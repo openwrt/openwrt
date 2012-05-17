@@ -825,7 +825,7 @@ $(eval $(call KernelPackage,mtdtests))
 define KernelPackage/nand
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NAND flash support
-  DEPENDS:=@!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39)
+  DEPENDS:=@!LINUX_2_6_39
   KCONFIG:=CONFIG_MTD_NAND \
 	CONFIG_MTD_NAND_IDS \
 	CONFIG_MTD_NAND_ECC
@@ -846,7 +846,7 @@ $(eval $(call KernelPackage,nand))
 define KernelPackage/nandsim
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NAND simulator
-  DEPENDS:=@!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39) +kmod-nand
+  DEPENDS:=+kmod-nand
   KCONFIG:=CONFIG_MTD_NAND_NANDSIM
   FILES:=$(LINUX_DIR)/drivers/mtd/nand/nandsim.ko
 endef
