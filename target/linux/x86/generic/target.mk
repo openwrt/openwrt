@@ -1,3 +1,4 @@
+LINUX_VERSION:=3.3.6
 BOARDNAME:=Generic
 
 define Target/Description
