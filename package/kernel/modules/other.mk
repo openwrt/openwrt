@@ -736,34 +736,6 @@ endef
 
 $(eval $(call KernelPackage,pwm-gpio))
 
-define KernelPackage/rtc-core-2.6
-  SUBMENU:=$(OTHER_MENU)
-  DEPENDS:=@(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39)
-  TITLE:=Real Time Clock class support
-  KCONFIG:=CONFIG_RTC_CLASS
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-core.ko
-  AUTOLOAD:=$(call AutoLoad,29,rtc-core)
-endef
-
-define KernelPackage/rtc-core-2.6/description
- Generic RTC class support.
-endef
-
-$(eval $(call KernelPackage,rtc-core-2.6))
-
-define KernelPackage/rtc-core-3.x
-  SUBMENU:=$(OTHER_MENU)
-  DEPENDS:=@!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39)
-  TITLE:=Real Time Clock class support
-  KCONFIG:=CONFIG_RTC_CLASS=y
-endef
-
-define KernelPackage/rtc-core-3.x/description
- Generic RTC class support.
-endef
-
-$(eval $(call KernelPackage,rtc-core-3.x))
-
 define KernelPackage/rtc-pcf8563
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support
