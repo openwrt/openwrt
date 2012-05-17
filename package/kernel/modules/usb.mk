@@ -561,7 +561,6 @@ $(eval $(call KernelPackage,usb-serial-keyspan))
 
 define KernelPackage/usb-serial-wwan
   TITLE:=Support for GSM and CDMA modems
-  DEPENDS:= @!LINUX_2_6_30&&!LINUX_2_6_31&&!LINUX_2_6_32
   KCONFIG:=CONFIG_USB_SERIAL_WWAN
   FILES:=$(LINUX_DIR)/drivers/usb/serial/usb_wwan.ko
   AUTOLOAD:=$(call AutoLoad,61,usb_wwan)
@@ -577,7 +576,7 @@ $(eval $(call KernelPackage,usb-serial-wwan))
 
 define KernelPackage/usb-serial-option
   TITLE:=Support for Option HSDPA modems
-  DEPENDS:=+!LINUX_2_6_30&&!LINUX_2_6_31&&!LINUX_2_6_32:kmod-usb-serial-wwan
+  DEPENDS:=+kmod-usb-serial-wwan
   KCONFIG:=CONFIG_USB_SERIAL_OPTION
   FILES:=$(LINUX_DIR)/drivers/usb/serial/option.ko
   AUTOLOAD:=$(call AutoLoad,65,option)

@@ -55,7 +55,7 @@ $(eval $(call KernelPackage,lib-crc7))
 define KernelPackage/lib-crc8
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC8 support
-  DEPENDS:= @!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39||LINUX_3_0)
+  DEPENDS:= @!LINUX_2_6_39
   KCONFIG:=CONFIG_CRC8
   FILES:=$(LINUX_DIR)/lib/crc8.ko
   AUTOLOAD:=$(call AutoLoad,20,crc8)
@@ -150,7 +150,7 @@ $(eval $(call KernelPackage,lib-zlib))
 define KernelPackage/lib-cordic
   SUBMENU:=$(LIB_MENU)
   TITLE:=Cordic function support
-  DEPENDS:= @!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39||LINUX_3_0)
+  DEPENDS:= @!LINUX_2_6_39
   KCONFIG:=CONFIG_CORDIC
   FILES:=$(LINUX_DIR)/lib/cordic.ko
   AUTOLOAD:=$(call AutoLoad,20,cordic)
