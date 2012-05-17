@@ -179,6 +179,7 @@ proto_6to4_setup() {
 
 		uci_revert_state radvd
 		config_load radvd
+		config_load network
 
 		adv_subnet=$((0x${adv_subnet:-1}))
 
