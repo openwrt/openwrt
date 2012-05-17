@@ -22,8 +22,8 @@ export RELEASE
 export REVISION
 export OPENWRTVERSION
 export IS_TTY=$(shell tty -s && echo 1 || echo 0)
-export LD_LIBRARY_PATH:=$(if $(LD_LIBRARY_PATH),$(LD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib
-export DYLD_LIBRARY_PATH:=$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib
+export LD_LIBRARY_PATH:=$(subst ::,:,$(if $(LD_LIBRARY_PATH),$(LD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib)
+export DYLD_LIBRARY_PATH:=$(subst ::,:,$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib)
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
 
 # prevent perforce from messing with the patch utility
