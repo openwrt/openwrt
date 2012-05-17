@@ -1,0 +1,159 @@
+--- a/drivers/net/wireless/b43/bus.c
++++ b/drivers/net/wireless/b43/bus.c
+@@ -107,11 +107,9 @@ struct b43_bus_dev *b43_bus_dev_bcma_ini
+ 	dev->dma_dev = core->dma_dev;
+ 	dev->irq = core->irq;
+ 
+-	/*
+ 	dev->board_vendor = core->bus->boardinfo.vendor;
+ 	dev->board_type = core->bus->boardinfo.type;
+-	dev->board_rev = core->bus->boardinfo.rev;
+-	*/
++	dev->board_rev = core->bus->sprom.board_rev;
+ 
+ 	dev->chip_id = core->bus->chipinfo.id;
+ 	dev->chip_rev = core->bus->chipinfo.rev;
+@@ -210,7 +208,7 @@ struct b43_bus_dev *b43_bus_dev_ssb_init
+ 
+ 	dev->board_vendor = sdev->bus->boardinfo.vendor;
+ 	dev->board_type = sdev->bus->boardinfo.type;
+-	dev->board_rev = sdev->bus->boardinfo.rev;
++	dev->board_rev = sdev->bus->sprom.board_rev;
+ 
+ 	dev->chip_id = sdev->bus->chip_id;
+ 	dev->chip_rev = sdev->bus->chip_rev;
+--- a/drivers/net/wireless/b43/dma.c
++++ b/drivers/net/wireless/b43/dma.c
+@@ -1109,7 +1109,7 @@ static bool b43_dma_translation_in_low_w
+ #ifdef CONFIG_B43_SSB
+ 	if (dev->dev->bus_type == B43_BUS_SSB &&
+ 	    dev->dev->sdev->bus->bustype == SSB_BUSTYPE_PCI &&
+-	    !(dev->dev->sdev->bus->host_pci->is_pcie &&
++	    !(pci_is_pcie(dev->dev->sdev->bus->host_pci) &&
+ 	      ssb_read32(dev->dev->sdev, SSB_TMSHIGH) & SSB_TMSHIGH_DMA64))
+ 			return 1;
+ #endif
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -4834,8 +4834,14 @@ static int b43_op_start(struct ieee80211
+  out_mutex_unlock:
+ 	mutex_unlock(&wl->mutex);
+ 
+-	/* reload configuration */
+-	b43_op_config(hw, ~0);
++	/*
++	 * Configuration may have been overwritten during initialization.
++	 * Reload the configuration, but only if initialization was
++	 * successful. Reloading the configuration after a failed init
++	 * may hang the system.
++	 */
++	if (!err)
++		b43_op_config(hw, ~0);
+ 
+ 	return err;
+ }
+@@ -5279,10 +5285,10 @@ static void b43_sprom_fixup(struct ssb_b
+ 
+ 	/* boardflags workarounds */
+ 	if (bus->boardinfo.vendor == SSB_BOARDVENDOR_DELL &&
+-	    bus->chip_id == 0x4301 && bus->boardinfo.rev == 0x74)
++	    bus->chip_id == 0x4301 && bus->sprom.board_rev == 0x74)
+ 		bus->sprom.boardflags_lo |= B43_BFL_BTCOEXIST;
+ 	if (bus->boardinfo.vendor == PCI_VENDOR_ID_APPLE &&
+-	    bus->boardinfo.type == 0x4E && bus->boardinfo.rev > 0x40)
++	    bus->boardinfo.type == 0x4E && bus->sprom.board_rev > 0x40)
+ 		bus->sprom.boardflags_lo |= B43_BFL_PACTRL;
+ 	if (bus->bustype == SSB_BUSTYPE_PCI) {
+ 		pdev = bus->host_pci;
+--- a/drivers/net/wireless/b43/sdio.c
++++ b/drivers/net/wireless/b43/sdio.c
+@@ -193,7 +193,7 @@ static struct sdio_driver b43_sdio_drive
+ 	.name		= "b43-sdio",
+ 	.id_table	= b43_sdio_ids,
+ 	.probe		= b43_sdio_probe,
+-	.remove		= b43_sdio_remove,
++	.remove		= __devexit_p(b43_sdio_remove),
+ };
+ 
+ int b43_sdio_init(void)
+--- a/drivers/net/wireless/b43legacy/main.c
++++ b/drivers/net/wireless/b43legacy/main.c
+@@ -1550,8 +1550,6 @@ static void b43legacy_request_firmware(s
+ 	const char *filename;
+ 	int err;
+ 
+-	/* do dummy read */
+-	ssb_read32(dev->dev, SSB_TMSHIGH);
+ 	if (!fw->ucode) {
+ 		if (rev == 2)
+ 			filename = "ucode2";
+@@ -3758,7 +3756,7 @@ static void b43legacy_sprom_fixup(struct
+ 	/* boardflags workarounds */
+ 	if (bus->boardinfo.vendor == PCI_VENDOR_ID_APPLE &&
+ 	    bus->boardinfo.type == 0x4E &&
+-	    bus->boardinfo.rev > 0x40)
++	    bus->sprom.board_rev > 0x40)
+ 		bus->sprom.boardflags_lo |= B43legacy_BFL_PACTRL;
+ }
+ 
+--- a/drivers/net/wireless/b43legacy/phy.c
++++ b/drivers/net/wireless/b43legacy/phy.c
+@@ -408,7 +408,7 @@ static void b43legacy_phy_setupg(struct
+ 
+ 		if (is_bcm_board_vendor(dev) &&
+ 		    (dev->dev->bus->boardinfo.type == 0x0416) &&
+-		    (dev->dev->bus->boardinfo.rev == 0x0017))
++		    (dev->dev->bus->sprom.board_rev == 0x0017))
+ 			return;
+ 
+ 		b43legacy_ilt_write(dev, 0x5001, 0x0002);
+@@ -424,7 +424,7 @@ static void b43legacy_phy_setupg(struct
+ 
+ 		if (is_bcm_board_vendor(dev) &&
+ 		    (dev->dev->bus->boardinfo.type == 0x0416) &&
+-		    (dev->dev->bus->boardinfo.rev == 0x0017))
++		    (dev->dev->bus->sprom.board_rev == 0x0017))
+ 			return;
+ 
+ 		b43legacy_ilt_write(dev, 0x0401, 0x0002);
+--- a/drivers/net/wireless/b43legacy/radio.c
++++ b/drivers/net/wireless/b43legacy/radio.c
+@@ -1998,7 +1998,7 @@ u16 b43legacy_default_radio_attenuation(
+ 			if (phy->type == B43legacy_PHYTYPE_G) {
+ 				if (is_bcm_board_vendor(dev) &&
+ 				    dev->dev->bus->boardinfo.type == 0x421 &&
+-				    dev->dev->bus->boardinfo.rev >= 30)
++				    dev->dev->bus->sprom.board_rev >= 30)
+ 					att = 3;
+ 				else if (is_bcm_board_vendor(dev) &&
+ 					 dev->dev->bus->boardinfo.type == 0x416)
+@@ -2008,7 +2008,7 @@ u16 b43legacy_default_radio_attenuation(
+ 			} else {
+ 				if (is_bcm_board_vendor(dev) &&
+ 				    dev->dev->bus->boardinfo.type == 0x421 &&
+-				    dev->dev->bus->boardinfo.rev >= 30)
++				    dev->dev->bus->sprom.board_rev >= 30)
+ 					att = 7;
+ 				else
+ 					att = 6;
+@@ -2018,7 +2018,7 @@ u16 b43legacy_default_radio_attenuation(
+ 			if (phy->type == B43legacy_PHYTYPE_G) {
+ 				if (is_bcm_board_vendor(dev) &&
+ 				    dev->dev->bus->boardinfo.type == 0x421 &&
+-				    dev->dev->bus->boardinfo.rev >= 30)
++				    dev->dev->bus->sprom.board_rev >= 30)
+ 					att = 3;
+ 				else if (is_bcm_board_vendor(dev) &&
+ 					 dev->dev->bus->boardinfo.type ==
+@@ -2052,9 +2052,9 @@ u16 b43legacy_default_radio_attenuation(
+ 	}
+ 	if (is_bcm_board_vendor(dev) &&
+ 	    dev->dev->bus->boardinfo.type == 0x421) {
+-		if (dev->dev->bus->boardinfo.rev < 0x43)
++		if (dev->dev->bus->sprom.board_rev < 0x43)
+ 			att = 2;
+-		else if (dev->dev->bus->boardinfo.rev < 0x51)
++		else if (dev->dev->bus->sprom.board_rev < 0x51)
+ 			att = 3;
+ 	}
+ 	if (att == 0xFFFF)
