@@ -280,7 +280,7 @@ out the configuration than the in kernel cfe config reader.
  
  	off = FLASH_MIN;
  	while (off <= lim) {
-@@ -252,6 +273,12 @@ int nvram_getenv(char *name, char *val,
+@@ -257,6 +278,12 @@ int nvram_getenv(char *name, char *val,
  	if (!nvram_buf[0])
  		early_nvram_init();
  
@@ -293,7 +293,7 @@ out the configuration than the in kernel cfe config reader.
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
  	end = nvram_buf + sizeof(nvram_buf) - 2;
-@@ -280,6 +307,9 @@ char *nvram_get(const char *name)
+@@ -285,6 +312,9 @@ char *nvram_get(const char *name)
  	if (!nvram_buf[0])
  		early_nvram_init();
  

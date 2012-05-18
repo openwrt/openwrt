@@ -24,7 +24,7 @@
  		base = bcma_cc->pflash.window;
  		lim = bcma_cc->pflash.window_size;
  		break;
-@@ -86,7 +84,110 @@ found:
+@@ -86,7 +84,115 @@ found:
  	for (i = 0; i < sizeof(struct nvram_header); i += 4)
  		*dst++ = *src++;
  	for (; i < header->len && i < NVRAM_SPACE; i += 4)
@@ -32,44 +32,49 @@
 +		*dst++ = *src++;
 +}
 +
-+static int early_nvram_init_sflash(void)
++static int find_nvram_size(void)
 +{
 +	struct nvram_header header;
++	int nvram_sizes[] = {NVRAM_SPACE, 0xF000, 2 * NVRAM_SPACE};
++	int i;
++	int ret;
++
++	for (i = 0; i < sizeof(nvram_sizes); i++) {
++		ret = bcm47xx_sflash.read(&bcm47xx_sflash, bcm47xx_sflash.size - nvram_sizes[i], sizeof(header), (u8 *)&header);
++		if (ret != sizeof(header))
++			return ret;
++		if (header.magic == NVRAM_HEADER)
++			return nvram_sizes[i];
++	}
++	return -1;
++}
++
++static int early_nvram_init_sflash(void)
++{
 +	u32 off;
 +	int ret;
 +	char *dst;
 +	int len;
++	int size;
 +
 +	/* check if the struct is already initilized */
 +	if (!bcm47xx_sflash.size)
 +		return -1;
 +
-+	off = FLASH_MIN;
-+	while (off <= bcm47xx_sflash.size) {
-+		ret = bcm47xx_sflash.read(&bcm47xx_sflash, off - NVRAM_SPACE, sizeof(header), (u8 *)&header);
-+		if (ret != sizeof(header))
-+			return ret;
-+		if (header.magic == NVRAM_HEADER)
-+			goto found;
-+		off <<= 1;
-+	}
++	size = find_nvram_size();
++	if (size <= 0)
++		return size;
 +
-+	off = FLASH_MIN;
-+	while (off <= bcm47xx_sflash.size) {
-+		ret = bcm47xx_sflash.read(&bcm47xx_sflash, off - (2 * NVRAM_SPACE), sizeof(header), (u8 *)&header);
-+		if (ret != sizeof(header))
-+			return ret;
-+		if (header.magic == NVRAM_HEADER)
-+			goto found;
-+		off <<= 1;
-+	}
-+	return -1;
-+
-+found:
 +	len = NVRAM_SPACE;
 +	dst = nvram_buf;
++	off = bcm47xx_sflash.size;
++	if (size > len) {
++		printk(KERN_WARNING "nvram on flash is bigger than the reserved"
++		       " space in memory, will just copy the first %i bytes\n",
++		       len);
++	}
 +	while (len) {
-+		ret = bcm47xx_sflash.read(&bcm47xx_sflash, off - (2 * NVRAM_SPACE), len, dst);
++		ret = bcm47xx_sflash.read(&bcm47xx_sflash, off - size, len, dst);
 +		if (ret < 0)
 +			return ret;
 +		off += ret;
