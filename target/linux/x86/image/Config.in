@@ -73,6 +73,7 @@ config OLPC_BOOTSCRIPT_IMAGES
 	bool "Build images with bootscript"
 	depends TARGET_x86_olpc
 	depends TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+	default TARGET_x86_olpc
 
 
 config TARGET_IMAGES_PAD
