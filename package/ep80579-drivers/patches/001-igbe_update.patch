@@ -144,7 +144,7 @@
  /**
   * gcu_probe_err - gcu_probe error handler
   * @err: gcu_err_type
-@@ -295,7 +293,7 @@ gcu_notify_reboot(struct notifier_block 
+@@ -295,7 +293,7 @@ gcu_notify_reboot(struct notifier_block
      case SYS_DOWN:
      case SYS_HALT:
      case SYS_POWER_OFF:
@@ -589,7 +589,7 @@
  
    Contact Information:
  
-@@ -2115,7 +2115,7 @@ iegbe_config_mac_to_phy(struct iegbe_hw 
+@@ -2115,7 +2115,7 @@ iegbe_config_mac_to_phy(struct iegbe_hw
  
          ret_val = iegbe_oem_set_trans_gasket(hw);
          if(ret_val){
@@ -598,7 +598,7 @@
          }
          ret_val = iegbe_oem_phy_is_full_duplex(
              hw, (int *) &is_FullDuplex);
-@@ -2164,7 +2164,7 @@ iegbe_config_mac_to_phy(struct iegbe_hw 
+@@ -2164,7 +2164,7 @@ iegbe_config_mac_to_phy(struct iegbe_hw
      }
      /* Write the configured values back to the Device Control Reg. */
      E1000_WRITE_REG(hw, CTRL, ctrl);
@@ -911,7 +911,7 @@
  
  /* iegbe_pci_tbl - PCI Device ID Table
   *
-@@ -148,95 +60,48 @@ char iegbe_copyright[] = "Copyright (c) 
+@@ -148,95 +60,48 @@ char iegbe_copyright[] = "Copyright (c)
   *   {PCI_DEVICE(PCI_VENDOR_ID_INTEL, device_id)}
   */
  static struct pci_device_id iegbe_pci_tbl[] = {
@@ -3025,7 +3025,7 @@
  }
  
  /**
-@@ -1512,113 +1412,108 @@ iegbe_configure_tx(struct iegbe_adapter 
+@@ -1512,113 +1412,108 @@ iegbe_configure_tx(struct iegbe_adapter
  
  	/* Setup the HW Tx Head and Tail descriptor pointers */
  
@@ -3210,7 +3210,7 @@
          hw->bus_type == iegbe_bus_type_pcix) {
          adapter->pcix_82544 = 0x1;
       }
-@@ -1632,96 +1527,95 @@ iegbe_configure_tx(struct iegbe_adapter 
+@@ -1632,96 +1527,95 @@ iegbe_configure_tx(struct iegbe_adapter
   * Returns 0 on success, negative on failure
   **/
  
@@ -3830,7 +3830,7 @@
  }
  
  /**
-@@ -2022,20 +1859,19 @@ iegbe_configure_rx(struct iegbe_adapter 
+@@ -2022,20 +1859,19 @@ iegbe_configure_rx(struct iegbe_adapter
   * Free all transmit software resources
   **/
  
@@ -5848,7 +5848,7 @@
  }
  
  /**
-@@ -3232,13 +3212,12 @@ iegbe_tx_timeout_task(struct net_device 
+@@ -3232,13 +3212,12 @@ iegbe_tx_timeout_task(struct net_device
   * The statistics are actually updated from the timer callback.
   **/
  
@@ -6877,7 +6877,7 @@
  
  /**
   * iegbe_rx_checksum - Receive Checksum Offload for 82543
-@@ -3913,192 +3689,193 @@ iegbe_clean_tx_irq(struct iegbe_adapter 
+@@ -3913,192 +3689,193 @@ iegbe_clean_tx_irq(struct iegbe_adapter
   * @sk_buff:     socket buffer with received data
   **/
  
@@ -9333,7 +9333,7 @@
  iegbe_oem_phy_reset_dsp(struct iegbe_hw *hw)
  {
  #ifdef EXTERNAL_MDIO
-@@ -478,10 +413,8 @@ iegbe_oem_phy_reset_dsp(struct iegbe_hw 
+@@ -478,10 +413,8 @@ iegbe_oem_phy_reset_dsp(struct iegbe_hw
       * no-op.
       */
       switch (hw->phy_id) {
@@ -9346,7 +9346,7 @@
               DEBUGOUT("No DSP to reset on OEM PHY\n");
           break;
           default:
-@@ -508,7 +441,7 @@ iegbe_oem_phy_reset_dsp(struct iegbe_hw 
+@@ -508,7 +441,7 @@ iegbe_oem_phy_reset_dsp(struct iegbe_hw
   * This is called from iegbe_phy_force_speed_duplex, which is
   * called from iegbe_oem_setup_link.
   **/
@@ -9623,7 +9623,7 @@
  iegbe_oem_phy_is_copper(struct iegbe_hw *hw)
  {
  #ifdef EXTERNAL_MDIO
-@@ -827,23 +738,21 @@ iegbe_oem_phy_is_copper(struct iegbe_hw 
+@@ -827,23 +738,21 @@ iegbe_oem_phy_is_copper(struct iegbe_hw
      switch (hw->phy_id) {
          case M88E1000_I_PHY_ID:
          case M88E1141_E_PHY_ID:
@@ -9650,7 +9650,7 @@
       */
      DEBUGOUT("Invalid value for transceiver type, return FALSE\n");
      return FALSE;
-@@ -856,19 +765,19 @@ iegbe_oem_phy_is_copper(struct iegbe_hw 
+@@ -856,19 +765,19 @@ iegbe_oem_phy_is_copper(struct iegbe_hw
   * iegbe_oem_get_phy_dev_number
   * @hw: iegbe_hw struct containing device specific information
   *
@@ -10804,7 +10804,7 @@
                              uint32_t data_length);
  int iegbe_oem_phy_loopback(struct iegbe_adapter *adapter);
  void iegbe_oem_loopback_cleanup(struct iegbe_adapter *adapter);
-@@ -94,81 +94,14 @@ int32_t iegbe_oem_phy_is_link_up(struct 
+@@ -94,81 +94,14 @@ int32_t iegbe_oem_phy_is_link_up(struct
  #define ICP_XXXX_MAC_2 2
  
  #define DEFAULT_ICP_XXXX_TIPG_IPGT 8      /* Inter Packet Gap Transmit Time */
