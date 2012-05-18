@@ -99,7 +99,7 @@
            case M88E1000_I_PHY_ID:
            case M88E1141_E_PHY_ID:
                ret_val = iegbe_oem_read_phy_reg_ex(hw, 
-@@ -415,6 +479,8 @@ iegbe_oem_phy_reset_dsp(struct iegbe_hw 
+@@ -415,6 +479,8 @@ iegbe_oem_phy_reset_dsp(struct iegbe_hw
       switch (hw->phy_id) {
           case M88E1000_I_PHY_ID:
           case M88E1141_E_PHY_ID:
@@ -161,7 +161,7 @@
               phy_num = DEFAULT_ICP_XXXX_TIPG_IPGT;
           break;
           default:
-@@ -738,6 +829,8 @@ iegbe_oem_phy_is_copper(struct iegbe_hw 
+@@ -738,6 +829,8 @@ iegbe_oem_phy_is_copper(struct iegbe_hw
      switch (hw->phy_id) {
          case M88E1000_I_PHY_ID:
          case M88E1141_E_PHY_ID:
@@ -670,7 +670,7 @@
 +}
 --- a/Embedded/src/GbE/iegbe_oem_phy.h
 +++ b/Embedded/src/GbE/iegbe_oem_phy.h
-@@ -95,6 +95,8 @@ int32_t iegbe_oem_phy_is_link_up(struct 
+@@ -95,6 +95,8 @@ int32_t iegbe_oem_phy_is_link_up(struct
  
  #define DEFAULT_ICP_XXXX_TIPG_IPGT 8      /* Inter Packet Gap Transmit Time */
  #define ICP_XXXX_TIPG_IPGT_MASK 0x000003FFUL 
@@ -679,7 +679,7 @@
  
  /* Miscellaneous defines */
  #ifdef IEGBE_10_100_ONLY
-@@ -103,5 +105,65 @@ int32_t iegbe_oem_phy_is_link_up(struct 
+@@ -103,5 +105,65 @@ int32_t iegbe_oem_phy_is_link_up(struct
      #define ICP_XXXX_AUTONEG_ADV_DEFAULT	0x2F
  #endif
  

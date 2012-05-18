@@ -10,7 +10,7 @@
  	int num_rx_queues;
 --- a/Embedded/src/GbE/iegbe_main.c
 +++ b/Embedded/src/GbE/iegbe_main.c
-@@ -763,7 +763,7 @@ static int __devinit iegbe_probe(struct 
+@@ -763,7 +763,7 @@ static int __devinit iegbe_probe(struct
  	struct iegbe_hw *hw;
  
  	static int cards_found = 0;
@@ -85,7 +85,7 @@
   **/
  
  static int __devinit
-@@ -1158,15 +1143,6 @@ iegbe_alloc_queues(struct iegbe_adapter 
+@@ -1158,15 +1143,6 @@ iegbe_alloc_queues(struct iegbe_adapter
  		return -ENOMEM;
  	}
  

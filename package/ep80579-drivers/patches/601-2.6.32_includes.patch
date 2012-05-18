@@ -1,6 +1,5 @@
-diff -Nur a/Embedded/src/1588/1588.c b/Embedded/src/1588/1588.c
---- a/Embedded/src/1588/1588.c	2009-11-10 14:20:46.563322192 +0100
-+++ b/Embedded/src/1588/1588.c	2009-11-30 10:44:22.144270452 +0100
+--- a/Embedded/src/1588/1588.c
++++ b/Embedded/src/1588/1588.c
 @@ -72,6 +72,7 @@
   *
   ****************************************************************************/
@@ -9,9 +8,8 @@ diff -Nur a/Embedded/src/1588/1588.c b/Embedded/src/1588/1588.c
  #include "1588.h"
  
  MODULE_AUTHOR("Intel(R) Corporation");
-diff -Nur a/Embedded/src/CAN/can_main.c b/Embedded/src/CAN/can_main.c
---- a/Embedded/src/CAN/can_main.c	2009-11-10 14:20:46.563322192 +0100
-+++ b/Embedded/src/CAN/can_main.c	2009-11-30 10:44:39.044269751 +0100
+--- a/Embedded/src/CAN/can_main.c
++++ b/Embedded/src/CAN/can_main.c
 @@ -68,6 +68,7 @@
   *
   **************************************************************************/
@@ -19,10 +17,9 @@ diff -Nur a/Embedded/src/CAN/can_main.c b/Embedded/src/CAN/can_main.c
 +#include <linux/sched.h>
  #include "can_main.h"
  #include "can_ioctl.h"
- 
-diff -Nur a/Embedded/src/WDT/iwdt.c b/Embedded/src/WDT/iwdt.c
---- a/Embedded/src/WDT/iwdt.c	2009-11-10 14:20:46.563322192 +0100
-+++ b/Embedded/src/WDT/iwdt.c	2009-11-30 10:44:54.024262744 +0100
+ #include <linux/fs.h>
+--- a/Embedded/src/WDT/iwdt.c
++++ b/Embedded/src/WDT/iwdt.c
 @@ -137,6 +137,7 @@
  #include <linux/watchdog.h>
  #include <linux/miscdevice.h>
