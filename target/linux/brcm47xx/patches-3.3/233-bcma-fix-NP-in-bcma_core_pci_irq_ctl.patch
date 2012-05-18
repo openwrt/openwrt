@@ -1,0 +1,20 @@
+--- a/drivers/bcma/driver_pci.c
++++ b/drivers/bcma/driver_pci.c
+@@ -232,7 +232,7 @@ void __devinit bcma_core_pci_init(struct
+ int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc, struct bcma_device *core,
+ 			  bool enable)
+ {
+-	struct pci_dev *pdev = pc->core->bus->host_pci;
++	struct pci_dev *pdev;
+ 	u32 coremask, tmp;
+ 	int err = 0;
+ 
+@@ -243,6 +243,8 @@ int bcma_core_pci_irq_ctl(struct bcma_dr
+ 		goto out;
+ 	}
+ 
++	pdev = pc->core->bus->host_pci;
++
+ 	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
+ 	if (err)
+ 		goto out;
