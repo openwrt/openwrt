@@ -113,6 +113,24 @@ endef
 
 $(eval $(call KernelPackage,libphy))
 
+define KernelPackage/et131x
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Agere ET131x Gigabit Ethernet driver
+  URL:=http://sourceforge.net/projects/et131x
+  FILES:=$(LINUX_DIR)/drivers/staging/et131x/et131x.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:= \
+	CONFIG_ET131X \
+	CONFIG_ET131X_DEBUG=n
+  DEPENDS:=@PCI_SUPPORT
+  AUTOLOAD:=$(call AutoLoad,70,et131x)
+endef
+
+define KernelPackage/et131x/description
+  This package contains the et131x kernel module.
+endef
+
+$(eval $(call KernelPackage,et131x))
+
 define KernelPackage/swconfig
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=switch configuration API
