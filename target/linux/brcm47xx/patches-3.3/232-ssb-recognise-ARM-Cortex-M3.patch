@@ -1,0 +1,21 @@
+--- a/drivers/ssb/scan.c
++++ b/drivers/ssb/scan.c
+@@ -90,6 +90,8 @@ const char *ssb_core_name(u16 coreid)
+ 		return "ARM 1176";
+ 	case SSB_DEV_ARM_7TDMI:
+ 		return "ARM 7TDMI";
++	case SSB_DEV_ARM_CM3:
++		return "ARM Cortex M3";
+ 	}
+ 	return "UNKNOWN";
+ }
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -243,6 +243,7 @@ struct ssb_bus_ops {
+ #define SSB_DEV_MINI_MACPHY	0x823
+ #define SSB_DEV_ARM_1176	0x824
+ #define SSB_DEV_ARM_7TDMI	0x825
++#define SSB_DEV_ARM_CM3		0x82A
+ 
+ /* Vendor-ID values */
+ #define SSB_VENDOR_BROADCOM	0x4243
