@@ -1,0 +1,91 @@
+--- a/Embedded/src/GbE/Makefile
++++ b/Embedded/src/GbE/Makefile
+@@ -60,19 +60,19 @@ GBE_NAME = iegbe
+ GCU_NAME = gcu
+ 
+ VERSION_FILE := $(KSRC)/include/linux/version.h
+-UTS_REL_FILE := $(KSRC)/include/linux/utsrelease.h
+-CONFIG_FILE  := $(KSRC)/include/linux/autoconf.h
++UTS_REL_FILE := $(KSRC)/include/generated/utsrelease.h
++CONFIG_FILE  := $(KSRC)/include/generated/autoconf.h
+ 
+ ifeq (,$(wildcard $(VERSION_FILE)))
+   $(error Linux kernel source not configured - missing version.h)
+ endif
+ 
+ ifeq (,$(wildcard $(CONFIG_FILE)))
+-  $(error Linux kernel source not configured - missing autoconf.h)
++    $(error Linux kernel source not configured - missing autoconf.h)
+ endif
+ 
+ ifeq (,$(wildcard $(UTS_REL_FILE)))
+-  $(error Linux kernel source not configured - missing utsrelease.h)
++    $(error Linux kernel source not configured - missing utsrelease.h)
+ endif
+ 
+ # set the install path
+--- a/Embedded/src/1588/Makefile
++++ b/Embedded/src/1588/Makefile
+@@ -97,8 +97,8 @@ OUTPUT_PATH ?= /
+ EXTRA_LDFLAGS += -whole-archive
+ 
+ VERSION_FILE := $(KOBJ)/include/linux/version.h
+-UTS_REL_FILE := $(KSRC)/include/linux/utsrelease.h
+-CONFIG_FILE  := $(KOBJ)/include/linux/autoconf.h
++UTS_REL_FILE := $(KSRC)/include/generated/utsrelease.h
++CONFIG_FILE  := $(KOBJ)/include/generated/autoconf.h
+ 
+  
+ # as of 2.6.16, kernel define UTS_RELEASE has been moved to utsrelease.h
+--- a/Embedded/src/CAN/Makefile
++++ b/Embedded/src/CAN/Makefile
+@@ -100,8 +100,8 @@ OUTPUT_PATH ?= /
+ EXTRA_LDFLAGS += -whole-archive
+ 
+ VERSION_FILE := $(KOBJ)/include/linux/version.h
+-UTS_REL_FILE := $(KSRC)/include/linux/utsrelease.h
+-CONFIG_FILE  := $(KOBJ)/include/linux/autoconf.h
++UTS_REL_FILE := $(KSRC)/include/generated/utsrelease.h
++CONFIG_FILE  := $(KOBJ)/include/generated/autoconf.h
+ 
+  
+ # as of 2.6.16, kernel define UTS_RELEASE has been moved to utsrelease.h
+--- a/Embedded/src/EDMA/Makefile
++++ b/Embedded/src/EDMA/Makefile
+@@ -114,8 +114,8 @@ OUTPUT_PATH ?= /
+ EXTRA_LDFLAGS += -whole-archive
+ 
+ VERSION_FILE := $(KOBJ)/include/linux/version.h
+-UTS_REL_FILE := $(KSRC)/include/linux/utsrelease.h
+-CONFIG_FILE  := $(KOBJ)/include/linux/autoconf.h
++UTS_REL_FILE := $(KSRC)/include/generated/utsrelease.h
++CONFIG_FILE  := $(KOBJ)/include/generated/autoconf.h
+ 
+  
+ # as of 2.6.16, kernel define UTS_RELEASE has been moved to utsrelease.h
+--- a/Embedded/src/GPIO/Makefile
++++ b/Embedded/src/GPIO/Makefile
+@@ -97,8 +97,8 @@ OUTPUT_PATH ?= /
+ EXTRA_LDFLAGS += -whole-archive
+ 
+ VERSION_FILE := $(KOBJ)/include/linux/version.h
+-UTS_REL_FILE := $(KSRC)/include/linux/utsrelease.h
+-CONFIG_FILE  := $(KOBJ)/include/linux/autoconf.h
++UTS_REL_FILE := $(KSRC)/include/generated/utsrelease.h
++CONFIG_FILE  := $(KOBJ)/include/generated/autoconf.h
+ 
+  
+ # as of 2.6.16, kernel define UTS_RELEASE has been moved to utsrelease.h
+--- a/Embedded/src/WDT/Makefile
++++ b/Embedded/src/WDT/Makefile
+@@ -99,8 +99,8 @@ OUTPUT_PATH ?= /
+ EXTRA_LDFLAGS += -whole-archive
+ 
+ VERSION_FILE := $(KOBJ)/include/linux/version.h
+-UTS_REL_FILE := $(KSRC)/include/linux/utsrelease.h
+-CONFIG_FILE  := $(KOBJ)/include/linux/autoconf.h
++UTS_REL_FILE := $(KSRC)/include/generated/utsrelease.h
++CONFIG_FILE  := $(KOBJ)/include/generated/autoconf.h
+ 
+  
+ # as of 2.6.16, kernel define UTS_RELEASE has been moved to utsrelease.h
