@@ -1,0 +1,34 @@
+--- a/arch/arm/mach-omap2/board-n8x0.c
++++ b/arch/arm/mach-omap2/board-n8x0.c
+@@ -41,6 +41,7 @@
+ #include <plat/mmc.h>
+ #include <plat/serial.h>
+ #include <plat/gpio-switch.h>
++#include <plat/usb.h>
+ 
+ #include "mux.h"
+ 
+@@ -486,6 +487,14 @@ static struct musb_hdrc_platform_data tu
+ 	.config		= &musb_config,
+ };
+ 
++static struct omap_usb_config n8x0_omap_usb_config __initdata = {
++	.otg		= 1,
++	.register_host	= 1,
++	.register_dev	= 1,
++	.hmc_mode	= 16,
++	.pins[0]	= 6,
++};
++
+ static void __init n8x0_usb_init(void)
+ {
+ 	int ret = 0;
+@@ -507,6 +516,8 @@ static void __init n8x0_usb_init(void)
+ 	if (ret != 0)
+ 		goto err;
+ 
++	omap2_usbfs_init(&n8x0_omap_usb_config);
++
+ 	printk(announce);
+ 
+ 	return;

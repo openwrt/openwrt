@@ -1,0 +1,36 @@
+--- a/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c
+@@ -235,7 +235,7 @@ struct omap_hwmod_irq_info omap2_timer11
+ };
+ 
+ struct omap_hwmod_irq_info omap2_uart1_mpu_irqs[] = {
+-	{ .irq = INT_24XX_UART1_IRQ, },
++	{ .irq = 0, },
+ 	{ .irq = -1 }
+ };
+ 
+--- a/drivers/tty/serial/omap-serial.c
++++ b/drivers/tty/serial/omap-serial.c
+@@ -517,8 +517,10 @@ static int serial_omap_startup(struct ua
+ 	/*
+ 	 * Allocate the IRQ
+ 	 */
+-	retval = request_irq(up->port.irq, serial_omap_irq, up->port.irqflags,
+-				up->name, up);
++	retval = 0;
++	if (up->port.irq)
++		retval = request_irq(up->port.irq, serial_omap_irq,
++				     up->port.irqflags, up->name, up);
+ 	if (retval)
+ 		return retval;
+ 
+@@ -629,7 +631,8 @@ static void serial_omap_shutdown(struct
+ 	}
+ 
+ 	pm_runtime_put(&up->pdev->dev);
+-	free_irq(up->port.irq, up);
++	if (up->port.irq)
++		free_irq(up->port.irq, up);
+ }
+ 
+ static inline void

@@ -1,0 +1,50 @@
+--- a/drivers/mmc/host/omap.c
++++ b/drivers/mmc/host/omap.c
+@@ -1456,6 +1456,7 @@ static int __init mmc_omap_probe(struct
+ 	host->dma_ch = -1;
+ 
+ 	host->irq = irq;
++	host->reg_shift = (cpu_is_omap7xx() ? 1 : 2);
+ 	host->phys_base = host->mem_res->start;
+ 	host->virt_base = ioremap(res->start, resource_size(res));
+ 	if (!host->virt_base)
+@@ -1495,7 +1496,9 @@ static int __init mmc_omap_probe(struct
+ 		}
+ 	}
+ 
+-	host->reg_shift = (cpu_is_omap7xx() ? 1 : 2);
++	/* Make sure the detect workqueue was run at least once. */
++	printk(KERN_INFO "OMAP-mmc: waiting for cards...\n");
++	mmc_flush_scheduled_work();
+ 
+ 	return 0;
+ 
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -78,12 +78,13 @@ static int mmc_schedule_delayed_work(str
+ }
+ 
+ /*
+- * Internal function. Flush all scheduled work from the MMC work queue.
++ * Flush all scheduled work from the MMC work queue.
+  */
+-static void mmc_flush_scheduled_work(void)
++void mmc_flush_scheduled_work(void)
+ {
+ 	flush_workqueue(workqueue);
+ }
++EXPORT_SYMBOL(mmc_flush_scheduled_work);
+ 
+ #ifdef CONFIG_FAIL_MMC_REQUEST
+ 
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -445,6 +445,8 @@ static inline int mmc_boot_partition_acc
+ 	return !(host->caps2 & MMC_CAP2_BOOTPART_NOACC);
+ }
+ 
++void mmc_flush_scheduled_work(void);
++
+ #ifdef CONFIG_MMC_CLKGATE
+ void mmc_host_clk_hold(struct mmc_host *host);
+ void mmc_host_clk_release(struct mmc_host *host);

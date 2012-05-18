@@ -1,0 +1,12 @@
+--- a/drivers/cbus/tahvo.c
++++ b/drivers/cbus/tahvo.c
+@@ -104,7 +104,9 @@ void tahvo_write_reg(struct device *chil
+ {
+ 	struct tahvo		*tahvo = dev_get_drvdata(child->parent);
+ 
++	mutex_lock(&tahvo->mutex);
+ 	__tahvo_write_reg(tahvo, reg, val);
++	mutex_unlock(&tahvo->mutex);
+ }
+ EXPORT_SYMBOL(tahvo_write_reg);
+ 
