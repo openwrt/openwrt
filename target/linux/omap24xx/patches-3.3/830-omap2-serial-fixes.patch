@@ -1,0 +1,23 @@
+--- a/arch/arm/mach-omap2/serial.c
++++ b/arch/arm/mach-omap2/serial.c
+@@ -258,6 +258,8 @@ char *cmdline_find_option(char *str)
+ 	return strstr(saved_command_line, str);
+ }
+ 
++static struct omap_uart_state statebuf[4];
++
+ static int __init omap_serial_early_init(void)
+ {
+ 	do {
+@@ -272,9 +274,9 @@ static int __init omap_serial_early_init
+ 		if (!oh)
+ 			break;
+ 
+-		uart = kzalloc(sizeof(struct omap_uart_state), GFP_KERNEL);
+-		if (WARN_ON(!uart))
++		if (WARN_ON(num_uarts >= ARRAY_SIZE(statebuf)))
+ 			return -ENODEV;
++		uart = &statebuf[num_uarts];
+ 
+ 		uart->oh = oh;
+ 		uart->num = num_uarts++;
