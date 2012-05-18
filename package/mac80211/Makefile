@@ -1078,32 +1078,56 @@ define KernelPackage/b43legacy/description
 Kernel module for Broadcom 43xx-legacy wireless support (mac80211 stack) new
 endef
 
+
+define KernelPackage/brcmutil
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Broadcom IEEE802.11n common driver parts
+  URL:=http://linuxwireless.org/en/users/Drivers/brcm80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmutil/brcmutil.ko
+  AUTOLOAD:=$(call AutoLoad,30,brcmutil)
+  MENU:=1
+endef
+
+define KernelPackage/brcmutil/description
+ This module contains some common parts needed by Broadcom Wireless drivers brcmsmac and brcmfmac.
+endef
+
+define KernelPackage/brcmutil/config
+	menu "Configuration"
+		depends on PACKAGE_kmod-brcmutil
+
+	config PACKAGE_BRCM80211_DEBUG
+		bool "Broadcom wireless driver debugging"
+		help
+		  Say Y, if you want to debug brcmsmac and brcmfmac wireless driver.
+
+	endmenu
+endef
+
 define KernelPackage/brcmsmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n PCIe SoftMAC WLAN driver
   URL:=http://linuxwireless.org/en/users/Drivers/brcm80211
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT +!TARGET_brcm47xx:kmod-bcma +kmod-lib-cordic +kmod-lib-crc8
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmsmac/brcmsmac.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmutil/brcmutil.ko
-  AUTOLOAD:=$(call AutoLoad,30,brcmutil brcmsmac)
-  MENU:=1
+  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT +!TARGET_brcm47xx:kmod-bcma +kmod-lib-cordic +kmod-lib-crc8 +kmod-brcmutil
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmsmac/brcmsmac.ko
+  AUTOLOAD:=$(call AutoLoad,31,brcmsmac)
 endef
 
 define KernelPackage/brcmsmac/description
- Kernel modules for Broadcom IEEE802.11n PCIe Wireless cards
+ Kernel module for Broadcom IEEE802.11n PCIe Wireless cards
 endef
 
-define KernelPackage/brcmsmac/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-brcmsmac
+define KernelPackage/brcmfmac
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Broadcom IEEE802.11n USB FullMAC WLAN driver
+  URL:=http://linuxwireless.org/en/users/Drivers/brcm80211
+  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +@DRIVER_11N_SUPPORT +kmod-brcmutil
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmfmac/brcmfmac.ko
+  AUTOLOAD:=$(call AutoLoad,60,brcmfmac)
+endef
 
-	config PACKAGE_BRCM80211_DEBUG
-		bool "brcmsmac wireless debugging"
-		help
-		  Say Y, if you want to debug brcmsmac wireless driver.
-
-	endmenu
+define KernelPackage/brcmfmac/description
+ Kernel module for Broadcom IEEE802.11n USB Wireless cards
 endef
 
 BUILDFLAGS:= \
@@ -1143,7 +1167,8 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PACKAGE_kmod-iwl3945),-DCONFIG_IWL3945) \
 	$(if $(CONFIG_PACKAGE_kmod-iwl4965),-DCONFIG_COMPAT_IWL4965) \
 	$(if $(CONFIG_PACKAGE_kmod-wl12xx),-DCONFIG_WL12XX -DCONFIG_COMPAT_WL12XX_SDIO) \
-	$(if $(CONFIG_PACKAGE_BRCM80211_DEBUG),-DCONFIG_BRCMDBG)
+	$(if $(CONFIG_PACKAGE_BRCM80211_DEBUG),-DCONFIG_BRCMDBG) \
+	$(if $(CONFIG_PACKAGE_kmod-brcmfmac),-DCONFIG_BRCMFMAC_USB)
 
 MAKE_OPTS:= \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
@@ -1275,9 +1300,10 @@ MAKE_OPTS:= \
 	CONFIG_ATL2= \
 	CONFIG_ATL1E= \
 	CONFIG_ATL1C= \
-	CONFIG_BRCMFMAC= \
-	CONFIG_BRCMUTIL=$(if $(CONFIG_PACKAGE_kmod-brcmsmac),m) \
+	CONFIG_BRCMUTIL=$(if $(CONFIG_PACKAGE_kmod-brcmutil),m) \
 	CONFIG_BRCMSMAC=$(if $(CONFIG_PACKAGE_kmod-brcmsmac),m) \
+	CONFIG_BRCMFMAC=$(if $(CONFIG_PACKAGE_kmod-brcmfmac),m) \
+	CONFIG_BRCMFMAC_USB=$(if $(CONFIG_PACKAGE_kmod-brcmfmac),y) \
 	CONFIG_BRCMDBG=$(if $(CONFIG_PACKAGE_BRCM80211_DEBUG),y) \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=true \
@@ -1533,6 +1559,13 @@ define KernelPackage/brcmsmac/install
 		$(1)/lib/firmware/brcm/
 endef
 
+define KernelPackage/brcmfmac/install
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43236b.bin \
+		$(1)/lib/firmware/brcm/
+endef
+
 $(eval $(call KernelPackage,ath5k))
 $(eval $(call KernelPackage,lib80211))
 $(eval $(call KernelPackage,libertas-usb))
@@ -1566,7 +1599,9 @@ $(eval $(call KernelPackage,ath))
 $(eval $(call KernelPackage,carl9170))
 $(eval $(call KernelPackage,b43))
 $(eval $(call KernelPackage,b43legacy))
+$(eval $(call KernelPackage,brcmutil))
 $(eval $(call KernelPackage,brcmsmac))
+$(eval $(call KernelPackage,brcmfmac))
 $(eval $(call KernelPackage,net-libipw))
 $(eval $(call KernelPackage,net-ipw2100))
 $(eval $(call KernelPackage,net-ipw2200))
