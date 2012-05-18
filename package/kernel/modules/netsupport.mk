@@ -624,8 +624,8 @@ $(eval $(call KernelPackage,mppe))
 
 
 SCHED_MODULES = $(patsubst $(LINUX_DIR)/net/sched/%.ko,%,$(wildcard $(LINUX_DIR)/net/sched/*.ko))
-SCHED_MODULES_CORE = sch_ingress sch_codel sch_fq_codel sch_hfsc cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_connmark act_skbedit
-SCHED_MODULES_EXTRA = $(filter-out $(SCHED_MODULES_CORE),$(SCHED_MODULES))
+SCHED_MODULES_CORE = sch_ingress sch_codel sch_fq_codel sch_hfsc cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_skbedit
+SCHED_MODULES_EXTRA = $(filter-out $(SCHED_MODULES_CORE) act_connmark,$(SCHED_MODULES))
 SCHED_FILES = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_CORE))
 SCHED_FILES_EXTRA = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_EXTRA))
 
@@ -646,7 +646,6 @@ define KernelPackage/sched-core
 	CONFIG_NET_CLS_TCINDEX \
 	CONFIG_NET_CLS_U32 \
 	CONFIG_NET_ACT_MIRRED \
-	CONFIG_NET_ACT_CONNMARK \
 	CONFIG_NET_ACT_SKBEDIT \
 	CONFIG_NET_EMATCH=y \
 	CONFIG_NET_EMATCH_U32
@@ -660,9 +659,17 @@ endef
 $(eval $(call KernelPackage,sched-core))
 
 
+define KernelPackage/sched-connmark
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper conntrack mark support
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
+  KCONFIG:=CONFIG_NET_ACT_CONNMARK
+endef
+$(eval $(call KernelPackage,sched-connmark))
+
 define KernelPackage/sched
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=Traffic schedulers
+  TITLE:=Extra traffic schedulers
   DEPENDS:=+kmod-sched-core
   KCONFIG:= \
 	CONFIG_NET_SCH_DSMARK \
