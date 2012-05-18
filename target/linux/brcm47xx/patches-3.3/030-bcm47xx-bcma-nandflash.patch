@@ -46,7 +46,7 @@
  
  static char nvram_buf[NVRAM_SPACE];
  
-@@ -134,6 +136,51 @@ found:
+@@ -139,6 +141,51 @@ static int early_nvram_init_sflash(void)
  	return 0;
  }
  
@@ -64,7 +64,7 @@
 +	/* check if the struct is already initilized */
 +	if (!flash_size)
 +		return -1;
-+	
++
 +	cfe_env = 0;
 +
 +	off = FLASH_MIN;
@@ -98,7 +98,7 @@
  #ifdef CONFIG_BCM47XX_SSB
  static void early_nvram_init_ssb(void)
  {
-@@ -168,6 +215,11 @@ static void early_nvram_init_bcma(void)
+@@ -173,6 +220,11 @@ static void early_nvram_init_bcma(void)
  		if (err < 0)
  			printk(KERN_WARNING "can not read from flash: %i\n", err);
  		break;
