@@ -1,0 +1,31 @@
+--- a/Embedded/src/WDT/iwdt.c
++++ b/Embedded/src/WDT/iwdt.c
+@@ -217,8 +217,7 @@ static int wdt_open(struct inode *inode,
+ static int wdt_release(struct inode *inode, struct file *file);
+ static ssize_t wdt_write(struct file *file, const char *data,
+                      size_t count, loff_t * pos);
+-static int wdt_ioctl(struct inode *inode, struct file *file,
+-                    unsigned int cmd, unsigned long arg);
++static long wdt_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
+ static irqreturn_t wdt_isr(int irq, void *dev_id);
+ static void __exit wdt_cleanup(void);
+ static int __init wdt_init(void);
+@@ -243,7 +242,7 @@ static struct pci_device_id lpc_pci_tbl[
+ static struct file_operations wdt_fops = {
+      owner:        THIS_MODULE,
+      write:        wdt_write,
+-     ioctl:        wdt_ioctl,
++     unlocked_ioctl: wdt_ioctl,
+      open:         wdt_open,
+      release:      wdt_release,
+ };
+@@ -1201,8 +1200,7 @@ char *wdt_get_ioctl_string(unsigned int
+  * Return Value:    0 - successful, negative value - failed.
+  * Description:     This function is used to provide IO interface.
+  */
+-static int wdt_ioctl(struct inode *inode, struct file *file,
+-                    unsigned int cmd, unsigned long arg)
++static long wdt_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ {
+      u8  mode=0, scale=0, int_type=0;
+      u32 u_margin=0, dcount=0;
