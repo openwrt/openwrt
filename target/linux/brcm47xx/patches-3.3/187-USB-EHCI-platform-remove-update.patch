@@ -1,0 +1,11 @@
+--- a/drivers/usb/host/ehci-platform.c
++++ b/drivers/usb/host/ehci-platform.c
+@@ -75,8 +75,6 @@ static const struct hc_driver ehci_platf
+ 	.relinquish_port	= ehci_relinquish_port,
+ 	.port_handed_over	= ehci_port_handed_over,
+ 
+-	.update_device		= ehci_update_device,
+-
+ 	.clear_tt_buffer_complete = ehci_clear_tt_buffer_complete,
+ };
+ 
