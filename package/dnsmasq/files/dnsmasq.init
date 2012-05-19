@@ -157,7 +157,9 @@ dhcp_subscrid_add() {
 
 	xappend "--dhcp-subscrid=$networkid,$subscriberid"
 
-	dhcp_option_add "$cfg" "$networkid"
+	config_get_bool force "$cfg" force 0
+
+	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
 dhcp_remoteid_add() {
@@ -171,7 +173,9 @@ dhcp_remoteid_add() {
 
 	xappend "--dhcp-remoteid=$networkid,$remoteid"
 
-	dhcp_option_add "$cfg" "$networkid"
+	config_get_bool force "$cfg" force 0
+
+	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
 dhcp_circuitid_add() {
@@ -185,7 +189,9 @@ dhcp_circuitid_add() {
 
 	xappend "--dhcp-circuitid=$networkid,$circuitid"
 
-	dhcp_option_add "$cfg" "$networkid"
+	config_get_bool force "$cfg" force 0
+
+	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
 dhcp_userclass_add() {
@@ -199,7 +205,9 @@ dhcp_userclass_add() {
 
 	xappend "--dhcp-userclass=$networkid,$userclass"
 
-	dhcp_option_add "$cfg" "$networkid"
+	config_get_bool force "$cfg" force 0
+
+	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
 dhcp_vendorclass_add() {
@@ -213,14 +221,18 @@ dhcp_vendorclass_add() {
 
 	xappend "--dhcp-vendorclass=$networkid,$vendorclass"
 
-	dhcp_option_add "$cfg" "$networkid"
+	config_get_bool force "$cfg" force 0
+
+	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
 dhcp_host_add() {
 	local cfg="$1"
 
+	config_get_bool force "$cfg" force 0
+
 	config_get networkid "$cfg" networkid
-	[ -n "$networkid" ] && dhcp_option_add "$cfg" "$networkid"
+	[ -n "$networkid" ] && dhcp_option_add "$cfg" "$networkid" "$force"
 
 	config_get name "$cfg" name
 	config_get ip "$cfg" ip
@@ -282,7 +294,9 @@ dhcp_boot_add() {
 
 	xappend "--dhcp-boot=${networkid:+net:$networkid,}$filename,$servername,$serveraddress"
 
-	dhcp_option_add "$cfg" "$networkid"
+	config_get_bool force "$cfg" force 0
+
+	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
 
@@ -342,10 +356,13 @@ dhcp_add() {
 dhcp_option_add() {
 	local cfg="$1"
 	local networkid="$2"
+	local force="$3"
+
+	[ "$force" = "0" ] && force=
 
 	config_get dhcp_option "$cfg" dhcp_option
 	for o in $dhcp_option; do
-		xappend "--dhcp-option=$networkid","$o"
+		xappend "--dhcp-option${force:+-force}=$networkid","$o"
 	done
 
 }
