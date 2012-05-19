@@ -394,7 +394,7 @@ dhcp_mx_add() {
 
 	local service="$domain,$relay,$pref"
 
-	append args "--mx-host=$service"
+	xappend "--mx-host=$service"
 }
 
 dhcp_cname_add() {
