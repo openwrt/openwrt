@@ -664,6 +664,7 @@ define KernelPackage/sched-connmark
   TITLE:=Traffic shaper conntrack mark support
   DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
   KCONFIG:=CONFIG_NET_ACT_CONNMARK
+  FILES:=$(LINUX_DIR)/net/sched/act_connmark.ko
 endef
 $(eval $(call KernelPackage,sched-connmark))
 
