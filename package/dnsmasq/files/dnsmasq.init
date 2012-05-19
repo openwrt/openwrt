@@ -224,14 +224,32 @@ dhcp_host_add() {
 
 	config_get name "$cfg" name
 	config_get ip "$cfg" ip
-	[ -n "$ip" ] || [ -n "$name" ] || return 0
+	[ -n "$ip" -o -n "$name" ] || return 0
 
 	macs=""
 	config_get mac "$cfg" mac
 	for m in $mac; do append macs "$m" ","; done
 	[ -n "$macs" ] || return 0
 
-	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${ip:+,$ip}${name:+,$name}"
+	config_get tag "$cfg" tag
+
+	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${tag:+,set:$tag}${ip:+,$ip}${name:+,$name}"
+}
+
+dhcp_tag_add() {
+	local cfg="$1"
+
+	tag="$cfg"
+
+	[ -n "$tag" ] || return 0
+
+	config_get_bool force "$cfg" force 0
+	[ "$force" = "0" ] && force=
+
+	config_get option "$cfg" dhcp_option
+	for o in $option; do
+		xappend "--dhcp-option${force:+-force}=tag:$tag,$o"
+	done
 }
 
 dhcp_mac_add() {
@@ -435,6 +453,7 @@ start() {
 	echo >> $CONFIGFILE
 	config_foreach dhcp_boot_add boot
 	config_foreach dhcp_mac_add mac
+	config_foreach dhcp_tag_add tag
 	config_foreach dhcp_vendorclass_add vendorclass
 	config_foreach dhcp_userclass_add userclass
 	config_foreach dhcp_circuitid_add circuitid
