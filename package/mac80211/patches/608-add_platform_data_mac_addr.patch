@@ -1,0 +1,63 @@
+--- a/include/linux/rt2x00_platform.h
++++ b/include/linux/rt2x00_platform.h
+@@ -14,6 +14,7 @@
+ 
+ struct rt2x00_platform_data {
+ 	char *eeprom_file_name;
++	const u8 *mac_address;
+ 
+ 	int disable_2ghz;
+ 	int disable_5ghz;
+--- a/drivers/net/wireless/rt2x00/rt2x00dev.c
++++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
+@@ -825,6 +825,18 @@ static void rt2x00lib_rate(struct ieee80
+ 		entry->flags |= IEEE80211_RATE_SHORT_PREAMBLE;
+ }
+ 
++const u8 *rt2x00lib_get_mac_address(struct rt2x00_dev *rt2x00dev)
++{
++	struct rt2x00_platform_data *pdata;
++
++	pdata = rt2x00dev->dev->platform_data;
++	if (!pdata)
++		return NULL;
++
++	return pdata->mac_address;
++}
++EXPORT_SYMBOL_GPL(rt2x00lib_get_mac_address);
++
+ static int rt2x00lib_probe_hw_modes(struct rt2x00_dev *rt2x00dev,
+ 				    struct hw_mode_spec *spec)
+ {
+--- a/drivers/net/wireless/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/rt2x00/rt2x00.h
+@@ -1280,6 +1280,7 @@ static inline void rt2x00debug_dump_fram
+  */
+ u32 rt2x00lib_get_bssidx(struct rt2x00_dev *rt2x00dev,
+ 			 struct ieee80211_vif *vif);
++const u8 *rt2x00lib_get_mac_address(struct rt2x00_dev *rt2x00dev);
+ 
+ /*
+  * Interrupt context handlers.
+--- a/drivers/net/wireless/rt2x00/rt61pci.c
++++ b/drivers/net/wireless/rt2x00/rt61pci.c
+@@ -2393,6 +2393,7 @@ static int rt61pci_validate_eeprom(struc
+ 	u32 reg;
+ 	u16 word;
+ 	u8 *mac;
++	const u8 *pdata_mac;
+ 	s8 value;
+ 
+ 	rt2x00pci_register_read(rt2x00dev, E2PROM_CSR, &reg);
+@@ -2413,7 +2414,11 @@ static int rt61pci_validate_eeprom(struc
+ 	/*
+ 	 * Start validation of the data that has been read.
+ 	 */
++	pdata_mac = rt2x00lib_get_mac_address(rt2x00dev);
+ 	mac = rt2x00_eeprom_addr(rt2x00dev, EEPROM_MAC_ADDR_0);
++	if (pdata_mac)
++		memcpy(mac, pdata_mac, 6);
++
+ 	if (!is_valid_ether_addr(mac)) {
+ 		random_ether_addr(mac);
+ 		EEPROM(rt2x00dev, "MAC: %pM\n", mac);
