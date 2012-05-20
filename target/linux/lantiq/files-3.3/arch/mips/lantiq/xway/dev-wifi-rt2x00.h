@@ -9,6 +9,6 @@
 #ifndef _DEV_WIFI_RT2X00_H__
 #define _DEV_WIFI_RT2X00_H__
 
-extern void ltq_register_rt2x00(const char *firmware);
+extern void ltq_register_rt2x00(const char *firmware, const u8 *mac);
 
 #endif

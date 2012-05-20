@@ -24,8 +24,9 @@ rt2x00_pci_plat_dev_init(struct pci_dev *dev)
 }
 
 void __init
-ltq_register_rt2x00(const char *firmware)
+ltq_register_rt2x00(const char *firmware, const u8 *mac)
 {
 	rt2x00_pdata.eeprom_file_name = kstrdup(firmware, GFP_KERNEL);
+	rt2x00_pdata.mac_address = mac;
 	ltqpci_plat_dev_init = rt2x00_pci_plat_dev_init;
 }

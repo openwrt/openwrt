@@ -14,6 +14,7 @@
 
 struct rt2x00_platform_data {
 	char *eeprom_file_name;
+	const u8 *mac_address;
 
 	int disable_2ghz;
 	int disable_5ghz;
