@@ -177,6 +177,8 @@ ramips_ring_cleanup(struct raeth_priv *re)
 			txi->tx_skb = NULL;
 		}
 	}
+
+	netdev_reset_queue(re->netdev);
 }
 
 #if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT3883)
@@ -699,6 +701,7 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	dev->stats.tx_packets++;
 	dev->stats.tx_bytes += skb->len;
 	ramips_fe_wr(tx_next, RAMIPS_TX_CTX_IDX0);
+	netdev_sent_queue(dev, skb->len);
 	spin_unlock(&re->page_lock);
 	return NETDEV_TX_OK;
 
@@ -780,6 +783,7 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 {
 	struct net_device *dev = (struct net_device*)ptr;
 	struct raeth_priv *re = netdev_priv(dev);
+	unsigned int bytes_compl = 0, pkts_compl = 0;
 
 	spin_lock(&re->page_lock);
 	while (1) {
@@ -792,12 +796,16 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 		if (!(txd->txd2 & TX_DMA_DONE) || !(txi->tx_skb))
 			break;
 
+		pkts_compl++;
+		bytes_compl += txi->tx_skb->len;
+
 		dev_kfree_skb_irq(txi->tx_skb);
 		txi->tx_skb = NULL;
 		re->skb_free_idx++;
 		if (re->skb_free_idx >= NUM_TX_DESC)
 			re->skb_free_idx = 0;
 	}
+	netdev_completed_queue(dev, pkts_compl, bytes_compl);
 	spin_unlock(&re->page_lock);
 
 	ramips_fe_int_enable(RAMIPS_TX_DLY_INT);
