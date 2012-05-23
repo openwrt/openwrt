@@ -12,7 +12,7 @@ BOARDNAME:=Intel IOP32x
 FEATURES:=squashfs broken
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.3.6
+LINUX_VERSION:=3.3.7
 
 include $(INCLUDE_DIR)/target.mk
 

@@ -13,7 +13,7 @@ SUBTARGETS:=generic harddisk dns323
 CFLAGS=-Os -pipe -march=armv5te -mtune=xscale -fno-caller-saves
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.3.6
+LINUX_VERSION:=3.3.7
 
 include $(INCLUDE_DIR)/target.mk
 
