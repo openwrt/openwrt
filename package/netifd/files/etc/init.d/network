@@ -1,23 +1,43 @@
 #!/bin/sh /etc/rc.common
-START=40
+
+START=20
 STOP=90
 
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
 start() {
+	stop
+	[ -e /proc/sys/kernel/core_pattern ] && {
+		ulimit -c unlimited
+		echo '/tmp/%e.%p.%s.%t.core' > /proc/sys/kernel/core_pattern
+	}
+	service_start /sbin/netifd
+
 	setup_switch() { return 0; }
 
 	include /lib/network
 	setup_switch
 
-	ifup -a
-	grep -qs config /etc/config/wireless && {
-		/sbin/wifi up
-	}
+	sleep 1
 }
 
 restart() {
+	ifdown -a
+	sleep 1
 	start
+	wifi
+}
+
+shutdown() {
+	ifdown -a
+	stop
 }
 
 stop() {
-	/sbin/ifdown -a
+	service_stop /sbin/netifd
+}
+
+reload() {
+	ubus call network reload
 }
