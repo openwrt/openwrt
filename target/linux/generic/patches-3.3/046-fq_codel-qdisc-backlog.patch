@@ -20,11 +20,9 @@ Cc: Van Jacobson <van@pollere.net>
  net/sched/sch_fq_codel.c |    5 +++--
  3 files changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/include/net/codel.h b/include/net/codel.h
-index 7546517..550debf 100644
 --- a/include/net/codel.h
 +++ b/include/net/codel.h
-@@ -205,7 +205,7 @@ static codel_time_t codel_control_law(codel_time_t t,
+@@ -205,7 +205,7 @@ static codel_time_t codel_control_law(co
  
  
  static bool codel_should_drop(const struct sk_buff *skb,
@@ -33,7 +31,7 @@ index 7546517..550debf 100644
  			      struct codel_vars *vars,
  			      struct codel_params *params,
  			      struct codel_stats *stats,
-@@ -219,13 +219,13 @@ static bool codel_should_drop(const struct sk_buff *skb,
+@@ -219,13 +219,13 @@ static bool codel_should_drop(const stru
  	}
  
  	vars->ldelay = now - codel_get_enqueue_time(skb);
@@ -49,7 +47,7 @@ index 7546517..550debf 100644
  		/* went below - stay below for at least interval */
  		vars->first_above_time = 0;
  		return false;
-@@ -249,8 +249,7 @@ static struct sk_buff *codel_dequeue(struct Qdisc *sch,
+@@ -249,8 +249,7 @@ static struct sk_buff *codel_dequeue(str
  				     struct codel_params *params,
  				     struct codel_vars *vars,
  				     struct codel_stats *stats,
@@ -59,7 +57,7 @@ index 7546517..550debf 100644
  {
  	struct sk_buff *skb = dequeue_func(vars, sch);
  	codel_time_t now;
-@@ -261,7 +260,7 @@ static struct sk_buff *codel_dequeue(struct Qdisc *sch,
+@@ -261,7 +260,7 @@ static struct sk_buff *codel_dequeue(str
  		return skb;
  	}
  	now = codel_get_time();
@@ -68,7 +66,7 @@ index 7546517..550debf 100644
  	if (vars->dropping) {
  		if (!drop) {
  			/* sojourn time below target - leave dropping state */
-@@ -292,7 +291,7 @@ static struct sk_buff *codel_dequeue(struct Qdisc *sch,
+@@ -292,7 +291,7 @@ static struct sk_buff *codel_dequeue(str
  				qdisc_drop(skb, sch);
  				stats->drop_count++;
  				skb = dequeue_func(vars, sch);
@@ -77,7 +75,7 @@ index 7546517..550debf 100644
  						       vars, params, stats, now)) {
  					/* leave dropping state */
  					vars->dropping = false;
-@@ -313,7 +312,7 @@ static struct sk_buff *codel_dequeue(struct Qdisc *sch,
+@@ -313,7 +312,7 @@ static struct sk_buff *codel_dequeue(str
  			stats->drop_count++;
  
  			skb = dequeue_func(vars, sch);
@@ -86,11 +84,9 @@ index 7546517..550debf 100644
  						 stats, now);
  		}
  		vars->dropping = true;
-diff --git a/net/sched/sch_codel.c b/net/sched/sch_codel.c
-index 213ef60..2f9ab17 100644
 --- a/net/sched/sch_codel.c
 +++ b/net/sched/sch_codel.c
-@@ -77,8 +77,8 @@ static struct sk_buff *codel_qdisc_dequeue(struct Qdisc *sch)
+@@ -77,8 +77,8 @@ static struct sk_buff *codel_qdisc_deque
  	struct codel_sched_data *q = qdisc_priv(sch);
  	struct sk_buff *skb;
  
@@ -101,11 +97,9 @@ index 213ef60..2f9ab17 100644
  	/* We cant call qdisc_tree_decrease_qlen() if our qlen is 0,
  	 * or HTB crashes. Defer it for next round.
  	 */
-diff --git a/net/sched/sch_fq_codel.c b/net/sched/sch_fq_codel.c
-index 337ff20..9fc1c62 100644
 --- a/net/sched/sch_fq_codel.c
 +++ b/net/sched/sch_fq_codel.c
-@@ -217,13 +217,14 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+@@ -217,13 +217,14 @@ static int fq_codel_enqueue(struct sk_bu
   */
  static struct sk_buff *dequeue(struct codel_vars *vars, struct Qdisc *sch)
  {
@@ -130,4 +124,3 @@ index 337ff20..9fc1c62 100644
  
  	flow->dropped += q->cstats.drop_count - prev_drop_count;
  	flow->dropped += q->cstats.ecn_mark - prev_ecn_mark;
-
