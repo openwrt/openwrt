@@ -323,6 +323,8 @@ static void __init rb751_wlan_setup(void)
 		return;
 	}
 
+	ap9x_pci_setup_wmac_led_pin(0, 9);
+
 	dec_size = decode_rle((char *) wmac_data->eeprom_data,
 			      sizeof(wmac_data->eeprom_data),
 			      hardconfig + RB751_CALDATA_OFFSET);
