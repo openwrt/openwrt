@@ -26,3 +26,21 @@ ubus -S list "network.interface.$1" > /dev/null || {
 	exit
 }
 if_call "network.interface.$1"
+
+grep -sq ^config /etc/config/wireless && {
+	local wdev
+	for wdev in $(
+		find_radio() {
+			local wdev wnet
+			config_get wdev "$1" device
+			config_get wnet "$1" network
+			[ -n "$wdev" ] && [ "$wnet" = "$2" ] && echo "$wdev"
+		}
+
+		source /lib/functions.sh
+		config_load wireless
+		config_foreach find_radio wifi-iface "$1" | sort -u
+	); do
+		/sbin/wifi up "$wdev"
+	done
+}
