@@ -27,6 +27,17 @@ endef
 $(eval $(call Profile,TLMR3020))
 
 
+define Profile/TLMR3040
+	NAME:=TP-LINK TL-MR3040
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+endef
+
+define Profile/TLMR3040/Description
+	Package set optimized for the TP-LINK TL-MR3040.
+endef
+$(eval $(call Profile,TLMR3040))
+
+
 define Profile/TLMR3220
 	NAME:=TP-LINK TL-MR3220
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev

@@ -112,6 +112,9 @@ tplink_board_detect() {
 	"302000"*)
 		model="TP-Link TL-MR3020"
 		;;
+	"304000"*)
+		model="TP-Link TL-MR3040"
+		;;
 	"322000"*)
 		model="TP-Link TL-MR3220"
 		;;
