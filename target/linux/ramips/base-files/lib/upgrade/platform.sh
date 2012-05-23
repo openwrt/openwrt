@@ -38,6 +38,7 @@ platform_check_image() {
 	v22rw-2x2 | \
 	wl341v3 | \
 	wl-330n | \
+	wl-351 | \
 	wli-tx4-ag300n | \
 	whr-g300n |\
 	ur-336un |\
