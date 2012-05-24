@@ -20,13 +20,14 @@ start() {
 	setup_switch
 
 	sleep 1
+
+	/sbin/wifi up
 }
 
 restart() {
 	ifdown -a
 	sleep 1
 	start
-	wifi
 }
 
 shutdown() {
