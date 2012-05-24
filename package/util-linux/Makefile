@@ -36,6 +36,8 @@ CONFIGURE_ARGS += \
 	--disable-nls 		\
 	--disable-tls
 
+TARGET_CFLAGS += $(FPIC)
+
 define Build/InstallDev
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		BUILDCC="$(HOSTCC)" \
