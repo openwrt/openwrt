@@ -40,7 +40,8 @@ proto_dhcp_setup() {
 }
 
 proto_dhcp_teardown() {
-	proto_kill_command
+	local interface="$1"
+	proto_kill_command "$interface"
 }
 
 add_protocol dhcp
