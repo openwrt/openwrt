@@ -607,7 +607,19 @@
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -282,7 +282,6 @@ static int ieee80211_do_open(struct net_
+@@ -206,8 +206,10 @@ static void ieee80211_set_default_queues
+ 	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
+ 		if (local->hw.flags & IEEE80211_HW_QUEUE_CONTROL)
+ 			sdata->vif.hw_queue[i] = IEEE80211_INVAL_HW_QUEUE;
+-		else
++		else if (local->hw.queues >= IEEE80211_NUM_ACS)
+ 			sdata->vif.hw_queue[i] = i;
++		else
++			sdata->vif.hw_queue[i] = 0;
+ 	}
+ 	sdata->vif.cab_queue = IEEE80211_INVAL_HW_QUEUE;
+ }
+@@ -282,7 +284,6 @@ static int ieee80211_do_open(struct net_
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ieee80211_local *local = sdata->local;
@@ -615,7 +627,7 @@
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -428,28 +427,6 @@ static int ieee80211_do_open(struct net_
+@@ -428,28 +429,6 @@ static int ieee80211_do_open(struct net_
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -644,7 +656,7 @@
  	/*
  	 * set_multicast_list will be invoked by the networking core
  	 * which will check whether any increments here were done in
-@@ -846,6 +823,72 @@ static void ieee80211_if_setup(struct ne
+@@ -846,6 +825,72 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -717,7 +729,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -950,6 +993,9 @@ static void ieee80211_iface_work(struct 
+@@ -950,6 +995,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
