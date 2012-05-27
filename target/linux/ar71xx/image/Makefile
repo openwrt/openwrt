@@ -955,7 +955,7 @@ endef
 
 tlwr1041_cmdline=board=TL-WR1041N-v2 console=ttyS0,115200
 define Image/Build/Profile/TLWR1041
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wr1041n-v2,$(tlwr1041_cmdline),0x10410002,1,8Mlzma)
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wr1041n-v2,$(tlwr1041_cmdline),0x10410002,1,4Mlzma)
 endef
 
 tlwr1043_cmdline=board=TL-WR1043ND console=ttyS0,115200
