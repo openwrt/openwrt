@@ -17,7 +17,7 @@ rt2x00_eeprom_extract() {
 	[ -n "$mtd" ] || \
 		rt2x00_eeprom_die "no mtd device found for partition $part"
 
-	dd if=$mtd of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$count || \
+	dd if=$mtd of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$count 2>/dev/null || \
 		rt2x00_eeprom_die "failed to extract from $mtd"
 }
 
