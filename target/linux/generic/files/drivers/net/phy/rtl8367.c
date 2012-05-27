@@ -1538,7 +1538,7 @@ static struct switch_attr rtl8367_vlan[] = {
 	},
 };
 
-static const struct switch_dev_ops rtl8366m_ops = {
+static const struct switch_dev_ops rtl8367_sw_ops = {
 	.attr_global = {
 		.attr = rtl8367_globals,
 		.n_attr = ARRAY_SIZE(rtl8367_globals),
@@ -1569,7 +1569,7 @@ static int rtl8367_switch_init(struct rtl8366_smi *smi)
 	dev->cpu_port = RTL8367_CPU_PORT_NUM;
 	dev->ports = RTL8367_NUM_PORTS;
 	dev->vlans = RTL8367_NUM_VIDS;
-	dev->ops = &rtl8366m_ops;
+	dev->ops = &rtl8367_sw_ops;
 	dev->alias = dev_name(smi->parent);
 
 	err = register_switch(dev, NULL);
