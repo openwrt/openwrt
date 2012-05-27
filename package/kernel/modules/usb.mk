@@ -16,7 +16,7 @@ define KernelPackage/usb-core
   TITLE:=Support for USB
   DEPENDS:=@USB_SUPPORT
   KCONFIG:=CONFIG_USB CONFIG_XPS_USB_HCD_XILINX=n CONFIG_USB_FHCI_HCD=n
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1)
+  ifndef CONFIG_LINUX_3_1
     FILES:= \
 	$(LINUX_DIR)/drivers/usb/core/usbcore.ko \
 	$(LINUX_DIR)/drivers/usb/usb-common.ko

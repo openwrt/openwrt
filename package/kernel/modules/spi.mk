@@ -31,13 +31,8 @@ define KernelPackage/spi-bitbang
   KCONFIG:=CONFIG_SPI_BITBANG \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.1)),1)
-    FILES:=$(LINUX_DIR)/drivers/spi/spi-bitbang.ko
-    AUTOLOAD:=$(call AutoLoad,91,spi-bitbang)
-  else
-    FILES:=$(LINUX_DIR)/drivers/spi/spi_bitbang.ko
-    AUTOLOAD:=$(call AutoLoad,91,spi_bitbang)
-  endif
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-bitbang.ko
+  AUTOLOAD:=$(call AutoLoad,91,spi-bitbang)
 endef
 
 define KernelPackage/spi-bitbang/description
@@ -67,13 +62,8 @@ define KernelPackage/spi-gpio
   TITLE:=GPIO-based bitbanging SPI Master
   DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_GPIO
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.1)),1)
-    FILES:=$(LINUX_DIR)/drivers/spi/spi-gpio.ko
-    AUTOLOAD:=$(call AutoLoad,92,spi-gpio)
-  else
-    FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.ko
-    AUTOLOAD:=$(call AutoLoad,92,spi_gpio)
-  endif
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-gpio.ko
+  AUTOLOAD:=$(call AutoLoad,92,spi-gpio)
 endef
 
 define KernelPackage/spi-gpio/description
