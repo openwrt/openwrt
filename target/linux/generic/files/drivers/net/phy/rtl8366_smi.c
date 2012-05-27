@@ -1291,8 +1291,6 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	if (err)
 		goto err_out;
 
-	spin_lock_init(&smi->lock);
-
 	dev_info(smi->parent, "using GPIO pins %u (SDA) and %u (SCK)\n",
 		 smi->gpio_sda, smi->gpio_sck);
 
