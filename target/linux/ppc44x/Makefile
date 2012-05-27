@@ -9,11 +9,11 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=ppc44x
 BOARDNAME:=AMCC/IBM PPC44x
-FEATURES:=squashfs
+FEATURES:=squashfs broken
 CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=440
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.2.16
+LINUX_VERSION:=3.3.7
 
 include $(INCLUDE_DIR)/target.mk
 
