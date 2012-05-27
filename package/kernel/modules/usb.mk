@@ -16,15 +16,10 @@ define KernelPackage/usb-core
   TITLE:=Support for USB
   DEPENDS:=@USB_SUPPORT
   KCONFIG:=CONFIG_USB CONFIG_XPS_USB_HCD_XILINX=n CONFIG_USB_FHCI_HCD=n
-  ifndef CONFIG_LINUX_3_1
-    FILES:= \
+  FILES:= \
 	$(LINUX_DIR)/drivers/usb/core/usbcore.ko \
 	$(LINUX_DIR)/drivers/usb/usb-common.ko
-    AUTOLOAD:=$(call AutoLoad,20,usb-common usbcore,1)
-  else
-    FILES:=$(LINUX_DIR)/drivers/usb/core/usbcore.ko
-    AUTOLOAD:=$(call AutoLoad,20,usbcore,1)
-  endif
+  AUTOLOAD:=$(call AutoLoad,20,usb-common usbcore,1)
   $(call AddDepends/nls)
 endef
 

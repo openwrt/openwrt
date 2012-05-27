@@ -69,11 +69,7 @@ define KernelPackage/pcmcia-serial
   KCONFIG:= \
 	CONFIG_PCMCIA_SERIAL_CS \
 	CONFIG_SERIAL_8250_CS
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.3)),1)
     FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/serial_cs.ko
-  else
-    FILES:=$(LINUX_DIR)/drivers/tty/serial/serial_cs.ko
-  endif
   AUTOLOAD:=$(call AutoLoad,45,serial_cs)
 endef
 

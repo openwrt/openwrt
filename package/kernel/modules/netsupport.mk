@@ -467,17 +467,10 @@ define KernelPackage/ppp
 	CONFIG_PPP \
 	CONFIG_PPP_ASYNC \
 	CONFIG_SLHC
-  ifndef CONFIG_LINUX_3_1
-    FILES:= \
+  FILES:= \
 	$(LINUX_DIR)/drivers/net/ppp/ppp_async.ko \
 	$(LINUX_DIR)/drivers/net/ppp/ppp_generic.ko \
 	$(LINUX_DIR)/drivers/net/slip/slhc.ko
-  else
-    FILES:= \
-	$(LINUX_DIR)/drivers/net/ppp_async.ko \
-	$(LINUX_DIR)/drivers/net/ppp_generic.ko \
-	$(LINUX_DIR)/drivers/net/slhc.ko
-  endif
   AUTOLOAD:=$(call AutoLoad,30,slhc ppp_generic ppp_async)
 endef
 
@@ -493,11 +486,7 @@ define KernelPackage/ppp-synctty
   TITLE:=PPP sync tty support
   DEPENDS:=kmod-ppp
   KCONFIG:=CONFIG_PPP_SYNC_TTY
-  ifndef CONFIG_LINUX_3_1
-    FILES:=$(LINUX_DIR)/drivers/net/ppp/ppp_synctty.ko
-  else
-    FILES:=$(LINUX_DIR)/drivers/net/ppp_synctty.ko
-  endif
+  FILES:=$(LINUX_DIR)/drivers/net/ppp/ppp_synctty.ko
   AUTOLOAD:=$(call AutoLoad,40,ppp_synctty)
 endef
 
@@ -513,15 +502,9 @@ define KernelPackage/pppoe
   TITLE:=PPPoE support
   DEPENDS:=kmod-ppp
   KCONFIG:=CONFIG_PPPOE
-  ifndef CONFIG_LINUX_3_1
-    FILES:= \
+  FILES:= \
 	$(LINUX_DIR)/drivers/net/ppp/pppoe.ko \
 	$(LINUX_DIR)/drivers/net/ppp/pppox.ko
-  else
-    FILES:= \
-	$(LINUX_DIR)/drivers/net/pppoe.ko \
-	$(LINUX_DIR)/drivers/net/pppox.ko
-  endif
   AUTOLOAD:=$(call AutoLoad,40,pppox pppoe)
 endef
 
@@ -553,11 +536,7 @@ define KernelPackage/pptp
   TITLE:=PPtP support
   DEPENDS:=kmod-ppp +kmod-gre
   KCONFIG:=CONFIG_PPTP
-  ifndef CONFIG_LINUX_3_1
-    FILES:=$(LINUX_DIR)/drivers/net/ppp/pptp.ko
-  else
-    FILES:=$(LINUX_DIR)/drivers/net/pptp.ko
-  endif
+  FILES:=$(LINUX_DIR)/drivers/net/ppp/pptp.ko
   AUTOLOAD:=$(call AutoLoad,41,pptp)
 endef
 
@@ -603,11 +582,7 @@ define KernelPackage/mppe
   KCONFIG:= \
 	CONFIG_PPP_MPPE_MPPC \
 	CONFIG_PPP_MPPE
-  ifndef CONFIG_LINUX_3_1
-    FILES:=$(LINUX_DIR)/drivers/net/ppp/ppp_mppe.ko
-  else
-    FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe.ko
-  endif
+  FILES:=$(LINUX_DIR)/drivers/net/ppp/ppp_mppe.ko
   AUTOLOAD:=$(call AutoLoad,31,ppp_mppe)
 endef
 
@@ -853,13 +828,8 @@ define KernelPackage/slip
        CONFIG_SLIP_SMART=y \
        CONFIG_SLIP_MODE_SLIP6=y
 
-  ifndef CONFIG_LINUX_3_1
-    FILES:= \
+  FILES:= \
        $(LINUX_DIR)/drivers/net/slip/slip.ko
-  else
-    FILES:= \
-       $(LINUX_DIR)/drivers/net/slip.ko
-  endif
   AUTOLOAD:=$(call AutoLoad,30,slip)
 endef
 
