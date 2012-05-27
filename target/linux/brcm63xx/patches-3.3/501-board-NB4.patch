@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -17,6 +17,9 @@
+@@ -14,6 +14,9 @@
  #include <linux/ssb/ssb.h>
  #include <linux/gpio_keys.h>
  #include <linux/input.h>
@@ -10,7 +10,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -41,6 +44,12 @@
+@@ -39,6 +42,12 @@
  #define CFE_OFFSET_64K		0x10000
  #define CFE_OFFSET_128K		0x20000
  
@@ -23,7 +23,7 @@
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -667,6 +676,496 @@ static struct board_info __initdata boar
+@@ -665,6 +674,496 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -520,7 +520,7 @@
  #endif
  
  /*
-@@ -697,9 +1196,30 @@ static const struct board_info __initdat
+@@ -695,9 +1194,30 @@ static const struct board_info __initdat
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -551,7 +551,7 @@
  /*
   * Register a sane SPROMv2 to make the on-board
   * bcm4318 WLAN work
-@@ -850,6 +1370,9 @@ void __init board_prom_init(void)
+@@ -848,6 +1368,9 @@ void __init board_prom_init(void)
  		boardid_fixup(boot_addr);
  	}
  

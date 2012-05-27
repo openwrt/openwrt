@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -321,6 +321,63 @@ static struct board_info __initdata boar
+@@ -319,6 +319,63 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -64,7 +64,7 @@
  #endif
  
  /*
-@@ -1787,6 +1844,7 @@ static const struct board_info __initdat
+@@ -1785,6 +1842,7 @@ static const struct board_info __initdat
  	&board_96348_D4PW,
  	&board_spw500v,
  	&board_96348sv,
@@ -72,7 +72,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1940,6 +1998,22 @@ void __init board_prom_init(void)
+@@ -1938,6 +1996,22 @@ void __init board_prom_init(void)
  	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
  	val &= MPI_CSBASE_BASE_MASK;
  	boot_addr = (u8 *)KSEG1ADDR(val);
@@ -95,17 +95,27 @@
  
  	/* dump cfe version */
  	cfe = boot_addr + BCM963XX_CFE_VERSION_OFFSET;
-@@ -2160,6 +2234,13 @@ int __init board_register_devices(void)
- 	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
- 	val &= MPI_CSBASE_BASE_MASK;
+--- a/arch/mips/bcm63xx/dev-flash.c
++++ b/arch/mips/bcm63xx/dev-flash.c
+@@ -16,6 +16,7 @@
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
  
-+	/* BT Voyager 2500V has 8 Meg flash in two 4 Meg banks */
-+	/* Loading from CFE always uses Bank 0 */
-+	if (!strcmp(board.name, "V2500V_BB")) {
-+		printk(KERN_INFO PFX "V2500V: Start in Bank 0\n");
-+		val = val + 0x400000; // Select Bank 0 start address
-+	}
++#include <bcm63xx_board.h>
+ #include <bcm63xx_cpu.h>
+ #include <bcm63xx_dev_flash.h>
+ #include <bcm63xx_regs.h>
+@@ -98,6 +99,13 @@ int __init bcm63xx_flash_register(void)
+ 		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
+ 		val &= MPI_CSBASE_BASE_MASK;
+ 
++		/* BT Voyager 2500V has 8 Meg flash in two 4 Meg banks */
++		/* Loading from CFE always uses Bank 0 */
++		if (!strcmp(board_get_name(), "V2500V_BB")) {
++			pr_info("V2500V: Start in Bank 0\n");
++			val = val + 0x400000; // Select Bank 0 start address
++		}
 +
- 	mtd_resources[0].start = val;
- 	mtd_resources[0].end = 0x1FFFFFFF;
+ 		mtd_resources[0].start = val;
+ 		mtd_resources[0].end = 0x1FFFFFFF;
  

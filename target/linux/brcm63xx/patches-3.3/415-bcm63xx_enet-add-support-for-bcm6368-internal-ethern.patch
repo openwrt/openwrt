@@ -13,7 +13,7 @@ Subject: [PATCH 31/63] bcm63xx_enet: add support for bcm6368 internal ethernet s
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -947,6 +947,10 @@ int __init board_register_devices(void)
+@@ -910,6 +910,10 @@ int __init board_register_devices(void)
  	    !board_get_mac_address(board.enet1.mac_addr))
  		bcm63xx_enet_register(1, &board.enet1);
  
@@ -205,7 +205,7 @@ Subject: [PATCH 31/63] bcm63xx_enet: add support for bcm6368 internal ethernet s
  #endif /* ! BCM63XX_DEV_ENET_H_ */
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -699,10 +699,60 @@
+@@ -708,10 +708,60 @@
   * _REG relative to RSET_ENETSW
   *************************************************************************/
  
