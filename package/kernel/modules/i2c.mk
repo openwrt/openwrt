@@ -309,13 +309,8 @@ endef
 
 $(eval $(call KernelPackage,i2c-mux-pca9541))
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.1.0)),1)
 GPIO_PCA953X_MODULES:= \
   CONFIG_GPIO_PCA953X:drivers/gpio/gpio-pca953x
-else
-GPIO_PCA953X_MODULES:= \
-  CONFIG_GPIO_PCA953X:drivers/gpio/pca953x
-endif
 
 define KernelPackage/pca953x
   $(call i2c_defaults,$(GPIO_PCA953X_MODULES),51)
@@ -329,13 +324,8 @@ endef
 
 $(eval $(call KernelPackage,pca953x))
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.1.0)),1)
 GPIO_PCF857X_MODULES:= \
   CONFIG_GPIO_PCF857X:drivers/gpio/gpio-pcf857x
-else
-GPIO_PCF857X_MODULES:= \
-  CONFIG_GPIO_PCF857X:drivers/gpio/pcf857x
-endif
 
 define KernelPackage/pcf857x
   $(call i2c_defaults,$(GPIO_PCF857X_MODULES),51)
