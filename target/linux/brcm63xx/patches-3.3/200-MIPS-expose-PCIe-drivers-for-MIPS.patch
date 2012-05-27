@@ -1,0 +1,21 @@
+From a3f65b46e32acd29c613b35fab588e4d28e5d432 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 3 Jul 2011 13:11:19 +0200
+Subject: [PATCH 48/79] MIPS: expose PCIe drivers for MIPS
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ arch/mips/Kconfig |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -2392,6 +2392,8 @@ config PCI_DOMAINS
+ 
+ source "drivers/pci/Kconfig"
+ 
++source "drivers/pci/pcie/Kconfig"
++
+ #
+ # ISA support is now enabled via select.  Too many systems still have the one
+ # or other ISA chip on the board that users don't know about so don't expect

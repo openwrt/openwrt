@@ -1,0 +1,48 @@
+From f7d09679600b187fcfa1d70819e53f190fb1c231 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 3 Jul 2011 03:08:11 +0200
+Subject: [PATCH 45/79] MIPS: BCM63XX: Move the PCI initialization into its
+ own function
+
+Also make the cpu check a bit more explicit.
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ arch/mips/pci/pci-bcm63xx.c |   25 +++++++++++++++++--------
+ 1 file changed, 17 insertions(+), 8 deletions(-)
+
+--- a/arch/mips/pci/pci-bcm63xx.c
++++ b/arch/mips/pci/pci-bcm63xx.c
+@@ -88,14 +88,10 @@ static void bcm63xx_int_cfg_writel(u32 v
+ 
+ void __iomem *pci_iospace_start;
+ 
+-int __init bcm63xx_pci_register(void)
++static int __init bcm63xx_register_pci(void)
+ {
+ 	unsigned int mem_size;
+ 	u32 val;
+-
+-	if (!BCMCPU_IS_6348() && !BCMCPU_IS_6358() && !BCMCPU_IS_6368())
+-		return -ENODEV;
+-
+ 	/*
+ 	 * configuration  access are  done through  IO space,  remap 4
+ 	 * first bytes to access it from CPU.
+@@ -211,3 +207,16 @@ int __init bcm63xx_pci_register(void)
+ 			   "bcm63xx PCI IO space");
+ 	return 0;
+ }
++
++int __init bcm63xx_pci_register(void)
++{
++	switch (bcm63xx_get_cpu_id()) {
++	case BCM6348_CPU_ID:
++	case BCM6358_CPU_ID:
++	case BCM6368_CPU_ID:
++		return bcm63xx_register_pci();
++	default:
++		return -ENODEV;
++	}
++}
++

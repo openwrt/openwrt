@@ -15,7 +15,7 @@ Subject: [PATCH 24/63] MIPS: BCM63XX: register ohci device.
 
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
-@@ -4,26 +4,25 @@ menu "CPU support"
+@@ -8,26 +8,25 @@ config BCM63XX_CPU_6328
  config BCM63XX_CPU_6338
  	bool "support 6338 CPU"
  	select HW_HAS_PCI
@@ -66,7 +66,7 @@ Subject: [PATCH 24/63] MIPS: BCM63XX: register ohci device.
  #include <board_bcm963xx.h>
  #include <bcm_tag.h>
  
-@@ -906,6 +907,9 @@ int __init board_register_devices(void)
+@@ -911,6 +912,9 @@ int __init board_register_devices(void)
  	    !board_get_mac_address(board.enet1.mac_addr))
  		bcm63xx_enet_register(1, &board.enet1);
  
