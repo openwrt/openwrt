@@ -203,6 +203,9 @@ define Image/Build
 	$(call Image/Build/CFEFIXUP,$(1),96358GW,AW4139,6358,DSL274XB-C2)
 	# D-Link DSL-2740B/DSL-2741B, rev C3
 	$(call Image/Build/CFE,$(1),AW4139,6358,DSL274XB-C3)
+	# D-Link DSL-2740B/DSL-2741B, rev F1
+	$(call Image/Build/CFE,$(1),AW4339U,6328,DSL274XB-F1-EU,,--signature2="4.06.01.EUF1" --pad 4)
+	$(call Image/Build/CFE,$(1),AW4339U,6328,DSL274XB-F1-AU,,--signature2="4.06.01.AUF1" --pad 4)
 	# D-Link DVA-G3810BN/TL
 	$(call Image/Build/CFE,$(1),96358GW,6358,DVAG3810BN)
 
