@@ -10,7 +10,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -40,6 +43,12 @@
+@@ -42,6 +45,12 @@
  #define CFE_OFFSET_64K		0x10000
  #define CFE_OFFSET_128K		0x20000
  
@@ -20,9 +20,9 @@
 +#define NB4_SPI_GPIO_CLK	6
 +#define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
 +
- static struct bcm963xx_nvram nvram;
- static unsigned int mac_addr_used;
  static struct board_info board;
+ 
+ /*
 @@ -666,6 +675,496 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
@@ -520,7 +520,7 @@
  #endif
  
  /*
-@@ -696,9 +1195,30 @@ static const struct board_info __initdat
+@@ -696,9 +1195,31 @@ static const struct board_info __initdat
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -536,28 +536,29 @@
 +{
 +	u8 *boot_addr, *p;
 +	u32 val;
++	char *board_name = (char *)bcm63xx_nvram_get_name();
 +
-+	if (BCMCPU_IS_6358() && (!strcmp(nvram.name, "96358VW"))) {
++	if (BCMCPU_IS_6358() && (!strcmp(board_name, "96358VW"))) {
 +		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
 +		val &= MPI_CSBASE_BASE_MASK;
 +		boot_addr = (u8 *)KSEG1ADDR(val);
 +		/* Extract nb4 PID */
 +		p = boot_addr + NB4_PID_OFFSET;
 +		if (!memcmp(p, "NB4-", 4))
-+			memcpy(nvram.name, p, sizeof("NB4-XXX-rX"));
++			memcpy(board_name, p, sizeof("NB4-XXX-rX"));
 +	}
 +}
 +
  /*
   * Register a sane SPROMv2 to make the on-board
   * bcm4318 WLAN work
-@@ -854,6 +1374,9 @@ void __init board_prom_init(void)
+@@ -807,6 +1328,9 @@ void __init board_prom_init(void)
  		boardid_fixup(boot_addr);
  	}
  
 +	/* Fixup broken nb4 board name */
 +	nb4_nvram_fixup();
 +
+ 	board_name = bcm63xx_nvram_get_name();
  	/* find board by name */
  	for (i = 0; i < ARRAY_SIZE(bcm963xx_boards); i++) {
- 		if (strncmp(nvram.name, bcm963xx_boards[i]->name,

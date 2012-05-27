@@ -72,7 +72,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1944,6 +2002,22 @@ void __init board_prom_init(void)
+@@ -1912,6 +1970,23 @@ void __init board_prom_init(void)
  		val &= MPI_CSBASE_BASE_MASK;
  	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
@@ -83,11 +83,12 @@
 +	/* Loading firmware from the CFE Prompt always loads to Bank 0 */
 +	/* Do an early check of CFE and then select bank 0 */
 +
-+       	if (boot_addr == (u8 *)0xbf800000) {
++	if (boot_addr == (u8 *)0xbf800000) {
++		unsigned char board_name[16];
 +		u8 *tmp_boot_addr;
 +		tmp_boot_addr = (u8 *)0xbfc00000; // Address of Bank 0
-+		memcpy(&nvram, tmp_boot_addr + BCM963XX_NVRAM_OFFSET, sizeof(nvram));
-+		if (!strcmp(nvram.name, "V2500V_BB")) {
++		memcpy(board_name, tmp_boot_addr + BCM963XX_NVRAM_OFFSET + offsetof(struct bcm963xx_nvram, name), sizeof(board_name));
++		if (!strcmp(board_name, "V2500V_BB")) {
 +	               	printk(KERN_INFO PFX "V2500V: nvram bank 0\n");
 +			boot_addr = (u8 *)0xbfc00000; // Bank 0
 +		}
@@ -105,7 +106,7 @@
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_dev_flash.h>
  #include <bcm63xx_dev_hsspi.h>
-@@ -126,6 +127,13 @@ int __init bcm63xx_flash_register(void)
+@@ -145,6 +146,13 @@ int __init bcm63xx_flash_register(int nu
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
  		val &= MPI_CSBASE_BASE_MASK;
  
