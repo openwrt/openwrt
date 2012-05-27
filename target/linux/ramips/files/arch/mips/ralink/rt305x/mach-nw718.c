@@ -71,7 +71,6 @@ static struct spi_board_info nw718_spi_info[] = {
 		.chip_select	= 0,
 		.max_speed_hz	= 25000000,
 		.modalias	= "m25p80",
-		.controller_data = (void *) NW718_GPIO_SPI_CS0,
 	}
 };
 
