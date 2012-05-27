@@ -7,7 +7,7 @@
 
 define Profile/Atheros
   NAME:=Atheros WiFi (default)
-  PACKAGES:=kmod-ath5k wpad-mini
+  PACKAGES:=kmod-ath5k kmod-ath9k wpad-mini
 endef
 
 define Profile/Atheros/Description
