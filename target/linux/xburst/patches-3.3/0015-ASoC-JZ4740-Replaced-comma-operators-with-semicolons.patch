@@ -1,0 +1,31 @@
+From 515f8006c03e1065bf98c9148a9ea787e2d120d3 Mon Sep 17 00:00:00 2001
+From: Maarten ter Huurne <maarten@treewalker.org>
+Date: Wed, 10 Aug 2011 00:20:16 +0200
+Subject: [PATCH 15/21] ASoC: JZ4740: Replaced comma operators with
+ semicolons.
+
+They were harmless but also unnecessary, probably a leftover from earlier code.
+---
+ sound/soc/jz4740/jz4740-i2s.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/sound/soc/jz4740/jz4740-i2s.c
++++ b/sound/soc/jz4740/jz4740-i2s.c
+@@ -346,7 +346,7 @@ static void jz4740_i2c_init_pcm_config(s
+ 
+ 	/* Playback */
+ 	dma_config = &i2s->pcm_config_playback.dma_config;
+-	dma_config->src_width = JZ4740_DMA_WIDTH_32BIT,
++	dma_config->src_width = JZ4740_DMA_WIDTH_32BIT;
+ 	dma_config->transfer_size = JZ4740_DMA_TRANSFER_SIZE_16BYTE;
+ 	dma_config->request_type = JZ4740_DMA_TYPE_AIC_TRANSMIT;
+ 	dma_config->flags = JZ4740_DMA_SRC_AUTOINC;
+@@ -355,7 +355,7 @@ static void jz4740_i2c_init_pcm_config(s
+ 
+ 	/* Capture */
+ 	dma_config = &i2s->pcm_config_capture.dma_config;
+-	dma_config->dst_width = JZ4740_DMA_WIDTH_32BIT,
++	dma_config->dst_width = JZ4740_DMA_WIDTH_32BIT;
+ 	dma_config->transfer_size = JZ4740_DMA_TRANSFER_SIZE_16BYTE;
+ 	dma_config->request_type = JZ4740_DMA_TYPE_AIC_RECEIVE;
+ 	dma_config->flags = JZ4740_DMA_DST_AUTOINC;
