@@ -10,9 +10,9 @@ ARCH:=arm
 BOARD:=omap24xx
 BOARDNAME:=TI OMAP-24xx
 MAINTAINER:=Michael Buesch <m@bues.ch>
-FEATURES:=targz squashfs jffs2 usb usbgadget display gpio audio
+FEATURES:=targz squashfs jffs2 usb usbgadget display gpio audio broken
 
-LINUX_VERSION:=3.1.10
+LINUX_VERSION:=3.3.7
 
 define Target/Description
 	TI OMAP-24xx
