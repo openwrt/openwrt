@@ -10,10 +10,11 @@
  	if (headroom < NET_SKB_PAD)
 -		headroom = NET_SKB_PAD;
 -	if (headroom > skb_headroom(skb))
+-		delta = headroom - skb_headroom(skb);
 +		alloc_headroom = NET_SKB_PAD;
 +	if (headroom > skb_headroom(skb) ||
 +	    (cloned && alloc_headroom > skb_headroom(skb))) {
- 		delta = headroom - skb_headroom(skb);
++		delta = alloc_headroom - skb_headroom(skb);
 +	}
  
  	if (delta || cloned)
