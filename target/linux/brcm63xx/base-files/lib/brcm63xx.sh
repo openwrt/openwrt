@@ -48,7 +48,8 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
-	AW4139)
+	AW4139 |\
+	AW4339U)
 		status_led="dsl-274xb:green:power"
 		brcm63xx_has_reset_button="true"
 		ifname=eth0

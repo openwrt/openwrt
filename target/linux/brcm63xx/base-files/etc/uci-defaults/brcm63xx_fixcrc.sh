@@ -14,6 +14,7 @@ brcm63xx_detect
 
 case "$board_name" in
 	"CPVA502+" |\
+	AW4339U |\
 	CPVA642 |\
 	MAGIC |\
 	V2110 |\
