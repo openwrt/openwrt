@@ -103,6 +103,12 @@ static int ag71xx_mdio_reset(struct mii_bus *bus)
 
 	if (am->pdata->is_ar7240)
 		t = MII_CFG_CLK_DIV_6;
+	else if (am->pdata->is_ar9330)
+		t = MII_CFG_CLK_DIV_98;
+	else if (am->pdata->builtin_switch && !am->pdata->is_ar934x)
+		t = MII_CFG_CLK_DIV_10;
+	else if (!am->pdata->builtin_switch && am->pdata->is_ar934x)
+		t = MII_CFG_CLK_DIV_58;
 	else
 		t = MII_CFG_CLK_DIV_28;
 
@@ -119,7 +125,7 @@ static int ag71xx_mdio_read(struct mii_bus *bus, int addr, int reg)
 {
 	struct ag71xx_mdio *am = bus->priv;
 
-	if (am->pdata->is_ar7240)
+	if (am->pdata->builtin_switch)
 		return ar7240sw_phy_read(bus, addr, reg);
 	else
 		return ag71xx_mdio_mii_read(am, addr, reg);
@@ -129,7 +135,7 @@ static int ag71xx_mdio_write(struct mii_bus *bus, int addr, int reg, u16 val)
 {
 	struct ag71xx_mdio *am = bus->priv;
 
-	if (am->pdata->is_ar7240)
+	if (am->pdata->builtin_switch)
 		ar7240sw_phy_write(bus, addr, reg, val);
 	else
 		ag71xx_mdio_mii_write(am, addr, reg, val);
