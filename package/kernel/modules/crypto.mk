@@ -376,18 +376,10 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/twofish_common.ko \
 	$(LINUX_DIR)/crypto/wp512.ko \
     $(LINUX_DIR)/crypto/twofish_generic.ko
-  ifdef CONFIG_LINUX_3_1
-    FILES += $(LINUX_DIR)/crypto/blowfish.ko
-  else
-    FILES += \
+  FILES += \
 	$(LINUX_DIR)/crypto/blowfish_common.ko \
-	$(LINUX_DIR)/crypto/blowfish_generic.ko
-  endif
-  ifeq ($(CONFIG_LINUX_3_1)$(CONFIG_LINUX_3_2)),)
-    FILES += $(LINUX_DIR)/crypto/serpent.ko
-  else
-    FILES += $(LINUX_DIR)/crypto/serpent_generic.ko
-  endif
+	$(LINUX_DIR)/crypto/blowfish_generic.ko \
+    $(LINUX_DIR)/crypto/serpent_generic.ko
   $(call AddDepends/crypto)
 endef
 

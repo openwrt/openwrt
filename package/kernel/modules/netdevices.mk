@@ -344,11 +344,7 @@ define KernelPackage/r8169
   KCONFIG:=CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
     CONFIG_R8169_VLAN=n
-  ifndef CONFIG_LINUX_3_1
-    FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/r8169.ko
-  else
-    FILES:=$(LINUX_DIR)/drivers/net/r8169.ko
-  endif
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/r8169.ko
   AUTOLOAD:=$(call AutoLoad,50,r8169)
 endef
 
@@ -407,11 +403,7 @@ define KernelPackage/e1000
   KCONFIG:=CONFIG_E1000 \
     CONFIG_E1000_DISABLE_PACKET_SPLIT=n \
     CONFIG_E1000_NAPI=y
-  ifndef CONFIG_LINUX_3_1
-    FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000/e1000.ko
-  else
-    FILES:=$(LINUX_DIR)/drivers/net/e1000/e1000.ko
-  endif
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000/e1000.ko
   AUTOLOAD:=$(call AutoLoad,35,e1000)
 endef
 
@@ -427,11 +419,7 @@ define KernelPackage/e1000e
   TITLE:=Intel(R) PRO/1000 PCIe cards kernel support
   DEPENDS:=@PCIE_SUPPORT
   KCONFIG:=CONFIG_E1000E
-  ifndef CONFIG_LINUX_3_1
-    FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000e/e1000e.ko
-  else
-    FILES:=$(LINUX_DIR)/drivers/net/e1000e/e1000e.ko
-  endif
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000e/e1000e.ko
   AUTOLOAD:=$(call AutoLoad,50,e1000e)
 endef
 
@@ -501,11 +489,7 @@ define KernelPackage/tg3
   KCONFIG:=CONFIG_TIGON3
   DEPENDS:=+!TARGET_brcm47xx:kmod-libphy @!TARGET_ubicom32
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  ifndef CONFIG_LINUX_3_1
-    FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/tg3.ko
-  else
-    FILES:=$(LINUX_DIR)/drivers/net/tg3.ko
-  endif
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/tg3.ko
   AUTOLOAD:=$(call AutoLoad,50,tg3)
 endef
 
