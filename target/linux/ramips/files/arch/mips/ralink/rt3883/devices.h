@@ -12,6 +12,7 @@
 #define _RT3883_DEVICES_H
 
 struct physmap_flash_data;
+struct spi_board_info;
 
 extern struct physmap_flash_data rt3883_flash0_data;
 extern struct physmap_flash_data rt3883_flash1_data;
@@ -27,5 +28,7 @@ void rt3883_register_usbhost(void);
 extern struct rt2x00_platform_data rt3883_wlan_data;
 void rt3883_register_wlan(void);
 void rt3883_register_wdt(bool enable_reset);
+
+void rt3883_register_spi(struct spi_board_info *info, int n);
 
 #endif  /* _RT3883_DEVICES_H */
