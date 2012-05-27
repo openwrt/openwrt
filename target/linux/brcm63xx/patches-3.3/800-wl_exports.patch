@@ -1,32 +1,24 @@
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -14,6 +14,7 @@
- #include <linux/ssb/ssb.h>
- #include <linux/gpio_keys.h>
- #include <linux/input.h>
-+#include <linux/export.h>
- #include <linux/spi/spi.h>
- #include <linux/spi/spi_gpio.h>
- #include <linux/spi/74x164.h>
-@@ -54,6 +55,13 @@ static unsigned int mac_addr_used;
- static struct board_info board;
+--- a/arch/mips/bcm63xx/nvram.c
++++ b/arch/mips/bcm63xx/nvram.c
+@@ -19,6 +19,13 @@
+ static struct bcm963xx_nvram nvram;
+ static int mac_addr_used;
  
- /*
++/*
 + * Required export for WL
 + */
 +#define NVRAM_SPACE 0x8000
 +char nvram_buf[NVRAM_SPACE];
 +EXPORT_SYMBOL(nvram_buf);
 +
-+/*
-  * known 6338 boards
-  */
- #ifdef CONFIG_BCM63XX_CPU_6338
-@@ -2496,6 +2504,7 @@ void __init board_prom_init(void)
+ int __init bcm63xx_nvram_init(void *addr)
+ {
+ 	unsigned int check_len;
+@@ -27,6 +34,7 @@ int __init bcm63xx_nvram_init(void *addr
  
  	/* extract nvram data */
- 	memcpy(&nvram, boot_addr + BCM963XX_NVRAM_OFFSET, sizeof(nvram));
-+	memcpy(&nvram_buf, boot_addr + BCM963XX_NVRAM_OFFSET, NVRAM_SPACE);
+ 	memcpy(&nvram, addr, sizeof(nvram));
++	memcpy(&nvram_buf, addr, NVRAM_SPACE);
  
  	/* check checksum before using data */
  	if (nvram.version <= 4)

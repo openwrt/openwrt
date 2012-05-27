@@ -1,0 +1,26 @@
+From d5173b2c806f4039679b001f1b55a3c245afdf68 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 8 May 2012 10:02:13 +0200
+Subject: [PATCH 23/79] MTD: bcm63xxpart: move the last curpart++ to its
+ correct place
+
+The line belongs above the comment, not below it.
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ drivers/mtd/bcm63xxpart.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mtd/bcm63xxpart.c
++++ b/drivers/mtd/bcm63xxpart.c
+@@ -190,9 +190,9 @@ static int bcm63xx_parse_cfe_partitions(
+ 	parts[curpart].name = "nvram";
+ 	parts[curpart].offset = master->size - nvramlen;
+ 	parts[curpart].size = nvramlen;
++	curpart++;
+ 
+ 	/* Global partition "linux" to make easy firmware upgrade */
+-	curpart++;
+ 	parts[curpart].name = "linux";
+ 	parts[curpart].offset = cfelen;
+ 	parts[curpart].size = master->size - cfelen - nvramlen;
