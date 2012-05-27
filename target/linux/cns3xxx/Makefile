@@ -9,11 +9,11 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=cns3xxx
 BOARDNAME:=Cavium Networks Econa CNS3xxx
-FEATURES:=squashfs fpu gpio
+FEATURES:=squashfs fpu gpio broken
 CFLAGS:=-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.1.10
+LINUX_VERSION:=3.3.7
 
 include $(INCLUDE_DIR)/target.mk
 
