@@ -14,6 +14,7 @@
 #include <linux/mtd/physmap.h>
 #include <linux/mtd/partitions.h>
 #include <linux/dma-mapping.h>
+#include <linux/spi/spi.h>
 #include <linux/delay.h>
 #include <linux/err.h>
 #include <linux/clk.h>
@@ -378,3 +379,25 @@ void __init rt3883_register_nand(void)
 {
 	platform_device_register(&rt3883_nand_device);
 }
+
+static struct resource rt3883_spi_resources[] = {
+	{
+		.flags	= IORESOURCE_MEM,
+		.start	= RT3883_SPI_BASE,
+		.end	= RT3883_SPI_BASE + RT3883_SPI_SIZE - 1,
+	},
+};
+
+static struct platform_device rt3883_spi_device = {
+	.name		= "ramips-spi",
+	.id		= 0,
+	.resource	= rt3883_spi_resources,
+	.num_resources	= ARRAY_SIZE(rt3883_spi_resources),
+};
+
+void __init rt3883_register_spi(struct spi_board_info *info, int n)
+{
+	spi_register_board_info(info, n);
+	platform_device_register(&rt3883_spi_device);
+}
+
