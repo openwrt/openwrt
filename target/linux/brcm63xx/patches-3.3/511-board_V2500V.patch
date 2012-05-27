@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -319,6 +319,63 @@ static struct board_info __initdata boar
+@@ -320,6 +320,63 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -64,7 +64,7 @@
  #endif
  
  /*
-@@ -1785,6 +1842,7 @@ static const struct board_info __initdat
+@@ -1786,6 +1843,7 @@ static const struct board_info __initdat
  	&board_96348_D4PW,
  	&board_spw500v,
  	&board_96348sv,
@@ -72,7 +72,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1943,6 +2001,22 @@ void __init board_prom_init(void)
+@@ -1944,6 +2002,22 @@ void __init board_prom_init(void)
  		val &= MPI_CSBASE_BASE_MASK;
  	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
@@ -97,15 +97,15 @@
  	cfe = boot_addr + BCM963XX_CFE_VERSION_OFFSET;
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -16,6 +16,7 @@
- #include <linux/mtd/partitions.h>
- #include <linux/mtd/physmap.h>
+@@ -18,6 +18,7 @@
+ #include <linux/spi/spi.h>
+ #include <linux/spi/flash.h>
  
 +#include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_dev_flash.h>
- #include <bcm63xx_regs.h>
-@@ -104,6 +105,13 @@ int __init bcm63xx_flash_register(void)
+ #include <bcm63xx_dev_hsspi.h>
+@@ -126,6 +127,13 @@ int __init bcm63xx_flash_register(void)
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
  		val &= MPI_CSBASE_BASE_MASK;
  

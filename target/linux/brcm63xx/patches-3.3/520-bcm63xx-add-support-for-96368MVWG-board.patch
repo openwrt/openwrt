@@ -10,7 +10,7 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -2016,6 +2016,80 @@ static struct board_info __initdata boar
+@@ -2017,6 +2017,80 @@ static struct board_info __initdata boar
  #endif
  
  /*
@@ -91,7 +91,7 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
   * all boards
   */
  static const struct board_info __initdata *bcm963xx_boards[] = {
-@@ -2064,6 +2138,10 @@ static const struct board_info __initdat
+@@ -2065,6 +2139,10 @@ static const struct board_info __initdat
  	&board_HW553,
  	&board_spw303v,
  #endif
@@ -102,7 +102,7 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
  };
  
  static void __init nb4_nvram_fixup(void)
-@@ -2285,12 +2363,25 @@ void __init board_prom_init(void)
+@@ -2286,12 +2364,25 @@ void __init board_prom_init(void)
  	if (board.has_pci) {
  		if (BCMCPU_IS_6348())
  			val |= GPIO_MODE_6348_G2_PCI;
