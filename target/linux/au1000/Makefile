@@ -9,11 +9,11 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=au1000
 BOARDNAME:=RMI/AMD AU1x00
-FEATURES:=jffs2 usb pci
+FEATURES:=jffs2 usb pci broken
 SUBTARGETS=au1500 au1550
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.2.16
+LINUX_VERSION:=3.3.7
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += wpad-mini yamonenv
