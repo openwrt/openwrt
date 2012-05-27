@@ -11,60 +11,60 @@ sys_mtd_part=""
 brcm63xx_has_reset_button=""
 
 brcm63xx_detect() {
-	board_name=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /system type/ {print $2}' /proc/cpuinfo)
+	board_name=$(awk 'BEGIN{FS="[ \t:/]+"} /system type/ {print $4}' /proc/cpuinfo)
 
 	case "$board_name" in
-	"bcm63xx/96348GW "*)
+	96348GW)
 		status_led="power"
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
-	"bcm63xx/GW6000 "*)
+	GW6000)
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
-	"bcm63xx/GW6200 "*)
+	GW6200)
 		status_led="line1"
 		status_led2="tel"
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
-	"bcm63xx/96348GW-11 "*)
+	96348GW-11)
 		status_led="power"
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
-	"bcm63xx/CT536_CT5621 "*)
+	CT536_CT5621)
 		status_led="power"
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
-	"bcm63xx/SPW500V "*)
+	SPW500V)
 		status_led="power:green"
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
-	"bcm63xx/AW4139 "*)
+	AW4139)
 		status_led="dsl-274xb:green:power"
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
-	"bcm63xx/96358-502V "*)
+	96358-502V)
 		status_led="spw303v:green:power+adsl"
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
-	"bcm63xx/V2110 "*)
+	V2110)
 		status_led="V2110:power:green"
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
-	"bcm63xx/CPVA642 "* )
+	CPVA642)
 		status_led="power:green"
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
-	"bcm63xx/D-4P-W "*)
+	D-4P-W)
 		status_led="power:green"
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
