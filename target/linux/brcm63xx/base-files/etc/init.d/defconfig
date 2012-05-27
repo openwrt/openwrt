@@ -6,17 +6,13 @@
 START=05
 
 start() {
-	local board=$(awk 'BEGIN{FS="[ \t:/]+"} /system type/ {print $4}' /proc/cpuinfo)
+	. /lib/brcm63xx.sh
 
-	if [ "$board" = "96358VW" ] && [ -e /proc/switch/eth1/enable ]; then
-		board="DVAG3810BN"
-	fi
+	[ ! -d /etc/defconfig/$board_name ] && board_name="generic"
 
-	[ ! -d /etc/defconfig/$board ] && board="generic"
-
-	for f in $( ls /etc/defconfig/$board ); do
+	for f in $( ls /etc/defconfig/$board_name ); do
 		if [ ! -e /etc/config/$f ]; then
-			cp /etc/defconfig/$board/$f /etc/config/
+			cp /etc/defconfig/$board_name/$f /etc/config/
 		fi
 	done
 }

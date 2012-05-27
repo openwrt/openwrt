@@ -13,6 +13,10 @@ brcm63xx_has_reset_button=""
 brcm63xx_detect() {
 	board_name=$(awk 'BEGIN{FS="[ \t:/]+"} /system type/ {print $4}' /proc/cpuinfo)
 
+	if [ "$board_name" = "96358VW" ] && [ -e /proc/switch/eth1/enable ]; then
+		board_name="DVAG3810BN"
+	fi
+
 	case "$board_name" in
 	96348GW)
 		status_led="power"
