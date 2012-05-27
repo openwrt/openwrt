@@ -1,0 +1,240 @@
+From e170282d7d12f4a26f10d4b666b158d24810d2f6 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 3 Jul 2011 03:41:02 +0200
+Subject: [PATCH 47/79] MIPS: BCM63XX: Add PCIe Support for BCM6328
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ arch/mips/pci/ops-bcm63xx.c |   61 +++++++++++++++++++++++
+ arch/mips/pci/pci-bcm63xx.c |  112 +++++++++++++++++++++++++++++++++++++++++++
+ arch/mips/pci/pci-bcm63xx.h |    5 ++
+ 3 files changed, 178 insertions(+)
+
+--- a/arch/mips/pci/ops-bcm63xx.c
++++ b/arch/mips/pci/ops-bcm63xx.c
+@@ -465,3 +465,64 @@ static void bcm63xx_fixup(struct pci_dev
+ 
+ DECLARE_PCI_FIXUP_ENABLE(PCI_ANY_ID, PCI_ANY_ID, bcm63xx_fixup);
+ #endif
++
++static int bcm63xx_pcie_can_access(struct pci_bus *bus, int devfn)
++{
++	switch (bus->number) {
++	case PCIE_BUS_BRIDGE:
++		return (PCI_SLOT(devfn) == 0);
++	case PCIE_BUS_DEVICE:
++		if (PCI_SLOT(devfn) == 0)
++			return bcm_pcie_readl(PCIE_DLSTATUS_REG)
++					& DLSTATUS_PHYLINKUP;
++	default:
++		return false;
++	}
++}
++
++static int bcm63xx_pcie_read(struct pci_bus *bus, unsigned int devfn,
++			     int where, int size, u32 *val)
++{
++	u32 data;
++	u32 reg = where & ~3;
++
++	if (!bcm63xx_pcie_can_access(bus, devfn))
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	if (bus->number == PCIE_BUS_DEVICE)
++		reg += PCIE_DEVICE_OFFSET;
++
++	data = bcm_pcie_readl(reg);
++
++	*val = postprocess_read(data, where, size);
++
++	return PCIBIOS_SUCCESSFUL;
++
++}
++
++static int bcm63xx_pcie_write(struct pci_bus *bus, unsigned int devfn,
++			      int where, int size, u32 val)
++{
++	u32 data;
++	u32 reg = where & ~3;
++
++	if (!bcm63xx_pcie_can_access(bus, devfn))
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	if (bus->number == PCIE_BUS_DEVICE)
++		reg += PCIE_DEVICE_OFFSET;
++
++
++	data = bcm_pcie_readl(reg);
++
++	data = preprocess_write(data, val, where, size);
++	bcm_pcie_writel(data, reg);
++
++	return PCIBIOS_SUCCESSFUL;
++}
++
++
++struct pci_ops bcm63xx_pcie_ops = {
++	.read   = bcm63xx_pcie_read,
++	.write  = bcm63xx_pcie_write
++};
+--- a/arch/mips/pci/pci-bcm63xx.c
++++ b/arch/mips/pci/pci-bcm63xx.c
+@@ -10,6 +10,7 @@
+ #include <linux/pci.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
++#include <linux/delay.h>
+ #include <asm/bootinfo.h>
+ 
+ #include "pci-bcm63xx.h"
+@@ -65,6 +66,26 @@ struct pci_controller bcm63xx_cb_control
+ };
+ #endif
+ 
++static struct resource bcm_pcie_mem_resource = {
++	.name   = "bcm63xx PCIe memory space",
++	.start  = BCM_PCIE_MEM_BASE_PA,
++	.end    = BCM_PCIE_MEM_END_PA,
++	.flags  = IORESOURCE_MEM,
++};
++
++static struct resource bcm_pcie_io_resource = {
++	.name   = "bcm63xx PCIe IO space",
++	.start  = 0,
++	.end    = 0,
++	.flags  = 0,
++};
++
++struct pci_controller bcm63xx_pcie_controller = {
++	.pci_ops	= &bcm63xx_pcie_ops,
++	.io_resource	= &bcm_pcie_io_resource,
++	.mem_resource	= &bcm_pcie_mem_resource,
++};
++
+ static u32 bcm63xx_int_cfg_readl(u32 reg)
+ {
+ 	u32 tmp;
+@@ -88,6 +109,95 @@ static void bcm63xx_int_cfg_writel(u32 v
+ 
+ void __iomem *pci_iospace_start;
+ 
++static void __init bcm63xx_reset_pcie(void)
++{
++	u32 val;
++
++	/* enable clock */
++	val = bcm_perf_readl(PERF_CKCTL_REG);
++	val |= CKCTL_6328_PCIE_EN;
++	bcm_perf_writel(val, PERF_CKCTL_REG);
++
++	/* enable SERDES */
++	val = bcm_misc_readl(MISC_SERDES_CTRL_REG);
++	val |= SERDES_PCIE_EN | SERDES_PCIE_EXD_EN;
++	bcm_misc_writel(val, MISC_SERDES_CTRL_REG);
++
++	/* reset the PCIe core */
++	val = bcm_perf_readl(PERF_SOFTRESET_6328_REG);
++
++	val &= ~SOFTRESET_6328_PCIE_MASK;
++	val &= ~SOFTRESET_6328_PCIE_CORE_MASK;
++	val &= ~SOFTRESET_6328_PCIE_HARD_MASK;
++	val &= ~SOFTRESET_6328_PCIE_EXT_MASK;
++	bcm_perf_writel(val, PERF_SOFTRESET_6328_REG);
++	mdelay(10);
++
++	val |= SOFTRESET_6328_PCIE_MASK;
++	val |= SOFTRESET_6328_PCIE_CORE_MASK;
++	val |= SOFTRESET_6328_PCIE_HARD_MASK;
++	bcm_perf_writel(val, PERF_SOFTRESET_6328_REG);
++	mdelay(10);
++
++	val |= SOFTRESET_6328_PCIE_EXT_MASK;
++	bcm_perf_writel(val, PERF_SOFTRESET_6328_REG);
++	mdelay(200);
++}
++
++static int __init bcm63xx_register_pcie(void)
++{
++	u32 val;
++
++	bcm63xx_reset_pcie();
++
++	/* configure the PCIe bridge */
++	val = bcm_pcie_readl(PCIE_BRIDGE_OPT1_REG);
++	val |= OPT1_RD_BE_OPT_EN;
++	val |= OPT1_RD_REPLY_BE_FIX_EN;
++	val |= OPT1_PCIE_BRIDGE_HOLE_DET_EN;
++	val |= OPT1_L1_INT_STATUS_MASK_POL;
++	bcm_pcie_writel(val, PCIE_BRIDGE_OPT1_REG);
++
++	/* setup the interrupts */
++	val = bcm_pcie_readl(PCIE_BRIDGE_RC_INT_MASK_REG);
++	val |= PCIE_RC_INT_A | PCIE_RC_INT_B | PCIE_RC_INT_C | PCIE_RC_INT_D;
++	bcm_pcie_writel(val, PCIE_BRIDGE_RC_INT_MASK_REG);
++
++	val = bcm_pcie_readl(PCIE_BRIDGE_OPT2_REG);
++	/* enable credit checking and error checking */
++	val |= OPT2_TX_CREDIT_CHK_EN;
++	val |= OPT2_UBUS_UR_DECODE_DIS;
++
++	/* set device bus/func for the pcie device */
++	val |= (PCIE_BUS_DEVICE << OPT2_CFG_TYPE1_BUS_NO_SHIFT);
++	val |= OPT2_CFG_TYPE1_BD_SEL;
++	bcm_pcie_writel(val, PCIE_BRIDGE_OPT2_REG);
++
++	/* setup class code as bridge */
++	val = bcm_pcie_readl(PCIE_IDVAL3_REG);
++	val &= ~IDVAL3_CLASS_CODE_MASK;
++	val |= (PCI_CLASS_BRIDGE_PCI << IDVAL3_SUBCLASS_SHIFT);
++	bcm_pcie_writel(val, PCIE_IDVAL3_REG);
++
++	/* disable bar1 size */
++	val = bcm_pcie_readl(PCIE_CONFIG2_REG);
++	val &= ~CONFIG2_BAR1_SIZE_MASK;
++	bcm_pcie_writel(val, PCIE_CONFIG2_REG);
++
++	/* set bar0 to little endian */
++	val = (BCM_PCIE_MEM_BASE_PA >> 20) << BASEMASK_BASE_SHIFT;
++	val |= (BCM_PCIE_MEM_BASE_PA >> 20) << BASEMASK_MASK_SHIFT;
++	val |= BASEMASK_REMAP_EN;
++	bcm_pcie_writel(val, PCIE_BRIDGE_BAR0_BASEMASK_REG);
++
++	val = (BCM_PCIE_MEM_BASE_PA >> 20) << REBASE_ADDR_BASE_SHIFT;
++	bcm_pcie_writel(val, PCIE_BRIDGE_BAR0_REBASE_ADDR_REG);
++
++	register_pci_controller(&bcm63xx_pcie_controller);
++
++	return 0;
++}
++
+ static int __init bcm63xx_register_pci(void)
+ {
+ 	unsigned int mem_size;
+@@ -211,6 +321,8 @@ static int __init bcm63xx_register_pci(v
+ int __init bcm63xx_pci_register(void)
+ {
+ 	switch (bcm63xx_get_cpu_id()) {
++	case BCM6328_CPU_ID:
++		return bcm63xx_register_pcie();
+ 	case BCM6348_CPU_ID:
+ 	case BCM6358_CPU_ID:
+ 	case BCM6368_CPU_ID:
+--- a/arch/mips/pci/pci-bcm63xx.h
++++ b/arch/mips/pci/pci-bcm63xx.h
+@@ -13,11 +13,16 @@
+  */
+ #define CARDBUS_PCI_IDSEL	0x8
+ 
++
++#define PCIE_BUS_BRIDGE		0
++#define PCIE_BUS_DEVICE		1
++
+ /*
+  * defined in ops-bcm63xx.c
+  */
+ extern struct pci_ops bcm63xx_pci_ops;
+ extern struct pci_ops bcm63xx_cb_ops;
++extern struct pci_ops bcm63xx_pcie_ops;
+ 
+ /*
+  * defined in pci-bcm63xx.c

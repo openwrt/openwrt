@@ -72,9 +72,9 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1938,6 +1996,22 @@ void __init board_prom_init(void)
- 	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
- 	val &= MPI_CSBASE_BASE_MASK;
+@@ -1943,6 +2001,22 @@ void __init board_prom_init(void)
+ 		val &= MPI_CSBASE_BASE_MASK;
+ 	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
 +	printk(KERN_INFO PFX "Boot address 0x%08x\n",(unsigned int)boot_addr);
 +
@@ -105,7 +105,7 @@
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_dev_flash.h>
  #include <bcm63xx_regs.h>
-@@ -98,6 +99,13 @@ int __init bcm63xx_flash_register(void)
+@@ -104,6 +105,13 @@ int __init bcm63xx_flash_register(void)
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
  		val &= MPI_CSBASE_BASE_MASK;
  

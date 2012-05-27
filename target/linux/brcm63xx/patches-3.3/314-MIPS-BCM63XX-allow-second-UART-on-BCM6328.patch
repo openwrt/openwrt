@@ -1,0 +1,22 @@
+From c110865541e2d3782c412af9d48c016de5a64d9c Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 14 Jun 2011 21:14:39 +0200
+Subject: [PATCH 42/79] MIPS: BCM63XX: allow second UART on BCM6328
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ arch/mips/bcm63xx/dev-uart.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/mips/bcm63xx/dev-uart.c
++++ b/arch/mips/bcm63xx/dev-uart.c
+@@ -54,7 +54,8 @@ int __init bcm63xx_uart_register(unsigne
+ 	if (id >= ARRAY_SIZE(bcm63xx_uart_devices))
+ 		return -ENODEV;
+ 
+-	if (id == 1 && (!BCMCPU_IS_6358() && !BCMCPU_IS_6368()))
++	if (id == 1 && !BCMCPU_IS_6328() && !BCMCPU_IS_6358() &&
++	    !BCMCPU_IS_6368())
+ 		return -ENODEV;
+ 
+ 	if (id == 0) {
