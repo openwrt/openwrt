@@ -16,13 +16,18 @@ case "$board_name" in
 
 96348A-122 |\
 96358-502V |\
-AW4139 |\
 CPVA642 |\
 CT536_CT5621 |\
 D-4P-W |\
 SPW500V |\
 V2110)
 	ucidef_set_interface_lan "eth0"
+	;;
+
+AW4139)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4 5t"
 	;;
 
 DVG3810BN)
