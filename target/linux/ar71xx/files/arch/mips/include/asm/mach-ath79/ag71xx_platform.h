@@ -49,7 +49,10 @@ struct ag71xx_platform_data {
 
 struct ag71xx_mdio_platform_data {
 	u32		phy_mask;
-	int		is_ar7240;
+	u8		builtin_switch:1;
+	u8		is_ar7240:1;
+	u8		is_ar9330:1;
+	u8		is_ar934x:1;
 };
 
 #endif /* __ASM_MACH_ATH79_PLATFORM_H */

@@ -322,6 +322,14 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define MII_CFG_CLK_DIV_14	5
 #define MII_CFG_CLK_DIV_20	6
 #define MII_CFG_CLK_DIV_28	7
+#define MII_CFG_CLK_DIV_34	8
+#define MII_CFG_CLK_DIV_42	9
+#define MII_CFG_CLK_DIV_50	10
+#define MII_CFG_CLK_DIV_58	11
+#define MII_CFG_CLK_DIV_66	12
+#define MII_CFG_CLK_DIV_74	13
+#define MII_CFG_CLK_DIV_82	14
+#define MII_CFG_CLK_DIV_98	15
 #define MII_CFG_RESET		BIT(31)
 
 #define MII_CMD_WRITE		0x0
