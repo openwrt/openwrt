@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -17,6 +17,7 @@
+@@ -14,6 +14,7 @@
  #include <linux/ssb/ssb.h>
  #include <linux/gpio_keys.h>
  #include <linux/input.h>
@@ -8,7 +8,7 @@
  #include <linux/spi/spi.h>
  #include <linux/spi/spi_gpio.h>
  #include <linux/spi/74x164.h>
-@@ -55,6 +56,13 @@ static unsigned int mac_addr_used;
+@@ -53,6 +54,13 @@ static unsigned int mac_addr_used;
  static struct board_info board;
  
  /*
@@ -22,7 +22,7 @@
   * known 6338 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_6338
-@@ -2492,6 +2500,7 @@ void __init board_prom_init(void)
+@@ -2490,6 +2498,7 @@ void __init board_prom_init(void)
  
  	/* extract nvram data */
  	memcpy(&nvram, boot_addr + BCM963XX_NVRAM_OFFSET, sizeof(nvram));
