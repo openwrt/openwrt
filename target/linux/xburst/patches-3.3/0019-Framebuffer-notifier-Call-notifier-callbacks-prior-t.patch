@@ -1,0 +1,38 @@
+From 159c4d81899db05a57bc4a0d55083e484c3d8a43 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Sat, 24 Apr 2010 12:23:28 +0200
+Subject: [PATCH 19/21] Framebuffer notifier: Call notifier callbacks prior to
+ blanking the screen
+
+---
+ drivers/video/fbmem.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/video/fbmem.c
++++ b/drivers/video/fbmem.c
+@@ -1046,12 +1046,12 @@ fb_set_var(struct fb_info *info, struct
+ int
+ fb_blank(struct fb_info *info, int blank)
+ {	
+- 	int ret = -EINVAL;
++ 	int ret = 0;
+ 
+  	if (blank > FB_BLANK_POWERDOWN)
+  		blank = FB_BLANK_POWERDOWN;
+ 
+-	if (info->fbops->fb_blank)
++	if (info->fbops->fb_blank && blank == FB_BLANK_UNBLANK)
+  		ret = info->fbops->fb_blank(blank, info);
+ 
+  	if (!ret) {
+@@ -1062,6 +1062,10 @@ fb_blank(struct fb_info *info, int blank
+ 		fb_notifier_call_chain(FB_EVENT_BLANK, &event);
+ 	}
+ 
++	if (info->fbops->fb_blank && blank != FB_BLANK_UNBLANK)
++ 		ret = info->fbops->fb_blank(blank, info);
++
++
+  	return ret;
+ }
+ 
