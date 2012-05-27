@@ -1350,6 +1350,9 @@ static int rtl8367_is_vlan_valid(struct rtl8366_smi *smi, unsigned vlan)
 {
 	unsigned max = RTL8367_NUM_VLANS;
 
+	if (smi->vlan4k_enabled)
+		max = RTL8367_NUM_VIDS - 1;
+
 	if (vlan == 0 || vlan >= max)
 		return 0;
 
