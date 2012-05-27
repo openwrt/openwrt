@@ -109,6 +109,9 @@ struct gengetopt_args_info
   const char *reserved2_help; /**< @brief String for second reserved section. help description.  */
   int kernel_file_has_header_flag;	/**< @brief Indicates that the kernel file includes the kernel header with correct load address and entry point, so no changes are needed (default=off).  */
   const char *kernel_file_has_header_help; /**< @brief Indicates that the kernel file includes the kernel header with correct load address and entry point, so no changes are needed help description.  */
+  int pad_arg;	/**< @brief Pad the image to this size if smaller (in MiB).  */
+  char * pad_orig;	/**< @brief Pad the image to this size if smaller (in MiB) original value given at command line.  */
+  const char *pad_help; /**< @brief Pad the image to this size if smaller (in MiB) help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -136,6 +139,7 @@ struct gengetopt_args_info
   unsigned int inactive_given ;	/**< @brief Whether inactive was given.  */
   unsigned int reserved2_given ;	/**< @brief Whether reserved2 was given.  */
   unsigned int kernel_file_has_header_given ;	/**< @brief Whether kernel-file-has-header was given.  */
+  unsigned int pad_given ;	/**< @brief Whether pad was given.  */
 
 } ;
 
