@@ -156,7 +156,7 @@ void __init rt3883_gpio_init(u32 mode)
 		rt3883_gpio_reserve(RT3883_GPIO_I2C_SD, RT3883_GPIO_I2C_SCLK);
 
 	if ((mode & RT3883_GPIO_MODE_SPI) == 0)
-		rt3883_gpio_reserve(RT3883_GPIO_SPI_CS0, RT3883_GPIO_SPI_CLK);
+		rt3883_gpio_reserve(RT3883_GPIO_SPI_CS0, RT3883_GPIO_SPI_MISO);
 
 	t = mode >> RT3883_GPIO_MODE_UART0_SHIFT;
 	t &= RT3883_GPIO_MODE_UART0_MASK;
