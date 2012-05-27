@@ -58,12 +58,14 @@ const char *gengetopt_args_info_help[] = {
   "      --inactive=flag-value     Inactive Flag (2=not-specified).  (possible \n                                  values=\"0\", \"1\", \"2\" default=`2')",
   "      --reserved2=STRING        String for second reserved section.",
   "      --kernel-file-has-header  Indicates that the kernel file includes the \n                                  kernel header with correct load address and \n                                  entry point, so no changes are needed  \n                                  (default=off)",
+  "  -p, --pad=size (in MiB)       Pad the image to this size if smaller (in MiB)",
     0
 };
 
 typedef enum {ARG_NO
   , ARG_FLAG
   , ARG_STRING
+  , ARG_INT
 } cmdline_parser_arg_type;
 
 static
@@ -113,6 +115,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->inactive_given = 0 ;
   args_info->reserved2_given = 0 ;
   args_info->kernel_file_has_header_given = 0 ;
+  args_info->pad_given = 0 ;
 }
 
 static
@@ -165,6 +168,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->reserved2_arg = NULL;
   args_info->reserved2_orig = NULL;
   args_info->kernel_file_has_header_flag = 0;
+  args_info->pad_orig = NULL;
   
 }
 
@@ -199,6 +203,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->inactive_help = gengetopt_args_info_help[23] ;
   args_info->reserved2_help = gengetopt_args_info_help[24] ;
   args_info->kernel_file_has_header_help = gengetopt_args_info_help[25] ;
+  args_info->pad_help = gengetopt_args_info_help[26] ;
   
 }
 
@@ -323,6 +328,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->inactive_orig));
   free_string_field (&(args_info->reserved2_arg));
   free_string_field (&(args_info->reserved2_orig));
+  free_string_field (&(args_info->pad_orig));
   
   
 
@@ -446,6 +452,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "reserved2", args_info->reserved2_orig, 0);
   if (args_info->kernel_file_has_header_given)
     write_into_file(outfile, "kernel-file-has-header", 0, 0 );
+  if (args_info->pad_given)
+    write_into_file(outfile, "pad", args_info->pad_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -690,6 +698,9 @@ int update_arg(void *field, char **orig_field,
   case ARG_FLAG:
     *((int *)field) = !*((int *)field);
     break;
+  case ARG_INT:
+    if (val) *((int *)field) = strtol (val, &stop_char, 0);
+    break;
   case ARG_STRING:
     if (val) {
       string_field = (char **)field;
@@ -702,6 +713,17 @@ int update_arg(void *field, char **orig_field,
     break;
   };
 
+  /* check numeric conversion */
+  switch(arg_type) {
+  case ARG_INT:
+    if (val && !(stop_char && *stop_char == '\0')) {
+      fprintf(stderr, "%s: invalid numeric value: %s\n", package_name, val);
+      return 1; /* failure */
+    }
+    break;
+  default:
+    ;
+  };
 
   /* store the original value */
   switch(arg_type) {
@@ -787,10 +809,11 @@ cmdline_parser_internal (
         { "inactive",	1, NULL, 0 },
         { "reserved2",	1, NULL, 0 },
         { "kernel-file-has-header",	0, NULL, 0 },
+        { "pad",	1, NULL, 'p' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVi:f:o:b:c:s:n:v:a:m:k:l:e:y:1:2:r:", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVi:f:o:b:c:s:n:v:a:m:k:l:e:y:1:2:r:p:", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -1006,6 +1029,18 @@ cmdline_parser_internal (
               &(local_args_info.rsa_signature_given), optarg, 0, 0, ARG_STRING,
               check_ambiguity, override, 0, 0,
               "rsa-signature", 'r',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'p':	/* Pad the image to this size if smaller (in MiB).  */
+        
+        
+          if (update_arg( (void *)&(args_info->pad_arg), 
+               &(args_info->pad_orig), &(args_info->pad_given),
+              &(local_args_info.pad_given), optarg, 0, 0, ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "pad", 'p',
               additional_error))
             goto failure;
         

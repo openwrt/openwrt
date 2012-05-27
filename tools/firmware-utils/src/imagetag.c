@@ -231,6 +231,19 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 	  fseek(binfile, rootfsoff + rootfslen - fwaddr + cfelen, SEEK_SET);
 	  fwrite(&deadcode, sizeof(uint32_t), 1, binfile);
 
+	  oldrootfslen = rootfslen;
+	  if (args->pad_given) {
+		uint32_t allfs = 0xffffffff;
+		uint32_t pad_size = args->pad_arg * 1024 * 1024;
+
+		printf("Padding image to %d bytes ...\n", pad_size);
+		while (imagelen < pad_size) {
+			fwrite(&allfs, sizeof(uint32_t), 1, binfile);
+			imagelen += 4;
+			rootfslen += 4;
+		}
+	  }
+
 	  /* Flush the binfile buffer so that when we read from file, it contains
 	   * everything in the buffer
 	   */
@@ -260,6 +273,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 	  rootfslen = oldrootfslen;
 	  rootfslen = ( (rootfslen % block_size) > 0 ? (((rootfslen / block_size) + 1) * block_size) : rootfslen );
 	  kerneloffpadlen = rootfslen - oldrootfslen;
+	  oldrootfslen = rootfslen;
 
 	  kerneloff = rootfsoff + rootfslen;
 	  kernellen = getlen(kernelfile);
@@ -343,7 +357,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 	  sprintf(tag.flashImageStart, "%lu", kerneloff);
 	  sprintf(tag.flashRootLength, "%lu", rootfslen + sizeof(deadcode));
 	}
-	int2tag(tag.rootLength, rootfslen + sizeof(deadcode));
+	int2tag(tag.rootLength, oldrootfslen + sizeof(deadcode));
 
 	if (args->rsa_signature_given) {
 	    strncpy(tag.rsa_signature, args->rsa_signature_arg, RSASIG_LEN);
@@ -483,6 +497,14 @@ int main(int argc, char **argv)
 		exit(1);
 	  }
 	}
+
+	if (parsed_args.pad_given) {
+	  if (parsed_args.pad_arg < 0) {
+		fprintf(stderr, "Error: pad size must be positive.\r");
+		exit(1);
+	  }
+	}
+
 	flash_start = strtoul(parsed_args.flash_start_arg, NULL, 16);
 	image_offset = strtoul(parsed_args.image_offset_arg, NULL, 16);
 	block_size = strtoul(parsed_args.block_size_arg, NULL, 16);
