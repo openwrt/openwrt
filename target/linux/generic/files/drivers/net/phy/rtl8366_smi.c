@@ -17,7 +17,7 @@
 #include <linux/skbuff.h>
 #include <linux/rtl8366.h>
 
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 #include <linux/debugfs.h>
 #endif
 
@@ -579,7 +579,7 @@ static int rtl8366_init_vlan(struct rtl8366_smi *smi)
 	return rtl8366_enable_vlan(smi, 1);
 }
 
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file)
 {
 	file->private_data = inode->i_private;
@@ -890,7 +890,7 @@ static void rtl8366_debugfs_remove(struct rtl8366_smi *smi)
 #else
 static inline void rtl8366_debugfs_init(struct rtl8366_smi *smi) {}
 static inline void rtl8366_debugfs_remove(struct rtl8366_smi *smi) {}
-#endif /* CONFIG_RTL8366S_PHY_DEBUG_FS */
+#endif /* CONFIG_RTL8366_SMI_DEBUG_FS */
 
 static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 {

@@ -52,7 +52,7 @@ struct rtl8366_smi {
 	int			vlan4k_enabled;
 
 	char			buf[4096];
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 	struct dentry           *debugfs_root;
 	u16			dbg_reg;
 	u8			dbg_vlan_4k_page;
@@ -112,7 +112,7 @@ int rtl8366_reset_vlan(struct rtl8366_smi *smi);
 int rtl8366_enable_vlan(struct rtl8366_smi *smi, int enable);
 int rtl8366_enable_all_ports(struct rtl8366_smi *smi, int enable);
 
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file);
 #endif
 
