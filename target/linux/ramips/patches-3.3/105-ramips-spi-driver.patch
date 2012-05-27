@@ -5,8 +5,8 @@
  	def_bool SPI_PXA2XX && X86_32 && PCI
  
 +config SPI_RAMIPS
-+	tristate "Ralink RT288x/RT305x SPI Controller"
-+	depends on (SOC_RT288X || SOC_RT305X) && SPI_MASTER
++	tristate "Ralink RT288x/RT305x/RT3662 SPI Controller"
++	depends on (SOC_RT288X || SOC_RT305X || SOC_RT3883)
 +	help
 +	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
 +
