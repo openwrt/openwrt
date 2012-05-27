@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. /lib/lantiq.sh
+
+init_atheeprom() {
+	local board=$(lantiq_board_name)
+	case $board in
+	"Netgear DGN3500B")
+		echo "- loading eeprom -"
+		dd if=/dev/mtd2 of=/sys/firmware/ath_eeprom bs=1k skip=60 count=4
+		echo 0 > /sys/bus/pci/slots/0000\:00\:0e.0/power
+		sleep 1
+		echo 1 > /sys/bus/pci/rescan
+		;;
+	esac
+}
+
+boot_hook_add preinit_essential init_atheeprom
+
