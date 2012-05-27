@@ -93,7 +93,7 @@ define Image/Build/SPW303V
 		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp \
 		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
 		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
-		$(6) $(7) $(8) $(9)
+		--pad 4 $(6) $(7) $(8) $(9)
 	# Fix up header
 	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp \
 		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-sysupgrade.bin
