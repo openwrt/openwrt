@@ -23,150 +23,19 @@
 #include <syslog.h>
 #define dbg(...) syslog(LOG_INFO, __VA_ARGS__)
 
-#ifdef TLS_IS_CYASSL
-static int uh_cyassl_recv_cb(char *buf, int sz, void *ctx)
-{
-	int rv;
-	int socket = *(int *)ctx;
-	struct client *cl;
-
-	if (!(cl = uh_client_lookup(socket)))
-		return -1; /* unexpected error */
-
-	rv = uh_tcp_recv_lowlevel(cl, buf, sz);
-
-	if (rv < 0)
-		return -4; /* interrupted */
-
-	if (rv == 0)
-		return -5; /* connection closed */
-
-	return rv;
-}
-
-static int uh_cyassl_send_cb(char *buf, int sz, void *ctx)
-{
-	int rv;
-	int socket = *(int *)ctx;
-	struct client *cl;
-
-	if (!(cl = uh_client_lookup(socket)))
-		return -1; /* unexpected error */
-
-	rv = uh_tcp_send_lowlevel(cl, buf, sz);
-
-	if (rv <= 0)
-		return -5; /* connection dead */
-
-	return rv;
-}
-
-void SetCallbackIORecv_Ctx(SSL_CTX*, int (*)(char *, int, void *));
-void SetCallbackIOSend_Ctx(SSL_CTX*, int (*)(char *, int, void *));
-
-static void uh_tls_ctx_setup(SSL_CTX *ctx)
-{
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
-	SetCallbackIORecv_Ctx(ctx, uh_cyassl_recv_cb);
-	SetCallbackIOSend_Ctx(ctx, uh_cyassl_send_cb);
-	return;
-}
-
-static int uh_tls_client_ctx_setup(SSL *ssl, int socket)
-{
-	return SSL_set_fd(ssl, socket);
-}
-#endif /* TLS_IS_CYASSL */
-
-#ifdef TLS_IS_OPENSSL
-static long uh_openssl_bio_ctrl_cb(BIO *b, int cmd, long num, void *ptr)
-{
-	long rv = 1;
-
-	switch (cmd)
-	{
-		case BIO_C_SET_FD:
-			b->num      = *((int *)ptr);
-			b->shutdown = (int)num;
-			b->init     = 1;
-			break;
-
-		case BIO_C_GET_FD:
-			if (!b->init)
-				return -1;
-
-			if (ptr)
-				*((int *)ptr) = b->num;
-
-			rv = b->num;
-			break;
-	}
-
-	return rv;
-}
-
-static int uh_openssl_bio_read_cb(BIO *b, char *out, int outl)
-{
-	int rv = 0;
-	struct client *cl;
-
-	if (!(cl = uh_client_lookup(b->num)))
-		return -1;
-
-	if (out != NULL)
-		rv = uh_tcp_recv_lowlevel(cl, out, outl);
-
-	return rv;
-}
-
-static int uh_openssl_bio_write_cb(BIO *b, const char *in, int inl)
-{
-	struct client *cl;
-
-	if (!(cl = uh_client_lookup(b->num)))
-		return -1;
-
-	return uh_tcp_send_lowlevel(cl, in, inl);
-}
-
-static BIO_METHOD uh_openssl_bio_methods = {
-	.type   = BIO_TYPE_SOCKET,
-	.name   = "uhsocket",
-	.ctrl   = uh_openssl_bio_ctrl_cb,
-	.bwrite = uh_openssl_bio_write_cb,
-	.bread  = uh_openssl_bio_read_cb
-};
-
-static void uh_tls_ctx_setup(SSL_CTX *ctx)
-{
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
-	return;
-}
-
-static int uh_tls_client_ctx_setup(SSL *ssl, int socket)
-{
-	BIO *b;
-
-	if (!(b = BIO_new(&uh_openssl_bio_methods)))
-		return 0;
-
-	BIO_set_fd(b, socket, BIO_NOCLOSE);
-	SSL_set_bio(ssl, b, b);
-
-	return 1;
-}
-#endif /* TLS_IS_OPENSSL */
-
-
-SSL_CTX * uh_tls_ctx_init()
+SSL_CTX * uh_tls_ctx_init(void)
 {
 	SSL_CTX *c;
 
 	SSL_load_error_strings();
 	SSL_library_init();
 
+#if TLS_IS_OPENSSL
+	if ((c = SSL_CTX_new(SSLv23_server_method())) != NULL)
+#else
 	if ((c = SSL_CTX_new(TLSv1_server_method())) != NULL)
-		uh_tls_ctx_setup(c);
+#endif
+		SSL_CTX_set_verify(c, SSL_VERIFY_NONE, NULL);
 
 	return c;
 }
@@ -199,53 +68,100 @@ void uh_tls_ctx_free(struct listener *l)
 
 int uh_tls_client_accept(struct client *c)
 {
-	int rv;
+	int rv, err;
+	int fd = c->fd.fd;
 
-	if( c->server && c->server->tls )
-	{
-		c->tls = SSL_new(c->server->tls);
-		if( c->tls )
-		{
-			if( (rv = uh_tls_client_ctx_setup(c->tls, c->socket)) < 1 )
-				goto cleanup;
-
-			if( (rv = SSL_accept(c->tls)) < 1 )
-				goto cleanup;
-		}
-		else
-			rv = 0;
-	}
-	else
+	if (!c->server || !c->server->tls)
 	{
 		c->tls = NULL;
-		rv = 1;
+		return 1;
 	}
 
-done:
-	return rv;
+	if ((c->tls = SSL_new(c->server->tls)))
+	{
+		if ((rv = SSL_set_fd(c->tls, fd)) < 1)
+		{
+			SSL_free(c->tls);
+			c->tls = NULL;
+		}
+		else
+		{
+			while (true)
+			{
+				rv = SSL_accept(c->tls);
+				err = SSL_get_error(c->tls, rv);
 
-cleanup:
-	SSL_free(c->tls);
-	c->tls = NULL;
-	goto done;
+				if ((rv != 1) &&
+					(err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE))
+				{
+					if (uh_socket_wait(fd, c->server->conf->network_timeout,
+									   (err == SSL_ERROR_WANT_WRITE)))
+					{
+						D("TLS: accept(%d) = retry\n", fd);
+						continue;
+					}
+
+					D("TLS: accept(%d) = timeout\n", fd);
+				}
+				else if (rv == 1)
+				{
+					D("TLS: accept(%d) = %p\n", fd, c->tls);
+					return 1;
+				}
+
+#ifdef TLS_IS_OPENSSL
+				D("TLS: accept(%d) = failed: %s\n",
+				  fd, ERR_error_string(ERR_get_error(), NULL));
+#endif
+
+				SSL_free(c->tls);
+				c->tls = NULL;
+				break;
+			}
+		}
+	}
+
+	return 0;
 }
 
-int uh_tls_client_recv(struct client *c, void *buf, int len)
+int uh_tls_client_recv(struct client *c, char *buf, int len)
 {
 	int rv = SSL_read(c->tls, buf, len);
-	return (rv > 0) ? rv : -1;
+	int err = SSL_get_error(c->tls, 0);
+
+	if ((rv == -1) && (err == SSL_ERROR_WANT_READ))
+	{
+		D("TLS: recv(%d, %d) = retry\n", c->fd.fd, len);
+		errno = EAGAIN;
+		return -1;
+	}
+
+	D("TLS: recv(%d, %d) = %d\n", c->fd.fd, len, rv);
+	return rv;
 }
 
-int uh_tls_client_send(struct client *c, void *buf, int len)
+int uh_tls_client_send(struct client *c, const char *buf, int len)
 {
 	int rv = SSL_write(c->tls, buf, len);
-	return (rv > 0) ? rv : -1;
+	int err = SSL_get_error(c->tls, 0);
+
+	if ((rv == -1) && (err == SSL_ERROR_WANT_WRITE))
+	{
+		D("TLS: send(%d, %d) = retry\n", c->fd.fd, len);
+		errno = EAGAIN;
+		return -1;
+	}
+
+	D("TLS: send(%d, %d) = %d\n", c->fd.fd, len, rv);
+	return rv;
 }
 
 void uh_tls_client_close(struct client *c)
 {
-	if( c->tls )
+	if (c->tls)
 	{
+		D("TLS: close(%d)\n", c->fd.fd);
+
 		SSL_shutdown(c->tls);
 		SSL_free(c->tls);
 

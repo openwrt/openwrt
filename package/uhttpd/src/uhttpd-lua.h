@@ -1,7 +1,7 @@
 /*
  * uhttpd - Tiny single-threaded httpd - Lua header
  *
- *   Copyright (C) 2010 Jo-Philipp Wich <xm@subsignal.org>
+ *   Copyright (C) 2010-2012 Jo-Philipp Wich <xm@subsignal.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,12 +32,17 @@
 #define UH_LUA_ERR_PARAM   -3
 
 
+struct uh_lua_state {
+	int rfd;
+	int wfd;
+	struct client *cl;
+	char httpbuf[UH_LIMIT_MSGHEAD];
+	int content_length;
+	bool data_sent;
+};
+
 lua_State * uh_lua_init(const struct config *conf);
-
-void uh_lua_request(
-	struct client *cl, struct http_request *req, lua_State *L
-);
-
+bool uh_lua_request(struct client *cl, lua_State *L);
 void uh_lua_close(lua_State *L);
 
 #endif

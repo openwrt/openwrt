@@ -1,7 +1,7 @@
 /*
  * uhttpd - Tiny single-threaded httpd - Utility header
  *
- *   Copyright (C) 2010 Jo-Philipp Wich <xm@subsignal.org>
+ *   Copyright (C) 2010-2012 Jo-Philipp Wich <xm@subsignal.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,6 +39,9 @@
 #define fd_cloexec(fd) \
 	fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC)
 
+#define fd_nonblock(fd) \
+	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
+
 #define ensure_out(x) \
 	do { if((x) < 0) goto out; } while(0)
 
@@ -64,18 +67,17 @@ int sa_rfc1918(void *sa);
 
 char *strfind(char *haystack, int hslen, const char *needle, int ndlen);
 
-int select_intr(int n, fd_set *r, fd_set *w, fd_set *e, struct timeval *t);
+bool uh_socket_wait(int fd, int sec, bool write);
 
+int uh_raw_send(int fd, const char *buf, int len, int seconds);
+int uh_raw_recv(int fd, char *buf, int len, int seconds);
 int uh_tcp_send(struct client *cl, const char *buf, int len);
 int uh_tcp_send_lowlevel(struct client *cl, const char *buf, int len);
-int uh_tcp_peek(struct client *cl, char *buf, int len);
 int uh_tcp_recv(struct client *cl, char *buf, int len);
 int uh_tcp_recv_lowlevel(struct client *cl, char *buf, int len);
 
-int uh_http_sendhf(
-	struct client *cl, int code, const char *summary,
-	const char *fmt, ...
-);
+int uh_http_sendhf(struct client *cl, int code, const char *summary,
+				   const char *fmt, ...);
 
 #define uh_http_response(cl, code, message) \
 	uh_http_sendhf(cl, code, message, message)
@@ -112,7 +114,17 @@ struct listener * uh_listener_lookup(int sock);
 
 struct client * uh_client_add(int sock, struct listener *serv);
 struct client * uh_client_lookup(int sock);
-void uh_client_remove(int sock);
+
+#define uh_client_error(cl, code, status, ...) do { \
+	uh_http_sendhf(cl, code, status, __VA_ARGS__);  \
+	uh_client_shutdown(cl);                         \
+} while(0)
+
+void uh_client_shutdown(struct client *cl);
+void uh_client_remove(struct client *cl);
+
+#define uh_client_gc() uh_client_remove(NULL)
+
 
 #ifdef HAVE_CGI
 struct interpreter * uh_interpreter_add(const char *extn, const char *path);

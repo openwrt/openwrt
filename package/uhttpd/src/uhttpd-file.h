@@ -31,8 +31,6 @@ struct mimetype {
 	const char *mime;
 };
 
-void uh_file_request(
-	struct client *cl, struct http_request *req, struct path_info *pi
-);
+bool uh_file_request(struct client *cl, struct path_info *pi);
 
 #endif

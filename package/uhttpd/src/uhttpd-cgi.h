@@ -1,7 +1,7 @@
 /*
  * uhttpd - Tiny single-threaded httpd - CGI header
  *
- *   Copyright (C) 2010 Jo-Philipp Wich <xm@subsignal.org>
+ *   Copyright (C) 2010-2012 Jo-Philipp Wich <xm@subsignal.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,9 +24,19 @@
 #include <sys/types.h>
 #include <linux/limits.h>
 
-void uh_cgi_request(
-	struct client *cl, struct http_request *req,
-	struct path_info *pi, struct interpreter *ip
-);
+#include <time.h>
+
+
+struct uh_cgi_state {
+	int rfd;
+	int wfd;
+	struct client *cl;
+	char httpbuf[UH_LIMIT_MSGHEAD];
+	int content_length;
+	bool header_sent;
+};
+
+bool uh_cgi_request(struct client *cl, struct path_info *pi,
+					struct interpreter *ip);
 
 #endif

@@ -72,6 +72,7 @@ start_instance()
 	append_arg "$cfg" tcp_keepalive "-A"
 	append_arg "$cfg" error_page "-E"
 	append_arg "$cfg" index_page "-I"
+	append_arg "$cfg" max_requests "-n" 3
 
 	append_bool "$cfg" no_symlinks "-S" 0
 	append_bool "$cfg" no_dirlists "-D" 0

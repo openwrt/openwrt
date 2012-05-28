@@ -41,6 +41,10 @@ ifeq ($(LUA_SUPPORT),1)
   CFLAGS += -DHAVE_LUA
 endif
 
+ifeq ($(UBUS_SUPPORT),1)
+  CFLAGS += -DHAVE_UBUS
+endif
+
 
 world: compile
 
@@ -66,10 +70,19 @@ ifeq ($(TLS_SUPPORT),1)
 			-o $(TLSLIB) uhttpd-tls.c
 endif
 
+ifeq ($(UBUS_SUPPORT),1)
+  UBUSLIB := uhttpd_ubus.so
+
+  $(UBUSLIB): uhttpd-ubus.c
+		$(CC) $(CFLAGS) $(LDFLAGS) $(FPIC) \
+			-shared -lubus -ljson -lblobmsg_json \
+			-o $(UBUSLIB) uhttpd-ubus.c
+endif
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-compile: $(OBJ) $(TLSLIB) $(LUALIB)
+compile: $(OBJ) $(TLSLIB) $(LUALIB) $(UBUSLIB)
 	$(CC) -o uhttpd $(LDFLAGS) $(OBJ) $(LIB)
 
 clean:
