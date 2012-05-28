@@ -1,7 +1,7 @@
 /*
  * uhttpd - Tiny single-threaded httpd - Utility functions
  *
- *   Copyright (C) 2010 Jo-Philipp Wich <xm@subsignal.org>
+ *   Copyright (C) 2010-2012 Jo-Philipp Wich <xm@subsignal.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -103,120 +103,171 @@ char *strfind(char *haystack, int hslen, const char *needle, int ndlen)
 	return NULL;
 }
 
-/* interruptable select() */
-int select_intr(int n, fd_set *r, fd_set *w, fd_set *e, struct timeval *t)
+bool uh_socket_wait(int fd, int sec, bool write)
 {
 	int rv;
-	sigset_t ssn, sso;
+	struct timeval timeout;
 
-	/* unblock SIGCHLD */
-	sigemptyset(&ssn);
-	sigaddset(&ssn, SIGCHLD);
-	sigaddset(&ssn, SIGPIPE);
-	sigprocmask(SIG_UNBLOCK, &ssn, &sso);
+	fd_set fds;
 
-	rv = select(n, r, w, e, t);
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
 
-	/* restore signal mask */
-	sigprocmask(SIG_SETMASK, &sso, NULL);
+	timeout.tv_sec = sec;
+	timeout.tv_usec = 0;
 
-	return rv;
+	while (((rv = select(fd+1, write ? NULL : &fds, write ? &fds : NULL,
+						 NULL, &timeout)) < 0) && (errno == EINTR))
+	{
+		D("IO: Socket(%d) select interrupted: %s\n",
+				fd, strerror(errno));
+
+		continue;
+	}
+
+	if (rv <= 0)
+	{
+		D("IO: Socket(%d) appears dead (rv=%d)\n", fd, rv);
+		return false;
+	}
+
+	return true;
 }
 
+static int __uh_raw_send(struct client *cl, const char *buf, int len, int sec,
+						 int (*wfn) (struct client *, const char *, int))
+{
+	ssize_t rv;
+	int fd = cl->fd.fd;
+
+	while (true)
+	{
+		if ((rv = wfn(cl, buf, len)) < 0)
+		{
+			if (errno == EINTR)
+			{
+				D("IO: Socket(%d) interrupted\n", cl->fd.fd);
+				continue;
+			}
+			else if ((sec > 0) && (errno == EAGAIN || errno == EWOULDBLOCK))
+			{
+				if (!uh_socket_wait(fd, sec, true))
+					return -1;
+			}
+			else
+			{
+				D("IO: Socket(%d) write error: %s\n", fd, strerror(errno));
+				return -1;
+			}
+		}
+		/*
+		 * It is not entirely clear whether rv = 0 on nonblocking sockets
+		 * is an error. In real world fuzzing tests, not handling it as close
+		 * led to tight infinite loops in this send procedure, so treat it as
+		 * closed and break out.
+		 */
+		else if (rv == 0)
+		{
+			D("IO: Socket(%d) closed\n", fd);
+			return 0;
+		}
+		else if (rv < len)
+		{
+			D("IO: Socket(%d) short write %d/%d bytes\n", fd, rv, len);
+			len -= rv;
+			buf += rv;
+			continue;
+		}
+		else
+		{
+			D("IO: Socket(%d) sent %d/%d bytes\n", fd, rv, len);
+			return rv;
+		}
+	}
+}
 
 int uh_tcp_send_lowlevel(struct client *cl, const char *buf, int len)
 {
-	fd_set writer;
-	struct timeval timeout;
+	return write(cl->fd.fd, buf, len);
+}
 
-	FD_ZERO(&writer);
-	FD_SET(cl->socket, &writer);
-
-	timeout.tv_sec = cl->server->conf->network_timeout;
-	timeout.tv_usec = 0;
-
-	if (select(cl->socket + 1, NULL, &writer, NULL, &timeout) > 0)
-		return send(cl->socket, buf, len, 0);
-
-	return -1;
+int uh_raw_send(int fd, const char *buf, int len, int sec)
+{
+	struct client_light cl = { .fd = { .fd = fd } };
+	return __uh_raw_send((struct client *)&cl, buf, len, sec,
+						 uh_tcp_send_lowlevel);
 }
 
 int uh_tcp_send(struct client *cl, const char *buf, int len)
 {
+	int seconds = cl->server->conf->network_timeout;
 #ifdef HAVE_TLS
 	if (cl->tls)
-		return cl->server->conf->tls_send(cl, (void *)buf, len);
-	else
+		return __uh_raw_send(cl, buf, len, seconds,
+							 cl->server->conf->tls_send);
 #endif
-		return uh_tcp_send_lowlevel(cl, buf, len);
+	return __uh_raw_send(cl, buf, len, seconds, uh_tcp_send_lowlevel);
 }
 
-int uh_tcp_peek(struct client *cl, char *buf, int len)
+static int __uh_raw_recv(struct client *cl, char *buf, int len, int sec,
+						 int (*rfn) (struct client *, char *, int))
 {
-	/* sanity check, prevent overflowing peek buffer */
-	if (len > sizeof(cl->peekbuf))
-		return -1;
+	ssize_t rv;
+	int fd = cl->fd.fd;
 
-	int sz = uh_tcp_recv(cl, buf, len);
-
-	/* store received data in peek buffer */
-	if (sz > 0)
+	while (true)
 	{
-		cl->peeklen = sz;
-		memcpy(cl->peekbuf, buf, sz);
+		if ((rv = rfn(cl, buf, len)) < 0)
+		{
+			if (errno == EINTR)
+			{
+				continue;
+			}
+			else if ((sec > 0) && (errno == EAGAIN || errno == EWOULDBLOCK))
+			{
+				if (!uh_socket_wait(fd, sec, false))
+					return -1;
+			}
+			else
+			{
+				D("IO: Socket(%d) read error: %s\n", fd, strerror(errno));
+				return -1;
+			}
+		}
+		else if (rv == 0)
+		{
+			D("IO: Socket(%d) closed\n", fd);
+			return 0;
+		}
+		else
+		{
+			D("IO: Socket(%d) read %d bytes\n", fd, rv);
+			return rv;
+		}
 	}
-
-	return sz;
 }
 
 int uh_tcp_recv_lowlevel(struct client *cl, char *buf, int len)
 {
-	fd_set reader;
-	struct timeval timeout;
+	return read(cl->fd.fd, buf, len);
+}
 
-	FD_ZERO(&reader);
-	FD_SET(cl->socket, &reader);
-
-	timeout.tv_sec  = cl->server->conf->network_timeout;
-	timeout.tv_usec = 0;
-
-	if (select(cl->socket + 1, &reader, NULL, NULL, &timeout) > 0)
-		return recv(cl->socket, buf, len, 0);
-
-	return -1;
+int uh_raw_recv(int fd, char *buf, int len, int sec)
+{
+	struct client_light cl = { .fd = { .fd = fd } };
+	return __uh_raw_recv((struct client *)&cl, buf, len, sec,
+						 uh_tcp_recv_lowlevel);
 }
 
 int uh_tcp_recv(struct client *cl, char *buf, int len)
 {
-	int sz = 0;
-	int rsz = 0;
-
-	/* first serve data from peek buffer */
-	if (cl->peeklen > 0)
-	{
-		sz = min(cl->peeklen, len);
-		len -= sz; cl->peeklen -= sz;
-		memcpy(buf, cl->peekbuf, sz);
-		memmove(cl->peekbuf, &cl->peekbuf[sz], cl->peeklen);
-	}
-
-	/* caller wants more */
-	if (len > 0)
-	{
+	int seconds = cl->server->conf->network_timeout;
 #ifdef HAVE_TLS
-		if (cl->tls)
-			rsz = cl->server->conf->tls_recv(cl, (void *)&buf[sz], len);
-		else
+	if (cl->tls)
+		return __uh_raw_recv(cl, buf, len, seconds,
+							 cl->server->conf->tls_recv);
 #endif
-			rsz = uh_tcp_recv_lowlevel(cl, (void *)&buf[sz], len);
-
-		if (rsz < 0)
-			return rsz;
-
-		sz += rsz;
-	}
-
-	return sz;
+	return __uh_raw_recv(cl, buf, len, seconds, uh_tcp_recv_lowlevel);
 }
 
 
@@ -841,8 +892,9 @@ struct listener * uh_listener_add(int sock, struct config *conf)
 	{
 		memset(new, 0, sizeof(struct listener));
 
-		new->socket = sock;
-		new->conf   = conf;
+		new->fd.fd = sock;
+		new->conf  = conf;
+
 
 		/* get local endpoint addr */
 		sl = sizeof(struct sockaddr_in6);
@@ -863,7 +915,7 @@ struct listener * uh_listener_lookup(int sock)
 	struct listener *cur = NULL;
 
 	for (cur = uh_listeners; cur; cur = cur->next)
-		if (cur->socket == sock)
+		if (cur->fd.fd == sock)
 			return cur;
 
 	return NULL;
@@ -879,7 +931,7 @@ struct client * uh_client_add(int sock, struct listener *serv)
 	{
 		memset(new, 0, sizeof(struct client));
 
-		new->socket = sock;
+		new->fd.fd  = sock;
 		new->server = serv;
 
 		/* get remote endpoint addr */
@@ -894,6 +946,8 @@ struct client * uh_client_add(int sock, struct listener *serv)
 
 		new->next = uh_clients;
 		uh_clients = new;
+
+		serv->n_clients++;
 	}
 
 	return new;
@@ -904,25 +958,49 @@ struct client * uh_client_lookup(int sock)
 	struct client *cur = NULL;
 
 	for (cur = uh_clients; cur; cur = cur->next)
-		if (cur->socket == sock)
+		if (cur->fd.fd == sock)
 			return cur;
 
 	return NULL;
 }
 
-void uh_client_remove(int sock)
+void uh_client_shutdown(struct client *cl)
+{
+#ifdef HAVE_TLS
+	/* free client tls context */
+	if (cl->server && cl->server->conf->tls)
+		cl->server->conf->tls_close(cl);
+#endif
+
+	/* remove from global client list */
+	uh_client_remove(cl);
+}
+
+void uh_client_remove(struct client *cl)
 {
 	struct client *cur = NULL;
 	struct client *prv = NULL;
 
 	for (cur = uh_clients; cur; prv = cur, cur = cur->next)
 	{
-		if (cur->socket == sock)
+		if ((cur == cl) || (!cl && cur->dead))
 		{
 			if (prv)
 				prv->next = cur->next;
 			else
 				uh_clients = cur->next;
+
+			if (cur->timeout.pending)
+				uloop_timeout_cancel(&cur->timeout);
+
+			if (cur->proc.pid)
+				uloop_process_delete(&cur->proc);
+
+			uloop_fd_delete(&cur->fd);
+			close(cur->fd.fd);
+
+			D("IO: Socket(%d) closing\n", cur->fd.fd);
+			cur->server->n_clients--;
 
 			free(cur);
 			break;

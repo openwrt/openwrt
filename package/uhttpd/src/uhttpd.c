@@ -42,11 +42,6 @@ static void uh_sigterm(int sig)
 	run = 0;
 }
 
-static void uh_sigchld(int sig)
-{
-	while (waitpid(-1, NULL, WNOHANG) > 0) { }
-}
-
 static void uh_config_parse(struct config *conf)
 {
 	FILE *c;
@@ -125,6 +120,8 @@ static void uh_config_parse(struct config *conf)
 		fclose(c);
 	}
 }
+
+static void uh_listener_cb(struct uloop_fd *u, unsigned int events);
 
 static int uh_socket_bind(fd_set *serv_fds, int *max_fd,
 						  const char *host, const char *port,
@@ -221,6 +218,9 @@ static int uh_socket_bind(fd_set *serv_fds, int *max_fd,
 		fd_cloexec(sock);
 		*max_fd = max(*max_fd, sock);
 
+		l->fd.cb = uh_listener_cb;
+		uloop_fd_add(&l->fd, ULOOP_READ | ULOOP_WRITE);
+
 		bound++;
 		continue;
 
@@ -237,7 +237,7 @@ static int uh_socket_bind(fd_set *serv_fds, int *max_fd,
 static struct http_request * uh_http_header_parse(struct client *cl,
 												  char *buffer, int buflen)
 {
-	char *method  = &buffer[0];
+	char *method  = buffer;
 	char *path    = NULL;
 	char *version = NULL;
 
@@ -248,9 +248,7 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 	int i;
 	int hdrcount = 0;
 
-	static struct http_request req;
-
-	memset(&req, 0, sizeof(req));
+	struct http_request *req = &cl->request;
 
 
 	/* terminate initial header line */
@@ -282,15 +280,15 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 			switch(method[0])
 			{
 				case 'G':
-					req.method = UH_HTTP_MSG_GET;
+					req->method = UH_HTTP_MSG_GET;
 					break;
 
 				case 'H':
-					req.method = UH_HTTP_MSG_HEAD;
+					req->method = UH_HTTP_MSG_HEAD;
 					break;
 
 				case 'P':
-					req.method = UH_HTTP_MSG_POST;
+					req->method = UH_HTTP_MSG_POST;
 					break;
 			}
 		}
@@ -304,7 +302,7 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 		}
 		else
 		{
-			req.url = path;
+			req->url = path;
 		}
 
 		/* check version */
@@ -317,9 +315,13 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 		}
 		else
 		{
-			req.version = strtof(&version[5], NULL);
+			req->version = strtof(&version[5], NULL);
 		}
 
+		D("SRV: %s %s HTTP/%.1f\n",
+		  (req->method == UH_HTTP_MSG_POST) ? "POST" :
+			(req->method == UH_HTTP_MSG_GET) ? "GET" : "HEAD",
+		  req->url, req->version);
 
 		/* process header fields */
 		for (i = (int)(headers - buffer); i < buflen; i++)
@@ -330,10 +332,12 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 				buffer[i] = 0;
 
 				/* store */
-				if ((hdrcount + 1) < array_size(req.headers))
+				if ((hdrcount + 1) < array_size(req->headers))
 				{
-					req.headers[hdrcount++] = hdrname;
-					req.headers[hdrcount++] = hdrdata;
+					D("SRV: HTTP: %s: %s\n", hdrname, hdrdata);
+
+					req->headers[hdrcount++] = hdrname;
+					req->headers[hdrcount++] = hdrdata;
 
 					hdrname = hdrdata = NULL;
 				}
@@ -341,6 +345,7 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 				/* too large */
 				else
 				{
+					D("SRV: HTTP: header too big (too many headers)\n");
 					uh_http_response(cl, 413, "Request Entity Too Large");
 					return NULL;
 				}
@@ -365,8 +370,8 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 		}
 
 		/* valid enough */
-		req.redirect_status = 200;
-		return &req;
+		req->redirect_status = 200;
+		return req;
 	}
 
 	/* Malformed request */
@@ -377,64 +382,43 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 
 static struct http_request * uh_http_header_recv(struct client *cl)
 {
-	static char buffer[UH_LIMIT_MSGHEAD];
-	char *bufptr = &buffer[0];
+	char *bufptr = cl->httpbuf.buf;
 	char *idxptr = NULL;
 
-	struct timeval timeout;
-
-	fd_set reader;
-
-	ssize_t blen = sizeof(buffer)-1;
+	ssize_t blen = sizeof(cl->httpbuf)-1;
 	ssize_t rlen = 0;
 
-	memset(buffer, 0, sizeof(buffer));
+	memset(bufptr, 0, sizeof(cl->httpbuf));
 
 	while (blen > 0)
 	{
-		FD_ZERO(&reader);
-		FD_SET(cl->socket, &reader);
+		/* receive data */
+		ensure_out(rlen = uh_tcp_recv(cl, bufptr, blen));
+		D("SRV: Client(%d) peek(%d) = %d\n", cl->fd.fd, blen, rlen);
 
-		/* fail after 0.1s */
-		timeout.tv_sec  = 0;
-		timeout.tv_usec = 100000;
-
-		/* check whether fd is readable */
-		if (select(cl->socket + 1, &reader, NULL, NULL, &timeout) > 0)
+		if (rlen <= 0)
 		{
-			/* receive data */
-			ensure_out(rlen = uh_tcp_peek(cl, bufptr, blen));
-
-			if ((idxptr = strfind(buffer, sizeof(buffer), "\r\n\r\n", 4)))
-			{
-				ensure_out(rlen = uh_tcp_recv(cl, bufptr,
-					(int)(idxptr - bufptr) + 4));
-
-				/* header read complete ... */
-				blen -= rlen;
-				return uh_http_header_parse(cl, buffer,
-					sizeof(buffer) - blen - 1);
-			}
-			else
-			{
-				ensure_out(rlen = uh_tcp_recv(cl, bufptr, rlen));
-
-				/* unexpected eof - #7904 */
-				if (rlen == 0)
-					return NULL;
-
-				blen -= rlen;
-				bufptr += rlen;
-			}
-		}
-		else
-		{
-			/* invalid request (unexpected eof/timeout) */
+			D("SRV: Client(%d) dead [%s]\n", cl->fd.fd, strerror(errno));
 			return NULL;
+		}
+
+		blen -= rlen;
+		bufptr += rlen;
+
+		if ((idxptr = strfind(cl->httpbuf.buf, sizeof(cl->httpbuf.buf),
+							  "\r\n\r\n", 4)))
+		{
+			/* header read complete ... */
+			cl->httpbuf.ptr = idxptr + 4;
+			cl->httpbuf.len = bufptr - cl->httpbuf.ptr;
+
+			return uh_http_header_parse(cl, cl->httpbuf.buf,
+										(cl->httpbuf.ptr - cl->httpbuf.buf));
 		}
 	}
 
 	/* request entity too large */
+	D("SRV: HTTP: header too big (buffer exceeded)\n");
 	uh_http_response(cl, 413, "Request Entity Too Large");
 
 out:
@@ -456,197 +440,276 @@ static int uh_path_match(const char *prefix, const char *url)
 }
 #endif
 
-static void uh_dispatch_request(struct client *cl, struct http_request *req,
-								struct path_info *pin)
+static bool uh_dispatch_request(struct client *cl, struct http_request *req)
 {
-#ifdef HAVE_CGI
+	struct path_info *pin;
 	struct interpreter *ipr = NULL;
+	struct config *conf = cl->server->conf;
 
-	if (uh_path_match(cl->server->conf->cgi_prefix, pin->name) ||
-		(ipr = uh_interpreter_lookup(pin->phys)))
+#ifdef HAVE_LUA
+	/* Lua request? */
+	if (conf->lua_state &&
+		uh_path_match(conf->lua_prefix, req->url))
 	{
-		uh_cgi_request(cl, req, pin, ipr);
+		return conf->lua_request(cl, conf->lua_state);
 	}
 	else
 #endif
+
+#ifdef HAVE_UBUS
+	/* ubus request? */
+	if (conf->ubus_state &&
+		uh_path_match(conf->ubus_prefix, req->url))
 	{
-		uh_file_request(cl, req, pin);
+		return conf->ubus_request(cl, conf->ubus_state);
+	}
+	else
+#endif
+
+	/* dispatch request */
+	if ((pin = uh_path_lookup(cl, req->url)) != NULL)
+	{
+		/* auth ok? */
+		if (!pin->redirected && uh_auth_check(cl, req, pin))
+		{
+#ifdef HAVE_CGI
+			if (uh_path_match(conf->cgi_prefix, pin->name) ||
+				(ipr = uh_interpreter_lookup(pin->phys)) != NULL)
+			{
+				return uh_cgi_request(cl, pin, ipr);
+			}
+#endif
+			return uh_file_request(cl, pin);
+		}
+	}
+
+	/* 404 - pass 1 */
+	else
+	{
+		/* Try to invoke an error handler */
+		if ((pin = uh_path_lookup(cl, conf->error_handler)) != NULL)
+		{
+			/* auth ok? */
+			if (uh_auth_check(cl, req, pin))
+			{
+				req->redirect_status = 404;
+#ifdef HAVE_CGI
+				if (uh_path_match(conf->cgi_prefix, pin->name) ||
+					(ipr = uh_interpreter_lookup(pin->phys)) != NULL)
+				{
+					return uh_cgi_request(cl, pin, ipr);
+				}
+#endif
+				return uh_file_request(cl, pin);
+			}
+		}
+
+		/* 404 - pass 2 */
+		else
+		{
+			uh_http_sendhf(cl, 404, "Not Found", "No such file or directory");
+		}
+	}
+
+	return false;
+}
+
+static void uh_client_cb(struct uloop_fd *u, unsigned int events);
+
+static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
+{
+	int new_fd;
+	struct listener *serv;
+	struct client *cl;
+	struct config *conf;
+
+	serv = container_of(u, struct listener, fd);
+	conf = serv->conf;
+
+	/* defer client if maximum number of requests is exceeded */
+	if (serv->n_clients >= conf->max_requests)
+		return;
+
+	/* handle new connections */
+	if ((new_fd = accept(u->fd, NULL, 0)) != -1)
+	{
+		D("SRV: Server(%d) accept => Client(%d)\n", u->fd, new_fd);
+
+		/* add to global client list */
+		if ((cl = uh_client_add(new_fd, serv)) != NULL)
+		{
+			/* add client socket to global fdset */
+			uloop_fd_add(&cl->fd, ULOOP_READ | ULOOP_WRITE);
+
+#ifdef HAVE_TLS
+			/* setup client tls context */
+			if (conf->tls)
+			{
+				if (conf->tls_accept(cl) < 1)
+				{
+					D("SRV: Client(%d) SSL handshake failed, drop\n", new_fd);
+
+					/* remove from global client list */
+					uh_client_remove(cl);
+					return;
+				}
+			}
+#endif
+
+			cl->fd.cb = uh_client_cb;
+			fd_cloexec(new_fd);
+		}
+
+		/* insufficient resources */
+		else
+		{
+			fprintf(stderr, "uh_client_add(): Cannot allocate memory\n");
+			close(new_fd);
+		}
 	}
 }
 
-static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
+static void uh_child_cb(struct uloop_process *p, int rv)
 {
-	/* master file descriptor list */
-	fd_set used_fds, read_fds;
+	struct client *cl = container_of(p, struct client, proc);
 
-	/* working structs */
-	struct http_request *req;
-	struct path_info *pin;
-	struct client *cl;
+	D("SRV: Client(%d) child(%d) is dead\n", cl->fd.fd, cl->proc.pid);
 
-	/* maximum file descriptor number */
-	int new_fd, cur_fd = 0;
+	cl->dead = true;
+	cl->fd.eof = true;
+	uh_client_cb(&cl->fd, ULOOP_READ | ULOOP_WRITE);
+}
 
-	/* clear the master and temp sets */
-	FD_ZERO(&used_fds);
-	FD_ZERO(&read_fds);
+static void uh_kill9_cb(struct uloop_timeout *t)
+{
+	struct client *cl = container_of(t, struct client, timeout);
 
-	/* backup server descriptor set */
-	used_fds = serv_fds;
-
-	/* loop */
-	while (run)
+	if (!kill(cl->proc.pid, 0))
 	{
-		/* create a working copy of the used fd set */
-		read_fds = used_fds;
+		D("SRV: Client(%d) child(%d) kill(SIGKILL)...\n",
+		  cl->fd.fd, cl->proc.pid);
 
-		/* sleep until socket activity */
-		if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1)
+		kill(cl->proc.pid, SIGKILL);
+	}
+}
+
+static void uh_timeout_cb(struct uloop_timeout *t)
+{
+	struct client *cl = container_of(t, struct client, timeout);
+
+	D("SRV: Client(%d) child(%d) timed out\n", cl->fd.fd, cl->proc.pid);
+
+	if (!kill(cl->proc.pid, 0))
+	{
+		D("SRV: Client(%d) child(%d) kill(SIGTERM)...\n",
+		  cl->fd.fd, cl->proc.pid);
+
+		kill(cl->proc.pid, SIGTERM);
+
+		cl->timeout.cb = uh_kill9_cb;
+		uloop_timeout_set(&cl->timeout, 1000);
+	}
+}
+
+static void uh_client_cb(struct uloop_fd *u, unsigned int events)
+{
+	int i;
+	struct client *cl;
+	struct config *conf;
+	struct http_request *req;
+
+	cl = container_of(u, struct client, fd);
+	conf = cl->server->conf;
+
+	D("SRV: Client(%d) enter callback\n", u->fd);
+
+	/* undispatched yet */
+	if (!cl->dispatched)
+	{
+		/* we have no headers yet and this was a write event, ignore... */
+		if (!(events & ULOOP_READ))
 		{
-			perror("select()");
-			exit(1);
+			D("SRV: Client(%d) ignoring write event before headers\n", u->fd);
+			return;
 		}
 
-		/* run through the existing connections looking for data to be read */
-		for (cur_fd = 0; cur_fd <= max_fd; cur_fd++)
+		/* attempt to receive and parse headers */
+		if (!(req = uh_http_header_recv(cl)))
 		{
-			/* is a socket managed by us */
-			if (FD_ISSET(cur_fd, &read_fds))
+			D("SRV: Client(%d) failed to receive header\n", u->fd);
+			uh_client_shutdown(cl);
+			return;
+		}
+
+		/* process expect headers */
+		foreach_header(i, req->headers)
+		{
+			if (strcasecmp(req->headers[i], "Expect"))
+				continue;
+
+			if (strcasecmp(req->headers[i+1], "100-continue"))
 			{
-				/* is one of our listen sockets */
-				if (FD_ISSET(cur_fd, &serv_fds))
-				{
-					/* handle new connections */
-					if ((new_fd = accept(cur_fd, NULL, 0)) != -1)
-					{
-						/* add to global client list */
-						if ((cl = uh_client_add(new_fd, uh_listener_lookup(cur_fd))) != NULL)
-						{
-#ifdef HAVE_TLS
-							/* setup client tls context */
-							if (conf->tls)
-							{
-								if (conf->tls_accept(cl) < 1)
-								{
-									fprintf(stderr,
-											"tls_accept failed, "
-											"connection dropped\n");
+				D("SRV: Client(%d) unknown expect header (%s)\n",
+				  u->fd, req->headers[i+1]);
 
-									/* close client socket */
-									close(new_fd);
+				uh_http_response(cl, 417, "Precondition Failed");
+				uh_client_shutdown(cl);
+				return;
+			}
+			else
+			{
+				D("SRV: Client(%d) sending HTTP/1.1 100 Continue\n", u->fd);
 
-									/* remove from global client list */
-									uh_client_remove(new_fd);
-
-									continue;
-								}
-							}
-#endif
-
-							/* add client socket to global fdset */
-							FD_SET(new_fd, &used_fds);
-							fd_cloexec(new_fd);
-							max_fd = max(max_fd, new_fd);
-						}
-
-						/* insufficient resources */
-						else
-						{
-							fprintf(stderr,
-									"uh_client_add(): "
-									"Cannot allocate memory\n");
-
-							close(new_fd);
-						}
-					}
-				}
-
-				/* is a client socket */
-				else
-				{
-					if (!(cl = uh_client_lookup(cur_fd)))
-					{
-						/* this should not happen! */
-						fprintf(stderr,
-								"uh_client_lookup(): No entry for fd %i!\n",
-								cur_fd);
-
-						goto cleanup;
-					}
-
-					/* parse message header */
-					if ((req = uh_http_header_recv(cl)) != NULL)
-					{
-						/* RFC1918 filtering required? */
-						if (conf->rfc1918_filter &&
-						    sa_rfc1918(&cl->peeraddr) &&
-						    !sa_rfc1918(&cl->servaddr))
-						{
-							uh_http_sendhf(cl, 403, "Forbidden",
-										   "Rejected request from RFC1918 IP "
-										   "to public server address");
-						}
-						else
-#ifdef HAVE_LUA
-						/* Lua request? */
-						if (conf->lua_state &&
-							uh_path_match(conf->lua_prefix, req->url))
-						{
-							conf->lua_request(cl, req, conf->lua_state);
-						}
-						else
-#endif
-						/* dispatch request */
-						if ((pin = uh_path_lookup(cl, req->url)) != NULL)
-						{
-							/* auth ok? */
-							if (!pin->redirected && uh_auth_check(cl, req, pin))
-								uh_dispatch_request(cl, req, pin);
-						}
-
-						/* 404 */
-						else
-						{
-							/* Try to invoke an error handler */
-							pin = uh_path_lookup(cl, conf->error_handler);
-
-							if (pin && uh_auth_check(cl, req, pin))
-							{
-								req->redirect_status = 404;
-								uh_dispatch_request(cl, req, pin);
-							}
-							else
-							{
-								uh_http_sendhf(cl, 404, "Not Found",
-									"No such file or directory");
-							}
-						}
-					}
-
-#ifdef HAVE_TLS
-					/* free client tls context */
-					if (conf->tls)
-						conf->tls_close(cl);
-#endif
-
-					cleanup:
-
-					/* close client socket */
-					close(cur_fd);
-					FD_CLR(cur_fd, &used_fds);
-
-					/* remove from global client list */
-					uh_client_remove(cur_fd);
-				}
+				uh_http_sendf(cl, NULL, "HTTP/1.1 100 Continue\r\n\r\n");
+				cl->httpbuf.len = 0; /* client will re-send the body */
+				break;
 			}
 		}
+
+		/* RFC1918 filtering */
+		if (conf->rfc1918_filter &&
+			sa_rfc1918(&cl->peeraddr) && !sa_rfc1918(&cl->servaddr))
+		{
+			uh_http_sendhf(cl, 403, "Forbidden",
+						   "Rejected request from RFC1918 IP "
+						   "to public server address");
+
+			uh_client_shutdown(cl);
+			return;
+		}
+
+		/* dispatch request */
+		if (!uh_dispatch_request(cl, req))
+		{
+			D("SRV: Client(%d) failed to dispach request\n", u->fd);
+			uh_client_shutdown(cl);
+			return;
+		}
+
+		/* request handler spawned a child, register handler */
+		if (cl->proc.pid)
+		{
+			D("SRV: Client(%d) child(%d) spawned\n", u->fd, cl->proc.pid);
+
+			cl->proc.cb = uh_child_cb;
+			uloop_process_add(&cl->proc);
+
+			cl->timeout.cb = uh_timeout_cb;
+			uloop_timeout_set(&cl->timeout, conf->script_timeout * 1000);
+		}
+
+		/* header processing complete */
+		D("SRV: Client(%d) dispatched\n", u->fd);
+		cl->dispatched = true;
+		return;
 	}
 
-#ifdef HAVE_LUA
-	/* destroy the Lua state */
-	if (conf->lua_state != NULL)
-		conf->lua_close(conf->lua_state);
-#endif
+	if (!cl->cb(cl))
+	{
+		D("SRV: Client(%d) response callback signalized EOF\n", u->fd);
+		uh_client_shutdown(cl);
+		return;
+	}
 }
 
 #ifdef HAVE_TLS
@@ -710,9 +773,6 @@ int main (int argc, char **argv)
 	struct sigaction sa;
 	struct config conf;
 
-	/* signal mask */
-	sigset_t ss;
-
 	/* maximum file descriptor number */
 	int cur_fd, max_fd = 0;
 
@@ -736,24 +796,16 @@ int main (int argc, char **argv)
 
 	FD_ZERO(&serv_fds);
 
-	/* handle SIGPIPE, SIGINT, SIGTERM, SIGCHLD */
+	/* handle SIGPIPE, SIGINT, SIGTERM */
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
 
 	sa.sa_handler = SIG_IGN;
 	sigaction(SIGPIPE, &sa, NULL);
 
-	sa.sa_handler = uh_sigchld;
-	sigaction(SIGCHLD, &sa, NULL);
-
 	sa.sa_handler = uh_sigterm;
 	sigaction(SIGINT,  &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
-
-	/* defer SIGCHLD */
-	sigemptyset(&ss);
-	sigaddset(&ss, SIGCHLD);
-	sigprocmask(SIG_BLOCK, &ss, NULL);
 
 	/* prepare addrinfo hints */
 	memset(&hints, 0, sizeof(hints));
@@ -765,9 +817,10 @@ int main (int argc, char **argv)
 	memset(&conf, 0, sizeof(conf));
 	memset(bind, 0, sizeof(bind));
 
+	uloop_init();
 
 	while ((opt = getopt(argc, argv,
-						 "fSDRC:K:E:I:p:s:h:c:l:L:d:r:m:x:i:t:T:A:")) > 0)
+						 "fSDRC:K:E:I:p:s:h:c:l:L:d:r:m:n:x:i:t:T:A:u:U:")) > 0)
 	{
 		switch(opt)
 		{
@@ -894,6 +947,10 @@ int main (int argc, char **argv)
 				conf.rfc1918_filter = 1;
 				break;
 
+			case 'n':
+				conf.max_requests = atoi(optarg);
+				break;
+
 #ifdef HAVE_CGI
 			/* cgi prefix */
 			case 'x':
@@ -925,6 +982,18 @@ int main (int argc, char **argv)
 			/* lua handler */
 			case 'L':
 				conf.lua_handler = optarg;
+				break;
+#endif
+
+#ifdef HAVE_UBUS
+			/* ubus prefix */
+			case 'u':
+				conf.ubus_prefix = optarg;
+				break;
+
+			/* ubus socket */
+			case 'U':
+				conf.ubus_socket = optarg;
 				break;
 #endif
 
@@ -1002,16 +1071,21 @@ int main (int argc, char **argv)
 					"	-S              Do not follow symbolic links outside of the docroot\n"
 					"	-D              Do not allow directory listings, send 403 instead\n"
 					"	-R              Enable RFC1918 filter\n"
+					"	-n count        Maximum allowed number of concurrent requests\n"
 #ifdef HAVE_LUA
 					"	-l string       URL prefix for Lua handler, default is '/lua'\n"
 					"	-L file         Lua handler script, omit to disable Lua\n"
+#endif
+#ifdef HAVE_UBUS
+					"	-u string       URL prefix for HTTP/JSON handler, default is '/ubus'\n"
+					"	-U file         Override ubus socket path\n"
 #endif
 #ifdef HAVE_CGI
 					"	-x string       URL prefix for CGI handler, default is '/cgi-bin'\n"
 					"	-i .ext=path    Use interpreter at path for files with the given extension\n"
 #endif
-#if defined(HAVE_CGI) || defined(HAVE_LUA)
-					"	-t seconds      CGI and Lua script timeout in seconds, default is 60\n"
+#if defined(HAVE_CGI) || defined(HAVE_LUA) || defined(HAVE_UBUS)
+					"	-t seconds      CGI, Lua and UBUS script timeout in seconds, default is 60\n"
 #endif
 					"	-T seconds      Network timeout in seconds, default is 30\n"
 					"	-d string       URL decode given string\n"
@@ -1053,11 +1127,15 @@ int main (int argc, char **argv)
 	/* config file */
 	uh_config_parse(&conf);
 
+	/* default max requests */
+	if (conf.max_requests <= 0)
+		conf.max_requests = 3;
+
 	/* default network timeout */
 	if (conf.network_timeout <= 0)
 		conf.network_timeout = 30;
 
-#if defined(HAVE_CGI) || defined(HAVE_LUA)
+#if defined(HAVE_CGI) || defined(HAVE_LUA) || defined(HAVE_UBUS)
 	/* default script timeout */
 	if (conf.script_timeout <= 0)
 		conf.script_timeout = 60;
@@ -1103,6 +1181,36 @@ int main (int argc, char **argv)
 	}
 #endif
 
+#ifdef HAVE_UBUS
+	/* load ubus plugin */
+	if (!(lib = dlopen("uhttpd_ubus.so", RTLD_LAZY | RTLD_GLOBAL)))
+	{
+		fprintf(stderr,
+				"Notice: Unable to load ubus plugin - disabling ubus support! "
+				"(Reason: %s)\n", dlerror());
+	}
+	else
+	{
+		/* resolve functions */
+		if (!(conf.ubus_init    = dlsym(lib, "uh_ubus_init"))    ||
+		    !(conf.ubus_close   = dlsym(lib, "uh_ubus_close"))   ||
+		    !(conf.ubus_request = dlsym(lib, "uh_ubus_request")))
+		{
+			fprintf(stderr,
+					"Error: Failed to lookup required symbols "
+					"in ubus plugin: %s\n", dlerror()
+			);
+			exit(1);
+		}
+
+		/* default ubus prefix */
+		if (!conf.ubus_prefix)
+			conf.ubus_prefix = "/ubus";
+
+		conf.ubus_state = conf.ubus_init(&conf);
+	}
+#endif
+
 	/* fork (if not disabled) */
 	if (!nofork)
 	{
@@ -1134,12 +1242,18 @@ int main (int argc, char **argv)
 	}
 
 	/* server main loop */
-	uh_mainloop(&conf, serv_fds, max_fd);
+	uloop_run();
 
 #ifdef HAVE_LUA
 	/* destroy the Lua state */
 	if (conf.lua_state != NULL)
 		conf.lua_close(conf.lua_state);
+#endif
+
+#ifdef HAVE_UBUS
+	/* destroy the ubus state */
+	if (conf.ubus_state != NULL)
+		conf.ubus_close(conf.ubus_state);
 #endif
 
 	return 0;
