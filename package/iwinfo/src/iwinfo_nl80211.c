@@ -1371,7 +1371,7 @@ int nl80211_get_txpwrlist(const char *ifname, char *buf, int *len)
 		nl80211_free(req);
 	}
 
-	if (dbm_max > -1)
+	if (dbm_max > 0)
 	{
 		for (dbm_cur = 0, dbm_cnt = 0;
 		     dbm_cur < dbm_max;
