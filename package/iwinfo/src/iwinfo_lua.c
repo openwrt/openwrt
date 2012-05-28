@@ -332,11 +332,12 @@ static int iwinfo_L_txpwrlist(lua_State *L, int (*func)(const char *, char *, in
 	const char *ifname = luaL_checkstring(L, 1);
 	struct iwinfo_txpwrlist_entry *e;
 
-	lua_newtable(L);
 	memset(rv, 0, sizeof(rv));
 
 	if (!(*func)(ifname, rv, &len))
 	{
+		lua_newtable(L);
+
 		for (i = 0, x = 1; i < len; i += sizeof(struct iwinfo_txpwrlist_entry), x++)
 		{
 			e = (struct iwinfo_txpwrlist_entry *) &rv[i];
@@ -351,9 +352,11 @@ static int iwinfo_L_txpwrlist(lua_State *L, int (*func)(const char *, char *, in
 
 			lua_rawseti(L, -2, x);
 		}
+
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 /* Wrapper for scan list */
