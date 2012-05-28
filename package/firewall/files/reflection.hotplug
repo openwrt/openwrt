@@ -1,48 +1,11 @@
 #!/bin/sh
 
-. /etc/functions.sh
-. /usr/share/libubox/jshn.sh
-
-find_iface_address()
-{
-	local iface="$1"
-	local ipaddr="$2"
-	local prefix="$3"
-
-	local idx=1
-	local tmp="$(ubus call network.interface."$iface" status 2>/dev/null)"
-
-	json_load "${tmp:-{}}"
-	json_get_type tmp address
-
-	if [ "$tmp" = array ]; then
-		json_select address
-
-		while true; do
-			json_get_type tmp $idx
-			[ "$tmp" = object ] || break
-
-			json_select $((idx++))
-			json_get_var tmp address
-
-			case "$tmp" in
-				*:*) json_select .. ;;
-				*)
-					[ -n "$ipaddr" ] && json_get_var $ipaddr address
-					[ -n "$prefix" ] && json_get_var $prefix mask
-					return 0 
-				;;
-			esac
-		done
-	fi
-
-	return 1
-}
+. /lib/functions.sh
+. /lib/functions/network.sh
 
 if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 	local wanip
-	find_iface_address wan wanip
-	[ -n "$wanip" ] || return
+	network_get_ipaddr wanip wan || return
 
 	iptables -t nat -F nat_reflection_in 2>/dev/null || {
 		iptables -t nat -N nat_reflection_in
@@ -99,9 +62,8 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 
 			local net
 			for net in $(find_networks "$dest"); do
-				local lanip lanmk
-				find_iface_address "$net" lanip lanmk
-				[ -n "$lanip" ] || return
+				local lannet
+				network_get_subnet lannet "$net" || return
 
 				local proto
 				config_get proto "$cfg" proto
@@ -144,17 +106,17 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 					case "$p" in
 						tcp|udp|6|17)
 							iptables -t nat -A nat_reflection_in \
-								-s $lanip/$lanmk -d $exthost \
+								-s $lannet -d $exthost \
 								-p $p $extport \
 								-j DNAT --to $inthost:${ipmin#!}${ipmax:+-$ipmax}
 
 							iptables -t nat -A nat_reflection_out \
-								-s $lanip/$lanmk -d $inthost \
+								-s $lannet -d $inthost \
 								-p $p $intport \
-								-j SNAT --to-source $lanip
+								-j SNAT --to-source ${lannet%%/*}
 
 							iptables -t filter -A nat_reflection_fwd \
-								-s $lanip/$lanmk -d $inthost \
+								-s $lannet -d $inthost \
 								-p $p $intport \
 								-j ACCEPT
 						;;
