@@ -55,7 +55,7 @@ endef
 define KernelPackage/cfg80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=cfg80211 - wireless configuration API
-  DEPENDS+= +wireless-tools +iw +crda
+  DEPENDS+= +wireless-tools +iw
   FILES:= \
 	$(PKG_BUILD_DIR)/compat/compat.ko \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.ko
@@ -1132,6 +1132,7 @@ endef
 
 BUILDFLAGS:= \
 	-I$(PKG_BUILD_DIR)/include \
+	-DCONFIG_CFG80211_INTERNAL_REGDB=y \
 	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt)) \
 	$(if $(CONFIG_PCI),-DCONFIG_B43_PCI_AUTOSELECT -DCONFIG_B43_PCICORE_AUTOSELECT) \
 	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS) \
@@ -1175,6 +1176,7 @@ MAKE_OPTS:= \
 	ARCH="$(LINUX_KARCH)" \
 	EXTRA_CFLAGS="$(BUILDFLAGS)" \
 	$(foreach opt,$(CONFOPTS),CONFIG_$(opt)=m) \
+	CONFIG_CFG80211_INTERNAL_REGDB=y \
 	CONFIG_CFG80211=$(if $(CONFIG_PACKAGE_kmod-cfg80211),m) \
 	CONFIG_MAC80211=$(if $(CONFIG_PACKAGE_kmod-mac80211),m) \
 	CONFIG_MAC80211_RC_MINSTREL=y \
@@ -1329,6 +1331,7 @@ define Build/Prepare
 	rm -f $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
 	echo 'compat-wireless-$(PKG_VERSION)-$(PKG_RELEASE)-$(REVISION)' > $(PKG_BUILD_DIR)/compat_version
+	$(CP) ./files/regdb.txt $(PKG_BUILD_DIR)/net/wireless/db.txt
 endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-cfg80211)$(CONFIG_PACKAGE_kmod-lib80211),)
