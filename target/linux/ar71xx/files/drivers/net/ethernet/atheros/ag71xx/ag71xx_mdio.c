@@ -103,8 +103,6 @@ static int ag71xx_mdio_reset(struct mii_bus *bus)
 
 	if (am->pdata->is_ar7240)
 		t = MII_CFG_CLK_DIV_6;
-	else if (am->pdata->is_ar9330)
-		t = MII_CFG_CLK_DIV_98;
 	else if (am->pdata->builtin_switch && !am->pdata->is_ar934x)
 		t = MII_CFG_CLK_DIV_10;
 	else if (!am->pdata->builtin_switch && am->pdata->is_ar934x)
