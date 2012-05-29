@@ -4,128 +4,55 @@
 # based on ar71xx
 #
 
-COMMIT_SYSTEM=0
-
-set_led_netdev() {
-	local cfg="led_$1"
-	local name=$2
-	local sysfs=$3
-	local dev=$4
-
-	uci -q get system.$cfg && return 0
-
-	uci batch <<EOF
-set system.$cfg='led'
-set system.$cfg.name='$name'
-set system.$cfg.sysfs='$sysfs'
-set system.$cfg.trigger='netdev'
-set system.$cfg.dev='$dev'
-set system.$cfg.mode='link tx rx'
-EOF
-	COMMIT_SYSTEM=1
-}
-
-set_led_usbdev() {
-	local cfg="led_$1"
-	local name=$2
-	local sysfs=$3
-	local dev=$4
-
-	uci -q get system.$cfg && return 0
-
-	uci batch <<EOF
-set system.$cfg='led'
-set system.$cfg.name='$name'
-set system.$cfg.sysfs='$sysfs'
-set system.$cfg.trigger='usbdev'
-set system.$cfg.dev='$dev'
-set system.$cfg.interval='50'
-EOF
-	COMMIT_SYSTEM=1
-}
-
-set_led_wlan() {
-	local cfg="led_$1"
-	local name=$2
-	local sysfs=$3
-	local trigger=$4
-
-	uci -q get system.$cfg && return 0
-
-	uci batch <<EOF
-set system.$cfg='led'
-set system.$cfg.name='$name'
-set system.$cfg.sysfs='$sysfs'
-set system.$cfg.trigger='$trigger'
-EOF
-	COMMIT_SYSTEM=1
-}
-
-set_led_default() {
-	local cfg="led_$1"
-	local name=$2
-	local sysfs=$3
-	local default=$4
-
-	uci -q get system.$cfg && return 0
-
-	uci batch <<EOF
-set system.$cfg='led'
-set system.$cfg.name='$name'
-set system.$cfg.sysfs='$sysfs'
-set system.$cfg.default='$default'
-EOF
-	COMMIT_SYSTEM=1
-}
-
+. /lib/functions/uci-defaults.sh
 . /lib/lantiq.sh
 
 board=$(lantiq_board_name)
 
 case "$board" in
 ARV4520PW|ARV452CPW)
-	set_led_netdev "wifi" "wifi" "soc:blue:wifi" "wlan0"
-	set_led_usbdev "usb" "USB" "soc:blue:usb" "1-1"
-	set_led_default "fxs1" "fxs1" "soc:blue:fxs1" "1"
-	set_led_default "fxs2" "fxs2" "soc:blue:fxs2" "1"
-	set_led_default "online" "online" "soc:blue:internet" "1"
+	ucidef_set_led_netdev "wifi" "wifi" "soc:blue:wifi" "wlan0"
+	ucidef_set_led_usbdev "usb" "USB" "soc:blue:usb" "1-1"
+	ucidef_set_led_default "fxs1" "fxs1" "soc:blue:fxs1" "1"
+	ucidef_set_led_default "fxs2" "fxs2" "soc:blue:fxs2" "1"
+	ucidef_set_led_default "online" "online" "soc:blue:internet" "1"
 	;;
 
 ARV7525PW)
-	set_led_netdev "wifi" "wifi" "soc:green:wifi" "wlan0"
-	set_led_default "fxs1" "fxs1" "soc:green:fxs1" "1"
-	set_led_default "fxs2" "fxs2" "soc:green:fxs2" "1"
-	set_led_default "dsl" "dsl" "soc:red:dsl" "1"
-	set_led_default "online" "online" "soc:green:online" "1"
+	ucidef_set_led_netdev "wifi" "wifi" "soc:green:wifi" "wlan0"
+	ucidef_set_led_default "fxs1" "fxs1" "soc:green:fxs1" "1"
+	ucidef_set_led_default "fxs2" "fxs2" "soc:green:fxs2" "1"
+	ucidef_set_led_default "dsl" "dsl" "soc:red:dsl" "1"
+	ucidef_set_led_default "online" "online" "soc:green:online" "1"
 	;;
 
 ARV4525PW)
-	set_led_netdev "wifi" "wifi" "soc:green:wifi" "wlan0"
-	set_led_default "fxs1" "fxs1" "soc:green:fxs1" "1"
-	set_led_default "fxs2" "fxs2" "soc:green:fxs2" "1"
-	set_led_default "dsl" "dsl" "soc:green:dsl" "1"
-	set_led_default "online" "online" "soc:green:online" "1"
+	ucidef_set_led_netdev "wifi" "wifi" "soc:green:wifi" "wlan0"
+	ucidef_set_led_default "fxs1" "fxs1" "soc:green:fxs1" "1"
+	ucidef_set_led_default "fxs2" "fxs2" "soc:green:fxs2" "1"
+	ucidef_set_led_default "dsl" "dsl" "soc:green:dsl" "1"
+	ucidef_set_led_default "online" "online" "soc:green:online" "1"
 	;;
 
 GIGASX76X)
-	set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
-	set_led_netdev "online" "online" "soc:green:online" "pppoe-wan"
-	set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
+	ucidef_set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
+	ucidef_set_led_netdev "online" "online" "soc:green:online" "pppoe-wan"
+	ucidef_set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
 	;;
 
 ARV4519PW)
-	set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
-	set_led_netdev "internet" "internet" "soc:green:internet" "pppoe-wan"
-	set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
+	ucidef_set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
+	ucidef_set_led_netdev "internet" "internet" "soc:green:internet" "pppoe-wan"
+	ucidef_set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
 	;;
 
 ARV7518PW)
-	set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
-	set_led_netdev "internet" "internet" "soc:green:internet" "pppoe-wan"
-	set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
+	ucidef_set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
+	ucidef_set_led_netdev "internet" "internet" "soc:green:internet" "pppoe-wan"
+	ucidef_set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
 	;;
 esac
 
-[ "$COMMIT_SYSTEM" == "1" ] && uci commit system
+ucidef_commit_leds
 
 exit 0
