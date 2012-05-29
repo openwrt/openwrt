@@ -15,8 +15,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/pptpclient
 PKG_MD5SUM:=b47735ba5d6d37dfdbccb85afc044ede
 
-PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_netifd
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/pptp
@@ -25,7 +23,7 @@ define Package/pptp
   TITLE:=PPTP client
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
   URL:=http://pptpclient.sourceforge.net/
-  DEPENDS:=+ppp +kmod-gre +resolveip +!PACKAGE_netifd:ip
+  DEPENDS:=+ppp +kmod-gre +resolveip
 endef
 
 define Package/pptp/description
@@ -38,24 +36,13 @@ endef
 
 MAKE_FLAGS += OPTIMIZE="$(TARGET_CFLAGS)"
 
-ifneq ($(CONFIG_PACKAGE_netifd),)
-  define Package/pptp/install
+define Package/pptp/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_DATA) ./files/options.pptp $(1)/etc/ppp/
 	$(INSTALL_DIR) $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/pptp.sh $(1)/lib/netifd/proto/
-  endef
-else
-  define Package/pptp/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/ppp
-	$(INSTALL_DATA) ./files/options.pptp $(1)/etc/ppp/
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_DATA) ./files.old/pptp.sh $(1)/lib/network/
-  endef
-endif
+endef
 
 $(eval $(call BuildPackage,pptp))
