@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+# Copyright (C) 2012 OpenWrt.org
+#
+
+COMMIT_SYSTEM=0
+
+set_led_netdev() {
+	local cfg="led_$1"
+	local sysfs=$2
+	local dev=$3
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.trigger='netdev'
+set system.$cfg.dev='$dev'
+set system.$cfg.mode='link tx rx'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+set_led_default() {
+	local cfg="led_$1"
+	local sysfs=$2
+	local default=$3
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.trigger='none'
+set system.$cfg.default='$default'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+. /lib/kirkwood.sh
+
+hardware=$(kirkwood_hardware_name)
+
+case "$hardware" in
+"Seagate FreeAgent DockStar")
+	set_led_netdev "eth0" "dockstar:orange:misc" "eth0"
+	set_led_default "health" "dockstar:green:health" "1"
+	;;
+
+*)
+	;;
+esac
+
+[ "$COMMIT_SYSTEM" == "1" ] && uci commit system
+
+exit 0
