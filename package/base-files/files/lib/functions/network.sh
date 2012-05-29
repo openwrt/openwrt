@@ -41,16 +41,18 @@ network_get_subnet()  { __network_ipaddr "$1" "$2" 4 1; }
 network_get_subnet6() { __network_ipaddr "$1" "$2" 6 1; }
 
 
-network_get_device()
+__network_device()
 {
 	local __var="$1"
 	local __iface="$2"
+	local __field="$3"
 
 	local __tmp="$(ubus call network.interface."$__iface" status 2>/dev/null)"
 	[ -n "$__tmp" ] || return 1
 
 	json_load "$__tmp"
-	json_get_var "$__var" device
-
-	return 0
+	json_get_var "$__var" "$__field"
 }
+
+network_get_device()  { __network_device "$1" "$2" l3_device; }
+network_get_physdev() { __network_device "$1" "$2" device;    }
