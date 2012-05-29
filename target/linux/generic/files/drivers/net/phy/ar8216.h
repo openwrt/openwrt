@@ -334,13 +334,4 @@ enum {
 	AR8216_PORT_STATE_FORWARD = 4
 };
 
-/* device */
-enum {
-  UNKNOWN = 0,
-  AR8216 = 8216,
-  AR8236 = 8236,
-  AR8316 = 8316,
-  AR8327 = 8327,
-};
-
 #endif

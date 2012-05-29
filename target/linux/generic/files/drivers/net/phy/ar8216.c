@@ -43,6 +43,13 @@ struct ar8216_priv;
 
 #define AR8XXX_CAP_GIGE		BIT(0)
 
+enum {
+	AR8XXX_VER_AR8216 = 0x01,
+	AR8XXX_VER_AR8236 = 0x03,
+	AR8XXX_VER_AR8316 = 0x10,
+	AR8XXX_VER_AR8327 = 0x12,
+};
+
 struct ar8xxx_chip {
 	unsigned long caps;
 
@@ -65,7 +72,8 @@ struct ar8216_priv {
 	const struct net_device_ops *ndo_old;
 	struct net_device_ops ndo;
 	struct mutex reg_mutex;
-	int chip_type;
+	u8 chip_ver;
+	u8 chip_rev;
 	const struct ar8xxx_chip *chip;
 	bool initialized;
 	bool port4_phy;
@@ -91,22 +99,22 @@ static inline bool ar8xxx_has_gige(struct ar8216_priv *priv)
 
 static inline bool chip_is_ar8216(struct ar8216_priv *priv)
 {
-	return priv->chip_type == AR8216;
+	return priv->chip_ver == AR8XXX_VER_AR8216;
 }
 
 static inline bool chip_is_ar8236(struct ar8216_priv *priv)
 {
-	return priv->chip_type == AR8236;
+	return priv->chip_ver == AR8XXX_VER_AR8236;
 }
 
 static inline bool chip_is_ar8316(struct ar8216_priv *priv)
 {
-	return priv->chip_type == AR8316;
+	return priv->chip_ver == AR8XXX_VER_AR8316;
 }
 
 static inline bool chip_is_ar8327(struct ar8216_priv *priv)
 {
-	return priv->chip_type == AR8327;
+	return priv->chip_ver == AR8XXX_VER_AR8327;
 }
 
 static inline void
@@ -1179,8 +1187,6 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	u16 id;
 	int i;
 
-	priv->chip_type = UNKNOWN;
-
 	val = ar8216_mii_read(priv, AR8216_REG_CTRL);
 	if (val == ~0)
 		return -ENODEV;
@@ -1198,30 +1204,27 @@ ar8216_id_chip(struct ar8216_priv *priv)
 			return -ENODEV;
 	}
 
-	switch (id) {
-	case 0x0101:
-		priv->chip_type = AR8216;
+	priv->chip_ver = (id & AR8216_CTRL_VERSION) >> AR8216_CTRL_VERSION_S;
+	priv->chip_rev = (id & AR8216_CTRL_REVISION);
+
+	switch (priv->chip_ver) {
+	case AR8XXX_VER_AR8216:
 		priv->chip = &ar8216_chip;
 		break;
-	case 0x0301:
-		priv->chip_type = AR8236;
+	case AR8XXX_VER_AR8236:
 		priv->chip = &ar8236_chip;
 		break;
-	case 0x1000:
-	case 0x1001:
-		priv->chip_type = AR8316;
+	case AR8XXX_VER_AR8316:
 		priv->chip = &ar8316_chip;
 		break;
-	case 0x1202:
-		priv->chip_type = AR8327;
+	case AR8XXX_VER_AR8327:
 		priv->mii_lo_first = true;
 		priv->chip = &ar8327_chip;
 		break;
 	default:
 		printk(KERN_DEBUG
 			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
-			(int)(id >> AR8216_CTRL_VERSION_S),
-			(int)(id & AR8216_CTRL_REVISION),
+			priv->chip_ver, priv->chip_rev,
 			mdiobus_read(priv->phy->bus, priv->phy->addr, 2),
 			mdiobus_read(priv->phy->bus, priv->phy->addr, 3));
 
@@ -1287,9 +1290,6 @@ ar8216_config_init(struct phy_device *pdev)
 		return 0;
 	}
 
-	printk(KERN_INFO "%s: AR%d switch driver attached.\n",
-		pdev->attached_dev->name, priv->chip_type);
-
 	if (ar8xxx_has_gige(priv))
 		pdev->supported = SUPPORTED_1000baseT_Full;
 	else
@@ -1331,6 +1331,9 @@ ar8216_config_init(struct phy_device *pdev)
 	ret = register_switch(&priv->dev, pdev->attached_dev);
 	if (ret)
 		goto err_free_priv;
+
+	printk(KERN_INFO "%s: %s switch driver attached.\n",
+		pdev->attached_dev->name, swdev->name);
 
 	priv->init = true;
 
