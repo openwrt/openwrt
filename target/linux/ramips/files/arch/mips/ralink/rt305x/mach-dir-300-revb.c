@@ -22,6 +22,12 @@
 #define DIR_300B_GPIO_LED_STATUS_AMBER	8
 #define DIR_300B_GPIO_LED_STATUS_GREEN	9
 #define DIR_300B_GPIO_LED_WPS		13
+/*
+ * NOTE: The wan led is also connected to the switch, both
+ * switch and gpio must be active to make it light up
+ */
+#define DIR_300B_GPIO_LED_WAN_GREEN	12
+#define DIR_300B_GPIO_LED_WAN_AMBER	14
 
 #define DIR_300B_GPIO_BUTTON_WPS	0	/* active low */
 #define DIR_300B_GPIO_BUTTON_RESET	10	/* active low */
@@ -37,6 +43,14 @@ static struct gpio_led dir_300b_leds_gpio[] __initdata = {
 	}, {
 		.name		= "d-link:green:status",
 		.gpio		= DIR_300B_GPIO_LED_STATUS_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "d-link:amber:wan",
+		.gpio		= DIR_300B_GPIO_LED_WAN_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "d-link:green:wan",
+		.gpio		= DIR_300B_GPIO_LED_WAN_GREEN,
 		.active_low	= 1,
 	}, {
 		.name		= "d-link:blue:wps",

@@ -30,6 +30,24 @@ commit system
 EOF
 }
 
+set_wan_led() {
+	local sysfs="$1"
+	local name="$2"
+	local trigger="$3"
+	local dev="$4"
+	local mode="$5"
+
+	uci batch <<EOF
+set system.${name}_led=led
+set system.${name}_led.name='$name'
+set system.${name}_led.sysfs='$sysfs'
+set system.${name}_led.trigger='$trigger'
+set system.${name}_led.dev='$dev'
+set system.${name}_led.mode='$mode'
+commit system
+EOF
+}
+
 board=$(ramips_board_name)
 
 case $board in
@@ -38,6 +56,12 @@ case $board in
 		;;
 	bc2)
 		set_usb_led "bc2:blue:usb"
+		;;
+	dir-300-b1|\
+	dir-600-b1|\
+	dir-600-b2)
+		# ANDed with vlan switch port 4 led state
+		set_wan_led "d-link:amber:wan" wan_switch default-on
 		;;
 	esr-9753)
 		set_wifi_led "rt2800pci-phy0::radio"
