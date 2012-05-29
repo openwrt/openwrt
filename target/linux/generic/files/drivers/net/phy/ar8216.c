@@ -89,6 +89,26 @@ static inline bool ar8xxx_has_gige(struct ar8216_priv *priv)
 	return priv->chip->caps & AR8XXX_CAP_GIGE;
 }
 
+static inline bool chip_is_ar8216(struct ar8216_priv *priv)
+{
+	return priv->chip_type == AR8216;
+}
+
+static inline bool chip_is_ar8236(struct ar8216_priv *priv)
+{
+	return priv->chip_type == AR8236;
+}
+
+static inline bool chip_is_ar8316(struct ar8216_priv *priv)
+{
+	return priv->chip_type == AR8316;
+}
+
+static inline bool chip_is_ar8327(struct ar8216_priv *priv)
+{
+	return priv->chip_type == AR8327;
+}
+
 static inline void
 split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
 {
@@ -362,7 +382,7 @@ ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 {
 	u32 header;
 
-	if (priv->vlan && port == AR8216_PORT_CPU && priv->chip_type == AR8216)
+	if (chip_is_ar8216(priv) && priv->vlan && port == AR8216_PORT_CPU)
 		header = AR8216_PORT_CTRL_HEADER;
 	else
 		header = 0;
@@ -416,8 +436,8 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
                                 AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
 			AR8216_PORT_STATUS_TXMAC |
 			AR8216_PORT_STATUS_RXMAC |
-			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
-			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
+			(chip_is_ar8316(priv) ? AR8216_PORT_STATUS_RXFLOW : 0) |
+			(chip_is_ar8316(priv) ? AR8216_PORT_STATUS_TXFLOW : 0) |
 			AR8216_PORT_STATUS_DUPLEX);
 	} else {
 		priv->write(priv, AR8216_REG_PORT_STATUS(port),
@@ -1237,7 +1257,7 @@ ar8216_config_init(struct phy_device *pdev)
 			pdev->advertising |= ADVERTISED_1000baseT_Full;
 		}
 
-		if (priv->chip_type == AR8316) {
+		if (chip_is_ar8316(priv)) {
 			/* check if we're attaching to the switch twice */
 			pdev = pdev->bus->phy_map[0];
 			if (!pdev) {
@@ -1287,7 +1307,7 @@ ar8216_config_init(struct phy_device *pdev)
 	swdev->ops = &ar8216_sw_ops;
 	swdev->ports = AR8216_NUM_PORTS;
 
-	if (priv->chip_type == AR8316) {
+	if (chip_is_ar8316(priv)) {
 		swdev->name = "Atheros AR8316";
 		swdev->vlans = AR8X16_MAX_VLANS;
 
@@ -1295,11 +1315,11 @@ ar8216_config_init(struct phy_device *pdev)
 			/* port 5 connected to the other mac, therefore unusable */
 			swdev->ports = (AR8216_NUM_PORTS - 1);
 		}
-	} else if (priv->chip_type == AR8236) {
+	} else if (chip_is_ar8236(priv)) {
 		swdev->name = "Atheros AR8236";
 		swdev->vlans = AR8216_NUM_VLANS;
 		swdev->ports = AR8216_NUM_PORTS;
-	} else if (priv->chip_type == AR8327) {
+	} else if (chip_is_ar8327(priv)) {
 		swdev->name = "Atheros AR8327";
 		swdev->vlans = AR8X16_MAX_VLANS;
 		swdev->ports = AR8327_NUM_PORTS;
@@ -1325,7 +1345,7 @@ ar8216_config_init(struct phy_device *pdev)
 	dev->phy_ptr = priv;
 
 	/* VID fixup only needed on ar8216 */
-	if (pdev->addr == 0 && priv->chip_type == AR8216) {
+	if (chip_is_ar8216(priv) && pdev->addr == 0) {
 		dev->priv_flags |= IFF_NO_IP_ALIGN;
 		dev->eth_mangle_rx = ar8216_mangle_rx;
 		dev->eth_mangle_tx = ar8216_mangle_tx;
