@@ -54,5 +54,11 @@ __network_device()
 	json_get_var "$__var" "$__field"
 }
 
+network_is_up()
+{
+	local __up
+	__network_device __up "$1" up && [ $__up -eq 1 ]
+}
+
 network_get_device()  { __network_device "$1" "$2" l3_device; }
 network_get_physdev() { __network_device "$1" "$2" device;    }
