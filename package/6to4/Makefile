@@ -11,8 +11,6 @@ PKG_NAME:=6to4
 PKG_VERSION:=8
 PKG_RELEASE:=1
 
-PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_netifd
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/6to4
@@ -36,20 +34,11 @@ endef
 define Build/Configure
 endef
 
-ifneq ($(CONFIG_PACKAGE_netifd),)
-  define Package/6to4/install
+define Package/6to4/install
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/6to4.sh $(1)/lib/netifd/proto/6to4.sh
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/6to4.hotplug $(1)/etc/hotplug.d/iface/91-6to4
-  endef
-else
-  define Package/6to4/install
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_DATA) ./files.old/6to4.sh $(1)/lib/network/6to4.sh
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_DATA) ./files.old/6to4.hotplug $(1)/etc/hotplug.d/iface/91-6to4
-  endef
-endif
+endef
 
 $(eval $(call BuildPackage,6to4))
