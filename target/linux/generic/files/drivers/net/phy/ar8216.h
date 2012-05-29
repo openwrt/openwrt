@@ -25,6 +25,8 @@
 #define AR8316_NUM_VLANS	4096
 
 /* Atheros specific MII registers */
+#define MII_ATH_MMD_ADDR		0x0d
+#define MII_ATH_MMD_DATA		0x0e
 #define MII_ATH_DBG_ADDR		0x1d
 #define MII_ATH_DBG_DATA		0x1e
 
