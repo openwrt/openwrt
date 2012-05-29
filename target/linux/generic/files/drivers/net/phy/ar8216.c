@@ -191,6 +191,17 @@ ar8216_phy_dbg_write(struct ar8216_priv *priv, int phy_addr,
 	mutex_unlock(&bus->mdio_lock);
 }
 
+static void
+ar8216_phy_mmd_write(struct ar8216_priv *priv, int phy_addr, u16 addr, u16 data)
+{
+	struct mii_bus *bus = priv->phy->bus;
+
+	mutex_lock(&bus->mdio_lock);
+	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr);
+	bus->write(bus, phy_addr, MII_ATH_MMD_DATA, data);
+	mutex_unlock(&bus->mdio_lock);
+}
+
 static u32
 ar8216_rmw(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
 {
@@ -692,6 +703,32 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 	return t;
 }
 
+static void
+ar8327_phy_fixup(struct ar8216_priv *priv, int phy)
+{
+	switch (priv->chip_rev) {
+	case 1:
+		/* For 100M waveform */
+		ar8216_phy_dbg_write(priv, phy, 0, 0x02ea);
+		/* Turn on Gigabit clock */
+		ar8216_phy_dbg_write(priv, phy, 0x3d, 0x68a0);
+		break;
+
+	case 2:
+		ar8216_phy_mmd_write(priv, phy, 0x7, 0x3c);
+		ar8216_phy_mmd_write(priv, phy, 0x4007, 0x0);
+		/* fallthrough */
+	case 4:
+		ar8216_phy_mmd_write(priv, phy, 0x3, 0x800d);
+		ar8216_phy_mmd_write(priv, phy, 0x4003, 0x803f);
+
+		ar8216_phy_dbg_write(priv, phy, 0x3d, 0x6860);
+		ar8216_phy_dbg_write(priv, phy, 0x5, 0x2c46);
+		ar8216_phy_dbg_write(priv, phy, 0x3c, 0x6000);
+		break;
+	}
+}
+
 static int
 ar8327_hw_init(struct ar8216_priv *priv)
 {
@@ -712,14 +749,8 @@ ar8327_hw_init(struct ar8216_priv *priv)
 
 	priv->write(priv, AR8327_REG_POWER_ON_STRIP, 0x40000000);
 
-	/* fixup PHYs */
-	for (i = 0; i < AR8327_NUM_PHYS; i++) {
-		/* For 100M waveform */
-		ar8216_phy_dbg_write(priv, i, 0, 0x02ea);
-
-		/* Turn on Gigabit clock */
-		ar8216_phy_dbg_write(priv, i, 0x3d, 0x68a0);
-	}
+	for (i = 0; i < AR8327_NUM_PHYS; i++)
+		ar8327_phy_fixup(priv, i);
 
 	return 0;
 }
