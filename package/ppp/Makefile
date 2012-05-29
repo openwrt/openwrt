@@ -19,7 +19,6 @@ PKG_MD5SUM:=4621bc56167b6953ec4071043fe0ec57
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 PKG_BUILD_DEPENDS:=libpcap
-PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_netifd
 
 PKG_INSTALL:=1
 
@@ -167,31 +166,8 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/include/pppd $(1)/usr/include/
 endef
 
-ifneq ($(CONFIG_PACKAGE_netifd),)
-  define Package/ppp/script_install
-	$(INSTALL_DIR) $(1)/lib/netifd/proto
-	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/netifd/proto/
-	$(INSTALL_BIN) ./files/lib/netifd/ppp-up $(1)/lib/netifd/
-	$(INSTALL_BIN) ./files/lib/netifd/ppp-down $(1)/lib/netifd/
-  endef
-else
-  define Package/ppp/script_install
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_BIN) ./files.old/ppp.sh $(1)/lib/network/
-	$(INSTALL_BIN) ./files.old/etc/ppp/ip-up $(1)/etc/ppp/
-	$(INSTALL_DIR) $(1)/etc/ppp/ip-up.d
-	$(INSTALL_BIN) ./files.old/etc/ppp/ip-down $(1)/etc/ppp/
-	$(INSTALL_DIR) $(1)/etc/ppp/ip-down.d
-	$(INSTALL_BIN) ./files.old/etc/ppp/ipv6-up $(1)/etc/ppp/
-	$(INSTALL_BIN) ./files.old/etc/ppp/ipv6-down $(1)/etc/ppp/
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_BIN) ./files.old/pppoe.sh $(1)/lib/network/
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_BIN) ./files.old/pppoa.sh $(1)/lib/network/
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/atm
-	$(INSTALL_DATA) ./files.old/etc/hotplug.d/atm/20-atm-modem $(1)/etc/hotplug.d/atm/
-  endef
-endif
+define Package/ppp/script_install
+endef
 
 define Package/ppp/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
@@ -202,7 +178,10 @@ define Package/ppp/install
 	$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/
 	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
 	ln -sf /tmp/resolv.conf.ppp $(1)/etc/ppp/resolv.conf
-	$(Package/ppp/script_install)
+	$(INSTALL_DIR) $(1)/lib/netifd/proto
+	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/netifd/proto/
+	$(INSTALL_BIN) ./files/lib/netifd/ppp-up $(1)/lib/netifd/
+	$(INSTALL_BIN) ./files/lib/netifd/ppp-down $(1)/lib/netifd/
 endef
 Package/ppp-multilink/install=$(Package/ppp/install)
 
