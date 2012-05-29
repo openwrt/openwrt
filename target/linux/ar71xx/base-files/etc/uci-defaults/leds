@@ -3,240 +3,148 @@
 # Copyright (C) 2011 OpenWrt.org
 #
 
-COMMIT_SYSTEM=0
-
-set_led_netdev() {
-	local cfg="led_$1"
-	local name=$2
-	local sysfs=$3
-	local dev=$4
-
-	uci -q get system.$cfg && return 0
-
-	uci batch <<EOF
-set system.$cfg='led'
-set system.$cfg.name='$name'
-set system.$cfg.sysfs='$sysfs'
-set system.$cfg.trigger='netdev'
-set system.$cfg.dev='$dev'
-set system.$cfg.mode='link tx rx'
-EOF
-	COMMIT_SYSTEM=1
-}
-
-set_led_usbdev() {
-	local cfg="led_$1"
-	local name=$2
-	local sysfs=$3
-	local dev=$4
-
-	uci -q get system.$cfg && return 0
-
-	uci batch <<EOF
-set system.$cfg='led'
-set system.$cfg.name='$name'
-set system.$cfg.sysfs='$sysfs'
-set system.$cfg.trigger='usbdev'
-set system.$cfg.dev='$dev'
-set system.$cfg.interval='50'
-EOF
-	COMMIT_SYSTEM=1
-}
-
-set_led_wlan() {
-	local cfg="led_$1"
-	local name=$2
-	local sysfs=$3
-	local trigger=$4
-
-	uci -q get system.$cfg && return 0
-
-	uci batch <<EOF
-set system.$cfg='led'
-set system.$cfg.name='$name'
-set system.$cfg.sysfs='$sysfs'
-set system.$cfg.trigger='$trigger'
-EOF
-	COMMIT_SYSTEM=1
-}
-
-set_led_switch() {
-	local cfg="led_$1"
-	local name=$2
-	local sysfs=$3
-	local trigger=$4
-	local port_mask=$5
-
-	uci -q get system.$cfg && return 0
-
-	uci batch <<EOF
-set system.$cfg='led'
-set system.$cfg.name='$name'
-set system.$cfg.sysfs='$sysfs'
-set system.$cfg.trigger='$trigger'
-set system.$cfg.port_mask='$port_mask'
-EOF
-	COMMIT_SYSTEM=1
-}
-
-set_led_default() {
-	local cfg="led_$1"
-	local name=$2
-	local sysfs=$3
-	local default=$4
-
-	uci -q get system.$cfg && return 0
-
-	uci batch <<EOF
-set system.$cfg='led'
-set system.$cfg.name='$name'
-set system.$cfg.sysfs='$sysfs'
-set system.$cfg.default='$default'
-EOF
-	COMMIT_SYSTEM=1
-}
-
+. /lib/functions/uci-defaults.sh
 . /lib/ar71xx.sh
 
 board=$(ar71xx_board_name)
 
 case "$board" in
 alfa-nx)
-	set_led_netdev "wan" "WAN" "alfa:green:led_2" "eth0"
-	set_led_netdev "lan" "LAN" "alfa:green:led_3" "eth1"
+	ucidef_set_led_netdev "wan" "WAN" "alfa:green:led_2" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "alfa:green:led_3" "eth1"
 	;;
 
 ap113)
-	set_led_usbdev "usb" "USB" "ap113:green:usb" "1-1"
+	ucidef_set_led_usbdev "usb" "USB" "ap113:green:usb" "1-1"
 	;;
 rb750)
-	set_led_default "act" "act" "rb750:green:act" "1"
-	set_led_netdev "port1" "port1" "rb750:green:port1" "eth1"
-	set_led_switch "port2" "port2" "rb750:green:port2" "switch0" "0x10"
-	set_led_switch "port3" "port3" "rb750:green:port3" "switch0" "0x08"
-	set_led_switch "port4" "port4" "rb750:green:port4" "switch0" "0x04"
-	set_led_switch "port5" "port5" "rb750:green:port5" "switch0" "0x02"
+	ucidef_set_led_default "act" "act" "rb750:green:act" "1"
+	ucidef_set_led_netdev "port1" "port1" "rb750:green:port1" "eth1"
+	ucidef_set_led_switch "port2" "port2" "rb750:green:port2" "switch0" "0x10"
+	ucidef_set_led_switch "port3" "port3" "rb750:green:port3" "switch0" "0x08"
+	ucidef_set_led_switch "port4" "port4" "rb750:green:port4" "switch0" "0x04"
+	ucidef_set_led_switch "port5" "port5" "rb750:green:port5" "switch0" "0x02"
 	;;
 
 dir-600-a1|\
 dir-615-e4)
-	set_led_netdev "wan" "WAN" "d-link:green:wan" "eth1"
-	set_led_switch "lan1" "LAN1" "d-link:green:lan1" "switch0" "0x02"
-	set_led_switch "lan2" "LAN2" "d-link:green:lan2" "switch0" "0x04"
-	set_led_switch "lan3" "LAN3" "d-link:green:lan3" "switch0" "0x08"
-	set_led_switch "lan4" "LAN4" "d-link:green:lan4" "switch0" "0x10"
+	ucidef_set_led_netdev "wan" "WAN" "d-link:green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "d-link:green:lan1" "switch0" "0x02"
+	ucidef_set_led_switch "lan2" "LAN2" "d-link:green:lan2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "LAN3" "d-link:green:lan3" "switch0" "0x08"
+	ucidef_set_led_switch "lan4" "LAN4" "d-link:green:lan4" "switch0" "0x10"
 	;;
 
 dir-825-b1)
-	set_led_usbdev "usb" "USB" "d-link:blue:usb" "1-1"
+	ucidef_set_led_usbdev "usb" "USB" "d-link:blue:usb" "1-1"
 	;;
 
 hornet-ub)
-	set_led_netdev "lan" "LAN" "alfa:blue:lan" "eth0"
-	set_led_netdev "wan" "WAN" "alfa:blue:wan" "eth1"
-	set_led_wlan "wlan" "WLAN" "alfa:blue:wlan" "phy0tpt"
-	set_led_usbdev "usb" "USB" "alfa:blue:usb" "1-1"
+	ucidef_set_led_netdev "lan" "LAN" "alfa:blue:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "alfa:blue:wan" "eth1"
+	ucidef_set_led_wlan "wlan" "WLAN" "alfa:blue:wlan" "phy0tpt"
+	ucidef_set_led_usbdev "usb" "USB" "alfa:blue:usb" "1-1"
 	;;
 
 mzk-w04u)
-	set_led_usbdev "usb" "USB" "planex:green:usb" "1-1"
+	ucidef_set_led_usbdev "usb" "USB" "planex:green:usb" "1-1"
 	;;
 
 mzk-w300nh)
-	set_led_wlan "wlan" "WLAN" "planex:green:wlan" "phy0tpt"
+	ucidef_set_led_wlan "wlan" "WLAN" "planex:green:wlan" "phy0tpt"
 	;;
 
 nbg460n_550n_550nh)
-	set_led_wlan "wlan" "WLAN" "nbg460n:green:wlan" "phy0tpt"
+	ucidef_set_led_wlan "wlan" "WLAN" "nbg460n:green:wlan" "phy0tpt"
 	;;
 
 om2p)
-	set_led_netdev "port1" "port1" "om2p:blue:wan" "eth0"
-	set_led_netdev "port2" "port2" "om2p:blue:lan" "eth1"
+	ucidef_set_led_netdev "port1" "port1" "om2p:blue:wan" "eth0"
+	ucidef_set_led_netdev "port2" "port2" "om2p:blue:lan" "eth1"
 	;;
 
 tl-mr11u | \
 tl-mr3020)
-	set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
-	set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
-	set_led_netdev "lan" "LAN" "tp-link:green:lan"  "eth0"
+	ucidef_set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
+	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan"  "eth0"
 	;;
 
 tl-mr3220 | \
 tl-mr3420 )
-	set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
+	ucidef_set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
 	;;
 
 tl-wa901nd)
-	set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
 	;;
 
 tl-wr741nd)
-	set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
-	set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x02"
-	set_led_switch "lan2" "LAN2" "tp-link:green:lan2" "switch0" "0x04"
-	set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x08"
-	set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x10"
+	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x02"
+	ucidef_set_led_switch "lan2" "LAN2" "tp-link:green:lan2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x08"
+	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x10"
 	;;
 
 tl-wr741nd-v4)
-	set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
-	set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x04"
-	set_led_switch "lan2" "LAN2" "tp-link:green:lan2" "switch0" "0x08"
-	set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x10"
-	set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x02"
-	set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
+	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "tp-link:green:lan1" "switch0" "0x04"
+	ucidef_set_led_switch "lan2" "LAN2" "tp-link:green:lan2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "tp-link:green:lan3" "switch0" "0x10"
+	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x02"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
 	;;
 
 tl-wr941nd | \
 tl-wr1041n-v2)
-	set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
 	;;
 
 tl-wr1043nd)
-	set_led_usbdev "usb" "USB" "tp-link:green:usb" "1-1"
-	set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
+	ucidef_set_led_usbdev "usb" "USB" "tp-link:green:usb" "1-1"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
 	;;
 
 tl-wr2543n)
-	set_led_usbdev "usb" "USB" "tp-link:green:usb" "1-1"
+	ucidef_set_led_usbdev "usb" "USB" "tp-link:green:usb" "1-1"
 	;;
 
 wrt160nl)
-	set_led_wlan "wlan" "WLAN" "wrt160nl:blue:wlan" "phy0tpt"
+	ucidef_set_led_wlan "wlan" "WLAN" "wrt160nl:blue:wlan" "phy0tpt"
 	;;
 
 wndr3700)
-	set_led_default "wan" "WAN LED (green)" "wndr3700:green:wan" "0"
-	set_led_usbdev "usb" "USB" "wndr3700:green:usb" "1-1"
+	ucidef_set_led_default "wan" "WAN LED (green)" "wndr3700:green:wan" "0"
+	ucidef_set_led_usbdev "usb" "USB" "wndr3700:green:usb" "1-1"
 	;;
 
 whr-g301n |\
 whr-hp-g300n |\
 whr-hp-gn)
-	set_led_netdev "wan" "WAN" "buffalo:green:wan" "eth1"
-	set_led_switch "lan1" "LAN1" "buffalo:green:lan1" "switch0" "0x02"
-	set_led_switch "lan2" "LAN2" "buffalo:green:lan2" "switch0" "0x04"
-	set_led_switch "lan3" "LAN3" "buffalo:green:lan3" "switch0" "0x08"
-	set_led_switch "lan4" "LAN4" "buffalo:green:lan4" "switch0" "0x10"
+	ucidef_set_led_netdev "wan" "WAN" "buffalo:green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "buffalo:green:lan1" "switch0" "0x02"
+	ucidef_set_led_switch "lan2" "LAN2" "buffalo:green:lan2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "LAN3" "buffalo:green:lan3" "switch0" "0x08"
+	ucidef_set_led_switch "lan4" "LAN4" "buffalo:green:lan4" "switch0" "0x10"
 	;;
 
 wzr-hp-g300nh)
-	set_led_wlan "wlan" "Wireless" "buffalo:green:wireless" "phy0tpt"
-	set_led_netdev "router" "Router" "buffalo:green:router" "eth1"
-	set_led_usbdev "usb" "USB" "buffalo:blue:usb" "1-1"
+	ucidef_set_led_wlan "wlan" "Wireless" "buffalo:green:wireless" "phy0tpt"
+	ucidef_set_led_netdev "router" "Router" "buffalo:green:router" "eth1"
+	ucidef_set_led_usbdev "usb" "USB" "buffalo:blue:usb" "1-1"
 	;;
 
 zcn-1523h-2)
-	set_led_netdev "lan1" "lan1" "zcn-1523h:green:lan1" "eth0"
+	ucidef_set_led_netdev "lan1" "lan1" "zcn-1523h:green:lan1" "eth0"
 	;;
 
 zcn-1523h-5)
-	set_led_netdev "lan1" "lan1" "zcn-1523h:green:lan1" "eth0"
-	set_led_netdev "lan2" "lan2" "zcn-1523h:green:lan2" "eth1"
+	ucidef_set_led_netdev "lan1" "lan1" "zcn-1523h:green:lan1" "eth0"
+	ucidef_set_led_netdev "lan2" "lan2" "zcn-1523h:green:lan2" "eth1"
 	;;
 esac
 
-[ "$COMMIT_SYSTEM" == "1" ] && uci commit system
+ucidef_commit_leds
 
 exit 0
