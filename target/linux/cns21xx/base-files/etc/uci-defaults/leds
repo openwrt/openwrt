@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# Copyright (C) 2010 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/cns21xx.sh
+
+board=$(get_board_name)
+
+case "$board" in
+"ns-k330")
+	ucidef_set_led_netdev "eth_orange" "ETH (orange)" "ns-k330:orange:eth" "eth0"
+	ucidef_set_led_usbdev "usb1" "USB1" "ns-k330:green:usb1" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB2" "ns-k330:green:usb2" "1-2"
+	;;
+fi
+
+ucidef_commit_leds
+
+exit 0
