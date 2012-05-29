@@ -1,51 +1,14 @@
 #!/bin/sh
 
+. /lib/functions/uci-defaults.sh
 . /lib/ramips.sh
 
 set_usb_led() {
-	local sysfs="$1"
-
-	uci batch <<EOF
-set system.usb_led=led
-set system.usb_led.name='usb'
-set system.usb_led.sysfs='$sysfs'
-set system.usb_led.trigger='usbdev'
-set system.usb_led.dev='1-1'
-set system.usb_led.interval='50'
-commit system
-EOF
+	ucidef_set_led_usbdev "usb" "USB" "$1" "1-1"
 }
 
 set_wifi_led() {
-	local sysfs="$1"
-
-	uci batch <<EOF
-set system.wifi_led=led
-set system.wifi_led.name='wifi'
-set system.wifi_led.sysfs='$sysfs'
-set system.wifi_led.trigger='netdev'
-set system.wifi_led.dev='wlan0'
-set system.wifi_led.mode='link rx tx'
-commit system
-EOF
-}
-
-set_wan_led() {
-	local sysfs="$1"
-	local name="$2"
-	local trigger="$3"
-	local dev="$4"
-	local mode="$5"
-
-	uci batch <<EOF
-set system.${name}_led=led
-set system.${name}_led.name='$name'
-set system.${name}_led.sysfs='$sysfs'
-set system.${name}_led.trigger='$trigger'
-set system.${name}_led.dev='$dev'
-set system.${name}_led.mode='$mode'
-commit system
-EOF
+	ucidef_set_led_netdev "wifi_led" "wifi" "$1" "wlan0"
 }
 
 board=$(ramips_board_name)
@@ -61,7 +24,7 @@ case $board in
 	dir-600-b1|\
 	dir-600-b2)
 		# ANDed with vlan switch port 4 led state
-		set_wan_led "d-link:amber:wan" wan_switch default-on
+		ucidef_set_led_default "wan" "WAN LED (amber)" "d-link:amber:wan" "1"
 		;;
 	esr-9753)
 		set_wifi_led "rt2800pci-phy0::radio"
@@ -101,3 +64,7 @@ case $board in
 		set_usb_led "wcr150gn:amber:user"
 		;;
 esac
+
+ucidef_commit_leds
+
+exit 0
