@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1445,15 +1445,6 @@ static int ath9k_add_interface(struct ie
+@@ -1443,15 +1443,6 @@ static int ath9k_add_interface(struct ie
  		}
  	}
  
@@ -16,7 +16,7 @@
  	ath_dbg(common, CONFIG, "Attach a VIF of type: %d\n", vif->type);
  
  	sc->nvifs++;
-@@ -1478,15 +1469,6 @@ static int ath9k_change_interface(struct
+@@ -1476,15 +1467,6 @@ static int ath9k_change_interface(struct
  	mutex_lock(&sc->mutex);
  	ath9k_ps_wakeup(sc);
  
@@ -34,7 +34,7 @@
  		if (sc->nbcnvifs >= ATH_BCBUF) {
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -655,6 +655,7 @@ static const struct ieee80211_iface_limi
+@@ -656,6 +656,7 @@ static const struct ieee80211_iface_limi
  #ifdef CONFIG_MAC80211_MESH
  				 BIT(NL80211_IFTYPE_MESH_POINT) |
  #endif

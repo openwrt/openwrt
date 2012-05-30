@@ -1,13 +1,15 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -99,8 +99,8 @@ ifndef CONFIG_COMPAT_KERNEL_2_6_27
+@@ -99,9 +99,9 @@ ifndef CONFIG_COMPAT_KERNEL_2_6_27
  ifeq ($(CONFIG_BT),y)
  # we'll ignore compiling bluetooth
  else
 - export CONFIG_COMPAT_BLUETOOTH=y
 - export CONFIG_COMPAT_BLUETOOTH_MODULES=m
+- export CONFIG_HID_GENERIC=m
 +# export CONFIG_COMPAT_BLUETOOTH=y
 +# export CONFIG_COMPAT_BLUETOOTH_MODULES=m
++# export CONFIG_HID_GENERIC=m
  endif
  endif #CONFIG_COMPAT_KERNEL_2_6_27
  

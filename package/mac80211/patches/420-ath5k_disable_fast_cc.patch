@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath5k/reset.c
 +++ b/drivers/net/wireless/ath/ath5k/reset.c
-@@ -1155,6 +1155,7 @@ ath5k_hw_reset(struct ath5k_hw *ah, enum
+@@ -1156,6 +1156,7 @@ ath5k_hw_reset(struct ath5k_hw *ah, enum
  	tsf_lo = 0;
  	mode = 0;
  
@@ -8,7 +8,7 @@
  	/*
  	 * Sanity check for fast flag
  	 * Fast channel change only available
-@@ -1162,6 +1163,7 @@ ath5k_hw_reset(struct ath5k_hw *ah, enum
+@@ -1163,6 +1164,7 @@ ath5k_hw_reset(struct ath5k_hw *ah, enum
  	 */
  	if (fast && (ah->ah_radio != AR5K_RF2413) &&
  	(ah->ah_radio != AR5K_RF5413))

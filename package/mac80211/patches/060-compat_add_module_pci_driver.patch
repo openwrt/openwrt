@@ -1,8 +1,8 @@
 --- a/include/linux/compat-3.4.h
 +++ b/include/linux/compat-3.4.h
-@@ -62,6 +62,19 @@ static inline void eth_hw_addr_random(st
- #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)) */
- #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,12)) */
+@@ -77,6 +77,19 @@ static inline void eth_hw_addr_random(st
+ 	module_driver(__pci_driver, pci_register_driver, \
+ 		       pci_unregister_driver)
  
 +/* source include/linux/pci.h */
 +/**

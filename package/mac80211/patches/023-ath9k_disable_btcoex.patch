@@ -1,11 +1,11 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -263,7 +263,7 @@ export CONFIG_ATH9K_COMMON=m
+@@ -266,7 +266,7 @@ export CONFIG_ATH9K_COMMON=m
  # for long range considerations.
  # export CONFIG_COMPAT_ATH9K_RATE_CONTROL=y
  
 -export CONFIG_ATH9K_BTCOEX_SUPPORT=y
 +# export CONFIG_ATH9K_BTCOEX_SUPPORT=y
  
- # PCI Drivers
- ifdef CONFIG_PCI
+ ifndef CONFIG_COMPAT_KERNEL_2_6_27
+ export CONFIG_ATH6KL=m
