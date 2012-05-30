@@ -1,22 +1,20 @@
-From 653dd2c8ff9d777104de85fb7b872ebed7139ceb Mon Sep 17 00:00:00 2001
+From 66808f706b3dcd83a9f5157997ff478a880a2906 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
 Date: Mon, 30 Apr 2012 09:10:51 +0200
 Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
  DSL-274xB rev F1
 
 ---
- arch/mips/bcm63xx/boards/board_bcm963xx.c |   80 +++++++++++++++++++++++++++++
- 1 file changed, 80 insertions(+)
+ arch/mips/bcm63xx/boards/board_bcm963xx.c |  104 +++++++++++++++++++++++++++++
+ 1 files changed, 104 insertions(+), 0 deletions(-)
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -54,6 +54,114 @@
- static struct board_info board;
+@@ -191,6 +191,109 @@ static struct board_info __initdata boar
  
- /*
-+ * known 6328 boards
-+ */
-+#ifdef CONFIG_BCM63XX_CPU_6328
+ 	},
+ };
++
 +static struct board_info __initdata board_dsl_274xb_f1 = {
 +	.name				= "AW4339U",
 +	.expected_cpu_id		= 0x6328,
@@ -119,19 +117,14 @@ Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
 +		},
 +	},
 +};
-+#endif
-+
-+/*
-  * known 6338 boards
-  */
- #ifdef CONFIG_BCM63XX_CPU_6338
-@@ -2160,6 +2268,9 @@ static struct board_info __initdata boar
-  * all boards
-  */
- static const struct board_info __initdata *bcm963xx_boards[] = {
-+#ifdef CONFIG_BCM63XX_CPU_6328
+ #endif
+ 
+ /*
+@@ -2303,6 +2406,7 @@ static const struct board_info __initdat
+ #ifdef CONFIG_BCM63XX_CPU_6328
+ 	&board_96328avng,
+ 	&board_963281TAN,
 +	&board_dsl_274xb_f1,
-+#endif
+ #endif
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
- 	&board_96338w,

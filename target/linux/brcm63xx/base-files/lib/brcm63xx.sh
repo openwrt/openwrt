@@ -18,6 +18,14 @@ brcm63xx_detect() {
 	fi
 
 	case "$board_name" in
+	96328avng)
+		status_led="96328avng::power"
+		ifname=eth0
+		;;
+	963281TAN)
+		status_led="963281TAN::power"
+		ifname=eth0
+		;;
 	96348GW)
 		status_led="power"
 		brcm63xx_has_reset_button="true"
