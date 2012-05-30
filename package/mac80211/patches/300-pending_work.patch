@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath5k/base.c
 +++ b/drivers/net/wireless/ath/ath5k/base.c
-@@ -2416,6 +2416,22 @@ ath5k_tx_complete_poll_work(struct work_
+@@ -2417,6 +2417,22 @@ ath5k_tx_complete_poll_work(struct work_
  * Initialization routines *
  \*************************/
  
@@ -23,7 +23,7 @@
  int __devinit
  ath5k_init_ah(struct ath5k_hw *ah, const struct ath_bus_ops *bus_ops)
  {
-@@ -2437,6 +2453,9 @@ ath5k_init_ah(struct ath5k_hw *ah, const
+@@ -2438,6 +2454,9 @@ ath5k_init_ah(struct ath5k_hw *ah, const
  		BIT(NL80211_IFTYPE_ADHOC) |
  		BIT(NL80211_IFTYPE_MESH_POINT);
  
@@ -32,531 +32,6 @@
 +
  	/* SW support for IBSS_RSN is provided by mac80211 */
  	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
- 
---- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-+++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-@@ -618,19 +618,10 @@ static void ar5008_hw_init_bb(struct ath
- 	u32 synthDelay;
- 
- 	synthDelay = REG_READ(ah, AR_PHY_RX_DELAY) & AR_PHY_RX_DELAY_DELAY;
--	if (IS_CHAN_B(chan))
--		synthDelay = (4 * synthDelay) / 22;
--	else
--		synthDelay /= 10;
--
--	if (IS_CHAN_HALF_RATE(chan))
--		synthDelay *= 2;
--	else if (IS_CHAN_QUARTER_RATE(chan))
--		synthDelay *= 4;
- 
- 	REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_EN);
- 
--	udelay(synthDelay + BASE_ACTIVATE_DELAY);
-+	ath9k_hw_synth_delay(ah, chan, synthDelay);
- }
- 
- static void ar5008_hw_init_chain_masks(struct ath_hw *ah)
-@@ -868,7 +859,7 @@ static int ar5008_hw_process_ini(struct 
- 	ar5008_hw_set_channel_regs(ah, chan);
- 	ar5008_hw_init_chain_masks(ah);
- 	ath9k_olc_init(ah);
--	ath9k_hw_apply_txpower(ah, chan);
-+	ath9k_hw_apply_txpower(ah, chan, false);
- 
- 	/* Write analog registers */
- 	if (!ath9k_hw_set_rf_regs(ah, chan, freqIndex)) {
-@@ -948,12 +939,8 @@ static bool ar5008_hw_rfbus_req(struct a
- static void ar5008_hw_rfbus_done(struct ath_hw *ah)
- {
- 	u32 synthDelay = REG_READ(ah, AR_PHY_RX_DELAY) & AR_PHY_RX_DELAY_DELAY;
--	if (IS_CHAN_B(ah->curchan))
--		synthDelay = (4 * synthDelay) / 22;
--	else
--		synthDelay /= 10;
- 
--	udelay(synthDelay + BASE_ACTIVATE_DELAY);
-+	ath9k_hw_synth_delay(ah, ah->curchan, synthDelay);
- 
- 	REG_WRITE(ah, AR_PHY_RFBUS_REQ, 0);
- }
---- a/drivers/net/wireless/ath/ath9k/ar9003_calib.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_calib.c
-@@ -1000,10 +1000,12 @@ static bool ar9003_hw_init_cal(struct at
- 	if (mci && IS_CHAN_2GHZ(chan) && run_agc_cal)
- 		ar9003_mci_init_cal_req(ah, &is_reusable);
- 
--	txiqcal_done = ar9003_hw_tx_iq_cal_run(ah);
--	REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_DIS);
--	udelay(5);
--	REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_EN);
-+	if (!(IS_CHAN_HALF_RATE(chan) || IS_CHAN_QUARTER_RATE(chan))) {
-+		txiqcal_done = ar9003_hw_tx_iq_cal_run(ah);
-+		REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_DIS);
-+		udelay(5);
-+		REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_EN);
-+	}
- 
- skip_tx_iqcal:
- 	if (run_agc_cal || !(ah->ah_flags & AH_FASTCC)) {
---- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
-@@ -4281,18 +4281,10 @@ static int ar9003_hw_tx_power_regwrite(s
- #undef POW_SM
- }
- 
--static void ar9003_hw_set_target_power_eeprom(struct ath_hw *ah, u16 freq,
--					      u8 *targetPowerValT2)
-+static void ar9003_hw_get_legacy_target_powers(struct ath_hw *ah, u16 freq,
-+					       u8 *targetPowerValT2,
-+					       bool is2GHz)
- {
--	/* XXX: hard code for now, need to get from eeprom struct */
--	u8 ht40PowerIncForPdadc = 0;
--	bool is2GHz = false;
--	unsigned int i = 0;
--	struct ath_common *common = ath9k_hw_common(ah);
--
--	if (freq < 4000)
--		is2GHz = true;
--
- 	targetPowerValT2[ALL_TARGET_LEGACY_6_24] =
- 	    ar9003_hw_eeprom_get_tgt_pwr(ah, LEGACY_TARGET_RATE_6_24, freq,
- 					 is2GHz);
-@@ -4305,6 +4297,11 @@ static void ar9003_hw_set_target_power_e
- 	targetPowerValT2[ALL_TARGET_LEGACY_54] =
- 	    ar9003_hw_eeprom_get_tgt_pwr(ah, LEGACY_TARGET_RATE_54, freq,
- 					 is2GHz);
-+}
-+
-+static void ar9003_hw_get_cck_target_powers(struct ath_hw *ah, u16 freq,
-+					    u8 *targetPowerValT2)
-+{
- 	targetPowerValT2[ALL_TARGET_LEGACY_1L_5L] =
- 	    ar9003_hw_eeprom_get_cck_tgt_pwr(ah, LEGACY_TARGET_RATE_1L_5L,
- 					     freq);
-@@ -4314,6 +4311,11 @@ static void ar9003_hw_set_target_power_e
- 	    ar9003_hw_eeprom_get_cck_tgt_pwr(ah, LEGACY_TARGET_RATE_11L, freq);
- 	targetPowerValT2[ALL_TARGET_LEGACY_11S] =
- 	    ar9003_hw_eeprom_get_cck_tgt_pwr(ah, LEGACY_TARGET_RATE_11S, freq);
-+}
-+
-+static void ar9003_hw_get_ht20_target_powers(struct ath_hw *ah, u16 freq,
-+					     u8 *targetPowerValT2, bool is2GHz)
-+{
- 	targetPowerValT2[ALL_TARGET_HT20_0_8_16] =
- 	    ar9003_hw_eeprom_get_ht20_tgt_pwr(ah, HT_TARGET_RATE_0_8_16, freq,
- 					      is2GHz);
-@@ -4356,6 +4358,16 @@ static void ar9003_hw_set_target_power_e
- 	targetPowerValT2[ALL_TARGET_HT20_23] =
- 	    ar9003_hw_eeprom_get_ht20_tgt_pwr(ah, HT_TARGET_RATE_23, freq,
- 					      is2GHz);
-+}
-+
-+static void ar9003_hw_get_ht40_target_powers(struct ath_hw *ah,
-+						   u16 freq,
-+						   u8 *targetPowerValT2,
-+						   bool is2GHz)
-+{
-+	/* XXX: hard code for now, need to get from eeprom struct */
-+	u8 ht40PowerIncForPdadc = 0;
-+
- 	targetPowerValT2[ALL_TARGET_HT40_0_8_16] =
- 	    ar9003_hw_eeprom_get_ht40_tgt_pwr(ah, HT_TARGET_RATE_0_8_16, freq,
- 					      is2GHz) + ht40PowerIncForPdadc;
-@@ -4399,6 +4411,26 @@ static void ar9003_hw_set_target_power_e
- 	targetPowerValT2[ALL_TARGET_HT40_23] =
- 	    ar9003_hw_eeprom_get_ht40_tgt_pwr(ah, HT_TARGET_RATE_23, freq,
- 					      is2GHz) + ht40PowerIncForPdadc;
-+}
-+
-+static void ar9003_hw_get_target_power_eeprom(struct ath_hw *ah,
-+					      struct ath9k_channel *chan,
-+					      u8 *targetPowerValT2)
-+{
-+	bool is2GHz = IS_CHAN_2GHZ(chan);
-+	unsigned int i = 0;
-+	struct ath_common *common = ath9k_hw_common(ah);
-+	u16 freq = chan->channel;
-+
-+	if (is2GHz)
-+		ar9003_hw_get_cck_target_powers(ah, freq, targetPowerValT2);
-+
-+	ar9003_hw_get_legacy_target_powers(ah, freq, targetPowerValT2, is2GHz);
-+	ar9003_hw_get_ht20_target_powers(ah, freq, targetPowerValT2, is2GHz);
-+
-+	if (IS_CHAN_HT40(chan))
-+		ar9003_hw_get_ht40_target_powers(ah, freq, targetPowerValT2,
-+						 is2GHz);
- 
- 	for (i = 0; i < ar9300RateSize; i++) {
- 		ath_dbg(common, EEPROM, "TPC[%02d] 0x%08x\n",
-@@ -4778,9 +4810,6 @@ static void ar9003_hw_set_power_per_rate
- 	scaledPower = ath9k_hw_get_scaled_power(ah, powerLimit,
- 						antenna_reduction);
- 
--	/*
--	 * Get target powers from EEPROM - our baseline for TX Power
--	 */
- 	if (is2ghz) {
- 		/* Setup for CTL modes */
- 		/* CTL_11B, CTL_11G, CTL_2GHT20 */
-@@ -4952,7 +4981,12 @@ static void ath9k_hw_ar9300_set_txpower(
- 	unsigned int i = 0, paprd_scale_factor = 0;
- 	u8 pwr_idx, min_pwridx = 0;
- 
--	ar9003_hw_set_target_power_eeprom(ah, chan->channel, targetPowerValT2);
-+	memset(targetPowerValT2, 0 , sizeof(targetPowerValT2));
-+
-+	/*
-+	 * Get target powers from EEPROM - our baseline for TX Power
-+	 */
-+	ar9003_hw_get_target_power_eeprom(ah, chan, targetPowerValT2);
- 
- 	if (ah->eep_ops->get_eeprom(ah, EEP_PAPRD)) {
- 		if (IS_CHAN_2GHZ(chan))
---- a/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
-@@ -54,7 +54,7 @@ void ar9003_paprd_enable(struct ath_hw *
- 
- 	if (val) {
- 		ah->paprd_table_write_done = true;
--		ath9k_hw_apply_txpower(ah, chan);
-+		ath9k_hw_apply_txpower(ah, chan, false);
- 	}
- 
- 	REG_RMW_FIELD(ah, AR_PHY_PAPRD_CTRL0_B0,
---- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -373,7 +373,7 @@ static void ar9003_hw_spur_ofdm_work(str
- 			else
- 				spur_subchannel_sd = 0;
- 
--			spur_freq_sd = (freq_offset << 9) / 11;
-+			spur_freq_sd = ((freq_offset + 10) << 9) / 11;
- 
- 		} else {
- 			if (REG_READ_FIELD(ah, AR_PHY_GEN_CTRL,
-@@ -382,7 +382,7 @@ static void ar9003_hw_spur_ofdm_work(str
- 			else
- 				spur_subchannel_sd = 1;
- 
--			spur_freq_sd = (freq_offset << 9) / 11;
-+			spur_freq_sd = ((freq_offset - 10) << 9) / 11;
- 
- 		}
- 
-@@ -526,22 +526,10 @@ static void ar9003_hw_init_bb(struct ath
- 	 * Value is in 100ns increments.
- 	 */
- 	synthDelay = REG_READ(ah, AR_PHY_RX_DELAY) & AR_PHY_RX_DELAY_DELAY;
--	if (IS_CHAN_B(chan))
--		synthDelay = (4 * synthDelay) / 22;
--	else
--		synthDelay /= 10;
- 
- 	/* Activate the PHY (includes baseband activate + synthesizer on) */
- 	REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_EN);
--
--	/*
--	 * There is an issue if the AP starts the calibration before
--	 * the base band timeout completes.  This could result in the
--	 * rx_clear false triggering.  As a workaround we add delay an
--	 * extra BASE_ACTIVATE_DELAY usecs to ensure this condition
--	 * does not happen.
--	 */
--	udelay(synthDelay + BASE_ACTIVATE_DELAY);
-+	ath9k_hw_synth_delay(ah, chan, synthDelay);
- }
- 
- static void ar9003_hw_set_chain_masks(struct ath_hw *ah, u8 rx, u8 tx)
-@@ -692,7 +680,7 @@ static int ar9003_hw_process_ini(struct 
- 	ar9003_hw_override_ini(ah);
- 	ar9003_hw_set_channel_regs(ah, chan);
- 	ar9003_hw_set_chain_masks(ah, ah->rxchainmask, ah->txchainmask);
--	ath9k_hw_apply_txpower(ah, chan);
-+	ath9k_hw_apply_txpower(ah, chan, false);
- 
- 	if (AR_SREV_9462(ah)) {
- 		if (REG_READ_FIELD(ah, AR_PHY_TX_IQCAL_CONTROL_0,
-@@ -723,6 +711,14 @@ static void ar9003_hw_set_rfmode(struct 
- 
- 	if (IS_CHAN_A_FAST_CLOCK(ah, chan))
- 		rfMode |= (AR_PHY_MODE_DYNAMIC | AR_PHY_MODE_DYN_CCK_DISABLE);
-+	if (IS_CHAN_QUARTER_RATE(chan))
-+		rfMode |= AR_PHY_MODE_QUARTER;
-+	if (IS_CHAN_HALF_RATE(chan))
-+		rfMode |= AR_PHY_MODE_HALF;
-+
-+	if (rfMode & (AR_PHY_MODE_QUARTER | AR_PHY_MODE_HALF))
-+		REG_RMW_FIELD(ah, AR_PHY_FRAME_CTL,
-+			      AR_PHY_FRAME_CTL_CF_OVERLAP_WINDOW, 3);
- 
- 	REG_WRITE(ah, AR_PHY_MODE, rfMode);
- }
-@@ -793,12 +789,8 @@ static bool ar9003_hw_rfbus_req(struct a
- static void ar9003_hw_rfbus_done(struct ath_hw *ah)
- {
- 	u32 synthDelay = REG_READ(ah, AR_PHY_RX_DELAY) & AR_PHY_RX_DELAY_DELAY;
--	if (IS_CHAN_B(ah->curchan))
--		synthDelay = (4 * synthDelay) / 22;
--	else
--		synthDelay /= 10;
- 
--	udelay(synthDelay + BASE_ACTIVATE_DELAY);
-+	ath9k_hw_synth_delay(ah, ah->curchan, synthDelay);
- 
- 	REG_WRITE(ah, AR_PHY_RFBUS_REQ, 0);
- }
---- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
-@@ -468,6 +468,9 @@
- #define AR_PHY_ADDAC_PARA_CTL    (AR_SM_BASE + 0x150)
- #define AR_PHY_XPA_CFG           (AR_SM_BASE + 0x158)
- 
-+#define AR_PHY_FRAME_CTL_CF_OVERLAP_WINDOW  3
-+#define AR_PHY_FRAME_CTL_CF_OVERLAP_WINDOW_S    0
-+
- #define AR_PHY_SPUR_MASK_A_CF_PUNC_MASK_IDX_A           0x0001FC00
- #define AR_PHY_SPUR_MASK_A_CF_PUNC_MASK_IDX_A_S         10
- #define AR_PHY_SPUR_MASK_A_CF_PUNC_MASK_A                       0x3FF
---- a/drivers/net/wireless/ath/ath9k/eeprom_9287.c
-+++ b/drivers/net/wireless/ath/ath9k/eeprom_9287.c
-@@ -798,6 +798,8 @@ static void ath9k_hw_ar9287_set_txpower(
- 			regulatory->max_power_level = ratesArray[i];
- 	}
- 
-+	ath9k_hw_update_regulatory_maxpower(ah);
-+
- 	if (test)
- 		return;
- 
---- a/drivers/net/wireless/ath/ath9k/hw.c
-+++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -191,6 +191,22 @@ bool ath9k_hw_wait(struct ath_hw *ah, u3
- }
- EXPORT_SYMBOL(ath9k_hw_wait);
- 
-+void ath9k_hw_synth_delay(struct ath_hw *ah, struct ath9k_channel *chan,
-+			  int hw_delay)
-+{
-+	if (IS_CHAN_B(chan))
-+		hw_delay = (4 * hw_delay) / 22;
-+	else
-+		hw_delay /= 10;
-+
-+	if (IS_CHAN_HALF_RATE(chan))
-+		hw_delay *= 2;
-+	else if (IS_CHAN_QUARTER_RATE(chan))
-+		hw_delay *= 4;
-+
-+	udelay(hw_delay + BASE_ACTIVATE_DELAY);
-+}
-+
- void ath9k_hw_write_array(struct ath_hw *ah, struct ar5416IniArray *array,
- 			  int column, unsigned int *writecnt)
- {
-@@ -1020,7 +1036,7 @@ void ath9k_hw_init_global_settings(struc
- 	struct ath_common *common = ath9k_hw_common(ah);
- 	struct ieee80211_conf *conf = &common->hw->conf;
- 	const struct ath9k_channel *chan = ah->curchan;
--	int acktimeout, ctstimeout;
-+	int acktimeout, ctstimeout, ack_offset = 0;
- 	int slottime;
- 	int sifstime;
- 	int rx_lat = 0, tx_lat = 0, eifs = 0;
-@@ -1041,6 +1057,11 @@ void ath9k_hw_init_global_settings(struc
- 		rx_lat = 37;
- 	tx_lat = 54;
- 
-+	if (IS_CHAN_5GHZ(chan))
-+		sifstime = 16;
-+	else
-+		sifstime = 10;
-+
- 	if (IS_CHAN_HALF_RATE(chan)) {
- 		eifs = 175;
- 		rx_lat *= 2;
-@@ -1048,8 +1069,9 @@ void ath9k_hw_init_global_settings(struc
- 		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
- 		    tx_lat += 11;
- 
-+		sifstime *= 2;
-+		ack_offset = 16;
- 		slottime = 13;
--		sifstime = 32;
- 	} else if (IS_CHAN_QUARTER_RATE(chan)) {
- 		eifs = 340;
- 		rx_lat = (rx_lat * 4) - 1;
-@@ -1057,8 +1079,9 @@ void ath9k_hw_init_global_settings(struc
- 		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
- 		    tx_lat += 22;
- 
-+		sifstime *= 4;
-+		ack_offset = 32;
- 		slottime = 21;
--		sifstime = 64;
- 	} else {
- 		if (AR_SREV_9287(ah) && AR_SREV_9287_13_OR_LATER(ah)) {
- 			eifs = AR_D_GBL_IFS_EIFS_ASYNC_FIFO;
-@@ -1072,14 +1095,10 @@ void ath9k_hw_init_global_settings(struc
- 		tx_lat = MS(reg, AR_USEC_TX_LAT);
- 
- 		slottime = ah->slottime;
--		if (IS_CHAN_5GHZ(chan))
--			sifstime = 16;
--		else
--			sifstime = 10;
- 	}
- 
- 	/* As defined by IEEE 802.11-2007 17.3.8.6 */
--	acktimeout = slottime + sifstime + 3 * ah->coverage_class;
-+	acktimeout = slottime + sifstime + 3 * ah->coverage_class + ack_offset;
- 	ctstimeout = acktimeout;
- 
- 	/*
-@@ -1089,7 +1108,8 @@ void ath9k_hw_init_global_settings(struc
- 	 * BA frames in some implementations, but it has been found to fix ACK
- 	 * timeout issues in other cases as well.
- 	 */
--	if (conf->channel && conf->channel->band == IEEE80211_BAND_2GHZ) {
-+	if (conf->channel && conf->channel->band == IEEE80211_BAND_2GHZ &&
-+	    !IS_CHAN_HALF_RATE(chan) && !IS_CHAN_QUARTER_RATE(chan)) {
- 		acktimeout += 64 - sifstime - ah->slottime;
- 		ctstimeout += 48 - sifstime - ah->slottime;
- 	}
-@@ -1469,6 +1489,10 @@ static bool ath9k_hw_channel_change(stru
- 						    CHANNEL_5GHZ));
- 	mode_diff = (chan->chanmode != ah->curchan->chanmode);
- 
-+	if ((ah->curchan->channelFlags | chan->channelFlags) &
-+	    (CHANNEL_HALF | CHANNEL_QUARTER))
-+		return false;
-+
- 	for (qnum = 0; qnum < AR_NUM_QCU; qnum++) {
- 		if (ath9k_hw_numtxpending(ah, qnum)) {
- 			ath_dbg(common, QUEUE,
-@@ -1502,7 +1526,7 @@ static bool ath9k_hw_channel_change(stru
- 		return false;
- 	}
- 	ath9k_hw_set_clockrate(ah);
--	ath9k_hw_apply_txpower(ah, chan);
-+	ath9k_hw_apply_txpower(ah, chan, false);
- 	ath9k_hw_rfbus_done(ah);
- 
- 	if (IS_CHAN_OFDM(chan) || IS_CHAN_HT(chan))
-@@ -2773,7 +2797,8 @@ static int get_antenna_gain(struct ath_h
- 	return ah->eep_ops->get_eeprom(ah, gain_param);
- }
- 
--void ath9k_hw_apply_txpower(struct ath_hw *ah, struct ath9k_channel *chan)
-+void ath9k_hw_apply_txpower(struct ath_hw *ah, struct ath9k_channel *chan,
-+			    bool test)
- {
- 	struct ath_regulatory *reg = ath9k_hw_regulatory(ah);
- 	struct ieee80211_channel *channel;
-@@ -2794,7 +2819,7 @@ void ath9k_hw_apply_txpower(struct ath_h
- 
- 	ah->eep_ops->set_txpower(ah, chan,
- 				 ath9k_regd_get_ctl(reg, chan),
--				 ant_reduction, new_pwr, false);
-+				 ant_reduction, new_pwr, test);
- }
- 
- void ath9k_hw_set_txpowerlimit(struct ath_hw *ah, u32 limit, bool test)
-@@ -2807,7 +2832,7 @@ void ath9k_hw_set_txpowerlimit(struct at
- 	if (test)
- 		channel->max_power = MAX_RATE_POWER / 2;
- 
--	ath9k_hw_apply_txpower(ah, chan);
-+	ath9k_hw_apply_txpower(ah, chan, test);
- 
- 	if (test)
- 		channel->max_power = DIV_ROUND_UP(reg->max_power_level, 2);
---- a/drivers/net/wireless/ath/ath9k/hw.h
-+++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -923,6 +923,8 @@ void ath9k_hw_set_gpio(struct ath_hw *ah
- void ath9k_hw_setantenna(struct ath_hw *ah, u32 antenna);
- 
- /* General Operation */
-+void ath9k_hw_synth_delay(struct ath_hw *ah, struct ath9k_channel *chan,
-+			  int hw_delay);
- bool ath9k_hw_wait(struct ath_hw *ah, u32 reg, u32 mask, u32 val, u32 timeout);
- void ath9k_hw_write_array(struct ath_hw *ah, struct ar5416IniArray *array,
- 			  int column, unsigned int *writecnt);
-@@ -982,7 +984,8 @@ void ath9k_hw_name(struct ath_hw *ah, ch
- /* PHY */
- void ath9k_hw_get_delta_slope_vals(struct ath_hw *ah, u32 coef_scaled,
- 				   u32 *coef_mantissa, u32 *coef_exponent);
--void ath9k_hw_apply_txpower(struct ath_hw *ah, struct ath9k_channel *chan);
-+void ath9k_hw_apply_txpower(struct ath_hw *ah, struct ath9k_channel *chan,
-+			    bool test);
- 
- /*
-  * Code Specific to AR5008, AR9001 or AR9002,
---- a/drivers/net/wireless/ath/ath9k/init.c
-+++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -647,6 +647,24 @@ void ath9k_reload_chainmask_settings(str
- 		setup_ht_cap(sc, &sc->sbands[IEEE80211_BAND_5GHZ].ht_cap);
- }
- 
-+static const struct ieee80211_iface_limit if_limits[] = {
-+	{ .max = 2048,	.types = BIT(NL80211_IFTYPE_STATION) |
-+				 BIT(NL80211_IFTYPE_P2P_CLIENT) |
-+				 BIT(NL80211_IFTYPE_WDS) },
-+	{ .max = 8,	.types =
-+#ifdef CONFIG_MAC80211_MESH
-+				 BIT(NL80211_IFTYPE_MESH_POINT) |
-+#endif
-+				 BIT(NL80211_IFTYPE_AP) |
-+				 BIT(NL80211_IFTYPE_P2P_GO) },
-+};
-+
-+static const struct ieee80211_iface_combination if_comb = {
-+	.limits = if_limits,
-+	.n_limits = ARRAY_SIZE(if_limits),
-+	.max_interfaces = 2048,
-+	.num_different_channels = 1,
-+};
- 
- void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
- {
-@@ -676,6 +694,9 @@ void ath9k_set_hw_capab(struct ath_softc
- 		BIT(NL80211_IFTYPE_ADHOC) |
- 		BIT(NL80211_IFTYPE_MESH_POINT);
- 
-+	hw->wiphy->iface_combinations = &if_comb;
-+	hw->wiphy->n_iface_combinations = 1;
-+
- 	if (AR_SREV_5416(sc->sc_ah))
- 		hw->wiphy->flags &= ~WIPHY_FLAG_PS_ON_BY_DEFAULT;
- 
---- a/drivers/net/wireless/ath/ath9k/mac.c
-+++ b/drivers/net/wireless/ath/ath9k/mac.c
-@@ -133,8 +133,16 @@ EXPORT_SYMBOL(ath9k_hw_updatetxtriglevel
- 
- void ath9k_hw_abort_tx_dma(struct ath_hw *ah)
- {
-+	int maxdelay = 1000;
- 	int i, q;
- 
-+	if (ah->curchan) {
-+		if (IS_CHAN_HALF_RATE(ah->curchan))
-+			maxdelay *= 2;
-+		else if (IS_CHAN_QUARTER_RATE(ah->curchan))
-+			maxdelay *= 4;
-+	}
-+
- 	REG_WRITE(ah, AR_Q_TXD, AR_Q_TXD_M);
- 
- 	REG_SET_BIT(ah, AR_PCU_MISC, AR_PCU_FORCE_QUIET_COLL | AR_PCU_CLEAR_VMF);
-@@ -142,7 +150,7 @@ void ath9k_hw_abort_tx_dma(struct ath_hw
- 	REG_SET_BIT(ah, AR_D_GBL_IFS_MISC, AR_D_GBL_IFS_MISC_IGNORE_BACKOFF);
- 
- 	for (q = 0; q < AR_NUM_QCU; q++) {
--		for (i = 0; i < 1000; i++) {
-+		for (i = 0; i < maxdelay; i++) {
- 			if (i)
- 				udelay(5);
  
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
@@ -581,7 +56,7 @@
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
-@@ -484,6 +485,7 @@ int ieee80211_start_tx_ba_session(struct
+@@ -490,6 +491,7 @@ int ieee80211_start_tx_ba_session(struct
  	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  	    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -607,19 +82,7 @@
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -206,8 +206,10 @@ static void ieee80211_set_default_queues
- 	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
- 		if (local->hw.flags & IEEE80211_HW_QUEUE_CONTROL)
- 			sdata->vif.hw_queue[i] = IEEE80211_INVAL_HW_QUEUE;
--		else
-+		else if (local->hw.queues >= IEEE80211_NUM_ACS)
- 			sdata->vif.hw_queue[i] = i;
-+		else
-+			sdata->vif.hw_queue[i] = 0;
- 	}
- 	sdata->vif.cab_queue = IEEE80211_INVAL_HW_QUEUE;
- }
-@@ -282,7 +284,6 @@ static int ieee80211_do_open(struct net_
+@@ -284,7 +284,6 @@ static int ieee80211_do_open(struct net_
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ieee80211_local *local = sdata->local;
@@ -627,7 +90,7 @@
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -428,28 +429,6 @@ static int ieee80211_do_open(struct net_
+@@ -430,28 +429,6 @@ static int ieee80211_do_open(struct net_
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -656,7 +119,7 @@
  	/*
  	 * set_multicast_list will be invoked by the networking core
  	 * which will check whether any increments here were done in
-@@ -846,6 +825,72 @@ static void ieee80211_if_setup(struct ne
+@@ -848,6 +825,72 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -729,7 +192,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -950,6 +995,9 @@ static void ieee80211_iface_work(struct 
+@@ -952,6 +995,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -741,7 +204,7 @@
  			break;
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2283,6 +2283,7 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2284,6 +2284,7 @@ ieee80211_rx_h_action(struct ieee80211_r
  		    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  		    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -749,7 +212,7 @@
  		    sdata->vif.type != NL80211_IFTYPE_ADHOC)
  			break;
  
-@@ -2497,14 +2498,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2498,14 +2499,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -767,7 +230,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_ASSOC_RESP):
  	case cpu_to_le16(IEEE80211_STYPE_REASSOC_RESP):
-@@ -2838,10 +2840,16 @@ static int prepare_for_handlers(struct i
+@@ -2839,10 +2841,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
@@ -804,172 +267,3 @@
  	WLAN_STA_CLEAR_PS_FILT,
  	WLAN_STA_MFP,
  	WLAN_STA_BLOCK_BA,
---- a/drivers/net/wireless/iwlwifi/iwl-agn.h
-+++ b/drivers/net/wireless/iwlwifi/iwl-agn.h
-@@ -425,6 +425,7 @@ void iwl_testmode_cleanup(struct iwl_pri
- #ifdef CONFIG_IWLWIFI_DEBUG
- void iwl_print_rx_config_cmd(struct iwl_priv *priv,
- 			     enum iwl_rxon_context_id ctxid);
-+int iwl_alloc_traffic_mem(struct iwl_priv *priv);
- #else
- static inline void iwl_print_rx_config_cmd(struct iwl_priv *priv,
- 					   enum iwl_rxon_context_id ctxid)
-@@ -510,7 +511,6 @@ void iwl_setup_deferred_work(struct iwl_
- int iwl_send_wimax_coex(struct iwl_priv *priv);
- int iwl_send_bt_env(struct iwl_priv *priv, u8 action, u8 type);
- void iwl_debug_config(struct iwl_priv *priv);
--int iwl_alloc_traffic_mem(struct iwl_priv *priv);
- void iwl_set_hw_params(struct iwl_priv *priv);
- void iwl_init_context(struct iwl_priv *priv, u32 ucode_flags);
- int iwl_init_drv(struct iwl_priv *priv);
---- a/drivers/net/wireless/libertas/firmware.c
-+++ b/drivers/net/wireless/libertas/firmware.c
-@@ -5,6 +5,7 @@
- #include <linux/firmware.h>
- #include <linux/firmware.h>
- #include <linux/module.h>
-+#include <linux/sched.h>
- 
- #include "dev.h"
- #include "decl.h"
---- a/drivers/net/wireless/ath/ath9k/recv.c
-+++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -812,6 +812,7 @@ static bool ath9k_rx_accept(struct ath_c
- 	is_valid_tkip = rx_stats->rs_keyix != ATH9K_RXKEYIX_INVALID &&
- 		test_bit(rx_stats->rs_keyix, common->tkip_keymap);
- 	strip_mic = is_valid_tkip && ieee80211_is_data(fc) &&
-+		ieee80211_has_protected(fc) &&
- 		!(rx_stats->rs_status &
- 		(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_CRC | ATH9K_RXERR_MIC |
- 		 ATH9K_RXERR_KEYMISS));
---- a/net/mac80211/cfg.c
-+++ b/net/mac80211/cfg.c
-@@ -1005,6 +1005,9 @@ static int ieee80211_change_station(stru
- 	}
- 
- 	if (params->vlan && params->vlan != sta->sdata->dev) {
-+		bool prev_4addr = false;
-+		bool new_4addr = false;
-+
- 		vlansdata = IEEE80211_DEV_TO_SUB_IF(params->vlan);
- 
- 		if (vlansdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
-@@ -1020,9 +1023,25 @@ static int ieee80211_change_station(stru
- 			}
- 
- 			rcu_assign_pointer(vlansdata->u.vlan.sta, sta);
-+			new_4addr = true;
-+		}
-+
-+		if (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
-+		    sta->sdata->u.vlan.sta) {
-+			rcu_assign_pointer(sta->sdata->u.vlan.sta, NULL);
-+			prev_4addr = true;
- 		}
- 
- 		sta->sdata = vlansdata;
-+
-+		if (sta->sta_state == IEEE80211_STA_AUTHORIZED &&
-+		    prev_4addr != new_4addr) {
-+			if (new_4addr)
-+				atomic_dec(&sta->sdata->bss->num_mcast_sta);
-+			else
-+				atomic_inc(&sta->sdata->bss->num_mcast_sta);
-+		}
-+
- 		ieee80211_send_layer2_update(sta);
- 	}
- 
---- a/net/mac80211/debugfs_netdev.c
-+++ b/net/mac80211/debugfs_netdev.c
-@@ -394,7 +394,7 @@ static ssize_t ieee80211_if_parse_uapsd_
- __IEEE80211_IF_FILE_W(uapsd_max_sp_len);
- 
- /* AP attributes */
--IEEE80211_IF_FILE(num_sta_authorized, u.ap.num_sta_authorized, ATOMIC);
-+IEEE80211_IF_FILE(num_mcast_sta, u.ap.num_mcast_sta, ATOMIC);
- IEEE80211_IF_FILE(num_sta_ps, u.ap.num_sta_ps, ATOMIC);
- IEEE80211_IF_FILE(dtim_count, u.ap.dtim_count, DEC);
- 
-@@ -540,7 +540,7 @@ static void add_sta_files(struct ieee802
- 
- static void add_ap_files(struct ieee80211_sub_if_data *sdata)
- {
--	DEBUGFS_ADD(num_sta_authorized);
-+	DEBUGFS_ADD(num_mcast_sta);
- 	DEBUGFS_ADD(num_sta_ps);
- 	DEBUGFS_ADD(dtim_count);
- 	DEBUGFS_ADD(num_buffered_multicast);
---- a/net/mac80211/ieee80211_i.h
-+++ b/net/mac80211/ieee80211_i.h
-@@ -282,7 +282,7 @@ struct ieee80211_if_ap {
- 	u8 tim[sizeof(unsigned long) * BITS_TO_LONGS(IEEE80211_MAX_AID + 1)];
- 	struct sk_buff_head ps_bc_buf;
- 	atomic_t num_sta_ps; /* number of stations in PS mode */
--	atomic_t num_sta_authorized; /* number of authorized stations */
-+	atomic_t num_mcast_sta; /* number of stations receiving multicast */
- 	int dtim_count;
- 	bool dtim_bc_mc;
- };
---- a/net/mac80211/sta_info.c
-+++ b/net/mac80211/sta_info.c
-@@ -1417,15 +1417,19 @@ int sta_info_move_state(struct sta_info 
- 		if (sta->sta_state == IEEE80211_STA_AUTH) {
- 			set_bit(WLAN_STA_ASSOC, &sta->_flags);
- 		} else if (sta->sta_state == IEEE80211_STA_AUTHORIZED) {
--			if (sta->sdata->vif.type == NL80211_IFTYPE_AP)
--				atomic_dec(&sta->sdata->u.ap.num_sta_authorized);
-+			if (sta->sdata->vif.type == NL80211_IFTYPE_AP ||
-+			    (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
-+			     !sta->sdata->u.vlan.sta))
-+				atomic_dec(&sta->sdata->bss->num_mcast_sta);
- 			clear_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
- 		}
- 		break;
- 	case IEEE80211_STA_AUTHORIZED:
- 		if (sta->sta_state == IEEE80211_STA_ASSOC) {
--			if (sta->sdata->vif.type == NL80211_IFTYPE_AP)
--				atomic_inc(&sta->sdata->u.ap.num_sta_authorized);
-+			if (sta->sdata->vif.type == NL80211_IFTYPE_AP ||
-+			    (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
-+			     !sta->sdata->u.vlan.sta))
-+				atomic_inc(&sta->sdata->bss->num_mcast_sta);
- 			set_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
- 		}
- 		break;
---- a/net/mac80211/tx.c
-+++ b/net/mac80211/tx.c
-@@ -306,7 +306,7 @@ ieee80211_tx_h_check_assoc(struct ieee80
- 		}
- 	} else if (unlikely(tx->sdata->vif.type == NL80211_IFTYPE_AP &&
- 			    ieee80211_is_data(hdr->frame_control) &&
--			    !atomic_read(&tx->sdata->u.ap.num_sta_authorized))) {
-+			    !atomic_read(&tx->sdata->u.ap.num_mcast_sta))) {
- 		/*
- 		 * No associated STAs - no need to send multicast
- 		 * frames.
-@@ -1159,7 +1159,8 @@ ieee80211_tx_prepare(struct ieee80211_su
- 		tx->sta = rcu_dereference(sdata->u.vlan.sta);
- 		if (!tx->sta && sdata->dev->ieee80211_ptr->use_4addr)
- 			return TX_DROP;
--	} else if (info->flags & IEEE80211_TX_CTL_INJECTED) {
-+	} else if (info->flags & IEEE80211_TX_CTL_INJECTED ||
-+		   tx->sdata->control_port_protocol == tx->skb->protocol) {
- 		tx->sta = sta_info_get_bss(sdata, hdr->addr1);
- 	}
- 	if (!tx->sta)
---- a/net/wireless/scan.c
-+++ b/net/wireless/scan.c
-@@ -378,7 +378,11 @@ static int cmp_bss_core(struct cfg80211_
- 			       b->len_information_elements);
- 	}
- 
--	return compare_ether_addr(a->bssid, b->bssid);
-+	/*
-+	 * we can't use compare_ether_addr here since we need a < > operator.
-+	 * The binary return value of compare_ether_addr isn't enough
-+	 */
-+	return memcmp(a->bssid, b->bssid, sizeof(a->bssid));
- }
- 
- static int cmp_bss(struct cfg80211_bss *a,

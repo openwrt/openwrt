@@ -1,6 +1,6 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -693,6 +693,9 @@ enum mac80211_rx_flags {
+@@ -697,6 +697,9 @@ enum mac80211_rx_flags {
   * @mactime: value in microseconds of the 64-bit Time Synchronization Function
   * 	(TSF) timer when the first data symbol (MPDU) arrived at the hardware.
   * @band: the active band when this frame was received
@@ -10,7 +10,7 @@
   * @freq: frequency the radio was tuned to when receiving this frame, in MHz
   * @signal: signal strength when receiving this frame, either in dBm, in dB or
   *	unspecified depending on the hardware capabilities flags
-@@ -706,6 +709,10 @@ enum mac80211_rx_flags {
+@@ -710,6 +713,10 @@ enum mac80211_rx_flags {
  struct ieee80211_rx_status {
  	u64 mactime;
  	enum ieee80211_band band;
@@ -37,7 +37,7 @@
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1262,6 +1262,7 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1263,6 +1263,7 @@ ieee80211_rx_h_sta_process(struct ieee80
  	struct sk_buff *skb = rx->skb;
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
@@ -45,7 +45,7 @@
  
  	if (!sta)
  		return RX_CONTINUE;
-@@ -1306,6 +1307,19 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1307,6 +1308,19 @@ ieee80211_rx_h_sta_process(struct ieee80
  		ewma_add(&sta->avg_signal, -status->signal);
  	}
  
@@ -269,7 +269,7 @@
  	RX_SAMP_DBG(rate) = rs->rs_rate;
 --- a/include/linux/nl80211.h
 +++ b/include/linux/nl80211.h
-@@ -1693,6 +1693,8 @@ enum nl80211_sta_bss_param {
+@@ -1695,6 +1695,8 @@ enum nl80211_sta_bss_param {
   * @NL80211_STA_INFO_STA_FLAGS: Contains a struct nl80211_sta_flag_update.
   * @NL80211_STA_INFO_BEACON_LOSS: count of times beacon loss was detected (u32)
   * @NL80211_STA_INFO_T_OFFSET: timing offset with respect to this STA (s64)
@@ -278,7 +278,7 @@
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -1717,6 +1719,8 @@ enum nl80211_sta_info {
+@@ -1719,6 +1721,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_STA_FLAGS,
  	NL80211_STA_INFO_BEACON_LOSS,
  	NL80211_STA_INFO_T_OFFSET,
@@ -289,7 +289,7 @@
  	__NL80211_STA_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -2406,6 +2406,33 @@ nla_put_failure:
+@@ -2467,6 +2467,33 @@ nla_put_failure:
  	return false;
  }
  
@@ -323,7 +323,7 @@
  static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
  				int flags,
  				struct cfg80211_registered_device *rdev,
-@@ -2460,6 +2487,18 @@ static int nl80211_send_station(struct s
+@@ -2528,6 +2555,18 @@ static int nl80211_send_station(struct s
  	default:
  		break;
  	}

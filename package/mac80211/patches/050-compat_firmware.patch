@@ -1,20 +1,17 @@
 --- a/compat/Makefile
 +++ b/compat/Makefile
-@@ -1,10 +1,13 @@
+@@ -1,7 +1,10 @@
  obj-m += compat.o
  #compat-objs :=
  
 -obj-$(CONFIG_COMPAT_FIRMWARE_CLASS) += compat_firmware_class.o
- 
- compat-y += main.o
- 
 +ifdef CONFIG_COMPAT_FIRMWARE_CLASS
 +  compat-y += compat_firmware_class.o
 +endif
 +
- # Compat kernel compatibility code
- compat-$(CONFIG_COMPAT_KERNEL_2_6_14) += compat-2.6.14.o
- compat-$(CONFIG_COMPAT_KERNEL_2_6_18) += compat-2.6.18.o
+ obj-$(CONFIG_COMPAT_NET_SCH_CODEL) += sch_codel.o
+ obj-$(CONFIG_COMPAT_NET_SCH_FQ_CODEL) += sch_fq_codel.o
+ 
 --- a/compat/compat_firmware_class.c
 +++ b/compat/compat_firmware_class.c
 @@ -741,19 +741,16 @@ compat_request_firmware_nowait(
@@ -41,9 +38,9 @@
  EXPORT_SYMBOL_GPL(request_firmware_nowait);
 --- a/compat/main.c
 +++ b/compat/main.c
-@@ -37,6 +37,17 @@ void compat_dependency_symbol(void)
- }
+@@ -47,6 +47,17 @@ void compat_dependency_symbol(void)
  EXPORT_SYMBOL_GPL(compat_dependency_symbol);
+ 
  
 +#if defined(CONFIG_FW_LOADER) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
 +int __init firmware_class_init(void);
@@ -58,10 +55,10 @@
 +
  static int __init compat_init(void)
  {
- 	/* pm-qos for kernels <= 2.6.24, this is a no-op on newer kernels */
-@@ -51,7 +62,8 @@ static int __init compat_init(void)
- 	       COMPAT_BASE_TREE " " COMPAT_BASE_TREE_VERSION
- 	       "\n");
+ 	compat_pm_qos_power_init();
+@@ -63,7 +74,8 @@ static int __init compat_init(void)
+ 	printk(KERN_INFO "compat.git: "
+ 	       COMPAT_BASE_TREE "\n");
  
 -        return 0;
 +	firmware_class_init();
@@ -69,7 +66,7 @@
  }
  module_init(compat_init);
  
-@@ -60,7 +72,8 @@ static void __exit compat_exit(void)
+@@ -72,7 +84,8 @@ static void __exit compat_exit(void)
  	compat_pm_qos_power_deinit();
  	compat_system_workqueue_destroy();
  

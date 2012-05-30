@@ -1,0 +1,19 @@
+--- a/include/linux/compat-3.5.h
++++ b/include/linux/compat-3.5.h
+@@ -10,6 +10,8 @@
+ 
+ #include <linux/pkt_sched.h>
+ 
++#ifndef TCA_CODEL_MAX
++
+ /*
+  * This backports:
+  *
+@@ -107,6 +109,7 @@ struct tc_fq_codel_xstats {
+ 	};
+ };
+ 
++#endif /* TCA_CODEL_MAX */
+ 
+ /* Backports tty_lock: Localise the lock */
+ #define tty_lock(__tty) tty_lock()
