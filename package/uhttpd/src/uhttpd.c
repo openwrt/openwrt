@@ -385,10 +385,10 @@ static struct http_request * uh_http_header_recv(struct client *cl)
 	char *bufptr = cl->httpbuf.buf;
 	char *idxptr = NULL;
 
-	ssize_t blen = sizeof(cl->httpbuf)-1;
+	ssize_t blen = sizeof(cl->httpbuf.buf)-1;
 	ssize_t rlen = 0;
 
-	memset(bufptr, 0, sizeof(cl->httpbuf));
+	memset(bufptr, 0, sizeof(cl->httpbuf.buf));
 
 	while (blen > 0)
 	{
