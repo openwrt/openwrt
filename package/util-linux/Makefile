@@ -83,7 +83,7 @@ $(call Package/util-linux/Default)
   CATEGORY:=Libraries
 endef
 
-define Package/libblkid/description
+define Package/libmount/description
  The libmount library is used to parse /etc/fstab, /etc/mtab and
  /proc/self/mountinfo files, manage the mtab file, evaluate mount options...
 endef
@@ -381,7 +381,7 @@ $(call Package/util-linux/Default)
   TITLE:=locate the binary, source, and manual page files for a command
 endef
 
-define Package/wipefs/description
+define Package/whereis/description
  whereis locates source/binary and manuals sections for specified files
 endef
 
