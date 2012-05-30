@@ -1,0 +1,24 @@
+Index: linux-3.3.7/drivers/net/phy/Kconfig
+===================================================================
+--- linux-3.3.7.orig/drivers/net/phy/Kconfig	2012-05-27 18:09:00.129697447 +0200
++++ linux-3.3.7/drivers/net/phy/Kconfig	2012-05-29 18:31:44.462611635 +0200
+@@ -207,3 +207,7 @@
+ config MICREL_KS8995MA
+ 	tristate "Micrel KS8995MA 5-ports 10/100 managed Ethernet switch"
+ 	depends on SPI
++
++config PSB6970_PHY
++	tristate "Lantiq XWAY Tantos (PSB6970) Ethernet switch"
++	select SWCONFIG
+Index: linux-3.3.7/drivers/net/phy/Makefile
+===================================================================
+--- linux-3.3.7.orig/drivers/net/phy/Makefile	2012-05-27 18:09:00.129697447 +0200
++++ linux-3.3.7/drivers/net/phy/Makefile	2012-05-29 18:30:59.286610634 +0200
+@@ -28,6 +28,7 @@
+ obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
+ obj-$(CONFIG_LSI_ET1011C_PHY)	+= et1011c.o
+ obj-$(CONFIG_MICREL_PHY)	+= micrel.o
++obj-$(CONFIG_PSB6970_PHY)	+= psb6970.o
+ obj-$(CONFIG_FIXED_PHY)		+= fixed.o
+ obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o
+ obj-$(CONFIG_MDIO_GPIO)		+= mdio-gpio.o
