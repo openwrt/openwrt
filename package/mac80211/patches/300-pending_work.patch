@@ -35,7 +35,29 @@
  
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
-@@ -200,6 +200,8 @@ static void ieee80211_send_addba_resp(st
+@@ -145,15 +145,20 @@ static void sta_rx_agg_session_timer_exp
+ 	struct tid_ampdu_rx *tid_rx;
+ 	unsigned long timeout;
+ 
++	rcu_read_lock();
+ 	tid_rx = rcu_dereference(sta->ampdu_mlme.tid_rx[*ptid]);
+-	if (!tid_rx)
++	if (!tid_rx) {
++		rcu_read_unlock();
+ 		return;
++	}
+ 
+ 	timeout = tid_rx->last_rx + TU_TO_JIFFIES(tid_rx->timeout);
+ 	if (time_is_after_jiffies(timeout)) {
+ 		mod_timer(&tid_rx->session_timer, timeout);
++		rcu_read_unlock();
+ 		return;
+ 	}
++	rcu_read_unlock();
+ 
+ #ifdef CONFIG_MAC80211_HT_DEBUG
+ 	printk(KERN_DEBUG "rx session timer expired on tid %d\n", (u16)*ptid);
+@@ -200,6 +205,8 @@ static void ieee80211_send_addba_resp(st
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_ADHOC)
  		memcpy(mgmt->bssid, sdata->u.ibss.bssid, ETH_ALEN);
@@ -119,7 +141,16 @@
  	/*
  	 * set_multicast_list will be invoked by the networking core
  	 * which will check whether any increments here were done in
-@@ -848,6 +825,72 @@ static void ieee80211_if_setup(struct ne
+@@ -642,6 +619,8 @@ static void ieee80211_do_stop(struct iee
+ 		ieee80211_configure_filter(local);
+ 		break;
+ 	default:
++		flush_work(&local->hw_roc_start);
++		flush_work(&local->hw_roc_done);
+ 		flush_work(&sdata->work);
+ 		/*
+ 		 * When we get here, the interface is marked down.
+@@ -848,6 +827,72 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -192,7 +223,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -952,6 +995,9 @@ static void ieee80211_iface_work(struct 
+@@ -952,6 +997,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -267,3 +298,228 @@
  	WLAN_STA_CLEAR_PS_FILT,
  	WLAN_STA_MFP,
  	WLAN_STA_BLOCK_BA,
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -804,7 +804,7 @@ void ieee80211_set_wmm_default(struct ie
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct ieee80211_tx_queue_params qparam;
+ 	int ac;
+-	bool use_11b;
++	bool use_11b, enable_qos;
+ 	int aCWmin, aCWmax;
+ 
+ 	if (!local->ops->conf_tx)
+@@ -818,6 +818,13 @@ void ieee80211_set_wmm_default(struct ie
+ 	use_11b = (local->hw.conf.channel->band == IEEE80211_BAND_2GHZ) &&
+ 		 !(sdata->flags & IEEE80211_SDATA_OPERATING_GMODE);
+ 
++	/*
++	 * By default disable QoS in STA mode for old access points, which do
++	 * not support 802.11e. New APs will provide proper queue parameters,
++	 * that we will configure later.
++	 */
++	enable_qos = (sdata->vif.type != NL80211_IFTYPE_STATION);
++
+ 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
+ 		/* Set defaults according to 802.11-2007 Table 7-37 */
+ 		aCWmax = 1023;
+@@ -826,38 +833,47 @@ void ieee80211_set_wmm_default(struct ie
+ 		else
+ 			aCWmin = 15;
+ 
+-		switch (ac) {
+-		case IEEE80211_AC_BK:
+-			qparam.cw_max = aCWmax;
+-			qparam.cw_min = aCWmin;
+-			qparam.txop = 0;
+-			qparam.aifs = 7;
+-			break;
+-		default: /* never happens but let's not leave undefined */
+-		case IEEE80211_AC_BE:
++		if (enable_qos) {
++			switch (ac) {
++			case IEEE80211_AC_BK:
++				qparam.cw_max = aCWmax;
++				qparam.cw_min = aCWmin;
++				qparam.txop = 0;
++				qparam.aifs = 7;
++				break;
++			/* never happens but let's not leave undefined */
++			default:
++			case IEEE80211_AC_BE:
++				qparam.cw_max = aCWmax;
++				qparam.cw_min = aCWmin;
++				qparam.txop = 0;
++				qparam.aifs = 3;
++				break;
++			case IEEE80211_AC_VI:
++				qparam.cw_max = aCWmin;
++				qparam.cw_min = (aCWmin + 1) / 2 - 1;
++				if (use_11b)
++					qparam.txop = 6016/32;
++				else
++					qparam.txop = 3008/32;
++				qparam.aifs = 2;
++				break;
++			case IEEE80211_AC_VO:
++				qparam.cw_max = (aCWmin + 1) / 2 - 1;
++				qparam.cw_min = (aCWmin + 1) / 4 - 1;
++				if (use_11b)
++					qparam.txop = 3264/32;
++				else
++					qparam.txop = 1504/32;
++				qparam.aifs = 2;
++				break;
++			}
++		} else {
++			/* Confiure old 802.11b/g medium access rules. */
+ 			qparam.cw_max = aCWmax;
+ 			qparam.cw_min = aCWmin;
+ 			qparam.txop = 0;
+-			qparam.aifs = 3;
+-			break;
+-		case IEEE80211_AC_VI:
+-			qparam.cw_max = aCWmin;
+-			qparam.cw_min = (aCWmin + 1) / 2 - 1;
+-			if (use_11b)
+-				qparam.txop = 6016/32;
+-			else
+-				qparam.txop = 3008/32;
+ 			qparam.aifs = 2;
+-			break;
+-		case IEEE80211_AC_VO:
+-			qparam.cw_max = (aCWmin + 1) / 2 - 1;
+-			qparam.cw_min = (aCWmin + 1) / 4 - 1;
+-			if (use_11b)
+-				qparam.txop = 3264/32;
+-			else
+-				qparam.txop = 1504/32;
+-			qparam.aifs = 2;
+-			break;
+ 		}
+ 
+ 		qparam.uapsd = false;
+@@ -866,12 +882,8 @@ void ieee80211_set_wmm_default(struct ie
+ 		drv_conf_tx(local, sdata, ac, &qparam);
+ 	}
+ 
+-	/* after reinitialize QoS TX queues setting to default,
+-	 * disable QoS at all */
+-
+ 	if (sdata->vif.type != NL80211_IFTYPE_MONITOR) {
+-		sdata->vif.bss_conf.qos =
+-			sdata->vif.type != NL80211_IFTYPE_STATION;
++		sdata->vif.bss_conf.qos = enable_qos;
+ 		if (bss_notify)
+ 			ieee80211_bss_info_change_notify(sdata,
+ 							 BSS_CHANGED_QOS);
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -48,7 +48,10 @@ int ath_beaconq_config(struct ath_softc 
+ 		txq = sc->tx.txq_map[WME_AC_BE];
+ 		ath9k_hw_get_txq_props(ah, txq->axq_qnum, &qi_be);
+ 		qi.tqi_aifs = qi_be.tqi_aifs;
+-		qi.tqi_cwmin = 4*qi_be.tqi_cwmin;
++		if (ah->slottime == ATH9K_SLOT_TIME_20)
++			qi.tqi_cwmin = 2*qi_be.tqi_cwmin;
++		else
++			qi.tqi_cwmin = 4*qi_be.tqi_cwmin;
+ 		qi.tqi_cwmax = qi_be.tqi_cwmax;
+ 	}
+ 
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1220,6 +1220,22 @@ static void ieee80211_sta_wmm_params(str
+ 	sdata->vif.bss_conf.qos = true;
+ }
+ 
++static void __ieee80211_stop_poll(struct ieee80211_sub_if_data *sdata)
++{
++	lockdep_assert_held(&sdata->local->mtx);
++
++	sdata->u.mgd.flags &= ~(IEEE80211_STA_CONNECTION_POLL |
++				IEEE80211_STA_BEACON_POLL);
++	ieee80211_run_deferred_scan(sdata->local);
++}
++
++static void ieee80211_stop_poll(struct ieee80211_sub_if_data *sdata)
++{
++	mutex_lock(&sdata->local->mtx);
++	__ieee80211_stop_poll(sdata);
++	mutex_unlock(&sdata->local->mtx);
++}
++
+ static u32 ieee80211_handle_bss_capability(struct ieee80211_sub_if_data *sdata,
+ 					   u16 capab, bool erp_valid, u8 erp)
+ {
+@@ -1285,8 +1301,7 @@ static void ieee80211_set_associated(str
+ 	sdata->u.mgd.flags |= IEEE80211_STA_RESET_SIGNAL_AVE;
+ 
+ 	/* just to be sure */
+-	sdata->u.mgd.flags &= ~(IEEE80211_STA_CONNECTION_POLL |
+-				IEEE80211_STA_BEACON_POLL);
++	ieee80211_stop_poll(sdata);
+ 
+ 	ieee80211_led_assoc(local, 1);
+ 
+@@ -1456,8 +1471,7 @@ static void ieee80211_reset_ap_probe(str
+ 		return;
+ 	}
+ 
+-	ifmgd->flags &= ~(IEEE80211_STA_CONNECTION_POLL |
+-			  IEEE80211_STA_BEACON_POLL);
++	__ieee80211_stop_poll(sdata);
+ 
+ 	mutex_lock(&local->iflist_mtx);
+ 	ieee80211_recalc_ps(local, -1);
+@@ -1477,7 +1491,6 @@ static void ieee80211_reset_ap_probe(str
+ 		  round_jiffies_up(jiffies +
+ 				   IEEE80211_CONNECTION_IDLE_TIME));
+ out:
+-	ieee80211_run_deferred_scan(local);
+ 	mutex_unlock(&local->mtx);
+ }
+ 
+@@ -2413,7 +2426,11 @@ static void ieee80211_rx_mgmt_beacon(str
+ 			       "to a received beacon\n", sdata->name);
+ 		}
+ #endif
++		mutex_lock(&local->mtx);
+ 		ifmgd->flags &= ~IEEE80211_STA_BEACON_POLL;
++		ieee80211_run_deferred_scan(local);
++		mutex_unlock(&local->mtx);
++
+ 		mutex_lock(&local->iflist_mtx);
+ 		ieee80211_recalc_ps(local, -1);
+ 		mutex_unlock(&local->iflist_mtx);
+@@ -2600,8 +2617,7 @@ static void ieee80211_sta_connection_los
+ 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
+ 	u8 frame_buf[DEAUTH_DISASSOC_LEN];
+ 
+-	ifmgd->flags &= ~(IEEE80211_STA_CONNECTION_POLL |
+-			  IEEE80211_STA_BEACON_POLL);
++	ieee80211_stop_poll(sdata);
+ 
+ 	ieee80211_set_disassoc(sdata, IEEE80211_STYPE_DEAUTH, reason,
+ 			       false, frame_buf);
+@@ -2879,8 +2895,7 @@ static void ieee80211_restart_sta_timer(
+ 	u32 flags;
+ 
+ 	if (sdata->vif.type == NL80211_IFTYPE_STATION) {
+-		sdata->u.mgd.flags &= ~(IEEE80211_STA_BEACON_POLL |
+-					IEEE80211_STA_CONNECTION_POLL);
++		__ieee80211_stop_poll(sdata);
+ 
+ 		/* let's probe the connection once */
+ 		flags = sdata->local->hw.flags;
+@@ -2949,7 +2964,10 @@ void ieee80211_sta_restart(struct ieee80
+ 	if (test_and_clear_bit(TMR_RUNNING_CHANSW, &ifmgd->timers_running))
+ 		add_timer(&ifmgd->chswitch_timer);
+ 	ieee80211_sta_reset_beacon_monitor(sdata);
++
++	mutex_lock(&sdata->local->mtx);
+ 	ieee80211_restart_sta_timer(sdata);
++	mutex_unlock(&sdata->local->mtx);
+ }
+ #endif
+ 
