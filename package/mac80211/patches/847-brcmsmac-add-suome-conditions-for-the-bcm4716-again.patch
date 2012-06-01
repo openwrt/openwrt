@@ -32,7 +32,7 @@
  		} else if (NREV_IS(pi->pubpi.phy_rev, 5)) {
  			tx_pwrctrl_tbl = nphy_tpc_txgain_ipa_rev5;
  		} else {
-@@ -19256,8 +19259,14 @@ static void wlc_phy_spurwar_nphy(struct 
+@@ -19256,8 +19259,14 @@ static void wlc_phy_spurwar_nphy(struct
  			case 38:
  			case 102:
  			case 118:
@@ -49,7 +49,7 @@
  				break;
  			case 134:
  				nphy_adj_tone_id_buf[0] = 32;
-@@ -20697,12 +20706,22 @@ wlc_phy_chanspec_radio2056_setup(struct 
+@@ -20697,12 +20706,22 @@ wlc_phy_chanspec_radio2056_setup(struct
  			write_radio_reg(pi, RADIO_2056_SYN_PLL_LOOPFILTER2 |
  					RADIO_2056_SYN, 0x1f);
  
@@ -78,7 +78,7 @@
  		}
  	}
  
-@@ -20749,24 +20768,33 @@ wlc_phy_chanspec_radio2056_setup(struct 
+@@ -20749,24 +20768,33 @@ wlc_phy_chanspec_radio2056_setup(struct
  				WRITE_RADIO_REG2(pi, RADIO_2056, TX, core,
  						 PADG_IDAC, 0xcc);
  

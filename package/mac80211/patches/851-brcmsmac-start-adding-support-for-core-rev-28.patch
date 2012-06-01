@@ -1,0 +1,66 @@
+--- a/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
+@@ -95,6 +95,7 @@ static struct bcma_device_id brcms_corei
+ //	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 17, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 23, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 24, BCMA_ANY_CLASS),
++//	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 28, BCMA_ANY_CLASS),
+ 	BCMA_CORETABLE_END
+ };
+ MODULE_DEVICE_TABLE(bcma, brcms_coreid_table);
+--- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
+@@ -751,7 +751,7 @@ static void brcms_c_ucode_bsinit(struct
+ 	brcms_c_write_mhf(wlc_hw, wlc_hw->band->mhfs);
+ 
+ 	/* do band-specific ucode IHR, SHM, and SCR inits */
+-	if (D11REV_IS(wlc_hw->corerev, 17) || D11REV_IS(wlc_hw->corerev, 23)) {
++	if (D11REV_IS(wlc_hw->corerev, 17) || D11REV_IS(wlc_hw->corerev, 23) || D11REV_IS(wlc_hw->corerev, 28)) {
+ 		if (BRCMS_ISNPHY(wlc_hw->band))
+ 			brcms_c_write_inits(wlc_hw, ucode->d11n0bsinitvals16);
+ 		else
+@@ -2276,7 +2276,7 @@ static void brcms_ucode_download(struct
+ 	if (wlc_hw->ucode_loaded)
+ 		return;
+ 
+-	if (D11REV_IS(wlc_hw->corerev, 17) || D11REV_IS(wlc_hw->corerev, 23)) {
++	if (D11REV_IS(wlc_hw->corerev, 17) || D11REV_IS(wlc_hw->corerev, 23) || D11REV_IS(wlc_hw->corerev, 28)) {
+ 		if (BRCMS_ISNPHY(wlc_hw->band)) {
+ 			brcms_ucode_write(wlc_hw, ucode->bcm43xx_16_mimo,
+ 					  ucode->bcm43xx_16_mimosz);
+@@ -3252,7 +3252,7 @@ static void brcms_b_coreinit(struct brcm
+ 
+ 	sflags = bcma_aread32(core, BCMA_IOST);
+ 
+-	if (D11REV_IS(wlc_hw->corerev, 17) || D11REV_IS(wlc_hw->corerev, 23)) {
++	if (D11REV_IS(wlc_hw->corerev, 17) || D11REV_IS(wlc_hw->corerev, 23) || D11REV_IS(wlc_hw->corerev, 28)) {
+ 		if (BRCMS_ISNPHY(wlc_hw->band))
+ 			brcms_c_write_inits(wlc_hw, ucode->d11n0initvals16);
+ 		else
+--- a/drivers/net/wireless/brcm80211/brcmsmac/main.h
++++ b/drivers/net/wireless/brcm80211/brcmsmac/main.h
+@@ -65,7 +65,7 @@
+ #define	SW_TIMER_MAC_STAT_UPD		30	/* periodic MAC stats update */
+ 
+ /* max # supported core revisions (0 .. MAXCOREREV - 1) */
+-#define	MAXCOREREV		28
++#define	MAXCOREREV		29
+ 
+ /* Double check that unsupported cores are not enabled */
+ #if CONF_MSK(D11CONF, 0x4f) || CONF_GE(D11CONF, MAXCOREREV)
+--- a/drivers/net/wireless/brcm80211/brcmsmac/types.h
++++ b/drivers/net/wireless/brcm80211/brcmsmac/types.h
+@@ -93,11 +93,11 @@
+ #define BOARD_GPIO_13		0x2000
+ 
+ /* **** Core type/rev defaults **** */
+-#define D11CONF		0x0fffffb0	/* Supported  D11 revs: 4, 5, 7-27
++#define D11CONF		0x1fffffb0	/* Supported  D11 revs: 4, 5, 7-27
+ 					 * also need to update wlc.h MAXCOREREV
+ 					 */
+ 
+-#define NCONF		0x000001ff	/* Supported nphy revs:
++#define NCONF		0x000002ff	/* Supported nphy revs:
+ 					 *      0       4321a0
+ 					 *      1       4321a1
+ 					 *      2       4321b0/b1/c0/c1

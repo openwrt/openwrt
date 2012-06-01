@@ -1,0 +1,48 @@
+--- a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
+@@ -471,9 +471,6 @@ ai_buscore_setup(struct si_info *sii, st
+ 		sii->pub.pmurev = sii->pub.pmucaps & PCAP_REV_MASK;
+ 	}
+ 
+-	/* figure out buscore */
+-	sii->buscore = ai_findcore(&sii->pub, PCIE_CORE_ID, 0);
+-
+ 	return true;
+ }
+ 
+@@ -807,15 +804,3 @@ bool ai_deviceremoved(struct si_pub *sih
+ 
+ 	return false;
+ }
+-
+-uint ai_get_buscoretype(struct si_pub *sih)
+-{
+-	struct si_info *sii = (struct si_info *)sih;
+-	return sii->buscore->id.id;
+-}
+-
+-uint ai_get_buscorerev(struct si_pub *sih)
+-{
+-	struct si_info *sii = (struct si_info *)sih;
+-	return sii->buscore->id.rev;
+-}
+--- a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.h
++++ b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.h
+@@ -168,7 +168,6 @@ struct si_info {
+ 	struct si_pub pub;	/* back plane public state (must be first) */
+ 	struct bcma_bus *icbus;	/* handle to soc interconnect bus */
+ 	struct pci_dev *pcibus;	/* handle to pci bus */
+-	struct bcma_device *buscore;
+ 
+ 	u32 chipst;		/* chip status */
+ };
+@@ -202,9 +201,6 @@ extern void ai_pci_up(struct si_pub *sih
+ /* Enable Ex-PA for 4313 */
+ extern void ai_epa_4313war(struct si_pub *sih);
+ 
+-extern uint ai_get_buscoretype(struct si_pub *sih);
+-extern uint ai_get_buscorerev(struct si_pub *sih);
+-
+ static inline u32 ai_get_cccaps(struct si_pub *sih)
+ {
+ 	return sih->cccaps;
