@@ -5,21 +5,15 @@
 START=31
 
 start() {
-	# TODO: clean up this mess
-	[ `cat /proc/cpuinfo | grep system | cut -f 3 -d ' '` =  "Twinpass-VE" ] && {
-		[ ! -e /dev/danube-port ] && mknod /dev/danube-port c 254 0
-		return;
-	}
-	[ `cat /proc/cpuinfo | grep system | cut -f 3 -d ' '` !=  "Danube" ] && {
-		[ ! -e /dev/amazon_s-port ] && mknod /dev/amazon_s-port c 240 1
-		echo "INFO configuring HW scheduling 33/66"
-		echo "t0 0x0" > /proc/mips/mtsched
-		echo "t1 0x1" > /proc/mips/mtsched
-		echo "v0 0x0" > /proc/mips/mtsched
-	}
-	[ `cat /proc/cpuinfo | grep system | cut -f 3 -d ' '` =  "Danube" ] && {
-		[ ! -e /dev/danube-port ] && mknod /dev/danube-port c 240 1
-		# switch life-line relais
-		echo 1 > /sys/class/leds/fxs_relay/brightness
+	[ ! -c /dev/vmmc10 ] && {
+		mknod /dev/vmmc10 c 122 10
+		mknod /dev/vmmc11 c 122 11
+		mknod /dev/vmmc12 c 122 12
+		mknod /dev/vmmc13 c 122 13
+		mknod /dev/vmmc14 c 122 14
+		mknod /dev/vmmc15 c 122 15
+		mknod /dev/vmmc16 c 122 16
+		mknod /dev/vmmc17 c 122 17
+		mknod /dev/vmmc18 c 122 18
 	}
 }

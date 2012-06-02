@@ -7,22 +7,6 @@ SERVICE_PID_FILE=/var/run/owsip.pid
 
 . /lib/functions.sh
 
-load_module() {
-	MODULE=`lsmod | grep vmmc`
-	[ ! -z "$MODULE" ] || ( insmod vmmc ; sleep 3 )
-	[ ! -c /dev/vmmc10 ] && {
-		mknod /dev/vmmc10 c 122 10
-		mknod /dev/vmmc11 c 122 11
-		mknod /dev/vmmc12 c 122 12
-		mknod /dev/vmmc13 c 122 13
-		mknod /dev/vmmc14 c 122 14
-		mknod /dev/vmmc15 c 122 15
-		mknod /dev/vmmc16 c 122 16
-		mknod /dev/vmmc17 c 122 17
-		mknod /dev/vmmc18 c 122 18
-	}
-}
-
 relay_set () {
 	local cfg="$1"
 	local gpio value
@@ -41,7 +25,6 @@ relay_set () {
 start() {
 	config_load telephony	
 	config_foreach relay_set relay
-	load_module
 	service_start /usr/bin/owsip_ua
 }
 
