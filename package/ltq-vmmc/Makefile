@@ -67,7 +67,10 @@ COEF_FILE:=coef_voip_ifx.tar.gz
 
 FW_DIR:=lib/firmware
 
-ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE),y)
+FW_TARGET_GENERIC:=$(FW_TARGET)
+COEF_TARGET_GENERIC:=$(COEF_TARGET)
+
+ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE)$(CONFIG_LTQ_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE),y)
   CONFIGURE_ARGS += --with-device=DANUBE
   FW_SOURCE:=voip_R12.1.0.1.0-enc.bin
   FW_TARGET:=danube_firmware.bin
@@ -154,7 +157,9 @@ define KernelPackage/ltq-vmmc/install
 	$(INSTALL_DIR) $(1)/etc/init.d $(1)/$(FW_DIR)
 	$(INSTALL_BIN) ./files/vmmc.init $(1)/etc/init.d/vmmc
 	$(CP) $(PKG_BUILD_DIR)/firmware/$(FW_SOURCE) $(1)/$(FW_DIR)/$(FW_TARGET)
+	ln -s /$(FW_DIR)/$(FW_TARGET) $(1)/$(FW_DIR)/$(FW_TARGET_GENERIC)
 	$(CP) $(PKG_BUILD_DIR)/coef/$(COEF_SRC) $(1)/$(FW_DIR)/$(COEF_TARGET)
+	ln -s /$(FW_DIR)/$(COEF_TARGET) $(1)/$(FW_DIR)/$(COEF_TARGET_GENERIC)
 endef
 
 $(eval $(call KernelPackage,ltq-vmmc))
