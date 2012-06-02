@@ -316,13 +316,7 @@ static bool uh_lua_socket_cb(struct client *cl)
 		state->data_sent = true;
 	}
 
-	/* child has been marked dead by timeout or child handler, bail out */
-	if (false && cl->dead)
-	{
-		D("Lua: Child(%d) is marked dead, returning\n", state->cl->proc.pid);
-		goto out;
-	}
-
+	/* got EOF or read error from child */
 	if ((len == 0) ||
 		((errno != EAGAIN) && (errno != EWOULDBLOCK) && (len == -1)))
 	{

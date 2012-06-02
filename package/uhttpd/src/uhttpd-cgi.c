@@ -283,13 +283,7 @@ static bool uh_cgi_socket_cb(struct client *cl)
 		}
 	}
 
-	/* child has been marked dead by timeout or child handler, bail out */
-	if (false && cl->dead)
-	{
-		D("CGI: Child(%d) is marked dead, returning\n", state->cl->proc.pid);
-		goto out;
-	}
-
+	/* got EOF or read error from child */
 	if ((len == 0) ||
 		((errno != EAGAIN) && (errno != EWOULDBLOCK) && (len == -1)))
 	{
