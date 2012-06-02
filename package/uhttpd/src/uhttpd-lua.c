@@ -298,9 +298,13 @@ static bool uh_lua_socket_cb(struct client *cl)
 		else
 			state->content_length = 0;
 
-		/* ... write to CGI process */
+		/* ... write to Lua process */
 		len = uh_raw_send(state->wfd, buf, len,
 						  cl->server->conf->script_timeout);
+
+		/* explicit EOF notification for the child */
+		if (state->content_length <= 0)
+			close(state->wfd);
 	}
 
 	/* try to read data from child */
