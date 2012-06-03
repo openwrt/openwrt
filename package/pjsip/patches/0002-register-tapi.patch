@@ -1,19 +1,6 @@
-From 455f6f2234a36aeeb97d3e05e9cbe3afad147341 Mon Sep 17 00:00:00 2001
-From: John Crispin <blogic@openwrt.org>
-Date: Sat, 28 Jan 2012 21:43:49 +0100
-Subject: [PATCH 2/3] register tapi
-
----
- .../pjmedia/src/pjmedia-audiodev/audiodev.c        |    7 +
- .../pjmedia/src/pjmedia-audiodev/tapi_dev.c        | 1300 ++++++++++++++++++++
- 2 files changed, 1307 insertions(+), 0 deletions(-)
- create mode 100644 pjproject-1.12/pjmedia/src/pjmedia-audiodev/tapi_dev.c
-
-diff --git a/pjmedia/src/pjmedia-audiodev/audiodev.c b/pjmedia/src/pjmedia-audiodev/audiodev.c
-index 3b7e121..82b364c 100644
 --- a/pjmedia/src/pjmedia-audiodev/audiodev.c
 +++ b/pjmedia/src/pjmedia-audiodev/audiodev.c
-@@ -98,6 +98,10 @@ pjmedia_aud_dev_factory* pjmedia_symb_mda_factory(pj_pool_factory *pf);
+@@ -98,6 +98,10 @@ pjmedia_aud_dev_factory* pjmedia_symb_md
  pjmedia_aud_dev_factory* pjmedia_null_audio_factory(pj_pool_factory *pf);
  #endif
  
@@ -24,7 +11,7 @@ index 3b7e121..82b364c 100644
  #define MAX_DRIVERS	16
  #define MAX_DEVS	64
  
-@@ -409,6 +413,9 @@ PJ_DEF(pj_status_t) pjmedia_aud_subsys_init(pj_pool_factory *pf)
+@@ -409,6 +413,9 @@ PJ_DEF(pj_status_t) pjmedia_aud_subsys_i
  #if PJMEDIA_AUDIO_DEV_HAS_NULL_AUDIO
      aud_subsys.drv[aud_subsys.drv_cnt++].create = &pjmedia_null_audio_factory;
  #endif
@@ -34,12 +21,9 @@ index 3b7e121..82b364c 100644
  
      /* Initialize each factory and build the device ID list */
      for (i=0; i<aud_subsys.drv_cnt; ++i) {
-diff --git a/pjmedia/src/pjmedia-audiodev/tapi_dev.c b/pjmedia/src/pjmedia-audiodev/tapi_dev.c
-new file mode 100644
-index 0000000..2c65a0d
 --- /dev/null
 +++ b/pjmedia/src/pjmedia-audiodev/tapi_dev.c
-@@ -0,0 +1,1300 @@
+@@ -0,0 +1,1307 @@
 +/******************************************************************************
 +
 +                               Copyright (c) 2010
@@ -237,7 +221,7 @@ index 0000000..2c65a0d
 +	} else if (!stricmp(cid, "kpn_dtmf_fsk")) {
 +		tapi_cid_type = IFX_TAPI_CID_STD_KPN_DTMF_FSK;
 +		PJ_LOG(3, (THIS_FILE, "using KPN DTMF FSK configuration for TAPI CID"));
-+	} 
++	}
 +}
 +
 +void tapi_locale_select(char *country)
@@ -875,6 +859,13 @@ index 0000000..2c65a0d
 +				if(tapi_digit_callback)
 +					tapi_digit_callback(i, tapiEvent.data.dtmf.ascii);
 +				break;
++			case IFX_TAPI_EVENT_PULSE_DIGIT:
++				if(tapi_digit_callback)
++					if(tapiEvent.data.pulse.digit == 0xB)
++						tapi_digit_callback(i, '0');
++					else
++						tapi_digit_callback(i, '0' + tapiEvent.data.pulse.digit);
++				break;
 +			case IFX_TAPI_EVENT_COD_DEC_CHG:
 +			case IFX_TAPI_EVENT_TONE_GEN_END:
 +			case IFX_TAPI_EVENT_CID_TX_SEQ_END:
@@ -1340,6 +1331,3 @@ index 0000000..2c65a0d
 +}
 +
 +#endif /* PJMEDIA_AUDIO_DEV_HAS_TAPI_DEVICE */
--- 
-1.7.7.1
-
