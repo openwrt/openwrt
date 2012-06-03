@@ -1,19 +1,6 @@
-From 1e0d5dbf8b7714dfd490add0e2b507fd513414f3 Mon Sep 17 00:00:00 2001
-From: John Crispin <blogic@openwrt.org>
-Date: Fri, 3 Feb 2012 21:45:08 +0100
-Subject: [PATCH 3/3] adds PJ_DEF(pj_status_t) pjsua_add_snd_port(int id)
-
----
- pjproject-1.12/pjsip/include/pjsua-lib/pjsua.h     |    2 +
- .../pjsip/include/pjsua-lib/pjsua_internal.h       |    4 +-
- pjproject-1.12/pjsip/src/pjsua-lib/pjsua_media.c   |   69 ++++++++++++++------
- 3 files changed, 54 insertions(+), 21 deletions(-)
-
-diff --git a/pjsip/include/pjsua-lib/pjsua.h b/pjsip/include/pjsua-lib/pjsua.h
-index 85dbbbb..ad3e020 100644
 --- a/pjsip/include/pjsua-lib/pjsua.h
 +++ b/pjsip/include/pjsua-lib/pjsua.h
-@@ -1543,6 +1543,8 @@ PJ_DECL(pjmedia_endpt*) pjsua_get_pjmedia_endpt(void);
+@@ -1543,6 +1543,8 @@ PJ_DECL(pjmedia_endpt*) pjsua_get_pjmedi
  PJ_DECL(pj_pool_factory*) pjsua_get_pool_factory(void);
  
  
@@ -22,8 +9,6 @@ index 85dbbbb..ad3e020 100644
  
  /*****************************************************************************
   * Utilities.
-diff --git a/pjsip/include/pjsua-lib/pjsua_internal.h b/pjsip/include/pjsua-lib/pjsua_internal.h
-index 6c27826..4ba91ed 100644
 --- a/pjsip/include/pjsua-lib/pjsua_internal.h
 +++ b/pjsip/include/pjsua-lib/pjsua_internal.h
 @@ -261,6 +261,8 @@ typedef struct pjsua_stun_resolve
@@ -44,8 +29,6 @@ index 6c27826..4ba91ed 100644
      pj_timer_entry	 snd_idle_timer;/**< Sound device idle timer.	*/
      pjmedia_master_port	*null_snd;  /**< Master port for null sound.	*/
      pjmedia_port	*null_port; /**< Null port.			*/
-diff --git a/pjsip/src/pjsua-lib/pjsua_media.c b/pjsip/src/pjsua-lib/pjsua_media.c
-index 7d53cad..8a882f3 100644
 --- a/pjsip/src/pjsua-lib/pjsua_media.c
 +++ b/pjsip/src/pjsua-lib/pjsua_media.c
 @@ -588,7 +588,7 @@ static void check_snd_dev_idle()
@@ -53,29 +36,29 @@ index 7d53cad..8a882f3 100644
       * there is no active call.
       */
 -    if ((pjsua_var.snd_port!=NULL || pjsua_var.null_snd!=NULL) && 
-+    if ((pjsua_var.snd_port[0]!=NULL || pjsua_var.null_snd!=NULL) && 
++    if ((pjsua_var.snd_port[0]!=NULL || pjsua_var.null_snd!=NULL) &&
  	pjsua_var.snd_idle_timer.id == PJ_FALSE &&
  	pjmedia_conf_get_connect_count(pjsua_var.mconf) == 0 &&
  	call_cnt == 0 &&
-@@ -2009,7 +2009,7 @@ PJ_DEF(pj_status_t) pjsua_conf_connect( pjsua_conf_port_id source,
+@@ -2008,7 +2008,7 @@ PJ_DEF(pj_status_t) pjsua_conf_connect(
  	pj_assert(status == PJ_SUCCESS);
  
  	/* Check if sound device is instantiated. */
 -	need_reopen = (pjsua_var.snd_port==NULL && pjsua_var.null_snd==NULL && 
-+	need_reopen = (pjsua_var.snd_port[0]==NULL && pjsua_var.null_snd==NULL && 
++	need_reopen = (pjsua_var.snd_port[0]==NULL && pjsua_var.null_snd==NULL &&
  		      !pjsua_var.no_snd);
  
  	/* Check if sound device need to reopen because it needs to modify 
-@@ -2067,7 +2067,7 @@ PJ_DEF(pj_status_t) pjsua_conf_connect( pjsua_conf_port_id source,
+@@ -2072,7 +2072,7 @@ PJ_DEF(pj_status_t) pjsua_conf_connect(
  	/* The bridge version */
  
  	/* Create sound port if none is instantiated */
 -	if (pjsua_var.snd_port==NULL && pjsua_var.null_snd==NULL && 
-+	if (pjsua_var.snd_port[0]==NULL && pjsua_var.null_snd==NULL && 
++	if (pjsua_var.snd_port[0]==NULL && pjsua_var.null_snd==NULL &&
  	    !pjsua_var.no_snd) 
  	{
  	    pj_status_t status;
-@@ -2679,9 +2679,9 @@ static pj_status_t update_initial_aud_param()
+@@ -2686,9 +2686,9 @@ static pj_status_t update_initial_aud_pa
      pjmedia_aud_param param;
      pj_status_t status;
  
@@ -87,7 +70,7 @@ index 7d53cad..8a882f3 100644
  
      status = pjmedia_aud_stream_get_param(strm, &param);
      if (status != PJ_SUCCESS) {
-@@ -2747,7 +2747,7 @@ static pj_status_t open_snd_dev(pjmedia_snd_port_param *param)
+@@ -2754,7 +2754,7 @@ static pj_status_t open_snd_dev(pjmedia_
  	      1000 / param->base.clock_rate));
  
      status = pjmedia_snd_port_create2( pjsua_var.snd_pool, 
@@ -96,24 +79,24 @@ index 7d53cad..8a882f3 100644
      if (status != PJ_SUCCESS)
  	return status;
  
-@@ -2805,13 +2805,13 @@ static pj_status_t open_snd_dev(pjmedia_snd_port_param *param)
+@@ -2812,13 +2812,13 @@ static pj_status_t open_snd_dev(pjmedia_
      }
  
      /* Connect sound port to the bridge */
 -    status = pjmedia_snd_port_connect(pjsua_var.snd_port, 	 
-+    status = pjmedia_snd_port_connect(pjsua_var.snd_port[0], 	 
++    status = pjmedia_snd_port_connect(pjsua_var.snd_port[0],
  				      conf_port ); 	 
      if (status != PJ_SUCCESS) { 	 
  	pjsua_perror(THIS_FILE, "Unable to connect conference port to "
  			        "sound device", status); 	 
 -	pjmedia_snd_port_destroy(pjsua_var.snd_port); 	 
 -	pjsua_var.snd_port = NULL; 	 
-+	pjmedia_snd_port_destroy(pjsua_var.snd_port[0]); 	 
-+	pjsua_var.snd_port[0] = NULL; 	 
++	pjmedia_snd_port_destroy(pjsua_var.snd_port[0]);
++	pjsua_var.snd_port[0] = NULL;
  	return status; 	 
      }
  
-@@ -2826,7 +2826,7 @@ static pj_status_t open_snd_dev(pjmedia_snd_port_param *param)
+@@ -2833,7 +2833,7 @@ static pj_status_t open_snd_dev(pjmedia_
  	pjmedia_aud_param si;
          pj_str_t tmp;
  
@@ -122,7 +105,7 @@ index 7d53cad..8a882f3 100644
  	status = pjmedia_aud_stream_get_param(strm, &si);
  	if (status == PJ_SUCCESS)
  	    status = pjmedia_aud_dev_get_info(si.rec_id, &rec_info);
-@@ -2869,12 +2869,12 @@ static pj_status_t open_snd_dev(pjmedia_snd_port_param *param)
+@@ -2876,12 +2876,12 @@ static pj_status_t open_snd_dev(pjmedia_
  static void close_snd_dev(void)
  {
      /* Close sound device */
@@ -137,7 +120,7 @@ index 7d53cad..8a882f3 100644
  	pjmedia_aud_stream_get_param(strm, &param);
  
  	if (pjmedia_aud_dev_get_info(param.rec_id, &cap_info) != PJ_SUCCESS)
-@@ -2886,9 +2886,9 @@ static void close_snd_dev(void)
+@@ -2893,9 +2893,9 @@ static void close_snd_dev(void)
  			     "%s sound capture device",
  			     play_info.name, cap_info.name));
  
@@ -150,7 +133,7 @@ index 7d53cad..8a882f3 100644
      }
  
      /* Close null sound device */
-@@ -2968,6 +2968,35 @@ PJ_DEF(pj_status_t) pjsua_set_snd_dev( int capture_dev,
+@@ -2984,6 +2984,35 @@ PJ_DEF(pj_status_t) pjsua_set_snd_dev( i
      return PJ_SUCCESS;
  }
  
@@ -186,18 +169,16 @@ index 7d53cad..8a882f3 100644
  
  /*
   * Get currently active sound devices. If sound devices has not been created
-@@ -3054,8 +3083,8 @@ PJ_DEF(pj_status_t) pjsua_set_ec(unsigned tail_ms, unsigned options)
- {
-     pjsua_var.media_cfg.ec_tail_len = tail_ms;
+@@ -3088,7 +3117,7 @@ PJ_DEF(pj_status_t) pjsua_set_ec(unsigne
+     pjsua_var.media_cfg.ec_options = options;
  
--    if (pjsua_var.snd_port)
--	return pjmedia_snd_port_set_ec( pjsua_var.snd_port, pjsua_var.pool,
-+    if (pjsua_var.snd_port[0])
-+	return pjmedia_snd_port_set_ec( pjsua_var.snd_port[0], pjsua_var.pool,
- 					tail_ms, options);
+     if (pjsua_var.snd_port)
+-	status = pjmedia_snd_port_set_ec(pjsua_var.snd_port, pjsua_var.pool,
++	status = pjmedia_snd_port_set_ec(pjsua_var.snd_port[0], pjsua_var.pool,
+ 					 tail_ms, options);
      
-     return PJ_SUCCESS;
-@@ -3077,7 +3106,7 @@ PJ_DEF(pj_status_t) pjsua_get_ec_tail(unsigned *p_tail_ms)
+     PJSUA_UNLOCK();
+@@ -3111,7 +3140,7 @@ PJ_DEF(pj_status_t) pjsua_get_ec_tail(un
   */
  PJ_DEF(pj_bool_t) pjsua_snd_is_active(void)
  {
@@ -206,7 +187,7 @@ index 7d53cad..8a882f3 100644
  }
  
  
-@@ -3099,7 +3128,7 @@ PJ_DEF(pj_status_t) pjsua_snd_set_setting( pjmedia_aud_dev_cap cap,
+@@ -3135,7 +3164,7 @@ PJ_DEF(pj_status_t) pjsua_snd_set_settin
      if (pjsua_snd_is_active()) {
  	pjmedia_aud_stream *strm;
  	
@@ -215,15 +196,12 @@ index 7d53cad..8a882f3 100644
  	status = pjmedia_aud_stream_set_cap(strm, cap, pval);
      } else {
  	status = PJ_SUCCESS;
-@@ -3137,7 +3166,7 @@ PJ_DEF(pj_status_t) pjsua_snd_get_setting( pjmedia_aud_dev_cap cap,
+@@ -3181,7 +3210,7 @@ PJ_DEF(pj_status_t) pjsua_snd_get_settin
  	/* Sound is active, retrieve from device directly */
  	pjmedia_aud_stream *strm;
  	
 -	strm = pjmedia_snd_port_get_snd_stream(pjsua_var.snd_port);
 +	strm = pjmedia_snd_port_get_snd_stream(pjsua_var.snd_port[0]);
- 	return pjmedia_aud_stream_get_cap(strm, cap, pval);
+ 	status = pjmedia_aud_stream_get_cap(strm, cap, pval);
      } else {
  	/* Otherwise retrieve from internal param */
--- 
-1.7.7.1
-
