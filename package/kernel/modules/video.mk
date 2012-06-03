@@ -306,6 +306,21 @@ endef
 $(eval $(call KernelPackage,video-gspca-pac7311))
 
 
+define KernelPackage/video-gspca-se401
+  TITLE:=se401 webcam support
+  KCONFIG:=CONFIG_USB_GSPCA_SE401
+  FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gspca_se401.ko
+  AUTOLOAD:=$(call AutoLoad,75,gspca_se401)
+  $(call AddDepends/video-gspca)
+endef
+
+define KernelPackage/video-gspca-se401/description
+ The SE401 USB Camera Driver kernel module.
+endef
+
+$(eval $(call KernelPackage,video-gspca-se401))
+
+
 define KernelPackage/video-gspca-sn9c20x
   TITLE:=sn9c20x webcam support
   KCONFIG:=CONFIG_USB_GSPCA_SN9C20X
