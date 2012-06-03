@@ -56,7 +56,7 @@ define KernelPackage/video-videobuf2
 endef
 
 define KernelPackage/video-videobuf2/description
- Kernel modules for supporting CPIA2 USB based cameras.
+ Kernel modules that implements three basic types of media buffers.
 endef
 
 $(eval $(call KernelPackage,video-videobuf2))
