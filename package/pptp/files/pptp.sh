@@ -24,7 +24,7 @@ proto_pptp_setup() {
 
 	serv_addr=
 	for ip in $(resolveip -t 5 "$server"); do
-		proto_add_host_dependency "$config" "$server"
+		( proto_add_host_dependency "$config" "$server" )
 		serv_addr=1
 	done
 	[ -n "$serv_addr" ] || {
