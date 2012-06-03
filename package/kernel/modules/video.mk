@@ -135,7 +135,7 @@ $(eval $(call KernelPackage,video-uvc))
 define KernelPackage/video-gspca-core
   MENU:=1
   TITLE:=GSPCA webcam core support framework
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-input-core
   KCONFIG:=CONFIG_USB_GSPCA
   FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gspca_main.ko
   AUTOLOAD:=$(call AutoLoad,70,gspca_main)
