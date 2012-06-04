@@ -17,7 +17,7 @@
 -	     entry_ofdm->ofdm_weak_signal_on)) {
 +	weak_sig = entry_ofdm->ofdm_weak_signal_on;
 +	if (ah->opmode == NL80211_IFTYPE_STATION &&
-+	    BEACON_RSSI(ah) >= aniState->rssiThrHigh)
++	    BEACON_RSSI(ah) <= aniState->rssiThrHigh)
 +		weak_sig = true;
 +
 +	if (!aniState->ofdmWeakSigDetectOff != weak_sig)
