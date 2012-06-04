@@ -1,0 +1,21 @@
+--- a/fw_env.c
++++ b/fw_env.c
+@@ -46,8 +46,6 @@
+ 
+ #include "fw_env.h"
+ 
+-#include <config.h>
+-
+ #define WHITESPACE(c) ((c == '\t') || (c == ' '))
+ 
+ #define min(x, y) ({				\
+@@ -401,9 +399,7 @@ int fw_env_write(char *name, char *value
+ 		if (
+ 		    (strcmp(name, "serial#") == 0) ||
+ 		    ((strcmp(name, "ethaddr") == 0)
+-#if defined(CONFIG_OVERWRITE_ETHADDR_ONCE) && defined(CONFIG_ETHADDR)
+ 		    && (strcmp(oldval, MK_STR(CONFIG_ETHADDR)) != 0)
+-#endif /* CONFIG_OVERWRITE_ETHADDR_ONCE && CONFIG_ETHADDR */
+ 		   ) ) {
+ 			fprintf (stderr, "Can't overwrite \"%s\"\n", name);
+ 			errno = EROFS;

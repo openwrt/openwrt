@@ -84,7 +84,7 @@
  
  #ifdef MTD_OLD
  # include <stdint.h>
-@@ -210,13 +211,14 @@ static char default_environment[] = {
+@@ -212,13 +213,14 @@ static char default_environment[] = {
  static int flash_io (int mode);
  static char *envmatch (char * s1, char * s2);
  static int parse_config (void);
@@ -101,7 +101,7 @@
  
  	if (HaveRedundEnv)
  		rc -= sizeof (char);
-@@ -346,7 +348,7 @@ int fw_env_close(void)
+@@ -348,7 +350,7 @@ int fw_env_close(void)
  	/*
  	 * Update CRC
  	 */
@@ -110,16 +110,7 @@
  
  	/* write environment back to flash */
  	if (flash_io(O_RDWR)) {
-@@ -802,7 +804,7 @@ static int flash_write_buf (int dev, int
- 		data = malloc (erase_len);
- 		if (!data) {
- 			fprintf (stderr,
--				 "Cannot malloc %u bytes: %s\n",
-+				 "Cannot malloc %zu bytes: %s\n",
- 				 erase_len, strerror (errno));
- 			return -1;
- 		}
-@@ -1107,7 +1109,7 @@ int fw_env_open(void)
+@@ -1116,7 +1118,7 @@ int fw_env_open(void)
  	if (flash_io (O_RDONLY))
  		return -1;
  
@@ -128,7 +119,7 @@
  	crc0_ok = (crc0 == *environment.crc);
  	if (!HaveRedundEnv) {
  		if (!crc0_ok) {
-@@ -1151,7 +1153,7 @@ int fw_env_open(void)
+@@ -1160,7 +1162,7 @@ int fw_env_open(void)
  			return -1;
  		}
  
