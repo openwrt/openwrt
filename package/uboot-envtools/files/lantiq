@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# Copyright (C) 2012 OpenWrt.org
+#
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/lantiq.sh
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(lantiq_board_name)
+
+case "$board" in
+GIGASX76X)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000" "1"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0
