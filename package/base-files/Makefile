@@ -443,10 +443,6 @@ define Package/base-files/install
 			$(CP) $(PLATFORM_SUBDIR)/$(PROFILE)/base-files/* $(1)/; \
 		fi \
 	)
-# Form valid /etc/shadow entries, by copying the user:pw pairs
-# from /etc/passwd, and adding on pw change data
-	cut -d ':' -f 1-2 $(1)/etc/passwd > $(1)/etc/shadow; \
-	$(SED) 's/$$$$/:0:0:99999:7:::/' $(1)/etc/shadow
 
 	$(VERSION_SED) \
 		$(1)/etc/banner \
