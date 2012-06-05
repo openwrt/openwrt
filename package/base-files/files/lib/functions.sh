@@ -302,6 +302,7 @@ user_add() {
 	[ -f "${IPKG_INSTROOT}/etc/passwd" ] || return 1
 	[ -n "$IPKG_INSTROOT" ] || lock /var/lock/passwd
 	echo "${name}:x:${uid}:${gid}:${desc}:${home}:${shell}" >> ${IPKG_INSTROOT}/etc/passwd
+	echo "${name}:x:0:0:99999:7:::" >> ${IPKG_INSTROOT}/etc/shadow
 	rc=$?
 	[ -n "$IPKG_INSTROOT" ] || lock -u /var/lock/passwd
 	return $rc
