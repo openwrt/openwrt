@@ -1,5 +1,5 @@
 #!/bin/sh
-[ -e /etc/functions.sh ] && . /etc/functions.sh || . ./functions.sh
+[ -e /lib/functions.sh ] && . /lib/functions.sh || . ./functions.sh
 [ -x /sbin/modprobe ] && {
 	insmod="modprobe"
 	rmmod="$insmod -r"

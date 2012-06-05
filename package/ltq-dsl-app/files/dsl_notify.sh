@@ -9,7 +9,7 @@
 
 [ "$DSL_NOTIFICATION_TYPE" = "DSL_INTERFACE_STATUS" ] || exit 0
 
-. /etc/functions.sh
+. /lib/functions.sh
 
 include /lib/network
 scan_interfaces

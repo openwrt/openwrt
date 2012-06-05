@@ -3,7 +3,7 @@
 [ -x /usr/sbin/pppd ] || exit 0
 
 [ -n "$INCLUDE_ONLY" ] || {
-	. /etc/functions.sh
+	. /lib/functions.sh
 	. ../netifd-proto.sh
 	init_proto "$@"
 }

@@ -48,7 +48,7 @@ system_config() {
 }
 
 apply_uci_config() {
-	sh -c '. /etc/functions.sh; include /lib/config; uci_apply_defaults'
+	sh -c '. /lib/functions.sh; include /lib/config; uci_apply_defaults'
 }
 
 start() {

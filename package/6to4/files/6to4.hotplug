@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$ACTION" = ifup ]; then
-	. /etc/functions.sh
+	. /lib/functions.sh
 
 	INCLUDE_ONLY=1
 	. /lib/netifd/proto/6to4.sh

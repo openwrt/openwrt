@@ -1,7 +1,7 @@
 #!/bin/sh
 # (C) 2008 openwrt.org
 
-. /etc/functions.sh
+. /lib/functions.sh
 ACTION=$1
 NAME=$2
 do_led() {

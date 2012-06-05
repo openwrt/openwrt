@@ -51,7 +51,7 @@ else
 fi
 
 if [ -n "$setup_wifi" ] && grep -q config /etc/config/wireless; then
-	. /etc/functions.sh
+	. /lib/functions.sh
 
 	find_related_radios() {
 		local wdev wnet
