@@ -13,7 +13,7 @@ FEATURES:=squashfs fpu gpio broken
 CFLAGS:=-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.3.7
+LINUX_VERSION:=3.3.8
 
 include $(INCLUDE_DIR)/target.mk
 

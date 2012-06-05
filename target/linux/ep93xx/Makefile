@@ -13,7 +13,7 @@ FEATURES:=squashfs jffs2 ext4 targz usb broken
 CFLAGS:=-Os -pipe -march=armv4t -fno-caller-saves
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.3.7
+LINUX_VERSION:=3.3.8
 
 include $(INCLUDE_DIR)/target.mk
 
