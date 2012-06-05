@@ -111,7 +111,7 @@ ifdef CONFIG_PACKAGE_wprobe-export
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="$(TARGET_CPPFLAGS) -I$(PKG_BUILD_DIR)/kernel -I$(PKG_BUILD_DIR)/user" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
-		LIBS="$(PKG_BUILD_DIR)/user/libwprobe.a $(STAGING_DIR)/usr/lib/libipfix.a $(STAGING_DIR)/usr/lib/libmisc.a -lnl-tiny -lm"
+		LIBS="$(PKG_BUILD_DIR)/user/libwprobe.a $(STAGING_DIR)/usr/lib/libipfix.a $(STAGING_DIR)/usr/lib/libipfixmisc.a -lnl-tiny -lm"
   endef
 endif
 

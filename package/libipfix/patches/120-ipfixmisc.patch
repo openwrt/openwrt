@@ -1,0 +1,27 @@
+Index: libipfix.r51/lib/Makefile.in
+===================================================================
+--- libipfix.r51.orig/lib/Makefile.in	2008-08-05 15:15:23.000000000 +0200
++++ libipfix.r51/lib/Makefile.in	2012-06-05 19:26:34.061692890 +0200
+@@ -41,7 +41,7 @@
+ INCLS = -I. -I..
+ CFLAGS = $(CCOPT) $(INCLS) $(DEFS)
+ 
+-TARGETS = libmisc.a libipfix.a
++TARGETS = libipfixmisc.a libipfix.a
+ OBJS = ipfix.o ipfix_col.o ipfix_print.o \
+        ipfix_col_files.o ipfix_col_db.o @IPFIX_DB_OBJ@ @IPFIX_SSL_OBJ@
+ DEPHDR = ipfix.h ipfix_def.h ipfix_fields.h ipfix_def_fokus.h ipfix_fields_fokus.h
+@@ -60,11 +60,11 @@
+ install:
+ 	@[ -d ${libdir} ] || (mkdir -p ${libdir}; chmod 755 ${libdir})
+ 	$(INSTALL_DATA) libipfix.a ${libdir}/
+-	$(INSTALL_DATA) libmisc.a ${libdir}/
++	$(INSTALL_DATA) libipfixmisc.a ${libdir}/
+ 	@[ -d ${includedir} ] || (mkdir -p ${includedir}; chmod 755 ${includedir})
+ 	$(INSTALL_HEADER) ipfix*.h mlog.h mpoll.h ${includedir}/
+ 
+-libmisc.a: $(MISCOBJS) Makefile
++libipfixmisc.a: $(MISCOBJS) Makefile
+ 	@rm -f $@
+ 	$(AR) rc $@ $(MISCOBJS) 
+ 
