@@ -212,7 +212,8 @@ $(call Package/util-linux/Default)
 endef
 
 define Package/logger/description
- logger makes entries in the system log, it provides a shell command interface to the syslog system log module
+ logger makes entries in the system log, it provides a shell command interface
+ to the syslog system log module
 endef
 
 define Package/look
@@ -372,7 +373,7 @@ $(call Package/util-linux/Default)
 endef
 
 define Package/wall/description
- Wall sends a message to everybody logged in with their mesg permission
+ wall sends a message to everybody logged in with their mesg permission
  set to yes
 endef
 
