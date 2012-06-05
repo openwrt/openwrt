@@ -36,7 +36,7 @@ define Build/Compile
 		exec_prefix="$(PKG_INSTALL_DIR)/usr" \
 		all install
 	$(TARGET_CROSS)ranlib $(PKG_INSTALL_DIR)/usr/lib/libipfix.a
-	$(TARGET_CROSS)ranlib $(PKG_INSTALL_DIR)/usr/lib/libmisc.a
+	$(TARGET_CROSS)ranlib $(PKG_INSTALL_DIR)/usr/lib/libipfixmisc.a
 endef
 
 define Build/InstallDev
