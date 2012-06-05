@@ -12,7 +12,7 @@ BOARDNAME:=TI AR7
 FEATURES:=squashfs jffs2 atm
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.3.7
+LINUX_VERSION:=3.3.8
 
 include $(INCLUDE_DIR)/target.mk
 

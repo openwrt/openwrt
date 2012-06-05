@@ -13,7 +13,7 @@ FEATURES:=targz pci ext4 broken
 CFLAGS:=-O2 -pipe -mtune=r5000 -fno-caller-saves
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.3.7
+LINUX_VERSION:=3.3.8
 
 include $(INCLUDE_DIR)/target.mk
 
