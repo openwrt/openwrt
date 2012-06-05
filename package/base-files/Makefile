@@ -470,6 +470,10 @@ define Package/base-files/install
 	ln -sf /tmp $(1)/var
 	mkdir -p $(1)/etc
 	ln -sf /tmp/resolv.conf /tmp/fstab /tmp/TZ $(1)/etc/
+
+	chmod 0600 $(1)/etc/shadow
+	chmod 1777 $(1)/tmp
+
 	$(call ImageConfigOptions,$(1))
 	$(call Package/base-files/install-target,$(1))
 	for conffile in $(1)/etc/config/*; do \
