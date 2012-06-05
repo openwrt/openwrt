@@ -115,40 +115,10 @@ Image/Build/Profile/BTHOMEHUBV2B=$(call Image/Build/$(1),$(1),BTHOMEHUBV2B)
 Image/Build/Profile/BTHOMEHUBV2BOPENRG=$(call Image/Build/$(1),$(1),BTHOMEHUBV2BOPENRG)
 
 define Image/BuildKernel/Profile/Generic
-	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV3527P,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV4510PW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV4518PW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV4519PW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV4520PW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV452CPW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV4525PW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV7525PW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV7518PW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV752DPW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV752DPW22,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,GIGASX76X,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,BTHOMEHUBV2B,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,BTHOMEHUBV2BOPENRG,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
 
 define Image/Build/Profile/Generic
-	$(call Image/Build/$(1),$(1),EASY50712)
-	$(call Image/Build/$(1),$(1),ARV3527P)
-	$(call Image/Build/$(1),$(1),ARV4510PW)
-	$(call Image/Build/$(1),$(1),ARV4518PW)
-	$(call Image/Build/$(1),$(1),ARV4519PW,BRNDA4519,0x12345678,memsize=32)
-	$(call Image/Build/$(1),$(1),ARV4520PW)
-	$(call Image/Build/$(1),$(1),ARV452CPW)
-	$(call Image/Build/$(1),$(1),ARV4525PW,BRNDTW502,0x12345678,memsize=32)
-	$(call Image/Build/$(1),$(1),ARV7525PW)
-	$(call Image/Build/$(1),$(1),ARV7518PW,BRNDA7519,0x12345678,memsize=32)
-	$(call Image/Build/$(1),$(1),ARV752DPW)
-	$(call Image/Build/$(1),$(1),ARV752DPW22)
-	$(call Image/Build/$(1),$(1),GIGASX76X)
-	$(call Image/Build/$(1),$(1),BTHOMEHUBV2B)
-	$(call Image/Build/$(1),$(1),BTHOMEHUBV2BOPENRG)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef
@@ -168,20 +138,10 @@ Image/Build/Profile/H201L=$(call Image/Build/$(1),$(1),H201L)
 Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
 
 define Image/BuildKernel/Profile/Generic
-	$(call Image/BuildKernel/Template,WBMR,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,DGN3500B,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,P2601HNFX,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,H201L,$(xway_cmdline))
-	$(call Image/BuildKernelEVA/Template,FRITZ7320,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
 
 define Image/Build/Profile/Generic
-	$(call Image/Build/$(1),$(1),WBMR)
-	$(call Image/Build/$(1),$(1),DGN3500B)
-	$(call Image/Build/$(1),$(1),P2601HNFX)
-	$(call Image/Build/$(1),$(1),H201L)
-	$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef
@@ -196,14 +156,10 @@ Image/Build/Profile/EASY98000=$(call Image/Build/$(1),$(1),EASY98000)
 Image/Build/Profile/EASY98020=$(call Image/Build/$(1),$(1),EASY98020)
 
 define Image/BuildKernel/Profile/Generic
-	$(call Image/BuildKernel/Template,EASY98000,$(falcon_cmdline))
-	$(call Image/BuildKernel/Template,EASY98020,$(falcon_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
 
 define Image/Build/Profile/Generic
-	$(call Image/Build/$(1),$(1),EASY98000)
-	$(call Image/Build/$(1),$(1),EASY98020)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef
@@ -215,12 +171,10 @@ Image/BuildKernel/Profile/EASY50601=$(call Image/BuildKernel/Template,EASY50601,
 Image/Build/Profile/EASY50601=$(call Image/Build/$(1),$(1),EASY50601)
 
 define Image/BuildKernel/Profile/Generic
-	$(call Image/BuildKernel/Template,EASY50601,$(ase_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
 
 define Image/Build/Profile/Generic
-	$(call Image/Build/$(1),$(1),EASY50601)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef
@@ -235,12 +189,10 @@ endef
 Image/Build/Profile/FRITZ3370=$(call Image/Build/$(1),$(1),FRITZ3370)
 
 define Image/BuildKernel/Profile/Generic
-	$(call Image/BuildKernel/Template,FRITZ3370,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
 
 define Image/Build/Profile/Generic
-	$(call Image/Build/$(1),$(1),FRITZ3370)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef
