@@ -41,7 +41,7 @@ Subject: [PATCH 26/63] MIPS: BCM63XX: register ehci device.
  obj-y		+= boards/
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -27,6 +27,7 @@
+@@ -28,6 +28,7 @@
  #include <bcm63xx_dev_pcmcia.h>
  #include <bcm63xx_dev_spi.h>
  #include <bcm63xx_dev_usb_ohci.h>
@@ -49,7 +49,7 @@ Subject: [PATCH 26/63] MIPS: BCM63XX: register ehci device.
  #include <board_bcm963xx.h>
  #include <bcm_tag.h>
  
-@@ -912,6 +913,9 @@ int __init board_register_devices(void)
+@@ -913,6 +914,9 @@ int __init board_register_devices(void)
  	    !board_get_mac_address(board.enet1.mac_addr))
  		bcm63xx_enet_register(1, &board.enet1);
  

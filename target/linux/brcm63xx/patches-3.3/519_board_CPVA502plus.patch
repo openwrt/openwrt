@@ -1,9 +1,10 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -438,6 +438,42 @@ static struct board_info __initdata boar
+@@ -1049,6 +1049,44 @@ static struct board_info __initdata boar
+ 		},
  	},
  };
- 
++
 +static struct board_info __initdata board_CPVA502plus = {
 +	.name				= "CPVA502+",
 +	.expected_cpu_id		= 0x6348,
@@ -40,10 +41,11 @@
 +		},
 +	},
 +};
++
  #endif
  
  /*
-@@ -2011,6 +2047,7 @@ static const struct board_info __initdat
+@@ -2010,6 +2048,7 @@ static const struct board_info __initdat
  	&board_V2110,
  	&board_ct536_ct5621,
  	&board_96348A_122,

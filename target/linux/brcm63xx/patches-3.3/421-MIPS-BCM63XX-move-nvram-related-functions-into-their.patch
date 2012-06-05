@@ -29,7 +29,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -20,6 +20,7 @@
+@@ -21,6 +21,7 @@
  #include <bcm63xx_dev_uart.h>
  #include <bcm63xx_regs.h>
  #include <bcm63xx_io.h>
@@ -37,7 +37,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_dev_pci.h>
  #include <bcm63xx_dev_enet.h>
  #include <bcm63xx_dev_dsp.h>
-@@ -40,8 +41,6 @@
+@@ -41,8 +42,6 @@
  #define CFE_OFFSET_64K		0x10000
  #define CFE_OFFSET_128K		0x20000
  
@@ -46,7 +46,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static struct board_info board;
  
  /*
-@@ -695,50 +694,16 @@ const char *board_get_name(void)
+@@ -696,50 +695,16 @@ const char *board_get_name(void)
  	return board.name;
  }
  
@@ -100,7 +100,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  			/* No tag found */
  			printk(KERN_DEBUG "No bcm_tag found!\n");
  			return;
-@@ -748,9 +713,9 @@ static void __init boardid_fixup(u8 *boo
+@@ -749,9 +714,9 @@ static void __init boardid_fixup(u8 *boo
  	if (tag->information1[0] != '+')
  		return;
  
@@ -112,7 +112,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  }
  
  /*
-@@ -758,9 +723,10 @@ static void __init boardid_fixup(u8 *boo
+@@ -759,9 +724,10 @@ static void __init boardid_fixup(u8 *boo
   */
  void __init board_prom_init(void)
  {
@@ -125,7 +125,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	u32 val;
  
  	/* read base address of boot chip select (0)
-@@ -782,32 +748,19 @@ void __init board_prom_init(void)
+@@ -783,32 +749,19 @@ void __init board_prom_init(void)
  		strcpy(cfe_version, "unknown");
  	printk(KERN_INFO PFX "CFE version: %s\n", cfe_version);
  
@@ -162,7 +162,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  			continue;
  		/* copy, board desc array is marked initdata */
  		memcpy(&board, bcm963xx_boards[i], sizeof(board));
-@@ -817,7 +770,7 @@ void __init board_prom_init(void)
+@@ -818,7 +771,7 @@ void __init board_prom_init(void)
  	/* bail out if board is not found, will complain later */
  	if (!board.name[0]) {
  		char name[17];
@@ -171,7 +171,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		name[16] = 0;
  		printk(KERN_ERR PFX "unknown bcm963xx board: %s\n",
  		       name);
-@@ -909,15 +862,15 @@ int __init board_register_devices(void)
+@@ -910,15 +863,15 @@ int __init board_register_devices(void)
  		bcm63xx_pcmcia_register();
  
  	if (board.has_enet0 &&
@@ -190,7 +190,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		bcm63xx_enetsw_register(&board.enetsw);
  
  	if (board.has_ehci0)
-@@ -933,7 +886,7 @@ int __init board_register_devices(void)
+@@ -934,7 +887,7 @@ int __init board_register_devices(void)
  	 * do this after registering enet devices
  	 */
  #ifdef CONFIG_SSB_PCIHOST
