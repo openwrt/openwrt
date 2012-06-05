@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -664,6 +664,98 @@ static struct board_info __initdata boar
+@@ -663,6 +663,98 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -99,7 +99,7 @@
  static struct board_info __initdata board_AGPFS0 = {
  	.name                           = "AGPF-S0",
  	.expected_cpu_id                = 0x6358,
-@@ -1227,6 +1319,7 @@ static const struct board_info __initdat
+@@ -1226,6 +1318,7 @@ static const struct board_info __initdat
  	&board_96358vw,
  	&board_96358vw2,
  	&board_AGPFS0,
@@ -107,3 +107,14 @@
  	&board_DWVS0,
  	&board_nb4_ser_r0,
  	&board_nb4_ser_r1,
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -52,7 +52,7 @@ struct board_info {
+ 	struct bcm63xx_dsp_platform_data dsp;
+ 
+ 	/* GPIO LEDs */
+-	struct gpio_led leds[9];
++	struct gpio_led leds[10];
+ 
+ 	/* Buttons */
+ 	struct gpio_keys_button buttons[4];

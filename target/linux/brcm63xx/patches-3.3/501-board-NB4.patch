@@ -1,16 +1,15 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -14,6 +14,9 @@
- #include <linux/ssb/ssb.h>
+@@ -15,6 +15,8 @@
  #include <linux/gpio_keys.h>
  #include <linux/input.h>
-+#include <linux/spi/spi.h>
+ #include <linux/spi/spi.h>
 +#include <linux/spi/spi_gpio.h>
 +#include <linux/spi/74x164.h>
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -42,6 +45,12 @@
+@@ -43,6 +45,12 @@
  #define CFE_OFFSET_64K		0x10000
  #define CFE_OFFSET_128K		0x20000
  
@@ -23,7 +22,7 @@
  static struct board_info board;
  
  /*
-@@ -666,6 +675,496 @@ static struct board_info __initdata boar
+@@ -666,6 +674,496 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -520,7 +519,7 @@
  #endif
  
  /*
-@@ -696,9 +1195,31 @@ static const struct board_info __initdat
+@@ -696,9 +1194,31 @@ static const struct board_info __initdat
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -552,7 +551,7 @@
  /*
   * Register a sane SPROMv2 to make the on-board
   * bcm4318 WLAN work
-@@ -807,6 +1328,9 @@ void __init board_prom_init(void)
+@@ -807,6 +1327,9 @@ void __init board_prom_init(void)
  		boardid_fixup(boot_addr);
  	}
  
@@ -562,3 +561,14 @@
  	board_name = bcm63xx_nvram_get_name();
  	/* find board by name */
  	for (i = 0; i < ARRAY_SIZE(bcm963xx_boards); i++) {
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -52,7 +52,7 @@ struct board_info {
+ 	struct bcm63xx_dsp_platform_data dsp;
+ 
+ 	/* GPIO LEDs */
+-	struct gpio_led leds[5];
++	struct gpio_led leds[9];
+ 
+ 	/* Buttons */
+ 	struct gpio_keys_button buttons[4];

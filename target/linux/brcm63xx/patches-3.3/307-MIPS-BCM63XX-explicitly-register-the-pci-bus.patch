@@ -16,7 +16,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -825,7 +825,6 @@ void __init board_prom_init(void)
+@@ -826,7 +826,6 @@ void __init board_prom_init(void)
  
  #ifdef CONFIG_PCI
  	if (board.has_pci) {
@@ -24,7 +24,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (BCMCPU_IS_6348())
  			val |= GPIO_MODE_6348_G2_PCI;
  	}
-@@ -997,5 +996,10 @@ int __init board_register_devices(void)
+@@ -998,5 +997,10 @@ int __init board_register_devices(void)
  		platform_device_register(&bcm63xx_gpio_keys_device);
  	}
  

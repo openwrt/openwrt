@@ -10,7 +10,7 @@ Subject: [PATCH 67/80] BCM63XX: allow providing fixup data in board data
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -32,6 +32,7 @@
+@@ -33,6 +33,7 @@
  #include <bcm63xx_dev_usb_ehci.h>
  #include <board_bcm963xx.h>
  #include <bcm_tag.h>
@@ -18,7 +18,7 @@ Subject: [PATCH 67/80] BCM63XX: allow providing fixup data in board data
  
  #define PFX	"board_bcm963xx: "
  
-@@ -851,6 +852,7 @@ int __init board_register_devices(void)
+@@ -852,6 +853,7 @@ int __init board_register_devices(void)
  {
  	int button_count = 0;
  	int led_count = 0;
@@ -26,7 +26,7 @@ Subject: [PATCH 67/80] BCM63XX: allow providing fixup data in board data
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -886,7 +888,8 @@ int __init board_register_devices(void)
+@@ -887,7 +889,8 @@ int __init board_register_devices(void)
  	 * do this after registering enet devices
  	 */
  #ifdef CONFIG_SSB_PCIHOST
@@ -36,7 +36,7 @@ Subject: [PATCH 67/80] BCM63XX: allow providing fixup data in board data
  		memcpy(bcm63xx_sprom.et0mac, bcm63xx_sprom.il0mac, ETH_ALEN);
  		memcpy(bcm63xx_sprom.et1mac, bcm63xx_sprom.il0mac, ETH_ALEN);
  		if (ssb_arch_register_fallback_sprom(
-@@ -931,5 +934,9 @@ int __init board_register_devices(void)
+@@ -932,5 +935,9 @@ int __init board_register_devices(void)
  		bcm63xx_pci_register();
  #endif
  

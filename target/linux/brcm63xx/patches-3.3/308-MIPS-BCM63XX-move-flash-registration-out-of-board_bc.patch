@@ -39,7 +39,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <linux/ssb/ssb.h>
  #include <linux/gpio_keys.h>
  #include <linux/input.h>
-@@ -26,6 +23,7 @@
+@@ -27,6 +24,7 @@
  #include <bcm63xx_dev_pci.h>
  #include <bcm63xx_dev_enet.h>
  #include <bcm63xx_dev_dsp.h>
@@ -47,7 +47,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_dev_pcmcia.h>
  #include <bcm63xx_dev_spi.h>
  #include <board_bcm963xx.h>
-@@ -865,40 +863,6 @@ void __init board_setup(void)
+@@ -866,40 +864,6 @@ void __init board_setup(void)
  		panic("unexpected CPU for bcm963xx board");
  }
  
@@ -88,7 +88,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static struct gpio_led_platform_data bcm63xx_led_data;
  
  static struct platform_device bcm63xx_gpio_leds = {
-@@ -922,7 +886,6 @@ static struct platform_device bcm63xx_gp
+@@ -923,7 +887,6 @@ static struct platform_device bcm63xx_gp
   */
  int __init board_register_devices(void)
  {
@@ -96,7 +96,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	int button_count = 0;
  	int led_count = 0;
  
-@@ -967,14 +930,7 @@ int __init board_register_devices(void)
+@@ -968,14 +931,7 @@ int __init board_register_devices(void)
  	if (board.num_spis)
  		spi_register_board_info(board.spis, board.num_spis);
  

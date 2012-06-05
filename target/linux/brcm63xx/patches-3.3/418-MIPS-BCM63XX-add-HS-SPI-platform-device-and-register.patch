@@ -28,7 +28,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  obj-y		+= boards/
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -24,6 +24,7 @@
+@@ -25,6 +25,7 @@
  #include <bcm63xx_dev_enet.h>
  #include <bcm63xx_dev_dsp.h>
  #include <bcm63xx_dev_flash.h>
@@ -36,7 +36,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_dev_pcmcia.h>
  #include <bcm63xx_dev_spi.h>
  #include <bcm63xx_dev_usb_ohci.h>
-@@ -940,6 +941,7 @@ int __init board_register_devices(void)
+@@ -941,6 +942,7 @@ int __init board_register_devices(void)
  			pr_err(PFX "failed to register fallback SPROM\n");
  	}
  #endif
