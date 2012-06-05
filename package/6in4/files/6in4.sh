@@ -3,7 +3,7 @@
 # Copyright (c) 2010 OpenWrt.org
 
 [ -n "$INCLUDE_ONLY" ] || {
-	. /etc/functions.sh
+	. /lib/functions.sh
 	. ../netifd-proto.sh
 	init_proto "$@"
 }

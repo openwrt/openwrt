@@ -4,7 +4,7 @@
 # See /LICENSE for more information.
 #
 
-. /etc/functions.sh
+. /lib/functions.sh
 
 reset_block_cb() {
 	mount_cb() { 

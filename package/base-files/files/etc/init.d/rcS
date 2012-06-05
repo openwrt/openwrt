@@ -14,7 +14,7 @@ system_config() {
 LOGGER="cat"
 [ -x /usr/bin/logger ] && LOGGER="logger -s -p 6 -t sysinit"
 
-. /etc/functions.sh
+. /lib/functions.sh
 
 config_load system
 config_foreach system_config system
