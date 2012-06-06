@@ -6,9 +6,6 @@ wpa_supplicant_setup_vif() {
 	local freq=""
 	[ -n "$4" ] && freq="frequency=$4"
 
-	# wpa_supplicant should use wext for mac80211 cards
-	[ "$driver" = "mac80211" ] && driver='wext'
-
 	# make sure we have the encryption type and the psk
 	[ -n "$enc" ] || {
 		config_get enc "$vif" encryption
@@ -60,7 +57,12 @@ wpa_supplicant_setup_vif() {
 		;;
 		*psk*)
 			key_mgmt='WPA-PSK'
-			[ "$mode" = "adhoc" -a "$driver" != "nl80211" ] && key_mgmt='WPA-NONE'
+			# if you want to use PSK with a non-nl80211 driver you
+			# have to use WPA-NONE and wext driver for wpa_s
+			[ "$mode" = "adhoc" -a "$driver" != "nl80211" ] && {
+				key_mgmt='WPA-NONE'
+				driver='wext'
+			}
 			config_get_bool usepassphrase "$vif" usepassphrase 1
 			if [ "$usepassphrase" = "1" ]; then
 				passphrase="psk=\"${key}\""
