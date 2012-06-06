@@ -1146,7 +1146,7 @@ endef
 define Image/Prepare
 	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
-	$(if $(CONFIG_IB),$(call Image/Build/Profile/Default,loader))
+	$(call Image/Build/Profile/$(if $(CONFIG_IB),Default,$(PROFILE)),loader)
 endef
 
 define Image/Build
