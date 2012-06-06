@@ -113,6 +113,7 @@ define Download/default
   SUBDIR:=$(PKG_SOURCE_SUBDIR)
   VERSION:=$(PKG_SOURCE_VERSION)
   MD5SUM:=$(PKG_MD5SUM)
+  MIRROR_MD5SUM:=$(PKG_MIRROR_MD5SUM)
 endef
 
 define Host/Exports/Default
