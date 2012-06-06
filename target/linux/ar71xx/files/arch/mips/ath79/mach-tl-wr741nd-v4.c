@@ -100,26 +100,12 @@ static struct gpio_keys_button tl_wr741ndv4_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init tl_wr741ndv4_gmac_setup(void)
-{
-	void __iomem *base;
-	u32 t;
-
-	base = ioremap(AR933X_GMAC_BASE, AR933X_GMAC_SIZE);
-
-	t = __raw_readl(base + AR933X_GMAC_REG_ETH_CFG);
-	t |= (AR933X_ETH_CFG_SW_PHY_SWAP | AR933X_ETH_CFG_SW_PHY_ADDR_SWAP);
-	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
-
-	iounmap(base);
-}
-
 static void __init tl_wr741ndv4_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	tl_wr741ndv4_gmac_setup();
+	ath79_setup_ar933x_phy4_switch(true, true);
 
 	ath79_gpio_function_disable(AR933X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
 				    AR933X_GPIO_FUNC_ETH_SWITCH_LED1_EN |

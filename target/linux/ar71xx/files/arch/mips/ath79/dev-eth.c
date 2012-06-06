@@ -634,6 +634,24 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 	return 0;
 }
 
+void __init ath79_setup_ar933x_phy4_switch(bool mac, bool mdio)
+{
+	void __iomem *base;
+	u32 t;
+
+	base = ioremap(AR933X_GMAC_BASE, AR933X_GMAC_SIZE);
+
+	t = __raw_readl(base + AR933X_GMAC_REG_ETH_CFG);
+	t &= ~(AR933X_ETH_CFG_SW_PHY_SWAP | AR933X_ETH_CFG_SW_PHY_ADDR_SWAP);
+	if (mac)
+		t |= AR933X_ETH_CFG_SW_PHY_SWAP;
+	if (mdio)
+		t |= AR933X_ETH_CFG_SW_PHY_ADDR_SWAP;
+	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+}
+
 static int ath79_eth_instance __initdata;
 void __init ath79_register_eth(unsigned int id)
 {
