@@ -24,12 +24,12 @@
 +
 +	.leds = {
 +		{
-+			.name		= "adsl-fail",
++			.name		= "CT536_CT5621:green:adsl-fail",
 +			.gpio		= 2,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "power",
++			.name		= "CT536_CT5621:green:power",
 +			.gpio		= 0,
 +			.active_low	= 1,
 +			.default_trigger = "default-on",
@@ -50,7 +50,7 @@
  static struct board_info __initdata board_96348gw = {
  	.name				= "96348GW",
  	.expected_cpu_id		= 0x6348,
-@@ -1900,6 +1943,7 @@ static const struct board_info __initdat
+@@ -1897,6 +1940,7 @@ static const struct board_info __initdat
  	&board_96348sv,
  	&board_V2500V_BB,
  	&board_V2110,
