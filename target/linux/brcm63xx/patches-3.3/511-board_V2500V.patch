@@ -25,27 +25,27 @@
 +
 +	.leds =	{
 +		{
-+			.name		= "power:green",
++			.name		= "V2500V_BB:green:power",
 +			.gpio		= 0,
 +			.active_low	= 1,
 +			.default_trigger = "default-on",
 +		},
 +		{
-+			.name		= "power:red",
++			.name		= "V2500V_BB:red:power",
 +			.gpio		= 1,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "adsl",
++			.name		= "V2500V_BB:green:adsl",
 +			.gpio		= 2,
 +			.active_low	= 1,
 +		},
-+		{	.name		= "ppp",
++		{	.name		= "V2500V_BB:green:ppp",
 +			.gpio		= 3,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "wireless",
++			.name		= "V2500V_BB:green:wireless",
 +			.gpio		= 6,
 +			.active_low	= 1,
 +		},
@@ -64,7 +64,7 @@
  #endif
  
  /*
-@@ -1785,6 +1842,7 @@ static const struct board_info __initdat
+@@ -1782,6 +1839,7 @@ static const struct board_info __initdat
  	&board_96348_D4PW,
  	&board_spw500v,
  	&board_96348sv,
@@ -72,7 +72,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1911,6 +1969,23 @@ void __init board_prom_init(void)
+@@ -1908,6 +1966,23 @@ void __init board_prom_init(void)
  		val &= MPI_CSBASE_BASE_MASK;
  	}
  	boot_addr = (u8 *)KSEG1ADDR(val);

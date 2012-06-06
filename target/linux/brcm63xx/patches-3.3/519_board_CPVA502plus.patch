@@ -25,17 +25,17 @@
 +
 +	.leds = {
 +		{
-+			.name		= "phone",
++			.name		= "CPVA502+:green:phone",
 +			.gpio		= 0,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "link",
++			.name		= "CPVA502+:green:link",
 +			.gpio		= 5,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "feth1", /* FIXME:does gpio4 enable eth1 phy? */
++			.name		= "CPVA502+:green:feth1", /* FIXME:does gpio4 enable eth1 phy? */
 +			.gpio		= 4,
 +			.active_low	= 1,
 +		},
@@ -45,7 +45,7 @@
  #endif
  
  /*
-@@ -2010,6 +2048,7 @@ static const struct board_info __initdat
+@@ -2007,6 +2045,7 @@ static const struct board_info __initdat
  	&board_V2110,
  	&board_ct536_ct5621,
  	&board_96348A_122,

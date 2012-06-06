@@ -19,23 +19,23 @@
 +
 +		.leds = {
 +		{
-+			.name		= "adsl",
++			.name		= "RTA1320_16M:green:adsl",
 +			.gpio		= 3,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "ppp",
++			.name		= "RTA1320_16M:green:ppp",
 +			.gpio		= 4,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "power",
++			.name		= "RTA1320_16M:green:power",
 +			.gpio		= 0,
 +			.active_low	= 1,
 +			.default_trigger = "default-on",
 +		},
 +		{
-+			.name		= "stop",
++			.name		= "RTA1320_16M:green:stop",
 +			.gpio		= 1,
 +			.active_low	= 1,
 +		},
@@ -44,7 +44,7 @@
  #endif
  
  /*
-@@ -1663,6 +1700,7 @@ static const struct board_info __initdat
+@@ -1660,6 +1697,7 @@ static const struct board_info __initdat
  	&board_96338gw,
  	&board_96338w,
  	&board_96338w2_e7t,

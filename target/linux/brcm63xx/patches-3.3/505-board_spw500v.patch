@@ -28,27 +28,27 @@
 +
 +	.leds = {
 +		{
-+			.name		= "power:red",
++			.name		= "SPW500V:red:power",
 +			.gpio		= 1,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "power:green",
++			.name		= "SPW500V:green:power",
 +			.gpio		= 0,
 +			.active_low	= 1,
 +			.default_trigger = "default-on",
 +		},
 +		{
-+			.name		= "ppp",
++			.name		= "SPW500V:green:ppp",
 +			.gpio		= 3,
 +			.active_low	= 1,
 +		},
-+		{	.name		= "pstn",
++		{	.name		= "SPW500V:green:pstn",
 +			.gpio		= 28,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "voip",
++			.name		= "SPW500V:green:voip",
 +			.gpio		= 32,
 +			.active_low	= 1,
 +		},
@@ -68,7 +68,7 @@
  #endif
  
  /*
-@@ -1365,6 +1426,7 @@ static const struct board_info __initdat
+@@ -1363,6 +1424,7 @@ static const struct board_info __initdat
  	&board_96348gw_a,
  	&board_rta1025w_16,
  	&board_96348_D4PW,
