@@ -62,3 +62,19 @@ network_is_up()
 
 network_get_device()  { __network_device "$1" "$2" l3_device; }
 network_get_physdev() { __network_device "$1" "$2" device;    }
+
+
+__network_defer()
+{
+	local __device="$1"
+	local __defer="$2"
+
+	json_init
+	json_add_string name "$__device"
+	json_add_boolean defer "$__defer"
+
+	ubus call network.device set_state "$(json_dump)" 2>/dev/null
+}
+
+network_defer_device() { __network_defer "$1" 1; }
+network_ready_device() { __network_defer "$1" 0; }
