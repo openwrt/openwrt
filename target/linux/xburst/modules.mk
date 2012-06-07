@@ -13,7 +13,6 @@ define KernelPackage/sound-soc-jz4740
   AUTOLOAD:=$(call AutoLoad,60,snd-soc-jz4740 snd-soc-jz4740-i2s)
 endef
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1)
 define KernelPackage/sound-soc-jz4740-codec
   SUBMENU:=$(SOUND_MENU)
   DEPENDS:=kmod-sound-soc-core @TARGET_xburst
@@ -22,16 +21,6 @@ define KernelPackage/sound-soc-jz4740-codec
   FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-jz4740-codec.ko
   AUTOLOAD:=$(call AutoLoad,60,snd-soc-jz4740-codec)
 endef
-else
-define KernelPackage/sound-soc-jz4740-codec
-  SUBMENU:=$(SOUND_MENU)
-  DEPENDS:=kmod-sound-soc-core @TARGET_xburst
-  TITLE:=JZ4740 SoC internal codec support
-  KCONFIG:=CONFIG_SND_SOC_JZCODEC CONFIG_SND_SOC_JZ4740_CODEC
-  FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-jzcodec.ko
-  AUTOLOAD:=$(call AutoLoad,60,snd-soc-jzcodec)
-endef
-endif
 
 define KernelPackage/sound-soc-xburst/default
   SUBMENU:=$(SOUND_MENU)
