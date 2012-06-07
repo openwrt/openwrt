@@ -39,7 +39,7 @@
 +libext4_objs := ${pfx_objs} ${pf4_objs}
 +libext6_objs := ${pfx_objs} ${pf6_objs}
 +targets += ${pfx_solibs} ${pf4_solibs} ${pf6_solibs}
-+targets_install += ${pfx_solibs} ${pf4_solibs} ${pf6_solibs}
++targets_install := $(strip ${targets_install} ${pfx_solibs} ${pf4_solibs} ${pf6_solibs})
  
  .SECONDARY:
  
