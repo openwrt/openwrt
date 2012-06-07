@@ -63,6 +63,12 @@ define Build/Configure
 		> $(PKG_BUILD_DIR)/include/SNAPSHOT.h
 endef
 
+ifdef CONFIG_USE_EGLIBC
+  ifndef CONFIG_EGLIBC_VERSION_2_13
+    TARGET_CFLAGS += -DHAVE_SETNS
+  endif
+endif
+
 MAKE_FLAGS += \
 	EXTRA_CCOPTS="$(TARGET_CFLAGS) -I../include -I$(STAGING_DIR)/usr/include/libnl-tiny" \
 	KERNEL_INCLUDE="$(LINUX_DIR)/include" \
