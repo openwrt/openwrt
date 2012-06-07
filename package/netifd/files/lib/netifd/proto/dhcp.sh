@@ -22,7 +22,7 @@ proto_dhcp_setup() {
 
 	local opt dhcpopts
 	for opt in $reqopts; do
-		append dhcpopts "-O opt"
+		append dhcpopts "-O $opt"
 	done
 
 	[ "$broadcast" = 1 ] && broadcast="-O broadcast" || broadcast=
