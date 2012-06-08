@@ -220,10 +220,16 @@ menu "Global build settings"
 		help
 		  This will compile your kernel and modules with debug information.
 
+	config KERNEL_DEBUG_LL_UART_NONE
+		bool
+		default n
+		depends on arm
+
 	config KERNEL_DEBUG_LL
 		bool
 		default n
 		depends on arm
+		select KERNEL_DEBUG_LL_UART_NONE
 		help
 		  ARM low level debugging
 
