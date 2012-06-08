@@ -119,10 +119,8 @@ else
 LIBGCC_A=$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.a)
 LIBGCC_S=$(if $(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so),-L$(TOOLCHAIN_DIR)/lib -lgcc_s,$(LIBGCC_A))
 endif
-ifdef CONFIG_USE_UCLIBC
 LIBRPC=-lrpc
-endif
-LIBRPC_DEPENDS=+USE_UCLIBC:librpc
+LIBRPC_DEPENDS=+librpc
 
 ifndef DUMP
   ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
