@@ -21,7 +21,6 @@ config BUSYBOX_CONFIG_HUSH
 
 config BUSYBOX_USE_LIBRPC
 	bool
-	depends USE_UCLIBC
 	default y if BUSYBOX_CONFIG_FEATURE_HAVE_RPC
 
 source "package/busybox/config/Config.in"
