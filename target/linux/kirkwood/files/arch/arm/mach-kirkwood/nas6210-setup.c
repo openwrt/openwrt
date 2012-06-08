@@ -186,4 +186,5 @@ MACHINE_START(NAS6210, "RaidSonic ICY BOX IB-NAS6210")
 	.init_early	= kirkwood_init_early,
 	.init_irq	= kirkwood_init_irq,
 	.timer		= &kirkwood_timer,
+	.restart	= kirkwood_restart,
 MACHINE_END
