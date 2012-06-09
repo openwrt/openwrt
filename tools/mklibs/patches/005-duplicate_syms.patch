@@ -1,0 +1,39 @@
+--- a/src/mklibs
++++ b/src/mklibs
+@@ -509,10 +509,7 @@ while 1:
+     num_unresolved = 0
+     unresolved = set()
+     for name in needed_symbols:
+-        if not name in present_symbols:
+-            debug(DEBUG_SPAM, "Still need: %s" % name)
+-            unresolved.add(name)
+-            num_unresolved = num_unresolved + 1
++        library_symbols[library][name] = symbol
+ 
+     debug (DEBUG_NORMAL, `len(needed_symbols)`, "symbols,",
+            `num_unresolved`, "unresolved")
+@@ -531,7 +528,6 @@ while 1:
+ 
+     library_symbols = {}
+     library_symbols_used = {}
+-    symbol_provider = {}
+ 
+     # WORKAROUND: Always add libgcc on old-abi arm
+     header = elf_header(find_lib(libraries.copy().pop()))
+@@ -557,12 +553,10 @@ while 1:
+ 
+     # which symbols are actually used from each lib
+     for name in needed_symbols:
+-        if not name in symbol_provider:
+-            if not needed_symbols[name].weak:
+-                print "WARNING: Unresolvable symbol %s" % name
+-        else:
+-            lib = symbol_provider[name]
+-            library_symbols_used[lib].add(library_symbols[lib][name])
++        for lib in libraries:
++            if name in library_symbols[lib]:
++                library_symbols_used[lib].add(library_symbols[lib][name])
++
+ 
+     # reduce libraries
+     for library in libraries:
