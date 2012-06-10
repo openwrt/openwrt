@@ -64,6 +64,7 @@ endef
 
 define Package/libblkid
 $(call Package/util-linux/Default)
+  DEPENDS:=+libuuid
   TITLE:=block device id library
   SECTION:=libs
   CATEGORY:=Libraries
@@ -116,7 +117,7 @@ endef
 define Package/blkid
 $(call Package/util-linux/Default)
   TITLE:=locate/print block device attributes
-  DEPENDS:= +libblkid +libuuid
+  DEPENDS:= +libblkid
   SUBMENU=disc
 endef
 
@@ -138,7 +139,7 @@ endef
 define Package/cfdisk
 $(call Package/util-linux/Default)
   TITLE:=display or manipulate disk partition table
-  DEPENDS:= +libblkid +libncurses +libuuid
+  DEPENDS:= +libblkid +libncurses
   SUBMENU:=disc
 endef
 
@@ -158,7 +159,7 @@ endef
 define Package/fdisk
 $(call Package/util-linux/Default)
   TITLE:=manipulate disk partition table
-  DEPENDS:= +libblkid +libuuid
+  DEPENDS:= +libblkid
   SUBMENU=disc
 endef
 
@@ -169,7 +170,7 @@ endef
 define Package/findfs
 $(call Package/util-linux/Default)
   TITLE:=find a filesystem by label or UUID
-  DEPENDS:= +libblkid +libuuid
+  DEPENDS:= +libblkid
   SUBMENU=disc
 endef
 
@@ -238,7 +239,7 @@ endef
 define Package/lsblk
 $(call Package/util-linux/Default)
   TITLE:=list block devices
-  DEPENDS:= +libblkid +libuuid
+  DEPENDS:= +libblkid
   SUBMENU=disc
 endef
 
@@ -259,7 +260,7 @@ endef
 define Package/mount-utils
 $(call Package/util-linux/Default)
   TITLE:=related (u)mount utilities
-  DEPENDS+= +libblkid +libmount +libuuid
+  DEPENDS+= +libblkid +libmount
 endef
 
 define Package/mount-utils/description
@@ -289,7 +290,7 @@ endef
 define Package/partx-utils
 $(call Package/util-linux/Default)
   TITLE:=inform kernel about the presence and numbering of on-disk partitions
-  DEPENDS:= +libblkid +libuuid
+  DEPENDS:= +libblkid
   SUBMENU=disc
 endef
 
@@ -332,7 +333,7 @@ endef
 define Package/swap-utils
 $(call Package/util-linux/Default)
   TITLE:=swap space management utilities
-  DEPENDS+= +libblkid +libuuid
+  DEPENDS+= +libblkid
   SUBMENU:=disc
 endef
 
@@ -389,7 +390,7 @@ endef
 define Package/wipefs
 $(call Package/util-linux/Default)
   TITLE:=wipe a signature from a device
-  DEPENDS:= +libblkid +libuuid
+  DEPENDS:= +libblkid
   SUBMENU:=disc
 endef
 
