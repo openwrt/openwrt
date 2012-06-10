@@ -17,12 +17,11 @@ PKG_SOURCE_URL:=@SF/e2fsprogs
 
 include $(INCLUDE_DIR)/host-build.mk
 
-TARGET_CFLAGS += $(FPIC)
+HOST_CFLAGS += $(FPIC)
 
-CONFIGURE_ARGS += \
+HOST_CONFIGURE_ARGS += \
 	--disable-shared \
 	--enable-static \
-	--disable-rpath \
 	--enable-elf-shlibs \
 	--enable-dynamic-e2fsck \
 	--disable-tls \
