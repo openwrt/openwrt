@@ -28,7 +28,6 @@ endef
 define Package/libgcc
 $(call Package/gcc/Default)
   TITLE:=GCC support library
-  DEPENDS+=@!(TARGET_avr32||TARGET_coldfire)
 endef
 
 define Package/libgcc/config
@@ -111,9 +110,7 @@ define Package/libc/Default
   SECTION:=libs
   CATEGORY:=Base system
   VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
-ifeq ($(TARGET_avr32)$(TARGET_coldfire),)
   DEPENDS:=+libgcc
-endif
   URL:=$(LIBC_URL)
   PKG_FLAGS:=hold essential
 endef
@@ -201,7 +198,7 @@ endef
 define Package/libgfortran
 $(call Package/gcc/Default)
   TITLE:=GFortran support library
-  DEPENDS+=@!(TARGET_avr32||TARGET_coldfire) @INSTALL_GFORTRAN
+  DEPENDS+=@INSTALL_GFORTRAN
 endef
 
 define Package/libgfortran/config
@@ -358,12 +355,12 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/libgcc/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/libgcc_s.so.* $(1)/lib/
+	$(if $(TARGET_avr32)$(TARGET_coldfire),,$(CP) $(TOOLCHAIN_DIR)/lib/libgcc_s.so.* $(1)/lib/)
   endef
 
   define Package/libgfortran/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/libgfortran.so.* $(1)/usr/lib/
+	$(if $(TARGET_avr32)$(TARGET_coldfire),,$(CP) $(TOOLCHAIN_DIR)/lib/libgfortran.so.* $(1)/usr/lib/)
   endef
 
   define Package/libssp/install
