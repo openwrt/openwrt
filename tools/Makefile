@@ -120,8 +120,9 @@ $(eval $(call PrepareCommand,find,gfind find))
 $(eval $(call PrepareCommand,md5sum,md5sum $(SCRIPT_DIR)/md5sum))
 $(eval $(call PrepareCommand,cp,gcp cp))
 $(eval $(call PrepareCommand,seq,gseq seq))
+$(eval $(call PrepareCommand,python,python2 python))
 
-$(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,find md5sum cp stat seq)
+$(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,find md5sum cp stat seq python)
 $(curdir)//prepare = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(curdir)/cmddeps)
 $(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(curdir)/cmddeps)
 
