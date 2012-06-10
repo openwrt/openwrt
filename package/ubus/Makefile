@@ -28,6 +28,7 @@ define Package/ubusd
   CATEGORY:=LuCI2
   SUBMENU:=System
   TITLE:=OpenWrt RPC daemon
+  DEPENDS:=+libubox
 endef
 
 define Package/libubus
