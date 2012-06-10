@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
 PKG_MD5SUM:=9c0cae5a0379228e7b55e5b29528df8e
 
-PKG_BUILD_DEPENDS:=BUSYBOX_USE_LIBRPC:librpc
+PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_FEATURE_HAVE_RPC:librpc
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -37,7 +37,7 @@ define Package/busybox
   MAINTAINER:=Nicolas Thill <nico@openwrt.org>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
-  DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc
+  DEPENDS:=+BUSYBOX_CONFIG_FEATURE_HAVE_RPC:librpc
   MENU:=1
 endef
 
@@ -66,7 +66,7 @@ ifdef CONFIG_GCC_VERSION_LLVM
 endif
 
 LDLIBS:=m crypt
-ifdef CONFIG_BUSYBOX_USE_LIBRPC
+ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_HAVE_RPC
   TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
   export LDFLAGS=$(TARGET_LDFLAGS)
   LDLIBS += rpc

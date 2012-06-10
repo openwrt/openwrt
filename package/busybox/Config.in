@@ -19,10 +19,6 @@ config BUSYBOX_CONFIG_HUSH
 	default y if NOMMU
 	default n if !NOMMU
 
-config BUSYBOX_USE_LIBRPC
-	bool
-	default y if BUSYBOX_CONFIG_FEATURE_HAVE_RPC
-
 source "package/busybox/config/Config.in"
 
 endif
