@@ -111,7 +111,7 @@ define Package/libc/Default
   SECTION:=libs
   CATEGORY:=Base system
   VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
-ifneq ($(TARGET_avr32)$(TARGET_coldfire),)
+ifeq ($(TARGET_avr32)$(TARGET_coldfire),)
   DEPENDS:=+libgcc
 endif
   URL:=$(LIBC_URL)
