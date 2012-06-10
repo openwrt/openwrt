@@ -26,7 +26,7 @@ define Package/libblobmsg-json
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=blobmsg <-> json conversion library
-  DEPENDS:=+libjson
+  DEPENDS:=+libjson +libubox
 endef
 
 define Package/jshn
