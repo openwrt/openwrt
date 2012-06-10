@@ -30,7 +30,7 @@ $(if $(MENU),Menu: $(MENU)
 )$(if $(DEFAULT),Default: $(DEFAULT)
 )$(if $(findstring $(PREREQ_CHECK),1),Prereq-Check: 1
 )Version: $(VERSION)
-Depends: $(DEPENDS)
+Depends: $(call PKG_FIXUP_DEPENDS,$(1),$(DEPENDS))
 Menu-Depends: $(MDEPENDS)
 Provides: $(PROVIDES)
 $(if $(VARIANT),Build-Variant: $(VARIANT)

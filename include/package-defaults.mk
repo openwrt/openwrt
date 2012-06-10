@@ -5,6 +5,12 @@
 # See /LICENSE for more information.
 #
 
+ifneq ($(PKG_NAME),toolchain)
+  PKG_FIXUP_DEPENDS = $(if $(filter kmod-%,$(1)),$(2),+libc $(filter-out +libc,$(2)))
+else
+  PKG_FIXUP_DEPENDS = $(2)
+endif
+
 define Package/Default
   CONFIGFILE:=
   SECTION:=opt
