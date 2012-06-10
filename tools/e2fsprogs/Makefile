@@ -25,7 +25,8 @@ CONFIGURE_ARGS += \
 	--disable-rpath \
 	--enable-elf-shlibs \
 	--enable-dynamic-e2fsck \
-	--disable-tls
+	--disable-tls \
+	--disable-nls
 
 define Host/Install
 	$(Host/Install/Default)
