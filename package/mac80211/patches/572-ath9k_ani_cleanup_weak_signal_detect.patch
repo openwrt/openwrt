@@ -1,0 +1,192 @@
+--- a/drivers/net/wireless/ath/ath9k/ani.c
++++ b/drivers/net/wireless/ath/ath9k/ani.c
+@@ -185,7 +185,7 @@ static void ath9k_hw_ani_ofdm_err_trigge
+ 	}
+ 	rssi = BEACON_RSSI(ah);
+ 	if (rssi > aniState->rssiThrHigh) {
+-		if (!aniState->ofdmWeakSigDetectOff) {
++		if (aniState->ofdmWeakSigDetect) {
+ 			if (ath9k_hw_ani_control(ah,
+ 					 ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
+ 					 false)) {
+@@ -200,7 +200,7 @@ static void ath9k_hw_ani_ofdm_err_trigge
+ 			return;
+ 		}
+ 	} else if (rssi > aniState->rssiThrLow) {
+-		if (aniState->ofdmWeakSigDetectOff)
++		if (!aniState->ofdmWeakSigDetect)
+ 			ath9k_hw_ani_control(ah,
+ 				     ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
+ 				     true);
+@@ -211,7 +211,7 @@ static void ath9k_hw_ani_ofdm_err_trigge
+ 	} else {
+ 		if ((conf->channel->band == IEEE80211_BAND_2GHZ) &&
+ 		    !conf_is_ht(conf)) {
+-			if (!aniState->ofdmWeakSigDetectOff)
++			if (aniState->ofdmWeakSigDetect)
+ 				ath9k_hw_ani_control(ah,
+ 				     ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
+ 				     false);
+@@ -296,7 +296,7 @@ static void ath9k_hw_set_ofdm_nil(struct
+ 	    BEACON_RSSI(ah) <= aniState->rssiThrHigh)
+ 		weak_sig = true;
+ 
+-	if (!aniState->ofdmWeakSigDetectOff != weak_sig)
++	if (aniState->ofdmWeakSigDetect != weak_sig)
+ 			ath9k_hw_ani_control(ah,
+ 				ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
+ 				entry_ofdm->ofdm_weak_signal_on);
+@@ -401,7 +401,7 @@ static void ath9k_hw_ani_lower_immunity_
+ 		if (rssi > aniState->rssiThrHigh) {
+ 			/* XXX: Handle me */
+ 		} else if (rssi > aniState->rssiThrLow) {
+-			if (aniState->ofdmWeakSigDetectOff) {
++			if (!aniState->ofdmWeakSigDetect) {
+ 				if (ath9k_hw_ani_control(ah,
+ 					 ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
+ 					 true))
+@@ -509,9 +509,9 @@ static void ath9k_ani_reset_old(struct a
+ 	if (aniState->spurImmunityLevel != 0)
+ 		ath9k_hw_ani_control(ah, ATH9K_ANI_SPUR_IMMUNITY_LEVEL,
+ 				     aniState->spurImmunityLevel);
+-	if (aniState->ofdmWeakSigDetectOff)
++	if (!aniState->ofdmWeakSigDetect)
+ 		ath9k_hw_ani_control(ah, ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
+-				     !aniState->ofdmWeakSigDetectOff);
++				     aniState->ofdmWeakSigDetect);
+ 	if (aniState->cckWeakSigThreshold)
+ 		ath9k_hw_ani_control(ah, ATH9K_ANI_CCK_WEAK_SIGNAL_THR,
+ 				     aniState->cckWeakSigThreshold);
+@@ -887,8 +887,7 @@ void ath9k_hw_ani_init(struct ath_hw *ah
+ 
+ 		ani->rssiThrHigh = ATH9K_ANI_RSSI_THR_HIGH;
+ 		ani->rssiThrLow = ATH9K_ANI_RSSI_THR_LOW;
+-		ani->ofdmWeakSigDetectOff =
+-			!ATH9K_ANI_USE_OFDM_WEAK_SIG;
++		ani->ofdmWeakSigDetect = ATH9K_ANI_USE_OFDM_WEAK_SIG;
+ 		ani->cckNoiseImmunityLevel = ATH9K_ANI_CCK_DEF_LEVEL;
+ 		ani->ofdmNoiseImmunityLevel = ATH9K_ANI_OFDM_DEF_LEVEL;
+ 		ani->update_ani = false;
+--- a/drivers/net/wireless/ath/ath9k/ani.h
++++ b/drivers/net/wireless/ath/ath9k/ani.h
+@@ -122,7 +122,7 @@ struct ar5416AniState {
+ 	u8 mrcCCKOff;
+ 	u8 spurImmunityLevel;
+ 	u8 firstepLevel;
+-	u8 ofdmWeakSigDetectOff;
++	u8 ofdmWeakSigDetect;
+ 	u8 cckWeakSigThreshold;
+ 	bool update_ani;
+ 	u32 listenTime;
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -1042,12 +1042,12 @@ static bool ar5008_hw_ani_control_old(st
+ 			REG_CLR_BIT(ah, AR_PHY_SFCORR_LOW,
+ 				    AR_PHY_SFCORR_LOW_USE_SELF_CORR_LOW);
+ 
+-		if (!on != aniState->ofdmWeakSigDetectOff) {
++		if (on != aniState->ofdmWeakSigDetect) {
+ 			if (on)
+ 				ah->stats.ast_ani_ofdmon++;
+ 			else
+ 				ah->stats.ast_ani_ofdmoff++;
+-			aniState->ofdmWeakSigDetectOff = !on;
++			aniState->ofdmWeakSigDetect = on;
+ 		}
+ 		break;
+ 	}
+@@ -1114,10 +1114,10 @@ static bool ar5008_hw_ani_control_old(st
+ 
+ 	ath_dbg(common, ANI, "ANI parameters:\n");
+ 	ath_dbg(common, ANI,
+-		"noiseImmunityLevel=%d, spurImmunityLevel=%d, ofdmWeakSigDetectOff=%d\n",
++		"noiseImmunityLevel=%d, spurImmunityLevel=%d, ofdmWeakSigDetect=%d\n",
+ 		aniState->noiseImmunityLevel,
+ 		aniState->spurImmunityLevel,
+-		!aniState->ofdmWeakSigDetectOff);
++		aniState->ofdmWeakSigDetect);
+ 	ath_dbg(common, ANI,
+ 		"cckWeakSigThreshold=%d, firstepLevel=%d, listenTime=%d\n",
+ 		aniState->cckWeakSigThreshold,
+@@ -1206,18 +1206,18 @@ static bool ar5008_hw_ani_control_new(st
+ 			REG_CLR_BIT(ah, AR_PHY_SFCORR_LOW,
+ 				    AR_PHY_SFCORR_LOW_USE_SELF_CORR_LOW);
+ 
+-		if (!on != aniState->ofdmWeakSigDetectOff) {
++		if (on != aniState->ofdmWeakSigDetect) {
+ 			ath_dbg(common, ANI,
+ 				"** ch %d: ofdm weak signal: %s=>%s\n",
+ 				chan->channel,
+-				!aniState->ofdmWeakSigDetectOff ?
++				aniState->ofdmWeakSigDetect ?
+ 				"on" : "off",
+ 				on ? "on" : "off");
+ 			if (on)
+ 				ah->stats.ast_ani_ofdmon++;
+ 			else
+ 				ah->stats.ast_ani_ofdmoff++;
+-			aniState->ofdmWeakSigDetectOff = !on;
++			aniState->ofdmWeakSigDetect = on;
+ 		}
+ 		break;
+ 	}
+@@ -1367,7 +1367,7 @@ static bool ar5008_hw_ani_control_new(st
+ 	ath_dbg(common, ANI,
+ 		"ANI parameters: SI=%d, ofdmWS=%s FS=%d MRCcck=%s listenTime=%d ofdmErrs=%d cckErrs=%d\n",
+ 		aniState->spurImmunityLevel,
+-		!aniState->ofdmWeakSigDetectOff ? "on" : "off",
++		aniState->ofdmWeakSigDetect ? "on" : "off",
+ 		aniState->firstepLevel,
+ 		!aniState->mrcCCKOff ? "on" : "off",
+ 		aniState->listenTime,
+@@ -1456,7 +1456,7 @@ static void ar5008_hw_ani_cache_ini_regs
+ 	/* these levels just got reset to defaults by the INI */
+ 	aniState->spurImmunityLevel = ATH9K_ANI_SPUR_IMMUNE_LVL_NEW;
+ 	aniState->firstepLevel = ATH9K_ANI_FIRSTEP_LVL_NEW;
+-	aniState->ofdmWeakSigDetectOff = !ATH9K_ANI_USE_OFDM_WEAK_SIG;
++	aniState->ofdmWeakSigDetect = ATH9K_ANI_USE_OFDM_WEAK_SIG;
+ 	aniState->mrcCCKOff = true; /* not available on pre AR9003 */
+ }
+ 
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -821,18 +821,18 @@ static bool ar9003_hw_ani_control(struct
+ 			REG_CLR_BIT(ah, AR_PHY_SFCORR_LOW,
+ 				    AR_PHY_SFCORR_LOW_USE_SELF_CORR_LOW);
+ 
+-		if (!on != aniState->ofdmWeakSigDetectOff) {
++		if (on != aniState->ofdmWeakSigDetect) {
+ 			ath_dbg(common, ANI,
+ 				"** ch %d: ofdm weak signal: %s=>%s\n",
+ 				chan->channel,
+-				!aniState->ofdmWeakSigDetectOff ?
++				aniState->ofdmWeakSigDetect ?
+ 				"on" : "off",
+ 				on ? "on" : "off");
+ 			if (on)
+ 				ah->stats.ast_ani_ofdmon++;
+ 			else
+ 				ah->stats.ast_ani_ofdmoff++;
+-			aniState->ofdmWeakSigDetectOff = !on;
++			aniState->ofdmWeakSigDetect = on;
+ 		}
+ 		break;
+ 	}
+@@ -998,7 +998,7 @@ static bool ar9003_hw_ani_control(struct
+ 	ath_dbg(common, ANI,
+ 		"ANI parameters: SI=%d, ofdmWS=%s FS=%d MRCcck=%s listenTime=%d ofdmErrs=%d cckErrs=%d\n",
+ 		aniState->spurImmunityLevel,
+-		!aniState->ofdmWeakSigDetectOff ? "on" : "off",
++		aniState->ofdmWeakSigDetect ? "on" : "off",
+ 		aniState->firstepLevel,
+ 		!aniState->mrcCCKOff ? "on" : "off",
+ 		aniState->listenTime,
+@@ -1109,7 +1109,7 @@ static void ar9003_hw_ani_cache_ini_regs
+ 	/* these levels just got reset to defaults by the INI */
+ 	aniState->spurImmunityLevel = ATH9K_ANI_SPUR_IMMUNE_LVL_NEW;
+ 	aniState->firstepLevel = ATH9K_ANI_FIRSTEP_LVL_NEW;
+-	aniState->ofdmWeakSigDetectOff = !ATH9K_ANI_USE_OFDM_WEAK_SIG;
++	aniState->ofdmWeakSigDetect = ATH9K_ANI_USE_OFDM_WEAK_SIG;
+ 	aniState->mrcCCKOff = !ATH9K_ANI_ENABLE_MRC_CCK;
+ }
+ 
