@@ -72,6 +72,10 @@ ppp_generic_teardown() {
 			proto_notify_error "$interface" AUTH_FAILED
 			proto_block_restart "$interface"
 		;;
+		2)
+			proto_notify_error "$interface" INVALID_OPTIONS
+			proto_block_restart "$interface"
+		;;
 	esac
 	proto_kill_command "$interface"
 }
