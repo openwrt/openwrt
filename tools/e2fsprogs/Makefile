@@ -21,8 +21,8 @@ HOST_CFLAGS += $(FPIC)
 
 HOST_CONFIGURE_ARGS += \
 	--disable-shared \
+	--disable-elf-shlibs \
 	--enable-static \
-	--enable-elf-shlibs \
 	--enable-dynamic-e2fsck \
 	--disable-tls \
 	--disable-nls
