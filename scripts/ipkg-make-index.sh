@@ -14,6 +14,7 @@ for pkg in `find $pkg_dir -name '*.ipk' | sort`; do
 	name="${pkg##*/}"
 	name="${name%%_*}"
 	[[ "$name" = "kernel" ]] && continue
+	[[ "$name" = "libc" ]] && continue
 	echo "Generating index for package $pkg" >&2
 	file_size=$(ls -l $pkg | awk '{print $5}')
 	md5sum=$(md5sum $pkg | awk '{print $1}')

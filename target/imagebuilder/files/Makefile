@@ -126,6 +126,7 @@ package_index: FORCE
 package_install: FORCE
 	@echo
 	@echo Installing packages...
+	$(OPKG) install $(PACKAGE_DIR)/libc_*.ipk
 	$(OPKG) install $(PACKAGE_DIR)/kernel_*.ipk
 	$(OPKG) install $(BUILD_PACKAGES)
 	rm -f $(TARGET_DIR)/usr/lib/opkg/lists/*
