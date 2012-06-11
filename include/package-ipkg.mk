@@ -65,6 +65,26 @@ define FixupDependencies
   $(call AddDependency,$(1),$$(DEPS))
 endef
 
+ifneq ($(PKG_NAME),toolchain)
+  define CheckDependencies
+	@( \
+		rm -f $(PKG_INFO_DIR)/$(1).missing; \
+		( \
+			export READELF=$(TARGET_CROSS)readelf XARGS="$(XARGS)"; \
+			$(SCRIPT_DIR)/gen-dependencies.sh "$$(IDIR_$(1))"; \
+		) | while read FILE; do \
+			grep -q "$$$$FILE" $(PKG_INFO_DIR)/$(1).provides || \
+				echo "$$$$FILE" >> $(PKG_INFO_DIR)/$(1).missing; \
+		done; \
+		if [ -f "$(PKG_INFO_DIR)/$(1).missing" ]; then \
+			echo "Package $(1) is missing dependencies for the following libraries:"; \
+			cat "$(PKG_INFO_DIR)/$(1).missing"; \
+			false; \
+		fi; \
+	)
+  endef
+endif
+
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
     IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
@@ -124,6 +144,8 @@ ifeq ($(DUMP),)
 			fi; \
 		done; \
 	) | sort -u > $(PKG_INFO_DIR)/$(1).provides
+	$(CheckDependencies)
+
 	$(RSTRIP) $$(IDIR_$(1))
 	( \
 		echo "Package: $(1)"; \
