@@ -34,7 +34,8 @@ CONFIGURE_ARGS += \
 	--enable-new-mount	\
 	--with-ncurses		\
 	--disable-nls 		\
-	--disable-tls
+	--disable-tls		\
+	--without-udev
 
 TARGET_CFLAGS += $(FPIC)
 
@@ -79,6 +80,7 @@ endef
 
 define Package/libmount
 $(call Package/util-linux/Default)
+  DEPENDS:=+libblkid
   TITLE:=mount library
   SECTION:=libs
   CATEGORY:=Libraries
@@ -260,7 +262,7 @@ endef
 define Package/mount-utils
 $(call Package/util-linux/Default)
   TITLE:=related (u)mount utilities
-  DEPENDS+= +libblkid +libmount
+  DEPENDS+= +libmount
 endef
 
 define Package/mount-utils/description
@@ -311,6 +313,7 @@ endef
 define Package/setterm
 $(call Package/util-linux/Default)
   TITLE:=set terminal attributes
+  DEPENDS:= +libncurses
   SUBMENU:=Terminal
 endef
 
