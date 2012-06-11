@@ -30,6 +30,7 @@ endef
 
 define Package/ebtables-utils
   $(call Package/ebtables)
+  DEPENDS += ebtables
   TITLE:=ebtables save/restore utilities
 endef
 
