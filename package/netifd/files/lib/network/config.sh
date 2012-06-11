@@ -5,6 +5,7 @@
 
 find_config() {
 	local device="$1"
+	local ifdev ifl3dev ifobj
 	for ifobj in `ubus list network.interface.\*`; do
 		interface="${ifobj##network.interface.}"
 		(
@@ -36,7 +37,7 @@ ubus_call() {
 
 fixup_interface() {
 	local config="$1"
-	local ifname type
+	local ifname type device l3dev
 
 	config_get type "$config" type
 	config_get ifname "$config" ifname

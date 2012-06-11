@@ -18,6 +18,7 @@ proto_dhcp_setup() {
 	local config="$1"
 	local iface="$2"
 
+	local ipaddr hostname clientid vendorid broadcast reqopts
 	json_get_vars ipaddr hostname clientid vendorid broadcast reqopts
 
 	local opt dhcpopts
