@@ -5,7 +5,7 @@ Subject: [PATCH 25/63] ehci: add driver for bcm63xx integrated controller.
 
 ---
  drivers/usb/host/Kconfig        |   10 ++-
- drivers/usb/host/ehci-bcm63xx.c |  185 +++++++++++++++++++++++++++++++++++++++
+ drivers/usb/host/ehci-bcm63xx.c |  186 +++++++++++++++++++++++++++++++++++++++
  drivers/usb/host/ehci-hcd.c     |    5 +
  3 files changed, 199 insertions(+), 1 deletions(-)
  create mode 100644 drivers/usb/host/ehci-bcm63xx.c
@@ -38,7 +38,7 @@ Subject: [PATCH 25/63] ehci: add driver for bcm63xx integrated controller.
  	depends on USB_EHCI_HCD && FSL_SOC
 --- /dev/null
 +++ b/drivers/usb/host/ehci-bcm63xx.c
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,186 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -179,6 +179,7 @@ Subject: [PATCH 25/63] ehci: add driver for bcm63xx integrated controller.
 +		HC_LENGTH(ehci, ehci_readl(ehci, &ehci->caps->hc_capbase));
 +	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
 +	ehci->sbrn = 0x20;
++	ehci->ignore_oc = 1;
 +
 +	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED);
 +	if (ret)
