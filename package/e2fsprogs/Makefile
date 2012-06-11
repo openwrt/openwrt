@@ -30,7 +30,7 @@ $(call Package/e2fsprogs/Default)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Ext2/3/4 filesystem utilities
-  DEPENDS:=+libblkid +libuuid +libext2fs +libpthread +libcom_err
+  DEPENDS:=+libblkid +libuuid +libext2fs
 endef
 
 define Package/e2fsprogs/description
@@ -41,6 +41,7 @@ endef
 
 define Package/libext2fs
 $(call Package/e2fsprogs/Default)
+  DEPENDS:=+libcom_err
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=ext2/3/4 filesystem library
@@ -52,6 +53,7 @@ endef
 
 define Package/libcom_err
 $(call Package/e2fsprogs/Default)
+  DEPENDS:=+libpthread
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Common error description library
