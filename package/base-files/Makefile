@@ -80,9 +80,10 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
 
-define Build/Compile
+define Build/Compile/Default
 
 endef
+Build/Compile = $(Build/Compile/Default)
 
 define Package/base-files/install
 	$(CP) ./files/* $(1)/
