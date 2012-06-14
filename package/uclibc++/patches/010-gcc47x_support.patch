@@ -1,0 +1,126 @@
+--- a/include/associative_base
++++ b/include/associative_base
+@@ -511,7 +511,7 @@
+ 
+ 	pair<iterator, bool> insert(const value_type& x){
+ 		pair<iterator, bool> retval;
+-		iterator location = lower_bound(value_to_key(x));
++		iterator location = lower_bound(this->value_to_key(x));
+ 		retval.second = true;
+ 		//Empty list or need to insert at end
+ 		if(end() == location){
+@@ -520,7 +520,7 @@
+ 			return retval;
+ 		}
+ 		//Something in the list
+-		if(c(value_to_key(x), value_to_key(*location))){
++		if(c(this->value_to_key(x), this->value_to_key(*location))){
+ 			location = backing.insert(location.base_iterator(), x);
+ 			retval.first = location;
+ 		}else{
+@@ -604,7 +604,7 @@
+ 	}
+ 
+ 	iterator insert(const value_type& x){
+-		iterator location = lower_bound(value_to_key(x));
++		iterator location = lower_bound(this->value_to_key(x));
+ 
+ 		if(location == begin()){
+ 			backing.push_front(x);
+--- a/include/fstream
++++ b/include/fstream
+@@ -72,9 +72,9 @@
+ 			pbuffer = new char_type[__UCLIBCXX_IOSTREAM_BUFSIZE__];
+ 			gbuffer = new char_type[__UCLIBCXX_IOSTREAM_BUFSIZE__];
+ 
+-			setp(pbuffer, pbuffer + __UCLIBCXX_IOSTREAM_BUFSIZE__);
++			this->setp(pbuffer, pbuffer + __UCLIBCXX_IOSTREAM_BUFSIZE__);
+ 			//Position get buffer so that there is no data available
+-			setg(gbuffer, gbuffer + __UCLIBCXX_IOSTREAM_BUFSIZE__,
++			this->setg(gbuffer, gbuffer + __UCLIBCXX_IOSTREAM_BUFSIZE__,
+ 				gbuffer + __UCLIBCXX_IOSTREAM_BUFSIZE__);
+ 		}
+ 
+--- a/include/string
++++ b/include/string
+@@ -426,7 +426,7 @@
+ 	}
+ 	_UCXXEXPORT size_type find (Ch c, size_type pos = 0) const{
+ 		for(size_type i = pos; i < length(); ++i){
+-			if(operator[](i) == c){
++			if(this->operator[](i) == c){
+ 				return i;
+ 			}
+ 		}
+@@ -456,7 +456,7 @@
+ 	_UCXXEXPORT size_type find_first_of(const basic_string& str, size_type pos = 0) const{
+ 		for(size_type i = pos; i < length(); ++i){
+ 			for(size_type j = 0; j < str.length() ; ++j){
+-				if( Tr::eq(str[j], operator[](i)) ){
++				if( Tr::eq(str[j], this->operator[](i)) ){
+ 					return i;
+ 				}
+ 			}
+@@ -472,7 +472,7 @@
+ 	}
+ 	_UCXXEXPORT size_type find_first_of(Ch c, size_type pos = 0) const{
+ 		for(size_type i = pos; i< length(); ++i){
+-			if( Tr::eq(operator[](i), c) ){
++			if( Tr::eq(this->operator[](i), c) ){
+ 				return i;
+ 			}
+ 		}
+@@ -485,7 +485,7 @@
+ 		}
+ 		for(size_type i = pos; i >0 ; --i){
+ 			for(size_type j = 0 ; j < str.length(); ++j){
+-				if( Tr::eq(operator[](i-1), str[j]) ){
++				if( Tr::eq(this->operator[](i-1), str[j]) ){
+ 					return i-1;
+ 				}
+ 			}
+@@ -503,7 +503,7 @@
+ 			pos = length();
+ 		}
+ 		for(size_type i = pos; i >0 ; --i){
+-			if( Tr::eq(operator[](i-1), c) ){
++			if( Tr::eq(this->operator[](i-1), c) ){
+ 				return i-1;
+ 			}
+ 		}
+@@ -515,7 +515,7 @@
+ 		for(size_type i = pos; i < length(); ++i){
+ 			foundCharacter = false;
+                         for(size_type j = 0; j < str.length() ; ++j){
+-                                if( Tr::eq(str[j], operator[](i)) ){
++                                if( Tr::eq(str[j], this->operator[](i)) ){
+ 					foundCharacter = true;
+                                 }
+                         }
+@@ -534,7 +534,7 @@
+ 	}
+ 	_UCXXEXPORT size_type find_first_not_of(Ch c, size_type pos = 0) const{
+ 		for(size_type i = pos; i < length() ; ++i){
+-			if(operator[](i) != c){
++			if(this->operator[](i) != c){
+ 				return i;
+ 			}
+ 		}
+@@ -546,7 +546,7 @@
+ 			xpos = pos;
+ 		}
+ 		
+-		while(xpos != npos && npos != str.find_first_of(at(xpos))){
++		while(xpos != npos && npos != str.find_first_of(this->at(xpos))){
+ 			--xpos;
+ 		}
+ 
+@@ -564,7 +564,7 @@
+ 		if(xpos > pos){
+ 			xpos = pos;
+ 		}
+-		while(xpos != npos && Tr::eq(at(xpos), c)){
++		while(xpos != npos && Tr::eq(this->at(xpos), c)){
+ 			--xpos;
+ 		}
+ 		return xpos;

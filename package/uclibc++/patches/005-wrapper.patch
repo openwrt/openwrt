@@ -1,0 +1,12 @@
+diff -ruN uClibc++-0.2.2-old/bin/Makefile uClibc++-0.2.2-new/bin/Makefile
+--- uClibc++-0.2.2-old/bin/Makefile	2007-09-23 13:46:10.000000000 +0200
++++ uClibc++-0.2.2-new/bin/Makefile	2007-09-23 13:47:03.000000000 +0200
+@@ -25,7 +25,7 @@
+ 	echo 'while [ -n "$$1" ]' >> $(WRAPPER)
+ 	echo 'do' >> $(WRAPPER)
+ 	echo '	WRAPPER_OPTIONS="$$WRAPPER_OPTIONS $$1"' >> $(WRAPPER)
+-	echo '	if [ "$$1" = "-c" -o "$$1" = "-E" -o "$$1" = "-S" ]' >> $(WRAPPER)
++	echo '	if [ "$$1" = "-c" -o "$$1" = "-E" -o "$$1" = "-S" -o "$$1" = "-MF" ]' >> $(WRAPPER)
+ 	echo '	then' >> $(WRAPPER)
+ 	echo '		WRAPPER_INCLIB="N"' >> $(WRAPPER)
+ 	echo '	fi' >> $(WRAPPER)
