@@ -523,3 +523,53 @@
  }
  #endif
  
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -214,6 +214,7 @@ struct ath_frame_info {
+ 	enum ath9k_key_type keytype;
+ 	u8 keyix;
+ 	u8 retries;
++	bool short_preamble;
+ };
+ 
+ struct ath_buf_state {
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -938,6 +938,7 @@ static void ath_buf_set_rate(struct ath_
+ 	struct ieee80211_tx_rate *rates;
+ 	const struct ieee80211_rate *rate;
+ 	struct ieee80211_hdr *hdr;
++	struct ath_frame_info *fi = get_frame_info(bf->bf_mpdu);
+ 	int i;
+ 	u8 rix = 0;
+ 
+@@ -957,8 +958,7 @@ static void ath_buf_set_rate(struct ath_
+ 	rate = ieee80211_get_rts_cts_rate(sc->hw, tx_info);
+ 	info->rtscts_rate = rate->hw_value;
+ 
+-	if (tx_info->control.vif &&
+-	    tx_info->control.vif->bss_conf.use_short_preamble)
++	if (fi->short_preamble)
+ 		info->rtscts_rate |= rate->hw_value_short;
+ 
+ 	for (i = 0; i < 4; i++) {
+@@ -1779,6 +1779,11 @@ static void setup_frame_info(struct ieee
+ 	struct ath_frame_info *fi = get_frame_info(skb);
+ 	struct ath_node *an = NULL;
+ 	enum ath9k_key_type keytype;
++	bool short_preamble = false;
++
++	if (tx_info->control.vif &&
++	    tx_info->control.vif->bss_conf.use_short_preamble)
++		short_preamble = true;
+ 
+ 	keytype = ath9k_cmn_get_hw_crypto_keytype(skb);
+ 
+@@ -1794,6 +1799,7 @@ static void setup_frame_info(struct ieee
+ 		fi->keyix = ATH9K_TXKEYIX_INVALID;
+ 	fi->keytype = keytype;
+ 	fi->framelen = framelen;
++	fi->short_preamble = short_preamble;
+ }
+ 
+ u8 ath_txchainmask_reduction(struct ath_softc *sc, u8 chainmask, u32 rate)
