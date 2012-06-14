@@ -5,6 +5,8 @@
 # See /LICENSE for more information.
 #
 
+__package_mk:=1
+
 all: $(if $(DUMP),dumpinfo,compile)
 
 PKG_BUILD_DIR ?= $(BUILD_DIR)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
