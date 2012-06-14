@@ -1,0 +1,24 @@
+diff -ruN uClibc++-0.2.2-old/src/abi/libgcc_eh/Makefile uClibc++-0.2.2-new/src/abi/libgcc_eh/Makefile
+--- uClibc++-0.2.2-old/src/abi/libgcc_eh/Makefile	2007-06-04 00:51:13.000000000 +0200
++++ uClibc++-0.2.2-new/src/abi/libgcc_eh/Makefile	2007-09-03 21:51:07.000000000 +0200
+@@ -16,7 +16,7 @@
+ #
+ #else
+ #	echo Binary
+-	$(AR) x $(shell CC=$(CC) $(TOPDIR)/scripts/find_libgcc_eh.sh)
++	$(AR) x $(shell CC="$(CC)" $(TOPDIR)/scripts/find_libgcc_eh.sh)
+ #endif
+ #endif
+ 
+diff -ruN uClibc++-0.2.2-old/src/abi/libsupc/Makefile uClibc++-0.2.2-new/src/abi/libsupc/Makefile
+--- uClibc++-0.2.2-old/src/abi/libsupc/Makefile	2007-06-04 00:51:13.000000000 +0200
++++ uClibc++-0.2.2-new/src/abi/libsupc/Makefile	2007-09-03 21:51:17.000000000 +0200
+@@ -14,7 +14,7 @@
+ #
+ #else
+ #	echo Binary
+-	$(AR) x $(shell CC=$(CC) $(TOPDIR)/scripts/find_libsupc.sh)
++	$(AR) x $(shell CC="$(CC)" $(TOPDIR)/scripts/find_libsupc.sh)
+ 	$(RM) -f new_op*.o del_op*.o pure.o new_handler.o eh_alloc.o eh_globals.o
+ #
+ #endif
