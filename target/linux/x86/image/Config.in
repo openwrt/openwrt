@@ -29,15 +29,15 @@ config X86_GRUB_CONSOLE
 config X86_GRUB_SERIAL
 	string "Serial port device"
 	depends X86_GRUB_IMAGES
-	default "hvc0" if (TARGET_x86_kvm_guest || TARGET_x86_xen_domu)
-	default "ttyS0" if ! (TARGET_x86_kvm_guest || TARGET_x86_xen_domu)
+	default "hvc0" if TARGET_x86_xen_domu
+	default "ttyS0" if ! TARGET_x86_xen_domu
 
 config X86_GRUB_BAUDRATE
 	int "Serial port baud rate"
 	depends X86_GRUB_IMAGES
 	default 19200 if TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501
 	default 38400 if TARGET_x86_alix2
-	default 115200 if TARGET_x86_geos
+	default 115200 if TARGET_x86_geos || TARGET_x86_kvm_guest
 	default 38400
 
 config X86_GRUB_BOOTOPTS
