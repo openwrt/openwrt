@@ -1,14 +1,13 @@
 --- a/aconfigure.ac
 +++ b/aconfigure.ac
-@@ -48,9 +48,9 @@ if test -z "$CROSS_COMPILE"; then
+@@ -48,9 +48,8 @@ if test -z "$CROSS_COMPILE"; then
      CROSS_COMPILE=`echo ${CC} | sed 's/gcc//'`
  fi
  
 -if test "$AR" = ""; then AR="${CROSS_COMPILE}ar rv"; fi
-+AR="${CROSS_COMPILE}ar rv"
++AR="${AR} rv"
  AC_SUBST(AR)
 -if test "$LD" = ""; then LD="$CC"; fi
-+LD="${CROSS_COMPILE}gcc"
  AC_SUBST(LD)
  if test "$LDOUT" = ""; then LDOUT="-o "; fi
  AC_SUBST(LDOUT)
