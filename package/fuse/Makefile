@@ -45,21 +45,6 @@ $(call Package/fuse/Default/description)
  - ulockmgr_server
 endef
 
-define KernelPackage/fuse
-  $(call Package/fuse/Default)
-  SUBMENU:=Filesystems
-  TITLE+= (kernel module)
-  KCONFIG:= CONFIG_FUSE_FS
-  FILES:=$(LINUX_DIR)/fs/fuse/fuse.ko
-  VERSION:=$(LINUX_VERSION)-$(LINUX_RELEASE)
-  AUTOLOAD:=$(call AutoLoad,80,fuse)
-endef
-
-define KernelPackage/fuse/description
-$(call Package/fuse/Default/description)
- This package contains the FUSE kernel module.
-endef
-
 define Package/libfuse
 $(call Package/fuse/Default)
   SECTION:=libs
@@ -121,4 +106,3 @@ endef
 
 $(eval $(call BuildPackage,fuse-utils))
 $(eval $(call BuildPackage,libfuse))
-$(eval $(call KernelPackage,fuse))
