@@ -26,7 +26,7 @@ define Package/ltq-tapidemo
   CATEGORY:=Network
   TITLE:=TAPIdemo application for Lantiq boards
   URL:=http://www.lantiq.com/
-  DEPENDS:=+kmod-ltq-tapi +kmod-ltq-vmmc
+  DEPENDS:=+kmod-ltq-tapi +kmod-ltq-vmmc +libpthread
   MAINTAINER:=John Crispin <blogic@openwrt.org>
   MENU:=1
 endef
@@ -38,6 +38,8 @@ endef
 define Package/ltq-tapidemo/config
 	source "$(SOURCE)/Config.in"
 endef
+
+TARGET_LDFLAGS+=-lpthread
 
 CONFIGURE_ARGS += \
 	ARCH=$(LINUX_KARCH) \
