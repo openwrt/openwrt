@@ -104,6 +104,21 @@ endef
 $(eval $(call KernelPackage,fs-ext4))
 
 
+define KernelPackage/fuse
+  SUBMENU:=$(FS_MENU)
+  TITLE:=FUSE (Filesystem in Userspace) support
+  KCONFIG:= CONFIG_FUSE_FS
+  FILES:=$(LINUX_DIR)/fs/fuse/fuse.ko
+  AUTOLOAD:=$(call AutoLoad,80,fuse)
+endef
+
+define KernelPackage/fuse/description
+ Kernel module for userspace filesystem support
+endef
+
+$(eval $(call KernelPackage,fuse))
+
+
 define KernelPackage/fs-hfs
   SUBMENU:=$(FS_MENU)
   TITLE:=HFS+ filesystem support
