@@ -4,18 +4,9 @@
 
 [ -n "$INCLUDE_ONLY" ] || {
 	. /lib/functions.sh
+	. /lib/functions/network.sh
 	. ../netifd-proto.sh
 	init_proto "$@"
-}
-
-find_6to4_wanif() {
-	local if=$(ip -4 r l e 0.0.0.0/0); if="${if#default* dev }"; if="${if%% *}"
-	[ -n "$if" ] && grep -qs "^ *$if:" /proc/net/dev && echo "$if"
-}
-
-find_6to4_wanip() {
-	local ip=$(ip -4 a s dev "$1"); ip="${ip#*inet }"
-	echo "${ip%%[^0-9.]*}"
 }
 
 find_6to4_prefix() {
@@ -119,46 +110,24 @@ proto_6to4_setup() {
 	local iface="$2"
 	local link="6to4-$cfg"
 
-	json_get_var mtu mtu
-	json_get_var ttl ttl
-	json_get_var local4 ipaddr
+	local mtu ttl ipaddr adv_subnet adv_interface adv_valid_lifetime adv_preferred_lifetime
+	json_get_vars mtu ttl ipaddr adv_subnet adv_interface adv_valid_lifetime adv_preferred_lifetime
 
-	json_get_var adv_subnet adv_subnet
-	json_get_var adv_interface adv_interface
-	json_get_var adv_valid_lifetime adv_valid_lifetime
-	json_get_var adv_preferred_lifetime adv_preferred_lifetime
-
-	local wanif=$(find_6to4_wanif)
-	[ -z "$wanif" ] && {
-		tun_error "$cfg" "NO_WAN_LINK"
-		return
+	[ -z "$ipaddr" ] && {
+		local wanif
+		if ! network_find_wan wanif || ! network_get_ipaddr ipaddr "$wanif"; then
+			tun_error "$cfg" "NO_WAN_LINK"
+			return
+		fi
 	}
 
-	. /lib/network/config.sh
-	local wancfg="$(find_config "$wanif")"
-	[ -z "$wancfg" ] && {
-		tun_error "$cfg" "NO_WAN_LINK"
-		return
-	}
-
-	# If local4 is unset, guess local IPv4 address from the
-	# interface used by the default route.
-	[ -z "$local4" ] && {
-		[ -n "$wanif" ] && local4=$(find_6to4_wanip "$wanif")
-	}
-
-	[ -z "$local4" ] && {
-		tun_error "$cfg" "NO_WAN_LINK"
-		return
-	}
-
-	test_6to4_rfc1918 "$local4" && {
+	test_6to4_rfc1918 "$ipaddr" && {
 		tun_error "$cfg" "INVALID_LOCAL_ADDRESS"
 		return
 	}
 
 	# find our local prefix
-	local prefix6=$(find_6to4_prefix "$local4")
+	local prefix6=$(find_6to4_prefix "$ipaddr")
 	local local6="$prefix6::1"
 
 	proto_init_update "$link" 1
@@ -169,7 +138,7 @@ proto_6to4_setup() {
 	json_add_string mode sit
 	json_add_int mtu "${mtu:-1280}"
 	json_add_int ttl "${ttl:-64}"
-	json_add_string local "$local4"
+	json_add_string local "$ipaddr"
 	proto_close_tunnel
 
 	proto_send_update "$cfg"
