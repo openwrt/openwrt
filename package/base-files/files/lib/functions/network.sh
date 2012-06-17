@@ -41,6 +41,65 @@ network_get_subnet()  { __network_ipaddr "$1" "$2" 4 1; }
 network_get_subnet6() { __network_ipaddr "$1" "$2" 6 1; }
 
 
+__network_gateway()
+{
+	local __var="$1"
+	local __iface="$2"
+	local __family="$3"
+
+	local __tmp="$(ubus call network.interface."$__iface" status 2>/dev/null)"
+	local __idx=1
+
+	json_load "${__tmp:-{}}"
+
+	if json_get_type __tmp route && [ "$__tmp" = array ]; then
+
+		json_select route
+
+		while json_get_type __tmp "$__idx" && [ "$__tmp" = object ]; do
+
+			json_select "$((__idx++))"
+			json_get_var __tmp target
+
+			case "${__family}/${__tmp}" in
+				4/0.0.0.0|6/::)
+					json_get_var "$__var" nexthop
+					return $?
+				;;
+			esac
+
+			json_select ".."
+
+		done
+	fi
+
+	return 1
+}
+
+network_get_gateway()  { __network_gateway "$1" "$2" 4; }
+network_get_gateway6() { __network_gateway "$1" "$2" 6; }
+
+
+__network_wan() {
+	local __var="$1"
+	local __family="$2"
+	local __iface
+
+	for __iface in $(ubus list | sed -ne 's/^network\.interface\.//p'); do
+		if __network_gateway "$__var" "$__iface" "$__family"; then
+			eval "export -- \"$__var=$__iface\""
+			return 0
+		fi
+	done
+
+	eval "export -- \"$__var=\""
+	return 1
+}
+
+network_find_wan()  { __network_wan "$1" 4; }
+network_find_wan6() { __network_wan "$1" 6; }
+
+
 __network_device()
 {
 	local __var="$1"
