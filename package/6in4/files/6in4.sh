@@ -21,17 +21,17 @@ proto_6in4_setup() {
 	local iface="$2"
 	local link="6in4-$cfg"
 
-	local mtu ttl local4 peeraddr ip6addr tunnelid username password
-	json_get_vars mtu ttl local4 peeraddr ip6addr tunnelid username password
+	local mtu ttl ipaddr peeraddr ip6addr tunnelid username password
+	json_get_vars mtu ttl ipaddr peeraddr ip6addr tunnelid username password
 
 	[ -z "$ip6addr" -o -z "$peeraddr" ] && {
 		tun_error "$cfg" "MISSING_ADDRESS"
 		return
 	}
 
-	[ -z "$local4" ] && {
+	[ -z "$ipaddr" ] && {
 		local wanif
-		if ! network_find_wan wanif || ! network_get_ipaddr local4 "$wanif"; then
+		if ! network_find_wan wanif || ! network_get_ipaddr ipaddr "$wanif"; then
 			tun_error "$cfg" "NO_WAN_LINK"
 			return
 		fi
@@ -49,7 +49,7 @@ proto_6in4_setup() {
 	json_add_string mode sit
 	json_add_int mtu "${mtu:-1280}"
 	json_add_int ttl "${ttl:-64}"
-	json_add_string local "$local4"
+	json_add_string local "$ipaddr"
 	json_add_string remote "$peeraddr"
 	proto_close_tunnel
 
