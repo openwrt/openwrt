@@ -108,7 +108,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define bcm_memc_readl(o)	bcm_rset_readl(RSET_MEMC, (o))
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -1163,6 +1163,9 @@
+@@ -1170,6 +1170,9 @@
  /*************************************************************************
   * _REG relative to RSET_MISC
   *************************************************************************/
@@ -118,7 +118,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  #define MISC_STRAPBUS_6328_REG		0x240
  #define STRAPBUS_6328_FCVO_SHIFT	7
-@@ -1170,4 +1173,55 @@
+@@ -1177,4 +1180,55 @@
  #define STRAPBUS_6328_BOOT_SEL_SERIAL	(1 << 28)
  #define STRAPBUS_6328_BOOT_SEL_NAND	(0 << 28)
  
