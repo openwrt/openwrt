@@ -1,21 +1,12 @@
 #!/bin/sh
 # 6in4.sh - IPv6-in-IPv4 tunnel backend
-# Copyright (c) 2010 OpenWrt.org
+# Copyright (c) 2010-2012 OpenWrt.org
 
 [ -n "$INCLUDE_ONLY" ] || {
 	. /lib/functions.sh
+	. /lib/functions/network.sh
 	. ../netifd-proto.sh
 	init_proto "$@"
-}
-
-find_6in4_wanif() {
-	local if=$(ip -4 r l e 0.0.0.0/0); if="${if#default* dev }"; if="${if%% *}"
-	[ -n "$if" ] && grep -qs "^ *$if:" /proc/net/dev && echo "$if"
-}
-
-find_6in4_wanip() {
-	local ip=$(ip -4 a s dev "$1"); ip="${ip#*inet }"
-	echo "${ip%%[^0-9.]*}"
 }
 
 tun_error() {
@@ -30,42 +21,20 @@ proto_6in4_setup() {
 	local iface="$2"
 	local link="6in4-$cfg"
 
-	json_get_var mtu mtu
-	json_get_var ttl ttl
-	json_get_var local4 ipaddr
-	json_get_var remote4 peeraddr
-	json_get_var ip6addr ip6addr
-	json_get_var tunnelid tunnelid
-	json_get_var username username
-	json_get_var password password
+	local mtu ttl local4 peeraddr ip6addr tunnelid username password
+	json_get_vars mtu ttl local4 peeraddr ip6addr tunnelid username password
 
-	[ -z "$ip6addr" -o -z "$remote4" ] && {
+	[ -z "$ip6addr" -o -z "$peeraddr" ] && {
 		tun_error "$cfg" "MISSING_ADDRESS"
 		return
 	}
 
 	[ -z "$local4" ] && {
-		local wanif=$(find_6in4_wanif)
-		[ -z "$wanif" ] && {
+		local wanif
+		if ! network_find_wan wanif || ! network_get_ipaddr local4 "$wanif"; then
 			tun_error "$cfg" "NO_WAN_LINK"
 			return
-		}
-
-		. /lib/network/config.sh
-		local wancfg="$(find_config "$wanif")"
-		[ -z "$wancfg" ] && {
-			tun_error "$cfg" "NO_WAN_LINK"
-			return
-		}
-
-		# If local4 is unset, guess local IPv4 address from the
-		# interface used by the default route.
-		[ -n "$wanif" ] && local4=$(find_6in4_wanip "$wanif")
-
-		[ -z "$local4" ] && {
-			tun_error "$cfg" "NO_WAN_LINK"
-			return
-		}
+		fi
 	}
 
 	local local6="${ip6addr%%/*}"
@@ -81,7 +50,7 @@ proto_6in4_setup() {
 	json_add_int mtu "${mtu:-1280}"
 	json_add_int ttl "${ttl:-64}"
 	json_add_string local "$local4"
-	json_add_string remote "$remote4"
+	json_add_string remote "$peeraddr"
 	proto_close_tunnel
 
 	proto_send_update "$cfg"
