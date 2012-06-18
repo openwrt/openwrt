@@ -9,13 +9,6 @@
 	init_proto "$@"
 }
 
-tun_error() {
-	local cfg="$1"; shift;
-
-	[ -n "$1" ] && proto_notify_error "$cfg" "$@"
-	proto_block_restart "$cfg"
-}
-
 proto_6rd_setup() {
 	local cfg="$1"
 	local iface="$2"
@@ -25,14 +18,17 @@ proto_6rd_setup() {
 	json_get_vars mtu ttl ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen
 
 	[ -z "$ip6prefix" -o -z "$peeraddr" ] && {
-		tun_error "$cfg" "MISSING_ADDRESS"
+		proto_notify_error "$cfg" "MISSING_ADDRESS"
+		proto_block_restart "$cfg"
 		return
 	}
+
+	( proto_add_host_dependency "$cfg" 0.0.0.0 )
 
 	[ -z "$ipaddr" ] && {
 		local wanif
 		if ! network_find_wan wanif || ! network_get_ipaddr ipaddr "$wanif"; then
-			tun_error "$cfg" "NO_WAN_LINK"
+			proto_notify_error "$cfg" "NO_WAN_LINK"
 			return
 		fi
 	}

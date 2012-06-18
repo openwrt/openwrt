@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6rd
-PKG_VERSION:=1
+PKG_VERSION:=2
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -48,8 +48,6 @@ define Package/6rd/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/6rdcalc $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/6rd.sh $(1)/lib/netifd/proto/6rd.sh
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_DATA) ./files/6rd.hotplug $(1)/etc/hotplug.d/iface/92-6rd
 endef
 
 $(eval $(call BuildPackage,6rd))
