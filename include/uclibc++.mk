@@ -9,8 +9,8 @@ CXX_DEPENDS = +USE_UCLIBCXX:uclibcxx +USE_LIBSTDCXX:libstdcpp
 
 ifneq ($(CONFIG_USE_UCLIBCXX),)
  ifneq ($(CONFIG_CCACHE),)
-  TARGET_CXX_NOCACHE="g++-uc"
+  TARGET_CXX_NOCACHE=g++-uc
  else
-  TARGET_CXX="g++-uc"
+  TARGET_CXX=g++-uc
  endif
 endif
