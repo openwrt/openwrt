@@ -397,6 +397,9 @@ bool uh_lua_request(struct client *cl, lua_State *L)
 		sleep(atoi(getenv("UHTTPD_SLEEP_ON_FORK") ?: "0"));
 #endif
 
+		/* do not leak parent epoll descriptor */
+		uloop_done();
+
 		/* close loose pipe ends */
 		close(rfd[0]);
 		close(wfd[1]);
