@@ -98,13 +98,6 @@ set_6to4_radvd_prefix() {
 	}
 }
 
-tun_error() {
-	local cfg="$1"; shift;
-
-	[ -n "$1" ] && proto_notify_error "$cfg" "$@"
-	proto_block_restart "$cfg"
-}
-
 proto_6to4_setup() {
 	local cfg="$1"
 	local iface="$2"
@@ -113,16 +106,18 @@ proto_6to4_setup() {
 	local mtu ttl ipaddr adv_subnet adv_interface adv_valid_lifetime adv_preferred_lifetime
 	json_get_vars mtu ttl ipaddr adv_subnet adv_interface adv_valid_lifetime adv_preferred_lifetime
 
+	( proto_add_host_dependency "$cfg" 0.0.0.0 )
+
 	[ -z "$ipaddr" ] && {
 		local wanif
 		if ! network_find_wan wanif || ! network_get_ipaddr ipaddr "$wanif"; then
-			tun_error "$cfg" "NO_WAN_LINK"
+			proto_notify_error "$cfg" "NO_WAN_LINK"
 			return
 		fi
 	}
 
 	test_6to4_rfc1918 "$ipaddr" && {
-		tun_error "$cfg" "INVALID_LOCAL_ADDRESS"
+		proto_notify_error "$cfg" "INVALID_LOCAL_ADDRESS"
 		return
 	}
 

@@ -37,8 +37,6 @@ endef
 define Package/6to4/install
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/6to4.sh $(1)/lib/netifd/proto/6to4.sh
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_DATA) ./files/6to4.hotplug $(1)/etc/hotplug.d/iface/91-6to4
 endef
 
 $(eval $(call BuildPackage,6to4))
