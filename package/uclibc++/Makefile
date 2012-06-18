@@ -45,6 +45,10 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 
 TARGET_CFLAGS += $(FPIC)
 
+ifneq ($(CONFIG_CCACHE),)
+TARGET_CXX=$(TARGET_CXX_NOCACHE)
+endif
+
 MAKE_FLAGS:= \
 	TOPDIR="$(PKG_BUILD_DIR)/" \
 	$(TARGET_CONFIGURE_OPTS) \
