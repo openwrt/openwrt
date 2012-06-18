@@ -365,6 +365,9 @@ bool uh_cgi_request(struct client *cl, struct path_info *pi,
 		sleep(atoi(getenv("UHTTPD_SLEEP_ON_FORK") ?: "0"));
 #endif
 
+		/* do not leak parent epoll descriptor */
+		uloop_done();
+
 		/* close loose pipe ends */
 		close(rfd[0]);
 		close(wfd[1]);
