@@ -28,7 +28,7 @@
  /*
   * read/modify chipcommon core register.
   */
-@@ -689,12 +668,13 @@ ai_clkctl_setdelay(struct si_pub *sih, s
+@@ -688,12 +667,13 @@ ai_clkctl_setdelay(struct si_pub *sih, s
  /* initialize power control delay registers */
  void ai_clkctl_init(struct si_pub *sih)
  {
@@ -43,7 +43,7 @@
  	if (cc == NULL)
  		return;
  
-@@ -726,7 +706,7 @@ u16 ai_clkctl_fast_pwrup_delay(struct si
+@@ -725,7 +705,7 @@ u16 ai_clkctl_fast_pwrup_delay(struct si
  		return 0;
  
  	fpdelay = 0;
@@ -52,7 +52,7 @@
  	if (cc) {
  		slowminfreq = ai_slowclk_freq(sih, false, cc);
  		fpdelay = (((bcma_read32(cc, CHIPCREGOFFS(pll_on_delay)) + 2)
-@@ -750,7 +730,7 @@ bool ai_clkctl_cc(struct si_pub *sih, en
+@@ -749,7 +729,7 @@ bool ai_clkctl_cc(struct si_pub *sih, en
  
  	sii = container_of(sih, struct si_info, pub);
  
@@ -61,7 +61,7 @@
  	bcma_core_set_clockmode(cc, mode);
  	return mode == BCMA_CLKMODE_FAST;
  }
-@@ -779,9 +759,10 @@ void ai_pci_down(struct si_pub *sih)
+@@ -778,9 +758,10 @@ void ai_pci_down(struct si_pub *sih)
  /* Enable BT-COEX & Ex-PA for 4313 */
  void ai_epa_4313war(struct si_pub *sih)
  {
@@ -134,7 +134,7 @@
  	struct bcma_device *core;
  	u32 alp_khz;
  
-@@ -335,7 +339,7 @@ u32 si_pmu_measure_alpclk(struct si_pub
+@@ -335,7 +339,7 @@ u32 si_pmu_measure_alpclk(struct si_pub 
  		return 0;
  
  	/* Remember original core before switch to chipc */
