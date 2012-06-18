@@ -82,11 +82,16 @@ else
   OPENSSL_OPTIONS += no-engines
 endif
 
-OPENSSL_OPTIONS += no-perlasm
+ifeq ($(CONFIG_x86_64),y)
+  OPENSSL_TARGET:=linux-x86_64
+else
+  OPENSSL_TARGET:=linux-openwrt
+  OPENSSL_OPTIONS+=no-perlasm no-sse2
+endif
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
-		./Configure linux-openwrt \
+		./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
 			$(TARGET_CPPFLAGS) \
