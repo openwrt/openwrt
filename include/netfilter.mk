@@ -185,6 +185,7 @@ $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_IRC, $(P_V4)nf_nat_irc))
 
 # nathelper-extra
 
+$(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_BROADCAST, $(P_XT)nf_conntrack_broadcast))
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_AMANDA, $(P_XT)nf_conntrack_amanda))
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_NAT_AMANDA, $(P_V4)nf_nat_amanda))
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_CT_PROTO_GRE, $(P_XT)nf_conntrack_proto_gre))
