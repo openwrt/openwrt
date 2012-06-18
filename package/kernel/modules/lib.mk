@@ -139,9 +139,13 @@ $(eval $(call KernelPackage,lib-textsearch))
 define KernelPackage/lib-zlib
   SUBMENU:=$(LIB_MENU)
   TITLE:=Zlib support
-  KCONFIG:=CONFIG_ZLIB_DEFLATE
-  FILES:=$(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko
-  AUTOLOAD:=$(call AutoLoad,08,zlib_deflate,1)
+  KCONFIG:= \
+    CONFIG_ZLIB_DEFLATE \
+    CONFIG_ZLIB_INFLATE
+  FILES:= \
+    $(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko \
+    $(LINUX_DIR)/lib/zlib_inflate/zlib_inflate.ko
+  AUTOLOAD:=$(call AutoLoad,08,zlib_deflate zlib_inflate,1)
 endef
 
 $(eval $(call KernelPackage,lib-zlib))
