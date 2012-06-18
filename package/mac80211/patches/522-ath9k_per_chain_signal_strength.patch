@@ -23,7 +23,7 @@
  	int antenna;
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -320,6 +320,11 @@ struct sta_info {
+@@ -325,6 +325,11 @@ struct sta_info {
  	unsigned long rx_dropped;
  	int last_signal;
  	struct ewma avg_signal;
@@ -78,7 +78,7 @@
  		kfree(sta);
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -522,6 +522,8 @@ struct station_parameters {
+@@ -527,6 +527,8 @@ struct station_parameters {
   * @STATION_INFO_STA_FLAGS: @sta_flags filled
   * @STATION_INFO_BEACON_LOSS_COUNT: @beacon_loss_count filled
   * @STATION_INFO_T_OFFSET: @t_offset filled
@@ -87,7 +87,7 @@
   */
  enum station_info_flags {
  	STATION_INFO_INACTIVE_TIME	= 1<<0,
-@@ -545,6 +547,8 @@ enum station_info_flags {
+@@ -550,6 +552,8 @@ enum station_info_flags {
  	STATION_INFO_STA_FLAGS		= 1<<18,
  	STATION_INFO_BEACON_LOSS_COUNT	= 1<<19,
  	STATION_INFO_T_OFFSET		= 1<<20,
@@ -96,7 +96,7 @@
  };
  
  /**
-@@ -626,6 +630,9 @@ struct sta_bss_parameters {
+@@ -631,6 +635,9 @@ struct sta_bss_parameters {
  	NOTE: For CFG80211_SIGNAL_TYPE_MBM, value is expressed in _dBm_.
   * @signal_avg: avg signal strength, type depends on the wiphy's signal_type
  	NOTE: For CFG80211_SIGNAL_TYPE_MBM, value is expressed in _dBm_.
@@ -106,7 +106,7 @@
   * @txrate: current unicast bitrate from this station
   * @rxrate: current unicast bitrate to this station
   * @rx_packets: packets received from this station
-@@ -658,6 +665,11 @@ struct station_info {
+@@ -663,6 +670,11 @@ struct station_info {
  	u8 plink_state;
  	s8 signal;
  	s8 signal_avg;
@@ -137,7 +137,7 @@
  	u8 rs_num_delims;
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -988,6 +988,7 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -951,6 +951,7 @@ static int ath9k_rx_skb_preprocess(struc
  				   bool *decrypt_error)
  {
  	struct ath_hw *ah = common->ah;
@@ -145,7 +145,7 @@
  
  	/*
  	 * everything but the rate is checked here, the rate check is done
-@@ -1013,6 +1014,20 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -976,6 +977,20 @@ static int ath9k_rx_skb_preprocess(struc
  	if (rx_stats->rs_moreaggr)
  		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
  
@@ -166,28 +166,9 @@
  	return 0;
  }
  
-@@ -1543,14 +1558,14 @@ static void ath_ant_comb_scan(struct ath
- 	struct ath_ant_comb *antcomb = &sc->ant_comb;
- 	int alt_ratio = 0, alt_rssi_avg = 0, main_rssi_avg = 0, curr_alt_set;
- 	int curr_main_set;
--	int main_rssi = rs->rs_rssi_ctl0;
--	int alt_rssi = rs->rs_rssi_ctl1;
-+	int main_rssi = rs->rs_rssi_ctl[0];
-+	int alt_rssi = rs->rs_rssi_ctl[1];
- 	int rx_ant_conf,  main_ant_conf;
- 	bool short_scan = false;
- 
--	rx_ant_conf = (rs->rs_rssi_ctl2 >> ATH_ANT_RX_CURRENT_SHIFT) &
-+	rx_ant_conf = (rs->rs_rssi_ctl[2] >> ATH_ANT_RX_CURRENT_SHIFT) &
- 		       ATH_ANT_RX_MASK;
--	main_ant_conf = (rs->rs_rssi_ctl2 >> ATH_ANT_RX_MAIN_SHIFT) &
-+	main_ant_conf = (rs->rs_rssi_ctl[2] >> ATH_ANT_RX_MAIN_SHIFT) &
- 			 ATH_ANT_RX_MASK;
- 
- 	/* Record packet only when both main_rssi and  alt_rssi is positive */
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -455,12 +455,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -458,12 +458,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
  
  	/* XXX: Keycache */
  	rxs->rs_rssi = MS(rxsp->status5, AR_RxRSSICombined);
@@ -248,7 +229,7 @@
  	if (ads.ds_rxstatus8 & AR_RxKeyIdxValid)
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -997,12 +997,12 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -998,12 +998,12 @@ void ath_debug_stat_rx(struct ath_softc 
  #ifdef CONFIG_ATH9K_MAC_DEBUG
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;
@@ -269,7 +250,7 @@
  	RX_SAMP_DBG(rate) = rs->rs_rate;
 --- a/include/linux/nl80211.h
 +++ b/include/linux/nl80211.h
-@@ -1695,6 +1695,8 @@ enum nl80211_sta_bss_param {
+@@ -1699,6 +1699,8 @@ enum nl80211_sta_bss_param {
   * @NL80211_STA_INFO_STA_FLAGS: Contains a struct nl80211_sta_flag_update.
   * @NL80211_STA_INFO_BEACON_LOSS: count of times beacon loss was detected (u32)
   * @NL80211_STA_INFO_T_OFFSET: timing offset with respect to this STA (s64)
@@ -278,7 +259,7 @@
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -1719,6 +1721,8 @@ enum nl80211_sta_info {
+@@ -1723,6 +1725,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_STA_FLAGS,
  	NL80211_STA_INFO_BEACON_LOSS,
  	NL80211_STA_INFO_T_OFFSET,
@@ -289,7 +270,7 @@
  	__NL80211_STA_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -2467,6 +2467,33 @@ nla_put_failure:
+@@ -2523,6 +2523,33 @@ nla_put_failure:
  	return false;
  }
  
@@ -323,7 +304,7 @@
  static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
  				int flags,
  				struct cfg80211_registered_device *rdev,
-@@ -2528,6 +2555,18 @@ static int nl80211_send_station(struct s
+@@ -2584,6 +2611,18 @@ static int nl80211_send_station(struct s
  	default:
  		break;
  	}
@@ -370,3 +351,37 @@
  
  	sta_set_rate_info_tx(sta, &sta->last_tx_rate, &sinfo->txrate);
  
+--- a/drivers/net/wireless/ath/ath9k/dfs.c
++++ b/drivers/net/wireless/ath/ath9k/dfs.c
+@@ -164,8 +164,8 @@ void ath9k_dfs_process_phyerr(struct ath
+ 		return;
+ 	}
+ 
+-	ard.rssi = rs->rs_rssi_ctl0;
+-	ard.ext_rssi = rs->rs_rssi_ext0;
++	ard.rssi = rs->rs_rssi_ctl[0];
++	ard.ext_rssi = rs->rs_rssi_ext[0];
+ 
+ 	/*
+ 	 * hardware stores this as 8 bit signed value.
+--- a/drivers/net/wireless/ath/ath9k/antenna.c
++++ b/drivers/net/wireless/ath/ath9k/antenna.c
+@@ -529,14 +529,14 @@ void ath_ant_comb_scan(struct ath_softc 
+ 	struct ath_ant_comb *antcomb = &sc->ant_comb;
+ 	int alt_ratio = 0, alt_rssi_avg = 0, main_rssi_avg = 0, curr_alt_set;
+ 	int curr_main_set;
+-	int main_rssi = rs->rs_rssi_ctl0;
+-	int alt_rssi = rs->rs_rssi_ctl1;
++	int main_rssi = rs->rs_rssi_ctl[0];
++	int alt_rssi = rs->rs_rssi_ctl[1];
+ 	int rx_ant_conf,  main_ant_conf;
+ 	bool short_scan = false;
+ 
+-	rx_ant_conf = (rs->rs_rssi_ctl2 >> ATH_ANT_RX_CURRENT_SHIFT) &
++	rx_ant_conf = (rs->rs_rssi_ctl[2] >> ATH_ANT_RX_CURRENT_SHIFT) &
+ 		       ATH_ANT_RX_MASK;
+-	main_ant_conf = (rs->rs_rssi_ctl2 >> ATH_ANT_RX_MAIN_SHIFT) &
++	main_ant_conf = (rs->rs_rssi_ctl[2] >> ATH_ANT_RX_MAIN_SHIFT) &
+ 			 ATH_ANT_RX_MASK;
+ 
+ 	/* Record packet only when both main_rssi and  alt_rssi is positive */

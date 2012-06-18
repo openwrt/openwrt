@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -621,6 +621,7 @@ struct ath_softc {
+@@ -641,6 +641,7 @@ struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
  
@@ -8,7 +8,7 @@
  	struct survey_info *cur_survey;
  	struct survey_info survey[ATH9K_NUM_CHANNELS];
  
-@@ -688,6 +689,7 @@ struct ath_softc {
+@@ -709,6 +710,7 @@ struct ath_softc {
  	struct dfs_pattern_detector *dfs_detector;
  };
  
@@ -18,7 +18,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1579,6 +1579,50 @@ static const struct file_operations fops
+@@ -1580,6 +1580,50 @@ static const struct file_operations fops
  	.owner = THIS_MODULE
  };
  
@@ -69,7 +69,7 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1645,5 +1689,8 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1646,5 +1690,8 @@ int ath9k_init_debug(struct ath_hw *ah)
  	debugfs_create_file("eeprom", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_eeprom);
  
@@ -80,7 +80,7 @@
  }
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1551,7 +1551,7 @@ static void ath9k_disable_ps(struct ath_
+@@ -1122,7 +1122,7 @@ static void ath9k_disable_ps(struct ath_
  	ath_dbg(common, PS, "PowerSave disabled\n");
  }
  
@@ -89,7 +89,7 @@
  {
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
-@@ -1602,9 +1602,11 @@ static int ath9k_config(struct ieee80211
+@@ -1173,9 +1173,11 @@ static int ath9k_config(struct ieee80211
  
  	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || reset_channel) {
  		struct ieee80211_channel *curchan = hw->conf.channel;
@@ -101,7 +101,7 @@
  
  		if (ah->curchan)
  			old_pos = ah->curchan - &ah->channels[0];
-@@ -1652,7 +1654,23 @@ static int ath9k_config(struct ieee80211
+@@ -1218,7 +1220,23 @@ static int ath9k_config(struct ieee80211
  			memset(&sc->survey[pos], 0, sizeof(struct survey_info));
  		}
  
@@ -125,4 +125,4 @@
 +		if (ath_set_channel(sc, hw, hchan) < 0) {
  			ath_err(common, "Unable to set channel\n");
  			mutex_unlock(&sc->mutex);
- 			return -EINVAL;
+ 			ath9k_ps_restore(sc);

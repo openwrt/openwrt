@@ -1,19 +1,19 @@
 --- a/include/linux/compat-3.5.h
 +++ b/include/linux/compat-3.5.h
-@@ -10,6 +10,8 @@
+@@ -8,6 +8,8 @@
  
- #include <linux/pkt_sched.h>
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,5,0))
  
 +#ifndef TCA_CODEL_MAX
 +
  /*
   * This backports:
   *
-@@ -107,6 +109,7 @@ struct tc_fq_codel_xstats {
- 	};
- };
+@@ -106,6 +108,7 @@ struct vga_switcheroo_client_ops {
+ 
+ #define SIZE_MAX    (~(size_t)0)
  
 +#endif /* TCA_CODEL_MAX */
  
- /* Backports tty_lock: Localise the lock */
- #define tty_lock(__tty) tty_lock()
+ #include <linux/pkt_sched.h>
+ 
