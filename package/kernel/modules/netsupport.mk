@@ -497,19 +497,33 @@ endef
 $(eval $(call KernelPackage,ppp-synctty))
 
 
+define KernelPackage/pppox
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=PPPoX helper
+  DEPENDS:=kmod-ppp
+  KCONFIG:=CONFIG_PPPOE
+  FILES:=$(LINUX_DIR)/drivers/net/ppp/pppox.ko
+  AUTOLOAD:=$(call AutoLoad,40,pppox)
+endef
+
+define KernelPackage/pppox/description
+ Kernel helper module for PPPoE and PPTP support
+endef
+
+$(eval $(call KernelPackage,pppox))
+
+
 define KernelPackage/pppoe
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoE support
-  DEPENDS:=kmod-ppp
+  DEPENDS:=kmod-ppp +kmod-pppox
   KCONFIG:=CONFIG_PPPOE
-  FILES:= \
-	$(LINUX_DIR)/drivers/net/ppp/pppoe.ko \
-	$(LINUX_DIR)/drivers/net/ppp/pppox.ko
-  AUTOLOAD:=$(call AutoLoad,40,pppox pppoe)
+  FILES:=$(LINUX_DIR)/drivers/net/ppp/pppoe.ko
+  AUTOLOAD:=$(call AutoLoad,41,pppoe)
 endef
 
 define KernelPackage/pppoe/description
- Kernel modules for PPPoE (PPP over Ethernet) support
+ Kernel module for PPPoE (PPP over Ethernet) support
 endef
 
 $(eval $(call KernelPackage,pppoe))
@@ -534,7 +548,7 @@ $(eval $(call KernelPackage,pppoa))
 define KernelPackage/pptp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPtP support
-  DEPENDS:=kmod-ppp +kmod-gre
+  DEPENDS:=kmod-ppp +kmod-gre +kmod-pppox
   KCONFIG:=CONFIG_PPTP
   FILES:=$(LINUX_DIR)/drivers/net/ppp/pptp.ko
   AUTOLOAD:=$(call AutoLoad,41,pptp)
