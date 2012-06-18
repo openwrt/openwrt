@@ -9,8 +9,8 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=insight
 PKG_VERSION:=6.8-1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=4ee9824c1e8d6108d886c6c09b24f0ac
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)a.tar.bz2
+PKG_MD5SUM:=f7dd764a102beb75c2bb6b8d83455f8e
 PKG_SOURCE_URL:=ftp://sourceware.org/pub/insight/releases
 PKG_CAT:=bzcat
 
