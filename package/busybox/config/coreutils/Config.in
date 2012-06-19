@@ -243,7 +243,7 @@ config BUSYBOX_CONFIG_FEATURE_DD_THIRD_STATUS_LINE
 
 config BUSYBOX_CONFIG_FEATURE_DD_IBS_OBS
 	bool "Enable ibs, obs and conv options"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_DD
 	help
 	  Enables support for writing a certain number of bytes in and out,
