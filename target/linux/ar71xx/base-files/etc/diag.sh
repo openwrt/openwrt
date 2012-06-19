@@ -121,6 +121,7 @@ get_status_led() {
 	tl-wr941nd)
 		status_led="tp-link:green:system"
 		;;
+	tl-wdr4300 | \
 	tl-wr703n)
 		status_led="tp-link:blue:system"
 		;;
