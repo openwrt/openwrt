@@ -41,6 +41,8 @@ wndr3700_board_detect() {
 		model=$(ar71xx_get_mtd_offset_size_format art 56 10 %c)
 		if [ -z "$model" ] || [ "$model" = $'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff' ]; then
 			machine="NETGEAR WNDR3700v2"
+		elif [ -z "$model" ] || [ "$model" = $'\xff\xff\xff\xff\xff\xff\xff\xff\xffN' ]; then
+			machine="NETGEAR WNDRMAC"
 		else
 			machine="NETGEAR $model"
 		fi
