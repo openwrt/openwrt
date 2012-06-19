@@ -1,3 +1,16 @@
+pppd: Implement support for precompiled pcap filters
+
+This patch implements support for precompiled pcap filters which is useful to
+support dial-on-demand on memory constrained embedded devices without having
+to link the full libpcap into pppd to generate the filters during runtime.
+
+Two new options are introduced; "precompiled-pass-filter" specifies a pre-
+compiled filter file containing rules to match packets which should be passed,
+"precompiled-active-filter" specifies a filter file containing rules to match
+packets which are treated as active.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/Makefile.linux
 +++ b/pppd/Makefile.linux
 @@ -50,6 +50,9 @@ MPPE=y

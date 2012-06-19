@@ -1,3 +1,13 @@
+pppd: Remove runtime kernel checks
+
+On embedded system distributions the required kernel features for pppd are
+more or less guaranteed to be present, so there is not much point in
+performing runtime checks, it just increases the binary size.
+
+This patch removes the runtime kernel feature checks.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
 @@ -203,7 +203,7 @@ static int driver_is_old       = 0;
@@ -88,11 +98,11 @@
  	return 0;
 --- a/pppd/plugins/pppoatm/pppoatm.c
 +++ b/pppd/plugins/pppoatm/pppoatm.c
-@@ -171,14 +171,6 @@ static void disconnect_pppoatm(void)
+@@ -170,14 +170,6 @@ static void disconnect_pppoatm(void)
  
  void plugin_init(void)
  {
--#ifdef linux
+-#if defined(__linux__)
 -	extern int new_style_driver;	/* From sys-linux.c */
 -	if (!ppp_available() && !new_style_driver)
 -		fatal("Kernel doesn't support ppp_generic - "
@@ -126,9 +136,9 @@
      add_options(Options);
  
      info("RP-PPPoE plugin version %s compiled against pppd %s",
---- a/pppd/plugins/pppol2tp/pppol2tp.c	2010-11-15 12:12:43.000000000 +0000
-+++ b/pppd/plugins/pppol2tp/pppol2tp.c	2012-04-24 15:53:58.806260309 +0100
-@@ -488,12 +488,7 @@ static void pppol2tp_check_options(void)
+--- a/pppd/plugins/pppol2tp/pppol2tp.c
++++ b/pppd/plugins/pppol2tp/pppol2tp.c
+@@ -500,12 +500,7 @@ static void pppol2tp_cleanup(void)
  
  void plugin_init(void)
  {

@@ -1,3 +1,11 @@
+build: Do not strip binaries on install
+
+Strippign executables should be handled by the distro packaging, not by ppp
+itself. This patch removes the "-s" (strip) switch from all "install" commands
+in order to install unstripped binaries into the destination prefix.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/chat/Makefile.linux
 +++ b/chat/Makefile.linux
 @@ -25,7 +25,7 @@ chat.o:	chat.c

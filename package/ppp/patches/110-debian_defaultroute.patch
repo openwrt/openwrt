@@ -1,3 +1,15 @@
+pppd: Add "replacedefaultroute" and "noreplacedefaultroute" options
+
+This patch implements two new options, "replacedefaultroute" to replace any
+existing system default route when specified and "noreplacedefaultroute" to
+disable the "replacedefaultroute" option, which is useful in multi user
+environments where the administrator wants to allow users to dial pppd
+connections but not allow them to change the system default route.
+
+The patch originated from the Debian project.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/ipcp.c
 +++ b/pppd/ipcp.c
 @@ -198,6 +198,14 @@ static option_t ipcp_option_list[] = {

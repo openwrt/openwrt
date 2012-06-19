@@ -1,3 +1,16 @@
+pppd: Implement option to strip domain part from MS CHAP response
+
+This patch implements a new boolean option "chapms-strip-domain" which
+strips the leading domain part of the username in a received MS Chap
+response.
+
+When the option is set, all leading chars up to and including the last
+backslash in the username are stripped. The option defaults to false.
+
+The patch originated from the Debian project.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/chap-new.c
 +++ b/pppd/chap-new.c
 @@ -58,6 +58,7 @@ int (*chap_verify_hook)(char *name, char

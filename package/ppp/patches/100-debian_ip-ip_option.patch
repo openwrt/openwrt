@@ -1,3 +1,15 @@
+pppd: Allow specifying ip-up and ip-down scripts
+
+This patch implements the "ip-up-script" and "ip-down-script" options which
+allow to specify the path of the ip-up and ip-down scripts to call.
+
+These options default to _PATH_IPUP and _PATH_IPDOWN to retain the 
+existing behaviour.
+
+The patch originated from the Debian project.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/ipcp.c
 +++ b/pppd/ipcp.c
 @@ -1939,7 +1939,7 @@ ipcp_up(f)

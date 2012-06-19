@@ -1,3 +1,11 @@
+build: Move optimization flags into a separate variable
+
+Isolate optimization related compiler flags from CFLAGS and move them into a
+separate COPTS variable so that it is easier to override optimizations from
+the environment.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/plugins/radius/Makefile.linux
 +++ b/pppd/plugins/radius/Makefile.linux
 @@ -12,7 +12,8 @@ VERSION = $(shell awk -F '"' '/VERSION/ 

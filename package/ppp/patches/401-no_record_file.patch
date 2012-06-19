@@ -1,3 +1,10 @@
+pppd: Remove the "record" option
+
+On many embedded systems there is not enough space to record PPP session
+information to the permanent storage, therfore remove this option.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/pppd.h
 +++ b/pppd/pppd.h
 @@ -309,7 +309,6 @@ extern int	holdoff;	/* Dead time before 

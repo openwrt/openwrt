@@ -1,3 +1,10 @@
+pppd: Don't use exponential timeout in discovery phase
+
+This patch removes the exponential timeout increase between PADO or PADS
+discovery attempts.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/plugins/rp-pppoe/discovery.c
 +++ b/pppd/plugins/rp-pppoe/discovery.c
 @@ -548,7 +548,9 @@ discovery(PPPoEConnection *conn)
