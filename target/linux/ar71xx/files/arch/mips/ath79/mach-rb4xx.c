@@ -21,7 +21,6 @@
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 #include <asm/mach-ath79/ath79.h>
-#include <asm/mach-ath79/pci.h>
 #include <asm/mach-ath79/rb4xx_cpld.h>
 
 #include "common.h"
