@@ -101,6 +101,9 @@ ramips_board_name() {
 	*"Omnima MiniEMBWiFi")
 		name="omni-emb"
 		;;
+	*"Petatel PSR-680W"*)
+		name="psr-680w"
+		;;
 	*"PWH2004")
 		name="pwh2004"
 		;;

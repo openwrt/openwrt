@@ -367,6 +367,10 @@ define Image/Build/Profile/OMNIEMB
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,omni-emb,OMNI-EMB,ttyS1,57600,phys)
 endef
 
+define Image/Build/Profile/PSR680W
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,psr-680w,PSR-680W,ttyS1,115200,phys)
+endef
+
 define Image/Build/Profile/PWH2004
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,pwh2004,PWH2004,ttyS1,57600,phys)
 endef
@@ -454,6 +458,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/NBG419N,$(1))
 	$(call Image/Build/Profile/NW718,$(1))
 	$(call Image/Build/Profile/OMNIEMB,$(1))
+	$(call Image/Build/Profile/PSR680W,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
 	$(call Image/Build/Profile/RTG32B1,$(1))
 	$(call Image/Build/Profile/SLR7205,$(1))

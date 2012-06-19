@@ -27,6 +27,7 @@ platform_check_image() {
 	nbg-419n | \
 	nw718 | \
 	omni-emb | \
+	psr-680w | \
 	rt-g32-b1 | \
 	rt-n10-plus | \
 	rt-n15 | \
