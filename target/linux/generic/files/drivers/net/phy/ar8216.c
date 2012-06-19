@@ -733,6 +733,8 @@ static int
 ar8327_hw_init(struct ar8216_priv *priv)
 {
 	struct ar8327_platform_data *pdata;
+	struct ar8327_led_cfg *led_cfg;
+	u32 pos, new_pos;
 	u32 t;
 	int i;
 
@@ -747,7 +749,26 @@ ar8327_hw_init(struct ar8216_priv *priv)
 	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
 	priv->write(priv, AR8327_REG_PAD6_MODE, t);
 
-	priv->write(priv, AR8327_REG_POWER_ON_STRIP, 0x40000000);
+	pos = priv->read(priv, AR8327_REG_POWER_ON_STRIP);
+	new_pos = pos;
+
+	led_cfg = pdata->led_cfg;
+	if (led_cfg) {
+		if (led_cfg->open_drain)
+			new_pos |= AR8327_POWER_ON_STRIP_LED_OPEN_EN;
+		else
+			new_pos &= ~AR8327_POWER_ON_STRIP_LED_OPEN_EN;
+
+		priv->write(priv, AR8327_REG_LED_CTRL0, led_cfg->led_ctrl0);
+		priv->write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
+		priv->write(priv, AR8327_REG_LED_CTRL2, led_cfg->led_ctrl2);
+		priv->write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
+	}
+
+	if (new_pos != pos) {
+		new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
+		priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
+	}
 
 	for (i = 0; i < AR8327_NUM_PHYS; i++)
 		ar8327_phy_fixup(priv, i);
