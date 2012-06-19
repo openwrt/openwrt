@@ -156,10 +156,10 @@ static void __init wzrhpg300nh2_setup(void)
 	ath79_eth0_data.phy_mask = BIT(0);
 
 	ath79_register_eth(0);
-	ath79_register_usb();
+
 	/* gpio13 is usb power.  Turn it on. */
-	gpio_request(13, "usb");
-	gpio_direction_output(13, 1);
+	ath79_set_usb_power_gpio(13, GPIOF_OUT_INIT_HIGH, "USB power");
+	ath79_register_usb();
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wzrhpg300nh2_leds_gpio),
 				 wzrhpg300nh2_leds_gpio);

@@ -10,7 +10,7 @@
  *  by the Free Software Foundation.
  */
 
-#include <asm/mach-ath79/gpio.h>
+#include <linux/gpio.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 
@@ -156,9 +156,8 @@ static void __init wzrhpg450h_init(void)
 
 	ath79_register_eth(0);
 
+	ath79_set_usb_power_gpio(16, GPIOF_OUT_INIT_HIGH, "USB power");
 	ath79_register_usb();
-	gpio_request(16, "usb");
-	gpio_direction_output(16, 1);
 
 	ap91_pci_init(ee, NULL);
 	ap9x_pci_setup_wmac_led_pin(0, 15);
