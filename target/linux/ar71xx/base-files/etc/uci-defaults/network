@@ -184,6 +184,12 @@ wzr-hp-g450h)
 	ucidef_add_switch_vlan "eth0" "2" "0t 1"
 	;;
 
+ew-dorin)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0 2 3"
+	;;
+
 *)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;

@@ -93,6 +93,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	ew-dorin | \
 	ap81 | \
 	ap83 | \
 	dir-600-a1 | \
