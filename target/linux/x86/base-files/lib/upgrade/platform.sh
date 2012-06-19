@@ -1,5 +1,20 @@
 USE_REFRESH=1
 
+x86_get_rootfs() {
+	local rootfsdev
+	local rootfstype
+	
+	rootfstype="$(awk 'BEGIN { RS=" "; FS="="; } ($1 == "rootfstype") { print $2 }' < /proc/cmdline)"
+	case "$rootfstype" in
+		squashfs|jffs2)
+			rootfsdev="$(awk 'BEGIN { RS=" "; FS="="; } ($1 == "block2mtd.block2mtd") { print substr($2,1,index($2, ",")-1) }' < /proc/cmdline)";;
+		ext4)
+			rootfsdev="$(awk 'BEGIN { RS=" "; FS="="; } ($1 == "root") { print $2 }' < /proc/cmdline)";;
+	esac
+		
+	echo "$rootfstype:$rootfsdev"
+}
+
 platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
@@ -12,22 +27,24 @@ platform_check_image() {
 	esac
 }
 
-platform_do_upgrade() {
-	local ROOTFS
-	sync
-	grep -q -e "jffs2" -e "squashfs" /proc/cmdline \
-		&& ROOTFS="$(awk 'BEGIN { RS=" "; FS="="; } ($1 == "block2mtd.block2mtd") { print substr($2,1,index($2, ",")-1) }' < /proc/cmdline)" \
-		|| ROOTFS="$(awk 'BEGIN { RS=" "; FS="="; } ($1 == "root") { print $2 }' < /proc/cmdline)"
-	[ -b ${ROOTFS%[0-9]} ] && get_image "$1" > ${ROOTFS%[0-9]}
+platform_refresh_partitions() {
+	return 0
 }
 
-x86_prepare_ext2() {
-	# if we're running from ext2, we need to make sure that we have a mtd 
-	# partition that points to the active rootfs partition.
-	# however this only matters if we actually need to preserve the config files
-	[ "$SAVE_CONFIG" -eq 1 ] || return 0
-	grep rootfs /proc/mtd >/dev/null || {
-		echo /dev/hda2,65536,rootfs > /sys/module/block2mtd/parameters/block2mtd
-	}
+platform_copy_config() {
+	local rootfs="$(x86_get_rootfs)"
+	local rootfsdev="${rootfs##*:}"
+	
+	mount -t ext4 -o rw,noatime "${rootfsdev%[0-9]}1" /mnt
+	cp -af "$CONF_TAR" /mnt/
+	umount /mnt
 }
-append sysupgrade_pre_upgrade x86_prepare_ext2
+
+platform_do_upgrade() {
+	local rootfs="$(x86_get_rootfs)"
+	local rootfsdev="${rootfs##*:}"
+
+	sync
+	[ -b ${rootfsdev%[0-9]} ] && get_image "$@" | dd of=${rootfsdev%[0-9]} bs=4096 conv=fsync
+	sleep 1
+}
