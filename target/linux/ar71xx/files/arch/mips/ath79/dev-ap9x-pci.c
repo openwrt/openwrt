@@ -13,7 +13,6 @@
 #include <linux/delay.h>
 
 #include <asm/mach-ath79/ath79.h>
-#include <asm/mach-ath79/pci.h>
 
 #include "dev-ap9x-pci.h"
 #include "pci-ath9k-fixup.h"
