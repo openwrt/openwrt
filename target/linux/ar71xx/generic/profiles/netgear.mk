@@ -7,7 +7,7 @@
 
 define Profile/WNDR3700
 	NAME:=NETGEAR WNDR3700/WNDR3800/WNDRMAC
-	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev kmod-leds-wndr3700-usb
 endef
 
 define Profile/WNDR3700/Description
