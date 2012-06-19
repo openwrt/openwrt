@@ -104,6 +104,11 @@ config RT305X_MACH_OMNI_EMB
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_PSR_680W
+	bool "Petatel PSR-680W Wireless 3G Router support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_PWH2004
 	bool "Prolink PWH2004 / Abocom WR5205 support (32M RAM, 8M flash)"
 	select RALINK_DEV_GPIO_BUTTONS
