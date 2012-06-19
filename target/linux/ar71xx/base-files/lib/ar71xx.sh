@@ -376,6 +376,9 @@ ar71xx_board_detect() {
 	*ZCN-1523H-5)
 		name="zcn-1523h-5"
 		;;
+	*EmbWir-Dorin)
+		name="ew-dorin"
+		;;
 	esac
 
 	case "$machine" in
