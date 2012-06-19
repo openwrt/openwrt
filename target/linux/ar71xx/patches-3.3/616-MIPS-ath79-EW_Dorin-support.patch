@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -240,6 +240,18 @@
+@@ -240,6 +240,18 @@ config ATH79_MACH_DIR_825_B1
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
  
@@ -21,7 +21,7 @@
  	select SOC_AR71XX
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -32,6 +32,7 @@
+@@ -32,6 +32,7 @@ enum ath79_mach_type {
  	ATH79_MACH_DIR_615_C1,		/* D-Link DIR-615 rev. C1 */
  	ATH79_MACH_DIR_615_E4,		/* D-Link DIR-615 rev. E4 */
  	ATH79_MACH_DIR_825_B1,		/* D-Link DIR-825 rev. B1 */
@@ -31,7 +31,7 @@
  	ATH79_MACH_JA76PF2,		/* jjPlus JA76PF2 */
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -49,6 +49,7 @@
+@@ -49,6 +49,7 @@ obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-
  obj-$(CONFIG_ATH79_MACH_DIR_600_A1)	+= mach-dir-600-a1.o
  obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
  obj-$(CONFIG_ATH79_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
