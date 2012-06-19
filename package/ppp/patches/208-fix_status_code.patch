@@ -1,3 +1,15 @@
+pppd: Do not clobber exit codes on hangup
+
+When a modem hangup occurs, pppd unconditionally sets the exit status code
+to EXIT_HANGUP. This patch only sets EXIT_HANGUP if the exit status code is
+not already set to an error value.
+
+The motiviation of this patch is to allow applications which remote control
+pppd to react properly on errors, e.g. only redial (relaunch pppd) if there
+was a hangup, but not if the CHAP authentication failed.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/main.c
 +++ b/pppd/main.c
 @@ -1048,7 +1048,8 @@ get_input()

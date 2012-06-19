@@ -1,3 +1,15 @@
+pppd: Allow specifying ipv6-up and ipv6-down scripts
+
+This patch implements the "ipv6-up-script" and "ipv6-down-script" options
+which allow to specify the path of the ipv6-up and ipv6-down scripts to call.
+
+These options default to _PATH_IPV6UP and _PATH_IPV6DOWN to retain the
+existing behaviour.
+
+The patch originated from the Debian project.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/main.c
 +++ b/pppd/main.c
 @@ -318,6 +318,8 @@ main(argc, argv)

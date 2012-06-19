@@ -1,3 +1,16 @@
+pppd: Watch out for time warps
+
+On many embedded systems there is no battery backed RTC and a proper system
+time only becomes available through NTP after establishing a connection.
+
+When the clock suddenly jumps forward, the internal accounting (connect time)
+is confused resulting in unreliable data.
+
+This patch implements periodic clock checking to look for time warps, if one
+is detected, the internal counters are adjusted accordingly.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/main.c
 +++ b/pppd/main.c
 @@ -90,6 +90,7 @@

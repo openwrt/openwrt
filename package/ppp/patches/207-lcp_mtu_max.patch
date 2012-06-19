@@ -1,3 +1,11 @@
+pppd: Cap MTU to the user configured value
+
+This patchs caps the calculated MTU value in lcp.c to the user specified "mru"
+option value. Without this patch pppd would advertise a different MTU value
+compared to what is set on the local interface in some cases.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/lcp.c
 +++ b/pppd/lcp.c
 @@ -1904,12 +1904,12 @@ lcp_up(f)

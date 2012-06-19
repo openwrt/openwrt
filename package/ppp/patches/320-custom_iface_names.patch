@@ -1,3 +1,12 @@
+pppd: Support arbitrary interface names
+
+This patch implements a new string option "ifname" which allows to specify
+fully custom PPP interface names on Linux. It does so by renaming the
+allocated pppX device immediately after it has been created to the requested
+interface name.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/main.c
 +++ b/pppd/main.c
 @@ -745,8 +745,11 @@ void

@@ -1,3 +1,10 @@
+pppol2tp: Provide struct pppol2tpv3_addr to align with Linux
+
+The struct pppol2tpv3_addr is referenced in the current Linux kernel sources
+but not provided by the shipped kernel headers, add it.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/include/linux/if_pppol2tp.h
 +++ b/include/linux/if_pppol2tp.h
 @@ -32,6 +32,20 @@ struct pppol2tp_addr

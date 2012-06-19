@@ -1,3 +1,16 @@
+pppd: Fill in default gateway on Linux
+
+On Linux, when pppd creates the default route, it does not set the peer
+address as gateway, leading to a default route without gateway address.
+
+This behaviour breaks various downstream programs which attempt to infer
+the default gateway IP address from the system default route entry.
+
+This patch addresses the issue by filling in the peer address as gateway
+when generating the default route entry.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
 @@ -1697,6 +1697,9 @@ int sifdefaultroute (int unit, u_int32_t

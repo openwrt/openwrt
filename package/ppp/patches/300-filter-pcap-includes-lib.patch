@@ -1,3 +1,10 @@
+build: Add required CFLAGS for libpcap
+
+This patch adds some flags to required to properly link libpcap within the
+OpenWrt environment.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+
 --- a/pppd/Makefile.linux
 +++ b/pppd/Makefile.linux
 @@ -170,8 +170,8 @@ endif
