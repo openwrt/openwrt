@@ -62,11 +62,20 @@ struct ar8327_port_cfg {
 	int duplex:1;
 };
 
+struct ar8327_led_cfg {
+	u32 led_ctrl0;
+	u32 led_ctrl1;
+	u32 led_ctrl2;
+	u32 led_ctrl3;
+	bool open_drain;
+};
+
 struct ar8327_platform_data {
 	struct ar8327_pad_cfg *pad0_cfg;
 	struct ar8327_pad_cfg *pad5_cfg;
 	struct ar8327_pad_cfg *pad6_cfg;
 	struct ar8327_port_cfg cpuport_cfg;
+	struct ar8327_led_cfg *led_cfg;
 };
 
 #endif /* AR8216_PLATFORM_H */
