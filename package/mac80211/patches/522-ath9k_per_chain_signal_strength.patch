@@ -270,7 +270,7 @@
  	__NL80211_STA_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -2523,6 +2523,33 @@ nla_put_failure:
+@@ -2553,6 +2553,33 @@ nla_put_failure:
  	return false;
  }
  
@@ -304,7 +304,7 @@
  static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
  				int flags,
  				struct cfg80211_registered_device *rdev,
-@@ -2584,6 +2611,18 @@ static int nl80211_send_station(struct s
+@@ -2614,6 +2641,18 @@ static int nl80211_send_station(struct s
  	default:
  		break;
  	}
