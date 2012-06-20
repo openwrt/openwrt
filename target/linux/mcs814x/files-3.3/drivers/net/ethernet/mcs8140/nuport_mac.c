@@ -139,6 +139,7 @@ struct nuport_mac_priv {
 	struct phy_device	*phydev;
 	int			old_link;
 	int			old_duplex;
+	u32			msg_level;
 };
 
 void dcache_invalidate_only(unsigned long start, unsigned long end)
@@ -231,8 +232,10 @@ static int nuport_mac_start_tx_dma(struct nuport_mac_priv *priv,
 
 	while (timeout--) {
 		reg = nuport_mac_readl(TX_START_DMA);
-		if (!(reg & 0x01))
+		if (!(reg & 0x01)) {
+			netdev_dbg(priv->dev, "dma ready\n");
 			break;
+		}
 		cpu_relax();
 	}
 
@@ -243,7 +246,7 @@ static int nuport_mac_start_tx_dma(struct nuport_mac_priv *priv,
 			skb->len, DMA_TO_DEVICE);
 
 	/* enable enhanced mode */
-	nuport_mac_writel(0x03, TX_DMA_ENH);
+	nuport_mac_writel(0x01, TX_DMA_ENH);
 	nuport_mac_writel(p, TX_BUFFER_ADDR);
 	nuport_mac_writel((skb->len) - 1, TX_PKT_BYTES);
 	wmb();
@@ -261,10 +264,24 @@ static void nuport_mac_reset_tx_dma(struct nuport_mac_priv *priv)
 	nuport_mac_writel(reg, TX_START_DMA);
 }
 
-static void nuport_mac_start_rx_dma(struct nuport_mac_priv *priv,
+static int nuport_mac_start_rx_dma(struct nuport_mac_priv *priv,
 					struct sk_buff *skb)
 {
 	dma_addr_t p;
+	u32 reg;
+	unsigned int timeout = 2048;
+
+	while (timeout--) {
+		reg = nuport_mac_readl(RX_START_DMA);
+		if (!(reg & 0x01)) {
+			netdev_dbg(priv->dev, "dma ready\n");
+			break;
+		}
+		cpu_relax();
+	}
+
+	if (!timeout)
+		return -EBUSY;
 
 	p = dma_map_single(&priv->pdev->dev, skb->data,
 				RX_ALLOC_SIZE, DMA_FROM_DEVICE);
@@ -272,6 +289,8 @@ static void nuport_mac_start_rx_dma(struct nuport_mac_priv *priv,
 	nuport_mac_writel(p, RX_BUFFER_ADDR);
 	wmb();
 	nuport_mac_writel(0x01, RX_START_DMA);
+
+	return 0;
 }
 
 static void nuport_mac_reset_rx_dma(struct nuport_mac_priv *priv)
@@ -309,11 +328,16 @@ static int nuport_mac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct nuport_mac_priv *priv = netdev_priv(dev);
 	int ret;
 
-	dcache_clean_range((u32) skb->data, (u32)(skb->data + skb->len));
+	if (netif_queue_stopped(dev)) {
+		netdev_warn(dev, "netif queue was stopped, restarting\n");
+		netif_start_queue(dev);
+	}
+
 	spin_lock_irqsave(&priv->lock, flags);
 	if (priv->first_pkt) {
 		ret = nuport_mac_start_tx_dma(priv, skb);
 		if (ret) {
+			netif_stop_queue(dev);
 			spin_unlock_irqrestore(&priv->lock, flags);
 			netdev_err(dev, "transmit path busy\n");
 			return NETDEV_TX_BUSY;
@@ -335,6 +359,7 @@ static int nuport_mac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	if (priv->valid_txskb[priv->cur_tx]) {
 		priv->tx_full = 1;
+		netdev_err(dev, "stopping queue\n");
 		netif_stop_queue(dev);
 	}
 
@@ -407,8 +432,20 @@ static irqreturn_t nuport_mac_tx_interrupt(int irq, void *dev_id)
 	struct sk_buff *skb;
 	unsigned long flags;
 	int ret;
+	u32 reg;
 
 	spin_lock_irqsave(&priv->lock, flags);
+	/* clear status word available if ready */
+	reg = nuport_mac_readl(TX_START_DMA);
+	if (reg & (1 << 18)) {
+		nuport_mac_writel(reg, TX_START_DMA);
+		reg = nuport_mac_readl(TX_DMA_STATUS);
+
+		if (reg & 1)
+			dev->stats.tx_errors++;
+	} else
+		netdev_dbg(dev, "no status word: %08x\n", reg);
+
 	skb = priv->tx_skb[priv->dma_tx];
 	priv->tx_skb[priv->dma_tx] = NULL;
 	priv->valid_txskb[priv->dma_tx] = 0;
@@ -427,7 +464,7 @@ static irqreturn_t nuport_mac_tx_interrupt(int irq, void *dev_id)
 	}
 
 	if (priv->tx_full) {
-		netdev_err(dev, "restarting transmit queue\n");
+		netdev_dbg(dev, "restarting transmit queue\n");
 		netif_wake_queue(dev);
 		priv->tx_full = 0;
 	}
@@ -442,7 +479,7 @@ static unsigned int nuport_mac_has_work(struct nuport_mac_priv *priv)
 	unsigned int i;
 
 	for (i = 0; i < RX_RING_SIZE; i++)
-		if (priv->irq_rxskb[i])
+		if (priv->rx_skb[i])
 			return 1;
 
 	return 0;
@@ -453,24 +490,33 @@ static irqreturn_t nuport_mac_rx_interrupt(int irq, void *dev_id)
 	struct net_device *dev = (struct net_device *)dev_id;
 	struct nuport_mac_priv *priv = netdev_priv(dev);
 	unsigned long flags;
+	int ret;
 
 	spin_lock_irqsave(&priv->lock, flags);
-	priv->pkt_len[priv->dma_rx] = nuport_mac_readl(RX_ACT_BYTES) - 4;
-	priv->irq_rxskb[priv->dma_rx] = 0;
-	priv->dma_rx++;
+	if (!priv->rx_full) {
+		priv->pkt_len[priv->dma_rx] = nuport_mac_readl(RX_ACT_BYTES) - 4;
+		priv->irq_rxskb[priv->dma_rx] = 0;
+		priv->dma_rx++;
 
-	if (priv->dma_rx >= RX_RING_SIZE)
-		priv->dma_rx = 0;
+		if (priv->dma_rx >= RX_RING_SIZE)
+			priv->dma_rx = 0;
+	} else
+		priv->rx_full = 0;
 
-	if (priv->irq_rxskb[priv->dma_rx] == 1)
-		nuport_mac_start_rx_dma(priv, priv->rx_skb[priv->dma_rx]);
+	if (priv->irq_rxskb[priv->dma_rx] == 1) {
+		ret = nuport_mac_start_rx_dma(priv, priv->rx_skb[priv->dma_rx]);
+		if (ret)
+			netdev_err(dev, "failed to start rx dma\n");
+	} else {
+		priv->rx_full = 1;
+		netdev_dbg(dev, "RX ring full\n");
+	}
 
 	if (likely(nuport_mac_has_work(priv))) {
 		/* find a way to disable DMA rx irq */
 		nuport_mac_disable_rx_dma(priv);
 		napi_schedule(&priv->napi);
 	}
-
 	spin_unlock_irqrestore(&priv->lock, flags);
 
 	return IRQ_HANDLED;
@@ -742,9 +788,7 @@ static int nuport_mac_open(struct net_device *dev)
 	nuport_mac_reset_rx_dma(priv);
 
 	/* Start RX DMA */
-	nuport_mac_start_rx_dma(priv, priv->rx_skb[0]);
-
-	return 0;
+	return nuport_mac_start_rx_dma(priv, priv->rx_skb[0]);
 
 out_rx_skb:
 	nuport_mac_free_rx_ring(priv);
@@ -780,6 +824,26 @@ static int nuport_mac_close(struct net_device *dev)
 	clk_disable(priv->emac_clk);
 
 	return 0;
+}
+
+static void nuport_mac_tx_timeout(struct net_device *dev)
+{
+	struct nuport_mac_priv *priv = netdev_priv(dev);
+	unsigned int i;
+
+	netdev_warn(dev, "transmit timeout, attempting recovery\n");
+
+	netdev_info(dev, "TX DMA regs\n");
+	for (i = 0; i < DMA_CHAN_WIDTH; i += 4)
+		netdev_info(dev, "[%02x]: 0x%08x\n", i, nuport_mac_readl(TX_DMA_BASE + i));
+	netdev_info(dev, "RX DMA regs\n");
+	for (i = 0; i < DMA_CHAN_WIDTH; i += 4)
+		netdev_info(dev, "[%02x]: 0x%08x\n", i, nuport_mac_readl(RX_DMA_BASE + i));
+
+	nuport_mac_init_tx_ring(priv);
+	nuport_mac_reset_tx_dma(priv);
+
+	netif_wake_queue(dev);
 }
 
 static int nuport_mac_mii_probe(struct net_device *dev)
@@ -864,11 +928,27 @@ static int nuport_mac_ethtool_set_settings(struct net_device *dev,
 	return -EINVAL;
 }
 
+static void nuport_mac_set_msglevel(struct net_device *dev, u32 msg_level)
+{
+	struct nuport_mac_priv *priv = netdev_priv(dev);
+
+	priv->msg_level = msg_level;
+}
+
+static u32 nuport_mac_get_msglevel(struct net_device *dev)
+{
+	struct nuport_mac_priv *priv = netdev_priv(dev);
+
+	return priv->msg_level;
+}
+
 static const struct ethtool_ops nuport_mac_ethtool_ops = {
 	.get_drvinfo		= nuport_mac_ethtool_drvinfo,
 	.get_link		= ethtool_op_get_link,
 	.get_settings		= nuport_mac_ethtool_get_settings,
 	.set_settings		= nuport_mac_ethtool_set_settings,
+	.set_msglevel		= nuport_mac_set_msglevel,
+	.get_msglevel		= nuport_mac_get_msglevel,
 };
 
 static const struct net_device_ops nuport_mac_ops = {
@@ -878,6 +958,7 @@ static const struct net_device_ops nuport_mac_ops = {
 	.ndo_change_mtu		= eth_change_mtu,
 	.ndo_validate_addr	= eth_validate_addr,
 	.ndo_set_mac_address	= nuport_mac_change_mac_address,
+	.ndo_tx_timeout		= nuport_mac_tx_timeout,
 };
 
 static int __init nuport_mac_probe(struct platform_device *pdev)
@@ -951,10 +1032,12 @@ static int __init nuport_mac_probe(struct platform_device *pdev)
 	priv->link_irq = link_irq;
 	priv->rx_irq = rx_irq;
 	priv->tx_irq = tx_irq;
+	priv->msg_level = NETIF_MSG_DRV | NETIF_MSG_PROBE | NETIF_MSG_LINK;
 	dev->netdev_ops = &nuport_mac_ops;
 	dev->ethtool_ops = &nuport_mac_ethtool_ops;
 	dev->watchdog_timeo = HZ;
 	dev->flags = IFF_BROADCAST;	/* Supports Broadcast */
+	dev->tx_queue_len = TX_RING_SIZE / 2;
 
 	netif_napi_add(dev, &priv->napi, nuport_mac_poll, 64);
 
