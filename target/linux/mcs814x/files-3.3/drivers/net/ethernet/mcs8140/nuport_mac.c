@@ -142,26 +142,6 @@ struct nuport_mac_priv {
 	u32			msg_level;
 };
 
-void dcache_invalidate_only(unsigned long start, unsigned long end)
-{
-	asm("\n"
-	    "       bic     r0, r0, #31\n"
-	    "1:     mcr     p15, 0, r0, c7, c6, 1\n"
-	    "       add     r0, r0, #32\n"
-	    "       cmp     r0, r1\n" "       blo     1b\n");
-}
-
-void dcache_clean_range(unsigned long start, unsigned long end)
-{
-	asm("\n"
-	    "       bic     r0, r0, #31\n"
-	    "1:     mcr     p15, 0, r0, c7, c10, 1 @ clean D entry\n"
-	    "       add     r0, r0, #32\n"
-	    "       cmp     r0, r1\n"
-	    "       blo     1b\n" \
-	    "       mcr     p15, 0, r0, c7, c10, 4 @ drain WB\n");
-}
-
 static inline int nuport_mac_mii_busy_wait(struct nuport_mac_priv *priv)
 {
 	unsigned long curr;
@@ -533,8 +513,6 @@ static int nuport_mac_rx(struct net_device *dev, int limit)
 	while (count < limit && !priv->irq_rxskb[priv->cur_rx]) {
 		skb = priv->rx_skb[priv->cur_rx];
 		len = priv->pkt_len[priv->cur_rx];
-		dcache_invalidate_only(((u32) skb->data),
-				       ((u32) (skb->data + len + 4)));
 
 		/* Remove 2 bytes added by RX buffer shifting */
 		len = len - 2;
