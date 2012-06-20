@@ -20,7 +20,7 @@
 #define MCS814X_IRQ_MASK	0x20
 #define MCS814X_IRQ_STS0	0x40
 
-static void __iomem *mcs814x_intc_base;
+void __iomem *mcs814x_intc_base;
 
 static void __init mcs814x_alloc_gc(void __iomem *base, unsigned int irq_start,
 					unsigned int num)
@@ -45,26 +45,6 @@ static void __init mcs814x_alloc_gc(void __iomem *base, unsigned int irq_start,
 
 	/* Clear all interrupts */
 	__raw_writel(0xffffffff, base + MCS814X_IRQ_ICR);
-}
-
-asmlinkage void __exception_irq_entry mcs814x_handle_irq(struct pt_regs *regs)
-{
-	u32 status, irq;
-
-	do {
-		/* read the status register */
-		status = __raw_readl(mcs814x_intc_base + MCS814X_IRQ_STS0);
-		if (!status)
-			break;
-
-		irq = ffs(status) - 1;
-		status |= (1 << irq);
-		/* clear the interrupt */
-		__raw_writel(status, mcs814x_intc_base + MCS814X_IRQ_ICR);
-		/* call the generic handler */
-		handle_IRQ(irq, regs);
-
-	} while (1);
 }
 
 static const struct of_device_id mcs814x_intc_ids[] = {
