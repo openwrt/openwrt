@@ -22,7 +22,7 @@ DEFAULT_PACKAGES := $(filter-out ppp%,$(DEFAULT_PACKAGES)) \
 		  kmod-usb-storage kmod-fs-vfat \
 		  kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
 		  kmod-nls-utf8 \
-		  kmod-mcs814x-wdt
+		  kmod-mcs814x-wdt kmod-ledtrig-usbdev
 
 KERNELNAME:="zImage dtbs"
 
