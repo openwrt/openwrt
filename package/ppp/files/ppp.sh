@@ -169,7 +169,6 @@ proto_pppoa_teardown() {
 proto_pptp_init_config() {
 	ppp_generic_init_config
 	proto_config_add_string "server"
-	proto_config_add_boolean "buffering"
 	available=1
 	no_device=1
 }
@@ -191,10 +190,6 @@ proto_pptp_setup() {
 		proto_setup_failed "$config"
 		exit 1
 	}
-
-	local buffering
-	json_get_var buffering buffering
-	[ "${buffering:-1}" == 0 ] && buffering="--nobuffer" || buffering=
 
 	local load
 	for module in slhc ppp_generic ppp_async ppp_mppe ip_gre gre pptp; do
