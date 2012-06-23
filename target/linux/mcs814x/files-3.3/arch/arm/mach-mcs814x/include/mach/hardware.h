@@ -14,6 +14,12 @@
 #define MCS814X_IO_START	0x40000000
 #define MCS814X_IO_SIZE		0x00100000
 
+/* IRQ controller register offset */
+#define MCS814X_IRQ_ICR		0x00
+#define MCS814X_IRQ_ISR		0x04
+#define MCS814X_IRQ_MASK	0x20
+#define MCS814X_IRQ_STS0	0x40
+
 #define _PHYS_CONFADDR		0x40000000
 #define _VIRT_CONFADDR		MCS814X_IO_BASE
 
