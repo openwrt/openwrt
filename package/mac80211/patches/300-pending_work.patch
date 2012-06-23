@@ -1681,3 +1681,45 @@
  	cal_interval = ATH_LONG_CALINTERVAL;
  	if (sc->sc_ah->config.enable_ani)
  		cal_interval = min(cal_interval,
+--- a/drivers/net/wireless/ath/ath.h
++++ b/drivers/net/wireless/ath/ath.h
+@@ -143,6 +143,7 @@ struct ath_common {
+ 	u32 keymax;
+ 	DECLARE_BITMAP(keymap, ATH_KEYMAX);
+ 	DECLARE_BITMAP(tkip_keymap, ATH_KEYMAX);
++	DECLARE_BITMAP(ccmp_keymap, ATH_KEYMAX);
+ 	enum ath_crypt_caps crypt_caps;
+ 
+ 	unsigned int clockrate;
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -785,7 +785,8 @@ static bool ath9k_rx_accept(struct ath_c
+ 	 * descriptor does contain a valid key index. This has been observed
+ 	 * mostly with CCMP encryption.
+ 	 */
+-	if (rx_stats->rs_keyix == ATH9K_RXKEYIX_INVALID)
++	if (rx_stats->rs_keyix == ATH9K_RXKEYIX_INVALID ||
++	    !test_bit(rx_stats->rs_keyix, common->ccmp_keymap))
+ 		rx_stats->rs_status &= ~ATH9K_RXERR_KEYMISS;
+ 
+ 	if (!rx_stats->rs_datalen) {
+--- a/drivers/net/wireless/ath/key.c
++++ b/drivers/net/wireless/ath/key.c
+@@ -556,6 +556,9 @@ int ath_key_config(struct ath_common *co
+ 		return -EIO;
+ 
+ 	set_bit(idx, common->keymap);
++	if (key->cipher == WLAN_CIPHER_SUITE_CCMP)
++		set_bit(idx, common->ccmp_keymap);
++
+ 	if (key->cipher == WLAN_CIPHER_SUITE_TKIP) {
+ 		set_bit(idx + 64, common->keymap);
+ 		set_bit(idx, common->tkip_keymap);
+@@ -582,6 +585,7 @@ void ath_key_delete(struct ath_common *c
+ 		return;
+ 
+ 	clear_bit(key->hw_key_idx, common->keymap);
++	clear_bit(key->hw_key_idx, common->ccmp_keymap);
+ 	if (key->cipher != WLAN_CIPHER_SUITE_TKIP)
+ 		return;
+ 
