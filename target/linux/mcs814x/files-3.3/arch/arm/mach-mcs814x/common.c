@@ -32,13 +32,6 @@ static struct map_desc mcs814x_io_desc[] __initdata = {
 	},
 };
 
-#define SYSDBG_BS2		0x04
-#define  LED_CFG_MASK		0x03
-#define  CPU_MODE_SHIFT		23
-#define  CPU_MODE_MASK		0x03
-
-#define SYSDBG_SYSCTL_MAC	0x1d
-
 struct cpu_mode {
 	const char *name;
 	int gpio_start;
@@ -96,9 +89,9 @@ static void mcs814x_eth_buffer_shifting_set(u8 value)
 
 	reg = __raw_readb(_CONFADDR_SYSDBG + SYSDBG_SYSCTL_MAC);
 	if (value)
-		reg |= 0x01;
+		reg |= BUF_SHIFT_BIT;
 	else
-		reg &= ~0x01;
+		reg &= ~BUF_SHIFT_BIT;
 	__raw_writeb(reg, _CONFADDR_SYSDBG + SYSDBG_SYSCTL_MAC);
 }
 

@@ -16,17 +16,6 @@
 
 #include <mach/mcs814x.h>
 
-/* System configuration registers offsets */
-#define SYSDBG_BS1	0x00
-#define SYSDBG_SYSCTL	0x08
-#define  SYSCTL_EMAC	(1 << 0)
-#define  SYSCTL_CIPHER	(1 << 16)
-#define SYSDBG_PLL_CTL	0x3C
-
-#define CPU_FREQ_SHIFT	27
-#define CPU_FREQ_MASK	0x0F
-#define SDRAM_FREQ_BIT	(1 << 22)
-
 #define KHZ	1000
 #define MHZ	(KHZ * KHZ)
 
