@@ -14,11 +14,7 @@
 
 #include <asm/exception.h>
 #include <asm/mach/irq.h>
-
-#define MCS814X_IRQ_ICR		0x00
-#define MCS814X_IRQ_ISR		0x04
-#define MCS814X_IRQ_MASK	0x20
-#define MCS814X_IRQ_STS0	0x40
+#include <mach/hardware.h>
 
 void __iomem *mcs814x_intc_base;
 

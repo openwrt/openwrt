@@ -11,8 +11,8 @@
 		.endm
 
 		.macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
-		mov	\tmp, #0x40
-		ldr	\irqstat, [\base, \tmp]
+		mov	\tmp, #MCS814X_IRQ_STS0	 @ load tmp with STS0 register offset
+		ldr	\irqstat, [\base, \tmp]	 @ load value at base + tmp
 		tst	\irqstat, \irqstat       @ test if no active IRQ's
 		beq	1002f                    @ if no active irqs return with status 0
 		mov	\irqnr, #0               @ start from irq zero
@@ -23,7 +23,7 @@
 		moveq   \tmp,   \tmp, lsl #1     @ shift mask one to left
 		beq     1001b                    @ if  zero then loop again
 		mov     \irqstat, \tmp           @ save the return mask
-		mov	\tmp, #0x00		 @ ICR offset
+		mov	\tmp, #MCS814X_IRQ_STS0  @ load tmp with ICR offset
 		str     \irqstat,  [\base, \tmp] @ clear irq with selected mask
 1002:
                 .endm
