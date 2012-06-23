@@ -1171,7 +1171,34 @@
  #ifdef CONFIG_ATH9K_BTCOEX_SUPPORT
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -516,24 +516,6 @@ irqreturn_t ath_isr(int irq, void *dev)
+@@ -19,7 +19,7 @@
+ #include "ath9k.h"
+ #include "btcoex.h"
+ 
+-static u8 parse_mpdudensity(u8 mpdudensity)
++u8 ath9k_parse_mpdudensity(u8 mpdudensity)
+ {
+ 	/*
+ 	 * 802.11n D2.0 defined values for "Minimum MPDU Start Spacing":
+@@ -320,6 +320,7 @@ static void ath_node_attach(struct ath_s
+ 			    struct ieee80211_vif *vif)
+ {
+ 	struct ath_node *an;
++	u8 density;
+ 	an = (struct ath_node *)sta->drv_priv;
+ 
+ #ifdef CONFIG_ATH9K_DEBUGFS
+@@ -334,7 +335,8 @@ static void ath_node_attach(struct ath_s
+ 		ath_tx_node_init(sc, an);
+ 		an->maxampdu = 1 << (IEEE80211_HT_MAX_AMPDU_FACTOR +
+ 				     sta->ht_cap.ampdu_factor);
+-		an->mpdudensity = parse_mpdudensity(sta->ht_cap.ampdu_density);
++		density = ath9k_parse_mpdudensity(sta->ht_cap.ampdu_density);
++		an->mpdudensity = density;
+ 	}
+ }
+ 
+@@ -516,24 +518,6 @@ irqreturn_t ath_isr(int irq, void *dev)
  		ath9k_hw_set_interrupts(ah);
  	}
  
@@ -1196,7 +1223,7 @@
  	if (!(ah->caps.hw_caps & ATH9K_HW_CAP_AUTOSLEEP))
  		if (status & ATH9K_INT_TIM_TIMER) {
  			if (ATH_DBG_WARN_ON_ONCE(sc->ps_idle))
-@@ -959,14 +941,10 @@ static void ath9k_calculate_summary_stat
+@@ -959,14 +943,10 @@ static void ath9k_calculate_summary_stat
  	/*
  	 * Enable MIB interrupts when there are hardware phy counters.
  	 */
@@ -1466,6 +1493,14 @@
  };
  
  struct ath_buf_state {
+@@ -721,6 +722,7 @@ extern int ath9k_modparam_nohwcrypt;
+ extern int led_blink;
+ extern bool is_ath9k_unloaded;
+ 
++u8 ath9k_parse_mpdudensity(u8 mpdudensity);
+ irqreturn_t ath_isr(int irq, void *dev);
+ int ath9k_init_device(u16 devid, struct ath_softc *sc,
+ 		    const struct ath_bus_ops *bus_ops);
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
 @@ -938,6 +938,7 @@ static void ath_buf_set_rate(struct ath_
@@ -1511,7 +1546,33 @@
  		info->rates[i].Rate = rate->hw_value;
  		if (rate->hw_value_short) {
  			if (rates[i].flags & IEEE80211_TX_RC_USE_SHORT_PREAMBLE)
-@@ -1776,10 +1766,22 @@ static void setup_frame_info(struct ieee
+@@ -1175,6 +1165,7 @@ int ath_tx_aggr_start(struct ath_softc *
+ {
+ 	struct ath_atx_tid *txtid;
+ 	struct ath_node *an;
++	u8 density;
+ 
+ 	an = (struct ath_node *)sta->drv_priv;
+ 	txtid = ATH_AN_2_TID(an, tid);
+@@ -1182,6 +1173,17 @@ int ath_tx_aggr_start(struct ath_softc *
+ 	if (txtid->state & (AGGR_CLEANUP | AGGR_ADDBA_COMPLETE))
+ 		return -EAGAIN;
+ 
++	/* update ampdu factor/density, they may have changed. This may happen
++	 * in HT IBSS when a beacon with HT-info is received after the station
++	 * has already been added.
++	 */
++	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT) {
++		an->maxampdu = 1 << (IEEE80211_HT_MAX_AMPDU_FACTOR +
++				     sta->ht_cap.ampdu_factor);
++		density = ath9k_parse_mpdudensity(sta->ht_cap.ampdu_density);
++		an->mpdudensity = density;
++	}
++
+ 	txtid->state |= AGGR_ADDBA_PROGRESS;
+ 	txtid->paused = true;
+ 	*ssn = txtid->seq_start = txtid->seq_next;
+@@ -1776,10 +1778,22 @@ static void setup_frame_info(struct ieee
  	struct ieee80211_sta *sta = tx_info->control.sta;
  	struct ieee80211_key_conf *hw_key = tx_info->control.hw_key;
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
@@ -1534,7 +1595,7 @@
  	keytype = ath9k_cmn_get_hw_crypto_keytype(skb);
  
  	if (sta)
-@@ -1794,6 +1796,9 @@ static void setup_frame_info(struct ieee
+@@ -1794,6 +1808,9 @@ static void setup_frame_info(struct ieee
  		fi->keyix = ATH9K_TXKEYIX_INVALID;
  	fi->keytype = keytype;
  	fi->framelen = framelen;
@@ -1602,3 +1663,21 @@
  	return err;
  }
  
+--- a/drivers/net/wireless/ath/ath9k/link.c
++++ b/drivers/net/wireless/ath/ath9k/link.c
+@@ -407,6 +407,7 @@ void ath_ani_calibrate(unsigned long dat
+ 		longcal ? "long" : "", shortcal ? "short" : "",
+ 		aniflag ? "ani" : "", common->ani.caldone ? "true" : "false");
+ 
++	ath9k_debug_samp_bb_mac(sc);
+ 	ath9k_ps_restore(sc);
+ 
+ set_timer:
+@@ -415,7 +416,6 @@ set_timer:
+ 	* The interval must be the shortest necessary to satisfy ANI,
+ 	* short calibration and long calibration.
+ 	*/
+-	ath9k_debug_samp_bb_mac(sc);
+ 	cal_interval = ATH_LONG_CALINTERVAL;
+ 	if (sc->sc_ah->config.enable_ani)
+ 		cal_interval = min(cal_interval,
