@@ -19,6 +19,9 @@
 
 	ahb {
 		vci {
+			eth0: ethernet@40084000 {
+				nuport-mac,link-activity = <0x01>;
+			};
 
 			adc {
 				sdram: memory@0,0 {

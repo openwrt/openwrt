@@ -27,7 +27,6 @@
 
 #include <asm/unaligned.h>
 #include <asm/sizes.h>
-#include <mach/hardware.h>
 
 /* Hardware registers */
 #define MAC_BASE_ADDR		((priv->mac_base))
@@ -140,6 +139,7 @@ struct nuport_mac_priv {
 	int			old_link;
 	int			old_duplex;
 	u32			msg_level;
+	unsigned int		buffer_shifting_len;
 };
 
 static inline int nuport_mac_mii_busy_wait(struct nuport_mac_priv *priv)
@@ -515,8 +515,8 @@ static int nuport_mac_rx(struct net_device *dev, int limit)
 		len = priv->pkt_len[priv->cur_rx];
 
 		/* Remove 2 bytes added by RX buffer shifting */
-		len = len - 2;
-		skb->data = skb->data + 2;
+		len = len - priv->buffer_shifting_len;
+		skb->data = skb->data + priv->buffer_shifting_len;
 
 		/* Get packet status */
 		status = get_unaligned((u32 *) (skb->data + len));
@@ -691,18 +691,6 @@ static int nuport_mac_open(struct net_device *dev)
 	int ret;
 	struct nuport_mac_priv *priv = netdev_priv(dev);
 	unsigned long flags;
-	u32 reg;
-	u8 tmp;
-
-	/* Enable hardware filters */
-	reg = nuport_mac_readl((void __iomem *)_CONFADDR_DBGLED);
-	reg |= 0x80;
-	nuport_mac_writel(reg, (void __iomem *)_CONFADDR_DBGLED);
-
-	/* Set LEDs to Link act and RX/TX mode */
-	reg = nuport_mac_readl((void __iomem *)(_CONFADDR_SYSDBG + 0x04));
-	reg |= 0x01;
-	nuport_mac_writel(reg, (void __iomem *)(_CONFADDR_SYSDBG + 0x04));
 
 	ret = clk_enable(priv->emac_clk);
 	if (ret) {
@@ -746,11 +734,6 @@ static int nuport_mac_open(struct net_device *dev)
 		netdev_err(dev, "unable to request tx interrupt\n");
 		goto out_tx_irq;
 	}
-
-	/* Enable buffer shifting in RX */
-	tmp = nuport_mac_readb((void __iomem *)(_CONFADDR_SYSDBG + 0x1D));
-	tmp |= 0x01;
-	nuport_mac_writeb(tmp, (void __iomem *)(_CONFADDR_SYSDBG + 0x1D));
 
 	netif_start_queue(dev);
 
@@ -947,6 +930,7 @@ static int __init nuport_mac_probe(struct platform_device *pdev)
 	int ret = 0;
 	int rx_irq, tx_irq, link_irq;
 	int i;
+	const unsigned int *intspec;
 
 	dev = alloc_etherdev(sizeof(struct nuport_mac_priv));
 	if (!dev) {
@@ -976,6 +960,13 @@ static int __init nuport_mac_probe(struct platform_device *pdev)
 	priv->pdev = pdev;
 	priv->dev = dev;
 	spin_lock_init(&priv->lock);
+
+	intspec = of_get_property(pdev->dev.of_node,
+				"nuport-mac,buffer-shifting", NULL);
+	if (!intspec)
+		priv->buffer_shifting_len = 0;
+	else
+		priv->buffer_shifting_len = 2;
 
 	priv->mac_base = devm_ioremap(&pdev->dev,
 				regs->start, resource_size(regs));

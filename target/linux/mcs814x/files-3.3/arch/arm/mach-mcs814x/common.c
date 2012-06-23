@@ -12,6 +12,8 @@
 #include <linux/init.h>
 #include <linux/io.h>
 #include <linux/gpio.h>
+#include <linux/of.h>
+#include <linux/of_address.h>
 
 #include <asm/setup.h>
 #include <asm/mach-types.h>
@@ -30,9 +32,12 @@ static struct map_desc mcs814x_io_desc[] __initdata = {
 	},
 };
 
-#define SYSDBG_BS2	0x04
-#define CPU_MODE_SHIFT	23
-#define CPU_MODE_MASK	0x03
+#define SYSDBG_BS2		0x04
+#define  LED_CFG_MASK		0x03
+#define  CPU_MODE_SHIFT		23
+#define  CPU_MODE_MASK		0x03
+
+#define SYSDBG_SYSCTL_MAC	0x1d
 
 struct cpu_mode {
 	const char *name;
@@ -63,6 +68,70 @@ static const struct cpu_mode cpu_modes[] = {
 	},
 };
 
+static void mcs814x_eth_hardware_filter_set(u8 value)
+{
+	u32 reg;
+
+	reg = __raw_readl(_CONFADDR_DBGLED);
+	if (value)
+		reg |= 0x80;
+	else
+		reg &= ~0x80;
+	__raw_writel(reg, _CONFADDR_DBGLED);
+}
+
+static void mcs814x_eth_led_cfg_set(u8 cfg)
+{
+	u32 reg;
+
+	reg = __raw_readl(_CONFADDR_SYSDBG + SYSDBG_BS2);
+	reg &= ~LED_CFG_MASK;
+	reg |= cfg;
+	__raw_writel(reg, _CONFADDR_SYSDBG + SYSDBG_BS2);
+}
+
+static void mcs814x_eth_buffer_shifting_set(u8 value)
+{
+	u8 reg;
+
+	reg = __raw_readb(_CONFADDR_SYSDBG + SYSDBG_SYSCTL_MAC);
+	if (value)
+		reg |= 0x01;
+	else
+		reg &= ~0x01;
+	__raw_writeb(reg, _CONFADDR_SYSDBG + SYSDBG_SYSCTL_MAC);
+}
+
+static struct of_device_id mcs814x_eth_ids[] __initdata = {
+	{ .compatible = "moschip,nuport-mac", },
+	{ /* sentinel */ },
+};
+
+/* Configure platform specific knobs based on ethernet device node
+ * properties */
+static void mcs814x_eth_init(void)
+{
+	struct device_node *np;
+	const unsigned int *intspec;
+
+	np = of_find_matching_node(NULL, mcs814x_eth_ids);
+	if (!np)
+		return;
+
+	/* hardware filter must always be enabled */
+	mcs814x_eth_hardware_filter_set(1);
+
+	intspec = of_get_property(np, "nuport-mac,buffer-shifting", NULL);
+	if (!intspec)
+		mcs814x_eth_buffer_shifting_set(0);
+	else
+		mcs814x_eth_buffer_shifting_set(1);
+
+	intspec = of_get_property(np, "nuport-mac,link-activity", NULL);
+	if (intspec)
+		mcs814x_eth_led_cfg_set(be32_to_cpup(intspec));
+}
+
 void __init mcs814x_init_machine(void)
 {
 	u32 bs2, cpu_mode;
@@ -79,6 +148,8 @@ void __init mcs814x_init_machine(void)
 		if (gpio != -1)
 			gpio_request(gpio, cpu_modes[cpu_mode].name);
 	}
+
+	mcs814x_eth_init();
 }
 
 void __init mcs814x_map_io(void)
