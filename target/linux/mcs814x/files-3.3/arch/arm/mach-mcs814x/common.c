@@ -23,6 +23,8 @@
 #include <asm/pgtable.h>
 #include <asm/mach/map.h>
 
+void __iomem *mcs814x_sysdbg_base;
+
 static struct map_desc mcs814x_io_desc[] __initdata = {
 	{
 		.virtual	= MCS814X_IO_BASE,
@@ -65,34 +67,34 @@ static void mcs814x_eth_hardware_filter_set(u8 value)
 {
 	u32 reg;
 
-	reg = __raw_readl(_CONFADDR_DBGLED);
+	reg = __raw_readl(MCS814X_VIRT_BASE + MCS814X_DBGLED);
 	if (value)
 		reg |= 0x80;
 	else
 		reg &= ~0x80;
-	__raw_writel(reg, _CONFADDR_DBGLED);
+	__raw_writel(reg, MCS814X_VIRT_BASE + MCS814X_DBGLED);
 }
 
 static void mcs814x_eth_led_cfg_set(u8 cfg)
 {
 	u32 reg;
 
-	reg = __raw_readl(_CONFADDR_SYSDBG + SYSDBG_BS2);
+	reg = __raw_readl(mcs814x_sysdbg_base + SYSDBG_BS2);
 	reg &= ~LED_CFG_MASK;
 	reg |= cfg;
-	__raw_writel(reg, _CONFADDR_SYSDBG + SYSDBG_BS2);
+	__raw_writel(reg, mcs814x_sysdbg_base + SYSDBG_BS2);
 }
 
 static void mcs814x_eth_buffer_shifting_set(u8 value)
 {
 	u8 reg;
 
-	reg = __raw_readb(_CONFADDR_SYSDBG + SYSDBG_SYSCTL_MAC);
+	reg = __raw_readb(mcs814x_sysdbg_base + SYSDBG_SYSCTL_MAC);
 	if (value)
 		reg |= BUF_SHIFT_BIT;
 	else
 		reg &= ~BUF_SHIFT_BIT;
-	__raw_writeb(reg, _CONFADDR_SYSDBG + SYSDBG_SYSCTL_MAC);
+	__raw_writeb(reg, mcs814x_sysdbg_base + SYSDBG_SYSCTL_MAC);
 }
 
 static struct of_device_id mcs814x_eth_ids[] __initdata = {
@@ -130,7 +132,7 @@ void __init mcs814x_init_machine(void)
 	u32 bs2, cpu_mode;
 	int gpio;
 
-	bs2 = __raw_readl(_CONFADDR_SYSDBG + SYSDBG_BS2);
+	bs2 = __raw_readl(mcs814x_sysdbg_base + SYSDBG_BS2);
 	cpu_mode = (bs2 >> CPU_MODE_SHIFT) & CPU_MODE_MASK;
 
 	pr_info("CPU mode: %s\n", cpu_modes[cpu_mode].name);
@@ -148,9 +150,14 @@ void __init mcs814x_init_machine(void)
 void __init mcs814x_map_io(void)
 {
 	iotable_init(mcs814x_io_desc, ARRAY_SIZE(mcs814x_io_desc));
+
+	mcs814x_sysdbg_base = ioremap(MCS814X_IO_START + MCS814X_SYSDBG,
+					MCS814X_SYSDBG_SIZE);
+	if (!mcs814x_sysdbg_base)
+		panic("unable to remap sysdbg base");
 }
 
 void mcs814x_restart(char mode, const char *cmd)
 {
-	__raw_writel(~(1 << 31), _CONFADDR_SYSDBG);
+	__raw_writel(~(1 << 31), mcs814x_sysdbg_base);
 }
