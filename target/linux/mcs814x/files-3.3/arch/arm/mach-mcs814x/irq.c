@@ -14,7 +14,7 @@
 
 #include <asm/exception.h>
 #include <asm/mach/irq.h>
-#include <mach/hardware.h>
+#include <mach/mcs814x.h>
 
 void __iomem *mcs814x_intc_base;
 

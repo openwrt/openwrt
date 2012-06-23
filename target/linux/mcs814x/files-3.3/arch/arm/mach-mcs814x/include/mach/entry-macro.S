@@ -1,4 +1,4 @@
-#include <mach/hardware.h>
+#include <mach/mcs814x.h>
                 .macro  disable_fiq
                 .endm
 

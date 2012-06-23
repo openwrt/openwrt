@@ -1,4 +1,4 @@
-#include <mach/hardware.h>
+#include <mach/mcs814x.h>
 
                 .macro  addruart, rp, rv, tmp
 		ldr	\rp, =_PHYS_CONFADDR

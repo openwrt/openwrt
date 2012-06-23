@@ -12,7 +12,6 @@
 #include <linux/irqdomain.h>
 #include <linux/of_platform.h>
 
-#include <mach/hardware.h>
 #include "common.h"
 
 #include <asm/setup.h>

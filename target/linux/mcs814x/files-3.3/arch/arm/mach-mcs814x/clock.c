@@ -14,7 +14,7 @@
 #include <linux/clkdev.h>
 #include <linux/clk.h>
 
-#include <mach/hardware.h>
+#include <mach/mcs814x.h>
 
 /* System configuration registers offsets */
 #define SYSDBG_BS1	0x00

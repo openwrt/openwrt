@@ -27,7 +27,7 @@
 #include <asm/system.h>
 #include <asm/mach/pci.h>
 #include <asm/mach/map.h>
-#include <mach/hardware.h>
+#include <mach/mcs814x.h>
 #include <mach/irqs.h>
 
 #define MCS8140_PCI_CONFIG_SIZE		SZ_64M
