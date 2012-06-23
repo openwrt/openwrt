@@ -37,11 +37,12 @@
 			ranges;
 
 			eth0: ethernet@40084000 {
-				//compatible = "moschip,mcs814x-eth";
 				compatible = "moschip,nuport-mac";
 				reg = <0x40084000 0xd8		// mac
 					0x40080000 0x58>;	// dma channels
 				interrupts = <4 5 29>;	/* tx, rx, link */
+				nuport-mac,buffer-shifting;
+				nuport-mac,link-activity = <0>;
 			};
 
 			tso@40088000 {
