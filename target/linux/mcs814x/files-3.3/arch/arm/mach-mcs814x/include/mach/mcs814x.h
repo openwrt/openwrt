@@ -30,5 +30,25 @@
 #define _CONFADDR_DBGLED  (_VIRT_CONFADDR + _CONFOFFSET_DBGLED)
 #define _CONFADDR_SYSDBG  (_VIRT_CONFADDR + _CONFOFFSET_SYSDBG)
 
+/* System configuration and bootstrap registers */
+#define SYSDBG_BS1		0x00
+#define  CPU_FREQ_SHIFT		27
+#define  CPU_FREQ_MASK		0x0F
+#define  SDRAM_FREQ_BIT		(1 << 22)
+
+#define SYSDBG_BS2		0x04
+#define  LED_CFG_MASK		0x03
+#define  CPU_MODE_SHIFT		23
+#define  CPU_MODE_MASK		0x03
+
+#define SYSDBG_SYSCTL_MAC	0x1d
+#define  BUF_SHIFT_BIT		(1 << 0)
+
+#define SYSDBG_SYSCTL		0x08
+#define  SYSCTL_EMAC		(1 << 0)
+#define  SYSCTL_CIPHER		(1 << 16)
+
+#define SYSDBG_PLL_CTL		0x3C
+
 #endif /* __ASM_ARCH_MCS814X_H */
 
