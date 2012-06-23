@@ -17,7 +17,7 @@
 #include <linux/of_address.h>
 
 #include <asm/mach/time.h>
-#include <mach/hardware.h>
+#include <mach/mcs814x.h>
 
 /* Timer block registers */
 #define TIMER_VAL	0x00

@@ -18,7 +18,7 @@
 #include <asm/setup.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
-#include <mach/hardware.h>
+#include <mach/mcs814x.h>
 #include <mach/cpu.h>
 #include <asm/pgtable.h>
 #include <asm/mach/map.h>

@@ -11,7 +11,7 @@
 
 #include <linux/serial_reg.h>
 #include <asm/io.h>
-#include <mach/hardware.h>
+#include <mach/mcs814x.h>
 #include <mach/cpu.h>
 
 #define UART_SHIFT	(2)
