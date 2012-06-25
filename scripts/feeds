@@ -12,7 +12,7 @@ chdir "$FindBin::Bin/..";
 $ENV{TOPDIR}=getcwd();
 $ENV{GIT_CONFIG_PARAMETERS}="'core.autocrlf=false'";
 
-my $mk=`which gmake`;	# select the right 'make' program
+my $mk=`which gmake 2>/dev/null`;	# select the right 'make' program
 chomp($mk);		# trim trailing newline
 $mk or $mk = "make";	# default to 'make'
 
