@@ -38,9 +38,12 @@ bridge_interface() {(
 	include /lib/network
 	scan_interfaces
 
-	config_get iftype "$cfg" type
-	[ "$iftype" = bridge ] && config_get "$cfg" ifname
-	prepare_interface_bridge "$cfg"
+	for cfg in $cfg; do
+		config_get iftype "$cfg" type
+		[ "$iftype" = bridge ] && config_get "$cfg" ifname
+		prepare_interface_bridge "$cfg"
+		return $?
+	done
 )}
 
 prepare_key_wep() {
@@ -132,7 +135,9 @@ start_net() {(
 	[ -z "$config" ] || {
 		include /lib/network
 		scan_interfaces
-		setup_interface "$iface" "$config" "" "$vifmac"
+		for config in $config; do
+			setup_interface "$iface" "$config" "" "$vifmac"
+		done
 	}
 )}
 
