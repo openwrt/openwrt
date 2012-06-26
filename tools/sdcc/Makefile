@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_ARGS += \
 	--disable-ucsim \
-	--disable-packihx \
+	--enable-packihx \
 	--enable-sdcpp \
 	--disable-sdcdb \
 	--disable-gbz80-port \
