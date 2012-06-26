@@ -100,8 +100,6 @@ endef
 define Package/atm-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/arpd/atmarp{,d} $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_BIN) ./files/ipoa.sh $(1)/lib/network/
 
 #
 #The following is disabled by default but still useful for some debugging
