@@ -1,16 +1,18 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1929,12 +1929,24 @@ static u32 fill_chainmask(u32 cap, u32 n
+@@ -1929,14 +1929,29 @@ static u32 fill_chainmask(u32 cap, u32 n
  	return filled;
  }
  
-+static bool validate_antenna_mask(u32 val)
++static bool validate_antenna_mask(struct ath_hw *ah, u32 val)
 +{
-+	switch (val & 0x7) {
++	switch (val & ah->caps.rx_chainmask) {
 +	case 0x1:
 +	case 0x3:
 +	case 0x7:
 +		return true;
++	case 0x2:
++		return (ah->caps.rx_chainmask == 1);
 +	default:
 +		return false;
 +	}
@@ -22,7 +24,10 @@
  	struct ath_hw *ah = sc->sc_ah;
  
 -	if (!rx_ant || !tx_ant)
-+	if (!validate_antenna_mask(rx_ant) || !validate_antenna_mask(tx_ant))
++	if (!validate_antenna_mask(ah, rx_ant) || !tx_ant)
  		return -EINVAL;
  
++	rx_ant |= tx_ant;
  	sc->ant_rx = rx_ant;
+ 	sc->ant_tx = tx_ant;
+ 
