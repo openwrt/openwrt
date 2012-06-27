@@ -1,0 +1,59 @@
+--- a/drivers/net/wireless/ath/ath9k/ani.c
++++ b/drivers/net/wireless/ath/ath9k/ani.c
+@@ -153,9 +153,7 @@ static void ath9k_hw_set_ofdm_nil(struct
+ 		immunityLevel, BEACON_RSSI(ah),
+ 		aniState->rssiThrLow, aniState->rssiThrHigh);
+ 
+-	if (aniState->update_ani)
+-		aniState->ofdmNoiseImmunityLevel = immunityLevel;
+-
++	aniState->ofdmNoiseImmunityLevel = immunityLevel;
+ 	entry_ofdm = &ofdm_level_table[aniState->ofdmNoiseImmunityLevel];
+ 	entry_cck = &cck_level_table[aniState->cckNoiseImmunityLevel];
+ 
+@@ -222,9 +220,7 @@ static void ath9k_hw_set_cck_nil(struct 
+ 	    immunityLevel > ATH9K_ANI_CCK_MAX_LEVEL_LOW_RSSI)
+ 		immunityLevel = ATH9K_ANI_CCK_MAX_LEVEL_LOW_RSSI;
+ 
+-	if (aniState->update_ani)
+-		aniState->cckNoiseImmunityLevel = immunityLevel;
+-
++	aniState->cckNoiseImmunityLevel = immunityLevel;
+ 	entry_ofdm = &ofdm_level_table[aniState->ofdmNoiseImmunityLevel];
+ 	entry_cck = &cck_level_table[aniState->cckNoiseImmunityLevel];
+ 
+@@ -338,7 +334,6 @@ void ath9k_ani_reset(struct ath_hw *ah, 
+ 				aniState->ofdmNoiseImmunityLevel,
+ 				aniState->cckNoiseImmunityLevel);
+ 
+-			aniState->update_ani = false;
+ 			ofdm_nil = ATH9K_ANI_OFDM_DEF_LEVEL;
+ 			cck_nil = ATH9K_ANI_CCK_DEF_LEVEL;
+ 		}
+@@ -354,8 +349,6 @@ void ath9k_ani_reset(struct ath_hw *ah, 
+ 			is_scanning,
+ 			aniState->ofdmNoiseImmunityLevel,
+ 			aniState->cckNoiseImmunityLevel);
+-
+-			aniState->update_ani = true;
+ 	}
+ 	ath9k_hw_set_ofdm_nil(ah, ofdm_nil);
+ 	ath9k_hw_set_cck_nil(ah, cck_nil);
+@@ -538,7 +531,6 @@ void ath9k_hw_ani_init(struct ath_hw *ah
+ 		ani->ofdmWeakSigDetect = ATH9K_ANI_USE_OFDM_WEAK_SIG;
+ 		ani->cckNoiseImmunityLevel = ATH9K_ANI_CCK_DEF_LEVEL;
+ 		ani->ofdmNoiseImmunityLevel = ATH9K_ANI_OFDM_DEF_LEVEL;
+-		ani->update_ani = false;
+ 	}
+ 
+ 	/*
+--- a/drivers/net/wireless/ath/ath9k/ani.h
++++ b/drivers/net/wireless/ath/ath9k/ani.h
+@@ -116,7 +116,6 @@ struct ar5416AniState {
+ 	u8 firstepLevel;
+ 	u8 ofdmWeakSigDetect;
+ 	u8 cckWeakSigThreshold;
+-	bool update_ani;
+ 	u32 listenTime;
+ 	int32_t rssiThrLow;
+ 	int32_t rssiThrHigh;
