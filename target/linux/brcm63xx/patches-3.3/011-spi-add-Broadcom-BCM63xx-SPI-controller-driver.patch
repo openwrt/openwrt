@@ -167,7 +167,7 @@ Acked-by: Grant Likely <grant.likely@secretlab.ca>
 +
 +	/* Find the closest clock configuration */
 +	for (i = 0; i < SPI_CLK_MASK; i++) {
-+		if (hz <= bcm63xx_spi_freq_table[i][0]) {
++		if (hz >= bcm63xx_spi_freq_table[i][0]) {
 +			clk_cfg = bcm63xx_spi_freq_table[i][1];
 +			break;
 +		}
