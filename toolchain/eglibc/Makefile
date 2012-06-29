@@ -68,6 +68,7 @@ EGLIBC_MAKE:= \
 	$(MAKE) \
 
 export libc_cv_ssp=no
+export ac_cv_header_cpuid_h=yes
 
 define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
