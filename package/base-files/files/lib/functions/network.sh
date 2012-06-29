@@ -82,6 +82,37 @@ network_get_gateway()  { __network_gateway "$1" "$2" 4; }
 network_get_gateway6() { __network_gateway "$1" "$2" 6; }
 
 
+__network_dns() {
+	local __var="$1"
+	local __iface="$2"
+	local __field="$3"
+
+	local __tmp="$(ubus call network.interface."$__iface" status 2>/dev/null)"
+	local __dns=""
+	local __idx=1
+
+	json_load "${__tmp:-{}}"
+
+	if json_get_type __tmp "$__field" && [ "$__tmp" = array ]; then
+
+		json_select "$__field"
+
+		while json_get_type __tmp "$__idx" && [ "$__tmp" = string ]; do
+
+			json_get_var __tmp "$((__idx++))"
+			__dns="${__dns:+$__dns }$__tmp"
+
+		done
+	fi
+
+	eval "export -- \"$__var=$__dns\""
+	[ -n "$__dns" ]
+}
+
+network_get_dnsserver() { __network_dns "$1" "$2" dns_server; }
+network_get_dnssearch() { __network_dns "$1" "$2" dns_search; }
+
+
 __network_wan() {
 	local __var="$1"
 	local __family="$2"
