@@ -61,6 +61,7 @@ $(curdir)/xfce-macros/compile := $(curdir)/automake/install
 $(curdir)/missing-macros/compile := $(curdir)/automake/install
 $(curdir)/e2fsprogs/compile := $(curdir)/automake/install
 $(curdir)/libelf/compile := $(curdir)/automake/install
+$(curdir)/sdcc/compile := $(curdir)/bison/install
 
 ifneq ($(CONFIG_CCACHE),)
 $(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/install))
