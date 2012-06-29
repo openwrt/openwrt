@@ -49,6 +49,7 @@ __network_gateway()
 
 	local __tmp="$(ubus call network.interface."$__iface" status 2>/dev/null)"
 	local __idx=1
+	local __enabled
 
 	json_load "${__tmp:-{}}"
 
@@ -60,9 +61,10 @@ __network_gateway()
 
 			json_select "$((__idx++))"
 			json_get_var __tmp target
+			json_get_var __enabled enabled
 
-			case "${__family}/${__tmp}" in
-				4/0.0.0.0|6/::)
+			case "${__enabled}/${__family}/${__tmp}" in
+				1/4/0.0.0.0|1/6/::)
 					json_get_var "$__var" nexthop
 					return $?
 				;;
