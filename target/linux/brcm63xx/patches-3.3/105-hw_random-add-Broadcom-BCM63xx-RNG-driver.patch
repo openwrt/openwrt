@@ -110,7 +110,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +	return 4;
 +}
 +
-+static int __init bcm63xx_trng_probe(struct platform_device *pdev)
++static int __devinit bcm63xx_trng_probe(struct platform_device *pdev)
 +{
 +	struct resource *r;
 +	struct clk *clk;
