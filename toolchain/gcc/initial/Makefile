@@ -29,6 +29,8 @@ define Host/Install
 		cp libgcc.a libgcc_initial.a; \
 	)
 
+	$(call FixupLibdir,$(TOOLCHAIN_DIR)/initial)
+
 	$(CP) $(TOOLCHAIN_DIR)/initial/. $(TOOLCHAIN_DIR)/
 endef
 
