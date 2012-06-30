@@ -93,7 +93,7 @@ CPU_CFLAGS = \
 	--std=gnu99 -ffunction-sections -fdata-sections \
 	$(TARGET_CFLAGS)
 
-UCLIBC_MAKE = PATH='$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
+UCLIBC_MAKE = PATH='$(TOOLCHAIN_DIR)/initial/bin:$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
 	$(TARGET_CONFIGURE_OPTS) \
 	DEVEL_PREFIX=/ \
 	RUNTIME_PREFIX=/ \
