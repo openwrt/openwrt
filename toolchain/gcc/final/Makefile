@@ -28,14 +28,19 @@ ifneq ($(CONFIG_SJLJ_EXCEPTIONS),)
 	--enable-sjlj-exceptions
 endif
 
-define Host/Configure
-	mkdir -p $(GCC_BUILD_DIR) $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)
+define CleanupToolchain
+	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)
 	# Important!  Required for limits.h to be fixed.
 	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
 	ln -sf ../include $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
 	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 	ln -sf ../lib $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 	$(if $(CONFIG_mips64)$(CONFIG_mips64el)$(CONFIG_x86_64),ln -sf ../lib64 $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib64)
+endef
+
+define Host/Configure
+	$(CleanupToolchain)
+	mkdir -p $(GCC_BUILD_DIR)
 	(cd $(GCC_BUILD_DIR) && rm -f config.cache; \
 		$(GCC_CONFIGURE) \
 	);
@@ -59,6 +64,7 @@ define SetupExtraArch
 endef
 
 define Host/Install
+	$(CleanupToolchain)
 	$(_SINGLE)$(GCC_MAKE) -C $(GCC_BUILD_DIR) install
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
