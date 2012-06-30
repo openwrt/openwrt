@@ -317,6 +317,7 @@ menu "Global build settings"
 		bool
 		prompt "Parallelize the default package build rule (May break build)"
 		depends on PKG_BUILD_PARALLEL
+		depends on BROKEN
 		default n
 		help
 		  Always set the default package build rules to parallel build.
@@ -332,6 +333,7 @@ menu "Global build settings"
 		bool
 		prompt "Parallelize the toolchain build (May break build)"
 		depends on PKG_BUILD_PARALLEL
+		depends on BROKEN
 		default n
 		help
 		  Build the toolchain with parallel make jobs.
