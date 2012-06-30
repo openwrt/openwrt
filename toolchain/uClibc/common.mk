@@ -47,6 +47,7 @@ GEN_CONFIG=$(SCRIPT_DIR)/kconfig.pl -n \
 CPU_CFLAGS = \
 	-funsigned-char -fno-builtin -fno-asm \
 	--std=gnu99 -ffunction-sections -fdata-sections \
+	-Wno-unused-but-set-variable \
 	$(TARGET_CFLAGS)
 
 UCLIBC_MAKE = PATH='$(TOOLCHAIN_DIR)/initial/bin:$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
