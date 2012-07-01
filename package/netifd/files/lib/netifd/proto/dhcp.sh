@@ -35,7 +35,7 @@ proto_dhcp_setup() {
 		-f -t 0 -i "$iface" \
 		${ipaddr:+-r $ipaddr} \
 		${hostname:+-H $hostname} \
-		${clientid:+-c $clientid} \
+		${clientid:+-x 0x3d:${clientid//:/}} \
 		${vendorid:+-V $vendorid} \
 		$broadcast $dhcpopts
 }
