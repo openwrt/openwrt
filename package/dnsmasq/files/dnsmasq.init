@@ -143,6 +143,8 @@ dnsmasq() {
 		config_list_foreach "$cfg" rebind_domain append_rebind_domain
 	}
 
+	dhcp_option_add "$cfg" "" 0
+
 	echo >> $CONFIGFILE
 }
 
@@ -362,7 +364,7 @@ dhcp_option_add() {
 
 	config_get dhcp_option "$cfg" dhcp_option
 	for o in $dhcp_option; do
-		xappend "--dhcp-option${force:+-force}=$networkid","$o"
+		xappend "--dhcp-option${force:+-force}=${networkid:+$networkid,}$o"
 	done
 
 }
