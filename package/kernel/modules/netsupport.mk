@@ -560,10 +560,10 @@ $(eval $(call KernelPackage,pptp))
 define KernelPackage/pppol2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoL2TP support
-  DEPENDS:=kmod-ppp +kmod-pppoe +kmod-l2tp
+  DEPENDS:=kmod-ppp +kmod-pppox +kmod-l2tp
   KCONFIG:=CONFIG_PPPOL2TP
   FILES:=$(LINUX_DIR)/net/l2tp/l2tp_ppp.ko
-  AUTOLOAD:=$(call AutoLoad,40,l2tp_ppp)
+  AUTOLOAD:=$(call AutoLoad,41,l2tp_ppp)
 endef
 
 define KernelPackage/pppol2tp/description
