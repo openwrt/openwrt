@@ -146,7 +146,7 @@ define Image/mkfs/prepare/default
 	- $(FIND) $(TARGET_DIR) -type f -perm +0100 -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
 	- $(FIND) $(TARGET_DIR) -type d -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
 	$(INSTALL_DIR) $(TARGET_DIR)/tmp
-	chmod 0777 $(TARGET_DIR)/tmp
+	chmod 1777 $(TARGET_DIR)/tmp
 endef
 
 define Image/mkfs/prepare
