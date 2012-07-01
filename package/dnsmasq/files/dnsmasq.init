@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2012 OpenWrt.org
 
 START=60
 
@@ -7,6 +7,9 @@ SERVICE_USE_PID=1
 
 DNS_SERVERS=""
 DOMAIN=""
+
+ADD_LOCAL_DOMAIN=1
+ADD_LOCAL_HOSTNAME=1
 
 CONFIGFILE="/var/etc/dnsmasq.conf"
 
@@ -110,6 +113,9 @@ dnsmasq() {
 	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
 
 	config_get DOMAIN "$cfg" domain
+
+	config_get_bool ADD_LOCAL_DOMAIN "$cfg" add_local_domain 1
+	config_get_bool ADD_LOCAL_HOSTNAME "$cfg" add_local_hostname 1
 
 	config_get_bool readethers "$cfg" readethers
 	[ "$readethers" = "1" -a \! -e "/etc/ethers" ] && touch /etc/ethers
@@ -490,14 +496,16 @@ start() {
 	echo >> $CONFIGFILE
 
 	# add own hostname
-	[ -z "$lanaddr" ] || {
+	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && [ -n "$lanaddr" ] && {
 		local hostname="$(uci_get system.@system[0].hostname)"
 		dhcp_domain_add "" "${hostname:-OpenWrt}" "$lanaddr"
 	}
 
 	service_start /usr/sbin/dnsmasq -C $CONFIGFILE && {
 		rm -f /tmp/resolv.conf
-		[ -n "$DOMAIN" ] && echo "search $DOMAIN" >> /tmp/resolv.conf
+		[ $ADD_LOCAL_DOMAIN -eq 1 ] && [ -n "$DOMAIN" ] && {
+			echo "search $DOMAIN" >> /tmp/resolv.conf
+		}
 		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
 		for DNS_SERVER in $DNS_SERVERS ; do
 			echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
