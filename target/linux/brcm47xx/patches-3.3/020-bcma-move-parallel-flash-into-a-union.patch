@@ -91,9 +91,9 @@
  #define BCMA_CC_BCAST_ADDR		0x0050
  #define BCMA_CC_BCAST_DATA		0x0054
  #define BCMA_CC_GPIOPULLUP		0x0058		/* Rev >= 20 only */
-@@ -324,6 +382,12 @@
- #define BCMA_CHIPCTL_4331_BT_SHD0_ON_GPIO4	BIT(16)	/* enable bt_shd0 at gpio4 */
- #define BCMA_CHIPCTL_4331_BT_SHD1_ON_GPIO5	BIT(17)	/* enable bt_shd1 at gpio5 */
+@@ -346,6 +404,12 @@
+ /* 4313 Chip specific ChipControl register bits */
+ #define BCMA_CCTRL_4313_12MA_LED_DRIVE		0x00000007	/* 12 mA drive strengh for later 4313 */
  
 +#define	BCMA_FLASH2			0x1c000000	/* Flash Region 2 (region 1 shadowed here) */
 +#define	BCMA_FLASH2_SZ			0x02000000	/* Size of Flash Region 2 */
@@ -104,7 +104,7 @@
  /* Data for the PMU, if available.
   * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
   */
-@@ -333,6 +397,10 @@ struct bcma_chipcommon_pmu {
+@@ -355,6 +419,10 @@ struct bcma_chipcommon_pmu {
  };
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
@@ -115,7 +115,7 @@
  struct bcma_pflash {
  	u8 buswidth;
  	u32 window;
-@@ -358,7 +426,10 @@ struct bcma_drv_cc {
+@@ -380,7 +448,10 @@ struct bcma_drv_cc {
  	u16 fast_pwrup_delay;
  	struct bcma_chipcommon_pmu pmu;
  #ifdef CONFIG_BCMA_DRIVER_MIPS
