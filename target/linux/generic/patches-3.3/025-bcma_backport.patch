@@ -55,14 +55,464 @@
  }
 --- a/drivers/bcma/driver_chipcommon_pmu.c
 +++ b/drivers/bcma/driver_chipcommon_pmu.c
-@@ -80,6 +80,7 @@ static void bcma_pmu_resources_init(stru
+@@ -3,7 +3,8 @@
+  * ChipCommon Power Management Unit driver
+  *
+  * Copyright 2009, Michael Buesch <m@bues.ch>
+- * Copyright 2007, Broadcom Corporation
++ * Copyright 2007, 2011, Broadcom Corporation
++ * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+@@ -54,38 +55,19 @@ void bcma_chipco_regctl_maskset(struct b
+ }
+ EXPORT_SYMBOL_GPL(bcma_chipco_regctl_maskset);
+ 
+-static void bcma_pmu_pll_init(struct bcma_drv_cc *cc)
+-{
+-	struct bcma_bus *bus = cc->core->bus;
+-
+-	switch (bus->chipinfo.id) {
+-	case 0x4313:
+-	case 0x4331:
+-	case 43224:
+-	case 43225:
+-		break;
+-	default:
+-		pr_err("PLL init unknown for device 0x%04X\n",
+-			bus->chipinfo.id);
+-	}
+-}
+-
+ static void bcma_pmu_resources_init(struct bcma_drv_cc *cc)
+ {
+ 	struct bcma_bus *bus = cc->core->bus;
+ 	u32 min_msk = 0, max_msk = 0;
+ 
+ 	switch (bus->chipinfo.id) {
+-	case 0x4313:
++	case BCMA_CHIP_ID_BCM4313:
  		min_msk = 0x200D;
  		max_msk = 0xFFFF;
  		break;
-+	case 0x4331:
- 	case 43224:
- 	case 43225:
+-	case 43224:
+-	case 43225:
+-		break;
+ 	default:
+-		pr_err("PMU resource config unknown for device 0x%04X\n",
+-			bus->chipinfo.id);
++		pr_debug("PMU resource config unknown or not needed for device 0x%04X\n",
++			 bus->chipinfo.id);
+ 	}
+ 
+ 	/* Set the resource masks. */
+@@ -93,22 +75,9 @@ static void bcma_pmu_resources_init(stru
+ 		bcma_cc_write32(cc, BCMA_CC_PMU_MINRES_MSK, min_msk);
+ 	if (max_msk)
+ 		bcma_cc_write32(cc, BCMA_CC_PMU_MAXRES_MSK, max_msk);
+-}
+-
+-void bcma_pmu_swreg_init(struct bcma_drv_cc *cc)
+-{
+-	struct bcma_bus *bus = cc->core->bus;
+ 
+-	switch (bus->chipinfo.id) {
+-	case 0x4313:
+-	case 0x4331:
+-	case 43224:
+-	case 43225:
+-		break;
+-	default:
+-		pr_err("PMU switch/regulators init unknown for device "
+-			"0x%04X\n", bus->chipinfo.id);
+-	}
++	/* Add some delay; allow resources to come up and settle. */
++	mdelay(2);
+ }
+ 
+ /* Disable to allow reading SPROM. Don't know the adventages of enabling it. */
+@@ -122,8 +91,11 @@ void bcma_chipco_bcm4331_ext_pa_lines_ct
+ 		val |= BCMA_CHIPCTL_4331_EXTPA_EN;
+ 		if (bus->chipinfo.pkg == 9 || bus->chipinfo.pkg == 11)
+ 			val |= BCMA_CHIPCTL_4331_EXTPA_ON_GPIO2_5;
++		else if (bus->chipinfo.rev > 0)
++			val |= BCMA_CHIPCTL_4331_EXTPA_EN2;
+ 	} else {
+ 		val &= ~BCMA_CHIPCTL_4331_EXTPA_EN;
++		val &= ~BCMA_CHIPCTL_4331_EXTPA_EN2;
+ 		val &= ~BCMA_CHIPCTL_4331_EXTPA_ON_GPIO2_5;
+ 	}
+ 	bcma_cc_write32(cc, BCMA_CC_CHIPCTL, val);
+@@ -134,26 +106,38 @@ void bcma_pmu_workarounds(struct bcma_dr
+ 	struct bcma_bus *bus = cc->core->bus;
+ 
+ 	switch (bus->chipinfo.id) {
+-	case 0x4313:
+-		bcma_chipco_chipctl_maskset(cc, 0, ~0, 0x7);
++	case BCMA_CHIP_ID_BCM4313:
++		/* enable 12 mA drive strenth for 4313 and set chipControl
++		   register bit 1 */
++		bcma_chipco_chipctl_maskset(cc, 0,
++					    BCMA_CCTRL_4313_12MA_LED_DRIVE,
++					    BCMA_CCTRL_4313_12MA_LED_DRIVE);
  		break;
+-	case 0x4331:
+-		/* BCM4331 workaround is SPROM-related, we put it in sprom.c */
++	case BCMA_CHIP_ID_BCM4331:
++	case BCMA_CHIP_ID_BCM43431:
++		/* Ext PA lines must be enabled for tx on BCM4331 */
++		bcma_chipco_bcm4331_ext_pa_lines_ctl(cc, true);
+ 		break;
+-	case 43224:
++	case BCMA_CHIP_ID_BCM43224:
++	case BCMA_CHIP_ID_BCM43421:
++		/* enable 12 mA drive strenth for 43224 and set chipControl
++		   register bit 15 */
+ 		if (bus->chipinfo.rev == 0) {
+-			pr_err("Workarounds for 43224 rev 0 not fully "
+-				"implemented\n");
+-			bcma_chipco_chipctl_maskset(cc, 0, ~0, 0x00F000F0);
++			bcma_cc_maskset32(cc, BCMA_CC_CHIPCTL,
++					  BCMA_CCTRL_43224_GPIO_TOGGLE,
++					  BCMA_CCTRL_43224_GPIO_TOGGLE);
++			bcma_chipco_chipctl_maskset(cc, 0,
++						    BCMA_CCTRL_43224A0_12MA_LED_DRIVE,
++						    BCMA_CCTRL_43224A0_12MA_LED_DRIVE);
+ 		} else {
+-			bcma_chipco_chipctl_maskset(cc, 0, ~0, 0xF0);
++			bcma_chipco_chipctl_maskset(cc, 0,
++						    BCMA_CCTRL_43224B0_12MA_LED_DRIVE,
++						    BCMA_CCTRL_43224B0_12MA_LED_DRIVE);
+ 		}
+ 		break;
+-	case 43225:
+-		break;
+ 	default:
+-		pr_err("Workarounds unknown for device 0x%04X\n",
+-			bus->chipinfo.id);
++		pr_debug("Workarounds unknown or not needed for device 0x%04X\n",
++			 bus->chipinfo.id);
+ 	}
+ }
+ 
+@@ -174,12 +158,7 @@ void bcma_pmu_init(struct bcma_drv_cc *c
+ 		bcma_cc_set32(cc, BCMA_CC_PMU_CTL,
+ 			     BCMA_CC_PMU_CTL_NOILPONW);
+ 
+-	if (cc->core->id.id == 0x4329 && cc->core->id.rev == 2)
+-		pr_err("Fix for 4329b0 bad LPOM state not implemented!\n");
+-
+-	bcma_pmu_pll_init(cc);
+ 	bcma_pmu_resources_init(cc);
+-	bcma_pmu_swreg_init(cc);
+ 	bcma_pmu_workarounds(cc);
+ }
+ 
+@@ -188,17 +167,17 @@ u32 bcma_pmu_alp_clock(struct bcma_drv_c
+ 	struct bcma_bus *bus = cc->core->bus;
+ 
+ 	switch (bus->chipinfo.id) {
+-	case 0x4716:
+-	case 0x4748:
+-	case 47162:
+-	case 0x4313:
+-	case 0x5357:
+-	case 0x4749:
+-	case 53572:
++	case BCMA_CHIP_ID_BCM4716:
++	case BCMA_CHIP_ID_BCM4748:
++	case BCMA_CHIP_ID_BCM47162:
++	case BCMA_CHIP_ID_BCM4313:
++	case BCMA_CHIP_ID_BCM5357:
++	case BCMA_CHIP_ID_BCM4749:
++	case BCMA_CHIP_ID_BCM53572:
+ 		/* always 20Mhz */
+ 		return 20000 * 1000;
+-	case 0x5356:
+-	case 0x5300:
++	case BCMA_CHIP_ID_BCM5356:
++	case BCMA_CHIP_ID_BCM4706:
+ 		/* always 25Mhz */
+ 		return 25000 * 1000;
+ 	default:
+@@ -221,7 +200,8 @@ static u32 bcma_pmu_clock(struct bcma_dr
+ 
+ 	BUG_ON(!m || m > 4);
+ 
+-	if (bus->chipinfo.id == 0x5357 || bus->chipinfo.id == 0x4749) {
++	if (bus->chipinfo.id == BCMA_CHIP_ID_BCM5357 ||
++	    bus->chipinfo.id == BCMA_CHIP_ID_BCM4749) {
+ 		/* Detect failure in clock setting */
+ 		tmp = bcma_cc_read32(cc, BCMA_CC_CHIPSTAT);
+ 		if (tmp & 0x40000)
+@@ -253,22 +233,22 @@ u32 bcma_pmu_get_clockcontrol(struct bcm
+ 	struct bcma_bus *bus = cc->core->bus;
+ 
+ 	switch (bus->chipinfo.id) {
+-	case 0x4716:
+-	case 0x4748:
+-	case 47162:
++	case BCMA_CHIP_ID_BCM4716:
++	case BCMA_CHIP_ID_BCM4748:
++	case BCMA_CHIP_ID_BCM47162:
+ 		return bcma_pmu_clock(cc, BCMA_CC_PMU4716_MAINPLL_PLL0,
+ 				      BCMA_CC_PMU5_MAINPLL_SSB);
+-	case 0x5356:
++	case BCMA_CHIP_ID_BCM5356:
+ 		return bcma_pmu_clock(cc, BCMA_CC_PMU5356_MAINPLL_PLL0,
+ 				      BCMA_CC_PMU5_MAINPLL_SSB);
+-	case 0x5357:
+-	case 0x4749:
++	case BCMA_CHIP_ID_BCM5357:
++	case BCMA_CHIP_ID_BCM4749:
+ 		return bcma_pmu_clock(cc, BCMA_CC_PMU5357_MAINPLL_PLL0,
+ 				      BCMA_CC_PMU5_MAINPLL_SSB);
+-	case 0x5300:
++	case BCMA_CHIP_ID_BCM4706:
+ 		return bcma_pmu_clock(cc, BCMA_CC_PMU4706_MAINPLL_PLL0,
+ 				      BCMA_CC_PMU5_MAINPLL_SSB);
+-	case 53572:
++	case BCMA_CHIP_ID_BCM53572:
+ 		return 75000000;
+ 	default:
+ 		pr_warn("No backplane clock specified for %04X device, "
+@@ -283,17 +263,17 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
+ {
+ 	struct bcma_bus *bus = cc->core->bus;
+ 
+-	if (bus->chipinfo.id == 53572)
++	if (bus->chipinfo.id == BCMA_CHIP_ID_BCM53572)
+ 		return 300000000;
+ 
+ 	if (cc->pmu.rev >= 5) {
+ 		u32 pll;
+ 		switch (bus->chipinfo.id) {
+-		case 0x5356:
++		case BCMA_CHIP_ID_BCM5356:
+ 			pll = BCMA_CC_PMU5356_MAINPLL_PLL0;
+ 			break;
+-		case 0x5357:
+-		case 0x4749:
++		case BCMA_CHIP_ID_BCM5357:
++		case BCMA_CHIP_ID_BCM4749:
+ 			pll = BCMA_CC_PMU5357_MAINPLL_PLL0;
+ 			break;
+ 		default:
+@@ -301,10 +281,190 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
+ 			break;
+ 		}
+ 
+-		/* TODO: if (bus->chipinfo.id == 0x5300)
++		/* TODO: if (bus->chipinfo.id == BCMA_CHIP_ID_BCM4706)
+ 		  return si_4706_pmu_clock(sih, osh, cc, PMU4706_MAINPLL_PLL0, PMU5_MAINPLL_CPU); */
+ 		return bcma_pmu_clock(cc, pll, BCMA_CC_PMU5_MAINPLL_CPU);
+ 	}
+ 
+ 	return bcma_pmu_get_clockcontrol(cc);
+ }
++
++static void bcma_pmu_spuravoid_pll_write(struct bcma_drv_cc *cc, u32 offset,
++					 u32 value)
++{
++	bcma_cc_write32(cc, BCMA_CC_PLLCTL_ADDR, offset);
++	bcma_cc_write32(cc, BCMA_CC_PLLCTL_DATA, value);
++}
++
++void bcma_pmu_spuravoid_pllupdate(struct bcma_drv_cc *cc, int spuravoid)
++{
++	u32 tmp = 0;
++	u8 phypll_offset = 0;
++	u8 bcm5357_bcm43236_p1div[] = {0x1, 0x5, 0x5};
++	u8 bcm5357_bcm43236_ndiv[] = {0x30, 0xf6, 0xfc};
++	struct bcma_bus *bus = cc->core->bus;
++
++	switch (bus->chipinfo.id) {
++	case BCMA_CHIP_ID_BCM5357:
++	case BCMA_CHIP_ID_BCM4749:
++	case BCMA_CHIP_ID_BCM53572:
++		/* 5357[ab]0, 43236[ab]0, and 6362b0 */
++
++		/* BCM5357 needs to touch PLL1_PLLCTL[02],
++		   so offset PLL0_PLLCTL[02] by 6 */
++		phypll_offset = (bus->chipinfo.id == BCMA_CHIP_ID_BCM5357 ||
++		       bus->chipinfo.id == BCMA_CHIP_ID_BCM4749 ||
++		       bus->chipinfo.id == BCMA_CHIP_ID_BCM53572) ? 6 : 0;
++
++		/* RMW only the P1 divider */
++		bcma_cc_write32(cc, BCMA_CC_PLLCTL_ADDR,
++				BCMA_CC_PMU_PLL_CTL0 + phypll_offset);
++		tmp = bcma_cc_read32(cc, BCMA_CC_PLLCTL_DATA);
++		tmp &= (~(BCMA_CC_PMU1_PLL0_PC0_P1DIV_MASK));
++		tmp |= (bcm5357_bcm43236_p1div[spuravoid] << BCMA_CC_PMU1_PLL0_PC0_P1DIV_SHIFT);
++		bcma_cc_write32(cc, BCMA_CC_PLLCTL_DATA, tmp);
++
++		/* RMW only the int feedback divider */
++		bcma_cc_write32(cc, BCMA_CC_PLLCTL_ADDR,
++				BCMA_CC_PMU_PLL_CTL2 + phypll_offset);
++		tmp = bcma_cc_read32(cc, BCMA_CC_PLLCTL_DATA);
++		tmp &= ~(BCMA_CC_PMU1_PLL0_PC2_NDIV_INT_MASK);
++		tmp |= (bcm5357_bcm43236_ndiv[spuravoid]) << BCMA_CC_PMU1_PLL0_PC2_NDIV_INT_SHIFT;
++		bcma_cc_write32(cc, BCMA_CC_PLLCTL_DATA, tmp);
++
++		tmp = 1 << 10;
++		break;
++
++	case BCMA_CHIP_ID_BCM4331:
++	case BCMA_CHIP_ID_BCM43431:
++		if (spuravoid == 2) {
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL0,
++						     0x11500014);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
++						     0x0FC00a08);
++		} else if (spuravoid == 1) {
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL0,
++						     0x11500014);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
++						     0x0F600a08);
++		} else {
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL0,
++						     0x11100014);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
++						     0x03000a08);
++		}
++		tmp = 1 << 10;
++		break;
++
++	case BCMA_CHIP_ID_BCM43224:
++	case BCMA_CHIP_ID_BCM43225:
++	case BCMA_CHIP_ID_BCM43421:
++		if (spuravoid == 1) {
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL0,
++						     0x11500010);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL1,
++						     0x000C0C06);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
++						     0x0F600a08);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL3,
++						     0x00000000);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL4,
++						     0x2001E920);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL5,
++						     0x88888815);
++		} else {
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL0,
++						     0x11100010);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL1,
++						     0x000c0c06);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
++						     0x03000a08);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL3,
++						     0x00000000);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL4,
++						     0x200005c0);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL5,
++						     0x88888815);
++		}
++		tmp = 1 << 10;
++		break;
++
++	case BCMA_CHIP_ID_BCM4716:
++	case BCMA_CHIP_ID_BCM4748:
++	case BCMA_CHIP_ID_BCM47162:
++		if (spuravoid == 1) {
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL0,
++						     0x11500060);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL1,
++						     0x080C0C06);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
++						     0x0F600000);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL3,
++						     0x00000000);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL4,
++						     0x2001E924);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL5,
++						     0x88888815);
++		} else {
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL0,
++						     0x11100060);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL1,
++						     0x080c0c06);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
++						     0x03000000);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL3,
++						     0x00000000);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL4,
++						     0x200005c0);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL5,
++						     0x88888815);
++		}
++
++		tmp = 3 << 9;
++		break;
++
++	case BCMA_CHIP_ID_BCM43227:
++	case BCMA_CHIP_ID_BCM43228:
++	case BCMA_CHIP_ID_BCM43428:
++		/* LCNXN */
++		/* PLL Settings for spur avoidance on/off mode,
++		   no on2 support for 43228A0 */
++		if (spuravoid == 1) {
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL0,
++						     0x01100014);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL1,
++						     0x040C0C06);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
++						     0x03140A08);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL3,
++						     0x00333333);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL4,
++						     0x202C2820);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL5,
++						     0x88888815);
++		} else {
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL0,
++						     0x11100014);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL1,
++						     0x040c0c06);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
++						     0x03000a08);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL3,
++						     0x00000000);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL4,
++						     0x200005c0);
++			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL5,
++						     0x88888815);
++		}
++		tmp = 1 << 10;
++		break;
++	default:
++		pr_err("unknown spuravoidance settings for chip 0x%04X, not changing PLL\n",
++		       bus->chipinfo.id);
++		break;
++	}
++
++	tmp |= bcma_cc_read32(cc, BCMA_CC_PMU_CTL);
++	bcma_cc_write32(cc, BCMA_CC_PMU_CTL, tmp);
++}
++EXPORT_SYMBOL_GPL(bcma_pmu_spuravoid_pllupdate);
+--- a/drivers/bcma/driver_mips.c
++++ b/drivers/bcma/driver_mips.c
+@@ -22,15 +22,15 @@
+ /* The 47162a0 hangs when reading MIPS DMP registers registers */
+ static inline bool bcma_core_mips_bcm47162a0_quirk(struct bcma_device *dev)
+ {
+-	return dev->bus->chipinfo.id == 47162 && dev->bus->chipinfo.rev == 0 &&
+-	       dev->id.id == BCMA_CORE_MIPS_74K;
++	return dev->bus->chipinfo.id == BCMA_CHIP_ID_BCM47162 &&
++	       dev->bus->chipinfo.rev == 0 && dev->id.id == BCMA_CORE_MIPS_74K;
+ }
+ 
+ /* The 5357b0 hangs when reading USB20H DMP registers */
+ static inline bool bcma_core_mips_bcm5357b0_quirk(struct bcma_device *dev)
+ {
+-	return (dev->bus->chipinfo.id == 0x5357 ||
+-		dev->bus->chipinfo.id == 0x4749) &&
++	return (dev->bus->chipinfo.id == BCMA_CHIP_ID_BCM5357 ||
++		dev->bus->chipinfo.id == BCMA_CHIP_ID_BCM4749) &&
+ 	       dev->bus->chipinfo.pkg == 11 &&
+ 	       dev->id.id == BCMA_CORE_USB20_HOST;
+ }
 --- a/drivers/bcma/driver_pci.c
 +++ b/drivers/bcma/driver_pci.c
 @@ -2,8 +2,9 @@
@@ -250,7 +700,7 @@
  }
  
  /**************************************************
-@@ -138,72 +143,90 @@ static void bcma_pcie_mdio_write(struct
+@@ -138,88 +143,108 @@ static void bcma_pcie_mdio_write(struct
  
  static u8 bcma_pcicore_polarity_workaround(struct bcma_drv_pci *pc)
  {
@@ -383,7 +833,27 @@
  }
  
  int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc, struct bcma_device *core,
-@@ -236,3 +259,17 @@ out:
+ 			  bool enable)
+ {
+-	struct pci_dev *pdev = pc->core->bus->host_pci;
++	struct pci_dev *pdev;
+ 	u32 coremask, tmp;
+ 	int err = 0;
+ 
+-	if (core->bus->hosttype != BCMA_HOSTTYPE_PCI) {
++	if (!pc || core->bus->hosttype != BCMA_HOSTTYPE_PCI) {
+ 		/* This bcma device is not on a PCI host-bus. So the IRQs are
+ 		 * not routed through the PCI core.
+ 		 * So we must not enable routing through the PCI core. */
+ 		goto out;
+ 	}
+ 
++	pdev = pc->core->bus->host_pci;
++
+ 	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
+ 	if (err)
+ 		goto out;
+@@ -236,3 +261,17 @@ out:
  	return err;
  }
  EXPORT_SYMBOL_GPL(bcma_core_pci_irq_ctl);
@@ -403,7 +873,7 @@
 +EXPORT_SYMBOL_GPL(bcma_core_pci_extend_L1timer);
 --- a/drivers/bcma/driver_pci_host.c
 +++ b/drivers/bcma/driver_pci_host.c
-@@ -2,13 +2,588 @@
+@@ -2,13 +2,590 @@
   * Broadcom specific AMBA
   * PCI Core in hostmode
   *
@@ -622,7 +1092,8 @@
 +	} else {
 +		writel(val, mmio);
 +
-+		if (chipid == 0x4716 || chipid == 0x4748)
++		if (chipid == BCMA_CHIP_ID_BCM4716 ||
++		    chipid == BCMA_CHIP_ID_BCM4748)
 +			readl(mmio);
 +	}
 +
@@ -841,13 +1312,14 @@
 +	 * as mips can't generate 64-bit address on the
 +	 * backplane.
 +	 */
-+	if (bus->chipinfo.id == 0x4716 || bus->chipinfo.id == 0x4748) {
++	if (bus->chipinfo.id == BCMA_CHIP_ID_BCM4716 ||
++	    bus->chipinfo.id == BCMA_CHIP_ID_BCM4748) {
 +		pc_host->mem_resource.start = BCMA_SOC_PCI_MEM;
 +		pc_host->mem_resource.end = BCMA_SOC_PCI_MEM +
 +					    BCMA_SOC_PCI_MEM_SZ - 1;
 +		pcicore_write32(pc, BCMA_CORE_PCI_SBTOPCI0,
 +				BCMA_CORE_PCI_SBTOPCI_MEM | BCMA_SOC_PCI_MEM);
-+	} else if (bus->chipinfo.id == 0x5300) {
++	} else if (bus->chipinfo.id == BCMA_CHIP_ID_BCM4706) {
 +		tmp = BCMA_CORE_PCI_SBTOPCI_MEM;
 +		tmp |= BCMA_CORE_PCI_SBTOPCI_PREF;
 +		tmp |= BCMA_CORE_PCI_SBTOPCI_BURST;
@@ -1026,7 +1498,15 @@
  {
  	struct bcma_bus *bus = pci_get_drvdata(dev);
  
-@@ -277,7 +280,7 @@ static struct pci_driver bcma_pci_bridge
+@@ -265,6 +268,7 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
+ 
+ static DEFINE_PCI_DEVICE_TABLE(bcma_pci_bridge_tbl) = {
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x0576) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43224) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4331) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4353) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4357) },
+@@ -277,7 +281,7 @@ static struct pci_driver bcma_pci_bridge
  	.name = "bcma-pci-bridge",
  	.id_table = bcma_pci_bridge_tbl,
  	.probe = bcma_host_pci_probe,
@@ -1095,7 +1575,7 @@
  	if (err) {
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
-@@ -19,7 +19,14 @@ struct bcma_device_id_name {
+@@ -19,15 +19,27 @@ struct bcma_device_id_name {
  	u16 id;
  	const char *name;
  };
@@ -1109,9 +1589,15 @@
 +
 +static const struct bcma_device_id_name bcma_bcm_device_names[] = {
  	{ BCMA_CORE_OOB_ROUTER, "OOB Router" },
++	{ BCMA_CORE_4706_CHIPCOMMON, "BCM4706 ChipCommon" },
++	{ BCMA_CORE_4706_SOC_RAM, "BCM4706 SOC RAM" },
++	{ BCMA_CORE_4706_MAC_GBIT, "BCM4706 GBit MAC" },
++	{ BCMA_CORE_AMEMC, "AMEMC (DDR)" },
++	{ BCMA_CORE_ALTA, "ALTA (I2S)" },
++	{ BCMA_CORE_4706_MAC_GBIT_COMMON, "BCM4706 GBit MAC Common" },
  	{ BCMA_CORE_INVALID, "Invalid" },
  	{ BCMA_CORE_CHIPCOMMON, "ChipCommon" },
-@@ -27,7 +34,6 @@ struct bcma_device_id_name bcma_device_n
+ 	{ BCMA_CORE_ILINE20, "ILine 20" },
  	{ BCMA_CORE_SRAM, "SRAM" },
  	{ BCMA_CORE_SDRAM, "SDRAM" },
  	{ BCMA_CORE_PCI, "PCI" },
@@ -1119,7 +1605,7 @@
  	{ BCMA_CORE_ETHERNET, "Fast Ethernet" },
  	{ BCMA_CORE_V90, "V90" },
  	{ BCMA_CORE_USB11_HOSTDEV, "USB 1.1 Hostdev" },
-@@ -44,7 +50,6 @@ struct bcma_device_id_name bcma_device_n
+@@ -44,7 +56,6 @@ struct bcma_device_id_name bcma_device_n
  	{ BCMA_CORE_PHY_A, "PHY A" },
  	{ BCMA_CORE_PHY_B, "PHY B" },
  	{ BCMA_CORE_PHY_G, "PHY G" },
@@ -1127,7 +1613,7 @@
  	{ BCMA_CORE_USB11_HOST, "USB 1.1 Host" },
  	{ BCMA_CORE_USB11_DEV, "USB 1.1 Device" },
  	{ BCMA_CORE_USB20_HOST, "USB 2.0 Host" },
-@@ -58,15 +63,11 @@ struct bcma_device_id_name bcma_device_n
+@@ -58,15 +69,11 @@ struct bcma_device_id_name bcma_device_n
  	{ BCMA_CORE_PHY_N, "PHY N" },
  	{ BCMA_CORE_SRAM_CTL, "SRAM Controller" },
  	{ BCMA_CORE_MINI_MACPHY, "Mini MACPHY" },
@@ -1143,7 +1629,7 @@
  	{ BCMA_CORE_MAC_GBIT, "GBit MAC" },
  	{ BCMA_CORE_DDR12_MEM_CTL, "DDR1/DDR2 Memory Controller" },
  	{ BCMA_CORE_PCIE_RC, "PCIe Root Complex" },
-@@ -79,16 +80,41 @@ struct bcma_device_id_name bcma_device_n
+@@ -79,16 +86,41 @@ struct bcma_device_id_name bcma_device_n
  	{ BCMA_CORE_SHIM, "SHIM" },
  	{ BCMA_CORE_DEFAULT, "Default" },
  };
@@ -1192,7 +1678,7 @@
  	return "UNKNOWN";
  }
  
-@@ -212,6 +238,17 @@ static struct bcma_device *bcma_find_cor
+@@ -212,6 +244,17 @@ static struct bcma_device *bcma_find_cor
  	return NULL;
  }
  
@@ -1210,7 +1696,40 @@
  static int bcma_get_next_core(struct bcma_bus *bus, u32 __iomem **eromptr,
  			      struct bcma_device_id *match, int core_num,
  			      struct bcma_device *core)
-@@ -353,6 +390,7 @@ static int bcma_get_next_core(struct bcm
+@@ -286,6 +329,23 @@ static int bcma_get_next_core(struct bcm
+ 			return -EILSEQ;
+ 	}
+ 
++	/* First Slave Address Descriptor should be port 0:
++	 * the main register space for the core
++	 */
++	tmp = bcma_erom_get_addr_desc(bus, eromptr, SCAN_ADDR_TYPE_SLAVE, 0);
++	if (tmp <= 0) {
++		/* Try again to see if it is a bridge */
++		tmp = bcma_erom_get_addr_desc(bus, eromptr,
++					      SCAN_ADDR_TYPE_BRIDGE, 0);
++		if (tmp <= 0) {
++			return -EILSEQ;
++		} else {
++			pr_info("Bridge found\n");
++			return -ENXIO;
++		}
++	}
++	core->addr = tmp;
++
+ 	/* get & parse slave ports */
+ 	for (i = 0; i < ports[1]; i++) {
+ 		for (j = 0; ; j++) {
+@@ -298,7 +358,7 @@ static int bcma_get_next_core(struct bcm
+ 				break;
+ 			} else {
+ 				if (i == 0 && j == 0)
+-					core->addr = tmp;
++					core->addr1 = tmp;
+ 			}
+ 		}
+ 	}
+@@ -353,6 +413,7 @@ static int bcma_get_next_core(struct bcm
  void bcma_init_bus(struct bcma_bus *bus)
  {
  	s32 tmp;
@@ -1218,7 +1737,7 @@
  
  	if (bus->init_done)
  		return;
-@@ -363,9 +401,12 @@ void bcma_init_bus(struct bcma_bus *bus)
+@@ -363,9 +424,12 @@ void bcma_init_bus(struct bcma_bus *bus)
  	bcma_scan_switch_core(bus, BCMA_ADDR_BASE);
  
  	tmp = bcma_scan_read32(bus, 0, BCMA_CC_ID);
@@ -1234,7 +1753,7 @@
  	bus->init_done = true;
  }
  
-@@ -392,6 +433,7 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -392,6 +456,7 @@ int bcma_bus_scan(struct bcma_bus *bus)
  	bcma_scan_switch_core(bus, erombase);
  
  	while (eromptr < eromend) {
@@ -1242,7 +1761,7 @@
  		struct bcma_device *core = kzalloc(sizeof(*core), GFP_KERNEL);
  		if (!core)
  			return -ENOMEM;
-@@ -414,6 +456,8 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -414,6 +479,8 @@ int bcma_bus_scan(struct bcma_bus *bus)
  
  		core->core_index = core_num++;
  		bus->nr_cores++;
@@ -1360,7 +1879,7 @@
  
  	bus->sprom.revision = sprom[SSB_SPROMSIZE_WORDS_R4 - 1] &
  		SSB_SPROM_REVISION_REV;
-@@ -137,85 +216,363 @@ static void bcma_sprom_extract_r8(struct
+@@ -137,102 +216,378 @@ static void bcma_sprom_extract_r8(struct
  		*(((__be16 *)bus->sprom.il0mac) + i) = cpu_to_be16(v);
  	}
  
@@ -1681,11 +2200,11 @@
 +	/* older chipcommon revisions use chip status register */
 +	chip_status = bcma_read32(bus->drv_cc.core, BCMA_CC_CHIPSTAT);
 +	switch (bus->chipinfo.id) {
-+	case 0x4313:
++	case BCMA_CHIP_ID_BCM4313:
 +		present_mask = BCMA_CC_CHIPST_4313_SPROM_PRESENT;
 +		break;
 +
-+	case 0x4331:
++	case BCMA_CHIP_ID_BCM4331:
 +		present_mask = BCMA_CC_CHIPST_4331_SPROM_PRESENT;
 +		break;
 +
@@ -1707,16 +2226,16 @@
 +
 +	chip_status = bcma_read32(bus->drv_cc.core, BCMA_CC_CHIPSTAT);
 +	switch (bus->chipinfo.id) {
-+	case 0x4313:
++	case BCMA_CHIP_ID_BCM4313:
 +		present = chip_status & BCMA_CC_CHIPST_4313_OTP_PRESENT;
 +		break;
 +
-+	case 0x4331:
++	case BCMA_CHIP_ID_BCM4331:
 +		present = chip_status & BCMA_CC_CHIPST_4331_OTP_PRESENT;
 +		break;
 +
-+	case 43224:
-+	case 43225:
++	case BCMA_CHIP_ID_BCM43224:
++	case BCMA_CHIP_ID_BCM43225:
 +		/* for these chips OTP is always available */
 +		present = true;
 +		break;
@@ -1792,8 +2311,12 @@
  
  	sprom = kcalloc(SSB_SPROMSIZE_WORDS_R4, sizeof(u16),
  			GFP_KERNEL);
-@@ -225,11 +582,7 @@ int bcma_sprom_get(struct bcma_bus *bus)
- 	if (bus->chipinfo.id == 0x4331)
+ 	if (!sprom)
+ 		return -ENOMEM;
+ 
+-	if (bus->chipinfo.id == 0x4331)
++	if (bus->chipinfo.id == BCMA_CHIP_ID_BCM4331 ||
++	    bus->chipinfo.id == BCMA_CHIP_ID_BCM43431)
  		bcma_chipco_bcm4331_ext_pa_lines_ctl(&bus->drv_cc, false);
  
 -	/* Most cards have SPROM moved by additional offset 0x30 (48 dwords).
@@ -1804,7 +2327,12 @@
 +	pr_debug("SPROM offset 0x%x\n", offset);
  	bcma_sprom_read(bus, offset, sprom);
  
- 	if (bus->chipinfo.id == 0x4331)
+-	if (bus->chipinfo.id == 0x4331)
++	if (bus->chipinfo.id == BCMA_CHIP_ID_BCM4331 ||
++	    bus->chipinfo.id == BCMA_CHIP_ID_BCM43431)
+ 		bcma_chipco_bcm4331_ext_pa_lines_ctl(&bus->drv_cc, true);
+ 
+ 	err = bcma_sprom_valid(sprom);
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
 @@ -26,6 +26,11 @@ struct bcma_chipinfo {
@@ -1819,15 +2347,69 @@
  enum bcma_clkmode {
  	BCMA_CLKMODE_FAST,
  	BCMA_CLKMODE_DYNAMIC,
-@@ -136,6 +141,7 @@ struct bcma_device {
+@@ -65,6 +70,13 @@ struct bcma_host_ops {
+ 
+ /* Core-ID values. */
+ #define BCMA_CORE_OOB_ROUTER		0x367	/* Out of band */
++#define BCMA_CORE_4706_CHIPCOMMON	0x500
++#define BCMA_CORE_4706_SOC_RAM		0x50E
++#define BCMA_CORE_4706_MAC_GBIT		0x52D
++#define BCMA_CORE_AMEMC			0x52E	/* DDR1/2 memory controller core */
++#define BCMA_CORE_ALTA			0x534	/* I2S core */
++#define BCMA_CORE_4706_MAC_GBIT_COMMON	0x5DC
++#define BCMA_CORE_DDR23_PHY		0x5DD
+ #define BCMA_CORE_INVALID		0x700
+ #define BCMA_CORE_CHIPCOMMON		0x800
+ #define BCMA_CORE_ILINE20		0x801
+@@ -125,6 +137,36 @@ struct bcma_host_ops {
+ 
+ #define BCMA_MAX_NR_CORES		16
+ 
++/* Chip IDs of PCIe devices */
++#define BCMA_CHIP_ID_BCM4313	0x4313
++#define BCMA_CHIP_ID_BCM43224	43224
++#define  BCMA_PKG_ID_BCM43224_FAB_CSM	0x8
++#define  BCMA_PKG_ID_BCM43224_FAB_SMIC	0xa
++#define BCMA_CHIP_ID_BCM43225	43225
++#define BCMA_CHIP_ID_BCM43227	43227
++#define BCMA_CHIP_ID_BCM43228	43228
++#define BCMA_CHIP_ID_BCM43421	43421
++#define BCMA_CHIP_ID_BCM43428	43428
++#define BCMA_CHIP_ID_BCM43431	43431
++#define BCMA_CHIP_ID_BCM43460	43460
++#define BCMA_CHIP_ID_BCM4331	0x4331
++#define BCMA_CHIP_ID_BCM6362	0x6362
++#define BCMA_CHIP_ID_BCM4360	0x4360
++#define BCMA_CHIP_ID_BCM4352	0x4352
++
++/* Chip IDs of SoCs */
++#define BCMA_CHIP_ID_BCM4706	0x5300
++#define BCMA_CHIP_ID_BCM4716	0x4716
++#define  BCMA_PKG_ID_BCM4716	8
++#define  BCMA_PKG_ID_BCM4717	9
++#define  BCMA_PKG_ID_BCM4718	10
++#define BCMA_CHIP_ID_BCM47162	47162
++#define BCMA_CHIP_ID_BCM4748	0x4748
++#define BCMA_CHIP_ID_BCM4749	0x4749
++#define BCMA_CHIP_ID_BCM5356	0x5356
++#define BCMA_CHIP_ID_BCM5357	0x5357
++#define BCMA_CHIP_ID_BCM53572	53572
++
+ struct bcma_device {
+ 	struct bcma_bus *bus;
+ 	struct bcma_device_id id;
+@@ -136,8 +178,10 @@ struct bcma_device {
  	bool dev_registered;
  
  	u8 core_index;
 +	u8 core_unit;
  
  	u32 addr;
++	u32 addr1;
  	u32 wrap;
-@@ -175,6 +181,12 @@ int __bcma_driver_register(struct bcma_d
+ 
+ 	void __iomem *io_addr;
+@@ -175,6 +219,12 @@ int __bcma_driver_register(struct bcma_d
  
  extern void bcma_driver_unregister(struct bcma_driver *drv);
  
@@ -1840,7 +2422,7 @@
  struct bcma_bus {
  	/* The MMIO area. */
  	void __iomem *mmio;
-@@ -191,10 +203,13 @@ struct bcma_bus {
+@@ -191,10 +241,13 @@ struct bcma_bus {
  
  	struct bcma_chipinfo chipinfo;
  
@@ -1854,7 +2436,7 @@
  
  	struct bcma_drv_cc drv_cc;
  	struct bcma_drv_pci drv_pci;
-@@ -282,6 +297,7 @@ static inline void bcma_maskset16(struct
+@@ -282,6 +335,7 @@ static inline void bcma_maskset16(struct
  	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
  }
  
@@ -1925,6 +2507,52 @@
  
  /* Divider allocation in 4716/47162/5356 */
  #define BCMA_CC_PMU5_MAINPLL_CPU	1
+@@ -284,6 +308,19 @@
+ #define BCMA_CC_PPL_PCHI_OFF		5
+ #define BCMA_CC_PPL_PCHI_MASK		0x0000003f
+ 
++#define BCMA_CC_PMU_PLL_CTL0		0
++#define BCMA_CC_PMU_PLL_CTL1		1
++#define BCMA_CC_PMU_PLL_CTL2		2
++#define BCMA_CC_PMU_PLL_CTL3		3
++#define BCMA_CC_PMU_PLL_CTL4		4
++#define BCMA_CC_PMU_PLL_CTL5		5
++
++#define BCMA_CC_PMU1_PLL0_PC0_P1DIV_MASK	0x00f00000
++#define BCMA_CC_PMU1_PLL0_PC0_P1DIV_SHIFT	20
++
++#define BCMA_CC_PMU1_PLL0_PC2_NDIV_INT_MASK	0x1ff00000
++#define BCMA_CC_PMU1_PLL0_PC2_NDIV_INT_SHIFT	20
++
+ /* BCM4331 ChipControl numbers. */
+ #define BCMA_CHIPCTL_4331_BT_COEXIST		BIT(0)	/* 0 disable */
+ #define BCMA_CHIPCTL_4331_SECI			BIT(1)	/* 0 SECI is disabled (JATG functional) */
+@@ -297,9 +334,18 @@
+ #define BCMA_CHIPCTL_4331_OVR_PIPEAUXPWRDOWN	BIT(9)	/* override core control on pipe_AuxPowerDown */
+ #define BCMA_CHIPCTL_4331_PCIE_AUXCLKEN		BIT(10)	/* pcie_auxclkenable */
+ #define BCMA_CHIPCTL_4331_PCIE_PIPE_PLLDOWN	BIT(11)	/* pcie_pipe_pllpowerdown */
++#define BCMA_CHIPCTL_4331_EXTPA_EN2		BIT(12)	/* 0 ext pa disable, 1 ext pa enabled */
+ #define BCMA_CHIPCTL_4331_BT_SHD0_ON_GPIO4	BIT(16)	/* enable bt_shd0 at gpio4 */
+ #define BCMA_CHIPCTL_4331_BT_SHD1_ON_GPIO5	BIT(17)	/* enable bt_shd1 at gpio5 */
+ 
++/* 43224 chip-specific ChipControl register bits */
++#define BCMA_CCTRL_43224_GPIO_TOGGLE		0x8000		/* gpio[3:0] pins as btcoex or s/w gpio */
++#define BCMA_CCTRL_43224A0_12MA_LED_DRIVE	0x00F000F0	/* 12 mA drive strength */
++#define BCMA_CCTRL_43224B0_12MA_LED_DRIVE	0xF0		/* 12 mA drive strength for later 43224s */
++
++/* 4313 Chip specific ChipControl register bits */
++#define BCMA_CCTRL_4313_12MA_LED_DRIVE		0x00000007	/* 12 mA drive strengh for later 4313 */
++
+ /* Data for the PMU, if available.
+  * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
+  */
+@@ -387,5 +433,6 @@ extern void bcma_chipco_chipctl_maskset(
+ 					u32 offset, u32 mask, u32 set);
+ extern void bcma_chipco_regctl_maskset(struct bcma_drv_cc *cc,
+ 				       u32 offset, u32 mask, u32 set);
++extern void bcma_pmu_spuravoid_pllupdate(struct bcma_drv_cc *cc, int spuravoid);
+ 
+ #endif /* LINUX_BCMA_DRIVER_CC_H_ */
 --- a/include/linux/bcma/bcma_driver_pci.h
 +++ b/include/linux/bcma/bcma_driver_pci.h
 @@ -53,11 +53,47 @@ struct pci_dev;
