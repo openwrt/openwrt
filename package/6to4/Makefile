@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6to4
-PKG_VERSION:=9
+PKG_VERSION:=10
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk

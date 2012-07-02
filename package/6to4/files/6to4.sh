@@ -143,7 +143,6 @@ proto_6to4_setup() {
 
 		uci_revert_state radvd
 		config_load radvd
-		config_load network
 
 		adv_subnet=$((0x${adv_subnet:-1}))
 
@@ -151,22 +150,20 @@ proto_6to4_setup() {
 
 		for adv_interface in ${adv_interface:-lan}; do
 			local adv_ifname
-			config_get adv_ifname "${adv_interface:-lan}" ifname
+			network_get_device adv_ifname "${adv_interface:-lan}" || continue
 
-			grep -qs "^ *$adv_ifname:" /proc/net/dev && {
-				local subnet6="$(printf "%s:%x::1/64" "$prefix6" $adv_subnet)"
+			local subnet6="$(printf "%s:%x::1/64" "$prefix6" $adv_subnet)"
 
-				logger -t "$link" " * Advertising IPv6 subnet $subnet6 on ${adv_interface:-lan} ($adv_ifname)"
-				ip -6 addr add $subnet6 dev $adv_ifname
+			logger -t "$link" " * Advertising IPv6 subnet $subnet6 on ${adv_interface:-lan} ($adv_ifname)"
+			ip -6 addr add $subnet6 dev $adv_ifname
 
-				set_6to4_radvd_interface "$sid" "$adv_interface" "$mtu"
-				set_6to4_radvd_prefix    "$sid" "$adv_interface" \
-					"$wancfg" "$(printf "0:0:0:%x::/64" $adv_subnet)" \
-					"$adv_valid_lifetime" "$adv_preferred_lifetime"
+			set_6to4_radvd_interface "$sid" "$adv_interface" "$mtu"
+			set_6to4_radvd_prefix    "$sid" "$adv_interface" \
+				"$wancfg" "$(printf "0:0:0:%x::/64" $adv_subnet)" \
+				"$adv_valid_lifetime" "$adv_preferred_lifetime"
 
-				adv_subnets="${adv_subnets:+$adv_subnets }$adv_ifname:$subnet6"
-				adv_subnet=$(($adv_subnet + 1))
-			}
+			adv_subnets="${adv_subnets:+$adv_subnets }$adv_ifname:$subnet6"
+			adv_subnet=$(($adv_subnet + 1))
 		done
 
 		uci_set_state network "$cfg" adv_subnets "$adv_subnets"
