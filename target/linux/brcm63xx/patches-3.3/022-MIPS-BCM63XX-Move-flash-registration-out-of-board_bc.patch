@@ -1,18 +1,24 @@
-From b620329db3d6646a172a599b0e960baca081fff1 Mon Sep 17 00:00:00 2001
+From bfe47f0f68b5f7a3a92d07266cba58b188fe10e7 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
-Date: Sat, 12 Nov 2011 11:17:32 +0100
-Subject: [PATCH 25/79] MIPS: BCM63XX: move flash registration out of
- board_bcm963xx.c
+Date: Tue, 12 Jun 2012 10:23:38 +0200
+Subject: [PATCH 1/8] MIPS: BCM63XX: Move flash registration out of board_bcm963xx.c
 
 board_bcm963xx.c is already large enough.
 
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+Cc: linux-mips@linux-mips.org
+Cc: Maxime Bizon <mbizon@freebox.fr>
+Cc: Florian Fainelli <florian@openwrt.org>
+Cc: Kevin Cernekee <cernekee@gmail.com>
+Patchwork: https://patchwork.linux-mips.org/patch/3952/
+Reviewed-by: Florian Fainelli <florian@openwrt.org>
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 ---
  arch/mips/bcm63xx/Makefile                         |    4 +-
  arch/mips/bcm63xx/boards/board_bcm963xx.c          |   49 +-------------
- arch/mips/bcm63xx/dev-flash.c                      |   68 ++++++++++++++++++++
+ arch/mips/bcm63xx/dev-flash.c                      |   69 ++++++++++++++++++++
  .../include/asm/mach-bcm63xx/bcm63xx_dev_flash.h   |    6 ++
- 4 files changed, 78 insertions(+), 49 deletions(-)
+ 4 files changed, 79 insertions(+), 49 deletions(-)
  create mode 100644 arch/mips/bcm63xx/dev-flash.c
  create mode 100644 arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h
 
@@ -20,10 +26,10 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +++ b/arch/mips/bcm63xx/Makefile
 @@ -1,6 +1,6 @@
  obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
--		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-spi.o dev-trng.o \
+-		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-rng.o dev-spi.o \
 -		   dev-uart.o dev-wdt.o
-+		   dev-dsp.o dev-enet.o dev-flash.o dev-pcmcia.o dev-spi.o \
-+		   dev-trng.o dev-uart.o dev-wdt.o
++		   dev-dsp.o dev-enet.o dev-flash.o dev-pcmcia.o dev-rng.o \
++		   dev-spi.o dev-uart.o dev-wdt.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
  
  obj-y		+= boards/
@@ -37,9 +43,9 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 -#include <linux/mtd/partitions.h>
 -#include <linux/mtd/physmap.h>
  #include <linux/ssb/ssb.h>
- #include <linux/gpio_keys.h>
- #include <linux/input.h>
-@@ -27,6 +24,7 @@
+ #include <asm/addrspace.h>
+ #include <bcm63xx_board.h>
+@@ -24,6 +21,7 @@
  #include <bcm63xx_dev_pci.h>
  #include <bcm63xx_dev_enet.h>
  #include <bcm63xx_dev_dsp.h>
@@ -47,7 +53,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_dev_pcmcia.h>
  #include <bcm63xx_dev_spi.h>
  #include <board_bcm963xx.h>
-@@ -866,40 +864,6 @@ void __init board_setup(void)
+@@ -809,40 +807,6 @@ void __init board_setup(void)
  		panic("unexpected CPU for bcm963xx board");
  }
  
@@ -88,17 +94,18 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static struct gpio_led_platform_data bcm63xx_led_data;
  
  static struct platform_device bcm63xx_gpio_leds = {
-@@ -923,7 +887,6 @@ static struct platform_device bcm63xx_gp
+@@ -856,8 +820,6 @@ static struct platform_device bcm63xx_gp
   */
  int __init board_register_devices(void)
  {
 -	u32 val;
- 	int button_count = 0;
- 	int led_count = 0;
+-
+ 	if (board.has_uart0)
+ 		bcm63xx_uart_register(0);
  
-@@ -968,14 +931,7 @@ int __init board_register_devices(void)
- 	if (board.num_spis)
- 		spi_register_board_info(board.spis, board.num_spis);
+@@ -893,14 +855,7 @@ int __init board_register_devices(void)
+ 
+ 	bcm63xx_spi_register();
  
 -	/* read base address of boot chip select (0) */
 -	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
@@ -110,11 +117,11 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 -	platform_device_register(&mtd_dev);
 +	bcm63xx_flash_register();
  
- 	/* count number of LEDs defined by this device */
- 	while (led_count < ARRAY_SIZE(board.leds) && board.leds[led_count].name)
+ 	bcm63xx_led_data.num_leds = ARRAY_SIZE(board.leds);
+ 	bcm63xx_led_data.leds = board.leds;
 --- /dev/null
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,69 @@
 +/*
 + * Broadcom BCM63xx flash registration
 + *
@@ -122,7 +129,8 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 + * License.  See the file "COPYING" in the main directory of this archive
 + * for more details.
 + *
-+ * Copyright (C) 2009 Florian Fainelli <florian@openwrt.org>
++ * Copyright (C) 2008 Maxime Bizon <mbizon@freebox.fr>
++ * Copyright (C) 2008 Florian Fainelli <florian@openwrt.org>
 + */
 +
 +#include <linux/init.h>

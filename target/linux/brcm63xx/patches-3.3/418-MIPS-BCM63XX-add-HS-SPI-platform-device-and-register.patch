@@ -1,16 +1,15 @@
-From a2b75f344cdc0f9e12c7909511d95b27be72c6b9 Mon Sep 17 00:00:00 2001
+From 56be5a2d7e08faa7bb306faaf352ac4e6ac52c01 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
 Date: Sat, 12 Nov 2011 12:18:26 +0100
-Subject: [PATCH 52/79] MIPS: BCM63XX: add HS SPI platform device and register
- it
+Subject: [PATCH 26/60] MIPS: BCM63XX: add HS SPI platform device and register it
 
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 ---
  arch/mips/bcm63xx/Makefile                         |    5 +-
  arch/mips/bcm63xx/boards/board_bcm963xx.c          |    2 +
- arch/mips/bcm63xx/dev-hsspi.c                      |   58 ++++++++++++++++++++
- .../include/asm/mach-bcm63xx/bcm63xx_dev_hsspi.h   |   26 +++++++++
- 4 files changed, 89 insertions(+), 2 deletions(-)
+ arch/mips/bcm63xx/dev-hsspi.c                      |   57 ++++++++++++++++++++
+ .../include/asm/mach-bcm63xx/bcm63xx_dev_hsspi.h   |   20 +++++++
+ 4 files changed, 82 insertions(+), 2 deletions(-)
  create mode 100644 arch/mips/bcm63xx/dev-hsspi.c
  create mode 100644 arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_hsspi.h
 
@@ -18,10 +17,10 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +++ b/arch/mips/bcm63xx/Makefile
 @@ -1,6 +1,7 @@
  obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
--		   dev-dsp.o dev-enet.o dev-flash.o dev-pcmcia.o dev-spi.o \
--		   dev-trng.o dev-uart.o dev-usb-ehci.o dev-usb-ohci.o dev-wdt.o
+-		   dev-dsp.o dev-enet.o dev-flash.o dev-pcmcia.o dev-rng.o \
+-		   dev-spi.o dev-uart.o dev-usb-ehci.o dev-usb-ohci.o dev-wdt.o
 +		   dev-dsp.o dev-enet.o dev-flash.o dev-hsspi.o dev-pcmcia.o \
-+		   dev-spi.o dev-trng.o dev-uart.o dev-usb-ehci.o \
++		   dev-rng.o dev-spi.o dev-uart.o dev-usb-ehci.o \
 +		   dev-usb-ohci.o dev-wdt.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
  
@@ -36,7 +35,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_dev_pcmcia.h>
  #include <bcm63xx_dev_spi.h>
  #include <bcm63xx_dev_usb_ohci.h>
-@@ -941,6 +942,7 @@ int __init board_register_devices(void)
+@@ -943,6 +944,7 @@ int __init board_register_devices(void)
  			pr_err(PFX "failed to register fallback SPROM\n");
  	}
  #endif
@@ -46,14 +45,13 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
 --- /dev/null
 +++ b/arch/mips/bcm63xx/dev-hsspi.c
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,57 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
 + * for more details.
 + *
-+ * Copyright (C) 2009 Florian Fainelli <florian@openwrt.org>
-+ * Copyright (C) 2010 Tanguy Bouzeloc <tanguy.bouzeloc@efixo.com>
++ * Copyright (C) 2012 Jonas Gorski <jonas.gorski@gmail.com>
 + */
 +
 +#include <linux/init.h>
@@ -107,7 +105,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +}
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_hsspi.h
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,20 @@
 +#ifndef BCM63XX_DEV_HSSPI_H
 +#define BCM63XX_DEV_HSSPI_H
 +
@@ -126,11 +124,5 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +#define bcm_hsspi_writel(v, o)	bcm_rset_writel(RSET_HSSPI, (v), (o))
 +
 +#define HSSPI_PLL_HZ_6328	133333333
-+
-+#define HSSPI_OP_CODE_SHIFT	13
-+#define HSSPI_OP_SLEEP		(0 << HSSPI_OP_CODE_SHIFT)
-+#define HSSPI_OP_READ_WRITE	(1 << HSSPI_OP_CODE_SHIFT)
-+#define HSSPI_OP_WRITE		(2 << HSSPI_OP_CODE_SHIFT)
-+#define HSSPI_OP_READ		(3 << HSSPI_OP_CODE_SHIFT)
 +
 +#endif /* BCM63XX_DEV_HSSPI_H */

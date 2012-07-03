@@ -72,7 +72,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1908,6 +1966,23 @@ void __init board_prom_init(void)
+@@ -1909,6 +1967,23 @@ void __init board_prom_init(void)
  		val &= MPI_CSBASE_BASE_MASK;
  	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
@@ -98,7 +98,7 @@
  	cfe = boot_addr + BCM963XX_CFE_VERSION_OFFSET;
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -18,6 +18,7 @@
+@@ -19,6 +19,7 @@
  #include <linux/spi/spi.h>
  #include <linux/spi/flash.h>
  
@@ -106,7 +106,7 @@
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_dev_flash.h>
  #include <bcm63xx_dev_hsspi.h>
-@@ -145,6 +146,13 @@ int __init bcm63xx_flash_register(int nu
+@@ -150,6 +151,13 @@ int __init bcm63xx_flash_register(int nu
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
  		val &= MPI_CSBASE_BASE_MASK;
  

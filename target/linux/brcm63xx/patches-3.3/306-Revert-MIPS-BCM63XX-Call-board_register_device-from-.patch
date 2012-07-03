@@ -1,0 +1,23 @@
+From a7d2622b6614fdca504c074a0cd307d5a1165c30 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 8 May 2012 09:39:01 +0200
+Subject: [PATCH 04/59] Revert "MIPS: BCM63XX: Call board_register_device from device_initcall()"
+
+This commit causes a race between PCI scan and SSB fallback SPROM handler
+registration, causing the wifi to not work on slower systems. The only
+subsystem touched from board_register_device is platform device
+registration, which should be safe as an arch init call.
+
+This reverts commit d64ed7ada2f689d2c62af1892ca55e47d3653e36.
+---
+ arch/mips/bcm63xx/setup.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/bcm63xx/setup.c
++++ b/arch/mips/bcm63xx/setup.c
+@@ -157,4 +157,4 @@ int __init bcm63xx_register_devices(void
+ 	return board_register_devices();
+ }
+ 
+-device_initcall(bcm63xx_register_devices);
++arch_initcall(bcm63xx_register_devices);

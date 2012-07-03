@@ -1,0 +1,71 @@
+From 79fed26f65c22e0d67c9523f7a374f0585bd2803 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Tue, 31 Jan 2012 15:12:24 +0100
+Subject: [PATCH 5/6] MIPS: BCM63XX: add RNG driver platform_device stub
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: mpm@selenic.com
+Cc: herbert@gondor.apana.org.au
+Patchwork: https://patchwork.linux-mips.org/patch/3325/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/bcm63xx/Makefile  |    4 ++--
+ arch/mips/bcm63xx/dev-rng.c |   40 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 42 insertions(+), 2 deletions(-)
+ create mode 100644 arch/mips/bcm63xx/dev-rng.c
+
+--- a/arch/mips/bcm63xx/Makefile
++++ b/arch/mips/bcm63xx/Makefile
+@@ -1,6 +1,6 @@
+ obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
+-		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-spi.o dev-uart.o \
+-		   dev-wdt.o
++		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-rng.o dev-spi.o \
++		   dev-uart.o dev-wdt.o
+ obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
+ 
+ obj-y		+= boards/
+--- /dev/null
++++ b/arch/mips/bcm63xx/dev-rng.c
+@@ -0,0 +1,40 @@
++/*
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ *
++ * Copyright (C) 2011 Florian Fainelli <florian@openwrt.org>
++ */
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <bcm63xx_cpu.h>
++
++static struct resource rng_resources[] = {
++	{
++		.start		= -1, /* filled at runtime */
++		.end		= -1, /* filled at runtime */
++		.flags		= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device bcm63xx_rng_device = {
++	.name		= "bcm63xx-rng",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(rng_resources),
++	.resource	= rng_resources,
++};
++
++int __init bcm63xx_rng_register(void)
++{
++	if (!BCMCPU_IS_6368())
++		return -ENODEV;
++
++	rng_resources[0].start = bcm63xx_regset_address(RSET_RNG);
++	rng_resources[0].end = rng_resources[0].start;
++	rng_resources[0].end += RSET_RNG_SIZE - 1;
++
++	return platform_device_register(&bcm63xx_rng_device);
++}
++arch_initcall(bcm63xx_rng_register);

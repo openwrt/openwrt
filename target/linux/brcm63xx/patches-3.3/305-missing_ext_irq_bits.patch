@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/irq.c
 +++ b/arch/mips/bcm63xx/irq.c
-@@ -45,8 +45,8 @@ static void __internal_irq_unmask_64(uns
+@@ -56,8 +56,8 @@ static void __internal_irq_unmask_64(uns
  #define is_ext_irq_cascaded	0
  #define ext_irq_start		0
  #define ext_irq_end		0
@@ -11,7 +11,7 @@
  #define ext_irq_cfg_reg2	0
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6348
-@@ -122,11 +122,15 @@ static void bcm63xx_init_irq(void)
+@@ -143,11 +143,15 @@ static void bcm63xx_init_irq(void)
  		irq_stat_addr += PERF_IRQSTAT_6338_REG;
  		irq_mask_addr += PERF_IRQMASK_6338_REG;
  		irq_bits = 32;
@@ -27,7 +27,7 @@
  		break;
  	case BCM6348_CPU_ID:
  		irq_stat_addr += PERF_IRQSTAT_6348_REG;
-@@ -413,7 +417,8 @@ static int bcm63xx_external_irq_set_type
+@@ -434,7 +438,8 @@ static int bcm63xx_external_irq_set_type
  	reg = bcm_perf_readl(regaddr);
  	irq %= 4;
  
@@ -37,7 +37,7 @@
  		if (levelsense)
  			reg |= EXTIRQ_CFG_LEVELSENSE_6348(irq);
  		else
-@@ -426,9 +431,12 @@ static int bcm63xx_external_irq_set_type
+@@ -447,9 +452,12 @@ static int bcm63xx_external_irq_set_type
  			reg |= EXTIRQ_CFG_BOTHEDGE_6348(irq);
  		else
  			reg &= ~EXTIRQ_CFG_BOTHEDGE_6348(irq);
@@ -52,7 +52,7 @@
  		if (levelsense)
  			reg |= EXTIRQ_CFG_LEVELSENSE(irq);
  		else
-@@ -441,6 +449,9 @@ static int bcm63xx_external_irq_set_type
+@@ -462,6 +470,9 @@ static int bcm63xx_external_irq_set_type
  			reg |= EXTIRQ_CFG_BOTHEDGE(irq);
  		else
  			reg &= ~EXTIRQ_CFG_BOTHEDGE(irq);
@@ -64,7 +64,7 @@
  	bcm_perf_writel(reg, regaddr);
 --- a/arch/mips/bcm63xx/setup.c
 +++ b/arch/mips/bcm63xx/setup.c
-@@ -71,6 +71,9 @@ void bcm63xx_machine_reboot(void)
+@@ -74,6 +74,9 @@ void bcm63xx_machine_reboot(void)
  	case BCM6338_CPU_ID:
  		perf_regs[0] = PERF_EXTIRQ_CFG_REG_6338;
  		break;
@@ -74,7 +74,7 @@
  	case BCM6348_CPU_ID:
  		perf_regs[0] = PERF_EXTIRQ_CFG_REG_6348;
  		break;
-@@ -80,6 +83,9 @@ void bcm63xx_machine_reboot(void)
+@@ -83,6 +86,9 @@ void bcm63xx_machine_reboot(void)
  	}
  
  	for (i = 0; i < 2; i++) {
@@ -86,9 +86,9 @@
  			reg &= ~EXTIRQ_CFG_MASK_ALL_6348;
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -134,6 +134,7 @@
- 
+@@ -161,6 +161,7 @@
  /* External Interrupt Configuration register */
+ #define PERF_EXTIRQ_CFG_REG_6328	0x18
  #define PERF_EXTIRQ_CFG_REG_6338	0x14
 +#define PERF_EXTIRQ_CFG_REG_6345	0x14
  #define PERF_EXTIRQ_CFG_REG_6348	0x14

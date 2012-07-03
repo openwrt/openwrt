@@ -1,0 +1,61 @@
+From b8420b9150fa03fcdfacd32e8c5ad286e208d5e9 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Wed, 13 Jun 2012 16:48:02 +0100
+Subject: [PATCH 5/8] MIPS: BCM63XX: Move the PCI initialization into its own function
+
+Also make the cpu check a bit more explicit.
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+Cc: linux-mips@linux-mips.org
+Cc: Maxime Bizon <mbizon@freebox.fr>
+Cc: Florian Fainelli <florian@openwrt.org>
+Cc: Kevin Cernekee <cernekee@gmail.com>
+Patchwork: https://patchwork.linux-mips.org/patch/3953/
+Reviewed-by: Florian Fainelli <florian@openwrt.org>
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/pci/pci-bcm63xx.c |   25 +++++++++++++++++--------
+ 1 files changed, 17 insertions(+), 8 deletions(-)
+
+--- a/arch/mips/pci/pci-bcm63xx.c
++++ b/arch/mips/pci/pci-bcm63xx.c
+@@ -94,17 +94,10 @@ static void bcm63xx_int_cfg_writel(u32 v
+ 
+ void __iomem *pci_iospace_start;
+ 
+-static int __init bcm63xx_pci_init(void)
++static int __init bcm63xx_register_pci(void)
+ {
+ 	unsigned int mem_size;
+ 	u32 val;
+-
+-	if (!BCMCPU_IS_6348() && !BCMCPU_IS_6358() && !BCMCPU_IS_6368())
+-		return -ENODEV;
+-
+-	if (!bcm63xx_pci_enabled)
+-		return -ENODEV;
+-
+ 	/*
+ 	 * configuration  access are  done through  IO space,  remap 4
+ 	 * first bytes to access it from CPU.
+@@ -221,4 +214,20 @@ static int __init bcm63xx_pci_init(void)
+ 	return 0;
+ }
+ 
++
++static int __init bcm63xx_pci_init(void)
++{
++	if (!bcm63xx_pci_enabled)
++		return -ENODEV;
++
++	switch (bcm63xx_get_cpu_id()) {
++	case BCM6348_CPU_ID:
++	case BCM6358_CPU_ID:
++	case BCM6368_CPU_ID:
++		return bcm63xx_register_pci();
++	default:
++		return -ENODEV;
++	}
++}
++
+ arch_initcall(bcm63xx_pci_init);

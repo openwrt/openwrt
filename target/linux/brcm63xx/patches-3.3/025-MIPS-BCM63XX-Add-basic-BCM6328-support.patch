@@ -1,39 +1,50 @@
-From e7fd2a00f5d6c5e50976ed931c26fdbfbbacf835 Mon Sep 17 00:00:00 2001
+From 8f9ed2e5502ed3ba3d4c89678cb44f43ccd5b9e0 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
-Date: Tue, 14 Jun 2011 21:14:39 +0200
-Subject: [PATCH 40/79] MIPS: BCM63XX: add basic BCM6328 CPU support
+Date: Wed, 13 Jun 2012 16:46:54 +0100
+Subject: [PATCH 4/8] MIPS: BCM63XX: Add basic BCM6328 support
+
+This includes CPU speed, memory size detection and working UART, but
+lacking the appropriate drivers, no support for attached flash.
 
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+Cc: linux-mips@linux-mips.org
+Cc: Maxime Bizon <mbizon@freebox.fr>
+Cc: Florian Fainelli <florian@openwrt.org>
+Cc: Kevin Cernekee <cernekee@gmail.com>
+Patchwork: https://patchwork.linux-mips.org/patch/3951/
+Reviewed-by: Florian Fainelli <florian@openwrt.org>
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 ---
- arch/mips/bcm63xx/Kconfig                         |    4 +
- arch/mips/bcm63xx/boards/board_bcm963xx.c         |   11 ++-
- arch/mips/bcm63xx/cpu.c                           |   43 +++++++++
+ arch/mips/bcm63xx/Kconfig                         |    3 +
+ arch/mips/bcm63xx/boards/board_bcm963xx.c         |   12 ++-
+ arch/mips/bcm63xx/cpu.c                           |   43 ++++++++
+ arch/mips/bcm63xx/dev-flash.c                     |    6 +
  arch/mips/bcm63xx/dev-spi.c                       |    2 +-
- arch/mips/bcm63xx/irq.c                           |   21 +++++
+ arch/mips/bcm63xx/irq.c                           |   21 ++++
  arch/mips/bcm63xx/prom.c                          |    4 +-
  arch/mips/bcm63xx/setup.c                         |   13 ++-
- arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h  |  101 +++++++++++++++++++++
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h  |  111 ++++++++++++++++++++-
  arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h |    2 +
- arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h |   44 +++++++++
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_io.h   |    2 +
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h |   54 ++++++++++
  arch/mips/include/asm/mach-bcm63xx/ioremap.h      |    1 +
- 11 files changed, 238 insertions(+), 8 deletions(-)
+ 13 files changed, 265 insertions(+), 9 deletions(-)
 
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
-@@ -1,6 +1,10 @@
+@@ -1,6 +1,9 @@
  menu "CPU support"
  	depends on BCM63XX
  
 +config BCM63XX_CPU_6328
 +	bool "support 6328 CPU"
-+	select HW_HAS_PCI
 +
  config BCM63XX_CPU_6338
  	bool "support 6338 CPU"
  	select HW_HAS_PCI
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -761,9 +761,14 @@ void __init board_prom_init(void)
+@@ -708,9 +708,15 @@ void __init board_prom_init(void)
  	char cfe_version[32];
  	u32 val;
  
@@ -41,7 +52,8 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 -	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
 -	val &= MPI_CSBASE_BASE_MASK;
 +	/* read base address of boot chip select (0)
-+	 * 6328 does not have MPI but boots from a fixed address */
++	 * 6328 does not have MPI but boots from a fixed address
++	 */
 +	if (BCMCPU_IS_6328())
 +		val = 0x18000000;
 +	else {
@@ -124,6 +136,21 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  			case BCM6368_CPU_ID:
  				expected_cpu_id = BCM6368_CPU_ID;
  				bcm63xx_regs_base = bcm6368_regs_base;
+--- a/arch/mips/bcm63xx/dev-flash.c
++++ b/arch/mips/bcm63xx/dev-flash.c
+@@ -60,6 +60,12 @@ static int __init bcm63xx_detect_flash_t
+ 	u32 val;
+ 
+ 	switch (bcm63xx_get_cpu_id()) {
++	case BCM6328_CPU_ID:
++		val = bcm_misc_readl(MISC_STRAPBUS_6328_REG);
++		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
++			return BCM63XX_FLASH_TYPE_SERIAL;
++		else
++			return BCM63XX_FLASH_TYPE_NAND;
+ 	case BCM6338_CPU_ID:
+ 	case BCM6345_CPU_ID:
+ 	case BCM6348_CPU_ID:
 --- a/arch/mips/bcm63xx/dev-spi.c
 +++ b/arch/mips/bcm63xx/dev-spi.c
 @@ -87,7 +87,7 @@ int __init bcm63xx_spi_register(void)
@@ -197,7 +224,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	case BCM6338_CPU_ID:
  		perf_regs[0] = PERF_EXTIRQ_CFG_REG_6338;
  		break;
-@@ -101,9 +104,13 @@ void bcm63xx_machine_reboot(void)
+@@ -95,9 +98,13 @@ void bcm63xx_machine_reboot(void)
  		bcm6348_a1_reboot();
  
  	printk(KERN_INFO "triggering watchdog soft-reset...\n");
@@ -244,8 +271,18 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #ifdef CONFIG_BCM63XX_CPU_6338
  # ifdef bcm63xx_get_cpu_id
  #  undef bcm63xx_get_cpu_id
-@@ -157,6 +171,49 @@ enum bcm63xx_regs_set {
- #define RSET_TRNG_SIZE			20
+@@ -129,7 +143,8 @@ enum bcm63xx_regs_set {
+ 	RSET_PCMDMA,
+ 	RSET_PCMDMAC,
+ 	RSET_PCMDMAS,
+-	RSET_RNG
++	RSET_RNG,
++	RSET_MISC
+ };
+ 
+ #define RSET_DSL_LMEM_SIZE		(64 * 1024 * 4)
+@@ -156,6 +171,49 @@ enum bcm63xx_regs_set {
+ #define RSET_RNG_SIZE			20
  
  /*
 + * 6328 register sets base address
@@ -288,13 +325,69 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +#define BCM_6328_PCMDMA_BASE		(0xdeadbeef)
 +#define BCM_6328_PCMDMAC_BASE		(0xdeadbeef)
 +#define BCM_6328_PCMDMAS_BASE		(0xdeadbeef)
-+#define BCM_6328_TRNG_BASE		(0xdeadbeef)
++#define BCM_6328_RNG_BASE		(0xdeadbeef)
 +#define BCM_6328_MISC_BASE		(0xb0001800)
 +/*
   * 6338 register sets base address
   */
  #define BCM_6338_DSL_LMEM_BASE		(0xfff00000)
-@@ -466,6 +523,9 @@ static inline unsigned long bcm63xx_regs
+@@ -198,6 +256,7 @@ enum bcm63xx_regs_set {
+ #define BCM_6338_PCMDMAC_BASE		(0xdeadbeef)
+ #define BCM_6338_PCMDMAS_BASE		(0xdeadbeef)
+ #define BCM_6338_RNG_BASE		(0xdeadbeef)
++#define BCM_6338_MISC_BASE		(0xdeadbeef)
+ 
+ /*
+  * 6345 register sets base address
+@@ -242,6 +301,7 @@ enum bcm63xx_regs_set {
+ #define BCM_6345_PCMDMAC_BASE		(0xdeadbeef)
+ #define BCM_6345_PCMDMAS_BASE		(0xdeadbeef)
+ #define BCM_6345_RNG_BASE		(0xdeadbeef)
++#define BCM_6345_MISC_BASE		(0xdeadbeef)
+ 
+ /*
+  * 6348 register sets base address
+@@ -283,6 +343,7 @@ enum bcm63xx_regs_set {
+ #define BCM_6348_PCMDMAC_BASE		(0xdeadbeef)
+ #define BCM_6348_PCMDMAS_BASE		(0xdeadbeef)
+ #define BCM_6348_RNG_BASE		(0xdeadbeef)
++#define BCM_6348_MISC_BASE		(0xdeadbeef)
+ 
+ /*
+  * 6358 register sets base address
+@@ -324,6 +385,7 @@ enum bcm63xx_regs_set {
+ #define BCM_6358_PCMDMAC_BASE		(0xfffe1900)
+ #define BCM_6358_PCMDMAS_BASE		(0xfffe1a00)
+ #define BCM_6358_RNG_BASE		(0xdeadbeef)
++#define BCM_6358_MISC_BASE		(0xdeadbeef)
+ 
+ 
+ /*
+@@ -366,6 +428,7 @@ enum bcm63xx_regs_set {
+ #define BCM_6368_PCMDMAC_BASE		(0xb0005a00)
+ #define BCM_6368_PCMDMAS_BASE		(0xb0005c00)
+ #define BCM_6368_RNG_BASE		(0xb0004180)
++#define BCM_6368_MISC_BASE		(0xdeadbeef)
+ 
+ 
+ extern const unsigned long *bcm63xx_regs_base;
+@@ -412,6 +475,7 @@ extern const unsigned long *bcm63xx_regs
+ 	__GEN_RSET_BASE(__cpu, PCMDMAC)					\
+ 	__GEN_RSET_BASE(__cpu, PCMDMAS)					\
+ 	__GEN_RSET_BASE(__cpu, RNG)					\
++	__GEN_RSET_BASE(__cpu, MISC)					\
+ 	}
+ 
+ #define __GEN_CPU_REGS_TABLE(__cpu)					\
+@@ -451,6 +515,7 @@ extern const unsigned long *bcm63xx_regs
+ 	[RSET_PCMDMAC]		= BCM_## __cpu ##_PCMDMAC_BASE,		\
+ 	[RSET_PCMDMAS]		= BCM_## __cpu ##_PCMDMAS_BASE,		\
+ 	[RSET_RNG]		= BCM_## __cpu ##_RNG_BASE,		\
++	[RSET_MISC]		= BCM_## __cpu ##_MISC_BASE,		\
+ 
+ 
+ static inline unsigned long bcm63xx_regset_address(enum bcm63xx_regs_set set)
+@@ -458,6 +523,9 @@ static inline unsigned long bcm63xx_regs
  #ifdef BCMCPU_RUNTIME_DETECT
  	return bcm63xx_regs_base[set];
  #else
@@ -304,7 +397,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #ifdef CONFIG_BCM63XX_CPU_6338
  	__GEN_RSET(6338)
  #endif
-@@ -520,6 +580,47 @@ enum bcm63xx_irq {
+@@ -512,6 +580,47 @@ enum bcm63xx_irq {
  };
  
  /*
@@ -354,7 +447,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define BCM_6338_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h
-@@ -9,6 +9,8 @@ int __init bcm63xx_gpio_init(void);
+@@ -8,6 +8,8 @@ int __init bcm63xx_gpio_init(void);
  static inline unsigned long bcm63xx_gpio_count(void)
  {
  	switch (bcm63xx_get_cpu_id()) {
@@ -363,6 +456,16 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	case BCM6358_CPU_ID:
  		return 40;
  	case BCM6338_CPU_ID:
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_io.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_io.h
+@@ -91,5 +91,7 @@
+ #define bcm_memc_writel(v, o)	bcm_rset_writel(RSET_MEMC, (v), (o))
+ #define bcm_ddr_readl(o)	bcm_rset_readl(RSET_DDR, (o))
+ #define bcm_ddr_writel(v, o)	bcm_rset_writel(RSET_DDR, (v), (o))
++#define bcm_misc_readl(o)	bcm_rset_readl(RSET_MISC, (o))
++#define bcm_misc_writel(v, o)	bcm_rset_writel(RSET_MISC, (v), (o))
+ 
+ #endif /* ! BCM63XX_IO_H_ */
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 @@ -15,6 +15,30 @@
@@ -418,9 +521,9 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  /* External Interrupt Configuration register */
 +#define PERF_EXTIRQ_CFG_REG_6328	0x18
  #define PERF_EXTIRQ_CFG_REG_6338	0x14
- #define PERF_EXTIRQ_CFG_REG_6345	0x14
  #define PERF_EXTIRQ_CFG_REG_6348	0x14
-@@ -163,8 +190,21 @@
+ #define PERF_EXTIRQ_CFG_REG_6358	0x14
+@@ -162,8 +189,21 @@
  
  /* Soft Reset register */
  #define PERF_SOFTRESET_REG		0x28
@@ -442,7 +545,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define SOFTRESET_6338_SPI_MASK		(1 << 0)
  #define SOFTRESET_6338_ENET_MASK	(1 << 2)
  #define SOFTRESET_6338_USBH_MASK	(1 << 3)
-@@ -308,6 +348,8 @@
+@@ -307,6 +347,8 @@
  /* Watchdog reset length register */
  #define WDT_RSTLEN_REG			0x8
  
@@ -451,7 +554,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  /*************************************************************************
   * _REG relative to RSET_UARTx
-@@ -934,6 +976,8 @@
+@@ -933,6 +975,8 @@
   * _REG relative to RSET_DDR
   *************************************************************************/
  
@@ -460,6 +563,21 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define DDR_DMIPSPLLCFG_REG		0x18
  #define DMIPSPLLCFG_M1_SHIFT		0
  #define DMIPSPLLCFG_M1_MASK		(0xff << DMIPSPLLCFG_M1_SHIFT)
+@@ -1122,4 +1166,14 @@
+ #define SPI_SSOFFTIME_SHIFT		3
+ #define SPI_BYTE_SWAP			0x80
+ 
++/*************************************************************************
++ * _REG relative to RSET_MISC
++ *************************************************************************/
++
++#define MISC_STRAPBUS_6328_REG		0x240
++#define STRAPBUS_6328_FCVO_SHIFT	7
++#define STRAPBUS_6328_FCVO_MASK		(0x1f << STRAPBUS_6328_FCVO_SHIFT)
++#define STRAPBUS_6328_BOOT_SEL_SERIAL	(1 << 28)
++#define STRAPBUS_6328_BOOT_SEL_NAND	(0 << 28)
++
+ #endif /* BCM63XX_REGS_H_ */
 --- a/arch/mips/include/asm/mach-bcm63xx/ioremap.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/ioremap.h
 @@ -18,6 +18,7 @@ static inline int is_bcm63xx_internal_re
