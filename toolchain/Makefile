@@ -28,9 +28,8 @@
 curdir:=toolchain
 
 # subdirectories to descend into
-$(curdir)/builddirs := $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_INSIGHT),insight) $(if $(CONFIG_EXTERNAL_TOOLCHAIN),wrapper,kernel-headers binutils gcc/minimal gcc/initial gcc/final $(LIBC))
+$(curdir)/builddirs := $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_INSIGHT),insight) $(if $(CONFIG_EXTERNAL_TOOLCHAIN),wrapper,kernel-headers binutils gcc/minimal gcc/initial gcc/final $(LIBC)/headers $(LIBC))
 ifdef CONFIG_USE_UCLIBC
-  $(curdir)/builddirs += $(LIBC)/headers
   $(curdir)/builddirs += $(LIBC)/utils
 endif
 $(curdir)/builddirs-compile:=$($(curdir)/builddirs-prepare)
@@ -43,21 +42,13 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   $(curdir)/gcc/initial/prepare:=$(curdir)/gcc/minimal/prepare
   $(curdir)/gcc/final/prepare:=$(curdir)/gcc/initial/prepare
 
-  ifdef CONFIG_USE_UCLIBC
-    $(curdir)/$(LIBC)/headers/compile:=$(curdir)/kernel-headers/install
-    $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/headers/install
-    $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/install
-    $(curdir)/gcc/final/compile:=$(curdir)/$(LIBC)/install
-    $(curdir)/$(LIBC)/utils/compile:=$(curdir)/gcc/final/install
-    $(curdir)/$(LIBC)/prepare:=$(curdir)/$(LIBC)/headers/prepare
-    $(curdir)/$(LIBC)/utils/prepare:=$(curdir)/$(LIBC)/headers/prepare
-  else
-    $(curdir)/$(LIBC)/prepare:=$(curdir)/kernel-headers/install
-    $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/install
-    $(curdir)/$(LIBC)/install:=$(curdir)/gcc/final/install
-    $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/prepare
-    $(curdir)/gcc/final/compile:=$(curdir)/$(LIBC)/compile
-  endif
+  $(curdir)/$(LIBC)/headers/compile:=$(curdir)/kernel-headers/install
+  $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/headers/install
+  $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/install
+  $(curdir)/gcc/final/compile:=$(curdir)/$(LIBC)/install
+  $(curdir)/$(LIBC)/utils/compile:=$(curdir)/gcc/final/install
+  $(curdir)/$(LIBC)/prepare:=$(curdir)/$(LIBC)/headers/prepare
+  $(curdir)/$(LIBC)/utils/prepare:=$(curdir)/$(LIBC)/headers/prepare
 endif
 
 ifdef CONFIG_GCC_VERSION_LLVM
