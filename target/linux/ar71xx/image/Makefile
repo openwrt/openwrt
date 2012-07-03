@@ -655,6 +655,12 @@ define Image/Build/Profile/ALFAAP96
 	$(call Image/Build/Template/$(fs_128k)/$(1),AthLzma,alfa-ap96,$(alfa_ap96_cmdline),$(alfa_ap96_mtdlayout),2097152,13631488,RKuImage)
 endef
 
+all0258n_cmdline=board=ALL0258N console=ttyS0,115200
+all0258n_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),1024k(kernel),5248k(rootfs),1536k(failsafe),64k(art),6272k@0x50000(firmware)
+define Image/Build/Profile/ALL0258N
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,all0258n,$(all0258n_cmdline),$(all0258n_mtdlayout),1048576,5373952,KRuImage)
+endef
+
 ap113_mtd_layout=64k(u-boot),3008k(rootfs),896k(uImage),64k(NVRAM),64k(ART),3904k@0x10000(firmware)
 ap113_cmdline=board=AP113 console=ttyS0,115200
 define Image/Build/Profile/AP113
@@ -1055,11 +1061,6 @@ endef
 zcn1523h516_cmdline=board=ZCN-1523H-5 console=ttyS0,115200 $(zcn1523h_mtdlayout)
 define Image/Build/Profile/ZCN1523H516
 	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-5-16,$(zcn1523h516_cmdline))
-endef
-
-all0258n_cmdline=board=ALL0258N console=ttyS0,115200
-define Image/Build/Profile/ALL0258N
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,all0258n,$(all0258n_cmdline),,917504,5505024,KRuImage)
 endef
 
 define Image/Build/Profile/Default
