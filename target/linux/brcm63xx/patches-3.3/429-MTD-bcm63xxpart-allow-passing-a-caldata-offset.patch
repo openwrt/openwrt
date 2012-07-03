@@ -33,7 +33,7 @@ contained in flash.
 +		}
 +		if (data->caldata[1]) {
 +			caldatalen2 = cfe_erasesize;
-+			caldataaddr1 = rounddown(data->caldata[1],
++			caldataaddr2 = rounddown(data->caldata[1],
 +						 cfe_erasesize);
 +		}
 +		if (caldataaddr1 == caldataaddr2) {
