@@ -161,6 +161,7 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),6338W,6338,6338W-generic,,)
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,96348GW-11-generic)
 	$(call Image/Build/CFE,$(1),96348GW-10,6348,96348GW-10-generic)
+	$(call Image/Build/CFE,$(1),96348A-122,6348,96348A-122-generic)
 	$(call Image/Build/CFE,$(1),96358VW,6358,96358VW-generic)
 	$(call Image/Build/CFE,$(1),96358VW2,6358,96358VW2-generic)
 	$(call Image/Build/CFE,$(1),96368MVNgr,6368,96368MVNgr-generic)
