@@ -1,0 +1,34 @@
+From 70a436c98a8479f15fe6ba7f894f88eede238dfa Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 2 Jul 2012 17:15:58 +0200
+Subject: [PATCH 15/20] ath9k: disable SYNC_HOST1_FATAL interrupts for AR9550
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath9k/hw.c  |    2 +-
+ drivers/net/wireless/ath/ath9k/mac.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -939,7 +939,7 @@ static void ath9k_hw_init_interrupt_mask
+ 		AR_IMR_RXORN |
+ 		AR_IMR_BCNMISC;
+ 
+-	if (AR_SREV_9340(ah))
++	if (AR_SREV_9340(ah) || AR_SREV_9550(ah))
+ 		sync_default &= ~AR_INTR_SYNC_HOST1_FATAL;
+ 
+ 	if (AR_SREV_9300_20_OR_LATER(ah)) {
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -810,7 +810,7 @@ void ath9k_hw_enable_interrupts(struct a
+ 		return;
+ 	}
+ 
+-	if (AR_SREV_9340(ah))
++	if (AR_SREV_9340(ah) || AR_SREV_9550(ah))
+ 		sync_default &= ~AR_INTR_SYNC_HOST1_FATAL;
+ 
+ 	async_mask = AR_INTR_MAC_IRQ;

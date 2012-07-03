@@ -1,0 +1,34 @@
+From f8e7d8fcb297db362c9288ef5f1cd778e7ddd1a9 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 2 Jul 2012 17:15:59 +0200
+Subject: [PATCH 19/20] ath9k: set 4ADDRESS bit in RX filter for AR9550
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath9k/mac.h  |    1 +
+ drivers/net/wireless/ath/ath9k/recv.c |    3 +++
+ 2 files changed, 4 insertions(+), 0 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath9k/mac.h
++++ b/drivers/net/wireless/ath/ath9k/mac.h
+@@ -642,6 +642,7 @@ enum ath9k_rx_filter {
+ 	ATH9K_RX_FILTER_PHYRADAR = 0x00002000,
+ 	ATH9K_RX_FILTER_MCAST_BCAST_ALL = 0x00008000,
+ 	ATH9K_RX_FILTER_CONTROL_WRAPPER = 0x00080000,
++	ATH9K_RX_FILTER_4ADDRESS = 0x00100000,
+ };
+ 
+ #define ATH9K_RATESERIES_RTS_CTS  0x0001
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -430,6 +430,9 @@ u32 ath_calcrxfilter(struct ath_softc *s
+ 		rfilt |= ATH9K_RX_FILTER_MCAST_BCAST_ALL;
+ 	}
+ 
++	if (AR_SREV_9550(sc->sc_ah))
++		rfilt |= ATH9K_RX_FILTER_4ADDRESS;
++
+ 	return rfilt;
+ 
+ }
