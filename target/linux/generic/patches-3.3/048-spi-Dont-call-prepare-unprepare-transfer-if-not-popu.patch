@@ -1,0 +1,39 @@
+From 7dfd2bd70228d1f8d468d58cb3d12ecd618479ed Mon Sep 17 00:00:00 2001
+From: Shubhrajyoti D <shubhrajyoti@ti.com>
+Date: Thu, 10 May 2012 19:20:41 +0530
+Subject: [PATCH] spi: Dont call prepare/unprepare transfer if not populated
+
+Currently the prepare/unprepare transfer are called unconditionally.
+The assumption is that every driver using the spi core queue infrastructure
+has to populate the prepare and unprepare functions. This encourages
+drivers to populate empty functions to prevent crashing.
+This patch prevents the call to prepare/unprepare if not populated.
+
+Signed-off-by: Shubhrajyoti D <shubhrajyoti@ti.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+[grant.likely: fix whitespace defect]
+Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
+---
+ drivers/spi/spi.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -530,7 +530,7 @@ static void spi_pump_messages(struct kth
+ 	/* Lock queue and check for queue work */
+ 	spin_lock_irqsave(&master->queue_lock, flags);
+ 	if (list_empty(&master->queue) || !master->running) {
+-		if (master->busy) {
++		if (master->busy && master->unprepare_transfer_hardware) {
+ 			ret = master->unprepare_transfer_hardware(master);
+ 			if (ret) {
+ 				dev_err(&master->dev,
+@@ -559,7 +559,7 @@ static void spi_pump_messages(struct kth
+ 		master->busy = true;
+ 	spin_unlock_irqrestore(&master->queue_lock, flags);
+ 
+-	if (!was_busy) {
++	if (!was_busy && master->prepare_transfer_hardware) {
+ 		ret = master->prepare_transfer_hardware(master);
+ 		if (ret) {
+ 			dev_err(&master->dev,
