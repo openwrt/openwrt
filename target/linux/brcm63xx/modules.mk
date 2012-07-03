@@ -8,7 +8,7 @@
 define KernelPackage/bcm63xx-spi
   SUBMENU:=$(SPI_MENU)
   TITLE:=Broadcom BCM63xx SPI driver
-  DEPENDS:=@TARGET_brcm63xx +kmod-spi-bitbang
+  DEPENDS:=@TARGET_brcm63xx
   KCONFIG:=CONFIG_SPI_BCM63XX
   FILES:=$(LINUX_DIR)/drivers/spi/spi-bcm63xx.ko
   AUTOLOAD:=$(call AutoLoad,92,spi-bcm63xx)
