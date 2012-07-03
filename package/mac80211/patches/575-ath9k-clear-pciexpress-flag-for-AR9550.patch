@@ -1,0 +1,22 @@
+From 68e9cddb98d5a7de130b064ec301e2370679160a Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 2 Jul 2012 17:10:15 +0200
+Subject: [PATCH 06/20] ath9k: clear pciexpress flag for AR9550
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath9k/hw.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -667,7 +667,7 @@ static int __ath9k_hw_init(struct ath_hw
+ 	}
+ 
+ 	if (AR_SREV_9271(ah) || AR_SREV_9100(ah) || AR_SREV_9340(ah) ||
+-	    AR_SREV_9330(ah))
++	    AR_SREV_9330(ah) || AR_SREV_9550(ah))
+ 		ah->is_pciexpress = false;
+ 
+ 	ah->hw_version.phyRev = REG_READ(ah, AR_PHY_CHIP_ID);

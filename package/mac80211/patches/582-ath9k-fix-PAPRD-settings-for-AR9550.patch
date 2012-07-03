@@ -1,0 +1,22 @@
+From 76ea066dcf42308aec8d20ef75170c1ecae82e60 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 2 Jul 2012 17:15:58 +0200
+Subject: [PATCH 13/20] ath9k: fix PAPRD settings for AR9550
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath9k/ar9003_paprd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
+@@ -211,7 +211,7 @@ static int ar9003_paprd_setup_single_tab
+ 		      AR_PHY_PAPRD_TRAINER_CNTL3_CF_PAPRD_NUM_CORR_STAGES, 7);
+ 	REG_RMW_FIELD(ah, AR_PHY_PAPRD_TRAINER_CNTL3,
+ 		      AR_PHY_PAPRD_TRAINER_CNTL3_CF_PAPRD_MIN_LOOPBACK_DEL, 1);
+-	if (AR_SREV_9485(ah) || AR_SREV_9462(ah))
++	if (AR_SREV_9485(ah) || AR_SREV_9462(ah) || AR_SREV_9550(ah))
+ 		REG_RMW_FIELD(ah, AR_PHY_PAPRD_TRAINER_CNTL3,
+ 			      AR_PHY_PAPRD_TRAINER_CNTL3_CF_PAPRD_QUICK_DROP,
+ 			      -3);
