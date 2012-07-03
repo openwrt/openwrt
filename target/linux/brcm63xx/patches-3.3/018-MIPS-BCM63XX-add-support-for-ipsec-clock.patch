@@ -1,12 +1,17 @@
-From 69b21096e25889d7db7cfc159202ef0a16530e6b Mon Sep 17 00:00:00 2001
+From 0fec0136456ce214ea4df6b8ff3b3728befc816a Mon Sep 17 00:00:00 2001
 From: Florian Fainelli <florian@openwrt.org>
-Date: Wed, 25 Jan 2012 17:39:54 +0100
-Subject: [PATCH 15/63] MIPS: BCM63XX: add support for "ipsec" clock
+Date: Tue, 31 Jan 2012 15:12:22 +0100
+Subject: [PATCH 3/6] MIPS: BCM63XX: add support for "ipsec" clock
 
 This module is only available on BCM6368 so far and does not require
 resetting the block.
 
 Signed-off-by: Florian Fainelli <florian@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: mpm@selenic.com
+Cc: herbert@gondor.apana.org.au
+Patchwork: https://patchwork.linux-mips.org/patch/3324/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 ---
  arch/mips/bcm63xx/clk.c |   14 ++++++++++++++
  1 files changed, 14 insertions(+), 0 deletions(-)

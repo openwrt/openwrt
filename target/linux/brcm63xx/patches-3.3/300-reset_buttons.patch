@@ -1,15 +1,15 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -15,6 +15,8 @@
- #include <linux/mtd/partitions.h>
- #include <linux/mtd/physmap.h>
+@@ -12,6 +12,8 @@
+ #include <linux/string.h>
+ #include <linux/platform_device.h>
  #include <linux/ssb/ssb.h>
 +#include <linux/gpio_keys.h>
 +#include <linux/input.h>
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -30,6 +32,9 @@
+@@ -28,6 +30,9 @@
  
  #define PFX	"board_bcm963xx: "
  
@@ -19,7 +19,7 @@
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -295,6 +300,16 @@ static struct board_info __initdata boar
+@@ -293,6 +298,16 @@ static struct board_info __initdata boar
  			.active_low	= 1,
  		},
  	},
@@ -36,7 +36,7 @@
  };
  
  static struct board_info __initdata board_96348gw = {
-@@ -353,6 +368,16 @@ static struct board_info __initdata boar
+@@ -351,6 +366,16 @@ static struct board_info __initdata boar
  			.active_low	= 1,
  		},
  	},
@@ -53,7 +53,7 @@
  };
  
  static struct board_info __initdata board_FAST2404 = {
-@@ -851,12 +876,23 @@ static struct platform_device bcm63xx_gp
+@@ -821,11 +846,23 @@ static struct platform_device bcm63xx_gp
  	.dev.platform_data	= &bcm63xx_led_data,
  };
  
@@ -72,12 +72,12 @@
   */
  int __init board_register_devices(void)
  {
- 	u32 val;
 +	int button_count = 0;
- 
++
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -907,5 +943,16 @@ int __init board_register_devices(void)
+ 
+@@ -868,5 +905,16 @@ int __init board_register_devices(void)
  
  	platform_device_register(&bcm63xx_gpio_leds);
  

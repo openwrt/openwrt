@@ -1,9 +1,14 @@
-From 21a474b37f905387d8908384a24c13d4f8513113 Mon Sep 17 00:00:00 2001
+From 1cfc5c76c5f48359716bd804daef2f2f7554fb4a Mon Sep 17 00:00:00 2001
 From: Florian Fainelli <florian@openwrt.org>
-Date: Wed, 25 Jan 2012 17:40:02 +0100
-Subject: [PATCH 18/63] hw_random: add Broadcom BCM63xx RNG driver
+Date: Tue, 31 Jan 2012 15:12:25 +0100
+Subject: [PATCH 6/6] hw_random: add Broadcom BCM63xx RNG driver
 
 Signed-off-by: Florian Fainelli <florian@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: mpm@selenic.com
+Cc: herbert@gondor.apana.org.au
+Patchwork: https://patchwork.linux-mips.org/patch/3327/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 ---
  drivers/char/hw_random/Kconfig       |   14 +++
  drivers/char/hw_random/Makefile      |    1 +
@@ -65,57 +70,57 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +#include <bcm63xx_io.h>
 +#include <bcm63xx_regs.h>
 +
-+struct bcm63xx_trng_priv {
++struct bcm63xx_rng_priv {
 +	struct clk *clk;
 +	void __iomem *regs;
 +};
 +
-+#define to_trng_priv(rng)	((struct bcm63xx_trng_priv *)rng->priv)
++#define to_rng_priv(rng)	((struct bcm63xx_rng_priv *)rng->priv)
 +
-+static int bcm63xx_trng_init(struct hwrng *rng)
++static int bcm63xx_rng_init(struct hwrng *rng)
 +{
-+	struct bcm63xx_trng_priv *priv = to_trng_priv(rng);
++	struct bcm63xx_rng_priv *priv = to_rng_priv(rng);
 +	u32 val;
 +
-+	val = bcm_readl(priv->regs + TRNG_CTRL);
-+	val |= TRNG_EN;
-+	bcm_writel(val, priv->regs + TRNG_CTRL);
++	val = bcm_readl(priv->regs + RNG_CTRL);
++	val |= RNG_EN;
++	bcm_writel(val, priv->regs + RNG_CTRL);
 +
 +	return 0;
 +}
 +
-+static void bcm63xx_trng_cleanup(struct hwrng *rng)
++static void bcm63xx_rng_cleanup(struct hwrng *rng)
 +{
-+	struct bcm63xx_trng_priv *priv = to_trng_priv(rng);
++	struct bcm63xx_rng_priv *priv = to_rng_priv(rng);
 +	u32 val;
 +
-+	val = bcm_readl(priv->regs + TRNG_CTRL);
-+	val &= ~TRNG_EN;
-+	bcm_writel(val, priv->regs + TRNG_CTRL);
++	val = bcm_readl(priv->regs + RNG_CTRL);
++	val &= ~RNG_EN;
++	bcm_writel(val, priv->regs + RNG_CTRL);
 +}
 +
-+static int bcm63xx_trng_data_present(struct hwrng *rng, int wait)
++static int bcm63xx_rng_data_present(struct hwrng *rng, int wait)
 +{
-+	struct bcm63xx_trng_priv *priv = to_trng_priv(rng);
++	struct bcm63xx_rng_priv *priv = to_rng_priv(rng);
 +
-+	return bcm_readl(priv->regs + TRNG_STAT) & TRNG_AVAIL_MASK;
++	return bcm_readl(priv->regs + RNG_STAT) & RNG_AVAIL_MASK;
 +}
 +
-+static int bcm63xx_trng_data_read(struct hwrng *rng, u32 *data)
++static int bcm63xx_rng_data_read(struct hwrng *rng, u32 *data)
 +{
-+	struct bcm63xx_trng_priv *priv = to_trng_priv(rng);
++	struct bcm63xx_rng_priv *priv = to_rng_priv(rng);
 +
-+	*data = bcm_readl(priv->regs + TRNG_DATA);
++	*data = bcm_readl(priv->regs + RNG_DATA);
 +
 +	return 4;
 +}
 +
-+static int __devinit bcm63xx_trng_probe(struct platform_device *pdev)
++static int __init bcm63xx_rng_probe(struct platform_device *pdev)
 +{
 +	struct resource *r;
 +	struct clk *clk;
 +	int ret;
-+	struct bcm63xx_trng_priv *priv;
++	struct bcm63xx_rng_priv *priv;
 +	struct hwrng *rng;
 +
 +	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -142,10 +147,10 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +	platform_set_drvdata(pdev, rng);
 +	rng->priv = (unsigned long)priv;
 +	rng->name = pdev->name;
-+	rng->init = bcm63xx_trng_init;
-+	rng->cleanup = bcm63xx_trng_cleanup;
-+	rng->data_present = bcm63xx_trng_data_present;
-+	rng->data_read = bcm63xx_trng_data_read;
++	rng->init = bcm63xx_rng_init;
++	rng->cleanup = bcm63xx_rng_cleanup;
++	rng->data_present = bcm63xx_rng_data_present;
++	rng->data_read = bcm63xx_rng_data_read;
 +
 +	clk = clk_get(&pdev->dev, "ipsec");
 +	if (IS_ERR(clk)) {
@@ -194,10 +199,10 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +	return ret;
 +}
 +
-+static int __devexit bcm63xx_trng_remove(struct platform_device *pdev)
++static int __devexit bcm63xx_rng_remove(struct platform_device *pdev)
 +{
 +	struct hwrng *rng = platform_get_drvdata(pdev);
-+	struct bcm63xx_trng_priv *priv = to_trng_priv(rng);
++	struct bcm63xx_rng_priv *priv = to_rng_priv(rng);
 +
 +	hwrng_unregister(rng);
 +	clk_disable(priv->clk);
@@ -208,16 +213,16 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +	return 0;
 +}
 +
-+static struct platform_driver bcm63xx_trng_driver = {
-+	.probe		= bcm63xx_trng_probe,
-+	.remove		= __devexit_p(bcm63xx_trng_remove),
++static struct platform_driver bcm63xx_rng_driver = {
++	.probe		= bcm63xx_rng_probe,
++	.remove		= __devexit_p(bcm63xx_rng_remove),
 +	.driver		= {
-+		.name	= "bcm63xx-trng",
++		.name	= "bcm63xx-rng",
 +		.owner	= THIS_MODULE,
 +	},
 +};
 +
-+module_platform_driver(bcm63xx_trng_driver);
++module_platform_driver(bcm63xx_rng_driver);
 +
 +MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org>");
 +MODULE_DESCRIPTION("Broadcom BCM63xx RNG driver");

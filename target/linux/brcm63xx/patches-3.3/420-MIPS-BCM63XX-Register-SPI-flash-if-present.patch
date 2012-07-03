@@ -1,17 +1,17 @@
-From a1e3ef9af3e3a7283ced5fd079ef7e8bc4e2deca Mon Sep 17 00:00:00 2001
+From d135d94b3d1fe599d13e7198d5f502912d694c13 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
 Date: Sun, 3 Jul 2011 15:00:38 +0200
-Subject: [PATCH 55/79] MIPS: BCM63XX: Register SPI flash if present
+Subject: [PATCH 29/60] MIPS: BCM63XX: Register SPI flash if present
 
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 ---
- arch/mips/bcm63xx/dev-flash.c                     |   29 +++++++++++++++++++--
- arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h |    1 +
- 2 files changed, 28 insertions(+), 2 deletions(-)
+ arch/mips/bcm63xx/dev-flash.c                     |   33 +++++++++++++++++++-
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h |    2 +
+ 2 files changed, 33 insertions(+), 2 deletions(-)
 
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -15,9 +15,12 @@
+@@ -16,9 +16,12 @@
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
  #include <linux/mtd/physmap.h>
@@ -24,7 +24,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_regs.h>
  #include <bcm63xx_io.h>
  
-@@ -54,12 +57,28 @@ static struct platform_device mtd_dev =
+@@ -55,6 +58,21 @@ static struct platform_device mtd_dev =
  	},
  };
  
@@ -46,14 +46,19 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static int __init bcm63xx_detect_flash_type(void)
  {
  	u32 val;
- 
+@@ -62,6 +80,11 @@ static int __init bcm63xx_detect_flash_t
  	switch (bcm63xx_get_cpu_id()) {
  	case BCM6328_CPU_ID:
-+		bcm63xx_spi_flash_info[0].max_speed_hz = 40000000;
  		val = bcm_misc_readl(MISC_STRAPBUS_6328_REG);
++		if (val & STRAPBUS_6328_HSSPI_CLK_FAST)
++			bcm63xx_spi_flash_info[0].max_speed_hz = 33333334;
++		else
++			bcm63xx_spi_flash_info[0].max_speed_hz = 16666667;
++
  		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
-@@ -78,6 +97,9 @@ static int __init bcm63xx_detect_flash_t
+ 		else
+@@ -79,6 +102,9 @@ static int __init bcm63xx_detect_flash_t
  			return BCM63XX_FLASH_TYPE_SERIAL;
  	case BCM6368_CPU_ID:
  		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
@@ -63,14 +68,14 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
  		case STRAPBUS_6368_BOOT_SEL_NAND:
  			return BCM63XX_FLASH_TYPE_NAND;
-@@ -109,8 +131,11 @@ int __init bcm63xx_flash_register(void)
+@@ -110,8 +136,11 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:
 -		pr_warn("unsupported serial flash detected\n");
 -		return -ENODEV;
 +		if (BCMCPU_IS_6328())
-+			bcm63xx_flash_data.max_transfer_len = HS_SPI_BUFFER_LEN;
++			bcm63xx_flash_data.max_transfer_len = HSSPI_BUFFER_LEN;
 +
 +		return spi_register_board_info(bcm63xx_spi_flash_info,
 +					ARRAY_SIZE(bcm63xx_spi_flash_info));
@@ -87,3 +92,11 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define STRAPBUS_6368_BOOT_SEL_MASK	0x3
  #define STRAPBUS_6368_BOOT_SEL_NAND	0
  #define STRAPBUS_6368_BOOT_SEL_SERIAL	1
+@@ -1227,6 +1228,7 @@
+ #define SERDES_PCIE_EXD_EN		(1 << 15)
+ 
+ #define MISC_STRAPBUS_6328_REG		0x240
++#define STRAPBUS_6328_HSSPI_CLK_FAST	(1 << 4)
+ #define STRAPBUS_6328_FCVO_SHIFT	7
+ #define STRAPBUS_6328_FCVO_MASK		(0x1f << STRAPBUS_6328_FCVO_SHIFT)
+ #define STRAPBUS_6328_BOOT_SEL_SERIAL	(1 << 28)

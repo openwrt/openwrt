@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -30,12 +30,16 @@
+@@ -28,12 +28,16 @@
  #include <bcm63xx_dev_pcmcia.h>
  #include <bcm63xx_dev_spi.h>
  #include <board_bcm963xx.h>
@@ -17,7 +17,7 @@
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -726,6 +730,29 @@ static int board_get_mac_address(u8 *mac
+@@ -724,6 +728,29 @@ static int board_get_mac_address(u8 *mac
  	return 0;
  }
  
@@ -47,7 +47,7 @@
  /*
   * early init callback, read nvram data from flash and checksum it
   */
-@@ -767,6 +794,11 @@ void __init board_prom_init(void)
+@@ -771,6 +798,11 @@ void __init board_prom_init(void)
  		return;
  	}
  

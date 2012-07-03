@@ -1,13 +1,20 @@
-From 0b2451b1cdab390b0b86c60a4765208bb2724d22 Mon Sep 17 00:00:00 2001
+From 0c921d542eb4359791cffd1737bf45184f6ae352 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
-Date: Sat, 2 Jul 2011 14:44:28 +0200
-Subject: [PATCH 26/79] MIPS: BCM63XX: add flash type detection
+Date: Tue, 12 Jun 2012 10:23:39 +0200
+Subject: [PATCH 2/8] MIPS: BCM63XX: Add flash type detection
 
 On BCM6358 and BCM6368 the attached flash type is exposed through a
 bootstrapping register. Use it for auto detecting the flash type on
 those and default to parallel flash for earlier SoCs.
 
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+Cc: linux-mips@linux-mips.org
+Cc: Maxime Bizon <mbizon@freebox.fr>
+Cc: Florian Fainelli <florian@openwrt.org>
+Cc: Kevin Cernekee <cernekee@gmail.com>
+Patchwork: https://patchwork.linux-mips.org/patch/3954/
+Reviewed-by: Florian Fainelli <florian@openwrt.org>
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 ---
  arch/mips/bcm63xx/dev-flash.c                      |   60 ++++++++++++++++++--
  .../include/asm/mach-bcm63xx/bcm63xx_dev_flash.h   |    6 ++
@@ -16,15 +23,15 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -6,6 +6,7 @@
-  * for more details.
+@@ -7,6 +7,7 @@
   *
-  * Copyright (C) 2009 Florian Fainelli <florian@openwrt.org>
+  * Copyright (C) 2008 Maxime Bizon <mbizon@freebox.fr>
+  * Copyright (C) 2008 Florian Fainelli <florian@openwrt.org>
 + * Copyright (C) 2012 Jonas Gorski <jonas.gorski@gmail.com>
   */
  
  #include <linux/init.h>
-@@ -53,16 +54,63 @@ static struct platform_device mtd_dev =
+@@ -54,16 +55,63 @@ static struct platform_device mtd_dev =
  	},
  };
  
@@ -90,7 +97,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +		pr_warn("unsupported NAND flash detected\n");
 +		return -ENODEV;
 +	default:
-+		pr_err("flash detection failed for BCM%x: %d",
++		pr_err("flash detection failed for BCM%x: %d\n",
 +		       bcm63xx_get_cpu_id(), flash_type);
 +		return -ENODEV;
 +	}
@@ -112,7 +119,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #endif /* __BCM63XX_FLASH_H */
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -508,6 +508,15 @@
+@@ -507,6 +507,15 @@
  #define GPIO_BASEMODE_6368_MASK		0x7
  /* those bits must be kept as read in gpio basemode register*/
  
