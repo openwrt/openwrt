@@ -47,53 +47,62 @@ static void ag71xx_mdio_dump_regs(struct ag71xx_mdio *am)
 		ag71xx_mdio_rr(am, AG71XX_REG_MII_IND));
 }
 
+static int ag71xx_mdio_wait_busy(struct ag71xx_mdio *am)
+{
+	int i;
+
+	for (i = 0; i < AG71XX_MDIO_RETRY; i++) {
+		u32 busy;
+
+		udelay(AG71XX_MDIO_DELAY);
+
+		busy = ag71xx_mdio_rr(am, AG71XX_REG_MII_IND);
+		if (!busy)
+			return 0;
+
+		udelay(AG71XX_MDIO_DELAY);
+	}
+
+	pr_err("%s: MDIO operation timed out\n", am->mii_bus->name);
+
+	return -ETIMEDOUT;
+}
+
 int ag71xx_mdio_mii_read(struct ag71xx_mdio *am, int addr, int reg)
 {
+	int err;
 	int ret;
-	int i;
+
+	err = ag71xx_mdio_wait_busy(am);
+	if (err)
+		return 0xffff;
 
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_ADDR,
 			((addr & 0xff) << MII_ADDR_SHIFT) | (reg & 0xff));
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CMD, MII_CMD_READ);
 
-	i = AG71XX_MDIO_RETRY;
-	while (ag71xx_mdio_rr(am, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
-		if (i-- == 0) {
-			pr_err("%s: mii_read timed out\n", am->mii_bus->name);
-			ret = 0xffff;
-			goto out;
-		}
-		udelay(AG71XX_MDIO_DELAY);
-	}
+	err = ag71xx_mdio_wait_busy(am);
+	if (err)
+		return 0xffff;
 
 	ret = ag71xx_mdio_rr(am, AG71XX_REG_MII_STATUS) & 0xffff;
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
 
 	DBG("mii_read: addr=%04x, reg=%04x, value=%04x\n", addr, reg, ret);
 
-out:
 	return ret;
 }
 
 void ag71xx_mdio_mii_write(struct ag71xx_mdio *am, int addr, int reg, u16 val)
 {
-	int i;
-
 	DBG("mii_write: addr=%04x, reg=%04x, value=%04x\n", addr, reg, val);
 
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_ADDR,
 			((addr & 0xff) << MII_ADDR_SHIFT) | (reg & 0xff));
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CTRL, val);
 
-	i = AG71XX_MDIO_RETRY;
-	while (ag71xx_mdio_rr(am, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
-		if (i-- == 0) {
-			pr_err("%s: mii_write timed out\n", am->mii_bus->name);
-			break;
-		}
-		udelay(AG71XX_MDIO_DELAY);
-	}
+	ag71xx_mdio_wait_busy(am);
 }
 
 static int ag71xx_mdio_reset(struct mii_bus *bus)
