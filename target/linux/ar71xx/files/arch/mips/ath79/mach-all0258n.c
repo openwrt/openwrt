@@ -8,9 +8,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ath79/ath79.h>
 
 #include "dev-eth.h"
@@ -32,51 +29,6 @@
 
 /* showed up in the original firmware's bootlog */
 #define ALL0258N_SEC_PHYMASK BIT(3)
-
-/*
- * from U-Boot bootargs of original firmware:
- * mtdparts=ar7240-nor0:256k(u-boot),64k(u-boot-env),320k(custom),1024k(kernel),4928k(rootfs),1536k(failsafe),64k(ART)
- * we use a more OpenWrt-friendly layout now:
- * mtdparts=ar7240-nor0:256k(u-boot),64k(u-boot-env),896k(kernel),5376k(rootfs),1536k(failsafe),64k(ART)
- */
-static struct mtd_partition all0258n_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x040000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "u-boot-env",
-		.offset		= 0x040000,
-		.size		= 0x010000,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x050000,
-		.size		= 0x0E0000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x130000,
-		.size		= 0x540000,
-	}, {
-		.name		= "failsafe",
-		.offset		= 0x670000,
-		.size		= 0x180000,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x050000,
-		.size		= 0x620000,
-	}, {
-		.name		= "art",
-		.offset		= 0x7F0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}
-};
-
-static struct flash_platform_data all0258n_flash_data = {
-	.parts		= all0258n_partitions,
-	.nr_parts	= ARRAY_SIZE(all0258n_partitions),
-};
 
 static struct gpio_led all0258n_leds_gpio[] __initdata = {
 	{
@@ -110,7 +62,7 @@ static void __init all0258n_setup(void)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f7f0000);
 	u8 *ee =  (u8 *) KSEG1ADDR(0x1f7f1000);
 
-	ath79_register_m25p80(&all0258n_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(all0258n_leds_gpio),
 				 all0258n_leds_gpio);
