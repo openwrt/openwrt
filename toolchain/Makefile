@@ -38,13 +38,13 @@ $(curdir)/builddirs-install:=$($(curdir)/builddirs-compile)
 
 # builddir dependencies
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
-  $(curdir)/$(LIBC)/prepare:=$(curdir)/kernel-headers/install
   $(curdir)/gcc/minimal/compile:=$(curdir)/binutils/install
   $(curdir)/kernel-headers/install:=$(curdir)/gcc/minimal/install
   $(curdir)/gcc/initial/prepare:=$(curdir)/gcc/minimal/prepare
   $(curdir)/gcc/final/prepare:=$(curdir)/gcc/initial/prepare
 
   ifdef CONFIG_USE_UCLIBC
+    $(curdir)/$(LIBC)/headers/compile:=$(curdir)/kernel-headers/install
     $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/headers/install
     $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/install
     $(curdir)/gcc/final/compile:=$(curdir)/$(LIBC)/install
@@ -52,6 +52,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
     $(curdir)/$(LIBC)/prepare:=$(curdir)/$(LIBC)/headers/prepare
     $(curdir)/$(LIBC)/utils/prepare:=$(curdir)/$(LIBC)/headers/prepare
   else
+    $(curdir)/$(LIBC)/prepare:=$(curdir)/kernel-headers/install
     $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/install
     $(curdir)/$(LIBC)/install:=$(curdir)/gcc/final/install
     $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/prepare
