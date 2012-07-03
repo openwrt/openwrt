@@ -35,12 +35,14 @@ install_bin() { # <file> [ <symlink> ... ]
 
 pivot() { # <new_root> <old_root>
 	mount | grep "on $1 type" 2>&- 1>&- || mount -o bind $1 $1
-	mkdir -p $1$2 $1/proc $1/dev $1/tmp $1/overlay && \
+	mkdir -p $1$2 $1/proc $1/sys $1/dev $1/tmp $1/overlay && \
 	mount -o move /proc $1/proc && \
 	pivot_root $1 $1$2 || {
         umount $1 $1
 		return 1
 	}
+
+	mount -o move $2/sys /sys
 	mount -o move $2/dev /dev
 	mount -o move $2/tmp /tmp
 	mount -o move $2/overlay /overlay 2>&-
@@ -83,6 +85,8 @@ kill_remaining() { # [ <signal> ]
 
 	local stat
 	for stat in /proc/[0-9]*/stat; do
+		[ -f "$stat" ] || continue
+
 		local pid name state ppid rest
 		read pid name state ppid rest < $stat
 		name="${name#(}"; name="${name%)}"
