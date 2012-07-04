@@ -312,8 +312,9 @@ enable_mac80211() {
 		}
 	}
 
-	config_get ath9k_chanbw "$device" ath9k_chanbw
-	[ -n "$ath9k_chanbw" -a -d /sys/kernel/debug/ieee80211/$phy/ath9k ] && echo "$ath9k_chanbw" > /sys/kernel/debug/ieee80211/$phy/ath9k/chanbw
+	config_get chanbw "$device" chanbw
+	[ -n "$chanbw" -a -d /sys/kernel/debug/ieee80211/$phy/ath9k ] && echo "$chanbw" > /sys/kernel/debug/ieee80211/$phy/ath9k/chanbw
+	[ -n "$chanbw" -a -d /sys/kernel/debug/ieee80211/$phy/ath5k ] && echo "$chanbw" > /sys/kernel/debug/ieee80211/$phy/ath5k/bwmode
 
 	[ "$channel" = "auto" -o "$channel" = "0" ] || {
 		fixed=1
