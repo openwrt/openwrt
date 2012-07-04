@@ -47,16 +47,19 @@
 
 			tso@40088000 {
 				reg = <0x40088000 0x1c>;
+				interrupts = <7>;
 			};
 
 			i2s@4008c000 {
 				compatible = "moschip,mcs814x-i2s";
 				reg = <0x4008c000 0x18>;
+				interrupts = <8>;
 			};
 
 			ipsec@40094000 {
 				compatible = "moschip,mcs814x-ipsec";
 				reg = <0x40094000 0x1d8>;
+				interrupts = <16>;
 			};
 
 			rng@4009c000 {
@@ -70,6 +73,7 @@
 
 			list-proc@400ac0c0 {
 				reg = <0x400ac0c0 0x38>;
+				interrupts = <19 27>;		// done, error
 			};
 
 			pci@400b0000 {
@@ -95,6 +99,7 @@
 			gpio: gpio@400d0000 {
 				compatible = "moschip,mcs814x-gpio";
 				reg = <0x400d0000 0x670>;
+				interrupts = <10>;
 				#gpio-cells = <2>;
 				gpio-controller;
 				num-gpios = <20>;
@@ -127,6 +132,7 @@
 
 			m2m@400e8000 {
 				reg = <0x400e8000 0x24>;
+				interrupts = <17>;
 			};
 
 			eth-filters@400ec000 {
@@ -192,6 +198,7 @@
 			usb3: otg@400ff000 {
 				compatible = "moschip,msc814x-otg", "usb-otg";
 				reg = <0x400ff000 0x1000>;
+				interrupts = <13>;
 			};
 		};
 
