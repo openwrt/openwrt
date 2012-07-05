@@ -44,7 +44,7 @@
 
 #define SYSDBG_SYSCTL		0x08
 #define  SYSCTL_EMAC		(1 << 0)
-#define  SYSCTL_EPHY		(1 << 1) /* active low */
+#define  SYSCTL_EPHY		(1 << 0) /* active low */
 #define  SYSCTL_CIPHER		(1 << 16)
 
 #define SYSDBG_PLL_CTL		0x3C
