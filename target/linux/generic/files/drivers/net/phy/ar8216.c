@@ -734,6 +734,7 @@ ar8327_hw_init(struct ar8216_priv *priv)
 {
 	struct ar8327_platform_data *pdata;
 	struct ar8327_led_cfg *led_cfg;
+	struct mii_bus *bus;
 	u32 pos, new_pos;
 	u32 t;
 	int i;
@@ -770,8 +771,19 @@ ar8327_hw_init(struct ar8216_priv *priv)
 		priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
 	}
 
-	for (i = 0; i < AR8327_NUM_PHYS; i++)
+	bus = priv->phy->bus;
+	for (i = 0; i < AR8327_NUM_PHYS; i++) {
 		ar8327_phy_fixup(priv, i);
+
+		/* start aneg on the PHY */
+		mdiobus_write(bus, i, MII_ADVERTISE, ADVERTISE_ALL |
+						     ADVERTISE_PAUSE_CAP |
+						     ADVERTISE_PAUSE_ASYM);
+		mdiobus_write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
+		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
+	}
+
+	msleep(1000);
 
 	return 0;
 }
