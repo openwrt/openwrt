@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/dev-wmac.c
 +++ b/arch/mips/ath79/dev-wmac.c
-@@ -121,6 +121,137 @@ static void ar934x_wmac_setup(void)
+@@ -139,6 +139,137 @@ static void qca955x_wmac_setup(void)
  		ath79_wmac_data.is_clk_25mhz = true;
  }
  
@@ -149,9 +149,9 @@
  #endif /* _ATH79_DEV_WMAC_H */
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-@@ -102,6 +102,14 @@
- #define AR934X_EHCI_BASE	0x1b000000
- #define AR934X_EHCI_SIZE	0x1000
+@@ -123,6 +123,14 @@
+ #define QCA955X_GMAC_BASE	(AR71XX_APB_BASE + 0x00070000)
+ #define QCA955X_GMAC_SIZE	0x40
  
 +#define AR9300_OTP_BASE		0x14000
 +#define AR9300_OTP_STATUS	0x15f18
