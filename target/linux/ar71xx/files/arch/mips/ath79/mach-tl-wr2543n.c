@@ -112,6 +112,8 @@ static void __init tl_wr2543n_setup(void)
 					ARRAY_SIZE(tl_wr2543n_gpio_keys),
 					tl_wr2543n_gpio_keys);
 	ath79_register_usb();
+
+	ap9x_pci_setup_wmac_led_pin(0, 0);
 	ap91_pci_init(eeprom, mac);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac, -1);
