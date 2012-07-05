@@ -22,6 +22,7 @@
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-m25p80.h"
+#include "dev-wmac.h"
 #include "machtypes.h"
 
 #define OM2P_GPIO_LED_POWER	0
@@ -36,6 +37,14 @@
 #define OM2P_KEYS_DEBOUNCE_INTERVAL	(3 * OM2P_KEYS_POLL_INTERVAL)
 
 #define OM2P_WAN_PHYMASK	BIT(4)
+
+#define OM2P_LC_GPIO_LED_POWER	1
+#define OM2P_LC_GPIO_LED_GREEN	15
+#define OM2P_LC_GPIO_LED_RED	16
+#define OM2P_LC_GPIO_LED_YELLOW	0
+#define OM2P_LC_GPIO_LED_LAN	13
+#define OM2P_LC_GPIO_LED_WAN	17
+#define OM2P_LC_GPIO_BTN_RESET	12
 
 static struct flash_platform_data om2p_flash_data = {
 	.type = "s25sl12800",
@@ -114,3 +123,54 @@ static void __init om2p_setup(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_OM2P, "OM2P", "OpenMesh OM2P", om2p_setup);
+
+
+static struct flash_platform_data om2p_lc_flash_data = {
+	.type = "s25sl12800",
+};
+
+static void __init om2p_lc_setup(void)
+{
+	u8 *mac1 = (u8 *)KSEG1ADDR(0x1ffc0000);
+	u8 *mac2 = (u8 *)KSEG1ADDR(0x1ffc0000 + ETH_ALEN);
+	u8 *art = (u8 *)KSEG1ADDR(0x1ffc1000);
+	u32 t;
+
+	ath79_gpio_function_disable(AR933X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				    AR933X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				    AR933X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				    AR933X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				    AR933X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
+
+	t = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
+	t |= AR933X_BOOTSTRAP_MDIO_GPIO_EN;
+	ath79_reset_wr(AR933X_RESET_REG_BOOTSTRAP, t);
+
+	ath79_register_m25p80(&om2p_lc_flash_data);
+
+	om2p_leds_gpio[0].gpio = OM2P_LC_GPIO_LED_POWER;
+	om2p_leds_gpio[1].gpio = OM2P_LC_GPIO_LED_RED;
+	om2p_leds_gpio[2].gpio = OM2P_LC_GPIO_LED_YELLOW;
+	om2p_leds_gpio[3].gpio = OM2P_LC_GPIO_LED_GREEN;
+	om2p_leds_gpio[4].gpio = OM2P_LC_GPIO_LED_LAN;
+	om2p_leds_gpio[5].gpio = OM2P_LC_GPIO_LED_WAN;
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(om2p_leds_gpio),
+				 om2p_leds_gpio);
+
+	om2p_gpio_keys[0].gpio = OM2P_LC_GPIO_BTN_RESET;
+	ath79_register_gpio_keys_polled(-1, OM2P_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(om2p_gpio_keys),
+					om2p_gpio_keys);
+
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac1, 0);
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac2, 0);
+
+	ath79_register_mdio(0, 0x0);
+
+	ath79_register_eth(0);
+	ath79_register_eth(1);
+
+	ath79_register_wmac(art, NULL);
+}
+
+MIPS_MACHINE(ATH79_MACH_OM2P_LC, "OM2P-LC", "OpenMesh OM2P LC", om2p_lc_setup);

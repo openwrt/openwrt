@@ -63,7 +63,8 @@ nbg460n_550n_550nh)
 	ucidef_set_led_wlan "wlan" "WLAN" "nbg460n:green:wlan" "phy0tpt"
 	;;
 
-om2p)
+om2p | \
+om2p-lc)
 	ucidef_set_led_netdev "port1" "port1" "om2p:blue:wan" "eth0"
 	ucidef_set_led_netdev "port2" "port2" "om2p:blue:lan" "eth1"
 	;;
