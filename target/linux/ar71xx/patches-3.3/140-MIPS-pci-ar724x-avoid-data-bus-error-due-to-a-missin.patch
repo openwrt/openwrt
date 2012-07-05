@@ -1,0 +1,78 @@
+From 9cfa64ddaba49975b420ce5e5020efc3301061ac Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 26 Jun 2012 10:19:46 +0200
+Subject: [PATCH 01/34] MIPS: pci-ar724x: avoid data bus error due to a missing PCIe module
+
+If the controller has no PCIe module attached,
+accessing of the device configuration space
+causes a data bus error. Avoid this by checking
+the status of the PCIe link in advance, and
+indicate an error if the link is down.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/pci/pci-ar724x.c |   22 ++++++++++++++++++++++
+ 1 files changed, 22 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/pci/pci-ar724x.c
++++ b/arch/mips/pci/pci-ar724x.c
+@@ -23,9 +23,12 @@
+ #define AR724X_PCI_MEM_BASE	0x10000000
+ #define AR724X_PCI_MEM_SIZE	0x08000000
+ 
++#define AR724X_PCI_REG_RESET		0x18
+ #define AR724X_PCI_REG_INT_STATUS	0x4c
+ #define AR724X_PCI_REG_INT_MASK		0x50
+ 
++#define AR724X_PCI_RESET_LINK_UP	BIT(0)
++
+ #define AR724X_PCI_INT_DEV0		BIT(14)
+ 
+ #define AR724X_PCI_IRQ_COUNT		1
+@@ -38,6 +41,15 @@ static void __iomem *ar724x_pci_ctrl_bas
+ 
+ static u32 ar724x_pci_bar0_value;
+ static bool ar724x_pci_bar0_is_cached;
++static bool ar724x_pci_link_up;
++
++static inline bool ar724x_pci_check_link(void)
++{
++	u32 reset;
++
++	reset = __raw_readl(ar724x_pci_ctrl_base + AR724X_PCI_REG_RESET);
++	return reset & AR724X_PCI_RESET_LINK_UP;
++}
+ 
+ static int ar724x_pci_read(struct pci_bus *bus, unsigned int devfn, int where,
+ 			    int size, uint32_t *value)
+@@ -46,6 +58,9 @@ static int ar724x_pci_read(struct pci_bu
+ 	void __iomem *base;
+ 	u32 data;
+ 
++	if (!ar724x_pci_link_up)
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
+ 	if (devfn)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+ 
+@@ -96,6 +111,9 @@ static int ar724x_pci_write(struct pci_b
+ 	u32 data;
+ 	int s;
+ 
++	if (!ar724x_pci_link_up)
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
+ 	if (devfn)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+ 
+@@ -280,6 +298,10 @@ int __init ar724x_pcibios_init(int irq)
+ 	if (ar724x_pci_ctrl_base == NULL)
+ 		goto err_unmap_devcfg;
+ 
++	ar724x_pci_link_up = ar724x_pci_check_link();
++	if (!ar724x_pci_link_up)
++		pr_warn("ar724x: PCIe link is down\n");
++
+ 	ar724x_pci_irq_init(irq);
+ 	register_pci_controller(&ar724x_pci_controller);
+ 

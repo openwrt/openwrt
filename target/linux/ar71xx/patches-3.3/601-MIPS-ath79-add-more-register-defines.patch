@@ -1,11 +1,8 @@
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-@@ -20,7 +20,13 @@
- #include <linux/io.h>
+@@ -21,6 +21,10 @@
  #include <linux/bitops.h>
  
-+#define AR71XX_PCI_MEM_BASE	0x10000000
-+#define AR71XX_PCI_MEM_SIZE	0x08000000
  #define AR71XX_APB_BASE		0x18000000
 +#define AR71XX_GE0_BASE		0x19000000
 +#define AR71XX_GE0_SIZE		0x10000
@@ -14,16 +11,16 @@
  #define AR71XX_EHCI_BASE	0x1b000000
  #define AR71XX_EHCI_SIZE	0x1000
  #define AR71XX_OHCI_BASE	0x1c000000
-@@ -40,6 +46,8 @@
+@@ -40,6 +44,8 @@
  #define AR71XX_PLL_SIZE		0x100
  #define AR71XX_RESET_BASE	(AR71XX_APB_BASE + 0x00060000)
  #define AR71XX_RESET_SIZE	0x100
 +#define AR71XX_MII_BASE		(AR71XX_APB_BASE + 0x00070000)
 +#define AR71XX_MII_SIZE		0x100
  
- #define AR7240_USB_CTRL_BASE	(AR71XX_APB_BASE + 0x00030000)
- #define AR7240_USB_CTRL_SIZE	0x100
-@@ -56,11 +64,15 @@
+ #define AR71XX_PCI_MEM_BASE	0x10000000
+ #define AR71XX_PCI_MEM_SIZE	0x07000000
+@@ -82,11 +88,15 @@
  
  #define AR933X_UART_BASE	(AR71XX_APB_BASE + 0x00020000)
  #define AR933X_UART_SIZE	0x14
@@ -39,7 +36,7 @@
  #define AR934X_WMAC_BASE	(AR71XX_APB_BASE + 0x00100000)
  #define AR934X_WMAC_SIZE	0x20000
  #define AR934X_EHCI_BASE	0x1b000000
-@@ -120,6 +132,9 @@
+@@ -146,6 +156,9 @@
  #define AR71XX_AHB_DIV_SHIFT		20
  #define AR71XX_AHB_DIV_MASK		0x7
  
@@ -49,7 +46,7 @@
  #define AR724X_PLL_REG_CPU_CONFIG	0x00
  #define AR724X_PLL_REG_PCIE_CONFIG	0x18
  
-@@ -132,6 +147,8 @@
+@@ -158,6 +171,8 @@
  #define AR724X_DDR_DIV_SHIFT		22
  #define AR724X_DDR_DIV_MASK		0x3
  
@@ -58,7 +55,7 @@
  #define AR913X_PLL_REG_CPU_CONFIG	0x00
  #define AR913X_PLL_REG_ETH_CONFIG	0x04
  #define AR913X_PLL_REG_ETH0_INT_CLOCK	0x14
-@@ -144,6 +161,9 @@
+@@ -170,6 +185,9 @@
  #define AR913X_AHB_DIV_SHIFT		19
  #define AR913X_AHB_DIV_MASK		0x1
  
@@ -68,7 +65,7 @@
  #define AR933X_PLL_CPU_CONFIG_REG	0x00
  #define AR933X_PLL_CLOCK_CTRL_REG	0x08
  
-@@ -165,6 +185,7 @@
+@@ -191,6 +209,7 @@
  #define AR934X_PLL_CPU_CONFIG_REG		0x00
  #define AR934X_PLL_DDR_CONFIG_REG		0x04
  #define AR934X_PLL_CPU_DDR_CLK_CTRL_REG		0x08
@@ -76,7 +73,7 @@
  
  #define AR934X_PLL_CPU_CONFIG_NFRAC_SHIFT	0
  #define AR934X_PLL_CPU_CONFIG_NFRAC_MASK	0x3f
-@@ -285,16 +306,50 @@
+@@ -311,16 +330,50 @@
  #define AR913X_RESET_USB_HOST		BIT(5)
  #define AR913X_RESET_USB_PHY		BIT(4)
  
@@ -127,7 +124,7 @@
  #define AR933X_BOOTSTRAP_REF_CLK_40	BIT(0)
  
  #define AR934X_BOOTSTRAP_SW_OPTION8	BIT(23)
-@@ -399,10 +454,138 @@
+@@ -425,10 +478,138 @@
  #define AR71XX_GPIO_REG_INT_ENABLE	0x24
  #define AR71XX_GPIO_REG_FUNC		0x28
  
