@@ -162,6 +162,9 @@ ar71xx_board_detect() {
 	*AP121-MINI)
 		name="ap121-mini"
 		;;
+	*"AP136 reference board")
+		name="ap136"
+		;;
 	*AP81)
 		name="ap81"
 		;;
