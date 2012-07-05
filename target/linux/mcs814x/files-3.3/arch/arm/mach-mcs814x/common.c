@@ -125,6 +125,8 @@ static void mcs814x_eth_init(void)
 	intspec = of_get_property(np, "nuport-mac,link-activity", NULL);
 	if (intspec)
 		mcs814x_eth_led_cfg_set(be32_to_cpup(intspec));
+
+	of_put_node(np);
 }
 
 void __init mcs814x_init_machine(void)
