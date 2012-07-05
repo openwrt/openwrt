@@ -33,6 +33,9 @@ get_status_led() {
 	alfa-nx)
 		status_led="alfa:green:led_8"
 		;;
+	ap136)
+		status_led="ap136:green:status"
+		;;
 	ap81)
 		status_led="ap81:green:status"
 		;;
