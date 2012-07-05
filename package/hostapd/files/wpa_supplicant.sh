@@ -63,11 +63,10 @@ wpa_supplicant_setup_vif() {
 				key_mgmt='WPA-NONE'
 				driver='wext'
 			}
-			config_get_bool usepassphrase "$vif" usepassphrase 1
-			if [ "$usepassphrase" = "1" ]; then
-				passphrase="psk=\"${key}\""
-			else
+			if [ ${#key} -eq 64 ]; then
 				passphrase="psk=${key}"
+			else
+				passphrase="psk=\"${key}\""
 			fi
 			case "$enc" in
 				*psk2*)
