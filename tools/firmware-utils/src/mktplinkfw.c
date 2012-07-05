@@ -79,7 +79,10 @@ struct fw_header {
 	uint32_t	rootfs_len;	/* rootfs data length */
 	uint32_t	boot_ofs;	/* bootloader data offset */
 	uint32_t	boot_len;	/* bootloader data length */
-	uint8_t		pad[360];
+	uint16_t	ver_hi;
+	uint16_t	ver_mid;
+	uint16_t	ver_lo;
+	uint8_t		pad[354];
 } __attribute__ ((packed));
 
 struct flash_layout {
@@ -104,6 +107,7 @@ static char *ofname;
 static char *progname;
 static char *vendor = "TP-LINK Technologies";
 static char *version = "ver. 1.0";
+static char *fw_ver = "0.0.0";
 
 static char *board_id;
 static struct board_info *board;
@@ -113,6 +117,9 @@ static char *opt_hw_id;
 static uint32_t hw_id;
 static char *opt_hw_rev;
 static uint32_t hw_rev;
+static int fw_ver_lo;
+static int fw_ver_mid;
+static int fw_ver_hi;
 static struct file_info kernel_info;
 static uint32_t kernel_la = 0;
 static uint32_t kernel_ep = 0;
@@ -368,6 +375,7 @@ static void usage(int status)
 "  -j              add jffs2 end-of-filesystem markers\n"
 "  -N <vendor>     set image vendor to <vendor>\n"
 "  -V <version>    set image version to <version>\n"
+"  -v <version>    set firmware version to <version>\n"
 "  -i <file>       inspect given firmware file <file>\n"
 "  -x              extract kernel and rootfs while inspecting (requires -i)\n"
 "  -h              show this screen\n"
@@ -545,6 +553,12 @@ static int check_options(void)
 		return -1;
 	}
 
+	ret = sscanf(fw_ver, "%d.%d.%d", &fw_ver_hi, &fw_ver_mid, &fw_ver_lo);
+	if (ret != 3) {
+		ERR("invalid firmware version '%s'", fw_ver);
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -574,6 +588,10 @@ static void fill_header(char *buf, int len)
 		hdr->rootfs_ofs = htonl(rootfs_ofs);
 		hdr->rootfs_len = htonl(rootfs_info.file_size);
 	}
+
+	hdr->ver_hi = htons(fw_ver_hi);
+	hdr->ver_mid = htons(fw_ver_mid);
+	hdr->ver_lo = htons(fw_ver_lo);
 
 	get_md5(buf, len, hdr->md5sum1);
 }
@@ -926,7 +944,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xhsj");
+		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xhsjv:");
 		if (c == -1)
 			break;
 
@@ -954,6 +972,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'V':
 			version = optarg;
+			break;
+		case 'v':
+			fw_ver = optarg;
 			break;
 		case 'N':
 			vendor = optarg;
