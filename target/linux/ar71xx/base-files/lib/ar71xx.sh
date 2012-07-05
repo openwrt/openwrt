@@ -225,6 +225,9 @@ ar71xx_board_detect() {
 	*OM2P)
 		name="om2p"
 		;;
+	*"OM2P LC")
+		name="om2p-lc"
+		;;
 	*PB42)
 		name="pb42"
 		;;
