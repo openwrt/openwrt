@@ -8,7 +8,7 @@
  
  u32 ath79_cpu_freq;
  EXPORT_SYMBOL_GPL(ath79_cpu_freq);
-@@ -107,3 +108,16 @@ void ath79_device_reset_clear(u32 mask)
+@@ -109,3 +110,16 @@ void ath79_device_reset_clear(u32 mask)
  	spin_unlock_irqrestore(&ath79_device_reset_lock, flags);
  }
  EXPORT_SYMBOL_GPL(ath79_device_reset_clear);
@@ -27,7 +27,7 @@
 +
 --- a/arch/mips/include/asm/mach-ath79/ath79.h
 +++ b/arch/mips/include/asm/mach-ath79/ath79.h
-@@ -126,4 +126,7 @@ static inline u32 ath79_reset_rr(unsigne
+@@ -137,4 +137,7 @@ static inline u32 ath79_reset_rr(unsigne
  void ath79_device_reset_set(u32 mask);
  void ath79_device_reset_clear(u32 mask);
  

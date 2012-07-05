@@ -1,6 +1,6 @@
 --- a/arch/mips/include/asm/mach-ath79/ath79.h
 +++ b/arch/mips/include/asm/mach-ath79/ath79.h
-@@ -125,6 +125,7 @@ static inline u32 ath79_reset_rr(unsigne
+@@ -136,6 +136,7 @@ static inline u32 ath79_reset_rr(unsigne
  
  void ath79_device_reset_set(u32 mask);
  void ath79_device_reset_clear(u32 mask);
@@ -10,7 +10,7 @@
  void ath79_flash_release(void);
 --- a/arch/mips/ath79/common.c
 +++ b/arch/mips/ath79/common.c
-@@ -109,6 +109,32 @@ void ath79_device_reset_clear(u32 mask)
+@@ -111,6 +111,32 @@ void ath79_device_reset_clear(u32 mask)
  }
  EXPORT_SYMBOL_GPL(ath79_device_reset_clear);
  

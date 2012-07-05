@@ -154,7 +154,8 @@ void __init ath79_register_mdio(unsigned int id, u32 phy_mask)
 
 	if (ath79_soc == ATH79_SOC_AR9341 ||
 	    ath79_soc == ATH79_SOC_AR9342 ||
-	    ath79_soc == ATH79_SOC_AR9344)
+	    ath79_soc == ATH79_SOC_AR9344 ||
+	    ath79_soc == ATH79_SOC_QCA9558)
 		max_id = 1;
 	else
 		max_id = 0;
@@ -175,6 +176,7 @@ void __init ath79_register_mdio(unsigned int id, u32 phy_mask)
 	case ATH79_SOC_AR9341:
 	case ATH79_SOC_AR9342:
 	case ATH79_SOC_AR9344:
+	case ATH79_SOC_QCA9558:
 		if (id == 0) {
 			mdio_dev = &ath79_mdio0_device;
 			mdio_data = &ath79_mdio0_data;
@@ -215,6 +217,7 @@ void __init ath79_register_mdio(unsigned int id, u32 phy_mask)
 	case ATH79_SOC_AR9341:
 	case ATH79_SOC_AR9342:
 	case ATH79_SOC_AR9344:
+	case ATH79_SOC_QCA9558:
 		if (id == 1)
 			mdio_data->builtin_switch = 1;
 		mdio_data->is_ar934x = 1;
@@ -504,6 +507,7 @@ static void __init ath79_init_eth_pll_data(unsigned int id)
 	case ATH79_SOC_AR9341:
 	case ATH79_SOC_AR9342:
 	case ATH79_SOC_AR9344:
+	case ATH79_SOC_QCA9558:
 		pll_10 = AR934X_PLL_VAL_10;
 		pll_100 = AR934X_PLL_VAL_100;
 		pll_1000 = AR934X_PLL_VAL_1000;
@@ -568,6 +572,7 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 		case ATH79_SOC_AR9341:
 		case ATH79_SOC_AR9342:
 		case ATH79_SOC_AR9344:
+		case ATH79_SOC_QCA9558:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_GMII:
@@ -616,6 +621,7 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 		case ATH79_SOC_AR9341:
 		case ATH79_SOC_AR9342:
 		case ATH79_SOC_AR9344:
+		case ATH79_SOC_QCA9558:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_GMII:
@@ -822,6 +828,7 @@ void __init ath79_register_eth(unsigned int id)
 	case ATH79_SOC_AR9341:
 	case ATH79_SOC_AR9342:
 	case ATH79_SOC_AR9344:
+	case ATH79_SOC_QCA9558:
 		if (id == 0) {
 			pdata->reset_bit = AR934X_RESET_GE0_MAC |
 					   AR934X_RESET_GE0_MDIO;
@@ -879,6 +886,7 @@ void __init ath79_register_eth(unsigned int id)
 		case ATH79_SOC_AR9341:
 		case ATH79_SOC_AR9342:
 		case ATH79_SOC_AR9344:
+		case ATH79_SOC_QCA9558:
 			if (id == 0)
 				pdata->mii_bus_dev = &ath79_mdio0_device.dev;
 			else
