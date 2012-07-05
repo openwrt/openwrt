@@ -1,0 +1,21 @@
+From 01dbfe17b8ff628b6e2b3c75e1fc8c11d4cca644 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Thu, 28 Jun 2012 19:19:58 +0200
+Subject: [PATCH 03/34] MIPS: pci-ar71xx: fix AR71XX_PCI_MEM_SIZE
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/pci/pci-ar71xx.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/pci/pci-ar71xx.c
++++ b/arch/mips/pci/pci-ar71xx.c
+@@ -24,7 +24,7 @@
+ #include <asm/mach-ath79/pci.h>
+ 
+ #define AR71XX_PCI_MEM_BASE	0x10000000
+-#define AR71XX_PCI_MEM_SIZE	0x08000000
++#define AR71XX_PCI_MEM_SIZE	0x07000000
+ 
+ #define AR71XX_PCI_WIN0_OFFS		0x10000000
+ #define AR71XX_PCI_WIN1_OFFS		0x11000000
