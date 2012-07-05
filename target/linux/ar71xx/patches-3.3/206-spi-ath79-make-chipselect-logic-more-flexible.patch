@@ -1,18 +1,19 @@
-From 16535fe56591ff85acd6776f53ff515799b037ba Mon Sep 17 00:00:00 2001
+From 7008284716403237f6bc7d7590b3ed073555bd56 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Wed, 11 Jan 2012 22:25:11 +0100
-Subject: [PATCH 47/47] spi/ath79: make chipselect logic more flexible
+Subject: [PATCH 34/34] spi/ath79: make chipselect logic more flexible
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
  arch/mips/ath79/mach-ap121.c                       |    6 ++
+ arch/mips/ath79/mach-ap136.c                       |    6 ++
  arch/mips/ath79/mach-ap81.c                        |    6 ++
  arch/mips/ath79/mach-db120.c                       |    6 ++
  arch/mips/ath79/mach-pb44.c                        |    6 ++
  arch/mips/ath79/mach-ubnt-xm.c                     |    6 ++
  .../include/asm/mach-ath79/ath79_spi_platform.h    |    8 ++-
- drivers/spi/spi-ath79.c                            |   70 +++++++++++++-------
- 7 files changed, 82 insertions(+), 26 deletions(-)
+ drivers/spi/spi-ath79.c                            |   67 +++++++++++++-------
+ 8 files changed, 88 insertions(+), 23 deletions(-)
 
 --- a/arch/mips/ath79/mach-ap121.c
 +++ b/arch/mips/ath79/mach-ap121.c
@@ -32,6 +33,27 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		.max_speed_hz	= 25000000,
  		.modalias	= "mx25l1606e",
 +		.controller_data = &ap121_spi0_data,
+ 	}
+ };
+ 
+--- a/arch/mips/ath79/mach-ap136.c
++++ b/arch/mips/ath79/mach-ap136.c
+@@ -98,12 +98,18 @@ static struct gpio_keys_button ap136_gpi
+ 	},
+ };
+ 
++static struct ath79_spi_controller_data ap136_spi0_data = {
++	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
++	.cs_line = 0,
++};
++
+ static struct spi_board_info ap136_spi_info[] = {
+ 	{
+ 		.bus_num	= 0,
+ 		.chip_select	= 0,
+ 		.max_speed_hz	= 25000000,
+ 		.modalias	= "mx25l6405d",
++		.controller_data = &ap136_spi0_data,
  	}
  };
  

@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -71,6 +71,7 @@ obj-$(CONFIG_ATH79_MACH_TL_MR3020)	+= ma
+@@ -72,6 +72,7 @@ obj-$(CONFIG_ATH79_MACH_TL_MR3020)	+= ma
  obj-$(CONFIG_ATH79_MACH_TL_MR3X20)	+= mach-tl-mr3x20.o
  obj-$(CONFIG_ATH79_MACH_TL_WA901ND)	+= mach-tl-wa901nd.o
  obj-$(CONFIG_ATH79_MACH_TL_WA901ND_V2)	+= mach-tl-wa901nd-v2.o
@@ -10,7 +10,7 @@
  obj-$(CONFIG_ATH79_MACH_TL_WR841N_V1)	+= mach-tl-wr841n.o
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -416,6 +416,17 @@ config ATH79_MACH_TL_WA901ND_V2
+@@ -428,6 +428,17 @@ config ATH79_MACH_TL_WA901ND_V2
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_WMAC
  
@@ -30,7 +30,7 @@
  	select SOC_AR933X
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -65,6 +65,7 @@ enum ath79_mach_type {
+@@ -66,6 +66,7 @@ enum ath79_mach_type {
  	ATH79_MACH_TL_MR3420,		/* TP-LINK TL-MR3420 */
  	ATH79_MACH_TL_WA901ND,		/* TP-LINK TL-WA901ND */
  	ATH79_MACH_TL_WA901ND_V2,	/* TP-LINK TL-WA901ND v2 */

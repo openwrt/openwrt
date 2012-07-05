@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,17 +16,86 @@
+@@ -16,18 +16,87 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -10,6 +10,7 @@
 +	ATH79_MACH_AP113,		/* Atheros AP113 reference board */
  	ATH79_MACH_AP121,		/* Atheros AP121 reference board */
  	ATH79_MACH_AP121_MINI,		/* Atheros AP121-MINI reference board */
+ 	ATH79_MACH_AP136,		/* Atheros AP136 reference board */
  	ATH79_MACH_AP81,		/* Atheros AP81 reference board */
 +	ATH79_MACH_AP83,		/* Atheros AP83 */
 +	ATH79_MACH_AP96,		/* Atheros AP96 */
@@ -142,7 +143,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -28,6 +74,24 @@ config ATH79_MACH_AP81
+@@ -40,6 +86,24 @@ config ATH79_MACH_AP81
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros AP81 reference board.
  
@@ -167,7 +168,7 @@
  config ATH79_MACH_DB120
  	bool "Atheros DB120 reference board"
  	select SOC_AR934X
-@@ -42,6 +106,13 @@ config ATH79_MACH_DB120
+@@ -54,6 +118,13 @@ config ATH79_MACH_DB120
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros DB120 reference board.
  
@@ -181,7 +182,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -54,6 +125,382 @@ config ATH79_MACH_PB44
+@@ -66,6 +137,382 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -564,7 +565,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -67,6 +514,24 @@ config ATH79_MACH_UBNT_XM
+@@ -79,6 +526,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -589,7 +590,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -102,10 +567,6 @@ config SOC_QCA955X
+@@ -114,10 +579,6 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -600,7 +601,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -116,7 +577,14 @@ config ATH79_DEV_DSA
+@@ -128,7 +589,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -616,7 +617,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -141,4 +609,7 @@ config ATH79_NVRAM
+@@ -153,4 +621,7 @@ config ATH79_NVRAM
  config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
@@ -626,7 +627,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -36,8 +36,57 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
+@@ -36,9 +36,58 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
  #
  # Machines
  #
@@ -635,6 +636,7 @@
 +obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
 +obj-$(CONFIG_ATH79_MACH_AP113)		+= mach-ap113.o
  obj-$(CONFIG_ATH79_MACH_AP121)		+= mach-ap121.o
+ obj-$(CONFIG_ATH79_MACH_AP136)		+= mach-ap136.o
  obj-$(CONFIG_ATH79_MACH_AP81)		+= mach-ap81.o
 +obj-$(CONFIG_ATH79_MACH_AP83)		+= mach-ap83.o
 +obj-$(CONFIG_ATH79_MACH_AP96)		+= mach-ap96.o

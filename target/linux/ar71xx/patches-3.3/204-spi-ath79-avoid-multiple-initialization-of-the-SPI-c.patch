@@ -1,7 +1,7 @@
-From 47fdda225880ab0aaa8a75f61991a72fade591ab Mon Sep 17 00:00:00 2001
+From e63ceaa0c4f7be0498cd452981073d3ce8e7d1f5 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 9 Jan 2012 15:00:46 +0100
-Subject: [PATCH 45/47] spi/ath79: avoid multiple initialization of the SPI controller
+Subject: [PATCH 32/34] spi/ath79: avoid multiple initialization of the SPI controller
 
 Currently we are initializing the SPI controller in
 the chip select line function, and that function is
