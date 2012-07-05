@@ -126,6 +126,10 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	om2p)
+		platform_check_image_om2p "$magic_long" "$1" && return 0
+		return 1
+		;;
 	tl-mr11u | \
 	tl-mr3020 | \
 	tl-mr3220 | \
@@ -223,6 +227,9 @@ platform_do_upgrade() {
 		;;
 	all0258n )
 		platform_do_upgrade_all0258n "$ARGV"
+		;;
+	om2p)
+		platform_do_upgrade_om2p "$ARGV"
 		;;
 	*)
 		default_do_upgrade "$ARGV"
