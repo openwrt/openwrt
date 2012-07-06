@@ -219,7 +219,7 @@ static int uh_socket_bind(fd_set *serv_fds, int *max_fd,
 		*max_fd = max(*max_fd, sock);
 
 		l->fd.cb = uh_listener_cb;
-		uloop_fd_add(&l->fd, ULOOP_READ | ULOOP_WRITE);
+		uloop_fd_add(&l->fd, ULOOP_READ);
 
 		bound++;
 		continue;
@@ -539,7 +539,7 @@ static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
 		if ((cl = uh_client_add(new_fd, serv)) != NULL)
 		{
 			/* add client socket to global fdset */
-			uloop_fd_add(&cl->fd, ULOOP_READ | ULOOP_WRITE);
+			uloop_fd_add(&cl->fd, ULOOP_READ);
 
 #ifdef HAVE_TLS
 			/* setup client tls context */
@@ -567,6 +567,15 @@ static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
 			close(new_fd);
 		}
 	}
+}
+
+static void uh_pipe_cb(struct uloop_fd *u, unsigned int events)
+{
+	struct client *cl = container_of(u, struct client, pipe);
+
+	D("SRV: Client(%d) pipe(%d) readable\n", cl->fd.fd, cl->pipe.fd);
+
+	uh_client_cb(&cl->fd, ULOOP_WRITE);
 }
 
 static void uh_child_cb(struct uloop_process *p, int rv)
@@ -686,6 +695,15 @@ static void uh_client_cb(struct uloop_fd *u, unsigned int events)
 			return;
 		}
 
+		/* request handler spawned a pipe, register handler */
+		if (cl->pipe.fd)
+		{
+			D("SRV: Client(%d) pipe(%d) spawned\n", u->fd, cl->pipe.fd);
+
+			cl->pipe.cb = uh_pipe_cb;
+			uloop_fd_add(&cl->pipe, ULOOP_READ);
+		}
+
 		/* request handler spawned a child, register handler */
 		if (cl->proc.pid)
 		{
@@ -701,7 +719,6 @@ static void uh_client_cb(struct uloop_fd *u, unsigned int events)
 		/* header processing complete */
 		D("SRV: Client(%d) dispatched\n", u->fd);
 		cl->dispatched = true;
-		return;
 	}
 
 	if (!cl->cb(cl))

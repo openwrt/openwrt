@@ -530,6 +530,7 @@ bool uh_cgi_request(struct client *cl, struct path_info *pi,
 		memset(state, 0, sizeof(*state));
 
 		state->cl = cl;
+		state->cl->pipe.fd = rfd[0];
 		state->cl->proc.pid = child;
 
 		/* close unneeded pipe ends */
