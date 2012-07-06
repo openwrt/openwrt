@@ -126,7 +126,8 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	om2p)
+	om2p | \
+	om2p-lc)
 		platform_check_image_om2p "$magic_long" "$1" && return 0
 		return 1
 		;;
@@ -228,7 +229,8 @@ platform_do_upgrade() {
 	all0258n )
 		platform_do_upgrade_all0258n "$ARGV"
 		;;
-	om2p)
+	om2p | \
+	om2p-lc)
 		platform_do_upgrade_om2p "$ARGV"
 		;;
 	*)
