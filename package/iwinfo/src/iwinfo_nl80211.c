@@ -351,15 +351,18 @@ static int nl80211_freq2channel(int freq)
 	return (freq / 5) - 1000;
 }
 
-static int nl80211_channel2freq(int channel)
+static int nl80211_channel2freq(int channel, const char *band)
 {
 	if (channel == 14)
 		return 2484;
 
-	if (channel < 14)
+	if ((channel < 14) && (!band || band[0] != 'a'))
 		return (channel * 5) + 2407;
 
-	return (1000 + channel) * 5;
+	if (channel > 0)
+		return (1000 + channel) * 5;
+
+	return 0;
 }
 
 static char * nl80211_getval(const char *ifname, const char *buf, const char *key)
@@ -763,9 +766,9 @@ int nl80211_get_bssid(const char *ifname, char *buf)
 }
 
 
-static int nl80211_get_channel_cb(struct nl_msg *msg, void *arg)
+static int nl80211_get_frequency_cb(struct nl_msg *msg, void *arg)
 {
-	int *channel = arg;
+	int *freq = arg;
 	struct nlattr **attr = nl80211_parse(msg);
 	struct nlattr *binfo[NL80211_BSS_MAX + 1];
 
@@ -775,27 +778,27 @@ static int nl80211_get_channel_cb(struct nl_msg *msg, void *arg)
 
 	if (attr[NL80211_ATTR_BSS] &&
 	    !nla_parse_nested(binfo, NL80211_BSS_MAX,
-						  attr[NL80211_ATTR_BSS], bss_policy))
+	                      attr[NL80211_ATTR_BSS], bss_policy))
 	{
 		if (binfo[NL80211_BSS_FREQUENCY])
-			*channel =
-				nl80211_freq2channel(nla_get_u32(binfo[NL80211_BSS_FREQUENCY]));
+			*freq = nla_get_u32(binfo[NL80211_BSS_FREQUENCY]);
 	}
 
 	return NL_SKIP;
 }
 
-int nl80211_get_channel(const char *ifname, int *buf)
+int nl80211_get_frequency(const char *ifname, int *buf)
 {
-	char *res;
+	char *res, *channel;
 	struct nl80211_msg_conveyor *req;
 
 	*buf = 0;
 
 	if ((res = nl80211_hostapd_info(ifname)) &&
-	    (res = nl80211_getval(NULL, res, "channel")))
+	    (channel = nl80211_getval(NULL, res, "channel")))
 	{
-		*buf = atoi(res);
+		*buf = nl80211_channel2freq(atoi(channel),
+		                            nl80211_getval(NULL, res, "hw_mode"));
 	}
 	else
 	{
@@ -804,7 +807,7 @@ int nl80211_get_channel(const char *ifname, int *buf)
 
 		if (req)
 		{
-			nl80211_send(req, nl80211_get_channel_cb, buf);
+			nl80211_send(req, nl80211_get_frequency_cb, buf);
 			nl80211_free(req);
 		}
 	}
@@ -812,11 +815,11 @@ int nl80211_get_channel(const char *ifname, int *buf)
 	return (*buf == 0) ? -1 : 0;
 }
 
-int nl80211_get_frequency(const char *ifname, int *buf)
+int nl80211_get_channel(const char *ifname, int *buf)
 {
-	if (!nl80211_get_channel(ifname, buf))
+	if (!nl80211_get_frequency(ifname, buf))
 	{
-		*buf = nl80211_channel2freq(*buf);
+		*buf = nl80211_freq2channel(*buf);
 		return 0;
 	}
 
