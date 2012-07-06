@@ -17,7 +17,8 @@ case "$board" in
 all0258n)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
-om2p)
+om2p | \
+om2p-lc)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
 	;;
 esac
