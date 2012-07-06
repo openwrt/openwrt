@@ -125,7 +125,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	u32 val;
  
  	/* read base address of boot chip select (0)
-@@ -784,32 +750,19 @@ void __init board_prom_init(void)
+@@ -786,32 +752,19 @@ void __init board_prom_init(void)
  		strcpy(cfe_version, "unknown");
  	printk(KERN_INFO PFX "CFE version: %s\n", cfe_version);
  
@@ -162,7 +162,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  			continue;
  		/* copy, board desc array is marked initdata */
  		memcpy(&board, bcm963xx_boards[i], sizeof(board));
-@@ -819,7 +772,7 @@ void __init board_prom_init(void)
+@@ -821,7 +774,7 @@ void __init board_prom_init(void)
  	/* bail out if board is not found, will complain later */
  	if (!board.name[0]) {
  		char name[17];
@@ -171,7 +171,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		name[16] = 0;
  		printk(KERN_ERR PFX "unknown bcm963xx board: %s\n",
  		       name);
-@@ -912,15 +865,15 @@ int __init board_register_devices(void)
+@@ -914,15 +867,15 @@ int __init board_register_devices(void)
  		bcm63xx_pcmcia_register();
  
  	if (board.has_enet0 &&
@@ -190,7 +190,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		bcm63xx_enetsw_register(&board.enetsw);
  
  	if (board.has_ehci0)
-@@ -936,7 +889,7 @@ int __init board_register_devices(void)
+@@ -938,7 +891,7 @@ int __init board_register_devices(void)
  	 * do this after registering enet devices
  	 */
  #ifdef CONFIG_SSB_PCIHOST
