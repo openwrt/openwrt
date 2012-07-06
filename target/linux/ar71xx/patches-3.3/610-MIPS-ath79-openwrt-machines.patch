@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,18 +16,88 @@
+@@ -16,18 +16,91 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -21,6 +21,7 @@
 +	ATH79_MACH_DIR_615_C1,		/* D-Link DIR-615 rev. C1 */
 +	ATH79_MACH_DIR_615_E4,		/* D-Link DIR-615 rev. E4 */
 +	ATH79_MACH_DIR_825_B1,		/* D-Link DIR-825 rev. B1 */
++	ATH79_MACH_EW_DORIN,		/* embedded wireless Dorin Platform */
 +	ATH79_MACH_EAP7660D,		/* Senao EAP7660D */
 +	ATH79_MACH_JA76PF,		/* jjPlus JA76PF */
 +	ATH79_MACH_JA76PF2,		/* jjPlus JA76PF2 */
@@ -54,6 +55,8 @@
 +	ATH79_MACH_TL_MR3420,		/* TP-LINK TL-MR3420 */
 +	ATH79_MACH_TL_WA901ND,		/* TP-LINK TL-WA901ND */
 +	ATH79_MACH_TL_WA901ND_V2,	/* TP-LINK TL-WA901ND v2 */
++	ATH79_MACH_TL_WDR4300,		/* TP-LINK TL-WDR4300 */
++	ATH79_MACH_TL_WR1041N_V2,	/* TP-LINK TL-WR1041N v2 */
 +	ATH79_MACH_TL_WR1043ND,		/* TP-LINK TL-WR1043ND */
 +	ATH79_MACH_TL_WR2543N,		/* TP-LINK TL-WR2543N/ND */
 +	ATH79_MACH_TL_WR703N,		/* TP-LINK TL-WR703N */
@@ -183,7 +186,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -66,6 +137,382 @@ config ATH79_MACH_PB44
+@@ -66,6 +137,416 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -301,6 +304,18 @@
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
++
++config ATH79_MACH_EW_DORIN
++	bool "embedded wireless Dorin Platform support"
++	select SOC_AR933X
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_WMAC
++	select ATH79_DEV_ETH
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  Dorin Platform from www.80211.de .
 +
 +config ATH79_MACH_JA76PF
 +	bool "jjPlus JA76PF board support"
@@ -466,6 +481,17 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_WMAC
 +
++config ATH79_MACH_TL_WDR4300
++	bool "TP-LINK TL-WDR4300 board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
 +config ATH79_MACH_TL_WR703N
 +	bool "TP-LINK TL-WR703N support"
 +	select SOC_AR933X
@@ -511,6 +537,17 @@
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_TL_WR1041N_V2
++	bool "TP-LINK TL-WR1041N v2 support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_TL_WR1043ND
@@ -566,7 +603,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -79,6 +526,24 @@ config ATH79_MACH_UBNT_XM
+@@ -79,6 +560,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -591,7 +628,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -114,10 +579,6 @@ config SOC_QCA955X
+@@ -114,10 +613,6 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -602,7 +639,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -128,7 +589,14 @@ config ATH79_DEV_DSA
+@@ -128,7 +623,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -618,7 +655,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -153,4 +621,7 @@ config ATH79_NVRAM
+@@ -153,4 +655,7 @@ config ATH79_NVRAM
  config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
@@ -628,7 +665,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -36,9 +36,58 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
+@@ -36,9 +36,61 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
  #
  # Machines
  #
@@ -646,6 +683,7 @@
 +obj-$(CONFIG_ATH79_MACH_DIR_600_A1)	+= mach-dir-600-a1.o
 +obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
 +obj-$(CONFIG_ATH79_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
++obj-$(CONFIG_ATH79_MACH_EW_DORIN)	+= mach-ew-dorin.o
 +obj-$(CONFIG_ATH79_MACH_EAP7660D)	+= mach-eap7660d.o
 +obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o
 +obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach-jwap003.o
@@ -667,10 +705,12 @@
 +obj-$(CONFIG_ATH79_MACH_TL_MR3X20)	+= mach-tl-mr3x20.o
 +obj-$(CONFIG_ATH79_MACH_TL_WA901ND)	+= mach-tl-wa901nd.o
 +obj-$(CONFIG_ATH79_MACH_TL_WA901ND_V2)	+= mach-tl-wa901nd-v2.o
++obj-$(CONFIG_ATH79_MACH_TL_WDR4300)     += mach-tl-wdr4300.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR741ND)	+= mach-tl-wr741nd.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR741ND_V4)	+= mach-tl-wr741nd-v4.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR841N_V1)	+= mach-tl-wr841n.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR941ND)	+= mach-tl-wr941nd.o
++obj-$(CONFIG_ATH79_MACH_TL_WR1041N_V2)	+= mach-tl-wr1041n-v2.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR1043ND)	+= mach-tl-wr1043nd.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR2543N)	+= mach-tl-wr2543n.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR703N)	+= mach-tl-wr703n.o
