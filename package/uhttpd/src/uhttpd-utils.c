@@ -996,6 +996,9 @@ void uh_client_remove(struct client *cl)
 			if (cur->proc.pid)
 				uloop_process_delete(&cur->proc);
 
+			if (cur->pipe.fd)
+				uloop_fd_delete(&cur->pipe);
+
 			uloop_fd_delete(&cur->fd);
 			close(cur->fd.fd);
 

@@ -160,6 +160,7 @@ struct client {
 	SSL *tls;
 #endif
 	struct uloop_fd fd;
+	struct uloop_fd pipe;
 	struct uloop_process proc;
 	struct uloop_timeout timeout;
 	bool (*cb)(struct client *);
