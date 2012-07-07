@@ -573,9 +573,13 @@ static void uh_pipe_cb(struct uloop_fd *u, unsigned int events)
 {
 	struct client *cl = container_of(u, struct client, pipe);
 
-	D("SRV: Client(%d) pipe(%d) readable\n", cl->fd.fd, cl->pipe.fd);
+	if (!u->error)
+	{
+		D("SRV: Client(%d) pipe(%d) readable\n",
+		  cl->fd.fd, cl->pipe.fd);
 
-	uh_client_cb(&cl->fd, ULOOP_WRITE);
+		uh_client_cb(&cl->fd, ULOOP_WRITE);
+	}
 }
 
 static void uh_child_cb(struct uloop_process *p, int rv)
