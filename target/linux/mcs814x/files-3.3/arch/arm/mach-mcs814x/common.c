@@ -126,7 +126,7 @@ static void mcs814x_eth_init(void)
 	if (intspec)
 		mcs814x_eth_led_cfg_set(be32_to_cpup(intspec));
 
-	of_put_node(np);
+	of_node_put(np);
 }
 
 void __init mcs814x_init_machine(void)
