@@ -218,8 +218,7 @@ static int uh_socket_bind(fd_set *serv_fds, int *max_fd,
 		fd_cloexec(sock);
 		*max_fd = max(*max_fd, sock);
 
-		l->fd.cb = uh_listener_cb;
-		uloop_fd_add(&l->fd, ULOOP_READ);
+		uh_ufd_add(&l->fd, uh_listener_cb, ULOOP_READ);
 
 		bound++;
 		continue;
@@ -514,7 +513,7 @@ static bool uh_dispatch_request(struct client *cl, struct http_request *req)
 	return false;
 }
 
-static void uh_client_cb(struct uloop_fd *u, unsigned int events);
+static void uh_socket_cb(struct uloop_fd *u, unsigned int events);
 
 static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
 {
@@ -539,7 +538,8 @@ static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
 		if ((cl = uh_client_add(new_fd, serv)) != NULL)
 		{
 			/* add client socket to global fdset */
-			uloop_fd_add(&cl->fd, ULOOP_READ);
+			uh_ufd_add(&cl->fd, uh_socket_cb, ULOOP_READ);
+			fd_cloexec(cl->fd.fd);
 
 #ifdef HAVE_TLS
 			/* setup client tls context */
@@ -555,9 +555,6 @@ static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
 				}
 			}
 #endif
-
-			cl->fd.cb = uh_client_cb;
-			fd_cloexec(new_fd);
 		}
 
 		/* insufficient resources */
@@ -569,28 +566,33 @@ static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
 	}
 }
 
-static void uh_pipe_cb(struct uloop_fd *u, unsigned int events)
+static void uh_client_cb(struct client *cl, unsigned int events);
+
+static void uh_rpipe_cb(struct uloop_fd *u, unsigned int events)
 {
-	struct client *cl = container_of(u, struct client, pipe);
+	struct client *cl = container_of(u, struct client, rpipe);
 
-	if (!u->error)
-	{
-		D("SRV: Client(%d) pipe(%d) readable\n",
-		  cl->fd.fd, cl->pipe.fd);
+	D("SRV: Client(%d) rpipe readable\n", cl->fd.fd);
 
-		uh_client_cb(&cl->fd, ULOOP_WRITE);
-	}
+	uh_client_cb(cl, ULOOP_WRITE);
+}
+
+static void uh_socket_cb(struct uloop_fd *u, unsigned int events)
+{
+	struct client *cl = container_of(u, struct client, fd);
+
+	D("SRV: Client(%d) socket readable\n", cl->fd.fd);
+
+	uh_client_cb(cl, ULOOP_READ);
 }
 
 static void uh_child_cb(struct uloop_process *p, int rv)
 {
 	struct client *cl = container_of(p, struct client, proc);
 
-	D("SRV: Client(%d) child(%d) is dead\n", cl->fd.fd, cl->proc.pid);
+	D("SRV: Client(%d) child(%d) dead\n", cl->fd.fd, cl->proc.pid);
 
-	cl->dead = true;
-	cl->fd.eof = true;
-	uh_client_cb(&cl->fd, ULOOP_READ | ULOOP_WRITE);
+	uh_client_cb(cl, ULOOP_READ | ULOOP_WRITE);
 }
 
 static void uh_kill9_cb(struct uloop_timeout *t)
@@ -624,17 +626,15 @@ static void uh_timeout_cb(struct uloop_timeout *t)
 	}
 }
 
-static void uh_client_cb(struct uloop_fd *u, unsigned int events)
+static void uh_client_cb(struct client *cl, unsigned int events)
 {
 	int i;
-	struct client *cl;
 	struct config *conf;
 	struct http_request *req;
 
-	cl = container_of(u, struct client, fd);
 	conf = cl->server->conf;
 
-	D("SRV: Client(%d) enter callback\n", u->fd);
+	D("SRV: Client(%d) enter callback\n", cl->fd.fd);
 
 	/* undispatched yet */
 	if (!cl->dispatched)
@@ -642,14 +642,14 @@ static void uh_client_cb(struct uloop_fd *u, unsigned int events)
 		/* we have no headers yet and this was a write event, ignore... */
 		if (!(events & ULOOP_READ))
 		{
-			D("SRV: Client(%d) ignoring write event before headers\n", u->fd);
+			D("SRV: Client(%d) ignoring write event before headers\n", cl->fd.fd);
 			return;
 		}
 
 		/* attempt to receive and parse headers */
 		if (!(req = uh_http_header_recv(cl)))
 		{
-			D("SRV: Client(%d) failed to receive header\n", u->fd);
+			D("SRV: Client(%d) failed to receive header\n", cl->fd.fd);
 			uh_client_shutdown(cl);
 			return;
 		}
@@ -663,7 +663,7 @@ static void uh_client_cb(struct uloop_fd *u, unsigned int events)
 			if (strcasecmp(req->headers[i+1], "100-continue"))
 			{
 				D("SRV: Client(%d) unknown expect header (%s)\n",
-				  u->fd, req->headers[i+1]);
+				  cl->fd.fd, req->headers[i+1]);
 
 				uh_http_response(cl, 417, "Precondition Failed");
 				uh_client_shutdown(cl);
@@ -671,7 +671,7 @@ static void uh_client_cb(struct uloop_fd *u, unsigned int events)
 			}
 			else
 			{
-				D("SRV: Client(%d) sending HTTP/1.1 100 Continue\n", u->fd);
+				D("SRV: Client(%d) sending HTTP/1.1 100 Continue\n", cl->fd.fd);
 
 				uh_http_sendf(cl, NULL, "HTTP/1.1 100 Continue\r\n\r\n");
 				cl->httpbuf.len = 0; /* client will re-send the body */
@@ -694,24 +694,23 @@ static void uh_client_cb(struct uloop_fd *u, unsigned int events)
 		/* dispatch request */
 		if (!uh_dispatch_request(cl, req))
 		{
-			D("SRV: Client(%d) failed to dispach request\n", u->fd);
+			D("SRV: Client(%d) failed to dispach request\n", cl->fd.fd);
 			uh_client_shutdown(cl);
 			return;
 		}
 
 		/* request handler spawned a pipe, register handler */
-		if (cl->pipe.fd)
+		if (cl->rpipe.fd > -1)
 		{
-			D("SRV: Client(%d) pipe(%d) spawned\n", u->fd, cl->pipe.fd);
+			D("SRV: Client(%d) pipe(%d) spawned\n", cl->fd.fd, cl->rpipe.fd);
 
-			cl->pipe.cb = uh_pipe_cb;
-			uloop_fd_add(&cl->pipe, ULOOP_READ);
+			uh_ufd_add(&cl->rpipe, uh_rpipe_cb, ULOOP_READ);
 		}
 
 		/* request handler spawned a child, register handler */
 		if (cl->proc.pid)
 		{
-			D("SRV: Client(%d) child(%d) spawned\n", u->fd, cl->proc.pid);
+			D("SRV: Client(%d) child(%d) spawned\n", cl->fd.fd, cl->proc.pid);
 
 			cl->proc.cb = uh_child_cb;
 			uloop_process_add(&cl->proc);
@@ -721,13 +720,13 @@ static void uh_client_cb(struct uloop_fd *u, unsigned int events)
 		}
 
 		/* header processing complete */
-		D("SRV: Client(%d) dispatched\n", u->fd);
+		D("SRV: Client(%d) dispatched\n", cl->fd.fd);
 		cl->dispatched = true;
 	}
 
 	if (!cl->cb(cl))
 	{
-		D("SRV: Client(%d) response callback signalized EOF\n", u->fd);
+		D("SRV: Client(%d) response callback signalized EOF\n", cl->fd.fd);
 		uh_client_shutdown(cl);
 		return;
 	}
@@ -1098,7 +1097,7 @@ int main (int argc, char **argv)
 					"	-L file         Lua handler script, omit to disable Lua\n"
 #endif
 #ifdef HAVE_UBUS
-					"	-u string       URL prefix for HTTP/JSON handler, default is '/ubus'\n"
+					"	-u string       URL prefix for HTTP/JSON handler\n"
 					"	-U file         Override ubus socket path\n"
 #endif
 #ifdef HAVE_CGI
@@ -1210,7 +1209,7 @@ int main (int argc, char **argv)
 				"Notice: Unable to load ubus plugin - disabling ubus support! "
 				"(Reason: %s)\n", dlerror());
 	}
-	else
+	else if (conf.ubus_prefix)
 	{
 		/* resolve functions */
 		if (!(conf.ubus_init    = dlsym(lib, "uh_ubus_init"))    ||
@@ -1224,10 +1223,7 @@ int main (int argc, char **argv)
 			exit(1);
 		}
 
-		/* default ubus prefix */
-		if (!conf.ubus_prefix)
-			conf.ubus_prefix = "/ubus";
-
+		/* initialize ubus */
 		conf.ubus_state = conf.ubus_init(&conf);
 	}
 #endif

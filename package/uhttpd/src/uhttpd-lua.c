@@ -250,8 +250,6 @@ lua_State * uh_lua_init(const struct config *conf)
 
 static void uh_lua_shutdown(struct uh_lua_state *state)
 {
-	close(state->rfd);
-	close(state->wfd);
 	free(state);
 }
 
@@ -266,31 +264,28 @@ static bool uh_lua_socket_cb(struct client *cl)
 	while (state->content_length > 0)
 	{
 		/* remaining data in http head buffer ... */
-		if (state->cl->httpbuf.len > 0)
+		if (cl->httpbuf.len > 0)
 		{
-			len = min(state->content_length, state->cl->httpbuf.len);
+			len = min(state->content_length, cl->httpbuf.len);
 
-			D("Lua: Child(%d) feed %d HTTP buffer bytes\n",
-			  state->cl->proc.pid, len);
+			D("Lua: Child(%d) feed %d HTTP buffer bytes\n", cl->proc.pid, len);
 
-			memcpy(buf, state->cl->httpbuf.ptr, len);
+			memcpy(buf, cl->httpbuf.ptr, len);
 
-			state->cl->httpbuf.len -= len;
-			state->cl->httpbuf.ptr += len;
+			cl->httpbuf.len -= len;
+			cl->httpbuf.ptr += len;
 		}
 
 		/* read it from socket ... */
 		else
 		{
-			len = uh_tcp_recv(state->cl, buf,
-							  min(state->content_length, sizeof(buf)));
+			len = uh_tcp_recv(cl, buf, min(state->content_length, sizeof(buf)));
 
 			if ((len < 0) && ((errno == EAGAIN) || (errno == EWOULDBLOCK)))
 				break;
 
 			D("Lua: Child(%d) feed %d/%d TCP socket bytes\n",
-			  state->cl->proc.pid, len,
-			  min(state->content_length, sizeof(buf)));
+			  cl->proc.pid, len, min(state->content_length, sizeof(buf)));
 		}
 
 		if (len)
@@ -299,20 +294,20 @@ static bool uh_lua_socket_cb(struct client *cl)
 			state->content_length = 0;
 
 		/* ... write to Lua process */
-		len = uh_raw_send(state->wfd, buf, len,
+		len = uh_raw_send(cl->wpipe.fd, buf, len,
 						  cl->server->conf->script_timeout);
 
 		/* explicit EOF notification for the child */
 		if (state->content_length <= 0)
-			close(state->wfd);
+			uh_ufd_remove(&cl->wpipe);
 	}
 
 	/* try to read data from child */
-	while ((len = uh_raw_recv(state->rfd, buf, sizeof(buf), -1)) > 0)
+	while ((len = uh_raw_recv(cl->rpipe.fd, buf, sizeof(buf), -1)) > 0)
 	{
 		/* pass through buffer to socket */
-		D("Lua: Child(%d) relaying %d normal bytes\n", state->cl->proc.pid, len);
-		ensure_out(uh_tcp_send(state->cl, buf, len));
+		D("Lua: Child(%d) relaying %d normal bytes\n", cl->proc.pid, len);
+		ensure_out(uh_tcp_send(cl, buf, len));
 		state->data_sent = true;
 	}
 
@@ -321,7 +316,7 @@ static bool uh_lua_socket_cb(struct client *cl)
 		((errno != EAGAIN) && (errno != EWOULDBLOCK) && (len == -1)))
 	{
 		D("Lua: Child(%d) presumed dead [%s]\n",
-		  state->cl->proc.pid, strerror(errno));
+		  cl->proc.pid, strerror(errno));
 
 		goto out;
 	}
@@ -331,11 +326,11 @@ static bool uh_lua_socket_cb(struct client *cl)
 out:
 	if (!state->data_sent)
 	{
-		if (state->cl->timeout.pending)
-			uh_http_sendhf(state->cl, 502, "Bad Gateway",
+		if (cl->timeout.pending)
+			uh_http_sendhf(cl, 502, "Bad Gateway",
 						   "The Lua process did not produce any response\n");
 		else
-			uh_http_sendhf(state->cl, 504, "Gateway Timeout",
+			uh_http_sendhf(cl, 504, "Gateway Timeout",
 						   "The Lua process took too long to produce a "
 						   "response\n");
 	}
@@ -557,9 +552,13 @@ bool uh_lua_request(struct client *cl, lua_State *L)
 	default:
 		memset(state, 0, sizeof(*state));
 
-		state->cl = cl;
-		state->cl->pipe.fd = rfd[0];
-		state->cl->proc.pid = child;
+		cl->rpipe.fd = rfd[0];
+		cl->wpipe.fd = wfd[1];
+		cl->proc.pid = child;
+
+		/* make pipe non-blocking */
+		fd_nonblock(cl->rpipe.fd);
+		fd_nonblock(cl->wpipe.fd);
 
 		/* close unneeded pipe ends */
 		close(rfd[1]);
@@ -581,12 +580,6 @@ bool uh_lua_request(struct client *cl, lua_State *L)
 				}
 			}
 		}
-
-		state->rfd = rfd[0];
-		fd_nonblock(state->rfd);
-
-		state->wfd = wfd[1];
-		fd_nonblock(state->wfd);
 
 		cl->cb = uh_lua_socket_cb;
 		cl->priv = state;
