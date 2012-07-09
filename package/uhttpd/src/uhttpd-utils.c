@@ -119,7 +119,7 @@ bool uh_socket_wait(int fd, int sec, bool write)
 	while (((rv = select(fd+1, write ? NULL : &fds, write ? &fds : NULL,
 						 NULL, &timeout)) < 0) && (errno == EINTR))
 	{
-		D("IO: Socket(%d) select interrupted: %s\n",
+		D("IO: FD(%d) select interrupted: %s\n",
 				fd, strerror(errno));
 
 		continue;
@@ -127,7 +127,7 @@ bool uh_socket_wait(int fd, int sec, bool write)
 
 	if (rv <= 0)
 	{
-		D("IO: Socket(%d) appears dead (rv=%d)\n", fd, rv);
+		D("IO: FD(%d) appears dead (rv=%d)\n", fd, rv);
 		return false;
 	}
 
@@ -146,7 +146,7 @@ static int __uh_raw_send(struct client *cl, const char *buf, int len, int sec,
 		{
 			if (errno == EINTR)
 			{
-				D("IO: Socket(%d) interrupted\n", cl->fd.fd);
+				D("IO: FD(%d) interrupted\n", cl->fd.fd);
 				continue;
 			}
 			else if ((sec > 0) && (errno == EAGAIN || errno == EWOULDBLOCK))
@@ -156,7 +156,7 @@ static int __uh_raw_send(struct client *cl, const char *buf, int len, int sec,
 			}
 			else
 			{
-				D("IO: Socket(%d) write error: %s\n", fd, strerror(errno));
+				D("IO: FD(%d) write error: %s\n", fd, strerror(errno));
 				return -1;
 			}
 		}
@@ -168,19 +168,19 @@ static int __uh_raw_send(struct client *cl, const char *buf, int len, int sec,
 		 */
 		else if (rv == 0)
 		{
-			D("IO: Socket(%d) closed\n", fd);
+			D("IO: FD(%d) appears closed\n", fd);
 			return 0;
 		}
 		else if (rv < len)
 		{
-			D("IO: Socket(%d) short write %d/%d bytes\n", fd, rv, len);
+			D("IO: FD(%d) short write %d/%d bytes\n", fd, rv, len);
 			len -= rv;
 			buf += rv;
 			continue;
 		}
 		else
 		{
-			D("IO: Socket(%d) sent %d/%d bytes\n", fd, rv, len);
+			D("IO: FD(%d) sent %d/%d bytes\n", fd, rv, len);
 			return rv;
 		}
 	}
@@ -230,18 +230,18 @@ static int __uh_raw_recv(struct client *cl, char *buf, int len, int sec,
 			}
 			else
 			{
-				D("IO: Socket(%d) read error: %s\n", fd, strerror(errno));
+				D("IO: FD(%d) read error: %s\n", fd, strerror(errno));
 				return -1;
 			}
 		}
 		else if (rv == 0)
 		{
-			D("IO: Socket(%d) closed\n", fd);
+			D("IO: FD(%d) appears closed\n", fd);
 			return 0;
 		}
 		else
 		{
-			D("IO: Socket(%d) read %d bytes\n", fd, rv);
+			D("IO: FD(%d) read %d bytes\n", fd, rv);
 			return rv;
 		}
 	}
@@ -934,6 +934,9 @@ struct client * uh_client_add(int sock, struct listener *serv)
 		new->fd.fd  = sock;
 		new->server = serv;
 
+		new->rpipe.fd = -1;
+		new->wpipe.fd = -1;
+
 		/* get remote endpoint addr */
 		sl = sizeof(struct sockaddr_in6);
 		memset(&(new->peeraddr), 0, sl);
@@ -948,6 +951,8 @@ struct client * uh_client_add(int sock, struct listener *serv)
 		uh_clients = new;
 
 		serv->n_clients++;
+
+		D("IO: Client(%d) allocated\n", new->fd.fd);
 	}
 
 	return new;
@@ -996,18 +1001,45 @@ void uh_client_remove(struct client *cl)
 			if (cur->proc.pid)
 				uloop_process_delete(&cur->proc);
 
-			if (cur->pipe.fd)
-				uloop_fd_delete(&cur->pipe);
+			D("IO: Client(%d) freeing\n", cur->fd.fd);
 
-			uloop_fd_delete(&cur->fd);
-			close(cur->fd.fd);
+			uh_ufd_remove(&cur->rpipe);
+			uh_ufd_remove(&cur->wpipe);
+			uh_ufd_remove(&cur->fd);
 
-			D("IO: Socket(%d) closing\n", cur->fd.fd);
 			cur->server->n_clients--;
 
 			free(cur);
 			break;
 		}
+	}
+}
+
+
+void uh_ufd_add(struct uloop_fd *u, uloop_fd_handler h, unsigned int ev)
+{
+	if (h != NULL)
+	{
+		u->cb = h;
+		uloop_fd_add(u, ev);
+		D("IO: FD(%d) added to uloop\n", u->fd);
+	}
+}
+
+void uh_ufd_remove(struct uloop_fd *u)
+{
+	if (u->cb != NULL)
+	{
+		uloop_fd_delete(u);
+		D("IO: FD(%d) removed from uloop\n", u->fd);
+		u->cb = NULL;
+	}
+
+	if (u->fd > -1)
+	{
+		close(u->fd);
+		D("IO: FD(%d) closed\n", u->fd);
+		u->fd = -1;
 	}
 }
 

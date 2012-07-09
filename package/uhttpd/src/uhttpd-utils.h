@@ -23,6 +23,9 @@
 #include <pwd.h>
 #include <sys/stat.h>
 
+#include <libubox/uloop.h>
+
+
 #ifdef HAVE_SHADOW
 #include <shadow.h>
 #endif
@@ -123,7 +126,8 @@ struct client * uh_client_lookup(int sock);
 void uh_client_shutdown(struct client *cl);
 void uh_client_remove(struct client *cl);
 
-#define uh_client_gc() uh_client_remove(NULL)
+void uh_ufd_add(struct uloop_fd *u, uloop_fd_handler h, unsigned int ev);
+void uh_ufd_remove(struct uloop_fd *u);
 
 
 #ifdef HAVE_CGI
