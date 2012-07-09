@@ -69,7 +69,7 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 				config_get proto "$cfg" proto
 
 				local epmin epmax extport
-				config_get extport "$cfg" src_dport
+				config_get extport "$cfg" src_dport "1-65535"
 				[ -n "$extport" ] || return
 
 				epmin="${extport%[-:]*}"; epmax="${extport#*[-:]}"
@@ -88,6 +88,7 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 				config_get inthost "$cfg" dest_ip
 				[ -n "$inthost" ] || return
 
+				[ "$proto" = all    ] && proto="tcp udp"
 				[ "$proto" = tcpudp ] && proto="tcp udp"
 
 				[ "${inthost#!}" = "$inthost" ] || return 0
