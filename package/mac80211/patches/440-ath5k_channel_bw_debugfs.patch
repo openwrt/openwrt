@@ -9,11 +9,9 @@ Other devices will need to be added to the switch in  write_file_bwmode
 drivers/net/wireless/ath/ath5k/debug.c |   86 ++++++++++++++++++++++++++++++++
  1 files changed, 86 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/net/wireless/ath/ath5k/debug.c b/drivers/net/wireless/ath/ath5k/debug.c
-index 8c5ce8b..bb41066 100644
 --- a/drivers/net/wireless/ath/ath5k/debug.c
 +++ b/drivers/net/wireless/ath/ath5k/debug.c
-@@ -815,6 +815,89 @@ static const struct file_operations fops_ani = {
+@@ -812,6 +812,89 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -103,7 +101,7 @@ index 8c5ce8b..bb41066 100644
  
  /* debugfs: queues etc */
  
-@@ -906,6 +989,9 @@ ath5k_debug_init_device(struct ath5k_hw *ah)
+@@ -903,6 +986,9 @@ ath5k_debug_init_device(struct ath5k_hw 
  	debugfs_create_file("beacon", S_IWUSR | S_IRUSR, phydir, ah,
  			    &fops_beacon);
  
@@ -113,4 +111,3 @@ index 8c5ce8b..bb41066 100644
  	debugfs_create_file("reset", S_IWUSR, phydir, ah, &fops_reset);
  
  	debugfs_create_file("antenna", S_IWUSR | S_IRUSR, phydir, ah,
--- 
