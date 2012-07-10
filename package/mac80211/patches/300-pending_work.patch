@@ -1,1248 +1,1613 @@
---- a/drivers/net/wireless/ath/ath9k/ani.c
-+++ b/drivers/net/wireless/ath/ath9k/ani.c
-@@ -104,11 +104,6 @@ static const struct ani_cck_level_entry 
- #define ATH9K_ANI_CCK_DEF_LEVEL \
- 	2 /* default level - matches the INI settings */
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -360,7 +360,7 @@ void ath_tx_aggr_sleep(struct ieee80211_
  
--static bool use_new_ani(struct ath_hw *ah)
--{
--	return AR_SREV_9300_20_OR_LATER(ah) || modparam_force_new_ani;
--}
--
- static void ath9k_hw_update_mibstats(struct ath_hw *ah,
- 				     struct ath9k_mib_stats *stats)
+ struct ath_vif {
+ 	int av_bslot;
+-	bool is_bslot_active, primary_sta_vif;
++	bool primary_sta_vif;
+ 	__le64 tsf_adjust; /* TSF adjustment for staggered beacons */
+ 	struct ath_buf *av_bcbuf;
+ };
+@@ -386,6 +386,7 @@ struct ath_beacon_config {
+ 	u16 dtim_period;
+ 	u16 bmiss_timeout;
+ 	u8 dtim_count;
++	bool enable_beacon;
+ };
+ 
+ struct ath_beacon {
+@@ -397,7 +398,6 @@ struct ath_beacon {
+ 
+ 	u32 beaconq;
+ 	u32 bmisscnt;
+-	u32 ast_be_xmit;
+ 	u32 bc_tstamp;
+ 	struct ieee80211_vif *bslot[ATH_BCBUF];
+ 	int slottime;
+@@ -411,12 +411,14 @@ struct ath_beacon {
+ 	bool tx_last;
+ };
+ 
+-void ath_beacon_tasklet(unsigned long data);
+-void ath_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif);
+-int ath_beacon_alloc(struct ath_softc *sc, struct ieee80211_vif *vif);
+-void ath_beacon_return(struct ath_softc *sc, struct ath_vif *avp);
+-int ath_beaconq_config(struct ath_softc *sc);
+-void ath_set_beacon(struct ath_softc *sc);
++void ath9k_beacon_tasklet(unsigned long data);
++bool ath9k_allow_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif);
++void ath9k_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif,
++			 u32 changed);
++void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif);
++void ath9k_beacon_remove_slot(struct ath_softc *sc, struct ieee80211_vif *vif);
++void ath9k_set_tsfadjust(struct ath_softc *sc, struct ieee80211_vif *vif);
++void ath9k_set_beacon(struct ath_softc *sc);
+ void ath9k_set_beaconing_status(struct ath_softc *sc, bool status);
+ 
+ /*******************/
+@@ -442,9 +444,12 @@ void ath_rx_poll(unsigned long data);
+ void ath_start_rx_poll(struct ath_softc *sc, u8 nbeacon);
+ void ath_paprd_calibrate(struct work_struct *work);
+ void ath_ani_calibrate(unsigned long data);
+-void ath_start_ani(struct ath_common *common);
++void ath_start_ani(struct ath_softc *sc);
++void ath_stop_ani(struct ath_softc *sc);
++void ath_check_ani(struct ath_softc *sc);
+ int ath_update_survey_stats(struct ath_softc *sc);
+ void ath_update_survey_nf(struct ath_softc *sc, int channel);
++void ath9k_queue_reset(struct ath_softc *sc, enum ath_reset_type type);
+ 
+ /**********/
+ /* BTCOEX */
+@@ -613,7 +618,6 @@ enum sc_op_flags {
+ 	SC_OP_INVALID,
+ 	SC_OP_BEACONS,
+ 	SC_OP_RXFLUSH,
+-	SC_OP_TSF_RESET,
+ 	SC_OP_ANI_RUN,
+ 	SC_OP_PRIM_STA_VIF,
+ 	SC_OP_HW_RESET,
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -30,7 +30,7 @@ static void ath9k_reset_beacon_status(st
+  *  the operating mode of the station (AP or AdHoc).  Parameters are AIFS
+  *  settings and channel width min/max
+ */
+-int ath_beaconq_config(struct ath_softc *sc)
++static void ath9k_beaconq_config(struct ath_softc *sc)
  {
-@@ -122,8 +117,6 @@ static void ath9k_hw_update_mibstats(str
- static void ath9k_ani_restart(struct ath_hw *ah)
- {
- 	struct ar5416AniState *aniState;
--	struct ath_common *common = ath9k_hw_common(ah);
--	u32 ofdm_base = 0, cck_base = 0;
- 
- 	if (!DO_ANI(ah))
- 		return;
-@@ -131,18 +124,10 @@ static void ath9k_ani_restart(struct ath
- 	aniState = &ah->curchan->ani;
- 	aniState->listenTime = 0;
- 
--	if (!use_new_ani(ah)) {
--		ofdm_base = AR_PHY_COUNTMAX - ah->config.ofdm_trig_high;
--		cck_base = AR_PHY_COUNTMAX - ah->config.cck_trig_high;
--	}
--
--	ath_dbg(common, ANI, "Writing ofdmbase=%u   cckbase=%u\n",
--		ofdm_base, cck_base);
--
- 	ENABLE_REGWRITE_BUFFER(ah);
- 
--	REG_WRITE(ah, AR_PHY_ERR_1, ofdm_base);
--	REG_WRITE(ah, AR_PHY_ERR_2, cck_base);
-+	REG_WRITE(ah, AR_PHY_ERR_1, 0);
-+	REG_WRITE(ah, AR_PHY_ERR_2, 0);
- 	REG_WRITE(ah, AR_PHY_ERR_MASK_1, AR_PHY_ERR_OFDM_TIMING);
- 	REG_WRITE(ah, AR_PHY_ERR_MASK_2, AR_PHY_ERR_CCK_TIMING);
- 
-@@ -154,110 +139,6 @@ static void ath9k_ani_restart(struct ath
- 	aniState->cckPhyErrCount = 0;
- }
- 
--static void ath9k_hw_ani_ofdm_err_trigger_old(struct ath_hw *ah)
--{
--	struct ieee80211_conf *conf = &ath9k_hw_common(ah)->hw->conf;
--	struct ar5416AniState *aniState;
--	int32_t rssi;
--
--	aniState = &ah->curchan->ani;
--
--	if (aniState->noiseImmunityLevel < HAL_NOISE_IMMUNE_MAX) {
--		if (ath9k_hw_ani_control(ah, ATH9K_ANI_NOISE_IMMUNITY_LEVEL,
--					 aniState->noiseImmunityLevel + 1)) {
--			return;
--		}
--	}
--
--	if (aniState->spurImmunityLevel < HAL_SPUR_IMMUNE_MAX) {
--		if (ath9k_hw_ani_control(ah, ATH9K_ANI_SPUR_IMMUNITY_LEVEL,
--					 aniState->spurImmunityLevel + 1)) {
--			return;
--		}
--	}
--
--	if (ah->opmode == NL80211_IFTYPE_AP) {
--		if (aniState->firstepLevel < HAL_FIRST_STEP_MAX) {
--			ath9k_hw_ani_control(ah, ATH9K_ANI_FIRSTEP_LEVEL,
--					     aniState->firstepLevel + 1);
--		}
--		return;
--	}
--	rssi = BEACON_RSSI(ah);
--	if (rssi > aniState->rssiThrHigh) {
--		if (!aniState->ofdmWeakSigDetectOff) {
--			if (ath9k_hw_ani_control(ah,
--					 ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
--					 false)) {
--				ath9k_hw_ani_control(ah,
--					ATH9K_ANI_SPUR_IMMUNITY_LEVEL, 0);
--				return;
--			}
--		}
--		if (aniState->firstepLevel < HAL_FIRST_STEP_MAX) {
--			ath9k_hw_ani_control(ah, ATH9K_ANI_FIRSTEP_LEVEL,
--					     aniState->firstepLevel + 1);
--			return;
--		}
--	} else if (rssi > aniState->rssiThrLow) {
--		if (aniState->ofdmWeakSigDetectOff)
--			ath9k_hw_ani_control(ah,
--				     ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
--				     true);
--		if (aniState->firstepLevel < HAL_FIRST_STEP_MAX)
--			ath9k_hw_ani_control(ah, ATH9K_ANI_FIRSTEP_LEVEL,
--					     aniState->firstepLevel + 1);
--		return;
--	} else {
--		if ((conf->channel->band == IEEE80211_BAND_2GHZ) &&
--		    !conf_is_ht(conf)) {
--			if (!aniState->ofdmWeakSigDetectOff)
--				ath9k_hw_ani_control(ah,
--				     ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
--				     false);
--			if (aniState->firstepLevel > 0)
--				ath9k_hw_ani_control(ah,
--					     ATH9K_ANI_FIRSTEP_LEVEL, 0);
--			return;
--		}
--	}
--}
--
--static void ath9k_hw_ani_cck_err_trigger_old(struct ath_hw *ah)
--{
--	struct ieee80211_conf *conf = &ath9k_hw_common(ah)->hw->conf;
--	struct ar5416AniState *aniState;
--	int32_t rssi;
--
--	aniState = &ah->curchan->ani;
--	if (aniState->noiseImmunityLevel < HAL_NOISE_IMMUNE_MAX) {
--		if (ath9k_hw_ani_control(ah, ATH9K_ANI_NOISE_IMMUNITY_LEVEL,
--					 aniState->noiseImmunityLevel + 1)) {
--			return;
--		}
--	}
--	if (ah->opmode == NL80211_IFTYPE_AP) {
--		if (aniState->firstepLevel < HAL_FIRST_STEP_MAX) {
--			ath9k_hw_ani_control(ah, ATH9K_ANI_FIRSTEP_LEVEL,
--					     aniState->firstepLevel + 1);
--		}
--		return;
--	}
--	rssi = BEACON_RSSI(ah);
--	if (rssi > aniState->rssiThrLow) {
--		if (aniState->firstepLevel < HAL_FIRST_STEP_MAX)
--			ath9k_hw_ani_control(ah, ATH9K_ANI_FIRSTEP_LEVEL,
--					     aniState->firstepLevel + 1);
--	} else {
--		if ((conf->channel->band == IEEE80211_BAND_2GHZ) &&
--		    !conf_is_ht(conf)) {
--			if (aniState->firstepLevel > 0)
--				ath9k_hw_ani_control(ah,
--					     ATH9K_ANI_FIRSTEP_LEVEL, 0);
--		}
--	}
--}
--
- /* Adjust the OFDM Noise Immunity Level */
- static void ath9k_hw_set_ofdm_nil(struct ath_hw *ah, u8 immunityLevel)
- {
-@@ -265,18 +146,15 @@ static void ath9k_hw_set_ofdm_nil(struct
+ 	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
- 	const struct ani_ofdm_level_entry *entry_ofdm;
- 	const struct ani_cck_level_entry *entry_cck;
--
--	aniState->noiseFloor = BEACON_RSSI(ah);
-+	bool weak_sig;
+@@ -38,6 +38,7 @@ int ath_beaconq_config(struct ath_softc 
+ 	struct ath_txq *txq;
  
- 	ath_dbg(common, ANI, "**** ofdmlevel %d=>%d, rssi=%d[lo=%d hi=%d]\n",
- 		aniState->ofdmNoiseImmunityLevel,
--		immunityLevel, aniState->noiseFloor,
-+		immunityLevel, BEACON_RSSI(ah),
- 		aniState->rssiThrLow, aniState->rssiThrHigh);
- 
- 	if (aniState->update_ani)
--		aniState->ofdmNoiseImmunityLevel =
--			(immunityLevel > ATH9K_ANI_OFDM_DEF_LEVEL) ?
--			immunityLevel : ATH9K_ANI_OFDM_DEF_LEVEL;
-+		aniState->ofdmNoiseImmunityLevel = immunityLevel;
- 
- 	entry_ofdm = &ofdm_level_table[aniState->ofdmNoiseImmunityLevel];
- 	entry_cck = &cck_level_table[aniState->cckNoiseImmunityLevel];
-@@ -292,12 +170,22 @@ static void ath9k_hw_set_ofdm_nil(struct
- 				     ATH9K_ANI_FIRSTEP_LEVEL,
- 				     entry_ofdm->fir_step_level);
- 
--	if ((aniState->noiseFloor >= aniState->rssiThrHigh) &&
--	    (!aniState->ofdmWeakSigDetectOff !=
--	     entry_ofdm->ofdm_weak_signal_on)) {
-+	weak_sig = entry_ofdm->ofdm_weak_signal_on;
-+	if (ah->opmode == NL80211_IFTYPE_STATION &&
-+	    BEACON_RSSI(ah) <= aniState->rssiThrHigh)
-+		weak_sig = true;
+ 	ath9k_hw_get_txq_props(ah, sc->beacon.beaconq, &qi);
 +
-+	if (aniState->ofdmWeakSigDetect != weak_sig)
- 			ath9k_hw_ani_control(ah,
- 				ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
- 				entry_ofdm->ofdm_weak_signal_on);
-+
-+	if (aniState->ofdmNoiseImmunityLevel >= ATH9K_ANI_OFDM_DEF_LEVEL) {
-+		ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH;
-+		ah->config.ofdm_trig_low = ATH9K_ANI_OFDM_TRIG_LOW_ABOVE_INI;
-+	} else {
-+		ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH_BELOW_INI;
-+		ah->config.ofdm_trig_low = ATH9K_ANI_OFDM_TRIG_LOW;
+ 	if (sc->sc_ah->opmode == NL80211_IFTYPE_AP) {
+ 		/* Always burst out beacon and CAB traffic. */
+ 		qi.tqi_aifs = 1;
+@@ -56,12 +57,9 @@ int ath_beaconq_config(struct ath_softc 
  	}
- }
  
-@@ -308,11 +196,6 @@ static void ath9k_hw_ani_ofdm_err_trigge
- 	if (!DO_ANI(ah))
- 		return;
- 
--	if (!use_new_ani(ah)) {
--		ath9k_hw_ani_ofdm_err_trigger_old(ah);
--		return;
--	}
--
- 	aniState = &ah->curchan->ani;
- 
- 	if (aniState->ofdmNoiseImmunityLevel < ATH9K_ANI_OFDM_MAX_LEVEL)
-@@ -329,22 +212,18 @@ static void ath9k_hw_set_cck_nil(struct 
- 	const struct ani_ofdm_level_entry *entry_ofdm;
- 	const struct ani_cck_level_entry *entry_cck;
- 
--	aniState->noiseFloor = BEACON_RSSI(ah);
- 	ath_dbg(common, ANI, "**** ccklevel %d=>%d, rssi=%d[lo=%d hi=%d]\n",
- 		aniState->cckNoiseImmunityLevel, immunityLevel,
--		aniState->noiseFloor, aniState->rssiThrLow,
-+		BEACON_RSSI(ah), aniState->rssiThrLow,
- 		aniState->rssiThrHigh);
- 
--	if ((ah->opmode == NL80211_IFTYPE_STATION ||
--	     ah->opmode == NL80211_IFTYPE_ADHOC) &&
--	    aniState->noiseFloor <= aniState->rssiThrLow &&
-+	if (ah->opmode == NL80211_IFTYPE_STATION &&
-+	    BEACON_RSSI(ah) <= aniState->rssiThrLow &&
- 	    immunityLevel > ATH9K_ANI_CCK_MAX_LEVEL_LOW_RSSI)
- 		immunityLevel = ATH9K_ANI_CCK_MAX_LEVEL_LOW_RSSI;
- 
- 	if (aniState->update_ani)
--		aniState->cckNoiseImmunityLevel =
--			(immunityLevel > ATH9K_ANI_CCK_DEF_LEVEL) ?
--			immunityLevel : ATH9K_ANI_CCK_DEF_LEVEL;
-+		aniState->cckNoiseImmunityLevel = immunityLevel;
- 
- 	entry_ofdm = &ofdm_level_table[aniState->ofdmNoiseImmunityLevel];
- 	entry_cck = &cck_level_table[aniState->cckNoiseImmunityLevel];
-@@ -372,70 +251,12 @@ static void ath9k_hw_ani_cck_err_trigger
- 	if (!DO_ANI(ah))
- 		return;
- 
--	if (!use_new_ani(ah)) {
--		ath9k_hw_ani_cck_err_trigger_old(ah);
--		return;
--	}
--
- 	aniState = &ah->curchan->ani;
- 
- 	if (aniState->cckNoiseImmunityLevel < ATH9K_ANI_CCK_MAX_LEVEL)
- 		ath9k_hw_set_cck_nil(ah, aniState->cckNoiseImmunityLevel + 1);
- }
- 
--static void ath9k_hw_ani_lower_immunity_old(struct ath_hw *ah)
--{
--	struct ar5416AniState *aniState;
--	int32_t rssi;
--
--	aniState = &ah->curchan->ani;
--
--	if (ah->opmode == NL80211_IFTYPE_AP) {
--		if (aniState->firstepLevel > 0) {
--			if (ath9k_hw_ani_control(ah, ATH9K_ANI_FIRSTEP_LEVEL,
--						 aniState->firstepLevel - 1))
--				return;
--		}
--	} else {
--		rssi = BEACON_RSSI(ah);
--		if (rssi > aniState->rssiThrHigh) {
--			/* XXX: Handle me */
--		} else if (rssi > aniState->rssiThrLow) {
--			if (aniState->ofdmWeakSigDetectOff) {
--				if (ath9k_hw_ani_control(ah,
--					 ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
--					 true))
--					return;
--			}
--			if (aniState->firstepLevel > 0) {
--				if (ath9k_hw_ani_control(ah,
--					 ATH9K_ANI_FIRSTEP_LEVEL,
--					 aniState->firstepLevel - 1))
--					return;
--			}
--		} else {
--			if (aniState->firstepLevel > 0) {
--				if (ath9k_hw_ani_control(ah,
--					 ATH9K_ANI_FIRSTEP_LEVEL,
--					 aniState->firstepLevel - 1))
--					return;
--			}
--		}
--	}
--
--	if (aniState->spurImmunityLevel > 0) {
--		if (ath9k_hw_ani_control(ah, ATH9K_ANI_SPUR_IMMUNITY_LEVEL,
--					 aniState->spurImmunityLevel - 1))
--			return;
--	}
--
--	if (aniState->noiseImmunityLevel > 0) {
--		ath9k_hw_ani_control(ah, ATH9K_ANI_NOISE_IMMUNITY_LEVEL,
--				     aniState->noiseImmunityLevel - 1);
--		return;
--	}
--}
--
- /*
-  * only lower either OFDM or CCK errors per turn
-  * we lower the other one next time
-@@ -446,11 +267,6 @@ static void ath9k_hw_ani_lower_immunity(
- 
- 	aniState = &ah->curchan->ani;
- 
--	if (!use_new_ani(ah)) {
--		ath9k_hw_ani_lower_immunity_old(ah);
--		return;
--	}
--
- 	/* lower OFDM noise immunity */
- 	if (aniState->ofdmNoiseImmunityLevel > 0 &&
- 	    (aniState->ofdmsTurn || aniState->cckNoiseImmunityLevel == 0)) {
-@@ -463,72 +279,6 @@ static void ath9k_hw_ani_lower_immunity(
- 		ath9k_hw_set_cck_nil(ah, aniState->cckNoiseImmunityLevel - 1);
- }
- 
--static void ath9k_ani_reset_old(struct ath_hw *ah, bool is_scanning)
--{
--	struct ar5416AniState *aniState;
--	struct ath9k_channel *chan = ah->curchan;
--	struct ath_common *common = ath9k_hw_common(ah);
--
--	if (!DO_ANI(ah))
--		return;
--
--	aniState = &ah->curchan->ani;
--
--	if (ah->opmode != NL80211_IFTYPE_STATION
--	    && ah->opmode != NL80211_IFTYPE_ADHOC) {
--		ath_dbg(common, ANI, "Reset ANI state opmode %u\n", ah->opmode);
--		ah->stats.ast_ani_reset++;
--
--		if (ah->opmode == NL80211_IFTYPE_AP) {
--			/*
--			 * ath9k_hw_ani_control() will only process items set on
--			 * ah->ani_function
--			 */
--			if (IS_CHAN_2GHZ(chan))
--				ah->ani_function = (ATH9K_ANI_SPUR_IMMUNITY_LEVEL |
--						    ATH9K_ANI_FIRSTEP_LEVEL);
--			else
--				ah->ani_function = 0;
--		}
--
--		ath9k_hw_ani_control(ah, ATH9K_ANI_NOISE_IMMUNITY_LEVEL, 0);
--		ath9k_hw_ani_control(ah, ATH9K_ANI_SPUR_IMMUNITY_LEVEL, 0);
--		ath9k_hw_ani_control(ah, ATH9K_ANI_FIRSTEP_LEVEL, 0);
--		ath9k_hw_ani_control(ah, ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
--				     !ATH9K_ANI_USE_OFDM_WEAK_SIG);
--		ath9k_hw_ani_control(ah, ATH9K_ANI_CCK_WEAK_SIGNAL_THR,
--				     ATH9K_ANI_CCK_WEAK_SIG_THR);
--
--		ath9k_ani_restart(ah);
--		return;
--	}
--
--	if (aniState->noiseImmunityLevel != 0)
--		ath9k_hw_ani_control(ah, ATH9K_ANI_NOISE_IMMUNITY_LEVEL,
--				     aniState->noiseImmunityLevel);
--	if (aniState->spurImmunityLevel != 0)
--		ath9k_hw_ani_control(ah, ATH9K_ANI_SPUR_IMMUNITY_LEVEL,
--				     aniState->spurImmunityLevel);
--	if (aniState->ofdmWeakSigDetectOff)
--		ath9k_hw_ani_control(ah, ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
--				     !aniState->ofdmWeakSigDetectOff);
--	if (aniState->cckWeakSigThreshold)
--		ath9k_hw_ani_control(ah, ATH9K_ANI_CCK_WEAK_SIGNAL_THR,
--				     aniState->cckWeakSigThreshold);
--	if (aniState->firstepLevel != 0)
--		ath9k_hw_ani_control(ah, ATH9K_ANI_FIRSTEP_LEVEL,
--				     aniState->firstepLevel);
--
--	ath9k_ani_restart(ah);
--
--	ENABLE_REGWRITE_BUFFER(ah);
--
--	REG_WRITE(ah, AR_PHY_ERR_MASK_1, AR_PHY_ERR_OFDM_TIMING);
--	REG_WRITE(ah, AR_PHY_ERR_MASK_2, AR_PHY_ERR_CCK_TIMING);
--
--	REGWRITE_BUFFER_FLUSH(ah);
--}
--
- /*
-  * Restore the ANI parameters in the HAL and reset the statistics.
-  * This routine should be called for every hardware reset and for
-@@ -539,13 +289,11 @@ void ath9k_ani_reset(struct ath_hw *ah, 
- 	struct ar5416AniState *aniState = &ah->curchan->ani;
- 	struct ath9k_channel *chan = ah->curchan;
- 	struct ath_common *common = ath9k_hw_common(ah);
-+	int ofdm_nil, cck_nil;
- 
- 	if (!DO_ANI(ah))
- 		return;
- 
--	if (!use_new_ani(ah))
--		return ath9k_ani_reset_old(ah, is_scanning);
--
- 	BUG_ON(aniState == NULL);
- 	ah->stats.ast_ani_reset++;
- 
-@@ -563,6 +311,11 @@ void ath9k_ani_reset(struct ath_hw *ah, 
- 	/* always allow mode (on/off) to be controlled */
- 	ah->ani_function |= ATH9K_ANI_MODE;
- 
-+	ofdm_nil = max_t(int, ATH9K_ANI_OFDM_DEF_LEVEL,
-+			 aniState->ofdmNoiseImmunityLevel);
-+	cck_nil = max_t(int, ATH9K_ANI_CCK_DEF_LEVEL,
-+			 aniState->cckNoiseImmunityLevel);
-+
- 	if (is_scanning ||
- 	    (ah->opmode != NL80211_IFTYPE_STATION &&
- 	     ah->opmode != NL80211_IFTYPE_ADHOC)) {
-@@ -586,8 +339,8 @@ void ath9k_ani_reset(struct ath_hw *ah, 
- 				aniState->cckNoiseImmunityLevel);
- 
- 			aniState->update_ani = false;
--			ath9k_hw_set_ofdm_nil(ah, ATH9K_ANI_OFDM_DEF_LEVEL);
--			ath9k_hw_set_cck_nil(ah, ATH9K_ANI_CCK_DEF_LEVEL);
-+			ofdm_nil = ATH9K_ANI_OFDM_DEF_LEVEL;
-+			cck_nil = ATH9K_ANI_CCK_DEF_LEVEL;
- 		}
+ 	if (!ath9k_hw_set_txq_props(ah, sc->beacon.beaconq, &qi)) {
+-		ath_err(common,
+-			"Unable to update h/w beacon queue parameters\n");
+-		return 0;
++		ath_err(common, "Unable to update h/w beacon queue parameters\n");
  	} else {
- 		/*
-@@ -603,11 +356,9 @@ void ath9k_ani_reset(struct ath_hw *ah, 
- 			aniState->cckNoiseImmunityLevel);
- 
- 			aniState->update_ani = true;
--			ath9k_hw_set_ofdm_nil(ah,
--					      aniState->ofdmNoiseImmunityLevel);
--			ath9k_hw_set_cck_nil(ah,
--					     aniState->cckNoiseImmunityLevel);
+ 		ath9k_hw_resettxqueue(ah, sc->beacon.beaconq);
+-		return 1;
  	}
-+	ath9k_hw_set_ofdm_nil(ah, ofdm_nil);
-+	ath9k_hw_set_cck_nil(ah, cck_nil);
+ }
+ 
+@@ -70,7 +68,7 @@ int ath_beaconq_config(struct ath_softc 
+  *  up rate codes, and channel flags. Beacons are always sent out at the
+  *  lowest rate, and are not retried.
+ */
+-static void ath_beacon_setup(struct ath_softc *sc, struct ieee80211_vif *vif,
++static void ath9k_beacon_setup(struct ath_softc *sc, struct ieee80211_vif *vif,
+ 			     struct ath_buf *bf, int rateidx)
+ {
+ 	struct sk_buff *skb = bf->bf_mpdu;
+@@ -81,8 +79,6 @@ static void ath_beacon_setup(struct ath_
+ 	u8 chainmask = ah->txchainmask;
+ 	u8 rate = 0;
+ 
+-	ath9k_reset_beacon_status(sc);
+-
+ 	sband = &sc->sbands[common->hw->conf.channel->band];
+ 	rate = sband->bitrates[rateidx].hw_value;
+ 	if (vif->bss_conf.use_short_preamble)
+@@ -111,7 +107,7 @@ static void ath_beacon_setup(struct ath_
+ 	ath9k_hw_set_txdesc(ah, bf->bf_desc, &info);
+ }
+ 
+-static void ath_tx_cabq(struct ieee80211_hw *hw, struct sk_buff *skb)
++static void ath9k_tx_cabq(struct ieee80211_hw *hw, struct sk_buff *skb)
+ {
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+@@ -128,28 +124,22 @@ static void ath_tx_cabq(struct ieee80211
+ 	}
+ }
+ 
+-static struct ath_buf *ath_beacon_generate(struct ieee80211_hw *hw,
+-					   struct ieee80211_vif *vif)
++static struct ath_buf *ath9k_beacon_generate(struct ieee80211_hw *hw,
++					     struct ieee80211_vif *vif)
+ {
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	struct ath_buf *bf;
+-	struct ath_vif *avp;
++	struct ath_vif *avp = (void *)vif->drv_priv;
+ 	struct sk_buff *skb;
+-	struct ath_txq *cabq;
++	struct ath_txq *cabq = sc->beacon.cabq;
+ 	struct ieee80211_tx_info *info;
++	struct ieee80211_mgmt *mgmt_hdr;
+ 	int cabq_depth;
+ 
+-	ath9k_reset_beacon_status(sc);
+-
+-	avp = (void *)vif->drv_priv;
+-	cabq = sc->beacon.cabq;
+-
+-	if ((avp->av_bcbuf == NULL) || !avp->is_bslot_active)
++	if (avp->av_bcbuf == NULL)
+ 		return NULL;
+ 
+-	/* Release the old beacon first */
+-
+ 	bf = avp->av_bcbuf;
+ 	skb = bf->bf_mpdu;
+ 	if (skb) {
+@@ -159,14 +149,14 @@ static struct ath_buf *ath_beacon_genera
+ 		bf->bf_buf_addr = 0;
+ 	}
+ 
+-	/* Get a new beacon from mac80211 */
+-
+ 	skb = ieee80211_beacon_get(hw, vif);
+-	bf->bf_mpdu = skb;
+ 	if (skb == NULL)
+ 		return NULL;
+-	((struct ieee80211_mgmt *)skb->data)->u.beacon.timestamp =
+-		avp->tsf_adjust;
++
++	bf->bf_mpdu = skb;
++
++	mgmt_hdr = (struct ieee80211_mgmt *)skb->data;
++	mgmt_hdr->u.beacon.timestamp = avp->tsf_adjust;
+ 
+ 	info = IEEE80211_SKB_CB(skb);
+ 	if (info->flags & IEEE80211_TX_CTL_ASSIGN_SEQ) {
+@@ -212,61 +202,52 @@ static struct ath_buf *ath_beacon_genera
+ 		}
+ 	}
+ 
+-	ath_beacon_setup(sc, vif, bf, info->control.rates[0].idx);
++	ath9k_beacon_setup(sc, vif, bf, info->control.rates[0].idx);
+ 
+ 	while (skb) {
+-		ath_tx_cabq(hw, skb);
++		ath9k_tx_cabq(hw, skb);
+ 		skb = ieee80211_get_buffered_bc(hw, vif);
+ 	}
+ 
+ 	return bf;
+ }
+ 
+-int ath_beacon_alloc(struct ath_softc *sc, struct ieee80211_vif *vif)
++void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
+ {
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+-	struct ath_vif *avp;
+-	struct ath_buf *bf;
+-	struct sk_buff *skb;
+-	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
+-	__le64 tstamp;
++	struct ath_vif *avp = (void *)vif->drv_priv;
++	int slot;
+ 
+-	avp = (void *)vif->drv_priv;
++	avp->av_bcbuf = list_first_entry(&sc->beacon.bbuf, struct ath_buf, list);
++	list_del(&avp->av_bcbuf->list);
+ 
+-	/* Allocate a beacon descriptor if we haven't done so. */
+-	if (!avp->av_bcbuf) {
+-		/* Allocate beacon state for hostap/ibss.  We know
+-		 * a buffer is available. */
+-		avp->av_bcbuf = list_first_entry(&sc->beacon.bbuf,
+-						 struct ath_buf, list);
+-		list_del(&avp->av_bcbuf->list);
+-
+-		if (ath9k_uses_beacons(vif->type)) {
+-			int slot;
+-			/*
+-			 * Assign the vif to a beacon xmit slot. As
+-			 * above, this cannot fail to find one.
+-			 */
+-			avp->av_bslot = 0;
+-			for (slot = 0; slot < ATH_BCBUF; slot++)
+-				if (sc->beacon.bslot[slot] == NULL) {
+-					avp->av_bslot = slot;
+-					avp->is_bslot_active = false;
+-
+-					/* NB: keep looking for a double slot */
+-					if (slot == 0 || !sc->beacon.bslot[slot-1])
+-						break;
+-				}
+-			BUG_ON(sc->beacon.bslot[avp->av_bslot] != NULL);
+-			sc->beacon.bslot[avp->av_bslot] = vif;
+-			sc->nbcnvifs++;
++	for (slot = 0; slot < ATH_BCBUF; slot++) {
++		if (sc->beacon.bslot[slot] == NULL) {
++			avp->av_bslot = slot;
++			break;
+ 		}
+ 	}
+ 
+-	/* release the previous beacon frame, if it already exists. */
+-	bf = avp->av_bcbuf;
+-	if (bf->bf_mpdu != NULL) {
+-		skb = bf->bf_mpdu;
++	sc->beacon.bslot[avp->av_bslot] = vif;
++	sc->nbcnvifs++;
++
++	ath_dbg(common, CONFIG, "Added interface at beacon slot: %d\n",
++		avp->av_bslot);
++}
++
++void ath9k_beacon_remove_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
++{
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
++	struct ath_vif *avp = (void *)vif->drv_priv;
++	struct ath_buf *bf = avp->av_bcbuf;
++
++	ath_dbg(common, CONFIG, "Removing interface at beacon slot: %d\n",
++		avp->av_bslot);
++
++	tasklet_disable(&sc->bcon_tasklet);
++
++	if (bf && bf->bf_mpdu) {
++		struct sk_buff *skb = bf->bf_mpdu;
+ 		dma_unmap_single(sc->dev, bf->bf_buf_addr,
+ 				 skb->len, DMA_TO_DEVICE);
+ 		dev_kfree_skb_any(skb);
+@@ -274,99 +255,74 @@ int ath_beacon_alloc(struct ath_softc *s
+ 		bf->bf_buf_addr = 0;
+ 	}
+ 
+-	/* NB: the beacon data buffer must be 32-bit aligned. */
+-	skb = ieee80211_beacon_get(sc->hw, vif);
+-	if (skb == NULL)
+-		return -ENOMEM;
+-
+-	tstamp = ((struct ieee80211_mgmt *)skb->data)->u.beacon.timestamp;
+-	sc->beacon.bc_tstamp = (u32) le64_to_cpu(tstamp);
+-	/* Calculate a TSF adjustment factor required for staggered beacons. */
+-	if (avp->av_bslot > 0) {
+-		u64 tsfadjust;
+-		int intval;
++	avp->av_bcbuf = NULL;
++	sc->beacon.bslot[avp->av_bslot] = NULL;
++	sc->nbcnvifs--;
++	list_add_tail(&bf->list, &sc->beacon.bbuf);
+ 
+-		intval = cur_conf->beacon_interval ? : ATH_DEFAULT_BINTVAL;
++	tasklet_enable(&sc->bcon_tasklet);
++}
+ 
+-		/*
+-		 * Calculate the TSF offset for this beacon slot, i.e., the
+-		 * number of usecs that need to be added to the timestamp field
+-		 * in Beacon and Probe Response frames. Beacon slot 0 is
+-		 * processed at the correct offset, so it does not require TSF
+-		 * adjustment. Other slots are adjusted to get the timestamp
+-		 * close to the TBTT for the BSS.
+-		 */
+-		tsfadjust = TU_TO_USEC(intval * avp->av_bslot) / ATH_BCBUF;
+-		avp->tsf_adjust = cpu_to_le64(tsfadjust);
++static int ath9k_beacon_choose_slot(struct ath_softc *sc)
++{
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
++	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
++	u16 intval;
++	u32 tsftu;
++	u64 tsf;
++	int slot;
+ 
+-		ath_dbg(common, BEACON,
+-			"stagger beacons, bslot %d intval %u tsfadjust %llu\n",
+-			avp->av_bslot, intval, (unsigned long long)tsfadjust);
++	if (sc->sc_ah->opmode != NL80211_IFTYPE_AP) {
++		ath_dbg(common, BEACON, "slot 0, tsf: %llu\n",
++			ath9k_hw_gettsf64(sc->sc_ah));
++		return 0;
++	}
+ 
+-		((struct ieee80211_mgmt *)skb->data)->u.beacon.timestamp =
+-			avp->tsf_adjust;
+-	} else
+-		avp->tsf_adjust = cpu_to_le64(0);
++	intval = cur_conf->beacon_interval ? : ATH_DEFAULT_BINTVAL;
++	tsf = ath9k_hw_gettsf64(sc->sc_ah);
++	tsf += TU_TO_USEC(sc->sc_ah->config.sw_beacon_response_time);
++	tsftu = TSF_TO_TU((tsf * ATH_BCBUF) >>32, tsf * ATH_BCBUF);
++	slot = (tsftu % (intval * ATH_BCBUF)) / intval;
+ 
+-	bf->bf_mpdu = skb;
+-	bf->bf_buf_addr = dma_map_single(sc->dev, skb->data,
+-					 skb->len, DMA_TO_DEVICE);
+-	if (unlikely(dma_mapping_error(sc->dev, bf->bf_buf_addr))) {
+-		dev_kfree_skb_any(skb);
+-		bf->bf_mpdu = NULL;
+-		bf->bf_buf_addr = 0;
+-		ath_err(common, "dma_mapping_error on beacon alloc\n");
+-		return -ENOMEM;
+-	}
+-	avp->is_bslot_active = true;
++	ath_dbg(common, BEACON, "slot: %d tsf: %llu tsftu: %u\n",
++		slot, tsf, tsftu / ATH_BCBUF);
+ 
+-	return 0;
++	return slot;
+ }
+ 
+-void ath_beacon_return(struct ath_softc *sc, struct ath_vif *avp)
++void ath9k_set_tsfadjust(struct ath_softc *sc, struct ieee80211_vif *vif)
+ {
+-	if (avp->av_bcbuf != NULL) {
+-		struct ath_buf *bf;
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
++	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
++	struct ath_vif *avp = (void *)vif->drv_priv;
++	u64 tsfadjust;
+ 
+-		avp->is_bslot_active = false;
+-		if (avp->av_bslot != -1) {
+-			sc->beacon.bslot[avp->av_bslot] = NULL;
+-			sc->nbcnvifs--;
+-			avp->av_bslot = -1;
+-		}
++	if (avp->av_bslot == 0)
++		return;
+ 
+-		bf = avp->av_bcbuf;
+-		if (bf->bf_mpdu != NULL) {
+-			struct sk_buff *skb = bf->bf_mpdu;
+-			dma_unmap_single(sc->dev, bf->bf_buf_addr,
+-					 skb->len, DMA_TO_DEVICE);
+-			dev_kfree_skb_any(skb);
+-			bf->bf_mpdu = NULL;
+-			bf->bf_buf_addr = 0;
+-		}
+-		list_add_tail(&bf->list, &sc->beacon.bbuf);
++	tsfadjust = cur_conf->beacon_interval * avp->av_bslot / ATH_BCBUF;
++	avp->tsf_adjust = cpu_to_le64(TU_TO_USEC(tsfadjust));
+ 
+-		avp->av_bcbuf = NULL;
+-	}
++	ath_dbg(common, CONFIG, "tsfadjust is: %llu for bslot: %d\n",
++		(unsigned long long)tsfadjust, avp->av_bslot);
+ }
+ 
+-void ath_beacon_tasklet(unsigned long data)
++void ath9k_beacon_tasklet(unsigned long data)
+ {
+ 	struct ath_softc *sc = (struct ath_softc *)data;
+-	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ath_buf *bf = NULL;
+ 	struct ieee80211_vif *vif;
+ 	bool edma = !!(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA);
+ 	int slot;
+-	u32 bfaddr, bc = 0;
+ 
+-	if (work_pending(&sc->hw_reset_work)) {
++	if (test_bit(SC_OP_HW_RESET, &sc->sc_flags)) {
+ 		ath_dbg(common, RESET,
+ 			"reset work is pending, skip beaconing now\n");
+ 		return;
+ 	}
++
+ 	/*
+ 	 * Check if the previous beacon has gone out.  If
+ 	 * not don't try to post another, skip this period
+@@ -390,55 +346,25 @@ void ath_beacon_tasklet(unsigned long da
+ 		} else if (sc->beacon.bmisscnt >= BSTUCK_THRESH) {
+ 			ath_dbg(common, BSTUCK, "beacon is officially stuck\n");
+ 			sc->beacon.bmisscnt = 0;
+-			set_bit(SC_OP_TSF_RESET, &sc->sc_flags);
+-			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
++			ath9k_queue_reset(sc, RESET_TYPE_BEACON_STUCK);
+ 		}
+ 
+ 		return;
+ 	}
+ 
+-	/*
+-	 * Generate beacon frames. we are sending frames
+-	 * staggered so calculate the slot for this frame based
+-	 * on the tsf to safeguard against missing an swba.
+-	 */
+-
+-
+-	if (ah->opmode == NL80211_IFTYPE_AP) {
+-		u16 intval;
+-		u32 tsftu;
+-		u64 tsf;
+-
+-		intval = cur_conf->beacon_interval ? : ATH_DEFAULT_BINTVAL;
+-		tsf = ath9k_hw_gettsf64(ah);
+-		tsf += TU_TO_USEC(ah->config.sw_beacon_response_time);
+-		tsftu = TSF_TO_TU((tsf * ATH_BCBUF) >>32, tsf * ATH_BCBUF);
+-		slot = (tsftu % (intval * ATH_BCBUF)) / intval;
+-		vif = sc->beacon.bslot[slot];
+-
+-		ath_dbg(common, BEACON,
+-			"slot %d [tsf %llu tsftu %u intval %u] vif %p\n",
+-			slot, tsf, tsftu / ATH_BCBUF, intval, vif);
+-	} else {
+-		slot = 0;
+-		vif = sc->beacon.bslot[slot];
+-	}
++	slot = ath9k_beacon_choose_slot(sc);
++	vif = sc->beacon.bslot[slot];
+ 
++	if (!vif || !vif->bss_conf.enable_beacon)
++		return;
+ 
+-	bfaddr = 0;
+-	if (vif) {
+-		bf = ath_beacon_generate(sc->hw, vif);
+-		if (bf != NULL) {
+-			bfaddr = bf->bf_daddr;
+-			bc = 1;
+-		}
++	bf = ath9k_beacon_generate(sc->hw, vif);
++	WARN_ON(!bf);
+ 
+-		if (sc->beacon.bmisscnt != 0) {
+-			ath_dbg(common, BSTUCK,
+-				"resume beacon xmit after %u misses\n",
+-				sc->beacon.bmisscnt);
+-			sc->beacon.bmisscnt = 0;
+-		}
++	if (sc->beacon.bmisscnt != 0) {
++		ath_dbg(common, BSTUCK, "resume beacon xmit after %u misses\n",
++			sc->beacon.bmisscnt);
++		sc->beacon.bmisscnt = 0;
+ 	}
  
  	/*
- 	 * enable phy counters if hw supports or if not, enable phy
-@@ -627,9 +378,6 @@ static bool ath9k_hw_ani_read_counters(s
- {
- 	struct ath_common *common = ath9k_hw_common(ah);
- 	struct ar5416AniState *aniState = &ah->curchan->ani;
--	u32 ofdm_base = 0;
--	u32 cck_base = 0;
--	u32 ofdmPhyErrCnt, cckPhyErrCnt;
- 	u32 phyCnt1, phyCnt2;
- 	int32_t listenTime;
- 
-@@ -642,11 +390,6 @@ static bool ath9k_hw_ani_read_counters(s
- 		return false;
+@@ -458,39 +384,37 @@ void ath_beacon_tasklet(unsigned long da
+ 	 *     set to ATH_BCBUF so this check is a noop.
+ 	 */
+ 	if (sc->beacon.updateslot == UPDATE) {
+-		sc->beacon.updateslot = COMMIT; /* commit next beacon */
++		sc->beacon.updateslot = COMMIT;
+ 		sc->beacon.slotupdate = slot;
+-	} else if (sc->beacon.updateslot == COMMIT && sc->beacon.slotupdate == slot) {
++	} else if (sc->beacon.updateslot == COMMIT &&
++		   sc->beacon.slotupdate == slot) {
+ 		ah->slottime = sc->beacon.slottime;
+ 		ath9k_hw_init_global_settings(ah);
+ 		sc->beacon.updateslot = OK;
  	}
+-	if (bfaddr != 0) {
++
++	if (bf) {
++		ath9k_reset_beacon_status(sc);
++
+ 		/* NB: cabq traffic should already be queued and primed */
+-		ath9k_hw_puttxbuf(ah, sc->beacon.beaconq, bfaddr);
++		ath9k_hw_puttxbuf(ah, sc->beacon.beaconq, bf->bf_daddr);
  
--	if (!use_new_ani(ah)) {
--		ofdm_base = AR_PHY_COUNTMAX - ah->config.ofdm_trig_high;
--		cck_base = AR_PHY_COUNTMAX - ah->config.cck_trig_high;
+ 		if (!edma)
+ 			ath9k_hw_txstart(ah, sc->beacon.beaconq);
+-
+-		sc->beacon.ast_be_xmit += bc;     /* XXX per-vif? */
+ 	}
+ }
+ 
+-static void ath9k_beacon_init(struct ath_softc *sc,
+-			      u32 next_beacon,
+-			      u32 beacon_period)
++static void ath9k_beacon_init(struct ath_softc *sc, u32 nexttbtt, u32 intval)
+ {
+-	if (test_bit(SC_OP_TSF_RESET, &sc->sc_flags)) {
+-		ath9k_ps_wakeup(sc);
+-		ath9k_hw_reset_tsf(sc->sc_ah);
 -	}
 -
- 	aniState->listenTime += listenTime;
+-	ath9k_hw_beaconinit(sc->sc_ah, next_beacon, beacon_period);
++	struct ath_hw *ah = sc->sc_ah;
  
- 	ath9k_hw_update_mibstats(ah, &ah->ah_mibStats);
-@@ -654,35 +397,12 @@ static bool ath9k_hw_ani_read_counters(s
- 	phyCnt1 = REG_READ(ah, AR_PHY_ERR_1);
- 	phyCnt2 = REG_READ(ah, AR_PHY_ERR_2);
+-	if (test_bit(SC_OP_TSF_RESET, &sc->sc_flags)) {
+-		ath9k_ps_restore(sc);
+-		clear_bit(SC_OP_TSF_RESET, &sc->sc_flags);
+-	}
++	ath9k_hw_disable_interrupts(ah);
++	ath9k_hw_reset_tsf(ah);
++	ath9k_beaconq_config(sc);
++	ath9k_hw_beaconinit(ah, nexttbtt, intval);
++	sc->beacon.bmisscnt = 0;
++	ath9k_hw_set_interrupts(ah);
++	ath9k_hw_enable_interrupts(ah);
+ }
  
--	if (!use_new_ani(ah) && (phyCnt1 < ofdm_base || phyCnt2 < cck_base)) {
--		if (phyCnt1 < ofdm_base) {
--			ath_dbg(common, ANI,
--				"phyCnt1 0x%x, resetting counter value to 0x%x\n",
--				phyCnt1, ofdm_base);
--			REG_WRITE(ah, AR_PHY_ERR_1, ofdm_base);
--			REG_WRITE(ah, AR_PHY_ERR_MASK_1,
--				  AR_PHY_ERR_OFDM_TIMING);
--		}
--		if (phyCnt2 < cck_base) {
--			ath_dbg(common, ANI,
--				"phyCnt2 0x%x, resetting counter value to 0x%x\n",
--				phyCnt2, cck_base);
--			REG_WRITE(ah, AR_PHY_ERR_2, cck_base);
--			REG_WRITE(ah, AR_PHY_ERR_MASK_2,
--				  AR_PHY_ERR_CCK_TIMING);
--		}
+ /*
+@@ -498,32 +422,27 @@ static void ath9k_beacon_init(struct ath
+  * burst together.  For the former arrange for the SWBA to be delivered for each
+  * slot. Slots that are not occupied will generate nothing.
+  */
+-static void ath_beacon_config_ap(struct ath_softc *sc,
+-				 struct ath_beacon_config *conf)
++static void ath9k_beacon_config_ap(struct ath_softc *sc,
++				   struct ath_beacon_config *conf)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
++	struct ath_common *common = ath9k_hw_common(ah);
+ 	u32 nexttbtt, intval;
+ 
+ 	/* NB: the beacon interval is kept internally in TU's */
+ 	intval = TU_TO_USEC(conf->beacon_interval);
+-	intval /= ATH_BCBUF;    /* for staggered beacons */
++	intval /= ATH_BCBUF;
+ 	nexttbtt = intval;
+ 
+-	/*
+-	 * In AP mode we enable the beacon timers and SWBA interrupts to
+-	 * prepare beacon frames.
+-	 */
+-	ah->imask |= ATH9K_INT_SWBA;
+-	ath_beaconq_config(sc);
++	if (conf->enable_beacon)
++		ah->imask |= ATH9K_INT_SWBA;
++	else
++		ah->imask &= ~ATH9K_INT_SWBA;
+ 
+-	/* Set the computed AP beacon timers */
++	ath_dbg(common, BEACON, "AP nexttbtt: %u intval: %u conf_intval: %u\n",
++		nexttbtt, intval, conf->beacon_interval);
+ 
+-	ath9k_hw_disable_interrupts(ah);
+-	set_bit(SC_OP_TSF_RESET, &sc->sc_flags);
+ 	ath9k_beacon_init(sc, nexttbtt, intval);
+-	sc->beacon.bmisscnt = 0;
+-	ath9k_hw_set_interrupts(ah);
+-	ath9k_hw_enable_interrupts(ah);
+ }
+ 
+ /*
+@@ -534,8 +453,8 @@ static void ath_beacon_config_ap(struct 
+  * we'll receive a BMISS interrupt when we stop seeing beacons from the AP
+  * we've associated with.
+  */
+-static void ath_beacon_config_sta(struct ath_softc *sc,
+-				  struct ath_beacon_config *conf)
++static void ath9k_beacon_config_sta(struct ath_softc *sc,
++				    struct ath_beacon_config *conf)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+@@ -654,8 +573,8 @@ static void ath_beacon_config_sta(struct
+ 	ath9k_hw_enable_interrupts(ah);
+ }
+ 
+-static void ath_beacon_config_adhoc(struct ath_softc *sc,
+-				    struct ath_beacon_config *conf)
++static void ath9k_beacon_config_adhoc(struct ath_softc *sc,
++				      struct ath_beacon_config *conf)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+@@ -669,82 +588,53 @@ static void ath_beacon_config_adhoc(stru
+ 	tsf = roundup(ath9k_hw_gettsf32(ah) + TU_TO_USEC(FUDGE), intval);
+ 	nexttbtt = tsf + intval;
+ 
+-	ath_dbg(common, BEACON, "IBSS nexttbtt %u intval %u (%u)\n",
+-		nexttbtt, intval, conf->beacon_interval);
+-
+-	/*
+-	 * In IBSS mode enable the beacon timers but only enable SWBA interrupts
+-	 * if we need to manually prepare beacon frames.  Otherwise we use a
+-	 * self-linked tx descriptor and let the hardware deal with things.
+-	 */
+-	ah->imask |= ATH9K_INT_SWBA;
+-
+-	ath_beaconq_config(sc);
++	if (conf->enable_beacon)
++		ah->imask |= ATH9K_INT_SWBA;
++	else
++		ah->imask &= ~ATH9K_INT_SWBA;
+ 
+-	/* Set the computed ADHOC beacon timers */
++	ath_dbg(common, BEACON, "IBSS nexttbtt: %u intval: %u conf_intval: %u\n",
++		nexttbtt, intval, conf->beacon_interval);
+ 
+-	ath9k_hw_disable_interrupts(ah);
+ 	ath9k_beacon_init(sc, nexttbtt, intval);
+-	sc->beacon.bmisscnt = 0;
+-
+-	ath9k_hw_set_interrupts(ah);
+-	ath9k_hw_enable_interrupts(ah);
+ }
+ 
+-static bool ath9k_allow_beacon_config(struct ath_softc *sc,
+-				      struct ieee80211_vif *vif)
++bool ath9k_allow_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif)
+ {
+-	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+-	struct ieee80211_bss_conf *bss_conf = &vif->bss_conf;
+ 	struct ath_vif *avp = (void *)vif->drv_priv;
+ 
+-	/*
+-	 * Can not have different beacon interval on multiple
+-	 * AP interface case
+-	 */
+-	if ((sc->sc_ah->opmode == NL80211_IFTYPE_AP) &&
+-	    (sc->nbcnvifs > 1) &&
+-	    (vif->type == NL80211_IFTYPE_AP) &&
+-	    (cur_conf->beacon_interval != bss_conf->beacon_int)) {
+-		ath_dbg(common, CONFIG,
+-			"Changing beacon interval of multiple AP interfaces !\n");
 -		return false;
 -	}
-+	ah->stats.ast_ani_ofdmerrs += phyCnt1 - aniState->ofdmPhyErrCount;
-+	aniState->ofdmPhyErrCount = phyCnt1;
+-	/*
+-	 * Can not configure station vif's beacon config
+-	 * while on AP opmode
+-	 */
+-	if ((sc->sc_ah->opmode == NL80211_IFTYPE_AP) &&
+-	    (vif->type != NL80211_IFTYPE_AP)) {
+-		ath_dbg(common, CONFIG,
+-			"STA vif's beacon not allowed on AP mode\n");
+-		return false;
++	if (sc->sc_ah->opmode == NL80211_IFTYPE_AP) {
++		if ((vif->type != NL80211_IFTYPE_AP) ||
++		    (sc->nbcnvifs > 1)) {
++			ath_dbg(common, CONFIG,
++				"An AP interface is already present !\n");
++			return false;
++		}
+ 	}
+-	/*
+-	 * Do not allow beacon config if HW was already configured
+-	 * with another STA vif
+-	 */
+-	if ((sc->sc_ah->opmode == NL80211_IFTYPE_STATION) &&
+-	    (vif->type == NL80211_IFTYPE_STATION) &&
+-	    test_bit(SC_OP_BEACONS, &sc->sc_flags) &&
+-	    !avp->primary_sta_vif) {
+-		ath_dbg(common, CONFIG,
+-			"Beacon already configured for a station interface\n");
+-		return false;
 +
-+	ah->stats.ast_ani_cckerrs += phyCnt2 - aniState->cckPhyErrCount;
-+	aniState->cckPhyErrCount = phyCnt2;
- 
--	ofdmPhyErrCnt = phyCnt1 - ofdm_base;
--	ah->stats.ast_ani_ofdmerrs +=
--		ofdmPhyErrCnt - aniState->ofdmPhyErrCount;
--	aniState->ofdmPhyErrCount = ofdmPhyErrCnt;
--
--	cckPhyErrCnt = phyCnt2 - cck_base;
--	ah->stats.ast_ani_cckerrs +=
--		cckPhyErrCnt - aniState->cckPhyErrCount;
--	aniState->cckPhyErrCount = cckPhyErrCnt;
++	if (sc->sc_ah->opmode == NL80211_IFTYPE_STATION) {
++		if ((vif->type == NL80211_IFTYPE_STATION) &&
++		    test_bit(SC_OP_BEACONS, &sc->sc_flags) &&
++		    !avp->primary_sta_vif) {
++			ath_dbg(common, CONFIG,
++				"Beacon already configured for a station interface\n");
++			return false;
++		}
+ 	}
++
  	return true;
  }
  
-@@ -716,21 +436,10 @@ void ath9k_hw_ani_monitor(struct ath_hw 
+-void ath_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif)
++static void ath9k_cache_beacon_config(struct ath_softc *sc,
++				      struct ieee80211_bss_conf *bss_conf)
+ {
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
+-	struct ieee80211_bss_conf *bss_conf = &vif->bss_conf;
  
- 	if (aniState->listenTime > ah->aniperiod) {
- 		if (cckPhyErrRate < ah->config.cck_trig_low &&
--		    ((ofdmPhyErrRate < ah->config.ofdm_trig_low &&
--		      aniState->ofdmNoiseImmunityLevel <
--		      ATH9K_ANI_OFDM_DEF_LEVEL) ||
--		     (ofdmPhyErrRate < ATH9K_ANI_OFDM_TRIG_LOW_ABOVE_INI &&
--		      aniState->ofdmNoiseImmunityLevel >=
--		      ATH9K_ANI_OFDM_DEF_LEVEL))) {
-+		    ofdmPhyErrRate < ah->config.ofdm_trig_low) {
- 			ath9k_hw_ani_lower_immunity(ah);
- 			aniState->ofdmsTurn = !aniState->ofdmsTurn;
--		} else if ((ofdmPhyErrRate > ah->config.ofdm_trig_high &&
--			    aniState->ofdmNoiseImmunityLevel >=
--			    ATH9K_ANI_OFDM_DEF_LEVEL) ||
--			   (ofdmPhyErrRate >
--			    ATH9K_ANI_OFDM_TRIG_HIGH_BELOW_INI &&
--			    aniState->ofdmNoiseImmunityLevel <
--			    ATH9K_ANI_OFDM_DEF_LEVEL)) {
-+		} else if (ofdmPhyErrRate > ah->config.ofdm_trig_high) {
- 			ath9k_hw_ani_ofdm_err_trigger(ah);
- 			aniState->ofdmsTurn = false;
- 		} else if (cckPhyErrRate > ah->config.cck_trig_high) {
-@@ -778,49 +487,6 @@ void ath9k_hw_disable_mib_counters(struc
+-	if (!ath9k_allow_beacon_config(sc, vif))
+-		return;
++	ath_dbg(common, BEACON,
++		"Caching beacon data for BSS: %pM\n", bss_conf->bssid);
+ 
+-	/* Setup the beacon configuration parameters */
+ 	cur_conf->beacon_interval = bss_conf->beacon_int;
+ 	cur_conf->dtim_period = bss_conf->dtim_period;
+ 	cur_conf->listen_interval = 1;
+@@ -769,73 +659,59 @@ void ath_beacon_config(struct ath_softc 
+ 	if (cur_conf->dtim_period == 0)
+ 		cur_conf->dtim_period = 1;
+ 
+-	ath_set_beacon(sc);
  }
- EXPORT_SYMBOL(ath9k_hw_disable_mib_counters);
  
--/*
-- * Process a MIB interrupt.  We may potentially be invoked because
-- * any of the MIB counters overflow/trigger so don't assume we're
-- * here because a PHY error counter triggered.
-- */
--void ath9k_hw_proc_mib_event(struct ath_hw *ah)
+-static bool ath_has_valid_bslot(struct ath_softc *sc)
++void ath9k_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif,
++			 u32 changed)
+ {
+-	struct ath_vif *avp;
+-	int slot;
+-	bool found = false;
++	struct ieee80211_bss_conf *bss_conf = &vif->bss_conf;
++	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
+ 
+-	for (slot = 0; slot < ATH_BCBUF; slot++) {
+-		if (sc->beacon.bslot[slot]) {
+-			avp = (void *)sc->beacon.bslot[slot]->drv_priv;
+-			if (avp->is_bslot_active) {
+-				found = true;
+-				break;
+-			}
++	ath9k_cache_beacon_config(sc, bss_conf);
++
++	if (sc->sc_ah->opmode == NL80211_IFTYPE_STATION) {
++		ath9k_set_beacon(sc);
++		set_bit(SC_OP_BEACONS, &sc->sc_flags);
++	} else {
++		/*
++		 * Take care of multiple interfaces when
++		 * enabling/disabling SWBA.
++		 */
++		if (changed & BSS_CHANGED_BEACON_ENABLED) {
++			if (!bss_conf->enable_beacon &&
++			    (sc->nbcnvifs <= 1))
++				cur_conf->enable_beacon = false;
++			else if (bss_conf->enable_beacon)
++				cur_conf->enable_beacon = true;
+ 		}
++
++		ath9k_set_beacon(sc);
++
++		if (cur_conf->enable_beacon)
++			set_bit(SC_OP_BEACONS, &sc->sc_flags);
++		else
++			clear_bit(SC_OP_BEACONS, &sc->sc_flags);
+ 	}
+-	return found;
+ }
+ 
+-
+-void ath_set_beacon(struct ath_softc *sc)
++void ath9k_set_beacon(struct ath_softc *sc)
+ {
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
+ 
+ 	switch (sc->sc_ah->opmode) {
+ 	case NL80211_IFTYPE_AP:
+-		if (ath_has_valid_bslot(sc))
+-			ath_beacon_config_ap(sc, cur_conf);
++		ath9k_beacon_config_ap(sc, cur_conf);
+ 		break;
+ 	case NL80211_IFTYPE_ADHOC:
+ 	case NL80211_IFTYPE_MESH_POINT:
+-		ath_beacon_config_adhoc(sc, cur_conf);
++		ath9k_beacon_config_adhoc(sc, cur_conf);
+ 		break;
+ 	case NL80211_IFTYPE_STATION:
+-		ath_beacon_config_sta(sc, cur_conf);
++		ath9k_beacon_config_sta(sc, cur_conf);
+ 		break;
+ 	default:
+ 		ath_dbg(common, CONFIG, "Unsupported beaconing mode\n");
+ 		return;
+ 	}
+-
+-	set_bit(SC_OP_BEACONS, &sc->sc_flags);
+-}
+-
+-void ath9k_set_beaconing_status(struct ath_softc *sc, bool status)
 -{
--	u32 phyCnt1, phyCnt2;
+-	struct ath_hw *ah = sc->sc_ah;
 -
--	/* Reset these counters regardless */
--	REG_WRITE(ah, AR_FILT_OFDM, 0);
--	REG_WRITE(ah, AR_FILT_CCK, 0);
--	if (!(REG_READ(ah, AR_SLP_MIB_CTRL) & AR_SLP_MIB_PENDING))
--		REG_WRITE(ah, AR_SLP_MIB_CTRL, AR_SLP_MIB_CLEAR);
--
--	/* Clear the mib counters and save them in the stats */
--	ath9k_hw_update_mibstats(ah, &ah->ah_mibStats);
--
--	if (!DO_ANI(ah)) {
--		/*
--		 * We must always clear the interrupt cause by
--		 * resetting the phy error regs.
--		 */
--		REG_WRITE(ah, AR_PHY_ERR_1, 0);
--		REG_WRITE(ah, AR_PHY_ERR_2, 0);
+-	if (!ath_has_valid_bslot(sc)) {
+-		clear_bit(SC_OP_BEACONS, &sc->sc_flags);
 -		return;
 -	}
 -
--	/* NB: these are not reset-on-read */
--	phyCnt1 = REG_READ(ah, AR_PHY_ERR_1);
--	phyCnt2 = REG_READ(ah, AR_PHY_ERR_2);
--	if (((phyCnt1 & AR_MIBCNT_INTRMASK) == AR_MIBCNT_INTRMASK) ||
--	    ((phyCnt2 & AR_MIBCNT_INTRMASK) == AR_MIBCNT_INTRMASK)) {
--
--		if (!use_new_ani(ah))
--			ath9k_hw_ani_read_counters(ah);
--
--		/* NB: always restart to insure the h/w counters are reset */
--		ath9k_ani_restart(ah);
--	}
--}
--EXPORT_SYMBOL(ath9k_hw_proc_mib_event);
--
- void ath9k_hw_ani_setup(struct ath_hw *ah)
- {
- 	int i;
-@@ -845,50 +511,31 @@ void ath9k_hw_ani_init(struct ath_hw *ah
- 
- 	ath_dbg(common, ANI, "Initialize ANI\n");
- 
--	if (use_new_ani(ah)) {
--		ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH_NEW;
--		ah->config.ofdm_trig_low = ATH9K_ANI_OFDM_TRIG_LOW_NEW;
-+	ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH;
-+	ah->config.ofdm_trig_low = ATH9K_ANI_OFDM_TRIG_LOW;
- 
--		ah->config.cck_trig_high = ATH9K_ANI_CCK_TRIG_HIGH_NEW;
--		ah->config.cck_trig_low = ATH9K_ANI_CCK_TRIG_LOW_NEW;
+-	ath9k_ps_wakeup(sc);
+-	if (status) {
+-		/* Re-enable beaconing */
+-		ah->imask |= ATH9K_INT_SWBA;
+-		ath9k_hw_set_interrupts(ah);
 -	} else {
--		ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH_OLD;
--		ah->config.ofdm_trig_low = ATH9K_ANI_OFDM_TRIG_LOW_OLD;
--
--		ah->config.cck_trig_high = ATH9K_ANI_CCK_TRIG_HIGH_OLD;
--		ah->config.cck_trig_low = ATH9K_ANI_CCK_TRIG_LOW_OLD;
+-		/* Disable SWBA interrupt */
+-		ah->imask &= ~ATH9K_INT_SWBA;
+-		ath9k_hw_set_interrupts(ah);
+-		tasklet_kill(&sc->bcon_tasklet);
+-		ath9k_hw_stop_dma_queue(ah, sc->beacon.beaconq);
 -	}
-+	ah->config.cck_trig_high = ATH9K_ANI_CCK_TRIG_HIGH;
-+	ah->config.cck_trig_low = ATH9K_ANI_CCK_TRIG_LOW;
- 
- 	for (i = 0; i < ARRAY_SIZE(ah->channels); i++) {
- 		struct ath9k_channel *chan = &ah->channels[i];
- 		struct ar5416AniState *ani = &chan->ani;
- 
--		if (use_new_ani(ah)) {
--			ani->spurImmunityLevel =
--				ATH9K_ANI_SPUR_IMMUNE_LVL_NEW;
-+		ani->spurImmunityLevel = ATH9K_ANI_SPUR_IMMUNE_LVL;
- 
--			ani->firstepLevel = ATH9K_ANI_FIRSTEP_LVL_NEW;
-+		ani->firstepLevel = ATH9K_ANI_FIRSTEP_LVL;
- 
--			if (AR_SREV_9300_20_OR_LATER(ah))
--				ani->mrcCCKOff =
--					!ATH9K_ANI_ENABLE_MRC_CCK;
--			else
--				ani->mrcCCKOff = true;
--
--			ani->ofdmsTurn = true;
--		} else {
--			ani->spurImmunityLevel =
--				ATH9K_ANI_SPUR_IMMUNE_LVL_OLD;
--			ani->firstepLevel = ATH9K_ANI_FIRSTEP_LVL_OLD;
-+		if (AR_SREV_9300_20_OR_LATER(ah))
-+			ani->mrcCCKOff =
-+				!ATH9K_ANI_ENABLE_MRC_CCK;
-+		else
-+			ani->mrcCCKOff = true;
- 
--			ani->cckWeakSigThreshold =
--				ATH9K_ANI_CCK_WEAK_SIG_THR;
--		}
-+		ani->ofdmsTurn = true;
- 
- 		ani->rssiThrHigh = ATH9K_ANI_RSSI_THR_HIGH;
- 		ani->rssiThrLow = ATH9K_ANI_RSSI_THR_LOW;
--		ani->ofdmWeakSigDetectOff =
--			!ATH9K_ANI_USE_OFDM_WEAK_SIG;
-+		ani->ofdmWeakSigDetect = ATH9K_ANI_USE_OFDM_WEAK_SIG;
- 		ani->cckNoiseImmunityLevel = ATH9K_ANI_CCK_DEF_LEVEL;
- 		ani->ofdmNoiseImmunityLevel = ATH9K_ANI_OFDM_DEF_LEVEL;
- 		ani->update_ani = false;
-@@ -898,13 +545,8 @@ void ath9k_hw_ani_init(struct ath_hw *ah
- 	 * since we expect some ongoing maintenance on the tables, let's sanity
- 	 * check here default level should not modify INI setting.
- 	 */
--	if (use_new_ani(ah)) {
--		ah->aniperiod = ATH9K_ANI_PERIOD_NEW;
--		ah->config.ani_poll_interval = ATH9K_ANI_POLLINTERVAL_NEW;
--	} else {
--		ah->aniperiod = ATH9K_ANI_PERIOD_OLD;
--		ah->config.ani_poll_interval = ATH9K_ANI_POLLINTERVAL_OLD;
--	}
-+	ah->aniperiod = ATH9K_ANI_PERIOD;
-+	ah->config.ani_poll_interval = ATH9K_ANI_POLLINTERVAL;
- 
- 	if (ah->config.enable_ani)
- 		ah->proc_phyerr |= HAL_PROCESS_ANI;
---- a/drivers/net/wireless/ath/ath9k/ani.h
-+++ b/drivers/net/wireless/ath/ath9k/ani.h
-@@ -24,42 +24,34 @@
- #define BEACON_RSSI(ahp) (ahp->stats.avgbrssi)
- 
- /* units are errors per second */
--#define ATH9K_ANI_OFDM_TRIG_HIGH_OLD      500
--#define ATH9K_ANI_OFDM_TRIG_HIGH_NEW      3500
-+#define ATH9K_ANI_OFDM_TRIG_HIGH          3500
- #define ATH9K_ANI_OFDM_TRIG_HIGH_BELOW_INI 1000
- 
- /* units are errors per second */
--#define ATH9K_ANI_OFDM_TRIG_LOW_OLD       200
--#define ATH9K_ANI_OFDM_TRIG_LOW_NEW       400
-+#define ATH9K_ANI_OFDM_TRIG_LOW           400
- #define ATH9K_ANI_OFDM_TRIG_LOW_ABOVE_INI 900
- 
- /* units are errors per second */
--#define ATH9K_ANI_CCK_TRIG_HIGH_OLD       200
--#define ATH9K_ANI_CCK_TRIG_HIGH_NEW       600
-+#define ATH9K_ANI_CCK_TRIG_HIGH           600
- 
- /* units are errors per second */
--#define ATH9K_ANI_CCK_TRIG_LOW_OLD        100
--#define ATH9K_ANI_CCK_TRIG_LOW_NEW        300
-+#define ATH9K_ANI_CCK_TRIG_LOW            300
- 
- #define ATH9K_ANI_NOISE_IMMUNE_LVL        4
- #define ATH9K_ANI_USE_OFDM_WEAK_SIG       true
- #define ATH9K_ANI_CCK_WEAK_SIG_THR        false
- 
--#define ATH9K_ANI_SPUR_IMMUNE_LVL_OLD     7
--#define ATH9K_ANI_SPUR_IMMUNE_LVL_NEW     3
-+#define ATH9K_ANI_SPUR_IMMUNE_LVL         3
- 
--#define ATH9K_ANI_FIRSTEP_LVL_OLD         0
--#define ATH9K_ANI_FIRSTEP_LVL_NEW         2
-+#define ATH9K_ANI_FIRSTEP_LVL             2
- 
- #define ATH9K_ANI_RSSI_THR_HIGH           40
- #define ATH9K_ANI_RSSI_THR_LOW            7
- 
--#define ATH9K_ANI_PERIOD_OLD              100
--#define ATH9K_ANI_PERIOD_NEW              300
-+#define ATH9K_ANI_PERIOD                  300
- 
- /* in ms */
--#define ATH9K_ANI_POLLINTERVAL_OLD        100
--#define ATH9K_ANI_POLLINTERVAL_NEW        1000
-+#define ATH9K_ANI_POLLINTERVAL            1000
- 
- #define HAL_NOISE_IMMUNE_MAX              4
- #define HAL_SPUR_IMMUNE_MAX               7
-@@ -122,13 +114,12 @@ struct ar5416AniState {
- 	u8 mrcCCKOff;
- 	u8 spurImmunityLevel;
- 	u8 firstepLevel;
--	u8 ofdmWeakSigDetectOff;
-+	u8 ofdmWeakSigDetect;
- 	u8 cckWeakSigThreshold;
- 	bool update_ani;
- 	u32 listenTime;
- 	int32_t rssiThrLow;
- 	int32_t rssiThrHigh;
--	u32 noiseFloor;
- 	u32 ofdmPhyErrCount;
- 	u32 cckPhyErrCount;
- 	int16_t pktRssi[2];
---- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-+++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-@@ -995,141 +995,6 @@ static u32 ar5008_hw_compute_pll_control
- 	return pll;
+-	ath9k_ps_restore(sc);
  }
- 
--static bool ar5008_hw_ani_control_old(struct ath_hw *ah,
--				      enum ath9k_ani_cmd cmd,
--				      int param)
--{
--	struct ar5416AniState *aniState = &ah->curchan->ani;
--	struct ath_common *common = ath9k_hw_common(ah);
--
--	switch (cmd & ah->ani_function) {
--	case ATH9K_ANI_NOISE_IMMUNITY_LEVEL:{
--		u32 level = param;
--
--		if (level >= ARRAY_SIZE(ah->totalSizeDesired)) {
--			ath_dbg(common, ANI, "level out of range (%u > %zu)\n",
--				level, ARRAY_SIZE(ah->totalSizeDesired));
--			return false;
--		}
--
--		REG_RMW_FIELD(ah, AR_PHY_DESIRED_SZ,
--			      AR_PHY_DESIRED_SZ_TOT_DES,
--			      ah->totalSizeDesired[level]);
--		REG_RMW_FIELD(ah, AR_PHY_AGC_CTL1,
--			      AR_PHY_AGC_CTL1_COARSE_LOW,
--			      ah->coarse_low[level]);
--		REG_RMW_FIELD(ah, AR_PHY_AGC_CTL1,
--			      AR_PHY_AGC_CTL1_COARSE_HIGH,
--			      ah->coarse_high[level]);
--		REG_RMW_FIELD(ah, AR_PHY_FIND_SIG,
--			      AR_PHY_FIND_SIG_FIRPWR,
--			      ah->firpwr[level]);
--
--		if (level > aniState->noiseImmunityLevel)
--			ah->stats.ast_ani_niup++;
--		else if (level < aniState->noiseImmunityLevel)
--			ah->stats.ast_ani_nidown++;
--		aniState->noiseImmunityLevel = level;
--		break;
--	}
--	case ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION:{
--		u32 on = param ? 1 : 0;
--
--		if (on)
--			REG_SET_BIT(ah, AR_PHY_SFCORR_LOW,
--				    AR_PHY_SFCORR_LOW_USE_SELF_CORR_LOW);
--		else
--			REG_CLR_BIT(ah, AR_PHY_SFCORR_LOW,
--				    AR_PHY_SFCORR_LOW_USE_SELF_CORR_LOW);
--
--		if (!on != aniState->ofdmWeakSigDetectOff) {
--			if (on)
--				ah->stats.ast_ani_ofdmon++;
--			else
--				ah->stats.ast_ani_ofdmoff++;
--			aniState->ofdmWeakSigDetectOff = !on;
--		}
--		break;
--	}
--	case ATH9K_ANI_CCK_WEAK_SIGNAL_THR:{
--		static const int weakSigThrCck[] = { 8, 6 };
--		u32 high = param ? 1 : 0;
--
--		REG_RMW_FIELD(ah, AR_PHY_CCK_DETECT,
--			      AR_PHY_CCK_DETECT_WEAK_SIG_THR_CCK,
--			      weakSigThrCck[high]);
--		if (high != aniState->cckWeakSigThreshold) {
--			if (high)
--				ah->stats.ast_ani_cckhigh++;
--			else
--				ah->stats.ast_ani_ccklow++;
--			aniState->cckWeakSigThreshold = high;
--		}
--		break;
--	}
--	case ATH9K_ANI_FIRSTEP_LEVEL:{
--		static const int firstep[] = { 0, 4, 8 };
--		u32 level = param;
--
--		if (level >= ARRAY_SIZE(firstep)) {
--			ath_dbg(common, ANI, "level out of range (%u > %zu)\n",
--				level, ARRAY_SIZE(firstep));
--			return false;
--		}
--		REG_RMW_FIELD(ah, AR_PHY_FIND_SIG,
--			      AR_PHY_FIND_SIG_FIRSTEP,
--			      firstep[level]);
--		if (level > aniState->firstepLevel)
--			ah->stats.ast_ani_stepup++;
--		else if (level < aniState->firstepLevel)
--			ah->stats.ast_ani_stepdown++;
--		aniState->firstepLevel = level;
--		break;
--	}
--	case ATH9K_ANI_SPUR_IMMUNITY_LEVEL:{
--		static const int cycpwrThr1[] = { 2, 4, 6, 8, 10, 12, 14, 16 };
--		u32 level = param;
--
--		if (level >= ARRAY_SIZE(cycpwrThr1)) {
--			ath_dbg(common, ANI, "level out of range (%u > %zu)\n",
--				level, ARRAY_SIZE(cycpwrThr1));
--			return false;
--		}
--		REG_RMW_FIELD(ah, AR_PHY_TIMING5,
--			      AR_PHY_TIMING5_CYCPWR_THR1,
--			      cycpwrThr1[level]);
--		if (level > aniState->spurImmunityLevel)
--			ah->stats.ast_ani_spurup++;
--		else if (level < aniState->spurImmunityLevel)
--			ah->stats.ast_ani_spurdown++;
--		aniState->spurImmunityLevel = level;
--		break;
--	}
--	case ATH9K_ANI_PRESENT:
--		break;
--	default:
--		ath_dbg(common, ANI, "invalid cmd %u\n", cmd);
--		return false;
--	}
--
--	ath_dbg(common, ANI, "ANI parameters:\n");
--	ath_dbg(common, ANI,
--		"noiseImmunityLevel=%d, spurImmunityLevel=%d, ofdmWeakSigDetectOff=%d\n",
--		aniState->noiseImmunityLevel,
--		aniState->spurImmunityLevel,
--		!aniState->ofdmWeakSigDetectOff);
--	ath_dbg(common, ANI,
--		"cckWeakSigThreshold=%d, firstepLevel=%d, listenTime=%d\n",
--		aniState->cckWeakSigThreshold,
--		aniState->firstepLevel,
--		aniState->listenTime);
--	ath_dbg(common, ANI, "ofdmPhyErrCount=%d, cckPhyErrCount=%d\n\n",
--		aniState->ofdmPhyErrCount,
--		aniState->cckPhyErrCount);
--
--	return true;
--}
--
- static bool ar5008_hw_ani_control_new(struct ath_hw *ah,
- 				      enum ath9k_ani_cmd cmd,
- 				      int param)
-@@ -1206,18 +1071,18 @@ static bool ar5008_hw_ani_control_new(st
- 			REG_CLR_BIT(ah, AR_PHY_SFCORR_LOW,
- 				    AR_PHY_SFCORR_LOW_USE_SELF_CORR_LOW);
- 
--		if (!on != aniState->ofdmWeakSigDetectOff) {
-+		if (on != aniState->ofdmWeakSigDetect) {
- 			ath_dbg(common, ANI,
- 				"** ch %d: ofdm weak signal: %s=>%s\n",
- 				chan->channel,
--				!aniState->ofdmWeakSigDetectOff ?
-+				aniState->ofdmWeakSigDetect ?
- 				"on" : "off",
- 				on ? "on" : "off");
- 			if (on)
- 				ah->stats.ast_ani_ofdmon++;
- 			else
- 				ah->stats.ast_ani_ofdmoff++;
--			aniState->ofdmWeakSigDetectOff = !on;
-+			aniState->ofdmWeakSigDetect = on;
- 		}
- 		break;
- 	}
-@@ -1236,7 +1101,7 @@ static bool ar5008_hw_ani_control_new(st
- 		 * from INI file & cap value
- 		 */
- 		value = firstep_table[level] -
--			firstep_table[ATH9K_ANI_FIRSTEP_LVL_NEW] +
-+			firstep_table[ATH9K_ANI_FIRSTEP_LVL] +
- 			aniState->iniDef.firstep;
- 		if (value < ATH9K_SIG_FIRSTEP_SETTING_MIN)
- 			value = ATH9K_SIG_FIRSTEP_SETTING_MIN;
-@@ -1251,7 +1116,7 @@ static bool ar5008_hw_ani_control_new(st
- 		 * from INI file & cap value
- 		 */
- 		value2 = firstep_table[level] -
--			 firstep_table[ATH9K_ANI_FIRSTEP_LVL_NEW] +
-+			 firstep_table[ATH9K_ANI_FIRSTEP_LVL] +
- 			 aniState->iniDef.firstepLow;
- 		if (value2 < ATH9K_SIG_FIRSTEP_SETTING_MIN)
- 			value2 = ATH9K_SIG_FIRSTEP_SETTING_MIN;
-@@ -1267,7 +1132,7 @@ static bool ar5008_hw_ani_control_new(st
- 				chan->channel,
- 				aniState->firstepLevel,
- 				level,
--				ATH9K_ANI_FIRSTEP_LVL_NEW,
-+				ATH9K_ANI_FIRSTEP_LVL,
- 				value,
- 				aniState->iniDef.firstep);
- 			ath_dbg(common, ANI,
-@@ -1275,7 +1140,7 @@ static bool ar5008_hw_ani_control_new(st
- 				chan->channel,
- 				aniState->firstepLevel,
- 				level,
--				ATH9K_ANI_FIRSTEP_LVL_NEW,
-+				ATH9K_ANI_FIRSTEP_LVL,
- 				value2,
- 				aniState->iniDef.firstepLow);
- 			if (level > aniState->firstepLevel)
-@@ -1300,7 +1165,7 @@ static bool ar5008_hw_ani_control_new(st
- 		 * from INI file & cap value
- 		 */
- 		value = cycpwrThr1_table[level] -
--			cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL_NEW] +
-+			cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL] +
- 			aniState->iniDef.cycpwrThr1;
- 		if (value < ATH9K_SIG_SPUR_IMM_SETTING_MIN)
- 			value = ATH9K_SIG_SPUR_IMM_SETTING_MIN;
-@@ -1316,7 +1181,7 @@ static bool ar5008_hw_ani_control_new(st
- 		 * from INI file & cap value
- 		 */
- 		value2 = cycpwrThr1_table[level] -
--			 cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL_NEW] +
-+			 cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL] +
- 			 aniState->iniDef.cycpwrThr1Ext;
- 		if (value2 < ATH9K_SIG_SPUR_IMM_SETTING_MIN)
- 			value2 = ATH9K_SIG_SPUR_IMM_SETTING_MIN;
-@@ -1331,7 +1196,7 @@ static bool ar5008_hw_ani_control_new(st
- 				chan->channel,
- 				aniState->spurImmunityLevel,
- 				level,
--				ATH9K_ANI_SPUR_IMMUNE_LVL_NEW,
-+				ATH9K_ANI_SPUR_IMMUNE_LVL,
- 				value,
- 				aniState->iniDef.cycpwrThr1);
- 			ath_dbg(common, ANI,
-@@ -1339,7 +1204,7 @@ static bool ar5008_hw_ani_control_new(st
- 				chan->channel,
- 				aniState->spurImmunityLevel,
- 				level,
--				ATH9K_ANI_SPUR_IMMUNE_LVL_NEW,
-+				ATH9K_ANI_SPUR_IMMUNE_LVL,
- 				value2,
- 				aniState->iniDef.cycpwrThr1Ext);
- 			if (level > aniState->spurImmunityLevel)
-@@ -1367,7 +1232,7 @@ static bool ar5008_hw_ani_control_new(st
- 	ath_dbg(common, ANI,
- 		"ANI parameters: SI=%d, ofdmWS=%s FS=%d MRCcck=%s listenTime=%d ofdmErrs=%d cckErrs=%d\n",
- 		aniState->spurImmunityLevel,
--		!aniState->ofdmWeakSigDetectOff ? "on" : "off",
-+		aniState->ofdmWeakSigDetect ? "on" : "off",
- 		aniState->firstepLevel,
- 		!aniState->mrcCCKOff ? "on" : "off",
- 		aniState->listenTime,
-@@ -1454,9 +1319,9 @@ static void ar5008_hw_ani_cache_ini_regs
- 					       AR_PHY_EXT_TIMING5_CYCPWR_THR1);
- 
- 	/* these levels just got reset to defaults by the INI */
--	aniState->spurImmunityLevel = ATH9K_ANI_SPUR_IMMUNE_LVL_NEW;
--	aniState->firstepLevel = ATH9K_ANI_FIRSTEP_LVL_NEW;
--	aniState->ofdmWeakSigDetectOff = !ATH9K_ANI_USE_OFDM_WEAK_SIG;
-+	aniState->spurImmunityLevel = ATH9K_ANI_SPUR_IMMUNE_LVL;
-+	aniState->firstepLevel = ATH9K_ANI_FIRSTEP_LVL;
-+	aniState->ofdmWeakSigDetect = ATH9K_ANI_USE_OFDM_WEAK_SIG;
- 	aniState->mrcCCKOff = true; /* not available on pre AR9003 */
- }
- 
-@@ -1545,11 +1410,8 @@ void ar5008_hw_attach_phy_ops(struct ath
- 	priv_ops->do_getnf = ar5008_hw_do_getnf;
- 	priv_ops->set_radar_params = ar5008_hw_set_radar_params;
- 
--	if (modparam_force_new_ani) {
--		priv_ops->ani_control = ar5008_hw_ani_control_new;
--		priv_ops->ani_cache_ini_regs = ar5008_hw_ani_cache_ini_regs;
--	} else
--		priv_ops->ani_control = ar5008_hw_ani_control_old;
-+	priv_ops->ani_control = ar5008_hw_ani_control_new;
-+	priv_ops->ani_cache_ini_regs = ar5008_hw_ani_cache_ini_regs;
- 
- 	if (AR_SREV_9100(ah) || AR_SREV_9160_10_OR_LATER(ah))
- 		priv_ops->compute_pll_control = ar9160_hw_compute_pll_control;
---- a/drivers/net/wireless/ath/ath9k/ar9002_hw.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9002_hw.c
-@@ -21,10 +21,6 @@
- #include "ar9002_initvals.h"
- #include "ar9002_phy.h"
- 
--int modparam_force_new_ani;
--module_param_named(force_new_ani, modparam_force_new_ani, int, 0444);
--MODULE_PARM_DESC(force_new_ani, "Force new ANI for AR5008, AR9001, AR9002");
--
- /* General hardware code for the A5008/AR9001/AR9002 hadware families */
- 
- static void ar9002_hw_init_mode_regs(struct ath_hw *ah)
---- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -825,18 +825,18 @@ static bool ar9003_hw_ani_control(struct
- 			REG_CLR_BIT(ah, AR_PHY_SFCORR_LOW,
- 				    AR_PHY_SFCORR_LOW_USE_SELF_CORR_LOW);
- 
--		if (!on != aniState->ofdmWeakSigDetectOff) {
-+		if (on != aniState->ofdmWeakSigDetect) {
- 			ath_dbg(common, ANI,
- 				"** ch %d: ofdm weak signal: %s=>%s\n",
- 				chan->channel,
--				!aniState->ofdmWeakSigDetectOff ?
-+				aniState->ofdmWeakSigDetect ?
- 				"on" : "off",
- 				on ? "on" : "off");
- 			if (on)
- 				ah->stats.ast_ani_ofdmon++;
- 			else
- 				ah->stats.ast_ani_ofdmoff++;
--			aniState->ofdmWeakSigDetectOff = !on;
-+			aniState->ofdmWeakSigDetect = on;
- 		}
- 		break;
- 	}
-@@ -855,7 +855,7 @@ static bool ar9003_hw_ani_control(struct
- 		 * from INI file & cap value
- 		 */
- 		value = firstep_table[level] -
--			firstep_table[ATH9K_ANI_FIRSTEP_LVL_NEW] +
-+			firstep_table[ATH9K_ANI_FIRSTEP_LVL] +
- 			aniState->iniDef.firstep;
- 		if (value < ATH9K_SIG_FIRSTEP_SETTING_MIN)
- 			value = ATH9K_SIG_FIRSTEP_SETTING_MIN;
-@@ -870,7 +870,7 @@ static bool ar9003_hw_ani_control(struct
- 		 * from INI file & cap value
- 		 */
- 		value2 = firstep_table[level] -
--			 firstep_table[ATH9K_ANI_FIRSTEP_LVL_NEW] +
-+			 firstep_table[ATH9K_ANI_FIRSTEP_LVL] +
- 			 aniState->iniDef.firstepLow;
- 		if (value2 < ATH9K_SIG_FIRSTEP_SETTING_MIN)
- 			value2 = ATH9K_SIG_FIRSTEP_SETTING_MIN;
-@@ -886,7 +886,7 @@ static bool ar9003_hw_ani_control(struct
- 				chan->channel,
- 				aniState->firstepLevel,
- 				level,
--				ATH9K_ANI_FIRSTEP_LVL_NEW,
-+				ATH9K_ANI_FIRSTEP_LVL,
- 				value,
- 				aniState->iniDef.firstep);
- 			ath_dbg(common, ANI,
-@@ -894,7 +894,7 @@ static bool ar9003_hw_ani_control(struct
- 				chan->channel,
- 				aniState->firstepLevel,
- 				level,
--				ATH9K_ANI_FIRSTEP_LVL_NEW,
-+				ATH9K_ANI_FIRSTEP_LVL,
- 				value2,
- 				aniState->iniDef.firstepLow);
- 			if (level > aniState->firstepLevel)
-@@ -919,7 +919,7 @@ static bool ar9003_hw_ani_control(struct
- 		 * from INI file & cap value
- 		 */
- 		value = cycpwrThr1_table[level] -
--			cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL_NEW] +
-+			cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL] +
- 			aniState->iniDef.cycpwrThr1;
- 		if (value < ATH9K_SIG_SPUR_IMM_SETTING_MIN)
- 			value = ATH9K_SIG_SPUR_IMM_SETTING_MIN;
-@@ -935,7 +935,7 @@ static bool ar9003_hw_ani_control(struct
- 		 * from INI file & cap value
- 		 */
- 		value2 = cycpwrThr1_table[level] -
--			 cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL_NEW] +
-+			 cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL] +
- 			 aniState->iniDef.cycpwrThr1Ext;
- 		if (value2 < ATH9K_SIG_SPUR_IMM_SETTING_MIN)
- 			value2 = ATH9K_SIG_SPUR_IMM_SETTING_MIN;
-@@ -950,7 +950,7 @@ static bool ar9003_hw_ani_control(struct
- 				chan->channel,
- 				aniState->spurImmunityLevel,
- 				level,
--				ATH9K_ANI_SPUR_IMMUNE_LVL_NEW,
-+				ATH9K_ANI_SPUR_IMMUNE_LVL,
- 				value,
- 				aniState->iniDef.cycpwrThr1);
- 			ath_dbg(common, ANI,
-@@ -958,7 +958,7 @@ static bool ar9003_hw_ani_control(struct
- 				chan->channel,
- 				aniState->spurImmunityLevel,
- 				level,
--				ATH9K_ANI_SPUR_IMMUNE_LVL_NEW,
-+				ATH9K_ANI_SPUR_IMMUNE_LVL,
- 				value2,
- 				aniState->iniDef.cycpwrThr1Ext);
- 			if (level > aniState->spurImmunityLevel)
-@@ -1002,7 +1002,7 @@ static bool ar9003_hw_ani_control(struct
- 	ath_dbg(common, ANI,
- 		"ANI parameters: SI=%d, ofdmWS=%s FS=%d MRCcck=%s listenTime=%d ofdmErrs=%d cckErrs=%d\n",
- 		aniState->spurImmunityLevel,
--		!aniState->ofdmWeakSigDetectOff ? "on" : "off",
-+		aniState->ofdmWeakSigDetect ? "on" : "off",
- 		aniState->firstepLevel,
- 		!aniState->mrcCCKOff ? "on" : "off",
- 		aniState->listenTime,
-@@ -1111,9 +1111,9 @@ static void ar9003_hw_ani_cache_ini_regs
- 					       AR_PHY_EXT_CYCPWR_THR1);
- 
- 	/* these levels just got reset to defaults by the INI */
--	aniState->spurImmunityLevel = ATH9K_ANI_SPUR_IMMUNE_LVL_NEW;
--	aniState->firstepLevel = ATH9K_ANI_FIRSTEP_LVL_NEW;
--	aniState->ofdmWeakSigDetectOff = !ATH9K_ANI_USE_OFDM_WEAK_SIG;
-+	aniState->spurImmunityLevel = ATH9K_ANI_SPUR_IMMUNE_LVL;
-+	aniState->firstepLevel = ATH9K_ANI_FIRSTEP_LVL;
-+	aniState->ofdmWeakSigDetect = ATH9K_ANI_USE_OFDM_WEAK_SIG;
- 	aniState->mrcCCKOff = !ATH9K_ANI_ENABLE_MRC_CCK;
- }
- 
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -348,8 +348,6 @@ void ath_debug_stat_interrupt(struct ath
- 		sc->debug.stats.istats.txok++;
- 	if (status & ATH9K_INT_TXURN)
- 		sc->debug.stats.istats.txurn++;
--	if (status & ATH9K_INT_MIB)
--		sc->debug.stats.istats.mib++;
- 	if (status & ATH9K_INT_RXPHY)
- 		sc->debug.stats.istats.rxphyerr++;
- 	if (status & ATH9K_INT_RXKCM)
+@@ -206,10 +206,9 @@ static ssize_t write_file_disable_ani(st
+ 
+ 	if (disable_ani) {
+ 		clear_bit(SC_OP_ANI_RUN, &sc->sc_flags);
+-		del_timer_sync(&common->ani.timer);
++		ath_stop_ani(sc);
+ 	} else {
+-		set_bit(SC_OP_ANI_RUN, &sc->sc_flags);
+-		ath_start_ani(common);
++		ath_check_ani(sc);
+ 	}
+ 
+ 	return count;
+--- a/drivers/net/wireless/ath/ath9k/debug.h
++++ b/drivers/net/wireless/ath/ath9k/debug.h
+@@ -32,6 +32,19 @@ struct ath_buf;
+ #define RESET_STAT_INC(sc, type) do { } while (0)
+ #endif
+ 
++enum ath_reset_type {
++	RESET_TYPE_BB_HANG,
++	RESET_TYPE_BB_WATCHDOG,
++	RESET_TYPE_FATAL_INT,
++	RESET_TYPE_TX_ERROR,
++	RESET_TYPE_TX_HANG,
++	RESET_TYPE_PLL_HANG,
++	RESET_TYPE_MAC_HANG,
++	RESET_TYPE_BEACON_STUCK,
++	RESET_TYPE_MCI,
++	__RESET_TYPE_MAX
++};
++
+ #ifdef CONFIG_ATH9K_DEBUGFS
+ 
+ /**
+@@ -209,17 +222,6 @@ struct ath_rx_stats {
+ 	u32 rx_frags;
+ };
+ 
+-enum ath_reset_type {
+-	RESET_TYPE_BB_HANG,
+-	RESET_TYPE_BB_WATCHDOG,
+-	RESET_TYPE_FATAL_INT,
+-	RESET_TYPE_TX_ERROR,
+-	RESET_TYPE_TX_HANG,
+-	RESET_TYPE_PLL_HANG,
+-	RESET_TYPE_MAC_HANG,
+-	__RESET_TYPE_MAX
+-};
+-
+ struct ath_stats {
+ 	struct ath_interrupt_stats istats;
+ 	struct ath_tx_stats txstats[ATH9K_NUM_TX_QUEUES];
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
+@@ -1111,7 +1111,7 @@ static int ath9k_htc_add_interface(struc
+ 
+ 	if ((priv->ah->opmode == NL80211_IFTYPE_AP) &&
+ 	    !test_bit(OP_ANI_RUNNING, &priv->op_flags)) {
+-		ath9k_hw_set_tsfadjust(priv->ah, 1);
++		ath9k_hw_set_tsfadjust(priv->ah, true);
+ 		ath9k_htc_start_ani(priv);
+ 	}
+ 
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -2908,9 +2908,9 @@ void ath9k_hw_reset_tsf(struct ath_hw *a
+ }
+ EXPORT_SYMBOL(ath9k_hw_reset_tsf);
+ 
+-void ath9k_hw_set_tsfadjust(struct ath_hw *ah, u32 setting)
++void ath9k_hw_set_tsfadjust(struct ath_hw *ah, bool set)
+ {
+-	if (setting)
++	if (set)
+ 		ah->misc_mode |= AR_PCU_TX_ADD_TSF;
+ 	else
+ 		ah->misc_mode &= ~AR_PCU_TX_ADD_TSF;
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -1019,16 +1019,8 @@ void ar9002_hw_attach_ops(struct ath_hw 
- void ar9003_hw_attach_ops(struct ath_hw *ah);
+@@ -943,7 +943,7 @@ u32 ath9k_hw_gettsf32(struct ath_hw *ah)
+ u64 ath9k_hw_gettsf64(struct ath_hw *ah);
+ void ath9k_hw_settsf64(struct ath_hw *ah, u64 tsf64);
+ void ath9k_hw_reset_tsf(struct ath_hw *ah);
+-void ath9k_hw_set_tsfadjust(struct ath_hw *ah, u32 setting);
++void ath9k_hw_set_tsfadjust(struct ath_hw *ah, bool set);
+ void ath9k_hw_init_global_settings(struct ath_hw *ah);
+ u32 ar9003_get_pll_sqsum_dvc(struct ath_hw *ah);
+ void ath9k_hw_set11nmac2040(struct ath_hw *ah);
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -560,7 +560,7 @@ static int ath9k_init_softc(u16 devid, s
+ 	spin_lock_init(&sc->debug.samp_lock);
+ #endif
+ 	tasklet_init(&sc->intr_tq, ath9k_tasklet, (unsigned long)sc);
+-	tasklet_init(&sc->bcon_tasklet, ath_beacon_tasklet,
++	tasklet_init(&sc->bcon_tasklet, ath9k_beacon_tasklet,
+ 		     (unsigned long)sc);
  
- void ar9002_hw_load_ani_reg(struct ath_hw *ah, struct ath9k_channel *chan);
--/*
-- * ANI work can be shared between all families but a next
-- * generation implementation of ANI will be used only for AR9003 only
-- * for now as the other families still need to be tested with the same
-- * next generation ANI. Feel free to start testing it though for the
-- * older families (AR5008, AR9001, AR9002) by using modparam_force_new_ani.
-- */
--extern int modparam_force_new_ani;
-+
- void ath9k_ani_reset(struct ath_hw *ah, bool is_scanning);
--void ath9k_hw_proc_mib_event(struct ath_hw *ah);
- void ath9k_hw_ani_monitor(struct ath_hw *ah, struct ath9k_channel *chan);
+ 	INIT_WORK(&sc->hw_reset_work, ath_reset_work);
+--- a/drivers/net/wireless/ath/ath9k/link.c
++++ b/drivers/net/wireless/ath/ath9k/link.c
+@@ -50,8 +50,7 @@ void ath_tx_complete_poll_work(struct wo
+ 	if (needreset) {
+ 		ath_dbg(ath9k_hw_common(sc->sc_ah), RESET,
+ 			"tx hung, resetting the chip\n");
+-		RESET_STAT_INC(sc, RESET_TYPE_TX_HANG);
+-		ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
++		ath9k_queue_reset(sc, RESET_TYPE_TX_HANG);
+ 		return;
+ 	}
  
- #ifdef CONFIG_ATH9K_BTCOEX_SUPPORT
---- a/drivers/net/wireless/ath/ath9k/main.c
-+++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -19,7 +19,7 @@
- #include "ath9k.h"
- #include "btcoex.h"
+@@ -69,6 +68,7 @@ void ath_hw_check(struct work_struct *wo
+ 	unsigned long flags;
+ 	int busy;
+ 	u8 is_alive, nbeacon = 1;
++	enum ath_reset_type type;
  
--static u8 parse_mpdudensity(u8 mpdudensity)
-+u8 ath9k_parse_mpdudensity(u8 mpdudensity)
- {
- 	/*
- 	 * 802.11n D2.0 defined values for "Minimum MPDU Start Spacing":
-@@ -320,6 +320,7 @@ static void ath_node_attach(struct ath_s
- 			    struct ieee80211_vif *vif)
- {
- 	struct ath_node *an;
-+	u8 density;
- 	an = (struct ath_node *)sta->drv_priv;
+ 	ath9k_ps_wakeup(sc);
+ 	is_alive = ath9k_hw_check_alive(sc->sc_ah);
+@@ -78,7 +78,7 @@ void ath_hw_check(struct work_struct *wo
+ 	else if (!is_alive && AR_SREV_9300(sc->sc_ah)) {
+ 		ath_dbg(common, RESET,
+ 			"DCU stuck is detected. Schedule chip reset\n");
+-		RESET_STAT_INC(sc, RESET_TYPE_MAC_HANG);
++		type = RESET_TYPE_MAC_HANG;
+ 		goto sched_reset;
+ 	}
  
- #ifdef CONFIG_ATH9K_DEBUGFS
-@@ -334,7 +335,8 @@ static void ath_node_attach(struct ath_s
- 		ath_tx_node_init(sc, an);
- 		an->maxampdu = 1 << (IEEE80211_HT_MAX_AMPDU_FACTOR +
- 				     sta->ht_cap.ampdu_factor);
--		an->mpdudensity = parse_mpdudensity(sta->ht_cap.ampdu_density);
-+		density = ath9k_parse_mpdudensity(sta->ht_cap.ampdu_density);
-+		an->mpdudensity = density;
+@@ -90,7 +90,7 @@ void ath_hw_check(struct work_struct *wo
+ 		busy, sc->hw_busy_count + 1);
+ 	if (busy >= 99) {
+ 		if (++sc->hw_busy_count >= 3) {
+-			RESET_STAT_INC(sc, RESET_TYPE_BB_HANG);
++			type = RESET_TYPE_BB_HANG;
+ 			goto sched_reset;
+ 		}
+ 	} else if (busy >= 0) {
+@@ -102,7 +102,7 @@ void ath_hw_check(struct work_struct *wo
+ 	goto out;
+ 
+ sched_reset:
+-	ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
++	ath9k_queue_reset(sc, type);
+ out:
+ 	ath9k_ps_restore(sc);
+ }
+@@ -119,8 +119,7 @@ static bool ath_hw_pll_rx_hang_check(str
+ 		count++;
+ 		if (count == 3) {
+ 			ath_dbg(common, RESET, "PLL WAR, resetting the chip\n");
+-			RESET_STAT_INC(sc, RESET_TYPE_PLL_HANG);
+-			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
++			ath9k_queue_reset(sc, RESET_TYPE_PLL_HANG);
+ 			count = 0;
+ 			return true;
+ 		}
+@@ -432,26 +431,69 @@ set_timer:
  	}
  }
  
-@@ -516,24 +518,6 @@ irqreturn_t ath_isr(int irq, void *dev)
- 		ath9k_hw_set_interrupts(ah);
+-void ath_start_ani(struct ath_common *common)
++void ath_start_ani(struct ath_softc *sc)
+ {
+-	struct ath_hw *ah = common->ah;
++	struct ath_hw *ah = sc->sc_ah;
++	struct ath_common *common = ath9k_hw_common(ah);
+ 	unsigned long timestamp = jiffies_to_msecs(jiffies);
+-	struct ath_softc *sc = (struct ath_softc *) common->priv;
+ 
+-	if (!test_bit(SC_OP_ANI_RUN, &sc->sc_flags))
+-		return;
+-
+-	if (sc->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL)
++	if (common->disable_ani ||
++	    !test_bit(SC_OP_ANI_RUN, &sc->sc_flags) ||
++	    (sc->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL))
+ 		return;
+ 
+ 	common->ani.longcal_timer = timestamp;
+ 	common->ani.shortcal_timer = timestamp;
+ 	common->ani.checkani_timer = timestamp;
+ 
++	ath_dbg(common, ANI, "Starting ANI\n");
+ 	mod_timer(&common->ani.timer,
+ 		  jiffies + msecs_to_jiffies((u32)ah->config.ani_poll_interval));
+ }
+ 
++void ath_stop_ani(struct ath_softc *sc)
++{
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
++
++	ath_dbg(common, ANI, "Stopping ANI\n");
++	del_timer_sync(&common->ani.timer);
++}
++
++void ath_check_ani(struct ath_softc *sc)
++{
++	struct ath_hw *ah = sc->sc_ah;
++	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
++
++	/*
++	 * Check for the various conditions in which ANI has to
++	 * be stopped.
++	 */
++	if (ah->opmode == NL80211_IFTYPE_ADHOC) {
++		if (!cur_conf->enable_beacon)
++			goto stop_ani;
++	} else if (ah->opmode == NL80211_IFTYPE_AP) {
++		if (!cur_conf->enable_beacon) {
++			/*
++			 * Disable ANI only when there are no
++			 * associated stations.
++			 */
++			if (!test_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags))
++				goto stop_ani;
++		}
++	} else if (ah->opmode == NL80211_IFTYPE_STATION) {
++		if (!test_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags))
++			goto stop_ani;
++	}
++
++	set_bit(SC_OP_ANI_RUN, &sc->sc_flags);
++	ath_start_ani(sc);
++	return;
++
++stop_ani:
++	clear_bit(SC_OP_ANI_RUN, &sc->sc_flags);
++	ath_stop_ani(sc);
++}
++
+ void ath_update_survey_nf(struct ath_softc *sc, int channel)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -167,8 +167,6 @@ static void ath_cancel_work(struct ath_s
+ 
+ static void ath_restart_work(struct ath_softc *sc)
+ {
+-	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+-
+ 	ieee80211_queue_delayed_work(sc->hw, &sc->tx_complete_work, 0);
+ 
+ 	if (AR_SREV_9340(sc->sc_ah) || AR_SREV_9485(sc->sc_ah) ||
+@@ -177,21 +175,18 @@ static void ath_restart_work(struct ath_
+ 				     msecs_to_jiffies(ATH_PLL_WORK_INTERVAL));
+ 
+ 	ath_start_rx_poll(sc, 3);
+-
+-	if (!common->disable_ani)
+-		ath_start_ani(common);
++	ath_start_ani(sc);
+ }
+ 
+ static bool ath_prepare_reset(struct ath_softc *sc, bool retry_tx, bool flush)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+-	struct ath_common *common = ath9k_hw_common(ah);
+ 	bool ret = true;
+ 
+ 	ieee80211_stop_queues(sc->hw);
+ 
+ 	sc->hw_busy_count = 0;
+-	del_timer_sync(&common->ani.timer);
++	ath_stop_ani(sc);
+ 	del_timer_sync(&sc->rx_poll_timer);
+ 
+ 	ath9k_debug_samp_bb_mac(sc);
+@@ -236,7 +231,7 @@ static bool ath_complete_reset(struct at
+ 		if (!test_bit(SC_OP_BEACONS, &sc->sc_flags))
+ 			goto work;
+ 
+-		ath_set_beacon(sc);
++		ath9k_set_beacon(sc);
+ 
+ 		if (ah->opmode == NL80211_IFTYPE_STATION &&
+ 		    test_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags)) {
+@@ -365,6 +360,7 @@ void ath9k_tasklet(unsigned long data)
+ 	struct ath_softc *sc = (struct ath_softc *)data;
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	enum ath_reset_type type;
+ 	unsigned long flags;
+ 	u32 status = sc->intrstatus;
+ 	u32 rxmask;
+@@ -374,18 +370,13 @@ void ath9k_tasklet(unsigned long data)
+ 
+ 	if ((status & ATH9K_INT_FATAL) ||
+ 	    (status & ATH9K_INT_BB_WATCHDOG)) {
+-#ifdef CONFIG_ATH9K_DEBUGFS
+-		enum ath_reset_type type;
+ 
+ 		if (status & ATH9K_INT_FATAL)
+ 			type = RESET_TYPE_FATAL_INT;
+ 		else
+ 			type = RESET_TYPE_BB_WATCHDOG;
+ 
+-		RESET_STAT_INC(sc, type);
+-#endif
+-		set_bit(SC_OP_HW_RESET, &sc->sc_flags);
+-		ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
++		ath9k_queue_reset(sc, type);
+ 		goto out;
  	}
  
--	if (status & ATH9K_INT_MIB) {
--		/*
--		 * Disable interrupts until we service the MIB
--		 * interrupt; otherwise it will continue to
--		 * fire.
--		 */
--		ath9k_hw_disable_interrupts(ah);
--		/*
--		 * Let the hal handle the event. We assume
--		 * it will clear whatever condition caused
--		 * the interrupt.
--		 */
--		spin_lock(&common->cc_lock);
--		ath9k_hw_proc_mib_event(ah);
--		spin_unlock(&common->cc_lock);
--		ath9k_hw_enable_interrupts(ah);
--	}
+@@ -575,6 +566,15 @@ static int ath_reset(struct ath_softc *s
+ 	return r;
+ }
+ 
++void ath9k_queue_reset(struct ath_softc *sc, enum ath_reset_type type)
++{
++#ifdef CONFIG_ATH9K_DEBUGFS
++	RESET_STAT_INC(sc, type);
++#endif
++	set_bit(SC_OP_HW_RESET, &sc->sc_flags);
++	ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
++}
++
+ void ath_reset_work(struct work_struct *work)
+ {
+ 	struct ath_softc *sc = container_of(work, struct ath_softc, hw_reset_work);
+@@ -841,16 +841,6 @@ bool ath9k_uses_beacons(int type)
+ 	}
+ }
+ 
+-static void ath9k_reclaim_beacon(struct ath_softc *sc,
+-				 struct ieee80211_vif *vif)
+-{
+-	struct ath_vif *avp = (void *)vif->drv_priv;
 -
- 	if (!(ah->caps.hw_caps & ATH9K_HW_CAP_AUTOSLEEP))
- 		if (status & ATH9K_INT_TIM_TIMER) {
- 			if (ATH_DBG_WARN_ON_ONCE(sc->ps_idle))
-@@ -959,14 +943,10 @@ static void ath9k_calculate_summary_stat
- 	/*
- 	 * Enable MIB interrupts when there are hardware phy counters.
- 	 */
--	if ((iter_data.nstations + iter_data.nadhocs + iter_data.nmeshes) > 0) {
--		if (ah->config.enable_ani)
--			ah->imask |= ATH9K_INT_MIB;
-+	if ((iter_data.nstations + iter_data.nadhocs + iter_data.nmeshes) > 0)
+-	ath9k_set_beaconing_status(sc, false);
+-	ath_beacon_return(sc, avp);
+-	ath9k_set_beaconing_status(sc, true);
+-}
+-
+ static void ath9k_vif_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
+ {
+ 	struct ath9k_vif_iter_data *iter_data = data;
+@@ -918,18 +908,14 @@ static void ath9k_calculate_summary_stat
+ 
+ 	ath9k_calculate_iter_data(hw, vif, &iter_data);
+ 
+-	/* Set BSSID mask. */
+ 	memcpy(common->bssidmask, iter_data.mask, ETH_ALEN);
+ 	ath_hw_setbssidmask(common);
+ 
+-	/* Set op-mode & TSF */
+ 	if (iter_data.naps > 0) {
+-		ath9k_hw_set_tsfadjust(ah, 1);
+-		set_bit(SC_OP_TSF_RESET, &sc->sc_flags);
++		ath9k_hw_set_tsfadjust(ah, true);
+ 		ah->opmode = NL80211_IFTYPE_AP;
+ 	} else {
+-		ath9k_hw_set_tsfadjust(ah, 0);
+-		clear_bit(SC_OP_TSF_RESET, &sc->sc_flags);
++		ath9k_hw_set_tsfadjust(ah, false);
+ 
+ 		if (iter_data.nmeshes)
+ 			ah->opmode = NL80211_IFTYPE_MESH_POINT;
+@@ -941,45 +927,14 @@ static void ath9k_calculate_summary_stat
+ 			ah->opmode = NL80211_IFTYPE_STATION;
+ 	}
+ 
+-	/*
+-	 * Enable MIB interrupts when there are hardware phy counters.
+-	 */
++	ath9k_hw_setopmode(ah);
++
+ 	if ((iter_data.nstations + iter_data.nadhocs + iter_data.nmeshes) > 0)
  		ah->imask |= ATH9K_INT_TSFOOR;
--	} else {
--		ah->imask &= ~ATH9K_INT_MIB;
-+	else
+ 	else
  		ah->imask &= ~ATH9K_INT_TSFOOR;
--	}
  
  	ath9k_hw_set_interrupts(ah);
+-
+-	/* Set up ANI */
+-	if (iter_data.naps > 0) {
+-		sc->sc_ah->stats.avgbrssi = ATH_RSSI_DUMMY_MARKER;
+-
+-		if (!common->disable_ani) {
+-			set_bit(SC_OP_ANI_RUN, &sc->sc_flags);
+-			ath_start_ani(common);
+-		}
+-
+-	} else {
+-		clear_bit(SC_OP_ANI_RUN, &sc->sc_flags);
+-		del_timer_sync(&common->ani.timer);
+-	}
+-}
+-
+-/* Called with sc->mutex held, vif counts set up properly. */
+-static void ath9k_do_vif_add_setup(struct ieee80211_hw *hw,
+-				   struct ieee80211_vif *vif)
+-{
+-	struct ath_softc *sc = hw->priv;
+-
+-	ath9k_calculate_summary_state(hw, vif);
+-
+-	if (ath9k_uses_beacons(vif->type)) {
+-		/* Reserve a beacon slot for the vif */
+-		ath9k_set_beaconing_status(sc, false);
+-		ath_beacon_alloc(sc, vif);
+-		ath9k_set_beaconing_status(sc, true);
+-	}
+ }
  
+ static int ath9k_add_interface(struct ieee80211_hw *hw,
+@@ -1021,7 +976,10 @@ static int ath9k_add_interface(struct ie
+ 
+ 	sc->nvifs++;
+ 
+-	ath9k_do_vif_add_setup(hw, vif);
++	ath9k_calculate_summary_state(hw, vif);
++	if (ath9k_uses_beacons(vif->type))
++		ath9k_beacon_assign_slot(sc, vif);
++
+ out:
+ 	mutex_unlock(&sc->mutex);
+ 	ath9k_ps_restore(sc);
+@@ -1038,6 +996,7 @@ static int ath9k_change_interface(struct
+ 	int ret = 0;
+ 
+ 	ath_dbg(common, CONFIG, "Change Interface\n");
++
+ 	mutex_lock(&sc->mutex);
+ 	ath9k_ps_wakeup(sc);
+ 
+@@ -1050,15 +1009,16 @@ static int ath9k_change_interface(struct
+ 		}
+ 	}
+ 
+-	/* Clean up old vif stuff */
+ 	if (ath9k_uses_beacons(vif->type))
+-		ath9k_reclaim_beacon(sc, vif);
++		ath9k_beacon_remove_slot(sc, vif);
+ 
+-	/* Add new settings */
+ 	vif->type = new_type;
+ 	vif->p2p = p2p;
+ 
+-	ath9k_do_vif_add_setup(hw, vif);
++	ath9k_calculate_summary_state(hw, vif);
++	if (ath9k_uses_beacons(vif->type))
++		ath9k_beacon_assign_slot(sc, vif);
++
+ out:
+ 	ath9k_ps_restore(sc);
+ 	mutex_unlock(&sc->mutex);
+@@ -1078,9 +1038,8 @@ static void ath9k_remove_interface(struc
+ 
+ 	sc->nvifs--;
+ 
+-	/* Reclaim beacon resources */
+ 	if (ath9k_uses_beacons(vif->type))
+-		ath9k_reclaim_beacon(sc, vif);
++		ath9k_beacon_remove_slot(sc, vif);
+ 
+ 	ath9k_calculate_summary_state(hw, NULL);
+ 
+@@ -1388,10 +1347,6 @@ static int ath9k_conf_tx(struct ieee8021
+ 	if (ret)
+ 		ath_err(common, "TXQ Update failed\n");
+ 
+-	if (sc->sc_ah->opmode == NL80211_IFTYPE_ADHOC)
+-		if (queue == WME_AC_BE && !ret)
+-			ath_beaconq_config(sc);
+-
+ 	mutex_unlock(&sc->mutex);
+ 	ath9k_ps_restore(sc);
+ 
+@@ -1460,85 +1415,36 @@ static int ath9k_set_key(struct ieee8021
+ 
+ 	return ret;
+ }
+-static void ath9k_bss_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
++
++static void ath9k_bss_assoc_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
+ {
+ 	struct ath_softc *sc = data;
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+-	struct ieee80211_bss_conf *bss_conf = &vif->bss_conf;
+ 	struct ath_vif *avp = (void *)vif->drv_priv;
++	struct ieee80211_bss_conf *bss_conf = &vif->bss_conf;
+ 	unsigned long flags;
+-	/*
+-	 * Skip iteration if primary station vif's bss info
+-	 * was not changed
+-	 */
++
+ 	if (test_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags))
+ 		return;
+ 
+ 	if (bss_conf->assoc) {
+ 		set_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags);
+ 		avp->primary_sta_vif = true;
++
+ 		memcpy(common->curbssid, bss_conf->bssid, ETH_ALEN);
+ 		common->curaid = bss_conf->aid;
+ 		ath9k_hw_write_associd(sc->sc_ah);
+-		ath_dbg(common, CONFIG, "Bss Info ASSOC %d, bssid: %pM\n",
+-			bss_conf->aid, common->curbssid);
+-		ath_beacon_config(sc, vif);
+-		/*
+-		 * Request a re-configuration of Beacon related timers
+-		 * on the receipt of the first Beacon frame (i.e.,
+-		 * after time sync with the AP).
+-		 */
+-		spin_lock_irqsave(&sc->sc_pm_lock, flags);
+-		sc->ps_flags |= PS_BEACON_SYNC | PS_WAIT_FOR_BEACON;
+-		spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
+ 
+-		/* Reset rssi stats */
+ 		sc->last_rssi = ATH_RSSI_DUMMY_MARKER;
+ 		sc->sc_ah->stats.avgbrssi = ATH_RSSI_DUMMY_MARKER;
+ 
+-		ath_start_rx_poll(sc, 3);
+-
+-		if (!common->disable_ani) {
+-			set_bit(SC_OP_ANI_RUN, &sc->sc_flags);
+-			ath_start_ani(common);
+-		}
+-
+-	}
+-}
+-
+-static void ath9k_config_bss(struct ath_softc *sc, struct ieee80211_vif *vif)
+-{
+-	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+-	struct ieee80211_bss_conf *bss_conf = &vif->bss_conf;
+-	struct ath_vif *avp = (void *)vif->drv_priv;
+-
+-	if (sc->sc_ah->opmode != NL80211_IFTYPE_STATION)
+-		return;
+-
+-	/* Reconfigure bss info */
+-	if (avp->primary_sta_vif && !bss_conf->assoc) {
+-		ath_dbg(common, CONFIG, "Bss Info DISASSOC %d, bssid %pM\n",
+-			common->curaid, common->curbssid);
+-		clear_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags);
+-		clear_bit(SC_OP_BEACONS, &sc->sc_flags);
+-		avp->primary_sta_vif = false;
+-		memset(common->curbssid, 0, ETH_ALEN);
+-		common->curaid = 0;
+-	}
+-
+-	ieee80211_iterate_active_interfaces_atomic(
+-			sc->hw, ath9k_bss_iter, sc);
++		spin_lock_irqsave(&sc->sc_pm_lock, flags);
++		sc->ps_flags |= PS_BEACON_SYNC | PS_WAIT_FOR_BEACON;
++		spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
+ 
+-	/*
+-	 * None of station vifs are associated.
+-	 * Clear bssid & aid
+-	 */
+-	if (!test_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags)) {
+-		ath9k_hw_write_associd(sc->sc_ah);
+-		clear_bit(SC_OP_ANI_RUN, &sc->sc_flags);
+-		del_timer_sync(&common->ani.timer);
+-		del_timer_sync(&sc->rx_poll_timer);
+-		memset(&sc->caldata, 0, sizeof(sc->caldata));
++		ath_dbg(common, CONFIG,
++			"Primary Station interface: %pM, BSSID: %pM\n",
++			vif->addr, common->curbssid);
+ 	}
+ }
+ 
+@@ -1547,6 +1453,11 @@ static void ath9k_bss_info_changed(struc
+ 				   struct ieee80211_bss_conf *bss_conf,
+ 				   u32 changed)
+ {
++#define CHECK_ANI				\
++	(BSS_CHANGED_ASSOC |			\
++	 BSS_CHANGED_IBSS |			\
++	 BSS_CHANGED_BEACON_ENABLED)
++
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+@@ -1557,53 +1468,43 @@ static void ath9k_bss_info_changed(struc
+ 	mutex_lock(&sc->mutex);
+ 
+ 	if (changed & BSS_CHANGED_ASSOC) {
+-		ath9k_config_bss(sc, vif);
++		ath_dbg(common, CONFIG, "BSSID %pM Changed ASSOC %d\n",
++			bss_conf->bssid, bss_conf->assoc);
+ 
+-		ath_dbg(common, CONFIG, "BSSID: %pM aid: 0x%x\n",
+-			common->curbssid, common->curaid);
++		/*
++		 * Do not do anything when the opmode is not STATION.
++		 */
++		if (ah->opmode == NL80211_IFTYPE_STATION) {
++			if (avp->primary_sta_vif && !bss_conf->assoc) {
++				clear_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags);
++				clear_bit(SC_OP_BEACONS, &sc->sc_flags);
++				avp->primary_sta_vif = false;
++			}
++
++			ieee80211_iterate_active_interfaces_atomic(sc->hw,
++						   ath9k_bss_assoc_iter, sc);
++
++			if (!test_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags)) {
++				memset(common->curbssid, 0, ETH_ALEN);
++				common->curaid = 0;
++				ath9k_hw_write_associd(sc->sc_ah);
++			}
++		}
+ 	}
+ 
+ 	if (changed & BSS_CHANGED_IBSS) {
+-		/* There can be only one vif available */
+ 		memcpy(common->curbssid, bss_conf->bssid, ETH_ALEN);
+ 		common->curaid = bss_conf->aid;
+ 		ath9k_hw_write_associd(sc->sc_ah);
+-
+-		if (bss_conf->ibss_joined) {
+-			sc->sc_ah->stats.avgbrssi = ATH_RSSI_DUMMY_MARKER;
+-
+-			if (!common->disable_ani) {
+-				set_bit(SC_OP_ANI_RUN, &sc->sc_flags);
+-				ath_start_ani(common);
+-			}
+-
+-		} else {
+-			clear_bit(SC_OP_ANI_RUN, &sc->sc_flags);
+-			del_timer_sync(&common->ani.timer);
+-			del_timer_sync(&sc->rx_poll_timer);
+-		}
+ 	}
+ 
+-	/*
+-	 * In case of AP mode, the HW TSF has to be reset
+-	 * when the beacon interval changes.
+-	 */
+-	if ((changed & BSS_CHANGED_BEACON_INT) &&
+-	    (vif->type == NL80211_IFTYPE_AP))
+-		set_bit(SC_OP_TSF_RESET, &sc->sc_flags);
+-
+-	/* Configure beaconing (AP, IBSS, MESH) */
+-	if (ath9k_uses_beacons(vif->type) &&
+-	    ((changed & BSS_CHANGED_BEACON) ||
+-	     (changed & BSS_CHANGED_BEACON_ENABLED) ||
+-	     (changed & BSS_CHANGED_BEACON_INT))) {
+-		ath9k_set_beaconing_status(sc, false);
+-		if (bss_conf->enable_beacon)
+-			ath_beacon_alloc(sc, vif);
+-		else
+-			avp->is_bslot_active = false;
+-		ath_beacon_config(sc, vif);
+-		ath9k_set_beaconing_status(sc, true);
++	if ((changed & BSS_CHANGED_BEACON) ||
++	    (changed & BSS_CHANGED_BEACON_ENABLED) ||
++	    (changed & BSS_CHANGED_BEACON_INT)) {
++		if (ah->opmode == NL80211_IFTYPE_AP)
++			ath9k_set_tsfadjust(sc, vif);
++		if (ath9k_allow_beacon_config(sc, vif))
++			ath9k_beacon_config(sc, vif, changed);
+ 	}
+ 
+ 	if (changed & BSS_CHANGED_ERP_SLOT) {
+@@ -1625,8 +1526,13 @@ static void ath9k_bss_info_changed(struc
+ 		}
+ 	}
+ 
++	if (changed & CHECK_ANI)
++		ath_check_ani(sc);
++
+ 	mutex_unlock(&sc->mutex);
+ 	ath9k_ps_restore(sc);
++
++#undef CHECK_ANI
+ }
+ 
+ static u64 ath9k_get_tsf(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+@@ -1855,10 +1761,11 @@ static int ath9k_tx_last_beacon(struct i
+ 	if (!vif)
+ 		return 0;
+ 
+-	avp = (void *)vif->drv_priv;
+-	if (!avp->is_bslot_active)
++	if (!vif->bss_conf.enable_beacon)
+ 		return 0;
+ 
++	avp = (void *)vif->drv_priv;
++
+ 	if (!sc->beacon.tx_processed && !edma) {
+ 		tasklet_disable(&sc->bcon_tasklet);
+ 
+--- a/drivers/net/wireless/ath/ath9k/mci.c
++++ b/drivers/net/wireless/ath/ath9k/mci.c
+@@ -202,7 +202,7 @@ static void ath_mci_cal_msg(struct ath_s
+ 	case MCI_GPM_BT_CAL_REQ:
+ 		if (mci_hw->bt_state == MCI_BT_AWAKE) {
+ 			ar9003_mci_state(ah, MCI_STATE_SET_BT_CAL_START);
+-			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
++			ath9k_queue_reset(sc, RESET_TYPE_MCI);
+ 		}
+ 		ath_dbg(common, MCI, "MCI State : %d\n", mci_hw->bt_state);
+ 		break;
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -553,7 +553,7 @@ static void ath_rx_ps_beacon(struct ath_
+ 		sc->ps_flags &= ~PS_BEACON_SYNC;
+ 		ath_dbg(common, PS,
+ 			"Reconfigure Beacon timers based on timestamp from the AP\n");
+-		ath_set_beacon(sc);
++		ath9k_set_beacon(sc);
+ 	}
+ 
+ 	if (ath_beacon_dtim_pending_cab(skb)) {
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -614,10 +614,8 @@ static void ath_tx_complete_aggr(struct 
+ 
+ 	rcu_read_unlock();
+ 
+-	if (needreset) {
+-		RESET_STAT_INC(sc, RESET_TYPE_TX_ERROR);
+-		ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
+-	}
++	if (needreset)
++		ath9k_queue_reset(sc, RESET_TYPE_TX_ERROR);
+ }
+ 
+ static bool ath_lookup_legacy(struct ath_buf *bf)
+@@ -1586,7 +1584,8 @@ void ath_txq_schedule(struct ath_softc *
+ 	struct ath_atx_ac *ac, *ac_tmp, *last_ac;
+ 	struct ath_atx_tid *tid, *last_tid;
+ 
+-	if (work_pending(&sc->hw_reset_work) || list_empty(&txq->axq_acq) ||
++	if (test_bit(SC_OP_HW_RESET, &sc->sc_flags) ||
++	    list_empty(&txq->axq_acq) ||
+ 	    txq->axq_ampdu_depth >= ATH_AGGR_MIN_QDEPTH)
+ 		return;
+ 
+@@ -2191,7 +2190,7 @@ static void ath_tx_processq(struct ath_s
+ 
+ 	ath_txq_lock(sc, txq);
+ 	for (;;) {
+-		if (work_pending(&sc->hw_reset_work))
++		if (test_bit(SC_OP_HW_RESET, &sc->sc_flags))
+ 			break;
+ 
+ 		if (list_empty(&txq->axq_q)) {
+@@ -2274,7 +2273,7 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 	int status;
+ 
+ 	for (;;) {
+-		if (work_pending(&sc->hw_reset_work))
++		if (test_bit(SC_OP_HW_RESET, &sc->sc_flags))
+ 			break;
+ 
+ 		status = ath9k_hw_txprocdesc(ah, NULL, (void *)&ts);
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -3596,22 +3596,6 @@ void ieee80211_request_smps(struct ieee8
+ 			    enum ieee80211_smps_mode smps_mode);
+ 
+ /**
+- * ieee80211_key_removed - disable hw acceleration for key
+- * @key_conf: The key hw acceleration should be disabled for
+- *
+- * This allows drivers to indicate that the given key has been
+- * removed from hardware acceleration, due to a new key that
+- * was added. Don't use this if the key can continue to be used
+- * for TX, if the key restriction is on RX only it is permitted
+- * to keep the key for TX only and not call this function.
+- *
+- * Due to locking constraints, it may only be called during
+- * @set_key. This function must be allowed to sleep, and the
+- * key it tries to disable may still be used until it returns.
+- */
+-void ieee80211_key_removed(struct ieee80211_key_conf *key_conf);
+-
+-/**
+  * ieee80211_ready_on_channel - notification of remain-on-channel start
+  * @hw: pointer as obtained from ieee80211_alloc_hw()
+  */
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
-@@ -201,6 +201,8 @@ static void ieee80211_send_addba_resp(st
+@@ -203,6 +203,8 @@ static void ieee80211_send_addba_resp(st
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_ADHOC)
  		memcpy(mgmt->bssid, sdata->u.ibss.bssid, ETH_ALEN);
@@ -1263,13 +1628,24 @@
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
-@@ -456,6 +457,7 @@ int ieee80211_start_tx_ba_session(struct
+@@ -459,6 +460,7 @@ int ieee80211_start_tx_ba_session(struct
  	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  	    sdata->vif.type != NL80211_IFTYPE_AP &&
 +	    sdata->vif.type != NL80211_IFTYPE_WDS &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC)
  		return -EINVAL;
+ 
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1741,6 +1741,8 @@ static int ieee80211_set_txq_params(stru
+ 		return -EINVAL;
+ 	}
+ 
++	ieee80211_bss_info_change_notify(sdata, BSS_CHANGED_QOS);
++
+ 	return 0;
+ }
  
 --- a/net/mac80211/debugfs_sta.c
 +++ b/net/mac80211/debugfs_sta.c
@@ -1289,7 +1665,7 @@
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -284,7 +284,6 @@ static int ieee80211_do_open(struct net_
+@@ -400,7 +400,6 @@ static int ieee80211_do_open(struct net_
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ieee80211_local *local = sdata->local;
@@ -1297,7 +1673,7 @@
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -430,28 +429,6 @@ static int ieee80211_do_open(struct net_
+@@ -538,28 +537,6 @@ static int ieee80211_do_open(struct net_
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -1326,16 +1702,7 @@
  	/*
  	 * set_multicast_list will be invoked by the networking core
  	 * which will check whether any increments here were done in
-@@ -639,6 +616,8 @@ static void ieee80211_do_stop(struct iee
- 		ieee80211_configure_filter(local);
- 		break;
- 	default:
-+		flush_work(&local->hw_roc_start);
-+		flush_work(&local->hw_roc_done);
- 		flush_work(&sdata->work);
- 		/*
- 		 * When we get here, the interface is marked down.
-@@ -845,6 +824,72 @@ static void ieee80211_if_setup(struct ne
+@@ -949,6 +926,72 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -1408,7 +1775,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -949,6 +994,9 @@ static void ieee80211_iface_work(struct 
+@@ -1053,6 +1096,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -1418,9 +1785,132 @@
  		default:
  			WARN(1, "frame for unexpected interface type");
  			break;
+--- a/net/mac80211/key.c
++++ b/net/mac80211/key.c
+@@ -197,26 +197,6 @@ static void ieee80211_key_disable_hw_acc
+ 	key->flags &= ~KEY_FLAG_UPLOADED_TO_HARDWARE;
+ }
+ 
+-void ieee80211_key_removed(struct ieee80211_key_conf *key_conf)
+-{
+-	struct ieee80211_key *key;
+-
+-	key = container_of(key_conf, struct ieee80211_key, conf);
+-
+-	might_sleep();
+-	assert_key_lock(key->local);
+-
+-	key->flags &= ~KEY_FLAG_UPLOADED_TO_HARDWARE;
+-
+-	/*
+-	 * Flush TX path to avoid attempts to use this key
+-	 * after this function returns. Until then, drivers
+-	 * must be prepared to handle the key.
+-	 */
+-	synchronize_rcu();
+-}
+-EXPORT_SYMBOL_GPL(ieee80211_key_removed);
+-
+ static void __ieee80211_set_default_key(struct ieee80211_sub_if_data *sdata,
+ 					int idx, bool uni, bool multi)
+ {
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1108,7 +1108,7 @@ void ieee80211_dynamic_ps_timer(unsigned
+ }
+ 
+ /* MLME */
+-static void ieee80211_sta_wmm_params(struct ieee80211_local *local,
++static bool ieee80211_sta_wmm_params(struct ieee80211_local *local,
+ 				     struct ieee80211_sub_if_data *sdata,
+ 				     u8 *wmm_param, size_t wmm_param_len)
+ {
+@@ -1119,23 +1119,23 @@ static void ieee80211_sta_wmm_params(str
+ 	u8 *pos, uapsd_queues = 0;
+ 
+ 	if (!local->ops->conf_tx)
+-		return;
++		return false;
+ 
+ 	if (local->hw.queues < IEEE80211_NUM_ACS)
+-		return;
++		return false;
+ 
+ 	if (!wmm_param)
+-		return;
++		return false;
+ 
+ 	if (wmm_param_len < 8 || wmm_param[5] /* version */ != 1)
+-		return;
++		return false;
+ 
+ 	if (ifmgd->flags & IEEE80211_STA_UAPSD_ENABLED)
+ 		uapsd_queues = ifmgd->uapsd_queues;
+ 
+ 	count = wmm_param[6] & 0x0f;
+ 	if (count == ifmgd->wmm_last_param_set)
+-		return;
++		return false;
+ 	ifmgd->wmm_last_param_set = count;
+ 
+ 	pos = wmm_param + 8;
+@@ -1202,6 +1202,7 @@ static void ieee80211_sta_wmm_params(str
+ 
+ 	/* enable WMM or activate new settings */
+ 	sdata->vif.bss_conf.qos = true;
++	return true;
+ }
+ 
+ static void __ieee80211_stop_poll(struct ieee80211_sub_if_data *sdata)
+@@ -2435,14 +2436,6 @@ static void ieee80211_rx_mgmt_beacon(str
+ 		directed_tim = ieee80211_check_tim(elems.tim, elems.tim_len,
+ 						   ifmgd->aid);
+ 
+-	if (ncrc != ifmgd->beacon_crc || !ifmgd->beacon_crc_valid) {
+-		ieee80211_rx_bss_info(sdata, mgmt, len, rx_status, &elems,
+-				      true);
+-
+-		ieee80211_sta_wmm_params(local, sdata, elems.wmm_param,
+-					 elems.wmm_param_len);
+-	}
+-
+ 	if (local->hw.flags & IEEE80211_HW_PS_NULLFUNC_STACK) {
+ 		if (directed_tim) {
+ 			if (local->hw.conf.dynamic_ps_timeout > 0) {
+@@ -2473,6 +2466,13 @@ static void ieee80211_rx_mgmt_beacon(str
+ 	ifmgd->beacon_crc = ncrc;
+ 	ifmgd->beacon_crc_valid = true;
+ 
++	ieee80211_rx_bss_info(sdata, mgmt, len, rx_status, &elems,
++			      true);
++
++	if (ieee80211_sta_wmm_params(local, sdata, elems.wmm_param,
++				     elems.wmm_param_len))
++		changed |= BSS_CHANGED_QOS;
++
+ 	if (elems.erp_info && elems.erp_info_len >= 1) {
+ 		erp_valid = true;
+ 		erp_value = elems.erp_info[0];
+--- a/net/mac80211/rc80211_minstrel_ht.c
++++ b/net/mac80211/rc80211_minstrel_ht.c
+@@ -626,8 +626,12 @@ minstrel_ht_get_rate(void *priv, struct 
+ 
+ #ifdef CONFIG_MAC80211_DEBUGFS
+ 	/* use fixed index if set */
+-	if (mp->fixed_rate_idx != -1)
+-		sample_idx = mp->fixed_rate_idx;
++	if (mp->fixed_rate_idx != -1) {
++		mi->max_tp_rate = mp->fixed_rate_idx;
++		mi->max_tp_rate2 = mp->fixed_rate_idx;
++		mi->max_prob_rate = mp->fixed_rate_idx;
++		sample_idx = -1;
++	}
+ #endif
+ 
+ 	if (sample_idx >= 0) {
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2281,6 +2281,7 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2262,6 +2262,7 @@ ieee80211_rx_h_action(struct ieee80211_r
  		    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  		    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -1428,7 +1918,7 @@
  		    sdata->vif.type != NL80211_IFTYPE_ADHOC)
  			break;
  
-@@ -2495,14 +2496,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2479,14 +2480,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -1446,7 +1936,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_ASSOC_RESP):
  	case cpu_to_le16(IEEE80211_STYPE_REASSOC_RESP):
-@@ -2833,10 +2835,16 @@ static int prepare_for_handlers(struct i
+@@ -2817,10 +2819,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
@@ -1483,243 +1973,14 @@
  	WLAN_STA_CLEAR_PS_FILT,
  	WLAN_STA_MFP,
  	WLAN_STA_BLOCK_BA,
---- a/drivers/net/wireless/ath/ath9k/ath9k.h
-+++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -214,6 +214,7 @@ struct ath_frame_info {
- 	enum ath9k_key_type keytype;
- 	u8 keyix;
- 	u8 retries;
-+	u8 rtscts_rate;
- };
- 
- struct ath_buf_state {
-@@ -721,6 +722,7 @@ extern int ath9k_modparam_nohwcrypt;
- extern int led_blink;
- extern bool is_ath9k_unloaded;
- 
-+u8 ath9k_parse_mpdudensity(u8 mpdudensity);
- irqreturn_t ath_isr(int irq, void *dev);
- int ath9k_init_device(u16 devid, struct ath_softc *sc,
- 		    const struct ath_bus_ops *bus_ops);
---- a/drivers/net/wireless/ath/ath9k/xmit.c
-+++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -938,6 +938,7 @@ static void ath_buf_set_rate(struct ath_
- 	struct ieee80211_tx_rate *rates;
- 	const struct ieee80211_rate *rate;
- 	struct ieee80211_hdr *hdr;
-+	struct ath_frame_info *fi = get_frame_info(bf->bf_mpdu);
- 	int i;
- 	u8 rix = 0;
- 
-@@ -948,18 +949,7 @@ static void ath_buf_set_rate(struct ath_
- 
- 	/* set dur_update_en for l-sig computation except for PS-Poll frames */
- 	info->dur_update = !ieee80211_is_pspoll(hdr->frame_control);
--
--	/*
--	 * We check if Short Preamble is needed for the CTS rate by
--	 * checking the BSS's global flag.
--	 * But for the rate series, IEEE80211_TX_RC_USE_SHORT_PREAMBLE is used.
--	 */
--	rate = ieee80211_get_rts_cts_rate(sc->hw, tx_info);
--	info->rtscts_rate = rate->hw_value;
--
--	if (tx_info->control.vif &&
--	    tx_info->control.vif->bss_conf.use_short_preamble)
--		info->rtscts_rate |= rate->hw_value_short;
-+	info->rtscts_rate = fi->rtscts_rate;
- 
- 	for (i = 0; i < 4; i++) {
- 		bool is_40, is_sgi, is_sp;
-@@ -1001,13 +991,13 @@ static void ath_buf_set_rate(struct ath_
- 		}
- 
- 		/* legacy rates */
-+		rate = &sc->sbands[tx_info->band].bitrates[rates[i].idx];
- 		if ((tx_info->band == IEEE80211_BAND_2GHZ) &&
- 		    !(rate->flags & IEEE80211_RATE_ERP_G))
- 			phy = WLAN_RC_PHY_CCK;
- 		else
- 			phy = WLAN_RC_PHY_OFDM;
- 
--		rate = &sc->sbands[tx_info->band].bitrates[rates[i].idx];
- 		info->rates[i].Rate = rate->hw_value;
- 		if (rate->hw_value_short) {
- 			if (rates[i].flags & IEEE80211_TX_RC_USE_SHORT_PREAMBLE)
-@@ -1175,6 +1165,7 @@ int ath_tx_aggr_start(struct ath_softc *
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2716,7 +2716,7 @@ EXPORT_SYMBOL(ieee80211_get_buffered_bc)
+ void ieee80211_tx_skb_tid(struct ieee80211_sub_if_data *sdata,
+ 			  struct sk_buff *skb, int tid)
  {
- 	struct ath_atx_tid *txtid;
- 	struct ath_node *an;
-+	u8 density;
+-	int ac = ieee802_1d_to_ac[tid];
++	int ac = ieee802_1d_to_ac[tid & 7];
  
- 	an = (struct ath_node *)sta->drv_priv;
- 	txtid = ATH_AN_2_TID(an, tid);
-@@ -1182,6 +1173,17 @@ int ath_tx_aggr_start(struct ath_softc *
- 	if (txtid->state & (AGGR_CLEANUP | AGGR_ADDBA_COMPLETE))
- 		return -EAGAIN;
- 
-+	/* update ampdu factor/density, they may have changed. This may happen
-+	 * in HT IBSS when a beacon with HT-info is received after the station
-+	 * has already been added.
-+	 */
-+	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT) {
-+		an->maxampdu = 1 << (IEEE80211_HT_MAX_AMPDU_FACTOR +
-+				     sta->ht_cap.ampdu_factor);
-+		density = ath9k_parse_mpdudensity(sta->ht_cap.ampdu_density);
-+		an->mpdudensity = density;
-+	}
-+
- 	txtid->state |= AGGR_ADDBA_PROGRESS;
- 	txtid->paused = true;
- 	*ssn = txtid->seq_start = txtid->seq_next;
-@@ -1776,10 +1778,22 @@ static void setup_frame_info(struct ieee
- 	struct ieee80211_sta *sta = tx_info->control.sta;
- 	struct ieee80211_key_conf *hw_key = tx_info->control.hw_key;
- 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
-+	const struct ieee80211_rate *rate;
- 	struct ath_frame_info *fi = get_frame_info(skb);
- 	struct ath_node *an = NULL;
- 	enum ath9k_key_type keytype;
-+	bool short_preamble = false;
-+
-+	/*
-+	 * We check if Short Preamble is needed for the CTS rate by
-+	 * checking the BSS's global flag.
-+	 * But for the rate series, IEEE80211_TX_RC_USE_SHORT_PREAMBLE is used.
-+	 */
-+	if (tx_info->control.vif &&
-+	    tx_info->control.vif->bss_conf.use_short_preamble)
-+		short_preamble = true;
- 
-+	rate = ieee80211_get_rts_cts_rate(hw, tx_info);
- 	keytype = ath9k_cmn_get_hw_crypto_keytype(skb);
- 
- 	if (sta)
-@@ -1794,6 +1808,9 @@ static void setup_frame_info(struct ieee
- 		fi->keyix = ATH9K_TXKEYIX_INVALID;
- 	fi->keytype = keytype;
- 	fi->framelen = framelen;
-+	fi->rtscts_rate = rate->hw_value;
-+	if (short_preamble)
-+		fi->rtscts_rate |= rate->hw_value_short;
- }
- 
- u8 ath_txchainmask_reduction(struct ath_softc *sc, u8 chainmask, u32 rate)
---- a/net/wireless/nl80211.c
-+++ b/net/wireless/nl80211.c
-@@ -2246,6 +2246,33 @@ static int nl80211_parse_beacon(struct g
- 	return 0;
- }
- 
-+static bool nl80211_get_ap_channel(struct cfg80211_registered_device *rdev,
-+				   struct cfg80211_ap_settings *params)
-+{
-+	struct wireless_dev *wdev;
-+	bool ret = false;
-+
-+	mutex_lock(&rdev->devlist_mtx);
-+
-+	list_for_each_entry(wdev, &rdev->netdev_list, list) {
-+		if (wdev->iftype != NL80211_IFTYPE_AP &&
-+		    wdev->iftype != NL80211_IFTYPE_P2P_GO)
-+			continue;
-+
-+		if (!wdev->preset_chan)
-+			continue;
-+
-+		params->channel = wdev->preset_chan;
-+		params->channel_type = wdev->preset_chantype;
-+		ret = true;
-+		break;
-+	}
-+
-+	mutex_unlock(&rdev->devlist_mtx);
-+
-+	return ret;
-+}
-+
- static int nl80211_start_ap(struct sk_buff *skb, struct genl_info *info)
- {
- 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
-@@ -2348,7 +2375,7 @@ static int nl80211_start_ap(struct sk_bu
- 	} else if (wdev->preset_chan) {
- 		params.channel = wdev->preset_chan;
- 		params.channel_type = wdev->preset_chantype;
--	} else
-+	} else if (!nl80211_get_ap_channel(rdev, &params))
- 		return -EINVAL;
- 
- 	if (!cfg80211_can_beacon_sec_chan(&rdev->wiphy, params.channel,
-@@ -2356,8 +2383,11 @@ static int nl80211_start_ap(struct sk_bu
- 		return -EINVAL;
- 
- 	err = rdev->ops->start_ap(&rdev->wiphy, dev, &params);
--	if (!err)
-+	if (!err) {
-+		wdev->preset_chan = params.channel;
-+		wdev->preset_chantype = params.channel_type;
- 		wdev->beacon_interval = params.beacon_interval;
-+	}
- 	return err;
- }
- 
---- a/drivers/net/wireless/ath/ath9k/link.c
-+++ b/drivers/net/wireless/ath/ath9k/link.c
-@@ -407,6 +407,7 @@ void ath_ani_calibrate(unsigned long dat
- 		longcal ? "long" : "", shortcal ? "short" : "",
- 		aniflag ? "ani" : "", common->ani.caldone ? "true" : "false");
- 
-+	ath9k_debug_samp_bb_mac(sc);
- 	ath9k_ps_restore(sc);
- 
- set_timer:
-@@ -415,7 +416,6 @@ set_timer:
- 	* The interval must be the shortest necessary to satisfy ANI,
- 	* short calibration and long calibration.
- 	*/
--	ath9k_debug_samp_bb_mac(sc);
- 	cal_interval = ATH_LONG_CALINTERVAL;
- 	if (sc->sc_ah->config.enable_ani)
- 		cal_interval = min(cal_interval,
---- a/drivers/net/wireless/ath/ath.h
-+++ b/drivers/net/wireless/ath/ath.h
-@@ -143,6 +143,7 @@ struct ath_common {
- 	u32 keymax;
- 	DECLARE_BITMAP(keymap, ATH_KEYMAX);
- 	DECLARE_BITMAP(tkip_keymap, ATH_KEYMAX);
-+	DECLARE_BITMAP(ccmp_keymap, ATH_KEYMAX);
- 	enum ath_crypt_caps crypt_caps;
- 
- 	unsigned int clockrate;
---- a/drivers/net/wireless/ath/ath9k/recv.c
-+++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -785,7 +785,8 @@ static bool ath9k_rx_accept(struct ath_c
- 	 * descriptor does contain a valid key index. This has been observed
- 	 * mostly with CCMP encryption.
- 	 */
--	if (rx_stats->rs_keyix == ATH9K_RXKEYIX_INVALID)
-+	if (rx_stats->rs_keyix == ATH9K_RXKEYIX_INVALID ||
-+	    !test_bit(rx_stats->rs_keyix, common->ccmp_keymap))
- 		rx_stats->rs_status &= ~ATH9K_RXERR_KEYMISS;
- 
- 	if (!rx_stats->rs_datalen) {
---- a/drivers/net/wireless/ath/key.c
-+++ b/drivers/net/wireless/ath/key.c
-@@ -556,6 +556,9 @@ int ath_key_config(struct ath_common *co
- 		return -EIO;
- 
- 	set_bit(idx, common->keymap);
-+	if (key->cipher == WLAN_CIPHER_SUITE_CCMP)
-+		set_bit(idx, common->ccmp_keymap);
-+
- 	if (key->cipher == WLAN_CIPHER_SUITE_TKIP) {
- 		set_bit(idx + 64, common->keymap);
- 		set_bit(idx, common->tkip_keymap);
-@@ -582,6 +585,7 @@ void ath_key_delete(struct ath_common *c
- 		return;
- 
- 	clear_bit(key->hw_key_idx, common->keymap);
-+	clear_bit(key->hw_key_idx, common->ccmp_keymap);
- 	if (key->cipher != WLAN_CIPHER_SUITE_TKIP)
- 		return;
- 
+ 	skb_set_mac_header(skb, 0);
+ 	skb_set_network_header(skb, 0);

@@ -7,5 +7,5 @@
 -export CONFIG_ATH9K_BTCOEX_SUPPORT=y
 +# export CONFIG_ATH9K_BTCOEX_SUPPORT=y
  
- ifndef CONFIG_COMPAT_KERNEL_2_6_27
- export CONFIG_ATH6KL=m
+ # WIL6210 requires MSI only available >= 2.6.30
+ ifndef CONFIG_COMPAT_KERNEL_2_6_30

@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
-@@ -4233,9 +4233,8 @@ static void brcms_c_radio_timer(void *ar
+@@ -4220,9 +4220,8 @@ static void brcms_c_radio_timer(void *ar
  }
  
  /* common low-level watchdog code */
@@ -11,7 +11,7 @@
  	struct brcms_hardware *wlc_hw = wlc->hw;
  
  	BCMMSG(wlc->wiphy, "wl%d\n", wlc_hw->unit);
-@@ -4256,10 +4255,8 @@ static void brcms_b_watchdog(void *arg)
+@@ -4243,10 +4242,8 @@ static void brcms_b_watchdog(void *arg)
  }
  
  /* common watchdog code */
@@ -23,7 +23,7 @@
  	BCMMSG(wlc->wiphy, "wl%d\n", wlc->pub->unit);
  
  	if (!wlc->pub->up)
-@@ -4299,7 +4296,9 @@ static void brcms_c_watchdog(void *arg)
+@@ -4286,7 +4283,9 @@ static void brcms_c_watchdog(void *arg)
  
  static void brcms_c_watchdog_by_timer(void *arg)
  {

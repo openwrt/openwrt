@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
-@@ -270,7 +270,7 @@ struct brcms_c_bit_desc {
+@@ -271,7 +271,7 @@ struct brcms_c_bit_desc {
   */
  
  /* Starting corerev for the fifo size table */
@@ -9,7 +9,7 @@
  
  struct d11init {
  	__le16 addr;
-@@ -334,6 +334,26 @@ const u8 wlc_prio2prec_map[] = {
+@@ -335,6 +335,26 @@ const u8 wlc_prio2prec_map[] = {
  };
  
  static const u16 xmtfifo_sz[][NFIFO] = {
@@ -36,7 +36,7 @@
  	/* corerev 20: 5120, 49152, 49152, 5376, 4352, 1280 */
  	{20, 192, 192, 21, 17, 5},
  	/* corerev 21: 2304, 14848, 5632, 3584, 3584, 1280 */
-@@ -344,6 +364,18 @@ static const u16 xmtfifo_sz[][NFIFO] = {
+@@ -345,6 +365,18 @@ static const u16 xmtfifo_sz[][NFIFO] = {
  	{20, 192, 192, 21, 17, 5},
  	/* corerev 24: 2304, 14848, 5632, 3584, 3584, 1280 */
  	{9, 58, 22, 14, 14, 5},
@@ -55,7 +55,7 @@
  };
  
  #ifdef DEBUG
-@@ -4611,8 +4643,15 @@ static int brcms_b_attach(struct brcms_c
+@@ -4598,8 +4630,15 @@ static int brcms_b_attach(struct brcms_c
  		wlc_hw->machwcap_backup = wlc_hw->machwcap;
  
  		/* init tx fifo size */
