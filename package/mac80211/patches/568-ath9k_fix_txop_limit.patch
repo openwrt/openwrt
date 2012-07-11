@@ -1,0 +1,22 @@
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
+@@ -1351,7 +1351,7 @@ static int ath9k_htc_conf_tx(struct ieee
+ 	qi.tqi_aifs = params->aifs;
+ 	qi.tqi_cwmin = params->cw_min;
+ 	qi.tqi_cwmax = params->cw_max;
+-	qi.tqi_burstTime = params->txop;
++	qi.tqi_burstTime = params->txop * 32;
+ 
+ 	qnum = get_hw_qnum(queue, priv->hwq_map);
+ 
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1359,7 +1359,7 @@ static int ath9k_conf_tx(struct ieee8021
+ 	qi.tqi_aifs = params->aifs;
+ 	qi.tqi_cwmin = params->cw_min;
+ 	qi.tqi_cwmax = params->cw_max;
+-	qi.tqi_burstTime = params->txop;
++	qi.tqi_burstTime = params->txop * 32;
+ 
+ 	ath_dbg(common, CONFIG,
+ 		"Configure tx [queue/halq] [%d/%d], aifs: %d, cw_min: %d, cw_max: %d, txop: %d\n",
