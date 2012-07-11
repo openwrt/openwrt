@@ -814,6 +814,8 @@ static void swcr_process_req(struct swcr_req *req)
 			sg_len, offset_in_page(crp->crp_buf + skip));
 		sg_num = 1;
 	}
+	if (sg_num > 0)
+		sg_mark_end(&req->sg[sg_num-1]);
 
 	switch (sw->sw_type & SW_TYPE_ALG_AMASK) {
 

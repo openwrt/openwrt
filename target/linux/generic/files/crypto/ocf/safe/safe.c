@@ -1944,12 +1944,10 @@ static int safe_probe(struct pci_dev *dev, const struct pci_device_id *ent)
 		return(-ENODEV);
 	}
 
-#ifdef HAVE_PCI_SET_MWI
 	if (pci_set_mwi(dev)) {
 		printk("safe: pci_set_mwi failed!");
 		return(-ENODEV);
 	}
-#endif
 
 	sc = (struct safe_softc *) kmalloc(sizeof(*sc), GFP_KERNEL);
 	if (!sc)

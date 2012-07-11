@@ -92,6 +92,11 @@ extern int cesaReqResources;
 #define CESA_OCF_MAX_SES 128
 #define CESA_Q_SIZE	 64
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#define FRAG_PAGE(f)    (f).p
+#else
+#define FRAG_PAGE(f)    (f)
+#endif
 
 /* data structures */
 struct cesa_ocf_data {
@@ -415,7 +420,7 @@ cesa_ocf_process(device_t dev, struct cryptop *crp, int hint)
         	for ( i = 0; i < skb_shinfo(skb)->nr_frags; i++ ) {
             		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
             		p_buf_info->bufSize = frag->size;
-            		p_buf_info->bufVirtPtr = page_address(frag->page) + frag->page_offset;
+            		p_buf_info->bufVirtPtr = page_address(FRAG_PAGE(frag->page)) + frag->page_offset;
             		p_buf_info++;
         	}
         	p_mbuf_info->numFrags = skb_shinfo(skb)->nr_frags + 1;

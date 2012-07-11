@@ -592,7 +592,7 @@ c7108_process(void *arg, struct cryptop *crp, int hint)
 			 i < skb_shinfo(skb)->nr_frags &&
 			 sg_num < SCATTERLIST_MAX; i++) {
 		    if (skip < skb_shinfo(skb)->frags[i].size) {
-			//sg[sg_num].page   = skb_frag_page(&kb_shinfo(skb)->frags[i]);
+			//sg[sg_num].page   = skb_frag_page(&skb_shinfo(skb)->frags[i]);
 			//sg[sg_num].offset = skb_shinfo(skb)->frags[i].page_offset + skip;
 			len = skb_shinfo(skb)->frags[i].size - skip;
 			if (len + sg_len > crd->crd_len)
@@ -636,6 +636,8 @@ c7108_process(void *arg, struct cryptop *crp, int hint)
 		sg_set_page(&sg[0], virt_to_page(crp->crp_buf + skip), sg_len, offset_in_page(crp->crp_buf + skip));
 		sg_num = 1;
 	    }
+	    if (sg_num > 0)
+		sg_mark_end(&sg[sg_num-1]);
 	    
 	    
 	    switch (sw->xfm_type) {
