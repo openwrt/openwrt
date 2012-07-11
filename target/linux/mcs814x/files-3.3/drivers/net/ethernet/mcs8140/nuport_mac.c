@@ -558,8 +558,7 @@ static int nuport_mac_rx(struct net_device *dev, int limit)
 		skb->ip_summed = CHECKSUM_UNNECESSARY;
 
 		/* Pass the received packet to network layer */
-		netif_receive_skb(skb);
-
+		status = netif_receive_skb(skb);
 		if (status != NET_RX_DROP)
 			dev->stats.rx_bytes += len - 4;	/* Without CRC */
 		else
