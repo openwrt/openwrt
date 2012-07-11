@@ -19,7 +19,7 @@ PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 PKG_MD5SUM:=ae412727c8c15b67880aef7bd2999b2e
 
 PKG_BUILD_DEPENDS:=ocf-crypto-headers
-PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE
+PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE_CRYPTO CONFIG_OPENSSL_ENGINE_DIGEST
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -73,11 +73,14 @@ endef
 
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
-					no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
+	no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
 OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic no-sse2
 
-ifdef CONFIG_OPENSSL_ENGINE
+ifdef CONFIG_OPENSSL_ENGINE_CRYPTO
   OPENSSL_OPTIONS += -DHAVE_CRYPTODEV
+  ifdef CONFIG_OPENSSL_ENGINE_DIGEST
+    OPENSSL_OPTIONS += -DUSE_CRYPTODEV_DIGESTS
+  endif
 else
   OPENSSL_OPTIONS += no-engines
 endif
