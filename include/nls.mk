@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011 OpenWrt.org
+# Copyright (C) 2011-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -23,7 +23,7 @@ else
 endif
 
 PKG_CONFIG_DEPENDS += CONFIG_BUILD_NLS
-PKG_BUILD_DEPENDS += !BUILD_NLS:libiconv !BUILD_NLS:gettext
+PKG_BUILD_DEPENDS += !BUILD_NLS:libiconv !BUILD_NLS:libintl
 
 ICONV_DEPENDS:=+BUILD_NLS:libiconv-full
 ICONV_CFLAGS:=-I$(ICONV_PREFIX)/include
