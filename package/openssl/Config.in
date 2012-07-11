@@ -1,8 +1,13 @@
 menu "Configuration"
 	depends on PACKAGE_libopenssl
 
-config OPENSSL_ENGINE
+config OPENSSL_ENGINE_CRYPTO
 	bool
 	prompt "Crypto acceleration support"
+
+config OPENSSL_ENGINE_DIGEST
+	bool
+	depends OPENSSL_ENGINE_CRYPTO
+	prompt "Digests acceleration support"
 
 endmenu
