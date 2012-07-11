@@ -20,7 +20,7 @@
  ccflags-y := -Werror
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_livebox.c
-@@ -0,0 +1,373 @@
+@@ -0,0 +1,368 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -386,11 +386,6 @@
 +
 +		platform_device_register(&bcm63xx_gpio_keys_device);
 +	}
-+
-+#ifdef CONFIG_PCI
-+	if (board.has_pci)
-+		bcm63xx_pci_register();
-+#endif
 +
 +	return 0;
 +}
