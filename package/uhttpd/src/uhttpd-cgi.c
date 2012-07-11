@@ -133,7 +133,7 @@ static void uh_cgi_shutdown(struct uh_cgi_state *state)
 
 static bool uh_cgi_socket_cb(struct client *cl)
 {
-	int i, len, hdroff;
+	int i, len, blen, hdroff;
 	char buf[UH_LIMIT_MSGHEAD];
 
 	struct uh_cgi_state *state = (struct uh_cgi_state *)cl->priv;
@@ -184,15 +184,20 @@ static bool uh_cgi_socket_cb(struct client *cl)
 	}
 
 	/* try to read data from child */
-	while ((len = uh_raw_recv(cl->rpipe.fd, buf, sizeof(buf), -1)) > 0)
+	while ((len = uh_raw_recv(cl->rpipe.fd, buf, state->header_sent
+	                          ? sizeof(buf) : state->httpbuf.len, -1)) > 0)
 	{
 		/* we have not pushed out headers yet, parse input */
 		if (!state->header_sent)
 		{
 			/* try to parse header ... */
-			memcpy(state->httpbuf, buf, len);
+			memcpy(state->httpbuf.ptr, buf, len);
+			state->httpbuf.len -= len;
+			state->httpbuf.ptr += len;
 
-			if (uh_cgi_header_parse(res, state->httpbuf, len, &hdroff))
+			blen = state->httpbuf.ptr - state->httpbuf.buf;
+
+			if (uh_cgi_header_parse(res, state->httpbuf.buf, blen, &hdroff))
 			{
 				/* write status */
 				ensure_out(uh_http_sendf(cl, NULL,
@@ -229,18 +234,19 @@ static bool uh_cgi_socket_cb(struct client *cl)
 				state->header_sent = true;
 
 				/* push out remaining head buffer */
-				if (hdroff < len)
+				if (hdroff < blen)
 				{
 					D("CGI: Child(%d) relaying %d rest bytes\n",
-					  cl->proc.pid, len - hdroff);
+					  cl->proc.pid, blen - hdroff);
 
 					ensure_out(uh_http_send(cl, req,
-											&buf[hdroff], len - hdroff));
+					                        state->httpbuf.buf + hdroff,
+					                        blen - hdroff));
 				}
 			}
 
 			/* ... failed and head buffer exceeded */
-			else
+			else if (!state->httpbuf.len)
 			{
 				/* I would do this ...
 				 *
@@ -535,6 +541,9 @@ bool uh_cgi_request(struct client *cl, struct path_info *pi,
 		close(wfd[0]);
 
 		D("CGI: Child(%d) created: rfd(%d) wfd(%d)\n", child, rfd[0], wfd[1]);
+
+		state->httpbuf.ptr = state->httpbuf.buf;
+		state->httpbuf.len = sizeof(state->httpbuf.buf);
 
 		state->content_length = cl->httpbuf.len;
 
