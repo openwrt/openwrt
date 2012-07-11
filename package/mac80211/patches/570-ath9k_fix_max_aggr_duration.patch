@@ -123,3 +123,13 @@
  static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf,
  			     struct ath_tx_info *info, int len)
  {
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1366,6 +1366,7 @@ static int ath9k_conf_tx(struct ieee8021
+ 		queue, txq->axq_qnum, params->aifs, params->cw_min,
+ 		params->cw_max, params->txop);
+ 
++	ath_update_max_aggr_framelen(sc, queue, qi.tqi_burstTime);
+ 	ret = ath_txq_update(sc, txq->axq_qnum, &qi);
+ 	if (ret)
+ 		ath_err(common, "TXQ Update failed\n");
