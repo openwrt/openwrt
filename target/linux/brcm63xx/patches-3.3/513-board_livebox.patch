@@ -20,7 +20,7 @@
  ccflags-y := -Werror
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_livebox.c
-@@ -0,0 +1,366 @@
+@@ -0,0 +1,373 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -273,6 +273,10 @@
 +		panic("unexpected CPU for bcm963xx board");
 +}
 +
++static struct physmap_flash_data flash_data = {
++	.width			= 2,
++};
++
 +static struct resource mtd_resources[] = {
 +	{
 +		.start          = 0,    /* filled at runtime */
@@ -282,9 +286,12 @@
 +};
 +
 +static struct platform_device mtd_dev = {
-+	.name                   = "bcm963xx-flash",
-+	.resource               = mtd_resources,
-+	.num_resources          = ARRAY_SIZE(mtd_resources),
++	.name			= "physmap-flash",
++	.resource		= mtd_resources,
++	.num_resources		= ARRAY_SIZE(mtd_resources),
++	.dev			= {
++		.platform_data	= &flash_data,
++	},
 +};
 +
 +static struct gpio_led_platform_data bcm63xx_led_data;
