@@ -15,14 +15,14 @@
 @@ -189,6 +189,7 @@ static void bcma_core_mips_flash_detect(
  		break;
  	case BCMA_CC_FLASHT_PARA:
- 		pr_info("found parallel flash.\n");
+ 		bcma_info(bus, "found parallel flash.\n");
 +		bus->drv_cc.flash_type = BCMA_PFLASH;
  		bus->drv_cc.pflash.window = 0x1c000000;
  		bus->drv_cc.pflash.window_size = 0x02000000;
  
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -117,10 +117,68 @@
+@@ -122,10 +122,68 @@
  #define  BCMA_CC_JCTL_EXT_EN		2		/* Enable external targets */
  #define  BCMA_CC_JCTL_EN		1		/* Enable Jtag master */
  #define BCMA_CC_FLASHCTL		0x0040
@@ -91,7 +91,7 @@
  #define BCMA_CC_BCAST_ADDR		0x0050
  #define BCMA_CC_BCAST_DATA		0x0054
  #define BCMA_CC_GPIOPULLUP		0x0058		/* Rev >= 20 only */
-@@ -346,6 +404,12 @@
+@@ -360,6 +418,12 @@
  /* 4313 Chip specific ChipControl register bits */
  #define BCMA_CCTRL_4313_12MA_LED_DRIVE		0x00000007	/* 12 mA drive strengh for later 4313 */
  
@@ -104,7 +104,7 @@
  /* Data for the PMU, if available.
   * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
   */
-@@ -355,6 +419,10 @@ struct bcma_chipcommon_pmu {
+@@ -369,6 +433,10 @@ struct bcma_chipcommon_pmu {
  };
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
@@ -115,7 +115,7 @@
  struct bcma_pflash {
  	u8 buswidth;
  	u32 window;
-@@ -380,7 +448,10 @@ struct bcma_drv_cc {
+@@ -394,7 +462,10 @@ struct bcma_drv_cc {
  	u16 fast_pwrup_delay;
  	struct bcma_chipcommon_pmu pmu;
  #ifdef CONFIG_BCMA_DRIVER_MIPS

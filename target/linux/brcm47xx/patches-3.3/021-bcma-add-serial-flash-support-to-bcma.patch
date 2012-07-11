@@ -23,7 +23,7 @@
  bcma-$(CONFIG_BCMA_DRIVER_MIPS)		+= driver_mips.o
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -42,6 +42,11 @@ void bcma_chipco_serial_init(struct bcma
+@@ -51,6 +51,11 @@ void bcma_chipco_serial_init(struct bcma
  u32 bcma_pmu_alp_clock(struct bcma_drv_cc *cc);
  u32 bcma_pmu_get_clockcpu(struct bcma_drv_cc *cc);
  
@@ -392,7 +392,7 @@
 +		} while (ret == -EAGAIN && tries > 0);
 +
 +		if (ret == -EAGAIN && tries == 0) {
-+			pr_info("ST Flash rejected write\n");
++			bcma_info(cc->core->bus, "ST Flash rejected write\n");
 +			ret = -EIO;
 +		}
 +		break;
@@ -442,20 +442,20 @@
  	switch (bus->drv_cc.capabilities & BCMA_CC_CAP_FLASHT) {
  	case BCMA_CC_FLASHT_STSER:
  	case BCMA_CC_FLASHT_ATSER:
--		pr_err("Serial flash not supported.\n");
+-		bcma_err(bus, "Serial flash not supported.\n");
 +#ifdef CONFIG_BCMA_SFLASH
-+		pr_info("found serial flash.\n");
++		bcma_info(bus, "found serial flash.\n");
 +		bus->drv_cc.flash_type = BCMA_SFLASH;
 +		bcma_sflash_init(&bus->drv_cc);
 +#else
-+		pr_info("serial flash not supported.\n");
++		bcma_info(bus, "serial flash not supported.\n");
 +#endif /* CONFIG_BCMA_SFLASH */
  		break;
  	case BCMA_CC_FLASHT_PARA:
- 		pr_info("found parallel flash.\n");
+ 		bcma_info(bus, "found parallel flash.\n");
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -421,6 +421,7 @@ struct bcma_chipcommon_pmu {
+@@ -435,6 +435,7 @@ struct bcma_chipcommon_pmu {
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  enum bcma_flash_type {
  	BCMA_PFLASH,
@@ -463,7 +463,7 @@
  };
  
  struct bcma_pflash {
-@@ -429,6 +430,14 @@ struct bcma_pflash {
+@@ -443,6 +444,14 @@ struct bcma_pflash {
  	u32 window_size;
  };
  
@@ -478,7 +478,7 @@
  struct bcma_serial_port {
  	void *regs;
  	unsigned long clockspeed;
-@@ -451,6 +460,9 @@ struct bcma_drv_cc {
+@@ -465,6 +474,9 @@ struct bcma_drv_cc {
  	enum bcma_flash_type flash_type;
  	union {
  		struct bcma_pflash pflash;
@@ -488,7 +488,7 @@
  	};
  
  	int nr_serial_ports;
-@@ -506,4 +518,14 @@ extern void bcma_chipco_regctl_maskset(s
+@@ -520,4 +532,14 @@ extern void bcma_chipco_regctl_maskset(s
  				       u32 offset, u32 mask, u32 set);
  extern void bcma_pmu_spuravoid_pllupdate(struct bcma_drv_cc *cc, int spuravoid);
  
