@@ -497,7 +497,8 @@ octo_process(device_t dev, struct cryptop *crp, int hint)
 				offset_in_page(crp->crp_buf));
 		sg_num = 1;
 	}
-
+	if (sg_num > 0)
+		sg_mark_end(&sg[sg_num-1]);
 
 	/*
 	 * setup a new explicit key

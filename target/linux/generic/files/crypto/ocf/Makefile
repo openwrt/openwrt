@@ -105,6 +105,7 @@ patch:
 		patch=ocf-linux-base.patch; \
 		patch24=ocf-linux-24.patch; \
 		patch26=ocf-linux-26.patch; \
+		patch3=ocf-linux-3.patch; \
 		( \
 			find . -name Makefile; \
 			find . -name Config.in; \
@@ -116,6 +117,8 @@ patch:
 		done > $$patch; \
 		cat $$patchbase/patches/linux-2.4.35-ocf.patch $$patch > $$patch24; \
 		cat $$patchbase/patches/linux-2.6.38-ocf.patch $$patch > $$patch26; \
+		cat $$patchbase/patches/linux-3.2.1-ocf.patch $$patch > $$patch3; \
+
 
 #
 # this target probably does nothing for anyone but me - davidm

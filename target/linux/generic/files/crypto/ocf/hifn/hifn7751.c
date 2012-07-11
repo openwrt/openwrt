@@ -434,10 +434,8 @@ hifn_probe(struct pci_dev *dev, const struct pci_device_id *ent)
 	if (pci_enable_device(dev) < 0)
 		return(-ENODEV);
 
-#ifdef HAVE_PCI_SET_MWI
 	if (pci_set_mwi(dev))
 		return(-ENODEV);
-#endif
 
 	if (!dev->irq) {
 		printk("hifn: found device with no IRQ assigned. check BIOS settings!");

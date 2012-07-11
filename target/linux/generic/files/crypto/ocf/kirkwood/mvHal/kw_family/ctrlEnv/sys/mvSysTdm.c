@@ -85,7 +85,7 @@ static MV_TARGET tdmAddrDecPrioTap[] =
         DEV_BOOCS,
         PEX0_IO,
         TBL_TERM
-};
+};
 
 static MV_STATUS tdmWinOverlapDetect(MV_U32 winNum, MV_ADDR_WIN *pAddrWin);
 

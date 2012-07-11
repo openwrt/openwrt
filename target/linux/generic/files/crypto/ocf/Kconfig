@@ -26,7 +26,6 @@ config OCF_CRYPTODEV
 
 config OCF_CRYPTOSOFT
 	tristate "cryptosoft (software crypto engine)"
-	select CRYPTO_MANAGER
 	depends on OCF_OCF
 	help
 	  A software driver for the OCF framework that uses
