@@ -32,7 +32,7 @@ unexport P4PORT P4USER P4CONFIG P4CLIENT
 # prevent user defaults for quilt from interfering
 unexport QUILT_PATCHES QUILT_PATCH_OPTS
 
-unexport C_INCLUDE_PATH CROSS_COMPILE
+unexport C_INCLUDE_PATH CROSS_COMPILE ARCH
 
 # prevent distro default LPATH from interfering
 unexport LPATH
