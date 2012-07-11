@@ -33,7 +33,6 @@
 
 
 struct uh_lua_state {
-	char httpbuf[UH_LIMIT_MSGHEAD];
 	int content_length;
 	bool data_sent;
 };
