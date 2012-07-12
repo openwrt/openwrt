@@ -186,7 +186,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -66,6 +137,418 @@ config ATH79_MACH_PB44
+@@ -66,6 +137,419 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -352,6 +352,7 @@
 +	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
 +
 +config ATH79_MACH_RB4XX
 +	bool "MikroTik RouterBOARD 4xx series support"
@@ -605,7 +606,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -79,6 +562,24 @@ config ATH79_MACH_UBNT_XM
+@@ -79,6 +563,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -630,7 +631,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -114,10 +615,6 @@ config SOC_QCA955X
+@@ -114,10 +616,6 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -641,7 +642,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -128,7 +625,14 @@ config ATH79_DEV_DSA
+@@ -128,7 +626,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -657,7 +658,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -153,4 +657,7 @@ config ATH79_NVRAM
+@@ -153,4 +658,7 @@ config ATH79_NVRAM
  config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
