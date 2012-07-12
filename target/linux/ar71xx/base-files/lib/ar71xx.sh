@@ -126,6 +126,9 @@ tplink_board_detect() {
 	"430000"*)
 		model="TP-Link TL-WDR4300"
 		;;
+	"431000"*)
+		model="TP-Link TL-WDR4310"
+		;;
 	*)
 		hwver=""
 		;;
