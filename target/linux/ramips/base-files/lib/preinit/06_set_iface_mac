@@ -8,6 +8,10 @@ preinit_set_mac_address() {
 	. /lib/ramips.sh
 
 	case $(ramips_board_name) in
+	3g-6200n)
+		mac=$(ramips_get_mac_binary factory 4)
+		ifconfig eth0 hw ether $mac 2>/dev/null
+		;;
 	bc2 |\
 	esr-9753 |\
 	freestation5 |\

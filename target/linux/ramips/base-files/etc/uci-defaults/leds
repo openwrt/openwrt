@@ -14,6 +14,10 @@ set_wifi_led() {
 board=$(ramips_board_name)
 
 case $board in
+	3g-6200n)
+		set_wifi_led "edimax:amber:wlan"
+		set_usb_led "edimax:blue:3g"
+		;;
 	all0256n)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;

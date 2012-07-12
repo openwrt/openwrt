@@ -124,6 +124,11 @@ define BuildFirmware/GENERIC_8M/initramfs
 	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M)))
 endef
 
+mtdlayout_edimax_3g6200n=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),2752k(rootfs),128k@0x3e0000(cimage)ro,3648k@0x50000(firmware)
+define BuildFirmware/3G6200N
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_edimax_3g6200n)),917504,2818048)
+endef
+
 mtdlayout_argus_atp52b=192k(bootloader)ro,64k(config),64k(factory),1152k(kernel),6656k(rootfs),7808k@0x50000(firmware)
 mtd_argus_atp52b_kernel_part_size=1179648
 mtd_argus_atp52b_rootfs_part_size=6815744
@@ -312,6 +317,10 @@ endif
 #
 # RT305X Profiles
 #
+define Image/Build/Profile/3G6200N
+	$(call Image/Build/Template/$(fs_squash)/$(1),3G6200N,3g-6200n,3G-6200N,ttyS1,57600,phys)
+endef
+
 define Image/Build/Profile/ALL0256N
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,all0256n,ALL0256N,ttyS1,57600,spi)
 endef
@@ -444,6 +453,7 @@ endef
 
 ifeq ($(CONFIG_RALINK_RT305X),y)
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/3G6200N,$(1))
 	$(call Image/Build/Profile/ALL0256N,$(1))
 	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
 	$(call Image/Build/Profile/BC2,$(1))
