@@ -201,3 +201,14 @@
 +
 +
 +#endif
+--- a/rpc/netdb.h
++++ b/rpc/netdb.h
+@@ -41,6 +41,8 @@
+ #define __need_size_t
+ #include <stddef.h>
+ 
++#include "types.h"
++
+ __BEGIN_DECLS
+ 
+ struct rpcent
