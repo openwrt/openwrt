@@ -30,6 +30,9 @@ status_led_off() {
 
 get_status_led() {
 	case $(ramips_board_name) in
+	3g-6200n)
+		status_led="edimax:green:power"
+		;;
 	argus-atp52b)
 		status_led="argus-atp52b:green:run"
 		;;
