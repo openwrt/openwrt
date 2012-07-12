@@ -1984,3 +1984,24 @@
  
  	skb_set_mac_header(skb, 0);
  	skb_set_network_header(skb, 0);
+--- a/net/wireless/chan.c
++++ b/net/wireless/chan.c
+@@ -136,9 +136,16 @@ cfg80211_get_chan_state(struct cfg80211_
+ 		break;
+ 	case NL80211_IFTYPE_AP:
+ 	case NL80211_IFTYPE_P2P_GO:
++		if (wdev->beacon_interval) {
++			*chan = wdev->channel;
++			*chanmode = CHAN_MODE_SHARED;
++		}
++		return;
+ 	case NL80211_IFTYPE_MESH_POINT:
+-		*chan = wdev->channel;
+-		*chanmode = CHAN_MODE_SHARED;
++		if (wdev->mesh_id_len) {
++			*chan = wdev->channel;
++			*chanmode = CHAN_MODE_SHARED;
++		}
+ 		return;
+ 	case NL80211_IFTYPE_MONITOR:
+ 	case NL80211_IFTYPE_AP_VLAN:
