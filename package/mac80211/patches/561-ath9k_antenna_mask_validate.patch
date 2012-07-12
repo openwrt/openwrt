@@ -6,7 +6,7 @@
  
 +static bool validate_antenna_mask(struct ath_hw *ah, u32 val)
 +{
-+	switch (val & ah->caps.rx_chainmask) {
++	switch (val & 0x7) {
 +	case 0x1:
 +	case 0x3:
 +	case 0x7:
