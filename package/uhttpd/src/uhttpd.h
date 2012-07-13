@@ -63,15 +63,8 @@
 
 #define UH_LIMIT_MSGHEAD	4096
 #define UH_LIMIT_HEADERS	64
-
 #define UH_LIMIT_CLIENTS	64
 
-#define UH_HTTP_MSG_GET		0
-#define UH_HTTP_MSG_HEAD	1
-#define UH_HTTP_MSG_POST	2
-
-#define UH_SOCK_CLIENT		0
-#define UH_SOCK_SERVER		1
 
 struct listener;
 struct client;
@@ -128,9 +121,25 @@ struct config {
 #endif
 };
 
+enum http_method {
+	UH_HTTP_MSG_GET,
+	UH_HTTP_MSG_POST,
+	UH_HTTP_MSG_HEAD,
+};
+
+extern const char *http_methods[];
+
+enum http_version {
+	UH_HTTP_VER_0_9,
+	UH_HTTP_VER_1_0,
+	UH_HTTP_VER_1_1,
+};
+
+extern const char *http_versions[];
+
 struct http_request {
-	int	method;
-	float version;
+	enum http_method method;
+	enum http_version version;
 	int redirect_status;
 	char *url;
 	char *headers[UH_LIMIT_HEADERS];
@@ -167,7 +176,6 @@ struct client {
 	bool (*cb)(struct client *);
 	void *priv;
 	bool dispatched;
-	bool dead;
 	struct {
 		char buf[UH_LIMIT_MSGHEAD];
 		char *ptr;

@@ -115,7 +115,9 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url);
 struct listener * uh_listener_add(int sock, struct config *conf);
 struct listener * uh_listener_lookup(int sock);
 
-struct client * uh_client_add(int sock, struct listener *serv);
+struct client * uh_client_add(int sock, struct listener *serv,
+                              struct sockaddr_in6 *peer);
+
 struct client * uh_client_lookup(int sock);
 
 #define uh_client_error(cl, code, status, ...) do { \

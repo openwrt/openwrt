@@ -201,9 +201,10 @@ static bool uh_cgi_socket_cb(struct client *cl)
 			{
 				/* write status */
 				ensure_out(uh_http_sendf(cl, NULL,
-					"HTTP/%.1f %03d %s\r\n"
+					"%s %03d %s\r\n"
 					"Connection: close\r\n",
-					req->version, res->statuscode, res->statusmsg));
+					http_versions[req->version],
+					res->statuscode, res->statusmsg));
 
 				/* add Content-Type if no Location or Content-Type */
 				if (!uh_cgi_header_lookup(res, "Location") &&
@@ -214,7 +215,7 @@ static bool uh_cgi_socket_cb(struct client *cl)
 				}
 
 				/* if request was HTTP 1.1 we'll respond chunked */
-				if ((req->version > 1.0) &&
+				if ((req->version > UH_HTTP_VER_1_0) &&
 					!uh_cgi_header_lookup(res, "Transfer-Encoding"))
 				{
 					ensure_out(uh_http_send(cl, NULL,
@@ -260,10 +261,11 @@ static bool uh_cgi_socket_cb(struct client *cl)
 				 */
 
 				ensure_out(uh_http_sendf(cl, NULL,
-										 "HTTP/%.1f 200 OK\r\n"
+										 "%s 200 OK\r\n"
 										 "Content-Type: text/plain\r\n"
 										 "%s\r\n",
-										 req->version, (req->version > 1.0)
+										 http_versions[req->version],
+										 (req->version > UH_HTTP_VER_1_0)
 										 ? "Transfer-Encoding: chunked\r\n" : ""
 				));
 
@@ -427,26 +429,10 @@ bool uh_cgi_request(struct client *cl, struct path_info *pi,
 			}
 
 			/* http version */
-			if (req->version > 1.0)
-				setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
-			else
-				setenv("SERVER_PROTOCOL", "HTTP/1.0", 1);
+			setenv("SERVER_PROTOCOL", http_versions[req->version], 1);
 
 			/* request method */
-			switch (req->method)
-			{
-				case UH_HTTP_MSG_GET:
-					setenv("REQUEST_METHOD", "GET", 1);
-					break;
-
-				case UH_HTTP_MSG_HEAD:
-					setenv("REQUEST_METHOD", "HEAD", 1);
-					break;
-
-				case UH_HTTP_MSG_POST:
-					setenv("REQUEST_METHOD", "POST", 1);
-					break;
-			}
+			setenv("REQUEST_METHOD", http_methods[req->method], 1);
 
 			/* request url */
 			setenv("REQUEST_URI", req->url, 1);
