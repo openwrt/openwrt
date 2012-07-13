@@ -20,6 +20,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR)/squashfs-tools \
+		CC="$(HOSTCC)" \
 		LZMAPATH=$(STAGING_DIR_HOST)/lib \
 		mksquashfs-lzma unsquashfs-lzma 
 endef
