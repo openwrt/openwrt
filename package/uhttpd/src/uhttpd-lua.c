@@ -66,7 +66,7 @@ static int uh_lua_recv(lua_State *L)
 	return 1;
 }
 
-static int uh_lua_send_common(lua_State *L, int chunked)
+static int uh_lua_send_common(lua_State *L, bool chunked)
 {
 	size_t length;
 
@@ -112,12 +112,12 @@ out:
 
 static int uh_lua_send(lua_State *L)
 {
-	return uh_lua_send_common(L, 0);
+	return uh_lua_send_common(L, false);
 }
 
 static int uh_lua_sendc(lua_State *L)
 {
-	return uh_lua_send_common(L, 1);
+	return uh_lua_send_common(L, true);
 }
 
 static int uh_lua_str2str(lua_State *L, int (*xlate_func) (char *, int, const char *, int))
@@ -414,21 +414,7 @@ bool uh_lua_request(struct client *cl, lua_State *L)
 		lua_newtable(L);
 
 		/* request method */
-		switch(req->method)
-		{
-			case UH_HTTP_MSG_GET:
-				lua_pushstring(L, "GET");
-				break;
-
-			case UH_HTTP_MSG_HEAD:
-				lua_pushstring(L, "HEAD");
-				break;
-
-			case UH_HTTP_MSG_POST:
-				lua_pushstring(L, "POST");
-				break;
-		}
-
+		lua_pushstring(L, http_methods[req->method]);
 		lua_setfield(L, -2, "REQUEST_METHOD");
 
 		/* request url */
@@ -462,14 +448,10 @@ bool uh_lua_request(struct client *cl, lua_State *L)
 		}
 
 		/* http protcol version */
-		lua_pushnumber(L, floor(req->version * 10) / 10);
+		lua_pushnumber(L, 0.9 + (req->version / 10.0));
 		lua_setfield(L, -2, "HTTP_VERSION");
 
-		if (req->version > 1.0)
-			lua_pushstring(L, "HTTP/1.1");
-		else
-			lua_pushstring(L, "HTTP/1.0");
-
+		lua_pushstring(L, http_versions[req->version]);
 		lua_setfield(L, -2, "SERVER_PROTOCOL");
 
 
@@ -529,12 +511,13 @@ bool uh_lua_request(struct client *cl, lua_State *L)
 				if (! err_str)
 					err_str = "Unknown error";
 
-				printf("HTTP/%.1f 500 Internal Server Error\r\n"
+				printf("%s 500 Internal Server Error\r\n"
 					   "Connection: close\r\n"
 					   "Content-Type: text/plain\r\n"
 					   "Content-Length: %i\r\n\r\n"
 					   "Lua raised a runtime error:\n  %s\n",
-					   req->version, 31 + strlen(err_str), err_str);
+					   http_versions[req->version],
+					   31 + strlen(err_str), err_str);
 
 				break;
 

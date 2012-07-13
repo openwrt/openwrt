@@ -113,16 +113,16 @@ static int uh_file_response_ok_hdrs(struct client *cl, struct stat *s)
 
 static int uh_file_response_200(struct client *cl, struct stat *s)
 {
-	ensure_ret(uh_http_sendf(cl, NULL, "HTTP/%.1f 200 OK\r\n",
-							 cl->request.version));
+	ensure_ret(uh_http_sendf(cl, NULL, "%s 200 OK\r\n",
+							 http_versions[cl->request.version]));
 
 	return uh_file_response_ok_hdrs(cl, s);
 }
 
 static int uh_file_response_304(struct client *cl, struct stat *s)
 {
-	ensure_ret(uh_http_sendf(cl, NULL, "HTTP/%.1f 304 Not Modified\r\n",
-							 cl->request.version));
+	ensure_ret(uh_http_sendf(cl, NULL, "%s 304 Not Modified\r\n",
+							 http_versions[cl->request.version]));
 
 	return uh_file_response_ok_hdrs(cl, s);
 }
@@ -130,8 +130,9 @@ static int uh_file_response_304(struct client *cl, struct stat *s)
 static int uh_file_response_412(struct client *cl)
 {
 	return uh_http_sendf(cl, NULL,
-						 "HTTP/%.1f 412 Precondition Failed\r\n"
-						 "Connection: close\r\n", cl->request.version);
+						 "%s 412 Precondition Failed\r\n"
+						 "Connection: close\r\n",
+	                     http_versions[cl->request.version]);
 }
 
 static int uh_file_if_match(struct client *cl, struct stat *s, int *ok)

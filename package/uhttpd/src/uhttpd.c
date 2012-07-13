@@ -35,6 +35,9 @@
 #endif
 
 
+const char * http_methods[] = { "GET", "POST", "HEAD", };
+const char * http_versions[] = { "HTTP/0.9", "HTTP/1.0", "HTTP/1.1", };
+
 static int run = 1;
 
 static void uh_sigterm(int sig)
@@ -123,10 +126,9 @@ static void uh_config_parse(struct config *conf)
 
 static void uh_listener_cb(struct uloop_fd *u, unsigned int events);
 
-static int uh_socket_bind(fd_set *serv_fds, int *max_fd,
-						  const char *host, const char *port,
-						  struct addrinfo *hints, int do_tls,
-						  struct config *conf)
+static int uh_socket_bind(const char *host, const char *port,
+                          struct addrinfo *hints, int do_tls,
+                          struct config *conf)
 {
 	int sock = -1;
 	int yes = 1;
@@ -213,11 +215,8 @@ static int uh_socket_bind(fd_set *serv_fds, int *max_fd,
 		l->tls = do_tls ? conf->tls : NULL;
 #endif
 
-		/* add socket to server fd set */
-		FD_SET(sock, serv_fds);
+		/* add socket to uloop */
 		fd_cloexec(sock);
-		*max_fd = max(*max_fd, sock);
-
 		uh_ufd_add(&l->fd, uh_listener_cb, ULOOP_READ);
 
 		bound++;
@@ -268,28 +267,17 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 
 
 		/* check method */
-		if (strcmp(method, "GET") && strcmp(method, "HEAD") && strcmp(method, "POST"))
+		if (method && !strcmp(method, "GET"))
+			req->method = UH_HTTP_MSG_GET;
+		else if (method && !strcmp(method, "POST"))
+			req->method = UH_HTTP_MSG_POST;
+		else if (method && !strcmp(method, "HEAD"))
+			req->method = UH_HTTP_MSG_HEAD;
+		else
 		{
 			/* invalid method */
 			uh_http_response(cl, 405, "Method Not Allowed");
 			return NULL;
-		}
-		else
-		{
-			switch(method[0])
-			{
-				case 'G':
-					req->method = UH_HTTP_MSG_GET;
-					break;
-
-				case 'H':
-					req->method = UH_HTTP_MSG_HEAD;
-					break;
-
-				case 'P':
-					req->method = UH_HTTP_MSG_POST;
-					break;
-			}
 		}
 
 		/* check path */
@@ -305,22 +293,21 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 		}
 
 		/* check version */
-		if ((version == NULL) || (strcmp(version, "HTTP/0.9") &&
-		    strcmp(version, "HTTP/1.0") && strcmp(version, "HTTP/1.1")))
+		if (version && !strcmp(version, "HTTP/0.9"))
+			req->version = UH_HTTP_VER_0_9;
+		else if (version && !strcmp(version, "HTTP/1.0"))
+			req->version = UH_HTTP_VER_1_0;
+		else if (version && !strcmp(version, "HTTP/1.1"))
+			req->version = UH_HTTP_VER_1_1;
+		else
 		{
 			/* unsupported version */
 			uh_http_response(cl, 400, "Bad Request");
 			return NULL;
 		}
-		else
-		{
-			req->version = strtof(&version[5], NULL);
-		}
 
-		D("SRV: %s %s HTTP/%.1f\n",
-		  (req->method == UH_HTTP_MSG_POST) ? "POST" :
-			(req->method == UH_HTTP_MSG_GET) ? "GET" : "HEAD",
-		  req->url, req->version);
+		D("SRV: %s %s %s\n",
+		  http_methods[req->method], req->url, http_versions[req->version]);
 
 		/* process header fields */
 		for (i = (int)(headers - buffer); i < buflen; i++)
@@ -522,6 +509,9 @@ static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
 	struct client *cl;
 	struct config *conf;
 
+	struct sockaddr_in6 sa;
+	socklen_t sl = sizeof(sa);
+
 	serv = container_of(u, struct listener, fd);
 	conf = serv->conf;
 
@@ -530,12 +520,12 @@ static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
 		return;
 
 	/* handle new connections */
-	if ((new_fd = accept(u->fd, NULL, 0)) != -1)
+	if ((new_fd = accept(u->fd, (struct sockaddr *)&sa, &sl)) != -1)
 	{
 		D("SRV: Server(%d) accept => Client(%d)\n", u->fd, new_fd);
 
 		/* add to global client list */
-		if ((cl = uh_client_add(new_fd, serv)) != NULL)
+		if ((cl = uh_client_add(new_fd, serv, &sa)) != NULL)
 		{
 			/* add client socket to global fdset */
 			uh_ufd_add(&cl->fd, uh_socket_cb, ULOOP_READ);
@@ -785,16 +775,13 @@ static inline int uh_inittls(struct config *conf)
 
 int main (int argc, char **argv)
 {
-	/* master file descriptor list */
-	fd_set serv_fds;
-
 	/* working structs */
 	struct addrinfo hints;
 	struct sigaction sa;
 	struct config conf;
 
 	/* maximum file descriptor number */
-	int cur_fd, max_fd = 0;
+	int cur_fd = 0;
 
 #ifdef HAVE_TLS
 	int tls = 0;
@@ -806,15 +793,13 @@ int main (int argc, char **argv)
 
 	/* args */
 	int opt;
-	char bind[128];
+	char addr[128];
 	char *port = NULL;
 
-#ifdef HAVE_LUA
+#if defined(HAVE_LUA) || defined(HAVE_TLS) || defined(HAVE_UBUS)
 	/* library handle */
 	void *lib;
 #endif
-
-	FD_ZERO(&serv_fds);
 
 	/* handle SIGPIPE, SIGINT, SIGTERM */
 	sa.sa_flags = 0;
@@ -835,7 +820,6 @@ int main (int argc, char **argv)
 
 	/* parse args */
 	memset(&conf, 0, sizeof(conf));
-	memset(bind, 0, sizeof(bind));
 
 	uloop_init();
 
@@ -847,14 +831,16 @@ int main (int argc, char **argv)
 			/* [addr:]port */
 			case 'p':
 			case 's':
+				memset(addr, 0, sizeof(addr));
+
 				if ((port = strrchr(optarg, ':')) != NULL)
 				{
 					if ((optarg[0] == '[') && (port > optarg) && (port[-1] == ']'))
-						memcpy(bind, optarg + 1,
-							min(sizeof(bind), (int)(port - optarg) - 2));
+						memcpy(addr, optarg + 1,
+							min(sizeof(addr), (int)(port - optarg) - 2));
 					else
-						memcpy(bind, optarg,
-							min(sizeof(bind), (int)(port - optarg)));
+						memcpy(addr, optarg,
+							min(sizeof(addr), (int)(port - optarg)));
 
 					port++;
 				}
@@ -880,11 +866,8 @@ int main (int argc, char **argv)
 #endif
 
 				/* bind sockets */
-				bound += uh_socket_bind(&serv_fds, &max_fd,
-										bind[0] ? bind : NULL,
-										port, &hints, (opt == 's'), &conf);
-
-				memset(bind, 0, sizeof(bind));
+				bound += uh_socket_bind(addr[0] ? addr : NULL, port, &hints,
+				                        (opt == 's'), &conf);
 				break;
 
 #ifdef HAVE_TLS
@@ -918,6 +901,13 @@ int main (int argc, char **argv)
 					keys++;
 				}
 
+				break;
+#else
+			case 'C':
+			case 'K':
+				fprintf(stderr,
+				        "Notice: TLS support not compiled, ignoring -%c\n",
+				        opt);
 				break;
 #endif
 
@@ -991,6 +981,13 @@ int main (int argc, char **argv)
 					exit(1);
 				}
 				break;
+#else
+			case 'x':
+			case 'i':
+				fprintf(stderr,
+				        "Notice: CGI support not compiled, ignoring -%c\n",
+				        opt);
+				break;
 #endif
 
 #ifdef HAVE_LUA
@@ -1003,6 +1000,13 @@ int main (int argc, char **argv)
 			case 'L':
 				conf.lua_handler = optarg;
 				break;
+#else
+			case 'l':
+			case 'L':
+				fprintf(stderr,
+				        "Notice: Lua support not compiled, ignoring -%c\n",
+				        opt);
+				break;
 #endif
 
 #ifdef HAVE_UBUS
@@ -1014,6 +1018,13 @@ int main (int argc, char **argv)
 			/* ubus socket */
 			case 'U':
 				conf.ubus_socket = optarg;
+				break;
+#else
+			case 'u':
+			case 'U':
+				fprintf(stderr,
+				        "Notice: UBUS support not compiled, ignoring -%c\n",
+				        opt);
 				break;
 #endif
 
