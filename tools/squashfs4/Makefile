@@ -20,6 +20,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR)/squashfs-tools \
+		CC="$(HOSTCC)" \
 		XZ_SUPPORT=1 \
 		LZMA_XZ_SUPPORT=1 \
 		XATTR_SUPPORT= \
