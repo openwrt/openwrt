@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -106,6 +106,23 @@ define KernelPackage/ac97/description
 endef
 
 $(eval $(call KernelPackage,ac97))
+
+
+define KernelPackage/sound-seq
+  TITLE:=Sequencer support
+  FILES:= \
+	$(LINUX_DIR)/sound/core/seq/snd-seq.ko \
+	$(LINUX_DIR)/sound/core/seq/snd-seq-midi-event.ko \
+	$(LINUX_DIR)/sound/core/seq/snd-seq-midi.ko
+  AUTOLOAD:=$(call AutoLoad,35,snd-seq snd-seq-midi-event snd-seq-midi)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-seq/description
+ Kernel modules for sequencer support
+endef
+
+$(eval $(call KernelPackage,sound-seq))
 
 
 define KernelPackage/sound-i8x0
