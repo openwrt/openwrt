@@ -1,53 +1,35 @@
 
 # uncomment me to log hotplug events
 # DEVPATH is set {
-# 	exec logger -s -t hotplug -p daemon.info "name=%DEVICENAME%, path=%DEVPATH%"
+# 	exec logger -s -t hotplug -p daemon.info "name=%DEVNAME%, path=%DEVPATH%"
 # }
 
 $include /etc/hotplug2-platform.rules
 
-DEVICENAME ~~ (^null$|^full$|^ptmx$|^zero$|^gpio|^hvc) {
-	makedev /dev/%DEVICENAME% 0666
+DEVNAME ~~ (^null$|^full$|^ptmx$|^zero$|^gpio|^hvc) {
+	makedev /dev/%DEVNAME% 0666
 	next-event
 }
 
-DEVICENAME ~~ (^tun|^tap[0-9]$) {
-	makedev /dev/net/%DEVICENAME% 0644
-}
-
-DEVICENAME ~~ (^controlC[0-9]$|^pcmC[0-9]D[0-9]|^timer$) {
-	makedev /dev/snd/%DEVICENAME% 0644
-	next-event
-}
-
-DEVICENAME ~~ ^lp[0-9]$ {
-	makedev /dev/%DEVICENAME% 0644
-	next-event
-}
-
-DEVPATH is set, SUBSYSTEM == input {
-	makedev /dev/input/%DEVICENAME% 0644
-}
-
-DEVICENAME == device-mapper {
-	makedev /dev/mapper/control 0600
+DEVNAME == mapper/control {
+	makedev /dev/%DEVNAME% 0600
 	next-event
 }
 
 ACTION == add, DEVPATH is set {
-	makedev /dev/%DEVICENAME% 0644
+	makedev /dev/%DEVNAME% 0644
 }
 
-ACTION == add, DEVPATH is set, DEVICENAME ~~ ^tty {
-	chmod 0666 /dev/%DEVICENAME%
+ACTION == add, DEVPATH is set, DEVNAME ~~ ^tty {
+	chmod 0666 /dev/%DEVNAME%
 }
 
-ACTION == add, DEVPATH is set, DEVICENAME ~~ ^ppp {
-	chmod 0600 /dev/%DEVICENAME%
+ACTION == add, DEVPATH is set, DEVNAME ~~ ^ppp {
+	chmod 0600 /dev/%DEVNAME%
 }
 
 ACTION == remove, DEVPATH is set, MAJOR is set, MINOR is set {
-	remove /dev/%DEVICENAME%
+	remove /dev/%DEVNAME%
 }
 
 FIRMWARE is set, ACTION == add {
