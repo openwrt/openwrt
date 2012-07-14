@@ -1,0 +1,15 @@
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -718,6 +718,12 @@ bool ath9k_hw_stopdmarecv(struct ath_hw 
+ 		udelay(AH_TIME_QUANTUM);
+ 	}
+ 
++	if (!AR_SREV_9300_20_OR_LATER(ah) && (mac_status & 0x700) == 0) {
++		/* DMA is idle but the MAC is still stuck processing events */
++		*reset = true;
++		return true;
++	}
++
+ 	if (i == 0) {
+ 		ath_err(common,
+ 			"DMA failed to stop in %d ms AR_CR=0x%08x AR_DIAG_SW=0x%08x DMADBG_7=0x%08x\n",
