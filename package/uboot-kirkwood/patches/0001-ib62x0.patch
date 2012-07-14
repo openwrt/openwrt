@@ -1,0 +1,542 @@
+http://lists.denx.de/pipermail/u-boot/2012-April/122597.html
+http://patchwork.ozlabs.org/patch/153293/
+---
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 708ded7..9d2aba7 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -777,6 +777,10 @@ Linus Walleij <linus.walleij@linaro.org>
+ 	integratorap	various
+ 	integratorcp	various
+ 
++Luka Perkov <uboot@lukaperkov.net>
++
++	ib62x0		ARM926EJS
++
+ Dave Peverley <dpeverley@mpc-data.co.uk>
+ 
+ 	omap730p2	ARM926EJS
+diff --git a/board/raidsonic/ib62x0/Makefile b/board/raidsonic/ib62x0/Makefile
+new file mode 100644
+index 0000000..d450f8d
+--- /dev/null
++++ b/board/raidsonic/ib62x0/Makefile
+@@ -0,0 +1,43 @@
++#
++# (C) Copyright 2009
++# Marvell Semiconductor <www.marvell.com>
++# Written-by: Prafulla Wadaskar <prafulla@marvell.com>
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program. If not, see <http://www.gnu.org/licenses/>.
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(BOARD).o
++
++COBJS	:= ib62x0.o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
++OBJS	:= $(addprefix $(obj),$(COBJS))
++SOBJS	:= $(addprefix $(obj),$(SOBJS))
++
++$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
++	$(call cmd_link_o_target, $(OBJS) $(SOBJS))
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+diff --git a/board/raidsonic/ib62x0/ib62x0.c b/board/raidsonic/ib62x0/ib62x0.c
+new file mode 100644
+index 0000000..65f2c2e
+--- /dev/null
++++ b/board/raidsonic/ib62x0/ib62x0.c
+@@ -0,0 +1,79 @@
++/*
++ * Copyright (C) 2011-2012
++ * Gerald Kerma <dreagle@doukki.net>
++ * Luka Perkov <uboot@lukaperkov.net>
++ * Simon Baatz <gmbnomis@gmail.com>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <common.h>
++#include <miiphy.h>
++#include <asm/arch/cpu.h>
++#include <asm/arch/kirkwood.h>
++#include <asm/arch/mpp.h>
++#include "ib62x0.h"
++
++DECLARE_GLOBAL_DATA_PTR;
++
++int board_early_init_f(void)
++{
++	/*
++	 * default gpio configuration
++	 * There are maximum 64 gpios controlled through 2 sets of registers
++	 * the below configuration configures mainly initial LED status
++	 */
++	kw_config_gpio(IB62x0_OE_VAL_LOW,
++			IB62x0_OE_VAL_HIGH,
++			IB62x0_OE_LOW, IB62x0_OE_HIGH);
++
++	/* Multi-Purpose Pins Functionality configuration */
++	u32 kwmpp_config[] = {
++		MPP0_NF_IO2,
++		MPP1_NF_IO3,
++		MPP2_NF_IO4,
++		MPP3_NF_IO5,
++		MPP4_NF_IO6,
++		MPP5_NF_IO7,
++		MPP6_SYSRST_OUTn,
++		MPP8_TW_SDA,
++		MPP9_TW_SCK,
++		MPP10_UART0_TXD,
++		MPP11_UART0_RXD,
++		MPP18_NF_IO0,
++		MPP19_NF_IO1,
++		MPP20_SATA1_ACTn,
++		MPP21_SATA0_ACTn,
++		MPP22_GPIO,     /* Power LED red */
++		MPP24_GPIO,     /* Power off device */
++		MPP25_GPIO,     /* Power LED green */
++		MPP27_GPIO,     /* USB transfer LED */
++		MPP28_GPIO,     /* Reset button */
++		MPP29_GPIO,     /* USB Copy button */
++		0
++	};
++	kirkwood_mpp_conf(kwmpp_config);
++	return 0;
++}
++
++int board_init(void)
++{
++	/* adress of boot parameters */
++	gd->bd->bi_boot_params = kw_sdram_bar(0) + 0x100;
++
++	return 0;
++}
+diff --git a/board/raidsonic/ib62x0/ib62x0.h b/board/raidsonic/ib62x0/ib62x0.h
+new file mode 100644
+index 0000000..0c30690
+--- /dev/null
++++ b/board/raidsonic/ib62x0/ib62x0.h
+@@ -0,0 +1,40 @@
++/*
++ * Copyright (C) 2011-2012
++ * Gerald Kerma <dreagle@doukki.net>
++ * Simon Baatz <gmbnomis@gmail.com>
++ * Luka Perkov <uboot@lukaperkov.net>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef __IB62x0_H
++#define __IB62x0_H
++
++#define IB62x0_OE_LOW		(~(1 << 22 | 1 << 24 | 1 << 25 | 1 << 27))
++#define IB62x0_OE_HIGH		(~(0))
++#define IB62x0_OE_VAL_LOW	0
++#define IB62x0_OE_VAL_HIGH	0
++
++/* PHY related */
++#define MV88E1116_LED_FCTRL_REG		10
++#define MV88E1116_CPRSP_CR3_REG		21
++#define MV88E1116_MAC_CTRL_REG		21
++#define MV88E1116_PGADR_REG		22
++#define MV88E1116_RGMII_TXTM_CTRL	(1 << 4)
++#define MV88E1116_RGMII_RXTM_CTRL	(1 << 5)
++
++#endif /* __IB62x0_H */
+diff --git a/board/raidsonic/ib62x0/kwbimage.cfg b/board/raidsonic/ib62x0/kwbimage.cfg
+new file mode 100644
+index 0000000..bd594eb
+--- /dev/null
++++ b/board/raidsonic/ib62x0/kwbimage.cfg
+@@ -0,0 +1,169 @@
++#
++# Copyright (C) 2011-2012
++# Gerald Kerma <dreagle@doukki.net>
++# Simon Baatz <gmbnomis@gmail.com>
++# Luka Perkov <uboot@lukaperkov.net>
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program. If not, see <http://www.gnu.org/licenses/>.
++#
++# Refer docs/README.kwimage for more details about how-to configure
++# and create kirkwood boot image
++#
++
++# Boot Media configurations
++BOOT_FROM	nand	# change from nand to uart if building UART image
++NAND_ECC_MODE	default
++NAND_PAGE_SIZE	0x0800
++
++# SOC registers configuration using bootrom header extension
++# Maximum KWBIMAGE_MAX_CONFIG configurations allowed
++
++# Configure RGMII-0 interface pad voltage to 1.8V
++DATA 0xffd100e0 0x1b1b1b9b
++
++#Dram initalization for SINGLE x16 CL=5 @ 400MHz
++DATA 0xffd01400 0x43000c30	# DDR Configuration register
++# bit13-0:  0xc30, (3120 DDR2 clks refresh rate)
++# bit23-14: 0x0,
++# bit24:    0x1,     enable exit self refresh mode on DDR access
++# bit25:    0x1,     required
++# bit29-26: 0x0,
++# bit31-30: 0x1,
++
++DATA 0xffd01404 0x37543000	# DDR Controller Control Low
++# bit4:     0x0, addr/cmd in smame cycle
++# bit5:     0x0, clk is driven during self refresh, we don't care for APX
++# bit6:     0x0, use recommended falling edge of clk for addr/cmd
++# bit14:    0x0, input buffer always powered up
++# bit18:    0x1, cpu lock transaction enabled
++# bit23-20: 0x5, recommended value for CL=5 and STARTBURST_DEL disabled bit31=0
++# bit27-24: 0x7, CL+2, STARTBURST sample stages, for freqs 400MHz, unbuffered DIMM
++# bit30-28: 0x3, required
++# bit31:    0x0, no additional STARTBURST delay
++
++DATA 0xffd01408 0x22125451	# DDR Timing (Low) (active cycles value +1)
++# bit3-0:   TRAS lsbs
++# bit7-4:   TRCD
++# bit11-8:  TRP
++# bit15-12: TWR
++# bit19-16: TWTR
++# bit20:    TRAS msb
++# bit23-21: 0x0
++# bit27-24: TRRD
++# bit31-28: TRTP
++
++DATA 0xffd0140c 0x00000a33	# DDR Timing (High)
++# bit6-0:   TRFC
++# bit8-7:   TR2R
++# bit10-9:  TR2W
++# bit12-11: TW2W
++# bit31-13: 0x0, required
++
++DATA 0xffd01410 0x0000000c	# DDR Address Control
++# bit1-0:   00,  Cs0width (x8)
++# bit3-2:   11,  Cs0size (1Gb)
++# bit5-4:   00,  Cs1width (x8)
++# bit7-6:   11,  Cs1size (1Gb)
++# bit9-8:   00,  Cs2width (nonexistent
++# bit11-10: 00,  Cs2size  (nonexistent
++# bit13-12: 00,  Cs3width (nonexistent
++# bit15-14: 00,  Cs3size  (nonexistent
++# bit16:    0,   Cs0AddrSel
++# bit17:    0,   Cs1AddrSel
++# bit18:    0,   Cs2AddrSel
++# bit19:    0,   Cs3AddrSel
++# bit31-20: 0x0, required
++
++DATA 0xffd01414 0x00000000	# DDR Open Pages Control
++# bit0:    0,   OpenPage enabled
++# bit31-1: 0x0, required
++
++DATA 0xffd01418 0x00000000	# DDR Operation
++# bit3-0:   0x0, DDR cmd
++# bit31-4:  0x0, required
++
++DATA 0xffd0141c 0x00000c52	# DDR Mode
++# bit2-0:   0x2, BurstLen=2 required
++# bit3:     0x0, BurstType=0 required
++# bit6-4:   0x4, CL=5
++# bit7:     0x0, TestMode=0 normal
++# bit8:     0x0, DLL reset=0 normal
++# bit11-9:  0x6, auto-precharge write recovery ????????????
++# bit12:    0x0, PD must be zero
++# bit31-13: 0x0, required
++
++DATA 0xffd01420 0x00000040	# DDR Extended Mode
++# bit0:     0,   DDR DLL enabled
++# bit1:     0,   DDR drive strenght normal
++# bit2:     1,   DDR ODT control lsd (disabled)
++# bit5-3:   0x0, required
++# bit6:     0,   DDR ODT control msb, (disabled)
++# bit9-7:   0x0, required
++# bit10:    0,   differential DQS enabled
++# bit11:    0,   required
++# bit12:    0,   DDR output buffer enabled
++# bit31-13: 0x0, required
++
++DATA 0xffd01424 0x0000f17f	# DDR Controller Control High
++# bit2-0:   0x7, required
++# bit3:     0x1, MBUS Burst Chop disabled
++# bit6-4:   0x7, required
++# bit7:     0x0,
++# bit8:     0x1, add writepath sample stage, must be 1 for DDR freq >= 300MHz
++# bit9:     0x0, no half clock cycle addition to dataout
++# bit10:    0x0, 1/4 clock cycle skew enabled for addr/ctl signals
++# bit11:    0x0, 1/4 clock cycle skew disabled for write mesh
++# bit15-12: 0xf, required
++# bit31-16: 0,   required
++
++DATA 0xffd01428 0x00085520	# DDR2 ODT Read Timing (default values)
++DATA 0xffd0147c 0x00008552	# DDR2 ODT Write Timing (default values)
++
++DATA 0xffd01500 0x00000000	# CS[0]n Base address to 0x0
++DATA 0xffd01504 0x0ffffff1	# CS[0]n Size
++# bit0:     0x1,     Window enabled
++# bit1:     0x0,     Write Protect disabled
++# bit3-2:   0x0,     CS0 hit selected
++# bit23-4:  0xfffff, required
++# bit31-24: 0x0f,    Size (i.e. 256MB)
++
++DATA 0xffd01508 0x10000000	# CS[1]n Base address to 256Mb
++DATA 0xffd0150c 0x00000000	# CS[1]n Size, window disabled
++
++DATA 0xffd01514 0x00000000	# CS[2]n Size, window disabled
++DATA 0xffd0151c 0x00000000	# CS[3]n Size, window disabled
++
++DATA 0xffd01494 0x00030000	# DDR ODT Control (Low)
++# bit3-0:     ODT0Rd, MODT[0] asserted during read from DRAM CS1
++# bit7-4:     ODT0Rd, MODT[0] asserted during read from DRAM CS0
++# bit19-16:2, ODT0Wr, MODT[0] asserted during write to DRAM CS1
++# bit23-20:1, ODT0Wr, MODT[0] asserted during write to DRAM CS0
++
++DATA 0xffd01498 0x00000000	# DDR ODT Control (High)
++# bit1-0:  0x0, ODT0 controlled by ODT Control (low) register above
++# bit3-2:  0x1, ODT1 active NEVER!
++# bit31-4: 0x0, required
++
++DATA 0xffd0149c 0x0000e803	# CPU ODT Control
++DATA 0xffd01480 0x00000001	# DDR Initialization Control
++# bit0: 0x1, enable DDR init upon this register write
++
++DATA 0xFFD20134 0x66666666      # L2 RAM Timing 0 Register
++DATA 0xFFD20138 0x66666666      # L2 RAM Timing 1 Register
++
++# End of Header extension
++DATA 0x0 0x0
+diff --git a/boards.cfg b/boards.cfg
+index 3cf75c3..23f84e8 100644
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -153,6 +153,7 @@ openrd_client                arm         arm926ejs   openrd              Marvell
+ openrd_ultimate              arm         arm926ejs   openrd              Marvell        kirkwood        openrd:BOARD_IS_OPENRD_ULTIMATE
+ rd6281a                      arm         arm926ejs   -                   Marvell        kirkwood
+ sheevaplug                   arm         arm926ejs   -                   Marvell        kirkwood
++ib62x0                       arm         arm926ejs   ib62x0              raidsonic      kirkwood
+ dockstar                     arm         arm926ejs   -                   Seagate        kirkwood
+ jadecpu                      arm         arm926ejs   jadecpu             syteco         mb86r0x
+ mx25pdk                      arm         arm926ejs   mx25pdk             freescale      mx25		mx25pdk:IMX_CONFIG=board/freescale/mx25pdk/imximage.cfg
+diff --git a/include/configs/ib62x0.h b/include/configs/ib62x0.h
+new file mode 100644
+index 0000000..85856f2
+--- /dev/null
++++ b/include/configs/ib62x0.h
+@@ -0,0 +1,150 @@
++/*
++ * Copyright (C) 2011-2012
++ * Gerald Kerma <dreagle@doukki.net>
++ * Luka Perkov <uboot@lukaperkov.net>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef _CONFIG_IB62x0_H
++#define _CONFIG_IB62x0_H
++
++/*
++ * Version number information
++ */
++#define CONFIG_IDENT_STRING	" RaidSonic ICY BOX IB-NAS62x0"
++
++/*
++ * High level configuration options
++ */
++#define CONFIG_FEROCEON_88FR131		/* CPU Core subversion */
++#define CONFIG_KIRKWOOD			/* SOC Family Name */
++#define CONFIG_KW88F6281		/* SOC Name */
++#define CONFIG_SKIP_LOWLEVEL_INIT	/* disable board lowlevel_init */
++
++/*
++ * Machine type
++ */
++#define CONFIG_MACH_TYPE	MACH_TYPE_NAS6210
++
++/*
++ * Compression configuration
++ */
++#define CONFIG_BZIP2
++#define CONFIG_LZMA
++#define CONFIG_LZO
++
++/*
++ * Commands configuration
++ */
++#define CONFIG_SYS_NO_FLASH		/* declare no flash (NOR/SPI) */
++#define CONFIG_SYS_MVFS
++#include <config_cmd_default.h>
++#define CONFIG_CMD_ENV
++#define CONFIG_CMD_IDE
++#define CONFIG_CMD_MII
++#define CONFIG_CMD_NAND
++#define CONFIG_CMD_PING
++#define CONFIG_CMD_USB
++
++/*
++ * mv-common.h should be defined after CMD configs since it used them
++ * to enable certain macros
++ */
++#include "mv-common.h"
++
++#undef CONFIG_SYS_PROMPT
++#define CONFIG_SYS_PROMPT	"ib62x0 => "
++
++/*
++ * Environment variables configuration
++ */
++#ifdef CONFIG_CMD_NAND
++#define CONFIG_ENV_IS_IN_NAND
++#define CONFIG_ENV_SECT_SIZE	0x20000
++#else
++#define CONFIG_ENV_IS_NOWHERE
++#endif
++#define CONFIG_ENV_SIZE		0x20000
++#define CONFIG_ENV_OFFSET	0x80000
++
++/*
++ * Default environment variables
++ */
++#define CONFIG_BOOTCOMMAND \
++	"setenv bootargs ${console} ${mtdparts} ${bootargs_root}; "	\
++	"ubi part rootfs; "						\
++	"ubifsmount rootfs; "						\
++	"ubifsload 0x800000 ${kernel}; "				\
++	"bootm 0x800000"
++
++#define CONFIG_MTDPARTS				\
++	"mtdparts=orion_nand:"			\
++	"0x80000@0x0(uboot),"			\
++	"0x20000@0x80000(uboot_env),"		\
++	"-@0xa0000(rootfs)\0"
++
++#define CONFIG_EXTRA_ENV_SETTINGS					\
++	"console=console=ttyS0,115200\0"				\
++	"mtdids=nand0=orion_nand\0"					\
++	"mtdparts="CONFIG_MTDPARTS					\
++	"kernel=/boot/uImage\0"						\
++	"bootargs_root=noinitrd ubi.mtd=2 root=ubi0:rootfs rootfstype=ubifs\0"
++
++/*
++ * Ethernet driver configuration
++ */
++#ifdef CONFIG_CMD_NET
++#define CONFIG_MVGBE_PORTS	{1, 0}	/* enable port 0 only */
++#define CONFIG_PHY_BASE_ADR	0
++#undef CONFIG_RESET_PHY_R
++#endif /* CONFIG_CMD_NET */
++
++/*
++ * SATA driver configuration
++ */
++#ifdef CONFIG_CMD_IDE
++#define __io
++#define CONFIG_IDE_PREINIT
++#define CONFIG_DOS_PARTITION
++#define CONFIG_MVSATA_IDE_USE_PORT0
++#define CONFIG_MVSATA_IDE_USE_PORT1
++#define CONFIG_SYS_ATA_IDE0_OFFSET	MV_SATA_PORT0_OFFSET
++#define CONFIG_SYS_ATA_IDE1_OFFSET	MV_SATA_PORT1_OFFSET
++#endif /* CONFIG_CMD_IDE */
++
++/*
++ * RTC driver configuration
++ */
++#ifdef CONFIG_CMD_DATE
++#define CONFIG_RTC_MV
++#endif /* CONFIG_CMD_DATE */
++
++/*
++ * File system
++ */
++#define CONFIG_CMD_EXT2
++#define CONFIG_CMD_FAT
++#define CONFIG_CMD_JFFS2
++#define CONFIG_CMD_UBI
++#define CONFIG_CMD_UBIFS
++#define CONFIG_RBTREE
++#define CONFIG_MTD_DEVICE
++#define CONFIG_MTD_PARTITIONS
++#define CONFIG_CMD_MTDPARTS
++
++#endif /* _CONFIG_IB62x0_H */
