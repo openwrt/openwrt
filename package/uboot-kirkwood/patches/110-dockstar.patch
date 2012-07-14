@@ -1,0 +1,35 @@
+--- a/include/configs/dockstar.h
++++ b/include/configs/dockstar.h
+@@ -83,22 +83,19 @@
+  * Default environment variables
+  */
+ #define CONFIG_BOOTCOMMAND \
+-	"setenv bootargs ${console} ${mtdparts} ${bootargs_root}; "	\
+-	"ubi part root; " \
+-	"ubifsmount root; " \
+-	"ubifsload 0x800000 ${kernel}; " \
+-	"ubifsload 0x1100000 ${initrd}; " \
+-	"bootm 0x800000 0x1100000"
++	"${x_bootcmd_kernel}; "					\
++	"setenv bootargs ${x_bootargs} ${x_bootargs_root}; "	\
++	"${x_bootcmd_usb}; bootm 0x6400000;"
+ 
+-#define CONFIG_MTDPARTS		"mtdparts=orion_nand:1m(uboot),-(root)\0"
++#define CONFIG_MTDPARTS \
++	"orion_nand:1M(u-boot),1M@1M(second_stage_u-boot),"	\
++	"3M@2M(kernel),32M@5M(rootfs),219M@37M(data) rw\0"
+ 
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+-	"console=console=ttyS0,115200\0" \
+-	"mtdids=nand0=orion_nand\0" \
+-	"mtdparts="CONFIG_MTDPARTS \
+-	"kernel=/boot/uImage\0" \
+-	"initrd=/boot/uInitrd\0" \
+-	"bootargs_root=ubi.mtd=1 root=ubi0:root rootfstype=ubifs ro\0"
++	"x_bootargs=console=ttyS0,115200 mtdparts="CONFIG_MTDPARTS	\
++	"x_bootcmd_kernel=nand read 0x6400000 0x200000 0x300000\0"	\
++	"x_bootargs_root=root=/dev/mtdblock3 rw rootfstype=jffs2\0"	\
++	"x_bootcmd_usb=usb start\0"
+ 
+ /*
+  * Ethernet Driver configuration

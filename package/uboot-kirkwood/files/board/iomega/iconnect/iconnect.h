@@ -1,7 +1,7 @@
 /*
- * (C) Copyright 2009
- * Marvell Semiconductor <www.marvell.com>
- * Written-by: Prafulla Wadaskar <prafulla@marvell.com>
+ * Copyright (C) 2009-2012
+ * Wojciech Dubowik <wojciech.dubowik@neratec.com>
+ * Luka Perkov <uboot@lukaperkov.net>
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -17,18 +17,16 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301 USA
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __DOCKSTAR_H
-#define __DOCKSTAR_H
+#ifndef __ICONNECT_H
+#define __ICONNECT_H
 
-#define DOCKSTAR_OE_LOW		(~(0))
-#define DOCKSTAR_OE_HIGH		(~(0))
-#define DOCKSTAR_OE_VAL_LOW		(1 << 29)	/* USB_PWEN low */
-#define DOCKSTAR_OE_VAL_HIGH		(1 << 17)	/* LED pin high */
+#define ICONNECT_OE_LOW			(~(1 << 7))
+#define ICONNECT_OE_HIGH		(~(1 << 10))
+#define ICONNECT_OE_VAL_LOW		(0)
+#define ICONNECT_OE_VAL_HIGH		(1 << 10)
 
 /* PHY related */
 #define MV88E1116_LED_FCTRL_REG		10
@@ -38,4 +36,4 @@
 #define MV88E1116_RGMII_TXTM_CTRL	(1 << 4)
 #define MV88E1116_RGMII_RXTM_CTRL	(1 << 5)
 
-#endif /* __DOCKSTAR_H */
+#endif /* __ICONNECT_H */
