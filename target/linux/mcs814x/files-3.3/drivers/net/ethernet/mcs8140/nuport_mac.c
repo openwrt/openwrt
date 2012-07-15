@@ -145,6 +145,7 @@ struct nuport_mac_priv {
 
 	/* Transmit buffers */
 	struct sk_buff *tx_skb[TX_RING_SIZE];
+	dma_addr_t tx_addr;
 	unsigned int valid_txskb[TX_RING_SIZE];
 	unsigned int cur_tx;
 	unsigned int dma_tx;
@@ -152,6 +153,7 @@ struct nuport_mac_priv {
 
 	/* Receive buffers */
 	struct sk_buff *rx_skb[RX_RING_SIZE];
+	dma_addr_t rx_addr;
 	unsigned int irq_rxskb[RX_RING_SIZE];
 	int pkt_len[RX_RING_SIZE];
 	unsigned int cur_rx;
@@ -237,7 +239,6 @@ static int nuport_mac_mii_reset(struct mii_bus *bus)
 static int nuport_mac_start_tx_dma(struct nuport_mac_priv *priv,
 					struct sk_buff *skb)
 {
-	dma_addr_t p;
 	u32 reg;
 	unsigned int timeout = 2048;
 
@@ -253,12 +254,12 @@ static int nuport_mac_start_tx_dma(struct nuport_mac_priv *priv,
 	if (!timeout)
 		return -EBUSY;
 
-	p = dma_map_single(&priv->pdev->dev, skb->data,
+	priv->tx_addr = dma_map_single(&priv->pdev->dev, skb->data,
 			skb->len, DMA_TO_DEVICE);
 
 	/* enable enhanced mode */
 	nuport_mac_writel(TX_DMA_ENH_ENABLE, TX_DMA_ENH);
-	nuport_mac_writel(p, TX_BUFFER_ADDR);
+	nuport_mac_writel(priv->tx_addr, TX_BUFFER_ADDR);
 	nuport_mac_writel((skb->len) - 1, TX_PKT_BYTES);
 	wmb();
 	reg = TX_DMA_ENABLE | TX_DMA_START_FRAME | TX_DMA_END_FRAME;
@@ -279,7 +280,6 @@ static void nuport_mac_reset_tx_dma(struct nuport_mac_priv *priv)
 static int nuport_mac_start_rx_dma(struct nuport_mac_priv *priv,
 					struct sk_buff *skb)
 {
-	dma_addr_t p;
 	u32 reg;
 	unsigned int timeout = 2048;
 
@@ -295,10 +295,10 @@ static int nuport_mac_start_rx_dma(struct nuport_mac_priv *priv,
 	if (!timeout)
 		return -EBUSY;
 
-	p = dma_map_single(&priv->pdev->dev, skb->data,
+	priv->rx_addr = dma_map_single(&priv->pdev->dev, skb->data,
 				RX_ALLOC_SIZE, DMA_FROM_DEVICE);
 
-	nuport_mac_writel(p, RX_BUFFER_ADDR);
+	nuport_mac_writel(priv->rx_addr, RX_BUFFER_ADDR);
 	wmb();
 	nuport_mac_writel(RX_DMA_ENABLE, RX_START_DMA);
 
@@ -461,6 +461,8 @@ static irqreturn_t nuport_mac_tx_interrupt(int irq, void *dev_id)
 	skb = priv->tx_skb[priv->dma_tx];
 	priv->tx_skb[priv->dma_tx] = NULL;
 	priv->valid_txskb[priv->dma_tx] = 0;
+	dma_unmap_single(&priv->pdev->dev, priv->rx_addr, skb->len,
+				DMA_TO_DEVICE);
 	dev_kfree_skb_irq(skb);
 
 	priv->dma_tx++;
@@ -553,6 +555,9 @@ static int nuport_mac_rx(struct net_device *dev, int limit)
 		/* Get packet status */
 		status = get_unaligned((u32 *) (skb->data + len));
 		skb->dev = dev;
+
+		dma_unmap_single(&priv->pdev->dev, priv->rx_addr, skb->len,
+				DMA_FROM_DEVICE);
 
 		/* packet filter failed */
 		if (!(status & (1 << 30))) {
