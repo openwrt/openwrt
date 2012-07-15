@@ -191,7 +191,7 @@ ifeq ($(DUMP),)
     $$(INFO_$(1)): $$(IPKG_$(1))
 	@[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
 	$(OPKG) install $$(IPKG_$(1))
-	$(if $(filter-out essential,$(PKG_FLAGS)),for flag in $(filter-out essential,$(PKG_FLAGS)); do $(OPKG) flag $$$$flag $(1); done)
+	$(if $(filter-out essential,$(PKG_FLAGS)),for flag in $(filter-out essential,$(PKG_FLAGS)); do $(OPKG) flag $$$$flag $(1); done,$(OPKG) flag ok $(1))
 
     $(1)-clean:
 	rm -f $(PACKAGE_DIR)/$(1)_*
