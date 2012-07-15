@@ -96,7 +96,7 @@ static int __devinit ohci_mcs814x_start(struct usb_hcd *hcd)
 
 	ret = ohci_run(ohci);
 	if (ret < 0) {
-		err("can't start %s", hcd->self.bus_name);
+		ohci_err(ohci, "can't start %s", hcd->self.bus_name);
 		ohci_stop(hcd);
 		return ret;
 	}
