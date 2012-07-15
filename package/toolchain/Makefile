@@ -61,7 +61,7 @@ define Package/libssp/config
 	menu "Configuration"
 		depends EXTERNAL_TOOLCHAIN && PACKAGE_libssp
 
-	config LIBSPP_ROOT_DIR
+	config LIBSSP_ROOT_DIR
 		string
 		prompt "libssp shared library base directory"
 		depends EXTERNAL_TOOLCHAIN && PACKAGE_libssp
