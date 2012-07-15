@@ -731,6 +731,23 @@ endef
 
 $(eval $(call KernelPackage,pwm-gpio))
 
+
+define KernelPackage/rtc-marvell
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Marvell SoC built-in RTC support
+  $(call AddDepends/rtc)
+  DEPENDS+=@TARGET_kirkwood||TARGET_orion
+  KCONFIG:=CONFIG_RTC_DRV_MV
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
+  AUTOLOAD:=$(call AutoLoad,60,rtc-mv)
+endef
+
+define KernelPackage/rtc-marvell/description
+ Kernel module for Marvell SoC built-in RTC.
+endef
+
+$(eval $(call KernelPackage,rtc-marvell))
+
 define KernelPackage/rtc-pcf8563
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support
