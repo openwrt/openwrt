@@ -24,7 +24,7 @@
  };
  
  static inline u32 ath79_spi_rr(struct ath79_spi *sp, unsigned reg)
-@@ -108,9 +118,6 @@ static void ath79_spi_enable(struct ath7
+@@ -111,9 +121,6 @@ static void ath79_spi_enable(struct ath7
  	/* save CTRL register */
  	sp->reg_ctrl = ath79_spi_rr(sp, AR71XX_SPI_REG_CTRL);
  	sp->ioc_base = ath79_spi_rr(sp, AR71XX_SPI_REG_IOC);
@@ -34,7 +34,7 @@
  }
  
  static void ath79_spi_disable(struct ath79_spi *sp)
-@@ -229,6 +236,110 @@ static u32 ath79_spi_txrx_mode0(struct s
+@@ -232,6 +239,110 @@ static u32 ath79_spi_txrx_mode0(struct s
  	return ath79_spi_rr(sp, AR71XX_SPI_REG_RDS);
  }
  
@@ -145,7 +145,7 @@
  static __devinit int ath79_spi_probe(struct platform_device *pdev)
  {
  	struct spi_master *master;
-@@ -251,6 +362,8 @@ static __devinit int ath79_spi_probe(str
+@@ -254,6 +365,8 @@ static __devinit int ath79_spi_probe(str
  	sp = spi_master_get_devdata(master);
  	platform_set_drvdata(pdev, sp);
  
@@ -154,7 +154,7 @@
  	master->setup = ath79_spi_setup;
  	master->cleanup = ath79_spi_cleanup;
  	master->bus_num = pdata->bus_num;
-@@ -259,7 +372,7 @@ static __devinit int ath79_spi_probe(str
+@@ -262,7 +375,7 @@ static __devinit int ath79_spi_probe(str
  	sp->bitbang.master = spi_master_get(master);
  	sp->bitbang.chipselect = ath79_spi_chipselect;
  	sp->bitbang.txrx_word[SPI_MODE_0] = ath79_spi_txrx_mode0;
@@ -163,7 +163,7 @@
  	sp->bitbang.flags = SPI_CS_HIGH;
  
  	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-@@ -284,7 +397,8 @@ static __devinit int ath79_spi_probe(str
+@@ -287,7 +400,8 @@ static __devinit int ath79_spi_probe(str
  	if (ret)
  		goto err_clk_put;
  

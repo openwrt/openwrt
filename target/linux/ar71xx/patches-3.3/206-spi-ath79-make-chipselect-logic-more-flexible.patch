@@ -178,7 +178,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
  	if (is_active) {
  		/* set initial clock polarity */
-@@ -80,20 +83,21 @@ static void ath79_spi_chipselect(struct
+@@ -80,20 +83,24 @@ static void ath79_spi_chipselect(struct
  		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, sp->ioc_base);
  	}
  
@@ -203,13 +203,16 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
 +	case ATH79_SPI_CS_TYPE_GPIO:
 +		/* SPI is normally active-low */
-+		gpio_set_value(cdata->cs_line, cs_high);
++		if (gpio_cansleep(cdata->cs_line))
++			gpio_set_value_cansleep(cdata->cs_line, cs_high);
++		else
++			gpio_set_value(cdata->cs_line, cs_high);
 +		break;
 +	}
  }
  
  static void ath79_spi_enable(struct ath79_spi *sp)
-@@ -120,24 +124,30 @@ static void ath79_spi_disable(struct ath
+@@ -120,24 +127,30 @@ static void ath79_spi_disable(struct ath
  static int ath79_spi_setup_cs(struct spi_device *spi)
  {
  	struct ath79_spi_controller_data *cdata;
@@ -244,7 +247,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	}
  
  	return status;
-@@ -145,9 +155,19 @@ static int ath79_spi_setup_cs(struct spi
+@@ -145,9 +158,19 @@ static int ath79_spi_setup_cs(struct spi
  
  static void ath79_spi_cleanup_cs(struct spi_device *spi)
  {
@@ -267,7 +270,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	}
  }
  
-@@ -155,6 +175,9 @@ static int ath79_spi_setup(struct spi_de
+@@ -155,6 +178,9 @@ static int ath79_spi_setup(struct spi_de
  {
  	int status = 0;
  
@@ -277,7 +280,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	if (spi->bits_per_word > 32)
  		return -EINVAL;
  
-@@ -215,6 +238,10 @@ static __devinit int ath79_spi_probe(str
+@@ -215,6 +241,10 @@ static __devinit int ath79_spi_probe(str
  	unsigned long rate;
  	int ret;
  
@@ -288,7 +291,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	master = spi_alloc_master(&pdev->dev, sizeof(*sp));
  	if (master == NULL) {
  		dev_err(&pdev->dev, "failed to allocate spi master\n");
-@@ -224,17 +251,10 @@ static __devinit int ath79_spi_probe(str
+@@ -224,17 +254,10 @@ static __devinit int ath79_spi_probe(str
  	sp = spi_master_get_devdata(master);
  	platform_set_drvdata(pdev, sp);
  
