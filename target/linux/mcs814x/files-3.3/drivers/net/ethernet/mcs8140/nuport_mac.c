@@ -32,15 +32,30 @@
 #define MAC_BASE_ADDR		((priv->mac_base))
 
 #define CTRL_REG		(MAC_BASE_ADDR)
-#define MII_BUSY		0x00000001
-#define MII_WRITE		0x00000002
+#define  MII_BUSY		(1 << 0)
+#define  MII_WRITE		(1 << 1)
+#define  RX_ENABLE		(1 << 2)
+#define  TX_ENABLE		(1 << 3)
+#define  DEFER_CHECK		(1 << 5)
+#define  STRIP_PAD		(1 << 8)
+#define  DRTRY_DISABLE		(1 << 10)
+#define  FULL_DUPLEX		(1 << 20)
+#define  HBD_DISABLE		(1 << 28)
 #define MAC_ADDR_HIGH_REG	(MAC_BASE_ADDR + 0x04)
 #define MAC_ADDR_LOW_REG	(MAC_BASE_ADDR + 0x08)
 #define MII_ADDR_REG		(MAC_BASE_ADDR + 0x14)
+#define  MII_ADDR_SHIFT		(11)
+#define  MII_REG_SHIFT		(6)
 #define MII_DATA_REG		(MAC_BASE_ADDR + 0x18)
 /* Link interrupt registers */
 #define LINK_INT_CSR		(MAC_BASE_ADDR + 0xD0)
+#define  LINK_INT_EN		(1 << 0)
+#define  LINK_PHY_ADDR_SHIFT	(1)
+#define  LINK_PHY_REG_SHIFT	(6)
+#define  LINK_BIT_UP_SHIFT	(11)
+#define  LINK_UP		(1 << 16)
 #define LINK_INT_POLL_TIME	(MAC_BASE_ADDR + 0xD4)
+#define  LINK_POLL_MASK		((1 << 20) - 1)
 
 #define DMA_CHAN_WIDTH		32
 #define DMA_RX_CHAN		0
@@ -53,7 +68,11 @@
 #define RX_MAX_BYTES		(RX_DMA_BASE + 0x04)
 #define RX_ACT_BYTES		(RX_DMA_BASE + 0x08)
 #define RX_START_DMA		(RX_DMA_BASE + 0x0C)
+#define  RX_DMA_ENABLE		(1 << 0)
+#define  RX_DMA_RESET		(1 << 1)
+#define  RX_DMA_STATUS_FIFO	(1 << 12)
 #define RX_DMA_ENH		(RX_DMA_BASE + 0x14)
+#define  RX_DMA_INT_ENABLE	(1 << 1)
 
 /* Transmit DMA registers */
 #define TX_DMA_BASE		((priv->dma_base) + \
@@ -62,8 +81,19 @@
 #define TX_PKT_BYTES		(TX_DMA_BASE + 0x04)
 #define TX_BYTES_SENT		(TX_DMA_BASE + 0x08)
 #define TX_START_DMA		(TX_DMA_BASE + 0x0C)
+#define  TX_DMA_ENABLE		(1 << 0)
+#define  TX_DMA_START_FRAME	(1 << 2)
+#define  TX_DMA_END_FRAME	(1 << 3)
+#define  TX_DMA_PAD_DISABLE	(1 << 8)
+#define  TX_DMA_CRC_DISABLE	(1 << 9)
+#define  TX_DMA_FIFO_FULL	(1 << 16)
+#define  TX_DMA_FIFO_EMPTY	(1 << 17)
+#define  TX_DMA_STATUS_AVAIL	(1 << 18)
+#define  TX_DMA_RESET		(1 << 24)
 #define TX_DMA_STATUS		(TX_DMA_BASE + 0x10)
 #define TX_DMA_ENH		(TX_DMA_BASE + 0x14)
+#define  TX_DMA_ENH_ENABLE	(1 << 0)
+#define  TX_DMA_INT_FIFO	(1 << 1)
 
 #define RX_ALLOC_SIZE		SZ_2K
 #define MAX_ETH_FRAME_SIZE	1536
@@ -170,7 +200,7 @@ static int nuport_mac_mii_read(struct mii_bus *bus,
 	if (ret)
 		return ret;
 
-	val |= (mii_id << 11) | (regnum << 6) | MII_BUSY;
+	val |= (mii_id << MII_ADDR_SHIFT) | (regnum << MII_REG_SHIFT) | MII_BUSY;
 	nuport_mac_writel(val, MII_ADDR_REG);
 	ret = nuport_mac_mii_busy_wait(priv);
 	if (ret)
@@ -191,7 +221,8 @@ static int nuport_mac_mii_write(struct mii_bus *bus, int mii_id,
 	if (ret)
 		return ret;
 
-	val |= (mii_id << 11) | (regnum << 6) | MII_BUSY | MII_WRITE;
+	val |= (mii_id << MII_ADDR_SHIFT) | (regnum << MII_REG_SHIFT);
+	val |= MII_BUSY | MII_WRITE;
 	nuport_mac_writel(value, MII_DATA_REG);
 	nuport_mac_writel(val, MII_ADDR_REG);
 
@@ -212,7 +243,7 @@ static int nuport_mac_start_tx_dma(struct nuport_mac_priv *priv,
 
 	while (timeout--) {
 		reg = nuport_mac_readl(TX_START_DMA);
-		if (!(reg & 0x01)) {
+		if (!(reg & TX_DMA_ENABLE)) {
 			netdev_dbg(priv->dev, "dma ready\n");
 			break;
 		}
@@ -226,11 +257,12 @@ static int nuport_mac_start_tx_dma(struct nuport_mac_priv *priv,
 			skb->len, DMA_TO_DEVICE);
 
 	/* enable enhanced mode */
-	nuport_mac_writel(0x01, TX_DMA_ENH);
+	nuport_mac_writel(TX_DMA_ENH_ENABLE, TX_DMA_ENH);
 	nuport_mac_writel(p, TX_BUFFER_ADDR);
 	nuport_mac_writel((skb->len) - 1, TX_PKT_BYTES);
 	wmb();
-	nuport_mac_writel(0x0D, TX_START_DMA);
+	reg = TX_DMA_ENABLE | TX_DMA_START_FRAME | TX_DMA_END_FRAME;
+	nuport_mac_writel(reg, TX_START_DMA);
 
 	return 0;
 }
@@ -240,7 +272,7 @@ static void nuport_mac_reset_tx_dma(struct nuport_mac_priv *priv)
 	u32 reg;
 
 	reg = nuport_mac_readl(TX_START_DMA);
-	reg |= (1 << 24);
+	reg |= TX_DMA_RESET;
 	nuport_mac_writel(reg, TX_START_DMA);
 }
 
@@ -253,7 +285,7 @@ static int nuport_mac_start_rx_dma(struct nuport_mac_priv *priv,
 
 	while (timeout--) {
 		reg = nuport_mac_readl(RX_START_DMA);
-		if (!(reg & 0x01)) {
+		if (!(reg & RX_DMA_ENABLE)) {
 			netdev_dbg(priv->dev, "dma ready\n");
 			break;
 		}
@@ -268,7 +300,7 @@ static int nuport_mac_start_rx_dma(struct nuport_mac_priv *priv,
 
 	nuport_mac_writel(p, RX_BUFFER_ADDR);
 	wmb();
-	nuport_mac_writel(0x01, RX_START_DMA);
+	nuport_mac_writel(RX_DMA_ENABLE, RX_START_DMA);
 
 	return 0;
 }
@@ -278,7 +310,7 @@ static void nuport_mac_reset_rx_dma(struct nuport_mac_priv *priv)
 	u32 reg;
 
 	reg = nuport_mac_readl(RX_START_DMA);
-	reg |= (1 << 1);
+	reg |= RX_DMA_RESET;
 	nuport_mac_writel(reg, RX_START_DMA);
 }
 
@@ -288,7 +320,7 @@ static void nuport_mac_disable_rx_dma(struct nuport_mac_priv *priv)
 	u32 reg;
 
 	reg = nuport_mac_readl(RX_DMA_ENH);
-	reg &= ~(1 << 1);
+	reg &= ~RX_DMA_INT_ENABLE;
 	nuport_mac_writel(reg, RX_DMA_ENH);
 }
 
@@ -297,7 +329,7 @@ static void nuport_mac_enable_rx_dma(struct nuport_mac_priv *priv)
 	u32 reg;
 
 	reg = nuport_mac_readl(RX_DMA_ENH);
-	reg |= (1 << 1);
+	reg |= RX_DMA_INT_ENABLE;
 	nuport_mac_writel(reg, RX_DMA_ENH);
 }
 
@@ -363,9 +395,9 @@ static void nuport_mac_adjust_link(struct net_device *dev)
 	if (phydev->link & (priv->old_duplex != phydev->duplex)) {
 		reg = nuport_mac_readl(CTRL_REG);
 		if (phydev->duplex == DUPLEX_FULL)
-			reg |= (1 << 20);
+			reg |= DUPLEX_FULL;
 		else
-			reg &= ~(1 << 20);
+			reg &= ~DUPLEX_FULL;
 		nuport_mac_writel(reg, CTRL_REG);
 
 		status_changed = 1;
@@ -392,14 +424,14 @@ static irqreturn_t nuport_mac_link_interrupt(int irq, void *dev_id)
 	u8 phy_addr;
 
 	reg = nuport_mac_readl(LINK_INT_CSR);
-	phy_addr = (reg >> 1) & 0x0f;
+	phy_addr = (reg >> LINK_PHY_ADDR_SHIFT) & (PHY_MAX_ADDR - 1);
 
 	if (phy_addr != priv->phydev->addr) {
 		netdev_err(dev, "spurious PHY irq (phy: %d)\n", phy_addr);
 		return IRQ_NONE;
 	}
 
-	priv->phydev->link = (reg & (1 << 16));
+	priv->phydev->link = (reg & LINK_UP);
 	nuport_mac_adjust_link(dev);
 
 	return IRQ_HANDLED;
@@ -417,7 +449,7 @@ static irqreturn_t nuport_mac_tx_interrupt(int irq, void *dev_id)
 	spin_lock_irqsave(&priv->lock, flags);
 	/* clear status word available if ready */
 	reg = nuport_mac_readl(TX_START_DMA);
-	if (reg & (1 << 18)) {
+	if (reg & TX_DMA_STATUS_AVAIL) {
 		nuport_mac_writel(reg, TX_START_DMA);
 		reg = nuport_mac_readl(TX_DMA_STATUS);
 
@@ -690,6 +722,7 @@ static int nuport_mac_open(struct net_device *dev)
 	int ret;
 	struct nuport_mac_priv *priv = netdev_priv(dev);
 	unsigned long flags;
+	u32 reg = 0;
 
 	ret = clk_enable(priv->emac_clk);
 	if (ret) {
@@ -698,7 +731,10 @@ static int nuport_mac_open(struct net_device *dev)
 	}
 
 	/* Set MAC into full duplex mode by default */
-	nuport_mac_writel(0x1010052C, CTRL_REG);
+	reg |= RX_ENABLE | TX_ENABLE;
+	reg |= DEFER_CHECK | STRIP_PAD | DRTRY_DISABLE;
+	reg |= FULL_DUPLEX | HBD_DISABLE;
+	nuport_mac_writel(reg, CTRL_REG);
 
 	/* set mac address in hardware in case it was not already */
 	nuport_mac_change_mac_address(dev, dev->dev_addr);
@@ -712,10 +748,16 @@ static int nuport_mac_open(struct net_device *dev)
 
 	phy_start(priv->phydev);
 
-	/* Enable link interrupt monitoring */
+	/* Enable link interrupt monitoring for our PHY address */
+	reg = LINK_INT_EN | (priv->phydev->addr << LINK_PHY_ADDR_SHIFT);
+	/* MII_BMSR register to be watched */
+	reg |= (1 << LINK_PHY_REG_SHIFT);
+	/* BMSR_STATUS to be watched in particular */
+	reg |= (2 << LINK_BIT_UP_SHIFT);
+
 	spin_lock_irqsave(&priv->lock, flags);
-	nuport_mac_writel(0x1041 | (priv->phydev->addr << 1), LINK_INT_CSR);
-	nuport_mac_writel(0xFFFFF, LINK_INT_POLL_TIME);
+	nuport_mac_writel(reg, LINK_INT_CSR);
+	nuport_mac_writel(LINK_POLL_MASK, LINK_INT_POLL_TIME);
 	spin_unlock_irqrestore(&priv->lock, flags);
 
 	ret = request_irq(priv->tx_irq, &nuport_mac_tx_interrupt,
@@ -771,8 +813,9 @@ static int nuport_mac_close(struct net_device *dev)
 	netif_stop_queue(dev);
 
 	free_irq(priv->link_irq, dev);
-	nuport_mac_writel(0x00, LINK_INT_CSR);
-	nuport_mac_writel(0x00, LINK_INT_POLL_TIME);
+	/* disable PHY polling */
+	nuport_mac_writel(0, LINK_INT_CSR);
+	nuport_mac_writel(0, LINK_INT_POLL_TIME);
 	phy_stop(priv->phydev);
 
 	free_irq(priv->tx_irq, dev);
