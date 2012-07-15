@@ -15,6 +15,8 @@ MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 LINUX_VERSION:=3.3.8
 
+DEVICE_TYPE:=other
+
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES := $(filter-out ppp%,$(DEFAULT_PACKAGES)) \
