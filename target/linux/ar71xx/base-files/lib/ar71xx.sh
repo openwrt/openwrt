@@ -234,7 +234,7 @@ ar71xx_board_detect() {
 	*PB42)
 		name="pb42"
 		;;
-	*PB44)
+	*"PB44 reference board")
 		name="pb44"
 		;;
 	*PB92)
