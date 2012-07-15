@@ -77,6 +77,7 @@
 			};
 
 			pci@400b0000 {
+				compatible = "moschip,mcs8140-pci", "moschip,mcs814x-pci";
 				reg = <0x400b0000 0x44		// PCI master
 					0x400d8000 0xe4>;	// EEPROM emulator
 				interrupts = <25>;		// abort interrupt
