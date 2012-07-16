@@ -1,6 +1,1661 @@
+--- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
++++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
+@@ -622,7 +622,7 @@ ath5k_conf_tx(struct ieee80211_hw *hw, s
+ 	qi.tqi_aifs = params->aifs;
+ 	qi.tqi_cw_min = params->cw_min;
+ 	qi.tqi_cw_max = params->cw_max;
+-	qi.tqi_burst_time = params->txop;
++	qi.tqi_burst_time = params->txop * 32;
+ 
+ 	ATH5K_DBG(ah, ATH5K_DEBUG_ANY,
+ 		  "Configure tx [queue %d],  "
+--- a/drivers/net/wireless/ath/ath9k/ar9002_hw.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_hw.c
+@@ -26,106 +26,74 @@
+ static void ar9002_hw_init_mode_regs(struct ath_hw *ah)
+ {
+ 	if (AR_SREV_9271(ah)) {
+-		INIT_INI_ARRAY(&ah->iniModes, ar9271Modes_9271,
+-			       ARRAY_SIZE(ar9271Modes_9271), 5);
+-		INIT_INI_ARRAY(&ah->iniCommon, ar9271Common_9271,
+-			       ARRAY_SIZE(ar9271Common_9271), 2);
+-		INIT_INI_ARRAY(&ah->iniModes_9271_ANI_reg, ar9271Modes_9271_ANI_reg,
+-			       ARRAY_SIZE(ar9271Modes_9271_ANI_reg), 5);
++		INIT_INI_ARRAY(&ah->iniModes, ar9271Modes_9271);
++		INIT_INI_ARRAY(&ah->iniCommon, ar9271Common_9271);
++		INIT_INI_ARRAY(&ah->iniModes_9271_ANI_reg, ar9271Modes_9271_ANI_reg);
+ 		return;
+ 	}
+ 
+ 	if (ah->config.pcie_clock_req)
+ 		INIT_INI_ARRAY(&ah->iniPcieSerdes,
+-			   ar9280PciePhy_clkreq_off_L1_9280,
+-			   ARRAY_SIZE(ar9280PciePhy_clkreq_off_L1_9280), 2);
++			   ar9280PciePhy_clkreq_off_L1_9280);
+ 	else
+ 		INIT_INI_ARRAY(&ah->iniPcieSerdes,
+-			   ar9280PciePhy_clkreq_always_on_L1_9280,
+-			   ARRAY_SIZE(ar9280PciePhy_clkreq_always_on_L1_9280), 2);
++			   ar9280PciePhy_clkreq_always_on_L1_9280);
+ #ifdef CONFIG_PM_SLEEP
+ 		INIT_INI_ARRAY(&ah->iniPcieSerdesWow,
+-			       ar9280PciePhy_awow,
+-			       ARRAY_SIZE(ar9280PciePhy_awow), 2);
++			       ar9280PciePhy_awow);
+ #endif
+ 
+ 	if (AR_SREV_9287_11_OR_LATER(ah)) {
+-		INIT_INI_ARRAY(&ah->iniModes, ar9287Modes_9287_1_1,
+-				ARRAY_SIZE(ar9287Modes_9287_1_1), 5);
+-		INIT_INI_ARRAY(&ah->iniCommon, ar9287Common_9287_1_1,
+-				ARRAY_SIZE(ar9287Common_9287_1_1), 2);
++		INIT_INI_ARRAY(&ah->iniModes, ar9287Modes_9287_1_1);
++		INIT_INI_ARRAY(&ah->iniCommon, ar9287Common_9287_1_1);
+ 	} else if (AR_SREV_9285_12_OR_LATER(ah)) {
+-		INIT_INI_ARRAY(&ah->iniModes, ar9285Modes_9285_1_2,
+-			       ARRAY_SIZE(ar9285Modes_9285_1_2), 5);
+-		INIT_INI_ARRAY(&ah->iniCommon, ar9285Common_9285_1_2,
+-			       ARRAY_SIZE(ar9285Common_9285_1_2), 2);
++		INIT_INI_ARRAY(&ah->iniModes, ar9285Modes_9285_1_2);
++		INIT_INI_ARRAY(&ah->iniCommon, ar9285Common_9285_1_2);
+ 	} else if (AR_SREV_9280_20_OR_LATER(ah)) {
+-		INIT_INI_ARRAY(&ah->iniModes, ar9280Modes_9280_2,
+-			       ARRAY_SIZE(ar9280Modes_9280_2), 5);
+-		INIT_INI_ARRAY(&ah->iniCommon, ar9280Common_9280_2,
+-			       ARRAY_SIZE(ar9280Common_9280_2), 2);
++		INIT_INI_ARRAY(&ah->iniModes, ar9280Modes_9280_2);
++		INIT_INI_ARRAY(&ah->iniCommon, ar9280Common_9280_2);
+ 
+ 		INIT_INI_ARRAY(&ah->iniModesFastClock,
+-			       ar9280Modes_fast_clock_9280_2,
+-			       ARRAY_SIZE(ar9280Modes_fast_clock_9280_2), 3);
++			       ar9280Modes_fast_clock_9280_2);
+ 	} else if (AR_SREV_9160_10_OR_LATER(ah)) {
+-		INIT_INI_ARRAY(&ah->iniModes, ar5416Modes_9160,
+-			       ARRAY_SIZE(ar5416Modes_9160), 5);
+-		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common_9160,
+-			       ARRAY_SIZE(ar5416Common_9160), 2);
++		INIT_INI_ARRAY(&ah->iniModes, ar5416Modes_9160);
++		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common_9160);
+ 		if (AR_SREV_9160_11(ah)) {
+ 			INIT_INI_ARRAY(&ah->iniAddac,
+-				       ar5416Addac_9160_1_1,
+-				       ARRAY_SIZE(ar5416Addac_9160_1_1), 2);
++				       ar5416Addac_9160_1_1);
+ 		} else {
+-			INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac_9160,
+-				       ARRAY_SIZE(ar5416Addac_9160), 2);
++			INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac_9160);
+ 		}
+ 	} else if (AR_SREV_9100_OR_LATER(ah)) {
+-		INIT_INI_ARRAY(&ah->iniModes, ar5416Modes_9100,
+-			       ARRAY_SIZE(ar5416Modes_9100), 5);
+-		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common_9100,
+-			       ARRAY_SIZE(ar5416Common_9100), 2);
+-		INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6_9100,
+-			       ARRAY_SIZE(ar5416Bank6_9100), 3);
+-		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac_9100,
+-			       ARRAY_SIZE(ar5416Addac_9100), 2);
++		INIT_INI_ARRAY(&ah->iniModes, ar5416Modes_9100);
++		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common_9100);
++		INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6_9100);
++		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac_9100);
+ 	} else {
+-		INIT_INI_ARRAY(&ah->iniModes, ar5416Modes,
+-			       ARRAY_SIZE(ar5416Modes), 5);
+-		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common,
+-			       ARRAY_SIZE(ar5416Common), 2);
+-		INIT_INI_ARRAY(&ah->iniBank6TPC, ar5416Bank6TPC,
+-			       ARRAY_SIZE(ar5416Bank6TPC), 3);
+-		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac,
+-			       ARRAY_SIZE(ar5416Addac), 2);
++		INIT_INI_ARRAY(&ah->iniModes, ar5416Modes);
++		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common);
++		INIT_INI_ARRAY(&ah->iniBank6TPC, ar5416Bank6TPC);
++		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac);
+ 	}
+ 
+ 	if (!AR_SREV_9280_20_OR_LATER(ah)) {
+ 		/* Common for AR5416, AR913x, AR9160 */
+-		INIT_INI_ARRAY(&ah->iniBB_RfGain, ar5416BB_RfGain,
+-			       ARRAY_SIZE(ar5416BB_RfGain), 3);
++		INIT_INI_ARRAY(&ah->iniBB_RfGain, ar5416BB_RfGain);
+ 
+-		INIT_INI_ARRAY(&ah->iniBank0, ar5416Bank0,
+-			       ARRAY_SIZE(ar5416Bank0), 2);
+-		INIT_INI_ARRAY(&ah->iniBank1, ar5416Bank1,
+-			       ARRAY_SIZE(ar5416Bank1), 2);
+-		INIT_INI_ARRAY(&ah->iniBank2, ar5416Bank2,
+-			       ARRAY_SIZE(ar5416Bank2), 2);
+-		INIT_INI_ARRAY(&ah->iniBank3, ar5416Bank3,
+-			       ARRAY_SIZE(ar5416Bank3), 3);
+-		INIT_INI_ARRAY(&ah->iniBank7, ar5416Bank7,
+-			       ARRAY_SIZE(ar5416Bank7), 2);
++		INIT_INI_ARRAY(&ah->iniBank0, ar5416Bank0);
++		INIT_INI_ARRAY(&ah->iniBank1, ar5416Bank1);
++		INIT_INI_ARRAY(&ah->iniBank2, ar5416Bank2);
++		INIT_INI_ARRAY(&ah->iniBank3, ar5416Bank3);
++		INIT_INI_ARRAY(&ah->iniBank7, ar5416Bank7);
+ 
+ 		/* Common for AR5416, AR9160 */
+ 		if (!AR_SREV_9100(ah))
+-			INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6,
+-				       ARRAY_SIZE(ar5416Bank6), 3);
++			INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6);
+ 
+ 		/* Common for AR913x, AR9160 */
+ 		if (!AR_SREV_5416(ah))
+-			INIT_INI_ARRAY(&ah->iniBank6TPC, ar5416Bank6TPC_9100,
+-				       ARRAY_SIZE(ar5416Bank6TPC_9100), 3);
++			INIT_INI_ARRAY(&ah->iniBank6TPC,
++				      ar5416Bank6TPC_9100);
+ 	}
+ 
+ 	/* iniAddac needs to be modified for these chips */
+@@ -148,13 +116,9 @@ static void ar9002_hw_init_mode_regs(str
+ 	}
+ 	if (AR_SREV_9287_11_OR_LATER(ah)) {
+ 		INIT_INI_ARRAY(&ah->iniCckfirNormal,
+-		       ar9287Common_normal_cck_fir_coeff_9287_1_1,
+-		       ARRAY_SIZE(ar9287Common_normal_cck_fir_coeff_9287_1_1),
+-		       2);
++		       ar9287Common_normal_cck_fir_coeff_9287_1_1);
+ 		INIT_INI_ARRAY(&ah->iniCckfirJapan2484,
+-		       ar9287Common_japan_2484_cck_fir_coeff_9287_1_1,
+-		       ARRAY_SIZE(ar9287Common_japan_2484_cck_fir_coeff_9287_1_1),
+-		       2);
++		       ar9287Common_japan_2484_cck_fir_coeff_9287_1_1);
+ 	}
+ }
+ 
+@@ -168,20 +132,16 @@ static void ar9280_20_hw_init_rxgain_ini
+ 
+ 		if (rxgain_type == AR5416_EEP_RXGAIN_13DB_BACKOFF)
+ 			INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9280Modes_backoff_13db_rxgain_9280_2,
+-			ARRAY_SIZE(ar9280Modes_backoff_13db_rxgain_9280_2), 5);
++				       ar9280Modes_backoff_13db_rxgain_9280_2);
+ 		else if (rxgain_type == AR5416_EEP_RXGAIN_23DB_BACKOFF)
+ 			INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9280Modes_backoff_23db_rxgain_9280_2,
+-			ARRAY_SIZE(ar9280Modes_backoff_23db_rxgain_9280_2), 5);
++				       ar9280Modes_backoff_23db_rxgain_9280_2);
+ 		else
+ 			INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9280Modes_original_rxgain_9280_2,
+-			ARRAY_SIZE(ar9280Modes_original_rxgain_9280_2), 5);
++				       ar9280Modes_original_rxgain_9280_2);
+ 	} else {
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9280Modes_original_rxgain_9280_2,
+-			ARRAY_SIZE(ar9280Modes_original_rxgain_9280_2), 5);
++			       ar9280Modes_original_rxgain_9280_2);
+ 	}
+ }
+ 
+@@ -191,16 +151,13 @@ static void ar9280_20_hw_init_txgain_ini
+ 	    AR5416_EEP_MINOR_VER_19) {
+ 		if (txgain_type == AR5416_EEP_TXGAIN_HIGH_POWER)
+ 			INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9280Modes_high_power_tx_gain_9280_2,
+-			ARRAY_SIZE(ar9280Modes_high_power_tx_gain_9280_2), 5);
++				       ar9280Modes_high_power_tx_gain_9280_2);
+ 		else
+ 			INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9280Modes_original_tx_gain_9280_2,
+-			ARRAY_SIZE(ar9280Modes_original_tx_gain_9280_2), 5);
++				       ar9280Modes_original_tx_gain_9280_2);
+ 	} else {
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-		ar9280Modes_original_tx_gain_9280_2,
+-		ARRAY_SIZE(ar9280Modes_original_tx_gain_9280_2), 5);
++			       ar9280Modes_original_tx_gain_9280_2);
+ 	}
+ }
+ 
+@@ -208,12 +165,10 @@ static void ar9271_hw_init_txgain_ini(st
+ {
+ 	if (txgain_type == AR5416_EEP_TXGAIN_HIGH_POWER)
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			       ar9271Modes_high_power_tx_gain_9271,
+-			       ARRAY_SIZE(ar9271Modes_high_power_tx_gain_9271), 5);
++			       ar9271Modes_high_power_tx_gain_9271);
+ 	else
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			       ar9271Modes_normal_power_tx_gain_9271,
+-			       ARRAY_SIZE(ar9271Modes_normal_power_tx_gain_9271), 5);
++			       ar9271Modes_normal_power_tx_gain_9271);
+ }
+ 
+ static void ar9002_hw_init_mode_gain_regs(struct ath_hw *ah)
+@@ -222,8 +177,7 @@ static void ar9002_hw_init_mode_gain_reg
+ 
+ 	if (AR_SREV_9287_11_OR_LATER(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-		ar9287Modes_rx_gain_9287_1_1,
+-		ARRAY_SIZE(ar9287Modes_rx_gain_9287_1_1), 5);
++			       ar9287Modes_rx_gain_9287_1_1);
+ 	else if (AR_SREV_9280_20(ah))
+ 		ar9280_20_hw_init_rxgain_ini(ah);
+ 
+@@ -231,8 +185,7 @@ static void ar9002_hw_init_mode_gain_reg
+ 		ar9271_hw_init_txgain_ini(ah, txgain_type);
+ 	} else if (AR_SREV_9287_11_OR_LATER(ah)) {
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-		ar9287Modes_tx_gain_9287_1_1,
+-		ARRAY_SIZE(ar9287Modes_tx_gain_9287_1_1), 5);
++			       ar9287Modes_tx_gain_9287_1_1);
+ 	} else if (AR_SREV_9280_20(ah)) {
+ 		ar9280_20_hw_init_txgain_ini(ah, txgain_type);
+ 	} else if (AR_SREV_9285_12_OR_LATER(ah)) {
+@@ -240,26 +193,18 @@ static void ar9002_hw_init_mode_gain_reg
+ 		if (txgain_type == AR5416_EEP_TXGAIN_HIGH_POWER) {
+ 			if (AR_SREV_9285E_20(ah)) {
+ 				INIT_INI_ARRAY(&ah->iniModesTxGain,
+-				ar9285Modes_XE2_0_high_power,
+-				ARRAY_SIZE(
+-				  ar9285Modes_XE2_0_high_power), 5);
++					       ar9285Modes_XE2_0_high_power);
+ 			} else {
+ 				INIT_INI_ARRAY(&ah->iniModesTxGain,
+-				ar9285Modes_high_power_tx_gain_9285_1_2,
+-				ARRAY_SIZE(
+-				  ar9285Modes_high_power_tx_gain_9285_1_2), 5);
++					ar9285Modes_high_power_tx_gain_9285_1_2);
+ 			}
+ 		} else {
+ 			if (AR_SREV_9285E_20(ah)) {
+ 				INIT_INI_ARRAY(&ah->iniModesTxGain,
+-				ar9285Modes_XE2_0_normal_power,
+-				ARRAY_SIZE(
+-				  ar9285Modes_XE2_0_normal_power), 5);
++					       ar9285Modes_XE2_0_normal_power);
+ 			} else {
+ 				INIT_INI_ARRAY(&ah->iniModesTxGain,
+-				ar9285Modes_original_tx_gain_9285_1_2,
+-				ARRAY_SIZE(
+-				  ar9285Modes_original_tx_gain_9285_1_2), 5);
++					ar9285Modes_original_tx_gain_9285_1_2);
+ 			}
+ 		}
+ 	}
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -131,8 +131,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	 },
+ 	.base_ext1 = {
+@@ -331,8 +332,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80c080),
+ 		.papdRateMaskHt40 = LE32(0x0080c080),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	 },
+ 	.base_ext2 = {
+@@ -704,8 +706,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80c080),
+ 		.papdRateMaskHt40 = LE32(0x0080c080),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	 },
+ 	 .base_ext1 = {
+@@ -904,8 +907,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	 },
+ 	.base_ext2 = {
+@@ -1278,8 +1282,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80c080),
+ 		.papdRateMaskHt40 = LE32(0x0080c080),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	},
+ 	.base_ext1 = {
+@@ -1478,8 +1483,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	},
+ 	.base_ext2 = {
+@@ -1852,8 +1858,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80c080),
+ 		.papdRateMaskHt40 = LE32(0x0080c080),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	},
+ 	.base_ext1 = {
+@@ -2052,8 +2059,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	},
+ 	.base_ext2 = {
+@@ -2425,8 +2433,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80C080),
+ 		.papdRateMaskHt40 = LE32(0x0080C080),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	 },
+ 	 .base_ext1 = {
+@@ -2625,8 +2634,9 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.xlna_bias_strength = 0,
+ 		.futureModal = {
+-			0, 0, 0, 0, 0, 0, 0, 0,
++			0, 0, 0, 0, 0, 0, 0,
+ 		},
+ 	 },
+ 	.base_ext2 = {
+@@ -2971,14 +2981,6 @@ static u32 ath9k_hw_ar9300_get_eeprom(st
+ 		return (pBase->txrxMask >> 4) & 0xf;
+ 	case EEP_RX_MASK:
+ 		return pBase->txrxMask & 0xf;
+-	case EEP_DRIVE_STRENGTH:
+-#define AR9300_EEP_BASE_DRIV_STRENGTH	0x1
+-		return pBase->miscConfiguration & AR9300_EEP_BASE_DRIV_STRENGTH;
+-	case EEP_INTERNAL_REGULATOR:
+-		/* Bit 4 is internal regulator flag */
+-		return (pBase->featureEnable & 0x10) >> 4;
+-	case EEP_SWREG:
+-		return le32_to_cpu(pBase->swreg);
+ 	case EEP_PAPRD:
+ 		return !!(pBase->featureEnable & BIT(5));
+ 	case EEP_CHAIN_MASK_REDUCE:
+@@ -2989,8 +2991,6 @@ static u32 ath9k_hw_ar9300_get_eeprom(st
+ 		return eep->modalHeader5G.antennaGain;
+ 	case EEP_ANTENNA_GAIN_2G:
+ 		return eep->modalHeader2G.antennaGain;
+-	case EEP_QUICK_DROP:
+-		return pBase->miscConfiguration & BIT(1);
+ 	default:
+ 		return 0;
+ 	}
+@@ -3260,10 +3260,20 @@ static int ar9300_eeprom_restore_interna
+ 	int it;
+ 	u16 checksum, mchecksum;
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	struct ar9300_eeprom *eep;
+ 	eeprom_read_op read;
+ 
+-	if (ath9k_hw_use_flash(ah))
+-		return ar9300_eeprom_restore_flash(ah, mptr, mdata_size);
++	if (ath9k_hw_use_flash(ah)) {
++		u8 txrx;
++
++		ar9300_eeprom_restore_flash(ah, mptr, mdata_size);
++
++		/* check if eeprom contains valid data */
++		eep = (struct ar9300_eeprom *) mptr;
++		txrx = eep->baseEepHeader.txrxMask;
++		if (txrx != 0 && txrx != 0xff)
++			return 0;
++	}
+ 
+ 	word = kzalloc(2048, GFP_KERNEL);
+ 	if (!word)
+@@ -3493,19 +3503,20 @@ static int ath9k_hw_ar9300_get_eeprom_re
+ 	return 0;
+ }
+ 
+-static s32 ar9003_hw_xpa_bias_level_get(struct ath_hw *ah, bool is2ghz)
++static struct ar9300_modal_eep_header *ar9003_modal_header(struct ath_hw *ah,
++							   bool is2ghz)
+ {
+ 	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+ 
+ 	if (is2ghz)
+-		return eep->modalHeader2G.xpaBiasLvl;
++		return &eep->modalHeader2G;
+ 	else
+-		return eep->modalHeader5G.xpaBiasLvl;
++		return &eep->modalHeader5G;
+ }
+ 
+ static void ar9003_hw_xpa_bias_level_apply(struct ath_hw *ah, bool is2ghz)
+ {
+-	int bias = ar9003_hw_xpa_bias_level_get(ah, is2ghz);
++	int bias = ar9003_modal_header(ah, is2ghz)->xpaBiasLvl;
+ 
+ 	if (AR_SREV_9485(ah) || AR_SREV_9330(ah) || AR_SREV_9340(ah))
+ 		REG_RMW_FIELD(ah, AR_CH0_TOP2, AR_CH0_TOP2_XPABIASLVL, bias);
+@@ -3521,57 +3532,26 @@ static void ar9003_hw_xpa_bias_level_app
+ 	}
+ }
+ 
+-static u16 ar9003_switch_com_spdt_get(struct ath_hw *ah, bool is_2ghz)
++static u16 ar9003_switch_com_spdt_get(struct ath_hw *ah, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	__le16 val;
+-
+-	if (is_2ghz)
+-		val = eep->modalHeader2G.switchcomspdt;
+-	else
+-		val = eep->modalHeader5G.switchcomspdt;
+-	return le16_to_cpu(val);
++	return le16_to_cpu(ar9003_modal_header(ah, is2ghz)->switchcomspdt);
+ }
+ 
+ 
+ static u32 ar9003_hw_ant_ctrl_common_get(struct ath_hw *ah, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	__le32 val;
+-
+-	if (is2ghz)
+-		val = eep->modalHeader2G.antCtrlCommon;
+-	else
+-		val = eep->modalHeader5G.antCtrlCommon;
+-	return le32_to_cpu(val);
++	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon);
+ }
+ 
+ static u32 ar9003_hw_ant_ctrl_common_2_get(struct ath_hw *ah, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	__le32 val;
+-
+-	if (is2ghz)
+-		val = eep->modalHeader2G.antCtrlCommon2;
+-	else
+-		val = eep->modalHeader5G.antCtrlCommon2;
+-	return le32_to_cpu(val);
++	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon2);
+ }
+ 
+-static u16 ar9003_hw_ant_ctrl_chain_get(struct ath_hw *ah,
+-					int chain,
++static u16 ar9003_hw_ant_ctrl_chain_get(struct ath_hw *ah, int chain,
+ 					bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	__le16 val = 0;
+-
+-	if (chain >= 0 && chain < AR9300_MAX_CHAINS) {
+-		if (is2ghz)
+-			val = eep->modalHeader2G.antCtrlChain[chain];
+-		else
+-			val = eep->modalHeader5G.antCtrlChain[chain];
+-	}
+-
++	__le16 val = ar9003_modal_header(ah, is2ghz)->antCtrlChain[chain];
+ 	return le16_to_cpu(val);
+ }
+ 
+@@ -3681,11 +3661,12 @@ static void ar9003_hw_ant_ctrl_apply(str
+ 
+ static void ar9003_hw_drive_strength_apply(struct ath_hw *ah)
+ {
++	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++	struct ar9300_base_eep_hdr *pBase = &eep->baseEepHeader;
+ 	int drive_strength;
+ 	unsigned long reg;
+ 
+-	drive_strength = ath9k_hw_ar9300_get_eeprom(ah, EEP_DRIVE_STRENGTH);
+-
++	drive_strength = pBase->miscConfiguration & BIT(0);
+ 	if (!drive_strength)
+ 		return;
+ 
+@@ -3815,11 +3796,11 @@ static bool is_pmu_set(struct ath_hw *ah
+ 
+ void ar9003_hw_internal_regulator_apply(struct ath_hw *ah)
+ {
+-	int internal_regulator =
+-		ath9k_hw_ar9300_get_eeprom(ah, EEP_INTERNAL_REGULATOR);
++	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++	struct ar9300_base_eep_hdr *pBase = &eep->baseEepHeader;
+ 	u32 reg_val;
+ 
+-	if (internal_regulator) {
++	if (pBase->featureEnable & BIT(4)) {
+ 		if (AR_SREV_9330(ah) || AR_SREV_9485(ah)) {
+ 			int reg_pmu_set;
+ 
+@@ -3863,11 +3844,11 @@ void ar9003_hw_internal_regulator_apply(
+ 			if (!is_pmu_set(ah, AR_PHY_PMU2, reg_pmu_set))
+ 				return;
+ 		} else if (AR_SREV_9462(ah)) {
+-			reg_val = ath9k_hw_ar9300_get_eeprom(ah, EEP_SWREG);
++			reg_val = le32_to_cpu(pBase->swreg);
+ 			REG_WRITE(ah, AR_PHY_PMU1, reg_val);
+ 		} else {
+ 			/* Internal regulator is ON. Write swreg register. */
+-			reg_val = ath9k_hw_ar9300_get_eeprom(ah, EEP_SWREG);
++			reg_val = le32_to_cpu(pBase->swreg);
+ 			REG_WRITE(ah, AR_RTC_REG_CONTROL1,
+ 				  REG_READ(ah, AR_RTC_REG_CONTROL1) &
+ 				  (~AR_RTC_REG_CONTROL1_SWREG_PROGRAM));
+@@ -3909,6 +3890,9 @@ static void ar9003_hw_apply_tuning_caps(
+ 	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+ 	u8 tuning_caps_param = eep->baseEepHeader.params_for_tuning_caps[0];
+ 
++	if (AR_SREV_9485(ah) || AR_SREV_9330(ah) || AR_SREV_9340(ah))
++		return;
++
+ 	if (eep->baseEepHeader.featureEnable & 0x40) {
+ 		tuning_caps_param &= 0x7f;
+ 		REG_RMW_FIELD(ah, AR_CH0_XTAL, AR_CH0_XTAL_CAPINDAC,
+@@ -3921,10 +3905,11 @@ static void ar9003_hw_apply_tuning_caps(
+ static void ar9003_hw_quick_drop_apply(struct ath_hw *ah, u16 freq)
+ {
+ 	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	int quick_drop = ath9k_hw_ar9300_get_eeprom(ah, EEP_QUICK_DROP);
++	struct ar9300_base_eep_hdr *pBase = &eep->baseEepHeader;
++	int quick_drop;
+ 	s32 t[3], f[3] = {5180, 5500, 5785};
+ 
+-	if (!quick_drop)
++	if (!(pBase->miscConfiguration & BIT(1)))
+ 		return;
+ 
+ 	if (freq < 4000)
+@@ -3938,13 +3923,11 @@ static void ar9003_hw_quick_drop_apply(s
+ 	REG_RMW_FIELD(ah, AR_PHY_AGC, AR_PHY_AGC_QUICK_DROP, quick_drop);
+ }
+ 
+-static void ar9003_hw_txend_to_xpa_off_apply(struct ath_hw *ah, u16 freq)
++static void ar9003_hw_txend_to_xpa_off_apply(struct ath_hw *ah, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+ 	u32 value;
+ 
+-	value = (freq < 4000) ? eep->modalHeader2G.txEndToXpaOff :
+-				eep->modalHeader5G.txEndToXpaOff;
++	value = ar9003_modal_header(ah, is2ghz)->txEndToXpaOff;
+ 
+ 	REG_RMW_FIELD(ah, AR_PHY_XPA_TIMING_CTL,
+ 		      AR_PHY_XPA_TIMING_CTL_TX_END_XPAB_OFF, value);
+@@ -3952,19 +3935,63 @@ static void ar9003_hw_txend_to_xpa_off_a
+ 		      AR_PHY_XPA_TIMING_CTL_TX_END_XPAA_OFF, value);
+ }
+ 
++static void ar9003_hw_xpa_timing_control_apply(struct ath_hw *ah, bool is2ghz)
++{
++	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++	u8 xpa_ctl;
++
++	if (!(eep->baseEepHeader.featureEnable & 0x80))
++		return;
++
++	if (!AR_SREV_9300(ah) && !AR_SREV_9340(ah) && !AR_SREV_9580(ah))
++		return;
++
++	xpa_ctl = ar9003_modal_header(ah, is2ghz)->txFrameToXpaOn;
++	if (is2ghz)
++		REG_RMW_FIELD(ah, AR_PHY_XPA_TIMING_CTL,
++			      AR_PHY_XPA_TIMING_CTL_FRAME_XPAB_ON, xpa_ctl);
++	else
++		REG_RMW_FIELD(ah, AR_PHY_XPA_TIMING_CTL,
++			      AR_PHY_XPA_TIMING_CTL_FRAME_XPAA_ON, xpa_ctl);
++}
++
++static void ar9003_hw_xlna_bias_strength_apply(struct ath_hw *ah, bool is2ghz)
++{
++	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++	u8 bias;
++
++	if (!(eep->baseEepHeader.featureEnable & 0x40))
++		return;
++
++	if (!AR_SREV_9300(ah))
++		return;
++
++	bias = ar9003_modal_header(ah, is2ghz)->xlna_bias_strength;
++	REG_RMW_FIELD(ah, AR_PHY_65NM_CH0_RXTX4, AR_PHY_65NM_RXTX4_XLNA_BIAS,
++		      bias & 0x3);
++	bias >>= 2;
++	REG_RMW_FIELD(ah, AR_PHY_65NM_CH1_RXTX4, AR_PHY_65NM_RXTX4_XLNA_BIAS,
++		      bias & 0x3);
++	bias >>= 2;
++	REG_RMW_FIELD(ah, AR_PHY_65NM_CH2_RXTX4, AR_PHY_65NM_RXTX4_XLNA_BIAS,
++		      bias & 0x3);
++}
++
+ static void ath9k_hw_ar9300_set_board_values(struct ath_hw *ah,
+ 					     struct ath9k_channel *chan)
+ {
+-	ar9003_hw_xpa_bias_level_apply(ah, IS_CHAN_2GHZ(chan));
+-	ar9003_hw_ant_ctrl_apply(ah, IS_CHAN_2GHZ(chan));
++	bool is2ghz = IS_CHAN_2GHZ(chan);
++	ar9003_hw_xpa_timing_control_apply(ah, is2ghz);
++	ar9003_hw_xpa_bias_level_apply(ah, is2ghz);
++	ar9003_hw_ant_ctrl_apply(ah, is2ghz);
+ 	ar9003_hw_drive_strength_apply(ah);
++	ar9003_hw_xlna_bias_strength_apply(ah, is2ghz);
+ 	ar9003_hw_atten_apply(ah, chan);
+ 	ar9003_hw_quick_drop_apply(ah, chan->channel);
+ 	if (!AR_SREV_9330(ah) && !AR_SREV_9340(ah) && !AR_SREV_9550(ah))
+ 		ar9003_hw_internal_regulator_apply(ah);
+-	if (AR_SREV_9485(ah) || AR_SREV_9330(ah) || AR_SREV_9340(ah))
+-		ar9003_hw_apply_tuning_caps(ah);
+-	ar9003_hw_txend_to_xpa_off_apply(ah, chan->channel);
++	ar9003_hw_apply_tuning_caps(ah);
++	ar9003_hw_txend_to_xpa_off_apply(ah, is2ghz);
+ }
+ 
+ static void ath9k_hw_ar9300_set_addac(struct ath_hw *ah,
+@@ -5100,14 +5127,9 @@ s32 ar9003_hw_get_rx_gain_idx(struct ath
+ 	return (eep->baseEepHeader.txrxgain) & 0xf; /* bits 3:0 */
+ }
+ 
+-u8 *ar9003_get_spur_chan_ptr(struct ath_hw *ah, bool is_2ghz)
++u8 *ar9003_get_spur_chan_ptr(struct ath_hw *ah, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-
+-	if (is_2ghz)
+-		return eep->modalHeader2G.spurChans;
+-	else
+-		return eep->modalHeader5G.spurChans;
++	return ar9003_modal_header(ah, is2ghz)->spurChans;
+ }
+ 
+ unsigned int ar9003_get_paprd_scale_factor(struct ath_hw *ah,
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
+@@ -231,7 +231,8 @@ struct ar9300_modal_eep_header {
+ 	__le32 papdRateMaskHt20;
+ 	__le32 papdRateMaskHt40;
+ 	__le16 switchcomspdt;
+-	u8 futureModal[8];
++	u8 xlna_bias_strength;
++	u8 futureModal[7];
+ } __packed;
+ 
+ struct ar9300_cal_data_per_freq_op_loop {
+--- a/drivers/net/wireless/ath/ath9k/ar9003_hw.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_hw.c
+@@ -44,462 +44,310 @@ static void ar9003_hw_init_mode_regs(str
+ 		ar9462_2p0_baseband_core_txfir_coeff_japan_2484
+ 	if (AR_SREV_9330_11(ah)) {
+ 		/* mac */
+-		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE],
+-				ar9331_1p1_mac_core,
+-				ARRAY_SIZE(ar9331_1p1_mac_core), 2);
++				ar9331_1p1_mac_core);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_POST],
+-				ar9331_1p1_mac_postamble,
+-				ARRAY_SIZE(ar9331_1p1_mac_postamble), 5);
++				ar9331_1p1_mac_postamble);
+ 
+ 		/* bb */
+-		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_CORE],
+-				ar9331_1p1_baseband_core,
+-				ARRAY_SIZE(ar9331_1p1_baseband_core), 2);
++				ar9331_1p1_baseband_core);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_POST],
+-				ar9331_1p1_baseband_postamble,
+-				ARRAY_SIZE(ar9331_1p1_baseband_postamble), 5);
++				ar9331_1p1_baseband_postamble);
+ 
+ 		/* radio */
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_CORE],
+-				ar9331_1p1_radio_core,
+-				ARRAY_SIZE(ar9331_1p1_radio_core), 2);
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_POST], NULL, 0, 0);
++				ar9331_1p1_radio_core);
+ 
+ 		/* soc */
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_PRE],
+-				ar9331_1p1_soc_preamble,
+-				ARRAY_SIZE(ar9331_1p1_soc_preamble), 2);
+-		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_CORE], NULL, 0, 0);
++				ar9331_1p1_soc_preamble);
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_POST],
+-				ar9331_1p1_soc_postamble,
+-				ARRAY_SIZE(ar9331_1p1_soc_postamble), 2);
++				ar9331_1p1_soc_postamble);
+ 
+ 		/* rx/tx gain */
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9331_common_rx_gain_1p1,
+-				ARRAY_SIZE(ar9331_common_rx_gain_1p1), 2);
++				ar9331_common_rx_gain_1p1);
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_lowest_ob_db_tx_gain_1p1,
+-			ARRAY_SIZE(ar9331_modes_lowest_ob_db_tx_gain_1p1),
+-			5);
++				ar9331_modes_lowest_ob_db_tx_gain_1p1);
+ 
+ 		/* additional clock settings */
+ 		if (ah->is_clk_25mhz)
+ 			INIT_INI_ARRAY(&ah->iniAdditional,
+-					ar9331_1p1_xtal_25M,
+-					ARRAY_SIZE(ar9331_1p1_xtal_25M), 2);
++					ar9331_1p1_xtal_25M);
+ 		else
+ 			INIT_INI_ARRAY(&ah->iniAdditional,
+-					ar9331_1p1_xtal_40M,
+-					ARRAY_SIZE(ar9331_1p1_xtal_40M), 2);
++					ar9331_1p1_xtal_40M);
+ 	} else if (AR_SREV_9330_12(ah)) {
+ 		/* mac */
+-		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE],
+-				ar9331_1p2_mac_core,
+-				ARRAY_SIZE(ar9331_1p2_mac_core), 2);
++				ar9331_1p2_mac_core);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_POST],
+-				ar9331_1p2_mac_postamble,
+-				ARRAY_SIZE(ar9331_1p2_mac_postamble), 5);
++				ar9331_1p2_mac_postamble);
+ 
+ 		/* bb */
+-		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_CORE],
+-				ar9331_1p2_baseband_core,
+-				ARRAY_SIZE(ar9331_1p2_baseband_core), 2);
++				ar9331_1p2_baseband_core);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_POST],
+-				ar9331_1p2_baseband_postamble,
+-				ARRAY_SIZE(ar9331_1p2_baseband_postamble), 5);
++				ar9331_1p2_baseband_postamble);
+ 
+ 		/* radio */
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_CORE],
+-				ar9331_1p2_radio_core,
+-				ARRAY_SIZE(ar9331_1p2_radio_core), 2);
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_POST], NULL, 0, 0);
++				ar9331_1p2_radio_core);
+ 
+ 		/* soc */
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_PRE],
+-				ar9331_1p2_soc_preamble,
+-				ARRAY_SIZE(ar9331_1p2_soc_preamble), 2);
+-		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_CORE], NULL, 0, 0);
++				ar9331_1p2_soc_preamble);
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_POST],
+-				ar9331_1p2_soc_postamble,
+-				ARRAY_SIZE(ar9331_1p2_soc_postamble), 2);
++				ar9331_1p2_soc_postamble);
+ 
+ 		/* rx/tx gain */
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9331_common_rx_gain_1p2,
+-				ARRAY_SIZE(ar9331_common_rx_gain_1p2), 2);
++				ar9331_common_rx_gain_1p2);
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_lowest_ob_db_tx_gain_1p2,
+-			ARRAY_SIZE(ar9331_modes_lowest_ob_db_tx_gain_1p2),
+-			5);
++				ar9331_modes_lowest_ob_db_tx_gain_1p2);
+ 
+ 		/* additional clock settings */
+ 		if (ah->is_clk_25mhz)
+ 			INIT_INI_ARRAY(&ah->iniAdditional,
+-					ar9331_1p2_xtal_25M,
+-					ARRAY_SIZE(ar9331_1p2_xtal_25M), 2);
++					ar9331_1p2_xtal_25M);
+ 		else
+ 			INIT_INI_ARRAY(&ah->iniAdditional,
+-					ar9331_1p2_xtal_40M,
+-					ARRAY_SIZE(ar9331_1p2_xtal_40M), 2);
++					ar9331_1p2_xtal_40M);
+ 	} else if (AR_SREV_9340(ah)) {
+ 		/* mac */
+-		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE],
+-				ar9340_1p0_mac_core,
+-				ARRAY_SIZE(ar9340_1p0_mac_core), 2);
++				ar9340_1p0_mac_core);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_POST],
+-				ar9340_1p0_mac_postamble,
+-				ARRAY_SIZE(ar9340_1p0_mac_postamble), 5);
++				ar9340_1p0_mac_postamble);
+ 
+ 		/* bb */
+-		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_CORE],
+-				ar9340_1p0_baseband_core,
+-				ARRAY_SIZE(ar9340_1p0_baseband_core), 2);
++				ar9340_1p0_baseband_core);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_POST],
+-				ar9340_1p0_baseband_postamble,
+-				ARRAY_SIZE(ar9340_1p0_baseband_postamble), 5);
++				ar9340_1p0_baseband_postamble);
+ 
+ 		/* radio */
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_CORE],
+-				ar9340_1p0_radio_core,
+-				ARRAY_SIZE(ar9340_1p0_radio_core), 2);
++				ar9340_1p0_radio_core);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_POST],
+-				ar9340_1p0_radio_postamble,
+-				ARRAY_SIZE(ar9340_1p0_radio_postamble), 5);
++				ar9340_1p0_radio_postamble);
+ 
+ 		/* soc */
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_PRE],
+-				ar9340_1p0_soc_preamble,
+-				ARRAY_SIZE(ar9340_1p0_soc_preamble), 2);
+-		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_CORE], NULL, 0, 0);
++				ar9340_1p0_soc_preamble);
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_POST],
+-				ar9340_1p0_soc_postamble,
+-				ARRAY_SIZE(ar9340_1p0_soc_postamble), 5);
++				ar9340_1p0_soc_postamble);
+ 
+ 		/* rx/tx gain */
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9340Common_wo_xlna_rx_gain_table_1p0,
+-				ARRAY_SIZE(ar9340Common_wo_xlna_rx_gain_table_1p0),
+-				5);
+-		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-				ar9340Modes_high_ob_db_tx_gain_table_1p0,
+-				ARRAY_SIZE(ar9340Modes_high_ob_db_tx_gain_table_1p0),
+-				5);
++				ar9340Common_wo_xlna_rx_gain_table_1p0);
++		INIT_INI_ARRAY(&ah->iniModesTxGain,
++				ar9340Modes_high_ob_db_tx_gain_table_1p0);
+ 
+ 		INIT_INI_ARRAY(&ah->iniModesFastClock,
+-				ar9340Modes_fast_clock_1p0,
+-				ARRAY_SIZE(ar9340Modes_fast_clock_1p0),
+-				3);
++				ar9340Modes_fast_clock_1p0);
+ 
+ 		if (!ah->is_clk_25mhz)
+ 			INIT_INI_ARRAY(&ah->iniAdditional,
+-				       ar9340_1p0_radio_core_40M,
+-				       ARRAY_SIZE(ar9340_1p0_radio_core_40M),
+-				       2);
++				       ar9340_1p0_radio_core_40M);
+ 	} else if (AR_SREV_9485_11(ah)) {
+ 		/* mac */
+-		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE],
+-				ar9485_1_1_mac_core,
+-				ARRAY_SIZE(ar9485_1_1_mac_core), 2);
++				ar9485_1_1_mac_core);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_POST],
+-				ar9485_1_1_mac_postamble,
+-				ARRAY_SIZE(ar9485_1_1_mac_postamble), 5);
++				ar9485_1_1_mac_postamble);
+ 
+ 		/* bb */
+-		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_PRE], ar9485_1_1,
+-				ARRAY_SIZE(ar9485_1_1), 2);
++		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_PRE], ar9485_1_1);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_CORE],
+-				ar9485_1_1_baseband_core,
+-				ARRAY_SIZE(ar9485_1_1_baseband_core), 2);
++				ar9485_1_1_baseband_core);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_POST],
+-				ar9485_1_1_baseband_postamble,
+-				ARRAY_SIZE(ar9485_1_1_baseband_postamble), 5);
++				ar9485_1_1_baseband_postamble);
+ 
+ 		/* radio */
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_CORE],
+-				ar9485_1_1_radio_core,
+-				ARRAY_SIZE(ar9485_1_1_radio_core), 2);
++				ar9485_1_1_radio_core);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_POST],
+-				ar9485_1_1_radio_postamble,
+-				ARRAY_SIZE(ar9485_1_1_radio_postamble), 2);
++				ar9485_1_1_radio_postamble);
+ 
+ 		/* soc */
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_PRE],
+-				ar9485_1_1_soc_preamble,
+-				ARRAY_SIZE(ar9485_1_1_soc_preamble), 2);
+-		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_CORE], NULL, 0, 0);
+-		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_POST], NULL, 0, 0);
++				ar9485_1_1_soc_preamble);
+ 
+ 		/* rx/tx gain */
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9485Common_wo_xlna_rx_gain_1_1,
+-				ARRAY_SIZE(ar9485Common_wo_xlna_rx_gain_1_1), 2);
++				ar9485Common_wo_xlna_rx_gain_1_1);
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-				ar9485_modes_lowest_ob_db_tx_gain_1_1,
+-				ARRAY_SIZE(ar9485_modes_lowest_ob_db_tx_gain_1_1),
+-				5);
++				ar9485_modes_lowest_ob_db_tx_gain_1_1);
+ 
+ 		/* Load PCIE SERDES settings from INI */
+ 
+ 		/* Awake Setting */
+ 
+ 		INIT_INI_ARRAY(&ah->iniPcieSerdes,
+-				ar9485_1_1_pcie_phy_clkreq_disable_L1,
+-				ARRAY_SIZE(ar9485_1_1_pcie_phy_clkreq_disable_L1),
+-				2);
++				ar9485_1_1_pcie_phy_clkreq_disable_L1);
+ 
+ 		/* Sleep Setting */
+ 
+ 		INIT_INI_ARRAY(&ah->iniPcieSerdesLowPower,
+-				ar9485_1_1_pcie_phy_clkreq_disable_L1,
+-				ARRAY_SIZE(ar9485_1_1_pcie_phy_clkreq_disable_L1),
+-				2);
++				ar9485_1_1_pcie_phy_clkreq_disable_L1);
+ 	} else if (AR_SREV_9462_20(ah)) {
+ 
+-		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_PRE], NULL, 0, 0);
+-		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE], ar9462_2p0_mac_core,
+-				ARRAY_SIZE(ar9462_2p0_mac_core), 2);
++		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE], ar9462_2p0_mac_core);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_POST],
+-				ar9462_2p0_mac_postamble,
+-				ARRAY_SIZE(ar9462_2p0_mac_postamble), 5);
++				ar9462_2p0_mac_postamble);
+ 
+-		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_CORE],
+-				ar9462_2p0_baseband_core,
+-				ARRAY_SIZE(ar9462_2p0_baseband_core), 2);
++				ar9462_2p0_baseband_core);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_POST],
+-				ar9462_2p0_baseband_postamble,
+-				ARRAY_SIZE(ar9462_2p0_baseband_postamble), 5);
++				ar9462_2p0_baseband_postamble);
+ 
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_CORE],
+-				ar9462_2p0_radio_core,
+-				ARRAY_SIZE(ar9462_2p0_radio_core), 2);
++				ar9462_2p0_radio_core);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_POST],
+-				ar9462_2p0_radio_postamble,
+-				ARRAY_SIZE(ar9462_2p0_radio_postamble), 5);
++				ar9462_2p0_radio_postamble);
+ 		INIT_INI_ARRAY(&ah->ini_radio_post_sys2ant,
+-				ar9462_2p0_radio_postamble_sys2ant,
+-				ARRAY_SIZE(ar9462_2p0_radio_postamble_sys2ant),
+-				5);
++				ar9462_2p0_radio_postamble_sys2ant);
+ 
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_PRE],
+-				ar9462_2p0_soc_preamble,
+-				ARRAY_SIZE(ar9462_2p0_soc_preamble), 2);
+-		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_CORE], NULL, 0, 0);
++				ar9462_2p0_soc_preamble);
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_POST],
+-				ar9462_2p0_soc_postamble,
+-				ARRAY_SIZE(ar9462_2p0_soc_postamble), 5);
++				ar9462_2p0_soc_postamble);
+ 
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9462_common_rx_gain_table_2p0,
+-				ARRAY_SIZE(ar9462_common_rx_gain_table_2p0), 2);
++				ar9462_common_rx_gain_table_2p0);
+ 
+ 		/* Awake -> Sleep Setting */
+ 		INIT_INI_ARRAY(&ah->iniPcieSerdes,
+-				PCIE_PLL_ON_CREQ_DIS_L1_2P0,
+-				ARRAY_SIZE(PCIE_PLL_ON_CREQ_DIS_L1_2P0),
+-				2);
++				PCIE_PLL_ON_CREQ_DIS_L1_2P0);
+ 		/* Sleep -> Awake Setting */
+ 		INIT_INI_ARRAY(&ah->iniPcieSerdesLowPower,
+-				PCIE_PLL_ON_CREQ_DIS_L1_2P0,
+-				ARRAY_SIZE(PCIE_PLL_ON_CREQ_DIS_L1_2P0),
+-				2);
++				PCIE_PLL_ON_CREQ_DIS_L1_2P0);
+ 
+ 		/* Fast clock modal settings */
+ 		INIT_INI_ARRAY(&ah->iniModesFastClock,
+-				ar9462_modes_fast_clock_2p0,
+-				ARRAY_SIZE(ar9462_modes_fast_clock_2p0), 3);
++				ar9462_modes_fast_clock_2p0);
+ 
+ 		INIT_INI_ARRAY(&ah->iniCckfirJapan2484,
+-				AR9462_BB_CTX_COEFJ(2p0),
+-				ARRAY_SIZE(AR9462_BB_CTX_COEFJ(2p0)), 2);
++				AR9462_BB_CTX_COEFJ(2p0));
+ 
+-		INIT_INI_ARRAY(&ah->ini_japan2484, AR9462_BBC_TXIFR_COEFFJ,
+-				ARRAY_SIZE(AR9462_BBC_TXIFR_COEFFJ), 2);
++		INIT_INI_ARRAY(&ah->ini_japan2484, AR9462_BBC_TXIFR_COEFFJ);
+ 	} else if (AR_SREV_9550(ah)) {
+ 		/* mac */
+-		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE],
+-				ar955x_1p0_mac_core,
+-				ARRAY_SIZE(ar955x_1p0_mac_core), 2);
++				ar955x_1p0_mac_core);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_POST],
+-				ar955x_1p0_mac_postamble,
+-				ARRAY_SIZE(ar955x_1p0_mac_postamble), 5);
++				ar955x_1p0_mac_postamble);
+ 
+ 		/* bb */
+-		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_CORE],
+-				ar955x_1p0_baseband_core,
+-				ARRAY_SIZE(ar955x_1p0_baseband_core), 2);
++				ar955x_1p0_baseband_core);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_POST],
+-				ar955x_1p0_baseband_postamble,
+-				ARRAY_SIZE(ar955x_1p0_baseband_postamble), 5);
++				ar955x_1p0_baseband_postamble);
+ 
+ 		/* radio */
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_CORE],
+-				ar955x_1p0_radio_core,
+-				ARRAY_SIZE(ar955x_1p0_radio_core), 2);
++				ar955x_1p0_radio_core);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_POST],
+-				ar955x_1p0_radio_postamble,
+-				ARRAY_SIZE(ar955x_1p0_radio_postamble), 5);
++				ar955x_1p0_radio_postamble);
+ 
+ 		/* soc */
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_PRE],
+-				ar955x_1p0_soc_preamble,
+-				ARRAY_SIZE(ar955x_1p0_soc_preamble), 2);
+-		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_CORE], NULL, 0, 0);
++				ar955x_1p0_soc_preamble);
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_POST],
+-				ar955x_1p0_soc_postamble,
+-				ARRAY_SIZE(ar955x_1p0_soc_postamble), 5);
++				ar955x_1p0_soc_postamble);
+ 
+ 		/* rx/tx gain */
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar955x_1p0_common_wo_xlna_rx_gain_table,
+-			ARRAY_SIZE(ar955x_1p0_common_wo_xlna_rx_gain_table),
+-			2);
++			ar955x_1p0_common_wo_xlna_rx_gain_table);
+ 		INIT_INI_ARRAY(&ah->ini_modes_rx_gain_bounds,
+-			ar955x_1p0_common_wo_xlna_rx_gain_bounds,
+-			ARRAY_SIZE(ar955x_1p0_common_wo_xlna_rx_gain_bounds),
+-			5);
+-		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-				ar955x_1p0_modes_xpa_tx_gain_table,
+-				ARRAY_SIZE(ar955x_1p0_modes_xpa_tx_gain_table),
+-				9);
++			ar955x_1p0_common_wo_xlna_rx_gain_bounds);
++		INIT_INI_ARRAY(&ah->iniModesTxGain,
++				ar955x_1p0_modes_xpa_tx_gain_table);
+ 
+ 		/* Fast clock modal settings */
+ 		INIT_INI_ARRAY(&ah->iniModesFastClock,
+-				ar955x_1p0_modes_fast_clock,
+-				ARRAY_SIZE(ar955x_1p0_modes_fast_clock), 3);
++				ar955x_1p0_modes_fast_clock);
+ 	} else if (AR_SREV_9580(ah)) {
+ 		/* mac */
+-		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE],
+-				ar9580_1p0_mac_core,
+-				ARRAY_SIZE(ar9580_1p0_mac_core), 2);
++				ar9580_1p0_mac_core);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_POST],
+-				ar9580_1p0_mac_postamble,
+-				ARRAY_SIZE(ar9580_1p0_mac_postamble), 5);
++				ar9580_1p0_mac_postamble);
+ 
+ 		/* bb */
+-		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_CORE],
+-				ar9580_1p0_baseband_core,
+-				ARRAY_SIZE(ar9580_1p0_baseband_core), 2);
++				ar9580_1p0_baseband_core);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_POST],
+-				ar9580_1p0_baseband_postamble,
+-				ARRAY_SIZE(ar9580_1p0_baseband_postamble), 5);
++				ar9580_1p0_baseband_postamble);
+ 
+ 		/* radio */
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_CORE],
+-				ar9580_1p0_radio_core,
+-				ARRAY_SIZE(ar9580_1p0_radio_core), 2);
++				ar9580_1p0_radio_core);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_POST],
+-				ar9580_1p0_radio_postamble,
+-				ARRAY_SIZE(ar9580_1p0_radio_postamble), 5);
++				ar9580_1p0_radio_postamble);
+ 
+ 		/* soc */
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_PRE],
+-				ar9580_1p0_soc_preamble,
+-				ARRAY_SIZE(ar9580_1p0_soc_preamble), 2);
+-		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_CORE], NULL, 0, 0);
++				ar9580_1p0_soc_preamble);
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_POST],
+-				ar9580_1p0_soc_postamble,
+-				ARRAY_SIZE(ar9580_1p0_soc_postamble), 5);
++				ar9580_1p0_soc_postamble);
+ 
+ 		/* rx/tx gain */
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9580_1p0_rx_gain_table,
+-				ARRAY_SIZE(ar9580_1p0_rx_gain_table), 2);
++				ar9580_1p0_rx_gain_table);
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-				ar9580_1p0_low_ob_db_tx_gain_table,
+-				ARRAY_SIZE(ar9580_1p0_low_ob_db_tx_gain_table),
+-				5);
++				ar9580_1p0_low_ob_db_tx_gain_table);
+ 
+ 		INIT_INI_ARRAY(&ah->iniModesFastClock,
+-				ar9580_1p0_modes_fast_clock,
+-				ARRAY_SIZE(ar9580_1p0_modes_fast_clock),
+-				3);
++				ar9580_1p0_modes_fast_clock);
+ 	} else {
+ 		/* mac */
+-		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE],
+-				ar9300_2p2_mac_core,
+-				ARRAY_SIZE(ar9300_2p2_mac_core), 2);
++				ar9300_2p2_mac_core);
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_POST],
+-				ar9300_2p2_mac_postamble,
+-				ARRAY_SIZE(ar9300_2p2_mac_postamble), 5);
++				ar9300_2p2_mac_postamble);
+ 
+ 		/* bb */
+-		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_CORE],
+-				ar9300_2p2_baseband_core,
+-				ARRAY_SIZE(ar9300_2p2_baseband_core), 2);
++				ar9300_2p2_baseband_core);
+ 		INIT_INI_ARRAY(&ah->iniBB[ATH_INI_POST],
+-				ar9300_2p2_baseband_postamble,
+-				ARRAY_SIZE(ar9300_2p2_baseband_postamble), 5);
++				ar9300_2p2_baseband_postamble);
+ 
+ 		/* radio */
+-		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_PRE], NULL, 0, 0);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_CORE],
+-				ar9300_2p2_radio_core,
+-				ARRAY_SIZE(ar9300_2p2_radio_core), 2);
++				ar9300_2p2_radio_core);
+ 		INIT_INI_ARRAY(&ah->iniRadio[ATH_INI_POST],
+-				ar9300_2p2_radio_postamble,
+-				ARRAY_SIZE(ar9300_2p2_radio_postamble), 5);
++				ar9300_2p2_radio_postamble);
+ 
+ 		/* soc */
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_PRE],
+-				ar9300_2p2_soc_preamble,
+-				ARRAY_SIZE(ar9300_2p2_soc_preamble), 2);
+-		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_CORE], NULL, 0, 0);
++				ar9300_2p2_soc_preamble);
+ 		INIT_INI_ARRAY(&ah->iniSOC[ATH_INI_POST],
+-				ar9300_2p2_soc_postamble,
+-				ARRAY_SIZE(ar9300_2p2_soc_postamble), 5);
++				ar9300_2p2_soc_postamble);
+ 
+ 		/* rx/tx gain */
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9300Common_rx_gain_table_2p2,
+-				ARRAY_SIZE(ar9300Common_rx_gain_table_2p2), 2);
++				ar9300Common_rx_gain_table_2p2);
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-				ar9300Modes_lowest_ob_db_tx_gain_table_2p2,
+-				ARRAY_SIZE(ar9300Modes_lowest_ob_db_tx_gain_table_2p2),
+-				5);
++				ar9300Modes_lowest_ob_db_tx_gain_table_2p2);
+ 
+ 		/* Load PCIE SERDES settings from INI */
+ 
+ 		/* Awake Setting */
+ 
+ 		INIT_INI_ARRAY(&ah->iniPcieSerdes,
+-				ar9300PciePhy_pll_on_clkreq_disable_L1_2p2,
+-				ARRAY_SIZE(ar9300PciePhy_pll_on_clkreq_disable_L1_2p2),
+-				2);
++				ar9300PciePhy_pll_on_clkreq_disable_L1_2p2);
+ 
+ 		/* Sleep Setting */
+ 
+ 		INIT_INI_ARRAY(&ah->iniPcieSerdesLowPower,
+-				ar9300PciePhy_pll_on_clkreq_disable_L1_2p2,
+-				ARRAY_SIZE(ar9300PciePhy_pll_on_clkreq_disable_L1_2p2),
+-				2);
++				ar9300PciePhy_pll_on_clkreq_disable_L1_2p2);
+ 
+ 		/* Fast clock modal settings */
+ 		INIT_INI_ARRAY(&ah->iniModesFastClock,
+-				ar9300Modes_fast_clock_2p2,
+-				ARRAY_SIZE(ar9300Modes_fast_clock_2p2),
+-				3);
++				ar9300Modes_fast_clock_2p2);
+ 	}
+ }
+ 
+@@ -507,156 +355,110 @@ static void ar9003_tx_gain_table_mode0(s
+ {
+ 	if (AR_SREV_9330_12(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_lowest_ob_db_tx_gain_1p2,
+-			ARRAY_SIZE(ar9331_modes_lowest_ob_db_tx_gain_1p2),
+-			5);
++			ar9331_modes_lowest_ob_db_tx_gain_1p2);
+ 	else if (AR_SREV_9330_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_lowest_ob_db_tx_gain_1p1,
+-			ARRAY_SIZE(ar9331_modes_lowest_ob_db_tx_gain_1p1),
+-			5);
++			ar9331_modes_lowest_ob_db_tx_gain_1p1);
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9340Modes_lowest_ob_db_tx_gain_table_1p0,
+-			ARRAY_SIZE(ar9340Modes_lowest_ob_db_tx_gain_table_1p0),
+-			5);
++			ar9340Modes_lowest_ob_db_tx_gain_table_1p0);
+ 	else if (AR_SREV_9485_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9485_modes_lowest_ob_db_tx_gain_1_1,
+-			ARRAY_SIZE(ar9485_modes_lowest_ob_db_tx_gain_1_1),
+-			5);
++			ar9485_modes_lowest_ob_db_tx_gain_1_1);
+ 	else if (AR_SREV_9550(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar955x_1p0_modes_xpa_tx_gain_table,
+-			ARRAY_SIZE(ar955x_1p0_modes_xpa_tx_gain_table),
+-			9);
++			ar955x_1p0_modes_xpa_tx_gain_table);
+ 	else if (AR_SREV_9580(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9580_1p0_lowest_ob_db_tx_gain_table,
+-			ARRAY_SIZE(ar9580_1p0_lowest_ob_db_tx_gain_table),
+-			5);
++			ar9580_1p0_lowest_ob_db_tx_gain_table);
+ 	else if (AR_SREV_9462_20(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9462_modes_low_ob_db_tx_gain_table_2p0,
+-			ARRAY_SIZE(ar9462_modes_low_ob_db_tx_gain_table_2p0),
+-			5);
++			ar9462_modes_low_ob_db_tx_gain_table_2p0);
+ 	else
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9300Modes_lowest_ob_db_tx_gain_table_2p2,
+-			ARRAY_SIZE(ar9300Modes_lowest_ob_db_tx_gain_table_2p2),
+-			5);
++			ar9300Modes_lowest_ob_db_tx_gain_table_2p2);
+ }
+ 
+ static void ar9003_tx_gain_table_mode1(struct ath_hw *ah)
+ {
+ 	if (AR_SREV_9330_12(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_high_ob_db_tx_gain_1p2,
+-			ARRAY_SIZE(ar9331_modes_high_ob_db_tx_gain_1p2),
+-			5);
++			ar9331_modes_high_ob_db_tx_gain_1p2);
+ 	else if (AR_SREV_9330_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_high_ob_db_tx_gain_1p1,
+-			ARRAY_SIZE(ar9331_modes_high_ob_db_tx_gain_1p1),
+-			5);
++			ar9331_modes_high_ob_db_tx_gain_1p1);
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9340Modes_lowest_ob_db_tx_gain_table_1p0,
+-			ARRAY_SIZE(ar9340Modes_lowest_ob_db_tx_gain_table_1p0),
+-			5);
++			ar9340Modes_high_ob_db_tx_gain_table_1p0);
+ 	else if (AR_SREV_9485_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9485Modes_high_ob_db_tx_gain_1_1,
+-			ARRAY_SIZE(ar9485Modes_high_ob_db_tx_gain_1_1),
+-			5);
++			ar9485Modes_high_ob_db_tx_gain_1_1);
+ 	else if (AR_SREV_9580(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9580_1p0_high_ob_db_tx_gain_table,
+-			ARRAY_SIZE(ar9580_1p0_high_ob_db_tx_gain_table),
+-			5);
++			ar9580_1p0_high_ob_db_tx_gain_table);
+ 	else if (AR_SREV_9550(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar955x_1p0_modes_no_xpa_tx_gain_table,
+-			ARRAY_SIZE(ar955x_1p0_modes_no_xpa_tx_gain_table),
+-			9);
++			ar955x_1p0_modes_no_xpa_tx_gain_table);
+ 	else if (AR_SREV_9462_20(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9462_modes_high_ob_db_tx_gain_table_2p0,
+-			ARRAY_SIZE(ar9462_modes_high_ob_db_tx_gain_table_2p0),
+-			5);
++			ar9462_modes_high_ob_db_tx_gain_table_2p0);
+ 	else
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9300Modes_high_ob_db_tx_gain_table_2p2,
+-			ARRAY_SIZE(ar9300Modes_high_ob_db_tx_gain_table_2p2),
+-			5);
++			ar9300Modes_high_ob_db_tx_gain_table_2p2);
+ }
+ 
+ static void ar9003_tx_gain_table_mode2(struct ath_hw *ah)
+ {
+ 	if (AR_SREV_9330_12(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_low_ob_db_tx_gain_1p2,
+-			ARRAY_SIZE(ar9331_modes_low_ob_db_tx_gain_1p2),
+-			5);
++			ar9331_modes_low_ob_db_tx_gain_1p2);
+ 	else if (AR_SREV_9330_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_low_ob_db_tx_gain_1p1,
+-			ARRAY_SIZE(ar9331_modes_low_ob_db_tx_gain_1p1),
+-			5);
++			ar9331_modes_low_ob_db_tx_gain_1p1);
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9340Modes_lowest_ob_db_tx_gain_table_1p0,
+-			ARRAY_SIZE(ar9340Modes_lowest_ob_db_tx_gain_table_1p0),
+-			5);
++			ar9340Modes_low_ob_db_tx_gain_table_1p0);
+ 	else if (AR_SREV_9485_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9485Modes_low_ob_db_tx_gain_1_1,
+-			ARRAY_SIZE(ar9485Modes_low_ob_db_tx_gain_1_1),
+-			5);
++			ar9485Modes_low_ob_db_tx_gain_1_1);
+ 	else if (AR_SREV_9580(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9580_1p0_low_ob_db_tx_gain_table,
+-			ARRAY_SIZE(ar9580_1p0_low_ob_db_tx_gain_table),
+-			5);
++			ar9580_1p0_low_ob_db_tx_gain_table);
+ 	else
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9300Modes_low_ob_db_tx_gain_table_2p2,
+-			ARRAY_SIZE(ar9300Modes_low_ob_db_tx_gain_table_2p2),
+-			5);
++			ar9300Modes_low_ob_db_tx_gain_table_2p2);
+ }
+ 
+ static void ar9003_tx_gain_table_mode3(struct ath_hw *ah)
+ {
+ 	if (AR_SREV_9330_12(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_high_power_tx_gain_1p2,
+-			ARRAY_SIZE(ar9331_modes_high_power_tx_gain_1p2),
+-			5);
++			ar9331_modes_high_power_tx_gain_1p2);
+ 	else if (AR_SREV_9330_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9331_modes_high_power_tx_gain_1p1,
+-			ARRAY_SIZE(ar9331_modes_high_power_tx_gain_1p1),
+-			5);
++			ar9331_modes_high_power_tx_gain_1p1);
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9340Modes_lowest_ob_db_tx_gain_table_1p0,
+-			ARRAY_SIZE(ar9340Modes_lowest_ob_db_tx_gain_table_1p0),
+-			5);
++			ar9340Modes_high_power_tx_gain_table_1p0);
+ 	else if (AR_SREV_9485_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9485Modes_high_power_tx_gain_1_1,
+-			ARRAY_SIZE(ar9485Modes_high_power_tx_gain_1_1),
+-			5);
++			ar9485Modes_high_power_tx_gain_1_1);
+ 	else if (AR_SREV_9580(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9580_1p0_high_power_tx_gain_table,
+-			ARRAY_SIZE(ar9580_1p0_high_power_tx_gain_table),
+-			5);
++			ar9580_1p0_high_power_tx_gain_table);
+ 	else
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+-			ar9300Modes_high_power_tx_gain_table_2p2,
+-			ARRAY_SIZE(ar9300Modes_high_power_tx_gain_table_2p2),
+-			5);
++			ar9300Modes_high_power_tx_gain_table_2p2);
++}
++
++static void ar9003_tx_gain_table_mode4(struct ath_hw *ah)
++{
++	if (AR_SREV_9340(ah))
++		INIT_INI_ARRAY(&ah->iniModesTxGain,
++			ar9340Modes_mixed_ob_db_tx_gain_table_1p0);
++	else if (AR_SREV_9580(ah))
++		INIT_INI_ARRAY(&ah->iniModesTxGain,
++			ar9580_1p0_mixed_ob_db_tx_gain_table);
+ }
+ 
+ static void ar9003_tx_gain_table_apply(struct ath_hw *ah)
+@@ -675,6 +477,9 @@ static void ar9003_tx_gain_table_apply(s
+ 	case 3:
+ 		ar9003_tx_gain_table_mode3(ah);
+ 		break;
++	case 4:
++		ar9003_tx_gain_table_mode4(ah);
++		break;
+ 	}
+ }
+ 
+@@ -682,104 +487,67 @@ static void ar9003_rx_gain_table_mode0(s
+ {
+ 	if (AR_SREV_9330_12(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9331_common_rx_gain_1p2,
+-				ARRAY_SIZE(ar9331_common_rx_gain_1p2),
+-				2);
++				ar9331_common_rx_gain_1p2);
+ 	else if (AR_SREV_9330_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9331_common_rx_gain_1p1,
+-				ARRAY_SIZE(ar9331_common_rx_gain_1p1),
+-				2);
++				ar9331_common_rx_gain_1p1);
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9340Common_rx_gain_table_1p0,
+-				ARRAY_SIZE(ar9340Common_rx_gain_table_1p0),
+-				2);
++				ar9340Common_rx_gain_table_1p0);
+ 	else if (AR_SREV_9485_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9485Common_wo_xlna_rx_gain_1_1,
+-				ARRAY_SIZE(ar9485Common_wo_xlna_rx_gain_1_1),
+-				2);
++				ar9485Common_wo_xlna_rx_gain_1_1);
+ 	else if (AR_SREV_9550(ah)) {
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar955x_1p0_common_rx_gain_table,
+-				ARRAY_SIZE(ar955x_1p0_common_rx_gain_table),
+-				2);
++				ar955x_1p0_common_rx_gain_table);
+ 		INIT_INI_ARRAY(&ah->ini_modes_rx_gain_bounds,
+-				ar955x_1p0_common_rx_gain_bounds,
+-				ARRAY_SIZE(ar955x_1p0_common_rx_gain_bounds),
+-				5);
++				ar955x_1p0_common_rx_gain_bounds);
+ 	} else if (AR_SREV_9580(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9580_1p0_rx_gain_table,
+-				ARRAY_SIZE(ar9580_1p0_rx_gain_table),
+-				2);
++				ar9580_1p0_rx_gain_table);
+ 	else if (AR_SREV_9462_20(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9462_common_rx_gain_table_2p0,
+-				ARRAY_SIZE(ar9462_common_rx_gain_table_2p0),
+-				2);
++				ar9462_common_rx_gain_table_2p0);
+ 	else
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-				ar9300Common_rx_gain_table_2p2,
+-				ARRAY_SIZE(ar9300Common_rx_gain_table_2p2),
+-				2);
++				ar9300Common_rx_gain_table_2p2);
+ }
+ 
+ static void ar9003_rx_gain_table_mode1(struct ath_hw *ah)
+ {
+ 	if (AR_SREV_9330_12(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9331_common_wo_xlna_rx_gain_1p2,
+-			ARRAY_SIZE(ar9331_common_wo_xlna_rx_gain_1p2),
+-			2);
++			ar9331_common_wo_xlna_rx_gain_1p2);
+ 	else if (AR_SREV_9330_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9331_common_wo_xlna_rx_gain_1p1,
+-			ARRAY_SIZE(ar9331_common_wo_xlna_rx_gain_1p1),
+-			2);
++			ar9331_common_wo_xlna_rx_gain_1p1);
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9340Common_wo_xlna_rx_gain_table_1p0,
+-			ARRAY_SIZE(ar9340Common_wo_xlna_rx_gain_table_1p0),
+-			2);
++			ar9340Common_wo_xlna_rx_gain_table_1p0);
+ 	else if (AR_SREV_9485_11(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9485Common_wo_xlna_rx_gain_1_1,
+-			ARRAY_SIZE(ar9485Common_wo_xlna_rx_gain_1_1),
+-			2);
++			ar9485Common_wo_xlna_rx_gain_1_1);
+ 	else if (AR_SREV_9462_20(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9462_common_wo_xlna_rx_gain_table_2p0,
+-			ARRAY_SIZE(ar9462_common_wo_xlna_rx_gain_table_2p0),
+-			2);
++			ar9462_common_wo_xlna_rx_gain_table_2p0);
+ 	else if (AR_SREV_9550(ah)) {
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar955x_1p0_common_wo_xlna_rx_gain_table,
+-			ARRAY_SIZE(ar955x_1p0_common_wo_xlna_rx_gain_table),
+-			2);
++			ar955x_1p0_common_wo_xlna_rx_gain_table);
+ 		INIT_INI_ARRAY(&ah->ini_modes_rx_gain_bounds,
+-			ar955x_1p0_common_wo_xlna_rx_gain_bounds,
+-			ARRAY_SIZE(ar955x_1p0_common_wo_xlna_rx_gain_bounds),
+-			5);
++			ar955x_1p0_common_wo_xlna_rx_gain_bounds);
+ 	} else if (AR_SREV_9580(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9580_1p0_wo_xlna_rx_gain_table,
+-			ARRAY_SIZE(ar9580_1p0_wo_xlna_rx_gain_table),
+-			2);
++			ar9580_1p0_wo_xlna_rx_gain_table);
+ 	else
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			ar9300Common_wo_xlna_rx_gain_table_2p2,
+-			ARRAY_SIZE(ar9300Common_wo_xlna_rx_gain_table_2p2),
+-			2);
++			ar9300Common_wo_xlna_rx_gain_table_2p2);
+ }
+ 
+ static void ar9003_rx_gain_table_mode2(struct ath_hw *ah)
+ {
+ 	if (AR_SREV_9462_20(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+-			       ar9462_common_mixed_rx_gain_table_2p0,
+-			       ARRAY_SIZE(ar9462_common_mixed_rx_gain_table_2p0), 2);
++			       ar9462_common_mixed_rx_gain_table_2p0);
+ }
+ 
+ static void ar9003_rx_gain_table_apply(struct ath_hw *ah)
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -117,8 +117,8 @@ static int ar9003_hw_set_channel(struct 
+ 		    ah->is_clk_25mhz) {
+ 			u32 chan_frac;
+ 
+-			channelSel = (freq * 2) / 75;
+-			chan_frac = (((freq * 2) % 75) * 0x20000) / 75;
++			channelSel = freq / 75;
++			chan_frac = ((freq % 75) * 0x20000) / 75;
+ 			channelSel = (channelSel << 17) | chan_frac;
+ 		} else {
+ 			channelSel = CHANSEL_5G(freq);
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
+@@ -633,6 +633,8 @@
+ #define AR_PHY_65NM_CH0_BIAS2       0x160c4
+ #define AR_PHY_65NM_CH0_BIAS4       0x160cc
+ #define AR_PHY_65NM_CH0_RXTX4       0x1610c
++#define AR_PHY_65NM_CH1_RXTX4       0x1650c
++#define AR_PHY_65NM_CH2_RXTX4       0x1690c
+ 
+ #define AR_CH0_TOP	(AR_SREV_9300(ah) ? 0x16288 : \
+ 				((AR_SREV_9462(ah) ? 0x1628c : 0x16280)))
+@@ -876,6 +878,9 @@
+ #define AR_PHY_65NM_CH0_RXTX4_THERM_ON          0x10000000
+ #define AR_PHY_65NM_CH0_RXTX4_THERM_ON_S        28
+ 
++#define AR_PHY_65NM_RXTX4_XLNA_BIAS		0xC0000000
++#define AR_PHY_65NM_RXTX4_XLNA_BIAS_S		30
++
+ /*
+  * Channel 1 Register Map
+  */
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -360,7 +360,7 @@ void ath_tx_aggr_sleep(struct ieee80211_
+@@ -297,6 +297,8 @@ struct ath_tx {
+ 	struct ath_txq txq[ATH9K_NUM_TX_QUEUES];
+ 	struct ath_descdma txdma;
+ 	struct ath_txq *txq_map[WME_NUM_AC];
++	u32 txq_max_pending[WME_NUM_AC];
++	u16 max_aggr_framelen[WME_NUM_AC][4][32];
+ };
+ 
+ struct ath_rx_edma {
+@@ -341,6 +343,7 @@ int ath_tx_init(struct ath_softc *sc, in
+ void ath_tx_cleanup(struct ath_softc *sc);
+ int ath_txq_update(struct ath_softc *sc, int qnum,
+ 		   struct ath9k_tx_queue_info *q);
++void ath_update_max_aggr_framelen(struct ath_softc *sc, int queue, int txop);
+ int ath_tx_start(struct ieee80211_hw *hw, struct sk_buff *skb,
+ 		 struct ath_tx_control *txctl);
+ void ath_tx_tasklet(struct ath_softc *sc);
+@@ -360,7 +363,7 @@ void ath_tx_aggr_sleep(struct ieee80211_
  
  struct ath_vif {
  	int av_bslot;
@@ -9,7 +1664,7 @@
  	__le64 tsf_adjust; /* TSF adjustment for staggered beacons */
  	struct ath_buf *av_bcbuf;
  };
-@@ -386,6 +386,7 @@ struct ath_beacon_config {
+@@ -386,6 +389,7 @@ struct ath_beacon_config {
  	u16 dtim_period;
  	u16 bmiss_timeout;
  	u8 dtim_count;
@@ -17,7 +1672,7 @@
  };
  
  struct ath_beacon {
-@@ -397,7 +398,6 @@ struct ath_beacon {
+@@ -397,7 +401,6 @@ struct ath_beacon {
  
  	u32 beaconq;
  	u32 bmisscnt;
@@ -25,7 +1680,7 @@
  	u32 bc_tstamp;
  	struct ieee80211_vif *bslot[ATH_BCBUF];
  	int slottime;
-@@ -411,12 +411,14 @@ struct ath_beacon {
+@@ -411,12 +414,14 @@ struct ath_beacon {
  	bool tx_last;
  };
  
@@ -46,7 +1701,7 @@
  void ath9k_set_beaconing_status(struct ath_softc *sc, bool status);
  
  /*******************/
-@@ -442,9 +444,12 @@ void ath_rx_poll(unsigned long data);
+@@ -442,9 +447,12 @@ void ath_rx_poll(unsigned long data);
  void ath_start_rx_poll(struct ath_softc *sc, u8 nbeacon);
  void ath_paprd_calibrate(struct work_struct *work);
  void ath_ani_calibrate(unsigned long data);
@@ -60,7 +1715,7 @@
  
  /**********/
  /* BTCOEX */
-@@ -613,7 +618,6 @@ enum sc_op_flags {
+@@ -619,7 +627,6 @@ enum sc_op_flags {
  	SC_OP_INVALID,
  	SC_OP_BEACONS,
  	SC_OP_RXFLUSH,
@@ -823,6 +2478,22 @@
 -	}
 -	ath9k_ps_restore(sc);
  }
+--- a/drivers/net/wireless/ath/ath9k/calib.h
++++ b/drivers/net/wireless/ath/ath9k/calib.h
+@@ -30,10 +30,10 @@ struct ar5416IniArray {
+ 	u32 ia_columns;
+ };
+ 
+-#define INIT_INI_ARRAY(iniarray, array, rows, columns) do {	\
++#define INIT_INI_ARRAY(iniarray, array) do {	\
+ 		(iniarray)->ia_array = (u32 *)(array);		\
+-		(iniarray)->ia_rows = (rows);			\
+-		(iniarray)->ia_columns = (columns);		\
++		(iniarray)->ia_rows = ARRAY_SIZE(array);	\
++		(iniarray)->ia_columns = ARRAY_SIZE(array[0]);	\
+ 	} while (0)
+ 
+ #define INI_RA(iniarray, row, column) \
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
 @@ -206,10 +206,9 @@ static ssize_t write_file_disable_ani(st
@@ -838,6 +2509,21 @@
  	}
  
  	return count;
+@@ -1556,6 +1555,14 @@ int ath9k_init_debug(struct ath_hw *ah)
+ 			    &fops_interrupt);
+ 	debugfs_create_file("xmit", S_IRUSR, sc->debug.debugfs_phy, sc,
+ 			    &fops_xmit);
++	debugfs_create_u32("qlen_bk", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
++			   &sc->tx.txq_max_pending[WME_AC_BK]);
++	debugfs_create_u32("qlen_be", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
++			   &sc->tx.txq_max_pending[WME_AC_BE]);
++	debugfs_create_u32("qlen_vi", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
++			   &sc->tx.txq_max_pending[WME_AC_VI]);
++	debugfs_create_u32("qlen_vo", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
++			   &sc->tx.txq_max_pending[WME_AC_VO]);
+ 	debugfs_create_file("stations", S_IRUSR, sc->debug.debugfs_phy, sc,
+ 			    &fops_stations);
+ 	debugfs_create_file("misc", S_IRUSR, sc->debug.debugfs_phy, sc,
 --- a/drivers/net/wireless/ath/ath9k/debug.h
 +++ b/drivers/net/wireless/ath/ath9k/debug.h
 @@ -32,6 +32,19 @@ struct ath_buf;
@@ -878,6 +2564,25 @@
  struct ath_stats {
  	struct ath_interrupt_stats istats;
  	struct ath_tx_stats txstats[ATH9K_NUM_TX_QUEUES];
+--- a/drivers/net/wireless/ath/ath9k/eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/eeprom.h
+@@ -241,16 +241,12 @@ enum eeprom_param {
+ 	EEP_TEMPSENSE_SLOPE,
+ 	EEP_TEMPSENSE_SLOPE_PAL_ON,
+ 	EEP_PWR_TABLE_OFFSET,
+-	EEP_DRIVE_STRENGTH,
+-	EEP_INTERNAL_REGULATOR,
+-	EEP_SWREG,
+ 	EEP_PAPRD,
+ 	EEP_MODAL_VER,
+ 	EEP_ANT_DIV_CTL1,
+ 	EEP_CHAIN_MASK_REDUCE,
+ 	EEP_ANTENNA_GAIN_2G,
+ 	EEP_ANTENNA_GAIN_5G,
+-	EEP_QUICK_DROP
+ };
+ 
+ enum ar5416_rates {
 --- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
 +++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
 @@ -1111,7 +1111,7 @@ static int ath9k_htc_add_interface(struc
@@ -889,9 +2594,29 @@
  		ath9k_htc_start_ani(priv);
  	}
  
+@@ -1351,7 +1351,7 @@ static int ath9k_htc_conf_tx(struct ieee
+ 	qi.tqi_aifs = params->aifs;
+ 	qi.tqi_cwmin = params->cw_min;
+ 	qi.tqi_cwmax = params->cw_max;
+-	qi.tqi_burstTime = params->txop;
++	qi.tqi_burstTime = params->txop * 32;
+ 
+ 	qnum = get_hw_qnum(queue, priv->hwq_map);
+ 
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -2908,9 +2908,9 @@ void ath9k_hw_reset_tsf(struct ath_hw *a
+@@ -671,10 +671,6 @@ static int __ath9k_hw_init(struct ath_hw
+ 	if (!AR_SREV_9300_20_OR_LATER(ah))
+ 		ah->ani_function &= ~ATH9K_ANI_MRC_CCK;
+ 
+-	/* disable ANI for 9340 */
+-	if (AR_SREV_9340(ah))
+-		ah->config.enable_ani = false;
+-
+ 	ath9k_hw_init_mode_regs(ah);
+ 
+ 	if (!ah->is_pciexpress)
+@@ -2916,9 +2912,9 @@ void ath9k_hw_reset_tsf(struct ath_hw *a
  }
  EXPORT_SYMBOL(ath9k_hw_reset_tsf);
  
@@ -905,7 +2630,7 @@
  		ah->misc_mode &= ~AR_PCU_TX_ADD_TSF;
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -943,7 +943,7 @@ u32 ath9k_hw_gettsf32(struct ath_hw *ah)
+@@ -994,7 +994,7 @@ u32 ath9k_hw_gettsf32(struct ath_hw *ah)
  u64 ath9k_hw_gettsf64(struct ath_hw *ah);
  void ath9k_hw_settsf64(struct ath_hw *ah, u64 tsf64);
  void ath9k_hw_reset_tsf(struct ath_hw *ah);
@@ -916,7 +2641,15 @@
  void ath9k_hw_set11nmac2040(struct ath_hw *ah);
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -560,7 +560,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -436,6 +436,7 @@ static int ath9k_init_queues(struct ath_
+ 	for (i = 0; i < WME_NUM_AC; i++) {
+ 		sc->tx.txq_map[i] = ath_txq_setup(sc, ATH9K_TX_QUEUE_DATA, i);
+ 		sc->tx.txq_map[i]->mac80211_qnum = i;
++		sc->tx.txq_max_pending[i] = ATH_MAX_QDEPTH;
+ 	}
+ 	return 0;
+ }
+@@ -560,7 +561,7 @@ static int ath9k_init_softc(u16 devid, s
  	spin_lock_init(&sc->debug.samp_lock);
  #endif
  	tasklet_init(&sc->intr_tq, ath9k_tasklet, (unsigned long)sc);
@@ -1131,7 +2864,7 @@
  		goto out;
  	}
  
-@@ -575,6 +566,15 @@ static int ath_reset(struct ath_softc *s
+@@ -586,6 +577,15 @@ static int ath_reset(struct ath_softc *s
  	return r;
  }
  
@@ -1147,7 +2880,7 @@
  void ath_reset_work(struct work_struct *work)
  {
  	struct ath_softc *sc = container_of(work, struct ath_softc, hw_reset_work);
-@@ -841,16 +841,6 @@ bool ath9k_uses_beacons(int type)
+@@ -852,16 +852,6 @@ bool ath9k_uses_beacons(int type)
  	}
  }
  
@@ -1164,7 +2897,7 @@
  static void ath9k_vif_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
  {
  	struct ath9k_vif_iter_data *iter_data = data;
-@@ -918,18 +908,14 @@ static void ath9k_calculate_summary_stat
+@@ -929,18 +919,14 @@ static void ath9k_calculate_summary_stat
  
  	ath9k_calculate_iter_data(hw, vif, &iter_data);
  
@@ -1185,7 +2918,7 @@
  
  		if (iter_data.nmeshes)
  			ah->opmode = NL80211_IFTYPE_MESH_POINT;
-@@ -941,45 +927,14 @@ static void ath9k_calculate_summary_stat
+@@ -952,45 +938,14 @@ static void ath9k_calculate_summary_stat
  			ah->opmode = NL80211_IFTYPE_STATION;
  	}
  
@@ -1233,7 +2966,7 @@
  }
  
  static int ath9k_add_interface(struct ieee80211_hw *hw,
-@@ -1021,7 +976,10 @@ static int ath9k_add_interface(struct ie
+@@ -1032,7 +987,10 @@ static int ath9k_add_interface(struct ie
  
  	sc->nvifs++;
  
@@ -1245,7 +2978,7 @@
  out:
  	mutex_unlock(&sc->mutex);
  	ath9k_ps_restore(sc);
-@@ -1038,6 +996,7 @@ static int ath9k_change_interface(struct
+@@ -1049,6 +1007,7 @@ static int ath9k_change_interface(struct
  	int ret = 0;
  
  	ath_dbg(common, CONFIG, "Change Interface\n");
@@ -1253,7 +2986,7 @@
  	mutex_lock(&sc->mutex);
  	ath9k_ps_wakeup(sc);
  
-@@ -1050,15 +1009,16 @@ static int ath9k_change_interface(struct
+@@ -1061,15 +1020,16 @@ static int ath9k_change_interface(struct
  		}
  	}
  
@@ -1274,7 +3007,7 @@
  out:
  	ath9k_ps_restore(sc);
  	mutex_unlock(&sc->mutex);
-@@ -1078,9 +1038,8 @@ static void ath9k_remove_interface(struc
+@@ -1089,9 +1049,8 @@ static void ath9k_remove_interface(struc
  
  	sc->nvifs--;
  
@@ -1285,7 +3018,20 @@
  
  	ath9k_calculate_summary_state(hw, NULL);
  
-@@ -1388,10 +1347,6 @@ static int ath9k_conf_tx(struct ieee8021
+@@ -1388,21 +1347,18 @@ static int ath9k_conf_tx(struct ieee8021
+ 	qi.tqi_aifs = params->aifs;
+ 	qi.tqi_cwmin = params->cw_min;
+ 	qi.tqi_cwmax = params->cw_max;
+-	qi.tqi_burstTime = params->txop;
++	qi.tqi_burstTime = params->txop * 32;
+ 
+ 	ath_dbg(common, CONFIG,
+ 		"Configure tx [queue/halq] [%d/%d], aifs: %d, cw_min: %d, cw_max: %d, txop: %d\n",
+ 		queue, txq->axq_qnum, params->aifs, params->cw_min,
+ 		params->cw_max, params->txop);
+ 
++	ath_update_max_aggr_framelen(sc, queue, qi.tqi_burstTime);
+ 	ret = ath_txq_update(sc, txq->axq_qnum, &qi);
  	if (ret)
  		ath_err(common, "TXQ Update failed\n");
  
@@ -1296,7 +3042,7 @@
  	mutex_unlock(&sc->mutex);
  	ath9k_ps_restore(sc);
  
-@@ -1460,85 +1415,36 @@ static int ath9k_set_key(struct ieee8021
+@@ -1471,85 +1427,36 @@ static int ath9k_set_key(struct ieee8021
  
  	return ret;
  }
@@ -1393,7 +3139,7 @@
  	}
  }
  
-@@ -1547,6 +1453,11 @@ static void ath9k_bss_info_changed(struc
+@@ -1558,6 +1465,11 @@ static void ath9k_bss_info_changed(struc
  				   struct ieee80211_bss_conf *bss_conf,
  				   u32 changed)
  {
@@ -1405,7 +3151,7 @@
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1557,53 +1468,43 @@ static void ath9k_bss_info_changed(struc
+@@ -1568,53 +1480,43 @@ static void ath9k_bss_info_changed(struc
  	mutex_lock(&sc->mutex);
  
  	if (changed & BSS_CHANGED_ASSOC) {
@@ -1487,7 +3233,7 @@
  	}
  
  	if (changed & BSS_CHANGED_ERP_SLOT) {
-@@ -1625,8 +1526,13 @@ static void ath9k_bss_info_changed(struc
+@@ -1636,8 +1538,13 @@ static void ath9k_bss_info_changed(struc
  		}
  	}
  
@@ -1501,7 +3247,7 @@
  }
  
  static u64 ath9k_get_tsf(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
-@@ -1855,10 +1761,11 @@ static int ath9k_tx_last_beacon(struct i
+@@ -1866,10 +1773,11 @@ static int ath9k_tx_last_beacon(struct i
  	if (!vif)
  		return 0;
  
@@ -1515,6 +3261,37 @@
  	if (!sc->beacon.tx_processed && !edma) {
  		tasklet_disable(&sc->bcon_tasklet);
  
+@@ -1923,12 +1831,29 @@ static u32 fill_chainmask(u32 cap, u32 n
+ 	return filled;
+ }
+ 
++static bool validate_antenna_mask(struct ath_hw *ah, u32 val)
++{
++	switch (val & 0x7) {
++	case 0x1:
++	case 0x3:
++	case 0x7:
++		return true;
++	case 0x2:
++		return (ah->caps.rx_chainmask == 1);
++	default:
++		return false;
++	}
++}
++
+ static int ath9k_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+ {
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_hw *ah = sc->sc_ah;
+ 
+-	if (!rx_ant || !tx_ant)
++	if (ah->caps.rx_chainmask != 1)
++		rx_ant |= tx_ant;
++
++	if (!validate_antenna_mask(ah, rx_ant) || !tx_ant)
+ 		return -EINVAL;
+ 
+ 	sc->ant_rx = rx_ant;
 --- a/drivers/net/wireless/ath/ath9k/mci.c
 +++ b/drivers/net/wireless/ath/ath9k/mci.c
 @@ -202,7 +202,7 @@ static void ath_mci_cal_msg(struct ath_s
@@ -1539,7 +3316,50 @@
  	if (ath_beacon_dtim_pending_cab(skb)) {
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -614,10 +614,8 @@ static void ath_tx_complete_aggr(struct 
+@@ -29,6 +29,8 @@
+ #define HT_LTF(_ns)             (4 * (_ns))
+ #define SYMBOL_TIME(_ns)        ((_ns) << 2) /* ns * 4 us */
+ #define SYMBOL_TIME_HALFGI(_ns) (((_ns) * 18 + 4) / 5)  /* ns * 3.6 us */
++#define TIME_SYMBOLS(t)         ((t) >> 2)
++#define TIME_SYMBOLS_HALFGI(t)  (((t) * 5 - 4) / 18)
+ #define NUM_SYMBOLS_PER_USEC(_usec) (_usec >> 2)
+ #define NUM_SYMBOLS_PER_USEC_HALFGI(_usec) (((_usec*5)-4)/18)
+ 
+@@ -74,33 +76,6 @@ enum {
+ 	MCS_HT40_SGI,
+ };
+ 
+-static int ath_max_4ms_framelen[4][32] = {
+-	[MCS_HT20] = {
+-		3212,  6432,  9648,  12864,  19300,  25736,  28952,  32172,
+-		6424,  12852, 19280, 25708,  38568,  51424,  57852,  64280,
+-		9628,  19260, 28896, 38528,  57792,  65532,  65532,  65532,
+-		12828, 25656, 38488, 51320,  65532,  65532,  65532,  65532,
+-	},
+-	[MCS_HT20_SGI] = {
+-		3572,  7144,  10720,  14296,  21444,  28596,  32172,  35744,
+-		7140,  14284, 21428,  28568,  42856,  57144,  64288,  65532,
+-		10700, 21408, 32112,  42816,  64228,  65532,  65532,  65532,
+-		14256, 28516, 42780,  57040,  65532,  65532,  65532,  65532,
+-	},
+-	[MCS_HT40] = {
+-		6680,  13360,  20044,  26724,  40092,  53456,  60140,  65532,
+-		13348, 26700,  40052,  53400,  65532,  65532,  65532,  65532,
+-		20004, 40008,  60016,  65532,  65532,  65532,  65532,  65532,
+-		26644, 53292,  65532,  65532,  65532,  65532,  65532,  65532,
+-	},
+-	[MCS_HT40_SGI] = {
+-		7420,  14844,  22272,  29696,  44544,  59396,  65532,  65532,
+-		14832, 29668,  44504,  59340,  65532,  65532,  65532,  65532,
+-		22232, 44464,  65532,  65532,  65532,  65532,  65532,  65532,
+-		29616, 59232,  65532,  65532,  65532,  65532,  65532,  65532,
+-	}
+-};
+-
+ /*********************/
+ /* Aggregation logic */
+ /*********************/
+@@ -614,10 +589,8 @@ static void ath_tx_complete_aggr(struct 
  
  	rcu_read_unlock();
  
@@ -1552,7 +3372,79 @@
  }
  
  static bool ath_lookup_legacy(struct ath_buf *bf)
-@@ -1586,7 +1584,8 @@ void ath_txq_schedule(struct ath_softc *
+@@ -650,6 +623,7 @@ static u32 ath_lookup_rate(struct ath_so
+ 	struct ieee80211_tx_rate *rates;
+ 	u32 max_4ms_framelen, frmlen;
+ 	u16 aggr_limit, bt_aggr_limit, legacy = 0;
++	int q = tid->ac->txq->mac80211_qnum;
+ 	int i;
+ 
+ 	skb = bf->bf_mpdu;
+@@ -658,8 +632,7 @@ static u32 ath_lookup_rate(struct ath_so
+ 
+ 	/*
+ 	 * Find the lowest frame length among the rate series that will have a
+-	 * 4ms transmit duration.
+-	 * TODO - TXOP limit needs to be considered.
++	 * 4ms (or TXOP limited) transmit duration.
+ 	 */
+ 	max_4ms_framelen = ATH_AMPDU_LIMIT_MAX;
+ 
+@@ -682,7 +655,7 @@ static u32 ath_lookup_rate(struct ath_so
+ 		if (rates[i].flags & IEEE80211_TX_RC_SHORT_GI)
+ 			modeidx++;
+ 
+-		frmlen = ath_max_4ms_framelen[modeidx][rates[i].idx];
++		frmlen = sc->tx.max_aggr_framelen[q][modeidx][rates[i].idx];
+ 		max_4ms_framelen = min(max_4ms_framelen, frmlen);
+ 	}
+ 
+@@ -929,6 +902,44 @@ static u32 ath_pkt_duration(struct ath_s
+ 	return duration;
+ }
+ 
++static int ath_max_framelen(int usec, int mcs, bool ht40, bool sgi)
++{
++	int streams = HT_RC_2_STREAMS(mcs);
++	int symbols, bits;
++	int bytes = 0;
++
++	symbols = sgi ? TIME_SYMBOLS_HALFGI(usec) : TIME_SYMBOLS(usec);
++	bits = symbols * bits_per_symbol[mcs % 8][ht40] * streams;
++	bits -= OFDM_PLCP_BITS;
++	bytes = bits / 8;
++	bytes -= L_STF + L_LTF + L_SIG + HT_SIG + HT_STF + HT_LTF(streams);
++	if (bytes > 65532)
++		bytes = 65532;
++
++	return bytes;
++}
++
++void ath_update_max_aggr_framelen(struct ath_softc *sc, int queue, int txop)
++{
++	u16 *cur_ht20, *cur_ht20_sgi, *cur_ht40, *cur_ht40_sgi;
++	int mcs;
++
++	/* 4ms is the default (and maximum) duration */
++	if (!txop || txop > 4096)
++		txop = 4096;
++
++	cur_ht20 = sc->tx.max_aggr_framelen[queue][MCS_HT20];
++	cur_ht20_sgi = sc->tx.max_aggr_framelen[queue][MCS_HT20_SGI];
++	cur_ht40 = sc->tx.max_aggr_framelen[queue][MCS_HT40];
++	cur_ht40_sgi = sc->tx.max_aggr_framelen[queue][MCS_HT40_SGI];
++	for (mcs = 0; mcs < 32; mcs++) {
++		cur_ht20[mcs] = ath_max_framelen(txop, mcs, false, false);
++		cur_ht20_sgi[mcs] = ath_max_framelen(txop, mcs, false, true);
++		cur_ht40[mcs] = ath_max_framelen(txop, mcs, true, false);
++		cur_ht40_sgi[mcs] = ath_max_framelen(txop, mcs, true, true);
++	}
++}
++
+ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf,
+ 			     struct ath_tx_info *info, int len)
+ {
+@@ -1586,7 +1597,8 @@ void ath_txq_schedule(struct ath_softc *
  	struct ath_atx_ac *ac, *ac_tmp, *last_ac;
  	struct ath_atx_tid *tid, *last_tid;
  
@@ -1562,7 +3454,27 @@
  	    txq->axq_ampdu_depth >= ATH_AGGR_MIN_QDEPTH)
  		return;
  
-@@ -2191,7 +2190,7 @@ static void ath_tx_processq(struct ath_s
+@@ -1988,7 +2000,8 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 
+ 	ath_txq_lock(sc, txq);
+ 	if (txq == sc->tx.txq_map[q] &&
+-	    ++txq->pending_frames > ATH_MAX_QDEPTH && !txq->stopped) {
++	    ++txq->pending_frames > sc->tx.txq_max_pending[q] &&
++	    !txq->stopped) {
+ 		ieee80211_stop_queue(sc->hw, q);
+ 		txq->stopped = true;
+ 	}
+@@ -2047,7 +2060,8 @@ static void ath_tx_complete(struct ath_s
+ 		if (WARN_ON(--txq->pending_frames < 0))
+ 			txq->pending_frames = 0;
+ 
+-		if (txq->stopped && txq->pending_frames < ATH_MAX_QDEPTH) {
++		if (txq->stopped &&
++		    txq->pending_frames < sc->tx.txq_max_pending[q]) {
+ 			ieee80211_wake_queue(sc->hw, q);
+ 			txq->stopped = false;
+ 		}
+@@ -2191,7 +2205,7 @@ static void ath_tx_processq(struct ath_s
  
  	ath_txq_lock(sc, txq);
  	for (;;) {
@@ -1571,7 +3483,7 @@
  			break;
  
  		if (list_empty(&txq->axq_q)) {
-@@ -2274,7 +2273,7 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2274,7 +2288,7 @@ void ath_tx_edma_tasklet(struct ath_soft
  	int status;
  
  	for (;;) {
@@ -1580,31 +3492,210 @@
  			break;
  
  		status = ath9k_hw_txprocdesc(ah, NULL, (void *)&ts);
---- a/include/net/mac80211.h
-+++ b/include/net/mac80211.h
-@@ -3596,22 +3596,6 @@ void ieee80211_request_smps(struct ieee8
- 			    enum ieee80211_smps_mode smps_mode);
+--- a/drivers/net/wireless/b43/xmit.c
++++ b/drivers/net/wireless/b43/xmit.c
+@@ -663,7 +663,7 @@ void b43_rx(struct b43_wldev *dev, struc
+ 	u32 uninitialized_var(macstat);
+ 	u16 chanid;
+ 	u16 phytype;
+-	int padding;
++	int padding, rate_idx;
  
- /**
-- * ieee80211_key_removed - disable hw acceleration for key
-- * @key_conf: The key hw acceleration should be disabled for
-- *
-- * This allows drivers to indicate that the given key has been
-- * removed from hardware acceleration, due to a new key that
-- * was added. Don't use this if the key can continue to be used
-- * for TX, if the key restriction is on RX only it is permitted
-- * to keep the key for TX only and not call this function.
-- *
-- * Due to locking constraints, it may only be called during
-- * @set_key. This function must be allowed to sleep, and the
-- * key it tries to disable may still be used until it returns.
-- */
--void ieee80211_key_removed(struct ieee80211_key_conf *key_conf);
--
--/**
-  * ieee80211_ready_on_channel - notification of remain-on-channel start
-  * @hw: pointer as obtained from ieee80211_alloc_hw()
+ 	memset(&status, 0, sizeof(status));
+ 
+@@ -766,16 +766,17 @@ void b43_rx(struct b43_wldev *dev, struc
+ 	}
+ 
+ 	if (phystat0 & B43_RX_PHYST0_OFDM)
+-		status.rate_idx = b43_plcp_get_bitrate_idx_ofdm(plcp,
++		rate_idx = b43_plcp_get_bitrate_idx_ofdm(plcp,
+ 						phytype == B43_PHYTYPE_A);
+ 	else
+-		status.rate_idx = b43_plcp_get_bitrate_idx_cck(plcp);
+-	if (unlikely(status.rate_idx == -1)) {
++		rate_idx = b43_plcp_get_bitrate_idx_cck(plcp);
++	if (unlikely(rate_idx == -1)) {
+ 		/* PLCP seems to be corrupted.
+ 		 * Drop the frame, if we are not interested in corrupted frames. */
+ 		if (!(dev->wl->filter_flags & FIF_PLCPFAIL))
+ 			goto drop;
+ 	}
++	status.rate_idx = rate_idx;
+ 	status.antenna = !!(phystat0 & B43_RX_PHYST0_ANT);
+ 
+ 	/*
+--- a/drivers/net/wireless/libertas/cfg.c
++++ b/drivers/net/wireless/libertas/cfg.c
+@@ -2182,13 +2182,15 @@ int lbs_reg_notifier(struct wiphy *wiphy
+ 		struct regulatory_request *request)
+ {
+ 	struct lbs_private *priv = wiphy_priv(wiphy);
+-	int ret;
++	int ret = 0;
+ 
+ 	lbs_deb_enter_args(LBS_DEB_CFG80211, "cfg80211 regulatory domain "
+ 			"callback for domain %c%c\n", request->alpha2[0],
+ 			request->alpha2[1]);
+ 
+-	ret = lbs_set_11d_domain_info(priv, request, wiphy->bands);
++	memcpy(priv->country_code, request->alpha2, sizeof(request->alpha2));
++	if (lbs_iface_active(priv))
++		ret = lbs_set_11d_domain_info(priv);
+ 
+ 	lbs_deb_leave(LBS_DEB_CFG80211);
+ 	return ret;
+--- a/drivers/net/wireless/libertas/cmd.c
++++ b/drivers/net/wireless/libertas/cmd.c
+@@ -733,15 +733,13 @@ int lbs_get_rssi(struct lbs_private *pri
+  *  to the firmware
+  *
+  *  @priv:	pointer to &struct lbs_private
+- *  @request:	cfg80211 regulatory request structure
+- *  @bands:	the device's supported bands and channels
+  *
+  *  returns:	0 on success, error code on failure
+ */
+-int lbs_set_11d_domain_info(struct lbs_private *priv,
+-			    struct regulatory_request *request,
+-			    struct ieee80211_supported_band **bands)
++int lbs_set_11d_domain_info(struct lbs_private *priv)
+ {
++	struct wiphy *wiphy = priv->wdev->wiphy;
++	struct ieee80211_supported_band **bands = wiphy->bands;
+ 	struct cmd_ds_802_11d_domain_info cmd;
+ 	struct mrvl_ie_domain_param_set *domain = &cmd.domain;
+ 	struct ieee80211_country_ie_triplet *t;
+@@ -752,21 +750,23 @@ int lbs_set_11d_domain_info(struct lbs_p
+ 	u8 first_channel = 0, next_chan = 0, max_pwr = 0;
+ 	u8 i, flag = 0;
+ 	size_t triplet_size;
+-	int ret;
++	int ret = 0;
+ 
+ 	lbs_deb_enter(LBS_DEB_11D);
++	if (!priv->country_code[0])
++		goto out;
+ 
+ 	memset(&cmd, 0, sizeof(cmd));
+ 	cmd.action = cpu_to_le16(CMD_ACT_SET);
+ 
+ 	lbs_deb_11d("Setting country code '%c%c'\n",
+-		    request->alpha2[0], request->alpha2[1]);
++		    priv->country_code[0], priv->country_code[1]);
+ 
+ 	domain->header.type = cpu_to_le16(TLV_TYPE_DOMAIN);
+ 
+ 	/* Set country code */
+-	domain->country_code[0] = request->alpha2[0];
+-	domain->country_code[1] = request->alpha2[1];
++	domain->country_code[0] = priv->country_code[0];
++	domain->country_code[1] = priv->country_code[1];
+ 	domain->country_code[2] = ' ';
+ 
+ 	/* Now set up the channel triplets; firmware is somewhat picky here
+@@ -848,6 +848,7 @@ int lbs_set_11d_domain_info(struct lbs_p
+ 
+ 	ret = lbs_cmd_with_response(priv, CMD_802_11D_DOMAIN_INFO, &cmd);
+ 
++out:
+ 	lbs_deb_leave_args(LBS_DEB_11D, "ret %d", ret);
+ 	return ret;
+ }
+@@ -1019,9 +1020,9 @@ static void lbs_submit_command(struct lb
+ 	if (ret) {
+ 		netdev_info(priv->dev, "DNLD_CMD: hw_host_to_card failed: %d\n",
+ 			    ret);
+-		/* Let the timer kick in and retry, and potentially reset
+-		   the whole thing if the condition persists */
+-		timeo = HZ/4;
++		/* Reset dnld state machine, report failure */
++		priv->dnld_sent = DNLD_RES_RECEIVED;
++		lbs_complete_command(priv, cmdnode, ret);
+ 	}
+ 
+ 	if (command == CMD_802_11_DEEP_SLEEP) {
+--- a/drivers/net/wireless/libertas/cmd.h
++++ b/drivers/net/wireless/libertas/cmd.h
+@@ -128,9 +128,7 @@ int lbs_set_monitor_mode(struct lbs_priv
+ 
+ int lbs_get_rssi(struct lbs_private *priv, s8 *snr, s8 *nf);
+ 
+-int lbs_set_11d_domain_info(struct lbs_private *priv,
+-			    struct regulatory_request *request,
+-			    struct ieee80211_supported_band **bands);
++int lbs_set_11d_domain_info(struct lbs_private *priv);
+ 
+ int lbs_get_reg(struct lbs_private *priv, u16 reg, u16 offset, u32 *value);
+ 
+--- a/drivers/net/wireless/libertas/dev.h
++++ b/drivers/net/wireless/libertas/dev.h
+@@ -49,6 +49,7 @@ struct lbs_private {
+ 	bool wiphy_registered;
+ 	struct cfg80211_scan_request *scan_req;
+ 	u8 assoc_bss[ETH_ALEN];
++	u8 country_code[IEEE80211_COUNTRY_STRING_LEN];
+ 	u8 disassoc_reason;
+ 
+ 	/* Mesh */
+--- a/drivers/net/wireless/libertas/if_usb.c
++++ b/drivers/net/wireless/libertas/if_usb.c
+@@ -311,7 +311,6 @@ static void if_usb_disconnect(struct usb
+ 	cardp->surprise_removed = 1;
+ 
+ 	if (priv) {
+-		priv->surpriseremoved = 1;
+ 		lbs_stop_card(priv);
+ 		lbs_remove_card(priv);
+ 	}
+--- a/drivers/net/wireless/libertas/main.c
++++ b/drivers/net/wireless/libertas/main.c
+@@ -154,6 +154,12 @@ int lbs_start_iface(struct lbs_private *
+ 		goto err;
+ 	}
+ 
++	ret = lbs_set_11d_domain_info(priv);
++	if (ret) {
++		lbs_deb_net("set 11d domain info failed\n");
++		goto err;
++	}
++
+ 	lbs_update_channel(priv);
+ 
+ 	priv->iface_running = true;
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1504,8 +1504,6 @@ struct cfg80211_gtk_rekey_data {
+  *	interfaces are active this callback should reject the configuration.
+  *	If no interfaces are active or the device is down, the channel should
+  *	be stored for when a monitor interface becomes active.
+- * @set_monitor_enabled: Notify driver that there are only monitor
+- *	interfaces running.
+  *
+  * @scan: Request to do a scan. If returning zero, the scan request is given
+  *	the driver, and will be valid until passed to cfg80211_scan_done().
+@@ -1612,6 +1610,10 @@ struct cfg80211_gtk_rekey_data {
+  * @get_et_strings:  Ethtool API to get a set of strings to describe stats
+  *	and perhaps other supported types of ethtool data-sets.
+  *	See @ethtool_ops.get_strings
++ *
++ * @get_channel: Get the current operating channel for the virtual interface.
++ *	For monitor interfaces, it should return %NULL unless there's a single
++ *	current monitoring channel.
   */
+ struct cfg80211_ops {
+ 	int	(*suspend)(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
+@@ -1820,7 +1822,10 @@ struct cfg80211_ops {
+ 	void	(*get_et_strings)(struct wiphy *wiphy, struct net_device *dev,
+ 				  u32 sset, u8 *data);
+ 
+-	void (*set_monitor_enabled)(struct wiphy *wiphy, bool enabled);
++	struct ieee80211_channel *
++		(*get_channel)(struct wiphy *wiphy,
++			       struct wireless_dev *wdev,
++			       enum nl80211_channel_type *type);
+ };
+ 
+ /*
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
 @@ -203,6 +203,8 @@ static void ieee80211_send_addba_resp(st
@@ -1628,7 +3719,7 @@
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
-@@ -459,6 +460,7 @@ int ieee80211_start_tx_ba_session(struct
+@@ -460,6 +461,7 @@ int ieee80211_start_tx_ba_session(struct
  	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  	    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -1638,15 +3729,39 @@
  
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1741,6 +1741,8 @@ static int ieee80211_set_txq_params(stru
- 		return -EINVAL;
- 	}
- 
-+	ieee80211_bss_info_change_notify(sdata, BSS_CHANGED_QOS);
-+
+@@ -2982,14 +2982,14 @@ static int ieee80211_probe_client(struct
  	return 0;
  }
  
+-static void ieee80211_set_monitor_enabled(struct wiphy *wiphy, bool enabled)
++static struct ieee80211_channel *
++ieee80211_cfg_get_channel(struct wiphy *wiphy, struct wireless_dev *wdev,
++			  enum nl80211_channel_type *type)
+ {
+ 	struct ieee80211_local *local = wiphy_priv(wiphy);
+ 
+-	if (enabled)
+-		WARN_ON(ieee80211_add_virtual_monitor(local));
+-	else
+-		ieee80211_del_virtual_monitor(local);
++	*type = local->_oper_channel_type;
++	return local->oper_channel;
+ }
+ 
+ #ifdef CONFIG_PM
+@@ -3066,11 +3066,11 @@ struct cfg80211_ops mac80211_config_ops 
+ 	.tdls_mgmt = ieee80211_tdls_mgmt,
+ 	.probe_client = ieee80211_probe_client,
+ 	.set_noack_map = ieee80211_set_noack_map,
+-	.set_monitor_enabled = ieee80211_set_monitor_enabled,
+ #ifdef CONFIG_PM
+ 	.set_wakeup = ieee80211_set_wakeup,
+ #endif
+ 	.get_et_sset_count = ieee80211_get_et_sset_count,
+ 	.get_et_stats = ieee80211_get_et_stats,
+ 	.get_et_strings = ieee80211_get_et_strings,
++	.get_channel = ieee80211_cfg_get_channel,
+ };
 --- a/net/mac80211/debugfs_sta.c
 +++ b/net/mac80211/debugfs_sta.c
 @@ -63,11 +63,11 @@ static ssize_t sta_flags_read(struct fil
@@ -1663,9 +3778,40 @@
  			    TEST(MFP), TEST(BLOCK_BA), TEST(PSPOLL),
  			    TEST(UAPSD), TEST(SP), TEST(TDLS_PEER),
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1496,10 +1496,6 @@ int ieee80211_add_srates_ie(struct ieee8
+ int ieee80211_add_ext_srates_ie(struct ieee80211_sub_if_data *sdata,
+ 				struct sk_buff *skb, bool need_basic);
+ 
+-/* virtual monitor */
+-int ieee80211_add_virtual_monitor(struct ieee80211_local *local);
+-void ieee80211_del_virtual_monitor(struct ieee80211_local *local);
+-
+ /* channel management */
+ enum ieee80211_chan_mode {
+ 	CHAN_MODE_UNDEFINED,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -400,7 +400,6 @@ static int ieee80211_do_open(struct net_
+@@ -331,7 +331,7 @@ static void ieee80211_set_default_queues
+ 	sdata->vif.cab_queue = IEEE80211_INVAL_HW_QUEUE;
+ }
+ 
+-int ieee80211_add_virtual_monitor(struct ieee80211_local *local)
++static int ieee80211_add_virtual_monitor(struct ieee80211_local *local)
+ {
+ 	struct ieee80211_sub_if_data *sdata;
+ 	int ret = 0;
+@@ -377,7 +377,7 @@ int ieee80211_add_virtual_monitor(struct
+ 	return ret;
+ }
+ 
+-void ieee80211_del_virtual_monitor(struct ieee80211_local *local)
++static void ieee80211_del_virtual_monitor(struct ieee80211_local *local)
+ {
+ 	struct ieee80211_sub_if_data *sdata;
+ 
+@@ -410,7 +410,6 @@ static int ieee80211_do_open(struct net_
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ieee80211_local *local = sdata->local;
@@ -1673,7 +3819,29 @@
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -538,28 +537,6 @@ static int ieee80211_do_open(struct net_
+@@ -497,6 +496,12 @@ static int ieee80211_do_open(struct net_
+ 			break;
+ 		}
+ 
++		if (local->monitors == 0 && local->open_count == 0) {
++			res = ieee80211_add_virtual_monitor(local);
++			if (res)
++				goto err_stop;
++		}
++
+ 		/* must be before the call to ieee80211_configure_filter */
+ 		local->monitors++;
+ 		if (local->monitors == 1) {
+@@ -511,6 +516,8 @@ static int ieee80211_do_open(struct net_
+ 		break;
+ 	default:
+ 		if (coming_up) {
++			ieee80211_del_virtual_monitor(local);
++
+ 			res = drv_add_interface(local, sdata);
+ 			if (res)
+ 				goto err_stop;
+@@ -548,28 +555,6 @@ static int ieee80211_do_open(struct net_
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -1702,7 +3870,25 @@
  	/*
  	 * set_multicast_list will be invoked by the networking core
  	 * which will check whether any increments here were done in
-@@ -949,6 +926,72 @@ static void ieee80211_if_setup(struct ne
+@@ -750,6 +735,7 @@ static void ieee80211_do_stop(struct iee
+ 		if (local->monitors == 0) {
+ 			local->hw.conf.flags &= ~IEEE80211_CONF_MONITOR;
+ 			hw_reconf_flags |= IEEE80211_CONF_CHANGE_MONITOR;
++			ieee80211_del_virtual_monitor(local);
+ 		}
+ 
+ 		ieee80211_adjust_monitor_flags(sdata, -1);
+@@ -823,6 +809,9 @@ static void ieee80211_do_stop(struct iee
+ 		}
+ 	}
+ 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
++
++	if (local->monitors == local->open_count && local->monitors > 0)
++		ieee80211_add_virtual_monitor(local);
+ }
+ 
+ static int ieee80211_stop(struct net_device *dev)
+@@ -959,6 +948,72 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -1775,7 +3961,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1053,6 +1096,9 @@ static void ieee80211_iface_work(struct 
+@@ -1063,6 +1118,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -1785,132 +3971,40 @@
  		default:
  			WARN(1, "frame for unexpected interface type");
  			break;
---- a/net/mac80211/key.c
-+++ b/net/mac80211/key.c
-@@ -197,26 +197,6 @@ static void ieee80211_key_disable_hw_acc
- 	key->flags &= ~KEY_FLAG_UPLOADED_TO_HARDWARE;
- }
+--- a/net/mac80211/offchannel.c
++++ b/net/mac80211/offchannel.c
+@@ -324,6 +324,7 @@ void ieee80211_sw_roc_work(struct work_s
+ 		container_of(work, struct ieee80211_roc_work, work.work);
+ 	struct ieee80211_sub_if_data *sdata = roc->sdata;
+ 	struct ieee80211_local *local = sdata->local;
++	bool started;
  
--void ieee80211_key_removed(struct ieee80211_key_conf *key_conf)
--{
--	struct ieee80211_key *key;
--
--	key = container_of(key_conf, struct ieee80211_key, conf);
--
--	might_sleep();
--	assert_key_lock(key->local);
--
--	key->flags &= ~KEY_FLAG_UPLOADED_TO_HARDWARE;
--
--	/*
--	 * Flush TX path to avoid attempts to use this key
--	 * after this function returns. Until then, drivers
--	 * must be prepared to handle the key.
--	 */
--	synchronize_rcu();
--}
--EXPORT_SYMBOL_GPL(ieee80211_key_removed);
--
- static void __ieee80211_set_default_key(struct ieee80211_sub_if_data *sdata,
- 					int idx, bool uni, bool multi)
- {
---- a/net/mac80211/mlme.c
-+++ b/net/mac80211/mlme.c
-@@ -1108,7 +1108,7 @@ void ieee80211_dynamic_ps_timer(unsigned
- }
+ 	mutex_lock(&local->mtx);
  
- /* MLME */
--static void ieee80211_sta_wmm_params(struct ieee80211_local *local,
-+static bool ieee80211_sta_wmm_params(struct ieee80211_local *local,
- 				     struct ieee80211_sub_if_data *sdata,
- 				     u8 *wmm_param, size_t wmm_param_len)
- {
-@@ -1119,23 +1119,23 @@ static void ieee80211_sta_wmm_params(str
- 	u8 *pos, uapsd_queues = 0;
+@@ -366,9 +367,10 @@ void ieee80211_sw_roc_work(struct work_s
+ 		/* finish this ROC */
+  finish:
+ 		list_del(&roc->list);
++		started = roc->started;
+ 		ieee80211_roc_notify_destroy(roc);
  
- 	if (!local->ops->conf_tx)
--		return;
-+		return false;
+-		if (roc->started) {
++		if (started) {
+ 			drv_flush(local, false);
  
- 	if (local->hw.queues < IEEE80211_NUM_ACS)
--		return;
-+		return false;
+ 			local->tmp_channel = NULL;
+@@ -379,7 +381,7 @@ void ieee80211_sw_roc_work(struct work_s
  
- 	if (!wmm_param)
--		return;
-+		return false;
+ 		ieee80211_recalc_idle(local);
  
- 	if (wmm_param_len < 8 || wmm_param[5] /* version */ != 1)
--		return;
-+		return false;
+-		if (roc->started)
++		if (started)
+ 			ieee80211_start_next_roc(local);
+ 	}
  
- 	if (ifmgd->flags & IEEE80211_STA_UAPSD_ENABLED)
- 		uapsd_queues = ifmgd->uapsd_queues;
- 
- 	count = wmm_param[6] & 0x0f;
- 	if (count == ifmgd->wmm_last_param_set)
--		return;
-+		return false;
- 	ifmgd->wmm_last_param_set = count;
- 
- 	pos = wmm_param + 8;
-@@ -1202,6 +1202,7 @@ static void ieee80211_sta_wmm_params(str
- 
- 	/* enable WMM or activate new settings */
- 	sdata->vif.bss_conf.qos = true;
-+	return true;
- }
- 
- static void __ieee80211_stop_poll(struct ieee80211_sub_if_data *sdata)
-@@ -2435,14 +2436,6 @@ static void ieee80211_rx_mgmt_beacon(str
- 		directed_tim = ieee80211_check_tim(elems.tim, elems.tim_len,
- 						   ifmgd->aid);
- 
--	if (ncrc != ifmgd->beacon_crc || !ifmgd->beacon_crc_valid) {
--		ieee80211_rx_bss_info(sdata, mgmt, len, rx_status, &elems,
--				      true);
--
--		ieee80211_sta_wmm_params(local, sdata, elems.wmm_param,
--					 elems.wmm_param_len);
--	}
--
- 	if (local->hw.flags & IEEE80211_HW_PS_NULLFUNC_STACK) {
- 		if (directed_tim) {
- 			if (local->hw.conf.dynamic_ps_timeout > 0) {
-@@ -2473,6 +2466,13 @@ static void ieee80211_rx_mgmt_beacon(str
- 	ifmgd->beacon_crc = ncrc;
- 	ifmgd->beacon_crc_valid = true;
- 
-+	ieee80211_rx_bss_info(sdata, mgmt, len, rx_status, &elems,
-+			      true);
-+
-+	if (ieee80211_sta_wmm_params(local, sdata, elems.wmm_param,
-+				     elems.wmm_param_len))
-+		changed |= BSS_CHANGED_QOS;
-+
- 	if (elems.erp_info && elems.erp_info_len >= 1) {
- 		erp_valid = true;
- 		erp_value = elems.erp_info[0];
---- a/net/mac80211/rc80211_minstrel_ht.c
-+++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -626,8 +626,12 @@ minstrel_ht_get_rate(void *priv, struct 
- 
- #ifdef CONFIG_MAC80211_DEBUGFS
- 	/* use fixed index if set */
--	if (mp->fixed_rate_idx != -1)
--		sample_idx = mp->fixed_rate_idx;
-+	if (mp->fixed_rate_idx != -1) {
-+		mi->max_tp_rate = mp->fixed_rate_idx;
-+		mi->max_tp_rate2 = mp->fixed_rate_idx;
-+		mi->max_prob_rate = mp->fixed_rate_idx;
-+		sample_idx = -1;
-+	}
- #endif
- 
- 	if (sample_idx >= 0) {
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2262,6 +2262,7 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2239,6 +2239,7 @@ ieee80211_rx_h_action(struct ieee80211_r
  		    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  		    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -1918,7 +4012,7 @@
  		    sdata->vif.type != NL80211_IFTYPE_ADHOC)
  			break;
  
-@@ -2479,14 +2480,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2456,14 +2457,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -1936,7 +4030,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_ASSOC_RESP):
  	case cpu_to_le16(IEEE80211_STYPE_REASSOC_RESP):
-@@ -2817,10 +2819,16 @@ static int prepare_for_handlers(struct i
+@@ -2788,10 +2790,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
@@ -1973,20 +4067,32 @@
  	WLAN_STA_CLEAR_PS_FILT,
  	WLAN_STA_MFP,
  	WLAN_STA_BLOCK_BA,
---- a/net/mac80211/tx.c
-+++ b/net/mac80211/tx.c
-@@ -2716,7 +2716,7 @@ EXPORT_SYMBOL(ieee80211_get_buffered_bc)
- void ieee80211_tx_skb_tid(struct ieee80211_sub_if_data *sdata,
- 			  struct sk_buff *skb, int tid)
- {
--	int ac = ieee802_1d_to_ac[tid];
-+	int ac = ieee802_1d_to_ac[tid & 7];
- 
- 	skb_set_mac_header(skb, 0);
- 	skb_set_network_header(skb, 0);
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
-@@ -136,9 +136,16 @@ cfg80211_get_chan_state(struct cfg80211_
+@@ -82,7 +82,6 @@ int cfg80211_set_monitor_channel(struct 
+ 				 int freq, enum nl80211_channel_type chantype)
+ {
+ 	struct ieee80211_channel *chan;
+-	int err;
+ 
+ 	if (!rdev->ops->set_monitor_channel)
+ 		return -EOPNOTSUPP;
+@@ -93,13 +92,7 @@ int cfg80211_set_monitor_channel(struct 
+ 	if (!chan)
+ 		return -EINVAL;
+ 
+-	err = rdev->ops->set_monitor_channel(&rdev->wiphy, chan, chantype);
+-	if (!err) {
+-		rdev->monitor_channel = chan;
+-		rdev->monitor_channel_type = chantype;
+-	}
+-
+-	return err;
++	return rdev->ops->set_monitor_channel(&rdev->wiphy, chan, chantype);
+ }
+ 
+ void
+@@ -134,9 +127,16 @@ cfg80211_get_chan_state(struct wireless_
  		break;
  	case NL80211_IFTYPE_AP:
  	case NL80211_IFTYPE_P2P_GO:
@@ -2005,3 +4111,146 @@
  		return;
  	case NL80211_IFTYPE_MONITOR:
  	case NL80211_IFTYPE_AP_VLAN:
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -747,60 +747,14 @@ static struct device_type wiphy_type = {
+ };
+ #endif
+ 
+-static struct ieee80211_channel *
+-cfg80211_get_any_chan(struct cfg80211_registered_device *rdev)
+-{
+-	struct ieee80211_supported_band *sband;
+-	int i;
+-
+-	for (i = 0; i < IEEE80211_NUM_BANDS; i++) {
+-		sband = rdev->wiphy.bands[i];
+-		if (sband && sband->n_channels > 0)
+-			return &sband->channels[0];
+-	}
+-
+-	return NULL;
+-}
+-
+-static void cfg80211_init_mon_chan(struct cfg80211_registered_device *rdev)
+-{
+-	struct ieee80211_channel *chan;
+-
+-	chan = cfg80211_get_any_chan(rdev);
+-	if (WARN_ON(!chan))
+-		return;
+-
+-	mutex_lock(&rdev->devlist_mtx);
+-	WARN_ON(cfg80211_set_monitor_channel(rdev, chan->center_freq,
+-					     NL80211_CHAN_NO_HT));
+-	mutex_unlock(&rdev->devlist_mtx);
+-}
+-
+ void cfg80211_update_iface_num(struct cfg80211_registered_device *rdev,
+ 			       enum nl80211_iftype iftype, int num)
+ {
+-	bool has_monitors_only_old = cfg80211_has_monitors_only(rdev);
+-	bool has_monitors_only_new;
+-
+ 	ASSERT_RTNL();
+ 
+ 	rdev->num_running_ifaces += num;
+ 	if (iftype == NL80211_IFTYPE_MONITOR)
+ 		rdev->num_running_monitor_ifaces += num;
+-
+-	has_monitors_only_new = cfg80211_has_monitors_only(rdev);
+-	if (has_monitors_only_new != has_monitors_only_old) {
+-		if (rdev->ops->set_monitor_enabled)
+-			rdev->ops->set_monitor_enabled(&rdev->wiphy,
+-						       has_monitors_only_new);
+-
+-		if (!has_monitors_only_new) {
+-			rdev->monitor_channel = NULL;
+-			rdev->monitor_channel_type = NL80211_CHAN_NO_HT;
+-		} else {
+-			cfg80211_init_mon_chan(rdev);
+-		}
+-	}
+ }
+ 
+ static int cfg80211_netdev_notifier_call(struct notifier_block *nb,
+@@ -932,6 +886,7 @@ static int cfg80211_netdev_notifier_call
+ 			mutex_unlock(&rdev->devlist_mtx);
+ 			dev_put(dev);
+ 		}
++		cfg80211_update_iface_num(rdev, wdev->iftype, 1);
+ 		cfg80211_lock_rdev(rdev);
+ 		mutex_lock(&rdev->devlist_mtx);
+ 		wdev_lock(wdev);
+@@ -1026,7 +981,6 @@ static int cfg80211_netdev_notifier_call
+ 		mutex_unlock(&rdev->devlist_mtx);
+ 		if (ret)
+ 			return notifier_from_errno(ret);
+-		cfg80211_update_iface_num(rdev, wdev->iftype, 1);
+ 		break;
+ 	}
+ 
+--- a/net/wireless/core.h
++++ b/net/wireless/core.h
+@@ -61,9 +61,6 @@ struct cfg80211_registered_device {
+ 	int num_running_ifaces;
+ 	int num_running_monitor_ifaces;
+ 
+-	struct ieee80211_channel *monitor_channel;
+-	enum nl80211_channel_type monitor_channel_type;
+-
+ 	/* BSSes/scanning */
+ 	spinlock_t bss_lock;
+ 	struct list_head bss_list;
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -1759,11 +1759,17 @@ static int nl80211_send_iface(struct sk_
+ 			(cfg80211_rdev_list_generation << 2)))
+ 		goto nla_put_failure;
+ 
+-	if (rdev->monitor_channel) {
+-		if (nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ,
+-				rdev->monitor_channel->center_freq) ||
+-		    nla_put_u32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE,
+-				rdev->monitor_channel_type))
++	if (rdev->ops->get_channel) {
++		struct ieee80211_channel *chan;
++		enum nl80211_channel_type channel_type;
++
++		chan = rdev->ops->get_channel(&rdev->wiphy, wdev,
++					      &channel_type);
++		if (chan &&
++		    (nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ,
++				 chan->center_freq) ||
++		     nla_put_u32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE,
++				 channel_type)))
+ 			goto nla_put_failure;
+ 	}
+ 
+--- a/net/wireless/wext-compat.c
++++ b/net/wireless/wext-compat.c
+@@ -827,6 +827,8 @@ static int cfg80211_wext_giwfreq(struct 
+ {
+ 	struct wireless_dev *wdev = dev->ieee80211_ptr;
+ 	struct cfg80211_registered_device *rdev = wiphy_to_dev(wdev->wiphy);
++	struct ieee80211_channel *chan;
++	enum nl80211_channel_type channel_type;
+ 
+ 	switch (wdev->iftype) {
+ 	case NL80211_IFTYPE_STATION:
+@@ -834,10 +836,13 @@ static int cfg80211_wext_giwfreq(struct 
+ 	case NL80211_IFTYPE_ADHOC:
+ 		return cfg80211_ibss_wext_giwfreq(dev, info, freq, extra);
+ 	case NL80211_IFTYPE_MONITOR:
+-		if (!rdev->monitor_channel)
++		if (!rdev->ops->get_channel)
+ 			return -EINVAL;
+ 
+-		freq->m = rdev->monitor_channel->center_freq;
++		chan = rdev->ops->get_channel(wdev->wiphy, wdev, &channel_type);
++		if (!chan)
++			return -EINVAL;
++		freq->m = chan->center_freq;
+ 		freq->e = 6;
+ 		return 0;
+ 	default:
