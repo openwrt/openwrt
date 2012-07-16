@@ -1,26 +1,25 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -697,6 +697,9 @@ enum mac80211_rx_flags {
-  * @mactime: value in microseconds of the 64-bit Time Synchronization Function
-  * 	(TSF) timer when the first data symbol (MPDU) arrived at the hardware.
-  * @band: the active band when this frame was received
+@@ -706,6 +706,9 @@ enum mac80211_rx_flags {
+  * @signal: signal strength when receiving this frame, either in dBm, in dB or
+  *	unspecified depending on the hardware capabilities flags
+  *	@IEEE80211_HW_SIGNAL_*
 + * @chains: bitmask of receive chains for which separate signal strength
 + *	values were filled.
 + * @chain_signal: per-chain signal strength, same format as @signal
-  * @freq: frequency the radio was tuned to when receiving this frame, in MHz
-  * @signal: signal strength when receiving this frame, either in dBm, in dB or
-  *	unspecified depending on the hardware capabilities flags
-@@ -710,6 +713,10 @@ enum mac80211_rx_flags {
- struct ieee80211_rx_status {
- 	u64 mactime;
- 	enum ieee80211_band band;
+  * @antenna: antenna used
+  * @rate_idx: index of data rate into band's supported rates or MCS index if
+  *	HT rates are use (RX_FLAG_HT)
+@@ -722,6 +725,9 @@ struct ieee80211_rx_status {
+ 	u8 band;
+ 	u8 antenna;
+ 	s8 signal;
 +
 +	u8 chains;
 +	s8 chain_signal[4];
-+
- 	int freq;
- 	int signal;
- 	int antenna;
+ };
+ 
+ /**
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
 @@ -325,6 +325,11 @@ struct sta_info {
@@ -37,7 +36,7 @@
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1254,6 +1254,7 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1231,6 +1231,7 @@ ieee80211_rx_h_sta_process(struct ieee80
  	struct sk_buff *skb = rx->skb;
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
@@ -45,7 +44,7 @@
  
  	if (!sta)
  		return RX_CONTINUE;
-@@ -1298,6 +1299,19 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1275,6 +1276,19 @@ ieee80211_rx_h_sta_process(struct ieee80
  		ewma_add(&sta->avg_signal, -status->signal);
  	}
  
@@ -250,7 +249,7 @@
  	RX_SAMP_DBG(rate) = rs->rs_rate;
 --- a/include/linux/nl80211.h
 +++ b/include/linux/nl80211.h
-@@ -1729,6 +1729,8 @@ enum nl80211_sta_bss_param {
+@@ -1734,6 +1734,8 @@ enum nl80211_sta_bss_param {
   * @NL80211_STA_INFO_STA_FLAGS: Contains a struct nl80211_sta_flag_update.
   * @NL80211_STA_INFO_BEACON_LOSS: count of times beacon loss was detected (u32)
   * @NL80211_STA_INFO_T_OFFSET: timing offset with respect to this STA (s64)
@@ -259,7 +258,7 @@
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -1753,6 +1755,8 @@ enum nl80211_sta_info {
+@@ -1758,6 +1760,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_STA_FLAGS,
  	NL80211_STA_INFO_BEACON_LOSS,
  	NL80211_STA_INFO_T_OFFSET,
@@ -270,7 +269,7 @@
  	__NL80211_STA_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -2648,6 +2648,32 @@ nla_put_failure:
+@@ -2745,6 +2745,32 @@ nla_put_failure:
  	return false;
  }
  
@@ -303,7 +302,7 @@
  static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
  				int flags,
  				struct cfg80211_registered_device *rdev,
-@@ -2709,6 +2735,18 @@ static int nl80211_send_station(struct s
+@@ -2806,6 +2832,18 @@ static int nl80211_send_station(struct s
  	default:
  		break;
  	}
