@@ -17,6 +17,7 @@ else
   REVISION:=$(shell $(TOPDIR)/scripts/getver.sh)
 endif
 
+HOSTCC ?= gcc
 OPENWRTVERSION:=$(RELEASE)$(if $(REVISION), ($(REVISION)))
 export RELEASE
 export REVISION
@@ -69,12 +70,12 @@ prepare-tmpinfo: FORCE
 	fi
 
 scripts/config/mconf:
-	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config all
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config all CC="$(HOSTCC)"
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
 
 scripts/config/conf:
-	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config conf
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config conf CC="$(HOSTCC)"
 
 config: scripts/config/conf prepare-tmpinfo FORCE
 	$< Config.in
