@@ -69,6 +69,10 @@ ifneq ($(CONFIG_TARGET_ar71xx),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/ar71xx $(1)/etc/uci-defaults/uboot-envtools
 endif
+ifneq ($(CONFIG_TARGET_kirkwood),)
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/kirkwood $(1)/etc/uci-defaults/uboot-envtools
+endif
 ifneq ($(CONFIG_TARGET_lantiq),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/lantiq $(1)/etc/uci-defaults/uboot-envtools
