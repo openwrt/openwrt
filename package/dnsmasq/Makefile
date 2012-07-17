@@ -8,26 +8,46 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.59
-PKG_RELEASE:=4
+PKG_VERSION:=2.62
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_MD5SUM:=b5757ef2d7b651748eeebb88af29d7d6
+PKG_MD5SUM:=f47e5cb8f5bac6343f24b2dbe317ab40
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/dnsmasq
+define Package/dnsmasq/Default
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=A lightweight DNS and DHCP server
   URL:=http://www.thekelleys.org.uk/dnsmasq/
 endef
 
+define Package/dnsmasq
+$(call Package/dnsmasq/Default)
+  VARIANT:=nodhcpv6
+endef
+
+define Package/dnsmasq-dhcpv6
+$(call Package/dnsmasq/Default)
+  TITLE += (with DHCPv6 support)
+  DEPENDS:=@IPV6 +kmod-ipv6
+  VARIANT:=dhcpv6
+endef
+
 define Package/dnsmasq/description
   It is intended to provide coupled DNS and DHCP service to a LAN.
+endef
+
+define Package/dnsmasq-dhcpv6/description
+$(call Package/dnsmasq/description)
+
+This is a variant with DHCPv6 support
 endef
 
 define Package/dnsmasq/conffiles
@@ -35,9 +55,15 @@ define Package/dnsmasq/conffiles
 /etc/dnsmasq.conf
 endef
 
+Package/dnsmasq-dhcpv6/conffiles = $(Package/dnsmasq/conffiles)
+
 TARGET_CFLAGS += \
 	-ffunction-sections -fdata-sections \
 	$(if $(CONFIG_IPV6),,-DNO_IPV6)
+
+ifeq ($(BUILD_VARIANT),nodhcpv6)
+  TARGET_CFLAGS += -DNO_DHCP6
+endif
 
 MAKE_FLAGS := \
 	$(TARGET_CONFIGURE_OPTS) \
@@ -55,4 +81,7 @@ define Package/dnsmasq/install
 	$(INSTALL_BIN) ./files/dnsmasq.init $(1)/etc/init.d/dnsmasq
 endef
 
+Package/dnsmasq-dhcpv6/install = $(Package/dnsmasq/install)
+
 $(eval $(call BuildPackage,dnsmasq))
+$(eval $(call BuildPackage,dnsmasq-dhcpv6))
