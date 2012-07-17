@@ -7,9 +7,8 @@
 
 define Profile/InternetBox
   NAME:=T-Mobile "InternetBox"
-  PACKAGES:=kmod-ath5k \
-		ldconfig ldd \
-		ip tc wpa-supplicant wpa-cli
+  PACKAGES:=kmod-ath5k kmod-usb-core kmod-usb-ohci kmod-usb-serial kmod-usb-serial-option \
+		comgt
 endef
 
 define Profile/InternetBox/Description
