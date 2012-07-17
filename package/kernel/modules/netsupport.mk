@@ -302,11 +302,11 @@ $(eval $(call KernelPackage,ipsec4))
 IPSEC6-m:= \
 	ipv6/ah6 \
 	ipv6/esp6 \
-	ipv6/ipcomp6 \
 	ipv6/xfrm6_mode_beet \
 	ipv6/xfrm6_mode_transport \
 	ipv6/xfrm6_mode_tunnel \
 	ipv6/xfrm6_tunnel \
+	ipv6/ipcomp6 \
 
 define KernelPackage/ipsec6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
