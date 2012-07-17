@@ -118,7 +118,7 @@ $(STAGING_DIR_HOST)/bin/stat: $(STAGING_DIR)/.prepared
 	fi
 
 $(eval $(call PrepareCommand,find,gfind find))
-$(eval $(call PrepareCommand,md5sum,md5sum $(SCRIPT_DIR)/md5sum))
+$(eval $(call PrepareCommand,md5sum,gmd5sum md5sum $(SCRIPT_DIR)/md5sum))
 $(eval $(call PrepareCommand,cp,gcp cp))
 $(eval $(call PrepareCommand,seq,gseq seq))
 $(eval $(call PrepareCommand,python,python2 python))
