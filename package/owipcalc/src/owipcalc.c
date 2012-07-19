@@ -518,6 +518,12 @@ static bool cidr_howmany(struct cidr *a, struct cidr *b)
 	return true;
 }
 
+static bool cidr_prefix(struct cidr *a, struct cidr *b)
+{
+	a->prefix = b->prefix;
+	return true;
+}
+
 static bool cidr_quiet(struct cidr *a)
 {
 	quiet = true;
@@ -544,6 +550,11 @@ struct op ops[] = {
 	{ .name = "broadcast",
 	  .desc = "Turn base address into broadcast address",
 	  .f4.a1 = cidr_broadcast4 },
+
+	{ .name = "prefix",
+	  .desc = "Set the prefix of base address to argument",
+	  .f4.a2 = cidr_prefix,
+	  .f6.a2 = cidr_prefix },
 
 	{ .name = "netmask",
 	  .desc = "Print netmask of base address, does not change base address",
