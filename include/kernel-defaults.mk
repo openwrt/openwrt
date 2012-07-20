@@ -6,6 +6,7 @@
 #
 
 KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
+	HOSTCFLAGS="$(HOST_CFLAGS) -Wall -Wmissing-prototypes -Wstrict-prototypes" \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
 	ARCH="$(LINUX_KARCH)" \
 	KBUILD_HAVE_NLS=no \
