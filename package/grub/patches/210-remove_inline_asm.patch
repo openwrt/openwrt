@@ -1,0 +1,14 @@
+--- a/stage2/fsys_iso9660.c
++++ b/stage2/fsys_iso9660.c
+@@ -83,10 +83,7 @@ iso9660_devread (int sector, int byte_of
+ 
+   sector += (byte_offset >> sector_size_lg2);
+   byte_offset &= (buf_geom.sector_size - 1);
+-  asm volatile ("shl%L0 %1,%0"
+-		: "=r"(sector)
+-		: "Ic"((int8_t)(ISO_SECTOR_BITS - sector_size_lg2)),
+-		"0"(sector));
++  sector <<= ISO_SECTOR_BITS - sector_size_lg2;
+ 
+ #if !defined(STAGE1_5)
+   if (disk_read_hook && debug)
