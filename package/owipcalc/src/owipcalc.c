@@ -224,14 +224,17 @@ static bool cidr_contains4(struct cidr *a, struct cidr *b)
 	uint32_t net1 = a->addr.v4.s_addr & htonl(~((1 << (32 - a->prefix)) - 1));
 	uint32_t net2 = b->addr.v4.s_addr & htonl(~((1 << (32 - a->prefix)) - 1));
 
+	if (printed)
+		qprintf(" ");
+
 	if ((b->prefix >= a->prefix) && (net1 == net2))
 	{
-		qprintf("1\n");
+		qprintf("1");
 		return true;
 	}
 	else
 	{
-		qprintf("0\n");
+		qprintf("0");
 		return false;
 	}
 }
@@ -250,16 +253,19 @@ static bool cidr_private4(struct cidr *a)
 {
 	uint32_t x = ntohl(a->addr.v4.s_addr);
 
+	if (printed)
+		qprintf(" ");
+
 	if (((x >= 0x0A000000) && (x <= 0x0AFFFFFF)) ||
 	    ((x >= 0xAC100000) && (x <= 0xAC1FFFFF)) ||
 	    ((x >= 0xC0A80000) && (x <= 0xC0A8FFFF)))
 	{
-		qprintf("1\n");
+		qprintf("1");
 		return true;
 	}
 	else
 	{
-		qprintf("0\n");
+		qprintf("0");
 		return false;
 	}
 }
@@ -268,14 +274,17 @@ static bool cidr_linklocal4(struct cidr *a)
 {
 	uint32_t x = ntohl(a->addr.v4.s_addr);
 
+	if (printed)
+		qprintf(" ");
+
 	if ((x >= 0xA9FE0000) && (x <= 0xA9FEFFFF))
 	{
-		qprintf("1\n");
+		qprintf("1");
 		return true;
 	}
 	else
 	{
-		qprintf("0\n");
+		qprintf("0");
 		return false;
 	}
 }
@@ -526,46 +535,55 @@ static bool cidr_contains6(struct cidr *a, struct cidr *b)
 	uint8_t net1 = x->s6_addr[15-i] & m;
 	uint8_t net2 = y->s6_addr[15-i] & m;
 
+	if (printed)
+		qprintf(" ");
+
 	if ((b->prefix >= n->prefix) && (net1 == net2) &&
 	    ((i == 15) || !memcmp(&x->s6_addr, &y->s6_addr, 15-i)))
 	{
-		qprintf("1\n");
+		qprintf("1");
 		return true;
 	}
 	else
 	{
-		qprintf("0\n");
+		qprintf("0");
 		return false;
 	}
 }
 
 static bool cidr_linklocal6(struct cidr *a)
 {
+	if (printed)
+		qprintf(" ");
+
 	if ((a->addr.v6.s6_addr[0] == 0xFE) &&
 	    (a->addr.v6.s6_addr[1] >= 0x80) &&
 	    (a->addr.v6.s6_addr[1] <= 0xBF))
 	{
-		qprintf("1\n");
+		qprintf("1");
 		return true;
 	}
 	else
 	{
-		qprintf("0\n");
+		qprintf("0");
 		return false;
 	}
 }
 
 static bool cidr_ula6(struct cidr *a)
 {
+	if (printed)
+		qprintf(" ");
+
 	if ((a->addr.v6.s6_addr[0] >= 0xFC) &&
 	    (a->addr.v6.s6_addr[0] <= 0xFD))
 	{
-		qprintf("1\n");
+		qprintf("1");
 		return true;
 	}
 	else
 	{
-		qprintf("0\n");
+		qprintf("0");
 		return false;
 	}
 }
@@ -652,10 +670,13 @@ static struct cidr * cidr_parse(const char *op, const char *s, int af_hint)
 
 static bool cidr_howmany(struct cidr *a, struct cidr *b)
 {
+	if (printed)
+		qprintf(" ");
+
 	if (b->prefix < a->prefix)
-		qprintf("0\n");
+		qprintf("0");
 	else
-		qprintf("%u\n", 1 << (b->prefix - a->prefix));
+		qprintf("%u", 1 << (b->prefix - a->prefix));
 
 	return true;
 }
