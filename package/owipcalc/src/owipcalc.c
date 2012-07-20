@@ -36,8 +36,9 @@ struct cidr {
 	} addr;
 	union {
 		char v4[sizeof("255.255.255.255/255.255.255.255 ")];
-		char v6[sizeof("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF/128 ")];
+		char v6[sizeof("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:255.255.255.255/128 ")];
 	} buf;
+	struct cidr *next;
 };
 
 struct op {
@@ -56,6 +57,54 @@ struct op {
 
 static bool quiet = false;
 static bool printed = false;
+
+static struct cidr *stack = NULL;
+
+#define qprintf(...) \
+	do { \
+		if (!quiet) printf(__VA_ARGS__); \
+		printed = true; \
+	} while(0)
+
+static void cidr_push(struct cidr *a)
+{
+	if (a)
+	{
+		a->next = stack;
+		stack = a;
+	}
+}
+
+static bool cidr_pop(struct cidr *a)
+{
+	struct cidr *old = stack;
+
+	if (old)
+	{
+		stack = stack->next;
+		free(old);
+
+		return true;
+	}
+
+	return false;
+}
+
+static struct cidr * cidr_clone(struct cidr *a)
+{
+	struct cidr *b = malloc(sizeof(*b));
+
+	if (!b)
+	{
+		fprintf(stderr, "out of memory\n");
+		exit(255);
+	}
+
+	memcpy(b, a, sizeof(*b));
+	cidr_push(b);
+
+	return b;
+}
 
 
 static struct cidr * cidr_parse4(const char *s)
@@ -115,7 +164,9 @@ static bool cidr_add4(struct cidr *a, struct cidr *b)
 	uint32_t x = ntohl(a->addr.v4.s_addr);
 	uint32_t y = ntohl(b->addr.v4.s_addr);
 
-	if ((a->family != AF_INET) || (b->family != AF_INET))
+	struct cidr *n = cidr_clone(a);
+
+	if ((n->family != AF_INET) || (b->family != AF_INET))
 		return false;
 
 	if ((uint32_t)(x + y) < x)
@@ -124,7 +175,7 @@ static bool cidr_add4(struct cidr *a, struct cidr *b)
 		return false;
 	}
 
-	a->addr.v4.s_addr = htonl(x + y);
+	n->addr.v4.s_addr = htonl(x + y);
 	return true;
 }
 
@@ -133,7 +184,9 @@ static bool cidr_sub4(struct cidr *a, struct cidr *b)
 	uint32_t x = ntohl(a->addr.v4.s_addr);
 	uint32_t y = ntohl(b->addr.v4.s_addr);
 
-	if ((a->family != AF_INET) || (b->family != AF_INET))
+	struct cidr *n = cidr_clone(a);
+
+	if ((n->family != AF_INET) || (b->family != AF_INET))
 		return false;
 
 	if ((uint32_t)(x - y) > x)
@@ -142,21 +195,27 @@ static bool cidr_sub4(struct cidr *a, struct cidr *b)
 		return false;
 	}
 
-	a->addr.v4.s_addr = htonl(x - y);
+	n->addr.v4.s_addr = htonl(x - y);
 	return true;
 }
 
 static bool cidr_network4(struct cidr *a)
 {
-	a->addr.v4.s_addr &= htonl(~((1 << (32 - a->prefix)) - 1));
-	a->prefix = 32;
+	struct cidr *n = cidr_clone(a);
+
+	n->addr.v4.s_addr &= htonl(~((1 << (32 - n->prefix)) - 1));
+	n->prefix = 32;
+
 	return true;
 }
 
 static bool cidr_broadcast4(struct cidr *a)
 {
-	a->addr.v4.s_addr |= htonl(((1 << (32 - a->prefix)) - 1));
-	a->prefix = 32;
+	struct cidr *n = cidr_clone(a);
+
+	n->addr.v4.s_addr |= htonl(((1 << (32 - n->prefix)) - 1));
+	n->prefix = 32;
+
 	return true;
 }
 
@@ -165,31 +224,24 @@ static bool cidr_contains4(struct cidr *a, struct cidr *b)
 	uint32_t net1 = a->addr.v4.s_addr & htonl(~((1 << (32 - a->prefix)) - 1));
 	uint32_t net2 = b->addr.v4.s_addr & htonl(~((1 << (32 - a->prefix)) - 1));
 
-	printed = true;
-
 	if ((b->prefix >= a->prefix) && (net1 == net2))
 	{
-		if (!quiet) printf("1\n");
+		qprintf("1\n");
 		return true;
 	}
 	else
 	{
-		if (!quiet) printf("0\n");
+		qprintf("0\n");
 		return false;
 	}
 }
 
 static bool cidr_netmask4(struct cidr *a)
 {
-	struct in_addr mask;
-	char buf[sizeof("255.255.255.255 ")];
+	struct cidr *n = cidr_clone(a);
 
-	mask.s_addr = htonl(~((1 << (32 - a->prefix)) - 1));
-
-	if (!quiet)
-		printf("%s\n", inet_ntop(AF_INET, &mask, buf, sizeof(buf)));
-
-	printed = true;
+	n->addr.v4.s_addr = htonl(~((1 << (32 - n->prefix)) - 1));
+	n->prefix = 32;
 
 	return true;
 }
@@ -198,18 +250,16 @@ static bool cidr_private4(struct cidr *a)
 {
 	uint32_t x = ntohl(a->addr.v4.s_addr);
 
-	printed = true;
-
 	if (((x >= 0x0A000000) && (x <= 0x0AFFFFFF)) ||
 	    ((x >= 0xAC100000) && (x <= 0xAC1FFFFF)) ||
 	    ((x >= 0xC0A80000) && (x <= 0xC0A8FFFF)))
 	{
-		if (!quiet) printf("1\n");
+		qprintf("1\n");
 		return true;
 	}
 	else
 	{
-		if (!quiet) printf("0\n");
+		qprintf("0\n");
 		return false;
 	}
 }
@@ -218,40 +268,77 @@ static bool cidr_linklocal4(struct cidr *a)
 {
 	uint32_t x = ntohl(a->addr.v4.s_addr);
 
-	printed = true;
-
 	if ((x >= 0xA9FE0000) && (x <= 0xA9FEFFFF))
 	{
-		if (!quiet) printf("1\n");
+		qprintf("1\n");
 		return true;
 	}
 	else
 	{
-		if (!quiet) printf("0\n");
+		qprintf("0\n");
 		return false;
 	}
+}
+
+static bool cidr_prev4(struct cidr *a, struct cidr *b)
+{
+	struct cidr *n = cidr_clone(a);
+
+	n->prefix = b->prefix;
+	n->addr.v4.s_addr -= htonl(1 << (32 - b->prefix));
+
+	return true;
+}
+
+static bool cidr_next4(struct cidr *a, struct cidr *b)
+{
+	struct cidr *n = cidr_clone(a);
+
+	n->prefix = b->prefix;
+	n->addr.v4.s_addr += htonl(1 << (32 - b->prefix));
+
+	return true;
+}
+
+static bool cidr_6to4(struct cidr *a)
+{
+	struct cidr *n = cidr_clone(a);
+	uint32_t x = a->addr.v4.s_addr;
+
+	memset(&n->addr.v6.s6_addr, 0, sizeof(n->addr.v6.s6_addr));
+
+	n->family = AF_INET6;
+	n->prefix = 48;
+
+	n->addr.v6.s6_addr[0] = 0x20;
+	n->addr.v6.s6_addr[1] = 0x02;
+	n->addr.v6.s6_addr[2] = (x >> 24);
+	n->addr.v6.s6_addr[3] = (x >> 16) & 0xFF;
+	n->addr.v6.s6_addr[4] = (x >>  8) & 0xFF;
+	n->addr.v6.s6_addr[5] = x & 0xFF;
+
+	return true;
 }
 
 static bool cidr_print4(struct cidr *a)
 {
 	char *p;
 
-	if (a->family != AF_INET)
+	if (!a || (a->family != AF_INET))
 		return false;
 
 	if (!(p = (char *)inet_ntop(AF_INET, &a->addr.v4, a->buf.v4, sizeof(a->buf.v4))))
 		return false;
 
-	if (!quiet)
-		printf("%s", p);
+	if (printed)
+		qprintf(" ");
 
-	if (!quiet && (a->prefix < 32))
-		printf("/%u", a->prefix);
+	qprintf("%s", p);
 
-	if (!quiet)
-		printf("\n");
+	if (a->prefix < 32)
+		qprintf("/%u", a->prefix);
 
-	printed = true;
+	cidr_pop(a);
 
 	return true;
 }
@@ -265,11 +352,11 @@ static struct cidr * cidr_parse6(const char *s)
 	if (!addr || (strlen(s) >= sizeof(addr->buf.v6)))
 		goto err;
 
-	snprintf(addr->buf.v6, sizeof(addr->buf.v6), "%s", s);
+	snprintf(addr->buf.v4, sizeof(addr->buf.v6), "%s", s);
 
 	addr->family = AF_INET6;
 
-	if ((p = strchr(addr->buf.v6, '/')) != NULL)
+	if ((p = strchr(addr->buf.v4, '/')) != NULL)
 	{
 		*p++ = 0;
 
@@ -283,9 +370,9 @@ static struct cidr * cidr_parse6(const char *s)
 		addr->prefix = 128;
 	}
 
-	if (p == addr->buf.v6+1)
+	if (p == addr->buf.v4+1)
 		memset(&addr->addr.v6, 0, sizeof(addr->addr.v6));
-	else if (inet_pton(AF_INET6, addr->buf.v6, &addr->addr.v6) != 1)
+	else if (inet_pton(AF_INET6, addr->buf.v4, &addr->addr.v6) != 1)
 		goto err;
 
 	return addr;
@@ -301,7 +388,8 @@ static bool cidr_add6(struct cidr *a, struct cidr *b)
 {
 	uint8_t idx = 15, carry = 0, overflow = 0;
 
-	struct in6_addr *x = &a->addr.v6;
+	struct cidr *n = cidr_clone(a);
+	struct in6_addr *x = &n->addr.v6;
 	struct in6_addr *y = &b->addr.v6;
 
 	if ((a->family != AF_INET6) || (b->family != AF_INET6))
@@ -327,10 +415,11 @@ static bool cidr_sub6(struct cidr *a, struct cidr *b)
 {
 	uint8_t idx = 15, carry = 0, underflow = 0;
 
-	struct in6_addr *x = &a->addr.v6;
+	struct cidr *n = cidr_clone(a);
+	struct in6_addr *x = &n->addr.v6;
 	struct in6_addr *y = &b->addr.v6;
 
-	if ((a->family != AF_INET6) || (b->family != AF_INET6))
+	if ((n->family != AF_INET6) || (b->family != AF_INET6))
 		return false;
 
 	do {
@@ -349,75 +438,134 @@ static bool cidr_sub6(struct cidr *a, struct cidr *b)
 	return true;
 }
 
+static bool cidr_prev6(struct cidr *a, struct cidr *b)
+{
+	uint8_t idx, carry = 1, underflow = 0;
+	struct cidr *n = cidr_clone(a);
+	struct in6_addr *x = &n->addr.v6;
+
+	if (b->prefix == 0)
+	{
+		fprintf(stderr, "underflow during 'prev'\n");
+		return false;
+	}
+
+	idx = (b->prefix - 1) / 8;
+
+	do {
+		underflow = !!((x->s6_addr[idx] - carry) < 0);
+		x->s6_addr[idx] -= carry;
+		carry = underflow;
+	}
+	while (idx-- > 0);
+
+	if (carry)
+	{
+		fprintf(stderr, "underflow during 'prev'\n");
+		return false;
+	}
+
+	n->prefix = b->prefix;
+
+	return true;
+}
+
+static bool cidr_next6(struct cidr *a, struct cidr *b)
+{
+	uint8_t idx, carry = 1, overflow = 0;
+	struct cidr *n = cidr_clone(a);
+	struct in6_addr *x = &n->addr.v6;
+
+	if (b->prefix == 0)
+	{
+		fprintf(stderr, "overflow during 'next'\n");
+		return false;
+	}
+
+	idx = (b->prefix - 1) / 8;
+
+	do {
+		overflow = !!((x->s6_addr[idx] + carry) >= 256);
+		x->s6_addr[idx] += carry;
+		carry = overflow;
+	}
+	while (idx-- > 0);
+
+	if (carry)
+	{
+		fprintf(stderr, "overflow during 'next'\n");
+		return false;
+	}
+
+	n->prefix = b->prefix;
+
+	return true;
+}
+
 static bool cidr_network6(struct cidr *a)
 {
 	uint8_t i;
+	struct cidr *n = cidr_clone(a);
 
-	for (i = 0; i < (128 - a->prefix) / 8; i++)
-		a->addr.v6.s6_addr[15-i] = 0;
+	for (i = 0; i < (128 - n->prefix) / 8; i++)
+		n->addr.v6.s6_addr[15-i] = 0;
 
-	if ((128 - a->prefix) % 8)
-		a->addr.v6.s6_addr[15-i] &= ~((1 << ((128 - a->prefix) % 8)) - 1);
+	if ((128 - n->prefix) % 8)
+		n->addr.v6.s6_addr[15-i] &= ~((1 << ((128 - n->prefix) % 8)) - 1);
 
 	return true;
 }
 
 static bool cidr_contains6(struct cidr *a, struct cidr *b)
 {
-	struct in6_addr *x = &a->addr.v6;
+	struct cidr *n = cidr_clone(a);
+	struct in6_addr *x = &n->addr.v6;
 	struct in6_addr *y = &b->addr.v6;
-
-	uint8_t i = (128 - a->prefix) / 8;
-	uint8_t m = ~((1 << ((128 - a->prefix) % 8)) - 1);
+	uint8_t i = (128 - n->prefix) / 8;
+	uint8_t m = ~((1 << ((128 - n->prefix) % 8)) - 1);
 	uint8_t net1 = x->s6_addr[15-i] & m;
 	uint8_t net2 = y->s6_addr[15-i] & m;
 
-	printed = true;
-
-	if ((b->prefix >= a->prefix) && (net1 == net2) &&
+	if ((b->prefix >= n->prefix) && (net1 == net2) &&
 	    ((i == 15) || !memcmp(&x->s6_addr, &y->s6_addr, 15-i)))
 	{
-		if (!quiet) printf("1\n");
+		qprintf("1\n");
 		return true;
 	}
 	else
 	{
-		if (!quiet) printf("0\n");
+		qprintf("0\n");
 		return false;
 	}
 }
 
 static bool cidr_linklocal6(struct cidr *a)
 {
-	printed = true;
-
 	if ((a->addr.v6.s6_addr[0] == 0xFE) &&
 	    (a->addr.v6.s6_addr[1] >= 0x80) &&
 	    (a->addr.v6.s6_addr[1] <= 0xBF))
 	{
-		if (!quiet) printf("1\n");
+		qprintf("1\n");
 		return true;
 	}
 	else
 	{
-		if (!quiet) printf("0\n");
+		qprintf("0\n");
 		return false;
 	}
 }
 
 static bool cidr_ula6(struct cidr *a)
 {
-	printed = true;
-
 	if ((a->addr.v6.s6_addr[0] >= 0xFC) &&
 	    (a->addr.v6.s6_addr[0] <= 0xFD))
 	{
-		if (!quiet) printf("1\n");
+		qprintf("1\n");
 		return true;
 	}
 	else
 	{
-		if (!quiet) printf("0\n");
+		qprintf("0\n");
 		return false;
 	}
 }
@@ -426,22 +574,21 @@ static bool cidr_print6(struct cidr *a)
 {
 	char *p;
 
-	if (a->family != AF_INET6)
+	if (!a || (a->family != AF_INET6))
 		return NULL;
 
 	if (!(p = (char *)inet_ntop(AF_INET6, &a->addr.v6, a->buf.v6, sizeof(a->buf.v6))))
 		return false;
 
-	if (!quiet)
-		printf("%s", p);
+	if (printed)
+		qprintf(" ");
 
-	if (!quiet && (a->prefix < 128))
-		printf("/%u", a->prefix);
+	qprintf("%s", p);
 
-	if (!quiet)
-		printf("\n");
+	if (a->prefix < 128)
+		qprintf("/%u", a->prefix);
 
-	printed = true;
+	cidr_pop(a);
 
 	return true;
 }
@@ -465,13 +612,13 @@ static struct cidr * cidr_parse(const char *op, const char *s, int af_hint)
 		if (af_hint == AF_INET)
 		{
 			a->family = AF_INET;
-			a->prefix = 32;
+			a->prefix = sum;
 			a->addr.v4.s_addr = htonl(sum);
 		}
 		else
 		{
 			a->family = AF_INET6;
-			a->prefix = 128;
+			a->prefix = sum;
 
 			for (i = 0; i <= 15; i++)
 			{
@@ -505,15 +652,10 @@ static struct cidr * cidr_parse(const char *op, const char *s, int af_hint)
 
 static bool cidr_howmany(struct cidr *a, struct cidr *b)
 {
-	if (!quiet)
-	{
-		if (b->prefix < a->prefix)
-			printf("0\n");
-		else
-			printf("%u\n", 1 << (b->prefix - a->prefix));
-	}
-
-	printed = true;
+	if (b->prefix < a->prefix)
+		qprintf("0\n");
+	else
+		qprintf("%u\n", 1 << (b->prefix - a->prefix));
 
 	return true;
 }
@@ -542,6 +684,16 @@ struct op ops[] = {
 	  .f4.a2 = cidr_sub4,
 	  .f6.a2 = cidr_sub6 },
 
+	{ .name = "next",
+	  .desc = "Advance base address to next prefix of given size",
+	  .f4.a2 = cidr_next4,
+	  .f6.a2 = cidr_next6 },
+
+	{ .name = "prev",
+	  .desc = "Lower base address to previous prefix of give size",
+	  .f4.a2 = cidr_prev4,
+	  .f6.a2 = cidr_prev6 },
+
 	{ .name = "network",
 	  .desc = "Turn base address into network address",
 	  .f4.a1 = cidr_network4,
@@ -557,46 +709,54 @@ struct op ops[] = {
 	  .f6.a2 = cidr_prefix },
 
 	{ .name = "netmask",
-	  .desc = "Print netmask of base address, does not change base address",
+	  .desc = "Calculate netmask of base address",
 	  .f4.a1 = cidr_netmask4 },
 
+	{ .name = "6to4",
+	  .desc = "Calculate 6to4 prefix of given ipv4-address",
+	  .f4.a1 = cidr_6to4 },
+
 	{ .name = "howmany",
-	  .desc = "Print amount of righ-hand prefixes that fit into base address, "
-	          "does not change base address",
+	  .desc = "Print amount of righ-hand prefixes that fit into base address",
 	  .f4.a2 = cidr_howmany,
 	  .f6.a2 = cidr_howmany },
 
 	{ .name = "contains",
-	  .desc = "Print '1' if argument fits into base address or '0' "
-	          "if not, does not change base address",
+	  .desc = "Print '1' if argument fits into base address or '0' if not",
 	  .f4.a2 = cidr_contains4,
 	  .f6.a2 = cidr_contains6 },
 
 	{ .name = "private",
 	  .desc = "Print '1' if base address is in RFC1918 private space or '0' "
-	          "if not, does not change base address",
+	          "if not",
 	  .f4.a1 = cidr_private4 },
 
 	{ .name = "linklocal",
 	  .desc = "Print '1' if base address is in 169.254.0.0/16 or FE80::/10 "
-	          "link local space or '0' if not, does not change base address",
+	          "link local space or '0' if not",
 	  .f4.a1 = cidr_linklocal4,
 	  .f6.a1 = cidr_linklocal6 },
 
 	{ .name = "ula",
 	  .desc = "Print '1' if base address is in FC00::/7 unique local address "
-	          "(ULA) space or '0' if not, does not change base address",
+	          "(ULA) space or '0' if not",
 	  .f6.a1 = cidr_ula6 },
 
 	{ .name = "quiet",
 	  .desc = "Suppress output, useful for test operation where the result can "
-	          "be inferred from the exit code, does not change base address",
+	          "be inferred from the exit code",
 	  .f4.a1 = cidr_quiet,
 	  .f6.a1 = cidr_quiet },
 
+	{ .name = "pop",
+	  .desc = "Pop intermediate result from stack",
+	  .f4.a1 = cidr_pop,
+	  .f6.a1 = cidr_pop },
+
 	{ .name = "print",
-	  .desc = "Print intermediate result, invoked implicitely at the end of "
-	          "calculation if no intermediate prints happened",
+	  .desc = "Print intermediate result and pop it from stack, invoked "
+	          "implicitely at the end of calculation if no intermediate prints "
+	          "happened",
 	  .f4.a1 = cidr_print4,
 	  .f6.a1 = cidr_print6 },
 };
@@ -651,11 +811,12 @@ static void usage(const char *prog)
 	exit(1);
 }
 
-static bool runop(struct cidr *a, char ***arg, int *status)
+static bool runop(char ***arg, int *status)
 {
 	int i;
 	char *arg1 = **arg;
 	char *arg2 = *(*arg+1);
+	struct cidr *a = stack;
 	struct cidr *b = NULL;
 
 	if (!arg1)
@@ -745,7 +906,9 @@ int main(int argc, char **argv)
 	if (!a)
 		usage(argv[0]);
 
-	while (runop(a, &arg, &status));
+	cidr_push(a);
+
+	while (runop(&arg, &status));
 
 	if (*arg)
 	{
@@ -755,11 +918,13 @@ int main(int argc, char **argv)
 
 	if (!printed && (status < 2))
 	{
-		if (a->family == AF_INET)
-			cidr_print4(a);
+		if (stack->family == AF_INET)
+			cidr_print4(stack);
 		else
-			cidr_print6(a);
+			cidr_print6(stack);
 	}
+
+	qprintf("\n");
 
 	exit(status);
 }
