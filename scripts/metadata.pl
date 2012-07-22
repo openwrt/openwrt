@@ -115,6 +115,7 @@ sub gen_kconfig_overrides() {
 					$val = $2;
 				}
 				if ($config{"CONFIG_PACKAGE_$package"} and ($config ne 'n')) {
+					next if $kconfig{$config} eq 'y';
 					$kconfig{$config} = $val;
 				} elsif (!$override) {
 					$kconfig{$config} or $kconfig{$config} = 'n';
