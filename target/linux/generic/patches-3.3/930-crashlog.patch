@@ -1,13 +1,18 @@
 --- /dev/null
 +++ b/include/linux/crashlog.h
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,17 @@
 +#ifndef __CRASHLOG_H
 +#define __CRASHLOG_H
 +
 +#ifdef CONFIG_CRASHLOG
-+void __init crashlog_init_mem(struct bootmem_data *bdata);
++void __init crashlog_init_bootmem(struct bootmem_data *bdata);
++void __init crashlog_init_memblock(phys_addr_t addr, phys_addr_t size);
 +#else
-+static inline void crashlog_init_mem(struct bootmem_data *bdata)
++static inline void crashlog_init_bootmem(struct bootmem_data *bdata)
++{
++}
++
++static inline void crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
 +{
 +}
 +#endif
@@ -21,7 +26,7 @@
  
 +config CRASHLOG
 +	bool "Crash logging"
-+	depends on !NO_BOOTMEM && !HAVE_MEMBLOCK
++	depends on !NO_BOOTMEM || HAVE_MEMBLOCK
 +
  config BLK_DEV_INITRD
  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
@@ -38,7 +43,7 @@
  
 --- /dev/null
 +++ b/kernel/crashlog.c
-@@ -0,0 +1,171 @@
+@@ -0,0 +1,190 @@
 +/*
 + * Crash information logger
 + * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
@@ -64,6 +69,7 @@
 +
 +#include <linux/module.h>
 +#include <linux/bootmem.h>
++#include <linux/memblock.h>
 +#include <linux/debugfs.h>
 +#include <linux/crashlog.h>
 +#include <linux/kmsg_dump.h>
@@ -96,7 +102,8 @@
 +
 +extern struct list_head *crashlog_modules;
 +
-+void __init crashlog_init_mem(bootmem_data_t *bdata)
++#ifndef CONFIG_NO_BOOTMEM
++void __init crashlog_init_bootmem(bootmem_data_t *bdata)
 +{
 +	unsigned long addr;
 +
@@ -111,6 +118,23 @@
 +	}
 +	crashlog_addr = addr;
 +}
++#endif
++
++#ifdef CONFIG_HAVE_MEMBLOCK
++void __init crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
++{
++	if (crashlog_addr)
++		return;
++
++	addr += size - CRASHLOG_OFFSET;
++	if (memblock_reserve(addr, CRASHLOG_SIZE)) {
++		printk("Crashlog failed to allocate RAM at address 0x%lx\n", (unsigned long) addr);
++		return;
++	}
++
++	crashlog_addr = addr;
++}
++#endif
 +
 +static void __init crashlog_copy(void)
 +{
@@ -224,7 +248,7 @@
  	if (!bdata->node_bootmem_map)
  		return 0;
  
-+	crashlog_init_mem(bdata);
++	crashlog_init_bootmem(bdata);
  	start = bdata->node_min_pfn;
  	end = bdata->node_low_pfn;
  
@@ -240,3 +264,22 @@
  
  
  /* Block module loading/unloading? */
+--- a/mm/memblock.c
++++ b/mm/memblock.c
+@@ -19,6 +19,7 @@
+ #include <linux/debugfs.h>
+ #include <linux/seq_file.h>
+ #include <linux/memblock.h>
++#include <linux/crashlog.h>
+ 
+ static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_REGIONS] __initdata_memblock;
+ static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_REGIONS] __initdata_memblock;
+@@ -305,6 +306,8 @@ static void __init_memblock memblock_ins
+ 	memblock_set_region_node(rgn, nid);
+ 	type->cnt++;
+ 	type->total_size += size;
++	if (type == &memblock.memory && idx == 0)
++		crashlog_init_memblock(base, size);
+ }
+ 
+ /**
