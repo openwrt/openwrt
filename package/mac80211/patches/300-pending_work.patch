@@ -4254,3 +4254,115 @@
  		freq->e = 6;
  		return 0;
  	default:
+--- a/drivers/net/wireless/ath/ath5k/ath5k.h
++++ b/drivers/net/wireless/ath/ath5k/ath5k.h
+@@ -1418,6 +1418,7 @@ struct ath5k_hw {
+ 		s16		txp_min_pwr;
+ 		s16		txp_max_pwr;
+ 		s16		txp_cur_pwr;
++		s16		txp_user_pwr;
+ 		/* Values in 0.5dB units */
+ 		s16		txp_offset;
+ 		s16		txp_ofdm;
+--- a/drivers/net/wireless/ath/ath5k/base.c
++++ b/drivers/net/wireless/ath/ath5k/base.c
+@@ -2953,6 +2953,9 @@ ath5k_init(struct ieee80211_hw *hw)
+ 		hw->queues = 1;
+ 	}
+ 
++	/* init tx_power setting to maximum */
++	ah->ah_txpower.txp_user_pwr = AR5K_TUNE_MAX_TXPOWER;
++
+ 	tasklet_init(&ah->rxtq, ath5k_tasklet_rx, (unsigned long)ah);
+ 	tasklet_init(&ah->txtq, ath5k_tasklet_tx, (unsigned long)ah);
+ 	tasklet_init(&ah->beacontq, ath5k_tasklet_beacon, (unsigned long)ah);
+--- a/drivers/net/wireless/ath/ath5k/eeprom.c
++++ b/drivers/net/wireless/ath/ath5k/eeprom.c
+@@ -1484,7 +1484,7 @@ ath5k_eeprom_read_target_rate_pwr_info(s
+ 	case AR5K_EEPROM_MODE_11A:
+ 		offset += AR5K_EEPROM_TARGET_PWR_OFF_11A(ee->ee_version);
+ 		rate_pcal_info = ee->ee_rate_tpwr_a;
+-		ee->ee_rate_target_pwr_num[mode] = AR5K_EEPROM_N_5GHZ_CHAN;
++		ee->ee_rate_target_pwr_num[mode] = AR5K_EEPROM_N_5GHZ_RATE_CHAN;
+ 		break;
+ 	case AR5K_EEPROM_MODE_11B:
+ 		offset += AR5K_EEPROM_TARGET_PWR_OFF_11B(ee->ee_version);
+--- a/drivers/net/wireless/ath/ath5k/eeprom.h
++++ b/drivers/net/wireless/ath/ath5k/eeprom.h
+@@ -182,6 +182,7 @@
+ #define AR5K_EEPROM_EEP_DELTA		10
+ #define AR5K_EEPROM_N_MODES		3
+ #define AR5K_EEPROM_N_5GHZ_CHAN		10
++#define AR5K_EEPROM_N_5GHZ_RATE_CHAN	8
+ #define AR5K_EEPROM_N_2GHZ_CHAN		3
+ #define AR5K_EEPROM_N_2GHZ_CHAN_2413	4
+ #define	AR5K_EEPROM_N_2GHZ_CHAN_MAX	4
+--- a/drivers/net/wireless/ath/ath5k/phy.c
++++ b/drivers/net/wireless/ath/ath5k/phy.c
+@@ -3585,14 +3585,12 @@ ath5k_setup_rate_powertable(struct ath5k
+  * ath5k_hw_txpower() - Set transmission power limit for a given channel
+  * @ah: The &struct ath5k_hw
+  * @channel: The &struct ieee80211_channel
+- * @txpower: Requested tx power in 0.5dB steps
+  *
+  * Combines all of the above to set the requested tx power limit
+- * on hw.
++ * on hw to ah->ah_txpower.txp_user_pwr.
+  */
+ static int
+-ath5k_hw_txpower(struct ath5k_hw *ah, struct ieee80211_channel *channel,
+-		 u8 txpower)
++ath5k_hw_txpower(struct ath5k_hw *ah, struct ieee80211_channel *channel)
+ {
+ 	struct ath5k_rate_pcal_info rate_info;
+ 	struct ieee80211_channel *curr_channel = ah->ah_current_channel;
+@@ -3600,11 +3598,6 @@ ath5k_hw_txpower(struct ath5k_hw *ah, st
+ 	u8 type;
+ 	int ret;
+ 
+-	if (txpower > AR5K_TUNE_MAX_TXPOWER) {
+-		ATH5K_ERR(ah, "invalid tx power: %u\n", txpower);
+-		return -EINVAL;
+-	}
+-
+ 	ee_mode = ath5k_eeprom_mode_from_channel(channel);
+ 	if (ee_mode < 0) {
+ 		ATH5K_ERR(ah,
+@@ -3669,7 +3662,7 @@ ath5k_hw_txpower(struct ath5k_hw *ah, st
+ 	ath5k_get_rate_pcal_data(ah, channel, &rate_info);
+ 
+ 	/* Setup rate power table */
+-	ath5k_setup_rate_powertable(ah, txpower, &rate_info, ee_mode);
++	ath5k_setup_rate_powertable(ah, ah->ah_txpower.txp_user_pwr, &rate_info, ee_mode);
+ 
+ 	/* Write rate power table on hw */
+ 	ath5k_hw_reg_write(ah, AR5K_TXPOWER_OFDM(3, 24) |
+@@ -3719,8 +3712,16 @@ ath5k_hw_set_txpower_limit(struct ath5k_
+ {
+ 	ATH5K_DBG(ah, ATH5K_DEBUG_TXPOWER,
+ 		"changing txpower to %d\n", txpower);
++	if (txpower) {
++		ah->ah_txpower.txp_user_pwr = txpower;
+ 
+-	return ath5k_hw_txpower(ah, ah->ah_current_channel, txpower);
++		if (ah->ah_txpower.txp_user_pwr > AR5K_TUNE_MAX_TXPOWER) {
++			ATH5K_ERR(ah, "invalid tx power: %u\n", ah->ah_txpower.txp_user_pwr);
++			return -EINVAL;
++		}
++	}
++
++	return ath5k_hw_txpower(ah, ah->ah_current_channel);
+ }
+ 
+ 
+@@ -3791,8 +3792,8 @@ ath5k_hw_phy_init(struct ath5k_hw *ah, s
+ 	 * RF buffer settings on 5211/5212+ so that we
+ 	 * properly set curve indices.
+ 	 */
+-	ret = ath5k_hw_txpower(ah, channel, ah->ah_txpower.txp_cur_pwr ?
+-			ah->ah_txpower.txp_cur_pwr / 2 : AR5K_TUNE_MAX_TXPOWER);
++	ret = ath5k_hw_txpower(ah, channel);
++
+ 	if (ret)
+ 		return ret;
+ 
