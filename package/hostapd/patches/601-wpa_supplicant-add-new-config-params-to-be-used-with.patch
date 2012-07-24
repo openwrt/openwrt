@@ -1,0 +1,222 @@
+From 4bb69d15477e0f2b00e166845341dc933de47c58 Mon Sep 17 00:00:00 2001
+From: Antonio Quartulli <ordex@autistici.org>
+Date: Sun, 3 Jun 2012 18:22:56 +0200
+Subject: [PATCHv2 601/602] wpa_supplicant: add new config params to be used
+ with the ibss join command
+
+Signed-hostap: Antonio Quartulli <ordex@autistici.org>
+---
+ src/drivers/driver.h            |    6 +++
+ wpa_supplicant/config.c         |   96 +++++++++++++++++++++++++++++++++++++++
+ wpa_supplicant/config_ssid.h    |    6 +++
+ wpa_supplicant/wpa_supplicant.c |   23 +++++++---
+ 4 files changed, 124 insertions(+), 7 deletions(-)
+
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index 5ee92f7..d204148 100644
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -19,6 +19,7 @@
+ 
+ #define WPA_SUPPLICANT_DRIVER_VERSION 4
+ 
++#include "drivers/nl80211_copy.h"
+ #include "common/defs.h"
+ 
+ #define HOSTAPD_CHAN_DISABLED 0x00000001
+@@ -332,6 +333,11 @@ struct wpa_driver_associate_params {
+ 	 */
+ 	int freq;
+ 
++	int beacon_interval;
++	int fixed_freq;
++	unsigned char rates[NL80211_MAX_SUPP_RATES];
++	int mcast_rate;
++
+ 	/**
+ 	 * bg_scan_period - Background scan period in seconds, 0 to disable
+ 	 * background scan, or -1 to indicate no change to default driver
+diff --git a/wpa_supplicant/config.c b/wpa_supplicant/config.c
+index c423bc3..be566ee 100644
+--- a/wpa_supplicant/config.c
++++ b/wpa_supplicant/config.c
+@@ -14,6 +14,7 @@
+ #include "rsn_supp/wpa.h"
+ #include "eap_peer/eap.h"
+ #include "p2p/p2p.h"
++#include "drivers/nl80211_copy.h"
+ #include "config.h"
+ 
+ 
+@@ -1431,6 +1432,97 @@ static char * wpa_config_write_p2p_client_list(const struct parse_data *data,
+ 
+ #endif /* CONFIG_P2P */
+ 
++static int wpa_config_parse_mcast_rate(const struct parse_data *data,
++				       struct wpa_ssid *ssid, int line,
++				       const char *value)
++{
++	ssid->mcast_rate = (int)(strtod(value, NULL) * 10);
++
++	return 0;
++}
++
++#ifndef NO_CONFIG_WRITE
++static char * wpa_config_write_mcast_rate(const struct parse_data *data,
++					  struct wpa_ssid *ssid)
++{
++	char *value;
++	int res;
++
++	if (!ssid->mcast_rate == 0)
++		return NULL;
++
++	value = os_malloc(6); /* longest: 300.0 */
++	if (value == NULL)
++		return NULL;
++	res = os_snprintf(value, 5, "%.1f", (double)ssid->mcast_rate / 10);
++	if (res < 0) {
++		os_free(value);
++		return NULL;
++	}
++	return value;
++}
++#endif /* NO_CONFIG_WRITE */
++
++static int wpa_config_parse_rates(const struct parse_data *data,
++				  struct wpa_ssid *ssid, int line,
++				  const char *value)
++{
++	int i;
++	char *pos, *r, *sptr, *end;
++	double rate;
++
++	pos = (char *)value;
++	r = strtok_r(pos, ",", &sptr);
++	i = 0;
++	while (pos && i < NL80211_MAX_SUPP_RATES) {
++		rate = 0.0;
++		if (r)
++			rate = strtod(r, &end);
++		ssid->rates[i] = rate * 2;
++		if (*end != '\0' || rate * 2 != ssid->rates[i])
++			return 1;
++
++		i++;
++		r = strtok_r(NULL, ",", &sptr);
++	}
++
++	return 0;
++}
++
++#ifndef NO_CONFIG_WRITE
++static char * wpa_config_write_rates(const struct parse_data *data,
++				     struct wpa_ssid *ssid)
++{
++	char *value, *pos;
++	int res, i;
++
++	if (ssid->rates[0] <= 0)
++		return NULL;
++
++	value = os_malloc(6 * NL80211_MAX_SUPP_RATES + 1);
++	if (value == NULL)
++		return NULL;
++	pos = value;
++	for (i = 0; i < NL80211_MAX_SUPP_RATES - 1; i++) {
++		res = os_snprintf(pos, 6, "%.1f,", (double)ssid->rates[i] / 2);
++		if (res < 0) {
++			os_free(value);
++			return NULL;
++		}
++		pos += res;
++	}
++	res = os_snprintf(pos, 6, "%.1f",
++			  (double)ssid->rates[NL80211_MAX_SUPP_RATES - 1] / 2);
++	if (res < 0) {
++		os_free(value);
++		return NULL;
++	}
++
++	value[6 * NL80211_MAX_SUPP_RATES] = '\0';
++	return value;
++}
++#endif /* NO_CONFIG_WRITE */
++
+ /* Helper macros for network block parser */
+ 
+ #ifdef OFFSET
+@@ -1605,6 +1697,10 @@ static const struct parse_data ssid_fields[] = {
+ 	{ STR(ht_mcs) },
+ #endif /* CONFIG_HT_OVERRIDES */
+ 	{ INT(ap_max_inactivity) },
++	{ INT_RANGE(fixed_freq, 0, 1) },
++	{ INT_RANGE(beacon_interval, 0, 1000) },
++	{ FUNC(rates) },
++	{ FUNC(mcast_rate) },
+ };
+ 
+ #undef OFFSET
+diff --git a/wpa_supplicant/config_ssid.h b/wpa_supplicant/config_ssid.h
+index 80d4382..8d152a4 100644
+--- a/wpa_supplicant/config_ssid.h
++++ b/wpa_supplicant/config_ssid.h
+@@ -11,6 +11,7 @@
+ 
+ #include "common/defs.h"
+ #include "eap_peer/eap_config.h"
++#include "drivers/nl80211_copy.h"
+ 
+ #define MAX_SSID_LEN 32
+ 
+@@ -499,6 +500,11 @@ struct wpa_ssid {
+ 	 * By default: 300 seconds.
+ 	 */
+ 	int ap_max_inactivity;
++
++	int fixed_freq;
++	int beacon_interval;
++	unsigned char rates[NL80211_MAX_SUPP_RATES];
++	double mcast_rate;
+ };
+ 
+ #endif /* CONFIG_SSID_H */
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index cc85f1e..1473d91 100644
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -1395,15 +1395,24 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
+ 		params.ssid_len = ssid->ssid_len;
+ 	}
+ 
+-	if (ssid->mode == WPAS_MODE_IBSS && ssid->bssid_set &&
+-	    wpa_s->conf->ap_scan == 2) {
+-		params.bssid = ssid->bssid;
+-		params.fixed_bssid = 1;
++	if (ssid->mode == WPAS_MODE_IBSS) {
++		if (ssid->bssid_set && wpa_s->conf->ap_scan == 2) {
++			params.bssid = ssid->bssid;
++			params.fixed_bssid = 1;
++		}
++		if (ssid->frequency > 0 && params.freq == 0)
++			/* Initial channel for IBSS */
++			params.freq = ssid->frequency;
++		params.fixed_freq = ssid->fixed_freq;
++		params.beacon_interval = ssid->beacon_interval;
++		i = 0;
++		while (i < NL80211_MAX_SUPP_RATES) {
++			params.rates[i] = ssid->rates[i];
++			i++;
++		}
++		params.mcast_rate = ssid->mcast_rate;
+ 	}
+ 
+-	if (ssid->mode == WPAS_MODE_IBSS && ssid->frequency > 0 &&
+-	    params.freq == 0)
+-		params.freq = ssid->frequency; /* Initial channel for IBSS */
+ 	params.wpa_ie = wpa_ie;
+ 	params.wpa_ie_len = wpa_ie_len;
+ 	params.pairwise_suite = cipher_pairwise;
+-- 
+1.7.9.4
+
