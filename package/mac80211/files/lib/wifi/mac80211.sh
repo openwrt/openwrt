@@ -445,11 +445,17 @@ enable_mac80211() {
 				config_get encryption "$vif" encryption
 				config_get key "$vif" key 1
 				config_get mcast_rate "$vif" mcast_rate
+				config_get htmode "$device" htmode
+				case "$htmode" in
+					HT20|HT40+|HT40-) ;;
+					*) htmode= ;;
+				esac
+
 
 				local keyspec=""
 				[ "$encryption" == "psk" -o "$encryption" == "psk2" ] && {
 					if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
-						wpa_supplicant_setup_vif "$vif" nl80211 "${hostapd_ctrl:+-H $hostapd_ctrl}" $freq || {
+						wpa_supplicant_setup_vif "$vif" nl80211 "${hostapd_ctrl:+-H $hostapd_ctrl}" $freq $htmode || {
 							echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
 							# make sure this wifi interface won't accidentally stay open without encryption
 							ifconfig "$ifname" down
@@ -495,12 +501,6 @@ enable_mac80211() {
 					mcsub="$(( ($mcast_rate / 100) % 10 ))"
 					[ "$mcsub" -gt 0 ] && mcval="$mcval.$mcsub"
 				}
-
-				config_get htmode "$device" htmode
-				case "$htmode" in
-					HT20|HT40+|HT40-|NOHT) ;;
-					*) htmode= ;;
-				esac
 
 				iw dev "$ifname" ibss join "$ssid" $freq $htmode \
 					${fixed:+fixed-freq} $bssid \

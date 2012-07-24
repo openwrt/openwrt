@@ -4,6 +4,7 @@ wpa_supplicant_setup_vif() {
 	local key="$key"
 	local options="$3"
 	local freq=""
+	local ht="$5"
 	local ap_scan=""
 	local scan_ssid="1"
 	[ -n "$4" ] && freq="frequency=$4"
@@ -149,6 +150,9 @@ wpa_supplicant_setup_vif() {
 		mrate=${mcast_rate:+"mcast_rate=$mcval"}
 	}
 
+	local ht_str
+	[ -n "$ht" ] && ht_str="htmode=$ht"
+
 	rm -rf /var/run/wpa_supplicant-$ifname
 	cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
 ctrl_interface=/var/run/wpa_supplicant-$ifname
@@ -165,6 +169,7 @@ network={
 	$beacon_interval
 	$brates
 	$mrate
+	$ht_str
 	$ieee80211w
 	$passphrase
 	$pairwise
