@@ -904,3 +904,20 @@ define KernelPackage/acpi-button/description
 endef
 
 $(eval $(call KernelPackage,acpi-button))
+
+define KernelPackage/regmap
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Generic register map support
+  KCONFIG:=CONFIG_REGMAP=y \
+	   CONFIG_REGMAP_SPI \
+	   CONFIG_REGMAP_I2C
+  FILES:=$(LINUX_DIR)/drivers/base/regmap/regmap-i2c.ko \
+	 $(LINUX_DIR)/drivers/base/regmap/regmap-spi.ko
+  AUTOLOAD:=$(call AutoLoad,10,regmap-i2c regmap-spi)
+endef
+
+define KernelPackage/regmap/description
+  Generic register map support
+endef
+
+$(eval $(call KernelPackage,regmap))
