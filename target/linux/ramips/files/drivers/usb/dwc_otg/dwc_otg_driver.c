@@ -634,7 +634,7 @@ static int dwc_otg_driver_remove(struct platform_device *pdev)
 
 #ifndef DWC_HOST_ONLY
 	if (otg_dev->pcd) {
-		dwc_otg_pcd_remove(pdev);
+		dwc_otg_pcd_remove(&pdev->dev);
 	}
 #endif
 	if (otg_dev->core_if) {
@@ -823,7 +823,7 @@ static int dwc_otg_driver_probe(struct platform_device *pdev)
 	/*
 	 * Initialize the PCD
 	 */
-	retval = dwc_otg_pcd_init(pdev);
+	retval = dwc_otg_pcd_init(&pdev->dev);
 	if (retval != 0) {
 		DWC_ERROR("dwc_otg_pcd_init failed\n");
 		otg_dev->pcd = NULL;
