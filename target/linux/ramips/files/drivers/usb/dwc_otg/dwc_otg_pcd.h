@@ -45,7 +45,11 @@
 # include <linux/usb_ch9.h>
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+#include <linux/usb/gadget.h>
+#else
 #include <linux/usb_gadget.h>
+#endif
 #include <linux/interrupt.h>
 #include <linux/dma-mapping.h>
 

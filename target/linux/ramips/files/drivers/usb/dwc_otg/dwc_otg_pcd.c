@@ -80,7 +80,11 @@
 # include <linux/usb_ch9.h>
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+#include <linux/usb/gadget.h>
+#else
 #include <linux/usb_gadget.h>
+#endif
 
 #include "dwc_otg_driver.h"
 #include "dwc_otg_pcd.h"
@@ -412,6 +416,7 @@ static void dwc_otg_pcd_free_request(struct usb_ep *ep,
 	kfree(request);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
 /**
  * This function allocates an I/O buffer to be used for a transfer
  * to/from the specified endpoint.
@@ -489,6 +494,7 @@ static void dwc_otg_pcd_free_buffer(struct usb_ep *usb_ep, void *buf,
 		kfree(buf);
 	}
 }
+#endif
 
 
 /**
@@ -571,8 +577,10 @@ static int dwc_otg_pcd_ep_queue(struct usb_ep *usb_ep,
 
 		if(ep->dwc_ep.is_in)
 		{
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)) || defined(CONFIG_MIPS)
 			if(usb_req->length)
 				dma_cache_wback_inv((unsigned long)usb_req->buf, usb_req->length + 2);
+#endif
 		}
 	}
 
@@ -1518,8 +1526,10 @@ static struct usb_isoc_ep_ops dwc_otg_pcd_ep_ops =
 		.alloc_request	= dwc_otg_pcd_alloc_request,
 		.free_request	= dwc_otg_pcd_free_request,
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
 		.alloc_buffer	= dwc_otg_pcd_alloc_buffer,
 		.free_buffer	= dwc_otg_pcd_free_buffer,
+#endif
 
 		.queue		= dwc_otg_pcd_ep_queue,
 		.dequeue	= dwc_otg_pcd_ep_dequeue,
@@ -1545,8 +1555,10 @@ static struct usb_ep_ops dwc_otg_pcd_ep_ops =
 	.alloc_request	= dwc_otg_pcd_alloc_request,
 	.free_request	= dwc_otg_pcd_free_request,
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
 	.alloc_buffer	= dwc_otg_pcd_alloc_buffer,
 	.free_buffer	= dwc_otg_pcd_free_buffer,
+#endif
 
 	.queue		= dwc_otg_pcd_ep_queue,
 	.dequeue	= dwc_otg_pcd_ep_dequeue,
@@ -2201,7 +2213,11 @@ int dwc_otg_pcd_init(struct device *dev)
 	otg_dev->pcd = pcd;
 	s_pcd = pcd;
 	pcd->gadget.name = pcd_name;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
 	strcpy(pcd->gadget.dev.bus_id, "gadget");
+#else
+	dev_set_name(&pcd->gadget.dev, "%s", "gadget");
+#endif
 
 	pcd->otg_dev = dev_get_drvdata(dev);
 
@@ -2276,7 +2292,7 @@ int dwc_otg_pcd_init(struct device *dev)
 	 */
 	DWC_DEBUGPL(DBG_ANY, "registering handler for irq%d\n", otg_dev->irq);
 	retval = request_irq(otg_dev->irq, dwc_otg_pcd_irq,
-				SA_SHIRQ, pcd->gadget.name, pcd);
+				IRQF_SHARED, pcd->gadget.name, pcd);
 	if (retval != 0) {
 		DWC_ERROR("request of irq%d failed\n", otg_dev->irq);
 		device_unregister(&pcd->gadget.dev);
@@ -2418,14 +2434,24 @@ void dwc_otg_pcd_remove(struct device *dev)
  *
  * @param driver The driver being registered
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)
+int usb_gadget_probe_driver(struct usb_gadget_driver *driver, int (*bind)(struct usb_gadget *))
+#else
 int usb_gadget_register_driver(struct usb_gadget_driver *driver)
+#endif
 {
 	int retval;
+	int (*d_bind)(struct usb_gadget *);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)
+	d_bind = bind;
+#else
+	d_bind = driver->bind;
+#endif
 
 	DWC_DEBUGPL(DBG_PCD, "registering gadget driver '%s'\n", driver->driver.name);
 
 	if (!driver || driver->speed == USB_SPEED_UNKNOWN ||
-		!driver->bind ||
+		!d_bind ||
 		!driver->unbind ||
 		!driver->disconnect ||
 		!driver->setup) {
@@ -2446,7 +2472,7 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 	s_pcd->gadget.dev.driver = &driver->driver;
 
 	DWC_DEBUGPL(DBG_PCD, "bind to driver %s\n", driver->driver.name);
-	retval = driver->bind(&s_pcd->gadget);
+	retval = d_bind(&s_pcd->gadget);
 	if (retval) {
 		DWC_ERROR("bind to driver %s --> error %d\n",
 					driver->driver.name, retval);
@@ -2459,7 +2485,11 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)
+EXPORT_SYMBOL(usb_gadget_probe_driver);
+#else
 EXPORT_SYMBOL(usb_gadget_register_driver);
+#endif
 
 /**
  * This function unregisters a gadget driver
