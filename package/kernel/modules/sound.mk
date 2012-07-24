@@ -211,3 +211,14 @@ define KernelPackage/sound-soc-n810
 endef
 
 $(eval $(call KernelPackage,sound-soc-n810))
+
+define KernelPackage/sound-soc-ac97
+  TITLE:=AC97 Codec support
+  KCONFIG:=CONFIG_SND_SOC_AC97_CODEC
+  FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-ac97.ko
+  AUTOLOAD:=$(call AutoLoad,57,snd-soc-ac97)
+  DEPENDS:=+kmod-ac97 +kmod-sound-soc-core
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-soc-ac97))
