@@ -182,6 +182,20 @@ define BuildFirmware/DIR300B1/initramfs
 	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),ttyS1,57600) $(call mkmtd/phys,$(mtdlayout_dir300b1)),$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
 endef
 
+mtdlayout_dap1350=192k(u-boot)ro,64k(devdata)ro,192k(devconf)ro,256k(devlang)ro,1088k(kernel),6400k(rootfs),7488k@0xb0000(firmware)
+mtd_dap1350_kernel_part_size=1114112
+mtd_dap1350_rootfs_part_size=6553600
+define BuildFirmware/DAP1350
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),ttyS1,115200) $(call mkmtd/phys,$(mtdlayout_dap1350)),$(mtd_dap1350_kernel_part_size),$(mtd_dap1350_rootfs_part_size))
+	mkdapimg -s $(4) \
+		-i $(call sysupname,$(1),$(2)) \
+		-o $(call imgname,$(1),$(2))-factory.bin
+endef
+
+define BuildFirmware/DAP1350/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),ttyS1,115200) $(call mkmtd/phys,$(mtdlayout_dap1350)),$(mtd_dap1350_kernel_part_size),$(mtd_dap1350_rootfs_part_size))
+endef
+
 define BuildFirmware/Edimax
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		mkedimaximg -i $(call sysupname,$(1),$(2)) \
@@ -353,6 +367,10 @@ define Image/Build/Profile/DIR300B1
 	$(call Image/Build/Template/$(fs_squash)/$(1),DIR300B1,dir-615-d,DIR-615-D,wrgn23_dlwbr_dir615d)
 endef
 
+define Image/Build/Profile/DAP1350
+	$(call Image/Build/Template/$(fs_squash)/$(1),DAP1350,dap-1350,DAP-1350,RT3052-AP-DAP1350-3)
+endef
+
 define Image/Build/Profile/ESR9753
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,esr-9753,ESR-9753,ttyS1,57600,phys)
 endef
@@ -472,6 +490,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
 	$(call Image/Build/Profile/BC2,$(1))
 	$(call Image/Build/Profile/DIR300B1,$(1))
+	$(call Image/Build/Profile/DAP1350,$(1))
 	$(call Image/Build/Profile/ESR9753,$(1))
 	$(call Image/Build/Profile/F5D8235V2,$(1))
 	$(call Image/Build/Profile/RTN10PLUS,$(1))
