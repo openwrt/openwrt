@@ -17,6 +17,7 @@ ramips_setup_interfaces()
 
 	case $board in
 	all0256n | \
+	all5002 | \
 	wl-330n)
 		ucidef_set_interface_lan "eth0.1"
 		;;
@@ -87,7 +88,8 @@ ramips_setup_macs()
 	local wan_mac=""
 
 	case $board in
-	all0256n)
+	all0256n | \
+	all5002)
 		lan_mac=$(ramips_get_mac_binary factory 40)
 		;;
 	3g-6200n | \

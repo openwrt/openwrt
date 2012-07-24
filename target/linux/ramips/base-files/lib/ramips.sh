@@ -53,6 +53,9 @@ ramips_board_name() {
 	*"Allnet ALL0256N")
 		name="all0256n"
 		;;
+	*"Allnet ALL5002")
+		name="all5002"
+		;;
 	*"ARC FreeStation5")
 		name="freestation5"
 		;;
