@@ -74,7 +74,7 @@
 +
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/mi424wr-setup.c
-@@ -0,0 +1,345 @@
+@@ -0,0 +1,380 @@
 +/*
 + * arch/arm/mach-ixp4xx/mi424wr-setup.c
 + *
@@ -350,13 +350,13 @@
 +	.dev.platform_data = &mi424wr_spi_bus_data,
 +};
 +
-+static struct eth_plat_info mi424wr_npeb_data = {
++static struct eth_plat_info mi424wr_wan_data = {
 +	.phy		= 17,	/* KS8721 */
 +	.rxq		= 3,
 +	.txreadyq	= 20,
 +};
 +
-+static struct eth_plat_info mi424wr_npec_data = {
++static struct eth_plat_info mi424wr_lan_data = {
 +	.phy		= IXP4XX_ETH_PHY_MAX_ADDR,
 +	.phy_mask	= 0x1e, /* ports 1-4 of the KS8995 switch */
 +	.rxq		= 4,
@@ -367,11 +367,36 @@
 +	{
 +		.name			= "ixp4xx_eth",
 +		.id			= IXP4XX_ETH_NPEC,
-+		.dev.platform_data	= &mi424wr_npec_data,
++		.dev.platform_data	= &mi424wr_lan_data,
 +	}, {
 +		.name			= "ixp4xx_eth",
 +		.id			= IXP4XX_ETH_NPEB,
-+		.dev.platform_data	= &mi424wr_npeb_data,
++		.dev.platform_data	= &mi424wr_wan_data,
++	}
++};
++
++static struct eth_plat_info mi424wr_wanD_data = {
++	.phy		= 5,
++	.rxq		= 4,
++	.txreadyq	= 21,
++};
++
++static struct eth_plat_info mi424wr_lanD_data = {
++	.phy		= IXP4XX_ETH_PHY_MAX_ADDR,
++	.phy_mask	= 0x1e, /* ports 1-4 of the KS8995 switch */
++	.rxq		= 3,
++	.txreadyq	= 20,
++};
++
++static struct platform_device mi424wr_npeD_devices[] = {
++	{
++		.name                   = "ixp4xx_eth",
++		.id                     = IXP4XX_ETH_NPEB,
++		.dev.platform_data      = &mi424wr_lanD_data,
++	}, {
++		.name                   = "ixp4xx_eth",
++		.id                     = IXP4XX_ETH_NPEC,
++		.dev.platform_data      = &mi424wr_wanD_data,
 +	}
 +};
 +
@@ -381,8 +406,6 @@
 +	&mi424wr_gpio_leds,
 +	&mi424wr_latch_leds,
 +	&mi424wr_spi_bus,
-+	&mi424wr_npe_devices[0],
-+	&mi424wr_npe_devices[1],
 +};
 +
 +static void __init mi424wr_init(void)
@@ -405,6 +428,18 @@
 +	__raw_writew(latch_value, iobase);
 +
 +	platform_add_devices(mi424wr_devices, ARRAY_SIZE(mi424wr_devices));
++
++	/* Need to figure out how to detect revD.
++	 * Look for a revision argument sent by redboot.
++	 */
++#define revD 4
++	if (system_rev == revD) {
++		platform_device_register(&mi424wr_npeD_devices[0]);
++		platform_device_register(&mi424wr_npeD_devices[1]);
++	} else {
++		platform_device_register(&mi424wr_npe_devices[0]);
++		platform_device_register(&mi424wr_npe_devices[1]);
++	}
 +}
 +
 +
