@@ -61,3 +61,76 @@ define KernelPackage/n810bm/description
 endef
 
 $(eval $(call KernelPackage,n810bm))
+
+
+define KernelPackage/musb-hdrc
+  TITLE:=Support for Mentor Graphics silicon dual role USB
+  KCONFIG:= \
+	CONFIG_USB_MUSB_HDRC \
+	CONFIG_MUSB_PIO_ONLY=n \
+	CONFIG_USB_MUSB_OTG=y \
+	CONFIG_USB_MUSB_DEBUG=y
+  DEPENDS:=@TARGET_omap24xx
+  FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
+  AUTOLOAD:=$(call AutoLoad,46,musb_hdrc)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/musb-hdrc/description
+  Kernel support for Mentor Graphics silicon dual role USB device.
+endef
+
+$(eval $(call KernelPackage,musb-hdrc))
+
+
+define KernelPackage/nop-usb-xceiv
+  TITLE:=Support for USB OTG NOP transceiver
+  KCONFIG:= \
+	CONFIG_NOP_USB_XCEIV
+  DEPENDS:=@TARGET_omap24xx
+  FILES:=$(LINUX_DIR)/drivers/usb/otg/nop-usb-xceiv.ko
+  AUTOLOAD:=$(call AutoLoad,45,nop-usb-xceiv)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/nop-usb-xceiv/description
+  Support for USB OTG NOP transceiver
+endef
+
+$(eval $(call KernelPackage,nop-usb-xceiv))
+
+
+define KernelPackage/tusb6010
+  TITLE:=Support for TUSB 6010
+  KCONFIG:= \
+	CONFIG_USB_MUSB_TUSB6010 \
+	CONFIG_USB_TUSB6010=y
+  DEPENDS:=+kmod-musb-hdrc +kmod-nop-usb-xceiv
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/tusb6010/description
+  TUSB6010 support
+endef
+
+$(eval $(call KernelPackage,tusb6010))
+
+
+define KernelPackage/usb-tahvo
+  TITLE:=Support for Tahvo (Nokia n810) USB
+  KCONFIG:= \
+	CONFIG_CBUS_TAHVO_USB \
+	CONFIG_CBUS_TAHVO_USB_HOST_BY_DEFAULT=n \
+	CONFIG_USB_OHCI_HCD_OMAP1=y \
+	CONFIG_USB_GADGET_DEBUG_FS=n
+  DEPENDS:=@TARGET_omap24xx +kmod-tusb6010 +kmod-usb-gadget
+  FILES:=$(LINUX_DIR)/drivers/cbus/tahvo-usb.ko
+  AUTOLOAD:=$(call AutoLoad,45,tahvo-usb)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-tahvo/description
+  Kernel support for Nokia n810 USB OHCI controller.
+endef
+
+$(eval $(call KernelPackage,usb-tahvo))
