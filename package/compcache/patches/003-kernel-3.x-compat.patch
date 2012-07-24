@@ -1,0 +1,31 @@
+Index: compcache-0.6.2/ramzswap_drv.c
+===================================================================
+--- compcache-0.6.2.orig/ramzswap_drv.c	2012-07-25 01:02:39.000000000 +0200
++++ compcache-0.6.2/ramzswap_drv.c	2012-07-25 01:04:29.270750850 +0200
+@@ -525,7 +525,7 @@
+ 
+ 	if (S_ISBLK(inode->i_mode)) {
+ 		bdev = I_BDEV(inode);
+-		ret = bd_claim(bdev, setup_backing_swap);
++		ret = blkdev_get(bdev, FMODE_READ | FMODE_WRITE | FMODE_EXCL, setup_backing_swap);
+ 		if (ret < 0) {
+ 			bdev = NULL;
+ 			goto bad_param;
+@@ -557,7 +557,7 @@
+ 
+ bad_param:
+ 	if (bdev)
+-		bd_release(bdev);
++		blkdev_put(bdev, FMODE_READ | FMODE_WRITE | FMODE_EXCL);
+ 	filp_close(swap_file, NULL);
+ 
+ out:
+@@ -1097,7 +1097,7 @@
+ 	/* Close backing swap device, if present */
+ 	if (rzs->backing_swap) {
+ 		if (is_backing_blkdev)
+-			bd_release(rzs->backing_swap);
++			blkdev_put(rzs->backing_swap, FMODE_READ | FMODE_WRITE | FMODE_EXCL);
+ 		filp_close(rzs->swap_file, NULL);
+ 		rzs->backing_swap = NULL;
+ 		memset(rzs->backing_swap_name, 0, MAX_SWAP_NAME_LEN);
