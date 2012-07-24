@@ -8,6 +8,28 @@
 
 VIDEO_MENU:=Video Support
 
+
+define KernelPackage/fb
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Framebuffer support
+  KCONFIG:=CONFIG_FB \
+	   CONFIG_FB_CFB_FILLRECT \
+	   CONFIG_FB_CFB_COPYAREA \
+	   CONFIG_FB_CFB_IMAGEBLIT
+  FILES:=$(LINUX_DIR)/drivers/video/fb.ko \
+	 $(LINUX_DIR)/drivers/video/cfbfillrect.ko \
+	 $(LINUX_DIR)/drivers/video/cfbcopyarea.ko \
+	 $(LINUX_DIR)/drivers/video/cfbimgblt.ko
+  AUTOLOAD:=$(call AutoLoad,06,fb cfbfillrect cfbcopyarea cfbimgblt)
+endef
+
+define KernelPackage/fb/description
+  Kernel support for framebuffers
+endef
+
+$(eval $(call KernelPackage,fb))
+
+
 define KernelPackage/video-core
   SUBMENU:=$(VIDEO_MENU)
   TITLE=Video4Linux support
