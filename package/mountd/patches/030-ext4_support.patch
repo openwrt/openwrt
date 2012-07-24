@@ -1,0 +1,85 @@
+diff -ruN mountd-0.1.orig/include/fs.h mountd-0.1/include/fs.h
+--- mountd-0.1.orig/include/fs.h	2009-10-02 22:57:04.000000000 +0200
++++ mountd-0.1/include/fs.h	2012-07-08 18:42:32.000000000 +0200
+@@ -7,5 +7,6 @@
+ #define EFI			7
+ #define NTFS		8
+ #define EXTENDED	9
++#define EXT4		10
+ 
+ int detect_fs(char *device);
+diff -ruN mountd-0.1.orig/lib/fs.c mountd-0.1/lib/fs.c
+--- mountd-0.1.orig/lib/fs.c	2009-10-02 23:26:22.000000000 +0200
++++ mountd-0.1/lib/fs.c	2012-07-08 19:28:08.000000000 +0200
+@@ -91,9 +91,14 @@
+ 		goto out;
+ 	if(get_le_short(buffer + 56) == 0xEF53)
+ 	{
+-		if((get_le_long(buffer + 96) & 0x0008)
+-			|| (get_le_long(buffer + 92) & 0x0004))
+-			ret = EXT3;
++		if(get_le_long(buffer + 92) & 0x0004)
++		{
++			if ((get_le_long(buffer + 96) < 0x0000040)
++				&& (get_le_long(buffer + 100) < 0x0000008))
++				ret = EXT3;
++			else
++				ret = EXT4;
++		}
+ 		else
+ 			ret = EXT2;
+ 	}
+diff -ruN mountd-0.1.orig/lib/mount.c mountd-0.1/lib/mount.c
+--- mountd-0.1.orig/lib/mount.c	2009-10-03 12:54:57.000000000 +0200
++++ mountd-0.1/lib/mount.c	2012-07-08 19:04:29.000000000 +0200
+@@ -53,7 +53,10 @@
+ 	"EXT3",
+ 	"FAT",
+ 	"HFSPLUS",
+-	"NTFS"
++	"",
++	"NTFS",
++	"",
++	"EXT4"
+ };
+ 
+ #define MAX_MOUNTED		32
+@@ -93,7 +96,7 @@
+ 		ucix_add_option(ctx, mountd, q->serial, "rev", q->rev);
+ 		snprintf(t, 64, "size%d", atoi(&q->dev[3]));
+ 		ucix_add_option(ctx, mountd, q->serial, t, q->size);
+-		if(q->fs > MBR && q->fs <= NTFS)
++		if(q->fs > MBR && q->fs <= EXT4)
+ 		{
+ 			snprintf(t, 64, "fs%d", atoi(&q->dev[3]));
+ 			ucix_add_option(ctx, mountd, q->serial, t, fs_names[q->fs]);
+@@ -131,7 +134,7 @@
+ {
+ 	struct mount *mount;
+ 	char tmp[64], tmp2[64];
+-	if(fs <= MBR || fs > NTFS)
++	if(fs <= MBR || fs > EXT4)
+ 		return;
+ 	mount  = malloc(sizeof(struct mount));
+ 	INIT_LIST_HEAD(&mount->list);
+@@ -147,7 +150,7 @@
+ 	mount->mounted = 0;
+ 	mount->fs = fs;
+ 	list_add(&mount->list, &mounts);
+-	if((!mount->ignore) && (mount->fs > MBR) && (mount->fs <= NTFS))
++	if((!mount->ignore) && (mount->fs > MBR) && (mount->fs <= EXT4))
+ 	{
+ 		log_printf("new mount : %s -> %s (%s)\n", name, dev, fs_names[mount->fs]);
+ 		snprintf(tmp, 64, "%s%s", uci_path, name);
+@@ -226,6 +229,11 @@
+ 			log_printf("mount -t vfat -o rw,uid=1000,gid=1000 /dev/%s %s", mount->dev, tmp);
+ 			ret = system_printf("mount -t vfat -o rw,uid=1000,gid=1000 /dev/%s %s", mount->dev, tmp);
+ 		}
++		if(mount->fs == EXT4)
++		{
++			log_printf("mount -t ext4 -o rw,defaults /dev/%s %s", mount->dev, tmp);
++			ret = system_printf("mount -t ext4 -o rw,defaults /dev/%s %s", mount->dev, tmp);
++		}
+ 		if(mount->fs == EXT3)
+ 		{
+ 			log_printf("mount -t ext3 -o rw,defaults /dev/%s %s", mount->dev, tmp);
