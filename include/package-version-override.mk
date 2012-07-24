@@ -62,7 +62,7 @@ define prepare_custom_source_directory
 		rm -Rf $(PKG_BUILD_DIR); \
 		echo "Preparing Custom Source Directory link: $(CONFIG_$(PKG_NAME)_CUSTOM_SOURCE_DIR)"; \
 		ln -snf $(CONFIG_$(PKG_NAME)_CUSTOM_SOURCE_DIR) $(PKG_BUILD_DIR); \
-		( cd $(PKG_BUILD_DIR); autoreconf -i; ) \
+		[ -x "$(PKG_BUILD_DIR)/autoreconf" ] && (cd $(PKG_BUILD_DIR); autoreconf -i;) \
 	else \
 		echo "Custom Source Directory $(CONFIG_$(PKG_NAME)_CUSTOM_SOURCE_DIR) is invalid"; \
 		false; \
