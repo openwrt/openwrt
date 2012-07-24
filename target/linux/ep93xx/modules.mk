@@ -68,3 +68,18 @@ define KernelPackage/sound-soc-ep93xx-simone/description
 endef
 
 $(eval $(call KernelPackage,sound-soc-ep93xx-simone))
+
+define KernelPackage/touchscreen-ep93xx
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=EP93xx input touchscreen support
+  KCONFIG:=CONFIG_TOUCHSCREEN_EP93XX
+  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/ep93xx_ts.ko
+  AUTOLOAD:=$(call AutoLoad,51,ep93xx_ts)
+endef
+
+define KernelPackage/touchscreen-ep93xx/description
+  EP93xx SoC input touchscreen support
+endef
+
+$(eval $(call KernelPackage,touchscreen-ep93xx))
+
