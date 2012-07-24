@@ -71,6 +71,11 @@ config RT305X_MACH_DIR_300_REVB
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_DAP_1350
+	bool "D-Link DAP-1350 board support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_ESR_9753
 	bool "EnGenius ESR-9753 support"
 	select RALINK_DEV_GPIO_BUTTONS

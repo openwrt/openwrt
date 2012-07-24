@@ -39,6 +39,9 @@ get_status_led() {
 	dir-300-b1 | dir-600-b1 | dir-600-b2)
 		status_led="d-link:green:status"
 		;;
+	dap-1350)
+		status_led="d-link:blue:power"
+		;;
 	esr-9753)
 		status_led="esr-9753:orange:power"
 		;;
