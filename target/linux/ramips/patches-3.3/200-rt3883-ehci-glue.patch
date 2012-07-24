@@ -6,7 +6,7 @@
  
 +config USB_EHCI_RT3883
 +	bool "EHCI support for Ralink RT3662/RT3883 SoCs"
-+	depends on USB_EHCI_HCD && SOC_RT3883
++	depends on USB_EHCI_HCD && ( SOC_RT3883 || SOC_RT305X )
 +	select USB_EHCI_ROOT_HUB_TT
 +	default y
 +	---help---
