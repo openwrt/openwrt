@@ -6,7 +6,7 @@
  
 +config USB_OHCI_RT3883
 +	bool "USB OHCI support for the Ralink RT3883 SoCs"
-+	depends on USB_OHCI_HCD && SOC_RT3883
++	depends on USB_OHCI_HCD && ( SOC_RT3883 || SOC_RT305X )
 +	default y
 +	help
 +	  Enables support for the built-in OHCI controller present on the

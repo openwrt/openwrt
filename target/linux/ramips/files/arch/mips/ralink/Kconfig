@@ -52,6 +52,8 @@ config SOC_RT305X
 	select SYS_HAS_EARLY_PRINTK
 	select MIPS_MACHINE
 	select USB_ARCH_HAS_HCD
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
 
 config SOC_RT3883
 	bool
