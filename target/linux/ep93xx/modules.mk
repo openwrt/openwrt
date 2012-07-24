@@ -27,10 +27,10 @@ $(eval $(call KernelPackage,input-keyboard-ep93xx))
 define KernelPackage/sound-soc-ep93xx
   SUBMENU:=$(SOUND_MENU)
   TITLE:=EP93xx SoC sound support
-  DEPENDS:=@TARGET_ep93xx +kmod-sound-core +kmod-sound-soc-core
+  DEPENDS:=@TARGET_ep93xx +kmod-sound-soc-ac97
   KCONFIG:=CONFIG_SND_EP93XX_SOC
   FILES:=$(LINUX_DIR)/sound/soc/ep93xx/snd-soc-ep93xx.ko
-  AUTOLOAD:=$(call AutoLoad,56,snd-soc-ep93xx)
+  AUTOLOAD:=$(call AutoLoad,57,snd-soc-ep93xx)
 endef
 
 define KernelPackage/sound-soc-ep93xx/description
@@ -39,13 +39,15 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-ep93xx))
 
+# Must be loaded prior to sound-soc-ac97 because it exports
+# soc_ac97_ops
 define KernelPackage/sound-soc-ep93xx-ac97
   SUBMENU:=$(SOUND_MENU)
   TITLE:=EP93xx SoC AC97 support
   DEPENDS:=+kmod-sound-soc-ep93xx
   KCONFIG:=CONFIG_SND_EP93XX_SOC_AC97
   FILES:=$(LINUX_DIR)/sound/soc/ep93xx/snd-soc-ep93xx-ac97.ko
-  AUTOLOAD:=$(call AutoLoad,57,snd-soc-ep93xx-ac97)
+  AUTOLOAD:=$(call AutoLoad,56,snd-soc-ep93xx-ac97)
 endef
 
 define KernelPackage/sound-soc-ep93xx-ac97/description
@@ -60,7 +62,7 @@ define KernelPackage/sound-soc-ep93xx-simone
   DEPENDS:=+kmod-sound-soc-ep93xx +kmod-sound-soc-ep93xx-ac97
   KCONFIG:=CONFIG_SND_EP93XX_SOC_SIMONE
   FILES:=$(LINUX_DIR)/sound/soc/ep93xx/snd-soc-simone.ko
-  AUTOLOAD:=$(call AutoLoad,57,snd-soc-ep93xx)
+  AUTOLOAD:=$(call AutoLoad,59,snd-soc-ep93xx)
 endef
 
 define KernelPackage/sound-soc-ep93xx-simone/description
