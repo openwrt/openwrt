@@ -1,0 +1,64 @@
+From ffc4445958a3ed4064f2e1bf73fa478a61c5cf7b Mon Sep 17 00:00:00 2001
+From: Antonio Quartulli <ordex@autistici.org>
+Date: Sun, 3 Jun 2012 18:42:25 +0200
+Subject: [PATCHv2 602/602] driver_nl80211: use new parameters during ibss join
+
+Signed-hostap: Antonio Quartulli <ordex@autistici.org>
+---
+ src/drivers/driver_nl80211.c |   33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
+
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 22e7075..f510d18 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -6481,7 +6481,7 @@ static int wpa_driver_nl80211_ibss(struct wpa_driver_nl80211_data *drv,
+ 				   struct wpa_driver_associate_params *params)
+ {
+ 	struct nl_msg *msg;
+-	int ret = -1;
++	int ret = -1, i;
+ 	int count = 0;
+ 
+ 	wpa_printf(MSG_DEBUG, "nl80211: Join IBSS (ifindex=%d)", drv->ifindex);
+@@ -6514,6 +6514,37 @@ retry:
+ 	wpa_printf(MSG_DEBUG, "  * freq=%d", params->freq);
+ 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, params->freq);
+ 
++	if (params->fixed_freq) {
++		wpa_printf(MSG_DEBUG, "  * fixed_freq");
++		NLA_PUT_FLAG(msg, NL80211_ATTR_FREQ_FIXED);
++	}
++
++	if (params->beacon_interval > 0) {
++		wpa_printf(MSG_DEBUG, "  * beacon_interval=%d",
++			   params->beacon_interval);
++		NLA_PUT_U32(msg, NL80211_ATTR_BEACON_INTERVAL,
++			    params->beacon_interval);
++	}
++
++	if (params->rates[0] > 0) {
++		wpa_printf(MSG_DEBUG, "  * basic_rates:");
++		i = 0;
++		while (i < NL80211_MAX_SUPP_RATES &&
++		       params->rates[i] > 0) {
++			wpa_printf(MSG_DEBUG, "    %.1f",
++				   (double)params->rates[i] / 2);
++			i++;
++		}
++		NLA_PUT(msg, NL80211_ATTR_BSS_BASIC_RATES, i,
++			params->rates);
++	}
++
++	if (params->mcast_rate > 0) {
++		wpa_printf(MSG_DEBUG, "  * mcast_rates=%.1f",
++			   (double)params->mcast_rate / 10);
++		NLA_PUT_U32(msg, NL80211_ATTR_MCAST_RATE, params->mcast_rate);
++	}
++
+ 	ret = nl80211_set_conn_keys(params, msg);
+ 	if (ret)
+ 		goto nla_put_failure;
+-- 
+1.7.9.4
+
