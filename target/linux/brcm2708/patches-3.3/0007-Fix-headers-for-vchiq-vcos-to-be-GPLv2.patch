@@ -1,0 +1,1493 @@
+From 9eaf792a2825b5b4d3b5c7f074354ed26e3f76ab Mon Sep 17 00:00:00 2001
+From: Dom Cobley <dc4@broadcom.com>
+Date: Fri, 20 Jan 2012 18:23:29 +0000
+Subject: [PATCH 7/7] Fix headers for vchiq/vcos to be GPLv2
+
+Signed-off-by: Dom Cobley <dc4@broadcom.com>
+---
+ .../misc/vc04_services/interface/vchi/vchi_mh.h    |   26 +++++++++++++-------
+ .../interface/vcos/generic/vcos_common.h           |   25 +++++++++++++-----
+ .../vcos/generic/vcos_generic_blockpool.h          |   25 +++++++++++++-----
+ .../vcos/generic/vcos_generic_event_flags.c        |   22 +++++++++++++---
+ .../vcos/generic/vcos_generic_event_flags.h        |   22 +++++++++++++---
+ .../vcos/generic/vcos_generic_named_sem.h          |   25 +++++++++++++-----
+ .../vcos/generic/vcos_generic_quickslow_mutex.h    |   25 +++++++++++++-----
+ .../vcos/generic/vcos_generic_reentrant_mtx.h      |   25 +++++++++++++-----
+ .../interface/vcos/generic/vcos_generic_tls.h      |   25 +++++++++++++-----
+ .../vcos/generic/vcos_joinable_thread_from_plain.h |   24 +++++++++++++----
+ .../interface/vcos/generic/vcos_latch_from_sem.h   |   25 +++++++++++++-----
+ .../interface/vcos/generic/vcos_logcat.c           |   25 +++++++++++++-----
+ .../interface/vcos/generic/vcos_mem_from_malloc.c  |   25 +++++++++++++-----
+ .../interface/vcos/generic/vcos_mem_from_malloc.h  |   25 +++++++++++++-----
+ .../vcos/generic/vcos_mutexes_are_reentrant.h      |   25 +++++++++++++-----
+ .../interface/vcos/generic/vcos_thread_reaper.h    |   25 +++++++++++++-----
+ .../interface/vcos/linuxkernel/stdint.h            |   22 +++++++++++++---
+ .../interface/vcos/linuxkernel/vcos_linuxkernel.c  |   25 +++++++++++++-----
+ .../vcos/linuxkernel/vcos_linuxkernel_misc.c       |    2 -
+ .../interface/vcos/linuxkernel/vcos_platform.h     |   25 +++++++++++++-----
+ .../vcos/linuxkernel/vcos_platform_types.h         |   25 +++++++++++++-----
+ drivers/misc/vc04_services/interface/vcos/vcos.h   |   25 +++++++++++++-----
+ .../vc04_services/interface/vcos/vcos_assert.h     |   25 +++++++++++++-----
+ .../interface/vcos/vcos_atomic_flags.h             |   25 +++++++++++++-----
+ .../vc04_services/interface/vcos/vcos_build_info.h |   18 +++++++++++++
+ .../misc/vc04_services/interface/vcos/vcos_ctype.h |   25 +++++++++++++-----
+ .../misc/vc04_services/interface/vcos/vcos_dlfcn.h |   25 +++++++++++++-----
+ .../misc/vc04_services/interface/vcos/vcos_event.h |   25 +++++++++++++-----
+ .../interface/vcos/vcos_event_flags.h              |   25 +++++++++++++-----
+ .../misc/vc04_services/interface/vcos/vcos_init.h  |   25 +++++++++++++-----
+ .../vc04_services/interface/vcos/vcos_logging.h    |   25 +++++++++++++-----
+ .../interface/vcos/vcos_lowlevel_thread.h          |   25 +++++++++++++-----
+ .../misc/vc04_services/interface/vcos/vcos_mem.h   |   25 +++++++++++++-----
+ .../vc04_services/interface/vcos/vcos_msgqueue.h   |   25 +++++++++++++-----
+ .../misc/vc04_services/interface/vcos/vcos_mutex.h |   25 +++++++++++++-----
+ .../misc/vc04_services/interface/vcos/vcos_once.h  |   25 +++++++++++++-----
+ .../vc04_services/interface/vcos/vcos_semaphore.h  |   25 +++++++++++++-----
+ .../vc04_services/interface/vcos/vcos_stdbool.h    |   17 +++++++++++++
+ .../vc04_services/interface/vcos/vcos_stdint.h     |   24 +++++++++++++-----
+ .../vc04_services/interface/vcos/vcos_string.h     |   25 +++++++++++++-----
+ .../vc04_services/interface/vcos/vcos_thread.h     |   25 +++++++++++++-----
+ .../interface/vcos/vcos_thread_attr.h              |   22 +++++++++++++---
+ .../misc/vc04_services/interface/vcos/vcos_timer.h |   25 +++++++++++++-----
+ .../misc/vc04_services/interface/vcos/vcos_types.h |   22 +++++++++++++---
+ 44 files changed, 771 insertions(+), 275 deletions(-)
+
+diff --git a/drivers/misc/vc04_services/interface/vchi/vchi_mh.h b/drivers/misc/vc04_services/interface/vchi/vchi_mh.h
+index 01732bf..9bcf12e 100644
+--- a/drivers/misc/vc04_services/interface/vchi/vchi_mh.h
++++ b/drivers/misc/vc04_services/interface/vchi/vchi_mh.h
+@@ -1,12 +1,20 @@
+-/*=============================================================================
+-Copyright (c) 2010 Broadcom Europe Limited. All rights reserved.
+-
+-Project  :  vchi
+-Module   :  vchi
+-
+-FILE DESCRIPTION:
+-Definitions for memory handle types.
+-=============================================================================*/
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+ #ifndef VCHI_MH_H_
+ #define VCHI_MH_H_
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_common.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_common.h
+index 2493122..ce7816957 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_common.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_common.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - common postamble code
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_blockpool.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_blockpool.h
+index a048470..154b200 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_blockpool.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_blockpool.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2011 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - event flags implemented via a semaphore
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_event_flags.c b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_event_flags.c
+index 8cd150f..3948a57 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_event_flags.c
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_event_flags.c
+@@ -1,8 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - event flags implemented via mutexes
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_event_flags.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_event_flags.h
+index 5205db7..8776ebe 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_event_flags.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_event_flags.h
+@@ -1,8 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - event flags implemented via a semaphore
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_named_sem.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_named_sem.h
+index 15b332d..370562d 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_named_sem.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_named_sem.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - named semaphores
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_quickslow_mutex.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_quickslow_mutex.h
+index e4ae649..bf7945c 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_quickslow_mutex.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_quickslow_mutex.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - reentrant mutexes created from regular ones.
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_reentrant_mtx.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_reentrant_mtx.h
+index ffb0b27..27563ea 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_reentrant_mtx.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_reentrant_mtx.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - reentrant mutexes created from regular ones.
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_tls.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_tls.h
+index 3af975f..22c059a 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_tls.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_generic_tls.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - generic thread local storage
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_joinable_thread_from_plain.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_joinable_thread_from_plain.h
+index 5387b9e..fd0e198 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_joinable_thread_from_plain.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_joinable_thread_from_plain.h
+@@ -1,10 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Module   :  vcos
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - implementation: joinable thread from plain
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_latch_from_sem.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_latch_from_sem.h
+index 9ee5b4b..ec9e07b 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_latch_from_sem.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_latch_from_sem.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  vcos
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - Construct a latch from a semaphore
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_logcat.c b/drivers/misc/vc04_services/interface/vcos/generic/vcos_logcat.c
+index d513fab..8b05179 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_logcat.c
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_logcat.c
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2010 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  vcos
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ Categorized logging for VCOS - a generic implementation.
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_mem_from_malloc.c b/drivers/misc/vc04_services/interface/vcos/generic/vcos_mem_from_malloc.c
+index 7f22051..dd0574a 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_mem_from_malloc.c
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_mem_from_malloc.c
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  vcos
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - memory alloc implementation
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_mem_from_malloc.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_mem_from_malloc.h
+index 1074dcc..8e2a18e 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_mem_from_malloc.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_mem_from_malloc.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  VMCS Host Apps
+-Module   :  Framework - VMCS
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ Create the vcos_malloc API from the regular system malloc/free
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_mutexes_are_reentrant.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_mutexes_are_reentrant.h
+index d10352c9..a6a52b4 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_mutexes_are_reentrant.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_mutexes_are_reentrant.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - reentrant mutexes mapped directly to regular ones
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/generic/vcos_thread_reaper.h b/drivers/misc/vc04_services/interface/vcos/generic/vcos_thread_reaper.h
+index a8fc3da..655dc25 100644
+--- a/drivers/misc/vc04_services/interface/vcos/generic/vcos_thread_reaper.h
++++ b/drivers/misc/vc04_services/interface/vcos/generic/vcos_thread_reaper.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2010 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  vcos
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - thread reaping
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/linuxkernel/stdint.h b/drivers/misc/vc04_services/interface/vcos/linuxkernel/stdint.h
+index d3469af..1db1ecb 100644
+--- a/drivers/misc/vc04_services/interface/vcos/linuxkernel/stdint.h
++++ b/drivers/misc/vc04_services/interface/vcos/linuxkernel/stdint.h
+@@ -1,8 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2010 Broadcom Europe Limited.
+-All rights reserved.
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS fAbstraction Layer - stdint.h C standard header
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_linuxkernel.c b/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_linuxkernel.c
+index 154f4a1..0385540 100644
+--- a/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_linuxkernel.c
++++ b/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_linuxkernel.c
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  vcos
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - pthreads types
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_linuxkernel_misc.c b/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_linuxkernel_misc.c
+index 4d934c3..4a9cedf 100644
+--- a/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_linuxkernel_misc.c
++++ b/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_linuxkernel_misc.c
+@@ -1,5 +1,3 @@
+-// #############################################################################
+-// START #######################################################################
+ /*****************************************************************************
+ * Copyright 2009 - 2010 Broadcom Corporation.  All rights reserved.
+ *
+diff --git a/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_platform.h b/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_platform.h
+index 854001d..381688e 100644
+--- a/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_platform.h
++++ b/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_platform.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  vcos
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - Linux kernel (partial) implementation.
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_platform_types.h b/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_platform_types.h
+index 20d973e..f841e12 100644
+--- a/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_platform_types.h
++++ b/drivers/misc/vc04_services/interface/vcos/linuxkernel/vcos_platform_types.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  osal
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - platform-specific types and defines
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos.h b/drivers/misc/vc04_services/interface/vcos/vcos.h
+index 4ff5cc8..e37d795 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - public header file
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_assert.h b/drivers/misc/vc04_services/interface/vcos/vcos_assert.h
+index 5091621..1e72dff 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_assert.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_assert.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  osal
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - Assertion and error-handling macros.
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_atomic_flags.h b/drivers/misc/vc04_services/interface/vcos/vcos_atomic_flags.h
+index bb8041e..317abf3 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_atomic_flags.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_atomic_flags.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver (just for consistency with the rest of vcos ;)
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - public header file
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_build_info.h b/drivers/misc/vc04_services/interface/vcos/vcos_build_info.h
+index 7543a89..f3817f6 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_build_info.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_build_info.h
+@@ -1,3 +1,21 @@
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
+ const char *vcos_get_build_hostname( void );
+ const char *vcos_get_build_version( void );
+ const char *vcos_get_build_time( void );
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_ctype.h b/drivers/misc/vc04_services/interface/vcos/vcos_ctype.h
+index 131b982..a270de8 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_ctype.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_ctype.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - public header file
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_dlfcn.h b/drivers/misc/vc04_services/interface/vcos/vcos_dlfcn.h
+index 456b08e..0a683c0b 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_dlfcn.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_dlfcn.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2010 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VCOS - abstraction over dynamic library opening
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_event.h b/drivers/misc/vc04_services/interface/vcos/vcos_event.h
+index f335059..38612f9 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_event.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_event.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - public header file for events
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_event_flags.h b/drivers/misc/vc04_services/interface/vcos/vcos_event_flags.h
+index 6223c48..9eee410 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_event_flags.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_event_flags.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - public header file
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_init.h b/drivers/misc/vc04_services/interface/vcos/vcos_init.h
+index e67327c..9fc5eca 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_init.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_init.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - initialization routines
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_logging.h b/drivers/misc/vc04_services/interface/vcos/vcos_logging.h
+index 0c54781d..9702822 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_logging.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_logging.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009-2011 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - logging support
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_lowlevel_thread.h b/drivers/misc/vc04_services/interface/vcos/vcos_lowlevel_thread.h
+index 658a30b..9473cec 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_lowlevel_thread.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_lowlevel_thread.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - low level thread support
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_mem.h b/drivers/misc/vc04_services/interface/vcos/vcos_mem.h
+index 99860db5..af16208 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_mem.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_mem.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - memory support
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_msgqueue.h b/drivers/misc/vc04_services/interface/vcos/vcos_msgqueue.h
+index 31f77c1..f0ef70b 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_msgqueue.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_msgqueue.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VCOS - packet-like messages, based loosely on those found in TRIPOS.
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_mutex.h b/drivers/misc/vc04_services/interface/vcos/vcos_mutex.h
+index 5347ab2..14387a8 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_mutex.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_mutex.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - mutex public header file
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_once.h b/drivers/misc/vc04_services/interface/vcos/vcos_once.h
+index d12ac5e..0533c10 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_once.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_once.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2011 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - 'once'
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_semaphore.h b/drivers/misc/vc04_services/interface/vcos/vcos_semaphore.h
+index 5a32031..2760dd7 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_semaphore.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_semaphore.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - public header file
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_stdbool.h b/drivers/misc/vc04_services/interface/vcos/vcos_stdbool.h
+index f1de3cb..3c7669d 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_stdbool.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_stdbool.h
+@@ -1,3 +1,20 @@
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ #ifndef VCOS_STDBOOL_H
+ #define VCOS_STDBOOL_H
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_stdint.h b/drivers/misc/vc04_services/interface/vcos/vcos_stdint.h
+index 537ec33..c9a3e02 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_stdint.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_stdint.h
+@@ -1,10 +1,20 @@
+-/*=============================================================================
+-Copyright (c) 2011 Broadcom Europe Limited.
+-All rights reserved.
+-
+-FILE DESCRIPTION
+-
+-=============================================================================*/
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+ #ifndef VCOS_STDINT_H
+ #define VCOS_STDINT_H
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_string.h b/drivers/misc/vc04_services/interface/vcos/vcos_string.h
+index 554b57d..c3d875f 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_string.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_string.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - public header file
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_thread.h b/drivers/misc/vc04_services/interface/vcos/vcos_thread.h
+index 08a76a0..ee34648 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_thread.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_thread.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - public header file
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_thread_attr.h b/drivers/misc/vc04_services/interface/vcos/vcos_thread_attr.h
+index 510991f..375dd01 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_thread_attr.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_thread_attr.h
+@@ -1,8 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - thread attributes
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_timer.h b/drivers/misc/vc04_services/interface/vcos/vcos_timer.h
+index 499adce..1612334 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_timer.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_timer.h
+@@ -1,11 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
+-
+-Project  :  vcfw
+-Module   :  chip driver
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - timer support
+ =============================================================================*/
+ 
+diff --git a/drivers/misc/vc04_services/interface/vcos/vcos_types.h b/drivers/misc/vc04_services/interface/vcos/vcos_types.h
+index ab16f36..25de671 100644
+--- a/drivers/misc/vc04_services/interface/vcos/vcos_types.h
++++ b/drivers/misc/vc04_services/interface/vcos/vcos_types.h
+@@ -1,8 +1,22 @@
+-/*=============================================================================
+-Copyright (c) 2009 Broadcom Europe Limited.
+-All rights reserved.
++/*
++ * Copyright (c) 2010-2011 Broadcom. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
+ 
+-FILE DESCRIPTION
++/*=============================================================================
+ VideoCore OS Abstraction Layer - basic types
+ =============================================================================*/
+ 
+-- 
+1.7.5.4
+
