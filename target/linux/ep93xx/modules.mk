@@ -5,6 +5,21 @@
 # See /LICENSE for more information.
 #
 
+define KernelPackage/fb-ep93xx
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=EP93xx framebuffer support
+  DEPENDS:=@TARGET_ep93xx +kmod-fb
+  KCONFIG:=CONFIG_FB_EP93XX
+  FILES:=$(LINUX_DIR)/drivers/video/ep93xx-fb.ko
+  AUTOLOAD:=$(call AutoLoad,51,ep93xx-fb)
+endef
+
+define KernelPackage/fb-ep93xx/description
+  EP93xx framebuffer support
+endef
+
+$(eval $(call KernelPackage,fb-ep93xx))
+
 define KernelPackage/input-keyboard-ep93xx
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EP93xx Matrix Keypad support
