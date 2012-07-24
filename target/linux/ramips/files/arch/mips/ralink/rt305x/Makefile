@@ -15,6 +15,7 @@ obj-$(CONFIG_RT305X_MACH_3G_6200N)	+= mach-3g-6200n.o
 obj-$(CONFIG_RT305X_MACH_ARGUS_ATP52B)	+= mach-argus-atp52b.o
 obj-$(CONFIG_RT305X_MACH_BC2)		+= mach-bc2.o
 obj-$(CONFIG_RT305X_MACH_ALL0256N)	+= mach-all0256n.o
+obj-$(CONFIG_RT305X_MACH_ALL5002)	+= mach-all5002.o
 obj-$(CONFIG_RT305X_MACH_DIR_300_REVB)	+= mach-dir-300-revb.o
 obj-$(CONFIG_RT305X_MACH_ESR_9753)	+= mach-esr-9753.o
 obj-$(CONFIG_RT305X_MACH_F5D8235_V2)    += mach-f5d8235-v2.o
