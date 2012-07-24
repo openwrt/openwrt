@@ -57,6 +57,7 @@ define Host/Compile
 	$(call cc,mkedimaximg)
 	$(call cc,mkbrncmdline)
 	$(call cc,mkbrnimg)
+	$(call cc,mkdapimg)
 endef
 
 define Host/Install
