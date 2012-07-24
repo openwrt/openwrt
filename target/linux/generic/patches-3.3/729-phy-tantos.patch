@@ -8,6 +8,7 @@
 +config PSB6970_PHY
 +	tristate "Lantiq XWAY Tantos (PSB6970) Ethernet switch"
 +	select SWCONFIG
++	select ETHERNET_PACKET_MANGLE
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
 @@ -28,6 +28,7 @@ obj-$(CONFIG_RTL8366RB_PHY)	+= rtl8366rb
