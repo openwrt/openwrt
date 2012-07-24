@@ -453,8 +453,9 @@ enable_mac80211() {
 							echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
 							# make sure this wifi interface won't accidentally stay open without encryption
 							ifconfig "$ifname" down
-							continue
 						}
+						# wpa_supplicant will bring the iface up
+						continue
 					fi
 				}
 

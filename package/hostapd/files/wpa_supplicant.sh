@@ -4,6 +4,8 @@ wpa_supplicant_setup_vif() {
 	local key="$key"
 	local options="$3"
 	local freq=""
+	local ap_scan=""
+	local scan_ssid="1"
 	[ -n "$4" ] && freq="frequency=$4"
 
 	# make sure we have the encryption type and the psk
@@ -30,7 +32,11 @@ wpa_supplicant_setup_vif() {
 		echo "wpa_supplicant_setup_vif($ifname): Refusing to bridge $mode mode interface"
 		return 1
 	}
-	[ "$mode" = "adhoc" ] && modestr="mode=1"
+	[ "$mode" = "adhoc" ] && {
+		modestr="mode=1"
+		scan_ssid="0"
+		ap_scan="ap_scan=2"
+	}
 
 	key_mgmt='NONE'
 	case "$enc" in
@@ -117,22 +123,48 @@ wpa_supplicant_setup_vif() {
 		;;
 	esac
 
+	local fixed_freq bssid1 beacon_interval brates mrate
 	config_get ifname "$vif" ifname
 	config_get bridge "$vif" bridge
-	config_get ssid "$vif" ssid
-	config_get bssid "$vif" bssid
-	bssid=${bssid:+"bssid=$bssid"}
+	bssid1=${bssid:+"bssid=$bssid"}
+	beacon_interval=${beacon_int:+"beacon_interval=$beacon_int"}
+
+	local br brval brsub brstr
+	[ -n "$basic_rate_list" ] && {
+		for br in $basic_rate_list; do
+			brval="$(($br / 1000))"
+			brsub="$((($br / 100) % 10))"
+			[ "$brsub" -gt 0 ] && brval="$brval.$brsub"
+			[ -n "$brstr" ] && brstr="$brstr,"
+			brstr="$brstr$brval"
+		done
+		brates=${basic_rate_list:+"rates=$brstr"}
+	}
+
+	local mcval=""
+	[ -n "$mcast_rate" ] && {
+		mcval="$(($mcast_rate / 1000))"
+		mcsub="$(( ($mcast_rate / 100) % 10 ))"
+		[ "$mcsub" -gt 0 ] && mcval="$mcval.$mcsub"
+		mrate=${mcast_rate:+"mcast_rate=$mcval"}
+	}
+
 	rm -rf /var/run/wpa_supplicant-$ifname
 	cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
 ctrl_interface=/var/run/wpa_supplicant-$ifname
+$ap_scan
 network={
 	$modestr
-	scan_ssid=1
+	scan_ssid=$scan_ssid
 	ssid="$ssid"
-	$bssid
+	$bssid1
 	key_mgmt=$key_mgmt
 	$proto
 	$freq
+	${fixed:+"fixed_freq=1"}
+	$beacon_interval
+	$brates
+	$mrate
 	$ieee80211w
 	$passphrase
 	$pairwise
