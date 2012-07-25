@@ -19,3 +19,18 @@ define KernelPackage/fb-cobalt/descriptione
 endef
 
 $(eval $(call KernelPackage,fb-cobalt))
+
+define KernelPackage/cobalt-btns
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Cobalt buttons support
+  DEPENDS:=@TARGET_cobalt +kmod-input-evdev +kmod-input-polldev
+  KCONFIG:=CONFIG_INPUT_COBALT_BTNS
+  FILES:=$(LINUX_DIR)/drivers/input/misc/cobalt_btns.ko
+  AUTOLOAD:=$(call AutoLoad,62,cobalt_btns)
+endef
+
+define KernelPackage/cobalt-btns/description
+  Kernel module for the Cobalt Microservers buttons
+endef
+
+$(eval $(call KernelPackage,cobalt-btns))
