@@ -33,3 +33,19 @@ define KernelPackage/ssb-gige/description
 endef
 
 $(eval $(call KernelPackage,ssb-gige))
+
+
+define KernelPackage/ocf-ubsec-ssb
+  TITLE:=BCM5365P IPSec Core driver
+  DEPENDS:=@TARGET_brcm47xx +kmod-crypto-ocf
+  KCONFIG:=CONFIG_OCF_UBSEC_SSB
+  FILES:=$(LINUX_DIR)/crypto/ocf/ubsec_ssb/ubsec_ssb.ko
+  AUTOLOAD:=$(call AutoLoad,10,ubsec_ssb)
+  $(call AddDepends/crypto)
+endef
+
+define KernelPackage/ocf-ubsec-ssb/description
+  This package contains the OCF driver for the BCM5365p IPSec Core
+endef
+
+$(eval $(call KernelPackage,ocf-ubsec-ssb))
