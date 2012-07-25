@@ -244,9 +244,6 @@ int mtd_replace_jffs2(const char *mtd, int fd, int ofs, const char *filename)
 	pad(erasesize);
 	free(buf);
 
-	if (trx_fixup) {
-	  trx_fixup(outfd, mtd);
-	}
 	return (mtdofs - ofs);
 }
 
