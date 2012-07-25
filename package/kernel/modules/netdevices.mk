@@ -486,20 +486,6 @@ endef
 $(eval $(call KernelPackage,tg3))
 
 
-define KernelPackage/ssb-gige
-  TITLE:=Broadcom SSB Gigabit Ethernet
-  KCONFIG:=CONFIG_SSB_DRIVER_GIGE=y
-  DEPENDS:=@TARGET_brcm47xx +kmod-tg3
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-endef
-
-define KernelPackage/ssb-gige/description
- Kernel modules for Broadcom SSB Gigabit Ethernet adapters.
-endef
-
-$(eval $(call KernelPackage,ssb-gige))
-
-
 define KernelPackage/hfcpci
   TITLE:=HFC PCI cards (single port) support for mISDN
   KCONFIG:=CONFIG_MISDN_HFCPCI
