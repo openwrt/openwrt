@@ -71,3 +71,178 @@ define KernelPackage/pata-cs5536/description
 endef
 
 $(eval $(call KernelPackage,pata-cs5536))
+
+
+define KernelPackage/cpu-msr
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=x86 CPU MSR support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_X86_MSR
+  FILES:=$(LINUX_DIR)/arch/x86/kernel/msr.ko
+  AUTOLOAD:=$(call AutoLoad,20,msr)
+endef
+
+define KernelPackage/cpu-msr/description
+ Kernel module for Model Specific Registers support in x86 CPUs
+endef
+
+$(eval $(call KernelPackage,cpu-msr))
+
+define KernelPackage/gpio-cs5535-new
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=AMD CS5535/CS5536 GPIO driver with improved sysfs support
+  DEPENDS:=@TARGET_x86 +kmod-cs5535-mfd
+  KCONFIG:=CONFIG_GPIO_CS5535
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-cs5535.ko
+  AUTOLOAD:=$(call AutoLoad,50,gpio-cs5535)
+endef
+
+define KernelPackage/gpio-cs5535-new/description
+ This package contains the new AMD CS5535/CS5536 GPIO driver
+endef
+
+$(eval $(call KernelPackage,gpio-cs5535-new))
+
+define KernelPackage/gpio-nsc
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Natsemi GPIO support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_NSC_GPIO
+  FILES:=$(LINUX_DIR)/drivers/char/nsc_gpio.ko
+  AUTOLOAD:=$(call AutoLoad,40,nsc_gpio)
+endef
+
+define KernelPackage/gpio-nsc/description
+ Kernel module for Natsemi GPIO
+endef
+
+$(eval $(call KernelPackage,gpio-nsc))
+
+
+define KernelPackage/gpio-pc8736x
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PC8736x GPIO support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_PC8736x_GPIO
+  FILES:=$(LINUX_DIR)/drivers/char/pc8736x_gpio.ko
+  AUTOLOAD:=$(call AutoLoad,40,pc8736x_gpio)
+endef
+
+define KernelPackage/gpio-pc8736x/description
+ Kernel module for PC8736x GPIO
+endef
+
+$(eval $(call KernelPackage,gpio-pc8736x))
+
+
+define KernelPackage/gpio-scx200
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Natsemi SCX200 GPIO support
+  DEPENDS:=@TARGET_x86 +kmod-gpio-nsc
+  KCONFIG:=CONFIG_SCx200_GPIO
+  FILES:=$(LINUX_DIR)/drivers/char/scx200_gpio.ko
+  AUTOLOAD:=$(call AutoLoad,50,scx200_gpio)
+endef
+
+define KernelPackage/gpio-scx200/description
+ Kernel module for SCX200 GPIO
+endef
+
+$(eval $(call KernelPackage,gpio-scx200))
+
+define KernelPackage/wdt-geode
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Geode/LX Watchdog timer
+  DEPENDS:=@TARGET_x86 +kmod-cs5535-mfgpt
+  KCONFIG:=CONFIG_GEODE_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/geodewdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,geodewdt)
+endef
+
+define KernelPackage/wdt-geode/description
+  Kernel module for Geode watchdog timer.
+endef
+
+$(eval $(call KernelPackage,wdt-geode))
+
+
+define KernelPackage/cs5535-clockevt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=CS5535/CS5536 high-res timer (MFGPT) events
+  DEPENDS:=@TARGET_x86 +kmod-cs5535-mfgpt
+  KCONFIG:=CONFIG_CS5535_CLOCK_EVENT_SRC
+  FILES:=$(LINUX_DIR)/drivers/clocksource/cs5535-clockevt.ko
+  AUTOLOAD:=$(call AutoLoad,50,cs5535-clockevt)
+endef
+
+define KernelPackage/cs5535-clockevt/description
+  Kernel module for CS5535/6 high-res clock event source
+endef
+
+$(eval $(call KernelPackage,cs5535-clockevt))
+
+
+define KernelPackage/cs5535-mfgpt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=CS5535/6 Multifunction General Purpose Timer
+  DEPENDS:=@TARGET_x86 +kmod-cs5535-mfd
+  KCONFIG:=CONFIG_CS5535_MFGPT
+  FILES:=$(LINUX_DIR)/drivers/misc/cs5535-mfgpt.ko
+  AUTOLOAD:=$(call AutoLoad,45,cs5535-mfgpt)
+endef
+
+define KernelPackage/cs5535-mfgpt/description
+  Kernel module for CS5535/6 multifunction general purpose timer.
+endef
+
+$(eval $(call KernelPackage,cs5535-mfgpt))
+
+
+define KernelPackage/cs5535-mfd
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=CS5535/6 Multifunction General Purpose Driver
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_MFD_CS5535
+  FILES:= \
+  	$(LINUX_DIR)/drivers/mfd/mfd-core.ko \
+  	$(LINUX_DIR)/drivers/mfd/cs5535-mfd.ko
+  AUTOLOAD:=$(call AutoLoad,44,mfd-core cs5535-mfd)
+endef
+
+define KernelPackage/cs5535-mfd/description
+  Core driver for CS5535/CS5536 MFD functions.
+endef
+
+$(eval $(call KernelPackage,cs5535-mfd))
+
+define KernelPackage/wdt-sc520
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Natsemi SC520 Watchdog support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_SC520_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/sc520_wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,sc520_wdt)
+endef
+
+define KernelPackage/wdt-sc520/description
+  Kernel module for SC520 Watchdog
+endef
+
+$(eval $(call KernelPackage,wdt-sc520))
+
+
+define KernelPackage/wdt-scx200
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Natsemi SCX200 Watchdog support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_SCx200_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/scx200_wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,scx200_wdt)
+endef
+
+define KernelPackage/wdt-scx200/description
+ Kernel module for SCX200 Watchdog
+endef
+
+$(eval $(call KernelPackage,wdt-scx200))
+
