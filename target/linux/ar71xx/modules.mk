@@ -31,7 +31,7 @@ define KernelPackage/leds-wndr3700-usb
 endef
 
 define KernelPackage/leds-wndr3700-usb/description
- Kernel module for the USB LED on the NETGWR WNDR3700 board.
+ Kernel module for the USB LED on the NETGEAR WNDR3700 board.
 endef
 
 $(eval $(call KernelPackage,leds-wndr3700-usb))
