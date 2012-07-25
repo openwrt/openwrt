@@ -135,7 +135,6 @@ $(eval $(call KernelPackage,gpio-dev))
 define KernelPackage/gpio-nxp-74hc164
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NXP 74HC164 GPIO expander support
-  DEPENDS:=@TARGET_brcm63xx
   KCONFIG:=CONFIG_GPIO_NXP_74HC164
   FILES:=$(LINUX_DIR)/drivers/gpio/nxp_74hc164.ko
   AUTOLOAD:=$(call AutoLoad,99,nxp_74hc164)
