@@ -110,25 +110,6 @@ endef
 $(eval $(call KernelPackage,usb-ohci,1))
 
 
-define KernelPackage/usb-isp116x-hcd
-  TITLE:=Support for the ISP116x USB Host Controller
-  DEPENDS:=@TARGET_ppc40x
-  KCONFIG:= \
-	CONFIG_USB_ISP116X_HCD \
-	CONFIG_USB_ISP116X_HCD_OF=y \
-	CONFIG_USB_ISP116X_HCD_PLATFORM=n
-  FILES:=$(LINUX_DIR)/drivers/usb/host/isp116x-hcd.ko
-  AUTOLOAD:=$(call AutoLoad,50,isp116x-hcd)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-isp116x-hcd/description
-  Kernel support for the ISP116X USB Host Controller
-endef
-
-$(eval $(call KernelPackage,usb-isp116x-hcd))
-
-
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx
