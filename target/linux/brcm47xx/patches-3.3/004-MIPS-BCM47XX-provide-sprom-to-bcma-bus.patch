@@ -6,10 +6,10 @@
   *  Copyright (C) 2010 Waldemar Brodkorb <wbx@openadk.org>
 - *  Copyright (C) 2010-2011 Hauke Mehrtens <hauke@hauke-m.de>
 + *  Copyright (C) 2010-2012 Hauke Mehrtens <hauke@hauke-m.de>
-  *  Copyright (C) 2011-2012 Tathagata Das <tathagata@alumnux.com>
   *
   *  This program is free software; you can redistribute  it and/or modify it
-@@ -132,7 +132,7 @@ static void bcm47xx_machine_halt(void)
+  *  under  the terms of  the GNU General  Public License as published by the
+@@ -85,7 +85,7 @@ static void bcm47xx_machine_halt(void)
  }
  
  #ifdef CONFIG_BCM47XX_SSB
@@ -18,7 +18,7 @@
  {
  	char prefix[10];
  
-@@ -149,7 +149,7 @@ static int bcm47xx_get_sprom(struct ssb_
+@@ -102,7 +102,7 @@ static int bcm47xx_get_sprom(struct ssb_
  }
  
  static int bcm47xx_get_invariants(struct ssb_bus *bus,
@@ -27,7 +27,7 @@
  {
  	char buf[20];
  
-@@ -204,7 +204,7 @@ static void __init bcm47xx_register_ssb(
+@@ -132,7 +132,7 @@ static void __init bcm47xx_register_ssb(
  	char buf[100];
  	struct ssb_mipscore *mcore;
  
@@ -36,7 +36,7 @@
  	if (err)
  		printk(KERN_WARNING "bcm47xx: someone else already registered"
  			" a ssb SPROM callback handler (err %d)\n", err);
-@@ -256,10 +256,41 @@ static int __init bcm47xx_register_flash
+@@ -159,10 +159,41 @@ static void __init bcm47xx_register_ssb(
  #endif
  
  #ifdef CONFIG_BCM47XX_BCMA

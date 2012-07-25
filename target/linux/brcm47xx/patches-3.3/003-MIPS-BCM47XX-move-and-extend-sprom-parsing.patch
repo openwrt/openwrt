@@ -4,12 +4,12 @@
  # under Linux.
  #
  
--obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o
-+obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o sprom.o
+-obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o
++obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o sprom.o
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -132,156 +132,7 @@ static void bcm47xx_machine_halt(void)
+@@ -85,156 +85,7 @@ static void bcm47xx_machine_halt(void)
  }
  
  #ifdef CONFIG_BCM47XX_SSB

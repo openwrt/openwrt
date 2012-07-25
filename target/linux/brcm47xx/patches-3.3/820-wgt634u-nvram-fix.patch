@@ -9,8 +9,8 @@ out the configuration than the in kernel cfe config reader.
  # under Linux.
  #
  
--obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o sprom.o
-+obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o sprom.o cfe_env.o
+-obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o sprom.o bus.o
++obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o sprom.o bus.o cfe_env.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/cfe_env.c
 @@ -0,0 +1,229 @@

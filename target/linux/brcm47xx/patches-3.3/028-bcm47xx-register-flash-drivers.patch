@@ -8,9 +8,9 @@
  	default y
  	help
  	 Add support for old Broadcom BCM47xx boards with Sonics Silicon Backplane support.
-@@ -22,6 +23,7 @@ config BCM47XX_BCMA
- 	select BCMA_HOST_SOC
+@@ -23,6 +24,7 @@ config BCM47XX_BCMA
  	select BCMA_DRIVER_MIPS
+ 	select BCMA_HOST_PCI if PCI
  	select BCMA_DRIVER_PCI_HOSTMODE if PCI
 +	select BCMA_SFLASH
  	default y
@@ -64,7 +64,7 @@
  static void bcm47xx_machine_restart(char *command)
  {
  	printk(KERN_ALERT "Please stand by while rebooting the system...\n");
-@@ -310,6 +338,24 @@ static void __init bcm47xx_register_ssb(
+@@ -156,6 +184,24 @@ static void __init bcm47xx_register_ssb(
  		}
  	}
  }
@@ -89,9 +89,9 @@
  #endif
  
  #ifdef CONFIG_BCM47XX_BCMA
-@@ -324,6 +370,24 @@ static void __init bcm47xx_register_bcma
- 	if (bcm47xx_bus.bcma.bus.drv_cc.flash_type == BCMA_SFLASH)
- 		bcm47xx_sflash_struct_bcma_init(&bcm47xx_sflash, &bcm47xx_bus.bcma.bus.drv_cc);
+@@ -205,6 +251,24 @@ static void __init bcm47xx_register_bcma
+ 
+ 	bcm47xx_fill_bcma_boardinfo(&bcm47xx_bus.bcma.bus.boardinfo, NULL);
  }
 +
 +static int __init bcm47xx_register_flash_bcma(void)
@@ -114,7 +114,7 @@
  #endif
  
  void __init plat_mem_setup(void)
-@@ -366,3 +430,19 @@ static int __init bcm47xx_register_bus_c
+@@ -247,3 +311,19 @@ static int __init bcm47xx_register_bus_c
  	return 0;
  }
  device_initcall(bcm47xx_register_bus_complete);

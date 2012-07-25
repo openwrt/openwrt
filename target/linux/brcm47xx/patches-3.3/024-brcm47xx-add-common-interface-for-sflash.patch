@@ -4,8 +4,8 @@
  # under Linux.
  #
  
--obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o
-+obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o
+-obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o sprom.o
++obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o sprom.o bus.o
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/bus.c
@@ -103,7 +103,7 @@
  static void bcm47xx_machine_restart(char *command)
  {
  	printk(KERN_ALERT "Please stand by while rebooting the system...\n");
-@@ -291,6 +293,9 @@ static void __init bcm47xx_register_ssb(
+@@ -137,6 +139,9 @@ static void __init bcm47xx_register_ssb(
  	if (err)
  		panic("Failed to initialize SSB bus (err %d)", err);
  
@@ -113,16 +113,16 @@
  	mcore = &bcm47xx_bus.ssb.mipscore;
  	if (nvram_getenv("kernel_args", buf, sizeof(buf)) >= 0) {
  		if (strstr(buf, "console=ttyS1")) {
-@@ -315,6 +320,9 @@ static void __init bcm47xx_register_bcma
- 	err = bcma_host_soc_register(&bcm47xx_bus.bcma);
+@@ -195,6 +200,9 @@ static void __init bcm47xx_register_bcma
  	if (err)
  		panic("Failed to initialize BCMA bus (err %d)", err);
-+
+ 
 +	if (bcm47xx_bus.bcma.bus.drv_cc.flash_type == BCMA_SFLASH)
 +		bcm47xx_sflash_struct_bcma_init(&bcm47xx_sflash, &bcm47xx_bus.bcma.bus.drv_cc);
++
+ 	bcm47xx_fill_bcma_boardinfo(&bcm47xx_bus.bcma.bus.boardinfo, NULL);
  }
  #endif
- 
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-bcm47xx/bus.h
 @@ -0,0 +1,36 @@
