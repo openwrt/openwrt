@@ -12,6 +12,7 @@ VIDEO_MENU:=Video Support
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer support
+  DEPENDS:=@DISPLAY_SUPPORT
   KCONFIG:=CONFIG_FB
   FILES:=$(LINUX_DIR)/drivers/video/fb.ko
   AUTOLOAD:=$(call AutoLoad,06,fb)

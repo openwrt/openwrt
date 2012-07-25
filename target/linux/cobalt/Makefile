@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=cobalt
 BOARDNAME:=Cobalt Microservers
-FEATURES:=targz pci ext4
+FEATURES:=targz pci ext4 display
 CFLAGS:=-O2 -pipe -mtune=r5000 -fno-caller-saves
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 

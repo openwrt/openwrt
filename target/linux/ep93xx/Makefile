@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=ep93xx
 BOARDNAME:=Cirrus Logic EP93xx
-FEATURES:=squashfs jffs2 ext4 targz usb
+FEATURES:=squashfs jffs2 ext4 targz usb display
 CFLAGS:=-Os -pipe -march=armv4t -fno-caller-saves
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
