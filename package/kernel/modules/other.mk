@@ -342,22 +342,6 @@ endef
 $(eval $(call KernelPackage,mmc))
 
 
-define KernelPackage/mmc-atmelmci
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Amtel MMC Support
-  DEPENDS:=@TARGET_avr32 +kmod-mmc
-  KCONFIG:=CONFIG_MMC_ATMELMCI
-  FILES:=$(LINUX_DIR)/drivers/mmc/host/atmel-mci.ko
-  AUTOLOAD:=$(call AutoLoad,90,atmel-mci)
-endef
-
-define KernelPackage/mmc-atmelmci/description
- Kernel support for  Atmel Multimedia Card Interface.
-endef
-
-$(eval $(call KernelPackage,mmc-atmelmci,1))
-
-
 define KernelPackage/oprofile
   SUBMENU:=$(OTHER_MENU)
   TITLE:=OProfile profiling support
