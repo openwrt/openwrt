@@ -51,3 +51,19 @@ define KernelPackage/spi-vsc7385/description
 endef
 
 $(eval $(call KernelPackage,spi-vsc7385))
+
+
+define KernelPackage/wdt-ath79
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Atheros AR7XXX/AR9XXX watchdog timer
+  DEPENDS:=@TARGET_ar71xx
+  KCONFIG:=CONFIG_ATH79_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/ath79_wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,ath79_wdt)
+endef
+
+define KernelPackage/wdt-ath79/description
+  Kernel module for AR7XXX/AR9XXX watchdog timer.
+endef
+
+$(eval $(call KernelPackage,wdt-ath79))
