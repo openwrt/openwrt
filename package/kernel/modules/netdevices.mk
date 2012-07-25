@@ -10,7 +10,7 @@ NETWORK_DEVICES_MENU:=Network Devices
 define KernelPackage/sis190
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SiS 190 Fast/Gigabit Ethernet support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_SIS190
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/sis/sis190.ko
   AUTOLOAD:=$(call AutoLoad,50,sis190)
@@ -21,7 +21,7 @@ $(eval $(call KernelPackage,sis190))
 define KernelPackage/skge
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SysKonnect Yukon support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_SKGE \
 	CONFIG_SKGE_DEBUG=n \
 	CONFIG_SKGE_GENESIS=n
@@ -34,7 +34,7 @@ $(eval $(call KernelPackage,skge))
 define KernelPackage/atl2
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros L2 Fast Ethernet support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_ATL2
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/atlx/atl2.ko
   AUTOLOAD:=$(call AutoLoad,50,atl2)
@@ -45,7 +45,7 @@ $(eval $(call KernelPackage,atl2))
 define KernelPackage/atl1
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros L1 Gigabit Ethernet support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_ATL1
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/atlx/atl1.ko
   AUTOLOAD:=$(call AutoLoad,50,atl1)
@@ -56,7 +56,7 @@ $(eval $(call KernelPackage,atl1))
 define KernelPackage/atl1c
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros L1C
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_ATL1C
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/atl1c/atl1c.ko
   AUTOLOAD:=$(call AutoLoad,50,atl1c)
@@ -67,7 +67,7 @@ $(eval $(call KernelPackage,atl1c))
 define KernelPackage/atl1e
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros L1E
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_ATL1E
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/atl1e/atl1e.ko
   AUTOLOAD:=$(call AutoLoad,50,atl1e)
@@ -185,7 +185,7 @@ $(eval $(call KernelPackage,switch-rtl8366s))
 define KernelPackage/natsemi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=National Semiconductor DP8381x series
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_NATSEMI
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/natsemi/natsemi.ko
   AUTOLOAD:=$(call AutoLoad,20,natsemi)
@@ -219,7 +219,7 @@ $(eval $(call KernelPackage,r6040))
 define KernelPackage/sis900
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SiS 900 Ethernet support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_SIS900
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/sis/sis900.ko
   AUTOLOAD:=$(call AutoLoad,50,sis900)
@@ -235,7 +235,7 @@ $(eval $(call KernelPackage,sis900))
 define KernelPackage/sky2
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SysKonnect Yukon2 support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_SKY2
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/marvell/sky2.ko
   AUTOLOAD:=$(call AutoLoad,50,sky2)
@@ -257,7 +257,7 @@ $(eval $(call KernelPackage,sky2))
 define KernelPackage/via-rhine
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Via Rhine ethernet support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_VIA_RHINE \
     CONFIG_VIA_RHINE_MMIO=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/via/via-rhine.ko
@@ -274,7 +274,7 @@ $(eval $(call KernelPackage,via-rhine))
 define KernelPackage/via-velocity
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=VIA Velocity Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@TARGET_ixp4xx||TARGET_mpc83xx||TARGET_x86 +kmod-lib-crc-ccitt
+  DEPENDS:=@TARGET_ixp4xx||TARGET_mpc83xx||PCI_SUPPORT +kmod-lib-crc-ccitt
   KCONFIG:=CONFIG_VIA_VELOCITY
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/via/via-velocity.ko
   AUTOLOAD:=$(call AutoLoad,50,via-velocity)
@@ -304,7 +304,7 @@ $(eval $(call KernelPackage,ixp4xx-eth))
 define KernelPackage/8139too
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_8139TOO \
     CONFIG_8139TOO_PIO=y \
     CONFIG_8139TOO_TUNE_TWISTER=n \
@@ -324,7 +324,7 @@ $(eval $(call KernelPackage,8139too))
 define KernelPackage/8139cp
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8139C+ PCI Fast Ethernet Adapter kernel support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_8139CP
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/8139cp.ko
   AUTOLOAD:=$(call AutoLoad,50,8139cp)
@@ -358,7 +358,7 @@ $(eval $(call KernelPackage,r8169))
 define KernelPackage/ne2k-pci
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=ne2k-pci Ethernet Adapter kernel support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_NE2K_PCI
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ethernet/8390/ne2k-pci.ko \
@@ -376,7 +376,7 @@ $(eval $(call KernelPackage,ne2k-pci))
 define KernelPackage/e100
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) PRO/100+ cards kernel support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_E100
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e100.ko
   AUTOLOAD:=$(call AutoLoad,50,e100)
@@ -433,7 +433,7 @@ $(eval $(call KernelPackage,e1000e))
 define KernelPackage/b44
   TITLE:=Broadcom 44xx driver
   KCONFIG:=CONFIG_B44
-  DEPENDS:=@TARGET_x86 +kmod-ssb
+  DEPENDS:=@PCI_SUPPORT +kmod-ssb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/b44.ko
   AUTOLOAD:=$(call AutoLoad,50,b44)
@@ -449,7 +449,7 @@ $(eval $(call KernelPackage,b44))
 define KernelPackage/3c59x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=3Com 3c590/3c900 series (592/595/597) Vortex/Boomerang
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_VORTEX
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/3com/3c59x.ko
   AUTOLOAD:=$(call AutoLoad,50,3c59x)
@@ -471,7 +471,7 @@ $(eval $(call KernelPackage,3c59x))
 define KernelPackage/pcnet32
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=AMD PCnet32 PCI support
-  DEPENDS:=@(TARGET_x86||TARGET_malta)
+  DEPENDS:=@(PCI_SUPPORT||TARGET_malta)
   KCONFIG:=CONFIG_PCNET32
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/amd/pcnet32.ko
   AUTOLOAD:=$(call AutoLoad,50,pcnet32)
@@ -595,7 +595,7 @@ $(eval $(call KernelPackage,macvlan))
 
 define KernelPackage/tulip
   TITLE:=Tulip family network device support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   KCONFIG:= \
     CONFIG_NET_TULIP=y \
@@ -632,7 +632,7 @@ $(eval $(call KernelPackage,tulip))
 define KernelPackage/solos-pci
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Solos ADSL2+ multiport modem
-  DEPENDS:=@TARGET_x86 +kmod-atm
+  DEPENDS:=@PCI_SUPPORT +kmod-atm
   KCONFIG:=CONFIG_ATM_SOLOS
   FILES:=$(LINUX_DIR)/drivers/atm/solos-pci.ko
   AUTOLOAD:=$(call AutoLoad,50,solos-pci)
@@ -678,7 +678,7 @@ $(eval $(call KernelPackage,ifb))
 define KernelPackage/dm9000
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Davicom 9000 Ethernet support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_DM9000 \
     CONFIG_DM9000_DEBUGLEVEL=4 \
     CONFIG_DM9000_FORCE_SIMPLE_PHY_POLL=y
