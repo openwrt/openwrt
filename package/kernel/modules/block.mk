@@ -492,7 +492,6 @@ $(eval $(call KernelPackage,ide-it821x))
 define KernelPackage/libsas
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SAS Domain Transport Attributes
-  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
 	CONFIG_SCSI_SAS_ATTRS \
 	CONFIG_SCSI_SAS_ATA=y \
@@ -531,7 +530,7 @@ $(eval $(call KernelPackage,loop))
 define KernelPackage/mvsas
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Marvell 88SE6440 SAS/SATA driver
-  DEPENDS:=@TARGET_x86 +kmod-libsas
+  DEPENDS:=@PCI_SUPPORT +kmod-libsas
   KCONFIG:= \
 	CONFIG_SCSI_MVSAS \
 	CONFIG_SCSI_MVSAS_TASKLET=n
