@@ -24,7 +24,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -320,6 +322,31 @@ static int bcm47xx_get_invariants(struct
+@@ -166,6 +168,31 @@ static int bcm47xx_get_invariants(struct
  	return 0;
  }
  
@@ -56,7 +56,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static void __init bcm47xx_register_ssb(void)
  {
  	int err;
-@@ -352,6 +379,10 @@ static void __init bcm47xx_register_ssb(
+@@ -198,6 +225,10 @@ static void __init bcm47xx_register_ssb(
  			memcpy(&mcore->serial_ports[1], &port, sizeof(port));
  		}
  	}

@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -157,12 +157,7 @@ static int bcm47xx_get_invariants(struct
+@@ -109,12 +109,7 @@ static int bcm47xx_get_invariants(struct
  	/* Fill boardinfo structure */
  	memset(&(iv->boardinfo), 0 , sizeof(struct ssb_boardinfo));
  
@@ -12,11 +12,11 @@
 -		iv->boardinfo.type = (u16)simple_strtoul(buf, NULL, 0);
 +	bcm47xx_fill_ssb_boardinfo(&iv->boardinfo, NULL);
  
- 	memset(&iv->sprom, 0, sizeof(struct ssb_sprom));
  	bcm47xx_fill_sprom(&iv->sprom, NULL);
+ 
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -616,3 +616,15 @@ void bcm47xx_fill_sprom(struct ssb_sprom
+@@ -618,3 +618,15 @@ void bcm47xx_fill_sprom(struct ssb_sprom
  		bcm47xx_fill_sprom_r1(sprom, prefix);
  	}
  }

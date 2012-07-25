@@ -1,7 +1,6 @@
-
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -268,8 +268,7 @@ int nvram_getenv(char *name, char *val,
+@@ -107,8 +107,7 @@ int nvram_getenv(char *name, char *val,
  		value = eq + 1;
  		if ((eq - var) == strlen(name) &&
  			strncmp(var, name, (eq - var)) == 0) {
