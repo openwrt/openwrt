@@ -35,3 +35,19 @@ define KernelPackage/leds-wndr3700-usb/description
 endef
 
 $(eval $(call KernelPackage,leds-wndr3700-usb))
+
+
+define KernelPackage/spi-vsc7385
+  SUBMENU:=$(SPI_MENU)
+  TITLE:=Vitesse VSC7385 ethernet switch driver
+  DEPENDS:=@TARGET_ar71xx
+  KCONFIG:=CONFIG_SPI_VSC7385
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-vsc7385.ko
+  AUTOLOAD:=$(call AutoLoad,93,spi-vsc7385)
+endef
+
+define KernelPackage/spi-vsc7385/description
+  This package contains the SPI driver for the Vitesse VSC7385 ethernet switch.
+endef
+
+$(eval $(call KernelPackage,spi-vsc7385))
