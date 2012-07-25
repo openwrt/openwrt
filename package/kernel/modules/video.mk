@@ -12,15 +12,9 @@ VIDEO_MENU:=Video Support
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer support
-  KCONFIG:=CONFIG_FB \
-	   CONFIG_FB_CFB_FILLRECT \
-	   CONFIG_FB_CFB_COPYAREA \
-	   CONFIG_FB_CFB_IMAGEBLIT
-  FILES:=$(LINUX_DIR)/drivers/video/fb.ko \
-	 $(LINUX_DIR)/drivers/video/cfbfillrect.ko \
-	 $(LINUX_DIR)/drivers/video/cfbcopyarea.ko \
-	 $(LINUX_DIR)/drivers/video/cfbimgblt.ko
-  AUTOLOAD:=$(call AutoLoad,06,fb cfbfillrect cfbcopyarea cfbimgblt)
+  KCONFIG:=CONFIG_FB
+  FILES:=$(LINUX_DIR)/drivers/video/fb.ko
+  AUTOLOAD:=$(call AutoLoad,06,fb)
 endef
 
 define KernelPackage/fb/description
@@ -28,6 +22,52 @@ define KernelPackage/fb/description
 endef
 
 $(eval $(call KernelPackage,fb))
+
+define KernelPackage/fb-cfb-fillrect
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Framebuffer software rectangle filling support
+  DEPENDS:=+kmod-fb
+  KCONFIG:=CONFIG_FB_CFB_FILLRECT
+  FILES:=$(LINUX_DIR)/drivers/video/cfbfillrect.ko
+  AUTOLOAD:=$(call AutoLoad,07,cfbfillrect)
+endef
+
+define KernelPackage/fb-cfb-fillrect/description
+  Kernel support for software rectangle filling
+endef
+
+$(eval $(call KernelPackage,fb-cfb-fillrect))
+
+
+define KernelPackage/fb-cfb-copyarea
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Framebuffer software copy area support
+  DEPENDS:=+kmod-fb
+  KCONFIG:=CONFIG_FB_CFB_COPYAREA
+  FILES:=$(LINUX_DIR)/drivers/video/cfbcopyarea.ko
+  AUTOLOAD:=$(call AutoLoad,07,cfbcopyarea)
+endef
+
+define KernelPackage/fb-cfb-copyarea/description
+  Kernel support for software copy area
+endef
+
+$(eval $(call KernelPackage,fb-cfb-copyarea))
+
+define KernelPackage/fb-cfb-imgblt
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Framebuffer software image blit support
+  DEPENDS:=+kmod-fb
+  KCONFIG:=CONFIG_FB_CFB_IMAGEBLIT
+  FILES:=$(LINUX_DIR)/drivers/video/cfbimgblt.ko
+  AUTOLOAD:=$(call AutoLoad,07,cfbimgblt)
+endef
+
+define KernelPackage/fb-cfb-imgblt/description
+  Kernel support for software image blitting
+endef
+
+$(eval $(call KernelPackage,fb-cfb-imgblt))
 
 
 define KernelPackage/video-core
