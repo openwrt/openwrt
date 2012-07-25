@@ -101,41 +101,6 @@ endef
 
 $(eval $(call KernelPackage,i2c-gpio))
 
-I2C_SCX200_MODULES:=\
-  CONFIG_SCx200_I2C:drivers/i2c/busses/scx200_i2c
-
-define KernelPackage/i2c-scx200
-  $(call i2c_defaults,$(I2C_SCX200_MODULES),59)
-  TITLE:=Geode SCx200 I2C using GPIO pins
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-algo-bit
-  KCONFIG+= \
-	CONFIG_SCx200_I2C_SCL=12 \
-	CONFIG_SCx200_I2C_SDA=13
-endef
-
-define KernelPackage/i2c-scx200/description
- Kernel module for I2C using GPIO pins on the Geode SCx200 processors.
-endef
-
-$(eval $(call KernelPackage,i2c-scx200))
-
-
-I2C_SCX200_ACB_MODULES:=\
-  CONFIG_SCx200_ACB:drivers/i2c/busses/scx200_acb
-
-define KernelPackage/i2c-scx200-acb
-  $(call i2c_defaults,$(I2C_SCX200_ACB_MODULES),59)
-  TITLE:=Geode SCx200 ACCESS.bus support
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-algo-bit
-endef
-
-define KernelPackage/i2c-scx200-acb/description
- Kernel module for I2C using the ACCESS.bus controllers on the Geode SCx200
- and SC1100 processors and the CS5535 and CS5536 Geode companion devices.
-endef
-
-$(eval $(call KernelPackage,i2c-scx200-acb))
-
 
 OF_I2C_MODULES:=\
   CONFIG_OF_I2C:drivers/of/of_i2c
