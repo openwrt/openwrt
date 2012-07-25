@@ -76,6 +76,9 @@ ifeq ($(CONFIG_$(PKG_NAME)_USE_CUSTOM_SOURCE_DIR),y)
 PKG_SOURCE_URL:=
 # add hook to install a link to customer source path of dedicated package
 Hooks/Prepare/Pre += prepare_custom_source_directory
+ifeq ($(filter autoreconf,$(Hooks/Configure/Pre)),)
+  Hooks/Configure/Pre += autoreconf_target
+endif
 # define empty default action
 define Build/Prepare/Default
 	@: 
