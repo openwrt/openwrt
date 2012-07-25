@@ -154,14 +154,14 @@ mtd_fixtrx(const char *mtd, size_t offset)
 	if (quiet < 2)
 		fprintf(stderr, "Trying to fix trx header in %s at 0x%x...\n", mtd, offset);
 
-	block_offset = offset & ~(erasesize - 1);
-	offset -= block_offset;
-
 	fd = mtd_check_open(mtd);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
 	}
+
+	block_offset = offset & ~(erasesize - 1);
+	offset -= block_offset;
 
 	if (block_offset + erasesize > mtdsize) {
 		fprintf(stderr, "Offset too large, device size 0x%x\n", mtdsize);

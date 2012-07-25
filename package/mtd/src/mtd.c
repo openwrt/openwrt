@@ -294,6 +294,7 @@ mtd_write(int imagefd, const char *mtd, char *fis_layout, size_t part_offset)
 	ssize_t r, w, e;
 	ssize_t skip = 0;
 	uint32_t offset = 0;
+	int jffs2_replaced = 0;
 
 #ifdef FIS_SUPPORT
 	static struct fis_part new_parts[MAX_ARGS];
@@ -417,6 +418,7 @@ resume:
 					fprintf(stderr, "\nAppending jffs2 data from %s to %s...", jffs2file, mtd);
 				/* got an EOF marker - this is the place to add some jffs2 data */
 				skip = mtd_replace_jffs2(mtd, fd, e, jffs2file);
+				jffs2_replaced = 1;
 
 				/* don't add it again */
 				jffs2file = NULL;
@@ -480,6 +482,10 @@ resume:
 
 		buflen = 0;
 		offset = 0;
+	}
+
+	if (jffs2_replaced && trx_fixup) {
+		trx_fixup(fd, mtd);
 	}
 
 	if (!quiet)
@@ -575,7 +581,7 @@ int main (int argc, char **argv)
 	force = 0;
 	buflen = 0;
 	quiet = 0;
-  no_erase = 0;
+	no_erase = 0;
 
 	while ((ch = getopt(argc, argv,
 #ifdef FIS_SUPPORT
