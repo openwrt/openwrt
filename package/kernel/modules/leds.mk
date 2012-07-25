@@ -24,39 +24,6 @@ endef
 $(eval $(call KernelPackage,leds-gpio))
 
 
-
-define KernelPackage/leds-rb750
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=RouterBOARD 750 LED support
-  DEPENDS:=@TARGET_ar71xx
-  KCONFIG:=CONFIG_LEDS_RB750
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-rb750.ko
-  AUTOLOAD:=$(call AutoLoad,60,leds-rb750)
-endef
-
-define KernelPackage/leds-rb750/description
- Kernel module for the LEDs on the MikroTik RouterBOARD 750.
-endef
-
-$(eval $(call KernelPackage,leds-rb750))
-
-
-define KernelPackage/leds-wndr3700-usb
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=WNDR3700 USB LED support
-  DEPENDS:=@TARGET_ar71xx
-  KCONFIG:=CONFIG_LEDS_WNDR3700_USB
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-wndr3700-usb.ko
-  AUTOLOAD:=$(call AutoLoad,60,leds-wndr3700-usb)
-endef
-
-define KernelPackage/leds-wndr3700-usb/description
- Kernel module for the USB LED on the NETGWR WNDR3700 board.
-endef
-
-$(eval $(call KernelPackage,leds-wndr3700-usb))
-
-
 define KernelPackage/ledtrig-heartbeat
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED Heartbeat Trigger
