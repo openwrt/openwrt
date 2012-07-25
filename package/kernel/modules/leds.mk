@@ -24,21 +24,6 @@ endef
 $(eval $(call KernelPackage,leds-gpio))
 
 
-define KernelPackage/leds-net48xx
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=Soekris Net48xx LED support
-  DEPENDS:=@TARGET_x86 +kmod-gpio-scx200
-  KCONFIG:=CONFIG_LEDS_NET48XX
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-net48xx.ko
-  AUTOLOAD:=$(call AutoLoad,50,leds-net48xx)
-endef
-
-define KernelPackage/leds-net48xx/description
- Kernel module for Soekris Net48xx LEDs
-endef
-
-$(eval $(call KernelPackage,leds-net48xx))
-
 
 define KernelPackage/leds-rb750
   SUBMENU:=$(LEDS_MENU)
@@ -70,22 +55,6 @@ define KernelPackage/leds-wndr3700-usb/description
 endef
 
 $(eval $(call KernelPackage,leds-wndr3700-usb))
-
-
-define KernelPackage/leds-wrap
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=PCengines WRAP LED support
-  DEPENDS:=@TARGET_x86 +kmod-gpio-scx200
-  KCONFIG:=CONFIG_LEDS_WRAP
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-wrap.ko
-  AUTOLOAD:=$(call AutoLoad,50,leds-wrap)
-endef
-
-define KernelPackage/leds-wrap/description
- Kernel module for PCengines WRAP LEDs
-endef
-
-$(eval $(call KernelPackage,leds-wrap))
 
 
 define KernelPackage/ledtrig-heartbeat
