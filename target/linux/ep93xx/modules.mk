@@ -60,7 +60,7 @@ $(eval $(call KernelPackage,sound-soc-ep93xx))
 define KernelPackage/sound-soc-ep93xx-ac97
   SUBMENU:=$(SOUND_MENU)
   TITLE:=EP93xx SoC AC97 support
-  DEPENDS:=+kmod-sound-soc-ep93xx
+  DEPENDS:=@TARGET_ep93xx +kmod-sound-soc-ep93xx
   KCONFIG:=CONFIG_SND_EP93XX_SOC_AC97
   FILES:=$(LINUX_DIR)/sound/soc/ep93xx/snd-soc-ep93xx-ac97.ko
   AUTOLOAD:=$(call AutoLoad,56,snd-soc-ep93xx-ac97)
@@ -75,7 +75,7 @@ $(eval $(call KernelPackage,sound-soc-ep93xx-ac97))
 define KernelPackage/sound-soc-ep93xx-simone
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sim.One EP93xx Soc sound support
-  DEPENDS:=+kmod-sound-soc-ep93xx +kmod-sound-soc-ep93xx-ac97
+  DEPENDS:=@TARGET_ep93xx +kmod-sound-soc-ep93xx +kmod-sound-soc-ep93xx-ac97
   KCONFIG:=CONFIG_SND_EP93XX_SOC_SIMONE
   FILES:=$(LINUX_DIR)/sound/soc/ep93xx/snd-soc-simone.ko
   AUTOLOAD:=$(call AutoLoad,59,snd-soc-ep93xx)
@@ -90,6 +90,7 @@ $(eval $(call KernelPackage,sound-soc-ep93xx-simone))
 define KernelPackage/touchscreen-ep93xx
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EP93xx input touchscreen support
+  DEPENDS:=@TARGET_ep93xx
   KCONFIG:=CONFIG_TOUCHSCREEN_EP93XX
   FILES:=$(LINUX_DIR)/drivers/input/touchscreen/ep93xx_ts.ko
   AUTOLOAD:=$(call AutoLoad,51,ep93xx_ts)
