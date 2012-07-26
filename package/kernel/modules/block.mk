@@ -530,7 +530,7 @@ $(eval $(call KernelPackage,loop))
 define KernelPackage/mvsas
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Marvell 88SE6440 SAS/SATA driver
-  DEPENDS:=@PCI_SUPPORT +kmod-libsas
+  DEPENDS:=@TARGET_x86 +kmod-libsas
   KCONFIG:= \
 	CONFIG_SCSI_MVSAS \
 	CONFIG_SCSI_MVSAS_TASKLET=n
