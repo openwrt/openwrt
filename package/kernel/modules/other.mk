@@ -431,6 +431,7 @@ define KernelPackage/bcma
 	CONFIG_BCMA_HOST_PCI=y \
 	CONFIG_BCMA_DRIVER_MIPS=n \
 	CONFIG_BCMA_DRIVER_PCI_HOSTMODE=n \
+	CONFIG_BCMA_DRIVER_GMAC_CMN=n \
 	CONFIG_BCMA_DEBUG=n
   FILES:=$(LINUX_DIR)/drivers/bcma/bcma.ko
   AUTOLOAD:=$(call AutoLoad,29,bcma)

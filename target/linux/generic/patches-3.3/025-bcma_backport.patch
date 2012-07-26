@@ -9,6 +9,32 @@
  	help
  	  PCI core hostmode operation (external PCI bus).
  
+@@ -46,6 +46,15 @@ config BCMA_DRIVER_MIPS
+ 
+ 	  If unsure, say N
+ 
++config BCMA_DRIVER_GMAC_CMN
++	bool "BCMA Broadcom GBIT MAC COMMON core driver"
++	depends on BCMA
++	help
++	  Driver for the Broadcom GBIT MAC COMMON core attached to Broadcom
++	  specific Advanced Microcontroller Bus.
++
++	  If unsure, say N
++
+ config BCMA_DEBUG
+ 	bool "BCMA debugging"
+ 	depends on BCMA
+--- a/drivers/bcma/Makefile
++++ b/drivers/bcma/Makefile
+@@ -3,6 +3,7 @@ bcma-y					+= driver_chipcommon.o driver
+ bcma-y					+= driver_pci.o
+ bcma-$(CONFIG_BCMA_DRIVER_PCI_HOSTMODE)	+= driver_pci_host.o
+ bcma-$(CONFIG_BCMA_DRIVER_MIPS)		+= driver_mips.o
++bcma-$(CONFIG_BCMA_DRIVER_GMAC_CMN)	+= driver_gmac_cmn.o
+ bcma-$(CONFIG_BCMA_HOST_PCI)		+= host_pci.o
+ bcma-$(CONFIG_BCMA_HOST_SOC)		+= host_soc.o
+ obj-$(CONFIG_BCMA)			+= bcma.o
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
 @@ -10,10 +10,19 @@
@@ -618,6 +644,23 @@
 +	bcma_cc_write32(cc, BCMA_CC_PMU_CTL, tmp);
 +}
 +EXPORT_SYMBOL_GPL(bcma_pmu_spuravoid_pllupdate);
+--- /dev/null
++++ b/drivers/bcma/driver_gmac_cmn.c
+@@ -0,0 +1,14 @@
++/*
++ * Broadcom specific AMBA
++ * GBIT MAC COMMON Core
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include "bcma_private.h"
++#include <linux/bcma/bcma.h>
++
++void __devinit bcma_core_gmac_cmn_init(struct bcma_drv_gmac_cmn *gc)
++{
++	mutex_init(&gc->phy_mutex);
++}
 --- a/drivers/bcma/driver_mips.c
 +++ b/drivers/bcma/driver_mips.c
 @@ -22,15 +22,15 @@
@@ -1737,16 +1780,23 @@
  static int bcma_bus_match(struct device *dev, struct device_driver *drv);
  static int bcma_device_probe(struct device *dev);
  static int bcma_device_remove(struct device *dev);
-@@ -55,7 +61,7 @@ static struct bus_type bcma_bus_type = {
+@@ -55,7 +61,14 @@ static struct bus_type bcma_bus_type = {
  	.dev_attrs	= bcma_device_attrs,
  };
  
 -static struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid)
++static u16 bcma_cc_core_id(struct bcma_bus *bus)
++{
++	if (bus->chipinfo.id == BCMA_CHIP_ID_BCM4706)
++		return BCMA_CORE_4706_CHIPCOMMON;
++	return BCMA_CORE_CHIPCOMMON;
++}
++
 +struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid)
  {
  	struct bcma_device *core;
  
-@@ -65,6 +71,7 @@ static struct bcma_device *bcma_find_cor
+@@ -65,6 +78,7 @@ static struct bcma_device *bcma_find_cor
  	}
  	return NULL;
  }
@@ -1754,7 +1804,18 @@
  
  static void bcma_release_core_dev(struct device *dev)
  {
-@@ -93,7 +100,7 @@ static int bcma_register_cores(struct bc
+@@ -84,16 +98,18 @@ static int bcma_register_cores(struct bc
+ 	list_for_each_entry(core, &bus->cores, list) {
+ 		/* We support that cores ourself */
+ 		switch (core->id.id) {
++		case BCMA_CORE_4706_CHIPCOMMON:
+ 		case BCMA_CORE_CHIPCOMMON:
+ 		case BCMA_CORE_PCI:
+ 		case BCMA_CORE_PCIE:
+ 		case BCMA_CORE_MIPS_74K:
++		case BCMA_CORE_4706_MAC_GBIT_COMMON:
+ 			continue;
+ 		}
  
  		core->dev.release = bcma_release_core_dev;
  		core->dev.bus = &bcma_bus_type;
@@ -1763,7 +1824,7 @@
  
  		switch (bus->hosttype) {
  		case BCMA_HOSTTYPE_PCI:
-@@ -111,8 +118,9 @@ static int bcma_register_cores(struct bc
+@@ -111,8 +127,9 @@ static int bcma_register_cores(struct bc
  
  		err = device_register(&core->dev);
  		if (err) {
@@ -1775,7 +1836,7 @@
  			continue;
  		}
  		core->dev_registered = true;
-@@ -132,15 +140,19 @@ static void bcma_unregister_cores(struct
+@@ -132,20 +149,24 @@ static void bcma_unregister_cores(struct
  	}
  }
  
@@ -1797,7 +1858,23 @@
  		return -1;
  	}
  
-@@ -168,14 +180,14 @@ int bcma_bus_register(struct bcma_bus *b
+ 	/* Init CC core */
+-	core = bcma_find_core(bus, BCMA_CORE_CHIPCOMMON);
++	core = bcma_find_core(bus, bcma_cc_core_id(bus));
+ 	if (core) {
+ 		bus->drv_cc.core = core;
+ 		bcma_core_chipcommon_init(&bus->drv_cc);
+@@ -165,17 +186,24 @@ int bcma_bus_register(struct bcma_bus *b
+ 		bcma_core_pci_init(&bus->drv_pci);
+ 	}
+ 
++	/* Init GBIT MAC COMMON core */
++	core = bcma_find_core(bus, BCMA_CORE_4706_MAC_GBIT_COMMON);
++	if (core) {
++		bus->drv_gmac_cmn.core = core;
++		bcma_core_gmac_cmn_init(&bus->drv_gmac_cmn);
++	}
++
  	/* Try to get SPROM */
  	err = bcma_sprom_get(bus);
  	if (err == -ENOENT) {
@@ -1815,7 +1892,15 @@
  
  	return 0;
  }
-@@ -203,7 +215,7 @@ int __init bcma_bus_early_register(struc
+@@ -196,14 +224,14 @@ int __init bcma_bus_early_register(struc
+ 	bcma_init_bus(bus);
+ 
+ 	match.manuf = BCMA_MANUF_BCM;
+-	match.id = BCMA_CORE_CHIPCOMMON;
++	match.id = bcma_cc_core_id(bus);
+ 	match.class = BCMA_CL_SIM;
+ 	match.rev = BCMA_ANY_REV;
+ 
  	/* Scan for chip common core */
  	err = bcma_bus_scan_early(bus, &match, core_cc);
  	if (err) {
@@ -1824,7 +1909,7 @@
  		return -1;
  	}
  
-@@ -215,7 +227,7 @@ int __init bcma_bus_early_register(struc
+@@ -215,12 +243,12 @@ int __init bcma_bus_early_register(struc
  	/* Scan for mips core */
  	err = bcma_bus_scan_early(bus, &match, core_mips);
  	if (err) {
@@ -1833,7 +1918,13 @@
  		return -1;
  	}
  
-@@ -233,7 +245,7 @@ int __init bcma_bus_early_register(struc
+ 	/* Init CC core */
+-	core = bcma_find_core(bus, BCMA_CORE_CHIPCOMMON);
++	core = bcma_find_core(bus, bcma_cc_core_id(bus));
+ 	if (core) {
+ 		bus->drv_cc.core = core;
+ 		bcma_core_chipcommon_init(&bus->drv_cc);
+@@ -233,7 +261,7 @@ int __init bcma_bus_early_register(struc
  		bcma_core_mips_init(&bus->drv_mips);
  	}
  
@@ -1842,6 +1933,16 @@
  
  	return 0;
  }
+@@ -259,8 +287,7 @@ int bcma_bus_resume(struct bcma_bus *bus
+ 	struct bcma_device *core;
+ 
+ 	/* Init CC core */
+-	core = bcma_find_core(bus, BCMA_CORE_CHIPCOMMON);
+-	if (core) {
++	if (bus->drv_cc.core) {
+ 		bus->drv_cc.setup_done = false;
+ 		bcma_core_chipcommon_init(&bus->drv_cc);
+ 	}
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
 @@ -19,15 +19,27 @@ struct bcma_device_id_name {
@@ -1851,6 +1952,7 @@
 -struct bcma_device_id_name bcma_device_names[] = {
 +
 +static const struct bcma_device_id_name bcma_arm_device_names[] = {
++	{ BCMA_CORE_4706_MAC_GBIT_COMMON, "BCM4706 GBit MAC Common" },
 +	{ BCMA_CORE_ARM_1176, "ARM 1176" },
 +	{ BCMA_CORE_ARM_7TDMI, "ARM 7TDMI" },
 +	{ BCMA_CORE_ARM_CM3, "ARM CM3" },
@@ -1863,7 +1965,6 @@
 +	{ BCMA_CORE_4706_MAC_GBIT, "BCM4706 GBit MAC" },
 +	{ BCMA_CORE_AMEMC, "AMEMC (DDR)" },
 +	{ BCMA_CORE_ALTA, "ALTA (I2S)" },
-+	{ BCMA_CORE_4706_MAC_GBIT_COMMON, "BCM4706 GBit MAC Common" },
  	{ BCMA_CORE_INVALID, "Invalid" },
  	{ BCMA_CORE_CHIPCOMMON, "ChipCommon" },
  	{ BCMA_CORE_ILINE20, "ILine 20" },
@@ -1965,7 +2066,28 @@
  static int bcma_get_next_core(struct bcma_bus *bus, u32 __iomem **eromptr,
  			      struct bcma_device_id *match, int core_num,
  			      struct bcma_device *core)
-@@ -286,6 +329,23 @@ static int bcma_get_next_core(struct bcm
+@@ -252,11 +295,15 @@ static int bcma_get_next_core(struct bcm
+ 
+ 	/* check if component is a core at all */
+ 	if (wrappers[0] + wrappers[1] == 0) {
+-		/* we could save addrl of the router
+-		if (cid == BCMA_CORE_OOB_ROUTER)
+-		 */
+-		bcma_erom_skip_component(bus, eromptr);
+-		return -ENXIO;
++		/* Some specific cores don't need wrappers */
++		switch (core->id.id) {
++		case BCMA_CORE_4706_MAC_GBIT_COMMON:
++		/* Not used yet: case BCMA_CORE_OOB_ROUTER: */
++			break;
++		default:
++			bcma_erom_skip_component(bus, eromptr);
++			return -ENXIO;
++		}
+ 	}
+ 
+ 	if (bcma_erom_is_bridge(bus, eromptr)) {
+@@ -286,6 +333,23 @@ static int bcma_get_next_core(struct bcm
  			return -EILSEQ;
  	}
  
@@ -1989,7 +2111,7 @@
  	/* get & parse slave ports */
  	for (i = 0; i < ports[1]; i++) {
  		for (j = 0; ; j++) {
-@@ -298,7 +358,7 @@ static int bcma_get_next_core(struct bcm
+@@ -298,7 +362,7 @@ static int bcma_get_next_core(struct bcm
  				break;
  			} else {
  				if (i == 0 && j == 0)
@@ -1998,7 +2120,7 @@
  			}
  		}
  	}
-@@ -353,6 +413,7 @@ static int bcma_get_next_core(struct bcm
+@@ -353,6 +417,7 @@ static int bcma_get_next_core(struct bcm
  void bcma_init_bus(struct bcma_bus *bus)
  {
  	s32 tmp;
@@ -2006,7 +2128,7 @@
  
  	if (bus->init_done)
  		return;
-@@ -363,9 +424,12 @@ void bcma_init_bus(struct bcma_bus *bus)
+@@ -363,9 +428,12 @@ void bcma_init_bus(struct bcma_bus *bus)
  	bcma_scan_switch_core(bus, BCMA_ADDR_BASE);
  
  	tmp = bcma_scan_read32(bus, 0, BCMA_CC_ID);
@@ -2022,7 +2144,7 @@
  	bus->init_done = true;
  }
  
-@@ -392,6 +456,7 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -392,6 +460,7 @@ int bcma_bus_scan(struct bcma_bus *bus)
  	bcma_scan_switch_core(bus, erombase);
  
  	while (eromptr < eromend) {
@@ -2030,7 +2152,7 @@
  		struct bcma_device *core = kzalloc(sizeof(*core), GFP_KERNEL);
  		if (!core)
  			return -ENOMEM;
-@@ -414,12 +479,13 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -414,14 +483,15 @@ int bcma_bus_scan(struct bcma_bus *bus)
  
  		core->core_index = core_num++;
  		bus->nr_cores++;
@@ -2047,9 +2169,12 @@
 +			  core->id.manuf, core->id.id, core->id.rev,
 +			  core->id.class);
  
- 		list_add(&core->list, &bus->cores);
+-		list_add(&core->list, &bus->cores);
++		list_add_tail(&core->list, &bus->cores);
  	}
-@@ -471,11 +537,10 @@ int __init bcma_bus_scan_early(struct bc
+ 
+ 	if (bus->hosttype == BCMA_HOSTTYPE_SOC)
+@@ -471,13 +541,12 @@ int __init bcma_bus_scan_early(struct bc
  
  		core->core_index = core_num++;
  		bus->nr_cores++;
@@ -2063,8 +2188,22 @@
 +			  core->id.manuf, core->id.id, core->id.rev,
 +			  core->id.class);
  
- 		list_add(&core->list, &bus->cores);
+-		list_add(&core->list, &bus->cores);
++		list_add_tail(&core->list, &bus->cores);
  		err = 0;
+ 		break;
+ 	}
+--- a/drivers/bcma/scan.h
++++ b/drivers/bcma/scan.h
+@@ -27,7 +27,7 @@
+ #define SCAN_CIB_NMW		0x0007C000
+ #define SCAN_CIB_NMW_SHIFT	14
+ #define SCAN_CIB_NSW		0x00F80000
+-#define SCAN_CIB_NSW_SHIFT	17
++#define SCAN_CIB_NSW_SHIFT	19
+ #define SCAN_CIB_REV		0xFF000000
+ #define SCAN_CIB_REV_SHIFT	24
+ 
 --- a/drivers/bcma/sprom.c
 +++ b/drivers/bcma/sprom.c
 @@ -2,6 +2,8 @@
@@ -2630,7 +2769,15 @@
  	err = bcma_sprom_valid(sprom);
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -26,6 +26,11 @@ struct bcma_chipinfo {
+@@ -7,6 +7,7 @@
+ #include <linux/bcma/bcma_driver_chipcommon.h>
+ #include <linux/bcma/bcma_driver_pci.h>
+ #include <linux/bcma/bcma_driver_mips.h>
++#include <linux/bcma/bcma_driver_gmac_cmn.h>
+ #include <linux/ssb/ssb.h> /* SPROM sharing */
+ 
+ #include "bcma_regs.h"
+@@ -26,6 +27,11 @@ struct bcma_chipinfo {
  	u8 pkg;
  };
  
@@ -2642,7 +2789,7 @@
  enum bcma_clkmode {
  	BCMA_CLKMODE_FAST,
  	BCMA_CLKMODE_DYNAMIC,
-@@ -65,6 +70,13 @@ struct bcma_host_ops {
+@@ -65,6 +71,13 @@ struct bcma_host_ops {
  
  /* Core-ID values. */
  #define BCMA_CORE_OOB_ROUTER		0x367	/* Out of band */
@@ -2656,7 +2803,7 @@
  #define BCMA_CORE_INVALID		0x700
  #define BCMA_CORE_CHIPCOMMON		0x800
  #define BCMA_CORE_ILINE20		0x801
-@@ -125,6 +137,36 @@ struct bcma_host_ops {
+@@ -125,6 +138,36 @@ struct bcma_host_ops {
  
  #define BCMA_MAX_NR_CORES		16
  
@@ -2693,7 +2840,7 @@
  struct bcma_device {
  	struct bcma_bus *bus;
  	struct bcma_device_id id;
-@@ -136,8 +178,10 @@ struct bcma_device {
+@@ -136,8 +179,10 @@ struct bcma_device {
  	bool dev_registered;
  
  	u8 core_index;
@@ -2704,7 +2851,7 @@
  	u32 wrap;
  
  	void __iomem *io_addr;
-@@ -175,6 +219,12 @@ int __bcma_driver_register(struct bcma_d
+@@ -175,6 +220,12 @@ int __bcma_driver_register(struct bcma_d
  
  extern void bcma_driver_unregister(struct bcma_driver *drv);
  
@@ -2717,7 +2864,7 @@
  struct bcma_bus {
  	/* The MMIO area. */
  	void __iomem *mmio;
-@@ -191,10 +241,13 @@ struct bcma_bus {
+@@ -191,14 +242,18 @@ struct bcma_bus {
  
  	struct bcma_chipinfo chipinfo;
  
@@ -2731,7 +2878,12 @@
  
  	struct bcma_drv_cc drv_cc;
  	struct bcma_drv_pci drv_pci;
-@@ -282,6 +335,7 @@ static inline void bcma_maskset16(struct
+ 	struct bcma_drv_mips drv_mips;
++	struct bcma_drv_gmac_cmn drv_gmac_cmn;
+ 
+ 	/* We decided to share SPROM struct with SSB as long as we do not need
+ 	 * any hacks for BCMA. This simplifies drivers code. */
+@@ -282,6 +337,7 @@ static inline void bcma_maskset16(struct
  	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
  }
  
@@ -2869,6 +3021,109 @@
 +extern void bcma_pmu_spuravoid_pllupdate(struct bcma_drv_cc *cc, int spuravoid);
  
  #endif /* LINUX_BCMA_DRIVER_CC_H_ */
+--- /dev/null
++++ b/include/linux/bcma/bcma_driver_gmac_cmn.h
+@@ -0,0 +1,100 @@
++#ifndef LINUX_BCMA_DRIVER_GMAC_CMN_H_
++#define LINUX_BCMA_DRIVER_GMAC_CMN_H_
++
++#include <linux/types.h>
++
++#define BCMA_GMAC_CMN_STAG0		0x000
++#define BCMA_GMAC_CMN_STAG1		0x004
++#define BCMA_GMAC_CMN_STAG2		0x008
++#define BCMA_GMAC_CMN_STAG3		0x00C
++#define BCMA_GMAC_CMN_PARSER_CTL	0x020
++#define BCMA_GMAC_CMN_MIB_MAX_LEN	0x024
++#define BCMA_GMAC_CMN_PHY_ACCESS	0x100
++#define  BCMA_GMAC_CMN_PA_DATA_MASK	0x0000ffff
++#define  BCMA_GMAC_CMN_PA_ADDR_MASK	0x001f0000
++#define  BCMA_GMAC_CMN_PA_ADDR_SHIFT	16
++#define  BCMA_GMAC_CMN_PA_REG_MASK	0x1f000000
++#define  BCMA_GMAC_CMN_PA_REG_SHIFT	24
++#define  BCMA_GMAC_CMN_PA_WRITE		0x20000000
++#define  BCMA_GMAC_CMN_PA_START		0x40000000
++#define BCMA_GMAC_CMN_PHY_CTL		0x104
++#define  BCMA_GMAC_CMN_PC_EPA_MASK	0x0000001f
++#define  BCMA_GMAC_CMN_PC_MCT_MASK	0x007f0000
++#define  BCMA_GMAC_CMN_PC_MCT_SHIFT	16
++#define  BCMA_GMAC_CMN_PC_MTE		0x00800000
++#define BCMA_GMAC_CMN_GMAC0_RGMII_CTL	0x110
++#define BCMA_GMAC_CMN_CFP_ACCESS	0x200
++#define BCMA_GMAC_CMN_CFP_TCAM_DATA0	0x210
++#define BCMA_GMAC_CMN_CFP_TCAM_DATA1	0x214
++#define BCMA_GMAC_CMN_CFP_TCAM_DATA2	0x218
++#define BCMA_GMAC_CMN_CFP_TCAM_DATA3	0x21C
++#define BCMA_GMAC_CMN_CFP_TCAM_DATA4	0x220
++#define BCMA_GMAC_CMN_CFP_TCAM_DATA5	0x224
++#define BCMA_GMAC_CMN_CFP_TCAM_DATA6	0x228
++#define BCMA_GMAC_CMN_CFP_TCAM_DATA7	0x22C
++#define BCMA_GMAC_CMN_CFP_TCAM_MASK0	0x230
++#define BCMA_GMAC_CMN_CFP_TCAM_MASK1	0x234
++#define BCMA_GMAC_CMN_CFP_TCAM_MASK2	0x238
++#define BCMA_GMAC_CMN_CFP_TCAM_MASK3	0x23C
++#define BCMA_GMAC_CMN_CFP_TCAM_MASK4	0x240
++#define BCMA_GMAC_CMN_CFP_TCAM_MASK5	0x244
++#define BCMA_GMAC_CMN_CFP_TCAM_MASK6	0x248
++#define BCMA_GMAC_CMN_CFP_TCAM_MASK7	0x24C
++#define BCMA_GMAC_CMN_CFP_ACTION_DATA	0x250
++#define BCMA_GMAC_CMN_TCAM_BIST_CTL	0x2A0
++#define BCMA_GMAC_CMN_TCAM_BIST_STATUS	0x2A4
++#define BCMA_GMAC_CMN_TCAM_CMP_STATUS	0x2A8
++#define BCMA_GMAC_CMN_TCAM_DISABLE	0x2AC
++#define BCMA_GMAC_CMN_TCAM_TEST_CTL	0x2F0
++#define BCMA_GMAC_CMN_UDF_0_A3_A0	0x300
++#define BCMA_GMAC_CMN_UDF_0_A7_A4	0x304
++#define BCMA_GMAC_CMN_UDF_0_A8		0x308
++#define BCMA_GMAC_CMN_UDF_1_A3_A0	0x310
++#define BCMA_GMAC_CMN_UDF_1_A7_A4	0x314
++#define BCMA_GMAC_CMN_UDF_1_A8		0x318
++#define BCMA_GMAC_CMN_UDF_2_A3_A0	0x320
++#define BCMA_GMAC_CMN_UDF_2_A7_A4	0x324
++#define BCMA_GMAC_CMN_UDF_2_A8		0x328
++#define BCMA_GMAC_CMN_UDF_0_B3_B0	0x330
++#define BCMA_GMAC_CMN_UDF_0_B7_B4	0x334
++#define BCMA_GMAC_CMN_UDF_0_B8		0x338
++#define BCMA_GMAC_CMN_UDF_1_B3_B0	0x340
++#define BCMA_GMAC_CMN_UDF_1_B7_B4	0x344
++#define BCMA_GMAC_CMN_UDF_1_B8		0x348
++#define BCMA_GMAC_CMN_UDF_2_B3_B0	0x350
++#define BCMA_GMAC_CMN_UDF_2_B7_B4	0x354
++#define BCMA_GMAC_CMN_UDF_2_B8		0x358
++#define BCMA_GMAC_CMN_UDF_0_C3_C0	0x360
++#define BCMA_GMAC_CMN_UDF_0_C7_C4	0x364
++#define BCMA_GMAC_CMN_UDF_0_C8		0x368
++#define BCMA_GMAC_CMN_UDF_1_C3_C0	0x370
++#define BCMA_GMAC_CMN_UDF_1_C7_C4	0x374
++#define BCMA_GMAC_CMN_UDF_1_C8		0x378
++#define BCMA_GMAC_CMN_UDF_2_C3_C0	0x380
++#define BCMA_GMAC_CMN_UDF_2_C7_C4	0x384
++#define BCMA_GMAC_CMN_UDF_2_C8		0x388
++#define BCMA_GMAC_CMN_UDF_0_D3_D0	0x390
++#define BCMA_GMAC_CMN_UDF_0_D7_D4	0x394
++#define BCMA_GMAC_CMN_UDF_0_D11_D8	0x394
++
++struct bcma_drv_gmac_cmn {
++	struct bcma_device *core;
++
++	/* Drivers accessing BCMA_GMAC_CMN_PHY_ACCESS and
++	 * BCMA_GMAC_CMN_PHY_CTL need to take that mutex first. */
++	struct mutex phy_mutex;
++};
++
++/* Register access */
++#define gmac_cmn_read16(gc, offset)		bcma_read16((gc)->core, offset)
++#define gmac_cmn_read32(gc, offset)		bcma_read32((gc)->core, offset)
++#define gmac_cmn_write16(gc, offset, val)	bcma_write16((gc)->core, offset, val)
++#define gmac_cmn_write32(gc, offset, val)	bcma_write32((gc)->core, offset, val)
++
++#ifdef CONFIG_BCMA_DRIVER_GMAC_CMN
++extern void __devinit bcma_core_gmac_cmn_init(struct bcma_drv_gmac_cmn *gc);
++#else
++static inline void bcma_core_gmac_cmn_init(struct bcma_drv_gmac_cmn *gc) { }
++#endif
++
++#endif /* LINUX_BCMA_DRIVER_GMAC_CMN_H_ */
 --- a/include/linux/bcma/bcma_driver_pci.h
 +++ b/include/linux/bcma/bcma_driver_pci.h
 @@ -53,11 +53,47 @@ struct pci_dev;
