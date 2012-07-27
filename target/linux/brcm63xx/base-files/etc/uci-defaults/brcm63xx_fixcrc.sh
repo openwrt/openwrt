@@ -18,6 +18,7 @@ case "$board_name" in
 	"CPVA502+" |\
 	AW4339U |\
 	CPVA642 |\
+	CT6373-1 |\
 	MAGIC |\
 	V2110 |\
 	V2500V_BB)
