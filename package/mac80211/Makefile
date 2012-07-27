@@ -1083,6 +1083,7 @@ define KernelPackage/brcmutil
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n common driver parts
   URL:=http://linuxwireless.org/en/users/Drivers/brcm80211
+  DEPENDS+=@PCI_SUPPORT||USB_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmutil/brcmutil.ko
   AUTOLOAD:=$(call AutoLoad,30,brcmutil)
   MENU:=1
