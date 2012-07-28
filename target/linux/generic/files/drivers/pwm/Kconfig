@@ -11,17 +11,6 @@ menuconfig GENERIC_PWM
 
 if GENERIC_PWM
 
-config ATMEL_PWM
-	tristate "Atmel AT32/AT91 PWM support"
-	depends on AVR32 || ARCH_AT91
-	help
-	  This option enables device driver support for the PWMC
-	  peripheral channels found on certain Atmel processors.
-	  Pulse Width Modulation is used many for purposes, including
-	  software controlled power-efficient backlights on LCD
-	  displays, motor control, and waveform generation.  If
-	  unsure, say N.
-
 config GPIO_PWM
        tristate "PWM emulation using GPIO"
        help

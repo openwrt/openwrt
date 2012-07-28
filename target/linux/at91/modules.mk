@@ -24,10 +24,9 @@ define KernelPackage/pwm-atmel
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PWM on atmel SoC
   DEPENDS:=@TARGET_at91
-  KCONFIG:=CONFIG_GENERIC_PWM \
-		CONFIG_ATMEL_PWM
-  FILES:=$(LINUX_DIR)/drivers/pwm/atmel-pwm.ko
-  AUTOLOAD:=$(call AutoLoad,51,atmel-pwm)
+  KCONFIG:=CONFIG_ATMEL_PWM
+  FILES:=$(LINUX_DIR)/drivers/misc/atmel_pwm.ko
+  AUTOLOAD:=$(call AutoLoad,51,atmel_pwm)
 endef
 
 define KernelPackage/pwm-atmel/description
