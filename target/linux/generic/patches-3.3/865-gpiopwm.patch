@@ -1,0 +1,25 @@
+Index: linux-3.3.8/drivers/Kconfig
+===================================================================
+--- linux-3.3.8.orig/drivers/Kconfig	2012-06-01 09:16:13.000000000 +0200
++++ linux-3.3.8/drivers/Kconfig	2012-07-28 22:16:32.894397322 +0200
+@@ -60,6 +60,8 @@
+ 
+ source "drivers/gpio/Kconfig"
+ 
++source "drivers/pwm/Kconfig"
++
+ source "drivers/w1/Kconfig"
+ 
+ source "drivers/power/Kconfig"
+Index: linux-3.3.8/drivers/Makefile
+===================================================================
+--- linux-3.3.8.orig/drivers/Makefile	2012-06-01 09:16:13.000000000 +0200
++++ linux-3.3.8/drivers/Makefile	2012-07-28 22:16:17.990396684 +0200
+@@ -8,6 +8,7 @@
+ # GPIO must come after pinctrl as gpios may need to mux pins etc
+ obj-y				+= pinctrl/
+ obj-y				+= gpio/
++obj-$(CONFIG_GENERIC_PWM)	+= pwm/
+ obj-$(CONFIG_PCI)		+= pci/
+ obj-$(CONFIG_PARISC)		+= parisc/
+ obj-$(CONFIG_RAPIDIO)		+= rapidio/
