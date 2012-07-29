@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=arm
 BOARD:=omap24xx
-BOARDNAME:=TI OMAP-24xx
+BOARDNAME:=TI OMAP24xx
 MAINTAINER:=Michael Buesch <m@bues.ch>
 FEATURES:=targz squashfs jffs2 usb usbgadget display gpio audio broken
 
