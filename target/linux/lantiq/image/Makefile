@@ -12,6 +12,7 @@ JFFS2_BLOCKSIZE = 64k 128k 256k
 ase_cmdline=-console=ttyLTQ0,115200 rootfstype=squashfs,jffs2
 xway_cmdline=-console=ttyLTQ1,115200 rootfstype=squashfs,jffs2
 falcon_cmdline=-console=ttyLTQ0,115200 rootfstype=squashfs,jffs2
+svip_cmdline=-console=ttyLTQ0,115200 rootfstype=squashfs,jffs2
 sx76x_cmdline=console=ttyLTQ1,115200 rootfstype=squashfs,jffs2
 
 define CompressLzma
@@ -40,6 +41,22 @@ define MkImageEVA
 	lzma2eva 0x80002000 0x80002000 $(KDIR)/vmlinux-$(1).lzma $(KDIR)/$(1).eva.prealign
 	dd if=$(KDIR)/$(1).eva.prealign of=$(KDIR)/$(1).eva bs=64k conv=sync
 	cat ./eva.dummy.squashfs >> $(KDIR)/$(1).eva
+endef
+
+define CompressGzip
+  gzip -c $(1) > $(2)
+endef
+
+define PatchKernelGzip
+	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) '$(strip $(2))'
+	$(call CompressGzip,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).gzip)
+endef
+
+define MkImageGzip
+	mkimage -A mips -O linux -T kernel -a 0x80002000 -C gzip \
+		-e 0x80002000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(KDIR)/vmlinux-$(1).gzip $(KDIR)/uImage-$(1)
 endef
 
 define Image/Build/squashfs
@@ -78,6 +95,12 @@ define Image/BuildKernelEVA/Template
 	$(call PatchKernelLzma,$(1),$(if $(2),$(2) machtype=$(1),))
 	$(call MkImageEVA,$(1))
 	$(CP) $(KDIR)/$(1).eva $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva
+endef
+
+define Image/BuildKernelGzip/Template
+	$(call PatchKernelGzip,$(1),$(if $(2),$(2) machtype=$(1),))
+	$(call MkImageGzip,$(1))
+	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
 endef
 
 ifeq ($(CONFIG_TARGET_lantiq_danube),y)
@@ -193,6 +216,58 @@ define Image/BuildKernel/Profile/Generic
 endef
 
 define Image/Build/Profile/Generic
+	$(call Image/Build/$(1),$(1),NONE)
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
+endef
+endif
+
+ifeq ($(CONFIG_TARGET_lantiq_svip_be),y)
+define Image/BuildKernel/Profile/EASY33016
+	$(call Image/BuildKernelGzip/Template,EASY33016,$(svip_cmdline))
+endef
+
+define Image/Build/Profile/EASY33016
+	$(call Image/Build/$(1),$(1),EASY33016)
+endef
+
+define Image/BuildKernel/Profile/EASY336
+	$(call Image/BuildKernelGzip/Template,EASY33016,$(svip_cmdline))
+endef
+
+define Image/Build/Profile/EASY336
+	$(call Image/Build/$(1),$(1),EASY33016)
+endef
+
+define Image/BuildKernel/Profile/Generic
+	$(call Image/BuildKernelGzip/Template,EASY33016,$(svip_cmdline))
+	$(call Image/BuildKernelGzip/Template,EASY336,$(svip_cmdline))
+	$(call Image/BuildKernelGzip/Template,NONE)
+endef
+
+define Image/Build/Profile/Generic
+	$(call Image/Build/$(1),$(1),EASY33016)
+	$(call Image/Build/$(1),$(1),EASY336)
+	$(call Image/Build/$(1),$(1),NONE)
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
+endef
+endif
+
+ifeq ($(CONFIG_TARGET_lantiq_svip_le),y)
+define Image/BuildKernel/Profile/EASY336
+	$(call Image/BuildKernelGzip/Template,EASY33016,$(svip_cmdline))
+endef
+
+define Image/Build/Profile/EASY336
+	$(call Image/Build/$(1),$(1),EASY33016)
+endef
+
+define Image/BuildKernel/Profile/Generic
+	$(call Image/BuildKernelGzip/Template,EASY336,$(svip_cmdline))
+	$(call Image/BuildKernelGzip/Template,NONE)
+endef
+
+define Image/Build/Profile/Generic
+	$(call Image/Build/$(1),$(1),EASY336)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef
