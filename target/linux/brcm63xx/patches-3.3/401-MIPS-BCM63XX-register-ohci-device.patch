@@ -15,7 +15,7 @@ Subject: [PATCH 24/63] MIPS: BCM63XX: register ohci device.
 
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
-@@ -8,26 +8,25 @@ config BCM63XX_CPU_6328
+@@ -8,22 +8,20 @@ config BCM63XX_CPU_6328
  config BCM63XX_CPU_6338
  	bool "support 6338 CPU"
  	select HW_HAS_PCI
@@ -39,6 +39,9 @@ Subject: [PATCH 24/63] MIPS: BCM63XX: register ohci device.
  	select HW_HAS_PCI
 +	select USB_ARCH_HAS_OHCI if USB_SUPPORT
  
+ config BCM63XX_CPU_6362
+ 	bool "support 6362 CPU"
+@@ -32,6 +30,7 @@ config BCM63XX_CPU_6362
  config BCM63XX_CPU_6368
  	bool "support 6368 CPU"
  	select HW_HAS_PCI

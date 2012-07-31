@@ -15,13 +15,15 @@ Subject: [PATCH 26/63] MIPS: BCM63XX: register ehci device.
 
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
-@@ -22,11 +22,13 @@ config BCM63XX_CPU_6358
+@@ -22,6 +22,7 @@ config BCM63XX_CPU_6358
  	bool "support 6358 CPU"
  	select HW_HAS_PCI
  	select USB_ARCH_HAS_OHCI if USB_SUPPORT
 +	select USB_ARCH_HAS_EHCI if USB_SUPPORT
  
- config BCM63XX_CPU_6368
+ config BCM63XX_CPU_6362
+ 	bool "support 6362 CPU"
+@@ -31,6 +32,7 @@ config BCM63XX_CPU_6368
  	bool "support 6368 CPU"
  	select HW_HAS_PCI
  	select USB_ARCH_HAS_OHCI if USB_SUPPORT
