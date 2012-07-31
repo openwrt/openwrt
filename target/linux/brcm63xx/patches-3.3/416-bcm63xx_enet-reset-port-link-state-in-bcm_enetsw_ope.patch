@@ -17,7 +17,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -2214,6 +2214,8 @@ static int bcm_enetsw_open(struct net_de
+@@ -2213,6 +2213,8 @@ static int bcm_enetsw_open(struct net_de
  		enetsw_writeb(priv, ENETSW_PTCTRL_RXDIS_MASK |
  			      ENETSW_PTCTRL_TXDIS_MASK,
  			      ENETSW_PTCTRL_REG(i));

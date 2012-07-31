@@ -1,0 +1,69 @@
+From 625894c377ba266c0044675b53f05d65db6355b6 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 8 Jul 2012 13:07:52 +0200
+Subject: [PATCH 38/84] BCM63XX: allow enetsw without tx irq
+
+---
+ arch/mips/bcm63xx/dev-enet.c                 |    2 ++
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c |   18 +++++++++++-------
+ 2 files changed, 13 insertions(+), 7 deletions(-)
+
+--- a/arch/mips/bcm63xx/dev-enet.c
++++ b/arch/mips/bcm63xx/dev-enet.c
+@@ -236,6 +236,8 @@ bcm63xx_enetsw_register(const struct bcm
+ 	enetsw_res[0].end += RSET_ENETSW_SIZE - 1;
+ 	enetsw_res[1].start = bcm63xx_get_irq_number(IRQ_ENETSW_RXDMA0);
+ 	enetsw_res[2].start = bcm63xx_get_irq_number(IRQ_ENETSW_TXDMA0);
++	if (!enetsw_res[2].start)
++		enetsw_res[2].start = -1;
+ 
+ 	memcpy(bcm63xx_enetsw_device.dev.platform_data, pd, sizeof (*pd));
+ 
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -2151,10 +2151,12 @@ static int bcm_enetsw_open(struct net_de
+ 	if (ret)
+ 		goto out_freeirq;
+ 
+-	ret = request_irq(priv->irq_tx, bcm_enet_isr_dma,
+-			  IRQF_DISABLED, dev->name, dev);
+-	if (ret)
+-		goto out_freeirq_rx;
++	if (priv->irq_tx != -1) {
++		ret = request_irq(priv->irq_tx, bcm_enet_isr_dma,
++				  IRQF_DISABLED, dev->name, dev);
++		if (ret)
++			goto out_freeirq_rx;
++	}
+ 
+ 	/* allocate rx dma ring */
+ 	size = priv->rx_ring_size * sizeof(struct bcm_enet_desc);
+@@ -2376,7 +2378,8 @@ out_free_rx_ring:
+ 			  priv->rx_desc_cpu, priv->rx_desc_dma);
+ 
+ out_freeirq_tx:
+-	free_irq(priv->irq_tx, dev);
++	if (priv->irq_tx != -1)
++		free_irq(priv->irq_tx, dev);
+ 
+ out_freeirq_rx:
+ 	free_irq(priv->irq_rx, dev);
+@@ -2433,7 +2436,8 @@ static int bcm_enetsw_stop(struct net_de
+ 			  priv->rx_desc_cpu, priv->rx_desc_dma);
+ 	dma_free_coherent(kdev, priv->tx_desc_alloc_size,
+ 			  priv->tx_desc_cpu, priv->tx_desc_dma);
+-	free_irq(priv->irq_tx, dev);
++	if (priv->irq_tx != -1)
++		free_irq(priv->irq_tx, dev);
+ 	free_irq(priv->irq_rx, dev);
+ 
+ 	return 0;
+@@ -2716,7 +2720,7 @@ static int __devinit bcm_enetsw_probe(st
+ 	res_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	irq_rx = platform_get_irq(pdev, 0);
+ 	irq_tx = platform_get_irq(pdev, 1);
+-	if (!res_mem || irq_rx < 0 || irq_tx < 0)
++	if (!res_mem || irq_rx < 0)
+ 		return -ENODEV;
+ 
+ 	ret = 0;
