@@ -1,0 +1,20 @@
+From e79bc74f76361020d820ed4611d28f70ebd845ca Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 10 Jul 2012 10:44:09 +0200
+Subject: [PATCH 34/84] bcm63xx_enet: don't overwrite settings when setting duplex on force
+
+---
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -2333,7 +2333,7 @@ static int bcm_enetsw_open(struct net_de
+ 		}
+ 
+ 		if (port->force_duplex_full)
+-			override = ENETSW_IMPOV_FDX_MASK;
++			override |= ENETSW_IMPOV_FDX_MASK;
+ 
+ 
+ 		enetsw_writeb(priv, override, ENETSW_PORTOV_REG(i));

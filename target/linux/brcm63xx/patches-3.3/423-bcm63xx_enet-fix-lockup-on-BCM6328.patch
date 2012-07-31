@@ -1,16 +1,16 @@
-From 37d151859e09d09a950ad3ae615db1903bcc59d3 Mon Sep 17 00:00:00 2001
+From 382a0b0dc4cbd0e0fbfd6c2d132e972c3d1245b0 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
 Date: Sun, 13 Nov 2011 14:59:37 +0100
-Subject: [PATCH 43/79] bcm63xx_enet: fix lockup on BCM6328
+Subject: [PATCH 39/84] bcm63xx_enet: fix lockup on BCM6328
 
 BCM6328 locks up on a maxburst size of 16, reduce it to 8 for BCM6328 and
 BCM6368.
 
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 ---
- drivers/net/ethernet/broadcom/bcm63xx_enet.c |   14 ++++++++------
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c |   13 +++++++------
  drivers/net/ethernet/broadcom/bcm63xx_enet.h |    4 ++++
- 2 files changed, 12 insertions(+), 6 deletions(-)
+ 2 files changed, 11 insertions(+), 6 deletions(-)
 
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
@@ -43,16 +43,15 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	return 0;
  }
  
-@@ -1700,6 +1699,8 @@ static int __devinit bcm_enet_probe(stru
- 		return -ENOMEM;
+@@ -1701,6 +1700,7 @@ static int __devinit bcm_enet_probe(stru
  	priv = netdev_priv(dev);
  
-+	priv->dma_maxburst = bcm_enet_is_sw(priv) ?
-+			BCMENETSW_DMA_MAXBURST : BCMENET_DMA_MAXBURST;
+ 	priv->enet_is_sw = false;
++	priv->dma_maxburst = BCMENET_DMA_MAXBURST;
+ 
  	ret = compute_hw_mtu(priv, dev->mtu);
  	if (ret)
- 		goto out;
-@@ -2263,9 +2264,9 @@ static int bcm_enetsw_open(struct net_de
+@@ -2282,9 +2282,9 @@ static int bcm_enetsw_open(struct net_de
  	enet_dmas_writel(priv, 0, ENETDMAS_SRAM4_REG(priv->tx_chan));
  
  	/* set dma maximum burst len */
@@ -64,7 +63,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  			 ENETDMAC_MAXBURST_REG(priv->tx_chan));
  
  	/* set flow control low/high threshold to 1/3 / 2/3 */
-@@ -2727,6 +2728,7 @@ static int __devinit bcm_enetsw_probe(st
+@@ -2749,6 +2749,7 @@ static int __devinit bcm_enetsw_probe(st
  	priv->irq_tx = irq_tx;
  	priv->rx_ring_size = BCMENET_DEF_RX_DESC;
  	priv->tx_ring_size = BCMENET_DEF_TX_DESC;
