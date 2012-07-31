@@ -11,6 +11,11 @@ TARGET_DTBS := rbt-832 dlan-usb-extender
 
 LOADADDR:=0x00008000
 
+UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs
+endif
+
 define Image/Build/MkuImage
 	mkimage -A arm -O linux -T kernel -a $(LOADADDR) -C none -e $(LOADADDR) \
 	-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' -d $(1) $(2);
@@ -24,25 +29,13 @@ define Image/BuildKernel
 	$(foreach dtb,$(TARGET_DTBS),cp $(KDIR)/zImage $(KDIR)/zImage-$(dtb);)
 	$(foreach dtb,$(TARGET_DTBS),cat $(LINUX_DIR)/arch/$(ARCH)/boot/$(dtb).dtb >> $(KDIR)/zImage-$(dtb);)
 	$(foreach dtb,$(TARGET_DTBS),$(call Image/Build/MkuImage,$(KDIR)/zImage-$(dtb),$(KDIR)/uImage-$(dtb)))
+	$(foreach dtb,$(TARGET_DTBS),cp $(KDIR)/uImage-$(dtb) $(UIMAGE)-$(dtb);)
 	$(call Image/Build/Initramfs)
 endef
 
-define Image/Build/squashfs
-	 $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-endef
-
-define Image/Build/ext2
-	cp $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-ext2.img
-endef
-
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-define Image/Build/Initramfs
-	$(foreach dtb,$(TARGET_DTBS),cp $(KDIR)/uImage-$(dtb) $(BIN_DIR)/uImage-$(IMG_PREFIX)-$(dtb)-initramfs;)
-endef
-endif
-
 define Image/Build
-	$(call Image/Build/$(1),$(1))
+	$(call Image/Build/$(1))
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
 
 $(eval $(call BuildImage))
