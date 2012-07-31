@@ -1,0 +1,11 @@
+--- a/arch/mips/include/asm/mach-lantiq/falcon/falcon_irq.h
++++ b/arch/mips/include/asm/mach-lantiq/falcon/falcon_irq.h
+@@ -18,6 +18,8 @@
+ #ifndef _FALCON_IRQ__
+ #define _FALCON_IRQ__
+ 
++#define IM_NUM				5
++
+ #define INT_NUM_IRQ0			8
+ #define INT_NUM_IM0_IRL0		(INT_NUM_IRQ0 + 0)
+ #define INT_NUM_IM1_IRL0		(INT_NUM_IM0_IRL0 + 32)diff --git a/target/linux/lantiq/patches-2.6.32/300-svip_header.patch b/target/linux/lantiq/patches-2.6.32/300-svip_header.patch

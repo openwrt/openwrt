@@ -18,8 +18,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  delete mode 100644 arch/mips/lantiq/xway/prom-xway.c
  create mode 100644 arch/mips/lantiq/xway/prom.c
 
---- a/arch/mips/lantiq/xway/Makefile
-+++ b/arch/mips/lantiq/xway/Makefile
+Index: linux-3.3.8/arch/mips/lantiq/xway/Makefile
+===================================================================
+--- linux-3.3.8.orig/arch/mips/lantiq/xway/Makefile	2012-07-31 08:34:35.000000000 +0200
++++ linux-3.3.8/arch/mips/lantiq/xway/Makefile	2012-07-31 08:52:14.155414782 +0200
 @@ -1,7 +1,4 @@
 -obj-y := sysctrl.o reset.o gpio.o gpio_stp.o gpio_ebu.o devices.o dma.o clk.o
 -
@@ -29,22 +31,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
---- a/arch/mips/lantiq/xway/Makefile.rej
-+++ /dev/null
-@@ -1,11 +0,0 @@
----- arch/mips/lantiq/xway/Makefile
--+++ arch/mips/lantiq/xway/Makefile
--@@ -1,7 +1,4 @@
---obj-y := sysctrl.o reset.o gpio.o gpio_stp.o gpio_ebu.o devices.o dma.o clk.o
---
---obj-$(CONFIG_SOC_XWAY) += prom-xway.o
---obj-$(CONFIG_SOC_AMAZON_SE) += prom-ase.o
--+obj-y := prom.o sysctrl.o reset.o gpio.o gpio_stp.o gpio_ebu.o devices.o dma.o clk.o
-- 
-- obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
-- obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
---- a/arch/mips/lantiq/xway/prom-ase.c
-+++ /dev/null
+Index: linux-3.3.8/arch/mips/lantiq/xway/prom-ase.c
+===================================================================
+--- linux-3.3.8.orig/arch/mips/lantiq/xway/prom-ase.c	2012-07-31 08:34:34.000000000 +0200
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,48 +0,0 @@
 -/*
 - *  This program is free software; you can redistribute it and/or modify it
@@ -94,8 +84,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -	ltq_register_gpio();
 -	ltq_register_wdt();
 -}
---- a/arch/mips/lantiq/xway/prom-xway.c
-+++ /dev/null
+Index: linux-3.3.8/arch/mips/lantiq/xway/prom-xway.c
+===================================================================
+--- linux-3.3.8.orig/arch/mips/lantiq/xway/prom-xway.c	2012-07-31 08:34:34.000000000 +0200
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
 @@ -1,64 +0,0 @@
 -/*
 - *  This program is free software; you can redistribute it and/or modify it
@@ -161,8 +153,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -	ltq_register_gpio();
 -	ltq_register_wdt();
 -}
---- /dev/null
-+++ b/arch/mips/lantiq/xway/prom.c
+Index: linux-3.3.8/arch/mips/lantiq/xway/prom.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.3.8/arch/mips/lantiq/xway/prom.c	2012-07-31 08:52:14.155414782 +0200
 @@ -0,0 +1,79 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it

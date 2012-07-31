@@ -6,9 +6,8 @@
 #
 include $(TOPDIR)/rules.mk
 
-ARCH:=mips
 BOARD:=lantiq
-BOARDNAME:=Lantiq GPON/XWAY
+BOARDNAME:=Lantiq GPON/XWAY/SVIP
 FEATURES:=squashfs jffs2
 DEFAULT_SUBTARGET:=danube
 
