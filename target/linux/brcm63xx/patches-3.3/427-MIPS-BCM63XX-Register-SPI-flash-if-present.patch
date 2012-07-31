@@ -84,7 +84,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		return -ENODEV;
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -555,6 +555,7 @@
+@@ -608,6 +608,7 @@
  #define GPIO_STRAPBUS_REG		0x40
  #define STRAPBUS_6358_BOOT_SEL_PARALLEL	(1 << 1)
  #define STRAPBUS_6358_BOOT_SEL_SERIAL	(0 << 1)
@@ -92,8 +92,8 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define STRAPBUS_6368_BOOT_SEL_MASK	0x3
  #define STRAPBUS_6368_BOOT_SEL_NAND	0
  #define STRAPBUS_6368_BOOT_SEL_SERIAL	1
-@@ -1240,6 +1241,7 @@
- #define SERDES_PCIE_EXD_EN		(1 << 15)
+@@ -1300,6 +1301,7 @@
+ #define STRAPBUS_6362_BOOT_SEL_NAND	(0 << 15)
  
  #define MISC_STRAPBUS_6328_REG		0x240
 +#define STRAPBUS_6328_HSSPI_CLK_FAST	(1 << 4)

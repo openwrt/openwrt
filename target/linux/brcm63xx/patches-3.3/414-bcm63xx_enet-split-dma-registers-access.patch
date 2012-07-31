@@ -50,7 +50,7 @@ Subject: [PATCH 30/63] bcm63xx_enet: split dma registers access.
  		if (ret)
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
-@@ -157,7 +157,9 @@ enum bcm63xx_regs_set {
+@@ -172,7 +172,9 @@ enum bcm63xx_regs_set {
  #define BCM_6358_RSET_SPI_SIZE		1804
  #define BCM_6368_RSET_SPI_SIZE		1804
  #define RSET_ENET_SIZE			2048
