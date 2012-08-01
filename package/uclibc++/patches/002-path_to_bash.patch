@@ -1,12 +1,11 @@
-diff -ur old/bin/Makefile dev/bin/Makefile
---- old/bin/Makefile	Sat Oct 14 17:49:54 2006
-+++ dev/bin/Makefile	Sat Oct 14 17:57:33 2006
-@@ -13,7 +13,7 @@
+--- a/bin/Makefile
++++ b/bin/Makefile
+@@ -13,7 +13,7 @@ install:
  	$(INSTALL) -m 755 $(WRAPPER) $(PREFIX)$(UCLIBCXX_RUNTIME_BINDIR)
  
- $(WRAPPER):
--	echo '#!/bin/sh' > $(WRAPPER)
-+	echo '#!/usr/bin/env bash' > $(WRAPPER)
- 	echo '' >> $(WRAPPER)
- 	echo 'WRAPPER_INCLUDEDIR="$${WRAPPER_INCLUDEDIR:=-I$(UCLIBCXX_RUNTIME_INCLUDEDIR)}"' >> $(WRAPPER)
- 	echo 'WRAPPER_LIBDIR="$${WRAPPER_LIBDIR:=-L$(UCLIBCXX_RUNTIME_LIBDIR)}"' >> $(WRAPPER)
+ $(WRAPPER): Makefile
+-	echo '#!/bin/sh' > $@
++	echo '#!/usr/bin/env bash' > $@
+ 	echo '' >> $@
+ 	echo 'WRAPPER_INCLUDEDIR="$${WRAPPER_INCLUDEDIR:=-I$(UCLIBCXX_RUNTIME_INCLUDEDIR)}"' >> $@
+ 	echo 'WRAPPER_LIBDIR="$${WRAPPER_LIBDIR:=-L$(UCLIBCXX_RUNTIME_LIBDIR)}"' >> $@
