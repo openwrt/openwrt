@@ -141,6 +141,10 @@ whr-hp-gn)
 	ucidef_set_led_switch "lan4" "LAN4" "buffalo:green:lan4" "switch0" "0x10"
 	;;
 
+wlae-ag300n)
+	ucidef_set_led_netdev "wireless" "WIRELESS" "buffalo:green:wireless" "wlan0"
+	;;
+
 wzr-hp-g300nh)
 	ucidef_set_led_wlan "wlan" "Wireless" "buffalo:green:wireless" "phy0tpt"
 	ucidef_set_led_netdev "router" "Router" "buffalo:green:router" "eth1"
