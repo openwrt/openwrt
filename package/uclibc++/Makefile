@@ -70,16 +70,16 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(2)/bin $(1)/usr/include/uClibc++ $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/g++-uc $(2)/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/g++-uc $(TOOLCHAIN_DIR)/bin/
 	$(CP) $(PKG_INSTALL_DIR)/include/* $(1)/usr/include/uClibc++/
 	$(CP) $(PKG_INSTALL_DIR)/lib/libuClibc++*.{a,so}* $(1)/usr/lib/
-	$(SED) 's|-I/include/|-I$(STAGING_DIR)/usr/include/uClibc++/|g' $(2)/bin/g++-uc
-	$(SED) 's|-L/lib/|-L$(STAGING_DIR)/usr/lib/|g' $(2)/bin/g++-uc
+	$(SED) 's|-I/include/|-I$(STAGING_DIR)/usr/include/uClibc++/|g' $(TOOLCHAIN_DIR)/bin/g++-uc
+	$(SED) 's|-L/lib/|-L$(STAGING_DIR)/usr/lib/|g' $(TOOLCHAIN_DIR)/bin/g++-uc
 # add another wrapper which links against both uClibc++ and libstdc++ 
-	$(INSTALL_BIN) $(2)/bin/g++-uc $(2)/bin/g++-uc+std
-	$(SED) 's|^WRAPPER_INCLUDEDIR=.*||g' $(2)/bin/g++-uc+std
-	$(SED) 's|-luClibc++|-Wl,-Bdynamic,-luClibc++,-Bstatic,-lstdc++,-Bdynamic|g' $(2)/bin/g++-uc+std
-	$(SED) 's|-nostdinc++||g' $(2)/bin/g++-uc+std
+	$(INSTALL_BIN) $(TOOLCHAIN_DIR)/bin/g++-uc $(TOOLCHAIN_DIR)/bin/g++-uc+std
+	$(SED) 's|^WRAPPER_INCLUDEDIR=.*||g' $(TOOLCHAIN_DIR)/bin/g++-uc+std
+	$(SED) 's|-luClibc++|-Wl,-Bdynamic,-luClibc++,-Bstatic,-lstdc++,-Bdynamic|g' $(TOOLCHAIN_DIR)/bin/g++-uc+std
+	$(SED) 's|-nostdinc++||g' $(TOOLCHAIN_DIR)/bin/g++-uc+std
 endef
 
 define Package/uclibcxx/install
