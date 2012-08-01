@@ -682,9 +682,11 @@ define Image/Build/Profile/AP121MINI
 endef
 
 ew-dorin_cmdline=board=EW-DORIN console=ttyATH0,115200
+ew-dorin-router_cmdline=board=EW-DORIN-ROUTER console=ttyATH0,115200
 ew-dorin_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),1024k(kernel),2688k(rootfs),64k(art),3712k@0x50000(firmware)
 define Image/Build/Profile/EWDORIN
 	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ew-dorin,$(ew-dorin_cmdline),$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ew-dorin-router,$(ew-dorin-router_cmdline),$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage)
 endef
 
 ap81_cmdline=board=AP81 console=ttyS0,115200
