@@ -118,6 +118,7 @@ platform_check_image() {
 	whr-g301n | \
 	whr-hp-g300n | \
 	whr-hp-gn | \
+	wlae-ag300n | \
 	nbg460n_550n_550nh | \
 	unifi )
 		[ "$magic" != "2705" ] && {
