@@ -885,8 +885,8 @@ static int nuport_mac_mii_probe(struct net_device *dev)
 	phydev->supported &= PHY_BASIC_FEATURES;
 	phydev->advertising = phydev->supported;
 	priv->phydev = phydev;
-	priv->old_link = 0;
-	priv->old_duplex = -1;
+	priv->old_link = 1;
+	priv->old_duplex = DUPLEX_FULL;
 
 	dev_info(&priv->pdev->dev, "attached PHY driver [%s] "
 		"(mii_bus:phy_addr=%d)\n",
