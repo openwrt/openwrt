@@ -94,13 +94,14 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	ew-dorin | \
 	ap81 | \
 	ap83 | \
 	dir-600-a1 | \
 	dir-615-c1 | \
 	dir-615-e4 | \
 	dir-825-b1 | \
+	ew-dorin | \
+	ew-dorin-router | \
 	mzk-w04nu | \
 	mzk-w300nh | \
 	tew-632brp | \
