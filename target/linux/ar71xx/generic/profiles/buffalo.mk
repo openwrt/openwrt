@@ -83,3 +83,14 @@ define Profile/WHRHPGN/Description
 endef
 
 $(eval $(call Profile,WHRHPGN))
+
+define Profile/WLAEAG300N
+	NAME:=Buffalo WLAE-AG300N
+	PACKAGES:=kmod-ledtrig-netdev
+endef
+
+define Profile/WLAEAG300N/Description
+	Package set optimized for the Buffalo WLAE-AG300N
+endef
+
+$(eval $(call Profile,WLAEAG300N))

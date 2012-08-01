@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,18 +16,91 @@
+@@ -16,18 +16,92 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -78,6 +78,7 @@
 +	ATH79_MACH_WHR_G301N,		/* Buffalo WHR-G301N */
 +	ATH79_MACH_WHR_HP_G300N,	/* Buffalo WHR-HP-G300N */
 +	ATH79_MACH_WHR_HP_GN,		/* Buffalo WHR-HP-GN */
++	ATH79_MACH_WLAE_AG300N,		/* Buffalo WLAE-AG300N */
 +	ATH79_MACH_WNDR3700,		/* NETGEAR WNDR3700/WNDR3800/WNDRMAC */
 +	ATH79_MACH_WNR2000,		/* NETGEAR WNR2000 */
 +	ATH79_MACH_WP543,		/* Compex WP543 */
@@ -186,7 +187,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -66,6 +137,419 @@ config ATH79_MACH_PB44
+@@ -66,6 +137,427 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -212,6 +213,14 @@
 +	select SOC_AR724X
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++
++config ATH79_MACH_WLAE_AG300N
++	bool "Buffalo WLAE-AG300N board support"
++	select SOC_AR71XX
++	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
@@ -606,7 +615,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -79,6 +563,24 @@ config ATH79_MACH_UBNT_XM
+@@ -79,6 +571,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -631,7 +640,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -114,10 +616,6 @@ config SOC_QCA955X
+@@ -114,10 +624,6 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -642,7 +651,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -128,7 +626,14 @@ config ATH79_DEV_DSA
+@@ -128,7 +634,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -658,7 +667,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -153,4 +658,7 @@ config ATH79_NVRAM
+@@ -153,4 +666,7 @@ config ATH79_NVRAM
  config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
@@ -668,7 +677,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -36,9 +36,61 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
+@@ -36,9 +36,62 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= pci-ath9k-fixup.o
  #
  # Machines
  #
@@ -720,6 +729,7 @@
 +obj-$(CONFIG_ATH79_MACH_UBNT)		+= mach-ubnt.o
  obj-$(CONFIG_ATH79_MACH_UBNT_XM)	+= mach-ubnt-xm.o
 +obj-$(CONFIG_ATH79_MACH_WHR_HP_G300N)	+= mach-whr-hp-g300n.o
++obj-$(CONFIG_ATH79_MACH_WLAE_AG300N)	+= mach-wlae-ag300n.o
 +obj-$(CONFIG_ATH79_MACH_WNDR3700)	+= mach-wndr3700.o
 +obj-$(CONFIG_ATH79_MACH_WNR2000)	+= mach-wnr2000.o
 +obj-$(CONFIG_ATH79_MACH_WP543)		+= mach-wp543.o
