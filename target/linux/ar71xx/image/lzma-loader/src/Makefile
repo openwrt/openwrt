@@ -18,7 +18,7 @@
 LOADADDR	:=
 LZMA_TEXT_START	:= 0x80a00000
 LOADER_DATA	:=
-CONFIG_BOARD	:=
+BOARD		:=
 FLASH_OFFS	:=
 FLASH_MAX	:=
 
@@ -61,6 +61,11 @@ endif
 
 ifneq ($(strip $(FLASH_MAX)),)
 CFLAGS		+= -DCONFIG_FLASH_MAX=$(FLASH_MAX)
+endif
+
+BOARD_DEF := $(shell echo $(strip $(BOARD)) | tr a-z A-Z | tr - _)
+ifneq ($(BOARD_DEF),)
+CFLAGS		+= -DCONFIG_BOARD_$(BOARD_DEF)
 endif
 
 all: loader.bin

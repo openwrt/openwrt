@@ -15,6 +15,7 @@ LOADER_DATA 	:=
 TARGET_DIR	:=
 FLASH_OFFS	:=
 FLASH_MAX	:=
+BOARD		:=
 
 ifeq ($(TARGET_DIR),)
 TARGET_DIR	:= $(KDIR)
@@ -40,6 +41,7 @@ loader-compile: $(PKG_BUILD_DIR)/.prepared
 		LOADER_DATA=$(LOADER_DATA) \
 		FLASH_OFFS=$(FLASH_OFFS) \
 		FLASH_MAX=$(FLASH_MAX) \
+		BOARD="$(BOARD)" \
 		clean all
 
 loader.gz: $(PKG_BUILD_DIR)/loader.bin

@@ -113,7 +113,7 @@ define Image/BuildLoader
 	-rm -rf $(KDIR)/lzma-loader
 	$(LOADER_MAKE) LOADER=loader-$(1).$(2) KERNEL_CMDLINE="$(3)"\
 		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
-		LOADER_DATA="$(KDIR)/vmlinux.bin.lzma" \
+		LOADER_DATA="$(KDIR)/vmlinux.bin.lzma" BOARD="$(1)" \
 		compile loader.$(2)
 endef
 
@@ -121,7 +121,7 @@ define Image/BuildLoaderAlone
 	-rm -rf $(KDIR)/lzma-loader
 	$(LOADER_MAKE) LOADER=loader-$(1).$(2) KERNEL_CMDLINE="$(3)" \
 		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
-		FLASH_OFFS=$(4) FLASH_MAX=$(5) \
+		BOARD="$(1)" FLASH_OFFS=$(4) FLASH_MAX=$(5) \
 		compile loader.$(2)
 endef
 
