@@ -29,6 +29,8 @@ struct rtl8366_initval {
 struct rtl8366_platform_data {
 	unsigned	gpio_sda;
 	unsigned	gpio_sck;
+	void		(*hw_reset)(bool active);
+
 	unsigned	num_initvals;
 	struct rtl8366_initval *initvals;
 };

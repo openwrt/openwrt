@@ -32,6 +32,7 @@ struct rtl8366_smi {
 	struct device		*parent;
 	unsigned int		gpio_sda;
 	unsigned int		gpio_sck;
+	void			(*hw_reset)(bool active);
 	unsigned int		clk_delay;	/* ns */
 	u8			cmd_read;
 	u8			cmd_write;
