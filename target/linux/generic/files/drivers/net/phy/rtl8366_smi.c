@@ -308,6 +308,19 @@ int rtl8366_smi_rmwr(struct rtl8366_smi *smi, u32 addr, u32 mask, u32 data)
 }
 EXPORT_SYMBOL_GPL(rtl8366_smi_rmwr);
 
+static int rtl8366_reset(struct rtl8366_smi *smi)
+{
+	if (smi->hw_reset) {
+		smi->hw_reset(true);
+		msleep(25);
+		smi->hw_reset(false);
+		msleep(25);
+		return 0;
+	}
+
+	return smi->ops->reset_chip(smi);
+}
+
 static int rtl8366_mc_is_used(struct rtl8366_smi *smi, int mc_index, int *used)
 {
 	int err;
@@ -938,7 +951,7 @@ int rtl8366_sw_reset_switch(struct switch_dev *dev)
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
 	int err;
 
-	err = smi->ops->reset_chip(smi);
+	err = rtl8366_reset(smi);
 	if (err)
 		return err;
 
@@ -1227,6 +1240,13 @@ static int __rtl8366_smi_init(struct rtl8366_smi *smi, const char *name)
 	}
 
 	spin_lock_init(&smi->lock);
+
+	/* start the switch */
+	if (smi->hw_reset) {
+		smi->hw_reset(false);
+		msleep(25);
+	}
+
 	return 0;
 
  err_free_sda:
@@ -1237,6 +1257,9 @@ static int __rtl8366_smi_init(struct rtl8366_smi *smi, const char *name)
 
 static void __rtl8366_smi_cleanup(struct rtl8366_smi *smi)
 {
+	if (smi->hw_reset)
+		smi->hw_reset(true);
+
 	gpio_free(smi->gpio_sck);
 	gpio_free(smi->gpio_sda);
 }
@@ -1300,7 +1323,7 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 		goto err_free_sck;
 	}
 
-	err = smi->ops->reset_chip(smi);
+	err = rtl8366_reset(smi);
 	if (err)
 		goto err_free_sck;
 

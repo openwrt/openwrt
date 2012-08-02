@@ -1074,6 +1074,8 @@ static int __devinit rtl8366s_probe(struct platform_device *pdev)
 
 	smi->gpio_sda = pdata->gpio_sda;
 	smi->gpio_sck = pdata->gpio_sck;
+	smi->hw_reset = pdata->hw_reset;
+
 	smi->clk_delay = 10;
 	smi->cmd_read = 0xa9;
 	smi->cmd_write = 0xa8;
