@@ -422,19 +422,25 @@ static irqreturn_t nuport_mac_link_interrupt(int irq, void *dev_id)
 	struct nuport_mac_priv *priv = netdev_priv(dev);
 	u32 reg;
 	u8 phy_addr;
+	unsigned long flags;
+	irqreturn_t ret = IRQ_HANDLED;
 
+	spin_lock_irqsave(&priv->lock, flags);
 	reg = nuport_mac_readl(LINK_INT_CSR);
 	phy_addr = (reg >> LINK_PHY_ADDR_SHIFT) & (PHY_MAX_ADDR - 1);
 
 	if (phy_addr != priv->phydev->addr) {
 		netdev_err(dev, "spurious PHY irq (phy: %d)\n", phy_addr);
-		return IRQ_NONE;
+		ret = IRQ_NONE;
+		goto out;
 	}
 
 	priv->phydev->link = (reg & LINK_UP);
 	nuport_mac_adjust_link(dev);
 
-	return IRQ_HANDLED;
+out:
+	spin_unlock_irqrestore(&priv->lock, flags);
+	return ret;
 }
 
 static irqreturn_t nuport_mac_tx_interrupt(int irq, void *dev_id)
