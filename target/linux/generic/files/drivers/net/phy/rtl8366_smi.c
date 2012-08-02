@@ -1340,8 +1340,7 @@ void rtl8366_smi_cleanup(struct rtl8366_smi *smi)
 {
 	rtl8366_debugfs_remove(smi);
 	rtl8366_smi_mii_cleanup(smi);
-	gpio_free(smi->gpio_sck);
-	gpio_free(smi->gpio_sda);
+	__rtl8366_smi_cleanup(smi);
 }
 EXPORT_SYMBOL_GPL(rtl8366_smi_cleanup);
 
