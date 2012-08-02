@@ -10,7 +10,9 @@
 
 #include <linux/platform_device.h>
 #include <linux/rtl8366.h>
+
 #include <asm/mach-ath79/ath79.h>
+#include <asm/mach-ath79/ar71xx_regs.h>
 
 #include "dev-eth.h"
 #include "dev-m25p80.h"
@@ -81,9 +83,18 @@ static struct gpio_keys_button tl_wr1043nd_gpio_keys[] __initdata = {
 	}
 };
 
+static void tl_wr1043nd_rtl8366rb_hw_reset(bool active)
+{
+	if (active)
+		ath79_device_reset_set(AR71XX_RESET_GE0_PHY);
+	else
+		ath79_device_reset_clear(AR71XX_RESET_GE0_PHY);
+}
+
 static struct rtl8366_platform_data tl_wr1043nd_rtl8366rb_data = {
-	.gpio_sda        = TL_WR1043ND_GPIO_RTL8366_SDA,
-	.gpio_sck        = TL_WR1043ND_GPIO_RTL8366_SCK,
+	.gpio_sda	= TL_WR1043ND_GPIO_RTL8366_SDA,
+	.gpio_sck	= TL_WR1043ND_GPIO_RTL8366_SCK,
+	.hw_reset	= tl_wr1043nd_rtl8366rb_hw_reset,
 };
 
 static struct platform_device tl_wr1043nd_rtl8366rb_device = {
@@ -98,6 +109,8 @@ static void __init tl_wr1043nd_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
+
+	tl_wr1043nd_rtl8366rb_hw_reset(true);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
 	ath79_eth0_data.mii_bus_dev = &tl_wr1043nd_rtl8366rb_device.dev;
