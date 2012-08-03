@@ -1,0 +1,378 @@
+From dc3fad8c60650e2bd67d95edb01ca0eb3bb23b3d Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 29 Sep 2011 20:29:54 +0200
+Subject: [PATCH 17/25] udp in-kernel redirect
+
+---
+ include/linux/udp_redirect.h |   57 +++++++++++++
+ net/Kconfig                  |    6 ++
+ net/ipv4/Makefile            |    3 +
+ net/ipv4/udp.c               |   28 ++++++-
+ net/ipv4/udp_redirect_symb.c |  186 ++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 276 insertions(+), 4 deletions(-)
+ create mode 100644 include/linux/udp_redirect.h
+ create mode 100644 net/ipv4/udp_redirect_symb.c
+
+diff --git a/include/linux/udp_redirect.h b/include/linux/udp_redirect.h
+new file mode 100644
+index 0000000..de1e64f
+--- /dev/null
++++ b/include/linux/udp_redirect.h
+@@ -0,0 +1,57 @@
++#ifndef _UDP_REDIRECT_H
++#define _UDP_REDIRECT_H
++
++/******************************************************************************
++
++                               Copyright (c) 2006
++                            Infineon Technologies AG
++                     Am Campeon 1-12; 81726 Munich, Germany
++
++  THE DELIVERY OF THIS SOFTWARE AS WELL AS THE HEREBY GRANTED NON-EXCLUSIVE,
++  WORLDWIDE LICENSE TO USE, COPY, MODIFY, DISTRIBUTE AND SUBLICENSE THIS
++  SOFTWARE IS FREE OF CHARGE.
++
++  THE LICENSED SOFTWARE IS PROVIDED "AS IS" AND INFINEON EXPRESSLY DISCLAIMS
++  ALL REPRESENTATIONS AND WARRANTIES, WHETHER EXPRESS OR IMPLIED, INCLUDING
++  WITHOUT LIMITATION, WARRANTIES OR REPRESENTATIONS OF WORKMANSHIP,
++  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, DURABILITY, THAT THE
++  OPERATING OF THE LICENSED SOFTWARE WILL BE ERROR FREE OR FREE OF ANY THIRD
++  PARTY CLAIMS, INCLUDING WITHOUT LIMITATION CLAIMS OF THIRD PARTY INTELLECTUAL
++  PROPERTY INFRINGEMENT.
++
++  EXCEPT FOR ANY LIABILITY DUE TO WILFUL ACTS OR GROSS NEGLIGENCE AND EXCEPT
++  FOR ANY PERSONAL INJURY INFINEON SHALL IN NO EVENT BE LIABLE FOR ANY CLAIM
++  OR DAMAGES OF ANY KIND, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++  DEALINGS IN THE SOFTWARE.
++
++******************************************************************************/
++
++/* ============================= */
++/* Includes                      */
++/* ============================= */
++#ifndef _LINUX_TYPES_H
++#include <linux/types.h>
++#endif
++
++
++/* ============================= */
++/* Definitions                   */
++/* ============================= */
++#define UDP_REDIRECT_MAGIC (void*)0x55445052L
++
++
++/* ============================= */
++/* Global variable declaration   */
++/* ============================= */
++extern int (*udp_do_redirect_fn)(struct sock *sk, struct sk_buff *skb);
++extern int (*udpredirect_getfrag_fn)(void *p, char * to,
++                                     int offset, int fraglen, int odd,
++                                     struct sk_buff *skb);
++/* ============================= */
++/* Global function declaration   */
++/* ============================= */
++
++extern int udpredirect_getfrag(void *p, char * to, int offset,
++                               int fraglen, int odd, struct sk_buff *skb);
++#endif
+diff --git a/net/Kconfig b/net/Kconfig
+index b3904e8..be5e417 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -78,6 +78,12 @@ config INET
+ 
+ 	  Short answer: say Y.
+ 
++config IFX_UDP_REDIRECT
++	bool "IFX Kernel Packet Interface for UDP redirection"
++	help
++	  You can say Y here if you want to use hooks from kernel for
++	  UDP redirection.
++
+ if INET
+ source "net/ipv4/Kconfig"
+ source "net/ipv6/Kconfig"
+diff --git a/net/ipv4/Makefile b/net/ipv4/Makefile
+index 1d57fe0..9974d6e 100644
+--- a/net/ipv4/Makefile
++++ b/net/ipv4/Makefile
+@@ -14,6 +14,9 @@ obj-y     := route.o inetpeer.o protocol.o \
+ 	     inet_fragment.o ping.o
+ 
+ obj-$(CONFIG_SYSCTL) += sysctl_net_ipv4.o
++ifneq ($(CONFIG_IFX_UDP_REDIRECT),)
++obj-$(CONFIG_IFX_UDP_REDIRECT) += udp_redirect_symb.o
++endif
+ obj-$(CONFIG_PROC_FS) += proc.o
+ obj-$(CONFIG_IP_MULTIPLE_TABLES) += fib_rules.o
+ obj-$(CONFIG_IP_MROUTE) += ipmr.o
+diff --git a/net/ipv4/udp.c b/net/ipv4/udp.c
+index 5d075b5..a2ee1bf 100644
+--- a/net/ipv4/udp.c
++++ b/net/ipv4/udp.c
+@@ -108,6 +108,10 @@
+ #include <trace/events/udp.h>
+ #include "udp_impl.h"
+ 
++#if defined(CONFIG_IFX_UDP_REDIRECT) || defined(CONFIG_IFX_UDP_REDIRECT_MODULE)
++#include <linux/udp_redirect.h>
++#endif
++
+ struct udp_table udp_table __read_mostly;
+ EXPORT_SYMBOL(udp_table);
+ 
+@@ -804,7 +808,7 @@ int udp_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
+ 	u8  tos;
+ 	int err, is_udplite = IS_UDPLITE(sk);
+ 	int corkreq = up->corkflag || msg->msg_flags&MSG_MORE;
+-	int (*getfrag)(void *, char *, int, int, int, struct sk_buff *);
++	int (*getfrag)(void *, char *, int, int, int, struct sk_buff *) = NULL;
+ 	struct sk_buff *skb;
+ 	struct ip_options_data opt_copy;
+ 
+@@ -821,7 +825,13 @@ int udp_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
+ 	ipc.opt = NULL;
+ 	ipc.tx_flags = 0;
+ 
+-	getfrag = is_udplite ? udplite_getfrag : ip_generic_getfrag;
++/* UDPREDIRECT */
++#if defined(CONFIG_IFX_UDP_REDIRECT) || defined(CONFIG_IFX_UDP_REDIRECT_MODULE)
++	if(udpredirect_getfrag_fn && sk->sk_user_data == UDP_REDIRECT_MAGIC)
++		getfrag = udpredirect_getfrag_fn;
++	else
++#endif /* IFX_UDP_REDIRECT */
++		getfrag = is_udplite ? udplite_getfrag : ip_generic_getfrag;
+ 
+ 	fl4 = &inet->cork.fl.u.ip4;
+ 	if (up->pending) {
+@@ -1625,6 +1635,7 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
+ 	struct rtable *rt = skb_rtable(skb);
+ 	__be32 saddr, daddr;
+ 	struct net *net = dev_net(skb->dev);
++	int ret = 0;
+ 
+ 	/*
+ 	 *  Validate the packet.
+@@ -1657,7 +1668,16 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
+ 	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
+ 
+ 	if (sk != NULL) {
+-		int ret = udp_queue_rcv_skb(sk, skb);
++	/* UDPREDIRECT */
++#if defined(CONFIG_IFX_UDP_REDIRECT) || defined(CONFIG_IFX_UDP_REDIRECT_MODULE)
++      if(udp_do_redirect_fn && sk->sk_user_data == UDP_REDIRECT_MAGIC)
++      {
++         udp_do_redirect_fn(sk,skb);
++         kfree_skb(skb);
++         return(0);
++      }
++#endif
++		ret = udp_queue_rcv_skb(sk, skb);
+ 		sock_put(sk);
+ 
+ 		/* a return value > 0 means to resubmit the input, but
+@@ -1954,7 +1974,7 @@ struct proto udp_prot = {
+ 	.clear_sk	   = sk_prot_clear_portaddr_nulls,
+ };
+ EXPORT_SYMBOL(udp_prot);
+-
++EXPORT_SYMBOL(udp_rcv);
+ /* ------------------------------------------------------------------------ */
+ #ifdef CONFIG_PROC_FS
+ 
+diff --git a/net/ipv4/udp_redirect_symb.c b/net/ipv4/udp_redirect_symb.c
+new file mode 100644
+index 0000000..5617e86
+--- /dev/null
++++ b/net/ipv4/udp_redirect_symb.c
+@@ -0,0 +1,186 @@
++/******************************************************************************
++
++                               Copyright (c) 2006
++                            Infineon Technologies AG
++                     Am Campeon 1-12; 81726 Munich, Germany
++
++  THE DELIVERY OF THIS SOFTWARE AS WELL AS THE HEREBY GRANTED NON-EXCLUSIVE,
++  WORLDWIDE LICENSE TO USE, COPY, MODIFY, DISTRIBUTE AND SUBLICENSE THIS
++  SOFTWARE IS FREE OF CHARGE.
++
++  THE LICENSED SOFTWARE IS PROVIDED "AS IS" AND INFINEON EXPRESSLY DISCLAIMS
++  ALL REPRESENTATIONS AND WARRANTIES, WHETHER EXPRESS OR IMPLIED, INCLUDING
++  WITHOUT LIMITATION, WARRANTIES OR REPRESENTATIONS OF WORKMANSHIP,
++  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, DURABILITY, THAT THE
++  OPERATING OF THE LICENSED SOFTWARE WILL BE ERROR FREE OR FREE OF ANY THIRD
++  PARTY CLAIMS, INCLUDING WITHOUT LIMITATION CLAIMS OF THIRD PARTY INTELLECTUAL
++  PROPERTY INFRINGEMENT.
++
++  EXCEPT FOR ANY LIABILITY DUE TO WILFUL ACTS OR GROSS NEGLIGENCE AND EXCEPT
++  FOR ANY PERSONAL INJURY INFINEON SHALL IN NO EVENT BE LIABLE FOR ANY CLAIM
++  OR DAMAGES OF ANY KIND, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++  DEALINGS IN THE SOFTWARE.
++
++******************************************************************************/
++#if defined(CONFIG_IFX_UDP_REDIRECT) || defined(CONFIG_IFX_UDP_REDIRECT_MODULE)
++/* ============================= */
++/* Includes                      */
++/* ============================= */
++#include <net/checksum.h>
++#include <net/udp.h>
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/udp_redirect.h>
++
++/* ============================= */
++/* Global variable definition    */
++/* ============================= */
++int (*udpredirect_getfrag_fn) (void *p, char * to, int offset,
++                               int fraglen, int odd, struct sk_buff *skb) = NULL;
++int (*udp_do_redirect_fn)(struct sock *sk, struct sk_buff *skb) = NULL;
++
++/* ============================= */
++/* Local type definitions        */
++/* ============================= */
++struct udpfakehdr
++{
++  struct udphdr uh;
++  u32 saddr;
++  u32 daddr;
++  struct iovec *iov;
++  u32 wcheck;
++};
++
++/* ============================= */
++/* Local function declaration    */
++/* ============================= */
++static int udpredirect_csum_partial_copy_fromiovecend(unsigned char *kdata,
++              struct iovec *iov, int offset, unsigned int len, __wsum *csump);
++
++static int udpredirect_memcpy_fromiovecend(unsigned char *kdata, struct iovec *iov, int offset,
++                        int len);
++
++/* ============================= */
++/* Global function definition    */
++/* ============================= */
++
++/*
++   Copy of udp_getfrag() from udp.c
++   This function exists because no copy_from_user() is needed for udpredirect.
++*/
++
++int
++udpredirect_getfrag(void *from, char *to, int offset, int len, int odd, struct sk_buff *skb)
++{
++   struct iovec *iov = from;
++
++        if (skb->ip_summed == CHECKSUM_PARTIAL) {
++                if (udpredirect_memcpy_fromiovecend(to, iov, offset, len) < 0)
++                        return -EFAULT;
++        } else {
++                __wsum csum = 0;
++                if (udpredirect_csum_partial_copy_fromiovecend(to, iov, offset, len, &csum) < 0)
++                        return -EFAULT;
++                skb->csum = csum_block_add(skb->csum, csum, odd);
++        }
++        return 0;
++}
++
++static int udpredirect_memcpy_fromiovecend(unsigned char *kdata, struct iovec *iov, int offset,
++                        int len)
++{
++        /* Skip over the finished iovecs */
++        while (offset >= iov->iov_len) {
++                offset -= iov->iov_len;
++                iov++;
++        }
++
++        while (len > 0) {
++                u8 __user *base = iov->iov_base + offset;
++                int copy = min_t(unsigned int, len, iov->iov_len - offset);
++
++                offset = 0;
++                memcpy(kdata, base, copy);
++                len -= copy;
++                kdata += copy;
++                iov++;
++        }
++
++        return 0;
++}
++
++/*
++   Copy of csum_partial_copy_fromiovecend() from iovec.c
++   This function exists because no copy_from_user() is needed for udpredirect.
++*/
++
++int udpredirect_csum_partial_copy_fromiovecend(unsigned char *kdata, struct iovec *iov,
++				 int offset, unsigned int len, __wsum *csump)
++{
++	__wsum csum = *csump;
++	int partial_cnt = 0, err = 0;
++
++	/* Skip over the finished iovecs */
++	while (offset >= iov->iov_len) {
++		offset -= iov->iov_len;
++		iov++;
++	}
++
++	while (len > 0) {
++		u8 __user *base = iov->iov_base + offset;
++		int copy = min_t(unsigned int, len, iov->iov_len - offset);
++
++		offset = 0;
++
++		/* There is a remnant from previous iov. */
++		if (partial_cnt) {
++			int par_len = 4 - partial_cnt;
++
++			/* iov component is too short ... */
++			if (par_len > copy) {
++				memcpy(kdata, base, copy);
++				kdata += copy;
++				base  += copy;
++				partial_cnt += copy;
++				len   -= copy;
++				iov++;
++				if (len)
++					continue;
++				*csump = csum_partial(kdata - partial_cnt,
++							 partial_cnt, csum);
++				goto out;
++			}
++			memcpy(kdata, base, par_len);
++			csum = csum_partial(kdata - partial_cnt, 4, csum);
++			kdata += par_len;
++			base  += par_len;
++			copy  -= par_len;
++			len   -= par_len;
++			partial_cnt = 0;
++		}
++
++		if (len > copy) {
++			partial_cnt = copy % 4;
++			if (partial_cnt) {
++				copy -= partial_cnt;
++				memcpy(kdata + copy, base + copy, partial_cnt);
++			}
++		}
++
++		if (copy) {
++			csum = csum_partial_copy_nocheck(base, kdata, copy, csum);
++		}
++		len   -= copy + partial_cnt;
++		kdata += copy + partial_cnt;
++		iov++;
++	}
++        *csump = csum;
++out:
++	return err;
++}
++
++EXPORT_SYMBOL(udpredirect_getfrag);
++EXPORT_SYMBOL(udp_do_redirect_fn);
++EXPORT_SYMBOL(udpredirect_getfrag_fn);
++#endif /* CONFIG_IFX_UDP_REDIRECT* */
+-- 
+1.7.9.1
+

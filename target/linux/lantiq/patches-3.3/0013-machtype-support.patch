@@ -1,0 +1,568 @@
+From f1c9b41720476cd660a852134b0e8a8acd601441 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Aug 2012 10:23:08 +0200
+Subject: [PATCH 13/25] machtype support
+
+---
+ arch/mips/lantiq/Makefile                |    2 +-
+ arch/mips/lantiq/devices.c               |   18 ++++
+ arch/mips/lantiq/devices.h               |    1 +
+ arch/mips/lantiq/falcon/Kconfig          |    8 ++
+ arch/mips/lantiq/falcon/Makefile         |    4 +
+ arch/mips/lantiq/falcon/mach-easy98000.c |  162 ++++++++++++++++++++++++++---
+ arch/mips/lantiq/machtypes.h             |   42 ++++++++
+ arch/mips/lantiq/xway/Kconfig            |   32 ++++++
+ arch/mips/lantiq/xway/Makefile           |   11 ++
+ arch/mips/lantiq/xway/devices.c          |   95 +++++++++++++++++
+ arch/mips/lantiq/xway/devices.h          |    6 +
+ 11 files changed, 363 insertions(+), 18 deletions(-)
+
+diff --git a/arch/mips/lantiq/Makefile b/arch/mips/lantiq/Makefile
+index db1ce50..4f245d8 100644
+--- a/arch/mips/lantiq/Makefile
++++ b/arch/mips/lantiq/Makefile
+@@ -4,7 +4,7 @@
+ # under the terms of the GNU General Public License version 2 as published
+ # by the Free Software Foundation.
+ 
+-obj-y := irq.o setup.o clk.o prom.o devices.o
++obj-y := irq.o setup.o clk.o prom.o devices.o dev-gpio-leds.o dev-gpio-buttons.o
+ 
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+diff --git a/arch/mips/lantiq/devices.c b/arch/mips/lantiq/devices.c
+index 7193d78..2d7c46a 100644
+--- a/arch/mips/lantiq/devices.c
++++ b/arch/mips/lantiq/devices.c
+@@ -18,6 +18,7 @@
+ #include <linux/time.h>
+ #include <linux/io.h>
+ #include <linux/gpio.h>
++#include <linux/dma-mapping.h>
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/irq.h>
+@@ -100,3 +101,20 @@ void __init ltq_register_pci(struct ltq_pci_data *data)
+ 	pr_err("kernel is compiled without PCI support\n");
+ }
+ #endif
++
++static unsigned int *cp1_base = 0;
++unsigned int*
++ltq_get_cp1_base(void)
++{
++	return cp1_base;
++}
++EXPORT_SYMBOL(ltq_get_cp1_base);
++
++void __init
++ltq_register_tapi(void)
++{
++#define CP1_SIZE	(1 << 20)
++	dma_addr_t dma;
++	cp1_base =
++		(void*)CPHYSADDR(dma_alloc_coherent(NULL, CP1_SIZE, &dma, GFP_ATOMIC));
++}
+diff --git a/arch/mips/lantiq/devices.h b/arch/mips/lantiq/devices.h
+index a03c23f..59d904c 100644
+--- a/arch/mips/lantiq/devices.h
++++ b/arch/mips/lantiq/devices.h
+@@ -23,5 +23,6 @@ extern void ltq_register_nor(struct physmap_flash_data *data);
+ extern void ltq_register_wdt(void);
+ extern void ltq_register_asc(int port);
+ extern void ltq_register_pci(struct ltq_pci_data *data);
++extern void ltq_register_tapi(void);
+ 
+ #endif
+diff --git a/arch/mips/lantiq/falcon/Kconfig b/arch/mips/lantiq/falcon/Kconfig
+index 03e999d..2e3e59c 100644
+--- a/arch/mips/lantiq/falcon/Kconfig
++++ b/arch/mips/lantiq/falcon/Kconfig
+@@ -6,6 +6,14 @@ config LANTIQ_MACH_EASY98000
+ 	bool "Easy98000"
+ 	default y
+ 
++config LANTIQ_MACH_EASY98020
++	bool "Easy98020"
++	default y
++
++config LANTIQ_MACH_95C3AM1
++	bool "95C3AM1"
++	default y
++
+ endmenu
+ 
+ endif
+diff --git a/arch/mips/lantiq/falcon/Makefile b/arch/mips/lantiq/falcon/Makefile
+index 3634154..aa1fc69 100644
+--- a/arch/mips/lantiq/falcon/Makefile
++++ b/arch/mips/lantiq/falcon/Makefile
+@@ -1,2 +1,6 @@
+ obj-y := prom.o reset.o sysctrl.o devices.o gpio.o
++obj-$(CONFIG_LANTIQ_MACH_EASY98000) += addon-easy98000.o
++obj-$(CONFIG_LANTIQ_MACH_EASY98000) += dev-leds-easy98000-cpld.o
+ obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
++obj-$(CONFIG_LANTIQ_MACH_EASY98020) += mach-easy98020.o
++obj-$(CONFIG_LANTIQ_MACH_95C3AM1)   += mach-95C3AM1.o
+diff --git a/arch/mips/lantiq/falcon/mach-easy98000.c b/arch/mips/lantiq/falcon/mach-easy98000.c
+index fc5720d..adf6b5d 100644
+--- a/arch/mips/lantiq/falcon/mach-easy98000.c
++++ b/arch/mips/lantiq/falcon/mach-easy98000.c
+@@ -1,23 +1,48 @@
+-/*
+- *  This program is free software; you can redistribute it and/or modify it
+- *  under the terms of the GNU General Public License version 2 as published
+- *  by the Free Software Foundation.
+- *
+- *  Copyright (C) 2011 Thomas Langer <thomas.langer@lantiq.com>
+- *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
+- */
+-
++#include <linux/init.h>
+ #include <linux/platform_device.h>
++#include <linux/leds.h>
++#include <linux/gpio.h>
++#include <linux/gpio_buttons.h>
++#include <linux/etherdevice.h>
++#include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
++#include <linux/mtd/physmap.h>
++#include <linux/input.h>
++#include <linux/interrupt.h>
++#include <linux/dm9000.h>
++#include <linux/i2c.h>
++#include <linux/i2c-gpio.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/spi_gpio.h>
+ #include <linux/spi/eeprom.h>
++#include <falcon/lantiq_soc.h>
++
++#include <dev-gpio-leds.h>
+ 
+ #include "../machtypes.h"
+ 
+ #include "devices.h"
+ 
+-static struct mtd_partition easy98000_nor_partitions[] = {
++#define EASY98000_GPIO_LED_0 9
++#define EASY98000_GPIO_LED_1 10
++#define EASY98000_GPIO_LED_2 11
++#define EASY98000_GPIO_LED_3 12
++#define EASY98000_GPIO_LED_4 13
++#define EASY98000_GPIO_LED_5 14
++
++static unsigned char ltq_ethaddr[6] = {0};
++
++static int __init falcon_set_ethaddr(char *str)
++{
++	sscanf(str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
++		&ltq_ethaddr[0], &ltq_ethaddr[1], &ltq_ethaddr[2],
++		&ltq_ethaddr[3], &ltq_ethaddr[4], &ltq_ethaddr[5]);
++	return 0;
++}
++__setup("ethaddr=", falcon_set_ethaddr);
++
++static struct mtd_partition easy98000_nor_partitions[] =
++{
+ 	{
+ 		.name	= "uboot",
+ 		.offset	= 0x0,
+@@ -35,7 +60,7 @@ static struct mtd_partition easy98000_nor_partitions[] = {
+ 	},
+ };
+ 
+-struct physmap_flash_data easy98000_nor_flash_data = {
++static struct physmap_flash_data easy98000_nor_flash_data = {
+ 	.nr_parts	= ARRAY_SIZE(easy98000_nor_partitions),
+ 	.parts		= easy98000_nor_partitions,
+ };
+@@ -55,12 +80,104 @@ static struct spi_board_info easy98000_spi_flash_data __initdata = {
+ 	.platform_data		= &easy98000_spi_flash_platform_data
+ };
+ 
++static struct gpio_led easy98000_gpio_leds[] __initdata = {
++	{
++		.name		= "easy98000:green:0",
++		.gpio		= EASY98000_GPIO_LED_0,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:1",
++		.gpio		= EASY98000_GPIO_LED_1,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:2",
++		.gpio		= EASY98000_GPIO_LED_2,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:3",
++		.gpio		= EASY98000_GPIO_LED_3,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:4",
++		.gpio		= EASY98000_GPIO_LED_4,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:5",
++		.gpio		= EASY98000_GPIO_LED_5,
++		.active_low	= 0,
++	}
++};
++
++#define CONFIG_DM9000_BASE		0x14000000
++#define DM9000_IO			(CONFIG_DM9000_BASE + 3)
++#define DM9000_DATA			(CONFIG_DM9000_BASE + 1)
++
++static struct dm9000_plat_data dm9000_plat_data = {
++	.flags = DM9000_PLATF_8BITONLY,
++};
++
++static struct resource dm9000_resources[] = {
++	MEM_RES("dm9000_io", DM9000_IO, 1),
++	MEM_RES("dm9000_data", DM9000_DATA, 1),
++	[2] = {
++		/* with irq (210 -> gpio 110) the driver is very unreliable */
++		.start	= -1,		/* use polling */
++		.end	= -1,
++		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_LOW,
++	},
++};
++
++static struct platform_device dm9000_platform = {
++	.name = "dm9000",
++	.id = 0,
++	.num_resources	= ARRAY_SIZE(dm9000_resources),
++	.resource	= dm9000_resources,
++	.dev = {
++		.platform_data = (void *) &dm9000_plat_data,
++	}
++};
++
++extern int easy98000_addon_has_dm9000(void);
++static void __init register_davicom(void)
++{
++	if (!easy98000_addon_has_dm9000())
++		return;
++
++	if (!is_valid_ether_addr(ltq_ethaddr))
++		random_ether_addr(dm9000_plat_data.dev_addr);
++	else {
++		memcpy(dm9000_plat_data.dev_addr, ltq_ethaddr, 6);
++		/* change to "Locally Administered Address" */
++		dm9000_plat_data.dev_addr[0] |= 0x2;
++	}
++	platform_device_register(&dm9000_platform);
++}
++
++static struct i2c_gpio_platform_data easy98000_i2c_gpio_data = {
++	.sda_pin	= 107,
++	.scl_pin	= 108,
++};
++
++static struct platform_device easy98000_i2c_gpio_device = {
++	.name		= "i2c-gpio",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &easy98000_i2c_gpio_data,
++	}
++};
++
++void __init register_easy98000_cpld(void)
++{
++	platform_device_register_simple("easy98000_cpld_led", 0, NULL, 0);
++	platform_device_register_simple("easy98000_addon", 0, NULL, 0);
++}
++
+ /* setup gpio based spi bus/device for access to the eeprom on the board */
+-#define SPI_GPIO_MRST		102
+-#define SPI_GPIO_MTSR		103
+-#define SPI_GPIO_CLK		104
+-#define SPI_GPIO_CS0		105
+-#define SPI_GPIO_CS1		106
++#define SPI_GPIO_MRST	102
++#define SPI_GPIO_MTSR	103
++#define SPI_GPIO_CLK	104
++#define SPI_GPIO_CS0	105
++#define SPI_GPIO_CS1	106
+ #define SPI_GPIO_BUS_NUM	1
+ 
+ static struct spi_gpio_platform_data easy98000_spi_gpio_data = {
+@@ -94,11 +211,22 @@ static struct spi_board_info easy98000_spi_gpio_devices __initdata = {
+ };
+ 
+ static void __init
+-easy98000_init_common(void)
++easy98000_spi_gpio_init(void)
+ {
+ 	spi_register_board_info(&easy98000_spi_gpio_devices, 1);
+ 	platform_device_register(&easy98000_spi_gpio_device);
++}
++
++static void __init
++easy98000_init_common(void)
++{
+ 	falcon_register_i2c();
++	platform_device_register(&easy98000_i2c_gpio_device);
++	register_davicom();
++	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(easy98000_gpio_leds),
++		easy98000_gpio_leds);
++	register_easy98000_cpld();
++	easy98000_spi_gpio_init();
+ }
+ 
+ static void __init
+diff --git a/arch/mips/lantiq/machtypes.h b/arch/mips/lantiq/machtypes.h
+index dfc6af7..7690f6a 100644
+--- a/arch/mips/lantiq/machtypes.h
++++ b/arch/mips/lantiq/machtypes.h
+@@ -16,10 +16,52 @@ enum lantiq_mach_type {
+ 	LTQ_MACH_EASY50712,	/* Danube evaluation board */
+ 	LTQ_MACH_EASY50601,	/* Amazon SE evaluation board */
+ 
++	/* SVIP */
++	LANTIQ_MACH_EASY33016,		/* SVIP Easy33016 */
++	LANTIQ_MACH_EASY336,		/* SVIP Easy336, NOR Flash */
++	LANTIQ_MACH_EASY336SF,		/* SVIP Easy336, Serial Flash */
++	LANTIQ_MACH_EASY336NAND,	/* SVIP Easy336, NAND Flash */
++
+ 	/* FALCON */
+ 	LANTIQ_MACH_EASY98000,		/* Falcon Eval Board, NOR Flash */
+ 	LANTIQ_MACH_EASY98000SF,	/* Falcon Eval Board, Serial Flash */
+ 	LANTIQ_MACH_EASY98000NAND,	/* Falcon Eval Board, NAND Flash */
++	LANTIQ_MACH_EASY98020,		/* EASY98020 Eval Board */
++	LANTIQ_MACH_EASY98020_1LAN,	/* EASY98020 Eval Board (1 LAN port) */
++	LANTIQ_MACH_EASY98020_2LAN,	/* EASY98020 Eval Board (2 LAN port) */
++	LANTIQ_MACH_95C3AM1,		/* 95C3AM1 Eval Board */
++
++	/* Arcadyan */
++	LANTIQ_MACH_ARV3527P,		/* Arcor easybox a401 */
++	LANTIQ_MACH_ARV4510PW,		/* Wippies Homebox */
++	LANTIQ_MACH_ARV4518PW,		/* Airties WAV-221, SMC-7908A-ISP */
++	LANTIQ_MACH_ARV4519PW,		/* Vodafone, Pirelli */
++	LANTIQ_MACH_ARV4520PW,		/* Airties WAV-281, Arcor EasyboxA800 */
++	LANTIQ_MACH_ARV452CPW,		/* Arcor EasyboxA801 */
++	LANTIQ_MACH_ARV4525PW,		/* Speedport W502V */
++	LANTIQ_MACH_ARV7525PW,		/* Speedport W303V */
++	LANTIQ_MACH_ARV752DPW,		/* Arcor easybox a802 */
++	LANTIQ_MACH_ARV752DPW22,	/* Arcor easybox a803 */
++	LANTIQ_MACH_ARV7518PW,		/* ASTORIA */
++
++	/* Netgear */
++	LANTIQ_MACH_DGN3500B,		/* Netgear DGN3500 */
++
++	/* FRITZ!BOX */
++	LANTIQ_MACH_FRITZ3370,		/* FRITZ!BOX 3370 vdsl cpe */
++	LANTIQ_MACH_FRITZ7320,		/* FRITZ!BOX 7320 1&1 homeserver */
++
++	/* Gigaset */
++	LANTIQ_MACH_GIGASX76X,		/* Gigaset SX76x */
++
++	/* Buffalo */
++	LANTIQ_MACH_WBMR,		/* WBMR-HP-G300H */
++
++	/* ZyXEL */
++	LANTIQ_MACH_P2601HNFX,		/* ZyXEL P-2601HN-Fx */
++
++	/* ZTE */
++	LANTIQ_MACH_H201L,		/* ZTE ZXV10 H201L */
+ };
+ 
+ #endif
+diff --git a/arch/mips/lantiq/xway/Kconfig b/arch/mips/lantiq/xway/Kconfig
+index 54a51ff..8ad481c 100644
+--- a/arch/mips/lantiq/xway/Kconfig
++++ b/arch/mips/lantiq/xway/Kconfig
+@@ -6,6 +6,38 @@ config LANTIQ_MACH_EASY50712
+ 	bool "Easy50712 - Danube"
+ 	default y
+ 
++config LANTIQ_MACH_ARV
++	bool "ARV"
++	default y
++
++config LANTIQ_MACH_NETGEAR
++	bool "Netgear"
++	default y
++
++config LANTIQ_MACH_GIGASX76X
++	bool "GIGASX76X"
++	default y
++
++config LANTIQ_MACH_WBMR
++	bool "WBMR-HP-G300H"
++	default y
++
++config LANTIQ_MACH_P2601HNFX
++	bool "P2601HNFX"
++	default y
++
++config LANTIQ_MACH_H201L
++	bool "H201L"
++	default y
++
++config LANTIQ_MACH_FRITZ_VR9
++	bool "FRITZ3370"
++	default y
++
++config LANTIQ_MACH_FRITZ_AR9
++	bool "FRITZ7320"
++	default y
++
+ endmenu
+ 
+ choice
+diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
+index c9baf91..d9f3685 100644
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
+@@ -1,4 +1,15 @@
+ obj-y := sysctrl.o reset.o gpio.o gpio_stp.o gpio_ebu.o devices.o dma.o clk.o prom.o nand.o timer.o dev-ifxhcd.o
+ 
++obj-y += dev-dwc_otg.o
++obj-$(CONFIG_PCI) += dev-wifi-rt2x00.o dev-wifi-athxk.o pci-ath-fixup.o
++
+ obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
+ obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
++obj-$(CONFIG_LANTIQ_MACH_ARV) += mach-arv.o
++obj-$(CONFIG_LANTIQ_MACH_FRITZ_AR9) += mach-fritz_ar9.o
++obj-$(CONFIG_LANTIQ_MACH_FRITZ_VR9) += mach-fritz_vr9.o
++obj-$(CONFIG_LANTIQ_MACH_GIGASX76X) += mach-gigasx76x.o
++obj-$(CONFIG_LANTIQ_MACH_NETGEAR) += mach-netgear.o
++obj-$(CONFIG_LANTIQ_MACH_WBMR) += mach-wbmr.o
++obj-$(CONFIG_LANTIQ_MACH_P2601HNFX) += mach-p2601hnfx.o
++obj-$(CONFIG_LANTIQ_MACH_H201L) += mach-h201l.o
+diff --git a/arch/mips/lantiq/xway/devices.c b/arch/mips/lantiq/xway/devices.c
+index 5d4650d..64fe713 100644
+--- a/arch/mips/lantiq/xway/devices.c
++++ b/arch/mips/lantiq/xway/devices.c
+@@ -19,6 +19,7 @@
+ #include <linux/time.h>
+ #include <linux/io.h>
+ #include <linux/gpio.h>
++#include <linux/spi/spi.h>
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/irq.h>
+@@ -119,3 +120,97 @@ ltq_register_vrx200(struct ltq_eth_data *eth)
+ 	ltq_vrx200.dev.platform_data = eth;
+ 	platform_device_register(&ltq_vrx200);
+ }
++
++/* ebu */
++static struct resource ltq_ebu_resource =
++{
++	.name	= "gpio_ebu",
++	.start	= LTQ_EBU_GPIO_START,
++	.end	= LTQ_EBU_GPIO_START + LTQ_EBU_GPIO_SIZE - 1,
++	.flags	= IORESOURCE_MEM,
++};
++
++static struct platform_device ltq_ebu =
++{
++	.name		= "ltq_ebu",
++	.resource	= &ltq_ebu_resource,
++	.num_resources	= 1,
++};
++
++void __init
++ltq_register_gpio_ebu(unsigned int value)
++{
++	ltq_ebu.dev.platform_data = (void*) value;
++	platform_device_register(&ltq_ebu);
++}
++
++/* gpio buttons */
++static struct gpio_buttons_platform_data ltq_gpio_buttons_platform_data;
++
++static struct platform_device ltq_gpio_buttons_platform_device =
++{
++	.name = "gpio-buttons",
++	.id = 0,
++	.dev = {
++		.platform_data = (void *) &ltq_gpio_buttons_platform_data,
++	},
++};
++
++void __init
++ltq_register_gpio_buttons(struct gpio_button *buttons, int cnt)
++{
++	ltq_gpio_buttons_platform_data.buttons = buttons;
++	ltq_gpio_buttons_platform_data.nbuttons = cnt;
++	platform_device_register(&ltq_gpio_buttons_platform_device);
++}
++
++static struct resource ltq_spi_resources[] = {
++	{
++		.start	= LTQ_SSC_BASE_ADDR,
++		.end	= LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	IRQ_RES(spi_tx, LTQ_SSC_TIR),
++	IRQ_RES(spi_rx, LTQ_SSC_RIR),
++	IRQ_RES(spi_err, LTQ_SSC_EIR),
++};
++
++static struct resource ltq_spi_resources_ar9[] = {
++	{
++		.start	= LTQ_SSC_BASE_ADDR,
++		.end	= LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	IRQ_RES(spi_tx, LTQ_SSC_TIR_AR9),
++	IRQ_RES(spi_rx, LTQ_SSC_RIR_AR9),
++	IRQ_RES(spi_err, LTQ_SSC_EIR),
++};
++
++static struct resource ltq_spi_resources_ase[] = {
++	{
++		.start	= LTQ_SSC_BASE_ADDR,
++		.end	= LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	IRQ_RES(spi_tx, LTQ_SSC_TIR_ASE),
++	IRQ_RES(spi_rx, LTQ_SSC_RIR_ASE),
++	IRQ_RES(spi_err, LTQ_SSC_EIR_ASE),
++};
++
++static struct platform_device ltq_spi = {
++	.name		= "ltq_spi",
++	.resource	= ltq_spi_resources,
++	.num_resources	= ARRAY_SIZE(ltq_spi_resources),
++};
++
++void __init ltq_register_spi(struct ltq_spi_platform_data *pdata,
++		struct spi_board_info const *info, unsigned n)
++{
++	if (ltq_is_ar9())
++		ltq_spi.resource = ltq_spi_resources_ar9;
++	else if (ltq_is_ase())
++		ltq_spi.resource = ltq_spi_resources_ase;
++	spi_register_board_info(info, n);
++	ltq_spi.dev.platform_data = pdata;
++	platform_device_register(&ltq_spi);
++}
+diff --git a/arch/mips/lantiq/xway/devices.h b/arch/mips/lantiq/xway/devices.h
+index 08befd9..dcf2a14 100644
+--- a/arch/mips/lantiq/xway/devices.h
++++ b/arch/mips/lantiq/xway/devices.h
+@@ -11,6 +11,8 @@
+ 
+ #include "../devices.h"
+ #include <linux/phy.h>
++#include <linux/spi/spi.h>
++#include <linux/gpio_buttons.h>
+ 
+ extern void ltq_register_gpio(void);
+ extern void ltq_register_gpio_stp(void);
+@@ -18,5 +20,9 @@ extern void ltq_register_ase_asc(void);
+ extern void ltq_register_etop(struct ltq_eth_data *eth);
+ extern void xway_register_nand(struct mtd_partition *parts, int count);
+ extern void ltq_register_vrx200(struct ltq_eth_data *eth);
++extern void ltq_register_gpio_ebu(unsigned int value);
++extern void ltq_register_spi(struct ltq_spi_platform_data *pdata,
++	struct spi_board_info const *info, unsigned n);
++extern void ltq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
+ 
+ #endif
+-- 
+1.7.9.1
+

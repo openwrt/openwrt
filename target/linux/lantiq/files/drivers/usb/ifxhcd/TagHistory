@@ -1,0 +1,171 @@
+
+
++----------------------------------------------------------------------+
+| TAG: svn://embeddedvm/home/SVN/drivers/usb_host20/tags/5.18-r240-non_musb_ar9_vr9-SOF_Timer_Fixed
+| Erzeugt mit SVN-Tagger Version 3.74.
++----------------------------------------------------------------------+
+FIX - Korrektur bei der SOF-Timer/IRQ Steuerung. (Bug in Tag 5.17)
+FIX - Fehlerbehandlung an mehreren Stellen korrigiert bzw. eingebaut.
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://embeddedvm/home/SVN/drivers/usb_host20/tags/5.17-r237-non_musb_ar9_vr9-2_6_32_41_Kompatibel
+| Erzeugt mit SVN-Tagger Version 3.73.
++----------------------------------------------------------------------+
+FIX - Kompatiblität zum Update auf Kernel 2.6.32-41. Weiterhin für 28er geeignet.
+ENH - Reduktion der Interrruptlast durch Nutzung eines hrtimers anstatt SOF-IRQ.
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.16-r208-non_musb_ar9_vr9-20110421_Zero_Paket_Optimiert
+| Erzeugt mit SVN-Tagger Version 3.66.
++----------------------------------------------------------------------+
+
+FIX - VR9 / AR9 - Zero Packet. Optimierung korrigiert.
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.15-r205-non_musb_ar9_vr9-20110421_Zero_Paket_WA_funktioniert
+| Erzeugt mit SVN-Tagger Version 3.66.
++----------------------------------------------------------------------+
+
+FIX - VR9 / AR9 - "Zero Packet" funktioniert nun wirklich. Letzter Tag hatte einen Bug.
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.14-r202-non_musb_ar9_vr9-20110420_Zero_Paket_WA
+| Erzeugt mit SVN-Tagger Version 3.66.
++----------------------------------------------------------------------+
+
+FIX - VR9 / AR9 - Zero Packet Workaround: ZLP wird nun geschickt wenn URB_ZERO_PACKET aktiv ist. 
+                  Wird von LTE Altair Firmware benoetig. 
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.13-r199-non_musb_ar9_vr9-20110310_Init_Fix
+| Erzeugt mit SVN-Tagger Version 3.64.
++----------------------------------------------------------------------+
+
+FIX - VR9 / AR9 - Timing der Initialisierungsphase angepasst zum Kernel 2.6.28 mit UGW-4.3.1.
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.12-r184-non_musb_ar9_vr9-20110118_Full_Speed_Fix
+| Erzeugt mit SVN-Tagger Version 3.58.
++----------------------------------------------------------------------+
+AR9/VR9 (3370,6840,7320):
+Makefile - FIX - (Workaround) Debug Modus hilft gegen Enumerationsfehler bei Full Speed Drucker. 
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.11-r175-non_musb_ar9_vr9-20101220_VR9_2_Ports_DMA_Fix
+| Erzeugt mit SVN-Tagger Version 3.58.
++----------------------------------------------------------------------+
+
+FIX - VR9 - Workaround DMA Burst Size. Wenn beiden USB Ports benutzt werden, geht der USB Host nicht mehr. 
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.10-r169-non_musb_ar9_vr9-Fix_Spontan_Reboot
+| Erzeugt mit SVN-Tagger Version 3.58.
++----------------------------------------------------------------------+
+
+FIX - Endlosschleife führte zu einem spontanen Reboot. 
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.9-r166-non_musb_ar9_vr9-20101112_deferred_completion
+| Erzeugt mit SVN-Tagger Version 3.58.
++----------------------------------------------------------------------+
+
+ENH - Deferred URB Completion Mechanismus eingebaut. Nun ca. 10% schneller bei usb-storage.
+ 
+FIX - PING Flow Control gefixt.
+FIX - Channel Halt wird nun immer angerufen. (Split Transaction wurde nicht erfolgreich gestoppt).
+FIX - Spinlock Benutzung verbessert. Mehr Stabilitaet. 
+   
+CHG - Ubersetztungsoption __DEBUG__ ist nun abhaengig von CONFIG_USB_DEBUG
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.8-r149-non_musb_ar9_vr9-20100827_LTE_Interrupt_EP_Fix
+| Erzeugt mit SVN-Tagger Version 3.57.
++----------------------------------------------------------------------+
+AR9/VR9 - FIX - Interrupt Packets gingen verloren, wegen falschem Timing beim OddFrame Bit.
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.7-r142-non_musb_ar9_vr9-20100728_Unaligned_Buf_Fix
+| Erzeugt mit SVN-Tagger Version 3.57.
++----------------------------------------------------------------------+
+FIX - "Unaligned Data" Flag wieder nach Transfer geloescht. 
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.6-r133-non_musb_ar9_vr9-20100714_Toggle_Datenverlust_Fix
+| Erzeugt mit SVN-Tagger Version 3.57.
++----------------------------------------------------------------------+
+TL5508 - Einige UMTS Modems funktionierten nicht korrekt an der 7320 (AR9).
+FIX - USB Data Toggle des usbcore benutzen. Datenverlust nach EP-Halt.
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.5-r130-non_musb_ar9_vr9-20100712_USB_Ports_abschaltbar
+| Erzeugt mit SVN-Tagger Version 3.57.
++----------------------------------------------------------------------+
+Power - Fix - Beide USB Port abschaltbar bei rmmod.
+rmmod - FIX - URB_Dequeue funktionierte beim Entladen des Treibers nicht (mehrere Ursachen).
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.4-r126-non_musb_ar9_vr9-20100701_Lost_Interrupt_Workaround
+| Erzeugt mit SVN-Tagger Version 3.57.
++----------------------------------------------------------------------+
+FIX - Workaround wegen verpasstem Interrupt, bei Full-Speed Interrupt EP.
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.3-r123-non_musb_ar9_vr9-20100630_UMTS_Fixes
+| Erzeugt mit SVN-Tagger Version 3.57.
++----------------------------------------------------------------------+
+FIX - Full-Speed Interrupt Endpoint hinter Hi-Speed Hub funktioniert nun (UMTS Modems)
+FIX - usb_hcd_link_urb_from_ep API von USBCore muss benutzt werden.
+FIX - Interrupt URBs nicht bei NAK completen. 
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.2-r114-non_musb_ar9_vr9-20100520_StickAndSurf_funktioniert
+| Erzeugt mit SVN-Tagger Version 3.56.
++----------------------------------------------------------------------+
+- Merge mit neuen LANTIQ Sourcen "3.0alpha B100312"
+- Fix - Spin_lock eingebaut, Stick&Surf funktioniert nun
+
+- DEP - CONFIG_USB_HOST_IFX_WITH_ISO wird nicht unterstuetzt: In der Kernel Config deaktivieren.
+
+
+
++----------------------------------------------------------------------+
+| TAG: svn://EmbeddedVM/home/SVN/drivers/usb_host20/tags/5.1-r107-non_musb_ar9_vr9-20100505_IFXUSB_Host_mit_Energiemonitor
+| Erzeugt mit SVN-Tagger Version 3.56.
++----------------------------------------------------------------------+
+USB Host Treiber für AR9 und VR9
+--------------------------------
+FIX - Toggle Error nach STALL - Einfacher Workaround - Nun werden Massenspeicherpartitionen erkannt!
+AVM_POWERMETER - USB Energiemonitor Support.
+
+Bekanntes Problem: Stick and Surf funktioniert nur sporadisch, weil CONTROL_IRQ manchmal ausbleibt.
+

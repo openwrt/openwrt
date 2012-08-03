@@ -1,0 +1,131 @@
+From 3c7089199784e3d53054869108cfa5666b42e7ea Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Aug 2012 10:28:51 +0200
+Subject: [PATCH 22/25] owrt dm9000 polling
+
+---
+ drivers/net/ethernet/davicom/dm9000.c |   50 +++++++++++++++++++++++++++-----
+ 1 files changed, 42 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/net/ethernet/davicom/dm9000.c b/drivers/net/ethernet/davicom/dm9000.c
+index f801754..258a0c3 100644
+--- a/drivers/net/ethernet/davicom/dm9000.c
++++ b/drivers/net/ethernet/davicom/dm9000.c
+@@ -19,6 +19,7 @@
+  *	Sascha Hauer <s.hauer@pengutronix.de>
+  */
+ 
++#define DEBUG
+ #include <linux/module.h>
+ #include <linux/ioport.h>
+ #include <linux/netdevice.h>
+@@ -132,6 +133,8 @@ typedef struct board_info {
+ 	struct delayed_work phy_poll;
+ 	struct net_device  *ndev;
+ 
++	struct delayed_work irq_poll;	/* for use in irq polling mode */
++
+ 	spinlock_t	lock;
+ 
+ 	struct mii_if_info mii;
+@@ -845,6 +848,8 @@ static void dm9000_timeout(struct net_device *dev)
+ 	netif_stop_queue(dev);
+ 	dm9000_reset(db);
+ 	dm9000_init_dm9000(dev);
++	dm9000_reset(db);
++	dm9000_init_dm9000(dev);
+ 	/* We can accept TX packets again */
+ 	dev->trans_start = jiffies; /* prevent tx timeout */
+ 	netif_wake_queue(dev);
+@@ -916,6 +921,12 @@ dm9000_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	/* free this SKB */
+ 	dev_kfree_skb(skb);
+ 
++	/* directly poll afterwards */
++	if (dev->irq == -1) {
++		cancel_delayed_work(&db->irq_poll);
++		schedule_delayed_work(&db->irq_poll, 1);
++	}
++
+ 	return NETDEV_TX_OK;
+ }
+ 
+@@ -1157,6 +1168,18 @@ static void dm9000_poll_controller(struct net_device *dev)
+ }
+ #endif
+ 
++static void dm9000_poll_irq(struct work_struct *w)
++{
++	struct delayed_work *dw = to_delayed_work(w);
++	board_info_t *db = container_of(dw, board_info_t, irq_poll);
++	struct net_device *ndev = db->ndev;
++
++	dm9000_interrupt(0, ndev);
++
++	if (netif_running(ndev))
++		schedule_delayed_work(&db->irq_poll, HZ /100);
++}
++
+ /*
+  *  Open the interface.
+  *  The interface is opened whenever "ifconfig" actives it.
+@@ -1170,14 +1193,15 @@ dm9000_open(struct net_device *dev)
+ 	if (netif_msg_ifup(db))
+ 		dev_dbg(db->dev, "enabling %s\n", dev->name);
+ 
+-	/* If there is no IRQ type specified, default to something that
+-	 * may work, and tell the user that this is a problem */
++	if (dev->irq != -1) {
++		/* If there is no IRQ type specified, default to something that
++		 * may work, and tell the user that this is a problem */
+ 
+-	if (irqflags == IRQF_TRIGGER_NONE)
+-		dev_warn(db->dev, "WARNING: no IRQ resource flags set.\n");
+-
+-	irqflags |= IRQF_SHARED;
++		if (irqflags == IRQF_TRIGGER_NONE)
++			dev_warn(db->dev, "WARNING: no IRQ resource flags set.\n");
+ 
++		irqflags |= IRQF_SHARED;
++	}
+ 	/* GPIO0 on pre-activate PHY, Reg 1F is not set by reset */
+ 	iow(db, DM9000_GPR, 0);	/* REG_1F bit0 activate phyxcer */
+ 	mdelay(1); /* delay needs by DM9000B */
+@@ -1186,8 +1210,14 @@ dm9000_open(struct net_device *dev)
+ 	dm9000_reset(db);
+ 	dm9000_init_dm9000(dev);
+ 
+-	if (request_irq(dev->irq, dm9000_interrupt, irqflags, dev->name, dev))
+-		return -EAGAIN;
++	/* testing: init a second time */
++	dm9000_reset(db);
++	dm9000_init_dm9000(dev);
++
++	if (dev->irq != -1) {
++		if (request_irq(dev->irq, dm9000_interrupt, irqflags, dev->name, dev))
++			return -EAGAIN;
++	}
+ 
+ 	/* Init driver variable */
+ 	db->dbug_cnt = 0;
+@@ -1195,6 +1225,9 @@ dm9000_open(struct net_device *dev)
+ 	mii_check_media(&db->mii, netif_msg_link(db), 1);
+ 	netif_start_queue(dev);
+ 	
++	if (dev->irq == -1)
++		schedule_delayed_work(&db->irq_poll, HZ / 100);
++
+ 	dm9000_schedule_poll(db);
+ 
+ 	return 0;
+@@ -1392,6 +1425,7 @@ dm9000_probe(struct platform_device *pdev)
+ 	mutex_init(&db->addr_lock);
+ 
+ 	INIT_DELAYED_WORK(&db->phy_poll, dm9000_poll_work);
++	INIT_DELAYED_WORK(&db->irq_poll, dm9000_poll_irq);
+ 
+ 	db->addr_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	db->data_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+-- 
+1.7.9.1
+

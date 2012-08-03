@@ -1,0 +1,59 @@
+From 9189efcc94f8492f403162484c5d2fc35c9f3fd1 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Aug 2012 10:27:43 +0200
+Subject: [PATCH 21/25] owrt cmdline
+
+---
+ arch/mips/lantiq/prom.c |   29 +++++++++++++++++++++++++++++
+ 1 files changed, 29 insertions(+), 0 deletions(-)
+
+diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
+index 00ad59c..0fdef27 100644
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -43,6 +43,34 @@ void prom_free_prom_memory(void)
+ {
+ }
+ 
++#ifdef CONFIG_IMAGE_CMDLINE_HACK
++extern char __image_cmdline[];
++
++static void __init
++prom_init_image_cmdline(void)
++{
++	char *p = __image_cmdline;
++	int replace = 0;
++
++	if (*p == '-') {
++		replace = 1;
++		p++;
++	}
++
++	if (*p == '\0')
++		return;
++
++	if (replace) {
++		strlcpy(arcs_cmdline, p, sizeof(arcs_cmdline));
++	} else {
++		strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
++		strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
++	}
++}
++#else
++static void __init prom_init_image_cmdline(void) { return; }
++#endif
++
+ static void __init prom_init_cmdline(void)
+ {
+ 	int argc = fw_arg0;
+@@ -59,6 +87,7 @@ static void __init prom_init_cmdline(void)
+ 			strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
+ 		}
+ 	}
++	prom_init_image_cmdline();
+ }
+ 
+ void __iomem *ltq_remap_resource(struct resource *res)
+-- 
+1.7.9.1
+

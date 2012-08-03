@@ -1,0 +1,90 @@
+From 3b11721314a100e40634a80062d0d2cce1dc83dc Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Aug 2012 09:54:27 +0200
+Subject: [PATCH 12/25] tty support
+
+---
+ drivers/tty/serial/lantiq.c |   25 +++++++++++++++++++++----
+ 1 files changed, 21 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/tty/serial/lantiq.c b/drivers/tty/serial/lantiq.c
+index 96c1cac..82956de 100644
+--- a/drivers/tty/serial/lantiq.c
++++ b/drivers/tty/serial/lantiq.c
+@@ -107,6 +107,9 @@
+ #define ASCFSTAT_TXFREEMASK	0x3F000000
+ #define ASCFSTAT_TXFREEOFF	24
+ 
++#define MUXC_SIF_RX_PIN		112
++#define MUXC_SIF_TX_PIN		113
++
+ static void lqasc_tx_chars(struct uart_port *port);
+ static struct ltq_uart_port *lqasc_port[MAXPORTS];
+ static struct uart_driver lqasc_reg;
+@@ -114,6 +117,7 @@ static DEFINE_SPINLOCK(ltq_asc_lock);
+ 
+ struct ltq_uart_port {
+ 	struct uart_port	port;
++	struct clk		*fpiclk;
+ 	struct clk		*clk;
+ 	unsigned int		tx_irq;
+ 	unsigned int		rx_irq;
+@@ -316,7 +320,7 @@ lqasc_startup(struct uart_port *port)
+ 	struct ltq_uart_port *ltq_port = to_ltq_uart_port(port);
+ 	int retval;
+ 
+-	port->uartclk = clk_get_rate(ltq_port->clk);
++	port->uartclk = clk_get_rate(ltq_port->fpiclk);
+ 
+ 	ltq_w32_mask(ASCCLC_DISS | ASCCLC_RMCMASK, (1 << ASCCLC_RMCOFFSET),
+ 		port->membase + LTQ_ASC_CLC);
+@@ -529,6 +533,19 @@ lqasc_request_port(struct uart_port *port)
+ 		if (port->membase == NULL)
+ 			return -ENOMEM;
+ 	}
++	if (ltq_is_falcon() && (port->line == 1)) {
++		struct ltq_uart_port *ltq_port = lqasc_port[pdev->id];
++		if (ltq_gpio_request(&pdev->dev, MUXC_SIF_RX_PIN,
++				3, 0, "asc1-rx"))
++			return -EBUSY;
++		if (ltq_gpio_request(&pdev->dev, MUXC_SIF_TX_PIN,
++				3, 1, "asc1-tx"))
++			return -EBUSY;
++		ltq_port->clk = clk_get(&pdev->dev, NULL);
++		if (IS_ERR(ltq_port->clk))
++			return PTR_ERR(ltq_port->clk);
++		clk_enable(ltq_port->clk);
++	}
+ 	return 0;
+ }
+ 
+@@ -630,7 +647,7 @@ lqasc_console_setup(struct console *co, char *options)
+ 
+ 	port = &ltq_port->port;
+ 
+-	port->uartclk = clk_get_rate(ltq_port->clk);
++	port->uartclk = clk_get_rate(ltq_port->fpiclk);
+ 
+ 	if (options)
+ 		uart_parse_options(options, &baud, &parity, &bits, &flow);
+@@ -686,7 +703,7 @@ lqasc_probe(struct platform_device *pdev)
+ 	if (lqasc_port[pdev->id] != NULL)
+ 		return -EBUSY;
+ 
+-	clk = clk_get(&pdev->dev, "fpi");
++	clk = clk_get_fpi();
+ 	if (IS_ERR(clk)) {
+ 		pr_err("failed to get fpi clk\n");
+ 		return -ENOENT;
+@@ -715,7 +732,7 @@ lqasc_probe(struct platform_device *pdev)
+ 	port->irq	= tx_irq; /* unused, just to be backward-compatibe */
+ 	port->mapbase	= mmres->start;
+ 
+-	ltq_port->clk	= clk;
++	ltq_port->fpiclk = clk;
+ 
+ 	ltq_port->tx_irq = tx_irq;
+ 	ltq_port->rx_irq = rx_irq;
+-- 
+1.7.9.1
+
