@@ -1,0 +1,16 @@
+if SOC_SVIP
+
+menu "Mips Machine"
+
+config LANTIQ_MACH_EASY33016
+	bool "Easy33016"
+	default y
+
+config LANTIQ_MACH_EASY336
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	bool "Easy336"
+	default y
+
+endmenu
+
+endif

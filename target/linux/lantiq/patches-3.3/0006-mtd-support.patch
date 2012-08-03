@@ -1,0 +1,98 @@
+From 4bd56362cd1780530d981e2e9f3793c4d7da7e02 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Aug 2012 09:53:27 +0200
+Subject: [PATCH 06/25] mtd support
+
+---
+ drivers/mtd/devices/m25p80.c    |    1 +
+ drivers/mtd/maps/lantiq-flash.c |   22 +++-------------------
+ drivers/mtd/nand/plat_nand.c    |    1 +
+ include/linux/mtd/nand.h        |    1 +
+ 4 files changed, 6 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index b06f46c..33bfd9b 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -684,6 +684,7 @@ static const struct spi_device_id m25p_ids[] = {
+ 	{ "640s33b",  INFO(0x898913, 0, 64 * 1024, 128, 0) },
+ 
+ 	/* Macronix */
++	{ "mx25l2005a",  INFO(0xc22012, 0, 64 * 1024,   8, SECT_4K) },
+ 	{ "mx25l4005a",  INFO(0xc22013, 0, 64 * 1024,   8, SECT_4K) },
+ 	{ "mx25l8005",   INFO(0xc22014, 0, 64 * 1024,  16, 0) },
+ 	{ "mx25l1606e",  INFO(0xc22015, 0, 64 * 1024,  32, SECT_4K) },
+diff --git a/drivers/mtd/maps/lantiq-flash.c b/drivers/mtd/maps/lantiq-flash.c
+index cf7a3cd..ccc6954 100644
+--- a/drivers/mtd/maps/lantiq-flash.c
++++ b/drivers/mtd/maps/lantiq-flash.c
+@@ -108,7 +108,7 @@ ltq_copy_to(struct map_info *map, unsigned long to,
+ 	spin_unlock_irqrestore(&ebu_lock, flags);
+ }
+ 
+-static int __init
++static int __devinit
+ ltq_mtd_probe(struct platform_device *pdev)
+ {
+ 	struct physmap_flash_data *ltq_mtd_data = dev_get_platdata(&pdev->dev);
+@@ -204,6 +204,7 @@ ltq_mtd_remove(struct platform_device *pdev)
+ }
+ 
+ static struct platform_driver ltq_mtd_driver = {
++	.probe = ltq_mtd_probe,
+ 	.remove = __devexit_p(ltq_mtd_remove),
+ 	.driver = {
+ 		.name = "ltq_nor",
+@@ -211,24 +212,7 @@ static struct platform_driver ltq_mtd_driver = {
+ 	},
+ };
+ 
+-static int __init
+-init_ltq_mtd(void)
+-{
+-	int ret = platform_driver_probe(&ltq_mtd_driver, ltq_mtd_probe);
+-
+-	if (ret)
+-		pr_err("ltq_nor: error registering platform driver");
+-	return ret;
+-}
+-
+-static void __exit
+-exit_ltq_mtd(void)
+-{
+-	platform_driver_unregister(&ltq_mtd_driver);
+-}
+-
+-module_init(init_ltq_mtd);
+-module_exit(exit_ltq_mtd);
++module_platform_driver(ltq_mtd_driver);
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
+diff --git a/drivers/mtd/nand/plat_nand.c b/drivers/mtd/nand/plat_nand.c
+index 10f142d..4cb118b 100644
+--- a/drivers/mtd/nand/plat_nand.c
++++ b/drivers/mtd/nand/plat_nand.c
+@@ -75,6 +75,7 @@ static int __devinit plat_nand_probe(struct platform_device *pdev)
+ 	data->chip.select_chip = pdata->ctrl.select_chip;
+ 	data->chip.write_buf = pdata->ctrl.write_buf;
+ 	data->chip.read_buf = pdata->ctrl.read_buf;
++	data->chip.read_byte = pdata->ctrl.read_byte;
+ 	data->chip.chip_delay = pdata->chip.chip_delay;
+ 	data->chip.options |= pdata->chip.options;
+ 	data->chip.bbt_options |= pdata->chip.bbt_options;
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index c2761fd..5e44cda 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -652,6 +652,7 @@ struct platform_nand_ctrl {
+ 	void (*cmd_ctrl)(struct mtd_info *mtd, int dat, unsigned int ctrl);
+ 	void (*write_buf)(struct mtd_info *mtd, const uint8_t *buf, int len);
+ 	void (*read_buf)(struct mtd_info *mtd, uint8_t *buf, int len);
++	unsigned char (*read_byte)(struct mtd_info *mtd);
+ 	void *priv;
+ };
+ 
+-- 
+1.7.9.1
+

@@ -1,0 +1,37 @@
+config DWC_OTG
+        tristate "Synopsis DWC_OTG support"
+        depends on USB
+        help
+          This driver supports Synopsis DWC_OTG IP core
+		  embebbed on many SOCs (ralink, infineon, etc)
+
+choice
+        prompt "USB Operation Mode"
+        depends on DWC_OTG
+        default DWC_OTG_HOST_ONLY
+
+config DWC_OTG_HOST_ONLY
+        bool "HOST ONLY MODE"
+        depends on DWC_OTG
+
+#config DWC_OTG_DEVICE_ONLY
+#        bool "DEVICE ONLY MODE"
+#        depends on DWC_OTG
+endchoice
+
+choice
+        prompt "Platform"
+        depends on DWC_OTG
+        default DWC_OTG_LANTIQ
+
+config DWC_OTG_LANTIQ
+        bool "Lantiq"
+        depends on LANTIQ
+        help
+          Danube USB Host Controller
+		  platform support
+endchoice
+
+config DWC_OTG_DEBUG
+        bool "Enable debug mode"
+        depends on DWC_OTG

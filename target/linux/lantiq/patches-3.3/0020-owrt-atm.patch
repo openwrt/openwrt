@@ -1,0 +1,83 @@
+From 8d2a7d1fb561c9cb098c2b13ded34fe0f49dcca5 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Aug 2012 10:27:25 +0200
+Subject: [PATCH 20/25] owrt atm
+
+---
+ arch/mips/lantiq/irq.c |    2 ++
+ arch/mips/mm/cache.c   |    2 ++
+ net/atm/common.c       |    6 ++++++
+ net/atm/proc.c         |    2 +-
+ 4 files changed, 11 insertions(+), 1 deletions(-)
+
+diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
+index 63dbb83..1e89104 100644
+--- a/arch/mips/lantiq/irq.c
++++ b/arch/mips/lantiq/irq.c
+@@ -10,6 +10,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/ioport.h>
+ #include <linux/sched.h>
++#include <linux/module.h>
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/irq_cpu.h>
+@@ -171,6 +172,7 @@ void ltq_disable_irq(struct irq_data *d)
+ 	ltq_icu_w32(ltq_icu_r32(LTQ_ICU_IM0_IER, im_nr) & ~(1 << irq_nr),
+ 		LTQ_ICU_IM0_IER, im_nr);
+ }
++EXPORT_SYMBOL(ltq_mask_and_ack_irq);
+ 
+ void ltq_mask_and_ack_irq(struct irq_data *d)
+ {
+diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
+index ef83ef1..c156456 100644
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -58,6 +58,8 @@ void (*_dma_cache_wback)(unsigned long start, unsigned long size);
+ void (*_dma_cache_inv)(unsigned long start, unsigned long size);
+ 
+ EXPORT_SYMBOL(_dma_cache_wback_inv);
++EXPORT_SYMBOL(_dma_cache_wback);
++EXPORT_SYMBOL(_dma_cache_inv);
+ 
+ #endif /* CONFIG_DMA_NONCOHERENT */
+ 
+diff --git a/net/atm/common.c b/net/atm/common.c
+index b4b44db..c30b397 100644
+--- a/net/atm/common.c
++++ b/net/atm/common.c
+@@ -62,11 +62,17 @@ static void vcc_remove_socket(struct sock *sk)
+ 	write_unlock_irq(&vcc_sklist_lock);
+ }
+ 
++struct sk_buff* (*ifx_atm_alloc_tx)(struct atm_vcc *, unsigned int) = NULL;
++EXPORT_SYMBOL(ifx_atm_alloc_tx);
++
+ static struct sk_buff *alloc_tx(struct atm_vcc *vcc, unsigned int size)
+ {
+ 	struct sk_buff *skb;
+ 	struct sock *sk = sk_atm(vcc);
+ 
++	if (ifx_atm_alloc_tx != NULL)
++		return ifx_atm_alloc_tx(vcc, size);
++
+ 	if (sk_wmem_alloc_get(sk) && !atm_may_send(vcc, size)) {
+ 		pr_debug("Sorry: wmem_alloc = %d, size = %d, sndbuf = %d\n",
+ 			 sk_wmem_alloc_get(sk), size, sk->sk_sndbuf);
+diff --git a/net/atm/proc.c b/net/atm/proc.c
+index 0d020de..9fdb539 100644
+--- a/net/atm/proc.c
++++ b/net/atm/proc.c
+@@ -154,7 +154,7 @@ static void *vcc_seq_next(struct seq_file *seq, void *v, loff_t *pos)
+ static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
+ {
+ 	static const char *const class_name[] = {
+-		"off", "UBR", "CBR", "VBR", "ABR"};
++		"off","UBR","CBR","NTR-VBR","ABR","ANY","RT-VBR","UBR+","GFR"};
+ 	static const char *const aal_name[] = {
+ 		"---",	"1",	"2",	"3/4",	/*  0- 3 */
+ 		"???",	"5",	"???",	"???",	/*  4- 7 */
+-- 
+1.7.9.1
+

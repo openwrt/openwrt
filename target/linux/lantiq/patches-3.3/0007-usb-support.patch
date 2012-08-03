@@ -1,0 +1,71 @@
+From a2089c84bb5c8ceab9a2ede7a87a97e37c308f8e Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Aug 2012 09:53:45 +0200
+Subject: [PATCH 07/25] usb support
+
+---
+ drivers/usb/Kconfig    |    4 ++++
+ drivers/usb/Makefile   |    4 ++++
+ drivers/usb/core/hub.c |    4 ++--
+ 3 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/Kconfig b/drivers/usb/Kconfig
+index 75823a1..f69cc4a 100644
+--- a/drivers/usb/Kconfig
++++ b/drivers/usb/Kconfig
+@@ -130,6 +130,8 @@ source "drivers/usb/wusbcore/Kconfig"
+ 
+ source "drivers/usb/host/Kconfig"
+ 
++source "drivers/usb/dwc_otg/Kconfig"
++
+ source "drivers/usb/musb/Kconfig"
+ 
+ source "drivers/usb/renesas_usbhs/Kconfig"
+@@ -182,4 +184,6 @@ source "drivers/usb/gadget/Kconfig"
+ 
+ source "drivers/usb/otg/Kconfig"
+ 
++source "drivers/usb/ifxhcd/Kconfig"
++
+ endif # USB_SUPPORT
+diff --git a/drivers/usb/Makefile b/drivers/usb/Makefile
+index 53a7bc0..7068e99 100644
+--- a/drivers/usb/Makefile
++++ b/drivers/usb/Makefile
+@@ -32,6 +32,8 @@ obj-$(CONFIG_USB_C67X00_HCD)	+= c67x00/
+ 
+ obj-$(CONFIG_USB_WUSB)		+= wusbcore/
+ 
++obj-$(CONFIG_DWC_OTG)           += dwc_otg/
++
+ obj-$(CONFIG_USB_ACM)		+= class/
+ obj-$(CONFIG_USB_PRINTER)	+= class/
+ obj-$(CONFIG_USB_WDM)		+= class/
+@@ -56,3 +58,5 @@ obj-$(CONFIG_USB_RENESAS_USBHS)	+= renesas_usbhs/
+ obj-$(CONFIG_USB_GADGET)	+= gadget/
+ 
+ obj-$(CONFIG_USB_COMMON)	+= usb-common.o
++
++obj-$(CONFIG_USB_HOST_IFX)	+= ifxhcd/
+diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
+index ce5e147..463da23 100644
+--- a/drivers/usb/core/hub.c
++++ b/drivers/usb/core/hub.c
+@@ -2939,11 +2939,11 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
+ 		udev->ttport = hdev->ttport;
+ 	} else if (udev->speed != USB_SPEED_HIGH
+ 			&& hdev->speed == USB_SPEED_HIGH) {
+-		if (!hub->tt.hub) {
++/*		if (!hub->tt.hub) {
+ 			dev_err(&udev->dev, "parent hub has no TT\n");
+ 			retval = -EINVAL;
+ 			goto fail;
+-		}
++		}*/
+ 		udev->tt = &hub->tt;
+ 		udev->ttport = port1;
+ 	}
+-- 
+1.7.9.1
+
