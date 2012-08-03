@@ -13,6 +13,7 @@
 
 #include <linux/platform_device.h>
 #include <linux/spi/spi_gpio_old.h>
+#include <linux/module.h>
 
 #define DRV_NAME	"wrt55agv2-spidevs"
 #define DRV_DESC	"SPI driver for the WRT55AG v2 board"
