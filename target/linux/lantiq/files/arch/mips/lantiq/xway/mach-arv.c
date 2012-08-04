@@ -522,7 +522,6 @@ arv4518pw_init(void)
 #define ARV4518PW_USB			14
 #define ARV4518PW_SWITCH_RESET		13
 #define ARV4518PW_ATH_ADDR		0x3f0400
-#define ARV4518PW_MADWIFI_ADDR		0xb03f0400
 #define ARV4518PW_MAC_ADDR		0x3f0016
 
 	ltq_register_gpio_ebu(ARV4518PW_EBU);
@@ -618,7 +617,6 @@ arv452Cpw_init(void)
 #define ARV452CPW_RELAY2		107
 #define ARV452CPW_SWITCH_RESET		110
 #define ARV452CPW_ATH_ADDR		0x3f0400
-#define ARV452CPW_MADWIFI_ADDR		0xb03f0400
 #define ARV452CPW_MAC_ADDR		0x3f0016
 
 	ltq_register_gpio_ebu(ARV452CPW_EBU);
@@ -652,7 +650,6 @@ static void __init
 arv4525pw_init(void)
 {
 #define ARV4525PW_ATH_ADDR		0x3f0400
-#define ARV4525PW_MADWIFI_ADDR		0xb03f0400
 #define ARV4525PW_MAC_ADDR		0x3f0016
 
 	arv_load_nor(0x400000);
@@ -662,7 +659,7 @@ arv4525pw_init(void)
 	gpio_export(ARV4525PW_PHYRESET, false);
 	ltq_pci_data.clock = PCI_CLOCK_INT;
 	ltq_register_pci(&ltq_pci_data);
-	arv_register_ath5k(ARV4525PW_ATH_ADDR, ARV4525PW_MADWIFI_ADDR);
+	arv_register_ath5k(ARV4525PW_ATH_ADDR, ARV4525PW_MAC_ADDR);
 	ltq_register_ath5k(arv_ath5k_eeprom_data, arv_athxk_eeprom_mac);
 	ltq_eth_data.mii_mode = PHY_INTERFACE_MODE_MII;
 	arv_register_ethernet(ARV4525PW_MAC_ADDR);
