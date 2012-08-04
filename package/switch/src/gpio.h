@@ -9,16 +9,16 @@
 #define __GPIO_H
 
 #ifdef CONFIG_BCM47XX
-#include "gpio-bcm947xx.h"
+#include <linux/gpio.h>
 #else
 #warning "Unsupported configuration."
 
-#define gpio_in()			(-1U)
-#define gpio_out(mask, value)		(-1U)
-#define gpio_outen(mask, value)		(-1U)
-#define gpio_control(mask, value)	(-1U)
-#define gpio_intmask(mask, value)	(-1U)
-#define gpio_intpolarity(mask, value)	(-1U)
+#define bcm47xx_gpio_in(mask)			(-1U)
+#define bcm47xx_gpio_out(mask, value)		(-1U)
+#define bcm47xx_gpio_outen(mask, value)		(-1U)
+#define bcm47xx_gpio_control(mask, value)	(-1U)
+#define bcm47xx_gpio_intmask(mask, value)	(-1U)
+#define bcm47xx_gpio_polarity(mask, value)	(-1U)
 
 #endif
 

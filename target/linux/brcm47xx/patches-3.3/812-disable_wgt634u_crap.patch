@@ -7,7 +7,7 @@
 -obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- a/arch/mips/bcm47xx/wgt634u.c
 +++ /dev/null
-@@ -1,170 +0,0 @@
+@@ -1,177 +0,0 @@
 -/*
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
@@ -143,6 +143,7 @@
 -	 * been allocated ranges 00:09:5b:xx:xx:xx and 00:0f:b5:xx:xx:xx.
 -	 */
 -	u8 *et0mac;
+-	int err;
 -
 -	if (bcm47xx_bus_type != BCM47XX_BUS_TYPE_SSB)
 -		return -ENODEV;
@@ -155,6 +156,12 @@
 -		struct ssb_mipscore *mcore = &bcm47xx_bus.ssb.mipscore;
 -
 -		printk(KERN_INFO "WGT634U machine detected.\n");
+-
+-		err = gpio_request(WGT634U_GPIO_RESET, "reset-buton");
+-		if (err) {
+-			printk(KERN_INFO "Can not register gpio fir reset button\n");
+-			return 0;
+-		}
 -
 -		if (!request_irq(gpio_to_irq(WGT634U_GPIO_RESET),
 -				 gpio_interrupt, IRQF_SHARED,
