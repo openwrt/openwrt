@@ -388,7 +388,7 @@ define KernelPackage/video-gspca-sn9c20x
   TITLE:=sn9c20x webcam support
   KCONFIG:=CONFIG_USB_GSPCA_SN9C20X
   FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gspca_sn9c20x.ko
-  AUTOLOAD:=$(call AutoLoad,75,sn9c20x)
+  AUTOLOAD:=$(call AutoLoad,75,gspca_sn9c20x)
   $(call AddDepends/video-gspca)
 endef
 
