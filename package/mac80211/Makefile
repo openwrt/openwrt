@@ -1329,7 +1329,13 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(PKG_LINUX_FIRMWARE_SOURCE)
 	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
 	rm -rf $(PKG_BUILD_DIR)/include/linux/bcma
+	rm -rf $(PKG_BUILD_DIR)/include/net/bluetooth/
 	rm -f $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
+	rm -f $(PKG_BUILD_DIR)/include/linux/ath9k_platform.h
+	rm -f $(PKG_BUILD_DIR)/include/linux/ath5k_platform.h
+	rm -f $(PKG_BUILD_DIR)/include/linux/rt2x00_platform.h
+	rm -f $(PKG_BUILD_DIR)/include/linux/wl12xx.h
+	rm -f $(PKG_BUILD_DIR)/include/linux/spi/libertas_spi.h
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
 	echo 'compat-wireless-$(PKG_VERSION)-$(PKG_RELEASE)-$(REVISION)' > $(PKG_BUILD_DIR)/compat_version
 	$(CP) ./files/regdb.txt $(PKG_BUILD_DIR)/net/wireless/db.txt
