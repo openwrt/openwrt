@@ -1,0 +1,26 @@
+From 960e1ef3c5b2d69a4a5a6984b6408d65221dd86c Mon Sep 17 00:00:00 2001
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Sat, 23 Jun 2012 04:14:55 +0000
+Subject: [PATCH 06/81] MIPS: BCM63XX: Fix USB IRQ definitions for 6328
+
+OHCI/EHCI are in the high (second) word.  Not currently used by any
+driver.
+
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+---
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
+@@ -602,8 +602,8 @@ enum bcm63xx_irq {
+ #define BCM_6328_ENET0_IRQ		0
+ #define BCM_6328_ENET1_IRQ		0
+ #define BCM_6328_ENET_PHY_IRQ		(IRQ_INTERNAL_BASE + 12)
+-#define BCM_6328_OHCI0_IRQ		(IRQ_INTERNAL_BASE + 9)
+-#define BCM_6328_EHCI0_IRQ		(IRQ_INTERNAL_BASE + 10)
++#define BCM_6328_OHCI0_IRQ		(BCM_6328_HIGH_IRQ_BASE + 9)
++#define BCM_6328_EHCI0_IRQ		(BCM_6328_HIGH_IRQ_BASE + 10)
+ #define BCM_6328_PCMCIA_IRQ		0
+ #define BCM_6328_ENET0_RXDMA_IRQ	0
+ #define BCM_6328_ENET0_TXDMA_IRQ	0
