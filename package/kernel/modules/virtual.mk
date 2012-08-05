@@ -160,7 +160,7 @@ define KernelPackage/xen-pcidev
   TITLE:=Xen PCI device frontend
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:=CONFIG_XEN_PCIDEV_FRONTEND
-  FILES:=$(LINUX_DIR)/drivers/xen/platform-pci.ko
+  FILES:=$(LINUX_DIR)/drivers/pci/xen-pcifront.ko
   AUTOLOAD:=$(call AutoLoad,10,xen-pcifront)
 endef
 
