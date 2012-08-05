@@ -71,9 +71,7 @@
 struct robo_switch {
 	char *device;			/* The device name string (ethX) */
 	u16 devid;			/* ROBO_DEVICE_ID_53xx */
-	bool use_et;
 	bool is_5350;
-	u8 phy_addr;			/* PHY address of the device */
 	struct ifreq ifr;
 	struct net_device *dev;
 	unsigned char port[6];
@@ -83,20 +81,13 @@ struct robo_switch {
 static struct robo_switch robo;
 
 
-static int do_ioctl(int cmd, void *buf)
+static int do_ioctl(int cmd)
 {
 	mm_segment_t old_fs = get_fs();
 	int ret;
 
-	if (buf != NULL)
-		robo.ifr.ifr_data = (caddr_t) buf;
-
 	set_fs(KERNEL_DS);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
 	ret = robo.dev->netdev_ops->ndo_do_ioctl(robo.dev, &robo.ifr, cmd);
-#else
-	ret = robo.dev->do_ioctl(robo.dev, &robo.ifr, cmd);
-#endif
 	set_fs(old_fs);
 
 	return ret;
@@ -104,71 +95,32 @@ static int do_ioctl(int cmd, void *buf)
 
 static u16 mdio_read(__u16 phy_id, __u8 reg)
 {
-	if (robo.use_et) {
-		int args[2] = { reg };
+	struct mii_ioctl_data *mii = if_mii(&robo.ifr);
+	mii->phy_id = phy_id;
+	mii->reg_num = reg;
 
-		if (phy_id != robo.phy_addr) {
-			printk(KERN_ERR PFX
-				"Access to real 'phy' registers unavaliable.\n"
-				"Upgrade kernel driver.\n");
+	if (do_ioctl(SIOCGMIIREG) < 0) {
+		printk(KERN_ERR PFX
+		       "[%s:%d] SIOCGMIIREG failed!\n", __FILE__, __LINE__);
 
-			return 0xffff;
-		}
-
-
-		if (do_ioctl(SIOCGETCPHYRD, &args) < 0) {
-			printk(KERN_ERR PFX
-			       "[%s:%d] SIOCGETCPHYRD failed!\n", __FILE__, __LINE__);
-			return 0xffff;
-		}
-
-		return args[1];
-	} else {
-		struct mii_ioctl_data *mii = (struct mii_ioctl_data *) &robo.ifr.ifr_data;
-		mii->phy_id = phy_id;
-		mii->reg_num = reg;
-
-		if (do_ioctl(SIOCGMIIREG, NULL) < 0) {
-			printk(KERN_ERR PFX
-			       "[%s:%d] SIOCGMIIREG failed!\n", __FILE__, __LINE__);
-
-			return 0xffff;
-		}
-
-		return mii->val_out;
+		return 0xffff;
 	}
+
+	return mii->val_out;
 }
 
 static void mdio_write(__u16 phy_id, __u8 reg, __u16 val)
 {
-	if (robo.use_et) {
-		int args[2] = { reg, val };
+	struct mii_ioctl_data *mii = if_mii(&robo.ifr);
 
-		if (phy_id != robo.phy_addr) {
-			printk(KERN_ERR PFX
-				"Access to real 'phy' registers unavaliable.\n"
-				"Upgrade kernel driver.\n");
+	mii->phy_id = phy_id;
+	mii->reg_num = reg;
+	mii->val_in = val;
 
-			return;
-		}
-
-		if (do_ioctl(SIOCSETCPHYWR, args) < 0) {
-			printk(KERN_ERR PFX
-			       "[%s:%d] SIOCGETCPHYWR failed!\n", __FILE__, __LINE__);
-			return;
-		}
-	} else {
-		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&robo.ifr.ifr_data;
-
-		mii->phy_id = phy_id;
-		mii->reg_num = reg;
-		mii->val_in = val;
-
-		if (do_ioctl(SIOCSMIIREG, NULL) < 0) {
-			printk(KERN_ERR PFX
-			       "[%s:%d] SIOCSMIIREG failed!\n", __FILE__, __LINE__);
-			return;
-		}
+	if (do_ioctl(SIOCSMIIREG) < 0) {
+		printk(KERN_ERR PFX
+		       "[%s:%d] SIOCSMIIREG failed!\n", __FILE__, __LINE__);
+		return;
 	}
 }
 
@@ -177,16 +129,16 @@ static int robo_reg(__u8 page, __u8 reg, __u8 op)
 	int i = 3;
 
 	/* set page number */
-	mdio_write(robo.phy_addr, REG_MII_PAGE,
+	mdio_write(ROBO_PHY_ADDR, REG_MII_PAGE,
 		(page << 8) | REG_MII_PAGE_ENABLE);
 
 	/* set register address */
-	mdio_write(robo.phy_addr, REG_MII_ADDR,
+	mdio_write(ROBO_PHY_ADDR, REG_MII_ADDR,
 		(reg << 8) | op);
 
 	/* check if operation completed */
 	while (i--) {
-		if ((mdio_read(robo.phy_addr, REG_MII_ADDR) & 3) == 0)
+		if ((mdio_read(ROBO_PHY_ADDR, REG_MII_ADDR) & 3) == 0)
 			return 0;
 	}
 
@@ -203,7 +155,7 @@ static void robo_read(__u8 page, __u8 reg, __u16 *val, int count)
 	robo_reg(page, reg, REG_MII_ADDR_READ);
 
 	for (i = 0; i < count; i++)
-		val[i] = mdio_read(robo.phy_addr, REG_MII_DATA0 + i);
+		val[i] = mdio_read(ROBO_PHY_ADDR, REG_MII_DATA0 + i);
 }
 */
 
@@ -211,21 +163,21 @@ static __u16 robo_read16(__u8 page, __u8 reg)
 {
 	robo_reg(page, reg, REG_MII_ADDR_READ);
 
-	return mdio_read(robo.phy_addr, REG_MII_DATA0);
+	return mdio_read(ROBO_PHY_ADDR, REG_MII_DATA0);
 }
 
 static __u32 robo_read32(__u8 page, __u8 reg)
 {
 	robo_reg(page, reg, REG_MII_ADDR_READ);
 
-	return mdio_read(robo.phy_addr, REG_MII_DATA0) +
-		(mdio_read(robo.phy_addr, REG_MII_DATA0 + 1) << 16);
+	return mdio_read(ROBO_PHY_ADDR, REG_MII_DATA0) +
+		(mdio_read(ROBO_PHY_ADDR, REG_MII_DATA0 + 1) << 16);
 }
 
 static void robo_write16(__u8 page, __u8 reg, __u16 val16)
 {
 	/* write data */
-	mdio_write(robo.phy_addr, REG_MII_DATA0, val16);
+	mdio_write(ROBO_PHY_ADDR, REG_MII_DATA0, val16);
 
 	robo_reg(page, reg, REG_MII_ADDR_WRITE);
 }
@@ -233,8 +185,8 @@ static void robo_write16(__u8 page, __u8 reg, __u16 val16)
 static void robo_write32(__u8 page, __u8 reg, __u32 val32)
 {
 	/* write data */
-	mdio_write(robo.phy_addr, REG_MII_DATA0, val32 & 65535);
-	mdio_write(robo.phy_addr, REG_MII_DATA0 + 1, val32 >> 16);
+	mdio_write(ROBO_PHY_ADDR, REG_MII_DATA0, val32 & 65535);
+	mdio_write(ROBO_PHY_ADDR, REG_MII_DATA0 + 1, val32 >> 16);
 
 	robo_reg(page, reg, REG_MII_ADDR_WRITE);
 }
@@ -308,11 +260,7 @@ static int robo_probe(char *devname)
 	printk(KERN_INFO PFX "Probing device %s: ", devname);
 	strcpy(robo.ifr.ifr_name, devname);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
-	if ((robo.dev = dev_get_by_name(devname)) == NULL) {
-#else
 	if ((robo.dev = dev_get_by_name(&init_net, devname)) == NULL) {
-#endif
 		printk("No such device\n");
 		return 1;
 	}
@@ -323,26 +271,22 @@ static int robo_probe(char *devname)
 	robo.port[5] = 8;
 
 	/* try access using MII ioctls - get phy address */
-	if (do_ioctl(SIOCGMIIPHY, NULL) < 0) {
-		robo.use_et = 1;
-		robo.phy_addr = ROBO_PHY_ADDR;
-	} else {
-		/* got phy address check for robo address */
-		struct mii_ioctl_data *mii = (struct mii_ioctl_data *) &robo.ifr.ifr_data;
-		if ((mii->phy_id != ROBO_PHY_ADDR) &&
-		    (mii->phy_id != ROBO_PHY_ADDR_BCM63XX) &&
-		    (mii->phy_id != ROBO_PHY_ADDR_TG3)) {
-			printk("Invalid phy address (%d)\n", mii->phy_id);
-			goto done;
-		}
-		robo.use_et = 0;
-		/* The robo has a fixed PHY address that is different from the
-		 * Tigon3 and BCM63xx PHY address. */
-		robo.phy_addr = ROBO_PHY_ADDR;
+	if (do_ioctl(SIOCGMIIPHY) < 0) {
+		printk("error while accessing MII phy registers with ioctls\n");
+		goto done;
 	}
 
-	phyid = mdio_read(robo.phy_addr, 0x2) | 
-		(mdio_read(robo.phy_addr, 0x3) << 16);
+	/* got phy address check for robo address */
+	struct mii_ioctl_data *mii = if_mii(&robo.ifr);
+	if ((mii->phy_id != ROBO_PHY_ADDR) &&
+	    (mii->phy_id != ROBO_PHY_ADDR_BCM63XX) &&
+	    (mii->phy_id != ROBO_PHY_ADDR_TG3)) {
+		printk("Invalid phy address (%d)\n", mii->phy_id);
+		goto done;
+	}
+
+	phyid = mdio_read(ROBO_PHY_ADDR, 0x2) | 
+		(mdio_read(ROBO_PHY_ADDR, 0x3) << 16);
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		printk("No Robo switch in managed mode found, phy_id = 0x%08x\n", phyid);
