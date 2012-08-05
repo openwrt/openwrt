@@ -153,7 +153,7 @@
 -	if (et0mac[0] == 0x00 &&
 -	    ((et0mac[1] == 0x09 && et0mac[2] == 0x5b) ||
 -	     (et0mac[1] == 0x0f && et0mac[2] == 0xb5))) {
--		struct ssb_mipscore *mcore = &bcm47xx_bus.ssb.mipscore;
+-		struct ssb_chipcommon *ccore = &bcm47xx_bus.ssb.chipco;
 -
 -		printk(KERN_INFO "WGT634U machine detected.\n");
 -
@@ -165,18 +165,18 @@
 -
 -		if (!request_irq(gpio_to_irq(WGT634U_GPIO_RESET),
 -				 gpio_interrupt, IRQF_SHARED,
--				 "WGT634U GPIO", &bcm47xx_bus.ssb.chipco)) {
+-				 "WGT634U GPIO", ccore)) {
 -			gpio_direction_input(WGT634U_GPIO_RESET);
 -			gpio_intmask(WGT634U_GPIO_RESET, 1);
--			ssb_chipco_irq_mask(&bcm47xx_bus.ssb.chipco,
+-			ssb_chipco_irq_mask(ccore,
 -					    SSB_CHIPCO_IRQ_GPIO,
 -					    SSB_CHIPCO_IRQ_GPIO);
 -		}
 -
--		wgt634u_flash_data.width = mcore->pflash.buswidth;
--		wgt634u_flash_resource.start = mcore->pflash.window;
--		wgt634u_flash_resource.end = mcore->pflash.window
--					   + mcore->pflash.window_size
+-		wgt634u_flash_data.width = ccore->pflash.buswidth;
+-		wgt634u_flash_resource.start = ccore->pflash.window;
+-		wgt634u_flash_resource.end = ccore->pflash.window
+-					   + ccore->pflash.window_size
 -					   - 1;
 -		return platform_add_devices(wgt634u_devices,
 -					    ARRAY_SIZE(wgt634u_devices));
