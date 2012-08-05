@@ -24,7 +24,7 @@
  obj-$(CONFIG_BCMA)			+= bcma.o
 --- /dev/null
 +++ b/drivers/bcma/driver_gpio.c
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,90 @@
 +/*
 + * Broadcom specific AMBA
 + * GPIO driver for SoCs
@@ -115,12 +115,6 @@
 +	return res;
 +}
 +EXPORT_SYMBOL(bcma_gpio_polarity);
-+
-+int bcma_gpio_count(struct bcma_bus *bus)
-+{
-+	return BCMA_GPIO_CC_LINES;
-+}
-+EXPORT_SYMBOL(bcma_gpio_count);
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
 @@ -422,6 +422,10 @@ void bcma_init_bus(struct bcma_bus *bus)
@@ -150,7 +144,7 @@
  	struct ssb_sprom sprom;
 --- /dev/null
 +++ b/include/linux/bcma/bcma_driver_gpio.h
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,21 @@
 +#ifndef LINUX_BCMA_DRIVER_GPIO_H_
 +#define LINUX_BCMA_DRIVER_GPIO_H_
 +
@@ -165,6 +159,10 @@
 +u32 bcma_gpio_control(struct bcma_bus *bus, u32 mask, u32 value);
 +u32 bcma_gpio_intmask(struct bcma_bus *bus, u32 mask, u32 value);
 +u32 bcma_gpio_polarity(struct bcma_bus *bus, u32 mask, u32 value);
-+int bcma_gpio_count(struct bcma_bus *bus);
++
++static inline int bcma_gpio_count(struct bcma_bus *bus)
++{
++	return BCMA_GPIO_CC_LINES;
++}
 +
 +#endif /* LINUX_BCMA_DRIVER_GPIO_H_ */
