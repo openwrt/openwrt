@@ -1331,9 +1331,6 @@ define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)/include/linux/bcma
 	rm -rf $(PKG_BUILD_DIR)/include/net/bluetooth/
 	rm -f $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
-	rm -f $(PKG_BUILD_DIR)/include/linux/ath9k_platform.h
-	rm -f $(PKG_BUILD_DIR)/include/linux/ath5k_platform.h
-	rm -f $(PKG_BUILD_DIR)/include/linux/rt2x00_platform.h
 	rm -f $(PKG_BUILD_DIR)/include/linux/wl12xx.h
 	rm -f $(PKG_BUILD_DIR)/include/linux/spi/libertas_spi.h
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
@@ -1347,6 +1344,12 @@ ifneq ($(CONFIG_PACKAGE_kmod-cfg80211)$(CONFIG_PACKAGE_kmod-lib80211),)
 	$(MAKE) $(PKG_JOBS) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) modules
  endef
 endif
+
+define Build/Configure
+	cmp $(PKG_BUILD_DIR)/include/linux/ath9k_platform.h $(LINUX_DIR)/include/linux/ath9k_platform.h
+	cmp $(PKG_BUILD_DIR)/include/linux/ath5k_platform.h $(LINUX_DIR)/include/linux/ath5k_platform.h
+	cmp $(PKG_BUILD_DIR)/include/linux/rt2x00_platform.h $(LINUX_DIR)/include/linux/rt2x00_platform.h
+endef
 
 define Build/Compile
 	$(call Build/Compile/kmod)
