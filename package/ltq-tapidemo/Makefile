@@ -26,7 +26,7 @@ define Package/ltq-tapidemo
   CATEGORY:=Network
   TITLE:=TAPIdemo application for Lantiq boards
   URL:=http://www.lantiq.com/
-  DEPENDS:=+kmod-ltq-tapi +kmod-ltq-vmmc +libpthread
+  DEPENDS:=+kmod-ltq-tapi +kmod-ltq-vmmc +libpthread @(TARGET_lantiq_danube||TARGET_lantiq_falcon)
   MAINTAINER:=John Crispin <blogic@openwrt.org>
   MENU:=1
 endef
