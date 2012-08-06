@@ -1,5 +1,16 @@
 --- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
 +++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
+@@ -210,8 +210,8 @@ ath5k_config(struct ieee80211_hw *hw, u3
+ 	}
+ 
+ 	if ((changed & IEEE80211_CONF_CHANGE_POWER) &&
+-	(ah->power_level != conf->power_level)) {
+-		ah->power_level = conf->power_level;
++	(ah->ah_txpower.txp_requested != conf->power_level)) {
++		ah->ah_txpower.txp_requested = conf->power_level;
+ 
+ 		/* Half dB steps */
+ 		ath5k_hw_set_txpower_limit(ah, (conf->power_level * 2));
 @@ -622,7 +622,7 @@ ath5k_conf_tx(struct ieee80211_hw *hw, s
  	qi.tqi_aifs = params->aifs;
  	qi.tqi_cw_min = params->cw_min;
@@ -4256,113 +4267,151 @@
  	default:
 --- a/drivers/net/wireless/ath/ath5k/ath5k.h
 +++ b/drivers/net/wireless/ath/ath5k/ath5k.h
-@@ -1418,6 +1418,7 @@ struct ath5k_hw {
- 		s16		txp_min_pwr;
- 		s16		txp_max_pwr;
- 		s16		txp_cur_pwr;
-+		s16		txp_user_pwr;
- 		/* Values in 0.5dB units */
- 		s16		txp_offset;
- 		s16		txp_ofdm;
+@@ -1331,7 +1331,6 @@ struct ath5k_hw {
+ 	unsigned int		nexttbtt;	/* next beacon time in TU */
+ 	struct ath5k_txq	*cabq;		/* content after beacon */
+ 
+-	int			power_level;	/* Requested tx power in dBm */
+ 	bool			assoc;		/* associate state */
+ 	bool			enable_beacon;	/* true if beacons are on */
+ 
+@@ -1425,6 +1424,7 @@ struct ath5k_hw {
+ 		/* Value in dB units */
+ 		s16		txp_cck_ofdm_pwr_delta;
+ 		bool		txp_setup;
++		int		txp_requested;	/* Requested tx power in dBm */
+ 	} ah_txpower;
+ 
+ 	struct ath5k_nfcal_hist ah_nfcal_hist;
 --- a/drivers/net/wireless/ath/ath5k/base.c
 +++ b/drivers/net/wireless/ath/ath5k/base.c
-@@ -2953,6 +2953,9 @@ ath5k_init(struct ieee80211_hw *hw)
- 		hw->queues = 1;
+@@ -325,6 +325,8 @@ ath5k_setup_channels(struct ath5k_hw *ah
+ 		if (!ath5k_is_standard_channel(ch, band))
+ 			continue;
+ 
++		channels[count].max_power = AR5K_TUNE_MAX_TXPOWER/2;
++
+ 		count++;
  	}
  
-+	/* init tx_power setting to maximum */
-+	ah->ah_txpower.txp_user_pwr = AR5K_TUNE_MAX_TXPOWER;
-+
- 	tasklet_init(&ah->rxtq, ath5k_tasklet_rx, (unsigned long)ah);
- 	tasklet_init(&ah->txtq, ath5k_tasklet_tx, (unsigned long)ah);
- 	tasklet_init(&ah->beacontq, ath5k_tasklet_beacon, (unsigned long)ah);
+@@ -725,7 +727,7 @@ ath5k_txbuf_setup(struct ath5k_hw *ah, s
+ 	ret = ah->ah_setup_tx_desc(ah, ds, pktlen,
+ 		ieee80211_get_hdrlen_from_skb(skb), padsize,
+ 		get_hw_packet_type(skb),
+-		(ah->power_level * 2),
++		(ah->ah_txpower.txp_requested * 2),
+ 		hw_rate,
+ 		info->control.rates[0].count, keyidx, ah->ah_tx_ant, flags,
+ 		cts_rate, duration);
+@@ -1780,7 +1782,8 @@ ath5k_beacon_setup(struct ath5k_hw *ah, 
+ 	ds->ds_data = bf->skbaddr;
+ 	ret = ah->ah_setup_tx_desc(ah, ds, skb->len,
+ 			ieee80211_get_hdrlen_from_skb(skb), padsize,
+-			AR5K_PKT_TYPE_BEACON, (ah->power_level * 2),
++			AR5K_PKT_TYPE_BEACON,
++			(ah->ah_txpower.txp_requested * 2),
+ 			ieee80211_get_tx_rate(ah->hw, info)->hw_value,
+ 			1, AR5K_TXKEYIX_INVALID,
+ 			antenna, flags, 0, 0);
 --- a/drivers/net/wireless/ath/ath5k/eeprom.c
 +++ b/drivers/net/wireless/ath/ath5k/eeprom.c
-@@ -1484,7 +1484,7 @@ ath5k_eeprom_read_target_rate_pwr_info(s
- 	case AR5K_EEPROM_MODE_11A:
- 		offset += AR5K_EEPROM_TARGET_PWR_OFF_11A(ee->ee_version);
- 		rate_pcal_info = ee->ee_rate_tpwr_a;
--		ee->ee_rate_target_pwr_num[mode] = AR5K_EEPROM_N_5GHZ_CHAN;
-+		ee->ee_rate_target_pwr_num[mode] = AR5K_EEPROM_N_5GHZ_RATE_CHAN;
- 		break;
- 	case AR5K_EEPROM_MODE_11B:
- 		offset += AR5K_EEPROM_TARGET_PWR_OFF_11B(ee->ee_version);
---- a/drivers/net/wireless/ath/ath5k/eeprom.h
-+++ b/drivers/net/wireless/ath/ath5k/eeprom.h
-@@ -182,6 +182,7 @@
- #define AR5K_EEPROM_EEP_DELTA		10
- #define AR5K_EEPROM_N_MODES		3
- #define AR5K_EEPROM_N_5GHZ_CHAN		10
-+#define AR5K_EEPROM_N_5GHZ_RATE_CHAN	8
- #define AR5K_EEPROM_N_2GHZ_CHAN		3
- #define AR5K_EEPROM_N_2GHZ_CHAN_2413	4
- #define	AR5K_EEPROM_N_2GHZ_CHAN_MAX	4
+@@ -524,7 +524,7 @@ ath5k_eeprom_read_freq_list(struct ath5k
+ 
+ 		freq1 = val & 0xff;
+ 		if (!freq1)
+-			break;
++			continue;
+ 
+ 		pc[i++].freq = ath5k_eeprom_bin2freq(ee,
+ 				freq1, mode);
+@@ -532,7 +532,7 @@ ath5k_eeprom_read_freq_list(struct ath5k
+ 
+ 		freq2 = (val >> 8) & 0xff;
+ 		if (!freq2)
+-			break;
++			continue;
+ 
+ 		pc[i++].freq = ath5k_eeprom_bin2freq(ee,
+ 				freq2, mode);
 --- a/drivers/net/wireless/ath/ath5k/phy.c
 +++ b/drivers/net/wireless/ath/ath5k/phy.c
-@@ -3585,14 +3585,12 @@ ath5k_setup_rate_powertable(struct ath5k
-  * ath5k_hw_txpower() - Set transmission power limit for a given channel
-  * @ah: The &struct ath5k_hw
-  * @channel: The &struct ieee80211_channel
-- * @txpower: Requested tx power in 0.5dB steps
-  *
-  * Combines all of the above to set the requested tx power limit
-- * on hw.
-+ * on hw to ah->ah_txpower.txp_user_pwr.
-  */
- static int
--ath5k_hw_txpower(struct ath5k_hw *ah, struct ieee80211_channel *channel,
--		 u8 txpower)
-+ath5k_hw_txpower(struct ath5k_hw *ah, struct ieee80211_channel *channel)
+@@ -3518,6 +3518,7 @@ ath5k_setup_rate_powertable(struct ath5k
  {
- 	struct ath5k_rate_pcal_info rate_info;
- 	struct ieee80211_channel *curr_channel = ah->ah_current_channel;
-@@ -3600,11 +3598,6 @@ ath5k_hw_txpower(struct ath5k_hw *ah, st
- 	u8 type;
- 	int ret;
+ 	unsigned int i;
+ 	u16 *rates;
++	s16 rate_idx_scaled = 0;
  
--	if (txpower > AR5K_TUNE_MAX_TXPOWER) {
--		ATH5K_ERR(ah, "invalid tx power: %u\n", txpower);
--		return -EINVAL;
--	}
--
- 	ee_mode = ath5k_eeprom_mode_from_channel(channel);
- 	if (ee_mode < 0) {
- 		ATH5K_ERR(ah,
-@@ -3669,7 +3662,7 @@ ath5k_hw_txpower(struct ath5k_hw *ah, st
- 	ath5k_get_rate_pcal_data(ah, channel, &rate_info);
+ 	/* max_pwr is power level we got from driver/user in 0.5dB
+ 	 * units, switch to 0.25dB units so we can compare */
+@@ -3564,20 +3565,32 @@ ath5k_setup_rate_powertable(struct ath5k
+ 		for (i = 8; i <= 15; i++)
+ 			rates[i] -= ah->ah_txpower.txp_cck_ofdm_gainf_delta;
  
- 	/* Setup rate power table */
--	ath5k_setup_rate_powertable(ah, txpower, &rate_info, ee_mode);
-+	ath5k_setup_rate_powertable(ah, ah->ah_txpower.txp_user_pwr, &rate_info, ee_mode);
- 
- 	/* Write rate power table on hw */
- 	ath5k_hw_reg_write(ah, AR5K_TXPOWER_OFDM(3, 24) |
-@@ -3719,8 +3712,16 @@ ath5k_hw_set_txpower_limit(struct ath5k_
- {
- 	ATH5K_DBG(ah, ATH5K_DEBUG_TXPOWER,
- 		"changing txpower to %d\n", txpower);
-+	if (txpower) {
-+		ah->ah_txpower.txp_user_pwr = txpower;
- 
--	return ath5k_hw_txpower(ah, ah->ah_current_channel, txpower);
-+		if (ah->ah_txpower.txp_user_pwr > AR5K_TUNE_MAX_TXPOWER) {
-+			ATH5K_ERR(ah, "invalid tx power: %u\n", ah->ah_txpower.txp_user_pwr);
-+			return -EINVAL;
-+		}
-+	}
++	/* Save min/max and current tx power for this channel
++	 * in 0.25dB units.
++	 *
++	 * Note: We use rates[0] for current tx power because
++	 * it covers most of the rates, in most cases. It's our
++	 * tx power limit and what the user expects to see. */
++	ah->ah_txpower.txp_min_pwr = 2 * rates[7];
++	ah->ah_txpower.txp_cur_pwr = 2 * rates[0];
 +
-+	return ath5k_hw_txpower(ah, ah->ah_current_channel);
++	/* Set max txpower for correct OFDM operation on all rates
++	 * -that is the txpower for 54Mbit-, it's used for the PAPD
++	 * gain probe and it's in 0.5dB units */
++	ah->ah_txpower.txp_ofdm = rates[7];
++
+ 	/* Now that we have all rates setup use table offset to
+ 	 * match the power range set by user with the power indices
+ 	 * on PCDAC/PDADC table */
+ 	for (i = 0; i < 16; i++) {
+-		rates[i] += ah->ah_txpower.txp_offset;
++		rate_idx_scaled = rates[i] + ah->ah_txpower.txp_offset;
+ 		/* Don't get out of bounds */
+-		if (rates[i] > 63)
+-			rates[i] = 63;
++		if (rate_idx_scaled > 63)
++			rate_idx_scaled = 63;
++		if (rate_idx_scaled < 0)
++			rate_idx_scaled = 0;
++		rates[i] = rate_idx_scaled;
+ 	}
+-
+-	/* Min/max in 0.25dB units */
+-	ah->ah_txpower.txp_min_pwr = 2 * rates[7];
+-	ah->ah_txpower.txp_cur_pwr = 2 * rates[0];
+-	ah->ah_txpower.txp_ofdm = rates[7];
  }
  
  
-@@ -3791,8 +3792,8 @@ ath5k_hw_phy_init(struct ath5k_hw *ah, s
+@@ -3641,10 +3654,17 @@ ath5k_hw_txpower(struct ath5k_hw *ah, st
+ 	if (!ah->ah_txpower.txp_setup ||
+ 	    (channel->hw_value != curr_channel->hw_value) ||
+ 	    (channel->center_freq != curr_channel->center_freq)) {
+-		/* Reset TX power values */
++		/* Reset TX power values but preserve requested
++		 * tx power from above */
++		int requested_txpower = ah->ah_txpower.txp_requested;
++
+ 		memset(&ah->ah_txpower, 0, sizeof(ah->ah_txpower));
++
++		/* Restore TPC setting and requested tx power */
+ 		ah->ah_txpower.txp_tpc = AR5K_TUNE_TPC_TXPOWER;
+ 
++		ah->ah_txpower.txp_requested = requested_txpower;
++
+ 		/* Calculate the powertable */
+ 		ret = ath5k_setup_channel_powertable(ah, channel,
+ 							ee_mode, type);
+@@ -3791,8 +3811,9 @@ ath5k_hw_phy_init(struct ath5k_hw *ah, s
  	 * RF buffer settings on 5211/5212+ so that we
  	 * properly set curve indices.
  	 */
 -	ret = ath5k_hw_txpower(ah, channel, ah->ah_txpower.txp_cur_pwr ?
 -			ah->ah_txpower.txp_cur_pwr / 2 : AR5K_TUNE_MAX_TXPOWER);
-+	ret = ath5k_hw_txpower(ah, channel);
-+
++	ret = ath5k_hw_txpower(ah, channel, ah->ah_txpower.txp_requested ?
++					ah->ah_txpower.txp_requested * 2 :
++					AR5K_TUNE_MAX_TXPOWER);
  	if (ret)
  		return ret;
  
