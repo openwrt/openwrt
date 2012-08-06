@@ -34,7 +34,7 @@ define Package/owsip-template
 endef
 
 Package/owsip-oss=$(call Package/owsip-template,oss,OSS,BROKEN)
-Package/owsip-ltq-tapi=$(call Package/owsip-template,ltq-tapi,Lantiq VMMC,@TARGET_lantiq +kmod-ltq-kpi2udp)
+Package/owsip-ltq-tapi=$(call Package/owsip-template,ltq-tapi,Lantiq VMMC,@(TARGET_lantiq_danube||TARGET_lantiq_falcon) +kmod-ltq-kpi2udp)
 
 define Package/owsip-$(BUILD_VARIANT)/description
 	OpenWrt sip daemon - $(BUILD_VARIANT)
