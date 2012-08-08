@@ -688,6 +688,10 @@ static void nuport_mac_free_rx_ring(struct nuport_mac_priv *priv)
 		dev_kfree_skb(priv->rx_skb[i]);
 		priv->rx_skb[i] = NULL;
 	}
+
+	if (priv->rx_addr)
+		dma_unmap_single(&priv->pdev->dev, priv->rx_addr, RX_ALLOC_SIZE,
+				DMA_TO_DEVICE);
 }
 
 static void nuport_mac_read_mac_address(struct net_device *dev)
