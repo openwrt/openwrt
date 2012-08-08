@@ -3325,6 +3325,22 @@
  	}
  
  	if (ath_beacon_dtim_pending_cab(skb)) {
+@@ -1044,7 +1044,6 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 	struct ieee80211_hw *hw = sc->hw;
+ 	struct ieee80211_hdr *hdr;
+ 	int retval;
+-	bool decrypt_error = false;
+ 	struct ath_rx_status rs;
+ 	enum ath9k_rx_qtype qtype;
+ 	bool edma = !!(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA);
+@@ -1066,6 +1065,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 	tsf_lower = tsf & 0xffffffff;
+ 
+ 	do {
++		bool decrypt_error = false;
+ 		/* If handling rx interrupt and flush is in progress => exit */
+ 		if (test_bit(SC_OP_RXFLUSH, &sc->sc_flags) && (flush == 0))
+ 			break;
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
 @@ -29,6 +29,8 @@
