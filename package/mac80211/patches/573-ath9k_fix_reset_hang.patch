@@ -1,0 +1,61 @@
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -783,15 +783,10 @@ bool ath9k_hw_intrpend(struct ath_hw *ah
+ }
+ EXPORT_SYMBOL(ath9k_hw_intrpend);
+ 
+-void ath9k_hw_disable_interrupts(struct ath_hw *ah)
++void ath9k_hw_kill_interrupts(struct ath_hw *ah)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 
+-	if (!(ah->imask & ATH9K_INT_GLOBAL))
+-		atomic_set(&ah->intr_ref_cnt, -1);
+-	else
+-		atomic_dec(&ah->intr_ref_cnt);
+-
+ 	ath_dbg(common, INTERRUPT, "disable IER\n");
+ 	REG_WRITE(ah, AR_IER, AR_IER_DISABLE);
+ 	(void) REG_READ(ah, AR_IER);
+@@ -803,6 +798,17 @@ void ath9k_hw_disable_interrupts(struct 
+ 		(void) REG_READ(ah, AR_INTR_SYNC_ENABLE);
+ 	}
+ }
++EXPORT_SYMBOL(ath9k_hw_kill_interrupts);
++
++void ath9k_hw_disable_interrupts(struct ath_hw *ah)
++{
++	if (!(ah->imask & ATH9K_INT_GLOBAL))
++		atomic_set(&ah->intr_ref_cnt, -1);
++	else
++		atomic_dec(&ah->intr_ref_cnt);
++
++	ath9k_hw_kill_interrupts(ah);
++}
+ EXPORT_SYMBOL(ath9k_hw_disable_interrupts);
+ 
+ void ath9k_hw_enable_interrupts(struct ath_hw *ah)
+--- a/drivers/net/wireless/ath/ath9k/mac.h
++++ b/drivers/net/wireless/ath/ath9k/mac.h
+@@ -734,6 +734,7 @@ bool ath9k_hw_intrpend(struct ath_hw *ah
+ void ath9k_hw_set_interrupts(struct ath_hw *ah);
+ void ath9k_hw_enable_interrupts(struct ath_hw *ah);
+ void ath9k_hw_disable_interrupts(struct ath_hw *ah);
++void ath9k_hw_kill_interrupts(struct ath_hw *ah);
+ 
+ void ar9002_hw_attach_mac_ops(struct ath_hw *ah);
+ 
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -459,8 +459,10 @@ irqreturn_t ath_isr(int irq, void *dev)
+ 	if (!ath9k_hw_intrpend(ah))
+ 		return IRQ_NONE;
+ 
+-	if(test_bit(SC_OP_HW_RESET, &sc->sc_flags))
++	if (test_bit(SC_OP_HW_RESET, &sc->sc_flags)) {
++		ath9k_hw_kill_interrupts(ah);
+ 		return IRQ_HANDLED;
++	}
+ 
+ 	/*
+ 	 * Figure out the reason(s) for the interrupt.  Note
