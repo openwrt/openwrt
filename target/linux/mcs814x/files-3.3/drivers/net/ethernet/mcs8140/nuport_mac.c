@@ -765,7 +765,12 @@ static int nuport_mac_open(struct net_device *dev)
 		goto out_emac_clk;
 	}
 
-	phy_start(priv->phydev);
+	ret = request_irq(priv->tx_irq, &nuport_mac_tx_interrupt,
+				0, dev->name, dev);
+	if (ret) {
+		netdev_err(dev, "unable to request rx interrupt\n");
+		goto out_link_irq;
+	}
 
 	/* Enable link interrupt monitoring for our PHY address */
 	reg = LINK_INT_EN | (priv->phydev->addr << LINK_PHY_ADDR_SHIFT);
@@ -779,12 +784,7 @@ static int nuport_mac_open(struct net_device *dev)
 	nuport_mac_writel(LINK_POLL_MASK, LINK_INT_POLL_TIME);
 	spin_unlock_irqrestore(&priv->lock, flags);
 
-	ret = request_irq(priv->tx_irq, &nuport_mac_tx_interrupt,
-				0, dev->name, dev);
-	if (ret) {
-		netdev_err(dev, "unable to request rx interrupt\n");
-		goto out_link_irq;
-	}
+	phy_start(priv->phydev);
 
 	napi_enable(&priv->napi);
 
