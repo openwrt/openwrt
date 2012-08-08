@@ -4313,26 +4313,6 @@
  			ieee80211_get_tx_rate(ah->hw, info)->hw_value,
  			1, AR5K_TXKEYIX_INVALID,
  			antenna, flags, 0, 0);
---- a/drivers/net/wireless/ath/ath5k/eeprom.c
-+++ b/drivers/net/wireless/ath/ath5k/eeprom.c
-@@ -524,7 +524,7 @@ ath5k_eeprom_read_freq_list(struct ath5k
- 
- 		freq1 = val & 0xff;
- 		if (!freq1)
--			break;
-+			continue;
- 
- 		pc[i++].freq = ath5k_eeprom_bin2freq(ee,
- 				freq1, mode);
-@@ -532,7 +532,7 @@ ath5k_eeprom_read_freq_list(struct ath5k
- 
- 		freq2 = (val >> 8) & 0xff;
- 		if (!freq2)
--			break;
-+			continue;
- 
- 		pc[i++].freq = ath5k_eeprom_bin2freq(ee,
- 				freq2, mode);
 --- a/drivers/net/wireless/ath/ath5k/phy.c
 +++ b/drivers/net/wireless/ath/ath5k/phy.c
 @@ -3518,6 +3518,7 @@ ath5k_setup_rate_powertable(struct ath5k
