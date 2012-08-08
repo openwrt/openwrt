@@ -21,15 +21,19 @@ define Image/Build/MkuImage
 	-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' -d $(1) $(2);
 endef
 
+define Image/Build/DTB
+	cp $(KDIR)/zImage $(KDIR)/zImage-$(1);
+	cat $(LINUX_DIR)/arch/$(ARCH)/boot/$(1).dtb >> $(KDIR)/zImage-$(1);
+	$(call Image/Build/MkuImage,$(KDIR)/zImage-$(1),$(KDIR)/uImage-$(1))
+	cp $(KDIR)/uImage-$(1) $(UIMAGE)-$(1);
+endef
+
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/$(ARCH)/boot/zImage $(KDIR)/zImage
 endef
 
 define Image/BuildKernel
-	$(foreach dtb,$(TARGET_DTBS),cp $(KDIR)/zImage $(KDIR)/zImage-$(dtb);)
-	$(foreach dtb,$(TARGET_DTBS),cat $(LINUX_DIR)/arch/$(ARCH)/boot/$(dtb).dtb >> $(KDIR)/zImage-$(dtb);)
-	$(foreach dtb,$(TARGET_DTBS),$(call Image/Build/MkuImage,$(KDIR)/zImage-$(dtb),$(KDIR)/uImage-$(dtb)))
-	$(foreach dtb,$(TARGET_DTBS),cp $(KDIR)/uImage-$(dtb) $(UIMAGE)-$(dtb);)
+	$(foreach dtb,$(TARGET_DTBS),$(call Image/Build/DTB,$(dtb)))
 	$(call Image/Build/Initramfs)
 endef
 
