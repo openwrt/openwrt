@@ -127,6 +127,8 @@ wpa_supplicant_setup_vif() {
 	local fixed_freq bssid1 beacon_interval brates mrate
 	config_get ifname "$vif" ifname
 	config_get bridge "$vif" bridge
+	config_get ssid "$vif" ssid
+	config_get bssid "$vif" bssid
 	bssid1=${bssid:+"bssid=$bssid"}
 	beacon_interval=${beacon_int:+"beacon_interval=$beacon_int"}
 
