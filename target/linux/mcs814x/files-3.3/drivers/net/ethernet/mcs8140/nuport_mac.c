@@ -809,7 +809,11 @@ static int nuport_mac_open(struct net_device *dev)
 	nuport_mac_reset_rx_dma(priv);
 
 	/* Start RX DMA */
-	return nuport_mac_start_rx_dma(priv, priv->rx_skb[0]);
+	spin_lock_irqsave(&priv->lock, flags);
+	ret = nuport_mac_start_rx_dma(priv, priv->rx_skb[0]);
+	spin_unlock_irqrestore(&priv->lock, flags);
+
+	return ret;
 
 out_rx_skb:
 	nuport_mac_free_rx_ring(priv);
