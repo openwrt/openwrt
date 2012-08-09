@@ -256,7 +256,7 @@ static int nuport_mac_start_tx_dma(struct nuport_mac_priv *priv,
 
 	priv->tx_addr = dma_map_single(&priv->pdev->dev, skb->data,
 			skb->len, DMA_TO_DEVICE);
-	if (!priv->tx_addr)
+	if (dma_mapping_error(&priv->pdev->dev, priv->tx_addr))
 		return -ENOMEM;
 
 	/* enable enhanced mode */
@@ -299,7 +299,7 @@ static int nuport_mac_start_rx_dma(struct nuport_mac_priv *priv,
 
 	priv->rx_addr = dma_map_single(&priv->pdev->dev, skb->data,
 				RX_ALLOC_SIZE, DMA_FROM_DEVICE);
-	if (!priv->rx_addr)
+	if (dma_mapping_error(&priv->pdev->dev, priv->rx_addr))
 		return -ENOMEM;
 
 	nuport_mac_writel(priv->rx_addr, RX_BUFFER_ADDR);
