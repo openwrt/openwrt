@@ -25,7 +25,7 @@ while [ -n "$1" ]; do
 		-c) export SAVE_OVERLAY=1;;
 		-b|--create-backup) export CONF_BACKUP="$2"; shift;;
 		-f) export CONF_IMAGE="$2"; shift;;
-		-F|--force) export FORCE=1; shift;;
+		-F|--force) export FORCE=1;;
 		-h|--help) export HELP=1; break;;
 		-*)
 			echo "Invalid option: $1"
