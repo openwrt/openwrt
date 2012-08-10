@@ -9,7 +9,7 @@ all: padjffs2
 	$(CC) $(CFLAGS) $(WFLAGS) -c -o $@ $<
 
 padjffs2: $(padjffs2-objs)
-	$(CC) -o $@ $(padjffs2-objs)
+	$(CC) $(LDFLAGS) -o $@ $(padjffs2-objs)
 
 clean:
 	rm -f padjffs2 *.o
