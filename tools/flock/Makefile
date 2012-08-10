@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
 	mkdir -p $(HOST_BUILD_DIR)
-	$(HOSTCC) $(HOST_CFLAGS) -o $(HOST_BUILD_DIR)/flock src/flock.c
+	$(HOSTCC) $(HOST_CFLAGS) -static -o $(HOST_BUILD_DIR)/flock src/flock.c
 endef
 
 define Host/Install
