@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -18,6 +18,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 include $(INCLUDE_DIR)/host-build.mk
 
 unexport CFLAGS
+HOST_LDFLAGS += -static
 
 define Host/Configure
 	(cd $(HOST_BUILD_DIR); \
