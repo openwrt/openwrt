@@ -21,8 +21,8 @@ UTIL_DIR=$(HOST_BUILD_DIR)/C/LzmaUtil
 ALONE_DIR=$(HOST_BUILD_DIR)/CPP/7zip/Compress/LZMA_Alone
 
 define Host/Compile
-	$(MAKE) -C $(UTIL_DIR) -f makefile.gcc
-	$(MAKE) -C $(ALONE_DIR) -f makefile.gcc
+	$(MAKE) -C $(UTIL_DIR) -f makefile.gcc LDFLAGS="-static"
+	$(MAKE) -C $(ALONE_DIR) -f makefile.gcc LDFLAGS="-static"
 endef
 
 define Host/Install
