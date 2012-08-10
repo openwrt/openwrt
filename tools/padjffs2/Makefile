@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011 OpenWrt.org
+# Copyright (C) 2011-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -16,6 +16,10 @@ define Host/Prepare
 	mkdir -p $(HOST_BUILD_DIR)
 	$(CP) ./src/* $(HOST_BUILD_DIR)/
 	find $(HOST_BUILD_DIR) -name .svn | $(XARGS) rm -rf
+endef
+
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR) LDFLAGS="-static"
 endef
 
 define Host/Configure
