@@ -122,6 +122,10 @@ endif
 LIBRPC=-lrpc
 LIBRPC_DEPENDS=+librpc
 
+ifneq ($(findstring $(ARCH) , mips64 x86_64 ),)
+  LIB_SUFFIX:=64
+endif
+
 ifndef DUMP
   ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
     -include $(TOOLCHAIN_DIR)/info.mk

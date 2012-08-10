@@ -23,9 +23,6 @@ ifneq ($(DUMP),1)
   ifneq ($(wildcard $(PLATFORM_DIR)/base-files-$(PROFILE) $(PLATFORM_SUBDIR)/base-files-$(PROFILE)),)
     TARGET:=$(TARGET)-$(PROFILE)
   endif
-  ifneq ($(findstring $(ARCH) , mips64 x86_64 ),)
-    LIB_SUFFIX:=64
-  endif
 endif
 
 define Package/base-files
