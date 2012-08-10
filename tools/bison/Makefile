@@ -16,6 +16,8 @@ PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOST_LDFLAGS += -static
+
 define Host/Clean
 	-$(MAKE) -C $(HOST_BUILD_DIR) uninstall
 	$(call Host/Clean/Default)
