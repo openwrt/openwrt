@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -26,6 +26,7 @@ define Host/Compile
 		XATTR_SUPPORT= \
 		LZMA_LIB="$(STAGING_DIR_HOST)/lib/liblzma.a" \
 		EXTRA_CFLAGS="-I$(STAGING_DIR_HOST)/include" \
+		EXTRA_LDFLAGS="-static" \
 		mksquashfs unsquashfs
 endef
 
