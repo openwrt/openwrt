@@ -70,6 +70,15 @@ $(eval $(call Require,working-g++, \
 	Please install the GNU C++ Compiler (g++). \
 ))
 
+define Require/working-gcc-static
+	echo 'int main(int argc, char **argv) { return 0; }' | \
+		gcc -x c -static -o $(TMP_DIR)/a.out -
+endef
+
+$(eval $(call Require,working-gcc-static, \
+    Please install the static libc development package (glibc-static on CentOS/Fedora/RHEL). \
+))
+
 define Require/ncurses
 	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
 		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses
