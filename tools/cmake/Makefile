@@ -15,4 +15,7 @@ PKG_MD5SUM:=e1b237aeaed880f65dec9c20602452f6
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOST_CONFIGURE_CMD = \
+	LDFLAGS="$(HOST_LDFLAGS) -static" ./configure
+
 $(eval $(call HostBuild))
