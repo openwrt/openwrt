@@ -25,6 +25,9 @@
 
 #define RTL8366_SMI_ACK_RETRY_COUNT         5
 
+#define RTL8366_SMI_HW_STOP_DELAY		25	/* msecs */
+#define RTL8366_SMI_HW_START_DELAY		100	/* msecs */
+
 static inline void rtl8366_smi_clk_delay(struct rtl8366_smi *smi)
 {
 	ndelay(smi->clk_delay);
@@ -312,9 +315,9 @@ static int rtl8366_reset(struct rtl8366_smi *smi)
 {
 	if (smi->hw_reset) {
 		smi->hw_reset(true);
-		msleep(25);
+		msleep(RTL8366_SMI_HW_STOP_DELAY);
 		smi->hw_reset(false);
-		msleep(25);
+		msleep(RTL8366_SMI_HW_START_DELAY);
 		return 0;
 	}
 
@@ -1244,7 +1247,7 @@ static int __rtl8366_smi_init(struct rtl8366_smi *smi, const char *name)
 	/* start the switch */
 	if (smi->hw_reset) {
 		smi->hw_reset(false);
-		msleep(25);
+		msleep(RTL8366_SMI_HW_START_DELAY);
 	}
 
 	return 0;
