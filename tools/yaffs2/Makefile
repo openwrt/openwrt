@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR)/yaffs2/utils \
+		CC="$(HOSTCC) -static" \
 		CFLAGS="$(HOST_CFLAGS) -include endian.h" \
 		mkyaffs2image
 endef
