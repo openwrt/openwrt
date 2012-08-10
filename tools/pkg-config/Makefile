@@ -15,9 +15,10 @@ PKG_MD5SUM:=a3270bab3f4b69b7dc6dbdacbcae9745
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOST_LDFLAGS += -static
+
 define Host/Install
-	$(MAKE) -C $(HOST_BUILD_DIR) \
-		install
+	$(MAKE) -C $(HOST_BUILD_DIR) install AM_LDFLAGS="-all-static"
 	mv $(STAGING_DIR_HOST)/bin/pkg-config $(STAGING_DIR_HOST)/bin/pkg-config.real
 	$(INSTALL_BIN) ./files/pkg-config $(STAGING_DIR_HOST)/bin/pkg-config
 endef
