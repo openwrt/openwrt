@@ -18,7 +18,7 @@ export SED:=
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)"
+	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)" LDFLAGS="-static"
 endef
 
 define Host/Install
