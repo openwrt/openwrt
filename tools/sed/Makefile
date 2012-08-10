@@ -23,6 +23,8 @@ HOST_CONFIGURE_ARGS += \
 
 HOST_CONFIGURE_VARS += \
 	ac_cv_search_setfilecon=no \
+	ac_cv_header_selinux_context_h=no \
+	ac_cv_header_selinux_selinux_h=no \
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)" LDFLAGS="-static"
