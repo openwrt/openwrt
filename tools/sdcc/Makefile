@@ -17,6 +17,7 @@ HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOST_LDFLAGS += -static
 HOST_CONFIGURE_ARGS += \
 	--disable-ucsim \
 	--enable-packihx \
