@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011 OpenWrt.org
+# Copyright (C) 2011-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/host-build.mk
 define Host/Compile
 	rm -f $(HOST_BUILD_DIR)/src/.depend
 	$(MAKE) UPX_LZMADIR="$(BUILD_DIR_HOST)/lzma-4.65" -C $(HOST_BUILD_DIR)/src \
-		CXXFLAGS_WERROR=
+		CXXFLAGS_WERROR="" LDFLAGS="$(HOST_LDFLAGS) -static"
 endef
 
 define Host/Install
