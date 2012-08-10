@@ -16,6 +16,8 @@ PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOST_LDFLAGS += -static
+
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) mcopy
 endef
