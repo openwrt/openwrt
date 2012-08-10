@@ -17,6 +17,7 @@ PKG_MD5SUM:=b6c713a8db638e173af53a62d5178640
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CFLAGS += -I$(STAGING_DIR_HOST)/include/e2fsprogs
+HOST_LDFLAGS += -static
 
 define Host/Configure
 	(cd $(HOST_BUILD_DIR); \
