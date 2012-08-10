@@ -786,8 +786,6 @@ static int nuport_mac_open(struct net_device *dev)
 
 	phy_start(priv->phydev);
 
-	napi_enable(&priv->napi);
-
 	ret = request_irq(priv->rx_irq, &nuport_mac_rx_interrupt,
 				0, dev->name, dev);
 	if (ret) {
@@ -812,6 +810,8 @@ static int nuport_mac_open(struct net_device *dev)
 	spin_lock_irqsave(&priv->lock, flags);
 	ret = nuport_mac_start_rx_dma(priv, priv->rx_skb[0]);
 	spin_unlock_irqrestore(&priv->lock, flags);
+
+	napi_enable(&priv->napi);
 
 	return ret;
 
