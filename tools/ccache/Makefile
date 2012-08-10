@@ -16,6 +16,8 @@ PKG_MD5SUM:=80a698c22d0b06b19c88ac58e8d8b632
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOSTCC:=$(HOSTCC_NOCACHE)
+
 define Host/Install/ccache
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin/
 	$(CP) ./files/* $(STAGING_DIR_HOST)/bin/
@@ -23,7 +25,7 @@ endef
 
 ifneq ($(strip $(shell which ccache >/dev/null && echo found)),found)
   define Host/Compile
-	$(MAKE) CC="$(HOSTCC_NOCACHE)" -C $(HOST_BUILD_DIR)
+	$(MAKE) -C $(HOST_BUILD_DIR)
   endef
 
   define Host/Clean
