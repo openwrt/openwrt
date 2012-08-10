@@ -18,6 +18,7 @@ PKG_SOURCE_URL:=@SF/e2fsprogs
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CFLAGS += $(FPIC)
+HOST_LDFLAGS += -static
 
 HOST_CONFIGURE_ARGS += \
 	--disable-shared \
