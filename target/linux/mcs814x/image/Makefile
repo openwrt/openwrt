@@ -11,6 +11,8 @@ TARGET_DTBS := rbt-832 dlan-usb-extender
 
 LOADADDR:=0x00008000
 
+JFFS2_BLOCKSIZE = 128k
+
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs
