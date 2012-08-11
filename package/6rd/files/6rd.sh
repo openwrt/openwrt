@@ -68,6 +68,7 @@ proto_6rd_init_config() {
 
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
+	proto_config_add_string "ipaddr"
 	proto_config_add_string "peeraddr"
 	proto_config_add_string "ip6prefix"
 	proto_config_add_string "ip6prefixlen"
