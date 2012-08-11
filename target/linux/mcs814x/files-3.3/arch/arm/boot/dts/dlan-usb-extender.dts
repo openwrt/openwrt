@@ -14,7 +14,7 @@
 	compatible = "devolo,dlan-usb-extender", "moschip,mcs8140", "moschip,mcs814x";
 
 	chosen {
-		bootargs = "mem=16M console=ttyS0,57600 earlyprintk rootfstype=squashfs,jffs2 root=/dev/mtdblock4";
+		bootargs = "mem=16M console=ttyS0,57600 earlyprintk";
 	};
 
 	ahb {
@@ -40,15 +40,15 @@
 						reg = <0x40000 0x10000>;
 					};
 					partition@50000 {
-						label = "bZimage";
+						label = "kernel";
 						reg = <0x50000 0x100000>;
 					};
 					partition@150000 {
-						label = "UserFS";
+						label = "rootfs";
 						reg = <0x150000 0x3C0000>;
 					};
 					partition@50001 {
-						label = "Combined";
+						label = "linux";
 						reg = <0x50000 0x4C0000>;
 					};
 				};
