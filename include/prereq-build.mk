@@ -79,6 +79,16 @@ $(eval $(call Require,working-gcc-static, \
     Please install the static libc development package (glibc-static on CentOS/Fedora/RHEL). \
 ))
 
+define Require/working-g++-static
+	echo 'int main(int argc, char **argv) { return 0; }' | \
+		g++ -x c++ -static -o $(TMP_DIR)/a.out - -lstdc++ && \
+		$(TMP_DIR)/a.out
+endef
+
+$(eval $(call Require,working-g++-static, \
+	Please install the static libstdc++ development package (libstdc++-static on CentOS/Fedora/RHEL). \
+))
+
 define Require/ncurses
 	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
 		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses
@@ -96,6 +106,15 @@ endef
 
 $(eval $(call Require,zlib, \
 	Please install zlib. (Missing libz.so or zlib.h) \
+))
+
+define Require/zlib-static
+	echo 'int main(int argc, char **argv) { gzdopen(0, "rb"); return 0; }' | \
+		gcc -include zlib.h -x c -static -o $(TMP_DIR)/a.out - -lz
+endef
+
+$(eval $(call Require,zlib-static, \
+	Please install a static zlib. (zlib-static on CentOS/Fedora/RHEL). \
 ))
 
 $(eval $(call RequireCommand,gawk, \
