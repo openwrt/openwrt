@@ -65,6 +65,10 @@ HOST_CONFIGURE_ARGS = \
 
 HOST_CONFIGURE_CMD = ./configure
 
+ifneq ($(HOST_OS),Darwin)
+  HOST_STATIC_LINKING = -static
+endif
+
 define Host/Configure/Default
 	(cd $(HOST_BUILD_DIR)/$(3); \
 		if [ -x configure ]; then \
