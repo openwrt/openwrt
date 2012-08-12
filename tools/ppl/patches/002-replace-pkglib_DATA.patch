@@ -1,0 +1,75 @@
+--- a/interfaces/Prolog/Ciao/Makefile.am
++++ b/interfaces/Prolog/Ciao/Makefile.am
+@@ -165,7 +165,7 @@ $(NO_UNDEFINED_FLAG) \
+ -module \
+ -avoid-version
+ 
+-pkglib_DATA = ppl_ciao.po
++pkgdata_DATA = ppl_ciao.po
+ 
+ ppl_ciao.pl: $(interface_generator_dependencies)
+ 	$(M4) --prefix-builtin -I../.. -I$(srcdir)/.. -I$(srcdir)/../.. \
+--- a/interfaces/Prolog/GNU/Makefile.am
++++ b/interfaces/Prolog/GNU/Makefile.am
+@@ -164,7 +164,7 @@ ppl_gprolog.pl: $(interface_generator_de
+ 	$(M4) --prefix-builtin -I../.. -I$(srcdir)/.. -I$(srcdir)/../.. \
+            $(srcdir)/ppl_interface_generator_gprolog_pl.m4 > $@
+ 
+-pkglib_DATA = ppl_gprolog.pl
++pkgdata_DATA = ppl_gprolog.pl
+ 
+ bin_PROGRAMS = ppl_gprolog
+ 
+--- a/interfaces/Prolog/SICStus/Makefile.am
++++ b/interfaces/Prolog/SICStus/Makefile.am
+@@ -68,7 +68,7 @@ ppl_sicstus_SOURCES =
+ 
+ if ENABLE_SHARED
+ 
+-pkglib_DATA = ppl_sicstus.pl ppl_sicstus.s.o
++pkgdata_DATA = ppl_sicstus.pl ppl_sicstus.s.o
+ 
+ ppl_sicstus.so: ppl_sicstus.pl $(top_builddir)/src/libppl.la $(WATCHDOG_LIBRARY) libppl_sicstus.la
+ 	$(LIBTOOL) --mode=link --tag=CXX \
+@@ -86,7 +86,7 @@ install-data-local: ppl_sicstus.so
+ 
+ else !ENABLE_SHARED
+ 
+-pkglib_DATA = ppl_sicstus.pl
++pkgdata_DATA = ppl_sicstus.pl
+ 
+ endif !ENABLE_SHARED
+ 
+--- a/interfaces/Prolog/SWI/Makefile.am
++++ b/interfaces/Prolog/SWI/Makefile.am
+@@ -184,7 +184,7 @@ $(NO_UNDEFINED_FLAG) \
+ bin_PROGRAMS = ppl_pl
+ ppl_pl_SOURCES = ppl_pl.cc
+ 
+-pkglib_DATA = ppl_swiprolog.pl
++pkgdata_DATA = ppl_swiprolog.pl
+ 
+ CLPQ_TESTS_NONSTRICT = \
+ ack.clpq \
+--- a/interfaces/Prolog/XSB/Makefile.am
++++ b/interfaces/Prolog/XSB/Makefile.am
+@@ -183,7 +183,7 @@ $(NO_UNDEFINED_FLAG) \
+ -module \
+ -avoid-version
+ 
+-pkglib_DATA = ppl_xsb.xwam
++pkgdata_DATA = ppl_xsb.xwam
+ 
+ ppl_xsb.xwam: ppl_xsb.H ppl_xsb.cc libppl_xsb.la
+ 	cp -f ppl_xsb.cc ppl_xsb.c
+--- a/interfaces/Prolog/YAP/Makefile.am
++++ b/interfaces/Prolog/YAP/Makefile.am
+@@ -173,7 +173,7 @@ $(NO_UNDEFINED_FLAG) \
+ -module \
+ -avoid-version
+ 
+-pkglib_DATA = ppl_yap.pl
++pkgdata_DATA = ppl_yap.pl
+ 
+ CLPQ_TESTS_NONSTRICT = \
+ ack.clpq \
