@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xz
-PKG_VERSION:=5.0.3
+PKG_VERSION:=5.0.4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://tukaani.org/xz
-PKG_MD5SUM:=8d900b742b94fa9e708ca4f5a4b29003
+PKG_MD5SUM:=741cd3a5f64b23b7bac56ec5b2258715
 
 include $(INCLUDE_DIR)/host-build.mk
 
