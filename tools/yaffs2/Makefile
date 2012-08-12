@@ -22,7 +22,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR)/yaffs2/utils \
-		CC="$(HOSTCC) -static" \
+		CC="$(HOSTCC) $(HOST_STATIC_LINKING)" \
 		CFLAGS="$(HOST_CFLAGS) -include endian.h" \
 		mkyaffs2image
 endef

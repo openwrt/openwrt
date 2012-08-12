@@ -16,7 +16,7 @@ PKG_MD5SUM:=afe0ed527ba96b8a882b5de350603007
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CFLAGS += -I$(CURDIR)/include
-HOST_LDFLAGS += -static
+HOST_LDFLAGS += $(HOST_STATIC_LINKING)
 
 define Host/Install
        $(INSTALL_BIN) \
