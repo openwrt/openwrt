@@ -36,7 +36,7 @@ get_status_led() {
 	argus-atp52b)
 		status_led="argus-atp52b:green:run"
 		;;
-	dir-300-b1 | dir-600-b1 | dir-600-b2)
+	dir-300-b1 | dir-600-b1 | dir-600-b2 | dir-620-a1)
 		status_led="d-link:green:status"
 		;;
 	dap-1350)

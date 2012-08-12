@@ -26,9 +26,11 @@ case $board in
 		;;
 	dir-300-b1|\
 	dir-600-b1|\
-	dir-600-b2)
+	dir-600-b2|\
+	dir-620-a1)
 		# ANDed with vlan switch port 4 led state
 		ucidef_set_led_default "wan" "WAN LED (amber)" "d-link:amber:wan" "1"
+		set_wifi_led "rt2800pci-phy0::radio"
 		;;
 	esr-9753)
 		set_wifi_led "rt2800pci-phy0::radio"
