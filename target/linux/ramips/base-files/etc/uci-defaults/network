@@ -94,7 +94,7 @@ ramips_setup_macs()
 		;;
 	3g-6200n | \
 	argus-atp52b | \
-	b2c | \
+	bc2 | \
 	f5d8235-v1 | \
 	nw718 | \
 	psr-680w | \
@@ -119,6 +119,12 @@ ramips_setup_macs()
 	dir-300-b2 |\
 	dir-600-b1)
 		lan_mac=$(ramips_get_mac_binary devdata 16388)
+		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		;;
+
+	dir-620-a1)
+		lan_mac=$(ramips_get_mac_binary factory 4)
+		lan_mac=$(maccalc or "$lan_mac" "02:00:00:00:00:00")
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
