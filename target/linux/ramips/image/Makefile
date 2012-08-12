@@ -49,14 +49,15 @@ define PatchKernelLzma
 endef
 
 define MkImage
+	$(eval imagename=$(if $(4),$(4),MIPS OpenWrt Linux-$(LINUX_VERSION)))
 	mkimage -A mips -O linux -T kernel -C $(1) $(call kernel_entry)\
-		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-n "$(imagename)" \
 		-d $(2) $(3)
 endef
 
 define MkImageLzma
 	$(call PatchKernelLzma,$(1),$(2))
-	$(call MkImage,lzma,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage)
+	$(call MkImage,lzma,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage,$(3))
 endef
 
 define CatFiles
@@ -95,7 +96,7 @@ define Image/BuildKernel
 endef
 
 define BuildFirmware/Generic
-	$(call MkImageLzma,$(2),$(3))
+	$(call MkImageLzma,$(2),$(3),$(6))
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(4),$(5))
 endef
 
@@ -200,7 +201,7 @@ mtdlayout_dir620a1=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),
 kernel_size_dir620a1=917504
 rootfs_size_dir620a1=7143424
 define BuildFirmware/DIR620A1
-	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),ttyS1,57600) $(call mkmtd/phys,$(mtdlayout_dir620a1)),$(kernel_size_dir620a1),$(rootfs_size_dir620a1))
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),ttyS1,57600) $(call mkmtd/phys,$(mtdlayout_dir620a1)),$(kernel_size_dir620a1),$(rootfs_size_dir620a1),DIR_620)
 endef
 
 define BuildFirmware/DIR620A1/initramfs
