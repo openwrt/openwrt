@@ -33,7 +33,7 @@
 
 #define DRIVER_NAME	"ramips-wdt"
 
-#define RAMIPS_WDT_TIMEOUT		20	/* seconds */
+#define RAMIPS_WDT_TIMEOUT		0	/* seconds */
 #define RAMIPS_WDT_PRESCALE		65536
 
 #define TIMER_REG_TMRSTAT		0x00
@@ -59,7 +59,7 @@ MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started "
 
 static int ramips_wdt_timeout = RAMIPS_WDT_TIMEOUT;
 module_param_named(timeout, ramips_wdt_timeout, int, 0);
-MODULE_PARM_DESC(timeout, "Watchdog timeout in seconds "
+MODULE_PARM_DESC(timeout, "Watchdog timeout in seconds, 0 means use maximum "
 			  "(default=" __MODULE_STRING(RAMIPS_WDT_TIMEOUT) "s)");
 
 static unsigned long ramips_wdt_flags;
@@ -112,9 +112,9 @@ static inline void ramips_wdt_disable(void)
 static int ramips_wdt_set_timeout(int val)
 {
 	if (val < 1 || val > ramips_wdt_max_timeout) {
-		pr_crit(DRIVER_NAME
-			": timeout value %d must be 0 < timeout < %d\n",
-			val, ramips_wdt_max_timeout);
+		pr_warn(DRIVER_NAME
+			": timeout value %d must be 0 < timeout <= %d, using %d\n",
+			val, ramips_wdt_max_timeout, ramips_wdt_timeout);
 		return -EINVAL;
 	}
 
@@ -291,7 +291,7 @@ static int __devinit ramips_wdt_probe(struct platform_device *pdev)
 	    ramips_wdt_timeout > ramips_wdt_max_timeout) {
 		ramips_wdt_timeout = ramips_wdt_max_timeout;
 		dev_info(&pdev->dev,
-			"timeout value must be 0 < timeout < %d, using %d\n",
+			"timeout value must be 0 < timeout <= %d, using %d\n",
 			ramips_wdt_max_timeout, ramips_wdt_timeout);
 	}
 
