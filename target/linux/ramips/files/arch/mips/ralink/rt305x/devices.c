@@ -352,7 +352,7 @@ static struct resource rt3352_ehci_resources[] = {
 
 static u64 rt3352_ehci_dmamask = DMA_BIT_MASK(32);
 static struct platform_device rt3352_ehci_device = {
-	.name		= "rt3352-ehci",
+	.name		= "rt3883-ehci",
 	.id		= -1,
 	.resource	= rt3352_ehci_resources,
 	.num_resources	= ARRAY_SIZE(rt3352_ehci_resources),
@@ -382,7 +382,7 @@ static struct rt3883_ohci_platform_data rt3352_ohci_data = {
 
 static u64 rt3352_ohci_dmamask = DMA_BIT_MASK(32);
 static struct platform_device rt3352_ohci_device = {
-	.name		= "rt3352-ohci",
+	.name		= "rt3883-ohci",
 	.id		= -1,
 	.resource	= rt3352_ohci_resources,
 	.num_resources	= ARRAY_SIZE(rt3352_ohci_resources),
