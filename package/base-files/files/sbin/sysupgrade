@@ -11,6 +11,7 @@ export SAVE_OVERLAY=0
 export DELAY=
 export CONF_IMAGE=
 export CONF_BACKUP=
+export CONF_RESTORE=
 export HELP=0
 export FORCE=0
 
@@ -24,6 +25,7 @@ while [ -n "$1" ]; do
 		-n) export SAVE_CONFIG=0;;
 		-c) export SAVE_OVERLAY=1;;
 		-b|--create-backup) export CONF_BACKUP="$2"; shift;;
+		-r|--restore-backup) export CONF_RESTORE="$2"; shift;;
 		-f) export CONF_IMAGE="$2"; shift;;
 		-F|--force) export FORCE=1;;
 		-h|--help) export HELP=1; break;;
@@ -55,6 +57,10 @@ Options:
 	             create .tar.gz of files specified in sysupgrade.conf
 	             then exit. Does not flash an image. If file is '-',
 	             i.e. stdout, verbosity is set to 0 (i.e. quiet).
+	-r / --restore-backup <file>
+	             restore a .tar.gz created with sysupgrade -b
+	             then exit. Does not flash an image. If file is '-',
+	             the archive is read from stdin.
 	-n           do not save configuration over reflash
 	-F / --force
 	             Flash image even if image checks fail, this is dangerous!
@@ -123,6 +129,12 @@ do_save_conffiles() {
 
 if [ -n "$CONF_BACKUP" ]; then
 	do_save_conffiles "$CONF_BACKUP"
+	exit $?
+fi
+
+if [ -f "$CONF_RESTORE" ] || [ "$CONF_RESTORE" = "-" ]; then
+	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
+	tar -C / -x${TAR_V}zf "$CONF_RESTORE"
 	exit $?
 fi
 
