@@ -11,7 +11,7 @@ PKG_NAME:=patch-cmdline
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
-	$(HOSTCC) $(HOST_CFLAGS) -include endian.h -static -o $(HOST_BUILD_DIR)/$(PKG_NAME) src/$(PKG_NAME).c
+	$(HOSTCC) $(HOST_CFLAGS) -include endian.h $(HOST_STATIC_LINKING) -o $(HOST_BUILD_DIR)/$(PKG_NAME) src/$(PKG_NAME).c
 endef
 
 define Host/Install
