@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/host-build.mk
 define Host/Compile
 	rm -f $(HOST_BUILD_DIR)/tools/.depend
 	touch $(HOST_BUILD_DIR)/include/config.h
-	$(MAKE) -C $(HOST_BUILD_DIR) BUILD_DIR= BIN_FILES-y="mkimage" HOSTLDFLAGS="-static" tools
+	$(MAKE) -C $(HOST_BUILD_DIR) BUILD_DIR= BIN_FILES-y="mkimage" HOSTLDFLAGS="$(HOST_STATIC_LINKING)" tools
 endef
 
 define Host/Install
