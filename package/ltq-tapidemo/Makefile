@@ -18,6 +18,7 @@ PKG_MD5SUM:=c970becc46b2935fb9e18f795d4e8469
 
 PKG_FIXUP:=autoreconf
 
+include $(INCLUDE_DIR)/ltqtapi.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ltq-tapidemo
@@ -26,7 +27,7 @@ define Package/ltq-tapidemo
   CATEGORY:=Network
   TITLE:=TAPIdemo application for Lantiq boards
   URL:=http://www.lantiq.com/
-  DEPENDS:=+kmod-ltq-tapi +kmod-ltq-vmmc +libpthread @(TARGET_lantiq_danube||TARGET_lantiq_falcon)
+  DEPENDS:=$(LTQ_TAPI_DEPENDS) +libpthread
   MAINTAINER:=John Crispin <blogic@openwrt.org>
   MENU:=1
 endef
