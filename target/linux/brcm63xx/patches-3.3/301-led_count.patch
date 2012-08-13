@@ -8,19 +8,26 @@
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -900,7 +901,11 @@ int __init board_register_devices(void)
+@@ -900,10 +901,16 @@ int __init board_register_devices(void)
  
  	bcm63xx_flash_register();
  
 -	bcm63xx_led_data.num_leds = ARRAY_SIZE(board.leds);
+-	bcm63xx_led_data.leds = board.leds;
 +	/* count number of LEDs defined by this device */
 +	while (led_count < ARRAY_SIZE(board.leds) && board.leds[led_count].name)
 +		led_count++;
 +
-+	bcm63xx_led_data.num_leds = led_count;
- 	bcm63xx_led_data.leds = board.leds;
++	if (led_count) {
++		bcm63xx_led_data.num_leds = led_count;
++		bcm63xx_led_data.leds = board.leds;
  
- 	platform_device_register(&bcm63xx_gpio_leds);
+-	platform_device_register(&bcm63xx_gpio_leds);
++		platform_device_register(&bcm63xx_gpio_leds);
++	}
+ 
+ 	/* count number of BUTTONs defined by this device */
+ 	while (button_count < ARRAY_SIZE(board.buttons) && board.buttons[button_count].desc)
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 @@ -57,7 +57,7 @@ struct board_info {
