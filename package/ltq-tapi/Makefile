@@ -16,13 +16,14 @@ PKG_SOURCE:=drv_tapi-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=edb43b494832c540cc035493d18db58f
 
+include $(INCLUDE_DIR)/ltqtapi.mk
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ltq-tapi
   SUBMENU:=Voice over IP
   TITLE:=Lantiq TAPI subsystem
   URL:=http://www.lantiq.com/
-  DEPENDS:=+kmod-ltq-ifxos @(TARGET_lantiq_danube||TARGET_lantiq_falcon)
+  DEPENDS:=$(LTQ_TAPI_TARGET) +kmod-ltq-ifxos
   FILES:=$(PKG_BUILD_DIR)/src/drv_tapi.ko
   AUTOLOAD:=$(call AutoLoad,20,drv_tapi)
   MAINTAINER:=John Crispin <blogic@openwrt.org>

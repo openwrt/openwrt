@@ -20,7 +20,8 @@ PKG_BUILD_PARALLEL:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/pjproject-$(PKG_VERSION)
 
-PKG_BUILD_DEPENDS:=TARGET_lantiq:kmod-ltq-tapi TARGET_lantiq:kmod-ltq-vmmc
+include $(INCLUDE_DIR)/ltqtapi.mk
+PKG_BUILD_DEPENDS:=$(LTQ_TAPI_BUILD_DEPENDS)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -70,7 +71,7 @@ EXTRA_CFLAGS:=-I$(STAGING_DIR)/usr/include/drv_tapi -I$(STAGING_DIR)/usr/include
 endif
 
 Package/pjsip-oss=$(call Package/pjsip-template,oss,BROKEN)
-Package/pjsip-ltq-tapi=$(call Package/pjsip-template,ltq-tapi,@TARGET_lantiq +TARGET_lantiq:kmod-ltq-tapi +TARGET_lantiq:kmod-ltq-vmmc)
+Package/pjsip-ltq-tapi=$(call Package/pjsip-template,ltq-tapi,$(LTQ_TAPI_DEPENDS))
 
 USE_LOCAL=$(shell ls ./src/ 2>/dev/null >/dev/null && echo 1)
 ifneq ($(USE_LOCAL),)
