@@ -66,7 +66,9 @@ HOST_CONFIGURE_ARGS = \
 HOST_CONFIGURE_CMD = ./configure
 
 ifneq ($(HOST_OS),Darwin)
-  HOST_STATIC_LINKING = -static
+  ifeq ($(CONFIG_BUILD_STATIC_TOOLS),y)
+    HOST_STATIC_LINKING = -static
+  endif
 endif
 
 define Host/Configure/Default
