@@ -64,7 +64,7 @@
  #endif
  
  /*
-@@ -1782,6 +1839,7 @@ static const struct board_info __initdat
+@@ -1872,6 +1929,7 @@ static const struct board_info __initdat
  	&board_96348_D4PW,
  	&board_spw500v,
  	&board_96348sv,
@@ -72,7 +72,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1909,6 +1967,23 @@ void __init board_prom_init(void)
+@@ -1992,6 +2050,23 @@ void __init board_prom_init(void)
  		val &= MPI_CSBASE_BASE_MASK;
  	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
