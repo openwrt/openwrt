@@ -1,6 +1,8 @@
---- a/aconfigure.ac
-+++ b/aconfigure.ac
-@@ -48,9 +48,8 @@ if test -z "$CROSS_COMPILE"; then
+Index: pjproject-1.14.2/aconfigure.ac
+===================================================================
+--- pjproject-1.14.2.orig/aconfigure.ac	2012-04-27 03:22:15.000000000 +0200
++++ pjproject-1.14.2/aconfigure.ac	2012-08-13 14:42:33.204641678 +0200
+@@ -48,9 +48,8 @@
      CROSS_COMPILE=`echo ${CC} | sed 's/gcc//'`
  fi
  
@@ -11,11 +13,25 @@
  AC_SUBST(LD)
  if test "$LDOUT" = ""; then LDOUT="-o "; fi
  AC_SUBST(LDOUT)
-@@ -616,6 +616,15 @@ AC_ARG_ENABLE(ext_sound,
- 		AC_MSG_RESULT([Checking if external sound is set... yes])
+@@ -584,13 +583,7 @@
+ 	;;
+   *)
+ 	dnl # Check if ALSA is available
+-	ac_pjmedia_snd=pa_unix
+-	AC_CHECK_HEADER(alsa/version.h,
+-			[AC_SUBST(ac_pa_use_alsa,1)
+-			 LIBS="$LIBS -lasound"
+-			],
+-		        [AC_SUBST(ac_pa_use_alsa,0)])
+-	AC_MSG_RESULT([Checking sound device backend... unix])
++        AC_SUBST(ac_pa_use_alsa,0)
+ 
+ 	dnl # Check if OSS is disabled
+ 	AC_SUBST(ac_pa_use_oss,1)
+@@ -617,6 +610,15 @@
  	       fi]
  	      )
-+
+ 
 +AC_ARG_ENABLE(ltq_tapi,
 +	      AC_HELP_STRING([--enable-ltq-tapi],
 +			     [PJMEDIA will use ltq tapi backend]),
@@ -24,12 +40,30 @@
 +		AC_MSG_RESULT([Checking if external sound is set... yes])
 +	       fi]
 +	      )
- 
++
  dnl # Include resampling small filter
  AC_SUBST(ac_no_small_filter)
---- a/pjmedia/build/os-auto.mak.in
-+++ b/pjmedia/build/os-auto.mak.in
-@@ -125,4 +125,11 @@ ifeq ($(AC_PJMEDIA_SND),external)
+ AC_ARG_ENABLE(small-filter,
+@@ -737,14 +739,6 @@
+ 	      AC_MSG_RESULT([Checking if iLBC codec is disabled...no]))
+ 
+ dnl # Include libsamplerate
+-AC_ARG_ENABLE(libsamplerate,
+-	      AC_HELP_STRING([--enable-libsamplerate],
+-			     [Link with libsamplerate when available. Note that PJMEDIA_RESAMPLE_IMP must also be configured]),
+-	      [ AC_CHECK_LIB(samplerate,src_new) ],
+-	      AC_MSG_RESULT([Skipping libsamplerate detection])
+-	     )
+-
+-dnl # Include libsamplerate
+ AC_SUBST(ac_resample_dll)
+ AC_ARG_ENABLE(resample_dll,
+ 	      AC_HELP_STRING([--enable-resample-dll],
+Index: pjproject-1.14.2/pjmedia/build/os-auto.mak.in
+===================================================================
+--- pjproject-1.14.2.orig/pjmedia/build/os-auto.mak.in	2011-10-14 06:15:15.000000000 +0200
++++ pjproject-1.14.2/pjmedia/build/os-auto.mak.in	2012-08-13 14:40:47.680637171 +0200
+@@ -125,4 +125,11 @@
  export CFLAGS += -DPJMEDIA_AUDIO_DEV_HAS_PORTAUDIO=0 -DPJMEDIA_AUDIO_DEV_HAS_WMME=0
  endif
  
