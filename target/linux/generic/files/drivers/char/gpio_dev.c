@@ -141,6 +141,8 @@ out:
 static int
 gpio_remove(struct platform_device *dev)
 {
+	device_destroy(gpiodev_class, MKDEV(dev_major, 0));
+	class_destroy(gpiodev_class);
 	unregister_chrdev(dev_major, DEVNAME);
 	return 0;
 }
