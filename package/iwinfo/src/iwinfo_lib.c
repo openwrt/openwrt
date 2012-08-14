@@ -346,6 +346,7 @@ const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[] = {
 	{ VENDOR_UBNT, "XR5",                   0x168c, 0x001b, 0x7777, 0x3005, 10,     0 },
 	{ VENDOR_UBNT, "XR7",                   0x168c, 0x001b, 0x0777, 0x3007, 10,     0 },
 	{ VENDOR_UBNT, "XR9",                   0x168c, 0x001b, 0x0777, 0x3009, 10, -1520 },
+	{ VENDOR_ATH,  "AR5413",                0x168c, 0x001b, 0x168c, 0x2063,  0,     0 },
 	{ VENDOR_UBNT, "SRC",                   0x168c, 0x0013, 0x168c, 0x1042,  1,     0 },
 	{ VENDOR_UBNT, "SR2",                   0x168c, 0x0013, 0x0777, 0x2041, 10,     0 },
 	{ VENDOR_UBNT, "SR4",                   0x168c, 0x0013, 0x0777, 0x2004,  6,     0 },
@@ -366,6 +367,7 @@ const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[] = {
 
 	{ VENDOR_ATH,  "AR9220",                0x168c, 0x0029, 0x168c, 0xa094,  0,     0 },
 	{ VENDOR_ATH,  "AR9223",                0x168c, 0x0029, 0x168c, 0xa095,  0,     0 },
+	{ VENDOR_ATH,  "AR9285",                0x168c, 0x002b, 0x168c, 0xa091,  0,     0 },
 #endif
 	{ NULL }
 };
