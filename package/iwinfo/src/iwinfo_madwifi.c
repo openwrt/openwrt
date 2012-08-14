@@ -196,6 +196,18 @@ static struct ISO3166_to_CCode
 };
 
 
+static const char * madwifi_phyname(const char *ifname)
+{
+	static char phyname[IFNAMSIZ];
+
+	if (strlen(ifname) > 5 && !strncmp(ifname, "radio", 5))
+		snprintf(phyname, sizeof(phyname), "wifi%s", ifname + 5);
+	else
+		snprintf(phyname, sizeof(phyname), "%s", ifname);
+
+	return (const char *)phyname;
+}
+
 static int madwifi_wrq(struct iwreq *wrq, const char *ifname, int cmd, void *data, size_t len)
 {
 	strncpy(wrq->ifr_name, ifname, IFNAMSIZ);
@@ -263,12 +275,14 @@ static int madwifi_iswifi(const char *ifname)
 	int ret;
 	char path[32];
 	struct stat s;
+	const char *phy;
 
 	ret = 0;
+	phy = madwifi_phyname(ifname);
 
-	if( strlen(ifname) <= 7 )
+	if( strlen(phy) <= 7 )
 	{
-		sprintf(path, "/proc/sys/dev/%s/diversity", ifname);
+		sprintf(path, "/proc/sys/dev/%s/diversity", phy);
 
 		if( ! stat(path, &s) )
 			ret = (s.st_mode & S_IFREG);
@@ -279,13 +293,13 @@ static int madwifi_iswifi(const char *ifname)
 
 static char * madwifi_ifadd(const char *ifname)
 {
-	char *wifidev = NULL;
+	const char *wifidev = NULL;
 	struct ifreq ifr = { 0 };
 	struct ieee80211_clone_params cp = { 0 };
 	static char nif[IFNAMSIZ] = { 0 };
 
 	if( !(wifidev = madwifi_isvap(ifname, NULL)) && madwifi_iswifi(ifname) )
-		wifidev = (char *)ifname;
+		wifidev = madwifi_phyname(ifname);
 
 	if( wifidev )
 	{
@@ -1014,8 +1028,9 @@ int madwifi_get_hardware_id(const char *ifname, char *buf)
 	char device[64];
 	struct iwinfo_hardware_id *ids;
 	struct iwinfo_hardware_entry *e;
+	const char *phy = madwifi_phyname(ifname);
 
-	if (wext_get_hardware_id(ifname, buf))
+	if (wext_get_hardware_id(phy, buf))
 		return iwinfo_hardware_id_from_mtd((struct iwinfo_hardware_id *)buf);
 
 	return 0;
