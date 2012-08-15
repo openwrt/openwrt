@@ -165,7 +165,8 @@ int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
 	while (fgets(buf, sizeof(buf), mtd) > 0)
 	{
 		if (fscanf(mtd, "mtd%d: %*x %x %127s", &off, &len, buf) < 3 ||
-		    (strcmp(buf, "\"boardconfig\"") && strcmp(buf, "\"EEPROM\"")))
+		    (strcmp(buf, "\"boardconfig\"") && strcmp(buf, "\"EEPROM\"") &&
+		     strcmp(buf, "\"factory\"")))
 		{
 			off = -1;
 			continue;
@@ -211,6 +212,26 @@ int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
 				id->subsystem_vendor_id = bc[off + 0x13];
 				id->subsystem_device_id = bc[off + 0x14];
 				break;
+			}
+
+			/* Rt3xxx SoC */
+			else if ((bc[off] == 0x3352) || (bc[off] == 0x5233) ||
+			         (bc[off] == 0x3350) || (bc[off] == 0x5033) ||
+			         (bc[off] == 0x3050) || (bc[off] == 0x5030) ||
+			         (bc[off] == 0x3052) || (bc[off] == 0x5230))
+			{
+				/* vendor: RaLink */
+				id->vendor_id = 0x1814;
+				id->subsystem_vendor_id = 0x1814;
+
+				/* device */
+				if (bc[off] & 0xf0 == 0x30)
+					id->device_id = (bc[off] >> 8) | (bc[off] & 0x00ff) << 8;
+				else
+					id->device_id = bc[off];
+
+				/* subsystem from EEPROM_NIC_CONF0_RF_TYPE */
+				id->subsystem_device_id = (bc[off + 0x1a] & 0x0f00) >> 8;
 			}
 		}
 
