@@ -314,6 +314,7 @@ const struct iwinfo_iso3166_label IWINFO_ISO3166_NAMES[] = {
 
 const char VENDOR_UBNT[] = "Ubiquiti";
 const char VENDOR_ATH[]  = "Atheros";
+const char VENDOR_RALINK[]  = "RaLink";
 
 const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[] = {
 /*	{ vendor, model, vendorid, deviceid, subsys vendorid, subsys deviceid, poweroff, freqoff } */
@@ -368,6 +369,7 @@ const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[] = {
 	{ VENDOR_ATH,  "AR9220",                0x168c, 0x0029, 0x168c, 0xa094,  0,     0 },
 	{ VENDOR_ATH,  "AR9223",                0x168c, 0x0029, 0x168c, 0xa095,  0,     0 },
 	{ VENDOR_ATH,  "AR9285",                0x168c, 0x002b, 0x168c, 0xa091,  0,     0 },
+	{ VENDOR_RALINK,  "Rt3352",             0x1814, 0x3352, 0x1814, 0x000c,  0,     0 },
 #endif
 	{ NULL }
 };
