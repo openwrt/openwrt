@@ -154,7 +154,7 @@ menu "Global build settings"
 		  instead of the default OpenWrt stubs. If uClibc is used, it is also built with locale support.
 
 	config BUILD_STATIC_TOOLS
-		default y
+		default n
 		bool "Attempt to link host utilities statically"
 		help
 		  Linking host utilities like sed or firmware-utils statically increases the portability of the
