@@ -37,7 +37,6 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 		$(PKG_BUILD_DIR)/
 	$(VERSION_SED) $(PKG_BUILD_DIR)/repositories.conf
 	$(CP) $(PACKAGE_DIR) $(PKG_BUILD_DIR)/packages
-	$(CP) $(STAGING_DIR_HOST)/bin $(PKG_BUILD_DIR)/staging_dir/host/
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
 	rm -rf \
 		$(PKG_BUILD_DIR)/target/linux/*/files{,-*} \
@@ -47,6 +46,8 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	$(SED) 's,^# REVISION:=.*,REVISION:=$(REVISION),g' $(PKG_BUILD_DIR)/include/version.mk
 	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn \
 	  | $(XARGS) rm -rf
+	find $(STAGING_DIR_HOST)/bin -maxdepth 1 -type f -perm -u=x \
+	  | $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host/bin
 	$(TAR) c -C $(BUILD_DIR) $(IB_NAME) | bzip2 -c > $@
 
 download:
