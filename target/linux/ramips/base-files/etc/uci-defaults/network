@@ -152,9 +152,10 @@ ramips_setup_macs()
 		wan_mac=$(ramips_get_mac_binary factory 32772)
 		;;
 
+	all0239-3g | \
 	w502u)
-                lan_mac=$(ramips_get_mac_binary factory 40)
-                wan_mac=$(ramips_get_mac_binary factory 46)
+		lan_mac=$(ramips_get_mac_binary factory 40)
+		wan_mac=$(ramips_get_mac_binary factory 46)
 		;;
 
 	wl341v3)
