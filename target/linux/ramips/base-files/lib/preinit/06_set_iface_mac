@@ -34,6 +34,7 @@ preinit_set_mac_address() {
 		mac=$(ramips_get_mac_binary devdata 46)
 		ifconfig eth0 hw ether $mac 2>/dev/null
                 ;;
+	all0239-3g |\
 	all0256n |\
 	all5002 |\
 	dir-615-h1 |\

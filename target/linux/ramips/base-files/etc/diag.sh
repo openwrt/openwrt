@@ -51,6 +51,7 @@ get_status_led() {
 	fonera20n)
 		status_led="fonera20n:green:power"
 		;;
+	all0239-3g|\
 	hw550-3g)
 		status_led="hw550-3g:green:status"
 		;;
