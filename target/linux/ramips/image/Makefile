@@ -183,6 +183,17 @@ define BuildFirmware/DIR300B1/initramfs
 	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),ttyS1,57600) $(call mkmtd/phys,$(mtdlayout_dir300b1)),$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
 endef
 
+mtdlayout_dir615h1=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
+define BuildFirmware/DIR615H1
+        $(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_dir615h1)),917504,2949120)
+	mkdir615h1 -e $(call sysupname,$(1),$(2)) \
+		-o $(call imgname,$(1),$(2))-factory.bin
+endef
+
+define BuildFirmware/DIR615H1/initramfs
+        $(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_dir615h1)))
+endef
+
 mtdlayout_dap1350=192k(u-boot)ro,64k(devdata)ro,192k(devconf)ro,256k(devlang)ro,1088k(kernel),6400k(rootfs),7488k@0xb0000(firmware)
 mtd_dap1350_kernel_part_size=1114112
 mtd_dap1350_rootfs_part_size=6553600
@@ -380,6 +391,10 @@ define Image/Build/Profile/DIR300B1
 	$(call Image/Build/Template/$(fs_squash)/$(1),DIR620A1,dir-620-a1,DIR-620-A1)
 endef
 
+define Image/Build/Profile/DIR615H1
+        $(call Image/Build/Template/$(fs_squash)/$(1),DIR615H1,dir-615-h1,DIR-615-H1,ttyS1,57600,spi)
+endef
+
 define Image/Build/Profile/DAP1350
 	$(call Image/Build/Template/$(fs_squash)/$(1),DAP1350,dap-1350,DAP-1350,RT3052-AP-DAP1350-3)
 endef
@@ -503,6 +518,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
 	$(call Image/Build/Profile/BC2,$(1))
 	$(call Image/Build/Profile/DIR300B1,$(1))
+	$(call Image/Build/Profile/DIR615H1,$(1))
 	$(call Image/Build/Profile/DAP1350,$(1))
 	$(call Image/Build/Profile/ESR9753,$(1))
 	$(call Image/Build/Profile/F5D8235V2,$(1))

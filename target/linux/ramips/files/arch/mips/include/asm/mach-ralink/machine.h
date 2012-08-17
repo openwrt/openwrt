@@ -63,6 +63,7 @@ enum ramips_mach_type {
 	
 	/* RT3352 based machines */
 	RAMIPS_MACH_ALL5002,		/* Allnet ALL5002 */
+	RAMIPS_MACH_DIR_615_H1,
 
 	/* RT3662 based machines */
 	RAMIPS_MACH_RT_N56U,		/* Asus RT-N56U */
