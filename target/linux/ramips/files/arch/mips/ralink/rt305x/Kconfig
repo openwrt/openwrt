@@ -16,7 +16,7 @@ config RT305X_MACH_ALL0256N
 	bool "Allnet ALL0256N support"
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
-	
+
 config RT305X_MACH_ALL5002
 	bool "Allnet ALL5002 support"
 	select RALINK_DEV_GPIO_BUTTONS
@@ -68,6 +68,11 @@ config RT305X_MACH_WHR_G300N
 
 config RT305X_MACH_DIR_300_REVB
 	bool "D-Link DIR-300 revB board support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
+config RT305X_MACH_DIR_615_H1
+	bool "D-Link DIR-615 H1 board support"
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
