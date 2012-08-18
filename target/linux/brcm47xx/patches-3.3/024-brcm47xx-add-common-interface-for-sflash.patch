@@ -9,7 +9,7 @@
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/bus.c
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,86 @@
 +/*
 + * BCM947xx nvram variable access
 + *
@@ -23,6 +23,7 @@
 +
 +#include <bus.h>
 +
++#ifdef CONFIG_BCM47XX_BCMA
 +static int bcm47xx_sflash_bcma_read(struct bcm47xx_sflash *dev, u32 offset, u32 len, u8 *buf)
 +{
 +	return bcma_sflash_read(dev->bcc, offset, len, buf);
@@ -57,7 +58,9 @@
 +	sflash->numblocks = bcc->sflash.numblocks;
 +	sflash->size = bcc->sflash.size;
 +}
++#endif
 +
++#ifdef CONFIG_BCM47XX_SSB
 +static int bcm47xx_sflash_ssb_read(struct bcm47xx_sflash *dev, u32 offset, u32 len, u8 *buf)
 +{
 +	return ssb_sflash_read(dev->scc, offset, len, buf);
@@ -92,6 +95,7 @@
 +	sflash->numblocks = scc->sflash.numblocks;
 +	sflash->size = scc->sflash.size;
 +}
++#endif
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
 @@ -43,6 +43,8 @@ EXPORT_SYMBOL(bcm47xx_bus);
