@@ -1,22 +1,3 @@
---- a/arch/mips/include/asm/mach-bcm47xx/bus.h
-+++ b/arch/mips/include/asm/mach-bcm47xx/bus.h
-@@ -11,6 +11,7 @@
- 
- #include <linux/ssb/ssb.h>
- #include <linux/bcma/bcma.h>
-+#include <linux/mtd/mtd.h>
- #include <bcm47xx.h>
- 
- struct bcm47xx_sflash {
-@@ -28,6 +29,8 @@ struct bcm47xx_sflash {
- 	u32 blocksize;		/* Block size */
- 	u32 numblocks;		/* Number of blocks */
- 	u32 size;		/* Total size in bytes */
-+
-+	struct mtd_info *mtd;
- };
- 
- void bcm47xx_sflash_struct_bcma_init(struct bcm47xx_sflash *sflash, struct bcma_drv_cc *bcc);
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
 @@ -257,6 +257,15 @@ config MTD_BCM47XX_PFLASH
