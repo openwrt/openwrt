@@ -13,8 +13,8 @@ include $(INCLUDE_DIR)/host.mk
 
 override MAKEFLAGS=
 
-PKG_OS:=$(shell uname -s)
-PKG_CPU:=$(shell uname -m)
+PKG_OS:=$(word 2,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
+PKG_CPU:=$(word 1,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
 
 TOOLCHAIN_NAME:=OpenWrt-Toolchain-$(BOARD)-for-$(ARCH)$(ARCH_SUFFIX)-gcc-$(GCCV)$(DIR_SUFFIX)
 TOOLCHAIN_BUILD_DIR:=$(BUILD_DIR)/$(TOOLCHAIN_NAME)

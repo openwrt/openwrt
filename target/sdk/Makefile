@@ -11,8 +11,8 @@ include $(INCLUDE_DIR)/host.mk
 
 override MAKEFLAGS=
 
-PKG_OS:=$(shell uname -s)
-PKG_CPU:=$(shell uname -m)
+PKG_OS:=$(word 2,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
+PKG_CPU:=$(word 1,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
 
 SDK_NAME:=OpenWrt-SDK-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)-gcc-$(GCCV)_$(LIBC)-$(LIBCV)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
