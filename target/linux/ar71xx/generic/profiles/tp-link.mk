@@ -95,12 +95,12 @@ $(eval $(call Profile,TLWA901))
 
 
 define Profile/TLWDR4300
-	NAME:=TP-LINK TL-WDR4300/ TL-WDR4310
+	NAME:=TP-LINK TL-WDR3600/4300/4310
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/TLWDR4300/Description
-	Package set optimized for the TP-LINK TL-WDR4300.
+	Package set optimized for the TP-LINK TL-WDR3600/4300/4310.
 endef
 $(eval $(call Profile,TLWDR4300))
 

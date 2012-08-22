@@ -991,6 +991,7 @@ endef
 
 tlwdr4300_cmdline=board=TL-WDR4300 console=ttyS0,115200
 define Image/Build/Profile/TLWDR4300
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wdr3600-v1,$(tlwdr4300_cmdline),0x36000001,1,8Mlzma)
 	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wdr4300-v1,$(tlwdr4300_cmdline),0x43000001,1,8Mlzma)
 	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wdr4310-v1,$(tlwdr4300_cmdline),0x43100001,1,8Mlzma)
 endef

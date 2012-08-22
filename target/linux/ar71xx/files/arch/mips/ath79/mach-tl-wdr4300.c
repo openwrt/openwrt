@@ -199,5 +199,6 @@ static void __init wdr4300_setup(void)
 	ath79_register_usb();
 }
 
-MIPS_MACHINE(ATH79_MACH_TL_WDR4300, "TL-WDR4300", "TP-LINK TL-WDR4300",
+MIPS_MACHINE(ATH79_MACH_TL_WDR4300, "TL-WDR4300",
+	     "TP-LINK TL-WDR3600/4300/4310",
 	     wdr4300_setup);
