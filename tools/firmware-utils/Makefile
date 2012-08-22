@@ -59,6 +59,7 @@ define Host/Compile
 	$(call cc,mkbrncmdline)
 	$(call cc,mkbrnimg)
 	$(call cc,mkdapimg)
+	$(call cc, mkcameofw, -Wall)
 endef
 
 define Host/Install
