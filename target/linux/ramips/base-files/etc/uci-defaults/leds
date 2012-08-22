@@ -19,6 +19,10 @@ case $board in
 		set_usb_led "edimax:blue:3g"
 		;;
 	all0256n)
+		ucidef_set_rssimon "wlan0" "40000" "1"
+		ucidef_set_led_rssi "rssilow" "RSSILOW" "all0256n:green:rssilow" "wlan0" "1" "40" "0" "6"
+		ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "all0256n:green:rssimed" "wlan0" "30" "80" "-29" "5"
+		ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "all0256n:green:rssihigh" "wlan0" "70" "100" "-69" "8"
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
 	bc2)
