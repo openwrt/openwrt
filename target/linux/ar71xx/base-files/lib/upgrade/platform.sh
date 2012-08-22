@@ -189,6 +189,7 @@ platform_check_image() {
 	ls-sr71 | \
 	pb42 | \
 	pb44 | \
+	all0305 | \
 	eap7660d | \
 	ja76pf | \
 	ja76pf2)
@@ -221,6 +222,7 @@ platform_do_upgrade() {
 	routerstation | \
 	routerstation-pro | \
 	ls-sr71 | \
+	all0305 | \
 	eap7660d | \
 	pb42 | \
 	pb44 | \

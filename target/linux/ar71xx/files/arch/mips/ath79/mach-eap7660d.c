@@ -176,3 +176,6 @@ static void __init eap7660d_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_EAP7660D, "EAP7660D", "Senao EAP7660D",
 	     eap7660d_setup);
+
+MIPS_MACHINE(ATH79_MACH_ALL0305, "ALL0305", "Allnet ALL0305",
+	     eap7660d_setup);
