@@ -12,8 +12,8 @@ include $(INCLUDE_DIR)/version.mk
 
 override MAKEFLAGS=
 
-PKG_OS:=$(shell uname -s)
-PKG_CPU:=$(shell uname -m | sed "s/ //g")
+PKG_OS:=$(word 2,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
+PKG_CPU:=$(word 1,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
 
 IB_NAME:=OpenWrt-ImageBuilder-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))-for-$(PKG_OS)-$(PKG_CPU)
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(IB_NAME)
