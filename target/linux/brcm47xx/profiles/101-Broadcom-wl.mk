@@ -12,7 +12,8 @@ endef
 
 define Profile/Broadcom-wl/Description
 	Package set compatible with hardware using Broadcom BCM43xx cards
-	using the proprietary broadcom wireless "wl" driver.
+	using the proprietary broadcom wireless "wl" driver and b44 Ethernet
+	driver.
 endef
 
 $(eval $(call Profile,Broadcom-wl))
