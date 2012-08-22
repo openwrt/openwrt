@@ -220,6 +220,18 @@ define Image/Build/Cameo
 	fi
 endef
 
+define Image/Build/CameoHornet
+	$(call MkuImageLzma,$(2),$(3) $(4))
+	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		mkcameofw -M HORNET -R "DEF" -S $(7) -V "1.99" \
+			-K $(5) -I $$$$(($(5)+$(6))) \
+			-k $(KDIR_TMP)/vmlinux-$(2).uImage \
+			-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+			-o $(call factoryname,$(1),$(2)); \
+	fi
+endef
+
 cameo913x_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,960k(kernel),2880k(rootfs),64k(art)ro,3840k@0x30000(firmware)
 define Image/Build/Cameo913x
 	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo913x_mtdlayout),983040,2949120,$(4))
@@ -236,6 +248,15 @@ endef
 
 define Image/Build/Cameo7240/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo7240_mtdlayout))
+endef
+
+cameo933x_mtdlayout=mtdparts=spi0.0:64k(u-boot)ro,64k(art)ro,64k(mac)ro,64k(nvram)ro,192k(language)ro,896k(kernel),2752k(rootfs),3648k@0x70000(firmware)
+define Image/Build/Cameo933x
+	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),917504,2818048,$(4))
+endef
+
+define Image/Build/Cameo933x/initramfs
+	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo933x_mtdlayout))
 endef
 
 define Image/Build/Ath
@@ -818,6 +839,12 @@ define Image/Build/Profile/TEW652BRP
 	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,tew-652brp-recovery,$(tew652brp_cmdline),"AP81-AR9130-RT-070614-02")
 endef
 
+tew712br_cmdline=board=TEW-712BR console=ttyATH0,115200
+define Image/Build/Profile/TEW712BR
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo933x,tew-712br,$(tew712br_cmdline),"HORNET-RT-TEW712BR-3")
+endef
+
+
 a05rbw300n_cmdline=board=TEW-632BRP console=ttyS0,115200
 define Image/Build/Profile/A02RBW300N
 	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,a02-rb-w300n,$(a05rbw300n_cmdline),"AP81-AR9130-RT-070614-03")
@@ -1120,6 +1147,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
 	$(call Image/Build/Profile/TEW673GRU,$(1))
+	$(call Image/Build/Profile/TEW712BR,$(1))
 	$(call Image/Build/Profile/TLMR11U,$(1))
 	$(call Image/Build/Profile/TLMR3020,$(1))
 	$(call Image/Build/Profile/TLMR3040,$(1))
