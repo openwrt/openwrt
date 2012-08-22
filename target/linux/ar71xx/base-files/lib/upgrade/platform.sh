@@ -106,6 +106,7 @@ platform_check_image() {
 	mzk-w300nh | \
 	tew-632brp | \
 	tew-673gru | \
+	tew-712br | \
 	wrt400n | \
 	airrouter | \
 	bullet-m | \

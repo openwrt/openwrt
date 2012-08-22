@@ -112,6 +112,9 @@ get_status_led() {
 	tew-673gru)
 		status_led="trendnet:blue:wps"
 		;;
+	tew-712br)
+		status_led="trendnet:green:power"
+		;;
 	tl-mr3020)
 		status_led="tp-link:green:wps"
 		;;
