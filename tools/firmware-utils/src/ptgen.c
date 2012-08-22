@@ -56,6 +56,7 @@ int verbose = 0;
 int active = 1;
 int heads = -1;
 int sectors = -1;
+int kb_align = 0;
 struct partinfo parts[4];
 char *filename = NULL;
 
@@ -117,6 +118,11 @@ static inline unsigned long round_to_cyl(long sect) {
 	return sect + cyl_size - (sect % cyl_size); 
 }
 
+/* round the sector number up to the kb_align boundary */
+static inline unsigned long round_to_kb(long sect) {
+        return ((sect - 1) / kb_align + 1) * kb_align;
+}
+
 /* check the partition sizes and write the partition table */
 static int gen_ptable(int nr)
 {
@@ -132,8 +138,13 @@ static int gen_ptable(int nr)
 		}
 		pte[i].active = ((i + 1) == active) ? 0x80 : 0;
 		pte[i].type = parts[i].type;
-		pte[i].start = cpu_to_le16(start = sect + sectors);
-		sect = round_to_cyl(start + parts[i].size * 2);
+		start = sect + sectors;
+		if (kb_align != 0)
+			start = round_to_kb(start);
+		pte[i].start = cpu_to_le16(start);
+		sect = start + parts[i].size * 2;
+		if (kb_align == 0)
+			sect = round_to_cyl(sect);
 		pte[i].length = cpu_to_le16(len = sect - start);
 		to_chs(start, pte[i].chs_start);
 		to_chs(start + len - 1, pte[i].chs_end);
@@ -167,7 +178,7 @@ fail:
 
 static void usage(char *prog)
 {
-	fprintf(stderr,	"Usage: %s [-v] -h <heads> -s <sectors> -o <outputfile> [-a 0..4] [[-t <type>] -p <size>...] \n", prog);
+	fprintf(stderr,	"Usage: %s [-v] -h <heads> -s <sectors> -o <outputfile> [-a 0..4] [-l <align kB>] [[-t <type>] -p <size>...] \n", prog);
 	exit(1);
 }
 
@@ -177,7 +188,7 @@ int main (int argc, char **argv)
 	int ch;
 	int part = 0;
 
-	while ((ch = getopt(argc, argv, "h:s:p:a:t:o:v")) != -1) {
+	while ((ch = getopt(argc, argv, "h:s:p:a:t:o:vl:")) != -1) {
 		switch (ch) {
 		case 'o':
 			filename = optarg;
@@ -206,6 +217,9 @@ int main (int argc, char **argv)
 			active = (int) strtoul(optarg, NULL, 0);
 			if ((active < 0) || (active > 4))
 				active = 0;
+			break;
+		case 'l':
+			kb_align = (int) strtoul(optarg, NULL, 0) * 2;
 			break;
 		case '?':
 		default:
