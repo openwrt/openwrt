@@ -37,3 +37,15 @@ define Profile/TEW673GRU/Description
 endef
 
 $(eval $(call Profile,TEW673GRU))
+
+define Profile/TEW712BR
+	NAME:=TRENDNet TEW-712BR
+	PACKAGES:=
+endef
+
+define Profile/TEW712BR/Description
+	Package set optimized for the TRENDNet TEW-712BR.
+endef
+
+$(eval $(call Profile,TEW712BR))
+
