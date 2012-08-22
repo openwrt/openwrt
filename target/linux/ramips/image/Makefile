@@ -444,7 +444,7 @@ define Image/Build/Profile/MOFI35003GN
 endef
 
 define Image/Build/Profile/NBG419N
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,nbg-419n,NBG419N,ttyS1,57600,phys)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,nbg-419n,NBG-419N,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/NW718
