@@ -159,6 +159,9 @@ ar71xx_board_detect() {
 	*ALL0258N)
 		name="all0258n"
 		;;
+	*ALL0305)
+		name="all0305"
+		;;
 	*AP113)
 		name="ap113"
 		;;
