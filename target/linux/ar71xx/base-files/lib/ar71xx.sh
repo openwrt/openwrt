@@ -300,6 +300,9 @@ ar71xx_board_detect() {
 	*TEW-673GRU)
 		name="tew-673gru"
 		;;
+	*TEW-712BR)
+		name="tew-712br"
+		;;
 	*"TL-WR1041N v2")
 		name="tl-wr1041n-v2"
 		;;
