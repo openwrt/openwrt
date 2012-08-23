@@ -869,26 +869,11 @@ $(eval $(call SingleProfile,DIR825B1,$(fs_64k),TEW673GRU,tew-637gru,TEW-673GRU,t
 
 $(eval $(call SingleProfile,CyberTAN,$(fs_64k),WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,1.00.01))
 
-whrg301n_cmdline=board=WHR-G301N console=ttyS0,115200
-define Image/Build/Profile/WHRG301N
-	$(call Image/Build/Template/$(fs_64k)/$(1),WHRHPG300N,whr-g301n,$(whrg301n_cmdline),$(whrhpg300n_mtdlayout),WHR-G301N)
-endef
-
-whrhpg300n_cmdline=board=WHR-HP-G300N console=ttyS0,115200
 whrhpg300n_mtdlayout=mtdparts=spi0.0:248k(u-boot)ro,8k(u-boot-env)ro,960k(kernel),2816k(rootfs),64k(art)ro,3712k@0x40000(firmware)
-define Image/Build/Profile/WHRHPG300N
-	$(call Image/Build/Template/$(fs_64k)/$(1),WHRHPG300N,whr-hp-g300n,$(whrhpg300n_cmdline),$(whrhpg300n_mtdlayout),WHR-HP-G300N)
-endef
-
-whrhpgn_cmdline=board=WHR-HP-GN console=ttyS0,115200
-define Image/Build/Profile/WHRHPGN
-	$(call Image/Build/Template/$(fs_64k)/$(1),WHRHPG300N,whr-hp-gn,$(whrhpgn_cmdline),$(whrhpg300n_mtdlayout),WHR-HP-GN)
-endef
-
-wlaeag300n_cmdline=board=WLAE-AG300N console=ttyS0,115200
-define Image/Build/Profile/WLAEAG300N
-	$(call Image/Build/Template/$(fs_64k)/$(1),WHRHPG300N,wlae-ag300n,$(wlaeag300n_cmdline),$(whrhpg300n_mtdlayout),WLAE-AG300N)
-endef
+$(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WHRG301N,whr-g301n,WHR-G301N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-G301N))
+$(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WHRHPG300N,whr-hp-g300n,WHR-HP-G300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-G300N))
+$(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WHRHPGN,whr-hp-gn,WHR-HP-GN,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-GN))
+$(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WLAEAG300N,wlae-ag300n,WLAE-AG300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WLAE-AG300N))
 
 wzrhpg300nh_cmdline=board=WZR-HP-G300NH console=ttyS0,115200
 define Image/Build/Profile/WZRHPG300NH
