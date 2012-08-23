@@ -716,21 +716,11 @@ $(eval $(call SingleProfile,AthLzma,$(fs_64k),EWDORINRT,ew-dorin-router,EW-DORIN
 
 $(eval $(call MultiProfile,EWDORIN, EWDORINAP EWDORINRT))
 
-ap81_cmdline=board=AP81 console=ttyS0,115200
-define Image/Build/Profile/AP81
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthGzip,ap81,$(ap81_cmdline),,1310720,6619136,KRuImage)
-endef
+$(eval $(call SingleProfile,AthGzip,$(fs_64k),AP81,ap81,AP81,ttyS0,115200,,1310720,6619136,KRuImage))
+$(eval $(call SingleProfile,AthGzip,$(fs_64k),AP83,ap83,AP83,ttyS0,115200,,1310720,6619136,KRuImage))
 
-ap83_cmdline=board=AP83 console=ttyS0,115200
-define Image/Build/Profile/AP83
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthGzip,ap83,$(ap83_cmdline),,1310720,6619136,KRuImage)
-endef
-
-ap96_cmdline=board=AP96 console=ttyS0,115200
 ap96_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),1728k(kernel),64k(art)ro,7872k@0x40000(firmware)
-define Image/Build/Profile/AP96
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthGzip,ap96,$(ap96_cmdline),$(ap96_mtdlayout),1769472,6291456,RKuImage)
-endef
+$(eval $(call SingleProfile,AthGzip,$(fs_64k),AP96,ap96,AP96,ttyS0,115200,$$(ap96_mtdlayout),1769472,6291456,RKuImage))
 
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 $(eval $(call SingleProfile,AthLzma,$(fs_64k),DB120,db120,DB120,ttyS0,115200,$$(db120_mtdlayout),1441792,6488064,RKuImage))
