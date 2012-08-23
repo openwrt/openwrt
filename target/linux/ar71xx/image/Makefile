@@ -23,6 +23,26 @@ define factoryname
 $(call imgname,$(1),$(2))-factory.bin
 endef
 
+COMMA:=,
+
+define mkcmdline
+$(if $(1),board=$(1) )$(if $(2),console=$(2)$(COMMA)$(3))
+endef
+
+define SingleProfile
+  define Image/Build/Profile/$(3)
+	$$(call Image/Build/Template/$(2)/$$(1),$(1),$(4),$$(call mkcmdline,$(5),$(6),$(7)),$(8),$(9),$(10),$(11),$(12))
+  endef
+endef
+
+define MultiProfile
+  define Image/Build/Profile/$(1)
+	$(foreach p,$(2),
+		$$(call Image/Build/Profile/$p,$$(1))
+	)
+  endef
+endef
+
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 
 KDIR_TMP:=$(KDIR)/tmp
