@@ -704,187 +704,141 @@ define Image/Build/Template/128k/jffs2-128k
 endef
 
 $(eval $(call SingleProfile,ALFA,$(fs_64k),ALFANX,alfa-nx,ALFA-NX,ttyS0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,vmlinux.gz.uImage,pb9x-2.6.31-jffs2))
-
-$(eval $(call SingleProfile,AthLzma,$(fs_64k),ALFAAP96,alfa-ap96,ALFA-AP96,ttyS0,115200,$$(alfa_ap96_mtdlayout),2097152,13631488,RKuImage))
-
-$(eval $(call SingleProfile,AthLzma,$(fs_64k),ALL0258N,all0258n,ALL0258N,ttyS0,115200,$$(all0258n_mtdlayout),1048576,5373952,KRuImage))
-
-$(eval $(call SingleProfile,PB4X,$(fs_128k),ALL0305,all0305,ALL0305,ttyS0,115200))
-
-$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP113,ap113,AP113,ttyS0,115200,$$(ap113_mtd_layout),917504,3080192,RK))
-
-$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP121_2M,ap121-2M,AP121,ttyATH0,115200,$$(ap121_mtdlayout_2M),720896,1245184,RKuImage))
-$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP121_4M,ap121-4M,AP121,ttyATH0,115200,$$(ap121_mtdlayout_4M),917504,2818048,RKuImage))
-
-$(eval $(call MultiProfile,AP121,AP121_2M AP121_4M))
-
-$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP121MINI,ap121-mini,AP121-MINI,ttyATH0,115200,$$(ap121_mtdlayout_4M),917504,2818048,RKuImage))
-
-$(eval $(call SingleProfile,AthLzma,$(fs_64k),EWDORINAP,ew-dorin,EW-DORIN,ttyATH0,115200,$$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage))
-$(eval $(call SingleProfile,AthLzma,$(fs_64k),EWDORINRT,ew-dorin-router,EW-DORIN-ROUTER,ttyATH0,115200,$$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage))
-
-$(eval $(call MultiProfile,EWDORIN, EWDORINAP EWDORINRT))
+$(eval $(call SingleProfile,ALFA,$(fs_64k),HORNETUB,hornet-ub,HORNET-UB,ttyATH0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,kernel_image,rootfs_image))
 
 $(eval $(call SingleProfile,AthGzip,$(fs_64k),AP81,ap81,AP81,ttyS0,115200,,1310720,6619136,KRuImage))
 $(eval $(call SingleProfile,AthGzip,$(fs_64k),AP83,ap83,AP83,ttyS0,115200,,1310720,6619136,KRuImage))
-
 $(eval $(call SingleProfile,AthGzip,$(fs_64k),AP96,ap96,AP96,ttyS0,115200,$$(ap96_mtdlayout),1769472,6291456,RKuImage))
 
-$(eval $(call SingleProfile,AthLzma,$(fs_64k),DB120,db120,DB120,ttyS0,115200,$$(db120_mtdlayout),1441792,6488064,RKuImage))
-
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),ALFAAP96,alfa-ap96,ALFA-AP96,ttyS0,115200,$$(alfa_ap96_mtdlayout),2097152,13631488,RKuImage))
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),ALL0258N,all0258n,ALL0258N,ttyS0,115200,$$(all0258n_mtdlayout),1048576,5373952,KRuImage))
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP113,ap113,AP113,ttyS0,115200,$$(ap113_mtd_layout),917504,3080192,RK))
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP121_2M,ap121-2M,AP121,ttyATH0,115200,$$(ap121_mtdlayout_2M),720896,1245184,RKuImage))
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP121_4M,ap121-4M,AP121,ttyATH0,115200,$$(ap121_mtdlayout_4M),917504,2818048,RKuImage))
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP121MINI,ap121-mini,AP121-MINI,ttyATH0,115200,$$(ap121_mtdlayout_4M),917504,2818048,RKuImage))
 $(eval $(call SingleProfile,AthLzma,$(fs_64k),AP136,ap136,AP136,ttyS0,115200,$$(ap136_mtdlayout),1441792,6488064,RKuImage))
-
-$(eval $(call SingleProfile,PB4X,$(fs_64k),PB42,pb42,PB42,ttyS0,115200))
-$(eval $(call SingleProfile,PB4X,$(fs_64k),PB44,pb44,PB44,ttyS0,115200))
-
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),DB120,db120,DB120,ttyS0,115200,$$(db120_mtdlayout),1441792,6488064,RKuImage))
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),EWDORINAP,ew-dorin,EW-DORIN,ttyATH0,115200,$$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage))
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),EWDORINRT,ew-dorin-router,EW-DORIN-ROUTER,ttyATH0,115200,$$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage))
 $(eval $(call SingleProfile,AthLzma,$(fs_64k),PB92,pb92,PB92,ttyS0,115200,$$(pb92_mtdlayout),917504,2818048,KRuImage))
+
+$(eval $(call SingleProfile,Cameo7240,$(fs_64k),DIR600A1,dir-600-a1,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-00"))
+$(eval $(call SingleProfile,Cameo7240,$(fs_64k),DIR601A1,dir-601-a1,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-02"))
+$(eval $(call SingleProfile,Cameo7240,$(fs_64k),DIR615E4,dir-615-e4,DIR-615-E4,ttyS0,115200,"AP99-AR7240-RT-091105-05"))
+$(eval $(call SingleProfile,Cameo7240,$(fs_64k),FR54RTR,fr-54rtr,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-01"))
+
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),A02RBW300N,a02-rb-w300n,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-03"))
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),DIR615C1,dir-615-c1,DIR-615-C1,ttyS0,115200,"AP81-AR9130-RT-070614-02"))
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW632BRP,tew-632brp,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-00"))
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_FW,tew-652brp,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-080609-05"))
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_RECOVERY,tew-652brp-recovery,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-02"))
+
+$(eval $(call SingleProfile,Cameo933x,$(fs_squash),TEW712BR,tew-712br,TEW-712BR,ttyATH0,115200,"HORNET-RT-TEW712BR-3"))
+
+$(eval $(call SingleProfile,CyberTAN,$(fs_64k),WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,1.00.01))
+
+$(eval $(call SingleProfile,DIR825B1,$(fs_64k),DIR825B1,dir-825-b1,DIR-825-B1,ttyS0,115200,01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
+$(eval $(call SingleProfile,DIR825B1,$(fs_64k),TEW673GRU,tew-637gru,TEW-673GRU,ttyS0,115200,01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01))
 
 $(eval $(call SingleProfile,MyLoader,$(fs_64k),WP543_2M,wp543,,ttyS0,115200,0x200000,2M))
 $(eval $(call SingleProfile,MyLoader,$(fs_64k),WP543_4M,wp543,,ttyS0,115200,0x400000,4M))
 $(eval $(call SingleProfile,MyLoader,$(fs_64k),WP543_8M,wp543,,ttyS0,115200,0x800000,8M))
 $(eval $(call SingleProfile,MyLoader,$(fs_64k),WP543_16M,wp543,,ttyS0,115200,0x1000000,16M))
-$(eval $(call MultiProfile,WPE543,WPE543_2M WPE543_4M WPE543_8M WPE543_16M))
-
 $(eval $(call SingleProfile,MyLoader,$(fs_64k),WPE72,wpe72,,ttyS0,115200,0x800000,8M))
-
-$(eval $(call SingleProfile,Cameo7240,$(fs_64k),DIR600A1,dir-600-a1,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-00"))
-$(eval $(call SingleProfile,Cameo7240,$(fs_64k),DIR601A1,dir-601-a1,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-02"))
-$(eval $(call SingleProfile,Cameo7240,$(fs_64k),DIR615E4,dir-615-e4,DIR-615-E4,ttyS0,115200,"AP99-AR7240-RT-091105-05"))
-
-$(eval $(call SingleProfile,PB4X,$(fs_128k),EAP7660D,eap7660d,EAP7660D,ttyS0,115200))
-
-$(eval $(call SingleProfile,ALFA,$(fs_64k),HORNETUB,hornet-ub,HORNET-UB,ttyATH0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,kernel_image,rootfs_image))
-
-$(eval $(call SingleProfile,PB4X,$(fs_64k),JA76PF,ja76pf,JA76PF,ttyS0,115200))
-$(eval $(call SingleProfile,PB4X,$(fs_64k),JA76PF2,ja76pf2,JA76PF2,ttyS0,115200))
-$(eval $(call SingleProfile,PB4X,$(fs_64k),JWAP003,jwap003,JWAP003,ttyS0,115200))
-
-$(eval $(call SingleProfile,Cameo7240,$(fs_64k),FR54RTR,fr-54rtr,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-01"))
-
-$(eval $(call SingleProfile,Cameo913x,$(fs_squash),DIR615C1,dir-615-c1,DIR-615-C1,ttyS0,115200,"AP81-AR9130-RT-070614-02"))
-
-$(eval $(call SingleProfile,UBNTXM,$(fs_64k),RW2458N,rw2458n,RW2458N,ttyS0,115200,XM,XM,ar7240))
-
-$(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW632BRP,tew-632brp,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-00"))
-
-$(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_FW,tew-652brp,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-080609-05"))
-$(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_RECOVERY,tew-652brp-recovery,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-02"))
-$(eval $(call MultiProfile,TEW652BRP,TEW652BRP_FW TEW652BRP_RECOVERY))
-
-$(eval $(call SingleProfile,Cameo933x,$(fs_squash),TEW712BR,tew-712br,TEW-712BR,ttyATH0,115200,"HORNET-RT-TEW712BR-3"))
-
-$(eval $(call SingleProfile,Cameo913x,$(fs_squash),A02RBW300N,a02-rb-w300n,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-03"))
-
-$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTAIRROUTER,ubnt-airrouter,UBNT-AR,ttyS0,115200,XM,XM,ar7240))
-
-$(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTRS,ubnt-rs,UBNT-RS,ttyS0,115200,RS,RSx,ar7100))
-
-$(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTRSPRO,ubnt-rspro,UBNT-RSPRO,ttyS0,115200,RSPRO,RSPRO,ar7100pro))
-
-$(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTLSSR71,ubnt-ls-sr71,UBNT-LS-SR71,ttyS0,115200,LS-SR71,LS-SR71,ar7100))
-
-$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTBULLETM,ubnt-bullet-m,UBNT-BM,ttyS0,115200,XM,XM,ar7240))
-
-$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTROCKETM,ubnt-rocket-m,UBNT-RM,ttyS0,115200,XM,XM,ar7240))
-
-$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTNANOM,ubnt-nano-m,UBNT-NM,ttyS0,115200,XM,XM,ar7240))
-
-$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTUNIFI,ubnt-unifi,UBNT-UF,ttyS0,115200,XM,XM,ar7240))
-
-$(eval $(call MultiProfile,UBNT,UBNTAIRROUTER UBNTRS UBNTRSPRO UBNTLSSR71 UBNTBULLETM UBNTROCKETM UBNTNANOM UBNTUNIFI))
-
-$(eval $(call SingleProfile,Planex,$(fs_64k),MZKW04NU,mzk-w04nu,MZK-W04NU,ttyS0,115200))
-$(eval $(call SingleProfile,Planex,$(fs_64k),MZKW300NH,mzk-w300nh,MZK-W300NH,ttyS0,115200))
-
-$(eval $(call SingleProfile,ZyXEL,$(fs_64k),NBG_460N_550N_550NH,nbg460n_550n_550nh,NBG460N,ttyS0,115200,NBG-460N))
-
-$(eval $(call SingleProfile,OpenMesh,$(fs_squash),OM2P,om2p,OM2P))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR11U,tl-mr11u-v1,TL-MR11U,ttyATH0,115200,0x00110101,1,4Mlzma))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR3020,tl-mr3020-v1,TL-MR3020,ttyATH0,115200,0x30200001,1,4Mlzma))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR3040,tl-mr3040-v1,TL-MR11U,ttyATH0,115200,0x30400001,1,4Mlzma))
-
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLMR3220,tl-mr3220-v1,TL-MR3220,ttyS0,115200,0x32200001,1,4M))
-
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLMR3420,tl-mr3420-v1,TL-MR3420,ttyS0,115200,0x34200001,1,4M))
-
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWA701NV1,tl-wa701n-v1,TL-WA901ND,ttyS0,115200,0x07010001,1,4M))
-
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWA901NV1,tl-wa901nd-v1,TL-WA901ND,ttyS0,115200,0x09010001,1,4M))
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWA901NV2,tl-wa901nd-v2,TL-WA901ND-v2,ttyS0,115200,0x09010002,1,4M))
-$(eval $(call MultiProfile,TLWA901,TLWA901NV1 TLWA901NV2))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR703,tl-wr703n-v1,TL-WR703N,ttyATH0,115200,0x07030101,1,4Mlzma))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR740NV4,tl-wr740n-v4,TL-WR741ND-v4,ttyATH0,115200,0x07400004,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR740NV1,tl-wr740n-v1,TL-WR741ND,ttyS0,115200,0x07400001,1,4M))
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR740NV3,tl-wr740n-v3,TL-WR741ND,ttyS0,115200,0x07400003,1,4M))
-$(eval $(call MultiProfile,TLWR740,TLWR740NV1 TLWR740NV3 TLWR740NV4))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR741NV4,tl-wr741nd-v4,TL-WR741ND-v4,ttyATH0,115200,0x07410004,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR741NV1,tl-wr741nd-v1,TL-WR741ND,ttyS0,115200,0x07410001,1,4M))
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR741NV2,tl-wr741nd-v2,TL-WR741ND,ttyS0,115200,0x07410001,1,4M))
-$(eval $(call MultiProfile,TLWR741,TLWR741NV1 TLWR741NV2 TLWR741NV4))
-
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR743,tl-wr743nd-v1,TL-WR741ND,ttyS0,115200,0x07430001,1,4M))
-
-$(eval $(call SingleProfile,TPLINKOLD,$(fs_squash),TLWR841NV15,tl-wr841nd-v1.5,TL-WR841N-v1.5,ttyS0,115200,0x08410002,2,4M))
-
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR841NV3,tl-wr841nd-v3,TL-WR941ND,ttyS0,115200,0x08410003,3,4M))
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR841NV5,tl-wr841nd-v5,TL-WR741ND,ttyS0,115200,0x08410005,1,4M))
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR841NV7,tl-wr841nd-v7,TL-WR841N-v7,ttyS0,115200,0x08410007,1,4M))
-$(eval $(call MultiProfile,TLWR841,TLWR841NV15 TLWR841NV3 TLWR841NV5 TLWR841NV7))
-
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR842,tl-wr842n-v1,TL-MR3420,ttyS0,115200,0x08420001,1,8M))
-
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR941NV2,tl-wr941nd-v2,TL-WR941ND,ttyS0,115200,0x09410002,2,4M))
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR941NV3,tl-wr941nd-v3,TL-WR941ND,ttyS0,115200,0x09410002,2,4M))
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR941NV4,tl-wr941nd-v4,TL-WR741ND,ttyS0,115200,0x09410004,1,4M))
-$(eval $(call MultiProfile,TLWR941,TLWR941NV2 TLWR941NV3 TLWR941NV4))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR1041,tl-wr1041n-v1,TL-WR1041,ttyS0,115200,0x10410002,1,4Mlzma))
-
-$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR1043,tl-wr1043nd-v1,TL-WR1043,ttyS0,115200,0x10430001,1,8M))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR2543,tl-wr2543-v1,TL-WR2543,ttyS0,115200,0x25430001,1,8Mlzma,-v 3.13.99))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWDR3600V1,tl-wdr3600-v1,TL-WDR4300,ttyS0,115200,0x36000001,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWDR4300V1,tl-wdr4300-v1,TL-WDR4300,ttyS0,115200,0x43000001,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWDR4310V1,tl-wdr4310-v1,TL-WDR4300,ttyS0,115200,0x43100001,1,8Mlzma))
-$(eval $(call MultiProfile,TLWDR4300,TLWDR3600V1 TLWDR4300V1 TLWDR4310V1))
 
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3700V1,wndr3700,WNDR3700,ttyS0,115200,$$(wndr3700_mtdlayout),3700,WNDR3700,"" NA,))
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3700V2,wndr3700v2,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDR3700v2,"",-H 29763654+16+64))
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3800,wndr3800,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDR3800,"",-H 29763654+16+128))
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDRMAC,wndrmac,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDRMAC,"",-H 29763654+16+64))
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDRMACV2,wndrmacv2,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDRMACv2,"",-H 29763654+16+128))
-$(eval $(call MultiProfile,WNDR3700,WNDR3700V1 WNDR3700V2 WNDR3800 WNDRMAC WNDRMACV2))
 
-$(eval $(call SingleProfile,WRT400N,$(fs_64k),WRT400N,wrt400n,WRT400N,ttyS0,115200))
+$(eval $(call SingleProfile,OpenMesh,$(fs_squash),OM2P,om2p,OM2P))
 
-$(eval $(call SingleProfile,DIR825B1,$(fs_64k),DIR825B1,dir-825-b1,DIR-825-B1,ttyS0,115200,01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
-$(eval $(call SingleProfile,DIR825B1,$(fs_64k),TEW673GRU,tew-637gru,TEW-673GRU,ttyS0,115200,01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01))
+$(eval $(call SingleProfile,PB4X,$(fs_128k),ALL0305,all0305,ALL0305,ttyS0,115200))
+$(eval $(call SingleProfile,PB4X,$(fs_128k),EAP7660D,eap7660d,EAP7660D,ttyS0,115200))
+$(eval $(call SingleProfile,PB4X,$(fs_64k),JA76PF,ja76pf,JA76PF,ttyS0,115200))
+$(eval $(call SingleProfile,PB4X,$(fs_64k),JA76PF2,ja76pf2,JA76PF2,ttyS0,115200))
+$(eval $(call SingleProfile,PB4X,$(fs_64k),JWAP003,jwap003,JWAP003,ttyS0,115200))
+$(eval $(call SingleProfile,PB4X,$(fs_64k),PB42,pb42,PB42,ttyS0,115200))
+$(eval $(call SingleProfile,PB4X,$(fs_64k),PB44,pb44,PB44,ttyS0,115200))
 
-$(eval $(call SingleProfile,CyberTAN,$(fs_64k),WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,1.00.01))
+$(eval $(call SingleProfile,Planex,$(fs_64k),MZKW04NU,mzk-w04nu,MZK-W04NU,ttyS0,115200))
+$(eval $(call SingleProfile,Planex,$(fs_64k),MZKW300NH,mzk-w300nh,MZK-W300NH,ttyS0,115200))
+
+$(eval $(call SingleProfile,TPLINKOLD,$(fs_squash),TLWR841NV15,tl-wr841nd-v1.5,TL-WR841N-v1.5,ttyS0,115200,0x08410002,2,4M))
+
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLMR3220,tl-mr3220-v1,TL-MR3220,ttyS0,115200,0x32200001,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLMR3420,tl-mr3420-v1,TL-MR3420,ttyS0,115200,0x34200001,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWA701NV1,tl-wa701n-v1,TL-WA901ND,ttyS0,115200,0x07010001,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWA901NV1,tl-wa901nd-v1,TL-WA901ND,ttyS0,115200,0x09010001,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWA901NV2,tl-wa901nd-v2,TL-WA901ND-v2,ttyS0,115200,0x09010002,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR740NV1,tl-wr740n-v1,TL-WR741ND,ttyS0,115200,0x07400001,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR740NV3,tl-wr740n-v3,TL-WR741ND,ttyS0,115200,0x07400003,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR741NV1,tl-wr741nd-v1,TL-WR741ND,ttyS0,115200,0x07410001,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR741NV2,tl-wr741nd-v2,TL-WR741ND,ttyS0,115200,0x07410001,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR743,tl-wr743nd-v1,TL-WR741ND,ttyS0,115200,0x07430001,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR841NV3,tl-wr841nd-v3,TL-WR941ND,ttyS0,115200,0x08410003,3,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR841NV5,tl-wr841nd-v5,TL-WR741ND,ttyS0,115200,0x08410005,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR841NV7,tl-wr841nd-v7,TL-WR841N-v7,ttyS0,115200,0x08410007,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR842,tl-wr842n-v1,TL-MR3420,ttyS0,115200,0x08420001,1,8M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR941NV2,tl-wr941nd-v2,TL-WR941ND,ttyS0,115200,0x09410002,2,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR941NV3,tl-wr941nd-v3,TL-WR941ND,ttyS0,115200,0x09410002,2,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR941NV4,tl-wr941nd-v4,TL-WR741ND,ttyS0,115200,0x09410004,1,4M))
+$(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR1043,tl-wr1043nd-v1,TL-WR1043,ttyS0,115200,0x10430001,1,8M))
+
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR11U,tl-mr11u-v1,TL-MR11U,ttyATH0,115200,0x00110101,1,4Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR3020,tl-mr3020-v1,TL-MR3020,ttyATH0,115200,0x30200001,1,4Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR3040,tl-mr3040-v1,TL-MR11U,ttyATH0,115200,0x30400001,1,4Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR703,tl-wr703n-v1,TL-WR703N,ttyATH0,115200,0x07030101,1,4Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR740NV4,tl-wr740n-v4,TL-WR741ND-v4,ttyATH0,115200,0x07400004,1,4Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR741NV4,tl-wr741nd-v4,TL-WR741ND-v4,ttyATH0,115200,0x07410004,1,4Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR1041,tl-wr1041n-v1,TL-WR1041,ttyS0,115200,0x10410002,1,4Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR2543,tl-wr2543-v1,TL-WR2543,ttyS0,115200,0x25430001,1,8Mlzma,-v 3.13.99))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWDR3600V1,tl-wdr3600-v1,TL-WDR4300,ttyS0,115200,0x36000001,1,8Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWDR4300V1,tl-wdr4300-v1,TL-WDR4300,ttyS0,115200,0x43000001,1,8Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWDR4310V1,tl-wdr4310-v1,TL-WDR4300,ttyS0,115200,0x43100001,1,8Mlzma))
+
+$(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTRS,ubnt-rs,UBNT-RS,ttyS0,115200,RS,RSx,ar7100))
+$(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTRSPRO,ubnt-rspro,UBNT-RSPRO,ttyS0,115200,RSPRO,RSPRO,ar7100pro))
+$(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTLSSR71,ubnt-ls-sr71,UBNT-LS-SR71,ttyS0,115200,LS-SR71,LS-SR71,ar7100))
+
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),RW2458N,rw2458n,RW2458N,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTAIRROUTER,ubnt-airrouter,UBNT-AR,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTBULLETM,ubnt-bullet-m,UBNT-BM,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTROCKETM,ubnt-rocket-m,UBNT-RM,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTNANOM,ubnt-nano-m,UBNT-NM,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTUNIFI,ubnt-unifi,UBNT-UF,ttyS0,115200,XM,XM,ar7240))
 
 $(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WHRG301N,whr-g301n,WHR-G301N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-G301N))
 $(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WHRHPG300N,whr-hp-g300n,WHR-HP-G300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-G300N))
 $(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WHRHPGN,whr-hp-gn,WHR-HP-GN,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-GN))
 $(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WLAEAG300N,wlae-ag300n,WLAE-AG300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WLAE-AG300N))
 
+$(eval $(call SingleProfile,WRT400N,$(fs_64k),WRT400N,wrt400n,WRT400N,ttyS0,115200))
+
 $(eval $(call SingleProfile,WZRHPG30XNH,$(fs_128k),WZRHPG300NH,wzr-hp-g300nh,WZR-HP-G300NH,ttyS0,115200,WZR-HP-G300NH))
-
 $(eval $(call SingleProfile,WZRHPG30XNH,$(fs_64k),WZRHPG300NH2,wzr-hp-g300nh2,WZR-HP-G300NH2,ttyS0,115200,WZR-HP-G300NH2))
-
 $(eval $(call SingleProfile,WZRHPG30XNH,$(fs_64k),WZRHPAG300H,wzr-hp-ag300h,WZR-HP-AG300H,ttyS0,115200,WZR-HP-AG300H))
-
 $(eval $(call SingleProfile,WZRHPG30XNH,$(fs_64k),WZRHPG450H,wzr-hp-g450h,WZR-HP-G450H,ttyS0,115200,WZR-HP-AG450H))
 
 $(eval $(call SingleProfile,Zcomax,$(fs_64k),ZCN1523H28,zcn-1523h-2-8,ZCN-1523H-2,ttyS0,115200,$$(zcn1523h_mtdlayout)))
 $(eval $(call SingleProfile,Zcomax,$(fs_64k),ZCN1523H516,zcn-1523h-5-16,ZCN-1523H-5,ttyS0,115200,$$(zcn1523h_mtdlayout)))
 
+$(eval $(call SingleProfile,ZyXEL,$(fs_64k),NBG_460N_550N_550NH,nbg460n_550n_550nh,NBG460N,ttyS0,115200,NBG-460N))
+
+
+$(eval $(call MultiProfile,AP121,AP121_2M AP121_4M))
+$(eval $(call MultiProfile,EWDORIN, EWDORINAP EWDORINRT))
+$(eval $(call MultiProfile,TEW652BRP,TEW652BRP_FW TEW652BRP_RECOVERY))
+$(eval $(call MultiProfile,TLWA901,TLWA901NV1 TLWA901NV2))
+$(eval $(call MultiProfile,TLWR740,TLWR740NV1 TLWR740NV3 TLWR740NV4))
+$(eval $(call MultiProfile,TLWR741,TLWR741NV1 TLWR741NV2 TLWR741NV4))
+$(eval $(call MultiProfile,TLWR841,TLWR841NV15 TLWR841NV3 TLWR841NV5 TLWR841NV7))
+$(eval $(call MultiProfile,TLWR941,TLWR941NV2 TLWR941NV3 TLWR941NV4))
+$(eval $(call MultiProfile,TLWDR4300,TLWDR3600V1 TLWDR4300V1 TLWDR4310V1))
+$(eval $(call MultiProfile,UBNT,UBNTAIRROUTER UBNTRS UBNTRSPRO UBNTLSSR71 UBNTBULLETM UBNTROCKETM UBNTNANOM UBNTUNIFI))
+$(eval $(call MultiProfile,WNDR3700,WNDR3700V1 WNDR3700V2 WNDR3800 WNDRMAC WNDRMACV2))
+$(eval $(call MultiProfile,WPE543,WPE543_2M WPE543_4M WPE543_8M WPE543_16M))
 
 $(eval $(call MultiProfile,Default,$(SINGLE_PROFILES)))
 $(eval $(call MultiProfile,Minimal,$(SINGLE_PROFILES)))
