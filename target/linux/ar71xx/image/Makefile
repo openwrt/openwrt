@@ -831,20 +831,11 @@ endef
 
 $(eval $(call SingleProfile,OpenMesh,$(fs_squash),OM2P,om2p,OM2P))
 
-tlmr11u_cmdline=board=TL-MR11U console=ttyATH0,115200
-define Image/Build/Profile/TLMR11U
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-mr11u-v1,$(tlmr11u_cmdline),0x00110101,1,4Mlzma)
-endef
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR11U,tl-mr11u-v1,TL-MR11U,ttyATH0,115200,0x00110101,1,4Mlzma))
 
-tlmr3020_cmdline=board=TL-MR3020 console=ttyATH0,115200
-define Image/Build/Profile/TLMR3020
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK-LZMA,tl-mr3020-v1,$(tlmr3020_cmdline),0x30200001,1,4Mlzma)
-endef
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR3020,tl-mr3020-v1,TL-MR3020,ttyATH0,115200,0x30200001,1,4Mlzma))
 
-tlmr3040_cmdline=board=TL-MR11U console=ttyATH0,115200
-define Image/Build/Profile/TLMR3040
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-mr3040-v1,$(tlmr3040_cmdline),0x30400001,1,4Mlzma)
-endef
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR3040,tl-mr3040-v1,TL-MR11U,ttyATH0,115200,0x30400001,1,4Mlzma))
 
 $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLMR3220,tl-mr3220-v1,TL-MR3220,ttyS0,115200,0x32200001,1,4M))
 
@@ -856,23 +847,14 @@ $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWA901NV1,tl-wa901nd-v1,TL-WA90
 $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWA901NV2,tl-wa901nd-v2,TL-WA901ND-v2,ttyS0,115200,0x09010002,1,4M))
 $(eval $(call MultiProfile,TLWA901,TLWA901NV1 TLWA901NV2))
 
-tlwr703_cmdline=board=TL-WR703N console=ttyATH0,115200
-define Image/Build/Profile/TLWR703
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wr703n-v1,$(tlwr703_cmdline),0x07030101,1,4Mlzma)
-endef
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR703,tl-wr703n-v1,TL-WR703N,ttyATH0,115200,0x07030101,1,4Mlzma))
 
-tlwr740v4_cmdline=board=TL-WR741ND-v4 console=ttyATH0,115200
-define Image/Build/Profile/TLWR740V4
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wr740n-v4,$(tlwr740v4_cmdline),0x07400004,1,4Mlzma)
-endef
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR740NV4,tl-wr740n-v4,TL-WR741ND-v4,ttyATH0,115200,0x07400004,1,4Mlzma))
 $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR740NV1,tl-wr740n-v1,TL-WR741ND,ttyS0,115200,0x07400001,1,4M))
 $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR740NV3,tl-wr740n-v3,TL-WR741ND,ttyS0,115200,0x07400003,1,4M))
 $(eval $(call MultiProfile,TLWR740,TLWR740NV1 TLWR740NV3 TLWR740NV4))
 
-tlwr741v4_cmdline=board=TL-WR741ND-v4 console=ttyATH0,115200
-define Image/Build/Profile/TLWR741V4
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wr741nd-v4,$(tlwr741v4_cmdline),0x07410004,1,4Mlzma)
-endef
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR741NV4,tl-wr741nd-v4,TL-WR741ND-v4,ttyATH0,115200,0x07410004,1,4Mlzma))
 $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR741NV1,tl-wr741nd-v1,TL-WR741ND,ttyS0,115200,0x07410001,1,4M))
 $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR741NV2,tl-wr741nd-v2,TL-WR741ND,ttyS0,115200,0x07410001,1,4M))
 $(eval $(call MultiProfile,TLWR741,TLWR741NV1 TLWR741NV2 TLWR741NV4))
@@ -896,24 +878,16 @@ $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR941NV3,tl-wr941nd-v3,TL-WR94
 $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR941NV4,tl-wr941nd-v4,TL-WR741ND,ttyS0,115200,0x09410004,1,4M))
 $(eval $(call MultiProfile,TLWR941,TLWR941NV2 TLWR941NV3 TLWR941NV4))
 
-tlwr1041_cmdline=board=TL-WR1041N-v2 console=ttyS0,115200
-define Image/Build/Profile/TLWR1041
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wr1041n-v2,$(tlwr1041_cmdline),0x10410002,1,4Mlzma)
-endef
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR1041,tl-wr1041n-v1,TL-WR1041,ttyS0,115200,0x10410002,1,4Mlzma))
 
 $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR1043,tl-wr1043nd-v1,TL-WR1043,ttyS0,115200,0x10430001,1,8M))
 
-tlwr2543_cmdline=board=TL-WR2543N console=ttyS0,115200
-define Image/Build/Profile/TLWR2543
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wr2543n-v1,$(tlwr2543_cmdline),0x25430001,1,8Mlzma,-v 3.13.99)
-endef
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWR2543,tl-wr2543-v1,TL-WR2543,ttyS0,115200,0x25430001,1,8Mlzma,-v 3.13.99))
 
-tlwdr4300_cmdline=board=TL-WDR4300 console=ttyS0,115200
-define Image/Build/Profile/TLWDR4300
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wdr3600-v1,$(tlwdr4300_cmdline),0x36000001,1,8Mlzma)
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wdr4300-v1,$(tlwdr4300_cmdline),0x43000001,1,8Mlzma)
-	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wdr4310-v1,$(tlwdr4300_cmdline),0x43100001,1,8Mlzma)
-endef
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWDR3600V1,tl-wdr3600-v1,TL-WDR4300,ttyS0,115200,0x36000001,1,8Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWDR4300V1,tl-wdr4300-v1,TL-WDR4300,ttyS0,115200,0x43000001,1,8Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLWDR4310V1,tl-wdr4310-v1,TL-WDR4300,ttyS0,115200,0x43100001,1,8Mlzma))
+$(eval $(call MultiProfile,TLWDR4300,TLWDR3600V1 TLWDR4300V1 TLWDR4310V1))
 
 wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
 wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),14848k(rootfs),64k(art)ro,15872k@0x70000(firmware)
