@@ -755,10 +755,7 @@ $(eval $(call SingleProfile,Cameo7240,$(fs_64k),FR54RTR,fr-54rtr,DIR-600-A1,ttyS
 
 $(eval $(call SingleProfile,Cameo913x,$(fs_squash),DIR615C1,dir-615-c1,DIR-615-C1,ttyS0,115200,"AP81-AR9130-RT-070614-02"))
 
-rw2458n_cmdline=board=RW2458N console=ttyS0,115200
-define Image/Build/Profile/RW2458N
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,rw2458n,$(rw2458n_cmdline),XM,UBNTXM,ar7240)
-endef
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),RW2458N,rw2458n,RW2458N,ttyS0,115200,XM,XM,ar7240))
 
 $(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW632BRP,tew-632brp,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-00"))
 
@@ -770,10 +767,7 @@ $(eval $(call SingleProfile,Cameo933x,$(fs_squash),TEW712BR,tew-712br,TEW-712BR,
 
 $(eval $(call SingleProfile,Cameo913x,$(fs_squash),A02RBW300N,a02-rb-w300n,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-03"))
 
-ubntairrouter_cmdline=board=UBNT-AR console=ttyS0,115200
-define Image/Build/Profile/UBNTAIRROUTER
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-airrouter,$(ubntairrouter_cmdline),XM,UBNTXM,ar7240)
-endef
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTAIRROUTER,ubnt-airrouter,UBNT-AR,ttyS0,115200,XM,XM,ar7240))
 
 $(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTRS,ubnt-rs,UBNT-RS,ttyS0,115200,RS,RSx,ar7100))
 
@@ -781,36 +775,15 @@ $(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTRSPRO,ubnt-rspro,UBNT-RSPRO,ttyS0
 
 $(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTLSSR71,ubnt-ls-sr71,UBNT-LS-SR71,ttyS0,115200,LS-SR71,LS-SR71,ar7100))
 
-ubntbulletm_cmdline=board=UBNT-BM console=ttyS0,115200
-define Image/Build/Profile/UBNTBULLETM
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-bullet-m,$(ubntbulletm_cmdline),XM,XM,ar7240)
-endef
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTBULLETM,ubnt-bullet-m,UBNT-BM,ttyS0,115200,XM,XM,ar7240))
 
-ubntrocketm_cmdline=board=UBNT-RM console=ttyS0,115200
-define Image/Build/Profile/UBNTROCKETM
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-rocket-m,$(ubntrocketm_cmdline),XM,XM,ar7240)
-endef
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTROCKETM,ubnt-rocket-m,UBNT-RM,ttyS0,115200,XM,XM,ar7240))
 
-ubntnanom_cmdline=board=UBNT-NM console=ttyS0,115200
-define Image/Build/Profile/UBNTNANOM
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-nano-m,$(ubntnanom_cmdline),XM,XM,ar7240)
-endef
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTNANOM,ubnt-nano-m,UBNT-NM,ttyS0,115200,XM,XM,ar7240))
 
-ubntunifi_cmdline=board=UBNT-UF console=ttyS0,115200
-define Image/Build/Profile/UBNTUNIFI
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-unifi,$(ubntunifi_cmdline),XM,XM,ar7240)
-endef
+$(eval $(call SingleProfile,UBNTXM,$(fs_64k),UBNTUNIFI,ubnt-unifi,UBNT-UF,ttyS0,115200,XM,XM,ar7240))
 
-define Image/Build/Profile/UBNT
-	$(call Image/Build/Profile/UBNTAIRROUTER,$(1))
-	$(call Image/Build/Profile/UBNTRS,$(1))
-	$(call Image/Build/Profile/UBNTRSPRO,$(1))
-	$(call Image/Build/Profile/UBNTLSSR71,$(1))
-	$(call Image/Build/Profile/UBNTBULLETM,$(1))
-	$(call Image/Build/Profile/UBNTROCKETM,$(1))
-	$(call Image/Build/Profile/UBNTNANOM,$(1))
-	$(call Image/Build/Profile/UBNTUNIFI,$(1))
-endef
+$(eval $(call MultiProfile,UBNT,UBNTAIRROUTER UBNTRS UBNTRSPRO UBNTLSSR71 UBNTBULLETM UBNTROCKETM UBNTNANOM UBNTUNIFI))
 
 $(eval $(call SingleProfile,Planex,$(fs_64k),MZKW04NU,mzk-w04nu,MZK-W04NU,ttyS0,115200))
 $(eval $(call SingleProfile,Planex,$(fs_64k),MZKW300NH,mzk-w300nh,MZK-W300NH,ttyS0,115200))
