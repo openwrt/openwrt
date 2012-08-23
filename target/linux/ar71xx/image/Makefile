@@ -687,17 +687,11 @@ endef
 
 $(eval $(call SingleProfile,ALFA,$(fs_64k),ALFANX,alfa-nx,ALFA-NX,ttyS0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,vmlinux.gz.uImage,pb9x-2.6.31-jffs2))
 
-alfa_ap96_cmdline=board=ALFA-AP96 console=ttyS0,115200
 alfa_ap96_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13312k(rootfs),2048k(kernel),512k(caldata)ro,15360k@0x80000(firmware)
-define Image/Build/Profile/ALFAAP96
-	$(call Image/Build/Template/$(fs_128k)/$(1),AthLzma,alfa-ap96,$(alfa_ap96_cmdline),$(alfa_ap96_mtdlayout),2097152,13631488,RKuImage)
-endef
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),ALFAAP96,alfa-ap96,ALFA-AP96,ttyS0,115200,$$(alfa_ap96_mtdlayout),2097152,13631488,RKuImage))
 
-all0258n_cmdline=board=ALL0258N console=ttyS0,115200
 all0258n_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),1024k(kernel),5248k(rootfs),1536k(failsafe),64k(art),6272k@0x50000(firmware)
-define Image/Build/Profile/ALL0258N
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,all0258n,$(all0258n_cmdline),$(all0258n_mtdlayout),1048576,5373952,KRuImage)
-endef
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),ALL0258N,all0258n,ALL0258N,ttyS0,115200,$$(all0258n_mtdlayout),1048576,5373952,KRuImage))
 
 all0305_cmdline=board=ALL0305 console=ttyS0,115200
 define Image/Build/Profile/ALL0305
@@ -705,32 +699,22 @@ define Image/Build/Profile/ALL0305
 endef
 
 ap113_mtd_layout=mtdparts=spi0.0:64k(u-boot),3008k(rootfs),896k(uImage),64k(NVRAM),64k(ART),3904k@0x10000(firmware)
-ap113_cmdline=board=AP113 console=ttyS0,115200
-define Image/Build/Profile/AP113
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap113,$(ap113_cmdline),$(ap113_mtd_layout),917504,3080192,RK)
-endef
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP113,ap113,AP113,ttyS0,115200,$$(ap113_mtd_layout),917504,3080192,RK))
 
 ap121_mtdlayout_2M=mtdparts=spi0.0:64k(u-boot)ro,1216k(rootfs),704k(kernel),64k(art)ro,1920k@0x10000(firmware)
 ap121_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP121_2M,ap121-2M,AP121,ttyATH0,115200,$$(ap121_mtdlayout_2M),720896,1245184,RKuImage))
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP121_4M,ap121-4M,AP121,ttyATH0,115200,$$(ap121_mtdlayout_4M),917504,2818048,RKuImage))
 
-ap121_cmdline=board=AP121 console=ttyATH0,115200
-define Image/Build/Profile/AP121
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap121-2M,$(ap121_cmdline),$(ap121_mtdlayout_2M),720896,1245184,RKuImage)
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap121-4M,$(ap121_cmdline),$(ap121_mtdlayout_4M),917504,2818048,RKuImage)
-endef
+$(eval $(call MultiProfile,AP121,AP121_2M AP121_4M))
 
-ap121_mini_cmdline=board=AP121-MINI console=ttyATH0,115200
-define Image/Build/Profile/AP121MINI
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap121-mini,$(ap121_mini_cmdline),$(ap121_mtdlayout_4M),917504,2818048,RKuImage)
-endef
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP121MINI,ap121-mini,AP121-MINI,ttyATH0,115200,$$(ap121_mtdlayout_4M),917504,2818048,RKuImage))
 
-ew-dorin_cmdline=board=EW-DORIN console=ttyATH0,115200
-ew-dorin-router_cmdline=board=EW-DORIN-ROUTER console=ttyATH0,115200
 ew-dorin_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),1024k(kernel),2688k(rootfs),64k(art),3712k@0x50000(firmware)
-define Image/Build/Profile/EWDORIN
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ew-dorin,$(ew-dorin_cmdline),$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage)
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ew-dorin-router,$(ew-dorin-router_cmdline),$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage)
-endef
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),EWDORINAP,ew-dorin,EW-DORIN,ttyATH0,115200,$$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage))
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),EWDORINRT,ew-dorin-router,EW-DORIN-ROUTER,ttyATH0,115200,$$(ew-dorin_mtdlayout_4M),1048576,2752512,KRuImage))
+
+$(eval $(call MultiProfile,EWDORIN, EWDORINAP EWDORINRT))
 
 ap81_cmdline=board=AP81 console=ttyS0,115200
 define Image/Build/Profile/AP81
@@ -748,18 +732,11 @@ define Image/Build/Profile/AP96
 	$(call Image/Build/Template/$(fs_64k)/$(1),AthGzip,ap96,$(ap96_cmdline),$(ap96_mtdlayout),1769472,6291456,RKuImage)
 endef
 
-db120_cmdline=board=DB120 console=ttyS0,115200
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
-define Image/Build/Profile/DB120
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,db120,$(db120_cmdline),$(db120_mtdlayout),1441792,6488064,RKuImage)
-endef
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),DB120,db120,DB120,ttyS0,115200,$$(db120_mtdlayout),1441792,6488064,RKuImage))
 
-ap136_cmdline=board=AP136 console=ttyS0,115200
 ap136_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(mib0),64k(art)ro,7744k@0x50000(firmware)
-define Image/Build/Profile/AP136
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap136,$(ap136_cmdline),$(ap136_mtdlayout),1441792,6488064,RKuImage)
-endef
-
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),AP136,ap136,AP136,ttyS0,115200,$$(ap136_mtdlayout),1441792,6488064,RKuImage))
 
 pb42_cmdline=board=PB42 console=ttyS0,115200
 define Image/Build/Profile/PB42
@@ -771,11 +748,8 @@ define Image/Build/Profile/PB44
 	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,pb44,$(pb44_cmdline))
 endef
 
-pb92_cmdline=board=PB92 console=ttyS0,115200
 pb92_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
-define Image/Build/Profile/PB92
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,pb92,$(pb92_cmdline),$(pb92_mtdlayout),917504,2818048,KRuImage)
-endef
+$(eval $(call SingleProfile,AthLzma,$(fs_64k),PB92,pb92,PB92,ttyS0,115200,$$(pb92_mtdlayout),917504,2818048,KRuImage))
 
 wp543_cmdline=console=ttyS0,115200
 define Image/Build/Profile/WP543
