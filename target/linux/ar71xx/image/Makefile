@@ -741,18 +741,13 @@ endef
 pb92_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
 $(eval $(call SingleProfile,AthLzma,$(fs_64k),PB92,pb92,PB92,ttyS0,115200,$$(pb92_mtdlayout),917504,2818048,KRuImage))
 
-wp543_cmdline=console=ttyS0,115200
-define Image/Build/Profile/WP543
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,$(wp543_cmdline),0x200000,2M)
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,$(wp543_cmdline),0x400000,4M)
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,$(wp543_cmdline),0x800000,8M)
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,$(wp543_cmdline),0x1000000,16M)
-endef
+$(eval $(call SingleProfile,MyLoader,$(fs_64k),WP543_2M,wp543,,ttyS0,115200,0x200000,2M))
+$(eval $(call SingleProfile,MyLoader,$(fs_64k),WP543_4M,wp543,,ttyS0,115200,0x400000,4M))
+$(eval $(call SingleProfile,MyLoader,$(fs_64k),WP543_8M,wp543,,ttyS0,115200,0x800000,8M))
+$(eval $(call SingleProfile,MyLoader,$(fs_64k),WP543_16M,wp543,,ttyS0,115200,0x1000000,16M))
+$(eval $(call MultiProfile,WPE543,WPE543_2M WPE543_4M WPE543_8M WPE543_16M))
 
-wpe72_cmdline=console=ttyS0,115200
-define Image/Build/Profile/WPE72
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wpe72,$(wpe72_cmdline),0x800000,8M)
-endef
+$(eval $(call SingleProfile,MyLoader,$(fs_64k),WPE72,wpe72,,ttyS0,115200,0x800000,8M))
 
 $(eval $(call SingleProfile,Cameo7240,$(fs_64k),DIR600A1,dir-600-a1,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-00"))
 $(eval $(call SingleProfile,Cameo7240,$(fs_64k),DIR601A1,dir-601-a1,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-02"))
