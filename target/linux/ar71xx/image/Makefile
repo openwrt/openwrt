@@ -859,10 +859,7 @@ $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDRMAC,wndrmac,WNDR3700,ttyS0,115
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDRMACV2,wndrmacv2,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDRMACv2,"",-H 29763654+16+128))
 $(eval $(call MultiProfile,WNDR3700,WNDR3700V1 WNDR3700V2 WNDR3800 WNDRMAC WNDRMACV2))
 
-wr400n_cmdline=board=WRT400N console=ttyS0,115200
-define Image/Build/Profile/WRT400N
-	$(call Image/Build/Template/$(fs_64k)/$(1),WRT400N,wrt400n,$(wr400n_cmdline))
-endef
+$(eval $(call SingleProfile,WRT400N,$(fs_64k),WRT400N,wrt400n,WRT400N,ttyS0,115200))
 
 $(eval $(call SingleProfile,DIR825B1,$(fs_64k),DIR825B1,dir-825-b1,DIR-825-B1,ttyS0,115200,01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
 $(eval $(call SingleProfile,DIR825B1,$(fs_64k),TEW673GRU,tew-637gru,TEW-673GRU,ttyS0,115200,01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01))
