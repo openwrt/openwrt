@@ -972,16 +972,14 @@ define Image/Build/Profile/TLWDR4300
 	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wdr4310-v1,$(tlwdr4300_cmdline),0x43100001,1,8Mlzma)
 endef
 
-wndr3700_cmdline=board=WNDR3700 console=ttyS0,115200
 wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
 wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),14848k(rootfs),64k(art)ro,15872k@0x70000(firmware)
-define Image/Build/Profile/WNDR3700
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,$(wndr3700_cmdline),$(wndr3700_mtdlayout),3700,WNDR3700,"" NA,)
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,$(wndr3700_cmdline),$(wndr3700v2_mtdlayout),3701,WNDR3700v2,"",-H 29763654+16+64)
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndrmac,$(wndr3700_cmdline),$(wndr3700v2_mtdlayout),3701,WNDRMAC,"",-H 29763654+16+64)
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3800,$(wndr3700_cmdline),$(wndr3700v2_mtdlayout),3701,WNDR3800,"",-H 29763654+16+128)
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndrmacv2,$(wndr3700_cmdline),$(wndr3700v2_mtdlayout),3701,WNDRMACv2,"",-H 29763654+16+128)
-endef
+$(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3700V1,wndr3700,WNDR3700,ttyS0,115200,$$(wndr3700_mtdlayout),3700,WNDR3700,"" NA,))
+$(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3700V2,wndr3700v2,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDR3700v2,"",-H 29763654+16+64))
+$(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3800,wndr3800,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDR3800,"",-H 29763654+16+128))
+$(eval $(call SingleProfile,Netgear,$(fs_64k),WNDRMAC,wndrmac,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDRMAC,"",-H 29763654+16+64))
+$(eval $(call SingleProfile,Netgear,$(fs_64k),WNDRMACV2,wndrmacv2,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDRMACv2,"",-H 29763654+16+128))
+$(eval $(call MultiProfile,WNDR3700,WNDR3700V1 WNDR3700V2 WNDR3800 WNDRMAC WNDRMACV2))
 
 wr400n_cmdline=board=WRT400N console=ttyS0,115200
 define Image/Build/Profile/WRT400N
