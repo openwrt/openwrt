@@ -887,14 +887,7 @@ $(eval $(call SingleProfile,Zcomax,$(fs_64k),ZCN1523H516,zcn-1523h-5-16,ZCN-1523
 
 $(eval $(call MultiProfile,Default,$(SINGLE_PROFILES)))
 $(eval $(call MultiProfile,Minimal,$(SINGLE_PROFILES)))
-
-define Image/Build/Profile/Madwifi
-	$(call Image/Build/Profile/EAP7660D,$(1))
-	$(call Image/Build/Profile/UBNTRS,$(1))
-	$(call Image/Build/Profile/UBNTRSPRO,$(1))
-	$(call Image/Build/Profile/UBNTLSSR71,$(1))
-	$(call Image/Build/Profile/WP543,$(1))
-endef
+$(eval $(call MultiProfile,Madwifi,EAP7660D UBNTRS UBNTRSPRO UBNTLSSR71 WP543))
 
 define Image/Build/squashfs
 	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-raw
