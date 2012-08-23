@@ -821,15 +821,8 @@ define Image/Build/Profile/UBNT
 	$(call Image/Build/Profile/UBNTUNIFI,$(1))
 endef
 
-mzkw04nu_cmdline=board=MZK-W04NU console=ttyS0,115200
-define Image/Build/Profile/MZKW04NU
-	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w04nu,$(mzkw04nu_cmdline))
-endef
-
-mzkw300nh_cmdline=board=MZK-W300NH console=ttyS0,115200
-define Image/Build/Profile/MZKW300NH
-	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w300nh,$(mzkw300nh_cmdline))
-endef
+$(eval $(call SingleProfile,Planex,$(fs_64k),MZKW04NU,mzk-w04nu,MZK-W04NU,ttyS0,115200))
+$(eval $(call SingleProfile,Planex,$(fs_64k),MZKW300NH,mzk-w300nh,MZK-W300NH,ttyS0,115200))
 
 nbg460n_cmdline=board=NBG460N console=ttyS0,115200
 define Image/Build/Profile/NBG_460N_550N_550NH
