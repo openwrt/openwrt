@@ -788,10 +788,7 @@ $(eval $(call MultiProfile,UBNT,UBNTAIRROUTER UBNTRS UBNTRSPRO UBNTLSSR71 UBNTBU
 $(eval $(call SingleProfile,Planex,$(fs_64k),MZKW04NU,mzk-w04nu,MZK-W04NU,ttyS0,115200))
 $(eval $(call SingleProfile,Planex,$(fs_64k),MZKW300NH,mzk-w300nh,MZK-W300NH,ttyS0,115200))
 
-nbg460n_cmdline=board=NBG460N console=ttyS0,115200
-define Image/Build/Profile/NBG_460N_550N_550NH
-	$(call Image/Build/Template/$(fs_64k)/$(1),ZyXEL,nbg460n_550n_550nh,$(nbg460n_cmdline),NBG-460N)
-endef
+$(eval $(call SingleProfile,ZyXEL,$(fs_64k),NBG_460N_550N_550NH,nbg460n_550n_550nh,NBG460N,ttyS0,115200,NBG-460N))
 
 $(eval $(call SingleProfile,OpenMesh,$(fs_squash),OM2P,om2p,OM2P))
 
