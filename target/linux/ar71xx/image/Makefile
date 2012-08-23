@@ -685,10 +685,7 @@ define Image/Build/Template/128k/jffs2-128k
 	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
-alfa_nx_cmdline=board=ALFA-NX console=ttyS0,115200
-define Image/Build/Profile/ALFANX
-	$(call Image/Build/Template/$(fs_64k)/$(1),ALFA,alfa-nx,$(alfa_nx_cmdline),$(alfa_mtdlayout_8M),1638400,6291456,vmlinux.gz.uImage,pb9x-2.6.31-jffs2)
-endef
+$(eval $(call SingleProfile,ALFA,$(fs_64k),ALFANX,alfa-nx,ALFA-NX,ttyS0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,vmlinux.gz.uImage,pb9x-2.6.31-jffs2))
 
 alfa_ap96_cmdline=board=ALFA-AP96 console=ttyS0,115200
 alfa_ap96_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13312k(rootfs),2048k(kernel),512k(caldata)ro,15360k@0x80000(firmware)
@@ -813,10 +810,7 @@ define Image/Build/Profile/EAP7660D
 	$(call Image/Build/Template/$(fs_128k)/$(1),PB4X,eap7660d,$(eap7660d_cmdline))
 endef
 
-hornetub_cmdline=board=HORNET-UB console=ttyATH0,115200
-define Image/Build/Profile/HORNETUB
-	$(call Image/Build/Template/$(fs_64k)/$(1),ALFA,hornet-ub,$(hornetub_cmdline),$(alfa_mtdlayout_8M),1638400,6291456,kernel_image,rootfs_image)
-endef
+$(eval $(call SingleProfile,ALFA,$(fs_64k),HORNETUB,hornet-ub,HORNET-UB,ttyATH0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,kernel_image,rootfs_image))
 
 ja76pf_cmdline=board=JA76PF console=ttyS0,115200
 define Image/Build/Profile/JA76PF
