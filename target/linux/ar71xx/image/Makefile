@@ -993,15 +993,8 @@ define Image/Build/Profile/WRT400N
 	$(call Image/Build/Template/$(fs_64k)/$(1),WRT400N,wrt400n,$(wr400n_cmdline))
 endef
 
-dir825b1_cmdline=board=DIR-825-B1 console=ttyS0,115200
-define Image/Build/Profile/DIR825B1
-	$(call Image/Build/Template/$(fs_64k)/$(1),DIR825B1,dir-825-b1,$(dir825b1_cmdline),01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00)
-endef
-
-tew673gru_cmdline=board=TEW-673GRU console=ttyS0,115200
-define Image/Build/Profile/TEW673GRU
-	$(call Image/Build/Template/$(fs_64k)/$(1),DIR825B1,tew-673gru,$(tew673gru_cmdline),01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01)
-endef
+$(eval $(call SingleProfile,DIR825B1,$(fs_64k),DIR825B1,dir-825-b1,DIR-825-B1,ttyS0,115200,01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
+$(eval $(call SingleProfile,DIR825B1,$(fs_64k),TEW673GRU,tew-637gru,TEW-673GRU,ttyS0,115200,01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01))
 
 $(eval $(call SingleProfile,CyberTAN,$(fs_64k),WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,1.00.01))
 
