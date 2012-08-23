@@ -1003,10 +1003,7 @@ define Image/Build/Profile/TEW673GRU
 	$(call Image/Build/Template/$(fs_64k)/$(1),DIR825B1,tew-673gru,$(tew673gru_cmdline),01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01)
 endef
 
-wrt160nl_cmdline=board=WRT160NL console=ttyS0,115200
-define Image/Build/Profile/WRT160NL
-	$(call Image/Build/Template/$(fs_64k)/$(1),CyberTAN,wrt160nl,$(wrt160nl_cmdline),1.00.01)
-endef
+$(eval $(call SingleProfile,CyberTAN,$(fs_64k),WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,1.00.01))
 
 whrg301n_cmdline=board=WHR-G301N console=ttyS0,115200
 define Image/Build/Profile/WHRG301N
