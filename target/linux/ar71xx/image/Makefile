@@ -782,37 +782,25 @@ endef
 
 $(eval $(call SingleProfile,Cameo7240,$(fs_64k),FR54RTR,fr-54rtr,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-01"))
 
-dir615c1_cmdline=board=DIR-615-C1 console=ttyS0,115200
-define Image/Build/Profile/DIR615C1
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,dir-615-c1,$(dir615c1_cmdline),"AP81-AR9130-RT-070614-02")
-endef
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),DIR615C1,dir-615-c1,DIR-615-C1,ttyS0,115200,"AP81-AR9130-RT-070614-02"))
 
 rw2458n_cmdline=board=RW2458N console=ttyS0,115200
 define Image/Build/Profile/RW2458N
 	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,rw2458n,$(rw2458n_cmdline),XM,UBNTXM,ar7240)
 endef
 
-tew632brp_cmdline=board=TEW-632BRP console=ttyS0,115200
-define Image/Build/Profile/TEW632BRP
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,tew-632brp,$(tew632brp_cmdline),"AP81-AR9130-RT-070614-00")
-endef
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW632BRP,tew-632brp,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-00"))
 
-tew652brp_cmdline=board=TEW-632BRP console=ttyS0,115200
-define Image/Build/Profile/TEW652BRP
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,tew-652brp,$(tew652brp_cmdline),"AP81-AR9130-RT-080609-05")
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,tew-652brp-recovery,$(tew652brp_cmdline),"AP81-AR9130-RT-070614-02")
-endef
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_FW,tew-652brp,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-080609-05"))
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_RECOVERY,tew-652brp-recovery,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-02"))
+$(eval $(call MultiProfile,TEW652BRP,TEW652BRP_FW TEW652BRP_RECOVERY))
 
 tew712br_cmdline=board=TEW-712BR console=ttyATH0,115200
 define Image/Build/Profile/TEW712BR
 	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo933x,tew-712br,$(tew712br_cmdline),"HORNET-RT-TEW712BR-3")
 endef
 
-
-a05rbw300n_cmdline=board=TEW-632BRP console=ttyS0,115200
-define Image/Build/Profile/A02RBW300N
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,a02-rb-w300n,$(a05rbw300n_cmdline),"AP81-AR9130-RT-070614-03")
-endef
+$(eval $(call SingleProfile,Cameo913x,$(fs_squash),A02RBW300N,a02-rb-w300n,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-03"))
 
 ubntairrouter_cmdline=board=UBNT-AR console=ttyS0,115200
 define Image/Build/Profile/UBNTAIRROUTER
