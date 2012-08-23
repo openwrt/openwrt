@@ -795,10 +795,7 @@ $(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_FW,tew-652brp,TEW-6
 $(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_RECOVERY,tew-652brp-recovery,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-02"))
 $(eval $(call MultiProfile,TEW652BRP,TEW652BRP_FW TEW652BRP_RECOVERY))
 
-tew712br_cmdline=board=TEW-712BR console=ttyATH0,115200
-define Image/Build/Profile/TEW712BR
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo933x,tew-712br,$(tew712br_cmdline),"HORNET-RT-TEW712BR-3")
-endef
+$(eval $(call SingleProfile,Cameo933x,$(fs_squash),TEW712BR,tew-712br,TEW-712BR,ttyATH0,115200,"HORNET-RT-TEW712BR-3"))
 
 $(eval $(call SingleProfile,Cameo913x,$(fs_squash),A02RBW300N,a02-rb-w300n,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-03"))
 
