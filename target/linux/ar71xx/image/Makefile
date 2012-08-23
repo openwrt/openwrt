@@ -29,10 +29,13 @@ define mkcmdline
 $(if $(1),board=$(1) )$(if $(2),console=$(2)$(COMMA)$(3))
 endef
 
+SINGLE_PROFILES:=
+
 define SingleProfile
   define Image/Build/Profile/$(3)
 	$$(call Image/Build/Template/$(2)/$$(1),$(1),$(4),$$(call mkcmdline,$(5),$(6),$(7)),$(8),$(9),$(10),$(11),$(12))
   endef
+  SINGLE_PROFILES += $(3)
 endef
 
 define MultiProfile
@@ -882,83 +885,8 @@ $(eval $(call SingleProfile,Zcomax,$(fs_64k),ZCN1523H28,zcn-1523h-2-8,ZCN-1523H-
 $(eval $(call SingleProfile,Zcomax,$(fs_64k),ZCN1523H516,zcn-1523h-5-16,ZCN-1523H-5,ttyS0,115200,$$(zcn1523h_mtdlayout)))
 
 
-define Image/Build/Profile/Default
-	$(call Image/Build/Profile/ALFAAP96,$(1))
-	$(call Image/Build/Profile/ALFANX,$(1))
-	$(call Image/Build/Profile/ALL0258N,$(1))
-	$(call Image/Build/Profile/ALL0305,$(1))
-	$(call Image/Build/Profile/AP113,$(1))
-	$(call Image/Build/Profile/AP121,$(1))
-	$(call Image/Build/Profile/AP121MINI,$(1))
-	$(call Image/Build/Profile/AP136,$(1))
-	$(call Image/Build/Profile/AP81,$(1))
-	$(call Image/Build/Profile/AP83,$(1))
-	$(call Image/Build/Profile/A02RBW300N,$(1))
-	$(call Image/Build/Profile/DB120,$(1))
-	$(call Image/Build/Profile/DIR600A1,$(1))
-	$(call Image/Build/Profile/DIR601A1,$(1))
-	$(call Image/Build/Profile/DIR615C1,$(1))
-	$(call Image/Build/Profile/DIR615E4,$(1))
-	$(call Image/Build/Profile/DIR825B1,$(1))
-	$(call Image/Build/Profile/EAP7660D,$(1))
-	$(call Image/Build/Profile/EWDORIN,$(1))
-	$(call Image/Build/Profile/FR54RTR,$(1))
-	$(call Image/Build/Profile/HORNETUB,$(1))
-	$(call Image/Build/Profile/JA76PF,$(1))
-	$(call Image/Build/Profile/JA76PF2,$(1))
-	$(call Image/Build/Profile/JWAP003,$(1))
-	$(call Image/Build/Profile/MZKW04NU,$(1))
-	$(call Image/Build/Profile/MZKW300NH,$(1))
-	$(call Image/Build/Profile/NBG_460N_550N_550NH,$(1))
-	$(call Image/Build/Profile/OM2P,$(1))
-	$(call Image/Build/Profile/PB42,$(1))
-	$(call Image/Build/Profile/PB44,$(1))
-	$(call Image/Build/Profile/PB92,$(1))
-	$(call Image/Build/Profile/RW2458N,$(1))
-	$(call Image/Build/Profile/TEW632BRP,$(1))
-	$(call Image/Build/Profile/TEW652BRP,$(1))
-	$(call Image/Build/Profile/TEW673GRU,$(1))
-	$(call Image/Build/Profile/TEW712BR,$(1))
-	$(call Image/Build/Profile/TLMR11U,$(1))
-	$(call Image/Build/Profile/TLMR3020,$(1))
-	$(call Image/Build/Profile/TLMR3040,$(1))
-	$(call Image/Build/Profile/TLMR3220,$(1))
-	$(call Image/Build/Profile/TLMR3420,$(1))
-	$(call Image/Build/Profile/TLWA701,$(1))
-	$(call Image/Build/Profile/TLWA901,$(1))
-	$(call Image/Build/Profile/TLWDR4300,$(1))
-	$(call Image/Build/Profile/TLWR703,$(1))
-	$(call Image/Build/Profile/TLWR740,$(1))
-	$(call Image/Build/Profile/TLWR741,$(1))
-	$(call Image/Build/Profile/TLWR743,$(1))
-	$(call Image/Build/Profile/TLWR841,$(1))
-	$(call Image/Build/Profile/TLWR842,$(1))
-	$(call Image/Build/Profile/TLWR941,$(1))
-	$(call Image/Build/Profile/TLWR1041,$(1))
-	$(call Image/Build/Profile/TLWR1043,$(1))
-	$(call Image/Build/Profile/TLWR2543,$(1))
-	$(call Image/Build/Profile/UBNT,$(1))
-	$(call Image/Build/Profile/WP543,$(1))
-	$(call Image/Build/Profile/WPE72,$(1))
-	$(call Image/Build/Profile/WNDR3700,$(1))
-	$(call Image/Build/Profile/AP96,$(1))
-	$(call Image/Build/Profile/WRT400N,$(1))
-	$(call Image/Build/Profile/WRT160NL,$(1))
-	$(call Image/Build/Profile/WHRG301N,$(1))
-	$(call Image/Build/Profile/WHRHPG300N,$(1))
-	$(call Image/Build/Profile/WHRHPGN,$(1))
-	$(call Image/Build/Profile/WLAEAG300N,$(1))
-	$(call Image/Build/Profile/WZRHPG300NH,$(1))
-	$(call Image/Build/Profile/WZRHPG300NH2,$(1))
-	$(call Image/Build/Profile/WZRHPAG300H,$(1))
-	$(call Image/Build/Profile/WZRHPG450H,$(1))
-	$(call Image/Build/Profile/ZCN1523H28,$(1))
-	$(call Image/Build/Profile/ZCN1523H516,$(1))
-endef
-
-define Image/Build/Profile/Minimal
-	$(call Image/Build/Profile/Default,$(1))
-endef
+$(eval $(call MultiProfile,Default,$(SINGLE_PROFILES)))
+$(eval $(call MultiProfile,Minimal,$(SINGLE_PROFILES)))
 
 define Image/Build/Profile/Madwifi
 	$(call Image/Build/Profile/EAP7660D,$(1))
