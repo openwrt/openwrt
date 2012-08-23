@@ -775,20 +775,11 @@ define Image/Build/Profile/UBNTAIRROUTER
 	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-airrouter,$(ubntairrouter_cmdline),XM,UBNTXM,ar7240)
 endef
 
-ubntrs_cmdline=board=UBNT-RS console=ttyS0,115200
-define Image/Build/Profile/UBNTRS
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-rs,$(ubntrs_cmdline),RS,RSx,ar7100)
-endef
+$(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTRS,ubnt-rs,UBNT-RS,ttyS0,115200,RS,RSx,ar7100))
 
-ubntrspro_cmdline=board=UBNT-RSPRO console=ttyS0,115200
-define Image/Build/Profile/UBNTRSPRO
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-rspro,$(ubntrspro_cmdline),RSPRO,RSPRO,ar7100pro)
-endef
+$(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTRSPRO,ubnt-rspro,UBNT-RSPRO,ttyS0,115200,RSPRO,RSPRO,ar7100pro))
 
-ubntlssr71_cmdline=board=UBNT-LS-SR71 console=ttyS0,115200
-define Image/Build/Profile/UBNTLSSR71
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-ls-sr71,$(ubntlssr71_cmdline),LS-SR71,LS-SR71,ar7100)
-endef
+$(eval $(call SingleProfile,UBNT,$(fs_64k),UBNTLSSR71,ubnt-ls-sr71,UBNT-LS-SR71,ttyS0,115200,LS-SR71,LS-SR71,ar7100))
 
 ubntbulletm_cmdline=board=UBNT-BM console=ttyS0,115200
 define Image/Build/Profile/UBNTBULLETM
