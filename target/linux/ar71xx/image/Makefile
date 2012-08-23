@@ -875,25 +875,13 @@ $(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WHRHPG300N,whr-hp-g300n,WHR-HP-
 $(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WHRHPGN,whr-hp-gn,WHR-HP-GN,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-GN))
 $(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WLAEAG300N,wlae-ag300n,WLAE-AG300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WLAE-AG300N))
 
-wzrhpg300nh_cmdline=board=WZR-HP-G300NH console=ttyS0,115200
-define Image/Build/Profile/WZRHPG300NH
-	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh,$(wzrhpg300nh_cmdline),WZR-HP-G300NH)
-endef
+$(eval $(call SingleProfile,WZRHPG30XNH,$(fs_128k),WZRHPG300NH,wzr-hp-g300nh,WZR-HP-G300NH,ttyS0,115200,WZR-HP-G300NH))
 
-wzrhpg300nh2_cmdline=board=WZR-HP-G300NH2 console=ttyS0,115200
-define Image/Build/Profile/WZRHPG300NH2
-	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh2,$(wzrhpg300nh2_cmdline),WZR-HP-G300NH2)
-endef
+$(eval $(call SingleProfile,WZRHPG30XNH,$(fs_64k),WZRHPG300NH2,wzr-hp-g300nh2,WZR-HP-G300NH2,ttyS0,115200,WZR-HP-G300NH2))
 
-wzrhpag300h_cmdline=board=WZR-HP-AG300H console=ttyS0,115200
-define Image/Build/Profile/WZRHPAG300H
-	$(call Image/Build/Template/$(fs_64k)/$(1),WZRHPG30XNH,wzr-hp-ag300h,$(wzrhpag300h_cmdline),WZR-HP-AG300H)
-endef
+$(eval $(call SingleProfile,WZRHPG30XNH,$(fs_64k),WZRHPAG300H,wzr-hp-ag300h,WZR-HP-AG300H,ttyS0,115200,WZR-HP-AG300H))
 
-wzrhpg450h_cmdline=board=WZR-HP-G450H console=ttyS0,115200
-define Image/Build/Profile/WZRHPG450H
-	$(call Image/Build/Template/$(fs_64k)/$(1),WZRHPG30XNH,wzr-hp-g450h,$(wzrhpg450h_cmdline),WZR-HP-AG450H)
-endef
+$(eval $(call SingleProfile,WZRHPG30XNH,$(fs_64k),WZRHPG450H,wzr-hp-g450h,WZR-HP-G450H,ttyS0,115200,WZR-HP-AG450H))
 
 zcn1523h_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6208k(rootfs),1472k(kernel),64k(configure)ro,64k(mfg)ro,64k(art)ro,7680k@0x50000(firmware)
 zcn1523h28_cmdline=board=ZCN-1523H-2 console=ttyS0,115200 $(zcn1523h_mtdlayout)
