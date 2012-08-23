@@ -860,9 +860,7 @@ define Image/Build/Profile/NBG_460N_550N_550NH
 	$(call Image/Build/Template/$(fs_64k)/$(1),ZyXEL,nbg460n_550n_550nh,$(nbg460n_cmdline),NBG-460N)
 endef
 
-define Image/Build/Profile/OM2P
-        $(call Image/Build/Template/$(fs_squash)/$(1),OpenMesh,om2p,OM2P)
-endef
+$(eval $(call SingleProfile,OpenMesh,$(fs_squash),OM2P,om2p,OM2P))
 
 tlmr11u_cmdline=board=TL-MR11U console=ttyATH0,115200
 define Image/Build/Profile/TLMR11U
