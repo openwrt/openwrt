@@ -27,9 +27,6 @@ define Package/util-linux/Default
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
 endef
 
-CONFIGURE_VARS += \
-	scanf_cv_alloc_modifier="ms"
-
 CONFIGURE_ARGS += \
 	--enable-new-mount	\
 	--with-ncurses		\
