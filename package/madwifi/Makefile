@@ -19,6 +19,7 @@ PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_SUBDIR:=$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://madwifi-project.org/svn/madwifi/$(if $(PKG_BRANCH),branches/$(PKG_BRANCH),trunk)
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
+PKG_MIRROR_MD5SUM:=086b026d1c1561be8a949b79b0931404
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
 
