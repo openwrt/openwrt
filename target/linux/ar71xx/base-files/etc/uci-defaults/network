@@ -15,6 +15,7 @@ ucidef_set_interface_loopback
 board=$(ar71xx_board_name)
 
 case "$board" in
+all0315n |\
 all0258n |\
 ja76pf2)
 	ucidef_set_interface_lan "eth0 eth1"
