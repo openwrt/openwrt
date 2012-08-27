@@ -73,8 +73,9 @@ platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$board" in
+	all0315n | \
 	all0258n )
-		platform_check_image_all0258n "$1" && return 0
+		platform_check_image_allnet "$1" && return 0
 		return 1
 		;;
 	alfa-ap96 | \
@@ -232,7 +233,10 @@ platform_do_upgrade() {
 		platform_do_upgrade_combined "$ARGV"
 		;;
 	all0258n )
-		platform_do_upgrade_all0258n "$ARGV"
+		platform_do_upgrade_allnet "0x9f050000" "$ARGV"
+		;;
+	all0315n )
+		platform_do_upgrade_allnet "0x9f080000" "$ARGV"
 		;;
 	om2p | \
 	om2p-lc)

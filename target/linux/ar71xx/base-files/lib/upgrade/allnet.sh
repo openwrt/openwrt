@@ -1,9 +1,7 @@
-# The U-Boot loader of the ALL0258N requires image sizes and checksums to be
-# provided in the U-Boot environment.
+# The U-Boot loader of the some Allnet devices requires image sizes and
+# checksums to be provided in the U-Boot environment.
 # In case the check fails during boot, a failsafe-system is started to provide
 # a minimal web-interface for flashing a new firmware.
-
-CI_FLADDR=0x9f050000
 
 # make sure we got uboot-envtools and fw_env.config copied over to the ramfs
 platform_add_ramfs_ubootenv() {
@@ -70,7 +68,7 @@ platform_get_offset() {
 	done
 }
 
-platform_check_image_all0258n() {
+platform_check_image_allnet() {
 	local fw_printenv=/usr/sbin/fw_printenv
 	[ ! -n "$fw_printenv" -o ! -x "$fw_printenv" ] && {
 		echo "Please install uboot-envtools!"
@@ -110,14 +108,14 @@ platform_check_image_all0258n() {
 	return 0
 }
 
-platform_do_upgrade_all0258n() {
-	local firmware_base_addr=$( printf "%d" "$CI_FLADDR" )
-	local vmlinux_blockoffset=$( platform_get_offset "$1" uImage )
+platform_do_upgrade_allnet() {
+	local firmware_base_addr=$( printf "%d" "$1" )
+	local vmlinux_blockoffset=$( platform_get_offset "$2" uImage )
 	if [ ! -n "$vmlinux_blockoffset" ]; then
 		echo "can't determine uImage offset"
 		return 1
 	fi
-	local rootfs_blockoffset=$( platform_get_offset "$1" rootfs $(( $vmlinux_blockoffset + 1 )) )
+	local rootfs_blockoffset=$( platform_get_offset "$2" rootfs $(( $vmlinux_blockoffset + 1 )) )
 	local vmlinux_offset=$(( $vmlinux_blockoffset * $CI_BLKSZ ))
 	local vmlinux_addr=$(( $firmware_base_addr + $vmlinux_offset ))
 	local vmlinux_hexaddr=0x$( printf "%08x" "$vmlinux_addr" )
@@ -131,7 +129,7 @@ platform_do_upgrade_all0258n() {
 	local vmlinux_blockcount=$(( $rootfs_blockoffset - $vmlinux_blockoffset ))
 	local vmlinux_size=$(( $rootfs_offset - $vmlinux_offset ))
 	local vmlinux_hexsize=0x$( printf "%08x" "$vmlinux_size" )
-	local data_blockoffset=$( platform_get_offset "$1" rootfs-data $(( $rootfs_blockoffset + 1 )) )
+	local data_blockoffset=$( platform_get_offset "$2" rootfs-data $(( $rootfs_blockoffset + 1 )) )
 	if [ ! -n "$data_blockoffset" ]; then
 		echo "can't determine rootfs size"
 		return 1
@@ -141,8 +139,8 @@ platform_do_upgrade_all0258n() {
 	local rootfs_size=$(( $data_offset - $rootfs_offset ))
 	local rootfs_hexsize=0x$( printf "%08x" "$rootfs_size" )
 
-	local rootfs_md5=$( dd if="$1" bs=$CI_BLKSZ skip=$rootfs_blockoffset count=$rootfs_blockcount 2>/dev/null | md5sum -); rootfs_md5="${rootfs_md5%% *}"
-	local vmlinux_md5=$( dd if="$1" bs=$CI_BLKSZ skip=$vmlinux_blockoffset count=$vmlinux_blockcount 2>/dev/null | md5sum -); vmlinux_md5="${vmlinux_md5%% *}"
+	local rootfs_md5=$( dd if="$2" bs=$CI_BLKSZ skip=$rootfs_blockoffset count=$rootfs_blockcount 2>/dev/null | md5sum -); rootfs_md5="${rootfs_md5%% *}"
+	local vmlinux_md5=$( dd if="$2" bs=$CI_BLKSZ skip=$vmlinux_blockoffset count=$vmlinux_blockcount 2>/dev/null | md5sum -); vmlinux_md5="${vmlinux_md5%% *}"
 	# this needs a recent version of uboot-envtools!
 	cat >/tmp/fw_env_upgrade <<EOF
 vmlinux_start_addr $vmlinux_hexaddr
@@ -157,5 +155,6 @@ EOF
 		echo "failed to update U-Boot environment"
 		return 1
 	}
+	shift
 	default_do_upgrade "$@"
 }
