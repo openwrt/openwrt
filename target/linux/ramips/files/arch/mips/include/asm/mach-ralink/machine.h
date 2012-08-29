@@ -23,6 +23,7 @@ enum ramips_mach_type {
 	/* RT3050 based machines */
 	RAMIPS_MACH_3G_6200N,		/* Edimax 3G-6200N */
 	RAMIPS_MACH_ALL0256N,		/* Allnet ALL0256N */
+	RAMIPS_MACH_CARAMBOLA,		/* 8devices Carambola */
 	RAMIPS_MACH_DIR_300_B1,		/* D-Link DIR-300 B1 */
 	RAMIPS_MACH_DIR_600_B1,		/* D-Link DIR-600 B1 */
 	RAMIPS_MACH_DIR_600_B2,		/* D-Link DIR-600 B2 */

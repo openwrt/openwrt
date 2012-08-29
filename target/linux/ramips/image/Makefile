@@ -403,6 +403,10 @@ define Image/Build/Profile/BC2
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,bc2,BC2,ttyS1,57600,phys)
 endef
 
+define Image/Build/Profile/CARAMBOLA
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,carambola,CARAMBOLA,ttyS1,115200,phys)
+endef
+
 define Image/Build/Profile/DIR300B1
 	$(call Image/Build/Template/$(fs_squash)/$(1),DIR300B1,dir-300-b1,DIR-300-B1,wrgn23_dlwbr_dir300b)
 	$(call Image/Build/Template/$(fs_squash)/$(1),DIR300B1,dir-600-b1,DIR-600-B1,wrgn23_dlwbr_dir600b)
@@ -538,6 +542,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ALL5002,$(1))
 	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
 	$(call Image/Build/Profile/BC2,$(1))
+	$(call Image/Build/Profile/CARAMBOLA,$(1))
 	$(call Image/Build/Profile/DIR300B1,$(1))
 	$(call Image/Build/Profile/DIR615H1,$(1))
 	$(call Image/Build/Profile/DAP1350,$(1))

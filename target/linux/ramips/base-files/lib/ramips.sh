@@ -47,6 +47,9 @@ ramips_board_name() {
 	machine=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)
 
 	case "$machine" in
+	*"8devices Carambola")
+		name="carambola"
+		;;
 	*"Edimax 3g-6200n")
 		name="3g-6200n"
 		;;
