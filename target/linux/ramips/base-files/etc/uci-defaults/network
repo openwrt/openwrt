@@ -9,6 +9,31 @@ if [ ! -x /usr/sbin/maccalc ]; then
 	return
 fi
 
+ramips_setup_rt3x5x_vlans()
+{
+	if [ ! -x /sbin/swconfig ]; then
+		# legacy default
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		return
+	fi
+	local wanports=""
+	local lanports=""
+	for port in 5 4 3 2 1 0; do
+		if [ `swconfig dev rt305x port $port get disable` = "1" ]; then
+			continue
+		fi
+		if [ `swconfig dev rt305x port $port get lan` = "0" ]; then
+			wanports="$port $wanports"
+		else
+			lanports="$port $lanports"
+		fi
+	done
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "rt305x" "1" "1"
+	ucidef_add_switch_vlan "rt305x" "1" "$lanports 6t"
+	ucidef_add_switch_vlan "rt305x" "2" "$wanports 6t"
+}
+
 ramips_setup_interfaces()
 {
 	local board="$1"
@@ -74,7 +99,7 @@ ramips_setup_interfaces()
 	*)
 		RT3X5X=`cat /proc/cpuinfo | grep RT3.5`
 		if [ -n "${RT3X5X}" ]; then
-			ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+			ramips_setup_rt3x5x_vlans
 		else
 			ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		fi
