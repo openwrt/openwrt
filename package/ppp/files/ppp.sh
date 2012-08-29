@@ -19,6 +19,7 @@ ppp_generic_init_config() {
 	proto_config_add_boolean "defaultroute"
 	proto_config_add_boolean "peerdns"
 	proto_config_add_boolean "ipv6"
+	proto_config_add_boolean "authfail"
 	proto_config_add_int "mtu"
 }
 
@@ -70,7 +71,10 @@ ppp_generic_teardown() {
 	case "$ERROR" in
 		11|19)
 			proto_notify_error "$interface" AUTH_FAILED
-			proto_block_restart "$interface"
+			json_get_var authfail authfail
+			if [ "${authfail:-0}" -gt 0 ]; then
+				proto_block_restart "$interface"
+			fi
 		;;
 		2)
 			proto_notify_error "$interface" INVALID_OPTIONS
