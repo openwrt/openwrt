@@ -65,20 +65,10 @@ static void __init all0315n_setup(void)
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ath79_eth0_data.speed = SPEED_1000;
-	ath79_eth0_data.duplex = DUPLEX_FULL;
 	ath79_eth0_data.phy_mask = BIT(0);
 
-	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 1);
-	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ath79_eth1_data.speed = SPEED_1000;
-	ath79_eth1_data.duplex = DUPLEX_FULL;
-	ath79_eth1_data.phy_mask = BIT(4);
-
-	ath79_register_mdio(0, ~(BIT(0) | BIT(4)));
+	ath79_register_mdio(0, 0x0);
 	ath79_register_eth(0);
-	ath79_register_eth(1);
-
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(all0315n_leds_gpio),
 					all0315n_leds_gpio);
@@ -88,7 +78,7 @@ static void __init all0315n_setup(void)
 					all0315n_gpio_keys);
 
 	ap9x_pci_setup_wmac_led_pin(0, 1);
-	ap91_pci_init(ee, mac);
+	ap91_pci_init(ee, NULL);
 }
 
 MIPS_MACHINE(ATH79_MACH_ALL0315N, "ALL0315N", "Allnet ALL0315N",
