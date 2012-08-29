@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# Copyright (C) 2011-2012 OpenWrt.org
+#
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/ramips.sh
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(ramips_board_name)
+
+case "$board" in
+all0239-3g | \
+all0256n | \
+all5002)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0
