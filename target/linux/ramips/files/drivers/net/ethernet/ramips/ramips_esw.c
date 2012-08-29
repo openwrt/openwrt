@@ -19,11 +19,11 @@
 #define RT305X_ESW_REG_FPA2		0xc8
 #define RT305X_ESW_REG_FCT2		0xcc
 #define RT305X_ESW_REG_SGC2		0xe4
-#define RT305X_ESW_REG_P0LED	0xa4
-#define RT305X_ESW_REG_P1LED	0xa8
-#define RT305X_ESW_REG_P2LED	0xac
-#define RT305X_ESW_REG_P3LED	0xb0
-#define RT305X_ESW_REG_P4LED	0xb4
+#define RT305X_ESW_REG_P0LED		0xa4
+#define RT305X_ESW_REG_P1LED		0xa8
+#define RT305X_ESW_REG_P2LED		0xac
+#define RT305X_ESW_REG_P3LED		0xb0
+#define RT305X_ESW_REG_P4LED		0xb4
 
 #define RT305X_ESW_PCR0_WT_NWAY_DATA_S	16
 #define RT305X_ESW_PCR0_WT_PHY_CMD	BIT(13)
@@ -69,21 +69,21 @@
 		 BIT(RT305X_ESW_PORT2) | BIT(RT305X_ESW_PORT3) |	\
 		 BIT(RT305X_ESW_PORT4))
 
-#define RT305X_ESW_PORTS_NOCPU	\
+#define RT305X_ESW_PORTS_NOCPU						\
 		(RT305X_ESW_PORTS_INTERNAL | BIT(RT305X_ESW_PORT5))
 
 #define RT305X_ESW_PORTS_CPU	BIT(RT305X_ESW_PORT6)
 
-#define RT305X_ESW_PORTS_ALL	\
+#define RT305X_ESW_PORTS_ALL						\
 		(RT305X_ESW_PORTS_NOCPU | RT305X_ESW_PORTS_CPU)
 
-#define RT305X_ESW_NUM_VLANS	16
-#define RT305X_ESW_NUM_PORTS	7
+#define RT305X_ESW_NUM_VLANS		16
+#define RT305X_ESW_NUM_PORTS		7
 
 struct rt305x_esw {
-	void __iomem *base;
+	void __iomem		*base;
 	struct rt305x_esw_platform_data *pdata;
-	spinlock_t reg_rw_lock;
+	spinlock_t		reg_rw_lock;
 };
 
 static inline void
