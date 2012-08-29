@@ -50,7 +50,7 @@ static void __init all5002_init(void)
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 	rt305x_register_spi(all5002_spi_slave_info,
 			    ARRAY_SIZE(all5002_spi_slave_info));
-	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_NONE;
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
 	rt305x_register_wdt();
