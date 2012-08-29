@@ -75,6 +75,47 @@ static struct gpio_led wzrhpag300h_leds_gpio[] __initdata = {
 	},
 };
 
+static struct gpio_led wzrhpag300h_wmac0_leds_gpio[] = {
+        {
+                .name           = "buffalo:amber:band2g",
+                .gpio           = 1,
+                .active_low     = 1,
+	},
+        {
+                .name           = "buffalo:green:usb",
+                .gpio           = 3,
+                .active_low     = 1,
+	},
+        {
+                .name           = "buffalo:green:band2g",
+                .gpio           = 5,
+                .active_low     = 1,
+	},
+};
+
+static struct gpio_led wzrhpag300h_wmac1_leds_gpio[] = {
+        {
+                .name           = "buffalo:green:band5g",
+                .gpio           = 1,
+                .active_low     = 1,
+	},
+        {
+                .name           = "buffalo:green:router",
+                .gpio           = 3,
+                .active_low     = 1,
+	},
+        {
+                .name           = "buffalo:blue:movie_engine",
+                .gpio           = 4,
+                .active_low     = 1,
+	},
+        {
+                .name           = "buffalo:amber:band5g",
+                .gpio           = 5,
+                .active_low     = 1,
+	},
+};
+
 static struct gpio_keys_button wzrhpag300h_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
@@ -110,6 +151,13 @@ static struct gpio_keys_button wzrhpag300h_gpio_keys[] __initdata = {
 		.code		= BTN_5,
 		.debounce_interval = WZRHPAG300H_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= 7,
+		.active_low	= 1,
+	}, {
+		.desc		= "movie_engine",
+		.type		= EV_KEY,
+		.code		= BTN_7,
+		.debounce_interval = WZRHPAG300H_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= 8,
 		.active_low	= 1,
 	}
 };
@@ -150,6 +198,14 @@ static void __init wzrhpag300h_setup(void)
 	ath79_register_m25p80_multi(&wzrhpag300h_flash_data);
 
 	ap94_pci_init(eeprom1, mac1, eeprom2, mac2);
+
+	ap9x_pci_setup_wmac_led_pin(0, 1);
+	ap9x_pci_setup_wmac_led_pin(1, 5);
+
+	ap9x_pci_setup_wmac_leds(0, wzrhpag300h_wmac0_leds_gpio,
+				ARRAY_SIZE(wzrhpag300h_wmac0_leds_gpio));
+	ap9x_pci_setup_wmac_leds(1, wzrhpag300h_wmac1_leds_gpio,
+				ARRAY_SIZE(wzrhpag300h_wmac1_leds_gpio));
 }
 
 MIPS_MACHINE(ATH79_MACH_WZR_HP_AG300H, "WZR-HP-AG300H",

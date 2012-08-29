@@ -150,6 +150,7 @@ get_status_led() {
 	wlae-ag300n)
 		status_led="buffalo:green:status"
 		;;
+	wzr-hp-ag300h | \
 	wzr-hp-g300nh2)
 		status_led="buffalo:red:diag"
 		;;
