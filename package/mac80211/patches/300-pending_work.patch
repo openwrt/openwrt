@@ -3486,6 +3486,15 @@
  /*********************/
  /* Aggregation logic */
  /*********************/
+@@ -593,7 +568,7 @@ static void ath_tx_complete_aggr(struct 
+ 		if (!an->sleeping) {
+ 			ath_tx_queue_tid(txq, tid);
+ 
+-			if (ts->ts_status & ATH9K_TXERR_FILT)
++			if (ts->ts_status & (ATH9K_TXERR_FILT | ATH9K_TXERR_XRETRY))
+ 				tid->ac->clear_ps_filter = true;
+ 		}
+ 	}
 @@ -614,10 +589,8 @@ static void ath_tx_complete_aggr(struct 
  
  	rcu_read_unlock();
