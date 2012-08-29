@@ -1,5 +1,6 @@
 #include <linux/ioport.h>
 #include <linux/switch.h>
+#include <linux/mii.h>
 
 #include <rt305x_regs.h>
 #include <rt305x_esw_platform.h>
@@ -326,6 +327,57 @@ rt305x_esw_set_vmsc(struct rt305x_esw *esw, unsigned vlan, unsigned msc)
 		       (msc & RT305X_ESW_VMSC_MSC_M) << s);
 }
 
+static unsigned
+rt305x_esw_get_port_disable(struct rt305x_esw *esw)
+{
+	unsigned reg;
+	reg = rt305x_esw_rr(esw, RT305X_ESW_REG_POC0);
+	return (reg >> RT305X_ESW_POC0_DIS_PORT_S) &
+	       RT305X_ESW_POC0_DIS_PORT_M;
+}
+
+static void
+rt305x_esw_set_port_disable(struct rt305x_esw *esw, unsigned disable_mask)
+{
+	unsigned old_mask;
+	unsigned enable_mask;
+	unsigned changed;
+	int i;
+
+	old_mask = rt305x_esw_get_port_disable(esw);
+	changed = old_mask ^ disable_mask;
+	enable_mask = old_mask & disable_mask;
+
+	/* enable before writing to MII */
+	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC0,
+		       (RT305X_ESW_POC0_DIS_PORT_M <<
+			RT305X_ESW_POC0_DIS_PORT_S),
+		       enable_mask << RT305X_ESW_POC0_DIS_PORT_S);
+
+	for (i = 0; i < RT305X_ESW_NUM_LEDS; i++) {
+		if (!(changed & (1 << i)))
+			continue;
+		if (disable_mask & (1 << i)) {
+			/* disable */
+			rt305x_mii_write(esw, i, MII_BMCR,
+					 BMCR_PDOWN);
+		} else {
+			/* enable */
+			rt305x_mii_write(esw, i, MII_BMCR,
+					 BMCR_FULLDPLX |
+					 BMCR_ANENABLE |
+					 BMCR_ANRESTART |
+					 BMCR_SPEED100);
+		}
+	}
+
+	/* disable after writing to MII */
+	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC0,
+		       (RT305X_ESW_POC0_DIS_PORT_M <<
+			RT305X_ESW_POC0_DIS_PORT_S),
+		       disable_mask << RT305X_ESW_POC0_DIS_PORT_S);
+}
+
 static int
 rt305x_esw_apply_config(struct switch_dev *dev);
 
@@ -333,6 +385,7 @@ static void
 rt305x_esw_hw_init(struct rt305x_esw *esw)
 {
 	int i;
+	u8 port_disable = 0;
 	u8 port_map = RT305X_ESW_PMAP_LLLLLL;
 
 	/* vodoo from original driver */
@@ -384,10 +437,21 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P3LED);
 	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P4LED);
 
+	/* Copy disabled port configuration from bootloader setup */
+	port_disable = rt305x_esw_get_port_disable(esw);
+	for (i = 0; i < 6; i++)
+		esw->ports[i].disable = (port_disable & (1 << i)) != 0;
+
 	rt305x_mii_write(esw, 0, 31, 0x8000);
 	for (i = 0; i < 5; i++) {
-		/* TX10 waveform coefficient */
-		rt305x_mii_write(esw, i, 0, 0x3100);
+		if (esw->ports[i].disable) {
+			rt305x_mii_write(esw, i, MII_BMCR, BMCR_PDOWN);
+		} else {
+			rt305x_mii_write(esw, i, MII_BMCR,
+					 BMCR_FULLDPLX |
+					 BMCR_ANENABLE |
+					 BMCR_SPEED100);
+		}
 		/* TX10 waveform coefficient */
 		rt305x_mii_write(esw, i, 26, 0x1601);
 		/* TX100/TX10 AD/DA current bias */
@@ -482,9 +546,7 @@ rt305x_esw_apply_config(struct switch_dev *dev)
 				      RT305X_ESW_REG_P0LED + 4*i);
 	}
 
-	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC0,
-		       RT305X_ESW_POC0_DIS_PORT_M << RT305X_ESW_POC0_DIS_PORT_S,
-		       disable << RT305X_ESW_POC0_DIS_PORT_S);
+	rt305x_esw_set_port_disable(esw, disable);
 	rt305x_esw_rmw(esw, RT305X_ESW_REG_SGC2,
 		       (RT305X_ESW_SGC2_DOUBLE_TAG_M <<
 			RT305X_ESW_SGC2_DOUBLE_TAG_S),
