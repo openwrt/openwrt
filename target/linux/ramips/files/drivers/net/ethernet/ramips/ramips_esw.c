@@ -23,9 +23,9 @@
 #define RT305X_ESW_REG_POA		0x80
 #define RT305X_ESW_REG_FPA		0x84
 #define RT305X_ESW_REG_SOCPC		0x8c
-#define RT305X_ESW_REG_POC1		0x90
-#define RT305X_ESW_REG_POC2		0x94
-#define RT305X_ESW_REG_POC3		0x98
+#define RT305X_ESW_REG_POC0		0x90
+#define RT305X_ESW_REG_POC1		0x94
+#define RT305X_ESW_REG_POC2		0x98
 #define RT305X_ESW_REG_SGC		0x9c
 #define RT305X_ESW_REG_STRT		0xa0
 #define RT305X_ESW_REG_PCR0		0xc0
@@ -85,16 +85,16 @@
 #define RT305X_ESW_SOCPC_DISBC2CPU_S	16
 #define RT305X_ESW_SOCPC_CRC_PADDING	BIT(25)
 
-#define RT305X_ESW_POC1_EN_BP_S		0
-#define RT305X_ESW_POC1_EN_FC_S		8
-#define RT305X_ESW_POC1_DIS_RMC2CPU_S	16
-#define RT305X_ESW_POC1_DIS_PORT_M	0x7f
-#define RT305X_ESW_POC1_DIS_PORT_S	23
+#define RT305X_ESW_POC0_EN_BP_S		0
+#define RT305X_ESW_POC0_EN_FC_S		8
+#define RT305X_ESW_POC0_DIS_RMC2CPU_S	16
+#define RT305X_ESW_POC0_DIS_PORT_M	0x7f
+#define RT305X_ESW_POC0_DIS_PORT_S	23
 
-#define RT305X_ESW_POC3_UNTAG_EN_M	0xff
-#define RT305X_ESW_POC3_UNTAG_EN_S	0
-#define RT305X_ESW_POC3_ENAGING_S	8
-#define RT305X_ESW_POC3_DIS_UC_PAUSE_S	16
+#define RT305X_ESW_POC2_UNTAG_EN_M	0xff
+#define RT305X_ESW_POC2_UNTAG_EN_S	0
+#define RT305X_ESW_POC2_ENAGING_S	8
+#define RT305X_ESW_POC2_DIS_UC_PAUSE_S	16
 
 #define RT305X_ESW_SGC2_DOUBLE_TAG_M	0x7f
 #define RT305X_ESW_SGC2_DOUBLE_TAG_S	0
@@ -345,15 +345,15 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 
 	/* Enable Back Pressure, and Flow Control */
 	rt305x_esw_wr(esw,
-		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC1_EN_BP_S) |
-		       (RT305X_ESW_PORTS_ALL << RT305X_ESW_POC1_EN_FC_S)),
-		      RT305X_ESW_REG_POC1);
+		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_BP_S) |
+		       (RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_FC_S)),
+		      RT305X_ESW_REG_POC0);
 
 	/* Enable Aging, and VLAN TAG removal */
 	rt305x_esw_wr(esw,
-		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC3_ENAGING_S) |
-		       (RT305X_ESW_PORTS_NOCPU << RT305X_ESW_POC3_UNTAG_EN_S)),
-		      RT305X_ESW_REG_POC3);
+		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC2_ENAGING_S) |
+		       (RT305X_ESW_PORTS_NOCPU << RT305X_ESW_POC2_UNTAG_EN_S)),
+		      RT305X_ESW_REG_POC2);
 
 	rt305x_esw_wr(esw, esw->pdata->reg_initval_fct2, RT305X_ESW_REG_FCT2);
 
@@ -482,9 +482,9 @@ rt305x_esw_apply_config(struct switch_dev *dev)
 				      RT305X_ESW_REG_P0LED + 4*i);
 	}
 
-	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC1,
-		       RT305X_ESW_POC1_DIS_PORT_M << RT305X_ESW_POC1_DIS_PORT_S,
-		       disable << RT305X_ESW_POC1_DIS_PORT_S);
+	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC0,
+		       RT305X_ESW_POC0_DIS_PORT_M << RT305X_ESW_POC0_DIS_PORT_S,
+		       disable << RT305X_ESW_POC0_DIS_PORT_S);
 	rt305x_esw_rmw(esw, RT305X_ESW_REG_SGC2,
 		       (RT305X_ESW_SGC2_DOUBLE_TAG_M <<
 			RT305X_ESW_SGC2_DOUBLE_TAG_S),
@@ -492,9 +492,9 @@ rt305x_esw_apply_config(struct switch_dev *dev)
 	rt305x_esw_rmw(esw, RT305X_ESW_REG_PFC1,
 		       RT305X_ESW_PFC1_EN_VLAN_M << RT305X_ESW_PFC1_EN_VLAN_S,
 		       en_vlan << RT305X_ESW_PFC1_EN_VLAN_S);
-	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC3,
-		       RT305X_ESW_POC3_UNTAG_EN_M << RT305X_ESW_POC3_UNTAG_EN_S,
-		       untag << RT305X_ESW_POC3_UNTAG_EN_S);
+	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC2,
+		       RT305X_ESW_POC2_UNTAG_EN_M << RT305X_ESW_POC2_UNTAG_EN_S,
+		       untag << RT305X_ESW_POC2_UNTAG_EN_S);
 
 	if (!esw->global_vlan_enable) {
 		/*
@@ -624,16 +624,16 @@ rt305x_esw_get_port_bool(struct switch_dev *dev,
 
 	switch (attr->id) {
 	case RT305X_ESW_ATTR_PORT_DISABLE:
-		reg = RT305X_ESW_REG_POC1;
-		shift = RT305X_ESW_POC1_DIS_PORT_S;
+		reg = RT305X_ESW_REG_POC0;
+		shift = RT305X_ESW_POC0_DIS_PORT_S;
 		break;
 	case RT305X_ESW_ATTR_PORT_DOUBLETAG:
 		reg = RT305X_ESW_REG_SGC2;
 		shift = RT305X_ESW_SGC2_DOUBLE_TAG_S;
 		break;
 	case RT305X_ESW_ATTR_PORT_UNTAG:
-		reg = RT305X_ESW_REG_POC3;
-		shift = RT305X_ESW_POC3_UNTAG_EN_S;
+		reg = RT305X_ESW_REG_POC2;
+		shift = RT305X_ESW_POC2_UNTAG_EN_S;
 		break;
 	case RT305X_ESW_ATTR_PORT_LAN:
 		reg = RT305X_ESW_REG_SGC2;
@@ -760,7 +760,7 @@ static int
 rt305x_esw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
-	u32 vmsc, poc3;
+	u32 vmsc, poc2;
 	int vlan_idx = -1;
 	int i;
 
@@ -782,7 +782,7 @@ rt305x_esw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 		return -EINVAL;
 
 	vmsc = rt305x_esw_get_vmsc(esw, vlan_idx);
-	poc3 = rt305x_esw_rr(esw, RT305X_ESW_REG_POC3);
+	poc2 = rt305x_esw_rr(esw, RT305X_ESW_REG_POC2);
 
 	for (i = 0; i < RT305X_ESW_NUM_PORTS; i++) {
 		struct switch_port *p;
@@ -793,7 +793,7 @@ rt305x_esw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 
 		p = &val->value.ports[val->len++];
 		p->id = i;
-		if (poc3 & (port_mask << RT305X_ESW_POC3_UNTAG_EN_S))
+		if (poc2 & (port_mask << RT305X_ESW_POC2_UNTAG_EN_S))
 			p->flags = 0;
 		else
 			p->flags = 1 << SWITCH_PORT_FLAG_TAGGED;
