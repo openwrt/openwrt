@@ -58,7 +58,7 @@
 +			conf->ht_capab &= atoi(val);
 +		else if ((val = get_option(opt, "sec_chan=")))
 +			conf->secondary_channel = atoi(val);
-+		else if ((val = get_option(opt, "hwmode=")))
++		else if ((val = get_option(opt, "hw_mode=")))
 +			conf->hw_mode = atoi(val);
 +		else if ((val = get_option(opt, "ieee80211n=")))
 +			conf->ieee80211n = atoi(val);

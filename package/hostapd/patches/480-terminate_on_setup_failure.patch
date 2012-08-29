@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -768,11 +768,8 @@ int hostapd_setup_interface_complete(str
+@@ -778,11 +778,8 @@ int hostapd_setup_interface_complete(str
  	size_t j;
  	u8 *prev_addr;
  
@@ -14,7 +14,7 @@
  
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (hapd->iconf->channel) {
-@@ -788,7 +785,7 @@ int hostapd_setup_interface_complete(str
+@@ -798,7 +795,7 @@ int hostapd_setup_interface_complete(str
  				     hapd->iconf->secondary_channel)) {
  			wpa_printf(MSG_ERROR, "Could not set channel for "
  				   "kernel driver");
@@ -23,7 +23,7 @@
  		}
  	}
  
-@@ -799,7 +796,7 @@ int hostapd_setup_interface_complete(str
+@@ -809,7 +806,7 @@ int hostapd_setup_interface_complete(str
  			hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
  				       HOSTAPD_LEVEL_WARNING,
  				       "Failed to prepare rates table.");
@@ -32,7 +32,7 @@
  		}
  	}
  
-@@ -807,14 +804,14 @@ int hostapd_setup_interface_complete(str
+@@ -817,14 +814,14 @@ int hostapd_setup_interface_complete(str
  	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
  		wpa_printf(MSG_ERROR, "Could not set RTS threshold for "
  			   "kernel driver");
@@ -49,7 +49,7 @@
  	}
  
  	prev_addr = hapd->own_addr;
-@@ -824,7 +821,7 @@ int hostapd_setup_interface_complete(str
+@@ -834,7 +831,7 @@ int hostapd_setup_interface_complete(str
  		if (j)
  			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
  		if (hostapd_setup_bss(hapd, j == 0))
@@ -58,7 +58,7 @@
  		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
  			prev_addr = hapd->own_addr;
  	}
-@@ -836,7 +833,7 @@ int hostapd_setup_interface_complete(str
+@@ -846,7 +843,7 @@ int hostapd_setup_interface_complete(str
  	if (hostapd_driver_commit(hapd) < 0) {
  		wpa_printf(MSG_ERROR, "%s: Failed to commit driver "
  			   "configuration", __func__);
@@ -67,7 +67,7 @@
  	}
  
  	/*
-@@ -860,6 +857,11 @@ int hostapd_setup_interface_complete(str
+@@ -870,6 +867,11 @@ int hostapd_setup_interface_complete(str
  		iface->init_complete(iface);
  
  	return 0;
