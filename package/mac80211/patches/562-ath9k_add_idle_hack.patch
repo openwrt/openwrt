@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1055,6 +1055,7 @@ static void ath9k_remove_interface(struc
+@@ -1057,6 +1057,7 @@ static void ath9k_remove_interface(struc
  	ath9k_calculate_summary_state(hw, NULL);
  
  	mutex_unlock(&sc->mutex);
@@ -8,7 +8,7 @@
  	ath9k_ps_restore(sc);
  }
  
-@@ -1107,7 +1108,8 @@ int ath9k_config(struct ieee80211_hw *hw
+@@ -1109,7 +1110,8 @@ int ath9k_config(struct ieee80211_hw *hw
  	mutex_lock(&sc->mutex);
  
  	if (changed & IEEE80211_CONF_CHANGE_IDLE) {
