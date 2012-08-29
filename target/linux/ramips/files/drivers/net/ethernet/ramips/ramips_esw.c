@@ -147,7 +147,6 @@ enum {
 	/* Port attributes. */
 	RT305X_ESW_ATTR_PORT_DISABLE,
 	RT305X_ESW_ATTR_PORT_DOUBLETAG,
-	RT305X_ESW_ATTR_PORT_EN_VLAN,
 	RT305X_ESW_ATTR_PORT_UNTAG,
 	RT305X_ESW_ATTR_PORT_LED,
 	RT305X_ESW_ATTR_PORT_LAN,
@@ -159,7 +158,6 @@ struct rt305x_esw_port {
 	bool	disable;
 	bool	doubletag;
 	bool	untag;
-	bool	en_vlan;
 	u8	led;
 	u16	pvid;
 };
@@ -335,7 +333,7 @@ static void
 rt305x_esw_hw_init(struct rt305x_esw *esw)
 {
 	int i;
-	u8 port_map = 0;
+	u8 port_map = RT305X_ESW_PMAP_LLLLLL;
 
 	/* vodoo from original driver */
 	rt305x_esw_wr(esw, 0xC8A07850, RT305X_ESW_REG_FCT0);
@@ -412,55 +410,16 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	/* select local register */
 	rt305x_mii_write(esw, 0, 31, 0x8000);
 
-	/* Set up logical config and apply. */
-	for (i = 0; i < RT305X_ESW_NUM_VLANS; i++) {
-		esw->vlans[i].vid = RT305X_ESW_VLAN_NONE;
-		esw->vlans[i].ports = RT305X_ESW_PORTS_NONE;
-	}
-
-	for (i = 0; i < RT305X_ESW_NUM_PORTS; i++) {
-		esw->ports[i].pvid = 1;
-		esw->ports[i].en_vlan = 1;
-		esw->ports[i].untag = i != RT305X_ESW_PORT6;
-	}
-
 	switch (esw->pdata->vlan_config) {
-	case RT305X_ESW_VLAN_CONFIG_BYPASS:
 	case RT305X_ESW_VLAN_CONFIG_NONE:
 		port_map = RT305X_ESW_PMAP_LLLLLL;
-		esw->global_vlan_enable = 0;
 		break;
-
 	case RT305X_ESW_VLAN_CONFIG_LLLLW:
 		port_map = RT305X_ESW_PMAP_LLLLWL;
-		esw->global_vlan_enable = 1;
-		esw->vlans[0].vid = 1;
-		esw->vlans[1].vid = 2;
-		esw->ports[4].pvid = 2;
-		esw->ports[5].disable = 1;
-		esw->vlans[0].ports =
-				BIT(RT305X_ESW_PORT0) | BIT(RT305X_ESW_PORT1) |
-				BIT(RT305X_ESW_PORT2) | BIT(RT305X_ESW_PORT3) |
-				BIT(RT305X_ESW_PORT6);
-		esw->vlans[1].ports =
-				BIT(RT305X_ESW_PORT4) | BIT(RT305X_ESW_PORT6);
 		break;
-
 	case RT305X_ESW_VLAN_CONFIG_WLLLL:
 		port_map = RT305X_ESW_PMAP_WLLLLL;
-		esw->global_vlan_enable = 1;
-		esw->vlans[0].vid = 1;
-		esw->vlans[1].vid = 2;
-		esw->ports[0].pvid = 2;
-		esw->ports[5].disable = 1;
-		esw->vlans[0].ports =
-			BIT(RT305X_ESW_PORT1) | BIT(RT305X_ESW_PORT2) |
-			BIT(RT305X_ESW_PORT3) | BIT(RT305X_ESW_PORT4) |
-			BIT(RT305X_ESW_PORT6);
-		esw->vlans[1].ports =
-				BIT(RT305X_ESW_PORT0) | BIT(RT305X_ESW_PORT6);
 		break;
-
 	default:
 		BUG();
 	}
@@ -475,6 +434,7 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 		       RT305X_ESW_SGC2_LAN_PMAP_M << RT305X_ESW_SGC2_LAN_PMAP_S,
 		       port_map << RT305X_ESW_SGC2_LAN_PMAP_S);
 
+	/* Apply the empty config. */
 	rt305x_esw_apply_config(&esw->swdev);
 }
 
@@ -506,7 +466,7 @@ rt305x_esw_apply_config(struct switch_dev *dev)
 		disable |= esw->ports[i].disable << i;
 		if (esw->global_vlan_enable) {
 			doubletag |= esw->ports[i].doubletag << i;
-			en_vlan   |= esw->ports[i].en_vlan   << i;
+			en_vlan   |= 1                       << i;
 			untag     |= esw->ports[i].untag     << i;
 			pvid       = esw->ports[i].pvid;
 		} else {
@@ -671,10 +631,6 @@ rt305x_esw_get_port_bool(struct switch_dev *dev,
 		reg = RT305X_ESW_REG_SGC2;
 		shift = RT305X_ESW_SGC2_DOUBLE_TAG_S;
 		break;
-	case RT305X_ESW_ATTR_PORT_EN_VLAN:
-		reg = RT305X_ESW_REG_PFC1;
-		shift = RT305X_ESW_PFC1_EN_VLAN_S;
-		break;
 	case RT305X_ESW_ATTR_PORT_UNTAG:
 		reg = RT305X_ESW_REG_POC3;
 		shift = RT305X_ESW_POC3_UNTAG_EN_S;
@@ -713,9 +669,6 @@ rt305x_esw_set_port_bool(struct switch_dev *dev,
 		break;
 	case RT305X_ESW_ATTR_PORT_DOUBLETAG:
 		esw->ports[idx].doubletag = val->value.i;
-		break;
-	case RT305X_ESW_ATTR_PORT_EN_VLAN:
-		esw->ports[idx].en_vlan = val->value.i;
 		break;
 	case RT305X_ESW_ATTR_PORT_UNTAG:
 		esw->ports[idx].untag = val->value.i;
@@ -940,15 +893,6 @@ static const struct switch_attr rt305x_esw_port[] = {
 				"(1:enabled)",
 		.max = 1,
 		.id = RT305X_ESW_ATTR_PORT_DOUBLETAG,
-		.get = rt305x_esw_get_port_bool,
-		.set = rt305x_esw_set_port_bool,
-	},
-	{
-		.type = SWITCH_TYPE_INT,
-		.name = "en_vlan",
-		.description = "VLAN enabled (1:enabled)",
-		.max = 1,
-		.id = RT305X_ESW_ATTR_PORT_EN_VLAN,
 		.get = rt305x_esw_get_port_bool,
 		.set = rt305x_esw_set_port_bool,
 	},

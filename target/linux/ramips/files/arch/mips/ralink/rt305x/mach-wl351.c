@@ -97,9 +97,15 @@ static void __init wl351_init(void)
 	ramips_register_gpio_buttons(-1, WL351_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(wl351_gpio_buttons),
 				     wl351_gpio_buttons);
-	// external rtl8366rb
-	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_BYPASS;
+	/* External RTL8366RB. */
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_NONE;
 	rt305x_esw_data.reg_initval_fct2 = 0x0002500c;
+	/*
+	 * ext phy base addr 31, rx/tx clock skew 0,
+	 * turbo mii off, rgmi 3.3v off, port 5 polling off
+	 * port5: enabled, gige, full-duplex, rx/tx-flow-control
+	 * port6: enabled, gige, full-duplex, rx/tx-flow-control
+	 */
 	rt305x_esw_data.reg_initval_fpa2 = 0x1f003fff;
 	rt305x_register_ethernet();
 	platform_device_register(&wl351_switch);
