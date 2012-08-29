@@ -8,11 +8,9 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  src/drivers/driver_nl80211.c |   33 ++++++++++++++++++++++++++++++++-
  1 file changed, 32 insertions(+), 1 deletion(-)
 
-diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
-index 22e7075..f510d18 100644
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -6481,7 +6481,7 @@ static int wpa_driver_nl80211_ibss(struct wpa_driver_nl80211_data *drv,
+@@ -6481,7 +6481,7 @@ static int wpa_driver_nl80211_ibss(struc
  				   struct wpa_driver_associate_params *params)
  {
  	struct nl_msg *msg;
@@ -59,6 +57,3 @@ index 22e7075..f510d18 100644
  	ret = nl80211_set_conn_keys(params, msg);
  	if (ret)
  		goto nla_put_failure;
--- 
-1.7.9.4
-

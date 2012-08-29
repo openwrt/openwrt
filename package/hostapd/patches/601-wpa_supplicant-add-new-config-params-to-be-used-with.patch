@@ -12,8 +12,6 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  wpa_supplicant/wpa_supplicant.c |   23 +++++++---
  4 files changed, 124 insertions(+), 7 deletions(-)
 
-diff --git a/src/drivers/driver.h b/src/drivers/driver.h
-index 5ee92f7..d204148 100644
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
 @@ -19,6 +19,7 @@
@@ -36,8 +34,6 @@ index 5ee92f7..d204148 100644
  	/**
  	 * bg_scan_period - Background scan period in seconds, 0 to disable
  	 * background scan, or -1 to indicate no change to default driver
-diff --git a/wpa_supplicant/config.c b/wpa_supplicant/config.c
-index c423bc3..be566ee 100644
 --- a/wpa_supplicant/config.c
 +++ b/wpa_supplicant/config.c
 @@ -14,6 +14,7 @@
@@ -48,7 +44,7 @@ index c423bc3..be566ee 100644
  #include "config.h"
  
  
-@@ -1431,6 +1432,97 @@ static char * wpa_config_write_p2p_client_list(const struct parse_data *data,
+@@ -1431,6 +1432,97 @@ static char * wpa_config_write_p2p_clien
  
  #endif /* CONFIG_P2P */
  
@@ -146,7 +142,7 @@ index c423bc3..be566ee 100644
  /* Helper macros for network block parser */
  
  #ifdef OFFSET
-@@ -1605,6 +1697,10 @@ static const struct parse_data ssid_fields[] = {
+@@ -1605,6 +1697,10 @@ static const struct parse_data ssid_fiel
  	{ STR(ht_mcs) },
  #endif /* CONFIG_HT_OVERRIDES */
  	{ INT(ap_max_inactivity) },
@@ -157,8 +153,6 @@ index c423bc3..be566ee 100644
  };
  
  #undef OFFSET
-diff --git a/wpa_supplicant/config_ssid.h b/wpa_supplicant/config_ssid.h
-index 80d4382..8d152a4 100644
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
 @@ -11,6 +11,7 @@
@@ -181,11 +175,9 @@ index 80d4382..8d152a4 100644
  };
  
  #endif /* CONFIG_SSID_H */
-diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
-index cc85f1e..1473d91 100644
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1395,15 +1395,24 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
+@@ -1395,15 +1395,24 @@ void wpa_supplicant_associate(struct wpa
  		params.ssid_len = ssid->ssid_len;
  	}
  
@@ -217,6 +209,3 @@ index cc85f1e..1473d91 100644
  	params.wpa_ie = wpa_ie;
  	params.wpa_ie_len = wpa_ie_len;
  	params.pairwise_suite = cipher_pairwise;
--- 
-1.7.9.4
-
