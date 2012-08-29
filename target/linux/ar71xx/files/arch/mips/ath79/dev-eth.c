@@ -616,14 +616,7 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 			break;
 
 		case ATH79_SOC_AR7242:
-			switch (pdata->phy_if_mode) {
-			case PHY_INTERFACE_MODE_RGMII:
-				break;
-			default:
-				/* Other PHY modes are not tested yet. */
-				return -EINVAL;
-			}
-			break;
+			/* FIXME */
 
 		case ATH79_SOC_AR9341:
 		case ATH79_SOC_AR9342:
