@@ -80,7 +80,7 @@
  }
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1095,7 +1095,7 @@ static void ath9k_disable_ps(struct ath_
+@@ -1097,7 +1097,7 @@ static void ath9k_disable_ps(struct ath_
  	ath_dbg(common, PS, "PowerSave disabled\n");
  }
  
@@ -89,7 +89,7 @@
  {
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
-@@ -1149,9 +1149,11 @@ static int ath9k_config(struct ieee80211
+@@ -1151,9 +1151,11 @@ static int ath9k_config(struct ieee80211
  
  	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || reset_channel) {
  		struct ieee80211_channel *curchan = hw->conf.channel;
@@ -101,7 +101,7 @@
  
  		if (ah->curchan)
  			old_pos = ah->curchan - &ah->channels[0];
-@@ -1194,7 +1196,23 @@ static int ath9k_config(struct ieee80211
+@@ -1196,7 +1198,23 @@ static int ath9k_config(struct ieee80211
  			memset(&sc->survey[pos], 0, sizeof(struct survey_info));
  		}
  
