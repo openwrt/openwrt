@@ -75,7 +75,7 @@ static void __init all0256n_init(void)
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 	rt305x_register_spi(all0256n_spi_slave_info,
 			    ARRAY_SIZE(all0256n_spi_slave_info));
-	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_WLLLL;
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_NONE;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(all0256n_leds_gpio),
 				  all0256n_leds_gpio);

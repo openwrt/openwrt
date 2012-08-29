@@ -42,7 +42,10 @@ ramips_setup_interfaces()
 
 	case $board in
 	all0256n | \
-	all5002 | \
+	all5002)
+		ucidef_set_interface_lan "eth0"
+		;;
+
 	dir-615-h1 | \
 	wl-330n)
 		ucidef_set_interface_lan "eth0.1"
