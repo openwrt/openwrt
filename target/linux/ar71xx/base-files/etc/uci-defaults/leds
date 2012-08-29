@@ -21,6 +21,13 @@ all0258n)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "all0258n:green:rssihigh" "wlan0" "70" "100" "-69" "8"
 	;;
 
+all0315n)
+	ucidef_set_rssimon "wlan0" "40000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "all0315n:red:rssilow" "wlan0" "1" "40" "0" "6"
+	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "all0315n:yellow:rssimedium" "wlan0" "30" "80" "-29" "5"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "all0315n:green:rssihigh" "wlan0" "70" "100" "-69" "8"
+	;;
+
 ap113)
 	ucidef_set_led_usbdev "usb" "USB" "ap113:green:usb" "1-1"
 	;;
