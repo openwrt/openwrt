@@ -45,6 +45,10 @@ define Image/BuildKernel
 	$(call Image/Build/Initramfs)
 endef
 
+define Image/Build/squashfs
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs 128
+endef
+
 define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
