@@ -34,7 +34,7 @@ define Image/Prepare
 	cp $(LINUX_DIR)/arch/$(ARCH)/boot/zImage $(KDIR)/zImage
 endef
 
-define Image/Build/dlan
+define Image/Build/Profile/dLAN_USB_Extender
 	dd if=$(KDIR)/uImage-dlan-usb-extender bs=1M conv=sync of=$(KDIR)/$(IMG_PREFIX)-dlan-usb-extender-upgrade-$(1).bin
 	cat $(KDIR)/root.$(1) >> $(KDIR)/$(IMG_PREFIX)-dlan-usb-extender-upgrade-$(1).bin
 	cp $(KDIR)/$(IMG_PREFIX)-dlan-usb-extender-upgrade-$(1).bin $(BIN_DIR)/
@@ -46,9 +46,9 @@ define Image/BuildKernel
 endef
 
 define Image/Build
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	$(call Image/Build/$(1))
-	$(call Image/Build/dlan,$(1))
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+	$(call Image/Build/Profile/$(PROFILE),$(1))
 endef
 
 $(eval $(call BuildImage))
