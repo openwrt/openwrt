@@ -829,9 +829,14 @@ out_emac_clk:
 
 static int nuport_mac_close(struct net_device *dev)
 {
+	u32 reg;
 	struct nuport_mac_priv *priv = netdev_priv(dev);
 
 	spin_lock_irq(&priv->lock);
+	reg = nuport_mac_readl(CTRL_REG);
+	reg &= ~(RX_ENABLE | TX_ENABLE);
+	nuport_mac_writel(reg, CTRL_REG);
+
 	napi_disable(&priv->napi);
 	netif_stop_queue(dev);
 
