@@ -20,7 +20,7 @@ $(eval $(call Profile,ALL02393G))
 
 define Profile/ALL0256N
 	NAME:=Allnet ALL0256N
-	PACKAGES:=
+	PACKAGES:=rssileds
 endef
 
 define Profile/ALL0256N/Description
