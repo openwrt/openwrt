@@ -750,11 +750,13 @@ rt305x_esw_get_port_recv_badgood(struct switch_dev *dev,
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 	int idx = val->port_vlan;
 	int shift = attr->id == RT305X_ESW_ATTR_PORT_RECV_GOOD ? 0 : 16;
+	u32 reg;
 
 	if (idx < 0 || idx >= RT305X_ESW_NUM_LANWAN)
 		return -EINVAL;
 
-	val->value.i = rt305x_esw_rr(esw, RT305X_ESW_REG_P0PC + 4*idx) >> shift;
+	reg = rt305x_esw_rr(esw, RT305X_ESW_REG_P0PC + 4*idx);
+	val->value.i = (reg >> shift) & 0xffff;
 
 	return 0;
 }
