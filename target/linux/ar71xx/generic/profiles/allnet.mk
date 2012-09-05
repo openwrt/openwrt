@@ -18,7 +18,7 @@ $(eval $(call Profile,ALL0305))
 
 define Profile/ALL0258N
 	NAME:=Allnet ALL0258N
-	PACKAGES:=uboot-envtools
+	PACKAGES:=uboot-envtools rssileds
 endef
 
 define Profile/ALL0258N/Description
@@ -29,7 +29,7 @@ $(eval $(call Profile,ALL0258N))
 
 define Profile/ALL0315N
 	NAME:=Allnet ALL0315N
-	PACKAGES:=uboot-envtools
+	PACKAGES:=uboot-envtools rssileds
 endef
 
 define Profile/ALL0315N/Description
