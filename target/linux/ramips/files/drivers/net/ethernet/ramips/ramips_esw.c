@@ -534,7 +534,7 @@ rt305x_esw_apply_config(struct switch_dev *dev)
 			untag     |= esw->ports[i].untag     << i;
 			pvid       = esw->ports[i].pvid;
 		} else {
-			int x = esw->alt_vlan_disable ? 1 : 0;
+			int x = esw->alt_vlan_disable ? 0 : 1;
 			doubletag |= x << i;
 			en_vlan   |= x << i;
 			untag     |= x << i;
