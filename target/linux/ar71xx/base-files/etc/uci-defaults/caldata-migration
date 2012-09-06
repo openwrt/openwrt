@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# Copyright (C) 2011 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/ar71xx.sh
+
+board=$(ar71xx_board_name)
+
+findmtd() {
+	local partname="$1"
+	grep "\"$partname\"" /proc/mtd | awk -F: '{ print $1 }'
+}
+
+getcalmac() {
+	local partname="$1"
+	local offset="$2"
+
+	hexdump -e '17/1 "%c"' -s $offset -n 17 /dev/$(findmtd $partname) | tr -d : | tr 'A-Z' 'a-z'
+}
+
+calcmacX() {
+	local mac="$1"
+	local X="$2"
+
+	local oui="$(expr substr "$mac" 1 6)"
+	local end="$(expr substr "$mac" 7 12)"
+
+	echo -n $oui
+	expr substr "$(printf "%6lx" "$(($(printf "%lu" 0x${end}) + $X))")" 1 6
+}
+
+getifmac() {
+	local ifname="$1"
+
+	local ifmac
+
+	ifmac="$(ifconfig "$ifname" | grep HWaddr)"
+	ifmac="${ifmac#*HWaddr }"
+	ifmac="${ifmac%% *}"
+
+	echo "$ifmac" | tr -d : | tr 'A-Z' 'a-z'
+}
+
+case "$board" in
+dir-825-b1)
+	mac1="$(getcalmac caldata 65440)"
+	mac1="$(calcmacX "$mac1" 2)"
+	mac2="$(calcmacX "$mac1" 1)"
+
+	if grep -q '"owrt_caldata"' /proc/mtd && [ "$mac1" = "$(getifmac eth0)" ] && [ "$mac2" = "$(getifmac eth1)" ]; then
+		dd if=/dev/$(findmtd caldata) of=/dev/$(findmtd owrt_caldata) bs=65536 count=1
+	fi
+	;;
+dir-825-b1-tostock)
+	mac1="$(getcalmac owrt_caldata 65440)"
+	mac1="$(calcmacX "$mac1" 2)"
+	mac2="$(calcmacX "$mac1" 1)"
+	if grep -q '"owrt_caldata"' /proc/mtd && [ "$mac1" = "$(getifmac eth0)" ] && [ "$mac2" = "$(getifmac eth1)" ]; then
+		dd if=/dev/$(findmtd owrt_caldata) of=/dev/$(findmtd caldata) bs=65536 count=1
+	fi
+	;;
+esac
+
+return 0

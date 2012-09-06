@@ -64,7 +64,9 @@ get_status_led() {
 	dir-615-c1)
 		status_led="d-link:green:status"
 		;;
-	dir-825-b1)
+	dir-825-b1 |\
+	dir-825-b1-openwrt |\
+	dir-825-b1-stock)
 		status_led="d-link:orange:power"
 		;;
 	eap7660d)
