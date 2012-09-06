@@ -53,10 +53,17 @@ dsl=$(lantiq_soc_has_adsl)
 
 case "$board" in
 # annex B with adm6996
-ARV4520PW|GIGASX76X)
+ARV4520PW)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "3 2 1 0 5t"
+	set_adsl "b" "b2p"
+	;;
+
+GIGASX76X)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "4 3 2 1 5t"
 	set_adsl "b" "b2p"
 	;;
 
