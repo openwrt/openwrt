@@ -40,7 +40,7 @@ static void __init mcs814x_alloc_gc(void __iomem *base, unsigned int irq_start,
 		IRQ_NOREQUEST, 0);
 
 	/* Clear all interrupts */
-	__raw_writel(0xffffffff, base + MCS814X_IRQ_ICR);
+	writel_relaxed(0xffffffff, base + MCS814X_IRQ_ICR);
 }
 
 static const struct of_device_id mcs814x_intc_ids[] = {

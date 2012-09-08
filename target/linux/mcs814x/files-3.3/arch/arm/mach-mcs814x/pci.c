@@ -93,13 +93,13 @@ static int mcs8140_pci_host_status(void)
 {
 	u32 host_status;
 
-	host_status = __raw_readl(mcs8140_pci_master_base + PCI_IF_CONFIG);
+	host_status = readl_relaxed(mcs8140_pci_master_base + PCI_IF_CONFIG);
 	if (host_status & PCI_FATAL_ERROR) {
-		__raw_writel(host_status & 0xfffffff0,
+		writel_relaxed(host_status & 0xfffffff0,
 			mcs8140_pci_master_base + PCI_IF_CONFIG);
 		/* flush write */
 		host_status =
-			__raw_readl(mcs8140_pci_master_base + PCI_IF_CONFIG);
+			readl_relaxed(mcs8140_pci_master_base + PCI_IF_CONFIG);
 		return 1;
 	}
 
@@ -124,7 +124,7 @@ static int mcs8140_pci_read_config(struct pci_bus *bus,
 			break;
 		default:
 			addr &= ~3;
-			v = __raw_readl(addr);
+			v = readl_relaxed(addr);
 			break;
 		}
 	} else
@@ -140,10 +140,10 @@ static int mcs8140_pci_read_config(struct pci_bus *bus,
 
 static void mcs8140_eeprom_emu_init(void)
 {
-	__raw_writel(0x0000000F, mcs8140_eeprom_emu_base + EPRM_SDRAM_FUNC0);
-	__raw_writel(0x08000000, MCS8140_PCI_CFG_VIRT_BASE + 0x10);
+	writel_relaxed(0x0000000F, mcs8140_eeprom_emu_base + EPRM_SDRAM_FUNC0);
+	writel_relaxed(0x08000000, MCS8140_PCI_CFG_VIRT_BASE + 0x10);
 	/* Set the DONE bit of the EEPROM emulator */
-	__raw_writel(0x01, mcs8140_eeprom_emu_base + EPRM_DONE);
+	writel_relaxed(0x01, mcs8140_eeprom_emu_base + EPRM_DONE);
 }
 
 static int mcs8140_pci_write_config(struct pci_bus *bus,
@@ -161,7 +161,7 @@ static int mcs8140_pci_write_config(struct pci_bus *bus,
 			__raw_writew((u16)val, addr);
 			break;
 		case 4:
-			__raw_writel(val, addr);
+			writel_relaxed(val, addr);
 			break;
 		}
 	}
@@ -260,7 +260,7 @@ int __init pci_mcs8140_setup(int nr, struct pci_sys_data *sys)
 		goto out;
 	}
 
-	val = __raw_readl(MCS8140_PCI_CFG_VIRT_BASE);
+	val = readl_relaxed(MCS8140_PCI_CFG_VIRT_BASE);
 	if (val != MCS8140_PCI_DEVICE_ID) {
 		pr_err("cannot find MCS8140 PCI Core: %08x\n", val);
 		ret = -EIO;
@@ -269,11 +269,11 @@ int __init pci_mcs8140_setup(int nr, struct pci_sys_data *sys)
 
 	pr_info("MCS8140 PCI core found\n");
 
-	val = __raw_readl(MCS8140_PCI_CFG_VIRT_BASE + PCI_COMMAND);
+	val = readl_relaxed(MCS8140_PCI_CFG_VIRT_BASE + PCI_COMMAND);
 	/* Added to support wireless cards */
-	__raw_writel(0, MCS8140_PCI_CFG_VIRT_BASE + 0x40);
-	__raw_writel(val | 0x147, MCS8140_PCI_CFG_VIRT_BASE + PCI_COMMAND);
-	val = __raw_readl(MCS8140_PCI_CFG_VIRT_BASE + PCI_COMMAND);
+	writel_relaxed(0, MCS8140_PCI_CFG_VIRT_BASE + 0x40);
+	writel_relaxed(val | 0x147, MCS8140_PCI_CFG_VIRT_BASE + PCI_COMMAND);
+	val = readl_relaxed(MCS8140_PCI_CFG_VIRT_BASE + PCI_COMMAND);
 	ret = 1;
 out:
 	return ret;
@@ -302,14 +302,14 @@ static irqreturn_t mcs8140_pci_abort_interrupt(int irq, void *dummy)
 {
 	u32 word;
 
-	word = __raw_readl(mcs8140_pci_master_base + PCI_IF_CONFIG);
+	word = readl_relaxed(mcs8140_pci_master_base + PCI_IF_CONFIG);
 	if (!(word & (1 << 24)))
 		return IRQ_NONE;
 
-	__raw_writel(word & 0xfffffff0,
+	writel_relaxed(word & 0xfffffff0,
 		mcs8140_pci_master_base + PCI_IF_CONFIG);
 	/* flush write */
-	word = __raw_readl(mcs8140_pci_master_base + PCI_IF_CONFIG);
+	word = readl_relaxed(mcs8140_pci_master_base + PCI_IF_CONFIG);
 
 	return IRQ_HANDLED;
 }
@@ -319,12 +319,12 @@ static int mcs8140_pci_abort_irq_init(int irq)
 	u32 word;
 
 	/* Enable Interrupt in PCI Master Core */
-	word = __raw_readl(mcs8140_pci_master_base + PCI_IF_CONFIG);
+	word = readl_relaxed(mcs8140_pci_master_base + PCI_IF_CONFIG);
 	word |= (1 << 24);
-	__raw_writel(word, mcs8140_pci_master_base + PCI_IF_CONFIG);
+	writel_relaxed(word, mcs8140_pci_master_base + PCI_IF_CONFIG);
 
 	/* flush write */
-	word = __raw_readl(mcs8140_pci_master_base + PCI_IF_CONFIG);
+	word = readl_relaxed(mcs8140_pci_master_base + PCI_IF_CONFIG);
 
 	return request_irq(irq, mcs8140_pci_abort_interrupt, 0,
 			"PCI abort", NULL);

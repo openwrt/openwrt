@@ -49,9 +49,9 @@ static int mcs814x_wdt_start(struct watchdog_device *dev)
 	u32 reg;
 
 	spin_lock(&wdt->lock);
-	reg = __raw_readl(wdt->regs + WDT_CTRL);
+	reg = readl_relaxed(wdt->regs + WDT_CTRL);
 	reg |= WDT_CTRL_EN;
-	__raw_writel(reg, wdt->regs + WDT_CTRL);
+	writel_relaxed(reg, wdt->regs + WDT_CTRL);
 	spin_unlock(&wdt->lock);
 
 	return 0;
@@ -63,9 +63,9 @@ static int mcs814x_wdt_stop(struct watchdog_device *dev)
 	u32 reg;
 
 	spin_lock(&wdt->lock);
-	reg = __raw_readl(wdt->regs + WDT_CTRL);
+	reg = readl_relaxed(wdt->regs + WDT_CTRL);
 	reg &= ~WDT_CTRL_EN;
-	__raw_writel(reg, wdt->regs + WDT_CTRL);
+	writel_relaxed(reg, wdt->regs + WDT_CTRL);
 	spin_unlock(&wdt->lock);
 
 	return 0;
@@ -80,7 +80,7 @@ static int mcs814x_wdt_set_timeout(struct watchdog_device *dev,
 	/* watchdog counts upward and rollover (0xfffffff -> 0)
 	 * triggers the reboot
 	 */
-	__raw_writel(WDT_MAX_VALUE - (new_timeout * clk_get_rate(wdt->clk)),
+	writel_relaxed(WDT_MAX_VALUE - (new_timeout * clk_get_rate(wdt->clk)),
 		wdt->regs + WDT_COUNT);
 	spin_unlock(&wdt->lock);
 

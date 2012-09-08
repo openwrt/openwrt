@@ -67,22 +67,22 @@ static void mcs814x_eth_hardware_filter_set(u8 value)
 {
 	u32 reg;
 
-	reg = __raw_readl(MCS814X_VIRT_BASE + MCS814X_DBGLED);
+	reg = readl_relaxed(MCS814X_VIRT_BASE + MCS814X_DBGLED);
 	if (value)
 		reg |= 0x80;
 	else
 		reg &= ~0x80;
-	__raw_writel(reg, MCS814X_VIRT_BASE + MCS814X_DBGLED);
+	writel_relaxed(reg, MCS814X_VIRT_BASE + MCS814X_DBGLED);
 }
 
 static void mcs814x_eth_led_cfg_set(u8 cfg)
 {
 	u32 reg;
 
-	reg = __raw_readl(mcs814x_sysdbg_base + SYSDBG_BS2);
+	reg = readl_relaxed(mcs814x_sysdbg_base + SYSDBG_BS2);
 	reg &= ~LED_CFG_MASK;
 	reg |= cfg;
-	__raw_writel(reg, mcs814x_sysdbg_base + SYSDBG_BS2);
+	writel_relaxed(reg, mcs814x_sysdbg_base + SYSDBG_BS2);
 }
 
 static void mcs814x_eth_buffer_shifting_set(u8 value)
@@ -134,7 +134,7 @@ void __init mcs814x_init_machine(void)
 	u32 bs2, cpu_mode;
 	int gpio;
 
-	bs2 = __raw_readl(mcs814x_sysdbg_base + SYSDBG_BS2);
+	bs2 = readl_relaxed(mcs814x_sysdbg_base + SYSDBG_BS2);
 	cpu_mode = (bs2 >> CPU_MODE_SHIFT) & CPU_MODE_MASK;
 
 	pr_info("CPU mode: %s\n", cpu_modes[cpu_mode].name);
@@ -161,5 +161,5 @@ void __init mcs814x_map_io(void)
 
 void mcs814x_restart(char mode, const char *cmd)
 {
-	__raw_writel(~(1 << 31), mcs814x_sysdbg_base);
+	writel_relaxed(~(1 << 31), mcs814x_sysdbg_base);
 }

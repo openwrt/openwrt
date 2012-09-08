@@ -54,13 +54,13 @@ static int clk_local_onoff_enable(struct clk *clk, int enable)
 	if (!clk->enable_reg)
 		return 0;
 
-	tmp = __raw_readl(mcs814x_sysdbg_base + clk->enable_reg);
+	tmp = readl_relaxed(mcs814x_sysdbg_base + clk->enable_reg);
 	if (!enable)
 		tmp &= ~clk->enable_mask;
 	else
 		tmp |= clk->enable_mask;
 
-	__raw_writel(tmp, mcs814x_sysdbg_base + clk->enable_reg);
+	writel_relaxed(tmp, mcs814x_sysdbg_base + clk->enable_reg);
 
 	return 0;
 }
@@ -254,7 +254,7 @@ void __init mcs814x_clk_init(void)
 	clkdev_add_table(mcs814x_chip_clks, ARRAY_SIZE(mcs814x_chip_clks));
 
 	/* read the bootstrap registers to know the exact clocking scheme */
-	bs1 = __raw_readl(mcs814x_sysdbg_base + SYSDBG_BS1);
+	bs1 = readl_relaxed(mcs814x_sysdbg_base + SYSDBG_BS1);
 	cpu_freq = (bs1 >> CPU_FREQ_SHIFT) & CPU_FREQ_MASK;
 
 	pr_info("CPU frequency: %lu (kHz)\n", cpu_freq_table[cpu_freq]);
