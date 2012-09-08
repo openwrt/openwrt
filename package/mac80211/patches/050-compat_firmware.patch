@@ -10,8 +10,8 @@
 +endif
 +
  obj-$(CONFIG_COMPAT_NET_SCH_CODEL) += sch_codel.o
- obj-$(CONFIG_COMPAT_NET_SCH_FQ_CODEL) += sch_fq_codel.o
  
+ sch_fq_codel-y = sch_fq_codel_core.o flow_dissector.o
 --- a/compat/compat_firmware_class.c
 +++ b/compat/compat_firmware_class.c
 @@ -741,19 +741,16 @@ compat_request_firmware_nowait(

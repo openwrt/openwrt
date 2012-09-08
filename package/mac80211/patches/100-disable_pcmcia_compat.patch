@@ -11,16 +11,16 @@
  struct pcmcia_cfg_mem {
 --- a/compat/compat-2.6.33.c
 +++ b/compat/compat-2.6.33.c
-@@ -11,7 +11,7 @@
+@@ -10,7 +10,7 @@
+ 
  #include <linux/compat.h>
- #include <linux/autoconf.h>
  
 -#if defined(CONFIG_PCCARD) || defined(CONFIG_PCCARD_MODULE)
 +#if 0
  
  /**
   * pccard_loop_tuple() - loop over tuples in the CIS
-@@ -73,7 +73,7 @@ next_entry:
+@@ -72,7 +72,7 @@ next_entry:
  EXPORT_SYMBOL_GPL(pccard_loop_tuple);
  /* Source: drivers/pcmcia/cistpl.c */
  
@@ -31,7 +31,7 @@
  	struct pcmcia_device *p_dev;
 --- a/include/linux/compat-2.6.28.h
 +++ b/include/linux/compat-2.6.28.h
-@@ -48,7 +48,7 @@ typedef u32 phys_addr_t;
+@@ -49,7 +49,7 @@ typedef u32 phys_addr_t;
  })
  #endif /* From include/asm-generic/bug.h */
  
@@ -51,7 +51,7 @@
  #include <pcmcia/cs_types.h>
  #include <pcmcia/cistpl.h>
  #include <pcmcia/ds.h>
-@@ -74,9 +74,9 @@ static inline struct sk_buff *netdev_all
+@@ -82,9 +82,9 @@ static inline struct sk_buff *netdev_all
  	return skb;
  }
  

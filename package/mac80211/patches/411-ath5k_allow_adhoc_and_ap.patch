@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
 +++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
-@@ -88,13 +88,8 @@ ath5k_add_interface(struct ieee80211_hw 
+@@ -89,13 +89,8 @@ ath5k_add_interface(struct ieee80211_hw 
  		goto end;
  	}
  
@@ -36,7 +36,7 @@
  		intval /= ATH_BCBUF;	/* staggered multi-bss beacons */
  		if (intval < 15)
  			ATH5K_WARN(ah, "intval %u is too low, min 15\n",
-@@ -2429,6 +2429,7 @@ static const struct ieee80211_iface_limi
+@@ -2427,6 +2427,7 @@ static const struct ieee80211_iface_limi
  #ifdef CONFIG_MAC80211_MESH
  				 BIT(NL80211_IFTYPE_MESH_POINT) |
  #endif

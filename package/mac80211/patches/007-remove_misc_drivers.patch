@@ -1,6 +1,6 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -240,7 +240,7 @@ $(warning "WARNING: CONFIG_CFG80211_WEXT
+@@ -241,7 +241,7 @@ $(warning "WARNING: CONFIG_CFG80211_WEXT
  endif #CONFIG_WIRELESS_EXT
  
  ifdef CONFIG_STAGING
@@ -9,7 +9,7 @@
  endif #CONFIG_STAGING
  
  # mac80211 test driver
-@@ -405,15 +405,15 @@ endif #CONFIG_CRC_ITU_T
+@@ -406,12 +406,12 @@ endif #CONFIG_CRC_ITU_T
  export CONFIG_MWL8K=m
  
  # Ethernet drivers go here
@@ -19,20 +19,15 @@
 +# export CONFIG_ATL1=m
 +# export CONFIG_ATL2=m
 +# export CONFIG_ATL1E=m
- ifdef CONFIG_COMPAT_KERNEL_2_6_28
+ ifndef CONFIG_COMPAT_KERNEL_2_6_28
 -export CONFIG_ATL1C=m
--export CONFIG_ALX=n
-+# export CONFIG_ATL1C=m
-+# export CONFIG_ALX=n
- else #CONFIG_COMPAT_KERNEL_2_6_28
--export CONFIG_ATL1C=n
 -export CONFIG_ALX=m
-+# export CONFIG_ATL1C=n
++# export CONFIG_ATL1C=m
 +# export CONFIG_ALX=m
  endif #CONFIG_COMPAT_KERNEL_2_6_28
  
  ifdef CONFIG_WIRELESS_EXT
-@@ -474,21 +474,21 @@ endif #CONFIG_COMPAT_KERNEL_2_6_29
+@@ -472,21 +472,21 @@ endif #CONFIG_COMPAT_KERNEL_2_6_29
  # Note: this depends on CONFIG_USB_NET_RNDIS_HOST and CONFIG_USB_NET_CDCETHER
  # it also requires new RNDIS_HOST and CDC_ETHER modules which we add
  ifdef CONFIG_COMPAT_KERNEL_2_6_29

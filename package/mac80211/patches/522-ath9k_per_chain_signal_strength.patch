@@ -1,6 +1,6 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -706,6 +706,9 @@ enum mac80211_rx_flags {
+@@ -729,6 +729,9 @@ enum mac80211_rx_flags {
   * @signal: signal strength when receiving this frame, either in dBm, in dB or
   *	unspecified depending on the hardware capabilities flags
   *	@IEEE80211_HW_SIGNAL_*
@@ -10,16 +10,15 @@
   * @antenna: antenna used
   * @rate_idx: index of data rate into band's supported rates or MCS index if
   *	HT rates are use (RX_FLAG_HT)
-@@ -722,6 +725,9 @@ struct ieee80211_rx_status {
+@@ -749,6 +752,8 @@ struct ieee80211_rx_status {
  	u8 band;
  	u8 antenna;
  	s8 signal;
-+
 +	u8 chains;
 +	s8 chain_signal[4];
+ 	u8 ampdu_delimiter_crc;
  };
  
- /**
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
 @@ -325,6 +325,11 @@ struct sta_info {
@@ -36,7 +35,7 @@
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1231,6 +1231,7 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1271,6 +1271,7 @@ ieee80211_rx_h_sta_process(struct ieee80
  	struct sk_buff *skb = rx->skb;
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
@@ -44,7 +43,7 @@
  
  	if (!sta)
  		return RX_CONTINUE;
-@@ -1275,6 +1276,19 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1315,6 +1316,19 @@ ieee80211_rx_h_sta_process(struct ieee80
  		ewma_add(&sta->avg_signal, -status->signal);
  	}
  
@@ -77,7 +76,7 @@
  		kfree(sta);
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -546,6 +546,8 @@ struct station_parameters {
+@@ -549,6 +549,8 @@ struct station_parameters {
   * @STATION_INFO_STA_FLAGS: @sta_flags filled
   * @STATION_INFO_BEACON_LOSS_COUNT: @beacon_loss_count filled
   * @STATION_INFO_T_OFFSET: @t_offset filled
@@ -86,7 +85,7 @@
   */
  enum station_info_flags {
  	STATION_INFO_INACTIVE_TIME	= 1<<0,
-@@ -569,6 +571,8 @@ enum station_info_flags {
+@@ -572,6 +574,8 @@ enum station_info_flags {
  	STATION_INFO_STA_FLAGS		= 1<<18,
  	STATION_INFO_BEACON_LOSS_COUNT	= 1<<19,
  	STATION_INFO_T_OFFSET		= 1<<20,
@@ -95,7 +94,7 @@
  };
  
  /**
-@@ -652,6 +656,9 @@ struct sta_bss_parameters {
+@@ -655,6 +659,9 @@ struct sta_bss_parameters {
   *	For CFG80211_SIGNAL_TYPE_MBM, value is expressed in _dBm_.
   * @signal_avg: Average signal strength, type depends on the wiphy's signal_type.
   *	For CFG80211_SIGNAL_TYPE_MBM, value is expressed in _dBm_.
@@ -105,7 +104,7 @@
   * @txrate: current unicast bitrate from this station
   * @rxrate: current unicast bitrate to this station
   * @rx_packets: packets received from this station
-@@ -684,6 +691,11 @@ struct station_info {
+@@ -687,6 +694,11 @@ struct station_info {
  	u8 plink_state;
  	s8 signal;
  	s8 signal_avg;
@@ -249,7 +248,7 @@
  	RX_SAMP_DBG(rate) = rs->rs_rate;
 --- a/include/linux/nl80211.h
 +++ b/include/linux/nl80211.h
-@@ -1734,6 +1734,8 @@ enum nl80211_sta_bss_param {
+@@ -1760,6 +1760,8 @@ enum nl80211_sta_bss_param {
   * @NL80211_STA_INFO_STA_FLAGS: Contains a struct nl80211_sta_flag_update.
   * @NL80211_STA_INFO_BEACON_LOSS: count of times beacon loss was detected (u32)
   * @NL80211_STA_INFO_T_OFFSET: timing offset with respect to this STA (s64)
@@ -258,7 +257,7 @@
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -1758,6 +1760,8 @@ enum nl80211_sta_info {
+@@ -1784,6 +1786,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_STA_FLAGS,
  	NL80211_STA_INFO_BEACON_LOSS,
  	NL80211_STA_INFO_T_OFFSET,
@@ -269,7 +268,7 @@
  	__NL80211_STA_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -2745,6 +2745,32 @@ nla_put_failure:
+@@ -2769,6 +2769,32 @@ nla_put_failure:
  	return false;
  }
  
@@ -302,7 +301,7 @@
  static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
  				int flags,
  				struct cfg80211_registered_device *rdev,
-@@ -2806,6 +2832,18 @@ static int nl80211_send_station(struct s
+@@ -2830,6 +2856,18 @@ static int nl80211_send_station(struct s
  	default:
  		break;
  	}
@@ -323,7 +322,7 @@
  					  NL80211_STA_INFO_TX_BITRATE))
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -355,6 +355,7 @@ static void sta_set_sinfo(struct sta_inf
+@@ -367,6 +367,7 @@ static void sta_set_sinfo(struct sta_inf
  	struct ieee80211_sub_if_data *sdata = sta->sdata;
  	struct ieee80211_local *local = sdata->local;
  	struct timespec uptime;
@@ -331,7 +330,7 @@
  
  	sinfo->generation = sdata->local->sta_generation;
  
-@@ -394,6 +395,17 @@ static void sta_set_sinfo(struct sta_inf
+@@ -406,6 +407,17 @@ static void sta_set_sinfo(struct sta_inf
  			sinfo->signal = (s8)sta->last_signal;
  		sinfo->signal_avg = (s8) -ewma_read(&sta->avg_signal);
  	}
