@@ -87,7 +87,7 @@
  
  	mutex_unlock(&flash->lock);
  
-@@ -924,6 +950,12 @@ static int __devinit m25p_probe(struct s
+@@ -925,6 +951,12 @@ static int __devinit m25p_probe(struct s
  	flash->mtd.erase = m25p80_erase;
  	flash->mtd.read = m25p80_read;
  
