@@ -22,6 +22,8 @@
 /* Timer block registers */
 #define TIMER_VAL	0x00
 #define TIMER_CTL	0x04
+#define  TIMER_CTL_EN	0x01
+#define  TIMER_CTL_DBG	0x02
 
 static u32 last_reload;
 static u32 timer_correct;
@@ -40,7 +42,7 @@ static inline unsigned long ticks2usecs(u32 x)
  */
 static unsigned long mcs814x_gettimeoffset(void)
 {
-	u32 ticks = __raw_readl(mcs814x_timer_base + TIMER_VAL);
+	u32 ticks = readl_relaxed(mcs814x_timer_base + TIMER_VAL);
 
 	if (ticks < last_reload)
 		return ticks2usecs(ticks + (u32)(0xffffffff - last_reload));
@@ -51,7 +53,7 @@ static unsigned long mcs814x_gettimeoffset(void)
 
 static irqreturn_t mcs814x_timer_interrupt(int irq, void *dev_id)
 {
-	u32 count = __raw_readl(mcs814x_timer_base + TIMER_VAL);
+	u32 count = readl_relaxed(mcs814x_timer_base + TIMER_VAL);
 
 	/* take into account delay up to this moment */
 	last_reload = count + timer_correct + timer_reload_value;
@@ -60,9 +62,9 @@ static irqreturn_t mcs814x_timer_interrupt(int irq, void *dev_id)
 		last_reload = timer_reload_value;
 	} else {
 		if (timer_correct == 0)
-			timer_correct = __raw_readl(mcs814x_timer_base + TIMER_VAL) - count;
+			timer_correct = readl_relaxed(mcs814x_timer_base + TIMER_VAL) - count;
 	}
-	__raw_writel(last_reload, mcs814x_timer_base + TIMER_VAL);
+	writel_relaxed(last_reload, mcs814x_timer_base + TIMER_VAL);
 
 	timer_tick();
 
@@ -118,13 +120,14 @@ static void __init mcs814x_timer_init(void)
 	timer_reload_value = 0xffffffff - (clock_rate / HZ);
 
 	/* disable timer */
-	__raw_writel(0, mcs814x_timer_base + TIMER_CTL);
-	__raw_writel(timer_reload_value, mcs814x_timer_base + TIMER_VAL);
+	writel_relaxed(~TIMER_CTL_EN, mcs814x_timer_base + TIMER_CTL);
+	writel_relaxed(timer_reload_value, mcs814x_timer_base + TIMER_VAL);
 	last_reload = timer_reload_value;
 
 	setup_irq(mcs814x_timer_irq.irq, &mcs814x_timer_irq);
 	/* enable timer, stop timer in debug mode */
-	__raw_writel(0x03, mcs814x_timer_base + TIMER_CTL);
+	writel_relaxed(TIMER_CTL_EN | TIMER_CTL_DBG,
+		mcs814x_timer_base + TIMER_CTL);
 }
 
 struct sys_timer mcs814x_timer = {

@@ -30,7 +30,7 @@ static int mcs814x_gpio_get(struct gpio_chip *chip, unsigned offset)
 {
 	struct mcs814x_gpio_chip *mcs814x = to_mcs814x_gpio_chip(chip);
 
-	return __raw_readl(mcs814x->regs + GPIO_PIN) & (1 << offset);
+	return readl_relaxed(mcs814x->regs + GPIO_PIN) & (1 << offset);
 }
 
 static void mcs814x_gpio_set(struct gpio_chip *chip,
@@ -39,12 +39,12 @@ static void mcs814x_gpio_set(struct gpio_chip *chip,
 	struct mcs814x_gpio_chip *mcs814x = to_mcs814x_gpio_chip(chip);
 	u32 mask;
 
-	mask = __raw_readl(mcs814x->regs + GPIO_PIN);
+	mask = readl_relaxed(mcs814x->regs + GPIO_PIN);
 	if (value)
 		mask |= (1 << offset);
 	else
 		mask &= ~(1 << offset);
-	__raw_writel(mask, mcs814x->regs + GPIO_PIN);
+	writel_relaxed(mask, mcs814x->regs + GPIO_PIN);
 }
 
 static int mcs814x_gpio_direction_output(struct gpio_chip *chip,
@@ -53,9 +53,9 @@ static int mcs814x_gpio_direction_output(struct gpio_chip *chip,
 	struct mcs814x_gpio_chip *mcs814x = to_mcs814x_gpio_chip(chip);
 	u32 mask;
 
-	mask = __raw_readl(mcs814x->regs + GPIO_DIR);
+	mask = readl_relaxed(mcs814x->regs + GPIO_DIR);
 	mask &= ~(1 << offset);
-	__raw_writel(mask, mcs814x->regs + GPIO_DIR);
+	writel_relaxed(mask, mcs814x->regs + GPIO_DIR);
 
 	return 0;
 }
@@ -66,9 +66,9 @@ static int mcs814x_gpio_direction_input(struct gpio_chip *chip,
 	struct mcs814x_gpio_chip *mcs814x = to_mcs814x_gpio_chip(chip);
 	u32 mask;
 
-	mask = __raw_readl(mcs814x->regs + GPIO_DIR);
+	mask = readl_relaxed(mcs814x->regs + GPIO_DIR);
 	mask |= (1 << offset);
-	__raw_writel(mask, mcs814x->regs + GPIO_DIR);
+	writel_relaxed(mask, mcs814x->regs + GPIO_DIR);
 
 	return 0;
 }

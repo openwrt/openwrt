@@ -112,7 +112,7 @@
 
 static inline u32 nuport_mac_readl(void __iomem *reg)
 {
-	return __raw_readl(reg);
+	return readl_relaxed(reg);
 }
 
 static inline u8 nuport_mac_readb(void __iomem *reg)
@@ -122,12 +122,12 @@ static inline u8 nuport_mac_readb(void __iomem *reg)
 
 static inline void nuport_mac_writel(u32 value, void __iomem *reg)
 {
-	__raw_writel(value, reg);
+	writel_relaxed(value, reg);
 }
 
 static inline void nuport_mac_writeb(u8 value, void __iomem *reg)
 {
-	__raw_writel(value, reg);
+	writel_relaxed(value, reg);
 }
 
 /* MAC private data */

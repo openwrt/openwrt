@@ -28,7 +28,7 @@ static int mcs814x_rng_data_read(struct hwrng *rng, u32 *buffer)
 {
 	struct mcs814x_rng_priv *priv = (struct mcs814x_rng_priv *)rng->priv;
 
-	*buffer = __raw_readl(priv->regs + RND);
+	*buffer = readl_relaxed(priv->regs + RND);
 
 	return 4;
 }
