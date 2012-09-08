@@ -1,6 +1,6 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -53,7 +53,7 @@ endif
+@@ -54,7 +54,7 @@ endif
  ifeq ($(KERNEL_VERSION),2)
  ifeq ($(shell test $(KERNEL_VERSION) -eq 2 -a $(KERNEL_26SUBLEVEL) -ge 27 -a $(KERNEL_26SUBLEVEL) -le 31 && echo yes),yes)
  ifeq ($(CONFIG_MAC80211),)

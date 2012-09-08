@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -537,6 +537,9 @@ struct ath9k_wow_pattern {
+@@ -538,6 +538,9 @@ struct ath9k_wow_pattern {
  #ifdef CONFIG_MAC80211_LEDS
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -654,6 +657,13 @@ struct ath9k_vif_iter_data {
+@@ -655,6 +658,13 @@ struct ath9k_vif_iter_data {
  	int nadhocs;   /* number of adhoc vifs */
  };
  
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -695,9 +705,8 @@ struct ath_softc {
+@@ -696,9 +706,8 @@ struct ath_softc {
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
  #ifdef CONFIG_MAC80211_LEDS

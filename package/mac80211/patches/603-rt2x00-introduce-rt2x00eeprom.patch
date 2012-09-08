@@ -186,7 +186,7 @@
  obj-$(CONFIG_RT2X00_LIB_PCI)		+= rt2x00pci.o
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -84,20 +84,10 @@ static void rt2800pci_mcu_status(struct 
+@@ -89,20 +89,10 @@ static void rt2800pci_mcu_status(struct 
  	rt2x00pci_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
  }
  
@@ -208,7 +208,7 @@
  
  #ifdef CONFIG_PCI
  static void rt2800pci_eepromregister_read(struct eeprom_93cx6 *eeprom)
-@@ -317,6 +307,20 @@ static int rt2800pci_write_firmware(stru
+@@ -322,6 +312,20 @@ static int rt2800pci_write_firmware(stru
  }
  
  /*
@@ -229,7 +229,7 @@
   * Initialization functions.
   */
  static bool rt2800pci_get_entry_state(struct queue_entry *entry)
-@@ -1159,6 +1163,7 @@ static const struct rt2x00lib_ops rt2800
+@@ -1033,6 +1037,7 @@ static const struct rt2x00lib_ops rt2800
  	.get_firmware_name	= rt2800pci_get_firmware_name,
  	.check_firmware		= rt2800_check_firmware,
  	.load_firmware		= rt2800_load_firmware,

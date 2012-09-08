@@ -1,6 +1,6 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -835,7 +835,7 @@ enum ieee80211_smps_mode {
+@@ -863,7 +863,7 @@ enum ieee80211_smps_mode {
   */
  struct ieee80211_conf {
  	u32 flags;
@@ -11,7 +11,7 @@
  	u16 listen_interval;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1957,7 +1957,7 @@ static int ieee80211_get_tx_power(struct
+@@ -1969,7 +1969,7 @@ static int ieee80211_get_tx_power(struct
  {
  	struct ieee80211_local *local = wiphy_priv(wiphy);
  

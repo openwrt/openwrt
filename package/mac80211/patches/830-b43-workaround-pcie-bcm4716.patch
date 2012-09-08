@@ -19,7 +19,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/net/wireless/b43/b43.h
 +++ b/drivers/net/wireless/b43/b43.h
-@@ -1051,6 +1051,32 @@ static inline bool b43_using_pio_transfe
+@@ -1048,6 +1048,32 @@ static inline bool b43_using_pio_transfe
  	return dev->__using_pio_transfers;
  }
  
@@ -73,7 +73,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  struct b43_bus_dev *b43_bus_dev_ssb_init(struct ssb_device *sdev);
 --- a/drivers/net/wireless/b43/phy_common.c
 +++ b/drivers/net/wireless/b43/phy_common.c
-@@ -251,6 +251,12 @@ void b43_phy_write(struct b43_wldev *dev
+@@ -266,6 +266,12 @@ void b43_phy_write(struct b43_wldev *dev
  {
  	assert_mac_suspended(dev);
  	dev->phy.ops->phy_write(dev, reg, value);
@@ -88,7 +88,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		dev->phy.writes_counter = 0;
 --- a/drivers/net/wireless/b43/phy_n.c
 +++ b/drivers/net/wireless/b43/phy_n.c
-@@ -4838,14 +4838,14 @@ static inline void check_phyreg(struct b
+@@ -5423,14 +5423,14 @@ static inline void check_phyreg(struct b
  static u16 b43_nphy_op_read(struct b43_wldev *dev, u16 reg)
  {
  	check_phyreg(dev, reg);
@@ -105,7 +105,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_write16(dev, B43_MMIO_PHY_DATA, value);
  }
  
-@@ -4853,7 +4853,7 @@ static void b43_nphy_op_maskset(struct b
+@@ -5438,7 +5438,7 @@ static void b43_nphy_op_maskset(struct b
  				 u16 set)
  {
  	check_phyreg(dev, reg);
@@ -114,7 +114,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_maskset16(dev, B43_MMIO_PHY_DATA, mask, set);
  }
  
-@@ -4864,7 +4864,7 @@ static u16 b43_nphy_op_radio_read(struct
+@@ -5449,7 +5449,7 @@ static u16 b43_nphy_op_radio_read(struct
  	/* N-PHY needs 0x100 for read access */
  	reg |= 0x100;
  
@@ -123,7 +123,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	return b43_read16(dev, B43_MMIO_RADIO_DATA_LOW);
  }
  
-@@ -4873,7 +4873,7 @@ static void b43_nphy_op_radio_write(stru
+@@ -5458,7 +5458,7 @@ static void b43_nphy_op_radio_write(stru
  	/* Register 1 is a 32-bit register. */
  	B43_WARN_ON(reg == 1);
  

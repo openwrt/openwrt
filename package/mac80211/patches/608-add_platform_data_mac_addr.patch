@@ -41,7 +41,7 @@
   * Interrupt context handlers.
 --- a/drivers/net/wireless/rt2x00/rt61pci.c
 +++ b/drivers/net/wireless/rt2x00/rt61pci.c
-@@ -2393,6 +2393,7 @@ static int rt61pci_validate_eeprom(struc
+@@ -2392,6 +2392,7 @@ static int rt61pci_validate_eeprom(struc
  	u32 reg;
  	u16 word;
  	u8 *mac;
@@ -49,7 +49,7 @@
  	s8 value;
  
  	rt2x00pci_register_read(rt2x00dev, E2PROM_CSR, &reg);
-@@ -2413,7 +2414,11 @@ static int rt61pci_validate_eeprom(struc
+@@ -2412,7 +2413,11 @@ static int rt61pci_validate_eeprom(struc
  	/*
  	 * Start validation of the data that has been read.
  	 */
@@ -59,5 +59,5 @@
 +		memcpy(mac, pdata_mac, 6);
 +
  	if (!is_valid_ether_addr(mac)) {
- 		random_ether_addr(mac);
+ 		eth_random_addr(mac);
  		EEPROM(rt2x00dev, "MAC: %pM\n", mac);

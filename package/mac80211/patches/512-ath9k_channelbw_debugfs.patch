@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -658,6 +658,7 @@ struct ath_softc {
+@@ -659,6 +659,7 @@ struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
  
@@ -8,7 +8,7 @@
  	struct survey_info *cur_survey;
  	struct survey_info survey[ATH9K_NUM_CHANNELS];
  
-@@ -733,6 +734,7 @@ struct ath_softc {
+@@ -734,6 +735,7 @@ struct ath_softc {
  #endif
  };
  
@@ -80,7 +80,7 @@
  }
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1097,7 +1097,7 @@ static void ath9k_disable_ps(struct ath_
+@@ -1127,7 +1127,7 @@ static void ath9k_disable_ps(struct ath_
  	ath_dbg(common, PS, "PowerSave disabled\n");
  }
  
@@ -89,7 +89,7 @@
  {
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
-@@ -1151,9 +1151,11 @@ static int ath9k_config(struct ieee80211
+@@ -1181,9 +1181,11 @@ static int ath9k_config(struct ieee80211
  
  	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || reset_channel) {
  		struct ieee80211_channel *curchan = hw->conf.channel;
@@ -101,7 +101,7 @@
  
  		if (ah->curchan)
  			old_pos = ah->curchan - &ah->channels[0];
-@@ -1196,7 +1198,23 @@ static int ath9k_config(struct ieee80211
+@@ -1226,7 +1228,23 @@ static int ath9k_config(struct ieee80211
  			memset(&sc->survey[pos], 0, sizeof(struct survey_info));
  		}
  
