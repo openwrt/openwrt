@@ -59,9 +59,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-@@ -92,6 +92,8 @@
- #define AR934X_EHCI_BASE	0x1b000000
- #define AR934X_EHCI_SIZE	0x200
+@@ -94,6 +94,8 @@
+ #define AR934X_SRIF_BASE	(AR71XX_APB_BASE + 0x00116000)
+ #define AR934X_SRIF_SIZE	0x1000
  
 +#define QCA955X_WMAC_BASE	(AR71XX_APB_BASE + 0x00100000)
 +#define QCA955X_WMAC_SIZE	0x20000
