@@ -11,8 +11,8 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/arch/mips/ath79/clock.c
 +++ b/arch/mips/ath79/clock.c
-@@ -242,6 +242,82 @@ static void __init ar934x_clocks_init(vo
- 	ath79_uart_clk.rate = ath79_ref_clk.rate;
+@@ -295,6 +295,82 @@ static void __init ar934x_clocks_init(vo
+ 	iounmap(dpll_base);
  }
  
 +static void __init qca955x_clocks_init(void)
@@ -94,7 +94,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  void __init ath79_clocks_init(void)
  {
  	if (soc_is_ar71xx())
-@@ -254,6 +330,8 @@ void __init ath79_clocks_init(void)
+@@ -307,6 +383,8 @@ void __init ath79_clocks_init(void)
  		ar933x_clocks_init();
  	else if (soc_is_ar934x())
  		ar934x_clocks_init();
@@ -105,7 +105,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-@@ -223,6 +223,41 @@
+@@ -225,6 +225,41 @@
  #define AR934X_PLL_CPU_DDR_CLK_CTRL_DDRCLK_FROM_DDRPLL	BIT(21)
  #define AR934X_PLL_CPU_DDR_CLK_CTRL_AHBCLK_FROM_DDRPLL	BIT(24)
  
@@ -147,7 +147,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  /*
   * USB_CONFIG block
   */
-@@ -262,6 +297,8 @@
+@@ -264,6 +299,8 @@
  #define AR934X_RESET_REG_BOOTSTRAP		0xb0
  #define AR934X_RESET_REG_PCIE_WMAC_INT_STATUS	0xac
  
@@ -156,7 +156,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  #define MISC_INT_ETHSW			BIT(12)
  #define MISC_INT_TIMER4			BIT(10)
  #define MISC_INT_TIMER3			BIT(9)
-@@ -339,6 +376,8 @@
+@@ -341,6 +378,8 @@
  #define AR934X_BOOTSTRAP_SDRAM_DISABLED	BIT(1)
  #define AR934X_BOOTSTRAP_DDR1		BIT(0)
  
