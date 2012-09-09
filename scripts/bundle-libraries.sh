@@ -74,16 +74,12 @@ for BIN in "$@"; do
 				*) echo " * lib: ${token##*/}" ;;
 			esac
 
-			dest="$DIR/bundled/lib/${token#*/lib*/}"
+			dest="$DIR/bundled/lib/${token##*/}"
 			ddir="${dest%/*}"
 
 			[ -f "$token" -a ! -f "$dest" ] && {
 				_md "$ddir"
 				_cp "$token" "$dest"
-
-				case "$token" in */tls/*.so*)
-					_cp "${token%/tls/*}/${token##*/}" "$DIR/bundled/lib/${token##*/}"
-				;; esac
 			}
 		;; esac
 	done
