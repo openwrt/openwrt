@@ -21,7 +21,8 @@ ja76pf2)
 	ucidef_set_interface_lan "eth0 eth1"
 	;;
 
-db120)
+db120 |\
+rb-2011l)
 	ucidef_set_interfaces_lan_wan "eth0.1 eth1" "eth0.2"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0t 2 3 4 5"
