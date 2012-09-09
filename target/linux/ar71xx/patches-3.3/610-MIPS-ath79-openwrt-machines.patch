@@ -670,8 +670,8 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -153,4 +667,7 @@ config ATH79_NVRAM
- config ATH79_PCI_ATH9K_FIXUP
+@@ -156,4 +670,7 @@ config ATH79_PCI_ATH9K_FIXUP
+ config ATH79_ROUTERBOOT
  	def_bool n
  
 +config PCI_AR724X
@@ -680,7 +680,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -36,9 +36,62 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
+@@ -37,9 +37,62 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #

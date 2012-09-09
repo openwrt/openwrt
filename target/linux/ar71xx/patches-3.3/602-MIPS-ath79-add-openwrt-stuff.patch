@@ -21,7 +21,7 @@
  config PCI_AR724X
  	def_bool n
  
-@@ -125,4 +139,10 @@ config ATH79_DEV_WMAC
+@@ -125,4 +139,13 @@ config ATH79_DEV_WMAC
  	depends on (SOC_AR913X || SOC_AR933X || SOC_AR934X || SOC_QCA955X)
  	def_bool n
  
@@ -31,10 +31,13 @@
 +config ATH79_PCI_ATH9K_FIXUP
 +	def_bool n
 +
++config ATH79_ROUTERBOOT
++	def_bool n
++
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -17,13 +17,23 @@ obj-$(CONFIG_PCI)			+= pci.o
+@@ -17,13 +17,24 @@ obj-$(CONFIG_PCI)			+= pci.o
  # Devices
  #
  obj-y					+= dev-common.o
@@ -53,6 +56,7 @@
 +#
 +obj-$(CONFIG_ATH79_NVRAM)		+= nvram.o
 +obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= pci-ath9k-fixup.o
++obj-$(CONFIG_ATH79_ROUTERBOOT)		+= routerboot.o
 +
 +#
  # Machines

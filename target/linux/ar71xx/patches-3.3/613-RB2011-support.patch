@@ -1,8 +1,8 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -333,6 +333,11 @@ config ATH79_MACH_RB750
- 	select ATH79_DEV_AP9X_PCI if PCI
+@@ -334,6 +334,11 @@ config ATH79_MACH_RB750
  	select ATH79_DEV_USB
+ 	select RLE_DECOMPRESS
  
 +config ATH79_MACH_RB2011
 +	bool "MikroTik RouterBOARD 2011 support"
@@ -22,11 +22,9 @@
  	ATH79_MACH_RW2458N,		/* Redwave RW2458N */
  	ATH79_MACH_TEW_632BRP,		/* TRENDnet TEW-632BRP */
  	ATH79_MACH_TEW_673GRU,		/* TRENDnet TEW-673GRU */
-Index: linux-3.3.8/arch/mips/ath79/Makefile
-===================================================================
---- linux-3.3.8.orig/arch/mips/ath79/Makefile
-+++ linux-3.3.8/arch/mips/ath79/Makefile
-@@ -65,6 +65,7 @@ obj-$(CONFIG_ATH79_MACH_PB44)		+= mach-p
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -66,6 +66,7 @@ obj-$(CONFIG_ATH79_MACH_PB44)		+= mach-p
  obj-$(CONFIG_ATH79_MACH_PB92)		+= mach-pb92.o
  obj-$(CONFIG_ATH79_MACH_RB4XX)		+= mach-rb4xx.o
  obj-$(CONFIG_ATH79_MACH_RB750)		+= mach-rb750.o
@@ -34,10 +32,8 @@ Index: linux-3.3.8/arch/mips/ath79/Makefile
  obj-$(CONFIG_ATH79_MACH_RW2458N)	+= mach-rw2458n.o
  obj-$(CONFIG_ATH79_MACH_TEW_632BRP)	+= mach-tew-632brp.o
  obj-$(CONFIG_ATH79_MACH_TEW_673GRU)	+= mach-tew-673gru.o
-Index: linux-3.3.8/arch/mips/ath79/prom.c
-===================================================================
---- linux-3.3.8.orig/arch/mips/ath79/prom.c
-+++ linux-3.3.8/arch/mips/ath79/prom.c
+--- a/arch/mips/ath79/prom.c
++++ b/arch/mips/ath79/prom.c
 @@ -181,7 +181,8 @@ void __init prom_init(void)
  		}
  	}
