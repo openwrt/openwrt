@@ -11,6 +11,10 @@
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/ar8216_platform.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#include <linux/spi/spi.h>
+#include <linux/spi/flash.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 
@@ -18,6 +22,43 @@
 #include "dev-eth.h"
 #include "dev-m25p80.h"
 #include "machtypes.h"
+
+#define RB_ROUTERBOOT_OFFSET	0x0000
+#define RB_ROUTERBOOT_SIZE	0xb000
+#define RB_HARD_CFG_OFFSET	0xb000
+#define RB_HARD_CFG_SIZE	0x1000
+#define RB_BIOS_OFFSET		0xd000
+#define RB_BIOS_SIZE		0x2000
+#define RB_SOFT_CFG_OFFSET	0xf000
+#define RB_SOFT_CFG_SIZE	0x1000
+
+static struct mtd_partition rb2011_spi_partitions[] = {
+	{
+		.name		= "routerboot",
+		.offset		= RB_ROUTERBOOT_OFFSET,
+		.size		= RB_ROUTERBOOT_SIZE,
+		.mask_flags	= MTD_WRITEABLE,
+	}, {
+		.name		= "hard_config",
+		.offset		= RB_HARD_CFG_OFFSET,
+		.size		= RB_HARD_CFG_SIZE,
+		.mask_flags	= MTD_WRITEABLE,
+	}, {
+		.name		= "bios",
+		.offset		= RB_BIOS_OFFSET,
+		.size		= RB_BIOS_SIZE,
+		.mask_flags	= MTD_WRITEABLE,
+	}, {
+		.name		= "soft_config",
+		.offset		= RB_SOFT_CFG_OFFSET,
+		.size		= RB_SOFT_CFG_SIZE,
+	}
+};
+
+static struct flash_platform_data rb2011_spi_flash_data = {
+	.parts		= rb2011_spi_partitions,
+	.nr_parts	= ARRAY_SIZE(rb2011_spi_partitions),
+};
 
 static struct ar8327_pad_cfg rb2011_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_RGMII,
@@ -65,7 +106,7 @@ static void __init rb2011_gmac_setup(void)
 
 static void __init rb2011_setup(void)
 {
-	ath79_register_m25p80(NULL);
+	ath79_register_m25p80(&rb2011_spi_flash_data);
 
 	rb2011_gmac_setup();
 
