@@ -14,6 +14,7 @@
 #include <linux/init.h>
 #include <linux/string.h>
 #include <linux/module.h>
+#include <linux/routerboot.h>
 
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
