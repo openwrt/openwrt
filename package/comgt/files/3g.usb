@@ -10,8 +10,8 @@ find_3g_iface() {
 	config_get proto "$cfg" proto
 	[ "$proto" = 3g ] || return 0
 
-	local dev
-	config_get dev "$cfg" device
+	# bypass state vars here because 00-netstate could clobber .device
+	local dev=$(uci_get network "$cfg" device)
 
 	if [ "${dev##*/}" = "${tty##*/}" ]; then
 		if [ "$ACTION" = add ]; then
