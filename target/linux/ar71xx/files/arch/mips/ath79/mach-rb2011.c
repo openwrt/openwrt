@@ -2,26 +2,35 @@
  *  MikroTik RouterBOARD 2011 support
  *
  *  Copyright (C) 2012 Stijn Tintel <stijn@linux-ipv6.be>
+ *  Copyright (C) 2012 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
  *  by the Free Software Foundation.
  */
 
+#define pr_fmt(fmt) "rb2011: " fmt
+
 #include <linux/phy.h>
 #include <linux/platform_device.h>
+#include <linux/ath9k_platform.h>
 #include <linux/ar8216_platform.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/rle.h>
+#include <linux/routerboot.h>
 
+#include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h>
 
 #include "common.h"
 #include "dev-eth.h"
 #include "dev-m25p80.h"
+#include "dev-wmac.h"
 #include "machtypes.h"
+#include "routerboot.h"
 
 #define RB_ROUTERBOOT_OFFSET	0x0000
 #define RB_ROUTERBOOT_SIZE	0xb000
@@ -31,6 +40,8 @@
 #define RB_BIOS_SIZE		0x2000
 #define RB_SOFT_CFG_OFFSET	0xf000
 #define RB_SOFT_CFG_SIZE	0x1000
+
+#define RB_ART_SIZE		0x10000
 
 static struct mtd_partition rb2011_spi_partitions[] = {
 	{
@@ -104,6 +115,42 @@ static void __init rb2011_gmac_setup(void)
 	iounmap(base);
 }
 
+static void __init rb2011_wlan_init(void)
+{
+	u8 *hard_cfg = (u8 *) KSEG1ADDR(0x1f000000 + RB_HARD_CFG_OFFSET);
+	u16 tag_len;
+	u8 *tag;
+	char *art_buf;
+	u8 wlan_mac[ETH_ALEN];
+	int err;
+
+	err = routerboot_find_tag(hard_cfg, RB_HARD_CFG_SIZE, RB_ID_WLAN_DATA,
+				  &tag, &tag_len);
+	if (err) {
+		pr_err("no calibration data found\n");
+		return;
+	}
+
+	art_buf = kmalloc(RB_ART_SIZE, GFP_KERNEL);
+	if (art_buf == NULL) {
+		pr_err("no memory for calibration data\n");
+		return;
+	}
+
+	err = rle_decode((char *) tag, tag_len, art_buf, RB_ART_SIZE,
+			 NULL, NULL);
+	if (err) {
+		pr_err("unable to decode calibration data\n");
+		goto free;
+	}
+
+	ath79_init_mac(wlan_mac, ath79_mac_base, 11);
+	ath79_register_wmac(art_buf + 0x1000, wlan_mac);
+
+free:
+	kfree(art_buf);
+}
+
 static void __init rb2011_setup(void)
 {
 	ath79_register_m25p80(&rb2011_spi_flash_data);
@@ -136,3 +183,12 @@ static void __init rb2011_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_RB_2011L, "2011L", "MikroTik RouterBOARD 2011L",
 	     rb2011_setup);
+
+static void __init rb2011g_setup(void)
+{
+	rb2011_setup();
+	rb2011_wlan_init();
+}
+
+MIPS_MACHINE(ATH79_MACH_RB_2011G, "2011G", "MikroTik RouterBOARD 2011UAS-2HnD",
+	     rb2011g_setup);
