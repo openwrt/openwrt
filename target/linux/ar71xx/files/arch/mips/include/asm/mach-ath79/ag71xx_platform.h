@@ -53,6 +53,8 @@ struct ag71xx_mdio_platform_data {
 	u8		is_ar7240:1;
 	u8		is_ar9330:1;
 	u8		is_ar934x:1;
+	unsigned long	mdio_clock;
+	unsigned long	ref_clock;
 };
 
 #endif /* __ASM_MACH_ATH79_PLATFORM_H */
