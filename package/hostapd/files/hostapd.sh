@@ -84,6 +84,9 @@ hostapd_set_bss_options() {
 			config_get auth_secret "$vif" auth_secret
 			[ -z "$auth_secret" ] && config_get auth_secret "$vif" key
 			append "$var" "auth_server_shared_secret=$auth_secret" "$N"
+			config_get_bool auth_cache "$vif" auth_cache 0
+			[ "$auth_cache" -gt 0 ] || append "$var" "disable_pmksa_caching=1" "$N"
+			[ "$auth_cache" -gt 0 ] || append "$var" "okc=0" "$N"
 			config_get acct_server "$vif" acct_server
 			[ -n "$acct_server" ] && append "$var" "acct_server_addr=$acct_server" "$N"
 			config_get acct_port "$vif" acct_port
@@ -174,7 +177,7 @@ hostapd_set_bss_options() {
 	if [ "$wpa" -ge "2" ]
 	then
 		# RSN -> allow preauthentication
-		config_get rsn_preauth "$vif" rsn_preauth
+		config_get_bool rsn_preauth "$vif" rsn_preauth "$auth_cache"
 		if [ -n "$bridge" -a "$rsn_preauth" = 1 ]
 		then
 			append "$var" "rsn_preauth=1" "$N"
