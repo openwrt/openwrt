@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=block-mount
 PKG_VERSION:=0.2.0
-PKG_RELEASE:=8
+PKG_RELEASE:=9
 
 include $(INCLUDE_DIR)/package.mk
 

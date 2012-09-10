@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2009-2012 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,6 +11,7 @@ blkdev=`dirname $DEVPATH`
 if [ `basename $blkdev` != "block" ]; then
 
     device=`basename $DEVPATH`
+    mountpoint=`sed -ne "s|^[^ ]*/$device ||; T; s/ .*//p" /proc/self/mounts`
 
     case "$ACTION" in
 	add)
@@ -82,6 +83,7 @@ if [ `basename $blkdev` != "block" ]; then
 		;;
 	remove)
 		umount /dev/$device
+		umount $mountpoint
 		;;
     esac	
 
