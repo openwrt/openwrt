@@ -54,6 +54,9 @@ void __init ramips_soc_prom_init(void)
 	} else if (n0 == RT3352_CHIP_NAME0 && n1 == RT3352_CHIP_NAME1) {
 		rt305x_soc = RT305X_SOC_RT3352;
 		name = "RT3352";
+	} else if (n0 == RT5350_CHIP_NAME0 && n1 == RT5350_CHIP_NAME1) {
+		rt305x_soc = RT305X_SOC_RT5350;
+		name = "RT5350";
 	} else {
 		panic("rt305x: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
 	}
@@ -68,7 +71,7 @@ void __init ramips_soc_prom_init(void)
 
 	ramips_mem_base = RT305X_SDRAM_BASE;
 
-	if (soc_is_rt305x() || soc_is_rt3350()) {
+	if (soc_is_rt305x() || soc_is_rt3350() || soc_is_rt5350()) {
 		ramips_mem_size_min = RT305X_MEM_SIZE_MIN;
 		ramips_mem_size_max = RT305X_MEM_SIZE_MAX;
 	} else if (soc_is_rt3352()) {
