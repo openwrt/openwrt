@@ -62,6 +62,27 @@ void __init rt305x_clocks_init(void)
 		rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 3;
 		rt305x_uart_clk.rate = 40000000;
 		rt305x_wdt_clk.rate = rt305x_sys_clk.rate;
+	} else if (soc_is_rt5350()) {
+		t = (t >> RT5350_SYSCFG0_CPUCLK_SHIFT) &
+		     RT5350_SYSCFG0_CPUCLK_MASK;
+		switch (t) {
+		case RT5350_SYSCFG0_CPUCLK_360:
+			rt305x_cpu_clk.rate = 360000000;
+			rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 3;
+			break;
+		case RT5350_SYSCFG0_CPUCLK_320:
+			rt305x_cpu_clk.rate = 320000000;
+			rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 4;
+			break;
+		case RT5350_SYSCFG0_CPUCLK_300:
+			rt305x_cpu_clk.rate = 300000000;
+			rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 3;
+			break;
+		default:
+			BUG();
+		}
+		rt305x_uart_clk.rate = 40000000;
+		rt305x_wdt_clk.rate = rt305x_sys_clk.rate;
 	} else {
 		BUG();
 	}

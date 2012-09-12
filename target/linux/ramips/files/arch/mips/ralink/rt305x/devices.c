@@ -404,7 +404,7 @@ void __init rt305x_register_usb(void)
 {
 	if (soc_is_rt305x() || soc_is_rt3350()) {
 		platform_device_register(&rt305x_dwc_otg_device);
-	} else if (soc_is_rt3352()) {
+	} else if (soc_is_rt3352() || soc_is_rt5350()) {
 		platform_device_register(&rt3352_ehci_device);
 		platform_device_register(&rt3352_ohci_device);
 	} else {
