@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,18 +16,94 @@
+@@ -16,18 +16,98 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -8,6 +8,7 @@
 +	ATH79_MACH_ALFA_NX,		/* ALFA Network N2/N5 board */
 +	ATH79_MACH_ALL0258N,		/* Allnet ALL0258N */
 +	ATH79_MACH_ALL0305,		/* Allnet ALL0305 */
++	ATH79_MACH_ALL0315N,		/* Allnet ALL0315N */
 +	ATH79_MACH_AP113,		/* Atheros AP113 reference board */
  	ATH79_MACH_AP121,		/* Atheros AP121 reference board */
  	ATH79_MACH_AP121_MINI,		/* Atheros AP121-MINI reference board */
@@ -48,9 +49,12 @@
 +	ATH79_MACH_RB_750G_R3,		/* MikroTik RouterBOARD 750GL */
 +	ATH79_MACH_RB_751,		/* MikroTik RouterBOARD 751 */
 +	ATH79_MACH_RB_751G,		/* Mikrotik RouterBOARD 751G */
++	ATH79_MACH_RB_2011G,		/* Mikrotik RouterBOARD 2011UAS-2HnD */
++	ATH79_MACH_RB_2011L,		/* Mikrotik RouterBOARD 2011L */
 +	ATH79_MACH_RW2458N,		/* Redwave RW2458N */
 +	ATH79_MACH_TEW_632BRP,		/* TRENDnet TEW-632BRP */
 +	ATH79_MACH_TEW_673GRU,		/* TRENDnet TEW-673GRU */
++	ATH79_MACH_TEW_712BR,		/* TRENDnet TEW-712BR */
 +	ATH79_MACH_TL_MR11U,		/* TP-LINK TL-MR11U */
 +	ATH79_MACH_TL_MR3020,		/* TP-LINK TL-MR3020 */
 +	ATH79_MACH_TL_MR3220,		/* TP-LINK TL-MR3220 */
@@ -97,7 +101,7 @@
  #endif /* _ATH79_MACHTYPE_H */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -2,6 +2,52 @@ if ATH79
+@@ -2,6 +2,61 @@ if ATH79
  
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
  
@@ -137,6 +141,15 @@
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
 +
++config ATH79_MACH_ALL0315N
++	bool "Allnet ALL0315N support"
++	select SOC_AR724X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++
 +config ATH79_MACH_AP113
 +	bool "Atheros AP113 board support"
 +	select SOC_AR724X
@@ -150,7 +163,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -40,6 +86,24 @@ config ATH79_MACH_AP81
+@@ -40,6 +95,24 @@ config ATH79_MACH_AP81
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros AP81 reference board.
  
@@ -175,7 +188,7 @@
  config ATH79_MACH_DB120
  	bool "Atheros DB120 reference board"
  	select SOC_AR934X
-@@ -54,6 +118,13 @@ config ATH79_MACH_DB120
+@@ -54,6 +127,13 @@ config ATH79_MACH_DB120
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros DB120 reference board.
  
@@ -189,7 +202,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -66,6 +137,429 @@ config ATH79_MACH_PB44
+@@ -66,6 +146,447 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -381,6 +394,14 @@
 +	select ATH79_DEV_USB
 +	select ATH79_ROUTERBOOT
 +	select RLE_DECOMPRESS
++
++config ATH79_MACH_RB2011
++	bool "MikroTik RouterBOARD 2011 support"
++	select SOC_AR934x
++	select ATH79_DEV_ETH
++	select ATH79_DEV_NFC
++	select ATH79_DEV_WMAC
++	select ATH79_ROUTERBOOT
 +
 +config ATH79_MACH_WNDR3700
 +	bool "NETGEAR WNDR3700 board support"
@@ -607,6 +628,16 @@
 +	select ATH79_DEV_USB
 +	select ATH79_NVRAM
 +
++config ATH79_MACH_TEW_712BR
++	bool "TRENDnet TEW-712BR support"
++	select SOC_AR933X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++	select ATH79_NVRAM
++
 +config ATH79_MACH_UBNT
 +	bool "Ubiquiti AR71xx based boards support"
 +	select SOC_AR71XX
@@ -619,7 +650,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -79,6 +573,24 @@ config ATH79_MACH_UBNT_XM
+@@ -79,6 +600,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -644,7 +675,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -114,10 +626,6 @@ config SOC_QCA955X
+@@ -114,10 +653,6 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -655,7 +686,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -128,7 +636,14 @@ config ATH79_DEV_DSA
+@@ -128,7 +663,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -671,7 +702,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -160,4 +675,7 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -160,4 +702,7 @@ config ATH79_PCI_ATH9K_FIXUP
  config ATH79_ROUTERBOOT
  	def_bool n
  
@@ -681,13 +712,14 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,62 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,65 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
 +obj-$(CONFIG_ATH79_MACH_ALFA_AP96)	+= mach-alfa-ap96.o
 +obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach-alfa-nx.o
 +obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
++obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o
 +obj-$(CONFIG_ATH79_MACH_AP113)		+= mach-ap113.o
  obj-$(CONFIG_ATH79_MACH_AP121)		+= mach-ap121.o
  obj-$(CONFIG_ATH79_MACH_AP136)		+= mach-ap136.o
@@ -713,9 +745,11 @@
 +obj-$(CONFIG_ATH79_MACH_PB92)		+= mach-pb92.o
 +obj-$(CONFIG_ATH79_MACH_RB4XX)		+= mach-rb4xx.o
 +obj-$(CONFIG_ATH79_MACH_RB750)		+= mach-rb750.o
++obj-$(CONFIG_ATH79_MACH_RB2011)		+= mach-rb2011.o
 +obj-$(CONFIG_ATH79_MACH_RW2458N)	+= mach-rw2458n.o
 +obj-$(CONFIG_ATH79_MACH_TEW_632BRP)	+= mach-tew-632brp.o
 +obj-$(CONFIG_ATH79_MACH_TEW_673GRU)	+= mach-tew-673gru.o
++obj-$(CONFIG_ATH79_MACH_TEW_712BR)	+= mach-tew-712br.o
 +obj-$(CONFIG_ATH79_MACH_TL_MR11U)	+= mach-tl-mr11u.o
 +obj-$(CONFIG_ATH79_MACH_TL_MR3020)	+= mach-tl-mr3020.o
 +obj-$(CONFIG_ATH79_MACH_TL_MR3X20)	+= mach-tl-mr3x20.o
@@ -746,12 +780,13 @@
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
 --- a/arch/mips/ath79/prom.c
 +++ b/arch/mips/ath79/prom.c
-@@ -180,6 +180,9 @@ void __init prom_init(void)
+@@ -180,6 +180,10 @@ void __init prom_init(void)
  			ath79_prom_append_cmdline("board", env);
  		}
  	}
 +
-+	if (strstr(arcs_cmdline, "board=750Gr3"))
++	if (strstr(arcs_cmdline, "board=750Gr3") ||
++	    strstr(arcs_cmdline, "board=2011L"))
 +		ath79_prom_append_cmdline("console", "ttyS0,115200");
  }
  
