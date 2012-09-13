@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -335,6 +335,11 @@ config ATH79_MACH_RB750
+@@ -335,6 +335,12 @@ config ATH79_MACH_RB750
  	select ATH79_ROUTERBOOT
  	select RLE_DECOMPRESS
  
@@ -8,6 +8,7 @@
 +	bool "MikroTik RouterBOARD 2011 support"
 +	select SOC_AR934x
 +	select ATH79_DEV_ETH
++	select ATH79_DEV_NFC
 +
  config ATH79_MACH_WNDR3700
  	bool "NETGEAR WNDR3700 board support"

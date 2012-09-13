@@ -10,10 +10,10 @@
  	ATH79_MACH_TEW_632BRP,		/* TRENDnet TEW-632BRP */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -339,6 +339,8 @@ config ATH79_MACH_RB2011
- 	bool "MikroTik RouterBOARD 2011 support"
+@@ -340,6 +340,8 @@ config ATH79_MACH_RB2011
  	select SOC_AR934x
  	select ATH79_DEV_ETH
+ 	select ATH79_DEV_NFC
 +	select ATH79_DEV_WMAC
 +	select ATH79_ROUTERBOOT
  
