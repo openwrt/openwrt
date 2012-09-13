@@ -12,15 +12,18 @@
 #define pr_fmt(fmt) "rb2011: " fmt
 
 #include <linux/phy.h>
+#include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/ath9k_platform.h>
 #include <linux/ar8216_platform.h>
 #include <linux/mtd/mtd.h>
+#include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/rle.h>
 #include <linux/routerboot.h>
+#include <linux/gpio.h>
 
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h>
@@ -28,9 +31,12 @@
 #include "common.h"
 #include "dev-eth.h"
 #include "dev-m25p80.h"
+#include "dev-nfc.h"
 #include "dev-wmac.h"
 #include "machtypes.h"
 #include "routerboot.h"
+
+#define RB2011_GPIO_NAND_NCE	14
 
 #define RB_ROUTERBOOT_OFFSET	0x0000
 #define RB_ROUTERBOOT_SIZE	0xb000
@@ -64,6 +70,25 @@ static struct mtd_partition rb2011_spi_partitions[] = {
 		.offset		= RB_SOFT_CFG_OFFSET,
 		.size		= RB_SOFT_CFG_SIZE,
 	}
+};
+
+static struct mtd_partition rb2011_nand_partitions[] = {
+	{
+		.name	= "booter",
+		.offset	= 0,
+		.size	= (256 * 1024),
+		.mask_flags = MTD_WRITEABLE,
+	},
+	{
+		.name	= "kernel",
+		.offset	= (256 * 1024),
+		.size	= (4 * 1024 * 1024) - (256 * 1024),
+	},
+	{
+		.name	= "rootfs",
+		.offset	= MTDPART_OFS_NXTBLK,
+		.size	= MTDPART_SIZ_FULL,
+	},
 };
 
 static struct flash_platform_data rb2011_spi_flash_data = {
@@ -151,9 +176,61 @@ free:
 	kfree(art_buf);
 }
 
+static void rb2011_nand_select_chip(int chip_no)
+{
+	switch (chip_no) {
+	case 0:
+		gpio_set_value(RB2011_GPIO_NAND_NCE, 0);
+		break;
+	default:
+		gpio_set_value(RB2011_GPIO_NAND_NCE, 1);
+		break;
+	}
+	ndelay(500);
+}
+
+static struct nand_ecclayout rb2011_nand_ecclayout = {
+	.eccbytes	= 6,
+	.eccpos		= { 8, 9, 10, 13, 14, 15 },
+	.oobavail	= 9,
+	.oobfree	= { { 0, 4 }, { 6, 2 }, { 11, 2 }, { 4, 1 } }
+};
+
+static int rb2011_nand_scan_fixup(struct mtd_info *mtd)
+{
+	struct nand_chip *chip = mtd->priv;
+
+	if (mtd->writesize == 512) {
+		/*
+		 * Use the OLD Yaffs-1 OOB layout, otherwise RouterBoot
+		 * will not be able to find the kernel that we load.
+		 */
+		chip->ecc.layout = &rb2011_nand_ecclayout;
+	}
+
+	return 0;
+}
+
+static void __init rb2011_nand_init(void)
+{
+	ath79_nfc_set_scan_fixup(rb2011_nand_scan_fixup);
+	ath79_nfc_set_parts(rb2011_nand_partitions,
+			    ARRAY_SIZE(rb2011_nand_partitions));
+	ath79_nfc_set_select_chip(rb2011_nand_select_chip);
+	ath79_register_nfc();
+}
+
+static void __init rb2011_gpio_init(void)
+{
+	gpio_request_one(RB2011_GPIO_NAND_NCE, GPIOF_OUT_INIT_HIGH, "NAND nCE");
+}
+
 static void __init rb2011_setup(void)
 {
+	rb2011_gpio_init();
+
 	ath79_register_m25p80(&rb2011_spi_flash_data);
+	rb2011_nand_init();
 
 	rb2011_gmac_setup();
 
