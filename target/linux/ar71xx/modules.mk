@@ -37,6 +37,22 @@ endef
 $(eval $(call KernelPackage,leds-wndr3700-usb))
 
 
+define KernelPackage/nand-ar934x
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Atheros AR934x NAND flash controller driver
+  KCONFIG:=CONFIG_MTD_NAND_AR934X
+  DEPENDS:=@TARGET_ar71xx +kmod-nand
+  FILES:=$(LINUX_DIR)/drivers/mtd/nand/ar934x_nfc.ko
+  AUTOLOAD:=$(call AutoLoad,30,ar934x_nfc)
+endef
+
+define KernelPackage/nand-ar934x/description
+  Atheros AR934x NAND flash controller driver.
+endef
+
+$(eval $(call KernelPackage,nand-ar934x))
+
+
 define KernelPackage/spi-vsc7385
   SUBMENU:=$(SPI_MENU)
   TITLE:=Vitesse VSC7385 ethernet switch driver
@@ -67,3 +83,4 @@ define KernelPackage/wdt-ath79/description
 endef
 
 $(eval $(call KernelPackage,wdt-ath79))
+
