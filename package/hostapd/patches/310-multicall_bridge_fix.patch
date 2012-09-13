@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -887,6 +887,10 @@ static void wpa_driver_nl80211_event_rtm
+@@ -893,6 +893,10 @@ static void wpa_driver_nl80211_event_rtm
  		return;
  	}
  
@@ -11,7 +11,7 @@
  	wpa_printf(MSG_DEBUG, "RTM_NEWLINK: operstate=%d ifi_flags=0x%x "
  		   "(%s%s%s%s)",
  		   drv->operstate, ifi->ifi_flags,
-@@ -994,6 +998,10 @@ static void wpa_driver_nl80211_event_rtm
+@@ -1000,6 +1004,10 @@ static void wpa_driver_nl80211_event_rtm
  	attrlen = len;
  	attr = (struct rtattr *) buf;
  
@@ -22,7 +22,7 @@
  	rta_len = RTA_ALIGN(sizeof(struct rtattr));
  	while (RTA_OK(attr, attrlen)) {
  		if (attr->rta_type == IFLA_IFNAME) {
-@@ -2933,6 +2941,11 @@ static void * wpa_driver_nl80211_init(vo
+@@ -2990,6 +2998,11 @@ static void * wpa_driver_nl80211_init(vo
  	drv->ap_scan_as_station = NL80211_IFTYPE_UNSPECIFIED;
  	drv->nlmode = NL80211_IFTYPE_STATION;
  
@@ -34,7 +34,7 @@
  	if (wpa_driver_nl80211_init_nl(drv)) {
  		os_free(drv);
  		return NULL;
-@@ -7685,8 +7698,6 @@ static void *i802_init(struct hostapd_da
+@@ -7819,8 +7832,6 @@ static void *i802_init(struct hostapd_da
  		br_ifindex = 0;
  	}
  

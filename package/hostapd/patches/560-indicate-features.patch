@@ -8,16 +8,16 @@
  #include "crypto/random.h"
  #include "crypto/tls.h"
  #include "common/version.h"
-@@ -551,7 +552,7 @@ int main(int argc, char *argv[])
+@@ -560,7 +561,7 @@ int main(int argc, char *argv[])
  
  	wpa_supplicant_event = hostapd_wpa_event;
  	for (;;) {
--		c = getopt(argc, argv, "Bde:f:hKP:tv");
-+		c = getopt(argc, argv, "Bde:f:hKP:tv::");
+-		c = getopt(argc, argv, "Bde:f:hKP:tvg:");
++		c = getopt(argc, argv, "Bde:f:hKP:tg:v::");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -583,6 +584,8 @@ int main(int argc, char *argv[])
+@@ -592,6 +593,8 @@ int main(int argc, char *argv[])
  			wpa_debug_timestamp++;
  			break;
  		case 'v':
@@ -36,7 +36,7 @@
  #include "wpa_supplicant_i.h"
  #include "driver_i.h"
  
-@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
+@@ -156,7 +157,7 @@ int main(int argc, char *argv[])
  
  	for (;;) {
  		c = getopt(argc, argv,
@@ -45,7 +45,7 @@
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -237,8 +238,12 @@ int main(int argc, char *argv[])
+@@ -248,8 +249,12 @@ int main(int argc, char *argv[])
  			break;
  #endif /* CONFIG_DBUS */
  		case 'v':

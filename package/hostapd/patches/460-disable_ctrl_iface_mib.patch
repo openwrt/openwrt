@@ -1,6 +1,6 @@
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -128,6 +128,9 @@ endif
+@@ -135,6 +135,9 @@ endif
  ifdef CONFIG_NO_CTRL_IFACE
  CFLAGS += -DCONFIG_NO_CTRL_IFACE
  else
@@ -12,7 +12,7 @@
  endif
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -743,6 +743,7 @@ static void hostapd_ctrl_iface_receive(i
+@@ -899,6 +899,7 @@ static void hostapd_ctrl_iface_receive(i
  	} else if (os_strncmp(buf, "RELOG", 5) == 0) {
  		if (wpa_debug_reopen_file() < 0)
  			reply_len = -1;
@@ -20,20 +20,20 @@
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -772,10 +773,12 @@ static void hostapd_ctrl_iface_receive(i
+@@ -928,10 +929,12 @@ static void hostapd_ctrl_iface_receive(i
  				reply_len += res;
  		}
  #endif /* CONFIG_NO_RADIUS */
 +#endif
  	} else if (os_strcmp(buf, "DOWN") == 0) {
  		hostapd_ctrl_iface_set_down(hapd);
- 	} else if (os_strncmp(buf, "RELOAD ", 7) == 0) {
- 		hostapd_ctrl_iface_reload(hapd, buf + 7);
+ 	} else if (os_strncmp(buf, "UPDATE ", 7) == 0) {
+ 		hostapd_ctrl_iface_update(hapd, buf + 7);
 +#ifdef CONFIG_CTRL_IFACE_MIB
  	} else if (os_strcmp(buf, "STA-FIRST") == 0) {
  		reply_len = hostapd_ctrl_iface_sta_first(hapd, reply,
  							 reply_size);
-@@ -785,6 +788,7 @@ static void hostapd_ctrl_iface_receive(i
+@@ -941,6 +944,7 @@ static void hostapd_ctrl_iface_receive(i
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = hostapd_ctrl_iface_sta_next(hapd, buf + 9, reply,
  							reply_size);
@@ -43,7 +43,7 @@
  			reply_len = -1;
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -719,6 +719,9 @@ ifdef CONFIG_IEEE80211N
+@@ -751,6 +751,9 @@ ifdef CONFIG_IEEE80211N
  OBJS += ../src/ap/ieee802_11_ht.o
  endif
  ifdef CONFIG_CTRL_IFACE
@@ -55,7 +55,7 @@
  
 --- a/wpa_supplicant/ctrl_iface.c
 +++ b/wpa_supplicant/ctrl_iface.c
-@@ -3770,6 +3770,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -4382,6 +4382,7 @@ char * wpa_supplicant_ctrl_iface_process
  			reply_len = -1;
  	} else if (os_strncmp(buf, "NOTE ", 5) == 0) {
  		wpa_printf(MSG_INFO, "NOTE: %s", buf + 5);
@@ -63,7 +63,7 @@
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = wpa_sm_get_mib(wpa_s->wpa, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -3781,6 +3782,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -4393,6 +4394,7 @@ char * wpa_supplicant_ctrl_iface_process
  			else
  				reply_len += res;
  		}
@@ -71,7 +71,7 @@
  	} else if (os_strncmp(buf, "STATUS", 6) == 0) {
  		reply_len = wpa_supplicant_ctrl_iface_status(
  			wpa_s, buf + 6, reply, reply_size);
-@@ -4135,6 +4137,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -4792,6 +4794,7 @@ char * wpa_supplicant_ctrl_iface_process
  		reply_len = wpa_supplicant_ctrl_iface_bss(
  			wpa_s, buf + 4, reply, reply_size);
  #ifdef CONFIG_AP
@@ -79,7 +79,7 @@
  	} else if (os_strcmp(buf, "STA-FIRST") == 0) {
  		reply_len = ap_ctrl_iface_sta_first(wpa_s, reply, reply_size);
  	} else if (os_strncmp(buf, "STA ", 4) == 0) {
-@@ -4143,6 +4146,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -4800,6 +4803,7 @@ char * wpa_supplicant_ctrl_iface_process
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = ap_ctrl_iface_sta_next(wpa_s, buf + 9, reply,
  						   reply_size);
@@ -112,7 +112,7 @@
 +
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
-@@ -1922,6 +1922,7 @@ static const char * bool_txt(Boolean boo
+@@ -2034,6 +2034,7 @@ static const char * bool_txt(Boolean boo
  	return bool ? "TRUE" : "FALSE";
  }
  
@@ -120,7 +120,7 @@
  
  int ieee802_1x_get_mib(struct hostapd_data *hapd, char *buf, size_t buflen)
  {
-@@ -2074,6 +2075,7 @@ int ieee802_1x_get_mib_sta(struct hostap
+@@ -2186,6 +2187,7 @@ int ieee802_1x_get_mib_sta(struct hostap
  	return len;
  }
  
@@ -130,15 +130,15 @@
  				struct sta_info *sta, int success)
 --- a/src/ap/wpa_auth.c
 +++ b/src/ap/wpa_auth.c
-@@ -2638,6 +2638,7 @@ static int wpa_cipher_bits(int cipher)
- 	}
+@@ -2729,6 +2729,7 @@ static const char * wpa_bool_txt(int boo
+ 	return bool ? "TRUE" : "FALSE";
  }
  
 +#ifdef CONFIG_CTRL_IFACE_MIB
  
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
-@@ -2801,7 +2802,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
+@@ -2873,7 +2874,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
  
  	return len;
  }
@@ -149,7 +149,7 @@
  {
 --- a/src/rsn_supp/wpa.c
 +++ b/src/rsn_supp/wpa.c
-@@ -1918,6 +1918,8 @@ static u32 wpa_cipher_suite(struct wpa_s
+@@ -1844,6 +1844,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
  }
  
  
@@ -158,7 +158,7 @@
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
  ((s) >> 24) & 0xff, ((s) >> 16) & 0xff, ((s) >> 8) & 0xff, (s) & 0xff
-@@ -1997,6 +1999,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
+@@ -1927,6 +1929,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
  
  	return (int) len;
  }
