@@ -17,6 +17,8 @@ KERNELNAME:="uImage"
 LINUX_VERSION:=2.6.36.4
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
+DEVICE_TYPE:=developerboard
+
 include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))
