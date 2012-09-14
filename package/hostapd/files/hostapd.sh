@@ -10,6 +10,7 @@ hostapd_set_bss_options() {
 	config_get wpa_master_rekey "$vif" wpa_master_rekey # 640
 	config_get_bool ap_isolate "$vif" isolate 0
 	config_get_bool disassoc_low_ack "$vif" disassoc_low_ack 1
+	config_get max_num_sta "$vif" max_num_sta 0
 
 	config_get device "$vif" device
 	config_get hwmode "$device" hwmode
@@ -19,6 +20,9 @@ hostapd_set_bss_options() {
 
 	if [ "$ap_isolate" -gt 0 ]; then
 		append "$var" "ap_isolate=$ap_isolate" "$N"
+	fi
+	if [ "$max_num_sta" -gt 0 ]; then
+		append "$var" "max_num_sta=$max_num_sta" "$N"
 	fi
 	append "$var" "disassoc_low_ack=$disassoc_low_ack" "$N"
 
