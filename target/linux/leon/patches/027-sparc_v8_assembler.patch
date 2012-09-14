@@ -1,0 +1,31 @@
+[PATCH] sparc32: Add -Av8 to assembler command line.
+
+Newer version of binutils are more strict about specifying the
+correct options to enable certain classes of instructions.
+
+The sparc32 build is done for v7 in order to support sun4c systems
+which lack hardware integer multiply and divide instructions.
+
+So we have to pass -Av8 when building the assembler routines that
+use these instructions and get patched into the kernel when we find
+out that we have a v8 capable cpu.
+
+Reported-by: Paul Gortmaker <paul.gortmaker@xxxxxxxxxxxxx>
+Signed-off-by: David S. Miller <davem@xxxxxxxxxxxxx>
+---
+ arch/sparc/Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sparc/Makefile b/arch/sparc/Makefile
+index ad1fb5d..eddcfb3 100644
+--- a/arch/sparc/Makefile
++++ b/arch/sparc/Makefile
+@@ -31,7 +31,7 @@ UTS_MACHINE    := sparc
+ 
+ #KBUILD_CFLAGS += -g -pipe -fcall-used-g5 -fcall-used-g7
+ KBUILD_CFLAGS += -m32 -pipe -mno-fpu -fcall-used-g5 -fcall-used-g7
+-KBUILD_AFLAGS += -m32
++KBUILD_AFLAGS += -m32 -Wa,-Av8
+ 
+ #LDFLAGS_vmlinux = -N -Ttext 0xf0004000
+ #  Since 2.5.40, the first stage is left not btfix-ed.
