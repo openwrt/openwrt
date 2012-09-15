@@ -50,7 +50,7 @@ else
 	if_call "network.interface.$1"
 fi
 
-if [ -n "$setup_wifi" ] && grep -q config /etc/config/wireless; then
+if [ -n "$setup_wifi" ] && grep -sq config /etc/config/wireless; then
 	. /lib/functions.sh
 
 	find_related_radios() {
@@ -58,8 +58,12 @@ if [ -n "$setup_wifi" ] && grep -q config /etc/config/wireless; then
 		config_get wdev "$1" device
 		config_get wnet "$1" network
 
-		if [ -n "$wdev" ] && [ "$wnet" = "$network" ]; then
-			append radio_devs "$wdev" "$N"
+		if [ -n "$wdev" ]; then
+			for wnet in $wnet; do
+				if [ "$wnet" = "$network" ]; then
+					append radio_devs "$wdev" "$N"
+				fi
+			done
 		fi
 	}
 
