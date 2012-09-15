@@ -13,6 +13,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=747b655418058964451eff7c7a15013c
 PKG_SOURCE_URL:=http://launchpad.net/gdb-linaro/7.2/7.2-2011.03-0/+download/
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/toolchain-build.mk
 
 define Host/Configure
@@ -31,10 +33,6 @@ define Host/Configure
 		--without-included-gettext \
 		--enable-threads \
 	);
-endef
-
-define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)
 endef
 
 define Host/Install
