@@ -148,7 +148,7 @@ prereq:: prepare-tmpinfo .config
 			echo "WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!"; \
 		fi \
 	)
-	@+$(SUBMAKE) -r $@ MAKE_JOBSERVER="$(filter --jobserver% -j,$(MAKEFLAGS))"
+	@+$(SUBMAKE) -r $@ MAKE_JOBSERVER="$(filter --jobserver%,$(MAKEFLAGS))"
 
 help:
 	cat README
