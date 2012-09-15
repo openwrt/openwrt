@@ -311,12 +311,21 @@ menu "Global build settings"
 
 		  If you are unsure, select N.
 
+	config PKG_BUILD_USE_JOBSERVER
+		bool
+		prompt "Use top-level make jobserver for packages"
+		depends on PKG_BUILD_PARALLEL
+		default y
+		help
+		  This passes the main make process jobserver fds to package builds,
+		  enabling full parallelization across different packages
+
 	config PKG_BUILD_JOBS
 		int
 		prompt "Number of package submake jobs (2-512)"
 		range 2 512
 		default 2
-		depends on PKG_BUILD_PARALLEL
+		depends on PKG_BUILD_PARALLEL && !PKG_BUILD_USE_JOBSERVER
 		help
 		  The number of jobs (-jX) to pass to packages submake.
 
