@@ -7,7 +7,7 @@
 
 define Profile/RTN56U
 	NAME:=Asus RT-N56U
-	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb-usb2 swconfig
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
 
 define Profile/RTN56U/Description
