@@ -13,6 +13,11 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.cmake.org/files/v2.8/
 PKG_MD5SUM:=e1b237aeaed880f65dec9c20602452f6
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/host-build.mk
+
+HOST_CONFIGURE_ARGS += \
+	$(if $(MAKE_JOBSERVER),--parallel="$(MAKE_JOBSERVER)")
 
 $(eval $(call HostBuild))
