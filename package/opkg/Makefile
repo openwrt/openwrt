@@ -21,6 +21,10 @@ PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 PKG_FIXUP:=autoreconf
 PKG_REMOVE_FILES = autogen.sh aclocal.m4
 
+PKG_BUILD_PARALLEL:=1
+HOST_BUILD_PARALLEL:=1
+PKG_INSTALL:=1
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -56,14 +60,11 @@ CONFIGURE_ARGS += \
 	--with-opkgetcdir=/etc \
 	--with-opkglockfile=/var/lock/opkg.lock
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+MAKE_FLAGS = \
 		CC="$(TARGET_CC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		HOST_CPU="$(PKGARCH)" \
 		LDFLAGS="-Wl,--gc-sections" \
-		all install
-endef
 
 define Package/opkg/install
 	$(INSTALL_DIR) $(1)/usr/lib/opkg
@@ -87,7 +88,7 @@ HOST_CONFIGURE_ARGS+= \
 	--with-opkglockfile=/tmp/opkg.lock
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) CC="$(HOSTCC)" all
+	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) CC="$(HOSTCC)" all
 endef
 
 define Host/Install
