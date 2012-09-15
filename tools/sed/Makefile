@@ -15,6 +15,8 @@ PKG_MD5SUM:=7d310fbd76e01a01115075c1fd3f455a
 PKG_CAT:=bzcat
 export SED:=
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_ARGS += \
@@ -27,7 +29,7 @@ HOST_CONFIGURE_VARS += \
 	ac_cv_header_selinux_selinux_h=no \
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)" LDFLAGS="$(HOST_STATIC_LINKING)"
+	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) SHELL="$(BASH)" LDFLAGS="$(HOST_STATIC_LINKING)"
 endef
 
 define Host/Install
