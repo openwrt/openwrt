@@ -17,6 +17,7 @@ PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_MD5SUM:=d49499368c3cf15f73a05d9bce8824a8
 
 PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -78,10 +79,10 @@ unexport PREFIX
 
 define Build/Compile
 	# src/qgen is built with HOSTCC, which does not really like our LDFLAGS
-	$(MAKE) -C $(PKG_BUILD_DIR)/src/qgen \
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/src/qgen \
 		LDFLAGS="" \
 		all
-	$(MAKE) -C $(PKG_BUILD_DIR) OBJCOPY=$(TARGET_CROSS)objcopy all
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) OBJCOPY=$(TARGET_CROSS)objcopy all
 endef
 
 define Build/InstallDev
