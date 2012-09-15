@@ -13,6 +13,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gmp/
 PKG_MD5SUM:=8aef50959acec2a1ad41d144ffe0f3b5
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 unexport CFLAGS
