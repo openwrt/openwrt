@@ -13,6 +13,8 @@ PKG_SOURCE_URL:=http://www.multiprecision.org/mpc/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_MD5SUM:=0d6acab8d214bd7d1fbbc593e83dd00d
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 unexport CFLAGS
