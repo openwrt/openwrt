@@ -47,7 +47,7 @@ define Host/Configure
 endef
 
 define Host/Compile
-	$(GCC_MAKE) -C $(GCC_BUILD_DIR) all
+	$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) all
 endef
 
 define SetupExtraArch

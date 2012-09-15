@@ -30,7 +30,7 @@ define Host/Prepare
 endef
 
 define Host/Compile
-	$(GCC_MAKE) -C $(GCC_BUILD_DIR) all-gcc all-target-libgcc
+	$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) all-gcc all-target-libgcc
 endef
 
 define Host/Install
