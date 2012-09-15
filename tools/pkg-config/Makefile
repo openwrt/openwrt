@@ -13,6 +13,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://pkgconfig.freedesktop.org/releases/
 PKG_MD5SUM:=a3270bab3f4b69b7dc6dbdacbcae9745
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_LDFLAGS += $(HOST_STATIC_LINKING)
