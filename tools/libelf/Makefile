@@ -15,6 +15,8 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.mr511.de/software/
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_ARGS += \
@@ -30,7 +32,7 @@ endef
 
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)/lib/ libelf.a
+	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/lib/ libelf.a
 endef
 
 define Host/Install
