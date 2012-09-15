@@ -22,9 +22,4 @@ HOST_CONFIGURE_ARGS += \
 	--disable-shared \
 	--with-gmp=$(STAGING_DIR_HOST)
 
-define Host/Configure
-	echo "PATH=$(shell echo $$PATH)"
-	$(call Host/Configure/Default)
-endef
-
 $(eval $(call HostBuild))
