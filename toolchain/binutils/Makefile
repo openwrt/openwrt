@@ -29,6 +29,8 @@ ifeq ($(PKG_VERSION),2.22)
   PKG_MD5SUM:=ee0f10756c84979622b992a4a61ea3f5
 endif
 
+HOST_BUILD_PARALLEL:=1
+
 PATCH_DIR:=./patches/$(PKG_VERSION)
 
 REAL_STAGING_DIR_HOST:=$(STAGING_DIR_HOST)
@@ -75,7 +77,7 @@ define Host/Configure
 endef
 
 define Host/Compile
-	$(MAKE) $(TOOLCHAIN_JOBS) -C $(HOST_BUILD_DIR) all
+	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) all
 endef
 
 define Host/Install
