@@ -79,7 +79,7 @@ static void __init dap_1350_init(void)
 
 	rt305x_register_flash(0);
 
-	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_WLLLL;
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(dap_1350_leds_gpio),
 				  dap_1350_leds_gpio);
