@@ -16,6 +16,7 @@ PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_MD5SUM:=1bca27d206970badae248cfa471bbb47
 
 PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
