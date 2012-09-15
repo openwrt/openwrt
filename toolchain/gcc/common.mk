@@ -79,6 +79,8 @@ PATCH_DIR=../patches/$(GCC_VERSION)
 
 BUGURL=https://dev.openwrt.org/
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/toolchain-build.mk
 
 HOST_SOURCE_DIR:=$(HOST_BUILD_DIR)
