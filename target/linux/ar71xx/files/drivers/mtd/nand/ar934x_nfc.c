@@ -131,6 +131,7 @@
 #define AR934X_NFC_DEV_READY_TIMEOUT	25 /* msecs */
 #define AR934X_NFC_DMA_READY_TIMEOUT	25 /* msecs */
 #define AR934X_NFC_DONE_TIMEOUT		1000
+#define AR934X_NFC_DMA_RETRIES		20
 
 #define AR934X_NFC_USE_IRQ		true
 #define AR934X_NFC_IRQ_MASK		AR934X_NFC_INT_DEV_RDY(0)
@@ -465,7 +466,7 @@ retry:
 			(write) ? "write" : "read", page_addr);
 
 		ar934x_nfc_restart(nfc);
-		if (retries++ < 5)
+		if (retries++ < AR934X_NFC_DMA_RETRIES)
 			goto retry;
 
 		dev_err(nfc->parent, "%s operation failed on page %d\n",
