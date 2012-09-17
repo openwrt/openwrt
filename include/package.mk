@@ -248,6 +248,8 @@ Build/Install=$(if $(PKG_INSTALL),$(call Build/Install/Default,))
 Build/Dist=$(call Build/Dist/Default,)
 Build/DistCheck=$(call Build/DistCheck/Default,)
 
+.NOTPARALLEL:
+
 $(PACKAGE_DIR):
 	mkdir -p $@
 	
