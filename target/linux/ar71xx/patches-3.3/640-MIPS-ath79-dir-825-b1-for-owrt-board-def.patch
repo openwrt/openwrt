@@ -4,11 +4,11 @@
  #define DIR825B1_MAC_LOCATION_0			0x1f66ffa0
  #define DIR825B1_MAC_LOCATION_1			0x1f66ffb4
  
-+#define DIR825B1_OPENWRT_CAL_LOCATION_0		0x1f7f1000
-+#define DIR825B1_OPENWRT_CAL_LOCATION_1		0x1f7f5000
++#define DIR825B1_WHOLEFLASH_CAL_LOCATION_0		0x1f7f1000
++#define DIR825B1_WHOLEFLASH_CAL_LOCATION_1		0x1f7f5000
 +
-+#define DIR825B1_OPENWRT_MAC_LOCATION_0		0x1f7fffa0
-+#define DIR825B1_OPENWRT_MAC_LOCATION_1		0x1f7fffb4
++#define DIR825B1_WHOLEFLASH_MAC_LOCATION_0		0x1f7fffa0
++#define DIR825B1_WHOLEFLASH_MAC_LOCATION_1		0x1f7fffb4
 +
  static struct gpio_led dir825b1_leds_gpio[] __initdata = {
  	{
@@ -30,7 +30,7 @@
  
  	ath79_register_mdio(0, 0x0);
  
-@@ -165,9 +171,27 @@ static void __init dir825b1_setup(void)
+@@ -165,9 +171,30 @@ static void __init dir825b1_setup(void)
  	ap9x_pci_setup_wmac_led_pin(0, 5);
  	ap9x_pci_setup_wmac_led_pin(1, 5);
  
@@ -46,27 +46,31 @@
 +		DIR825B1_CAL_LOCATION_0, DIR825B1_CAL_LOCATION_1);
 +}
 +
-+static void __init dir825b1_openwrt_setup(void)
++static void __init dir825b1_wholeflash_setup(void)
 +{
-+	dir825b1_common_setup(DIR825B1_OPENWRT_MAC_LOCATION_0, DIR825B1_OPENWRT_MAC_LOCATION_1,
-+		DIR825B1_OPENWRT_CAL_LOCATION_0, DIR825B1_OPENWRT_CAL_LOCATION_1);
++	dir825b1_common_setup(DIR825B1_WHOLEFLASH_MAC_LOCATION_0, DIR825B1_WHOLEFLASH_MAC_LOCATION_1,
++		DIR825B1_WHOLEFLASH_CAL_LOCATION_0, DIR825B1_WHOLEFLASH_CAL_LOCATION_1);
  }
  
  MIPS_MACHINE(ATH79_MACH_DIR_825_B1, "DIR-825-B1", "D-Link DIR-825 rev. B1",
  	     dir825b1_setup);
 +
-+MIPS_MACHINE(ATH79_MACH_DIR_825_B1_OPENWRT, "DIR-825-B1_OPENWRT", "D-Link DIR-825 rev. B1 OpenWrt",
-+	     dir825b1_openwrt_setup);
++MIPS_MACHINE(ATH79_MACH_DIR_825_B1_TOWHOLEFLASH, "DIR-825-B1_TOWHOLEFLASH", "D-Link DIR-825 rev. B1 TOWHOLEFLASH",
++	     dir825b1_setup);
 +
-+MIPS_MACHINE(ATH79_MACH_DIR_825_B1_TOSTOCK, "DIR-825-B1_TOSTOCK", "D-Link DIR-825 rev. B1 TOSTOCK", dir825b1_openwrt_setup);
++MIPS_MACHINE(ATH79_MACH_DIR_825_B1_WHOLEFLASH, "DIR-825-B1_WHOLEFLASH", "D-Link DIR-825 rev. B1 WHOLEFLASH",
++	     dir825b1_wholeflash_setup);
++
++MIPS_MACHINE(ATH79_MACH_DIR_825_B1_TOSTOCK, "DIR-825-B1_TOSTOCK", "D-Link DIR-825 rev. B1 TOSTOCK", dir825b1_wholeflash_setup);
 +
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -35,6 +35,8 @@ enum ath79_mach_type {
+@@ -35,6 +35,9 @@ enum ath79_mach_type {
  	ATH79_MACH_DIR_615_C1,		/* D-Link DIR-615 rev. C1 */
  	ATH79_MACH_DIR_615_E4,		/* D-Link DIR-615 rev. E4 */
  	ATH79_MACH_DIR_825_B1,		/* D-Link DIR-825 rev. B1 */
-+	ATH79_MACH_DIR_825_B1_OPENWRT,	/* D-Link DIR-825 rev. B1 OpenWrt */
++	ATH79_MACH_DIR_825_B1_TOWHOLEFLASH, /* D-Link DIR-825 rev. B1 TOWHOLEFLASH */
++	ATH79_MACH_DIR_825_B1_WHOLEFLASH, /* D-Link DIR-825 rev. B1 WHOLEFLASH */
 +	ATH79_MACH_DIR_825_B1_TOSTOCK,	/* D-Link DIR-825 rev. B1 TOSTOCK */
  	ATH79_MACH_EW_DORIN,		/* embedded wireless Dorin Platform */
  	ATH79_MACH_EW_DORIN_ROUTER,	/* embedded wireless Dorin Router Platform */

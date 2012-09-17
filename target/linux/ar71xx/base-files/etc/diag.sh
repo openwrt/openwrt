@@ -65,7 +65,8 @@ get_status_led() {
 		status_led="d-link:green:status"
 		;;
 	dir-825-b1 |\
-	dir-825-b1-openwrt |\
+	dir-825-b1-towholeflash |\
+	dir-825-b1-wholeflash |\
 	dir-825-b1-stock)
 		status_led="d-link:orange:power"
 		;;
