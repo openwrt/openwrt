@@ -643,10 +643,14 @@ ar934x_nfc_cmdfunc(struct mtd_info *mtd, unsigned int command, int column,
 		break;
 
 	case NAND_CMD_RNDOUT:
+		if (WARN_ON(nfc->small_page))
+			break;
+
 		/* emulate subpage read */
-		ar934x_nfc_send_read(nfc, nfc->rndout_read_cmd, column,
+		ar934x_nfc_send_read(nfc, nfc->rndout_read_cmd, 0,
 				     nfc->rndout_page_addr,
-				     mtd->writesize, false);
+				     mtd->writesize + mtd->oobsize, false);
+		nfc->buf_index = column;
 		break;
 
 	case NAND_CMD_ERASE1:
