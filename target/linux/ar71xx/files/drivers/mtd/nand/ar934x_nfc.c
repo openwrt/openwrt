@@ -492,12 +492,12 @@ ar934x_nfc_send_readid(struct ar934x_nfc *nfc, unsigned command)
 
 static void
 ar934x_nfc_send_read(struct ar934x_nfc *nfc, unsigned command, int column,
-		     int page_addr, int len, bool oob)
+		     int page_addr, int len)
 {
 	u32 cmd_reg;
 
-	nfc_dbg(nfc, "read, column=%d page=%d len=%d oob:%d\n",
-		column, page_addr, len, oob);
+	nfc_dbg(nfc, "read, column=%d page=%d len=%d\n",
+		column, page_addr, len);
 
 	cmd_reg = (command & AR934X_NFC_CMD_CMD0_M) << AR934X_NFC_CMD_CMD0_S;
 
@@ -616,12 +616,10 @@ ar934x_nfc_cmdfunc(struct mtd_info *mtd, unsigned int command, int column,
 	case NAND_CMD_READ1:
 		if (nfc->small_page) {
 			ar934x_nfc_send_read(nfc, command, column, page_addr,
-					     mtd->writesize + mtd->oobsize,
-					     false);
+					     mtd->writesize + mtd->oobsize);
 		} else {
 			ar934x_nfc_send_read(nfc, command, 0, page_addr,
-					     mtd->writesize + mtd->oobsize,
-					     false);
+					     mtd->writesize + mtd->oobsize);
 			nfc->buf_index = column;
 			nfc->rndout_page_addr = page_addr;
 			nfc->rndout_read_cmd = command;
@@ -632,13 +630,11 @@ ar934x_nfc_cmdfunc(struct mtd_info *mtd, unsigned int command, int column,
 		if (nfc->small_page)
 			ar934x_nfc_send_read(nfc, NAND_CMD_READOOB,
 					     column, page_addr,
-					     mtd->oobsize,
-					     true);
+					     mtd->oobsize);
 		else
 			ar934x_nfc_send_read(nfc, NAND_CMD_READ0,
 					     mtd->writesize, page_addr,
-					     mtd->oobsize,
-					     true);
+					     mtd->oobsize);
 		break;
 
 	case NAND_CMD_RNDOUT:
@@ -648,7 +644,7 @@ ar934x_nfc_cmdfunc(struct mtd_info *mtd, unsigned int command, int column,
 		/* emulate subpage read */
 		ar934x_nfc_send_read(nfc, nfc->rndout_read_cmd, 0,
 				     nfc->rndout_page_addr,
-				     mtd->writesize + mtd->oobsize, false);
+				     mtd->writesize + mtd->oobsize);
 		nfc->buf_index = column;
 		break;
 
