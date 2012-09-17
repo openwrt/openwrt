@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ ! -f "/rom/etc/sysctl.conf" ] || cmp "/rom/etc/sysctl.conf" "/etc/sysctl.conf"; then
+if [ ! -f "/rom/etc/sysctl.conf" ] || cmp -s "/rom/etc/sysctl.conf" "/etc/sysctl.conf"; then
 	exit 0
 fi
 
