@@ -613,15 +613,18 @@ ar934x_nfc_cmdfunc(struct mtd_info *mtd, unsigned int command, int column,
 
 	case NAND_CMD_READ0:
 	case NAND_CMD_READ1:
-		if (nfc->small_page)
+		if (nfc->small_page) {
 			ar934x_nfc_send_read(nfc, command, column, page_addr,
 					     mtd->writesize + mtd->oobsize,
 					     false);
-		else
-			ar934x_nfc_send_read(nfc, command, column, page_addr,
-					     mtd->writesize, false);
-		nfc->rndout_page_addr = page_addr;
-		nfc->rndout_read_cmd = command;
+		} else {
+			ar934x_nfc_send_read(nfc, command, 0, page_addr,
+					     mtd->writesize + mtd->oobsize,
+					     false);
+			nfc->buf_index = column;
+			nfc->rndout_page_addr = page_addr;
+			nfc->rndout_read_cmd = command;
+		}
 		break;
 
 	case NAND_CMD_READOOB:
