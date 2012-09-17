@@ -44,12 +44,13 @@ getifmac() {
 }
 
 case "$board" in
-dir-825-b1)
+dir-825-b1-towholeflash)
 	mac1="$(getcalmac caldata 65440)"
 	mac1="$(calcmacX "$mac1" 2)"
 	mac2="$(calcmacX "$mac1" 1)"
 
 	if grep -q '"owrt_caldata"' /proc/mtd && [ "$mac1" = "$(getifmac eth0)" ] && [ "$mac2" = "$(getifmac eth1)" ]; then
+		mtd erase owrt_caldata
 		dd if=/dev/$(findmtd caldata) of=/dev/$(findmtd owrt_caldata) bs=65536 count=1
 	fi
 	;;
@@ -58,6 +59,7 @@ dir-825-b1-tostock)
 	mac1="$(calcmacX "$mac1" 2)"
 	mac2="$(calcmacX "$mac1" 1)"
 	if grep -q '"owrt_caldata"' /proc/mtd && [ "$mac1" = "$(getifmac eth0)" ] && [ "$mac2" = "$(getifmac eth1)" ]; then
+		mtd erase caldata
 		dd if=/dev/$(findmtd owrt_caldata) of=/dev/$(findmtd caldata) bs=65536 count=1
 	fi
 	;;
