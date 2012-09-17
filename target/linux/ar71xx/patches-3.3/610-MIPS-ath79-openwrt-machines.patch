@@ -188,7 +188,7 @@
  config ATH79_MACH_DB120
  	bool "Atheros DB120 reference board"
  	select SOC_AR934X
-@@ -54,6 +127,13 @@ config ATH79_MACH_DB120
+@@ -55,6 +128,13 @@ config ATH79_MACH_DB120
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros DB120 reference board.
  
@@ -202,7 +202,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -66,6 +146,447 @@ config ATH79_MACH_PB44
+@@ -67,6 +147,447 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -650,7 +650,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -79,6 +600,24 @@ config ATH79_MACH_UBNT_XM
+@@ -80,6 +601,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -675,7 +675,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -114,10 +653,6 @@ config SOC_QCA955X
+@@ -115,10 +654,6 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -686,7 +686,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -128,7 +663,14 @@ config ATH79_DEV_DSA
+@@ -129,7 +664,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -702,7 +702,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -160,4 +702,7 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -161,4 +703,7 @@ config ATH79_PCI_ATH9K_FIXUP
  config ATH79_ROUTERBOOT
  	def_bool n
  
