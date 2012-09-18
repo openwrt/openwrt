@@ -64,10 +64,7 @@ get_status_led() {
 	dir-615-c1)
 		status_led="d-link:green:status"
 		;;
-	dir-825-b1 |\
-	dir-825-b1-towholeflash |\
-	dir-825-b1-wholeflash |\
-	dir-825-b1-stock)
+	dir-825-b1)
 		status_led="d-link:orange:power"
 		;;
 	eap7660d)

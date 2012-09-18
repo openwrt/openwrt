@@ -101,9 +101,6 @@ platform_check_image() {
 	dir-615-c1 | \
 	dir-615-e4 | \
 	dir-825-b1 | \
-	dir-825-b1-towholeflash | \
-	dir-825-b1-wholeflash | \
-	dir-825-b1-tostock | \
 	ew-dorin | \
 	ew-dorin-router | \
 	mzk-w04nu | \
