@@ -8,8 +8,8 @@
  	select BOOT_RAW
  	select CEVT_R4K
  	select CSRC_R4K
-@@ -100,7 +101,6 @@ config BCM47XX
- 	select IRQ_CPU
+@@ -101,7 +102,6 @@ config BCM47XX
+ 	select NO_EXCEPT_FILL
  	select SYS_SUPPORTS_32BIT_KERNEL
  	select SYS_SUPPORTS_LITTLE_ENDIAN
 -	select GENERIC_GPIO
@@ -18,7 +18,7 @@
  	 Support for BCM47XX based boards
 --- a/arch/mips/bcm47xx/gpio.c
 +++ b/arch/mips/bcm47xx/gpio.c
-@@ -4,83 +4,150 @@
+@@ -4,83 +4,154 @@
   * for more details.
   *
   * Copyright (C) 2007 Aurelien Jarno <aurelien@aurel32.net>
@@ -36,7 +36,6 @@
 -#include <asm/mach-bcm47xx/gpio.h>
 +#include <linux/ssb/ssb_embedded.h>
 +#include <linux/bcma/bcma.h>
-+#include <linux/bcma/bcma_driver_gpio.h>
 +
 +#include <bcm47xx.h>
  
@@ -76,7 +75,7 @@
 -
 -		if (test_and_set_bit(gpio, gpio_in_use))
 -			return -EBUSY;
-+		return bcma_gpio_in(&bcm47xx_bus.bcma.bus, mask);
++		return bcma_chipco_gpio_in(&bcm47xx_bus.bcma.bus.drv_cc, mask);
 +#endif
 +	}
 +	return -EINVAL;
@@ -93,7 +92,8 @@
 +#endif
 +#ifdef CONFIG_BCM47XX_BCMA
 +	case BCM47XX_BUS_TYPE_BCMA:
-+		return bcma_gpio_out(&bcm47xx_bus.bcma.bus, mask, value);
++		return bcma_chipco_gpio_out(&bcm47xx_bus.bcma.bus.drv_cc, mask,
++					    value);
  #endif
  	}
  	return -EINVAL;
@@ -114,7 +114,8 @@
 +#endif
 +#ifdef CONFIG_BCM47XX_BCMA
 +	case BCM47XX_BUS_TYPE_BCMA:
-+		return bcma_gpio_outen(&bcm47xx_bus.bcma.bus, mask, value);
++		return bcma_chipco_gpio_outen(&bcm47xx_bus.bcma.bus.drv_cc,
++					      mask, value);
 +#endif
 +	}
 +	return -EINVAL;
@@ -133,7 +134,8 @@
 +#endif
 +#ifdef CONFIG_BCM47XX_BCMA
 +	case BCM47XX_BUS_TYPE_BCMA:
-+		return bcma_gpio_control(&bcm47xx_bus.bcma.bus, mask, value);
++		return bcma_chipco_gpio_control(&bcm47xx_bus.bcma.bus.drv_cc,
++						mask, value);
 +#endif
 +	}
 +	return -EINVAL;
@@ -153,7 +155,8 @@
  	case BCM47XX_BUS_TYPE_BCMA:
 -		if (gpio >= BCM47XX_CHIPCO_GPIO_LINES)
 -			return;
-+		return bcma_gpio_intmask(&bcm47xx_bus.bcma.bus, mask, value);
++		return bcma_chipco_gpio_intmask(&bcm47xx_bus.bcma.bus.drv_cc,
++						mask, value);
 +#endif
 +	}
 +	return -EINVAL;
@@ -171,7 +174,8 @@
 +#endif
 +#ifdef CONFIG_BCM47XX_BCMA
 +	case BCM47XX_BUS_TYPE_BCMA:
-+		return bcma_gpio_polarity(&bcm47xx_bus.bcma.bus, mask, value);
++		return bcma_chipco_gpio_polarity(&bcm47xx_bus.bcma.bus.drv_cc,
++						 mask, value);
  #endif
  	}
 +	return -EINVAL;
@@ -213,7 +217,7 @@
  {
  	switch (bcm47xx_bus_type) {
  #ifdef CONFIG_BCM47XX_SSB
-@@ -99,4 +166,55 @@ int gpio_to_irq(unsigned gpio)
+@@ -99,4 +170,55 @@ int gpio_to_irq(unsigned gpio)
  	}
  	return -EINVAL;
  }
@@ -241,7 +245,7 @@
 +#endif
 +#ifdef CONFIG_BCM47XX_BCMA
 +	case BCM47XX_BUS_TYPE_BCMA:
-+		bcm47xx_gpio_count = bcma_gpio_count(&bcm47xx_bus.bcma.bus);
++		bcm47xx_gpio_count = bcma_chipco_gpio_count();
 +		break;
 +#endif
 +	}
