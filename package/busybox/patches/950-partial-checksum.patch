@@ -1,0 +1,87 @@
+diff -ur busybox-1.19.4.orig/networking/udhcp/dhcpc.c busybox-1.19.4/networking/udhcp/dhcpc.c
+--- busybox-1.19.4.orig/networking/udhcp/dhcpc.c	2012-09-06 22:33:53.476998721 +0400
++++ busybox-1.19.4/networking/udhcp/dhcpc.c	2012-09-07 01:09:46.693372304 +0400
+@@ -26,8 +26,8 @@
+ #include "dhcpc.h"
+ 
+ #include <netinet/if_ether.h>
+-#include <netpacket/packet.h>
+ #include <linux/filter.h>
++#include <linux/if_packet.h>
+ 
+ /* struct client_config_t client_config is in bb_common_bufsiz1 */
+ 
+@@ -784,17 +784,41 @@
+ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
+ {
+ 	int bytes;
++	int nocsum = 0;
+ 	struct ip_udp_dhcp_packet packet;
+ 	uint16_t check;
++	unsigned char cmsgbuf[CMSG_LEN(sizeof(struct tpacket_auxdata))];
++	struct iovec iov = {
++		.iov_base = &packet,
++		.iov_len = sizeof(packet),
++	};
++	struct msghdr msg = {
++		.msg_iov = &iov,
++		.msg_iovlen = 1,
++		.msg_control = cmsgbuf,
++		.msg_controllen = sizeof(cmsgbuf),
++	};
++	struct cmsghdr *cmsg;
+ 
+ 	memset(&packet, 0, sizeof(packet));
+-	bytes = safe_read(fd, &packet, sizeof(packet));
++	do {
++		bytes = recvmsg(fd, &msg, 0);
++	} while (bytes < 0 && errno == EINTR);
++
+ 	if (bytes < 0) {
+ 		log1("Packet read error, ignoring");
+ 		/* NB: possible down interface, etc. Caller should pause. */
+ 		return bytes; /* returns -1 */
+ 	}
+ 
++	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
++		if (cmsg->cmsg_level == SOL_PACKET &&
++			cmsg->cmsg_type == PACKET_AUXDATA) {
++			struct tpacket_auxdata *aux = (void *)CMSG_DATA(cmsg);
++			nocsum = aux->tp_status & TP_STATUS_CSUMNOTREADY;
++		}
++	}
++
+ 	if (bytes < (int) (sizeof(packet.ip) + sizeof(packet.udp))) {
+ 		log1("Packet is too short, ignoring");
+ 		return -2;
+@@ -834,7 +858,7 @@
+ 	packet.ip.tot_len = packet.udp.len; /* yes, this is needed */
+ 	check = packet.udp.check;
+ 	packet.udp.check = 0;
+-	if (check && check != udhcp_checksum(&packet, bytes)) {
++	if (!nocsum && check && check != udhcp_checksum(&packet, bytes)) {
+ 		log1("Packet with bad UDP checksum received, ignoring");
+ 		return -2;
+ 	}
+@@ -880,6 +904,7 @@
+ {
+ 	int fd;
+ 	struct sockaddr_ll sock;
++	int val;
+ 
+ 	/*
+ 	 * Comment:
+@@ -946,6 +971,13 @@
+ 			log1("Attached filter to raw socket fd %d", fd); // log?
+ 	}
+ 
++	val = 1;
++	if (setsockopt(fd, SOL_PACKET, PACKET_AUXDATA, &val,
++			sizeof(val)) < 0) {
++		if (errno != ENOPROTOOPT)
++			log1("Failed to set auxiliary packet data for socket fd %d", fd);
++	}
++
+ 	log1("Created raw socket");
+ 
+ 	return fd;
