@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/mach-cns3xxx/laguna.c
-@@ -0,0 +1,761 @@
+@@ -0,0 +1,764 @@
 +/*
 + * Gateworks Corporation Laguna Platform
 + *
@@ -45,6 +45,7 @@
 +#include <mach/irqs.h>
 +#include <mach/platform.h>
 +#include <mach/pm.h>
++#include <asm/hardware/gic.h>
 +#include "core.h"
 +#include "devices.h"
 +
@@ -760,7 +761,9 @@
 +	.map_io		= laguna_map_io,
 +	.init_irq	= cns3xxx_init_irq,
 +	.timer		= &cns3xxx_timer,
++	.handle_irq	= gic_handle_irq,
 +	.init_machine	= laguna_init,
++	.restart	= cns3xxx_restart,
 +MACHINE_END
 --- a/arch/arm/mach-cns3xxx/Kconfig
 +++ b/arch/arm/mach-cns3xxx/Kconfig
