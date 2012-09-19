@@ -1,0 +1,89 @@
+--- a/drivers/net/ethernet/cavium/cns3xxx_eth.c
++++ b/drivers/net/ethernet/cavium/cns3xxx_eth.c
+@@ -666,6 +666,7 @@ static int eth_xmit(struct sk_buff *skb,
+ 	int nr_frags = skb_shinfo(skb)->nr_frags;
+ 	struct skb_frag_struct *frag;
+ 	unsigned int i;
++	u32 config0 = 0;
+ 
+ 	if (pmap == 8)
+ 		pmap = (1 << 4);
+@@ -691,6 +692,10 @@ static int eth_xmit(struct sk_buff *skb,
+ 
+ 	spin_unlock(&tx_lock);
+ 
++	config0 = FORCE_ROUTE;
++	if (skb->ip_summed == CHECKSUM_PARTIAL)
++		config0 |= UDP_CHECKSUM | TCP_CHECKSUM;
++
+ 	if (!nr_frags) {
+ 		tx_desc = &(tx_ring)->desc[index];
+ 
+@@ -704,23 +709,14 @@ static int eth_xmit(struct sk_buff *skb,
+ 		tx_ring->phys_tab[index] = phys;
+ 
+ 		tx_ring->buff_tab[index] = skb;
+-		if (index == TX_DESCS - 1) {
+-			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT | LAST_SEGMENT |
+-				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
+-				   	TCP_CHECKSUM | len;
+-		} else {
+-			tx_desc->config0 = FIRST_SEGMENT | LAST_SEGMENT |
+-				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
+-				   	TCP_CHECKSUM | len;
+-		}
++		config0 |= FIRST_SEGMENT | LAST_SEGMENT;
+ 	} else {
+-		unsigned int config;
+-
+ 		index = ((index + nr_frags) % TX_DESCS);
+ 		tx_desc = &(tx_ring)->desc[index];
+ 
+ 		/* fragments */
+ 		for (i = nr_frags; i > 0; i--) {
++			u32 config;
+ 			void *addr;
+ 
+ 			frag = &skb_shinfo(skb)->frags[i-1];
+@@ -735,8 +731,7 @@ static int eth_xmit(struct sk_buff *skb,
+ 			tx_desc->pmap = pmap;
+ 			tx_ring->phys_tab[index] = phys;
+ 
+-			config = FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
+-				TCP_CHECKSUM | len;
++			config = config0 | len;
+ 			if (i == nr_frags) {
+ 				config |= LAST_SEGMENT;
+ 				tx_ring->buff_tab[index] = skb;
+@@ -757,24 +752,19 @@ static int eth_xmit(struct sk_buff *skb,
+ 		/* header */
+ 		len = skb->len - skb->data_len;
+ 
+-		phys = dma_map_single(NULL, skb->data, len,
+-				      	DMA_TO_DEVICE);
++		phys = dma_map_single(NULL, skb->data, len, DMA_TO_DEVICE);
+ 
+ 		tx_desc->sdp = phys;
+ 		tx_desc->pmap = pmap;
+ 		tx_ring->phys_tab[index] = phys;
+-
+-		if (index == TX_DESCS - 1) {
+-			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT |
+-				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
+-				   	TCP_CHECKSUM | len;
+-		} else {
+-			tx_desc->config0 = FIRST_SEGMENT |
+-				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
+-				   	TCP_CHECKSUM | len;
+-		}
++		config0 |= FIRST_SEGMENT;
+ 	}
+ 
++	if (index == TX_DESCS - 1)
++		config0 |= END_OF_RING;
++
++	tx_desc->config0 = config0 | len;
++
+ 	mb();
+ 
+ 	spin_lock(&tx_lock);
