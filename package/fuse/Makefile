@@ -50,7 +50,7 @@ $(call Package/fuse/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= (library)
-  DEPENDS:=+kmod-fuse +libpthread +USE_EGLIBC:librt
+  DEPENDS:=+kmod-fuse +libpthread
   SUBMENU:=Filesystem
 endef
 
