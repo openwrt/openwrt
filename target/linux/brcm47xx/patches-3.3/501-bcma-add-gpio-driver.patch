@@ -1,168 +1,140 @@
---- a/drivers/bcma/Kconfig
-+++ b/drivers/bcma/Kconfig
-@@ -39,6 +39,11 @@ config BCMA_HOST_SOC
- 	depends on BCMA_DRIVER_MIPS
- 	select USB_HCD_BCMA if USB_EHCI_HCD || USB_OHCI_HCD
+--- a/drivers/bcma/driver_chipcommon.c
++++ b/drivers/bcma/driver_chipcommon.c
+@@ -57,6 +57,8 @@ void bcma_core_chipcommon_init(struct bc
+ 			 (leddc_off << BCMA_CC_GPIOTIMER_OFFTIME_SHIFT)));
+ 	}
  
-+config BCMA_DRIVER_GPIO
-+	bool
-+	depends on BCMA_DRIVER_MIPS
-+	default y
++	spin_lock_init(&cc->gpio_lock);
 +
- config BCMA_SFLASH
- 	bool
- 	depends on BCMA_DRIVER_MIPS
---- a/drivers/bcma/Makefile
-+++ b/drivers/bcma/Makefile
-@@ -6,6 +6,7 @@ bcma-y					+= driver_pci.o
- bcma-$(CONFIG_BCMA_DRIVER_PCI_HOSTMODE)	+= driver_pci_host.o
- bcma-$(CONFIG_BCMA_DRIVER_MIPS)		+= driver_mips.o
- bcma-$(CONFIG_BCMA_DRIVER_GMAC_CMN)	+= driver_gmac_cmn.o
-+bcma-$(CONFIG_BCMA_DRIVER_GPIO)		+= driver_gpio.o
- bcma-$(CONFIG_BCMA_HOST_PCI)		+= host_pci.o
- bcma-$(CONFIG_BCMA_HOST_SOC)		+= host_soc.o
- obj-$(CONFIG_BCMA)			+= bcma.o
---- /dev/null
-+++ b/drivers/bcma/driver_gpio.c
-@@ -0,0 +1,90 @@
-+/*
-+ * Broadcom specific AMBA
-+ * GPIO driver for SoCs
-+ *
-+ * Copyright 2012, Hauke Mehrtens <hauke@hauke-m.de>
-+ *
-+ * Licensed under the GNU/GPL. See COPYING for details.
-+ */
-+
-+#include <linux/export.h>
-+#include <linux/bcma/bcma.h>
-+#include <linux/bcma/bcma_driver_gpio.h>
-+
-+u32 bcma_gpio_in(struct bcma_bus *bus, u32 mask)
-+{
-+	unsigned long flags;
-+	u32 res = 0;
-+
-+	spin_lock_irqsave(&bus->gpio_lock, flags);
-+	res = bcma_chipco_gpio_in(&bus->drv_cc, mask);
-+	spin_unlock_irqrestore(&bus->gpio_lock, flags);
-+
-+	return res;
-+}
-+EXPORT_SYMBOL(bcma_gpio_in);
-+
-+u32 bcma_gpio_out(struct bcma_bus *bus, u32 mask, u32 value)
-+{
-+	unsigned long flags;
-+	u32 res = 0;
-+
-+	spin_lock_irqsave(&bus->gpio_lock, flags);
-+	res = bcma_chipco_gpio_out(&bus->drv_cc, mask, value);
-+	spin_unlock_irqrestore(&bus->gpio_lock, flags);
-+
-+	return res;
-+}
-+EXPORT_SYMBOL(bcma_gpio_out);
-+
-+u32 bcma_gpio_outen(struct bcma_bus *bus, u32 mask, u32 value)
-+{
-+	unsigned long flags;
-+	u32 res = 0;
-+
-+	spin_lock_irqsave(&bus->gpio_lock, flags);
-+	res = bcma_chipco_gpio_outen(&bus->drv_cc, mask, value);
-+	spin_unlock_irqrestore(&bus->gpio_lock, flags);
-+
-+	return res;
-+}
-+EXPORT_SYMBOL(bcma_gpio_outen);
-+
-+u32 bcma_gpio_control(struct bcma_bus *bus, u32 mask, u32 value)
-+{
-+	unsigned long flags;
-+	u32 res = 0;
-+
-+	spin_lock_irqsave(&bus->gpio_lock, flags);
-+	res = bcma_chipco_gpio_control(&bus->drv_cc, mask, value);
-+	spin_unlock_irqrestore(&bus->gpio_lock, flags);
-+
-+	return res;
-+}
-+EXPORT_SYMBOL(bcma_gpio_control);
-+
-+u32 bcma_gpio_intmask(struct bcma_bus *bus, u32 mask, u32 value)
-+{
-+	unsigned long flags;
-+	u32 res = 0;
-+
-+	spin_lock_irqsave(&bus->gpio_lock, flags);
-+	res = bcma_chipco_gpio_intmask(&bus->drv_cc, mask, value);
-+	spin_unlock_irqrestore(&bus->gpio_lock, flags);
-+
-+	return res;
-+}
-+EXPORT_SYMBOL(bcma_gpio_intmask);
-+
-+u32 bcma_gpio_polarity(struct bcma_bus *bus, u32 mask, u32 value)
-+{
-+	unsigned long flags;
-+	u32 res = 0;
-+
-+	spin_lock_irqsave(&bus->gpio_lock, flags);
-+	res = bcma_chipco_gpio_polarity(&bus->drv_cc, mask, value);
-+	spin_unlock_irqrestore(&bus->gpio_lock, flags);
-+
-+	return res;
-+}
-+EXPORT_SYMBOL(bcma_gpio_polarity);
---- a/drivers/bcma/scan.c
-+++ b/drivers/bcma/scan.c
-@@ -422,6 +422,10 @@ void bcma_init_bus(struct bcma_bus *bus)
- 	if (bus->init_done)
- 		return;
+ 	cc->setup_done = true;
+ }
  
-+#ifdef CONFIG_BCMA_DRIVER_GPIO
-+	spin_lock_init(&bus->gpio_lock);
-+#endif
+@@ -79,34 +81,81 @@ u32 bcma_chipco_irq_status(struct bcma_d
+ 
+ u32 bcma_chipco_gpio_in(struct bcma_drv_cc *cc, u32 mask)
+ {
+-	return bcma_cc_read32(cc, BCMA_CC_GPIOIN) & mask;
++	unsigned long flags;
++	u32 res;
 +
- 	INIT_LIST_HEAD(&bus->cores);
- 	bus->nr_cores = 0;
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = bcma_cc_read32(cc, BCMA_CC_GPIOIN) & mask;
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_in);
  
---- a/include/linux/bcma/bcma.h
-+++ b/include/linux/bcma/bcma.h
-@@ -255,6 +255,11 @@ struct bcma_bus {
- 	struct bcma_drv_mips drv_mips;
- 	struct bcma_drv_gmac_cmn drv_gmac_cmn;
+ u32 bcma_chipco_gpio_out(struct bcma_drv_cc *cc, u32 mask, u32 value)
+ {
+-	return bcma_cc_write32_masked(cc, BCMA_CC_GPIOOUT, mask, value);
++	unsigned long flags;
++	u32 res;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = bcma_cc_write32_masked(cc, BCMA_CC_GPIOOUT, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_out);
  
-+#ifdef CONFIG_BCMA_DRIVER_GPIO
+ u32 bcma_chipco_gpio_outen(struct bcma_drv_cc *cc, u32 mask, u32 value)
+ {
+-	return bcma_cc_write32_masked(cc, BCMA_CC_GPIOOUTEN, mask, value);
++	unsigned long flags;
++	u32 res;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = bcma_cc_write32_masked(cc, BCMA_CC_GPIOOUTEN, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_outen);
+ 
+ u32 bcma_chipco_gpio_control(struct bcma_drv_cc *cc, u32 mask, u32 value)
+ {
+-	return bcma_cc_write32_masked(cc, BCMA_CC_GPIOCTL, mask, value);
++	unsigned long flags;
++	u32 res;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = bcma_cc_write32_masked(cc, BCMA_CC_GPIOCTL, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
+ EXPORT_SYMBOL_GPL(bcma_chipco_gpio_control);
+ 
+ u32 bcma_chipco_gpio_intmask(struct bcma_drv_cc *cc, u32 mask, u32 value)
+ {
+-	return bcma_cc_write32_masked(cc, BCMA_CC_GPIOIRQ, mask, value);
++	unsigned long flags;
++	u32 res;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = bcma_cc_write32_masked(cc, BCMA_CC_GPIOIRQ, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_intmask);
+ 
+ u32 bcma_chipco_gpio_polarity(struct bcma_drv_cc *cc, u32 mask, u32 value)
+ {
+-	return bcma_cc_write32_masked(cc, BCMA_CC_GPIOPOL, mask, value);
++	unsigned long flags;
++	u32 res;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = bcma_cc_write32_masked(cc, BCMA_CC_GPIOPOL, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_polarity);
+ 
+ #ifdef CONFIG_BCMA_DRIVER_MIPS
+ void bcma_chipco_serial_init(struct bcma_drv_cc *cc)
+--- a/include/linux/bcma/bcma_driver_chipcommon.h
++++ b/include/linux/bcma/bcma_driver_chipcommon.h
+@@ -494,6 +494,9 @@ struct bcma_drv_cc {
+ 	int nr_serial_ports;
+ 	struct bcma_serial_port serial_ports[4];
+ #endif /* CONFIG_BCMA_DRIVER_MIPS */
++
 +	/* Lock for GPIO register access. */
 +	spinlock_t gpio_lock;
-+#endif /* CONFIG_BCMA_DRIVER_GPIO */
+ };
+ 
+ /* Register access */
+@@ -523,13 +526,22 @@ void bcma_chipco_irq_mask(struct bcma_dr
+ 
+ u32 bcma_chipco_irq_status(struct bcma_drv_cc *cc, u32 mask);
+ 
++#define BCMA_CC_GPIO_LINES	16
 +
- 	/* We decided to share SPROM struct with SSB as long as we do not need
- 	 * any hacks for BCMA. This simplifies drivers code. */
- 	struct ssb_sprom sprom;
---- /dev/null
-+++ b/include/linux/bcma/bcma_driver_gpio.h
-@@ -0,0 +1,21 @@
-+#ifndef LINUX_BCMA_DRIVER_GPIO_H_
-+#define LINUX_BCMA_DRIVER_GPIO_H_
-+
-+#include <linux/types.h>
-+#include <linux/bcma/bcma.h>
-+
-+#define BCMA_GPIO_CC_LINES	16
-+
-+u32 bcma_gpio_in(struct bcma_bus *bus, u32 mask);
-+u32 bcma_gpio_out(struct bcma_bus *bus, u32 mask, u32 value);
-+u32 bcma_gpio_outen(struct bcma_bus *bus, u32 mask, u32 value);
-+u32 bcma_gpio_control(struct bcma_bus *bus, u32 mask, u32 value);
-+u32 bcma_gpio_intmask(struct bcma_bus *bus, u32 mask, u32 value);
-+u32 bcma_gpio_polarity(struct bcma_bus *bus, u32 mask, u32 value);
-+
-+static inline int bcma_gpio_count(struct bcma_bus *bus)
+ /* Chipcommon GPIO pin access. */
+-u32 bcma_chipco_gpio_in(struct bcma_drv_cc *cc, u32 mask);
+-u32 bcma_chipco_gpio_out(struct bcma_drv_cc *cc, u32 mask, u32 value);
+-u32 bcma_chipco_gpio_outen(struct bcma_drv_cc *cc, u32 mask, u32 value);
+-u32 bcma_chipco_gpio_control(struct bcma_drv_cc *cc, u32 mask, u32 value);
+-u32 bcma_chipco_gpio_intmask(struct bcma_drv_cc *cc, u32 mask, u32 value);
+-u32 bcma_chipco_gpio_polarity(struct bcma_drv_cc *cc, u32 mask, u32 value);
++extern u32 bcma_chipco_gpio_in(struct bcma_drv_cc *cc, u32 mask);
++extern u32 bcma_chipco_gpio_out(struct bcma_drv_cc *cc, u32 mask, u32 value);
++extern u32 bcma_chipco_gpio_outen(struct bcma_drv_cc *cc, u32 mask, u32 value);
++extern u32 bcma_chipco_gpio_control(struct bcma_drv_cc *cc, u32 mask,
++				    u32 value);
++extern u32 bcma_chipco_gpio_intmask(struct bcma_drv_cc *cc, u32 mask,
++				    u32 value);
++extern u32 bcma_chipco_gpio_polarity(struct bcma_drv_cc *cc, u32 mask,
++				     u32 value);
++static inline int bcma_chipco_gpio_count(void)
 +{
-+	return BCMA_GPIO_CC_LINES;
++	return BCMA_CC_GPIO_LINES;
 +}
-+
-+#endif /* LINUX_BCMA_DRIVER_GPIO_H_ */
+ 
+ /* PMU support */
+ extern void bcma_pmu_init(struct bcma_drv_cc *cc);
