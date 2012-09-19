@@ -7,12 +7,18 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+define mkimage
+	mkimage -A arm -O linux -T kernel -C none -a $(2) -e $(2) -n 'OpenWrt Linux-$(LINUX_VERSION)' -d $(LINUX_DIR)/arch/arm/boot/zImage $(KDIR)/uImage-$(1)
+endef
+
 define Image/Prepare
-	cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
+	$(call mkimage,old,0x00008000)
+	$(call mkimage,new,0x20008000)
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
+	cp $(KDIR)/uImage-old $(BIN_DIR)/openwrt-$(BOARD)-old-uboot-uImage
+	cp $(KDIR)/uImage-new $(BIN_DIR)/openwrt-$(BOARD)-uImage
 endef
 
 define Image/Build
