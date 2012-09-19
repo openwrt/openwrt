@@ -1,0 +1,76 @@
+--- a/arch/arm/mach-cns3xxx/cns3420vb.c
++++ b/arch/arm/mach-cns3xxx/cns3420vb.c
+@@ -32,6 +32,7 @@
+ #include <asm/mach/time.h>
+ #include <mach/cns3xxx.h>
+ #include <mach/irqs.h>
++#include <mach/platform.h>
+ #include "core.h"
+ #include "devices.h"
+ 
+@@ -199,6 +200,8 @@ static void __init cns3420_init(void)
+ 	cns3xxx_ahci_init();
+ 	cns3xxx_sdhci_init();
+ 
++	cns3xxx_pcie_init(0x3);
++
+ 	pm_power_off = cns3xxx_power_off;
+ }
+ 
+--- a/arch/arm/mach-cns3xxx/core.h
++++ b/arch/arm/mach-cns3xxx/core.h
+@@ -12,6 +12,8 @@
+ #define __CNS3XXX_CORE_H
+ 
+ extern struct sys_timer cns3xxx_timer;
++extern int cns3xxx_pcie_init(u8 bitmap);
++extern void cns3xxx_pcie_iotable_init(u8 bitmap);
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ void __init cns3xxx_l2x0_init(void);
+--- a/arch/arm/mach-cns3xxx/pcie.c
++++ b/arch/arm/mach-cns3xxx/pcie.c
+@@ -365,7 +365,23 @@ static int cns3xxx_pcie_abort_handler(un
+ 	return 0;
+ }
+ 
+-static int __init cns3xxx_pcie_init(void)
++void __init cns3xxx_pcie_iotable_init(u8 bitmap)
++{
++	static int _iotable_init = 0;
++	int i;
++
++	bitmap &= ~_iotable_init;
++	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
++		if (!(bitmap & (1 << i)))
++			continue;
++
++		iotable_init(cns3xxx_pcie[i].cfg_bases,
++			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));
++	}
++	_iotable_init |= bitmap;
++}
++
++int __init cns3xxx_pcie_init(u8 bitmap)
+ {
+ 	int i;
+ 
+@@ -375,9 +391,11 @@ static int __init cns3xxx_pcie_init(void
+ 	hook_fault_code(16 + 6, cns3xxx_pcie_abort_handler, SIGBUS, 0,
+ 			"imprecise external abort");
+ 
++	cns3xxx_pcie_iotable_init(bitmap);
+ 	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
+-		iotable_init(cns3xxx_pcie[i].cfg_bases,
+-			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));
++		if (!(bitmap & (1 << i)))
++			continue;
++
+ 		cns3xxx_pcie_check_link(&cns3xxx_pcie[i]);
+ 		cns3xxx_pcie_hw_init(&cns3xxx_pcie[i]);
+ 		pci_common_init(&cns3xxx_pcie[i].hw_pci);
+@@ -387,4 +405,3 @@ static int __init cns3xxx_pcie_init(void
+ 
+ 	return 0;
+ }
+-device_initcall(cns3xxx_pcie_init);

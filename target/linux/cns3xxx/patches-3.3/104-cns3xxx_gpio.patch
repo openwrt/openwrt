@@ -96,7 +96,7 @@
  /* used by entry-macro.S */
 --- a/arch/arm/mach-cns3xxx/core.h
 +++ b/arch/arm/mach-cns3xxx/core.h
-@@ -20,7 +20,7 @@ void __init cns3xxx_l2x0_init(void);
+@@ -21,7 +21,7 @@ void __init cns3xxx_l2x0_init(void);
  static inline void cns3xxx_l2x0_init(void) {}
  #endif /* CONFIG_CACHE_L2X0 */
  
@@ -105,14 +105,3 @@
  void __init cns3xxx_init_irq(void);
  void cns3xxx_power_off(void);
  void cns3xxx_restart(char, const char *);
---- a/arch/arm/mach-cns3xxx/laguna.c
-+++ b/arch/arm/mach-cns3xxx/laguna.c
-@@ -612,7 +612,7 @@ static struct map_desc laguna_io_desc[] 
- 
- static void __init laguna_map_io(void)
- {
--	cns3xxx_map_io();
-+	cns3xxx_common_init();
- 	iotable_init(laguna_io_desc, ARRAY_SIZE(laguna_io_desc));
- 	laguna_early_serial_setup();
- }
