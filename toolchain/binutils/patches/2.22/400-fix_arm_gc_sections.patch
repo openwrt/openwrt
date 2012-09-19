@@ -1,0 +1,12 @@
+--- a/bfd/elf32-arm.c
++++ b/bfd/elf32-arm.c
+@@ -12408,7 +12408,8 @@ elf32_arm_check_relocs (bfd *abfd, struc
+ 
+ 	  /* If the symbol is a function that doesn't bind locally,
+ 	     this relocation will need a PLT entry.  */
+-	  root_plt->refcount += 1;
++	  if (root_plt->refcount != -1)
++	    root_plt->refcount += 1;
+ 
+ 	  if (!call_reloc_p)
+ 	    arm_plt->noncall_refcount++;
