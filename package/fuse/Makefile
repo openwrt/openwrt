@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=fuse
 PKG_VERSION:=2.9.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
@@ -50,7 +50,7 @@ $(call Package/fuse/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= (library)
-  DEPENDS:=+kmod-fuse +libpthread
+  DEPENDS:=+kmod-fuse +libpthread +USE_EGLIBC:librt
   SUBMENU:=Filesystem
 endef
 
