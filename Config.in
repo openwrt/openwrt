@@ -193,9 +193,14 @@ menu "Global build settings"
 		  debugging files into. Enable this option to be able to read and
 		  write to these files.
 
+	config KERNEL_PERF_EVENTS
+		bool
+		default n
+
 	config KERNEL_PROFILING
 		bool "Compile the kernel with profiling enabled"
 		default n
+		select KERNEL_PERF_EVENTS
 		help
 		  Enable the extended profiling support mechanisms used by profilers such
 		  as OProfile.
