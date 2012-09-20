@@ -1,0 +1,12 @@
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
+@@ -209,9 +209,6 @@ void __init check_wait(void)
+ 		break;
+ 
+ 	case CPU_74K:
+-		cpu_wait = r4k_wait;
+-		if ((c->processor_id & 0xff) >= PRID_REV_ENCODE_332(2, 1, 0))
+-			cpu_wait = r4k_wait_irqoff;
+ 		break;
+ 
+ 	case CPU_TX49XX:
