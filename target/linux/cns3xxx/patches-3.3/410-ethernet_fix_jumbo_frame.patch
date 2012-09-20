@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/cavium/cns3xxx_eth.c
 +++ b/drivers/net/ethernet/cavium/cns3xxx_eth.c
-@@ -26,15 +26,18 @@
+@@ -26,15 +26,21 @@
  
  #define DRV_NAME "cns3xxx_eth"
  
@@ -16,15 +16,18 @@
 -#define MAX_MRU (1536 + SKB_DMA_REALIGN)
 -#define CNS3XXX_MAX_MTU (1536)
 +
-+#define SKB_HEAD_ALIGN (((PAGE_SIZE - NET_SKB_PAD) % SMP_CACHE_BYTES) + NET_SKB_PAD + NET_IP_ALIGN)
++#define RX_BUFFER_ALIGN 64
++#define RX_BUFFER_ALIGN_MASK (~(RX_BUFFER_ALIGN - 1))
++
++#define SKB_HEAD_ALIGN (((PAGE_SIZE - NET_SKB_PAD) % RX_BUFFER_ALIGN) + NET_SKB_PAD + NET_IP_ALIGN)
 +#define RX_SEGMENT_ALLOC_SIZE 4096
 +#define RX_SEGMENT_BUFSIZE (SKB_WITH_OVERHEAD(RX_SEGMENT_ALLOC_SIZE))
-+#define RX_SEGMENT_MRU ((RX_SEGMENT_BUFSIZE - SKB_HEAD_ALIGN))
++#define RX_SEGMENT_MRU (((RX_SEGMENT_BUFSIZE - SKB_HEAD_ALIGN) & RX_BUFFER_ALIGN_MASK) - NET_IP_ALIGN)
 +#define MAX_MTU	9500
  
  #define NAPI_WEIGHT 64
  
-@@ -266,7 +269,7 @@ struct _rx_ring {
+@@ -266,7 +272,7 @@ struct _rx_ring {
  	struct rx_desc *desc;
  	dma_addr_t phys_addr;
  	struct rx_desc *cur_addr;
@@ -33,7 +36,7 @@
  	unsigned int phys_tab[RX_DESCS];
  	u32 cur_index;
  	u32 alloc_index;
-@@ -280,6 +283,8 @@ struct sw {
+@@ -280,6 +286,8 @@ struct sw {
  	struct cns3xxx_plat_info *plat;
  	struct _tx_ring *tx_ring;
  	struct _rx_ring *rx_ring;
@@ -42,7 +45,7 @@
  };
  
  struct port {
-@@ -500,37 +505,35 @@ static void cns3xxx_alloc_rx_buf(struct 
+@@ -500,37 +508,35 @@ static void cns3xxx_alloc_rx_buf(struct 
  	struct _rx_ring *rx_ring = sw->rx_ring;
  	unsigned int i = rx_ring->alloc_index;
  	struct rx_desc *desc = &(rx_ring)->desc[i];
@@ -96,7 +99,7 @@
  			i++;
  			desc++;
  		}
-@@ -588,49 +591,78 @@ static int eth_poll(struct napi_struct *
+@@ -588,49 +594,79 @@ static int eth_poll(struct napi_struct *
  
  	while (desc->cown) {
  		struct sk_buff *skb;
@@ -139,7 +142,8 @@
 +		else {
 +			if (sw->frag_first == sw->frag_last)
 +				skb_frag_add_head(sw->frag_first, skb);
-+			sw->frag_last->next = skb;
++			else
++				sw->frag_last->next = skb;
 +			sw->frag_first->len += skb->len;
 +			sw->frag_first->data_len += skb->len;
 +			sw->frag_first->truesize += skb->truesize;
@@ -201,7 +205,7 @@
  		if (++i == RX_DESCS) {
  			i = 0;
  			desc = &(rx_ring)->desc[i];
-@@ -671,12 +703,6 @@ static int eth_xmit(struct sk_buff *skb,
+@@ -671,12 +707,6 @@ static int eth_xmit(struct sk_buff *skb,
  	if (pmap == 8)
  		pmap = (1 << 4);
  
@@ -214,7 +218,7 @@
  	spin_lock(&tx_lock);
  
  	if ((tx_ring->num_used + nr_frags) >= TX_DESCS) {
-@@ -701,8 +727,7 @@ static int eth_xmit(struct sk_buff *skb,
+@@ -701,8 +731,7 @@ static int eth_xmit(struct sk_buff *skb,
  
  		len = skb->len;
  
@@ -224,7 +228,7 @@
  
  		tx_desc->sdp = phys;
  		tx_desc->pmap = pmap;
-@@ -849,24 +874,24 @@ static int init_rings(struct sw *sw)
+@@ -849,24 +878,24 @@ static int init_rings(struct sw *sw)
  	/* Setup RX buffers */
  	for (i = 0; i < RX_DESCS; i++) {
  		struct rx_desc *desc = &(rx_ring)->desc[i];
@@ -260,7 +264,7 @@
  		rx_ring->phys_tab[i] = desc->sdp;
  		desc->cown = 0;
  	}
-@@ -905,12 +930,13 @@ static void destroy_rings(struct sw *sw)
+@@ -905,12 +934,13 @@ static void destroy_rings(struct sw *sw)
  			struct _rx_ring *rx_ring = sw->rx_ring;
  			struct rx_desc *desc = &(rx_ring)->desc[i];
  			struct sk_buff *skb = sw->rx_ring->buff_tab[i];
@@ -280,7 +284,7 @@
  		}
  		dma_pool_free(rx_dma_pool, sw->rx_ring->desc, sw->rx_ring->phys_addr);
  		dma_pool_destroy(rx_dma_pool);
-@@ -1085,13 +1111,22 @@ static int eth_set_mac(struct net_device
+@@ -1085,13 +1115,22 @@ static int eth_set_mac(struct net_device
  	return 0;
  }
  
@@ -304,7 +308,7 @@
  	.ndo_set_mac_address = eth_set_mac,
  	.ndo_validate_addr = eth_validate_addr,
  };
-@@ -1124,6 +1159,10 @@ static int __devinit eth_init_one(struct
+@@ -1124,6 +1163,10 @@ static int __devinit eth_init_one(struct
  		goto err_free;
  	}
  
