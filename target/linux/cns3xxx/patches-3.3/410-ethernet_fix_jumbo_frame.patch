@@ -99,7 +99,15 @@
  			i++;
  			desc++;
  		}
-@@ -588,49 +594,79 @@ static int eth_poll(struct napi_struct *
+@@ -579,7 +585,6 @@ static void clear_tx_desc(struct sw *sw)
+ static int eth_poll(struct napi_struct *napi, int budget)
+ {
+ 	struct sw *sw = container_of(napi, struct sw, napi);
+-	struct net_device *dev;
+ 	struct _rx_ring *rx_ring = sw->rx_ring;
+ 	int received = 0;
+ 	unsigned int length;
+@@ -588,49 +593,82 @@ static int eth_poll(struct napi_struct *
  
  	while (desc->cown) {
  		struct sk_buff *skb;
@@ -110,14 +118,15 @@
  
 -		skb = rx_ring->buff_tab[i];
 +		/* process received frame */
-+		dma_unmap_single(&dev->dev, rx_ring->phys_tab[i],
++		dma_unmap_single(NULL, rx_ring->phys_tab[i],
 +				 RX_SEGMENT_MRU, DMA_FROM_DEVICE);
-+
+ 
+-		dev = switch_port_tab[desc->sp]->netdev;
 +		skb = build_skb(rx_ring->buff_tab[i]);
 +		if (!skb)
 +			break;
- 
- 		dev = switch_port_tab[desc->sp]->netdev;
++
++		skb->dev = switch_port_tab[desc->sp]->netdev;
  
  		length = desc->sdl;
 -		/* process received frame */
@@ -125,13 +134,13 @@
 -				 length, DMA_FROM_DEVICE);
 +		if (desc->fsd && !desc->lsd)
 +			length = RX_SEGMENT_MRU;
- 
++
 +		if (!desc->fsd) {
 +			reserve -= NET_IP_ALIGN;
 +			if (!desc->lsd)
 +				length += NET_IP_ALIGN;
 +		}
-+
+ 
 +		skb_reserve(skb, reserve);
  		skb_put(skb, length);
  
@@ -149,11 +158,14 @@
 +			sw->frag_first->truesize += skb->truesize;
 +		}
 +		sw->frag_last = skb;
++
++		if (desc->lsd) {
++			struct net_device *dev;
  
 -		dev->stats.rx_packets++;
 -		dev->stats.rx_bytes += length;
-+		if (desc->lsd) {
 +			skb = sw->frag_first;
++			dev = skb->dev;
 +			skb->protocol = eth_type_trans(skb, dev);
 +
 +			dev->stats.rx_packets++;
@@ -205,7 +217,7 @@
  		if (++i == RX_DESCS) {
  			i = 0;
  			desc = &(rx_ring)->desc[i];
-@@ -671,12 +707,6 @@ static int eth_xmit(struct sk_buff *skb,
+@@ -671,12 +709,6 @@ static int eth_xmit(struct sk_buff *skb,
  	if (pmap == 8)
  		pmap = (1 << 4);
  
@@ -218,7 +230,7 @@
  	spin_lock(&tx_lock);
  
  	if ((tx_ring->num_used + nr_frags) >= TX_DESCS) {
-@@ -701,8 +731,7 @@ static int eth_xmit(struct sk_buff *skb,
+@@ -701,8 +733,7 @@ static int eth_xmit(struct sk_buff *skb,
  
  		len = skb->len;
  
@@ -228,7 +240,7 @@
  
  		tx_desc->sdp = phys;
  		tx_desc->pmap = pmap;
-@@ -849,24 +878,24 @@ static int init_rings(struct sw *sw)
+@@ -849,24 +880,24 @@ static int init_rings(struct sw *sw)
  	/* Setup RX buffers */
  	for (i = 0; i < RX_DESCS; i++) {
  		struct rx_desc *desc = &(rx_ring)->desc[i];
@@ -264,7 +276,7 @@
  		rx_ring->phys_tab[i] = desc->sdp;
  		desc->cown = 0;
  	}
-@@ -905,12 +934,13 @@ static void destroy_rings(struct sw *sw)
+@@ -905,12 +936,13 @@ static void destroy_rings(struct sw *sw)
  			struct _rx_ring *rx_ring = sw->rx_ring;
  			struct rx_desc *desc = &(rx_ring)->desc[i];
  			struct sk_buff *skb = sw->rx_ring->buff_tab[i];
@@ -284,7 +296,7 @@
  		}
  		dma_pool_free(rx_dma_pool, sw->rx_ring->desc, sw->rx_ring->phys_addr);
  		dma_pool_destroy(rx_dma_pool);
-@@ -1085,13 +1115,22 @@ static int eth_set_mac(struct net_device
+@@ -1085,13 +1117,22 @@ static int eth_set_mac(struct net_device
  	return 0;
  }
  
@@ -308,7 +320,7 @@
  	.ndo_set_mac_address = eth_set_mac,
  	.ndo_validate_addr = eth_validate_addr,
  };
-@@ -1124,6 +1163,10 @@ static int __devinit eth_init_one(struct
+@@ -1124,6 +1165,10 @@ static int __devinit eth_init_one(struct
  		goto err_free;
  	}
  
