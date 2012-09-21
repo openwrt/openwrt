@@ -39,11 +39,9 @@ To unsubscribe from this list: send the line "unsubscribe netdev" in
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/include/net/codel.h b/include/net/codel.h
-index 550debf..389cf62 100644
 --- a/include/net/codel.h
 +++ b/include/net/codel.h
-@@ -305,6 +305,8 @@ static struct sk_buff *codel_dequeue(struct Qdisc *sch,
+@@ -305,6 +305,8 @@ static struct sk_buff *codel_dequeue(str
  			}
  		}
  	} else if (drop) {
@@ -52,7 +50,7 @@ index 550debf..389cf62 100644
  		if (params->ecn && INET_ECN_set_ce(skb)) {
  			stats->ecn_mark++;
  		} else {
-@@ -320,9 +322,11 @@ static struct sk_buff *codel_dequeue(struct Qdisc *sch,
+@@ -320,9 +322,11 @@ static struct sk_buff *codel_dequeue(str
  		 * assume that the drop rate that controlled the queue on the
  		 * last cycle is a good starting point to control it now.
  		 */
