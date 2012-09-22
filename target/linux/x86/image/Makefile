@@ -9,6 +9,7 @@ include $(INCLUDE_DIR)/image.mk
 
 export PATH=$(TARGET_PATH):/sbin
 
+GRUB2_MODULES = at_keyboard biosdisk boot chain configfile ext2 linux ls part_msdos reboot serial vga
 GRUB_TERMINALS =
 GRUB_SERIAL_CONFIG =
 GRUB_TERMINAL_CONFIG =
@@ -26,7 +27,11 @@ ifneq ($(CONFIG_X86_GRUB_SERIAL),)
 endif
 
 ifneq ($(GRUB_TERMINALS),)
-  GRUB_TERMINAL_CONFIG := terminal --timeout=2 $(GRUB_TERMINALS)
+  ifneq ($(CONFIG_X86_USE_GRUB2),)
+    GRUB_TERMINAL_CONFIG := terminal_input $(GRUB_TERMINALS); terminal_output $(GRUB_TERMINALS)
+  else
+    GRUB_TERMINAL_CONFIG := terminal --timeout=2 $(GRUB_TERMINALS)
+  endif
 endif
 
 ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
@@ -85,6 +90,35 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 		$(KDIR)/
   endef
 
+  define Image/Build/grub2
+	# left here because the image builder doesnt need these
+	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub $(KDIR)/grub2
+	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
+	grub-mkimage \
+		-o $(KDIR)/grub2/core.img \
+		-O i386-pc \
+		-c ./grub-early.cfg \
+		$(GRUB2_MODULES)
+	$(CP) $(STAGING_DIR_HOST)/lib/grub/i386-pc/*.img $(KDIR)/grub2/
+	echo '(hd0) $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img' > $(KDIR)/grub2/device.map
+	sed \
+		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
+		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
+		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1)) $(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE))#g' \
+		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
+		./grub.cfg > $(KDIR)/root.grub/boot/grub/grub.cfg
+	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_generic.sh \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(KDIR)/root.grub \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1) \
+		256
+	grub-bios-setup \
+		--device-map="$(KDIR)/grub2/device.map" \
+		-d "$(KDIR)/grub2" \
+		-r "hd0,msdos1" \
+		"$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img"
+	$(call Image/Build/grub/$(1))
+  endef
 endif
 
 ROOTDELAY=10
@@ -210,7 +244,7 @@ define Image/Build
 	$(call Image/Build/$(1))
 	$(call Image/Build/bootscript,$(1))
   ifneq ($(1),iso)
-	$(call Image/Build/grub,$(1))
+	$(call Image/Build/$(if $(CONFIG_X86_USE_GRUB2),grub2,grub),$(1))
 	$(call Image/Build/vdi,$(1))
 	$(call Image/Build/vmdk,$(1))
   endif
