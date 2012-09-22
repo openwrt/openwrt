@@ -69,6 +69,8 @@ HOST_CONFIGURE_ARGS = \
 	--localstatedir=$(STAGING_DIR_HOST)/var \
 	--sbindir=$(STAGING_DIR_HOST)/bin
 
+HOST_MAKE_FLAGS =
+
 HOST_CONFIGURE_CMD = ./configure
 
 ifneq ($(HOST_OS),Darwin)
@@ -95,7 +97,9 @@ define Host/Configure
 endef
 
 define Host/Compile/Default
-	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) $(1)
+	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) \
+		$(HOST_MAKE_FLAGS) \
+		$(1)
 endef
 
 define Host/Compile
