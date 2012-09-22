@@ -20,6 +20,8 @@ def usage():
 	print("G         => G-PHY")
 	print("LP        => LP-PHY")
 	print("N         => N-PHY")
+	print("HT        => HT-PHY")
+	print("LCN       => LCN-PHY")
 	print("")
 	print("COREREVS is a comma separated list of core revision numbers.")
 
@@ -87,6 +89,8 @@ initvalmapping = {
 	"lp0initvals13.fw"	: ( (13,),		("LP",), ),
 	"lp0initvals14.fw"	: ( (14,),		("LP",), ),
 	"lp0initvals15.fw"	: ( (15,),		("LP",), ),
+	"lcn0initvals24.fw"	: ( (24,),		("LNC",), ),
+	"ht0initvals29.fw"	: ( (29,),		("HT",), ),
 	"a0g1bsinitvals5.fw"	: ( (5,6,7,8,9,10,),	("AG",), ),
 	"a0g0bsinitvals5.fw"	: ( (5,6,7,8,9,10,),	("A", "AG"), ),
 	"b0g0bsinitvals5.fw"	: ( (5,6,7,8,9,10,),	("G",), ),
@@ -95,8 +99,8 @@ initvalmapping = {
 	"lp0bsinitvals13.fw"	: ( (13,),		("LP",), ),
 	"lp0bsinitvals14.fw"	: ( (14,),		("LP",), ),
 	"lp0bsinitvals15.fw"	: ( (15,),		("LP",), ),
-	"lcn0initvals24.fw"	: ( (24,),		("LNC",), ),
-	"ht0initvals29.fw"	: ( (29,),		("HT",), ),
+	"lcn0bsinitvals24.fw"	: ( (24,),		("LNC",), ),
+	"ht0bsinitvals29.fw"	: ( (29,),		("HT",), ),
 }
 
 for f in fwfiles:
