@@ -1,0 +1,77 @@
+--- a/util/grub-setup.c
++++ b/util/grub-setup.c
+@@ -141,12 +141,11 @@ write_rootdev (char *core_img, grub_devi
+ static void
+ setup (const char *dir,
+        const char *boot_file, const char *core_file,
+-       const char *dest, int force,
++       const char *root, const char *dest, int force,
+        int fs_probe, int allow_floppy)
+ {
+   char *boot_path, *core_path, *core_path_dev, *core_path_dev_full;
+   char *boot_img, *core_img;
+-  char *root = 0;
+   size_t boot_size, core_size;
+   grub_uint16_t core_sectors;
+   grub_device_t root_dev = 0, dest_dev, core_dev;
+@@ -253,7 +252,10 @@ setup (const char *dir,
+ 
+   core_dev = dest_dev;
+ 
+-  {
++  if (root)
++    root_dev = grub_device_open(root);
++
++  if (!root_dev) {
+     char **root_devices = grub_guess_root_devices (dir);
+     char **cur;
+     int found = 0;
+@@ -263,6 +265,8 @@ setup (const char *dir,
+ 	char *drive;
+ 	grub_device_t try_dev;
+ 
++	if (root_dev)
++	  break;
+ 	drive = grub_util_get_grub_dev (*cur);
+ 	if (!drive)
+ 	  continue;
+@@ -956,6 +960,8 @@ static struct argp_option options[] = {
+    N_("install even if problems are detected"), 0},
+   {"skip-fs-probe",'s',0,      0,
+    N_("do not probe for filesystems in DEVICE"), 0},
++  {"root-device", 'r', N_("DEVICE"), 0,
++   N_("use DEVICE as the root device"), 0},
+   {"verbose",     'v', 0,      0, N_("print verbose messages."), 0},
+   {"allow-floppy", 'a', 0,      0,
+    /* TRANSLATORS: The potential breakage isn't limited to floppies but it's
+@@ -993,6 +999,7 @@ struct arguments
+   char *core_file;
+   char *dir;
+   char *dev_map;
++  char *root_dev;
+   int  force;
+   int  fs_probe;
+   int allow_floppy;
+@@ -1040,6 +1047,13 @@ argp_parser (int key, char *arg, struct 
+         arguments->dev_map = xstrdup (arg);
+         break;
+ 
++      case 'r':
++        if (arguments->root_dev)
++          free (arguments->root_dev);
++
++        arguments->root_dev = xstrdup (arg);
++        break;
++
+       case 'f':
+         arguments->force = 1;
+         break;
+@@ -1172,7 +1186,7 @@ main (int argc, char *argv[])
+   setup (arguments.dir ? : DEFAULT_DIRECTORY,
+ 	 arguments.boot_file ? : DEFAULT_BOOT_FILE,
+ 	 arguments.core_file ? : DEFAULT_CORE_FILE,
+-	 dest_dev, arguments.force,
++	 arguments.root_dev, dest_dev, arguments.force,
+ 	 arguments.fs_probe, arguments.allow_floppy);
+ 
+   /* Free resources.  */
