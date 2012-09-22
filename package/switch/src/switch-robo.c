@@ -269,6 +269,10 @@ static int robo_probe(char *devname)
 		printk("No such device\n");
 		return 1;
 	}
+	if (!robo.dev->netdev_ops || !robo.dev->netdev_ops->ndo_do_ioctl) {
+		printk("ndo_do_ioctl not implemented in ethernet driver\n");
+		return 1;
+	}
 
 	robo.device = devname;
 	for (i = 0; i < 5; i++)
