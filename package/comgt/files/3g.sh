@@ -52,7 +52,7 @@ proto_3g_setup() {
 				export MODE="AT_OPSYS=${CODE}"
 			elif echo "$cardinfo" | grep -q "Sierra Wireless"; then
 				SIERRA=1
-			elif echo "$cardinfo" | grep -q huawei; then
+			elif echo "$cardinfo" | grep -qi huawei; then
 				case "$service" in
 					umts_only) CODE="14,2";;
 					gprs_only) CODE="13,1";;
