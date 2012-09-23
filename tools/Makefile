@@ -39,6 +39,7 @@ endif
 
 # builddir dependencies
 $(curdir)/bison/compile := $(curdir)/flex/install
+$(curdir)/flex/compile := $(curdir)/m4/install
 $(curdir)/pkg-config/compile := $(curdir)/sed/install
 $(curdir)/libtool/compile := $(curdir)/sed/install
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
