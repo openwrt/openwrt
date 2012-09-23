@@ -18,6 +18,13 @@ HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/u-boot-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
+define Host/Prepare
+	$(Host/Prepare/Default)
+	rm -f \
+		$(HOST_BUILD_DIR)/include/errno.h \
+		$(HOST_BUILD_DIR)/include/malloc.h
+endef
+
 define Host/Compile
 	rm -f $(HOST_BUILD_DIR)/tools/.depend
 	touch $(HOST_BUILD_DIR)/include/config.h
