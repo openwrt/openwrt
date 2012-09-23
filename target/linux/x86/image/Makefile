@@ -237,7 +237,7 @@ endef
 define Image/Prepare
 	$(CP) $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
 	$(call Image/Prepare/bootscript)
-	$(call Image/Prepare/grub)
+	$(call Image/Prepare/$(if $(CONFIG_X86_USE_GRUB2),grub2,grub))
 endef
 
 define Image/Build
