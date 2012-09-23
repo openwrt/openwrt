@@ -26,6 +26,7 @@ export IS_TTY=$(shell tty -s && echo 1 || echo 0)
 export LD_LIBRARY_PATH:=$(subst ::,:,$(if $(LD_LIBRARY_PATH),$(LD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib)
 export DYLD_LIBRARY_PATH:=$(subst ::,:,$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib)
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
+export MAKE_JOBSERVER=$(filter --jobserver%,$(MAKEFLAGS))
 
 # prevent perforce from messing with the patch utility
 unexport P4PORT P4USER P4CONFIG P4CLIENT
@@ -148,7 +149,7 @@ prereq:: prepare-tmpinfo .config
 			echo "WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!"; \
 		fi \
 	)
-	@+$(SUBMAKE) -r $@ MAKE_JOBSERVER="$(filter --jobserver%,$(MAKEFLAGS))"
+	@+$(SUBMAKE) -r $@
 
 help:
 	cat README
