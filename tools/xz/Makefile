@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/host-build.mk
 HOST_LDFLAGS += $(HOST_STATIC_LINKING)
 
 define Host/Install
-	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) install xzlinks="unxz xzcat" \
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) install xzlinks="unxz xzcat" \
 		AM_LDFLAGS="$(if $(HOST_STATIC_LINKING),-all-static)"
 endef
 

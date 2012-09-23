@@ -76,12 +76,12 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		LD="$(TARGET_CC)" \
 		PROGRAMS="dropbear dbclient dropbearkey scp" \
 		MULTI=1 SCPPROGRESS=1
-	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		LD="$(TARGET_CC)" \
 		PROGRAMS="dropbearconvert"

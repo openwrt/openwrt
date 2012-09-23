@@ -88,7 +88,7 @@ HOST_CONFIGURE_ARGS+= \
 	--with-opkglockfile=/tmp/opkg.lock
 
 define Host/Compile
-	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) CC="$(HOSTCC)" all
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) CC="$(HOSTCC)" all
 endef
 
 define Host/Install

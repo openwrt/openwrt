@@ -79,10 +79,10 @@ unexport PREFIX
 
 define Build/Compile
 	# src/qgen is built with HOSTCC, which does not really like our LDFLAGS
-	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/src/qgen \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/src/qgen \
 		LDFLAGS="" \
 		all
-	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) OBJCOPY=$(TARGET_CROSS)objcopy all
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) OBJCOPY=$(TARGET_CROSS)objcopy all
 endef
 
 define Build/InstallDev

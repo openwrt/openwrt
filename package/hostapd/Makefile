@@ -234,7 +234,7 @@ endif
 
 define Build/RunMake
 	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
-	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/$(1) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/$(1) \
 		$(TARGET_CONFIGURE_OPTS) \
 		$(DRIVER_MAKEOPTS) \
 		LIBS="$(TARGET_LDFLAGS)" \

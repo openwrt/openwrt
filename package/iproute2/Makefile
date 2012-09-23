@@ -75,7 +75,7 @@ MAKE_FLAGS += \
 	FPIC="$(FPIC)"
 
 define Build/Compile
-	$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) $(MAKE_FLAGS) 
+	+$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) $(MAKE_FLAGS)
 endef
 
 define Build/InstallDev

@@ -129,7 +129,7 @@ MAKE_INSTALL_FLAGS = \
 MAKE_PATH = .
 
 define Build/Compile/Default
-	$(MAKE_VARS) \
+	+$(MAKE_VARS) \
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
 		$(MAKE_FLAGS) \
 		$(1);

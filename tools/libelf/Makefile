@@ -32,7 +32,7 @@ endef
 
 
 define Host/Compile
-	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/lib/ libelf.a
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/lib/ libelf.a
 endef
 
 define Host/Install
