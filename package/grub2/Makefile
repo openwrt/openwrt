@@ -35,7 +35,8 @@ endef
 HOST_CONFIGURE_ARGS += \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--sbindir="$(STAGING_DIR_HOST)/bin" \
-	--disable-werror
+	--disable-werror \
+	--disable-nls
 
 HOST_MAKE_FLAGS += \
 	TARGET_RANLIB=$(TARGET_RANLIB)
