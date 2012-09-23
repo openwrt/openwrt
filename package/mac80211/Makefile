@@ -977,6 +977,8 @@ define KernelPackage/b43/config
 		    G  => G-PHY
 		    LP => LP-PHY
 		    N  => N-PHY
+		    HT  => HT-PHY
+		    LCN  => LCN-PHY
 
 		  Example (keep files for G-PHY only):
 		    G
