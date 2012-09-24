@@ -88,8 +88,13 @@ endif
 ifeq ($(CONFIG_x86_64),y)
   OPENSSL_TARGET:=linux-x86_64
 else
-  OPENSSL_TARGET:=linux-openwrt
-  OPENSSL_OPTIONS+=no-perlasm no-sse2
+  OPENSSL_OPTIONS+=no-sse2
+  ifeq ($(CONFIG_mips)$(CONFIG_mipsel),y)
+    OPENSSL_TARGET:=linux-mips-openwrt
+  else
+    OPENSSL_TARGET:=linux-generic-openwrt
+    OPENSSL_OPTIONS+=no-perlasm
+  endif
 endif
 
 define Build/Configure
