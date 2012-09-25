@@ -40,6 +40,15 @@
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC)
  		return -EINVAL;
  
+@@ -869,7 +871,7 @@ void ieee80211_process_addba_resp(struct
+ 
+ 	} else {
+ 		___ieee80211_stop_tx_ba_session(sta, tid, WLAN_BACK_INITIATOR,
+-						true);
++						false);
+ 	}
+ 
+  out:
 --- a/net/mac80211/debugfs_sta.c
 +++ b/net/mac80211/debugfs_sta.c
 @@ -63,11 +63,11 @@ static ssize_t sta_flags_read(struct fil
@@ -375,3 +384,25 @@
  			rfilt |= ATH9K_RX_FILTER_PROM;
  		rfilt |= ATH9K_RX_FILTER_MCAST_BCAST_ALL;
  	}
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1390,7 +1390,7 @@ static void ieee80211_set_disassoc(struc
+ 	sta = sta_info_get(sdata, ifmgd->bssid);
+ 	if (sta) {
+ 		set_sta_flag(sta, WLAN_STA_BLOCK_BA);
+-		ieee80211_sta_tear_down_BA_sessions(sta, tx);
++		ieee80211_sta_tear_down_BA_sessions(sta, false);
+ 	}
+ 	mutex_unlock(&local->sta_mtx);
+ 
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -674,7 +674,7 @@ int __must_check __sta_info_destroy(stru
+ 	 * will be sufficient.
+ 	 */
+ 	set_sta_flag(sta, WLAN_STA_BLOCK_BA);
+-	ieee80211_sta_tear_down_BA_sessions(sta, true);
++	ieee80211_sta_tear_down_BA_sessions(sta, false);
+ 
+ 	ret = sta_info_hash_del(local, sta);
+ 	if (ret)
