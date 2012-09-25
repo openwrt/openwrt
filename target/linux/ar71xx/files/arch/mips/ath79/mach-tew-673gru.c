@@ -40,11 +40,13 @@
 #define TEW673GRU_KEYS_POLL_INTERVAL	20 /* msecs */
 #define TEW673GRU_KEYS_DEBOUNCE_INTERVAL (3 * TEW673GRU_KEYS_POLL_INTERVAL)
 
-#define TEW673GRU_CAL_LOCATION_0	0x1f661000
-#define TEW673GRU_CAL_LOCATION_1	0x1f665000
+#define TEW673GRU_CAL0_OFFSET		0x1000
+#define TEW673GRU_CAL1_OFFSET		0x5000
+#define TEW673GRU_MAC0_OFFSET		0xffa0
+#define TEW673GRU_MAC1_OFFSET		0xffb4
 
-#define TEW673GRU_MAC_LOCATION_0	0x1f66ffa0
-#define TEW673GRU_MAC_LOCATION_1	0x1f66ffb4
+#define TEW673GRU_CAL_LOCATION_0	0x1f660000
+#define TEW673GRU_CAL_LOCATION_1	0x1f7f0000
 
 static struct gpio_led tew673gru_leds_gpio[] __initdata = {
 	{
@@ -117,35 +119,67 @@ static struct platform_device tew673gru_spi_device = {
 	},
 };
 
-static void tew673gru_read_ascii_mac(u8 *dest, unsigned int src_addr)
+static void tew673gru_read_ascii_mac(u8 *dest, u8 *src)
 {
 	int ret;
-	u8 *src = (u8 *)KSEG1ADDR(src_addr);
 
 	ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
 		     &dest[0], &dest[1], &dest[2],
 		     &dest[3], &dest[4], &dest[5]);
 
-	if (ret != ETH_ALEN) memset(dest, 0, ETH_ALEN);
+	if (ret != ETH_ALEN)
+		memset(dest, 0, ETH_ALEN);
+}
+
+static bool __init tew673gru_is_caldata_valid(u8 *p)
+{
+	u16 *magic0, *magic1;
+
+	magic0 = (u16 *)(p + TEW673GRU_CAL0_OFFSET);
+	magic1 = (u16 *)(p + TEW673GRU_CAL1_OFFSET);
+
+	return (*magic0 == 0xa55a && *magic1 == 0xa55a);
+}
+
+static void __init tew673gru_wlan_init(void)
+{
+	u8 mac1[ETH_ALEN], mac2[ETH_ALEN];
+	u8 *caldata;
+
+	caldata = (u8 *) KSEG1ADDR(TEW673GRU_CAL_LOCATION_0);
+	if (!tew673gru_is_caldata_valid(caldata)) {
+		caldata = (u8 *)KSEG1ADDR(TEW673GRU_CAL_LOCATION_1);
+		if (!tew673gru_is_caldata_valid(caldata)) {
+			pr_err("no calibration data found\n");
+			return;
+		}
+	}
+
+	tew673gru_read_ascii_mac(mac1, caldata + TEW673GRU_MAC0_OFFSET);
+	tew673gru_read_ascii_mac(mac2, caldata + TEW673GRU_MAC1_OFFSET);
+
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 2);
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac1, 3);
+
+	ap9x_pci_setup_wmac_led_pin(0, 5);
+	ap9x_pci_setup_wmac_led_pin(1, 5);
+
+	ap94_pci_init(caldata + TEW673GRU_CAL0_OFFSET, mac1,
+		      caldata + TEW673GRU_CAL1_OFFSET, mac2);
 }
 
 static void __init tew673gru_setup(void)
 {
-	u8 mac1[ETH_ALEN], mac2[ETH_ALEN];
-
-	tew673gru_read_ascii_mac(mac1, TEW673GRU_MAC_LOCATION_0);
-	tew673gru_read_ascii_mac(mac2, TEW673GRU_MAC_LOCATION_1);
+	tew673gru_wlan_init();
 
 	ath79_register_mdio(0, 0x0);
 
-	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 2);
 	ath79_eth0_data.mii_bus_dev = &tew673gru_rtl8366s_device.dev;
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ath79_eth0_data.speed = SPEED_1000;
 	ath79_eth0_data.duplex = DUPLEX_FULL;
 	ath79_eth0_pll_data.pll_1000 = 0x11110000;
 
-	ath79_init_mac(ath79_eth1_data.mac_addr, mac1, 3);
 	ath79_eth1_data.mii_bus_dev = &tew673gru_rtl8366s_device.dev;
 	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ath79_eth1_data.phy_mask = 0x10;
@@ -166,12 +200,6 @@ static void __init tew673gru_setup(void)
 	ath79_register_usb();
 
 	platform_device_register(&tew673gru_rtl8366s_device);
-
-	ap9x_pci_setup_wmac_led_pin(0, 5);
-	ap9x_pci_setup_wmac_led_pin(1, 5);
-
-	ap94_pci_init((u8 *) KSEG1ADDR(TEW673GRU_CAL_LOCATION_0), mac1,
-		      (u8 *) KSEG1ADDR(TEW673GRU_CAL_LOCATION_1), mac2);
 
 	spi_register_board_info(tew673gru_spi_info,
 				ARRAY_SIZE(tew673gru_spi_info));
