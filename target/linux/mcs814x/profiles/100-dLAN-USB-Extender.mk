@@ -7,7 +7,8 @@
 
 define Profile/dLAN_USB_Extender
   NAME:=Devolo dLAN USB Extender
-  PACKAGES:=hpavcfg foot kmod-usb-serial kmod-usb-serial-ftdi
+  PACKAGES:=hpavcfg foot kmod-usb-serial kmod-usb-serial-ftdi \
+	    wmbus-repeater
 endef
 
 define Profile/dLAN_USB_Extender/Description
