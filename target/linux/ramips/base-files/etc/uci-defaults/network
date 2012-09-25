@@ -101,7 +101,7 @@ ramips_setup_interfaces()
 		;;
 
 	*)
-		RT3X5X=`cat /proc/cpuinfo | grep RT3.5`
+		RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350)"`
 		if [ -n "${RT3X5X}" ]; then
 			ramips_setup_rt3x5x_vlans
 		else
