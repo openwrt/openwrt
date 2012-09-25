@@ -31,7 +31,7 @@ preinit_net_echo() {
 			port_net_echo $1
 		}; done
 		
-		echo "0 ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
+		echo "0 1 2 3 4 ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
 		
 	} || port_net_echo $1
 }
