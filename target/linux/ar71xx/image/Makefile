@@ -170,7 +170,8 @@ cameo7240_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,960k(kernel),275
 cameo913x_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,960k(kernel),2880k(rootfs),64k(art)ro,3840k@0x30000(firmware)
 cameo933x_mtdlayout=mtdparts=spi0.0:64k(u-boot)ro,64k(art)ro,64k(mac)ro,64k(nvram)ro,192k(language)ro,896k(kernel),2752k(rootfs),3648k@0x70000(firmware)
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
-dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,1600k(unknown)ro,6208k@0x50000(firmware)
+dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,1600k(unknown)ro,6208k@0x50000(firmware),64k@0x7f0000(caldata_copy)
+dir825b1_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),6784k(rootfs),64k(caldata)ro,7808k@0x50000(firmware),64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
 ew-dorin_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),1024k(kernel),2688k(rootfs),64k(art),3712k@0x50000(firmware)
 pb92_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
 planex_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,960k(kernel),6784k(rootfs),128k(art)ro,7744k@0x50000(firmware)
@@ -215,6 +216,15 @@ define Image/Build/DIR825B1
 				echo -n "$(5)"; \
 			) > $(call factoryname,$(1),$(2)); \
 		fi; \
+	fi
+	$(call MkuImageLzma,$(2)-fat,$(3) $(dir825b1_mtdlayout_fat))
+	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,1048576,$(KDIR)/root.$(1),6946816,$(KDIR_TMP)/$(2)-fat.bin)
+	if [ -e "$(KDIR_TMP)/$(2)-fat.bin" ]; then \
+		echo -n "" > $(KDIR_TMP)/$(2)-fat.dummy; \
+		sh $(TOPDIR)/scripts/combined-image.sh \
+			"$(KDIR_TMP)/$(2)-fat.bin" \
+			"$(KDIR_TMP)/$(2)-fat.dummy" \
+			$(call sysupname,$(1),$(2)-fat); \
 	fi
 endef
 

@@ -100,13 +100,11 @@ platform_check_image() {
 	dir-600-a1 | \
 	dir-615-c1 | \
 	dir-615-e4 | \
-	dir-825-b1 | \
 	ew-dorin | \
 	ew-dorin-router | \
 	mzk-w04nu | \
 	mzk-w300nh | \
 	tew-632brp | \
-	tew-673gru | \
 	tew-712br | \
 	wrt400n | \
 	airrouter | \
@@ -130,6 +128,12 @@ platform_check_image() {
 		}
 		return 0
 		;;
+
+	dir-825-b1 | \
+	tew-673gru)
+		dir825b_check_image "$1" && return 0
+		;;
+
 	om2p | \
 	om2p-lc)
 		platform_check_image_om2p "$magic_long" "$1" && return 0
@@ -238,6 +242,10 @@ platform_do_upgrade() {
 		;;
 	all0315n )
 		platform_do_upgrade_allnet "0x9f080000" "$ARGV"
+		;;
+	dir-825-b1 |\
+	tew-673gru)
+		platform_do_upgrade_dir825b "$ARGV"
 		;;
 	om2p | \
 	om2p-lc)
