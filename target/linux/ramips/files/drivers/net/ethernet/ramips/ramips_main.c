@@ -33,10 +33,12 @@
 #define	MAX_RX_LENGTH	1600
 
 #ifdef CONFIG_RALINK_RT305X
+#include <rt305x.h>
 #include "ramips_esw.c"
 #else
 static inline int rt305x_esw_init(void) { return 0; }
 static inline void rt305x_esw_exit(void) { }
+static inline int soc_is_rt5350(void) { return 0; }
 #endif
 
 #define phys_to_bus(a)  (a & 0x1FFFFFFF)
@@ -46,6 +48,9 @@ static inline void rt305x_esw_exit(void) { }
 #else
 #define RADEBUG(fmt, args...)	do {} while (0)
 #endif
+
+#define RX_DLY_INT ((soc_is_rt5350())?(RT5350_RX_DLY_INT):(RAMIPS_RX_DLY_INT))
+#define TX_DLY_INT ((soc_is_rt5350())?(RT5350_TX_DLY_INT):(RAMIPS_TX_DLY_INT))
 
 enum raeth_reg {
 	RAETH_REG_PDMA_GLO_CFG = 0,
@@ -76,6 +81,20 @@ static const u32 ramips_reg_table[RAETH_REG_COUNT] = {
 	[RAETH_REG_FE_INT_STATUS] = RAMIPS_FE_INT_STATUS,
 };
 
+static const u32 rt5350_reg_table[RAETH_REG_COUNT] = {
+	[RAETH_REG_PDMA_GLO_CFG] = RT5350_PDMA_GLO_CFG,
+	[RAETH_REG_PDMA_RST_CFG] = RT5350_PDMA_RST_CFG,
+	[RAETH_REG_DLY_INT_CFG] = RT5350_DLY_INT_CFG,
+	[RAETH_REG_TX_BASE_PTR0] = RT5350_TX_BASE_PTR0,
+	[RAETH_REG_TX_MAX_CNT0] = RT5350_TX_MAX_CNT0,
+	[RAETH_REG_TX_CTX_IDX0] = RT5350_TX_CTX_IDX0,
+	[RAETH_REG_RX_BASE_PTR0] = RT5350_RX_BASE_PTR0,
+	[RAETH_REG_RX_MAX_CNT0] = RT5350_RX_MAX_CNT0,
+	[RAETH_REG_RX_CALC_IDX0] = RT5350_RX_CALC_IDX0,
+	[RAETH_REG_FE_INT_ENABLE] = RT5350_FE_INT_ENABLE,
+	[RAETH_REG_FE_INT_STATUS] = RT5350_FE_INT_STATUS,
+};
+
 static struct net_device * ramips_dev;
 static void __iomem *ramips_fe_base = 0;
 
@@ -83,7 +102,10 @@ static inline u32 get_reg_offset(enum raeth_reg reg)
 {
 	const u32 *table;
 
-	table = ramips_reg_table;
+	if (soc_is_rt5350())
+		table = rt5350_reg_table;
+	else
+		table = ramips_reg_table;
 
 	return table[reg];
 }
@@ -133,9 +155,15 @@ ramips_fe_int_enable(u32 mask)
 static inline void
 ramips_hw_set_macaddr(unsigned char *mac)
 {
-	ramips_fe_wr((mac[0] << 8) | mac[1], RAMIPS_GDMA1_MAC_ADRH);
-	ramips_fe_wr((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
-		     RAMIPS_GDMA1_MAC_ADRL);
+	if (soc_is_rt5350()) {
+		ramips_fe_wr((mac[0] << 8) | mac[1], RT5350_SDM_MAC_ADRH);
+		ramips_fe_wr((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
+			     RT5350_SDM_MAC_ADRL);
+	} else {
+		ramips_fe_wr((mac[0] << 8) | mac[1], RAMIPS_GDMA1_MAC_ADRH);
+		ramips_fe_wr((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
+			     RAMIPS_GDMA1_MAC_ADRL);
+	}
 }
 
 static struct sk_buff *
@@ -825,7 +853,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 	if (max_rx == 0)
 		tasklet_schedule(&re->rx_tasklet);
 	else
-		ramips_fe_int_enable(RAMIPS_RX_DLY_INT);
+		ramips_fe_int_enable(RX_DLY_INT);
 }
 
 static void
@@ -858,7 +886,7 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 	netdev_completed_queue(dev, pkts_compl, bytes_compl);
 	spin_unlock(&re->page_lock);
 
-	ramips_fe_int_enable(RAMIPS_TX_DLY_INT);
+	ramips_fe_int_enable(TX_DLY_INT);
 }
 
 static void
@@ -883,13 +911,13 @@ ramips_eth_irq(int irq, void *dev)
 
 	ramips_fe_twr(status, RAETH_REG_FE_INT_STATUS);
 
-	if (status & RAMIPS_RX_DLY_INT) {
-		ramips_fe_int_disable(RAMIPS_RX_DLY_INT);
+	if (status & RX_DLY_INT) {
+		ramips_fe_int_disable(RX_DLY_INT);
 		tasklet_schedule(&re->rx_tasklet);
 	}
 
-	if (status & RAMIPS_TX_DLY_INT) {
-		ramips_fe_int_disable(RAMIPS_TX_DLY_INT);
+	if (status & TX_DLY_INT) {
+		ramips_fe_int_disable(TX_DLY_INT);
 		tasklet_schedule(&re->tx_housekeeping_tasklet);
 	}
 
@@ -933,14 +961,20 @@ ramips_eth_open(struct net_device *dev)
 	ramips_phy_start(re);
 
 	ramips_fe_twr(RAMIPS_DELAY_INIT, RAETH_REG_DLY_INT_CFG);
-	ramips_fe_twr(RAMIPS_TX_DLY_INT | RAMIPS_RX_DLY_INT, RAETH_REG_FE_INT_ENABLE);
-	ramips_fe_wr(ramips_fe_rr(RAMIPS_GDMA1_FWD_CFG) &
-		~(RAMIPS_GDM1_ICS_EN | RAMIPS_GDM1_TCS_EN | RAMIPS_GDM1_UCS_EN | 0xffff),
-		RAMIPS_GDMA1_FWD_CFG);
-	ramips_fe_wr(ramips_fe_rr(RAMIPS_CDMA_CSG_CFG) &
-		~(RAMIPS_ICS_GEN_EN | RAMIPS_TCS_GEN_EN | RAMIPS_UCS_GEN_EN),
-		RAMIPS_CDMA_CSG_CFG);
-	ramips_fe_wr(RAMIPS_PSE_FQFC_CFG_INIT, RAMIPS_PSE_FQ_CFG);
+	ramips_fe_twr(TX_DLY_INT | RX_DLY_INT, RAETH_REG_FE_INT_ENABLE);
+	if (soc_is_rt5350()) {
+		ramips_fe_wr(ramips_fe_rr(RT5350_SDM_CFG) &
+			~(RT5350_SDM_ICS_EN | RT5350_SDM_TCS_EN | RT5350_SDM_UCS_EN | 0xffff),
+			RT5350_SDM_CFG);
+	} else {
+		ramips_fe_wr(ramips_fe_rr(RAMIPS_GDMA1_FWD_CFG) &
+			~(RAMIPS_GDM1_ICS_EN | RAMIPS_GDM1_TCS_EN | RAMIPS_GDM1_UCS_EN | 0xffff),
+			RAMIPS_GDMA1_FWD_CFG);
+		ramips_fe_wr(ramips_fe_rr(RAMIPS_CDMA_CSG_CFG) &
+			~(RAMIPS_ICS_GEN_EN | RAMIPS_TCS_GEN_EN | RAMIPS_UCS_GEN_EN),
+			RAMIPS_CDMA_CSG_CFG);
+		ramips_fe_wr(RAMIPS_PSE_FQFC_CFG_INIT, RAMIPS_PSE_FQ_CFG);
+	}
 	ramips_fe_wr(1, RAMIPS_FE_RST_GL);
 	ramips_fe_wr(0, RAMIPS_FE_RST_GL);
 
