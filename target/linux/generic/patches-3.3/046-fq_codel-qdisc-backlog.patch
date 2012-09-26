@@ -1,4 +1,9 @@
+From 7bd90773f89001ea4960ed47676b550137f3facb Mon Sep 17 00:00:00 2001
 From: Eric Dumazet <edumazet@google.com>
+Date: Wed, 16 May 2012 04:39:09 +0000
+Subject: [PATCH] fq_codel: should use qdisc backlog as threshold
+
+commit 865ec5523dadbedefbc5710a68969f686a28d928 upstream.
 
 codel_should_drop() logic allows a packet being not dropped if queue
 size is under max packet size.
@@ -14,6 +19,7 @@ Signed-off-by: Eric Dumazet <edumazet@google.com>
 Cc: Dave Taht <dave.taht@bufferbloat.net>
 Cc: Kathleen Nichols <nichols@pollere.com>
 Cc: Van Jacobson <van@pollere.net>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  include/net/codel.h      |   15 +++++++--------
  net/sched/sch_codel.c    |    4 ++--

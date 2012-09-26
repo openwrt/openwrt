@@ -1,7 +1,9 @@
-From 536edd67109df5e0cdb2c4ee759e9bade7976367 Mon Sep 17 00:00:00 2001
+From 4a8056dfeef49b306ad6af24a5563d7d6867aae0 Mon Sep 17 00:00:00 2001
 From: Eric Dumazet <edumazet@google.com>
 Date: Sat, 12 May 2012 03:32:13 +0000
-Subject: [PATCH 37/41] codel: use Newton method instead of sqrt() and divides
+Subject: [PATCH] codel: use Newton method instead of sqrt() and divides
+
+commit 536edd67109df5e0cdb2c4ee759e9bade7976367 upstream.
 
 As Van pointed out, interval/sqrt(count) can be implemented using
 multiplies only.
