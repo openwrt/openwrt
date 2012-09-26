@@ -1,8 +1,9 @@
-From 6ff272c9ad65eda219cd975b9da2dbc31cc812ee Mon Sep 17 00:00:00 2001
+From 03333931c17d9c62ba4063d4e4fec1578c0729a7 Mon Sep 17 00:00:00 2001
 From: Eric Dumazet <eric.dumazet@gmail.com>
 Date: Sat, 12 May 2012 21:23:23 +0000
-Subject: [PATCH 46/50] codel: use u16 field instead of 31bits for
- rec_inv_sqrt
+Subject: [PATCH] codel: use u16 field instead of 31bits for rec_inv_sqrt
+
+commit 6ff272c9ad65eda219cd975b9da2dbc31cc812ee upstream.
 
 David pointed out gcc might generate poor code with 31bit fields.
 
