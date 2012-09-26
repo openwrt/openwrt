@@ -7,7 +7,7 @@
 
 define Profile/NoWiFi
   NAME:=No WiFi (BCM6338)
-  PACKAGES:=kmod-spi-bitbang kmod-bcm63xx-spi
+  PACKAGES:=kmod-bcm63xx-spi
 endef
 
 define Profile/NoWiFi/description
