@@ -424,14 +424,14 @@ static int __init s3c2410ts_probe(struct platform_device *pdev)
 	ts_filter_chain_clear(ts.chain);
 
 	/* Get irqs */
-	if (request_irq(IRQ_ADC, stylus_action, IRQF_SAMPLE_RANDOM,
+	if (request_irq(IRQ_ADC, stylus_action, 0,
 						    "s3c2410_action", ts.dev)) {
 		dev_err(&pdev->dev, "Could not allocate ts IRQ_ADC !\n");
 		iounmap(base_addr);
 		ret = -EIO;
 		goto bail3;
 	}
-	if (request_irq(IRQ_TC, stylus_updown, IRQF_SAMPLE_RANDOM,
+	if (request_irq(IRQ_TC, stylus_updown, 0,
 			"s3c2410_action", ts.dev)) {
 		dev_err(&pdev->dev, "Could not allocate ts IRQ_TC !\n");
 		free_irq(IRQ_ADC, ts.dev);

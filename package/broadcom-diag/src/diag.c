@@ -1297,7 +1297,7 @@ static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 	if (irq == -EINVAL) return;
 	
 	if (enabled) {
-		if (request_irq(irq, handler, IRQF_SHARED | IRQF_SAMPLE_RANDOM, "gpio", handler))
+		if (request_irq(irq, handler, IRQF_SHARED, "gpio", handler))
 			return;
 	} else {
 		free_irq(irq, handler);

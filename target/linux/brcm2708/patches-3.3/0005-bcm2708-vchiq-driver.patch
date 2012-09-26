@@ -414,7 +414,7 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	}
 +
 +	err = request_irq(VCHIQ_DOORBELL_IRQ, vchiq_doorbell_irq,
-+		IRQF_SAMPLE_RANDOM | IRQF_IRQPOLL, "VCHIQ doorbell",
++		IRQF_IRQPOLL, "VCHIQ doorbell",
 +		state);
 +	if (err < 0)
 +	{
