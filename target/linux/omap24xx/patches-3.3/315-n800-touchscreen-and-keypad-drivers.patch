@@ -485,7 +485,7 @@ Touchscreen and keypad are fully functional, audio part only provides power mana
 +
 +	irq_set_irq_type(kp->irq, IRQ_TYPE_EDGE_FALLING);
 +
-+	r = request_irq(kp->irq, tsc2301_kp_irq_handler, IRQF_SAMPLE_RANDOM,
++	r = request_irq(kp->irq, tsc2301_kp_irq_handler, 0,
 +			"tsc2301-kp", tsc);
 +	if (r < 0) {
 +		dev_err(&tsc->spi->dev, "unable to get kbirq IRQ");
@@ -1179,7 +1179,7 @@ Touchscreen and keypad are fully functional, audio part only provides power mana
 +	tsc2301_ts_start_scan(tsc);
 +
 +	r = request_irq(ts->irq, tsc2301_ts_irq_handler,
-+			IRQF_SAMPLE_RANDOM | IRQF_TRIGGER_FALLING,
++			IRQF_TRIGGER_FALLING,
 +			"tsc2301-ts", tsc);
 +	if (r < 0) {
 +		dev_err(&tsc->spi->dev, "unable to get DAV IRQ");
