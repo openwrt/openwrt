@@ -1,7 +1,7 @@
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
-@@ -130,6 +130,9 @@
-  * 	void add_interrupt_randomness(int irq);
+@@ -131,6 +131,9 @@
+  *	void add_interrupt_randomness(int irq, int irq_flags);
   * 	void add_disk_randomness(struct gendisk *disk);
   *
 + *      void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
@@ -10,7 +10,7 @@
   * add_input_randomness() uses the input layer interrupt timing, as well as
   * the event type information from the hardware.
   *
-@@ -147,6 +150,13 @@
+@@ -152,6 +155,13 @@
   * seek times do not make for good sources of entropy, as their seek
   * times are usually fairly consistent.
   *
@@ -24,7 +24,7 @@
   * All of these routines try to estimate how many bits of randomness a
   * particular randomness source.  They do this by keeping track of the
   * first and second order deltas of the event timings.
-@@ -726,6 +736,63 @@ void add_disk_randomness(struct gendisk
+@@ -796,6 +806,63 @@ void add_disk_randomness(struct gendisk
  }
  #endif
  
@@ -40,7 +40,7 @@
 + */
 +void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
 +{
-+	mix_pool_bytes(&input_pool, buf, wordcount*4);
++	mix_pool_bytes(&input_pool, buf, wordcount*4, NULL);
 +
 +	credit_entropy_bits(&input_pool, ent_count);
 +
@@ -141,17 +141,17 @@
  struct rand_pool_info {
  	int	entropy_count;
  	int	buf_size;
-@@ -54,6 +78,10 @@ extern void add_input_randomness(unsigne
+@@ -53,6 +77,10 @@ extern void add_input_randomness(unsigne
  				 unsigned int value);
- extern void add_interrupt_randomness(int irq);
+ extern void add_interrupt_randomness(int irq, int irq_flags);
  
 +extern void random_input_words(__u32 *buf, size_t wordcount, int ent_count);
 +extern int random_input_wait(void);
 +#define HAS_RANDOM_INPUT_WAIT 1
 +
  extern void get_random_bytes(void *buf, int nbytes);
+ extern void get_random_bytes_arch(void *buf, int nbytes);
  void generate_random_uuid(unsigned char uuid_out[16]);
- 
 --- a/kernel/pid.c
 +++ b/kernel/pid.c
 @@ -430,6 +430,7 @@ struct task_struct *find_task_by_vpid(pi
