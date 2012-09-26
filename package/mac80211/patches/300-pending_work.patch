@@ -180,7 +180,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1101,6 +1144,9 @@ static void ieee80211_iface_work(struct 
+@@ -1101,6 +1144,9 @@ static void ieee80211_iface_work(struct
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -281,6 +281,13 @@
 +		list_for_each_entry_rcu(sdata, &local->interfaces, list) {
 +			if (!sdata->dev)
 +				continue;
++
++			if (skb->dev != sdata->dev)
++				continue;
++
++			found = true;
++			break;
++		}
  
 -			p2p_sdata = rcu_dereference(local->p2p_sdata);
 -			if (p2p_sdata) {
@@ -289,18 +296,11 @@
 -					skb->len, acked, GFP_ATOMIC);
 -			}
 -			rcu_read_unlock();
-+			if (skb->dev != sdata->dev)
-+				continue;
-+
-+			found = true;
-+			break;
- 		}
-+
 +		if (!skb->dev) {
 +			sdata = rcu_dereference(local->p2p_sdata);
 +			if (sdata)
 +				found = true;
-+		}
+ 		}
 +
 +		if (!found)
 +			skb->dev = NULL;

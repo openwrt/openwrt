@@ -186,7 +186,7 @@
  obj-$(CONFIG_RT2X00_LIB_PCI)		+= rt2x00pci.o
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -89,20 +89,10 @@ static void rt2800pci_mcu_status(struct 
+@@ -89,20 +89,10 @@ static void rt2800pci_mcu_status(struct
  	rt2x00pci_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
  }
  
@@ -198,12 +198,12 @@
 -	memcpy_fromio(rt2x00dev->eeprom, base_addr, EEPROM_SIZE);
 -
 -	iounmap(base_addr);
-+	memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data, EEPROM_SIZE);
- }
+-}
 -#else
 -static inline void rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
 -{
--}
++	memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data, EEPROM_SIZE);
+ }
 -#endif /* CONFIG_RALINK_RT288X || CONFIG_RALINK_RT305X */
  
  #ifdef CONFIG_PCI
