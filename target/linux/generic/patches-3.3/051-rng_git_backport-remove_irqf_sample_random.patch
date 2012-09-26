@@ -1,0 +1,543 @@
+--- a/arch/arm/mach-omap1/board-palmz71.c
++++ b/arch/arm/mach-omap1/board-palmz71.c
+@@ -291,8 +291,7 @@ palmz71_gpio_setup(int early)
+ 		}
+ 		gpio_direction_input(PALMZ71_USBDETECT_GPIO);
+ 		if (request_irq(gpio_to_irq(PALMZ71_USBDETECT_GPIO),
+-				palmz71_powercable, IRQF_SAMPLE_RANDOM,
+-				"palmz71-cable", 0))
++				palmz71_powercable, 0, "palmz71-cable", 0))
+ 			printk(KERN_ERR
+ 					"IRQ request for power cable failed!\n");
+ 		palmz71_powercable(gpio_to_irq(PALMZ71_USBDETECT_GPIO), 0);
+--- a/arch/arm/mach-pxa/lubbock.c
++++ b/arch/arm/mach-pxa/lubbock.c
+@@ -455,7 +455,7 @@ static int lubbock_mci_init(struct devic
+ 	init_timer(&mmc_timer);
+ 	mmc_timer.data = (unsigned long) data;
+ 	return request_irq(LUBBOCK_SD_IRQ, lubbock_detect_int,
+-			IRQF_SAMPLE_RANDOM, "lubbock-sd-detect", data);
++			   0, "lubbock-sd-detect", data);
+ }
+ 
+ static int lubbock_mci_get_ro(struct device *dev)
+--- a/arch/arm/mach-pxa/magician.c
++++ b/arch/arm/mach-pxa/magician.c
+@@ -617,9 +617,8 @@ static struct platform_device bq24022 =
+ static int magician_mci_init(struct device *dev,
+ 				irq_handler_t detect_irq, void *data)
+ {
+-	return request_irq(IRQ_MAGICIAN_SD, detect_irq,
+-				IRQF_DISABLED | IRQF_SAMPLE_RANDOM,
+-				"mmc card detect", data);
++	return request_irq(IRQ_MAGICIAN_SD, detect_irq, IRQF_DISABLED,
++			   "mmc card detect", data);
+ }
+ 
+ static void magician_mci_exit(struct device *dev, void *data)
+--- a/arch/arm/mach-pxa/trizeps4.c
++++ b/arch/arm/mach-pxa/trizeps4.c
+@@ -332,8 +332,8 @@ static int trizeps4_mci_init(struct devi
+ 	int err;
+ 
+ 	err = request_irq(TRIZEPS4_MMC_IRQ, mci_detect_int,
+-		IRQF_DISABLED | IRQF_TRIGGER_RISING | IRQF_SAMPLE_RANDOM,
+-		"MMC card detect", data);
++			  IRQF_DISABLED | IRQF_TRIGGER_RISING,
++			  "MMC card detect", data);
+ 	if (err) {
+ 		printk(KERN_ERR "trizeps4_mci_init: MMC/SD: can't request"
+ 						"MMC card detect IRQ\n");
+--- a/arch/ia64/kernel/irq_ia64.c
++++ b/arch/ia64/kernel/irq_ia64.c
+@@ -23,7 +23,6 @@
+ #include <linux/ioport.h>
+ #include <linux/kernel_stat.h>
+ #include <linux/ptrace.h>
+-#include <linux/random.h>	/* for rand_initialize_irq() */
+ #include <linux/signal.h>
+ #include <linux/smp.h>
+ #include <linux/threads.h>
+--- a/arch/sparc/kernel/ldc.c
++++ b/arch/sparc/kernel/ldc.c
+@@ -1250,14 +1250,12 @@ int ldc_bind(struct ldc_channel *lp, con
+ 	snprintf(lp->rx_irq_name, LDC_IRQ_NAME_MAX, "%s RX", name);
+ 	snprintf(lp->tx_irq_name, LDC_IRQ_NAME_MAX, "%s TX", name);
+ 
+-	err = request_irq(lp->cfg.rx_irq, ldc_rx,
+-			  IRQF_SAMPLE_RANDOM | IRQF_DISABLED,
++	err = request_irq(lp->cfg.rx_irq, ldc_rx, IRQF_DISABLED,
+ 			  lp->rx_irq_name, lp);
+ 	if (err)
+ 		return err;
+ 
+-	err = request_irq(lp->cfg.tx_irq, ldc_tx,
+-			  IRQF_SAMPLE_RANDOM | IRQF_DISABLED,
++	err = request_irq(lp->cfg.tx_irq, ldc_tx, IRQF_DISABLED,
+ 			  lp->tx_irq_name, lp);
+ 	if (err) {
+ 		free_irq(lp->cfg.rx_irq, lp);
+--- a/arch/um/drivers/line.c
++++ b/arch/um/drivers/line.c
+@@ -371,7 +371,7 @@ static irqreturn_t line_write_interrupt(
+ int line_setup_irq(int fd, int input, int output, struct line *line, void *data)
+ {
+ 	const struct line_driver *driver = line->driver;
+-	int err = 0, flags = IRQF_DISABLED | IRQF_SHARED | IRQF_SAMPLE_RANDOM;
++	int err = 0, flags = IRQF_DISABLED | IRQF_SHARED;
+ 
+ 	if (input)
+ 		err = um_request_irq(driver->read_irq, fd, IRQ_READ,
+@@ -807,7 +807,7 @@ void register_winch_irq(int fd, int tty_
+ 				   .stack	= stack });
+ 
+ 	if (um_request_irq(WINCH_IRQ, fd, IRQ_READ, winch_interrupt,
+-			   IRQF_DISABLED | IRQF_SHARED | IRQF_SAMPLE_RANDOM,
++			   IRQF_DISABLED | IRQF_SHARED,
+ 			   "winch", winch) < 0) {
+ 		printk(KERN_ERR "register_winch_irq - failed to register "
+ 		       "IRQ\n");
+--- a/arch/um/drivers/mconsole_kern.c
++++ b/arch/um/drivers/mconsole_kern.c
+@@ -773,7 +773,7 @@ static int __init mconsole_init(void)
+ 	register_reboot_notifier(&reboot_notifier);
+ 
+ 	err = um_request_irq(MCONSOLE_IRQ, sock, IRQ_READ, mconsole_interrupt,
+-			     IRQF_DISABLED | IRQF_SHARED | IRQF_SAMPLE_RANDOM,
++			     IRQF_DISABLED | IRQF_SHARED,
+ 			     "mconsole", (void *)sock);
+ 	if (err) {
+ 		printk(KERN_ERR "Failed to get IRQ for management console\n");
+--- a/arch/um/drivers/port_kern.c
++++ b/arch/um/drivers/port_kern.c
+@@ -100,7 +100,7 @@ static int port_accept(struct port_list
+ 		  .port 	= port });
+ 
+ 	if (um_request_irq(TELNETD_IRQ, socket[0], IRQ_READ, pipe_interrupt,
+-			  IRQF_DISABLED | IRQF_SHARED | IRQF_SAMPLE_RANDOM,
++			  IRQF_DISABLED | IRQF_SHARED,
+ 			  "telnetd", conn)) {
+ 		printk(KERN_ERR "port_accept : failed to get IRQ for "
+ 		       "telnetd\n");
+@@ -184,7 +184,7 @@ void *port_data(int port_num)
+ 	}
+ 
+ 	if (um_request_irq(ACCEPT_IRQ, fd, IRQ_READ, port_interrupt,
+-			  IRQF_DISABLED | IRQF_SHARED | IRQF_SAMPLE_RANDOM,
++			  IRQF_DISABLED | IRQF_SHARED,
+ 			  "port", port)) {
+ 		printk(KERN_ERR "Failed to get IRQ for port %d\n", port_num);
+ 		goto out_close;
+--- a/arch/um/drivers/random.c
++++ b/arch/um/drivers/random.c
+@@ -131,8 +131,7 @@ static int __init rng_init (void)
+ 	random_fd = err;
+ 
+ 	err = um_request_irq(RANDOM_IRQ, random_fd, IRQ_READ, random_interrupt,
+-			     IRQF_DISABLED | IRQF_SAMPLE_RANDOM, "random",
+-			     NULL);
++			     IRQF_DISABLED, "random", NULL);
+ 	if (err)
+ 		goto err_out_cleanup_hw;
+ 
+--- a/arch/um/drivers/xterm_kern.c
++++ b/arch/um/drivers/xterm_kern.c
+@@ -50,8 +50,7 @@ int xterm_fd(int socket, int *pid_out)
+ 	init_completion(&data->ready);
+ 
+ 	err = um_request_irq(XTERM_IRQ, socket, IRQ_READ, xterm_interrupt,
+-			     IRQF_DISABLED | IRQF_SHARED | IRQF_SAMPLE_RANDOM,
+-			     "xterm", data);
++			     IRQF_DISABLED | IRQF_SHARED, "xterm", data);
+ 	if (err) {
+ 		printk(KERN_ERR "xterm_fd : failed to get IRQ for xterm, "
+ 		       "err = %d\n",  err);
+--- a/arch/um/kernel/sigio.c
++++ b/arch/um/kernel/sigio.c
+@@ -25,8 +25,7 @@ int write_sigio_irq(int fd)
+ 	int err;
+ 
+ 	err = um_request_irq(SIGIO_WRITE_IRQ, fd, IRQ_READ, sigio_interrupt,
+-			     IRQF_DISABLED|IRQF_SAMPLE_RANDOM, "write sigio",
+-			     NULL);
++			     IRQF_DISABLED, "write sigio", NULL);
+ 	if (err) {
+ 		printk(KERN_ERR "write_sigio_irq : um_request_irq failed, "
+ 		       "err = %d\n", err);
+--- a/Documentation/feature-removal-schedule.txt
++++ b/Documentation/feature-removal-schedule.txt
+@@ -71,20 +71,6 @@ Who:	Luis R. Rodriguez <lrodriguez@ather
+ 
+ ---------------------------
+ 
+-What:	IRQF_SAMPLE_RANDOM
+-Check:	IRQF_SAMPLE_RANDOM
+-When:	July 2009
+-
+-Why:	Many of IRQF_SAMPLE_RANDOM users are technically bogus as entropy
+-	sources in the kernel's current entropy model. To resolve this, every
+-	input point to the kernel's entropy pool needs to better document the
+-	type of entropy source it actually is. This will be replaced with
+-	additional add_*_randomness functions in drivers/char/random.c
+-
+-Who:	Robin Getz <rgetz@blackfin.uclinux.org> & Matt Mackall <mpm@selenic.com>
+-
+----------------------------
+-
+ What:	The ieee80211_regdom module parameter
+ When:	March 2010 / desktop catchup
+ 
+--- a/drivers/block/xen-blkfront.c
++++ b/drivers/block/xen-blkfront.c
+@@ -852,9 +852,8 @@ static int setup_blkring(struct xenbus_d
+ 	if (err)
+ 		goto fail;
+ 
+-	err = bind_evtchn_to_irqhandler(info->evtchn,
+-					blkif_interrupt,
+-					IRQF_SAMPLE_RANDOM, "blkif", info);
++	err = bind_evtchn_to_irqhandler(info->evtchn, blkif_interrupt, 0,
++					"blkif", info);
+ 	if (err <= 0) {
+ 		xenbus_dev_fatal(dev, err,
+ 				 "bind_evtchn_to_irqhandler failed");
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -633,43 +633,6 @@ struct timer_rand_state {
+ 	unsigned dont_count_entropy:1;
+ };
+ 
+-#ifndef CONFIG_GENERIC_HARDIRQS
+-
+-static struct timer_rand_state *irq_timer_state[NR_IRQS];
+-
+-static struct timer_rand_state *get_timer_rand_state(unsigned int irq)
+-{
+-	return irq_timer_state[irq];
+-}
+-
+-static void set_timer_rand_state(unsigned int irq,
+-				 struct timer_rand_state *state)
+-{
+-	irq_timer_state[irq] = state;
+-}
+-
+-#else
+-
+-static struct timer_rand_state *get_timer_rand_state(unsigned int irq)
+-{
+-	struct irq_desc *desc;
+-
+-	desc = irq_to_desc(irq);
+-
+-	return desc->timer_rand_state;
+-}
+-
+-static void set_timer_rand_state(unsigned int irq,
+-				 struct timer_rand_state *state)
+-{
+-	struct irq_desc *desc;
+-
+-	desc = irq_to_desc(irq);
+-
+-	desc->timer_rand_state = state;
+-}
+-#endif
+-
+ /*
+  * Add device- or boot-specific data to the input and nonblocking
+  * pools to help initialize them to unique values.
+@@ -1131,24 +1094,6 @@ static int rand_initialize(void)
+ }
+ module_init(rand_initialize);
+ 
+-void rand_initialize_irq(int irq)
+-{
+-	struct timer_rand_state *state;
+-
+-	state = get_timer_rand_state(irq);
+-
+-	if (state)
+-		return;
+-
+-	/*
+-	 * If kzalloc returns null, we just won't use that entropy
+-	 * source.
+-	 */
+-	state = kzalloc(sizeof(struct timer_rand_state), GFP_KERNEL);
+-	if (state)
+-		set_timer_rand_state(irq, state);
+-}
+-
+ #ifdef CONFIG_BLOCK
+ void rand_initialize_disk(struct gendisk *disk)
+ {
+--- a/drivers/crypto/n2_core.c
++++ b/drivers/crypto/n2_core.c
+@@ -1607,8 +1607,7 @@ static int spu_map_ino(struct platform_d
+ 
+ 	sprintf(p->irq_name, "%s-%d", irq_name, index);
+ 
+-	return request_irq(p->irq, handler, IRQF_SAMPLE_RANDOM,
+-			   p->irq_name, p);
++	return request_irq(p->irq, handler, 0, p->irq_name, p);
+ }
+ 
+ static struct kmem_cache *queue_cache[2];
+--- a/drivers/hv/vmbus_drv.c
++++ b/drivers/hv/vmbus_drv.c
+@@ -545,8 +545,7 @@ static int vmbus_bus_init(int irq)
+ 	if (ret)
+ 		goto err_cleanup;
+ 
+-	ret = request_irq(irq, vmbus_isr, IRQF_SAMPLE_RANDOM,
+-			driver_name, hv_acpi_dev);
++	ret = request_irq(irq, vmbus_isr, 0, driver_name, hv_acpi_dev);
+ 
+ 	if (ret != 0) {
+ 		pr_err("Unable to request IRQ %d\n",
+--- a/drivers/i2c/busses/i2c-pmcmsp.c
++++ b/drivers/i2c/busses/i2c-pmcmsp.c
+@@ -306,8 +306,7 @@ static int __devinit pmcmsptwi_probe(str
+ 	pmcmsptwi_data.irq = platform_get_irq(pldev, 0);
+ 	if (pmcmsptwi_data.irq) {
+ 		rc = request_irq(pmcmsptwi_data.irq, &pmcmsptwi_interrupt,
+-			IRQF_SHARED | IRQF_SAMPLE_RANDOM,
+-			pldev->name, &pmcmsptwi_data);
++				 IRQF_SHARED, pldev->name, &pmcmsptwi_data);
+ 		if (rc == 0) {
+ 			/*
+ 			 * Enable 'DONE' interrupt only.
+--- a/drivers/input/serio/hp_sdc.c
++++ b/drivers/input/serio/hp_sdc.c
+@@ -879,7 +879,7 @@ static int __init hp_sdc_init(void)
+ #endif
+ 
+ 	errstr = "IRQ not available for";
+-	if (request_irq(hp_sdc.irq, &hp_sdc_isr, IRQF_SHARED|IRQF_SAMPLE_RANDOM,
++	if (request_irq(hp_sdc.irq, &hp_sdc_isr, IRQF_SHARED,
+ 			"HP SDC", &hp_sdc))
+ 		goto err1;
+ 
+--- a/drivers/mfd/ab3100-core.c
++++ b/drivers/mfd/ab3100-core.c
+@@ -937,9 +937,6 @@ static int __devinit ab3100_probe(struct
+ 
+ 	err = request_threaded_irq(client->irq, NULL, ab3100_irq_handler,
+ 				IRQF_ONESHOT, "ab3100-core", ab3100);
+-	/* This real unpredictable IRQ is of course sampled for entropy */
+-	rand_initialize_irq(client->irq);
+-
+ 	if (err)
+ 		goto exit_no_irq;
+ 
+--- a/drivers/mfd/tps65010.c
++++ b/drivers/mfd/tps65010.c
+@@ -563,8 +563,7 @@ static int tps65010_probe(struct i2c_cli
+ 	 */
+ 	if (client->irq > 0) {
+ 		status = request_irq(client->irq, tps65010_irq,
+-			IRQF_SAMPLE_RANDOM | IRQF_TRIGGER_FALLING,
+-			DRIVER_NAME, tps);
++			IRQF_TRIGGER_FALLING, DRIVER_NAME, tps);
+ 		if (status < 0) {
+ 			dev_dbg(&client->dev, "can't get IRQ %d, err %d\n",
+ 					client->irq, status);
+--- a/drivers/net/ethernet/broadcom/tg3.c
++++ b/drivers/net/ethernet/broadcom/tg3.c
+@@ -9415,7 +9415,7 @@ static int tg3_test_interrupt(struct tg3
+ 	}
+ 
+ 	err = request_irq(tnapi->irq_vec, tg3_test_isr,
+-			  IRQF_SHARED | IRQF_SAMPLE_RANDOM, dev->name, tnapi);
++			  IRQF_SHARED, dev->name, tnapi);
+ 	if (err)
+ 		return err;
+ 
+--- a/drivers/power/pda_power.c
++++ b/drivers/power/pda_power.c
+@@ -24,11 +24,7 @@
+ 
+ static inline unsigned int get_irq_flags(struct resource *res)
+ {
+-	unsigned int flags = IRQF_SAMPLE_RANDOM | IRQF_SHARED;
+-
+-	flags |= res->flags & IRQF_TRIGGER_MASK;
+-
+-	return flags;
++	return IRQF_SHARED | (res->flags & IRQF_TRIGGER_MASK);
+ }
+ 
+ static struct device *dev;
+--- a/drivers/tty/serial/uartlite.c
++++ b/drivers/tty/serial/uartlite.c
+@@ -216,8 +216,7 @@ static int ulite_startup(struct uart_por
+ {
+ 	int ret;
+ 
+-	ret = request_irq(port->irq, ulite_isr,
+-			  IRQF_SHARED | IRQF_SAMPLE_RANDOM, "uartlite", port);
++	ret = request_irq(port->irq, ulite_isr, IRQF_SHARED, "uartlite", port);
+ 	if (ret)
+ 		return ret;
+ 
+--- a/drivers/usb/gadget/goku_udc.c
++++ b/drivers/usb/gadget/goku_udc.c
+@@ -1839,7 +1839,7 @@ static int goku_probe(struct pci_dev *pd
+ 	/* init to known state, then setup irqs */
+ 	udc_reset(dev);
+ 	udc_reinit (dev);
+-	if (request_irq(pdev->irq, goku_irq, IRQF_SHARED/*|IRQF_SAMPLE_RANDOM*/,
++	if (request_irq(pdev->irq, goku_irq, IRQF_SHARED,
+ 			driver_name, dev) != 0) {
+ 		DBG(dev, "request interrupt %d failed\n", pdev->irq);
+ 		retval = -EBUSY;
+--- a/drivers/usb/gadget/omap_udc.c
++++ b/drivers/usb/gadget/omap_udc.c
+@@ -2943,7 +2943,7 @@ known:
+ 
+ 	/* USB general purpose IRQ:  ep0, state changes, dma, etc */
+ 	status = request_irq(pdev->resource[1].start, omap_udc_irq,
+-			IRQF_SAMPLE_RANDOM, driver_name, udc);
++			     0, driver_name, udc);
+ 	if (status != 0) {
+ 		ERR("can't get irq %d, err %d\n",
+ 			(int) pdev->resource[1].start, status);
+@@ -2952,7 +2952,7 @@ known:
+ 
+ 	/* USB "non-iso" IRQ (PIO for all but ep0) */
+ 	status = request_irq(pdev->resource[2].start, omap_udc_pio_irq,
+-			IRQF_SAMPLE_RANDOM, "omap_udc pio", udc);
++			     0, "omap_udc pio", udc);
+ 	if (status != 0) {
+ 		ERR("can't get irq %d, err %d\n",
+ 			(int) pdev->resource[2].start, status);
+--- a/drivers/usb/gadget/pxa25x_udc.c
++++ b/drivers/usb/gadget/pxa25x_udc.c
+@@ -2202,19 +2202,15 @@ static int __init pxa25x_udc_probe(struc
+ 
+ #ifdef CONFIG_ARCH_LUBBOCK
+ 	if (machine_is_lubbock()) {
+-		retval = request_irq(LUBBOCK_USB_DISC_IRQ,
+-				lubbock_vbus_irq,
+-				IRQF_SAMPLE_RANDOM,
+-				driver_name, dev);
++		retval = request_irq(LUBBOCK_USB_DISC_IRQ, lubbock_vbus_irq,
++				     0, driver_name, dev);
+ 		if (retval != 0) {
+ 			pr_err("%s: can't get irq %i, err %d\n",
+ 				driver_name, LUBBOCK_USB_DISC_IRQ, retval);
+ 			goto err_irq_lub;
+ 		}
+-		retval = request_irq(LUBBOCK_USB_IRQ,
+-				lubbock_vbus_irq,
+-				IRQF_SAMPLE_RANDOM,
+-				driver_name, dev);
++		retval = request_irq(LUBBOCK_USB_IRQ, lubbock_vbus_irq,
++				     0, driver_name, dev);
+ 		if (retval != 0) {
+ 			pr_err("%s: can't get irq %i, err %d\n",
+ 				driver_name, LUBBOCK_USB_IRQ, retval);
+--- a/drivers/usb/otg/gpio_vbus.c
++++ b/drivers/usb/otg/gpio_vbus.c
+@@ -51,8 +51,7 @@ struct gpio_vbus_data {
+  * edges might be workable.
+  */
+ #define VBUS_IRQ_FLAGS \
+-	( IRQF_SAMPLE_RANDOM | IRQF_SHARED \
+-	| IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING )
++	( IRQF_SHARED | IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING )
+ 
+ 
+ /* interface to regulator framework */
+@@ -253,7 +252,7 @@ static int __init gpio_vbus_probe(struct
+ 	if (res) {
+ 		irq = res->start;
+ 		res->flags &= IRQF_TRIGGER_MASK;
+-		res->flags |= IRQF_SAMPLE_RANDOM | IRQF_SHARED;
++		res->flags |= IRQF_SHARED;
+ 	} else
+ 		irq = gpio_to_irq(gpio);
+ 
+--- a/drivers/usb/otg/isp1301_omap.c
++++ b/drivers/usb/otg/isp1301_omap.c
+@@ -1567,7 +1567,6 @@ isp1301_probe(struct i2c_client *i2c, co
+ 		isp->irq_type = IRQF_TRIGGER_FALLING;
+ 	}
+ 
+-	isp->irq_type |= IRQF_SAMPLE_RANDOM;
+ 	status = request_irq(i2c->irq, isp1301_irq,
+ 			isp->irq_type, DRIVER_NAME, isp);
+ 	if (status < 0) {
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -44,7 +44,6 @@
+  *
+  * IRQF_DISABLED - keep irqs disabled when calling the action handler.
+  *                 DEPRECATED. This flag is a NOOP and scheduled to be removed
+- * IRQF_SAMPLE_RANDOM - irq is used to feed the random generator
+  * IRQF_SHARED - allow sharing the irq among several devices
+  * IRQF_PROBE_SHARED - set by callers when they expect sharing mismatches to occur
+  * IRQF_TIMER - Flag to mark this interrupt as timer interrupt
+@@ -63,7 +62,6 @@
+  *                resume time.
+  */
+ #define IRQF_DISABLED		0x00000020
+-#define IRQF_SAMPLE_RANDOM	0x00000040
+ #define IRQF_SHARED		0x00000080
+ #define IRQF_PROBE_SHARED	0x00000100
+ #define __IRQF_TIMER		0x00000200
+--- a/include/linux/irqdesc.h
++++ b/include/linux/irqdesc.h
+@@ -39,7 +39,6 @@ struct module;
+  */
+ struct irq_desc {
+ 	struct irq_data		irq_data;
+-	struct timer_rand_state *timer_rand_state;
+ 	unsigned int __percpu	*kstat_irqs;
+ 	irq_flow_handler_t	handle_irq;
+ #ifdef CONFIG_IRQ_PREFLOW_FASTEOI
+--- a/include/linux/random.h
++++ b/include/linux/random.h
+@@ -48,8 +48,6 @@ struct rnd_state {
+ 
+ #ifdef __KERNEL__
+ 
+-extern void rand_initialize_irq(int irq);
+-
+ extern void add_device_randomness(const void *, unsigned int);
+ extern void add_input_randomness(unsigned int type, unsigned int code,
+ 				 unsigned int value);
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -891,22 +891,6 @@ __setup_irq(unsigned int irq, struct irq
+ 		return -ENOSYS;
+ 	if (!try_module_get(desc->owner))
+ 		return -ENODEV;
+-	/*
+-	 * Some drivers like serial.c use request_irq() heavily,
+-	 * so we have to be careful not to interfere with a
+-	 * running system.
+-	 */
+-	if (new->flags & IRQF_SAMPLE_RANDOM) {
+-		/*
+-		 * This function might sleep, we want to call it first,
+-		 * outside of the atomic block.
+-		 * Yes, this might clear the entropy pool if the wrong
+-		 * driver is attempted to be loaded, without actually
+-		 * installing a new handler, but is this really a problem,
+-		 * only the sysadmin is able to do this.
+-		 */
+-		rand_initialize_irq(irq);
+-	}
+ 
+ 	/*
+ 	 * Check whether the interrupt nests into another interrupt
+@@ -1342,7 +1326,6 @@ EXPORT_SYMBOL(free_irq);
+  *	Flags:
+  *
+  *	IRQF_SHARED		Interrupt is shared
+- *	IRQF_SAMPLE_RANDOM	The interrupt can be used for entropy
+  *	IRQF_TRIGGER_*		Specify active edge(s) or level
+  *
+  */
