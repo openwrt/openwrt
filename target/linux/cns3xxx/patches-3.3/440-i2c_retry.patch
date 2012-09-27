@@ -1,0 +1,72 @@
+--- a/drivers/i2c/busses/i2c-cns3xxx.c
++++ b/drivers/i2c/busses/i2c-cns3xxx.c
+@@ -2,8 +2,9 @@
+  * Cavium CNS3xxx I2C Host Controller
+  *
+  * Copyright 2010 Cavium Network
+- * Copyright 2011 Gateworks Corporation
++ * Copyright 2012 Gateworks Corporation
+  *		  Chris Lang <clang@gateworks.com>
++ *        Tim Harvey <tharvey@gateworks.com>
+  *
+  * This file is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License, Version 2, as
+@@ -63,13 +64,15 @@
+ #define STATE_ERROR		2
+ 
+ struct cns3xxx_i2c {
+-	void __iomem *base;
+-	wait_queue_head_t wait;
+-	struct i2c_adapter adap;
+-	struct i2c_msg *msg;
+-	int state;		/* see STATE_ */
+-	int rd_wr_len;
+-	u8 *buf;
++	struct device		*dev;
++	void __iomem		*base;		/* virtual */
++	wait_queue_head_t	wait;
++	struct i2c_adapter	adap;
++	struct i2c_msg		*msg;
++	u8			state;		/* see STATE_ */
++	u8			error;		/* see TWI_STATUS register */
++	int			rd_wr_len;
++	u8			*buf;
+ };
+ 
+ static u32 cns3xxx_i2c_func(struct i2c_adapter *adap)
+@@ -150,14 +153,18 @@ cns3xxx_i2c_xfer_msg(struct i2c_adapter
+ 
+ 		// Start the Transfer
+ 		i2c->state = 0;		// Clear out the State
++		i2c->error = 0;
+ 		I2C_CONTROLLER_REG |= (1 << 6);
+ 
+ 		if (wait_event_timeout(i2c->wait, (i2c->state == STATE_ERROR) ||
+ 				(i2c->state == STATE_DONE), TWI_TIMEOUT)) {
+ 			if (i2c->state == STATE_ERROR) {
+-				return -EIO;
++				dev_dbg(i2c->dev, "controller error: 0x%2x", i2c->error);
++				return -EAGAIN; // try again
+ 			}
+ 		} else {
++			dev_err(i2c->dev, "controller timed out "
++				"waiting for start condition to finish\n");
+ 			return -ETIMEDOUT;
+ 		}
+ 	}
+@@ -238,6 +245,7 @@ static irqreturn_t cns3xxx_i2c_isr(int i
+ 
+ 	if (stat & I2C_BUS_ERROR_FLAG) {
+ 		i2c->state = STATE_ERROR;
++		i2c->error = (I2C_INTERRUPT_STATUS_REG & 0xff00)>>8;
+ 	} else {
+ 		if (i2c->msg->flags & I2C_M_RD) {
+ 			for (i = 0; i <= i2c->rd_wr_len; i++)
+@@ -280,6 +288,7 @@ static int __devinit cns3xxx_i2c_probe(s
+ 		goto request_mem_failed;
+ 	}
+ 
++	i2c->dev = &pdev->dev;
+ 	i2c->base = ioremap(res->start, res->end - res->start + 1);
+ 	if (!i2c->base) {
+ 		dev_err(&pdev->dev, "Unable to map registers\n");
