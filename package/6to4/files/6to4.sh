@@ -108,10 +108,15 @@ proto_6to4_setup() {
 
 	( proto_add_host_dependency "$cfg" 0.0.0.0 )
 
+	local wanif
+	if ! network_find_wan wanif; then
+		proto_notify_error "$cfg" "NO_WAN_LINK"
+		return
+	fi
+
 	[ -z "$ipaddr" ] && {
-		local wanif
-		if ! network_find_wan wanif || ! network_get_ipaddr ipaddr "$wanif"; then
-			proto_notify_error "$cfg" "NO_WAN_LINK"
+		if ! network_get_ipaddr ipaddr "$wanif"; then
+			proto_notify_error "$cfg" "NO_WAN_ADDRESS"
 			return
 		fi
 	}
@@ -159,7 +164,7 @@ proto_6to4_setup() {
 
 			set_6to4_radvd_interface "$sid" "$adv_interface" "$mtu"
 			set_6to4_radvd_prefix    "$sid" "$adv_interface" \
-				"$wancfg" "$(printf "0:0:0:%x::/64" $adv_subnet)" \
+				"$wanif" "$(printf "0:0:0:%x::/64" $adv_subnet)" \
 				"$adv_valid_lifetime" "$adv_preferred_lifetime"
 
 			adv_subnets="${adv_subnets:+$adv_subnets }$adv_ifname:$subnet6"
