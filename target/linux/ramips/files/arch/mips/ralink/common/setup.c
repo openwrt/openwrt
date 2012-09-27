@@ -21,6 +21,7 @@
 #include <asm/mach-ralink/machine.h>
 
 unsigned char ramips_sys_type[RAMIPS_SYS_TYPE_LEN];
+unsigned long (*ramips_get_mem_size)(void);
 
 const char *get_system_type(void)
 {
@@ -30,13 +31,18 @@ const char *get_system_type(void)
 static void __init detect_mem_size(void)
 {
 	unsigned long size;
-	void *base;
 
-	base = (void *) KSEG1ADDR(detect_mem_size);
-	for (size = ramips_mem_size_min; size < ramips_mem_size_max;
-	     size <<= 1 ) {
-		if (!memcmp(base, base + size, 1024))
-			break;
+	if (ramips_get_mem_size) {
+		size = ramips_get_mem_size();
+	} else {
+		void *base;
+
+		base = (void *) KSEG1ADDR(detect_mem_size);
+		for (size = ramips_mem_size_min; size < ramips_mem_size_max;
+		     size <<= 1 ) {
+			if (!memcmp(base, base + size, 1024))
+				break;
+		}
 	}
 
 	add_memory_region(ramips_mem_base, size, BOOT_MEM_RAM);
