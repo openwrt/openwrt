@@ -26,6 +26,40 @@ void __iomem * rt305x_sysc_base;
 void __iomem * rt305x_memc_base;
 enum rt305x_soc_type rt305x_soc;
 
+static unsigned long rt5350_get_mem_size(void)
+{
+	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT305X_SYSC_BASE);
+	unsigned long ret;
+	u32 t;
+
+	t = __raw_readl(sysc + SYSC_REG_SYSTEM_CONFIG);
+	t = (t >> RT5350_SYSCFG0_DRAM_SIZE_SHIFT) &
+	    RT5350_SYSCFG0_DRAM_SIZE_MASK;
+
+	switch (t) {
+	case RT5350_SYSCFG0_DRAM_SIZE_2M:
+		ret = 2 * 1024 * 1024;
+		break;
+	case RT5350_SYSCFG0_DRAM_SIZE_8M:
+		ret = 8 * 1024 * 1024;
+		break;
+	case RT5350_SYSCFG0_DRAM_SIZE_16M:
+		ret = 16 * 1024 * 1024;
+		break;
+	case RT5350_SYSCFG0_DRAM_SIZE_32M:
+		ret = 32 * 1024 * 1024;
+		break;
+	case RT5350_SYSCFG0_DRAM_SIZE_64M:
+		ret = 64 * 1024 * 1024;
+		break;
+	default:
+		panic("rt5350: invalid DRAM size: %u", t);
+		break;
+	}
+
+	return ret;
+}
+
 void __init ramips_soc_prom_init(void)
 {
 	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT305X_SYSC_BASE);
@@ -71,7 +105,9 @@ void __init ramips_soc_prom_init(void)
 
 	ramips_mem_base = RT305X_SDRAM_BASE;
 
-	if (soc_is_rt305x() || soc_is_rt3350() || soc_is_rt5350()) {
+	if (soc_is_rt5350()) {
+		ramips_get_mem_size = rt5350_get_mem_size;
+	} else if (soc_is_rt305x() || soc_is_rt3350() ) {
 		ramips_mem_size_min = RT305X_MEM_SIZE_MIN;
 		ramips_mem_size_max = RT305X_MEM_SIZE_MAX;
 	} else if (soc_is_rt3352()) {
