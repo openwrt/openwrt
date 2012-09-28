@@ -535,6 +535,7 @@ arv4518pw_init(void)
 	arv_register_ethernet(ARV4518PW_MAC_ADDR);
 	arv_register_ath5k(ARV4518PW_ATH_ADDR, ARV4518PW_MAC_ADDR);
 	ltq_register_ath5k(arv_ath5k_eeprom_data, arv_athxk_eeprom_mac);
+	ltq_register_tapi();
 
 	gpio_request(ARV4518PW_SWITCH_RESET, "switch");
 	gpio_direction_output(ARV4518PW_SWITCH_RESET, 1);
@@ -567,6 +568,7 @@ arv4519pw_init(void)
 	arv_register_ethernet(ARV4519PW_MAC_ADDR);
 	arv_register_ath5k(ARV4519PW_ATH_ADDR, ARV4519PW_MAC_ADDR);
 	ltq_register_ath5k(arv_ath5k_eeprom_data, arv_athxk_eeprom_mac);
+	ltq_register_tapi();
 
 	gpio_request(ARV4519PW_RELAY, "relay");
 	gpio_direction_output(ARV4519PW_RELAY, 1);
@@ -598,6 +600,7 @@ arv4520pw_init(void)
 	arv_register_ethernet(ARV4520PW_MAC_ADDR);
 	ltq_register_rt2x00(NULL, (const u8 *) ltq_eth_data.mac.sa_data);
 	xway_register_dwc(ARV4520PW_USB);
+	ltq_register_tapi();
 
 	gpio_request(ARV4520PW_SWITCH_RESET, "switch");
 	gpio_set_value(ARV4520PW_SWITCH_RESET, 1);
@@ -627,6 +630,7 @@ arv452Cpw_init(void)
 	arv_register_ethernet(ARV452CPW_MAC_ADDR);
 	arv_register_ath5k(ARV452CPW_ATH_ADDR, ARV452CPW_MAC_ADDR);
 	ltq_register_ath5k(arv_ath5k_eeprom_data, arv_athxk_eeprom_mac);
+	ltq_register_tapi();
 
 	gpio_request(ARV452CPW_SWITCH_RESET, "switch");
 	gpio_set_value(ARV452CPW_SWITCH_RESET, 1);
@@ -663,6 +667,7 @@ arv4525pw_init(void)
 	ltq_register_ath5k(arv_ath5k_eeprom_data, arv_athxk_eeprom_mac);
 	ltq_eth_data.mii_mode = PHY_INTERFACE_MODE_MII;
 	arv_register_ethernet(ARV4525PW_MAC_ADDR);
+	ltq_register_tapi();
 }
 
 MIPS_MACHINE(LANTIQ_MACH_ARV4525PW,
@@ -715,6 +720,7 @@ arv7518pw_init(void)
 	arv_register_ath9k(ARV7518PW_ATH_ADDR, ARV7518PW_MAC_ADDR);
 	ltq_register_ath9k(arv_ath9k_eeprom_data, arv_athxk_eeprom_mac);
 	ltq_pci_ath_fixup(14, arv_ath9k_eeprom_data);
+	ltq_register_tapi();
 
 	gpio_request(ARV7518PW_SWITCH_RESET, "switch");
 	gpio_direction_output(ARV7518PW_SWITCH_RESET, 1);
@@ -744,6 +750,7 @@ arv752dpw22_init(void)
 	ltq_register_pci(&ltq_pci_data);
 	xway_register_dwc(ARV752DPW22_USB);
 	arv_register_ethernet(ARV752DPW22_MAC_ADDR);
+	ltq_register_tapi();
 
 	gpio_request(ARV752DPW22_RELAY, "relay");
 	gpio_set_value(ARV752DPW22_RELAY, 1);
@@ -770,6 +777,7 @@ arv752dpw_init(void)
 	ltq_pci_data.irq[14] = (INT_NUM_IM3_IRL0 + 31);
 	ltq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
 	ltq_register_pci(&ltq_pci_data);
+	ltq_register_tapi();
 	xway_register_dwc(ARV752DPW22_USB);
 	ltq_register_rt2x00("RT2860.eeprom", NULL);
 	arv_register_ethernet(ARV752DPW22_MAC_ADDR);
