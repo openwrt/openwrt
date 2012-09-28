@@ -7887,7 +7887,7 @@
 +#endif
 --- /dev/null
 +++ b/drivers/usb/dwc/otg_hcd.c
-@@ -0,0 +1,2735 @@
+@@ -0,0 +1,2752 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd.c $
 + * $Revision: #75 $
@@ -8056,7 +8056,9 @@
 +	dwc_otg_qh_t		*qh;
 +	struct list_head	*qtd_item;
 +	dwc_otg_qtd_t		*qtd;
++	unsigned long		flags;
 +
++	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
 +	list_for_each(qh_item, qh_list) {
 +		qh = list_entry(qh_item, dwc_otg_qh_t, qh_list_entry);
 +		for (qtd_item = qh->qtd_list.next;
@@ -8070,6 +8072,7 @@
 +			dwc_otg_hcd_qtd_remove_and_free(hcd, qtd);
 +		}
 +	}
++	SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
 +}
 +
 +/**
@@ -8313,10 +8316,14 @@
 +	hcd->regs = otg_dev->base;
 +	hcd->self.otg_port = 1;
 +
++	/* Integrate TT in root hub, by default this is disbled. */
++	hcd->has_tt = 1;
++
 +	/* Initialize the DWC OTG HCD. */
 +	dwc_otg_hcd = hcd_to_dwc_otg_hcd(hcd);
 +	dwc_otg_hcd->core_if = otg_dev->core_if;
 +	otg_dev->hcd = dwc_otg_hcd;
++	init_hcd_usecs(dwc_otg_hcd);
 +
 +	/* */
 +	spin_lock_init(&dwc_otg_hcd->lock);
@@ -8534,6 +8541,7 @@
 +{
 +	struct list_head 	*item;
 +	dwc_otg_qh_t		*qh;
++	unsigned long flags;
 +
 +	if (!qh_list->next) {
 +		/* The list hasn't been initialized yet. */
@@ -8543,10 +8551,12 @@
 +	/* Ensure there are no QTDs or URBs left. */
 +	kill_urbs_in_qh_list(hcd, qh_list);
 +
++	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
 +	for (item = qh_list->next; item != qh_list; item = qh_list->next) {
 +		qh = list_entry(item, dwc_otg_qh_t, qh_list_entry);
 +		dwc_otg_hcd_qh_remove_and_free(hcd, qh);
 +	}
++	SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
 +}
 +
 +/**
@@ -8838,6 +8848,10 @@
 +	urb_qtd = (dwc_otg_qtd_t *)urb->hcpriv;
 +	qh = (dwc_otg_qh_t *)ep->hcpriv;
 +
++	if (urb_qtd == NULL) {
++		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
++		return 0;
++	}
 +#ifdef DEBUG
 +	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
 +		dump_urb_info(urb, "dwc_otg_hcd_urb_dequeue");
@@ -8869,14 +8883,16 @@
 +	 */
 +	dwc_otg_hcd_qtd_remove_and_free(dwc_otg_hcd, urb_qtd);
 +	if (urb_qtd == qh->qtd_in_process) {
++		/* Note that dwc_otg_hcd_qh_deactivate() locks the spin_lock again */
++		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 +		dwc_otg_hcd_qh_deactivate(dwc_otg_hcd, qh, 0);
 +		qh->channel = NULL;
 +		qh->qtd_in_process = NULL;
-+	} else if (list_empty(&qh->qtd_list)) {
-+		dwc_otg_hcd_qh_remove(dwc_otg_hcd, qh);
++	} else {
++		if (list_empty(&qh->qtd_list))
++			dwc_otg_hcd_qh_remove(dwc_otg_hcd, qh);
++		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 +	}
-+
-+	SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 +
 +	urb->hcpriv = NULL;
 +
@@ -8928,7 +8944,6 @@
 +	ep->hcpriv = NULL;
 +done:
 +	SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
-+
 +}
 +
 +/** Handles host mode interrupts for the DWC_otg controller. Returns IRQ_NONE if
@@ -10085,6 +10100,7 @@
 +	DWC_DEBUGPL(DBG_HCD, "  Select Transactions\n");
 +#endif
 +
++	spin_lock(&hcd->lock);
 +	/* Process entries in the periodic ready list. */
 +	qh_ptr = hcd->periodic_sched_ready.next;
 +	while (qh_ptr != &hcd->periodic_sched_ready &&
@@ -10133,6 +10149,7 @@
 +
 +		hcd->non_periodic_channels++;
 +	}
++	spin_unlock(&hcd->lock);
 +
 +	return ret_val;
 +}
@@ -10625,7 +10642,7 @@
 +#endif /* DWC_DEVICE_ONLY */
 --- /dev/null
 +++ b/drivers/usb/dwc/otg_hcd.h
-@@ -0,0 +1,647 @@
+@@ -0,0 +1,652 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd.h $
 + * $Revision: #45 $
@@ -10825,6 +10842,9 @@
 +	/** (micro)frame at which last start split was initialized. */
 +	uint16_t		start_split_frame;
 +
++	u16 speed;
++	u16 frame_usecs[8];
++
 +	/** @} */
 +
 +	/** Entry for QH in either the periodic or non-periodic schedule. */
@@ -10927,6 +10947,18 @@
 +	 * periodic transfers may occur in the same (micro)frame.
 +	 */
 +	uint16_t		periodic_usecs;
++
++	/*
++	 * Total bandwidth claimed so far for all periodic transfers
++	 * in a frame.
++	 * This will include a mixture of HS and FS transfers.
++	 * Units are microseconds per (micro)frame.
++	 * We have a budget per frame and have to schedule
++	 * transactions accordingly.
++	 * Watch out for the fact that things are actually scheduled for the
++	 * "next frame".
++	 */
++	u16 frame_usecs[8];
 +
 +	/**
 +	 * Frame number read from the core at SOF. The value ranges from 0 to
@@ -11089,6 +11121,7 @@
 +/** @{ */
 +
 +/* Implemented in dwc_otg_hcd_queue.c */
++extern int init_hcd_usecs(dwc_otg_hcd_t *hcd);
 +extern dwc_otg_qh_t *dwc_otg_hcd_qh_create(dwc_otg_hcd_t *hcd, struct urb *urb);
 +extern void dwc_otg_hcd_qh_init(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh, struct urb *urb);
 +extern void dwc_otg_hcd_qh_free(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh);
@@ -11130,21 +11163,10 @@
 +	kfree(qtd);
 +}
 +
-+/** Removes a QTD from list.
-+ * @param[in] hcd HCD instance.
-+ * @param[in] qtd QTD to remove from list. */
-+static inline void dwc_otg_hcd_qtd_remove(dwc_otg_hcd_t *hcd, dwc_otg_qtd_t *qtd)
-+{
-+	unsigned long flags;
-+	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
-+	list_del(&qtd->qtd_list_entry);
-+	SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
-+}
-+
 +/** Remove and free a QTD */
 +static inline void dwc_otg_hcd_qtd_remove_and_free(dwc_otg_hcd_t *hcd, dwc_otg_qtd_t *qtd)
 +{
-+	dwc_otg_hcd_qtd_remove(hcd, qtd);
++	list_del(&qtd->qtd_list_entry);
 +	dwc_otg_hcd_qtd_free(qtd);
 +}
 +
@@ -11275,7 +11297,7 @@
 +#endif /* DWC_DEVICE_ONLY */
 --- /dev/null
 +++ b/drivers/usb/dwc/otg_hcd_intr.c
-@@ -0,0 +1,1826 @@
+@@ -0,0 +1,1828 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd_intr.c $
 + * $Revision: #70 $
@@ -11884,6 +11906,7 @@
 +
 +	DWC_DEBUGPL(DBG_HCDV, "  %s(%p,%p,%d)\n", __func__, hcd, qh, free_qtd);
 +
++	spin_lock(&hcd->lock);
 +	qtd = list_entry(qh->qtd_list.next, dwc_otg_qtd_t, qtd_list_entry);
 +
 +	if (qtd->complete_split) {
@@ -11900,6 +11923,7 @@
 +
 +	qh->channel = NULL;
 +	qh->qtd_in_process = NULL;
++	spin_unlock(&hcd->lock);
 +	dwc_otg_hcd_qh_deactivate(hcd, qh, continue_split);
 +}
 +
@@ -13104,7 +13128,7 @@
 +#endif /* DWC_DEVICE_ONLY */
 --- /dev/null
 +++ b/drivers/usb/dwc/otg_hcd_queue.c
-@@ -0,0 +1,713 @@
+@@ -0,0 +1,794 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd_queue.c $
 + * $Revision: #33 $
@@ -13262,6 +13286,7 @@
 +	INIT_LIST_HEAD(&qh->qtd_list);
 +	INIT_LIST_HEAD(&qh->qh_list_entry);
 +	qh->channel = NULL;
++	qh->speed = urb->dev->speed;
 +
 +	/* FS/LS Enpoint on HS Hub
 +	 * NOT virtual root hub */
@@ -13283,10 +13308,10 @@
 +
 +		/** @todo Account for split transfers in the bus time. */
 +		int bytecount = dwc_hb_mult(qh->maxp) * dwc_max_packet(qh->maxp);
-+		qh->usecs = usb_calc_bus_time(urb->dev->speed,
++		qh->usecs = NS_TO_US(usb_calc_bus_time(urb->dev->speed,
 +					       usb_pipein(urb->pipe),
 +					       (qh->ep_type == USB_ENDPOINT_XFER_ISOC),
-+					       bytecount);
++					       bytecount));
 +
 +		/* Start in a slightly future (micro)frame. */
 +		qh->sched_frame = dwc_frame_num_inc(hcd->frame_number,
@@ -13365,73 +13390,159 @@
 +}
 +
 +/**
-+ * Checks that a channel is available for a periodic transfer.
-+ *
-+ * @return 0 if successful, negative error code otherise.
++ * Microframe scheduler
++ * track the total use in hcd->frame_usecs
++ * keep each qh use in qh->frame_usecs
++ * when surrendering the qh then donate the time back
 + */
-+static int periodic_channel_available(dwc_otg_hcd_t *hcd)
++static const u16 max_uframe_usecs[] = { 100, 100, 100, 100, 100, 100, 30, 0 };
++
++/*
++ * called from dwc_otg_hcd.c:dwc_otg_hcd_init
++ */
++int init_hcd_usecs(dwc_otg_hcd_t *hcd)
 +{
-+	/*
-+	 * Currently assuming that there is a dedicated host channnel for each
-+	 * periodic transaction plus at least one host channel for
-+	 * non-periodic transactions.
-+	 */
-+	int status;
-+	int num_channels;
++	int i;
 +
-+	num_channels = hcd->core_if->core_params->host_channels;
-+	if ((hcd->periodic_channels + hcd->non_periodic_channels < num_channels) &&
-+	    (hcd->periodic_channels < num_channels - 1)) {
-+		status = 0;
-+	}
-+	else {
-+		DWC_NOTICE("%s: Total channels: %d, Periodic: %d, Non-periodic: %d\n",
-+			   __func__, num_channels, hcd->periodic_channels,
-+			   hcd->non_periodic_channels);
-+		status = -ENOSPC;
-+	}
++	for (i = 0; i < 8; i++)
++		hcd->frame_usecs[i] = max_uframe_usecs[i];
 +
-+	return status;
++	return 0;
 +}
 +
-+/**
-+ * Checks that there is sufficient bandwidth for the specified QH in the
-+ * periodic schedule. For simplicity, this calculation assumes that all the
-+ * transfers in the periodic schedule may occur in the same (micro)frame.
-+ *
-+ * @param hcd The HCD state structure for the DWC OTG controller.
-+ * @param qh QH containing periodic bandwidth required.
-+ *
-+ * @return 0 if successful, negative error code otherwise.
-+ */
-+static int check_periodic_bandwidth(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
++static int find_single_uframe(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 +{
-+	int 		status;
-+	uint16_t 	max_claimed_usecs;
++	int i;
++	u16 utime;
++	int t_left;
++	int ret;
++	int done;
 +
-+	status = 0;
-+
-+	if (hcd->core_if->core_params->speed == DWC_SPEED_PARAM_HIGH) {
-+		/*
-+		 * High speed mode.
-+		 * Max periodic usecs is 80% x 125 usec = 100 usec.
-+		 */
-+		max_claimed_usecs = 100 - qh->usecs;
-+	} else {
-+		/*
-+		 * Full speed mode.
-+		 * Max periodic usecs is 90% x 1000 usec = 900 usec.
-+		 */
-+		max_claimed_usecs = 900 - qh->usecs;
++	ret = -1;
++	utime = qh->usecs;
++	t_left = utime;
++	i = 0;
++	done = 0;
++	while (done == 0) {
++		/* At the start hcd->frame_usecs[i] = max_uframe_usecs[i]; */
++		if (utime <= hcd->frame_usecs[i]) {
++			hcd->frame_usecs[i] -= utime;
++			qh->frame_usecs[i] += utime;
++			t_left -= utime;
++			ret = i;
++			done = 1;
++			return ret;
++		} else {
++			i++;
++			if (i == 8) {
++				done = 1;
++				ret = -1;
++			}
++		}
 +	}
++	return ret;
++}
 +
-+	if (hcd->periodic_usecs > max_claimed_usecs) {
-+		DWC_NOTICE("%s: already claimed usecs %d, required usecs %d\n",
-+			   __func__, hcd->periodic_usecs, qh->usecs);
-+		status = -ENOSPC;
++/*
++ * use this for FS apps that can span multiple uframes
++ */
++static int find_multi_uframe(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
++{
++	int i;
++	int j;
++	u16 utime;
++	int t_left;
++	int ret;
++	int done;
++	u16 xtime;
++
++	ret = -1;
++	utime = qh->usecs;
++	t_left = utime;
++	i = 0;
++	done = 0;
++loop:
++	while (done == 0) {
++		if (hcd->frame_usecs[i] <= 0) {
++			i++;
++			if (i == 8) {
++				done = 1;
++				ret = -1;
++			}
++			goto loop;
++		}
++
++		/*
++		 * We need n consequtive slots so use j as a start slot.
++		 * j plus j+1 must be enough time (for now)
++		 */
++		xtime = hcd->frame_usecs[i];
++		for (j = i + 1; j < 8; j++) {
++			/*
++			 * if we add this frame remaining time to xtime we may
++			 * be OK, if not we need to test j for a complete frame.
++			 */
++			if ((xtime + hcd->frame_usecs[j]) < utime) {
++				if (hcd->frame_usecs[j] < max_uframe_usecs[j]) {
++					j = 8;
++					ret = -1;
++					continue;
++				}
++			}
++			if (xtime >= utime) {
++				ret = i;
++				j = 8;	/* stop loop with a good value ret */
++				continue;
++			}
++			/* add the frame time to x time */
++			xtime += hcd->frame_usecs[j];
++			/* we must have a fully available next frame or break */
++			if ((xtime < utime) &&
++			    (hcd->frame_usecs[j] == max_uframe_usecs[j])) {
++				ret = -1;
++				j = 8;	/* stop loop with a bad value ret */
++				continue;
++			}
++		}
++		if (ret >= 0) {
++			t_left = utime;
++			for (j = i; (t_left > 0) && (j < 8); j++) {
++				t_left -= hcd->frame_usecs[j];
++				if (t_left <= 0) {
++					qh->frame_usecs[j] +=
++					    hcd->frame_usecs[j] + t_left;
++					hcd->frame_usecs[j] = -t_left;
++					ret = i;
++					done = 1;
++				} else {
++					qh->frame_usecs[j] +=
++					    hcd->frame_usecs[j];
++					hcd->frame_usecs[j] = 0;
++				}
++			}
++		} else {
++			i++;
++			if (i == 8) {
++				done = 1;
++				ret = -1;
++			}
++		}
 +	}
++	return ret;
++}
 +
-+	return status;
++static int find_uframe(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
++{
++	int ret = -1;
++
++	if (qh->speed == USB_SPEED_HIGH)
++		/* if this is a hs transaction we need a full frame */
++		ret = find_single_uframe(hcd, qh);
++	else
++		/* FS transaction may need a sequence of frames */
++		ret = find_multi_uframe(hcd, qh);
++
++	return ret;
 +}
 +
 +/**
@@ -13467,58 +13578,55 @@
 +
 +/**
 + * Schedules an interrupt or isochronous transfer in the periodic schedule.
-+ *
-+ * @param hcd The HCD state structure for the DWC OTG controller.
-+ * @param qh QH for the periodic transfer. The QH should already contain the
-+ * scheduling information.
-+ *
-+ * @return 0 if successful, negative error code otherwise.
 + */
 +static int schedule_periodic(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 +{
-+	int status = 0;
++	int status;
++	struct usb_bus *bus = hcd_to_bus(dwc_otg_hcd_to_hcd(hcd));
++	int frame;
 +
-+	status = periodic_channel_available(hcd);
++	status = find_uframe(hcd, qh);
++	frame = -1;
++	if (status == 0) {
++		frame = 7;
++	} else {
++		if (status > 0)
++			frame = status - 1;
++	}
++	/* Set the new frame up */
++	if (frame > -1) {
++		qh->sched_frame &= ~0x7;
++		qh->sched_frame |= (frame & 7);
++	}
++	if (status != -1)
++		status = 0;
 +	if (status) {
-+		DWC_NOTICE("%s: No host channel available for periodic "
-+			   "transfer.\n", __func__);
++		pr_notice("%s: Insufficient periodic bandwidth for "
++			  "periodic transfer.\n", __func__);
 +		return status;
 +	}
-+
-+	status = check_periodic_bandwidth(hcd, qh);
-+	if (status) {
-+		DWC_NOTICE("%s: Insufficient periodic bandwidth for "
-+			   "periodic transfer.\n", __func__);
-+		return status;
-+	}
-+
 +	status = check_max_xfer_size(hcd, qh);
 +	if (status) {
-+		DWC_NOTICE("%s: Channel max transfer size too small "
-+			    "for periodic transfer.\n", __func__);
++		pr_notice("%s: Channel max transfer size too small "
++			  "for periodic transfer.\n", __func__);
 +		return status;
 +	}
-+
 +	/* Always start in the inactive schedule. */
 +	list_add_tail(&qh->qh_list_entry, &hcd->periodic_sched_inactive);
-+
-+	/* Reserve the periodic channel. */
-+	hcd->periodic_channels++;
 +
 +	/* Update claimed usecs per (micro)frame. */
 +	hcd->periodic_usecs += qh->usecs;
 +
-+	/* Update average periodic bandwidth claimed and # periodic reqs for usbfs. */
-+	hcd_to_bus(dwc_otg_hcd_to_hcd(hcd))->bandwidth_allocated += qh->usecs / qh->interval;
-+	if (qh->ep_type == USB_ENDPOINT_XFER_INT) {
-+		hcd_to_bus(dwc_otg_hcd_to_hcd(hcd))->bandwidth_int_reqs++;
-+		DWC_DEBUGPL(DBG_HCD, "Scheduled intr: qh %p, usecs %d, period %d\n",
-+			    qh, qh->usecs, qh->interval);
-+	} else {
-+		hcd_to_bus(dwc_otg_hcd_to_hcd(hcd))->bandwidth_isoc_reqs++;
-+		DWC_DEBUGPL(DBG_HCD, "Scheduled isoc: qh %p, usecs %d, period %d\n",
-+			    qh, qh->usecs, qh->interval);
-+	}
++	/*
++	 * Update average periodic bandwidth claimed and # periodic reqs for
++	 * usbfs.
++	 */
++	bus->bandwidth_allocated += qh->usecs / qh->interval;
++
++	if (qh->ep_type == USB_ENDPOINT_XFER_INT)
++		bus->bandwidth_int_reqs++;
++	else
++		bus->bandwidth_isoc_reqs++;
 +
 +	return status;
 +}
@@ -13569,32 +13677,29 @@
 +
 +/**
 + * Removes an interrupt or isochronous transfer from the periodic schedule.
-+ *
-+ * @param hcd The HCD state structure for the DWC OTG controller.
-+ * @param qh QH for the periodic transfer.
 + */
 +static void deschedule_periodic(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 +{
++	struct usb_bus *bus = hcd_to_bus(dwc_otg_hcd_to_hcd(hcd));
++	int i;
++
 +	list_del_init(&qh->qh_list_entry);
-+
-+	/* Release the periodic channel reservation. */
-+	hcd->periodic_channels--;
-+
 +	/* Update claimed usecs per (micro)frame. */
 +	hcd->periodic_usecs -= qh->usecs;
-+
-+	/* Update average periodic bandwidth claimed and # periodic reqs for usbfs. */
-+	hcd_to_bus(dwc_otg_hcd_to_hcd(hcd))->bandwidth_allocated -= qh->usecs / qh->interval;
-+
-+	if (qh->ep_type == USB_ENDPOINT_XFER_INT) {
-+		hcd_to_bus(dwc_otg_hcd_to_hcd(hcd))->bandwidth_int_reqs--;
-+		DWC_DEBUGPL(DBG_HCD, "Descheduled intr: qh %p, usecs %d, period %d\n",
-+			    qh, qh->usecs, qh->interval);
-+	} else {
-+		hcd_to_bus(dwc_otg_hcd_to_hcd(hcd))->bandwidth_isoc_reqs--;
-+		DWC_DEBUGPL(DBG_HCD, "Descheduled isoc: qh %p, usecs %d, period %d\n",
-+			    qh, qh->usecs, qh->interval);
++	for (i = 0; i < 8; i++) {
++		hcd->frame_usecs[i] += qh->frame_usecs[i];
++		qh->frame_usecs[i] = 0;
 +	}
++	/*
++	 * Update average periodic bandwidth claimed and # periodic reqs for
++	 * usbfs.
++	 */
++	bus->bandwidth_allocated -= qh->usecs / qh->interval;
++
++	if (qh->ep_type == USB_ENDPOINT_XFER_INT)
++		bus->bandwidth_int_reqs--;
++	else
++		bus->bandwidth_isoc_reqs--;
 +}
 +
 +/**
