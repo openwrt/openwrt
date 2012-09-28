@@ -10,7 +10,7 @@ define Profile/Vpp
   PACKAGES:=-iptables -ppp -ppp-mod-pppoe -kmod-ipt-nathelper \
 		-firewall -mtd -hotplug2 -udevtrigger -dropbear \
 		usb udev kmod-bluetooth ntpclient wpa-supplicant \
-		wireless-tools wpa-cli \
+		wpa-cli \
 		bluez-utils bluez-hcidump usbutils \
 		kmod-usb-serial kmod-usb-serial-cp210x kmod-usb-serial-ftdi \
 		kmod-usb-serial-pl2303 kmod-usb-uhci kmod-cfg80211 \

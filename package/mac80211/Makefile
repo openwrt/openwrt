@@ -55,7 +55,7 @@ endef
 define KernelPackage/cfg80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=cfg80211 - wireless configuration API
-  DEPENDS+= +wireless-tools +iw
+  DEPENDS+= +iw
   FILES:= \
 	$(PKG_BUILD_DIR)/compat/compat.ko \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.ko

@@ -7,7 +7,7 @@
 
 define Profile/flexibity-luci
   NAME:=Flexibity Connect (LuCI)
-  PACKAGES:=bridge wireless-tools block-mount modprobe dnsmasq hotplug2 udev luci-flexibity  \
+  PACKAGES:=bridge block-mount modprobe dnsmasq hotplug2 udev luci-flexibity  \
 	syslog-ng sudo transmission-web miniupnpd nmap-ssl ip ntpclient ntpdate chat crda e169-stats genl hostapd-utils \
 	iw madwimax netcat portmap ppp ppp-mod-pppoe pptp tcpdump usb-modem usb-modem-huawei-e175x usb-modem-huawei-eg162 \
 	usb-modem-nokia-5800 wpa-cli wpa-supplicant motion badblocks blkid cifsmount disktype dosfsck dosfslabel e2fsprogs \
