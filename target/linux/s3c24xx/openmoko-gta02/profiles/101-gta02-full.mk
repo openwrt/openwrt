@@ -7,7 +7,7 @@
 
 define Profile/openmoko-gta02-full
   NAME:=Openmoko GTA-02 (full)
-  PACKAGES:=xserver-xorg xf86-video-glamo xf86-input-tslib enlightenment fso-gsm0710muxd python fso-frameworkd fso-gpsd paroli wireless-tools
+  PACKAGES:=xserver-xorg xf86-video-glamo xf86-input-tslib enlightenment fso-gsm0710muxd python fso-frameworkd fso-gpsd paroli
 endef
 
 define Profile/openmoko-gta02-full/Description
