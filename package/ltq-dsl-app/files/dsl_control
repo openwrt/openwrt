@@ -15,7 +15,7 @@ SERVICE_WRITE_PID=1
 # Basic functions to send CLI commands to the dsl_cpe_control daemon
 #
 dsl_cmd() {
-	pkill -0 dsl_cpe_control && (
+	killall -0 dsl_cpe_control && (
 		echo "$@" > /tmp/pipe/dsl_cpe0_cmd
 		cat /tmp/pipe/dsl_cpe0_ack
 	)
