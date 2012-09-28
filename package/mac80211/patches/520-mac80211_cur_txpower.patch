@@ -22,7 +22,7 @@
  }
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -167,6 +167,7 @@ int ieee80211_hw_config(struct ieee80211
+@@ -165,6 +165,7 @@ int ieee80211_hw_config(struct ieee80211
  
  	if (local->hw.conf.power_level != power) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;

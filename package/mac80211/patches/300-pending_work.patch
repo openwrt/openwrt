@@ -386,7 +386,90 @@
  	}
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -1390,7 +1390,7 @@ static void ieee80211_set_disassoc(struc
+@@ -818,23 +818,71 @@ void ieee80211_sta_process_chanswitch(st
+ }
+ 
+ static void ieee80211_handle_pwr_constr(struct ieee80211_sub_if_data *sdata,
+-					u16 capab_info, u8 *pwr_constr_elem,
+-					u8 pwr_constr_elem_len)
++					struct ieee80211_channel *channel,
++					const u8 *country_ie, u8 country_ie_len,
++					const u8 *pwr_constr_elem)
+ {
+-	struct ieee80211_conf *conf = &sdata->local->hw.conf;
++	struct ieee80211_country_ie_triplet *triplet;
++	int chan = ieee80211_frequency_to_channel(channel->center_freq);
++	int i, chan_pwr, chan_increment, new_ap_level;
++	bool have_chan_pwr = false;
+ 
+-	if (!(capab_info & WLAN_CAPABILITY_SPECTRUM_MGMT))
++	/* Invalid IE */
++	if (country_ie_len % 2 || country_ie_len < IEEE80211_COUNTRY_IE_MIN_LEN)
+ 		return;
+ 
+-	/* Power constraint IE length should be 1 octet */
+-	if (pwr_constr_elem_len != 1)
+-		return;
++	triplet = (void *)(country_ie + 3);
++	country_ie_len -= 3;
+ 
+-	if ((*pwr_constr_elem <= conf->channel->max_reg_power) &&
+-	    (*pwr_constr_elem != sdata->local->power_constr_level)) {
+-		sdata->local->power_constr_level = *pwr_constr_elem;
+-		ieee80211_hw_config(sdata->local, 0);
++	switch (channel->band) {
++	default:
++		WARN_ON_ONCE(1);
++		/* fall through */
++	case IEEE80211_BAND_2GHZ:
++	case IEEE80211_BAND_60GHZ:
++		chan_increment = 1;
++		break;
++	case IEEE80211_BAND_5GHZ:
++		chan_increment = 4;
++		break;
+ 	}
++
++	/* find channel */
++	while (country_ie_len >= 3) {
++		u8 first_channel = triplet->chans.first_channel;
++
++		if (first_channel >= IEEE80211_COUNTRY_EXTENSION_ID)
++			goto next;
++
++		for (i = 0; i < triplet->chans.num_channels; i++) {
++			if (first_channel + i * chan_increment == chan) {
++				have_chan_pwr = true;
++				chan_pwr = triplet->chans.max_power;
++				break;
++			}
++		}
++		if (have_chan_pwr)
++			break;
++
++ next:
++		triplet++;
++		country_ie_len -= 3;
++	}
++
++	if (!have_chan_pwr)
++		return;
++
++	new_ap_level = max_t(int, 0, chan_pwr - *pwr_constr_elem);
++
++	if (sdata->local->ap_power_level == new_ap_level)
++		return;
++
++	sdata_info(sdata,
++		   "Limiting TX power to %d (%d - %d) dBm as advertised by %pM\n",
++		   new_ap_level, chan_pwr, *pwr_constr_elem,
++		   sdata->u.mgd.bssid);
++	sdata->local->ap_power_level = new_ap_level;
++	ieee80211_hw_config(sdata->local, 0);
+ }
+ 
+ void ieee80211_enable_dyn_ps(struct ieee80211_vif *vif)
+@@ -1390,7 +1438,7 @@ static void ieee80211_set_disassoc(struc
  	sta = sta_info_get(sdata, ifmgd->bssid);
  	if (sta) {
  		set_sta_flag(sta, WLAN_STA_BLOCK_BA);
@@ -395,6 +478,38 @@
  	}
  	mutex_unlock(&local->sta_mtx);
  
+@@ -1438,7 +1486,7 @@ static void ieee80211_set_disassoc(struc
+ 	memset(&ifmgd->ht_capa, 0, sizeof(ifmgd->ht_capa));
+ 	memset(&ifmgd->ht_capa_mask, 0, sizeof(ifmgd->ht_capa_mask));
+ 
+-	local->power_constr_level = 0;
++	local->ap_power_level = 0;
+ 
+ 	del_timer_sync(&local->dynamic_ps_timer);
+ 	cancel_work_sync(&local->dynamic_ps_enable_work);
+@@ -2530,15 +2578,13 @@ static void ieee80211_rx_mgmt_beacon(str
+ 						  bssid, true);
+ 	}
+ 
+-	/* Note: country IE parsing is done for us by cfg80211 */
+-	if (elems.country_elem) {
+-		/* TODO: IBSS also needs this */
+-		if (elems.pwr_constr_elem)
+-			ieee80211_handle_pwr_constr(sdata,
+-				le16_to_cpu(mgmt->u.probe_resp.capab_info),
+-				elems.pwr_constr_elem,
+-				elems.pwr_constr_elem_len);
+-	}
++	if (elems.country_elem && elems.pwr_constr_elem &&
++	    mgmt->u.probe_resp.capab_info &
++				cpu_to_le16(WLAN_CAPABILITY_SPECTRUM_MGMT))
++		ieee80211_handle_pwr_constr(sdata, local->oper_channel,
++					    elems.country_elem,
++					    elems.country_elem_len,
++					    elems.pwr_constr_elem);
+ 
+ 	ieee80211_bss_info_change_notify(sdata, changed);
+ }
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
 @@ -674,7 +674,7 @@ int __must_check __sta_info_destroy(stru
@@ -422,3 +537,56 @@
  		default:
  			if (channel->band == IEEE80211_BAND_5GHZ) {
  				/* Both sample_freq and chip_freq are 40MHz */
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1062,7 +1062,7 @@ struct ieee80211_local {
+ 	bool disable_dynamic_ps;
+ 
+ 	int user_power_level; /* in dBm */
+-	int power_constr_level; /* in dBm */
++	int ap_power_level; /* in dBm */
+ 
+ 	enum ieee80211_smps_mode smps_mode;
+ 
+@@ -1170,7 +1170,6 @@ struct ieee802_11_elems {
+ 	u8 prep_len;
+ 	u8 perr_len;
+ 	u8 country_elem_len;
+-	u8 pwr_constr_elem_len;
+ 	u8 quiet_elem_len;
+ 	u8 num_of_quiet_elem;	/* can be more the one */
+ 	u8 timeout_int_len;
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -792,8 +792,11 @@ u32 ieee802_11_parse_elems_crc(u8 *start
+ 			elems->country_elem_len = elen;
+ 			break;
+ 		case WLAN_EID_PWR_CONSTRAINT:
++			if (elen != 1) {
++				elem_parse_failed = true;
++				break;
++			}
+ 			elems->pwr_constr_elem = pos;
+-			elems->pwr_constr_elem_len = elen;
+ 			break;
+ 		case WLAN_EID_TIMEOUT_INTERVAL:
+ 			elems->timeout_int = pos;
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -154,13 +154,11 @@ int ieee80211_hw_config(struct ieee80211
+ 
+ 	if (test_bit(SCAN_SW_SCANNING, &local->scanning) ||
+ 	    test_bit(SCAN_ONCHANNEL_SCANNING, &local->scanning) ||
+-	    test_bit(SCAN_HW_SCANNING, &local->scanning))
++	    test_bit(SCAN_HW_SCANNING, &local->scanning) ||
++	    !local->ap_power_level)
+ 		power = chan->max_power;
+ 	else
+-		power = local->power_constr_level ?
+-			min(chan->max_power,
+-				(chan->max_reg_power  - local->power_constr_level)) :
+-			chan->max_power;
++		power = min(chan->max_power, local->ap_power_level);
+ 
+ 	if (local->user_power_level >= 0)
+ 		power = min(power, local->user_power_level);
