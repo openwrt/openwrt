@@ -4,7 +4,7 @@
  			return -EINVAL;
  		}
  
-+		conf->cur_power_level = sc->curtxpow / 2;
++		hw->cur_power_level = sc->curtxpow / 2;
 +
  		/*
  		 * The most recent snapshot of channel->noisefloor for the old
@@ -13,7 +13,7 @@
  		sc->config.txpowlimit = 2 * conf->power_level;
  		ath9k_cmn_update_txpow(ah, sc->curtxpow,
  				       sc->config.txpowlimit, &sc->curtxpow);
-+		conf->cur_power_level = sc->curtxpow / 2;
++		hw->cur_power_level = sc->curtxpow / 2;
  	}
  
  	mutex_unlock(&sc->mutex);
