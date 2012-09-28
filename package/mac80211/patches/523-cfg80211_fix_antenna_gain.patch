@@ -1,0 +1,12 @@
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -908,8 +908,7 @@ static void handle_channel(struct wiphy 
+ 
+ 	chan->beacon_found = false;
+ 	chan->flags = flags | bw_flags | map_regdom_flags(reg_rule->flags);
+-	chan->max_antenna_gain = min(chan->orig_mag,
+-		(int) MBI_TO_DBI(power_rule->max_antenna_gain));
++	chan->max_antenna_gain = (int) MBI_TO_DBI(power_rule->max_antenna_gain);
+ 	chan->max_reg_power = (int) MBM_TO_DBM(power_rule->max_eirp);
+ 	if (chan->orig_mpwr) {
+ 		/*
