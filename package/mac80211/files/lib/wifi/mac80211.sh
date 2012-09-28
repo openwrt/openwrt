@@ -295,6 +295,7 @@ enable_mac80211() {
 	config_get distance "$device" distance
 	config_get txantenna "$device" txantenna all
 	config_get rxantenna "$device" rxantenna all
+	config_get antenna_gain "$device" antenna_gain 0
 	config_get frag "$device" frag
 	config_get rts "$device" rts
 	find_mac80211_phy "$device" || return 0
@@ -321,6 +322,7 @@ enable_mac80211() {
 	}
 
 	iw phy "$phy" set antenna $txantenna $rxantenna >/dev/null 2>&1
+	iw phy "$phy" set antenna_gain $antenna_gain
 
 	[ -n "$distance" ] && iw phy "$phy" set distance "$distance"
 	[ -n "$frag" ] && iw phy "$phy" set frag "${frag%%.*}"
