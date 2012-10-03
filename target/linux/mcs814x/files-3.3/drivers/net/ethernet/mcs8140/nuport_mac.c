@@ -117,7 +117,7 @@ static inline u32 nuport_mac_readl(void __iomem *reg)
 
 static inline u8 nuport_mac_readb(void __iomem *reg)
 {
-	return __raw_readb(reg);
+	return readb_relaxed(reg);
 }
 
 static inline void nuport_mac_writel(u32 value, void __iomem *reg)
