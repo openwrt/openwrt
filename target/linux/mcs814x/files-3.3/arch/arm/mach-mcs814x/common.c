@@ -89,12 +89,12 @@ static void mcs814x_eth_buffer_shifting_set(u8 value)
 {
 	u8 reg;
 
-	reg = __raw_readb(mcs814x_sysdbg_base + SYSDBG_SYSCTL_MAC);
+	reg = readb_relaxed(mcs814x_sysdbg_base + SYSDBG_SYSCTL_MAC);
 	if (value)
 		reg |= BUF_SHIFT_BIT;
 	else
 		reg &= ~BUF_SHIFT_BIT;
-	__raw_writeb(reg, mcs814x_sysdbg_base + SYSDBG_SYSCTL_MAC);
+	writeb_relaxed(reg, mcs814x_sysdbg_base + SYSDBG_SYSCTL_MAC);
 }
 
 static struct of_device_id mcs814x_eth_ids[] __initdata = {

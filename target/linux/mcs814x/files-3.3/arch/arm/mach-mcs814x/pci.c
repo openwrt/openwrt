@@ -116,11 +116,11 @@ static int mcs8140_pci_read_config(struct pci_bus *bus,
 	if (addr != 0) {
 		switch (size) {
 		case 1:
-			v = __raw_readb(addr);
+			v = readb_relaxed(addr);
 			break;
 		case 2:
 			addr &= ~1;
-			v = __raw_readw(addr);
+			v = readw_relaxed(addr);
 			break;
 		default:
 			addr &= ~3;
@@ -155,10 +155,10 @@ static int mcs8140_pci_write_config(struct pci_bus *bus,
 	if (addr != 0) {
 		switch (size) {
 		case 1:
-			__raw_writeb((u8)val, addr);
+			writeb_relaxed((u8)val, addr);
 			break;
 		case 2:
-			__raw_writew((u16)val, addr);
+			writew_relaxed((u16)val, addr);
 			break;
 		case 4:
 			writel_relaxed(val, addr);
