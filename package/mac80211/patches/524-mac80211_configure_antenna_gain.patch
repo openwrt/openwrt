@@ -131,7 +131,7 @@
  		u32 tx_ant, rx_ant;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1986,6 +1986,19 @@ static int ieee80211_get_tx_power(struct
+@@ -1984,6 +1984,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -151,7 +151,7 @@
  static int ieee80211_set_wds_peer(struct wiphy *wiphy, struct net_device *dev,
  				  const u8 *addr)
  {
-@@ -3084,6 +3097,7 @@ struct cfg80211_ops mac80211_config_ops 
+@@ -3082,6 +3095,7 @@ struct cfg80211_ops mac80211_config_ops 
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,

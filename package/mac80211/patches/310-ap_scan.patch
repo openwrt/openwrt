@@ -1,0 +1,11 @@
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1796,8 +1796,6 @@ static int ieee80211_scan(struct wiphy *
+ 		 * beaconing hasn't been configured yet
+ 		 */
+ 	case NL80211_IFTYPE_AP:
+-		if (sdata->u.ap.beacon)
+-			return -EOPNOTSUPP;
+ 		break;
+ 	default:
+ 		return -EOPNOTSUPP;
