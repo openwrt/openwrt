@@ -42,7 +42,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  /* usb state change */
  #define GUMSTIX_USB_INTR_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_USB_GPIOn)
  
-@@ -42,48 +54,135 @@ has detected a cable insertion; driven l
+@@ -42,48 +54,136 @@ has detected a cable insertion; driven l
   * ETH_RST provides a hardware reset line to the ethernet chip
   * ETH is the IRQ line in from the ethernet chip to the PXA
   */
@@ -66,13 +66,13 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 -#define GPIO_GUMSTIX_ETH1		27
  #define GPIO_GUMSTIX_ETH1_MD		(GPIO_GUMSTIX_ETH1 | GPIO_IN)
 -#define GUMSTIX_ETH1_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_ETH1)
- 
-+#define GUMSTIX_ETH0_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_ETH0)
-+#define GUMSTIX_ETH1_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_ETH1)
+-
  
 -/* CF reset line */
 -#define GPIO8_RESET			8
--
++#define GUMSTIX_ETH0_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_ETH0)
++#define GUMSTIX_ETH1_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_ETH1)
+ 
 -/* CF slot 0 */
 -#define GPIO4_nBVD1			4
 -#define GPIO4_nSTSCHG			GPIO4_nBVD1
@@ -159,6 +159,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +#endif
 +
 +#define GPIO_GUMSTIX_PRDY_nBSY_0_OLD	GPIO109_PRDY_nBSY_0
++#define GUMSTIX_S0_PRDY_nBSY_OLD_IRQ	PXA_GPIO_TO_IRQ(GPIO109_PRDY_nBSY_0)
 +
 +#define GUMSTIX_S0_nSTSCHG_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_nSTSCHG_0)
 +#define GUMSTIX_S0_nCD_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_nCD_0)
@@ -169,6 +170,18 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 -#define GPIO18_nSTSCHG			GPIO18_nBVD1
 -#define GPIO36_nCD			36
 -#define GPIO27_PRDY_nBSY		27
+-#define GUMSTIX_S1_nSTSCHG_IRQ		PXA_GPIO_TO_IRQ(GPIO18_nSTSCHG)
+-#define GUMSTIX_S1_nCD_IRQ		PXA_GPIO_TO_IRQ(GPIO36_nCD)
+-#define GUMSTIX_S1_PRDY_nBSY_IRQ	PXA_GPIO_TO_IRQ(GPIO27_PRDY_nBSY)
+-
+-/* CF GPIO line modes */
+-#define GPIO4_nSTSCHG_MD		(GPIO4_nSTSCHG | GPIO_IN)
+-#define GPIO8_RESET_MD			(GPIO8_RESET | GPIO_OUT)
+-#define GPIO11_nCD_MD			(GPIO11_nCD | GPIO_IN)
+-#define GPIO18_nSTSCHG_MD		(GPIO18_nSTSCHG | GPIO_IN)
+-#define GPIO26_PRDY_nBSY_MD		(GPIO26_PRDY_nBSY | GPIO_IN)
+-#define GPIO27_PRDY_nBSY_MD		(GPIO27_PRDY_nBSY | GPIO_IN)
+-#define GPIO36_nCD_MD			(GPIO36_nCD | GPIO_IN)
 +#define GPIO18_nBVD1_1			18
 +#define GPIO18_nSTSCHG_1		GPIO18_nBVD1_1
 +#define GPIO36_nCD_1			36
@@ -179,18 +192,10 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +#define GPIO_GUMSTIX_nCD_1		GPIO36_nCD_1
 +#define GPIO_GUMSTIX_PRDY_nBSY_1	GPIO27_PRDY_nBSY_1
 +
- #define GUMSTIX_S1_nSTSCHG_IRQ		PXA_GPIO_TO_IRQ(GPIO18_nSTSCHG)
- #define GUMSTIX_S1_nCD_IRQ		PXA_GPIO_TO_IRQ(GPIO36_nCD)
- #define GUMSTIX_S1_PRDY_nBSY_IRQ	PXA_GPIO_TO_IRQ(GPIO27_PRDY_nBSY)
- 
--/* CF GPIO line modes */
--#define GPIO4_nSTSCHG_MD		(GPIO4_nSTSCHG | GPIO_IN)
--#define GPIO8_RESET_MD			(GPIO8_RESET | GPIO_OUT)
--#define GPIO11_nCD_MD			(GPIO11_nCD | GPIO_IN)
--#define GPIO18_nSTSCHG_MD		(GPIO18_nSTSCHG | GPIO_IN)
--#define GPIO26_PRDY_nBSY_MD		(GPIO26_PRDY_nBSY | GPIO_IN)
--#define GPIO27_PRDY_nBSY_MD		(GPIO27_PRDY_nBSY | GPIO_IN)
--#define GPIO36_nCD_MD			(GPIO36_nCD | GPIO_IN)
++#define GUMSTIX_S1_nSTSCHG_IRQ		PXA_GPIO_TO_IRQ(GPIO18_nSTSCHG_1)
++#define GUMSTIX_S1_nCD_IRQ		PXA_GPIO_TO_IRQ(GPIO36_nCD_1)
++#define GUMSTIX_S1_PRDY_nBSY_IRQ	PXA_GPIO_TO_IRQ(GPIO27_PRDY_nBSY_1)
++
 +/* CF GPIO line modes - correspond to mfp-pxa2[57]x.h */
 +#define GPIO_GUMSTIX_CF_RESET_MD	(GPIO_GUMSTIX_CF_RESET | GPIO_OUT)
 +#define GPIO_GUMSTIX_CF_OLD_RESET_MD	(GPIO_GUMSTIX_CF_OLD_RESET | GPIO_OUT)

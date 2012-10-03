@@ -75,7 +75,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  obj-$(CONFIG_MACH_INTELMOTE2)	+= stargate2.o
 --- /dev/null
 +++ b/arch/arm/mach-pxa/gumstix-verdex.c
-@@ -0,0 +1,793 @@
+@@ -0,0 +1,794 @@
 +/*
 + *  linux/arch/arm/mach-pxa/gumstix-verdex.c
 + *
@@ -103,6 +103,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +#include <linux/i2c/tsc2007.h>
 +#include <linux/i2c/pxa-i2c.h>
 +#include <linux/gpio.h>
++#include <linux/gpio-pxa.h>
 +
 +#include <asm/setup.h>
 +#include <asm/memory.h>
@@ -371,8 +372,8 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +
 +inline void __init gumstix_pcmcia_cpld_clk(void)
 +{
-+	GPCR(GPIO_GUMSTIX_nPOE) = GPIO_bit(GPIO_GUMSTIX_nPOE);
-+	GPSR(GPIO_GUMSTIX_nPOE) = GPIO_bit(GPIO_GUMSTIX_nPOE);
++	gpio_set_value(GPIO_GUMSTIX_nPOE, 0);
++	gpio_set_value(GPIO_GUMSTIX_nPOE, 1);
 +}
 +
 +inline unsigned char __init gumstix_pcmcia_cpld_read_bits(int bits)
@@ -381,7 +382,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +	unsigned int shift = 0;
 +	while(bits--)
 +	{
-+		result |= !!(GPLR(GPIO_GUMSTIX_nCD_0) & GPIO_bit(GPIO_GUMSTIX_nCD_0)) << shift;
++		result |= !!(gpio_get_value(GPIO_GUMSTIX_nCD_0) & GPIO_bit(GPIO_GUMSTIX_nCD_0)) << shift;
 +		shift ++;
 +		gumstix_pcmcia_cpld_clk();
 +	}
@@ -438,15 +439,15 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +	}
 +
 +	// Setup the shift register
-+	GPSR(GPIO_GUMSTIX_nPCE_1) = GPIO_bit(GPIO_GUMSTIX_nPCE_1);
-+	GPCR(GPIO_GUMSTIX_nPCE_2) = GPIO_bit(GPIO_GUMSTIX_nPCE_2);
++	gpio_set_value(GPIO_GUMSTIX_nPCE_1, 1);
++	gpio_set_value(GPIO_GUMSTIX_nPCE_2, 0);
 +
 +	// Tick the clock to program the shift register
 +	gumstix_pcmcia_cpld_clk();
 +
 +	// Now set shift register into read mode
-+	GPCR(GPIO_GUMSTIX_nPCE_1) = GPIO_bit(GPIO_GUMSTIX_nPCE_1);
-+	GPSR(GPIO_GUMSTIX_nPCE_2) = GPIO_bit(GPIO_GUMSTIX_nPCE_2);
++	gpio_set_value(GPIO_GUMSTIX_nPCE_1, 0);
++	gpio_set_value(GPIO_GUMSTIX_nPCE_2, 1);
 +
 +	// We can read the bits now -- 0xC2 means "Dual compact flash"
 +	if(gumstix_pcmcia_cpld_read_bits(8) != 0xC2)
@@ -574,9 +575,9 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +	if(on_or_off) {
 +		gpio_direction_input(17);
 +	} else {
-+		GPCR(17) = GPIO_bit(17);
++		gpio_set_value(17, 0);
 +		gpio_direction_output(17, 0);
-+		GPCR(17) = GPIO_bit(17);
++		gpio_set_value(17, 0);
 +	}
 +
 +	return;
@@ -843,7 +844,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +#ifdef CONFIG_FB_PXA_SHARP_LQ043_PSP
 +	/* DISP must be always high while screen is on */
 +	gpio_direction_output(GPIO77, 0);
-+	GPSR(GPIO77) = GPIO_bit(GPIO77);
++	gpio_set_value(GPIO77, 1);
 +#endif
 +	verdex_udc_init();
 +	verdex_mmc_init();

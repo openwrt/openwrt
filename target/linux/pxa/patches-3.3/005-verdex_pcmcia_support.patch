@@ -38,7 +38,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  obj-$(CONFIG_PCMCIA_XXS1500)			+= xxs1500_ss.o
 --- /dev/null
 +++ b/drivers/pcmcia/pxa2xx_gumstix.c
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,195 @@
 +/*
 + * linux/drivers/pcmcia/pxa2xx_gumstix.c
 + *
@@ -62,16 +62,14 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +#include <linux/delay.h>
 +#include <linux/platform_device.h>
 +
++#include <linux/gpio-pxa.h>
++
 +#include <pcmcia/ss.h>
 +
 +#include <mach/hardware.h>
 +#include <asm/mach-types.h>
 +
-+#ifdef CONFIG_MACH_GUMSTIX_VERDEX
 +#include <mach/pxa27x.h>
-+#else
-+#include <mach/pxa27x.h>
-+#endif
 +
 +#include <asm/io.h>
 +#include <mach/gpio.h>
@@ -79,6 +77,9 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +#include "soc_common.h"
 +
 +#define ARRAY_AND_SIZE(x)	(x), ARRAY_SIZE(x)
++
++#define BANK_OFF(n)     (((n) < 3) ? (n) << 2 : 0x100 + (((n) - 3) << 2))
++#define GPLR(x)         __REG2(0x40E00000, BANK_OFF((x) >> 5))
 +
 +static struct pcmcia_irqs gumstix_pcmcia_irqs0[] = {
 +	{ 0, GUMSTIX_S0_nCD_IRQ,	"CF0 nCD"     },
@@ -98,7 +99,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +/* Note: The verdex_pcmcia_pin_config is moved to gumstix_verdex.c in order to use mfp_pxa2xx_config
 +   for board-specific pin configuration instead of the old deprecated pxa_gpio_mode function.  Thus,
 +   only the IRQ init is still needed to be done here. */
-+	skt->irq = (skt->nr == 0) ? ((net_cf_vx_mode == 0) ? GUMSTIX_S0_PRDY_nBSY_IRQ : GUMSTIX_S0_PRDY_nBSY_OLD_IRQ) : GUMSTIX_S1_PRDY_nBSY_IRQ;
++	skt->socket.pci_irq = (skt->nr == 0) ? ((net_cf_vx_mode == 0) ? GUMSTIX_S0_PRDY_nBSY_IRQ : GUMSTIX_S0_PRDY_nBSY_OLD_IRQ) : GUMSTIX_S1_PRDY_nBSY_IRQ;
 +
 +	return (skt->nr == 0) ? soc_pcmcia_request_irqs(skt, gumstix_pcmcia_irqs0, ARRAY_SIZE(gumstix_pcmcia_irqs0)) :
 +				soc_pcmcia_request_irqs(skt, gumstix_pcmcia_irqs1, ARRAY_SIZE(gumstix_pcmcia_irqs1));
@@ -138,9 +139,9 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +		prdy_nbsy = GPIO_GUMSTIX_PRDY_nBSY_1;
 +		nbvd1 = GPIO_GUMSTIX_nBVD1_1;
 +	}
-+	state->detect = !(GPLR(cd) & GPIO_bit(cd));
-+	state->ready  = !!(GPLR(prdy_nbsy) & GPIO_bit(prdy_nbsy));
-+	state->bvd1   = !!(GPLR(nbvd1) & GPIO_bit(nbvd1));
++	state->detect = !!gpio_get_value(cd);
++	state->ready  = !!gpio_get_value(prdy_nbsy);
++	state->bvd1   = !!gpio_get_value(nbvd1);
 +	state->bvd2   = 1;
 +	state->vs_3v  = 0;
 +	state->vs_Xv  = 0;
