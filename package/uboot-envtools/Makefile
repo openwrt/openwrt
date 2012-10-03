@@ -26,7 +26,6 @@ define Package/uboot-envtools
   CATEGORY:=Utilities
   TITLE:=read/modify U-Boot bootloader environment
   URL:=http://www.denx.de/wiki/U-Boot
-  MENU:=1
 endef
 
 define Package/uboot-envtools/description
