@@ -19,7 +19,7 @@ set_ether_mac() {
 		mac0=$(hexdump -n 6 -e '6/1 ":%X"' -s 24583 $config | cut -c2-)
 		[ "$mac0" = "FF:FF:FF:FF:FF:FF" -o "$mac0" = "0:0:0:0:0:0" ] && unset mac0
 		mac1=$(hexdump -n 6 -e '6/1 ":%X"' -s 24589 $config | cut -c2-)
-		[ "$mac1" = "FF:FF:FF:FF:FF:FF" -o "$mac0" = "0:0:0:0:0:0" ] && unset mac1
+		[ "$mac1" = "FF:FF:FF:FF:FF:FF" -o "$mac1" = "0:0:0:0:0:0" ] && unset mac1
 	fi
 	if [ -n "$mac0" ]; then
 		logger -t kernel -p user.info "r6040: Setting MAC for eth0 to $mac0"
