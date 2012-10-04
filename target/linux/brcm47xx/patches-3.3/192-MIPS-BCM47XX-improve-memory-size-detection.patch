@@ -12,19 +12,16 @@
  {
  	unsigned long mem;
  	unsigned long max;
-+	unsigned long off, data, off1, data1;
++	unsigned long off;
  	struct cpuinfo_mips *c = &current_cpu_data;
  
  	/* Figure out memory size by finding aliases.
-@@ -77,15 +79,19 @@ static __init void prom_init_mem(void)
+@@ -77,15 +79,15 @@ static __init void prom_init_mem(void)
  	 * max contains the biggest possible address supported by the platform.
  	 * If the method wants to try something above we assume 128MB ram.
  	 */
 -	max = ((unsigned long)(prom_init) | ((128 << 20) - 1));
 +	off = (unsigned long)prom_init;
-+	data = *(unsigned long *)prom_init;
-+	off1 = off + 4;
-+	data1 = *(unsigned long *)off1;
 +	max = off | ((128 << 20) - 1);
  	for (mem = (1 << 20); mem < (128 << 20); mem += (1 << 20)) {
 -		if (((unsigned long)(prom_init) + mem) > max) {
@@ -35,8 +32,7 @@
  		}
 -		if (*(unsigned long *)((unsigned long)(prom_init) + mem) ==
 -		    *(unsigned long *)(prom_init))
-+		if ((*(unsigned long *)(off + mem) == data) &&
-+			(*(unsigned long *)(off1 + mem) == data1))
++		if (!memcmp(prom_init, prom_init + mem, 32))
  			break;
  	}
  
