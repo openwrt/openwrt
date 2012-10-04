@@ -1,0 +1,11 @@
+--- a/driver/wl_linux.c	2012-09-26 20:51:48.099454971 -0400
++++ b/driver/wl_linux.c	2012-09-26 20:53:24.115453441 -0400
+@@ -691,7 +691,7 @@
+ 	if (wl->bustype != JTAG_BUS)
+ #endif	/* BCMJTAG */
+ 	{
+-		if (request_irq(irq, wl_isr, IRQF_SHARED|IRQF_SAMPLE_RANDOM, dev->name, wl)) {
++		if (request_irq(irq, wl_isr, IRQF_SHARED, dev->name, wl)) {
+ 			WL_ERROR(("wl%d: request_irq() failed\n", unit));
+ 			goto fail;
+ 		}
