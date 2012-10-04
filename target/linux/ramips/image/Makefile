@@ -389,6 +389,7 @@ endef
 
 define Image/Build/Profile/ALL0256N
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,all0256n,ALL0256N,ttyS1,57600,spi)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,all0256n-8M,ALL0256N,ttyS1,57600,spi)
 endef
 
 define Image/Build/Profile/ALL5002
