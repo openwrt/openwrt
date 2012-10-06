@@ -253,6 +253,7 @@ Build/DistCheck=$(call Build/DistCheck/Default,)
 
 .PHONY: prepare-package-install
 prepare-package-install:
+	@mkdir -p $(PKG_INFO_DIR)
 	@touch $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.clean
 	@echo "$(filter-out essential,$(PKG_FLAGS))" > $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.flags
 
