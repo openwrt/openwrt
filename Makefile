@@ -40,11 +40,9 @@ else
 
 $(toolchain/stamp-install): $(tools/stamp-install)
 $(target/stamp-compile): $(toolchain/stamp-install) $(tools/stamp-install) $(BUILD_DIR)/.prepared
-$(package/stamp-cleanup): $(target/stamp-compile)
-$(package/stamp-compile): $(target/stamp-compile) $(package/stamp-cleanup)
+$(package/stamp-compile): $(target/stamp-compile)
 $(package/stamp-install): $(package/stamp-compile)
-$(package/stamp-rootfs-prepare): $(package/stamp-install)
-$(target/stamp-install): $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare)
+$(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
 
 printdb:
 	@true
@@ -86,7 +84,7 @@ prereq: $(target/stamp-prereq) tmp/.prereq_packages
 	fi
 
 prepare: .config $(tools/stamp-install) $(toolchain/stamp-install)
-world: prepare $(target/stamp-compile) $(package/stamp-cleanup) $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare) $(target/stamp-install) FORCE
+world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
 	$(_SINGLE)$(SUBMAKE) -r package/index
 
 # update all feeds, re-create index files, install symlinks
