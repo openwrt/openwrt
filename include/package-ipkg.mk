@@ -5,22 +5,6 @@
 # See /LICENSE for more information.
 #
 
-# where to build (and put) .ipk packages
-OPKG:= \
-  IPKG_TMP=$(TMP_DIR)/ipkg \
-  IPKG_INSTROOT=$(TARGET_DIR) \
-  IPKG_CONF_DIR=$(STAGING_DIR)/etc \
-  IPKG_OFFLINE_ROOT=$(TARGET_DIR) \
-  $(STAGING_DIR_HOST)/bin/opkg \
-	--offline-root $(TARGET_DIR) \
-	--force-depends \
-	--force-overwrite \
-	--force-postinstall \
-	--force-maintainer \
-	--add-dest root:/ \
-	--add-arch all:100 \
-	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
-
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
   ipkg-build -c -o 0 -g 0
@@ -89,7 +73,6 @@ ifeq ($(DUMP),)
   define BuildTarget/ipkg
     IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
-    INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
 
     ifeq ($(if $(VARIANT),$(BUILD_VARIANT)),$(VARIANT))
@@ -99,7 +82,15 @@ ifeq ($(DUMP),)
         compile: $$(IPKG_$(1)) $(PKG_INFO_DIR)/$(1).provides $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
 
         ifeq ($(CONFIG_PACKAGE_$(1)),y)
-          install: $$(INFO_$(1))
+          .PHONY: $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.$(1)
+          compile: $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.$(1)
+          $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.$(1):
+			@if [ -f $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.clean ]; then \
+				rm -f \
+					$(PKG_INFO_DIR)/$(PKG_DIR_NAME).install \
+					$(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.clean; \
+			fi; \
+			echo "$(1)" >> $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install
         endif
       else
         compile: $(1)-disabled
@@ -187,11 +178,6 @@ ifeq ($(DUMP),)
 
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 	@[ -f $$(IPKG_$(1)) ]
-
-    $$(INFO_$(1)): $$(IPKG_$(1))
-	@[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
-	$(OPKG) install $$(IPKG_$(1))
-	$(if $(filter-out essential,$(PKG_FLAGS)),for flag in $(filter-out essential,$(PKG_FLAGS)); do $(OPKG) flag $$$$flag $(1); done,$(OPKG) flag ok $(1))
 
     $(1)-clean:
 	rm -f $(PACKAGE_DIR)/$(1)_*

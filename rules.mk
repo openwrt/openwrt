@@ -105,6 +105,7 @@ TARGET_ROOTFS_DIR?=$(if $(call qstrip,$(CONFIG_TARGET_ROOTFS_DIR)),$(call qstrip
 TARGET_DIR:=$(TARGET_ROOTFS_DIR)/root-$(BOARD)
 STAGING_DIR_ROOT:=$(STAGING_DIR)/root-$(BOARD)
 BUILD_LOG_DIR:=$(TOPDIR)/logs
+PKG_INFO_DIR := $(STAGING_DIR)/pkginfo
 
 TARGET_PATH:=$(STAGING_DIR_HOST)/bin:$(subst $(space),:,$(filter-out .,$(filter-out ./,$(subst :,$(space),$(PATH)))))
 TARGET_CFLAGS:=$(TARGET_OPTIMIZATION)$(if $(CONFIG_DEBUG), -g3)
