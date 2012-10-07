@@ -219,8 +219,10 @@ define Image/Build
 	$(call Image/Build/grub2,$(1))
 	$(call Image/Build/vdi,$(1))
 	$(call Image/Build/vmdk,$(1))
-  endif
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
+  else
+	$(CP) $(KDIR)/root.iso $(BIN_DIR)/$(IMG_PREFIX).iso
+  endif
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/$(IMG_PREFIX)-vmlinuz
 	$(call Image/Build/gzip/$(1))
 endef
