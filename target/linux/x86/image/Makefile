@@ -10,6 +10,7 @@ include $(INCLUDE_DIR)/image.mk
 export PATH=$(TARGET_PATH):/sbin
 
 GRUB2_MODULES = at_keyboard biosdisk boot chain configfile ext2 linux ls part_msdos reboot serial vga
+GRUB2_MODULES_ISO = at_keyboard biosdisk boot chain configfile iso9660 linux ls part_msdos reboot serial vga
 GRUB_TERMINALS =
 GRUB_SERIAL_CONFIG =
 GRUB_TERMINAL_CONFIG =
@@ -45,7 +46,7 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
   define Image/cmdline/ext4
     root=$(ROOTPART) rootfstype=ext4 rootwait
   endef
-  
+
   define Image/cmdline/jffs2-64k
     block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 rootwait
   endef
@@ -159,7 +160,31 @@ define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
-define Image/Build/iso 
+ifdef CONFIG_X86_USE_GRUB2
+  define Image/Build/iso
+	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub $(KDIR)/grub2
+	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
+	grub-mkimage \
+		-o $(KDIR)/grub2/eltorito.img \
+		-O i386-pc \
+		-c ./grub-early.cfg \
+		$(GRUB2_MODULES_ISO)
+	cat \
+		$(STAGING_DIR_HOST)/lib/grub/i386-pc/cdboot.img \
+		$(KDIR)/grub2/eltorito.img \
+		> $(KDIR)/root.grub/boot/grub/eltorito.img
+	sed \
+		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
+		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
+		-e 's#@CMDLINE@#root=/dev/sr0 rootfstype=iso9660 rootwait $(strip $(call Image/cmdline/$(1)) $(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE))#g' \
+		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
+		./grub-iso.cfg > $(KDIR)/root.grub/boot/grub/grub.cfg
+	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
+	mkisofs -R -b boot/grub/eltorito.img -no-emul-boot -boot-info-table \
+		-o $(KDIR)/root.iso $(KDIR)/root.grub $(TARGET_DIR)
+  endef
+else
+  define Image/Build/iso
 	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub
 	$(CP) \
 		$(KDIR)/stage2_eltorito \
@@ -173,7 +198,8 @@ define Image/Build/iso
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz 
 	mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table \
 		-o $(KDIR)/root.iso $(KDIR)/root.grub 
-endef 
+  endef
+endif
 
 ifneq ($(CONFIG_X86_VDI_IMAGES),)
   define Image/Build/vdi
