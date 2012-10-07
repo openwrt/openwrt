@@ -9,11 +9,9 @@ Cc: gwingerde@gmail.com
  drivers/net/wireless/rt2x00/rt2800lib.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800lib.c b/drivers/net/wireless/rt2x00/rt2800lib.c
-index 540c94f..01dc889 100644
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -2252,9 +2252,9 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -2273,9 +2273,9 @@ static void rt2800_config_channel(struct
  	 */
  	if (rt2x00_rt(rt2x00dev, RT3352)) {
  		rt2800_bbp_write(rt2x00dev, 27, 0x0);
@@ -25,6 +23,3 @@ index 540c94f..01dc889 100644
  	} else {
  		rt2800_bbp_write(rt2x00dev, 62, 0x37 - rt2x00dev->lna_gain);
  		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
--- 
-1.7.12.2
-
