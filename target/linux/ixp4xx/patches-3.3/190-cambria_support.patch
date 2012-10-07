@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/cambria-pci.c
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,79 @@
 +/*
 + * arch/arch/mach-ixp4xx/cambria-pci.c
 + *
@@ -55,6 +55,11 @@
 +		return IRQ_IXP4XX_GPIO9;
 +	else if (slot == 4)
 +		return IRQ_IXP4XX_GPIO8;
++	else if (slot == 6)
++		return IRQ_IXP4XX_GPIO10;
++	else if (slot == 15)
++		return IRQ_IXP4XX_GPIO8;
++
 +	else return -1;
 +}
 +
@@ -77,26 +82,30 @@
 +subsys_initcall(cambria_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/cambria-setup.c
-@@ -0,0 +1,574 @@
+@@ -0,0 +1,1005 @@
 +/*
 + * arch/arm/mach-ixp4xx/cambria-setup.c
 + *
 + * Board setup for the Gateworks Cambria series
 + *
 + * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
++ * Copyright (C) 2012 Gateworks Corporation <support@gateworks.com>
 + *
 + * based on coyote-setup.c:
 + *      Copyright (C) 2003-2005 MontaVista Software, Inc.
 + *
 + * Author: Imre Kaloz <kaloz@openwrt.org>
++ *         Tim Harvey <tharvey@gateworks.com>
 + */
 +
 +#include <linux/device.h>
 +#include <linux/gpio_buttons.h>
++#include <linux/gpio.h>
 +#include <linux/i2c.h>
 +#include <linux/i2c-gpio.h>
 +#include <linux/i2c/at24.h>
 +#include <linux/i2c/gw_i2c_pld.h>
++#include <linux/i2c/pca953x.h>
 +#include <linux/if_ether.h>
 +#include <linux/init.h>
 +#include <linux/input.h>
@@ -110,14 +119,17 @@
 +#include <linux/socket.h>
 +#include <linux/types.h>
 +#include <linux/tty.h>
++#include <linux/irq.h>
 +
 +#include <mach/hardware.h>
++#include <mach/gpio.h>
 +#include <asm/irq.h>
 +#include <asm/mach-types.h>
 +#include <asm/mach/arch.h>
 +#include <asm/mach/flash.h>
 +#include <asm/setup.h>
-+#include <linux/irq.h>
++
++#define ARRAY_AND_SIZE(x)       (x), ARRAY_SIZE(x)
 +
 +struct cambria_board_info {
 +	unsigned char	*model;
@@ -157,6 +169,38 @@
 +		.platform_data	= &cambria_i2c_gpio_data,
 +	},
 +};
++
++#ifdef SFP_SERIALID
++static struct i2c_gpio_platform_data cambria_i2c_gpio_sfpa_data = {
++	.sda_pin	= 113,
++	.scl_pin	= 112,
++	.sda_is_open_drain = 0,
++	.scl_is_open_drain = 0,
++};
++
++static struct platform_device cambria_i2c_gpio_sfpa = {
++	.name		= "i2c-gpio",
++	.id		= 1,
++	.dev = {
++		.platform_data	= &cambria_i2c_gpio_sfpa_data,
++	},
++};
++
++static struct i2c_gpio_platform_data cambria_i2c_gpio_sfpb_data = {
++	.sda_pin	= 115,
++	.scl_pin	= 114,
++	.sda_is_open_drain = 0,
++	.scl_is_open_drain = 0,
++};
++
++static struct platform_device cambria_i2c_gpio_sfpb = {
++	.name		= "i2c-gpio",
++	.id		= 2,
++	.dev = {
++		.platform_data	= &cambria_i2c_gpio_sfpb_data,
++	},
++};
++#endif // #ifdef SFP_SERIALID
 +
 +static struct eth_plat_info cambria_npec_data = {
 +	.phy		= 1,
@@ -221,6 +265,36 @@
 +		.start	= 0x53000000,
 +		.end	= 0x53000fff,
 +		.flags	= IORESOURCE_MEM
++	},
++	{
++		.start	= 0x52000000,
++		.end	= 0x52000fff,
++		.flags	= IORESOURCE_MEM
++	},
++	{
++		.start	= 0x52000000,
++		.end	= 0x52000fff,
++		.flags	= IORESOURCE_MEM
++	},
++	{
++		.start	= 0x52000000,
++		.end	= 0x52000fff,
++		.flags	= IORESOURCE_MEM
++	},
++	{
++		.start	= 0x52000000,
++		.end	= 0x52000fff,
++		.flags	= IORESOURCE_MEM
++	},
++	{
++		.start	= 0x52000000,
++		.end	= 0x52000fff,
++		.flags	= IORESOURCE_MEM
++	},
++	{
++		.start	= 0x53000000,
++		.end	= 0x53000fff,
++		.flags	= IORESOURCE_MEM
 +	}
 +};
 +
@@ -230,14 +304,44 @@
 +		.iotype		= UPIO_MEM_DELAY,
 +		.regshift	= 0,
 +		.uartclk	= 1843200,
-+		.rw_delay	= 2,
++		.rw_delay	= 10,
 +	},
 +	{
 +		.flags		= UPF_BOOT_AUTOCONF,
 +		.iotype		= UPIO_MEM_DELAY,
 +		.regshift	= 0,
 +		.uartclk	= 1843200,
-+		.rw_delay	= 2,
++		.rw_delay	= 10,
++	},
++	{
++		.flags		= UPF_BOOT_AUTOCONF,
++		.iotype		= UPIO_MEM,
++		.regshift	= 0,
++		.uartclk	= 18432000,
++	},
++	{
++		.flags		= UPF_BOOT_AUTOCONF,
++		.iotype		= UPIO_MEM,
++		.regshift	= 0,
++		.uartclk	= 18432000,
++	},
++	{
++		.flags		= UPF_BOOT_AUTOCONF,
++		.iotype		= UPIO_MEM,
++		.regshift	= 0,
++		.uartclk	= 18432000,
++	},
++	{
++		.flags		= UPF_BOOT_AUTOCONF,
++		.iotype		= UPIO_MEM,
++		.regshift	= 0,
++		.uartclk	= 18432000,
++	},
++	{
++		.flags		= UPF_BOOT_AUTOCONF,
++		.iotype		= UPIO_MEM,
++		.regshift	= 0,
++		.uartclk	= 18432000,
 +	},
 +  { },
 +};
@@ -280,8 +384,23 @@
 +
 +static struct gpio_led cambria_gpio_leds[] = {
 +	{
-+		.name		= "user",  /* green led */
++		.name		= "user",
 +		.gpio		= 5,
++		.active_low 	= 1,
++	},
++	{
++		.name		= "user2",
++		.gpio		= 0,
++		.active_low 	= 1,
++	},
++	{
++		.name		= "user3",
++		.gpio		= 0,
++		.active_low 	= 1,
++	},
++	{
++		.name		= "user4",
++		.gpio		= 0,
 +		.active_low 	= 1,
 +	}
 +};
@@ -302,6 +421,100 @@
 +		.name = "gpio",
 +		.flags  = 0,
 +	},
++};
++
++static struct gpio cambria_gpios_gw2350[] = {
++	// ARM GPIO
++#if 0 // configured from bootloader
++	{  0, GPIOF_IN,            "ARM_DIO0" },
++	{  1, GPIOF_IN,            "ARM_DIO1" },
++	{  2, GPIOF_IN,            "ARM_DIO2" },
++	{  3, GPIOF_IN,            "ARM_DIO3" },
++	{  4, GPIOF_IN,            "ARM_DIO4" },
++	{  5, GPIOF_IN,            "ARM_DIO5" },
++	{ 12, GPIOF_OUT_INIT_HIGH, "WDOGEN#" },
++#endif
++	{  8, GPIOF_IN,            "ARM_DIO8" },
++	{  9, GPIOF_IN,            "ARM_DIO9" },
++};
++
++static struct gpio cambria_gpios_gw2358[] = {
++	// ARM GPIO
++#if 0 // configured from bootloader
++	{  0, GPIOF_IN,            "*VINLOW#" },
++	{  2, GPIOF_IN,            "*GPS_PPS" },
++	{  3, GPIOF_IN,            "*GPS_IRQ#" },
++	{  4, GPIOF_IN,            "*RS485_IRQ#" },
++	{  5, GPIOF_IN,            "*SER_EN#" },
++	{ 14, GPIOF_OUT_INIT_HIGH, "*WDOGEN#" },
++#endif
++};
++
++static struct gpio cambria_gpios_gw2359[] = {
++	// ARM GPIO
++#if 0 // configured from bootloader
++	{  0, GPIOF_IN,            "*PCA_IRQ#" },
++	{  1, GPIOF_IN,            "ARM_DIO1" },
++	{  2, GPIOF_IN,            "ARM_DIO2" },
++	{  3, GPIOF_IN,            "ARM_DIO3" },
++	{  4, GPIOF_IN,            "ARM_DIO4" },
++	{  5, GPIOF_IN,            "ARM_DIO5" },
++	{  8, GPIOF_OUT_INIT_HIGH, "*WDOGEN#" },
++#endif
++	{ 11, GPIOF_OUT_INIT_HIGH, "*SER_EN"   },       // console serial enable
++	{ 12, GPIOF_IN,            "*GSC_IRQ#" },
++	{ 13, GPIOF_OUT_INIT_HIGH, "*PCIE_RST#"},
++	// GSC GPIO
++#if !(defined(CONFIG_INPUT_GPIO_BUTTONS) || defined(CONFIG_INPUT_GPIO_BUTTONS_MODULE))
++	{100, GPIOF_IN,            "*USER_PB#" },
++#endif
++	{103, GPIOF_OUT_INIT_HIGH, "*5V_EN" },         // 5V aux supply enable
++	{108, GPIOF_IN,            "*SMUXDA0" },
++	{109, GPIOF_IN,            "*SMUXDA1" },
++	{110, GPIOF_IN,            "*SMUXDA2" },
++	{111, GPIOF_IN,            "*SMUXDB0" },
++	{112, GPIOF_IN,            "*SMUXDB1" },
++	{113, GPIOF_IN,            "*SMUXDB2" },
++	// PCA GPIO
++	{118, GPIOF_IN,            "*USIM2_DET#"},     // USIM2 Detect
++	{120, GPIOF_OUT_INIT_LOW,  "*USB1_PCI_SEL"},   // USB1  Select (1=PCI, 0=FP)
++	{121, GPIOF_OUT_INIT_LOW,  "*USB2_PCI_SEL"},   // USB2  Select (1=PCI, 0=FP)
++	{122, GPIOF_IN,            "*USIM1_DET#"},     // USIM1 Detect
++	{123, GPIOF_OUT_INIT_HIGH, "*COM1_DTR#" },     // J21/J10
++	{124, GPIOF_IN,            "*COM1_DSR#" },     // J21/J10
++	{127, GPIOF_IN,            "PCA_DIO0" },
++	{128, GPIOF_IN,            "PCA_DIO1" },
++	{129, GPIOF_IN,            "PCA_DIO2" },
++	{130, GPIOF_IN,            "PCA_DIO3" },
++	{131, GPIOF_IN,            "PCA_DIO4" },
++};
++
++static struct gpio cambria_gpios_gw2360[] = {
++	// ARM GPIO
++	{  0, GPIOF_IN,            "*PCA_IRQ#" },
++	{ 11, GPIOF_OUT_INIT_LOW, "*SER0_EN#" },
++	{ 12, GPIOF_IN,            "*GSC_IRQ#" },
++	{ 13, GPIOF_OUT_INIT_HIGH, "*PCIE_RST#"},
++	// GSC GPIO
++#if !(defined(CONFIG_INPUT_GPIO_BUTTONS) || defined(CONFIG_INPUT_GPIO_BUTTONS_MODULE))
++	{100, GPIOF_IN,            "*USER_PB#" },
++#endif
++	{108, GPIOF_OUT_INIT_LOW,  "*ENET1_EN#" },     // ENET1 TX Enable
++	{109, GPIOF_IN,            "*ENET1_PRES#" },   // ENET1 Detect (0=SFP present)
++	{110, GPIOF_OUT_INIT_LOW,  "*ENET2_EN#" },     // ENET2 TX Enable
++	{111, GPIOF_IN,            "*ENET2_PRES#"},    // ENET2 Detect (0=SFP present)
++	// PCA GPIO
++	{116, GPIOF_OUT_INIT_HIGH, "*USIM2_LOC"},      // USIM2 Select (1=Loc, 0=Rem)
++	{117, GPIOF_IN,            "*USIM2_DET_LOC#" },// USIM2 Detect (Local Slot)
++	{118, GPIOF_IN,            "*USIM2_DET_REM#" },// USIM2 Detect (Remote Slot)
++	{120, GPIOF_OUT_INIT_LOW,  "*USB1_PCI_SEL"},   // USB1  Select (1=PCIe1, 0=J1)
++	{121, GPIOF_OUT_INIT_LOW,  "*USB2_PCI_SEL"},   // USB2  Select (1=PCIe2, 0=J1)
++	{122, GPIOF_IN,            "*USIM1_DET#"},     // USIM1 Detect
++	{127, GPIOF_IN,            "DIO0" },
++	{128, GPIOF_IN,            "DIO1" },
++	{129, GPIOF_IN,            "DIO2" },
++	{130, GPIOF_IN,            "DIO3" },
++	{131, GPIOF_IN,            "DIO4" },
 +};
 +
 +static struct platform_device cambria_gpio = {
@@ -445,6 +658,25 @@
 +	&cambria_uart,
 +};
 +
++static int cambria_register_gpio(struct gpio *array, size_t num)
++{
++	int i, err, ret;
++
++	ret = 0;
++	for (i = 0; i < num; i++, array++) {
++		const char *label = array->label;
++		if (label[0] == '*')
++			label++;
++		err = gpio_request_one(array->gpio, array->flags, label);
++		if (err)
++			ret = err;
++		else {
++			err = gpio_export(array->gpio, array->label[0] != '*');
++		}
++	}
++	return ret;
++}
++
 +static void __init cambria_gw23xx_setup(void)
 +{
 +	cambria_gpio_resources[0].start = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) |\
@@ -483,11 +715,14 @@
 +	platform_device_register(&cambria_usb1_device);
 +
 +	platform_device_register(&cambria_gpio_leds_device);
++
++	/* gpio config (/sys/class/gpio) */
++	cambria_register_gpio(ARRAY_AND_SIZE(cambria_gpios_gw2350));
 +}
 +
 +static void __init cambria_gw2358_setup(void)
 +{
-+	*IXP4XX_EXP_CS3 = 0xBFFF3C43;
++	*IXP4XX_EXP_CS3 = 0xBFFF3C43; // bit0 = 16bit vs 8bit bus
 +	irq_set_irq_type(IRQ_IXP4XX_GPIO3, IRQ_TYPE_EDGE_RISING);
 +	cambria_optional_uart_data[0].mapbase	= 0x53FC0000;
 +	cambria_optional_uart_data[0].membase	= (void __iomem *)ioremap(0x53FC0000, 0x0fff);
@@ -519,6 +754,175 @@
 +	platform_device_register(&cambria_latch_leds_device);
 +
 +	platform_device_register(&cambria_gpio_buttons_device);
++
++	/* gpio config (/sys/class/gpio) */
++	cambria_register_gpio(ARRAY_AND_SIZE(cambria_gpios_gw2358));
++}
++
++static void __init cambria_gw2359_setup(void)
++{
++	platform_device_register(&cambria_gpio);
++
++#if defined(CONFIG_MVSWITCH_PHY) || defined(CONFIG_MVSWITCH_PHY_MODULE)
++	/* The mvswitch driver has some hard-coded values which could
++	 * easily be turned into a platform resource if needed.  For now they
++	 * match our hardware configuration:
++	 *  MV_BASE    0x10 - phy base address
++	 *  MV_WANPORT 0 - Port0 (ENET2) is WAN (SFP module)
++	 *  MV_CPUPORT 5 - Port5 is CPU NPEA (eth1)
++	 *
++	 * The mvswitch driver registers a fixup which forces a driver match
++	 * if phy_addr matches MV_BASE
++	 *
++	 * Two static defautl VLAN's are created: WAN port in 1, and all other ports
++	 * in the other.
++	 */
++	cambria_npea_data.phy = 0x10; // mvswitch driver catches this
++#else
++	// Switch Port5 to CPU is MII<->MII (no PHY) - this disables the genphy driver
++	cambria_npea_data.phy = IXP4XX_ETH_PHY_MAX_ADDR;
++	// CPU NPE-C is in bridge bypass mode to Port4 PHY@0x14
++	cambria_npec_data.phy = 0x14;
++#endif
++	platform_device_register(&cambria_npec_device);
++	platform_device_register(&cambria_npea_device);
++
++	platform_device_register(&cambria_usb0_device);
++	platform_device_register(&cambria_usb1_device);
++
++	cambria_gpio_leds_data.num_leds = 3;
++	cambria_gpio_leds[0].name = "user1";
++	cambria_gpio_leds[0].gpio = 125; // PNLLED1#
++	cambria_gpio_leds[1].gpio = 126; // PNLLED3#
++	cambria_gpio_leds[2].gpio = 119; // PNLLED4#
++	platform_device_register(&cambria_gpio_leds_device);
++
++#if (defined(CONFIG_INPUT_GPIO_BUTTONS) || defined(CONFIG_INPUT_GPIO_BUTTONS_MODULE))
++	cambria_gpio_buttons[0].gpio = 100;
++	platform_device_register(&cambria_gpio_buttons_device);
++#endif
++
++	/* gpio config (/sys/class/gpio) */
++	cambria_register_gpio(ARRAY_AND_SIZE(cambria_gpios_gw2359));
++}
++
++static void __init cambria_gw2360_setup(void)
++{
++	/* The GW2360 has 8 UARTs in addition to the 1 IXP4xxx UART.
++	 * The chip-selects are expanded via a 3-to-8 decoder and CS2
++	 * and they are 8bit devices
++	 */
++	*IXP4XX_EXP_CS2 = 0xBFFF3C43;
++	cambria_optional_uart_data[0].mapbase = 0x52000000;
++	cambria_optional_uart_data[0].membase = (void __iomem *)ioremap(0x52000000, 0x0fff);
++	cambria_optional_uart_data[0].uartclk = 18432000;
++	cambria_optional_uart_data[0].iotype  = UPIO_MEM;
++	cambria_optional_uart_data[0].irq     = IRQ_IXP4XX_GPIO2;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO2, IRQ_TYPE_EDGE_RISING);
++
++	cambria_optional_uart_data[1].mapbase = 0x52000008;
++	cambria_optional_uart_data[1].membase = (void __iomem *)ioremap(0x52000008, 0x0fff);
++	cambria_optional_uart_data[1].uartclk = 18432000;
++	cambria_optional_uart_data[1].iotype  = UPIO_MEM;
++	cambria_optional_uart_data[1].irq     = IRQ_IXP4XX_GPIO3;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO3, IRQ_TYPE_EDGE_RISING);
++
++	cambria_optional_uart_data[2].mapbase = 0x52000010;
++	cambria_optional_uart_data[2].membase = (void __iomem *)ioremap(0x52000010, 0x0fff);
++	cambria_optional_uart_data[2].uartclk = 18432000;
++	cambria_optional_uart_data[2].iotype  = UPIO_MEM;
++	cambria_optional_uart_data[2].irq     = IRQ_IXP4XX_GPIO4;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO4, IRQ_TYPE_EDGE_RISING);
++
++	cambria_optional_uart_data[3].mapbase = 0x52000018;
++	cambria_optional_uart_data[3].membase = (void __iomem *)ioremap(0x52000018, 0x0fff);
++	cambria_optional_uart_data[3].uartclk = 18432000;
++	cambria_optional_uart_data[3].iotype  = UPIO_MEM;
++	cambria_optional_uart_data[3].irq     = IRQ_IXP4XX_GPIO5;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO5, IRQ_TYPE_EDGE_RISING);
++
++	cambria_optional_uart_data[4].mapbase = 0x52000020;
++	cambria_optional_uart_data[4].membase = (void __iomem *)ioremap(0x52000020, 0x0fff);
++	cambria_optional_uart_data[4].uartclk = 18432000;
++	cambria_optional_uart_data[4].iotype  = UPIO_MEM;
++	cambria_optional_uart_data[4].irq     = IRQ_IXP4XX_GPIO8;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO8, IRQ_TYPE_EDGE_RISING);
++
++	cambria_optional_uart_data[5].mapbase = 0x52000028;
++	cambria_optional_uart_data[5].membase = (void __iomem *)ioremap(0x52000028, 0x0fff);
++	cambria_optional_uart_data[5].uartclk = 18432000;
++	cambria_optional_uart_data[5].iotype  = UPIO_MEM;
++	cambria_optional_uart_data[5].irq     = IRQ_IXP4XX_GPIO9;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO9, IRQ_TYPE_EDGE_RISING);
++
++	cambria_optional_uart_data[6].mapbase = 0x52000030;
++	cambria_optional_uart_data[6].membase = (void __iomem *)ioremap(0x52000030, 0x0fff);
++	cambria_optional_uart_data[6].uartclk = 18432000;
++	cambria_optional_uart_data[6].iotype  = UPIO_MEM;
++	cambria_optional_uart_data[6].irq     = IRQ_IXP4XX_GPIO10;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO10, IRQ_TYPE_EDGE_RISING);
++
++	cambria_optional_uart.num_resources   = 7,
++	platform_device_register(&cambria_optional_uart);
++
++	platform_device_register(&cambria_gpio);
++
++#if defined(CONFIG_MVSWITCH_PHY) || defined(CONFIG_MVSWITCH_PHY_MODULE)
++	/* The mvswitch driver has some hard-coded values which could
++	 * easily be turned into a platform resource if needed.  For now they
++	 * match our hardware configuration:
++	 *  MV_BASE    0x10 - phy base address
++	 *  MV_WANPORT 0 - Port0 (ENET2) is WAN (SFP module)
++	 *  MV_CPUPORT 5 - Port5 is CPU NPEA (eth1)
++	 *
++	 * The mvswitch driver registers a fixup which forces a driver match
++	 * if phy_addr matches MV_BASE
++	 *
++	 * Two static defautl VLAN's are created: WAN port in 1, and all other ports
++	 * in the other.
++	 */
++	cambria_npea_data.phy = 0x10; // mvswitch driver catches this
++#else
++	// Switch Port5 to CPU is MII<->MII (no PHY) - this disables the generic PHY driver
++	cambria_npea_data.phy = IXP4XX_ETH_PHY_MAX_ADDR;
++#endif
++
++	// disable genphy autonegotiation on NPE-C PHY (eth1) as its 100BaseFX
++	//cambria_npec_data.noautoneg = 1;   // disable autoneg
++	cambria_npec_data.speed_10 = 0;    // 100mbps
++	cambria_npec_data.half_duplex = 0; // full-duplex
++	platform_device_register(&cambria_npec_device);
++	platform_device_register(&cambria_npea_device);
++
++	platform_device_register(&cambria_usb0_device);
++	platform_device_register(&cambria_usb1_device);
++
++	cambria_gpio_leds_data.num_leds = 3;
++	cambria_gpio_leds[0].name = "user1";
++	cambria_gpio_leds[0].gpio = 125;
++	cambria_gpio_leds[1].gpio = 126;
++	cambria_gpio_leds[2].gpio = 119;
++	platform_device_register(&cambria_gpio_leds_device);
++
++#if (defined(CONFIG_INPUT_GPIO_BUTTONS) || defined(CONFIG_INPUT_GPIO_BUTTONS_MODULE))
++	cambria_gpio_buttons[0].gpio = 100;
++	platform_device_register(&cambria_gpio_buttons_device);
++#endif
++
++#ifdef SFP_SERIALID
++	/* the SFP modules each have an i2c bus for serial ident via GSC GPIO
++	 * To use these the i2c-gpio driver must be changed to use the _cansleep
++	 * varients of gpio_get_value/gpio_set_value (I don't know why it doesn't
++	 * use that anyway as it doesn't operate in an IRQ context).
++	 * Additionally the i2c-gpio module must set the gpio to output-high prior
++	 * to changing direction to an input to enable internal Pullups
++	 */
++	platform_device_register(&cambria_i2c_gpio_sfpa);
++	platform_device_register(&cambria_i2c_gpio_sfpb);
++#endif
++
++	/* gpio config (/sys/class/gpio) */
++	cambria_register_gpio(ARRAY_AND_SIZE(cambria_gpios_gw2360));
 +}
 +
 +static struct cambria_board_info cambria_boards[] __initdata = {
@@ -526,7 +930,19 @@
 +		.model	= "GW2350",
 +		.setup	= cambria_gw2350_setup,
 +	}, {
++		.model	= "GW2351",
++		.setup	= cambria_gw2350_setup,
++	}, {
 +		.model	= "GW2358",
++		.setup	= cambria_gw2358_setup,
++	}, {
++		.model	= "GW2359",
++		.setup	= cambria_gw2359_setup,
++	}, {
++		.model	= "GW2360",
++		.setup	= cambria_gw2360_setup,
++	}, {
++		.model	= "GW2371",
 +		.setup	= cambria_gw2358_setup,
 +	}
 +};
@@ -576,9 +992,30 @@
 +	.setup		= at24_setup,
 +};
 +
++static struct pca953x_platform_data cambria_pca_data = {
++	.gpio_base = 100,
++	.irq_base = -1,
++};
++
++static struct pca953x_platform_data cambria_pca2_data = {
++	.gpio_base = 116,
++	.irq_base = -1,
++};
++
 +static struct i2c_board_info __initdata cambria_i2c_board_info[] = {
 +	{
++		I2C_BOARD_INFO("pca9555", 0x23),
++		.platform_data = &cambria_pca_data,
++	},
++	{
++		I2C_BOARD_INFO("pca9555", 0x27),
++		.platform_data = &cambria_pca2_data,
++	},
++	{
 +		I2C_BOARD_INFO("ds1672", 0x68),
++	},
++	{
++		I2C_BOARD_INFO("gsp", 0x29),
 +	},
 +	{
 +		I2C_BOARD_INFO("ad7418", 0x28),
@@ -604,10 +1041,10 @@
 +	cambria_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
 +	cambria_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
 +
-+	*IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE;
++	*IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE; // make sure window is writable
 +	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
 +
-+	platform_add_devices(cambria_devices, ARRAY_SIZE(cambria_devices));
++	platform_add_devices(ARRAY_AND_SIZE(cambria_devices));
 +
 +	cambria_pata_resources[0].start = 0x53e00000;
 +	cambria_pata_resources[0].end = 0x53e3ffff;
@@ -618,8 +1055,7 @@
 +	cambria_pata_data.cs0_cfg = IXP4XX_EXP_CS3;
 +	cambria_pata_data.cs1_cfg = IXP4XX_EXP_CS3;
 +
-+	i2c_register_board_info(0, cambria_i2c_board_info,
-+				ARRAY_SIZE(cambria_i2c_board_info));
++	i2c_register_board_info(0, ARRAY_AND_SIZE(cambria_i2c_board_info));
 +}
 +
 +static int __init cambria_model_setup(void)
