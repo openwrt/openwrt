@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-ixp4xx/avila-setup.c
 +++ b/arch/arm/mach-ixp4xx/avila-setup.c
-@@ -14,9 +14,14 @@
+@@ -14,9 +14,15 @@
  #include <linux/kernel.h>
  #include <linux/init.h>
  #include <linux/device.h>
@@ -12,13 +12,21 @@
  #include <linux/serial_8250.h>
 +#include <linux/i2c.h>
 +#include <linux/i2c/at24.h>
++#include <linux/leds.h>
  #include <linux/i2c-gpio.h>
  #include <asm/types.h>
  #include <asm/setup.h>
-@@ -30,6 +35,13 @@
+@@ -30,6 +36,20 @@
  #define AVILA_SDA_PIN	7
  #define AVILA_SCL_PIN	6
  
++/* User LEDs */
++#define AVILA_GW23XX_LED_USER_GPIO     3
++#define AVILA_GW23X7_LED_USER_GPIO     4
++
++/* gpio mask used by platform device */
++#define AVILA_GPIO_MASK        (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9)
++
 +struct avila_board_info {
 +	unsigned char	*model;
 +	void		(*setup)(void);
@@ -29,7 +37,7 @@
  static struct flash_platform_data avila_flash_data = {
  	.map_name	= "cfi_probe",
  	.width		= 2,
-@@ -133,16 +145,181 @@ static struct platform_device avila_pata
+@@ -133,16 +153,277 @@ static struct platform_device avila_pata
  	.resource		= avila_pata_resources,
  };
  
@@ -58,6 +66,72 @@
 +	.dev.platform_data	= &avila_npec_data,
 +};
 +
++static struct gpio_led avila_gpio_leds[] = {
++	{
++		.name		= "user",  /* green led */
++		.gpio		= AVILA_GW23XX_LED_USER_GPIO,
++		.active_low	= 1,
++	}
++};
++
++static struct gpio_led_platform_data avila_gpio_leds_data = {
++	.num_leds		= 1,
++	.leds			= avila_gpio_leds,
++};
++
++static struct platform_device avila_gpio_leds_device = {
++	.name			= "leds-gpio",
++	.id			= -1,
++	.dev.platform_data	= &avila_gpio_leds_data,
++};
++
++static struct latch_led avila_latch_leds[] = {
++	{
++		.name	= "led0",  /* green led */
++		.bit	= 0,
++	},
++	{
++		.name	= "led1",  /* green led */
++		.bit	= 1,
++	},
++	{
++		.name	= "led2",  /* green led */
++		.bit	= 2,
++	},
++	{
++		.name	= "led3",  /* green led */
++		.bit	= 3,
++	},
++	{
++		.name	= "led4",  /* green led */
++		.bit	= 4,
++	},
++	{
++		.name	= "led5",  /* green led */
++		.bit	= 5,
++	},
++	{
++		.name	= "led6",  /* green led */
++		.bit	= 6,
++	},
++	{
++		.name	= "led7",  /* green led */
++		.bit	= 7,
++	}
++};
++
++static struct latch_led_platform_data avila_latch_leds_data = {
++	.num_leds	= 8,
++	.leds		= avila_latch_leds,
++	.mem		= 0x51000000,
++};
++
++static struct platform_device avila_latch_leds_device = {
++	.name			= "leds-latch",
++	.id			= -1,
++	.dev.platform_data	= &avila_latch_leds_data,
++};
++
  static struct platform_device *avila_devices[] __initdata = {
  	&avila_i2c_gpio,
  	&avila_flash,
@@ -68,12 +142,16 @@
 +{
 +	platform_device_register(&avila_npeb_device);
 +	platform_device_register(&avila_npec_device);
++
++	platform_device_register(&avila_gpio_leds_device);
 +}
 +
 +static void __init avila_gw2342_setup(void)
 +{
 +	platform_device_register(&avila_npeb_device);
 +	platform_device_register(&avila_npec_device);
++
++	platform_device_register(&avila_gpio_leds_device);
 +}
 +
 +static void __init avila_gw2345_setup(void)
@@ -84,22 +162,30 @@
 +
 +	avila_npec_data.phy = 5; /* port 5 of the KS8995 switch */
 +	platform_device_register(&avila_npec_device);
++
++	platform_device_register(&avila_gpio_leds_device);
 +}
 +
 +static void __init avila_gw2347_setup(void)
 +{
 +	platform_device_register(&avila_npeb_device);
++
++	avila_gpio_leds[0].gpio = AVILA_GW23X7_LED_USER_GPIO;
++	platform_device_register(&avila_gpio_leds_device);
 +}
 +
 +static void __init avila_gw2348_setup(void)
 +{
 +	platform_device_register(&avila_npeb_device);
 +	platform_device_register(&avila_npec_device);
++
++	platform_device_register(&avila_gpio_leds_device);
 +}
 +
 +static void __init avila_gw2353_setup(void)
 +{
 +	platform_device_register(&avila_npeb_device);
++	platform_device_register(&avila_gpio_leds_device);
 +}
 +
 +static void __init avila_gw2355_setup(void)
@@ -110,11 +196,29 @@
 +
 +	avila_npec_data.phy = 16;
 +	platform_device_register(&avila_npec_device);
++
++	platform_device_register(&avila_gpio_leds_device);
++
++	*IXP4XX_EXP_CS4 |= 0xbfff3c03;
++	avila_latch_leds[0].name = "RXD";
++	avila_latch_leds[1].name = "TXD";
++	avila_latch_leds[2].name = "POL";
++	avila_latch_leds[3].name = "LNK";
++	avila_latch_leds[4].name = "ERR";
++	avila_latch_leds_data.num_leds = 5;
++	avila_latch_leds_data.mem = 0x54000000;
++	platform_device_register(&avila_latch_leds_device);
 +}
 +
 +static void __init avila_gw2357_setup(void)
 +{
 +	platform_device_register(&avila_npeb_device);
++
++	avila_gpio_leds[0].gpio = AVILA_GW23X7_LED_USER_GPIO;
++	platform_device_register(&avila_gpio_leds_device);
++
++	*IXP4XX_EXP_CS1 |= 0xbfff3c03;
++	platform_device_register(&avila_latch_leds_device);
 +}
 +
 +static struct avila_board_info avila_boards[] __initdata = {
@@ -211,7 +315,7 @@
  	avila_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
  	avila_flash_resource.end =
  		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
-@@ -160,7 +337,28 @@ static void __init avila_init(void)
+@@ -160,7 +441,28 @@ static void __init avila_init(void)
  
  	platform_device_register(&avila_pata);
  
