@@ -82,6 +82,7 @@ menu "Target Images"
 		bool "iso"
 		default n
 		depends on TARGET_x86_generic
+		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Create some bootable ISO image
 
