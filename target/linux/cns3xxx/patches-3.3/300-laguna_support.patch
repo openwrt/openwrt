@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/mach-cns3xxx/laguna.c
-@@ -0,0 +1,919 @@
+@@ -0,0 +1,935 @@
 +/*
 + * Gateworks Corporation Laguna Platform
 + *
@@ -660,6 +660,16 @@
 +	{ 108, GPIOF_IN           , "J9_DIOGSC0" },
 +};
 +
++static struct gpio laguna_gpio_gw2383[] = {
++	{   0, GPIOF_IN           , "*GPS_PPS" },
++	{   1, GPIOF_IN           , "*GSC_IRQ#" },
++	{   2, GPIOF_OUT_INIT_HIGH, "*PCIE_RST#" },
++	{   3, GPIOF_IN           , "GPIO0" },
++	{   8, GPIOF_IN           , "GPIO1" },
++	{ 100, GPIOF_IN           , "DIO0" },
++	{ 101, GPIOF_IN           , "DIO1" },
++};
++
 +static struct gpio laguna_gpio_gw2382[] = {
 +	{   0, GPIOF_IN           , "*GPS_PPS" },
 +	{   1, GPIOF_IN           , "*GSC_IRQ#" },
@@ -881,6 +891,12 @@
 +			// configure GPIO's
 +			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2384));
 +			// configure LED's
++			laguna_gpio_leds_data.num_leds = 1;
++		} else if (strncmp(laguna_info.model, "GW2383", 6) == 0) {
++			// configure GPIO's
++			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2383));
++			// configure LED's
++			laguna_gpio_leds[0].gpio = 107;
 +			laguna_gpio_leds_data.num_leds = 1;
 +		} else if (strncmp(laguna_info.model, "GW2382", 6) == 0) {
 +			// configure GPIO's
