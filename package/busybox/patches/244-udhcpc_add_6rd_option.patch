@@ -9,7 +9,7 @@
  	{ OPTION_STRING                           , 0xfc }, /* DHCP_WPAD          */
  
  	/* Options below have no match in dhcp_option_strings[],
-@@ -127,6 +129,8 @@ const char dhcp_option_strings[] ALIGN1
+@@ -127,6 +129,8 @@ const char dhcp_option_strings[] ALIGN1 
  	"vlanpriority" "\0"/* DHCP_VLAN_PRIORITY  */
  #endif
  	"msstaticroutes""\0"/* DHCP_MS_STATIC_ROUTES */
@@ -18,7 +18,7 @@
  	"wpad" "\0"        /* DHCP_WPAD           */
  	;
  
-@@ -154,6 +158,7 @@ const uint8_t dhcp_option_lengths[] ALIG
+@@ -155,6 +159,7 @@ const uint8_t dhcp_option_lengths[] ALIG
  	[OPTION_S32] =     4,
  	/* Just like OPTION_STRING, we use minimum length here */
  	[OPTION_STATIC_ROUTES] = 5,
@@ -28,7 +28,7 @@
  
 --- a/networking/udhcp/common.h
 +++ b/networking/udhcp/common.h
-@@ -88,6 +88,7 @@ enum {
+@@ -91,6 +91,7 @@ enum {
  	OPTION_S32,
  	OPTION_BIN,
  	OPTION_STATIC_ROUTES,
@@ -44,9 +44,9 @@
  	[OPTION_STATIC_ROUTES   ] = sizeof("255.255.255.255/32 255.255.255.255 "),
 +	[OPTION_6RD             ] = sizeof("32 128 FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF 255.255.255.255 "),
  	[OPTION_STRING          ] = 1,
+ 	[OPTION_STRING_HOST     ] = 1,
  #if ENABLE_FEATURE_UDHCP_RFC3397
- 	[OPTION_DNS_STRING      ] = 1, /* unused */
-@@ -123,6 +124,23 @@ static int sprint_nip(char *dest, const
+@@ -124,6 +125,23 @@ static int sprint_nip(char *dest, const 
  	return sprintf(dest, "%s%u.%u.%u.%u", pre, ip[0], ip[1], ip[2], ip[3]);
  }
  
@@ -70,11 +70,10 @@
  /* really simple implementation, just count the bits */
  static int mton(uint32_t mask)
  {
-@@ -231,6 +249,70 @@ static NOINLINE char *xmalloc_optname_op
- 			}
+@@ -293,6 +311,70 @@ static NOINLINE char *xmalloc_optname_op
  
  			return ret;
-+		}
+ 		}
 +		case OPTION_6RD: {
 +			/* Option binary format:
 +			 *  0                   1                   2                   3
@@ -138,6 +137,7 @@
 +			}
 +
 +			return ret;
- 		}
++		}
  #if ENABLE_FEATURE_UDHCP_RFC3397
  		case OPTION_DNS_STRING:
+ 			/* unpack option into dest; use ret for prefix (i.e., "optname=") */

@@ -1,6 +1,5 @@
-diff -ur busybox-1.19.4.orig/networking/udhcp/dhcpc.c busybox-1.19.4/networking/udhcp/dhcpc.c
---- busybox-1.19.4.orig/networking/udhcp/dhcpc.c	2012-09-06 22:33:53.476998721 +0400
-+++ busybox-1.19.4/networking/udhcp/dhcpc.c	2012-09-07 01:09:46.693372304 +0400
+--- a/networking/udhcp/dhcpc.c
++++ b/networking/udhcp/dhcpc.c
 @@ -26,8 +26,8 @@
  #include "dhcpc.h"
  
@@ -11,7 +10,7 @@ diff -ur busybox-1.19.4.orig/networking/udhcp/dhcpc.c busybox-1.19.4/networking/
  
  /* struct client_config_t client_config is in bb_common_bufsiz1 */
  
-@@ -784,17 +784,41 @@
+@@ -846,17 +846,41 @@ static int send_release(uint32_t server,
  static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
  {
  	int bytes;
@@ -54,7 +53,7 @@ diff -ur busybox-1.19.4.orig/networking/udhcp/dhcpc.c busybox-1.19.4/networking/
  	if (bytes < (int) (sizeof(packet.ip) + sizeof(packet.udp))) {
  		log1("Packet is too short, ignoring");
  		return -2;
-@@ -834,7 +858,7 @@
+@@ -896,7 +920,7 @@ static NOINLINE int udhcp_recv_raw_packe
  	packet.ip.tot_len = packet.udp.len; /* yes, this is needed */
  	check = packet.udp.check;
  	packet.udp.check = 0;
@@ -63,7 +62,7 @@ diff -ur busybox-1.19.4.orig/networking/udhcp/dhcpc.c busybox-1.19.4/networking/
  		log1("Packet with bad UDP checksum received, ignoring");
  		return -2;
  	}
-@@ -880,6 +904,7 @@
+@@ -942,6 +966,7 @@ static int udhcp_raw_socket(int ifindex)
  {
  	int fd;
  	struct sockaddr_ll sock;
@@ -71,7 +70,7 @@ diff -ur busybox-1.19.4.orig/networking/udhcp/dhcpc.c busybox-1.19.4/networking/
  
  	/*
  	 * Comment:
-@@ -946,6 +971,13 @@
+@@ -1008,6 +1033,13 @@ static int udhcp_raw_socket(int ifindex)
  			log1("Attached filter to raw socket fd %d", fd); // log?
  	}
  
