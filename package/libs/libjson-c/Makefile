@@ -18,6 +18,8 @@ PKG_MD5SUM:=3a13d264528dcbaf3931b0cede24abae
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 include $(INCLUDE_DIR)/package.mk
 
 TARGET_CFLAGS += $(FPIC)

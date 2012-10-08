@@ -17,6 +17,7 @@ PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_SUBDIR:=hotplug2-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://svn.nomi.cz/svn/isteve/hotplug2
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 #PKG_SOURCE_URL:=http://isteve.bofh.cz/~isteve/hotplug2
 #PKG_MD5SUM:=ea2c01d027b4002e4e6b0ff266f51a51
 
