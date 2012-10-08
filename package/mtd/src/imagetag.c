@@ -32,9 +32,10 @@
 
 #include <sys/ioctl.h>
 #include <mtd/mtd-user.h>
+#include <../arch/mips/include/asm/mach-bcm63xx/bcm963xx_tag.h>
+
 #include "mtd.h"
 #include "crc32.h"
-#include "bcm_tag.h"
 
 ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
@@ -112,28 +113,28 @@ trx_fixup(int fd, const char *name)
 
 	tag = (struct bcm_tag *) (ptr);
 
-	cfelen = strntoul(&tag->cfeLength[0], NULL, 10, IMAGE_LEN);
+	cfelen = strntoul(&tag->cfe_length[0], NULL, 10, IMAGE_LEN);
 	if (cfelen) {
 	  fprintf(stderr, "Non-zero CFE length.  This is currently unsupported.\n");
 	  exit(1);
 	}
 
-	headercrc = compute_crc32(CRC_START, offset, offsetof(struct bcm_tag, headerCRC), fd);
-	if (headercrc != *(uint32_t *)(&tag->headerCRC[0])) {
+	headercrc = compute_crc32(CRC_START, offset, offsetof(struct bcm_tag, header_crc), fd);
+	if (headercrc != *(uint32_t *)(&tag->header_crc)) {
 		fprintf(stderr, "Tag verify failed.  This may not be a valid image.\n");
 		exit(1);
 	}
 
-	sprintf(&tag->flashRootLength[0], "%lu", 0);
-	strncpy(&tag->totalLength[0], &tag->kernelLength[0], IMAGE_LEN);
+	sprintf(&tag->root_length[0], "%u", 0);
+	strncpy(&tag->total_length[0], &tag->kernel_length[0], IMAGE_LEN);
 
 	imagestart = sizeof(tag);
-	memcpy(&tag->imageCRC[0], &tag->kernelCRC[0], CRC_LEN);
-	memcpy(&tag->fskernelCRC[0], &tag->kernelCRC[0], CRC_LEN);
+	memcpy(&tag->image_crc, &tag->kernel_crc, sizeof(uint32_t));
+	memcpy(&tag->fskernel_crc, &tag->kernel_crc, sizeof(uint32_t));
 	rootfscrc = CRC_START;
-	memcpy(&tag->rootfsCRC[0], &rootfscrc, sizeof(uint32_t));
-	headercrc = crc32(CRC_START, tag, offsetof(struct bcm_tag, headerCRC));
-	memcpy(&tag->headerCRC[0], &headercrc, sizeof(uint32_t));
+	memcpy(&tag->rootfs_crc, &rootfscrc, sizeof(uint32_t));
+	headercrc = crc32(CRC_START, tag, offsetof(struct bcm_tag, header_crc));
+	memcpy(&tag->header_crc, &headercrc, sizeof(uint32_t));
 
 	msync(ptr, sizeof(struct bcm_tag), MS_SYNC|MS_INVALIDATE);
 	munmap(ptr, len);
@@ -164,12 +165,12 @@ trx_check(int imagefd, const char *mtd, char *buf, int *len)
 		fprintf(stdout, "Could not get image header, file too small (%d bytes)\n", *len);
 		return 0;
 	}
-	headerCRC = crc32buf(buf, offsetof(struct bcm_tag, headerCRC));
-	if (*(uint32_t *)(&tag->headerCRC[0]) != headerCRC) {
+	headerCRC = crc32buf(buf, offsetof(struct bcm_tag, header_crc));
+	if (*(uint32_t *)(&tag->header_crc) != headerCRC) {
   
 	  if (quiet < 2) {
-		fprintf(stderr, "Bad header CRC got %08lx, calculated %08lx\n",
-				*(uint32_t *)(&tag->headerCRC[0]), headerCRC);
+		fprintf(stderr, "Bad header CRC got %08x, calculated %08x\n",
+				*(uint32_t *)(&tag->header_crc), headerCRC);
 		fprintf(stderr, "This is not the correct file format; refusing to flash.\n"
 				"Please specify the correct file or use -f to force.\n");
 	  }
@@ -183,7 +184,7 @@ trx_check(int imagefd, const char *mtd, char *buf, int *len)
 		exit(1);
 	}
 
-	imageLen = strntoul(&tag->totalLength[0], NULL, 10, IMAGE_LEN);
+	imageLen = strntoul(&tag->total_length[0], NULL, 10, IMAGE_LEN);
 	
 	if(mtdsize < imageLen) {
 		fprintf(stderr, "Image too big for partition: %s\n", mtd);
@@ -238,7 +239,7 @@ mtd_fixtrx(const char *mtd, size_t offset)
 
 	tag = (struct bcm_tag *) (buf + offset);
 
-	cfelen = strntoul(&tag->cfeLength[0], NULL, 10, IMAGE_LEN);
+	cfelen = strntoul(tag->cfe_length, NULL, 10, IMAGE_LEN);
 	if (cfelen) {
 	  fprintf(stderr, "Non-zero CFE length.  This is currently unsupported.\n");
 	  exit(1);
@@ -248,8 +249,8 @@ mtd_fixtrx(const char *mtd, size_t offset)
 	  fprintf(stderr, "Verifying we actually have an imagetag.\n");
 	}
 
-	headercrc = compute_crc32(CRC_START, offset, offsetof(struct bcm_tag, headerCRC), fd);
-	if (headercrc != *(uint32_t *)(&tag->headerCRC[0])) {
+	headercrc = compute_crc32(CRC_START, offset, offsetof(struct bcm_tag, header_crc), fd);
+	if (headercrc != *(uint32_t *)(&tag->header_crc)) {
 		fprintf(stderr, "Tag verify failed.  This may not be a valid image.\n");
 		exit(1);
 	}
@@ -258,7 +259,7 @@ mtd_fixtrx(const char *mtd, size_t offset)
 	  fprintf(stderr, "Checking current fixed status.\n");
 	}
 
-	rootfslen = strntoul(&tag->flashRootLength[0], NULL, 10, IMAGE_LEN);
+	rootfslen = strntoul(&tag->root_length[0], NULL, 10, IMAGE_LEN);
 	if (rootfslen == 0) {
 	  if (quiet < 2) 
 		fprintf(stderr, "Header already fixed, exiting\n");
@@ -270,20 +271,20 @@ mtd_fixtrx(const char *mtd, size_t offset)
 	  fprintf(stderr, "Setting root length to 0.\n");
 	}
 
-	sprintf(&tag->flashRootLength[0], "%lu", 0);
-	strncpy(&tag->totalLength[0], &tag->kernelLength[0], IMAGE_LEN);
+	sprintf(&tag->root_length[0], "%u", 0);
+	strncpy(&tag->total_length[0], &tag->kernel_length[0], IMAGE_LEN);
 
 	if (quiet < 2) {
 	  fprintf(stderr, "Recalculating CRCs.\n");
 	}
 
 	imagestart = sizeof(tag);
-	memcpy(&tag->imageCRC[0], &tag->kernelCRC[0], CRC_LEN);
-	memcpy(&tag->fskernelCRC[0], &tag->kernelCRC[0], CRC_LEN);
+	memcpy(&tag->image_crc, &tag->kernel_crc, sizeof(uint32_t));
+	memcpy(&tag->fskernel_crc, &tag->kernel_crc, sizeof(uint32_t));
 	rootfscrc = CRC_START;
-	memcpy(&tag->rootfsCRC[0], &rootfscrc, sizeof(uint32_t));
-	headercrc = crc32(CRC_START, tag, offsetof(struct bcm_tag, headerCRC));
-	memcpy(&tag->headerCRC[0], &headercrc, sizeof(uint32_t));
+	memcpy(&tag->rootfs_crc, &rootfscrc, sizeof(uint32_t));
+	headercrc = crc32(CRC_START, tag, offsetof(struct bcm_tag, header_crc));
+	memcpy(&tag->header_crc, &headercrc, sizeof(uint32_t));
 
 	if (quiet < 2) {
 	  fprintf(stderr, "Erasing imagetag block\n");
@@ -296,7 +297,7 @@ mtd_fixtrx(const char *mtd, size_t offset)
 
 	if (quiet < 2) {
 	  fprintf(stderr, "New image crc32: 0x%x, rewriting block\n", 
-			  *(uint32_t *)(&tag->imageCRC[0]));
+			  *(uint32_t *)(&tag->image_crc));
 	  fprintf(stderr, "New header crc32: 0x%x, rewriting block\n", headercrc);  
 	}
 
