@@ -11,6 +11,8 @@ PKG_SOURCE_VERSION:=0a2179bbc0844928f2a0ec01dba93d9b5d6d41a7
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 

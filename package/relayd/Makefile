@@ -17,6 +17,8 @@ PKG_SOURCE_URL:=git://nbd.name/relayd.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=4e8f1fa4ca2b176500362843a9e57ea5abd4b7a3
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 

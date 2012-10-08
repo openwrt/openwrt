@@ -11,6 +11,8 @@ PKG_NAME:=libnl-tiny
 PKG_VERSION:=0.1
 PKG_RELEASE:=3
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libnl-tiny

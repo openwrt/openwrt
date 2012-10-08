@@ -13,6 +13,8 @@ PKG_RELEASE:=1
 PKG_BUILD_DEPENDS:=libpcap
 PKG_BUILD_DIR:=$(BUILD_DIR)/ead
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 

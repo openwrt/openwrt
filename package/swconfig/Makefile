@@ -10,6 +10,8 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=swconfig
 PKG_RELEASE:=10
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 
