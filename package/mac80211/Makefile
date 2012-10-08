@@ -919,7 +919,7 @@ define KernelPackage/b43/config
 		  This firmware is mostly untested. It is needed for some N-PHY devices.
 
 		  If unsure, select the "stable" firmware.
-   
+
 	config B43_FW_5_100_138
 		bool "Firmware 666.2 from driver 5.100.138 (stable)"
 		help
@@ -1482,7 +1482,7 @@ define KernelPackage/net-ipw2200/install
 endef
 
 define KernelPackage/iwlagn/install
-        $(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DIR) $(1)/lib/firmware
 ifneq ($(CONFIG_IWL5000_FW),)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-5000-5.ucode $(1)/lib/firmware
 endif
@@ -1510,12 +1510,12 @@ endif
 endef
 
 define KernelPackage/iwl3945/install
-        $(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-3945-2.ucode $(1)/lib/firmware
 endef
 
 define KernelPackage/iwl4965/install
-        $(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-4965-2.ucode $(1)/lib/firmware
 endef
 
