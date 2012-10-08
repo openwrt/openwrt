@@ -1079,6 +1079,13 @@ define KernelPackage/brcmutil/config
 	endmenu
 endef
 
+PKG_BRCMSMAC_FW_NAME:=broadcom-wl
+PKG_BRCMSMAC_FW_VERSION:=5.100.138
+PKG_BRCMSMAC_FW_OBJECT:=$(PKG_BRCMSMAC_FW_NAME)-$(PKG_BRCMSMAC_FW_VERSION)/linux/wl_apsta.o
+PKG_BRCMSMAC_FW_SOURCE:=$(PKG_BRCMSMAC_FW_NAME)-$(PKG_BRCMSMAC_FW_VERSION).tar.bz2
+PKG_BRCMSMAC_FW_SOURCE_URL:=http://www.lwfinger.com/b43-firmware/
+PKG_BRCMSMAC_FW_MD5SUM:=f4e357b09eaf5d8b1f1920cf3493a555
+
 define KernelPackage/brcmsmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n PCIe SoftMAC WLAN driver
@@ -1086,11 +1093,31 @@ define KernelPackage/brcmsmac
   DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT +!TARGET_brcm47xx:kmod-bcma +kmod-lib-cordic +kmod-lib-crc8 +kmod-brcmutil
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmsmac/brcmsmac.ko
   AUTOLOAD:=$(call AutoLoad,31,brcmsmac)
+  MENU:=1
 endef
 
 define KernelPackage/brcmsmac/description
  Kernel module for Broadcom IEEE802.11n PCIe Wireless cards
 endef
+
+define KernelPackage/brcmsmac/config
+	menu "Configuration"
+		depends on PACKAGE_kmod-brcmsmac
+
+	config BRCMSMAC_USE_FW_FROM_WL
+		bool "Use firmware extracted from broadcom proprietary driver"
+		default y
+		help
+		  Instead of using the official brcmsmac firmware a firmware
+		  version 666.2 extracted from the proprietary Broadcom driver
+		  is used. This is needed to get core rev 17 used in bcm4716
+		  to work.
+
+		  If unsure, say Y.
+
+	endmenu
+endef
+
 
 define KernelPackage/brcmfmac
   $(call KernelPackage/mac80211/Default)
@@ -1521,10 +1548,15 @@ endef
 
 define KernelPackage/brcmsmac/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+ifeq ($(CONFIG_BRCMSMAC_USE_FW_FROM_WL),y)
+	tar xjf "$(DL_DIR)/$(PKG_BRCMSMAC_FW_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	b43-fwcutter --brcmsmac -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_BRCMSMAC_FW_OBJECT)
+else
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx-0.fw \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx_hdr-0.fw \
 		$(1)/lib/firmware/brcm/
+endif
 endef
 
 define KernelPackage/brcmfmac/install
