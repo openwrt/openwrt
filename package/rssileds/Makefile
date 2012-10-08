@@ -17,7 +17,7 @@ define Package/rssileds
   SECTION:=net
   CATEGORY:=Network
   TITLE:=RSSI real-time LED indicator
-  DEPENDS:=libiwinfo
+  DEPENDS:=+libiwinfo
 endef
 
 define Package/rssileds/description
