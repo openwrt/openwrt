@@ -74,7 +74,7 @@
 +
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/mi424wr-setup.c
-@@ -0,0 +1,380 @@
+@@ -0,0 +1,381 @@
 +/*
 + * arch/arm/mach-ixp4xx/mi424wr-setup.c
 + *
@@ -453,6 +453,7 @@
 +#if defined(CONFIG_PCI)
 +	.dma_zone_size	= SZ_64M,
 +#endif
++	.restart	= ixp4xx_restart,
 +MACHINE_END
 +
 --- a/arch/arm/mach-ixp4xx/Makefile

@@ -127,7 +127,7 @@
 +subsys_initcall(pronghorn_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/pronghorn-setup.c
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,249 @@
 +/*
 + * arch/arm/mach-ixp4xx/pronghorn-setup.c
 + *
@@ -362,6 +362,7 @@
 +#if defined(CONFIG_PCI)
 +	.dma_zone_size	= SZ_64M,
 +#endif
++	.restart	= ixp4xx_restart,
 +MACHINE_END
 +
 +MACHINE_START(PRONGHORNMETRO, "ADI Engineering Pronghorn Metro")
@@ -374,6 +375,7 @@
 +#if defined(CONFIG_PCI)
 +	.dma_zone_size	= SZ_64M,
 +#endif
++	.restart	= ixp4xx_restart,
 +MACHINE_END
 --- a/arch/arm/mach-ixp4xx/include/mach/uncompress.h
 +++ b/arch/arm/mach-ixp4xx/include/mach/uncompress.h

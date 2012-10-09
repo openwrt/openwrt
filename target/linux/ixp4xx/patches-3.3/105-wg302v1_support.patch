@@ -112,7 +112,7 @@
 +subsys_initcall(wg302v1_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/wg302v1-setup.c
-@@ -0,0 +1,144 @@
+@@ -0,0 +1,145 @@
 +/*
 + * arch/arm/mach-ixp4xx/wg302v1-setup.c
 + *
@@ -255,5 +255,6 @@
 +#if defined(CONFIG_PCI)
 +	.dma_zone_size	= SZ_64M,
 +#endif
++	.restart	= ixp4xx_restart,
 +MACHINE_END
 +#endif

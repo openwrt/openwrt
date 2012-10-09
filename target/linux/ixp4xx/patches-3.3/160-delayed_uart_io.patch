@@ -112,7 +112,7 @@ Add a new UART I/O type for slow busses such as the ixp4xx expansion bus
  	case UPIO_MEM:
  	case UPIO_MEM32:
  	case UPIO_AU:
-@@ -2435,6 +2436,7 @@ int uart_match_port(struct uart_port *po
+@@ -2436,6 +2437,7 @@ int uart_match_port(struct uart_port *po
  	case UPIO_HUB6:
  		return (port1->iobase == port2->iobase) &&
  		       (port1->hub6   == port2->hub6);
