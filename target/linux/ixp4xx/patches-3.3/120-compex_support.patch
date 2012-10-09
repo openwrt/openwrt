@@ -50,7 +50,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/compex-setup.c
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,138 @@
 +/*
 + * arch/arm/mach-ixp4xx/compex-setup.c
 + *
@@ -187,6 +187,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +#if defined(CONFIG_PCI)
 +	.dma_zone_size	= SZ_64M,
 +#endif
++	.restart	= ixp4xx_restart,
 +MACHINE_END
 --- a/arch/arm/mach-ixp4xx/ixdp425-pci.c
 +++ b/arch/arm/mach-ixp4xx/ixdp425-pci.c

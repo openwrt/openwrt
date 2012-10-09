@@ -116,7 +116,7 @@
 +subsys_initcall(usr8200_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/usr8200-setup.c
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,214 @@
 +/*
 + * arch/arm/mach-ixp4xx/usr8200-setup.c
 + *
@@ -329,6 +329,7 @@
 +#if defined(CONFIG_PCI)
 +	.dma_zone_size	= SZ_64M,
 +#endif
++	.restart	= ixp4xx_restart,
 +MACHINE_END
 --- a/arch/arm/mach-ixp4xx/include/mach/uncompress.h
 +++ b/arch/arm/mach-ixp4xx/include/mach/uncompress.h

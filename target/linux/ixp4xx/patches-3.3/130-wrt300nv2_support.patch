@@ -103,7 +103,7 @@
 +subsys_initcall(wrt300nv2_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,110 @@
 +/*
 + * arch/arm/mach-ixp4xx/wrt300nv2-setup.c
 + *
@@ -211,6 +211,7 @@
 +#if defined(CONFIG_PCI)
 +	.dma_zone_size	= SZ_64M,
 +#endif
++	.restart	= ixp4xx_restart,
 +MACHINE_END
 +#endif
 --- a/arch/arm/mach-ixp4xx/include/mach/uncompress.h
