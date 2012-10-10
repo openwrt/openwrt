@@ -1,0 +1,40 @@
+--- a/src/priv.c
++++ b/src/priv.c
+@@ -518,12 +518,14 @@ priv_init(char *chrootdir)
+ 		fatal("[priv]: unable to create socket pair for privilege separation");
+ 
+ 	/* Get users */
++	/*
+ 	if ((user = getpwnam(PRIVSEP_USER)) == NULL)
+ 		fatal("[priv]: no " PRIVSEP_USER " user for privilege separation");
+ 	uid = user->pw_uid;
+ 	if ((group = getgrnam(PRIVSEP_GROUP)) == NULL)
+ 		fatal("[priv]: no " PRIVSEP_GROUP " group for privilege separation");
+ 	gid = group->gr_gid;
++	*/
+ 
+ 	/* Spawn off monitor */
+ 	if ((monitored = fork()) < 0)
+@@ -534,17 +536,17 @@ priv_init(char *chrootdir)
+ 		if (RUNNING_ON_VALGRIND)
+ 			LLOG_WARNX("[priv]: running on valgrind, keep privileges");
+ 		else {
+-			if (chroot(chrootdir) == -1)
+-				fatal("[priv]: unable to chroot");
+-			if (chdir("/") != 0)
++			/*if (chroot(chrootdir) == -1)
++				fatal("[priv]: unable to chroot");*/
++			if (chdir("/tmp") != 0)
+ 				fatal("[priv]: unable to chdir");
+ 			gidset[0] = gid;
+-			if (setresgid(gid, gid, gid) == -1)
++			/*if (setresgid(gid, gid, gid) == -1)
+ 				fatal("[priv]: setresgid() failed");
+ 			if (setgroups(1, gidset) == -1)
+ 				fatal("[priv]: setgroups() failed");
+ 			if (setresuid(uid, uid, uid) == -1)
+-				fatal("[priv]: setresuid() failed");
++				fatal("[priv]: setresuid() failed");*/
+ 		}
+ 		remote = pair[0];
+ 		close(pair[1]);
