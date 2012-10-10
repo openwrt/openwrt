@@ -16,6 +16,7 @@ define Package/resolveip
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=Simple DNS resolver with configurable timeout
+  MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 endef
 
 define Package/resolveip/description
