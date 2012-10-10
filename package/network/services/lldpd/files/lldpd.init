@@ -1,0 +1,40 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2012 OpenWrt.org
+
+START=90
+
+SERVICE_USE_PID=1
+
+start() {
+	local enable_cdp
+	local enable_fdp
+	local enable_sonmp
+	local enable_edp
+	local lldp_class
+	local lldp_location
+
+	config_load 'lldpd'
+	config_get_bool enable_cdp 'config' 'enable_cdp' 0
+	config_get_bool enable_fdp 'config' 'enable_fdp' 0
+	config_get_bool enable_sonmp 'config' 'enable_sonmp' 0
+	config_get_bool enable_edp 'config' 'enable_edp' 0
+	config_get lldp_class 'config' 'lldp_class'
+	config_get lldp_location 'config' 'lldp_location'
+
+	[ $enable_cdp -gt 0 ] && append args '-c'
+	[ $enable_fdp -gt 0 ] && append args '-f'
+	[ $enable_sonmp -gt 0 ] && append args '-s'
+	[ $enable_edp -gt 0 ] && append args '-e'
+
+	service_start /usr/sbin/lldpd $args \
+		${lldp_class:+ -M $lldp_class}
+
+	[ -n "$lldp_location" ] && {
+		sleep 1
+		/usr/sbin/lldpctl -L "$lldp_location" > /dev/null 2>&1
+	}
+}
+
+stop() {
+	service_stop /usr/sbin/lldpd
+}
