@@ -1,0 +1,11 @@
+--- a/ui.c
++++ b/ui.c
+@@ -263,7 +263,7 @@ static void draw_bar_scale(int* y) {
+             char s[40], *p;
+             int x;
+             /* This 1024 vs 1000 stuff is just plain evil */
+-            readable_size(i, s, sizeof s, options.log_scale ? 1000 : 1024, 0);
++            readable_size(i, s, sizeof s, options.log_scale ? 1000 : 1024, options.bandwidth_in_bytes);
+             p = s + strspn(s, " ");
+             x = get_bar_length(i * 8);
+             mvaddch(*y + 1, x, ACS_BTEE);

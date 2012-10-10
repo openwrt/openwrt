@@ -1,0 +1,15 @@
+--- a/cfgfile.c
++++ b/cfgfile.c
+@@ -45,9 +45,9 @@ stringmap config;
+ extern options_t options ;
+ 
+ int is_cfgdirective_valid(const char *s) {
+-    char **t;
+-    for (t = config_directives; *t != NULL; ++t)
+-        if (strcmp(s, *t) == 0) return 1;
++    int t;
++    for (t = 0; config_directives[t] != NULL; t++)
++       if (strcmp(s, config_directives[t]) == 0) return 1;
+     return 0;
+ }
+ 
