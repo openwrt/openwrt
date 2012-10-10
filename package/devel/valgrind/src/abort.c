@@ -1,0 +1,3 @@
+void abort(void)
+{
+}

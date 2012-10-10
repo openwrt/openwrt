@@ -1,0 +1,11 @@
+--- a/configure.in
++++ b/configure.in
+@@ -260,7 +260,7 @@ case "${host_os}" in
+         # Ok, this is linux. Check the kernel version
+         AC_MSG_CHECKING([for the kernel version])
+ 
+-        kernel=`uname -r`
++        kernel=${UNAME_R:-`uname -r`}
+ 
+         case "${kernel}" in
+              2.6.*|3.*) 

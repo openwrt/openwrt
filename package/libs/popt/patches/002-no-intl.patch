@@ -1,0 +1,81 @@
+--- a/configure.in
++++ b/configure.in
+@@ -64,25 +64,14 @@ else
+ 	AC_MSG_RESULT(no)
+ fi
+ 
+-if test ! -f ../rpm.c
+-then
+-  AC_MSG_CHECKING(for GNU xgettext)
+-  xgettext --version 2>&1 | grep 'GNU gettext' >/dev/null 2>&1 || AC_MSG_ERROR([
+-  *** GNU gettext is required. The latest version
+-  *** is always available from ftp://ftp.gnu.org/gnu/gettext/.])
+-  AC_MSG_RESULT(yes)
+-fi
+-
+ AC_CHECK_FUNCS(strerror mtrace getuid geteuid)
+ AC_CHECK_FUNC(setreuid, [], [
+     AC_CHECK_LIB(ucb, setreuid, [if echo $LIBS | grep -- -lucb >/dev/null ;then :; else LIBS="$LIBS -lc -lucb" USEUCB=y;fi])
+ ])
+ 
+-AM_GNU_GETTEXT
+-
+ POPT_SOURCE_PATH="`pwd`"
+ AC_DEFINE_UNQUOTED(POPT_SOURCE_PATH, "$POPT_SOURCE_PATH",
+ 	[Full path to popt top_sourcedir.])
+ AC_SUBST(POPT_SOURCE_PATH)
+ 
+-AC_OUTPUT([Doxyfile Makefile intl/Makefile po/Makefile.in])
++AC_OUTPUT([Doxyfile Makefile])
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -4,10 +4,9 @@ AUTOMAKE_OPTIONS = 1.4 foreign
+ 
+ EXTRA_DIST = autogen.sh CHANGES $(man_MANS) popt.spec \
+ 	testit.sh test-poptrc \
+-	po/*.in po/*.po po/popt.pot \
+ 	popt.ps
+ 
+-SUBDIRS = intl po
++SUBDIRS =
+ 
+ INCLUDES = -I. -I$(top_srcdir)
+ 
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -124,7 +124,7 @@ EXTRA_DIST = autogen.sh CHANGES $(man_MA
+ 	popt.ps
+ 
+ 
+-SUBDIRS = intl po
++SUBDIRS =
+ 
+ INCLUDES = -I. -I$(top_srcdir)
+ 
+@@ -160,7 +160,7 @@ subdir = .
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+ CONFIG_HEADER = config.h
+-CONFIG_CLEAN_FILES = Doxyfile intl/Makefile
++CONFIG_CLEAN_FILES = Doxyfile
+ LTLIBRARIES = $(lib_LTLIBRARIES)
+ 
+ libpopt_la_LDFLAGS =
+@@ -261,8 +261,6 @@ distclean-hdr:
+ 	-rm -f config.h stamp-h1
+ Doxyfile: $(top_builddir)/config.status Doxyfile.in
+ 	cd $(top_builddir) && $(SHELL) ./config.status $@
+-intl/Makefile: $(top_builddir)/config.status $(top_srcdir)/intl/Makefile.in
+-	cd $(top_builddir) && $(SHELL) ./config.status $@
+ libLTLIBRARIES_INSTALL = $(INSTALL)
+ install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+ 	@$(NORMAL_INSTALL)
+@@ -584,7 +582,7 @@ distcleancheck_listfiles = find . -type 
+ distdir: $(DISTFILES)
+ 	$(am__remove_distdir)
+ 	mkdir $(distdir)
+-	$(mkinstalldirs) $(distdir)/. $(distdir)/intl $(distdir)/po
++	$(mkinstalldirs) $(distdir)/.
+ 	@list='$(DISTFILES)'; for file in $$list; do \
+ 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
+ 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
