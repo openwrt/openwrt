@@ -94,7 +94,6 @@ define Package/hostapd/Default
   TITLE:=IEEE 802.1x Authenticator
   URL:=http://hostap.epitest.fi/
   DEPENDS:=$(DRV_DEPENDS)
-  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
 define Package/hostapd
@@ -134,7 +133,6 @@ define Package/wpad/Default
   CATEGORY:=Network
   TITLE:=IEEE 802.1x Authenticator/Supplicant
   URL:=http://hostap.epitest.fi/
-  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
 define Package/wpad
@@ -167,7 +165,6 @@ define Package/wpa-supplicant
   URL:=http://hostap.epitest.fi/wpa_supplicant/
   DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl
   VARIANT:=supplicant-full
-  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
 define Package/wpa-supplicant/Description
@@ -194,7 +191,6 @@ define Package/wpa-cli
   CATEGORY:=Network
   DEPENDS:=@PACKAGE_wpa-supplicant||PACKAGE_wpad-mini||PACKAGE_wpad
   TITLE:=WPA Supplicant command line interface
-  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
 define Package/wpa-cli/Description
