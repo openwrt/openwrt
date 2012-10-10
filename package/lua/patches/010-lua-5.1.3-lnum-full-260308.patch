@@ -406,7 +406,7 @@
    lua_setglobal(L, "_VERSION");  /* set global _VERSION */
 +  lua_pushliteral(L, LUA_LNUM);
 +  lua_setglobal(L, "_LNUM");  /* "[complex] double|float|ldouble int32|int64" */
-   /* `ipairs' and `pairs' need auxliliary functions as upvalues */
+   /* `ipairs' and `pairs' need auxiliary functions as upvalues */
    auxopen(L, "ipairs", luaB_ipairs, ipairsaux);
    auxopen(L, "pairs", luaB_pairs, luaB_next);
 --- a/src/lcode.c
@@ -526,7 +526,7 @@
        pc = NO_JUMP;  /* always true; do nothing */
        break;
      }
-@@ -598,7 +643,10 @@ static void codenot (FuncState *fs, expd
+@@ -590,7 +635,10 @@ static void codenot (FuncState *fs, expd
        e->k = VTRUE;
        break;
      }
@@ -538,7 +538,7 @@
        e->k = VFALSE;
        break;
      }
-@@ -634,25 +682,70 @@ void luaK_indexed (FuncState *fs, expdes
+@@ -626,25 +674,70 @@ void luaK_indexed (FuncState *fs, expdes
  
  static int constfolding (OpCode op, expdesc *e1, expdesc *e2) {
    lua_Number v1, v2, r;
@@ -614,7 +614,7 @@
    e1->u.nval = r;
    return 1;
  }
-@@ -696,7 +789,8 @@ static void codecomp (FuncState *fs, OpC
+@@ -688,7 +781,8 @@ static void codecomp (FuncState *fs, OpC
  
  void luaK_prefix (FuncState *fs, UnOpr op, expdesc *e) {
    expdesc e2;
@@ -667,8 +667,8 @@
    else
 --- a/src/ldo.c
 +++ b/src/ldo.c
-@@ -219,9 +219,9 @@ static StkId adjust_varargs (lua_State *
-     luaC_checkGC(L);
+@@ -220,9 +220,9 @@ static StkId adjust_varargs (lua_State *
+     luaD_checkstack(L, p->maxstacksize);
      htab = luaH_new(L, nvar, 1);  /* create `arg' table */
      for (i=0; i<nvar; i++)  /* put extra arguments into `arg' table */
 -      setobj2n(L, luaH_setnum(L, htab, i+1), L->top - nvar + i);
@@ -740,8 +740,8 @@
  
  static int read_number (lua_State *L, FILE *f) {
    lua_Number d;
-@@ -279,6 +288,43 @@ static int read_number (lua_State *L, FI
-   else return 0;  /* read fails */
+@@ -282,6 +291,43 @@ static int read_number (lua_State *L, FI
+   }
  }
  
 +static int read_integer (lua_State *L, FILE *f) {
@@ -784,7 +784,7 @@
  
  static int test_eof (lua_State *L, FILE *f) {
    int c = getc(f);
-@@ -352,6 +398,14 @@ static int g_read (lua_State *L, FILE *f
+@@ -355,6 +401,14 @@ static int g_read (lua_State *L, FILE *f
            case 'n':  /* number */
              success = read_number(L, f);
              break;
@@ -799,7 +799,7 @@
            case 'l':  /* line */
              success = read_line(L, f);
              break;
-@@ -412,9 +466,10 @@ static int g_write (lua_State *L, FILE *
+@@ -415,9 +469,10 @@ static int g_write (lua_State *L, FILE *
    int status = 1;
    for (; nargs--; arg++) {
      if (lua_type(L, arg) == LUA_TNUMBER) {
@@ -813,7 +813,7 @@
      }
      else {
        size_t l;
-@@ -457,7 +512,7 @@ static int f_setvbuf (lua_State *L) {
+@@ -460,7 +515,7 @@ static int f_setvbuf (lua_State *L) {
    static const char *const modenames[] = {"no", "full", "line", NULL};
    FILE *f = tofile(L);
    int op = luaL_checkoption(L, 2, NULL, modenames);
@@ -863,7 +863,7 @@
        save(ls, '\0');
        return luaZ_buffer(ls->buff);
      default:
-@@ -173,23 +182,27 @@ static void buffreplace (LexState *ls, c
+@@ -175,23 +184,27 @@ static void buffreplace (LexState *ls, c
      if (p[n] == from) p[n] = to;
  }
  
@@ -896,7 +896,7 @@
    lua_assert(isdigit(ls->current));
    do {
      save_and_next(ls);
-@@ -200,8 +213,9 @@ static void read_numeral (LexState *ls, 
+@@ -202,8 +215,9 @@ static void read_numeral (LexState *ls, 
      save_and_next(ls);
    save(ls, '\0');
    buffreplace(ls, '.', ls->decpoint);  /* follow locale for decimal point */
@@ -908,7 +908,7 @@
  }
  
  
-@@ -329,6 +343,7 @@ static void read_string (LexState *ls, i
+@@ -331,6 +345,7 @@ static void read_string (LexState *ls, i
  }
  
  
@@ -916,7 +916,7 @@
  static int llex (LexState *ls, SemInfo *seminfo) {
    luaZ_resetbuffer(ls->buff);
    for (;;) {
-@@ -400,8 +415,7 @@ static int llex (LexState *ls, SemInfo *
+@@ -402,8 +417,7 @@ static int llex (LexState *ls, SemInfo *
          }
          else if (!isdigit(ls->current)) return '.';
          else {
@@ -926,7 +926,7 @@
          }
        }
        case EOZ: {
-@@ -414,8 +428,7 @@ static int llex (LexState *ls, SemInfo *
+@@ -416,8 +430,7 @@ static int llex (LexState *ls, SemInfo *
            continue;
          }
          else if (isdigit(ls->current)) {
@@ -2438,7 +2438,7 @@
  }
  
  
-@@ -777,12 +777,12 @@ static int str_format (lua_State *L) {
+@@ -779,12 +779,12 @@ static int str_format (lua_State *L) {
          }
          case 'd':  case 'i': {
            addintlen(form);
@@ -2792,10 +2792,10 @@
 +++ b/src/lua.h
 @@ -19,7 +19,7 @@
  #define LUA_VERSION	"Lua 5.1"
- #define LUA_RELEASE	"Lua 5.1.4"
+ #define LUA_RELEASE	"Lua 5.1.5"
  #define LUA_VERSION_NUM	501
--#define LUA_COPYRIGHT	"Copyright (C) 1994-2008 Lua.org, PUC-Rio"
-+#define LUA_COPYRIGHT	"Copyright (C) 1994-2008 Lua.org, PUC-Rio" " (" LUA_LNUM ")"
+-#define LUA_COPYRIGHT	"Copyright (C) 1994-2012 Lua.org, PUC-Rio"
++#define LUA_COPYRIGHT	"Copyright (C) 1994-2012 Lua.org, PUC-Rio" " (" LUA_LNUM ")"
  #define LUA_AUTHORS 	"R. Ierusalimschy, L. H. de Figueiredo & W. Celes"
  
  
@@ -3198,7 +3198,7 @@
      setsvalue2s(L, obj, luaS_new(L, s));
      return 1;
    }
-@@ -218,59 +230,127 @@ static int l_strcmp (const TString *ls, 
+@@ -222,59 +234,127 @@ static int l_strcmp (const TString *ls, 
  }
  
  
@@ -3351,7 +3351,7 @@
    return !l_isfalse(L->top);
  }
  
-@@ -310,30 +390,6 @@ void luaV_concat (lua_State *L, int tota
+@@ -314,30 +394,6 @@ void luaV_concat (lua_State *L, int tota
  }
  
  
@@ -3382,7 +3382,7 @@
  /*
  ** some macros for common tasks in `luaV_execute'
  */
-@@ -357,17 +413,154 @@ static void Arith (lua_State *L, StkId r
+@@ -361,17 +417,154 @@ static void Arith (lua_State *L, StkId r
  #define Protect(x)	{ L->savedpc = pc; {x;}; base = L->base; }
  
  
@@ -3546,7 +3546,7 @@
  
  
  void luaV_execute (lua_State *L, int nexeccalls) {
-@@ -468,38 +661,45 @@ void luaV_execute (lua_State *L, int nex
+@@ -472,38 +665,45 @@ void luaV_execute (lua_State *L, int nex
          continue;
        }
        case OP_ADD: {
@@ -3605,7 +3605,7 @@
          continue;
        }
        case OP_NOT: {
-@@ -511,11 +711,11 @@ void luaV_execute (lua_State *L, int nex
+@@ -515,11 +715,11 @@ void luaV_execute (lua_State *L, int nex
          const TValue *rb = RB(i);
          switch (ttype(rb)) {
            case LUA_TTABLE: {
@@ -3619,7 +3619,7 @@
              break;
            }
            default: {  /* try metamethod */
-@@ -648,14 +848,30 @@ void luaV_execute (lua_State *L, int nex
+@@ -652,14 +852,30 @@ void luaV_execute (lua_State *L, int nex
          }
        }
        case OP_FORLOOP: {
@@ -3658,7 +3658,7 @@
          }
          continue;
        }
-@@ -664,13 +880,21 @@ void luaV_execute (lua_State *L, int nex
+@@ -668,13 +884,21 @@ void luaV_execute (lua_State *L, int nex
          const TValue *plimit = ra+1;
          const TValue *pstep = ra+2;
          L->savedpc = pc;  /* next steps may throw errors */
@@ -3681,7 +3681,7 @@
          dojump(L, pc, GETARG_sBx(i));
          continue;
        }
-@@ -707,7 +931,7 @@ void luaV_execute (lua_State *L, int nex
+@@ -711,7 +935,7 @@ void luaV_execute (lua_State *L, int nex
            luaH_resizearray(L, h, last);  /* pre-alloc it at once */
          for (; n > 0; n--) {
            TValue *val = ra+n;
