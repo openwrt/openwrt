@@ -17,6 +17,7 @@ PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
 	http://mirrors.dotsrc.org/lua/ \
 	http://www.tecgraf.puc-rio.br/lua/ftp/
 PKG_MD5SUM:=2e115fe26e435e33b0d5c022e4490567
+PKG_BUILD_PARALLEL:=1
 
 HOST_PATCH_DIR := ./patches-host
 
@@ -96,7 +97,7 @@ ifneq ($(CONFIG_USE_EGLIBC),)
 endif
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CROSS)gcc" \
 		AR="$(TARGET_CROSS)ar rcu" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
