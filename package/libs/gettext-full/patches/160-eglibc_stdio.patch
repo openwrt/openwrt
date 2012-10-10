@@ -1,0 +1,36 @@
+--- a/gettext-runtime/gnulib-lib/stdio.in.h
++++ b/gettext-runtime/gnulib-lib/stdio.in.h
+@@ -141,7 +141,9 @@ _GL_WARN_ON_USE (fflush, "fflush is not
+    so any use of gets warrants an unconditional warning.  Assume it is
+    always declared, since it is required by C89.  */
+ #undef gets
++#if HAVE_RAW_DECL_GETS
+ _GL_WARN_ON_USE (gets, "gets is a security hole - use fgets instead");
++#endif
+ 
+ #if @GNULIB_FOPEN@
+ # if @REPLACE_FOPEN@
+--- a/gettext-tools/gnulib-lib/stdio.in.h
++++ b/gettext-tools/gnulib-lib/stdio.in.h
+@@ -141,7 +141,9 @@ _GL_WARN_ON_USE (fflush, "fflush is not
+    so any use of gets warrants an unconditional warning.  Assume it is
+    always declared, since it is required by C89.  */
+ #undef gets
++#if HAVE_RAW_DECL_GETS
+ _GL_WARN_ON_USE (gets, "gets is a security hole - use fgets instead");
++#endif
+ 
+ #if @GNULIB_FOPEN@
+ # if @REPLACE_FOPEN@
+--- a/gettext-tools/libgettextpo/stdio.in.h
++++ b/gettext-tools/libgettextpo/stdio.in.h
+@@ -141,7 +141,9 @@ _GL_WARN_ON_USE (fflush, "fflush is not
+    so any use of gets warrants an unconditional warning.  Assume it is
+    always declared, since it is required by C89.  */
+ #undef gets
++#if HAVE_RAW_DECL_GETS
+ _GL_WARN_ON_USE (gets, "gets is a security hole - use fgets instead");
++#endif
+ 
+ #if @GNULIB_FOPEN@
+ # if @REPLACE_FOPEN@
