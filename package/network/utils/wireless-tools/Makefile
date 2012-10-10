@@ -17,6 +17,8 @@ PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
 PKG_MD5SUM:=e06c222e186f7cc013fd272d023710cb
 TAR_OPTIONS += || true
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk

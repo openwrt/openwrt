@@ -11,6 +11,8 @@ PKG_NAME:=qos-scripts
 PKG_VERSION:=1.2.1
 PKG_RELEASE:=6
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk

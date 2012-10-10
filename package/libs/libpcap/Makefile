@@ -15,6 +15,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_MD5SUM:=1bca27d206970badae248cfa471bbb47
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 

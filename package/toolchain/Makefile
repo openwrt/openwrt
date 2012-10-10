@@ -9,6 +9,8 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=toolchain
 PKG_RELEASE:=1
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
