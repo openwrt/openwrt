@@ -42,6 +42,7 @@ define KernelPackage/sangam-atm/Default
   TITLE:=AR7 ADSL driver
   FILES:=$(PKG_BUILD_DIR)/tiatm.ko
   AUTOLOAD:=$(call AutoLoad,50,tiatm)
+  MAINTAINER:=Florian Fainelli <florian@openwrt.org>
   MENU:=1
 endef
 

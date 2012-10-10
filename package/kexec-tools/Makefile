@@ -25,6 +25,7 @@ define Package/kexec-tools
   DEPENDS:=@armeb||@arm||@i386||@powerpc64||@mipsel||@mips +zlib
   TITLE:=Kernel boots kernel
   URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
+  MAINTAINER:=Florian Fainelli <florian@openwrt.org>
   MENU:=1
 endef
 

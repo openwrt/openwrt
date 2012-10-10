@@ -40,6 +40,7 @@ define Package/uboot-pxa-$(1)
   TITLE:=$(2)
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)
+  MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 endef
 endef
 
