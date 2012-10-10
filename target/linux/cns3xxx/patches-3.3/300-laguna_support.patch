@@ -563,7 +563,7 @@
 +
 +static struct resource laguna_watchdog_resources[] = {
 +	[0] = {
-+		.start	= CNS3XXX_TC11MP_TWD_BASE,
++		.start	= CNS3XXX_TC11MP_TWD_BASE + 0x100, // CPU0 watchdog
 +		.end	= CNS3XXX_TC11MP_TWD_BASE + SZ_4K - 1,
 +		.flags	= IORESOURCE_MEM,
 +	},
