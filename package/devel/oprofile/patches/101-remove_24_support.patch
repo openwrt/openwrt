@@ -1,0 +1,64 @@
+--- a/daemon/Makefile.am
++++ b/daemon/Makefile.am
+@@ -1,4 +1,4 @@
+-SUBDIRS = liblegacy .
++SUBDIRS = .
+ 
+ oprofiled_SOURCES = \
+ 	init.c \
+@@ -49,7 +49,6 @@ AM_CFLAGS = @OP_CFLAGS@ -fno-omit-frame-
+ bin_PROGRAMS = oprofiled
+ 
+ oprofiled_LDADD = \
+-	liblegacy/liblegacy.a \
+ 	../libabi/libabi.a \
+ 	../libdb/libodb.a \
+ 	../libop/libop.a \
+--- a/daemon/Makefile.in
++++ b/daemon/Makefile.in
+@@ -70,7 +70,7 @@ am_oprofiled_OBJECTS = init.$(OBJEXT) op
+ 	opd_extended.$(OBJEXT) opd_ibs.$(OBJEXT) \
+ 	opd_ibs_trans.$(OBJEXT)
+ oprofiled_OBJECTS = $(am_oprofiled_OBJECTS)
+-oprofiled_DEPENDENCIES = liblegacy/liblegacy.a ../libabi/libabi.a \
++oprofiled_DEPENDENCIES = ../libabi/libabi.a \
+ 	../libdb/libodb.a ../libop/libop.a ../libutil/libutil.a
+ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
+ depcomp = $(SHELL) $(top_srcdir)/depcomp
+@@ -285,7 +285,7 @@ top_build_prefix = @top_build_prefix@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ topdir = @topdir@
+-SUBDIRS = liblegacy .
++SUBDIRS = .
+ oprofiled_SOURCES = \
+ 	init.c \
+ 	oprofiled.c \
+@@ -331,7 +331,6 @@ AM_CPPFLAGS = \
+ # -fno-omit-frame-pointer needed for daemon build: see ChangeLog-2004 02-23
+ AM_CFLAGS = @OP_CFLAGS@ -fno-omit-frame-pointer
+ oprofiled_LDADD = \
+-	liblegacy/liblegacy.a \
+ 	../libabi/libabi.a \
+ 	../libdb/libodb.a \
+ 	../libop/libop.a \
+--- a/daemon/oprofiled.c
++++ b/daemon/oprofiled.c
+@@ -77,7 +77,6 @@ static char * events;
+ static char * ext_feature;
+ static int showvers;
+ static struct oprofiled_ops * opd_ops;
+-extern struct oprofiled_ops opd_24_ops;
+ extern struct oprofiled_ops opd_26_ops;
+ 
+ #define OPD_IMAGE_FILTER_HASH_SIZE 32
+@@ -477,9 +476,6 @@ static void opd_options(int argc, char c
+ static struct oprofiled_ops * get_ops(void)
+ {
+ 	switch (op_get_interface()) {
+-		case OP_INTERFACE_24:
+-			printf("Using 2.4 OProfile kernel interface.\n");
+-			return &opd_24_ops;
+ 		case OP_INTERFACE_26:
+ 			printf("Using 2.6+ OProfile kernel interface.\n");
+ 			return &opd_26_ops;
