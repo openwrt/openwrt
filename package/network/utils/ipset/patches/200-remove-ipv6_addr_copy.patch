@@ -1,0 +1,22 @@
+--- a/kernel/net/netfilter/ipset/ip_set_hash_ip.c
++++ b/kernel/net/netfilter/ipset/ip_set_hash_ip.c
+@@ -241,7 +241,7 @@ hash_ip6_data_isnull(const struct hash_i
+ static inline void
+ hash_ip6_data_copy(struct hash_ip6_elem *dst, const struct hash_ip6_elem *src)
+ {
+-	ipv6_addr_copy(&dst->ip.in6, &src->ip.in6);
++	dst->ip.in6 = src->ip.in6;
+ }
+ 
+ static inline void
+--- a/kernel/net/netfilter/ipset/ip_set_hash_net.c
++++ b/kernel/net/netfilter/ipset/ip_set_hash_net.c
+@@ -295,7 +295,7 @@ static inline void
+ hash_net6_data_copy(struct hash_net6_elem *dst,
+ 		    const struct hash_net6_elem *src)
+ {
+-	ipv6_addr_copy(&dst->ip.in6, &src->ip.in6);
++	dst->ip.in6 = src->ip.in6;
+ 	dst->cidr = src->cidr;
+ 	dst->nomatch = src->nomatch;
+ }

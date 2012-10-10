@@ -1,0 +1,20 @@
+--- a/kernel/net/netfilter/ipset/ip_set_getport.c
++++ b/kernel/net/netfilter/ipset/ip_set_getport.c
+@@ -8,7 +8,7 @@
+ /* Get Layer-4 data from the packets */
+ 
+ #include <linux/version.h>
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+ #include <linux/export.h>
+ #endif
+ #include <linux/ip.h>
+--- a/kernel/net/netfilter/ipset/pfxlen.c
++++ b/kernel/net/netfilter/ipset/pfxlen.c
+@@ -1,5 +1,5 @@
+ #include <linux/version.h>
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+ #include <linux/export.h>
+ #endif
+ #include <linux/netfilter/ipset/pfxlen.h>
