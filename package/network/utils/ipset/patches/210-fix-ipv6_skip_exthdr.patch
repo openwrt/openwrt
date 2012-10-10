@@ -1,0 +1,29 @@
+--- a/kernel/net/netfilter/ipset/ip_set_getport.c
++++ b/kernel/net/netfilter/ipset/ip_set_getport.c
+@@ -113,6 +113,17 @@ ip_set_get_ip4_port(const struct sk_buff
+ EXPORT_SYMBOL_GPL(ip_set_get_ip4_port);
+ 
+ #if defined(CONFIG_IP6_NF_IPTABLES) || defined(CONFIG_IP6_NF_IPTABLES_MODULE)
++static int ip_set_skip_exthdr(const struct sk_buff *skb, int start,
++                              u8 *nexthdrp)
++{
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
++	__be16 fragoff;
++	return ipv6_skip_exthdr(skb, start, nexthdrp, &fragoff);
++#else
++	return ipv6_skip_exthdr(skb, start, nexthdrp);
++#endif
++}
++
+ bool
+ ip_set_get_ip6_port(const struct sk_buff *skb, bool src,
+ 		    __be16 *port, u8 *proto)
+@@ -121,7 +132,7 @@ ip_set_get_ip6_port(const struct sk_buff
+ 	u8 nexthdr;
+ 
+ 	nexthdr = ipv6_hdr(skb)->nexthdr;
+-	protoff = ipv6_skip_exthdr(skb, sizeof(struct ipv6hdr), &nexthdr);
++	protoff = ip_set_skip_exthdr(skb, sizeof(struct ipv6hdr), &nexthdr);
+ 	if (protoff < 0)
+ 		return false;
+ 
