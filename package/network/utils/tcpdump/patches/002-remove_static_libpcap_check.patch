@@ -1,0 +1,77 @@
+--- a/configure
++++ b/configure
+@@ -7130,28 +7130,6 @@ echo "${ECHO_T}Using $pfopen" >&6; }
+ 		    LIBS="$LIBS $pfopen"
+ 	    fi
+     fi
+-    { echo "$as_me:$LINENO: checking for local pcap library" >&5
+-echo $ECHO_N "checking for local pcap library... $ECHO_C" >&6; }
+-    libpcap=FAIL
+-    lastdir=FAIL
+-    places=`ls $srcdir/.. | sed -e 's,/$,,' -e "s,^,$srcdir/../," | \
+-	egrep '/libpcap-[0-9]+\.[0-9]+(\.[0-9]*)?([ab][0-9]*|-PRE-GIT)?$'`
+-    for dir in $places $srcdir/../libpcap $srcdir/libpcap ; do
+-	    basedir=`echo $dir | sed -e 's/[ab][0-9]*$//' | \
+-	        sed -e 's/-PRE-GIT$//' `
+-	    if test $lastdir = $basedir ; then
+-		    		    continue;
+-	    fi
+-	    lastdir=$dir
+-	    if test -r $dir/libpcap.a ; then
+-		    libpcap=$dir/libpcap.a
+-		    d=$dir
+-		    	    fi
+-    done
+-    if test $libpcap = FAIL ; then
+-	    { echo "$as_me:$LINENO: result: not found" >&5
+-echo "${ECHO_T}not found" >&6; }
+-
+ 	    #
+ 	    # Look for pcap-config.
+ 	    #
+@@ -7335,45 +7313,6 @@ if test $ac_cv_lib_pcap_main = yes; then
+   libpcap="-lpcap"
+ fi
+ 
+-		if test $libpcap = FAIL ; then
+-		    { { echo "$as_me:$LINENO: error: see the INSTALL doc for more info" >&5
+-echo "$as_me: error: see the INSTALL doc for more info" >&2;}
+-   { (exit 1); exit 1; }; }
+-		fi
+-																																								{ echo "$as_me:$LINENO: checking for extraneous pcap header directories" >&5
+-echo $ECHO_N "checking for extraneous pcap header directories... $ECHO_C" >&6; }
+-		if test \( ! -r /usr/local/include/pcap.h \) -a \
+-			\( ! -r /usr/include/pcap.h \); then
+-		    if test -r /usr/local/include/pcap/pcap.h; then
+-			d="/usr/local/include/pcap"
+-		    elif test -r /usr/include/pcap/pcap.h; then
+-			d="/usr/include/pcap"
+-		    fi
+-		fi
+-		if test -z "$d" ; then
+-		    { echo "$as_me:$LINENO: result: not found" >&5
+-echo "${ECHO_T}not found" >&6; }
+-		else
+-		    V_INCLS="-I$d $V_INCLS"
+-		    { echo "$as_me:$LINENO: result: found -- -I$d added" >&5
+-echo "${ECHO_T}found -- -I$d added" >&6; }
+-		fi
+-	    fi
+-    else
+-	    V_PCAPDEP=$libpcap
+-	    places=`ls $srcdir/.. | sed -e 's,/$,,' -e "s,^,$srcdir/../," | \
+-    	 		egrep '/libpcap-[0-9]*.[0-9]*(.[0-9]*)?([ab][0-9]*)?$'`
+-	    if test -r $d/pcap.h; then
+-		    V_INCLS="-I$d $V_INCLS"
+-	    elif test -r $places/pcap.h; then
+-		    V_INCLS="-I$places $V_INCLS"
+-	    else
+-                    { { echo "$as_me:$LINENO: error: cannot find pcap.h" >&5
+-echo "$as_me: error: cannot find pcap.h" >&2;}
+-   { (exit see INSTALL); exit see INSTALL; }; }
+- 	    fi
+-	    { echo "$as_me:$LINENO: result: $libpcap" >&5
+-echo "${ECHO_T}$libpcap" >&6; }
+ 	    # Extract the first word of "pcap-config", so it can be a program name with args.
+ set dummy pcap-config; ac_word=$2
+ { echo "$as_me:$LINENO: checking for $ac_word" >&5
