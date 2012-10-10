@@ -25,6 +25,7 @@ define Package/yamonenv
   DEPENDS:=@TARGET_au1000
   TITLE:=YAMON configuration utility
   URL:=http://meshcube.org/nylon/stable/sources/
+  MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 endef
 
 define Build/Configure
