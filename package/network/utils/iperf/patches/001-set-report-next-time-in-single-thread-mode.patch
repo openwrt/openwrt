@@ -1,0 +1,14 @@
+--- a/src/Reporter.c
++++ b/src/Reporter.c
+@@ -308,6 +308,11 @@ ReportHeader* InitReport( thread_Setting
+ #else
+         // set start time
+         gettimeofday( &(reporthdr->report.startTime), NULL );
++
++	// set next time
++	reporthdr->report.nextTime = reporthdr->report.startTime;
++	TimeAdd( reporthdr->report.nextTime, reporthdr->report.intervalTime );
++
+         /*
+          * Process the report in this thread
+          */
