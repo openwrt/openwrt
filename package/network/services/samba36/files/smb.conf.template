@@ -1,0 +1,34 @@
+[global]
+	netbios name = |NAME| 
+	display charset = |CHARSET|
+	interfaces = |INTERFACES|
+	server string = |DESCRIPTION|
+	unix charset = |CHARSET|
+	workgroup = |WORKGROUP|
+	browseable = yes
+	deadtime = 30
+	domain master = yes
+	encrypt passwords = true
+	enable core files = no
+	guest account = nobody
+	guest ok = yes
+	invalid users = root
+	local master = yes
+	load printers = no
+	map to guest = Bad User
+	max protocol = SMB2
+	min receivefile size = 16384
+	null passwords = yes
+	obey pam restrictions = yes
+	os level = 20
+	passdb backend = smbpasswd
+	preferred master = yes
+	printable = no
+	security = user
+	smb encrypt = disabled
+	smb passwd file = /etc/samba/smbpasswd
+	socket options = TCP_NODELAY IPTOS_LOWDELAY
+	syslog = 2
+	use sendfile = yes
+	writeable = yes
+	
