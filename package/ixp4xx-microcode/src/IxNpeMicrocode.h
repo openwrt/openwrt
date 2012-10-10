@@ -27,7 +27,7 @@
 #define IX_NPEDL_NPEIMAGE_NPEA_ETH_SPAN_FIREWALL_VLAN_QOS_HDR_CONV
 // #define IX_NPEDL_NPEIMAGE_NPEA_ETH_LEARN_FILTER_SPAN_FIREWALL_VLAN_QOS
 // #define IX_NPEDL_NPEIMAGE_NPEA_ETH_LEARN_FILTER_SPAN_FIREWALL
-// #define IX_NPEDL_NPEIMAGE_NPEA_HSS_2_PORT
+#define IX_NPEDL_NPEIMAGE_NPEA_HSS_2_PORT
 // #define IX_NPEDL_NPEIMAGE_NPEA_DMA
 // #define IX_NPEDL_NPEIMAGE_NPEA_ATM_MPHY_12_PORT
 // #define IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_1_PORT
@@ -118,7 +118,11 @@ int main(int argc, char *argv[])
 
 		sprintf(filename, "NPE-%c.%08x", (field[0] & 0xf) + 'A',
 			image->id);
-		sprintf(slnk, "NPE-%c", (field[0] & 0xf) + 'A');
+		if (image->id == 0x00090000)
+			sprintf(slnk, "NPE-%c-HSS", (field[0] & 0xf) + 'A');
+		else
+			sprintf(slnk, "NPE-%c", (field[0] & 0xf) + 'A');
+
 		printf("Writing image: %s.NPE_%c Func: %2x Rev: %02x.%02x "
 			"Size: %5d to: '%s'\n",
 			names[field[0] >> 4], (field[0] & 0xf) + 'A',
