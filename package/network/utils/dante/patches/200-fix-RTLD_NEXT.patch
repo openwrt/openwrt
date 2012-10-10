@@ -1,0 +1,36 @@
+--- a/lib/address.c
++++ b/lib/address.c
+@@ -45,11 +45,12 @@
+ 
+ #include "interposition.h"
+ 
+-#ifndef __USE_GNU
+-#define __USE_GNU /* XXX for RTLD_NEXT on Linux */
+-#endif /* !__USE_GNU */
+ #include <dlfcn.h>
+ 
++#ifndef RTLD_NEXT
++#define RTLD_NEXT  ((void *) -1l)
++#endif
++
+ static const char rcsid[] =
+ "$Id: address.c,v 1.177.2.2 2010/05/24 16:38:36 karls Exp $";
+ 
+--- a/dlib/interposition.c
++++ b/dlib/interposition.c
+@@ -66,11 +66,12 @@ sendto(HAVE_PROT_SENDTO_1, HAVE_PROT_SEN
+     HAVE_PROT_SENDTO_4, HAVE_PROT_SENDTO_5, HAVE_PROT_SENDTO_6);
+ #endif
+ 
+-#ifndef __USE_GNU
+-#define __USE_GNU /* XXX for RTLD_NEXT on Linux */
+-#endif /* !__USE_GNU */
+ #include <dlfcn.h>
+ 
++#ifndef RTLD_NEXT
++#define RTLD_NEXT  ((void *) -1l)
++#endif
++
+ #undef accept
+ #undef bind
+ #undef bindresvport
