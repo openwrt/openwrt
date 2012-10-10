@@ -1,0 +1,482 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -16,7 +16,7 @@ echo "Configuring Dante ${version}${pren
+ 
+ AM_INIT_AUTOMAKE(dante, ${version}${prename})
+ AC_CONFIG_SRCDIR(include/common.h)
+-AM_CONFIG_HEADER(include/autoconf.h)
++AM_CONFIG_HEADER(autoconfig-is-soo-stupid.h include/autoconf.h)
+ 
+ AC_DEFINE(BAREFOOTD, 0, [we are Dante])
+ 
+@@ -38,17 +38,6 @@ AC_PROG_CPP
+ 
+ AM_CONDITIONAL(PRERELEASE, test x$prerelease != x)
+ 
+-#known keywords for --enable/disable-foo(=yes/no)?
+-LTINTERNAL="dlopen|dlopen_self|dlopen_self_static|fast_install|libtool_lock|win32_dll|shared_with_static_runtimes|shared_with_static_runtimes_CXX|shared_with_static_runtimes_F77"
+-KNOWN_KEYWORDS="$LTINTERNAL|shared|static|debug|warnings|diagnostic|profiling|linting|libwrap|preload|serverdl|clientdl|internal|pidfile|drt_fallback"
+-for keyword in `set | egrep '^enable_' | sed -e 's/^enable_\(.*\)=.*/\1/'`; do
+-    echo $keyword | egrep "^(${KNOWN_KEYWORDS})$" > /dev/null
+-    if test $? -ne 0; then
+-	AC_MSG_WARN([unknown option '$keyword', ignoring ...])
+-	sleep 10;
+-    fi
+-done
+-
+ case $host in
+     *-*-osf*)
+       	AC_MSG_WARN([OSF support might be removed in the near future.])
+@@ -175,31 +164,6 @@ case $host in
+     #XXX make sure compiling with compiler options works
+ esac
+ 
+-AC_MSG_CHECKING([for support for -pipe compiler flag])
+-oCFLAGS=$CFLAGS
+-CFLAGS="$CFLAGS -pipe"
+-AC_TRY_RUN([
+-int main()
+-{
+-	return 0;
+-}], [AC_MSG_RESULT([yes])
+-     comp_flags="${comp_flags} -pipe"],
+-    AC_MSG_RESULT([no]))
+-CFLAGS="$oCFLAGS"
+-
+-AC_MSG_CHECKING([for support for -Wbounded compiler flag])
+-oCFLAGS=$CFLAGS
+-CFLAGS="$CFLAGS -Wbounded"
+-AC_TRY_RUN([
+-int main()
+-{
+-        return 0;
+-}], [AC_MSG_RESULT([yes])
+-     comp_flags="${comp_flags} -Wbounded"],
+-    [AC_MSG_RESULT([no])
+-     AC_DEFINE(__bounded__(a,b,c), , [empty __bounded__ macro])])
+-CFLAGS="$oCFLAGS"
+-
+ AC_MSG_CHECKING([for compilation with debugging])
+ AC_ARG_ENABLE(debug,
+ [  --enable-debug          compile with debugging support],
+@@ -608,43 +572,6 @@ else
+ fi], [AC_MSG_RESULT(no)
+       AC_MSG_WARN([performance in the server might be degraded without support for the SO_SNDLOWAT socket option])])
+ 
+-AC_MSG_CHECKING([whether realloc with a NULL pointer calls malloc])
+-AC_TRY_RUN([
+-#include <stdlib.h>
+-#ifndef NULL
+-#define NULL (char *)0
+-#endif
+-
+-int main()
+-{
+-	/* will assume this test doesn\'t fail because of lack of memory */
+-	if (realloc(NULL, 1) == NULL)
+-		return 1;
+-	else
+-		return 0;
+-}], [AC_MSG_RESULT(yes)],
+-    [AC_DEFINE(HAVE_NOMALLOC_REALLOC, 1, [realloc never calls malloc])
+-     AC_MSG_RESULT(no)])
+-
+-AC_MSG_CHECKING([whether free can be called with NULL])
+-AC_TRY_RUN([
+-#include <stdlib.h>
+-#ifndef NULL
+-#define NULL (char *)0
+-#endif
+-
+-int main()
+-{
+-	/* will assume core dump/seg fault if it doesn\'t work */
+-	free(NULL);
+-	return 0;
+-}], [AC_MSG_RESULT(yes)],
+-    [AC_DEFINE(HAVE_NONULL_FREE, 1, [free does not accept NULL parameter])
+-     AC_MSG_RESULT(no)])
+-
+-#A good time to save the cache (preload code might fail)
+-AC_CACHE_SAVE
+-
+ m4_include(preload.m4)
+ 
+ #construct SUBDIRS variable
+@@ -722,31 +649,8 @@ case $host in
+ 	;;
+ esac
+ 
+-AC_MSG_CHECKING([for CMSG_SPACE in sys/socket.h])
+-AC_TRY_RUN([
+-#include <sys/types.h>
+-#include <sys/socket.h>
+-int main()
+-{
+-   int d = CMSG_SPACE(4);
+-   return 0;
+-}
+-], [AC_MSG_RESULT(yes)
+-    AC_DEFINE(HAVE_CMSG_SPACE, 1, CMSG_SPACE exists)],
+-   [AC_MSG_RESULT(no)])
+-
+-AC_MSG_CHECKING([for CMSG_LEN in sys/socket.h])
+-AC_TRY_RUN([
+-#include <sys/types.h>
+-#include <sys/socket.h>
+-
+-int main()
+-{
+-   int d = CMSG_LEN(4);
+-   return 0;
+-}], [AC_MSG_RESULT(yes)
+-    AC_DEFINE(HAVE_CMSG_LEN, 1, [CMSG_LEN exists])],
+-   [AC_MSG_RESULT(no)])
++AC_DEFINE(HAVE_CMSG_SPACE, 1, [CMSG_SPACE exists])
++AC_DEFINE(HAVE_CMSG_LEN, 1, [CMSG_LEN exists])
+ 
+ AC_MSG_CHECKING([for sa_len in sockaddr])
+ AC_TRY_COMPILE([
+@@ -913,10 +817,6 @@ else
+     AC_MSG_RESULT([yes])
+ fi
+ 
+-dnl determine GSSAPI support
+-no_gssapi=t
+-m4_include(gssapi.m4)
+-
+ dnl compatibility library tests
+ m4_include(libscompat.m4)
+ 
+@@ -978,15 +878,6 @@ global:
+ fi
+ AC_SUBST(MAPOPT)
+ 
+-#expected select behaviour?
+-unset nb_select_err
+-L_UNCON_SELECT([],
+- [nb_select_err=t])
+-
+-if test x"${nb_select_err}" = xt; then
+-   AC_MSG_WARN([operations on nonblocking sockets might fail on this platform])
+-fi
+-
+ AC_MSG_CHECKING([direct route fallback in client enabled])
+ with_drtfallback=t
+ AC_ARG_ENABLE(drt-fallback,
+--- a/acinclude.m4
++++ b/acinclude.m4
+@@ -180,63 +180,7 @@ selectcheck(s)
+     [AC_MSG_RESULT(no)
+      [$2]])])
+ 
+-#can it really be this simple?
+-#nope, doesn't handle coff files which also have no underscore
+-AC_DEFUN([L_SYMBOL_UNDERSCORE],
+-[AC_MSG_CHECKING(for object file type)
+-AH_TEMPLATE([HAVE_NO_SYMBOL_UNDERSCORE], [platform symbol type])
+-AC_TRY_RUN([
+-/* look for ELF identification header at the start of argv[0] */
+-
+-#include <stdio.h>
+-#include <fcntl.h>
+-#include <string.h>
+-
+-/*
+- * ELF header, from ELF standard (Portable Formats Specification,
+- *  Version 1.1).
+- */
+-char elfheader[] = { 0x7f, 'E', 'L', 'F' };
+-
+-int
+-main (argc, argv)
+-	int argc;
+-	char *argv[];
+-{
+-	int fd;
+-	int len = sizeof(elfheader);
+-	char header[len];
+-
+-	if ((fd = open(argv[0], O_RDONLY, 0)) == -1) {
+-		perror("open");
+-		exit(1);
+-	}
+-	if (read(fd, header, len) != len) {
+-		perror("read");
+-		exit(1);
+-	}
+-	if (memcmp(header, elfheader, len) == 0)
+-		exit(0); /* pointy ears */
+-	else
+-		exit(1);
+-}
+-], [AC_MSG_RESULT(elf)
+-    AC_DEFINE(HAVE_NO_SYMBOL_UNDERSCORE)],
+-   [
+-	#XXX exceptions for coff platforms, should be detected automatically
+-	case $host in
+-		alpha*-dec-osf*)
+-			AC_DEFINE(HAVE_NO_SYMBOL_UNDERSCORE)
+-			AC_MSG_RESULT(coff)
+-			;;
+-		*-*-hpux*) #XXX apparently does not use underscore
+-			AC_DEFINE(HAVE_NO_SYMBOL_UNDERSCORE)
+-			AC_MSG_RESULT(a.out?)
+-			;;
+-		*)
+-			AC_MSG_RESULT(a.out)
+-			;;
+-	esac])])
++AC_DEFUN([L_SYMBOL_UNDERSCORE], [AC_DEFINE(HAVE_NO_SYMBOL_UNDERSCORE, [1], [Automake sucks])])
+ 
+ 
+ dnl addproto - generate AC_DEFINE statements
+--- a/preload.m4
++++ b/preload.m4
+@@ -517,91 +517,6 @@ AC_DEFINE_UNQUOTED(LIBRARY_LIBC, "${LIBC
+ 
+ L_SYMBOL_UNDERSCORE()
+ 
+-AC_MSG_CHECKING([for working dlsym])
+-AC_TRY_RUN([
+-#include <dlfcn.h>
+-#include <stdio.h>
+-
+-#include "include/symbols.h"
+-
+-int main()
+-{
+-	void *lib;
+-	void *sym;
+-
+-	if ((lib = dlopen(LIBRARY_CONNECT, DL_LAZY)) == NULL) {
+-		fprintf(stderr, "dlopen: %s", dlerror());
+-		return 1;
+-	}
+-	(void)dlerror();
+-	if ((sym = dlsym(lib, SYMBOL_CONNECT)) == NULL) {
+-		fprintf(stderr, "dlsym: %s", dlerror());
+-		return 1;
+-	}
+-	return 0;
+-}], [AC_MSG_RESULT(yes)],
+-    [AC_MSG_RESULT(no)
+-     no_preload_client=t
+-     no_preload_server=t
+-     no_preload=t])
+-
+-AC_MSG_CHECKING([for working RTLD_NEXT])
+-AC_TRY_RUN([
+-#define _GNU_SOURCE
+-#include <dlfcn.h>
+-#include <stdio.h>
+-
+-#include "include/symbols.h"
+-
+-int main()
+-{
+-	void *sym;
+-
+-	if ((sym = dlsym(RTLD_NEXT, SYMBOL_READ)) == NULL) {
+-		fprintf(stderr, "dlsym: %s", dlerror());
+-		return 1;
+-	}
+-	return 0;
+-}], [AC_MSG_RESULT(yes)
+-     AC_DEFINE(HAVE_RTLD_NEXT, 1, [have working dlsym RTLD_NEXT])],
+-    [AC_MSG_RESULT(no)
+-     AC_DEFINE(HAVE_RTLD_NEXT, 0, [no working dlsym RTLD_NEXT])])
+-
+-#solaris might block preloading
+-AC_MSG_CHECKING([libc preload blocking])
+-AC_TRY_RUN([
+-#include <stdlib.h>
+-#include <string.h>
+-#include <unistd.h>                                                             
+-int
+-main(int argc, char *argv[])
+-{
+-   char buf[1024];
+-  
+-   strcpy(buf, "lari -V ");
+-   strcat(buf, argv[0]);
+-   strcat(buf, " | grep read | grep protected > /dev/null");
+-
+-   /*
+-    * return error if 'protected'
+-    * (ignore errors, not indicative of blocking) */ 
+-   if (system(buf) == 0)
+-        return 1;
+-   else
+-        return 0;
+-}
+-
+-ssize_t
+-read(d, buf, nbytes)
+-   int d;
+-   void *buf;
+-   size_t nbytes;
+-{
+-   return 0;
+-}
+-], [AC_MSG_RESULT(no)],
+-   [AC_MSG_RESULT(yes)
+-    AC_MSG_WARN([this platform blocks preloading of libraries])
+-    blocked_preload=t])
++AC_DEFINE(HAVE_RTLD_NEXT, 1, [have working dlsym RTLD_NEXT])
+ 
+ AC_CONFIG_FILES(bin/socksify)
+--- a/libscompat.m4
++++ b/libscompat.m4
+@@ -1,70 +1,6 @@
+ dnl libscompat.m4 - tests related to replacement code in libscompat directory
+ 
+-AC_MSG_CHECKING([for __attribute__ support])
+-AC_TRY_RUN([
+-#include <stdlib.h>
+-
+-void errfunc(void) __attribute((noreturn));
+-
+-void errfunc(void)
+-{
+-    exit(0);
+-}
+-
+-int main()
+-{
+-    errfunc();
+-}], [AC_MSG_RESULT([yes])],
+-    [AC_MSG_RESULT([no])
+-     AC_DEFINE(__attribute__(a), , [empty __attribute__ macro])])
+-
+-AC_MSG_CHECKING([for __printf__ attribute support])
+-if test x"$have_suncc" = xt; then
+-    AC_MSG_RESULT([disabled for sun cc])
+-    AC_DEFINE(format(a,b,c), , [empty format attribute macro])
+-else
+-    AC_TRY_RUN([
+-#include <stdlib.h>
+-
+-void func(const char *fmt, ...)
+-   __attribute__((format(__printf__, 1, 2)));
+-
+-void func(const char *fmt, ...) {
+-     (void)fmt;
+-     return;
+-}
+-
+-int main()
+-{
+-    func("foo");
+-    return 0;
+-}], [AC_MSG_RESULT([yes])],
+-    [AC_MSG_RESULT([no])
+-     AC_DEFINE(format(a,b,c), , [empty format attribute macro])])
+-fi
+-
+-AC_MSG_CHECKING([for timer macros])
+-AC_TRY_RUN([
+-#include <sys/time.h>
+-
+-int main()
+-{
+-    struct timeval tv, tv2, tv3;
+-
+-    tv.tv_sec = 0;
+-    tv.tv_usec = 0;
+-    tv2.tv_sec = 0;
+-    tv2.tv_usec = 0;
+-    tv3.tv_sec = 0;
+-    tv3.tv_usec = 0;
+-
+-    timeradd(&tv, &tv2, &tv3);
+-    timersub(&tv3, &tv2, &tv);
+-
+-    return 0; }],
+-[AC_MSG_RESULT(yes)
+- AC_DEFINE(HAVE_TIMER_MACROS, 1, [timeradd(), timersub etc. exist in sys/time.h])],
+-[AC_MSG_RESULT(no)])
++AC_DEFINE(HAVE_TIMER_MACROS, 1, [timeradd(), timersub etc. exist in sys/time.h])
+ 
+ AC_CHECK_FUNCS(daemon difftime getifaddrs freeifaddrs hstrerror inet_aton)
+ AC_CHECK_FUNCS(inet_pton issetugid memmove seteuid setegid)
+@@ -72,53 +8,7 @@ AC_CHECK_FUNCS(setproctitle sockatmark s
+ AC_CHECK_FUNCS(bzero)
+ #inet_ntoa - only checked for incorrect behavior
+ 
+-#try to detect gcc bug (irix 64 problem, affects among others inet_ntoa)
+-AC_MSG_CHECKING([for incorrect inet_ntoa behaviour])
+-AC_TRY_RUN([
+-#include <sys/types.h>
+-#include <netinet/in.h>
+-#include <arpa/inet.h>
+-#include <sys/socket.h>
+-int main(void)
+-{
+-    struct sockaddr_in addr;
+-    char *a, *b = "195.195.195.195";
+-    addr.sin_addr.s_addr = inet_addr(b);
+-    a = inet_ntoa(addr.sin_addr);
+-    if (strcmp(a, b) == 0)
+-	return 1;
+-    else
+-	return 0;
+-}
+-], [AC_DEFINE(HAVE_BROKEN_INET_NTOA, 1, [platform bug])
+-    AC_MSG_RESULT(yes)
+-    ac_cv_func_inet_ntoa=no],
+-    AC_MSG_RESULT(no))
+-
+-if test x${ac_cv_func_sockatmark} = xyes; then
+-   AC_MSG_CHECKING([for working sockatmark])
+-   AC_TRY_RUN([
+-#include <sys/types.h>
+-#include <sys/socket.h>
+-
+-int
+-main()
+-{
+-    int s;
+-    int r;
+-
+-    if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1)
+-	return 1;
+-    if ((r = sockatmark(s)) == -1)
+-	return 1;
+-    if (r == 0)
+-	return 0;
+-    else
+-	return 1; /* would likely indicate an error */
+-}], [AC_MSG_RESULT(yes)],
+-    [AC_MSG_RESULT(no)
+-     ac_cv_func_sockatmark=no])
+-fi
++ac_cv_func_sockatmark=no
+ 
+ #only compile files that are needed
+ unset LIBSCSRC
+@@ -139,24 +29,3 @@ AC_SUBST([LIBSCSRC])
+ if test x${ac_cv_func_bzero} = xno; then
+     AC_DEFINE(bzero(b, len), memset((b), 0, (len)), [bzero replacement])
+ fi
+-
+-#causes problems with packaging, allow test to be turned off
+-AC_ARG_WITH(glibc-secure,
+-[  --without-glibc-secure  disable libc_enable_secure check @<:@default=detect@:>@],
+-[GLIBCSEC=$withval])
+-
+-if test "${GLIBCSEC}" != no; then
+-    AC_MSG_CHECKING([for __libc_enable_secure])
+-    AC_TRY_RUN([
+-extern int __libc_enable_secure;
+-
+-int main()
+-{
+-    if (__libc_enable_secure == 0)
+-	return 0;
+-
+-	return 1;
+-}],[AC_MSG_RESULT([yes])
+-    AC_DEFINE(HAVE_LIBC_ENABLE_SECURE, 1, [linux version of issetugid()])],
+-    AC_MSG_RESULT([no]))
+-fi
