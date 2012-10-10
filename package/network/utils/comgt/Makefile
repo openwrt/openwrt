@@ -15,6 +15,8 @@ PKG_SOURCE:=$(PKG_NAME).$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=@SF/comgt
 PKG_MD5SUM:=db2452680c3d953631299e331daf49ef
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME).$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
