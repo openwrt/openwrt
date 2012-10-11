@@ -16,6 +16,7 @@ PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/drv_dsl_cpe_api-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=c45bc531c1ed2ac80f68fb986b63bb87
+PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 FW_NAME:=ltq-dsl-fw-0.1
 FW_MD5:=4700a36b66b955b4c5544227267356f4
@@ -41,7 +42,6 @@ define KernelPackage/ltq-dsl-template
 	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.ko \
 	$(PKG_BUILD_DIR)/src/mei/lantiq_atm.ko
   AUTOLOAD:=$(call AutoLoad,50,lantiq_mei drv_dsl_cpe_api lantiq_atm)
-  MAINTAINER:=John Crispin <blogic@openwrt.org>
 endef
 
 KernelPackage/ltq-dsl-danube=$(call KernelPackage/ltq-dsl-template,danube)
@@ -57,7 +57,6 @@ define Package/kmod-ltq-dsl-firmware-template
   VARIANT:= $(1)-$(2)
   URL:=http://www.lantiq.com/
   DEPENDS:=@TARGET_lantiq_$(2) kmod-ltq-dsl-$(2)
-  MAINTAINER:=John Crispin <blogic@openwrt.org>
 endef
 
 Package/kmod-ltq-dsl-firmware-a-danube=$(call Package/kmod-ltq-dsl-firmware-template,a,danube)

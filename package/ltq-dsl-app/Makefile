@@ -15,6 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/dsl_cpe_control-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=ee315306626b68794d3d3636dabfe161
+PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 PKG_CONFIG_DEPENDS:=\
 	CONFIG_LTQ_DSL_ENABLE_SOAP \
@@ -31,7 +32,6 @@ define Package/ltq-dsl-app
   TITLE:=Lantiq DSL userland tool
   URL:=http://www.lantiq.com/
   DEPENDS:=@TARGET_lantiq&&!(TARGET_lantiq_falcon||TARGET_lantiq_falcon_stable) +libpthread
-  MAINTAINER:=John Crispin <blogic@openwrt.org> 
   MENU:=1
 endef
 

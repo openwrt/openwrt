@@ -15,6 +15,7 @@ PKG_RELEASE:=2
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=d8eee8cba0edb28974cc1f8532e3bd18
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
+PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 include $(INCLUDE_DIR)/ltqtapi.mk
 include $(INCLUDE_DIR)/package.mk
@@ -26,7 +27,6 @@ define KernelPackage/ltq-vmmc
   DEPENDS:=$(LTQ_TAPI_TARGET) +kmod-ltq-tapi
   FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.ko
   AUTOLOAD:=$(call AutoLoad,25,drv_vmmc)
-  MAINTAINER:=John Crispin <blogic@openwrt.org>
 endef
 
 define KernelPackage/ltq-vmmc/description
