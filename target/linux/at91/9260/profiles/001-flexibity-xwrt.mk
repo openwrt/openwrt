@@ -13,7 +13,7 @@ define Profile/flexibity-xwrt
 	usb-modem-nokia-5800 wpa-cli wpa-supplicant motion badblocks blkid cifsmount disktype dosfsck dosfslabel e2fsprogs \
 	fuse-utils mkdosfs nfs-utils ntfs-3g ntfs-3g-utils reiserfsprogs resize2fs sysfsutils tune2fs uuidgen certtool \
 	gnutls-utils picocom setterm unrar unzip sqlite3-cli alsa-utils anyremote bluez-utils bzip2 comgt crypto-tools \
-	file flock gdbserver gnupg gpioctl gsm-utils gzip huaweiaktbbo hwclock i2c-tools input-utils ldd lsof mdadm \
+	file flock gdbserver gnupg gsm-utils gzip huaweiaktbbo hwclock i2c-tools input-utils ldd lsof mdadm \
 	module-init-tools mount-utils openssl-util procps psmisc px5g screen strace stress sysstat uboot-envtools \
 	usb-modeswitch usb-modeswitch-data usbutils lua
 endef
