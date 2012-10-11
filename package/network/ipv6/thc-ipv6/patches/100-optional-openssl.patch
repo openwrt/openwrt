@@ -1,0 +1,93 @@
+--- a/Makefile
++++ b/Makefile
+@@ -1,8 +1,8 @@
+ CC=gcc
+ #OPT=-Wall -ggdb
+-OPT=-O2
+-LIB=-lpcap -lssl -lcrypto
+-PROGRAM=parasite6 dos-new-ip6 detect-new-ip6 fake_router6 fake_advertise6 fake_mld6 fake_mipv6 redir6 smurf6 alive6 toobig6 rsmurf6 test_implementation6 sendpees6
++OPT=-O2 $(if $(USE_SSL),-DUSE_SSL,)
++LIB=-lpcap $(if $(USE_SSL),-lssl -lcrypto,)
++PROGRAM=parasite6 dos-new-ip6 detect-new-ip6 fake_router6 fake_advertise6 fake_mld6 fake_mipv6 redir6 smurf6 alive6 toobig6 rsmurf6 test_implementation6 $(if $(USE_SSL),sendpees6,)
+ 
+ all:	thc-ipv6-lib.o $(PROGRAM)
+ 
+--- a/thc-ipv6-lib.c
++++ b/thc-ipv6-lib.c
+@@ -37,8 +37,10 @@
+ #include <pcap.h>
+ #include "thc-ipv6.h"
+ /* libssl */
++#ifdef USE_SSL
+ #include <openssl/evp.h>
+ #include <openssl/sha.h>
++#endif
+ 
+ 
+ 
+@@ -1507,7 +1509,7 @@
+  * 2006/07
+  */
+ 
+-
++#ifdef USE_SSL
+ thc_key_t *thc_generate_key(int key_len)
+ {
+    thc_key_t *key;
+@@ -1598,6 +1600,7 @@
+                                        
+     return cga_hdr;                                    
+ }
++#endif
+ 
+ thc_timestamp_hdr *generate_timestamp(void)
+ {
+@@ -1632,6 +1635,7 @@
+     return nonce;    
+ }
+ 
++#ifdef USE_SSL
+ thc_rsa_hdr *thc_generate_rsa(char *data2sign, int data2sign_len, thc_cga_hdr *cga_hdr, thc_key_t *key)
+ {
+    thc_rsa_hdr *rsa_hdr;
+@@ -1827,3 +1831,4 @@
+    
+    return 0; 
+ }
++#endif
+--- a/thc-ipv6.h
++++ b/thc-ipv6.h
+@@ -10,7 +10,9 @@
+ #define _THC_IPV6_H
+ 
+ #include <pcap.h>
++#ifdef USE_SSL
+ #include <openssl/rsa.h>
++#endif
+ 
+ #define VERSION 	"v0.7"
+ #define AUTHOR 		"van Hauser / THC <vh@thc.org>"
+@@ -228,10 +230,12 @@
+   char *pad;
+ } thc_rsa_hdr;       
+ 
++#ifdef USE_SSL
+ typedef struct {
+   RSA *rsa;
+   int len;
+ } thc_key_t;
++#endif
+ 
+ typedef struct {
+   unsigned char *data;
+@@ -239,8 +243,10 @@
+   int len;
+ } opt_t;
+ 
++#ifdef USE_SSL
+ extern thc_key_t *thc_generate_key(int key_len);
+ extern thc_cga_hdr *thc_generate_cga(unsigned char *prefix, thc_key_t *key, unsigned char **cga);
++#endif
+ 
+ #endif
+ 
