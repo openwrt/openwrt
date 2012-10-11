@@ -41,7 +41,9 @@ define Image/Prepare
 		$(LOADER_MAKEOPTS) \
 		clean compile
 	$(OBJCOPY_SREC) $(KDIR)/loader.elf $(KDIR)/loader.srec
+	$(OBJCOPY_SREC) $(KDIR)/vmlinux.elf $(KDIR)/vmlinux.srec
 	srec2bin $(KDIR)/loader.srec $(KDIR)/loader.bin
+	srec2bin $(KDIR)/vmlinux.srec $(KDIR)/vmlinux.bin
 endef
 
 define align/jffs2-64k
