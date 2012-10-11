@@ -25,6 +25,11 @@ load_led() {
 	config_get interval $1 interval "50"
 	config_get port_state $1 port_state
 
+	if [ "$trigger" = "rssi" ]; then
+		# handled by rssileds userspace process
+		return
+	fi
+
 	[ -e /sys/class/leds/${sysfs}/brightness ] && {
 		echo "setting up led ${name}"
 		[ "$default" != nil ] && {
