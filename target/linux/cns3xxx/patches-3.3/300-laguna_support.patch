@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/mach-cns3xxx/laguna.c
-@@ -0,0 +1,935 @@
+@@ -0,0 +1,936 @@
 +/*
 + * Gateworks Corporation Laguna Platform
 + *
@@ -356,6 +356,7 @@
 +		.end   = CNS3XXX_UART2_BASE + SZ_4K - 1,
 +		.flags    = IORESOURCE_MEM
 +	},
++	{ },
 +};
 +
 +static struct plat_serial8250_port laguna_uart_data[] = {
