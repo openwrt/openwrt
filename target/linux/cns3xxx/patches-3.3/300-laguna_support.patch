@@ -356,7 +356,6 @@
 +		.end   = CNS3XXX_UART2_BASE + SZ_4K - 1,
 +		.flags    = IORESOURCE_MEM
 +	},
-+	{ },
 +};
 +
 +static struct plat_serial8250_port laguna_uart_data[] = {
@@ -388,6 +387,7 @@
 +		.uartclk        = 24000000,
 +		.type           = PORT_16550A,
 +	},
++	{ },
 +};
 +
 +static struct platform_device laguna_uart = {
