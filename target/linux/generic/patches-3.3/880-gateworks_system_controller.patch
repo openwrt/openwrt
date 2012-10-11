@@ -4,14 +4,14 @@
  	  This driver can also be built as a module.  If so, the module
  	  will be called gl520sm.
  
-+config SENSORS_GSP
-+	tristate "Gateworks System Peripheral"
-+	depends on I2C && EXPERIMENTAL
++config SENSORS_GSC
++	tristate "Gateworks System Controller"
++	depends on I2C && (ARCH_DAVINCI || ARCH_CNS3XXX || ARCH_IXP4XX)
 +	help
-+	  If you say yes here you get support for the Gateworks System Peripherals.
++	  If you say yes here you get support for the Gateworks System Controller.
 +
 +	  This driver can also be built as a module. If so, the module
-+	  will be called gsp.
++	  will be called gsc.
 +
  config SENSORS_GPIO_FAN
  	tristate "GPIO fan"
@@ -22,15 +22,15 @@
  obj-$(CONFIG_SENSORS_W83L786NG)	+= w83l786ng.o
  obj-$(CONFIG_SENSORS_WM831X)	+= wm831x-hwmon.o
  obj-$(CONFIG_SENSORS_WM8350)	+= wm8350-hwmon.o
-+obj-$(CONFIG_SENSORS_GSP)	+= gsp.o
++obj-$(CONFIG_SENSORS_GSC)	+= gsc.o
  
  obj-$(CONFIG_PMBUS)		+= pmbus/
  
 --- /dev/null
-+++ b/drivers/hwmon/gsp.c
++++ b/drivers/hwmon/gsc.c
 @@ -0,0 +1,308 @@
 +/*
-+ * A hwmon driver for the Gateworks System Peripheral
++ * A hwmon driver for the Gateworks System Controller 
 + * Copyright (C) 2009 Gateworks Corporation
 + *
 + * Author: Chris Lang <clang@gateworks.com>
@@ -333,7 +333,7 @@
 +module_exit(gsp_exit);
 +
 +MODULE_AUTHOR("Chris Lang <clang@gateworks.com>");
-+MODULE_DESCRIPTION("GSP HWMON driver");
++MODULE_DESCRIPTION("GSC HWMON driver");
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION(DRV_VERSION);
 +
