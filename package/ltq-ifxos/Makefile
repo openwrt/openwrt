@@ -14,6 +14,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_RELEASE:=3
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=bc107f9d8ff6bed4c2760a2817bbb029
+PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -21,7 +22,6 @@ define KernelPackage/ltq-ifxos
   SUBMENU:=Voice over IP
   TITLE:=Lantiq OS abstraction library
   URL:=http://www.lantiq.com/
-  MAINTAINER:=Lantiq
   DEPENDS:=@TARGET_lantiq
   FILES:=$(PKG_BUILD_DIR)/src/drv_ifxos.ko
   AUTOLOAD:=$(call AutoLoad,10,drv_ifxos)
