@@ -1,0 +1,12 @@
+diff -urN gdb-6.8/gdb/linux-nat.h gdb-6.8a.new/gdb/linux-nat.h
+--- gdb-6.8/gdb/linux-nat.h	2008-01-23 12:26:28.000000000 +0100
++++ gdb-6.8a.new/gdb/linux-nat.h	2012-09-19 16:37:10.468916796 +0200
+@@ -60,7 +60,7 @@
+ 
+   /* Non-zero si_signo if this LWP stopped with a trap.  si_addr may
+      be the address of a hardware watchpoint.  */
+-  struct siginfo siginfo;
++  siginfo_t siginfo;
+ 
+   /* If WAITSTATUS->KIND != TARGET_WAITKIND_SPURIOUS, the waitstatus
+      for this LWP's last event.  This may correspond to STATUS above,
