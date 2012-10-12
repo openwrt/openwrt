@@ -54,7 +54,7 @@ config interface     "lan"
     option ifname    "eth0"
     option proto     "dhcp"
     option ipaddr    "192.168.1.1" (optional)
-    option hostname  "openwrt"	(optional)
+    option hostname  "openwrt"     (optional)
 \end{Verbatim}
 
 PPP based protocols (\texttt{pppoe}, \texttt{pptp}, ...) accept these options:
@@ -70,7 +70,6 @@ PPP based protocols (\texttt{pppoe}, \texttt{pptp}, ...) accept these options:
         ",<interval>" to the keepalive value
     \item{demand} \\
         Use Dial on Demand (value specifies the maximum idle time.
-
     \item{server: (pptp)} \\
         The remote pptp server IP
 \end{itemize}
@@ -84,7 +83,7 @@ config interface     "lan"
     option proto     "pppoe"
     option username  "username"
     option password  "openwrt"
-    option mtu	     1492 (optional)
+    option mtu       "1492"      (optional)
 \end{Verbatim}
 
 \subsubsection{Setting up static routes}
@@ -96,10 +95,10 @@ Simply add a config section like this:
 
 \begin{Verbatim}
 config route foo
-	option interface lan
-	option target 1.1.1.0
-	option netmask 255.255.255.0
-	option gateway 192.168.1.1
+	option interface  "lan"
+	option target     "1.1.1.0"
+	option netmask    "255.255.255.0"
+	option gateway    "192.168.1.1"
 \end{Verbatim}
 
 The name for the route section is optional, the \texttt{interface}, \texttt{target} and 
@@ -166,9 +165,9 @@ file and change the settings accordingly :
 \begin{Verbatim}
 config 6tunnel
         option tnlifname     'sixbone'
-        option remoteip4        '1.0.0.1'
-        option localip4         '1.0.0.2'
-        option localip6         '2001::DEAD::BEEF::1'
+        option remoteip4     '1.0.0.1'
+        option localip4      '1.0.0.2'
+        option localip6      '2001::DEAD::BEEF::1'
 \end{Verbatim}
 
 \begin{itemize}
@@ -185,7 +184,7 @@ config 6tunnel
 	This address is given by the tunnel broker
 \end{itemize}
 
-Using the same package you can also setup an IPv6 bridged connection :
+Using the same package you can also setup an IPv6 bridged connection:
 
 \begin{Verbatim}
 config 6bridge
@@ -197,7 +196,6 @@ and uses ebtables to filter anything that is not IPv6 on the bridge.
 This configuration is particularly useful if your router is not
 IPv6 ND proxy capable (see: http://www.rfc-archive.org/getrfc.php?rfc=4389).
 
-
 IPv6 static addressing is also supported using a similar setup as
 IPv4 but with the \texttt{ip6} prefixing (when applicable).
 
@@ -205,6 +203,6 @@ IPv4 but with the \texttt{ip6} prefixing (when applicable).
 config interface     "lan"
     option ifname    "eth0"
     option proto     "static"
-    option ip6addr    "fe80::200:ff:fe00:0/64"
+    option ip6addr   "fe80::200:ff:fe00:0/64"
     option ip6gw     "2001::DEAF:BEE:1"
 \end{Verbatim}
