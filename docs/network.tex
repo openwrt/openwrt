@@ -107,7 +107,7 @@ The name for the route section is optional, the \texttt{interface}, \texttt{targ
 \texttt{gateway} options are mandatory.
 Leaving out the \texttt{netmask} option will turn the route into a host route.
 
-\subsubsection{Setting up the switch (currently broadcom only)}
+\subsubsection{Setting up the switch (broadcom only)}
 
 The switch configuration is set by adding a \texttt{'switch'} config section.
 Example:
@@ -151,6 +151,27 @@ Three interfaces will be automatically created using this switch layout :
 \texttt{eth0.0} (vlan0), \texttt{eth0.1} (vlan1) and \texttt{eth0.2} (vlan2).
 You can then assign those interfaces to a custom network configuration name
 like \texttt{lan}, \texttt{wan} or \texttt{dmz} for instance.
+
+\subsubsection{Setting up the switch (swconfig)}
+
+\emph{swconfig} based configurations have a different structure with one extra
+section per vlan. The example below shows a typical configuration:
+
+\begin{Verbatim}
+config 'switch' 'eth0'
+        option 'reset' '1'
+        option 'enable_vlan' '1'
+
+config 'switch_vlan' 'eth0_1'
+        option 'device' 'eth0'
+        option 'vlan' '1'
+        option 'ports' '0 1 2 3 5t'
+
+config 'switch_vlan' 'eth0_2'
+        option 'device' 'eth0'
+        option 'vlan' '2'
+        option 'ports' '4 5t'
+\end{Verbatim}
 
 \subsubsection{Setting up IPv6 connectivity}
 
