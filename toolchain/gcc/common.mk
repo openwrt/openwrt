@@ -123,6 +123,7 @@ GCC_CONFIGURE:= \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 --with-abi=64) \
 		$(if $(CONFIG_GCC_VERSION_LLVM),--enable-llvm=$(BUILD_DIR_BASE)/host/llvm) \
+		$(if $(CONFIG_sparc),--with-long-double-128) \
 
 ifeq ($(CONFIG_GCC_LLVM),)
   GCC_BUILD_TARGET_LIBGCC:=y
