@@ -22,11 +22,13 @@ of interfaces and add:
 \end{Verbatim}
 
 It is possible to use VLAN tagging on an interface simply by adding the VLAN IDs
-to it, e.g. \texttt{eth0.1}. These can be nested as well. See the switch section for
+to it, e.g. \texttt{eth0.15}. These can be nested as well. See the switch section for
 this.
 
 \begin{Verbatim}
-config inter
+config interface
+    option ifname    "eth0.15"
+    option proto     "none"
 \end{Verbatim}
 
 This sets up a simple static configuration for \texttt{eth0}. \texttt{proto} specifies the
