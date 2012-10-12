@@ -24,6 +24,9 @@ endif
 ifneq ($(CONFIG_EGLIBC_VERSION_2_15),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_15
 endif
+ifneq ($(CONFIG_EGLIBC_VERSION_2_16),)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_16
+endif
 
 PATCH_DIR:=$(PATH_PREFIX)/patches/$(PKG_VERSION)
 
