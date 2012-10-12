@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lldpd
-PKG_VERSION:=0.6.0
+PKG_VERSION:=0.6.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://media.luffy.cx/files/lldpd
-PKG_MD5SUM:=77279577e3b6d85a33dc0afe7c960b27
+PKG_MD5SUM:=d2f9ae67e0bcce0206a3a501a81d0738
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
@@ -43,8 +43,9 @@ endef
 define Package/lldpd/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/lldp{ctl,d} $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/lldp{ctl,d} $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblldpctl.so* $(1)/usr/lib/
 	$(INSTALL_BIN) ./files/lldpd.init $(1)/etc/init.d/lldpd
 	$(INSTALL_DATA) ./files/lldpd.config $(1)/etc/config/lldpd
 endef
@@ -52,5 +53,10 @@ endef
 define Package/lldpd/conffiles
 /etc/config/lldpd
 endef
+
+CONFIGURE_ARGS += \
+	--with-privsep-user=lldp \
+	--with-privsep-group=lldp \
+	--with-privsep-chroot=/var/run/lldp
 
 $(eval $(call BuildPackage,lldpd))
