@@ -147,7 +147,7 @@
  #endif
  
  #ifndef TRUE
-@@ -655,9 +795,9 @@ static int __init tn7atm_irq_request (st
+@@ -655,9 +795,9 @@
     * interrupt pacing
     */
    ptr = prom_getenv ("sar_ipacemax");
@@ -159,16 +159,28 @@
    }
  /*  avalanche_request_pacing (priv->sar_irq, ATM_SAR_INT_PACING_BLOCK_NUM,
                              def_sar_inter_pace);*/
-@@ -797,7 +937,7 @@ static int __init tn7atm_get_ESI (struct
+@@ -795,9 +935,18 @@
+ {
+   int i;
    char esi_addr[ESI_LEN] = { 0x00, 0x00, 0x11, 0x22, 0x33, 0x44 };
-   char *esiaddr_str = NULL;
+-  char *esiaddr_str = NULL;
++  char *esiaddr_str = mp_macc;
  
 -  esiaddr_str = prom_getenv ("maca");
-+  esiaddr_str = mp_macc ? mp_macc : prom_getenv ("maca");
++  if (esiaddr_str == NULL)
++    esiaddr_str = prom_getenv ("macdsl");
++  if (esiaddr_str == NULL)
++    esiaddr_str = prom_getenv ("macc");
++  if (esiaddr_str == NULL)
++    esiaddr_str = prom_getenv ("HWA_1");
++  if (esiaddr_str == NULL)
++    esiaddr_str = prom_getenv ("macb");
++  if (esiaddr_str == NULL)
++    esiaddr_str = prom_getenv ("maca");
  
    if (!esiaddr_str)
    {
-@@ -1930,15 +2070,15 @@ static int tn7atm_autoDetectDspBoost (vo
+@@ -1930,15 +2079,15 @@
  //UR8_MERGE_END   CQ10450*
  
    cp = prom_getenv ("dsp_noboost");
@@ -188,7 +200,7 @@
      if (dspfreq == 250)
      {
        boostDsp = 1;
-@@ -2187,8 +2327,9 @@ static int __init tn7atm_init (struct at
+@@ -2187,8 +2336,9 @@
    // Inter-Op DSL phy Control
    // Note the setting of _dsl_Feature_0 and _dsl_Feature_1 must before
    // dslhal_api_dslStartup (in tn7dsl_init()).
@@ -199,7 +211,7 @@
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2196,8 +2337,9 @@ static int __init tn7atm_init (struct at
+@@ -2196,8 +2346,9 @@
      _dsl_Feature_0_defined = 1;
    }
  
@@ -210,7 +222,7 @@
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2209,8 +2351,9 @@ static int __init tn7atm_init (struct at
+@@ -2209,8 +2360,9 @@
    // DSL phy Feature Control
    // Note the setting of _dsl_PhyControl_0 and _dsl_PhyControl_1 must before
    // dslhal_api_dslStartup (in tn7dsl_init()).
@@ -221,7 +233,7 @@
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2218,8 +2361,9 @@ static int __init tn7atm_init (struct at
+@@ -2218,8 +2370,9 @@
      _dsl_PhyControl_0_defined = 1;
    }
  
@@ -232,7 +244,7 @@
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2247,9 +2391,9 @@ static int __init tn7atm_init (struct at
+@@ -2247,9 +2400,9 @@
    priv->bTurboDsl = 1;
    // read config for turbo dsl
    ptr = prom_getenv ("TurboDSL");
@@ -244,7 +256,7 @@
    }
  
    // @Added to make Rx buffer number & Service max configurable through
-@@ -2257,30 +2401,30 @@ static int __init tn7atm_init (struct at
+@@ -2257,30 +2410,30 @@
    priv->sarRxBuf = RX_BUFFER_NUM;
    ptr = NULL;
    ptr = prom_getenv ("SarRxBuf");
