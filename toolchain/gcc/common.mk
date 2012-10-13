@@ -38,10 +38,10 @@ ifdef CONFIG_GCC_VERSION_LLVM
 else
 ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
     ifeq ($(CONFIG_GCC_VERSION),"4.5-linaro")
-      PKG_REV:=4.5-2012.02
+      PKG_REV:=4.5-2012.03
       PKG_VERSION:=4.5.4
       PKG_VERSION_MAJOR:=4.5
-      PKG_MD5SUM:=e05be9ea8eca2ad4c859d35dbab568e7
+      PKG_MD5SUM:=0c25f93e15e362e352c933e4649a7fc6
     endif
     ifeq ($(CONFIG_GCC_VERSION),"4.6-linaro")
       PKG_REV:=4.6-2012.10
