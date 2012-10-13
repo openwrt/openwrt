@@ -1,26 +1,27 @@
---- a/gdb/configure
-+++ b/gdb/configure
-@@ -988,7 +988,7 @@ CPP
+--- a/gdb/configure	2012-09-13 16:01:22.000000000 +0200
++++ b/gdb/configure	2012-10-12 17:48:06.863908023 +0200
+@@ -828,8 +828,7 @@
  YACC
  YFLAGS
  XMKMF'
--ac_subdirs_all='doc testsuite
-+ac_subdirs_all='doc
- gdbtk
+-ac_subdirs_all='testsuite
+-gdbtk
++ac_subdirs_all='gdbtk
  multi-ice
  gdbserver'
-@@ -7881,7 +7881,7 @@ fi
+ 
+@@ -5023,7 +5022,7 @@
  
  
  
--subdirs="$subdirs doc testsuite"
-+subdirs="$subdirs doc"
+-subdirs="$subdirs testsuite"
++subdirs="$subdirs"
  
  
  # Check whether to support alternative target configurations
---- a/gdb/gdbserver/configure
-+++ b/gdb/gdbserver/configure
-@@ -2152,7 +2152,7 @@ $as_echo "$as_me: error: \`$ac_var' was 
+--- a/gdb/gdbserver/configure	2012-09-13 16:01:22.000000000 +0200
++++ b/gdb/gdbserver/configure	2012-10-12 17:49:29.775910147 +0200
+@@ -2173,7 +2173,7 @@
        ac_cache_corrupted=: ;;
      ,);;
      *)
