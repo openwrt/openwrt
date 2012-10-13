@@ -1,7 +1,7 @@
---- a/acx_func.h
-+++ b/acx_func.h
-@@ -335,8 +335,11 @@ void acx_process_rxbuf(acx_device_t *ade
-  */
+--- a/main.h
++++ b/main.h
+@@ -44,8 +44,11 @@ void acx_process_rxbuf(acx_device_t *ade
+ 
  #if CONFIG_ACX_MAC80211_VERSION < KERNEL_VERSION(2, 6, 39)
  int acx_op_tx(struct ieee80211_hw *hw, struct sk_buff *skb);
 -#else
@@ -12,23 +12,10 @@
 +	       struct sk_buff *skb);
  #endif
  
- void acx_tx_work(struct work_struct *work);
---- a/common.c
-+++ b/common.c
-@@ -232,8 +232,11 @@ static void acx_rx(acx_device_t *adev, r
- /* Tx Path */
- #if CONFIG_ACX_MAC80211_VERSION < KERNEL_VERSION(2, 6, 39)
- int acx_op_tx(struct ieee80211_hw *hw, struct sk_buff *skb);
--#else
-+#elif CONFIG_ACX_MAC80211_VERSION < KERNEL_VERSION(3, 7, 0)
- void acx_op_tx(struct ieee80211_hw *hw, struct sk_buff *skb);
-+#else
-+void acx_op_tx(struct ieee80211_hw *hw, struct ieee80211_tx_control *control,
-+	       struct sk_buff *skb);
- #endif
  
- //-void acx_tx_work(struct work_struct *work);
-@@ -5183,7 +5186,12 @@ out:
+--- a/main.c
++++ b/main.c
+@@ -1024,7 +1024,12 @@ out:
   * acx_compat, and hiding this #if/else.  OTOH, inclusion doesnt care
   * about old kernels
   */
