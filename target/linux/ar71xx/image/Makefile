@@ -641,7 +641,7 @@ define Image/Build/OpenMesh
 		"$(KDIR_TMP)/vmlinux-$(2).uImage" \
 		"$(KDIR)/root.$(1)"
 	-sh $(TOPDIR)/scripts/combined-ext-image.sh \
-		"$(3)" "$(call factoryname,$(1),$(2))" \
+		"$(4)" "$(call factoryname,$(1),$(2))" \
 		"$(BUILD_DIR)/om2p-fwupgrade.cfg" "fwupgrade.cfg" \
 		"$(KDIR_TMP)/vmlinux-$(2).uImage" "kernel" \
 		"$(KDIR)/root.$(1)" "rootfs"
@@ -781,7 +781,7 @@ $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3800,wndr3800,WNDR3700,ttyS0,1
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDRMAC,wndrmac,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDRMAC,"",-H 29763654+16+64))
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDRMACV2,wndrmacv2,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDRMACv2,"",-H 29763654+16+128))
 
-$(eval $(call SingleProfile,OpenMesh,$(fs_squash),OM2P,om2p,OM2P))
+$(eval $(call SingleProfile,OpenMesh,$(fs_squash),OM2P,om2p,,,,OM2P))
 
 $(eval $(call SingleProfile,PB4X,$(fs_128k),ALL0305,all0305,ALL0305,ttyS0,115200))
 $(eval $(call SingleProfile,PB4X,$(fs_128k),EAP7660D,eap7660d,EAP7660D,ttyS0,115200))
