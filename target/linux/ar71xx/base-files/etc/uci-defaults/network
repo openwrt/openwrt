@@ -143,7 +143,6 @@ all0305 |\
 aw-nr580 |\
 bullet-m |\
 eap7660d |\
-ew-dorin |\
 rb-411 |\
 tl-mr11u |\
 tl-mr3020 |\
@@ -197,6 +196,12 @@ wzr-hp-g450h)
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0t 2 3 4 5"
 	ucidef_add_switch_vlan "eth0" "2" "0t 1"
+	;;
+
+ew-dorin)
+	ucidef_set_interface_lan "eth0"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3"
 	;;
 
 ew-dorin-router)
