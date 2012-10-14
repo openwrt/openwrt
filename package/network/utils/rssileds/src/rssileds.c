@@ -70,6 +70,32 @@ void log_rules(rule_t *rules)
 	}
 }
 
+int set_led(struct led *led, unsigned char value)
+{
+	char buf[8];
+
+	if ( ! led )
+		return -1;
+
+	if ( ! led->controlfd )
+		return -1;
+
+	if ( led->state == value )
+		return 0;
+
+	snprintf(buf, 8, "%d", value);
+
+	rewind(led->controlfd);
+
+	if ( ! fwrite(buf, sizeof(char), strlen(buf), led->controlfd) )
+		return -2;
+
+	fflush(led->controlfd);
+	led->state=value;
+
+	return 0;
+}
+
 int init_led(struct led **led, char *ledname)
 {
 	struct led *newled;
@@ -102,8 +128,15 @@ int init_led(struct led **led, char *ledname)
 
 	newled->sysfspath = bp;
 	newled->controlfd = bfp;
-	
+
 	*led = newled;
+
+	if ( set_led(newled, 255) )
+		goto cleanup_fp;
+
+	if ( set_led(newled, 0) )
+		goto cleanup_fp;
+
 	return 0;
 
 cleanup_fp:
@@ -122,29 +155,6 @@ void close_led(struct led **led)
 	free((*led)->sysfspath);
 	free((*led));
 	(*led)=NULL;
-}
-
-int set_led(struct led *led, unsigned char value)
-{
-	char buf[8];
-
-	if ( ! led )
-		return -1;
-
-	if ( ! led->controlfd )
-		return -1;
-
-	snprintf(buf, 8, "%d", value);
-
-	rewind(led->controlfd);
-
-	if ( ! fwrite(buf, sizeof(char), strlen(buf), led->controlfd) )
-		return -2;
-
-	fflush(led->controlfd);
-	led->state=value;
-
-	return 0;
 }
 
 
