@@ -189,7 +189,7 @@ int j_inputbox(const char *t, int ac, const char *const *av)
 	int ret = dialog_inputbox(t, av[2], atoi(av[3]), atoi(av[4]),
 				  ac == 6 ? av[5] : (char *)NULL);
 	if (ret == 0)
-		fprintf(stderr, dialog_input_result);
+		fprintf(stderr, "%s", dialog_input_result);
 	return ret;
 }
 
