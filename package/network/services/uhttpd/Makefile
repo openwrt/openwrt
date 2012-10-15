@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2012 Jo-Philipp Wich <xm@subsignal.org>
+# Copyright (C) 2010-2012 Jo-Philipp Wich <jow@openwrt.org>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,9 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_RELEASE:=40
+PKG_VERSION:=2012-10-15
+PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=git://nbd.name/uhttpd.git
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=fa43d1a62864f912e4450affb9c86f3accbe026a
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
+PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+
 PKG_CONFIG_DEPENDS := \
 	CONFIG_PACKAGE_uhttpd_debug \
 	CONFIG_PACKAGE_uhttpd-mod-lua \
@@ -20,13 +27,14 @@ PKG_CONFIG_DEPENDS := \
 	CONFIG_PACKAGE_uhttpd-mod-ubus
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
+
 
 define Package/uhttpd/default
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Web Servers/Proxies
   TITLE:=uHTTPd - tiny, single threaded HTTP server
-  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
 
 define Package/uhttpd
@@ -71,19 +79,18 @@ define Package/uhttpd-mod-tls/config
   endchoice
 endef
 
-UHTTPD_TLS:=
+UHTTPD_TLS:=none
 TLS_CFLAGS:=
 TLS_LDFLAGS:=
 
 ifneq ($(CONFIG_PACKAGE_uhttpd-mod-tls_cyassl),)
   UHTTPD_TLS:=cyassl
-  TLS_CFLAGS:=-I$(STAGING_DIR)/usr/include/cyassl -DTLS_IS_CYASSL
+  TLS_CFLAGS:=-I$(STAGING_DIR)/usr/include/cyassl
   TLS_LDFLAGS:=-lcyassl -lm
 endif
 
 ifneq ($(CONFIG_PACKAGE_uhttpd-mod-tls_openssl),)
   UHTTPD_TLS:=openssl
-  TLS_CFLAGS:=-DTLS_IS_OPENSSL
   TLS_LDFLAGS:=-lssl
 endif
 
@@ -111,21 +118,16 @@ define Package/uhttpd-mod-ubus/description
 endef
 
 
-TARGET_CFLAGS += $(TLS_CFLAGS) $(if $(CONFIG_PACKAGE_uhttpd_debug),-DDEBUG) -ggdb3
-TARGET_LDFLAGS += -lubox -Wl,-rpath-link=$(STAGING_DIR)/usr/lib
-MAKE_VARS += \
-	FPIC="$(FPIC)" \
-	LUA_SUPPORT="$(if $(CONFIG_PACKAGE_uhttpd-mod-lua),1)" \
-	TLS_SUPPORT="$(if $(CONFIG_PACKAGE_uhttpd-mod-tls),1)" \
-	UBUS_SUPPORT="$(if $(CONFIG_PACKAGE_uhttpd-mod-ubus),1)" \
-	UHTTPD_TLS="$(UHTTPD_TLS)" \
-	TLS_CFLAGS="$(TLS_CFLAGS)" \
-	TLS_LDFLAGS="$(TLS_LDFLAGS)"
+TARGET_LDFLAGS += -lubox -lcrypt
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
+CMAKE_OPTIONS += \
+	-DDEBUG=$(if $(CONFIG_PACKAGE_uhttpd_debug),ON,OFF) \
+	-DLUA_SUPPORT=$(if $(CONFIG_PACKAGE_uhttpd-mod-lua),ON,OFF) \
+	-DUBUS_SUPPORT=$(if $(CONFIG_PACKAGE_uhttpd-mod-ubus),ON,OFF) \
+	-DTLS_SUPPORT=$(UHTTPD_TLS) \
+	-DTLS_CFLAGS="$(TLS_CFLAGS)" \
+	-DTLS_LDFLAGS="$(TLS_LDFLAGS)" \
+
 
 define Package/uhttpd/conffiles
 /etc/config/uhttpd
