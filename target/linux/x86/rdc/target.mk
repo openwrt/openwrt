@@ -1,21 +1,7 @@
-#
-# Copyright (C) 2006-2012 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
-include $(TOPDIR)/rules.mk
-
-ARCH:=i386
-BOARD:=rdc
-BOARDNAME:=RDC 321x
-FEATURES:=squashfs jffs2 pci usb pcmcia
+BOARDNAME:=RDC R-321x
+FEATURES:=squashfs jffs2 pci usb gpio pcmcia
 CFLAGS:=-Os -pipe -march=i486 -mtune=i486 -fno-caller-saves
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
-
-LINUX_VERSION:=3.3.8
-
-include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += kmod-llc kmod-stp kmod-bridge kmod-8021q \
 		    wpad-mini kmod-libphy kmod-r6040 kmod-input-core \
@@ -26,5 +12,3 @@ define Target/Description
         Build firmware images for RDC321x based routers
         (e.g. Airlink101 AR525W, Linksys WRT54GR, Sitecom WL-153)
 endef
-
-$(eval $(call BuildTarget))

@@ -15,7 +15,7 @@ config X86_ETHERBOOT_BOOTOPTS
 
 config X86_GRUB_IMAGES
 	bool "Build GRUB images (Linux x86 or x86_64 host only)"
-	depends TARGET_x86 && !TARGET_x86_olpc
+	depends TARGET_x86 && !(TARGET_x86_olpc || TARGET_x86_rdc)
 	depends TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 	select PACKAGE_grub2
 	default y
