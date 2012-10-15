@@ -59,7 +59,7 @@ start_instance()
 
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
-	local listen http https interpreter path
+	local listen http https interpreter indexes path
 
 	append_arg "$cfg" home "-h"
 	append_arg "$cfg" realm "-r" "${realm:-OpenWrt}"
@@ -71,7 +71,6 @@ start_instance()
 	append_arg "$cfg" network_timeout "-T"
 	append_arg "$cfg" tcp_keepalive "-A"
 	append_arg "$cfg" error_page "-E"
-	append_arg "$cfg" index_page "-I"
 	append_arg "$cfg" max_requests "-n" 3
 
 	append_bool "$cfg" no_symlinks "-S" 0
@@ -86,6 +85,11 @@ start_instance()
 	config_get interpreter "$cfg" interpreter
 	for path in $interpreter; do
 		append UHTTPD_ARGS "-i $path"
+	done
+
+	config_get indexes "$cfg" index_page
+	for path in $indexes; do
+		append UHTTPD_ARGS "-I $path"
 	done
 
 	config_get https "$cfg" listen_https
