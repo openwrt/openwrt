@@ -73,9 +73,12 @@ OPKG:= \
 PACKAGE_INSTALL:=$(sort $(foreach pkg,$(package-y),$(lastword $(subst /,$(space),$(pkg)))))
 PACKAGE_INSTALL_FILES:=$(patsubst %,$(PKG_INFO_DIR)/%.install,$(PACKAGE_INSTALL))
 
+$(curdir)/cleanup: $(TMP_DIR)/.build
+	rm -rf $(STAGING_DIR_ROOT)
+
 $(curdir)/install: $(TMP_DIR)/.build
 	- find $(STAGING_DIR_ROOT) -type d | $(XARGS) chmod 0755
-	rm -rf $(TARGET_DIR) $(STAGING_DIR_ROOT)
+	rm -rf $(TARGET_DIR)
 	[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
 	$(OPKG) install `cat $(PACKAGE_INSTALL_FILES) | sed -e 's,^\(.*\)$$,$(PACKAGE_DIR)/\1_*.ipk,'`
 	@for pkg in $(PACKAGE_INSTALL); do \
@@ -121,6 +124,7 @@ $(curdir)/preconfig:
 $(curdir)/flags-install:= -j1
 
 $(eval $(call stampfile,$(curdir),package,prereq,.config))
+$(eval $(call stampfile,$(curdir),package,cleanup,$(TMP_DIR)/.build))
 $(eval $(call stampfile,$(curdir),package,compile,$(TMP_DIR)/.build))
 $(eval $(call stampfile,$(curdir),package,install,$(TMP_DIR)/.build))
 
