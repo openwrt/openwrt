@@ -396,7 +396,7 @@ static void nuport_mac_adjust_link(struct net_device *dev)
 		priv->old_link = phydev->link;
 	}
 
-	if (phydev->link & (priv->old_duplex != phydev->duplex)) {
+	if (phydev->link && (priv->old_duplex != phydev->duplex)) {
 		reg = nuport_mac_readl(CTRL_REG);
 		if (phydev->duplex == DUPLEX_FULL)
 			reg |= DUPLEX_FULL;
@@ -564,7 +564,6 @@ static int nuport_mac_rx(struct net_device *dev, int limit)
 
 		/* Get packet status */
 		status = get_unaligned((u32 *) (skb->data + len));
-		skb->dev = dev;
 
 		dma_unmap_single(&priv->pdev->dev, priv->rx_addr, skb->len,
 				DMA_FROM_DEVICE);
@@ -615,6 +614,9 @@ static int nuport_mac_rx(struct net_device *dev, int limit)
 
 exit:
 		skb = netdev_alloc_skb(dev, RX_ALLOC_SIZE);
+		if (!skb)
+			goto out;
+
 		skb_reserve(skb, RX_SKB_HEADROOM);
 		priv->rx_skb[priv->cur_rx] = skb;
 		priv->irq_rxskb[priv->cur_rx] = 1;
@@ -624,7 +626,7 @@ exit:
 			priv->cur_rx = 0;
 		count++;
 	}
-
+out:
 	return count;
 }
 
