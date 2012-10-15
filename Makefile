@@ -40,7 +40,7 @@ else
 
 $(toolchain/stamp-install): $(tools/stamp-install)
 $(target/stamp-compile): $(toolchain/stamp-install) $(tools/stamp-install) $(BUILD_DIR)/.prepared
-$(package/stamp-compile): $(target/stamp-compile)
+$(package/stamp-compile): $(target/stamp-compile) $(package/stamp-cleanup)
 $(package/stamp-install): $(package/stamp-compile)
 $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
 
