@@ -164,9 +164,17 @@ ifndef DUMP
 	touch $$@
 
   $(call Host/Exports,$(HOST_STAMP_BUILT))
-  ifdef Host/Install
-    host-install: $(if $(STAMP_BUILT),$(HOST_STAMP_BUILT),$(HOST_STAMP_INSTALLED))
-  endif
+  $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
+		$(call Host/Compile)
+		$(foreach hook,$(Hooks/HostCompile/Post),$(call $(hook))$(sep))
+		touch $$@
+
+  $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
+		$(call Host/Install)
+		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
+		mkdir -p $$(shell dirname $$@)
+		touch $$@
 
   ifndef STAMP_BUILT
     prepare: host-prepare
@@ -175,31 +183,12 @@ ifndef DUMP
     clean: host-clean
     update: host-update
     refresh: host-refresh
-
-    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
-		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
-		$(call Host/Compile)
-		$(foreach hook,$(Hooks/HostCompile/Post),$(call $(hook))$(sep))
-		touch $$@
-
-    $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
-		$(call Host/Install)
-		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
-		mkdir -p $$(shell dirname $$@)
-		touch $$@
-  else
-    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED) $(if $(FORCE_HOST_INSTALL),FORCE)
-		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
-		$(call Host/Compile)
-		$(foreach hook,$(Hooks/HostCompile/Post),$(call $(hook))$(sep))
-		$(call Host/Install)
-		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
-		touch $$@
   endif
+
   host-prepare: $(HOST_STAMP_PREPARED)
   host-configure: $(HOST_STAMP_CONFIGURED)
-  host-compile: $(HOST_STAMP_BUILT)
-  host-install:
+  host-compile: $(HOST_STAMP_BUILT) $(if $(STAMP_BUILT),$(HOST_STAMP_INSTALLED))
+  host-install: $(HOST_STAMP_INSTALLED)
   host-clean: FORCE
 	$(call Host/Clean)
 	$(call Host/Uninstall)
