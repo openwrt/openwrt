@@ -1,0 +1,12 @@
+diff -ru iftop-1.0pre2-old/configure iftop-1.0pre2/configure
+--- iftop-1.0pre2-old/configure	2011-10-04 13:30:30.000000000 -0700
++++ iftop-1.0pre2/configure	2012-09-09 22:26:05.000000000 -0700
+@@ -7568,7 +7568,7 @@
+ { $as_echo "$as_me:$LINENO: checking for a curses library containing mvchgat" >&5
+ $as_echo_n "checking for a curses library containing mvchgat... " >&6; }
+ oldLIBS=$LIBS
+-for curseslib in ncursesw curses ncurses ; do
++for curseslib in ncurses ; do
+     LIBS="$oldLIBS -l$curseslib"
+     cat >conftest.$ac_ext <<_ACEOF
+ /* confdefs.h.  */
