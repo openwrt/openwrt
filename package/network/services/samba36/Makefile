@@ -18,6 +18,8 @@ PKG_MD5SUM:=2f0c14547333c1b48fd4728b031e7040
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
+PKG_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/package.mk
 
 MAKE_PATH:=source3
