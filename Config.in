@@ -495,20 +495,6 @@ menu "Global build settings"
 		  Only say Y, if you don't mind fixing broken packages.
 		  Before reporting build bugs, set this to N and re-run the build.
 
-	config TOOLCHAIN_PARALLEL
-		bool
-		prompt "Parallelize the toolchain build (May break build)"
-		depends on PKG_BUILD_PARALLEL
-		depends on BROKEN
-		default n
-		help
-		  Build the toolchain with parallel make jobs.
-		  This speeds up the toolchain build on SMP machines, but may
-		  break the build for certain toolchain versions.
-
-		  If you say Y, toolchain build might break.
-		  Before reporting build bugs, set this to N and re-run the build.
-
 	comment "Stripping options"
 
 	choice
