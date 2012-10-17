@@ -510,6 +510,29 @@
  
  	ieee80211_bss_info_change_notify(sdata, changed);
  }
+@@ -3526,6 +3572,7 @@ int ieee80211_mgd_deauth(struct ieee8021
+ {
+ 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
+ 	u8 frame_buf[DEAUTH_DISASSOC_LEN];
++	bool tx = !req->local_state_change;
+ 
+ 	mutex_lock(&ifmgd->mtx);
+ 
+@@ -3542,12 +3589,12 @@ int ieee80211_mgd_deauth(struct ieee8021
+ 	if (ifmgd->associated &&
+ 	    ether_addr_equal(ifmgd->associated->bssid, req->bssid)) {
+ 		ieee80211_set_disassoc(sdata, IEEE80211_STYPE_DEAUTH,
+-				       req->reason_code, true, frame_buf);
++				       req->reason_code, tx, frame_buf);
+ 	} else {
+ 		drv_mgd_prepare_tx(sdata->local, sdata);
+ 		ieee80211_send_deauth_disassoc(sdata, req->bssid,
+ 					       IEEE80211_STYPE_DEAUTH,
+-					       req->reason_code, true,
++					       req->reason_code, tx,
+ 					       frame_buf);
+ 	}
+ 
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
 @@ -674,7 +674,7 @@ int __must_check __sta_info_destroy(stru
@@ -590,3 +613,39 @@
  
  	if (local->user_power_level >= 0)
  		power = min(power, local->user_power_level);
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1218,6 +1218,7 @@ struct cfg80211_deauth_request {
+ 	const u8 *ie;
+ 	size_t ie_len;
+ 	u16 reason_code;
++	bool local_state_change;
+ };
+ 
+ /**
+--- a/net/wireless/mlme.c
++++ b/net/wireless/mlme.c
+@@ -457,20 +457,14 @@ int __cfg80211_mlme_deauth(struct cfg802
+ 		.reason_code = reason,
+ 		.ie = ie,
+ 		.ie_len = ie_len,
++		.local_state_change = local_state_change,
+ 	};
+ 
+ 	ASSERT_WDEV_LOCK(wdev);
+ 
+-	if (local_state_change) {
+-		if (wdev->current_bss &&
+-		    ether_addr_equal(wdev->current_bss->pub.bssid, bssid)) {
+-			cfg80211_unhold_bss(wdev->current_bss);
+-			cfg80211_put_bss(&wdev->current_bss->pub);
+-			wdev->current_bss = NULL;
+-		}
+-
++	if (local_state_change && (!wdev->current_bss ||
++	    !ether_addr_equal(wdev->current_bss->pub.bssid, bssid)))
+ 		return 0;
+-	}
+ 
+ 	return rdev->ops->deauth(&rdev->wiphy, dev, &req);
+ }
