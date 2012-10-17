@@ -363,7 +363,8 @@ define KernelPackage/rfkill
   KCONFIG:= \
     CONFIG_RFKILL \
     CONFIG_RFKILL_INPUT=y \
-    CONFIG_RFKILL_LEDS=y
+    CONFIG_RFKILL_LEDS=y \
+    CONFIG_RFKILL_GPIO=y
   FILES:= \
     $(LINUX_DIR)/net/rfkill/rfkill.ko
   AUTOLOAD:=$(call AutoLoad,20,rfkill)
