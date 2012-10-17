@@ -175,27 +175,6 @@ static void __init om2p_lc_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_OM2P_LC, "OM2P-LC", "OpenMesh OM2P LC", om2p_lc_setup);
 
-
-static void __init om2p_hs_gmac_setup(void)
-{
-	void __iomem *base;
-	u32 t;
-
-	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
-
-	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
-
-	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
-	       AR934X_ETH_CFG_GMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE |
-	       AR934X_ETH_CFG_SW_PHY_SWAP);
-
-	t |= AR934X_ETH_CFG_SW_PHY_SWAP;
-	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
-	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
-
-	iounmap(base);
-}
-
 static void __init om2p_hs_setup(void)
 {
 	u8 *mac1 = (u8 *)KSEG1ADDR(0x1ffc0000);
@@ -222,7 +201,7 @@ static void __init om2p_hs_setup(void)
 
 	ath79_register_wmac(art, NULL);
 
-	om2p_hs_gmac_setup();
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_SW_PHY_SWAP);
 	ath79_register_mdio(1, 0x0);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 0);
