@@ -26,7 +26,7 @@ proto_dhcp_setup() {
 		append dhcpopts "-O $opt"
 	done
 
-	[ "$broadcast" = 1 ] && broadcast="-O broadcast" || broadcast=
+	[ "$broadcast" = 1 ] && broadcast="-B" || broadcast=
 
 	proto_export "INTERFACE=$config"
 	proto_run_command "$config" udhcpc \
