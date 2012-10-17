@@ -44,5 +44,6 @@ extern struct platform_device ath79_mdio1_device;
 void ath79_register_mdio(unsigned int id, u32 phy_mask);
 
 void ath79_setup_ar933x_phy4_switch(bool mac, bool mdio);
+void ath79_setup_ar934x_eth_cfg(u32 mask);
 
 #endif /* _ATH79_DEV_ETH_H */
