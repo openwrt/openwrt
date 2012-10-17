@@ -80,8 +80,7 @@ define KernelPackage/mac80211
 endef
 
 define KernelPackage/mac80211/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-mac80211
+  if PACKAGE_kmod-mac80211
 
 	config PACKAGE_MAC80211_DEBUGFS
 		bool "Export mac80211 internals in DebugFS"
@@ -96,7 +95,7 @@ define KernelPackage/mac80211/config
 		bool "Enable 802.11s mesh support"
 		default y
 
-	endmenu
+  endif
 endef
 
 define KernelPackage/mac80211/description
@@ -217,8 +216,7 @@ $(call KernelPackage/rt2x00/Default)
 endef
 
 define KernelPackage/rt2x00-lib/config
-	menu "Configuration"
-		depends PACKAGE_kmod-rt2x00-lib
+  if PACKAGE_kmod-rt2x00-lib
 
 	config PACKAGE_RT2X00_LIB_DEBUGFS
 		bool "Enable rt2x00 debugfs support"
@@ -233,7 +231,7 @@ define KernelPackage/rt2x00-lib/config
 		help
 		  Enable debugging output for all rt2x00 modules
 
-	endmenu
+  endif
 endef
 
 define KernelPackage/rt2x00-pci
@@ -365,9 +363,7 @@ define KernelPackage/zd1211rw
 endef
 
 define KernelPackage/ath/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-ath
-
+  if PACKAGE_kmod-ath
 	config ATH_USER_REGD
 		bool "Force Atheros drivers to respect the user's regdomain settings"
 		help
@@ -384,8 +380,7 @@ define KernelPackage/ath/config
 		help
 		  Say Y, if you want to debug atheros wireless drivers.
 		  Right now only ath9k makes use of this.
-
-	endmenu
+  endif
 endef
 
 define KernelPackage/ath
@@ -645,8 +640,7 @@ define KernelPackage/iwlagn/description
 endef
 
 define KernelPackage/iwlagn/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-iwlagn
+  if PACKAGE_kmod-iwlagn
 
 	config IWL5000_FW
 		bool "Intel 5000 Firmware"
@@ -704,7 +698,7 @@ define KernelPackage/iwlagn/config
 		  Download and install firmware for:
 		    Intel 100 wireless card into /lib/firmware.
 
-	endmenu
+  endif
 endef
 
 define KernelPackage/iwl-legacy
@@ -852,8 +846,7 @@ define KernelPackage/b43
 endef
 
 define KernelPackage/b43/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-b43
+  if PACKAGE_kmod-b43
 
 	choice
 		prompt "b43 firmware version"
@@ -999,7 +992,7 @@ define KernelPackage/b43/config
 
 		  If unsure, say N.
 
-	endmenu
+  endif
 endef
 
 define KernelPackage/b43/description
@@ -1019,8 +1012,7 @@ define KernelPackage/b43legacy
 endef
 
 define KernelPackage/b43legacy/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-b43legacy
+  if PACKAGE_kmod-b43legacy
 
 	config B43LEGACY_FW_SQUASH
 		bool "Remove unnecessary firmware files"
@@ -1045,7 +1037,7 @@ define KernelPackage/b43legacy/config
 		  Example (keep files for rev2 and rev4):
 		    2,4
 
-	endmenu
+  endif
 endef
 
 define KernelPackage/b43legacy/description
@@ -1068,15 +1060,14 @@ define KernelPackage/brcmutil/description
 endef
 
 define KernelPackage/brcmutil/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-brcmutil
+  if PACKAGE_kmod-brcmutil
 
 	config PACKAGE_BRCM80211_DEBUG
 		bool "Broadcom wireless driver debugging"
 		help
 		  Say Y, if you want to debug brcmsmac and brcmfmac wireless driver.
 
-	endmenu
+  endif
 endef
 
 PKG_BRCMSMAC_FW_NAME:=broadcom-wl
@@ -1101,8 +1092,7 @@ define KernelPackage/brcmsmac/description
 endef
 
 define KernelPackage/brcmsmac/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-brcmsmac
+  if PACKAGE_kmod-brcmsmac
 
 	config BRCMSMAC_USE_FW_FROM_WL
 		bool "Use firmware extracted from broadcom proprietary driver"
@@ -1115,7 +1105,7 @@ define KernelPackage/brcmsmac/config
 
 		  If unsure, say Y.
 
-	endmenu
+  endif
 endef
 
 
