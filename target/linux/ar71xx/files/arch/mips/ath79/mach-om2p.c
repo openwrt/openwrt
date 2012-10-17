@@ -174,3 +174,71 @@ static void __init om2p_lc_setup(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_OM2P_LC, "OM2P-LC", "OpenMesh OM2P LC", om2p_lc_setup);
+
+
+static void __init om2p_hs_gmac_setup(void)
+{
+	void __iomem *base;
+	u32 t;
+
+	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+
+	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+
+	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
+	       AR934X_ETH_CFG_GMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE |
+	       AR934X_ETH_CFG_SW_PHY_SWAP);
+
+	t |= AR934X_ETH_CFG_SW_PHY_SWAP;
+	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+}
+
+static void __init om2p_hs_setup(void)
+{
+	u8 *mac1 = (u8 *)KSEG1ADDR(0x1ffc0000);
+	u8 *mac2 = (u8 *)KSEG1ADDR(0x1ffc0000 + ETH_ALEN);
+	u8 *art = (u8 *)KSEG1ADDR(0x1ffc1000);
+
+	/* make lan / wan leds software controllable */
+	ath79_gpio_output_select(OM2P_GPIO_LED_LAN, AR934X_GPIO_OUT_GPIO);
+	ath79_gpio_output_select(OM2P_GPIO_LED_WAN, AR934X_GPIO_OUT_GPIO);
+
+	/* enable reset button */
+	ath79_gpio_output_select(OM2P_GPIO_BTN_RESET, AR934X_GPIO_OUT_GPIO);
+	ath79_gpio_function_enable(AR933X_GPIO_FUNC_JTAG_DISABLE);
+
+	om2p_leds_gpio[4].gpio = OM2P_GPIO_LED_WAN;
+	om2p_leds_gpio[5].gpio = OM2P_GPIO_LED_LAN;
+
+	ath79_register_m25p80(&om2p_lc_flash_data);
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(om2p_leds_gpio),
+				 om2p_leds_gpio);
+	ath79_register_gpio_keys_polled(-1, OM2P_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(om2p_gpio_keys),
+					om2p_gpio_keys);
+
+	ath79_register_wmac(art, NULL);
+
+	om2p_hs_gmac_setup();
+	ath79_register_mdio(1, 0x0);
+
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 0);
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac2, 0);
+
+	/* GMAC0 is connected to the PHY0 of the internal switch */
+	ath79_switch_data.phy4_mii_en = 1;
+	ath79_switch_data.phy_poll_mask = BIT(0);
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ath79_eth0_data.phy_mask = BIT(0);
+	ath79_eth0_data.mii_bus_dev = &ath79_mdio1_device.dev;
+	ath79_register_eth(0);
+
+	/* GMAC1 is connected to the internal switch */
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ath79_register_eth(1);
+}
+
+MIPS_MACHINE(ATH79_MACH_OM2P_HS, "OM2P-HS", "OpenMesh OM2P HS", om2p_hs_setup);
