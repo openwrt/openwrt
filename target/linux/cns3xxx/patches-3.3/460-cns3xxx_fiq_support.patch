@@ -65,11 +65,10 @@
  obj-$(CONFIG_LOCAL_TIMERS)		+= localtimer.o
 --- /dev/null
 +++ b/arch/arm/mach-cns3xxx/cns3xxx_fiq.S
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,96 @@
 +/*
-+ *  linux/arch/arm/lib/floppydma.S
-+ *
-+ *  Copyright (C) 1995, 1996 Russell King
++ *  Copyright (C) 2012 Gateworks Corporation
++ *      Chris Lang <clang@gateworks.com>
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
@@ -298,7 +297,7 @@
 +	cpu_cache.dma_map_area = (void *)smp_dma_map_area;
 +	cpu_cache.dma_unmap_area = (void *)smp_dma_unmap_area;
 +	cpu_cache.dma_flush_range = (void *)smp_dma_flush_range;
-+	
++
 +	/*
  	 * Synchronise with the boot thread.
  	 */
