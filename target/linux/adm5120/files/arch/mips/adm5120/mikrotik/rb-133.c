@@ -32,7 +32,6 @@ static void __init rb133_setup(void)
 	rb1xx_add_device_nand();
 
 	adm5120_add_device_switch(3, rb133_vlans);
-	adm5120_add_device_gpio(0);
 	adm5120_add_device_gpio_leds(ARRAY_SIZE(rb133_gpio_leds),
 					rb133_gpio_leds);
 }

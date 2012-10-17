@@ -14,8 +14,6 @@
 #include <prom/zynos.h>
 
 #define P33X_GPIO_FLASH_A20	ADM5120_GPIO_PIN5
-#define P33X_GPIO_DEV_MASK	(1 << P33X_GPIO_FLASH_A20)
-
 static struct mtd_partition p33x_partitions[] = {
 	{
 		.name	= "bootbase",
@@ -79,8 +77,6 @@ void __init p33x_generic_setup(void)
 
 	adm5120_add_device_uart(0);
 	adm5120_add_device_uart(1);
-
-	adm5120_add_device_gpio(P33X_GPIO_DEV_MASK);
 
 	adm5120_setup_eth_macs(bootbase_info.mac);
 	adm5120_add_device_switch(6, p33x_vlans);

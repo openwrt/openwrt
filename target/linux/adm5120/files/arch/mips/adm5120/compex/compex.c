@@ -13,8 +13,6 @@
 
 #include <asm/mach-adm5120/prom/myloader.h>
 
-#define COMPEX_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN5)
-
 static void switch_bank_gpio5(unsigned bank)
 {
 	switch (bank) {
@@ -57,8 +55,6 @@ void __init compex_generic_setup(void)
 
 	adm5120_add_device_uart(0);
 	adm5120_add_device_uart(1);
-
-	adm5120_add_device_gpio(COMPEX_GPIO_DEV_MASK);
 
 	compex_mac_setup();
 }

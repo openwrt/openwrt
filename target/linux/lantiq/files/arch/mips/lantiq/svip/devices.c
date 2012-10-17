@@ -173,14 +173,9 @@ static struct platform_device ltq_gpio = {
 	.name = "ifxmips_gpio",
 };
 
-static struct platform_device ltq_gpiodev = {
-	.name = "GPIODEV",
-};
-
 void __init svip_register_gpio(void)
 {
 	platform_device_register(&ltq_gpio);
-	platform_device_register(&ltq_gpiodev);
 }
 
 /* MUX */

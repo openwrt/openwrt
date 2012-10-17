@@ -13,8 +13,6 @@
 
 #include <prom/admboot.h>
 
-#define BR61XX_GPIO_DEV_MASK	0
-
 #define BR61XX_CONFIG_OFFSET	0x8000
 #define BR61XX_CONFIG_SIZE		0x1000
 
@@ -72,8 +70,6 @@ void __init br61xx_generic_setup(void)
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(br61xx_partitions);
 	adm5120_flash0_data.parts = br61xx_partitions;
 	adm5120_add_device_flash(0);
-
-	adm5120_add_device_gpio(BR61XX_GPIO_DEV_MASK);
 
 	adm5120_add_device_uart(0);
 	adm5120_add_device_uart(1);
