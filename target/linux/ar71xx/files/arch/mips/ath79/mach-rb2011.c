@@ -123,23 +123,6 @@ static struct mdio_board_info rb2011_mdio0_info[] = {
 	},
 };
 
-static void __init rb2011_gmac_setup(void)
-{
-	void __iomem *base;
-	u32 t;
-
-	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
-
-	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
-	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
-		AR934X_ETH_CFG_GMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
-	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
-
-	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
-
-	iounmap(base);
-}
-
 static void __init rb2011_wlan_init(void)
 {
 	u8 *hard_cfg = (u8 *) KSEG1ADDR(0x1f000000 + RB_HARD_CFG_OFFSET);
@@ -232,7 +215,8 @@ static void __init rb2011_setup(void)
 	ath79_register_m25p80(&rb2011_spi_flash_data);
 	rb2011_nand_init();
 
-	rb2011_gmac_setup();
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
+				   AR934X_ETH_CFG_SW_ONLY_MODE);
 
 	ath79_register_mdio(1, 0x0);
 	ath79_register_mdio(0, 0x0);

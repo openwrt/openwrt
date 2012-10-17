@@ -101,23 +101,6 @@ static struct mdio_board_info db120_mdio0_info[] = {
 	},
 };
 
-static void __init db120_gmac_setup(void)
-{
-	void __iomem *base;
-	u32 t;
-
-	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
-
-	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
-	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
-	       AR934X_ETH_CFG_GMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
-	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
-
-	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
-
-	iounmap(base);
-}
-
 static void __init tl_wr1041nv2_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
@@ -132,7 +115,8 @@ static void __init tl_wr1041nv2_setup(void)
 					 tl_wr1041nv2_gpio_keys);
 	ath79_register_wmac(ee, mac);
 
-	db120_gmac_setup();
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
+				   AR934X_ETH_CFG_SW_ONLY_MODE);
 
 	ath79_register_mdio(1, 0x0);
 	ath79_register_mdio(0, 0x0);
