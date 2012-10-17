@@ -82,7 +82,7 @@
 +subsys_initcall(cambria_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/cambria-setup.c
-@@ -0,0 +1,1006 @@
+@@ -0,0 +1,992 @@
 +/*
 + * arch/arm/mach-ixp4xx/cambria-setup.c
 + *
@@ -517,13 +517,6 @@
 +	{131, GPIOF_IN,            "DIO4" },
 +};
 +
-+static struct platform_device cambria_gpio = {
-+	.name     = "GPIODEV",
-+	.id     = -1,
-+	.num_resources    = ARRAY_SIZE(cambria_gpio_resources),
-+	.resource   = cambria_gpio_resources,
-+};
-+
 +static struct latch_led cambria_latch_leds[] = {
 +	{
 +		.name	= "ledA",  /* green led */
@@ -683,7 +676,6 @@
 +																		(1 << 5) | (1 << 8) | (1 << 9) | (1 << 12);
 +	cambria_gpio_resources[0].end = cambria_gpio_resources[0].start;
 +
-+	platform_device_register(&cambria_gpio);
 +	platform_device_register(&cambria_npec_device);
 +	platform_device_register(&cambria_npea_device);
 +}
@@ -706,7 +698,6 @@
 +																		(1 << 5) | (1 << 8) | (1 << 9) | (1 << 12);
 +	cambria_gpio_resources[0].end = cambria_gpio_resources[0].start;
 +
-+	platform_device_register(&cambria_gpio);
 +	platform_device_register(&cambria_optional_uart);
 +	platform_device_register(&cambria_npec_device);
 +	platform_device_register(&cambria_npea_device);
@@ -737,7 +728,6 @@
 +																		(1 << 19) | (1 << 20) | (1 << 24) | (1 << 25);
 +	cambria_gpio_resources[0].end = cambria_gpio_resources[0].start;
 +
-+	platform_device_register(&cambria_gpio);
 +	platform_device_register(&cambria_optional_uart);
 +
 +	platform_device_register(&cambria_npec_device);
@@ -761,8 +751,6 @@
 +
 +static void __init cambria_gw2359_setup(void)
 +{
-+	platform_device_register(&cambria_gpio);
-+
 +#if defined(CONFIG_MVSWITCH_PHY) || defined(CONFIG_MVSWITCH_PHY_MODULE)
 +	/* The mvswitch driver has some hard-coded values which could
 +	 * easily be turned into a platform resource if needed.  For now they
@@ -864,8 +852,6 @@
 +
 +	cambria_optional_uart.num_resources   = 7,
 +	platform_device_register(&cambria_optional_uart);
-+
-+	platform_device_register(&cambria_gpio);
 +
 +#if defined(CONFIG_MVSWITCH_PHY) || defined(CONFIG_MVSWITCH_PHY_MODULE)
 +	/* The mvswitch driver has some hard-coded values which could

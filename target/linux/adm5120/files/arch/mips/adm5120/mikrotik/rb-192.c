@@ -20,7 +20,6 @@ static void __init rb192_setup(void)
 	rb1xx_generic_setup();
 	rb1xx_add_device_nand();
 
-	adm5120_add_device_gpio(0);
 	adm5120_add_device_switch(6, rb192_vlans);
 }
 

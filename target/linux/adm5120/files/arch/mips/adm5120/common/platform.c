@@ -312,26 +312,6 @@ void __init adm5120_add_device_gpio_leds(unsigned num_leds,
 }
 
 /*
- * GPIO device
- */
-static struct resource adm5120_gpio_resource[] __initdata = {
-	{
-		.start	= 0x3fffff,
-	},
-};
-
-void __init adm5120_add_device_gpio(u32 disable_mask)
-{
-	if (adm5120_package_pqfp())
-		disable_mask |= 0xf0;
-
-	adm5120_gpio_resource[0].start &= ~disable_mask;
-	platform_device_register_simple("GPIODEV", -1,
-			adm5120_gpio_resource,
-			ARRAY_SIZE(adm5120_gpio_resource));
-}
-
-/*
  * NAND flash
  */
 struct resource adm5120_nand_resources[] = {

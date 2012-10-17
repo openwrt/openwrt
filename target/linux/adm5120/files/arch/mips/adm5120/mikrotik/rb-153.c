@@ -11,10 +11,6 @@
 
 #include "rb-1xx.h"
 
-#define RB153_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN0 \
-				| 1 << ADM5120_GPIO_PIN3 \
-				| 1 << ADM5120_GPIO_PIN4)
-
 static struct resource rb153_cf_resources[] __initdata = {
 	{
 		.name	= "cf_membase",
@@ -65,7 +61,6 @@ static void __init rb153_setup(void)
 	rb1xx_add_device_nand();
 	rb153_add_device_cf();
 
-	adm5120_add_device_gpio(RB153_GPIO_DEV_MASK);
 	adm5120_add_device_gpio_leds(ARRAY_SIZE(rb153_gpio_leds),
 					rb153_gpio_leds);
 	adm5120_add_device_switch(5, rb153_vlans);

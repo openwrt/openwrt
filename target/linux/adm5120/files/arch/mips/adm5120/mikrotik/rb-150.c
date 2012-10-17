@@ -20,11 +20,6 @@
 #define RB150_GPIO_NAND_ALE	ADM5120_GPIO_P3L2
 #define RB150_GPIO_RESET_BUTTON	ADM5120_GPIO_PIN1 /* FIXME */
 
-#define RB150_GPIO_DEV_MASK	(1 << RB150_GPIO_NAND_READY	\
-				| 1 << RB150_GPIO_NAND_NCE	\
-				| 1 << RB150_GPIO_NAND_CLE	\
-				| 1 << RB150_GPIO_NAND_ALE)
-
 #define RB150_NAND_DELAY	100
 
 #define RB150_NAND_WRITE(v) \
@@ -127,7 +122,6 @@ static void __init rb150_setup(void)
 	rb1xx_generic_setup();
 	rb150_add_device_nand();
 
-	adm5120_add_device_gpio(RB150_GPIO_DEV_MASK);
 	adm5120_add_device_gpio_leds(ARRAY_SIZE(rb150_gpio_leds),
 					rb150_gpio_leds);
 	adm5120_add_device_switch(5, rb150_vlans);

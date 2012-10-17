@@ -31,26 +31,3 @@
 +	return NULL;
 +}
 +EXPORT_SYMBOL(nvram_get);
---- a/arch/mips/bcm47xx/setup.c
-+++ b/arch/mips/bcm47xx/setup.c
-@@ -381,3 +381,20 @@ static int __init bcm47xx_register_flash
- 	return -1;
- }
- fs_initcall(bcm47xx_register_flash);
-+
-+static int __init bcm47xx_register_gpiodev(void)
-+{
-+	static struct resource res = {
-+		.start = 0xFFFFFFFF,
-+	};
-+	struct platform_device *pdev;
-+
-+	pdev = platform_device_register_simple("GPIODEV", 0, &res, 1);
-+	if (!pdev) {
-+		printk(KERN_ERR "bcm47xx: GPIODEV init failed\n");
-+		return -ENODEV;
-+	}
-+
-+	return 0;
-+}
-+device_initcall(bcm47xx_register_gpiodev);

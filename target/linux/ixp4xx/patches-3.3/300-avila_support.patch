@@ -117,7 +117,7 @@
  		.name	= "intrq",
  		.start	= IRQ_IXP4XX_GPIO12,
  		.end	= IRQ_IXP4XX_GPIO12,
-@@ -133,21 +210,280 @@ static struct platform_device avila_pata
+@@ -133,21 +210,275 @@ static struct platform_device avila_pata
  	.resource		= avila_pata_resources,
  };
  
@@ -240,11 +240,6 @@
  };
  
 -static void __init avila_init(void)
-+static struct platform_device avila_gpio_dev = {
-+	.name     = "GPIODEV",
-+	.id     = -1,
-+};
-+
 +/*
 + * Audio Devices
 + */
@@ -405,7 +400,7 @@
  
  	avila_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
  	avila_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
-@@ -159,8 +495,274 @@ static void __init avila_init(void)
+@@ -159,8 +495,272 @@ static void __init avila_init(void)
  	avila_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
  
  	platform_device_register(&avila_pata);
@@ -650,8 +645,6 @@
 +
 +	i2c_register_board_info(0, avila_i2c_board_info,
 +			ARRAY_SIZE(avila_i2c_board_info));
-+
-+	platform_device_register(&avila_gpio_dev);
 +}
 +
 +static int __init avila_model_setup(void)

@@ -66,7 +66,6 @@ extern void adm5120_add_device_usb(void) __init;
 extern void adm5120_add_device_uart(unsigned id) __init;
 extern void adm5120_add_device_nand(struct platform_nand_data *pdata) __init;
 extern void adm5120_add_device_switch(unsigned num_ports, u8 *vlan_map) __init;
-extern void adm5120_add_device_gpio(u32 disable_mask) __init;
 extern void adm5120_register_gpio_buttons(int id,
 					  unsigned poll_interval,
 					  unsigned nbuttons,

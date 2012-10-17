@@ -118,7 +118,7 @@
 +subsys_initcall(tw2662_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/tw2662-setup.c
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,205 @@
 +/*
 + * arch/arm/mach-ixp4xx/tw2662-setup.c
 + *
@@ -183,13 +183,6 @@
 +                .end    = TW2662_GPIO_MASK,
 +                .flags  = 0,
 +        },
-+};
-+
-+static struct platform_device tw2662_gpio = {
-+	.name			= "GPIODEV",
-+	.id			= -1,
-+	.num_resources		= ARRAY_SIZE(tw2662_gpio_resources),
-+	.resource		= tw2662_gpio_resources,
 +};
 +
 +static struct resource tw2662_uart_resources[] = {
@@ -264,7 +257,6 @@
 +static struct platform_device *tw2662_devices[] __initdata = {
 +	&tw2662_flash,
 +	&tw2662_uart,
-+	&tw2662_gpio,
 +	&tw2662_eth[0],
 +	&tw2662_eth[1],
 +};

@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/mach-cns3xxx/laguna.c
-@@ -0,0 +1,936 @@
+@@ -0,0 +1,931 @@
 +/*
 + * Gateworks Corporation Laguna Platform
 + *
@@ -585,10 +585,6 @@
 +/*
 + * GPIO
 + */
-+static struct platform_device laguna_gpio_dev = {
-+	.name = "GPIODEV",
-+	.id = -1,
-+};
 +
 +static struct gpio laguna_gpio_gw2391[] = {
 +	{   0, GPIOF_IN           , "*GPS_PPS" },
@@ -919,7 +915,6 @@
 +			laguna_gpio_leds_data.num_leds = 2;
 +		}
 +		platform_device_register(&laguna_gpio_leds_device);
-+		platform_device_register(&laguna_gpio_dev);
 +	} else {
 +		// Do some defaults here, not sure what yet
 +	}

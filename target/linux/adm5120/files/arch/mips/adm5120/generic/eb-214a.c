@@ -25,7 +25,6 @@
 #include <asm/mach-adm5120/adm5120_defs.h>
 
 
-#define EB214A_GPIO_DEV_MASK	0
 #define EB214A_CONFIG_OFFSET	0x4000
 
 #define EB214A_KEYS_POLL_INTERVAL	20
@@ -98,8 +97,6 @@ static void __init eb214a_setup(void)
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(eb214a_partitions);
 	adm5120_flash0_data.parts = eb214a_partitions;
 	adm5120_add_device_flash(0);
-
-	adm5120_add_device_gpio(EB214A_GPIO_DEV_MASK);
 
 	adm5120_add_device_uart(0);
 	/* adm5120_add_device_uart(1); */
