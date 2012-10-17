@@ -88,6 +88,7 @@ get_status_led() {
 		status_led="nbg460n:green:power"
 		;;
 	om2p | \
+	om2p-hs | \
 	om2p-lc)
 		status_led="om2p:blue:power"
 		;;
