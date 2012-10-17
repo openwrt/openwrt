@@ -12,11 +12,14 @@ boot() {
 		. /lib/ar71xx.sh
 		local board=$(ar71xx_board_name)
 
-		if [ "$board" = "om2p" ]; then
-			service_start /sbin/om-watchdog 12
-		elif [ "$board" = "om2p-lc" ]; then
-			service_start /sbin/om-watchdog 26
-		fi
+		case "$board" in
+			"om2p"|"om2p-hs")
+				service_start /sbin/om-watchdog 12
+				;;
+			"om2p-lc")
+				service_start /sbin/om-watchdog 26
+				;;
+		esac
 	else
 		#we assume it is om1p in this case
 		service_start /sbin/om-watchdog 3
