@@ -186,7 +186,7 @@ mac80211_start_vif() {
 
 lookup_phy() {
 	[ -n "$phy" ] && {
-		[ -d /sys/class/ieee80211/phy ] && return
+		[ -d /sys/class/ieee80211/$phy ] && return
 	}
 
 	local devpath
