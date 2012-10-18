@@ -13,6 +13,12 @@ config RT3883_MACH_DIR_645
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT3883_MACH_TEW_692GR
+	bool "TRENDnet TEW-692GR support"
+	select HW_HAS_PCI
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 endmenu
 
 endif
