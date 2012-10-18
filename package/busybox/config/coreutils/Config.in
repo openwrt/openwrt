@@ -582,14 +582,14 @@ config BUSYBOX_CONFIG_PWD
 
 config BUSYBOX_CONFIG_READLINK
 	bool "readlink"
-	default n
+	default y
 	help
 	  This program reads a symbolic link and returns the name
 	  of the file it points to
 
 config BUSYBOX_CONFIG_FEATURE_READLINK_FOLLOW
 	bool "Enable canonicalization by following all symlinks (-f)"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_READLINK
 	help
 	  Enable the readlink option (-f).
