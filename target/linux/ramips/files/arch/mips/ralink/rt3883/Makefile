@@ -11,4 +11,5 @@ obj-y	:= irq.o setup.o devices.o rt3883.o clock.o
 
 obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
 
+obj-$(CONFIG_RT3883_MACH_DIR_645)	+= mach-dir-645.o
 obj-$(CONFIG_RT3883_MACH_RT_N56U)	+= mach-rt-n56u.o
