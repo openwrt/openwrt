@@ -40,6 +40,7 @@ platform_check_image() {
 	rt-n15 | \
 	rt-n56u | \
 	sl-r7205 | \
+	tew-692gr | \
 	w306r-v20 |\
 	w502u |\
 	wr6202 |\
