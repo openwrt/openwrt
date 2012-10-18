@@ -137,6 +137,7 @@ image_check(int imagefd, const char *mtd)
 	if (trx_check) {
 	  ret = trx_check(imagefd, mtd, buf, &buflen);
 	}
+
 	return ret;
 }
 
@@ -520,6 +521,10 @@ static void usage(void)
 	    fprintf(stderr,
 	"        fixtrx                  fix the checksum in a trx header on first boot\n");
 	}
+	if (mtd_fixseama) {
+	    fprintf(stderr,
+	"        fixseama                fix the checksum in a seama header on first boot\n");
+	}
     fprintf(stderr,
 	"Following options are available:\n"
 	"        -q                      quiet mode (once: no [w] on writing,\n"
@@ -574,6 +579,7 @@ int main (int argc, char **argv)
 		CMD_REFRESH,
 		CMD_JFFS2WRITE,
 		CMD_FIXTRX,
+		CMD_FIXSEAMA,
 	} cmd = -1;
 
 	erase[0] = NULL;
@@ -662,6 +668,9 @@ int main (int argc, char **argv)
 	} else if (((strcmp(argv[0], "fixtrx") == 0) && (argc == 2)) && mtd_fixtrx) {
 		cmd = CMD_FIXTRX;
 		device = argv[1];
+	} else if (((strcmp(argv[0], "fixseama") == 0) && (argc == 2)) && mtd_fixseama) {
+		cmd = CMD_FIXSEAMA;
+		device = argv[1];
 	} else if ((strcmp(argv[0], "write") == 0) && (argc == 3)) {
 		cmd = CMD_WRITE;
 		device = argv[2];
@@ -738,6 +747,9 @@ int main (int argc, char **argv)
 		    if (mtd_fixtrx) {
 			    mtd_fixtrx(device, offset);
             }
+		case CMD_FIXSEAMA:
+			if (mtd_fixseama)
+			    mtd_fixseama(device, 0);
 			break;
 	}
 
