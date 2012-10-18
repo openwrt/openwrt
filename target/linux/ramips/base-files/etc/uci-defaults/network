@@ -98,6 +98,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "2" "4 8t"
 		;;
 
+	tew-691gr|\
 	tew-692gr)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
@@ -198,6 +199,11 @@ ramips_setup_macs()
 	rt-n56u)
 		lan_mac=$(ramips_get_mac_binary factory 4)
 		wan_mac=$(ramips_get_mac_binary factory 32772)
+		;;
+
+	tew-691gr)
+		lan_mac=$(ramips_get_mac_binary factory 40)
+		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 3)
 		;;
 
 	tew-692gr)

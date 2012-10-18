@@ -88,6 +88,7 @@ get_status_led() {
 	sl-r7205)
 		status_led="sl-r7205:green:status"
 		;;
+	tew-691gr|\
 	tew-692gr)
 		status_led="trendnet:green:wps"
 		;;
