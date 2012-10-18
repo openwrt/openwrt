@@ -167,6 +167,9 @@ ramips_board_name() {
 	*"Tenda W306R V2.0")
 		name="w306r-v20"
 		;;
+	*"TEW-691GR")
+		name="tew-691gr"
+		;;
 	*"TEW-692GR")
 		name="tew-692gr"
 		;;
