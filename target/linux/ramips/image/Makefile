@@ -640,6 +640,10 @@ define Image/Build/Profile/RTN56U
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,rt-n56u,RT-N56U,ttyS1,57600,phys)
 endef
 
+define Image/Build/Profile/TEW691GR
+	$(call Image/Build/Template/$(fs_squash)/$(1),UMedia,tew-691gr,TEW-691GR,0x026910)
+endef
+
 define Image/Build/Profile/TEW692GR
 	$(call Image/Build/Template/$(fs_squash)/$(1),UMedia,tew-692gr,TEW-692GR,0x026920)
 endef
@@ -648,6 +652,7 @@ ifeq ($(CONFIG_RALINK_RT3883),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR645,$(1))
 	$(call Image/Build/Profile/RTN56U,$(1))
+	$(call Image/Build/Profile/TEW691GR,$(1))
 	$(call Image/Build/Profile/TEW692GR,$(1))
 endef
 endif
