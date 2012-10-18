@@ -8,6 +8,11 @@ config RT3883_MACH_RT_N56U
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT3883_MACH_DIR_645
+	bool "D-Link DIR-645 support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 endmenu
 
 endif
