@@ -12,6 +12,7 @@
 #define _RTL8367_H
 
 #define RTL8367_DRIVER_NAME	"rtl8367"
+#define RTL8367B_DRIVER_NAME	"rtl8367b"
 
 enum rtl8367_port_speed {
 	RTL8367_PORT_SPEED_10 = 0,
