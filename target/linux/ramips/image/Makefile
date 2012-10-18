@@ -287,6 +287,46 @@ define BuildFirmware/RTN10PLUS
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/phys,$(mtdlayout_rtn10plus)),$(mtd_rtn10plus_kernel_part_size),$(mtd_rtn10plus_rootfs_part_size))
 endef
 
+define BuildFirmware/Seama
+	$(call PatchKernelLzma,$(2),$(3))
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt $(4) ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(5) ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).bin.lzma bs=$(4) count=1 conv=sync; \
+		) > $(KDIR)/vmlinux-$(2).tmp; \
+		$(STAGING_DIR_HOST)/bin/seama \
+			-i $(KDIR)/vmlinux-$(2).tmp \
+			-m "dev=/dev/mtdblock/2" -m "type=firmware"; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).tmp.seama; \
+			dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).bin.lzma bs=$(4) count=1 conv=sync; \
+			dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+		) > $(KDIR)/vmlinux-$(2).tmp; \
+		$(STAGING_DIR_HOST)/bin/seama \
+			-i $(KDIR)/vmlinux-$(2).tmp \
+			-m "dev=/dev/mtdblock/2" -m "type=firmware"; \
+		$(STAGING_DIR_HOST)/bin/seama \
+			-s $(call imgname,$(1),$(2))-factory.bin \
+			-m "signature=$(6)" \
+			-i $(KDIR)/vmlinux-$(2).tmp.seama; \
+	fi; fi
+endef
+
+mtdlayout_dir645a1=192k(u-boot)ro,16k(u-boot-env)ro,16k(factory)ro,32k(nvram)ro,64k(devdata)ro,896k(kernel),6976k(rootfs),7872k@0x50000(firmware)
+define BuildFirmware/DIR645
+	$(call BuildFirmware/Seama,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_dir645a1)),917440,7143424,$(7))
+endef
+
+define BuildFirmware/DIR645/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_dir645a1)))
+endef
+
 define BuildFirmware/W306R_4M
 	$(call BuildFirmware/w306r,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)),917504,2949120)
 endef
@@ -579,12 +619,17 @@ endif
 #
 # RT3662/RT3883 Profiles
 #
+define Image/Build/Profile/DIR645
+	$(call Image/Build/Template/$(fs_squash)/$(1),DIR645,dir-645,DIR-645,ttyS1,57600,spi,wrgn39_dlob.hans_dir645)
+endef
+
 define Image/Build/Profile/RTN56U
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,rt-n56u,RT-N56U,ttyS1,57600,phys)
 endef
 
 ifeq ($(CONFIG_RALINK_RT3883),y)
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/DIR645,$(1))
 	$(call Image/Build/Profile/RTN56U,$(1))
 endef
 endif
