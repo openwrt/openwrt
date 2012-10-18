@@ -9,7 +9,7 @@ RAMFS_COPY_DATA=/lib/ramips.sh
 
 platform_check_image() {
 	local board=$(ramips_board_name)
-	local magic="$(get_magic_word "$1")"
+	local magic="$(get_magic_long "$1")"
 
 	[ "$ARGC" -gt 1 ] && return 1
 
@@ -51,7 +51,7 @@ platform_check_image() {
 	whr-g300n |\
 	ur-336un |\
 	wr512-3gn)
-		[ "$magic" != "2705" ] && {
+		[ "$magic" != "27051956" ] && {
 			echo "Invalid image type."
 			return 1
 		}
