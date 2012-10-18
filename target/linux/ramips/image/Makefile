@@ -327,6 +327,19 @@ define BuildFirmware/DIR645/initramfs
 	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_dir645a1)))
 endef
 
+define BuildFirmware/UMedia
+	$(call BuildFirmware/GENERIC_8M,$(1),$(2),$(3),ttyS1,57600,phys)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		fix-u-media-header -T 0x46 -B $(4) \
+			-i $(call sysupname,$(1),$(2)) \
+			-o $(call imgname,$(1),$(2))-factory.bin; \
+	fi
+endef
+
+define BuildFirmware/UMedia/initramfs
+	$(call BuildFirmware/GENERIC_8M/initramfs,$(1),$(2),$(3),ttyS1,57600,phys)
+endef
+
 define BuildFirmware/W306R_4M
 	$(call BuildFirmware/w306r,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)),917504,2949120)
 endef
@@ -627,10 +640,15 @@ define Image/Build/Profile/RTN56U
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,rt-n56u,RT-N56U,ttyS1,57600,phys)
 endef
 
+define Image/Build/Profile/TEW692GR
+	$(call Image/Build/Template/$(fs_squash)/$(1),UMedia,tew-692gr,TEW-692GR,0x026920)
+endef
+
 ifeq ($(CONFIG_RALINK_RT3883),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR645,$(1))
 	$(call Image/Build/Profile/RTN56U,$(1))
+	$(call Image/Build/Profile/TEW692GR,$(1))
 endef
 endif
 
