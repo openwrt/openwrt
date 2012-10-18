@@ -184,26 +184,46 @@ mac80211_start_vif() {
 	set_wifi_up "$vif" "$ifname"
 }
 
+lookup_phy() {
+	[ -n "$phy" ] && {
+		[ -d /sys/class/ieee80211/phy ] && return
+	}
+
+	local devpath
+	config_get devpath "$device" path
+	[ -n "$devpath" -a -d "/sys/devices/$devpath/ieee80211" ] && {
+		phy="$(ls /sys/devices/$devpath/ieee80211 | grep -m 1 phy)"
+		[ -n "$phy" ] && return
+	}
+
+	local macaddr="$(config_get "$device" macaddr | tr 'A-Z' 'a-z')"
+	[ -n "$macaddr" ] && {
+		for _phy in $(ls /sys/class/ieee80211 2>/dev/null); do
+			[ "$macaddr" = "$(cat /sys/class/ieee80211/${_phy}/macaddress)" ] || continue
+			phy="$_phy"
+			return
+		done
+	}
+	phy=
+	return
+}
+
 find_mac80211_phy() {
 	local device="$1"
 
-	local macaddr="$(config_get "$device" macaddr | tr 'A-Z' 'a-z')"
 	config_get phy "$device" phy
-	[ -z "$phy" -a -n "$macaddr" ] && {
-		for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
-			[ "$macaddr" = "$(cat /sys/class/ieee80211/${phy}/macaddress)" ] || continue
-			config_set "$device" phy "$phy"
-			break
-		done
-		config_get phy "$device" phy
-	}
+	lookup_phy
 	[ -n "$phy" -a -d "/sys/class/ieee80211/$phy" ] || {
 		echo "PHY for wifi device $1 not found"
 		return 1
 	}
+	config_set "$device" phy "$phy"
+
+	config_get macaddr "$device" macaddr
 	[ -z "$macaddr" ] && {
 		config_set "$device" macaddr "$(cat /sys/class/ieee80211/${phy}/macaddress)"
 	}
+
 	return 0
 }
 
@@ -575,12 +595,20 @@ detect_mac80211() {
 		}
 		iw phy "$dev" info | grep -q '2412 MHz' || { mode_band="a"; channel="36"; }
 
+		if [ -x /usr/bin/readlink ]; then
+			path="$(readlink -f /sys/class/ieee80211/${dev}/device)"
+			path="${path##/sys/devices/}"
+			dev_id="	option path	'$path'"
+		else
+			dev_id="	option macaddr	$(cat /sys/class/ieee80211/${dev}/macaddress)"
+		fi
+
 		cat <<EOF
 config wifi-device  radio$devidx
 	option type     mac80211
 	option channel  ${channel}
-	option macaddr	$(cat /sys/class/ieee80211/${dev}/macaddress)
 	option hwmode	11${mode_11n}${mode_band}
+$dev_id
 $ht_capab
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
