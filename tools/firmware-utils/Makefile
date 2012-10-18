@@ -60,6 +60,7 @@ define Host/Compile
 	$(call cc,mkbrnimg)
 	$(call cc,mkdapimg)
 	$(call cc, mkcameofw, -Wall)
+	$(call cc,seama md5)
 endef
 
 define Host/Install
