@@ -5,6 +5,16 @@
 # See /LICENSE for more information.
 #
 
+define Profile/TEW691GR
+	NAME:=TRENDnet TEW-691GR
+	PACKAGES:=swconfig
+endef
+
+define Profile/TEW691GR/Description
+	Package set compatible with the TRENDnet TEW-691GR board.
+endef
+$(eval $(call Profile,TEW691GR))
+
 define Profile/TEW692GR
 	NAME:=TRENDnet TEW-692GR
 	PACKAGES:=swconfig
