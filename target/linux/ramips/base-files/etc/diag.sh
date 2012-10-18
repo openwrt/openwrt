@@ -39,6 +39,9 @@ get_status_led() {
 	dir-300-b1 | dir-600-b1 | dir-600-b2 | dir-615-h1 | dir-620-a1)
 		status_led="d-link:green:status"
 		;;
+	dir-645)
+		status_led="d-link:green:wps"
+		;;
 	dap-1350)
 		status_led="d-link:blue:power"
 		;;

@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# Copyright (C) 2012 OpenWrt.org
+#
+
+. /lib/ramips.sh
+
+fix_seama_header() {
+	local part=$1
+
+	mtd fixseama $part
+}
+
+board=$(ramips_board_name)
+
+case "$board" in
+dir-645)
+	fix_seama_header kernel
+	;;
+esac
