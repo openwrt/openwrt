@@ -103,10 +103,9 @@ Generic IEEE 802.11 Networking Stack (mac80211)
 endef
 
 PKG_LINUX_FIRMWARE_NAME:=linux-firmware
-PKG_LINUX_FIRMWARE_VERSION:=375e9548bf75a5664256d47a2f9e14b79181e02d
+PKG_LINUX_FIRMWARE_VERSION:=0d6729f2b0bc6254d3628eb831bc80a36b5a17db
 PKG_LINUX_FIRMWARE_SOURCE:=$(PKG_LINUX_FIRMWARE_NAME)-$(PKG_LINUX_FIRMWARE_VERSION).tar.bz2
 PKG_LINUX_FIRMWARE_PROTO:=git
-# PKG_LINUX_FIRMWARE_SOURCE_URL:=git://git.infradead.org/users/dwmw2/linux-firmware.git
 PKG_LINUX_FIRMWARE_SOURCE_URL:=git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
 PKG_LINUX_FIRMWARE_SUBDIR:=$(PKG_LINUX_FIRMWARE_NAME)-$(PKG_LINUX_FIRMWARE_VERSION)
 
@@ -647,57 +646,84 @@ define KernelPackage/iwlagn/config
 		default y
 		help
 		  Download and install firmware for:
-		    Intel 5000 wireless card into /lib/firmware.
+		    Intel Wireless WiFi 5100AGN, 5300AGN, and 5350AGN
 
 	config IWL5150_FW
 		bool "Intel 5150 Firmware"
 		default y
 		help
 		  Download and install firmware for:
-		    Intel 5150 wireless card into /lib/firmware.
+		    Intel Wireless WiFi 5150AGN
 
 	config IWL1000_FW
 		bool "Intel 1000 Firmware"
 		default y
 		help
 		  Download and install firmware for:
-		    Intel 1000 wireless card into /lib/firmware.
+		    Intel Centrino Wireless-N 1000
 
 	config IWL6000_FW
 		bool "Intel 6000 Firmware"
 		default y
 		help
 		  Download and install firmware for:
-		    Intel 6000 wireless card into /lib/firmware.
+		    Intel Centrino Ultimate-N 6300 and Advanced-N 6200
 
 	config IWL6050_FW
 		bool "Intel 6050 Firmware"
 		default y
 		help
 		  Download and install firmware for:
-		    Intel 6050 wireless card into /lib/firmware.
+		    Intel Centrino Advanced-N + WiMAX 6250 and Wireless-N + WiMAX 6150
 
 	config IWL6005_FW
 		bool "Intel 6005 Firmware"
 		default y
 		help
 		  Download and install firmware for:
-		    Intel 6005 wireless card into /lib/firmware.
+		    Intel Centrino Advanced-N 6205
 
 	config IWL6030_FW
 		bool "Intel 6030 Firmware"
 		default y
 		help
 		  Download and install firmware for:
-		    Intel 6030 wireless card into /lib/firmware.
+		    Intel Centrino Advanced-N 6230, Wireless-N 1030, Wireless-N 130 and Advanced-N 6235
 
 	config IWL100_FW
 		bool "Intel 100 Firmware"
 		default y
 		help
 		  Download and install firmware for:
-		    Intel 100 wireless card into /lib/firmware.
+		    Intel Centrino Wireless-N 100
 
+	config IWL2000_FW
+		bool "Intel 2000 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 2200
+
+	config IWL2030_FW
+		bool "Intel 2030 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 2230
+
+	config IWL105_FW
+		bool "Intel 105 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 105
+
+	config IWL135_FW
+		bool "Intel 135 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 135
   endif
 endef
 
@@ -1360,7 +1386,6 @@ define KernelPackage/libertas-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8388_v9.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8388_v5.bin \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8682.bin \
 		$(1)/lib/firmware/
 endef
@@ -1372,8 +1397,6 @@ define KernelPackage/libertas-sd/install
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8385.bin \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v9_helper.bin \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v9.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v8_helper.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v8.bin \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8688_helper.bin \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8688.bin \
 		$(1)/lib/firmware/libertas
@@ -1415,7 +1438,10 @@ endef
 
 define KernelPackage/rt2800-pci/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2860.bin $(1)/lib/firmware/
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2860.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt3290.bin \
+		$(1)/lib/firmware
 endef
 
 define KernelPackage/rt2800-usb/install
@@ -1426,9 +1452,9 @@ endef
 define KernelPackage/wl12xx/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-4-mr.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-4-plt.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-4-sr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-mr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-plt.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-sr.bin \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl1271-nvs.bin \
 		$(1)/lib/firmware/ti-connectivity
 endef
@@ -1486,13 +1512,25 @@ ifneq ($(CONFIG_IWL6050_FW),)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6050-5.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL6005_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6000g2a-5.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6000g2a-6.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL6030_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6000g2b-5.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6000g2b-6.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL100_FW),)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-100-5.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL2000_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-2000-6.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL2030_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-2030-6.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL105_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-105-6.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL135_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-135-6.ucode $(1)/lib/firmware
 endif
 endef
 
