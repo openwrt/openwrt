@@ -60,22 +60,13 @@ static struct gpio_led rw2458n_leds_gpio[] __initdata = {
 	}
 };
 
-static const char *rw2458n_part_probes[] = {
-        "RedBoot",
-        NULL,
-};
-
-static struct flash_platform_data rw2458n_flash_data = {
-        .part_probes    = rw2458n_part_probes,
-};
-
 static void __init rw2458n_setup(void)
 {
 	u8 *mac1 = (u8 *) KSEG1ADDR(0x1fff0000);
 	u8 *mac2 = (u8 *) KSEG1ADDR(0x1fff0000 + ETH_ALEN);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	ath79_register_m25p80(&rw2458n_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_mdio(0, ~RW2458N_WAN_PHYMASK);
 
