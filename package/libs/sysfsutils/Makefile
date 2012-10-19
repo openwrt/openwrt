@@ -16,6 +16,9 @@ PKG_SOURCE_URL:=@SF/linux-diag
 PKG_MD5SUM:=14e7dcd0436d2f49aa403f67e1ef7ddc
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
+PKG_LICENSE:=GPLv2 LGPLv2.1
+PKG_LICENSE_FILES:=COPYING cmd/GPL lib/LGPL
+
 PKG_FIXUP:=autoreconf
 
 PKG_INSTALL:=1

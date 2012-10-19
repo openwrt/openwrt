@@ -15,6 +15,9 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.zlib.net @SF/libpng
 PKG_MD5SUM:=2ab442d169156f34c379c968f3f482dd
 
+PKG_LICENSE:=ZLIB
+PKG_LICENSE_FILES:=README
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/zlib

@@ -19,6 +19,9 @@ PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
 PKG_MD5SUM:=2e115fe26e435e33b0d5c022e4490567
 PKG_BUILD_PARALLEL:=1
 
+PKG_LICENSE:=MIT
+PKG_LICENSE_FILES:=COPYRIGHT
+
 HOST_PATCH_DIR := ./patches-host
 
 include $(INCLUDE_DIR)/package.mk

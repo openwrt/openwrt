@@ -14,6 +14,9 @@ PKG_FLAGS:=hold
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
 SCAN_DEPS=modules/*.mk $(TOPDIR)/target/linux/*/modules.mk
 
+PKG_LICENSE:=GPLv2
+PKG_LICENSE_FILES:=
+
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
   -include $(LINUX_DIR)/.config

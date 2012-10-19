@@ -18,6 +18,8 @@ PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
 PKG_MD5SUM:=ae412727c8c15b67880aef7bd2999b2e
 
+PKG_LICENSE:=SSLEAY OPENSSL
+PKG_LICENSE_FILES:=LICENSE
 PKG_BUILD_DEPENDS:=ocf-crypto-headers
 PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE_CRYPTO CONFIG_OPENSSL_ENGINE_DIGEST
 

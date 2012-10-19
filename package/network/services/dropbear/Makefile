@@ -17,6 +17,9 @@ PKG_SOURCE_URL:= \
 	http://www.mirrors.wiretapped.net/security/cryptography/apps/ssh/dropbear/
 PKG_MD5SUM:=c627ffe09570fad7aa94d8eac2b9320c
 
+PKG_LICENSE:=MIT
+PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
+
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk

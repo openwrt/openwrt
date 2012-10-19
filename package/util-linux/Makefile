@@ -15,6 +15,9 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.21
 PKG_MD5SUM:=54ba880f1d66782c2287ee2c898520e9
 
+PKG_LICENSE:=GPLv2 LGPLv2.1 BSD-3c
+PKG_LICENSE_FILES:=COPYING getopt/COPYING libblkid/COPYING libmount/COPYING Documentation/licenses/COPYING.GPLv2 Documentation/licenses/COPYING.LGPLv2.1 libuuid/COPYING Documentation/licenses/COPYING.BSD-3
+
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=libncurses
 PKG_FIXUP:=autoreconf

@@ -8,6 +8,9 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://libbsd.freedesktop.org/releases
 #PKG_MD5SUM:=d0870f2de55d59c1c8419f36e8fac150
 
+PKG_LICENSE:=BSD-4c
+PKG_LICENSE_FILES:=COPYING
+
 include $(INCLUDE_DIR)/package.mk
 
 PKG_INSTALL:=1
