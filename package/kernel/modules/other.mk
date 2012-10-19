@@ -697,3 +697,18 @@ define KernelPackage/regmap/description
 endef
 
 $(eval $(call KernelPackage,regmap))
+
+define KernelPackage/ikconfig
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Kernel configuration via /proc/config.gz
+  KCONFIG:=CONFIG_IKCONFIG \
+	   CONFIG_IKCONFIG_PROC=y
+  FILES:=$(LINUX_DIR)/kernel/configs.ko
+  AUTOLOAD:=$(call AutoLoad,70,configs)
+endef
+
+define KernelPackage/ikconfig/description
+	Kernel configuration via /proc/config.gz
+endef
+
+$(eval $(call KernelPackage,ikconfig))
