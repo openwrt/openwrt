@@ -15,6 +15,9 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/readline
 PKG_MD5SUM:=e39331f32ad14009b9ff49cc10c5e751
 
+PKG_LICENSE:=GPLv2
+PKG_LICENSE_FILES:=COPYING
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libreadline

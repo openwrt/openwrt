@@ -13,6 +13,9 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 # PKG_MIRROR_MD5SUM:=
 # CMAKE_INSTALL:=1
 
+PKG_LICENSE:=GPLv2
+PKG_LICENSE_FILES:=
+
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk

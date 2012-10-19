@@ -149,6 +149,10 @@ ifeq ($(DUMP),)
 		echo "Depends: $$$$DEPENDS"; \
 		echo "Provides: $(PROVIDES)"; \
 		echo "Source: $(SOURCE)"; \
+		echo "SourceFile: $(PKG_SOURCE)"; \
+		echo "SourceURL: $(PKG_SOURCE_URL)"; \
+		echo "License: $(PKG_LICENSE)"; \
+		echo "LicenseFiles: $(PKG_LICENSE_FILES)"; \
 		echo "Section: $(SECTION)"; \
 		echo "Status: unknown $(if $(filter hold,$(PKG_FLAGS)),hold,ok) not-installed"; \
 		echo "Essential: $(if $(filter essential,$(PKG_FLAGS)),yes,no)"; \

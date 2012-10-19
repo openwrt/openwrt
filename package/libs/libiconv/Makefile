@@ -13,6 +13,9 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=libiconv
 PKG_RELEASE:=7
 
+PKG_LICENSE:=FREE
+PKG_LICENSE_FILES:=LICENSE
+
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
