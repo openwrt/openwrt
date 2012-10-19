@@ -126,6 +126,7 @@ static void __init tew_692gr_init(void)
 				     ARRAY_SIZE(tew_692gr_gpio_buttons),
 				     tew_692gr_gpio_buttons);
 
+	rt3883_wlan_data.disable_5ghz = 1;
 	rt3883_register_wlan();
 
 	mdiobus_register_board_info(tew_692gr_mdio0_info,

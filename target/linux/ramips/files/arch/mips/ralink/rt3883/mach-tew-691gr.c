@@ -87,6 +87,7 @@ static void __init tew_691gr_init(void)
 				     ARRAY_SIZE(tew_691gr_gpio_buttons),
 				     tew_691gr_gpio_buttons);
 
+	rt3883_wlan_data.disable_5ghz = 1;
 	rt3883_register_wlan();
 
 	rt3883_eth_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
