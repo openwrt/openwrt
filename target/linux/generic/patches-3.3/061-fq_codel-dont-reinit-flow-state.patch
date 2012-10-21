@@ -16,11 +16,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/sched/sch_fq_codel.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/net/sched/sch_fq_codel.c b/net/sched/sch_fq_codel.c
-index 9fc1c62..4e606fc 100644
 --- a/net/sched/sch_fq_codel.c
 +++ b/net/sched/sch_fq_codel.c
-@@ -191,7 +191,6 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+@@ -191,7 +191,6 @@ static int fq_codel_enqueue(struct sk_bu
  
  	if (list_empty(&flow->flowchain)) {
  		list_add_tail(&flow->flowchain, &q->new_flows);
@@ -28,7 +26,7 @@ index 9fc1c62..4e606fc 100644
  		q->new_flow_count++;
  		flow->deficit = q->quantum;
  		flow->dropped = 0;
-@@ -418,6 +417,7 @@ static int fq_codel_init(struct Qdisc *sch, struct nlattr *opt)
+@@ -418,6 +417,7 @@ static int fq_codel_init(struct Qdisc *s
  			struct fq_codel_flow *flow = q->flows + i;
  
  			INIT_LIST_HEAD(&flow->flowchain);
@@ -36,6 +34,3 @@ index 9fc1c62..4e606fc 100644
  		}
  	}
  	if (sch->limit >= 1)
--- 
-1.7.9.5
-
