@@ -227,6 +227,9 @@ define Image/Build
 	# Sagem F@ST2404
 	$(call Image/Build/CFE,$(1),F@ST2404,6348,F@ST2404-cfe)
 	$(call Image/Build/CFE,$(1),F@ST2404,6348,F@ST2404,OpenWRT-$(REVISION))
+	# Sagem F@ST2604
+	$(call Image/Build/CFE,$(1),F@ST2604,6348,F@ST2604-cfe)
+	$(call Image/Build/CFE,$(1),F@ST2604,6348,F@ST2604,OpenWRT-$(REVISION))
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 	# Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
