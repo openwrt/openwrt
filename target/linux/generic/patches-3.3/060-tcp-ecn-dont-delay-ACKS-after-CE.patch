@@ -44,11 +44,9 @@ To unsubscribe from this list: send the line "unsubscribe netdev" in
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/net/ipv4/tcp_input.c b/net/ipv4/tcp_input.c
-index 2fd2bc9..fa2c2c2 100644
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -237,7 +237,11 @@ static inline void TCP_ECN_check_ce(struct tcp_sock *tp, const struct sk_buff *s
+@@ -231,7 +231,11 @@ static inline void TCP_ECN_check_ce(stru
  			tcp_enter_quickack_mode((struct sock *)tp);
  		break;
  	case INET_ECN_CE:

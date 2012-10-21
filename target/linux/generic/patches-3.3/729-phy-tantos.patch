@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -206,3 +206,8 @@ endif # PHYLIB
+@@ -210,3 +210,8 @@ endif # PHYLIB
  config MICREL_KS8995MA
  	tristate "Micrel KS8995MA 5-ports 10/100 managed Ethernet switch"
  	depends on SPI
@@ -11,8 +11,8 @@
 +	select ETHERNET_PACKET_MANGLE
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -28,6 +28,7 @@ obj-$(CONFIG_RTL8366RB_PHY)	+= rtl8366rb
- obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
+@@ -29,6 +29,7 @@ obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
+ obj-$(CONFIG_RTL8367B_PHY)	+= rtl8367b.o
  obj-$(CONFIG_LSI_ET1011C_PHY)	+= et1011c.o
  obj-$(CONFIG_MICREL_PHY)	+= micrel.o
 +obj-$(CONFIG_PSB6970_PHY)	+= psb6970.o
