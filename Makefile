@@ -11,6 +11,10 @@ LC_ALL:=C
 LANG:=C
 export TOPDIR LC_ALL LANG
 
+empty:=
+space:= $(empty) $(empty)
+$(if $(findstring $(space),$(TOPDIR)),$(error ERROR: The path to the OpenWrt directory must not include any spaces))
+
 world:
 
 include $(TOPDIR)/include/host.mk
