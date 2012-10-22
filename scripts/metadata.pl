@@ -233,6 +233,7 @@ EOF
 	}
 	if (@{$target->{subtargets}} > 0) {
 		$confstr .= "\tselect HAS_SUBTARGETS\n";
+		grep { /broken/ } @{$target->{features}} and $confstr .= "\tdepends BROKEN\n";
 	} else {
 		$confstr .= $features;
 	}
