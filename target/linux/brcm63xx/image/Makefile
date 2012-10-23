@@ -148,6 +148,7 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96328avng,6328,96328avng-4M-flash-generic,,--pad 2)
 	$(call Image/Build/CFE,$(1),96328avng,6328,96328avng-8M-flash-generic,,--pad 4)
 	$(call Image/Build/CFE,$(1),96328avng,6328,96328avng-16M-flash-generic,,--pad 8)
+	$(call Image/Build/CFE,$(1),96328A-1441N1,6328,96328A-1441N1-generic,,--pad 8)
 	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-4M-flash-generic,,--pad 2)
 	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-8M-flash-generic,,--pad 4)
 	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-16M-flash-generic,,--pad 8)
