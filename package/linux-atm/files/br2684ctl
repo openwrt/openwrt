@@ -1,14 +1,13 @@
 #!/bin/sh /etc/rc.common
 
-
-. /lib/functions/network.sh
-
 START=50
 
 SERVICE_DAEMONIZE=1
 SERVICE_WRITE_PID=1
 
 start_daemon() {
+	. /lib/functions/network.sh
+
 	local cfg="$1"
 
 	local atmdev
