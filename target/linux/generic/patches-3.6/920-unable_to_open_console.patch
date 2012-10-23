@@ -1,0 +1,11 @@
+--- a/init/main.c
++++ b/init/main.c
+@@ -816,7 +816,7 @@ static int __init kernel_init(void * unu
+ 
+ 	/* Open the /dev/console on the rootfs, this should never fail */
+ 	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
+-		printk(KERN_WARNING "Warning: unable to open an initial console.\n");
++		printk(KERN_WARNING "Please be patient, while OpenWrt loads ...\n");
+ 
+ 	(void) sys_dup(0);
+ 	(void) sys_dup(0);
