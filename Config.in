@@ -549,20 +549,21 @@ menu "Global build settings"
 		  Note that this will make the system libraries incompatible with most of the packages
 		  that are not selected during the build process
 
-	choice
-		prompt "Preferred standard C++ library"
-		default USE_LIBSTDCXX if USE_EGLIBC
-		default USE_UCLIBCXX
-		help
-		  Select the preferred standard C++ library for all packages that support this.
+	if INSTALL_LIBSTDCPP
+		choice
+			prompt "Preferred standard C++ library"
+			default USE_LIBSTDCXX if USE_EGLIBC
+			default USE_UCLIBCXX
+			help
+			  Select the preferred standard C++ library for all packages that support this.
 
-		config USE_UCLIBCXX
-			bool "uClibc++"
+			config USE_UCLIBCXX
+				bool "uClibc++"
 
-		config USE_LIBSTDCXX
-			bool "libstdc++"
-
-	endchoice
+			config USE_LIBSTDCXX
+				bool "libstdc++"
+		endchoice
+	endif
 
 endmenu
 
