@@ -26,6 +26,7 @@ define Package/uclibcxx
   NAME:=uclibc++
   SECTION:=libs
   CATEGORY:=Libraries
+  DEPENDS:=@INSTALL_LIBSTDCPP
   TITLE:=C++ library for embedded systems
   URL:=http://cxx.uclibc.org/src/
 endef
