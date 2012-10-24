@@ -1,6 +1,6 @@
 --- a/drivers/mtd/devices/block2mtd.c
 +++ b/drivers/mtd/devices/block2mtd.c
-@@ -29,6 +29,8 @@
+@@ -29,6 +29,8 @@ struct block2mtd_dev {
  	struct block_device *blkdev;
  	struct mtd_info mtd;
  	struct mutex write_mutex;
@@ -9,7 +9,7 @@
  };
  
  
-@@ -79,6 +81,12 @@
+@@ -79,6 +81,12 @@ static int block2mtd_erase(struct mtd_in
  	size_t len = instr->len;
  	int err;
  
@@ -22,7 +22,7 @@
  	instr->state = MTD_ERASING;
  	mutex_lock(&dev->write_mutex);
  	err = _block2mtd_erase(dev, from, len);
-@@ -90,6 +98,10 @@
+@@ -90,6 +98,10 @@ static int block2mtd_erase(struct mtd_in
  		instr->state = MTD_ERASE_DONE;
  
  	mtd_erase_callback(instr);
@@ -33,7 +33,7 @@
  	return err;
  }
  
-@@ -101,7 +113,13 @@
+@@ -101,7 +113,13 @@ static int block2mtd_read(struct mtd_inf
  	struct page *page;
  	int index = from >> PAGE_SHIFT;
  	int offset = from & (PAGE_SIZE-1);
@@ -48,7 +48,7 @@
  
  	while (len) {
  		if ((offset + len) > PAGE_SIZE)
-@@ -111,8 +129,10 @@
+@@ -111,8 +129,10 @@ static int block2mtd_read(struct mtd_inf
  		len = len - cpylen;
  
  		page = page_read(dev->blkdev->bd_inode->i_mapping, index);
@@ -60,7 +60,7 @@
  
  		memcpy(buf, page_address(page) + offset, cpylen);
  		page_cache_release(page);
-@@ -123,7 +143,10 @@
+@@ -123,7 +143,10 @@ static int block2mtd_read(struct mtd_inf
  		offset = 0;
  		index++;
  	}
@@ -72,7 +72,7 @@
  }
  
  
-@@ -171,13 +194,22 @@
+@@ -171,13 +194,22 @@ static int block2mtd_write(struct mtd_in
  		size_t *retlen, const u_char *buf)
  {
  	struct block2mtd_dev *dev = mtd->priv;
@@ -96,7 +96,7 @@
  	return err;
  }
  
-@@ -186,33 +218,110 @@
+@@ -186,33 +218,110 @@ static int block2mtd_write(struct mtd_in
  static void block2mtd_sync(struct mtd_info *mtd)
  {
  	struct block2mtd_dev *dev = mtd->priv;
@@ -217,7 +217,7 @@
  	struct block2mtd_dev *dev;
  	struct mtd_partition *part;
  	char *name;
-@@ -220,36 +329,17 @@
+@@ -220,36 +329,17 @@ static struct block2mtd_dev *add_device(
  	if (!devname)
  		return NULL;
  
@@ -258,7 +258,7 @@
  
  	/* Setup the MTD structure */
  	/* make the name contain the block device in */
-@@ -274,6 +364,7 @@
+@@ -274,6 +364,7 @@ static struct block2mtd_dev *add_device(
  	dev->mtd._read = block2mtd_read;
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;

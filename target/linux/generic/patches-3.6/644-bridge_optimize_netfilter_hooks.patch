@@ -1,6 +1,6 @@
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
-@@ -55,7 +55,7 @@ int br_dev_queue_push_xmit(struct sk_buf
+@@ -56,7 +56,7 @@ int br_dev_queue_push_xmit(struct sk_buf
  
  int br_forward_finish(struct sk_buff *skb)
  {
@@ -9,7 +9,7 @@
  		       br_dev_queue_push_xmit);
  
  }
-@@ -74,7 +74,7 @@ static void __br_deliver(const struct ne
+@@ -75,7 +75,7 @@ static void __br_deliver(const struct ne
  		return;
  	}
  
@@ -18,7 +18,7 @@
  		br_forward_finish);
  }
  
-@@ -91,7 +91,7 @@ static void __br_forward(const struct ne
+@@ -92,7 +92,7 @@ static void __br_forward(const struct ne
  	skb->dev = to->dev;
  	skb_forward_csum(skb);
  
@@ -48,7 +48,7 @@
  			return RX_HANDLER_CONSUMED; /* consumed by filter */
  		} else {
 @@ -224,7 +224,7 @@ forward:
- 		if (!compare_ether_addr(p->br->dev->dev_addr, dest))
+ 		if (ether_addr_equal(p->br->dev->dev_addr, dest))
  			skb->pkt_type = PACKET_HOST;
  
 -		NF_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING, skb, skb->dev, NULL,
@@ -58,7 +58,7 @@
  	default:
 --- a/net/bridge/br_multicast.c
 +++ b/net/bridge/br_multicast.c
-@@ -753,7 +753,7 @@ static void __br_multicast_send_query(st
+@@ -770,7 +770,7 @@ static void __br_multicast_send_query(st
  	if (port) {
  		__skb_push(skb, sizeof(struct ethhdr));
  		skb->dev = port->dev;
@@ -69,7 +69,7 @@
  		netif_rx(skb);
 --- a/net/bridge/br_netfilter.c
 +++ b/net/bridge/br_netfilter.c
-@@ -71,6 +71,15 @@ static int brnf_filter_pppoe_tagged __re
+@@ -73,6 +73,15 @@ static int brnf_pass_vlan_indev __read_m
  #define IS_ARP(skb) \
  	(!vlan_tx_tag_present(skb) && skb->protocol == htons(ETH_P_ARP))
  
@@ -87,7 +87,7 @@
  	if (vlan_tx_tag_present(skb))
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -486,15 +486,29 @@ static inline bool br_multicast_is_route
+@@ -497,15 +497,29 @@ static inline bool br_multicast_is_route
  
  /* br_netfilter.c */
  #ifdef CONFIG_BRIDGE_NETFILTER

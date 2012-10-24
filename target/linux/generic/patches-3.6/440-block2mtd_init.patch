@@ -8,7 +8,7 @@
  #include <linux/mutex.h>
  #include <linux/mount.h>
  #include <linux/slab.h>
-@@ -231,11 +232,12 @@ static void block2mtd_free_device(struct
+@@ -208,11 +209,12 @@ static void block2mtd_free_device(struct
  
  
  /* FIXME: ensure that mtd->size % erase_size == 0 */
@@ -22,7 +22,7 @@
  	char *name;
  
  	if (!devname)
-@@ -274,13 +276,16 @@ static struct block2mtd_dev *add_device(
+@@ -251,13 +253,16 @@ static struct block2mtd_dev *add_device(
  
  	/* Setup the MTD structure */
  	/* make the name contain the block device in */
@@ -41,7 +41,7 @@
  	dev->mtd.erasesize = erase_size;
  	dev->mtd.writesize = 1;
  	dev->mtd.writebufsize = PAGE_SIZE;
-@@ -294,14 +299,17 @@ static struct block2mtd_dev *add_device(
+@@ -270,14 +275,17 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
  
@@ -62,7 +62,7 @@
  	return dev;
  
  devinit_err:
-@@ -374,9 +382,9 @@ static char block2mtd_paramline[80 + 12]
+@@ -350,9 +358,9 @@ static char block2mtd_paramline[80 + 12]
  
  static int block2mtd_setup2(const char *val)
  {
@@ -74,7 +74,7 @@
  	char *name;
  	size_t erase_size = PAGE_SIZE;
  	int i, ret;
-@@ -387,7 +395,7 @@ static int block2mtd_setup2(const char *
+@@ -363,7 +371,7 @@ static int block2mtd_setup2(const char *
  	strcpy(str, val);
  	kill_final_newline(str);
  
@@ -83,7 +83,7 @@
  		token[i] = strsep(&str, ",");
  
  	if (str)
-@@ -406,8 +414,10 @@ static int block2mtd_setup2(const char *
+@@ -382,8 +390,10 @@ static int block2mtd_setup2(const char *
  			parse_err("illegal erase size");
  		}
  	}
@@ -95,7 +95,7 @@
  
  	return 0;
  }
-@@ -441,7 +451,7 @@ static int block2mtd_setup(const char *v
+@@ -417,7 +427,7 @@ static int block2mtd_setup(const char *v
  
  
  module_param_call(block2mtd, block2mtd_setup, NULL, NULL, 0200);
@@ -106,7 +106,7 @@
  {
 --- a/block/partition-generic.c
 +++ b/block/partition-generic.c
-@@ -546,6 +546,7 @@ int invalidate_partitions(struct gendisk
+@@ -548,6 +548,7 @@ int invalidate_partitions(struct gendisk
  
  	return 0;
  }

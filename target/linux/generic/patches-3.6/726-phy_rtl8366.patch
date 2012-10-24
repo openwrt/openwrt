@@ -1,8 +1,8 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -168,6 +168,30 @@ config MDIO_OCTEON
- 
- 	  If in doubt, say Y.
+@@ -197,6 +197,30 @@ config MDIO_BUS_MUX_GPIO
+ 	  several child MDIO busses to a parent bus.  Child bus
+ 	  selection is under the control of GPIO lines.
  
 +config RTL8366_SMI
 +	tristate "Driver for the RTL8366 SMI interface"
@@ -33,7 +33,7 @@
  config MICREL_KS8995MA
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -22,6 +22,9 @@ obj-$(CONFIG_IP17XX_PHY)	+= ip17xx.o
+@@ -23,6 +23,9 @@ obj-$(CONFIG_IP17XX_PHY)	+= ip17xx.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
  obj-$(CONFIG_AR8216_PHY)	+= ar8216.o
  obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o

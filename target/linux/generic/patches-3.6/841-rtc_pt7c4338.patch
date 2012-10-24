@@ -1,6 +1,6 @@
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
-@@ -379,6 +379,15 @@ config RTC_DRV_RV3029C2
+@@ -389,6 +389,15 @@ config RTC_DRV_RV3029C2
  	  This driver can also be built as a module. If so, the module
  	  will be called rtc-rv3029c2.
  
@@ -18,7 +18,7 @@
  comment "SPI RTC drivers"
 --- a/drivers/rtc/Makefile
 +++ b/drivers/rtc/Makefile
-@@ -79,6 +79,7 @@ obj-$(CONFIG_RTC_DRV_PL030)	+= rtc-pl030
+@@ -82,6 +82,7 @@ obj-$(CONFIG_RTC_DRV_PL030)	+= rtc-pl030
  obj-$(CONFIG_RTC_DRV_PL031)	+= rtc-pl031.o
  obj-$(CONFIG_RTC_DRV_PM8XXX)	+= rtc-pm8xxx.o
  obj-$(CONFIG_RTC_DRV_PS3)	+= rtc-ps3.o

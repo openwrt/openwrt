@@ -612,7 +612,7 @@
 +module_exit(gpiommc_modexit);
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -474,6 +474,31 @@ config MMC_SDHI
+@@ -467,6 +467,31 @@ config MMC_SDHI
  	  This provides support for the SDHI SD/SDIO controller found in
  	  SuperH and ARM SH-Mobile SoCs
  
@@ -646,14 +646,14 @@
  	depends on PCI
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -37,6 +37,7 @@ tmio_mmc_core-$(subst m,y,$(CONFIG_MMC_S
+@@ -36,6 +36,7 @@ tmio_mmc_core-$(subst m,y,$(CONFIG_MMC_S
  obj-$(CONFIG_MMC_SDHI)		+= sh_mobile_sdhi.o
  obj-$(CONFIG_MMC_CB710)		+= cb710-mmc.o
  obj-$(CONFIG_MMC_VIA_SDMMC)	+= via-sdmmc.o
 +obj-$(CONFIG_GPIOMMC)		+= gpiommc.o
  obj-$(CONFIG_SDH_BFIN)		+= bfin_sdh.o
  obj-$(CONFIG_MMC_DW)		+= dw_mmc.o
- obj-$(CONFIG_MMC_SH_MMCIF)	+= sh_mmcif.o
+ obj-$(CONFIG_MMC_DW_PLTFM)	+= dw_mmc-pltfm.o
 --- /dev/null
 +++ b/include/linux/mmc/gpiommc.h
 @@ -0,0 +1,71 @@
@@ -830,7 +830,7 @@
 +be done automatically.
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -3045,6 +3045,11 @@ L:	linuxppc-dev@lists.ozlabs.org
+@@ -3188,6 +3188,11 @@ L:	linuxppc-dev@lists.ozlabs.org
  S:	Odd Fixes
  F:	drivers/tty/hvc/
  
@@ -841,4 +841,4 @@
 +
  HARDWARE MONITORING
  M:	Jean Delvare <khali@linux-fr.org>
- M:	Guenter Roeck <guenter.roeck@ericsson.com>
+ M:	Guenter Roeck <linux@roeck-us.net>

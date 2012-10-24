@@ -8,7 +8,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 --
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -961,6 +961,17 @@ config I8259
+@@ -978,6 +978,17 @@ config I8259
  config MIPS_BONITO64
  	bool
  
@@ -92,7 +92,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +#endif /* CONFIG_MIPS_FPU_EMU */
 --- a/arch/mips/math-emu/dsemul.c
 +++ b/arch/mips/math-emu/dsemul.c
-@@ -109,6 +109,7 @@ int mips_dsemul(struct pt_regs *regs, mi
+@@ -108,6 +108,7 @@ int mips_dsemul(struct pt_regs *regs, mi
  	return SIGILL;		/* force out of emulation loop */
  }
  
@@ -100,7 +100,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  int do_dsemulret(struct pt_regs *xcp)
  {
  	struct emuframe __user *fr;
-@@ -165,3 +166,9 @@ int do_dsemulret(struct pt_regs *xcp)
+@@ -164,3 +165,9 @@ int do_dsemulret(struct pt_regs *xcp)
  
  	return 1;
  }

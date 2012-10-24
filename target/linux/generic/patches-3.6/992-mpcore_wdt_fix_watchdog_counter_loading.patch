@@ -29,29 +29,33 @@ Signed-off-by: Vitaly Kuzmichev <vkuzmichev@mvista.com>
 
 --- a/arch/arm/include/asm/smp_twd.h
 +++ b/arch/arm/include/asm/smp_twd.h
-@@ -24,5 +24,6 @@ extern void __iomem *twd_base;
+@@ -33,6 +33,7 @@ struct twd_local_timer name __initdata =
+ };
  
- void twd_timer_setup(struct clock_event_device *);
- void twd_timer_stop(struct clock_event_device *);
+ int twd_local_timer_register(struct twd_local_timer *);
 +unsigned long twd_timer_get_rate(void);
  
- #endif
+ #ifdef CONFIG_HAVE_ARM_TWD
+ void twd_local_timer_of_register(void);
 --- a/arch/arm/kernel/smp_twd.c
 +++ b/arch/arm/kernel/smp_twd.c
-@@ -268,3 +268,10 @@ void __cpuinit twd_timer_setup(struct cl
- 					0xf, 0xffffffff);
- 	enable_percpu_irq(clk->irq, 0);
+@@ -352,6 +352,13 @@ int __init twd_local_timer_register(stru
+ 	return twd_local_timer_common_register();
  }
-+
+ 
 +/* Needed by mpcore_wdt */
 +unsigned long twd_timer_get_rate(void)
 +{
 +	return twd_timer_rate;
 +}
 +EXPORT_SYMBOL_GPL(twd_timer_get_rate);
++
+ #ifdef CONFIG_OF
+ const static struct of_device_id twd_of_match[] __initconst = {
+ 	{ .compatible = "arm,cortex-a9-twd-timer",	},
 --- a/drivers/watchdog/mpcore_wdt.c
 +++ b/drivers/watchdog/mpcore_wdt.c
-@@ -99,9 +99,7 @@ static void mpcore_wdt_keepalive(struct
+@@ -102,9 +102,7 @@ static void mpcore_wdt_keepalive(struct
  
  	spin_lock(&wdt_lock);
  	/* Assume prescale is set to 256 */

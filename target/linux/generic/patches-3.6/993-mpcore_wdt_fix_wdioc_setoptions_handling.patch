@@ -17,7 +17,7 @@ Signed-off-by: Vitaly Kuzmichev <vkuzmichev@mvista.com>
 
 --- a/drivers/watchdog/mpcore_wdt.c
 +++ b/drivers/watchdog/mpcore_wdt.c
-@@ -233,7 +233,8 @@ static long mpcore_wdt_ioctl(struct file
+@@ -236,7 +236,8 @@ static long mpcore_wdt_ioctl(struct file
  	if (_IOC_DIR(cmd) && _IOC_SIZE(cmd) > sizeof(uarg))
  		return -ENOTTY;
  

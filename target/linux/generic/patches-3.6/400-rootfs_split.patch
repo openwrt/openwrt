@@ -31,11 +31,11 @@
   */
  #define PART(x)  ((struct mtd_part *)(x))
 -
-+#define IS_PART(mtd) (mtd->read == part_read)
++#define IS_PART(mtd) (mtd->_read == part_read)
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -643,6 +645,155 @@ int mtd_del_partition(struct mtd_info *m
+@@ -613,6 +615,155 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -55,7 +55,7 @@
 +	struct squashfs_super_block sb;
 +	int len, ret;
 +
-+	ret = master->read(master, offset, sizeof(sb), &len, (void *) &sb);
++	ret = master->_read(master, offset, sizeof(sb), &len, (void *) &sb);
 +	if (ret || (len != sizeof(sb))) {
 +		printk(KERN_ALERT "split_squashfs: error occured while reading "
 +			"from \"%s\"\n", master->name);
@@ -191,7 +191,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -659,6 +810,9 @@ int add_mtd_partitions(struct mtd_info *
+@@ -629,6 +780,9 @@ int add_mtd_partitions(struct mtd_info *
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
  	int i;
@@ -201,7 +201,7 @@
  
  	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
  
-@@ -673,12 +827,53 @@ int add_mtd_partitions(struct mtd_info *
+@@ -643,12 +797,53 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
@@ -257,7 +257,7 @@
  
 --- a/drivers/mtd/mtdchar.c
 +++ b/drivers/mtd/mtdchar.c
-@@ -1005,6 +1005,12 @@ static int mtdchar_ioctl(struct file *fi
+@@ -1012,6 +1012,12 @@ static int mtdchar_ioctl(struct file *fi
  		break;
  	}
  
@@ -280,7 +280,7 @@
  struct mtd_info {
  	u_char type;
  	uint32_t flags;
-@@ -214,6 +215,9 @@ struct mtd_info {
+@@ -226,6 +227,9 @@ struct mtd_info {
  	int (*_block_markbad) (struct mtd_info *mtd, loff_t ofs);
  	int (*_suspend) (struct mtd_info *mtd);
  	void (*_resume) (struct mtd_info *mtd);
@@ -290,7 +290,7 @@
  	/*
  	 * If the driver is something smart, like UBI, it may need to maintain
  	 * its own reference counting. The below functions are only for driver.
-@@ -502,6 +506,7 @@ extern int mtd_device_parse_register(str
+@@ -375,6 +379,7 @@ extern int mtd_device_parse_register(str
  			      int defnr_parts);
  #define mtd_device_register(master, parts, nr_parts)	\
  	mtd_device_parse_register(master, NULL, NULL, parts, nr_parts)

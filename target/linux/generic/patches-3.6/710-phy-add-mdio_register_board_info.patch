@@ -9,7 +9,7 @@
  /**
   * mdiobus_alloc_size - allocate a mii_bus structure
   * @size: extra amount of memory to allocate for private storage.
-@@ -228,15 +230,33 @@
+@@ -228,15 +230,33 @@ void mdiobus_free(struct mii_bus *bus)
  }
  EXPORT_SYMBOL(mdiobus_free);
  
@@ -45,7 +45,7 @@
  		phy_device_free(phydev);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -543,4 +543,22 @@ int __init mdio_bus_init(void);
+@@ -575,4 +575,22 @@ int __init mdio_bus_init(void);
  void mdio_bus_exit(void);
  
  extern struct bus_type mdio_bus_type;

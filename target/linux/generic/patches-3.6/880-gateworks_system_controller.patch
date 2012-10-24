@@ -1,6 +1,6 @@
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
-@@ -423,6 +423,15 @@ config SENSORS_GL520SM
+@@ -434,6 +434,15 @@ config SENSORS_GL520SM
  	  This driver can also be built as a module.  If so, the module
  	  will be called gl520sm.
  
@@ -15,10 +15,10 @@
 +
  config SENSORS_GPIO_FAN
  	tristate "GPIO fan"
- 	depends on GENERIC_GPIO
+ 	depends on GPIOLIB
 --- a/drivers/hwmon/Makefile
 +++ b/drivers/hwmon/Makefile
-@@ -125,6 +125,7 @@ obj-$(CONFIG_SENSORS_W83L785TS)	+= w83l7
+@@ -129,6 +129,7 @@ obj-$(CONFIG_SENSORS_W83L785TS)	+= w83l7
  obj-$(CONFIG_SENSORS_W83L786NG)	+= w83l786ng.o
  obj-$(CONFIG_SENSORS_WM831X)	+= wm831x-hwmon.o
  obj-$(CONFIG_SENSORS_WM8350)	+= wm8350-hwmon.o

@@ -50,7 +50,7 @@
  static bool
  ip_checkentry(const struct ipt_ip *ip)
  {
-@@ -561,7 +587,7 @@ static void cleanup_match(struct xt_entr
+@@ -560,7 +586,7 @@ static void cleanup_match(struct xt_entr
  }
  
  static int
@@ -59,7 +59,7 @@
  {
  	const struct xt_entry_target *t;
  
-@@ -570,6 +596,8 @@ check_entry(const struct ipt_entry *e, c
+@@ -569,6 +595,8 @@ check_entry(const struct ipt_entry *e, c
  		return -EINVAL;
  	}
  
@@ -68,7 +68,7 @@
  	if (e->target_offset + sizeof(struct xt_entry_target) >
  	    e->next_offset)
  		return -EINVAL;
-@@ -931,6 +959,7 @@ copy_entries_to_user(unsigned int total_
+@@ -930,6 +958,7 @@ copy_entries_to_user(unsigned int total_
  	const struct xt_table_info *private = table->private;
  	int ret = 0;
  	const void *loc_cpu_entry;
@@ -76,7 +76,7 @@
  
  	counters = alloc_counters(table);
  	if (IS_ERR(counters))
-@@ -961,6 +990,14 @@ copy_entries_to_user(unsigned int total_
+@@ -960,6 +989,14 @@ copy_entries_to_user(unsigned int total_
  			ret = -EFAULT;
  			goto free_counters;
  		}

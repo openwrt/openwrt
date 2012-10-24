@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -795,7 +795,7 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -645,7 +645,7 @@ static int ehci_run (struct usb_hcd *hcd
  		"USB %x.%x started, EHCI %x.%02x%s\n",
  		((ehci->sbrn & 0xf0)>>4), (ehci->sbrn & 0x0f),
  		temp >> 8, temp & 0xff,
@@ -11,7 +11,7 @@
  		    &ehci->regs->intr_enable); /* Turn On Interrupts */
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -578,7 +578,7 @@ ehci_hub_status_data (struct usb_hcd *hc
+@@ -585,7 +585,7 @@ ehci_hub_status_data (struct usb_hcd *hc
  	 * always set, seem to clear PORT_OCC and PORT_CSC when writing to
  	 * PORT_POWER; that's surprising, but maybe within-spec.
  	 */
@@ -20,7 +20,7 @@
  		mask = PORT_CSC | PORT_PEC | PORT_OCC;
  	else
  		mask = PORT_CSC | PORT_PEC;
-@@ -803,7 +803,7 @@ static int ehci_hub_control (
+@@ -804,7 +804,7 @@ static int ehci_hub_control (
  		if (temp & PORT_PEC)
  			status |= USB_PORT_STAT_C_ENABLE << 16;
  
@@ -31,7 +31,7 @@
  			/*
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -147,6 +147,7 @@ struct ehci_hcd {			/* one per controlle
+@@ -197,6 +197,7 @@ struct ehci_hcd {			/* one per controlle
  	unsigned		use_dummy_qh:1;	/* AMD Frame List table quirk*/
  	unsigned		has_synopsys_hc_bug:1; /* Synopsys HC */
  	unsigned		frame_index_bug:1; /* MosChip (AKA NetMos) */

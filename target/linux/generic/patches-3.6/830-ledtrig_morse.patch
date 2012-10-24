@@ -1,8 +1,8 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -480,4 +480,8 @@ config LEDS_TRIGGER_DEFAULT_ON
- comment "iptables trigger is under Netfilter config (LED target)"
- 	depends on LEDS_TRIGGERS
+@@ -537,4 +537,8 @@ config LEDS_TRIGGER_TRANSIENT
+ 	  GPIO/PWM based hardware.
+ 	  If unsure, say Y.
  
 +config LEDS_TRIGGER_MORSE
 +	tristate "LED Morse Trigger"
@@ -11,10 +11,10 @@
  endif # NEW_LEDS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -57,3 +57,4 @@ obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+=
- obj-$(CONFIG_LEDS_TRIGGER_BACKLIGHT)	+= ledtrig-backlight.o
+@@ -63,3 +63,4 @@ obj-$(CONFIG_LEDS_TRIGGER_BACKLIGHT)	+=
  obj-$(CONFIG_LEDS_TRIGGER_GPIO)		+= ledtrig-gpio.o
  obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o
+ obj-$(CONFIG_LEDS_TRIGGER_TRANSIENT)	+= ledtrig-transient.o
 +obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
 --- a/drivers/leds/ledtrig-morse.c
 +++ b/drivers/leds/ledtrig-morse.c

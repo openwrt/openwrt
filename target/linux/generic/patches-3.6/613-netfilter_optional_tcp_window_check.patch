@@ -10,7 +10,7 @@
  /* "Be conservative in what you do,
      be liberal in what you accept from others."
      If it's non-zero, we mark only out of window RST segments as INVALID. */
-@@ -524,6 +527,9 @@ static bool tcp_in_window(const struct n
+@@ -526,6 +529,9 @@ static bool tcp_in_window(const struct n
  	s16 receiver_offset;
  	bool res;
  
@@ -20,7 +20,7 @@
  	/*
  	 * Get the required data from the packet.
  	 */
-@@ -1321,6 +1327,13 @@ static struct ctl_table tcp_sysctl_table
+@@ -1425,6 +1431,13 @@ static struct ctl_table tcp_sysctl_table
  		.proc_handler	= proc_dointvec,
  	},
  	{
@@ -32,5 +32,5 @@
 +	},
 +	{
  		.procname       = "nf_conntrack_tcp_be_liberal",
- 		.data           = &nf_ct_tcp_be_liberal,
  		.maxlen         = sizeof(unsigned int),
+ 		.mode           = 0644,

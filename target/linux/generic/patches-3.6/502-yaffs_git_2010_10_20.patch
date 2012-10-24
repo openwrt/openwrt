@@ -1,6 +1,6 @@
 --- a/fs/Kconfig
 +++ b/fs/Kconfig
-@@ -35,7 +35,6 @@ source "fs/gfs2/Kconfig"
+@@ -39,7 +39,6 @@ source "fs/gfs2/Kconfig"
  source "fs/ocfs2/Kconfig"
  source "fs/btrfs/Kconfig"
  source "fs/nilfs2/Kconfig"
@@ -8,7 +8,7 @@
  
  endif # BLOCK
  
-@@ -201,6 +200,10 @@ source "fs/hfsplus/Kconfig"
+@@ -205,6 +204,10 @@ source "fs/hfsplus/Kconfig"
  source "fs/befs/Kconfig"
  source "fs/bfs/Kconfig"
  source "fs/efs/Kconfig"
@@ -21,7 +21,7 @@
  source "fs/ubifs/Kconfig"
 --- a/fs/Makefile
 +++ b/fs/Makefile
-@@ -125,5 +125,6 @@ obj-$(CONFIG_GFS2_FS)           += gfs2/
+@@ -126,5 +126,6 @@ obj-$(CONFIG_GFS2_FS)           += gfs2/
  obj-y				+= exofs/ # Multiple modules
  obj-$(CONFIG_CEPH_FS)		+= ceph/
  obj-$(CONFIG_PSTORE)		+= pstore/

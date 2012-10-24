@@ -1,6 +1,6 @@
 --- a/fs/ubifs/Kconfig
 +++ b/fs/ubifs/Kconfig
-@@ -5,8 +5,10 @@
+@@ -5,8 +5,10 @@ config UBIFS_FS
  	select CRYPTO if UBIFS_FS_ADVANCED_COMPR
  	select CRYPTO if UBIFS_FS_LZO
  	select CRYPTO if UBIFS_FS_ZLIB
@@ -11,7 +11,7 @@
  	depends on MTD_UBI
  	help
  	  UBIFS is a file system for flash devices which works on top of UBI.
-@@ -35,3 +37,12 @@
+@@ -35,3 +37,12 @@ config UBIFS_FS_ZLIB
  	default y
  	help
  	  Zlib compresses better than LZO but it is slower. Say 'Y' if unsure.

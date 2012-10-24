@@ -1,6 +1,6 @@
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1078,6 +1078,11 @@ struct net_device {
+@@ -1102,6 +1102,11 @@ struct net_device {
  	const struct net_device_ops *netdev_ops;
  	const struct ethtool_ops *ethtool_ops;
  
@@ -12,7 +12,7 @@
  	/* Hardware header description */
  	const struct header_ops *header_ops;
  
-@@ -1134,6 +1139,9 @@ struct net_device {
+@@ -1158,6 +1163,9 @@ struct net_device {
  	void			*ax25_ptr;	/* AX.25 specific data */
  	struct wireless_dev	*ieee80211_ptr;	/* IEEE 802.11 specific data,
  						   assign before registering */
@@ -34,20 +34,20 @@
  #define IF_GET_IFACE	0x0001		/* for querying only */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -1661,6 +1661,10 @@ extern struct sk_buff *dev_alloc_skb(uns
- extern struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
- 		unsigned int length, gfp_t gfp_mask);
+@@ -1656,6 +1656,10 @@ static inline int pskb_trim(struct sk_bu
+ 	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
+ }
  
 +extern struct sk_buff *__netdev_alloc_skb_ip_align(struct net_device *dev,
 +		unsigned int length, gfp_t gfp);
 +
 +
  /**
-  *	netdev_alloc_skb - allocate an skbuff for rx on a specific device
-  *	@dev: network device to receive on
-@@ -1680,16 +1684,6 @@ static inline struct sk_buff *netdev_all
- 	return __netdev_alloc_skb(dev, length, GFP_ATOMIC);
+  *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
+  *	@skb: buffer to alter
+@@ -1758,16 +1762,6 @@ static inline struct sk_buff *dev_alloc_
  }
+ 
  
 -static inline struct sk_buff *__netdev_alloc_skb_ip_align(struct net_device *dev,
 -		unsigned int length, gfp_t gfp)
@@ -79,7 +79,7 @@
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -2267,9 +2267,19 @@ int dev_hard_start_xmit(struct sk_buff *
+@@ -2243,9 +2243,19 @@ int dev_hard_start_xmit(struct sk_buff *
  			}
  		}
  
@@ -102,7 +102,7 @@
  		if (rc == NETDEV_TX_OK)
  			txq_trans_update(txq);
  		return rc;
-@@ -2289,9 +2299,19 @@ gso:
+@@ -2265,9 +2275,19 @@ gso:
  		if (dev->priv_flags & IFF_XMIT_DST_RELEASE)
  			skb_dst_drop(nskb);
  
@@ -127,7 +127,7 @@
  				goto out_kfree_gso_skb;
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -58,6 +58,7 @@
+@@ -60,6 +60,7 @@
  #include <linux/scatterlist.h>
  #include <linux/errqueue.h>
  #include <linux/prefetch.h>
@@ -135,7 +135,7 @@
  
  #include <net/protocol.h>
  #include <net/dst.h>
-@@ -320,6 +321,22 @@ struct sk_buff *__netdev_alloc_skb(struc
+@@ -441,6 +442,22 @@ struct sk_buff *__netdev_alloc_skb(struc
  }
  EXPORT_SYMBOL(__netdev_alloc_skb);
  
@@ -156,11 +156,11 @@
 +EXPORT_SYMBOL(__netdev_alloc_skb_ip_align);
 +
  void skb_add_rx_frag(struct sk_buff *skb, int i, struct page *page, int off,
- 		int size)
+ 		     int size, unsigned int truesize)
  {
 --- a/net/ethernet/eth.c
 +++ b/net/ethernet/eth.c
-@@ -160,6 +160,12 @@ __be16 eth_type_trans(struct sk_buff *sk
+@@ -159,6 +159,12 @@ __be16 eth_type_trans(struct sk_buff *sk
  	struct ethhdr *eth;
  
  	skb->dev = dev;
