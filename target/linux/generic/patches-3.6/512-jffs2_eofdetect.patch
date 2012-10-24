@@ -1,13 +1,12 @@
 --- a/fs/jffs2/build.c
 +++ b/fs/jffs2/build.c
-@@ -112,6 +112,17 @@ static int jffs2_build_filesystem(struct
+@@ -114,6 +114,16 @@ static int jffs2_build_filesystem(struct
  	dbg_fsbuild("scanned flash completely\n");
  	jffs2_dbg_dump_block_lists_nolock(c);
  
 +	if (c->flags & (1 << 7)) {
 +		printk("%s(): unlocking the mtd device... ", __func__);
-+		if (c->mtd->unlock)
-+			c->mtd->unlock(c->mtd, 0, c->mtd->size);
++		mtd_unlock(c->mtd, 0, c->mtd->size);
 +		printk("done.\n");
 +
 +		printk("%s(): erasing all blocks after the end marker... ", __func__);
@@ -20,7 +19,7 @@
  	/* Now scan the directory tree, increasing nlink according to every dirent found. */
 --- a/fs/jffs2/scan.c
 +++ b/fs/jffs2/scan.c
-@@ -147,8 +147,11 @@ int jffs2_scan_medium(struct jffs2_sb_in
+@@ -148,8 +148,11 @@ int jffs2_scan_medium(struct jffs2_sb_in
  		/* reset summary info for next eraseblock scan */
  		jffs2_sum_reset_collected(s);
  
@@ -34,7 +33,7 @@
  
  		if (ret < 0)
  			goto out;
-@@ -549,6 +552,17 @@ static int jffs2_scan_eraseblock (struct
+@@ -556,6 +559,17 @@ static int jffs2_scan_eraseblock (struct
  			return err;
  	}
  

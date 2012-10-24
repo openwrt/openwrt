@@ -20,7 +20,7 @@
 +#endif
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -926,6 +926,10 @@ config RELAY
+@@ -1105,6 +1105,10 @@ config RELAY
  
  	  If unsure, say N.
  
@@ -33,7 +33,7 @@
  	depends on BROKEN || !FRV
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
-@@ -107,6 +107,7 @@ obj-$(CONFIG_USER_RETURN_NOTIFIER) += us
+@@ -110,6 +110,7 @@ obj-$(CONFIG_USER_RETURN_NOTIFIER) += us
  obj-$(CONFIG_PADATA) += padata.o
  obj-$(CONFIG_CRASH_DUMP) += crash_dump.o
  obj-$(CONFIG_JUMP_LABEL) += jump_label.o
@@ -274,7 +274,7 @@
  
  static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_REGIONS] __initdata_memblock;
  static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_REGIONS] __initdata_memblock;
-@@ -305,6 +306,8 @@ static void __init_memblock memblock_ins
+@@ -341,6 +342,8 @@ static void __init_memblock memblock_ins
  	memblock_set_region_node(rgn, nid);
  	type->cnt++;
  	type->total_size += size;

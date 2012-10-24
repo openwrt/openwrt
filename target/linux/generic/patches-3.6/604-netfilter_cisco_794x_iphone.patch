@@ -1,8 +1,8 @@
 --- a/include/linux/netfilter/nf_conntrack_sip.h
 +++ b/include/linux/netfilter/nf_conntrack_sip.h
-@@ -2,12 +2,15 @@
- #define __NF_CONNTRACK_SIP_H__
- #ifdef __KERNEL__
+@@ -4,12 +4,15 @@
+ 
+ #include <net/netfilter/nf_conntrack_expect.h>
  
 +#include <linux/types.h>
 +
@@ -18,25 +18,32 @@
  enum sip_expectation_classes {
 --- a/net/ipv4/netfilter/nf_nat_sip.c
 +++ b/net/ipv4/netfilter/nf_nat_sip.c
-@@ -73,6 +73,7 @@ static int map_addr(struct sk_buff *skb,
+@@ -73,11 +73,14 @@ static int map_addr(struct sk_buff *skb,
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
-+	struct nf_conn_help *help = nfct_help(ct);
++	struct nf_ct_sip_master *ct_sip_info;
  	char buffer[sizeof("nnn.nnn.nnn.nnn:nnnnn")];
  	unsigned int buflen;
  	__be32 newaddr;
-@@ -85,7 +86,8 @@ static int map_addr(struct sk_buff *skb,
+ 	__be16 newport;
+ 
++	ct_sip_info = nfct_help_data(ct->master);
++
+ 	if (ct->tuplehash[dir].tuple.src.u3.ip == addr->ip &&
+ 	    ct->tuplehash[dir].tuple.src.u.udp.port == port) {
+ 		newaddr = ct->tuplehash[!dir].tuple.dst.u3.ip;
+@@ -85,7 +88,8 @@ static int map_addr(struct sk_buff *skb,
  	} else if (ct->tuplehash[dir].tuple.dst.u3.ip == addr->ip &&
  		   ct->tuplehash[dir].tuple.dst.u.udp.port == port) {
  		newaddr = ct->tuplehash[!dir].tuple.src.u3.ip;
 -		newport = ct->tuplehash[!dir].tuple.src.u.udp.port;
-+		newport = help->help.ct_sip_info.forced_dport ? :
++		newport = ct_sip_info->forced_dport ? :
 +			  ct->tuplehash[!dir].tuple.src.u.udp.port;
  	} else
  		return 1;
  
-@@ -121,6 +123,7 @@ static unsigned int ip_nat_sip(struct sk
+@@ -121,6 +125,7 @@ static unsigned int ip_nat_sip(struct sk
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
@@ -44,19 +51,21 @@
  	unsigned int coff, matchoff, matchlen;
  	enum sip_header_types hdr;
  	union nf_inet_addr addr;
-@@ -229,6 +232,20 @@ next:
+@@ -230,6 +235,22 @@ next:
  	    !map_sip_addr(skb, dataoff, dptr, datalen, SIP_HDR_TO))
  		return NF_DROP;
  
++	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct->master);
++
 +	/* Mangle destination port for Cisco phones, then fix up checksums */
-+	if (dir == IP_CT_DIR_REPLY && help->help.ct_sip_info.forced_dport) {
++	if (dir == IP_CT_DIR_REPLY && ct_sip_info->forced_dport) {
 +		struct udphdr *uh;
 +
 +		if (!skb_make_writable(skb, skb->len))
 +			return NF_DROP;
 +
 +		uh = (struct udphdr *)(skb->data + ip_hdrlen(skb));
-+		uh->dest = help->help.ct_sip_info.forced_dport;
++		uh->dest = ct_sip_info->forced_dport;
 +
 +		if (!nf_nat_mangle_udp_packet(skb, ct, ctinfo, 0, 0, NULL, 0))
 +			return NF_DROP;
@@ -65,7 +74,7 @@
  	return NF_ACCEPT;
  }
  
-@@ -280,8 +297,10 @@ static unsigned int ip_nat_sip_expect(st
+@@ -281,10 +302,13 @@ static unsigned int ip_nat_sip_expect(st
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
@@ -74,15 +83,18 @@
  	u_int16_t port;
 +	__be16 srcport;
  	char buffer[sizeof("nnn.nnn.nnn.nnn:nnnnn")];
- 	unsigned buflen;
+ 	unsigned int buflen;
++	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct->master);
  
-@@ -294,8 +313,9 @@ static unsigned int ip_nat_sip_expect(st
+ 	/* Connection will come from reply */
+ 	if (ct->tuplehash[dir].tuple.src.u3.ip == ct->tuplehash[!dir].tuple.dst.u3.ip)
+@@ -295,8 +319,9 @@ static unsigned int ip_nat_sip_expect(st
  	/* If the signalling port matches the connection's source port in the
  	 * original direction, try to use the destination port in the opposite
  	 * direction. */
 -	if (exp->tuple.dst.u.udp.port ==
 -	    ct->tuplehash[dir].tuple.src.u.udp.port)
-+	srcport = help->help.ct_sip_info.forced_dport ? :
++	srcport = ct_sip_info->forced_dport ? :
 +		  ct->tuplehash[dir].tuple.src.u.udp.port;
 +	if (exp->tuple.dst.u.udp.port == srcport)
  		port = ntohs(ct->tuplehash[!dir].tuple.dst.u.udp.port);
@@ -90,7 +102,7 @@
  		port = ntohs(exp->tuple.dst.u.udp.port);
 --- a/net/netfilter/nf_conntrack_sip.c
 +++ b/net/netfilter/nf_conntrack_sip.c
-@@ -1363,8 +1363,25 @@ static int process_sip_request(struct sk
+@@ -1416,8 +1416,26 @@ static int process_sip_request(struct sk
  {
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
@@ -100,6 +112,7 @@
  	unsigned int cseq, i;
 +	union nf_inet_addr addr;
 +	__be16 port;
++	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct->master);
 +
 +	/* Many Cisco IP phones use a high source port for SIP requests, but
 +	 * listen for the response on port 5060.  If we are the local
@@ -112,7 +125,7 @@
 +				    &matchlen, &addr, &port) > 0 &&
 +	    port != ct->tuplehash[dir].tuple.src.u.udp.port &&
 +	    nf_inet_addr_cmp(&addr, &ct->tuplehash[dir].tuple.src.u3))
-+		help->help.ct_sip_info.forced_dport = port;
++		ct_sip_info->forced_dport = port;
  
  	for (i = 0; i < ARRAY_SIZE(sip_handlers); i++) {
  		const struct sip_handler *handler;

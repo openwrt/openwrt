@@ -17,7 +17,7 @@
  	int nrparts = 0;
  	struct fis_image_desc *buf;
  	struct mtd_partition *parts;
-@@ -227,14 +230,14 @@ static int parse_redboot_partitions(stru
+@@ -225,14 +228,14 @@ static int parse_redboot_partitions(stru
  		}
  	}
  #endif
@@ -34,7 +34,7 @@
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	if (nulllen > 0) {
  		strcpy(nullname, nullstring);
-@@ -253,6 +256,8 @@ static int parse_redboot_partitions(stru
+@@ -251,6 +254,8 @@ static int parse_redboot_partitions(stru
  	}
  #endif
  	for ( ; i<nrparts; i++) {
@@ -43,7 +43,7 @@
  		parts[i].size = fl->img->size;
  		parts[i].offset = fl->img->flash_base;
  		parts[i].name = names;
-@@ -286,6 +291,14 @@ static int parse_redboot_partitions(stru
+@@ -284,6 +289,14 @@ static int parse_redboot_partitions(stru
  		fl = fl->next;
  		kfree(tmp_fl);
  	}

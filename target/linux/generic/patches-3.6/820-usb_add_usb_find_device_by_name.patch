@@ -1,6 +1,6 @@
 --- a/drivers/usb/core/usb.c
 +++ b/drivers/usb/core/usb.c
-@@ -652,6 +652,71 @@ int __usb_get_extra_descriptor(char *buf
+@@ -653,6 +653,71 @@ int __usb_get_extra_descriptor(char *buf
  }
  EXPORT_SYMBOL_GPL(__usb_get_extra_descriptor);
  
@@ -74,7 +74,7 @@
   * @dev: device the buffer will be used with
 --- a/include/linux/usb.h
 +++ b/include/linux/usb.h
-@@ -531,6 +531,7 @@ extern int usb_lock_device_for_reset(str
+@@ -584,6 +584,7 @@ extern int usb_lock_device_for_reset(str
  extern int usb_reset_device(struct usb_device *dev);
  extern void usb_queue_reset_device(struct usb_interface *dev);
  

@@ -28,7 +28,7 @@
 +CFLAGS_compr_lzma.o += -Iinclude/linux -Ilib/lzma
 --- a/fs/jffs2/compr.c
 +++ b/fs/jffs2/compr.c
-@@ -374,6 +374,9 @@ int __init jffs2_compressors_init(void)
+@@ -378,6 +378,9 @@ int __init jffs2_compressors_init(void)
  #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_init();
  #endif
@@ -38,7 +38,7 @@
  /* Setting default compression mode */
  #ifdef CONFIG_JFFS2_CMODE_NONE
  	jffs2_compression_mode = JFFS2_COMPR_MODE_NONE;
-@@ -397,6 +400,9 @@ int __init jffs2_compressors_init(void)
+@@ -401,6 +404,9 @@ int __init jffs2_compressors_init(void)
  int jffs2_compressors_exit(void)
  {
  /* Unregistering compressors */
@@ -206,7 +206,7 @@
 +}
 --- a/fs/jffs2/super.c
 +++ b/fs/jffs2/super.c
-@@ -371,14 +371,41 @@ static int __init init_jffs2_fs(void)
+@@ -373,14 +373,41 @@ static int __init init_jffs2_fs(void)
  	BUILD_BUG_ON(sizeof(struct jffs2_raw_inode) != 68);
  	BUILD_BUG_ON(sizeof(struct jffs2_raw_summary) != 32);
  
@@ -1049,7 +1049,7 @@
 +#endif
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -118,6 +118,12 @@ config LZO_DECOMPRESS
+@@ -188,6 +188,12 @@ config LZO_DECOMPRESS
  
  source "lib/xz/Kconfig"
  

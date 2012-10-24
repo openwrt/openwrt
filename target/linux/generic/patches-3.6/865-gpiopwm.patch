@@ -11,11 +11,11 @@
  source "drivers/power/Kconfig"
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
-@@ -8,6 +8,7 @@
- # GPIO must come after pinctrl as gpios may need to mux pins etc
- obj-y				+= pinctrl/
+@@ -10,6 +10,7 @@ obj-y				+= pinctrl/
  obj-y				+= gpio/
-+obj-$(CONFIG_GENERIC_PWM)	+= pwm/
+ obj-y				+= pwm/
  obj-$(CONFIG_PCI)		+= pci/
++obj-$(CONFIG_GENERIC_PWM)	+= pwm/
  obj-$(CONFIG_PARISC)		+= parisc/
  obj-$(CONFIG_RAPIDIO)		+= rapidio/
+ obj-y				+= video/

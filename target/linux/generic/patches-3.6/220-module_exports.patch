@@ -28,7 +28,7 @@
  #ifndef SYMBOL_PREFIX
  #define VMLINUX_SYMBOL(sym) sym
  #else
-@@ -275,14 +296,14 @@
+@@ -276,14 +297,14 @@
  	/* Kernel symbol table: Normal symbols */			\
  	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
  		VMLINUX_SYMBOL(__start___ksymtab) = .;			\
@@ -45,7 +45,7 @@
  		VMLINUX_SYMBOL(__stop___ksymtab_gpl) = .;		\
  	}								\
  									\
-@@ -344,7 +365,7 @@
+@@ -345,7 +366,7 @@
  									\
  	/* Kernel symbol table: strings */				\
          __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
@@ -54,7 +54,7 @@
  	}								\
  									\
  	/* __*init sections */						\
-@@ -676,6 +697,9 @@
+@@ -670,6 +691,9 @@
  	EXIT_TEXT							\
  	EXIT_DATA							\
  	EXIT_CALL							\

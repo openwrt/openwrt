@@ -20,12 +20,12 @@ Signed-off-by: Vitaly Kuzmichev <vkuzmichev@mvista.com>
 +#define TWD_WDOG_CONTROL_TIMER_MODE	(0 << 3)
 +#define TWD_WDOG_CONTROL_WATCHDOG_MODE	(1 << 3)
 +
- struct clock_event_device;
+ #include <linux/ioport.h>
  
- extern void __iomem *twd_base;
+ struct twd_local_timer {
 --- a/drivers/watchdog/mpcore_wdt.c
 +++ b/drivers/watchdog/mpcore_wdt.c
-@@ -118,18 +118,25 @@ static void mpcore_wdt_stop(struct mpcor
+@@ -121,18 +121,25 @@ static void mpcore_wdt_stop(struct mpcor
  
  static void mpcore_wdt_start(struct mpcore_wdt *wdt)
  {

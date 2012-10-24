@@ -1,6 +1,6 @@
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
-@@ -719,6 +719,15 @@ config RTC_DRV_NUC900
+@@ -716,6 +716,15 @@ config RTC_DRV_NUC900
  	  If you say yes here you get support for the RTC subsystem of the
  	  NUC910/NUC920 used in embedded systems.
  
@@ -18,7 +18,7 @@
  config RTC_DRV_DAVINCI
 --- a/drivers/rtc/Makefile
 +++ b/drivers/rtc/Makefile
-@@ -86,6 +86,7 @@ obj-$(CONFIG_RTC_DRV_RP5C01)	+= rtc-rp5c
+@@ -89,6 +89,7 @@ obj-$(CONFIG_RTC_DRV_RP5C01)	+= rtc-rp5c
  obj-$(CONFIG_RTC_DRV_RS5C313)	+= rtc-rs5c313.o
  obj-$(CONFIG_RTC_DRV_RS5C348)	+= rtc-rs5c348.o
  obj-$(CONFIG_RTC_DRV_RS5C372)	+= rtc-rs5c372.o

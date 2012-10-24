@@ -13,7 +13,7 @@
  
 --- a/arch/mips/include/asm/module.h
 +++ b/arch/mips/include/asm/module.h
-@@ -9,6 +9,11 @@ struct mod_arch_specific {
+@@ -11,6 +11,11 @@ struct mod_arch_specific {
  	const struct exception_table_entry *dbe_start;
  	const struct exception_table_entry *dbe_end;
  	struct mips_hi16 *r_mips_hi16_list;
@@ -27,7 +27,7 @@
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
 --- a/arch/mips/kernel/module.c
 +++ b/arch/mips/kernel/module.c
-@@ -44,14 +44,219 @@ static struct mips_hi16 *mips_hi16_list;
+@@ -42,14 +42,219 @@ struct mips_hi16 {
  static LIST_HEAD(dbe_list);
  static DEFINE_SPINLOCK(dbe_lock);
  
@@ -248,7 +248,7 @@
  
  static int apply_r_mips_none(struct module *me, u32 *location, Elf_Addr v)
  {
-@@ -72,28 +277,36 @@ static int apply_r_mips_32_rela(struct m
+@@ -70,28 +275,36 @@ static int apply_r_mips_32_rela(struct m
  	return 0;
  }
  
@@ -301,7 +301,7 @@
  {
  	if (v % 4) {
  		pr_err("module %s: dangerous R_MIPS_26 RELArelocation\n",
-@@ -102,17 +315,31 @@ static int apply_r_mips_26_rela(struct m
+@@ -100,17 +313,31 @@ static int apply_r_mips_26_rela(struct m
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -336,7 +336,7 @@
  static int apply_r_mips_hi16_rel(struct module *me, u32 *location, Elf_Addr v)
  {
  	struct mips_hi16 *n;
-@@ -380,11 +607,32 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -405,11 +632,32 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}

@@ -1,6 +1,6 @@
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -1053,6 +1053,27 @@ config NETFILTER_XT_MATCH_STATE
+@@ -1119,6 +1119,27 @@ config NETFILTER_XT_MATCH_STATE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -30,7 +30,7 @@
  	depends on NETFILTER_ADVANCED
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -105,6 +105,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_RECENT)
+@@ -112,6 +112,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_RECENT)
  obj-$(CONFIG_NETFILTER_XT_MATCH_SCTP) += xt_sctp.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_SOCKET) += xt_socket.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_STATE) += xt_state.o
@@ -2059,7 +2059,7 @@
 +}
 --- a/net/netfilter/nf_conntrack_core.c
 +++ b/net/netfilter/nf_conntrack_core.c
-@@ -214,6 +214,14 @@ destroy_conntrack(struct nf_conntrack *n
+@@ -215,6 +215,14 @@ destroy_conntrack(struct nf_conntrack *n
  	 * too. */
  	nf_ct_remove_expectations(ct);
  
@@ -2091,7 +2091,7 @@
  
 --- a/include/net/netfilter/nf_conntrack.h
 +++ b/include/net/netfilter/nf_conntrack.h
-@@ -134,6 +134,22 @@ struct nf_conn {
+@@ -105,6 +105,22 @@ struct nf_conn {
  	struct net *ct_net;
  #endif
  
@@ -2132,7 +2132,7 @@
 +#endif /* _XT_LAYER7_H */
 --- a/include/linux/netfilter/Kbuild
 +++ b/include/linux/netfilter/Kbuild
-@@ -49,6 +49,7 @@ header-y += xt_hashlimit.h
+@@ -52,6 +52,7 @@ header-y += xt_hashlimit.h
  header-y += xt_helper.h
  header-y += xt_iprange.h
  header-y += xt_ipvs.h

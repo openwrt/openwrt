@@ -437,7 +437,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  
  #include <asm/addrspace.h>
  #include <asm/bootinfo.h>
-@@ -523,12 +524,62 @@ static void __init arch_mem_init(char **
+@@ -522,12 +523,62 @@ static void __init arch_mem_init(char **
  	}
  
  	bootmem_init();
@@ -500,7 +500,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  static void __init resource_init(void)
  {
  	int i;
-@@ -544,6 +595,8 @@ static void __init resource_init(void)
+@@ -543,6 +594,8 @@ static void __init resource_init(void)
  	/*
  	 * Request address space for all standard RAM.
  	 */
@@ -509,7 +509,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  	for (i = 0; i < boot_mem_map.nr_map; i++) {
  		struct resource *res;
  		unsigned long start, end;
-@@ -580,6 +633,7 @@ static void __init resource_init(void)
+@@ -579,6 +632,7 @@ static void __init resource_init(void)
  		 */
  		request_resource(res, &code_resource);
  		request_resource(res, &data_resource);
@@ -519,7 +519,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  
 --- a/arch/mips/kernel/smp.c
 +++ b/arch/mips/kernel/smp.c
-@@ -433,3 +433,21 @@ void flush_tlb_one(unsigned long vaddr)
+@@ -386,3 +386,21 @@ void flush_tlb_one(unsigned long vaddr)
  
  EXPORT_SYMBOL(flush_tlb_page);
  EXPORT_SYMBOL(flush_tlb_one);
