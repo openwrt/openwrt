@@ -381,12 +381,16 @@ swconfig_dump_attr(struct swconfig_callback *cb, void *arg)
 	if (IS_ERR(hdr))
 		return -1;
 
-	NLA_PUT_U32(msg, SWITCH_ATTR_OP_ID, id);
-	NLA_PUT_U32(msg, SWITCH_ATTR_OP_TYPE, op->type);
-	NLA_PUT_STRING(msg, SWITCH_ATTR_OP_NAME, op->name);
+	if (nla_put_u32(msg, SWITCH_ATTR_OP_ID, id))
+		goto nla_put_failure;
+	if (nla_put_u32(msg, SWITCH_ATTR_OP_TYPE, op->type))
+		goto nla_put_failure;
+	if (nla_put_string(msg, SWITCH_ATTR_OP_NAME, op->name))
+		goto nla_put_failure;
 	if (op->description)
-		NLA_PUT_STRING(msg, SWITCH_ATTR_OP_DESCRIPTION,
-			op->description);
+		if (nla_put_string(msg, SWITCH_ATTR_OP_DESCRIPTION,
+			op->description))
+			goto nla_put_failure;
 
 	return genlmsg_end(msg, hdr);
 nla_put_failure:
@@ -711,9 +715,12 @@ swconfig_send_port(struct swconfig_callback *cb, void *arg)
 	if (!p)
 		goto error;
 
-	NLA_PUT_U32(cb->msg, SWITCH_PORT_ID, port->id);
-	if (port->flags & (1 << SWITCH_PORT_FLAG_TAGGED))
-		NLA_PUT_FLAG(cb->msg, SWITCH_PORT_FLAG_TAGGED);
+	if (nla_put_u32(cb->msg, SWITCH_PORT_ID, port->id))
+		goto nla_put_failure;
+	if (port->flags & (1 << SWITCH_PORT_FLAG_TAGGED)) {
+		if (nla_put_flag(cb->msg, SWITCH_PORT_FLAG_TAGGED))
+			goto nla_put_failure;
+	}
 
 	nla_nest_end(cb->msg, p);
 	return 0;
@@ -798,10 +805,12 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 
 	switch(attr->type) {
 	case SWITCH_TYPE_INT:
-		NLA_PUT_U32(msg, SWITCH_ATTR_OP_VALUE_INT, val.value.i);
+		if (nla_put_u32(msg, SWITCH_ATTR_OP_VALUE_INT, val.value.i))
+			goto nla_put_failure;
 		break;
 	case SWITCH_TYPE_STRING:
-		NLA_PUT_STRING(msg, SWITCH_ATTR_OP_VALUE_STR, val.value.s);
+		if (nla_put_string(msg, SWITCH_ATTR_OP_VALUE_STR, val.value.s))
+			goto nla_put_failure;
 		break;
 	case SWITCH_TYPE_PORTS:
 		err = swconfig_send_ports(&msg, info,
@@ -842,13 +851,20 @@ swconfig_send_switch(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 	if (IS_ERR(hdr))
 		return -1;
 
-	NLA_PUT_U32(msg, SWITCH_ATTR_ID, dev->id);
-	NLA_PUT_STRING(msg, SWITCH_ATTR_DEV_NAME, dev->devname);
-	NLA_PUT_STRING(msg, SWITCH_ATTR_ALIAS, dev->alias);
-	NLA_PUT_STRING(msg, SWITCH_ATTR_NAME, dev->name);
-	NLA_PUT_U32(msg, SWITCH_ATTR_VLANS, dev->vlans);
-	NLA_PUT_U32(msg, SWITCH_ATTR_PORTS, dev->ports);
-	NLA_PUT_U32(msg, SWITCH_ATTR_CPU_PORT, dev->cpu_port);
+	if (nla_put_u32(msg, SWITCH_ATTR_ID, dev->id))
+		goto nla_put_failure;
+	if (nla_put_string(msg, SWITCH_ATTR_DEV_NAME, dev->devname))
+		goto nla_put_failure;
+	if (nla_put_string(msg, SWITCH_ATTR_ALIAS, dev->alias))
+		goto nla_put_failure;
+	if (nla_put_string(msg, SWITCH_ATTR_NAME, dev->name))
+		goto nla_put_failure;
+	if (nla_put_u32(msg, SWITCH_ATTR_VLANS, dev->vlans))
+		goto nla_put_failure;
+	if (nla_put_u32(msg, SWITCH_ATTR_PORTS, dev->ports))
+		goto nla_put_failure;
+	if (nla_put_u32(msg, SWITCH_ATTR_CPU_PORT, dev->cpu_port))
+		goto nla_put_failure;
 
 	return genlmsg_end(msg, hdr);
 nla_put_failure:
