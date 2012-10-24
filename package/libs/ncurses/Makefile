@@ -67,6 +67,11 @@ CONFIGURE_ARGS += \
 	--with-terminfo-dirs=/usr/share/terminfo \
 	--with-default-terminfo-dir=/usr/share/terminfo
 
+ifneq ($(INSTALL_LIBSTDCPP),y)
+CONFIGURE_ARGS += \
+	--without-cxx-binding
+endif
+
 ifeq ($(HOST_OS),FreeBSD)
 	CONFIGURE_ARGS +=
 		--with-terminfo=/usr/share/terminfo.db 
