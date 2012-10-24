@@ -212,8 +212,12 @@ endef
 
 $(eval $(call KernelPackage,i2c-mux-gpio))
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.6.0)),1)
+I2C_MUX_PREFIX:=i2c-mux-
+endif
+
 I2C_MUX_PCA954x_MODULES:= \
-  CONFIG_I2C_MUX_PCA954x:drivers/i2c/muxes/pca954x
+  CONFIG_I2C_MUX_PCA954x:drivers/i2c/muxes/$(I2C_MUX_PREFIX)pca954x
 
 define KernelPackage/i2c-mux-pca954x
   $(call i2c_defaults,$(I2C_MUX_PCA954x_MODULES),51)
@@ -229,7 +233,7 @@ $(eval $(call KernelPackage,i2c-mux-pca954x))
 ## Support for pca954x seems to be in kernel since 2.6.36
 
 I2C_MUX_PCA9541_MODULES:= \
-  CONFIG_I2C_MUX_PCA9541:drivers/i2c/muxes/pca9541
+  CONFIG_I2C_MUX_PCA9541:drivers/i2c/muxes/$(I2C_MUX_PREFIX)pca9541
 
 define KernelPackage/i2c-mux-pca9541
   $(call i2c_defaults,$(I2C_MUX_PCA9541_MODULES),51)
