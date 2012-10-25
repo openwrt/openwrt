@@ -29,6 +29,7 @@ define Host/Compile
 	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/assembler \
 		CFLAGS="$(HOST_CFLAGS) -include endian.h" \
 		$(HOST_MAKE_FLAGS) \
+		LDFLAGS= \
 		$(1) QUIET_SPARSE=:
 endef
 
