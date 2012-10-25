@@ -11,12 +11,12 @@ This prevents the options from being delete with make kernel_oldconfig.
  	depends on BCMA_DRIVER_MIPS
 +	select USB_HCD_BCMA if USB_EHCI_HCD || USB_OHCI_HCD
  
- config BCMA_SFLASH
- 	bool
+ config BCMA_DRIVER_MIPS
+ 	bool "BCMA Broadcom MIPS core driver"
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
-@@ -147,6 +147,7 @@ config SSB_SFLASH
- config SSB_EMBEDDED
+@@ -146,6 +146,7 @@ config SSB_EMBEDDED
+ config SSB_SFLASH
  	bool
  	depends on SSB_DRIVER_MIPS
 +	select USB_HCD_SSB if USB_EHCI_HCD || USB_OHCI_HCD
