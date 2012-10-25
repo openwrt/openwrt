@@ -1,0 +1,87 @@
+From 85e4551e033df7cb043e93042661fc1e58799efa Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 8 Jul 2012 15:36:23 +0200
+Subject: [PATCH 52/84] BCM63XX: use port id for deciding external phy
+
+Ports 0-3 always use the internal phy, while 4+ always need an external
+phy to work.
+---
+ .../include/asm/mach-bcm63xx/bcm63xx_dev_enet.h    |    3 ++-
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c       |   15 ++++++++-------
+ drivers/net/ethernet/broadcom/bcm63xx_enet.h       |    5 +++++
+ 3 files changed, 15 insertions(+), 8 deletions(-)
+
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_enet.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_enet.h
+@@ -45,9 +45,10 @@ struct bcm63xx_enet_platform_data {
+ #define ENETSW_MAX_PORT	6
+ #define ENETSW_PORTS_6368 6 /* 4 FE PHY + 2 RGMII */
+ 
++#define ENETSW_RGMII_PORT0	4
++
+ struct bcm63xx_enetsw_port {
+ 	int		used;
+-	int		external_phy;
+ 	int		phy_id;
+ 
+ 	int		bypass_link;
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -2046,6 +2046,7 @@ static void swphy_poll_timer(unsigned lo
+ 	for (i = 0; i < priv->num_ports; i++) {
+ 		struct bcm63xx_enetsw_port *port;
+ 		int val, j, up, advertise, lpa, lpa2, speed, duplex, media;
++		int external_phy = bcm_enet_port_is_rgmii(i);
+ 		u8 override;
+ 
+ 		port = &priv->used_ports[i];
+@@ -2057,7 +2058,7 @@ static void swphy_poll_timer(unsigned lo
+ 
+ 		/* dummy read to clear */
+ 		for (j = 0; j < 2; j++)
+-			val = bcmenet_sw_mdio_read(priv, port->external_phy,
++			val = bcmenet_sw_mdio_read(priv, external_phy,
+ 						   port->phy_id, MII_BMSR);
+ 
+ 		if (val == 0xffff)
+@@ -2081,14 +2082,14 @@ static void swphy_poll_timer(unsigned lo
+ 			continue;
+ 		}
+ 
+-		advertise = bcmenet_sw_mdio_read(priv, port->external_phy,
++		advertise = bcmenet_sw_mdio_read(priv, external_phy,
+ 						 port->phy_id, MII_ADVERTISE);
+ 
+-		lpa = bcmenet_sw_mdio_read(priv, port->external_phy,
+-					   port->phy_id, MII_LPA);
++		lpa = bcmenet_sw_mdio_read(priv, external_phy, port->phy_id,
++					   MII_LPA);
+ 
+-		lpa2 = bcmenet_sw_mdio_read(priv, port->external_phy,
+-					   port->phy_id, MII_STAT1000);
++		lpa2 = bcmenet_sw_mdio_read(priv, external_phy, port->phy_id,
++					    MII_STAT1000);
+ 
+ 		/* figure out media and duplex from advertise and LPA values */
+ 		media = mii_nway_result(lpa & advertise);
+@@ -2457,7 +2458,7 @@ static int bcm_enetsw_phy_is_external(st
+ 		if (!priv->used_ports[i].used)
+ 			continue;
+ 		if (priv->used_ports[i].phy_id == phy_id)
+-			return priv->used_ports[i].external_phy;
++			return bcm_enet_port_is_rgmii(i);
+ 	}
+ 
+ 	printk_once(KERN_WARNING  "bcm63xx_enet: could not find a used port "
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.h
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.h
+@@ -365,4 +365,9 @@ struct bcm_enet_priv {
+ 	spinlock_t enetsw_mdio_lock;
+ };
+ 
++static inline int bcm_enet_port_is_rgmii(int portid)
++{
++	return portid >= ENETSW_RGMII_PORT0;
++}
++
+ #endif /* ! BCM63XX_ENET_H_ */

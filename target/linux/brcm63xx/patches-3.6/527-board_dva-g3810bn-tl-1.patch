@@ -1,0 +1,82 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -2512,6 +2512,71 @@ static struct board_info __initdata boar
+ 		},
+ 	}
+ };
++
++/* D-Link DVA-G3810BN/TL */
++static struct board_info __initdata board_DVAG3810BN = {
++	.name			= "DVAG3810BN",
++	.expected_cpu_id	= 0x6358,
++
++	.has_uart0		= 1,
++	.has_enet0		= 1,
++	.has_enet1		= 1,
++	.has_pci		= 1,
++
++	.enet0 = {
++		.has_phy		= 0,
++		.use_internal_phy	= 1,
++		.force_speed_100	= 1,
++		.force_duplex_full	= 1,
++	},
++
++	.enet1 = {
++		.force_speed_100	= 1,
++		.force_duplex_full	= 1,
++	},
++
++
++	.has_ohci0		= 1,
++	.has_pccard		= 1,
++	.has_ehci0		= 1,
++
++	.leds = {
++		{
++			.name	= "DVAG3810BN::voip",
++			.gpio	= 1,
++		},
++		{
++			.name	= "DVAG3810BN::dsl",
++			.gpio	= 22,
++			.active_low  = 1,
++		},
++		{
++			.name	= "DVAG3810BN::internet",
++			.gpio	= 23,
++			.active_low  = 1,
++		},
++		{
++			.name	= "DVAG3810BN::power",
++			.gpio	= 4,
++			.default_trigger = "default-on",
++		},
++		{
++			.name	= "DVAG3810BN::stop",
++			.gpio	= 5,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc	= "reset",
++			.gpio	= 34,
++			.active_low = 1,
++			.type	= EV_KEY,
++			.code	= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
+ #endif
+ 
+ /*
+@@ -2707,6 +2772,7 @@ static const struct board_info __initdat
+ 	&board_ct6373_1,
+ 	&board_HW553,
+ 	&board_spw303v,
++	&board_DVAG3810BN,
+ #endif
+ 
+ #ifdef CONFIG_BCM63XX_CPU_6368
