@@ -1,0 +1,48 @@
+diff --git a/drivers/net/wireless/b43/main.c b/drivers/net/wireless/b43/main.c
+index 73730e9..7358ea2 100644
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -4652,7 +4652,7 @@ static int b43_wireless_core_init(struct b43_wldev *dev)
+ 	switch (dev->dev->bus_type) {
+ #ifdef CONFIG_B43_BCMA
+ 	case B43_BUS_BCMA:
+-		bcma_core_pci_irq_ctl(&dev->dev->bdev->bus->drv_pci,
++		bcma_core_pci_irq_ctl(&dev->dev->bdev->bus->drv_pci[0],
+ 				      dev->dev->bdev, true);
+ 		break;
+ #endif
+diff --git a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
+index b89f127..de96290 100644
+--- a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
+@@ -692,7 +692,7 @@ void ai_pci_up(struct si_pub *sih)
+ 	sii = container_of(sih, struct si_info, pub);
+ 
+ 	if (sii->icbus->hosttype == BCMA_HOSTTYPE_PCI)
+-		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci, true);
++		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci[0], true);
+ }
+ 
+ /* Unconfigure and/or apply various WARs when going down */
+@@ -703,7 +703,7 @@ void ai_pci_down(struct si_pub *sih)
+ 	sii = container_of(sih, struct si_info, pub);
+ 
+ 	if (sii->icbus->hosttype == BCMA_HOSTTYPE_PCI)
+-		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci, false);
++		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci[0], false);
+ }
+ 
+ /* Enable BT-COEX & Ex-PA for 4313 */
+diff --git a/drivers/net/wireless/brcm80211/brcmsmac/main.c b/drivers/net/wireless/brcm80211/brcmsmac/main.c
+index 75086b3..565c15a 100644
+--- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
+@@ -5077,7 +5077,7 @@ static int brcms_b_up_prep(struct brcms_hardware *wlc_hw)
+ 	 * Configure pci/pcmcia here instead of in brcms_c_attach()
+ 	 * to allow mfg hotswap:  down, hotswap (chip power cycle), up.
+ 	 */
+-	bcma_core_pci_irq_ctl(&wlc_hw->d11core->bus->drv_pci, wlc_hw->d11core,
++	bcma_core_pci_irq_ctl(&wlc_hw->d11core->bus->drv_pci[0], wlc_hw->d11core,
+ 			      true);
+ 
+ 	/*

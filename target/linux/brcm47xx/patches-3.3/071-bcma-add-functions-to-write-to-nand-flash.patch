@@ -1,0 +1,232 @@
+--- a/drivers/bcma/driver_chipcommon_nflash.c
++++ b/drivers/bcma/driver_chipcommon_nflash.c
+@@ -2,16 +2,23 @@
+  * Broadcom specific AMBA
+  * ChipCommon NAND flash interface
+  *
++ * Copyright 2011, Tathagata Das <tathagata@alumnux.com>
++ * Copyright 2010, Broadcom Corporation
++ *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+ 
++#include <linux/delay.h>
++#include <linux/mtd/bcm47xx_nand.h>
++#include <linux/mtd/nand.h>
+ #include <linux/platform_device.h>
+ #include <linux/bcma/bcma.h>
++#include <linux/bcma/bcma_driver_chipcommon.h>
+ 
+ #include "bcma_private.h"
+ 
+ struct platform_device bcma_nflash_dev = {
+-	.name		= "bcma_nflash",
++	.name		= "bcm47xx-nflash",
+ 	.num_resources	= 0,
+ };
+ 
+@@ -31,6 +38,11 @@ int bcma_nflash_init(struct bcma_drv_cc
+ 		return -ENODEV;
+ 	}
+ 
++	if (bus->chipinfo.id == BCMA_CHIP_ID_BCM4706) {
++		bcma_err(bus, "NAND flash support for BCM4706 not implemented\n");
++		return -ENOTSUPP;
++	}
++
+ 	cc->nflash.present = true;
+ 	if (cc->core->id.rev == 38 &&
+ 	    (cc->status & BCMA_CC_CHIPST_5357_NAND_BOOT))
+@@ -42,3 +54,141 @@ int bcma_nflash_init(struct bcma_drv_cc
+ 
+ 	return 0;
+ }
++
++/* Issue a nand flash command */
++static inline void bcma_nflash_cmd(struct bcma_drv_cc *cc, u32 opcode)
++{
++	bcma_cc_write32(cc, NAND_CMD_START, opcode);
++	bcma_cc_read32(cc,  NAND_CMD_START);
++}
++
++/* Check offset and length */
++static int bcma_nflash_offset_is_valid(struct bcma_drv_cc *cc, u32 offset, u32 len, u32 mask)
++{
++	if ((offset & mask) != 0 || (len & mask) != 0) {
++		pr_err("%s(): Address is not aligned. offset: %x, len: %x, mask: %x\n", __func__, offset, len, mask);
++		return 1;
++	}
++
++	if ((((offset + len) >> 20) >= cc->nflash.size) &&
++		(((offset + len) & ((1 << 20) - 1)) != 0)) {
++		pr_err("%s(): Address is outside Flash memory region. offset: %x, len: %x, mask: %x\n", __func__, offset, len, mask);
++		return 1;
++	}
++
++	return 0;
++}
++
++#define NF_RETRIES   1000000
++
++/* Poll for command completion. Returns zero when complete. */
++int bcma_nflash_poll(struct bcma_drv_cc *cc)
++{
++	u32 retries = NF_RETRIES;
++	u32 pollmask = NIST_CTRL_READY|NIST_FLASH_READY;
++	u32 mask;
++
++	while (retries--) {
++		mask = bcma_cc_read32(cc, NAND_INTFC_STATUS) & pollmask;
++		if (mask == pollmask)
++			return 0;
++		cpu_relax();
++	}
++
++	if (!retries) {
++		pr_err("bcma_nflash_poll: not ready\n");
++		return -1;
++	}
++
++	return 0;
++}
++
++/* Read len bytes starting at offset into buf. Returns number of bytes read. */
++int bcma_nflash_read(struct bcma_drv_cc *cc, u32 offset, u32 len, u8 *buf)
++{
++	u32 mask;
++	int i;
++	u32 *to, val, res;
++
++	mask = NFL_SECTOR_SIZE - 1;
++	if (bcma_nflash_offset_is_valid(cc, offset, len, mask))
++		return 0;
++
++	to = (u32 *)buf;
++	res = len;
++	while (res > 0) {
++		bcma_cc_write32(cc, NAND_CMD_ADDR, offset);
++		bcma_nflash_cmd(cc, NCMD_PAGE_RD);
++		if (bcma_nflash_poll(cc) < 0)
++			break;
++		val = bcma_cc_read32(cc, NAND_INTFC_STATUS);
++		if ((val & NIST_CACHE_VALID) == 0)
++			break;
++		bcma_cc_write32(cc, NAND_CACHE_ADDR, 0);
++		for (i = 0; i < NFL_SECTOR_SIZE; i += 4, to++) {
++			*to = bcma_cc_read32(cc, NAND_CACHE_DATA);
++		}
++		res -= NFL_SECTOR_SIZE;
++		offset += NFL_SECTOR_SIZE;
++	}
++	return (len - res);
++}
++
++/* Write len bytes starting at offset into buf. Returns success (0) or failure (!0).
++ * Should poll for completion.
++ */
++int bcma_nflash_write(struct bcma_drv_cc *cc, u32 offset, u32 len,
++			    const u8 *buf)
++{
++	u32 mask;
++	int i;
++	u32 *from, res, reg;
++
++	mask = cc->nflash.pagesize - 1;
++	if (bcma_nflash_offset_is_valid(cc, offset, len, mask))
++		return 1;
++
++	/* disable partial page enable */
++	reg = bcma_cc_read32(cc, NAND_ACC_CONTROL);
++	reg &= ~NAC_PARTIAL_PAGE_EN;
++	bcma_cc_write32(cc, NAND_ACC_CONTROL, reg);
++
++	from = (u32 *)buf;
++	res = len;
++	while (res > 0) {
++		bcma_cc_write32(cc, NAND_CACHE_ADDR, 0);
++		for (i = 0; i < cc->nflash.pagesize; i += 4, from++) {
++			if (i % 512 == 0)
++				bcma_cc_write32(cc, NAND_CMD_ADDR, i);
++			bcma_cc_write32(cc, NAND_CACHE_DATA, *from);
++		}
++		bcma_cc_write32(cc, NAND_CMD_ADDR, offset + cc->nflash.pagesize - 512);
++		bcma_nflash_cmd(cc, NCMD_PAGE_PROG);
++		if (bcma_nflash_poll(cc) < 0)
++			break;
++		res -= cc->nflash.pagesize;
++		offset += cc->nflash.pagesize;
++	}
++
++	if (res <= 0)
++		return 0;
++	else
++		return (len - res);
++}
++
++/* Erase a region. Returns success (0) or failure (-1).
++ * Poll for completion.
++ */
++int bcma_nflash_erase(struct bcma_drv_cc *cc, u32 offset)
++{
++	if ((offset >> 20) >= cc->nflash.size)
++		return -1;
++	if ((offset & (cc->nflash.blocksize - 1)) != 0)
++		return -1;
++
++	bcma_cc_write32(cc, NAND_CMD_ADDR, offset);
++	bcma_nflash_cmd(cc, NCMD_BLOCK_ERASE);
++	if (bcma_nflash_poll(cc) < 0)
++		return -1;
++	return 0;
++}
+--- a/include/linux/bcma/bcma_driver_chipcommon.h
++++ b/include/linux/bcma/bcma_driver_chipcommon.h
+@@ -2,6 +2,7 @@
+ #define LINUX_BCMA_DRIVER_CC_H_
+ 
+ #include <linux/mtd/bcm47xx_sflash.h>
++#include <linux/mtd/bcm47xx_nand.h>
+ 
+ /** ChipCommon core registers. **/
+ #define BCMA_CC_ID			0x0000
+@@ -519,17 +520,6 @@ struct bcma_pflash {
+ };
+ 
+ 
+-#ifdef CONFIG_BCMA_NFLASH
+-struct mtd_info;
+-
+-struct bcma_nflash {
+-	bool present;
+-	bool boot;		/* This is the flash the SoC boots from */
+-
+-	struct mtd_info *mtd;
+-};
+-#endif
+-
+ struct bcma_serial_port {
+ 	void *regs;
+ 	unsigned long clockspeed;
+@@ -555,7 +545,7 @@ struct bcma_drv_cc {
+ 	struct bcm47xx_sflash sflash;
+ #endif
+ #ifdef CONFIG_BCMA_NFLASH
+-	struct bcma_nflash nflash;
++	struct bcm47xx_nflash nflash;
+ #endif
+ 
+ 	int nr_serial_ports;
+@@ -613,4 +603,13 @@ extern void bcma_chipco_regctl_maskset(s
+ 				       u32 offset, u32 mask, u32 set);
+ extern void bcma_pmu_spuravoid_pllupdate(struct bcma_drv_cc *cc, int spuravoid);
+ 
++#ifdef CONFIG_BCMA_NFLASH
++/* Chipcommon nflash support. */
++int bcma_nflash_read(struct bcma_drv_cc *cc, u32 offset, u32 len, u8 *buf);
++int bcma_nflash_poll(struct bcma_drv_cc *cc);
++int bcma_nflash_write(struct bcma_drv_cc *cc, u32 offset, u32 len, const u8 *buf);
++int bcma_nflash_erase(struct bcma_drv_cc *cc, u32 offset);
++int bcma_nflash_commit(struct bcma_drv_cc *cc, u32 offset, u32 len, const u8 *buf);
++#endif
++
+ #endif /* LINUX_BCMA_DRIVER_CC_H_ */

@@ -276,7 +276,7 @@
 +EXPORT_SYMBOL(gpio_set_value);
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -346,6 +346,8 @@ void __init plat_mem_setup(void)
+@@ -252,6 +252,8 @@ void __init plat_mem_setup(void)
  	_machine_restart = bcm47xx_machine_restart;
  	_machine_halt = bcm47xx_machine_halt;
  	pm_power_off = bcm47xx_machine_halt;
@@ -307,7 +307,7 @@
 +
  		if (!request_irq(gpio_to_irq(WGT634U_GPIO_RESET),
  				 gpio_interrupt, IRQF_SHARED,
- 				 "WGT634U GPIO", ccore)) {
+ 				 "WGT634U GPIO", &bcm47xx_bus.ssb.chipco)) {
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
 @@ -56,4 +56,6 @@ void bcm47xx_fill_bcma_boardinfo(struct
