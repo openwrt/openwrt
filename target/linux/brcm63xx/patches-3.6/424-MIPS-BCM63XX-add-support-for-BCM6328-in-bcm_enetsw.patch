@@ -1,0 +1,103 @@
+From f1c1bfa89cdac76a215d0e21161da9f8f8373437 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 14 Jun 2011 21:14:39 +0200
+Subject: [PATCH 40/84] MIPS: BCM63XX: add support for BCM6328 in bcm_enetsw
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ arch/mips/bcm63xx/clk.c                            |   34 ++++++++++++++-----
+ arch/mips/bcm63xx/dev-enet.c                       |    9 +++--
+ .../include/asm/mach-bcm63xx/bcm63xx_dev_enet.h    |    1 +
+ 3 files changed, 32 insertions(+), 12 deletions(-)
+
+--- a/arch/mips/bcm63xx/clk.c
++++ b/arch/mips/bcm63xx/clk.c
+@@ -118,21 +118,37 @@ static struct clk clk_ephy = {
+  */
+ static void enetsw_set(struct clk *clk, int enable)
+ {
+-	if (!BCMCPU_IS_6368())
++	u32 mask;
++
++	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6368())
+ 		return;
+-	bcm_hwclock_set(CKCTL_6368_ROBOSW_EN |
+-			CKCTL_6368_SWPKT_USB_EN |
+-			CKCTL_6368_SWPKT_SAR_EN, enable);
++
++	if (BCMCPU_IS_6328())
++		mask = CKCTL_6328_ROBOSW_EN;
++	else
++		mask = CKCTL_6368_ROBOSW_EN | CKCTL_6368_SWPKT_USB_EN |
++		       CKCTL_6368_SWPKT_SAR_EN;
++
++	bcm_hwclock_set(mask, enable);
+ 	if (enable) {
++		u32 reg;
+ 		u32 val;
+ 
++		if (BCMCPU_IS_6328()) {
++			reg = PERF_SOFTRESET_6328_REG;
++			mask = SOFTRESET_6328_ENETSW_MASK;
++		} else {
++			reg = PERF_SOFTRESET_6368_REG;
++			mask = SOFTRESET_6368_ENETSW_MASK;
++		}
++
+ 		/* reset switch core afer clock change */
+-		val = bcm_perf_readl(PERF_SOFTRESET_6368_REG);
+-		val &= ~SOFTRESET_6368_ENETSW_MASK;
+-		bcm_perf_writel(val, PERF_SOFTRESET_6368_REG);
++		val = bcm_perf_readl(reg);
++		val &= ~mask;
++		bcm_perf_writel(val, reg);
+ 		msleep(10);
+-		val |= SOFTRESET_6368_ENETSW_MASK;
+-		bcm_perf_writel(val, PERF_SOFTRESET_6368_REG);
++		val |= mask;
++		bcm_perf_writel(val, reg);
+ 		msleep(10);
+ 	}
+ }
+--- a/arch/mips/bcm63xx/dev-enet.c
++++ b/arch/mips/bcm63xx/dev-enet.c
+@@ -141,7 +141,7 @@ static int __init register_shared(void)
+ 	shared_res[0].end = shared_res[0].start;
+ 	shared_res[0].end += (RSET_ENETDMA_SIZE)  - 1;
+ 
+-	if (BCMCPU_IS_6368())
++	if (BCMCPU_IS_6328() || BCMCPU_IS_6368())
+ 		chan_count = 32;
+ 	else
+ 		chan_count = 16;
+@@ -224,7 +224,7 @@ bcm63xx_enetsw_register(const struct bcm
+ {
+ 	int ret;
+ 
+-	if (!BCMCPU_IS_6368())
++	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6368())
+ 		return -ENODEV;
+ 
+ 	ret = register_shared();
+@@ -241,7 +241,10 @@ bcm63xx_enetsw_register(const struct bcm
+ 
+ 	memcpy(bcm63xx_enetsw_device.dev.platform_data, pd, sizeof (*pd));
+ 
+-	enetsw_pd.num_ports = ENETSW_PORTS_6368;
++	if (BCMCPU_IS_6328())
++		enetsw_pd.num_ports = ENETSW_PORTS_6328;
++	else if (BCMCPU_IS_6368())
++		enetsw_pd.num_ports = ENETSW_PORTS_6368;
+ 
+ 	ret = platform_device_register(&bcm63xx_enetsw_device);
+ 	if (ret)
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_enet.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_enet.h
+@@ -43,6 +43,7 @@ struct bcm63xx_enet_platform_data {
+  * on board ethernet switch platform data
+  */
+ #define ENETSW_MAX_PORT	6
++#define ENETSW_PORTS_6328 5 /* 4 FE PHY + 1 RGMII */
+ #define ENETSW_PORTS_6368 6 /* 4 FE PHY + 2 RGMII */
+ 
+ #define ENETSW_RGMII_PORT0	4
