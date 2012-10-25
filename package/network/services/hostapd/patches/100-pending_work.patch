@@ -121,3 +121,45 @@
  
  	if (bss != &drv->first_bss) {
  		struct i802_bss *tbss;
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -672,12 +672,15 @@ static void hostapd_event_eapol_rx(struc
+ 				   const u8 *data, size_t data_len)
+ {
+ 	struct hostapd_iface *iface = hapd->iface;
++	struct sta_info *sta;
+ 	size_t j;
+ 
+ 	for (j = 0; j < iface->num_bss; j++) {
+-		if (ap_get_sta(iface->bss[j], src)) {
+-			hapd = iface->bss[j];
+-			break;
++		if ((sta = ap_get_sta(iface->bss[j], src))) {
++			if (sta->flags & WLAN_STA_ASSOC) {
++				hapd = iface->bss[j];
++				break;
++			}
+ 		}
+ 	}
+ 
+--- a/src/eap_peer/eap.c
++++ b/src/eap_peer/eap.c
+@@ -348,6 +348,7 @@ SM_STATE(EAP, METHOD)
+ {
+ 	struct wpabuf *eapReqData;
+ 	struct eap_method_ret ret;
++	int min_len = 1;
+ 
+ 	SM_ENTRY(EAP, METHOD);
+ 	if (sm->m == NULL) {
+@@ -356,7 +357,9 @@ SM_STATE(EAP, METHOD)
+ 	}
+ 
+ 	eapReqData = eapol_get_eapReqData(sm);
+-	if (!eap_hdr_len_valid(eapReqData, 1))
++	if (sm->m->vendor == EAP_VENDOR_IETF && sm->m->method == EAP_TYPE_LEAP)
++		min_len = 0; /* LEAP uses EAP-Success without payload */
++	if (!eap_hdr_len_valid(eapReqData, min_len))
+ 		return;
+ 
+ 	/*
