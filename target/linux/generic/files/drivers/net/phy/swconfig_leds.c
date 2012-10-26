@@ -46,7 +46,7 @@ static void
 swconfig_trig_set_brightness(struct swconfig_trig_data *trig_data,
 			     enum led_brightness brightness)
 {
-	led_brightness_set(trig_data->led_cdev, brightness);
+	led_set_brightness(trig_data->led_cdev, brightness);
 	trig_data->prev_brightness = brightness;
 }
 
@@ -209,7 +209,7 @@ swconfig_trig_led_event(struct switch_led_trigger *sw_trig,
 	link = !!(sw_trig->port_link & port_mask);
 	if (!link) {
 		if (link != trig_data->prev_link)
-			led_brightness_set(trig_data->led_cdev, LED_OFF);
+			led_set_brightness(trig_data->led_cdev, LED_OFF);
 	} else {
 		unsigned long traffic;
 		int i;

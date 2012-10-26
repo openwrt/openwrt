@@ -1,0 +1,11 @@
+--- a/drivers/net/phy/swconfig_leds.c
++++ b/drivers/net/phy/swconfig_leds.c
+@@ -20,6 +20,8 @@
+ #define SWCONFIG_LED_TIMER_INTERVAL	(HZ / 10)
+ #define SWCONFIG_LED_NUM_PORTS		32
+ 
++#define led_set_brightness(_led, _switch)	led_brightness_set((_led), (_switch))
++
+ struct switch_led_trigger {
+ 	struct led_trigger trig;
+ 	struct switch_dev *swdev;
