@@ -65,6 +65,10 @@ tplink_get_image_hwid() {
 	get_image "$@" | dd bs=4 count=1 skip=16 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
+tplink_get_image_boot_size() {
+	get_image "$@" | dd bs=4 count=1 skip=37 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
 platform_check_image() {
 	local board=$(ar71xx_board_name)
 	local magic="$(get_magic_word "$1")"
@@ -171,6 +175,14 @@ platform_check_image() {
 
 		[ "$hwid" != "$imageid" ] && {
 			echo "Invalid image, hardware ID mismatch, hw:$hwid image:$imageid."
+			return 1
+		}
+
+		local boot_size
+
+		boot_size=$(tplink_get_image_boot_size "$1")
+		[ "$boot_size" != "00000000" ] && {
+			echo "Invalid image, it contains a bootloader."
 			return 1
 		}
 
