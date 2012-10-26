@@ -63,7 +63,7 @@ static struct gpio_keys_button tew_691gr_gpio_buttons[] __initdata = {
 	{
 		.desc		= "RFKILL switch",
 		.type		= EV_SW,
-		.code		= KEY_WPS_BUTTON,
+		.code		= KEY_RFKILL,
 		.debounce_interval = TEW_691GR_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= TEW_691GR_GPIO_SWITCH_RFKILL,
 		.active_low	= 1,
