@@ -17,11 +17,11 @@
 KERNEL_MTD_SIZE:=1024
 
 # Netgear WNR854T: erase size is 128KiB = 0x00020000 = 131072
-ERASE_SIZE_WNR854T:=128
+ERASE_SIZE_128K:=128
 UIMAGE_FILE_NAME_WNR854T:=uImage
 
 # Linksys WRT350N v2: erase size is 64KiB = 0x00010000 = 65536
-ERASE_SIZE_WRT350Nv2:=64
+ERASE_SIZE_64K:=64
 
 # define JFFS2 sizes for include/image.mk
 JFFS2_BLOCKSIZE:=64k 128k
@@ -48,7 +48,7 @@ define Image/BuildKernel
 $(call Image/BuildKernel/ARM/zImage,wn802t,"\x0c\x1c\xa0\xe3\xea\x10\x81\xe3")
 $(call Image/BuildKernel/ARM/uImage,wn802t)
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)  # nothing more to do for a ramdisk build
-$(call Image/BuildKernel/JFFS2uImage,wn802t,$(ERASE_SIZE_WRT350Nv2),$(UIMAGE_FILE_NAME_WNR854T))
+$(call Image/BuildKernel/JFFS2uImage,wn802t,$(ERASE_SIZE_64K),$(UIMAGE_FILE_NAME_WNR854T))
 $(call Image/Default/FileSizeCheck,$(KDIR)/wn802t-uImage.jffs2,$(shell expr $(KERNEL_MTD_SIZE) \* 1024))
  endif
 
@@ -56,7 +56,7 @@ $(call Image/Default/FileSizeCheck,$(KDIR)/wn802t-uImage.jffs2,$(shell expr $(KE
 $(call Image/BuildKernel/ARM/zImage,wnr854t,"\x07\x1c\xa0\xe3\x09\x10\x81\xe3")
 $(call Image/BuildKernel/ARM/uImage,wnr854t)
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)  # nothing more to do for a ramdisk build
-$(call Image/BuildKernel/JFFS2uImage,wnr854t,$(ERASE_SIZE_WNR854T),$(UIMAGE_FILE_NAME_WNR854T))
+$(call Image/BuildKernel/JFFS2uImage,wnr854t,$(ERASE_SIZE_128K),$(UIMAGE_FILE_NAME_WNR854T))
 $(call Image/Default/FileSizeCheck,$(KDIR)/wnr854t-uImage.jffs2,$(shell expr $(KERNEL_MTD_SIZE) \* 1024))
  endif
 
@@ -115,13 +115,13 @@ define Image/Build
 $(call Image/Build/$(1),$(1))
 
  ## Netgear WN802T
-$(call Image/Build/Default,$(1),wn802t,$(ERASE_SIZE_WRT350Nv2),$(KERNEL_MTD_SIZE),.jffs2,NG_WN802T)
+$(call Image/Build/Default,$(1),wn802t,$(ERASE_SIZE_64K),$(KERNEL_MTD_SIZE),.jffs2,NG_WN802T)
 
  ## Netgear WNR854T
-$(call Image/Build/Default,$(1),wnr854t,$(ERASE_SIZE_WNR854T),$(KERNEL_MTD_SIZE),.jffs2,NG_WNR854T)
+$(call Image/Build/Default,$(1),wnr854t,$(ERASE_SIZE_128K),$(KERNEL_MTD_SIZE),.jffs2,NG_WNR854T)
 
  ## Linksys WRT350N v2
-$(call Image/Build/Linksys/wrt350nv2,$(1),wrt350nv2,$(ERASE_SIZE_WRT350Nv2),$(KERNEL_MTD_SIZE),)
+$(call Image/Build/Linksys/wrt350nv2,$(1),wrt350nv2,$(ERASE_SIZE_64K),$(KERNEL_MTD_SIZE),)
 endef
 
 define Image/Build/squashfs
