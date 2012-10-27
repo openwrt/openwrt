@@ -113,8 +113,8 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 		goto free_parts;
 	}
 
-	ret = master->read(master, uboot_len, sizeof(*header),
-			   &retlen, (void *) header);
+	ret = mtd_read(master, uboot_len, sizeof(*header),
+		       &retlen, (void *) header);
 	if (ret)
 		goto free_hdr;
 
