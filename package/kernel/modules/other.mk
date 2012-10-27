@@ -613,7 +613,6 @@ $(eval $(call KernelPackage,mtdtests))
 define KernelPackage/nand
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NAND flash support
-  DEPENDS:=@!LINUX_2_6_39
   KCONFIG:=CONFIG_MTD_NAND \
 	CONFIG_MTD_NAND_IDS \
 	CONFIG_MTD_NAND_ECC
