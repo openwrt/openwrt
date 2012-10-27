@@ -44,6 +44,14 @@ endef
 define Image/BuildKernel
 ### Dummy comment for indented calls of Image/BuildKernel
 
+ ## Netgear WN802T: mach id 3306 (0x0cea)
+$(call Image/BuildKernel/ARM/zImage,wn802t,"\x0c\x1c\xa0\xe3\xea\x10\x81\xe3")
+$(call Image/BuildKernel/ARM/uImage,wn802t)
+ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)  # nothing more to do for a ramdisk build
+$(call Image/BuildKernel/JFFS2uImage,wn802t,$(ERASE_SIZE_WRT350Nv2),$(UIMAGE_FILE_NAME_WNR854T))
+$(call Image/Default/FileSizeCheck,$(KDIR)/wn802t-uImage.jffs2,$(shell expr $(KERNEL_MTD_SIZE) \* 1024))
+ endif
+
  ## Netgear WNR854T: mach id 1801 (0x0709)
 $(call Image/BuildKernel/ARM/zImage,wnr854t,"\x07\x1c\xa0\xe3\x09\x10\x81\xe3")
 $(call Image/BuildKernel/ARM/uImage,wnr854t)
@@ -105,6 +113,9 @@ define Image/Build
 
  ## Prepare rootfs
 $(call Image/Build/$(1),$(1))
+
+ ## Netgear WN802T
+$(call Image/Build/Default,$(1),wn802t,$(ERASE_SIZE_WRT350Nv2),$(KERNEL_MTD_SIZE),.jffs2,NG_WN802T)
 
  ## Netgear WNR854T
 $(call Image/Build/Default,$(1),wnr854t,$(ERASE_SIZE_WNR854T),$(KERNEL_MTD_SIZE),.jffs2,NG_WNR854T)
