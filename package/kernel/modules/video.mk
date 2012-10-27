@@ -161,7 +161,7 @@ $(eval $(call KernelPackage,video-sn9c102))
 
 define KernelPackage/video-pwc
   TITLE:=Philips USB webcam support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +!LINUX_2_6_39:kmod-video-videobuf2
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-video-videobuf2
   KCONFIG:= \
 	CONFIG_USB_PWC \
 	CONFIG_USB_PWC_DEBUG=n
