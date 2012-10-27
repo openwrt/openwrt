@@ -891,7 +891,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += pktlen;
 
-		skb = build_skb(ring->buf[i].rx_buf);
+		skb = build_skb(ring->buf[i].rx_buf, 0);
 		if (!skb) {
 			kfree(ring->buf[i].rx_buf);
 			goto next;
