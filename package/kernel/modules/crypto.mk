@@ -192,7 +192,7 @@ define KernelPackage/crypto-arc4
   KCONFIG:=CONFIG_CRYPTO_ARC4
   FILES:=$(LINUX_DIR)/crypto/arc4.ko
   AUTOLOAD:=$(call AutoLoad,09,arc4)
-  $(call AddDepends/crypto)
+  $(call AddDepends/crypto,+!LINUX_3_3:kmod-crypto-manager)
 endef
 
 $(eval $(call KernelPackage,crypto-arc4))
