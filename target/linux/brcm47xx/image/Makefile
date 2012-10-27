@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2010 OpenWrt.org
+#
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -27,6 +27,11 @@ endef
 define Image/Build/wgt634u
 	dd if=$(KDIR)/loader.elf of=$(BIN_DIR)/openwrt-wgt634u-$(2).bin bs=131072 conv=sync
 	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx >> $(BIN_DIR)/openwrt-wgt634u-$(2).bin
+endef
+
+define Image/Build/dwl3150
+	cp $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-dwl3150-$(2).bin
+	echo "BCM-5352-2050-0000000-01" >> $(BIN_DIR)/openwrt-dwl3150-$(2).bin
 endef
 
 define Image/Build/CyberTAN
@@ -90,6 +95,7 @@ define Image/Build/jffs2-64k
 	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),we800g,3,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Edi,$(1),ps1208mfg,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/dwl3150,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 endef
 
 define Image/Build/squashfs
