@@ -78,7 +78,8 @@ platform_check_image() {
 
 	case "$board" in
 	all0315n | \
-	all0258n )
+	all0258n | \
+	cap4200ag)
 		platform_check_image_allnet "$1" && return 0
 		return 1
 		;;
@@ -258,6 +259,9 @@ platform_do_upgrade() {
 		;;
 	all0315n )
 		platform_do_upgrade_allnet "0x9f080000" "$ARGV"
+		;;
+	cap4200ag)
+		platform_do_upgrade_allnet "0xbf0a0000" "$ARGV"
 		;;
 	dir-825-b1 |\
 	tew-673gru)
