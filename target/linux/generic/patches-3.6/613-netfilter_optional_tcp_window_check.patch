@@ -20,17 +20,17 @@
  	/*
  	 * Get the required data from the packet.
  	 */
-@@ -1425,6 +1431,13 @@ static struct ctl_table tcp_sysctl_table
+@@ -1436,6 +1442,13 @@ static struct ctl_table tcp_sysctl_table
+ 		.mode		= 0644,
  		.proc_handler	= proc_dointvec,
  	},
- 	{
++	{
 +		.procname       = "nf_conntrack_tcp_no_window_check",
 +		.data           = &nf_ct_tcp_no_window_check,
 +		.maxlen         = sizeof(unsigned int),
 +		.mode           = 0644,
 +		.proc_handler   = proc_dointvec,
 +	},
-+	{
- 		.procname       = "nf_conntrack_tcp_be_liberal",
- 		.maxlen         = sizeof(unsigned int),
- 		.mode           = 0644,
+ 	{ }
+ };
+ 
