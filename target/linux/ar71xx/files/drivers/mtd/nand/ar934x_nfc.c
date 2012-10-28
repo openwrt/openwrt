@@ -1051,7 +1051,6 @@ ar934x_nfc_probe(struct platform_device *pdev)
 	else
 		mtd->name = dev_name(&pdev->dev);
 
-	nand->options = NAND_NO_AUTOINCR;
 	nand->chip_delay = 25;
 	nand->ecc.mode = NAND_ECC_SOFT;
 

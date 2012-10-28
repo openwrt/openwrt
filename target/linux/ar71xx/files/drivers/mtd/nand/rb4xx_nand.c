@@ -221,7 +221,6 @@ static int __devinit rb4xx_nand_probe(struct platform_device *pdev)
 
 	info->chip.chip_delay	= 25;
 	info->chip.ecc.mode	= NAND_ECC_SOFT;
-	info->chip.options	|= NAND_NO_AUTOINCR;
 
 	platform_set_drvdata(pdev, info);
 
