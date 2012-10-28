@@ -1,0 +1,23 @@
+--- a/arch/mips/ath79/gpio.c
++++ b/arch/mips/ath79/gpio.c
+@@ -25,7 +25,9 @@
+ #include <asm/mach-ath79/ath79.h>
+ #include "common.h"
+ 
+-static void __iomem *ath79_gpio_base;
++void __iomem *ath79_gpio_base;
++EXPORT_SYMBOL_GPL(ath79_gpio_base);
++
+ static unsigned long ath79_gpio_count;
+ static DEFINE_SPINLOCK(ath79_gpio_lock);
+ 
+--- a/arch/mips/include/asm/mach-ath79/ath79.h
++++ b/arch/mips/include/asm/mach-ath79/ath79.h
+@@ -110,6 +110,7 @@ static inline int soc_is_qca955x(void)
+ }
+ 
+ extern void __iomem *ath79_ddr_base;
++extern void __iomem *ath79_gpio_base;
+ extern void __iomem *ath79_pll_base;
+ extern void __iomem *ath79_reset_base;
+ 

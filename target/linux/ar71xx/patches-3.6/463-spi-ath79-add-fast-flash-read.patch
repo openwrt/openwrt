@@ -1,0 +1,185 @@
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -37,6 +37,11 @@
+ 
+ #define ATH79_SPI_CS_LINE_MAX		2
+ 
++enum ath79_spi_state {
++	ATH79_SPI_STATE_WAIT_CMD = 0,
++	ATH79_SPI_STATE_WAIT_READ,
++};
++
+ struct ath79_spi {
+ 	struct spi_bitbang	bitbang;
+ 	u32			ioc_base;
+@@ -44,6 +49,11 @@ struct ath79_spi {
+ 	void __iomem		*base;
+ 	struct clk		*clk;
+ 	unsigned		rrw_delay;
++
++	enum ath79_spi_state	state;
++	u32			clk_div;
++	unsigned long 		read_addr;
++	unsigned long		ahb_rate;
+ };
+ 
+ static inline u32 ath79_spi_rr(struct ath79_spi *sp, unsigned reg)
+@@ -111,9 +121,6 @@ static void ath79_spi_enable(struct ath7
+ 	/* save CTRL register */
+ 	sp->reg_ctrl = ath79_spi_rr(sp, AR71XX_SPI_REG_CTRL);
+ 	sp->ioc_base = ath79_spi_rr(sp, AR71XX_SPI_REG_IOC);
+-
+-	/* TODO: setup speed? */
+-	ath79_spi_wr(sp, AR71XX_SPI_REG_CTRL, 0x43);
+ }
+ 
+ static void ath79_spi_disable(struct ath79_spi *sp)
+@@ -232,6 +239,110 @@ static u32 ath79_spi_txrx_mode0(struct s
+ 	return ath79_spi_rr(sp, AR71XX_SPI_REG_RDS);
+ }
+ 
++static int ath79_spi_do_read_flash_data(struct spi_device *spi,
++					struct spi_transfer *t)
++{
++	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
++
++	/* disable GPIO mode */
++	ath79_spi_wr(sp, AR71XX_SPI_REG_FS, 0);
++
++	memcpy_fromio(t->rx_buf, sp->base + sp->read_addr, t->len);
++
++	/* enable GPIO mode */
++	ath79_spi_wr(sp, AR71XX_SPI_REG_FS, AR71XX_SPI_FS_GPIO);
++
++	/* restore IOC register */
++	ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, sp->ioc_base);
++
++	return t->len;
++}
++
++static int ath79_spi_do_read_flash_cmd(struct spi_device *spi,
++				       struct spi_transfer *t)
++{
++	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
++	int len;
++	const u8 *p;
++
++	sp->read_addr = 0;
++
++	len = t->len - 1;
++	p = t->tx_buf;
++
++	while (len--) {
++		p++;
++		sp->read_addr <<= 8;
++		sp->read_addr |= *p;
++	}
++
++	return t->len;
++}
++
++static bool ath79_spi_is_read_cmd(struct spi_device *spi,
++				 struct spi_transfer *t)
++{
++	return t->type == SPI_TRANSFER_FLASH_READ_CMD;
++}
++
++static bool ath79_spi_is_data_read(struct spi_device *spi,
++				  struct spi_transfer *t)
++{
++	return t->type == SPI_TRANSFER_FLASH_READ_DATA;
++}
++
++static int ath79_spi_txrx_bufs(struct spi_device *spi, struct spi_transfer *t)
++{
++	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
++	int ret;
++
++	switch (sp->state) {
++	case ATH79_SPI_STATE_WAIT_CMD:
++		if (ath79_spi_is_read_cmd(spi, t)) {
++			ret = ath79_spi_do_read_flash_cmd(spi, t);
++			sp->state = ATH79_SPI_STATE_WAIT_READ;
++		} else {
++			ret = spi_bitbang_bufs(spi, t);
++		}
++		break;
++
++	case ATH79_SPI_STATE_WAIT_READ:
++		if (ath79_spi_is_data_read(spi, t)) {
++			ret = ath79_spi_do_read_flash_data(spi, t);
++		} else {
++			dev_warn(&spi->dev, "flash data read expected\n");
++			ret = -EIO;
++		}
++		sp->state = ATH79_SPI_STATE_WAIT_CMD;
++		break;
++
++	default:
++		BUG();
++	}
++
++	return ret;
++}
++
++static int ath79_spi_setup_transfer(struct spi_device *spi,
++				    struct spi_transfer *t)
++{
++	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
++	struct ath79_spi_controller_data *cdata;
++	int ret;
++
++	ret = spi_bitbang_setup_transfer(spi, t);
++	if (ret)
++		return ret;
++
++	cdata = spi->controller_data;
++	if (cdata->is_flash)
++		sp->bitbang.txrx_bufs = ath79_spi_txrx_bufs;
++	else
++		sp->bitbang.txrx_bufs = spi_bitbang_bufs;
++
++	return ret;
++}
++
+ static __devinit int ath79_spi_probe(struct platform_device *pdev)
+ {
+ 	struct spi_master *master;
+@@ -254,6 +365,8 @@ static __devinit int ath79_spi_probe(str
+ 	sp = spi_master_get_devdata(master);
+ 	platform_set_drvdata(pdev, sp);
+ 
++	sp->state = ATH79_SPI_STATE_WAIT_CMD;
++
+ 	master->setup = ath79_spi_setup;
+ 	master->cleanup = ath79_spi_cleanup;
+ 	master->bus_num = pdata->bus_num;
+@@ -262,7 +375,7 @@ static __devinit int ath79_spi_probe(str
+ 	sp->bitbang.master = spi_master_get(master);
+ 	sp->bitbang.chipselect = ath79_spi_chipselect;
+ 	sp->bitbang.txrx_word[SPI_MODE_0] = ath79_spi_txrx_mode0;
+-	sp->bitbang.setup_transfer = spi_bitbang_setup_transfer;
++	sp->bitbang.setup_transfer = ath79_spi_setup_transfer;
+ 	sp->bitbang.flags = SPI_CS_HIGH;
+ 
+ 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+@@ -287,7 +400,8 @@ static __devinit int ath79_spi_probe(str
+ 	if (ret)
+ 		goto err_clk_put;
+ 
+-	rate = DIV_ROUND_UP(clk_get_rate(sp->clk), MHZ);
++	sp->ahb_rate = clk_get_rate(sp->clk);
++	rate = DIV_ROUND_UP(sp->ahb_rate, MHZ);
+ 	if (!rate) {
+ 		ret = -EINVAL;
+ 		goto err_clk_disable;
+--- a/arch/mips/include/asm/mach-ath79/ath79_spi_platform.h
++++ b/arch/mips/include/asm/mach-ath79/ath79_spi_platform.h
+@@ -24,6 +24,7 @@ enum ath79_spi_cs_type {
+ struct ath79_spi_controller_data {
+ 	enum ath79_spi_cs_type cs_type;
+ 	unsigned cs_line;
++	bool is_flash;
+ };
+ 
+ #endif /* _ATH79_SPI_PLATFORM_H */
