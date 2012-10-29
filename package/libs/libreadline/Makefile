@@ -8,15 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=readline
-PKG_VERSION:=5.2
-PKG_RELEASE:=2
+PKG_VERSION:=6.2
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/readline
-PKG_MD5SUM:=e39331f32ad14009b9ff49cc10c5e751
+PKG_MD5SUM:=67948acb2ca081f23359d0256e9a271c
 
-PKG_LICENSE:=GPLv2
+PKG_LICENSE:=GPLv3
 PKG_LICENSE_FILES:=COPYING
+
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -37,6 +39,7 @@ define Package/libreadline/description
 endef
 
 define Build/Configure
+	$(CP) $(SCRIPT_DIR)/config.guess $(SCRIPT_DIR)/config.sub $(PKG_BUILD_DIR)/support/
 	$(call Build/Configure/Default, \
 		--enable-shared \
 		--enable-static \
@@ -49,7 +52,7 @@ TARGET_CPPFLAGS:=-I. -I.. $(TARGET_CPPFLAGS)
 TARGET_CFLAGS += $(FPIC)
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 endef
@@ -58,12 +61,12 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/readline $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{history,readline}.{a,so,so.5,so.5.2} $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{history,readline}.{a,so,so.6,so.6.2} $(1)/usr/lib/
 endef
 
 define Package/libreadline/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{history,readline}.{so,so.5,so.5.2} $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{history,readline}.{so,so.6,so.6.2} $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libreadline))
