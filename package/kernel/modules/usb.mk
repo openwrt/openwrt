@@ -97,7 +97,8 @@ define KernelPackage/usb-ohci
 	CONFIG_USB_OHCI_ATH79=y \
 	CONFIG_USB_OHCI_BCM63XX=y \
 	CONFIG_USB_OHCI_RT3883=y \
-	CONFIG_USB_OCTEON_OHCI=y
+	CONFIG_USB_OCTEON_OHCI=y \
+	CONFIG_USB_OHCI_HCD_PLATFORM=y
   FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,50,ohci-hcd,1)
   $(call AddDepends/usb)
@@ -114,11 +115,12 @@ define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx
   KCONFIG:=CONFIG_USB_EHCI_HCD \
-    CONFIG_USB_EHCI_ATH79=y \
-    CONFIG_USB_EHCI_BCM63XX=y \
-    CONFIG_USB_EHCI_RT3883=y \
-    CONFIG_USB_OCTEON_EHCI=y \
-    CONFIG_USB_EHCI_FSL=n
+	CONFIG_USB_EHCI_ATH79=y \
+	CONFIG_USB_EHCI_BCM63XX=y \
+	CONFIG_USB_EHCI_RT3883=y \
+	CONFIG_USB_OCTEON_EHCI=y \
+	CONFIG_USB_EHCI_FSL=n \
+	CONFIG_USB_EHCI_HCD_PLATFORM
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,40,ehci-hcd,1)
   $(call AddDepends/usb)
