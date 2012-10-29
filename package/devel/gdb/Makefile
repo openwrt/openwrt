@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/gdb/Default
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@!(avr32||cris)
+  DEPENDS:=@!(avr32||cris) +libthread-db
   URL:=http://www.gnu.org/software/gdb/
 endef
 
@@ -80,10 +80,6 @@ endef
 define Package/gdbserver/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/gdbserver $(1)/usr/bin/
-ifneq ($(CONFIG_USE_EGLIBC),)
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/libthread_db* $(1)/usr/lib
-endif
 endef
 
 $(eval $(call BuildPackage,gdb))
