@@ -186,7 +186,7 @@ static struct ar8327_platform_data rb750gr3_ar8327_data = {
 	.pad0_cfg = &rb750gr3_ar8327_pad0_cfg,
 	.cpuport_cfg = {
 		.force_link = 1,
-		.speed = AR8327_PORT_SPEED_100,
+		.speed = AR8327_PORT_SPEED_1000,
 		.duplex = 1,
 		.txpause = 1,
 		.rxpause = 1,
@@ -261,6 +261,7 @@ static void __init rb750gr3_setup(void)
 	ath79_init_mac(ath79_eth0_data.mac_addr, ath79_mac_base, 0);
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ath79_eth0_data.phy_mask = BIT(0);
+	ath79_eth0_pll_data.pll_1000 = 0x62000000;
 
 	ath79_register_eth(0);
 
