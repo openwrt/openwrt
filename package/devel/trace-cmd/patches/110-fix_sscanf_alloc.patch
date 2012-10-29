@@ -1,0 +1,20 @@
+--- a/trace-util.c
++++ b/trace-util.c
+@@ -110,7 +110,7 @@ void parse_cmdlines(struct pevent *peven
+ 
+ 	line = strtok_r(file, "\n", &next);
+ 	while (line) {
+-		sscanf(line, "%d %as", &pid,
++		sscanf(line, "%d %ms", &pid,
+ 		       (float *)(void *)&comm); /* workaround gcc warning */
+ 		pevent_register_comm(pevent, comm, pid);
+ 		free(comm);
+@@ -133,7 +133,7 @@ void parse_proc_kallsyms(struct pevent *
+ 	line = strtok_r(file, "\n", &next);
+ 	while (line) {
+ 		mod = NULL;
+-		ret = sscanf(line, "%as %c %as\t[%as",
++		ret = sscanf(line, "%ms %c %ms\t[%ms",
+ 			     (float *)(void *)&addr_str, /* workaround gcc warning */
+ 			     &ch,
+ 			     (float *)(void *)&func,

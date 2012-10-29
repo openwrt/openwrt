@@ -1,0 +1,30 @@
+--- a/event-utils.h
++++ b/event-utils.h
+@@ -22,6 +22,7 @@
+ 
+ #include <string.h>
+ #include <ctype.h>
++#include <stdarg.h>
+ 
+ /* Can be overridden */
+ void die(const char *fmt, ...);
+--- a/trace-listen.c
++++ b/trace-listen.c
+@@ -17,6 +17,7 @@
+  *
+  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  */
++#define _GNU_SOURCE
+ #define _LARGEFILE64_SOURCE
+ #include <dirent.h>
+ #include <stdio.h>
+--- a/trace-record.c
++++ b/trace-record.c
+@@ -17,6 +17,7 @@
+  *
+  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  */
++#define _GNU_SOURCE
+ #include <dirent.h>
+ #include <stdio.h>
+ #include <stdlib.h>
