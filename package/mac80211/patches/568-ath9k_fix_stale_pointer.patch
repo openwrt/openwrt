@@ -8,7 +8,7 @@
  	list_del(&bf->list);
  
  	spin_unlock_bh(&sc->tx.txbuflock);
-@@ -1774,6 +1775,7 @@ static void ath_tx_send_normal(struct at
+@@ -1778,6 +1779,7 @@ static void ath_tx_send_normal(struct at
  	list_add_tail(&bf->list, &bf_head);
  	bf->bf_state.bf_type = 0;
  
