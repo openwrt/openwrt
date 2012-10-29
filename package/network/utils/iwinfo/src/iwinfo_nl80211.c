@@ -41,6 +41,8 @@ static int nl80211_init(void)
 			goto err;
 		}
 
+		memset(nls, 0, sizeof(*nls));
+
 		nls->nl_sock = nl_socket_alloc();
 		if (!nls->nl_sock) {
 			err = -ENOMEM;
