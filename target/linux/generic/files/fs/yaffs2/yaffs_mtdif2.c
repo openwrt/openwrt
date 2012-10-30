@@ -14,7 +14,7 @@
 /* mtd interface for YAFFS2 */
 
 const char *yaffs_mtdif2_c_version =
-    "$Id: yaffs_mtdif2.c,v 1.17 2007-02-14 01:09:06 wookey Exp $";
+	"$Id: yaffs_mtdif2.c,v 1.23 2009-03-06 17:20:53 wookey Exp $";
 
 #include "yportenv.h"
 
@@ -27,19 +27,23 @@ const char *yaffs_mtdif2_c_version =
 
 #include "yaffs_packedtags2.h"
 
-int nandmtd2_WriteChunkWithTagsToNAND(yaffs_Device * dev, int chunkInNAND,
-				      const __u8 * data,
-				      const yaffs_ExtendedTags * tags)
+/* NB For use with inband tags....
+ * We assume that the data buffer is of size totalBytersPerChunk so that we can also
+ * use it to load the tags.
+ */
+int nandmtd2_WriteChunkWithTagsToNAND(yaffs_Device *dev, int chunkInNAND,
+				      const __u8 *data,
+				      const yaffs_ExtendedTags *tags)
 {
 	struct mtd_info *mtd = (struct mtd_info *)(dev->genericDevice);
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+#if (MTD_VERSION_CODE > MTD_VERSION(2, 6, 17))
 	struct mtd_oob_ops ops;
 #else
 	size_t dummy;
 #endif
 	int retval = 0;
 
-	loff_t addr = ((loff_t) chunkInNAND) * dev->nDataBytesPerChunk;
+	loff_t addr;
 
 	yaffs_PackedTags2 pt;
 
@@ -48,46 +52,40 @@ int nandmtd2_WriteChunkWithTagsToNAND(yaffs_Device * dev, int chunkInNAND,
 	   ("nandmtd2_WriteChunkWithTagsToNAND chunk %d data %p tags %p"
 	    TENDSTR), chunkInNAND, data, tags));
 
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
-	if (tags)
-		yaffs_PackTags2(&pt, tags);
-	else
-		BUG(); /* both tags and data should always be present */
 
-	if (data) {
-		ops.mode = MTD_OOB_AUTO;
-		ops.ooblen = sizeof(pt);
-		ops.len = dev->nDataBytesPerChunk;
-		ops.ooboffs = 0;
-		ops.datbuf = (__u8 *)data;
-		ops.oobbuf = (void *)&pt;
-		retval = mtd->write_oob(mtd, addr, &ops);
+	addr  = ((loff_t) chunkInNAND) * dev->totalBytesPerChunk;
+
+	/* For yaffs2 writing there must be both data and tags.
+	 * If we're using inband tags, then the tags are stuffed into
+	 * the end of the data buffer.
+	 */
+	if (!data || !tags)
+		BUG();
+	else if (dev->inbandTags) {
+		yaffs_PackedTags2TagsPart *pt2tp;
+		pt2tp = (yaffs_PackedTags2TagsPart *)(data + dev->nDataBytesPerChunk);
+		yaffs_PackTags2TagsPart(pt2tp, tags);
 	} else
-		BUG(); /* both tags and data should always be present */
-#else
-	if (tags) {
 		yaffs_PackTags2(&pt, tags);
-	}
 
-	if (data && tags) {
-		if (dev->useNANDECC)
-			retval =
-			    mtd->write_ecc(mtd, addr, dev->nDataBytesPerChunk,
-					   &dummy, data, (__u8 *) & pt, NULL);
-		else
-			retval =
-			    mtd->write_ecc(mtd, addr, dev->nDataBytesPerChunk,
-					   &dummy, data, (__u8 *) & pt, NULL);
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
+	ops.mode = MTD_OOB_AUTO;
+	ops.ooblen = (dev->inbandTags) ? 0 : sizeof(pt);
+	ops.len = dev->totalBytesPerChunk;
+	ops.ooboffs = 0;
+	ops.datbuf = (__u8 *)data;
+	ops.oobbuf = (dev->inbandTags) ? NULL : (void *)&pt;
+	retval = mtd->write_oob(mtd, addr, &ops);
+
+#else
+	if (!dev->inbandTags) {
+		retval =
+		    mtd->write_ecc(mtd, addr, dev->nDataBytesPerChunk,
+				   &dummy, data, (__u8 *) &pt, NULL);
 	} else {
-		if (data)
-			retval =
-			    mtd->write(mtd, addr, dev->nDataBytesPerChunk, &dummy,
-				       data);
-		if (tags)
-			retval =
-			    mtd->write_oob(mtd, addr, mtd->oobsize, &dummy,
-					   (__u8 *) & pt);
-
+		retval =
+		    mtd->write(mtd, addr, dev->totalBytesPerChunk, &dummy,
+			       data);
 	}
 #endif
 
@@ -97,17 +95,18 @@ int nandmtd2_WriteChunkWithTagsToNAND(yaffs_Device * dev, int chunkInNAND,
 		return YAFFS_FAIL;
 }
 
-int nandmtd2_ReadChunkWithTagsFromNAND(yaffs_Device * dev, int chunkInNAND,
-				       __u8 * data, yaffs_ExtendedTags * tags)
+int nandmtd2_ReadChunkWithTagsFromNAND(yaffs_Device *dev, int chunkInNAND,
+				       __u8 *data, yaffs_ExtendedTags *tags)
 {
 	struct mtd_info *mtd = (struct mtd_info *)(dev->genericDevice);
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+#if (MTD_VERSION_CODE > MTD_VERSION(2, 6, 17))
 	struct mtd_oob_ops ops;
 #endif
 	size_t dummy;
 	int retval = 0;
+	int localData = 0;
 
-	loff_t addr = ((loff_t) chunkInNAND) * dev->nDataBytesPerChunk;
+	loff_t addr = ((loff_t) chunkInNAND) * dev->totalBytesPerChunk;
 
 	yaffs_PackedTags2 pt;
 
@@ -116,9 +115,20 @@ int nandmtd2_ReadChunkWithTagsFromNAND(yaffs_Device * dev, int chunkInNAND,
 	   ("nandmtd2_ReadChunkWithTagsFromNAND chunk %d data %p tags %p"
 	    TENDSTR), chunkInNAND, data, tags));
 
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
-	if (data && !tags)
-		retval = mtd->read(mtd, addr, dev->nDataBytesPerChunk,
+	if (dev->inbandTags) {
+
+		if (!data) {
+			localData = 1;
+			data = yaffs_GetTempBuffer(dev, __LINE__);
+		}
+
+
+	}
+
+
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
+	if (dev->inbandTags || (data && !tags))
+		retval = mtd->read(mtd, addr, dev->totalBytesPerChunk,
 				&dummy, data);
 	else if (tags) {
 		ops.mode = MTD_OOB_AUTO;
@@ -130,38 +140,42 @@ int nandmtd2_ReadChunkWithTagsFromNAND(yaffs_Device * dev, int chunkInNAND,
 		retval = mtd->read_oob(mtd, addr, &ops);
 	}
 #else
-	if (data && tags) {
-		if (dev->useNANDECC) {
-			retval =
-			    mtd->read_ecc(mtd, addr, dev->nDataBytesPerChunk,
+	if (!dev->inbandTags && data && tags) {
+
+		retval = mtd->read_ecc(mtd, addr, dev->nDataBytesPerChunk,
 					  &dummy, data, dev->spareBuffer,
 					  NULL);
-		} else {
-			retval =
-			    mtd->read_ecc(mtd, addr, dev->nDataBytesPerChunk,
-					  &dummy, data, dev->spareBuffer,
-					  NULL);
-		}
 	} else {
 		if (data)
 			retval =
 			    mtd->read(mtd, addr, dev->nDataBytesPerChunk, &dummy,
 				      data);
-		if (tags)
+		if (!dev->inbandTags && tags)
 			retval =
 			    mtd->read_oob(mtd, addr, mtd->oobsize, &dummy,
 					  dev->spareBuffer);
 	}
 #endif
 
-	memcpy(&pt, dev->spareBuffer, sizeof(pt));
 
-	if (tags)
-		yaffs_UnpackTags2(tags, &pt);
+	if (dev->inbandTags) {
+		if (tags) {
+			yaffs_PackedTags2TagsPart *pt2tp;
+			pt2tp = (yaffs_PackedTags2TagsPart *)&data[dev->nDataBytesPerChunk];
+			yaffs_UnpackTags2TagsPart(tags, pt2tp);
+		}
+	} else {
+		if (tags) {
+			memcpy(&pt, dev->spareBuffer, sizeof(pt));
+			yaffs_UnpackTags2(tags, &pt);
+		}
+	}
 
-	if(tags && retval == -EBADMSG && tags->eccResult == YAFFS_ECC_RESULT_NO_ERROR)
+	if (localData)
+		yaffs_ReleaseTempBuffer(dev, data, __LINE__);
+
+	if (tags && retval == -EBADMSG && tags->eccResult == YAFFS_ECC_RESULT_NO_ERROR)
 		tags->eccResult = YAFFS_ECC_RESULT_UNFIXED;
-
 	if (retval == 0)
 		return YAFFS_OK;
 	else
@@ -178,7 +192,7 @@ int nandmtd2_MarkNANDBlockBad(struct yaffs_DeviceStruct *dev, int blockNo)
 	retval =
 	    mtd->block_markbad(mtd,
 			       blockNo * dev->nChunksPerBlock *
-			       dev->nDataBytesPerChunk);
+			       dev->totalBytesPerChunk);
 
 	if (retval == 0)
 		return YAFFS_OK;
@@ -188,7 +202,7 @@ int nandmtd2_MarkNANDBlockBad(struct yaffs_DeviceStruct *dev, int blockNo)
 }
 
 int nandmtd2_QueryNANDBlock(struct yaffs_DeviceStruct *dev, int blockNo,
-			    yaffs_BlockState * state, int *sequenceNumber)
+			    yaffs_BlockState *state, __u32 *sequenceNumber)
 {
 	struct mtd_info *mtd = (struct mtd_info *)(dev->genericDevice);
 	int retval;
@@ -198,7 +212,7 @@ int nandmtd2_QueryNANDBlock(struct yaffs_DeviceStruct *dev, int blockNo,
 	retval =
 	    mtd->block_isbad(mtd,
 			     blockNo * dev->nChunksPerBlock *
-			     dev->nDataBytesPerChunk);
+			     dev->totalBytesPerChunk);
 
 	if (retval) {
 		T(YAFFS_TRACE_MTD, (TSTR("block is bad" TENDSTR)));

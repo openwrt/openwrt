@@ -28,12 +28,12 @@
  */
 
 #include "yportenv.h"
-//#include <linux/string.h>
+/* #include <linux/string.h> */
 
 /*
  * Qsort routine from Bentley & McIlroy's "Engineering a Sort Function".
  */
-#define swapcode(TYPE, parmi, parmj, n) { 		\
+#define swapcode(TYPE, parmi, parmj, n) do { 		\
 	long i = (n) / sizeof (TYPE); 			\
 	register TYPE *pi = (TYPE *) (parmi); 		\
 	register TYPE *pj = (TYPE *) (parmj); 		\
@@ -41,28 +41,29 @@
 		register TYPE	t = *pi;		\
 		*pi++ = *pj;				\
 		*pj++ = t;				\
-        } while (--i > 0);				\
-}
+	} while (--i > 0);				\
+} while (0)
 
 #define SWAPINIT(a, es) swaptype = ((char *)a - (char *)0) % sizeof(long) || \
-	es % sizeof(long) ? 2 : es == sizeof(long)? 0 : 1;
+	es % sizeof(long) ? 2 : es == sizeof(long) ? 0 : 1;
 
 static __inline void
 swapfunc(char *a, char *b, int n, int swaptype)
 {
 	if (swaptype <= 1)
-		swapcode(long, a, b, n)
+		swapcode(long, a, b, n);
 	else
-		swapcode(char, a, b, n)
+		swapcode(char, a, b, n);
 }
 
-#define swap(a, b)					\
+#define yswap(a, b) do {					\
 	if (swaptype == 0) {				\
 		long t = *(long *)(a);			\
 		*(long *)(a) = *(long *)(b);		\
 		*(long *)(b) = t;			\
 	} else						\
-		swapfunc(a, b, es, swaptype)
+		swapfunc(a, b, es, swaptype);		\
+} while (0)
 
 #define vecswap(a, b, n) 	if ((n) > 0) swapfunc(a, b, n, swaptype)
 
@@ -70,12 +71,12 @@ static __inline char *
 med3(char *a, char *b, char *c, int (*cmp)(const void *, const void *))
 {
 	return cmp(a, b) < 0 ?
-	       (cmp(b, c) < 0 ? b : (cmp(a, c) < 0 ? c : a ))
-              :(cmp(b, c) > 0 ? b : (cmp(a, c) < 0 ? a : c ));
+		(cmp(b, c) < 0 ? b : (cmp(a, c) < 0 ? c : a))
+		: (cmp(b, c) > 0 ? b : (cmp(a, c) < 0 ? a : c));
 }
 
 #ifndef min
-#define min(a,b) (((a) < (b)) ? (a) : (b))
+#define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
 void
@@ -92,7 +93,7 @@ loop:	SWAPINIT(a, es);
 		for (pm = (char *)a + es; pm < (char *) a + n * es; pm += es)
 			for (pl = pm; pl > (char *) a && cmp(pl - es, pl) > 0;
 			     pl -= es)
-				swap(pl, pl - es);
+				yswap(pl, pl - es);
 		return;
 	}
 	pm = (char *)a + (n / 2) * es;
@@ -107,7 +108,7 @@ loop:	SWAPINIT(a, es);
 		}
 		pm = med3(pl, pm, pn, cmp);
 	}
-	swap(a, pm);
+	yswap(a, pm);
 	pa = pb = (char *)a + es;
 
 	pc = pd = (char *)a + (n - 1) * es;
@@ -115,7 +116,7 @@ loop:	SWAPINIT(a, es);
 		while (pb <= pc && (r = cmp(pb, a)) <= 0) {
 			if (r == 0) {
 				swap_cnt = 1;
-				swap(pa, pb);
+				yswap(pa, pb);
 				pa += es;
 			}
 			pb += es;
@@ -123,14 +124,14 @@ loop:	SWAPINIT(a, es);
 		while (pb <= pc && (r = cmp(pc, a)) >= 0) {
 			if (r == 0) {
 				swap_cnt = 1;
-				swap(pc, pd);
+				yswap(pc, pd);
 				pd -= es;
 			}
 			pc -= es;
 		}
 		if (pb > pc)
 			break;
-		swap(pb, pc);
+		yswap(pb, pc);
 		swap_cnt = 1;
 		pb += es;
 		pc -= es;
@@ -139,7 +140,7 @@ loop:	SWAPINIT(a, es);
 		for (pm = (char *) a + es; pm < (char *) a + n * es; pm += es)
 			for (pl = pm; pl > (char *) a && cmp(pl - es, pl) > 0;
 			     pl -= es)
-				swap(pl, pl - es);
+				yswap(pl, pl - es);
 		return;
 	}
 
@@ -148,9 +149,11 @@ loop:	SWAPINIT(a, es);
 	vecswap(a, pb - r, r);
 	r = min((long)(pd - pc), (long)(pn - pd - es));
 	vecswap(pb, pn - r, r);
-	if ((r = pb - pa) > es)
+	r = pb - pa;
+	if (r > es)
 		yaffs_qsort(a, r / es, es, cmp);
-	if ((r = pd - pc) > es) {
+	r = pd - pc;
+	if (r > es) {
 		/* Iterate rather than recurse to save stack space */
 		a = pn - r;
 		n = r / es;

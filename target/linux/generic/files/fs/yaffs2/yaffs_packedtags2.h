@@ -33,6 +33,11 @@ typedef struct {
 	yaffs_ECCOther ecc;
 } yaffs_PackedTags2;
 
-void yaffs_PackTags2(yaffs_PackedTags2 * pt, const yaffs_ExtendedTags * t);
-void yaffs_UnpackTags2(yaffs_ExtendedTags * t, yaffs_PackedTags2 * pt);
+/* Full packed tags with ECC, used for oob tags */
+void yaffs_PackTags2(yaffs_PackedTags2 *pt, const yaffs_ExtendedTags *t);
+void yaffs_UnpackTags2(yaffs_ExtendedTags *t, yaffs_PackedTags2 *pt);
+
+/* Only the tags part (no ECC for use with inband tags */
+void yaffs_PackTags2TagsPart(yaffs_PackedTags2TagsPart *pt, const yaffs_ExtendedTags *t);
+void yaffs_UnpackTags2TagsPart(yaffs_ExtendedTags *t, yaffs_PackedTags2TagsPart *pt);
 #endif
