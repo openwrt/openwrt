@@ -204,15 +204,6 @@
  }
  
  static struct file_system_type yaffs2_fs_type = {
-@@ -3223,7 +3250,7 @@ static int yaffs_proc_read(char *page,
- 		buf += sprintf(buf,"\n");
- 	else {
- 		step-=2;
--		
-+
- 		down(&yaffs_context_lock);
- 
- 		/* Locate and print the Nth entry.  Order N-squared but N is small. */
 @@ -3240,7 +3267,7 @@ static int yaffs_proc_read(char *page,
  				buf = yaffs_dump_dev_part0(buf, dev);
  			} else
@@ -221,7 +212,7 @@
 +
  			break;
  		}
- 		up(&yaffs_context_lock);
+ 		mutex_unlock(&yaffs_context_lock);
 @@ -3267,7 +3294,7 @@ static int yaffs_stats_proc_read(char *p
  		int erasedChunks;
  
