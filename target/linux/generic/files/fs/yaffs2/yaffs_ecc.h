@@ -1,7 +1,7 @@
 /*
  * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
- * Copyright (C) 2002-2007 Aleph One Ltd.
+ * Copyright (C) 2002-2010 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
  * Created by Charles Manning <charles@aleph1.co.uk>
@@ -32,13 +32,13 @@ typedef struct {
 	unsigned lineParityPrime;
 } yaffs_ECCOther;
 
-void yaffs_ECCCalculate(const unsigned char *data, unsigned char *ecc);
-int yaffs_ECCCorrect(unsigned char *data, unsigned char *read_ecc,
+void yaffs_ecc_cacl(const unsigned char *data, unsigned char *ecc);
+int yaffs_ecc_correct(unsigned char *data, unsigned char *read_ecc,
 		const unsigned char *test_ecc);
 
-void yaffs_ECCCalculateOther(const unsigned char *data, unsigned nBytes,
+void yaffs_ecc_calc_other(const unsigned char *data, unsigned n_bytes,
 			yaffs_ECCOther *ecc);
-int yaffs_ECCCorrectOther(unsigned char *data, unsigned nBytes,
+int yaffs_ecc_correct_other(unsigned char *data, unsigned n_bytes,
 			yaffs_ECCOther *read_ecc,
 			const yaffs_ECCOther *test_ecc);
 #endif

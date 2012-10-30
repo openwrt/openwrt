@@ -1,7 +1,7 @@
 /*
  * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
- * Copyright (C) 2002-2007 Aleph One Ltd.
+ * Copyright (C) 2002-2010 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
  * Created by Charles Manning <charles@aleph1.co.uk>
@@ -20,18 +20,18 @@
 
 #include "yaffs_guts.h"
 
-int nandemul2k_WriteChunkWithTagsToNAND(struct yaffs_DeviceStruct *dev,
-					int chunkInNAND, const __u8 *data,
-					const yaffs_ExtendedTags *tags);
-int nandemul2k_ReadChunkWithTagsFromNAND(struct yaffs_DeviceStruct *dev,
-					 int chunkInNAND, __u8 *data,
-					 yaffs_ExtendedTags *tags);
-int nandemul2k_MarkNANDBlockBad(struct yaffs_DeviceStruct *dev, int blockNo);
-int nandemul2k_QueryNANDBlock(struct yaffs_DeviceStruct *dev, int blockNo,
-			      yaffs_BlockState *state, __u32 *sequenceNumber);
-int nandemul2k_EraseBlockInNAND(struct yaffs_DeviceStruct *dev,
-				int blockInNAND);
-int nandemul2k_InitialiseNAND(struct yaffs_DeviceStruct *dev);
+int nandemul2k_WriteChunkWithTagsToNAND(struct yaffs_dev_s *dev,
+					int nand_chunk, const __u8 *data,
+					const yaffs_ext_tags *tags);
+int nandemul2k_ReadChunkWithTagsFromNAND(struct yaffs_dev_s *dev,
+					 int nand_chunk, __u8 *data,
+					 yaffs_ext_tags *tags);
+int nandemul2k_MarkNANDBlockBad(struct yaffs_dev_s *dev, int block_no);
+int nandemul2k_QueryNANDBlock(struct yaffs_dev_s *dev, int block_no,
+			      yaffs_block_state_t *state, __u32 *seq_number);
+int nandemul2k_EraseBlockInNAND(struct yaffs_dev_s *dev,
+				int flash_block);
+int nandemul2k_InitialiseNAND(struct yaffs_dev_s *dev);
 int nandemul2k_GetBytesPerChunk(void);
 int nandemul2k_GetChunksPerBlock(void);
 int nandemul2k_GetNumberOfBlocks(void);

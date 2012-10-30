@@ -13,22 +13,18 @@
  * Note: Only YAFFS headers are LGPL, YAFFS C code is covered by GPL.
  */
 
-#ifndef __YAFFS_CHECKPTRW_H__
-#define __YAFFS_CHECKPTRW_H__
+#ifndef __YAFFS_ALLOCATOR_H__
+#define __YAFFS_ALLOCATOR_H__
 
 #include "yaffs_guts.h"
 
-int yaffs2_checkpt_open(yaffs_dev_t *dev, int forWriting);
+void yaffs_init_raw_tnodes_and_objs(yaffs_dev_t *dev);
+void yaffs_deinit_raw_tnodes_and_objs(yaffs_dev_t *dev);
 
-int yaffs2_checkpt_wr(yaffs_dev_t *dev, const void *data, int n_bytes);
+yaffs_tnode_t *yaffs_alloc_raw_tnode(yaffs_dev_t *dev);
+void yaffs_free_raw_tnode(yaffs_dev_t *dev, yaffs_tnode_t *tn);
 
-int yaffs2_checkpt_rd(yaffs_dev_t *dev, void *data, int n_bytes);
-
-int yaffs2_get_checkpt_sum(yaffs_dev_t *dev, __u32 *sum);
-
-int yaffs_checkpt_close(yaffs_dev_t *dev);
-
-int yaffs2_checkpt_invalidate_stream(yaffs_dev_t *dev);
-
+yaffs_obj_t *yaffs_alloc_raw_obj(yaffs_dev_t *dev);
+void yaffs_free_raw_obj(yaffs_dev_t *dev, yaffs_obj_t *obj);
 
 #endif

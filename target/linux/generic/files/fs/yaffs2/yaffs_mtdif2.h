@@ -1,7 +1,7 @@
 /*
  * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
- * Copyright (C) 2002-2007 Aleph One Ltd.
+ * Copyright (C) 2002-2010 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
  * Created by Charles Manning <charles@aleph1.co.uk>
@@ -17,13 +17,13 @@
 #define __YAFFS_MTDIF2_H__
 
 #include "yaffs_guts.h"
-int nandmtd2_WriteChunkWithTagsToNAND(yaffs_Device *dev, int chunkInNAND,
+int nandmtd2_WriteChunkWithTagsToNAND(yaffs_dev_t *dev, int nand_chunk,
 				const __u8 *data,
-				const yaffs_ExtendedTags *tags);
-int nandmtd2_ReadChunkWithTagsFromNAND(yaffs_Device *dev, int chunkInNAND,
-				__u8 *data, yaffs_ExtendedTags *tags);
-int nandmtd2_MarkNANDBlockBad(struct yaffs_DeviceStruct *dev, int blockNo);
-int nandmtd2_QueryNANDBlock(struct yaffs_DeviceStruct *dev, int blockNo,
-			yaffs_BlockState *state, __u32 *sequenceNumber);
+				const yaffs_ext_tags *tags);
+int nandmtd2_ReadChunkWithTagsFromNAND(yaffs_dev_t *dev, int nand_chunk,
+				__u8 *data, yaffs_ext_tags *tags);
+int nandmtd2_MarkNANDBlockBad(struct yaffs_dev_s *dev, int block_no);
+int nandmtd2_QueryNANDBlock(struct yaffs_dev_s *dev, int block_no,
+			yaffs_block_state_t *state, __u32 *seq_number);
 
 #endif
