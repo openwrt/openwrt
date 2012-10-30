@@ -1,0 +1,90 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2011-2012 OpenWrt.org
+START=80
+
+resolve_ifname() {
+	grep -qs "^ *$1:" /proc/net/dev && {
+		append ifaces "$1"
+	}
+}
+
+resolve_network() {
+	local ifn
+	fixup_interface "$1"
+	config_get ifn "$1" ifname
+	[ -z "$ifn" ] && return 1
+	resolve_ifname "$ifn"
+}
+
+start_6relayd() {
+	local cfg="$1"
+
+	local args="-S"
+	local ifaces=""
+
+	config_get proto "$cfg" proto
+	[[ "$proto" == 6relay ]] || return 0
+
+	SERVICE_DAEMONIZE=1
+	SERVICE_WRITE_PID=1
+	SERVICE_PID_FILE="/var/run/6relayd-$cfg.pid"
+	[ -f "$SERVICE_PID_FILE" ] && {
+		if grep -q 6relayd "/proc/$(cat $SERVICE_PID_FILE)/cmdline"; then
+			return 0
+		else
+			rm -f "$SERVICE_PID_FILE"
+		fi
+	}
+
+	local net networks
+	config_get networks "$cfg" network
+	for net in $networks; do
+		resolve_network "$net" || {
+			return 1
+		}
+	done
+
+	local ifn ifnames
+	config_get ifnames "$cfg" ifname
+	for ifn in $ifnames; do
+		resolve_ifname "$ifn"
+	done
+
+	local forward_rd # = 1
+	config_get_bool forward_rd "$cfg" forward_rd 1
+	[ $forward_rd -eq 1 ] && append args "-R"
+
+	local forward_dhcpv6 # = 1
+	local forward_dhcpv6_mode # = relay
+	config_get_bool forward_dhcpv6 "$cfg" forward_dhcpv6 1
+	config_get forward_dhcpv6_mode "$cfg" forward_dhcpv6_mode
+	[ $forward_dhcpv6 -eq 1 ] && append args "-D$forward_dhcpv6_mode"
+
+	local forward_ndp # = 1
+	config_get_bool forward_ndp "$cfg" forward_ndp 1
+	[ $forward_ndp -eq 1 ] && append args "-N"
+
+	local configure_routes # = 1
+	config_get_bool configure_routes "$cfg" configure_routes 1
+	[ $configure_routes -eq 1 ] && append args "-r"
+
+	local always_rewrite_dns # = 0
+	config_get_bool always_rewrite_dns "$cfg" always_rewrite_dns 0
+	[ $always_rewrite_dns -eq 1 ] && append args "-n"
+
+	service_start /usr/sbin/6relayd $args $ifaces
+}
+
+stop() {
+	for pid in /var/run/6relayd-*.pid; do
+		SERVICE_PID_FILE="$pid"
+		service_stop /usr/sbin/6relayd
+		rm -f "$SERVICE_PID_FILE"
+	done
+}
+
+start() {
+	include /lib/network
+	config_load network
+	config_foreach start_6relayd interface
+}
