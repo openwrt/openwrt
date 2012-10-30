@@ -12,16 +12,17 @@
  */
 
 const char *yaffs_nand_c_version =
-    "$Id: yaffs_nand.c,v 1.7 2007-02-14 01:09:06 wookey Exp $";
+	"$Id: yaffs_nand.c,v 1.10 2009-03-06 17:20:54 wookey Exp $";
 
 #include "yaffs_nand.h"
 #include "yaffs_tagscompat.h"
 #include "yaffs_tagsvalidity.h"
 
+#include "yaffs_getblockinfo.h"
 
-int yaffs_ReadChunkWithTagsFromNAND(yaffs_Device * dev, int chunkInNAND,
-					   __u8 * buffer,
-					   yaffs_ExtendedTags * tags)
+int yaffs_ReadChunkWithTagsFromNAND(yaffs_Device *dev, int chunkInNAND,
+					   __u8 *buffer,
+					   yaffs_ExtendedTags *tags)
 {
 	int result;
 	yaffs_ExtendedTags localTags;
@@ -29,7 +30,7 @@ int yaffs_ReadChunkWithTagsFromNAND(yaffs_Device * dev, int chunkInNAND,
 	int realignedChunkInNAND = chunkInNAND - dev->chunkOffset;
 
 	/* If there are no tags provided, use local tags to get prioritised gc working */
-	if(!tags)
+	if (!tags)
 		tags = &localTags;
 
 	if (dev->readChunkWithTagsFromNAND)
@@ -40,20 +41,20 @@ int yaffs_ReadChunkWithTagsFromNAND(yaffs_Device * dev, int chunkInNAND,
 									realignedChunkInNAND,
 									buffer,
 									tags);
-	if(tags &&
-	   tags->eccResult > YAFFS_ECC_RESULT_NO_ERROR){
+	if (tags &&
+	   tags->eccResult > YAFFS_ECC_RESULT_NO_ERROR) {
 
 		yaffs_BlockInfo *bi = yaffs_GetBlockInfo(dev, chunkInNAND/dev->nChunksPerBlock);
-                yaffs_HandleChunkError(dev,bi);
+		yaffs_HandleChunkError(dev, bi);
 	}
 
 	return result;
 }
 
-int yaffs_WriteChunkWithTagsToNAND(yaffs_Device * dev,
+int yaffs_WriteChunkWithTagsToNAND(yaffs_Device *dev,
 						   int chunkInNAND,
-						   const __u8 * buffer,
-						   yaffs_ExtendedTags * tags)
+						   const __u8 *buffer,
+						   yaffs_ExtendedTags *tags)
 {
 	chunkInNAND -= dev->chunkOffset;
 
@@ -84,7 +85,7 @@ int yaffs_WriteChunkWithTagsToNAND(yaffs_Device * dev,
 								       tags);
 }
 
-int yaffs_MarkBlockBad(yaffs_Device * dev, int blockNo)
+int yaffs_MarkBlockBad(yaffs_Device *dev, int blockNo)
 {
 	blockNo -= dev->blockOffset;
 
@@ -95,10 +96,10 @@ int yaffs_MarkBlockBad(yaffs_Device * dev, int blockNo)
 		return yaffs_TagsCompatabilityMarkNANDBlockBad(dev, blockNo);
 }
 
-int yaffs_QueryInitialBlockState(yaffs_Device * dev,
+int yaffs_QueryInitialBlockState(yaffs_Device *dev,
 						 int blockNo,
-						 yaffs_BlockState * state,
-						 unsigned *sequenceNumber)
+						 yaffs_BlockState *state,
+						 __u32 *sequenceNumber)
 {
 	blockNo -= dev->blockOffset;
 

@@ -13,23 +13,22 @@
  * Note: Only YAFFS headers are LGPL, YAFFS C code is covered by GPL.
  */
 
-#ifndef __YAFFS_CHECKPTRW_H__
-#define __YAFFS_CHECKPTRW_H__
+#ifndef __YAFFS_GETBLOCKINFO_H__
+#define __YAFFS_GETBLOCKINFO_H__
 
 #include "yaffs_guts.h"
 
-int yaffs_CheckpointOpen(yaffs_Device *dev, int forWriting);
-
-int yaffs_CheckpointWrite(yaffs_Device *dev, const void *data, int nBytes);
-
-int yaffs_CheckpointRead(yaffs_Device *dev, void *data, int nBytes);
-
-int yaffs_GetCheckpointSum(yaffs_Device *dev, __u32 *sum);
-
-int yaffs_CheckpointClose(yaffs_Device *dev);
-
-int yaffs_CheckpointInvalidateStream(yaffs_Device *dev);
-
+/* Function to manipulate block info */
+static Y_INLINE yaffs_BlockInfo *yaffs_GetBlockInfo(yaffs_Device * dev, int blk)
+{
+	if (blk < dev->internalStartBlock || blk > dev->internalEndBlock) {
+		T(YAFFS_TRACE_ERROR,
+		  (TSTR
+		   ("**>> yaffs: getBlockInfo block %d is not valid" TENDSTR),
+		   blk));
+		YBUG();
+	}
+	return &dev->blockInfo[blk - dev->internalStartBlock];
+}
 
 #endif
-

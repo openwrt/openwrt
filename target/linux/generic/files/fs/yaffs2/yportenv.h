@@ -17,17 +17,28 @@
 #ifndef __YPORTENV_H__
 #define __YPORTENV_H__
 
+/*
+ * Define the MTD version in terms of Linux Kernel versions
+ * This allows yaffs to be used independantly of the kernel
+ * as well as with it.
+ */
+
+#define MTD_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
+
 #if defined CONFIG_YAFFS_WINCE
 
 #include "ywinceenv.h"
 
-#elif  defined __KERNEL__
+#elif defined __KERNEL__
 
 #include "moduleconfig.h"
 
 /* Linux kernel */
+
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19))
+#define MTD_VERSION_CODE LINUX_VERSION_CODE
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19))
 #include <linux/config.h>
 #endif
 #include <linux/kernel.h>
@@ -40,12 +51,13 @@
 #define YCHAR char
 #define YUCHAR unsigned char
 #define _Y(x)     x
-#define yaffs_strcpy(a,b)    strcpy(a,b)
-#define yaffs_strncpy(a,b,c) strncpy(a,b,c)
-#define yaffs_strncmp(a,b,c) strncmp(a,b,c)
-#define yaffs_strlen(s)	     strlen(s)
-#define yaffs_sprintf	     sprintf
-#define yaffs_toupper(a)     toupper(a)
+#define yaffs_strcat(a, b)     strcat(a, b)
+#define yaffs_strcpy(a, b)     strcpy(a, b)
+#define yaffs_strncpy(a, b, c) strncpy(a, b, c)
+#define yaffs_strncmp(a, b, c) strncmp(a, b, c)
+#define yaffs_strlen(s)	       strlen(s)
+#define yaffs_sprintf	       sprintf
+#define yaffs_toupper(a)       toupper(a)
 
 #define Y_INLINE inline
 
@@ -53,19 +65,19 @@
 #define YAFFS_LOSTNFOUND_PREFIX		"obj"
 
 /* #define YPRINTF(x) printk x */
-#define YMALLOC(x) kmalloc(x,GFP_KERNEL)
+#define YMALLOC(x) kmalloc(x, GFP_NOFS)
 #define YFREE(x)   kfree(x)
 #define YMALLOC_ALT(x) vmalloc(x)
 #define YFREE_ALT(x)   vfree(x)
 #define YMALLOC_DMA(x) YMALLOC(x)
 
-// KR - added for use in scan so processes aren't blocked indefinitely.
+/* KR - added for use in scan so processes aren't blocked indefinitely. */
 #define YYIELD() schedule()
 
 #define YAFFS_ROOT_MODE			0666
 #define YAFFS_LOSTNFOUND_MODE		0666
 
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,5,0))
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 0))
 #define Y_CURRENT_TIME CURRENT_TIME.tv_sec
 #define Y_TIME_CONVERT(x) (x).tv_sec
 #else
@@ -73,11 +85,12 @@
 #define Y_TIME_CONVERT(x) (x)
 #endif
 
-#define yaffs_SumCompare(x,y) ((x) == (y))
-#define yaffs_strcmp(a,b) strcmp(a,b)
+#define yaffs_SumCompare(x, y) ((x) == (y))
+#define yaffs_strcmp(a, b) strcmp(a, b)
 
 #define TENDSTR "\n"
 #define TSTR(x) KERN_WARNING x
+#define TCONT(x) x
 #define TOUT(p) printk p
 
 #define yaffs_trace(mask, fmt, args...) \
@@ -89,6 +102,8 @@
 	({ int x = __builtin_choose_expr(assertion, 0, (void)0); (void) x; })
 
 #elif defined CONFIG_YAFFS_DIRECT
+
+#define MTD_VERSION_CODE MTD_VERSION(2, 6, 22)
 
 /* Direct interface */
 #include "ydirectenv.h"
@@ -111,11 +126,12 @@
 #define YCHAR char
 #define YUCHAR unsigned char
 #define _Y(x)     x
-#define yaffs_strcpy(a,b)    strcpy(a,b)
-#define yaffs_strncpy(a,b,c) strncpy(a,b,c)
-#define yaffs_strlen(s)	     strlen(s)
-#define yaffs_sprintf	     sprintf
-#define yaffs_toupper(a)     toupper(a)
+#define yaffs_strcat(a, b)     strcat(a, b)
+#define yaffs_strcpy(a, b)     strcpy(a, b)
+#define yaffs_strncpy(a, b, c) strncpy(a, b, c)
+#define yaffs_strlen(s)	       strlen(s)
+#define yaffs_sprintf	       sprintf
+#define yaffs_toupper(a)       toupper(a)
 
 #define Y_INLINE inline
 
@@ -133,8 +149,8 @@
 #define YAFFS_ROOT_MODE				0666
 #define YAFFS_LOSTNFOUND_MODE		0666
 
-#define yaffs_SumCompare(x,y) ((x) == (y))
-#define yaffs_strcmp(a,b) strcmp(a,b)
+#define yaffs_SumCompare(x, y) ((x) == (y))
+#define yaffs_strcmp(a, b) strcmp(a, b)
 
 #else
 /* Should have specified a configuration type */
@@ -178,10 +194,10 @@ extern unsigned int yaffs_wr_attempts;
 #define YAFFS_TRACE_ALWAYS		0xF0000000
 
 
-#define T(mask,p) do{ if((mask) & (yaffs_traceMask | YAFFS_TRACE_ALWAYS)) TOUT(p);} while(0)
+#define T(mask, p) do { if ((mask) & (yaffs_traceMask | YAFFS_TRACE_ALWAYS)) TOUT(p); } while (0)
 
-#ifndef CONFIG_YAFFS_WINCE
-#define YBUG() T(YAFFS_TRACE_BUG,(TSTR("==>> yaffs bug: " __FILE__ " %d" TENDSTR),__LINE__))
+#ifndef YBUG
+#define YBUG() do {T(YAFFS_TRACE_BUG, (TSTR("==>> yaffs bug: " __FILE__ " %d" TENDSTR), __LINE__)); } while (0)
 #endif
 
 #endif

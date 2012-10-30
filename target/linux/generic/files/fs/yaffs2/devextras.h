@@ -14,194 +14,135 @@
  */
 
 /*
- * This file is just holds extra declarations used during development.
- * Most of these are from kernel includes placed here so we can use them in
- * applications.
+ * This file is just holds extra declarations of macros that would normally
+ * be providesd in the Linux kernel. These macros have been written from
+ * scratch but are functionally equivalent to the Linux ones.
  *
  */
 
 #ifndef __EXTRAS_H__
 #define __EXTRAS_H__
 
-#if defined WIN32
-#define __inline__ __inline
-#define new newHack
-#endif
 
-#if !(defined __KERNEL__) || (defined WIN32)
+#if !(defined __KERNEL__)
 
-/* User space defines */
-
+/* Definition of types */
 typedef unsigned char __u8;
 typedef unsigned short __u16;
 typedef unsigned __u32;
 
+#endif
+
 /*
- * Simple doubly linked list implementation.
- *
- * Some of the internal functions ("__xxx") are useful when
- * manipulating whole lists rather than single entries, as
- * sometimes we already know the next/prev entries and we can
- * generate better code by using them directly rather than
- * using the generic single-entry routines.
+ * This is a simple doubly linked list implementation that matches the
+ * way the Linux kernel doubly linked list implementation works.
  */
 
-#define prefetch(x) 1
-
-struct list_head {
-	struct list_head *next, *prev;
+struct ylist_head {
+	struct ylist_head *next; /* next in chain */
+	struct ylist_head *prev; /* previous in chain */
 };
 
-#define LIST_HEAD_INIT(name) { &(name), &(name) }
 
-#define LIST_HEAD(name) \
-	struct list_head name = LIST_HEAD_INIT(name)
+/* Initialise a static list */
+#define YLIST_HEAD(name) \
+struct ylist_head name = { &(name), &(name)}
 
-#define INIT_LIST_HEAD(ptr) do { \
-	(ptr)->next = (ptr); (ptr)->prev = (ptr); \
+
+
+/* Initialise a list head to an empty list */
+#define YINIT_LIST_HEAD(p) \
+do { \
+	(p)->next = (p);\
+	(p)->prev = (p); \
 } while (0)
 
-/*
- * Insert a new entry between two known consecutive entries.
- *
- * This is only for internal list manipulation where we know
- * the prev/next entries already!
- */
-static __inline__ void __list_add(struct list_head *new,
-				  struct list_head *prev,
-				  struct list_head *next)
+
+/* Add an element to a list */
+static __inline__ void ylist_add(struct ylist_head *newEntry,
+				struct ylist_head *list)
 {
-	next->prev = new;
-	new->next = next;
-	new->prev = prev;
-	prev->next = new;
+	struct ylist_head *listNext = list->next;
+
+	list->next = newEntry;
+	newEntry->prev = list;
+	newEntry->next = listNext;
+	listNext->prev = newEntry;
+
 }
 
-/**
- * list_add - add a new entry
- * @new: new entry to be added
- * @head: list head to add it after
- *
- * Insert a new entry after the specified head.
- * This is good for implementing stacks.
- */
-static __inline__ void list_add(struct list_head *new, struct list_head *head)
+static __inline__ void ylist_add_tail(struct ylist_head *newEntry,
+				 struct ylist_head *list)
 {
-	__list_add(new, head, head->next);
+	struct ylist_head *listPrev = list->prev;
+
+	list->prev = newEntry;
+	newEntry->next = list;
+	newEntry->prev = listPrev;
+	listPrev->next = newEntry;
+
 }
 
-/**
- * list_add_tail - add a new entry
- * @new: new entry to be added
- * @head: list head to add it before
- *
- * Insert a new entry before the specified head.
- * This is useful for implementing queues.
- */
-static __inline__ void list_add_tail(struct list_head *new,
-				     struct list_head *head)
+
+/* Take an element out of its current list, with or without
+ * reinitialising the links.of the entry*/
+static __inline__ void ylist_del(struct ylist_head *entry)
 {
-	__list_add(new, head->prev, head);
+	struct ylist_head *listNext = entry->next;
+	struct ylist_head *listPrev = entry->prev;
+
+	listNext->prev = listPrev;
+	listPrev->next = listNext;
+
 }
 
-/*
- * Delete a list entry by making the prev/next entries
- * point to each other.
- *
- * This is only for internal list manipulation where we know
- * the prev/next entries already!
- */
-static __inline__ void __list_del(struct list_head *prev,
-				  struct list_head *next)
+static __inline__ void ylist_del_init(struct ylist_head *entry)
 {
-	next->prev = prev;
-	prev->next = next;
+	ylist_del(entry);
+	entry->next = entry->prev = entry;
 }
 
-/**
- * list_del - deletes entry from list.
- * @entry: the element to delete from the list.
- * Note: list_empty on entry does not return true after this, the entry is
- * in an undefined state.
- */
-static __inline__ void list_del(struct list_head *entry)
+
+/* Test if the list is empty */
+static __inline__ int ylist_empty(struct ylist_head *entry)
 {
-	__list_del(entry->prev, entry->next);
+	return (entry->next == entry);
 }
 
-/**
- * list_del_init - deletes entry from list and reinitialize it.
- * @entry: the element to delete from the list.
+
+/* ylist_entry takes a pointer to a list entry and offsets it to that
+ * we can find a pointer to the object it is embedded in.
  */
-static __inline__ void list_del_init(struct list_head *entry)
-{
-	__list_del(entry->prev, entry->next);
-	INIT_LIST_HEAD(entry);
-}
 
-/**
- * list_empty - tests whether a list is empty
- * @head: the list to test.
+
+#define ylist_entry(entry, type, member) \
+	((type *)((char *)(entry)-(unsigned long)(&((type *)NULL)->member)))
+
+
+/* ylist_for_each and list_for_each_safe  iterate over lists.
+ * ylist_for_each_safe uses temporary storage to make the list delete safe
  */
-static __inline__ int list_empty(struct list_head *head)
-{
-	return head->next == head;
-}
 
-/**
- * list_splice - join two lists
- * @list: the new list to add.
- * @head: the place to add it in the first list.
- */
-static __inline__ void list_splice(struct list_head *list,
-				   struct list_head *head)
-{
-	struct list_head *first = list->next;
+#define ylist_for_each(itervar, list) \
+	for (itervar = (list)->next; itervar != (list); itervar = itervar->next)
 
-	if (first != list) {
-		struct list_head *last = list->prev;
-		struct list_head *at = head->next;
+#define ylist_for_each_safe(itervar, saveVar, list) \
+	for (itervar = (list)->next, saveVar = (list)->next->next; \
+		itervar != (list); itervar = saveVar, saveVar = saveVar->next)
 
-		first->prev = head;
-		head->next = first;
 
-		last->next = at;
-		at->prev = last;
-	}
-}
+#if !(defined __KERNEL__)
 
-/**
- * list_entry - get the struct for this entry
- * @ptr:	the &struct list_head pointer.
- * @type:	the type of the struct this is embedded in.
- * @member:	the name of the list_struct within the struct.
- */
-#define list_entry(ptr, type, member) \
-	((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
 
-/**
- * list_for_each	-	iterate over a list
- * @pos:	the &struct list_head to use as a loop counter.
- * @head:	the head for your list.
- */
-#define list_for_each(pos, head) \
-	for (pos = (head)->next, prefetch(pos->next); pos != (head); \
-        	pos = pos->next, prefetch(pos->next))
+#ifndef WIN32
+#include <sys/stat.h>
+#endif
 
-/**
- * list_for_each_safe	-	iterate over a list safe against removal
- *                              of list entry
- * @pos:	the &struct list_head to use as a loop counter.
- * @n:		another &struct list_head to use as temporary storage
- * @head:	the head for your list.
- */
-#define list_for_each_safe(pos, n, head) \
-	for (pos = (head)->next, n = pos->next; pos != (head); \
-		pos = n, n = pos->next)
 
-/*
- * File types
- */
+#ifdef CONFIG_YAFFS_PROVIDE_DEFS
+/* File types */
+
+
 #define DT_UNKNOWN	0
 #define DT_FIFO		1
 #define DT_CHR		2
@@ -211,6 +152,7 @@ static __inline__ void list_splice(struct list_head *list,
 #define DT_LNK		10
 #define DT_SOCK		12
 #define DT_WHT		14
+
 
 #ifndef WIN32
 #include <sys/stat.h>
@@ -227,10 +169,6 @@ static __inline__ void list_splice(struct list_head *list,
 #define ATTR_ATIME	16
 #define ATTR_MTIME	32
 #define ATTR_CTIME	64
-#define ATTR_ATIME_SET	128
-#define ATTR_MTIME_SET	256
-#define ATTR_FORCE	512	/* Not a change, but a change it */
-#define ATTR_ATTR_FLAG	1024
 
 struct iattr {
 	unsigned int ia_valid;
@@ -244,21 +182,15 @@ struct iattr {
 	unsigned int ia_attr_flags;
 };
 
-#define KERN_DEBUG
+#endif
 
 #else
 
-#ifndef WIN32
 #include <linux/types.h>
-#include <linux/list.h>
 #include <linux/fs.h>
 #include <linux/stat.h>
-#endif
 
 #endif
 
-#if defined WIN32
-#undef new
-#endif
 
 #endif

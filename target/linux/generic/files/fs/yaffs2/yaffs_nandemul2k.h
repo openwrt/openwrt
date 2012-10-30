@@ -21,14 +21,14 @@
 #include "yaffs_guts.h"
 
 int nandemul2k_WriteChunkWithTagsToNAND(struct yaffs_DeviceStruct *dev,
-					int chunkInNAND, const __u8 * data,
-					yaffs_ExtendedTags * tags);
+					int chunkInNAND, const __u8 *data,
+					const yaffs_ExtendedTags *tags);
 int nandemul2k_ReadChunkWithTagsFromNAND(struct yaffs_DeviceStruct *dev,
-					 int chunkInNAND, __u8 * data,
-					 yaffs_ExtendedTags * tags);
+					 int chunkInNAND, __u8 *data,
+					 yaffs_ExtendedTags *tags);
 int nandemul2k_MarkNANDBlockBad(struct yaffs_DeviceStruct *dev, int blockNo);
 int nandemul2k_QueryNANDBlock(struct yaffs_DeviceStruct *dev, int blockNo,
-			      yaffs_BlockState * state, int *sequenceNumber);
+			      yaffs_BlockState *state, __u32 *sequenceNumber);
 int nandemul2k_EraseBlockInNAND(struct yaffs_DeviceStruct *dev,
 				int blockInNAND);
 int nandemul2k_InitialiseNAND(struct yaffs_DeviceStruct *dev);

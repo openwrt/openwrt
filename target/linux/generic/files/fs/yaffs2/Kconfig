@@ -5,7 +5,7 @@
 config YAFFS_FS
 	tristate "YAFFS2 file system support"
 	default n
-	depends on MTD
+	depends on MTD_BLOCK
 	select YAFFS_YAFFS1
 	select YAFFS_YAFFS2
 	help
@@ -43,7 +43,8 @@ config YAFFS_9BYTE_TAGS
 	  format that you need to continue to support.  New data written
 	  also uses the older-style format.  Note: Use of this option
 	  generally requires that MTD's oob layout be adjusted to use the
-	  older-style format.  See notes on tags formats and MTD versions.
+	  older-style format.  See notes on tags formats and MTD versions
+	  in yaffs_mtdif1.c.
 
 	  If unsure, say N.
 
@@ -109,26 +110,6 @@ config YAFFS_DISABLE_LAZY_LOAD
 
 	  If unsure, say N.
 
-config YAFFS_CHECKPOINT_RESERVED_BLOCKS
-	int "Reserved blocks for checkpointing"
-	depends on YAFFS_YAFFS2
-	default 10
-	help
-          Give the number of Blocks to reserve for checkpointing.
-	  Checkpointing saves the state at unmount so that mounting is
-	  much faster as a scan of all the flash to regenerate this state
-	  is not needed.  These Blocks are reserved per partition, so if
-	  you have very small partitions the default (10) may be a mess
-	  for you.  You can set this value to 0, but that does not mean
-	  checkpointing is disabled at all. There only won't be any
-	  specially reserved blocks for checkpointing, so if there is
-	  enough free space on the filesystem, it will be used for
-	  checkpointing.
-
-	  If unsure, leave at default (10), but don't wonder if there are
-	  always 2MB used on your large page device partition (10 x 2k
-	  pagesize). When using small partitions or when being very small
-	  on space, you probably want to set this to zero.
 
 config YAFFS_DISABLE_WIDE_TNODES
 	bool "Turn off wide tnodes"

@@ -12,7 +12,7 @@
  */
 
 const char *yaffs_mtdif_c_version =
-    "$Id: yaffs_mtdif.c,v 1.19 2007-02-14 01:09:06 wookey Exp $";
+	"$Id: yaffs_mtdif.c,v 1.22 2009-03-06 17:20:51 wookey Exp $";
 
 #include "yportenv.h"
 
@@ -24,7 +24,7 @@ const char *yaffs_mtdif_c_version =
 #include "linux/time.h"
 #include "linux/mtd/nand.h"
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18))
+#if (MTD_VERSION_CODE < MTD_VERSION(2, 6, 18))
 static struct nand_oobinfo yaffs_oobinfo = {
 	.useecc = 1,
 	.eccbytes = 6,
@@ -36,7 +36,7 @@ static struct nand_oobinfo yaffs_noeccinfo = {
 };
 #endif
 
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+#if (MTD_VERSION_CODE > MTD_VERSION(2, 6, 17))
 static inline void translate_spare2oob(const yaffs_Spare *spare, __u8 *oob)
 {
 	oob[0] = spare->tagByte0;
@@ -45,8 +45,8 @@ static inline void translate_spare2oob(const yaffs_Spare *spare, __u8 *oob)
 	oob[3] = spare->tagByte3;
 	oob[4] = spare->tagByte4;
 	oob[5] = spare->tagByte5 & 0x3f;
-	oob[5] |= spare->blockStatus == 'Y' ? 0: 0x80;
-	oob[5] |= spare->pageStatus == 0 ? 0: 0x40;
+	oob[5] |= spare->blockStatus == 'Y' ? 0 : 0x80;
+	oob[5] |= spare->pageStatus == 0 ? 0 : 0x40;
 	oob[6] = spare->tagByte6;
 	oob[7] = spare->tagByte7;
 }
@@ -71,18 +71,18 @@ static inline void translate_oob2spare(yaffs_Spare *spare, __u8 *oob)
 }
 #endif
 
-int nandmtd_WriteChunkToNAND(yaffs_Device * dev, int chunkInNAND,
-			     const __u8 * data, const yaffs_Spare * spare)
+int nandmtd_WriteChunkToNAND(yaffs_Device *dev, int chunkInNAND,
+			     const __u8 *data, const yaffs_Spare *spare)
 {
 	struct mtd_info *mtd = (struct mtd_info *)(dev->genericDevice);
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+#if (MTD_VERSION_CODE > MTD_VERSION(2, 6, 17))
 	struct mtd_oob_ops ops;
 #endif
 	size_t dummy;
 	int retval = 0;
 
 	loff_t addr = ((loff_t) chunkInNAND) * dev->nDataBytesPerChunk;
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+#if (MTD_VERSION_CODE > MTD_VERSION(2, 6, 17))
 	__u8 spareAsBytes[8]; /* OOB */
 
 	if (data && !spare)
@@ -135,18 +135,18 @@ int nandmtd_WriteChunkToNAND(yaffs_Device * dev, int chunkInNAND,
 		return YAFFS_FAIL;
 }
 
-int nandmtd_ReadChunkFromNAND(yaffs_Device * dev, int chunkInNAND, __u8 * data,
-			      yaffs_Spare * spare)
+int nandmtd_ReadChunkFromNAND(yaffs_Device *dev, int chunkInNAND, __u8 *data,
+			      yaffs_Spare *spare)
 {
 	struct mtd_info *mtd = (struct mtd_info *)(dev->genericDevice);
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+#if (MTD_VERSION_CODE > MTD_VERSION(2, 6, 17))
 	struct mtd_oob_ops ops;
 #endif
 	size_t dummy;
 	int retval = 0;
 
 	loff_t addr = ((loff_t) chunkInNAND) * dev->nDataBytesPerChunk;
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+#if (MTD_VERSION_CODE > MTD_VERSION(2, 6, 17))
 	__u8 spareAsBytes[8]; /* OOB */
 
 	if (data && !spare)
@@ -205,7 +205,7 @@ int nandmtd_ReadChunkFromNAND(yaffs_Device * dev, int chunkInNAND, __u8 * data,
 		return YAFFS_FAIL;
 }
 
-int nandmtd_EraseBlockInNAND(yaffs_Device * dev, int blockNumber)
+int nandmtd_EraseBlockInNAND(yaffs_Device *dev, int blockNumber)
 {
 	struct mtd_info *mtd = (struct mtd_info *)(dev->genericDevice);
 	__u32 addr =
@@ -234,7 +234,7 @@ int nandmtd_EraseBlockInNAND(yaffs_Device * dev, int blockNumber)
 		return YAFFS_FAIL;
 }
 
-int nandmtd_InitialiseNAND(yaffs_Device * dev)
+int nandmtd_InitialiseNAND(yaffs_Device *dev)
 {
 	return YAFFS_OK;
 }

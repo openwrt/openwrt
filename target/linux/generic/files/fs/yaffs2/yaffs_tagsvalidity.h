@@ -19,6 +19,6 @@
 
 #include "yaffs_guts.h"
 
-void yaffs_InitialiseTags(yaffs_ExtendedTags * tags);
-int yaffs_ValidateTags(yaffs_ExtendedTags * tags);
+void yaffs_InitialiseTags(yaffs_ExtendedTags *tags);
+int yaffs_ValidateTags(yaffs_ExtendedTags *tags);
 #endif

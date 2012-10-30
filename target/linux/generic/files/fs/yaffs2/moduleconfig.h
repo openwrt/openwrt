@@ -27,12 +27,12 @@
 
 /* Default: Not selected */
 /* Meaning: Yaffs does its own ECC, rather than using MTD ECC */
-//#define CONFIG_YAFFS_DOES_ECC
+/* #define CONFIG_YAFFS_DOES_ECC */
 
 /* Default: Not selected */
 /* Meaning: ECC byte order is 'wrong'.  Only meaningful if */
 /*          CONFIG_YAFFS_DOES_ECC is set */
-//#define CONFIG_YAFFS_ECC_WRONG_ORDER
+/* #define CONFIG_YAFFS_ECC_WRONG_ORDER */
 
 /* Default: Selected */
 /* Meaning: Disables testing whether chunks are erased before writing to them*/
@@ -54,11 +54,11 @@ that you need to continue to support.  New data written also uses the
 older-style format.
 Note: Use of this option generally requires that MTD's oob layout be
 adjusted to use the older-style format.  See notes on tags formats and
-MTD versions.
+MTD versions in yaffs_mtdif1.c.
 */
 /* Default: Not selected */
 /* Meaning: Use older-style on-NAND data format with pageStatus byte */
-#define CONFIG_YAFFS_9BYTE_TAGS
+/* #define CONFIG_YAFFS_9BYTE_TAGS */
 
 #endif /* YAFFS_OUT_OF_TREE */
 
