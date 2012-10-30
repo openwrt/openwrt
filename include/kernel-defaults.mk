@@ -37,15 +37,15 @@ ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
     endef
   else
     ifeq ($(strip $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)),"")
-define Kernel/Prepare/Default
+      define Kernel/Prepare/Default
 	git clone $(CONFIG_KERNEL_GIT_CLONE_URI) $(LINUX_DIR)
-    endef
-  else
-    define Kernel/Prepare/Default
+      endef
+    else
+      define Kernel/Prepare/Default
 	git clone --reference $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY) $(CONFIG_KERNEL_GIT_CLONE_URI) $(LINUX_DIR)
-    endef
+      endef
+    endif
   endif
-endif
 else
   define Kernel/Prepare/Default
 	mkdir -p $(KERNEL_BUILD_DIR)
