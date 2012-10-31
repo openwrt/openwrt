@@ -19,7 +19,7 @@ resolve_network() {
 start_6relayd() {
 	local cfg="$1"
 
-	local args="-S"
+	local args="-S -l"
 	local ifaces=""
 
 	config_get proto "$cfg" proto
