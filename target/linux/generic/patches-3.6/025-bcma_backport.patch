@@ -626,7 +626,7 @@
  static void bcma_release_core_dev(struct device *dev)
  {
  	struct bcma_device *core = container_of(dev, struct bcma_device, dev);
-@@ -136,14 +149,31 @@ static int bcma_register_cores(struct bc
+@@ -136,6 +149,22 @@ static int bcma_register_cores(struct bc
  		dev_id++;
  	}
  
@@ -649,18 +649,7 @@
  	return 0;
  }
  
- static void bcma_unregister_cores(struct bcma_bus *bus)
- {
--	struct bcma_device *core;
-+	struct bcma_device *core, *tmp;
- 
--	list_for_each_entry(core, &bus->cores, list) {
-+	list_for_each_entry_safe(core, tmp, &bus->cores, list) {
-+		list_del(&core->list);
- 		if (core->dev_registered)
- 			device_unregister(&core->dev);
- 	}
-@@ -165,6 +195,20 @@ int __devinit bcma_bus_register(struct b
+@@ -166,6 +195,20 @@ int __devinit bcma_bus_register(struct b
  		return -1;
  	}
  
@@ -681,28 +670,28 @@
  	/* Init CC core */
  	core = bcma_find_core(bus, bcma_cc_core_id(bus));
  	if (core) {
-@@ -180,10 +224,17 @@ int __devinit bcma_bus_register(struct b
+@@ -181,10 +224,17 @@ int __devinit bcma_bus_register(struct b
  	}
  
  	/* Init PCIE core */
 -	core = bcma_find_core(bus, BCMA_CORE_PCIE);
 +	core = bcma_find_core_unit(bus, BCMA_CORE_PCIE, 0);
- 	if (core) {
--		bus->drv_pci.core = core;
--		bcma_core_pci_init(&bus->drv_pci);
++	if (core) {
 +		bus->drv_pci[0].core = core;
 +		bcma_core_pci_init(&bus->drv_pci[0]);
 +	}
 +
 +	/* Init PCIE core */
 +	core = bcma_find_core_unit(bus, BCMA_CORE_PCIE, 1);
-+	if (core) {
+ 	if (core) {
+-		bus->drv_pci.core = core;
+-		bcma_core_pci_init(&bus->drv_pci);
 +		bus->drv_pci[1].core = core;
 +		bcma_core_pci_init(&bus->drv_pci[1]);
  	}
  
  	/* Init GBIT MAC COMMON core */
-@@ -193,13 +244,6 @@ int __devinit bcma_bus_register(struct b
+@@ -194,13 +244,6 @@ int __devinit bcma_bus_register(struct b
  		bcma_core_gmac_cmn_init(&bus->drv_gmac_cmn);
  	}
  
@@ -716,7 +705,7 @@
  	/* Register found cores */
  	bcma_register_cores(bus);
  
-@@ -210,7 +254,17 @@ int __devinit bcma_bus_register(struct b
+@@ -211,7 +254,17 @@ int __devinit bcma_bus_register(struct b
  
  void bcma_bus_unregister(struct bcma_bus *bus)
  {
@@ -734,7 +723,7 @@
  }
  
  int __init bcma_bus_early_register(struct bcma_bus *bus,
-@@ -247,18 +301,18 @@ int __init bcma_bus_early_register(struc
+@@ -248,18 +301,18 @@ int __init bcma_bus_early_register(struc
  		return -1;
  	}
  
