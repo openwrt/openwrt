@@ -774,3 +774,15 @@
  		txok = false;
  
  	isaggr = bf_isaggr(bf);
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -2563,6 +2563,9 @@ static void ieee80211_mgmt_frame_registe
+ 		else
+ 			local->probe_req_reg--;
+ 
++		if (!local->open_count)
++			break;
++
+ 		ieee80211_queue_work(&local->hw, &local->reconfig_filter);
+ 		break;
+ 	default:
