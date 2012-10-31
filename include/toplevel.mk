@@ -51,6 +51,8 @@ export SCAN_COOKIE
 
 SUBMAKE:=umask 022; $(SUBMAKE)
 
+ULIMIT_FIX=_limit=`ulimit -n`; [ "$$_limit" = "unlimited" -o "$$_limit" -ge 1024 ] || ulimit -n 1024;
+
 prepare-mk: FORCE ;
 
 prepare-tmpinfo: FORCE
@@ -149,7 +151,7 @@ prereq:: prepare-tmpinfo .config
 			echo "WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!"; \
 		fi \
 	)
-	@+$(SUBMAKE) -r $@
+	@+$(ULIMIT_FIX) $(SUBMAKE) -r $@
 
 help:
 	cat README
