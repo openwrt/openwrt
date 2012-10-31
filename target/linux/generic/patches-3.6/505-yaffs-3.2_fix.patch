@@ -36,19 +36,7 @@
  static void yaffs_put_super(struct super_block *sb);
  
  static ssize_t yaffs_file_write(struct file *f, const char *buf, size_t n,
-@@ -238,7 +261,10 @@ static int yaffs_file_flush(struct file
- static int yaffs_file_flush(struct file *file);
- #endif
- 
--#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34))
-+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3, 2, 0))
-+static int yaffs_sync_object(struct file *file, loff_t start, loff_t end,
-+			     int datasync);
-+#elif (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34))
- static int yaffs_sync_object(struct file *file, int datasync);
- #else
- static int yaffs_sync_object(struct file *file, struct dentry *dentry,
-@@ -513,7 +539,7 @@ static unsigned yaffs_gc_control_callbac
+@@ -513,7 +536,7 @@ static unsigned yaffs_gc_control_callbac
  {
  	return yaffs_gc_control;
  }
@@ -57,7 +45,7 @@
  static void yaffs_gross_lock(yaffs_dev_t *dev)
  {
  	T(YAFFS_TRACE_LOCK, (TSTR("yaffs locking %p\n"), current));
-@@ -1362,7 +1388,7 @@ static void yaffs_fill_inode_from_obj(st
+@@ -1362,7 +1385,7 @@ static void yaffs_fill_inode_from_obj(st
  		inode->i_size = yaffs_get_obj_length(obj);
  		inode->i_blocks = (inode->i_size + 511) >> 9;
  
@@ -66,7 +54,7 @@
  
  		T(YAFFS_TRACE_OS,
  			(TSTR("yaffs_fill_inode mode %x uid %d gid %d size %d count %d\n"),
-@@ -1810,10 +1836,9 @@ static int yaffs_unlink(struct inode *di
+@@ -1784,10 +1807,9 @@ static int yaffs_unlink(struct inode *di
  	retVal = yaffs_unlinker(obj, dentry->d_name.name);
  
  	if (retVal == YAFFS_OK) {
@@ -78,7 +66,7 @@
  		update_dir_time(dir);
  		return 0;
  	}
-@@ -1844,7 +1869,8 @@ static int yaffs_link(struct dentry *old
+@@ -1818,7 +1840,8 @@ static int yaffs_link(struct dentry *old
  			obj);
  
  	if (link) {
@@ -88,19 +76,7 @@
  		d_instantiate(dentry, old_dentry->d_inode);
  		atomic_inc(&old_dentry->d_inode->i_count);
  		T(YAFFS_TRACE_OS,
-@@ -1894,7 +1920,10 @@ static int yaffs_symlink(struct inode *d
- 	return -ENOMEM;
- }
- 
--#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34))
-+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3, 2, 0))
-+static int yaffs_sync_object(struct file *file, loff_t start, loff_t end,
-+			     int datasync)
-+#elif (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34))
- static int yaffs_sync_object(struct file *file, int datasync)
- #else
- static int yaffs_sync_object(struct file *file, struct dentry *dentry,
-@@ -1961,11 +1990,9 @@ static int yaffs_rename(struct inode *ol
+@@ -1937,11 +1960,9 @@ static int yaffs_rename(struct inode *ol
  	yaffs_gross_unlock(dev);
  
  	if (retVal == YAFFS_OK) {
@@ -115,7 +91,7 @@
  		update_dir_time(old_dir);
  		if(old_dir != new_dir)
  			update_dir_time(new_dir);
-@@ -1985,7 +2012,7 @@ static int yaffs_setattr(struct dentry *
+@@ -1961,7 +1982,7 @@ static int yaffs_setattr(struct dentry *
  		(TSTR("yaffs_setattr of object %d\n"),
  		yaffs_InodeToObject(inode)->obj_id));
  
@@ -124,7 +100,7 @@
  	if (attr->ia_valid & ATTR_SIZE &&
  		(attr->ia_size >> 31))
  		error = -EINVAL;
-@@ -2216,7 +2243,7 @@ static void yaffs_flush_inodes(struct su
+@@ -2192,7 +2213,7 @@ static void yaffs_flush_inodes(struct su
  {
  	struct inode *iptr;
  	yaffs_obj_t *obj;
@@ -133,7 +109,7 @@
  	list_for_each_entry(iptr,&sb->s_inodes, i_sb_list){
  		obj = yaffs_InodeToObject(iptr);
  		if(obj){
-@@ -2230,10 +2257,10 @@ static void yaffs_flush_inodes(struct su
+@@ -2206,10 +2227,10 @@ static void yaffs_flush_inodes(struct su
  
  static void yaffs_flush_super(struct super_block *sb, int do_checkpoint)
  {
@@ -146,7 +122,7 @@
  	yaffs_flush_inodes(sb);
  	yaffs_update_dirty_dirs(dev);
  	yaffs_flush_whole_cache(dev);
-@@ -2301,7 +2328,7 @@ static int yaffs_do_sync_fs(struct super
+@@ -2277,7 +2298,7 @@ static int yaffs_do_sync_fs(struct super
   * yaffs_bg_start() launches the background thread.
   * yaffs_bg_stop() cleans up the background thread.
   *
@@ -155,7 +131,7 @@
   * The thread should only run after the yaffs is initialised
   * The thread should be stopped before yaffs is unmounted.
   * The thread should not do any writing while the fs is in read only.
-@@ -2872,7 +2899,7 @@ static struct super_block *yaffs_interna
+@@ -2848,7 +2869,7 @@ static struct super_block *yaffs_interna
  
  	dev = kmalloc(sizeof(yaffs_dev_t), GFP_KERNEL);
  	context = kmalloc(sizeof(struct yaffs_LinuxContext),GFP_KERNEL);
@@ -164,7 +140,7 @@
  	if(!dev || !context ){
  		if(dev)
  			kfree(dev);
-@@ -2905,7 +2932,7 @@ static struct super_block *yaffs_interna
+@@ -2881,7 +2902,7 @@ static struct super_block *yaffs_interna
  #else
  	sb->u.generic_sbp = dev;
  #endif
@@ -173,7 +149,7 @@
  	dev->driver_context = mtd;
  	param->name = mtd->name;
  
-@@ -3005,7 +3032,7 @@ static struct super_block *yaffs_interna
+@@ -2981,7 +3002,7 @@ static struct super_block *yaffs_interna
  	param->gc_control = yaffs_gc_control_callback;
  
  	yaffs_dev_to_lc(dev)->superBlock= sb;
@@ -182,7 +158,7 @@
  
  #ifndef CONFIG_YAFFS_DOES_ECC
  	param->use_nand_ecc = 1;
-@@ -3047,10 +3074,10 @@ static struct super_block *yaffs_interna
+@@ -3023,10 +3044,10 @@ static struct super_block *yaffs_interna
  	T(YAFFS_TRACE_OS,
  	  (TSTR("yaffs_read_super: guts initialised %s\n"),
  	   (err == YAFFS_OK) ? "OK" : "FAILED"));
@@ -195,16 +171,7 @@
  	if(!context->bgThread)
  		param->defered_dir_update = 0;
  
-@@ -3125,7 +3152,7 @@ static struct dentry *yaffs2_read_super(
- 			void *data)
- {
- 	return mount_bdev(fs, flags, dev_name, data,
--		yaffs_internal_read_super_mtd);
-+		yaffs2_internal_read_super_mtd);
- }
- 
- static struct file_system_type yaffs2_fs_type = {
-@@ -3240,7 +3267,7 @@ static int yaffs_proc_read(char *page,
+@@ -3282,7 +3303,7 @@ static int yaffs_proc_read(char *page,
  				buf = yaffs_dump_dev_part0(buf, dev);
  			} else
  				buf = yaffs_dump_dev_part1(buf, dev);
@@ -213,7 +180,7 @@
  			break;
  		}
  		mutex_unlock(&yaffs_context_lock);
-@@ -3267,7 +3294,7 @@ static int yaffs_stats_proc_read(char *p
+@@ -3309,7 +3330,7 @@ static int yaffs_stats_proc_read(char *p
  		int erasedChunks;
  
  		erasedChunks = dev->n_erased_blocks * dev->param.chunks_per_block;
