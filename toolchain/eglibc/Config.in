@@ -5,14 +5,6 @@ choice
 	help
 	  Select the version of eglibc you wish to use.
 
-	config EGLIBC_VERSION_2_13
-		bool "eglibc 2.13"
-		depends !GCC_VERSION_LLVM
-
-	config EGLIBC_VERSION_2_14
-		bool "eglibc 2.14"
-		depends !GCC_VERSION_LLVM
-
 	config EGLIBC_VERSION_2_15
 		bool "eglibc 2.15"
 		depends !GCC_VERSION_LLVM
@@ -27,8 +19,6 @@ config EGLIBC_REVISION
 	string
 	prompt "eglibc revision"
 	depends on TOOLCHAINOPTS && USE_EGLIBC
-	default "15508" if EGLIBC_VERSION_2_13
-	default "16488" if EGLIBC_VERSION_2_14
 	default "18909" if EGLIBC_VERSION_2_15
 	default "19922" if EGLIBC_VERSION_2_16
 	default ""
