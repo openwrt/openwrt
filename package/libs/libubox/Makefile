@@ -48,6 +48,8 @@ define Package/jshn/description
 endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
+CMAKE_OPTIONS = \
+	-DLUAPATH=/usr/lib/lua
 
 define Package/libubox/install
 	$(INSTALL_DIR) $(1)/lib/
