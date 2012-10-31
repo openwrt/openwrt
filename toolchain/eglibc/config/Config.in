@@ -534,7 +534,7 @@ config EGLIBC_OPTION_EGLIBC_MEMUSAGE
 
 config EGLIBC_OPTION_EGLIBC_NIS
 	bool "Support for NIS, NIS+, and the special 'compat' services."
-	default y
+	default n
 	select EGLIBC_OPTION_EGLIBC_INET
 	select EGLIBC_OPTION_EGLIBC_SUNRPC
 	help
@@ -718,7 +718,7 @@ config EGLIBC_OPTION_EGLIBC_STREAMS
 
 config EGLIBC_OPTION_EGLIBC_SUNRPC
 	bool "Support for the Sun 'RPC' protocol."
-	default y
+	default n
 	select EGLIBC_OPTION_EGLIBC_INET
 	help
 	  This option group includes support for the Sun RPC protocols,
