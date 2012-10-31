@@ -17,7 +17,6 @@ endchoice
 
 config EGLIBC_REVISION
 	string
-	prompt "eglibc revision"
 	depends on TOOLCHAINOPTS && USE_EGLIBC
 	default "18909" if EGLIBC_VERSION_2_15
 	default "19922" if EGLIBC_VERSION_2_16
