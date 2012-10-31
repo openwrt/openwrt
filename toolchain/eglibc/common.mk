@@ -60,6 +60,7 @@ EGLIBC_CONFIGURE:= \
 
 export libc_cv_ssp=no
 export ac_cv_header_cpuid_h=yes
+export HOST_CFLAGS := $(HOST_CFLAGS) -idirafter $(CURDIR)/$(PATH_PREFIX)/include
 
 define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
