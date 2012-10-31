@@ -1,6 +1,6 @@
 --- a/fs/yaffs2/yaffs_vfs_glue.c
 +++ b/fs/yaffs2/yaffs_vfs_glue.c
-@@ -274,8 +274,13 @@ static int yaffs_sync_object(struct file
+@@ -273,8 +273,13 @@ static int yaffs_sync_object(struct file
  static int yaffs_readdir(struct file *f, void *dirent, filldir_t filldir);
  
  #if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 0))
@@ -14,7 +14,7 @@
  static struct dentry *yaffs_lookup(struct inode *dir, struct dentry *dentry,
  					struct nameidata *n);
  #else
-@@ -287,9 +292,17 @@ static int yaffs_link(struct dentry *old
+@@ -286,9 +291,17 @@ static int yaffs_link(struct dentry *old
  static int yaffs_unlink(struct inode *dir, struct dentry *dentry);
  static int yaffs_symlink(struct inode *dir, struct dentry *dentry,
  			const char *symname);
@@ -33,7 +33,7 @@
  static int yaffs_mknod(struct inode *dir, struct dentry *dentry, int mode,
  			dev_t dev);
  #else
-@@ -1708,7 +1721,10 @@ out:
+@@ -1679,7 +1692,10 @@ out:
  #define YCRED(x) (x->cred)
  #endif
  
@@ -45,7 +45,7 @@
  static int yaffs_mknod(struct inode *dir, struct dentry *dentry, int mode,
  			dev_t rdev)
  #else
-@@ -1798,7 +1814,11 @@ static int yaffs_mknod(struct inode *dir
+@@ -1769,7 +1785,11 @@ static int yaffs_mknod(struct inode *dir
  	return error;
  }
  
@@ -57,7 +57,7 @@
  {
  	int retVal;
  	T(YAFFS_TRACE_OS, (TSTR("yaffs_mkdir\n")));
-@@ -1806,7 +1826,10 @@ static int yaffs_mkdir(struct inode *dir
+@@ -1777,7 +1797,10 @@ static int yaffs_mkdir(struct inode *dir
  	return retVal;
  }
  
