@@ -1,0 +1,156 @@
+--- a/arch/arm/mach-cns3xxx/cns3420vb.c
++++ b/arch/arm/mach-cns3xxx/cns3420vb.c
+@@ -203,7 +203,6 @@ static void __init cns3420_init(void)
+ 		NR_IRQS_CNS3XXX);
+ 	cns3xxx_gpio_init(32, 32, CNS3XXX_GPIOB_BASE_VIRT, IRQ_CNS3XXX_GPIOB,
+ 		NR_IRQS_CNS3XXX + 32);
+-	cns3xxx_pcie_init(0x3);
+ 
+ 	pm_power_off = cns3xxx_power_off;
+ }
+@@ -220,11 +219,21 @@ static struct map_desc cns3420_io_desc[]
+ static void __init cns3420_map_io(void)
+ {
+ 	cns3xxx_common_init();
++	cns3xxx_pcie_iotable_init();
+ 	iotable_init(cns3420_io_desc, ARRAY_SIZE(cns3420_io_desc));
+ 
+ 	cns3420_early_serial_setup();
+ }
+ 
++static int __init cns3420vb_pcie_init(void)
++{
++	if (!machine_is_cns3420vb())
++		return 0;
++
++	return cns3xxx_pcie_init();
++}
++subsys_initcall(cns3420vb_pcie_init);
++
+ MACHINE_START(CNS3420VB, "Cavium Networks CNS3420 Validation Board")
+ 	.atag_offset	= 0x100,
+ 	.map_io		= cns3420_map_io,
+--- a/arch/arm/mach-cns3xxx/core.h
++++ b/arch/arm/mach-cns3xxx/core.h
+@@ -12,8 +12,8 @@
+ #define __CNS3XXX_CORE_H
+ 
+ extern struct sys_timer cns3xxx_timer;
+-extern int cns3xxx_pcie_init(u8 bitmap);
+-extern void cns3xxx_pcie_iotable_init(u8 bitmap);
++extern void cns3xxx_pcie_iotable_init(void);
++
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ void __init cns3xxx_l2x0_init(void);
+@@ -23,6 +23,7 @@ static inline void cns3xxx_l2x0_init(voi
+ 
+ void __init cns3xxx_common_init(void);
+ void __init cns3xxx_init_irq(void);
++int  __init cns3xxx_pcie_init(void);
+ void cns3xxx_power_off(void);
+ void cns3xxx_restart(char, const char *);
+ 
+--- a/arch/arm/mach-cns3xxx/laguna.c
++++ b/arch/arm/mach-cns3xxx/laguna.c
+@@ -729,7 +731,7 @@ static struct map_desc laguna_io_desc[]
+ static void __init laguna_map_io(void)
+ {
+ 	cns3xxx_common_init();
+-	cns3xxx_pcie_iotable_init(0x3);
++	cns3xxx_pcie_iotable_init();
+ 	iotable_init(ARRAY_AND_SIZE(laguna_io_desc));
+ 	laguna_early_serial_setup();
+ }
+@@ -753,11 +755,19 @@ static int laguna_register_gpio(struct g
+ 	return ret;
+ }
+ 
++static int __init laguna_pcie_init(void)
++{
++	if (!machine_is_gw2388())
++		return 0;
++
++	return cns3xxx_pcie_init();
++}
++subsys_initcall(laguna_pcie_init);
++
+ static int __init laguna_model_setup(void)
+ {
+ 	u32 __iomem *mem;
+ 	u32 reg;
+-	u8 pcie_bitmap = 0;
+ 
+ 	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
+ 	cns3xxx_gpio_init( 0, 32, CNS3XXX_GPIOA_BASE_VIRT, IRQ_CNS3XXX_GPIOA,
+@@ -779,14 +789,6 @@ static int __init laguna_model_setup(voi
+ 		    (laguna_info.config_bitmap & SATA1_LOAD))
+ 			cns3xxx_ahci_init();
+ 
+-		if (laguna_info.config_bitmap & (PCIE0_LOAD))
+-			pcie_bitmap |= 0x1;
+-
+-		if (laguna_info.config_bitmap & (PCIE1_LOAD))
+-			pcie_bitmap |= 0x2;
+-
+-		cns3xxx_pcie_init(pcie_bitmap);
+-
+ 		if (laguna_info.config_bitmap & (USB0_LOAD)) {
+ 			cns3xxx_pwr_power_up(1 << PM_PLL_HM_PD_CTRL_REG_OFFSET_PLL_USB);
+ 
+@@ -926,7 +928,6 @@ static int __init laguna_model_setup(voi
+ 	}
+ 	return 0;
+ }
+-
+ late_initcall(laguna_model_setup);
+ 
+ MACHINE_START(GW2388, "Gateworks Corporation Laguna Platform")
+--- a/arch/arm/mach-cns3xxx/pcie.c
++++ b/arch/arm/mach-cns3xxx/pcie.c
+@@ -456,23 +456,18 @@ static int cns3xxx_pcie_abort_handler(un
+ 	return 0;
+ }
+ 
+-void __init cns3xxx_pcie_iotable_init(u8 bitmap)
++
++void __init cns3xxx_pcie_iotable_init()
+ {
+-	static int _iotable_init = 0;
+ 	int i;
+ 
+-	bitmap &= ~_iotable_init;
+ 	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
+-		if (!(bitmap & (1 << i)))
+-			continue;
+-
+ 		iotable_init(cns3xxx_pcie[i].cfg_bases,
+ 			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));
+ 	}
+-	_iotable_init |= bitmap;
+ }
+ 
+-int __init cns3xxx_pcie_init(u8 bitmap)
++int __init cns3xxx_pcie_init(void)
+ {
+ 	int i;
+ 
+@@ -482,14 +477,12 @@ int __init cns3xxx_pcie_init(u8 bitmap)
+ 	hook_fault_code(16 + 6, cns3xxx_pcie_abort_handler, SIGBUS, 0,
+ 			"imprecise external abort");
+ 
+-	cns3xxx_pcie_iotable_init(bitmap);
+ 	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
+-		if (!(bitmap & (1 << i)))
+-			continue;
+-
+ 		cns3xxx_pcie_check_link(&cns3xxx_pcie[i]);
+-		cns3xxx_pcie_hw_init(&cns3xxx_pcie[i]);
+-		pci_common_init(&cns3xxx_pcie[i].hw_pci);
++		if (cns3xxx_pcie[i].linked) {
++			cns3xxx_pcie_hw_init(&cns3xxx_pcie[i]);
++			pci_common_init(&cns3xxx_pcie[i].hw_pci);
++		}
+ 	}
+ 
+ 	pci_assign_unassigned_resources();
