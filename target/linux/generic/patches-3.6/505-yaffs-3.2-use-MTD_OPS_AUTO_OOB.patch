@@ -1,0 +1,54 @@
+--- a/fs/yaffs2/yaffs_mtdif1.c
++++ b/fs/yaffs2/yaffs_mtdif1.c
+@@ -127,7 +127,7 @@ int nandmtd1_WriteChunkWithTagsToNAND(ya
+ #endif
+ 
+ 	memset(&ops, 0, sizeof(ops));
+-	ops.mode = MTD_OOB_AUTO;
++	ops.mode = MTD_OPS_AUTO_OOB;
+ 	ops.len = (data) ? chunkBytes : 0;
+ 	ops.ooblen = YTAG1_SIZE;
+ 	ops.datbuf = (__u8 *)data;
+@@ -179,7 +179,7 @@ int nandmtd1_ReadChunkWithTagsFromNAND(y
+ 	int deleted;
+ 
+ 	memset(&ops, 0, sizeof(ops));
+-	ops.mode = MTD_OOB_AUTO;
++	ops.mode = MTD_OPS_AUTO_OOB;
+ 	ops.len = (data) ? chunkBytes : 0;
+ 	ops.ooblen = YTAG1_SIZE;
+ 	ops.datbuf = data;
+--- a/fs/yaffs2/yaffs_mtdif2.c
++++ b/fs/yaffs2/yaffs_mtdif2.c
+@@ -71,7 +71,7 @@ int nandmtd2_WriteChunkWithTagsToNAND(ya
+ 		yaffs_PackTags2(&pt, tags, !dev->param.no_tags_ecc);
+ 
+ #if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
+-	ops.mode = MTD_OOB_AUTO;
++	ops.mode = MTD_OPS_AUTO_OOB;
+ 	ops.ooblen = (dev->param.inband_tags) ? 0 : packed_tags_size;
+ 	ops.len = dev->param.total_bytes_per_chunk;
+ 	ops.ooboffs = 0;
+@@ -136,7 +136,7 @@ int nandmtd2_ReadChunkWithTagsFromNAND(y
+ 		retval = mtd->read(mtd, addr, dev->param.total_bytes_per_chunk,
+ 				&dummy, data);
+ 	else if (tags) {
+-		ops.mode = MTD_OOB_AUTO;
++		ops.mode = MTD_OPS_AUTO_OOB;
+ 		ops.ooblen = packed_tags_size;
+ 		ops.len = data ? dev->data_bytes_per_chunk : packed_tags_size;
+ 		ops.ooboffs = 0;
+--- a/fs/yaffs2/yaffs_mtdif.h
++++ b/fs/yaffs2/yaffs_mtdif.h
+@@ -24,4 +24,11 @@ extern struct nand_oobinfo yaffs_noeccin
+ #endif
+ int nandmtd_EraseBlockInNAND(yaffs_dev_t *dev, int blockNumber);
+ int nandmtd_InitialiseNAND(yaffs_dev_t *dev);
++
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0))
++#include <mtd/mtd-abi.h>
++#else
++#define MTD_OPS_AUTO_OOB 	MTD_OOB_AUTO
++#endif
++
+ #endif
