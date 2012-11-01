@@ -52,8 +52,9 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		./files/package/rules.mk \
 		$(TOPDIR)/package/Makefile \
 		$(SDK_BUILD_DIR)/package/
-	echo "src-svn trunk $(SVN_PACKAGE_URL)" \
-		> $(SDK_BUILD_DIR)/feeds.conf.default
+	$(if $(SVN_PACKAGE_URL),echo "src-svn trunk $(SVN_PACKAGE_URL)" \
+		> $(SDK_BUILD_DIR)/feeds.conf.default,\
+		-rm -f $(SDK_BUILD_DIR)/feeds.conf.default)
 	cat $(TOPDIR)/feeds.conf.default \
 		>> $(SDK_BUILD_DIR)/feeds.conf.default
 	$(SED) 's,^# REVISION:=.*,REVISION:=$(REVISION),g' $(SDK_BUILD_DIR)/include/version.mk
