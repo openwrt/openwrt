@@ -1,0 +1,31 @@
+From f40e1f9d856ec417468c090c4b56826171daa670 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 16 Aug 2012 08:25:42 +0000
+Subject: [PATCH 8/9] MIPS: lantiq: enable pci clk conditional for xrx200 SoC
+
+The xrx200 SoC family has the same PCI clock register layout as the AR9.
+Enable the same quirk as for AR9
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4235/
+---
+ arch/mips/lantiq/xway/sysctrl.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
+index befbb76..67c3a91 100644
+--- a/arch/mips/lantiq/xway/sysctrl.c
++++ b/arch/mips/lantiq/xway/sysctrl.c
+@@ -145,7 +145,8 @@ static int pci_enable(struct clk *clk)
+ {
+ 	unsigned int val = ltq_cgu_r32(ifccr);
+ 	/* set bus clock speed */
+-	if (of_machine_is_compatible("lantiq,ar9")) {
++	if (of_machine_is_compatible("lantiq,ar9") ||
++			of_machine_is_compatible("lantiq,vr9")) {
+ 		val &= ~0x1f00000;
+ 		if (clk->rate == CLOCK_33M)
+ 			val |= 0xe00000;
+-- 
+1.7.10.4
+

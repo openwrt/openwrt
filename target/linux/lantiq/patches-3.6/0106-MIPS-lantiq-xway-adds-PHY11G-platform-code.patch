@@ -1,0 +1,607 @@
+From b2ea96b934fcf665b4c0cc844416a7a2618e198e Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 22 Oct 2012 09:52:50 +0200
+Subject: [PATCH 106/113] MIPS: lantiq: xway: adds PHY11G platform code
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/lantiq/xway/Makefile          |    2 +-
+ arch/mips/lantiq/xway/vr9_switch_regs.h |  425 +++++++++++++++++++++++++++++++
+ arch/mips/lantiq/xway/xway_phy_fw.c     |  146 +++++++++++
+ 3 files changed, 572 insertions(+), 1 deletion(-)
+ create mode 100644 arch/mips/lantiq/xway/vr9_switch_regs.h
+ create mode 100644 arch/mips/lantiq/xway/xway_phy_fw.c
+
+diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
+index 70a58c7..1998b7c 100644
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
+@@ -1 +1 @@
+-obj-y := prom.o sysctrl.o clk.o reset.o dma.o gptu.o
++obj-y := prom.o sysctrl.o clk.o reset.o dma.o gptu.o xway_phy_fw.o
+diff --git a/arch/mips/lantiq/xway/vr9_switch_regs.h b/arch/mips/lantiq/xway/vr9_switch_regs.h
+new file mode 100644
+index 0000000..339e4c1
+--- /dev/null
++++ b/arch/mips/lantiq/xway/vr9_switch_regs.h
+@@ -0,0 +1,425 @@
++/*
++ *   This program is free software; you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; either version 2 of the License, or
++ *   (at your option) any later version.
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *   GNU General Public License for more details.
++ *
++ *   You should have received a copy of the GNU General Public License
++ *   along with this program; if not, write to the Free Software
++ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
++ *
++ *   Copyright (C) 2012 Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
++ */
++
++#ifndef __VR9_SWITCH_REGS_H__
++#define __VR9_SWITCH_REGS_H__
++
++/* Switch core registers */
++struct vr9_switch_core_regs {
++	__be32 swres;
++	/* TODO: implement registers */
++	__be32 rsvd0[0x3f];
++};
++
++/* Switch buffer management registers */
++struct vr9_switch_bm_regs {
++	struct bm_core {
++		__be32 ram_val3;	/* RAM value 3 */
++		__be32 ram_val2;	/* RAM value 2 */
++		__be32 ram_val1;	/* RAM value 1 */
++		__be32 ram_val0;	/* RAM value 0 */
++		__be32 ram_addr;	/* RAM address */
++		__be32 ram_ctrl;	/* RAM access control */
++		__be32 fsqm_gctrl;	/* Free segment queue global control */
++		__be32 cons_sel;	/* Number of consumed segments */
++		__be32 cons_pkt;	/* Number of consumed packet pointers */
++		__be32 gctrl;		/* Global control */
++		__be32 queue_gctrl;	/* Queue manager global control */
++		/* TODO: implement registers */
++		__be32 rsvd0[0x35];
++	} core;
++
++	struct bm_port {
++		__be32 pcfg;		/* Port config */
++		__be32 rmon_ctrl;	/* RMON control */
++	} port[13];
++
++	__be32 rsvd0[0x66];
++
++	struct bm_queue {
++		__be32 rsvd0;
++		__be32 pqm_rs;		/* Packet queue manager rate shape assignment */
++	} queue[32];
++
++	struct bm_shaper {
++		__be32 ctrl;		/* Rate shaper control */
++		__be32 cbs;		/* Rate shaper committed burst size */
++		__be32 ibs;		/* Rate shaper instantaneous burst size */
++		__be32 cir_ext;		/* Rate shaper rate exponent */
++		__be32 cir_mant;	/* Rate shaper rate mantissa */
++	} shaper[16];
++
++	__be32 rsvd1[0x2a8];
++};
++
++/* Switch parser and classification engine registers */
++struct vr9_switch_pce_regs {
++	struct pce_core {
++		__be32 tbl_key[16];	/* Table key data */
++		__be32 tbl_mask;	/* Table mask */
++		__be32 tbl_val[5];	/* Table value */
++		__be32 tbl_addr;	/* Table entry address */
++		__be32 tbl_ctrl;	/* Table access control */
++		__be32 tbl_stat;	/* Table general status */
++		__be32 age_0;		/* Aging counter config 0 */
++		__be32 age_1;		/* Aging counter config 1 */
++		__be32 pmap_1;		/* Port map (monitoring) */
++		__be32 pmap_2;		/* Port map (multicast) */
++		__be32 pmap_3;		/* Port map (unknown unicast) */
++		__be32 gctrl_0;		/* Global control 0 */
++		__be32 gctrl_1;		/* Global control 1 */
++		__be32 tcm_gctrl;	/* Three-color marker global control */
++		__be32 igmp_ctrl;	/* IGMP control */
++		__be32 igmp_drpm;	/* IGMP default router port map */
++		__be32 igmp_age_0;	/* IGMP aging 0 */
++		__be32 igmp_age_1;	/* IGMP aging 1 */
++		__be32 igmp_stat;	/* IGMP status */
++		__be32 wol_gctrl;	/* Wake-on-LAN control */
++		__be32 wol_da_0;	/* Wake-on-LAN destination address 0 */
++		__be32 wol_da_1;	/* Wake-on-LAN destination address 1 */
++		__be32 wol_da_2;	/* Wake-on-LAN destination address 2 */
++		__be32 wol_pw_0;	/* Wake-on-LAN password 0 */
++		__be32 wol_pw_1;	/* Wake-on-LAN password 1 */
++		__be32 wol_pw_2;	/* Wake-on-LAN password 2 */
++		__be32 ier_0;		/* PCE global interrupt enable 0 */
++		__be32 ier_1;		/* PCE global interrupt enable 1 */
++		__be32 isr_0;		/* PCE global interrupt status 0 */
++		__be32 isr_1;		/* PCE global interrupt status 1 */
++		__be32 parser_stat;	/* Parser status */
++		__be32 rsvd0[0x6];
++	} core;
++
++	__be32 rsvd0[0x10];
++
++	struct pce_port {
++		__be32 pctrl_0;		/* Port control 0 */
++		__be32 pctrl_1;		/* Port control 1 */
++		__be32 pctrl_2;		/* Port control 2 */
++		__be32 pctrl_3;		/* Port control 3 */
++		__be32 wol_ctrl;	/* Wake-on-LAN control */
++		__be32 vlan_ctrl;	/* VLAN control */
++		__be32 def_pvid;	/* Default port VID */
++		__be32 pstat;		/* Port status */
++		__be32 pier;		/* Interrupt enable */
++		__be32 pisr;		/* Interrupt status */
++	} port[13];
++
++	__be32 rsvd1[0x7e];
++
++	struct pce_meter {
++		/* TODO: implement registers */
++		__be32 rsvd0[0x7];
++	} meter[8];
++
++	__be32 rsvd2[0x308];
++};
++
++static inline unsigned int to_pce_tbl_key_id(unsigned int id)
++{
++	return 15 - id;
++}
++
++static inline unsigned int to_pce_tbl_value_id(unsigned int id)
++{
++	return 4 - id;
++}
++
++/* Switch ethernet MAC registers */
++struct vr9_switch_mac_regs {
++	struct mac_core {
++		__be32 test;		/* MAC test */
++		__be32 pfad_cfg;	/* Pause frame source address config */
++		__be32 pfsa_0;		/* Pause frame source address 0 */
++		__be32 pfsa_1;		/* Pause frame source address 1 */
++		__be32 pfsa_2;		/* Pause frame source address 2 */
++		__be32 flen;		/* Frame length */
++		__be32 vlan_etype_0;	/* VLAN ethertype 0 */
++		__be32 vlan_etype_1;	/* VLAN ethertype 1 */
++		__be32 ier;		/* Interrupt enable */
++		__be32 isr;		/* Interrupt status */
++		__be32 rsvd0[0x36];
++	} core;
++
++	struct mac_port {
++		__be32 pstat;		/* Port status */
++		__be32 pisr;		/* Interrupt status */
++		__be32 pier;		/* Interrupt enable */
++		__be32 ctrl_0;		/* Control 0 */
++		__be32 ctrl_1;		/* Control 1 */
++		__be32 ctrl_2;		/* Control 2 */
++		__be32 ctrl_3;		/* Control 3 */
++		__be32 ctrl_4;		/* Control 4 */
++		__be32 ctrl_5;		/* Control 5 */
++		__be32 rsvd0[0x2];
++		__be32 testen;		/* Test enable */
++	} port[13];
++
++	__be32 rsvd0[0xa4];
++};
++
++/* Switch Fetch DMA registers */
++struct vr9_switch_fdma_regs {
++	struct fdma_core {
++		__be32 ctrl;		/* FDMA control */
++		__be32 stetype;		/* Special tag ethertype control */
++		__be32 vtetype;		/* VLAN tag ethertype control */
++		__be32 stat;		/* FDMA status */
++		__be32 ier;		/* FDMA interrupt enable */
++		__be32 isr;		/* FDMA interrupt status */
++	} core;
++
++	__be32 rsvd0[0x3a];
++
++	struct fdma_port {
++		__be32 pctrl;		/* Port control */
++		__be32 prio;		/* Port priority */
++		__be32 pstat_0;		/* Port status 0 */
++		__be32 pstat_1;		/* Port status 1 */
++		__be32 tstamp_0;	/* Egress time stamp 0 */
++		__be32 tstamp_1;	/* Egress time stamp 1 */
++	} port[13];
++
++	__be32 rsvd1[0x72];
++};
++
++/* Switch Store DMA registers */
++struct vr9_switch_sdma_regs {
++	struct sdma_core {
++		__be32 ctrl;		/* SDMA Control */
++		__be32 fcthr_1;		/* Flow control threshold 1 */
++		__be32 rsvd0;
++		__be32 fcthr_3;		/* Flow control threshold 3 */
++		__be32 fcthr_4;		/* Flow control threshold 4 */
++		__be32 fcthr_5;		/* Flow control threshold 5 */
++		__be32 fcthr_6;		/* Flow control threshold 6 */
++		__be32 fcthr_7;		/* Flow control threshold 7 */
++		__be32 stat_0;		/* SDMA status 0 */
++		__be32 stat_1;		/* SDMA status 1 */
++		__be32 stat_2;		/* SDMA status 2 */
++		__be32 ier;		/* SDMA interrupt enable */
++		__be32 isr;		/* SDMA interrupt status */
++	} core;
++
++	__be32 rsvd0[0x73];
++
++	struct sdma_port {
++		__be32 pctrl;		/* Port control */
++		__be32 prio;		/* Port priority */
++		__be32 pstat_0;		/* Port status 0 */
++		__be32 pstat_1;		/* Port status 1 */
++		__be32 tstamp_0;	/* Ingress time stamp 0 */
++		__be32 tstamp_1;	/* Ingress time stamp 1 */
++	} port[13];
++
++	__be32 rsvd1[0x32];
++};
++
++/* Switch MDIO control and status registers */
++struct vr9_switch_mdio_regs {
++	__be32 glob_ctrl;	/* Global control 0 */
++	__be32 rsvd0[7];
++	__be32 mdio_ctrl;	/* MDIO control */
++	__be32 mdio_read;	/* MDIO read data */
++	__be32 mdio_write;	/* MDIO write data */
++	__be32 mdc_cfg_0;	/* MDC clock configuration 0 */
++	__be32 mdc_cfg_1;	/* MDC clock configuration 1 */
++	__be32 rsvd1[0x3];
++	__be32 phy_addr[6];	/* PHY address port 5..0 */
++	__be32 mdio_stat[6];	/* MDIO PHY polling status port 0..5 */
++	__be32 aneg_eee[6];	/* EEE auto-neg overrides port 0..5 */
++	__be32 rsvd2[0x14];
++};
++
++static inline unsigned int to_mdio_phyaddr_id(unsigned int id)
++{
++	return 5 - id;
++}
++
++/* Switch xMII control registers */
++struct vr9_switch_mii_regs {
++	__be32 mii_cfg0;	/* xMII port 0 configuration */
++	__be32 pcdu0;		/* Port 0 clock delay configuration */
++	__be32 mii_cfg1;	/* xMII port 1 configuration */
++	__be32 pcdu1;		/* Port 1 clock delay configuration */
++	__be32 rsvd0[0x6];
++	__be32 mii_cfg5;	/* xMII port 5 configuration */
++	__be32 pcdu5;		/* Port 5 clock delay configuration */
++	__be32 rsvd1[0x14];
++	__be32 rxb_ctl_0;	/* Port 0 receive buffer control */
++	__be32 rxb_ctl_1;	/* Port 1 receive buffer control */
++	__be32 rxb_ctl_5;	/* Port 5 receive buffer control */
++	__be32 rsvd2[0x28];
++	__be32 dbg_ctl;		/* Debug control */
++};
++
++/* Switch Pseudo-MAC registers */
++struct vr9_switch_pmac_regs {
++	__be32 hd_ctl;		/* PMAC header control */
++	__be32 tl;		/* PMAC type/length */
++	__be32 sa1;		/* PMAC source address 1 */
++	__be32 sa2;		/* PMAC source address 2 */
++	__be32 sa3;		/* PMAC source address 3 */
++	__be32 da1;		/* PMAC destination address 1 */
++	__be32 da2;		/* PMAC destination address 2 */
++	__be32 da3;		/* PMAC destination address 3 */
++	__be32 vlan;		/* PMAC VLAN */
++	__be32 rx_ipg;		/* PMAC interpacket gap in RX direction */
++	__be32 st_etype;	/* PMAC special tag ethertype */
++	__be32 ewan;		/* PMAC ethernet WAN group */
++	__be32 ctl;		/* PMAC control */
++	__be32 rsvd0[0x2];
++};
++
++struct vr9_switch_regs {
++	struct vr9_switch_core_regs core;
++	struct vr9_switch_bm_regs bm;
++	struct vr9_switch_pce_regs pce;
++	struct vr9_switch_mac_regs mac;
++	struct vr9_switch_fdma_regs fdma;
++	struct vr9_switch_sdma_regs sdma;
++	struct vr9_switch_mdio_regs mdio;
++	struct vr9_switch_mii_regs mii;
++	struct vr9_switch_pmac_regs pmac;
++};
++
++#define VR9_SWITCH_REG_OFFSET(reg)	(4 * (reg))
++
++#define BUILD_CHECK_VR9_REG(name, offset)	\
++	BUILD_BUG_ON(offsetof(struct vr9_switch_regs, name) != (4 * offset))
++
++static inline void build_check_vr9_registers(void)
++{
++	BUILD_CHECK_VR9_REG(core, 0x0);
++	BUILD_CHECK_VR9_REG(bm.core, 0x40);
++	BUILD_CHECK_VR9_REG(bm.core.queue_gctrl, 0x4a);
++	BUILD_CHECK_VR9_REG(bm.port[0], 0x80);
++	BUILD_CHECK_VR9_REG(bm.queue, 0x100);
++	BUILD_CHECK_VR9_REG(bm.shaper, 0x140);
++	BUILD_CHECK_VR9_REG(pce.core, 0x438);
++	BUILD_CHECK_VR9_REG(pce.core.tbl_ctrl, 0x44f);
++	BUILD_CHECK_VR9_REG(pce.core.parser_stat, 0x469);
++	BUILD_CHECK_VR9_REG(pce.port[0], 0x480);
++	BUILD_CHECK_VR9_REG(pce.meter[0], 0x580);
++	BUILD_CHECK_VR9_REG(mac.core, 0x8c0);
++	BUILD_CHECK_VR9_REG(mac.port[0].pstat, 0x900);
++	BUILD_CHECK_VR9_REG(mac.port[0].ctrl_0, 0x903);
++	BUILD_CHECK_VR9_REG(mac.port[1].pstat, 0x90c);
++	BUILD_CHECK_VR9_REG(mac.port[1].ctrl_0, 0x90f);
++	BUILD_CHECK_VR9_REG(mac.port[2].pstat, 0x918);
++	BUILD_CHECK_VR9_REG(mac.port[2].ctrl_0, 0x91b);
++	BUILD_CHECK_VR9_REG(fdma.core, 0xa40);
++	BUILD_CHECK_VR9_REG(fdma.port[0], 0xa80);
++	BUILD_CHECK_VR9_REG(sdma.core, 0xb40);
++	BUILD_CHECK_VR9_REG(sdma.port[0], 0xbc0);
++	BUILD_CHECK_VR9_REG(mdio, 0xc40);
++	BUILD_CHECK_VR9_REG(mii, (0xc40 + 0x36));
++	BUILD_CHECK_VR9_REG(pmac, (0xc40 + 0x82));
++}
++
++#define MAC_CTRL0_BM		BIT(12)
++#define MAC_CTRL0_APADEN	BIT(11)
++#define MAC_CTRL0_VPAD2EN	BIT(10)
++#define MAC_CTRL0_VPADEN	BIT(9)
++#define MAC_CTRL0_PADEN		BIT(8)
++#define MAC_CTRL0_FCS		BIT(7)
++#define MAC_CTRL0_FCON_SHIFT	4
++#define MAC_CTRL0_FCON_AUTO	(0x0 << MAC_CTRL0_FCON_SHIFT)
++#define MAC_CTRL0_FCON_RX	(0x1 << MAC_CTRL0_FCON_SHIFT)
++#define MAC_CTRL0_FCON_TX	(0x2 << MAC_CTRL0_FCON_SHIFT)
++#define MAC_CTRL0_FCON_RXTX	(0x3 << MAC_CTRL0_FCON_SHIFT)
++#define MAC_CTRL0_FCON_NONE	(0x4 << MAC_CTRL0_FCON_SHIFT)
++#define MAC_CTRL0_FDUP_SHIFT	2
++#define MAC_CTRL0_FDUP_AUTO	(0x0 << MAC_CTRL0_FDUP_SHIFT)
++#define MAC_CTRL0_FDUP_EN	(0x1 << MAC_CTRL0_FDUP_SHIFT)
++#define MAC_CTRL0_FDUP_DIS	(0x3 << MAC_CTRL0_FDUP_SHIFT)
++#define MAC_CTRL0_GMII_AUTO	0x0
++#define MAC_CTRL0_GMII_MII	0x1
++#define MAC_CTRL0_GMII_GMII	0x2
++#define MAC_CTRL0_GMII_GMII_2G	0x3
++
++#define MAC_CTRL1_DEFERMODE	BIT(15)
++#define MAC_CTRL1_SHORTPRE	BIT(8)
++
++#define MAC_CTRL2_MLEN		BIT(3)
++#define MAC_CTRL2_LCHKL		BIT(2)
++#define MAC_CTRL2_LCHKS_DIS	0x0
++#define MAC_CTRL2_LCHKS_UNTAG	0x1
++#define MAC_CTRL2_LCHKS_TAG	0x2
++
++#define PHY_ADDR_LNKST_SHIFT	13
++#define PHY_ADDR_LNKST_AUTO	(0x0 << PHY_ADDR_LNKST_SHIFT)
++#define PHY_ADDR_LNKST_UP	(0x1 << PHY_ADDR_LNKST_SHIFT)
++#define PHY_ADDR_LNKST_DOWN	(0x2 << PHY_ADDR_LNKST_SHIFT)
++#define PHY_ADDR_SPEED_SHIFT	11
++#define PHY_ADDR_SPEED_M10	(0x0 << PHY_ADDR_SPEED_SHIFT)
++#define PHY_ADDR_SPEED_M100	(0x1 << PHY_ADDR_SPEED_SHIFT)
++#define PHY_ADDR_SPEED_G1	(0x2 << PHY_ADDR_SPEED_SHIFT)
++#define PHY_ADDR_SPEED_AUTO	(0x3 << PHY_ADDR_SPEED_SHIFT)
++#define PHY_ADDR_FDUP_SHIFT	9
++#define PHY_ADDR_FDUP_AUTO	(0x0 << PHY_ADDR_FDUP_SHIFT)
++#define PHY_ADDR_FDUP_EN	(0x1 << PHY_ADDR_FDUP_SHIFT)
++#define PHY_ADDR_FDUP_DIS	(0x3 << PHY_ADDR_FDUP_SHIFT)
++#define PHY_ADDR_FCONTX_SHIFT	7
++#define PHY_ADDR_FCONTX_AUTO	(0x0 << PHY_ADDR_FCONTX_SHIFT)
++#define PHY_ADDR_FCONTX_EN	(0x1 << PHY_ADDR_FCONTX_SHIFT)
++#define PHY_ADDR_FCONTX_DIS	(0x3 << PHY_ADDR_FCONTX_SHIFT)
++#define PHY_ADDR_FCONRX_SHIFT	5
++#define PHY_ADDR_FCONRX_AUTO	(0x0 << PHY_ADDR_FCONRX_SHIFT)
++#define PHY_ADDR_FCONRX_EN	(0x1 << PHY_ADDR_FCONRX_SHIFT)
++#define PHY_ADDR_FCONRX_DIS	(0x3 << PHY_ADDR_FCONRX_SHIFT)
++
++#define MII_CFG_RES		BIT(15)
++#define MII_CFG_EN		BIT(14)
++#define MII_CFG_LDCLKDIS	BIT(12)
++#define MII_CFG_MIIRATE_SHIFT	4
++#define MII_CFG_MIIRATE_MASK	(0x7 << MII_CFG_MIIRATE_SHIFT)
++#define MII_CFG_MIIRATE_M2P5	(0x0 << MII_CFG_MIIRATE_SHIFT)
++#define MII_CFG_MIIRATE_M25	(0x1 << MII_CFG_MIIRATE_SHIFT)
++#define MII_CFG_MIIRATE_M125	(0x2 << MII_CFG_MIIRATE_SHIFT)
++#define MII_CFG_MIIRATE_M50	(0x3 << MII_CFG_MIIRATE_SHIFT)
++#define MII_CFG_MIIRATE_AUTO	(0x4 << MII_CFG_MIIRATE_SHIFT)
++#define MII_CFG_MIIMODE_MASK	0xf
++#define MII_CFG_MIIMODE_MIIP	0x0
++#define MII_CFG_MIIMODE_MIIM	0x1
++#define MII_CFG_MIIMODE_RMIIP	0x2
++#define MII_CFG_MIIMODE_RMIIM	0x3
++#define MII_CFG_MIIMODE_RGMII	0x4
++
++#define PMAC_HD_CTL_FC		BIT(10)
++#define PMAC_HD_CTL_RST		BIT(8)
++#define PMAC_HD_CTL_AST		BIT(7)
++#define PMAC_HD_CTL_RXSH	BIT(6)
++#define PMAC_HD_CTL_RC		BIT(4)
++#define PMAC_HD_CTL_AS		BIT(3)
++#define PMAC_HD_CTL_AC		BIT(2)
++
++#define PCE_PCTRL_0_IGSTEN	BIT(11)
++
++#define FDMA_PCTRL_STEN		BIT(1)
++#define FDMA_PCTRL_EN		BIT(0)
++
++#define SDMA_PCTRL_EN		BIT(0)
++
++#define MDIO_CTRL_MBUSY		BIT(12)
++#define MDIO_CTRL_OP_READ	BIT(11)
++#define MDIO_CTRL_OP_WRITE	BIT(10)
++#define MDIO_CTRL_PHYAD_SHIFT	5
++#define MDIO_CTRL_PHYAD_MASK	(0x1f << MDIO_CTRL_PHYAD_SHIFT)
++#define MDIO_CTRL_REGAD_MASK	0x1f
++
++#endif /* __VR9_SWITCH_REGS_H__ */
+diff --git a/arch/mips/lantiq/xway/xway_phy_fw.c b/arch/mips/lantiq/xway/xway_phy_fw.c
+new file mode 100644
+index 0000000..97a6d22
+--- /dev/null
++++ b/arch/mips/lantiq/xway/xway_phy_fw.c
+@@ -0,0 +1,146 @@
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/errno.h>
++#include <linux/types.h>
++#include <linux/interrupt.h>
++#include <linux/uaccess.h>
++#include <linux/in.h>
++#include <linux/netdevice.h>
++#include <linux/etherdevice.h>
++#include <linux/phy.h>
++#include <linux/ip.h>
++#include <linux/tcp.h>
++#include <linux/skbuff.h>
++#include <linux/mm.h>
++#include <linux/ethtool.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/io.h>
++#include <linux/dma-mapping.h>
++#include <linux/module.h>
++#include <linux/firmware.h>
++#include <linux/ihex.h>
++#include <linux/of_platform.h>
++#include <linux/of_net.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++#include <linux/of_gpio.h>
++
++#include <asm/checksum.h>
++
++#include <lantiq_soc.h>
++
++#include "vr9_switch_regs.h"
++
++#define XWAY_GPHY_FW_ALIGN		(16 * 1024)
++#define XWAY_GPHY_FW_NAME_SIZE		32
++
++struct xway_gphy_core {
++	struct device *dev;
++	char fw_name[XWAY_GPHY_FW_NAME_SIZE];
++	dma_addr_t dev_addr;
++	void *fw_addr;
++	size_t fw_size;
++};
++
++static int xway_gphy_load(struct platform_device *pdev, struct xway_gphy_core *gphy)
++{
++	const struct firmware *fw;
++	dma_addr_t dev_addr;
++	void *fw_addr;
++	int err;
++	size_t size;
++	const char *fw_name;
++
++	err = of_property_read_string(pdev->dev.of_node, "firmware", &fw_name);
++	if (err) {
++		dev_err(&pdev->dev, "failed to load firmware filename\n");
++		return err;
++	}
++
++	if (strlen(fw_name) >= sizeof(gphy->fw_name)) {
++		dev_err(&pdev->dev, "firmware filename too long\n");
++		return ENAMETOOLONG;
++	}
++
++	strncpy(gphy->fw_name, fw_name, sizeof(gphy->fw_name));
++
++	dev_info(&pdev->dev, "requesting %s\n", gphy->fw_name);
++	err = request_firmware(&fw, gphy->fw_name, &pdev->dev);
++	if (err) {
++		dev_err(&pdev->dev, "failed to load firmware: %s\n", gphy->fw_name);
++		return err;
++	}
++
++	/*
++	 * GPHY cores need the firmware code in a persistent and contiguous
++	 * memory area with a 16 kB boundary aligned start address
++	 */
++	size = fw->size + XWAY_GPHY_FW_ALIGN;
++	fw_addr = dma_alloc_coherent(&pdev->dev, size, &dev_addr, GFP_KERNEL);
++	if (!fw_addr) {
++		dev_err(&pdev->dev, "failed to alloc firmware memory\n");
++		goto err_release;
++	}
++
++	fw_addr = PTR_ALIGN(fw_addr, XWAY_GPHY_FW_ALIGN);
++	dev_addr = ALIGN(dev_addr, XWAY_GPHY_FW_ALIGN);
++
++	memcpy(fw_addr, fw->data, fw->size);
++	release_firmware(fw);
++
++	gphy->dev = &pdev->dev;
++	gphy->dev_addr = dev_addr;
++	gphy->fw_addr = fw_addr;
++	gphy->fw_size = size;
++
++	return 0;
++
++err_release:
++	release_firmware(fw);
++
++	return err;
++}
++
++static int __devinit xway_phy_fw_probe(struct platform_device *pdev)
++{
++	struct xway_gphy_core gphy;
++	struct property *pp;
++	unsigned char *phyids;
++	int i, ret;
++
++	ret = xway_gphy_load(pdev, &gphy);
++	if (ret)
++		return ret;
++	pp = of_find_property(pdev->dev.of_node, "phys", NULL);
++	if (!pp)
++		return -ENOENT;
++	phyids = pp->value;
++	for (i = 0; i < pp->length && !ret; i++)
++		ret = xrx200_gphy_boot(&pdev->dev, phyids[i], gphy.dev_addr);
++	if (!ret)
++		mdelay(100);
++	return ret;
++}
++
++static const struct of_device_id xway_phy_match[] = {
++	{ .compatible = "lantiq,phy-xrx200" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, xway_phy_match);
++
++static struct platform_driver xway_phy_driver = {
++	.probe = xway_phy_fw_probe,
++	.driver = {
++		.name = "phy-xrx200",
++		.owner = THIS_MODULE,
++		.of_match_table = xway_phy_match,
++	},
++};
++
++module_platform_driver(xway_phy_driver);
++
++MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
++MODULE_DESCRIPTION("Lantiq XRX200 PHY Firmware Loader");
++MODULE_LICENSE("GPL");
++
+-- 
+1.7.10.4
+
