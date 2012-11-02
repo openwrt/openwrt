@@ -21,7 +21,12 @@ endef
 
 define PatchKernelLzma
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
+ifeq ($(CONFIG_LINUX_3_5),y)
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(KDIR)/$(1).dtb ./$(1).dts
+	$(STAGING_DIR_HOST)/bin/patch-dtb $(KDIR)/vmlinux-$(1) $(KDIR)/$(1).dtb
+else
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) '$(strip $(2))'
+endif
 	$(call CompressLzma,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).lzma)
 endef
 
@@ -190,17 +195,18 @@ endif
 
 ifeq ($(CONFIG_TARGET_lantiq_ase),y)
 
-Image/BuildKernel/Profile/EASY50601=$(call Image/BuildKernel/Template,EASY50601,$(ase_cmdline))
-Image/Build/Profile/EASY50601=$(call Image/Build/$(1),$(1),EASY50601)
+Image/BuildKernel/Profile/DGN1000B=$(call Image/BuildKernel/Template,DGN1000B)
+Image/Build/Profile/DGN1000B=$(call Image/Build/$(1),$(1),DGN1000B)
 
-define Image/BuildKernel/Profile/Generic
-	$(call Image/BuildKernel/Template,NONE)
-endef
+endif
 
-define Image/Build/Profile/Generic
-	$(call Image/Build/$(1),$(1),NONE)
-	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
-endef
+ifeq ($(CONFIG_TARGET_lantiq_xway),y)
+
+Image/BuildKernel/Profile/EASY80920-NAND=$(call Image/BuildKernel/Template,EASY80920-NAND)
+Image/Build/Profile/EASY80920-NAND=$(call Image/Build/$(1),$(1),EASY80920-NAND)
+Image/BuildKernel/Profile/EASY80920-NOR=$(call Image/BuildKernel/Template,EASY80920-NOR)
+Image/Build/Profile/EASY80920-NOR=$(call Image/Build/$(1),$(1),EASY80920-NOR)
+
 endif
 
 ifeq ($(CONFIG_TARGET_lantiq_vr9),y)

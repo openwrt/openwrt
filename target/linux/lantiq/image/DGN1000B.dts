@@ -1,0 +1,157 @@
+/dts-v1/;
+
+/include/ "amazonse.dtsi"
+
+/ {
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
+
+	memory@0 {
+		reg = <0x0 0x1000000>;
+	};
+
+	fpi@10000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		gpio: pinmux@E100B10 {
+			compatible = "lantiq,pinctrl-ase";
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			#gpio-cells = <2>;
+			gpio-controller;
+			reg = <0xE100B10 0xA0>;
+
+			state_default: pinmux {
+				spi {
+					lantiq,groups = "spi", "spi_cs1";
+					lantiq,function = "spi";
+				};
+				asc {
+					lantiq,groups = "asc";
+					lantiq,function = "asc";
+				};
+				exin {
+					lantiq,groups = "exin1", "exin2";
+					lantiq,function = "exin";
+				};
+				conf_in {
+					lantiq,pins = "io0", "io29"; /* nand rdy */
+					lantiq,pull = <2>;
+				};
+			};
+		};
+
+		adsl: dsl@E116000 {
+			compatible = "lantiq,dsl-xway";
+			interrupt-parent = <&icu0>;
+			interrupts = <63 96>;
+		};
+
+		etop@E180000 {
+			compatible = "lantiq,etop-xway";
+			reg = <0xE180000 0x40000>;
+			interrupt-parent = <&icu0>;
+			interrupts = <105 109>;
+			phy-mode = "ephy";
+			mac-address = [ 00 11 22 33 44 55 ];
+		};
+
+		spi@E100800 {
+			compatible = "lantiq,spi-xway";
+			reg = <0xE100800 0x100>;
+			interrupt-parent = <&icu0>;
+			interrupts = <24 25 26>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "s25fl129p0";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "mx25l3205d";
+				spi-max-frequency = <5000000>;
+
+				partition@0 {
+					reg = <0x0 0x20000>;
+					label = "SPI (RO) U-Boot Image";
+					read-only;
+				};
+	
+				partition@20000 {
+					reg = <0x20000 0x10000>;
+					label = "ENV_MAC";
+					read-only;
+				};
+
+				partition@30000 {
+					reg = <0x30000 0x10000>;
+					label = "DPF";
+					read-only;
+				};
+
+				partition@40000 {
+					reg = <0x40000 0x10000>;
+					label = "NVRAM";
+					read-only;
+				};
+
+				partition@500000 {
+					reg = <0x50000 0x003a0000>;
+					label = "kernel";
+				};
+			};
+		};
+	};
+	
+	/* missing button on <&gpio 25 0> */
+/*	gpio-keys {
+		compatible = "gpio-keys";
+		interrupt-parent = <&icu0>;
+		interrupts = <30 31>;
+		reset {
+			label = "Reset";
+			gpios = <&gpio 0 0>;
+			gpio-key,wakeup;
+			linux,code = <0x100>;
+		};
+		wps {
+			label = "WPS";
+			gpios = <&gpio 29 1>;
+			gpio-key,wakeup;
+			linux,code = <0x100>;
+		};
+	};
+*/
+	gpio-leds {
+		compatible = "gpio-leds";
+		festnetz {
+			label = "DSL";
+			gpios = <&gpio 1 1>;
+			default-state = "on";
+		};
+		internet1 {
+			label = "Internet1";
+			gpios = <&gpio 2 1>;
+			default-state = "on";
+		};
+		internet2 {
+			label = "Internet2";
+			gpios = <&gpio 3 1>;
+			default-state = "on";
+		};
+		wps {
+			label = "WPS";
+			gpios = <&gpio 4 1>;
+			default-state = "on";
+		};
+		power {
+			label = "power";
+			gpios = <&gpio 13 1>;
+			default-state = "on";
+		};
+	};
+};
