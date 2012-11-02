@@ -1,0 +1,71 @@
+From b27b8f1bd7d46f1affc9a2bc4142e248411c1afa Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 22 Oct 2012 17:42:48 +0200
+Subject: [PATCH 100/113] MIPS: lantiq: external interrupt units not loaded
+ properly
+
+The code references the wrong device node causing the number of EIU pins to
+be wrong.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/lantiq/irq.c         |    2 +-
+ drivers/pinctrl/pinctrl-xway.c |   15 +++++++++++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
+index f36acd1..8e55622 100644
+--- a/arch/mips/lantiq/irq.c
++++ b/arch/mips/lantiq/irq.c
+@@ -343,7 +343,7 @@ int __init icu_of_init(struct device_node *node, struct device_node *parent)
+ 	eiu_node = of_find_compatible_node(NULL, NULL, "lantiq,eiu");
+ 	if (eiu_node && !of_address_to_resource(eiu_node, 0, &res)) {
+ 		/* find out how many external irq sources we have */
+-		const __be32 *count = of_get_property(node,
++		const __be32 *count = of_get_property(eiu_node,
+ 							"lantiq,count",	NULL);
+ 
+ 		if (count)
+diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
+index b9bcaec..ea5e017 100644
+--- a/drivers/pinctrl/pinctrl-xway.c
++++ b/drivers/pinctrl/pinctrl-xway.c
+@@ -14,6 +14,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/of_address.h>
+ #include <linux/of_gpio.h>
++#include <linux/of_irq.h>
+ #include <linux/ioport.h>
+ #include <linux/io.h>
+ #include <linux/device.h>
+@@ -618,6 +619,19 @@ static void xway_gpio_free(struct gpio_chip *chip, unsigned offset)
+ 	pinctrl_free_gpio(gpio);
+ }
+ 
++static int xway_gpio_to_irq(struct gpio_chip *chip, unsigned int offset)
++{
++	struct ltq_pinmux_info *info = dev_get_drvdata(chip->dev);
++	struct resource res;
++	int i;
++
++	for (i = 0; i < info->num_exin; i++)
++		if (offset == info->exin[i])
++			if (of_irq_to_resource(chip->dev->of_node, i, &res))
++				return res.start;
++	return 0;
++}
++
+ static struct gpio_chip xway_chip = {
+ 	.label = "gpio-xway",
+ 	.direction_input = xway_gpio_dir_in,
+@@ -626,6 +640,7 @@ static struct gpio_chip xway_chip = {
+ 	.set = xway_gpio_set,
+ 	.request = xway_gpio_req,
+ 	.free = xway_gpio_free,
++	.to_irq = xway_gpio_to_irq,
+ 	.base = -1,
+ };
+ 
+-- 
+1.7.10.4
+

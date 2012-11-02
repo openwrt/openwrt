@@ -1,0 +1,33 @@
+From 6a88a0f762a61f212d4bbcf1ad45369f28014484 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 15 Aug 2012 15:41:50 +0200
+Subject: [PATCH 14/15] MIPS: lantiq: make use of __gpio_to_irq
+
+The gpio_chip struct allows us to set a .to_irq callback. Once this is set
+we can rely on the generic __gpio_to_irq() function to map gpio->irq allowing
+more than one gpio_chip to register an interrupt
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/mach-lantiq/gpio.h |    5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/arch/mips/include/asm/mach-lantiq/gpio.h b/arch/mips/include/asm/mach-lantiq/gpio.h
+index f79505b..9ba1cae 100644
+--- a/arch/mips/include/asm/mach-lantiq/gpio.h
++++ b/arch/mips/include/asm/mach-lantiq/gpio.h
+@@ -1,10 +1,7 @@
+ #ifndef __ASM_MIPS_MACH_LANTIQ_GPIO_H
+ #define __ASM_MIPS_MACH_LANTIQ_GPIO_H
+ 
+-static inline int gpio_to_irq(unsigned int gpio)
+-{
+-	return -1;
+-}
++#define gpio_to_irq __gpio_to_irq
+ 
+ #define gpio_get_value __gpio_get_value
+ #define gpio_set_value __gpio_set_value
+-- 
+1.7.10.4
+

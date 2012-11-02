@@ -1,0 +1,27 @@
+From 50b5073dd266721a690323519fb906a56daa09d7 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 1 Nov 2012 20:39:43 +0100
+Subject: [PATCH 101/113] MIPS: lantiq: bootsel bits are wrong
+
+---
+ arch/mips/lantiq/xway/reset.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/lantiq/xway/reset.c b/arch/mips/lantiq/xway/reset.c
+index 22c55f7..a89d1a3 100644
+--- a/arch/mips/lantiq/xway/reset.c
++++ b/arch/mips/lantiq/xway/reset.c
+@@ -34,8 +34,8 @@
+ /* reset cause */
+ #define RCU_STAT_SHIFT		26
+ /* boot selection */
+-#define RCU_BOOT_SEL_SHIFT	26
+-#define RCU_BOOT_SEL_MASK	0x7
++#define RCU_BOOT_SEL_SHIFT	17
++#define RCU_BOOT_SEL_MASK	0xf
+ 
+ /* remapped base addr of the reset control unit */
+ static void __iomem *ltq_rcu_membase;
+-- 
+1.7.10.4
+
