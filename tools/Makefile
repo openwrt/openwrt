@@ -15,7 +15,7 @@ tools-y += gmp mpfr mpc libelf
 endif
 tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage
-tools-y += firmware-utils patch-cmdline quilt yaffs2 flock padjffs2
+tools-y += firmware-utils patch-image quilt yaffs2 flock padjffs2
 tools-y += mm-macros xorg-macros xfce-macros missing-macros xz cmake scons
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_powerpc) += upx
