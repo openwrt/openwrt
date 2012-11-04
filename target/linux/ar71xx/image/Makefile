@@ -649,7 +649,7 @@ define Image/Build/OpenMesh
 endef
 
 define Image/Build/Zcomax
-	$(call MkuImageLzma,$(2),$(3))
+	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/RKuImage,$(1),$(2),1507328,6356992)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkzcfw \
@@ -661,7 +661,7 @@ define Image/Build/Zcomax
 endef
 
 define Image/Build/Zcomax/initramfs
-	$(call MkuImageLzma/initramfs,$(2),$(3))
+	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 endef
 
 define Image/Build/Template/initramfs/initramfs
