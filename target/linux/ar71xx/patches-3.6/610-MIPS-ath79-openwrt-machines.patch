@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,18 +16,101 @@
+@@ -16,18 +16,102 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -99,6 +99,7 @@
 +	ATH79_MACH_WZR_HP_G300NH2,	/* Buffalo WZR-HP-G300NH2 */
 +	ATH79_MACH_WZR_HP_G450H,	/* Buffalo WZR-HP-G450H */
 +	ATH79_MACH_ZCN_1523H_2,		/* Zcomax ZCN-1523H-2-xx */
++	ATH79_MACH_ZCN_1523H_5,		/* Zcomax ZCN-1523H-5-xx */
  };
  
  #endif /* _ATH79_MACHTYPE_H */
@@ -724,7 +725,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,66 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,68 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -791,6 +792,8 @@
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G300NH2)	+= mach-wzr-hp-g300nh2.o
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_AG300H)	+= mach-wzr-hp-ag300h.o
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
++obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
++
 --- a/arch/mips/ath79/prom.c
 +++ b/arch/mips/ath79/prom.c
 @@ -180,6 +180,10 @@ void __init prom_init(void)
