@@ -334,13 +334,6 @@ define Package/libxtables
  TITLE:=IPv4/IPv6 firewall - shared xtables library
 endef
 
-define Package/libipq
-  $(call Package/iptables/Default)
-  SECTION:=libs
-  CATEGORY:=Libraries
-  TITLE:=IPv4/IPv6 firewall - shared libipq library
-endef
-
 TARGET_CPPFLAGS := \
 	-I$(PKG_BUILD_DIR)/include \
 	-I$(LINUX_DIR)/user_headers/include \
@@ -354,7 +347,6 @@ CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-devel \
 	$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
-	--enable-libipq \
 	--with-kernel="$(LINUX_DIR)/user_headers" \
 	--with-xtlibdir=/usr/lib/iptables \
 	--enable-static
@@ -375,7 +367,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/include/net/netfilter/*.h $(1)/usr/include/net/netfilter/
 	$(CP) $(PKG_BUILD_DIR)/include/iptables/*.h $(1)/usr/include/iptables/
 	$(CP) $(PKG_BUILD_DIR)/include/iptables.h $(1)/usr/include/
-	$(CP) $(PKG_BUILD_DIR)/include/libipq/libipq.h $(1)/usr/include/
 	$(CP) $(PKG_BUILD_DIR)/include/libipulog $(1)/usr/include/
 	$(CP) $(PKG_BUILD_DIR)/include/libiptc $(1)/usr/include/
 
@@ -383,7 +374,6 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.so* $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libip*tc.so* $(1)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipq.so* $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/xtables.pc $(1)/usr/lib/pkgconfig/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libiptc.pc $(1)/usr/lib/pkgconfig/
@@ -428,11 +418,6 @@ define Package/libxtables/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.so* $(1)/usr/lib/
 endef
 
-define Package/libipq/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipq.so* $(1)/usr/lib/
-endef
-
 define BuildPlugin
   define Package/$(1)/install
 	$(INSTALL_DIR) $$(1)/usr/lib/iptables
@@ -472,4 +457,3 @@ $(eval $(call BuildPackage,libiptc))
 $(eval $(call BuildPackage,libip4tc))
 $(eval $(call BuildPackage,libip6tc))
 $(eval $(call BuildPackage,libxtables))
-$(eval $(call BuildPackage,libipq))
