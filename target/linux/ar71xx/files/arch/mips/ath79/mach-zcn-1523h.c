@@ -27,7 +27,7 @@
 #define ZCN_1523H_2_GPIO_LED_MEDIUM	14
 #define ZCN_1523H_2_GPIO_LED_STRONG	15
 
-#define ZCN_1523H_5_GPIO_LED_UNKNOWN	1
+#define ZCN_1523H_5_GPIO_LAN2_POWER	1
 #define ZCN_1523H_5_GPIO_LED_LAN2	13
 #define ZCN_1523H_5_GPIO_LED_WEAK	14
 #define ZCN_1523H_5_GPIO_LED_MEDIUM	15
@@ -92,9 +92,6 @@ static struct gpio_led zcn_1523h_5_leds_gpio[] __initdata = {
 		.name		= "zcn-1523h:green:lan2",
 		.gpio		= ZCN_1523H_5_GPIO_LED_LAN2,
 		.active_low	= 1,
-	}, {
-		.name		= "zcn-1523h:amber:unknown",
-		.gpio		= ZCN_1523H_5_GPIO_LED_UNKNOWN,
 	}
 };
 
