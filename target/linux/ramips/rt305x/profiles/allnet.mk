@@ -9,7 +9,7 @@ define Profile/ALL02393G
 	NAME:=Allnet ALL0239-3G
 	PACKAGES:=\
 		kmod-usb-core kmod-usb-rt305x-dwc_otg \
-		kmod-ledtrig-usbdev
+		kmod-ledtrig-usbdev restorefactory
 endef
 
 define Profile/ALL02393G/Description
@@ -20,7 +20,7 @@ $(eval $(call Profile,ALL02393G))
 
 define Profile/ALL0256N
 	NAME:=Allnet ALL0256N
-	PACKAGES:=rssileds
+	PACKAGES:=restorefactory rssileds
 endef
 
 define Profile/ALL0256N/Description
