@@ -109,8 +109,9 @@ static void __init tl_mr3020_setup(void)
 					ARRAY_SIZE(tl_mr3020_gpio_keys),
 					tl_mr3020_gpio_keys);
 
-	ath79_set_usb_power_gpio(TL_MR3020_GPIO_USB_POWER, GPIOF_OUT_INIT_HIGH,
-				"USB power");
+	gpio_request_one(TL_MR3020_GPIO_USB_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
 	ath79_register_usb();
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);

@@ -156,7 +156,8 @@ static void __init wzrhpg450h_init(void)
 
 	ath79_register_eth(0);
 
-	ath79_set_usb_power_gpio(16, GPIOF_OUT_INIT_HIGH, "USB power");
+	gpio_request_one(16, GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
 	ath79_register_usb();
 
 	ap91_pci_init(ee, NULL);
