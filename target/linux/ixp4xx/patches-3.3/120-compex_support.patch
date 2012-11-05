@@ -5,13 +5,6 @@ Subject: [PATCH] Add support for the Compex WP18 / NP18A boards
 
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 ---
- arch/arm/mach-ixp4xx/Kconfig        |    8 ++
- arch/arm/mach-ixp4xx/Makefile       |    2 +
- arch/arm/mach-ixp4xx/compex-setup.c |  136 +++++++++++++++++++++++++++++++++++
- arch/arm/mach-ixp4xx/ixdp425-pci.c  |    3 +-
- arch/arm/tools/mach-types           |    2 +-
- 5 files changed, 149 insertions(+), 2 deletions(-)
- create mode 100644 arch/arm/mach-ixp4xx/compex-setup.c
 
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
@@ -19,7 +12,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	  Engineering Sidewinder board. For more information on this
  	  platform, see http://www.adiengineering.com
  
-+config MACH_COMPEX
++config MACH_COMPEXWP18
 +	bool "Compex WP18 / NP18A"
 +	select PCI
 +	help
@@ -36,7 +29,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  obj-pci-$(CONFIG_MACH_ARCOM_VULCAN)	+= vulcan-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-pci.o
  obj-pci-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-pci.o
-+obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
++obj-pci-$(CONFIG_MACH_COMPEXWP18)	+= ixdp425-pci.o
  
  obj-y	+= common.o
  
@@ -44,12 +37,12 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  obj-$(CONFIG_MACH_ARCOM_VULCAN)	+= vulcan-setup.o
  obj-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-setup.o
  obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-setup.o
-+obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
++obj-$(CONFIG_MACH_COMPEXWP18)	+= compex42x-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
 --- /dev/null
-+++ b/arch/arm/mach-ixp4xx/compex-setup.c
++++ b/arch/arm/mach-ixp4xx/compex42x-setup.c
 @@ -0,0 +1,138 @@
 +/*
 + * arch/arm/mach-ixp4xx/compex-setup.c
@@ -77,21 +70,21 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	.width		= 2,
 +};
 +
-+static struct resource compex_flash_resource = {
++static struct resource compex42x_flash_resource = {
 +	.flags		= IORESOURCE_MEM,
 +};
 +
-+static struct platform_device compex_flash = {
++static struct platform_device compex42x_flash = {
 +	.name		= "IXP4XX-Flash",
 +	.id		= 0,
 +	.dev		= {
-+		.platform_data = &compex_flash_data,
++		.platform_data = &compex42x_flash_data,
 +	},
 +	.num_resources	= 1,
-+	.resource	= &compex_flash_resource,
++	.resource	= &compex42x_flash_resource,
 +};
 +
-+static struct resource compex_uart_resources[] = {
++static struct resource compex42x_uart_resources[] = {
 +	{
 +		.start		= IXP4XX_UART1_BASE_PHYS,
 +		.end		= IXP4XX_UART1_BASE_PHYS + 0x0fff,
@@ -104,7 +97,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	}
 +};
 +
-+static struct plat_serial8250_port compex_uart_data[] = {
++static struct plat_serial8250_port compex42x_uart_data[] = {
 +	{
 +		.mapbase	= IXP4XX_UART1_BASE_PHYS,
 +		.membase	= (char *)IXP4XX_UART1_BASE_VIRT + REG_OFFSET,
@@ -126,15 +119,15 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	{ },
 +};
 +
-+static struct platform_device compex_uart = {
++static struct platform_device compex42x_uart = {
 +	.name			= "serial8250",
 +	.id			= PLAT8250_DEV_PLATFORM,
-+	.dev.platform_data	= compex_uart_data,
++	.dev.platform_data	= compex42x_uart_data,
 +	.num_resources		= 2,
-+	.resource		= compex_uart_resources,
++	.resource		= compex42x_uart_resources,
 +};
 +
-+static struct eth_plat_info compex_plat_eth[] = {
++static struct eth_plat_info compex42x_plat_eth[] = {
 +	{
 +		.phy		= IXP4XX_ETH_PHY_MAX_ADDR,
 +		.phy_mask	= 0xf0000,
@@ -147,34 +140,34 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	}
 +};
 +
-+static struct platform_device compex_eth[] = {
++static struct platform_device compex42x_eth[] = {
 +	{
 +		.name			= "ixp4xx_eth",
 +		.id			= IXP4XX_ETH_NPEB,
-+		.dev.platform_data	= compex_plat_eth,
++		.dev.platform_data	= compex42x_plat_eth,
 +	}, {
 +		.name			= "ixp4xx_eth",
 +		.id			= IXP4XX_ETH_NPEC,
-+		.dev.platform_data	= compex_plat_eth + 1,
++		.dev.platform_data	= compex42x_plat_eth + 1,
 +	}
 +};
 +
-+static struct platform_device *compex_devices[] __initdata = {
-+	&compex_flash,
-+	&compex_uart,
-+	&compex_eth[0],
-+	&compex_eth[1],
++static struct platform_device *compex42x_devices[] __initdata = {
++	&compex42x_flash,
++	&compex42x_uart,
++	&compex42x_eth[0],
++	&compex42x_eth[1],
 +};
 +
-+static void __init compex_init(void)
++static void __init compex42x_init(void)
 +{
 +	ixp4xx_sys_init();
 +
-+	compex_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
-+	compex_flash_resource.end =
++	compex42x_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
++	compex42x_flash_resource.end =
 +		IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
 +
-+	platform_add_devices(compex_devices, ARRAY_SIZE(compex_devices));
++	platform_add_devices(compex42x_devices, ARRAY_SIZE(compex42x_devices));
 +}
 +
 +MACHINE_START(COMPEX, "Compex WP18 / NP18A")
@@ -183,7 +176,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	.init_irq	= ixp4xx_init_irq,
 +	.timer		= &ixp4xx_timer,
 +	.atag_offset	= 0x0100,
-+	.init_machine	= compex_init,
++	.init_machine	= compex42x_init,
 +#if defined(CONFIG_PCI)
 +	.dma_zone_size	= SZ_64M,
 +#endif
@@ -197,18 +190,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
 -			machine_is_ixdp465() || machine_is_kixrp435())
 +			machine_is_ixdp465() || machine_is_kixrp435() ||
-+			machine_is_compex())
++			machine_is_compex42x())
  		pci_common_init(&ixdp425_pci);
  	return 0;
  }
---- a/arch/arm/tools/mach-types
-+++ b/arch/arm/tools/mach-types
-@@ -1273,7 +1273,7 @@ oiab			MACH_OIAB		OIAB			1269
- smdk6400		MACH_SMDK6400		SMDK6400		1270
- nokia_n800		MACH_NOKIA_N800		NOKIA_N800		1271
- greenphone		MACH_GREENPHONE		GREENPHONE		1272
--compex42x		MACH_COMPEXWP18		COMPEXWP18		1273
-+compex			MACH_COMPEX		COMPEX			1273
- xmate			MACH_XMATE		XMATE			1274
- energizer		MACH_ENERGIZER		ENERGIZER		1275
- ime1			MACH_IME1		IME1			1276

@@ -19,7 +19,7 @@
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
 @@ -25,6 +25,7 @@ obj-pci-$(CONFIG_MACH_SIDEWINDER)	+= sid
- obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
+ obj-pci-$(CONFIG_MACH_COMPEXWP18)	+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  obj-pci-$(CONFIG_MACH_AP1000)		+= ixdp425-pci.o
 +obj-pci-$(CONFIG_MACH_TW2662)		+= tw2662-pci.o
@@ -27,7 +27,7 @@
  obj-pci-$(CONFIG_MACH_MI424WR)		+= mi424wr-pci.o
  obj-pci-$(CONFIG_MACH_USR8200)		+= usr8200-pci.o
 @@ -54,6 +55,7 @@ obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewin
- obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
+ obj-$(CONFIG_MACH_COMPEXWP18)	+= compex42x-setup.o
  obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  obj-$(CONFIG_MACH_AP1000)	+= ap1000-setup.o
 +obj-$(CONFIG_MACH_TW2662)	+= tw2662-setup.o
