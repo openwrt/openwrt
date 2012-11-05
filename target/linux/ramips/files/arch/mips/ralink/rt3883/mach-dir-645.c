@@ -14,6 +14,7 @@
 #include <linux/ethtool.h>
 #include <linux/rt2x00_platform.h>
 #include <linux/spi/spi.h>
+#include <linux/gpio.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -113,6 +114,10 @@ static void __init dir_645_gpio_init(void)
 			 RT3883_GPIO_MODE_UART0(RT3883_GPIO_MODE_GPIO) |
 			 RT3883_GPIO_MODE_JTAG |
 			 RT3883_GPIO_MODE_PCI(RT3883_GPIO_MODE_PCI_FNC));
+
+	gpio_request_one(DIR_645_GPIO_USB_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
 }
 
 static void __init dir_645_init(void)
