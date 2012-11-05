@@ -109,8 +109,9 @@ static void __init tl_mr11u_setup(void)
 	ath79_register_gpio_keys_polled(-1, TL_MR11U_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(tl_mr11u_gpio_keys),
 					tl_mr11u_gpio_keys);
-	ath79_set_usb_power_gpio(TL_MR11U_GPIO_USB_POWER, GPIOF_OUT_INIT_HIGH,
-				"USB power");
+	gpio_request_one(TL_MR11U_GPIO_USB_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
 }
 
 MIPS_MACHINE(ATH79_MACH_TL_MR11U, "TL-MR11U", "TP-LINK TL-MR11U",
@@ -122,8 +123,9 @@ static void __init tl_mr3040_setup(void)
 
 	ath79_register_gpio_keys_polled(-1, TL_MR11U_KEYS_POLL_INTERVAL,
 					1, tl_mr11u_gpio_keys);
-	ath79_set_usb_power_gpio(TL_MR3040_GPIO_USB_POWER, GPIOF_OUT_INIT_HIGH,
-				"USB power");
+	gpio_request_one(TL_MR3040_GPIO_USB_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
 }
 
 MIPS_MACHINE(ATH79_MACH_TL_MR3040, "TL-MR3040", "TP-LINK TL-MR3040",

@@ -102,8 +102,9 @@ static void __init tl_ap99_setup(void)
 static void __init tl_mr3x20_usb_setup(void)
 {
 	/* enable power for the USB port */
-	ath79_set_usb_power_gpio(TL_MR3X20_GPIO_USB_POWER, GPIOF_OUT_INIT_HIGH,
-				"USB power");
+	gpio_request_one(TL_MR3X20_GPIO_USB_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
 	ath79_register_usb();
 }
 

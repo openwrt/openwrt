@@ -185,7 +185,8 @@ static void __init wzrhpag300h_setup(void)
 	ath79_register_eth(0);
 	ath79_register_eth(1);
 
-	ath79_set_usb_power_gpio(2, GPIOF_OUT_INIT_HIGH, "USB power");
+	gpio_request_one(2, GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
 	ath79_register_usb();
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wzrhpag300h_leds_gpio),

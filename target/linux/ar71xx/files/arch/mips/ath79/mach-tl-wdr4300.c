@@ -175,10 +175,12 @@ static void __init wdr4300_setup(void)
 	ath79_eth0_pll_data.pll_1000 = 0x06000000;
 	ath79_register_eth(0);
 
-	ath79_set_usb_power_gpio(WDR4300_GPIO_USB1_POWER, GPIOF_OUT_INIT_HIGH,
-				"USB1 power");
-	ath79_set_usb_power_gpio(WDR4300_GPIO_USB2_POWER, GPIOF_OUT_INIT_HIGH,
-				"USB2 power");
+	gpio_request_one(WDR4300_GPIO_USB1_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB1 power");
+	gpio_request_one(WDR4300_GPIO_USB2_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB2 power");
 	ath79_register_usb();
 }
 
