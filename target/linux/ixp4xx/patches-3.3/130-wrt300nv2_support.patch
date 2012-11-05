@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -97,6 +97,14 @@ config MACH_COMPEX
+@@ -97,6 +97,14 @@ config MACH_COMPEXWP18
  	  WP18 or NP18A boards. For more information on this
  	  platform, see http://www.compex.com.sg/home/OEM/product_ap.htm
  
@@ -20,7 +20,7 @@
 @@ -22,6 +22,7 @@ obj-pci-$(CONFIG_MACH_ARCOM_VULCAN)	+= v
  obj-pci-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-pci.o
  obj-pci-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-pci.o
- obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
+ obj-pci-$(CONFIG_MACH_COMPEXWP18)	+= ixdp425-pci.o
 +obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  
  obj-y	+= common.o
@@ -28,7 +28,7 @@
 @@ -45,6 +46,7 @@ obj-$(CONFIG_MACH_ARCOM_VULCAN)	+= vulca
  obj-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-setup.o
  obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-setup.o
- obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
+ obj-$(CONFIG_MACH_COMPEXWP18)	+= compex42x-setup.o
 +obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
