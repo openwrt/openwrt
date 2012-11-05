@@ -18,6 +18,7 @@ case "$board_name" in
 	96328A-1441N1 |\
 	963281TAN |\
 	963281T_TEF |\
+	96358-502V |\
 	"CPVA502+" |\
 	AW4339U |\
 	CPVA642 |\
