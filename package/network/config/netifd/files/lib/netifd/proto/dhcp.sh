@@ -27,6 +27,7 @@ proto_dhcp_setup() {
 	done
 
 	[ "$broadcast" = 1 ] && broadcast="-B" || broadcast=
+	[ -n "$clientid" ] && clientid="-x 0x3d:${clientid//:/}" || clientid="-C"
 
 	proto_export "INTERFACE=$config"
 	proto_run_command "$config" udhcpc \
@@ -35,9 +36,8 @@ proto_dhcp_setup() {
 		-f -t 0 -i "$iface" \
 		${ipaddr:+-r $ipaddr} \
 		${hostname:+-H $hostname} \
-		${clientid:+-x 0x3d:${clientid//:/}} \
 		${vendorid:+-V $vendorid} \
-		$broadcast $dhcpopts
+		$clientid $broadcast $dhcpopts
 }
 
 proto_dhcp_teardown() {
