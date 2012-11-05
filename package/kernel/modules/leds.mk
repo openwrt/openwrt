@@ -150,3 +150,20 @@ define KernelPackage/ledtrig-timer/description
 endef
 
 $(eval $(call KernelPackage,ledtrig-timer))
+
+
+define KernelPackage/ledtrig-oneshot
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED One-Shot Trigger
+  DEPENDS:=@!LINUX_3_3
+  KCONFIG:=CONFIG_LEDS_TRIGGER_ONESHOT
+  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-oneshot.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-oneshot)
+endef
+
+define KernelPackage/ledtrig-oneshot/description
+ Kernel module that allows LEDs to be triggered by sporadic events in
+ one-shot pulses.
+endef
+
+$(eval $(call KernelPackage,ledtrig-oneshot))
