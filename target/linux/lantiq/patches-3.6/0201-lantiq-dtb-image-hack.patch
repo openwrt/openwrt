@@ -1,0 +1,58 @@
+From a86a157eb87fb21a62205a5382842c2f331fb473 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 2 Nov 2012 15:40:34 +0100
+Subject: [PATCH 201/201] lantiq: dtb image hack
+
+---
+ arch/mips/lantiq/Kconfig |   12 ------------
+ arch/mips/lantiq/prom.c  |    4 +++-
+ 2 files changed, 3 insertions(+), 13 deletions(-)
+
+diff --git a/arch/mips/lantiq/Kconfig b/arch/mips/lantiq/Kconfig
+index c9d0984..bef648f 100644
+--- a/arch/mips/lantiq/Kconfig
++++ b/arch/mips/lantiq/Kconfig
+@@ -24,18 +24,6 @@ config SOC_FALCON
+ 
+ endchoice
+ 
+-choice
+-	prompt "Devicetree"
+-
+-config DT_EASY50712
+-	bool "Easy50712"
+-	depends on SOC_XWAY
+-
+-config DT_EASY80920
+-	bool "Easy80920"
+-	depends on SOC_XWAY
+-endchoice
+-
+ config PCI_LANTIQ
+ 	bool "PCI Support"
+ 	depends on SOC_XWAY && PCI
+diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
+index 9f9e875..72b183a 100644
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -57,6 +57,8 @@ static void __init prom_init_cmdline(void)
+ 	}
+ }
+ 
++extern struct boot_param_header __image_dtb;
++
+ void __init plat_mem_setup(void)
+ {
+ 	ioport_resource.start = IOPORT_RESOURCE_START;
+@@ -70,7 +72,7 @@ void __init plat_mem_setup(void)
+ 	 * Load the builtin devicetree. This causes the chosen node to be
+ 	 * parsed resulting in our memory appearing
+ 	 */
+-	__dt_setup_arch(&__dtb_start);
++	__dt_setup_arch(&__image_dtb);
+ }
+ 
+ void __init device_tree_init(void)
+-- 
+1.7.10.4
+
