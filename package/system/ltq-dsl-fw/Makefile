@@ -25,7 +25,7 @@ define Package/kmod-ltq-dsl-firmware-template
   SUBMENU:=Network Devices
   VARIANT:= $(1)-$(2)
   URL:=http://www.lantiq.com/
-  DEPENDS:=@(TARGET_lantiq_xway|| kmod-ltq-dsl-$(2)
+  DEPENDS:=@(TARGET_lantiq_$(2)||TARGET_lantiq_$(3)) kmod-ltq-dsl-$(2)
 endef
 
 Package/kmod-ltq-dsl-firmware-a-danube=$(call Package/kmod-ltq-dsl-firmware-template,a,danube,xway)
