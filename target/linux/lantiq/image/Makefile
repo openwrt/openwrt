@@ -207,6 +207,9 @@ Image/Build/Profile/EASY80920-NAND=$(call Image/Build/$(1),$(1),EASY80920-NAND)
 Image/BuildKernel/Profile/EASY80920-NOR=$(call Image/BuildKernel/Template,EASY80920-NOR)
 Image/Build/Profile/EASY80920-NOR=$(call Image/Build/$(1),$(1),EASY80920-NOR)
 
+Image/BuildKernel/Profile/ARV7525PW=$(call Image/BuildKernel/Template,ARV7525PW)
+Image/Build/Profile/ARV7525PW=$(call Image/Build/$(1),$(1),ARV7525PW)
+
 endif
 
 ifeq ($(CONFIG_TARGET_lantiq_vr9),y)
