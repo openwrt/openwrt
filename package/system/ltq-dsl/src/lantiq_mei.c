@@ -81,6 +81,14 @@
 #define ltq_w32_mask(clear, set, reg)       ltq_w32((ltq_r32(reg) & ~clear) | set, reg)
 */
 
+#define LTQ_RCU_BASE_ADDR   0x1F203000
+#define LTQ_ICU_BASE_ADDR       0x1F880200
+#define LTQ_MEI_BASE_ADDR       0x1E116000
+#define LTQ_PMU_BASE_ADDR       0x1F102000
+#define LTQ_MEI_DYING_GASP_INT  (INT_NUM_IM1_IRL0 + 21)
+#define LTQ_USB_OC_INT          (INT_NUM_IM4_IRL0 + 23)
+#define LTQ_MEI_INT             (INT_NUM_IM1_IRL0 + 23)
+
 #define LTQ_RCU_RST_REQ_DFE		(1 << 7)
 #define LTQ_RCU_RST_REQ_AFE		(1 << 11)
 

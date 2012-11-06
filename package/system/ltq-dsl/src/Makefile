@@ -1,6 +1,8 @@
 obj-m = lantiq_mei.o lantiq_atm.o
 lantiq_atm-objs := ifxmips_atm_core.o
 
+CFLAGS_MODULE+=-DSOC_TYPE_XWAY
+EXTRA_CFLAGS+=-DSOC_TYPE_XWAY
 ifeq ($(BUILD_VARIANT),danube)
   CFLAGS_MODULE+=-DCONFIG_DANUBE
   EXTRA_CFLAGS+=-DCONFIG_DANUBE
