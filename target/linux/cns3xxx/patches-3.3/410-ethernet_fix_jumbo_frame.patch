@@ -45,7 +45,7 @@
  };
  
  struct port {
-@@ -500,37 +508,35 @@ static void cns3xxx_alloc_rx_buf(struct 
+@@ -500,37 +508,35 @@ static void cns3xxx_alloc_rx_buf(struct
  	struct _rx_ring *rx_ring = sw->rx_ring;
  	unsigned int i = rx_ring->alloc_index;
  	struct rx_desc *desc = &(rx_ring)->desc[i];
