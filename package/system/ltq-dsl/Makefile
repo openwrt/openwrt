@@ -9,26 +9,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-dsl
-PKG_BASE_NAME:=drv_dsl_cpe_api_danube
 PKG_VERSION:=3.24.4.4
-PKG_RELEASE:=3
-PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/drv_dsl_cpe_api-$(PKG_VERSION)
+PKG_RELEASE:=4
+PKG_SOURCE:=drv_dsl_cpe_api_danube-$(PKG_VERSION).tar.gz
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/ltq-dsl-$(BUILD_VARIANT)/drv_dsl_cpe_api-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=c45bc531c1ed2ac80f68fb986b63bb87
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
-FW_NAME:=ltq-dsl-fw-0.1
-FW_MD5:=4700a36b66b955b4c5544227267356f4
-
 include $(INCLUDE_DIR)/package.mk
-
-define Download/ltq-dsl-fw
-	FILE:=$(FW_NAME).tar.bz2
-	MD5SUM:=$(FW_MD5)
-	URL:=http://mirror2.openwrt.org/sources/
-endef
-$(eval $(call Download,ltq-dsl-fw))
 
 define KernelPackage/ltq-dsl-template
   SECTION:=sys
@@ -37,40 +26,16 @@ define KernelPackage/ltq-dsl-template
   TITLE:=Lantiq dsl driver for $(1)
   URL:=http://www.lantiq.com/
   VARIANT:=$(1)
-  DEPENDS:=@TARGET_lantiq_$(1) +kmod-atm
+  DEPENDS:=@(TARGET_lantiq_$(1)||TARGET_lantiq_$(2)) +kmod-atm
   FILES:=$(PKG_BUILD_DIR)/src/mei/lantiq_mei.ko \
 	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.ko \
 	$(PKG_BUILD_DIR)/src/mei/lantiq_atm.ko
   AUTOLOAD:=$(call AutoLoad,50,lantiq_mei drv_dsl_cpe_api lantiq_atm)
 endef
 
-KernelPackage/ltq-dsl-danube=$(call KernelPackage/ltq-dsl-template,danube)
-KernelPackage/ltq-dsl-ase=$(call KernelPackage/ltq-dsl-template,ase)
-KernelPackage/ltq-dsl-ar9=$(call KernelPackage/ltq-dsl-template,ar9)
-KernelPackage/ltq-dsl-vr9=$(call KernelPackage/ltq-dsl-template,vr9)
-
-define Package/kmod-ltq-dsl-firmware-template
-  TITLE+=Firmware Annex-$(1) $(2)
-  SECTION:=sys
-  CATEGORY:=Kernel modules
-  SUBMENU:=Network Devices
-  VARIANT:= $(1)-$(2)
-  URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_$(2) kmod-ltq-dsl-$(2)
-endef
-
-Package/kmod-ltq-dsl-firmware-a-danube=$(call Package/kmod-ltq-dsl-firmware-template,a,danube)
-Package/kmod-ltq-dsl-firmware-b-danube=$(call Package/kmod-ltq-dsl-firmware-template,b,danube)
-Package/kmod-ltq-dsl-firmware-a-ase=$(call Package/kmod-ltq-dsl-firmware-template,a,ase)
-Package/kmod-ltq-dsl-firmware-b-ase=$(call Package/kmod-ltq-dsl-firmware-template,b,ase)
-Package/kmod-ltq-dsl-firmware-a-ar9=$(call Package/kmod-ltq-dsl-firmware-template,a,ar9)
-Package/kmod-ltq-dsl-firmware-b-ar9=$(call Package/kmod-ltq-dsl-firmware-template,b,ar9)
-Package/kmod-ltq-dsl-firmware-a-vr9=$(call Package/kmod-ltq-dsl-firmware-template,a,vr9)
-Package/kmod-ltq-dsl-firmware-b-vr9=$(call Package/kmod-ltq-dsl-firmware-template,b,vr9)
-
-define KernelPackage/ltq-dsl/description
-	Lantiq DSL driver for AR9, Amazon SE, Danube and VR9
-endef
+KernelPackage/ltq-dsl-danube=$(call KernelPackage/ltq-dsl-template,danube,xway)
+KernelPackage/ltq-dsl-ar9=$(call KernelPackage/ltq-dsl-template,ar9,xway)
+KernelPackage/ltq-dsl-ase=$(call KernelPackage/ltq-dsl-template,ase,ase)
 
 define KernelPackage/ltq-dsl/config
 	source "$(SOURCE)/Config.in"
@@ -105,14 +70,9 @@ CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
 CONFIG_TAG_danube:=DANUBE
 CONFIG_TAG_ase:=AMAZON_SE
 CONFIG_TAG_ar9:=AR9
-CONFIG_TAG_vr9:=VR9
 CONFIGURE_ARGS += --enable-add-drv-cflags="-DMODULE -DCONFIG_$(CONFIG_TAG_$(BUILD_VARIANT))"
 
-ifeq ($(BUILD_VARIANT),vr9)
-CONFIGURE_ARGS += --enable-vinax
-else
 CONFIGURE_ARGS += --enable-danube
-endif
 
 ifeq ($(CONFIG_LANTIQ_DSL_DEBUG),y)
 CONFIGURE_ARGS += \
@@ -125,10 +85,9 @@ EXTRA_CFLAGS = -fno-pic -mno-abicalls -mlong-calls -G 0
 
 define Build/Prepare
 	$(PKG_UNPACK)
+	$(Build/Patch)
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/src/mei/ 
 	$(CP) ./src/* $(PKG_BUILD_DIR)/src/mei/
-	$(Build/Patch)
-	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(FW_NAME).tar.bz2
 endef
 
 define Build/Configure
@@ -157,21 +116,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/src/include/drv_dsl_cpe_cmv_danube.h $(1)/usr/include
 endef
 
-define Package/kmod-ltq-dsl-firmware-$(BUILD_VARIANT)/install
-	$(INSTALL_DIR) $(1)/lib/firmware/
-	$(CP) $(PKG_BUILD_DIR)/$(FW_NAME)/ltq-dsl-fw-$(BUILD_VARIANT).bin $(1)/lib/firmware/dsl-fw-$(word 1, $(subst -, ,$(BUILD_VARIANT))).bin
-	ln -s /lib/firmware/dsl-fw-$(word 1, $(subst -, ,$(BUILD_VARIANT))).bin $(1)/lib/firmware/ModemHWE.bin
-endef
-
-$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a-danube))
-$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-b-danube))
-$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a-ase))
-$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-b-ase))
-$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a-ar9))
-$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-b-ar9))
-#$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a-vr9))
-#$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-b-vr9))
 $(eval $(call KernelPackage,ltq-dsl-danube))
 $(eval $(call KernelPackage,ltq-dsl-ase))
 $(eval $(call KernelPackage,ltq-dsl-ar9))
-#$(eval $(call KernelPackage,ltq-dsl-vr9))

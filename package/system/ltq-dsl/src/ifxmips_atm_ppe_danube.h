@@ -122,6 +122,7 @@
 /*
  *  Mailbox IGU1 Interrupt
  */
+#define LTQ_PPE_MBOX_INT     (INT_NUM_IM2_IRL0 + 24)
 #define PPE_MAILBOX_IGU1_INT            LTQ_PPE_MBOX_INT
 
 
