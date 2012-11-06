@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010 OpenWrt.org
+# Copyright (C) 2010-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -23,5 +23,7 @@ define Target/Description
 endef
 
 KERNELNAME:="uImage"
+
+DEFAULT_PACKAGES += kmod-ath9k kmod-usb2 wpad-mini
 
 $(eval $(call BuildTarget))
