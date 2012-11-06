@@ -32,7 +32,7 @@
 
 #include <sys/ioctl.h>
 #include <mtd/mtd-user.h>
-#include <../arch/mips/include/asm/mach-bcm63xx/bcm963xx_tag.h>
+#include <linux/bcm963xx_tag.h>
 
 #include "mtd.h"
 #include "crc32.h"
