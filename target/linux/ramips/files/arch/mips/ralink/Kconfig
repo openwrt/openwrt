@@ -37,6 +37,7 @@ config SOC_RT288X
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 	select SYS_HAS_EARLY_PRINTK
 	select MIPS_MACHINE
+	select HAVE_CLK
 
 config SOC_RT305X
 	bool
@@ -54,6 +55,7 @@ config SOC_RT305X
 	select USB_ARCH_HAS_HCD
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI
+	select HAVE_CLK
 
 config SOC_RT3883
 	bool
@@ -70,6 +72,7 @@ config SOC_RT3883
 	select MIPS_MACHINE
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI
+	select HAVE_CLK
 
 config RALINK_DEV_GPIO_BUTTONS
 	def_bool n
