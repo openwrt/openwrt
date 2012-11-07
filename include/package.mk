@@ -52,6 +52,7 @@ ifneq ($(if $(CONFIG_SRC_TREE_OVERRIDE),$(wildcard ./git-src)),)
 endif
 
 PKG_DIR_NAME:=$(lastword $(subst /,$(space),$(CURDIR)))
+PKG_INSTALL_STAMP:=$(PKG_INFO_DIR)/$(PKG_DIR_NAME).$(if $(BUILD_VARIANT),$(BUILD_VARIANT),default).install
 
 include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
@@ -254,8 +255,8 @@ Build/DistCheck=$(call Build/DistCheck/Default,)
 .PHONY: prepare-package-install
 prepare-package-install:
 	@mkdir -p $(PKG_INFO_DIR)
-	@touch $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.clean
-	@echo "$(filter-out essential,$(PKG_FLAGS))" > $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.flags
+	@touch $(PKG_INSTALL_STAMP).clean
+	@echo "$(filter-out essential,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
 
 $(PACKAGE_DIR):
 	mkdir -p $@
