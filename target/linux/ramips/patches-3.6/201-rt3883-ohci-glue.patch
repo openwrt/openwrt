@@ -1,0 +1,31 @@
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -342,6 +342,14 @@ config USB_OHCI_ATH79
+ 	  Enables support for the built-in OHCI controller present on the
+ 	  Atheros AR71XX/AR7240 SoCs.
+ 
++config USB_OHCI_RT3883
++	bool "USB OHCI support for the Ralink RT3883 SoCs"
++	depends on USB_OHCI_HCD && ( SOC_RT3883 || SOC_RT305X )
++	default y
++	help
++	  Enables support for the built-in OHCI controller present on the
++	  Ralink RT3883 SoC.
++
+ config USB_OHCI_HCD_PPC_SOC
+ 	bool "OHCI support for on-chip PPC USB controller"
+ 	depends on USB_OHCI_HCD && (STB03xxx || PPC_MPC52xx)
+--- a/drivers/usb/host/ohci-hcd.c
++++ b/drivers/usb/host/ohci-hcd.c
+@@ -1120,6 +1120,11 @@ MODULE_LICENSE ("GPL");
+ #define PLATFORM_DRIVER		ohci_platform_driver
+ #endif
+ 
++#ifdef CONFIG_USB_OHCI_RT3883
++#include "ohci-rt3883.c"
++#define PLATFORM_DRIVER		ohci_rt3883_driver
++#endif
++
+ #if	!defined(PCI_DRIVER) &&		\
+ 	!defined(PLATFORM_DRIVER) &&	\
+ 	!defined(OMAP1_PLATFORM_DRIVER) &&	\
