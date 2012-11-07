@@ -75,22 +75,22 @@ ifeq ($(DUMP),)
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
 
-    ifeq ($(if $(VARIANT),$(BUILD_VARIANT)),$(VARIANT))
+    ifeq ($(BUILD_VARIANT),$$(if $$(VARIANT),$$(VARIANT),$(BUILD_VARIANT)))
     ifdef Package/$(1)/install
       ifneq ($(CONFIG_PACKAGE_$(1))$(SDK)$(DEVELOPER),)
         IPKGS += $(1)
         compile: $$(IPKG_$(1)) $(PKG_INFO_DIR)/$(1).provides $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
 
         ifeq ($(CONFIG_PACKAGE_$(1)),y)
-          .PHONY: $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.$(1)
-          compile: $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.$(1)
-          $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.$(1):
-			@if [ -f $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.clean ]; then \
+          .PHONY: $(PKG_INSTALL_STAMP).$(1)
+          compile: $(PKG_INSTALL_STAMP).$(1)
+          $(PKG_INSTALL_STAMP).$(1):
+			if [ -f $(PKG_INSTALL_STAMP).clean ]; then \
 				rm -f \
-					$(PKG_INFO_DIR)/$(PKG_DIR_NAME).install \
-					$(PKG_INFO_DIR)/$(PKG_DIR_NAME).install.clean; \
+					$(PKG_INSTALL_STAMP) \
+					$(PKG_INSTALL_STAMP).clean; \
 			fi; \
-			echo "$(1)" >> $(PKG_INFO_DIR)/$(PKG_DIR_NAME).install
+			echo "$(1)" >> $(PKG_INSTALL_STAMP)
         endif
       else
         compile: $(1)-disabled

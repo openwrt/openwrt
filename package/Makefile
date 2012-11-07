@@ -60,7 +60,7 @@ OPKG:= \
   IPKG_INSTROOT=$(TARGET_DIR) \
   IPKG_CONF_DIR=$(STAGING_DIR)/etc \
   IPKG_OFFLINE_ROOT=$(TARGET_DIR) \
-  $(STAGING_DIR_HOST)/bin/opkg \
+  $(XARGS) $(STAGING_DIR_HOST)/bin/opkg \
 	--offline-root $(TARGET_DIR) \
 	--force-depends \
 	--force-overwrite \
@@ -71,7 +71,7 @@ OPKG:= \
 	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
 
 PACKAGE_INSTALL:=$(sort $(foreach pkg,$(package-y),$(lastword $(subst /,$(space),$(pkg)))))
-PACKAGE_INSTALL_FILES:=$(patsubst %,$(PKG_INFO_DIR)/%.install,$(PACKAGE_INSTALL))
+PACKAGE_INSTALL_FILES:=$(patsubst %,$(PKG_INFO_DIR)/%.*.install,$(PACKAGE_INSTALL))
 
 $(curdir)/cleanup: $(TMP_DIR)/.build
 	rm -rf $(STAGING_DIR_ROOT)
@@ -80,11 +80,11 @@ $(curdir)/install: $(TMP_DIR)/.build
 	- find $(STAGING_DIR_ROOT) -type d | $(XARGS) chmod 0755
 	rm -rf $(TARGET_DIR)
 	[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
-	$(OPKG) install `cat $(PACKAGE_INSTALL_FILES) | sed -e 's,^\(.*\)$$,$(PACKAGE_DIR)/\1_*.ipk,'`
-	@for pkg in $(PACKAGE_INSTALL); do \
-		[ -s $(PKG_INFO_DIR)/$${pkg}.install.flags ] || continue; \
-		for flag in `cat $(PKG_INFO_DIR)/$${pkg}.install.flags`; do \
-			$(OPKG) flag $$flag `cat $(PKG_INFO_DIR)/$${pkg}.install`; \
+	@$(FIND) `sed -e 's|.*|$(PACKAGE_DIR)/&_*.ipk|' $(PACKAGE_INSTALL_FILES)` | sort -u | $(OPKG) install
+	@for file in $(PACKAGE_INSTALL_FILES); do \
+		[ -s $$file.flags ] || continue; \
+		for flag in `cat $$file.flags`; do \
+			$(OPKG) flag $$flag < $$file; \
 		done; \
 	done || true
 	@-$(MAKE) package/preconfig
