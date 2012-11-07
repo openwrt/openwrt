@@ -1,0 +1,32 @@
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -235,6 +235,15 @@ config USB_EHCI_ATH79
+ 	  Enables support for the built-in EHCI controller present
+ 	  on the Atheros AR7XXX/AR9XXX SoCs.
+ 
++config USB_EHCI_RT3883
++	bool "EHCI support for Ralink RT3662/RT3883 SoCs"
++	depends on USB_EHCI_HCD && ( SOC_RT3883 || SOC_RT305X )
++	select USB_EHCI_ROOT_HUB_TT
++	default y
++	---help---
++	  Enables support for the built-in EHCI controller present
++	  on the Ralink RT3883 SoC.
++
+ config USB_OXU210HP_HCD
+ 	tristate "OXU210HP HCD support"
+ 	depends on USB
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -1339,6 +1339,11 @@ MODULE_LICENSE ("GPL");
+ #define PLATFORM_DRIVER		ehci_platform_driver
+ #endif
+ 
++#ifdef CONFIG_USB_EHCI_RT3883
++#include "ehci-rt3883.c"
++#define PLATFORM_DRIVER		ehci_rt3883_driver
++#endif
++
+ #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \
+     !defined(PS3_SYSTEM_BUS_DRIVER) && !defined(OF_PLATFORM_DRIVER) && \
+     !defined(XILINX_OF_PLATFORM_DRIVER)
