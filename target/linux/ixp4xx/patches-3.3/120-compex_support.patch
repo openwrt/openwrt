@@ -65,7 +65,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +#include <asm/mach/arch.h>
 +#include <asm/mach/flash.h>
 +
-+static struct flash_platform_data compex_flash_data = {
++static struct flash_platform_data compex42x_flash_data = {
 +	.map_name	= "cfi_probe",
 +	.width		= 2,
 +};
@@ -170,7 +170,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	platform_add_devices(compex42x_devices, ARRAY_SIZE(compex42x_devices));
 +}
 +
-+MACHINE_START(COMPEX, "Compex WP18 / NP18A")
++MACHINE_START(COMPEXWP18, "Compex WP18 / NP18A")
 +	/* Maintainer: Imre Kaloz <Kaloz@openwrt.org> */
 +	.map_io		= ixp4xx_map_io,
 +	.init_irq	= ixp4xx_init_irq,
