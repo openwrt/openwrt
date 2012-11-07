@@ -4,12 +4,12 @@
 #
 
 cns3xxx_board_name() {
-        local machine
-        local name
+	local machine
+	local name
 
-        machine=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /Hardware/ {print $2}' /proc/cpuinfo)
+	machine=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /Hardware/ {print $2}' /proc/cpuinfo)
 
-        case "$machine" in
+	case "$machine" in
 		"Gateworks Corporation Laguna"*)
 			name="laguna"
 			;;
