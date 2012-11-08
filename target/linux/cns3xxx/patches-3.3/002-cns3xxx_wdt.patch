@@ -11,16 +11,6 @@ arch/arm/Kconfig                     |    1 +
  arch/arm/mach-cns3xxx/cns3420vb.c    |   22 ++++++++++++++++++++++
  3 files changed, 25 insertions(+), 0 deletions(-)
 
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -372,6 +372,7 @@ config ARCH_CNS3XXX
- 	select MIGHT_HAVE_CACHE_L2X0
- 	select MIGHT_HAVE_PCI
- 	select PCI_DOMAINS if PCI
-+	select HAVE_ARM_TWD
- 	help
- 	  Support for Cavium Networks CNS3XXX platform.
- 
 --- a/arch/arm/configs/cns3420vb_defconfig
 +++ b/arch/arm/configs/cns3420vb_defconfig
 @@ -53,6 +53,8 @@ CONFIG_LEGACY_PTY_COUNT=16

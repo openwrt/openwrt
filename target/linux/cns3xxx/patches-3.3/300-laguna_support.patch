@@ -1,13 +1,11 @@
 --- a/arch/arm/mach-cns3xxx/Kconfig
 +++ b/arch/arm/mach-cns3xxx/Kconfig
-@@ -11,4 +11,14 @@ config MACH_CNS3420VB
+@@ -10,4 +10,12 @@ config MACH_CNS3420VB
  	  This is a platform with an on-board ARM11 MPCore and has support
  	  for USB, USB-OTG, MMC/SD/SDIO, SATA, PCI-E, etc.
  
 +config MACH_GW2388
 +	bool "Support for Gateworks Laguna Platform"
-+	select HAVE_ARM_SCU if SMP
-+	select MIGHT_HAVE_PCI
 +	help
 +	  Include support for the Gateworks Laguna Platform
 +
