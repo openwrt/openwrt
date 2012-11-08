@@ -7,22 +7,12 @@
 +obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o
 +obj-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o
 +obj-$(CONFIG_LOCAL_TIMERS)		+= localtimer.o
---- a/arch/arm/mach-cns3xxx/Kconfig
-+++ b/arch/arm/mach-cns3xxx/Kconfig
-@@ -3,6 +3,7 @@ menu "CNS3XXX platform type"
- 
- config MACH_CNS3420VB
- 	bool "Support for CNS3420 Validation Board"
-+	select HAVE_ARM_SCU if SMP
- 	select MIGHT_HAVE_PCI
- 	help
- 	  Include support for the Cavium Networks CNS3420 MPCore Platform
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -373,6 +373,7 @@ config ARCH_CNS3XXX
+@@ -372,6 +372,7 @@ config ARCH_CNS3XXX
+ 	select MIGHT_HAVE_CACHE_L2X0
  	select MIGHT_HAVE_PCI
  	select PCI_DOMAINS if PCI
- 	select HAVE_ARM_TWD
 +	select HAVE_SMP
  	help
  	  Support for Cavium Networks CNS3XXX platform.
