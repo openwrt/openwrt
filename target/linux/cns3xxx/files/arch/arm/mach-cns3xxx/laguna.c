@@ -781,6 +781,9 @@ static int __init laguna_model_setup(void)
 	u32 __iomem *mem;
 	u32 reg;
 
+	if (!machine_is_gw2388())
+		return 0;
+
 	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
 	cns3xxx_gpio_init( 0, 32, CNS3XXX_GPIOA_BASE_VIRT, IRQ_CNS3XXX_GPIOA,
 		NR_IRQS_CNS3XXX);
