@@ -35,7 +35,7 @@ static void show_usage(void)
 int main(int argc, char **argv)
 {
 	int timeout = 3;
-	char opt;
+	int opt;
 	char ipaddr[INET6_ADDRSTRLEN];
 	void *addr;
 	struct addrinfo *res, *rp;
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
 	while ((opt = getopt(argc, argv, "46t:h")) > -1)
 	{
-		switch (opt)
+		switch ((char)opt)
 		{
 			case '4':
 				hints.ai_family = AF_INET;
