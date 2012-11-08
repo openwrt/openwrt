@@ -16,7 +16,7 @@ endef
 
 define Host/Compile
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(HOST_BUILD_DIR)/Rules.mak
-	$(UCLIBC_MAKE) $(TOOLCHAIN_JOBS) PREFIX= all
+	$(UCLIBC_MAKE) PREFIX= all
 endef
 
 define Host/Install
