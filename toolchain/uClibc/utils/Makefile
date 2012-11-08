@@ -7,7 +7,7 @@ HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.uclibc_utils_installed
 
 define Host/Compile
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(HOST_BUILD_DIR)/Rules.mak
-	$(UCLIBC_MAKE) $(TOOLCHAIN_JOBS) PREFIX= utils
+	$(UCLIBC_MAKE) PREFIX= utils
 endef
 
 define Host/Install
