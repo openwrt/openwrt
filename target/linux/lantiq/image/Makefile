@@ -21,7 +21,7 @@ endef
 
 define PatchKernelLzma
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
-ifeq ($(CONFIG_LINUX_3_5),y)
+ifeq ($(CONFIG_LINUX_3_6),y)
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(KDIR)/$(1).dtb ./$(1).dts
 	$(STAGING_DIR_HOST)/bin/patch-dtb $(KDIR)/vmlinux-$(1) $(KDIR)/$(1).dtb
 else
@@ -202,13 +202,24 @@ endif
 
 ifeq ($(CONFIG_TARGET_lantiq_xway),y)
 
+# VR9
 Image/BuildKernel/Profile/EASY80920-NAND=$(call Image/BuildKernel/Template,EASY80920-NAND)
 Image/Build/Profile/EASY80920-NAND=$(call Image/Build/$(1),$(1),EASY80920-NAND)
 Image/BuildKernel/Profile/EASY80920-NOR=$(call Image/BuildKernel/Template,EASY80920-NOR)
 Image/Build/Profile/EASY80920-NOR=$(call Image/Build/$(1),$(1),EASY80920-NOR)
 
+# Danube
 Image/BuildKernel/Profile/ARV7525PW=$(call Image/BuildKernel/Template,ARV7525PW)
 Image/Build/Profile/ARV7525PW=$(call Image/Build/$(1),$(1),ARV7525PW)
+
+Image/BuildKernel/Profile/ARV4520PW=$(call Image/BuildKernel/Template,ARV4520PW)
+Image/Build/Profile/ARV4520PW=$(call Image/Build/$(1),$(1),ARV4520PW)
+
+Image/BuildKernel/Profile/ARV752DPW=$(call Image/BuildKernel/Template,ARV752DPW)
+Image/Build/Profile/ARV752DPW=$(call Image/Build/$(1),$(1),ARV752DPW)
+
+Image/BuildKernel/Profile/ARV752DPW22=$(call Image/BuildKernel/Template,ARV752DPW22)
+Image/Build/Profile/ARV752DPW22=$(call Image/Build/$(1),$(1),ARV752DPW22)
 
 endif
 

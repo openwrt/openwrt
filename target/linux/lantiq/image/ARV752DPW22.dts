@@ -8,7 +8,7 @@
 	};
 
 	memory@0 {
-		reg = <0x0 0x2000000>;
+		reg = <0x0 0x4000000>;
 	};
 
 	fpi@10000000 {
@@ -24,29 +24,40 @@
 			nor-boot@0 {
 				compatible = "lantiq,nor";
 				bank-width = <2>;
-				reg = <0 0x0 0x2000000>;
+				reg = <0 0x0 0x800000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 
 				partition@0 {
 					label = "uboot";
-					reg = <0x00000 0x10000>; /* 64 KB */
+					reg = <0x00000 0x10000>;
+					read-only;
 				};
 
 				partition@10000 {
 					label = "uboot_env";
-					reg = <0x10000 0x10000>; /* 64 KB */
+					reg = <0x10000 0x10000>;
 				};
 
 				partition@20000 {
 					label = "linux";
-					reg = <0x20000 0x3c0000>;
+					reg = <0x20000 0x7d0000>;
 				};
 
-				partition@400000 {
+				partition@7f0000 {
 					label = "boardconfig";
-					reg = <0x3f0000 0x10000>;
+					reg = <0x7f0000 0x10000>;
+					read-only;
 				};
+			};
+			gpiomm: gpiomm@4000000 {
+				compatible = "lantiq,gpio-mm";
+				reg = <1 0x0 0x10 >;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				lantiq,shadow = <2>;
 			};
 		};
 
@@ -65,8 +76,14 @@
 					lantiq,function = "exin";
 				};
 				pci {
-					lantiq,groups = "gnt1", "req1";
+					lantiq,groups = "gnt1", "gnt2", "req1", "req2";
 					lantiq,function = "pci";
+				};
+				conf_out {
+					lantiq,pins = "io3", "io5", "io6", "io8", /* leds */
+							"io21"; /* pci-rst */
+					lantiq,open-drain;
+					lantiq,pull = <0>;
 				};
 			};
 		};
@@ -92,8 +109,9 @@
 			interrupt-map = <
                                 0x7000 0 0 1 &icu0 30 1 // slot 14, irq 29
 			>;
+			lantiq,external-clock;
 			gpio-reset = <&gpio 21 0>;
-			req-mask = <0x1>;		/* GNT1 */
+			req-mask = <0x3>;
 		};
 
 	};
@@ -107,32 +125,81 @@
 			linux,code = <0x100>;
 		};
 	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
-		festnetz {
-			label = "Festnetz";
-			gpios = <&gpio 4 1>;
+		power0 {
+			label = "power0";
+			gpios = <&gpio 3 1>;
 			default-state = "on";
 		};
-		internet {
-			label = "Internet";
+		message {
+			label = "message";
 			gpios = <&gpio 5 1>;
 			default-state = "on";
 		};
-		wlan {
-			label = "WLan";
+		power1 {
+			label = "power1";
 			gpios = <&gpio 6 1>;
 			default-state = "on";
 		};
-		online {
-			label = "Online";
+		voice1 {
+			label = "voice1";
 			gpios = <&gpio 8 1>;
 			default-state = "on";
 		};
-		dsl {
-			label = "DSL";
-			gpios = <&gpio 9 1>;
+		microphone {
+			label = "microphone";
+			gpios = <&gpiomm 3 1>;
+			default-state = "on";
+		};
+		wifi {
+			label = "wifi";
+			gpios = <&gpiomm 4 1>;
+			default-state = "on";
+		};
+		fxs1 {
+			label = "fxs1";
+			gpios = <&gpiomm 5 1>;
+			default-state = "on";
+		};
+		fx2 {
+			label = "fxs2";
+			gpios = <&gpiomm 6 1>;
+			default-state = "on";
+		};
+		fxo {
+			label = "fxo";
+			gpios = <&gpiomm 7 1>;
+			default-state = "on";
+		};
+		internet {
+			label = "internet";
+			gpios = <&gpiomm 8 1>;
+			default-state = "on";
+		};
+		voice2 {
+			label = "voice2";
+			gpios = <&gpiomm 9 1>;
+			default-state = "on";
+		};
+		eth1 {
+			 label = "eth1";
+			 gpios = <&gpiomm 11 1>;
+			 default-state = "on";
+		};
+		eth2 {
+			label = "eth2";
+			gpios = <&gpiomm 12 1>;
+			default-state = "on";
+		};
+		eth3 {
+			label = "eth3";
+			gpios = <&gpiomm 13 1>;
+			default-state = "on";
+		};
+		eth4 {
+			label = "eth4";
+			gpios = <&gpiomm 14 1>;
 			default-state = "on";
 		};
 	};
