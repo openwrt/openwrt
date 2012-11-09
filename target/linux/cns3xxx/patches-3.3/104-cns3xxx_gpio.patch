@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -216,7 +216,7 @@ static struct map_desc cns3420_io_desc[]
+@@ -213,7 +213,7 @@ static struct map_desc cns3420_io_desc[]
  
  static void __init cns3420_map_io(void)
  {
@@ -96,7 +96,7 @@
  /* used by entry-macro.S */
 --- a/arch/arm/mach-cns3xxx/core.h
 +++ b/arch/arm/mach-cns3xxx/core.h
-@@ -21,7 +21,7 @@ void __init cns3xxx_l2x0_init(void);
+@@ -19,7 +19,7 @@ void __init cns3xxx_l2x0_init(void);
  static inline void cns3xxx_l2x0_init(void) {}
  #endif /* CONFIG_CACHE_L2X0 */
  
