@@ -18,7 +18,7 @@ GRUB_CONSOLE_CMDLINE =
 
 USE_ATKBD = generic kvm_guest
 
-ifneq ($(foreach subtarget,$(USE_ATKBD),$(CONFIG_TARGET_x86_$(subtarget))),)
+ifneq ($(strip $(foreach subtarget,$(USE_ATKBD),$(CONFIG_TARGET_x86_$(subtarget)))),)
   GRUB2_MODULES += at_keyboard
   GRUB2_MODULES_ISO += at_keyboard
 endif
