@@ -17,13 +17,3 @@ define Profile/EASY80920-NAND/Description
 endef
 
 $(eval $(call Profile,EASY80920-NAND))
-
-define Profile/ARV7525PW
-  NAME:=ARV7525PW
-endef
-
-define Profile/ARV7525PW/Description
-	Speedport W303V - ARV7525PW
-endef
-
-$(eval $(call Profile,ARV7525PW))
