@@ -31,7 +31,7 @@ Subject: [PATCH 23/63] ohci: add driver for bcm63xx integrated controller.
  	depends on USB_OHCI_HCD && ARCH_OMAP1
 --- /dev/null
 +++ b/drivers/usb/host/ohci-bcm63xx.c
-@@ -0,0 +1,175 @@
+@@ -0,0 +1,176 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -64,7 +64,8 @@ Subject: [PATCH 23/63] ohci: add driver for bcm63xx integrated controller.
 +
 +	ret = ohci_run(ohci);
 +	if (ret < 0) {
-+		err("can't start %s", hcd->self.bus_name);
++		dev_err(hcd->self.controller, "can't start %s\n",
++			hcd->self.bus_name);
 +		ohci_stop(hcd);
 +		return ret;
 +	}
