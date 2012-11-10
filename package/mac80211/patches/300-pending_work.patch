@@ -107,6 +107,15 @@
  
  	/*
  	 * set_multicast_list will be invoked by the networking core
+@@ -849,7 +826,7 @@ static void ieee80211_do_stop(struct iee
+ 			struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 			if (info->control.vif == &sdata->vif) {
+ 				__skb_unlink(skb, &local->pending[i]);
+-				dev_kfree_skb_irq(skb);
++				ieee80211_free_txskb(&local->hw, skb);
+ 			}
+ 		}
+ 	}
 @@ -997,6 +974,72 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
@@ -257,6 +266,24 @@
  	WLAN_STA_BLOCK_BA,
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
+@@ -34,7 +34,7 @@ void ieee80211_tx_status_irqsafe(struct 
+ 		skb_queue_len(&local->skb_queue_unreliable);
+ 	while (tmp > IEEE80211_IRQSAFE_QUEUE_LIMIT &&
+ 	       (skb = skb_dequeue(&local->skb_queue_unreliable))) {
+-		dev_kfree_skb_irq(skb);
++		ieee80211_free_txskb(hw, skb);
+ 		tmp--;
+ 		I802_DEBUG_INC(local->tx_status_drop);
+ 	}
+@@ -159,7 +159,7 @@ static void ieee80211_handle_filtered_fr
+ 			   "dropped TX filtered frame, queue_len=%d PS=%d @%lu\n",
+ 			   skb_queue_len(&sta->tx_filtered[ac]),
+ 			   !!test_sta_flag(sta, WLAN_STA_PS_STA), jiffies);
+-	dev_kfree_skb(skb);
++	ieee80211_free_txskb(&local->hw, skb);
+ }
+ 
+ static void ieee80211_check_pending_bar(struct sta_info *sta, u8 *addr, u8 tid)
 @@ -324,6 +324,75 @@ static void ieee80211_add_tx_radiotap_he
  
  }
@@ -385,7 +412,7 @@
  
  	/* this was a transmitted frame, but now we want to reuse it */
  	skb_orphan(skb);
-@@ -634,25 +660,8 @@ EXPORT_SYMBOL(ieee80211_report_low_ack);
+@@ -634,25 +660,17 @@ EXPORT_SYMBOL(ieee80211_report_low_ack);
  void ieee80211_free_txskb(struct ieee80211_hw *hw, struct sk_buff *skb)
  {
  	struct ieee80211_local *local = hw_to_local(hw);
@@ -412,6 +439,15 @@
  	dev_kfree_skb_any(skb);
  }
  EXPORT_SYMBOL(ieee80211_free_txskb);
++
++void ieee80211_purge_tx_queue(struct ieee80211_hw *hw,
++			      struct sk_buff_head *skbs)
++{
++	struct sk_buff *skb;
++
++	while ((skb = __skb_dequeue(skbs)))
++		ieee80211_free_txskb(hw, skb);
++}
 --- a/drivers/net/wireless/p54/main.c
 +++ b/drivers/net/wireless/p54/main.c
 @@ -139,6 +139,7 @@ static int p54_beacon_format_ie_tim(stru
@@ -630,6 +666,24 @@
  
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
+@@ -585,7 +585,7 @@ static bool sta_info_cleanup_expire_buff
+ 		 */
+ 		if (!skb)
+ 			break;
+-		dev_kfree_skb(skb);
++		ieee80211_free_txskb(&local->hw, skb);
+ 	}
+ 
+ 	/*
+@@ -614,7 +614,7 @@ static bool sta_info_cleanup_expire_buff
+ 		local->total_ps_buffered--;
+ 		ps_dbg(sta->sdata, "Buffered frame expired (STA %pM)\n",
+ 		       sta->sta.addr);
+-		dev_kfree_skb(skb);
++		ieee80211_free_txskb(&local->hw, skb);
+ 	}
+ 
+ 	/*
 @@ -674,7 +674,7 @@ int __must_check __sta_info_destroy(stru
  	 * will be sufficient.
  	 */
@@ -639,6 +693,26 @@
  
  	ret = sta_info_hash_del(local, sta);
  	if (ret)
+@@ -730,8 +730,8 @@ int __must_check __sta_info_destroy(stru
+ 
+ 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
+ 		local->total_ps_buffered -= skb_queue_len(&sta->ps_tx_buf[ac]);
+-		__skb_queue_purge(&sta->ps_tx_buf[ac]);
+-		__skb_queue_purge(&sta->tx_filtered[ac]);
++		ieee80211_purge_tx_queue(&local->hw, &sta->ps_tx_buf[ac]);
++		ieee80211_purge_tx_queue(&local->hw, &sta->tx_filtered[ac]);
+ 	}
+ 
+ #ifdef CONFIG_MAC80211_MESH
+@@ -765,7 +765,7 @@ int __must_check __sta_info_destroy(stru
+ 		tid_tx = rcu_dereference_raw(sta->ampdu_mlme.tid_tx[i]);
+ 		if (!tid_tx)
+ 			continue;
+-		__skb_queue_purge(&tid_tx->pending);
++		ieee80211_purge_tx_queue(&local->hw, &tid_tx->pending);
+ 		kfree(tid_tx);
+ 	}
+ 
 --- a/drivers/net/wireless/ath/ath5k/phy.c
 +++ b/drivers/net/wireless/ath/ath5k/phy.c
 @@ -1977,11 +1977,13 @@ ath5k_hw_set_spur_mitigation_filter(stru
@@ -674,8 +748,35 @@
  	u8 quiet_elem_len;
  	u8 num_of_quiet_elem;	/* can be more the one */
  	u8 timeout_int_len;
+@@ -1318,6 +1317,8 @@ netdev_tx_t ieee80211_monitor_start_xmit
+ 					 struct net_device *dev);
+ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
+ 				       struct net_device *dev);
++void ieee80211_purge_tx_queue(struct ieee80211_hw *hw,
++			      struct sk_buff_head *skbs);
+ 
+ /* HT */
+ void ieee80211_apply_htcap_overrides(struct ieee80211_sub_if_data *sdata,
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
+@@ -406,7 +406,7 @@ void ieee80211_add_pending_skb(struct ie
+ 	int queue = info->hw_queue;
+ 
+ 	if (WARN_ON(!info->control.vif)) {
+-		kfree_skb(skb);
++		ieee80211_free_txskb(&local->hw, skb);
+ 		return;
+ 	}
+ 
+@@ -431,7 +431,7 @@ void ieee80211_add_pending_skbs_fn(struc
+ 		struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 
+ 		if (WARN_ON(!info->control.vif)) {
+-			kfree_skb(skb);
++			ieee80211_free_txskb(&local->hw, skb);
+ 			continue;
+ 		}
+ 
 @@ -792,8 +792,11 @@ u32 ieee802_11_parse_elems_crc(u8 *start
  			elems->country_elem_len = elen;
  			break;
@@ -786,3 +887,109 @@
  		ieee80211_queue_work(&local->hw, &local->reconfig_filter);
  		break;
  	default:
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -354,7 +354,7 @@ static void purge_old_ps_buffers(struct 
+ 			total += skb_queue_len(&sta->ps_tx_buf[ac]);
+ 			if (skb) {
+ 				purged++;
+-				dev_kfree_skb(skb);
++				ieee80211_free_txskb(&local->hw, skb);
+ 				break;
+ 			}
+ 		}
+@@ -466,7 +466,7 @@ ieee80211_tx_h_unicast_ps_buf(struct iee
+ 			ps_dbg(tx->sdata,
+ 			       "STA %pM TX buffer for AC %d full - dropping oldest frame\n",
+ 			       sta->sta.addr, ac);
+-			dev_kfree_skb(old);
++			ieee80211_free_txskb(&local->hw, old);
+ 		} else
+ 			tx->local->total_ps_buffered++;
+ 
+@@ -1103,7 +1103,7 @@ static bool ieee80211_tx_prep_agg(struct
+ 		spin_unlock(&tx->sta->lock);
+ 
+ 		if (purge_skb)
+-			dev_kfree_skb(purge_skb);
++			ieee80211_free_txskb(&tx->local->hw, purge_skb);
+ 	}
+ 
+ 	/* reset session timer */
+@@ -1214,7 +1214,7 @@ static bool ieee80211_tx_frags(struct ie
+ #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
+ 		if (WARN_ON_ONCE(q >= local->hw.queues)) {
+ 			__skb_unlink(skb, skbs);
+-			dev_kfree_skb(skb);
++			ieee80211_free_txskb(&local->hw, skb);
+ 			continue;
+ 		}
+ #endif
+@@ -1356,9 +1356,9 @@ static int invoke_tx_handlers(struct iee
+ 	if (unlikely(res == TX_DROP)) {
+ 		I802_DEBUG_INC(tx->local->tx_handlers_drop);
+ 		if (tx->skb)
+-			dev_kfree_skb(tx->skb);
++			ieee80211_free_txskb(&tx->local->hw, tx->skb);
+ 		else
+-			__skb_queue_purge(&tx->skbs);
++			ieee80211_purge_tx_queue(&tx->local->hw, &tx->skbs);
+ 		return -1;
+ 	} else if (unlikely(res == TX_QUEUED)) {
+ 		I802_DEBUG_INC(tx->local->tx_handlers_queued);
+@@ -1393,7 +1393,7 @@ static bool ieee80211_tx(struct ieee8021
+ 	res_prepare = ieee80211_tx_prepare(sdata, &tx, skb);
+ 
+ 	if (unlikely(res_prepare == TX_DROP)) {
+-		dev_kfree_skb(skb);
++		ieee80211_free_txskb(&local->hw, skb);
+ 		goto out;
+ 	} else if (unlikely(res_prepare == TX_QUEUED)) {
+ 		goto out;
+@@ -1465,7 +1465,7 @@ void ieee80211_xmit(struct ieee80211_sub
+ 	headroom = max_t(int, 0, headroom);
+ 
+ 	if (ieee80211_skb_resize(sdata, skb, headroom, may_encrypt)) {
+-		dev_kfree_skb(skb);
++		ieee80211_free_txskb(&local->hw, skb);
+ 		rcu_read_unlock();
+ 		return;
+ 	}
+@@ -2056,8 +2056,10 @@ netdev_tx_t ieee80211_subif_start_xmit(s
+ 		head_need += IEEE80211_ENCRYPT_HEADROOM;
+ 		head_need += local->tx_headroom;
+ 		head_need = max_t(int, 0, head_need);
+-		if (ieee80211_skb_resize(sdata, skb, head_need, true))
+-			goto fail;
++		if (ieee80211_skb_resize(sdata, skb, head_need, true)) {
++			ieee80211_free_txskb(&local->hw, skb);
++			return NETDEV_TX_OK;
++		}
+ 	}
+ 
+ 	if (encaps_data) {
+@@ -2124,10 +2126,13 @@ netdev_tx_t ieee80211_subif_start_xmit(s
+  */
+ void ieee80211_clear_tx_pending(struct ieee80211_local *local)
+ {
++	struct sk_buff *skb;
+ 	int i;
+ 
+-	for (i = 0; i < local->hw.queues; i++)
+-		skb_queue_purge(&local->pending[i]);
++	for (i = 0; i < local->hw.queues; i++) {
++		while ((skb = skb_dequeue(&local->pending[i])) != NULL)
++			ieee80211_free_txskb(&local->hw, skb);
++	}
+ }
+ 
+ /*
+@@ -2190,7 +2195,7 @@ void ieee80211_tx_pending(unsigned long 
+ 			struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 
+ 			if (WARN_ON(!info->control.vif)) {
+-				kfree_skb(skb);
++				ieee80211_free_txskb(&local->hw, skb);
+ 				continue;
+ 			}
+ 
