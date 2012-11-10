@@ -105,9 +105,20 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  	ret = platform_device_register(pdev);
  	if (ret)
  		return ret;
+@@ -248,6 +303,10 @@ bcm63xx_enetsw_register(const struct bcm
+ 	else if (BCMCPU_IS_6368())
+ 		enetsw_pd.num_ports = ENETSW_PORTS_6368;
+ 
++	enetsw_pd.dma_chan_width = ENETDMA_CHAN_WIDTH;
++	enetsw_pd.dma_chan_en_mask = ENETDMAC_CHANCFG_EN_MASK;
++	enetsw_pd.dma_chan_int_mask = ENETDMAC_IR_PKTDONE_MASK;
++
+ 	ret = platform_device_register(&bcm63xx_enetsw_device);
+ 	if (ret)
+ 		return ret;
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -709,6 +709,8 @@
+@@ -715,6 +715,8 @@
  /*************************************************************************
   * _REG relative to RSET_ENETDMA
   *************************************************************************/
@@ -116,7 +127,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  
  /* Controller Configuration Register */
  #define ENETDMA_CFG_REG			(0x0)
-@@ -758,29 +760,54 @@
+@@ -764,29 +766,54 @@
  /* State Ram Word 4 */
  #define ENETDMA_SRAM4_REG(x)		(0x20c + (x) * 0x10)
  
@@ -175,7 +186,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  
  
  /*************************************************************************
-@@ -788,16 +815,16 @@
+@@ -794,16 +821,16 @@
   *************************************************************************/
  
  /* Ring Start Address register */
@@ -536,8 +547,8 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  	/* mask all interrupts and request them */
 -	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK_REG(priv->rx_chan));
 -	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK_REG(priv->tx_chan));
-+	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK_REG, priv->rx_chan);
-+	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK_REG, priv->tx_chan);
++	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK, priv->rx_chan);
++	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK, priv->tx_chan);
  
  	ret = request_irq(priv->irq_rx, bcm_enet_isr_dma,
  			  IRQF_DISABLED, dev->name, dev);
@@ -568,10 +579,10 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  	/* set dma maximum burst len */
  	enet_dmac_writel(priv, priv->dma_maxburst,
 -			 ENETDMAC_MAXBURST_REG(priv->rx_chan));
-+			 ENETDMAC_MAXBURST_REG, priv->rx_chan);
++			 ENETDMAC_MAXBURST, priv->rx_chan);
  	enet_dmac_writel(priv, priv->dma_maxburst,
 -			 ENETDMAC_MAXBURST_REG(priv->tx_chan));
-+			 ENETDMAC_MAXBURST_REG, priv->tx_chan);
++			 ENETDMAC_MAXBURST, priv->tx_chan);
  
  	/* set flow control low/high threshold to 1/3 / 2/3 */
  	val = priv->rx_ring_size / 3;
@@ -580,25 +591,25 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  	enet_dma_writel(priv, ENETDMA_CFG_EN_MASK, ENETDMA_CFG_REG);
  	enet_dmac_writel(priv, ENETDMAC_CHANCFG_EN_MASK,
 -			 ENETDMAC_CHANCFG_REG(priv->rx_chan));
-+			 ENETDMAC_CHANCFG_REG, priv->rx_chan);
++			 ENETDMAC_CHANCFG, priv->rx_chan);
  
  	/* watch "packet transferred" interrupt in rx and tx */
  	enet_dmac_writel(priv, ENETDMAC_IR_PKTDONE_MASK,
 -			 ENETDMAC_IR_REG(priv->rx_chan));
-+			 ENETDMAC_IR_REG, priv->rx_chan);
++			 ENETDMAC_IR, priv->rx_chan);
  	enet_dmac_writel(priv, ENETDMAC_IR_PKTDONE_MASK,
 -			 ENETDMAC_IR_REG(priv->tx_chan));
-+			 ENETDMAC_IR_REG, priv->tx_chan);
++			 ENETDMAC_IR, priv->tx_chan);
  
  	/* make sure we enable napi before rx interrupt  */
  	napi_enable(&priv->napi);
  
  	enet_dmac_writel(priv, ENETDMAC_IR_PKTDONE_MASK,
 -			 ENETDMAC_IRMASK_REG(priv->rx_chan));
-+			 ENETDMAC_IRMASK_REG, priv->rx_chan);
++			 ENETDMAC_IRMASK, priv->rx_chan);
  	enet_dmac_writel(priv, ENETDMAC_IR_PKTDONE_MASK,
 -			 ENETDMAC_IRMASK_REG(priv->tx_chan));
-+			 ENETDMAC_IRMASK_REG, priv->tx_chan);
++			 ENETDMAC_IRMASK, priv->tx_chan);
  
  	netif_carrier_on(dev);
  	netif_start_queue(dev);
@@ -608,11 +619,21 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  	/* mask all interrupts */
 -	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK_REG(priv->rx_chan));
 -	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK_REG(priv->tx_chan));
-+	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK_REG, priv->rx_chan);
-+	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK_REG, priv->tx_chan);
++	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK, priv->rx_chan);
++	enet_dmac_writel(priv, 0, ENETDMAC_IRMASK, priv->tx_chan);
  
  	/* disable dma & mac */
  	bcm_enet_disable_dma(priv, priv->tx_chan);
+@@ -2757,6 +2793,9 @@ static int __devinit bcm_enetsw_probe(st
+ 		memcpy(priv->used_ports, pd->used_ports,
+ 		       sizeof (pd->used_ports));
+ 		priv->num_ports = pd->num_ports;
++		priv->dma_chan_en_mask = pd->dma_chan_en_mask;
++		priv->dma_chan_int_mask = pd->dma_chan_int_mask;
++		priv->dma_chan_width = pd->dma_chan_width;
+ 	}
+ 
+ 	ret = compute_hw_mtu(priv, dev->mtu);
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.h
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.h
 @@ -367,6 +367,21 @@ struct bcm_enet_priv {
@@ -689,7 +710,23 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  };
  
  /*
-@@ -72,4 +89,66 @@ int __init bcm63xx_enet_register(int uni
+@@ -64,6 +81,15 @@ struct bcm63xx_enetsw_platform_data {
+ 	char mac_addr[ETH_ALEN];
+ 	int num_ports;
+ 	struct bcm63xx_enetsw_port used_ports[ENETSW_MAX_PORT];
++
++	/* DMA channel enable mask */
++	u32 dma_chan_en_mask;
++
++	/* DMA channel interrupt mask */
++	u32 dma_chan_int_mask;
++
++	/* DMA channel register width */
++	unsigned int dma_chan_width;
+ };
+ 
+ int __init bcm63xx_enet_register(int unit,
+@@ -72,4 +98,66 @@ int __init bcm63xx_enet_register(int uni
  int __init
  bcm63xx_enetsw_register(const struct bcm63xx_enetsw_platform_data *pd);
  
