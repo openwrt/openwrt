@@ -34,7 +34,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +#define BCM_6328_HSSPI_BASE		(0xb0001000)
  #define BCM_6328_UDC0_BASE		(0xdeadbeef)
  #define BCM_6328_USBDMA_BASE		(0xdeadbeef)
- #define BCM_6328_OHCI0_BASE		(0xdeadbeef)
+ #define BCM_6328_OHCI0_BASE		(0xb0002600)
 @@ -227,6 +230,7 @@ enum bcm63xx_regs_set {
  #define BCM_6338_UART1_BASE		(0xdeadbeef)
  #define BCM_6338_GPIO_BASE		(0xfffe0400)
@@ -104,8 +104,8 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define BCM_6328_ENET1_IRQ		0
  #define BCM_6328_ENET_PHY_IRQ		(IRQ_INTERNAL_BASE + 12)
 +#define BCM_6328_HSSPI_IRQ		(IRQ_INTERNAL_BASE + 29)
- #define BCM_6328_OHCI0_IRQ		(IRQ_INTERNAL_BASE + 9)
- #define BCM_6328_EHCI0_IRQ		(IRQ_INTERNAL_BASE + 10)
+ #define BCM_6328_OHCI0_IRQ		(BCM_6328_HIGH_IRQ_BASE + 9)
+ #define BCM_6328_EHCI0_IRQ		(BCM_6328_HIGH_IRQ_BASE + 10)
  #define BCM_6328_PCMCIA_IRQ		0
 @@ -640,6 +652,7 @@ enum bcm63xx_irq {
  #define BCM_6338_ENET0_IRQ		(IRQ_INTERNAL_BASE + 8)
@@ -157,7 +157,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	[IRQ_ENET0_RXDMA]	= BCM_## __cpu ##_ENET0_RXDMA_IRQ,	\
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -1231,4 +1231,51 @@
+@@ -1239,4 +1239,51 @@
  
  #define PCIE_DEVICE_OFFSET		0x8000
  
