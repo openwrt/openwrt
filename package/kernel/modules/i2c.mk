@@ -197,8 +197,13 @@ endef
 
 $(eval $(call KernelPackage,i2c-mux))
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.6.0)),1)
+I2C_MUX_GPIO_MODULES:= \
+  CONFIG_I2C_MUX_GPIO:drivers/i2c/muxes/i2c-mux-gpio
+else
 I2C_MUX_GPIO_MODULES:= \
   CONFIG_I2C_MUX_GPIO:drivers/i2c/muxes/gpio-i2cmux
+endif
 
 define KernelPackage/i2c-mux-gpio
   $(call i2c_defaults,$(I2C_MUX_GPIO_MODULES),51)
