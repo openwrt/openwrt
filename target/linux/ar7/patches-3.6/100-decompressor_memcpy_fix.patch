@@ -1,0 +1,12 @@
+--- a/arch/mips/boot/compressed/decompress.c
++++ b/arch/mips/boot/compressed/decompress.c
+@@ -44,6 +44,9 @@ void error(char *x)
+ #define STATIC static
+ 
+ #ifdef CONFIG_KERNEL_GZIP
++#ifdef memcpy
++#undef memcpy
++#endif
+ void *memcpy(void *dest, const void *src, size_t n)
+ {
+ 	int i;
