@@ -2,7 +2,7 @@
 #
 #   Empty/wrong machtype-workaround generator
 #
-#   Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
+#   Copyright (C) 2006-2012 Imre Kaloz <kaloz@openwrt.org>
 #   based on linux/arch/arm/boot/compressed/head-xscale.S
 #
 #   This program is free software; you can redistribute it and/or modify
@@ -31,7 +31,11 @@ do
     printf "\xe3\xa0\x10\x$hexid" > $BIN_DIR/openwrt-$1-zImage
   else
     # we have a high machtypeid, we need a "mov" (e3a) and an "orr" (e38)
-    printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "2 3")\xe3\x81\x1c\x$(echo $hexid|cut -b 1)" > $BIN_DIR/openwrt-$1-zImage
+    if [ "$2" -lt "4096" ]; then
+      printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "2 3")\xe3\x81\x1c\x$(echo $hexid|cut -b 1)" > $BIN_DIR/openwrt-$1-zImage
+    else
+      printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "3 4")\xe3\x81\x1c\x$(echo $hexid|cut -b "1 2")" > $BIN_DIR/openwrt-$1-zImage
+    fi
   fi
     # generate the image
     cat $BIN_DIR/$IMG_PREFIX-zImage >> $BIN_DIR/openwrt-$1-zImage
