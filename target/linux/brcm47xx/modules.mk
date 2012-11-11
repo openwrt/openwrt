@@ -21,19 +21,6 @@ endef
 
 $(eval $(call KernelPackage,usb-brcm47xx))
 
-define KernelPackage/ssb-gige
-  TITLE:=Broadcom SSB Gigabit Ethernet
-  KCONFIG:=CONFIG_SSB_DRIVER_GIGE=y
-  DEPENDS:=@TARGET_brcm47xx +kmod-tg3
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-endef
-
-define KernelPackage/ssb-gige/description
- Kernel modules for Broadcom SSB Gigabit Ethernet adapters.
-endef
-
-$(eval $(call KernelPackage,ssb-gige))
-
 
 define KernelPackage/ocf-ubsec-ssb
   TITLE:=BCM5365P IPSec Core driver

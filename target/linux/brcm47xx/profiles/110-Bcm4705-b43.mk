@@ -7,7 +7,7 @@
 
 define Profile/Bcm4705-b43
   NAME:=BCM4705/BCM4785, Broadcom BCM43xx WiFi (b43)
-  PACKAGES:=kmod-b43 kmod-b43legacy kmod-tg3 kmod-ssb-gige
+  PACKAGES:=kmod-b43 kmod-b43legacy kmod-tg3 kmod-tg3
 endef
 
 define Profile/Broadcom-b43/Description
