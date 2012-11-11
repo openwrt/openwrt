@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2010 OpenWrt.org
+#
+# Copyright (C) 2010-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -16,17 +16,17 @@ define Image/Prepare
 	$(call mkimage,new,0x20008000)
 endef
 
-define Image/BuildKernel
-	cp $(KDIR)/uImage-old $(BIN_DIR)/openwrt-$(BOARD)-old-uboot-uImage
-	cp $(KDIR)/uImage-new $(BIN_DIR)/openwrt-$(BOARD)-uImage
-endef
-
 # Build sysupgrade image
 define BuildFirmware/Generic
-	dd if=$(BIN_DIR)/openwrt-$(BOARD)-uImage of=$(KDIR)/uImage.pad bs=64k conv=sync; \
+	dd if=$(KDIR)/uImage-old of=$(KDIR)/uImage-old.pad bs=64k conv=sync; \
+	dd if=$(KDIR)/uImage-new of=$(KDIR)/uImage-new.pad bs=64k conv=sync; \
 	dd if=$(KDIR)/root.$(1) of=$(KDIR)/root.$(1).pad bs=128k conv=sync; \
 	sh $(TOPDIR)/scripts/combined-image.sh \
-		$(KDIR)/uImage.pad \
+		$(KDIR)/uImage-old.pad \
+		$(KDIR)/root.$(1).pad \
+		$(BIN_DIR)/$(IMG_PREFIX)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))-old-uboot-sysupgrade.bin
+	sh $(TOPDIR)/scripts/combined-image.sh \
+		$(KDIR)/uImage-new.pad \
 		$(KDIR)/root.$(1).pad \
 		$(BIN_DIR)/$(IMG_PREFIX)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))-sysupgrade.bin
 endef
@@ -37,16 +37,37 @@ define Image/Build
 endef
 
 define Image/Build/jffs2-64k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=64k conv=sync
+	( \
+	dd if=$(KDIR)/uImage-old bs=2048k conv=sync; \
+	dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-old-uboot-$(1).bin
+	( \
+	dd if=$(KDIR)/uImage-new bs=2048k conv=sync; \
+	dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1).bin
 endef
 
 define Image/Build/jffs2-128k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=128k conv=sync
+	( \
+	dd if=$(KDIR)/uImage-old bs=2048k conv=sync; \
+	dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-old-uboot-$(1).bin
+	( \
+	dd if=$(KDIR)/uImage-new bs=2048k conv=sync; \
+	dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1).bin
 endef
 
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=128k conv=sync
+	( \
+	dd if=$(KDIR)/uImage-old bs=2048k conv=sync; \
+	dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-old-uboot-$(1).bin
+	( \
+	dd if=$(KDIR)/uImage-new bs=2048k conv=sync; \
+	dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1).bin
 endef
 
 $(eval $(call BuildImage))
