@@ -67,6 +67,9 @@ define Image/Build/Titan
 	$(STAGING_DIR_HOST)/bin/mktitanimg -o $(BIN_DIR)/openwrt-$(2)-na-$(4)-code.bin -i $(KDIR)/loader.bin $(KDIR)/root.$(1) -a 0x10000 0x10000 -h 2  -p 0x4D575943 -s 0x0b010000
 endef
 
+define Image/Build/AudioCodes
+	( dd if=$(KDIR)/vmlinux.elf bs=64k conv=sync ; dd if=$(KDIR)/root.$(1) ) > $(BIN_DIR)/openwrt-$(2)-$(1).bin
+endef
 
 #define Image/Build/sErCoMm
 #	cat sercomm/adam2.bin "$(BIN_DIR)/$(IMG_PREFIX)-$(1).bin" > "$(KDIR)/dgfw.tmp"
@@ -86,6 +89,7 @@ define Image/Build/Initramfs
 	$(CP) $(KDIR)/vmlinux.bin $(BIN_DIR)/$(IMG_PREFIX)-initramfs.bin
 endef
 
+ifeq ($(CONFIG_AR7_TI),y)
 define Image/Build
 	dd if=$(KDIR)/loader.bin $(call align/$(1)) > $(BIN_DIR)/$(IMG_PREFIX)-$(1).bin
 	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/$(IMG_PREFIX)-$(1).bin
@@ -113,5 +117,16 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
 endif
 endef
+endif
+
+ifeq ($(CONFIG_AR7_AC49X),y)
+define Image/Build
+#	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(1).bin)
+	$(call Image/Build/AudioCodes,$(1),mp202,$(1))
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	$(call Image/Build/Initramfs)
+endif
+endef
+endif
 
 $(eval $(call BuildImage))
