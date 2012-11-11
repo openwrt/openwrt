@@ -1,0 +1,35 @@
+--- a/drivers/mtd/maps/physmap.c
++++ b/drivers/mtd/maps/physmap.c
+@@ -94,7 +94,7 @@ static const char *rom_probe_types[] = {
+ 					"map_rom",
+ 					NULL };
+ static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", "afs",
+-					  "ar7part", NULL };
++					  "ac49xpart", "ar7part", NULL };
+ 
+ static int physmap_flash_probe(struct platform_device *dev)
+ {
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -143,6 +143,11 @@ config MTD_OF_PARTS
+ 	  the partition map from the children of the flash node,
+ 	  as described in Documentation/devicetree/booting-without-of.txt.
+ 
++config MTD_AC49X_PARTS
++	tristate "AudioCodes AC49X partitioning support"
++	---help---
++	  AudioCodes AC49X partitioning support
++
+ config MTD_AR7_PARTS
+ 	tristate "TI AR7 partitioning support"
+ 	---help---
+--- a/drivers/mtd/Makefile
++++ b/drivers/mtd/Makefile
+@@ -9,6 +9,7 @@ mtd-y				:= mtdcore.o mtdsuper.o mtdconc
+ obj-$(CONFIG_MTD_OF_PARTS)	+= ofpart.o
+ obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
+ obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
++obj-$(CONFIG_MTD_AC49X_PARTS)	+= ac49xpart.o
+ obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
+ obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o titanpart.o
+ obj-$(CONFIG_MTD_BCM63XX_PARTS)	+= bcm63xxpart.o
