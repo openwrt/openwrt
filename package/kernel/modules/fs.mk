@@ -94,7 +94,7 @@ define KernelPackage/fs-ext4
 	$(LINUX_DIR)/fs/jbd2/jbd2.ko \
 	$(LINUX_DIR)/fs/mbcache.ko
   AUTOLOAD:=$(call AutoLoad,30,mbcache jbd2 ext4,1)
-  $(call AddDepends/crc16)
+  $(call AddDepends/crc16, +!LINUX_3_3:kmod-crypto-hash)
 endef
 
 define KernelPackage/fs-ext4/description
