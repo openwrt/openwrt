@@ -1,0 +1,26 @@
+diff -urN uClibc-0.9.33.2/ldso/libdl/libdl.c uClibc-0.9.33.2.new/ldso/libdl/libdl.c
+--- uClibc-0.9.33.2/ldso/libdl/libdl.c	2012-05-15 09:20:09.000000000 +0200
++++ uClibc-0.9.33.2.new/ldso/libdl/libdl.c	2012-11-10 18:34:56.673501060 +0100
+@@ -671,7 +671,7 @@
+ {
+ 	struct elf_resolve *tpnt, *tfrom;
+ 	struct dyn_elf *handle;
+-	ElfW(Addr) from;
++	ElfW(Addr) from = 0;
+ 	struct dyn_elf *rpnt;
+ 	void *ret;
+ 	struct symbol_ref sym_ref = { NULL, NULL };
+@@ -729,7 +729,12 @@
+ 	tpnt = NULL;
+ 	if (handle == _dl_symbol_tables)
+ 		tpnt = handle->dyn; /* Only search RTLD_GLOBAL objs if global object */
+-	ret = _dl_find_hash(name2, &handle->dyn->symbol_scope, tpnt, ELF_RTYPE_CLASS_DLSYM, &sym_ref);
++	do {
++		ret = _dl_find_hash(name2, &handle->dyn->symbol_scope, tpnt, ELF_RTYPE_CLASS_DLSYM, &sym_ref);
++		if (ret != NULL)
++			break;
++		handle = handle->next;
++	} while (from && handle);
+ 
+ #if defined(USE_TLS) && USE_TLS && defined SHARED
+ 	if (sym_ref.sym && (ELF_ST_TYPE(sym_ref.sym->st_info) == STT_TLS) && (sym_ref.tpnt)) {
