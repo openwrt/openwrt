@@ -1,0 +1,76 @@
+The current fixed physical/virtual mappings for the internal peripherals
+of the ixp4xx SoC devices is using a virtual address outside of the vmalloc
+region. This results in kernel warnings like this on the boot console:
+
+  BUG: mapping for 0xc8000000 at 0xffbeb000 out of vmalloc space
+  BUG: mapping for 0xc4000000 at 0xffbfe000 out of vmalloc space
+  BUG: mapping for 0xc0000000 at 0xffbff000 out of vmalloc space
+
+The virtual kernel memory layout lists this for the vmalloc region:
+
+    ...
+    vmalloc : 0xc2800000 - 0xff000000   ( 968 MB)
+    ...
+
+With a little adjustment to the virtual address used we can map these
+internal devices in the vmalloc region.
+
+Signed-off-by: Greg Ungerer <gerg@uclinux.org>
+
+---
+arch/arm/mach-ixp4xx/include/mach/ixp4xx-regs.h |   14 +++++++-------
+ 1 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm/mach-ixp4xx/include/mach/ixp4xx-regs.h b/arch/arm/mach-ixp4xx/include/mach/ixp4xx-regs.h
+index 97c530f..ad66605 100644
+--- a/arch/arm/mach-ixp4xx/include/mach/ixp4xx-regs.h
++++ b/arch/arm/mach-ixp4xx/include/mach/ixp4xx-regs.h
+@@ -32,11 +32,11 @@
+  *
+  * 0x6000000	0x00004000	ioremap'd	QMgr
+  *
+- * 0xC0000000	0x00001000	0xffbff000	PCI CFG
++ * 0xC0000000	0x00001000	0xfebff000	PCI CFG
+  *
+- * 0xC4000000	0x00001000	0xffbfe000	EXP CFG
++ * 0xC4000000	0x00001000	0xfebfe000	EXP CFG
+  *
+- * 0xC8000000	0x00013000	0xffbeb000	On-Chip Peripherals
++ * 0xC8000000	0x00013000	0xfebeb000	On-Chip Peripherals
+  */
+ 
+ /*
+@@ -49,21 +49,21 @@
+  * Expansion BUS Configuration registers
+  */
+ #define IXP4XX_EXP_CFG_BASE_PHYS	(0xC4000000)
+-#define IXP4XX_EXP_CFG_BASE_VIRT	(0xFFBFE000)
++#define IXP4XX_EXP_CFG_BASE_VIRT	(0xFEBFE000)
+ #define IXP4XX_EXP_CFG_REGION_SIZE	(0x00001000)
+ 
+ /*
+  * PCI Config registers
+  */
+ #define IXP4XX_PCI_CFG_BASE_PHYS	(0xC0000000)
+-#define	IXP4XX_PCI_CFG_BASE_VIRT	(0xFFBFF000)
++#define	IXP4XX_PCI_CFG_BASE_VIRT	(0xFEBFF000)
+ #define IXP4XX_PCI_CFG_REGION_SIZE	(0x00001000)
+ 
+ /*
+  * Peripheral space
+  */
+ #define IXP4XX_PERIPHERAL_BASE_PHYS	(0xC8000000)
+-#define IXP4XX_PERIPHERAL_BASE_VIRT	(0xFFBEB000)
++#define IXP4XX_PERIPHERAL_BASE_VIRT	(0xFEBEB000)
+ #define IXP4XX_PERIPHERAL_REGION_SIZE	(0x00013000)
+ 
+ /*
+@@ -73,7 +73,7 @@
+  * aligned so that it * can be used with the low-level debug code.
+  */
+ #define	IXP4XX_DEBUG_UART_BASE_PHYS	(0xC8000000)
+-#define	IXP4XX_DEBUG_UART_BASE_VIRT	(0xffb00000)
++#define	IXP4XX_DEBUG_UART_BASE_VIRT	(0xfeb00000)
+ #define	IXP4XX_DEBUG_UART_REGION_SIZE	(0x00001000)
+ 
+ #define IXP4XX_EXP_CS0_OFFSET	0x00
