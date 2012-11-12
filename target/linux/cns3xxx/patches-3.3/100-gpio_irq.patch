@@ -5,7 +5,7 @@
 +obj-$(CONFIG_ARCH_CNS3XXX)		+= core.o gpio.o pm.o devices.o
  obj-$(CONFIG_PCI)			+= pcie.o
  obj-$(CONFIG_MACH_CNS3420VB)		+= cns3420vb.o
- obj-$(CONFIG_MACH_GW2388)		+= laguna.o
+ obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o cns3xxx_fiq.o
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
 @@ -198,6 +198,10 @@ static void __init cns3420_init(void)

@@ -6,9 +6,9 @@
  {
 -	cns3xxx_map_io();
 +	cns3xxx_common_init();
+ 	cns3xxx_pcie_iotable_init();
  	iotable_init(cns3420_io_desc, ARRAY_SIZE(cns3420_io_desc));
  
- 	cns3420_early_serial_setup();
 --- a/arch/arm/mach-cns3xxx/core.c
 +++ b/arch/arm/mach-cns3xxx/core.c
 @@ -21,6 +21,7 @@
@@ -19,7 +19,7 @@
  #include <mach/cns3xxx.h>
  #include "core.h"
  
-@@ -72,12 +73,73 @@ static struct map_desc cns3xxx_io_desc[]
+@@ -82,12 +83,73 @@ static struct map_desc cns3xxx_io_desc[]
  	},
  };
  
@@ -96,15 +96,15 @@
  /* used by entry-macro.S */
 --- a/arch/arm/mach-cns3xxx/core.h
 +++ b/arch/arm/mach-cns3xxx/core.h
-@@ -19,7 +19,7 @@ void __init cns3xxx_l2x0_init(void);
+@@ -21,7 +21,7 @@ void __init cns3xxx_l2x0_init(void);
  static inline void cns3xxx_l2x0_init(void) {}
  #endif /* CONFIG_CACHE_L2X0 */
  
 -void __init cns3xxx_map_io(void);
 +void __init cns3xxx_common_init(void);
  void __init cns3xxx_init_irq(void);
+ int  __init cns3xxx_pcie_init(void);
  void cns3xxx_power_off(void);
- void cns3xxx_restart(char, const char *);
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -366,6 +366,7 @@ config ARCH_CLPS711X
