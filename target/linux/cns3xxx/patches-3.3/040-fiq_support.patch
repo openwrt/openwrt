@@ -1,6 +1,6 @@
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -374,6 +374,7 @@ config ARCH_CNS3XXX
+@@ -373,6 +373,7 @@ config ARCH_CNS3XXX
  	select MIGHT_HAVE_PCI
  	select PCI_DOMAINS if PCI
  	select HAVE_SMP
@@ -55,10 +55,10 @@
  
 --- a/arch/arm/mach-cns3xxx/Makefile
 +++ b/arch/arm/mach-cns3xxx/Makefile
-@@ -2,6 +2,6 @@ obj-$(CONFIG_ARCH_CNS3XXX)		+= core.o pm
+@@ -1,6 +1,6 @@
+ obj-$(CONFIG_ARCH_CNS3XXX)		+= core.o pm.o devices.o
  obj-$(CONFIG_PCI)			+= pcie.o
  obj-$(CONFIG_MACH_CNS3420VB)		+= cns3420vb.o
- obj-$(CONFIG_MACH_GW2388)		+= laguna.o
 -obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o
 +obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o cns3xxx_fiq.o
  obj-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o

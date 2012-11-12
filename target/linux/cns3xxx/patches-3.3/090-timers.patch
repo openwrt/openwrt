@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/core.c
 +++ b/arch/arm/mach-cns3xxx/core.c
-@@ -115,12 +115,13 @@ static void cns3xxx_timer_set_mode(enum
+@@ -125,12 +125,13 @@ static void cns3xxx_timer_set_mode(enum
  
  	switch (mode) {
  	case CLOCK_EVT_MODE_PERIODIC:
@@ -15,7 +15,7 @@
  		ctrl |= (1 << 2) | (1 << 9);
  		break;
  	case CLOCK_EVT_MODE_UNUSED:
-@@ -145,11 +146,11 @@ static int cns3xxx_timer_set_next_event(
+@@ -155,11 +156,11 @@ static int cns3xxx_timer_set_next_event(
  
  static struct clock_event_device cns3xxx_tmr1_clockevent = {
  	.name		= "cns3xxx timer1",
@@ -29,7 +29,7 @@
  	.cpumask	= cpu_all_mask,
  };
  
-@@ -191,6 +192,35 @@ static struct irqaction cns3xxx_timer_ir
+@@ -201,6 +202,35 @@ static struct irqaction cns3xxx_timer_ir
  	.handler	= cns3xxx_timer_interrupt,
  };
  
@@ -65,7 +65,7 @@
  /*
   * Set up the clock source and clock events devices
   */
-@@ -208,13 +238,12 @@ static void __init __cns3xxx_timer_init(
+@@ -218,13 +248,12 @@ static void __init __cns3xxx_timer_init(
  	/* stop free running timer3 */
  	writel(0, cns3xxx_tmr1 + TIMER_FREERUN_CONTROL_OFFSET);
  
@@ -82,7 +82,7 @@
  	/* mask irq, non-mask timer1 overflow */
  	irq_mask = readl(cns3xxx_tmr1 + TIMER1_2_INTERRUPT_MASK_OFFSET);
  	irq_mask &= ~(1 << 2);
-@@ -226,23 +255,9 @@ static void __init __cns3xxx_timer_init(
+@@ -236,23 +265,9 @@ static void __init __cns3xxx_timer_init(
  	val |= (1 << 9);
  	writel(val, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
  
