@@ -254,10 +254,10 @@ out the configuration than the in kernel cfe config reader.
  
  static u32 find_nvram_size(u32 end)
  {
-@@ -59,6 +61,25 @@ static void early_nvram_init_fill(u32 ba
- 		}
- 		off <<= 1;
- 	}
+@@ -47,6 +49,26 @@ static void early_nvram_init_fill(u32 ba
+ 	u32 *src, *dst;
+ 	u32 size;
+ 
 +	cfe_env = 0;
 +
 +	/* XXX: hack for supporting the CFE environment stuff on WGT634U */
@@ -277,10 +277,11 @@ out the configuration than the in kernel cfe config reader.
 +			return;
 +		}
 +	}
- 
- 	/* Try embedded NVRAM at 4 KB and 1 KB as last resorts */
- 	header = (struct nvram_header *) KSEG1ADDR(base + 4096);
-@@ -166,6 +187,12 @@ int nvram_getenv(char *name, char *val,
++
+ 	/* TODO: when nvram is on nand flash check for bad blocks first. */
+ 	off = FLASH_MIN;
+ 	while (off <= lim) {
+@@ -166,6 +188,12 @@ int nvram_getenv(char *name, char *val,
  	if (!nvram_buf[0])
  		early_nvram_init();
  
@@ -293,7 +294,7 @@ out the configuration than the in kernel cfe config reader.
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
  	end = nvram_buf + sizeof(nvram_buf) - 2;
-@@ -194,6 +221,9 @@ char *nvram_get(const char *name)
+@@ -194,6 +222,9 @@ char *nvram_get(const char *name)
  	if (!nvram_buf[0])
  		early_nvram_init();
  
