@@ -13,7 +13,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
 
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -1697,6 +1697,9 @@ int sifdefaultroute (int unit, u_int32_t
+@@ -1709,6 +1709,9 @@ int sifdefaultroute (int unit, u_int32_t
      memset (&rt, 0, sizeof (rt));
      SET_SA_FAMILY (rt.rt_dst, AF_INET);
  
@@ -23,7 +23,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      rt.rt_dev = ifname;
  
      if (kernel_version > KVERSION(2,1,0)) {
-@@ -1704,7 +1707,7 @@ int sifdefaultroute (int unit, u_int32_t
+@@ -1716,7 +1719,7 @@ int sifdefaultroute (int unit, u_int32_t
  	SIN_ADDR(rt.rt_genmask) = 0L;
      }
  

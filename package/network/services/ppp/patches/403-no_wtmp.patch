@@ -7,7 +7,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
 
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -2254,6 +2254,7 @@ int ppp_available(void)
+@@ -2266,6 +2266,7 @@ int ppp_available(void)
  
  void logwtmp (const char *line, const char *name, const char *host)
  {
@@ -15,7 +15,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      struct utmp ut, *utp;
      pid_t  mypid = getpid();
  #if __GLIBC__ < 2
-@@ -2319,6 +2320,7 @@ void logwtmp (const char *line, const ch
+@@ -2331,6 +2332,7 @@ void logwtmp (const char *line, const ch
  	close (wtmp);
      }
  #endif
