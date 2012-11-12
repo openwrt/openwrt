@@ -927,7 +927,7 @@ ramips_eth_irq(int irq, void *dev)
 }
 
 static int
-ramips_eth_open(struct net_device *dev)
+ramips_eth_hw_init(struct net_device *dev)
 {
 	struct raeth_priv *re = netdev_priv(dev);
 	int err;
@@ -945,10 +945,6 @@ ramips_eth_open(struct net_device *dev)
 	ramips_hw_set_macaddr(dev->dev_addr);
 
 	ramips_setup_dma(re);
-	ramips_fe_twr((ramips_fe_trr(RAETH_REG_PDMA_GLO_CFG) & 0xff) |
-		(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN |
-		RAMIPS_TX_DMA_EN | RAMIPS_PDMA_SIZE_4DWORDS),
-		RAETH_REG_PDMA_GLO_CFG);
 	ramips_fe_wr((ramips_fe_rr(RAMIPS_FE_GLO_CFG) &
 		~(RAMIPS_US_CYC_CNT_MASK << RAMIPS_US_CYC_CNT_SHIFT)) |
 		((re->plat->sys_freq / RAMIPS_US_CYC_CNT_DIVISOR) << RAMIPS_US_CYC_CNT_SHIFT),
@@ -958,7 +954,6 @@ ramips_eth_open(struct net_device *dev)
 		     (unsigned long)dev);
 	tasklet_init(&re->rx_tasklet, ramips_eth_rx_hw, (unsigned long)dev);
 
-	ramips_phy_start(re);
 
 	ramips_fe_twr(RAMIPS_DELAY_INIT, RAETH_REG_DLY_INT_CFG);
 	ramips_fe_twr(TX_DLY_INT | RX_DLY_INT, RAETH_REG_FE_INT_ENABLE);
@@ -978,12 +973,25 @@ ramips_eth_open(struct net_device *dev)
 	ramips_fe_wr(1, RAMIPS_FE_RST_GL);
 	ramips_fe_wr(0, RAMIPS_FE_RST_GL);
 
-	netif_start_queue(dev);
 	return 0;
 
- err_free_irq:
+err_free_irq:
 	free_irq(dev->irq, dev);
 	return err;
+}
+
+static int
+ramips_eth_open(struct net_device *dev)
+{
+	struct raeth_priv *re = netdev_priv(dev);
+
+	ramips_fe_twr((ramips_fe_trr(RAETH_REG_PDMA_GLO_CFG) & 0xff) |
+		(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN |
+		RAMIPS_TX_DMA_EN | RAMIPS_PDMA_SIZE_4DWORDS),
+		RAETH_REG_PDMA_GLO_CFG);
+	ramips_phy_start(re);
+	netif_start_queue(dev);
+	return 0;
 }
 
 static int
@@ -995,16 +1003,8 @@ ramips_eth_stop(struct net_device *dev)
 		     ~(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN | RAMIPS_TX_DMA_EN),
 		     RAETH_REG_PDMA_GLO_CFG);
 
-	/* disable all interrupts in the hw */
-	ramips_fe_twr(0, RAETH_REG_FE_INT_ENABLE);
-
-	ramips_phy_stop(re);
-	free_irq(dev->irq, dev);
 	netif_stop_queue(dev);
-	tasklet_kill(&re->tx_housekeeping_tasklet);
-	tasklet_kill(&re->rx_tasklet);
-	ramips_ring_cleanup(re);
-	ramips_ring_free(re);
+	ramips_phy_stop(re);
 	RADEBUG("ramips_eth: stopped\n");
 	return 0;
 }
@@ -1038,8 +1038,14 @@ ramips_eth_probe(struct net_device *dev)
 	if (err)
 		goto err_phy_disconnect;
 
+	err = ramips_eth_hw_init(dev);
+	if (err)
+		goto err_debugfs;
+
 	return 0;
 
+err_debugfs:
+	raeth_debugfs_exit(re);
 err_phy_disconnect:
 	ramips_phy_disconnect(re);
 err_mdio_cleanup:
@@ -1055,6 +1061,12 @@ ramips_eth_uninit(struct net_device *dev)
 	raeth_debugfs_exit(re);
 	ramips_phy_disconnect(re);
 	ramips_mdio_cleanup(re);
+	ramips_fe_twr(0, RAETH_REG_FE_INT_ENABLE);
+	free_irq(dev->irq, dev);
+	tasklet_kill(&re->tx_housekeeping_tasklet);
+	tasklet_kill(&re->rx_tasklet);
+	ramips_ring_cleanup(re);
+	ramips_ring_free(re);
 }
 
 static const struct net_device_ops ramips_eth_netdev_ops = {
