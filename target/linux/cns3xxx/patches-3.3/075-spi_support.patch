@@ -39,3 +39,19 @@
  				status = bitbang->txrx_bufs(spi, t);
  			}
  			if (status > 0)
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -508,6 +508,13 @@ struct spi_transfer {
+ 	u32		speed_hz;
+ 
+ 	struct list_head transfer_list;
++
++#ifdef CONFIG_ARCH_CNS3XXX
++	unsigned	last_in_message_list;
++#ifdef CONFIG_SPI_CNS3XXX_2IOREAD
++	u8	dio_read;
++#endif
++#endif
+ };
+ 
+ /**
