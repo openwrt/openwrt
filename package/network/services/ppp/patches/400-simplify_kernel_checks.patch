@@ -29,7 +29,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  #define MAX_IFS		100
  
-@@ -1438,11 +1438,12 @@ int ccp_fatal_error (int unit)
+@@ -1450,11 +1450,12 @@ int ccp_fatal_error (int unit)
   *
   * path_to_procfs - find the path to the proc file system mount point
   */
@@ -44,7 +44,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      struct mntent *mntent;
      FILE *fp;
  
-@@ -1464,6 +1465,7 @@ static char *path_to_procfs(const char *
+@@ -1476,6 +1477,7 @@ static char *path_to_procfs(const char *
  	    fclose (fp);
  	}
      }
@@ -52,7 +52,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
      strlcpy(proc_path + proc_path_len, tail,
  	    sizeof(proc_path) - proc_path_len);
-@@ -2116,15 +2118,19 @@ int ppp_available(void)
+@@ -2128,15 +2130,19 @@ int ppp_available(void)
      int    my_version, my_modification, my_patch;
      int osmaj, osmin, ospatch;
  
@@ -72,7 +72,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  	/* XXX should get from driver */
  	driver_version = 2;
-@@ -2185,6 +2191,7 @@ int ppp_available(void)
+@@ -2197,6 +2203,7 @@ int ppp_available(void)
  
      if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
  	ok = 0;
@@ -80,7 +80,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  /*
   *  This is the PPP device. Validate the version of the driver at this
-@@ -2678,6 +2685,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2690,6 +2697,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
      }
  #endif /* TIOCGPTN */
  
@@ -88,7 +88,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      if (sfd < 0) {
  	/* the old way - scan through the pty name space */
  	for (i = 0; i < 64; ++i) {
-@@ -2696,6 +2704,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2708,6 +2716,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
  	    }
  	}
      }
