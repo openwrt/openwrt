@@ -7,7 +7,7 @@
 
 define Profile/Bcm4705-none
   NAME:=BCM4705/BCM4785, no WiFi
-  PACKAGES:=-wpad-mini kmod-tg3 kmod-tg3
+  PACKAGES:=-wpad-mini kmod-tg3
 endef
 
 define Profile/None/Description
