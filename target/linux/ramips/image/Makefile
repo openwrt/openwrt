@@ -126,9 +126,9 @@ define BuildFirmware/GENERIC_4M/initramfs
 	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)))
 endef
 
-mtdlayout_8M=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),6976k(rootfs),7872k@0x50000(firmware)
-kernel_size_8M=917504
-rootfs_size_8M=7143424
+mtdlayout_8M=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,960k(kernel),6912k(rootfs),7808k@0x50000(firmware)
+kernel_size_8M=983040
+rootfs_size_8M=7077888
 define BuildFirmware/GENERIC_8M
 	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M)),$(kernel_size_8M),$(rootfs_size_8M))
 endef
