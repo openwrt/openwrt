@@ -390,6 +390,9 @@ ar71xx_board_detect() {
 	*WLAE-AG300N)
 		name="wlae-ag300n"
 		;;
+	*"UniFiAP Outdoor")
+		name="unifi-outdoor"
+		;;
 	*WP543)
 		name="wp543"
 		;;
