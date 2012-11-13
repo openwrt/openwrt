@@ -1,0 +1,28 @@
+From 4ade440f81a3c248068d8b89eea7754cc8705b58 Mon Sep 17 00:00:00 2001
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Tue, 13 Nov 2012 14:33:30 +0100
+Subject: [PATCH] MIPS: Malta: Fix build error
+
+Caused by fe2ccd4dcebd3c5e264af1705bb9b659972418cc [MIPS: Malta: Fix
+interupt number of CBUS UART.]
+
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/mti-malta/malta-platform.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/mti-malta/malta-platform.c b/arch/mips/mti-malta/malta-platform.c
+index c154181..7473217 100644
+--- a/arch/mips/mti-malta/malta-platform.c
++++ b/arch/mips/mti-malta/malta-platform.c
+@@ -29,6 +29,7 @@
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/platform_device.h>
++#include <asm/mips-boards/maltaint.h>
+ #include <mtd/mtd-abi.h>
+ 
+ #define SMC_PORT(base, int)						\
+-- 
+1.7.11.7
+
