@@ -150,6 +150,7 @@ platform_check_image() {
 	tl-mr3040 | \
 	tl-mr3220 | \
 	tl-mr3420 | \
+	tl-wa7510n | \
 	tl-wa901nd | \
 	tl-wa901nd-v2 | \
 	tl-wdr4300 | \
