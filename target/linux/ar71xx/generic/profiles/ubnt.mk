@@ -38,6 +38,17 @@ endef
 
 $(eval $(call Profile,UBNTUNIFI))
 
+define Profile/UBNTUNIFIOUTDOOR
+	NAME:=Ubiquiti UniFiAP Outdoor
+	PACKAGES:=
+endef
+
+define Profile/UBNTUNIFIOUTDOOR/Description
+	Package set optimized for the Ubiquiti UniFiAP Outdoor.
+endef
+
+$(eval $(call Profile,UBNTUNIFIOUTDOOR))
+
 define Profile/UBNT
 	NAME:=Ubiquiti Products
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
