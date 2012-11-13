@@ -1,8 +1,9 @@
 /*
- *  TP-LINK TL-WA901N/ND v1 board support
+ *  TP-LINK TL-WA901N/ND v1, TL-WA7510N v1 board support
  *
  *  Copyright (C) 2009-2012 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2010 Pieter Hollants <pieter@hollants.com>
+ *  Copyright (C) 2012 Stefan Helmert <helst_listen@aol.de>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -19,6 +20,7 @@
 #include "dev-leds-gpio.h"
 #include "dev-m25p80.h"
 #include "machtypes.h"
+#include "pci.h"
 
 #define TL_WA901ND_GPIO_LED_QSS		0
 #define TL_WA901ND_GPIO_LED_SYSTEM	1
@@ -73,6 +75,22 @@ static struct gpio_keys_button tl_wa901nd_gpio_keys[] __initdata = {
 	}
 };
 
+static void __init common_setup(void)
+{
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
+
+	/*
+	 * ath79_eth0 would be the WAN port, but is not connected.
+	 * ath79_eth1 connects to the internal switch chip, however
+	 * we have a single LAN port only.
+	 */
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 0);
+	ath79_register_mdio(0, 0x0);
+	ath79_register_eth(1);
+
+	ath79_register_m25p80(&tl_wa901nd_flash_data);
+}
+
 static void __init tl_wa901nd_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
@@ -84,16 +102,7 @@ static void __init tl_wa901nd_setup(void)
 				    AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
 				    AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
-	/*
-	 * ath79_eth0 would be the WAN port, but is not connected on
-	 * the TL-WA901ND. ath79_eth1 connects to the internal switch chip,
-	 * however we have a single LAN port only.
-	 */
-	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 0);
-	ath79_register_mdio(0, 0x0);
-	ath79_register_eth(1);
-
-	ath79_register_m25p80(&tl_wa901nd_flash_data);
+	common_setup();
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa901nd_leds_gpio),
 				 tl_wa901nd_leds_gpio);
@@ -107,3 +116,12 @@ static void __init tl_wa901nd_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_TL_WA901ND, "TL-WA901ND", "TP-LINK TL-WA901ND",
 	     tl_wa901nd_setup);
+
+static void __init tl_wa7510n_v1_setup(void)
+{
+	common_setup();
+	ath79_register_pci();
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WA7510N_V1, "TL-WA7510N", "TP-LINK TL-WA7510N v1",
+	     tl_wa7510n_v1_setup);
