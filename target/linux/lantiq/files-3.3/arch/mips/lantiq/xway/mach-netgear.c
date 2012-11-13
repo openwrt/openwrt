@@ -22,6 +22,7 @@
 #include <linux/etherdevice.h>
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
+#include <linux/rtl8366.h>
 
 #include <lantiq_soc.h>
 #include <irq.h>
@@ -149,6 +150,22 @@ static int __init setup_ethaddr(char *str)
 }
 __setup("ethaddr=", setup_ethaddr);
 
+#define smi_SCK		37
+#define smi_SDA		35
+
+static struct rtl8366_platform_data rtl8366rb_data = {
+	.gpio_sda = smi_SDA,
+	.gpio_sck = smi_SCK,
+};
+
+static struct platform_device rtl8366rb_device = {
+	.name = RTL8366RB_DRIVER_NAME,
+	.id = -1,
+	.dev = {
+		.platform_data  = &rtl8366rb_data,
+	}
+};
+
 static u16 dgn3500_eeprom_data[ATH9K_PLAT_EEP_MAX_WORDS] = {0};
 
 static ssize_t ath_eeprom_read(struct file *filp, struct kobject *kobj,
@@ -231,6 +248,7 @@ static void __init dgn3500_init(void)
 	ltq_pci_ath_fixup(14, dgn3500_eeprom_data);
 	/* The usb power is always enabled, protected by a fuse */
 	xway_register_dwc(-1);
+	platform_device_register(&rtl8366rb_device);
 }
 
 MIPS_MACHINE(LANTIQ_MACH_DGN3500B,
