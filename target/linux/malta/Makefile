@@ -13,7 +13,7 @@ SUBTARGETS:=le be
 INITRAMFS_EXTRA_FILES:=
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.3.8
+LINUX_VERSION:=3.6.6
 
 DEVICE_TYPE:=developerboard
 
