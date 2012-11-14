@@ -680,7 +680,7 @@ endif
 
 define Image/Build/OpenMesh
 	$(call MkuImageLzma,$(2))
-	-sh $(TOPDIR)/scripts/om2p-fwupgradecfg-gen.sh \
+	-sh $(TOPDIR)/scripts/om-fwupgradecfg-gen.sh \
 		"$(BUILD_DIR)/om2p-fwupgrade.cfg" \
 		"$(KDIR_TMP)/vmlinux-$(2).uImage" \
 		"$(KDIR)/root.$(1)"
