@@ -9,17 +9,17 @@
  {
       int i;
       pkg_vec_t *available;
-@@ -612,6 +612,9 @@ opkg_list_cmd(int argc, char **argv)
+@@ -610,7 +610,8 @@ opkg_list_cmd(int argc, char **argv)
+      for (i=0; i < available->len; i++) {
+ 	  pkg = available->pkgs[i];
  	  /* if we have package name or pattern and pkg does not match, then skip it */
- 	  if (pkg_name && fnmatch(pkg_name, pkg->name, conf->nocase))
+-	  if (pkg_name && fnmatch(pkg_name, pkg->name, conf->nocase))
++	  if (pkg_name && fnmatch(pkg_name, pkg->name, conf->nocase) &&
++	      (!use_desc || !pkg->description || fnmatch(pkg_name, pkg->description, conf->nocase)))
  	       continue;
-+	  if (pkg_name && use_desc && pkg->description &&
-+	      fnmatch(pkg_name, pkg->description, conf->nocase))
-+	       continue;
            print_pkg(pkg);
       }
-      pkg_vec_free(available);
-@@ -619,6 +622,18 @@ opkg_list_cmd(int argc, char **argv)
+@@ -619,6 +620,18 @@ opkg_list_cmd(int argc, char **argv)
       return 0;
  }
  
@@ -38,7 +38,7 @@
  
  static int
  opkg_list_installed_cmd(int argc, char **argv)
-@@ -1262,6 +1277,7 @@ static opkg_cmd_t cmds[] = {
+@@ -1262,6 +1275,7 @@ static opkg_cmd_t cmds[] = {
       {"configure", 0, (opkg_cmd_fun_t)opkg_configure_cmd, PFM_DESCRIPTION|PFM_SOURCE},
       {"files", 1, (opkg_cmd_fun_t)opkg_files_cmd, PFM_DESCRIPTION|PFM_SOURCE},
       {"search", 1, (opkg_cmd_fun_t)opkg_search_cmd, PFM_DESCRIPTION|PFM_SOURCE},
