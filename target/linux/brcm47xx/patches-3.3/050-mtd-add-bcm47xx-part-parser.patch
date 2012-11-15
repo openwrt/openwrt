@@ -26,7 +26,7 @@
  obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o
 --- /dev/null
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -0,0 +1,548 @@
+@@ -0,0 +1,542 @@
 +/*
 + *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
@@ -96,11 +96,6 @@
 +	u32 offsets[TRX_MAX_OFFSET];	/* Offsets of partitions from start of header */
 +};
 +
-+/* for WGT634U search the ELF-header of
-+ * the kernel decompressor instead of TRX
-+ */
-+#define WGT634U_ELF_MAGIC	0x464c457f /*  ".ELF"  */
-+
 +/* for Edimax Print servers which use an additional header
 + * then the firmware on flash looks like :
 + * EDIMAX HEADER | TRX HEADER
@@ -154,8 +149,7 @@
 +		}
 +
 +		/* found a TRX header */
-+		if (le32_to_cpu(trx->magic) == TRX_MAGIC ||
-+		    le32_to_cpu(trx->magic) == WGT634U_ELF_MAGIC)
++		if (le32_to_cpu(trx->magic) == TRX_MAGIC)
 +			goto found;
 +	}
 +
