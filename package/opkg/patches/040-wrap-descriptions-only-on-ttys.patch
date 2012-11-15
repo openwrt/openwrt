@@ -1,0 +1,31 @@
+--- a/libopkg/pkg_parse.c
++++ b/libopkg/pkg_parse.c
+@@ -20,6 +20,7 @@
+ 
+ #include <stdio.h>
+ #include <ctype.h>
++#include <unistd.h>
+ 
+ #include "pkg.h"
+ #include "opkg_utils.h"
+@@ -239,10 +240,16 @@ pkg_parse_line(void *ptr, const char *li
+ 
+ 	case ' ':
+ 		if ((mask & PFM_DESCRIPTION) && reading_description) {
+-			pkg->description = xrealloc(pkg->description,
+-						strlen(pkg->description)
+-						+ 1 + strlen(line) + 1);
+-			strcat(pkg->description, "\n");
++			if (isatty(1)) {
++				pkg->description = xrealloc(pkg->description,
++							strlen(pkg->description)
++							+ 1 + strlen(line) + 1);
++				strcat(pkg->description, "\n");
++			} else {
++				pkg->description = xrealloc(pkg->description,
++							strlen(pkg->description)
++							+ 1 + strlen(line));
++			}
+ 			strcat(pkg->description, (line));
+ 			goto dont_reset_flags;
+ 		} else if ((mask & PFM_CONFFILES) && reading_conffiles) {
