@@ -17,7 +17,7 @@ LINUX_VERSION:=3.3.8
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES+= kmod-acx-mac80211 swconfig wpad-mini
+DEFAULT_PACKAGES+= swconfig
 
 define Target/Description
 	Build firmware images for TI AR7 based routers.
