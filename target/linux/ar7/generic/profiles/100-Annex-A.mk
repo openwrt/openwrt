@@ -7,7 +7,8 @@
 
 define Profile/Annex-A
   NAME:=Annex-A DSL firmware (default)
-  PACKAGES:=kmod-sangam-atm-annex-a
+  PACKAGES:=kmod-pppoa ppp-mod-pppoa linux-atm atm-tools br2684ctl \
+	    kmod-sangam-atm-annex-a
 endef
 
 define Profile/Annex-A/Description
