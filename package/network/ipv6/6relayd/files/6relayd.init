@@ -18,12 +18,9 @@ resolve_network() {
 
 start_6relayd() {
 	local cfg="$1"
-
-	local args="-S -l"
+	local mode="$2"
+	local args="-s -l"
 	local ifaces=""
-
-	config_get proto "$cfg" proto
-	[[ "$proto" == 6relay ]] || return 0
 
 	SERVICE_DAEMONIZE=1
 	SERVICE_WRITE_PID=1
@@ -50,27 +47,29 @@ start_6relayd() {
 		resolve_ifname "$ifn"
 	done
 
-	local forward_rd # = 1
-	config_get_bool forward_rd "$cfg" forward_rd 1
-	[ $forward_rd -eq 1 ] && append args "-R"
+	local rd
+	config_get rd "$cfg" rd
+	[ -n "$rd" ] && append args "-R$rd"
 
-	local forward_dhcpv6 # = 1
-	local forward_dhcpv6_mode # = relay
-	config_get_bool forward_dhcpv6 "$cfg" forward_dhcpv6 1
-	config_get forward_dhcpv6_mode "$cfg" forward_dhcpv6_mode
-	[ $forward_dhcpv6 -eq 1 ] && append args "-D$forward_dhcpv6_mode"
+	local dhcpv6
+	config_get dhcpv6 "$cfg" dhcpv6
+	[ -n "$dhcpv6" ] && append args "-D$dhcpv6"
 
-	local forward_ndp # = 1
-	config_get_bool forward_ndp "$cfg" forward_ndp 1
-	[ $forward_ndp -eq 1 ] && append args "-N"
+	local ndp
+	config_get ndp "$cfg" ndp
+	[ "$ndp" == "relay" ] && append args "-N -r"
 
-	local configure_routes # = 1
-	config_get_bool configure_routes "$cfg" configure_routes 1
-	[ $configure_routes -eq 1 ] && append args "-r"
-
-	local always_rewrite_dns # = 0
+	local always_rewrite_dns
 	config_get_bool always_rewrite_dns "$cfg" always_rewrite_dns 0
 	[ $always_rewrite_dns -eq 1 ] && append args "-n"
+
+	# In server mode the first interface needs to be passed twice
+	[ "$mode" == "server" ] && {
+		for iface in $ifaces; do
+			ifaces="$iface $ifaces"
+			break
+		done
+	}
 
 	service_start /usr/sbin/6relayd $args $ifaces
 }
@@ -85,6 +84,7 @@ stop() {
 
 start() {
 	include /lib/network
-	config_load network
-	config_foreach start_6relayd interface
+	config_load 6relayd
+	config_foreach start_6relayd relay relay
+	config_foreach start_6relayd server server
 }
