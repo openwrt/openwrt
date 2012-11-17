@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6relayd
-PKG_VERSION:=2012-11-16
+PKG_VERSION:=2012-11-17
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -37,6 +37,10 @@ define Package/6relayd/description
 
  It can also be used as a lightweight router advertisement daemon and provide
  stateless DHCPv6 service where size matters.
+endef
+
+define Package/6relayd/conffiles
+/etc/config/6relayd
 endef
 
 define Package/6relayd/install
