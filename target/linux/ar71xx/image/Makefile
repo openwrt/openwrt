@@ -681,12 +681,13 @@ endif
 define Image/Build/OpenMesh
 	$(call MkuImageLzma,$(2))
 	-sh $(TOPDIR)/scripts/om-fwupgradecfg-gen.sh \
-		"$(BUILD_DIR)/om2p-fwupgrade.cfg" \
+		"$(4)" \
+		"$(BUILD_DIR)/fwupgrade.cfg-$(4)" \
 		"$(KDIR_TMP)/vmlinux-$(2).uImage" \
 		"$(KDIR)/root.$(1)"
 	-sh $(TOPDIR)/scripts/combined-ext-image.sh \
 		"$(4)" "$(call factoryname,$(1),$(2))" \
-		"$(BUILD_DIR)/om2p-fwupgrade.cfg" "fwupgrade.cfg" \
+		"$(BUILD_DIR)/fwupgrade.cfg-$(4)" "fwupgrade.cfg" \
 		"$(KDIR_TMP)/vmlinux-$(2).uImage" "kernel" \
 		"$(KDIR)/root.$(1)" "rootfs"
 endef

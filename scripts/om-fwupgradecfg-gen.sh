@@ -7,28 +7,46 @@
 #
 
 usage() {
-	echo "Usage: $0 <out file path> <kernel path> <rootfs path>"
+	echo "Usage: $0 <OM2P|MR600> <out file path> <kernel path> <rootfs path>"
 	rm -f $CFG_OUT
 	exit 1
 }
 
-[ "$#" -lt 3 ] && usage
+[ "$#" -lt 4 ] && usage
 
-FLASH_BS=262144
+CE_TYPE=$1
+CFG_OUT=$2
+KERNEL_PATH=$3
+ROOTFS_PATH=$4
+
+case $CE_TYPE in
+	OM2P)
+		MAX_PART_SIZE=7168
+		KERNEL_FLASH_ADDR=0x1c0000
+		FLASH_BS=262144
+		MD5_SKIP_BLOCKS=1
+		;;
+	MR600)
+		MAX_PART_SIZE=7808
+		KERNEL_FLASH_ADDR=0xb0000
+		FLASH_BS=65536
+		MD5_SKIP_BLOCKS=4
+		;;
+	*)
+		echo "Error - unsupported ce type: $CE_TYPE"
+		exit 1
+		;;
+esac
+
 CHECK_BS=65536
-MAX_PART_SIZE=7168
-CFG_OUT=$1
 
-KERNEL_PATH=$2
-KERNEL_FLASH_ADDR=0x1c0000
 KERNEL_SIZE=$(stat -c%s "$KERNEL_PATH")
 KERNEL_MD5=$(md5=$(md5sum $KERNEL_PATH); echo ${md5%% *})
 KERNEL_PART_SIZE=$(size=$(($KERNEL_SIZE / $FLASH_BS)); [ $(($size * $FLASH_BS)) -lt $KERNEL_SIZE ] && size=$(($size + 1)); echo $(($size * $FLASH_BS / 1024)))
 
-ROOTFS_PATH=$3
 ROOTFS_FLASH_ADDR=$(addr=$(($KERNEL_FLASH_ADDR + ($KERNEL_PART_SIZE * 1024))); printf "0x%x" $addr)
 ROOTFS_SIZE=$(stat -c%s "$ROOTFS_PATH")
-ROOTFS_CHECK_BLOCKS=$((($ROOTFS_SIZE / $CHECK_BS) - 1))
+ROOTFS_CHECK_BLOCKS=$((($ROOTFS_SIZE / $CHECK_BS) - $MD5_SKIP_BLOCKS))
 ROOTFS_MD5=$(md5=$(dd if=$ROOTFS_PATH bs=$CHECK_BS count=$ROOTFS_CHECK_BLOCKS 2>&- | md5sum); echo ${md5%% *})
 ROOTFS_CHECK_SIZE=$(printf '0x%x' $(($ROOTFS_CHECK_BLOCKS * $CHECK_BS)))
 ROOTFS_PART_SIZE=$(($MAX_PART_SIZE - $KERNEL_PART_SIZE))
