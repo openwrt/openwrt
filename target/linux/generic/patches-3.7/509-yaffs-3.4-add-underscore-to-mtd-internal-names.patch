@@ -1,0 +1,72 @@
+--- a/fs/yaffs2/yaffs_vfs_glue.c
++++ b/fs/yaffs2/yaffs_vfs_glue.c
+@@ -2793,6 +2793,15 @@ static struct super_block *yaffs_interna
+ 		return NULL;
+ 	}
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
++	T(YAFFS_TRACE_OS, (TSTR(" erase %p\n"), mtd->_erase));
++	T(YAFFS_TRACE_OS, (TSTR(" read %p\n"), mtd->_read));
++	T(YAFFS_TRACE_OS, (TSTR(" write %p\n"), mtd->_write));
++	T(YAFFS_TRACE_OS, (TSTR(" readoob %p\n"), mtd->_read_oob));
++	T(YAFFS_TRACE_OS, (TSTR(" writeoob %p\n"), mtd->_write_oob));
++	T(YAFFS_TRACE_OS, (TSTR(" block_isbad %p\n"), mtd->_block_isbad));
++	T(YAFFS_TRACE_OS, (TSTR(" block_markbad %p\n"), mtd->_block_markbad));
++#else
+ 	T(YAFFS_TRACE_OS, (TSTR(" erase %p\n"), mtd->erase));
+ 	T(YAFFS_TRACE_OS, (TSTR(" read %p\n"), mtd->read));
+ 	T(YAFFS_TRACE_OS, (TSTR(" write %p\n"), mtd->write));
+@@ -2800,6 +2809,7 @@ static struct super_block *yaffs_interna
+ 	T(YAFFS_TRACE_OS, (TSTR(" writeoob %p\n"), mtd->write_oob));
+ 	T(YAFFS_TRACE_OS, (TSTR(" block_isbad %p\n"), mtd->block_isbad));
+ 	T(YAFFS_TRACE_OS, (TSTR(" block_markbad %p\n"), mtd->block_markbad));
++#endif
+ 	T(YAFFS_TRACE_OS, (TSTR(" %s %d\n"), WRITE_SIZE_STR, WRITE_SIZE(mtd)));
+ 	T(YAFFS_TRACE_OS, (TSTR(" oobsize %d\n"), mtd->oobsize));
+ 	T(YAFFS_TRACE_OS, (TSTR(" erasesize %d\n"), mtd->erasesize));
+@@ -2828,6 +2838,15 @@ static struct super_block *yaffs_interna
+ 
+ 	if (yaffs_version == 2) {
+ 		/* Check for version 2 style functions */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
++		if (!mtd->_erase ||
++		    !mtd->_block_isbad ||
++		    !mtd->_block_markbad ||
++		    !mtd->_read ||
++		    !mtd->_write ||
++		    !mtd->_read_oob ||
++		    !mtd->_write_oob) {
++#else
+ 		if (!mtd->erase ||
+ 		    !mtd->block_isbad ||
+ 		    !mtd->block_markbad ||
+@@ -2839,6 +2858,7 @@ static struct super_block *yaffs_interna
+ 		    !mtd->write_ecc ||
+ 		    !mtd->read_ecc || !mtd->read_oob || !mtd->write_oob) {
+ #endif
++#endif
+ 			T(YAFFS_TRACE_ALWAYS,
+ 			  (TSTR("yaffs: MTD device does not support required "
+ 			   "functions\n")));
+@@ -2855,6 +2875,13 @@ static struct super_block *yaffs_interna
+ 		}
+ 	} else {
+ 		/* Check for V1 style functions */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
++		if (!mtd->_erase ||
++		    !mtd->_read ||
++		    !mtd->_write ||
++		    !mtd->_read_oob ||
++		    !mtd->_write_oob) {
++#else
+ 		if (!mtd->erase ||
+ 		    !mtd->read ||
+ 		    !mtd->write ||
+@@ -2864,6 +2891,7 @@ static struct super_block *yaffs_interna
+ 		    !mtd->write_ecc ||
+ 		    !mtd->read_ecc || !mtd->read_oob || !mtd->write_oob) {
+ #endif
++#endif
+ 			T(YAFFS_TRACE_ALWAYS,
+ 			  (TSTR("yaffs: MTD device does not support required "
+ 			   "functions\n")));

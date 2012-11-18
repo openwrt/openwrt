@@ -1,0 +1,159 @@
+From 03cd81fbca6b91317ec1a7b3b3c09fb8d08f83a6 Mon Sep 17 00:00:00 2001
+From: Wu Zhangjin <wuzhangjin@gmail.com>
+Date: Tue, 11 Jan 2011 18:42:08 +0000
+Subject: MIPS: Kexec: Enhance the support
+
+Changes:
+  o Print more information in machine_kexec() for debugging
+    E.g. with this information, the kexec_start_address has been found
+    it was wrong with 64bit kernel / o32 kexec-tools. Which must be
+    fixed later.
+  o Link relocate_kernel.S to a section for future extension
+    This allows more functions can be added for the kexec relocation
+    part even written in C. to add code into that section, you just need
+    to mark your function or data with __kexec or
+    __attribute__((__section__(".__kexec.relocate")))
+
+TODO:
+
+1. Make 64bit kernel / o32|n32|64 kexec-tools works
+
+Fix the user-space kexec-tools, seems the tool only work for 32bit
+machine. So, we need to add 64bit support for it. The address of the
+entry point(kexec_start_address) is wrong and make the "kexec -e" fail.
+the real entry point must be read from the new kernel image by the
+user-space kexec-tools, otherwise, it will not work.  The above 64bit
+support tested is 64bit kernel with o32 user-space kexec-tools. The root
+cause may be the different definition of virt_to_phys() and
+phys_to_virt() in the kexec-tools and kernel space for 64bit system /
+o32 kernel.
+
+Ref: http://www.linux-mips.org/archives/linux-mips/2009-08/msg00149.html
+
+2. Pass the arguments from kexec-tools to the new kernel image
+
+Please refer to: "MIPS: Loongson: Kexec: Pass parameters to new kernel"
+
+Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
+---
+--- a/arch/mips/include/asm/kexec.h
++++ b/arch/mips/include/asm/kexec.h
+@@ -36,6 +36,16 @@ static inline void crash_setup_regs(stru
+ }
+ 
+ #ifdef CONFIG_KEXEC
++
++#define __kexec __attribute__((__section__(".__kexec.relocate")))
++
++/* The linker tells us where the relocate_new_kernel part is. */
++extern const unsigned char __start___kexec_relocate;
++extern const unsigned char __end___kexec_relocate;
++
++extern unsigned long kexec_start_address;
++extern unsigned long kexec_indirection_page;
++
+ struct kimage;
+ extern unsigned long kexec_args[4];
+ extern int (*_machine_kexec_prepare)(struct kimage *);
+--- a/arch/mips/kernel/machine_kexec.c
++++ b/arch/mips/kernel/machine_kexec.c
+@@ -13,12 +13,6 @@
+ #include <asm/cacheflush.h>
+ #include <asm/page.h>
+ 
+-extern const unsigned char relocate_new_kernel[];
+-extern const size_t relocate_new_kernel_size;
+-
+-extern unsigned long kexec_start_address;
+-extern unsigned long kexec_indirection_page;
+-
+ int (*_machine_kexec_prepare)(struct kimage *) = NULL;
+ void (*_machine_kexec_shutdown)(void) = NULL;
+ void (*_machine_crash_shutdown)(struct pt_regs *regs) = NULL;
+@@ -61,21 +55,34 @@ typedef void (*noretfun_t)(void) __attri
+ void
+ machine_kexec(struct kimage *image)
+ {
++	unsigned long kexec_relocate_size;
+ 	unsigned long reboot_code_buffer;
+ 	unsigned long entry;
+ 	unsigned long *ptr;
+ 
++	kexec_relocate_size = (unsigned long)(&__end___kexec_relocate) -
++		(unsigned long)(&__start___kexec_relocate);
++	pr_info("kexec_relocate_size = %lu\n", kexec_relocate_size);
++
+ 	reboot_code_buffer =
+ 	  (unsigned long)page_address(image->control_code_page);
++	pr_info("reboot_code_buffer = %p\n", (void *)reboot_code_buffer);
+ 
+ 	kexec_start_address =
+ 	  (unsigned long) phys_to_virt(image->start);
++	pr_info("kexec_start_address(entry point of new kernel) = %p\n",
++			(void *)kexec_start_address);
+ 
+ 	kexec_indirection_page =
+ 		(unsigned long) phys_to_virt(image->head & PAGE_MASK);
++	pr_info("kexec_indirection_page = %p\n",
++			(void *)kexec_indirection_page);
+ 
+-	memcpy((void*)reboot_code_buffer, relocate_new_kernel,
+-	       relocate_new_kernel_size);
++	memcpy((void *)reboot_code_buffer, &__start___kexec_relocate,
++	       kexec_relocate_size);
++
++	pr_info("Copy kexec_relocate section from %p to reboot_code_buffer: %p\n",
++			&__start___kexec_relocate, (void *)reboot_code_buffer);
+ 
+ 	/*
+ 	 * The generic kexec code builds a page list with physical
+@@ -96,8 +103,8 @@ machine_kexec(struct kimage *image)
+ 	 */
+ 	local_irq_disable();
+ 
+-	printk("Will call new kernel at %08lx\n", image->start);
+-	printk("Bye ...\n");
++	pr_info("Will call new kernel at %p\n", (void *)kexec_start_address);
++	pr_info("Bye ...\n");
+ 	__flush_cache_all();
+ #ifdef CONFIG_SMP
+ 	/* All secondary cpus now may jump to kexec_wait cycle */
+@@ -108,4 +115,3 @@ machine_kexec(struct kimage *image)
+ #endif
+ 	((noretfun_t) reboot_code_buffer)();
+ }
+-
+--- a/arch/mips/kernel/relocate_kernel.S
++++ b/arch/mips/kernel/relocate_kernel.S
+@@ -14,6 +14,8 @@
+ #include <asm/stackframe.h>
+ #include <asm/addrspace.h>
+ 
++	.section	.kexec.relocate, "ax"
++
+ LEAF(relocate_new_kernel)
+ 	PTR_L a0,	arg0
+ 	PTR_L a1,	arg1
+@@ -155,9 +157,3 @@ EXPORT(kexec_start_address)
+ EXPORT(kexec_indirection_page)
+ 	PTR		0
+ 	.size		kexec_indirection_page, PTRSIZE
+-
+-relocate_new_kernel_end:
+-
+-EXPORT(relocate_new_kernel_size)
+-	PTR		relocate_new_kernel_end - relocate_new_kernel
+-	.size		relocate_new_kernel_size, PTRSIZE
+--- a/arch/mips/kernel/vmlinux.lds.S
++++ b/arch/mips/kernel/vmlinux.lds.S
+@@ -58,6 +58,10 @@ SECTIONS
+ 		*(.text.*)
+ 		*(.fixup)
+ 		*(.gnu.warning)
++		__start___kexec_relocate = .;
++		KEEP(*(.kexec.relocate))
++		KEEP(*(.__kexec.relocate))
++		__end___kexec_relocate = .;
+ 	} :text = 0
+ 	_etext = .;	/* End of text section */
+ 

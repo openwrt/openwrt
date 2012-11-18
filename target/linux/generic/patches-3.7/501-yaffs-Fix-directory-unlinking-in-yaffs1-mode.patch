@@ -1,0 +1,31 @@
+From 2505e8b0a13d3d5c5bbeaaae4eb889864f44c9df Mon Sep 17 00:00:00 2001
+From: Charles Manning <cdhmanning@gmail.com>
+Date: Thu, 3 Feb 2011 05:55:30 +1300
+Subject: [PATCH] yaffs: Fix directory unlinking in yaffs1 mode
+
+commit 964b3425a71890e6701c830e38b04d8557c04f49 upstream.
+
+Treat both yaffs2 and yaffs1 paths the same.
+
+Signed-off-by: Charles Manning <cdhmanning@gmail.com>
+---
+ yaffs_guts.c |    8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+--- a/fs/yaffs2/yaffs_guts.c
++++ b/fs/yaffs2/yaffs_guts.c
+@@ -1708,13 +1708,7 @@ static int yaffs_change_obj_name(yaffs_o
+ 		YBUG();
+ 	}
+ 
+-	/* TODO: Do we need this different handling for YAFFS2 and YAFFS1?? */
+-	if (obj->my_dev->param.is_yaffs2)
+-		unlinkOp = (new_dir == obj->my_dev->unlinked_dir);
+-	else
+-		unlinkOp = (new_dir == obj->my_dev->unlinked_dir
+-			    && obj->variant_type == YAFFS_OBJECT_TYPE_FILE);
+-
++	unlinkOp = (new_dir == obj->my_dev->unlinked_dir);
+ 	deleteOp = (new_dir == obj->my_dev->del_dir);
+ 
+ 	existingTarget = yaffs_find_by_name(new_dir, new_name);
