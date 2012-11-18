@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -45,7 +45,7 @@ static int bcma_wait_bits(struct bcma_de
+@@ -46,7 +46,7 @@ static int bcma_wait_bits(struct bcma_de
  
  	for (i = 0; i < timeout; i++) {
  		val = bcma_read32(dev, reg);
