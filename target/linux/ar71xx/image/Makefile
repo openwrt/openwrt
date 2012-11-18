@@ -69,13 +69,13 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 endif
 
 define CompressLzma
-  $(STAGING_DIR_HOST)/bin/lzma e $(1) -lc1 -lp2 -pb2 $(2)
+  $(STAGING_DIR_HOST)/bin/lzma e $(1) -lc1 -lp2 -pb2 $(3) $(2)
 endef
 
 define PatchKernelLzma
 	cp $(KDIR)/vmlinux $(KDIR_TMP)/vmlinux-$(1)
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR_TMP)/vmlinux-$(1) "$(strip $(2))"
-	$(call CompressLzma,$(KDIR_TMP)/vmlinux-$(1),$(KDIR_TMP)/vmlinux-$(1).bin.lzma)
+	$(call CompressLzma,$(KDIR_TMP)/vmlinux-$(1),$(KDIR_TMP)/vmlinux-$(1).bin.lzma,$(3))
 endef
 
 define PatchKernelGzip
@@ -91,7 +91,7 @@ define MkuImage
 endef
 
 define MkuImageLzma
-	$(call PatchKernelLzma,$(1),$(2))
+	$(call PatchKernelLzma,$(1),$(2),$(3))
 	$(call MkuImage,lzma,,$(KDIR_TMP)/vmlinux-$(1).bin.lzma,$(KDIR_TMP)/vmlinux-$(1).uImage)
 endef
 
@@ -579,7 +579,7 @@ define Image/Build/CyberTAN
 endef
 
 define Image/Build/Netgear/Build_uImage
-	$(call MkuImageLzma,$(1),$(2) $(3))
+	$(call MkuImageLzma,$(1),$(2) $(3),-d20)
 	-rm -rf $(KDIR)/$(1)
 	mkdir -p $(KDIR)/$(1)/image
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
