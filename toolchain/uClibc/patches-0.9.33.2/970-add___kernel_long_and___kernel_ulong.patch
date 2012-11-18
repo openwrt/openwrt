@@ -1,0 +1,366 @@
+From 6a76edddaa62ff06f178143b582167734cb55c18 Mon Sep 17 00:00:00 2001
+From: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Date: Mon, 01 Oct 2012 05:12:54 +0000
+Subject: libc/sysdeps: add __kernel_long and __kernel_ulong
+
+Linux 3.4 added __kernel_long_t and __kernel_ulong_t and various
+exported header files were updated to use these new types. Add the
+definitions for __kernel_long_t and __kernel_ulong_t to the relevant
+kernel_types.h headers.
+
+This change was automated with the following scriptlet
+
+  git grep --name-only 'typedef.*__kernel_old_dev_t' \
+    | xargs sed -i '/typedef.*__kernel_old_dev_t/ a\
+  typedef long\t\t__kernel_long_t;\
+  typedef unsigned long\t__kernel_ulong_t;'
+
+Whitespace in arm, avr32, hppa, sparc was then manually fixed up.
+
+Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+--
+Here's a cleaned up patch which should get the whitespace right. I'm a
+bit iffy about the sparc changes they make sense to me but it's not a
+platform I have access to.
+
+I can break this up per arch or per maintainer if requested.
+
+ libc/sysdeps/linux/alpha/bits/kernel_types.h      |    2 ++
+ libc/sysdeps/linux/arm/bits/kernel_types.h        |    2 ++
+ libc/sysdeps/linux/avr32/bits/kernel_types.h      |    2 ++
+ libc/sysdeps/linux/bfin/bits/kernel_types.h       |    2 ++
+ libc/sysdeps/linux/c6x/bits/kernel_types.h        |    2 ++
+ libc/sysdeps/linux/cris/bits/kernel_types.h       |    2 ++
+ libc/sysdeps/linux/e1/bits/kernel_types.h         |    2 ++
+ libc/sysdeps/linux/h8300/bits/kernel_types.h      |    2 ++
+ libc/sysdeps/linux/hppa/bits/kernel_types.h       |    2 ++
+ libc/sysdeps/linux/i386/bits/kernel_types.h       |    2 ++
+ libc/sysdeps/linux/ia64/bits/kernel_types.h       |    2 ++
+ libc/sysdeps/linux/m68k/bits/kernel_types.h       |    2 ++
+ libc/sysdeps/linux/microblaze/bits/kernel_types.h |    2 ++
+ libc/sysdeps/linux/mips/bits/kernel_types.h       |    4 ++++
+ libc/sysdeps/linux/nios2/bits/kernel_types.h      |    2 ++
+ libc/sysdeps/linux/powerpc/bits/kernel_types.h    |    4 ++++
+ libc/sysdeps/linux/sh/bits/kernel_types.h         |    2 ++
+ libc/sysdeps/linux/sh64/bits/kernel_types.h       |    2 ++
+ libc/sysdeps/linux/sparc/bits/kernel_types.h      |    4 ++++
+ libc/sysdeps/linux/v850/bits/kernel_types.h       |    2 ++
+ libc/sysdeps/linux/x86_64/bits/kernel_types.h     |    2 ++
+ libc/sysdeps/linux/xtensa/bits/kernel_types.h     |    2 ++
+ 22 files changed, 50 insertions(+)
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+diff --git a/libc/sysdeps/linux/alpha/bits/kernel_types.h b/libc/sysdeps/linux/alpha/bits/kernel_types.h
+index d5574c9..cd59b9d 100644
+--- a/libc/sysdeps/linux/alpha/bits/kernel_types.h
++++ b/libc/sysdeps/linux/alpha/bits/kernel_types.h
+@@ -33,6 +33,8 @@ typedef __kernel_gid_t __kernel_old_gid_t;
+ typedef __kernel_uid_t __kernel_uid32_t;
+ typedef __kernel_gid_t __kernel_gid32_t;
+ typedef __kernel_dev_t __kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ 
+ typedef struct {
+ 	int val[2];
+diff --git a/libc/sysdeps/linux/arm/bits/kernel_types.h b/libc/sysdeps/linux/arm/bits/kernel_types.h
+index 766a306..6b36f32 100644
+--- a/libc/sysdeps/linux/arm/bits/kernel_types.h
++++ b/libc/sysdeps/linux/arm/bits/kernel_types.h
+@@ -32,6 +32,8 @@ typedef unsigned short		__kernel_old_uid_t;
+ typedef unsigned short		__kernel_old_gid_t;
+ typedef long long		__kernel_loff_t;
+ typedef __kernel_dev_t		__kernel_old_dev_t;
++typedef long			__kernel_long_t;
++typedef unsigned long		__kernel_ulong_t;
+ 
+ typedef struct {
+ #ifdef __USE_ALL
+diff --git a/libc/sysdeps/linux/avr32/bits/kernel_types.h b/libc/sysdeps/linux/avr32/bits/kernel_types.h
+index f7d8b52..c551d57 100644
+--- a/libc/sysdeps/linux/avr32/bits/kernel_types.h
++++ b/libc/sysdeps/linux/avr32/bits/kernel_types.h
+@@ -39,6 +39,8 @@ typedef unsigned int		__kernel_gid32_t;
+ typedef unsigned short		__kernel_old_uid_t;
+ typedef unsigned short		__kernel_old_gid_t;
+ typedef unsigned short		__kernel_old_dev_t;
++typedef long			__kernel_long_t;
++typedef unsigned long		__kernel_ulong_t;
+ 
+ #ifdef __GNUC__
+ typedef long long		__kernel_loff_t;
+diff --git a/libc/sysdeps/linux/bfin/bits/kernel_types.h b/libc/sysdeps/linux/bfin/bits/kernel_types.h
+index d69a875..9fec595 100644
+--- a/libc/sysdeps/linux/bfin/bits/kernel_types.h
++++ b/libc/sysdeps/linux/bfin/bits/kernel_types.h
+@@ -32,6 +32,8 @@ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef long long	__kernel_loff_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ 
+ typedef struct {
+ #ifdef __USE_ALL
+diff --git a/libc/sysdeps/linux/c6x/bits/kernel_types.h b/libc/sysdeps/linux/c6x/bits/kernel_types.h
+index 7557309..2c363a8 100644
+--- a/libc/sysdeps/linux/c6x/bits/kernel_types.h
++++ b/libc/sysdeps/linux/c6x/bits/kernel_types.h
+@@ -22,6 +22,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned int	__kernel_old_uid_t;
+ typedef unsigned int	__kernel_old_gid_t;
+ typedef unsigned int	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef unsigned int	__kernel_size_t;
+ typedef int		__kernel_ssize_t;
+ typedef int		__kernel_ptrdiff_t;
+diff --git a/libc/sysdeps/linux/cris/bits/kernel_types.h b/libc/sysdeps/linux/cris/bits/kernel_types.h
+index f122c7f..5d31f7b 100644
+--- a/libc/sysdeps/linux/cris/bits/kernel_types.h
++++ b/libc/sysdeps/linux/cris/bits/kernel_types.h
+@@ -28,6 +28,8 @@ typedef unsigned int    __kernel_gid32_t;
+ typedef unsigned short  __kernel_old_uid_t;
+ typedef unsigned short  __kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ 
+ #ifdef __GNUC__
+ typedef long long	__kernel_loff_t;
+diff --git a/libc/sysdeps/linux/e1/bits/kernel_types.h b/libc/sysdeps/linux/e1/bits/kernel_types.h
+index 8017d85..f55a129 100644
+--- a/libc/sysdeps/linux/e1/bits/kernel_types.h
++++ b/libc/sysdeps/linux/e1/bits/kernel_types.h
+@@ -31,6 +31,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long	__kernel_loff_t;
+ 
+ /*
+diff --git a/libc/sysdeps/linux/h8300/bits/kernel_types.h b/libc/sysdeps/linux/h8300/bits/kernel_types.h
+index 0570675..4cfd1bf 100644
+--- a/libc/sysdeps/linux/h8300/bits/kernel_types.h
++++ b/libc/sysdeps/linux/h8300/bits/kernel_types.h
+@@ -32,6 +32,8 @@ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef long long	__kernel_loff_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ 
+ typedef struct {
+ #ifdef __USE_ALL
+diff --git a/libc/sysdeps/linux/hppa/bits/kernel_types.h b/libc/sysdeps/linux/hppa/bits/kernel_types.h
+index 4441f9b..6b2e794 100644
+--- a/libc/sysdeps/linux/hppa/bits/kernel_types.h
++++ b/libc/sysdeps/linux/hppa/bits/kernel_types.h
+@@ -45,6 +45,8 @@ typedef long long		__kernel_off64_t;
+ typedef unsigned long long	__kernel_ino64_t;
+ 
+ typedef unsigned int		__kernel_old_dev_t;
++typedef long			__kernel_long_t;
++typedef unsigned long		__kernel_ulong_t;
+ 
+ typedef struct {
+ #ifdef __USE_ALL
+diff --git a/libc/sysdeps/linux/i386/bits/kernel_types.h b/libc/sysdeps/linux/i386/bits/kernel_types.h
+index 9c07c72..59044b8 100644
+--- a/libc/sysdeps/linux/i386/bits/kernel_types.h
++++ b/libc/sysdeps/linux/i386/bits/kernel_types.h
+@@ -40,6 +40,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long	__kernel_loff_t;
+ 
+ typedef struct {
+diff --git a/libc/sysdeps/linux/ia64/bits/kernel_types.h b/libc/sysdeps/linux/ia64/bits/kernel_types.h
+index c8ef86d..e31dc65 100644
+--- a/libc/sysdeps/linux/ia64/bits/kernel_types.h
++++ b/libc/sysdeps/linux/ia64/bits/kernel_types.h
+@@ -52,5 +52,7 @@ typedef __kernel_gid_t __kernel_gid32_t;
+ 
+ typedef unsigned int	__kernel_dev_t;
+ typedef unsigned int	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ 
+ #endif /* _ASM_IA64_POSIX_TYPES_H */
+diff --git a/libc/sysdeps/linux/m68k/bits/kernel_types.h b/libc/sysdeps/linux/m68k/bits/kernel_types.h
+index 0a77a8f..176b968 100644
+--- a/libc/sysdeps/linux/m68k/bits/kernel_types.h
++++ b/libc/sysdeps/linux/m68k/bits/kernel_types.h
+@@ -32,6 +32,8 @@ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef long long	__kernel_loff_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ 
+ typedef struct {
+ #ifdef __USE_ALL
+diff --git a/libc/sysdeps/linux/microblaze/bits/kernel_types.h b/libc/sysdeps/linux/microblaze/bits/kernel_types.h
+index 2a70575..a9f736b 100644
+--- a/libc/sysdeps/linux/microblaze/bits/kernel_types.h
++++ b/libc/sysdeps/linux/microblaze/bits/kernel_types.h
+@@ -44,6 +44,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned int	__kernel_old_uid_t;
+ typedef unsigned int	__kernel_old_gid_t;
+ typedef unsigned int	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ 
+ #ifdef __GNUC__
+ typedef long long	__kernel_loff_t;
+diff --git a/libc/sysdeps/linux/mips/bits/kernel_types.h b/libc/sysdeps/linux/mips/bits/kernel_types.h
+index 9fc3b96..97faeac 100644
+--- a/libc/sysdeps/linux/mips/bits/kernel_types.h
++++ b/libc/sysdeps/linux/mips/bits/kernel_types.h
+@@ -32,6 +32,8 @@ typedef int		__kernel_gid32_t;
+ typedef __kernel_uid_t	__kernel_old_uid_t;
+ typedef __kernel_gid_t	__kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long      __kernel_loff_t;
+ #else
+ typedef unsigned int	__kernel_dev_t;
+@@ -68,6 +70,8 @@ typedef int		__kernel_gid32_t;
+ typedef __kernel_uid_t	__kernel_old_uid_t;
+ typedef __kernel_gid_t	__kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long      __kernel_loff_t;
+ #endif
+ 
+diff --git a/libc/sysdeps/linux/nios2/bits/kernel_types.h b/libc/sysdeps/linux/nios2/bits/kernel_types.h
+index 8b86d79..3c030e7 100644
+--- a/libc/sysdeps/linux/nios2/bits/kernel_types.h
++++ b/libc/sysdeps/linux/nios2/bits/kernel_types.h
+@@ -31,6 +31,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef unsigned short	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long	__kernel_loff_t;
+ 
+ typedef struct {
+diff --git a/libc/sysdeps/linux/powerpc/bits/kernel_types.h b/libc/sysdeps/linux/powerpc/bits/kernel_types.h
+index 3f3b933..1167de2 100644
+--- a/libc/sysdeps/linux/powerpc/bits/kernel_types.h
++++ b/libc/sysdeps/linux/powerpc/bits/kernel_types.h
+@@ -36,6 +36,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned int	__kernel_old_uid_t;
+ typedef unsigned int	__kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ #else
+ typedef unsigned int	__kernel_dev_t;
+ typedef unsigned int	__kernel_ino_t;
+@@ -61,6 +63,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned int	__kernel_old_uid_t;
+ typedef unsigned int	__kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long	__kernel_loff_t;
+ #endif
+ 
+diff --git a/libc/sysdeps/linux/sh/bits/kernel_types.h b/libc/sysdeps/linux/sh/bits/kernel_types.h
+index f96e9fa..ac97261 100644
+--- a/libc/sysdeps/linux/sh/bits/kernel_types.h
++++ b/libc/sysdeps/linux/sh/bits/kernel_types.h
+@@ -32,6 +32,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long	__kernel_loff_t;
+ 
+ typedef struct {
+diff --git a/libc/sysdeps/linux/sh64/bits/kernel_types.h b/libc/sysdeps/linux/sh64/bits/kernel_types.h
+index 671cc83..8cc6c61 100644
+--- a/libc/sysdeps/linux/sh64/bits/kernel_types.h
++++ b/libc/sysdeps/linux/sh64/bits/kernel_types.h
+@@ -43,6 +43,8 @@ typedef unsigned int    __kernel_gid32_t;
+ typedef unsigned short  __kernel_old_uid_t;
+ typedef unsigned short  __kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long       __kernel_loff_t;
+ 
+ typedef struct {
+diff --git a/libc/sysdeps/linux/sparc/bits/kernel_types.h b/libc/sysdeps/linux/sparc/bits/kernel_types.h
+index 0cc4bc2..a10e075 100644
+--- a/libc/sysdeps/linux/sparc/bits/kernel_types.h
++++ b/libc/sysdeps/linux/sparc/bits/kernel_types.h
+@@ -32,6 +32,8 @@ typedef unsigned short	       __kernel_gid16_t;
+ typedef __kernel_uid_t 	       __kernel_old_uid_t;
+ typedef __kernel_gid_t         __kernel_old_gid_t;
+ typedef __kernel_dev_t         __kernel_old_dev_t;
++typedef long                   __kernel_long_t;
++typedef unsigned long          __kernel_ulong_t;
+ typedef __kernel_uid_t	       __kernel_uid32_t;
+ typedef __kernel_gid_t	       __kernel_gid32_t;
+ typedef int		       __kernel_suseconds_t;
+@@ -62,6 +64,8 @@ typedef unsigned int	       __kernel_gid32_t;
+ typedef unsigned short	       __kernel_old_uid_t;
+ typedef unsigned short	       __kernel_old_gid_t;
+ typedef __kernel_dev_t         __kernel_old_dev_t;
++typedef long                   __kernel_long_t;
++typedef unsigned long          __kernel_ulong_t;
+ typedef long long              __kernel_loff_t;
+ #endif
+ 
+diff --git a/libc/sysdeps/linux/v850/bits/kernel_types.h b/libc/sysdeps/linux/v850/bits/kernel_types.h
+index 3e851ab..780aa8a 100644
+--- a/libc/sysdeps/linux/v850/bits/kernel_types.h
++++ b/libc/sysdeps/linux/v850/bits/kernel_types.h
+@@ -41,6 +41,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ 
+ typedef struct {
+ #ifdef __USE_ALL
+diff --git a/libc/sysdeps/linux/x86_64/bits/kernel_types.h b/libc/sysdeps/linux/x86_64/bits/kernel_types.h
+index de800d7..0cae08c 100644
+--- a/libc/sysdeps/linux/x86_64/bits/kernel_types.h
++++ b/libc/sysdeps/linux/x86_64/bits/kernel_types.h
+@@ -40,6 +40,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef __kernel_dev_t	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long	__kernel_loff_t;
+ 
+ typedef struct {
+diff --git a/libc/sysdeps/linux/xtensa/bits/kernel_types.h b/libc/sysdeps/linux/xtensa/bits/kernel_types.h
+index 44f1075..ed38f2e 100644
+--- a/libc/sysdeps/linux/xtensa/bits/kernel_types.h
++++ b/libc/sysdeps/linux/xtensa/bits/kernel_types.h
+@@ -33,6 +33,8 @@ typedef unsigned int	__kernel_gid32_t;
+ typedef unsigned short	__kernel_old_uid_t;
+ typedef unsigned short	__kernel_old_gid_t;
+ typedef unsigned short	__kernel_old_dev_t;
++typedef long		__kernel_long_t;
++typedef unsigned long	__kernel_ulong_t;
+ typedef long long	__kernel_loff_t;
+ 
+ /* Beginning in 2.6 kernels, which is the first version that includes the
+--
+cgit v0.9.0.1-2-gef13

@@ -1,0 +1,20 @@
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -2378,12 +2378,15 @@ static void dynamic_debug_remove(struct
+ 
+ void * __weak module_alloc(unsigned long size)
+ {
+-	return size == 0 ? NULL : vmalloc_exec(size);
++	return vmalloc_exec(size);
+ }
+ 
+ static void *module_alloc_update_bounds(unsigned long size)
+ {
+-	void *ret = module_alloc(size);
++	void *ret = NULL;
++
++	if (size)
++		ret = module_alloc(size);
+ 
+ 	if (ret) {
+ 		mutex_lock(&module_mutex);

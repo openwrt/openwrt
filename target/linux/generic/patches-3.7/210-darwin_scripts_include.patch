@@ -1,0 +1,78 @@
+--- a/scripts/kallsyms.c
++++ b/scripts/kallsyms.c
+@@ -22,6 +22,35 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <ctype.h>
++#ifdef __APPLE__
++/* Darwin has no memmem implementation, this one is ripped of the uClibc-0.9.28 source */
++void *memmem (const void *haystack, size_t haystack_len,
++                          const void *needle,  size_t needle_len)
++{
++  const char *begin;
++  const char *const last_possible
++    = (const char *) haystack + haystack_len - needle_len;
++
++  if (needle_len == 0)
++    /* The first occurrence of the empty string is deemed to occur at
++       the beginning of the string.  */
++    return (void *) haystack;
++
++  /* Sanity check, otherwise the loop might search through the whole
++     memory.  */
++  if (__builtin_expect (haystack_len < needle_len, 0))
++    return NULL;
++
++  for (begin = (const char *) haystack; begin <= last_possible; ++begin)
++    if (begin[0] == ((const char *) needle)[0] &&
++        !memcmp ((const void *) &begin[1],
++                 (const void *) ((const char *) needle + 1),
++                 needle_len - 1))
++      return (void *) begin;
++
++  return NULL;
++}
++#endif
+ 
+ #ifndef ARRAY_SIZE
+ #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
+--- a/scripts/kconfig/Makefile
++++ b/scripts/kconfig/Makefile
+@@ -129,6 +129,9 @@ check-lxdialog  := $(srctree)/$(src)/lxd
+ # we really need to do so. (Do not call gcc as part of make mrproper)
+ HOST_EXTRACFLAGS += $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags) \
+                     -DLOCALE
++ifeq ($(shell uname -s),Darwin)
++HOST_LOADLIBES  += -lncurses
++endif
+ 
+ # ===========================================================================
+ # Shared Makefile for the various kconfig executables:
+--- a/scripts/mod/mk_elfconfig.c
++++ b/scripts/mod/mk_elfconfig.c
+@@ -1,7 +1,11 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#ifndef __APPLE__
+ #include <elf.h>
++#else
++#include "../../../../../tools/sstrip/include/elf.h"
++#endif
+ 
+ int
+ main(int argc, char **argv)
+--- a/scripts/mod/modpost.h
++++ b/scripts/mod/modpost.h
+@@ -7,7 +7,11 @@
+ #include <sys/mman.h>
+ #include <fcntl.h>
+ #include <unistd.h>
++#if !(defined(__APPLE__) || defined(__CYGWIN__))
+ #include <elf.h>
++#else
++#include "../../../../../tools/sstrip/include/elf.h"
++#endif
+ 
+ #include "elfconfig.h"
+ 
