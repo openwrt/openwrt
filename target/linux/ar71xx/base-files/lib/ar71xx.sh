@@ -270,6 +270,9 @@ ar71xx_board_detect() {
 	*"RouterBOARD 433UAH")
 		name="rb-433u"
 		;;
+	*"RouterBOARD 435G")
+		name="rb-435g"
+		;;
 	*"RouterBOARD 450")
 		name="rb-450"
 		;;

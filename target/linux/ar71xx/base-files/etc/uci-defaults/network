@@ -53,6 +53,12 @@ rb-433u)
 	ucidef_add_switch_vlan "switch0" "1" "1 2 5"
 	;;
 
+rb-435g)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2"
+	;;
+
 rb-450)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	ucidef_add_switch "eth1" "1" "1"
