@@ -174,6 +174,7 @@ $(eval $(call nf_add,IPT_NAT_EXTRA,CONFIG_IP_NF_TARGET_REDIRECT, $(P_V4)ipt_REDI
 
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_IP_NF_NAT_FTP, $(P_V4)ip_nat_ftp))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_CONNTRACK_FTP, $(P_XT)nf_conntrack_ftp))
+$(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_CONNTRACK_IRC, $(P_XT)nf_conntrack_irc))
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.7.0)),1)
   $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_FTP, $(P_XT)nf_nat_ftp))
   $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_IRC, $(P_XT)nf_nat_irc))
@@ -181,7 +182,6 @@ else
   $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_FTP, $(P_V4)nf_nat_ftp))
   $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_IRC, $(P_V4)nf_nat_irc))
 endif
-$(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_CONNTRACK_IRC, $(P_XT)nf_conntrack_irc))
 
 
 # nathelper-extra
