@@ -73,7 +73,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		reg &= ~USBH_PRIV_SWAP_EHCI_DATA_MASK;
 --- a/drivers/usb/host/ohci-bcm63xx.c
 +++ b/drivers/usb/host/ohci-bcm63xx.c
-@@ -94,7 +94,7 @@ static int __devinit ohci_hcd_bcm63xx_dr
+@@ -95,7 +95,7 @@ static int __devinit ohci_hcd_bcm63xx_dr
  		bcm_rset_writel(RSET_USBH_PRIV, 0x1c0020,
  				USBH_PRIV_TEST_6358_REG);
  
