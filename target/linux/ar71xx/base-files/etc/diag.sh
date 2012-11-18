@@ -83,6 +83,9 @@ get_status_led() {
 	ls-sr71)
 		status_led="ubnt:green:d22"
 		;;
+	mr600)
+		status_led="mr600:orange:power"
+		;;
 	mzk-w04nu | \
 	mzk-w300nh)
 		status_led="planex:green:status"
