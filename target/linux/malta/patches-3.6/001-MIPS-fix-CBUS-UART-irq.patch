@@ -21,11 +21,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/mti-malta/malta-platform.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/mips/mti-malta/malta-platform.c b/arch/mips/mti-malta/malta-platform.c
-index a8beca8..a906153 100644
 --- a/arch/mips/mti-malta/malta-platform.c
 +++ b/arch/mips/mti-malta/malta-platform.c
-@@ -47,7 +47,7 @@ static struct plat_serial8250_port uart8250_data[] = {
+@@ -48,7 +48,7 @@ static struct plat_serial8250_port uart8
  	SMC_PORT(0x2F8, 3),
  	{
  		.mapbase	= 0x1f000900,	/* The CBUS UART */
@@ -34,6 +32,3 @@ index a8beca8..a906153 100644
  		.uartclk	= 3686400,	/* Twice the usual clk! */
  		.iotype		= UPIO_MEM32,
  		.flags		= CBUS_UART_FLAGS,
--- 
-1.7.11.7
-
