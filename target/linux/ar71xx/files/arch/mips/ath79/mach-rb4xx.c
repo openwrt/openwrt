@@ -107,8 +107,36 @@ static struct ath79_pci_irq rb4xx_pci_irqs[] __initdata = {
 		.irq	= ATH79_PCI_IRQ(1),
 	}, {
 		.slot	= 19,
+		.pin	= 2,
+		.irq	= ATH79_PCI_IRQ(2),
+	}, {
+		.slot	= 20,
 		.pin	= 1,
 		.irq	= ATH79_PCI_IRQ(2),
+	}, {
+		.slot	= 20,
+		.pin	= 2,
+		.irq	= ATH79_PCI_IRQ(0),
+	}, {
+		.slot	= 21,
+		.pin	= 1,
+		.irq	= ATH79_PCI_IRQ(0),
+	}, {
+		.slot	= 22,
+		.pin	= 1,
+		.irq	= ATH79_PCI_IRQ(1),
+	}, {
+		.slot	= 22,
+		.pin	= 2,
+		.irq	= ATH79_PCI_IRQ(2),
+	}, {
+		.slot	= 23,
+		.pin	= 1,
+		.irq	= ATH79_PCI_IRQ(2),
+	}, {
+		.slot	= 23,
+		.pin	= 2,
+		.irq	= ATH79_PCI_IRQ(0),
 	}
 };
 
