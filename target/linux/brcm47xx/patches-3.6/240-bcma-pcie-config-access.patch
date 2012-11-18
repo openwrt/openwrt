@@ -1,0 +1,104 @@
+--- a/drivers/bcma/driver_pci_host.c
++++ b/drivers/bcma/driver_pci_host.c
+@@ -94,19 +94,19 @@ static int bcma_extpci_read_config(struc
+ 	if (dev == 0) {
+ 		/* we support only two functions on device 0 */
+ 		if (func > 1)
+-			return -EINVAL;
++			goto out;
+ 
+ 		/* accesses to config registers with offsets >= 256
+ 		 * requires indirect access.
+ 		 */
+ 		if (off >= PCI_CONFIG_SPACE_SIZE) {
+ 			addr = (func << 12);
+-			addr |= (off & 0x0FFF);
++			addr |= (off & 0x0FFC);
+ 			val = bcma_pcie_read_config(pc, addr);
+ 		} else {
+ 			addr = BCMA_CORE_PCI_PCICFG0;
+ 			addr |= (func << 8);
+-			addr |= (off & 0xfc);
++			addr |= (off & 0xFC);
+ 			val = pcicore_read32(pc, addr);
+ 		}
+ 	} else {
+@@ -122,8 +122,6 @@ static int bcma_extpci_read_config(struc
+ 			val = 0xffffffff;
+ 			goto unmap;
+ 		}
+-
+-		val = readl(mmio);
+ 	}
+ 	val >>= (8 * (off & 3));
+ 
+@@ -151,7 +149,7 @@ static int bcma_extpci_write_config(stru
+ 				   const void *buf, int len)
+ {
+ 	int err = -EINVAL;
+-	u32 addr = 0, val = 0;
++	u32 addr, val;
+ 	void __iomem *mmio = 0;
+ 	u16 chipid = pc->core->bus->chipinfo.id;
+ 
+@@ -159,16 +157,22 @@ static int bcma_extpci_write_config(stru
+ 	if (unlikely(len != 1 && len != 2 && len != 4))
+ 		goto out;
+ 	if (dev == 0) {
++		/* we support only two functions on device 0 */
++		if (func > 1)
++			goto out;
++
+ 		/* accesses to config registers with offsets >= 256
+ 		 * requires indirect access.
+ 		 */
+-		if (off < PCI_CONFIG_SPACE_SIZE) {
+-			addr = pc->core->addr + BCMA_CORE_PCI_PCICFG0;
++		if (off >= PCI_CONFIG_SPACE_SIZE) {
++			addr = (func << 12);
++			addr |= (off & 0x0FFC);
++			val = bcma_pcie_read_config(pc, addr);
++		} else {
++			addr = BCMA_CORE_PCI_PCICFG0;
+ 			addr |= (func << 8);
+-			addr |= (off & 0xfc);
+-			mmio = ioremap_nocache(addr, sizeof(val));
+-			if (!mmio)
+-				goto out;
++			addr |= (off & 0xFC);
++			val = pcicore_read32(pc, addr);
+ 		}
+ 	} else {
+ 		addr = bcma_get_cfgspace_addr(pc, dev, func, off);
+@@ -187,12 +191,10 @@ static int bcma_extpci_write_config(stru
+ 
+ 	switch (len) {
+ 	case 1:
+-		val = readl(mmio);
+ 		val &= ~(0xFF << (8 * (off & 3)));
+ 		val |= *((const u8 *)buf) << (8 * (off & 3));
+ 		break;
+ 	case 2:
+-		val = readl(mmio);
+ 		val &= ~(0xFFFF << (8 * (off & 3)));
+ 		val |= *((const u16 *)buf) << (8 * (off & 3));
+ 		break;
+@@ -200,13 +202,14 @@ static int bcma_extpci_write_config(stru
+ 		val = *((const u32 *)buf);
+ 		break;
+ 	}
+-	if (dev == 0 && !addr) {
++	if (dev == 0) {
+ 		/* accesses to config registers with offsets >= 256
+ 		 * requires indirect access.
+ 		 */
+-		addr = (func << 12);
+-		addr |= (off & 0x0FFF);
+-		bcma_pcie_write_config(pc, addr, val);
++		if (off >= PCI_CONFIG_SPACE_SIZE)
++			bcma_pcie_write_config(pc, addr, val);
++		else
++			pcicore_write32(pc, addr, val);
+ 	} else {
+ 		writel(val, mmio);
+ 

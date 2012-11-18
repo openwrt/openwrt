@@ -1,0 +1,40 @@
+--- a/drivers/ssb/embedded.c
++++ b/drivers/ssb/embedded.c
+@@ -136,6 +136,18 @@ u32 ssb_gpio_polarity(struct ssb_bus *bu
+ }
+ EXPORT_SYMBOL(ssb_gpio_polarity);
+ 
++int ssb_gpio_count(struct ssb_bus *bus)
++{
++	if (ssb_chipco_available(&bus->chipco))
++		return SSB_GPIO_CHIPCO_LINES;
++	else if (ssb_extif_available(&bus->extif))
++		return SSB_GPIO_EXTIF_LINES;
++	else
++		SSB_WARN_ON(1);
++	return 0;
++}
++EXPORT_SYMBOL(ssb_gpio_count);
++
+ #ifdef CONFIG_SSB_DRIVER_GIGE
+ static int gige_pci_init_callback(struct ssb_bus *bus, unsigned long data)
+ {
+--- a/include/linux/ssb/ssb_embedded.h
++++ b/include/linux/ssb/ssb_embedded.h
+@@ -7,6 +7,9 @@
+ 
+ extern int ssb_watchdog_timer_set(struct ssb_bus *bus, u32 ticks);
+ 
++#define SSB_GPIO_EXTIF_LINES	5
++#define SSB_GPIO_CHIPCO_LINES	16
++
+ /* Generic GPIO API */
+ u32 ssb_gpio_in(struct ssb_bus *bus, u32 mask);
+ u32 ssb_gpio_out(struct ssb_bus *bus, u32 mask, u32 value);
+@@ -14,5 +17,6 @@ u32 ssb_gpio_outen(struct ssb_bus *bus,
+ u32 ssb_gpio_control(struct ssb_bus *bus, u32 mask, u32 value);
+ u32 ssb_gpio_intmask(struct ssb_bus *bus, u32 mask, u32 value);
+ u32 ssb_gpio_polarity(struct ssb_bus *bus, u32 mask, u32 value);
++int ssb_gpio_count(struct ssb_bus *bus);
+ 
+ #endif /* LINUX_SSB_EMBEDDED_H_ */
