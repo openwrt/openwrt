@@ -15,7 +15,8 @@ board=$(ar71xx_board_name)
 
 case "$board" in
 all0258n | \
-cap4200ag)
+cap4200ag | \
+mr600)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
 alfa-ap96 | \
