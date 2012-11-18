@@ -305,6 +305,35 @@ static void __init rb433u_setup(void)
 MIPS_MACHINE(ATH79_MACH_RB_433U, "433U", "MikroTik RouterBOARD 433UAH",
 	     rb433u_setup);
 
+static void __init rb435g_setup(void)
+{
+	rb4xx_generic_setup();
+
+	spi_register_board_info(rb4xx_microsd_info,
+				ARRAY_SIZE(rb4xx_microsd_info));
+
+	ath79_register_mdio(0, ~RB433_MDIO_PHYMASK);
+
+	ath79_init_mac(ath79_eth0_data.mac_addr, ath79_mac_base, 1);
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ath79_eth0_data.phy_mask = RB433_LAN_PHYMASK;
+
+	ath79_init_mac(ath79_eth1_data.mac_addr, ath79_mac_base, 0);
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ath79_eth1_data.phy_mask = RB433_WAN_PHYMASK;
+
+	ath79_register_eth(1);
+	ath79_register_eth(0);
+
+	ath79_pci_set_irq_map(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
+	ath79_register_pci();
+
+	ath79_register_usb();
+}
+
+MIPS_MACHINE(ATH79_MACH_RB_435G, "435G", "MikroTik RouterBOARD 435G",
+	     rb435g_setup);
+
 #define RB450_LAN_PHYMASK	BIT(0)
 #define RB450_WAN_PHYMASK	BIT(4)
 #define RB450_MDIO_PHYMASK	(RB450_LAN_PHYMASK | RB450_WAN_PHYMASK)
