@@ -1,9 +1,9 @@
-# The U-Boot loader of the OM2P requires image sizes and checksums to be
-# provided in the U-Boot environment.
-# The OM2P comes with 2 main partitions - while one is active sysupgrade
-# will flash the other. The boot order is changed to boot the newly
-# flashed partition. If the new partition can't be booted due to upgrade
-# failures the previously used partition is loaded.
+# The U-Boot loader of the OpenMesh devices requires image sizes and
+# checksums to be provided in the U-Boot environment.
+# The OpenMesh devices come with 2 main partitions - while one is active
+# sysupgrade will flash the other. The boot order is changed to boot the
+# newly flashed partition. If the new partition can't be booted due to
+# upgrade failures the previously used partition is loaded.
 
 trim()
 {
@@ -34,7 +34,7 @@ platform_add_ramfs_ubootenv()
 }
 append sysupgrade_pre_upgrade platform_add_ramfs_ubootenv
 
-platform_check_image_om2p()
+platform_check_image_openmesh()
 {
 	local img_magic=$1
 	local img_path=$2
@@ -56,6 +56,16 @@ platform_check_image_om2p()
 
 	case "$img_board_target" in
 		OM2P)
+			[ "$board" = "om2p" ] && break
+			[ "$board" = "om2p-lc" ] && break
+			[ "$board" = "om2p-hs" ] && break
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		MR600)
+			[ "$board" = "mr600" ] && break
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
 			;;
 		*)
 			echo "Invalid board target ($img_board_target). Use the correct image for this platform"
@@ -102,13 +112,14 @@ platform_check_image_om2p()
 	return 0
 }
 
-platform_do_upgrade_om2p()
+platform_do_upgrade_openmesh()
 {
-	local img_path=$1
-	local kernel_start_addr= kernel_size= kernel_md5=
+	local img_path=$1 img_board_target=
+	local kernel_start_addr= kernel_start_addr1= kernel_start_addr2=
+	local kernel_size= kernel_md5=
 	local rootfs_size= rootfs_checksize= rootfs_md5=
 	local kernel_bsize= total_size=7340032
-	local data_offset=$((64 * 1024)) block_size=$((256 * 1024)) offset=
+	local data_offset=$((64 * 1024)) block_size= offset=
 	local uboot_env_upgrade="/tmp/fw_env_upgrade"
 	local cfg_size= kernel_size= rootfs_size=
 	local append=""
@@ -119,7 +130,21 @@ platform_do_upgrade_om2p()
 	kernel_size=$(dd if="$img_path" bs=2 skip=71 count=4 2>/dev/null)
 	rootfs_size=$(dd if="$img_path" bs=2 skip=107 count=4 2>/dev/null)
 
+	img_board_target=$(trim $(dd if="$img_path" bs=4 skip=1 count=8 2>/dev/null))
 	cfg_content=$(dd if="$img_path" bs=1 skip=$data_offset count=$(echo $((0x$cfg_size))) 2>/dev/null)
+
+	case $img_board_target in
+		OM2P)
+			block_size=$((256 * 1024))
+			kernel_start_addr1=0x9f1c0000
+			kernel_start_addr2=0x9f8c0000
+			;;
+		MR600)
+			block_size=$((64 * 1024))
+			kernel_start_addr1=0x9f0b0000
+			kernel_start_addr2=0x9f850000
+			;;
+	esac
 
 	kernel_md5=$(cfg_value_get "$cfg_content" "vmlinux" "md5sum")
 	rootfs_md5=$(cfg_value_get "$cfg_content" "rootfs" "md5sum")
@@ -147,12 +172,12 @@ platform_do_upgrade_om2p()
 			printf "kernel_size_1 %u\n" $(($kernel_bsize / 1024)) >> $uboot_env_upgrade
 			printf "rootfs_size_1 %u\n" $((($total_size - $kernel_bsize) / 1024)) >> $uboot_env_upgrade
 			printf "bootseq 1,2\n" >> $uboot_env_upgrade
-			kernel_start_addr=0x9f1c0000
+			kernel_start_addr=$kernel_start_addr1
 		else
 			printf "kernel_size_2 %u\n" $(($kernel_bsize / 1024)) >> $uboot_env_upgrade
 			printf "rootfs_size_2 %u\n" $((($total_size - $kernel_bsize) / 1024)) >> $uboot_env_upgrade
 			printf "bootseq 2,1\n" >> $uboot_env_upgrade
-			kernel_start_addr=0x9f8c0000
+			kernel_start_addr=$kernel_start_addr2
 	fi
 
 	printf "vmlinux_start_addr %s\n" $kernel_start_addr >> $uboot_env_upgrade
