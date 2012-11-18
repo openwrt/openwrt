@@ -49,7 +49,7 @@ else
 
   LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
 
-  LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
+  LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.xz
   TESTING:=$(if $(findstring -rc,$(LINUX_VERSION)),/testing,)
   ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
       LINUX_SITE:=@KERNEL/linux/kernel/v3.x$(TESTING)
