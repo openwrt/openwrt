@@ -1,3 +1,33 @@
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -43,8 +43,8 @@ static void early_nvram_init(void)
+ #ifdef CONFIG_BCM47XX_SSB
+ 	case BCM47XX_BUS_TYPE_SSB:
+ 		mcore_ssb = &bcm47xx_bus.ssb.mipscore;
+-		base = mcore_ssb->flash_window;
+-		lim = mcore_ssb->flash_window_size;
++		base = mcore_ssb->pflash.window;
++		lim = mcore_ssb->pflash.window_size;
+ 		break;
+ #endif
+ #ifdef CONFIG_BCM47XX_BCMA
+--- a/arch/mips/bcm47xx/wgt634u.c
++++ b/arch/mips/bcm47xx/wgt634u.c
+@@ -156,10 +156,10 @@ static int __init wgt634u_init(void)
+ 					    SSB_CHIPCO_IRQ_GPIO);
+ 		}
+ 
+-		wgt634u_flash_data.width = mcore->flash_buswidth;
+-		wgt634u_flash_resource.start = mcore->flash_window;
+-		wgt634u_flash_resource.end = mcore->flash_window
+-					   + mcore->flash_window_size
++		wgt634u_flash_data.width = mcore->pflash.buswidth;
++		wgt634u_flash_resource.start = mcore->pflash.window;
++		wgt634u_flash_resource.end = mcore->pflash.window
++					   + mcore->pflash.window_size
+ 					   - 1;
+ 		return platform_add_devices(wgt634u_devices,
+ 					    ARRAY_SIZE(wgt634u_devices));
 --- a/drivers/bcma/Kconfig
 +++ b/drivers/bcma/Kconfig
 @@ -48,12 +48,12 @@ config BCMA_DRIVER_MIPS
@@ -1022,3 +1052,45 @@
 +#define BCMA_SOC_FLASH2_SZ		0x02000000	/* Size of Flash Region 2 */
 +
  #endif /* LINUX_BCMA_REGS_H_ */
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -4622,7 +4622,7 @@ static int b43_wireless_core_init(struct
+ 	switch (dev->dev->bus_type) {
+ #ifdef CONFIG_B43_BCMA
+ 	case B43_BUS_BCMA:
+-		bcma_core_pci_irq_ctl(&dev->dev->bdev->bus->drv_pci,
++		bcma_core_pci_irq_ctl(&dev->dev->bdev->bus->drv_pci[0],
+ 				      dev->dev->bdev, true);
+ 		break;
+ #endif
+--- a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
+@@ -695,7 +695,7 @@ void ai_pci_up(struct si_pub *sih)
+ 	sii = container_of(sih, struct si_info, pub);
+ 
+ 	if (sii->icbus->hosttype == BCMA_HOSTTYPE_PCI)
+-		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci, true);
++		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci[0], true);
+ }
+ 
+ /* Unconfigure and/or apply various WARs when going down */
+@@ -706,7 +706,7 @@ void ai_pci_down(struct si_pub *sih)
+ 	sii = container_of(sih, struct si_info, pub);
+ 
+ 	if (sii->icbus->hosttype == BCMA_HOSTTYPE_PCI)
+-		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci, false);
++		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci[0], false);
+ }
+ 
+ /* Enable BT-COEX & Ex-PA for 4313 */
+--- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
+@@ -5077,7 +5077,7 @@ static int brcms_b_up_prep(struct brcms_
+ 	 * Configure pci/pcmcia here instead of in brcms_c_attach()
+ 	 * to allow mfg hotswap:  down, hotswap (chip power cycle), up.
+ 	 */
+-	bcma_core_pci_irq_ctl(&wlc_hw->d11core->bus->drv_pci, wlc_hw->d11core,
++	bcma_core_pci_irq_ctl(&wlc_hw->d11core->bus->drv_pci[0], wlc_hw->d11core,
+ 			      true);
+ 
+ 	/*

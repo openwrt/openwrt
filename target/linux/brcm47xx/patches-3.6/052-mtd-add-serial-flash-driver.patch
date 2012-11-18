@@ -1,0 +1,335 @@
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -258,6 +258,15 @@ config MTD_BCM47XX_PFLASH
+ 	help
+ 	  Support for bcm47xx parallel flash
+ 
++config MTD_BCM47XX_SFLASH
++	tristate "bcm47xx serial flash support"
++	default y
++	depends on BCM47XX
++	select MTD_PARTITIONS
++	select MTD_BCM47XX_PARTS
++	help
++	  Support for bcm47xx parallel flash
++
+ config MTD_DILNETPC
+ 	tristate "CFI Flash device mapped on DIL/Net PC"
+ 	depends on X86 && MTD_CFI_INTELEXT && BROKEN
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -58,3 +58,4 @@ obj-$(CONFIG_MTD_GPIO_ADDR)	+= gpio-addr
+ obj-$(CONFIG_MTD_LATCH_ADDR)	+= latch-addr-flash.o
+ obj-$(CONFIG_MTD_LANTIQ)	+= lantiq-flash.o
+ obj-$(CONFIG_MTD_BCM47XX_PFLASH)+= bcm47xx-pflash.o
++obj-$(CONFIG_MTD_BCM47XX_SFLASH)+= bcm47xx-sflash.o
+--- /dev/null
++++ b/drivers/mtd/maps/bcm47xx-sflash.c
+@@ -0,0 +1,270 @@
++/*
++ * Broadcom SiliconBackplane chipcommon serial flash interface
++ *
++ * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
++ * Copyright 2006, Broadcom Corporation
++ * All Rights Reserved.
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#define pr_fmt(fmt) "bcm47xx_sflash: " fmt
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/ioport.h>
++#include <linux/sched.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/mtd/partitions.h>
++#include <linux/errno.h>
++#include <linux/delay.h>
++#include <linux/platform_device.h>
++#include <linux/mtd/bcm47xx_sflash.h>
++
++static int
++sflash_mtd_poll(struct bcm47xx_sflash *sflash, unsigned int offset, int timeout)
++{
++	unsigned long now = jiffies;
++
++	for (;;) {
++		if (!sflash->poll(sflash, offset)) {
++			break;
++		}
++		if (time_after(jiffies, now + timeout)) {
++			pr_err("timeout while polling\n");
++			return -ETIMEDOUT;
++
++		}
++		cpu_relax();
++		udelay(1);
++	}
++
++	return 0;
++}
++
++static int
++sflash_mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
++{
++	struct bcm47xx_sflash *sflash = (struct bcm47xx_sflash *)mtd->priv;
++
++	/* Check address range */
++	if (!len)
++		return 0;
++
++	if ((from + len) > mtd->size)
++		return -EINVAL;
++
++	*retlen = 0;
++	while (len) {
++		int ret = sflash->read(sflash, from, len, buf);
++		if (ret < 0)
++			return ret;
++
++		from += (loff_t) ret;
++		len -= ret;
++		buf += ret;
++		*retlen += ret;
++	}
++
++	return 0;
++}
++
++static int
++sflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf)
++{
++	int bytes;
++	int ret;
++	struct bcm47xx_sflash *sflash = (struct bcm47xx_sflash *)mtd->priv;
++
++	/* Check address range */
++	if (!len)
++		return 0;
++
++	if ((to + len) > mtd->size)
++		return -EINVAL;
++
++	*retlen = 0;
++	while (len) {
++		ret = sflash->write(sflash, to, len, buf);
++		if (ret < 0)
++			return ret;
++
++		bytes = ret;
++
++		ret = sflash_mtd_poll(sflash, (unsigned int) to, HZ / 10);
++		if (ret)
++			return ret;
++
++		to += (loff_t) bytes;
++		len -= bytes;
++		buf += bytes;
++		*retlen += bytes;
++	}
++
++	return 0;
++}
++
++static int
++sflash_mtd_erase(struct mtd_info *mtd, struct erase_info *erase)
++{
++	struct bcm47xx_sflash *sflash = (struct bcm47xx_sflash *) mtd->priv;
++	int i, j, ret = 0;
++	unsigned int addr, len;
++
++	/* Check address range */
++	if (!erase->len)
++		return 0;
++	if ((erase->addr + erase->len) > mtd->size)
++		return -EINVAL;
++
++	addr = erase->addr;
++	len = erase->len;
++
++	/* Ensure that requested regions are aligned */
++	for (i = 0; i < mtd->numeraseregions; i++) {
++		for (j = 0; j < mtd->eraseregions[i].numblocks; j++) {
++			if (addr == mtd->eraseregions[i].offset +
++					mtd->eraseregions[i].erasesize * j &&
++			    len >= mtd->eraseregions[i].erasesize) {
++				ret = sflash->erase(sflash, addr);
++				if (ret < 0)
++					break;
++				ret = sflash_mtd_poll(sflash, addr, 10 * HZ);
++				if (ret)
++					break;
++				addr += mtd->eraseregions[i].erasesize;
++				len -= mtd->eraseregions[i].erasesize;
++			}
++		}
++		if (ret)
++			break;
++	}
++
++	/* Set erase status */
++	if (ret)
++		erase->state = MTD_ERASE_FAILED;
++	else
++		erase->state = MTD_ERASE_DONE;
++
++	/* Call erase callback */
++	if (erase->callback)
++		erase->callback(erase);
++
++	return ret;
++}
++
++static const char *probes[] = { "bcm47xx", NULL };
++
++static int bcm47xx_sflash_probe(struct platform_device *pdev)
++{
++	struct bcm47xx_sflash *sflash = dev_get_platdata(&pdev->dev);
++	struct mtd_info *mtd;
++	struct mtd_erase_region_info *eraseregions;
++	int ret = 0;
++
++	mtd = kzalloc(sizeof(struct mtd_info), GFP_KERNEL);
++	if (!mtd){
++		ret =  -ENOMEM;
++		goto err_out;
++	}
++
++	eraseregions = kzalloc(sizeof(struct mtd_erase_region_info), GFP_KERNEL);
++	if (!eraseregions) {
++		ret =  -ENOMEM;
++		goto err_free_mtd;
++	}
++
++	pr_info("found serial flash: blocksize=%dKB, numblocks=%d, size=%dKB\n",
++		sflash->blocksize / 1024, sflash->numblocks, sflash->size / 1024);
++
++	/* Setup region info */
++	eraseregions->offset = 0;
++	eraseregions->erasesize = sflash->blocksize;
++	eraseregions->numblocks = sflash->numblocks;
++	if (eraseregions->erasesize > mtd->erasesize)
++		mtd->erasesize = eraseregions->erasesize;
++	mtd->size = sflash->size;
++	mtd->numeraseregions = 1;
++
++	/* Register with MTD */
++	mtd->name = "bcm47xx-sflash";
++	mtd->type = MTD_NORFLASH;
++	mtd->flags = MTD_CAP_NORFLASH;
++	mtd->eraseregions = eraseregions;
++	mtd->_erase = sflash_mtd_erase;
++	mtd->_read = sflash_mtd_read;
++	mtd->_write = sflash_mtd_write;
++	mtd->writesize = 1;
++	mtd->priv = sflash;
++	ret = dev_set_drvdata(&pdev->dev, mtd);
++	mtd->owner = THIS_MODULE;
++	if (ret) {
++		pr_err("adding private data failed\n");
++		goto err_free_eraseregions;
++	}
++
++	ret = mtd_device_parse_register(mtd, probes, NULL, NULL, 0);
++
++	if (ret) {
++		pr_err("mtd_device_register failed\n");
++		goto err_free_eraseregions;
++	}
++	return 0;
++
++err_free_eraseregions:
++	kfree(eraseregions);
++err_free_mtd:
++	kfree(mtd);
++err_out:
++	return ret;
++}
++
++static int __devexit bcm47xx_sflash_remove(struct platform_device *pdev)
++{
++	struct mtd_info *mtd = dev_get_drvdata(&pdev->dev);
++
++	if (mtd) {
++		mtd_device_unregister(mtd);
++		map_destroy(mtd);
++		kfree(mtd->eraseregions);
++		kfree(mtd);
++		dev_set_drvdata(&pdev->dev, NULL);
++	}
++	return 0;
++}
++
++static const struct platform_device_id bcm47xx_sflash_table[] = {
++	{ "bcm47xx-sflash", 0 },
++	{ }
++};
++MODULE_DEVICE_TABLE(platform, bcm47xx_sflash_table);
++
++static struct platform_driver bcm47xx_sflash_driver = {
++	.id_table	= bcm47xx_sflash_table,
++	.probe	= bcm47xx_sflash_probe,
++	.remove	= __devexit_p(bcm47xx_sflash_remove),
++	.driver	= {
++		.name = "bcm47xx-sflash",
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init init_bcm47xx_sflash(void)
++{
++	int ret = platform_driver_register(&bcm47xx_sflash_driver);
++
++	if (ret)
++		pr_err("error registering platform driver: %i\n", ret);
++	return ret;
++}
++
++static void __exit exit_bcm47xx_sflash(void)
++{
++	platform_driver_unregister(&bcm47xx_sflash_driver);
++}
++
++module_init(init_bcm47xx_sflash);
++module_exit(exit_bcm47xx_sflash);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("BCM47XX serial flash driver");
+--- /dev/null
++++ b/include/linux/mtd/bcm47xx_sflash.h
+@@ -0,0 +1,34 @@
++#ifndef LINUX_MTD_BCM47XX_SFLASH_H_
++#define LINUX_MTD_BCM47XX_SFLASH_H_
++
++#include <linux/mtd/mtd.h>
++
++enum bcm47xx_sflash_type {
++	BCM47XX_SFLASH_SSB,
++	BCM47XX_SFLASH_BCMA,
++};
++
++struct ssb_chipcommon;
++struct bcma_drv_cc;
++
++struct bcm47xx_sflash {
++	enum bcm47xx_sflash_type type;
++	union {
++		struct ssb_chipcommon *scc;
++		struct bcma_drv_cc *bcc;
++	};
++
++	bool present;
++	u16 numblocks;
++	u32 window;
++	u32 blocksize;
++	u32 size;
++
++	int (*read)(struct bcm47xx_sflash *dev, u32 offset, u32 len, u8 *buf);
++	int (*poll)(struct bcm47xx_sflash *dev, u32 offset);
++	int (*write)(struct bcm47xx_sflash *dev, u32 offset, u32 len, const u8 *buf);
++	int (*erase)(struct bcm47xx_sflash *dev, u32 offset);
++
++	struct mtd_info *mtd;
++};
++#endif /* LINUX_MTD_BCM47XX_SFLASH_H_ */

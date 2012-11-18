@@ -1,0 +1,76 @@
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -14,6 +14,7 @@
+ #include <linux/serial_core.h>
+ #include <linux/serial_reg.h>
+ #include <linux/time.h>
++#include <linux/platform_device.h>
+ 
+ #include "ssb_private.h"
+ 
+@@ -186,6 +187,19 @@ static void ssb_mips_serial_init(struct
+ 		mcore->nr_serial_ports = 0;
+ }
+ 
++static struct resource ssb_pflash_resource = {
++	.name	= "ssb_pflash",
++	.start	= 0,
++	.end	= 0,
++	.flags  = 0,
++};
++
++struct platform_device ssb_pflash_dev = {
++	.name		= "bcm47xx-pflash",
++	.resource	= &ssb_pflash_resource,
++	.num_resources	= 1,
++};
++
+ static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
+ {
+ 	struct ssb_bus *bus = mcore->dev->bus;
+@@ -196,6 +210,9 @@ static void ssb_mips_flash_detect(struct
+ 		mcore->pflash.buswidth = 2;
+ 		mcore->pflash.window = SSB_FLASH1;
+ 		mcore->pflash.window_size = SSB_FLASH1_SZ;
++		ssb_pflash_resource.start = mcore->pflash.window;
++		ssb_pflash_resource.end = mcore->pflash.window + 
++					  mcore->pflash.window_size;
+ 		return;
+ 	}
+ 
+@@ -216,6 +233,9 @@ static void ssb_mips_flash_detect(struct
+ 			mcore->pflash.buswidth = 1;
+ 		else
+ 			mcore->pflash.buswidth = 2;
++		ssb_pflash_resource.start = mcore->pflash.window;
++		ssb_pflash_resource.end = mcore->pflash.window + 
++					  mcore->pflash.window_size;
+ 		break;
+ 	}
+ }
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -543,6 +543,14 @@ static int ssb_devices_register(struct s
+ 				   "Error registering serial flash\n");
+ 	}
+ #endif
++#ifdef CONFIG_SSB_DRIVER_MIPS
++	if (bus->mipscore.pflash.present) {
++		err = platform_device_register(&ssb_pflash_dev);
++		if (err)
++			ssb_printk(KERN_ERR PFX
++				   "Error registering parallel flash\n");
++	}
++#endif
+ 
+ 	return 0;
+ error:
+--- a/drivers/ssb/ssb_private.h
++++ b/drivers/ssb/ssb_private.h
+@@ -223,4 +223,6 @@ static inline int ssb_sflash_init(struct
+ }
+ #endif /* CONFIG_SSB_SFLASH */
+ 
++extern struct platform_device ssb_pflash_dev;
++
+ #endif /* LINUX_SSB_PRIVATE_H_ */
