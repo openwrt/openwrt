@@ -1481,10 +1481,19 @@ ar8216_config_aneg(struct phy_device *phydev)
 static int
 ar8216_probe(struct phy_device *pdev)
 {
-	struct ar8216_priv priv;
+	struct ar8216_priv *priv;
+	int ret;
 
-	priv.phy = pdev;
-	return ar8216_id_chip(&priv);
+	priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
+	if (priv == NULL)
+		return -ENOMEM;
+
+	priv->phy = pdev;
+
+	ret = ar8216_id_chip(priv);
+	kfree(priv);
+
+	return ret;
 }
 
 static void
