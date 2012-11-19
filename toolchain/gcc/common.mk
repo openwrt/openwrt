@@ -44,10 +44,10 @@ ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
       PKG_MD5SUM:=0c25f93e15e362e352c933e4649a7fc6
     endif
     ifeq ($(CONFIG_GCC_VERSION),"4.6-linaro")
-      PKG_REV:=4.6-2012.10
+      PKG_REV:=4.6-2012.11
       PKG_VERSION:=4.6.4
       PKG_VERSION_MAJOR:=4.6
-      PKG_MD5SUM:=acd304caf055ccaaca4e3ef61da11e7d
+      PKG_MD5SUM:=d2632b8d3c0e44025dd1c8661db0c201
     endif
     ifeq ($(CONFIG_GCC_VERSION),"4.7-linaro")
       PKG_REV:=4.7-2012.11
