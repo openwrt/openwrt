@@ -1,0 +1,27 @@
+--- a/ipkg-build
++++ b/ipkg-build
+@@ -250,13 +250,13 @@ mkdir $tmp_dir
+ 
+ echo $CONTROL > $tmp_dir/tarX
+ # Preserve permissions (-p) when creating data.tar.gz as non-root user
+-( cd $pkg_dir && $TAR $ogargs -X $tmp_dir/tarX -czpf $tmp_dir/data.tar.gz . )
++( cd $pkg_dir && $TAR $ogargs -X $tmp_dir/tarX --format=gnu -czpf $tmp_dir/data.tar.gz . )
+ 
+ installed_size=`stat -c "%s" $tmp_dir/data.tar.gz`
+ sed -i -e "s/^Installed-Size: .*/Installed-Size: $installed_size/" \
+ 	$pkg_dir/$CONTROL/control
+ 
+-( cd $pkg_dir/$CONTROL && $TAR $ogargs -czf $tmp_dir/control.tar.gz . )
++( cd $pkg_dir/$CONTROL && $TAR $ogargs --format=gnu -czf $tmp_dir/control.tar.gz . )
+ rm $tmp_dir/tarX
+ 
+ echo "2.0" > $tmp_dir/debian-binary
+@@ -266,7 +266,7 @@ rm -f $pkg_file
+ if [ "$outer" = "ar" ] ; then
+   ( cd $tmp_dir && ar -crf $pkg_file ./debian-binary ./data.tar.gz ./control.tar.gz )
+ else
+-  ( cd $tmp_dir && $TAR -zcf $pkg_file ./debian-binary ./data.tar.gz ./control.tar.gz )
++  ( cd $tmp_dir && $TAR --format=gnu -zcf $pkg_file ./debian-binary ./data.tar.gz ./control.tar.gz )
+ fi
+ 
+ rm $tmp_dir/debian-binary $tmp_dir/data.tar.gz $tmp_dir/control.tar.gz
