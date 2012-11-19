@@ -1,0 +1,28 @@
+See http://sourceware.org/bugzilla/show_bug.cgi?id=13990 for details.
+---
+diff -u -r1.287 -r1.288
+--- a/bfd/elf32-arm.c	2012/04/24 05:12:31	1.287
++++ b/bfd/elf32-arm.c	2012/04/24 16:09:12	1.288
+@@ -12256,8 +12256,19 @@
+       if (may_need_local_target_p
+ 	  && elf32_arm_get_plt_info (abfd, eh, r_symndx, &root_plt, &arm_plt))
+ 	{
+-	  BFD_ASSERT (root_plt->refcount > 0);
+-	  root_plt->refcount -= 1;
++	  /* If PLT refcount book-keeping is wrong and too low, we'll
++	     see a zero value (going to -1) for the root PLT reference
++	     count.  */
++	  if (root_plt->refcount >= 0)
++	    {
++	      BFD_ASSERT (root_plt->refcount != 0);
++	      root_plt->refcount -= 1;
++	    }
++	  else
++	    /* A value of -1 means the symbol has become local, forced
++	       or seeing a hidden definition.  Any other negative value
++	       is an error.  */
++	    BFD_ASSERT (root_plt->refcount == -1);
+ 
+ 	  if (!call_reloc_p)
+ 	    arm_plt->noncall_refcount--;
+
