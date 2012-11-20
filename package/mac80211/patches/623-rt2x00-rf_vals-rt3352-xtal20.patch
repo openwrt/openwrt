@@ -1,0 +1,121 @@
+Index: compat-wireless-2012-09-07/drivers/net/wireless/rt2x00/rt2800lib.c
+===================================================================
+--- compat-wireless-2012-09-07.orig/drivers/net/wireless/rt2x00/rt2800lib.c
++++ compat-wireless-2012-09-07/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -5072,6 +5072,27 @@ static const struct rf_channel rf_vals_3
+ 	{173, 0x61, 0, 9},
+ };
+ 
++/*
++ * RF value list for rt3xxx with Xtal20MHz
++ * Supports: 2.4 GHz (all) (RF3322)
++ */
++static const struct rf_channel rf_vals_xtal20mhz_3x[] = {
++	{1,    0xE2,	 2,  0x14},
++	{2,    0xE3,	 2,  0x14},
++	{3,    0xE4,	 2,  0x14},
++	{4,    0xE5,	 2,  0x14},
++	{5,    0xE6,	 2,  0x14},
++	{6,    0xE7,	 2,  0x14},
++	{7,    0xE8,	 2,  0x14},
++	{8,    0xE9,	 2,  0x14},
++	{9,    0xEA,	 2,  0x14},
++	{10,   0xEB,	 2,  0x14},
++	{11,   0xEC,	 2,  0x14},
++	{12,   0xED,	 2,  0x14},
++	{13,   0xEE,	 2,  0x14},
++	{14,   0xF0,	 2,  0x18},
++};
++
+ static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
+ {
+ 	struct hw_mode_spec *spec = &rt2x00dev->spec;
+@@ -5149,7 +5170,6 @@ static int rt2800_probe_hw_mode(struct r
+ 		   rt2x00_rf(rt2x00dev, RF3022) ||
+ 		   rt2x00_rf(rt2x00dev, RF3290) ||
+ 		   rt2x00_rf(rt2x00dev, RF3320) ||
+-		   rt2x00_rf(rt2x00dev, RF3322) ||
+ 		   rt2x00_rf(rt2x00dev, RF5360) ||
+ 		   rt2x00_rf(rt2x00dev, RF5370) ||
+ 		   rt2x00_rf(rt2x00dev, RF5372) ||
+@@ -5157,6 +5177,12 @@ static int rt2800_probe_hw_mode(struct r
+ 		   rt2x00_rf(rt2x00dev, RF5392)) {
+ 		spec->num_channels = 14;
+ 		spec->channels = rf_vals_3x;
++	} else if (rt2x00_rf(rt2x00dev, RF3322)) {
++		spec->num_channels = 14;
++		if (spec->clk_is_20mhz)
++			spec->channels = rf_vals_xtal20mhz_3x;
++		else
++			spec->channels = rf_vals_3x;
+ 	} else if (rt2x00_rf(rt2x00dev, RF3052)) {
+ 		spec->supported_bands |= SUPPORT_BAND_5GHZ;
+ 		spec->num_channels = ARRAY_SIZE(rf_vals_3x);
+@@ -5250,6 +5276,19 @@ static int rt2800_probe_hw_mode(struct r
+ 	return 0;
+ }
+ 
++int rt2800_probe_clk(struct rt2x00_dev *rt2x00dev)
++{
++	struct rt2x00_platform_data *pdata = rt2x00dev->dev->platform_data;
++	struct hw_mode_spec *spec = &rt2x00dev->spec;
++
++	if (!pdata)
++		return -EINVAL;
++
++	spec->clk_is_20mhz = pdata->clk_is_20mhz;
++
++	return 0;
++}
++
+ int rt2800_probe_hw(struct rt2x00_dev *rt2x00dev)
+ {
+ 	int retval;
+@@ -5275,6 +5314,15 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+ 	rt2800_register_write(rt2x00dev, GPIO_CTRL, reg);
+ 
+ 	/*
++	 * Probe SoC clock.
++	 */
++	if (rt2x00_is_soc(rt2x00dev)) {
++		retval = rt2800_probe_clk(rt2x00dev);
++		if (retval)
++			return retval;
++	}
++
++	/*
+ 	 * Initialize hw specifications.
+ 	 */
+ 	retval = rt2800_probe_hw_mode(rt2x00dev);
+Index: compat-wireless-2012-09-07/drivers/net/wireless/rt2x00/rt2x00.h
+===================================================================
+--- compat-wireless-2012-09-07.orig/drivers/net/wireless/rt2x00/rt2x00.h
++++ compat-wireless-2012-09-07/drivers/net/wireless/rt2x00/rt2x00.h
+@@ -421,6 +421,7 @@ static inline struct rt2x00_intf* vif_to
+  * @channels: Device/chipset specific channel values (See &struct rf_channel).
+  * @channels_info: Additional information for channels (See &struct channel_info).
+  * @ht: Driver HT Capabilities (See &ieee80211_sta_ht_cap).
++ * @clk_is_20mhz: External crystal of WiSoC is 20MHz instead of 40MHz
+  */
+ struct hw_mode_spec {
+ 	unsigned int supported_bands;
+@@ -437,6 +438,7 @@ struct hw_mode_spec {
+ 	const struct channel_info *channels_info;
+ 
+ 	struct ieee80211_sta_ht_cap ht;
++	int clk_is_20mhz;
+ };
+ 
+ /*
+Index: compat-wireless-2012-09-07/include/linux/rt2x00_platform.h
+===================================================================
+--- compat-wireless-2012-09-07.orig/include/linux/rt2x00_platform.h
++++ compat-wireless-2012-09-07/include/linux/rt2x00_platform.h
+@@ -18,6 +18,7 @@ struct rt2x00_platform_data {
+ 
+ 	int disable_2ghz;
+ 	int disable_5ghz;
++	int clk_is_20mhz;
+ };
+ 
+ #endif /* _RT2X00_PLATFORM_H */
