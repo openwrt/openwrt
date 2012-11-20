@@ -1549,7 +1549,6 @@ ar8216_sw_get_port_mib(struct switch_dev *dev,
 		goto unlock;
 
 	ar8216_mib_fetch_port_stat(priv, port, false);
-	mutex_unlock(&priv->mib_lock);
 
 	len += snprintf(buf + len, sizeof(priv->buf) - len,
 			"Port %d MIB counters\n",
