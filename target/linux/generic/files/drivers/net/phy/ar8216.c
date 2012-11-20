@@ -425,6 +425,8 @@ ar8216_mib_fetch_port_stat(struct ar8216_priv *priv, int port, bool flush)
 	u64 *mib_stats;
 	int i;
 
+	WARN_ON(port >= priv->dev.ports);
+
 	lockdep_assert_held(&priv->mib_lock);
 
 	if (chip_is_ar8327(priv))
@@ -1710,7 +1712,7 @@ ar8xxx_mib_work_func(struct work_struct *work)
 
 next_port:
 	priv->mib_next_port++;
-	if (priv->mib_next_port > priv->dev.ports)
+	if (priv->mib_next_port >= priv->dev.ports)
 		priv->mib_next_port = 0;
 
 	mutex_unlock(&priv->mib_lock);
