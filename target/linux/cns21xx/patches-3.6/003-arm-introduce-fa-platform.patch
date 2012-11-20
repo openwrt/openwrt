@@ -1,0 +1,56 @@
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1133,10 +1133,15 @@ source "arch/arm/mach-vt8500/Kconfig"
+ 
+ source "arch/arm/mach-w90x900/Kconfig"
+ 
++source "arch/arm/plat-fa/Kconfig"
++
+ # Definitions to make life easier
+ config ARCH_ACORN
+ 	bool
+ 
++config PLAT_FA
++	bool
++
+ config PLAT_IOP
+ 	bool
+ 	select GENERIC_CLOCKEVENTS
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -205,6 +205,7 @@ plat-$(CONFIG_ARCH_MXC)		:= mxc
+ plat-$(CONFIG_ARCH_OMAP)	:= omap
+ plat-$(CONFIG_ARCH_S3C64XX)	:= samsung
+ plat-$(CONFIG_ARCH_ZYNQ)	:= versatile
++plat-$(CONFIG_PLAT_FA)		:= fa
+ plat-$(CONFIG_PLAT_IOP)		:= iop
+ plat-$(CONFIG_PLAT_NOMADIK)	:= nomadik
+ plat-$(CONFIG_PLAT_ORION)	:= orion
+@@ -304,7 +305,7 @@ define archhelp
+   echo  '  Image         - Uncompressed kernel image (arch/$(ARCH)/boot/Image)'
+   echo  '* xipImage      - XIP kernel image, if configured (arch/$(ARCH)/boot/xipImage)'
+   echo  '  uImage        - U-Boot wrapped zImage'
+-  echo  '  bootpImage    - Combined zImage and initial RAM disk' 
++  echo  '  bootpImage    - Combined zImage and initial RAM disk'
+   echo  '                  (supply initrd image via make variable INITRD=<path>)'
+   echo  '  dtbs          - Build device tree blobs for enabled boards'
+   echo  '  install       - Install uncompressed kernel'
+--- /dev/null
++++ b/arch/arm/plat-fa/Makefile
+@@ -0,0 +1,10 @@
++#
++# Makefile for the linux kernel.
++#
++
++obj-y :=
++
++obj-m :=
++obj-n :=
++obj-  :=
++
+--- /dev/null
++++ b/arch/arm/plat-fa/Kconfig
+@@ -0,0 +1,3 @@
++if PLAT_FA
++
++endif
