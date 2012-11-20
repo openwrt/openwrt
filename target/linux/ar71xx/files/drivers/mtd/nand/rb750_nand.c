@@ -110,8 +110,7 @@ static void rb750_nand_write(const u8 *buf, unsigned len)
 	__raw_readl(base + AR71XX_GPIO_REG_OE);
 }
 
-static int rb750_nand_read_verify(u8 *read_buf, unsigned len,
-				  const u8 *verify_buf)
+static void rb750_nand_read(u8 *read_buf, unsigned len)
 {
 	void __iomem *base = ath79_gpio_base;
 	unsigned i;
@@ -131,13 +130,8 @@ static int rb750_nand_read_verify(u8 *read_buf, unsigned len,
 		/* deactivate RE line */
 		__raw_writel(RB750_NAND_NRE, base + AR71XX_GPIO_REG_SET);
 
-		if (read_buf)
-			read_buf[i] = data;
-		else if (verify_buf && verify_buf[i] != data)
-			return -EFAULT;
+		read_buf[i] = data;
 	}
-
-	return 0;
 }
 
 static void rb750_nand_select_chip(struct mtd_info *mtd, int chip)
@@ -212,23 +206,18 @@ static void rb750_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
 static u8 rb750_nand_read_byte(struct mtd_info *mtd)
 {
 	u8 data = 0;
-	rb750_nand_read_verify(&data, 1, NULL);
+	rb750_nand_read(&data, 1);
 	return data;
 }
 
 static void rb750_nand_read_buf(struct mtd_info *mtd, u8 *buf, int len)
 {
-	rb750_nand_read_verify(buf, len, NULL);
+	rb750_nand_read(buf, len);
 }
 
 static void rb750_nand_write_buf(struct mtd_info *mtd, const u8 *buf, int len)
 {
 	rb750_nand_write(buf, len);
-}
-
-static int rb750_nand_verify_buf(struct mtd_info *mtd, const u8 *buf, int len)
-{
-	return rb750_nand_read_verify(NULL, len, buf);
 }
 
 static void __init rb750_nand_gpio_init(struct rb750_nand_info *info)
@@ -285,7 +274,6 @@ static int __devinit rb750_nand_probe(struct platform_device *pdev)
 	info->chip.read_byte	= rb750_nand_read_byte;
 	info->chip.write_buf	= rb750_nand_write_buf;
 	info->chip.read_buf	= rb750_nand_read_buf;
-	info->chip.verify_buf	= rb750_nand_verify_buf;
 
 	info->chip.chip_delay	= 25;
 	info->chip.ecc.mode	= NAND_ECC_SOFT;
