@@ -62,7 +62,7 @@ static struct mtd_partition rb4xx_nand_partitions[] = {
 	{
 		.name	= "kernel",
 		.offset	= (256 * 1024),
-		.size	= (6 * 1024 * 1024) - (256 * 1024),
+		.size	= (4 * 1024 * 1024) - (256 * 1024),
 	},
 	{
 		.name	= "rootfs",
