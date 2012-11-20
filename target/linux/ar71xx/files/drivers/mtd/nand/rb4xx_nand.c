@@ -215,9 +215,6 @@ static int __devinit rb4xx_nand_probe(struct platform_device *pdev)
 	info->chip.read_byte	= rb4xx_nand_read_byte;
 	info->chip.write_buf	= rb4xx_nand_write_buf;
 	info->chip.read_buf	= rb4xx_nand_read_buf;
-#if 0
-	info->chip.verify_buf	= rb4xx_nand_verify_buf;
-#endif
 
 	info->chip.chip_delay	= 25;
 	info->chip.ecc.mode	= NAND_ECC_SOFT;
