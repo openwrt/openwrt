@@ -373,9 +373,11 @@ ar8216_mib_capture(struct ar8216_priv *priv)
 	else
 		mib_func = AR8216_REG_MIB_FUNC;
 
+	mutex_lock(&priv->reg_mutex);
 	/* Capture the hardware statistics for all ports */
 	ar8216_rmw(priv, mib_func, AR8216_MIB_FUNC,
 		   (AR8216_MIB_FUNC_CAPTURE << AR8216_MIB_FUNC_S));
+	mutex_unlock(&priv->reg_mutex);
 
 	/* Wait for the capturing to complete. */
 	ret = ar8216_reg_wait(priv, mib_func, AR8216_MIB_BUSY, 0, 10);
