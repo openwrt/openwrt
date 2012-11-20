@@ -68,7 +68,7 @@ ifneq ($(BOARD_DEF),)
 CFLAGS		+= -DCONFIG_BOARD_$(BOARD_DEF)
 endif
 
-all: loader.bin
+all: loader.elf
 
 # Don't build dependencies, this may die if $(CC) isn't gcc
 dep:
@@ -84,16 +84,22 @@ install:
 data.o: $(LOADER_DATA)
 	$(LD) -r -b binary --oformat $(O_FORMAT) -T lzma-data.lds -o $@ $<
 
-loader.bin: loader.elf
+loader: $(OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
+
+loader.bin: loader
 	$(OBJCOPY) $(BIN_FLAGS) $< $@
 
-loader.elf: $(OBJECTS)
-	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
+loader2.o: loader.bin
+	$(LD) -r -b binary --oformat $(O_FORMAT) -o $@ $<
+
+loader.elf: loader2.o
+	$(LD) -e startup -T loader2.lds -Ttext $(LOADADDR) -o $@ $<
 
 mrproper: clean
 
 clean:
-	rm -f *.elf *.bin *.o
+	rm -f loader *.elf *.bin *.o
 
 
 
