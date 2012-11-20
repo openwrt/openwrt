@@ -1,6 +1,6 @@
 --- a/fs/yaffs2/yaffs_vfs_glue.c
 +++ b/fs/yaffs2/yaffs_vfs_glue.c
-@@ -394,6 +394,84 @@ static void yaffs_touch_super(yaffs_dev_
+@@ -393,6 +393,84 @@ static void yaffs_touch_super(yaffs_dev_
  static int yaffs_vfs_setattr(struct inode *, struct iattr *);
  
  
@@ -85,7 +85,7 @@
  static struct address_space_operations yaffs_file_address_operations = {
  	.readpage = yaffs_readpage,
  	.writepage = yaffs_writepage,
-@@ -527,7 +605,9 @@ static const struct super_operations yaf
+@@ -553,7 +631,9 @@ static const struct super_operations yaf
  	.clear_inode = yaffs_clear_inode,
  #endif
  	.sync_fs = yaffs_sync_fs,
@@ -95,7 +95,7 @@
  };
  
  
-@@ -2314,7 +2394,7 @@ static int yaffs_do_sync_fs(struct super
+@@ -2340,7 +2420,7 @@ static int yaffs_do_sync_fs(struct super
  	T(YAFFS_TRACE_OS | YAFFS_TRACE_SYNC | YAFFS_TRACE_BACKGROUND,
  		(TSTR("yaffs_do_sync_fs: gc-urgency %d %s %s%s\n"),
  		gc_urgent,
@@ -104,7 +104,7 @@
  		request_checkpoint ? "checkpoint requested" : "no checkpoint",
  		oneshot_checkpoint ? " one-shot" : "" ));
  
-@@ -2323,9 +2403,9 @@ static int yaffs_do_sync_fs(struct super
+@@ -2349,9 +2429,9 @@ static int yaffs_do_sync_fs(struct super
  			oneshot_checkpoint) &&
  			!dev->is_checkpointed;
  
@@ -116,7 +116,7 @@
  		if(oneshot_checkpoint)
  			yaffs_auto_checkpoint &= ~4;
  	}
-@@ -2601,6 +2681,8 @@ static void yaffs_put_super(struct super
+@@ -2627,6 +2707,8 @@ static void yaffs_put_super(struct super
  
  	yaffs_flush_super(sb,1);
  
@@ -125,7 +125,7 @@
  	if (yaffs_dev_to_lc(dev)->putSuperFunc)
  		yaffs_dev_to_lc(dev)->putSuperFunc(sb);
  
-@@ -2639,7 +2721,7 @@ static void yaffs_touch_super(yaffs_dev_
+@@ -2665,7 +2747,7 @@ static void yaffs_touch_super(yaffs_dev_
  
  	T(YAFFS_TRACE_OS, (TSTR("yaffs_touch_super() sb = %p\n"), sb));
  	if (sb)
@@ -134,7 +134,7 @@
  }
  
  typedef struct {
-@@ -2965,6 +3047,8 @@ static struct super_block *yaffs_interna
+@@ -2991,6 +3073,8 @@ static struct super_block *yaffs_interna
  	context->dev = dev;
  	context->superBlock = sb;
  
@@ -143,7 +143,7 @@
  	dev->read_only = read_only;
  
  #if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 0))
-@@ -3151,7 +3235,7 @@ static struct super_block *yaffs_interna
+@@ -3177,7 +3261,7 @@ static struct super_block *yaffs_interna
  		return NULL;
  	}
  	sb->s_root = root;
