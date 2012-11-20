@@ -1,6 +1,6 @@
 --- a/fs/yaffs2/yaffs_vfs_glue.c
 +++ b/fs/yaffs2/yaffs_vfs_glue.c
-@@ -272,20 +272,29 @@ static int yaffs_sync_object(struct file
+@@ -271,20 +271,29 @@ static int yaffs_sync_object(struct file
  
  static int yaffs_readdir(struct file *f, void *dirent, filldir_t filldir);
  
@@ -34,7 +34,7 @@
  static int yaffs_link(struct dentry *old_dentry, struct inode *dir,
  			struct dentry *dentry);
  static int yaffs_unlink(struct inode *dir, struct dentry *dentry);
-@@ -811,7 +820,10 @@ struct inode *yaffs_get_inode(struct sup
+@@ -837,7 +846,10 @@ struct inode *yaffs_get_inode(struct sup
  /*
   * Lookup is used to find objects in the fs
   */
@@ -46,7 +46,7 @@
  
  static struct dentry *yaffs_lookup(struct inode *dir, struct dentry *dentry,
  				struct nameidata *n)
-@@ -1801,7 +1813,10 @@ static int yaffs_mkdir(struct inode *dir
+@@ -1827,7 +1839,10 @@ static int yaffs_mkdir(struct inode *dir
  	return retVal;
  }
  
