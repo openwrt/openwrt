@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -7738,7 +7738,7 @@ static int i802_set_wds_sta(void *priv, 
+@@ -7738,7 +7738,7 @@ static int i802_set_wds_sta(void *priv,
  		if (!if_nametoindex(name)) {
  			if (nl80211_create_iface(drv, name,
  						 NL80211_IFTYPE_AP_VLAN,
