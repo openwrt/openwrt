@@ -72,9 +72,6 @@ else
   ifeq ($(PKG_VERSION),4.6.3)
     PKG_MD5SUM:=773092fe5194353b02bb0110052a972e
   endif
-  ifeq ($(PKG_VERSION),4.7.0)
-    PKG_MD5SUM:=2a0f1d99fda235c29d40b561f81d9a77
-  endif
   ifeq ($(PKG_VERSION),4.7.2)
     PKG_MD5SUM:=cc308a0891e778cfda7a151ab8a6e762
   endif
