@@ -1,6 +1,14 @@
 --- a/src/crypto/random.c
 +++ b/src/crypto/random.c
-@@ -33,6 +33,8 @@
+@@ -25,6 +25,7 @@
+ #include "utils/includes.h"
+ #ifdef __linux__
+ #include <fcntl.h>
++#include <sys/stat.h>
+ #endif /* __linux__ */
+ 
+ #include "utils/common.h"
+@@ -33,6 +34,8 @@
  #include "sha1.h"
  #include "random.h"
  
@@ -9,7 +17,7 @@
  #define POOL_WORDS 32
  #define POOL_WORDS_MASK (POOL_WORDS - 1)
  #define POOL_TAP1 26
-@@ -43,6 +45,8 @@
+@@ -43,6 +46,8 @@
  #define EXTRACT_LEN 16
  #define MIN_READY_MARK 2
  
@@ -18,7 +26,7 @@
  static u32 pool[POOL_WORDS];
  static unsigned int input_rotate = 0;
  static unsigned int pool_pos = 0;
-@@ -123,7 +127,7 @@ static void random_extract(u8 *out)
+@@ -123,7 +128,7 @@ static void random_extract(u8 *out)
  }
  
  
@@ -27,7 +35,7 @@
  {
  	struct os_time t;
  	static unsigned int count = 0;
-@@ -213,16 +217,22 @@ int random_get_bytes(void *buf, size_t l
+@@ -213,16 +218,22 @@ int random_get_bytes(void *buf, size_t l
  int random_pool_ready(void)
  {
  #ifdef __linux__
@@ -51,7 +59,7 @@
  
  	/*
  	 * Try to fetch some more data from the kernel high quality
-@@ -257,6 +267,7 @@ int random_pool_ready(void)
+@@ -257,6 +268,7 @@ int random_pool_ready(void)
  	if (dummy_key_avail == sizeof(dummy_key)) {
  		if (own_pool_ready < MIN_READY_MARK)
  			own_pool_ready = MIN_READY_MARK;
@@ -59,7 +67,7 @@
  		random_write_entropy();
  		return 1;
  	}
-@@ -269,6 +280,7 @@ int random_pool_ready(void)
+@@ -269,6 +281,7 @@ int random_pool_ready(void)
  	    total_collected + 10 * own_pool_ready > MIN_COLLECT_ENTROPY) {
  		wpa_printf(MSG_INFO, "random: Allow operation to proceed "
  			   "based on internal entropy");
@@ -67,7 +75,7 @@
  		return 1;
  	}
  
-@@ -284,10 +296,16 @@ int random_pool_ready(void)
+@@ -284,10 +297,16 @@ int random_pool_ready(void)
  
  void random_mark_pool_ready(void)
  {
@@ -84,7 +92,7 @@
  }
  
  
-@@ -444,3 +462,22 @@ void random_deinit(void)
+@@ -444,3 +463,22 @@ void random_deinit(void)
  	os_free(random_entropy_file);
  	random_entropy_file = NULL;
  }
