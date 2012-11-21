@@ -31,7 +31,6 @@
 #include <sys/syscall.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <error.h>
 #include <time.h>
 #include <string.h>
 #include <sys/ioctl.h>
