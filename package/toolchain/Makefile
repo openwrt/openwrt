@@ -453,9 +453,12 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/libthread-db/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
-		$(TOOLCHAIN_DIR)/lib/libthread_db.so.* \
+		$(TOOLCHAIN_DIR)/lib/libthread_db.so.* $(1)/lib
+  ifeq ($(USE_UCLIBC),y)
+	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libthread_db-$(LIBC_SO_VERSION).so \
 		$(1)/lib/
+  endif
   endef
 
   define Package/libpthread/install_lib
