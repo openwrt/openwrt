@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2012.04.01
+PKG_VERSION:=2012.10
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=192bb231082d9159fb6e16de3039b6b2
+PKG_MD5SUM:=8655f63b1e5c4647295ac9ce44660be3
 PKG_TARGETS:=bin
 
 include $(INCLUDE_DIR)/package.mk
@@ -67,11 +67,6 @@ UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
 UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
 endif
 
-define Build/Prepare
-	$(call Build/Prepare/Default)
-	$(CP) ./files/* $(PKG_BUILD_DIR)
-endef
-
 define Build/Configure
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(UBOOT_CONFIG)_config
@@ -84,11 +79,11 @@ define Build/Compile
 endef
 
 define Package/uboot/install/default
-	$(INSTALL_DIR) $(BIN_DIR)
+	$(INSTALL_DIR) $(BIN_DIR)/uboot-$(BOARD)-$(1)
 	$(CP) $(PKG_BUILD_DIR)/u-boot.bin \
-		$(BIN_DIR)/openwrt-$(BOARD)-$(1)-u-boot.bin
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.bin
 	$(CP) $(PKG_BUILD_DIR)/u-boot.kwb \
-		$(BIN_DIR)/openwrt-$(BOARD)-$(1)-u-boot.kwb
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.kwb
 	$(INSTALL_DIR) $(BIN_DIR)/u-boot-kwboot/
 	$(CP) $(PKG_BUILD_DIR)/tools/kwboot \
 		$(BIN_DIR)/u-boot-kwboot/
