@@ -36,7 +36,7 @@ $(eval $(call KernelPackage,crypto-core))
 
 define AddDepends/crypto
   SUBMENU:=$(CRYPTO_MENU)
-  DEPENDS+=kmod-crypto-core $(1)
+  DEPENDS+=+kmod-crypto-core $(1)
 endef
 
 define KernelPackage/crypto-hash
