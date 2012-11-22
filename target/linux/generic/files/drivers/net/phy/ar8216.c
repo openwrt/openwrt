@@ -361,7 +361,7 @@ ar8216_reg_wait(struct ar8216_priv *priv, u32 reg, u32 mask, u32 val,
 }
 
 static int
-ar8216_mib_capture(struct ar8216_priv *priv)
+ar8216_mib_op(struct ar8216_priv *priv, u32 op)
 {
 	unsigned mib_func;
 	int ret;
@@ -375,8 +375,7 @@ ar8216_mib_capture(struct ar8216_priv *priv)
 
 	mutex_lock(&priv->reg_mutex);
 	/* Capture the hardware statistics for all ports */
-	ar8216_rmw(priv, mib_func, AR8216_MIB_FUNC,
-		   (AR8216_MIB_FUNC_CAPTURE << AR8216_MIB_FUNC_S));
+	ar8216_rmw(priv, mib_func, AR8216_MIB_FUNC, (op << AR8216_MIB_FUNC_S));
 	mutex_unlock(&priv->reg_mutex);
 
 	/* Wait for the capturing to complete. */
@@ -391,31 +390,15 @@ out:
 }
 
 static int
+ar8216_mib_capture(struct ar8216_priv *priv)
+{
+	return ar8216_mib_op(priv, AR8216_MIB_FUNC_CAPTURE);
+}
+
+static int
 ar8216_mib_flush(struct ar8216_priv *priv)
 {
-	unsigned mib_func;
-	int ret;
-
-	lockdep_assert_held(&priv->mib_lock);
-
-	if (chip_is_ar8327(priv))
-		mib_func = AR8327_REG_MIB_FUNC;
-	else
-		mib_func = AR8216_REG_MIB_FUNC;
-
-	/* Flush hardware statistics for all ports */
-	ar8216_rmw(priv, mib_func, AR8216_MIB_FUNC,
-		   (AR8216_MIB_FUNC_FLUSH << AR8216_MIB_FUNC_S));
-
-	/* Wait for the capturing to complete. */
-	ret = ar8216_reg_wait(priv, mib_func, AR8216_MIB_BUSY, 0, 10);
-	if (ret)
-		goto out;
-
-	ret = 0;
-
-out:
-	return ret;
+	return ar8216_mib_op(priv, AR8216_MIB_FUNC_FLUSH);
 }
 
 static void
