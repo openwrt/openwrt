@@ -7,7 +7,7 @@ init_devpts() {
 }
 
 do_mount_devpts() {
-    mount devpts /dev/pts -t devpts
+    mount -t devpts devpts /dev/pts
 }
 
 boot_hook_add preinit_essential init_devpts

@@ -27,7 +27,6 @@ preinit_net_echo() {
     		     		[ "$pi_failsafe_net_message"  = "true" ] && 
     		         	    [ "$pi_preinit_no_failsafe_netmsg" != "y" ] 
     		         }
-	    			
 		} && netmsg $pi_broadcast "$1"
     	}
 }
