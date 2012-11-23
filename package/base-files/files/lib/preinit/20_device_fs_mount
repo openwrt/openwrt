@@ -10,11 +10,11 @@ do_move_devtmpfs() {
 }
 
 do_mount_devfs() {
-    mount devfs /dev -t devfs
+    mount -t devfs devfs /dev
 }
 
 do_mount_hotplug() {
-    mount -t tmpfs tmpfs /dev -o mode=0755,size=512K
+    mount -t tmpfs -o mode=0755,size=512K tmpfs /dev
 }
 
 do_mount_udev() {
