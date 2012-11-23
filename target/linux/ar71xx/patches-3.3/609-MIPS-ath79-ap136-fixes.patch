@@ -56,7 +56,7 @@
  
  static struct gpio_led ap136_leds_gpio[] __initdata = {
  	{
-@@ -98,63 +104,82 @@ static struct gpio_keys_button ap136_gpi
+@@ -98,63 +104,91 @@ static struct gpio_keys_button ap136_gpi
  	},
  };
  
@@ -78,31 +78,40 @@
 -		.max_speed_hz	= 25000000,
 -		.modalias	= "mx25l6405d",
 -		.controller_data = &ap136_spi0_data,
+-	}
++static struct ar8327_pad_cfg ap136_ar8327_pad6_cfg = {
++	.mode = AR8327_PAD_MAC_SGMII,
++	.txclk_delay_en = false,
++	.rxclk_delay_en = true,
++	.txclk_delay_sel = AR8327_CLK_DELAY_SEL0,
++	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0,
+ };
+ 
+-static struct ath79_spi_platform_data ap136_spi_data = {
+-	.bus_num	= 0,
+-	.num_chipselect	= 1,
 +static struct ar8327_platform_data ap136_ar8327_data = {
 +	.pad0_cfg = &ap136_ar8327_pad0_cfg,
++	.pad6_cfg = &ap136_ar8327_pad6_cfg,
 +	.cpuport_cfg = {
 +		.force_link = 1,
 +		.speed = AR8327_PORT_SPEED_1000,
 +		.duplex = 1,
 +		.txpause = 1,
 +		.rxpause = 1,
- 	}
++	}
  };
  
--static struct ath79_spi_platform_data ap136_spi_data = {
--	.bus_num	= 0,
--	.num_chipselect	= 1,
+-#ifdef CONFIG_PCI
+-static struct ath9k_platform_data ap136_ath9k_data;
 +static struct mdio_board_info ap136_mdio0_info[] = {
 +	{
 +		.bus_id = "ag71xx-mdio.0",
 +		.phy_addr = 0,
 +		.platform_data = &ap136_ar8327_data,
 +	},
- };
++};
  
--#ifdef CONFIG_PCI
--static struct ath9k_platform_data ap136_ath9k_data;
--
 -static int ap136_pci_plat_dev_init(struct pci_dev *dev)
 +static void __init ap136_gmac_setup(void)
  {
@@ -167,7 +176,7 @@
 +	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 +	ath79_eth0_data.phy_mask = BIT(0);
 +	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
-+	ath79_eth0_pll_data.pll_1000 = 0x06000000;
++	ath79_eth0_pll_data.pll_1000 = 0xa6000000;
 +
 +	ath79_register_eth(0);
  }
