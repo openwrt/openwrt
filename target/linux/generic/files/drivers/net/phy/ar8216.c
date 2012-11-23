@@ -903,6 +903,20 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 
 	case AR8327_PAD_MAC_SGMII:
 		t = AR8327_PAD_SGMII_EN;
+
+		/*
+		 * WAR for the QUalcomm Atheros AP136 board.
+		 * It seems that RGMII TX/RX delay settings needs to be
+		 * applied for SGMII mode as well, The ethernet is not
+		 * reliable without this.
+		 */
+		t |= cfg->txclk_delay_sel << AR8327_PAD_RGMII_TXCLK_DELAY_SEL_S;
+		t |= cfg->rxclk_delay_sel << AR8327_PAD_RGMII_RXCLK_DELAY_SEL_S;
+		if (cfg->rxclk_delay_en)
+			t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
+		if (cfg->txclk_delay_en)
+			t |= AR8327_PAD_RGMII_TXCLK_DELAY_EN;
+
 		break;
 
 	case AR8327_PAD_MAC2PHY_MII:
