@@ -1,0 +1,22 @@
+diff -urN grub-2.00/build-aux/config.sub grub-2.00.new/build-aux/config.sub
+--- grub-2.00/build-aux/config.sub	2012-06-18 23:08:46.000000000 +0200
++++ grub-2.00.new/build-aux/config.sub	2012-11-22 14:12:12.190748353 +0100
+@@ -126,7 +126,8 @@
+   linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
+   knetbsd*-gnu* | netbsd*-gnu* | \
+   kopensolaris*-gnu* | \
+-  storm-chaos* | os2-emx* | rtmk-nova*)
++  storm-chaos* | os2-emx* | rtmk-nova* | \
++  linux-musl*)
+     os=-$maybe_os
+     basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
+     ;;
+@@ -1360,7 +1361,7 @@
+ 	      | -chorusos* | -chorusrdb* | -cegcc* \
+ 	      | -cygwin* | -msys* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
+ 	      | -mingw32* | -linux-gnu* | -linux-android* \
+-	      | -linux-newlib* | -linux-uclibc* \
++	      | -linux-newlib* | -linux-uclibc* | -linux-musl* \
+ 	      | -uxpv* | -beos* | -mpeix* | -udk* \
+ 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
+ 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
