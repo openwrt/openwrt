@@ -426,6 +426,16 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 		$(1)/lib/
   endef
 
+  define Package/musl/install
+	$(INSTALL_DIR) $(1)/lib
+	$(CP) \
+		$(TOOLCHAIN_DIR)/lib/ld-musl-*.so* \
+		$(1)/lib/
+	$(CP) \
+		$(TOOLCHAIN_DIR)/lib/libc.so* \
+		$(1)/lib/
+  endef
+
   define Package/libc/install
     $(call Package/$(LIBC)/install,$1)
   endef

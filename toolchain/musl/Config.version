@@ -1,0 +1,13 @@
+config MUSL_VERSION
+	string
+	depends on USE_MUSL
+	default "0.9.7"       if MUSL_VERSION_0_9_7
+	default "0.9.7"
+
+if !TOOLCHAINOPTS
+
+	config MUSL_VERSION_0_9_7
+		default y if USE_MUSL
+		bool
+
+endif

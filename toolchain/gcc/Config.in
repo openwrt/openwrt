@@ -79,7 +79,7 @@ config SJLJ_EXCEPTIONS
 config INSTALL_LIBSTDCPP
 	bool
 	prompt "Build/install c++ compiler and libstdc++?" if TOOLCHAINOPTS
-	default y
+	default y if !USE_MUSL
 	help
 	    Build/install c++ compiler and libstdc++?
 

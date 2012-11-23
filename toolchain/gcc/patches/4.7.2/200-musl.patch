@@ -1,0 +1,336 @@
+diff --git a/config.sub b/config.sub
+--- a/config.sub
++++ b/config.sub
+@@ -125,6 +125,7 @@
+ maybe_os=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\2/'`
+ case $maybe_os in
+   nto-qnx* | linux-gnu* | linux-android* | linux-dietlibc | linux-newlib* | \
++  linux-musl* | \
+   linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
+   knetbsd*-gnu* | netbsd*-gnu* | \
+   kopensolaris*-gnu* | \
+@@ -1346,6 +1347,7 @@
+ 	      | -cygwin* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
+ 	      | -mingw32* | -linux-gnu* | -linux-android* \
+ 	      | -linux-newlib* | -linux-uclibc* \
++	      | -linux-musl* \
+ 	      | -uxpv* | -beos* | -mpeix* | -udk* \
+ 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
+ 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -522,7 +522,7 @@
+ esac
+ 
+ # Common C libraries.
+-tm_defines="$tm_defines LIBC_GLIBC=1 LIBC_UCLIBC=2 LIBC_BIONIC=3"
++tm_defines="$tm_defines LIBC_GLIBC=1 LIBC_UCLIBC=2 LIBC_BIONIC=3 LIBC_MUSL=4"
+ 
+ # Common parts for widely ported systems.
+ case ${target} in
+@@ -625,6 +625,9 @@
+     *-*-*uclibc*)
+       tm_defines="$tm_defines DEFAULT_LIBC=LIBC_UCLIBC"
+       ;;
++    *-*-*musl*)
++      tm_defines="$tm_defines DEFAULT_LIBC=LIBC_MUSL"
++      ;;
+     *)
+       tm_defines="$tm_defines DEFAULT_LIBC=LIBC_GLIBC"
+       ;;
+@@ -1722,6 +1725,7 @@
+ 	tm_file="${tm_file} dbxelf.h gnu-user.h linux.h microblaze/linux.h"
+ 	c_target_objs="${c_target_objs} microblaze-c.o"
+ 	cxx_target_objs="${cxx_target_objs} microblaze-c.o"
++        tmake_file="${tmake_file} microblaze/t-microblaze"
+ 	;;
+ microblaze*-*-*)
+         tm_file="${tm_file} dbxelf.h"
+diff --git a/gcc/config/arm/linux-eabi.h b/gcc/config/arm/linux-eabi.h
+--- a/gcc/config/arm/linux-eabi.h
++++ b/gcc/config/arm/linux-eabi.h
+@@ -64,6 +64,10 @@
+ #undef  GLIBC_DYNAMIC_LINKER
+ #define GLIBC_DYNAMIC_LINKER "/lib/ld-linux.so.3"
+ 
++/* musl has no "classic" (i.e. broken) mode */
++#undef  MUSL_DYNAMIC_LINKER
++#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-arm.so.1"
++
+ /* At this point, bpabi.h will have clobbered LINK_SPEC.  We want to
+    use the GNU/Linux version, not the generic BPABI version.  */
+ #undef  LINK_SPEC
+diff --git a/gcc/config/i386/linux.h b/gcc/config/i386/linux.h
+--- a/gcc/config/i386/linux.h
++++ b/gcc/config/i386/linux.h
+@@ -22,3 +22,4 @@
+ 
+ #define GNU_USER_LINK_EMULATION "elf_i386"
+ #define GLIBC_DYNAMIC_LINKER "/lib/ld-linux.so.2"
++#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-i386.so.1"
+diff --git a/gcc/config/i386/linux64.h b/gcc/config/i386/linux64.h
+--- a/gcc/config/i386/linux64.h
++++ b/gcc/config/i386/linux64.h
+@@ -31,3 +31,7 @@
+ #define GLIBC_DYNAMIC_LINKER32 "/lib/ld-linux.so.2"
+ #define GLIBC_DYNAMIC_LINKER64 "/lib64/ld-linux-x86-64.so.2"
+ #define GLIBC_DYNAMIC_LINKERX32 "/libx32/ld-linux-x32.so.2"
++
++#define MUSL_DYNAMIC_LINKER32 "/lib/ld-musl-i386.so.1"
++#define MUSL_DYNAMIC_LINKER64 "/lib/ld-musl-x86_64.so.1"
++#define MUSL_DYNAMIC_LINKERX32 "/lib/ld-musl-x32.so.1"
+diff --git a/gcc/config/linux.h b/gcc/config/linux.h
+--- a/gcc/config/linux.h
++++ b/gcc/config/linux.h
+@@ -33,10 +33,12 @@
+ #define OPTION_GLIBC  (DEFAULT_LIBC == LIBC_GLIBC)
+ #define OPTION_UCLIBC (DEFAULT_LIBC == LIBC_UCLIBC)
+ #define OPTION_BIONIC (DEFAULT_LIBC == LIBC_BIONIC)
++#define OPTION_MUSL   (DEFAULT_LIBC == LIBC_MUSL)
+ #else
+ #define OPTION_GLIBC  (linux_libc == LIBC_GLIBC)
+ #define OPTION_UCLIBC (linux_libc == LIBC_UCLIBC)
+ #define OPTION_BIONIC (linux_libc == LIBC_BIONIC)
++#define OPTION_MUSL   (linux_libc == LIBC_MUSL)
+ #endif
+ 
+ #define GNU_USER_TARGET_OS_CPP_BUILTINS()			\
+@@ -54,18 +56,21 @@
+    uClibc or Bionic is the default C library and whether
+    -muclibc or -mglibc or -mbionic has been passed to change the default.  */
+ 
+-#define CHOOSE_DYNAMIC_LINKER1(LIBC1, LIBC2, LIBC3, LD1, LD2, LD3)	\
+-  "%{" LIBC2 ":" LD2 ";:%{" LIBC3 ":" LD3 ";:" LD1 "}}"
++#define CHOOSE_DYNAMIC_LINKER1(LIBC1, LIBC2, LIBC3, LIBC4, LD1, LD2, LD3, LD4)	\
++  "%{" LIBC2 ":" LD2 ";:%{" LIBC3 ":" LD3 ";:%{" LIBC4 ":" LD4 ";:" LD1 "}}}"
+ 
+ #if DEFAULT_LIBC == LIBC_GLIBC
+-#define CHOOSE_DYNAMIC_LINKER(G, U, B) \
+-  CHOOSE_DYNAMIC_LINKER1 ("mglibc", "muclibc", "mbionic", G, U, B)
++#define CHOOSE_DYNAMIC_LINKER(G, U, B, M) \
++  CHOOSE_DYNAMIC_LINKER1 ("mglibc", "muclibc", "mbionic", "mmusl", G, U, B, M)
+ #elif DEFAULT_LIBC == LIBC_UCLIBC
+-#define CHOOSE_DYNAMIC_LINKER(G, U, B) \
+-  CHOOSE_DYNAMIC_LINKER1 ("muclibc", "mglibc", "mbionic", U, G, B)
++#define CHOOSE_DYNAMIC_LINKER(G, U, B, M) \
++  CHOOSE_DYNAMIC_LINKER1 ("muclibc", "mglibc", "mbionic", "mmusl", U, G, B, M)
+ #elif DEFAULT_LIBC == LIBC_BIONIC
+-#define CHOOSE_DYNAMIC_LINKER(G, U, B) \
+-  CHOOSE_DYNAMIC_LINKER1 ("mbionic", "mglibc", "muclibc", B, G, U)
++#define CHOOSE_DYNAMIC_LINKER(G, U, B, M) \
++  CHOOSE_DYNAMIC_LINKER1 ("mbionic", "mglibc", "muclibc", "mmusl", B, G, U, M)
++#elif DEFAULT_LIBC == LIBC_MUSL
++#define CHOOSE_DYNAMIC_LINKER(G, U, B, M) \
++  CHOOSE_DYNAMIC_LINKER1 ("mmusl", "mglibc", "muclibc", "mbionic", M, G, U, B)
+ #else
+ #error "Unsupported DEFAULT_LIBC"
+ #endif /* DEFAULT_LIBC */
+@@ -85,16 +90,16 @@
+ 
+ #define GNU_USER_DYNAMIC_LINKER						\
+   CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER, UCLIBC_DYNAMIC_LINKER,	\
+-			 BIONIC_DYNAMIC_LINKER)
++			 BIONIC_DYNAMIC_LINKER, MUSL_DYNAMIC_LINKER)
+ #define GNU_USER_DYNAMIC_LINKER32					\
+   CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER32, UCLIBC_DYNAMIC_LINKER32, \
+-			 BIONIC_DYNAMIC_LINKER32)
++			 BIONIC_DYNAMIC_LINKER32, MUSL_DYNAMIC_LINKER32)
+ #define GNU_USER_DYNAMIC_LINKER64					\
+   CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER64, UCLIBC_DYNAMIC_LINKER64, \
+-			 BIONIC_DYNAMIC_LINKER64)
++			 BIONIC_DYNAMIC_LINKER64, MUSL_DYNAMIC_LINKER64)
+ #define GNU_USER_DYNAMIC_LINKERX32					\
+   CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKERX32, UCLIBC_DYNAMIC_LINKERX32, \
+-			 BIONIC_DYNAMIC_LINKERX32)
++			 BIONIC_DYNAMIC_LINKERX32, MUSL_DYNAMIC_LINKERX32)
+ 
+ /* Determine whether the entire c99 runtime
+    is present in the runtime library.  */
+diff --git a/gcc/config/linux.opt b/gcc/config/linux.opt
+--- a/gcc/config/linux.opt
++++ b/gcc/config/linux.opt
+@@ -30,3 +30,7 @@
+ muclibc
+ Target Report RejectNegative Var(linux_libc,LIBC_UCLIBC) Negative(mbionic)
+ Use uClibc C library
++
++mmusl
++Target Report RejectNegative Var(linux_libc,LIBC_MUSL) Negative(mglibc)
++Use musl C library
+diff --git a/gcc/config/mips/linux.h b/gcc/config/mips/linux.h
+--- a/gcc/config/mips/linux.h
++++ b/gcc/config/mips/linux.h
+@@ -19,3 +19,5 @@
+ <http://www.gnu.org/licenses/>.  */
+ 
+ #define GLIBC_DYNAMIC_LINKER "/lib/ld.so.1"
++
++#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-mips.so.1"
+diff --git a/gcc/config/rs6000/linux64.h b/gcc/config/rs6000/linux64.h
+--- a/gcc/config/rs6000/linux64.h
++++ b/gcc/config/rs6000/linux64.h
+@@ -362,17 +362,21 @@
+ #define GLIBC_DYNAMIC_LINKER64 "/lib64/ld64.so.1"
+ #define UCLIBC_DYNAMIC_LINKER32 "/lib/ld-uClibc.so.0"
+ #define UCLIBC_DYNAMIC_LINKER64 "/lib/ld64-uClibc.so.0"
++#define MUSL_DYNAMIC_LINKER32 "/lib/ld-musl-powerpc.so.1"
++#define MUSL_DYNAMIC_LINKER64 "/lib/ld-musl-powerpc64.so.1"
+ #if DEFAULT_LIBC == LIBC_UCLIBC
+-#define CHOOSE_DYNAMIC_LINKER(G, U) "%{mglibc:" G ";:" U "}"
++#define CHOOSE_DYNAMIC_LINKER(G, U, M) "%{mglibc:" G ";:%{mmusl:" M ";:" U "}}"
+ #elif DEFAULT_LIBC == LIBC_GLIBC
+-#define CHOOSE_DYNAMIC_LINKER(G, U) "%{muclibc:" U ";:" G "}"
++#define CHOOSE_DYNAMIC_LINKER(G, U, M) "%{muclibc:" U ";:%{mmusl:" M ";:" G "}}"
++#elif DEFAULT_LIBC == LIBC_MUSL
++#define CHOOSE_DYNAMIC_LINKER(G, U, M) "%{mglibc:" G ";:%{muclibc:" U ";:" M "}}"
+ #else
+ #error "Unsupported DEFAULT_LIBC"
+ #endif
+ #define GNU_USER_DYNAMIC_LINKER32 \
+-  CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER32, UCLIBC_DYNAMIC_LINKER32)
++  CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER32, UCLIBC_DYNAMIC_LINKER32, MUSL_DYNAMIC_LINKER32)
+ #define GNU_USER_DYNAMIC_LINKER64 \
+-  CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER64, UCLIBC_DYNAMIC_LINKER64)
++  CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER64, UCLIBC_DYNAMIC_LINKER64, MUSL_DYNAMIC_LINKER64)
+ 
+ 
+ #define LINK_OS_LINUX_SPEC32 "-m elf32ppclinux %{!shared: %{!static: \
+diff --git a/gcc/config/rs6000/sysv4.h b/gcc/config/rs6000/sysv4.h
+--- a/gcc/config/rs6000/sysv4.h
++++ b/gcc/config/rs6000/sysv4.h
+@@ -804,15 +804,18 @@
+ 
+ #define GLIBC_DYNAMIC_LINKER "/lib/ld.so.1"
+ #define UCLIBC_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
++#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-powerpc.so.1"
+ #if DEFAULT_LIBC == LIBC_UCLIBC
+-#define CHOOSE_DYNAMIC_LINKER(G, U) "%{mglibc:" G ";:" U "}"
++#define CHOOSE_DYNAMIC_LINKER(G, U, M) "%{mglibc:" G ";:%{mmusl:" M ";:" U "}}"
++#elif DEFAULT_LIBC == LIBC_MUSL
++#define CHOOSE_DYNAMIC_LINKER(G, U, M) "%{mglibc:" G ";:%{muclibc:" U ";:" M "}}"
+ #elif !defined (DEFAULT_LIBC) || DEFAULT_LIBC == LIBC_GLIBC
+-#define CHOOSE_DYNAMIC_LINKER(G, U) "%{muclibc:" U ";:" G "}"
++#define CHOOSE_DYNAMIC_LINKER(G, U, M) "%{muclibc:" U ";:%{mmusl:" M ";:" G "}}"
+ #else
+ #error "Unsupported DEFAULT_LIBC"
+ #endif
+ #define GNU_USER_DYNAMIC_LINKER \
+-  CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER, UCLIBC_DYNAMIC_LINKER)
++  CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER, UCLIBC_DYNAMIC_LINKER, MUSL_DYNAMIC_LINKER)
+ 
+ #define LINK_OS_LINUX_SPEC "-m elf32ppclinux %{!shared: %{!static: \
+   %{rdynamic:-export-dynamic} \
+diff --git a/gcc/ginclude/stddef.h b/gcc/ginclude/stddef.h
+--- a/gcc/ginclude/stddef.h
++++ b/gcc/ginclude/stddef.h
+@@ -184,6 +184,7 @@
+ #ifndef _GCC_SIZE_T
+ #ifndef _SIZET_
+ #ifndef __size_t
++#ifndef __DEFINED_size_t /* musl */
+ #define __size_t__	/* BeOS */
+ #define __SIZE_T__	/* Cray Unicos/Mk */
+ #define _SIZE_T
+@@ -200,6 +201,7 @@
+ #define ___int_size_t_h
+ #define _GCC_SIZE_T
+ #define _SIZET_
++#define __DEFINED_size_t /* musl */
+ #if (defined (__FreeBSD__) && (__FreeBSD__ >= 5)) \
+   || defined(__FreeBSD_kernel__)
+ /* __size_t is a typedef on FreeBSD 5, must not trash it. */
+@@ -215,6 +217,7 @@
+ typedef long ssize_t;
+ #endif /* __BEOS__ */
+ #endif /* !(defined (__GNUG__) && defined (size_t)) */
++#endif /* __DEFINED_size_t */
+ #endif /* __size_t */
+ #endif /* _SIZET_ */
+ #endif /* _GCC_SIZE_T */
+diff --git a/libgomp/config/posix/time.c b/libgomp/config/posix/time.c
+--- a/libgomp/config/posix/time.c
++++ b/libgomp/config/posix/time.c
+@@ -28,6 +28,8 @@
+    The following implementation uses the most simple POSIX routines.
+    If present, POSIX 4 clocks should be used instead.  */
+ 
++#define _POSIX_C_SOURCE 199309L /* for clocks */
++
+ #include "libgomp.h"
+ #include <unistd.h>
+ #if TIME_WITH_SYS_TIME
+diff --git a/libitm/config/arm/hwcap.cc b/libitm/config/arm/hwcap.cc
+--- a/libitm/config/arm/hwcap.cc
++++ b/libitm/config/arm/hwcap.cc
+@@ -40,7 +40,11 @@
+ 
+ #ifdef __linux__
+ #include <unistd.h>
++#ifdef __GLIBC__
+ #include <sys/fcntl.h>
++#else
++#include <fcntl.h>
++#endif
+ #include <elf.h>
+ 
+ static void __attribute__((constructor))
+diff --git a/libitm/config/linux/x86/tls.h b/libitm/config/linux/x86/tls.h
+--- a/libitm/config/linux/x86/tls.h
++++ b/libitm/config/linux/x86/tls.h
+@@ -25,16 +25,19 @@
+ #ifndef LIBITM_X86_TLS_H
+ #define LIBITM_X86_TLS_H 1
+ 
+-#if defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 10)
++#if defined(__GLIBC_PREREQ)
++#if __GLIBC_PREREQ(2, 10)
+ /* Use slots in the TCB head rather than __thread lookups.
+    GLIBC has reserved words 10 through 13 for TM.  */
+ #define HAVE_ARCH_GTM_THREAD 1
+ #define HAVE_ARCH_GTM_THREAD_DISP 1
+ #endif
++#endif
+ 
+ #include "config/generic/tls.h"
+ 
+-#if defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 10)
++#if defined(__GLIBC_PREREQ)
++#if __GLIBC_PREREQ(2, 10)
+ namespace GTM HIDDEN {
+ 
+ #ifdef __x86_64__
+@@ -101,5 +104,6 @@
+ 
+ } // namespace GTM
+ #endif /* >= GLIBC 2.10 */
++#endif
+ 
+ #endif // LIBITM_X86_TLS_H
+diff --git a/libstdc++-v3/configure.host b/libstdc++-v3/configure.host
+--- a/libstdc++-v3/configure.host
++++ b/libstdc++-v3/configure.host
+@@ -243,6 +243,13 @@
+     os_include_dir="os/bsd/freebsd"
+     ;;
+   gnu* | linux* | kfreebsd*-gnu | knetbsd*-gnu)
++    # check for musl by target
++    case "${host_os}" in
++      *-musl*)
++        os_include_dir="os/generic"
++        ;;
++      *)
++
+     if [ "$uclibc" = "yes" ]; then
+       os_include_dir="os/uclibc"
+     elif [ "$bionic" = "yes" ]; then
+@@ -251,6 +258,9 @@
+       os_include_dir="os/gnu-linux"
+     fi
+     ;;
++
++    esac
++    ;;
+   hpux*)
+     os_include_dir="os/hpux"
+     ;;

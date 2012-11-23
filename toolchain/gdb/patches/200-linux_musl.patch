@@ -1,0 +1,22 @@
+diff -urN gdb-linaro-7.5-2012.09/config.sub gdb-linaro-7.5-2012.09.new/config.sub
+--- gdb-linaro-7.5-2012.09/config.sub	2012-09-13 16:01:23.000000000 +0200
++++ gdb-linaro-7.5-2012.09.new/config.sub	2012-11-21 18:19:43.516916352 +0100
+@@ -126,7 +126,8 @@
+   linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
+   knetbsd*-gnu* | netbsd*-gnu* | \
+   kopensolaris*-gnu* | \
+-  storm-chaos* | os2-emx* | rtmk-nova*)
++  storm-chaos* | os2-emx* | rtmk-nova* | \
++  linux-musl*)
+     os=-$maybe_os
+     basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
+     ;;
+@@ -1360,7 +1361,7 @@
+ 	      | -chorusos* | -chorusrdb* | -cegcc* \
+ 	      | -cygwin* | -msys* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
+ 	      | -mingw32* | -linux-gnu* | -linux-android* \
+-	      | -linux-newlib* | -linux-uclibc* \
++	      | -linux-newlib* | -linux-uclibc* | -linux-musl* \
+ 	      | -uxpv* | -beos* | -mpeix* | -udk* \
+ 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
+ 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
