@@ -8,7 +8,7 @@
  	char *buf = NULL;
  	char *argv[4];
  	int status;
-@@ -348,6 +349,7 @@ int xtables_insmod(const char *modname, 
+@@ -348,6 +349,7 @@ int xtables_insmod(const char *modname,
  	free(buf);
  	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
  		return 0;

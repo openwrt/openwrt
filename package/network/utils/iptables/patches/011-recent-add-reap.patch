@@ -79,7 +79,7 @@ Signed-off-by: Tim Gardner <tim.gardner@canonical.com>
  }
  
  static void recent_save(const void *ip, const struct xt_entry_match *match)
-@@ -211,6 +229,8 @@ static void recent_save(const void *ip, 
+@@ -211,6 +229,8 @@ static void recent_save(const void *ip,
  		printf("--rsource ");
  	if (info->side == XT_RECENT_DEST)
  		printf("--rdest ");
@@ -90,7 +90,7 @@ Signed-off-by: Tim Gardner <tim.gardner@canonical.com>
  static struct xtables_match recent_mt_reg = {
 --- a/extensions/libxt_recent.man
 +++ b/extensions/libxt_recent.man
-@@ -41,6 +41,11 @@ This option must be used in conjunction 
+@@ -41,6 +41,11 @@ This option must be used in conjunction
  \fB\-\-update\fP. When used, this will narrow the match to only happen when the
  address is in the list and was seen within the last given number of seconds.
  .TP
