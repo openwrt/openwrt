@@ -1,0 +1,60 @@
+diff -urN linux-atm-2.5.2/src/ilmid/io.c linux-atm-2.5.2.new/src/ilmid/io.c
+--- linux-atm-2.5.2/src/ilmid/io.c	2008-01-01 01:14:50.000000000 +0100
++++ linux-atm-2.5.2.new/src/ilmid/io.c	2012-11-23 17:32:18.149268039 +0100
+@@ -48,6 +48,14 @@
+ 			     be manually configured (after ilmid has
+ 			     registered the "official" address) - HACK */
+ 
++#ifndef SUN_LEN
++# include <string.h>            /* For prototype of `strlen'.  */
++
++/* Evaluate to actual length of the `sockaddr_un' structure.  */
++# define SUN_LEN(ptr) ((size_t) (((struct sockaddr_un *) 0)->sun_path)        \
++                      + strlen ((ptr)->sun_path))
++#endif
++
+ extern SysGroup *remsys;
+ extern State ilmi_state;
+ static short atm_itf = -1; /* bad value */
+diff -urN linux-atm-2.5.2/src/mpoad/io.c linux-atm-2.5.2.new/src/mpoad/io.c
+--- linux-atm-2.5.2/src/mpoad/io.c	2008-01-01 01:14:51.000000000 +0100
++++ linux-atm-2.5.2.new/src/mpoad/io.c	2012-11-23 17:34:17.745271101 +0100
+@@ -10,14 +10,7 @@
+ #include <errno.h>
+ #include <sys/ioctl.h>
+ #include <sys/param.h> /* for OPEN_MAX   */
+-#if __GLIBC__ >= 2
+ #include <sys/poll.h>
+-#else /* ugly hack to make it compile on RH 4.2 - WA */
+-#include <syscall.h>
+-#include <linux/poll.h>
+-#define SYS_poll 168
+-_syscall3(int,poll,struct pollfd *,ufds,unsigned int,nfds,int,timeout);
+-#endif
+ #include <atm.h>
+ #include <linux/types.h>
+ #include <linux/atmioc.h>
+diff -urN linux-atm-2.5.2/src/sigd/atmsigd.c linux-atm-2.5.2.new/src/sigd/atmsigd.c
+--- linux-atm-2.5.2/src/sigd/atmsigd.c	2008-01-01 01:14:52.000000000 +0100
++++ linux-atm-2.5.2.new/src/sigd/atmsigd.c	2012-11-23 17:30:38.689265492 +0100
+@@ -517,7 +517,7 @@
+ 	    exit(0);
+ 	}
+     }
+-    (void) on_exit(trace_on_exit,NULL);
++    (void) atexit(trace_on_exit);
+     poll_loop();
+     close_all();
+     for (sig = entities; sig; sig = sig->next) stop_saal(&sig->saal);
+diff -urN linux-atm-2.5.2/src/test/align.c linux-atm-2.5.2.new/src/test/align.c
+--- linux-atm-2.5.2/src/test/align.c	2001-10-10 00:33:08.000000000 +0200
++++ linux-atm-2.5.2.new/src/test/align.c	2012-11-23 17:25:15.077257206 +0100
+@@ -24,7 +24,7 @@
+ #include <signal.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+-#include <sys/errno.h>
++#include <errno.h>
+ #include <atm.h>
+ 
+ 
