@@ -1,0 +1,21 @@
+# Choose musl version.
+
+choice
+	prompt "musl Version"
+	depends on TOOLCHAINOPTS && USE_MUSL
+	default UCLIBC_VERSION_0_9_7
+	help
+	  Select the version of musl you wish to use.
+
+	config MUSL_VERSION_0_9_7
+		bool "musl 0.9.7"
+
+endchoice
+
+
+# Debug version.
+
+config MUSL_ENABLE_DEBUG
+	bool "Build with debug information"
+	depends on TOOLCHAINOPTS && USE_MUSL
+	default n

@@ -145,10 +145,14 @@ choice
 	config USE_UCLIBC
 		bool "Use uClibc"
 
+	config USE_MUSL
+		bool "Use musl"
+
 endchoice
 
 source "toolchain/eglibc/Config.in"
 source "toolchain/uClibc/Config.in"
+source "toolchain/musl/Config.in"
 
 comment "Debuggers"
 	depends TOOLCHAINOPTS
@@ -181,20 +185,25 @@ source "toolchain/gcc/Config.version"
 
 source "toolchain/eglibc/Config.version"
 source "toolchain/uClibc/Config.version"
+source "toolchain/musl/Config.version"
 
 config LIBC
 	string
 	default "eglibc"  if USE_EGLIBC
 	default "uClibc"  if USE_UCLIBC
+	default "musl"	  if USE_MUSL
 
 config LIBC_VERSION
 	string
 	default EGLIBC_VERSION  if USE_EGLIBC
 	default UCLIBC_VERSION  if USE_UCLIBC
+	default MUSL_VERSION	if USE_MUSL
 
 config TARGET_SUFFIX
 	string
-	default "gnueabi"         if (USE_EGLIBC) && (arm || armeb)
-	default "gnu"             if (USE_EGLIBC) && !(arm || armeb)
+	default "gnueabi"         if USE_EGLIBC && (arm || armeb)
+	default "gnu"             if USE_EGLIBC && !(arm || armeb)
 	default "uclibcgnueabi"   if USE_UCLIBC && (arm || armeb)
 	default "uclibc"          if USE_UCLIBC && !(arm || armeb)
+	default "muslgnueabi"     if USE_MUSL && (arm || armeb)
+	default "musl"            if USE_MUSL && !(arm || armeb)

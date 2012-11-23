@@ -1,0 +1,219 @@
+Date: Sat, 20 Oct 2012 22:15:44 +0200
+From: Abdoulaye Walsimou Gaye <awg@...toolkit.org>
+To: musl@...ts.openwall.com
+Cc: Abdoulaye Walsimou Gaye <awg@...toolkit.org>
+Subject: [PATCH 3/4] Import BSD functions defined in <netinet/ether.h> from NetBSD
+
+Signed-off-by: Abdoulaye Walsimou Gaye <awg@...toolkit.org>
+---
+ include/netinet/ether.h |   14 ++++
+ src/network/ethers.c    |  180 +++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 194 insertions(+)
+ create mode 100644 include/netinet/ether.h
+ create mode 100644 src/network/ethers.c
+
+diff --git a/include/netinet/ether.h b/include/netinet/ether.h
+new file mode 100644
+index 0000000..44c614e
+--- /dev/null
++++ b/include/netinet/ether.h
+@@ -0,0 +1,10 @@
++#ifndef _NETINET_ETHER_H
++#define _NETINET_ETHER_H
++
++char	*ether_ntoa(const struct ether_addr *);
++struct 	ether_addr *ether_aton(const char *);
++int	ether_ntohost(char *, const struct ether_addr *);
++int	ether_hostton(const char *, struct ether_addr *);
++int	ether_line(const char *, struct ether_addr *, char *);
++
++#endif /* !_NETINET_ETHER_H */
+diff --git a/src/network/ethers.c b/src/network/ethers.c
+new file mode 100644
+index 0000000..8014581
+--- /dev/null
++++ b/src/network/ethers.c
+@@ -0,0 +1,180 @@
++/* Origin NetBSD: src/lib/libc/net/ethers.c */
++
++/*
++ * ethers(3N) a la Sun.
++ *
++ * Written by Roland McGrath <roland@...b.com> 10/14/93.
++ * Public domain.
++ *
++ * port for musl by Abdoulaye Walsimou GAYE <awg@...toolkit.org> 2012/10/15
++ */
++
++#define _BSD_SOURCE
++#include <net/ethernet.h>
++#include <netinet/ether.h>
++
++#include <sys/param.h>
++#include <assert.h>
++#include <errno.h>
++#include <paths.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#ifndef _PATH_ETHERS
++#define _PATH_ETHERS "/etc/ethers"
++#endif
++
++/*
++ * ether_ntoa():
++ * This function converts this structure into an ASCII string of the form
++ * ``xx:xx:xx:xx:xx:xx'', consisting of 6 hexadecimal numbers separated
++ * by colons.  It returns a pointer to a static buffer that is reused for
++ * each call.
++ */
++char *ether_ntoa(const struct ether_addr *e)
++{
++	static char a[18];
++
++	assert(e != NULL);
++
++	(void) snprintf(a, sizeof a, "%02x:%02x:%02x:%02x:%02x:%02x",
++	    e->ether_addr_octet[0], e->ether_addr_octet[1],
++	    e->ether_addr_octet[2], e->ether_addr_octet[3],
++	    e->ether_addr_octet[4], e->ether_addr_octet[5]);
++	return a;
++}
++
++/*
++ * ether_aton():
++ * This function converts an ASCII string of the same form and to a structure
++ * containing the 6 octets of the address.  It returns a pointer to a
++ * static structure that is reused for each call.
++ */
++struct ether_addr *ether_aton(const char *s)
++{
++	static struct ether_addr n;
++	unsigned int i[6];
++
++	assert(s != NULL);
++
++	if (sscanf(s, " %x:%x:%x:%x:%x:%x ", &i[0], &i[1],
++	    &i[2], &i[3], &i[4], &i[5]) == 6) {
++		n.ether_addr_octet[0] = (unsigned char)i[0];
++		n.ether_addr_octet[1] = (unsigned char)i[1];
++		n.ether_addr_octet[2] = (unsigned char)i[2];
++		n.ether_addr_octet[3] = (unsigned char)i[3];
++		n.ether_addr_octet[4] = (unsigned char)i[4];
++		n.ether_addr_octet[5] = (unsigned char)i[5];
++		return &n;
++	}
++	return NULL;
++}
++
++/*
++ * ether_ntohost():
++ * This function interrogates the data base mapping host names to Ethernet
++ * addresses, /etc/ethers.
++ * It looks up the given Ethernet address and writes the associated host name
++ * into the character buffer passed.
++ * It returns zero if it finds the requested host name and -1 if not.
++ */
++int ether_ntohost(char *hostname, const struct ether_addr *e)
++{
++	FILE *f;
++	char *p;
++	size_t len;
++	struct ether_addr try;
++
++	assert(hostname != NULL);
++	assert(e != NULL);
++
++	f = fopen(_PATH_ETHERS, "r");
++	if (f == NULL)
++		return -1;
++	while ((p = fgetln(f, &len)) != NULL) {
++		if (p[len - 1] != '\n')
++			continue;		/* skip lines w/o \n */
++		p[--len] = '\0';
++		if (ether_line(p, &try, hostname) == 0 &&
++		    memcmp(&try, e, sizeof try) == 0) {
++			(void)fclose(f);
++			return 0;
++		}
++	}
++	(void)fclose(f);
++	errno = ENOENT;
++	return -1;
++}
++
++/*
++ * ether_hostton():
++ * This function interrogates the data base mapping host names to Ethernet
++ * addresses, /etc/ethers.
++ * It looks up the given host name and writes the associated Ethernet address
++ * into the structure passed.
++ * It returns zero if it finds the requested address and -1 if not.
++ */
++int ether_hostton(const char *hostname, struct ether_addr *e)
++{
++	FILE *f;
++	char *p;
++	size_t len;
++	char try[MAXHOSTNAMELEN + 1];
++
++	assert(hostname != NULL);
++	assert(e != NULL);
++
++	f = fopen(_PATH_ETHERS, "r");
++	if (f==NULL)
++		return -1;
++
++	while ((p = fgetln(f, &len)) != NULL) {
++		if (p[len - 1] != '\n')
++			continue;		/* skip lines w/o \n */
++		p[--len] = '\0';
++		if (ether_line(p, e, try) == 0 && strcmp(hostname, try) == 0) {
++			(void)fclose(f);
++			return 0;
++		}
++	}
++	(void)fclose(f);
++	errno = ENOENT;
++	return -1;
++}
++
++/*
++ * ether_line():
++ * This function parses a line from the /etc/ethers file and fills in the passed
++ * ``struct ether_addr'' and character buffer with the Ethernet address and host
++ * name on the line.
++ * It returns zero if the line was successfully parsed and -1 if not.
++ */
++int ether_line(const char *l, struct ether_addr *e, char *hostname)
++{
++	unsigned int i[6];
++
++#define S2(arg) #arg
++#define S1(arg) S2(arg)
++	static const char fmt[] = " %x:%x:%x:%x:%x:%x"
++	    " %" S1(MAXHOSTNAMELEN) "s\n";
++#undef S2
++#undef S1
++
++	assert(l != NULL);
++	assert(e != NULL);
++	assert(hostname != NULL);
++
++	if (sscanf(l, fmt,
++	    &i[0], &i[1], &i[2], &i[3], &i[4], &i[5], hostname) == 7) {
++		e->ether_addr_octet[0] = (unsigned char)i[0];
++		e->ether_addr_octet[1] = (unsigned char)i[1];
++		e->ether_addr_octet[2] = (unsigned char)i[2];
++		e->ether_addr_octet[3] = (unsigned char)i[3];
++		e->ether_addr_octet[4] = (unsigned char)i[4];
++		e->ether_addr_octet[5] = (unsigned char)i[5];
++		return 0;
++	}
++	errno = EINVAL;
++	return -1;
++}
+-- 
+1.7.9.5
+
