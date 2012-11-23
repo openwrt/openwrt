@@ -1,0 +1,12 @@
+diff -urN busybox-1.19.4/networking/arping.c busybox-1.19.4.new/networking/arping.c
+--- busybox-1.19.4/networking/arping.c	2012-02-04 20:24:55.000000000 +0100
++++ busybox-1.19.4.new/networking/arping.c	2012-11-23 17:22:13.753252564 +0100
+@@ -24,6 +24,8 @@
+ 
+ #include <arpa/inet.h>
+ #include <net/if.h>
++#include <net/if_arp.h>
++#include <netinet/if_ether.h>
+ #include <netinet/ether.h>
+ #include <netpacket/packet.h>
+ 
