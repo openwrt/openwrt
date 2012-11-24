@@ -10,7 +10,7 @@ Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -195,6 +195,109 @@ static struct board_info __initdata boar
+@@ -195,6 +195,110 @@ static struct board_info __initdata boar
  
  	},
  };
@@ -27,6 +27,7 @@ Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
 +		{
 +			.caldata_offset	= 0x7d1000,
 +			.slot		= 0,
++			.led_pin	= -1,
 +		},
 +	},
 +
@@ -120,7 +121,7 @@ Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
  #endif
  
  /*
-@@ -2393,6 +2496,7 @@ static const struct board_info __initdat
+@@ -2393,6 +2497,7 @@ static const struct board_info __initdat
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_963281TAN,
