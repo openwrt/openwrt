@@ -8,7 +8,7 @@
  
  static int timeout = WDT_DEFAULT_TIME;
  static bool nowayout = WATCHDOG_NOWAYOUT;
-@@ -52,6 +53,53 @@ static inline struct bcm47xx_wdt *bcm47x
+@@ -50,6 +51,53 @@ static inline struct bcm47xx_wdt *bcm47x
  	return container_of(wdd, struct bcm47xx_wdt, wdd);
  }
  
@@ -62,7 +62,7 @@
  static void bcm47xx_wdt_soft_timer_tick(unsigned long data)
  {
  	struct bcm47xx_wdt *wdt = (struct bcm47xx_wdt *)data;
-@@ -136,15 +184,22 @@ static struct watchdog_ops bcm47xx_wdt_s
+@@ -134,15 +182,22 @@ static struct watchdog_ops bcm47xx_wdt_s
  static int __devinit bcm47xx_wdt_probe(struct platform_device *pdev)
  {
  	int ret;
@@ -88,7 +88,7 @@
  	wdt->wdd.info = &bcm47xx_wdt_info;
  	wdt->wdd.timeout = WDT_DEFAULT_TIME;
  	ret = wdt->wdd.ops->set_timeout(&wdt->wdd, timeout);
-@@ -162,14 +217,16 @@ static int __devinit bcm47xx_wdt_probe(s
+@@ -160,14 +215,16 @@ static int __devinit bcm47xx_wdt_probe(s
  	if (ret)
  		goto err_notifier;
  
