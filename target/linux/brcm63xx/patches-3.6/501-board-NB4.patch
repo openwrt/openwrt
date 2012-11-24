@@ -9,7 +9,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -43,6 +45,12 @@
+@@ -44,6 +46,12 @@
  #define CFE_OFFSET_64K		0x10000
  #define CFE_OFFSET_128K		0x20000
  
@@ -22,7 +22,7 @@
  static struct board_info board;
  
  /*
-@@ -708,6 +716,586 @@ static struct board_info __initdata boar
+@@ -709,6 +717,586 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -609,7 +609,7 @@
  #endif
  
  /*
-@@ -741,6 +1329,11 @@ static const struct board_info __initdat
+@@ -742,6 +1330,11 @@ static const struct board_info __initdat
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -621,7 +621,7 @@
  #endif
  };
  
-@@ -795,6 +1388,16 @@ static void __init boardid_fixup(u8 *boo
+@@ -796,6 +1389,16 @@ static void __init boardid_fixup(u8 *boo
  	struct bcm_tag *tag = (struct bcm_tag *)(boot_addr + CFE_OFFSET_64K);
  	char *board_name = (char *)bcm63xx_nvram_get_name();
  

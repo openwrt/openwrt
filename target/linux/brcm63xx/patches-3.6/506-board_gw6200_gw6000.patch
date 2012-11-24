@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -468,6 +468,112 @@ static struct board_info __initdata boar
+@@ -469,6 +469,112 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -113,7 +113,7 @@
  static struct board_info __initdata board_FAST2404 = {
  	.name				= "F@ST2404",
  	.expected_cpu_id		= 0x6348,
-@@ -1552,6 +1658,8 @@ static const struct board_info __initdat
+@@ -1553,6 +1659,8 @@ static const struct board_info __initdat
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
  	&board_96348gw,
