@@ -23,7 +23,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  	.width			= 2,
 --- a/drivers/mtd/redboot.c
 +++ b/drivers/mtd/redboot.c
-@@ -75,6 +75,7 @@ static int parse_redboot_partitions(stru
+@@ -72,6 +72,7 @@ static int parse_redboot_partitions(stru
  	int nulllen = 0;
  	int numslots;
  	unsigned long offset;
@@ -31,7 +31,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	static char nullstring[] = "unallocated";
  #endif
-@@ -181,6 +182,16 @@ static int parse_redboot_partitions(stru
+@@ -178,6 +179,16 @@ static int parse_redboot_partitions(stru
  		goto out;
  	}
  
@@ -48,7 +48,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  	for (i = 0; i < numslots; i++) {
  		struct fis_list *new_fl, **prev;
  
-@@ -201,10 +212,10 @@ static int parse_redboot_partitions(stru
+@@ -198,10 +209,10 @@ static int parse_redboot_partitions(stru
  			goto out;
  		}
  		new_fl->img = &buf[i];
