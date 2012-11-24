@@ -8,7 +8,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -50,6 +51,8 @@
+@@ -51,6 +52,8 @@
  #define NB4_SPI_GPIO_MOSI	7
  #define NB4_SPI_GPIO_CLK	6
  #define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
@@ -17,7 +17,7 @@
  
  #define CT6373_PID_OFFSET		0xff80
  #define CT6373_74X164_GPIO_BASE	64
-@@ -2580,6 +2583,103 @@ static struct board_info __initdata boar
+@@ -2582,6 +2585,103 @@ static struct board_info __initdata boar
  };
  #endif
  
@@ -121,7 +121,7 @@
  /*
   * known 6368 boards
   */
-@@ -2776,6 +2876,10 @@ static const struct board_info __initdat
+@@ -2778,6 +2878,10 @@ static const struct board_info __initdat
  	&board_DVAG3810BN,
  #endif
  
@@ -132,7 +132,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
-@@ -2843,6 +2947,11 @@ static void __init boardid_fixup(u8 *boo
+@@ -2845,6 +2949,11 @@ static void __init boardid_fixup(u8 *boo
  		}
  	}
  
