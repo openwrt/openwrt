@@ -17,8 +17,8 @@
 +MODULE_PARM_DESC(timeout, "Watchdog time in seconds. (default="
  				__MODULE_STRING(WDT_DEFAULT_TIME) ")");
  
- #ifdef CONFIG_WATCHDOG_NOWAYOUT
-@@ -97,9 +97,9 @@ static int bcm47xx_wdt_soft_stop(struct
+ module_param(nowayout, bool, 0);
+@@ -95,9 +95,9 @@ static int bcm47xx_wdt_soft_stop(struct
  static int bcm47xx_wdt_soft_set_timeout(struct watchdog_device *wdd,
  					unsigned int new_time)
  {
@@ -30,7 +30,7 @@
  		return -EINVAL;
  	}
  
-@@ -163,7 +163,7 @@ static int __devinit bcm47xx_wdt_probe(s
+@@ -161,7 +161,7 @@ static int __devinit bcm47xx_wdt_probe(s
  		goto err_notifier;
  
  	pr_info("BCM47xx Watchdog Timer enabled (%d seconds%s)\n",

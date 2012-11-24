@@ -26,16 +26,23 @@
  #include <linux/watchdog.h>
  #include <linux/timer.h>
  #include <linux/jiffies.h>
-@@ -48,8 +45,6 @@ MODULE_PARM_DESC(nowayout,
+@@ -41,15 +38,11 @@ module_param(wdt_time, int, 0);
+ MODULE_PARM_DESC(wdt_time, "Watchdog time in seconds. (default="
+ 				__MODULE_STRING(WDT_DEFAULT_TIME) ")");
+ 
+-#ifdef CONFIG_WATCHDOG_NOWAYOUT
+ module_param(nowayout, bool, 0);
+ MODULE_PARM_DESC(nowayout,
+ 		"Watchdog cannot be stopped once started (default="
  				__MODULE_STRING(WATCHDOG_NOWAYOUT) ")");
- #endif
+-#endif
  
 -static unsigned long bcm47xx_wdt_busy;
 -static char expect_release;
  static struct timer_list wdt_timer;
  static atomic_t ticks;
  
-@@ -97,29 +92,31 @@ static void bcm47xx_timer_tick(unsigned
+@@ -97,29 +90,31 @@ static void bcm47xx_timer_tick(unsigned
  	}
  }
  
@@ -75,7 +82,7 @@
  {
  	if ((new_time <= 0) || (new_time > WDT_MAX_TIME))
  		return -EINVAL;
-@@ -128,51 +125,6 @@ static int bcm47xx_wdt_settimeout(int ne
+@@ -128,51 +123,6 @@ static int bcm47xx_wdt_settimeout(int ne
  	return 0;
  }
  
@@ -127,7 +134,7 @@
  static const struct watchdog_info bcm47xx_wdt_info = {
  	.identity	= DRV_NAME,
  	.options	= WDIOF_SETTIMEOUT |
-@@ -180,80 +132,25 @@ static const struct watchdog_info bcm47x
+@@ -180,80 +130,25 @@ static const struct watchdog_info bcm47x
  				WDIOF_MAGICCLOSE,
  };
  
@@ -217,7 +224,7 @@
  };
  
  static struct notifier_block bcm47xx_wdt_notifier = {
-@@ -274,12 +171,13 @@ static int __init bcm47xx_wdt_init(void)
+@@ -274,12 +169,13 @@ static int __init bcm47xx_wdt_init(void)
  		pr_info("wdt_time value must be 0 < wdt_time < %d, using %d\n",
  			(WDT_MAX_TIME + 1), wdt_time);
  	}
@@ -232,7 +239,7 @@
  	if (ret) {
  		unregister_reboot_notifier(&bcm47xx_wdt_notifier);
  		return ret;
-@@ -292,10 +190,8 @@ static int __init bcm47xx_wdt_init(void)
+@@ -292,10 +188,8 @@ static int __init bcm47xx_wdt_init(void)
  
  static void __exit bcm47xx_wdt_exit(void)
  {
@@ -245,7 +252,7 @@
  
  	unregister_reboot_notifier(&bcm47xx_wdt_notifier);
  }
-@@ -306,4 +202,3 @@ module_exit(bcm47xx_wdt_exit);
+@@ -306,4 +200,3 @@ module_exit(bcm47xx_wdt_exit);
  MODULE_AUTHOR("Aleksandar Radovanovic");
  MODULE_DESCRIPTION("Watchdog driver for Broadcom BCM47xx");
  MODULE_LICENSE("GPL");
