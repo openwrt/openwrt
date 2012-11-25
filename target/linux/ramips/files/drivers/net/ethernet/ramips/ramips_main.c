@@ -43,7 +43,7 @@ static inline int soc_is_rt5350(void) { return 0; }
 
 #define phys_to_bus(a)  (a & 0x1FFFFFFF)
 
-#ifdef CONFIG_RAMIPS_ETH_DEBUG
+#ifdef CONFIG_NET_RAMIPS_DEBUG
 #define RADEBUG(fmt, args...)	printk(KERN_DEBUG fmt, ## args)
 #else
 #define RADEBUG(fmt, args...)	do {} while (0)
