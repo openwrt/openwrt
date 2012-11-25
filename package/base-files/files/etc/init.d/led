@@ -24,6 +24,8 @@ load_led() {
 	config_get delayoff $1 delayoff
 	config_get interval $1 interval "50"
 	config_get port_state $1 port_state
+	config_get delay $1 delay "150"
+	config_get message $1 message ""
 
 	if [ "$trigger" = "rssi" ]; then
 		# handled by rssileds userspace process
@@ -64,6 +66,11 @@ load_led() {
 		"port_state")
 			[ -n "$port_state" ] && \
 				echo $port_state > /sys/class/leds/${sysfs}/port_state
+			;;
+
+		"morse")
+			echo $message > /sys/class/leds/${sysfs}/message
+			echo $delay > /sys/class/leds/${sysfs}/delay
 			;;
 
 		switch[0-9]*)
