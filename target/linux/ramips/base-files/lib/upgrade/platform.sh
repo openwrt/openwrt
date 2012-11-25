@@ -24,6 +24,7 @@ platform_check_image() {
 	dir-600-b1 | \
 	dir-600-b2 | \
 	dir-615-h1 | \
+	dir-615-d | \
 	dir-620-a1 | \
 	dap-1350 | \
 	esr-9753 | \
