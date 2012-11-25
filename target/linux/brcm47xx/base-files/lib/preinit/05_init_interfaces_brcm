@@ -28,7 +28,7 @@ check_module () {
 init_iface() {
 	check_module tg3
 	insmod switch-core
-	check_module switch-robo || check_module switch-adm  || { 
+	check_module switch-robo || check_module switch-adm  || {
 	  check_module bcm57xx activate_gpio=0x4 && cpu_port="8u*"
 	} || rmmod switch-core
 }

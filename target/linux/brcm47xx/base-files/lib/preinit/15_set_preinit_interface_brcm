@@ -2,7 +2,7 @@
 
 port_net_echo() {
 	[ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
-		if [ "$pi_preinit_net_messages" = "y" ] || [ "$pi_failsafe_net_message" = "true" ] && [ "$pi_preinit_no_failsafe_netmsg" != "y" ]; then 
+		if [ "$pi_preinit_net_messages" = "y" ] || [ "$pi_failsafe_net_message" = "true" ] && [ "$pi_preinit_no_failsafe_netmsg" != "y" ]; then
 			netmsg $pi_broadcast "$1"
 		fi
 	}
@@ -20,7 +20,7 @@ preinit_ip_deconfig() {
 
 preinit_net_echo() {
 	preinit_ip
-	
+
 	[ -d /proc/switch/eth0 ] && [ "$pi_ifname" = "eth0" ] && {
 		echo 1 > /proc/switch/eth0/reset
 
@@ -30,10 +30,8 @@ preinit_net_echo() {
 			echo "$port ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
 			port_net_echo $1
 		}; done
-		
+
 		echo "0 1 2 3 4 ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
-		
+
 	} || port_net_echo $1
 }
-
-
