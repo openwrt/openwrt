@@ -6,7 +6,7 @@
 #
 
 define Profile/Bcm4705-wl
-  NAME:=Broadcom BCM43xx WiFi (wl, proprietary)
+  NAME:=BCM4705/BCM4785, BCM43xx WiFi (wl, proprietary)
   PACKAGES:=-wpad-mini kmod-brcm-wl wlc nas kmod-tg3
 endef
 
