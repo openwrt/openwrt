@@ -92,6 +92,9 @@ ramips_board_name() {
 	*"DIR-615 H1")
 		name="dir-615-h1"
 		;;
+	*"DIR-615 D")
+		name="dir-615-d"
+		;;
 	*"DIR-645")
 		name="dir-645"
 		;;
