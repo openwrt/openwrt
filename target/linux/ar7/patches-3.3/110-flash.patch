@@ -1,14 +1,3 @@
---- a/drivers/mtd/maps/physmap.c
-+++ b/drivers/mtd/maps/physmap.c
-@@ -78,7 +78,7 @@ static const char *rom_probe_types[] = {
- 					"map_rom",
- 					NULL };
- static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", "afs",
--					  NULL };
-+					  "ar7part", NULL };
- 
- static int physmap_flash_probe(struct platform_device *dev)
- {
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
 @@ -10,7 +10,7 @@ obj-$(CONFIG_MTD_OF_PARTS)	+= ofpart.o
@@ -22,7 +11,7 @@
  
 --- a/arch/mips/ar7/platform.c
 +++ b/arch/mips/ar7/platform.c
-@@ -199,7 +199,7 @@ static struct resource physmap_flash_res
+@@ -199,11 +199,14 @@ static struct resource physmap_flash_res
  	.name	= "mem",
  	.flags	= IORESOURCE_MEM,
  	.start	= 0x10000000,
@@ -30,4 +19,11 @@
 +	.end	= 0x11ffffff,
  };
  
++static const char *ar7_probe_types[] = { "ar7part", NULL };
++
  static struct physmap_flash_data physmap_flash_data = {
+ 	.width	= 2,
++	.part_probe_types = ar7_probe_types,
+ };
+ 
+ static struct platform_device physmap_flash = {

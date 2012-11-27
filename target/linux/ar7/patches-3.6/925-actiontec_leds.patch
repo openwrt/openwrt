@@ -1,6 +1,6 @@
 --- a/arch/mips/ar7/platform.c
 +++ b/arch/mips/ar7/platform.c
-@@ -462,31 +462,22 @@ static struct gpio_led fb_fon_leds[] = {
+@@ -465,31 +465,22 @@ static struct gpio_led fb_fon_leds[] = {
  	},
  };
  
@@ -35,7 +35,7 @@
  		.default_trigger	= "default-on",
  	},
          {
-@@ -494,6 +485,44 @@ static struct gpio_led gt701_leds[] = {
+@@ -497,6 +488,44 @@ static struct gpio_led gt701_leds[] = {
                  .gpio                   = 10,
                  .active_low             = 1,
          },
@@ -80,7 +80,7 @@
  };
  
  static struct gpio_led_platform_data ar7_led_data;
-@@ -537,9 +566,9 @@ static void __init detect_leds(void)
+@@ -540,9 +569,9 @@ static void __init detect_leds(void)
  	} else if (strstr(prid, "CYWM") || strstr(prid, "CYWL")) {
  		ar7_led_data.num_leds = ARRAY_SIZE(titan_leds);
  		ar7_led_data.leds = titan_leds;
