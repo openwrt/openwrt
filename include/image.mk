@@ -18,9 +18,9 @@ KDIR=$(KERNEL_BUILD_DIR)
 IMG_PREFIX:=openwrt-$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
 
 ifneq ($(CONFIG_BIG_ENDIAN),)
-  JFFS2OPTS     :=  --pad --big-endian --squash -v
+  JFFS2OPTS     :=  --pad --big-endian --squash-uids -v
 else
-  JFFS2OPTS     :=  --pad --little-endian --squash -v
+  JFFS2OPTS     :=  --pad --little-endian --squash-uids -v
 endif
 
 ifeq ($(CONFIG_JFFS2_RTIME),y)
