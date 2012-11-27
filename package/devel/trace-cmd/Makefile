@@ -35,9 +35,7 @@ MAKE_FLAGS += \
 	prefix=/usr
 
 PLUGINS_DIR := $(PKG_INSTALL_DIR)/usr/lib/trace-cmd/plugins
-PLUGINS_ALL = $(patsubst $(PLUGINS_DIR)/plugin_%.so,%,$(wildcard $(PLUGINS_DIR)/plugin_*.so))
 PLUGINS_MAIN := function hrtimer mac80211 sched_switch
-PLUGINS_EXTRA = $(filter-out $(PLUGINS_MAIN),$(PLUGINS_ALL))
 
 TARGET_CFLAGS += --std=gnu99
 
@@ -52,7 +50,10 @@ endef
 define Package/trace-cmd-extra/install
 	$(INSTALL_DIR) $(1)/usr/lib/trace-cmd/plugins
 	$(CP) \
-		$(patsubst %,$(PLUGINS_DIR)/plugin_%.so,$(PLUGINS_EXTRA)) \
+		$$(patsubst %,$(PLUGINS_DIR)/plugin_%.so, \
+			$$(filter-out $(PLUGINS_MAIN), \
+				$$(patsubst $(PLUGINS_DIR)/plugin_%.so,%, \
+					$$(wildcard $(PLUGINS_DIR)/plugin_*.so)))) \
 		$(1)/usr/lib/trace-cmd/plugins
 endef
 
