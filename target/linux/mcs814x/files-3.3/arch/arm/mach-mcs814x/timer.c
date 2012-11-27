@@ -111,7 +111,6 @@ static void __init mcs814x_timer_init(void)
 		panic("unable to get timer0 clock");
 
 	clock_rate = clk_get_rate(clk);
-	clk_put(clk);
 
 	mcs814x_of_timer_init();
 
