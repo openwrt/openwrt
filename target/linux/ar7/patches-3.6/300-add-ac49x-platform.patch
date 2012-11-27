@@ -13,22 +13,25 @@
 +load-$(CONFIG_AR7_AC49X)        += 0xffffffff945ca000
 --- a/arch/mips/ar7/setup.c
 +++ b/arch/mips/ar7/setup.c
-@@ -69,6 +69,8 @@ const char *get_system_type(void)
+@@ -69,6 +69,10 @@ const char *get_system_type(void)
  			return "TI AR7 (TNETV1056)";
  		case TITAN_CHIP_1060:
  			return "TI AR7 (TNETV1060)";
-+		case TITAN_CHIP_AC:
-+			return "AudioCodes AC49x";
++		case TITAN_CHIP_AC495:
++			return "AudioCodes AC495";
++		case TITAN_CHIP_AC496:
++			return "AudioCodes AC496";
  		}
  	default:
  		return "TI AR7 (unknown)";
 --- a/arch/mips/include/asm/mach-ar7/ar7.h
 +++ b/arch/mips/include/asm/mach-ar7/ar7.h
-@@ -92,6 +92,7 @@
+@@ -92,6 +92,8 @@
  #define TITAN_CHIP_1055	0x0e
  #define TITAN_CHIP_1056	0x0d
  #define TITAN_CHIP_1060	0x07
-+#define TITAN_CHIP_AC	0x02
++#define TITAN_CHIP_AC495	0x00
++#define TITAN_CHIP_AC496	0x02
  
  /* Interrupts */
  #define AR7_IRQ_UART0	15
