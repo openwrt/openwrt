@@ -27,8 +27,6 @@ static void __init mcs814x_dt_device_init(void)
 }
 
 static const char *mcs8140_dt_board_compat[] __initdata = {
-	"devolo,dlan-usb-extender",
-	"tigal,rbt-832",
 	"moschip,mcs8140",
 	NULL,	/* sentinel */
 };
