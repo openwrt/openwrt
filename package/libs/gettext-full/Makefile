@@ -49,6 +49,9 @@ CONFIGURE_ARGS += \
 	--without-libexpat-prefix \
 	--without-emacs
 
+HOST_CONFIGURE_ARGS += \
+	--with-included-libxml
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib/libintl-full/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/libintl.h $(1)/usr/lib/libintl-full/include/
