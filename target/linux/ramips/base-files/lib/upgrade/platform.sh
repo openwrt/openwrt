@@ -29,6 +29,7 @@ platform_check_image() {
 	dap-1350 | \
 	esr-9753 | \
 	fonera20n | \
+	rt-n13u | \
 	freestation5 | \
 	hw550-3g | \
 	mofi3500-3gn | \
