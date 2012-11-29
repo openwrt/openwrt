@@ -5,10 +5,10 @@
  #include <linux/dma-mapping.h>
  #include <linux/firmware.h>
 +#include <linux/ssb/ssb_driver_gige.h>
- #if IS_ENABLED(CONFIG_HWMON)
  #include <linux/hwmon.h>
  #include <linux/hwmon-sysfs.h>
-@@ -253,6 +254,7 @@ static DEFINE_PCI_DEVICE_TABLE(tg3_pci_t
+ 
+@@ -251,6 +252,7 @@ static DEFINE_PCI_DEVICE_TABLE(tg3_pci_t
  	{PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5705F)},
  	{PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5721)},
  	{PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5722)},
@@ -16,7 +16,7 @@
  	{PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5751)},
  	{PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5751M)},
  	{PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5751F)},
-@@ -535,7 +537,9 @@ static void _tw32_flush(struct tg3 *tp,
+@@ -533,7 +535,9 @@ static void _tw32_flush(struct tg3 *tp,
  static inline void tw32_mailbox_flush(struct tg3 *tp, u32 off, u32 val)
  {
  	tp->write32_mbox(tp, off, val);
@@ -27,7 +27,7 @@
  		tp->read32_mbox(tp, off);
  }
  
-@@ -545,7 +549,8 @@ static void tg3_write32_tx_mbox(struct t
+@@ -543,7 +547,8 @@ static void tg3_write32_tx_mbox(struct t
  	writel(val, mbox);
  	if (tg3_flag(tp, TXD_MBOX_HWBUG))
  		writel(val, mbox);
@@ -37,7 +37,7 @@
  		readl(mbox);
  }
  
-@@ -1052,7 +1057,8 @@ static void tg3_switch_clocks(struct tg3
+@@ -1050,7 +1055,8 @@ static void tg3_switch_clocks(struct tg3
  
  #define PHY_BUSY_LOOPS	5000
  
@@ -47,7 +47,7 @@
  {
  	u32 frame_val;
  	unsigned int loops;
-@@ -1068,7 +1074,7 @@ static int tg3_readphy(struct tg3 *tp, i
+@@ -1066,7 +1072,7 @@ static int tg3_readphy(struct tg3 *tp, i
  
  	*val = 0x0;
  
@@ -56,7 +56,7 @@
  		      MI_COM_PHY_ADDR_MASK);
  	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
  		      MI_COM_REG_ADDR_MASK);
-@@ -1105,7 +1111,13 @@ static int tg3_readphy(struct tg3 *tp, i
+@@ -1103,7 +1109,13 @@ static int tg3_readphy(struct tg3 *tp, i
  	return ret;
  }
  
@@ -71,7 +71,7 @@
  {
  	u32 frame_val;
  	unsigned int loops;
-@@ -1123,7 +1135,7 @@ static int tg3_writephy(struct tg3 *tp,
+@@ -1121,7 +1133,7 @@ static int tg3_writephy(struct tg3 *tp,
  
  	tg3_ape_lock(tp, tp->phy_ape_lock);
  
@@ -80,7 +80,7 @@
  		      MI_COM_PHY_ADDR_MASK);
  	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
  		      MI_COM_REG_ADDR_MASK);
-@@ -1158,6 +1170,11 @@ static int tg3_writephy(struct tg3 *tp,
+@@ -1156,6 +1168,11 @@ static int tg3_writephy(struct tg3 *tp,
  	return ret;
  }
  
@@ -92,7 +92,7 @@
  static int tg3_phy_cl45_write(struct tg3 *tp, u32 devad, u32 addr, u32 val)
  {
  	int err;
-@@ -1730,6 +1747,11 @@ static int tg3_poll_fw(struct tg3 *tp)
+@@ -1728,6 +1745,11 @@ static int tg3_poll_fw(struct tg3 *tp)
  	int i;
  	u32 val;
  
@@ -104,7 +104,7 @@
  	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5906) {
  		/* Wait up to 20ms for init done. */
  		for (i = 0; i < 200; i++) {
-@@ -3312,6 +3334,8 @@ static int tg3_nvram_write_block(struct
+@@ -3310,6 +3332,8 @@ static int tg3_nvram_write_block(struct
  {
  	int ret;
  
@@ -113,7 +113,7 @@
  	if (tg3_flag(tp, EEPROM_WRITE_PROT)) {
  		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
  		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
-@@ -3387,6 +3411,11 @@ static int tg3_halt_cpu(struct tg3 *tp,
+@@ -3385,6 +3409,11 @@ static int tg3_halt_cpu(struct tg3 *tp,
  		tw32_f(offset + CPU_MODE,  CPU_MODE_HALT);
  		udelay(10);
  	} else {
@@ -125,7 +125,7 @@
  		for (i = 0; i < 10000; i++) {
  			tw32(offset + CPU_STATE, 0xffffffff);
  			tw32(offset + CPU_MODE,  CPU_MODE_HALT);
-@@ -3401,9 +3430,12 @@ static int tg3_halt_cpu(struct tg3 *tp,
+@@ -3399,9 +3428,12 @@ static int tg3_halt_cpu(struct tg3 *tp,
  		return -ENODEV;
  	}
  
@@ -141,7 +141,7 @@
  	return 0;
  }
  
-@@ -3466,6 +3498,11 @@ static int tg3_load_5701_a0_firmware_fix
+@@ -3464,6 +3496,11 @@ static int tg3_load_5701_a0_firmware_fix
  	const __be32 *fw_data;
  	int err, i;
  
@@ -153,7 +153,7 @@
  	fw_data = (void *)tp->fw->data;
  
  	/* Firmware blob starts with version numbers, followed by
-@@ -3522,6 +3559,11 @@ static int tg3_load_tso_firmware(struct
+@@ -3520,6 +3557,11 @@ static int tg3_load_tso_firmware(struct
  	unsigned long cpu_base, cpu_scratch_base, cpu_scratch_size;
  	int err, i;
  
@@ -165,7 +165,7 @@
  	if (tg3_flag(tp, HW_TSO_1) ||
  	    tg3_flag(tp, HW_TSO_2) ||
  	    tg3_flag(tp, HW_TSO_3))
-@@ -3862,8 +3904,9 @@ static int tg3_power_down_prepare(struct
+@@ -3860,8 +3902,9 @@ static int tg3_power_down_prepare(struct
  	tg3_frob_aux_power(tp, true);
  
  	/* Workaround for unstable PLL clock */
@@ -177,7 +177,7 @@
  		u32 val = tr32(0x7d00);
  
  		val &= ~((1 << 16) | (1 << 4) | (1 << 2) | (1 << 1) | 1);
-@@ -4365,6 +4408,14 @@ relink:
+@@ -4363,6 +4406,14 @@ relink:
  	if (current_link_up == 0 || (tp->phy_flags & TG3_PHYFLG_IS_LOW_POWER)) {
  		tg3_phy_copper_begin(tp);
  
@@ -192,7 +192,7 @@
  		tg3_readphy(tp, MII_BMSR, &bmsr);
  		if ((!tg3_readphy(tp, MII_BMSR, &bmsr) && (bmsr & BMSR_LSTATUS)) ||
  		    (tp->mac_mode & MAC_MODE_PORT_INT_LPBACK))
-@@ -4383,6 +4434,26 @@ relink:
+@@ -4381,6 +4432,26 @@ relink:
  	else
  		tp->mac_mode |= MAC_MODE_PORT_MODE_GMII;
  
@@ -219,7 +219,7 @@
  	tp->mac_mode &= ~MAC_MODE_HALF_DUPLEX;
  	if (tp->link_config.active_duplex == DUPLEX_HALF)
  		tp->mac_mode |= MAC_MODE_HALF_DUPLEX;
-@@ -8110,6 +8181,14 @@ static int tg3_chip_reset(struct tg3 *tp
+@@ -8108,6 +8179,14 @@ static int tg3_chip_reset(struct tg3 *tp
  		tw32(0x5000, 0x400);
  	}
  
@@ -234,7 +234,7 @@
  	tw32(GRC_MODE, tp->grc_mode);
  
  	if (tp->pci_chip_rev_id == CHIPREV_ID_5705_A0) {
-@@ -9729,6 +9808,11 @@ static void tg3_timer(unsigned long __op
+@@ -9720,6 +9799,11 @@ static void tg3_timer(unsigned long __op
  	    tg3_flag(tp, 57765_CLASS))
  		tg3_chk_missed_msi(tp);
  
@@ -246,7 +246,7 @@
  	if (!tg3_flag(tp, TAGGED_STATUS)) {
  		/* All of this garbage is because when using non-tagged
  		 * IRQ status the mailbox/status_block protocol the chip
-@@ -11424,6 +11508,11 @@ static int tg3_test_nvram(struct tg3 *tp
+@@ -11415,6 +11499,11 @@ static int tg3_test_nvram(struct tg3 *tp
  	if (tg3_flag(tp, NO_NVRAM))
  		return 0;
  
@@ -258,7 +258,7 @@
  	if (tg3_nvram_read(tp, 0, &magic) != 0)
  		return -EIO;
  
-@@ -12392,11 +12481,12 @@ static int tg3_ioctl(struct net_device *
+@@ -12383,11 +12472,12 @@ static int tg3_ioctl(struct net_device *
  		if (tp->phy_flags & TG3_PHYFLG_PHY_SERDES)
  			break;			/* We have no PHY */
  
@@ -273,7 +273,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		data->val_out = mii_regval;
-@@ -12408,11 +12498,12 @@ static int tg3_ioctl(struct net_device *
+@@ -12399,11 +12489,12 @@ static int tg3_ioctl(struct net_device *
  		if (tp->phy_flags & TG3_PHYFLG_PHY_SERDES)
  			break;			/* We have no PHY */
  
@@ -288,7 +288,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		return err;
-@@ -13260,6 +13351,13 @@ static void __devinit tg3_get_5720_nvram
+@@ -13251,6 +13342,13 @@ static void __devinit tg3_get_5720_nvram
  /* Chips other than 5700/5701 use the NVRAM for fetching info. */
  static void __devinit tg3_nvram_init(struct tg3 *tp)
  {
@@ -302,7 +302,7 @@
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -13752,10 +13850,19 @@ static int __devinit tg3_phy_probe(struc
+@@ -13743,10 +13841,19 @@ static int __devinit tg3_phy_probe(struc
  			 * subsys device table.
  			 */
  			p = tg3_lookup_by_subsys(tp);
@@ -324,7 +324,7 @@
  			if (!tp->phy_id ||
  			    tp->phy_id == TG3_PHY_ID_BCM8002)
  				tp->phy_flags |= TG3_PHYFLG_PHY_SERDES;
-@@ -14765,6 +14872,11 @@ static int __devinit tg3_get_invariants(
+@@ -14756,6 +14863,11 @@ static int __devinit tg3_get_invariants(
  		}
  	}
  
@@ -336,7 +336,7 @@
  	/* Get eeprom hw config before calling tg3_set_power_state().
  	 * In particular, the TG3_FLAG_IS_NIC flag must be
  	 * determined before calling tg3_set_power_state() so that
-@@ -15174,6 +15286,10 @@ static int __devinit tg3_get_device_addr
+@@ -15165,6 +15277,10 @@ static int __devinit tg3_get_device_addr
  	}
  
  	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
@@ -347,7 +347,7 @@
  #ifdef CONFIG_SPARC
  		if (!tg3_get_default_macaddr_sparc(tp))
  			return 0;
-@@ -15458,7 +15574,8 @@ static int __devinit tg3_test_dma(struct
+@@ -15449,7 +15565,8 @@ static int __devinit tg3_test_dma(struct
  			if (tg3_flag(tp, 40BIT_DMA_BUG) &&
  			    GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5704)
  				tp->dma_rwctrl |= 0x8000;
@@ -357,7 +357,7 @@
  				tp->dma_rwctrl |= DMA_RWCTRL_ONE_DMA;
  
  			if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5703)
-@@ -15820,6 +15937,17 @@ static int __devinit tg3_init_one(struct
+@@ -15811,6 +15928,17 @@ static int __devinit tg3_init_one(struct
  		tp->msg_enable = tg3_debug;
  	else
  		tp->msg_enable = TG3_DEF_MSG_ENABLE;
