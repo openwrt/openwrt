@@ -528,6 +528,7 @@ menu "Global build settings"
 			depends !DEBUG
 			depends !USE_GLIBC
 			depends !USE_EGLIBC
+			depends !USE_MUSL
 			help
 			  This will install binaries stripped using sstrip
 	endchoice
