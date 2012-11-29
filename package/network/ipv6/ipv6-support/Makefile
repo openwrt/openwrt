@@ -33,6 +33,10 @@ endef
 define Build/Configure
 endef
 
+define Package/ipv6-support/conffiles
+/etc/config/network6
+endef
+
 define Package/ipv6-support/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/ipv6.hotplug $(1)/etc/hotplug.d/iface/20-ipv6
