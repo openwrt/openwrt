@@ -1,0 +1,709 @@
+commit 86768086727a60335b08c34b2966c784029a24cf
+Author: David Woodhouse <David.Woodhouse@intel.com>
+Date:   Wed Nov 28 10:15:05 2012 +0000
+
+    pppoatm: optimise PPP channel wakeups after sock_owned_by_user()
+    
+    We don't need to schedule the wakeup tasklet on *every* unlock; only if we
+    actually blocked the channel in the first place.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
+
+commit a009aa5fde926350f7a7e558a3ac0180e10eb24a
+Author: Krzysztof Mazur <krzysiek@podlesie.net>
+Date:   Wed Nov 28 09:08:04 2012 +0100
+
+    br2684: allow assign only on a connected socket
+    
+    The br2684 does not check if used vcc is in connected state,
+    causing potential Oops in pppoatm_send() when vcc->send() is called
+    on not fully connected socket.
+    
+    Now br2684 can be assigned only on connected sockets; otherwise
+    -EINVAL error is returned.
+    
+    Signed-off-by: Krzysztof Mazur <krzysiek@podlesie.net>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit ae2169bcb6375fb214cadd0ea50ac54bcf39b0d6
+Author: Nathan Williams <nathan@traverse.com.au>
+Date:   Tue Nov 27 17:34:09 2012 +1100
+
+    solos-pci: Fix leak of skb received for unknown vcc
+    
+    ... and ensure that the next skb is set up for RX in the DMA case.
+    
+    Signed-off-by: Nathan Williams <nathan@traverse.com.au>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit 6227612becaebe2f9f4ad7d0cdf27e298bb56687
+Author: David Woodhouse <David.Woodhouse@intel.com>
+Date:   Wed Nov 28 00:46:45 2012 +0000
+
+    br2684: fix module_put() race
+    
+    The br2684 code used module_put() during unassignment from vcc with
+    hope that we have BKL. This assumption is no longer true.
+    
+    Now owner field in atmvcc is used to move this module_put()
+    to vcc_destroy_socket().
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
+
+commit 44abbb464896dc2270716d25e12fe47e57eeb1d3
+Author: David Woodhouse <David.Woodhouse@intel.com>
+Date:   Wed Nov 28 00:05:52 2012 +0000
+
+    pppoatm: fix missing wakeup in pppoatm_send()
+    
+    Now that we can return zero from pppoatm_send() for reasons *other* than
+    the queue being full, that means we can't depend on a subsequent call to
+    pppoatm_pop() waking the queue, and we might leave it stalled
+    indefinitely.
+    
+    Use the ->release_cb() callback to wake the queue after the sock is
+    unlocked.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
+
+commit c93eeac2ebee497dbc9b6ad39c235ff3061be141
+Author: David Woodhouse <David.Woodhouse@intel.com>
+Date:   Wed Nov 28 00:03:11 2012 +0000
+
+    atm: Add release_cb() callback to vcc
+    
+    The immediate use case for this is that it will allow us to ensure that a
+    pppoatm queue is woken after it has to drop a packet due to the sock being
+    locked.
+    
+    Note that 'release_cb' is called when the socket is *unlocked*. This is
+    not to be confused with vcc_release() — which probably ought to be called
+    vcc_close().
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
+
+commit 9b3e2e224cc4326d8897243b24d778abf9098a8d
+Author: David Woodhouse <dwmw2@infradead.org>
+Date:   Tue Nov 27 23:28:36 2012 +0000
+
+    br2684: don't send frames on not-ready vcc
+    
+    Avoid submitting packets to a vcc which is being closed. Things go badly
+    wrong when the ->pop method gets later called after everything's been
+    torn down.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
+
+commit 26c7c53318cf56a690ae553104f4a60181734fb5
+Author: David Woodhouse <David.Woodhouse@intel.com>
+Date:   Tue Nov 27 23:49:24 2012 +0000
+
+    solos-pci: Wait for pending TX to complete when releasing vcc
+    
+    We should no longer be calling the old pop routine for the vcc, after
+    vcc_release() has completed. Make sure we wait for any pending TX skbs
+    to complete, by waiting for our own PKT_PCLOSE control skb to be sent.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit 1a3304e89b9ba168340a37926014be11c3ad110e
+Author: Krzysztof Mazur <krzysiek@podlesie.net>
+Date:   Tue Nov 6 23:17:02 2012 +0100
+
+    pppoatm: do not inline pppoatm_may_send()
+    
+    The pppoatm_may_send() is quite heavy and it's called three times
+    in pppoatm_send() and inlining costs more than 200 bytes of code
+    (more than 10% of total pppoatm driver code size).
+    
+    add/remove: 1/0 grow/shrink: 0/1 up/down: 132/-367 (-235)
+    function                                     old     new   delta
+    pppoatm_may_send                               -     132    +132
+    pppoatm_send                                 900     533    -367
+    
+    Signed-off-by: Krzysztof Mazur <krzysiek@podlesie.net>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit 294398bcd0fe26335059a185b59cfb5de1fc4c71
+Author: Krzysztof Mazur <krzysiek@podlesie.net>
+Date:   Sat Nov 10 23:33:19 2012 +0100
+
+    pppoatm: drop frames to not-ready vcc
+    
+    Patches "atm: detach protocol before closing vcc"
+    and "pppoatm: allow assign only on a connected socket" fixed
+    common cases where the pppoatm_send() crashes while sending
+    frame to not-ready vcc. However there are still some other cases
+    where we can send frames to vcc, which is flagged as ATM_VF_CLOSE
+    (for instance after vcc_release_async()) or it's opened but not
+    ready yet.
+    
+    Now pppoatm_send(), like vcc_sendmsg(), checks for vcc flags that
+    indicate that vcc is not ready. If the vcc is not ready we just
+    drop frame. Queueing frames is much more complicated because we
+    don't have callbacks that inform us about vcc flags changes.
+    
+    Signed-off-by: Krzysztof Mazur <krzysiek@podlesie.net>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit 3ac108006fd7f20cb8fc8ea2287f1497bcda00a1
+Author: Krzysztof Mazur <krzysiek@podlesie.net>
+Date:   Tue Nov 6 23:17:00 2012 +0100
+
+    pppoatm: take ATM socket lock in pppoatm_send()
+    
+    The pppoatm_send() does not take any lock that will prevent concurrent
+    vcc_sendmsg(). This causes two problems:
+    
+    	- there is no locking between checking the send queue size
+    	  with atm_may_send() and incrementing sk_wmem_alloc,
+    	  and the real queue size can be a little higher than sk_sndbuf
+    
+    	- the vcc->sendmsg() can be called concurrently. I'm not sure
+    	  if it's allowed. Some drivers (eni, nicstar, ...) seem
+    	  to assume it will never happen.
+    
+    Now pppoatm_send() takes ATM socket lock, the same that is used
+    in vcc_sendmsg() and other ATM socket functions. The pppoatm_send()
+    is called with BH disabled, so bh_lock_sock() is used instead
+    of lock_sock().
+    
+    Signed-off-by: Krzysztof Mazur <krzysiek@podlesie.net>
+    Cc: Chas Williams - CONTRACTOR <chas@cmf.nrl.navy.mil>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit e41faed9cde1acce657f75a0b19a1787e9850d3f
+Author: Krzysztof Mazur <krzysiek@podlesie.net>
+Date:   Tue Nov 6 23:16:59 2012 +0100
+
+    pppoatm: fix module_put() race
+    
+    The pppoatm used module_put() during unassignment from vcc with
+    hope that we have BKL. This assumption is no longer true.
+    
+    Now owner field in atmvcc is used to move this module_put()
+    to vcc_destroy_socket().
+    
+    Signed-off-by: Krzysztof Mazur <krzysiek@podlesie.net>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit 3b1a914595f3f9beb9e38ff3ddc7bdafa092ba22
+Author: Krzysztof Mazur <krzysiek@podlesie.net>
+Date:   Tue Nov 6 23:16:58 2012 +0100
+
+    pppoatm: allow assign only on a connected socket
+    
+    The pppoatm does not check if used vcc is in connected state,
+    causing an Oops in pppoatm_send() when vcc->send() is called
+    on not fully connected socket.
+    
+    Now pppoatm can be assigned only on connected sockets; otherwise
+    -EINVAL error is returned.
+    
+    Signed-off-by: Krzysztof Mazur <krzysiek@podlesie.net>
+    Cc: Chas Williams - CONTRACTOR <chas@cmf.nrl.navy.mil>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit ec809bd817dfa1905283468e4c813684ed4efe78
+Author: Krzysztof Mazur <krzysiek@podlesie.net>
+Date:   Tue Nov 6 23:16:57 2012 +0100
+
+    atm: add owner of push() callback to atmvcc
+    
+    The atm is using atmvcc->push(vcc, NULL) callback to notify protocol
+    that vcc will be closed and protocol must detach from it. This callback
+    is usually used by protocol to decrement module usage count by module_put(),
+    but it leaves small window then module is still used after module_put().
+    
+    Now the owner of push() callback is kept in atmvcc and
+    module_put(atmvcc->owner) is called after the protocol is detached from vcc.
+    
+    Signed-off-by: Krzysztof Mazur <krzysiek@podlesie.net>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Chas Williams <chas@cmf.nrl.navy.mil>
+
+commit ae088d663beebb3cad0e7abaac67ee61a7c578d5
+Author: David Woodhouse <dwmw2@infradead.org>
+Date:   Sun Nov 25 12:06:52 2012 +0000
+
+    atm: br2684: Fix excessive queue bloat
+    
+    There's really no excuse for an additional wmem_default of buffering
+    between the netdev queue and the ATM device. Two packets (one in-flight,
+    and one ready to send) ought to be fine. It's not as if it should take
+    long to get another from the netdev queue when we need it.
+    
+    If necessary we can make the queue space configurable later, but I don't
+    think it's likely to be necessary.
+    
+    cf. commit 9d02daf754238adac48fa075ee79e7edd3d79ed3 (pppoatm: Fix
+    excessive queue bloat) which did something very similar for PPPoATM.
+    
+    Note that there is a tremendously unlikely race condition which may
+    result in qspace temporarily going negative. If a CPU running the
+    br2684_pop() function goes off into the weeds for a long period of time
+    after incrementing qspace to 1, but before calling netdev_wake_queue()...
+    and another CPU ends up calling br2684_start_xmit() and *stopping* the
+    queue again before the first CPU comes back, the netdev queue could
+    end up being woken when qspace has already reached zero.
+    
+    An alternative approach to coping with this race would be to check in
+    br2684_start_xmit() for qspace==0 and return NETDEV_TX_BUSY, but just
+    using '> 0' and '< 1' for comparison instead of '== 0' and '!= 0' is
+    simpler. It just warranted a mention of *why* we do it that way...
+    
+    Move the call to atmvcc->send() to happen *after* the accounting and
+    potentially stopping the netdev queue, in br2684_xmit_vcc(). This matters
+    if the ->send() call suffers an immediate failure, because it'll call
+    br2684_pop() with the offending skb before returning. We want that to
+    happen *after* we've done the initial accounting for the packet in
+    question. Also make it return an appropriate success/failure indication
+    while we're at it.
+    
+    Tested by running 'ping -l 1000 bottomless.aaisp.net.uk' from within my
+    network, with only a single PPPoE-over-BR2684 link running. And after
+    setting txqueuelen on the nas0 interface to something low (5, in fact).
+    Before the patch, we'd see about 15 packets being queued and a resulting
+    latency of ~56ms being reached. After the patch, we see only about 8,
+    which is fairly much what we expect. And a max latency of ~36ms. On this
+    OpenWRT box, wmem_default is 163840.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Reviewed-by: Krzysztof Mazur <krzysiek@podlesie.net>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+diff --git a/drivers/atm/solos-pci.c b/drivers/atm/solos-pci.c
+index 9851093..6258961 100644
+--- a/drivers/atm/solos-pci.c
++++ b/drivers/atm/solos-pci.c
+@@ -92,6 +92,7 @@ struct pkt_hdr {
+ };
+ 
+ struct solos_skb_cb {
++	struct completion c;
+ 	struct atm_vcc *vcc;
+ 	uint32_t dma_addr;
+ };
+@@ -710,7 +711,8 @@ void solos_bh(unsigned long card_arg)
+ 						dev_warn(&card->dev->dev, "Received packet for unknown VPI.VCI %d.%d on port %d\n",
+ 							 le16_to_cpu(header->vpi), le16_to_cpu(header->vci),
+ 							 port);
+-					continue;
++					dev_kfree_skb_any(skb);
++					break;
+ 				}
+ 				atm_charge(vcc, skb->truesize);
+ 				vcc->push(vcc, skb);
+@@ -881,11 +883,18 @@ static void pclose(struct atm_vcc *vcc)
+ 	header->vci = cpu_to_le16(vcc->vci);
+ 	header->type = cpu_to_le16(PKT_PCLOSE);
+ 
++	init_completion(&SKB_CB(skb)->c);
++
+ 	fpga_queue(card, SOLOS_CHAN(vcc->dev), skb, NULL);
+ 
+ 	clear_bit(ATM_VF_ADDR, &vcc->flags);
+ 	clear_bit(ATM_VF_READY, &vcc->flags);
+ 
++	if (!wait_for_completion_timeout(&SKB_CB(skb)->c,
++					 msecs_to_jiffies(5000)))
++		dev_warn(&card->dev->dev, "Timeout waiting for VCC close on port %d\n",
++			 SOLOS_CHAN(vcc->dev));
++
+ 	/* Hold up vcc_destroy_socket() (our caller) until solos_bh() in the
+ 	   tasklet has finished processing any incoming packets (and, more to
+ 	   the point, using the vcc pointer). */
+@@ -1011,9 +1020,12 @@ static uint32_t fpga_tx(struct solos_card *card)
+ 			if (vcc) {
+ 				atomic_inc(&vcc->stats->tx);
+ 				solos_pop(vcc, oldskb);
+-			} else
++			} else {
++				struct pkt_hdr *header = (void *)oldskb->data;
++				if (le16_to_cpu(header->type) == PKT_PCLOSE)
++					complete(&SKB_CB(oldskb)->c);
+ 				dev_kfree_skb_irq(oldskb);
+-
++			}
+ 		}
+ 	}
+ 	/* For non-DMA TX, write the 'TX start' bit for all four ports simultaneously */
+@@ -1345,6 +1357,8 @@ static struct pci_driver fpga_driver = {
+ 
+ static int __init solos_pci_init(void)
+ {
++	BUILD_BUG_ON(sizeof(struct solos_skb_cb) > sizeof(((struct sk_buff *)0)->cb));
++
+ 	printk(KERN_INFO "Solos PCI Driver Version %s\n", VERSION);
+ 	return pci_register_driver(&fpga_driver);
+ }
+diff --git a/include/linux/atmdev.h b/include/linux/atmdev.h
+index 22ef21c..c1da539 100644
+--- a/include/linux/atmdev.h
++++ b/include/linux/atmdev.h
+@@ -99,6 +99,7 @@ struct atm_vcc {
+ 	struct atm_dev	*dev;		/* device back pointer */
+ 	struct atm_qos	qos;		/* QOS */
+ 	struct atm_sap	sap;		/* SAP */
++	void (*release_cb)(struct atm_vcc *vcc); /* release_sock callback */
+ 	void (*push)(struct atm_vcc *vcc,struct sk_buff *skb);
+ 	void (*pop)(struct atm_vcc *vcc,struct sk_buff *skb); /* optional */
+ 	int (*push_oam)(struct atm_vcc *vcc,void *cell);
+@@ -106,6 +107,7 @@ struct atm_vcc {
+ 	void		*dev_data;	/* per-device data */
+ 	void		*proto_data;	/* per-protocol data */
+ 	struct k_atm_aal_stats *stats;	/* pointer to AAL stats group */
++	struct module *owner;		/* owner of ->push function */
+ 	/* SVC part --- may move later ------------------------------------- */
+ 	short		itf;		/* interface number */
+ 	struct sockaddr_atmsvc local;
+diff --git a/net/atm/br2684.c b/net/atm/br2684.c
+index 4819d315..a4ee4ad 100644
+--- a/net/atm/br2684.c
++++ b/net/atm/br2684.c
+@@ -68,12 +68,14 @@ struct br2684_vcc {
+ 	/* keep old push, pop functions for chaining */
+ 	void (*old_push)(struct atm_vcc *vcc, struct sk_buff *skb);
+ 	void (*old_pop)(struct atm_vcc *vcc, struct sk_buff *skb);
++	struct module *old_owner;
+ 	enum br2684_encaps encaps;
+ 	struct list_head brvccs;
+ #ifdef CONFIG_ATM_BR2684_IPFILTER
+ 	struct br2684_filter filter;
+ #endif /* CONFIG_ATM_BR2684_IPFILTER */
+ 	unsigned int copies_needed, copies_failed;
++	atomic_t qspace;
+ };
+ 
+ struct br2684_dev {
+@@ -181,18 +183,15 @@ static struct notifier_block atm_dev_notifier = {
+ static void br2684_pop(struct atm_vcc *vcc, struct sk_buff *skb)
+ {
+ 	struct br2684_vcc *brvcc = BR2684_VCC(vcc);
+-	struct net_device *net_dev = skb->dev;
+ 
+-	pr_debug("(vcc %p ; net_dev %p )\n", vcc, net_dev);
++	pr_debug("(vcc %p ; net_dev %p )\n", vcc, brvcc->device);
+ 	brvcc->old_pop(vcc, skb);
+ 
+-	if (!net_dev)
+-		return;
+-
+-	if (atm_may_send(vcc, 0))
+-		netif_wake_queue(net_dev);
+-
++	/* If the queue space just went up from zero, wake */
++	if (atomic_inc_return(&brvcc->qspace) == 1)
++		netif_wake_queue(brvcc->device);
+ }
++
+ /*
+  * Send a packet out a particular vcc.  Not to useful right now, but paves
+  * the way for multiple vcc's per itf.  Returns true if we can send,
+@@ -251,21 +250,30 @@ static int br2684_xmit_vcc(struct sk_buff *skb, struct net_device *dev,
+ 	skb_debug(skb);
+ 
+ 	ATM_SKB(skb)->vcc = atmvcc = brvcc->atmvcc;
++	if (test_bit(ATM_VF_RELEASED, &atmvcc->flags) ||
++	    test_bit(ATM_VF_CLOSE, &atmvcc->flags) ||
++	    !test_bit(ATM_VF_READY, &atmvcc->flags)) {
++		dev_kfree_skb(skb);
++		return 0;
++	}
+ 	pr_debug("atm_skb(%p)->vcc(%p)->dev(%p)\n", skb, atmvcc, atmvcc->dev);
+ 	atomic_add(skb->truesize, &sk_atm(atmvcc)->sk_wmem_alloc);
+ 	ATM_SKB(skb)->atm_options = atmvcc->atm_options;
+ 	dev->stats.tx_packets++;
+ 	dev->stats.tx_bytes += skb->len;
+-	atmvcc->send(atmvcc, skb);
+ 
+-	if (!atm_may_send(atmvcc, 0)) {
++	if (atomic_dec_return(&brvcc->qspace) < 1) {
++		/* No more please! */
+ 		netif_stop_queue(brvcc->device);
+-		/*check for race with br2684_pop*/
+-		if (atm_may_send(atmvcc, 0))
+-			netif_start_queue(brvcc->device);
++		/* We might have raced with br2684_pop() */
++		if (unlikely(atomic_read(&brvcc->qspace) > 0))
++			netif_wake_queue(brvcc->device);
+ 	}
+ 
+-	return 1;
++	/* If this fails immediately, the skb will be freed and br2684_pop()
++	   will wake the queue if appropriate. Just return an error so that
++	   the stats are updated correctly */
++	return !atmvcc->send(atmvcc, skb);
+ }
+ 
+ static inline struct br2684_vcc *pick_outgoing_vcc(const struct sk_buff *skb,
+@@ -378,8 +386,8 @@ static void br2684_close_vcc(struct br2684_vcc *brvcc)
+ 	write_unlock_irq(&devs_lock);
+ 	brvcc->atmvcc->user_back = NULL;	/* what about vcc->recvq ??? */
+ 	brvcc->old_push(brvcc->atmvcc, NULL);	/* pass on the bad news */
++	module_put(brvcc->old_owner);
+ 	kfree(brvcc);
+-	module_put(THIS_MODULE);
+ }
+ 
+ /* when AAL5 PDU comes in: */
+@@ -504,6 +512,13 @@ static int br2684_regvcc(struct atm_vcc *atmvcc, void __user * arg)
+ 	brvcc = kzalloc(sizeof(struct br2684_vcc), GFP_KERNEL);
+ 	if (!brvcc)
+ 		return -ENOMEM;
++	/*
++	 * Allow two packets in the ATM queue. One actually being sent, and one
++	 * for the ATM 'TX done' handler to send. It shouldn't take long to get
++	 * the next one from the netdev queue, when we need it. More than that
++	 * would be bufferbloat.
++	 */
++	atomic_set(&brvcc->qspace, 2);
+ 	write_lock_irq(&devs_lock);
+ 	net_dev = br2684_find_dev(&be.ifspec);
+ 	if (net_dev == NULL) {
+@@ -546,9 +561,11 @@ static int br2684_regvcc(struct atm_vcc *atmvcc, void __user * arg)
+ 	brvcc->encaps = (enum br2684_encaps)be.encaps;
+ 	brvcc->old_push = atmvcc->push;
+ 	brvcc->old_pop = atmvcc->pop;
++	brvcc->old_owner = atmvcc->owner;
+ 	barrier();
+ 	atmvcc->push = br2684_push;
+ 	atmvcc->pop = br2684_pop;
++	atmvcc->owner = THIS_MODULE;
+ 
+ 	/* initialize netdev carrier state */
+ 	if (atmvcc->dev->signal == ATM_PHY_SIG_LOST)
+@@ -687,10 +704,13 @@ static int br2684_ioctl(struct socket *sock, unsigned int cmd,
+ 			return -ENOIOCTLCMD;
+ 		if (!capable(CAP_NET_ADMIN))
+ 			return -EPERM;
+-		if (cmd == ATM_SETBACKEND)
++		if (cmd == ATM_SETBACKEND) {
++			if (sock->state != SS_CONNECTED)
++				return -EINVAL;
+ 			return br2684_regvcc(atmvcc, argp);
+-		else
++		} else {
+ 			return br2684_create(argp);
++		}
+ #ifdef CONFIG_ATM_BR2684_IPFILTER
+ 	case BR2684_SETFILT:
+ 		if (atmvcc->push != br2684_push)
+diff --git a/net/atm/common.c b/net/atm/common.c
+index 0c0ad93..806fc0a 100644
+--- a/net/atm/common.c
++++ b/net/atm/common.c
+@@ -126,10 +126,19 @@ static void vcc_write_space(struct sock *sk)
+ 	rcu_read_unlock();
+ }
+ 
++static void vcc_release_cb(struct sock *sk)
++{
++	struct atm_vcc *vcc = atm_sk(sk);
++
++	if (vcc->release_cb)
++		vcc->release_cb(vcc);
++}
++
+ static struct proto vcc_proto = {
+ 	.name	  = "VCC",
+ 	.owner	  = THIS_MODULE,
+ 	.obj_size = sizeof(struct atm_vcc),
++	.release_cb = vcc_release_cb,
+ };
+ 
+ int vcc_create(struct net *net, struct socket *sock, int protocol, int family)
+@@ -156,7 +165,9 @@ int vcc_create(struct net *net, struct socket *sock, int protocol, int family)
+ 	atomic_set(&sk->sk_rmem_alloc, 0);
+ 	vcc->push = NULL;
+ 	vcc->pop = NULL;
++	vcc->owner = NULL;
+ 	vcc->push_oam = NULL;
++	vcc->release_cb = NULL;
+ 	vcc->vpi = vcc->vci = 0; /* no VCI/VPI yet */
+ 	vcc->atm_options = vcc->aal_options = 0;
+ 	sk->sk_destruct = vcc_sock_destruct;
+@@ -175,6 +186,7 @@ static void vcc_destroy_socket(struct sock *sk)
+ 			vcc->dev->ops->close(vcc);
+ 		if (vcc->push)
+ 			vcc->push(vcc, NULL); /* atmarpd has no push */
++		module_put(vcc->owner);
+ 
+ 		while ((skb = skb_dequeue(&sk->sk_receive_queue)) != NULL) {
+ 			atm_return(vcc, skb->truesize);
+diff --git a/net/atm/pppoatm.c b/net/atm/pppoatm.c
+index 226dca9..8c93267 100644
+--- a/net/atm/pppoatm.c
++++ b/net/atm/pppoatm.c
+@@ -60,6 +60,8 @@ struct pppoatm_vcc {
+ 	struct atm_vcc	*atmvcc;	/* VCC descriptor */
+ 	void (*old_push)(struct atm_vcc *, struct sk_buff *);
+ 	void (*old_pop)(struct atm_vcc *, struct sk_buff *);
++	void (*old_release_cb)(struct atm_vcc *);
++	struct module *old_owner;
+ 					/* keep old push/pop for detaching */
+ 	enum pppoatm_encaps encaps;
+ 	atomic_t inflight;
+@@ -107,6 +109,24 @@ static void pppoatm_wakeup_sender(unsigned long arg)
+ 	ppp_output_wakeup((struct ppp_channel *) arg);
+ }
+ 
++static void pppoatm_release_cb(struct atm_vcc *atmvcc)
++{
++	struct pppoatm_vcc *pvcc = atmvcc_to_pvcc(atmvcc);
++
++	/*
++	 * As in pppoatm_pop(), it's safe to clear the BLOCKED bit here because
++	 * the wakeup *can't* race with pppoatm_send(). They both hold the PPP
++	 * channel's ->downl lock. And the potential race with *setting* it,
++	 * which leads to the double-check dance in pppoatm_may_send(), doesn't
++	 * exist here. In the sock_owned_by_user() case in pppoatm_send(), we
++	 * set the BLOCKED bit while the socket is still locked. We know that
++	 * ->release_cb() can't be called until that's done.
++	 */
++	if (test_and_clear_bit(BLOCKED, &pvcc->blocked))
++		tasklet_schedule(&pvcc->wakeup_tasklet);
++	if (pvcc->old_release_cb)
++		pvcc->old_release_cb(atmvcc);
++}
+ /*
+  * This gets called every time the ATM card has finished sending our
+  * skb.  The ->old_pop will take care up normal atm flow control,
+@@ -151,12 +171,11 @@ static void pppoatm_unassign_vcc(struct atm_vcc *atmvcc)
+ 	pvcc = atmvcc_to_pvcc(atmvcc);
+ 	atmvcc->push = pvcc->old_push;
+ 	atmvcc->pop = pvcc->old_pop;
++	atmvcc->release_cb = pvcc->old_release_cb;
+ 	tasklet_kill(&pvcc->wakeup_tasklet);
+ 	ppp_unregister_channel(&pvcc->chan);
+ 	atmvcc->user_back = NULL;
+ 	kfree(pvcc);
+-	/* Gee, I hope we have the big kernel lock here... */
+-	module_put(THIS_MODULE);
+ }
+ 
+ /* Called when an AAL5 PDU comes in */
+@@ -165,9 +184,13 @@ static void pppoatm_push(struct atm_vcc *atmvcc, struct sk_buff *skb)
+ 	struct pppoatm_vcc *pvcc = atmvcc_to_pvcc(atmvcc);
+ 	pr_debug("\n");
+ 	if (skb == NULL) {			/* VCC was closed */
++		struct module *module;
++
+ 		pr_debug("removing ATMPPP VCC %p\n", pvcc);
++		module = pvcc->old_owner;
+ 		pppoatm_unassign_vcc(atmvcc);
+ 		atmvcc->push(atmvcc, NULL);	/* Pass along bad news */
++		module_put(module);
+ 		return;
+ 	}
+ 	atm_return(atmvcc, skb->truesize);
+@@ -211,7 +234,7 @@ error:
+ 	ppp_input_error(&pvcc->chan, 0);
+ }
+ 
+-static inline int pppoatm_may_send(struct pppoatm_vcc *pvcc, int size)
++static int pppoatm_may_send(struct pppoatm_vcc *pvcc, int size)
+ {
+ 	/*
+ 	 * It's not clear that we need to bother with using atm_may_send()
+@@ -269,10 +292,33 @@ static inline int pppoatm_may_send(struct pppoatm_vcc *pvcc, int size)
+ static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
+ {
+ 	struct pppoatm_vcc *pvcc = chan_to_pvcc(chan);
++	struct atm_vcc *vcc;
++	int ret;
++
+ 	ATM_SKB(skb)->vcc = pvcc->atmvcc;
+ 	pr_debug("(skb=0x%p, vcc=0x%p)\n", skb, pvcc->atmvcc);
+ 	if (skb->data[0] == '\0' && (pvcc->flags & SC_COMP_PROT))
+ 		(void) skb_pull(skb, 1);
++
++	vcc = ATM_SKB(skb)->vcc;
++	bh_lock_sock(sk_atm(vcc));
++	if (sock_owned_by_user(sk_atm(vcc))) {
++		/*
++		 * Needs to happen (and be flushed, hence test_and_) before we unlock
++		 * the socket. It needs to be seen by the time our ->release_cb gets
++		 * called.
++		 */
++		test_and_set_bit(BLOCKED, &pvcc->blocked);
++		goto nospace;
++	}
++	if (test_bit(ATM_VF_RELEASED, &vcc->flags) ||
++	    test_bit(ATM_VF_CLOSE, &vcc->flags) ||
++	    !test_bit(ATM_VF_READY, &vcc->flags)) {
++		bh_unlock_sock(sk_atm(vcc));
++		kfree_skb(skb);
++		return DROP_PACKET;
++	}
++
+ 	switch (pvcc->encaps) {		/* LLC encapsulation needed */
+ 	case e_llc:
+ 		if (skb_headroom(skb) < LLC_LEN) {
+@@ -285,8 +331,10 @@ static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
+ 			}
+ 			consume_skb(skb);
+ 			skb = n;
+-			if (skb == NULL)
++			if (skb == NULL) {
++				bh_unlock_sock(sk_atm(vcc));
+ 				return DROP_PACKET;
++			}
+ 		} else if (!pppoatm_may_send(pvcc, skb->truesize))
+ 			goto nospace;
+ 		memcpy(skb_push(skb, LLC_LEN), pppllc, LLC_LEN);
+@@ -296,6 +344,7 @@ static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
+ 			goto nospace;
+ 		break;
+ 	case e_autodetect:
++		bh_unlock_sock(sk_atm(vcc));
+ 		pr_debug("Trying to send without setting encaps!\n");
+ 		kfree_skb(skb);
+ 		return 1;
+@@ -305,9 +354,12 @@ static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
+ 	ATM_SKB(skb)->atm_options = ATM_SKB(skb)->vcc->atm_options;
+ 	pr_debug("atm_skb(%p)->vcc(%p)->dev(%p)\n",
+ 		 skb, ATM_SKB(skb)->vcc, ATM_SKB(skb)->vcc->dev);
+-	return ATM_SKB(skb)->vcc->send(ATM_SKB(skb)->vcc, skb)
++	ret = ATM_SKB(skb)->vcc->send(ATM_SKB(skb)->vcc, skb)
+ 	    ? DROP_PACKET : 1;
++	bh_unlock_sock(sk_atm(vcc));
++	return ret;
+ nospace:
++	bh_unlock_sock(sk_atm(vcc));
+ 	/*
+ 	 * We don't have space to send this SKB now, but we might have
+ 	 * already applied SC_COMP_PROT compression, so may need to undo
+@@ -362,6 +414,8 @@ static int pppoatm_assign_vcc(struct atm_vcc *atmvcc, void __user *arg)
+ 	atomic_set(&pvcc->inflight, NONE_INFLIGHT);
+ 	pvcc->old_push = atmvcc->push;
+ 	pvcc->old_pop = atmvcc->pop;
++	pvcc->old_owner = atmvcc->owner;
++	pvcc->old_release_cb = atmvcc->release_cb;
+ 	pvcc->encaps = (enum pppoatm_encaps) be.encaps;
+ 	pvcc->chan.private = pvcc;
+ 	pvcc->chan.ops = &pppoatm_ops;
+@@ -377,7 +431,9 @@ static int pppoatm_assign_vcc(struct atm_vcc *atmvcc, void __user *arg)
+ 	atmvcc->user_back = pvcc;
+ 	atmvcc->push = pppoatm_push;
+ 	atmvcc->pop = pppoatm_pop;
++	atmvcc->release_cb = pppoatm_release_cb;
+ 	__module_get(THIS_MODULE);
++	atmvcc->owner = THIS_MODULE;
+ 
+ 	/* re-process everything received between connection setup and
+ 	   backend setup */
+@@ -406,6 +462,8 @@ static int pppoatm_ioctl(struct socket *sock, unsigned int cmd,
+ 			return -ENOIOCTLCMD;
+ 		if (!capable(CAP_NET_ADMIN))
+ 			return -EPERM;
++		if (sock->state != SS_CONNECTED)
++			return -EINVAL;
+ 		return pppoatm_assign_vcc(atmvcc, argp);
+ 		}
+ 	case PPPIOCGCHAN:
