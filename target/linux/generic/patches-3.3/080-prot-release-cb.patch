@@ -1,0 +1,27 @@
+This was added in commit 46d3ceabd8d98ed0ad10f20c595ca784e34786c5 (tcp: 
+TCP Small Queues) but we need it for pppoatm too.
+
+--- a/include/net/sock.h
++++ b/include/net/sock.h
+@@ -858,6 +858,8 @@ struct proto {
+ 	int			(*backlog_rcv) (struct sock *sk,
+ 						struct sk_buff *skb);
+ 
++	void		(*release_cb)(struct sock *sk);
++
+ 	/* Keeping track of sk's, looking them up, and port selection methods. */
+ 	void			(*hash)(struct sock *sk);
+ 	void			(*unhash)(struct sock *sk);
+--- a/net/core/sock.c
++++ b/net/core/sock.c
+@@ -2159,6 +2159,10 @@ void release_sock(struct sock *sk)
+ 	spin_lock_bh(&sk->sk_lock.slock);
+ 	if (sk->sk_backlog.tail)
+ 		__release_sock(sk);
++
++	if (sk->sk_prot->release_cb)
++		sk->sk_prot->release_cb(sk);
++
+ 	sk->sk_lock.owned = 0;
+ 	if (waitqueue_active(&sk->sk_lock.wq))
+ 		wake_up(&sk->sk_lock.wq);
