@@ -259,6 +259,10 @@ define BuildFirmware/FONERA20N/initramfs
 	$(call BuildFirmware/GENERIC_8M/initramfs,$(1),fonera20n,FONERA20N,ttyS1,57600,phys)
 endef
 
+define BuildFirmware/RT-N13U
+	$(call BuildFirmware/GENERIC_8M,$(1),rt-n13u,RT-N13U,ttyS1,57600,phys)
+endef
+
 mtdlayout_nw718=192k(u-boot)ro,128k(config)ro,64k(factory)ro,896k(kernel),2816k(rootfs),3712k@0x60000(firmware)
 kernel_size_nw718=917504
 rootfs_size_nw718=2883584
@@ -493,6 +497,10 @@ define Image/Build/Profile/FONERA20N
 	$(call Image/Build/Template/$(fs_squash)/$(1),FONERA20N)
 endef
 
+define Image/Build/Profile/RT-N13U
+	$(call Image/Build/Template/$(fs_squash)/$(1),RT-N13U)
+endef
+
 define Image/Build/Profile/FREESTATION5
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,freestation5,FREESTATION5,ttyS1,115200,phys)
 endef
@@ -604,6 +612,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/F5D8235V2,$(1))
 	$(call Image/Build/Profile/RTN10PLUS,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))
+	$(call Image/Build/Profile/RT-N13U,$(1))
 	$(call Image/Build/Profile/FREESTATION5,$(1))
 	$(call Image/Build/Profile/HW5503G,$(1))
 	$(call Image/Build/Profile/MOFI35003GN,$(1))
