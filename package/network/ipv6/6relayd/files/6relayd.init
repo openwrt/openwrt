@@ -64,12 +64,7 @@ start_6relayd() {
 	[ $always_rewrite_dns -eq 1 ] && append args "-n"
 
 	# In server mode the first interface needs to be passed twice
-	[ "$mode" == "server" ] && {
-		for iface in $ifaces; do
-			ifaces="$iface $ifaces"
-			break
-		done
-	}
+	[ "$mode" == "server" ] && ifaces=". $ifaces"
 
 	service_start /usr/sbin/6relayd $args $ifaces
 }
