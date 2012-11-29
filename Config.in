@@ -125,6 +125,13 @@ menu "Target Images"
 		help
 		    Allows you to change the maximum number of inodes in the root filesystem
 
+	config TARGET_ROOTFS_RESERVED_PCT
+		int "Percentage of reserved blocks in root filesystem"
+		depends TARGET_ROOTFS_EXT4FS
+		default 5
+		help
+		    Allows you to change the percentage of reserved blocks in the root filesystem
+
 endmenu
 
 menu "Global build settings"
