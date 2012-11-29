@@ -1,0 +1,189 @@
+commit 01ffc0a7f1c1801a2354719dedbc32aff45b987d
+Author: David Woodhouse <dwmw2@infradead.org>
+Date:   Sat Nov 24 12:11:21 2012 +0000
+
+    8139cp: re-enable interrupts after tx timeout
+    
+    Recovery doesn't work too well if we leave interrupts disabled...
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Francois Romieu <romieu@fr.zoreil.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit 871f0d4c153e1258d4becf306eca6761bf38b629
+Author: David Woodhouse <dwmw2@infradead.org>
+Date:   Thu Nov 22 03:16:58 2012 +0000
+
+    8139cp: enable bql
+    
+    This adds support for byte queue limits on RTL8139C+
+    
+    Tested on real hardware.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-By: Dave Täht <dave.taht@bufferbloat.net>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit a9dbe40fc10cea2efe6e1ff9e03c62dd7579c5ba
+Author: David Woodhouse <dwmw2@infradead.org>
+Date:   Wed Nov 21 10:27:19 2012 +0000
+
+    8139cp: set ring address after enabling C+ mode
+    
+    This fixes (for me) a regression introduced by commit b01af457 ("8139cp:
+    set ring address before enabling receiver"). That commit configured the
+    descriptor ring addresses earlier in the initialisation sequence, in
+    order to avoid the possibility of triggering stray DMA before the
+    correct address had been set up.
+    
+    Unfortunately, it seems that the hardware will scribble garbage into the
+    TxRingAddr registers when we enable "plus mode" Tx in the CpCmd
+    register. Observed on a Traverse Geos router board.
+    
+    To deal with this, while not reintroducing the problem which led to the
+    original commit, we augment cp_start_hw() to write to the CpCmd register
+    *first*, then set the descriptor ring addresses, and then finally to
+    enable Rx and Tx in the original 8139 Cmd register. The datasheet
+    actually indicates that we should enable Tx/Rx in the Cmd register
+    *before* configuring the descriptor addresses, but that would appear to
+    re-introduce the problem that the offending commit b01af457 was trying
+    to solve. And this variant appears to work fine on real hardware.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Cc: stable@kernel.org [3.5+]
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit 071e3ef4a94a021b16a2912f3885c86f4ff36b49
+Author: David S. Miller <davem@davemloft.net>
+Date:   Sun Nov 25 15:52:09 2012 -0500
+
+    Revert "8139cp: revert "set ring address before enabling receiver""
+    
+    This reverts commit b26623dab7eeb1e9f5898c7a49458789dd492f20.
+    
+    This reverts the revert, in net-next we'll try another scheme
+    to fix this bug using patches from David Woodhouse.
+    
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+diff --git a/drivers/net/ethernet/realtek/8139cp.c b/drivers/net/ethernet/realtek/8139cp.c
+index b01f83a..6cb96b4 100644
+--- a/drivers/net/ethernet/realtek/8139cp.c
++++ b/drivers/net/ethernet/realtek/8139cp.c
+@@ -648,6 +648,7 @@ static void cp_tx (struct cp_private *cp)
+ {
+ 	unsigned tx_head = cp->tx_head;
+ 	unsigned tx_tail = cp->tx_tail;
++	unsigned bytes_compl = 0, pkts_compl = 0;
+ 
+ 	while (tx_tail != tx_head) {
+ 		struct cp_desc *txd = cp->tx_ring + tx_tail;
+@@ -666,6 +667,9 @@ static void cp_tx (struct cp_private *cp)
+ 				 le32_to_cpu(txd->opts1) & 0xffff,
+ 				 PCI_DMA_TODEVICE);
+ 
++		bytes_compl += skb->len;
++		pkts_compl++;
++
+ 		if (status & LastFrag) {
+ 			if (status & (TxError | TxFIFOUnder)) {
+ 				netif_dbg(cp, tx_err, cp->dev,
+@@ -697,6 +701,7 @@ static void cp_tx (struct cp_private *cp)
+ 
+ 	cp->tx_tail = tx_tail;
+ 
++	netdev_completed_queue(cp->dev, pkts_compl, bytes_compl);
+ 	if (TX_BUFFS_AVAIL(cp) > (MAX_SKB_FRAGS + 1))
+ 		netif_wake_queue(cp->dev);
+ }
+@@ -843,6 +848,8 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+ 		wmb();
+ 	}
+ 	cp->tx_head = entry;
++
++	netdev_sent_queue(dev, skb->len);
+ 	netif_dbg(cp, tx_queued, cp->dev, "tx queued, slot %d, skblen %d\n",
+ 		  entry, skb->len);
+ 	if (TX_BUFFS_AVAIL(cp) <= (MAX_SKB_FRAGS + 1))
+@@ -937,6 +944,8 @@ static void cp_stop_hw (struct cp_private *cp)
+ 
+ 	cp->rx_tail = 0;
+ 	cp->tx_head = cp->tx_tail = 0;
++
++	netdev_reset_queue(cp->dev);
+ }
+ 
+ static void cp_reset_hw (struct cp_private *cp)
+@@ -957,8 +966,38 @@ static void cp_reset_hw (struct cp_private *cp)
+ 
+ static inline void cp_start_hw (struct cp_private *cp)
+ {
++	dma_addr_t ring_dma;
++
+ 	cpw16(CpCmd, cp->cpcmd);
++
++	/*
++	 * These (at least TxRingAddr) need to be configured after the
++	 * corresponding bits in CpCmd are enabled. Datasheet v1.6 §6.33
++	 * (C+ Command Register) recommends that these and more be configured
++	 * *after* the [RT]xEnable bits in CpCmd are set. And on some hardware
++	 * it's been observed that the TxRingAddr is actually reset to garbage
++	 * when C+ mode Tx is enabled in CpCmd.
++	 */
++	cpw32_f(HiTxRingAddr, 0);
++	cpw32_f(HiTxRingAddr + 4, 0);
++
++	ring_dma = cp->ring_dma;
++	cpw32_f(RxRingAddr, ring_dma & 0xffffffff);
++	cpw32_f(RxRingAddr + 4, (ring_dma >> 16) >> 16);
++
++	ring_dma += sizeof(struct cp_desc) * CP_RX_RING_SIZE;
++	cpw32_f(TxRingAddr, ring_dma & 0xffffffff);
++	cpw32_f(TxRingAddr + 4, (ring_dma >> 16) >> 16);
++
++	/*
++	 * Strictly speaking, the datasheet says this should be enabled
++	 * *before* setting the descriptor addresses. But what, then, would
++	 * prevent it from doing DMA to random unconfigured addresses?
++	 * This variant appears to work fine.
++	 */
+ 	cpw8(Cmd, RxOn | TxOn);
++
++	netdev_reset_queue(cp->dev);
+ }
+ 
+ static void cp_enable_irq(struct cp_private *cp)
+@@ -969,7 +1008,6 @@ static void cp_enable_irq(struct cp_private *cp)
+ static void cp_init_hw (struct cp_private *cp)
+ {
+ 	struct net_device *dev = cp->dev;
+-	dma_addr_t ring_dma;
+ 
+ 	cp_reset_hw(cp);
+ 
+@@ -992,17 +1030,6 @@ static void cp_init_hw (struct cp_private *cp)
+ 
+ 	cpw8(Config5, cpr8(Config5) & PMEStatus);
+ 
+-	cpw32_f(HiTxRingAddr, 0);
+-	cpw32_f(HiTxRingAddr + 4, 0);
+-
+-	ring_dma = cp->ring_dma;
+-	cpw32_f(RxRingAddr, ring_dma & 0xffffffff);
+-	cpw32_f(RxRingAddr + 4, (ring_dma >> 16) >> 16);
+-
+-	ring_dma += sizeof(struct cp_desc) * CP_RX_RING_SIZE;
+-	cpw32_f(TxRingAddr, ring_dma & 0xffffffff);
+-	cpw32_f(TxRingAddr + 4, (ring_dma >> 16) >> 16);
+-
+ 	cpw16(MultiIntr, 0);
+ 
+ 	cpw8_f(Cfg9346, Cfg9346_Lock);
+@@ -1192,6 +1219,7 @@ static void cp_tx_timeout(struct net_device *dev)
+ 	cp_clean_rings(cp);
+ 	rc = cp_init_rings(cp);
+ 	cp_start_hw(cp);
++	cp_enable_irq(cp);
+ 
+ 	netif_wake_queue(dev);
+ 
