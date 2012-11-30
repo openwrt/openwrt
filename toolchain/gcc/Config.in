@@ -9,7 +9,7 @@ choice
 
 	config GCC_VERSION_4_4_7
 		bool "gcc 4.4.7"
-		depends (avr32 || ubicom32)
+		depends avr32
 
 	config GCC_VERSION_4_6_2
 		bool "gcc 4.6.2"
