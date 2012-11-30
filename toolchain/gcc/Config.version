@@ -3,7 +3,7 @@ config GCC_DEFAULT_VERSION
 
 config GCC_DEFAULT_VERSION_4_4_7
 	select GCC_DEFAULT_VERSION
-	default y if (avr32 || ubicom32)
+	default y if avr32
 	bool
 
 config GCC_DEFAULT_VERSION_4_6_LINARO

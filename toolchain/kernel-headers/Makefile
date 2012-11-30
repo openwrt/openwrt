@@ -70,15 +70,6 @@ define Host/Configure/post/cris
 	$(SED) '/#include <asm\/page\.h>/d' $(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/user.h
 endef
 
-define Host/Configure/post/ubicom32
-	$(CP) \
-		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/elf.h \
-		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/user.h \
-		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/page.h \
-		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/page_offset.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/
-endef
-
 define Host/Configure/post/mips
 	$(call Host/Configure/lzma)
 endef
