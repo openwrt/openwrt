@@ -67,24 +67,40 @@ define BuildKernel
 	$(Kernel/Prepare)
 	touch $$@
 
-  $(KERNEL_BUILD_DIR)/symtab.txt: FORCE
+  $(KERNEL_BUILD_DIR)/symtab.h: FORCE
+	rm -f $(KERNEL_BUILD_DIR)/symtab.h
+	touch $(KERNEL_BUILD_DIR)/symtab.h
+	+$(MAKE) $(KERNEL_MAKEOPTS) vmlinux
 	find $(LINUX_DIR) $(STAGING_DIR_ROOT)/lib/modules -name \*.ko | \
 		xargs $(TARGET_CROSS)nm | \
 		awk '$$$$1 == "U" { print $$$$2 } ' | \
-		sort -u > $$@
-
-  $(KERNEL_BUILD_DIR)/symtab.h: $(KERNEL_BUILD_DIR)/symtab.txt
+		sort -u > $(KERNEL_BUILD_DIR)/mod_symtab.txt
+	$(TARGET_CROSS)nm -n $(LINUX_DIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(KERNEL_BUILD_DIR)/kernel_symtab.txt
+	grep -f $(KERNEL_BUILD_DIR)/mod_symtab.txt $(KERNEL_BUILD_DIR)/kernel_symtab.txt > $(KERNEL_BUILD_DIR)/sym_include.txt
+	grep -vf $(KERNEL_BUILD_DIR)/mod_symtab.txt $(KERNEL_BUILD_DIR)/kernel_symtab.txt > $(KERNEL_BUILD_DIR)/sym_exclude.txt
 	( \
 		echo '#define SYMTAB_KEEP \'; \
-		cat $(KERNEL_BUILD_DIR)/symtab.txt | \
+		cat $(KERNEL_BUILD_DIR)/sym_include.txt | \
 			awk '{print "*(__ksymtab." $$$$1 ") \\" }'; \
 		echo; \
 		echo '#define SYMTAB_KEEP_GPL \'; \
-		cat $(KERNEL_BUILD_DIR)/symtab.txt | \
+		cat $(KERNEL_BUILD_DIR)/sym_include.txt | \
 			awk '{print "*(__ksymtab_gpl." $$$$1 ") \\" }'; \
 		echo; \
 		echo '#define SYMTAB_KEEP_STR \'; \
-		cat $(KERNEL_BUILD_DIR)/symtab.txt | \
+		cat $(KERNEL_BUILD_DIR)/sym_include.txt | \
+			awk '{print "*(__ksymtab_strings." $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(KERNEL_BUILD_DIR)/sym_exclude.txt | \
+			awk '{print "*(__ksymtab." $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_GPL \'; \
+		cat $(KERNEL_BUILD_DIR)/sym_exclude.txt | \
+			awk '{print "*(__ksymtab_gpl." $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_STR \'; \
+		cat $(KERNEL_BUILD_DIR)/sym_exclude.txt | \
 			awk '{print "*(__ksymtab_strings." $$$$1 ") \\" }'; \
 		echo; \
 	) > $$@
