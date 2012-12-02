@@ -166,7 +166,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -458,12 +458,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -458,12 +458,12 @@ int ath9k_hw_process_rxdesc_edma(struct
  
  	/* XXX: Keycache */
  	rxs->rs_rssi = MS(rxsp->status5, AR_RxRSSICombined);
@@ -227,7 +227,7 @@
  	if (ads.ds_rxstatus8 & AR_RxKeyIdxValid)
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -997,12 +997,12 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -997,12 +997,12 @@ void ath_debug_stat_rx(struct ath_softc
  #ifdef CONFIG_ATH9K_MAC_DEBUG
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;
@@ -363,7 +363,7 @@
  	 * hardware stores this as 8 bit signed value.
 --- a/drivers/net/wireless/ath/ath9k/antenna.c
 +++ b/drivers/net/wireless/ath/ath9k/antenna.c
-@@ -529,14 +529,14 @@ void ath_ant_comb_scan(struct ath_softc 
+@@ -529,14 +529,14 @@ void ath_ant_comb_scan(struct ath_softc
  	struct ath_ant_comb *antcomb = &sc->ant_comb;
  	int alt_ratio = 0, alt_rssi_avg = 0, main_rssi_avg = 0, curr_alt_set;
  	int curr_main_set;

@@ -189,7 +189,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1101,6 +1144,9 @@ static void ieee80211_iface_work(struct 
+@@ -1101,6 +1144,9 @@ static void ieee80211_iface_work(struct
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -266,7 +266,7 @@
  	WLAN_STA_BLOCK_BA,
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -34,7 +34,7 @@ void ieee80211_tx_status_irqsafe(struct 
+@@ -34,7 +34,7 @@ void ieee80211_tx_status_irqsafe(struct
  		skb_queue_len(&local->skb_queue_unreliable);
  	while (tmp > IEEE80211_IRQSAFE_QUEUE_LIMIT &&
  	       (skb = skb_dequeue(&local->skb_queue_unreliable))) {
@@ -847,7 +847,7 @@
  }
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -386,7 +386,7 @@ static void ath_tx_complete_aggr(struct 
+@@ -386,7 +386,7 @@ static void ath_tx_complete_aggr(struct
  	u16 seq_st = 0, acked_cnt = 0, txfail_cnt = 0, seq_first;
  	u32 ba[WME_BA_BMP_SIZE >> 5];
  	int isaggr, txfail, txpending, sendbar = 0, needreset = 0, nbad = 0;
@@ -856,7 +856,7 @@
  	struct ieee80211_tx_rate rates[4];
  	struct ath_frame_info *fi;
  	int nframes;
-@@ -430,13 +430,17 @@ static void ath_tx_complete_aggr(struct 
+@@ -430,13 +430,17 @@ static void ath_tx_complete_aggr(struct
  	tidno = ieee80211_get_qos_ctl(hdr)[0] & IEEE80211_QOS_CTL_TID_MASK;
  	tid = ATH_AN_2_TID(an, tidno);
  	seq_first = tid->seq_start;
@@ -889,7 +889,7 @@
  	default:
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -354,7 +354,7 @@ static void purge_old_ps_buffers(struct 
+@@ -354,7 +354,7 @@ static void purge_old_ps_buffers(struct
  			total += skb_queue_len(&sta->ps_tx_buf[ac]);
  			if (skb) {
  				purged++;
@@ -984,7 +984,7 @@
  }
  
  /*
-@@ -2190,7 +2195,7 @@ void ieee80211_tx_pending(unsigned long 
+@@ -2190,7 +2195,7 @@ void ieee80211_tx_pending(unsigned long
  			struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  
  			if (WARN_ON(!info->control.vif)) {
