@@ -247,7 +247,7 @@ mtdlayout_f5d8235=320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(fact
 mtd_f5d8235_kernel_part_size=1572864
 mtd_f5d8235_rootfs_part_size=6356992
 define BuildFirmware/F5D8235
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call  mkmtd/phys,$(mtdlayout_f5d8235)),$(mtd_f5d8235_kernel_part_size),$(mtd_f5d8235_rootfs_part_size))
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),ttyS1,57600) $(call  mkmtd/phys,$(mtdlayout_f5d8235)),$(mtd_f5d8235_kernel_part_size),$(mtd_f5d8235_rootfs_part_size))
 endef
 
 define BuildFirmware/FONERA20N
