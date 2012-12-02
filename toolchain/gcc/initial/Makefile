@@ -30,8 +30,7 @@ define Host/Install
 	)
 
 	$(call FixupLibdir,$(TOOLCHAIN_DIR)/initial)
-
-	$(CP) $(TOOLCHAIN_DIR)/initial/. $(TOOLCHAIN_DIR)/
+	$$(call file_copy,$(TOOLCHAIN_DIR)/initial/.,$(TOOLCHAIN_DIR)/)
 endef
 
 $(eval $(call HostBuild))
