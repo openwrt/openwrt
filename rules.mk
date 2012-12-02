@@ -302,7 +302,7 @@ define file_copy
 				rm -f "$$FILE"; \
 			done; ); \
 	done; \
-	$(CP) $(1) $(realpath $(2)/)/
+	$(CP) $(1) $(2)
 endef
 
 # file extension
