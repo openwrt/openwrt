@@ -1,4 +1,36 @@
-commit 86768086727a60335b08c34b2966c784029a24cf
+commit d7d3d8f1ee4435e32bc6c93187798b7e2e3170a9
+Author: David Woodhouse <David.Woodhouse@intel.com>
+Date:   Thu Nov 29 23:28:30 2012 +0000
+
+    solos-pci: remove list_vccs() debugging function
+    
+    No idea why we've gone so long dumping a list of VCCs with vci==0 on
+    every ->open() call...
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit c93967bfd3a3dffa759a3f28370167bf3cdbc3d0
+Author: David Woodhouse <David.Woodhouse@intel.com>
+Date:   Thu Nov 29 23:27:20 2012 +0000
+
+    solos-pci: use GFP_KERNEL where possible, not GFP_ATOMIC
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit ad6999e17ae4f7b99f6d28f425ae970acb115347
+Author: David Woodhouse <David.Woodhouse@intel.com>
+Date:   Thu Nov 29 23:15:30 2012 +0000
+
+    solos-pci: clean up pclose() function
+    
+     - Flush pending TX skbs from the queue rather than waiting for them all to
+       complete (suggested by Krzysztof Mazur <krzysiek@podlesie.net>).
+     - Clear ATM_VF_ADDR only when the PKT_PCLOSE packet has been submitted.
+     - Don't clear ATM_VF_READY at all — vcc_destroy_socket() does that for us.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+
+commit 2547e97f29d6d69d567947d5ef90b6b4fbcaf565
 Author: David Woodhouse <David.Woodhouse@intel.com>
 Date:   Wed Nov 28 10:15:05 2012 +0000
 
@@ -10,7 +42,7 @@ Date:   Wed Nov 28 10:15:05 2012 +0000
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
     Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
 
-commit a009aa5fde926350f7a7e558a3ac0180e10eb24a
+commit 990b0884a2e9668c08e9daa4d70a54d65329cb6f
 Author: Krzysztof Mazur <krzysiek@podlesie.net>
 Date:   Wed Nov 28 09:08:04 2012 +0100
 
@@ -26,7 +58,7 @@ Date:   Wed Nov 28 09:08:04 2012 +0100
     Signed-off-by: Krzysztof Mazur <krzysiek@podlesie.net>
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
 
-commit ae2169bcb6375fb214cadd0ea50ac54bcf39b0d6
+commit f49b6da01f0abebb17f6241473d53018d923f6b0
 Author: Nathan Williams <nathan@traverse.com.au>
 Date:   Tue Nov 27 17:34:09 2012 +1100
 
@@ -37,7 +69,7 @@ Date:   Tue Nov 27 17:34:09 2012 +1100
     Signed-off-by: Nathan Williams <nathan@traverse.com.au>
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
 
-commit 6227612becaebe2f9f4ad7d0cdf27e298bb56687
+commit a61d37ff4a555886c4ebe31d2c6d893afb6f4d3c
 Author: David Woodhouse <David.Woodhouse@intel.com>
 Date:   Wed Nov 28 00:46:45 2012 +0000
 
@@ -52,7 +84,7 @@ Date:   Wed Nov 28 00:46:45 2012 +0000
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
     Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
 
-commit 44abbb464896dc2270716d25e12fe47e57eeb1d3
+commit c52f40629884ddc62c7af445fd5d620fdb466fb2
 Author: David Woodhouse <David.Woodhouse@intel.com>
 Date:   Wed Nov 28 00:05:52 2012 +0000
 
@@ -69,11 +101,30 @@ Date:   Wed Nov 28 00:05:52 2012 +0000
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
     Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
 
-commit c93eeac2ebee497dbc9b6ad39c235ff3061be141
+commit 35826e7372fe39b7db7930eda0267c82d68d1a4c
+Author: David Woodhouse <dwmw2@infradead.org>
+Date:   Tue Nov 27 23:28:36 2012 +0000
+
+    br2684: don't send frames on not-ready vcc
+    
+    Avoid submitting packets to a vcc which is being closed. Things go badly
+    wrong when the ->pop method gets later called after everything's been
+    torn down.
+    
+    Use the ATM socket lock for synchronisation with vcc_destroy_socket(),
+    which clears the ATM_VF_READY bit under the same lock. Otherwise, we
+    could end up submitting a packet to the device driver even after its
+    ->ops->close method has been called. And it could call the vcc's ->pop
+    method after the protocol has been shut down. Which leads to a panic.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
+
+commit 7f940dde65de4a707f3dd723bb6ce9de90ca1eab
 Author: David Woodhouse <David.Woodhouse@intel.com>
 Date:   Wed Nov 28 00:03:11 2012 +0000
 
-    atm: Add release_cb() callback to vcc
+    atm: add release_cb() callback to vcc
     
     The immediate use case for this is that it will allow us to ensure that a
     pppoatm queue is woken after it has to drop a packet due to the sock being
@@ -86,24 +137,11 @@ Date:   Wed Nov 28 00:03:11 2012 +0000
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
     Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
 
-commit 9b3e2e224cc4326d8897243b24d778abf9098a8d
-Author: David Woodhouse <dwmw2@infradead.org>
-Date:   Tue Nov 27 23:28:36 2012 +0000
-
-    br2684: don't send frames on not-ready vcc
-    
-    Avoid submitting packets to a vcc which is being closed. Things go badly
-    wrong when the ->pop method gets later called after everything's been
-    torn down.
-    
-    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
-    Acked-by: Krzysztof Mazur <krzysiek@podlesie.net>
-
-commit 26c7c53318cf56a690ae553104f4a60181734fb5
+commit def1b2f9083f84d0a77730e537c76429914d17c1
 Author: David Woodhouse <David.Woodhouse@intel.com>
 Date:   Tue Nov 27 23:49:24 2012 +0000
 
-    solos-pci: Wait for pending TX to complete when releasing vcc
+    solos-pci: wait for pending TX to complete when releasing vcc
     
     We should no longer be calling the old pop routine for the vcc, after
     vcc_release() has completed. Make sure we wait for any pending TX skbs
@@ -111,7 +149,7 @@ Date:   Tue Nov 27 23:49:24 2012 +0000
     
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
 
-commit 1a3304e89b9ba168340a37926014be11c3ad110e
+commit 397ff16dce53888ec693b3718640be2560204751
 Author: Krzysztof Mazur <krzysiek@podlesie.net>
 Date:   Tue Nov 6 23:17:02 2012 +0100
 
@@ -129,19 +167,16 @@ Date:   Tue Nov 6 23:17:02 2012 +0100
     Signed-off-by: Krzysztof Mazur <krzysiek@podlesie.net>
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
 
-commit 294398bcd0fe26335059a185b59cfb5de1fc4c71
+commit 071d93931a75dc1f82f0baa9959613af81c5a032
 Author: Krzysztof Mazur <krzysiek@podlesie.net>
 Date:   Sat Nov 10 23:33:19 2012 +0100
 
     pppoatm: drop frames to not-ready vcc
     
-    Patches "atm: detach protocol before closing vcc"
-    and "pppoatm: allow assign only on a connected socket" fixed
-    common cases where the pppoatm_send() crashes while sending
-    frame to not-ready vcc. However there are still some other cases
-    where we can send frames to vcc, which is flagged as ATM_VF_CLOSE
-    (for instance after vcc_release_async()) or it's opened but not
-    ready yet.
+    The vcc_destroy_socket() closes vcc before the protocol is detached
+    from vcc by calling vcc->push() with NULL skb. This leaves some time
+    window, where the protocol may call vcc->send() on closed vcc
+    and crash.
     
     Now pppoatm_send(), like vcc_sendmsg(), checks for vcc flags that
     indicate that vcc is not ready. If the vcc is not ready we just
@@ -277,8 +312,6 @@ Date:   Sun Nov 25 12:06:52 2012 +0000
     Reviewed-by: Krzysztof Mazur <krzysiek@podlesie.net>
     Signed-off-by: David S. Miller <davem@davemloft.net>
 
-diff --git a/drivers/atm/solos-pci.c b/drivers/atm/solos-pci.c
-index 9851093..6258961 100644
 --- a/drivers/atm/solos-pci.c
 +++ b/drivers/atm/solos-pci.c
 @@ -92,6 +92,7 @@ struct pkt_hdr {
@@ -289,7 +322,15 @@ index 9851093..6258961 100644
  	struct atm_vcc *vcc;
  	uint32_t dma_addr;
  };
-@@ -710,7 +711,8 @@ void solos_bh(unsigned long card_arg)
+@@ -164,7 +165,6 @@ static void fpga_queue(struct solos_card
+ static uint32_t fpga_tx(struct solos_card *);
+ static irqreturn_t solos_irq(int irq, void *dev_id);
+ static struct atm_vcc* find_vcc(struct atm_dev *dev, short vpi, int vci);
+-static int list_vccs(int vci);
+ static int atm_init(struct solos_card *, struct device *);
+ static void atm_remove(struct solos_card *);
+ static int send_command(struct solos_card *card, int dev, const char *buf, size_t size);
+@@ -710,7 +710,8 @@ void solos_bh(unsigned long card_arg)
  						dev_warn(&card->dev->dev, "Received packet for unknown VPI.VCI %d.%d on port %d\n",
  							 le16_to_cpu(header->vpi), le16_to_cpu(header->vci),
  							 port);
@@ -299,26 +340,119 @@ index 9851093..6258961 100644
  				}
  				atm_charge(vcc, skb->truesize);
  				vcc->push(vcc, skb);
-@@ -881,11 +883,18 @@ static void pclose(struct atm_vcc *vcc)
+@@ -790,44 +791,6 @@ static struct atm_vcc *find_vcc(struct a
+ 	return vcc;
+ }
+ 
+-static int list_vccs(int vci)
+-{
+-	struct hlist_head *head;
+-	struct atm_vcc *vcc;
+-	struct hlist_node *node;
+-	struct sock *s;
+-	int num_found = 0;
+-	int i;
+-
+-	read_lock(&vcc_sklist_lock);
+-	if (vci != 0){
+-		head = &vcc_hash[vci & (VCC_HTABLE_SIZE -1)];
+-		sk_for_each(s, node, head) {
+-			num_found ++;
+-			vcc = atm_sk(s);
+-			printk(KERN_DEBUG "Device: %d Vpi: %d Vci: %d\n",
+-			       vcc->dev->number,
+-			       vcc->vpi,
+-			       vcc->vci);
+-		}
+-	} else {
+-		for(i = 0; i < VCC_HTABLE_SIZE; i++){
+-			head = &vcc_hash[i];
+-			sk_for_each(s, node, head) {
+-				num_found ++;
+-				vcc = atm_sk(s);
+-				printk(KERN_DEBUG "Device: %d Vpi: %d Vci: %d\n",
+-				       vcc->dev->number,
+-				       vcc->vpi,
+-				       vcc->vci);
+-			}
+-		}
+-	}
+-	read_unlock(&vcc_sklist_lock);
+-	return num_found;
+-}
+-
+-
+ static int popen(struct atm_vcc *vcc)
+ {
+ 	struct solos_card *card = vcc->dev->dev_data;
+@@ -840,7 +803,7 @@ static int popen(struct atm_vcc *vcc)
+ 		return -EINVAL;
+ 	}
+ 
+-	skb = alloc_skb(sizeof(*header), GFP_ATOMIC);
++	skb = alloc_skb(sizeof(*header), GFP_KERNEL);
+ 	if (!skb) {
+ 		if (net_ratelimit())
+ 			dev_warn(&card->dev->dev, "Failed to allocate sk_buff in popen()\n");
+@@ -857,8 +820,6 @@ static int popen(struct atm_vcc *vcc)
+ 
+ 	set_bit(ATM_VF_ADDR, &vcc->flags);
+ 	set_bit(ATM_VF_READY, &vcc->flags);
+-	list_vccs(0);
+-
+ 
+ 	return 0;
+ }
+@@ -866,10 +827,21 @@ static int popen(struct atm_vcc *vcc)
+ static void pclose(struct atm_vcc *vcc)
+ {
+ 	struct solos_card *card = vcc->dev->dev_data;
+-	struct sk_buff *skb;
++	unsigned char port = SOLOS_CHAN(vcc->dev);
++	struct sk_buff *skb, *tmpskb;
+ 	struct pkt_hdr *header;
+ 
+-	skb = alloc_skb(sizeof(*header), GFP_ATOMIC);
++	/* Remove any yet-to-be-transmitted packets from the pending queue */
++	spin_lock(&card->tx_queue_lock);
++	skb_queue_walk_safe(&card->tx_queue[port], skb, tmpskb) {
++		if (SKB_CB(skb)->vcc == vcc) {
++			skb_unlink(skb, &card->tx_queue[port]);
++			solos_pop(vcc, skb);
++		}
++	}
++	spin_unlock(&card->tx_queue_lock);
++
++	skb = alloc_skb(sizeof(*header), GFP_KERNEL);
+ 	if (!skb) {
+ 		dev_warn(&card->dev->dev, "Failed to allocate sk_buff in pclose()\n");
+ 		return;
+@@ -881,15 +853,21 @@ static void pclose(struct atm_vcc *vcc)
  	header->vci = cpu_to_le16(vcc->vci);
  	header->type = cpu_to_le16(PKT_PCLOSE);
  
+-	fpga_queue(card, SOLOS_CHAN(vcc->dev), skb, NULL);
 +	init_completion(&SKB_CB(skb)->c);
+ 
+-	clear_bit(ATM_VF_ADDR, &vcc->flags);
+-	clear_bit(ATM_VF_READY, &vcc->flags);
++	fpga_queue(card, port, skb, NULL);
 +
- 	fpga_queue(card, SOLOS_CHAN(vcc->dev), skb, NULL);
- 
- 	clear_bit(ATM_VF_ADDR, &vcc->flags);
- 	clear_bit(ATM_VF_READY, &vcc->flags);
- 
-+	if (!wait_for_completion_timeout(&SKB_CB(skb)->c,
-+					 msecs_to_jiffies(5000)))
++	if (!wait_for_completion_timeout(&SKB_CB(skb)->c, 5 * HZ))
 +		dev_warn(&card->dev->dev, "Timeout waiting for VCC close on port %d\n",
-+			 SOLOS_CHAN(vcc->dev));
-+
++			 port);
+ 
  	/* Hold up vcc_destroy_socket() (our caller) until solos_bh() in the
  	   tasklet has finished processing any incoming packets (and, more to
  	   the point, using the vcc pointer). */
-@@ -1011,9 +1020,12 @@ static uint32_t fpga_tx(struct solos_card *card)
+ 	tasklet_unlock_wait(&card->tlet);
++
++	clear_bit(ATM_VF_ADDR, &vcc->flags);
++
+ 	return;
+ }
+ 
+@@ -1010,9 +988,12 @@ static uint32_t fpga_tx(struct solos_car
  			if (vcc) {
  				atomic_inc(&vcc->stats->tx);
  				solos_pop(vcc, oldskb);
@@ -333,7 +467,16 @@ index 9851093..6258961 100644
  		}
  	}
  	/* For non-DMA TX, write the 'TX start' bit for all four ports simultaneously */
-@@ -1345,6 +1357,8 @@ static struct pci_driver fpga_driver = {
+@@ -1246,7 +1227,7 @@ static int atm_init(struct solos_card *c
+ 		card->atmdev[i]->phy_data = (void *)(unsigned long)i;
+ 		atm_dev_signal_change(card->atmdev[i], ATM_PHY_SIG_FOUND);
+ 
+-		skb = alloc_skb(sizeof(*header), GFP_ATOMIC);
++		skb = alloc_skb(sizeof(*header), GFP_KERNEL);
+ 		if (!skb) {
+ 			dev_warn(&card->dev->dev, "Failed to allocate sk_buff in atm_init()\n");
+ 			continue;
+@@ -1343,6 +1324,8 @@ static struct pci_driver fpga_driver = {
  
  static int __init solos_pci_init(void)
  {
@@ -342,11 +485,9 @@ index 9851093..6258961 100644
  	printk(KERN_INFO "Solos PCI Driver Version %s\n", VERSION);
  	return pci_register_driver(&fpga_driver);
  }
-diff --git a/include/linux/atmdev.h b/include/linux/atmdev.h
-index 22ef21c..c1da539 100644
 --- a/include/linux/atmdev.h
 +++ b/include/linux/atmdev.h
-@@ -99,6 +99,7 @@ struct atm_vcc {
+@@ -307,6 +307,7 @@ struct atm_vcc {
  	struct atm_dev	*dev;		/* device back pointer */
  	struct atm_qos	qos;		/* QOS */
  	struct atm_sap	sap;		/* SAP */
@@ -354,7 +495,7 @@ index 22ef21c..c1da539 100644
  	void (*push)(struct atm_vcc *vcc,struct sk_buff *skb);
  	void (*pop)(struct atm_vcc *vcc,struct sk_buff *skb); /* optional */
  	int (*push_oam)(struct atm_vcc *vcc,void *cell);
-@@ -106,6 +107,7 @@ struct atm_vcc {
+@@ -314,6 +315,7 @@ struct atm_vcc {
  	void		*dev_data;	/* per-device data */
  	void		*proto_data;	/* per-protocol data */
  	struct k_atm_aal_stats *stats;	/* pointer to AAL stats group */
@@ -362,14 +503,13 @@ index 22ef21c..c1da539 100644
  	/* SVC part --- may move later ------------------------------------- */
  	short		itf;		/* interface number */
  	struct sockaddr_atmsvc local;
-diff --git a/net/atm/br2684.c b/net/atm/br2684.c
-index 4819d315..a4ee4ad 100644
 --- a/net/atm/br2684.c
 +++ b/net/atm/br2684.c
-@@ -68,12 +68,14 @@ struct br2684_vcc {
+@@ -68,12 +68,15 @@ struct br2684_vcc {
  	/* keep old push, pop functions for chaining */
  	void (*old_push)(struct atm_vcc *vcc, struct sk_buff *skb);
  	void (*old_pop)(struct atm_vcc *vcc, struct sk_buff *skb);
++	void (*old_release_cb)(struct atm_vcc *vcc);
 +	struct module *old_owner;
  	enum br2684_encaps encaps;
  	struct list_head brvccs;
@@ -381,7 +521,7 @@ index 4819d315..a4ee4ad 100644
  };
  
  struct br2684_dev {
-@@ -181,18 +183,15 @@ static struct notifier_block atm_dev_notifier = {
+@@ -181,18 +184,15 @@ static struct notifier_block atm_dev_not
  static void br2684_pop(struct atm_vcc *vcc, struct sk_buff *skb)
  {
  	struct br2684_vcc *brvcc = BR2684_VCC(vcc);
@@ -405,18 +545,7 @@ index 4819d315..a4ee4ad 100644
  /*
   * Send a packet out a particular vcc.  Not to useful right now, but paves
   * the way for multiple vcc's per itf.  Returns true if we can send,
-@@ -251,21 +250,30 @@ static int br2684_xmit_vcc(struct sk_buff *skb, struct net_device *dev,
- 	skb_debug(skb);
- 
- 	ATM_SKB(skb)->vcc = atmvcc = brvcc->atmvcc;
-+	if (test_bit(ATM_VF_RELEASED, &atmvcc->flags) ||
-+	    test_bit(ATM_VF_CLOSE, &atmvcc->flags) ||
-+	    !test_bit(ATM_VF_READY, &atmvcc->flags)) {
-+		dev_kfree_skb(skb);
-+		return 0;
-+	}
- 	pr_debug("atm_skb(%p)->vcc(%p)->dev(%p)\n", skb, atmvcc, atmvcc->dev);
- 	atomic_add(skb->truesize, &sk_atm(atmvcc)->sk_wmem_alloc);
+@@ -256,16 +256,30 @@ static int br2684_xmit_vcc(struct sk_buf
  	ATM_SKB(skb)->atm_options = atmvcc->atm_options;
  	dev->stats.tx_packets++;
  	dev->stats.tx_bytes += skb->len;
@@ -439,12 +568,76 @@ index 4819d315..a4ee4ad 100644
 +	   will wake the queue if appropriate. Just return an error so that
 +	   the stats are updated correctly */
 +	return !atmvcc->send(atmvcc, skb);
++}
++
++static void br2684_release_cb(struct atm_vcc *atmvcc)
++{
++	struct br2684_vcc *brvcc = BR2684_VCC(atmvcc);
++
++	if (atomic_read(&brvcc->qspace) > 0)
++		netif_wake_queue(brvcc->device);
++
++	if (brvcc->old_release_cb)
++		brvcc->old_release_cb(atmvcc);
  }
  
  static inline struct br2684_vcc *pick_outgoing_vcc(const struct sk_buff *skb,
-@@ -378,8 +386,8 @@ static void br2684_close_vcc(struct br2684_vcc *brvcc)
+@@ -279,6 +293,8 @@ static netdev_tx_t br2684_start_xmit(str
+ {
+ 	struct br2684_dev *brdev = BRPRIV(dev);
+ 	struct br2684_vcc *brvcc;
++	struct atm_vcc *atmvcc;
++	netdev_tx_t ret = NETDEV_TX_OK;
+ 
+ 	pr_debug("skb_dst(skb)=%p\n", skb_dst(skb));
+ 	read_lock(&devs_lock);
+@@ -289,9 +305,26 @@ static netdev_tx_t br2684_start_xmit(str
+ 		dev->stats.tx_carrier_errors++;
+ 		/* netif_stop_queue(dev); */
+ 		dev_kfree_skb(skb);
+-		read_unlock(&devs_lock);
+-		return NETDEV_TX_OK;
++		goto out_devs;
+ 	}
++	atmvcc = brvcc->atmvcc;
++
++	bh_lock_sock(sk_atm(atmvcc));
++
++	if (test_bit(ATM_VF_RELEASED, &atmvcc->flags) ||
++	    test_bit(ATM_VF_CLOSE, &atmvcc->flags) ||
++	    !test_bit(ATM_VF_READY, &atmvcc->flags)) {
++		dev->stats.tx_dropped++;
++		dev_kfree_skb(skb);
++		goto out;
++	}
++
++	if (sock_owned_by_user(sk_atm(atmvcc))) {
++		netif_stop_queue(brvcc->device);
++		ret = NETDEV_TX_BUSY;
++		goto out;
++	}
++
+ 	if (!br2684_xmit_vcc(skb, dev, brvcc)) {
+ 		/*
+ 		 * We should probably use netif_*_queue() here, but that
+@@ -303,8 +336,11 @@ static netdev_tx_t br2684_start_xmit(str
+ 		dev->stats.tx_errors++;
+ 		dev->stats.tx_fifo_errors++;
+ 	}
++ out:
++	bh_unlock_sock(sk_atm(atmvcc));
++ out_devs:
+ 	read_unlock(&devs_lock);
+-	return NETDEV_TX_OK;
++	return ret;
+ }
+ 
+ /*
+@@ -377,9 +413,10 @@ static void br2684_close_vcc(struct br26
+ 	list_del(&brvcc->brvccs);
  	write_unlock_irq(&devs_lock);
  	brvcc->atmvcc->user_back = NULL;	/* what about vcc->recvq ??? */
++	brvcc->atmvcc->release_cb = brvcc->old_release_cb;
  	brvcc->old_push(brvcc->atmvcc, NULL);	/* pass on the bad news */
 +	module_put(brvcc->old_owner);
  	kfree(brvcc);
@@ -452,7 +645,7 @@ index 4819d315..a4ee4ad 100644
  }
  
  /* when AAL5 PDU comes in: */
-@@ -504,6 +512,13 @@ static int br2684_regvcc(struct atm_vcc *atmvcc, void __user * arg)
+@@ -504,6 +541,13 @@ static int br2684_regvcc(struct atm_vcc
  	brvcc = kzalloc(sizeof(struct br2684_vcc), GFP_KERNEL);
  	if (!brvcc)
  		return -ENOMEM;
@@ -466,19 +659,21 @@ index 4819d315..a4ee4ad 100644
  	write_lock_irq(&devs_lock);
  	net_dev = br2684_find_dev(&be.ifspec);
  	if (net_dev == NULL) {
-@@ -546,9 +561,11 @@ static int br2684_regvcc(struct atm_vcc *atmvcc, void __user * arg)
+@@ -546,9 +590,13 @@ static int br2684_regvcc(struct atm_vcc
  	brvcc->encaps = (enum br2684_encaps)be.encaps;
  	brvcc->old_push = atmvcc->push;
  	brvcc->old_pop = atmvcc->pop;
++	brvcc->old_release_cb = atmvcc->release_cb;
 +	brvcc->old_owner = atmvcc->owner;
  	barrier();
  	atmvcc->push = br2684_push;
  	atmvcc->pop = br2684_pop;
++	atmvcc->release_cb = br2684_release_cb;
 +	atmvcc->owner = THIS_MODULE;
  
  	/* initialize netdev carrier state */
  	if (atmvcc->dev->signal == ATM_PHY_SIG_LOST)
-@@ -687,10 +704,13 @@ static int br2684_ioctl(struct socket *sock, unsigned int cmd,
+@@ -687,10 +735,13 @@ static int br2684_ioctl(struct socket *s
  			return -ENOIOCTLCMD;
  		if (!capable(CAP_NET_ADMIN))
  			return -EPERM;
@@ -494,11 +689,9 @@ index 4819d315..a4ee4ad 100644
  #ifdef CONFIG_ATM_BR2684_IPFILTER
  	case BR2684_SETFILT:
  		if (atmvcc->push != br2684_push)
-diff --git a/net/atm/common.c b/net/atm/common.c
-index 0c0ad93..806fc0a 100644
 --- a/net/atm/common.c
 +++ b/net/atm/common.c
-@@ -126,10 +126,19 @@ static void vcc_write_space(struct sock *sk)
+@@ -126,10 +126,19 @@ static void vcc_write_space(struct sock
  	rcu_read_unlock();
  }
  
@@ -518,7 +711,7 @@ index 0c0ad93..806fc0a 100644
  };
  
  int vcc_create(struct net *net, struct socket *sock, int protocol, int family)
-@@ -156,7 +165,9 @@ int vcc_create(struct net *net, struct socket *sock, int protocol, int family)
+@@ -156,7 +165,9 @@ int vcc_create(struct net *net, struct s
  	atomic_set(&sk->sk_rmem_alloc, 0);
  	vcc->push = NULL;
  	vcc->pop = NULL;
@@ -528,7 +721,7 @@ index 0c0ad93..806fc0a 100644
  	vcc->vpi = vcc->vci = 0; /* no VCI/VPI yet */
  	vcc->atm_options = vcc->aal_options = 0;
  	sk->sk_destruct = vcc_sock_destruct;
-@@ -175,6 +186,7 @@ static void vcc_destroy_socket(struct sock *sk)
+@@ -175,6 +186,7 @@ static void vcc_destroy_socket(struct so
  			vcc->dev->ops->close(vcc);
  		if (vcc->push)
  			vcc->push(vcc, NULL); /* atmarpd has no push */
@@ -536,8 +729,6 @@ index 0c0ad93..806fc0a 100644
  
  		while ((skb = skb_dequeue(&sk->sk_receive_queue)) != NULL) {
  			atm_return(vcc, skb->truesize);
-diff --git a/net/atm/pppoatm.c b/net/atm/pppoatm.c
-index 226dca9..8c93267 100644
 --- a/net/atm/pppoatm.c
 +++ b/net/atm/pppoatm.c
 @@ -60,6 +60,8 @@ struct pppoatm_vcc {
@@ -549,7 +740,7 @@ index 226dca9..8c93267 100644
  					/* keep old push/pop for detaching */
  	enum pppoatm_encaps encaps;
  	atomic_t inflight;
-@@ -107,6 +109,24 @@ static void pppoatm_wakeup_sender(unsigned long arg)
+@@ -107,6 +109,24 @@ static void pppoatm_wakeup_sender(unsign
  	ppp_output_wakeup((struct ppp_channel *) arg);
  }
  
@@ -574,7 +765,7 @@ index 226dca9..8c93267 100644
  /*
   * This gets called every time the ATM card has finished sending our
   * skb.  The ->old_pop will take care up normal atm flow control,
-@@ -151,12 +171,11 @@ static void pppoatm_unassign_vcc(struct atm_vcc *atmvcc)
+@@ -151,12 +171,11 @@ static void pppoatm_unassign_vcc(struct
  	pvcc = atmvcc_to_pvcc(atmvcc);
  	atmvcc->push = pvcc->old_push;
  	atmvcc->pop = pvcc->old_pop;
@@ -588,7 +779,7 @@ index 226dca9..8c93267 100644
  }
  
  /* Called when an AAL5 PDU comes in */
-@@ -165,9 +184,13 @@ static void pppoatm_push(struct atm_vcc *atmvcc, struct sk_buff *skb)
+@@ -165,9 +184,13 @@ static void pppoatm_push(struct atm_vcc
  	struct pppoatm_vcc *pvcc = atmvcc_to_pvcc(atmvcc);
  	pr_debug("\n");
  	if (skb == NULL) {			/* VCC was closed */
@@ -611,7 +802,7 @@ index 226dca9..8c93267 100644
  {
  	/*
  	 * It's not clear that we need to bother with using atm_may_send()
-@@ -269,10 +292,33 @@ static inline int pppoatm_may_send(struct pppoatm_vcc *pvcc, int size)
+@@ -269,10 +292,33 @@ static inline int pppoatm_may_send(struc
  static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
  {
  	struct pppoatm_vcc *pvcc = chan_to_pvcc(chan);
@@ -645,9 +836,9 @@ index 226dca9..8c93267 100644
  	switch (pvcc->encaps) {		/* LLC encapsulation needed */
  	case e_llc:
  		if (skb_headroom(skb) < LLC_LEN) {
-@@ -285,8 +331,10 @@ static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
+@@ -285,8 +331,10 @@ static int pppoatm_send(struct ppp_chann
  			}
- 			consume_skb(skb);
+ 			kfree_skb(skb);
  			skb = n;
 -			if (skb == NULL)
 +			if (skb == NULL) {
@@ -657,7 +848,7 @@ index 226dca9..8c93267 100644
  		} else if (!pppoatm_may_send(pvcc, skb->truesize))
  			goto nospace;
  		memcpy(skb_push(skb, LLC_LEN), pppllc, LLC_LEN);
-@@ -296,6 +344,7 @@ static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
+@@ -296,6 +344,7 @@ static int pppoatm_send(struct ppp_chann
  			goto nospace;
  		break;
  	case e_autodetect:
@@ -665,7 +856,7 @@ index 226dca9..8c93267 100644
  		pr_debug("Trying to send without setting encaps!\n");
  		kfree_skb(skb);
  		return 1;
-@@ -305,9 +354,12 @@ static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
+@@ -305,9 +354,12 @@ static int pppoatm_send(struct ppp_chann
  	ATM_SKB(skb)->atm_options = ATM_SKB(skb)->vcc->atm_options;
  	pr_debug("atm_skb(%p)->vcc(%p)->dev(%p)\n",
  		 skb, ATM_SKB(skb)->vcc, ATM_SKB(skb)->vcc->dev);
@@ -679,7 +870,7 @@ index 226dca9..8c93267 100644
  	/*
  	 * We don't have space to send this SKB now, but we might have
  	 * already applied SC_COMP_PROT compression, so may need to undo
-@@ -362,6 +414,8 @@ static int pppoatm_assign_vcc(struct atm_vcc *atmvcc, void __user *arg)
+@@ -362,6 +414,8 @@ static int pppoatm_assign_vcc(struct atm
  	atomic_set(&pvcc->inflight, NONE_INFLIGHT);
  	pvcc->old_push = atmvcc->push;
  	pvcc->old_pop = atmvcc->pop;
@@ -688,7 +879,7 @@ index 226dca9..8c93267 100644
  	pvcc->encaps = (enum pppoatm_encaps) be.encaps;
  	pvcc->chan.private = pvcc;
  	pvcc->chan.ops = &pppoatm_ops;
-@@ -377,7 +431,9 @@ static int pppoatm_assign_vcc(struct atm_vcc *atmvcc, void __user *arg)
+@@ -377,7 +431,9 @@ static int pppoatm_assign_vcc(struct atm
  	atmvcc->user_back = pvcc;
  	atmvcc->push = pppoatm_push;
  	atmvcc->pop = pppoatm_pop;
@@ -698,7 +889,7 @@ index 226dca9..8c93267 100644
  
  	/* re-process everything received between connection setup and
  	   backend setup */
-@@ -406,6 +462,8 @@ static int pppoatm_ioctl(struct socket *sock, unsigned int cmd,
+@@ -406,6 +462,8 @@ static int pppoatm_ioctl(struct socket *
  			return -ENOIOCTLCMD;
  		if (!capable(CAP_NET_ADMIN))
  			return -EPERM;
