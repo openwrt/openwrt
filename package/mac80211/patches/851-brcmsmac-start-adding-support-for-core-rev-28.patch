@@ -10,7 +10,7 @@
  MODULE_DEVICE_TABLE(bcma, brcms_coreid_table);
 --- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
-@@ -734,7 +734,7 @@ static void brcms_c_ucode_bsinit(struct 
+@@ -734,7 +734,7 @@ static void brcms_c_ucode_bsinit(struct
  	brcms_c_write_mhf(wlc_hw, wlc_hw->band->mhfs);
  
  	/* do band-specific ucode IHR, SHM, and SCR inits */
@@ -19,7 +19,7 @@
  		if (BRCMS_ISNPHY(wlc_hw->band))
  			brcms_c_write_inits(wlc_hw, ucode->d11n0bsinitvals16);
  		else
-@@ -2259,7 +2259,7 @@ static void brcms_ucode_download(struct 
+@@ -2259,7 +2259,7 @@ static void brcms_ucode_download(struct
  	if (wlc_hw->ucode_loaded)
  		return;
  

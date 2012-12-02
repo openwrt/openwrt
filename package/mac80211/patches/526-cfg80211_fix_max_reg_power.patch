@@ -1,6 +1,6 @@
 --- a/net/wireless/reg.c
 +++ b/net/wireless/reg.c
-@@ -901,7 +901,7 @@ static void handle_channel(struct wiphy 
+@@ -901,7 +901,7 @@ static void handle_channel(struct wiphy
  			map_regdom_flags(reg_rule->flags) | bw_flags;
  		chan->max_antenna_gain = chan->orig_mag =
  			(int) MBI_TO_DBI(power_rule->max_antenna_gain);

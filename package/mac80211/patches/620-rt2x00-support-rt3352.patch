@@ -157,7 +157,7 @@ Signed-off-by: John W. Linville <linville@tuxdriver.com>
  }
  
  static int rt2800_get_gain_calibration_delta(struct rt2x00_dev *rt2x00dev)
-@@ -2998,6 +3073,10 @@ static int rt2800_init_registers(struct 
+@@ -2998,6 +3073,10 @@ static int rt2800_init_registers(struct
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000400);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00000000);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000030);
