@@ -30,6 +30,11 @@ HOST_CONFIGURE_ARGS += \
 	--disable-tls \
 	--disable-nls
 
+define Host/Prepare
+	$(call Host/Prepare/Default)
+	rm -rf $(HOST_BUILD_DIR)/doc
+endef
+
 define Host/Install
 	$(Host/Install/Default)
 	$(MAKE) -C $(HOST_BUILD_DIR)/lib/uuid install
