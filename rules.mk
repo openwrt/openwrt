@@ -287,6 +287,24 @@ define locked
 		-c '$(subst ','\'',$(1))'
 endef
 
+# Recursively copy paths into another directory, purge dangling
+# symlinks before.
+# $(1) => File glob expression
+# $(2) => Destination directory
+define file_copy
+	for src_dir in $(sort $(foreach d,$(wildcard $(1)),$(dir $(d)))); do \
+		( cd $$src_dir; find -type f -or -type d ) | \
+			( cd $(2); while :; do \
+				read FILE; \
+				[ -z "$$FILE" ] && break; \
+				[ -L "$$FILE" ] || continue; \
+				echo "Removing symlink $(2)/$$FILE"; \
+				rm -f "$$FILE"; \
+			done; ); \
+	done; \
+	$(CP) $(1) $(realpath $(2)/)/
+endef
+
 # file extension
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 
