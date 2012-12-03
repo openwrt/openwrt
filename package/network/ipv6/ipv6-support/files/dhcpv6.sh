@@ -27,11 +27,11 @@ done
 local prefix_fallback
 config_get prefix_fallback "$network" prefix_fallback
 [ "$prefix_fallback" == "relay" -a -z "$PREFIXES" -a "$state" != "unbound" ] &&
-	restart_relay "$network" 1
+	restart_relay "$network" "fallback"
 
 # Disable relay if requested
 [ "$prefix_fallback" != "relay" -o -n "$PREFIXES" -o "$state" == "unbound" ] &&
-	stop_relay "$network"
+	restart_relay "$network"
 
 
 # Operations in case of success
