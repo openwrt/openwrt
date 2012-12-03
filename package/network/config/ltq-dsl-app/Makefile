@@ -17,6 +17,8 @@ PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=ee315306626b68794d3d3636dabfe161
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
+PKG_FIXUP:=autoreconf
+
 PKG_CONFIG_DEPENDS:=\
 	CONFIG_LTQ_DSL_ENABLE_SOAP \
 	CONFIG_LTQ_DSL_ENABLE_DSL_EVENT_POLLING
