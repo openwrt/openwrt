@@ -83,8 +83,8 @@ void __init pmugw_setup(void)
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(pmugw_partitions);
 	adm5120_flash0_data.parts = pmugw_partitions;
 
-	adm5120_add_device_uart(1); /* ttyS0 */
-	adm5120_add_device_uart(0); /* ttyS1 */
+	adm5120_add_device_uart(1); /* ttyAM0 */
+	adm5120_add_device_uart(0); /* ttyAM1 */
 
 	adm5120_add_device_flash(0);
 
