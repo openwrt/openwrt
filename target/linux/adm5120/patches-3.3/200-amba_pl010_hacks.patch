@@ -1,6 +1,6 @@
 --- a/drivers/tty/serial/amba-pl010.c
 +++ b/drivers/tty/serial/amba-pl010.c
-@@ -49,11 +49,10 @@
+@@ -49,11 +49,9 @@
  
  #include <asm/io.h>
  
@@ -10,11 +10,10 @@
  #define SERIAL_AMBA_MINOR	16
 -#define SERIAL_AMBA_NR		UART_NR
 +#define SERIAL_AMBA_NR		CONFIG_SERIAL_AMBA_PL010_NUMPORTS
-+#define SERIAL_AMBA_NAME	CONFIG_SERIAL_AMBA_PL010_PORTNAME
  
  #define AMBA_ISR_PASS_LIMIT	256
  
-@@ -79,9 +78,9 @@ static void pl010_stop_tx(struct uart_po
+@@ -79,9 +77,9 @@ static void pl010_stop_tx(struct uart_po
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
  	unsigned int cr;
  
@@ -26,7 +25,7 @@
  }
  
  static void pl010_start_tx(struct uart_port *port)
-@@ -89,9 +88,9 @@ static void pl010_start_tx(struct uart_p
+@@ -89,9 +87,9 @@ static void pl010_start_tx(struct uart_p
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
  	unsigned int cr;
  
@@ -38,7 +37,7 @@
  }
  
  static void pl010_stop_rx(struct uart_port *port)
-@@ -99,9 +98,9 @@ static void pl010_stop_rx(struct uart_po
+@@ -99,9 +97,9 @@ static void pl010_stop_rx(struct uart_po
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
  	unsigned int cr;
  
@@ -50,7 +49,7 @@
  }
  
  static void pl010_enable_ms(struct uart_port *port)
-@@ -109,9 +108,9 @@ static void pl010_enable_ms(struct uart_
+@@ -109,9 +107,9 @@ static void pl010_enable_ms(struct uart_
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
  	unsigned int cr;
  
@@ -62,7 +61,7 @@
  }
  
  static void pl010_rx_chars(struct uart_amba_port *uap)
-@@ -119,9 +118,9 @@ static void pl010_rx_chars(struct uart_a
+@@ -119,9 +117,9 @@ static void pl010_rx_chars(struct uart_a
  	struct tty_struct *tty = uap->port.state->port.tty;
  	unsigned int status, ch, flag, rsr, max_count = 256;
  
@@ -74,7 +73,7 @@
  		flag = TTY_NORMAL;
  
  		uap->port.icount.rx++;
-@@ -130,9 +129,9 @@ static void pl010_rx_chars(struct uart_a
+@@ -130,9 +128,9 @@ static void pl010_rx_chars(struct uart_a
  		 * Note that the error handling code is
  		 * out of the main execution path
  		 */
@@ -86,7 +85,7 @@
  
  			if (rsr & UART01x_RSR_BE) {
  				rsr &= ~(UART01x_RSR_FE | UART01x_RSR_PE);
-@@ -162,7 +161,7 @@ static void pl010_rx_chars(struct uart_a
+@@ -162,7 +160,7 @@ static void pl010_rx_chars(struct uart_a
  		uart_insert_char(&uap->port, rsr, UART01x_RSR_OE, ch, flag);
  
  	ignore_char:
@@ -95,7 +94,7 @@
  	}
  	spin_unlock(&uap->port.lock);
  	tty_flip_buffer_push(tty);
-@@ -175,7 +174,7 @@ static void pl010_tx_chars(struct uart_a
+@@ -175,7 +173,7 @@ static void pl010_tx_chars(struct uart_a
  	int count;
  
  	if (uap->port.x_char) {
@@ -104,7 +103,7 @@
  		uap->port.icount.tx++;
  		uap->port.x_char = 0;
  		return;
-@@ -187,7 +186,7 @@ static void pl010_tx_chars(struct uart_a
+@@ -187,7 +185,7 @@ static void pl010_tx_chars(struct uart_a
  
  	count = uap->port.fifosize >> 1;
  	do {
@@ -113,7 +112,7 @@
  		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
  		uap->port.icount.tx++;
  		if (uart_circ_empty(xmit))
-@@ -205,9 +204,9 @@ static void pl010_modem_status(struct ua
+@@ -205,9 +203,9 @@ static void pl010_modem_status(struct ua
  {
  	unsigned int status, delta;
  
@@ -125,7 +124,7 @@
  
  	delta = status ^ uap->old_status;
  	uap->old_status = status;
-@@ -235,7 +234,7 @@ static irqreturn_t pl010_int(int irq, vo
+@@ -235,7 +233,7 @@ static irqreturn_t pl010_int(int irq, vo
  
  	spin_lock(&uap->port.lock);
  
@@ -134,7 +133,7 @@
  	if (status) {
  		do {
  			if (status & (UART010_IIR_RTIS | UART010_IIR_RIS))
-@@ -248,7 +247,7 @@ static irqreturn_t pl010_int(int irq, vo
+@@ -248,7 +246,7 @@ static irqreturn_t pl010_int(int irq, vo
  			if (pass_counter-- == 0)
  				break;
  
@@ -143,7 +142,7 @@
  		} while (status & (UART010_IIR_RTIS | UART010_IIR_RIS |
  				   UART010_IIR_TIS));
  		handled = 1;
-@@ -262,7 +261,7 @@ static irqreturn_t pl010_int(int irq, vo
+@@ -262,7 +260,7 @@ static irqreturn_t pl010_int(int irq, vo
  static unsigned int pl010_tx_empty(struct uart_port *port)
  {
  	struct uart_amba_port *uap = (struct uart_amba_port *)port;
@@ -152,7 +151,7 @@
  	return status & UART01x_FR_BUSY ? 0 : TIOCSER_TEMT;
  }
  
-@@ -272,7 +271,7 @@ static unsigned int pl010_get_mctrl(stru
+@@ -272,7 +270,7 @@ static unsigned int pl010_get_mctrl(stru
  	unsigned int result = 0;
  	unsigned int status;
  
@@ -161,7 +160,7 @@
  	if (status & UART01x_FR_DCD)
  		result |= TIOCM_CAR;
  	if (status & UART01x_FR_DSR)
-@@ -298,12 +297,12 @@ static void pl010_break_ctl(struct uart_
+@@ -298,12 +296,12 @@ static void pl010_break_ctl(struct uart_
  	unsigned int lcr_h;
  
  	spin_lock_irqsave(&uap->port.lock, flags);
@@ -176,7 +175,7 @@
  	spin_unlock_irqrestore(&uap->port.lock, flags);
  }
  
-@@ -335,12 +334,12 @@ static int pl010_startup(struct uart_por
+@@ -335,12 +333,12 @@ static int pl010_startup(struct uart_por
  	/*
  	 * initialise the old status of the modem signals
  	 */
@@ -191,7 +190,7 @@
  	       uap->port.membase + UART010_CR);
  
  	return 0;
-@@ -365,10 +364,10 @@ static void pl010_shutdown(struct uart_p
+@@ -365,10 +363,10 @@ static void pl010_shutdown(struct uart_p
  	/*
  	 * disable all interrupts, disable the port
  	 */
@@ -204,7 +203,7 @@
  		~(UART01x_LCRH_BRK | UART01x_LCRH_FEN),
  	       uap->port.membase + UART010_LCRH);
  
-@@ -391,7 +390,7 @@ pl010_set_termios(struct uart_port *port
+@@ -391,7 +389,7 @@ pl010_set_termios(struct uart_port *port
  	/*
  	 * Ask the core to calculate the divisor for us.
  	 */
@@ -213,7 +212,7 @@
  	quot = uart_get_divisor(port, baud);
  
  	switch (termios->c_cflag & CSIZE) {
-@@ -454,25 +453,25 @@ pl010_set_termios(struct uart_port *port
+@@ -454,25 +452,25 @@ pl010_set_termios(struct uart_port *port
  		uap->port.ignore_status_mask |= UART_DUMMY_RSR_RX;
  
  	/* first, disable everything */
@@ -245,7 +244,7 @@
  
  	spin_unlock_irqrestore(&uap->port.lock, flags);
  }
-@@ -554,7 +553,7 @@ static struct uart_ops amba_pl010_pops =
+@@ -554,7 +552,7 @@ static struct uart_ops amba_pl010_pops =
  	.verify_port	= pl010_verify_port,
  };
  
@@ -254,7 +253,7 @@
  
  #ifdef CONFIG_SERIAL_AMBA_PL010_CONSOLE
  
-@@ -564,10 +563,10 @@ static void pl010_console_putchar(struct
+@@ -564,10 +562,10 @@ static void pl010_console_putchar(struct
  	unsigned int status;
  
  	do {
@@ -267,7 +266,7 @@
  }
  
  static void
-@@ -581,8 +580,8 @@ pl010_console_write(struct console *co,
+@@ -581,8 +579,8 @@ pl010_console_write(struct console *co,
  	/*
  	 *	First save the CR then disable the interrupts
  	 */
@@ -278,7 +277,7 @@
  
  	uart_console_write(&uap->port, s, count, pl010_console_putchar);
  
-@@ -591,10 +590,10 @@ pl010_console_write(struct console *co,
+@@ -591,10 +589,10 @@ pl010_console_write(struct console *co,
  	 *	and restore the TCR
  	 */
  	do {
@@ -291,7 +290,7 @@
  
  	clk_disable(uap->clk);
  }
-@@ -603,9 +602,9 @@ static void __init
+@@ -603,9 +601,9 @@ static void __init
  pl010_console_get_options(struct uart_amba_port *uap, int *baud,
  			     int *parity, int *bits)
  {
@@ -303,7 +302,7 @@
  
  		*parity = 'n';
  		if (lcr_h & UART01x_LCRH_PEN) {
-@@ -620,8 +619,8 @@ pl010_console_get_options(struct uart_am
+@@ -620,8 +618,8 @@ pl010_console_get_options(struct uart_am
  		else
  			*bits = 8;
  
@@ -314,7 +313,7 @@
  		*baud = uap->port.uartclk / (16 * (quot + 1));
  	}
  }
-@@ -640,7 +639,7 @@ static int __init pl010_console_setup(st
+@@ -640,7 +638,7 @@ static int __init pl010_console_setup(st
  	 * if so, search for the first available port that does have
  	 * console support.
  	 */
@@ -323,23 +322,8 @@
  		co->index = 0;
  	uap = amba_ports[co->index];
  	if (!uap)
-@@ -662,7 +661,7 @@ static int __init pl010_console_setup(st
- 
- static struct uart_driver amba_reg;
- static struct console amba_console = {
--	.name		= "ttyAM",
-+	.name		= SERIAL_AMBA_NAME,
- 	.write		= pl010_console_write,
- 	.device		= uart_console_device,
- 	.setup		= pl010_console_setup,
-@@ -678,11 +677,11 @@ static struct console amba_console = {
- 
- static struct uart_driver amba_reg = {
- 	.owner			= THIS_MODULE,
--	.driver_name		= "ttyAM",
--	.dev_name		= "ttyAM",
-+	.driver_name		= SERIAL_AMBA_NAME,
-+	.dev_name		= SERIAL_AMBA_NAME,
+@@ -682,7 +680,7 @@ static struct uart_driver amba_reg = {
+ 	.dev_name		= "ttyAM",
  	.major			= SERIAL_AMBA_MAJOR,
  	.minor			= SERIAL_AMBA_MINOR,
 -	.nr			= UART_NR,
@@ -349,7 +333,7 @@
  
 --- a/drivers/tty/serial/Kconfig
 +++ b/drivers/tty/serial/Kconfig
-@@ -16,10 +16,25 @@ config SERIAL_AMBA_PL010
+@@ -16,10 +16,18 @@ config SERIAL_AMBA_PL010
  	help
  	  This selects the ARM(R) AMBA(R) PrimeCell PL010 UART.  If you have
  	  an Integrator/AP or Integrator/PP2 platform, or if you have a
@@ -365,13 +349,6 @@
 +	---help---
 +	  Set this to the number of serial ports you want the AMBA PL010 driver
 +	  to support.
-+
-+config SERIAL_AMBA_PL010_PORTNAME
-+	string "Name of the AMBA PL010 serial ports"
-+	depends on SERIAL_AMBA_PL010
-+	default "ttyAM"
-+	---help---
-+	  ::: To be written :::
 +
  config SERIAL_AMBA_PL010_CONSOLE
  	bool "Support for console on AMBA serial port"
