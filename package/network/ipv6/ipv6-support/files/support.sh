@@ -93,93 +93,143 @@ announce_prefix() {
 }
 
 
-disable_downstream() {
+disable_router() {
 	local network="$1"
 
 	# Notify the address distribution daemon
 	ubus call 6distributed deliface '{"network": "'"$network"'"}'
 
 	# Disable advertisement daemon
-	stop_service /usr/sbin/6relayd "/var/run/ipv6-downstream-$network.pid"
+	stop_service /usr/sbin/6relayd "/var/run/ipv6-router-$network.pid"
 }
 
 
-restart_relay_add() {
+restart_relay_slave() {
+	local __section="$1"
+	local __master="$2"
+
+	network_is_up "$__section" || return
+
+	local __device=""
+	network_get_device __device "$__section"
+
+	local __cmaster=""
+	config_get __cmaster "$__section" relay_master
+
+	[ "$__master" == "$__cmaster" ] && {
+		disable_interface "$__section"
+		enable_interface "$__section" "$__device"
+	}
+}
+
+
+add_relay_slave() {
 	local __section="$1"
 	local __return="$2"
 	local __master="$3"
-	local __disable="$4"
+	local __mode="$4"
 
 	network_is_up "$__section" || return
+
+	# Get device
+	local __device=""
+	network_get_device __device "$__section"
 
 	# Match master network
 	local __cmaster=""
 	config_get __cmaster "$__section" relay_master
-	[ "$__master" != "$__cmaster" ] && return
+	[ "$__master" == "$__cmaster" ] || return
 	
+	# Test slave  mode
+	local __cmode=""
+	config_get __cmode "$__section" mode
+	[ "$__cmode" == "downstream" ] && __cmode="router"
+
+	# Don't start fallback interfaces if we are in forced-relay mode
+	[ "$__cmode" == "relay" -o "$__mode" == "fallback" ] || return
+
+	# Don't make non-relay or non-router interfaces slaves
+	[ "$__cmode" == "relay" -o "$__cmode" == "router" ] || return
+
 	# Disable any active distribution
-	disable_downstream "$__section"
+	[ "$__cmode" == "router" ] && disable_router "$__section"
 
-	local __device=""
-	network_get_device __device "$__section"
-	
-	# Coming from stop relay, reenable distribution
-	[ "$__disable" == "disable" ] && {
-		enable_downstream "$__section" "$__device"
-		return
-	}
-
-	
 	eval "$__return"'="$'"$__return"' '"$__device"'"'
 }
 
 
 stop_relay() {
 	local network="$1"
-	local pid="/var/run/ipv6-relay-$network.pid"
-	local was_running=""
+	local pid_fallback="/var/run/ipv6-relay-fallback-$network.pid"
+	local pid_forced="/var/run/ipv6-relay-forced-$network.pid"
+	local was_fallback=""
 	
-	stop_service /usr/sbin/6relayd "$pid" was_running
+	stop_service /usr/sbin/6relayd "$pid_fallback" was_fallback
+	stop_service /usr/sbin/6relayd "$pid_forced"
 
 	# Reenable normal distribution on slave interfaces	
-	[ -n "$was_running" ] && config_foreach restart_relay_add interface dummy "$network" disable
+	[ -n "$was_fallback" ] && config_foreach restart_relay_slave interface "$network"
+}
+
+
+detect_forced_relay_mode() {
+	local __section="$1"
+	local __mode="$2"
+
+	local __cmode
+	config_get __cmode "$__section" mode
+	[ "$__cmode" == "relay" ] && eval "$__mode=forced"
 }
 
 
 restart_relay() {
 	local network="$1"
-	local force="$2"
-	local pid="/var/run/ipv6-relay-$network.pid"
+	local mode="$2"
 
-	local not_running=0
-	[ -f "$pid" ] || not_running=1
-
-	# Don't start if not desired
-	[ "$force" != "1" ] && [ "$not_running" == "1" ] && return
-
-	# Kill current relay and distribution daemon
+	# Stop last active relay
 	stop_relay "$network"
+
+	# Detect if we have a forced-relay
+	[ -z "$mode" ] && config_foreach detect_forced_relay_mode interface mode
+
+	# Don't start without a mode
+	[ -z "$mode" ] && return
 
 	# Detect master device
 	local device=""
-	network_get_device device $network
+	network_get_device device "$network"
 
 	# Generate command string
-	local cmd="/usr/sbin/6relayd -A $device "
-	config_foreach restart_relay_add interface cmd "$network"
+	local cmd="/usr/sbin/6relayd -A $device"
+	local ifaces=""
+	config_foreach add_relay_slave interface ifaces "$network" "$mode"
 
 	# Start relay
-	start_service "$cmd" "$pid"
+	local pid="/var/run/ipv6-relay-$mode-$network.pid"
+	[ -n "$ifaces" ] && start_service "$cmd $ifaces" "$pid"
+
+	# There are no slave interface, however indicate that we want to relay
+	[ -z "$ifaces" ] && touch "$pid"
 }
 
 
 restart_master_relay() {
 	local network="$1"
+	local mode="$2"
+	local pid_fallback="/var/run/ipv6-relay-fallback-$network.pid"
+	local pid_forced="/var/run/ipv6-relay-forced-$network.pid"
 
 	# Disable active relaying to this interface
-	local relay_master
 	config_get relay_master "$network" relay_master
-	[ -n "$relay_master" ] && restart_relay "$relay_master"
+	[ -z "$relay_master" ] && return
+	network_is_up "$relay_master" || return
+
+	# Detect running mode
+	[ -z "$mode" && -f "$pid_fallback" ] && mode="fallback"
+	[ -z "$mode" && -f "$pid_forced" ] && mode="forced"
+
+	# Restart relay if running or start requested
+	[ -n "$mode" ] && restart_relay "$relay_master" "$mode"
 }
 
 
@@ -193,13 +243,13 @@ disable_interface() {
 	restart_master_relay "$network"
 
 	# Disable distribution
-	disable_downstream "$network"
+	disable_router "$network"
 
 	# Disable relay
 	stop_relay "$network"
 
 	# Disable DHCPv6 client if enabled, state script will take care
-	stop_service /usr/sbin/odhcp6c "/var/run/ipv6-upstream-$network.pid"
+	stop_service /usr/sbin/odhcp6c "/var/run/ipv6-dhcpv6-$network.pid"
 }
 
 
@@ -245,10 +295,13 @@ enable_static() {
 
 	# Announce all static prefixes
 	config_list_foreach "$network" static_prefix announce_prefix $network
+
+	# start relay if there are forced relay members
+	restart_relay "$network"
 }
 
 
-enable_downstream() {
+enable_router() {
 	local network="$1"
 	local device="$2"
 
@@ -259,7 +312,7 @@ enable_downstream() {
 	[ "$length" -ne "0" ] && ubus call 6distributed newiface '{"network": "'"$network"'", "iface": "'"$device"'", "length": '"$length"'}'
 
 	# Start RD & DHCPv6 service
-	local pid="/var/run/ipv6-downstream-$network.pid"
+	local pid="/var/run/ipv6-router-$network.pid"
 	start_service "/usr/sbin/6relayd -Rserver -Dserver . $device" "$pid"
 
 	# Try relaying if necessary
@@ -267,7 +320,7 @@ enable_downstream() {
 }
 
 
-enable_upstream() {
+enable_dhcpv6() {
 	local network="$1"
 	local device="$2"
 	
@@ -292,13 +345,30 @@ enable_upstream() {
 	}
 	
 	# Start DHCPv6 client
-	local pid="/var/run/ipv6-upstream-$network.pid"
+	local pid="/var/run/ipv6-dhcpv6-$network.pid"
 	start_service "/usr/sbin/odhcp6c -s/lib/ipv6/dhcpv6.sh $dhcp6_opts" "$pid"
 
 	# Refresh RA on all interfaces
-	for pid in /var/run/ipv6-downstream-*.pid; do
+	for pid in /var/run/ipv6-router-*.pid; do
 		kill -SIGUSR1 $(cat "$pid")
 	done
 }
 
 
+enable_interface()
+{
+	local network="$1"
+	local device="$2"
+	local mode=""
+	config_get mode "$network" mode
+
+	# Compatibility with old mode names
+	[ "$mode" == "downstream" ] && mode=router
+	[ "$mode" == "upstream" ] && mode=dhcpv6
+
+	# Run mode startup code
+	[ "$mode" == "dhcpv6" -o "$mode" == "static" ] && enable_static "$network" "$device"
+	[ "$mode" == "dhcpv6" ] && enable_dhcpv6 "$network" "$device"
+	[ "$mode" == "router" ] && enable_router "$network" "$device"
+	[ "$mode" == "relay" ] && restart_master_relay "$network" forced
+}

@@ -3,16 +3,11 @@
 [ "$DEVICE" == "lo" ] && exit 0
 . /lib/ipv6/support.sh
 
-local mode
-config_get mode "$INTERFACE" mode
-
 case "$ACTION" in
 	ifup)
-		[ "$mode" != "downstream" ] && enable_static $INTERFACE $DEVICE
-		[ "$mode" == "upstream" ] && enable_upstream $INTERFACE $DEVICE
-		[ "$mode" == "downstream" ] && enable_downstream $INTERFACE $DEVICE
+		enable_interface "$INTERFACE" "$DEVICE"
 	;;
 	ifdown)
-		disable_interface $INTERFACE $DEVICE
+		disable_interface "$INTERFACE" "$DEVICE"
 	;;
 esac
