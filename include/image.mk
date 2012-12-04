@@ -109,6 +109,7 @@ endif
 ifneq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),)
   define Image/mkfs/cpiogz
 		( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz )
+		$(call Image/Build,cpiogz)
   endef
 endif
 
@@ -116,6 +117,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_TARGZ),)
   define Image/mkfs/targz
 		# Preserve permissions (-p) when building as non-root user
 		$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+		$(call Image/Build,targz)
   endef
 endif
 
