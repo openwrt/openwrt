@@ -32,12 +32,16 @@ define Package/linux-atm/description
   This package contains a library for accessing the Linux ATM subsystem.
 endef
 
-define Package/atm-tools
+define Package/linux-atm/Default
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=linux-atm
-  TITLE:=Linux ATM tools
   URL:=http://linux-atm.sourceforge.net/
+endef
+
+define Package/atm-tools
+  $(call Package/linux-atm/Default)
+  TITLE:=Linux ATM tools
 endef
 
 define Package/atm-tools/description
@@ -45,11 +49,8 @@ define Package/atm-tools/description
 endef
 
 define Package/atm-diagnostics
-  SECTION:=net
-  CATEGORY:=Network
-  DEPENDS:=linux-atm
+  $(call Package/linux-atm/Default)
   TITLE:=Linux ATM Diagnostics
-  URL:=http://linux-atm.sourceforge.net/
 endef
 
 define Package/atm-diagnostics/description
@@ -57,11 +58,8 @@ define Package/atm-diagnostics/description
 endef
 
 define Package/br2684ctl
-  SECTION:=net
-  CATEGORY:=Network
-  DEPENDS:=linux-atm
+  $(call Package/linux-atm/Default)
   TITLE:=ATM Ethernet bridging configuration utility
-  URL:=http://linux-atm.sourceforge.net/
 endef
 
 define Package/br2684ctl/description
