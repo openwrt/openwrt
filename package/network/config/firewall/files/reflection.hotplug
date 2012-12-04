@@ -3,34 +3,59 @@
 . /lib/functions.sh
 . /lib/functions/network.sh
 
-if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
-	local wanip
-	network_get_ipaddr wanip wan || return
+if [ "$ACTION" = "remove" ]; then
 
-	iptables -t nat -F nat_reflection_in 2>/dev/null || {
-		iptables -t nat -N nat_reflection_in
-		iptables -t nat -A prerouting_rule -j nat_reflection_in
+	delete_rules_by_comment() {
+		local table="$1"
+		local chain="$2"
+		local comment="$3"
+
+		iptables -t "$table" --line-numbers -nL "$chain" 2>/dev/null | \
+			sed -e '
+				1d;
+				1! {
+					\#^[0-9]\+ .* /\* '"$comment"' \*/.*$# {
+						s/ .*$//;
+						G; h;
+					}
+				};
+				$!d;
+			' | xargs -n1 iptables -t "$table" -D "$chain" 2>/dev/null
 	}
 
-	iptables -t nat -F nat_reflection_out 2>/dev/null || {
-		iptables -t nat -N nat_reflection_out
-		iptables -t nat -A postrouting_rule -j nat_reflection_out
-	}
+	delete_rules_by_comment nat    nat_reflection_in  "$INTERFACE"
+	delete_rules_by_comment nat    nat_reflection_out "$INTERFACE"
+	delete_rules_by_comment filter nat_reflection_fwd "$INTERFACE"
 
-	iptables -t filter -F nat_reflection_fwd 2>/dev/null || {
-		iptables -t filter -N nat_reflection_fwd
-		iptables -t filter -A forwarding_rule -j nat_reflection_fwd
+elif [ "$ACTION" = "add" ]; then
+
+	prepare_chains() {
+		iptables -t nat -N nat_reflection_in 2>/dev/null && {
+			iptables -t nat -A prerouting_rule -j nat_reflection_in
+		}
+
+		iptables -t nat -N nat_reflection_out 2>/dev/null && {
+			iptables -t nat -A postrouting_rule -j nat_reflection_out
+		}
+
+		iptables -t filter -N nat_reflection_fwd 2>/dev/null && {
+			iptables -t filter -A forwarding_rule -j nat_reflection_fwd
+		}
 	}
 
 	find_networks() {
 		find_networks_cb() {
 			local cfg="$1"
 			local zone="$2"
+			local need_masq="${3:-0}"
 
 			local name
 			config_get name "$cfg" name
 
-			[ "$name" = "$zone" ] && {
+			local masq
+			config_get_bool masq "$cfg" masq 0
+
+			[ "$name" = "$zone" ] && [ "$masq" -ge "$need_masq" ] && {
 				local network
 				config_get network "$cfg" network
 
@@ -51,82 +76,94 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 
 		local src
 		config_get src "$cfg" src
+		[ "$src" == "$ZONE" ] || return
+
+		local dest
+		config_get dest "$cfg" dest
+		[ "$dest" != "*" ] || return
 
 		local target
 		config_get target "$cfg" target DNAT
+		[ "$target" = DNAT ] || return
 
-		[ "$src" = wan ] && [ "$target" = DNAT ] && {
-			local dest
-			config_get dest "$cfg" dest "lan"
-			[ "$dest" != "*" ] || return
+		prepare_chains
 
-			local net
-			for net in $(find_networks "$dest"); do
-				local lannet
-				network_get_subnet lannet "$net" || return
+		local net
+		for net in $(find_networks "$dest" 0); do
+			local intnet
+			network_get_subnet intnet "$net" || continue
 
-				local proto
-				config_get proto "$cfg" proto
+			local proto
+			config_get proto "$cfg" proto
 
-				local epmin epmax extport
-				config_get extport "$cfg" src_dport "1-65535"
-				[ -n "$extport" ] || return
+			local epmin epmax extport
+			config_get extport "$cfg" src_dport "1-65535"
+			[ -n "$extport" ] || return
 
-				epmin="${extport%[-:]*}"; epmax="${extport#*[-:]}"
-				[ "${epmin#!}" != "$epmax" ] || epmax=""
+			epmin="${extport%[-:]*}"; epmax="${extport#*[-:]}"
+			[ "${epmin#!}" != "$epmax" ] || epmax=""
 
-				local ipmin ipmax intport
-				config_get intport "$cfg" dest_port "$extport"
+			local ipmin ipmax intport
+			config_get intport "$cfg" dest_port "$extport"
 
-				ipmin="${intport%[-:]*}"; ipmax="${intport#*[-:]}"
-				[ "${ipmin#!}" != "$ipmax" ] || ipmax=""
+			ipmin="${intport%[-:]*}"; ipmax="${intport#*[-:]}"
+			[ "${ipmin#!}" != "$ipmax" ] || ipmax=""
 
-				local exthost
-				config_get exthost "$cfg" src_dip "$wanip"
+			local exthost
+			config_get exthost "$cfg" src_dip "$extip"
 
-				local inthost
-				config_get inthost "$cfg" dest_ip
-				[ -n "$inthost" ] || return
+			local inthost
+			config_get inthost "$cfg" dest_ip
+			[ -n "$inthost" ] || return
 
-				[ "$proto" = all    ] && proto="tcp udp"
-				[ "$proto" = tcpudp ] && proto="tcp udp"
+			[ "$proto" = all    ] && proto="tcp udp"
+			[ "$proto" = tcpudp ] && proto="tcp udp"
 
-				[ "${inthost#!}" = "$inthost" ] || return 0
-				[ "${exthost#!}" = "$exthost" ] || return 0
+			[ "${inthost#!}" = "$inthost" ] || return 0
+			[ "${exthost#!}" = "$exthost" ] || return 0
 
-				[ "${epmin#!}" != "$epmin" ] && \
-					extport="! --dport ${epmin#!}${epmax:+:$epmax}" || \
-					extport="--dport $epmin${epmax:+:$epmax}"
+			[ "${epmin#!}" != "$epmin" ] && \
+				extport="! --dport ${epmin#!}${epmax:+:$epmax}" || \
+				extport="--dport $epmin${epmax:+:$epmax}"
 
-				[ "${ipmin#!}" != "$ipmin" ] && \
-					intport="! --dport ${ipmin#!}${ipmax:+:$ipmax}" || \
-					intport="--dport $ipmin${ipmax:+:$ipmax}"
+			[ "${ipmin#!}" != "$ipmin" ] && \
+				intport="! --dport ${ipmin#!}${ipmax:+:$ipmax}" || \
+				intport="--dport $ipmin${ipmax:+:$ipmax}"
 
-				local p
-				for p in ${proto:-tcp udp}; do
-					case "$p" in
-						tcp|udp|6|17)
-							iptables -t nat -A nat_reflection_in \
-								-s $lannet -d $exthost \
-								-p $p $extport \
-								-j DNAT --to $inthost:${ipmin#!}${ipmax:+-$ipmax}
+			local p
+			for p in ${proto:-tcp udp}; do
+				case "$p" in
+					tcp|udp|6|17)
+						iptables -t nat -A nat_reflection_in \
+							-s $intnet -d $exthost \
+							-p $p $extport \
+							-m comment --comment "$INTERFACE" \
+							-j DNAT --to $inthost:${ipmin#!}${ipmax:+-$ipmax}
 
-							iptables -t nat -A nat_reflection_out \
-								-s $lannet -d $inthost \
-								-p $p $intport \
-								-j SNAT --to-source ${lannet%%/*}
+						iptables -t nat -A nat_reflection_out \
+							-s $intnet -d $inthost \
+							-p $p $intport \
+							-m comment --comment "$INTERFACE" \
+							-j SNAT --to-source ${intnet%%/*}
 
-							iptables -t filter -A nat_reflection_fwd \
-								-s $lannet -d $inthost \
-								-p $p $intport \
-								-j ACCEPT
-						;;
-					esac
-				done
+						iptables -t filter -A nat_reflection_fwd \
+							-s $intnet -d $inthost \
+							-p $p $intport \
+							-m comment --comment "$INTERFACE" \
+							-j ACCEPT
+					;;
+				esac
 			done
-		}
+		done
 	}
 
 	config_load firewall
+
+	local is_masq_zone="$(find_networks "$ZONE" 1)"
+	[ -n "$is_masq_zone" ] || exit 0
+
+	local extip
+	network_get_ipaddr extip "$INTERFACE" || exit 0
+
 	config_foreach setup_fwd redirect
 fi
