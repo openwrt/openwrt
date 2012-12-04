@@ -6,8 +6,6 @@ mac80211_hostapd_setup_base() {
 	local ifname="$2"
 
 	cfgfile="/var/run/hostapd-$phy.conf"
-	macfile="/var/run/hostapd-$phy.maclist"
-	[ -e "$macfile" ] && rm -f "$macfile"
 
 	config_get device "$vif" device
 	config_get country "$device" country
@@ -50,24 +48,6 @@ mac80211_hostapd_setup_base() {
 	[ -n "$country" ] && country_ie=1
 	config_get_bool country_ie "$device" country_ie "$country_ie"
 	[ "$country_ie" -gt 0 ] && append base_cfg "ieee80211d=1" "$N"
-
-	config_get macfilter "$vif" macfilter
-	case "$macfilter" in
-		allow)
-			append base_cfg "macaddr_acl=1" "$N"
-			append base_cfg "accept_mac_file=$macfile" "$N"
-			;;
-		deny)
-			append base_cfg "macaddr_acl=0" "$N"
-			append base_cfg "deny_mac_file=$macfile" "$N"
-			;;
-	esac
-	config_get maclist "$vif" maclist
-	[ -n "$maclist" ] && {
-		for mac in $maclist; do
-			echo "$mac" >> $macfile
-		done
-	}
 
 	local br brval brstr
 	[ -n "$basic_rate_list" ] && {

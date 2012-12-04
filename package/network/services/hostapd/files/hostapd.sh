@@ -210,6 +210,27 @@ hostapd_set_bss_options() {
 			;;
 		esac
 	fi
+
+	config_get macfilter "$vif" macfilter
+	macfile="/var/run/hostapd-$ifname.maclist"
+	[ -e "$macfile" ] && rm -f "$macfile"
+
+	case "$macfilter" in
+		allow)
+			append "$var" "macaddr_acl=1" "$N"
+			append "$var" "accept_mac_file=$macfile" "$N"
+			;;
+		deny)
+			append "$var" "macaddr_acl=0" "$N"
+			append "$var" "deny_mac_file=$macfile" "$N"
+			;;
+	esac
+	config_get maclist "$vif" maclist
+	[ -n "$maclist" ] && {
+		for mac in $maclist; do
+			echo "$mac" >> $macfile
+		done
+	}
 }
 
 hostapd_set_log_options() {
