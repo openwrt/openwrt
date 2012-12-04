@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=cns3xxx
 BOARDNAME:=Cavium Networks Econa CNS3xxx
-FEATURES:=squashfs fpu gpio
+FEATURES:=squashfs fpu gpio pcie usb usbgadget
 CFLAGS:=-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
