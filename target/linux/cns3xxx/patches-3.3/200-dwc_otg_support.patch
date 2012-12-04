@@ -56,14 +56,3 @@
  	help
  	   A USB device uses a controller to talk to its host.
  	   Systems should have only one such upstream link.
---- a/drivers/usb/gadget/Makefile
-+++ b/drivers/usb/gadget/Makefile
-@@ -3,7 +3,7 @@
- #
- ccflags-$(CONFIG_USB_GADGET_DEBUG) := -DDEBUG
- 
--obj-$(CONFIG_USB_GADGET)	+= udc-core.o
-+#obj-$(CONFIG_USB_GADGET)	+= udc-core.o
- obj-$(CONFIG_USB_DUMMY_HCD)	+= dummy_hcd.o
- obj-$(CONFIG_USB_NET2272)	+= net2272.o
- obj-$(CONFIG_USB_NET2280)	+= net2280.o
