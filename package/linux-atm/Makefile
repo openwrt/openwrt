@@ -132,7 +132,7 @@ endef
 define BuildAtmPlugin
   define Package/$(1)/install
 	$(INSTALL_DIR) $$(1)/usr/$(3)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/$(3)/$(2) $$(1)/$(3)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/$(3)/$(2) $$(1)/usr/$(3)
   endef
 
   $$(eval $$(call BuildPackage,$(1)))
