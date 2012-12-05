@@ -21,6 +21,12 @@ PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
+ATM_DEBUG_BINS:=aread awrite atmdiag atmdump atmswitch saaldump \
+		sonetdiag svc_recv svc_send ttcp_atm
+ATM_DEBUG_SBINS:=atmaddr atmloop atmtcp esi atmsigd bus \
+		 ilmid ilmidiag lecs les mpcd zeppelin
+ATM_DEBUG_TOOLS:=$(ATM_DEBUG_BINS) $(ATM_DEBUG_SBINS)
+
 define Package/linux-atm
   SECTION:=libs
   CATEGORY:=Libraries
@@ -75,6 +81,19 @@ define Package/br2684ctl/description
   Support for AAL5 encapsulation (RFC-1483/RFC-2684) over ATM.
 endef
 
+define GenAtmPlugin
+  define Package/$(1)
+     $(call Package/linux-atm/Default)
+     TITLE:=Linux ATM tool $(2)
+  endef
+
+  define Package/$(1)/description
+     Linux ATM tool $(2).
+  endef
+endef
+
+$(foreach t,$(ATM_DEBUG_TOOLS),$(eval $(call GenAtmPlugin,atm-$(t),$(t))))
+
 define Build/Configure
 	$(call Build/Configure/Default)
 	# prevent autoheader invocation
@@ -107,6 +126,16 @@ endef
 define Package/atm-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/atmarp{,d} $(1)/usr/sbin/
+endef
+
+
+define BuildAtmPlugin
+  define Package/$(1)/install
+	$(INSTALL_DIR) $$(1)/usr/$(3)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/$(3)/$(2) $$(1)/$(3)
+  endef
+
+  $$(eval $$(call BuildPackage,$(1)))
 endef
 
 define Package/atm-debug-tools/install
@@ -156,3 +185,5 @@ $(eval $(call BuildPackage,atm-tools))
 $(eval $(call BuildPackage,atm-debug-tools))
 $(eval $(call BuildPackage,atm-diagnostics))
 $(eval $(call BuildPackage,br2684ctl))
+$(foreach t,$(ATM_DEBUG_BINS),$(eval $(call BuildAtmPlugin,atm-$(t),$(t),bin)))
+$(foreach t,$(ATM_DEBUG_SBINS),$(eval $(call BuildAtmPlugin,atm-$(t),$(t),sbin)))
