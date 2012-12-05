@@ -83,6 +83,11 @@ define Package/libiconv-full/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libiconv.so* $(1)/usr/lib/
 endef
 
+define Package/iconv/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/iconv $(1)/usr/bin/
+endef
+
 $(eval $(call BuildPackage,libcharset))
 $(eval $(call BuildPackage,libiconv-full))
 $(eval $(call BuildPackage,iconv))
