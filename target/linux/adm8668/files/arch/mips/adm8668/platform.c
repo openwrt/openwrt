@@ -77,12 +77,14 @@ static struct platform_device adm8668_eth1_device = {
 	.num_resources	= ARRAY_SIZE(eth1_resources),
 };
 
+static struct platform_device *adm8668_devs[] = {
+	&adm8668_uart_device,
+	&adm8668_eth0_device,
+	&adm8668_eth1_device,
+};
+
 int __devinit adm8668_devs_register(void)
 {
-	platform_device_register(&adm8668_uart_device);
-	platform_device_register(&adm8668_eth0_device);
-	platform_device_register(&adm8668_eth1_device);
-
-	return 0;
+	return platform_add_devices(adm8668_devs, ARRAY_SIZE(adm8668_devs));
 }
 arch_initcall(adm8668_devs_register);
