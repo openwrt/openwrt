@@ -108,7 +108,7 @@ static void __init init_adm8668_irqs(void)
 	/* disable all interrupts for the moment */
 	intc_write_reg(IRQ_MASK, IRQ_DISABLE_REG);
 
-	for (i = 0; i <= INT_LVL_MAX; i++)
+	for (i = 0; i <= ADM8668_IRQ_MAX; i++)
 		irq_set_chip_and_handler(i, &adm8668_irq_type,
 			handle_level_irq);
 

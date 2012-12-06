@@ -54,7 +54,7 @@ static struct amba_device adm8668_uart0_device = {
 		.flags		= IORESOURCE_MEM,
 	},
 	.irq = {
-		INT_LVL_UART0,
+		ADM8668_UART0_IRQ,
 		-1
 	},
 	.periphid = 0x0041010,
@@ -67,7 +67,7 @@ static struct resource eth0_resources[] = {
 		.flags		= IORESOURCE_MEM,
 	},
 	{
-		.start		= INT_LVL_LAN,
+		.start		= ADM8668_LAN_IRQ,
 		.flags		= IORESOURCE_IRQ,
 	},
 };
@@ -91,7 +91,7 @@ static struct resource eth1_resources[] = {
 		.flags		= IORESOURCE_MEM,
 	},
 	{
-		.start		= INT_LVL_WAN,
+		.start		= ADM8668_WAN_IRQ,
 		.flags		= IORESOURCE_IRQ,
 	},
 };
@@ -138,8 +138,8 @@ static struct resource usb_resources[] = {
 		.flags	= IORESOURCE_MEM,
 	},
 	{
-		.start	= INT_LVL_USB,
-		.end	= INT_LVL_USB,
+		.start	= ADM8668_USB_IRQ,
+		.end	= ADM8668_USB_IRQ,
 		.flags	= IORESOURCE_IRQ,
 	},
 };
