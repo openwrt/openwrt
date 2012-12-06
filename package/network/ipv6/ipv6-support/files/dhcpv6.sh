@@ -39,8 +39,9 @@ config_get prefix_fallback "$network" prefix_fallback
 
 local peerdns
 config_get_bool peerdns "$network" peerdns 0
-[ "peerdns" -eq "1" ] && {
+[ "$peerdns" -eq "1" ] && {
 	proto_init_update "*" 1
+	proto_set_keep 1
 	for server in $RDNSS; do
 		proto_add_dns_server "$server"
 	done
