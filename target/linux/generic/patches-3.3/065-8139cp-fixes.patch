@@ -66,11 +66,9 @@ Date:   Sun Nov 25 15:52:09 2012 -0500
     
     Signed-off-by: David S. Miller <davem@davemloft.net>
 
-diff --git a/drivers/net/ethernet/realtek/8139cp.c b/drivers/net/ethernet/realtek/8139cp.c
-index b01f83a..6cb96b4 100644
 --- a/drivers/net/ethernet/realtek/8139cp.c
 +++ b/drivers/net/ethernet/realtek/8139cp.c
-@@ -648,6 +648,7 @@ static void cp_tx (struct cp_private *cp)
+@@ -645,6 +645,7 @@ static void cp_tx (struct cp_private *cp
  {
  	unsigned tx_head = cp->tx_head;
  	unsigned tx_tail = cp->tx_tail;
@@ -78,7 +76,7 @@ index b01f83a..6cb96b4 100644
  
  	while (tx_tail != tx_head) {
  		struct cp_desc *txd = cp->tx_ring + tx_tail;
-@@ -666,6 +667,9 @@ static void cp_tx (struct cp_private *cp)
+@@ -663,6 +664,9 @@ static void cp_tx (struct cp_private *cp
  				 le32_to_cpu(txd->opts1) & 0xffff,
  				 PCI_DMA_TODEVICE);
  
@@ -88,7 +86,7 @@ index b01f83a..6cb96b4 100644
  		if (status & LastFrag) {
  			if (status & (TxError | TxFIFOUnder)) {
  				netif_dbg(cp, tx_err, cp->dev,
-@@ -697,6 +701,7 @@ static void cp_tx (struct cp_private *cp)
+@@ -694,6 +698,7 @@ static void cp_tx (struct cp_private *cp
  
  	cp->tx_tail = tx_tail;
  
@@ -96,7 +94,7 @@ index b01f83a..6cb96b4 100644
  	if (TX_BUFFS_AVAIL(cp) > (MAX_SKB_FRAGS + 1))
  		netif_wake_queue(cp->dev);
  }
-@@ -843,6 +848,8 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+@@ -840,6 +845,8 @@ static netdev_tx_t cp_start_xmit (struct
  		wmb();
  	}
  	cp->tx_head = entry;
@@ -105,7 +103,7 @@ index b01f83a..6cb96b4 100644
  	netif_dbg(cp, tx_queued, cp->dev, "tx queued, slot %d, skblen %d\n",
  		  entry, skb->len);
  	if (TX_BUFFS_AVAIL(cp) <= (MAX_SKB_FRAGS + 1))
-@@ -937,6 +944,8 @@ static void cp_stop_hw (struct cp_private *cp)
+@@ -934,6 +941,8 @@ static void cp_stop_hw (struct cp_privat
  
  	cp->rx_tail = 0;
  	cp->tx_head = cp->tx_tail = 0;
@@ -114,7 +112,7 @@ index b01f83a..6cb96b4 100644
  }
  
  static void cp_reset_hw (struct cp_private *cp)
-@@ -957,8 +966,38 @@ static void cp_reset_hw (struct cp_private *cp)
+@@ -954,8 +963,38 @@ static void cp_reset_hw (struct cp_priva
  
  static inline void cp_start_hw (struct cp_private *cp)
  {
@@ -153,7 +151,7 @@ index b01f83a..6cb96b4 100644
  }
  
  static void cp_enable_irq(struct cp_private *cp)
-@@ -969,7 +1008,6 @@ static void cp_enable_irq(struct cp_private *cp)
+@@ -966,7 +1005,6 @@ static void cp_enable_irq(struct cp_priv
  static void cp_init_hw (struct cp_private *cp)
  {
  	struct net_device *dev = cp->dev;
@@ -161,7 +159,7 @@ index b01f83a..6cb96b4 100644
  
  	cp_reset_hw(cp);
  
-@@ -992,17 +1030,6 @@ static void cp_init_hw (struct cp_private *cp)
+@@ -989,17 +1027,6 @@ static void cp_init_hw (struct cp_privat
  
  	cpw8(Config5, cpr8(Config5) & PMEStatus);
  
@@ -179,7 +177,7 @@ index b01f83a..6cb96b4 100644
  	cpw16(MultiIntr, 0);
  
  	cpw8_f(Cfg9346, Cfg9346_Lock);
-@@ -1192,6 +1219,7 @@ static void cp_tx_timeout(struct net_device *dev)
+@@ -1188,6 +1215,7 @@ static void cp_tx_timeout(struct net_dev
  	cp_clean_rings(cp);
  	rc = cp_init_rings(cp);
  	cp_start_hw(cp);
