@@ -52,33 +52,13 @@ void plat_irq_dispatch(void)
  */
 static void enable_adm8668_irq(struct irq_data *d)
 {
-	int irq = d->irq;
-
-	if ((irq < 0) || (irq > NR_IRQS))
-		return;
-
-	ADM8668_INTC_REG(IRQ_ENABLE_REG) = (1 << irq);
+	ADM8668_INTC_REG(IRQ_ENABLE_REG) = (1 << d->irq);
 }
 
-
-/*
- * disable 8668 irq
- */
-static void disable_adm8668_irq(struct irq_data *d)
-{
-	int irq = d->irq;
-
-	if ((irq < 0) || (irq > NR_IRQS))
-		return;
-
-	ADM8668_INTC_REG(IRQ_DISABLE_REG) = (1 << irq);
-}
 
 static void ack_adm8668_irq(struct irq_data *d)
 {
-	int irq = d->irq;
-
-	ADM8668_INTC_REG(IRQ_DISABLE_REG) = (1 << irq);
+	ADM8668_INTC_REG(IRQ_DISABLE_REG) = (1 << d->irq);
 }
 
 /*
@@ -88,7 +68,7 @@ static void ack_adm8668_irq(struct irq_data *d)
 static struct irq_chip adm8668_irq_type = {
 	.name = "adm8668",
 	.irq_ack = ack_adm8668_irq,
-	.irq_mask = disable_adm8668_irq,
+	.irq_mask = ack_adm8668_irq,
 	.irq_unmask = enable_adm8668_irq
 };
 
