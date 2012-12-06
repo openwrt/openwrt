@@ -31,33 +31,6 @@
 
 /** onboard uart **/
 #define ADM8668_UARTCLK_FREQ	62500000
-/* registers */
-#define UART_DR_REG		0x00
-#define UART_RSR_REG		0x04
-#define UART_CR_REG		0x14
-#define UART_FR_REG		0x18
-#define UART_IIR_REG		0x1C
-
-/* rsr reg */
-#define UART_FRAMING_ERR	0x01
-#define UART_PARITY_ERR		0x02
-#define UART_BREAK_ERR		0x04
-#define UART_OVERRUN_ERR	0x08
-#define UART_RX_STATUS_MASK	0x0F
-
-/* cr reg */
-#define UART_RX_INT_EN		0x10
-#define UART_TX_INT_EN		0x20
-#define UART_RX_TIMEOUT_INT_EN	0x40
-
-/* fr reg */
-#define UART_RX_FIFO_EMPTY	0x10
-#define UART_TX_FIFO_FULL	0x20
-
-/* iir reg */
-#define UART_RX_INT		0x02
-#define UART_TX_INT		0x04
-#define UART_RX_TIMEOUT_INT	0x08
 
 /* interrupt controller */
 #define IRQ_STATUS_REG		0x00	/* Read */

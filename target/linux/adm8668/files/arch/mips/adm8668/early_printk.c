@@ -1,5 +1,5 @@
 #include <linux/io.h>
-#include <linux/serial_core.h>
+#include <linux/amba/serial.h>
 #include <adm8668.h>
 
 #define UART_READ(r) \
@@ -10,7 +10,7 @@
 
 void prom_putchar(char c)
 {
-	UART_WRITE(c, UART_DR_REG);
-	while ((UART_READ(UART_FR_REG) & UART_TX_FIFO_FULL) != 0)
+	UART_WRITE(c, UART01x_DR);
+	while ((UART_READ(UART01x_FR) & UART01x_FR_TXFF) != 0)
 		;
 }
