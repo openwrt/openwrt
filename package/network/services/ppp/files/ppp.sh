@@ -16,8 +16,6 @@ ppp_generic_init_config() {
 	proto_config_add_string "pppd_options"
 	proto_config_add_string "connect"
 	proto_config_add_string "disconnect"
-	proto_config_add_boolean "defaultroute"
-	proto_config_add_boolean "peerdns"
 	proto_config_add_boolean "ipv6"
 	proto_config_add_boolean "authfail"
 	proto_config_add_int "mtu"
@@ -26,14 +24,8 @@ ppp_generic_init_config() {
 ppp_generic_setup() {
 	local config="$1"; shift
 
-	json_get_vars ipv6 peerdns defaultroute demand keepalive username password pppd_options
+	json_get_vars ipv6 demand keepalive username password pppd_options
 	[ "$ipv6" = 1 ] || ipv6=""
-	[ "$peerdns" = 0 ] && peerdns="" || peerdns="1"
-	if [ "$defaultroute" = 1 ]; then
-		defaultroute="defaultroute replacedefaultroute";
-	else
-		defaultroute="nodefaultroute"
-	fi
 	if [ "${demand:-0}" -gt 0 ]; then
 		demand="precompiled-active-filter /etc/ppp/filter demand idle $demand"
 	else
@@ -51,8 +43,9 @@ ppp_generic_setup() {
 		nodetach ipparam "$config" \
 		ifname "${proto:-ppp}-$config" \
 		${keepalive:+lcp-echo-interval $interval lcp-echo-failure ${keepalive%%[, ]*}} \
-		${ipv6:++ipv6} $defaultroute \
-		${peerdns:+usepeerdns} \
+		${ipv6:++ipv6} \
+		nodefaultroute \
+		usepeerdns \
 		$demand maxfail 1 \
 		${username:+user "$username" password "$password"} \
 		${connect:+connect "$connect"} \
