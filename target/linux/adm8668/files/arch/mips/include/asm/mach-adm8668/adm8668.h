@@ -64,6 +64,7 @@
 #define ADM8668_CR0		0x00
 #define ADM8668_CR1		0x04
 #define ADM8668_CR3		0x0C
+#define ADM8668_CR66		0x108
 
 /** For GPIO control **/
 #define	GPIO_REG		0x5C	/* on WLAN */

@@ -13,6 +13,7 @@
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/platform_data/tulip.h>
+#include <linux/usb/ehci_pdriver.h>
 #include <linux/mtd/physmap.h>
 #include <linux/mtd/partitions.h>
 #include <linux/pci.h>
@@ -130,10 +131,38 @@ static struct platform_device adm8668_nor_device = {
 	.dev.platform_data = &nor_flash_data,
 };
 
+static struct resource usb_resources[] = {
+	{
+		.start	= ADM8668_USB_BASE,
+		.end	= ADM8668_USB_BASE + 0x1FFFFF,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.start	= INT_LVL_USB,
+		.end	= INT_LVL_USB,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct usb_ehci_pdata usb_pdata = {
+	.caps_offset	= 0x100,
+	.has_tt		= 1,
+	.port_power_off	= 1,
+};
+
+static struct platform_device adm8668_usb_device = {
+	.name		= "ehci-platform",
+	.id		= -1,
+	.resource	= usb_resources,
+	.num_resources	= ARRAY_SIZE(usb_resources),
+	.dev.platform_data = &usb_pdata,
+};
+
 static struct platform_device *adm8668_devs[] = {
 	&adm8668_eth0_device,
 	&adm8668_eth1_device,
 	&adm8668_nor_device,
+	&adm8668_usb_device,
 };
 
 static void adm8668_fetch_mac(int unit)
@@ -162,6 +191,21 @@ static void adm8668_fetch_mac(int unit)
 	memcpy(pdata->mac, mac, sizeof(pdata->mac));
 }
 
+static void adm8668_ehci_workaround(void)
+{
+	u32 chipid;
+
+	chipid = ADM8668_CONFIG_REG(ADM8668_CR0);
+	ADM8668_CONFIG_REG(ADM8668_CR66) = 0x0C1600D9;
+
+	if (chipid == 0x86880001)
+		return;
+
+	ADM8668_CONFIG_REG(ADM8668_CR66) &= ~(3 << 20);
+	ADM8668_CONFIG_REG(ADM8668_CR66) |= (1 << 20);
+	pr_info("ADM8668: applied USB workaround\n");
+}
+
 
 int __devinit adm8668_devs_register(void)
 {
@@ -173,6 +217,7 @@ int __devinit adm8668_devs_register(void)
 
 	adm8668_fetch_mac(0);
 	adm8668_fetch_mac(1);
+	adm8668_ehci_workaround();
 
 	return platform_add_devices(adm8668_devs, ARRAY_SIZE(adm8668_devs));
 }
