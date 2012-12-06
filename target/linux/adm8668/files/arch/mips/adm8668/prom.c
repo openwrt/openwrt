@@ -25,44 +25,6 @@
 
 register volatile struct global_data *gd asm ("k0");
 
-#ifdef CONFIG_SERIAL_ADM8668_CONSOLE
-static inline unsigned int adm_uart_readl(unsigned int offset)
-{
-	return (*(volatile unsigned int *)(0xbe400000 + offset));
-}
-
-static inline void adm_uart_writel(unsigned int value, unsigned int offset)
-{
-	(*((volatile unsigned int *)(0xbe400000 + offset))) = value;
-}
-
-static void prom_putchar(char c)
-{
-	adm_uart_writel(c, UART_DR_REG);
-	while ((adm_uart_readl(UART_FR_REG) & UART_TX_FIFO_FULL) != 0)
-		;
-}
-
-static void __init
-early_console_write(struct console *con, const char *s, unsigned n)
-{
-	while (n-- && *s) {
-		if (*s == '\n')
-			prom_putchar('\r');
-		prom_putchar(*s);
-		s++;
-	}
-}
-
-static struct console early_console __initdata = {
-	.name	= "early",
-	.write	= early_console_write,
-	.flags	= CON_BOOT,
-	.index	= -1
-};
-
-#endif
-
 void __init prom_free_prom_memory(void)
 {
 	/* No prom memory to free */
@@ -121,10 +83,6 @@ void __init prom_init(void)
 {
 	bd_t *bd = gd->bd;
 	int memsize;
-
-#ifdef CONFIG_SERIAL_ADM8668_CONSOLE
-	register_console(&early_console);
-#endif
 
 	memsize = bd->bi_memsize;
 	printk("Board info:\n");
