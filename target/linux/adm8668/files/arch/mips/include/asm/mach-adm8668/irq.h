@@ -8,9 +8,7 @@
 #ifndef __ASM_MACH_ADM8668_IRQ_H
 #define __ASM_MACH_ADM8668_IRQ_H
 
-#define	NR_IRQS	32
+#define	NR_IRQS			32
 #define	MIPS_CPU_IRQ_BASE	16
-
-#define IRQ_MASK		0xffff
 
 #endif /* __ASM_MACH_ADM8668_IRQ_H */
