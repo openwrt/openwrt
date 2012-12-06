@@ -1,4 +1,6 @@
 /*
+ * Infineon/ADMTek 8668 (WildPass) platform devices support
+ *
  * Copyright (C) 2010 Scott Nicholas <neutronscott@scottn.us>
  * Copyright (C) 2012 Florian Fainelli <florian@openwrt.org>
  *
@@ -11,6 +13,7 @@
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/mtd/physmap.h>
+#include <linux/mtd/partitions.h>
 #include <linux/pci.h>
 #include <linux/slab.h>
 #include <linux/ioport.h>
@@ -89,9 +92,33 @@ static struct platform_device adm8668_eth1_device = {
 	.num_resources	= ARRAY_SIZE(eth1_resources),
 };
 
+static const char *nor_probe_types[] = { "adm8668part", NULL };
+
+static struct physmap_flash_data nor_flash_data = {
+	.width			= 2,
+	.part_probe_types	= nor_probe_types,
+};
+
+static struct resource nor_resources[] = {
+	{
+		.start	= ADM8668_SMEM1_BASE,
+		.end	= ADM8668_SMEM1_BASE + 0x800000 - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device adm8668_nor_device = {
+	.name		= "physmap-flash",
+	.id		= -1,
+	.resource	= nor_resources,
+	.num_resources	= ARRAY_SIZE(nor_resources),
+	.dev.platform_data = &nor_flash_data,
+};
+
 static struct platform_device *adm8668_devs[] = {
 	&adm8668_eth0_device,
 	&adm8668_eth1_device,
+	&adm8668_nor_device,
 };
 
 int __devinit adm8668_devs_register(void)
