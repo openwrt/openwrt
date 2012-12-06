@@ -22,7 +22,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 PKG_DRIVERS = \
-	ath5k libertas-usb libertas-sd p54-common p54-pci p54-usb p54-spi \
+	adm8211 ath5k libertas-usb libertas-sd p54-common p54-pci p54-usb p54-spi \
 	rt2x00-lib rt2x00-pci rt2x00-usb rt2x00-soc rt2800-lib rt2400-pci \
 	rt2500-pci rt2500-usb rt61-pci rt73-usb rt2800-pci rt2800-usb \
 	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
@@ -361,6 +361,14 @@ define KernelPackage/zd1211rw
   DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.ko
   AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
+endef
+
+define KernelPackage/adm8211
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=ADMTek 8211 support
+  DEPENDS+=@PCI_SUPPORT +kmod-mac80211 +kmod-eeprom-93cx6
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/adm8211.ko
+  AUTOLOAD:=$(call AutoLoad,60,adm8211)
 endef
 
 define KernelPackage/ath/config
@@ -1290,7 +1298,7 @@ MAKE_OPTS:= \
 	CONFIG_MWL8K=$(if $(CONFIG_PACKAGE_kmod-mwl8k),m) \
 	CONFIG_ATMEL= \
 	CONFIG_PCMCIA_ATMEL= \
-	CONFIG_ADM8211= \
+	CONFIG_ADM8211=$(if $(CONFIG_PACKAGE_kmod-adm8211),m) \
 	CONFIG_USB_NET_RNDIS_HOST= \
 	CONFIG_USB_NET_RNDIS_WLAN= \
 	CONFIG_USB_NET_CDCETHER= \
@@ -1632,6 +1640,7 @@ define KernelPackage/brcmfmac/install
 		$(1)/lib/firmware/brcm/
 endef
 
+$(eval $(call KernelPackage,adm8211))
 $(eval $(call KernelPackage,ath5k))
 $(eval $(call KernelPackage,lib80211))
 $(eval $(call KernelPackage,libertas-usb))
