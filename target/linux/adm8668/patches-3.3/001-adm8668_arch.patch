@@ -10,7 +10,7 @@
  include $(patsubst %, $(srctree)/arch/mips/%/Platform, $(platforms))
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -105,6 +105,25 @@ config BCM47XX
+@@ -105,6 +105,26 @@ config BCM47XX
  	help
  	 Support for BCM47XX based boards
  
@@ -29,6 +29,7 @@
 +	select DMA_NONCOHERENT
 +	select SWAP_IO_SPACE
 +	select SYS_HAS_EARLY_PRINTK
++	select ARCH_REQUIRE_GPIOLIB
 +	help
 +		ADM8668 board support by neutronscott
 +		Scott Nicholas <neutronscott@scottn.us>
@@ -36,7 +37,7 @@
  config BCM63XX
  	bool "Broadcom BCM63XX based boards"
  	select CEVT_R4K
-@@ -813,6 +832,7 @@ config NLM_XLP_BOARD
+@@ -813,6 +833,7 @@ config NLM_XLP_BOARD
  
  endchoice
  
