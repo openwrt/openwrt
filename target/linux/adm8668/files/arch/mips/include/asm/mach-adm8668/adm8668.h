@@ -109,4 +109,6 @@
 #define CRGPIO_TOGGLE(num)	\
 	ADM8668_CONFIG_REG(CRGPIO_REG) ^= (1 << (6 + num))
 
+void adm8668_init_clocks(void);
+
 #endif /* __ADM8668_H__ */
