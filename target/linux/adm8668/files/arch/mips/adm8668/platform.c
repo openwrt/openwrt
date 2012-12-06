@@ -12,6 +12,7 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
+#include <linux/platform_data/tulip.h>
 #include <linux/mtd/physmap.h>
 #include <linux/mtd/partitions.h>
 #include <linux/pci.h>
@@ -26,6 +27,10 @@
 #include <asm/bootinfo.h>
 #include <asm/io.h>
 #include <adm8668.h>
+
+#define ADM8868_UBOOT_ENV		0x20000
+#define ADM8868_UBOOT_WAN_MAC		0x5ac
+#define ADM8868_UBOOT_LAN_MAC		0x404
 
 static void adm8668_uart_set_mctrl(struct amba_device *dev,
 					void __iomem *base,
@@ -66,11 +71,16 @@ static struct resource eth0_resources[] = {
 	},
 };
 
+static struct tulip_platform_data eth0_pdata = {
+	.chip_id	= ADM8668,
+};
+
 static struct platform_device adm8668_eth0_device = {
-	.name		= "adm8668_eth",
+	.name		= "tulip",
 	.id		= 0,
 	.resource	= eth0_resources,
 	.num_resources	= ARRAY_SIZE(eth0_resources),
+	.dev.platform_data = &eth0_pdata,
 };
 
 static struct resource eth1_resources[] = {
@@ -85,11 +95,16 @@ static struct resource eth1_resources[] = {
 	},
 };
 
+static struct tulip_platform_data eth1_pdata = {
+	.chip_id	= ADM8668,
+};
+
 static struct platform_device adm8668_eth1_device = {
-	.name		= "adm8668_eth",
+	.name		= "tulip",
 	.id		= 1,
 	.resource	= eth1_resources,
 	.num_resources	= ARRAY_SIZE(eth1_resources),
+	.dev.platform_data = &eth1_pdata,
 };
 
 static const char *nor_probe_types[] = { "adm8668part", NULL };
@@ -121,6 +136,33 @@ static struct platform_device *adm8668_devs[] = {
 	&adm8668_nor_device,
 };
 
+static void adm8668_fetch_mac(int unit)
+{
+	u8 *mac;
+	u32 offset;
+	struct tulip_platform_data *pdata;
+
+	switch (unit) {
+	case -1:
+	case 0:
+		offset = ADM8868_UBOOT_LAN_MAC;
+		pdata = &eth0_pdata;
+		break;
+	case 1:
+		offset = ADM8868_UBOOT_WAN_MAC;
+		pdata = &eth1_pdata;
+		break;
+	default:
+		pr_err("unsupported ethernet unit: %d\n", unit);
+		return;
+	}
+
+	mac = (u8 *)(KSEG1ADDR(ADM8668_SMEM1_BASE) + ADM8868_UBOOT_ENV + offset);
+
+	memcpy(pdata->mac, mac, sizeof(pdata->mac));
+}
+
+
 int __devinit adm8668_devs_register(void)
 {
 	int ret;
@@ -128,6 +170,9 @@ int __devinit adm8668_devs_register(void)
 	ret = amba_device_register(&adm8668_uart0_device, &iomem_resource);
 	if (ret)
 		panic("failed to register AMBA UART");
+
+	adm8668_fetch_mac(0);
+	adm8668_fetch_mac(1);
 
 	return platform_add_devices(adm8668_devs, ARRAY_SIZE(adm8668_devs));
 }
