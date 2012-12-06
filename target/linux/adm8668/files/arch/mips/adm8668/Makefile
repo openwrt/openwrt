@@ -4,4 +4,3 @@
 
 obj-y	 	:= irq.o prom.o platform.o proc.o \
 		   setup.o clock.o time.o early_printk.o \
-		   net_core.o net_intr.o
