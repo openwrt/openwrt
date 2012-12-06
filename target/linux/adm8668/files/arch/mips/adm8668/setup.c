@@ -8,20 +8,6 @@ static void adm8668_restart(char *cmd)
 {
 	int i;
 
-	/* stop eth0 and eth1 */
-	ADM8668_LAN_REG(NETCSR6) = (1 << 13) | (1 << 1);
-	ADM8668_LAN_REG(NETCSR7) = 0;
-	ADM8668_WAN_REG(NETCSR6) = (1 << 13) | (1 << 1);
-	ADM8668_WAN_REG(NETCSR7) = 0;
-
-	/* reset PHY */
-	ADM8668_WAN_REG(NETCSR37) = 0x20;
-	for (i = 0; i < 10000; i++)
-		;
-	ADM8668_WAN_REG(NETCSR37) = 0;
-	for (i = 0; i < 10000; i++)
-		;
-
 	/* the real deal */
 	for (i = 0; i < 1000; i++)
 		;
