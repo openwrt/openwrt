@@ -52,7 +52,6 @@ resolve_network_add() {
 	local __section="$1"
 	local __device="$2"
 	local __return="$3"
-
 	local __cdevice
 	network_get_device __cdevice "$__section"
 	[ "$__cdevice" != "$__device" ] && return
@@ -153,6 +152,10 @@ add_relay_slave() {
 
 	# Disable any active distribution
 	[ "$__cmode" == "router" ] && disable_router "$__section"
+
+	# Configure interface to accept RA and send RS
+	conf_set "$__device" accept_ra 2
+	conf_set "$__device" forwarding 2
 
 	eval "$__return"'="$'"$__return"' '"$__device"'"'
 }
@@ -286,8 +289,8 @@ enable_static() {
 		ula_prefix="fd$r1:$r2:$r3::/48"
 
 		# Save prefix so it will be preserved across reboots
-		uci set network6.$network.ula_prefix=$ula_prefix
-		uci commit network6
+		uci_set network6 "$network" ula_prefix "$ula_prefix"
+		uci_commit network6
 	}
 
 	# Announce ULA
@@ -313,10 +316,15 @@ enable_router() {
 
 	# Start RD & DHCPv6 service
 	local pid="/var/run/ipv6-router-$network.pid"
-	start_service "/usr/sbin/6relayd -Rserver -Dserver . $device" "$pid"
+
+	# Start server
+	start_service "/usr/sbin/6relayd -S . $device" "$pid"
 
 	# Try relaying if necessary
 	restart_master_relay "$network"
+
+	# start relay if there are forced relay members
+	restart_relay "$network"
 }
 
 
@@ -355,6 +363,25 @@ enable_dhcpv6() {
 }
 
 
+enable_6to4() {
+	local network="$1"
+	local device="$2"
+	local mode="$3"
+
+	local prefixlen="48"
+	[ "$mode" == "6rd" ] && {
+		local ip4prefix=$(uci_get network "$network" ip4prefixlen 0)
+		local ip6prefix=$(uci_get network "$network" ip6prefixlen 32)
+		prefixlen=$(($ip6prefix + 32 - $ip4prefix))
+	}
+
+	local prefix=""
+	network_get_ipaddr6 prefix "$network"
+
+	announce_prefix "$prefix/$prefixlen" "$network"
+}
+
+
 enable_interface()
 {
 	local network="$1"
@@ -370,5 +397,6 @@ enable_interface()
 	[ "$mode" == "dhcpv6" -o "$mode" == "static" ] && enable_static "$network" "$device"
 	[ "$mode" == "dhcpv6" ] && enable_dhcpv6 "$network" "$device"
 	[ "$mode" == "router" ] && enable_router "$network" "$device"
+	[ "$mode" == "6to4" -o "$mode" == "6rd" ] && enable_6to4 "$network" "$device" "$mode"
 	[ "$mode" == "relay" ] && restart_master_relay "$network" forced
 }
