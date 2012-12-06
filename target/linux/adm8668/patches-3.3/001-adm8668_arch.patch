@@ -10,7 +10,7 @@
  include $(patsubst %, $(srctree)/arch/mips/%/Platform, $(platforms))
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -105,6 +105,26 @@ config BCM47XX
+@@ -105,6 +105,27 @@ config BCM47XX
  	help
  	 Support for BCM47XX based boards
  
@@ -30,6 +30,7 @@
 +	select SWAP_IO_SPACE
 +	select SERIAL_ADM8668
 +	select SERIAL_ADM8668_CONSOLE
++	select SYS_HAS_EARLY_PRINTK
 +	help
 +		ADM8668 board support by neutronscott
 +		Scott Nicholas <neutronscott@scottn.us>
