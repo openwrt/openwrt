@@ -28,22 +28,22 @@
 #define ADM8668_PCIDAT_BASE	0x12400000
 
 /* interrupt levels */
-#define INT_LVL_SWI		1
-#define INT_LVL_COMMS_RX	2
-#define INT_LVL_COMMS_TX	3
-#define INT_LVL_TIMERINT0	4
-#define INT_LVL_TIMERINT1	5
-#define INT_LVL_UART0		6
-#define INT_LVL_LAN		7
-#define INT_LVL_WAN		8
-#define INT_LVL_WLAN		9
-#define INT_LVL_GPIO		10
-#define INT_LVL_IDE		11
-#define INT_LVL_PCI2		12
-#define INT_LVL_PCI1		13
-#define INT_LVL_PCI0		14
-#define INT_LVL_USB		15
-#define INT_LVL_MAX		INT_LVL_USB
+#define ADM8668_SWI_IRQ		1
+#define ADM8668_COMMS_RX_IRQ	2
+#define ADM8668_COMMS_TX_IRQ	3
+#define ADM8668_TIMER0_IRQ	4
+#define ADM8668_TIMER1_IRQ	5
+#define ADM8668_UART0_IRQ	6
+#define ADM8668_LAN_IRQ		7
+#define ADM8668_WAN_IRQ		8
+#define ADM8668_WLAN_IRQ	9
+#define ADM8668_GPIO_IRQ	10
+#define ADM8668_IDE_IRQ		11
+#define ADM8668_PCI2_IRQ	12
+#define ADM8668_PCI1_IRQ	13
+#define ADM8668_PCI0_IRQ	14
+#define ADM8668_USB_IRQ		15
+#define ADM8668_IRQ_MAX		ADM8668_USB_IRQ
 
 /* register access macros */
 #define ADM8668_CONFIG_REG(_reg)	\
