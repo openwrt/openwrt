@@ -1,0 +1,22 @@
+--- a/config.mk
++++ b/config.mk
+@@ -353,7 +353,8 @@ export CONFIG_IPW2200_QOS=y
+ # % echo 1 > /sys/bus/pci/drivers/ipw2200/*/rtap_iface
+ endif #CONFIG_WIRELESS_EXT
+ 
+-ifdef CONFIG_SSB
++# disabled
++ifdef __CONFIG_SSB
+ # Sonics Silicon Backplane
+ export CONFIG_SSB_SPROM=y
+ 
+@@ -366,7 +367,7 @@ endif #CONFIG_PCMCIA
+ # export CONFIG_SSB_DEBUG=y
+ export CONFIG_SSB_DRIVER_PCICORE=y
+ export CONFIG_B43_SSB=y
+-endif #CONFIG_SSB
++endif #__CONFIG_SSB
+ 
+ export CONFIG_BCMA=m
+ export CONFIG_BCMA_BLOCKIO=y
+

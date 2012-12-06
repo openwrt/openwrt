@@ -1317,11 +1317,6 @@ MAKE_OPTS:= \
 	CONFIG_ATH6KL= \
 	CONFIG_MAC80211_RC_MINSTREL_HT=y \
 	MADWIFI= \
-	CONFIG_B44= \
-	CONFIG_ATL1= \
-	CONFIG_ATL2= \
-	CONFIG_ATL1E= \
-	CONFIG_ATL1C= \
 	CONFIG_BRCMUTIL=$(if $(CONFIG_PACKAGE_kmod-brcmutil),m) \
 	CONFIG_BRCMSMAC=$(if $(CONFIG_PACKAGE_kmod-brcmsmac),m) \
 	CONFIG_BRCMFMAC=$(if $(CONFIG_PACKAGE_kmod-brcmfmac),m) \
@@ -1337,6 +1332,39 @@ ifeq ($(CONFIG_PACKAGE_kmod-libertas-sd)$(CONFIG_PACKAGE_kmod-libertas-usb)$(CON
   MAKE_OPTS += CONFIG_COMPAT_KFIFO=
 endif
 
+DISABLE_CONFIG = \
+	COMPAT_BLUETOOTH.* \
+	COMPAT_CORDIC \
+	COMPAT_CRC8 \
+	COMPAT_MDIO \
+	COMPAT_NETWORK_MODULES \
+	COMPAT_NET_USB_MODULES \
+	COMPAT_VAR_MODULES \
+	COMPAT_RFKILL \
+	COMPAT_RFKILL_.* \
+	COMPAT_STAGING \
+	\
+	B43_PCMCIA \
+	B43_SDIO \
+	BCMA.* \
+	COMPAT_ATH9K_RATE_CONTROL \
+	HID_GENERIC \
+	MAC80211_RC_PID \
+	PCMCIA \
+	RFKILL_BACKPORT.* \
+	SSB \
+	SSB_SDIOHOST \
+	\
+	ATH5K_PCI \
+	ATH9K_BTCOEX_SUPPORT \
+	B43_PHY_N \
+	B43_PHY_HT \
+	B43_BCMA.* \
+	MAC80211_MESH \
+	RT2X00_LIB_PCI \
+	RT2X00_LIB_USB
+
+
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
@@ -1346,15 +1374,23 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(PKG_LINUX_FIRMWARE_SOURCE)
-	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
-	rm -rf $(PKG_BUILD_DIR)/include/linux/bcma
-	rm -rf $(PKG_BUILD_DIR)/include/net/bluetooth/
-	rm -f $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
-	rm -f $(PKG_BUILD_DIR)/include/linux/wl12xx.h
-	rm -f $(PKG_BUILD_DIR)/include/linux/spi/libertas_spi.h
-	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
+	rm -rf \
+		$(PKG_BUILD_DIR)/include/linux/ssb \
+		$(PKG_BUILD_DIR)/include/linux/bcma \
+		$(PKG_BUILD_DIR)/include/net/bluetooth
+
+	rm -f \
+		$(PKG_BUILD_DIR)/include/linux/cordic.h \
+		$(PKG_BUILD_DIR)/include/linux/crc8.h \
+		$(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h \
+		$(PKG_BUILD_DIR)/include/linux/wl12xx.h \
+		$(PKG_BUILD_DIR)/include/linux/spi/libertas_spi.h \
+		$(PKG_BUILD_DIR)/include/net/ieee80211.h
+
 	echo 'compat-wireless-$(PKG_VERSION)-$(PKG_RELEASE)-$(REVISION)' > $(PKG_BUILD_DIR)/compat_version
 	$(CP) ./files/regdb.txt $(PKG_BUILD_DIR)/net/wireless/db.txt
+
+	sed -i $(foreach config,$(DISABLE_CONFIG),-e 's,^\([ 	]*export *CONFIG_$(config)=\),# \1,') $(PKG_BUILD_DIR)/config.mk
 endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-cfg80211)$(CONFIG_PACKAGE_kmod-lib80211),)
