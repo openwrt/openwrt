@@ -36,16 +36,14 @@ void __init plat_mem_setup(void)
 const char *get_system_type(void)
 {
         unsigned long chipid = ADM8668_CONFIG_REG(ADM8668_CR0);
-        int adj = (ADM8668_CONFIG_REG(ADM8668_CR3) >> 11) & 0xf;
-        int product, revision, mhz;
+        int product, revision;
 	static char ret[32];
 
         product = chipid >> 16;
         revision = chipid & 0xffff;
-	mhz = (SYS_CLOCK/1000000) + (adj * 5);
 
 	/* i getting fancy :\ */
-	snprintf(ret, sizeof(ret), "ADM%xr%x %dMHz", product, revision, mhz);
+	snprintf(ret, sizeof(ret), "ADM%xr%x", product, revision);
 
 	return ret;
 }
