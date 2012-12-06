@@ -46,12 +46,6 @@
 #define INT_LVL_MAX		INT_LVL_USB
 
 /* register access macros */
-#define ADM8668_LAN_REG(_reg)		\
-	(*((volatile unsigned int *)(KSEG1ADDR(ADM8668_LAN_BASE + (_reg)))))
-#define ADM8668_WAN_REG(_reg)		\
-	(*((volatile unsigned int *)(KSEG1ADDR(ADM8668_WAN_BASE + (_reg)))))
-#define ADM8668_WLAN_REG(_reg)		\
-	(*((volatile unsigned int *)(KSEG1ADDR(ADM8668_WLAN_BASE + (_reg)))))
 #define ADM8668_CONFIG_REG(_reg)	\
 	(*((volatile unsigned int *)(KSEG1ADDR(ADM8668_CONFIG_BASE + (_reg)))))
 
@@ -69,34 +63,6 @@
 /** For GPIO control **/
 #define	GPIO_REG		0x5C	/* on WLAN */
 #define CRGPIO_REG		0x20	/* on CPU */
-#define GPIO0_OUTPUT_ENABLE	0x1000
-#define GPIO1_OUTPUT_ENABLE	0x2000
-#define GPIO2_OUTPUT_ENABLE	0x4000
-#define GPIO_OUTPUT_ENABLE_ALL	0x7000
-#define GPIO0_OUTPUT_1		0x40
-#define GPIO1_OUTPUT_1		0x80
-#define GPIO2_OUTPUT_1		0x100
-#define GPIO0_INPUT_1		0x1
-#define GPIO1_INPUT_1		0x2
-#define GPIO2_INPUT_1		0x4
-
-#define GPIO_SET_HI(num)	\
-	ADM8668_WLAN_REG(GPIO_REG) |= (1 << (6 + num))
-
-#define GPIO_SET_LOW(num)	\
-	ADM8668_WLAN_REG(GPIO_REG) &= ~(1 << (6 + num))
-
-#define GPIO_TOGGLE(num)	\
-	ADM8668_WLAN_REG(GPIO_REG) ^= (1 << (6 + num))
-
-#define CRGPIO_SET_HI(num)	\
-	ADM8668_CONFIG_REG(CRGPIO_REG) |= (1 << (6 + num))
-
-#define CRGPIO_SET_LOW(num)	\
-	ADM8668_CONFIG_REG(CRGPIO_REG) &= ~(1 << (6 + num))
-
-#define CRGPIO_TOGGLE(num)	\
-	ADM8668_CONFIG_REG(CRGPIO_REG) ^= (1 << (6 + num))
 
 void adm8668_init_clocks(void);
 
