@@ -9,8 +9,6 @@
 #ifndef  __ADM8668_H__
 #define  __ADM8668_H__
 
-#define SYS_CLOCK		175000000
-
 /*=======================  Physical Memory Map  ============================*/
 #define ADM8668_SDRAM_BASE	0
 #define ADM8668_SMEM1_BASE	0x10000000
@@ -28,9 +26,6 @@
 
 #define ADM8668_PCICFG_BASE	0x12200000
 #define ADM8668_PCIDAT_BASE	0x12400000
-
-/** onboard uart **/
-#define ADM8668_UARTCLK_FREQ	62500000
 
 /* interrupt levels */
 #define INT_LVL_SWI		1
