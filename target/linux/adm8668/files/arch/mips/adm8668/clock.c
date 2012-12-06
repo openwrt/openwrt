@@ -22,12 +22,19 @@ static struct clk uart_clk = {
 	.rate	= ADM8668_UARTCLK_FREQ,
 };
 
+static struct clk sys_clk;
+
 struct clk *clk_get(struct device *dev, const char *id)
 {
-	const char *name = dev_name(dev);
+	const char *lookup = id;
 
-	if (!strcmp(name, "apb:uart0"))
+	if (dev)
+		lookup = dev_name(dev);
+
+	if (!strcmp(lookup, "apb:uart0"))
 		return &uart_clk;
+	if (!strcmp(lookup, "sys"))
+		return &sys_clk;
 
 	return ERR_PTR(-ENOENT);
 }
@@ -54,3 +61,16 @@ void clk_put(struct clk *clk)
 {
 }
 EXPORT_SYMBOL(clk_put);
+
+void __init adm8668_init_clocks(void)
+{
+	u32 adj;
+
+	/* adjustable clock selection
+	 * CR3 bit 14~11, 0000 -> 175MHz, 0001 -> 180MHz, etc...
+	 */
+	adj = (ADM8668_CONFIG_REG(ADM8668_CR3) >> 11) & 0xf;
+	sys_clk.rate = SYS_CLOCK + adj * 5000000;
+
+	pr_info("ADM8668 CPU clock: %lu MHz\n", sys_clk.rate / 1000000);
+}
