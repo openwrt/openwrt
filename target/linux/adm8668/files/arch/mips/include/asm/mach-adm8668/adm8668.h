@@ -32,11 +32,6 @@
 /** onboard uart **/
 #define ADM8668_UARTCLK_FREQ	62500000
 
-/* interrupt controller */
-#define IRQ_STATUS_REG		0x00	/* Read */
-#define IRQ_ENABLE_REG		0x08	/* Read/Write */
-#define IRQ_DISABLE_REG		0x0C	/* Write */
-
 /* interrupt levels */
 #define INT_LVL_SWI		1
 #define INT_LVL_COMMS_RX	2
@@ -56,8 +51,6 @@
 #define INT_LVL_MAX		INT_LVL_USB
 
 /* register access macros */
-#define ADM8668_INTC_REG(_reg)	\
-	(*((volatile unsigned long *)(KSEG1ADDR(ADM8668_INTC_BASE + (_reg)))))
 #define ADM8668_LAN_REG(_reg)		\
 	(*((volatile unsigned int *)(KSEG1ADDR(ADM8668_LAN_BASE + (_reg)))))
 #define ADM8668_WAN_REG(_reg)		\
