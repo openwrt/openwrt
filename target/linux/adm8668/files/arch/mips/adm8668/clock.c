@@ -19,7 +19,7 @@ struct clk {
 };
 
 static struct clk uart_clk = {
-	.rate	= ADM8668_UARTCLK_FREQ,
+	.rate	= 62500000,
 };
 
 static struct clk sys_clk;
@@ -70,7 +70,7 @@ void __init adm8668_init_clocks(void)
 	 * CR3 bit 14~11, 0000 -> 175MHz, 0001 -> 180MHz, etc...
 	 */
 	adj = (ADM8668_CONFIG_REG(ADM8668_CR3) >> 11) & 0xf;
-	sys_clk.rate = SYS_CLOCK + adj * 5000000;
+	sys_clk.rate = 175000000 + (adj * 5000000);
 
 	pr_info("ADM8668 CPU clock: %lu MHz\n", sys_clk.rate / 1000000);
 }
