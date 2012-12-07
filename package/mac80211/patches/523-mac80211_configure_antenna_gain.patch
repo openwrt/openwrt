@@ -1,0 +1,162 @@
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -955,6 +955,7 @@ enum ieee80211_smps_mode {
+  *
+  * @power_level: requested transmit power (in dBm), backward compatibility
+  *	value only that is set to the minimum of all interfaces
++ * @max_antenna_gain: maximum antenna gain adjusted by user config (in dBi)
+  *
+  * @channel: the channel to tune to
+  * @channel_type: the channel (HT) type
+@@ -976,6 +977,7 @@ struct ieee80211_conf {
+ 	u32 flags;
+ 	int power_level, dynamic_ps_timeout;
+ 	int max_sleep_period;
++	int max_antenna_gain;
+ 
+ 	u16 listen_interval;
+ 	u8 ps_dtim_period;
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1132,6 +1132,7 @@ struct ieee80211_local {
+ 	bool disable_dynamic_ps;
+ 
+ 	int user_power_level; /* in dBm, for all interfaces */
++	int user_antenna_gain; /* in dBi */
+ 
+ 	enum ieee80211_smps_mode smps_mode;
+ 
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1580,6 +1580,8 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_P2P_CTWINDOW,
+ 	NL80211_ATTR_P2P_OPPPS,
+ 
++	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -365,6 +365,7 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_SCAN_FLAGS] = { .type = NLA_U32 },
+ 	[NL80211_ATTR_P2P_CTWINDOW] = { .type = NLA_U8 },
+ 	[NL80211_ATTR_P2P_OPPPS] = { .type = NLA_U8 },
++	[NL80211_ATTR_WIPHY_ANTENNA_GAIN] = { .type = NLA_U32 },
+ };
+ 
+ /* policy for the key attributes */
+@@ -1652,6 +1653,22 @@ static int nl80211_set_wiphy(struct sk_b
+ 			goto bad_res;
+ 	}
+ 
++	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_GAIN]) {
++		int idx, dbi = 0;
++
++		if (!rdev->ops->set_antenna_gain) {
++			result = -EOPNOTSUPP;
++			goto bad_res;
++		}
++
++		idx = NL80211_ATTR_WIPHY_ANTENNA_GAIN;
++		dbi = nla_get_u32(info->attrs[idx]);
++
++		result = rdev->ops->set_antenna_gain(&rdev->wiphy, dbi);
++		if (result)
++			goto bad_res;
++	}
++
+ 	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_TX] &&
+ 	    info->attrs[NL80211_ATTR_WIPHY_ANTENNA_RX]) {
+ 		u32 tx_ant, rx_ant;
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -2118,6 +2118,19 @@ static int ieee80211_get_tx_power(struct
+ 	return 0;
+ }
+ 
++static int ieee80211_set_antenna_gain(struct wiphy *wiphy, int dbi)
++{
++	struct ieee80211_local *local = wiphy_priv(wiphy);
++
++	if (dbi < 0)
++		return -EINVAL;
++
++	local->user_antenna_gain = dbi;
++	ieee80211_hw_config(local, 0);
++
++	return 0;
++}
++
+ static int ieee80211_set_wds_peer(struct wiphy *wiphy, struct net_device *dev,
+ 				  const u8 *addr)
+ {
+@@ -3241,6 +3254,7 @@ struct cfg80211_ops mac80211_config_ops 
+ 	.set_wiphy_params = ieee80211_set_wiphy_params,
+ 	.set_tx_power = ieee80211_set_tx_power,
+ 	.get_tx_power = ieee80211_get_tx_power,
++	.set_antenna_gain = ieee80211_set_antenna_gain,
+ 	.set_wds_peer = ieee80211_set_wds_peer,
+ 	.rfkill_poll = ieee80211_rfkill_poll,
+ 	CFG80211_TESTMODE_CMD(ieee80211_testmode_cmd)
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1693,6 +1693,7 @@ struct cfg80211_gtk_rekey_data {
+  *	(as advertised by the nl80211 feature flag.)
+  * @get_tx_power: store the current TX power into the dbm variable;
+  *	return 0 if successful
++ * @set_antenna_gain: set antenna gain to reduce maximum tx power if necessary
+  *
+  * @set_wds_peer: set the WDS peer for a WDS interface
+  *
+@@ -1893,6 +1894,7 @@ struct cfg80211_ops {
+ 				enum nl80211_tx_power_setting type, int mbm);
+ 	int	(*get_tx_power)(struct wiphy *wiphy, struct wireless_dev *wdev,
+ 				int *dbm);
++	int	(*set_antenna_gain)(struct wiphy *wiphy, int dbi);
+ 
+ 	int	(*set_wds_peer)(struct wiphy *wiphy, struct net_device *dev,
+ 				const u8 *addr);
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -102,7 +102,7 @@ static u32 ieee80211_hw_conf_chan(struct
+ 	struct ieee80211_sub_if_data *sdata;
+ 	struct ieee80211_channel *chan;
+ 	u32 changed = 0;
+-	int power;
++	int power, ant_gain, max_power;
+ 	enum nl80211_channel_type channel_type;
+ 	u32 offchannel_flag;
+ 	bool scanning = false;
+@@ -165,8 +165,21 @@ static u32 ieee80211_hw_conf_chan(struct
+ 	}
+ 	rcu_read_unlock();
+ 
+-	if (local->hw.conf.power_level != power) {
++	max_power = chan->max_reg_power;
++	ant_gain = chan->max_antenna_gain;
++	if (local->user_antenna_gain > 0) {
++		if (local->user_antenna_gain > ant_gain) {
++			max_power -= local->user_antenna_gain - ant_gain;
++			ant_gain = 0;
++		} else
++			ant_gain -= local->user_antenna_gain;
++	}
++
++	power = min(chan->max_power, max_power);
++	if (local->hw.conf.power_level != power ||
++		local->hw.conf.max_antenna_gain != ant_gain) {
+ 		changed |= IEEE80211_CONF_CHANGE_POWER;
++		local->hw.conf.max_antenna_gain = ant_gain;
+ 		local->hw.cur_power_level = power;
+ 		local->hw.conf.power_level = power;
+ 	}
+@@ -646,6 +659,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+ 					 IEEE80211_RADIOTAP_MCS_HAVE_BW;
+ 	local->hw.radiotap_vht_details = IEEE80211_RADIOTAP_VHT_KNOWN_GI |
+ 					 IEEE80211_RADIOTAP_VHT_KNOWN_BANDWIDTH;
++	local->user_antenna_gain = 0;
+ 	local->user_power_level = IEEE80211_UNSET_POWER_LEVEL;
+ 	wiphy->ht_capa_mod_mask = &mac80211_ht_capa_mod_mask;
+ 

@@ -10,7 +10,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -2828,7 +2828,7 @@ void ath9k_hw_apply_txpower(struct ath_h
+@@ -2836,7 +2836,7 @@ void ath9k_hw_apply_txpower(struct ath_h
  	channel = chan->chan;
  	chan_pwr = min_t(int, channel->max_power * 2, MAX_RATE_POWER);
  	new_pwr = min_t(int, chan_pwr, reg->power_limit);
@@ -21,7 +21,7 @@
  	if (ant_gain > max_gain)
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1263,7 +1263,10 @@ int ath9k_config(struct ieee80211_hw *hw
+@@ -1211,7 +1211,10 @@ int ath9k_config(struct ieee80211_hw *hw
  	}
  
  	if (changed & IEEE80211_CONF_CHANGE_POWER) {

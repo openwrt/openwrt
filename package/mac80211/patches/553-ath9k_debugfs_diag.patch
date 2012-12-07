@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1678,6 +1678,50 @@ static const struct file_operations fops
+@@ -1864,6 +1864,50 @@ static const struct file_operations fops
  };
  
  
@@ -51,18 +51,18 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1760,5 +1804,8 @@ int ath9k_init_debug(struct ath_hw *ah)
- 	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
- 			    sc, &fops_chanbw);
- 
+@@ -1889,6 +1933,8 @@ int ath9k_init_debug(struct ath_hw *ah)
+ 	debugfs_create_file("gpio_led", S_IWUSR,
+ 			   sc->debug.debugfs_phy, sc, &fops_gpio_led);
+ #endif
 +	debugfs_create_file("diag", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
 +			    sc, &fops_diag);
-+
- 	return 0;
- }
+ 	debugfs_create_file("dma", S_IRUSR, sc->debug.debugfs_phy, sc,
+ 			    &fops_dma);
+ 	debugfs_create_file("interrupt", S_IRUSR, sc->debug.debugfs_phy, sc,
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -498,6 +498,12 @@ enum {
+@@ -497,6 +497,12 @@ enum {
  	ATH9K_RESET_COLD,
  };
  
@@ -81,9 +81,9 @@
  
 +	unsigned long diag;
 +
+ 	bool reset_power_on;
  	bool htc_reset_init;
  
- 	enum nl80211_iftype opmode;
 @@ -1007,6 +1015,7 @@ void ath9k_hw_set_sta_beacon_timers(stru
  bool ath9k_hw_check_alive(struct ath_hw *ah);
  
@@ -94,7 +94,7 @@
  void ath9k_debug_sync_cause(struct ath_common *common, u32 sync_cause);
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1749,6 +1749,20 @@ fail:
+@@ -1762,6 +1762,20 @@ fail:
  	return -EINVAL;
  }
  
@@ -115,17 +115,17 @@
  int ath9k_hw_reset(struct ath_hw *ah, struct ath9k_channel *chan,
  		   struct ath9k_hw_cal_data *caldata, bool fastcc)
  {
-@@ -2026,6 +2040,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -2039,6 +2053,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  	}
  
  	ath9k_hw_apply_gpio_override(ah);
 +	ath9k_hw_update_diag(ah);
  
- 	return 0;
- }
+ 	if (AR_SREV_9565(ah) && ah->shared_chain_lnadiv)
+ 		REG_SET_BIT(ah, AR_BTCOEX_WL_LNADIV, AR_BTCOEX_WL_LNADIV_FORCE_ON);
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -476,6 +476,11 @@ irqreturn_t ath_isr(int irq, void *dev)
+@@ -470,6 +470,11 @@ irqreturn_t ath_isr(int irq, void *dev)
  	ath9k_hw_getisr(ah, &status);	/* NB: clears ISR too */
  	status &= ah->imask;	/* discard unasked-for bits */
  

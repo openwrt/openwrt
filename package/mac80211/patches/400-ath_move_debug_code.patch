@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/Makefile
 +++ b/drivers/net/wireless/ath/Makefile
-@@ -8,7 +8,7 @@ obj-$(CONFIG_ATH_COMMON)	+= ath.o
+@@ -9,7 +9,7 @@ obj-$(CONFIG_ATH_COMMON)	+= ath.o
  ath-objs :=	main.o \
  		regd.o \
  		hw.o \
@@ -12,7 +12,7 @@
  ccflags-y += -D__CHECK_ENDIAN__
 --- a/drivers/net/wireless/ath/ath.h
 +++ b/drivers/net/wireless/ath/ath.h
-@@ -280,13 +280,6 @@ void _ath_dbg(struct ath_common *common,
+@@ -281,13 +281,6 @@ void _ath_dbg(struct ath_common *common,
  #endif /* CONFIG_ATH_DEBUG */
  
  /** Returns string describing opmode, or NULL if unknown mode. */

@@ -56,7 +56,7 @@
  
  	INIT_LIST_HEAD(&sc->leds);
  
-@@ -133,6 +154,12 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -120,6 +141,12 @@ void ath_init_leds(struct ath_softc *sc)
  		trigger = ieee80211_get_radio_led_name(sc->hw);
  
  	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger, 1);
@@ -67,5 +67,5 @@
 +	for (i = 0; i < pdata->num_leds; i++)
 +		ath_create_platform_led(sc, &pdata->leds[i]);
  }
- #endif
  
+ void ath_fill_led_pin(struct ath_softc *sc)

@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -2271,15 +2271,18 @@ static void rt2800_config_channel(struct
+@@ -2250,15 +2250,18 @@ static void rt2800_config_channel(struct
  	/*
  	 * Change BBP settings
  	 */
@@ -22,7 +22,7 @@
  		rt2800_bbp_write(rt2x00dev, 86, 0);
  	}
  
-@@ -3850,6 +3853,7 @@ static int rt2800_init_rfcsr(struct rt2x
+@@ -3890,6 +3893,7 @@ static int rt2800_init_rfcsr(struct rt2x
  	 * Init RF calibration.
  	 */
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
@@ -30,7 +30,7 @@
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392)) {
  		rt2800_rfcsr_read(rt2x00dev, 2, &rfcsr);
-@@ -4036,6 +4040,10 @@ static int rt2800_init_rfcsr(struct rt2x
+@@ -4076,6 +4080,10 @@ static int rt2800_init_rfcsr(struct rt2x
  		rt2800_rfcsr_write(rt2x00dev, 31, 0x00);
  		return 0;
  	} else if (rt2x00_rt(rt2x00dev, RT3352)) {
@@ -41,7 +41,7 @@
  		rt2800_rfcsr_write(rt2x00dev, 0, 0xf0);
  		rt2800_rfcsr_write(rt2x00dev, 1, 0x23);
  		rt2800_rfcsr_write(rt2x00dev, 2, 0x50);
-@@ -4069,15 +4077,30 @@ static int rt2800_init_rfcsr(struct rt2x
+@@ -4109,15 +4117,30 @@ static int rt2800_init_rfcsr(struct rt2x
  		rt2800_rfcsr_write(rt2x00dev, 31, 0x80);
  		rt2800_rfcsr_write(rt2x00dev, 32, 0x80);
  		rt2800_rfcsr_write(rt2x00dev, 33, 0x00);
@@ -75,7 +75,7 @@
  		rt2800_rfcsr_write(rt2x00dev, 43, 0xdb);
  		rt2800_rfcsr_write(rt2x00dev, 44, 0xdb);
  		rt2800_rfcsr_write(rt2x00dev, 45, 0xdb);
-@@ -4085,15 +4108,20 @@ static int rt2800_init_rfcsr(struct rt2x
+@@ -4125,15 +4148,20 @@ static int rt2800_init_rfcsr(struct rt2x
  		rt2800_rfcsr_write(rt2x00dev, 47, 0x0d);
  		rt2800_rfcsr_write(rt2x00dev, 48, 0x14);
  		rt2800_rfcsr_write(rt2x00dev, 49, 0x00);
@@ -105,7 +105,7 @@
  		rt2800_rfcsr_write(rt2x00dev, 59, 0x00);
  		rt2800_rfcsr_write(rt2x00dev, 60, 0x00);
  		rt2800_rfcsr_write(rt2x00dev, 61, 0x00);
-@@ -4854,7 +4882,8 @@ static int rt2800_init_eeprom(struct rt2
+@@ -4894,7 +4922,8 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Detect if this device has Bluetooth co-existence.
  	 */
@@ -115,7 +115,7 @@
  		__set_bit(CAPABILITY_BT_COEXIST, &rt2x00dev->cap_flags);
  
  	/*
-@@ -4883,6 +4912,22 @@ static int rt2800_init_eeprom(struct rt2
+@@ -4923,6 +4952,22 @@ static int rt2800_init_eeprom(struct rt2
  					EIRP_MAX_TX_POWER_LIMIT)
  		__set_bit(CAPABILITY_POWER_LIMIT, &rt2x00dev->cap_flags);
  
@@ -140,7 +140,7 @@
  
 --- a/drivers/net/wireless/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/rt2x00/rt2800.h
-@@ -2115,6 +2115,12 @@ struct mac_iveiv_entry {
+@@ -2117,6 +2117,12 @@ struct mac_iveiv_entry {
  #define RFCSR31_RX_CALIB		FIELD8(0x7f)
  
  /*
@@ -153,7 +153,7 @@
   * RFCSR 38:
   */
  #define RFCSR38_RX_LO1_EN		FIELD8(0x20)
-@@ -2125,6 +2131,18 @@ struct mac_iveiv_entry {
+@@ -2127,6 +2133,18 @@ struct mac_iveiv_entry {
  #define RFCSR39_RX_LO2_EN		FIELD8(0x80)
  
  /*
@@ -172,7 +172,7 @@
   * RFCSR 49:
   */
  #define RFCSR49_TX			FIELD8(0x3f)
-@@ -2133,6 +2151,8 @@ struct mac_iveiv_entry {
+@@ -2135,6 +2153,8 @@ struct mac_iveiv_entry {
   * RFCSR 50:
   */
  #define RFCSR50_TX			FIELD8(0x3f)
@@ -181,7 +181,7 @@
  
  /*
   * RF registers
-@@ -2220,6 +2240,8 @@ struct mac_iveiv_entry {
+@@ -2222,6 +2242,8 @@ struct mac_iveiv_entry {
   * INTERNAL_TX_ALC: 0: disable, 1: enable
   * BT_COEXIST: 0: disable, 1: enable
   * DAC_TEST: 0: disable, 1: enable
@@ -190,7 +190,7 @@
   */
  #define	EEPROM_NIC_CONF1		0x001b
  #define EEPROM_NIC_CONF1_HW_RADIO		FIELD16(0x0001)
-@@ -2237,6 +2259,8 @@ struct mac_iveiv_entry {
+@@ -2239,6 +2261,8 @@ struct mac_iveiv_entry {
  #define EEPROM_NIC_CONF1_INTERNAL_TX_ALC		FIELD16(0x2000)
  #define EEPROM_NIC_CONF1_BT_COEXIST		FIELD16(0x4000)
  #define EEPROM_NIC_CONF1_DAC_TEST		FIELD16(0x8000)
@@ -201,7 +201,7 @@
   * EEPROM frequency
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -743,6 +743,8 @@ enum rt2x00_capability_flags {
+@@ -742,6 +742,8 @@ enum rt2x00_capability_flags {
  	CAPABILITY_DOUBLE_ANTENNA,
  	CAPABILITY_BT_COEXIST,
  	CAPABILITY_VCO_RECALIBRATION,
