@@ -64,7 +64,7 @@ elif [ "$ACTION" = "add" ]; then
 			}
 		}
 
-		config_foreach find_networks_cb zone "$1"
+		config_foreach find_networks_cb zone "$@"
 	}
 
 	setup_fwd() {
