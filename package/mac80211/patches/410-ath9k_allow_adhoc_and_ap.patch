@@ -1,10 +1,10 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -667,6 +667,7 @@ static const struct ieee80211_iface_limi
- #ifdef CONFIG_MAC80211_MESH
- 				 BIT(NL80211_IFTYPE_MESH_POINT) |
+@@ -678,6 +678,7 @@ static const struct ieee80211_iface_limi
  #endif
-+				 BIT(NL80211_IFTYPE_ADHOC) |
  				 BIT(NL80211_IFTYPE_AP) |
  				 BIT(NL80211_IFTYPE_P2P_GO) },
++	{ .max = 1,	.types = BIT(NL80211_IFTYPE_ADHOC) },
  };
+ 
+ static const struct ieee80211_iface_combination if_comb = {

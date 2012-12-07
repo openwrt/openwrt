@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -1529,7 +1529,7 @@ static void b43_write_beacon_template(st
+@@ -1553,7 +1553,7 @@ static void b43_write_beacon_template(st
  				  len, ram_offset, shm_size_offset, rate);
  
  	/* Write the PHY TX control parameters. */
@@ -9,7 +9,7 @@
  	antenna = b43_antenna_to_phyctl(antenna);
  	ctl = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_BEACPHYCTL);
  	/* We can't send beacons with short preamble. Would get PHY errors. */
-@@ -3049,8 +3049,8 @@ static int b43_chip_init(struct b43_wlde
+@@ -3073,8 +3073,8 @@ static int b43_chip_init(struct b43_wlde
  
  	/* Select the antennae */
  	if (phy->ops->set_rx_antenna)
@@ -20,7 +20,7 @@
  
  	if (phy->type == B43_PHYTYPE_B) {
  		value16 = b43_read16(dev, 0x005E);
-@@ -3794,7 +3794,6 @@ static int b43_op_config(struct ieee8021
+@@ -3818,7 +3818,6 @@ static int b43_op_config(struct ieee8021
  	struct b43_wldev *dev;
  	struct b43_phy *phy;
  	struct ieee80211_conf *conf = &hw->conf;
@@ -28,7 +28,7 @@
  	int err = 0;
  	bool reload_bss = false;
  
-@@ -3848,11 +3847,9 @@ static int b43_op_config(struct ieee8021
+@@ -3872,11 +3871,9 @@ static int b43_op_config(struct ieee8021
  	}
  
  	/* Antennas for RX and management frame TX. */
@@ -42,7 +42,7 @@
  
  	if (wl->radio_enabled != phy->radio_on) {
  		if (wl->radio_enabled) {
-@@ -4974,6 +4971,47 @@ static int b43_op_get_survey(struct ieee
+@@ -4998,6 +4995,47 @@ static int b43_op_get_survey(struct ieee
  	return 0;
  }
  
@@ -90,7 +90,7 @@
  static const struct ieee80211_ops b43_hw_ops = {
  	.tx			= b43_op_tx,
  	.conf_tx		= b43_op_conf_tx,
-@@ -4995,6 +5033,8 @@ static const struct ieee80211_ops b43_hw
+@@ -5019,6 +5057,8 @@ static const struct ieee80211_ops b43_hw
  	.sw_scan_complete	= b43_op_sw_scan_complete_notifier,
  	.get_survey		= b43_op_get_survey,
  	.rfkill_poll		= b43_rfkill_poll,
@@ -99,7 +99,7 @@
  };
  
  /* Hard-reset the chip. Do not call this directly.
-@@ -5241,6 +5281,8 @@ static int b43_one_core_attach(struct b4
+@@ -5265,6 +5305,8 @@ static int b43_one_core_attach(struct b4
  	if (!wldev)
  		goto out;
  
@@ -108,7 +108,7 @@
  	wldev->use_pio = b43_modparam_pio;
  	wldev->dev = dev;
  	wldev->wl = wl;
-@@ -5331,6 +5373,9 @@ static struct b43_wl *b43_wireless_init(
+@@ -5355,6 +5397,9 @@ static struct b43_wl *b43_wireless_init(
  
  	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
  

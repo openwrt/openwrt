@@ -1,27 +1,29 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1372,6 +1372,7 @@ struct ieee80211_hw {
+@@ -1508,6 +1508,7 @@ struct ieee80211_hw {
  	u8 max_tx_aggregation_subframes;
  	u8 offchannel_tx_hw_queue;
  	u8 radiotap_mcs_details;
 +	s8 cur_power_level;
+ 	u16 radiotap_vht_details;
  	netdev_features_t netdev_features;
  };
- 
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1967,7 +1967,7 @@ static int ieee80211_get_tx_power(struct
- {
+@@ -2096,7 +2096,9 @@ static int ieee80211_get_tx_power(struct
  	struct ieee80211_local *local = wiphy_priv(wiphy);
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
  
--	*dbm = local->hw.conf.power_level;
-+	*dbm = local->hw.cur_power_level;
- 
- 	return 0;
- }
+-	if (!local->use_chanctx)
++	if (local->hw.cur_power_level)
++		*dbm = local->hw.cur_power_level;
++	else if (!local->use_chanctx)
+ 		*dbm = local->hw.conf.power_level;
+ 	else
+ 		*dbm = sdata->vif.bss_conf.txpower;
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -165,6 +165,7 @@ int ieee80211_hw_config(struct ieee80211
+@@ -167,6 +167,7 @@ static u32 ieee80211_hw_conf_chan(struct
  
  	if (local->hw.conf.power_level != power) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;

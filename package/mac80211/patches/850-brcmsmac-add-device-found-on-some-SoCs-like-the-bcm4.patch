@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
-@@ -94,6 +94,7 @@ MODULE_FIRMWARE("brcm/bcm43xx_hdr-0.fw")
+@@ -95,6 +95,7 @@ MODULE_FIRMWARE("brcm/bcm43xx_hdr-0.fw")
  
  /* recognized BCMA Core IDs */
  static struct bcma_device_id brcms_coreid_table[] = {
@@ -10,7 +10,7 @@
  	BCMA_CORETABLE_END
 --- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
-@@ -734,7 +734,7 @@ static void brcms_c_ucode_bsinit(struct
+@@ -719,7 +719,7 @@ static void brcms_c_ucode_bsinit(struct 
  	brcms_c_write_mhf(wlc_hw, wlc_hw->band->mhfs);
  
  	/* do band-specific ucode IHR, SHM, and SCR inits */
@@ -19,7 +19,7 @@
  		if (BRCMS_ISNPHY(wlc_hw->band))
  			brcms_c_write_inits(wlc_hw, ucode->d11n0bsinitvals16);
  		else
-@@ -2259,7 +2259,7 @@ static void brcms_ucode_download(struct
+@@ -2266,7 +2266,7 @@ static void brcms_ucode_download(struct 
  	if (wlc_hw->ucode_loaded)
  		return;
  
@@ -28,7 +28,7 @@
  		if (BRCMS_ISNPHY(wlc_hw->band)) {
  			brcms_ucode_write(wlc_hw, ucode->bcm43xx_16_mimo,
  					  ucode->bcm43xx_16_mimosz);
-@@ -3221,7 +3221,7 @@ static void brcms_b_coreinit(struct brcm
+@@ -3218,7 +3218,7 @@ static void brcms_b_coreinit(struct brcm
  
  	sflags = bcma_aread32(core, BCMA_IOST);
  
