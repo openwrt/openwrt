@@ -1,14 +1,6 @@
 --- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
-@@ -4135,6 +4135,7 @@ void brcms_c_wme_setparams(struct brcms_
- 					  M_EDCF_QINFO +
- 					  wme_ac2fifo[aci] * M_EDCF_QLEN + i,
- 					  *shm_entry++);
-+		printk("dummy\n");
- 	}
- 
- 	if (suspend) {
-@@ -4537,7 +4538,8 @@ static int brcms_b_attach(struct brcms_c
+@@ -4537,7 +4537,8 @@ static int brcms_b_attach(struct brcms_c
  
  	/* check device id(srom, nvram etc.) to set bands */
  	if (wlc_hw->deviceid == BCM43224_D11N_ID ||
@@ -18,7 +10,7 @@
  		/* Dualband boards */
  		wlc_hw->_nbands = 2;
  	else
-@@ -5797,7 +5799,7 @@ static bool brcms_c_chipmatch_pci(struct
+@@ -5797,7 +5798,7 @@ static bool brcms_c_chipmatch_pci(struct
  		return false;
  	}
  
