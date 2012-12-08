@@ -13,7 +13,7 @@ SUBTARGETS:=danube ar9 vr9 falcon svip_be
 LINUX_VERSION:=3.3.8
 
 #SUBTARGETS=xway ase
-#LINUX_VERSION:=3.6.8
+#LINUX_VERSION:=3.6.9
 
 CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 
