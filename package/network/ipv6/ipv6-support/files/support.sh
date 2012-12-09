@@ -5,7 +5,7 @@
 . /lib/functions/network.sh
 
 config_load network6
-
+local NAT="ip6tables -t nat"
 
 conf_get() {
 	local __return="$1"
@@ -67,6 +67,46 @@ resolve_network() {
 }
 
 
+setup_masquerading() {
+	local cmd="$1"
+	local chain="network6_masquerade_$2"
+	local device="$3"
+
+	$NAT -D POSTROUTING -j "$chain" 2>/dev/null && {
+		$NAT -F "$chain" 2>/dev/null
+		$NAT -X "$chain" 2>/dev/null
+	}
+
+	[ "$cmd" != "stop" ] && {
+		$NAT -N "$chain"
+		$NAT -A "$chain" -o "$device" -j MASQUERADE
+		$NAT -A POSTROUTING -j "$chain"
+	}
+}
+
+
+setup_npt_chain() {
+	local cmd="$1"
+	local network="$2"
+	local chain="network6_npt_$network"
+
+	[ "$cmd" != "start" ] && {
+		$NAT -D POSTROUTING -j "$chain" 2>/dev/null && {
+			$NAT -D PREROUTING -j "$chain" 2>/dev/null
+			$NAT -F "$chain" 2>/dev/null
+			$NAT -X "$chain" 2>/dev/null
+		}
+	}
+
+	[ "$cmd" != "stop" ] && {
+		$NAT -N "$chain" 2>/dev/null && {
+			$NAT -A PREROUTING -j "$chain"
+			$NAT -A POSTROUTING -j "$chain"
+		}
+	}
+}
+
+
 announce_prefix() {
 	local prefix="$1"
 	local network="$2"
@@ -84,11 +124,42 @@ announce_prefix() {
 		valid=$(echo "$rem" | cut -d, -f3)
 	}
 
-	local msg='{"network": "'"$network"'", "prefix": "'"$addr"'", "length": '"$length"
-	[ -n "$valid" ] && msg="$msg"', "valid": '"$valid"', "preferred": '"$prefer"
-	[ -z "$cmd" ] && cmd=newprefix
+	# Get prefix configuration
+	local ula=""
+	local prefix_action=""
+	config_get ula global ula_prefix
+	config_get prefix_action "$network" prefix_action
+	[ -z "$prefix_action" ] && prefix_action="distribute"
+
+	# Always announce the ULA when doing NPT
+	[ "$prefix" == "$ula" -a "$prefix_action" == "npt" ] && prefix_action="distribute"
+
+	[ "$prefix_action" == "distribute" ] && {
+		local msg='{"network": "'"$network"'", "prefix": "'"$addr"'", "length": '"$length"
+		[ -n "$valid" ] && msg="$msg"', "valid": '"$valid"', "preferred": '"$prefer"
+		[ -z "$cmd" ] && cmd=newprefix
 	
-	ubus call 6distributed "$cmd" "$msg}"
+		ubus call 6distributed "$cmd" "$msg}"
+	}
+
+	[ "$prefix_action" == "npt" ] && {
+		local chain="network6_npt_$network"
+		local ula_addr=$(echo "$ula" | cut -d/ -f1)
+		local ula_rem=$(echo "$ula" | cut -d/ -f2)
+		local ula_length=$(echo "$ula_rem" | cut -d, -f1)
+		local device=""
+
+		network_get_device device "$network"
+		[ "$length" -lt "$ula_length" ] && length="$ula_length"
+		[ "$cmd" == "delprefix" ] && cmd="-D $chain" || cmd="-A $chain"
+
+		local in="-i $device -d $addr/$length -j NETMAP --to $ula_addr/$ula_length"
+		local out="-o $device -s $ula_addr/$ula_length -j NETMAP --to $addr/$length"
+
+		setup_npt_chain start "$network"
+		$NAT $cmd $in
+		$NAT $cmd $out
+	}
 }
 
 
@@ -216,6 +287,26 @@ restart_relay() {
 }
 
 
+setup_prefix_fallback() {
+	local cmd="$1"
+	local network="$2"
+	local device="$3"
+
+	stop_relay "$network"
+	restart_relay "$network"
+
+	setup_masquerading stop "$network"
+
+	[ "$cmd" != "stop" ] && {
+		local fallback=""
+		config_get fallback "$network" prefix_fallback
+
+		[ "$fallback" == "relay" ] && restart_relay "$network" fallback
+		[ "$fallback" == "masquerade" ] && setup_masquerading start "$network" "$device"
+	}
+}
+
+
 restart_master_relay() {
 	local network="$1"
 	local mode="$2"
@@ -248,30 +339,24 @@ disable_interface() {
 	# Disable distribution
 	disable_router "$network"
 
-	# Disable relay
+	# Disable any active relays, masquerading rules and NPT rules
 	stop_relay "$network"
+	setup_masquerading stop "$network"
+	setup_npt_chain stop "$network"
 
 	# Disable DHCPv6 client if enabled, state script will take care
 	stop_service /usr/sbin/odhcp6c "/var/run/ipv6-dhcpv6-$network.pid"
 }
 
 
-enable_static() {
+enable_ula_prefix() {
 	local network="$1"
-	local device="$2"
-
-	# Enable global forwarding
-	local global_forward
-	conf_get global_forward all forwarding
-	[ "$global_forward" != "1" ] && conf_set all forwarding 1
-
-	# Configure device
-	conf_set "$device" accept_ra 1
-	conf_set "$device" forwarding 1
+	local ula="$2"
+	[ -z "$ula" ] && ula="global"
 
 	# ULA-integration
 	local ula_prefix=""
-	config_get ula_prefix "$network" ula_prefix
+	config_get ula_prefix "$ula" ula_prefix
 
 	# ULA auto configuration (first init)
 	[ "$ula_prefix" == "auto" ] && {
@@ -289,12 +374,33 @@ enable_static() {
 		ula_prefix="fd$r1:$r2:$r3::/48"
 
 		# Save prefix so it will be preserved across reboots
-		uci_set network6 "$network" ula_prefix "$ula_prefix"
+		config_set "$ula" ula_prefix "$ula_prefix"
+		uci_set network6 "$ula" ula_prefix "$ula_prefix"
 		uci_commit network6
 	}
 
 	# Announce ULA
-	[ -n "$ula_prefix" ] && announce_prefix $ula_prefix $network
+	[ -n "$ula_prefix" ] && announce_prefix "$ula_prefix" "$network"
+}
+
+
+enable_static() {
+	local network="$1"
+	local device="$2"
+
+	# Enable global forwarding
+	local global_forward
+	conf_get global_forward all forwarding
+	[ "$global_forward" != "1" ] && conf_set all forwarding 1
+
+	# Configure device
+	conf_set "$device" accept_ra 1
+	conf_set "$device" forwarding 1
+
+	# Enable ULA
+	enable_ula_prefix "$network"
+	# Compatibility (deprecated)
+	enable_ula_prefix "$network" "$network"
 
 	# Announce all static prefixes
 	config_list_foreach "$network" static_prefix announce_prefix $network
@@ -316,15 +422,10 @@ enable_router() {
 
 	# Start RD & DHCPv6 service
 	local pid="/var/run/ipv6-router-$network.pid"
-
-	# Start server
 	start_service "/usr/sbin/6relayd -S . $device" "$pid"
 
 	# Try relaying if necessary
 	restart_master_relay "$network"
-
-	# start relay if there are forced relay members
-	restart_relay "$network"
 }
 
 
@@ -387,14 +488,16 @@ enable_interface()
 	local network="$1"
 	local device="$2"
 	local mode=""
+
 	config_get mode "$network" mode
+	[ -n "$mode" -a "$mode" != "none" ] || return
 
 	# Compatibility with old mode names
 	[ "$mode" == "downstream" ] && mode=router
 	[ "$mode" == "upstream" ] && mode=dhcpv6
 
 	# Run mode startup code
-	[ "$mode" == "dhcpv6" -o "$mode" == "static" ] && enable_static "$network" "$device"
+	enable_static "$network" "$device"
 	[ "$mode" == "dhcpv6" ] && enable_dhcpv6 "$network" "$device"
 	[ "$mode" == "router" ] && enable_router "$network" "$device"
 	[ "$mode" == "6to4" -o "$mode" == "6rd" ] && enable_6to4 "$network" "$device" "$mode"
