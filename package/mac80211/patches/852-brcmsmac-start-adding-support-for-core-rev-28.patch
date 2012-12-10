@@ -37,7 +37,7 @@
  		if (BRCMS_ISNPHY(wlc_hw->band))
  			brcms_c_write_inits(wlc_hw, ucode->d11n0initvals16);
  		else
-@@ -5676,6 +5676,8 @@ static bool brcms_c_chipmatch_soc(struct
+@@ -5675,6 +5675,8 @@ static bool brcms_c_chipmatch_soc(struct
  
  	if (chipinfo->id == BCMA_CHIP_ID_BCM4716)
  		return true;
