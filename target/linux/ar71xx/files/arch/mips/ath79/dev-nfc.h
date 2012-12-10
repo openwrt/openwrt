@@ -11,16 +11,20 @@
 #ifndef _ATH79_DEV_NFC_H
 #define _ATH79_DEV_NFC_H
 
+struct mtd_partition;
+
 #ifdef CONFIG_ATH79_DEV_NFC
 void ath79_nfc_set_parts(struct mtd_partition *parts, int nr_parts);
 void ath79_nfc_set_select_chip(void (*f)(int chip_no));
 void ath79_nfc_set_scan_fixup(int (*f)(struct mtd_info *mtd));
+void ath79_nfc_set_swap_dma(bool enable);
 void ath79_register_nfc(void);
 #else
 static inline void ath79_nfc_set_parts(struct mtd_partition *parts,
 				       int nr_parts) {}
 static inline void ath79_nfc_set_select_chip(void (*f)(int chip_no)) {}
 static inline void ath79_nfc_set_scan_fixup(int (*f)(struct mtd_info *mtd)) {}
+static inline void ath79_nfc_set_swap_dma(bool enable) {}
 static inline void ath79_register_nfc(void) {}
 #endif
 

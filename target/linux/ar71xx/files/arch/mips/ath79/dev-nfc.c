@@ -80,6 +80,11 @@ void __init ath79_nfc_set_scan_fixup(int (*f)(struct mtd_info *mtd))
 	ath79_nfc_data.scan_fixup = f;
 }
 
+void __init ath79_nfc_set_swap_dma(bool enable)
+{
+	ath79_nfc_data.swap_dma = enable;
+}
+
 void __init ath79_nfc_set_parts(struct mtd_partition *parts, int nr_parts)
 {
 	ath79_nfc_data.parts = parts;
