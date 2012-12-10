@@ -550,3 +550,14 @@
  	struct ath_rx_stats rxstats;
  	struct ath_dfs_stats dfs_stats;
  	u32 reset[__RESET_TYPE_MAX];
+--- a/drivers/net/wireless/ath/carl9170/rx.c
++++ b/drivers/net/wireless/ath/carl9170/rx.c
+@@ -684,7 +684,7 @@ static int carl9170_handle_mpdu(struct a
+ 	if (!skb)
+ 		return -ENOMEM;
+ 
+-	memcpy(IEEE80211_SKB_RXCB(skb), &status, sizeof(status));
++	memcpy(IEEE80211_SKB_RXCB(skb), status, sizeof(*status));
+ 	ieee80211_rx(ar->hw, skb);
+ 	return 0;
+ }
