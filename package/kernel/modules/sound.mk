@@ -146,6 +146,7 @@ $(eval $(call KernelPackage,sound-cs5535audio))
 
 define KernelPackage/sound-soc-core
   TITLE:=SoC sound support
+  DEPENDS:=+kmod-regmap
   KCONFIG:= \
 	CONFIG_SND_SOC \
 	CONFIG_SND_SOC_ALL_CODECS=n
