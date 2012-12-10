@@ -21,18 +21,6 @@ endef
 define Host/Install
 	$(call Host/SetToolchainInfo)
 	$(MAKE) -C $(HOST_BUILD_DIR) DESTDIR="$(TOOLCHAIN_DIR)/" install
-	( cd $(TOOLCHAIN_DIR) ; \
-		for d in lib usr/lib ; do \
-		  for f in libc.so libpthread.so libgcc_s.so ; do \
-		    if [ -f $$$$d/$$$$f -a ! -L $$$$d/$$$$f ] ; then \
-		      $(SED) 's,/usr/lib/,,g;s,/lib/,,g' $$$$d/$$$$f ; \
-		    fi \
-		  done \
-		done \
-	)
-	rm -f \
-		$(TOOLCHAIN_DIR)/lib/libresolv*.so* \
-		$(TOOLCHAIN_DIR)/lib/libnsl*.so*
 endef
 
 $(eval $(call HostBuild))
