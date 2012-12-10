@@ -297,6 +297,21 @@ endef
 
 $(eval $(call KernelPackage,input-polldev))
 
+define KernelPackage/input-matrixkmap
+   SUBMENU:=$(OTHER_MENU)
+   TITLE:=Input matrix devices support
+   KCONFIG:=CONFIG_INPUT_MATRIXKMAP
+   DEPENDS:=@LINUX_3_6||@LINUX_3_7
+   FILES:=$(LINUX_DIR)/drivers/input/matrix-keymap.ko
+   AUTOLOAD:=$(call AutoLoad,20,matrix-keymap)
+   $(call AddDepends/input)
+endef
+
+define KernelPackage/input-matrix/description
+  Kernel module support for input matrix devices
+endef
+
+$(eval $(call KernelPackage,input-matrixkmap))
 
 define KernelPackage/lp
   SUBMENU:=$(OTHER_MENU)
