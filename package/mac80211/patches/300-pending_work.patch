@@ -561,3 +561,25 @@
  	ieee80211_rx(ar->hw, skb);
  	return 0;
  }
+--- a/drivers/net/wireless/ath/ath9k/calib.c
++++ b/drivers/net/wireless/ath/ath9k/calib.c
+@@ -69,6 +69,7 @@ s16 ath9k_hw_getchan_noise(struct ath_hw
+ 
+ 	if (chan && chan->noisefloor) {
+ 		s8 delta = chan->noisefloor -
++			   ATH9K_NF_CAL_NOISE_THRESH -
+ 			   ath9k_hw_get_default_nf(ah, chan);
+ 		if (delta > 0)
+ 			noise += delta;
+--- a/drivers/net/wireless/ath/ath9k/calib.h
++++ b/drivers/net/wireless/ath/ath9k/calib.h
+@@ -21,6 +21,9 @@
+ 
+ #define AR_PHY_CCA_FILTERWINDOW_LENGTH          5
+ 
++/* Internal noise floor can vary by about 6db depending on the frequency */
++#define ATH9K_NF_CAL_NOISE_THRESH		6
++
+ #define NUM_NF_READINGS       6
+ #define ATH9K_NF_CAL_HIST_MAX 5
+ 
