@@ -233,6 +233,7 @@ $(eval $(call KernelPackage,ipip))
 IPSEC-m:= \
 	key/af_key \
 	xfrm/xfrm_ipcomp \
+	$(if $(CONFIG_LINUX_3_3),,xfrm/xfrm_algo) \
 	xfrm/xfrm_user \
 
 define KernelPackage/ipsec
