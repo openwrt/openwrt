@@ -1,0 +1,1072 @@
+---
+ arch/arm/mach-ep93xx/include/mach/hardware.h   |    1 
+ arch/arm/mach-ep93xx/include/mach/regs_touch.h |   95 ++
+ drivers/input/touchscreen/Kconfig              |    5 
+ drivers/input/touchscreen/Makefile             |    1 
+ drivers/input/touchscreen/ep93xx_ts.c          | 1117 +++++++++++++++++++++++++
+ drivers/input/touchscreen/ep93xx_ts.h          |   53 +
+ 6 files changed, 1272 insertions(+)
+
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
+@@ -247,6 +247,15 @@ config TOUCHSCREEN_EGALAX
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called egalax_ts.
+ 
++config TOUCHSCREEN_EP93XX
++	tristate "EP93xx Touchscreen"
++	depends on ARM && INPUT && ARCH_EP93XX
++	help
++	  Say Y here to enable support for EP93xx touch screen.
++
++	  To compile this driver as a module, choose M here:
++	  the module will be called ep93xx_ts.
++
+ config TOUCHSCREEN_FUJITSU
+ 	tristate "Fujitsu serial touchscreen"
+ 	select SERIO
+--- a/drivers/input/touchscreen/Makefile
++++ b/drivers/input/touchscreen/Makefile
+@@ -30,6 +30,7 @@ obj-$(CONFIG_TOUCHSCREEN_GUNZE)		+= gunz
+ obj-$(CONFIG_TOUCHSCREEN_EETI)		+= eeti_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_ELO)		+= elo.o
+ obj-$(CONFIG_TOUCHSCREEN_EGALAX)	+= egalax_ts.o
++obj-$(CONFIG_TOUCHSCREEN_EP93XX)	+= ep93xx_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_FUJITSU)	+= fujitsu_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_ILI210X)	+= ili210x.o
+ obj-$(CONFIG_TOUCHSCREEN_INEXIO)	+= inexio.o
+--- /dev/null
++++ b/drivers/input/touchscreen/ep93xx_ts.c
+@@ -0,0 +1,1022 @@
++/*
++ * linux/drivers/input/touchscreen/ep93xx_ts.c
++ *
++ * Copyright (C) 2003-2004 Cirrus Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/delay.h>
++#include <linux/wait.h>
++#include <linux/fs.h>
++#include <linux/sched.h>
++#include <linux/poll.h>
++#include <linux/miscdevice.h>
++#include <linux/init.h>
++#include <linux/compiler.h>
++#include <linux/timer.h>
++#include <linux/interrupt.h>
++#include <linux/syscalls.h>
++#include <linux/input.h>
++#include <linux/semaphore.h>
++#include <asm/irq.h>
++#include <mach/hardware.h>
++#include <asm/io.h>
++#include "../../../arch/arm/mach-ep93xx/soc.h"
++
++/* This stuff should be in ep93xx-regs.h */
++#define EP93XX_TOUCHSCREEN_REG(x)	(EP93XX_TOUCHSCREEN_BASE + (x))
++/* R/W touchscreen controller setup control register. */
++#define EP93XX_TOUCHSCREEN_SETUP	EP93XX_TOUCHSCREEN_REG(0x00)
++/* R/W touchscreen controller max/min register. */
++#define EP93XX_TOUCHSCREEN_XYMAXMIN	EP93XX_TOUCHSCREEN_REG(0x04)
++/* R   touchscreen controller result register. */
++#define EP93XX_TOUCHSCREEN_XYRESULT	EP93XX_TOUCHSCREEN_REG(0x08)
++/* LOCKED R/W touchscreen Switch Matrix control register. */
++#define EP93XX_TOUCHSCREEN_DISCHARGE	EP93XX_TOUCHSCREEN_REG(0x0C)
++#define EP93XX_TOUCHSCREEN_XSAMPLE	EP93XX_TOUCHSCREEN_REG(0x10)
++#define EP93XX_TOUCHSCREEN_YSAMPLE	EP93XX_TOUCHSCREEN_REG(0x14)
++#define EP93XX_TOUCHSCREEN_DIRECT	EP93XX_TOUCHSCREEN_REG(0x18)
++#define EP93XX_TOUCHSCREEN_DETECT	EP93XX_TOUCHSCREEN_REG(0x1C)
++/*  NA    R/W touchscreen software lock register. */
++#define EP93XX_TOUCHSCREEN_SWLOCK	EP93XX_TOUCHSCREEN_REG(0x20)
++/* R/W touchscreen setup control register #2. */
++#define EP93XX_TOUCHSCREEN_SETUP2	EP93XX_TOUCHSCREEN_REG(0x24)
++
++/* These are duplicated in mach-ep93xx/core.c */
++#define EP93XX_TIMER_REG(x)	(EP93XX_TIMER_BASE + (x))
++#define EP93XX_TIMER2_LOAD	EP93XX_TIMER_REG(0x20)
++#define EP93XX_TIMER2_VALUE	EP93XX_TIMER_REG(0x24)
++#define EP93XX_TIMER2_CONTROL	EP93XX_TIMER_REG(0x28)
++#define EP93XX_TIMER2_CLEAR	EP93XX_TIMER_REG(0x2c)
++
++/*
++ * Register bit definitions
++ */
++#define TSSETUP_SDLY_MASK	0x000003FF
++#define TSSETUP_SDLY_SHIFT	0
++#define TSSETUP_NSMP_4		0x00000000
++#define TSSETUP_NSMP_8		0x00000400
++#define TSSETUP_NSMP_16		0x00000800
++#define TSSETUP_NSMP_32		0x00000C00
++#define TSSETUP_NSMP_MASK	0x00000C00
++#define TSSETUP_DEV_4		0x00000000
++#define TSSETUP_DEV_8		0x00001000
++#define TSSETUP_DEV_12		0x00002000
++#define TSSETUP_DEV_16		0x00003000
++#define TSSETUP_DEV_24		0x00004000
++#define TSSETUP_DEV_32		0x00005000
++#define TSSETUP_DEV_64		0x00006000
++#define TSSETUP_DEV_128		0x00007000
++#define TSSETUP_ENABLE		0x00008000
++#define TSSETUP_DLY_MASK	0x03FF0000
++#define TSSETUP_DLY_SHIFT	16
++#define TSSETUP_TDTCT		0x80000000
++
++#define TSMAXMIN_XMIN_MASK	0x000000FF
++#define TSMAXMIN_XMIN_SHIFT	0
++#define TSMAXMIN_YMIN_MASK	0x0000FF00
++#define TSMAXMIN_YMIN_SHIFT	8
++#define TSMAXMIN_XMAX_MASK	0x00FF0000
++#define TSMAXMIN_XMAX_SHIFT	16
++#define TSMAXMIN_YMAX_MASK	0xFF000000
++#define TSMAXMIN_YMAX_SHIFT	24
++
++#define TSXYRESULT_X_MASK	0x00000FFF
++#define TSXYRESULT_X_SHIFT	0
++#define TSXYRESULT_AD_MASK	0x0000FFFF
++#define TSXYRESULT_AD_SHIFT	0
++#define TSXYRESULT_Y_MASK	0x0FFF0000
++#define TSXYRESULT_Y_SHIFT	16
++#define TSXYRESULT_SDR		0x80000000
++
++#define TSX_SAMPLE_MASK		0x00003FFF
++#define TSX_SAMPLE_SHIFT	0x00
++#define TSY_SAMPLE_MASK		0x3FFF0000
++#define TSY_SAMPLE_SHIFT	0x10
++
++#define TSSETUP2_TINT		0x00000001
++#define TSSETUP2_NICOR		0x00000002
++#define TSSETUP2_PINT		0x00000004
++#define TSSETUP2_PENSTS		0x00000008
++#define TSSETUP2_PINTEN		0x00000010
++#define TSSETUP2_DEVINT		0x00000020
++#define TSSETUP2_DINTEN		0x00000040
++#define TSSETUP2_DTMEN		0x00000080
++#define TSSETUP2_DISDEV		0x00000100
++#define TSSETUP2_NSIGND		0x00000200
++#define TSSETUP2_S28EN		0x00000400
++#define TSSETUP2_RINTEN		0x00000800
++
++#define TSXYRESULT_SDR		0x80000000
++
++/*
++ * These are used as trigger levels to know when we have pen up/down.
++ * The rules:
++ * 1.  TS_HEAVY_INV_PRESSURE < TS_LIGHT_INV_PRESSURE because these
++ *    are Inverse pressure.
++ * 2.  Any touch lighter than TS_LIGHT_INV_PRESSURE is a pen up.
++ * 3.  Any touch heavier than TS_HEAVY_INV_PRESSURE is a pen down.
++ */
++#define TS_HEAVY_INV_PRESSURE 0xFE0 /* C00 */
++#define TS_LIGHT_INV_PRESSURE 0xFFF /* e00 */
++
++/*
++ * If the x, y, or inverse pressure changes more than these values
++ * between two succeeding points, the point is not reported.
++ */
++#define TS_MAX_VALID_XY_CHANGE		0x300
++#define TS_MAX_VALID_PRESSURE_CHANGE	0x100
++
++/*
++ * This is the minimum Z1 Value that is valid.
++ */
++#define MIN_Z1_VALUE 0x50
++
++/*
++ * Settling delay for taking each ADC measurement.  Increase this
++ * if ts is jittery.
++ */
++#define EP93XX_TS_ADC_DELAY_USEC 2000
++
++/*
++ * Delay between TS points.
++ */
++#define EP93XX_TS_PER_POINT_DELAY_USEC 10000
++
++/*
++ * A few more macros...
++ */
++#define TSSETUP_DEFAULT  (TSSETUP_NSMP_32 | TSSETUP_DEV_64 |  \
++			  ((128<<TSSETUP_SDLY_SHIFT) & TSSETUP_SDLY_MASK) | \
++			  ((128<<TSSETUP_DLY_SHIFT)  & TSSETUP_DLY_MASK))
++
++#define TSSETUP2_DEFAULT (TSSETUP2_NSIGND)
++
++/*
++ * For now, we use one of the minor numbers from the local/experimental
++ * range.
++ */
++#define EP93XX_TS_MINOR 240
++
++/*
++ * Static Declarations
++ */
++static unsigned int   guiLastX, guiLastY;
++static unsigned int   guiLastInvPressure;
++
++struct TouchScreenSample
++{
++    int currentX;
++    int currentY;
++    int currentButton;
++    int currentPressure;
++    struct timeval currentTime;
++};
++
++/*
++ * This must match the structure in tslib.
++ */
++struct ts_sample {
++    int x;
++    int y;
++    unsigned int pressure;
++    struct timeval tv;
++};
++
++static struct TouchScreenSample gSample;
++static int bFreshTouchData;
++static int bCurrentPenDown;
++
++static DECLARE_WAIT_QUEUE_HEAD(queue);
++static DEFINE_SEMAPHORE(open_sem);
++static DEFINE_SPINLOCK(event_buffer_lock);
++static struct fasync_struct *ep93xx_fasync;
++
++/*
++ * Typedef Declarations
++ */
++typedef enum {
++    TS_MODE_UN_INITIALIZED,
++    TS_MODE_HARDWARE_SCAN,
++    TS_MODE_SOFT_SCAN
++} ts_mode_t;
++
++static ts_mode_t gScanningMode;
++
++typedef enum{
++    TS_STATE_STOPPED = 0,
++    TS_STATE_Z1,
++    TS_STATE_Z2,
++    TS_STATE_Y,
++    TS_STATE_X,
++    TS_STATE_DONE
++} ts_states_t;
++
++typedef struct
++{
++    unsigned int uiX;
++    unsigned int uiY;
++    unsigned int uiZ1;
++    unsigned int uiZ2;
++    ts_states_t  state;
++} ts_struct_t;
++
++static ts_struct_t sTouch;
++
++/*
++ * From the spec, here's how to set up the touch screen's switch registers.
++ */
++typedef struct
++{
++    unsigned int uiDetect;
++    unsigned int uiDischarge;
++    unsigned int uiXSample;
++    unsigned int uiYSample;
++    unsigned int uiSwitchZ1;
++    unsigned int uiSwitchZ2;
++}SwitchStructType;
++
++/*
++ * Here's the switch settings for a 4-wire touchscreen.  See the spec
++ * for how to handle a 4, 7, or 8-wire.
++ */
++const static SwitchStructType sSwitchSettings =
++/* s28en=0 */
++/*   TSDetect    TSDischarge TSXSample   TSYSample   SwitchZ1    SwitchZ2 */
++    {0x00403604, 0x0007fe04, 0x00081604, 0x00104601, 0x00101601, 0x00101608};
++
++/*
++ * Function declarations
++ */
++static void ep93xx_ts_set_direct(unsigned int uiADCSwitch);
++static irqreturn_t ep93xx_ts_isr(int irq, void *dev_id);
++static irqreturn_t ep93xx_timer2_isr(int irq, void *dev_id);
++static void ee93xx_ts_evt_add(int button, int dX, int dY, int Pressure);
++static ssize_t ep93xx_ts_read(struct file *filp, char *buf,
++	size_t count, loff_t *l);
++static unsigned int ep93xx_ts_poll(struct file *filp, poll_table *wait);
++static int ep93xx_ts_open(struct inode *inode, struct file *filp);
++static int ep93xx_ts_fasync(int fd, struct file *filp, int on);
++static int ep93xx_ts_release(struct inode *inode, struct file *filp);
++static ssize_t ep93xx_ts_write(struct file *file, const char *buffer,
++		size_t count, loff_t *ppos);
++static void ep93xx_ts_setup(void);
++static void ep93xx_ts_shutdown(void);
++int __init ep93xx_ts_init(void);
++void __exit ep93xx_ts_exit(void);
++static unsigned int CalculateInvPressure(void);
++static unsigned int ADCGetData(unsigned int uiSamples, unsigned int uiMaxDiff);
++static void TS_Soft_Scan_Mode(void);
++static void TS_Hardware_Scan_Mode(void);
++static void ProcessPointData(void);
++static void Set_Timer2_uSec(unsigned int Delay_mSec);
++static void Stop_Timer2(void);
++
++/*
++ *  ep93xx_ts_isr
++ */
++static irqreturn_t ep93xx_ts_isr(int irq, void *dev_id)
++{
++    /*
++     * Note that we don't clear the interrupt here.  The interrupt
++     * gets cleared in TS_Soft_Scan_Mode when the TS ENABLE
++     * bit is cleared.
++     */
++
++    /*
++     * Set the ts to manual polling mode and schedule a callback.
++     * That way we can return from the isr in a reasonable amount of
++     * time and process the touch in the callback after a brief delay.
++     */
++    TS_Soft_Scan_Mode();
++
++    return(IRQ_HANDLED);
++}
++
++/*
++ * Save the current ts 'event' in an atomic fashion.
++ */
++static void ee93xx_ts_evt_add(int buttons, int iX, int iY, int iPressure)
++{
++    /*
++     * Note the event, but use spinlocks to keep it from getting
++     * halfway read if we get interrupted.
++     */
++
++    spin_lock(&event_buffer_lock);
++
++    gSample.currentX        = iX;
++    gSample.currentY        = iY;
++    gSample.currentButton   = buttons;
++    gSample.currentPressure = iPressure;
++    bFreshTouchData         = 1;
++    do_gettimeofday(&gSample.currentTime);
++
++    spin_unlock(&event_buffer_lock);
++
++    kill_fasync(&ep93xx_fasync, SIGIO, POLL_IN);
++    wake_up_interruptible(&queue);
++}
++
++
++static ssize_t ep93xx_ts_read(struct file *filp, char *buf, size_t count, loff_t *l)
++{
++    unsigned short data[3];
++    struct  ts_sample   ts_data;
++    int     iReturn = -EFAULT;
++
++    if (!bFreshTouchData)
++    {
++	iReturn = 0;
++    }
++    else if (count == sizeof(data))
++    {
++	spin_lock_irq(&event_buffer_lock);
++	bFreshTouchData = 0;
++	data[0] = gSample.currentX;
++	data[1] = gSample.currentY;
++	data[2] = gSample.currentButton;
++
++	spin_unlock_irq(&event_buffer_lock);
++
++	if (copy_to_user(buf, data, sizeof data))
++	    return -EFAULT;
++
++	count -= sizeof(data);
++
++	/* return the # of bytes that got read */
++	iReturn = sizeof(data) ;
++    }
++    else if (count == sizeof(struct ts_sample) )
++    {
++	spin_lock_irq(&event_buffer_lock);
++	bFreshTouchData = 0;
++	ts_data.x           = gSample.currentX;
++	ts_data.y           = gSample.currentY;
++	ts_data.pressure    = gSample.currentPressure;
++	ts_data.tv          = gSample.currentTime;
++	spin_unlock_irq(&event_buffer_lock);
++
++	if (copy_to_user(buf, &ts_data, sizeof(struct ts_sample)))
++	{
++	    iReturn = -EFAULT;
++	}
++	else
++	{
++	    count -= sizeof(ts_data);
++	    iReturn = sizeof(ts_data);
++	}
++    }
++
++    return iReturn;
++}
++
++static unsigned int ep93xx_ts_poll(struct file *filp, poll_table *wait)
++{
++    poll_wait(filp, &queue, wait);
++
++    if (bFreshTouchData)
++    {
++	return POLLIN | POLLRDNORM;
++    }
++
++    return 0;
++}
++
++static int ep93xx_ts_open(struct inode *inode, struct file *filp)
++{
++    if (down_trylock(&open_sem))
++    {
++	return -EBUSY;
++    }
++
++    ep93xx_ts_setup();
++
++    return 0;
++}
++
++/*
++ * Asynchronous I/O support.
++ */
++static int ep93xx_ts_fasync(int fd, struct file *filp, int on)
++{
++    int retval;
++
++    retval = fasync_helper(fd, filp, on, &ep93xx_fasync);
++    if (retval < 0)
++    {
++	return retval;
++    }
++
++    return 0;
++}
++
++static int ep93xx_ts_release(struct inode *inode, struct file *filp)
++{
++    Stop_Timer2();
++
++    /*
++     * Call our async I/O support to request that this file
++     * cease to be used for async I/O.
++     */
++    ep93xx_ts_fasync(-1, filp, 0);
++
++    ep93xx_ts_shutdown();
++
++    up(&open_sem);
++
++    return 0;
++}
++
++static ssize_t ep93xx_ts_write(struct file *file, const char *buffer, size_t count,
++	       loff_t *ppos)
++{
++    return -EINVAL;
++}
++
++
++static int ep93xx_ts_ioctl(struct inode *inode, struct file *file, uint command, ulong u)
++{
++    static const int         version = EV_VERSION;
++    static const u_int32_t   bit =(1 << EV_ABS);
++    static const u_int32_t   absbit = (1 << ABS_X) | (1 << ABS_Y) | (1 << ABS_PRESSURE);
++    int         iReturn ;
++    int         i = 0;
++
++    switch(command)
++    {
++	case EVIOCGVERSION:
++	    i = copy_to_user((void __user *)u, (void *)version, sizeof(version));
++	    iReturn = i ? -EFAULT : 0;
++	    break;
++
++	case EVIOCGBIT(0,sizeof(u_int32_t) * 8) :
++	    i = copy_to_user((void __user *)u, (void *)bit, sizeof(bit));
++	    iReturn = i ? -EFAULT : 0;
++	    break;
++
++	case EVIOCGBIT(EV_ABS, sizeof(absbit) * 8):
++	    i = copy_to_user((void __user *)u, (void *)absbit, sizeof(absbit));
++	    iReturn = i ? -EFAULT : 0;
++	    break;
++	default:
++	    iReturn = -1;
++	    break;
++    }
++
++    return iReturn;
++}
++
++static struct file_operations ep93xx_ts_fops = {
++    owner:      THIS_MODULE,
++    read:       ep93xx_ts_read,
++    write:      ep93xx_ts_write,
++    poll:       ep93xx_ts_poll,
++    open:       ep93xx_ts_open,
++    unlocked_ioctl:      ep93xx_ts_ioctl,
++    release:    ep93xx_ts_release,
++    fasync:     ep93xx_ts_fasync,
++};
++
++static struct miscdevice ep93xx_ts_miscdev =
++{
++	EP93XX_TS_MINOR,
++	"ep93xx_ts",
++	&ep93xx_ts_fops
++};
++
++void ep93xx_ts_setup(void)
++{
++    unsigned int uiKTDIV, uiTSXYMaxMin;
++
++    /*
++     * Set the TSEN bit in KTDIV so that we are enabling the clock
++     * for the touchscreen.
++     */
++    uiKTDIV = __raw_readl(EP93XX_SYSCON_KEYTCHCLKDIV);
++    uiKTDIV |= EP93XX_SYSCON_KEYTCHCLKDIV_TSEN;
++    ep93xx_syscon_swlocked_write(uiKTDIV, EP93XX_SYSCON_KEYTCHCLKDIV);
++
++    /*
++     * Program the EP93XX_TOUCHSCREEN_SETUP and TSSetup2 registers.
++     */
++    __raw_writel(TSSETUP_DEFAULT, EP93XX_TOUCHSCREEN_SETUP);
++    __raw_writel(TSSETUP2_DEFAULT, EP93XX_TOUCHSCREEN_SETUP2);
++
++    /*
++     * Set the the touch settings.
++     */
++    __raw_writel(0xaa, EP93XX_TOUCHSCREEN_SWLOCK);
++    __raw_writel(sSwitchSettings.uiDischarge, EP93XX_TOUCHSCREEN_DIRECT);
++
++    __raw_writel(0xaa, EP93XX_TOUCHSCREEN_SWLOCK);
++    __raw_writel(sSwitchSettings.uiDischarge, EP93XX_TOUCHSCREEN_DISCHARGE);
++
++    __raw_writel(0xaa, EP93XX_TOUCHSCREEN_SWLOCK);
++    __raw_writel(sSwitchSettings.uiSwitchZ1, EP93XX_TOUCHSCREEN_XSAMPLE);
++
++    __raw_writel(0xaa, EP93XX_TOUCHSCREEN_SWLOCK);
++    __raw_writel(sSwitchSettings.uiSwitchZ2, EP93XX_TOUCHSCREEN_YSAMPLE);
++
++    __raw_writel(0xaa, EP93XX_TOUCHSCREEN_SWLOCK);
++    __raw_writel(sSwitchSettings.uiDetect, EP93XX_TOUCHSCREEN_DETECT);
++
++    /*
++     * X,YMin set to 0x40 = have to drag that many pixels for a new irq.
++     * X,YMax set to 0x40 = 1024 pixels is the maximum movement within the
++     * time scan limit.
++     */
++    uiTSXYMaxMin =  (50   << TSMAXMIN_XMIN_SHIFT) & TSMAXMIN_XMIN_MASK;
++    uiTSXYMaxMin |= (50   << TSMAXMIN_YMIN_SHIFT) & TSMAXMIN_YMIN_MASK;
++    uiTSXYMaxMin |= (0xff << TSMAXMIN_XMAX_SHIFT) & TSMAXMIN_XMAX_MASK;
++    uiTSXYMaxMin |= (0xff << TSMAXMIN_YMAX_SHIFT) & TSMAXMIN_YMAX_MASK;
++    __raw_writel(uiTSXYMaxMin, EP93XX_TOUCHSCREEN_XYMAXMIN);
++
++    bCurrentPenDown = 0;
++    bFreshTouchData = 0;
++    guiLastX = 0;
++    guiLastY = 0;
++    guiLastInvPressure = 0xffffff;
++
++    /*
++     * Enable the touch screen scanning engine.
++     */
++    TS_Hardware_Scan_Mode();
++}
++
++/*
++ * ep93xx_ts_shutdown
++ *
++ */
++static void
++ep93xx_ts_shutdown(void)
++{
++    unsigned int uiKTDIV;
++
++    sTouch.state = TS_STATE_STOPPED;
++    Stop_Timer2();
++
++    /*
++     * Disable the scanning engine.
++     */
++    __raw_writel(0, EP93XX_TOUCHSCREEN_SETUP);
++    __raw_writel(0, EP93XX_TOUCHSCREEN_SETUP2);
++
++    /*
++     * Clear the TSEN bit in KTDIV so that we are disabling the clock
++     * for the touchscreen.
++     */
++    uiKTDIV = __raw_readl(EP93XX_SYSCON_KEYTCHCLKDIV);
++    uiKTDIV &= ~EP93XX_SYSCON_KEYTCHCLKDIV_TSEN;
++    ep93xx_syscon_swlocked_write(uiKTDIV, EP93XX_SYSCON_KEYTCHCLKDIV);
++
++} /* ep93xx_ts_shutdown */
++
++static irqreturn_t ep93xx_timer2_isr(int irq, void *dev_id)
++{
++    switch(sTouch.state)
++    {
++	case TS_STATE_STOPPED:
++	    TS_Hardware_Scan_Mode();
++	    break;
++
++	/*
++	 * Get the Z1 value for pressure measurement and set up
++	 * the switch register for getting the Z2 measurement.
++	 */
++	case TS_STATE_Z1:
++	    Set_Timer2_uSec(EP93XX_TS_ADC_DELAY_USEC);
++	    sTouch.uiZ1 = ADCGetData(2, 200);
++	    ep93xx_ts_set_direct(sSwitchSettings.uiSwitchZ2);
++	    sTouch.state = TS_STATE_Z2;
++	    break;
++
++	/*
++	 * Get the Z2 value for pressure measurement and set up
++	 * the switch register for getting the Y measurement.
++	 */
++	case TS_STATE_Z2:
++	    sTouch.uiZ2 = ADCGetData(2, 200);
++	    ep93xx_ts_set_direct(sSwitchSettings.uiYSample);
++	    sTouch.state = TS_STATE_Y;
++	    break;
++
++	/*
++	 * Get the Y value and set up the switch register for
++	 * getting the X measurement.
++	 */
++	case TS_STATE_Y:
++	    sTouch.uiY = ADCGetData(4, 20);
++	    ep93xx_ts_set_direct(sSwitchSettings.uiXSample);
++	    sTouch.state = TS_STATE_X;
++	    break;
++
++	/*
++	 * Read the X value.  This is the last of the 4 adc values
++	 * we need so we continue on to process the data.
++	 */
++	case TS_STATE_X:
++	    Stop_Timer2();
++
++	    sTouch.uiX = ADCGetData(4, 20);
++
++	    __raw_writel(0xaa, EP93XX_TOUCHSCREEN_SWLOCK);
++	    __raw_writel(sSwitchSettings.uiDischarge, EP93XX_TOUCHSCREEN_DIRECT);
++
++	    sTouch.state = TS_STATE_DONE;
++
++	    /*
++	     * Process this set of ADC readings.
++	     */
++	    ProcessPointData();
++
++	    break;
++
++	/*
++	 * Shouldn't get here.  But if we do, we can recover...
++	 */
++	case TS_STATE_DONE:
++	    TS_Hardware_Scan_Mode();
++	    break;
++    }
++
++    /*
++     * Clear the timer2 interrupt.
++     */
++    __raw_writel(1, EP93XX_TIMER2_CLEAR);
++    return(IRQ_HANDLED);
++}
++
++/*---------------------------------------------------------------------
++ * ProcessPointData
++ *
++ * This routine processes the ADC data into usable point data and then
++ * puts the driver into hw or sw scanning mode before returning.
++ *
++ * We calculate inverse pressure (lower number = more pressure) then
++ * do a hystheresis with the two pressure values 'light' and 'heavy'.
++ *
++ * If we are above the light, we have pen up.
++ * If we are below the heavy we have pen down.
++ * As long as the pressure stays below the light, pen stays down.
++ * When we get above the light again, pen goes back up.
++ *
++ */
++static void ProcessPointData(void)
++{
++    int  bValidPoint = 0;
++    unsigned int   uiXDiff, uiYDiff, uiInvPressureDiff;
++    unsigned int   uiInvPressure;
++
++    /*
++     * Calculate the current pressure.
++     */
++    uiInvPressure = CalculateInvPressure();
++
++    /*
++     * If pen pressure is so light that it is greater than the 'max' setting
++     * then we consider this to be a pen up.
++     */
++    if (uiInvPressure >= TS_LIGHT_INV_PRESSURE)
++    {
++	bCurrentPenDown = 0;
++	ee93xx_ts_evt_add(0, guiLastX, guiLastY, 0);
++	TS_Hardware_Scan_Mode();
++	return;
++    }
++
++    /*
++     * Hysteresis:
++     * If the pen pressure is hard enough to be less than the 'min' OR
++     * the pen is already down and is still less than the 'max'...
++     */
++    if ((uiInvPressure < TS_HEAVY_INV_PRESSURE) ||
++	(bCurrentPenDown && (uiInvPressure < TS_LIGHT_INV_PRESSURE)))
++    {
++	if (bCurrentPenDown)
++	{
++	    /*
++	     * If pen was previously down, check the difference between
++	     * the last sample and this one... if the difference between
++	     * samples is too great, ignore the sample.
++	     */
++	    uiXDiff = abs(guiLastX - sTouch.uiX);
++	    uiYDiff = abs(guiLastY - sTouch.uiY);
++	    uiInvPressureDiff = abs(guiLastInvPressure - uiInvPressure);
++
++	    if (uiXDiff < TS_MAX_VALID_XY_CHANGE
++		&& uiYDiff < TS_MAX_VALID_XY_CHANGE
++		&& uiInvPressureDiff < TS_MAX_VALID_PRESSURE_CHANGE)
++	    {
++		bValidPoint = 1;
++	    }
++	}
++	else
++	{
++	    bValidPoint = 1;
++	}
++
++	/*
++	 * If either the pen was put down or dragged make a note of it.
++	 */
++	if (bValidPoint)
++	{
++	    guiLastX = sTouch.uiX;
++	    guiLastY = sTouch.uiY;
++	    guiLastInvPressure = uiInvPressure;
++	    bCurrentPenDown = 1;
++	    ee93xx_ts_evt_add(1, sTouch.uiX, sTouch.uiY,
++			      0x7000000 / uiInvPressure);
++	}
++
++	TS_Soft_Scan_Mode();
++	return;
++    }
++
++    TS_Hardware_Scan_Mode();
++}
++
++static void ep93xx_ts_set_direct(unsigned int uiADCSwitch)
++{
++    unsigned int uiResult;
++
++    /*
++     * Set the switch settings in the direct register.
++     */
++    __raw_writel(0xaa, EP93XX_TOUCHSCREEN_SWLOCK);
++    __raw_writel(uiADCSwitch, EP93XX_TOUCHSCREEN_DIRECT);
++
++    /*
++     * Read and throw away the first sample.
++     */
++    do {
++	uiResult = __raw_readl(EP93XX_TOUCHSCREEN_XYRESULT);
++    } while (!(uiResult & TSXYRESULT_SDR));
++
++}
++
++static unsigned int ADCGetData(unsigned int uiSamples, unsigned int uiMaxDiff)
++{
++    unsigned int uiResult, uiValue, uiCount, uiLowest, uiHighest, uiSum, uiAve;
++
++    do
++    {
++	/*
++	 * Initialize our values.
++	 */
++	uiLowest        = 0xfffffff;
++	uiHighest       = 0;
++	uiSum           = 0;
++
++	for (uiCount = 0; uiCount < uiSamples; uiCount++)
++	{
++	    /*
++	     * Read the touch screen four more times and average.
++	     */
++	    do {
++		uiResult = __raw_readl(EP93XX_TOUCHSCREEN_XYRESULT);
++	    } while (!(uiResult & TSXYRESULT_SDR));
++
++	    uiValue = (uiResult & TSXYRESULT_AD_MASK) >> TSXYRESULT_AD_SHIFT;
++	    uiValue = ((uiValue >> 4) + ((1 + TSXYRESULT_X_MASK)>>1)) & TSXYRESULT_X_MASK;
++
++	    /*
++	     * Add up the values.
++	     */
++	    uiSum += uiValue;
++
++	    /*
++	     * Get the lowest and highest values.
++	     */
++	    if (uiValue < uiLowest)
++	    {
++		uiLowest = uiValue;
++	    }
++	    if (uiValue > uiHighest)
++	    {
++		uiHighest = uiValue;
++	    }
++	}
++    } while ((uiHighest - uiLowest) > uiMaxDiff);
++
++    /*
++     * Calculate the Average value.
++     */
++    uiAve = uiSum / uiSamples;
++
++    return uiAve;
++}
++
++/*
++ * CalculateInvPressure
++ *
++ * Is the Touch Valid.  Touch is not valid if the X or Y value is not
++ * in range and the pressure is not  enough.
++ *
++ * Touch resistance can be measured by the following formula:
++ *
++ *          Rx * X *     Z2
++ * Rtouch = --------- * (-- - 1)
++ *           4096        Z1
++ *
++ * This is simplified in the ration of Rtouch to Rx.  The lower the value, the
++ * higher the pressure.
++ *
++ *                     Z2
++ * InvPressure =  X * (-- - 1)
++ *                     Z1
++ */
++static unsigned int CalculateInvPressure(void)
++{
++    unsigned int uiInvPressure;
++
++    /*
++     * Check to see if the point is valid.
++     */
++    if (sTouch.uiZ1 < MIN_Z1_VALUE)
++    {
++	uiInvPressure = 0x10000;
++    }
++
++    /*
++     * Can omit the pressure calculation if you need to get rid of the division.
++     */
++    else
++    {
++	uiInvPressure = ((sTouch.uiX * sTouch.uiZ2) / sTouch.uiZ1) - sTouch.uiX;
++    }
++
++    return uiInvPressure;
++}
++
++/*
++ * TS_Hardware_Scan_Mode
++ *
++ * Enables the ep93xx ts scanning engine so that when the pen goes down
++ * we will get an interrupt.
++ */
++static void TS_Hardware_Scan_Mode(void)
++{
++    unsigned int uiDevCfg;
++
++    /*
++     * Disable the soft scanning engine.
++     */
++    sTouch.state = TS_STATE_STOPPED;
++    Stop_Timer2();
++
++    /*
++     * Clear the TIN (Touchscreen INactive) bit so we can go to
++     * automatic scanning mode.
++     */
++    uiDevCfg = __raw_readl(EP93XX_SYSCON_DEVCFG);
++    ep93xx_syscon_swlocked_write(uiDevCfg & ~EP93XX_SYSCON_DEVCFG_TIN,
++				 EP93XX_SYSCON_DEVCFG);
++
++    /*
++     * Enable the touch screen scanning state machine by setting
++     * the ENABLE bit.
++     */
++    __raw_writel(TSSETUP_DEFAULT | TSSETUP_ENABLE, EP93XX_TOUCHSCREEN_SETUP);
++
++    /*
++     * Set the flag to show that we are in interrupt mode.
++     */
++    gScanningMode = TS_MODE_HARDWARE_SCAN;
++
++    /*
++     * Initialize EP93XX_TOUCHSCREEN_SETUP2 register.
++     */
++    __raw_writel(TSSETUP2_DEFAULT, EP93XX_TOUCHSCREEN_SETUP2);
++
++}
++
++/*
++ * TS_Soft_Scan_Mode
++ *
++ * Sets the touch screen to manual polling mode.
++ */
++static void TS_Soft_Scan_Mode(void)
++{
++    unsigned int uiDevCfg;
++
++    if (gScanningMode != TS_MODE_SOFT_SCAN)
++    {
++	/*
++	 * Disable the touch screen scanning state machine by clearing
++	 * the ENABLE bit.
++	 */
++	__raw_writel(TSSETUP_DEFAULT, EP93XX_TOUCHSCREEN_SETUP);
++
++	/*
++	 * Set the TIN bit so we can do manual touchscreen polling.
++	 */
++	uiDevCfg = __raw_readl(EP93XX_SYSCON_DEVCFG);
++	ep93xx_syscon_swlocked_write(uiDevCfg | EP93XX_SYSCON_DEVCFG_TIN,
++				     EP93XX_SYSCON_DEVCFG);
++    }
++
++    /*
++     * Set the switch register up for the first ADC reading
++     */
++    ep93xx_ts_set_direct(sSwitchSettings.uiSwitchZ1);
++
++    /*
++     * Initialize our software state machine to know which ADC
++     * reading to take
++     */
++    sTouch.state = TS_STATE_Z1;
++
++    /*
++     * Set the timer so after a mSec or two settling delay it will
++     * take the first ADC reading.
++     */
++    Set_Timer2_uSec(EP93XX_TS_PER_POINT_DELAY_USEC);
++
++    /*
++     * Note that we are in sw scanning mode not hw scanning mode.
++     */
++    gScanningMode = TS_MODE_SOFT_SCAN;
++
++}
++
++static void Set_Timer2_uSec(unsigned int uiDelay_uSec)
++{
++    unsigned int uiClockTicks;
++
++    /*
++     * Stop timer 2
++     */
++    __raw_writel(0, EP93XX_TIMER2_CONTROL);
++
++    uiClockTicks = ((uiDelay_uSec * 508) + 999) / 1000;
++    __raw_writel(uiClockTicks, EP93XX_TIMER2_LOAD);
++    __raw_writel(uiClockTicks, EP93XX_TIMER2_VALUE);
++
++    /*
++     * Set up Timer 2 for 508 kHz clock and periodic mode.
++     */
++    __raw_writel(0xC8, EP93XX_TIMER2_CONTROL);
++
++}
++
++static void Stop_Timer2(void)
++{
++    __raw_writel(0, EP93XX_TIMER2_CONTROL);
++}
++
++/*
++ * Initialization and exit routines
++ */
++int __init ep93xx_ts_init(void)
++{
++    int retval;
++
++    retval = request_irq(IRQ_EP93XX_TOUCH, ep93xx_ts_isr,
++			 IRQF_DISABLED, "ep93xx_ts", 0);
++    if (retval)
++    {
++	printk(KERN_WARNING "ep93xx_ts: failed to get touchscreen IRQ\n");
++	return retval;
++    }
++
++    retval = request_irq(IRQ_EP93XX_TIMER2, ep93xx_timer2_isr,
++			 IRQF_DISABLED, "ep93xx_timer2", 0);
++    if (retval)
++    {
++	printk(KERN_WARNING "ep93xx_ts: failed to get timer2 IRQ\n");
++	free_irq(IRQ_EP93XX_TOUCH, 0);
++	return retval;
++    }
++
++    misc_register(&ep93xx_ts_miscdev);
++
++    sTouch.state = TS_STATE_STOPPED;
++    gScanningMode = TS_MODE_UN_INITIALIZED;
++
++    printk(KERN_NOTICE "ep93xx touchscreen driver configured for 4-wire operation\n");
++
++    return 0;
++}
++
++void __exit ep93xx_ts_exit(void)
++{
++    Stop_Timer2();
++
++    free_irq(IRQ_EP93XX_TOUCH, 0);
++    free_irq(IRQ_EP93XX_TIMER2, 0);
++
++    misc_deregister(&ep93xx_ts_miscdev);
++}
++
++module_init(ep93xx_ts_init);
++module_exit(ep93xx_ts_exit);
++
++MODULE_DESCRIPTION("Cirrus EP93xx touchscreen driver");
++MODULE_SUPPORTED_DEVICE("touchscreen/ep93xx");
++MODULE_LICENSE("GPL");
+--- a/arch/arm/mach-ep93xx/core.c
++++ b/arch/arm/mach-ep93xx/core.c
+@@ -205,6 +205,7 @@ void ep93xx_syscon_swlocked_write(unsign
+ 
+ 	spin_unlock_irqrestore(&syscon_swlock, flags);
+ }
++EXPORT_SYMBOL(ep93xx_syscon_swlocked_write);
+ 
+ void ep93xx_devcfg_set_clear(unsigned int set_bits, unsigned int clear_bits)
+ {
