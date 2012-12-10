@@ -437,7 +437,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  
  #include <asm/addrspace.h>
  #include <asm/bootinfo.h>
-@@ -522,12 +523,62 @@ static void __init arch_mem_init(char **
+@@ -536,12 +537,62 @@ static void __init arch_mem_init(char **
  	}
  
  	bootmem_init();
@@ -500,7 +500,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  static void __init resource_init(void)
  {
  	int i;
-@@ -543,6 +594,8 @@ static void __init resource_init(void)
+@@ -557,6 +608,8 @@ static void __init resource_init(void)
  	/*
  	 * Request address space for all standard RAM.
  	 */
@@ -509,7 +509,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  	for (i = 0; i < boot_mem_map.nr_map; i++) {
  		struct resource *res;
  		unsigned long start, end;
-@@ -579,6 +632,7 @@ static void __init resource_init(void)
+@@ -593,6 +646,7 @@ static void __init resource_init(void)
  		 */
  		request_resource(res, &code_resource);
  		request_resource(res, &data_resource);
