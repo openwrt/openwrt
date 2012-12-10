@@ -43,7 +43,7 @@ define KernelPackage/nand-ar934x
   KCONFIG:=CONFIG_MTD_NAND_AR934X
   DEPENDS:=@TARGET_ar71xx +kmod-nand
   FILES:=$(LINUX_DIR)/drivers/mtd/nand/ar934x_nfc.ko
-  AUTOLOAD:=$(call AutoLoad,30,ar934x_nfc)
+  AUTOLOAD:=$(call AutoLoad,25,ar934x_nfc)
 endef
 
 define KernelPackage/nand-ar934x/description
