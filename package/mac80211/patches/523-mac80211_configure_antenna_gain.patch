@@ -142,9 +142,9 @@
 +			ant_gain = 0;
 +		} else
 +			ant_gain -= local->user_antenna_gain;
++		power = min(power, max_power);
 +	}
 +
-+	power = min(chan->max_power, max_power);
 +	if (local->hw.conf.power_level != power ||
 +		local->hw.conf.max_antenna_gain != ant_gain) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;
