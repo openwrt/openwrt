@@ -110,6 +110,9 @@ ramips_board_name() {
 	*"F5D8235 v2")
 		name="f5d8235-v2"
 		;;
+	*"Hauppauge Broadway")
+		name="broadway"
+		;;
 	*"La Fonera 2.0N")
 		name="fonera20n"
 		;;

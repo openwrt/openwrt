@@ -43,7 +43,8 @@ ramips_setup_interfaces()
 
 	case $board in
 	all0256n | \
-	all5002)
+	all5002 | \
+	broadway)
 		ucidef_set_interface_lan "eth0"
 		;;
 
@@ -141,6 +142,7 @@ ramips_setup_macs()
 	3g-6200n | \
 	argus-atp52b | \
 	bc2 | \
+	broadway | \
 	f5d8235-v1 | \
 	nw718 | \
 	psr-680w | \

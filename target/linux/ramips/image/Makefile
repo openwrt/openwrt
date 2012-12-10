@@ -162,6 +162,22 @@ define BuildFirmware/ARGUS_ATP52B
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/phys,$(mtdlayout_argus_atp52b)),$(mtd_argus_atp52b_kernel_part_size),$(mtd_argus_atp52b_rootfs_part_size))
 endef
 
+# djh - Note all of these are marked Read-Only for now
+mtdlayout_broadway=192k(bootloader)ro,64k(config)ro,64k(factory)ro,1024k(kernel)ro,6720k(rootfs),7744k@0x50000(firmware)
+mtd_broadway_kernel_part_size=1048576
+mtd_broadway_rootfs_part_size=6881280
+define BuildFirmware/BROADWAY
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_broadway)),$(mtd_broadway_kernel_part_size),$(mtd_broadway_rootfs_part_size))
+	mkimage -A mips -O linux -T kernel -C lzma $(call kernel_entry)\
+	 -n 'Broadway Kernel Image' \
+	 -d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage
+	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,$(mtd_broadway_kernel_part_size),$(KDIR)/root.$(1),$(mtd_broadway_rootfs_part_size),$(call imgname,$(1),$(2))-factory.bin)
+endef
+
+define BuildFirmware/BROADWAY/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_broadway)))
+endef
+
 define BuildFirmware/Buffalo
 	$(call MkImageLzma,$(2),$(3))
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(4),$(5))
@@ -461,6 +477,10 @@ define Image/Build/Profile/BC2
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,bc2,BC2,ttyS1,57600,phys)
 endef
 
+define Image/Build/Profile/BROADWAY
+	$(call Image/Build/Template/$(fs_squash)/$(1),BROADWAY,broadway,BROADWAY,ttyS1,57600,phys)
+endef
+
 define Image/Build/Profile/CARAMBOLA
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,carambola,CARAMBOLA,ttyS1,115200,phys)
 endef
@@ -604,6 +624,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ALL5002,$(1))
 	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
 	$(call Image/Build/Profile/BC2,$(1))
+	$(call Image/Build/Profile/BROADWAY,$(1))
 	$(call Image/Build/Profile/CARAMBOLA,$(1))
 	$(call Image/Build/Profile/DIR300B1,$(1))
 	$(call Image/Build/Profile/DIR615H1,$(1))

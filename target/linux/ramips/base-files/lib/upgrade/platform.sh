@@ -19,6 +19,7 @@ platform_check_image() {
 	all0256n | \
 	all5002 | \
 	bc2 | \
+	broadway | \
 	carambola | \
 	dir-300-b1 | \
 	dir-600-b1 | \

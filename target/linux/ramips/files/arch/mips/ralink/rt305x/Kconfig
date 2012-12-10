@@ -91,6 +91,11 @@ config RT305X_MACH_ESR_9753
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_BROADWAY
+	bool "Hauppauge Broadway support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_FONERA20N
 	bool "La Fonera20N board support"
 	select RALINK_DEV_GPIO_BUTTONS
