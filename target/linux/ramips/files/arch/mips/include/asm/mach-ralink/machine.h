@@ -39,6 +39,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_ALL0239_3G,		/* ALL0239-3G */
 	RAMIPS_MACH_ARGUS_ATP52B,	/* Argus ATP-52B */
 	RAMIPS_MACH_BC2,		/* NexAira BC2 */
+	RAMIPS_MACH_BROADWAY,		/* Hauppauge Broadway */
 	RAMIPS_MACH_DAP_1350,		/* D-Link DAP-1350 */
 	RAMIPS_MACH_ESR_9753,		/* Senao / EnGenius ESR-9753*/
 	RAMIPS_MACH_F5D8235_V2,         /* Belkin F5D8235 v2 */
