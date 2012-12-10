@@ -1,0 +1,46 @@
+From 0714f2ec1e950d7b825093d05ae8eacf1d66ce58 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Mon, 10 Dec 2012 15:52:07 +0100
+Subject: [PATCH 3.7-rc8] MIPS: MT: fix build with CONFIG_UIDGID_STRICT_TYPE_CHECKS=y
+
+When CONFIG_UIDGID_STRICT_TYPE_CHECKS is enabled, plain integer checking
+between different uids/gids is explicitely turned into a build failure
+by making the k{uid,gid}_t types a structure containing a value:
+
+arch/mips/kernel/mips-mt-fpaff.c: In function 'check_same_owner':
+arch/mips/kernel/mips-mt-fpaff.c:53:22: error: invalid operands to
+binary == (have 'kuid_t' and 'kuid_t')
+arch/mips/kernel/mips-mt-fpaff.c:54:15: error: invalid operands to
+binary == (have 'kuid_t' and 'kuid_t')
+
+This problem got introduced with commit 17c04139 (MIPS: MT: Fix FPU affinity.)
+
+In order to ensure proper comparison between uids, using the helper
+function uid_eq() which performs the right thing whenever this config
+option is turned on or off.
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+---
+Ralf, I think you might want to sneak this into 3.7-rc8 if possible at all.
+
+ arch/mips/kernel/mips-mt-fpaff.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/kernel/mips-mt-fpaff.c b/arch/mips/kernel/mips-mt-fpaff.c
+index 33f63ba..fd814e0 100644
+--- a/arch/mips/kernel/mips-mt-fpaff.c
++++ b/arch/mips/kernel/mips-mt-fpaff.c
+@@ -50,8 +50,8 @@ static bool check_same_owner(struct task_struct *p)
+ 
+ 	rcu_read_lock();
+ 	pcred = __task_cred(p);
+-	match = (cred->euid == pcred->euid ||
+-		 cred->euid == pcred->uid);
++	match = (uid_eq(cred->euid, pcred->euid) ||
++		 uid_eq(cred->euid, pcred->uid));
+ 	rcu_read_unlock();
+ 	return match;
+ }
+-- 
+1.7.10.4
+
