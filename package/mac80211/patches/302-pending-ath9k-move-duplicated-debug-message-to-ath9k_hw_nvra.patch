@@ -1,0 +1,83 @@
+From cd3d888d569f5908c4345f7c99018f574c80a32b Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 9 Dec 2012 14:58:56 +0100
+Subject: [PATCH 1/4] ath9k: move duplicated debug message to
+ 'ath9k_hw_nvram_read'
+
+The fill_eeprom functions are printing the same
+debug message in case the 'ath9k_hw_nvram_read'
+function fails. Remove the duplicated code from
+fill_eeprom functions and add the ath_dbg call
+directly into 'ath9k_hw_nvram_read'.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/net/wireless/ath/ath9k/eeprom.c      |    8 +++++++-
+ drivers/net/wireless/ath/ath9k/eeprom_4k.c   |    6 ++----
+ drivers/net/wireless/ath/ath9k/eeprom_9287.c |    5 +----
+ drivers/net/wireless/ath/ath9k/eeprom_def.c  |    5 +----
+ 4 files changed, 11 insertions(+), 13 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath9k/eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom.c
+@@ -115,7 +115,13 @@ void ath9k_hw_usb_gen_fill_eeprom(struct
+ 
+ bool ath9k_hw_nvram_read(struct ath_common *common, u32 off, u16 *data)
+ {
+-	return common->bus_ops->eeprom_read(common, off, data);
++	bool ret;
++
++	ret = common->bus_ops->eeprom_read(common, off, data);
++	if (!ret)
++		ath_dbg(common, EEPROM, "Unable to read eeprom region\n");
++
++	return ret;
+ }
+ 
+ void ath9k_hw_fill_vpd_table(u8 pwrMin, u8 pwrMax, u8 *pPwrList,
+--- a/drivers/net/wireless/ath/ath9k/eeprom_4k.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_4k.c
+@@ -37,11 +37,9 @@ static bool __ath9k_hw_4k_fill_eeprom(st
+ 	int addr, eep_start_loc = 64;
+ 
+ 	for (addr = 0; addr < SIZE_EEPROM_4K; addr++) {
+-		if (!ath9k_hw_nvram_read(common, addr + eep_start_loc, eep_data)) {
+-			ath_dbg(common, EEPROM,
+-				"Unable to read eeprom region\n");
++		if (!ath9k_hw_nvram_read(common, addr + eep_start_loc,
++					 eep_data))
+ 			return false;
+-		}
+ 		eep_data++;
+ 	}
+ 
+--- a/drivers/net/wireless/ath/ath9k/eeprom_9287.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_9287.c
+@@ -40,11 +40,8 @@ static bool __ath9k_hw_ar9287_fill_eepro
+ 
+ 	for (addr = 0; addr < SIZE_EEPROM_AR9287; addr++) {
+ 		if (!ath9k_hw_nvram_read(common, addr + eep_start_loc,
+-					 eep_data)) {
+-			ath_dbg(common, EEPROM,
+-				"Unable to read eeprom region\n");
++					 eep_data))
+ 			return false;
+-		}
+ 		eep_data++;
+ 	}
+ 
+--- a/drivers/net/wireless/ath/ath9k/eeprom_def.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_def.c
+@@ -97,11 +97,8 @@ static bool __ath9k_hw_def_fill_eeprom(s
+ 
+ 	for (addr = 0; addr < SIZE_EEPROM_DEF; addr++) {
+ 		if (!ath9k_hw_nvram_read(common, addr + ar5416_eep_start_loc,
+-					 eep_data)) {
+-			ath_err(ath9k_hw_common(ah),
+-				"Unable to read eeprom region\n");
++					 eep_data))
+ 			return false;
+-		}
+ 		eep_data++;
+ 	}
+ 	return true;
