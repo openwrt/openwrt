@@ -583,3 +583,34 @@
  #define NUM_NF_READINGS       6
  #define ATH9K_NF_CAL_HIST_MAX 5
  
+--- a/drivers/net/wireless/ath/ath5k/base.c
++++ b/drivers/net/wireless/ath/ath5k/base.c
+@@ -851,7 +851,7 @@ ath5k_txbuf_free_skb(struct ath5k_hw *ah
+ 		return;
+ 	dma_unmap_single(ah->dev, bf->skbaddr, bf->skb->len,
+ 			DMA_TO_DEVICE);
+-	dev_kfree_skb_any(bf->skb);
++	ieee80211_free_txskb(ah->hw, bf->skb);
+ 	bf->skb = NULL;
+ 	bf->skbaddr = 0;
+ 	bf->desc->ds_data = 0;
+@@ -1578,7 +1578,7 @@ ath5k_tx_queue(struct ieee80211_hw *hw, 
+ 	return;
+ 
+ drop_packet:
+-	dev_kfree_skb_any(skb);
++	ieee80211_free_txskb(hw, skb);
+ }
+ 
+ static void
+--- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
++++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
+@@ -65,7 +65,7 @@ ath5k_tx(struct ieee80211_hw *hw, struct
+ 	u16 qnum = skb_get_queue_mapping(skb);
+ 
+ 	if (WARN_ON(qnum >= ah->ah_capabilities.cap_queues.q_tx_num)) {
+-		dev_kfree_skb_any(skb);
++		ieee80211_free_txskb(hw, skb);
+ 		return;
+ 	}
+ 
