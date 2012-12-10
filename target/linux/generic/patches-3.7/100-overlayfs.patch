@@ -301,7 +301,7 @@
  
  /**
   * sb_permission - Check superblock-level permissions
-@@ -2883,9 +2884,12 @@ finish_open_created:
+@@ -2888,9 +2889,12 @@ finish_open_created:
  	error = may_open(&nd->path, acc_mode, open_flag);
  	if (error)
  		goto out;
@@ -3125,7 +3125,7 @@
  /** 
   * enum positive_aop_returns - aop return codes with specific semantics
   *
-@@ -1321,6 +1327,11 @@ struct super_block {
+@@ -1319,6 +1325,11 @@ struct super_block {
  
  	/* Being remounted read-only */
  	int s_readonly_remount;
@@ -3137,7 +3137,7 @@
  };
  
  /* superblock cache pruning functions */
-@@ -1578,6 +1589,7 @@ struct inode_operations {
+@@ -1576,6 +1587,7 @@ struct inode_operations {
  	int (*atomic_open)(struct inode *, struct dentry *,
  			   struct file *, unsigned open_flag,
  			   umode_t create_mode, int *opened);
@@ -3145,7 +3145,7 @@
  } ____cacheline_aligned;
  
  struct seq_file;
-@@ -2009,6 +2021,7 @@ extern struct file *file_open_name(struc
+@@ -2007,6 +2019,7 @@ extern struct file *file_open_name(struc
  extern struct file *filp_open(const char *, int, umode_t);
  extern struct file *file_open_root(struct dentry *, struct vfsmount *,
  				   const char *, int);
@@ -3153,7 +3153,7 @@
  extern struct file * dentry_open(const struct path *, int, const struct cred *);
  extern int filp_close(struct file *, fl_owner_t id);
  
-@@ -2215,6 +2228,7 @@ extern sector_t bmap(struct inode *, sec
+@@ -2212,6 +2225,7 @@ extern sector_t bmap(struct inode *, sec
  #endif
  extern int notify_change(struct dentry *, struct iattr *);
  extern int inode_permission(struct inode *, int);
@@ -3175,7 +3175,7 @@
  				      int flags, const char *name,
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -5450,6 +5450,13 @@ F:	drivers/scsi/osd/
+@@ -5458,6 +5458,13 @@ F:	drivers/scsi/osd/
  F:	include/scsi/osd_*
  F:	fs/exofs/
  
