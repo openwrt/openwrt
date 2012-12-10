@@ -47,11 +47,10 @@
  };
  
  /* policy for the key attributes */
-@@ -1651,6 +1652,22 @@ static int nl80211_set_wiphy(struct sk_b
- 		if (result)
+@@ -1652,6 +1653,22 @@ static int nl80211_set_wiphy(struct sk_b
  			goto bad_res;
  	}
-+
+ 
 +	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_GAIN]) {
 +		int idx, dbi = 0;
 +
@@ -67,12 +66,13 @@
 +		if (result)
 +			goto bad_res;
 +	}
- 
++
  	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_TX] &&
  	    info->attrs[NL80211_ATTR_WIPHY_ANTENNA_RX]) {
+ 		u32 tx_ant, rx_ant;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2118,6 +2118,19 @@ static int ieee80211_get_tx_power(struct
+@@ -2127,6 +2127,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -92,7 +92,7 @@
  static int ieee80211_set_wds_peer(struct wiphy *wiphy, struct net_device *dev,
  				  const u8 *addr)
  {
-@@ -3241,6 +3254,7 @@ struct cfg80211_ops mac80211_config_ops
+@@ -3250,6 +3263,7 @@ struct cfg80211_ops mac80211_config_ops 
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
