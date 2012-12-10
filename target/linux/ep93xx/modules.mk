@@ -24,7 +24,7 @@ $(eval $(call KernelPackage,fb-ep93xx))
 define KernelPackage/input-keyboard-ep93xx
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EP93xx Matrix Keypad support
-  DEPENDS:=@TARGET_ep93xx
+  DEPENDS:=@TARGET_ep93xx +(LINUX_3_6||LINUX_3_7):kmod-input-matrixkmap
   KCONFIG:= \
 	CONFIG_KEYBOARD_EP93XX \
 	CONFIG_INPUT_KEYBOARD=y
