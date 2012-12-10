@@ -200,6 +200,7 @@ static void __init rb2011_nand_init(void)
 	ath79_nfc_set_parts(rb2011_nand_partitions,
 			    ARRAY_SIZE(rb2011_nand_partitions));
 	ath79_nfc_set_select_chip(rb2011_nand_select_chip);
+	ath79_nfc_set_swap_dma(true);
 	ath79_register_nfc();
 }
 

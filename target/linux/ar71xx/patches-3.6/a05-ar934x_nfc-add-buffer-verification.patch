@@ -1,6 +1,6 @@
 --- a/drivers/mtd/nand/ar934x_nfc.c
 +++ b/drivers/mtd/nand/ar934x_nfc.c
-@@ -762,6 +762,18 @@ ar934x_nfc_read_buf(struct mtd_info *mtd
+@@ -786,6 +786,18 @@ ar934x_nfc_read_buf(struct mtd_info *mtd
  	nfc->buf_index = buf_index;
  }
  
@@ -19,7 +19,7 @@
  static void
  ar934x_nfc_hw_init(struct ar934x_nfc *nfc)
  {
-@@ -1047,6 +1059,7 @@ ar934x_nfc_probe(struct platform_device
+@@ -1072,6 +1084,7 @@ ar934x_nfc_probe(struct platform_device
  	nand->read_byte = ar934x_nfc_read_byte;
  	nand->write_buf = ar934x_nfc_write_buf;
  	nand->read_buf = ar934x_nfc_read_buf;
