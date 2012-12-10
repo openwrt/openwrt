@@ -1,6 +1,6 @@
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
-@@ -31,6 +31,9 @@ struct ath9k_platform_data {
+@@ -33,6 +33,9 @@ struct ath9k_platform_data {
  
  	bool endian_check;
  	bool is_clk_25mhz;
@@ -48,18 +48,18 @@
  	    AR_SREV_9285(ah) ||
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -929,6 +929,8 @@ struct ath_hw {
+@@ -930,6 +930,8 @@ struct ath_hw {
  	bool is_clk_25mhz;
  	int (*get_mac_revision)(void);
  	int (*external_reset)(void);
 +	bool disable_2ghz;
 +	bool disable_5ghz;
- };
  
- struct ath_bus_ops {
+ 	const struct firmware *eeprom_blob;
+ };
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -541,6 +541,8 @@ static int ath9k_init_softc(u16 devid, s
+@@ -591,6 +591,8 @@ static int ath9k_init_softc(u16 devid, s
  		ah->is_clk_25mhz = pdata->is_clk_25mhz;
  		ah->get_mac_revision = pdata->get_mac_revision;
  		ah->external_reset = pdata->external_reset;
