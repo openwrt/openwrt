@@ -119,15 +119,36 @@
  	ieee80211_bss_info_change_notify(sdata, bss_change);
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -510,7 +510,6 @@ int ieee80211_do_open(struct wireless_de
+@@ -508,9 +508,9 @@ static void ieee80211_del_virtual_monito
+ int ieee80211_do_open(struct wireless_dev *wdev, bool coming_up)
+ {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
++	struct ieee80211_sub_if_data *ap_sdata;
  	struct net_device *dev = wdev->netdev;
  	struct ieee80211_local *local = sdata->local;
 -	struct sta_info *sta;
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -665,30 +664,8 @@ int ieee80211_do_open(struct wireless_de
+@@ -587,10 +587,14 @@ int ieee80211_do_open(struct wireless_de
+ 	switch (sdata->vif.type) {
+ 	case NL80211_IFTYPE_AP_VLAN:
+ 		/* no need to tell driver, but set carrier */
+-		if (rtnl_dereference(sdata->bss->beacon))
+-			netif_carrier_on(dev);
+-		else
++		if (!rtnl_dereference(sdata->bss->beacon)) {
+ 			netif_carrier_off(dev);
++			break;
++		}
++
++		ap_sdata = get_bss_sdata(sdata);
++		ieee80211_vif_copy_channel(sdata, ap_sdata);
++		netif_carrier_on(dev);
+ 		break;
+ 	case NL80211_IFTYPE_MONITOR:
+ 		if (sdata->u.mntr_flags & MONITOR_FLAG_COOK_FRAMES) {
+@@ -665,30 +669,8 @@ int ieee80211_do_open(struct wireless_de
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -159,7 +180,16 @@
  
  	/*
  	 * set_multicast_list will be invoked by the networking core
-@@ -1072,6 +1049,72 @@ static void ieee80211_if_setup(struct ne
+@@ -844,6 +826,8 @@ static void ieee80211_do_stop(struct iee
+ 	switch (sdata->vif.type) {
+ 	case NL80211_IFTYPE_AP_VLAN:
+ 		list_del(&sdata->u.vlan.list);
++		netif_carrier_off(sdata->dev);
++		ieee80211_vif_release_channel(sdata);
+ 		/* no need to tell driver */
+ 		break;
+ 	case NL80211_IFTYPE_MONITOR:
+@@ -1072,6 +1056,72 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -232,7 +262,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1176,6 +1219,9 @@ static void ieee80211_iface_work(struct 
+@@ -1176,6 +1226,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -692,3 +722,107 @@
  		err = 0;
  		goto out;
  	}
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -915,6 +915,12 @@ static int ieee80211_start_ap(struct wip
+ 	if (err)
+ 		return err;
+ 
++	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list) {
++		err = ieee80211_vif_copy_channel(vlan, sdata);
++		if (err)
++			return err;
++	}
++
+ 	/*
+ 	 * Apply control port protocol, this allows us to
+ 	 * not encrypt dynamic WEP control frames.
+@@ -998,8 +1004,11 @@ static int ieee80211_stop_ap(struct wiph
+ 	old_probe_resp = rtnl_dereference(sdata->u.ap.probe_resp);
+ 
+ 	/* turn off carrier for this interface and dependent VLANs */
+-	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list)
++	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list) {
++		sta_info_flush(local, vlan);
+ 		netif_carrier_off(vlan->dev);
++		ieee80211_vif_release_channel(vlan);
++	}
+ 	netif_carrier_off(dev);
+ 
+ 	/* remove beacon and probe response */
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -119,14 +119,17 @@ static int ieee80211_assign_vif_chanctx(
+ 
+ 	lockdep_assert_held(&local->chanctx_mtx);
+ 
+-	ret = drv_assign_vif_chanctx(local, sdata, ctx);
+-	if (ret)
+-		return ret;
++	if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN) {
++		ret = drv_assign_vif_chanctx(local, sdata, ctx);
++		if (ret)
++			return ret;
++	}
+ 
+ 	rcu_assign_pointer(sdata->vif.chanctx_conf, &ctx->conf);
+ 	ctx->refcount++;
+ 
+-	ieee80211_recalc_txpower(sdata);
++	if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN)
++		ieee80211_recalc_txpower(sdata);
+ 
+ 	return 0;
+ }
+@@ -174,7 +177,8 @@ static void ieee80211_unassign_vif_chanc
+ 	ctx->refcount--;
+ 	rcu_assign_pointer(sdata->vif.chanctx_conf, NULL);
+ 
+-	drv_unassign_vif_chanctx(local, sdata, ctx);
++	if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN)
++		drv_unassign_vif_chanctx(local, sdata, ctx);
+ 
+ 	if (ctx->refcount > 0) {
+ 		ieee80211_recalc_chanctx_chantype(sdata->local, ctx);
+@@ -285,6 +289,30 @@ void ieee80211_recalc_smps_chanctx(struc
+ 	drv_change_chanctx(local, chanctx, IEEE80211_CHANCTX_CHANGE_RX_CHAINS);
+ }
+ 
++int ieee80211_vif_copy_channel(struct ieee80211_sub_if_data *sdata,
++			       struct ieee80211_sub_if_data *parent)
++{
++	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_chanctx_conf *conf;
++	struct ieee80211_chanctx *ctx;
++
++	int ret;
++
++	mutex_lock(&local->chanctx_mtx);
++	conf = rcu_dereference_protected(parent->vif.chanctx_conf,
++					 lockdep_is_held(&local->chanctx_mtx));
++	if (!conf) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	ctx = container_of(conf, struct ieee80211_chanctx, conf);
++	ret = ieee80211_assign_vif_chanctx(sdata, ctx);
++out:
++	mutex_unlock(&local->chanctx_mtx);
++	return ret;
++}
++
+ int ieee80211_vif_use_channel(struct ieee80211_sub_if_data *sdata,
+ 			      const struct cfg80211_chan_def *chandef,
+ 			      enum ieee80211_chanctx_mode mode)
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1633,6 +1633,8 @@ ieee80211_vif_use_channel(struct ieee802
+ 			  const struct cfg80211_chan_def *chandef,
+ 			  enum ieee80211_chanctx_mode mode);
+ void ieee80211_vif_release_channel(struct ieee80211_sub_if_data *sdata);
++int ieee80211_vif_copy_channel(struct ieee80211_sub_if_data *sdata,
++			       struct ieee80211_sub_if_data *parent);
+ 
+ void ieee80211_recalc_smps_chanctx(struct ieee80211_local *local,
+ 				   struct ieee80211_chanctx *chanctx);
