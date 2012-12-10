@@ -134,11 +134,12 @@ announce_prefix() {
 	# Always announce the ULA when doing NPT
 	[ "$prefix" == "$ula" -a "$prefix_action" == "npt" ] && prefix_action="distribute"
 
-	[ "$prefix_action" == "distribute" ] && {
+	[ "$prefix_action" == "distribute" -o "$prefix_action" == "npt" ] && {
 		local msg='{"network": "'"$network"'", "prefix": "'"$addr"'", "length": '"$length"
 		[ -n "$valid" ] && msg="$msg"', "valid": '"$valid"', "preferred": '"$prefer"
 		[ -z "$cmd" ] && cmd=newprefix
-	
+
+		[ "$prefix_action" == "npt" ] && msg="$msg"', "npt": 1'
 		ubus call 6distributed "$cmd" "$msg}"
 	}
 
