@@ -13,13 +13,11 @@ Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
  sound/soc/Makefile |    5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/sound/soc/Makefile b/sound/soc/Makefile
-index bcbf1d0..99f32f7 100644
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
 @@ -1,8 +1,9 @@
  snd-soc-core-objs := soc-core.o soc-dapm.o soc-jack.o soc-cache.o soc-utils.o
- snd-soc-core-objs += soc-pcm.o soc-compress.o soc-io.o
+ snd-soc-core-objs += soc-pcm.o soc-io.o
  
 -snd-soc-dmaengine-pcm-objs := soc-dmaengine-pcm.o
 -obj-$(CONFIG_SND_SOC_DMAENGINE_PCM) += snd-soc-dmaengine-pcm.o
@@ -29,6 +27,3 @@ index bcbf1d0..99f32f7 100644
  
  obj-$(CONFIG_SND_SOC)	+= snd-soc-core.o
  obj-$(CONFIG_SND_SOC)	+= codecs/
--- 
-1.7.10.4
-
