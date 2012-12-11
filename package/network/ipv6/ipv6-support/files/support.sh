@@ -111,6 +111,7 @@ announce_prefix() {
 	local prefix="$1"
 	local network="$2"
 	local cmd="$3"
+	local type="$4"
 
 	local addr=$(echo "$prefix" | cut -d/ -f1)
 	local rem=$(echo "$prefix" | cut -d/ -f2)
@@ -140,6 +141,7 @@ announce_prefix() {
 		[ -z "$cmd" ] && cmd=newprefix
 
 		[ "$prefix_action" == "npt" ] && msg="$msg"', "npt": 1'
+		[ "$type" == "secondary" ] && msg="$msg"', "secondary": 1'
 		ubus call 6distributed "$cmd" "$msg}"
 	}
 
@@ -381,7 +383,7 @@ enable_ula_prefix() {
 	}
 
 	# Announce ULA
-	[ -n "$ula_prefix" ] && announce_prefix "$ula_prefix" "$network"
+	[ -n "$ula_prefix" ] && announce_prefix "$ula_prefix" "$network" newprefix secondary
 }
 
 
