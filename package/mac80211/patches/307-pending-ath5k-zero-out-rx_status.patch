@@ -1,0 +1,31 @@
+From 4c0faf816beeb5d4175cff09c96e668a49ad032f Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 11 Dec 2012 14:16:15 +0100
+Subject: [PATCH 2/3] ath5k: zero-out rx_status
+
+In commit 'mac80211: support radiotap vendor namespace RX data'
+new fields were added to 'struct ieee80211_rx_status'.
+The ath5k driver does not initializes those fields and
+this can cause unexpected behaviour. The patch ensures
+that each field gets initialized with zeroes.
+
+Cc: <ath5k-devel@lists.ath5k.org>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+Compile tested only.
+---
+ drivers/net/wireless/ath/ath5k/base.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath5k/base.c
++++ b/drivers/net/wireless/ath/ath5k/base.c
+@@ -1325,8 +1325,8 @@ ath5k_receive_frame(struct ath5k_hw *ah,
+ 	ath5k_remove_padding(skb);
+ 
+ 	rxs = IEEE80211_SKB_RXCB(skb);
++	memset(rxs, 0, sizeof(*rxs));
+ 
+-	rxs->flag = 0;
+ 	if (unlikely(rs->rs_status & AR5K_RXERR_MIC))
+ 		rxs->flag |= RX_FLAG_MMIC_ERROR;
+ 
