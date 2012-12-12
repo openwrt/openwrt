@@ -1,0 +1,40 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -354,6 +354,17 @@ config ATH79_MACH_WNDR3700
+ 	select ATH79_DEV_M25P80
+ 	select ATH79_DEV_USB
+ 
++config ATH79_MACH_WNDR4300
++	bool "NETGEAR WNDR4300 board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_NFC
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_WNR2000
+ 	bool "NETGEAR WNR2000 board support"
+ 	select SOC_AR913X
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -106,6 +106,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_WHR_HP_GN,		/* Buffalo WHR-HP-GN */
+ 	ATH79_MACH_WLAE_AG300N,		/* Buffalo WLAE-AG300N */
+ 	ATH79_MACH_WNDR3700,		/* NETGEAR WNDR3700/WNDR3800/WNDRMAC */
++	ATH79_MACH_WNDR4300,		/* NETGEAR WNDR4300 */
+ 	ATH79_MACH_WNR2000,		/* NETGEAR WNR2000 */
+ 	ATH79_MACH_WP543,		/* Compex WP543 */
+ 	ATH79_MACH_WPE72,		/* Compex WPE72 */
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -94,6 +94,7 @@ obj-$(CONFIG_ATH79_MACH_UBNT_XM)	+= mach
+ obj-$(CONFIG_ATH79_MACH_WHR_HP_G300N)	+= mach-whr-hp-g300n.o
+ obj-$(CONFIG_ATH79_MACH_WLAE_AG300N)	+= mach-wlae-ag300n.o
+ obj-$(CONFIG_ATH79_MACH_WNDR3700)	+= mach-wndr3700.o
++obj-$(CONFIG_ATH79_MACH_WNDR4300)	+= mach-wndr4300.o
+ obj-$(CONFIG_ATH79_MACH_WNR2000)	+= mach-wnr2000.o
+ obj-$(CONFIG_ATH79_MACH_WP543)		+= mach-wp543.o
+ obj-$(CONFIG_ATH79_MACH_WPE72)		+= mach-wpe72.o
