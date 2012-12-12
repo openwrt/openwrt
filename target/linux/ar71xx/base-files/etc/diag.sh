@@ -165,6 +165,9 @@ get_status_led() {
 	wndr3700)
 		status_led="wndr3700:green:power"
 		;;
+	wndr4300)
+		status_led="netgear:green:power"
+		;;
 	wnr2000)
 		status_led="wnr2000:green:power"
 		;;
