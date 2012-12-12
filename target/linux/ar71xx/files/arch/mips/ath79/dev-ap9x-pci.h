@@ -22,6 +22,7 @@ void ap9x_pci_setup_wmac_leds(unsigned wmac, struct gpio_led *leds,
 struct ath9k_platform_data *ap9x_pci_get_wmac_data(unsigned wmac);
 
 void ap91_pci_init(u8 *cal_data, u8 *mac_addr);
+void ap91_pci_init_simple(void);
 void ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,
 		   u8 *cal_data1, u8 *mac_addr1);
 
@@ -38,6 +39,7 @@ static inline struct ath9k_platform_data *ap9x_pci_get_wmac_data(unsigned wmac)
 }
 
 static inline void ap91_pci_init(u8 *cal_data, u8 *mac_addr) {}
+static inline void ap91_pci_init_simple(void) {}
 static inline void ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,
 				 u8 *cal_data1, u8 *mac_addr1) {}
 #endif
