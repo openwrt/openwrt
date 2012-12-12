@@ -307,16 +307,16 @@
  		  e->name, sflash->size / 1024, sflash->blocksize,
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -1,6 +1,8 @@
- #ifndef LINUX_BCMA_DRIVER_CC_H_
- #define LINUX_BCMA_DRIVER_CC_H_
+@@ -3,6 +3,8 @@
+ 
+ #include <linux/platform_device.h>
  
 +#include <linux/mtd/bcm47xx_sflash.h>
 +
  /** ChipCommon core registers. **/
  #define BCMA_CC_ID			0x0000
  #define  BCMA_CC_ID_ID			0x0000FFFF
-@@ -516,17 +518,6 @@ struct bcma_pflash {
+@@ -518,17 +520,6 @@ struct bcma_pflash {
  	u32 window_size;
  };
  
@@ -334,7 +334,7 @@
  
  #ifdef CONFIG_BCMA_NFLASH
  struct mtd_info;
-@@ -561,7 +552,7 @@ struct bcma_drv_cc {
+@@ -563,7 +554,7 @@ struct bcma_drv_cc {
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  	struct bcma_pflash pflash;
  #ifdef CONFIG_BCMA_SFLASH

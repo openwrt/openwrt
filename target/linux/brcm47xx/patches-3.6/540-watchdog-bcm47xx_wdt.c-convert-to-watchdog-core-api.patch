@@ -239,7 +239,7 @@
  	if (ret) {
  		unregister_reboot_notifier(&bcm47xx_wdt_notifier);
  		return ret;
-@@ -292,10 +188,8 @@ static int __init bcm47xx_wdt_init(void)
+@@ -292,10 +188,7 @@ static int __init bcm47xx_wdt_init(void)
  
  static void __exit bcm47xx_wdt_exit(void)
  {
@@ -247,12 +247,11 @@
 -		bcm47xx_wdt_stop();
 -
 -	misc_deregister(&bcm47xx_wdt_miscdev);
-+	watchdog_stop(&bcm47xx_wdt_wdd);
 +	watchdog_unregister_device(&bcm47xx_wdt_wdd);
  
  	unregister_reboot_notifier(&bcm47xx_wdt_notifier);
  }
-@@ -306,4 +200,3 @@ module_exit(bcm47xx_wdt_exit);
+@@ -306,4 +199,3 @@ module_exit(bcm47xx_wdt_exit);
  MODULE_AUTHOR("Aleksandar Radovanovic");
  MODULE_DESCRIPTION("Watchdog driver for Broadcom BCM47xx");
  MODULE_LICENSE("GPL");

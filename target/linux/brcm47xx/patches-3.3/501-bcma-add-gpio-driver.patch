@@ -1,15 +1,15 @@
 --- a/drivers/bcma/driver_chipcommon.c
 +++ b/drivers/bcma/driver_chipcommon.c
-@@ -70,6 +70,8 @@ void bcma_core_chipcommon_init(struct bc
- 			 (leddc_off << BCMA_CC_GPIOTIMER_OFFTIME_SHIFT)));
+@@ -158,6 +158,8 @@ void bcma_core_chipcommon_init(struct bc
  	}
+ 	cc->ticks_per_ms = bcma_chipco_watchdog_ticks_per_ms(cc);
  
 +	spin_lock_init(&cc->gpio_lock);
 +
  	cc->setup_done = true;
  }
  
-@@ -92,34 +94,81 @@ u32 bcma_chipco_irq_status(struct bcma_d
+@@ -197,34 +199,81 @@ u32 bcma_chipco_irq_status(struct bcma_d
  
  u32 bcma_chipco_gpio_in(struct bcma_drv_cc *cc, u32 mask)
  {
@@ -99,17 +99,17 @@
  void bcma_chipco_serial_init(struct bcma_drv_cc *cc)
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -551,6 +551,9 @@ struct bcma_drv_cc {
- 	int nr_serial_ports;
- 	struct bcma_serial_port serial_ports[4];
+@@ -555,6 +555,9 @@ struct bcma_drv_cc {
  #endif /* CONFIG_BCMA_DRIVER_MIPS */
+ 	u32 ticks_per_ms;
+ 	struct platform_device *watchdog;
 +
 +	/* Lock for GPIO register access. */
 +	spinlock_t gpio_lock;
  };
  
  /* Register access */
-@@ -581,13 +584,22 @@ void bcma_chipco_irq_mask(struct bcma_dr
+@@ -584,13 +587,22 @@ void bcma_chipco_irq_mask(struct bcma_dr
  
  u32 bcma_chipco_irq_status(struct bcma_drv_cc *cc, u32 mask);
  

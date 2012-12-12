@@ -1,6 +1,6 @@
 --- a/drivers/ssb/b43_pci_bridge.c
 +++ b/drivers/ssb/b43_pci_bridge.c
-@@ -29,11 +29,14 @@ static const struct pci_device_id b43_pc
+@@ -29,11 +29,15 @@ static const struct pci_device_id b43_pc
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4319) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4320) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4321) },
@@ -12,9 +12,155 @@
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4329) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x432b) },
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x432c) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4350) },
  	{ 0, },
  };
  MODULE_DEVICE_TABLE(pci, b43_pci_bridge_tbl);
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
+@@ -4,6 +4,7 @@
+  *
+  * Copyright 2005, Broadcom Corporation
+  * Copyright 2006, 2007, Michael Buesch <m@bues.ch>
++ * Copyright 2012, Hauke Mehrtens <hauke@hauke-m.de>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+@@ -12,6 +13,7 @@
+ #include <linux/ssb/ssb_regs.h>
+ #include <linux/export.h>
+ #include <linux/pci.h>
++#include <linux/bcm47xx_wdt.h>
+ 
+ #include "ssb_private.h"
+ 
+@@ -280,6 +282,69 @@ static void calc_fast_powerup_delay(stru
+ 	cc->fast_pwrup_delay = tmp;
+ }
+ 
++static u32 ssb_chipco_alp_clock(struct ssb_chipcommon *cc)
++{
++	if (cc->capabilities & SSB_CHIPCO_CAP_PMU)
++		return ssb_pmu_get_alp_clock(cc);
++
++	return 20000000;
++}
++
++static u32 ssb_chipco_watchdog_get_max_timer(struct ssb_chipcommon *cc)
++{
++	u32 nb;
++
++	if (cc->capabilities & SSB_CHIPCO_CAP_PMU) {
++		if (cc->dev->id.revision < 26)
++			nb = 16;
++		else
++			nb = (cc->dev->id.revision >= 37) ? 32 : 24;
++	} else {
++		nb = 28;
++	}
++	if (nb == 32)
++		return 0xffffffff;
++	else
++		return (1 << nb) - 1;
++}
++
++u32 ssb_chipco_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt, u32 ticks)
++{
++	struct ssb_chipcommon *cc = bcm47xx_wdt_get_drvdata(wdt);
++
++	if (cc->dev->bus->bustype != SSB_BUSTYPE_SSB)
++		return 0;
++
++	return ssb_chipco_watchdog_timer_set(cc, ticks);
++}
++
++u32 ssb_chipco_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms)
++{
++	struct ssb_chipcommon *cc = bcm47xx_wdt_get_drvdata(wdt);
++	u32 ticks;
++
++	if (cc->dev->bus->bustype != SSB_BUSTYPE_SSB)
++		return 0;
++
++	ticks = ssb_chipco_watchdog_timer_set(cc, cc->ticks_per_ms * ms);
++	return ticks / cc->ticks_per_ms;
++}
++
++static int ssb_chipco_watchdog_ticks_per_ms(struct ssb_chipcommon *cc)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++
++	if (cc->capabilities & SSB_CHIPCO_CAP_PMU) {
++			/* based on 32KHz ILP clock */
++			return 32;
++	} else {
++		if (cc->dev->id.revision < 18)
++			return ssb_clockspeed(bus) / 1000;
++		else
++			return ssb_chipco_alp_clock(cc) / 1000;
++	}
++}
++
+ void ssb_chipcommon_init(struct ssb_chipcommon *cc)
+ {
+ 	if (!cc->dev)
+@@ -297,6 +362,11 @@ void ssb_chipcommon_init(struct ssb_chip
+ 	chipco_powercontrol_init(cc);
+ 	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
+ 	calc_fast_powerup_delay(cc);
++
++	if (cc->dev->bus->bustype == SSB_BUSTYPE_SSB) {
++		cc->ticks_per_ms = ssb_chipco_watchdog_ticks_per_ms(cc);
++		cc->max_timer_ms = ssb_chipco_watchdog_get_max_timer(cc) / cc->ticks_per_ms;
++	}
+ }
+ 
+ void ssb_chipco_suspend(struct ssb_chipcommon *cc)
+@@ -395,10 +465,27 @@ void ssb_chipco_timing_init(struct ssb_c
+ }
+ 
+ /* Set chip watchdog reset timer to fire in 'ticks' backplane cycles */
+-void ssb_chipco_watchdog_timer_set(struct ssb_chipcommon *cc, u32 ticks)
++u32 ssb_chipco_watchdog_timer_set(struct ssb_chipcommon *cc, u32 ticks)
+ {
+-	/* instant NMI */
+-	chipco_write32(cc, SSB_CHIPCO_WATCHDOG, ticks);
++	u32 maxt;
++	enum ssb_clkmode clkmode;
++
++	maxt = ssb_chipco_watchdog_get_max_timer(cc);
++	if (cc->capabilities & SSB_CHIPCO_CAP_PMU) {
++		if (ticks == 1)
++			ticks = 2;
++		else if (ticks > maxt)
++			ticks = maxt;
++		chipco_write32(cc, SSB_CHIPCO_PMU_WATCHDOG, ticks);
++	} else {
++		clkmode = ticks ? SSB_CLKMODE_FAST : SSB_CLKMODE_DYNAMIC;
++		ssb_chipco_set_clockmode(cc, clkmode);
++		if (ticks > maxt)
++			ticks = maxt;
++		/* instant NMI */
++		chipco_write32(cc, SSB_CHIPCO_WATCHDOG, ticks);
++	}
++	return ticks;
+ }
+ 
+ void ssb_chipco_irq_mask(struct ssb_chipcommon *cc, u32 mask, u32 value)
+@@ -473,12 +560,7 @@ int ssb_chipco_serial_init(struct ssb_ch
+ 				       chipco_read32(cc, SSB_CHIPCO_CORECTL)
+ 				       | SSB_CHIPCO_CORECTL_UARTCLK0);
+ 		} else if ((ccrev >= 11) && (ccrev != 15)) {
+-			/* Fixed ALP clock */
+-			baud_base = 20000000;
+-			if (cc->capabilities & SSB_CHIPCO_CAP_PMU) {
+-				/* FIXME: baud_base is different for devices with a PMU */
+-				SSB_WARN_ON(1);
+-			}
++			baud_base = ssb_chipco_alp_clock(cc);
+ 			div = 1;
+ 			if (ccrev >= 21) {
+ 				/* Turn off UART clock before switching clocksource. */
 --- a/drivers/ssb/driver_chipcommon_pmu.c
 +++ b/drivers/ssb/driver_chipcommon_pmu.c
 @@ -13,6 +13,9 @@
@@ -63,10 +209,54 @@
  		ssb_pmu0_pllinit_r0(cc, crystalfreq);
  		break;
  	case 0x4322:
-@@ -607,3 +614,34 @@ void ssb_pmu_set_ldo_paref(struct ssb_ch
+@@ -339,6 +346,8 @@ static void ssb_pmu_pll_init(struct ssb_
+ 			chipco_write32(cc, SSB_CHIPCO_PLLCTL_DATA, 0x380005C0);
+ 		}
+ 		break;
++	case 43222:
++		break;
+ 	default:
+ 		ssb_printk(KERN_ERR PFX
+ 			   "ERROR: PLL init unknown for device %04X\n",
+@@ -427,6 +436,7 @@ static void ssb_pmu_resources_init(struc
+ 		 min_msk = 0xCBB;
+ 		 break;
+ 	case 0x4322:
++	case 43222:
+ 		/* We keep the default settings:
+ 		 * min_msk = 0xCBB
+ 		 * max_msk = 0x7FFFF
+@@ -607,3 +617,61 @@ void ssb_pmu_set_ldo_paref(struct ssb_ch
  
  EXPORT_SYMBOL(ssb_pmu_set_ldo_voltage);
  EXPORT_SYMBOL(ssb_pmu_set_ldo_paref);
++
++static u32 ssb_pmu_get_alp_clock_clk0(struct ssb_chipcommon *cc)
++{
++	u32 crystalfreq;
++	const struct pmu0_plltab_entry *e = NULL;
++
++	crystalfreq = chipco_read32(cc, SSB_CHIPCO_PMU_CTL) &
++		      SSB_CHIPCO_PMU_CTL_XTALFREQ >> SSB_CHIPCO_PMU_CTL_XTALFREQ_SHIFT;
++	e = pmu0_plltab_find_entry(crystalfreq);
++	BUG_ON(!e);
++	return e->freq * 1000;
++}
++
++u32 ssb_pmu_get_alp_clock(struct ssb_chipcommon *cc)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++
++	switch (bus->chip_id) {
++	case 0x5354:
++		ssb_pmu_get_alp_clock_clk0(cc);
++	default:
++		ssb_printk(KERN_ERR PFX
++			   "ERROR: PMU alp clock unknown for device %04X\n",
++			   bus->chip_id);
++		return 0;
++	}
++}
 +
 +u32 ssb_pmu_get_cpu_clock(struct ssb_chipcommon *cc)
 +{
@@ -98,8 +288,55 @@
 +		return 0;
 +	}
 +}
+--- a/drivers/ssb/driver_extif.c
++++ b/drivers/ssb/driver_extif.c
+@@ -112,10 +112,30 @@ void ssb_extif_get_clockcontrol(struct s
+ 	*m = extif_read32(extif, SSB_EXTIF_CLOCK_SB);
+ }
+ 
+-void ssb_extif_watchdog_timer_set(struct ssb_extif *extif,
+-				  u32 ticks)
++u32 ssb_extif_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt, u32 ticks)
+ {
++	struct ssb_extif *extif = bcm47xx_wdt_get_drvdata(wdt);
++
++	return ssb_extif_watchdog_timer_set(extif, ticks);
++}
++
++u32 ssb_extif_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms)
++{
++	struct ssb_extif *extif = bcm47xx_wdt_get_drvdata(wdt);
++	u32 ticks = (SSB_EXTIF_WATCHDOG_CLK / 1000) * ms;
++
++	ticks = ssb_extif_watchdog_timer_set(extif, ticks);
++
++	return (ticks * 1000) / SSB_EXTIF_WATCHDOG_CLK;
++}
++
++u32 ssb_extif_watchdog_timer_set(struct ssb_extif *extif, u32 ticks)
++{
++	if (ticks > SSB_EXTIF_WATCHDOG_MAX_TIMER)
++		ticks = SSB_EXTIF_WATCHDOG_MAX_TIMER;
+ 	extif_write32(extif, SSB_EXTIF_WATCHDOG, ticks);
++
++	return ticks;
+ }
+ 
+ u32 ssb_extif_gpio_in(struct ssb_extif *extif, u32 mask)
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
+@@ -178,9 +178,9 @@ static void ssb_mips_serial_init(struct
+ {
+ 	struct ssb_bus *bus = mcore->dev->bus;
+ 
+-	if (bus->extif.dev)
++	if (ssb_extif_available(&bus->extif))
+ 		mcore->nr_serial_ports = ssb_extif_serial_init(&bus->extif, mcore->serial_ports);
+-	else if (bus->chipco.dev)
++	else if (ssb_chipco_available(&bus->chipco))
+ 		mcore->nr_serial_ports = ssb_chipco_serial_init(&bus->chipco, mcore->serial_ports);
+ 	else
+ 		mcore->nr_serial_ports = 0;
 @@ -190,16 +190,32 @@ static void ssb_mips_flash_detect(struct
  {
  	struct ssb_bus *bus = mcore->dev->bus;
@@ -109,7 +346,7 @@
 -		mcore->flash_window = 0x1c000000;
 -		mcore->flash_window_size = 0x02000000;
 +	/* When there is no chipcommon on the bus there is 4MB flash */
-+	if (!bus->chipco.dev) {
++	if (!ssb_chipco_available(&bus->chipco)) {
 +		mcore->pflash.present = true;
 +		mcore->pflash.buswidth = 2;
 +		mcore->pflash.window = SSB_FLASH1;
@@ -141,19 +378,100 @@
  	}
  }
  
-@@ -208,6 +224,9 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
+@@ -208,9 +224,12 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
  	struct ssb_bus *bus = mcore->dev->bus;
  	u32 pll_type, n, m, rate = 0;
  
+-	if (bus->extif.dev) {
 +	if (bus->chipco.capabilities & SSB_CHIPCO_CAP_PMU)
 +		return ssb_pmu_get_cpu_clock(&bus->chipco);
 +
- 	if (bus->extif.dev) {
++	if (ssb_extif_available(&bus->extif)) {
  		ssb_extif_get_clockcontrol(&bus->extif, &pll_type, &n, &m);
- 	} else if (bus->chipco.dev) {
+-	} else if (bus->chipco.dev) {
++	} else if (ssb_chipco_available(&bus->chipco)) {
+ 		ssb_chipco_get_clockcpu(&bus->chipco, &pll_type, &n, &m);
+ 	} else
+ 		return 0;
+@@ -246,9 +265,9 @@ void ssb_mipscore_init(struct ssb_mipsco
+ 		hz = 100000000;
+ 	ns = 1000000000 / hz;
+ 
+-	if (bus->extif.dev)
++	if (ssb_extif_available(&bus->extif))
+ 		ssb_extif_timing_init(&bus->extif, ns);
+-	else if (bus->chipco.dev)
++	else if (ssb_chipco_available(&bus->chipco))
+ 		ssb_chipco_timing_init(&bus->chipco, ns);
+ 
+ 	/* Assign IRQs to all cores on the bus, start with irq line 2, because serial usually takes 1 */
+--- a/drivers/ssb/embedded.c
++++ b/drivers/ssb/embedded.c
+@@ -4,11 +4,13 @@
+  *
+  * Copyright 2005-2008, Broadcom Corporation
+  * Copyright 2006-2008, Michael Buesch <m@bues.ch>
++ * Copyright 2012, Hauke Mehrtens <hauke@hauke-m.de>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+ 
+ #include <linux/export.h>
++#include <linux/platform_device.h>
+ #include <linux/ssb/ssb.h>
+ #include <linux/ssb/ssb_embedded.h>
+ #include <linux/ssb/ssb_driver_pci.h>
+@@ -32,6 +34,39 @@ int ssb_watchdog_timer_set(struct ssb_bu
+ }
+ EXPORT_SYMBOL(ssb_watchdog_timer_set);
+ 
++int ssb_watchdog_register(struct ssb_bus *bus)
++{
++	struct bcm47xx_wdt wdt = {};
++	struct platform_device *pdev;
++
++	if (ssb_chipco_available(&bus->chipco)) {
++		wdt.driver_data = &bus->chipco;
++		wdt.timer_set = ssb_chipco_watchdog_timer_set_wdt;
++		wdt.timer_set_ms = ssb_chipco_watchdog_timer_set_ms;
++		wdt.max_timer_ms = bus->chipco.max_timer_ms;
++	} else if (ssb_extif_available(&bus->extif)) {
++		wdt.driver_data = &bus->extif;
++		wdt.timer_set = ssb_extif_watchdog_timer_set_wdt;
++		wdt.timer_set_ms = ssb_extif_watchdog_timer_set_ms;
++		wdt.max_timer_ms = SSB_EXTIF_WATCHDOG_MAX_TIMER_MS;
++	} else {
++		return -ENODEV;
++	}
++
++	pdev = platform_device_register_data(NULL, "bcm47xx-wdt",
++					     bus->busnumber, &wdt,
++					     sizeof(wdt));
++	if (IS_ERR(pdev)) {
++		ssb_dprintk(KERN_INFO PFX
++			    "can not register watchdog device, err: %li\n",
++			    PTR_ERR(pdev));
++		return PTR_ERR(pdev);
++	}
++
++	bus->watchdog = pdev;
++	return 0;
++}
++
+ u32 ssb_gpio_in(struct ssb_bus *bus, u32 mask)
+ {
+ 	unsigned long flags;
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -140,19 +140,6 @@ static void ssb_device_put(struct ssb_de
+@@ -13,6 +13,7 @@
+ #include <linux/delay.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
++#include <linux/platform_device.h>
+ #include <linux/ssb/ssb.h>
+ #include <linux/ssb/ssb_regs.h>
+ #include <linux/ssb/ssb_driver_gige.h>
+@@ -140,19 +141,6 @@ static void ssb_device_put(struct ssb_de
  		put_device(dev->dev);
  }
  
@@ -173,7 +491,7 @@
  static int ssb_device_resume(struct device *dev)
  {
  	struct ssb_device *ssb_dev = dev_to_ssb_dev(dev);
-@@ -250,11 +237,9 @@ int ssb_devices_freeze(struct ssb_bus *b
+@@ -250,11 +238,9 @@ int ssb_devices_freeze(struct ssb_bus *b
  			ssb_device_put(sdev);
  			continue;
  		}
@@ -187,7 +505,7 @@
  		sdrv->remove(sdev);
  		ctx->device_frozen[i] = 1;
  	}
-@@ -293,7 +278,6 @@ int ssb_devices_thaw(struct ssb_freeze_c
+@@ -293,7 +279,6 @@ int ssb_devices_thaw(struct ssb_freeze_c
  				   dev_name(sdev->dev));
  			result = err;
  		}
@@ -195,7 +513,28 @@
  		ssb_device_put(sdev);
  	}
  
-@@ -1094,6 +1078,9 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
+@@ -449,6 +434,11 @@ static void ssb_devices_unregister(struc
+ 		if (sdev->dev)
+ 			device_unregister(sdev->dev);
+ 	}
++
++#ifdef CONFIG_SSB_EMBEDDED
++	if (bus->bustype == SSB_BUSTYPE_SSB)
++		platform_device_unregister(bus->watchdog);
++#endif
+ }
+ 
+ void ssb_bus_unregister(struct ssb_bus *bus)
+@@ -577,6 +567,8 @@ static int __devinit ssb_attach_queued_b
+ 		if (err)
+ 			goto error;
+ 		ssb_pcicore_init(&bus->pcicore);
++		if (bus->bustype == SSB_BUSTYPE_SSB)
++			ssb_watchdog_register(bus);
+ 		ssb_bus_may_powerdown(bus);
+ 
+ 		err = ssb_devices_register(bus);
+@@ -1094,6 +1086,9 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
  	u32 plltype;
  	u32 clkctl_n, clkctl_m;
  
@@ -205,6 +544,16 @@
  	if (ssb_extif_available(&bus->extif))
  		ssb_extif_get_clockcontrol(&bus->extif, &plltype,
  					   &clkctl_n, &clkctl_m);
+@@ -1131,8 +1126,7 @@ static u32 ssb_tmslow_reject_bitmask(str
+ 	case SSB_IDLOW_SSBREV_27:     /* same here */
+ 		return SSB_TMSLOW_REJECT;	/* this is a guess */
+ 	default:
+-		printk(KERN_INFO "ssb: Backplane Revision 0x%.8X\n", rev);
+-		WARN_ON(1);
++		WARN(1, KERN_INFO "ssb: Backplane Revision 0x%.8X\n", rev);
+ 	}
+ 	return (SSB_TMSLOW_REJECT | SSB_TMSLOW_REJECT_23);
+ }
 --- a/drivers/ssb/pci.c
 +++ b/drivers/ssb/pci.c
 @@ -178,6 +178,18 @@ err_pci:
@@ -533,18 +882,64 @@
  				GOTO_ERROR_ON((tuple->size != 3) &&
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
-@@ -207,4 +207,8 @@ static inline void b43_pci_ssb_bridge_ex
+@@ -3,6 +3,7 @@
+ 
+ #include <linux/ssb/ssb.h>
+ #include <linux/types.h>
++#include <linux/bcm47xx_wdt.h>
+ 
+ 
+ #define PFX	"ssb: "
+@@ -207,4 +208,38 @@ static inline void b43_pci_ssb_bridge_ex
  }
  #endif /* CONFIG_SSB_B43_PCI_BRIDGE */
  
 +/* driver_chipcommon_pmu.c */
 +extern u32 ssb_pmu_get_cpu_clock(struct ssb_chipcommon *cc);
 +extern u32 ssb_pmu_get_controlclock(struct ssb_chipcommon *cc);
++extern u32 ssb_pmu_get_alp_clock(struct ssb_chipcommon *cc);
++
++extern u32 ssb_chipco_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt,
++					     u32 ticks);
++extern u32 ssb_chipco_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms);
++
++#ifdef CONFIG_SSB_DRIVER_EXTIF
++extern u32 ssb_extif_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt, u32 ticks);
++extern u32 ssb_extif_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms);
++#else
++static inline u32 ssb_extif_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt,
++						   u32 ticks)
++{
++	return 0;
++}
++static inline u32 ssb_extif_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt,
++						  u32 ms)
++{
++	return 0;
++}
++#endif
++
++#ifdef CONFIG_SSB_EMBEDDED
++extern int ssb_watchdog_register(struct ssb_bus *bus);
++#else /* CONFIG_SSB_EMBEDDED */
++static inline int ssb_watchdog_register(struct ssb_bus *bus)
++{
++	return 0;
++}
++#endif /* CONFIG_SSB_EMBEDDED */
 +
  #endif /* LINUX_SSB_PRIVATE_H_ */
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -16,6 +16,12 @@ struct pcmcia_device;
+@@ -8,6 +8,7 @@
+ #include <linux/pci.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/dma-mapping.h>
++#include <linux/platform_device.h>
+ 
+ #include <linux/ssb/ssb_regs.h>
+ 
+@@ -16,6 +17,12 @@ struct pcmcia_device;
  struct ssb_bus;
  struct ssb_driver;
  
@@ -557,7 +952,7 @@
  struct ssb_sprom {
  	u8 revision;
  	u8 il0mac[6];		/* MAC address for 802.11b/g */
-@@ -26,9 +32,12 @@ struct ssb_sprom {
+@@ -26,9 +33,12 @@ struct ssb_sprom {
  	u8 et0mdcport;		/* MDIO for enet0 */
  	u8 et1mdcport;		/* MDIO for enet1 */
  	u16 board_rev;		/* Board revision number from SPROM. */
@@ -572,7 +967,7 @@
  	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
  	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
  	u16 pa0b0;
-@@ -47,10 +56,10 @@ struct ssb_sprom {
+@@ -47,10 +57,10 @@ struct ssb_sprom {
  	u8 gpio1;		/* GPIO pin 1 */
  	u8 gpio2;		/* GPIO pin 2 */
  	u8 gpio3;		/* GPIO pin 3 */
@@ -587,7 +982,7 @@
  	u8 itssi_a;		/* Idle TSSI Target for A-PHY */
  	u8 itssi_bg;		/* Idle TSSI Target for B/G-PHY */
  	u8 tri2g;		/* 2.4GHz TX isolation */
-@@ -61,8 +70,8 @@ struct ssb_sprom {
+@@ -61,8 +71,8 @@ struct ssb_sprom {
  	u8 txpid5gl[4];		/* 4.9 - 5.1GHz TX power index */
  	u8 txpid5g[4];		/* 5.1 - 5.5GHz TX power index */
  	u8 txpid5gh[4];		/* 5.5 - ...GHz TX power index */
@@ -598,7 +993,7 @@
  	u8 rssisav2g;		/* 2GHz RSSI params */
  	u8 rssismc2g;
  	u8 rssismf2g;
-@@ -82,16 +91,13 @@ struct ssb_sprom {
+@@ -82,16 +92,13 @@ struct ssb_sprom {
  	u16 boardflags2_hi;	/* Board flags (bits 48-63) */
  	/* TODO store board flags in a single u64 */
  
@@ -618,7 +1013,7 @@
  	} antenna_gain;
  
  	struct {
-@@ -103,14 +109,85 @@ struct ssb_sprom {
+@@ -103,14 +110,85 @@ struct ssb_sprom {
  		} ghz5;
  	} fem;
  
@@ -706,7 +1101,7 @@
  };
  
  
-@@ -166,6 +243,7 @@ struct ssb_bus_ops {
+@@ -166,6 +244,7 @@ struct ssb_bus_ops {
  #define SSB_DEV_MINI_MACPHY	0x823
  #define SSB_DEV_ARM_1176	0x824
  #define SSB_DEV_ARM_7TDMI	0x825
@@ -714,6 +1109,14 @@
  
  /* Vendor-ID values */
  #define SSB_VENDOR_BROADCOM	0x4243
+@@ -354,6 +433,7 @@ struct ssb_bus {
+ #ifdef CONFIG_SSB_EMBEDDED
+ 	/* Lock for GPIO register access. */
+ 	spinlock_t gpio_lock;
++	struct platform_device *watchdog;
+ #endif /* EMBEDDED */
+ 
+ 	/* Internal-only stuff follows. Do not touch. */
 --- a/include/linux/ssb/ssb_driver_chipcommon.h
 +++ b/include/linux/ssb/ssb_driver_chipcommon.h
 @@ -504,7 +504,9 @@
@@ -727,6 +1130,102 @@
  
  /* Status register bits for ST flashes */
  #define SSB_CHIPCO_FLASHSTA_ST_WIP	0x01		/* Write In Progress */
+@@ -589,6 +591,8 @@ struct ssb_chipcommon {
+ 	/* Fast Powerup Delay constant */
+ 	u16 fast_pwrup_delay;
+ 	struct ssb_chipcommon_pmu pmu;
++	u32 ticks_per_ms;
++	u32 max_timer_ms;
+ };
+ 
+ static inline bool ssb_chipco_available(struct ssb_chipcommon *cc)
+@@ -628,8 +632,7 @@ enum ssb_clkmode {
+ extern void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
+ 				     enum ssb_clkmode mode);
+ 
+-extern void ssb_chipco_watchdog_timer_set(struct ssb_chipcommon *cc,
+-					  u32 ticks);
++extern u32 ssb_chipco_watchdog_timer_set(struct ssb_chipcommon *cc, u32 ticks);
+ 
+ void ssb_chipco_irq_mask(struct ssb_chipcommon *cc, u32 mask, u32 value);
+ 
+--- a/include/linux/ssb/ssb_driver_extif.h
++++ b/include/linux/ssb/ssb_driver_extif.h
+@@ -152,6 +152,9 @@
+ /* watchdog */
+ #define SSB_EXTIF_WATCHDOG_CLK		48000000	/* Hz */
+ 
++#define SSB_EXTIF_WATCHDOG_MAX_TIMER	((1 << 28) - 1)
++#define SSB_EXTIF_WATCHDOG_MAX_TIMER_MS	(SSB_EXTIF_WATCHDOG_MAX_TIMER \
++					 / (SSB_EXTIF_WATCHDOG_CLK / 1000))
+ 
+ 
+ #ifdef CONFIG_SSB_DRIVER_EXTIF
+@@ -171,8 +174,7 @@ extern void ssb_extif_get_clockcontrol(s
+ extern void ssb_extif_timing_init(struct ssb_extif *extif,
+ 				  unsigned long ns);
+ 
+-extern void ssb_extif_watchdog_timer_set(struct ssb_extif *extif,
+-					 u32 ticks);
++extern u32 ssb_extif_watchdog_timer_set(struct ssb_extif *extif, u32 ticks);
+ 
+ /* Extif GPIO pin access */
+ u32 ssb_extif_gpio_in(struct ssb_extif *extif, u32 mask);
+@@ -205,10 +207,52 @@ void ssb_extif_get_clockcontrol(struct s
+ }
+ 
+ static inline
+-void ssb_extif_watchdog_timer_set(struct ssb_extif *extif,
+-				  u32 ticks)
++void ssb_extif_timing_init(struct ssb_extif *extif, unsigned long ns)
+ {
+ }
+ 
++static inline
++u32 ssb_extif_watchdog_timer_set(struct ssb_extif *extif, u32 ticks)
++{
++	return 0;
++}
++
++static inline u32 ssb_extif_gpio_in(struct ssb_extif *extif, u32 mask)
++{
++	return 0;
++}
++
++static inline u32 ssb_extif_gpio_out(struct ssb_extif *extif, u32 mask,
++				     u32 value)
++{
++	return 0;
++}
++
++static inline u32 ssb_extif_gpio_outen(struct ssb_extif *extif, u32 mask,
++				       u32 value)
++{
++	return 0;
++}
++
++static inline u32 ssb_extif_gpio_polarity(struct ssb_extif *extif, u32 mask,
++					  u32 value)
++{
++	return 0;
++}
++
++static inline u32 ssb_extif_gpio_intmask(struct ssb_extif *extif, u32 mask,
++					 u32 value)
++{
++	return 0;
++}
++
++#ifdef CONFIG_SSB_SERIAL
++static inline int ssb_extif_serial_init(struct ssb_extif *extif,
++					struct ssb_serial_port *ports)
++{
++	return 0;
++}
++#endif /* CONFIG_SSB_SERIAL */
++
+ #endif /* CONFIG_SSB_DRIVER_EXTIF */
+ #endif /* LINUX_SSB_EXTIFCORE_H_ */
 --- a/include/linux/ssb/ssb_driver_gige.h
 +++ b/include/linux/ssb/ssb_driver_gige.h
 @@ -2,6 +2,7 @@
@@ -848,7 +1347,7 @@
 +#define  SSB_SPROM8_HWIQ_IQSWP_IQCAL_SWP_SHIFT	4
 +#define  SSB_SPROM8_HWIQ_IQSWP_HW_IQCAL	0x0020
 +#define  SSB_SPROM8_HWIQ_IQSWP_HW_IQCAL_SHIFT	5
-+#define SSB_SPROM8_TEMPDELTA		0x00BA
++#define SSB_SPROM8_TEMPDELTA		0x00BC
 +#define  SSB_SPROM8_TEMPDELTA_PHYCAL	0x00ff
 +#define  SSB_SPROM8_TEMPDELTA_PHYCAL_SHIFT	0
 +#define  SSB_SPROM8_TEMPDELTA_PERIOD	0x0f00

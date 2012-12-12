@@ -26,11 +26,9 @@ Ralf, I think you might want to sneak this into 3.7-rc8 if possible at all.
  arch/mips/kernel/mips-mt-fpaff.c |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/kernel/mips-mt-fpaff.c b/arch/mips/kernel/mips-mt-fpaff.c
-index 33f63ba..fd814e0 100644
 --- a/arch/mips/kernel/mips-mt-fpaff.c
 +++ b/arch/mips/kernel/mips-mt-fpaff.c
-@@ -50,8 +50,8 @@ static bool check_same_owner(struct task_struct *p)
+@@ -50,8 +50,8 @@ static bool check_same_owner(struct task
  
  	rcu_read_lock();
  	pcred = __task_cred(p);
@@ -41,6 +39,3 @@ index 33f63ba..fd814e0 100644
  	rcu_read_unlock();
  	return match;
  }
--- 
-1.7.10.4
-

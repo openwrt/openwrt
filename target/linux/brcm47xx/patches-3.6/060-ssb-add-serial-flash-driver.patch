@@ -434,7 +434,7 @@
  		pr_debug("Found parallel flash\n");
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -18,6 +18,7 @@
+@@ -19,6 +19,7 @@
  #include <linux/ssb/ssb_driver_gige.h>
  #include <linux/dma-mapping.h>
  #include <linux/pci.h>
@@ -442,7 +442,7 @@
  #include <linux/mmc/sdio_func.h>
  #include <linux/slab.h>
  
-@@ -534,6 +535,15 @@ static int ssb_devices_register(struct s
+@@ -540,6 +541,15 @@ static int ssb_devices_register(struct s
  		dev_idx++;
  	}
  
@@ -460,9 +460,9 @@
  	/* Unwind the already registered devices. */
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
-@@ -211,4 +211,16 @@ static inline void b43_pci_ssb_bridge_ex
- extern u32 ssb_pmu_get_cpu_clock(struct ssb_chipcommon *cc);
- extern u32 ssb_pmu_get_controlclock(struct ssb_chipcommon *cc);
+@@ -242,4 +242,16 @@ static inline int ssb_watchdog_register(
+ }
+ #endif /* CONFIG_SSB_EMBEDDED */
  
 +#ifdef CONFIG_SSB_SFLASH
 +/* driver_chipcommon_sflash.c */
@@ -515,10 +515,10 @@
  #define SSB_CHIPCO_FLASHCTL_ST_RES	0x03AB		/* Read Electronic Signature */
  #define SSB_CHIPCO_FLASHCTL_ST_CSA	0x1000		/* Keep chip select asserted */
  #define SSB_CHIPCO_FLASHCTL_ST_SSE	0x0220		/* Sub-sector Erase */
-@@ -591,6 +604,9 @@ struct ssb_chipcommon {
- 	/* Fast Powerup Delay constant */
- 	u16 fast_pwrup_delay;
+@@ -593,6 +606,9 @@ struct ssb_chipcommon {
  	struct ssb_chipcommon_pmu pmu;
+ 	u32 ticks_per_ms;
+ 	u32 max_timer_ms;
 +#ifdef CONFIG_SSB_SFLASH
 +	struct bcm47xx_sflash sflash;
 +#endif
