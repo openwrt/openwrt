@@ -220,13 +220,27 @@ include() {
 	done
 }
 
-find_mtd_part() {
+find_mtd_index() {
 	local PART="$(grep "\"$1\"" /proc/mtd | awk -F: '{print $1}')"
+	local INDEX="${PART##mtd}"
+
+	echo ${INDEX}
+}
+
+find_mtd_part() {
+	local INDEX=$(find_mtd_index "$1")
 	local PREFIX=/dev/mtdblock
 
-	PART="${PART##mtd}"
 	[ -d /dev/mtdblock ] && PREFIX=/dev/mtdblock/
-	echo "${PART:+$PREFIX$PART}"
+	echo "${INDEX:+$PREFIX$INDEX}"
+}
+
+find_mtd_chardev() {
+	local INDEX=$(find_mtd_index "$1")
+	local PREFIX=/dev/mtd
+
+	[ -d /dev/mtd ] && PREFIX=/dev/mtd/
+	echo "${INDEX:+$PREFIX$INDEX}"
 }
 
 strtok() { # <string> { <variable> [<separator>] ... }
