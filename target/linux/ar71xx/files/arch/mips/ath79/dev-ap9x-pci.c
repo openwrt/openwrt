@@ -109,6 +109,12 @@ __init void ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 	pci_enable_ath9k_fixup(0, ap9x_wmac0_data.eeprom_data);
 }
 
+__init void ap91_pci_init_simple(void)
+{
+	ap91_pci_init(NULL, NULL);
+	ap9x_wmac0_data.eeprom_name = "pci_wmac0.eeprom";
+}
+
 static int ap94_pci_plat_dev_init(struct pci_dev *dev)
 {
 	switch (PCI_SLOT(dev->devfn)) {
