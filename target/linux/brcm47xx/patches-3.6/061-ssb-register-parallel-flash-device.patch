@@ -50,7 +50,7 @@
  }
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -543,6 +543,14 @@ static int ssb_devices_register(struct s
+@@ -549,6 +549,14 @@ static int ssb_devices_register(struct s
  				   "Error registering serial flash\n");
  	}
  #endif
@@ -67,7 +67,7 @@
  error:
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
-@@ -223,4 +223,6 @@ static inline int ssb_sflash_init(struct
+@@ -254,4 +254,6 @@ static inline int ssb_sflash_init(struct
  }
  #endif /* CONFIG_SSB_SFLASH */
  

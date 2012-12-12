@@ -28,26 +28,9 @@
  					   - 1;
  		return platform_add_devices(wgt634u_devices,
  					    ARRAY_SIZE(wgt634u_devices));
---- a/drivers/bcma/Kconfig
-+++ b/drivers/bcma/Kconfig
-@@ -48,12 +48,12 @@ config BCMA_DRIVER_MIPS
- 
- config BCMA_SFLASH
- 	bool
--	depends on BCMA_DRIVER_MIPS && BROKEN
-+	depends on BCMA_DRIVER_MIPS
- 	default y
- 
- config BCMA_NFLASH
- 	bool
--	depends on BCMA_DRIVER_MIPS && BROKEN
-+	depends on BCMA_DRIVER_MIPS
- 	default y
- 
- config BCMA_DRIVER_GMAC_CMN
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -48,12 +48,13 @@ void bcma_chipco_serial_init(struct bcma
+@@ -48,8 +48,8 @@ void bcma_chipco_serial_init(struct bcma
  #endif /* CONFIG_BCMA_DRIVER_MIPS */
  
  /* driver_chipcommon_pmu.c */
@@ -58,20 +41,7 @@
  
  #ifdef CONFIG_BCMA_SFLASH
  /* driver_chipcommon_sflash.c */
- int bcma_sflash_init(struct bcma_drv_cc *cc);
-+extern struct platform_device bcma_sflash_dev;
- #else
- static inline int bcma_sflash_init(struct bcma_drv_cc *cc)
- {
-@@ -65,6 +66,7 @@ static inline int bcma_sflash_init(struc
- #ifdef CONFIG_BCMA_NFLASH
- /* driver_chipcommon_nflash.c */
- int bcma_nflash_init(struct bcma_drv_cc *cc);
-+extern struct platform_device bcma_nflash_dev;
- #else
- static inline int bcma_nflash_init(struct bcma_drv_cc *cc)
- {
-@@ -82,6 +84,8 @@ extern void __exit bcma_host_pci_exit(vo
+@@ -84,6 +84,8 @@ extern void __exit bcma_host_pci_exit(vo
  /* driver_pci.c */
  u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address);
  
@@ -80,17 +50,6 @@
  #ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
  bool __devinit bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc);
  void __devinit bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc);
---- a/drivers/bcma/core.c
-+++ b/drivers/bcma/core.c
-@@ -65,7 +65,7 @@ void bcma_core_set_clockmode(struct bcma
- 	switch (clkmode) {
- 	case BCMA_CLKMODE_FAST:
- 		bcma_set32(core, BCMA_CLKCTLST, BCMA_CLKCTLST_FORCEHT);
--		udelay(64);
-+		usleep_range(64, 300);
- 		for (i = 0; i < 1500; i++) {
- 			if (bcma_read32(core, BCMA_CLKCTLST) &
- 			    BCMA_CLKCTLST_HAVEHT) {
 --- a/drivers/bcma/driver_chipcommon.c
 +++ b/drivers/bcma/driver_chipcommon.c
 @@ -4,12 +4,15 @@
@@ -279,74 +238,19 @@
  			bcma_cc_write32(cc, BCMA_CC_CORECTL,
 --- a/drivers/bcma/driver_chipcommon_nflash.c
 +++ b/drivers/bcma/driver_chipcommon_nflash.c
-@@ -5,15 +5,40 @@
-  * Licensed under the GNU/GPL. See COPYING for details.
-  */
+@@ -32,6 +32,9 @@ int bcma_nflash_init(struct bcma_drv_cc
+ 	}
  
-+#include <linux/platform_device.h>
- #include <linux/bcma/bcma.h>
--#include <linux/bcma/bcma_driver_chipcommon.h>
--#include <linux/delay.h>
- 
- #include "bcma_private.h"
- 
-+struct platform_device bcma_nflash_dev = {
-+	.name		= "bcma_nflash",
-+	.num_resources	= 0,
-+};
-+
- /* Initialize NAND flash access */
- int bcma_nflash_init(struct bcma_drv_cc *cc)
- {
--	bcma_err(cc->core->bus, "NAND flash support is broken\n");
-+	struct bcma_bus *bus = cc->core->bus;
-+
-+	if (bus->chipinfo.id != BCMA_CHIP_ID_BCM4706 &&
-+	    cc->core->id.rev != 0x38) {
-+		bcma_err(bus, "NAND flash on unsupported board!\n");
-+		return -ENOTSUPP;
-+	}
-+
-+	if (!(cc->capabilities & BCMA_CC_CAP_NFLASH)) {
-+		bcma_err(bus, "NAND flash not present according to ChipCommon\n");
-+		return -ENODEV;
-+	}
-+
-+	cc->nflash.present = true;
+ 	cc->nflash.present = true;
 +	if (cc->core->id.rev == 38 &&
 +	    (cc->status & BCMA_CC_CHIPST_5357_NAND_BOOT))
 +		cc->nflash.boot = true;
-+
-+	/* Prepare platform device, but don't register it yet. It's too early,
-+	 * malloc (required by device_private_init) is not available yet. */
-+	bcma_nflash_dev.dev.platform_data = &cc->nflash;
-+
- 	return 0;
- }
+ 
+ 	/* Prepare platform device, but don't register it yet. It's too early,
+ 	 * malloc (required by device_private_init) is not available yet. */
 --- a/drivers/bcma/driver_chipcommon_pmu.c
 +++ b/drivers/bcma/driver_chipcommon_pmu.c
-@@ -76,7 +76,10 @@ static void bcma_pmu_resources_init(stru
- 	if (max_msk)
- 		bcma_cc_write32(cc, BCMA_CC_PMU_MAXRES_MSK, max_msk);
- 
--	/* Add some delay; allow resources to come up and settle. */
-+	/*
-+	 * Add some delay; allow resources to come up and settle.
-+	 * Delay is required for SoC (early init).
-+	 */
- 	mdelay(2);
- }
- 
-@@ -101,7 +104,7 @@ void bcma_chipco_bcm4331_ext_pa_lines_ct
- 	bcma_cc_write32(cc, BCMA_CC_CHIPCTL, val);
- }
- 
--void bcma_pmu_workarounds(struct bcma_drv_cc *cc)
-+static void bcma_pmu_workarounds(struct bcma_drv_cc *cc)
- {
- 	struct bcma_bus *bus = cc->core->bus;
- 
-@@ -141,7 +144,7 @@ void bcma_pmu_workarounds(struct bcma_dr
+@@ -144,7 +144,7 @@ static void bcma_pmu_workarounds(struct
  	}
  }
  
@@ -355,7 +259,7 @@
  {
  	u32 pmucap;
  
-@@ -150,7 +153,10 @@ void bcma_pmu_init(struct bcma_drv_cc *c
+@@ -153,7 +153,10 @@ void bcma_pmu_init(struct bcma_drv_cc *c
  
  	bcma_debug(cc->core->bus, "Found rev %u PMU (capabilities 0x%08X)\n",
  		   cc->pmu.rev, pmucap);
@@ -366,7 +270,7 @@
  	if (cc->pmu.rev == 1)
  		bcma_cc_mask32(cc, BCMA_CC_PMU_CTL,
  			      ~BCMA_CC_PMU_CTL_NOILPONW);
-@@ -162,7 +168,7 @@ void bcma_pmu_init(struct bcma_drv_cc *c
+@@ -165,7 +168,7 @@ void bcma_pmu_init(struct bcma_drv_cc *c
  	bcma_pmu_workarounds(cc);
  }
  
@@ -375,7 +279,7 @@
  {
  	struct bcma_bus *bus = cc->core->bus;
  
-@@ -190,7 +196,7 @@ u32 bcma_pmu_alp_clock(struct bcma_drv_c
+@@ -193,7 +196,7 @@ u32 bcma_pmu_alp_clock(struct bcma_drv_c
  /* Find the output of the "m" pll divider given pll controls that start with
   * pllreg "pll0" i.e. 12 for main 6 for phy, 0 for misc.
   */
@@ -384,7 +288,7 @@
  {
  	u32 tmp, div, ndiv, p1, p2, fc;
  	struct bcma_bus *bus = cc->core->bus;
-@@ -219,14 +225,14 @@ static u32 bcma_pmu_clock(struct bcma_dr
+@@ -222,14 +225,14 @@ static u32 bcma_pmu_clock(struct bcma_dr
  	ndiv = (tmp & BCMA_CC_PPL_NDIV_MASK) >> BCMA_CC_PPL_NDIV_SHIFT;
  
  	/* Do calculation in Mhz */
@@ -401,16 +305,16 @@
  {
  	u32 tmp, ndiv, p1div, p2div;
  	u32 clock;
-@@ -257,7 +263,7 @@ static u32 bcma_pmu_clock_bcm4706(struct
+@@ -260,7 +263,7 @@ static u32 bcma_pmu_clock_bcm4706(struct
  }
  
  /* query bus clock frequency for PMU-enabled chipcommon */
--u32 bcma_pmu_get_clockcontrol(struct bcma_drv_cc *cc)
+-static u32 bcma_pmu_get_clockcontrol(struct bcma_drv_cc *cc)
 +static u32 bcma_pmu_get_bus_clock(struct bcma_drv_cc *cc)
  {
  	struct bcma_bus *bus = cc->core->bus;
  
-@@ -265,40 +271,42 @@ u32 bcma_pmu_get_clockcontrol(struct bcm
+@@ -268,40 +271,42 @@ static u32 bcma_pmu_get_clockcontrol(str
  	case BCMA_CHIP_ID_BCM4716:
  	case BCMA_CHIP_ID_BCM4748:
  	case BCMA_CHIP_ID_BCM47162:
@@ -464,7 +368,7 @@
  						BCMA_CC_PMU4706_MAINPLL_PLL0,
  						BCMA_CC_PMU5_MAINPLL_CPU);
  		case BCMA_CHIP_ID_BCM5356:
-@@ -313,10 +321,11 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
+@@ -316,10 +321,11 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
  			break;
  		}
  
@@ -480,38 +384,20 @@
  static void bcma_pmu_spuravoid_pll_write(struct bcma_drv_cc *cc, u32 offset,
 --- a/drivers/bcma/driver_chipcommon_sflash.c
 +++ b/drivers/bcma/driver_chipcommon_sflash.c
-@@ -5,15 +5,161 @@
-  * Licensed under the GNU/GPL. See COPYING for details.
-  */
+@@ -12,7 +12,7 @@
  
-+#include <linux/platform_device.h>
- #include <linux/bcma/bcma.h>
--#include <linux/bcma/bcma_driver_chipcommon.h>
--#include <linux/delay.h>
- 
- #include "bcma_private.h"
- 
-+static struct resource bcma_sflash_resource = {
-+	.name	= "bcma_sflash",
+ static struct resource bcma_sflash_resource = {
+ 	.name	= "bcma_sflash",
+-	.start	= BCMA_SFLASH,
 +	.start	= BCMA_SOC_FLASH2,
-+	.end	= 0,
-+	.flags  = IORESOURCE_MEM | IORESOURCE_READONLY,
-+};
-+
-+struct platform_device bcma_sflash_dev = {
-+	.name		= "bcma_sflash",
-+	.resource	= &bcma_sflash_resource,
-+	.num_resources	= 1,
-+};
-+
-+struct bcma_sflash_tbl_e {
-+	char *name;
-+	u32 id;
-+	u32 blocksize;
-+	u16 numblocks;
-+};
-+
-+static struct bcma_sflash_tbl_e bcma_sflash_st_tbl[] = {
+ 	.end	= 0,
+ 	.flags  = IORESOURCE_MEM | IORESOURCE_READONLY,
+ };
+@@ -31,15 +31,42 @@ struct bcma_sflash_tbl_e {
+ };
+ 
+ static struct bcma_sflash_tbl_e bcma_sflash_st_tbl[] = {
+-	{ "", 0x14, 0x10000, 32, },
 +	{ "M25P20", 0x11, 0x10000, 4, },
 +	{ "M25P40", 0x12, 0x10000, 8, },
 +
@@ -519,10 +405,10 @@
 +	{ "M25P32", 0x14, 0x10000, 64, },
 +	{ "M25P64", 0x16, 0x10000, 128, },
 +	{ "M25FL128", 0x17, 0x10000, 256, },
-+	{ 0 },
-+};
-+
-+static struct bcma_sflash_tbl_e bcma_sflash_sst_tbl[] = {
+ 	{ 0 },
+ };
+ 
+ static struct bcma_sflash_tbl_e bcma_sflash_sst_tbl[] = {
 +	{ "SST25WF512", 1, 0x1000, 16, },
 +	{ "SST25VF512", 0x48, 0x1000, 16, },
 +	{ "SST25WF010", 2, 0x1000, 32, },
@@ -537,10 +423,10 @@
 +	{ "SST25VF016", 0x41, 0x1000, 512, },
 +	{ "SST25VF032", 0x4a, 0x1000, 1024, },
 +	{ "SST25VF064", 0x4b, 0x1000, 2048, },
-+	{ 0 },
-+};
-+
-+static struct bcma_sflash_tbl_e bcma_sflash_at_tbl[] = {
+ 	{ 0 },
+ };
+ 
+ static struct bcma_sflash_tbl_e bcma_sflash_at_tbl[] = {
 +	{ "AT45DB011", 0xc, 256, 512, },
 +	{ "AT45DB021", 0x14, 256, 1024, },
 +	{ "AT45DB041", 0x1c, 256, 2048, },
@@ -548,103 +434,27 @@
 +	{ "AT45DB161", 0x2c, 512, 4096, },
 +	{ "AT45DB321", 0x34, 512, 8192, },
 +	{ "AT45DB642", 0x3c, 1024, 8192, },
-+	{ 0 },
-+};
-+
-+static void bcma_sflash_cmd(struct bcma_drv_cc *cc, u32 opcode)
-+{
-+	int i;
-+	bcma_cc_write32(cc, BCMA_CC_FLASHCTL,
-+			BCMA_CC_FLASHCTL_START | opcode);
-+	for (i = 0; i < 1000; i++) {
-+		if (!(bcma_cc_read32(cc, BCMA_CC_FLASHCTL) &
-+		      BCMA_CC_FLASHCTL_BUSY))
-+			return;
-+		cpu_relax();
-+	}
-+	bcma_err(cc->core->bus, "SFLASH control command failed (timeout)!\n");
-+}
-+
- /* Initialize serial flash access */
- int bcma_sflash_init(struct bcma_drv_cc *cc)
- {
--	bcma_err(cc->core->bus, "Serial flash support is broken\n");
-+	struct bcma_bus *bus = cc->core->bus;
-+	struct bcma_sflash *sflash = &cc->sflash;
-+	struct bcma_sflash_tbl_e *e;
-+	u32 id, id2;
-+
-+	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
-+	case BCMA_CC_FLASHT_STSER:
-+		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_DP);
-+
-+		bcma_cc_write32(cc, BCMA_CC_FLASHADDR, 0);
-+		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_RES);
-+		id = bcma_cc_read32(cc, BCMA_CC_FLASHDATA);
-+
-+		bcma_cc_write32(cc, BCMA_CC_FLASHADDR, 1);
-+		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_RES);
-+		id2 = bcma_cc_read32(cc, BCMA_CC_FLASHDATA);
-+
-+		switch (id) {
-+		case 0xbf:
-+			for (e = bcma_sflash_sst_tbl; e->name; e++) {
-+				if (e->id == id2)
-+					break;
-+			}
-+			break;
+ 	{ 0 },
+ };
+ 
+@@ -84,6 +111,8 @@ int bcma_sflash_init(struct bcma_drv_cc
+ 					break;
+ 			}
+ 			break;
 +		case 0x13:
 +			return -ENOTSUPP;
-+		default:
-+			for (e = bcma_sflash_st_tbl; e->name; e++) {
-+				if (e->id == id)
-+					break;
-+			}
-+			break;
-+		}
-+		if (!e->name) {
-+			bcma_err(bus, "Unsupported ST serial flash (id: 0x%X, id2: 0x%X)\n", id, id2);
-+			return -ENOTSUPP;
-+		}
-+
-+		break;
-+	case BCMA_CC_FLASHT_ATSER:
-+		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_AT_STATUS);
-+		id = bcma_cc_read32(cc, BCMA_CC_FLASHDATA) & 0x3c;
-+
-+		for (e = bcma_sflash_at_tbl; e->name; e++) {
-+			if (e->id == id)
-+				break;
-+		}
-+		if (!e->name) {
-+			bcma_err(bus, "Unsupported Atmel serial flash (id: 0x%X)\n", id);
-+			return -ENOTSUPP;
-+		}
-+
-+		break;
-+	default:
-+		bcma_err(bus, "Unsupported flash type\n");
-+		return -ENOTSUPP;
-+	}
-+
+ 		default:
+ 			for (e = bcma_sflash_st_tbl; e->name; e++) {
+ 				if (e->id == id)
+@@ -116,7 +145,7 @@ int bcma_sflash_init(struct bcma_drv_cc
+ 		return -ENOTSUPP;
+ 	}
+ 
+-	sflash->window = BCMA_SFLASH;
 +	sflash->window = BCMA_SOC_FLASH2;
-+	sflash->blocksize = e->blocksize;
-+	sflash->numblocks = e->numblocks;
-+	sflash->size = sflash->blocksize * sflash->numblocks;
-+	sflash->present = true;
-+
-+	bcma_info(bus, "Found %s serial flash (size: %dKiB, blocksize: 0x%X, blocks: %d)\n",
-+		  e->name, sflash->size / 1024, sflash->blocksize,
-+		  sflash->numblocks);
-+
-+	/* Prepare platform device, but don't register it yet. It's too early,
-+	 * malloc (required by device_private_init) is not available yet. */
-+	bcma_sflash_dev.resource[0].end = bcma_sflash_dev.resource[0].start +
-+					  sflash->size;
-+	bcma_sflash_dev.dev.platform_data = sflash;
-+
- 	return 0;
- }
+ 	sflash->blocksize = e->blocksize;
+ 	sflash->numblocks = e->numblocks;
+ 	sflash->size = sflash->blocksize * sflash->numblocks;
 --- a/drivers/bcma/driver_mips.c
 +++ b/drivers/bcma/driver_mips.c
 @@ -115,7 +115,7 @@ static void bcma_core_mips_set_irq(struc
@@ -755,35 +565,6 @@
 -	bcma_core_mips_flash_detect(mcore);
  	mcore->setup_done = true;
  }
---- a/drivers/bcma/driver_pci.c
-+++ b/drivers/bcma/driver_pci.c
-@@ -51,7 +51,7 @@ static void bcma_pcie_mdio_set_phy(struc
- 		v = pcicore_read32(pc, BCMA_CORE_PCI_MDIO_CONTROL);
- 		if (v & BCMA_CORE_PCI_MDIOCTL_ACCESS_DONE)
- 			break;
--		msleep(1);
-+		usleep_range(1000, 2000);
- 	}
- }
- 
-@@ -92,7 +92,7 @@ static u16 bcma_pcie_mdio_read(struct bc
- 			ret = pcicore_read32(pc, BCMA_CORE_PCI_MDIO_DATA);
- 			break;
- 		}
--		msleep(1);
-+		usleep_range(1000, 2000);
- 	}
- 	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_CONTROL, 0);
- 	return ret;
-@@ -132,7 +132,7 @@ static void bcma_pcie_mdio_write(struct
- 		v = pcicore_read32(pc, BCMA_CORE_PCI_MDIO_CONTROL);
- 		if (v & BCMA_CORE_PCI_MDIOCTL_ACCESS_DONE)
- 			break;
--		msleep(1);
-+		usleep_range(1000, 2000);
- 	}
- 	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_CONTROL, 0);
- }
 --- a/drivers/bcma/driver_pci_host.c
 +++ b/drivers/bcma/driver_pci_host.c
 @@ -35,11 +35,6 @@ bool __devinit bcma_core_pci_is_in_hostm
@@ -810,18 +591,6 @@
  	pc_host = kzalloc(sizeof(*pc_host), GFP_KERNEL);
  	if (!pc_host)  {
  		bcma_err(bus, "can not allocate memory");
-@@ -425,9 +425,9 @@ void __devinit bcma_core_pci_hostmode_in
- 	pc_host->io_resource.flags = IORESOURCE_IO | IORESOURCE_PCI_FIXED;
- 
- 	/* Reset RC */
--	udelay(3000);
-+	usleep_range(3000, 5000);
- 	pcicore_write32(pc, BCMA_CORE_PCI_CTL, BCMA_CORE_PCI_CTL_RST_OE);
--	udelay(1000);
-+	usleep_range(1000, 2000);
- 	pcicore_write32(pc, BCMA_CORE_PCI_CTL, BCMA_CORE_PCI_CTL_RST |
- 			BCMA_CORE_PCI_CTL_RST_OE);
- 
 @@ -452,6 +452,8 @@ void __devinit bcma_core_pci_hostmode_in
  			pc_host->mem_resource.start = BCMA_SOC_PCI_MEM;
  			pc_host->mem_resource.end = BCMA_SOC_PCI_MEM +
@@ -840,24 +609,6 @@
  			pci_membase_1G = BCMA_SOC_PCIE1_DMA_H32;
  			pc_host->host_cfg_addr = BCMA_SOC_PCI1_CFG;
  			pcicore_write32(pc, BCMA_CORE_PCI_SBTOPCI0,
-@@ -481,7 +485,7 @@ void __devinit bcma_core_pci_hostmode_in
- 	 * before issuing configuration requests to PCI Express
- 	 * devices.
- 	 */
--	udelay(100000);
-+	msleep(100);
- 
- 	bcma_core_pci_enable_crs(pc);
- 
-@@ -501,7 +505,7 @@ void __devinit bcma_core_pci_hostmode_in
- 	set_io_port_base(pc_host->pci_controller.io_map_base);
- 	/* Give some time to the PCI controller to configure itself with the new
- 	 * values. Not waiting at this point causes crashes of the machine. */
--	mdelay(10);
-+	usleep_range(10000, 15000);
- 	register_pci_controller(&pc_host->pci_controller);
- 	return;
- }
 @@ -534,7 +538,7 @@ DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_
  static void bcma_core_pci_fixup_addresses(struct pci_dev *dev)
  {
@@ -884,39 +635,7 @@
  DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, bcma_core_pci_fixup_addresses);
 --- a/drivers/bcma/host_pci.c
 +++ b/drivers/bcma/host_pci.c
-@@ -77,8 +77,8 @@ static void bcma_host_pci_write32(struct
- }
- 
- #ifdef CONFIG_BCMA_BLOCKIO
--void bcma_host_pci_block_read(struct bcma_device *core, void *buffer,
--			      size_t count, u16 offset, u8 reg_width)
-+static void bcma_host_pci_block_read(struct bcma_device *core, void *buffer,
-+				     size_t count, u16 offset, u8 reg_width)
- {
- 	void __iomem *addr = core->bus->mmio + offset;
- 	if (core->bus->mapped_core != core)
-@@ -100,8 +100,9 @@ void bcma_host_pci_block_read(struct bcm
- 	}
- }
- 
--void bcma_host_pci_block_write(struct bcma_device *core, const void *buffer,
--			       size_t count, u16 offset, u8 reg_width)
-+static void bcma_host_pci_block_write(struct bcma_device *core,
-+				      const void *buffer, size_t count,
-+				      u16 offset, u8 reg_width)
- {
- 	void __iomem *addr = core->bus->mmio + offset;
- 	if (core->bus->mapped_core != core)
-@@ -139,7 +140,7 @@ static void bcma_host_pci_awrite32(struc
- 	iowrite32(value, core->bus->mmio + (1 * BCMA_CORE_SIZE) + offset);
- }
- 
--const struct bcma_host_ops bcma_host_pci_ops = {
-+static const struct bcma_host_ops bcma_host_pci_ops = {
- 	.read8		= bcma_host_pci_read8,
- 	.read16		= bcma_host_pci_read16,
- 	.read32		= bcma_host_pci_read32,
-@@ -237,7 +238,7 @@ static void __devexit bcma_host_pci_remo
+@@ -238,7 +238,7 @@ static void __devexit bcma_host_pci_remo
  	pci_set_drvdata(dev, NULL);
  }
  
@@ -925,7 +644,7 @@
  static int bcma_host_pci_suspend(struct device *dev)
  {
  	struct pci_dev *pdev = to_pci_dev(dev);
-@@ -260,11 +261,11 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
+@@ -261,11 +261,11 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
  			 bcma_host_pci_resume);
  #define BCMA_PM_OPS	(&bcma_pm_ops)
  
@@ -939,36 +658,9 @@
  
  static DEFINE_PCI_DEVICE_TABLE(bcma_pci_bridge_tbl) = {
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x0576) },
-@@ -272,6 +273,7 @@ static DEFINE_PCI_DEVICE_TABLE(bcma_pci_
- 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4331) },
- 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4353) },
- 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4357) },
-+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4358) },
- 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4359) },
- 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
- 	{ 0, },
---- a/drivers/bcma/host_soc.c
-+++ b/drivers/bcma/host_soc.c
-@@ -143,7 +143,7 @@ static void bcma_host_soc_awrite32(struc
- 	writel(value, core->io_wrap + offset);
- }
- 
--const struct bcma_host_ops bcma_host_soc_ops = {
-+static const struct bcma_host_ops bcma_host_soc_ops = {
- 	.read8		= bcma_host_soc_read8,
- 	.read16		= bcma_host_soc_read16,
- 	.read32		= bcma_host_soc_read32,
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -7,6 +7,7 @@
- 
- #include "bcma_private.h"
- #include <linux/module.h>
-+#include <linux/platform_device.h>
- #include <linux/bcma/bcma.h>
- #include <linux/slab.h>
- 
-@@ -80,6 +81,18 @@ struct bcma_device *bcma_find_core(struc
+@@ -81,6 +81,18 @@ struct bcma_device *bcma_find_core(struc
  }
  EXPORT_SYMBOL_GPL(bcma_find_core);
  
@@ -987,26 +679,10 @@
  static void bcma_release_core_dev(struct device *dev)
  {
  	struct bcma_device *core = container_of(dev, struct bcma_device, dev);
-@@ -136,6 +149,28 @@ static int bcma_register_cores(struct bc
- 		dev_id++;
+@@ -153,6 +165,12 @@ static int bcma_register_cores(struct bc
  	}
+ #endif
  
-+#ifdef CONFIG_BCMA_SFLASH
-+	if (bus->drv_cc.sflash.present) {
-+		err = platform_device_register(&bcma_sflash_dev);
-+		if (err)
-+			bcma_err(bus, "Error registering serial flash\n");
-+	}
-+#endif
-+
-+#ifdef CONFIG_BCMA_NFLASH
-+	if (bus->drv_cc.nflash.present) {
-+		err = platform_device_register(&bcma_nflash_dev);
-+		if (err)
-+			bcma_err(bus, "Error registering NAND flash\n");
-+	}
-+#endif
-+
 +	if (bus->hosttype == BCMA_HOSTTYPE_SOC) {
 +		err = bcma_chipco_watchdog_register(&bus->drv_cc);
 +		if (err)
@@ -1016,7 +692,7 @@
  	return 0;
  }
  
-@@ -148,6 +183,8 @@ static void bcma_unregister_cores(struct
+@@ -165,6 +183,8 @@ static void bcma_unregister_cores(struct
  		if (core->dev_registered)
  			device_unregister(&core->dev);
  	}
@@ -1025,7 +701,7 @@
  }
  
  int __devinit bcma_bus_register(struct bcma_bus *bus)
-@@ -166,6 +203,20 @@ int __devinit bcma_bus_register(struct b
+@@ -183,6 +203,20 @@ int __devinit bcma_bus_register(struct b
  		return -1;
  	}
  
@@ -1046,28 +722,28 @@
  	/* Init CC core */
  	core = bcma_find_core(bus, bcma_cc_core_id(bus));
  	if (core) {
-@@ -181,10 +232,17 @@ int __devinit bcma_bus_register(struct b
+@@ -198,10 +232,17 @@ int __devinit bcma_bus_register(struct b
  	}
  
  	/* Init PCIE core */
 -	core = bcma_find_core(bus, BCMA_CORE_PCIE);
 +	core = bcma_find_core_unit(bus, BCMA_CORE_PCIE, 0);
-+	if (core) {
+ 	if (core) {
+-		bus->drv_pci.core = core;
+-		bcma_core_pci_init(&bus->drv_pci);
 +		bus->drv_pci[0].core = core;
 +		bcma_core_pci_init(&bus->drv_pci[0]);
 +	}
 +
 +	/* Init PCIE core */
 +	core = bcma_find_core_unit(bus, BCMA_CORE_PCIE, 1);
- 	if (core) {
--		bus->drv_pci.core = core;
--		bcma_core_pci_init(&bus->drv_pci);
++	if (core) {
 +		bus->drv_pci[1].core = core;
 +		bcma_core_pci_init(&bus->drv_pci[1]);
  	}
  
  	/* Init GBIT MAC COMMON core */
-@@ -194,13 +252,6 @@ int __devinit bcma_bus_register(struct b
+@@ -211,13 +252,6 @@ int __devinit bcma_bus_register(struct b
  		bcma_core_gmac_cmn_init(&bus->drv_gmac_cmn);
  	}
  
@@ -1081,25 +757,7 @@
  	/* Register found cores */
  	bcma_register_cores(bus);
  
-@@ -211,7 +262,17 @@ int __devinit bcma_bus_register(struct b
- 
- void bcma_bus_unregister(struct bcma_bus *bus)
- {
-+	struct bcma_device *cores[3];
-+
-+	cores[0] = bcma_find_core(bus, BCMA_CORE_MIPS_74K);
-+	cores[1] = bcma_find_core(bus, BCMA_CORE_PCIE);
-+	cores[2] = bcma_find_core(bus, BCMA_CORE_4706_MAC_GBIT_COMMON);
-+
- 	bcma_unregister_cores(bus);
-+
-+	kfree(cores[2]);
-+	kfree(cores[1]);
-+	kfree(cores[0]);
- }
- 
- int __init bcma_bus_early_register(struct bcma_bus *bus,
-@@ -248,18 +309,18 @@ int __init bcma_bus_early_register(struc
+@@ -275,18 +309,18 @@ int __init bcma_bus_early_register(struc
  		return -1;
  	}
  
@@ -1124,17 +782,7 @@
  	bcma_info(bus, "Early bus registered\n");
 --- a/drivers/bcma/sprom.c
 +++ b/drivers/bcma/sprom.c
-@@ -507,7 +507,9 @@ static bool bcma_sprom_onchip_available(
- 		/* for these chips OTP is always available */
- 		present = true;
- 		break;
-+	case BCMA_CHIP_ID_BCM43227:
- 	case BCMA_CHIP_ID_BCM43228:
-+	case BCMA_CHIP_ID_BCM43428:
- 		present = chip_status & BCMA_CC_CHIPST_43228_OTP_PRESENT;
- 		break;
- 	default:
-@@ -593,8 +595,11 @@ int bcma_sprom_get(struct bcma_bus *bus)
+@@ -595,8 +595,11 @@ int bcma_sprom_get(struct bcma_bus *bus)
  		bcma_chipco_bcm4331_ext_pa_lines_ctl(&bus->drv_cc, true);
  
  	err = bcma_sprom_valid(sprom);
@@ -1149,15 +797,6 @@
  
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -10,7 +10,7 @@
- #include <linux/bcma/bcma_driver_gmac_cmn.h>
- #include <linux/ssb/ssb.h> /* SPROM sharing */
- 
--#include "bcma_regs.h"
-+#include <linux/bcma/bcma_regs.h>
- 
- struct bcma_device;
- struct bcma_bus;
 @@ -157,6 +157,7 @@ struct bcma_host_ops {
  
  /* Chip IDs of SoCs */
@@ -1198,120 +837,7 @@
  /** ChipCommon core registers. **/
  #define BCMA_CC_ID			0x0000
  #define  BCMA_CC_ID_ID			0x0000FFFF
-@@ -100,6 +102,7 @@
- #define  BCMA_CC_CHIPST_4706_SFLASH_TYPE	BIT(2) /* 0: 8b-p/ST-s flash, 1: 16b-p/Atmal-s flash */
- #define  BCMA_CC_CHIPST_4706_MIPS_BENDIAN	BIT(3) /* 0: little, 1: big endian */
- #define  BCMA_CC_CHIPST_4706_PCIE1_DISABLE	BIT(5) /* PCIE1 enable strap pin */
-+#define  BCMA_CC_CHIPST_5357_NAND_BOOT		BIT(4) /* NAND boot, valid for CC rev 38 and/or BCM5357 */
- #define BCMA_CC_JCMD			0x0030		/* Rev >= 10 only */
- #define  BCMA_CC_JCMD_START		0x80000000
- #define  BCMA_CC_JCMD_BUSY		0x80000000
-@@ -266,6 +269,29 @@
- #define  BCMA_CC_SROM_CONTROL_SIZE_16K	0x00000004
- #define  BCMA_CC_SROM_CONTROL_SIZE_SHIFT	1
- #define  BCMA_CC_SROM_CONTROL_PRESENT	0x00000001
-+/* Block 0x140 - 0x190 registers are chipset specific */
-+#define BCMA_CC_4706_FLASHSCFG		0x18C		/* Flash struct configuration */
-+#define  BCMA_CC_4706_FLASHSCFG_MASK	0x000000ff
-+#define  BCMA_CC_4706_FLASHSCFG_SF1	0x00000001	/* 2nd serial flash present */
-+#define  BCMA_CC_4706_FLASHSCFG_PF1	0x00000002	/* 2nd parallel flash present */
-+#define  BCMA_CC_4706_FLASHSCFG_SF1_TYPE	0x00000004	/* 2nd serial flash type : 0 : ST, 1 : Atmel */
-+#define  BCMA_CC_4706_FLASHSCFG_NF1	0x00000008	/* 2nd NAND flash present */
-+#define  BCMA_CC_4706_FLASHSCFG_1ST_MADDR_SEG_MASK	0x000000f0
-+#define  BCMA_CC_4706_FLASHSCFG_1ST_MADDR_SEG_4MB	0x00000010	/* 4MB */
-+#define  BCMA_CC_4706_FLASHSCFG_1ST_MADDR_SEG_8MB	0x00000020	/* 8MB */
-+#define  BCMA_CC_4706_FLASHSCFG_1ST_MADDR_SEG_16MB	0x00000030	/* 16MB */
-+#define  BCMA_CC_4706_FLASHSCFG_1ST_MADDR_SEG_32MB	0x00000040	/* 32MB */
-+#define  BCMA_CC_4706_FLASHSCFG_1ST_MADDR_SEG_64MB	0x00000050	/* 64MB */
-+#define  BCMA_CC_4706_FLASHSCFG_1ST_MADDR_SEG_128MB	0x00000060	/* 128MB */
-+#define  BCMA_CC_4706_FLASHSCFG_1ST_MADDR_SEG_256MB	0x00000070	/* 256MB */
-+/* NAND flash registers for BCM4706 (corerev = 31) */
-+#define BCMA_CC_NFLASH_CTL		0x01A0
-+#define  BCMA_CC_NFLASH_CTL_ERR		0x08000000
-+#define BCMA_CC_NFLASH_CONF		0x01A4
-+#define BCMA_CC_NFLASH_COL_ADDR		0x01A8
-+#define BCMA_CC_NFLASH_ROW_ADDR		0x01AC
-+#define BCMA_CC_NFLASH_DATA		0x01B0
-+#define BCMA_CC_NFLASH_WAITCNT0		0x01B4
- /* 0x1E0 is defined as shared BCMA_CLKCTLST */
- #define BCMA_CC_HW_WORKAROUND		0x01E4 /* Hardware workaround (rev >= 20) */
- #define BCMA_CC_UART0_DATA		0x0300
-@@ -325,6 +351,60 @@
- #define BCMA_CC_PLLCTL_ADDR		0x0660
- #define BCMA_CC_PLLCTL_DATA		0x0664
- #define BCMA_CC_SPROM			0x0800 /* SPROM beginning */
-+/* NAND flash MLC controller registers (corerev >= 38) */
-+#define BCMA_CC_NAND_REVISION		0x0C00
-+#define BCMA_CC_NAND_CMD_START		0x0C04
-+#define BCMA_CC_NAND_CMD_ADDR_X		0x0C08
-+#define BCMA_CC_NAND_CMD_ADDR		0x0C0C
-+#define BCMA_CC_NAND_CMD_END_ADDR	0x0C10
-+#define BCMA_CC_NAND_CS_NAND_SELECT	0x0C14
-+#define BCMA_CC_NAND_CS_NAND_XOR	0x0C18
-+#define BCMA_CC_NAND_SPARE_RD0		0x0C20
-+#define BCMA_CC_NAND_SPARE_RD4		0x0C24
-+#define BCMA_CC_NAND_SPARE_RD8		0x0C28
-+#define BCMA_CC_NAND_SPARE_RD12		0x0C2C
-+#define BCMA_CC_NAND_SPARE_WR0		0x0C30
-+#define BCMA_CC_NAND_SPARE_WR4		0x0C34
-+#define BCMA_CC_NAND_SPARE_WR8		0x0C38
-+#define BCMA_CC_NAND_SPARE_WR12		0x0C3C
-+#define BCMA_CC_NAND_ACC_CONTROL	0x0C40
-+#define BCMA_CC_NAND_CONFIG		0x0C48
-+#define BCMA_CC_NAND_TIMING_1		0x0C50
-+#define BCMA_CC_NAND_TIMING_2		0x0C54
-+#define BCMA_CC_NAND_SEMAPHORE		0x0C58
-+#define BCMA_CC_NAND_DEVID		0x0C60
-+#define BCMA_CC_NAND_DEVID_X		0x0C64
-+#define BCMA_CC_NAND_BLOCK_LOCK_STATUS	0x0C68
-+#define BCMA_CC_NAND_INTFC_STATUS	0x0C6C
-+#define BCMA_CC_NAND_ECC_CORR_ADDR_X	0x0C70
-+#define BCMA_CC_NAND_ECC_CORR_ADDR	0x0C74
-+#define BCMA_CC_NAND_ECC_UNC_ADDR_X	0x0C78
-+#define BCMA_CC_NAND_ECC_UNC_ADDR	0x0C7C
-+#define BCMA_CC_NAND_READ_ERROR_COUNT	0x0C80
-+#define BCMA_CC_NAND_CORR_STAT_THRESHOLD	0x0C84
-+#define BCMA_CC_NAND_READ_ADDR_X	0x0C90
-+#define BCMA_CC_NAND_READ_ADDR		0x0C94
-+#define BCMA_CC_NAND_PAGE_PROGRAM_ADDR_X	0x0C98
-+#define BCMA_CC_NAND_PAGE_PROGRAM_ADDR	0x0C9C
-+#define BCMA_CC_NAND_COPY_BACK_ADDR_X	0x0CA0
-+#define BCMA_CC_NAND_COPY_BACK_ADDR	0x0CA4
-+#define BCMA_CC_NAND_BLOCK_ERASE_ADDR_X	0x0CA8
-+#define BCMA_CC_NAND_BLOCK_ERASE_ADDR	0x0CAC
-+#define BCMA_CC_NAND_INV_READ_ADDR_X	0x0CB0
-+#define BCMA_CC_NAND_INV_READ_ADDR	0x0CB4
-+#define BCMA_CC_NAND_BLK_WR_PROTECT	0x0CC0
-+#define BCMA_CC_NAND_ACC_CONTROL_CS1	0x0CD0
-+#define BCMA_CC_NAND_CONFIG_CS1		0x0CD4
-+#define BCMA_CC_NAND_TIMING_1_CS1	0x0CD8
-+#define BCMA_CC_NAND_TIMING_2_CS1	0x0CDC
-+#define BCMA_CC_NAND_SPARE_RD16		0x0D30
-+#define BCMA_CC_NAND_SPARE_RD20		0x0D34
-+#define BCMA_CC_NAND_SPARE_RD24		0x0D38
-+#define BCMA_CC_NAND_SPARE_RD28		0x0D3C
-+#define BCMA_CC_NAND_CACHE_ADDR		0x0D40
-+#define BCMA_CC_NAND_CACHE_DATA		0x0D44
-+#define BCMA_CC_NAND_CTRL_CONFIG	0x0D48
-+#define BCMA_CC_NAND_CTRL_STATUS	0x0D4C
- 
- /* Divider allocation in 4716/47162/5356 */
- #define BCMA_CC_PMU5_MAINPLL_CPU	1
-@@ -415,6 +495,13 @@
- /* 4313 Chip specific ChipControl register bits */
- #define BCMA_CCTRL_4313_12MA_LED_DRIVE		0x00000007	/* 12 mA drive strengh for later 4313 */
- 
-+/* BCM5357 ChipControl register bits */
-+#define BCMA_CHIPCTL_5357_EXTPA			BIT(14)
-+#define BCMA_CHIPCTL_5357_ANT_MUX_2O3		BIT(15)
-+#define BCMA_CHIPCTL_5357_NFLASH		BIT(16)
-+#define BCMA_CHIPCTL_5357_I2S_PINS_ENABLE	BIT(18)
-+#define BCMA_CHIPCTL_5357_I2CSPI_PINS_ENABLE	BIT(19)
-+
- /* Data for the PMU, if available.
-  * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
-  */
-@@ -425,11 +512,35 @@ struct bcma_chipcommon_pmu {
+@@ -510,6 +512,7 @@ struct bcma_chipcommon_pmu {
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  struct bcma_pflash {
@@ -1319,35 +845,15 @@
  	u8 buswidth;
  	u32 window;
  	u32 window_size;
- };
+@@ -532,6 +535,7 @@ struct mtd_info;
  
-+#ifdef CONFIG_BCMA_SFLASH
-+struct bcma_sflash {
-+	bool present;
-+	u32 window;
-+	u32 blocksize;
-+	u16 numblocks;
-+	u32 size;
-+
-+	struct mtd_info *mtd;
-+};
-+#endif
-+
-+#ifdef CONFIG_BCMA_NFLASH
-+struct mtd_info;
-+
-+struct bcma_nflash {
-+	bool present;
+ struct bcma_nflash {
+ 	bool present;
 +	bool boot;		/* This is the flash the SoC boots from */
-+
-+	struct mtd_info *mtd;
-+};
-+#endif
-+
- struct bcma_serial_port {
- 	void *regs;
- 	unsigned long clockspeed;
-@@ -445,15 +556,24 @@ struct bcma_drv_cc {
+ 
+ 	struct mtd_info *mtd;
+ };
+@@ -552,6 +556,7 @@ struct bcma_drv_cc {
  	u32 capabilities;
  	u32 capabilities_ext;
  	u8 setup_done:1;
@@ -1355,15 +861,7 @@
  	/* Fast Powerup Delay constant */
  	u16 fast_pwrup_delay;
  	struct bcma_chipcommon_pmu pmu;
- #ifdef CONFIG_BCMA_DRIVER_MIPS
- 	struct bcma_pflash pflash;
-+#ifdef CONFIG_BCMA_SFLASH
-+	struct bcma_sflash sflash;
-+#endif
-+#ifdef CONFIG_BCMA_NFLASH
-+	struct bcma_nflash nflash;
-+#endif
- 
+@@ -567,6 +572,8 @@ struct bcma_drv_cc {
  	int nr_serial_ports;
  	struct bcma_serial_port serial_ports[4];
  #endif /* CONFIG_BCMA_DRIVER_MIPS */
@@ -1372,7 +870,7 @@
  };
  
  /* Register access */
-@@ -470,14 +590,14 @@ struct bcma_drv_cc {
+@@ -583,14 +590,14 @@ struct bcma_drv_cc {
  	bcma_cc_write32(cc, offset, (bcma_cc_read32(cc, offset) & (mask)) | (set))
  
  extern void bcma_core_chipcommon_init(struct bcma_drv_cc *cc);
@@ -1389,7 +887,7 @@
  
  void bcma_chipco_irq_mask(struct bcma_drv_cc *cc, u32 mask, u32 value);
  
-@@ -493,6 +613,7 @@ u32 bcma_chipco_gpio_polarity(struct bcm
+@@ -606,6 +613,7 @@ u32 bcma_chipco_gpio_polarity(struct bcm
  
  /* PMU support */
  extern void bcma_pmu_init(struct bcma_drv_cc *cc);
@@ -1418,33 +916,20 @@
  extern u32 bcma_cpu_clock(struct bcma_drv_mips *mcore);
 --- a/include/linux/bcma/bcma_regs.h
 +++ b/include/linux/bcma/bcma_regs.h
-@@ -11,11 +11,13 @@
- #define  BCMA_CLKCTLST_HAVEHTREQ	0x00000010 /* HT available request */
- #define  BCMA_CLKCTLST_HWCROFF		0x00000020 /* Force HW clock request off */
- #define  BCMA_CLKCTLST_EXTRESREQ	0x00000700 /* Mask of external resource requests */
-+#define  BCMA_CLKCTLST_EXTRESREQ_SHIFT	8
- #define  BCMA_CLKCTLST_HAVEALP		0x00010000 /* ALP available */
- #define  BCMA_CLKCTLST_HAVEHT		0x00020000 /* HT available */
- #define  BCMA_CLKCTLST_BP_ON_ALP	0x00040000 /* RO: running on ALP clock */
- #define  BCMA_CLKCTLST_BP_ON_HT		0x00080000 /* RO: running on HT clock */
- #define  BCMA_CLKCTLST_EXTRESST		0x07000000 /* Mask of external resource status */
-+#define  BCMA_CLKCTLST_EXTRESST_SHIFT	24
- /* Is there any BCM4328 on BCMA bus? */
- #define  BCMA_CLKCTLST_4328A0_HAVEHT	0x00010000 /* 4328a0 has reversed bits */
- #define  BCMA_CLKCTLST_4328A0_HAVEALP	0x00020000 /* 4328a0 has reversed bits */
-@@ -83,4 +85,9 @@
+@@ -85,6 +85,9 @@
  							 * (2 ZettaBytes), high 32 bits
  							 */
  
+-#define BCMA_SFLASH			0x1c000000
 +#define BCMA_SOC_FLASH1			0x1fc00000	/* MIPS Flash Region 1 */
 +#define BCMA_SOC_FLASH1_SZ		0x00400000	/* MIPS Size of Flash Region 1 */
 +#define BCMA_SOC_FLASH2			0x1c000000	/* Flash Region 2 (region 1 shadowed here) */
 +#define BCMA_SOC_FLASH2_SZ		0x02000000	/* Size of Flash Region 2 */
-+
+ 
  #endif /* LINUX_BCMA_REGS_H_ */
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -4622,7 +4622,7 @@ static int b43_wireless_core_init(struct
+@@ -4652,7 +4652,7 @@ static int b43_wireless_core_init(struct
  	switch (dev->dev->bus_type) {
  #ifdef CONFIG_B43_BCMA
  	case B43_BUS_BCMA:
@@ -1455,7 +940,7 @@
  #endif
 --- a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
-@@ -695,7 +695,7 @@ void ai_pci_up(struct si_pub *sih)
+@@ -692,7 +692,7 @@ void ai_pci_up(struct si_pub *sih)
  	sii = container_of(sih, struct si_info, pub);
  
  	if (sii->icbus->hosttype == BCMA_HOSTTYPE_PCI)
@@ -1464,7 +949,7 @@
  }
  
  /* Unconfigure and/or apply various WARs when going down */
-@@ -706,7 +706,7 @@ void ai_pci_down(struct si_pub *sih)
+@@ -703,7 +703,7 @@ void ai_pci_down(struct si_pub *sih)
  	sii = container_of(sih, struct si_info, pub);
  
  	if (sii->icbus->hosttype == BCMA_HOSTTYPE_PCI)

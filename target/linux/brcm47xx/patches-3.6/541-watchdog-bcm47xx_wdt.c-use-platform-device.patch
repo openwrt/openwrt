@@ -151,7 +151,7 @@
  	return NOTIFY_DONE;
  }
  
-@@ -146,57 +130,72 @@ static struct watchdog_ops bcm47xx_wdt_o
+@@ -146,56 +130,72 @@ static struct watchdog_ops bcm47xx_wdt_o
  	.set_timeout	= bcm47xx_wdt_set_timeout,
  };
  
@@ -225,7 +225,6 @@
 -static void __exit bcm47xx_wdt_exit(void)
 +static int __devexit bcm47xx_wdt_remove(struct platform_device *pdev)
  {
--	watchdog_stop(&bcm47xx_wdt_wdd);
 -	watchdog_unregister_device(&bcm47xx_wdt_wdd);
 +	struct bcm47xx_wdt *wdt = dev_get_platdata(&pdev->dev);
 +
@@ -256,33 +255,29 @@
 +MODULE_AUTHOR("Hauke Mehrtens <hauke@hauke-m.de>");
  MODULE_DESCRIPTION("Watchdog driver for Broadcom BCM47xx");
  MODULE_LICENSE("GPL");
---- /dev/null
+--- a/include/linux/bcm47xx_wdt.h
 +++ b/include/linux/bcm47xx_wdt.h
-@@ -0,0 +1,27 @@
-+#ifndef LINUX_BCM47XX_WDT_H_
-+#define LINUX_BCM47XX_WDT_H_
-+
+@@ -1,7 +1,10 @@
+ #ifndef LINUX_BCM47XX_WDT_H_
+ #define LINUX_BCM47XX_WDT_H_
+ 
 +#include <linux/notifier.h>
 +#include <linux/timer.h>
-+#include <linux/types.h>
+ #include <linux/types.h>
 +#include <linux/watchdog.h>
-+
-+
-+struct bcm47xx_wdt {
-+	u32 (*timer_set)(struct bcm47xx_wdt *, u32);
-+	u32 (*timer_set_ms)(struct bcm47xx_wdt *, u32);
-+
-+	void *driver_data;
+ 
+ 
+ struct bcm47xx_wdt {
+@@ -10,6 +13,12 @@ struct bcm47xx_wdt {
+ 	u32 max_timer_ms;
+ 
+ 	void *driver_data;
 +
 +	struct watchdog_device wdd;
 +	struct notifier_block notifier;
 +
 +	struct timer_list soft_timer;
 +	atomic_t soft_ticks;
-+};
-+
-+static inline void *bcm47xx_wdt_get_drvdata(struct bcm47xx_wdt *wdt)
-+{
-+	return wdt->driver_data;
-+}
-+#endif /* LINUX_BCM47XX_WDT_H_ */
+ };
+ 
+ static inline void *bcm47xx_wdt_get_drvdata(struct bcm47xx_wdt *wdt)
