@@ -220,15 +220,6 @@ include() {
 	done
 }
 
-find_mtd_part() {
-	local PART="$(grep "\"$1\"" /proc/mtd | awk -F: '{print $1}')"
-	local PREFIX=/dev/mtdblock
-
-	PART="${PART##mtd}"
-	[ -d /dev/mtdblock ] && PREFIX=/dev/mtdblock/
-	echo "${PART:+$PREFIX$PART}"
-}
-
 strtok() { # <string> { <variable> [<separator>] ... }
 	local tmp
 	local val="$1"
