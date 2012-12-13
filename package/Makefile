@@ -70,8 +70,19 @@ OPKG:= \
 	--add-arch all:100 \
 	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
 
-PACKAGE_INSTALL:=$(sort $(foreach pkg,$(package-y),$(lastword $(subst /,$(space),$(pkg)))))
-PACKAGE_INSTALL_FILES:=$(patsubst %,$(PKG_INFO_DIR)/%.*.install,$(PACKAGE_INSTALL))
+PACKAGE_INSTALL_FILES:= \
+	$(foreach pkg,$(sort $(package-y)), \
+		$(foreach variant, \
+			$(if $(package/$(pkg)/variants), \
+				$(package/$(pkg)/variants), \
+				$(if $(package/$(pkg)/default-variant), \
+					$(package/$(pkg)/default-variant), \
+					default \
+				) \
+			), \
+			$(PKG_INFO_DIR)/$(lastword $(subst /,$(space),$(pkg))).$(variant).install \
+		) \
+	)
 
 $(curdir)/cleanup: $(TMP_DIR)/.build
 	rm -rf $(STAGING_DIR_ROOT)
