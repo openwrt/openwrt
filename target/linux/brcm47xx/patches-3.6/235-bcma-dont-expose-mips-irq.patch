@@ -1,0 +1,87 @@
+--- a/include/linux/bcma/bcma_driver_mips.h
++++ b/include/linux/bcma/bcma_driver_mips.h
+@@ -49,6 +49,6 @@ static inline void bcma_core_mips_early_
+ 
+ extern u32 bcma_cpu_clock(struct bcma_drv_mips *mcore);
+ 
+-extern unsigned int bcma_core_mips_irq(struct bcma_device *dev);
++extern unsigned int bcma_core_irq(struct bcma_device *core);
+ 
+ #endif /* LINUX_BCMA_DRIVER_MIPS_H_ */
+--- a/drivers/bcma/driver_chipcommon.c
++++ b/drivers/bcma/driver_chipcommon.c
+@@ -258,7 +258,7 @@ void bcma_chipco_serial_init(struct bcma
+ 		return;
+ 	}
+ 
+-	irq = bcma_core_mips_irq(cc->core);
++	irq = bcma_core_irq(cc->core);
+ 
+ 	/* Determine the registers of the UARTs */
+ 	cc->nr_serial_ports = (cc->capabilities & BCMA_CC_CAP_NRUART);
+--- a/drivers/bcma/driver_mips.c
++++ b/drivers/bcma/driver_mips.c
+@@ -81,7 +81,7 @@ static u32 bcma_core_mips_irqflag(struct
+ /* Get the MIPS IRQ assignment for a specified device.
+  * If unassigned, 0 is returned.
+  */
+-unsigned int bcma_core_mips_irq(struct bcma_device *dev)
++static unsigned int bcma_core_mips_irq(struct bcma_device *dev)
+ {
+ 	struct bcma_device *mdev = dev->bus->drv_mips.core;
+ 	u32 irqflag;
+@@ -96,7 +96,12 @@ unsigned int bcma_core_mips_irq(struct b
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL(bcma_core_mips_irq);
++
++unsigned int bcma_core_irq(struct bcma_device *dev)
++{
++	return bcma_core_mips_irq(dev) + 2;
++}
++EXPORT_SYMBOL(bcma_core_irq);
+ 
+ static void bcma_core_mips_set_irq(struct bcma_device *dev, unsigned int irq)
+ {
+--- a/drivers/bcma/driver_pci_host.c
++++ b/drivers/bcma/driver_pci_host.c
+@@ -577,7 +577,7 @@ int bcma_core_pci_plat_dev_init(struct p
+ 	pr_info("PCI: Fixing up device %s\n", pci_name(dev));
+ 
+ 	/* Fix up interrupt lines */
+-	dev->irq = bcma_core_mips_irq(pc_host->pdev->core) + 2;
++	dev->irq = bcma_core_irq(pc_host->pdev->core);
+ 	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
+ 
+ 	return 0;
+@@ -596,6 +596,6 @@ int bcma_core_pci_pcibios_map_irq(const
+ 
+ 	pc_host = container_of(dev->bus->ops, struct bcma_drv_pci_host,
+ 			       pci_ops);
+-	return bcma_core_mips_irq(pc_host->pdev->core) + 2;
++	return bcma_core_irq(pc_host->pdev->core);
+ }
+ EXPORT_SYMBOL(bcma_core_pci_pcibios_map_irq);
+--- a/arch/mips/bcm47xx/gpio.c
++++ b/arch/mips/bcm47xx/gpio.c
+@@ -94,7 +94,7 @@ int gpio_to_irq(unsigned gpio)
+ #endif
+ #ifdef CONFIG_BCM47XX_BCMA
+ 	case BCM47XX_BUS_TYPE_BCMA:
+-		return bcma_core_mips_irq(bcm47xx_bus.bcma.bus.drv_cc.core) + 2;
++		return bcma_core_irq(bcm47xx_bus.bcma.bus.drv_cc.core);
+ #endif
+ 	}
+ 	return -EINVAL;
+--- a/arch/mips/bcm47xx/serial.c
++++ b/arch/mips/bcm47xx/serial.c
+@@ -62,7 +62,7 @@ static int __init uart8250_init_bcma(voi
+ 
+ 		p->mapbase = (unsigned int) bcma_port->regs;
+ 		p->membase = (void *) bcma_port->regs;
+-		p->irq = bcma_port->irq + 2;
++		p->irq = bcma_port->irq;
+ 		p->uartclk = bcma_port->baud_base;
+ 		p->regshift = bcma_port->reg_shift;
+ 		p->iotype = UPIO_MEM;
