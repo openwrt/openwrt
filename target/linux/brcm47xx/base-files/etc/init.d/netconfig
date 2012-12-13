@@ -165,6 +165,12 @@ start() {
 			c["vlan1ports"] = "0 8"
 		}
 
+		# generic broadcom 4716 processor with 53115 switch
+		if (nvram["boardtype"] == "0x04cf") {
+			c["vlan0ports"] = "1 2 3 4 8*"
+			c["vlan1ports"] = "0 8"
+		}
+
 		# WAP54G
 		if ((nvram["boardnum"] == "2") || \
 			(nvram["boardnum"] == "1024")) {
