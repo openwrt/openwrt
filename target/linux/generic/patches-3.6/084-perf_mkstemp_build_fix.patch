@@ -1,0 +1,40 @@
+From 7b45f21c2e42f265f6fd469e43857e98e2fdf01c Mon Sep 17 00:00:00 2001
+From: Irina Tirdea <irina.tirdea@intel.com>
+Date: Sat, 8 Sep 2012 03:43:21 +0300
+Subject: [PATCH] perf tools: replace mkostemp with mkstemp
+
+The mkostemp function is only available in glibc. This leads to compile
+error in Android, since bionic is derived from BSD.
+
+Replacing mkostemp with mkstemp. mkstemp is available on both glibc and
+bionic.
+
+Signed-off-by: Irina Tirdea <irina.tirdea@intel.com>
+Cc: David Ahern <dsahern@gmail.com>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Namhyung Kim <namhyung.kim@lge.com>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Cc: Steven Rostedt <rostedt@goodmis.org>
+Link: http://lkml.kernel.org/r/1347065004-15306-10-git-send-email-irina.tirdea@intel.com
+Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
+---
+ tools/perf/util/dso-test-data.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/perf/util/dso-test-data.c b/tools/perf/util/dso-test-data.c
+index 541cdc7..c6caede 100644
+--- a/tools/perf/util/dso-test-data.c
++++ b/tools/perf/util/dso-test-data.c
+@@ -23,7 +23,7 @@ static char *test_file(int size)
+ 	int fd, i;
+ 	unsigned char *buf;
+ 
+-	fd = mkostemp(templ, O_CREAT|O_WRONLY|O_TRUNC);
++	fd = mkstemp(templ);
+ 
+ 	buf = malloc(size);
+ 	if (!buf) {
+-- 
+1.7.10.4
+
