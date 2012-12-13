@@ -26,6 +26,7 @@ check_module () {
 }
 
 init_iface() {
+	check_module hwmon
 	check_module tg3
 	insmod switch-core
 	check_module switch-robo || check_module switch-adm  || {
