@@ -108,7 +108,7 @@ static int wl_glue_bcma_probe(struct bcma_device *dev)
 	 * 0x1000     = BCMA_CORE_SIZE
 	 */
 
-	wldev = attach_cb(dev->id.manuf, dev->id.id, (ulong)dev->io_addr, dev, dev->irq);
+	wldev = attach_cb(dev->id.manuf, dev->id.id, (ulong)dev->addr, dev, dev->irq);
 
 	if (!wldev)
 	{
