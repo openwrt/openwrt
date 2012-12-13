@@ -18,27 +18,20 @@
  enum sip_expectation_classes {
 --- a/net/ipv4/netfilter/nf_nat_sip.c
 +++ b/net/ipv4/netfilter/nf_nat_sip.c
-@@ -73,11 +73,14 @@ static int map_addr(struct sk_buff *skb,
+@@ -73,6 +73,7 @@ static int map_addr(struct sk_buff *skb,
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
-+	struct nf_ct_sip_master *ct_sip_info;
++	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct);
  	char buffer[sizeof("nnn.nnn.nnn.nnn:nnnnn")];
  	unsigned int buflen;
  	__be32 newaddr;
- 	__be16 newport;
- 
-+	ct_sip_info = nfct_help_data(ct->master);
-+
- 	if (ct->tuplehash[dir].tuple.src.u3.ip == addr->ip &&
- 	    ct->tuplehash[dir].tuple.src.u.udp.port == port) {
- 		newaddr = ct->tuplehash[!dir].tuple.dst.u3.ip;
 @@ -85,7 +88,8 @@ static int map_addr(struct sk_buff *skb,
  	} else if (ct->tuplehash[dir].tuple.dst.u3.ip == addr->ip &&
  		   ct->tuplehash[dir].tuple.dst.u.udp.port == port) {
  		newaddr = ct->tuplehash[!dir].tuple.src.u3.ip;
 -		newport = ct->tuplehash[!dir].tuple.src.u.udp.port;
-+		newport = ct_sip_info->forced_dport ? :
++		newport = ct_sip_info->forced_dport ? ct_sip_info->forced_dport :
 +			  ct->tuplehash[!dir].tuple.src.u.udp.port;
  	} else
  		return 1;
@@ -47,16 +40,14 @@
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
-+	struct nf_conn_help *help = nfct_help(ct);
++	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct);
  	unsigned int coff, matchoff, matchlen;
  	enum sip_header_types hdr;
  	union nf_inet_addr addr;
-@@ -230,6 +235,22 @@ next:
+@@ -230,6 +235,20 @@ next:
  	    !map_sip_addr(skb, dataoff, dptr, datalen, SIP_HDR_TO))
  		return NF_DROP;
  
-+	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct->master);
-+
 +	/* Mangle destination port for Cisco phones, then fix up checksums */
 +	if (dir == IP_CT_DIR_REPLY && ct_sip_info->forced_dport) {
 +		struct udphdr *uh;
@@ -74,27 +65,24 @@
  	return NF_ACCEPT;
  }
  
-@@ -281,10 +302,13 @@ static unsigned int ip_nat_sip_expect(st
+@@ -281,8 +302,10 @@ static unsigned int ip_nat_sip_expect(st
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
-+	struct nf_conn_help *help = nfct_help(ct);
++	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct);
  	__be32 newip;
  	u_int16_t port;
 +	__be16 srcport;
  	char buffer[sizeof("nnn.nnn.nnn.nnn:nnnnn")];
  	unsigned int buflen;
-+	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct->master);
  
- 	/* Connection will come from reply */
- 	if (ct->tuplehash[dir].tuple.src.u3.ip == ct->tuplehash[!dir].tuple.dst.u3.ip)
 @@ -295,8 +319,9 @@ static unsigned int ip_nat_sip_expect(st
  	/* If the signalling port matches the connection's source port in the
  	 * original direction, try to use the destination port in the opposite
  	 * direction. */
 -	if (exp->tuple.dst.u.udp.port ==
 -	    ct->tuplehash[dir].tuple.src.u.udp.port)
-+	srcport = ct_sip_info->forced_dport ? :
++	srcport = ct_sip_info->forced_dport ? ct_sip_info->forced_dport :
 +		  ct->tuplehash[dir].tuple.src.u.udp.port;
 +	if (exp->tuple.dst.u.udp.port == srcport)
  		port = ntohs(ct->tuplehash[!dir].tuple.dst.u.udp.port);
@@ -102,17 +90,16 @@
  		port = ntohs(exp->tuple.dst.u.udp.port);
 --- a/net/netfilter/nf_conntrack_sip.c
 +++ b/net/netfilter/nf_conntrack_sip.c
-@@ -1416,8 +1416,26 @@ static int process_sip_request(struct sk
+@@ -1416,8 +1416,25 @@ static int process_sip_request(struct sk
  {
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
-+	struct nf_conn_help *help = nfct_help(ct);
++	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct);
 +	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
  	unsigned int matchoff, matchlen;
  	unsigned int cseq, i;
 +	union nf_inet_addr addr;
 +	__be16 port;
-+	struct nf_ct_sip_master *ct_sip_info = nfct_help_data(ct->master);
 +
 +	/* Many Cisco IP phones use a high source port for SIP requests, but
 +	 * listen for the response on port 5060.  If we are the local
