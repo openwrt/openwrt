@@ -1,0 +1,33 @@
+From cae49ede00ec3d0cda290b03fee55b72b49efc11 Mon Sep 17 00:00:00 2001
+From: David Woodhouse <dwmw2@infradead.org>
+Date: Tue, 11 Dec 2012 14:57:14 +0000
+Subject: [PATCH] solos-pci: fix double-free of TX skb in DMA mode
+
+We weren't clearing card->tx_skb[port] when processing the TX done interrupt.
+If there wasn't another skb ready to transmit immediately, this led to a
+double-free because we'd free it *again* next time we did have a packet to
+send.
+
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+Cc: stable@kernel.org
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/atm/solos-pci.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/atm/solos-pci.c
++++ b/drivers/atm/solos-pci.c
+@@ -945,10 +945,11 @@ static uint32_t fpga_tx(struct solos_car
+ 	for (port = 0; tx_pending; tx_pending >>= 1, port++) {
+ 		if (tx_pending & 1) {
+ 			struct sk_buff *oldskb = card->tx_skb[port];
+-			if (oldskb)
++			if (oldskb) {
+ 				pci_unmap_single(card->dev, SKB_CB(oldskb)->dma_addr,
+ 						 oldskb->len, PCI_DMA_TODEVICE);
+-
++				card->tx_skb[port] = NULL;
++			}
+ 			spin_lock(&card->tx_queue_lock);
+ 			skb = skb_dequeue(&card->tx_queue[port]);
+ 			if (!skb)
