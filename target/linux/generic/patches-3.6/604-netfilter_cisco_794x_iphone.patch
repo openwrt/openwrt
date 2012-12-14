@@ -26,7 +26,7 @@
  	char buffer[sizeof("nnn.nnn.nnn.nnn:nnnnn")];
  	unsigned int buflen;
  	__be32 newaddr;
-@@ -85,7 +88,8 @@ static int map_addr(struct sk_buff *skb,
+@@ -85,7 +86,8 @@ static int map_addr(struct sk_buff *skb,
  	} else if (ct->tuplehash[dir].tuple.dst.u3.ip == addr->ip &&
  		   ct->tuplehash[dir].tuple.dst.u.udp.port == port) {
  		newaddr = ct->tuplehash[!dir].tuple.src.u3.ip;
@@ -36,7 +36,7 @@
  	} else
  		return 1;
  
-@@ -121,6 +125,7 @@ static unsigned int ip_nat_sip(struct sk
+@@ -121,6 +123,7 @@ static unsigned int ip_nat_sip(struct sk
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
@@ -44,7 +44,7 @@
  	unsigned int coff, matchoff, matchlen;
  	enum sip_header_types hdr;
  	union nf_inet_addr addr;
-@@ -230,6 +235,20 @@ next:
+@@ -230,6 +233,20 @@ next:
  	    !map_sip_addr(skb, dataoff, dptr, datalen, SIP_HDR_TO))
  		return NF_DROP;
  
@@ -65,7 +65,7 @@
  	return NF_ACCEPT;
  }
  
-@@ -281,8 +302,10 @@ static unsigned int ip_nat_sip_expect(st
+@@ -281,8 +298,10 @@ static unsigned int ip_nat_sip_expect(st
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
@@ -76,7 +76,7 @@
  	char buffer[sizeof("nnn.nnn.nnn.nnn:nnnnn")];
  	unsigned int buflen;
  
-@@ -295,8 +319,9 @@ static unsigned int ip_nat_sip_expect(st
+@@ -295,8 +314,9 @@ static unsigned int ip_nat_sip_expect(st
  	/* If the signalling port matches the connection's source port in the
  	 * original direction, try to use the destination port in the opposite
  	 * direction. */
