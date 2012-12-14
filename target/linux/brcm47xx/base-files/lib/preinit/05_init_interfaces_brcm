@@ -21,7 +21,7 @@ check_module () {
 
   insmod "$module" "$params"
   sleep 1
-  grep "^$module" /proc/modules > /dev/null
+  grep -q ^"$module " /proc/modules
   return $?
 }
 
