@@ -25,8 +25,6 @@ endef
 TARGET_CPPFLAGS := \
 	-D_GNU_SOURCE \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
-	-I$(LINUX_DIR)/include \
-	-I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include \
 	-I$(PKG_BUILD_DIR) \
 	$(TARGET_CPPFLAGS)
 
