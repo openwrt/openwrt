@@ -21,7 +21,7 @@
  /*
   * Make sure the controller is completely inactive, unable to
   * generate interrupts or do DMA.
-@@ -432,6 +438,13 @@ reset_needed:
+@@ -432,8 +438,16 @@ reset_needed:
  	uhci_reset_hc(pdev, base);
  	return 1;
  }
@@ -34,17 +34,11 @@
 +#endif
  EXPORT_SYMBOL_GPL(uhci_check_and_reset_hc);
  
- static inline int io_type_enabled(struct pci_dev *pdev, unsigned int mask)
-@@ -461,6 +474,8 @@ static void __devinit quirk_usb_handoff_
- 		uhci_check_and_reset_hc(pdev, base);
- }
- 
 +#ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
-+
- static int __devinit mmio_resource_enabled(struct pci_dev *pdev, int idx)
+ static inline int io_type_enabled(struct pci_dev *pdev, unsigned int mask)
  {
- 	return pci_resource_start(pdev, idx) && mmio_enabled(pdev);
-@@ -971,3 +986,4 @@ static void __devinit quirk_usb_early_ha
+ 	u16 cmd;
+@@ -971,3 +985,4 @@ static void __devinit quirk_usb_early_ha
  }
  DECLARE_PCI_FIXUP_CLASS_FINAL(PCI_ANY_ID, PCI_ANY_ID,
  			PCI_CLASS_SERIAL_USB, 8, quirk_usb_early_handoff);
