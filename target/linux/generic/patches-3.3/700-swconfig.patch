@@ -27,3 +27,13 @@
  obj-$(CONFIG_MARVELL_PHY)	+= marvell.o
  obj-$(CONFIG_DAVICOM_PHY)	+= davicom.o
  obj-$(CONFIG_CICADA_PHY)	+= cicada.o
+--- a/include/linux/Kbuild
++++ b/include/linux/Kbuild
+@@ -354,6 +354,7 @@ header-y += stddef.h
+ header-y += string.h
+ header-y += suspend_ioctls.h
+ header-y += swab.h
++header-y += switch.h
+ header-y += synclink.h
+ header-y += sysctl.h
+ header-y += taskstats.h
