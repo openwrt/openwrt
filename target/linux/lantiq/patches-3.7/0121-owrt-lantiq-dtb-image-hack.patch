@@ -1,0 +1,44 @@
+From d8f83a608bc854dbbe6b2ea5436e9b34516af8e4 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 6 Dec 2012 16:09:08 +0100
+Subject: [PATCH 121/123] owrt: lantiq dtb image hack
+
+---
+ arch/mips/lantiq/prom.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+Index: linux-3.7-rc8/arch/mips/lantiq/prom.c
+===================================================================
+--- linux-3.7-rc8.orig/arch/mips/lantiq/prom.c	2012-12-14 23:08:36.451576994 +0100
++++ linux-3.7-rc8/arch/mips/lantiq/prom.c	2012-12-14 23:08:36.607576999 +0100
+@@ -72,6 +72,8 @@
+ 	return 0;
+ }
+ 
++extern struct boot_param_header __image_dtb;
++
+ void __init plat_mem_setup(void)
+ {
+ 	ioport_resource.start = IOPORT_RESOURCE_START;
+@@ -85,7 +87,7 @@
+ 	 * Load the builtin devicetree. This causes the chosen node to be
+ 	 * parsed resulting in our memory appearing
+ 	 */
+-	__dt_setup_arch(&__dtb_start);
++	__dt_setup_arch(&__image_dtb);
+ 
+ 	of_scan_flat_dt(early_init_dt_scan_model, NULL);
+ }
+Index: linux-3.7-rc8/arch/mips/lantiq/Makefile
+===================================================================
+--- linux-3.7-rc8.orig/arch/mips/lantiq/Makefile	2012-12-14 23:08:36.459576996 +0100
++++ linux-3.7-rc8/arch/mips/lantiq/Makefile	2012-12-15 01:40:16.519805129 +0100
+@@ -6,8 +6,6 @@
+ 
+ obj-y := irq.o clk.o prom.o
+ 
+-obj-y += dts/
+-
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+ obj-$(CONFIG_SOC_TYPE_XWAY) += xway/

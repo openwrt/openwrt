@@ -1,0 +1,139 @@
+From 72112b91624dca6c636bd3a592471642d3988b27 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 20 Jul 2012 19:09:01 +0200
+Subject: [PATCH 111/123] MTD: MIPS: lantiq: Add NAND support on Lantiq FALCON
+ SoC.
+
+The driver uses plat_nand. As the platform_device is loaded from DT, we need
+to lookup the node and attach our falocn specific "struct platform_nand_data"
+to it.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Cc: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+Cc: linux-mtd@lists.infradead.org
+---
+ drivers/mtd/nand/Kconfig       |    8 ++++
+ drivers/mtd/nand/Makefile      |    1 +
+ drivers/mtd/nand/falcon_nand.c |   82 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 91 insertions(+)
+ create mode 100644 drivers/mtd/nand/falcon_nand.c
+
+diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
+index 4883139..a3b05be 100644
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -572,4 +572,12 @@ config MTD_NAND_XWAY
+ 	  Enables support for NAND Flash chips on Lantiq XWAY SoCs. NAND is attached
+ 	  to the External Bus Unit (EBU).
+ 
++config MTD_NAND_FALCON
++	tristate "Support for NAND on Lantiq FALC-ON SoC"
++	depends on LANTIQ && SOC_FALCON
++	select MTD_NAND_PLATFORM
++	help
++	  Enables support for NAND Flash chips on Lantiq FALC-ON SoCs. NAND is
++	  attached to the External Bus Unit (EBU).
++
+ endif # MTD_NAND
+diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
+index 2cbd091..a97e1b5 100644
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -53,5 +53,6 @@ obj-$(CONFIG_MTD_NAND_RICOH)		+= r852.o
+ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740_nand.o
+ obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
+ obj-$(CONFIG_MTD_NAND_XWAY)		+= xway_nand.o
++obj-$(CONFIG_MTD_NAND_FALCON)		+= falcon_nand.o
+ 
+ nand-objs := nand_base.o nand_bbt.o
+diff --git a/drivers/mtd/nand/falcon_nand.c b/drivers/mtd/nand/falcon_nand.c
+new file mode 100644
+index 0000000..b3b850c
+--- /dev/null
++++ b/drivers/mtd/nand/falcon_nand.c
+@@ -0,0 +1,82 @@
++/*
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published
++ * by the Free Software Foundation.
++ *
++ * Copyright (C) 2011 Thomas Langer <thomas.langer@lantiq.com>
++ * Copyright (C) 2011 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/mtd/nand.h>
++#include <linux/of_platform.h>
++
++#include <lantiq_soc.h>
++
++/* nand flash */
++/* address lines used for NAND control signals */
++#define NAND_ADDR_ALE		0x10000
++#define NAND_ADDR_CLE		0x20000
++/* Ready/Busy Status */
++#define MODCON_STS		0x0002
++/* Ready/Busy Status Edge */
++#define MODCON_STSEDGE		0x0004
++#define LTQ_EBU_MODCON		0x000C
++
++static const char *part_probes[] = { "cmdlinepart", "ofpart", NULL };
++
++static int falcon_nand_ready(struct mtd_info *mtd)
++{
++	u32 modcon = ltq_ebu_r32(LTQ_EBU_MODCON);
++
++	return (((modcon & (MODCON_STS | MODCON_STSEDGE)) ==
++						(MODCON_STS | MODCON_STSEDGE)));
++}
++
++static void falcon_hwcontrol(struct mtd_info *mtd, int cmd, unsigned int ctrl)
++{
++	struct nand_chip *this = mtd->priv;
++	unsigned long nandaddr = (unsigned long) this->IO_ADDR_W;
++
++	if (ctrl & NAND_CTRL_CHANGE) {
++		nandaddr &= ~(NAND_ADDR_ALE | NAND_ADDR_CLE);
++
++		if (ctrl & NAND_CLE)
++			nandaddr |= NAND_ADDR_CLE;
++		if (ctrl & NAND_ALE)
++			nandaddr |= NAND_ADDR_ALE;
++
++		this->IO_ADDR_W = (void __iomem *) nandaddr;
++	}
++
++	if (cmd != NAND_CMD_NONE)
++		writeb(cmd, this->IO_ADDR_W);
++}
++
++static struct platform_nand_data falcon_nand_data = {
++	.chip = {
++		.nr_chips		= 1,
++		.chip_delay		= 25,
++		.part_probe_types	= part_probes,
++	},
++	.ctrl = {
++		.cmd_ctrl		= falcon_hwcontrol,
++		.dev_ready		= falcon_nand_ready,
++	}
++};
++
++static int __init falcon_register_nand(void)
++{
++	struct device_node *node;
++	struct platform_device *pdev;
++
++	node = of_find_compatible_node(NULL, NULL, "lantiq,nand-falcon");
++	if (!node)
++		return -1;
++	pdev = of_find_device_by_node(node);
++	if (pdev)
++		pdev->dev.platform_data = &falcon_nand_data;
++	of_node_put(node);
++	return 0;
++}
++
++arch_initcall(falcon_register_nand);
+-- 
+1.7.10.4
+

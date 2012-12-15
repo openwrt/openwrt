@@ -1,0 +1,92 @@
+From 84ce6d4b2802fd428a76e5f2692fd4c102ed35ea Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 30 Nov 2012 21:11:22 +0100
+Subject: [PATCH 107/123] PINCTRL: lantiq: pinconf uses port instead of pin
+
+The XWAY pinctrl driver invalidly uses the port and not the pin number to work
+out the registeres and bits to be set for the opendrain and pullup/down
+resistors.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/pinctrl/pinctrl-xway.c |   28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
+index b9bcaec..48ab09b 100644
+--- a/drivers/pinctrl/pinctrl-xway.c
++++ b/drivers/pinctrl/pinctrl-xway.c
+@@ -441,17 +441,17 @@ static int xway_pinconf_get(struct pinctrl_dev *pctldev,
+ 		if (port == PORT3)
+ 			reg = GPIO3_OD;
+ 		else
+-			reg = GPIO_OD(port);
++			reg = GPIO_OD(pin);
+ 		*config = LTQ_PINCONF_PACK(param,
+-			!!gpio_getbit(info->membase[0], reg, PORT_PIN(port)));
++			!!gpio_getbit(info->membase[0], reg, PORT_PIN(pin)));
+ 		break;
+ 
+ 	case LTQ_PINCONF_PARAM_PULL:
+ 		if (port == PORT3)
+ 			reg = GPIO3_PUDEN;
+ 		else
+-			reg = GPIO_PUDEN(port);
+-		if (!gpio_getbit(info->membase[0], reg, PORT_PIN(port))) {
++			reg = GPIO_PUDEN(pin);
++		if (!gpio_getbit(info->membase[0], reg, PORT_PIN(pin))) {
+ 			*config = LTQ_PINCONF_PACK(param, 0);
+ 			break;
+ 		}
+@@ -459,8 +459,8 @@ static int xway_pinconf_get(struct pinctrl_dev *pctldev,
+ 		if (port == PORT3)
+ 			reg = GPIO3_PUDSEL;
+ 		else
+-			reg = GPIO_PUDSEL(port);
+-		if (!gpio_getbit(info->membase[0], reg, PORT_PIN(port)))
++			reg = GPIO_PUDSEL(pin);
++		if (!gpio_getbit(info->membase[0], reg, PORT_PIN(pin)))
+ 			*config = LTQ_PINCONF_PACK(param, 2);
+ 		else
+ 			*config = LTQ_PINCONF_PACK(param, 1);
+@@ -488,29 +488,29 @@ static int xway_pinconf_set(struct pinctrl_dev *pctldev,
+ 		if (port == PORT3)
+ 			reg = GPIO3_OD;
+ 		else
+-			reg = GPIO_OD(port);
+-		gpio_setbit(info->membase[0], reg, PORT_PIN(port));
++			reg = GPIO_OD(pin);
++		gpio_setbit(info->membase[0], reg, PORT_PIN(pin));
+ 		break;
+ 
+ 	case LTQ_PINCONF_PARAM_PULL:
+ 		if (port == PORT3)
+ 			reg = GPIO3_PUDEN;
+ 		else
+-			reg = GPIO_PUDEN(port);
++			reg = GPIO_PUDEN(pin);
+ 		if (arg == 0) {
+-			gpio_clearbit(info->membase[0], reg, PORT_PIN(port));
++			gpio_clearbit(info->membase[0], reg, PORT_PIN(pin));
+ 			break;
+ 		}
+-		gpio_setbit(info->membase[0], reg, PORT_PIN(port));
++		gpio_setbit(info->membase[0], reg, PORT_PIN(pin));
+ 
+ 		if (port == PORT3)
+ 			reg = GPIO3_PUDSEL;
+ 		else
+-			reg = GPIO_PUDSEL(port);
++			reg = GPIO_PUDSEL(pin);
+ 		if (arg == 1)
+-			gpio_clearbit(info->membase[0], reg, PORT_PIN(port));
++			gpio_clearbit(info->membase[0], reg, PORT_PIN(pin));
+ 		else if (arg == 2)
+-			gpio_setbit(info->membase[0], reg, PORT_PIN(port));
++			gpio_setbit(info->membase[0], reg, PORT_PIN(pin));
+ 		else
+ 			dev_err(pctldev->dev, "Invalid pull value %d\n", arg);
+ 		break;
+-- 
+1.7.10.4
+

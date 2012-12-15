@@ -1,0 +1,439 @@
+From 4d77ad216ad86b3b25c196a189fa28f3e53c3ffd Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 30 Nov 2012 21:32:00 +0100
+Subject: [PATCH 101/123] MIPS: lantiq: adds support for SVIP SoC Family
+
+---
+ arch/mips/kernel/cevt-r4k.c     |    4 +-
+ arch/mips/lantiq/Kconfig        |    4 ++
+ arch/mips/lantiq/Makefile       |    1 +
+ arch/mips/lantiq/Platform       |    1 +
+ arch/mips/lantiq/clk.c          |    7 +++
+ arch/mips/lantiq/clk.h          |    4 ++
+ arch/mips/lantiq/svip/Makefile  |    1 +
+ arch/mips/lantiq/svip/clk.c     |   70 ++++++++++++++++++++++++++
+ arch/mips/lantiq/svip/prom.c    |   43 ++++++++++++++++
+ arch/mips/lantiq/svip/reset.c   |  105 +++++++++++++++++++++++++++++++++++++++
+ arch/mips/lantiq/svip/sysctrl.c |   81 ++++++++++++++++++++++++++++++
+ 11 files changed, 320 insertions(+), 1 deletion(-)
+ create mode 100644 arch/mips/lantiq/svip/Makefile
+ create mode 100644 arch/mips/lantiq/svip/clk.c
+ create mode 100644 arch/mips/lantiq/svip/prom.c
+ create mode 100644 arch/mips/lantiq/svip/reset.c
+ create mode 100644 arch/mips/lantiq/svip/sysctrl.c
+
+diff --git a/arch/mips/kernel/cevt-r4k.c b/arch/mips/kernel/cevt-r4k.c
+index 7532392..06b45e4 100644
+--- a/arch/mips/kernel/cevt-r4k.c
++++ b/arch/mips/kernel/cevt-r4k.c
+@@ -176,8 +176,10 @@ int __cpuinit r4k_clockevent_init(void)
+ 	if (!cpu_has_counter || !mips_hpt_frequency)
+ 		return -ENXIO;
+ 
+-	if (!c0_compare_int_usable())
++	if (!c0_compare_int_usable()) {
++		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
+ 		return -ENXIO;
++	}
+ 
+ 	/*
+ 	 * With vectored interrupts things are getting platform specific.
+diff --git a/arch/mips/lantiq/Kconfig b/arch/mips/lantiq/Kconfig
+index c002191..edeb58c 100644
+--- a/arch/mips/lantiq/Kconfig
++++ b/arch/mips/lantiq/Kconfig
+@@ -22,6 +22,10 @@ config SOC_FALCON
+ 	bool "FALCON"
+ 	select PINCTRL_FALCON
+ 
++config SOC_SVIP
++	bool "SVIP"
++	select MIPS_CPU_SCACHE
++
+ endchoice
+ 
+ choice
+diff --git a/arch/mips/lantiq/Makefile b/arch/mips/lantiq/Makefile
+index d6bdc57..edeb30b 100644
+--- a/arch/mips/lantiq/Makefile
++++ b/arch/mips/lantiq/Makefile
+@@ -12,3 +12,4 @@ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+ obj-$(CONFIG_SOC_TYPE_XWAY) += xway/
+ obj-$(CONFIG_SOC_FALCON) += falcon/
++obj-$(CONFIG_SOC_SVIP) += svip/
+diff --git a/arch/mips/lantiq/Platform b/arch/mips/lantiq/Platform
+index b3ec498..857548c 100644
+--- a/arch/mips/lantiq/Platform
++++ b/arch/mips/lantiq/Platform
+@@ -7,3 +7,4 @@ cflags-$(CONFIG_LANTIQ)		+= -I$(srctree)/arch/mips/include/asm/mach-lantiq
+ load-$(CONFIG_LANTIQ)		= 0xffffffff80002000
+ cflags-$(CONFIG_SOC_TYPE_XWAY)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/xway
+ cflags-$(CONFIG_SOC_FALCON)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/falcon
++cflags-$(CONFIG_SOC_SVIP)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/svip
+diff --git a/arch/mips/lantiq/clk.c b/arch/mips/lantiq/clk.c
+index ce2f129..9128ff8 100644
+--- a/arch/mips/lantiq/clk.c
++++ b/arch/mips/lantiq/clk.c
+@@ -163,8 +163,15 @@ void __init plat_time_init(void)
+ 	ltq_soc_init();
+ 
+ 	clk = clk_get_cpu();
++#ifdef CONFIG_SOC_SVIP
++	mips_hpt_frequency = ltq_svip_cpu_hz() / get_counter_resolution();
++	write_c0_count(0);
++	write_c0_compare(mips_hpt_frequency / HZ);
++	enable_irq(MIPS_CPU_TIMER_IRQ);
++#else
+ 	mips_hpt_frequency = clk_get_rate(clk) / get_counter_resolution();
+ 	write_c0_compare(read_c0_count());
++#endif
+ 	pr_info("CPU Clock: %ldMHz\n", clk_get_rate(clk) / 1000000);
+ 	clk_put(clk);
+ }
+diff --git a/arch/mips/lantiq/clk.h b/arch/mips/lantiq/clk.h
+index fa67060..c169e2b 100644
+--- a/arch/mips/lantiq/clk.h
++++ b/arch/mips/lantiq/clk.h
+@@ -75,4 +75,8 @@ extern unsigned long ltq_ar9_fpi_hz(void);
+ extern unsigned long ltq_vr9_cpu_hz(void);
+ extern unsigned long ltq_vr9_fpi_hz(void);
+ 
++extern unsigned long ltq_svip_cpu_hz(void);
++extern unsigned long ltq_svip_fpi_hz(void);
++extern unsigned long ltq_svip_io_hz(void);
++
+ #endif
+diff --git a/arch/mips/lantiq/svip/Makefile b/arch/mips/lantiq/svip/Makefile
+new file mode 100644
+index 0000000..74308b2
+--- /dev/null
++++ b/arch/mips/lantiq/svip/Makefile
+@@ -0,0 +1 @@
++obj-y := prom.o reset.o sysctrl.o clk.o
+diff --git a/arch/mips/lantiq/svip/clk.c b/arch/mips/lantiq/svip/clk.c
+new file mode 100644
+index 0000000..3a7b665
+--- /dev/null
++++ b/arch/mips/lantiq/svip/clk.c
+@@ -0,0 +1,70 @@
++/*
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ *
++ *  Copyright (C) 2010 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/io.h>
++#include <linux/export.h>
++#include <linux/init.h>
++#include <linux/clk.h>
++
++#include <asm/time.h>
++#include <asm/irq.h>
++#include <asm/div64.h>
++
++#include <lantiq_soc.h>
++
++#include "../clk.h"
++
++#define STATUS_CONFIG_CLK_MODE		(0x1 << 1)
++#define STATUS_CONFIG_CLK_MODE_GET(val)	((((val) & STATUS_CONFIG_CLK_MODE) >> 4) & 0x1)
++#define STATUS_CONFIG			0x0010
++
++#define SYS0_PLL1CR_PLLDIV		(0x3)
++#define SYS0_PLL1CR_PLLDIV_GET(val)	((((val) & SYS0_PLL1CR_PLLDIV) >> 0) & 0x3)
++#define SYS0_PLL1CR			0x0008
++
++#define SYS1_FPICR_FPIDIV		(0x1)
++#define SYS1_FPICR_FPIDIV_GET(val)	((((val) & SYS1_FPICR_FPIDIV) >> 0) & 0x1)
++#define SYS1_FPICR			0x0014
++
++unsigned long ltq_svip_io_hz(void)
++{
++	return 200000000; /* 200 MHz */
++}
++
++unsigned long ltq_svip_cpu_hz(void)
++{
++	/* Magic BootROM speed location... */
++	if ((*(u32 *)0x9fc07ff0) == 1)
++		return *(u32 *)0x9fc07ff4;
++
++	if (STATUS_CONFIG_CLK_MODE_GET(ltq_status_r32(STATUS_CONFIG)) == 1) {
++	/* xT16 */
++		return 393216000;
++	} else {
++		switch (SYS0_PLL1CR_PLLDIV_GET(ltq_sys0_r32(SYS0_PLL1CR))) {
++		case 3:
++			return 475000000;
++		case 2:
++			return 450000000;
++		case 1:
++			return 425000000;
++		default:
++			break;
++		}
++	}
++	return 400000000;
++}
++
++unsigned long ltq_svip_fpi_hz(void)
++{
++	u32 fbs0_div[2] = {4, 8};
++	u32 div;
++
++	div = SYS1_FPICR_FPIDIV_GET(ltq_sys1_r32(SYS1_FPICR));
++	return ltq_svip_cpu_hz() / fbs0_div[div];
++}
+diff --git a/arch/mips/lantiq/svip/prom.c b/arch/mips/lantiq/svip/prom.c
+new file mode 100644
+index 0000000..01d2018
+--- /dev/null
++++ b/arch/mips/lantiq/svip/prom.c
+@@ -0,0 +1,43 @@
++/*
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published
++ * by the Free Software Foundation.
++ *
++ * Copyright (C) 2012 Thomas Langer <thomas.langer@lantiq.com>
++ * Copyright (C) 2012 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/kernel.h>
++#include <asm/io.h>
++
++#include <lantiq_soc.h>
++
++#include "../prom.h"
++
++#define SOC_SVIP	"SVIP"
++
++#define COMP_SVIP	"lantiq,svip"
++
++#define PART_SHIFT	12
++#define PART_MASK	0x0FFFF000
++#define REV_SHIFT	28
++#define REV_MASK	0xF0000000
++
++void __init ltq_soc_detect(struct ltq_soc_info *i)
++{
++	i->partnum = (ltq_r32(LTQ_STATUS_CHIPID) & PART_MASK) >> PART_SHIFT;
++	i->rev = (ltq_r32(LTQ_STATUS_CHIPID) & REV_MASK) >> REV_SHIFT;
++	sprintf(i->rev_type, "1.%d", i->rev);
++
++	switch (i->partnum) {
++	case SOC_ID_SVIP:
++		i->name = SOC_SVIP;
++		i->type = SOC_TYPE_SVIP;
++		i->compatible = COMP_SVIP;
++		break;
++
++	default:
++		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++		break;
++	}
++}
+diff --git a/arch/mips/lantiq/svip/reset.c b/arch/mips/lantiq/svip/reset.c
+new file mode 100644
+index 0000000..4b41dd1
+--- /dev/null
++++ b/arch/mips/lantiq/svip/reset.c
+@@ -0,0 +1,105 @@
++/*
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ *
++ *  Copyright (C) 2012 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/ioport.h>
++#include <linux/pm.h>
++#include <linux/module.h>
++#include <asm/reboot.h>
++
++#include <lantiq_soc.h>
++
++#define CPLD_CMDREG3  ((volatile unsigned char*)(KSEG1 + 0x120000f3))
++
++#define LTQ_EBU_ADDRSEL2	0x0028
++#define LTQ_EBU_BUSCON2         0x0068
++#define LTQ_BOOT_CPU_OFFSET	0x20
++
++#define LTQ_L2_SPRAM_BASE	(KSEG1 + 0x1F1E8000)
++#define LTQ_BOOT_RVEC(cpu)	(volatile u32*)(LTQ_L2_SPRAM_BASE + \
++				(cpu * LTQ_BOOT_CPU_OFFSET))
++
++#define SYS0_BCR		0x0004
++#define BMODE_SHIFT		16
++#define BMODE_MASK		0x1f
++
++#define SYS1_CLKCLR		0x0008
++#define SYS1_RREQR		0x0044
++#define SYS1_RRLSR		0x0048
++#define SYS1_RBTR		0x004c
++#define SYS1_CPU0RSR		0x0060
++#define SYS1_CPU0RSR_MASK	0x0007
++
++/* This function is used by the watchdog driver */
++int ltq_reset_cause(void)
++{
++	return ltq_sys1_r32(SYS1_CPU0RSR) & SYS1_CPU0RSR_MASK;
++}
++EXPORT_SYMBOL_GPL(ltq_reset_cause);
++
++/* allow platform code to find out what source we booted from */
++unsigned char ltq_boot_select(void)
++{
++	return (ltq_sys0_r32(SYS0_BCR) >> BMODE_SHIFT) & BMODE_MASK;
++}
++
++static void ltq_machine_restart(char *command)
++{
++	local_irq_disable();
++	if (/*mips_machtype == LANTIQ_MACH_EASY33016 ||
++	    mips_machtype == LANTIQ_MACH_EASY336)*/
++	    1) {
++		/* We just use the CPLD function to reset the entire system as a
++		   workaround for the switch reset problem */
++		local_irq_disable();
++		ltq_ebu_w32(0x120000f1, LTQ_EBU_ADDRSEL2);
++		ltq_ebu_w32(0x404027ff, LTQ_EBU_BUSCON2);
++
++		if (/*mips_machtype == LANTIQ_MACH_EASY336*/
++			0)
++			/* set bit 0 to reset SVIP */
++			*CPLD_CMDREG3 = (1<<0);
++		else
++			/* set bit 7 to reset SVIP, set bit 3 to reset xT */
++			*CPLD_CMDREG3 = (1<<7) | (1<<3);
++	} else {
++		*LTQ_BOOT_RVEC(0) = 0;
++		/* reset all except PER, SUBSYS and CPU0 */
++		ltq_sys1_w32(0x00043F3E, SYS1_RREQR);
++		/* release WDT0 reset */
++		ltq_sys1_w32(0x00000100, SYS1_RRLSR);
++		/* restore reset value for clock enables */
++		ltq_sys1_w32(~0x0c000040, SYS1_CLKCLR);
++		/* reset SUBSYS (incl. DDR2) and CPU0 */
++		ltq_sys1_w32(0x00030001, SYS1_RBTR);
++	}
++
++	unreachable();
++}
++
++static void ltq_machine_halt(void)
++{
++	local_irq_disable();
++	unreachable();
++}
++
++static void ltq_machine_power_off(void)
++{
++	local_irq_disable();
++}
++
++static int __init mips_reboot_setup(void)
++{
++	_machine_restart = ltq_machine_restart;
++	_machine_halt = ltq_machine_halt;
++	pm_power_off = ltq_machine_power_off;
++	return 0;
++}
++
++arch_initcall(mips_reboot_setup);
+diff --git a/arch/mips/lantiq/svip/sysctrl.c b/arch/mips/lantiq/svip/sysctrl.c
+new file mode 100644
+index 0000000..d2b636b
+--- /dev/null
++++ b/arch/mips/lantiq/svip/sysctrl.c
+@@ -0,0 +1,81 @@
++/*
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ *
++ *  Copyright (C) 2011-2012 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/ioport.h>
++#include <linux/export.h>
++#include <linux/clkdev.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/of_address.h>
++
++#include <lantiq_soc.h>
++
++#include "../clk.h"
++#include "../prom.h"
++
++void __iomem *ltq_sys0_membase;
++void __iomem *ltq_sys1_membase;
++void __iomem *ltq_sys2_membase;
++void __iomem *ltq_status_membase;
++void __iomem *ltq_ebu_membase;
++
++/* bring up all register ranges that we need for basic system control */
++void __init ltq_soc_init(void)
++{
++	struct resource res_sys0, res_sys1, res_sys2, res_status, res_ebu;
++	struct device_node *np_sys0 =
++			of_find_compatible_node(NULL, NULL, "lantiq,sys0-svip");
++	struct device_node *np_sys1 =
++			of_find_compatible_node(NULL, NULL, "lantiq,sys1-svip");
++	struct device_node *np_sys2 =
++			of_find_compatible_node(NULL, NULL, "lantiq,sys2-svip");
++	struct device_node *np_status =
++			of_find_compatible_node(NULL, NULL, "lantiq,status-svip");
++	struct device_node *np_ebu =
++			of_find_compatible_node(NULL, NULL, "lantiq,ebu-svip");
++
++	/* check if all the core register ranges are available */
++	if (!np_sys0 || !np_sys1 || !np_sys2 || !np_status || !np_ebu)
++		panic("Failed to load core nodes from devicetree");
++
++	if (of_address_to_resource(np_sys0, 0, &res_sys0) ||
++			of_address_to_resource(np_sys1, 0, &res_sys1) ||
++			of_address_to_resource(np_sys2, 0, &res_sys2) ||
++			of_address_to_resource(np_status, 0, &res_status) ||
++			of_address_to_resource(np_ebu, 0, &res_ebu))
++		panic("Failed to get core resources");
++
++	if ((request_mem_region(res_sys0.start, resource_size(&res_sys0),
++				res_sys0.name) < 0) ||
++		(request_mem_region(res_sys1.start, resource_size(&res_sys1),
++				res_sys1.name) < 0) ||
++		(request_mem_region(res_sys2.start, resource_size(&res_sys2),
++				res_sys2.name) < 0) ||
++		(request_mem_region(res_status.start, resource_size(&res_status),
++				res_status.name) < 0) ||
++		(request_mem_region(res_ebu.start, resource_size(&res_ebu),
++				res_ebu.name) < 0))
++		pr_err("Failed to request core reources");
++
++	ltq_sys0_membase = ioremap_nocache(res_sys0.start,
++						resource_size(&res_sys0));
++	ltq_sys1_membase = ioremap_nocache(res_sys1.start,
++						resource_size(&res_sys1));
++	ltq_sys2_membase = ioremap_nocache(res_sys2.start,
++						resource_size(&res_sys2));
++	ltq_status_membase = ioremap_nocache(res_status.start,
++						resource_size(&res_status));
++	ltq_ebu_membase = ioremap_nocache(res_ebu.start,
++						resource_size(&res_ebu));
++	if (!ltq_sys0_membase || !ltq_sys1_membase || !ltq_sys2_membase ||
++			!ltq_status_membase || !ltq_ebu_membase)
++		panic("Failed to remap core resources");
++
++	clkdev_add_static(ltq_svip_cpu_hz(), ltq_svip_fpi_hz(),
++				ltq_svip_io_hz());
++}
+-- 
+1.7.10.4
+

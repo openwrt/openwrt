@@ -1,0 +1,52 @@
+From 05d6c964722224e8cf2902606744e29a835e7d5f Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 3 Dec 2012 21:35:01 +0100
+Subject: [PATCH 102/123] MIPS: lantiq: add GPHY clock gate bits
+
+Explicitly enable the clock gate of the internal GPHYs found on xrx200.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/lantiq/xway/reset.c   |    9 +++++++++
+ arch/mips/lantiq/xway/sysctrl.c |    1 +
+ 2 files changed, 10 insertions(+)
+
+diff --git a/arch/mips/lantiq/xway/reset.c b/arch/mips/lantiq/xway/reset.c
+index 544dbb7..1fa0f17 100644
+--- a/arch/mips/lantiq/xway/reset.c
++++ b/arch/mips/lantiq/xway/reset.c
+@@ -78,10 +78,19 @@ static struct ltq_xrx200_gphy_reset {
+ /* reset and boot a gphy. these phys only exist on xrx200 SoC */
+ int xrx200_gphy_boot(struct device *dev, unsigned int id, dma_addr_t dev_addr)
+ {
++	struct clk *clk;
++
+ 	if (!of_device_is_compatible(ltq_rcu_np, "lantiq,rcu-xrx200")) {
+ 		dev_err(dev, "this SoC has no GPHY\n");
+ 		return -EINVAL;
+ 	}
++
++	clk = clk_get_sys("1f203000.rcu", "gphy");
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
++
++	clk_enable(clk);
++
+ 	if (id > 1) {
+ 		dev_err(dev, "%u is an invalid gphy id\n", id);
+ 		return -EINVAL;
+diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
+index 3925e66..6e0e135 100644
+--- a/arch/mips/lantiq/xway/sysctrl.c
++++ b/arch/mips/lantiq/xway/sysctrl.c
+@@ -374,6 +374,7 @@ void __init ltq_soc_init(void)
+ 				PMU_SWITCH | PMU_PPE_DPLUS | PMU_PPE_DPLUM |
+ 				PMU_PPE_EMA | PMU_PPE_TC | PMU_PPE_SLL01 |
+ 				PMU_PPE_QSB | PMU_PPE_TOP);
++		clkdev_add_pmu("1f203000.rcu", "gphy", 0, PMU_GPHY);
+ 	} else if (of_machine_is_compatible("lantiq,ar9")) {
+ 		clkdev_add_static(ltq_ar9_cpu_hz(), ltq_ar9_fpi_hz(),
+ 				ltq_ar9_fpi_hz());
+-- 
+1.7.10.4
+
