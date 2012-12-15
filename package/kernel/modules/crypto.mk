@@ -60,6 +60,17 @@ define KernelPackage/crypto-manager
 endef
 $(eval $(call KernelPackage,crypto-manager))
 
+define KernelPackage/crypto-pcompress
+  TITLE:=CryptoAPI Partial (de)compression operations
+  KCONFIG:= \
+	CONFIG_CRYPTO_PCOMP=y \
+	CONFIG_CRYPTO_PCOMP2
+  FILES:=$(LINUX_DIR)/crypto/pcompress.ko
+  AUTOLOAD:=$(call AutoLoad,09,pcompress)
+  $(call AddDepends/crypto)
+endef
+$(eval $(call KernelPackage,crypto-pcompress))
+
 define KernelPackage/crypto-user
   TITLE:=CryptoAPI userspace interface
   DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager
