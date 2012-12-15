@@ -9,3 +9,13 @@
  			AC_SUBST([KERNEL_BUILD_PATH],[$enableval])
  		else
  			AC_MSG_ERROR([The kernel build directory is not valid or not configured!])
+--- a/src/linux/ifxos_linux_thread_drv.c
++++ b/src/linux/ifxos_linux_thread_drv.c
+@@ -34,7 +34,6 @@
+ #include <linux/sched.h>
+ #include <linux/version.h>
+ #include <linux/completion.h>
+-#include <linux/smp_lock.h>
+ #include <linux/signal.h>
+ 
+ 
