@@ -1,0 +1,179 @@
+/include/ "ar9.dtsi"
+
+/ {
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
+
+	memory@0 {
+		reg = <0x0 0x4000000>;
+	};
+
+	fpi@10000000 {
+		gpio: pinmux@E100B10 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			state_default: pinmux {
+				exin {
+					lantiq,groups = "exin1";
+					lantiq,function = "exin";
+				};
+				pci {
+					lantiq,groups = "gnt1", "req1";
+					lantiq,function = "pci";
+				};
+				pci-in {
+					lantiq,groups = "req1";
+					lantiq,output = <0>;
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+				};
+				pci-out {
+					lantiq,groups = "gnt1";
+					lantiq,output = <1>;
+					lantiq,pull = <0>;
+				};
+				spi-in {
+					lantiq,pins = "io16";
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+				};
+				spi-out {
+					lantiq,pins = "io10", "io17", "io18", "io21";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+				};
+			};
+		};
+
+		etop@E180000 {
+			phy-mode = "mii";
+			mac-address = [ 00 11 22 33 44 55 ];
+		};
+
+		ifxhcd@E101000 {
+			status = "okay";
+		};
+
+		pci@E105400 {
+			status = "okay";
+
+			lantiq,bus-clock = <33333333>;
+			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
+			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
+			gpio-reset = <&gpio 21 0>;
+			req-mask = <0x1>; /* GNT1 */
+		};
+	};
+
+	spi {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "spi-gpio";
+		
+		gpio-miso = <&gpio 16 0>;
+		gpio-mosi = <&gpio 17 0>;
+		gpio-sck = <&gpio 18 0>;
+		num-chipselects = <1>;
+		cs-gpios = <&gpio 10 0>;
+
+		m25p80@0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "s25fl129p0";
+			reg = <0 0>;
+			linux,modalias = "m25p80", "mx25l3205d";
+			spi-max-frequency = <1000000>;
+			spi-cpha;
+			spi-cpol;
+			spi-cs-high;
+
+			partition@0 {
+				reg = <0x0 0x10000>;
+				label = "uboot";
+				read-only;
+			};
+
+			partition@10000 {
+				reg = <0x10000 0x10000>;
+				label = "uboot-env";
+				read-only;
+			};
+
+			partition@20000 {
+				reg = <0x20000 0x10000>;
+				label = "calibration";
+				read-only;
+			};
+
+			partition@50000 {
+				reg = <0x50000 0xfa0000>;
+				label = "linux";
+			};
+		};
+	};
+
+	rtl8366rb {
+		compatible = "rtl8366rb";
+		gpio-sda = <&gpio 35 0>;
+		gpio-sck = <&gpio 37 0>;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+		
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 36 1>;
+			linux,code = <0xf7>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio 54 1>;
+			linux,code = <0x211>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio 53 1>;
+			linux,code = <0x100>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		internet {
+			label = "inernet";
+			gpios = <&gpio 2 1>;
+		};
+		dsl {
+			label = "dsl";
+			gpios = <&gpio 4 1>;
+		};
+		usb {
+			label = "usb";
+			gpios = <&gpio 22 1>;
+		};
+		power {
+			label = "power";
+			gpios = <&gpio 34 1>;
+			default-state = "on";
+		};
+		power2 {
+			label = "power2";
+			gpios = <&gpio 39 1>;
+		};
+		wifi {
+			label = "wifi";
+			gpios = <&gpio 51 1>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio 52 1>;
+		};
+	};
+};
