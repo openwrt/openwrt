@@ -1,9 +1,7 @@
-#
-# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2009-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
-#
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -19,7 +17,9 @@ PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ltq-ifxos
-  SUBMENU:=Voice over IP
+  SECTION:=sys
+  CATEGORY:=Kernel modules
+  SUBMENU:=Libraries
   TITLE:=Lantiq OS abstraction library
   URL:=http://www.lantiq.com/
   DEPENDS:=@TARGET_lantiq
