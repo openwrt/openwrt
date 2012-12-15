@@ -305,6 +305,8 @@ static int ifxusb_driver_probe(struct platform_device *_pdev)
 	int retval = 0;
 	struct device_node *np;
 	int gpio_count;
+	u32 port_mask = 0x1;
+
 #ifdef __IS_DANUBE__
         np = of_find_compatible_node(NULL, NULL, "lantiq,ifxhcd-danube");
 #elif defined __IS_AMAZON_SE__
@@ -318,7 +320,7 @@ static int ifxusb_driver_probe(struct platform_device *_pdev)
 		dev_err(&_pdev->dev, "failed to find hcd device node\n");
 		return -ENODEV;
 	}
-
+	of_property_read_u32(np, "lantiq,portmask", &port_mask);
 	// Parsing and store the parameters
 	IFX_DEBUGPL(DBG_ENTRY, "%s() %d\n", __func__, __LINE__ );
 	parse_parms();
@@ -349,24 +351,27 @@ static int ifxusb_driver_probe(struct platform_device *_pdev)
 			ifxusb_hcd_1.dev=&_pdev->dev;
 			ifxusb_hcd_2.dev=&_pdev->dev;
 
-			retval = ifxusb_driver_probe_h(&ifxusb_hcd_1,
+			if (port_mask & 0x1) {
+				retval = ifxusb_driver_probe_h(&ifxusb_hcd_1,
 			                               IFXUSB1_IRQ,
 			                               IFXUSB1_IOMEM_BASE,
 			                               IFXUSB1_FIFOMEM_BASE,
 			                               IFXUSB1_FIFODBG_BASE
 			                               );
-			if(retval)
-				goto ifxusb_driver_probe_fail;
+				if(retval)
+					goto ifxusb_driver_probe_fail;
+			}
 
-			retval = ifxusb_driver_probe_h(&ifxusb_hcd_2,
+			if (port_mask & 0x2) {
+				retval = ifxusb_driver_probe_h(&ifxusb_hcd_2,
 			                               IFXUSB2_IRQ,
 			                               IFXUSB2_IOMEM_BASE,
 			                               IFXUSB2_FIFOMEM_BASE,
 			                               IFXUSB2_FIFODBG_BASE
 			                              );
-			if(retval)
-				goto ifxusb_driver_probe_fail;
-
+				if(retval)
+					goto ifxusb_driver_probe_fail;
+			}
 		#elif defined(__IS_FIRST__)
 			memset(&ifxusb_hcd, 0, sizeof(ifxhcd_hcd_t));
 
