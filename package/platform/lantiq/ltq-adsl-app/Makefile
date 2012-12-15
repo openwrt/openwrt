@@ -23,25 +23,24 @@ PKG_CONFIG_DEPENDS:=\
 	CONFIG_LTQ_DSL_ENABLE_SOAP \
 	CONFIG_LTQ_DSL_ENABLE_DSL_EVENT_POLLING
 
+PKG_BUILD_DEPENDS:=TARGET_lantiq_xway:kmod-ltq-adsl-danube TARGET_lantiq_ase:kmod-ltq-adsl-ase
+
 include $(INCLUDE_DIR)/package.mk
 
-PKG_BUILD_DEPENDS:=TARGET_lantiq_danube:kmod-ltq-dsl-danube TARGET_lantiq_ar9:kmod-ltq-dsl-ar9 \
-	TARGET_lantiq_vr9:kmod-ltq-dsl-vr9 TARGET_lantiq_ase:kmod-ltq-dsl-ase
-
-define Package/ltq-dsl-app
+define Package/ltq-adsl-app
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Lantiq DSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq&&!(TARGET_lantiq_falcon||TARGET_lantiq_falcon_stable) +libpthread
+  DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_ase) +libpthread
   MENU:=1
 endef
 
-define Package/ltq-dsl-app/description
+define Package/ltq-adsl-app/description
 	Infineon DSL CPE API for Amazon SE, Danube and Vinax.
 endef
 
-define Package/ltq-dsl-app/config
+define Package/ltq-adsl-app/config
 	source "$(SOURCE)/Config.in"
 endef
 
@@ -54,7 +53,7 @@ CONFIGURE_ARGS += \
 	--with-lines-per-device="$(LTQ_DSL_LINES_PER_DEVICE)" \
 	--with-channels-per-line="$(LTQ_DSL_CHANNELS_PER_LINE)" \
 	--enable-danube \
-	--enable-driver-include="-I$(STAGING_DIR)/usr/include" \
+	--enable-driver-include="-I$(STAGING_DIR)/usr/include/adsl/" \
 	--enable-debug-prints \
 	--enable-add-appl-cflags="-DMAX_CLI_PIPES=2" \
 	--enable-cli-support \
@@ -87,7 +86,7 @@ endif
 
 TARGET_CFLAGS += -I$(LINUX_DIR)/include
 
-define Package/ltq-dsl-app/install
+define Package/ltq-adsl-app/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/dsl_control $(1)/etc/init.d/
 
@@ -96,4 +95,4 @@ define Package/ltq-dsl-app/install
 	$(INSTALL_BIN) ./files/dsl_notify.sh $(1)/sbin
 endef
 
-$(eval $(call BuildPackage,ltq-dsl-app))
+$(eval $(call BuildPackage,ltq-adsl-app))
