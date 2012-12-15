@@ -15,9 +15,15 @@ P_XT:=netfilter/
 P_EBT:=bridge/netfilter/
 endif
 
+# 1: variable
+# 2: kconfig symbols
+# 3: file list
+# 4: version dependency
 define nf_add
- $(1)-$$($(2)) += $(3)
- KCONFIG_$(1) += $(2)
+ $(if $(4),ifeq ($$(strip $$(call CompareKernelPatchVer,$$(KERNEL_PATCHVER),$(firstword $(4)),$(lastword $(4)))),1))
+  $(1)-$$($(2)) += $(3)
+ $(if $(4),endif)
+ KCONFIG_$(1) = $(filter-out $(2),$(KCONFIG_$(1))) $(2)
 endef
 
 
@@ -37,11 +43,8 @@ $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MATCH_MAC, $(P_XT)xt_mac))
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MATCH_MULTIPORT, $(P_XT)xt_multiport))
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MATCH_COMMENT, $(P_XT)xt_comment))
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.4.0)),1)
-  $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_LOG, $(P_XT)xt_LOG))
-else
-  $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_LOG, $(P_V4)ipt_LOG))
-endif
+$(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_LOG, $(P_XT)xt_LOG, ge 3.4.0))
+$(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_LOG, $(P_V4)ipt_LOG, lt 3.4.0))
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_TCPMSS, $(P_XT)xt_TCPMSS))
 $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_REJECT, $(P_V4)ipt_REJECT))
 
@@ -156,11 +159,8 @@ $(eval $(call nf_add,IPT_IPV6,CONFIG_IP6_NF_TARGET_REJECT, $(P_V6)ip6t_REJECT))
 # nat
 
 # kernel only
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.7.0)),1)
-  $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_XT)nf_nat $(P_V4)iptable_nat),))
-else
-  $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_V4)nf_nat $(P_V4)iptable_nat),))
-endif
+$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_XT)nf_nat $(P_V4)iptable_nat, ge 3.7.0),))
+$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_V4)nf_nat $(P_V4)iptable_nat, lt 3.7.0),))
 
 # userland only
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_NAT,CONFIG_NF_NAT, ipt_SNAT ipt_DNAT)))
@@ -179,13 +179,10 @@ $(eval $(call nf_add,IPT_NAT_EXTRA,CONFIG_IP_NF_TARGET_REDIRECT, $(P_V4)ipt_REDI
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_IP_NF_NAT_FTP, $(P_V4)ip_nat_ftp))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_CONNTRACK_FTP, $(P_XT)nf_conntrack_ftp))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_CONNTRACK_IRC, $(P_XT)nf_conntrack_irc))
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.7.0)),1)
-  $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_FTP, $(P_XT)nf_nat_ftp))
-  $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_IRC, $(P_XT)nf_nat_irc))
-else
-  $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_FTP, $(P_V4)nf_nat_ftp))
-  $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_IRC, $(P_V4)nf_nat_irc))
-endif
+$(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_FTP, $(P_XT)nf_nat_ftp, ge 3.7.0))
+$(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_IRC, $(P_XT)nf_nat_irc, ge 3.7.0))
+$(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_FTP, $(P_V4)nf_nat_ftp, lt 3.7.0))
+$(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_IRC, $(P_V4)nf_nat_irc, lt 3.7.0))
 
 
 # nathelper-extra
