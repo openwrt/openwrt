@@ -15,6 +15,7 @@
 #include <linux/gpio.h>
 #include <linux/spinlock.h>
 #include <linux/skbuff.h>
+#include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/of_gpio.h>
 #include <linux/rtl8366.h>
@@ -1389,7 +1390,7 @@ int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi *smi)
 	return 0;
 }
 #else
-static inline int rtl8366_smi_probe_of(struct device_node *np, struct rtl8366_smi *smi)
+static inline int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi *smi)
 {
 	return -ENODEV;
 }

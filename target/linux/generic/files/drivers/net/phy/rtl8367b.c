@@ -11,6 +11,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
+#include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
@@ -1528,7 +1529,9 @@ static struct platform_driver rtl8367b_driver = {
 	.driver = {
 		.name		= RTL8367B_DRIVER_NAME,
 		.owner		= THIS_MODULE,
+#ifdef CONFIG_OF
 		.of_match_table = of_match_ptr(rtl8367b_match),
+#endif
 	},
 	.probe		= rtl8367b_probe,
 	.remove		= __devexit_p(rtl8367b_remove),
