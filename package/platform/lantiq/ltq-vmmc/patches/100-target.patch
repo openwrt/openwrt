@@ -159,7 +159,7 @@
 +static void inline bsp_mask_and_ack_irq(int x)
 +{
 +	struct irq_data d;
-+	d.irq = x;
++	d.hwirq = x;
 +	ltq_mask_and_ack_irq(&d);
 +}
 +#endif
@@ -735,4 +735,17 @@
 +#include "drv_vmmc_init.h"
  #include "drv_vmmc_api.h"
  #include "drv_vmmc_bbd.h"
+
+Index: drv_vmmc-1.9.0/src/mps/drv_mps_vmmc_danube.c
+===================================================================
+--- drv_vmmc-1.9.0.orig/src/mps/drv_mps_vmmc_danube.c	2012-12-13 08:43:16.080109377 +0100
++++ drv_vmmc-1.9.0/src/mps/drv_mps_vmmc_danube.c	2012-12-13 08:43:48.584110192 +0100
+@@ -44,7 +44,7 @@
+ #  include <linux/dma-mapping.h>
  
+ 
+-#define LQ_RCU_BASE_ADDR	(KSEG1 + LTQ_RCU_BASE_ADDR)
++#define LQ_RCU_BASE_ADDR	(KSEG1 + 0x1F203000)
+ # define LQ_RCU_RST		((u32 *)(LQ_RCU_BASE_ADDR + 0x0010))
+ #define IFX_RCU_RST_REQ_CPU1             (1 << 3)
+ #  define IFX_RCU_RST_REQ        LQ_RCU_RST
