@@ -13,6 +13,7 @@
 
 #include <linux/phy.h>
 #include <linux/switch.h>
+#include <linux/platform_device.h>
 
 struct rtl8366_smi_ops;
 struct rtl8366_vlan_ops;
