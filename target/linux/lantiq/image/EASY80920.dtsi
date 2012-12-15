@@ -247,7 +247,8 @@
 		ifxhcd@E101000 {
 			status = "okay";
 			gpios = <&gpio 33 0>;
-		};	
+			lantiq,portmask = <0x3>;
+		};
 
 		pci@E105400 {
 			#address-cells = <3>;
