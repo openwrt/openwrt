@@ -12,8 +12,8 @@ FEATURES:=squashfs jffs2
 SUBTARGETS:=danube ar9 vr9 falcon svip_be
 LINUX_VERSION:=3.3.8
 
-#SUBTARGETS=xway ase
-#LINUX_VERSION:=3.6.10
+SUBTARGETS=xway ase falcon
+LINUX_VERSION:=3.7-rc8
 
 CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 

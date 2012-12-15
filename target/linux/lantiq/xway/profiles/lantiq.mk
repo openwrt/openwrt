@@ -1,19 +1,17 @@
-define Profile/EASY80920-NOR
-  NAME:=EASY80920-NOR
+define Profile/EASY50712
+  NAME:=Lantiq Danube - EASY50712
 endef
 
-define Profile/EASY80920-NOR/Description
-	Lantiq EASY80920 evalkit (NOR)
+$(eval $(call Profile,EASY50712))
+
+define Profile/EASY80920NOR
+  NAME:=Lantiq VR9 - EASY80920NOR
 endef
 
-$(eval $(call Profile,EASY80920-NOR))
+$(eval $(call Profile,EASY80920NOR))
 
-define Profile/EASY80920-NAND
-  NAME:=EASY80920-NAND
+define Profile/EASY80920NAND
+  NAME:=Lantiq VR9 - EASY80920NAND
 endef
 
-define Profile/EASY80920-NAND/Description
-	Lantiq EASY80920 evalkit (NAND)
-endef
-
-$(eval $(call Profile,EASY80920-NAND))
+$(eval $(call Profile,EASY80920NAND))

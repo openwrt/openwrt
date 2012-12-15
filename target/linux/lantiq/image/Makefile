@@ -21,12 +21,8 @@ endef
 
 define PatchKernelLzma
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
-ifeq ($(CONFIG_LINUX_3_6),y)
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(KDIR)/$(1).dtb ./$(1).dts
 	$(STAGING_DIR_HOST)/bin/patch-dtb $(KDIR)/vmlinux-$(1) $(KDIR)/$(1).dtb
-else
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) '$(strip $(2))'
-endif
 	$(call CompressLzma,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).lzma)
 endef
 

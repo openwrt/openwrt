@@ -1,0 +1,47 @@
+From d8d9b9055d704d6f84ef6346d6826b8a9640f209 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 22 Oct 2012 10:25:39 +0200
+Subject: [PATCH 112/123] MTD: lantiq: xway: fix NAND reset timeout handling
+
+Fixes a possible deadlock in the code that resets the NAND flash.
+
+http://lists.infradead.org/pipermail/linux-mtd/2012-September/044240.html
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/mtd/nand/xway_nand.c |   12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/nand/xway_nand.c b/drivers/mtd/nand/xway_nand.c
+index 3f81dc8..4731300 100644
+--- a/drivers/mtd/nand/xway_nand.c
++++ b/drivers/mtd/nand/xway_nand.c
+@@ -58,15 +58,23 @@ static void xway_reset_chip(struct nand_chip *chip)
+ {
+ 	unsigned long nandaddr = (unsigned long) chip->IO_ADDR_W;
+ 	unsigned long flags;
++	unsigned long timeout;
+ 
+ 	nandaddr &= ~NAND_WRITE_ADDR;
+ 	nandaddr |= NAND_WRITE_CMD;
+ 
+ 	/* finish with a reset */
++	timeout = jiffies + msecs_to_jiffies(200);
++
+ 	spin_lock_irqsave(&ebu_lock, flags);
++
+ 	writeb(NAND_WRITE_CMD_RESET, (void __iomem *) nandaddr);
+-	while ((ltq_ebu_r32(EBU_NAND_WAIT) & NAND_WAIT_WR_C) == 0)
+-		;
++	do {
++		if ((ltq_ebu_r32(EBU_NAND_WAIT) & NAND_WAIT_WR_C) == 0)
++			break;
++		cond_resched();
++	} while (!time_after_eq(jiffies, timeout));
++
+ 	spin_unlock_irqrestore(&ebu_lock, flags);
+ }
+ 
+-- 
+1.7.10.4
+

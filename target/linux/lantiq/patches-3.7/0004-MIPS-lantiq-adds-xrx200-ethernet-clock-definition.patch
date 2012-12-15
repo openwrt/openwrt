@@ -1,0 +1,29 @@
+From f2bbe41c507b475c6f0ae1fca69c7aac6d31d228 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 9 Nov 2012 13:34:18 +0100
+Subject: [PATCH 4/6] MIPS: lantiq: adds xrx200 ethernet clock definition
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4521
+---
+ arch/mips/lantiq/xway/sysctrl.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
+index 2917b56..3925e66 100644
+--- a/arch/mips/lantiq/xway/sysctrl.c
++++ b/arch/mips/lantiq/xway/sysctrl.c
+@@ -370,6 +370,10 @@ void __init ltq_soc_init(void)
+ 		clkdev_add_pmu("1d900000.pcie", "pdi", 1, PMU1_PCIE_PDI);
+ 		clkdev_add_pmu("1d900000.pcie", "ctl", 1, PMU1_PCIE_CTL);
+ 		clkdev_add_pmu("1d900000.pcie", "ahb", 0, PMU_AHBM | PMU_AHBS);
++		clkdev_add_pmu("1e108000.eth", NULL, 0,
++				PMU_SWITCH | PMU_PPE_DPLUS | PMU_PPE_DPLUM |
++				PMU_PPE_EMA | PMU_PPE_TC | PMU_PPE_SLL01 |
++				PMU_PPE_QSB | PMU_PPE_TOP);
+ 	} else if (of_machine_is_compatible("lantiq,ar9")) {
+ 		clkdev_add_static(ltq_ar9_cpu_hz(), ltq_ar9_fpi_hz(),
+ 				ltq_ar9_fpi_hz());
+-- 
+1.7.10.4
+

@@ -1,0 +1,41 @@
+From a15d129a352e5f6ab821b81bc3f692ecc952a815 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 9 Nov 2012 12:09:57 +0100
+Subject: [PATCH 1/6] MIPS: lantiq: unbreak devicetree init
+
+The bootmem was incorrectly freed resulting in lots of dangling pointers.
+Additionally we should use of_platform_populate() as the Documentaion tells us
+to do so.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4518
+---
+ arch/mips/lantiq/prom.c |    5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
+index 6cfd611..9f9e875 100644
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -87,9 +87,6 @@ void __init device_tree_init(void)
+ 	reserve_bootmem(base, size, BOOTMEM_DEFAULT);
+ 
+ 	unflatten_device_tree();
+-
+-	/* free the space reserved for the dt blob */
+-	free_bootmem(base, size);
+ }
+ 
+ void __init prom_init(void)
+@@ -119,7 +116,7 @@ int __init plat_of_setup(void)
+ 		sizeof(of_ids[0].compatible));
+ 	strncpy(of_ids[1].compatible, "simple-bus",
+ 		sizeof(of_ids[1].compatible));
+-	return of_platform_bus_probe(NULL, of_ids, NULL);
++	return of_platform_populate(NULL, of_ids, NULL, NULL);
+ }
+ 
+ arch_initcall(plat_of_setup);
+-- 
+1.7.10.4
+
