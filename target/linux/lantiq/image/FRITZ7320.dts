@@ -1,0 +1,138 @@
+/dts-v1/;
+
+/include/ "ar9.dtsi"
+
+/ {
+	model = "FRITZ7320 - 1&1 HomeServer";
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
+
+	memory@0 {
+		reg = <0x0 0x4000000>;
+	};
+
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x800000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "urlader";
+					reg = <0x00000 0x20000>;
+					read-only;
+				};
+
+				partition@20000 {
+					label = "linux";
+					reg = <0x20000 0xf60000>;
+				};
+
+				partition@f80000 {
+					label = "tffs (1)";
+					reg = <0xf80000 0x40000>;
+					read-only;
+				};
+
+				partition@fc0000 {
+					label = "tffs (2)";
+					reg = <0xfc0000 0x40000>;
+					read-only;
+				};
+			};
+		};
+
+		gpio: pinmux@E100B10 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			state_default: pinmux {
+				pci {
+					lantiq,groups = "gnt1", "req1", "req2", "req3", "req4", "gnt2", "gnt3", "gnt4";
+					lantiq,function = "pci";
+				};
+				pci-in {
+					lantiq,groups = "req1", "req2", "req3", "req4";
+					lantiq,output = <0>;
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+				};
+				pci-out {
+					lantiq,groups = "gnt1", "gnt2", "gnt3", "gnt4";
+					lantiq,output = <1>;
+					lantiq,pull = <0>;
+				};
+			};
+		};
+
+		etop@E180000 {
+			phy-mode = "mii";
+			mac-address = [ 00 11 22 33 44 55 ];
+		};
+
+		ifxhcd@E101000 {
+			status = "okay";
+		};
+
+		pci@E105400 {
+			status = "okay";
+			req-mask = <0xf>;
+			lantiq,bus-clock = <33333333>;
+			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
+			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
+			gpio-reset = <&gpio 21 0>;
+			req-mask = <0xf>; /* GNT1 */
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+		
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 1 1>;
+			linux,code = <0xf7>;
+		};
+		dect {
+			label = "dect";
+			gpios = <&gpio 2 1>;
+			linux,code = <0x102>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		power {
+			label = "power";
+			gpios = <&gpio 44 1>;
+		};
+		voice {
+			label = "voice";
+			gpios = <&gpio 47 1>;
+		};
+		dect {
+			label = "dect";
+			gpios = <&gpio 38 1>;
+		};
+		wlan {
+			label = "wlan";
+			gpios = <&gpio 37 1>;
+		};
+		online {
+			label = "online";
+			gpios = <&gpio 35 1>;
+		};
+		online2 {
+			label = "online2";
+			gpios = <&gpio 45 1>;
+		};
+	};
+};

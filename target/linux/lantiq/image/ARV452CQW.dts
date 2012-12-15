@@ -3,20 +3,21 @@
 /include/ "danube.dtsi"
 
 / {
-	model = "ARV752DPW - Arcor 802";
+	model = "ARV452CQW - Arcor 801";
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 	};
 
 	memory@0 {
-		reg = <0x0 0x4000000>;
+		reg = <0x0 0x2000000>;
 	};
 
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpiomm 1 0>;
+			gpios = <&gpio 31 0
+				&gpiomm 7 0>;
 		};
 	};
 
@@ -25,7 +26,7 @@
 			nor-boot@0 {
 				compatible = "lantiq,nor";
 				bank-width = <2>;
-				reg = <0 0x0 0x800000>;
+				reg = <0 0x0 0x400000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 
@@ -43,30 +44,36 @@
 
 				partition@20000 {
 					label = "linux";
-					reg = <0x20000 0x7d0000>;
+					reg = <0x20000 0x3d0000>;
 				};
 
-				partition@7f0000 {
-					label = "board_config";
-					reg = <0x7f0000 0x10000>;
+				partition@3f0000 {
+					label = "boardconfig";
+					reg = <0x3f0000 0x10000>;
 					read-only;
 				};
 			};
 
 			mac_addr {
 				compatible = "lantiq,eth-mac";
-				reg = <0 0x7f0016 0x6>;
+				reg = <0 0x3f0016 0x6>;
 				mac-increment = <2>;
 			};
 
+			ath5k_eep {
+				compatible = "ath5k,eeprom";
+				reg = <0 0x3f0400 0x800>;
+				ath,mac-offset = <0>;
+				ath,eep-swap;
+			};
 			gpiomm: gpiomm@4000000 {
 				compatible = "lantiq,gpio-mm";
-				reg = <1 0x0 0x10 >;
+				reg = <1 0x0 0x10>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 				#gpio-cells = <2>;
 				gpio-controller;
-				lantiq,shadow = <0x3>;
+				lantiq,shadow = <0x77f>;
 			};
 		};
 
@@ -79,14 +86,8 @@
 					lantiq,groups = "ebu cs1";
 					lantiq,function = "ebu";
 				};
-				exin {
-					lantiq,groups = "exin1";
-					lantiq,function = "exin";
-					lantiq,pull = <2>;
-					lantiq,output = <0>;
-				};
 				pci_in {
-					lantiq,groups = "req2", "req1";
+					lantiq,groups = "req1";
 					lantiq,function = "pci";
 					lantiq,open-drain = <1>;
 					lantiq,pull = <2>;
@@ -99,26 +100,19 @@
 				};
 				pci_rst {
 					lantiq,pins = "io21";
-					lantiq,pull = <2>;
+					lantiq,pull = <0>;
 					lantiq,output = <1>;
 				};
 				leds {
-					lantiq,pins = "io3", "io5", "io6", "io8";
+					lantiq,pins = "io3", "io5", "io6", "io7", "io9";
 					lantiq,output = <1>;
-					lantiq,pull = <0>;
-				};
-				keys {
-					lantiq,pins = "io11", "io12", "io13", "io28";
-					lantiq,output = <0>;
-					lantiq,pull = <2>;
-					lantiq,open-drain = <1>;
 				};
 			};
 		};
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpiomm 0 0>;
+			gpios = <&gpio 28 0>;
 		};
 
 		etop@E180000 {
@@ -129,90 +123,96 @@
 			status = "okay";
 			lantiq,external-clock;
 			gpio-reset = <&gpio 21 0>;
-			interrupt-map = <0x7000 0 0 1 &icu0 135>;
-			req-mask = <0x3>;
 		};
 
 	};
 
-	ralink_eep {
-		compatible = "ralink,eeprom";
-		ralink,eeprom = "RT2860.eeprom";
-	};
-
+/*
+#define ARV452CPW_SWITCH_RESET          110
+*/
 	gpio-keys-polled {
-		compatible = "gpio-keys-polled";
+		compatible = "gpio-keys-polled1";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
 		
-	/*	wps {
+		wps {
 			label = "wps";
 			gpios = <&gpio 11 1>;
-			linux,code = <0x211>;
-		};*/
+			linux,code = <0x101>;
+		};
 		restart {
 			label = "restart";
-			gpios = <&gpio 12 0>;
+			gpios = <&gpio 12 1>;
 			linux,code = <0x110>;
-		};
-		dsl {
-			label = "dsl";
-			gpios = <&gpio 13 0>;
-			linux,code = <0x111>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 28 0>;
+			gpios = <&gpio 28 1>;
 			linux,code = <0x100>;
 		};
 	};
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power {
-			label = "power";
+		power0 {
+			label = "power0";
 			gpios = <&gpio 3 1>;
 		};
-		message {
-			label = "message";
+		dsl {
+			label = "dsl";
+			gpios = <&gpio 4 1>;
+		};
+		isdn {
+			label = "isdn";
 			gpios = <&gpio 5 1>;
 		};
 		power1 {
 			label = "power1";
 			gpios = <&gpio 6 1>;
 		};
-		voice1 {
-			label = "voice1";
-			gpios = <&gpio 8 1>;
+		wps {
+			label = "wps";
+			gpios = <&gpio 7 1>;
 		};
-		microphone {
-			/* use this led as te usb led */
-			label = "usb";
-			gpios = <&gpiomm 3 1>;
-		};
-		wifi {
-			label = "wifi";
-			gpios = <&gpiomm 4 1>;
+		wps1 {
+			label = "wps1";
+			gpios = <&gpio 9 1>;
 		};
 		fxs1 {
 			label = "fxs1";
-			gpios = <&gpiomm 5 1>;
+			gpios = <&gpiomm 0 1>;
 		};
-		fx2 {
+		fxs2 {
 			label = "fxs2";
-			gpios = <&gpiomm 6 1>;
+			gpios = <&gpiomm 1 1>;
+		};
+		wps2 {
+			label = "wps2";
+			gpios = <&gpiomm 2 1>;
 		};
 		fxo {
 			label = "fxo";
-			gpios = <&gpiomm 7 1>;
+			gpios = <&gpiomm 3 1>;
 		};
-		internet {
-			label = "internet";
+		voice {
+			label = "voice";
+			gpios = <&gpiomm 4  1>;
+		};
+		usb {
+			label = "usb";
+			gpios = <&gpiomm 5 1>;
+		};
+		wifi {
+			label = "wifi";
+			gpios = <&gpiomm 6 1>;
+		};
+		dsl2 {
+			label = "dsl2";
 			gpios = <&gpiomm 8 1>;
 		};
-		voice2 {
-			label = "voice2";
+		dsl3 {
+			label = "dsl3";
 			gpios = <&gpiomm 9 1>;
 		};
 	};

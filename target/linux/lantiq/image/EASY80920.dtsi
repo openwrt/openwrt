@@ -23,25 +23,50 @@
 			
 		};
 
-		sflash@E100800 {
-			compatible = "lantiq,sflash";
+		spi@E100800 {
+			compatible = "lantiq,spi-xway-broken";
 			reg = <0xE100800 0x100>;
+			interrupt-parent = <&icu0>;
+			interrupts = <22 23 24>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-	
-			partition@0 {
-				label = "uboot";
-				reg = <0x00000 0x10000>;
-			};
 
-			partition@10000 {
-				label = "uboot_env";
-				reg = <0x10000 0x10000>;
-			};
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "s25fl129p0";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "mx25l3205d";
+				spi-max-frequency = <1000000>;
 
-			partition@20000 {
-				label = "linux";
-				reg = <0x20000 0x1d0000>;
+				partition@0 {
+					reg = <0x0 0x20000>;
+					label = "SPI (RO) U-Boot Image";
+					read-only;
+				};
+
+				partition@20000 {
+					reg = <0x20000 0x10000>;
+					label = "ENV_MAC";
+					read-only;
+				};
+
+				partition@30000 {
+					reg = <0x30000 0x10000>;
+					label = "DPF";
+					read-only;
+				};
+
+				partition@40000 {
+					reg = <0x40000 0x10000>;
+					label = "NVRAM";
+					read-only;
+				};
+
+				partition@500000 {
+					reg = <0x50000 0x003a0000>;
+					label = "kernel";
+				};
 			};
 		};
 
@@ -58,14 +83,18 @@
 			reg = <0xE100B10 0xA0>;
 
 			state_default: pinmux {
+				exin3 {
+					lantiq,groups = "exin3";
+					lantiq,function = "exin";
+				};
 				stp {
 					lantiq,groups = "stp";
 					lantiq,function = "stp";
 				};
-				/*spi {
+				spi {
 					lantiq,groups = "spi", "spi_cs4";
 					lantiq,function = "spi";
-				};*/
+				};
 				nand {
 					lantiq,groups = "nand cle", "nand ale",
 							"nand rd", "nand rdy";
@@ -79,18 +108,19 @@
 					lantiq,groups = "gnt1", "req1";
 					lantiq,function = "pci";
 				};
-				exin {
-					lantiq,groups = "exin3";
-					lantiq,function = "exin";
-				};
 				conf_out {
 					lantiq,pins = "io24", "io13", "io49", /* nand cle, ale and rd */
 							"io4", "io5", "io6", /* stp */
-							"io17", "io18", /* spi dout & clk */
-							"io21", /* pci-rst */
-							"io38"; /* pcie-rst */
+							"io21",
+							"io33";
 					lantiq,open-drain;
 					lantiq,pull = <0>;
+					lantiq,output = <1>;
+				};
+				pcie-rst {
+					lantiq,pins = "io38";
+					lantiq,pull = <0>;
+					lantiq,output = <1>;
 				};
 				conf_in {
 					lantiq,pins = "io39", /* exin3 */
@@ -100,7 +130,7 @@
 			};
 		};
 
-		eth@0xE108000 {
+		eth@E108000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible = "lantiq,xrx200-net";
@@ -137,12 +167,6 @@
 					phy-mode = "gmii";
 					phy-handle = <&phy11>;
 				};
-				ethernet@4 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <4>;
-					phynmode0 = "gmii";
-					phy-handle = <&phy13>;
-				};
 			};
 
 			wan: interface@1 {
@@ -151,12 +175,26 @@
 				#size-cells = <0>;
 				reg = <1>;
 				mac-address = [ 00 11 22 33 44 56 ];
-
+				lantiq,wan;
 				ethernet@5 {
 					compatible = "lantiq,xrx200-pdi-port";
 					reg = <5>;
 					phy-mode = "rgmii";
 					phy-handle = <&phy5>;
+				};
+			};
+
+			test: interface@2 {
+				compatible = "lantiq,xrx200-pdi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <2>;
+				mac-address = [ 00 11 22 33 44 57 ];
+				ethernet@4 {
+					compatible = "lantiq,xrx200-pdi-port";
+					reg = <4>;
+					phynmode0 = "gmii";
+					phy-handle = <&phy13>;
 				};
 			};
 
@@ -205,7 +243,12 @@
 			lantiq,phy2 = <0x7>;
 			/* lantiq,rising; */
 		};
-		
+
+		ifxhcd@E101000 {
+			status = "okay";
+			gpios = <&gpio 33 0>;
+		};	
+
 		pci@E105400 {
 			#address-cells = <3>;
 			#size-cells = <2>;
@@ -229,12 +272,6 @@
 		};
 	};
 
-	ifxhcd {
-		compatible = "lantiq,ifxhcd";
-		interrupt-parent = <&icu0>;
-		interrupts = <62 91>;
-	};
-
 	gphy-xrx200 {
 		compatible = "lantiq,phy-xrx200";
 		firmware = "lantiq/vr9_phy11g_a2x.bin";
@@ -248,7 +285,7 @@
 		poll-interval = <100>;
 		reset {
 			label = "Reset";
-			gpios = <&gpio 7 0>;
+			gpios = <&gpio 7 1>;
 			linux,code = <0x100>;
 		};
 		paging {
@@ -261,7 +298,7 @@
 /*	gpio-keys {
 		compatible = "gpio-keys";
 		wps {
-			gpios = <&gpio 39 0>;
+			gpios = <&gpio 2 0>;
 			linux,code = <0x100>;
 		};
 	};*/
@@ -269,50 +306,42 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 		
-		led0 {
-			label = "led0";
+		power {
+			label = "power";
 			gpios = <&stp 9 0>;
 			default-state = "on";
 		};
 		warning {
 			label = "warning";
 			gpios = <&stp 22 0>;
-			default-state = "on";
 		};
 		fxs1 {
 			label = "fxs1";
 			gpios = <&stp 21 0>;
-			default-state = "on";
 		};
 		fxs2 {
 			label = "fxs2";
 			gpios = <&stp 20 0>;
-			default-state = "on";
 		};
 		fxo {
 			label = "fxo";
 			gpios = <&stp 19 0>;
-			default-state = "on";
 		};
 		usb1 {
 			label = "usb1";
 			gpios = <&stp 18 0>;
-			default-state = "on";
 		};
 		usb2 {
 			label = "usb2";
 			gpios = <&stp 15 0>;
-			default-state = "on";
 		};
 		sd {
 			label = "sd";
 			gpios = <&stp 14 0>;
-			default-state = "on";
 		};
 		wps {
 			label = "wps";
 			gpios = <&stp 12 0>;
-			default-state = "on";
 		};
 	};
 };

@@ -3,11 +3,7 @@
 /include/ "danube.dtsi"
 
 / {
-	model = "ARV7525PW - Speedport W303V Typ A";
-
-	chosen {
-		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
-	};
+	model = "ARV4525PW - Speedport W501V Typ A";
 
 	memory@0 {
 		reg = <0x0 0x2000000>;
@@ -47,7 +43,7 @@
 				};
 
 				partition@400000 {
-					label = "board_config";
+					label = "boardconfig";
 					reg = <0x3f0000 0x10000>;
 					read-only;
 				};
@@ -59,10 +55,11 @@
 				mac-increment = <2>;
 			};
 
-			ralink_eep {
-				compatible = "ralink,eeprom";
-				ralink,eeprom = "RT2860.eeprom";
-				reg = <0 0x3f0410 0x110>;
+			ath5k_eep {
+				compatible = "ath5k,eeprom";
+				reg = <0 0x3f0400 0x800>;
+				ath,mac-offset = <0>;
+				ath,eep-swap;
 			};
 		};
 
@@ -71,13 +68,26 @@
 			pinctrl-0 = <&state_default>;
 
 			state_default: pinmux {
-				exin {
-					lantiq,groups = "exin1";
-					lantiq,function = "exin";
-				};
-				pci {
-					lantiq,groups = "gnt1", "req1";
+				pci_in {
+					lantiq,groups = "req1";
 					lantiq,function = "pci";
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+					lantiq,output = <0>;
+				};
+				pci_out {
+					lantiq,groups = "gnt1";
+					lantiq,function = "pci";
+					lantiq,output = <1>;
+				};
+				pci_rst {
+					lantiq,pins = "io21";
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
+				relay {
+					lantiq,pins = "io31";
+					lantiq,output = <1>;
 				};
 			};
 		};
@@ -88,11 +98,15 @@
 
 		pci@E105400 {
 			status = "okay";
-			interrupt-map = <0x7000 0 0 1 &icu0 135 1>;
-			req-mask = <0x1>;
+			gpio-reset = <&gpio 21 0>;
 		};
 
 	};
+
+/*
+#define ARV4525PW_PHYRESET	13
+#define ARV4525PW_RELAY		31
+*/
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
@@ -114,28 +128,25 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power {
-			label = "power";
-			gpios = <&gpio 3 1>;
-		};
-		power1 {
-			label = "power1";
+		fxo {
+			label = "fxo";
 			gpios = <&gpio 4 1>;
 		};
-		online {
-			label = "online";
+		fxs {
+			label = "fxs";
 			gpios = <&gpio 5 1>;
 		};
-		voice {
-			label = "voice";
+		dsl {
+			label = "dsl";
 			gpios = <&gpio 6 1>;
-		};
-		voice2 {
-			label = "voice2";
-			gpios = <&gpio 8 1>;
 		};
 		wifi {
 			label = "wifi";
+			gpios = <&gpio 8 1>;
+		};
+		online {
+			/*label = "online"; - we dont have a power led, lets use this one */
+			label = "power";
 			gpios = <&gpio 9 1>;
 		};
 	};

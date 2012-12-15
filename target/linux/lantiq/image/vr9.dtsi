@@ -36,16 +36,17 @@
 	sram@1F000000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "lantiq,sram";
+		compatible = "lantiq,sram", "simple-bus";
 		reg = <0x1F000000 0x800000>;
 		ranges = <0x0 0x1F000000 0x7FFFFF>;
 
 		eiu0: eiu@101000 {
 			#interrupt-cells = <1>;
 			interrupt-controller;
-			interrupt-parent;
 			compatible = "lantiq,eiu-xway";
 			reg = <0x101000 0x1000>;
+			interrupt-parent = <&icu0>;
+			interrupts = <166 135 66 40 41 42>;
 		};
 
 		pmu0: pmu@102000 {
@@ -56,11 +57,15 @@
 		cgu0: cgu@103000 {
 			compatible = "lantiq,cgu-xway";
 			reg = <0x103000 0x1000>;
-			#clock-cells = <1>;
+		};
+
+		dcdc@106a00 {
+			compatible = "lantiq,dcdc-xrx200";
+			reg = <0x106a00 0x200>;
 		};
 
 		rcu0: rcu@203000 {
-			compatible = "lantiq,rcu-xway";
+			compatible = "lantiq,rcu-xrx200";
 			reg = <0x203000 0x1000>;
 			/* irq for thermal sensor */
 			interrupt-parent = <&icu0>;
@@ -97,6 +102,27 @@
 		ebu0: ebu@E105300 {
 			compatible = "lantiq,ebu-xway";
 			reg = <0xE105300 0x100>;
+		};
+
+		ifxhcd@E101000 {
+			status = "disabled";
+			compatible = "lantiq,ifxhcd-xrx200";
+			reg = <0xE101000 0x1000
+				0xE120000 0x3f000>;
+			interrupt-parent = <&icu0>;
+			interrupts = <62 91>;
+		};
+
+		ppe@E234000 {
+			compatible = "lantiq,atm-xrx200";
+			interrupt-parent = <&icu0>;
+			interrupts = <96>;
+		};
+
+		pcie@d900000 {
+			interrupt-parent = <&icu0>;
+			interrupts = <161 144>;
+			compatible = "lantiq,pcie-xrx200";
 		};
 
 		pci0: pci@E105400 {
