@@ -12,7 +12,6 @@ set_atm_wan() {
 	local payload=$4
 	uci batch <<EOF
 set network.atm='atm-bridge'
-set network.atm.unit='0'
 set network.atm.vpi='$vpi'
 set network.atm.vci='$vci'
 set network.atm.encaps='$encaps'
@@ -25,18 +24,8 @@ set network.wan.password='bar'
 EOF
 }
 
-set_adsl() {
-	local fwannex=$1
-	local annex=$2
-	uci batch <<EOF
-set network.adsl='adsl-device'
-set network.adsl.fwannex='$fwannex'
-set network.adsl.annex='$annex'
-EOF
-}
-
 . /lib/functions/uci-defaults.sh
-. /lib/lantiq.sh
+. /lib/functions/lantiq.sh
 
 touch /etc/config/network
 
@@ -47,40 +36,33 @@ vpi=1
 vci=32
 encaps="llc"
 payload="bridged"
-fwannex=$(lantiq_dsl_fwannex)
-board=$(lantiq_board_name)
-dsl=$(lantiq_soc_has_adsl)
+
+board=$(lantiq_board_id)
 
 case "$board" in
-# annex B with adm6996
+# adm6996
 ARV4520PW)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "3 2 1 0 5t"
-	set_adsl "b" "b2p"
 	;;
 
 GIGASX76X)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "4 3 2 1 5t"
-	set_adsl "b" "b2p"
 	;;
 
-# annex A with ar8316
+# ar8316
 ARV4519PW|ARV7518PW)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0t 2 3 4 5"
-	set_adsl "a" "a2p"
-	;;
-
-ARV7525PW|ARV4525PW|*)
-	set_adsl "$fwannex" "${fwannex}2p"
 	;;
 esac
 
-[ -z "$dsl" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"
+[ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"
+
 
 uci commit network
 

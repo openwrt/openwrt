@@ -5,51 +5,21 @@
 #
 
 . /lib/functions/uci-defaults.sh
-. /lib/lantiq.sh
+. /lib/functions/lantiq.sh
 
-board=$(lantiq_board_name)
+[ -e "/sys/class/leds/wifi" ] && ucidef_set_led_wlan "wifi" "wifi" "wifi" "phy0tx"
+[ -e "/sys/class/leds/usb" ] && ucidef_set_led_usbdev "usb" "usb" "usb" "1-1"
+[ -e "/sys/class/leds/dsl" ] &&	ucidef_set_led_netdev "dsl" "dsl" "dsl" "pppoe-wan"
+
+for a in `ls /sys/class/leds/`; do
+	grep -q "\[none\]" /sys/class/leds/$a/trigger
+	[ $? -eq 0 ] && ucidef_set_led_default $a $a $a `cat /sys/class/leds/$a/brightness`
+done
+
+board=$(lantiq_board_id)
 
 case "$board" in
-ARV4520PW|ARV452CPW)
-	ucidef_set_led_netdev "wifi" "wifi" "soc:blue:wifi" "wlan0"
-	ucidef_set_led_usbdev "usb" "USB" "soc:blue:usb" "1-1"
-	ucidef_set_led_default "fxs1" "fxs1" "soc:blue:fxs1" "1"
-	ucidef_set_led_default "fxs2" "fxs2" "soc:blue:fxs2" "1"
-	ucidef_set_led_default "online" "online" "soc:blue:internet" "1"
-	;;
-
-ARV7525PW)
-	ucidef_set_led_netdev "wifi" "wifi" "soc:green:wifi" "wlan0"
-	ucidef_set_led_default "fxs1" "fxs1" "soc:green:fxs1" "1"
-	ucidef_set_led_default "fxs2" "fxs2" "soc:green:fxs2" "1"
-	ucidef_set_led_default "dsl" "dsl" "soc:red:dsl" "1"
-	ucidef_set_led_default "online" "online" "soc:green:online" "1"
-	;;
-
-ARV4525PW)
-	ucidef_set_led_netdev "wifi" "wifi" "soc:green:wifi" "wlan0"
-	ucidef_set_led_default "fxs1" "fxs1" "soc:green:fxs1" "1"
-	ucidef_set_led_default "fxs2" "fxs2" "soc:green:fxs2" "1"
-	ucidef_set_led_default "dsl" "dsl" "soc:green:dsl" "1"
-	ucidef_set_led_default "online" "online" "soc:green:online" "1"
-	;;
-
-GIGASX76X)
-	ucidef_set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
-	ucidef_set_led_netdev "online" "online" "soc:green:online" "pppoe-wan"
-	ucidef_set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
-	;;
-
-ARV4519PW)
-	ucidef_set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
-	ucidef_set_led_netdev "internet" "internet" "soc:green:internet" "pppoe-wan"
-	ucidef_set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
-	;;
-
-ARV7518PW)
-	ucidef_set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
-	ucidef_set_led_netdev "internet" "internet" "soc:green:internet" "pppoe-wan"
-	ucidef_set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
+*)
 	;;
 esac
 
