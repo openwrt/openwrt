@@ -65,7 +65,7 @@ define Package/uboot/template
 define Package/uboot-lantiq-$(1)
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_lantiq
+  DEPENDS:=@TARGET_lantiq_xway
   TITLE:=$(2)
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)
