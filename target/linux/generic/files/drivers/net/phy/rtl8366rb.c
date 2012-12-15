@@ -13,7 +13,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/platform_device.h>
+#include <linux/of_platform.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
 #include <linux/rtl8366.h>
@@ -1179,22 +1179,9 @@ static int __devinit rtl8366rb_probe(struct platform_device *pdev)
 		printk(KERN_NOTICE RTL8366RB_DRIVER_DESC
 		       " version " RTL8366RB_DRIVER_VER"\n");
 
-	pdata = pdev->dev.platform_data;
-	if (!pdata) {
-		dev_err(&pdev->dev, "no platform data specified\n");
-		err = -EINVAL;
-		goto err_out;
-	}
-
-	smi = rtl8366_smi_alloc(&pdev->dev);
-	if (!smi) {
-		err = -ENOMEM;
-		goto err_out;
-	}
-
-	smi->gpio_sda = pdata->gpio_sda;
-	smi->gpio_sck = pdata->gpio_sck;
-	smi->hw_reset = pdata->hw_reset;
+	smi = rtl8366_smi_probe(pdev);
+	if (!smi)
+		return -ENODEV;
 
 	smi->clk_delay = 10;
 	smi->cmd_read = 0xa9;
@@ -1241,10 +1228,19 @@ static int __devexit rtl8366rb_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id rtl8366rb_match[] = {
+	{ .compatible = "rtl8366rb" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, rtl8366rb_match);
+#endif
+
 static struct platform_driver rtl8366rb_driver = {
 	.driver = {
 		.name		= RTL8366RB_DRIVER_NAME,
 		.owner		= THIS_MODULE,
+		.of_match_table = of_match_ptr(rtl8366rb_match),
 	},
 	.probe		= rtl8366rb_probe,
 	.remove		= __devexit_p(rtl8366rb_remove),
