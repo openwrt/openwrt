@@ -9,13 +9,8 @@ wpa_supplicant_setup_vif() {
 	local scan_ssid="1"
 	[ -n "$4" ] && freq="frequency=$4"
 
-	# make sure we have the encryption type and the psk
-	[ -n "$enc" ] || {
-		config_get enc "$vif" encryption
-	}
-	[ -n "$key" ] || {
-		config_get key "$vif" key
-	}
+	config_get enc "$vif" encryption
+	config_get key "$vif" key
 
 	local net_cfg bridge
 	config_get bridge "$vif" bridge
