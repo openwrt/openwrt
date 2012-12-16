@@ -106,11 +106,11 @@ endef
 
 ifeq ($(CONFIG_TARGET_lantiq_falcon),y)
 
-Image/BuildKernel/Profile/EASY98000=$(call Image/BuildKernel/Template,EASY98000)
-Image/Build/Profile/EASY98000=$(call Image/Build/$(1),$(1),EASY98000)
+Image/BuildKernel/Profile/EASY98000NOR=$(call Image/BuildKernel/Template,EASY98000NOR)
+Image/Build/Profile/EASY98000NOR=$(call Image/Build/$(1),$(1),EASY98000NOR)
 
-Image/BuildKernel/Profile/EASY98020=$(call Image/BuildKernel/Template,EASY98020)
-Image/Build/Profile/EASY98020=$(call Image/Build/$(1),$(1),EASY98020)
+Image/BuildKernel/Profile/EASY98000SFLASH=$(call Image/BuildKernel/Template,EASY98000SFLASH)
+Image/Build/Profile/EASY98000SFLASH=$(call Image/Build/$(1),$(1),EASY98000SFLASH)
 
 endif
 
