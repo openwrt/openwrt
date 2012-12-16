@@ -544,6 +544,7 @@ menu "Global build settings"
 
 	config STRIP_KERNEL_EXPORTS
 		bool "Strip unnecessary exports from the kernel image"
+		depends BROKEN
 		help
 		  Reduces kernel size by stripping unused kernel exports from the kernel image
 		  Note that this might make the kernel incompatible with any kernel modules that
