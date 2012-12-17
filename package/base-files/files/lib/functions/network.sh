@@ -39,11 +39,11 @@ __network_parse_ifstatus()
 		# parse addresses
 		local __family
 		for __family in 4 6; do
-			if json_get_type __tmp "ipv${__family}_address" && [ "$__tmp" = array ]; then
+			if json_is_a "ipv${__family}_address" array; then
 
 				json_select "ipv${__family}_address"
 
-				if json_get_type __tmp 1 && [ "$__tmp" = object ]; then
+				if json_is_a 1 object; then
 
 					json_select 1
 					__network_set_cache "${__key}_address${__family}" address
@@ -58,12 +58,12 @@ __network_parse_ifstatus()
 		done
 
 		# parse routes
-		if json_get_type __tmp route && [ "$__tmp" = array ]; then
+		if json_is_a route array; then
 
 			json_select "route"
 
 			local __idx=1
-			while json_get_type __tmp "$__idx" && [ "$__tmp" = object ]; do
+			while json_is_a "$__idx" object; do
 
 				json_select "$((__idx++))"
 				json_get_var __tmp target
@@ -88,14 +88,14 @@ __network_parse_ifstatus()
 		# parse dns info
 		local __field
 		for __field in "dns_server" "dns_search"; do
-			if json_get_type __tmp "$__field" && [ "$__tmp" = array ]; then
+			if json_is_a "$__field" array; then
 
 				json_select "$__field"
 
 				local __idx=1
 				local __dns=""
 
-				while json_get_type __tmp "$__idx" && [ "$__tmp" = string ]; do
+				while json_is_a "$__idx" string; do
 
 					json_get_var __tmp "$((__idx++))"
 					__dns="${__dns:+$__dns }$__tmp"
@@ -118,7 +118,7 @@ __network_parse_ifstatus()
 		done
 
 		# descend into inactive table
-		json_get_type __tmp "inactive" && [ "$__tmp" = object ] && json_select "inactive"
+		json_is_a "inactive" object && json_select "inactive"
 
 	done
 
