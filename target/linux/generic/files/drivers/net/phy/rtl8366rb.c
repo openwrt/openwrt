@@ -13,6 +13,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
+#include <linux/device.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/delay.h>
@@ -1172,7 +1173,6 @@ static struct rtl8366_smi_ops rtl8366rb_smi_ops = {
 static int __devinit rtl8366rb_probe(struct platform_device *pdev)
 {
 	static int rtl8366_smi_version_printed;
-	struct rtl8366_platform_data *pdata;
 	struct rtl8366_smi *smi;
 	int err;
 
@@ -1211,7 +1211,6 @@ static int __devinit rtl8366rb_probe(struct platform_device *pdev)
 	rtl8366_smi_cleanup(smi);
  err_free_smi:
 	kfree(smi);
- err_out:
 	return err;
 }
 
