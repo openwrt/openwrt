@@ -387,6 +387,9 @@ ar71xx_board_detect() {
 	*UniFi)
 		name="unifi"
 		;;
+	*"UniFi AP Pro")
+		name="uap-pro"
+		;;
 	*WHR-G301N)
 		name="whr-g301n"
 		;;

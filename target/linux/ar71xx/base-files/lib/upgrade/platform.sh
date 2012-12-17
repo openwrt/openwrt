@@ -192,6 +192,13 @@ platform_check_image() {
 
 		return 0
 		;;
+	uap-pro)
+		[ "$magic_long" != "19852003" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
 	wndr3700)
 		local hw_magic
 

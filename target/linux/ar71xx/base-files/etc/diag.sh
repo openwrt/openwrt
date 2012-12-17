@@ -149,6 +149,9 @@ get_status_led() {
 	unifi)
 		status_led="ubnt:green:dome"
 		;;
+	uap-pro)
+		status_led="ubnt:white:dome"
+		;;
 	whr-g301n | \
 	whr-hp-g300n | \
 	whr-hp-gn | \
