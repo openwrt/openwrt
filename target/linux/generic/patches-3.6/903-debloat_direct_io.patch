@@ -26,7 +26,7 @@
  endif
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -2632,20 +2632,36 @@ enum {
+@@ -2632,12 +2632,26 @@ enum {
  	DIO_SKIP_HOLES	= 0x02,
  };
  
@@ -53,16 +53,6 @@
  
  static inline ssize_t blockdev_direct_IO(int rw, struct kiocb *iocb,
  		struct inode *inode, const struct iovec *iov, loff_t offset,
- 		unsigned long nr_segs, get_block_t get_block)
- {
-+#ifdef CONFIG_DIRECT_IO
- 	return __blockdev_direct_IO(rw, iocb, inode, inode->i_sb->s_bdev, iov,
- 				    offset, nr_segs, get_block, NULL, NULL,
- 				    DIO_LOCKING | DIO_SKIP_HOLES);
-+#endif
- }
- #endif
- 
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
 @@ -169,8 +169,10 @@ static int setfl(int fd, struct file * f
