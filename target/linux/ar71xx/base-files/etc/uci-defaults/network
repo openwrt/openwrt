@@ -134,6 +134,12 @@ tl-wr841n-v8)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4"
 	;;
 
+uap-pro)
+	ucidef_set_interface_lan "eth0"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2"
+	;;
+
 wrt160nl)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "eth0" "1" "1"
