@@ -1,6 +1,6 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2914,6 +2914,16 @@ EXPORT_SYMBOL_GPL(shmem_truncate_range);
+@@ -2920,6 +2920,16 @@ EXPORT_SYMBOL_GPL(shmem_truncate_range);
  
  /* common code */
  
@@ -17,7 +17,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2991,11 +3001,8 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -2997,11 +3007,8 @@ int shmem_zero_setup(struct vm_area_stru
  	if (IS_ERR(file))
  		return PTR_ERR(file);
  

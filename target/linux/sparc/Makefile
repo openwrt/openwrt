@@ -11,7 +11,7 @@ BOARD:=sparc
 BOARDNAME:=Sun UltraSPARC
 FEATURES+=fpu tgz jffs2 ext4 squashfs
 
-LINUX_VERSION:=3.6.10
+LINUX_VERSION:=3.6.11
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 include $(INCLUDE_DIR)/target.mk
