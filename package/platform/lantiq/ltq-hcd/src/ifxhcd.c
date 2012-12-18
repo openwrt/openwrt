@@ -1349,10 +1349,10 @@ int ifxhcd_hub_control( struct usb_hcd *_syshcd,
 				port_status |= (1 << USB_PORT_FEAT_RESET);
 			if (hprt0.b.prtpwr)
 				port_status |= (1 << USB_PORT_FEAT_POWER);
-/*			if      (hprt0.b.prtspd == IFXUSB_HPRT0_PRTSPD_HIGH_SPEED)
-				port_status |= (1 << USB_PORT_FEAT_HIGHSPEED);
-			else*/ if (hprt0.b.prtspd == IFXUSB_HPRT0_PRTSPD_LOW_SPEED)
-				port_status |= (1 << USB_PORT_FEAT_LOWSPEED);
+			if (hprt0.b.prtspd == IFXUSB_HPRT0_PRTSPD_HIGH_SPEED)
+				port_status |= USB_PORT_STAT_HIGH_SPEED;
+			else if (hprt0.b.prtspd == IFXUSB_HPRT0_PRTSPD_LOW_SPEED)
+				port_status |= USB_PORT_STAT_LOW_SPEED;
 			if (hprt0.b.prttstctl)
 				port_status |= (1 << USB_PORT_FEAT_TEST);
 			/* USB_PORT_FEAT_INDICATOR unsupported always 0 */
