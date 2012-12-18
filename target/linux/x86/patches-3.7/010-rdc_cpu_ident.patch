@@ -72,7 +72,7 @@
 +
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -464,6 +464,7 @@ config X86_RDC321X
+@@ -460,6 +460,7 @@ config X86_RDC321X
  	bool "RDC R-321x SoC"
  	depends on X86_32
  	depends on X86_EXTENDED_PLATFORM
@@ -82,7 +82,7 @@
  	select EMBEDDED
 --- a/arch/x86/include/asm/processor.h
 +++ b/arch/x86/include/asm/processor.h
-@@ -119,7 +119,8 @@ struct cpuinfo_x86 {
+@@ -141,7 +141,8 @@ struct cpuinfo_x86 {
  #define X86_VENDOR_CENTAUR	5
  #define X86_VENDOR_TRANSMETA	7
  #define X86_VENDOR_NSC		8
@@ -94,7 +94,7 @@
  
 --- a/arch/x86/kernel/cpu/Makefile
 +++ b/arch/x86/kernel/cpu/Makefile
-@@ -26,6 +26,7 @@ obj-$(CONFIG_CPU_SUP_CYRIX_32)		+= cyrix
+@@ -27,6 +27,7 @@ obj-$(CONFIG_CPU_SUP_CYRIX_32)		+= cyrix
  obj-$(CONFIG_CPU_SUP_CENTAUR)		+= centaur.o
  obj-$(CONFIG_CPU_SUP_TRANSMETA_32)	+= transmeta.o
  obj-$(CONFIG_CPU_SUP_UMC_32)		+= umc.o

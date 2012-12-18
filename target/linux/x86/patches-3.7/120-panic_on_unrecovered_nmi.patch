@@ -7,5 +7,5 @@
 +	panic_on_unrecovered_nmi = 1;
 +
  	return mfd_add_devices(&pdev->dev, -1,
- 		rdc321x_sb_cells, ARRAY_SIZE(rdc321x_sb_cells), NULL, 0);
- }
+ 			       rdc321x_sb_cells, ARRAY_SIZE(rdc321x_sb_cells),
+ 			       NULL, 0, NULL);
