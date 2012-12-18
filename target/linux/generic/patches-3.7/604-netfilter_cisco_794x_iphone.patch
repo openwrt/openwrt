@@ -1,5 +1,3 @@
-diff --git a/include/linux/netfilter/nf_conntrack_sip.h b/include/linux/netfilter/nf_conntrack_sip.h
-index 387bdd0..ba7f571 100644
 --- a/include/linux/netfilter/nf_conntrack_sip.h
 +++ b/include/linux/netfilter/nf_conntrack_sip.h
 @@ -4,12 +4,15 @@
@@ -18,11 +16,9 @@ index 387bdd0..ba7f571 100644
  };
  
  enum sip_expectation_classes {
-diff --git a/net/netfilter/nf_nat_sip.c b/net/netfilter/nf_nat_sip.c
-index 16303c7..552e270 100644
 --- a/net/netfilter/nf_nat_sip.c
 +++ b/net/netfilter/nf_nat_sip.c
-@@ -95,6 +95,7 @@ static int map_addr(struct sk_buff *skb, unsigned int protoff,
+@@ -95,6 +95,7 @@ static int map_addr(struct sk_buff *skb,
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
@@ -30,7 +26,7 @@ index 16303c7..552e270 100644
  	char buffer[INET6_ADDRSTRLEN + sizeof("[]:nnnnn")];
  	unsigned int buflen;
  	union nf_inet_addr newaddr;
-@@ -107,7 +108,8 @@ static int map_addr(struct sk_buff *skb, unsigned int protoff,
+@@ -107,7 +108,8 @@ static int map_addr(struct sk_buff *skb,
  	} else if (nf_inet_addr_cmp(&ct->tuplehash[dir].tuple.dst.u3, addr) &&
  		   ct->tuplehash[dir].tuple.dst.u.udp.port == port) {
  		newaddr = ct->tuplehash[!dir].tuple.src.u3;
@@ -40,7 +36,7 @@ index 16303c7..552e270 100644
  	} else
  		return 1;
  
-@@ -144,6 +146,7 @@ static unsigned int nf_nat_sip(struct sk_buff *skb, unsigned int protoff,
+@@ -144,6 +146,7 @@ static unsigned int nf_nat_sip(struct sk
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
@@ -69,7 +65,7 @@ index 16303c7..552e270 100644
  	return NF_ACCEPT;
  }
  
-@@ -311,8 +328,10 @@ static unsigned int nf_nat_sip_expect(struct sk_buff *skb, unsigned int protoff,
+@@ -311,8 +328,10 @@ static unsigned int nf_nat_sip_expect(st
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
  	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
@@ -80,7 +76,7 @@ index 16303c7..552e270 100644
  	char buffer[INET6_ADDRSTRLEN + sizeof("[]:nnnnn")];
  	unsigned int buflen;
  
-@@ -326,8 +345,9 @@ static unsigned int nf_nat_sip_expect(struct sk_buff *skb, unsigned int protoff,
+@@ -326,8 +345,9 @@ static unsigned int nf_nat_sip_expect(st
  	/* If the signalling port matches the connection's source port in the
  	 * original direction, try to use the destination port in the opposite
  	 * direction. */
@@ -92,11 +88,9 @@ index 16303c7..552e270 100644
  		port = ntohs(ct->tuplehash[!dir].tuple.dst.u.udp.port);
  	else
  		port = ntohs(exp->tuple.dst.u.udp.port);
-diff --git a/net/netfilter/nf_conntrack_sip.c b/net/netfilter/nf_conntrack_sip.c
-index df8f4f2..72a67bb 100644
 --- a/net/netfilter/nf_conntrack_sip.c
 +++ b/net/netfilter/nf_conntrack_sip.c
-@@ -1440,8 +1440,25 @@ static int process_sip_request(struct sk_buff *skb, unsigned int protoff,
+@@ -1440,8 +1440,25 @@ static int process_sip_request(struct sk
  {
  	enum ip_conntrack_info ctinfo;
  	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);

@@ -90,7 +90,7 @@
   * Entropy extraction routines
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
-@@ -146,6 +146,7 @@ pid_t f_getown(struct file *filp)
+@@ -148,6 +148,7 @@ pid_t f_getown(struct file *filp)
  	read_unlock(&filp->f_owner.lock);
  	return pid;
  }
