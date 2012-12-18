@@ -948,6 +948,7 @@ $(eval $(call SingleProfile,ZyXEL,$(fs_64k),NBG_460N_550N_550NH,nbg460n_550n_550
 
 $(eval $(call MultiProfile,AP121,AP121_2M AP121_4M))
 $(eval $(call MultiProfile,EWDORIN, EWDORINAP EWDORINRT))
+$(eval $(call MultiProfile,OPENMESH,OM2P MR600))
 $(eval $(call MultiProfile,TEW652BRP,TEW652BRP_FW TEW652BRP_RECOVERY))
 $(eval $(call MultiProfile,TLWA801,TLWA801NV1))
 $(eval $(call MultiProfile,TLWA901,TLWA901NV1 TLWA901NV2))
