@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011 OpenWrt.org
+# Copyright (C) 2011-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -26,4 +26,15 @@ define Profile/MR600/Description
 endef
 
 $(eval $(call Profile,MR600))
+
+define Profile/OPENMESH
+	NAME:=OpenMesh products
+	PACKAGES:=kmod-ath9k om-watchdog
+endef
+
+define Profile/OPENMESH/Description
+	Build images for all OpenMesh products.
+endef
+
+$(eval $(call Profile,OPENMESH))
 
