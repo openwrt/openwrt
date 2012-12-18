@@ -30,9 +30,58 @@
  #ifdef CONFIG_USB_CNS3XXX_OHCI
  #include "ohci-cns3xxx.c"
  #define PLATFORM_DRIVER		ohci_hcd_cns3xxx_driver
+@@ -1117,7 +1124,7 @@ MODULE_LICENSE ("GPL");
+ 
+ #ifdef CONFIG_USB_OHCI_HCD_PLATFORM
+ #include "ohci-platform.c"
+-#define PLATFORM_DRIVER		ohci_platform_driver
++#define OHCI_PLATFORM_DRIVER		ohci_platform_driver
+ #endif
+ 
+ #if	!defined(PCI_DRIVER) &&		\
+@@ -1128,7 +1135,8 @@ MODULE_LICENSE ("GPL");
+ 	!defined(SA1111_DRIVER) &&	\
+ 	!defined(PS3_SYSTEM_BUS_DRIVER) && \
+ 	!defined(SM501_OHCI_DRIVER) && \
+-	!defined(TMIO_OHCI_DRIVER)
++	!defined(TMIO_OHCI_DRIVER) && \
++	!defined(OHCI_PLATFORM_DRIVER)
+ #error "missing bus glue for ohci-hcd"
+ #endif
+ 
+@@ -1206,9 +1214,19 @@ static int __init ohci_hcd_mod_init(void
+ 		goto error_tmio;
+ #endif
+ 
++#ifdef OHCI_PLATFORM_DRIVER
++	retval = platform_driver_register(&OHCI_PLATFORM_DRIVER);
++	if (retval < 0)
++		goto error_ohci;
++#endif
++
+ 	return retval;
+ 
+ 	/* Error path */
++#ifdef OHCI_PLATFORM_DRIVER
++	platform_driver_unregister(&OHCI_PLATFORM_DRIVER);
++ error_ohci:
++#endif
+ #ifdef TMIO_OHCI_DRIVER
+ 	platform_driver_unregister(&TMIO_OHCI_DRIVER);
+  error_tmio:
+@@ -1258,6 +1276,9 @@ module_init(ohci_hcd_mod_init);
+ 
+ static void __exit ohci_hcd_mod_exit(void)
+ {
++#ifdef OHCI_PLATFORM_DRIVER
++	platform_driver_unregister(&OHCI_PLATFORM_DRIVER);
++#endif
+ #ifdef TMIO_OHCI_DRIVER
+ 	platform_driver_unregister(&TMIO_OHCI_DRIVER);
+ #endif
 --- /dev/null
 +++ b/drivers/usb/host/ohci-cns21xx.c
-@@ -0,0 +1,175 @@
+@@ -0,0 +1,176 @@
 +/*
 + *  Copyright (c) 2008 Cavium Networks
 + *  Copyright (c) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
@@ -59,7 +108,8 @@
 +
 +	ret = ohci_run(ohci);
 +	if (ret) {
-+		err("can't start %s", ohci_to_hcd(ohci)->self.bus_name);
++		ohci_err(ohci, "can't start %s",
++			 ohci_to_hcd(ohci)->self.bus_name);
 +		goto err;
 +	}
 +
@@ -214,7 +264,7 @@
  #define	OHCI_QUIRK_HUB_POWER	0x100			/* distrust firmware power/oc setup */
  #define	OHCI_QUIRK_AMD_PLL	0x200			/* AMD PLL quirk*/
  #define	OHCI_QUIRK_AMD_PREFETCH	0x400			/* pre-fetch for ISO transfer */
-+#define OHCI_QUIRK_INIT_FMINTERVAL 0x1000		/* fminterval must be initialized */
++#define	OHCI_QUIRK_INIT_FMINTERVAL 0x1000		/* fminterval must be initialized */
  	// there are also chip quirks/bugs in init logic
  
  	struct work_struct	nec_work;	/* Worker for NEC quirk */
