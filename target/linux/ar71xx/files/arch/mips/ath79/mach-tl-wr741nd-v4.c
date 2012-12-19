@@ -1,5 +1,5 @@
 /*
- *  TP-LINK TL-WR741ND v4 board support
+ *  TP-LINK TL-WR741ND v4/TL-MR3220 v2 board support
  *
  *  Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
  *
@@ -18,6 +18,7 @@
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-m25p80.h"
+#include "dev-usb.h"
 #include "dev-wmac.h"
 #include "machtypes.h"
 
@@ -31,8 +32,10 @@
 #define TL_WR741NDV4_GPIO_LED_LAN2	15
 #define TL_WR741NDV4_GPIO_LED_LAN3	16
 #define TL_WR741NDV4_GPIO_LED_LAN4	17
-
 #define TL_WR741NDV4_GPIO_LED_SYSTEM	27
+
+#define TL_MR3220V2_GPIO_LED_3G		26
+#define TL_MR3220V2_GPIO_USB_POWER	8
 
 #define TL_WR741NDV4_KEYS_POLL_INTERVAL	20	/* msecs */
 #define TL_WR741NDV4_KEYS_DEBOUNCE_INTERVAL (3 * TL_WR741NDV4_KEYS_POLL_INTERVAL)
@@ -79,6 +82,11 @@ static struct gpio_led tl_wr741ndv4_leds_gpio[] __initdata = {
 		.name		= "tp-link:green:wlan",
 		.gpio		= TL_WR741NDV4_GPIO_LED_WLAN,
 		.active_low	= 0,
+	}, {
+		/* the 3G LED is only present on the MR3220 v2 */
+		.name		= "tp-link:green:3g",
+		.gpio		= TL_MR3220V2_GPIO_LED_3G,
+		.active_low	= 0,
 	},
 };
 
@@ -91,6 +99,7 @@ static struct gpio_keys_button tl_wr741ndv4_gpio_keys[] __initdata = {
 		.gpio		= TL_WR741NDV4_GPIO_BTN_RESET,
 		.active_low	= 0,
 	}, {
+		/* the WPS button is only present on the WR741ND v4 */
 		.desc		= "WPS",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
@@ -100,7 +109,7 @@ static struct gpio_keys_button tl_wr741ndv4_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init tl_wr741ndv4_setup(void)
+static void __init tl_ap121_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
@@ -113,13 +122,6 @@ static void __init tl_wr741ndv4_setup(void)
 				    AR933X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
 				    AR933X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
-	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr741ndv4_leds_gpio),
-				 tl_wr741ndv4_leds_gpio);
-
-	ath79_register_gpio_keys_polled(1, TL_WR741NDV4_KEYS_POLL_INTERVAL,
-					ARRAY_SIZE(tl_wr741ndv4_gpio_keys),
-					tl_wr741ndv4_gpio_keys);
-
 	ath79_register_m25p80(&tl_wr741ndv4_flash_data);
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 1);
 	ath79_init_mac(ath79_eth1_data.mac_addr, mac, -1);
@@ -131,5 +133,35 @@ static void __init tl_wr741ndv4_setup(void)
 	ath79_register_wmac(ee, mac);
 }
 
+static void __init tl_wr741ndv4_setup(void)
+{
+	tl_ap121_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr741ndv4_leds_gpio) - 1,
+				 tl_wr741ndv4_leds_gpio);
+	ath79_register_gpio_keys_polled(1, TL_WR741NDV4_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wr741ndv4_gpio_keys),
+					tl_wr741ndv4_gpio_keys);
+}
+
 MIPS_MACHINE(ATH79_MACH_TL_WR741ND_V4, "TL-WR741ND-v4",
 	     "TP-LINK TL-WR741ND v4", tl_wr741ndv4_setup);
+
+static void __init tl_mr3220v2_setup(void)
+{
+	tl_ap121_setup();
+
+	gpio_request_one(TL_MR3220V2_GPIO_USB_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
+	ath79_register_usb();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr741ndv4_leds_gpio),
+				 tl_wr741ndv4_leds_gpio);
+	ath79_register_gpio_keys_polled(1, TL_WR741NDV4_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wr741ndv4_gpio_keys) - 1,
+					tl_wr741ndv4_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_MR3220_V2, "TL-MR3220-v2",
+	     "TP-LINK TL-MR3220 v2", tl_mr3220v2_setup);
