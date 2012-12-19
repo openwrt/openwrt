@@ -5,8 +5,8 @@
 
 no_fo_mount_jffs() {
     # initialize jffs2
-    mount "$mtdpart" /overlay -t jffs2 || exit
-    
+    mount -o noatime "$mtdpart" /overlay -t jffs2 || exit
+
     # workaround to ensure that union can attach properly
     sync
     ls /overlay >/dev/null

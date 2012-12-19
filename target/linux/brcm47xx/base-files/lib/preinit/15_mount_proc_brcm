@@ -1,5 +1,5 @@
 #!/bin/sh
 
 do_mount_procfs() {
-	mount none /proc -t proc
+	mount -o noatime none /proc -t proc
 }

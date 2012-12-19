@@ -4,6 +4,6 @@
 START=39
 start() {
 	[ -d /proc/bus/usb ] && {
-		/bin/mount -t usbfs none /proc/bus/usb
+		mount -o noatime -t usbfs none /proc/bus/usb
 	}		
 }

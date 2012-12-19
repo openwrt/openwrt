@@ -3,11 +3,11 @@
 # Copyright (C) 2010 Vertical Communications
 
 do_mount_procfs() {
-   mount -t proc proc /proc
+   mount -o noatime -t proc proc /proc
 }
 
 do_mount_sysfs() {
-   mount -t sysfs sysfs /sys
+   mount -o noatime -tsysfs sysfs /sys
 }
 
 calc_tmpfs_size() {
@@ -16,7 +16,7 @@ calc_tmpfs_size() {
 
 do_mount_tmpfs() {
     calc_tmpfs_size
-    mount -t tmpfs -o size=$pi_size,nosuid,nodev,mode=1777 tmpfs /tmp
+    mount -o noatime -t tmpfs -o size=$pi_size,nosuid,nodev,mode=1777 tmpfs /tmp
 }
 
 boot_hook_add preinit_essential do_mount_procfs
