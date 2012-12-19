@@ -5,7 +5,7 @@
 
 mount_no_mtd() {
     mtd unlock rootfs
-    mount -o remount,rw /dev/root /
+    mount -o noatime,remount,rw /dev/root /
 }
 
 check_for_mtd() {

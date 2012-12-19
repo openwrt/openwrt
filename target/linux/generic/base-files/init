@@ -9,14 +9,14 @@ set_state init
 echo "- init -"
 
 [ -n "$SWITCH_ROOT_TMPFS" ] && {
-  mount none /mnt -t tmpfs
+  mount -o noatime none /mnt -t tmpfs
   ( cd /; find -xdev -type d ) | ( cd /mnt; xargs mkdir -p )
   find / \! -type d -xdev | tar -cT /proc/self/fd/0 | tar -xC /mnt
   mkdir /mnt/proc /mnt/dev /mnt/tmp /mnt/sys
-  mount -o move /proc /mnt/proc
-  mount -o move /dev /mnt/dev
-  mount -o move /tmp /mnt/tmp
-  mount -o move /sys /mnt/sys
+  mount -o noatime,move /proc /mnt/proc
+  mount -o noatime,move /dev /mnt/dev
+  mount -o noatime,move /tmp /mnt/tmp
+  mount -o noatime,move /sys /mnt/sys
   rm -rf /proc /dev /tmp /sys
   exec switch_root -c /dev/console /mnt /sbin/init
 }
@@ -60,7 +60,7 @@ done
 COUNTER=0
 while [ $COUNTER -lt 10 ]; do
   sleep 1
-  mount $rootfs /mnt
+  mount -o noatime $rootfs /mnt
   [ $? -eq "0" ] && let COUNTER=100;
   let COUNTER=COUNTER+1
 done
@@ -84,12 +84,12 @@ done
 
 unset rootfs
 
-mount -o move /proc /mnt/proc
-mount -o move /dev /mnt/dev
-mount -o move /dev/pts /mnt/dev/pts
-mount -o move /tmp /mnt/tmp
-mount -o move /sys /mnt/sys
-mount none /tmp -t tmpfs
+mount -o noatime,move /proc /mnt/proc
+mount -o noatime,move /dev /mnt/dev
+mount -o noatime,move /dev/pts /mnt/dev/pts
+mount -o noatime,move /tmp /mnt/tmp
+mount -o noatime,move /sys /mnt/sys
+mount -o noatime none /tmp -t tmpfs
 killall -q hotplug2
 exec switch_root -c /dev/console /mnt /sbin/init
 

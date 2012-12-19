@@ -6,9 +6,6 @@
 debug () {
 	${DEBUG:-:} "$@"
 }
-mount() {
-	busybox mount "$@"
-}
 
 # newline
 N="

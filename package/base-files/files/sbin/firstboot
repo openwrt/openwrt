@@ -27,7 +27,7 @@ if [ "${0##*/}" = "firstboot" ]; then
 	boot_run_hook jffs2reset
     else
 	mtd erase "$partname"
-	mount "$mtdpart" /overlay -t jffs2
+	mount -o noatime "$mtdpart" /overlay -t jffs2
 	fopivot /overlay /rom 1
     fi
 fi

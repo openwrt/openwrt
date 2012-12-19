@@ -6,19 +6,19 @@ do_move_devtmpfs() {
     local mnt="$(grep devtmpfs /proc/mounts)"
           mnt="${mnt#* }"; mnt="${mnt%% *}"
 
-    [ "$mnt" = "/dev" ] || mount -o move "$mnt" /dev
+    [ "$mnt" = "/dev" ] || mount -o noatime,move "$mnt" /dev
 }
 
 do_mount_devfs() {
-    mount -t devfs devfs /dev
+    mount -o noatime -t devfs devfs /dev
 }
 
 do_mount_hotplug() {
-    mount -t tmpfs -o mode=0755,size=512K tmpfs /dev
+    mount -t tmpfs -o noatime,mode=0755,size=512K tmpfs /dev
 }
 
 do_mount_udev() {
-    mount -n -t tmpfs -o mode=0755 udev /dev
+    mount -n -t tmpfs -o noatime,mode=0755 udev /dev
 }
 
 choose_device_fs() {
