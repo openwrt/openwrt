@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,20 +16,104 @@
+@@ -16,20 +16,110 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -17,6 +17,7 @@
 +	ATH79_MACH_AP83,		/* Atheros AP83 */
 +	ATH79_MACH_AP96,		/* Atheros AP96 */
 +	ATH79_MACH_AW_NR580,		/* AzureWave AW-NR580 */
++	ATH79_MACH_CAP4200AG,		/* Senao CAP4200AG */
  	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
  	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
 +	ATH79_MACH_DIR_600_A1,		/* D-Link DIR-600 rev. A1 */
@@ -30,6 +31,7 @@
 +	ATH79_MACH_JA76PF2,		/* jjPlus JA76PF2 */
 +	ATH79_MACH_JWAP003,		/* jjPlus JWAP003 */
 +	ATH79_MACH_HORNET_UB,		/* ALFA Networks Hornet-UB */
++	ATH79_MACH_MR600,		/* OpenMesh MR600 */
 +	ATH79_MACH_MZK_W04NU,		/* Planex MZK-W04NU */
 +	ATH79_MACH_MZK_W300NH,		/* Planex MZK-W300NH */
 +	ATH79_MACH_NBG460N,		/* Zyxel NBG460N/550N/550NH */
@@ -42,6 +44,7 @@
 +	ATH79_MACH_RB_411U,		/* MikroTik RouterBOARD 411U */
 +	ATH79_MACH_RB_433,		/* MikroTik RouterBOARD 433/433AH */
 +	ATH79_MACH_RB_433U,		/* MikroTik RouterBOARD 433UAH */
++	ATH79_MACH_RB_435G,		/* MikroTik RouterBOARD 435G */
 +	ATH79_MACH_RB_450G,		/* MikroTik RouterBOARD 450G */
 +	ATH79_MACH_RB_450,		/* MikroTik RouterBOARD 450 */
 +	ATH79_MACH_RB_493,		/* Mikrotik RouterBOARD 493/493AH */
@@ -60,7 +63,9 @@
 +	ATH79_MACH_TL_MR3020,		/* TP-LINK TL-MR3020 */
 +	ATH79_MACH_TL_MR3040,		/* TP-LINK TL-MR3040 */
 +	ATH79_MACH_TL_MR3220,		/* TP-LINK TL-MR3220 */
++	ATH79_MACH_TL_MR3220_V2,	/* TP-LINK TL-MR3220 v2 */
 +	ATH79_MACH_TL_MR3420,		/* TP-LINK TL-MR3420 */
++	ATH79_MACH_TL_WA7510N_V1,	/* TP-LINK TL-WA7510N v1*/
 +	ATH79_MACH_TL_WA901ND,		/* TP-LINK TL-WA901ND */
 +	ATH79_MACH_TL_WA901ND_V2,	/* TP-LINK TL-WA901ND v2 */
 +	ATH79_MACH_TL_WDR4300,		/* TP-LINK TL-WDR4300 */
@@ -91,6 +96,7 @@
 +	ATH79_MACH_WHR_HP_GN,		/* Buffalo WHR-HP-GN */
 +	ATH79_MACH_WLAE_AG300N,		/* Buffalo WLAE-AG300N */
 +	ATH79_MACH_WNDR3700,		/* NETGEAR WNDR3700/WNDR3800/WNDRMAC */
++	ATH79_MACH_WNDR4300,		/* NETGEAR WNDR4300 */
 +	ATH79_MACH_WNR2000,		/* NETGEAR WNR2000 */
 +	ATH79_MACH_WP543,		/* Compex WP543 */
 +	ATH79_MACH_WPE72,		/* Compex WPE72 */
@@ -208,7 +214,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -67,6 +147,456 @@ config ATH79_MACH_PB44
+@@ -67,6 +147,488 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -419,6 +425,17 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +
++config ATH79_MACH_WNDR4300
++	bool "NETGEAR WNDR4300 board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_NFC
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
 +config ATH79_MACH_WNR2000
 +	bool "NETGEAR WNR2000 board support"
 +	select SOC_AR913X
@@ -432,6 +449,16 @@
 +	bool "OpenMesh OM2P board support"
 +	select SOC_AR724X
 +	select SOC_AR933X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_MR600
++	bool "OpenMesh MR600 board support"
++	select SOC_AR934X
 +	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
@@ -467,6 +494,16 @@
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
++
++config ATH79_MACH_CAP4200AG
++	bool "Senao CAP4200AG support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_EAP7660D
 +	bool "Senao EAP7660D support"
@@ -507,7 +544,7 @@
 +	select ATH79_DEV_USB
 +
 +config ATH79_MACH_TL_WA901ND
-+	bool "TP-LINK TL-WA901ND support"
++	bool "TP-LINK TL-WA901ND/TL-WA7510N support"
 +	select SOC_AR724X
 +	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_ETH
@@ -555,12 +592,13 @@
 +	select ATH79_DEV_M25P80
 +
 +config ATH79_MACH_TL_WR741ND_V4
-+	bool "TP-LINK TL-WR741ND v4 support"
++	bool "TP-LINK TL-WR741ND v4/TL-MR3220 v2 support"
 +	select SOC_AR933X
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_TL_WR841N_V1
@@ -665,7 +703,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
  	select SOC_AR724X
-@@ -82,6 +612,24 @@ config ATH79_MACH_UBNT_XM
+@@ -82,6 +644,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -690,7 +728,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -117,10 +665,6 @@ config SOC_QCA955X
+@@ -117,10 +697,6 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -701,7 +739,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -131,7 +675,14 @@ config ATH79_DEV_DSA
+@@ -131,7 +707,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -717,7 +755,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -163,4 +714,7 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -163,4 +746,7 @@ config ATH79_PCI_ATH9K_FIXUP
  config ATH79_ROUTERBOOT
  	def_bool n
  
@@ -727,7 +765,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,68 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,71 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -742,6 +780,7 @@
 +obj-$(CONFIG_ATH79_MACH_AP83)		+= mach-ap83.o
 +obj-$(CONFIG_ATH79_MACH_AP96)		+= mach-ap96.o
 +obj-$(CONFIG_ATH79_MACH_AW_NR580)	+= mach-aw-nr580.o
++obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
  obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
 +obj-$(CONFIG_ATH79_MACH_DIR_600_A1)	+= mach-dir-600-a1.o
 +obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
@@ -751,6 +790,7 @@
 +obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o
 +obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach-jwap003.o
 +obj-$(CONFIG_ATH79_MACH_HORNET_UB)	+= mach-hornet-ub.o
++obj-$(CONFIG_ATH79_MACH_MR600)		+= mach-mr600.o
 +obj-$(CONFIG_ATH79_MACH_MZK_W04NU)	+= mach-mzk-w04nu.o
 +obj-$(CONFIG_ATH79_MACH_MZK_W300NH)	+= mach-mzk-w300nh.o
 +obj-$(CONFIG_ATH79_MACH_NBG460N)	+= mach-nbg460n.o
@@ -785,6 +825,7 @@
 +obj-$(CONFIG_ATH79_MACH_WHR_HP_G300N)	+= mach-whr-hp-g300n.o
 +obj-$(CONFIG_ATH79_MACH_WLAE_AG300N)	+= mach-wlae-ag300n.o
 +obj-$(CONFIG_ATH79_MACH_WNDR3700)	+= mach-wndr3700.o
++obj-$(CONFIG_ATH79_MACH_WNDR4300)	+= mach-wndr4300.o
 +obj-$(CONFIG_ATH79_MACH_WNR2000)	+= mach-wnr2000.o
 +obj-$(CONFIG_ATH79_MACH_WP543)		+= mach-wp543.o
 +obj-$(CONFIG_ATH79_MACH_WPE72)		+= mach-wpe72.o
