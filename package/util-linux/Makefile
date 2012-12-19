@@ -419,13 +419,13 @@ define Package/libuuid/install
 endef
 
 define Package/agetty/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/term-utils/agetty $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/term-utils/agetty $(1)/usr/sbin/
 endef
 
 define Package/blkid/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/blkid $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/blkid $(1)/usr/sbin/
 endef
 
 define Package/cal/install
@@ -434,18 +434,18 @@ define Package/cal/install
 endef
 
 define Package/cfdisk/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/.libs/cfdisk $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/.libs/cfdisk $(1)/usr/sbin/
 endef
 
 define Package/fdisk/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/.libs/fdisk $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/.libs/fdisk $(1)/usr/sbin/
 endef
 
 define Package/findfs/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/findfs $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/findfs $(1)/usr/sbin/
 endef
 
 define Package/flock/install
@@ -459,8 +459,8 @@ define Package/getopt/install
 endef
 
 define Package/hwclock/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hwclock/hwclock $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hwclock/hwclock $(1)/usr/sbin/
 endef
 
 define Package/logger/install
@@ -474,13 +474,13 @@ define Package/look/install
 endef
 
 define Package/losetup/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/losetup $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/losetup $(1)/usr/sbin/
 endef
 
 define Package/lsblk/install
-	$(INSTALL_DIR) $(1)/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/lsblk $(1)/bin/
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/lsblk $(1)/usr/bin/
 endef
 
 define Package/mcookie/install
@@ -489,19 +489,19 @@ define Package/mcookie/install
 endef
 
 define Package/mount-utils/install
-	$(INSTALL_DIR) $(1)/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/.libs/{u,}mount $(1)/bin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/.libs/mountpoint $(1)/bin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/findmnt $(1)/bin/
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/.libs/{u,}mount $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/.libs/mountpoint $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/findmnt $(1)/usr/bin/
 endef
 
 define Package/namei/install
-	$(INSTALL_DIR) $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/namei $(1)/usr/bin/
 endef
 
 define Package/rename/install
-	$(INSTALL_DIR) $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/rename $(1)/usr/bin/
 endef
 
@@ -524,16 +524,16 @@ define Package/setterm/install
 endef
 
 define Package/sfdisk/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/sfdisk $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/sfdisk $(1)/usr/sbin/
 endef
 
 define Package/swap-utils/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/.libs/mkswap $(1)/sbin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/.libs/swaplabel $(1)/sbin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/.libs/swapon $(1)/sbin/
-	ln -sf swapon $(1)/sbin/swapoff
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/.libs/mkswap $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/.libs/swaplabel $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/.libs/swapon $(1)/usr/sbin/
+	ln -sf swapon $(1)/usr/sbin/swapoff
 endef
 
 define Package/uuidd/install
@@ -557,8 +557,8 @@ define Package/whereis/install
 endef
 
 define Package/wipefs/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/wipefs $(1)/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/.libs/wipefs $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,libblkid))
