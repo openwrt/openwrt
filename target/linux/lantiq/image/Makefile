@@ -160,8 +160,17 @@ Image/Build/Profile/ARV752DPW22=$(call Image/Build/$(1),$(1),ARV752DPW22)
 
 
 # AR9
-Image/BuildKernel/Profile/DGN3500B=$(call Image/BuildKernel/Template,DGN3500B)
-Image/Build/Profile/DGN3500B=$(call Image/Build/$(1),$(1),DGN3500B)
+Image/BuildKernel/Profile/DGN3500=$(call Image/BuildKernel/Template,DGN3500)
+Image/Build/Profile/DGN3500=$(call Image/Build/$(1),$(1),DGN3500)
+
+Image/BuildKernel/Profile/DGN3500B=$(call Image/BuildKernel/Template,DGN3500)
+Image/Build/Profile/DGN3500B=$(call Image/Build/$(1),$(1),DGN3500)
+
+Image/BuildKernel/Profile/WBMRA=$(call Image/BuildKernel/Template,WBMR)
+Image/Build/Profile/WBMRA=$(call Image/Build/$(1),$(1),WBMR)
+
+Image/BuildKernel/Profile/WBMRB=$(call Image/BuildKernel/Template,WBMR)
+Image/Build/Profile/WBMRB=$(call Image/Build/$(1),$(1),WBMR)
 
 Image/BuildKernel/Profile/FRITZ7320=$(call Image/BuildKernelEVA/Template,FRITZ7320)
 Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)

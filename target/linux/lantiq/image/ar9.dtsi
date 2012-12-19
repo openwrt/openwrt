@@ -86,7 +86,6 @@
 			reg = <0xE100A00 0x100>;
 			interrupt-parent = <&icu0>;
 			interrupts = <126 127 128 129 130 131>;
-			status = "disabled";
 		};
 
 		asc0: serial@E100400 {
@@ -147,6 +146,7 @@
 				0xE108000 0x200>;
 			interrupt-parent = <&icu0>;
 			interrupts = <73 72>;
+			mac-address = [ 00 11 22 33 44 55 ];
 		};
 
 		ppe@E234000 {

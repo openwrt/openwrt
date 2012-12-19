@@ -1,0 +1,161 @@
+/dts-v1/;
+
+/include/ "ar9.dtsi"
+
+/ {
+	model = "WBMR - Buffalo WBMR-HP-G300H";
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
+
+	memory@0 {
+		reg = <0x0 0x4000000>;
+	};
+
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x2000000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x00000 0x40000>;
+					read-only;
+				};
+
+				partition@40000 {
+					label = "uboot_env";
+					reg = <0x40000 0x20000>;
+					read-only;
+				};
+
+				partition@20000 {
+					label = "linux";
+					reg = <0x60000 0x1f20000>;
+				};
+
+				partition@0x1fe0000 {
+					label = "calibration";
+					reg = <0x1fe0000 0x20000>;
+					read-only;
+				};
+			};
+
+			mac_addr {
+				compatible = "lantiq,eth-mac";
+				reg = <0 0x1fd0024 0x6>;
+			};
+		};
+
+		gpio: pinmux@E100B10 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			state_default: pinmux {
+				pci-in {
+					lantiq,groups = "req1";
+					lantiq,output = <0>;
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+				};
+				pci-out {
+					lantiq,groups = "gnt1";
+					lantiq,output = <1>;
+					lantiq,pull = <0>;
+				};
+				pci_rst {
+					lantiq,pins = "io21";
+					lantiq,pull = <0>;
+					lantiq,output = <1>;
+				};
+			};
+		};
+
+		etop@E180000 {
+			phy-mode = "gmii";
+		};
+
+		ifxhcd@E101000 {
+			status = "okay";
+			gpios = <&gpio 36 0>;
+		};
+
+		pci@E105400 {
+			status = "okay";
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+		
+		wps {
+			label = "wps";
+			gpios = <&gpio 0 1>;
+			linux,code = <0x211>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio 37 1>;
+			linux,code = <0x198>;
+		};
+		eject {
+			label = "eject";
+			gpios = <&gpio 34 1>;
+			linux,code = <0x108>;
+		};
+		movie {
+			label = "movie";
+			gpios = <&gpio 22 1>;
+			linux,code = <0x109>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		power {
+			label = "power";
+			gpios = <&gpio 1 1>;
+		};
+		power2 {
+			label = "power2";
+			gpios = <&gpio 5 1>;
+		};
+		security {
+			label = "security";
+			gpios = <&gpio 14 1>;
+		};
+		wifi {
+			label = "wifi";
+			gpios = <&gpio 15 1>;
+		};
+		dsl {
+			label = "dsl";
+			gpios = <&gpio 16 1>;
+		};
+		online {
+			label = "online";
+			gpios = <&gpio 17 1>;
+		};
+		online2 {
+			label = "online2";
+			gpios = <&gpio 18 1>;
+		};
+		movie {
+			label = "movie";
+			gpios = <&gpio 20 1>;
+		};
+		usb {
+			label = "usb";
+			gpios = <&gpio 28 1>;
+			default-state = "on";
+		};
+	};
+};
