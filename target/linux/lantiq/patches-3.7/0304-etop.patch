@@ -1,0 +1,33 @@
+Index: linux-3.7.1/drivers/net/ethernet/lantiq_etop.c
+===================================================================
+--- linux-3.7.1.orig/drivers/net/ethernet/lantiq_etop.c	2012-12-19 17:06:46.282857707 +0100
++++ linux-3.7.1/drivers/net/ethernet/lantiq_etop.c	2012-12-19 17:09:26.710861534 +0100
+@@ -335,16 +335,17 @@
+ ltq_etop_hw_init(struct net_device *dev)
+ {
+ 	struct ltq_etop_priv *priv = netdev_priv(dev);
++	int mii_mode = priv->mii_mode;
+ 
+ 	clk_enable(priv->clk_ppe);
+ 
+ 	if (of_machine_is_compatible("lantiq,ar9")) {
+ 		ltq_etop_gbit_init(dev);
+ 		/* force the etops link to the gbit to MII */
+-		priv->mii_mode = PHY_INTERFACE_MODE_MII;
++		mii_mode = PHY_INTERFACE_MODE_MII;
+ 	}
+ 
+-	switch (priv->mii_mode) {
++	switch (mii_mode) {
+ 	case PHY_INTERFACE_MODE_RMII:
+ 		ltq_etop_w32_mask(ETOP_MII_MASK,
+ 			ETOP_MII_REVERSE, LTQ_ETOP_CFG);
+@@ -369,7 +370,7 @@
+ 			break;
+ 		}
+ 		netdev_err(dev, "unknown mii mode %d\n",
+-			priv->mii_mode);
++			mii_mode);
+ 		return -ENOTSUPP;
+ 	}
+ 
