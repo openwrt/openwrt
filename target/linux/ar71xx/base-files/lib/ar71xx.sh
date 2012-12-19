@@ -345,6 +345,9 @@ ar71xx_board_detect() {
 	*TL-MR3220)
 		name="tl-mr3220"
 		;;
+	*"TL-MR3220 v2")
+		name="tl-mr3220-v2"
+		;;
 	*TL-MR3420)
 		name="tl-mr3420"
 		;;
