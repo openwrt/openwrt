@@ -5,7 +5,7 @@
 . /lib/functions.sh
 
 case "${BUTTON}" in
-	BTN_0)
+	reset)
 		logger "reset pressed"
 		echo "REBOOT" > /dev/console
 		sleep 3

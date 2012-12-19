@@ -7,7 +7,7 @@
 . /lib/functions/uci-defaults.sh
 . /lib/functions/lantiq.sh
 
-[ -e "/sys/class/leds/wifi" ] && ucidef_set_led_wlan "wifi" "wifi" "wifi" "phy0tx"
+[ -e "/sys/class/leds/wifi" ] && ucidef_set_led_wlan "wifi" "wifi" "wifi" "phy0tpt"
 [ -e "/sys/class/leds/usb" ] && ucidef_set_led_usbdev "usb" "usb" "usb" "1-1"
 [ -e "/sys/class/leds/dsl" ] &&	ucidef_set_led_netdev "dsl" "dsl" "dsl" "pppoe-wan"
 
