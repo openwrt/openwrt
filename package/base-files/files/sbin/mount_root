@@ -10,7 +10,7 @@ failsafe_hook=
 initramfs_hook=
 preinit_mount_root=
 
-. /lib/functions/boot.sh
+. /lib/functions.sh
 
 for pi_source_file in /lib/preinit/*; do
     . $pi_source_file
