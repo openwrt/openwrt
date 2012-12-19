@@ -11,7 +11,7 @@ ath9k_eeprom_extract() {
 	local count=$3
 	local mtd
 
-	. /etc/functions.sh
+	. /lib/functions.sh
 
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || \

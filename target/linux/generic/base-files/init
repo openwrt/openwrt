@@ -35,7 +35,7 @@ echo "- init -"
 
 # Load the modules we have in initramfs, this should
 # make the media accessible, but, it may take some time
-. /etc/functions.sh
+. /lib/functions.sh
 load_modules /etc/modules /etc/modules.d/*
 
 #wait 10 seconds for the disc to show up

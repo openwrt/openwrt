@@ -12,7 +12,7 @@ rt2x00_eeprom_extract() {
 	local count=$3
 	local mtd
 
-	. /etc/functions.sh
+	. /lib/functions.sh
 
 	mtd=$(find_mtd_part $part)
 	[ -n "$mtd" ] || \
