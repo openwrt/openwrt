@@ -88,6 +88,7 @@ static void __init dap_1350_init(void)
 				     dap_1350_gpio_buttons);
 	rt305x_register_wifi();
 	rt305x_register_wdt();
+	rt305x_register_usb();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_DAP_1350, "DAP-1350", "D-Link DAP-1350",
