@@ -1,23 +1,320 @@
-From cae49ede00ec3d0cda290b03fee55b72b49efc11 Mon Sep 17 00:00:00 2001
-From: David Woodhouse <dwmw2@infradead.org>
-Date: Tue, 11 Dec 2012 14:57:14 +0000
-Subject: [PATCH] solos-pci: fix double-free of TX skb in DMA mode
+commit 152a2a8b5e1d4cbe91a7c66f1028db15164a3766
+Author: David Woodhouse <David.Woodhouse@intel.com>
+Date:   Wed Dec 19 11:01:21 2012 +0000
 
-We weren't clearing card->tx_skb[port] when processing the TX done interrupt.
-If there wasn't another skb ready to transmit immediately, this led to a
-double-free because we'd free it *again* next time we did have a packet to
-send.
+    solos-pci: ensure all TX packets are aligned to 4 bytes
+    
+    The FPGA can't handled unaligned DMA (yet). So copy into an aligned buffer,
+    if skb->data isn't suitably aligned.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
 
-Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
-Cc: stable@kernel.org
-Signed-off-by: David S. Miller <davem@davemloft.net>
+commit 13af816469db3449c072afbae6c4c1bd9ccecccb
+Author: Nathan Williams <nathan@traverse.com.au>
+Date:   Wed Dec 19 11:01:20 2012 +0000
+
+    solos-pci: add firmware upgrade support for new models
+    
+    Signed-off-by: Nathan Williams <nathan@traverse.com.au>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit 7fbdadb5e951e4f0c0fc991ff5f50295568786e6
+Author: Nathan Williams <nathan@traverse.com.au>
+Date:   Wed Dec 19 11:01:19 2012 +0000
+
+    solos-pci: remove superfluous debug output
+    
+    Signed-off-by: Nathan Williams <nathan@traverse.com.au>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit f9baad02e7411d9f38d5ebe1a1cdcde4ceec100d
+Author: Nathan Williams <nathan@traverse.com.au>
+Date:   Wed Dec 19 11:01:18 2012 +0000
+
+    solos-pci: add GPIO support for newer versions on Geos board
+    
+    dwmw2: Tidy up a little, simpler matching on which GPIO is being accessed,
+           only register on newer boards, register under PCI device instead of
+           duplicating them under each ATM device.
+    
+    Signed-off-by: Nathan Williams <nathan@traverse.com.au>
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit cae49ede00ec3d0cda290b03fee55b72b49efc11
+Author: David Woodhouse <dwmw2@infradead.org>
+Date:   Tue Dec 11 14:57:14 2012 +0000
+
+    solos-pci: fix double-free of TX skb in DMA mode
+    
+    We weren't clearing card->tx_skb[port] when processing the TX done interrupt.
+    If there wasn't another skb ready to transmit immediately, this led to a
+    double-free because we'd free it *again* next time we did have a packet to
+    send.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Cc: stable@kernel.org
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+==
+There is a typo here so we do a double lock instead of an unlock.
+
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 ---
- drivers/atm/solos-pci.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+Only needed in linux-next.  Introduced in f9baad02e7411d9 [14/17]
+solos-pci: add GPIO support for newer versions on Geos board
+
 
 --- a/drivers/atm/solos-pci.c
 +++ b/drivers/atm/solos-pci.c
-@@ -945,10 +945,11 @@ static uint32_t fpga_tx(struct solos_car
+@@ -42,7 +42,8 @@
+ #include <linux/swab.h>
+ #include <linux/slab.h>
+ 
+-#define VERSION "0.07"
++#define VERSION "1.04"
++#define DRIVER_VERSION 0x01
+ #define PTAG "solos-pci"
+ 
+ #define CONFIG_RAM_SIZE	128
+@@ -56,16 +57,21 @@
+ #define FLASH_BUSY	0x60
+ #define FPGA_MODE	0x5C
+ #define FLASH_MODE	0x58
++#define GPIO_STATUS	0x54
++#define DRIVER_VER	0x50
+ #define TX_DMA_ADDR(port)	(0x40 + (4 * (port)))
+ #define RX_DMA_ADDR(port)	(0x30 + (4 * (port)))
+ 
+ #define DATA_RAM_SIZE	32768
+ #define BUF_SIZE	2048
+ #define OLD_BUF_SIZE	4096 /* For FPGA versions <= 2*/
+-#define FPGA_PAGE	528 /* FPGA flash page size*/
+-#define SOLOS_PAGE	512 /* Solos flash page size*/
+-#define FPGA_BLOCK	(FPGA_PAGE * 8) /* FPGA flash block size*/
+-#define SOLOS_BLOCK	(SOLOS_PAGE * 8) /* Solos flash block size*/
++/* Old boards use ATMEL AD45DB161D flash */
++#define ATMEL_FPGA_PAGE	528 /* FPGA flash page size*/
++#define ATMEL_SOLOS_PAGE	512 /* Solos flash page size*/
++#define ATMEL_FPGA_BLOCK	(ATMEL_FPGA_PAGE * 8) /* FPGA block size*/
++#define ATMEL_SOLOS_BLOCK	(ATMEL_SOLOS_PAGE * 8) /* Solos block size*/
++/* Current boards use M25P/M25PE SPI flash */
++#define SPI_FLASH_BLOCK	(256 * 64)
+ 
+ #define RX_BUF(card, nr) ((card->buffers) + (nr)*(card->buffer_size)*2)
+ #define TX_BUF(card, nr) ((card->buffers) + (nr)*(card->buffer_size)*2 + (card->buffer_size))
+@@ -123,11 +129,14 @@ struct solos_card {
+ 	struct sk_buff_head cli_queue[4];
+ 	struct sk_buff *tx_skb[4];
+ 	struct sk_buff *rx_skb[4];
++	unsigned char *dma_bounce;
+ 	wait_queue_head_t param_wq;
+ 	wait_queue_head_t fw_wq;
+ 	int using_dma;
++	int dma_alignment;
+ 	int fpga_version;
+ 	int buffer_size;
++	int atmel_flash;
+ };
+ 
+ 
+@@ -452,7 +461,6 @@ static ssize_t console_show(struct devic
+ 
+ 	len = skb->len;
+ 	memcpy(buf, skb->data, len);
+-	dev_dbg(&card->dev->dev, "len: %d\n", len);
+ 
+ 	kfree_skb(skb);
+ 	return len;
+@@ -499,6 +507,78 @@ static ssize_t console_store(struct devi
+ 	return err?:count;
+ }
+ 
++struct geos_gpio_attr {
++	struct device_attribute attr;
++	int offset;
++};
++
++#define SOLOS_GPIO_ATTR(_name, _mode, _show, _store, _offset)	\
++	struct geos_gpio_attr gpio_attr_##_name = {		\
++		.attr = __ATTR(_name, _mode, _show, _store),	\
++		.offset = _offset }
++
++static ssize_t geos_gpio_store(struct device *dev, struct device_attribute *attr,
++			       const char *buf, size_t count)
++{
++	struct pci_dev *pdev = container_of(dev, struct pci_dev, dev);
++	struct geos_gpio_attr *gattr = container_of(attr, struct geos_gpio_attr, attr);
++	struct solos_card *card = pci_get_drvdata(pdev);
++	uint32_t data32;
++
++	if (count != 1 && (count != 2 || buf[1] != '\n'))
++		return -EINVAL;
++
++	spin_lock_irq(&card->param_queue_lock);
++	data32 = ioread32(card->config_regs + GPIO_STATUS);
++	if (buf[0] == '1') {
++		data32 |= 1 << gattr->offset;
++		iowrite32(data32, card->config_regs + GPIO_STATUS);
++	} else if (buf[0] == '0') {
++		data32 &= ~(1 << gattr->offset);
++		iowrite32(data32, card->config_regs + GPIO_STATUS);
++	} else {
++		count = -EINVAL;
++	}
++	spin_unlock_irq(&card->param_queue_lock);
++	return count;
++}
++
++static ssize_t geos_gpio_show(struct device *dev, struct device_attribute *attr,
++			      char *buf)
++{
++	struct pci_dev *pdev = container_of(dev, struct pci_dev, dev);
++	struct geos_gpio_attr *gattr = container_of(attr, struct geos_gpio_attr, attr);
++	struct solos_card *card = pci_get_drvdata(pdev);
++	uint32_t data32;
++
++	data32 = ioread32(card->config_regs + GPIO_STATUS);
++	data32 = (data32 >> gattr->offset) & 1;
++
++	return sprintf(buf, "%d\n", data32);
++}
++
++static ssize_t hardware_show(struct device *dev, struct device_attribute *attr,
++			     char *buf)
++{
++	struct pci_dev *pdev = container_of(dev, struct pci_dev, dev);
++	struct geos_gpio_attr *gattr = container_of(attr, struct geos_gpio_attr, attr);
++	struct solos_card *card = pci_get_drvdata(pdev);
++	uint32_t data32;
++
++	data32 = ioread32(card->config_regs + GPIO_STATUS);
++	switch (gattr->offset) {
++	case 0:
++		/* HardwareVersion */
++		data32 = data32 & 0x1F;
++		break;
++	case 1:
++		/* HardwareVariant */
++		data32 = (data32 >> 5) & 0x0F;
++		break;
++	}
++	return sprintf(buf, "%d\n", data32);
++}
++
+ static DEVICE_ATTR(console, 0644, console_show, console_store);
+ 
+ 
+@@ -507,6 +587,14 @@ static DEVICE_ATTR(console, 0644, consol
+ 
+ #include "solos-attrlist.c"
+ 
++static SOLOS_GPIO_ATTR(GPIO1, 0644, geos_gpio_show, geos_gpio_store, 9);
++static SOLOS_GPIO_ATTR(GPIO2, 0644, geos_gpio_show, geos_gpio_store, 10);
++static SOLOS_GPIO_ATTR(GPIO3, 0644, geos_gpio_show, geos_gpio_store, 11);
++static SOLOS_GPIO_ATTR(GPIO4, 0644, geos_gpio_show, geos_gpio_store, 12);
++static SOLOS_GPIO_ATTR(GPIO5, 0644, geos_gpio_show, geos_gpio_store, 13);
++static SOLOS_GPIO_ATTR(PushButton, 0444, geos_gpio_show, NULL, 14);
++static SOLOS_GPIO_ATTR(HardwareVersion, 0444, hardware_show, NULL, 0);
++static SOLOS_GPIO_ATTR(HardwareVariant, 0444, hardware_show, NULL, 1);
+ #undef SOLOS_ATTR_RO
+ #undef SOLOS_ATTR_RW
+ 
+@@ -523,6 +611,23 @@ static struct attribute_group solos_attr
+ 	.name = "parameters",
+ };
+ 
++static struct attribute *gpio_attrs[] = {
++	&gpio_attr_GPIO1.attr.attr,
++	&gpio_attr_GPIO2.attr.attr,
++	&gpio_attr_GPIO3.attr.attr,
++	&gpio_attr_GPIO4.attr.attr,
++	&gpio_attr_GPIO5.attr.attr,
++	&gpio_attr_PushButton.attr.attr,
++	&gpio_attr_HardwareVersion.attr.attr,
++	&gpio_attr_HardwareVariant.attr.attr,
++	NULL
++};
++
++static struct attribute_group gpio_attr_group = {
++	.attrs = gpio_attrs,
++	.name = "gpio",
++};
++
+ static int flash_upgrade(struct solos_card *card, int chip)
+ {
+ 	const struct firmware *fw;
+@@ -534,16 +639,25 @@ static int flash_upgrade(struct solos_ca
+ 	switch (chip) {
+ 	case 0:
+ 		fw_name = "solos-FPGA.bin";
+-		blocksize = FPGA_BLOCK;
++		if (card->atmel_flash)
++			blocksize = ATMEL_FPGA_BLOCK;
++		else
++			blocksize = SPI_FLASH_BLOCK;
+ 		break;
+ 	case 1:
+ 		fw_name = "solos-Firmware.bin";
+-		blocksize = SOLOS_BLOCK;
++		if (card->atmel_flash)
++			blocksize = ATMEL_SOLOS_BLOCK;
++		else
++			blocksize = SPI_FLASH_BLOCK;
+ 		break;
+ 	case 2:
+ 		if (card->fpga_version > LEGACY_BUFFERS){
+ 			fw_name = "solos-db-FPGA.bin";
+-			blocksize = FPGA_BLOCK;
++			if (card->atmel_flash)
++				blocksize = ATMEL_FPGA_BLOCK;
++			else
++				blocksize = SPI_FLASH_BLOCK;
+ 		} else {
+ 			dev_info(&card->dev->dev, "FPGA version doesn't support"
+ 					" daughter board upgrades\n");
+@@ -553,7 +667,10 @@ static int flash_upgrade(struct solos_ca
+ 	case 3:
+ 		if (card->fpga_version > LEGACY_BUFFERS){
+ 			fw_name = "solos-Firmware.bin";
+-			blocksize = SOLOS_BLOCK;
++			if (card->atmel_flash)
++				blocksize = ATMEL_SOLOS_BLOCK;
++			else
++				blocksize = SPI_FLASH_BLOCK;
+ 		} else {
+ 			dev_info(&card->dev->dev, "FPGA version doesn't support"
+ 					" daughter board upgrades\n");
+@@ -569,6 +686,9 @@ static int flash_upgrade(struct solos_ca
+ 
+ 	dev_info(&card->dev->dev, "Flash upgrade starting\n");
+ 
++	/* New FPGAs require driver version before permitting flash upgrades */
++	iowrite32(DRIVER_VERSION, card->config_regs + DRIVER_VER);
++
+ 	numblocks = fw->size / blocksize;
+ 	dev_info(&card->dev->dev, "Firmware size: %zd\n", fw->size);
+ 	dev_info(&card->dev->dev, "Number of blocks: %d\n", numblocks);
+@@ -598,9 +718,13 @@ static int flash_upgrade(struct solos_ca
+ 		/* dev_info(&card->dev->dev, "Set FPGA Flash mode to Block Write\n"); */
+ 		iowrite32(((chip * 2) + 1), card->config_regs + FLASH_MODE);
+ 
+-		/* Copy block to buffer, swapping each 16 bits */
++		/* Copy block to buffer, swapping each 16 bits for Atmel flash */
+ 		for(i = 0; i < blocksize; i += 4) {
+-			uint32_t word = swahb32p((uint32_t *)(fw->data + offset + i));
++			uint32_t word;
++			if (card->atmel_flash)
++				word = swahb32p((uint32_t *)(fw->data + offset + i));
++			else
++				word = *(uint32_t *)(fw->data + offset + i);
+ 			if(card->fpga_version > LEGACY_BUFFERS)
+ 				iowrite32(word, FLASH_BUF + i);
+ 			else
+@@ -945,10 +1069,11 @@ static uint32_t fpga_tx(struct solos_car
  	for (port = 0; tx_pending; tx_pending >>= 1, port++) {
  		if (tx_pending & 1) {
  			struct sk_buff *oldskb = card->tx_skb[port];
@@ -31,3 +328,90 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			spin_lock(&card->tx_queue_lock);
  			skb = skb_dequeue(&card->tx_queue[port]);
  			if (!skb)
+@@ -960,7 +1085,12 @@ static uint32_t fpga_tx(struct solos_car
+ 				tx_started |= 1 << port;
+ 				oldskb = skb; /* We're done with this skb already */
+ 			} else if (skb && card->using_dma) {
+-				SKB_CB(skb)->dma_addr = pci_map_single(card->dev, skb->data,
++				unsigned char *data = skb->data;
++				if ((unsigned long)data & card->dma_alignment) {
++					data = card->dma_bounce + (BUF_SIZE * port);
++					memcpy(data, skb->data, skb->len);
++				}
++				SKB_CB(skb)->dma_addr = pci_map_single(card->dev, data,
+ 								       skb->len, PCI_DMA_TODEVICE);
+ 				card->tx_skb[port] = skb;
+ 				iowrite32(SKB_CB(skb)->dma_addr,
+@@ -1134,18 +1264,33 @@ static int fpga_probe(struct pci_dev *de
+ 		db_fpga_upgrade = db_firmware_upgrade = 0;
+ 	}
+ 
++	/* Stopped using Atmel flash after 0.03-38 */
++	if (fpga_ver < 39)
++		card->atmel_flash = 1;
++	else
++		card->atmel_flash = 0;
++
++	data32 = ioread32(card->config_regs + PORTS);
++	card->nr_ports = (data32 & 0x000000FF);
++
+ 	if (card->fpga_version >= DMA_SUPPORTED) {
+ 		pci_set_master(dev);
+ 		card->using_dma = 1;
++		if (1) { /* All known FPGA versions so far */
++			card->dma_alignment = 3;
++			card->dma_bounce = kmalloc(card->nr_ports * BUF_SIZE, GFP_KERNEL);
++			if (!card->dma_bounce) {
++				dev_warn(&card->dev->dev, "Failed to allocate DMA bounce buffers\n");
++				/* Fallback to MMIO doesn't work */
++				goto out_unmap_both;
++			}
++		}
+ 	} else {
+ 		card->using_dma = 0;
+ 		/* Set RX empty flag for all ports */
+ 		iowrite32(0xF0, card->config_regs + FLAGS_ADDR);
+ 	}
+ 
+-	data32 = ioread32(card->config_regs + PORTS);
+-	card->nr_ports = (data32 & 0x000000FF);
+-
+ 	pci_set_drvdata(dev, card);
+ 
+ 	tasklet_init(&card->tlet, solos_bh, (unsigned long)card);
+@@ -1180,6 +1325,10 @@ static int fpga_probe(struct pci_dev *de
+ 	if (err)
+ 		goto out_free_irq;
+ 
++	if (card->fpga_version >= DMA_SUPPORTED &&
++	    sysfs_create_group(&card->dev->dev.kobj, &gpio_attr_group))
++		dev_err(&card->dev->dev, "Could not register parameter group for GPIOs\n");
++
+ 	return 0;
+ 
+  out_free_irq:
+@@ -1188,6 +1337,7 @@ static int fpga_probe(struct pci_dev *de
+ 	tasklet_kill(&card->tlet);
+ 	
+  out_unmap_both:
++	kfree(card->dma_bounce);
+ 	pci_set_drvdata(dev, NULL);
+ 	pci_iounmap(dev, card->buffers);
+  out_unmap_config:
+@@ -1290,11 +1440,16 @@ static void fpga_remove(struct pci_dev *
+ 	iowrite32(1, card->config_regs + FPGA_MODE);
+ 	(void)ioread32(card->config_regs + FPGA_MODE); 
+ 
++	if (card->fpga_version >= DMA_SUPPORTED)
++		sysfs_remove_group(&card->dev->dev.kobj, &gpio_attr_group);
++
+ 	atm_remove(card);
+ 
+ 	free_irq(dev->irq, card);
+ 	tasklet_kill(&card->tlet);
+ 
++	kfree(card->dma_bounce);
++
+ 	/* Release device from reset */
+ 	iowrite32(0, card->config_regs + FPGA_MODE);
+ 	(void)ioread32(card->config_regs + FPGA_MODE); 
