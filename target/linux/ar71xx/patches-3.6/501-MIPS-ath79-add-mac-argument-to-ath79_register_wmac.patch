@@ -16,7 +16,7 @@
  static struct ath9k_platform_data ath79_wmac_data;
  
  static struct resource ath79_wmac_resources[] = {
-@@ -134,7 +136,7 @@ static void qca955x_wmac_setup(void)
+@@ -151,7 +153,7 @@ static void qca955x_wmac_setup(void)
  		ath79_wmac_data.is_clk_25mhz = true;
  }
  
@@ -25,7 +25,7 @@
  {
  	if (soc_is_ar913x())
  		ar913x_wmac_setup();
-@@ -151,5 +153,10 @@ void __init ath79_register_wmac(u8 *cal_
+@@ -168,5 +170,10 @@ void __init ath79_register_wmac(u8 *cal_
  		memcpy(ath79_wmac_data.eeprom_data, cal_data,
  		       sizeof(ath79_wmac_data.eeprom_data));
  
