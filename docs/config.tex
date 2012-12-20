@@ -23,7 +23,7 @@ To be able to load configuration files, you need to include the common
 functions with:
 
 \begin{Verbatim}
-. /etc/functions.sh
+. /lib/functions.sh
 \end{Verbatim}
 
 Then you can use \texttt{config\_load \textit{<name>}} to load config files. The function
@@ -32,7 +32,7 @@ it from \texttt{/etc/config} (which is the most common way of using it).
 
 If you want to use special callbacks for sections and/or options, you
 need to define the following shell functions before running \texttt{config\_load}
-(after including \texttt{/etc/functions.sh}):
+(after including \texttt{/lib/functions.sh}):
 
 \begin{Verbatim}
 config_cb() {
