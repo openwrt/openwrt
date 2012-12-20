@@ -1,0 +1,578 @@
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -507,6 +507,8 @@ struct spi_transfer {
+ 	u16		delay_usecs;
+ 	u32		speed_hz;
+ 
++	unsigned	last_in_message_list;
++
+ 	struct list_head transfer_list;
+ };
+ 
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -179,6 +179,14 @@ config SPI_GPIO_OLD
+ 
+ 	  If unsure, say N.
+ 
++config SPI_CNS21XX
++	tristate "Cavium Netowrks CNS21xx SPI master"
++	depends on ARCH_CNS21XX && EXPERIMENTAL
++	select SPI_BITBANG
++	help
++	  This driver supports the buil-in SPI controller of the Cavium Networks
++	  CNS21xx SoCs.
++
+ config SPI_IMX
+ 	tristate "Freescale i.MX SPI controllers"
+ 	depends on ARCH_MXC
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_SPI_BFIN5XX)		+= spi-bfin5x
+ obj-$(CONFIG_SPI_BFIN_SPORT)		+= spi-bfin-sport.o
+ obj-$(CONFIG_SPI_BITBANG)		+= spi-bitbang.o
+ obj-$(CONFIG_SPI_BUTTERFLY)		+= spi-butterfly.o
++obj-$(CONFIG_SPI_CNS21XX)		+= spi-cns21xx.o
+ obj-$(CONFIG_SPI_COLDFIRE_QSPI)		+= spi-coldfire-qspi.o
+ obj-$(CONFIG_SPI_DAVINCI)		+= spi-davinci.o
+ obj-$(CONFIG_SPI_DESIGNWARE)		+= spi-dw.o
+--- a/drivers/spi/spi-bitbang.c
++++ b/drivers/spi/spi-bitbang.c
+@@ -330,6 +330,13 @@ static void bitbang_work(struct work_str
+ 				 */
+ 				if (!m->is_dma_mapped)
+ 					t->rx_dma = t->tx_dma = 0;
++
++				if (t->transfer_list.next == &m->transfers) {
++					t->last_in_message_list = 1;
++				} else {
++					t->last_in_message_list = 0;
++				}
++
+ 				status = bitbang->txrx_bufs(spi, t);
+ 			}
+ 			if (status > 0)
+--- /dev/null
++++ b/drivers/spi/spi-cns21xx.c
+@@ -0,0 +1,521 @@
++/*
++ *  Copyright (c) 2008 Cavium Networks
++ *  Copyright (c) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
++ *
++ *  This file is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License, Version 2, as
++ *  published by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/spinlock.h>
++#include <linux/workqueue.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <linux/errno.h>
++#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/spi_bitbang.h>
++
++#include <mach/hardware.h>
++#include <mach/cns21xx.h>
++
++#define DRIVER_NAME	"cns21xx-spi"
++
++#ifdef CONFIG_CNS21XX_SPI_DEBUG
++#define DBG(fmt, args...)	pr_info("[CNS21XX_SPI_DEBUG]" fmt, ## args)
++#else
++#define DBG(fmt, args...)	do {} while (0)
++#endif /*  CNS21XX_SPI_DEBUG */
++
++#define SPI_REG_CFG			0x40
++#define SPI_REG_STAT			0x44
++#define SPI_REG_BIT_RATE		0x48
++#define SPI_REG_TX_CTRL			0x4c
++#define SPI_REG_TX_DATA			0x50
++#define SPI_REG_RX_CTRL			0x54
++#define SPI_REG_RX_DATA			0x58
++#define SPI_REG_FIFO_TX_CFG		0x5c
++#define SPI_REG_FIFO_TX_CTRL		0x60
++#define SPI_REG_FIFO_RX_CFG		0x64
++#define SPI_REG_INTR_STAT		0x68
++#define SPI_REG_INTR_ENA		0x6c
++
++#define CFG_SPI_EN			BIT(31)
++#define CFG_SPI_CLKPOL			BIT(14)
++#define CFG_SPI_CLKPHA			BIT(13)
++#define CFG_SPI_MASTER_EN		BIT(11)
++#define CFG_SPI_CHAR_LEN_M		0x3
++#define CFG_SPI_CHAR_LEN_8BITS		0
++#define CFG_SPI_CHAR_LEN_16BITS		1
++#define CFG_SPI_CHAR_LEN_24BITS		2
++#define CFG_SPI_CHAR_LEN_32BITS		3
++
++#define STAT_SPI_BUSY_STA		BIT(1)
++
++#define BIT_RATE_DIV_1			0
++#define BIT_RATE_DIV_2			1
++#define BIT_RATE_DIV_4			2
++#define BIT_RATE_DIV_8			3
++#define BIT_RATE_DIV_16			4
++#define BIT_RATE_DIV_32			5
++#define BIT_RATE_DIV_64			6
++#define BIT_RATE_DIV_128		7
++
++#define TX_CTRL_SPI_TXDAT_EOF		BIT(2)
++#define TX_CTRL_SPI_TXCH_NUM_M		0x3
++#define TX_CTRL_CLEAR_MASK		(TX_CTRL_SPI_TXDAT_EOF | \
++					 TX_CTRL_SPI_TXCH_NUM_M)
++
++#define RX_CTRL_SPI_RXDAT_EOF		BIT(2)
++#define RX_CTRL_SPI_RXCH_NUM_M		0x3
++
++#define INTR_STAT_SPI_TXBF_UNRN_FG	BIT(7)
++#define INTR_STAT_SPI_RXBF_OVRN_FG	BIT(6)
++#define INTR_STAT_SPI_TXFF_UNRN_FG	BIT(5)
++#define INTR_STAT_SPI_RXFF_OVRN_FG	BIT(4)
++#define INTR_STAT_SPI_TXBUF_FG		BIT(3)
++#define INTR_STAT_SPI_RXBUF_FG		BIT(2)
++#define INTR_STAT_SPI_TXFF_FG		BIT(1)
++#define INTR_STAT_SPI_RXFF_FG		BIT(0)
++
++#define INTR_STAT_CLEAR_MASK		(INTR_STAT_SPI_TXBF_UNRN_FG | \
++					 INTR_STAT_SPI_RXBF_OVRN_FG | \
++					 INTR_STAT_SPI_TXFF_UNRN_FG | \
++					 INTR_STAT_SPI_RXFF_OVRN_FG)
++
++#define FIFO_TX_CFG_SPI_TXFF_THRED_M	0x3
++#define FIFO_TX_CFG_SPI_TXFF_THRED_S	4
++#define FIFO_TX_CFG_SPI_TXFF_THRED_2	0
++#define FIFO_TX_CFG_SPI_TXFF_THRED_4	1
++#define FIFO_TX_CFG_SPI_TXFF_THRED_6	0
++#define FIFO_TX_CFG_SPI_TXFF_STATUS_M	0xf
++
++#define FIFO_RX_CFG_SPI_RXFF_THRED_M	0x3
++#define FIFO_RX_CFG_SPI_RXFF_THRED_S	4
++#define FIFO_RX_CFG_SPI_RXFF_THRED_2	0
++#define FIFO_RX_CFG_SPI_RXFF_THRED_4	1
++#define FIFO_RX_CFG_SPI_RXFF_THRED_6	0
++#define FIFO_RX_CFG_SPI_RXFF_STATUS_M	0xf
++
++#define CNS21XX_SPI_NUM_BIT_RATES	8
++
++struct cns21xx_spi {
++	struct spi_bitbang	bitbang;
++
++	struct spi_master	*master;
++	struct device		*dev;
++	void __iomem		*base;
++	struct resource		*region;
++
++	unsigned		freq_max;
++	unsigned		freq_min;
++
++};
++
++static inline struct cns21xx_spi *to_hw(struct spi_device *spi)
++{
++	return spi_master_get_devdata(spi->master);
++}
++
++static inline u32 cns21xx_spi_rr(struct cns21xx_spi *hw, unsigned int reg)
++{
++	return __raw_readl(hw->base + reg);
++}
++
++static inline void cns21xx_spi_wr(struct cns21xx_spi *hw, u32 val,
++				  unsigned int reg)
++{
++	__raw_writel(val, hw->base + reg);
++}
++
++#define CNS21XX_SPI_RETRY_COUNT		100
++static inline int cns21xx_spi_wait(struct cns21xx_spi *hw, unsigned int reg,
++				   u32 mask, u32 val)
++{
++	int retry_cnt = 0;
++
++	do {
++		if ((cns21xx_spi_rr(hw, reg) & mask) == val)
++			break;
++
++		if (++retry_cnt > CNS21XX_SPI_RETRY_COUNT) {
++			dev_err(hw->dev, "timeout waiting on register %02x\n",
++				reg);
++			return -EIO;
++		}
++	} while (1);
++
++	return 0;
++}
++
++static int cns21xx_spi_txrx_word(struct cns21xx_spi *hw, u8 tx_channel,
++				 u8 tx_eof_flag, u32 tx_data, u32 *rx_data)
++{
++	unsigned int tx_ctrl;
++	u8 rx_channel;
++	u8 rx_eof_flag;
++	int err = 0;
++
++	err = cns21xx_spi_wait(hw, SPI_REG_STAT, STAT_SPI_BUSY_STA, 0);
++	if (err)
++		return err;
++
++	err = cns21xx_spi_wait(hw, SPI_REG_INTR_STAT, INTR_STAT_SPI_TXBUF_FG,
++			       INTR_STAT_SPI_TXBUF_FG);
++	if (err)
++		return err;
++
++	tx_ctrl = cns21xx_spi_rr(hw, SPI_REG_TX_CTRL);
++	tx_ctrl &= ~(TX_CTRL_CLEAR_MASK);
++	tx_ctrl |= (tx_channel & TX_CTRL_SPI_TXCH_NUM_M);
++	tx_ctrl |= (tx_eof_flag) ? TX_CTRL_SPI_TXDAT_EOF : 0;
++	cns21xx_spi_wr(hw, tx_ctrl, SPI_REG_TX_CTRL);
++
++	cns21xx_spi_wr(hw, tx_data, SPI_REG_TX_DATA);
++
++	err = cns21xx_spi_wait(hw, SPI_REG_INTR_STAT, INTR_STAT_SPI_RXBUF_FG,
++			       INTR_STAT_SPI_RXBUF_FG);
++	if (err)
++		return err;
++
++	rx_channel = cns21xx_spi_rr(hw, SPI_REG_RX_CTRL) &
++					RX_CTRL_SPI_RXCH_NUM_M;
++
++	rx_eof_flag = (cns21xx_spi_rr(hw, SPI_REG_RX_CTRL) &
++					RX_CTRL_SPI_RXDAT_EOF) ? 1 : 0;
++
++	*rx_data = cns21xx_spi_rr(hw, SPI_REG_RX_DATA);
++
++	if ((tx_channel != rx_channel) || (tx_eof_flag != rx_eof_flag))
++		return -EPROTO;
++
++	return 0;
++}
++
++static void cns21xx_spi_chipselect(struct spi_device *spi, int value)
++{
++	struct cns21xx_spi *hw = to_hw(spi);
++	unsigned int spi_config;
++	unsigned int tx_ctrl;
++
++	switch (value) {
++	case BITBANG_CS_INACTIVE:
++		break;
++
++	case BITBANG_CS_ACTIVE:
++		spi_config = cns21xx_spi_rr(hw, SPI_REG_CFG);
++
++		if (spi->mode & SPI_CPHA)
++			spi_config |= CFG_SPI_CLKPHA;
++		else
++			spi_config &= ~CFG_SPI_CLKPHA;
++
++		if (spi->mode & SPI_CPOL)
++			spi_config |= CFG_SPI_CLKPOL;
++		else
++			spi_config &= ~CFG_SPI_CLKPOL;
++
++		cns21xx_spi_wr(hw, spi_config, SPI_REG_CFG);
++
++		tx_ctrl = cns21xx_spi_rr(hw, SPI_REG_TX_CTRL);
++		tx_ctrl &= ~(TX_CTRL_CLEAR_MASK);
++		tx_ctrl |= (spi->chip_select & TX_CTRL_SPI_TXCH_NUM_M);
++		cns21xx_spi_wr(hw, tx_ctrl, SPI_REG_TX_CTRL);
++
++		break;
++	}
++}
++
++static int cns21xx_spi_setup(struct spi_device *spi)
++{
++	struct cns21xx_spi *hw = to_hw(spi);
++
++	if (spi->bits_per_word != 8) {
++		dev_err(&spi->dev, "%s: invalid bits_per_word=%u\n",
++			__func__, spi->bits_per_word);
++		return -EINVAL;
++	}
++
++	if (spi->max_speed_hz == 0)
++		spi->max_speed_hz = hw->freq_max;
++
++	if (spi->max_speed_hz > hw->freq_max ||
++	    spi->max_speed_hz < hw->freq_min) {
++		dev_err(&spi->dev, "%s: max_speed_hz=%u out of range\n",
++			__func__, spi->max_speed_hz);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int cns21xx_spi_setup_transfer(struct spi_device *spi,
++				      struct spi_transfer *t)
++{
++	struct cns21xx_spi *hw = to_hw(spi);
++	u8	bits_per_word;
++	u32	hz;
++	int	i;
++
++	bits_per_word = (t) ? t->bits_per_word : spi->bits_per_word;
++	hz = t ? t->speed_hz : spi->max_speed_hz;
++
++	if (!bits_per_word)
++		bits_per_word = spi->bits_per_word;
++
++	if (!hz)
++		hz = spi->max_speed_hz;
++
++	if (bits_per_word != 8) {
++		dev_err(&spi->dev, "%s: invalid bits_per_word=%u\n",
++			__func__, bits_per_word);
++		return -EINVAL;
++	}
++
++	if (hz > spi->max_speed_hz || hz > hw->freq_max || hz < hw->freq_min) {
++		dev_err(&spi->dev, "%s: max_speed_hz=%u out of range\n",
++			__func__, hz);
++		return -EINVAL;
++	}
++
++	for (i = 0; i < CNS21XX_SPI_NUM_BIT_RATES; i++)
++		if (spi->max_speed_hz > (cns21xx_get_apb_freq() >> i))
++			break;
++
++	DBG("max_speed:%uHz, curr_speed:%luHz, rate_index=%d\n",
++	    spi->max_speed_hz, cns21xx_get_apb_freq() / (1 << i), i);
++
++	cns21xx_spi_wr(hw, i, SPI_REG_BIT_RATE);
++
++	return 0;
++}
++
++static int cns21xx_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
++{
++	struct cns21xx_spi *hw = to_hw(spi);
++	const unsigned char *tx_buf;
++	unsigned char *rx_buf;
++	u32 rx_data;
++	int tx_eof;
++	int err = 0;
++	int i;
++
++	tx_buf = t->tx_buf;
++	rx_buf = t->rx_buf;
++	tx_eof = t->last_in_message_list;
++
++	DBG("txrx: tx %p, rx %p, len %d\n", tx_buf, rx_buf, t->len);
++
++	if (tx_buf) {
++		for (i = 0; i < t->len; i++)
++			DBG("tx_buf[%02d]: 0x%02x\n", i, tx_buf[i]);
++
++		for (i = 0; i < (t->len - 1); i++) {
++			err = cns21xx_spi_txrx_word(hw, spi->chip_select, 0,
++						    tx_buf[i], &rx_data);
++			if (err)
++				goto done;
++
++			if (rx_buf) {
++				rx_buf[i] = rx_data;
++				DBG("rx_buf[%02d]:0x%02x\n", i, rx_buf[i]);
++			}
++		}
++
++		err = cns21xx_spi_txrx_word(hw, spi->chip_select, tx_eof,
++					    tx_buf[i], &rx_data);
++		if (err)
++			goto done;
++
++		if ((tx_eof) && rx_buf) {
++			rx_buf[i] = rx_data;
++			DBG("rx_buf[%02d]:0x%02x\n", i, rx_buf[i]);
++		}
++	} else if (rx_buf) {
++		for (i = 0; i < (t->len - 1); i++) {
++			err = cns21xx_spi_txrx_word(hw, spi->chip_select, 0,
++						    0xff, &rx_data);
++			if (err)
++				goto done;
++
++			rx_buf[i] = rx_data;
++			DBG("rx_buf[%02d]:0x%02x\n", i, rx_buf[i]);
++		}
++
++		err = cns21xx_spi_txrx_word(hw, spi->chip_select, tx_eof,
++					    0xff, &rx_data);
++		if (err)
++			goto done;
++
++		rx_buf[i] = rx_data;
++		DBG("rx_buf[%02d]:0x%02x\n", i, rx_buf[i]);
++	}
++
++ done:
++	return (err) ? err : t->len;
++}
++
++static void __init cns21xx_spi_hw_init(struct cns21xx_spi *hw)
++{
++	u32 t;
++	u32 pclk;
++
++	/* Setup configuration register */
++	cns21xx_spi_wr(hw, CFG_SPI_MASTER_EN, SPI_REG_CFG);
++
++	/* Set default clock to PCLK/2 */
++	cns21xx_spi_wr(hw, BIT_RATE_DIV_2, SPI_REG_BIT_RATE);
++
++	/* Configure SPI's Tx channel */
++	cns21xx_spi_wr(hw, 0, SPI_REG_TX_CTRL);
++
++	/* Configure Tx FIFO Threshold */
++	t = cns21xx_spi_rr(hw, SPI_REG_FIFO_TX_CFG);
++	t &= ~(FIFO_TX_CFG_SPI_TXFF_THRED_M << FIFO_TX_CFG_SPI_TXFF_THRED_S);
++	t |= (FIFO_TX_CFG_SPI_TXFF_THRED_2 << FIFO_TX_CFG_SPI_TXFF_THRED_S);
++	cns21xx_spi_wr(hw, t, SPI_REG_FIFO_TX_CFG);
++
++	/* Configure Rx FIFO Threshold */
++	t = cns21xx_spi_rr(hw, SPI_REG_FIFO_RX_CFG);
++	t &= ~(FIFO_RX_CFG_SPI_RXFF_THRED_M << FIFO_RX_CFG_SPI_RXFF_THRED_S);
++	t |= (FIFO_RX_CFG_SPI_RXFF_THRED_2 << FIFO_RX_CFG_SPI_RXFF_THRED_S);
++	cns21xx_spi_wr(hw, t, SPI_REG_FIFO_RX_CFG);
++
++	/* Disable interrupts, and clear interrupt status */
++	cns21xx_spi_wr(hw, 0, SPI_REG_INTR_ENA);
++	cns21xx_spi_wr(hw, INTR_STAT_CLEAR_MASK, SPI_REG_INTR_STAT);
++
++	(void) cns21xx_spi_rr(hw, SPI_REG_RX_DATA);
++
++	/* Enable SPI */
++	t = cns21xx_spi_rr(hw, SPI_REG_CFG);
++	t |= CFG_SPI_EN;
++	cns21xx_spi_wr(hw, t, SPI_REG_CFG);
++
++	pclk = cns21xx_get_apb_freq();
++	hw->freq_max = pclk;
++	hw->freq_min = pclk / (1 << BIT_RATE_DIV_128);
++}
++
++static int __init cns21xx_spi_probe(struct platform_device *pdev)
++{
++	struct cns21xx_spi *hw;
++	struct spi_master *master;
++	struct resource *res;
++	int err = 0;
++
++	master = spi_alloc_master(&pdev->dev, sizeof(struct cns21xx_spi));
++	if (!master) {
++		dev_err(&pdev->dev, "No memory for spi_master\n");
++		return -ENOMEM;
++	}
++
++	hw = spi_master_get_devdata(master);
++
++	platform_set_drvdata(pdev, hw);
++	hw->master = spi_master_get(master);
++	hw->dev = &pdev->dev;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_dbg(&pdev->dev, "no MEM resource found\n");
++		err = -ENOENT;
++		goto err_put_master;
++	}
++
++	hw->region = request_mem_region(res->start, resource_size(res),
++					dev_name(&pdev->dev));
++	if (!hw->region) {
++		dev_err(&pdev->dev, "unable to reserve iomem region\n");
++		err = -ENXIO;
++		goto err_put_master;
++	}
++
++	hw->base = ioremap(res->start, resource_size(res));
++	if (!hw->base) {
++		dev_err(&pdev->dev, "ioremap failed\n");
++		err = -ENOENT;
++		goto err_release_region;
++	}
++
++	cns21xx_spi_hw_init(hw);
++
++	master->bus_num = pdev->id;
++	if (master->bus_num == -1)
++		master->bus_num = 0;
++
++	master->num_chipselect = 4;
++	master->setup = cns21xx_spi_setup;
++
++	hw->bitbang.master = hw->master;
++	hw->bitbang.chipselect = cns21xx_spi_chipselect;
++	hw->bitbang.txrx_bufs = cns21xx_spi_txrx;
++	hw->bitbang.setup_transfer = cns21xx_spi_setup_transfer;
++
++	err = spi_bitbang_start(&hw->bitbang);
++	if (err) {
++		dev_err(hw->dev, "unable to register SPI master\n");
++		goto err_unmap;
++	}
++
++	dev_info(hw->dev, "iomem at %08x\n", res->start);
++
++	return 0;
++
++ err_unmap:
++	iounmap(hw->base);
++
++ err_release_region:
++	release_resource(hw->region);
++	kfree(hw->region);
++
++ err_put_master:
++	spi_master_put(hw->bitbang.master);
++	platform_set_drvdata(pdev, NULL);
++
++	return err;
++}
++
++static int __devexit cns21xx_spi_remove(struct platform_device *pdev)
++{
++	struct cns21xx_spi *hw = platform_get_drvdata(pdev);
++
++	spi_bitbang_stop(&hw->bitbang);
++	iounmap(hw->base);
++	release_resource(hw->region);
++	kfree(hw->region);
++	spi_master_put(hw->bitbang.master);
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++static struct platform_driver cns21xx_spi_driver = {
++	.remove		= __devexit_p(cns21xx_spi_remove),
++	.driver		= {
++		.name	= DRIVER_NAME,
++		.owner	= THIS_MODULE,
++	},
++};
++
++static int __init cns21xx_spi_init(void)
++{
++	return platform_driver_probe(&cns21xx_spi_driver, cns21xx_spi_probe);
++}
++
++static void __exit cns21xx_spi_exit(void)
++{
++	platform_driver_unregister(&cns21xx_spi_driver);
++}
++
++module_init(cns21xx_spi_init);
++module_exit(cns21xx_spi_exit);
++
++MODULE_DESCRIPTION("Cavium Networks CNS21xx SPI Controller driver");
++MODULE_AUTHOR("STAR Semi Corp.");
++MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:" DRIVER_NAME);

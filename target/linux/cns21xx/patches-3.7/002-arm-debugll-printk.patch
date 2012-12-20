@@ -1,0 +1,24 @@
+--- a/kernel/printk.c
++++ b/kernel/printk.c
+@@ -48,6 +48,10 @@
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/printk.h>
+ 
++#ifdef CONFIG_DEBUG_LL
++extern void printascii(char *);
++#endif /* CONFIG_DEBUG_LL */
++
+ /*
+  * Architectures can override it:
+  */
+@@ -473,6 +477,10 @@ static ssize_t devkmsg_read(struct file
+ 	ts_usec = msg->ts_nsec;
+ 	do_div(ts_usec, 1000);
+ 
++#ifdef CONFIG_DEBUG_LL
++	printascii(printk_buf);
++#endif
++
+ 	/*
+ 	 * If we couldn't merge continuation line fragments during the print,
+ 	 * export the stored flags to allow an optional external merge of the
