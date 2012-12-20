@@ -1,0 +1,343 @@
+--- /dev/null
++++ b/arch/arm/plat-fa/gpio.c
+@@ -0,0 +1,283 @@
++/*
++ * Gpiochip and interrupt routines for Faraday FA526 based SoCs
++ *
++ * Copyright (C) 2008-2009 Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
++ * Copyright (C) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
++ *
++ * Based on plat-mxc/gpio.c:
++ *  MXC GPIO supchip. (c) 2008 Daniel Mack <daniel@caiaq.de>
++ *  Copyright 2008 Juergen Beisert, kernel@pengutronix.de
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#include <linux/spinlock.h>
++
++#include <plat/gpio.h>
++
++#define GPIO_DATA_OUT		0x0
++#define GPIO_DATA_IN		0x4
++#define GPIO_DIR		0x8
++#define GPIO_DATA_SET		0x10
++#define GPIO_DATA_CLR		0x14
++#define GPIO_PULL_EN		0x18
++#define GPIO_PULL_TYPE		0x1C
++#define GPIO_INT_EN		0x20
++#define GPIO_INT_STAT		0x24
++#define GPIO_INT_MASK		0x2C
++#define GPIO_INT_CLR		0x30
++#define GPIO_INT_TYPE		0x34
++#define GPIO_INT_BOTH_EDGE	0x38
++#define GPIO_INT_LEVEL		0x3C
++#define GPIO_DEBOUNCE_EN	0x40
++#define GPIO_DEBOUNCE_PRESCALE	0x44
++
++#define GPIO_REGS_SIZE		0x48
++
++static DEFINE_SPINLOCK(fa_gpio_lock);
++
++static inline struct fa_gpio_chip *to_fgc(struct gpio_chip *chip)
++{
++	return container_of(chip, struct fa_gpio_chip, gpio_chip);
++}
++
++static void _fa_gpio_irq_setenable(struct irq_data *d, int enable)
++{
++	struct fa_gpio_chip *fgc = irq_get_chip_data(d->irq);
++	void __iomem *base = fgc->mem_base;
++	unsigned int gpio = d->irq - fgc->irq_base;
++	unsigned int reg;
++
++	reg = __raw_readl(base + GPIO_INT_EN);
++	reg = (reg & (~(1 << gpio))) | (!!enable << gpio);
++	__raw_writel(reg, base + GPIO_INT_EN);
++}
++
++static void fa_gpio_irq_ack(struct irq_data *d)
++{
++	struct fa_gpio_chip *fgc = irq_get_chip_data(d->irq);
++	unsigned int gpio = d->irq - fgc->irq_base;
++
++	__raw_writel(1 << gpio, fgc->mem_base + GPIO_INT_CLR);
++}
++
++static void fa_gpio_irq_mask(struct irq_data *d)
++{
++	_fa_gpio_irq_setenable(d, 0);
++}
++
++static void fa_gpio_irq_unmask(struct irq_data *d)
++{
++	_fa_gpio_irq_setenable(d, 1);
++}
++
++static int fa_gpio_irq_set_type(struct irq_data *d, unsigned int type)
++{
++	struct fa_gpio_chip *fgc = irq_get_chip_data(d->irq);
++	void __iomem *base = fgc->mem_base;
++	unsigned int gpio = d->irq - fgc->irq_base;
++	unsigned int gpio_mask = 1 << gpio;
++	unsigned int reg_both, reg_level, reg_type;
++
++	reg_type = __raw_readl(base + GPIO_INT_TYPE);
++	reg_level = __raw_readl(base + GPIO_INT_LEVEL);
++	reg_both = __raw_readl(base + GPIO_INT_BOTH_EDGE);
++
++	switch (type) {
++	case IRQ_TYPE_EDGE_BOTH:
++		reg_type &= ~gpio_mask;
++		reg_both |= gpio_mask;
++		break;
++	case IRQ_TYPE_EDGE_RISING:
++		reg_type &= ~gpio_mask;
++		reg_both &= ~gpio_mask;
++		reg_level &= ~gpio_mask;
++		break;
++	case IRQ_TYPE_EDGE_FALLING:
++		reg_type &= ~gpio_mask;
++		reg_both &= ~gpio_mask;
++		reg_level |= gpio_mask;
++		break;
++	case IRQ_TYPE_LEVEL_HIGH:
++		reg_type |= gpio_mask;
++		reg_level &= ~gpio_mask;
++		break;
++	case IRQ_TYPE_LEVEL_LOW:
++		reg_type |= gpio_mask;
++		reg_level |= gpio_mask;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	__raw_writel(reg_type, base + GPIO_INT_TYPE);
++	__raw_writel(reg_level, base + GPIO_INT_LEVEL);
++	__raw_writel(reg_both, base + GPIO_INT_BOTH_EDGE);
++
++	fa_gpio_irq_ack(d);
++
++	return 0;
++}
++
++static void fa_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
++{
++	struct fa_gpio_data *data = irq_get_handler_data(irq);
++	unsigned int chip;
++
++	for (chip = 0; chip < data->nchips; chip++) {
++		struct fa_gpio_chip *fgc = &data->chips[chip];
++		unsigned int status;
++		unsigned int i;
++
++		status = __raw_readl(fgc->mem_base + GPIO_INT_STAT);
++		for (i = fgc->irq_base; status != 0; status >>= 1, i++) {
++			if ((status & 1) == 0)
++				continue;
++
++			BUG_ON(!(irq_desc[i].handle_irq));
++			irq_desc[i].handle_irq(i, &irq_desc[i]);
++		}
++	}
++}
++
++static struct irq_chip fa_gpio_irq_chip = {
++	.name		= "GPIO",
++	.irq_ack	= fa_gpio_irq_ack,
++	.irq_mask	= fa_gpio_irq_mask,
++	.irq_unmask	= fa_gpio_irq_unmask,
++	.irq_set_type	= fa_gpio_irq_set_type,
++};
++
++static void _fa_gpio_set_direction(struct fa_gpio_chip *fgc, unsigned offset,
++				   int is_output)
++{
++	unsigned int reg;
++
++	reg = __raw_readl(fgc->mem_base + GPIO_DIR);
++	if (is_output)
++		reg |= 1 << offset;
++	else
++		reg &= ~(1 << offset);
++	__raw_writel(reg, fgc->mem_base + GPIO_DIR);
++}
++
++static void _fa_gpio_set(struct fa_gpio_chip *fgc, unsigned offset, int value)
++{
++	if (value)
++		__raw_writel(1 << offset, fgc->mem_base + GPIO_DATA_SET);
++	else
++		__raw_writel(1 << offset, fgc->mem_base + GPIO_DATA_CLR);
++}
++
++static void fa_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
++{
++	struct fa_gpio_chip *fgc = to_fgc(chip);
++
++	_fa_gpio_set(fgc, offset, value);
++}
++
++static int fa_gpio_get(struct gpio_chip *chip, unsigned offset)
++{
++	struct fa_gpio_chip *fgc = to_fgc(chip);
++
++	return (__raw_readl(fgc->mem_base + GPIO_DATA_IN) >> offset) & 1;
++}
++
++static int fa_gpio_to_irq(struct gpio_chip *chip, unsigned offset)
++{
++	struct fa_gpio_chip *fgc = to_fgc(chip);
++
++	return fgc->irq_base + offset;
++}
++
++static int fa_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
++{
++	struct fa_gpio_chip *fgc = to_fgc(chip);
++	unsigned long flags;
++
++	spin_lock_irqsave(&fa_gpio_lock, flags);
++
++	_fa_gpio_set_direction(fgc, offset, 0);
++
++	spin_unlock_irqrestore(&fa_gpio_lock, flags);
++
++	return 0;
++}
++
++static int fa_gpio_direction_output(struct gpio_chip *chip,
++				    unsigned offset,
++				    int value)
++{
++	struct fa_gpio_chip *fgc = to_fgc(chip);
++	unsigned long flags;
++
++	spin_lock_irqsave(&fa_gpio_lock, flags);
++
++	_fa_gpio_set(fgc, offset, value);
++	_fa_gpio_set_direction(fgc, offset, 1);
++
++	spin_unlock_irqrestore(&fa_gpio_lock, flags);
++
++	return 0;
++}
++
++static int fa_gpio_init_chip(struct fa_gpio_chip *fgc)
++{
++	void __iomem *mem_base;
++	unsigned int i;
++	int err;
++
++	mem_base = ioremap(fgc->map_base, GPIO_REGS_SIZE);
++	if (!mem_base)
++		return -ENXIO;
++
++	fgc->mem_base = mem_base;
++
++	fgc->gpio_chip.direction_input = fa_gpio_direction_input;
++	fgc->gpio_chip.direction_output = fa_gpio_direction_output;
++	fgc->gpio_chip.get = fa_gpio_get;
++	fgc->gpio_chip.set = fa_gpio_set;
++	fgc->gpio_chip.to_irq = fa_gpio_to_irq;
++
++	/* disable, unmask and clear all interrupts */
++	__raw_writel(0x0, mem_base + GPIO_INT_EN);
++	__raw_writel(0x0, mem_base + GPIO_INT_MASK);
++	__raw_writel(~0x0, mem_base + GPIO_INT_CLR);
++
++	for (i = fgc->irq_base;
++	     i < fgc->irq_base + fgc->gpio_chip.ngpio; i++) {
++		irq_set_chip(i, &fa_gpio_irq_chip);
++		irq_set_chip_data(i, fgc);
++		irq_set_handler(i, handle_edge_irq);
++		set_irq_flags(i, IRQF_VALID);
++	}
++
++	err = gpiochip_add(&fgc->gpio_chip);
++	if (err)
++		goto unmap;
++
++	return 0;
++
++ unmap:
++	iounmap(fgc->mem_base);
++	return err;
++}
++
++void __init fa_gpio_init(struct fa_gpio_data *data)
++{
++	unsigned int i;
++
++	for (i = 0; i < data->nchips; i++) {
++		int err;
++
++		err = fa_gpio_init_chip(&data->chips[i]);
++		if (WARN(err, "GPIO init failed\n"))
++			return;
++	}
++
++	irq_set_chained_handler(data->irq, fa_gpio_irq_handler);
++	irq_set_handler_data(data->irq, data);
++}
+--- /dev/null
++++ b/arch/arm/plat-fa/include/plat/gpio.h
+@@ -0,0 +1,33 @@
++/*
++ *  Copyright (c) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
++ *
++ *  This file is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License, Version 2, as
++ *  published by the Free Software Foundation.
++ */
++
++#ifndef _FA_GPIO_H
++#define _FA_GPIO_H
++
++#include <linux/init.h>
++#include <linux/gpio.h>
++#include <linux/irq.h>
++#include <linux/io.h>
++
++struct fa_gpio_chip {
++	struct gpio_chip	gpio_chip;
++	unsigned int		map_base;
++	unsigned int		irq_base;
++
++	void __iomem		*mem_base;
++};
++
++struct fa_gpio_data {
++	struct fa_gpio_chip	*chips;
++	unsigned int		nchips;
++	unsigned int		irq;
++};
++
++void __init fa_gpio_init(struct fa_gpio_data *data);
++
++#endif /* _FA_GPIO_H */
+--- a/arch/arm/plat-fa/Kconfig
++++ b/arch/arm/plat-fa/Kconfig
+@@ -1,5 +1,8 @@
+ if PLAT_FA
+ 
++config PLAT_FA_GPIO
++	def_bool n
++
+ config PLAT_FA_TIME
+ 	def_bool n
+ 
+--- a/arch/arm/plat-fa/Makefile
++++ b/arch/arm/plat-fa/Makefile
+@@ -4,6 +4,7 @@
+ 
+ obj-y :=
+ 
++obj-$(CONFIG_PLAT_FA_GPIO)	+= gpio.o
+ obj-$(CONFIG_PLAT_FA_TIME)	+= time.o
+ 
+ obj-m :=
