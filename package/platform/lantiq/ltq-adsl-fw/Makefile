@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kmod-ltq-adsl-fw-template
   TITLE+=Firmware Annex-$(1) $(2)
   SECTION:=sys
+  CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   VARIANT:= $(2)-fw-$(1)
   SOC:=$(2)
