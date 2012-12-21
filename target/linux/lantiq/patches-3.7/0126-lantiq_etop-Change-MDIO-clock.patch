@@ -1,0 +1,47 @@
+From 2f9f0ec1ff013934a86a7303c9194f6dc05620c3 Mon Sep 17 00:00:00 2001
+From: Sebastian Mayr <sebastian.mayr@student.uibk.ac.at>
+Date: Thu, 20 Dec 2012 18:34:45 +0100
+Subject: [PATCH 1/2] lantiq_etop: Change MDIO clock
+
+This patch sets the MDC clock to 2.5MHz which fixes the MDIO communication
+with the ar8316 switch.
+---
+ drivers/net/ethernet/lantiq_etop.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/net/ethernet/lantiq_etop.c b/drivers/net/ethernet/lantiq_etop.c
+index e695f71..fc963f6 100644
+--- a/drivers/net/ethernet/lantiq_etop.c
++++ b/drivers/net/ethernet/lantiq_etop.c
+@@ -83,6 +83,7 @@
+ #define LTQ_GBIT_PMAC_HD_CTL	0x8c
+ #define LTQ_GBIT_P0_CTL		0x4
+ #define LTQ_GBIT_PMAC_RX_IPG	0xa8
++#define LTQ_GBIT_RGMII_CTL	0x78
+ 
+ #define PMAC_HD_CTL_AS		(1 << 19)
+ #define PMAC_HD_CTL_RXSH	(1 << 22)
+@@ -92,6 +93,10 @@
+ /* Disable MDIO auto polling (0=disable, 1=enable) */
+ #define PX_CTL_DMDIO		0x00400000
+ 
++/* MDC clock divider, clock = 25MHz/((MDC_CLOCK + 1) * 2) */
++#define MDC_CLOCK_MASK		0xff000000
++#define MDC_CLOCK_OFFSET	24
++
+ /* register information for the gbit's MDIO bus */
+ #define MDIO_XR9_REQUEST	0x00008000
+ #define MDIO_XR9_READ		0x00000800
+@@ -329,6 +334,9 @@ ltq_etop_gbit_init(struct net_device *dev)
+ 	/* Due to traffic halt when burst length 8,
+ 		replace default IPG value with 0x3B */
+ 	ltq_gbit_w32(0x3B, LTQ_GBIT_PMAC_RX_IPG);
++	/* set mdc clock to 2.5 MHz */
++	ltq_gbit_w32_mask(MDC_CLOCK_MASK, 4 << MDC_CLOCK_OFFSET,
++		LTQ_GBIT_RGMII_CTL);
+ }
+ 
+ static int
+-- 
+1.7.11.7
+

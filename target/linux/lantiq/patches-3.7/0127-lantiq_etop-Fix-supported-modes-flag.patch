@@ -1,0 +1,51 @@
+From 4de6a250878c9ce5605838b65acbddf338a7254a Mon Sep 17 00:00:00 2001
+From: Sebastian Mayr <sebastian.mayr@student.uibk.ac.at>
+Date: Thu, 20 Dec 2012 18:52:10 +0100
+Subject: [PATCH 2/2] lantiq_etop: Fix supported modes flag
+
+---
+ drivers/net/ethernet/lantiq_etop.c | 19 ++++++++++---------
+ 1 file changed, 10 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/net/ethernet/lantiq_etop.c b/drivers/net/ethernet/lantiq_etop.c
+index fc963f6..b50b91e 100644
+--- a/drivers/net/ethernet/lantiq_etop.c
++++ b/drivers/net/ethernet/lantiq_etop.c
+@@ -551,6 +551,13 @@ ltq_etop_mdio_probe(struct net_device *dev)
+ {
+ 	struct ltq_etop_priv *priv = netdev_priv(dev);
+ 	struct phy_device *phydev = NULL;
++	u32 phy_supported =  (SUPPORTED_10baseT_Half
++			| SUPPORTED_10baseT_Full
++			| SUPPORTED_100baseT_Half
++			| SUPPORTED_100baseT_Full
++			| SUPPORTED_Autoneg
++			| SUPPORTED_MII
++			| SUPPORTED_TP);
+ 
+ 	if (of_machine_is_compatible("lantiq,ase"))
+ 		phydev = priv->mii_bus->phy_map[8];
+@@ -570,17 +577,11 @@ ltq_etop_mdio_probe(struct net_device *dev)
+ 		return PTR_ERR(phydev);
+ 	}
+ 
+-	phydev->supported &= (SUPPORTED_10baseT_Half
+-			      | SUPPORTED_10baseT_Full
+-			      | SUPPORTED_100baseT_Half
+-			      | SUPPORTED_100baseT_Full
+-			      | SUPPORTED_Autoneg
+-			      | SUPPORTED_MII
+-			      | SUPPORTED_TP);
+ 	if (of_machine_is_compatible("lantiq,ar9"))
+-		phydev->supported &= SUPPORTED_1000baseT_Half
+-					| SUPPORTED_1000baseT_Full;
++		phy_supported |= SUPPORTED_1000baseT_Half
++			| SUPPORTED_1000baseT_Full;
+ 
++	phydev->supported &= phy_supported;
+ 	phydev->advertising = phydev->supported;
+ 	priv->phydev = phydev;
+ 	pr_info("%s: attached PHY [%s] (phy_addr=%s, irq=%d)\n",
+-- 
+1.7.11.7
+
