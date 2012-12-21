@@ -1379,7 +1379,7 @@ int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi *smi)
 	int sck = of_get_named_gpio(pdev->dev.of_node, "gpio-sck", 0);
 	int sda = of_get_named_gpio(pdev->dev.of_node, "gpio-sda", 0);
 
-	if (!sck || !sda) {
+	if (!gpio_is_valid(sck) || !gpio_is_valid(sda)) {
 		dev_err(&pdev->dev, "gpios missing in devictree\n");
 		return -EINVAL;
 	}
