@@ -3,7 +3,7 @@ SUBTARGET:=xway
 BOARDNAME:=XWAY
 FEATURES:=squashfs jffs2 atm
 
-DEFAULT_PACKAGES+=kmod-leds-gpio kmod-button-hotplug kmod-input-gpio-keys-polled
+DEFAULT_PACKAGES+=kmod-leds-gpio kmod-gpio-button-hotplug
 
 define Target/Description
 	Lantiq XWAY
