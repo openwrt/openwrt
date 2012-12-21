@@ -59,6 +59,12 @@ ARV4519PW|ARV7518PW)
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0t 2 3 4 5"
 	;;
+
+WBMR)
+	ucidef_add_switch "eth0" "1" "0"
+	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4 5"
+	;;
+
 esac
 
 [ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"
