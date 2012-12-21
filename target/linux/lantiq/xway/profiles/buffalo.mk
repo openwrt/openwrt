@@ -4,7 +4,7 @@ define Profile/WBMRA
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-  	kmod-ath9k wpad-mini \
+	kmod-ath9k wpad hostapd-utils \
 	swconfig
 endef
 
@@ -16,7 +16,7 @@ define Profile/WBMRB
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-  	kmod-ath9k wpad-mini \
+	kmod-ath9k wpad hostapd-utils \
 	swconfig
 endef
 
