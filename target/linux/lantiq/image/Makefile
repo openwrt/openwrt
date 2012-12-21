@@ -183,6 +183,9 @@ Image/Build/Profile/EASY80920NAND=$(call Image/Build/$(1),$(1),EASY80920NAND)
 Image/BuildKernel/Profile/EASY80920NOR=$(call Image/BuildKernel/Template,EASY80920NOR)
 Image/Build/Profile/EASY80920NOR=$(call Image/Build/$(1),$(1),EASY80920NOR)
 
+Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
+Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
+
 endif
 
 

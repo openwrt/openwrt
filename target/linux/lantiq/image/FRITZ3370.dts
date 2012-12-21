@@ -1,6 +1,10 @@
+/dts-v1/;
+
 /include/ "vr9.dtsi"
 
 / {
+	model = "FRITZ3370 - Fritz!Box WLAN 3370";
+
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 	};
@@ -10,17 +14,41 @@
 	};
 	
 	fpi@10000000 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "lantiq,fpi", "simple-bus";
-		ranges = <0x0 0x10000000 0xEEFFFFF>;
-		reg = <0x10000000 0xEF00000>;
-
 		localbus@0 {
-			#address-cells = <2>;
-			#size-cells = <1>;
-			compatible = "lantiq,localbus", "simple-bus";
-			
+			nand-parts@0 {
+				compatible = "gen_nand", "lantiq,nand-xway";
+				bank-width = <2>;
+				reg = <1 0x0 0x2000000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "linux";
+					reg = <0x00000 0x400000>;
+				};
+
+				partition@400000 {
+					label = "filesystem";
+					reg = <0x400000 0x3000000>;
+				};
+
+				partition@3400000 {
+					label = "reserved-kernel";
+					reg = <0x3400000 0x400000>;
+				};
+				partition@3800000 {
+					label = "reserved";
+					reg = <0x3800000 0x3000000>;
+				};
+				partition@6800000 {
+					label = "config";
+					reg = <0x6800000 0x200000>;
+				};
+				partition@6a00000 {
+					label = "nand-filesystem";
+					reg = <0x6a00000 0x1600000>;
+				};
+			};
 		};
 
 		spi@E100800 {
@@ -71,61 +99,41 @@
 		};
 
 		gpio: pinmux@E100B10 {
-			compatible = "lantiq,pinctrl-xr9";
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
-			
-			interrupt-parent = <&icu0>;
-			interrupts = <166 135 66 40 41 42 38>;
-
-			#gpio-cells = <2>;
-			gpio-controller;
-			reg = <0xE100B10 0xA0>;
 
 			state_default: pinmux {
-				exin3 {
-					lantiq,groups = "exin3";
-					lantiq,function = "exin";
-				};
-				stp {
-					lantiq,groups = "stp";
-					lantiq,function = "stp";
-				};
 				spi {
 					lantiq,groups = "spi", "spi_cs4";
 					lantiq,function = "spi";
 				};
-				nand {
-					lantiq,groups = "nand cle", "nand ale",
-							"nand rd", "nand rdy";
+				nand_out {
+					lantiq,groups = "nand cle", "nand ale",	"nand rd", "ebu a23", "ebu a24";
 					lantiq,function = "ebu";
+					lantiq,direction = <1>;
+					lantiq,pull = <0>;
+				};
+				nand_in {
+					lantiq,groups = "nand rdy";
+					lantiq,function = "ebu";
+					lantiq,direction = <0>;
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
 				};
 				mdio {
 					lantiq,groups = "mdio";
 					lantiq,function = "mdio";
 				};
-				pci {
-					lantiq,groups = "gnt1", "req1";
-					lantiq,function = "pci";
-				};
-				conf_out {
-					lantiq,pins = "io24", "io13", "io49", /* nand cle, ale and rd */
-							"io4", "io5", "io6", /* stp */
-							"io21",
-							"io33";
-					lantiq,open-drain;
+				phy-rst {
+					lantiq,pins = "io37", "io44";
 					lantiq,pull = <0>;
+					lantiq,open-drain = <0>;
 					lantiq,output = <1>;
 				};
 				pcie-rst {
 					lantiq,pins = "io38";
 					lantiq,pull = <0>;
 					lantiq,output = <1>;
-				};
-				conf_in {
-					lantiq,pins = "io39", /* exin3 */
-							"io48"; /* nand rdy */
-					lantiq,pull = <2>;
 				};
 			};
 		};
@@ -154,12 +162,14 @@
 					reg = <0>;
 					phy-mode = "rgmii";
 					phy-handle = <&phy0>;
+					gpios = <&gpio 37 0>;
 				};
 				ethernet@1 {
 					compatible = "lantiq,xrx200-pdi-port";
 					reg = <1>;
 					phy-mode = "rgmii";
 					phy-handle = <&phy1>;
+					gpios = <&gpio 44 0>;
 				};
 				ethernet@2 {
 					compatible = "lantiq,xrx200-pdi-port";
@@ -167,30 +177,7 @@
 					phy-mode = "gmii";
 					phy-handle = <&phy11>;
 				};
-			};
-
-			wan: interface@1 {
-				compatible = "lantiq,xrx200-pdi";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <1>;
-				mac-address = [ 00 11 22 33 44 56 ];
-				lantiq,wan;
-				ethernet@5 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <5>;
-					phy-mode = "rgmii";
-					phy-handle = <&phy5>;
-				};
-			};
-
-			test: interface@2 {
-				compatible = "lantiq,xrx200-pdi";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <2>;
-				mac-address = [ 00 11 22 33 44 57 ];
-				ethernet@4 {
+				ethernet@3 {
 					compatible = "lantiq,xrx200-pdi-port";
 					reg = <4>;
 					phynmode0 = "gmii";
@@ -212,11 +199,6 @@
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 					lantiq,c45-reg-init = <1 0 0 0>; 
 				};
-				phy5: ethernet-phy@5 {
-					reg = <0x5>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
-				};
 				phy11: ethernet-phy@11 {
 					reg = <0x11>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
@@ -230,52 +212,17 @@
 			};
 		};
 
-		stp: stp@E100BB0 {
-			compatible = "lantiq,gpio-stp-xway";
-			reg = <0xE100BB0 0x40>;
-			#gpio-cells = <2>;
-			gpio-controller;
-
-			lantiq,shadow = <0xffff>;
-			lantiq,groups = <0x7>;
-			lantiq,dsl = <0x3>;
-			lantiq,phy1 = <0x7>;
-			lantiq,phy2 = <0x7>;
-			/* lantiq,rising; */
-		};
-
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 33 0>;
+			gpios = <&gpio 5 0
+				&gpio 14 0>;
 			lantiq,portmask = <0x3>;
-		};
-
-		pci@E105400 {
-			#address-cells = <3>;
-			#size-cells = <2>;
-			#interrupt-cells = <1>;
-			compatible = "lantiq,pci-xway1";
-			bus-range = <0x0 0x0>;
-			ranges = <0x2000000 0 0x8000000 0x8000000 0 0x2000000   /* pci memory */
-				0x1000000 0 0x00000000 0xAE00000 0 0x200000>; /* io space */
-			reg = <0x7000000 0x8000         /* config space */
-				0xE105400 0x400>;       /* pci bridge */
-			lantiq,bus-clock = <33333333>;
-			/*lantiq,external-clock;*/
-			lantiq,delay-hi = <0>; /* 0ns delay */
-			lantiq,delay-lo = <0>; /* 0.0ns delay */
-			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
-			interrupt-map = <
-				0x7000 0 0 1 &icu0 29 1 // slot 14, irq 29
-				>;
-			gpios-reset = <&gpio 21 0>;
-			req-mask = <0x1>;	/* GNT1 */
 		};
 	};
 
 	gphy-xrx200 {
 		compatible = "lantiq,phy-xrx200";
-		firmware = "lantiq/vr9_phy11g_a2x.bin";
+		firmware = "lantiq/vr9_phy11g_a1x.bin";
 		phys = [ 00 01 ];
 	};
 
@@ -284,65 +231,48 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
-		reset {
-			label = "reset";
-			gpios = <&gpio 7 1>;
-			linux,code = <0x198>;
-		};
-		paging {
-			label = "paging";
-			gpios = <&gpio 11 1>;
+		power {
+			label = "power";
+			gpios = <&gpio 1 0>;
 			linux,code = <0x100>;
-		};
+		}; 
+/*		wifi {
+			label = "wifi";
+			gpios = <&gpio 29 0>;
+			linux,code = <0x101>;
+		};*/
 	};
-
-/*	gpio-keys {
-		compatible = "gpio-keys";
-		wps {
-			gpios = <&gpio 2 0>;
-			linux,code = <0x100>;
-		};
-	};*/
 
 	gpio-leds {
 		compatible = "gpio-leds";
 		
 		power {
 			label = "power";
-			gpios = <&stp 9 0>;
-			default-state = "on";
+			gpios = <&gpio 32 1>;
 		};
-		warning {
-			label = "warning";
-			gpios = <&stp 22 0>;
+		power2 {
+			label = "power2";
+			gpios = <&gpio 33 1>;
 		};
-		fxs1 {
-			label = "fxs1";
-			gpios = <&stp 21 0>;
+		info_red {
+			label = "info_red";
+			gpios = <&gpio 34 1>;
 		};
-		fxs2 {
-			label = "fxs2";
-			gpios = <&stp 20 0>;
+		wifi {
+			label = "wifi";
+			gpios = <&gpio 35 1>;
 		};
-		fxo {
-			label = "fxo";
-			gpios = <&stp 19 0>;
+		dsl {
+			label = "dsl";
+			gpios = <&gpio 36 1>;
 		};
-		usb1 {
-			label = "usb1";
-			gpios = <&stp 18 0>;
+		lan {
+			label = "lan";
+			gpios = <&gpio 38 1>;
 		};
-		usb2 {
-			label = "usb2";
-			gpios = <&stp 15 0>;
-		};
-		sd {
-			label = "sd";
-			gpios = <&stp 14 0>;
-		};
-		wps {
-			label = "wps";
-			gpios = <&stp 12 0>;
+		info_green {
+			label = "info_green";
+			gpios = <&gpio 47 1>;
 		};
 	};
 };

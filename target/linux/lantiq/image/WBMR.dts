@@ -39,6 +39,12 @@
 					reg = <0x60000 0x1f20000>;
 				};
 
+				partition@0x1fc0000 {
+					label = "board";
+					reg = <0x1fc0000 0x20000>;
+					read-only;
+				};
+
 				partition@0x1fe0000 {
 					label = "calibration";
 					reg = <0x1fe0000 0x20000>;
@@ -109,7 +115,7 @@
 		eject {
 			label = "eject";
 			gpios = <&gpio 34 1>;
-			linux,code = <0x108>;
+			linux,code = <0xf7>;
 		};
 		movie {
 			label = "movie";
