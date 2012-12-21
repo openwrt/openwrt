@@ -43,7 +43,7 @@ endef
 define Package/kmod-ltq-adsl-$(BUILD_VARIANT)/install
 	$(INSTALL_DIR) $(1)/lib/firmware/
 	$(CP) $(PKG_BUILD_DIR)/$(FW_NAME)/ltq-dsl-fw-$(ANNEX)-$(SOC).bin $(1)/lib/firmware/
-	#ln -s /lib/firmware/$(FW_NAME)/ltq-dsl-fw-$(BUILD_VARIANT).bin $(1)/lib/firmware/adsl.bin
+	ln -s /lib/firmware/$(FW_NAME)/ltq-dsl-fw-$(ANNEX)-$(SOC).bin $(1)/lib/firmware/adsl.bin
 endef
 
 $(eval $(call BuildPackage,kmod-ltq-adsl-danube-fw-a))
