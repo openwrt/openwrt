@@ -277,27 +277,23 @@ annex_m2p=00_00_00_00_00_00_04_00
 #
 start() {
 	local annex
-	local fwannex
+	local firmware
 	local xtu
 	config_load network
-	config_get annex adsl annex
-	config_get fwannex adsl fwannex
+	config_get annex wan annex
+	config_get firmware wan firmware
 
 	# get xtu
 	eval "xtu=\"\${annex_$annex}\""
 
-	# check for invalid annex mode
-	[ -n "${annex}" -a -z "${xtu}" ] &&
-		echo "unknown annex mode $annex"
-
-	# check for invalid fw annex mode
-	[[ "$fwannex" != "a" && "$fwannex" != "b" ]] &&
-		echo "invalid fwannex: $fwannex"
+	# check for firmware
+	[ -z "${firmware}" ] &&
+		firmware=adsl.bin
 
 	# start CPE dsl daemon in the background
 	service_start /sbin/dsl_cpe_control -i${xtu} \
 			-n /sbin/dsl_notify.sh \
-			-f /lib/firmware/ModemHWE.bin
+			-f /lib/firmware/${firmware}
 }
 
 #
@@ -308,7 +304,7 @@ start() {
 stop() {
 	DSL_NOTIFICATION_TYPE="DSL_INTERFACE_STATUS" \
 	DSL_INTERFACE_STATUS="DOWN" \
-	/sbin/dsl_notify.sh
+		/sbin/dsl_notify.sh
 
 	service_stop /sbin/dsl_cpe_control
 }
