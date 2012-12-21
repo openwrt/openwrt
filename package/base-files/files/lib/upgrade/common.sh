@@ -33,7 +33,7 @@ install_bin() { # <file> [ <symlink> ... ]
 	}; done
 }
 
-pivot() { # <new_root> <old_root>
+supivot() { # <new_root> <old_root>
 	mount | grep "on $1 type" 2>&- 1>&- || mount -o bind $1 $1
 	mkdir -p $1$2 $1/proc $1/sys $1/dev $1/tmp $1/overlay && \
 	mount -o noatime,move /proc $1/proc && \
@@ -62,7 +62,7 @@ run_ramfs() { # <command> [...]
 	done
 	install_file /etc/resolv.conf /lib/functions.sh /lib/functions.sh /lib/upgrade/*.sh $RAMFS_COPY_DATA
 
-	pivot $RAM_ROOT /mnt || {
+	supivot $RAM_ROOT /mnt || {
 		echo "Failed to switch over to ramfs. Please reboot."
 		exit 1
 	}
