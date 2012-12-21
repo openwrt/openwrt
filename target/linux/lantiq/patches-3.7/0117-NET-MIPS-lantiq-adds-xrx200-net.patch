@@ -12,11 +12,11 @@ Subject: [PATCH 117/123] NET: MIPS: lantiq: adds xrx200-net
  create mode 100644 drivers/net/ethernet/lantiq_pce.h
  create mode 100644 drivers/net/ethernet/lantiq_xrx200.c
 
-diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
-index e4ff389..35cb7b0 100644
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -83,7 +83,13 @@ config LANTIQ_ETOP
+Index: linux-3.7.1/drivers/net/ethernet/Kconfig
+===================================================================
+--- linux-3.7.1.orig/drivers/net/ethernet/Kconfig	2012-12-17 20:14:54.000000000 +0100
++++ linux-3.7.1/drivers/net/ethernet/Kconfig	2012-12-21 10:30:29.629462283 +0100
+@@ -83,7 +83,13 @@
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
  	---help---
@@ -31,11 +31,11 @@ index e4ff389..35cb7b0 100644
  
  source "drivers/net/ethernet/marvell/Kconfig"
  source "drivers/net/ethernet/mellanox/Kconfig"
-diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
-index d447307..4f95100 100644
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -36,6 +36,7 @@ obj-$(CONFIG_IP1000) += icplus/
+Index: linux-3.7.1/drivers/net/ethernet/Makefile
+===================================================================
+--- linux-3.7.1.orig/drivers/net/ethernet/Makefile	2012-12-17 20:14:54.000000000 +0100
++++ linux-3.7.1/drivers/net/ethernet/Makefile	2012-12-21 10:30:29.629462283 +0100
+@@ -36,6 +36,7 @@
  obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
@@ -43,11 +43,10 @@ index d447307..4f95100 100644
  obj-$(CONFIG_NET_VENDOR_MARVELL) += marvell/
  obj-$(CONFIG_NET_VENDOR_MELLANOX) += mellanox/
  obj-$(CONFIG_NET_VENDOR_MICREL) += micrel/
-diff --git a/drivers/net/ethernet/lantiq_pce.h b/drivers/net/ethernet/lantiq_pce.h
-new file mode 100644
-index 0000000..0c38efe
---- /dev/null
-+++ b/drivers/net/ethernet/lantiq_pce.h
+Index: linux-3.7.1/drivers/net/ethernet/lantiq_pce.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.7.1/drivers/net/ethernet/lantiq_pce.h	2012-12-21 10:30:29.629462283 +0100
 @@ -0,0 +1,163 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
@@ -212,12 +211,11 @@ index 0000000..0c38efe
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +};
-diff --git a/drivers/net/ethernet/lantiq_xrx200.c b/drivers/net/ethernet/lantiq_xrx200.c
-new file mode 100644
-index 0000000..458bc11
---- /dev/null
-+++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1191 @@
+Index: linux-3.7.1/drivers/net/ethernet/lantiq_xrx200.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.7.1/drivers/net/ethernet/lantiq_xrx200.c	2012-12-21 12:06:26.473599462 +0100
+@@ -0,0 +1,1203 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -245,6 +243,7 @@ index 0000000..458bc11
 +
 +#include <linux/of_net.h>
 +#include <linux/of_mdio.h>
++#include <linux/of_gpio.h>
 +
 +#include <xway_dma.h>
 +#include <lantiq_soc.h>
@@ -408,6 +407,8 @@ index 0000000..458bc11
 +	phy_interface_t phy_if;
 +
 +	int link;
++	int gpio;
++	enum of_gpio_flags gpio_flags;
 +
 +	struct phy_device *phydev;
 +	struct device_node *phy_node;
@@ -1180,6 +1181,7 @@ index 0000000..458bc11
 +
 +static int xrx200_of_mdio(struct xrx200_hw *hw, struct device_node *np)
 +{
++	int i;
 +	hw->mii_bus = mdiobus_alloc();
 +	if (!hw->mii_bus)
 +		return -ENOMEM;
@@ -1220,6 +1222,14 @@ index 0000000..458bc11
 +		p->flags = XRX200_PORT_TYPE_PHY;
 +	priv->num_port++;
 +
++	p->gpio = of_get_gpio_flags(port, 0, &p->gpio_flags);
++	if (gpio_is_valid(p->gpio))
++		if (!gpio_request(p->gpio, "phy-reset")) {
++			gpio_direction_output(p->gpio,
++				(p->gpio_flags & OF_GPIO_ACTIVE_LOW) ? (1) : (0));
++			udelay(100);
++			gpio_set_value(p->gpio, (p->gpio_flags & OF_GPIO_ACTIVE_LOW) ? (0) : (1));
++		}
 +	/* is this port a wan port ? */
 +	if (priv->wan)
 +		priv->hw->wan_map |= BIT(p->num);
@@ -1409,6 +1419,3 @@ index 0000000..458bc11
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Lantiq SoC XRX200 ethernet");
 +MODULE_LICENSE("GPL");
--- 
-1.7.10.4
-
