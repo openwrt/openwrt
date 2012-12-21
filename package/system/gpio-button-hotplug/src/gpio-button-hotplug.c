@@ -24,7 +24,7 @@
 #include <linux/kobject.h>
 #include <linux/input.h>
 #include <linux/platform_device.h>
-#include <linux/gpio.h>
+#include <linux/of_gpio.h>
 #include <linux/gpio_keys.h>
 
 #define DRV_NAME	"gpio-keys-polled"
@@ -90,6 +90,7 @@ static struct bh_map button_map[] = {
 	BH_MAP(BTN_8,		"BTN_8"),
 	BH_MAP(BTN_9,		"BTN_9"),
 	BH_MAP(KEY_RESTART,	"reset"),
+	BH_MAP(KEY_RFKILL,	"rfkill"),
 #ifdef KEY_WPS_BUTTON
 	BH_MAP(KEY_WPS_BUTTON,	"wps"),
 #endif /* KEY_WPS_BUTTON */
@@ -322,6 +323,100 @@ static void __devinit gpio_keys_polled_open(struct gpio_keys_polled_dev *bdev)
 	gpio_keys_polled_queue_work(bdev);
 }
 
+#ifdef CONFIG_OF
+static struct gpio_keys_platform_data * __devinit
+gpio_keys_polled_get_devtree_pdata(struct device *dev)
+{
+	struct device_node *node, *pp;
+	struct gpio_keys_platform_data *pdata;
+	struct gpio_keys_button *button;
+	int error;
+	int nbuttons;
+	int i;
+
+	node = dev->of_node;
+	if (!node)
+		return NULL;
+
+	nbuttons = of_get_child_count(node);
+	if (nbuttons == 0)
+		return NULL;
+
+	pdata = kzalloc(sizeof(*pdata) + nbuttons * (sizeof *button),
+		GFP_KERNEL);
+	if (!pdata) {
+		error = -ENOMEM;
+		goto err_out;
+	}
+
+	pdata->buttons = (struct gpio_keys_button *)(pdata + 1);
+	pdata->nbuttons = nbuttons;
+
+	pdata->rep = !!of_get_property(node, "autorepeat", NULL);
+	of_property_read_u32(node, "poll-interval", &pdata->poll_interval);
+
+	i = 0;
+	for_each_child_of_node(node, pp) {
+		enum of_gpio_flags flags;
+
+		if (!of_find_property(pp, "gpios", NULL)) {
+			pdata->nbuttons--;
+			dev_warn(dev, "Found button without gpios\n");
+			continue;
+		}
+
+		button = &pdata->buttons[i++];
+
+		button->gpio = of_get_gpio_flags(pp, 0, &flags);
+		button->active_low = flags & OF_GPIO_ACTIVE_LOW;
+
+		if (of_property_read_u32(pp, "linux,code", &button->code)) {
+			dev_err(dev, "Button without keycode: 0x%x\n",
+				button->gpio);
+			error = -EINVAL;
+			goto err_free_pdata;
+		}
+
+		button->desc = of_get_property(pp, "label", NULL);
+
+		if (of_property_read_u32(pp, "linux,input-type", &button->type))
+			button->type = EV_KEY;
+
+		button->wakeup = !!of_get_property(pp, "gpio-key,wakeup", NULL);
+
+		if (of_property_read_u32(pp, "debounce-interval",
+					&button->debounce_interval))
+			button->debounce_interval = 5;
+	}
+
+	if (pdata->nbuttons == 0) {
+		error = -EINVAL;
+		goto err_free_pdata;
+	}
+
+	return pdata;
+
+err_free_pdata:
+	kfree(pdata);
+err_out:
+	return ERR_PTR(error);
+}
+
+static struct of_device_id gpio_keys_polled_of_match[] = {
+	{ .compatible = "gpio-keys-polled", },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, gpio_keys_polled_of_match);
+
+#else
+
+static inline struct gpio_keys_platform_data *
+gpio_keys_polled_get_devtree_pdata(struct device *dev)
+{
+	return NULL;
+}
+#endif
+
 static void __devexit gpio_keys_polled_close(struct gpio_keys_polled_dev *bdev)
 {
 	struct gpio_keys_platform_data *pdata = bdev->pdata;
@@ -340,8 +435,21 @@ static int __devinit gpio_keys_polled_probe(struct platform_device *pdev)
 	int error;
 	int i;
 
-	if (!pdata || !pdata->poll_interval)
-		return -EINVAL;
+	if (!pdata) {
+		pdata = gpio_keys_polled_get_devtree_pdata(dev);
+		if (IS_ERR(pdata))
+			return PTR_ERR(pdata);
+		if (!pdata) {
+			dev_err(dev, "missing platform data\n");
+			return -EINVAL;
+		}
+	}
+
+	if (!pdata->poll_interval) {
+		dev_err(dev, "missing poll_interval value\n");
+		error = -EINVAL;
+		goto err_free_pdata;
+	}
 
 	bdev = kzalloc(sizeof(struct gpio_keys_polled_dev) +
 		       pdata->nbuttons * sizeof(struct gpio_keys_button_data),
@@ -401,6 +509,11 @@ err_free_gpio:
 	kfree(bdev);
 	platform_set_drvdata(pdev, NULL);
 
+err_free_pdata:
+	/* If we have no platform_data, we allocated pdata dynamically.  */
+	if (!dev_get_platdata(&pdev->dev))
+		kfree(pdata);
+
 	return error;
 }
 
@@ -427,6 +540,7 @@ static struct platform_driver gpio_keys_polled_driver = {
 	.driver	= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,
+		.of_match_table = of_match_ptr(gpio_keys_polled_of_match),
 	},
 };
 
