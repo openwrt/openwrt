@@ -1,0 +1,36 @@
+From b6dd245c4594482d46507a0bfd100439be367952 Mon Sep 17 00:00:00 2001
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 6 Aug 2012 18:07:30 -0700
+Subject: [PATCH] usb: host: ohci-platform: BUG_ON() to WARN_ON() on probe
+
+Commit b6dd245c4594482d46507a0bfd100439be367952 upstream.
+
+usb_ohci_pdata is certainly required in ohci-platform driver.
+This patch avoids using BUG_ON() from driver,
+and return from probe with WARN_ON() if pdata was NULL.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/host/ohci-platform.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/usb/host/ohci-platform.c
++++ b/drivers/usb/host/ohci-platform.c
+@@ -83,10 +83,14 @@ static int __devinit ohci_platform_probe
+ {
+ 	struct usb_hcd *hcd;
+ 	struct resource *res_mem;
++	struct usb_ohci_pdata *pdata = dev->dev.platform_data;
+ 	int irq;
+ 	int err = -ENOMEM;
+ 
+-	BUG_ON(!dev->dev.platform_data);
++	if (!pdata) {
++		WARN_ON(1);
++		return -ENODEV;
++	}
+ 
+ 	if (usb_disabled())
+ 		return -ENODEV;
