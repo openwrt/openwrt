@@ -5,7 +5,7 @@
 START=50
 STOP=50
 
-SERVICE_USE_PID=1
+USE_PROCD=1
 
 NAME=dropbear
 PROG=/usr/sbin/dropbear
@@ -13,7 +13,7 @@ PIDCOUNT=0
 EXTRA_COMMANDS="killclients"
 EXTRA_HELP="	killclients Kill ${NAME} processes except servers and yourself"
 
-dropbear_start()
+dropbear_instance()
 {
 	append_ports()
 	{
@@ -21,7 +21,7 @@ dropbear_start()
 		local port="$2"
 
 		grep -qs "^ *$ifname:" /proc/net/dev || {
-			append args "-p $port"
+			procd_append_param command -p "$port"
 			return
 		}
 
@@ -31,7 +31,7 @@ dropbear_start()
 				s/.* addr: *\([0-9a-f:\.]*\).*/\1/p
 			'
 		); do
-			append args "-p $addr:$port"
+			procd_append_param command -p "$addr:$port"
 		done
 	}
 
@@ -43,20 +43,21 @@ dropbear_start()
 	config_get_bool enabled "${section}" enable 1
 	[ "${enabled}" -eq 0 ] && return 1
 
-	# verbose parameter
-	local verbosed
-	config_get_bool verbosed "${section}" verbose 0
-
 	# increase pid file count to handle multiple instances correctly
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 
-	# prepare parameters (initialise with pid file)
 	local pid_file="/var/run/${NAME}.${PIDCOUNT}.pid"
-	local args="-P $pid_file"
+
+	procd_open_instance
+	procd_set_param command "$PROG" -F -P "$pid_file"
+
+	# prepare parameters (initialise with pid file)
 	local val
+
 	# A) password authentication
 	config_get_bool val "${section}" PasswordAuth 1
-	[ "${val}" -eq 0 ] && append args "-s"
+	[ "${val}" -eq 0 ] && procd_append_param command -s
+
 	# B) listen interface and port
 	local port
 	local interface
@@ -66,25 +67,23 @@ dropbear_start()
 	append_ports "$interface" "$port"
 	# C) banner file
 	config_get val "${section}" BannerFile
-	[ -f "${val}" ] && append args "-b ${val}"
+	[ -f "${val}" ] && procd_append_param command -b "${val}"
 	# D) gatewayports
 	config_get_bool val "${section}" GatewayPorts 0
-	[ "${val}" -eq 1 ] && append args "-a"
+	[ "${val}" -eq 1 ] && procd_append_param command -a
 	# E) root password authentication
 	config_get_bool val "${section}" RootPasswordAuth 1
-	[ "${val}" -eq 0 ] && append args "-g"
+	[ "${val}" -eq 0 ] && procd_append_param command -g
 	# F) root login
 	config_get_bool val "${section}" RootLogin 1
-	[ "${val}" -eq 0 ] && append args "-w"
+	[ "${val}" -eq 0 ] && procd_append_param command -w
 	# G) host keys
 	config_get val "${section}" rsakeyfile
-	[ -f "${val}" ] && append args "-r ${val}"
+	[ -f "${val}" ] && procd_append_param command -r "${val}"
 	config_get val "${section}" dsskeyfile
-	[ -f "${val}" ] && append args "-d ${val}"
+	[ -f "${val}" ] && procd_append_param command -d "${val}"
 
-	# execute program and return its exit code
-	[ "${verbosed}" -ne 0 ] && echo "${initscript}: section ${section} starting ${PROG} ${args}"
-	SERVICE_PID_FILE="$pid_file" service_start ${PROG} ${args}
+	procd_close_instance
 }
 
 keygen()
@@ -110,7 +109,7 @@ keygen()
 	chmod 0700 /etc/dropbear
 }
 
-start()
+start_service()
 {
 	[ -s /etc/dropbear/dropbear_rsa_host_key -a \
 	  -s /etc/dropbear/dropbear_dss_host_key ] || keygen
@@ -119,22 +118,7 @@ start()
 	. /lib/functions/network.sh
 
 	config_load "${NAME}"
-	config_foreach dropbear_start dropbear
-}
-
-stop()
-{
-	local pid_file pid_files
-	
-	pid_files=`ls /var/run/${NAME}.*.pid 2>/dev/null`
-	
-	[ -z "$pid_files" ] && return 1
-	
-	for pid_file in $pid_files; do
-		SERVICE_PID_FILE="$pid_file" service_stop ${PROG} && {
-			rm -f ${pid_file}
-		}
-	done
+	config_foreach dropbear_instance dropbear
 }
 
 killclients()
