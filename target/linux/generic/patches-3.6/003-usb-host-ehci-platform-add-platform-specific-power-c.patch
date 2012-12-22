@@ -1,0 +1,119 @@
+From 04216bedafb1b3992a6c2b7f1518281d2ba5fc7b Mon Sep 17 00:00:00 2001
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 6 Aug 2012 18:08:39 -0700
+Subject: [PATCH] usb: host: ehci-platform: add platform specific power callback
+
+Commit 04216bedafb1b3992a6c2b7f1518281d2ba5fc7b upstream.
+
+This patch enables to call platform specific power callback function.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Alan Stern <stern@rowland.harvard.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/host/ehci-platform.c |   40 +++++++++++++++++++++++++++++++++++---
+ include/linux/usb/ehci_pdriver.h |    8 ++++++++
+ 2 files changed, 45 insertions(+), 3 deletions(-)
+
+--- a/drivers/usb/host/ehci-platform.c
++++ b/drivers/usb/host/ehci-platform.c
+@@ -105,10 +105,18 @@ static int __devinit ehci_platform_probe
+ 		return -ENXIO;
+ 	}
+ 
++	if (pdata->power_on) {
++		err = pdata->power_on(dev);
++		if (err < 0)
++			return err;
++	}
++
+ 	hcd = usb_create_hcd(&ehci_platform_hc_driver, &dev->dev,
+ 			     dev_name(&dev->dev));
+-	if (!hcd)
+-		return -ENOMEM;
++	if (!hcd) {
++		err = -ENOMEM;
++		goto err_power;
++	}
+ 
+ 	hcd->rsrc_start = res_mem->start;
+ 	hcd->rsrc_len = resource_size(res_mem);
+@@ -136,12 +144,17 @@ err_release_region:
+ 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
+ err_put_hcd:
+ 	usb_put_hcd(hcd);
++err_power:
++	if (pdata->power_off)
++		pdata->power_off(dev);
++
+ 	return err;
+ }
+ 
+ static int __devexit ehci_platform_remove(struct platform_device *dev)
+ {
+ 	struct usb_hcd *hcd = platform_get_drvdata(dev);
++	struct usb_ehci_pdata *pdata = dev->dev.platform_data;
+ 
+ 	usb_remove_hcd(hcd);
+ 	iounmap(hcd->regs);
+@@ -149,6 +162,9 @@ static int __devexit ehci_platform_remov
+ 	usb_put_hcd(hcd);
+ 	platform_set_drvdata(dev, NULL);
+ 
++	if (pdata->power_off)
++		pdata->power_off(dev);
++
+ 	return 0;
+ }
+ 
+@@ -157,14 +173,32 @@ static int __devexit ehci_platform_remov
+ static int ehci_platform_suspend(struct device *dev)
+ {
+ 	struct usb_hcd *hcd = dev_get_drvdata(dev);
++	struct usb_ehci_pdata *pdata = dev->platform_data;
++	struct platform_device *pdev =
++		container_of(dev, struct platform_device, dev);
+ 	bool do_wakeup = device_may_wakeup(dev);
++	int ret;
++
++	ret = ehci_suspend(hcd, do_wakeup);
+ 
+-	return ehci_suspend(hcd, do_wakeup);
++	if (pdata->power_suspend)
++		pdata->power_suspend(pdev);
++
++	return ret;
+ }
+ 
+ static int ehci_platform_resume(struct device *dev)
+ {
+ 	struct usb_hcd *hcd = dev_get_drvdata(dev);
++	struct usb_ehci_pdata *pdata = dev->platform_data;
++	struct platform_device *pdev =
++		container_of(dev, struct platform_device, dev);
++
++	if (pdata->power_on) {
++		int err = pdata->power_on(pdev);
++		if (err < 0)
++			return err;
++	}
+ 
+ 	ehci_resume(hcd, false);
+ 	return 0;
+--- a/include/linux/usb/ehci_pdriver.h
++++ b/include/linux/usb/ehci_pdriver.h
+@@ -41,6 +41,14 @@ struct usb_ehci_pdata {
+ 	unsigned	big_endian_mmio:1;
+ 	unsigned	port_power_on:1;
+ 	unsigned	port_power_off:1;
++
++	/* Turn on all power and clocks */
++	int (*power_on)(struct platform_device *pdev);
++	/* Turn off all power and clocks */
++	void (*power_off)(struct platform_device *pdev);
++	/* Turn on only VBUS suspend power and hotplug detection,
++	 * turn off everything else */
++	void (*power_suspend)(struct platform_device *pdev);
+ };
+ 
+ #endif /* __USB_CORE_EHCI_PDRIVER_H */
