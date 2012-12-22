@@ -19,13 +19,13 @@
 #include <linux/err.h>
 #include <linux/clk.h>
 #include <linux/rt2x00_platform.h>
+#include <linux/usb/ehci_pdriver.h>
+#include <linux/usb/ohci_pdriver.h>
 
 #include <asm/addrspace.h>
 
 #include <asm/mach-ralink/rt3883.h>
 #include <asm/mach-ralink/rt3883_regs.h>
-#include <asm/mach-ralink/rt3883_ehci_platform.h>
-#include <asm/mach-ralink/rt3883_ohci_platform.h>
 #include <asm/mach-ralink/ramips_nand_platform.h>
 #include "devices.h"
 
@@ -123,67 +123,63 @@ void __init rt3883_register_pflash(unsigned int id)
 	rt3883_flash_instance++;
 }
 
-static atomic_t rt3883_usb_use_count = ATOMIC_INIT(0);
+static atomic_t rt3883_usb_pwr_ref = ATOMIC_INIT(0);
 
-static void rt3883_usb_host_start(void)
+static int rt3883_usb_power_on(struct platform_device *pdev)
 {
-	u32 t;
 
-	if (atomic_inc_return(&rt3883_usb_use_count) != 1)
-		return;
+	if (atomic_inc_return(&rt3883_usb_pwr_ref) == 1) {
+		u32 t;
 
-	t = rt3883_sysc_rr(RT3883_SYSC_REG_USB_PS);
+		t = rt3883_sysc_rr(RT3883_SYSC_REG_USB_PS);
 
-#if 0
-	/* put the HOST controller into reset */
-	t = rt3883_sysc_rr(RT3883_SYSC_REG_RSTCTRL);
-	t |= RT3883_RSTCTRL_UHST;
-	rt3883_sysc_wr(t, RT3883_SYSC_REG_RSTCTRL);
-#endif
+		/* enable clock for port0's and port1's phys */
+		t = rt3883_sysc_rr(RT3883_SYSC_REG_CLKCFG1);
+		t |= RT3883_CLKCFG1_UPHY0_CLK_EN | RT3883_CLKCFG1_UPHY1_CLK_EN;
+		rt3883_sysc_wr(t, RT3883_SYSC_REG_CLKCFG1);
+		mdelay(500);
 
-	/* enable clock for port0's and port1's phys */
-	t = rt3883_sysc_rr(RT3883_SYSC_REG_CLKCFG1);
-	t = t | RT3883_CLKCFG1_UPHY0_CLK_EN | RT3883_CLKCFG1_UPHY1_CLK_EN;
-	rt3883_sysc_wr(t, RT3883_SYSC_REG_CLKCFG1);
-	mdelay(500);
+		/* pull USBHOST and USBDEV out from reset */
+		t = rt3883_sysc_rr(RT3883_SYSC_REG_RSTCTRL);
+		t &= ~(RT3883_RSTCTRL_UHST | RT3883_RSTCTRL_UDEV);
+		rt3883_sysc_wr(t, RT3883_SYSC_REG_RSTCTRL);
+		mdelay(500);
 
-	/* pull USBHOST and USBDEV out from reset */
-	t = rt3883_sysc_rr(RT3883_SYSC_REG_RSTCTRL);
-	t &= ~(RT3883_RSTCTRL_UHST | RT3883_RSTCTRL_UDEV);
-	rt3883_sysc_wr(t, RT3883_SYSC_REG_RSTCTRL);
-	mdelay(500);
+		/* enable host mode */
+		t = rt3883_sysc_rr(RT3883_SYSC_REG_SYSCFG1);
+		t |= RT3883_SYSCFG1_USB0_HOST_MODE;
+		rt3883_sysc_wr(t, RT3883_SYSC_REG_SYSCFG1);
 
-	/* enable host mode */
-	t = rt3883_sysc_rr(RT3883_SYSC_REG_SYSCFG1);
-	t |= RT3883_SYSCFG1_USB0_HOST_MODE;
-	rt3883_sysc_wr(t, RT3883_SYSC_REG_SYSCFG1);
+		t = rt3883_sysc_rr(RT3883_SYSC_REG_USB_PS);
+	}
 
-	t = rt3883_sysc_rr(RT3883_SYSC_REG_USB_PS);
+	return 0;
 }
 
-static void rt3883_usb_host_stop(void)
+static void rt3883_usb_power_off(struct platform_device *pdev)
 {
-	u32 t;
+	if (atomic_dec_return(&rt3883_usb_pwr_ref) == 0) {
+		u32 t;
 
-	if (atomic_dec_return(&rt3883_usb_use_count) != 0)
-		return;
+		/* put USBHOST and USBDEV into reset */
+		t = rt3883_sysc_rr(RT3883_SYSC_REG_RSTCTRL);
+		t |= RT3883_RSTCTRL_UHST | RT3883_RSTCTRL_UDEV;
+		rt3883_sysc_wr(t, RT3883_SYSC_REG_RSTCTRL);
+		udelay(10000);
 
-	/* put USBHOST and USBDEV into reset */
-	t = rt3883_sysc_rr(RT3883_SYSC_REG_RSTCTRL);
-	t |= RT3883_RSTCTRL_UHST | RT3883_RSTCTRL_UDEV;
-	rt3883_sysc_wr(t, RT3883_SYSC_REG_RSTCTRL);
-	udelay(10000);
-
-	/* disable clock for port0's and port1's phys*/
-	t = rt3883_sysc_rr(RT3883_SYSC_REG_CLKCFG1);
-	t &= ~(RT3883_CLKCFG1_UPHY0_CLK_EN | RT3883_CLKCFG1_UPHY1_CLK_EN);
-	rt3883_sysc_wr(t, RT3883_SYSC_REG_CLKCFG1);
-	udelay(10000);
+		/* disable clock for port0's and port1's phys*/
+		t = rt3883_sysc_rr(RT3883_SYSC_REG_CLKCFG1);
+		t &= ~(RT3883_CLKCFG1_UPHY0_CLK_EN |
+		       RT3883_CLKCFG1_UPHY1_CLK_EN);
+		rt3883_sysc_wr(t, RT3883_SYSC_REG_CLKCFG1);
+		udelay(10000);
+	}
 }
 
-static struct rt3883_ehci_platform_data rt3883_ehci_data = {
-	.start_hw	= rt3883_usb_host_start,
-	.stop_hw	= rt3883_usb_host_stop,
+static struct usb_ehci_pdata rt3883_ehci_data = {
+	.port_power_off	= 1,
+	.power_on	= rt3883_usb_power_on,
+	.power_off	= rt3883_usb_power_off,
 };
 
 static struct resource rt3883_ehci_resources[] = {
@@ -200,7 +196,7 @@ static struct resource rt3883_ehci_resources[] = {
 
 static u64 rt3883_ehci_dmamask = DMA_BIT_MASK(32);
 static struct platform_device rt3883_ehci_device = {
-	.name		= "rt3883-ehci",
+	.name		= "ehci-platform",
 	.id		= -1,
 	.resource	= rt3883_ehci_resources,
 	.num_resources	= ARRAY_SIZE(rt3883_ehci_resources),
@@ -223,14 +219,14 @@ static struct resource rt3883_ohci_resources[] = {
 	},
 };
 
-static struct rt3883_ohci_platform_data rt3883_ohci_data = {
-	.start_hw	= rt3883_usb_host_start,
-	.stop_hw	= rt3883_usb_host_stop,
+static struct usb_ohci_pdata rt3883_ohci_data = {
+	.power_on	= rt3883_usb_power_on,
+	.power_off	= rt3883_usb_power_off,
 };
 
 static u64 rt3883_ohci_dmamask = DMA_BIT_MASK(32);
 static struct platform_device rt3883_ohci_device = {
-	.name		= "rt3883-ohci",
+	.name		= "ohci-platform",
 	.id		= -1,
 	.resource	= rt3883_ohci_resources,
 	.num_resources	= ARRAY_SIZE(rt3883_ohci_resources),
