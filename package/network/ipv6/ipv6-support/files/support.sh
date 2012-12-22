@@ -172,8 +172,17 @@ disable_router() {
 	# Notify the address distribution daemon
 	ubus call 6distributed deliface '{"network": "'"$network"'"}'
 
-	# Disable advertisement daemon
-	stop_service /usr/sbin/6relayd "/var/run/ipv6-router-$network.pid"
+
+	# Start RD & DHCPv6 service
+	local router_service
+	config_get router_service global router_service
+
+	if [ "$router_service" == "dnsmasq" ]; then
+		rm -f "/var/etc/dnsmasq.d/ipv6-router-$network.conf"
+		/etc/init.d/dnsmasq restart
+	else
+		stop_service /usr/sbin/6relayd "/var/run/ipv6-router-$network.pid"
+	fi
 }
 
 
@@ -424,8 +433,23 @@ enable_router() {
 	[ "$length" -ne "0" ] && ubus call 6distributed newiface '{"network": "'"$network"'", "iface": "'"$device"'", "length": '"$length"'}'
 
 	# Start RD & DHCPv6 service
-	local pid="/var/run/ipv6-router-$network.pid"
-	start_service "/usr/sbin/6relayd -S . $device" "$pid"
+	local router_service
+	config_get router_service global router_service
+
+	if [ "$router_service" == "dnsmasq" ]; then
+		local dnsmasq_opts
+		config_get dnsmasq_opts global dnsmasq_opts
+		[ -z "$dnsmasq_opts" ] && dnsmasq_opts="ra-stateful,ra-names"
+
+		local conf="/var/etc/dnsmasq.d/ipv6-router-$network.conf"
+		mkdir -p $(dirname $conf)
+		echo "dhcp-range=::1,constructor:$device,$dnsmasq_opts" > $conf
+		echo "enable-ra" >> $conf
+		/etc/init.d/dnsmasq restart
+	else
+		local pid="/var/run/ipv6-router-$network.pid"
+		start_service "/usr/sbin/6relayd -S . $device" "$pid"
+	fi
 
 	# Try relaying if necessary
 	restart_master_relay "$network"

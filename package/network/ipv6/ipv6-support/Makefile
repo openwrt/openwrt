@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ipv6-support
-PKG_VERSION:=2012-12-11
+PKG_VERSION:=2012-12-22
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
