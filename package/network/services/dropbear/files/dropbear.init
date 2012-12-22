@@ -61,7 +61,7 @@ dropbear_start()
 	local port
 	local interface
 	config_get interface "${section}" Interface
-	config_get interface "${interface}" ifname "$interface"
+	[ -n "$interface" ] && network_get_device interface "$interface"
 	config_get port "${section}" Port 22
 	append_ports "$interface" "$port"
 	# C) banner file
@@ -115,8 +115,9 @@ start()
 	[ -s /etc/dropbear/dropbear_rsa_host_key -a \
 	  -s /etc/dropbear/dropbear_dss_host_key ] || keygen
 
-	include /lib/network
-	scan_interfaces
+	. /lib/functions.sh
+	. /lib/functions/network.sh
+
 	config_load "${NAME}"
 	config_foreach dropbear_start dropbear
 }
