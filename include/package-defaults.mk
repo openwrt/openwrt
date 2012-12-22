@@ -13,8 +13,6 @@ else
   PKG_FIXUP_DEPENDS = $(2)
 endif
 
-PKG_MAINTAINER ?= OpenWrt Developers Team <openwrt-devel@openwrt.org>
-
 define Package/Default
   CONFIGFILE:=
   SECTION:=opt
