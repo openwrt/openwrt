@@ -75,9 +75,40 @@ $EXTRA_HELP
 EOF
 }
 
+# for procd
+start_service() {
+	return 0
+}
+
+stop_service() {
+	return 0
+}
+
 ${INIT_TRACE:+set -x}
 
 . "$initscript"
+
+[ -n "$USE_PROCD" ] && {
+	. $IPKG_INSTROOT/lib/functions/procd.sh
+
+	rc_procd() {
+		procd_open_service "$(basename "$initscript")" "$initscript"
+		"$@"
+		procd_close_service
+	}
+
+	start() {
+		rc_procd start_service "$@"
+	}
+
+	stop() {
+		procd_kill "$(basename "$initscript")" "$1"
+	}
+
+	reload() {
+		start
+	}
+}
 
 ALL_COMMANDS="start stop reload restart boot shutdown enable disable enabled depends ${EXTRA_COMMANDS}"
 list_contains ALL_COMMANDS "$action" || action=help
