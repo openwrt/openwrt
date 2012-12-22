@@ -48,7 +48,7 @@ void ag71xx_phy_start(struct ag71xx *ag)
 
 	if (ag->phy_dev) {
 		phy_start(ag->phy_dev);
-	} else if (pdata->switch_data) {
+	} else if (pdata->mii_bus_dev && pdata->switch_data) {
 		ag71xx_ar7240_start(ag);
 	} else {
 		ag->link = 1;
@@ -63,7 +63,7 @@ void ag71xx_phy_stop(struct ag71xx *ag)
 
 	if (ag->phy_dev)
 		phy_stop(ag->phy_dev);
-	else if (pdata->switch_data)
+	else if (pdata->mii_bus_dev && pdata->switch_data)
 		ag71xx_ar7240_stop(ag);
 
 	spin_lock_irqsave(&ag->lock, flags);
