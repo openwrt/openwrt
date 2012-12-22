@@ -130,8 +130,8 @@
 -	       sizeof(ap136_ath9k_data.eeprom_data));
 +	t = __raw_readl(base + QCA955X_GMAC_REG_ETH_CFG);
 +
-+	t &= ~(QCA955X_ETH_CFG_RGMII_GMAC0 | QCA955X_ETH_CFG_SGMII_GMAC0);
-+	t |= QCA955X_ETH_CFG_RGMII_GMAC0;
++	t &= ~(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII);
++	t |= QCA955X_ETH_CFG_RGMII_EN;
  
 -	ath79_pci_set_plat_dev_init(ap136_pci_plat_dev_init);
 -	ath79_register_pci();
