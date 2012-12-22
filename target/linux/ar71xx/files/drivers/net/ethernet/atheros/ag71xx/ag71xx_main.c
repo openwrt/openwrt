@@ -1071,7 +1071,7 @@ static int __devinit ag71xx_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
-	if (pdata->mii_bus_dev == NULL) {
+	if (pdata->mii_bus_dev == NULL && pdata->phy_mask) {
 		dev_err(&pdev->dev, "no MII bus device specified\n");
 		err = -EINVAL;
 		goto err_out;
