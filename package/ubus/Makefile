@@ -63,8 +63,7 @@ define Package/ubus/install
 endef
 
 define Package/ubusd/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/ubus.init $(1)/etc/init.d/ubus
+	$(INSTALL_DIR) $(1)/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ubusd $(1)/sbin/
 endef
 
