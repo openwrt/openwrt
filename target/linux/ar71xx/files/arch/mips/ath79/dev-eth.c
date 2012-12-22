@@ -605,12 +605,22 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 		case ATH79_SOC_AR9341:
 		case ATH79_SOC_AR9342:
 		case ATH79_SOC_AR9344:
-		case ATH79_SOC_QCA9558:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_GMII:
 			case PHY_INTERFACE_MODE_RGMII:
 			case PHY_INTERFACE_MODE_RMII:
+				break;
+			default:
+				return -EINVAL;
+			}
+			break;
+
+		case ATH79_SOC_QCA9558:
+			switch (pdata->phy_if_mode) {
+			case PHY_INTERFACE_MODE_MII:
+			case PHY_INTERFACE_MODE_RGMII:
+			case PHY_INTERFACE_MODE_SGMII:
 				break;
 			default:
 				return -EINVAL;
@@ -654,10 +664,20 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 		case ATH79_SOC_AR9341:
 		case ATH79_SOC_AR9342:
 		case ATH79_SOC_AR9344:
-		case ATH79_SOC_QCA9558:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_GMII:
+				break;
+			default:
+				return -EINVAL;
+			}
+			break;
+
+		case ATH79_SOC_QCA9558:
+			switch (pdata->phy_if_mode) {
+			case PHY_INTERFACE_MODE_MII:
+			case PHY_INTERFACE_MODE_RGMII:
+			case PHY_INTERFACE_MODE_SGMII:
 				break;
 			default:
 				return -EINVAL;
@@ -921,6 +941,7 @@ void __init ath79_register_eth(unsigned int id)
 	switch (pdata->phy_if_mode) {
 	case PHY_INTERFACE_MODE_GMII:
 	case PHY_INTERFACE_MODE_RGMII:
+	case PHY_INTERFACE_MODE_SGMII:
 		if (!pdata->has_gbit) {
 			printk(KERN_ERR "ar71xx: no gbit available on eth%d\n",
 					id);
