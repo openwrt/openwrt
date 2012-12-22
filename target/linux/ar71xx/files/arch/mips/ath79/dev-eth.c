@@ -943,7 +943,6 @@ void __init ath79_register_eth(unsigned int id)
 		case ATH79_SOC_AR9341:
 		case ATH79_SOC_AR9342:
 		case ATH79_SOC_AR9344:
-		case ATH79_SOC_QCA9558:
 			if (id == 0)
 				pdata->mii_bus_dev = &ath79_mdio0_device.dev;
 			else
@@ -954,6 +953,10 @@ void __init ath79_register_eth(unsigned int id)
 		case ATH79_SOC_AR9330:
 		case ATH79_SOC_AR9331:
 			pdata->mii_bus_dev = &ath79_mdio1_device.dev;
+			break;
+
+		case ATH79_SOC_QCA9558:
+			/* don't assign any MDIO device by default */
 			break;
 
 		default:
