@@ -1074,19 +1074,13 @@ ar8327_init_globals(struct ar8216_priv *priv)
 }
 
 static void
-ar8327_init_cpuport(struct ar8216_priv *priv)
+ar8327_config_port(struct ar8216_priv *priv, unsigned int port,
+		    struct ar8327_port_cfg *cfg)
 {
-	struct ar8327_platform_data *pdata;
-	struct ar8327_port_cfg *cfg;
 	u32 t;
 
-	pdata = priv->phy->dev.platform_data;
-	if (!pdata)
-		return;
-
-	cfg = &pdata->port0_cfg;
-	if (!cfg->force_link) {
-		priv->write(priv, AR8327_REG_PORT_STATUS(AR8216_PORT_CPU),
+	if (!cfg || !cfg->force_link) {
+		priv->write(priv, AR8327_REG_PORT_STATUS(port),
 			    AR8216_PORT_STATUS_LINK_AUTO);
 		return;
 	}
@@ -1095,6 +1089,7 @@ ar8327_init_cpuport(struct ar8216_priv *priv)
 	t |= cfg->duplex ? AR8216_PORT_STATUS_DUPLEX : 0;
 	t |= cfg->rxpause ? AR8216_PORT_STATUS_RXFLOW : 0;
 	t |= cfg->txpause ? AR8216_PORT_STATUS_TXFLOW : 0;
+
 	switch (cfg->speed) {
 	case AR8327_PORT_SPEED_10:
 		t |= AR8216_PORT_SPEED_10M;
@@ -1107,21 +1102,27 @@ ar8327_init_cpuport(struct ar8216_priv *priv)
 		break;
 	}
 
-	priv->write(priv, AR8327_REG_PORT_STATUS(AR8216_PORT_CPU), t);
+	priv->write(priv, AR8327_REG_PORT_STATUS(port), t);
 }
 
 static void
 ar8327_init_port(struct ar8216_priv *priv, int port)
 {
+	struct ar8327_platform_data *pdata;
+	struct ar8327_port_cfg *cfg;
 	u32 t;
 
-	if (port == AR8216_PORT_CPU) {
-		ar8327_init_cpuport(priv);
-	} else {
-		t = AR8216_PORT_STATUS_LINK_AUTO;
-		priv->write(priv, AR8327_REG_PORT_STATUS(port), t);
-	}
+	pdata = priv->phy->dev.platform_data;
 
+	if (pdata && port == AR8216_PORT_CPU)
+		cfg = &pdata->port0_cfg;
+	else if (pdata && port == 6)
+		cfg = &pdata->port6_cfg;
+	else
+		cfg = NULL;
+
+	ar8327_config_port(priv, port, cfg);
+	
 	priv->write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
 	priv->write(priv, AR8327_REG_PORT_VLAN0(port), 0);
