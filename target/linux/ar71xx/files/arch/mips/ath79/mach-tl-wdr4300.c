@@ -121,7 +121,7 @@ static struct ar8327_led_cfg wdr4300_ar8327_led_cfg = {
 
 static struct ar8327_platform_data wdr4300_ar8327_data = {
 	.pad0_cfg = &wdr4300_ar8327_pad0_cfg,
-	.cpuport_cfg = {
+	.port0_cfg = {
 		.force_link = 1,
 		.speed = AR8327_PORT_SPEED_1000,
 		.duplex = 1,

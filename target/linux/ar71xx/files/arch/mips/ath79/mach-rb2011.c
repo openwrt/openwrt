@@ -106,7 +106,7 @@ static struct ar8327_pad_cfg rb2011_ar8327_pad0_cfg = {
 
 static struct ar8327_platform_data rb2011_ar8327_data = {
 	.pad0_cfg = &rb2011_ar8327_pad0_cfg,
-	.cpuport_cfg = {
+	.port0_cfg = {
 		.force_link = 1,
 		.speed = AR8327_PORT_SPEED_1000,
 		.duplex = 1,

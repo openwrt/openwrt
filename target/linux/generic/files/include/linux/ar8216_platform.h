@@ -74,7 +74,7 @@ struct ar8327_platform_data {
 	struct ar8327_pad_cfg *pad0_cfg;
 	struct ar8327_pad_cfg *pad5_cfg;
 	struct ar8327_pad_cfg *pad6_cfg;
-	struct ar8327_port_cfg cpuport_cfg;
+	struct ar8327_port_cfg port0_cfg;
 	struct ar8327_led_cfg *led_cfg;
 };
 
