@@ -1084,7 +1084,7 @@ ar8327_init_cpuport(struct ar8216_priv *priv)
 	if (!pdata)
 		return;
 
-	cfg = &pdata->cpuport_cfg;
+	cfg = &pdata->port0_cfg;
 	if (!cfg->force_link) {
 		priv->write(priv, AR8327_REG_PORT_STATUS(AR8216_PORT_CPU),
 			    AR8216_PORT_STATUS_LINK_AUTO);
