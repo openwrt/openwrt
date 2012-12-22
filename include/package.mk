@@ -215,7 +215,7 @@ define Package/$(1)/description
 endef
 endif
 
-  $(foreach FIELD, TITLE CATEGORY PRIORITY SECTION VERSION,
+  $(foreach FIELD, TITLE CATEGORY SECTION VERSION,
     ifeq ($($(FIELD)),)
       $$(error Package/$(1) is missing the $(FIELD) field)
     endif

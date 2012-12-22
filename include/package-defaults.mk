@@ -42,7 +42,6 @@ define Package/Default
   else
     PKGARCH:=$(BOARD)
   endif
-  PRIORITY:=optional
   DEFAULT:=
   MENU:=
   SUBMENU:=

@@ -146,18 +146,17 @@ ifeq ($(DUMP),)
 		for depend in $$(filter-out @%,$$(IDEPEND_$(1))); do \
 			DEPENDS=$$$${DEPENDS:+$$$$DEPENDS, }$$$${depend##+}; \
 		done; \
-		echo "Depends: $$$$DEPENDS"; \
-		echo "Provides: $(PROVIDES)"; \
+		[ -z "$$$$DEPENDS" ] || echo "Depends: $$$$DEPENDS"; \
+		$(if $(PROVIDES), echo "Provides: $(PROVIDES)"; ) \
 		echo "Source: $(SOURCE)"; \
-		echo "SourceFile: $(PKG_SOURCE)"; \
-		echo "SourceURL: $(PKG_SOURCE_URL)"; \
-		echo "License: $(PKG_LICENSE)"; \
-		echo "LicenseFiles: $(PKG_LICENSE_FILES)"; \
+		$(if $(PKG_SOURCE), echo "SourceFile: $(PKG_SOURCE)"; ) \
+		$(if $(PKG_SOURCE_URL), echo "SourceURL: $(PKG_SOURCE_URL)"; ) \
+		$(if $(PKG_LICENSE), echo "License: $(PKG_LICENSE)"; ) \
+		$(if $(PKG_LICENSE_FILES), echo "LicenseFiles: $(PKG_LICENSE_FILES)"; ) \
 		echo "Section: $(SECTION)"; \
-		echo "Status: unknown $(if $(filter hold,$(PKG_FLAGS)),hold,ok) not-installed"; \
-		echo "Essential: $(if $(filter essential,$(PKG_FLAGS)),yes,no)"; \
-		echo "Priority: $(PRIORITY)"; \
-		echo "Maintainer: $(MAINTAINER)"; \
+		$(if $(filter hold,$(PKG_FLAGS)),echo "Status: unknown hold not-installed"; ) \
+		$(if $(filter essential,$(PKG_FLAGS)), echo "Essential: yes"; ) \
+		$(if $(MAINTAINER),echo "Maintainer: $(MAINTAINER)"; ) \
 		echo "Architecture: $(PKGARCH)"; \
 		echo "Installed-Size: 0"; \
 		echo -n "Description: "; $(SH_FUNC) getvar $(call shvar,Package/$(1)/description) | sed -e 's,^[[:space:]]*, ,g'; \
