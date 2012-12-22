@@ -134,7 +134,7 @@ static struct platform_device rt288x_wifi_device = {
 
 void __init rt288x_register_wifi(void)
 {
-	rt288x_wifi_data.eeprom_file_name = "RT288X.eeprom";
+	rt288x_wifi_data.eeprom_file_name = "soc_wmac.eeprom";
 	platform_device_register(&rt288x_wifi_device);
 }
 

@@ -216,7 +216,8 @@ static struct platform_device rt305x_wifi_device = {
 void __init rt305x_register_wifi(void)
 {
 	u32 t;
-	rt305x_wifi_data.eeprom_file_name = "RT305X.eeprom";
+
+	rt305x_wifi_data.eeprom_file_name = "soc_wmac.eeprom";
 
 	if (soc_is_rt3352() || soc_is_rt5350()) {
 		t = rt305x_sysc_rr(SYSC_REG_SYSTEM_CONFIG);

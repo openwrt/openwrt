@@ -319,7 +319,7 @@ static struct platform_device rt3883_wlan_device = {
 
 void __init rt3883_register_wlan(void)
 {
-	rt3883_wlan_data.eeprom_file_name = "RT3883.eeprom",
+	rt3883_wlan_data.eeprom_file_name = "soc_wmac.eeprom",
 	platform_device_register(&rt3883_wlan_device);
 }
 
