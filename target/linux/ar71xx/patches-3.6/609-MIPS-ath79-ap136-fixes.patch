@@ -56,7 +56,7 @@
  
  static struct gpio_led ap136_leds_gpio[] __initdata = {
  	{
-@@ -98,63 +104,91 @@ static struct gpio_keys_button ap136_gpi
+@@ -98,63 +104,106 @@ static struct gpio_keys_button ap136_gpi
  	},
  };
  
@@ -99,7 +99,14 @@
 +		.duplex = 1,
 +		.txpause = 1,
 +		.rxpause = 1,
-+	}
++	},
++	.port6_cfg = {
++		.force_link = 1,
++		.speed = AR8327_PORT_SPEED_1000,
++		.duplex = 1,
++		.txpause = 1,
++		.rxpause = 1,
++	},
  };
  
 -#ifdef CONFIG_PCI
@@ -132,11 +139,11 @@
 +
 +	t &= ~(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII);
 +	t |= QCA955X_ETH_CFG_RGMII_EN;
++
++	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
  
 -	ath79_pci_set_plat_dev_init(ap136_pci_plat_dev_init);
 -	ath79_register_pci();
-+	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
-+
 +	iounmap(base);
  }
 -#else
@@ -172,13 +179,21 @@
 +	mdiobus_register_board_info(ap136_mdio0_info,
 +				    ARRAY_SIZE(ap136_mdio0_info));
 +
-+	/* GMAC0 is connected to an AR8327 switch */
++	/* GMAC0 is connected to GMAC0 of the AR8327 switch via RGMII */
 +	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 +	ath79_eth0_data.phy_mask = BIT(0);
 +	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
 +	ath79_eth0_pll_data.pll_1000 = 0xa6000000;
 +
 +	ath79_register_eth(0);
++
++	/* GMAC1 is connected to GMAC6 of the AR8327 switch via SGMII */
++	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
++	ath79_eth1_data.speed = SPEED_1000;
++	ath79_eth1_data.duplex = DUPLEX_FULL;
++	ath79_eth1_pll_data.pll_1000 = 0x03000101;
++
++	ath79_register_eth(1);
  }
  
  MIPS_MACHINE(ATH79_MACH_AP136, "AP136", "Atheros AP136 reference board",
