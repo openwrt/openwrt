@@ -710,8 +710,6 @@ static struct gpio laguna_gpio_gw2380[] = {
  */
 static void __init laguna_init(void)
 {
-	cns3xxx_l2x0_init();
-
 	platform_device_register(&laguna_watchdog);
 
 	platform_device_register(&laguna_i2c_controller);
