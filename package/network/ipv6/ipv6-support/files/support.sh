@@ -438,12 +438,12 @@ enable_router() {
 
 	if [ "$router_service" == "dnsmasq" ]; then
 		local dnsmasq_opts
-		config_get dnsmasq_opts global dnsmasq_opts
-		[ -z "$dnsmasq_opts" ] && dnsmasq_opts="ra-stateful,ra-names"
+		config_get dnsmasq_opts "$network" dnsmasq_opts
+		[ -z "$dnsmasq_opts" ] && dnsmasq_opts="ra-names,24h"
 
 		local conf="/var/etc/dnsmasq.d/ipv6-router-$network.conf"
 		mkdir -p $(dirname $conf)
-		echo "dhcp-range=::1,constructor:$device,$dnsmasq_opts" > $conf
+		echo "dhcp-range=::00ff,::ffff,constructor:$device,$dnsmasq_opts" > $conf
 		echo "enable-ra" >> $conf
 		/etc/init.d/dnsmasq restart
 	else
