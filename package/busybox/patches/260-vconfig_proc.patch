@@ -1,0 +1,22 @@
+--- a/networking/vconfig.c
++++ b/networking/vconfig.c
+@@ -116,8 +116,6 @@ static const char name_types[] ALIGN1 = 
+ 	'_', 'N', 'O', '_', 'P', 'A', 'D', 0,
+ };
+ 
+-static const char conf_file_name[] ALIGN1 = "/proc/net/vlan/config";
+-
+ int vconfig_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+ int vconfig_main(int argc, char **argv)
+ {
+@@ -129,10 +127,6 @@ int vconfig_main(int argc, char **argv)
+ 		bb_show_usage();
+ 	}
+ 
+-	/* Don't bother closing the filedes.  It will be closed on cleanup. */
+-	/* Will die if 802.1q is not present */
+-	xopen(conf_file_name, O_RDONLY);
+-
+ 	memset(&ifr, 0, sizeof(ifr));
+ 
+ 	++argv;
