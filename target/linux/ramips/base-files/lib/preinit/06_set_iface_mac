@@ -8,7 +8,9 @@ preinit_set_mac_address() {
 	. /lib/ramips.sh
 
 	case $(ramips_board_name) in
-	3g-6200n)
+	3g-6200n |\
+	wl-330n |\
+	wl-330n3g)
 		mac=$(ramips_get_mac_binary factory 4)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
@@ -54,8 +56,6 @@ preinit_set_mac_address() {
 	tew-692gr |\
 	w306r-v20 |\
 	w502u    |\
-	wl-330n |\
-	wl-330n3g |\
 	wr6202 |\
 	xdxrn502j)
 		mac=$(ramips_get_mac_binary factory 40)
