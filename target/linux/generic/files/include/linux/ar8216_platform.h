@@ -44,6 +44,7 @@ struct ar8327_pad_cfg {
 	bool pipe_rxclk_sel;
 	bool txclk_delay_en;
 	bool rxclk_delay_en;
+	bool sgmii_delay_en;
 	enum ar8327_clk_delay_sel txclk_delay_sel;
 	enum ar8327_clk_delay_sel rxclk_delay_sel;
 };

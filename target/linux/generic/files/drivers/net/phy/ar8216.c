@@ -917,6 +917,9 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 		if (cfg->txclk_delay_en)
 			t |= AR8327_PAD_RGMII_TXCLK_DELAY_EN;
 
+		if (cfg->sgmii_delay_en)
+			t |= AR8327_PAD_SGMII_DELAY_EN;
+
 		break;
 
 	case AR8327_PAD_MAC2PHY_MII:
