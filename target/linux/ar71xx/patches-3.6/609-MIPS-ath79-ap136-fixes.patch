@@ -56,7 +56,7 @@
  
  static struct gpio_led ap136_leds_gpio[] __initdata = {
  	{
-@@ -98,63 +104,103 @@ static struct gpio_keys_button ap136_gpi
+@@ -98,64 +104,105 @@ static struct gpio_keys_button ap136_gpi
  	},
  };
  
@@ -194,4 +194,18 @@
 +	ath79_register_eth(1);
  }
  
- MIPS_MACHINE(ATH79_MACH_AP136, "AP136", "Atheros AP136 reference board",
+-MIPS_MACHINE(ATH79_MACH_AP136, "AP136", "Atheros AP136 reference board",
++MIPS_MACHINE(ATH79_MACH_AP136_010, "AP136-010",
++	     "Atheros AP136-010 reference board",
+ 	     ap136_setup);
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -18,7 +18,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_GENERIC = 0,
+ 	ATH79_MACH_AP121,		/* Atheros AP121 reference board */
+ 	ATH79_MACH_AP121_MINI,		/* Atheros AP121-MINI reference board */
+-	ATH79_MACH_AP136,		/* Atheros AP136 reference board */
++	ATH79_MACH_AP136_010,		/* Atheros AP136-010 reference board */
+ 	ATH79_MACH_AP81,		/* Atheros AP81 reference board */
+ 	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
+ 	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
