@@ -89,6 +89,7 @@ platform_check_image() {
 	ap121 | \
 	ap121-mini | \
 	ap136-010 | \
+	ap136-020 | \
 	ap96 | \
 	db120 | \
 	hornet-ub | \
