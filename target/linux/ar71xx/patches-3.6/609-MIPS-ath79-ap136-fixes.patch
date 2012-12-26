@@ -56,7 +56,7 @@
  
  static struct gpio_led ap136_leds_gpio[] __initdata = {
  	{
-@@ -98,64 +104,105 @@ static struct gpio_keys_button ap136_gpi
+@@ -98,64 +104,136 @@ static struct gpio_keys_button ap136_gpi
  	},
  };
  
@@ -138,7 +138,8 @@
 -static inline void ap136_pci_init(void) {}
 -#endif /* CONFIG_PCI */
  
- static void __init ap136_setup(void)
+-static void __init ap136_setup(void)
++static void __init ap136_common_setup(void)
  {
  	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
  
@@ -167,45 +168,78 @@
 +	mdiobus_register_board_info(ap136_mdio0_info,
 +				    ARRAY_SIZE(ap136_mdio0_info));
 +
++	/* GMAC0 is connected to the RMGII interface */
++	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
++	ath79_eth0_data.phy_mask = BIT(0);
++	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
++
++	ath79_register_eth(0);
++
++	/* GMAC1 is connected tot eh SGMII interface */
++	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
++	ath79_eth1_data.speed = SPEED_1000;
++	ath79_eth1_data.duplex = DUPLEX_FULL;
++
++	ath79_register_eth(1);
++}
++
++static void __init ap136_010_setup(void)
++{
++	/* GMAC0 of the AR8327 switch is connected to GMAC0 via RGMII */
 +	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_RGMII;
 +	ap136_ar8327_pad0_cfg.txclk_delay_en = true;
 +	ap136_ar8327_pad0_cfg.rxclk_delay_en = true;
 +	ap136_ar8327_pad0_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
 +	ap136_ar8327_pad0_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
 +
++	/* GMAC6 of the AR8327 switch is connected to GMAC1 via SGMII */
 +	ap136_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_SGMII;
 +	ap136_ar8327_pad6_cfg.rxclk_delay_en = true;
 +	ap136_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0;
 +
-+	/* GMAC0 is connected to GMAC0 of the AR8327 switch via RGMII */
-+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-+	ath79_eth0_data.phy_mask = BIT(0);
-+	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
 +	ath79_eth0_pll_data.pll_1000 = 0xa6000000;
-+
-+	ath79_register_eth(0);
-+
-+	/* GMAC1 is connected to GMAC6 of the AR8327 switch via SGMII */
-+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
-+	ath79_eth1_data.speed = SPEED_1000;
-+	ath79_eth1_data.duplex = DUPLEX_FULL;
 +	ath79_eth1_pll_data.pll_1000 = 0x03000101;
 +
-+	ath79_register_eth(1);
++	ap136_common_setup();
++}
++
++MIPS_MACHINE(ATH79_MACH_AP136_010, "AP136-010",
++	     "Atheros AP136-010 reference board",
++	     ap136_010_setup);
++
++static void __init ap136_020_setup(void)
++{
++	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
++	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
++	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
++
++	/* GMAC6 of the AR8327 switch is connected to GMAC0 via RGMII */
++	ap136_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_RGMII;
++	ap136_ar8327_pad6_cfg.txclk_delay_en = true;
++	ap136_ar8327_pad6_cfg.rxclk_delay_en = true;
++	ap136_ar8327_pad6_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
++	ap136_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
++
++	ath79_eth0_pll_data.pll_1000 = 0x56000000;
++	ath79_eth1_pll_data.pll_1000 = 0x03000101;
++
++	ap136_common_setup();
  }
  
 -MIPS_MACHINE(ATH79_MACH_AP136, "AP136", "Atheros AP136 reference board",
-+MIPS_MACHINE(ATH79_MACH_AP136_010, "AP136-010",
-+	     "Atheros AP136-010 reference board",
- 	     ap136_setup);
+-	     ap136_setup);
++MIPS_MACHINE(ATH79_MACH_AP136_020, "AP136-020",
++	     "Atheros AP136-020 reference board",
++	     ap136_020_setup);
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -18,7 +18,7 @@ enum ath79_mach_type {
+@@ -18,7 +18,8 @@ enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
  	ATH79_MACH_AP121,		/* Atheros AP121 reference board */
  	ATH79_MACH_AP121_MINI,		/* Atheros AP121-MINI reference board */
 -	ATH79_MACH_AP136,		/* Atheros AP136 reference board */
 +	ATH79_MACH_AP136_010,		/* Atheros AP136-010 reference board */
++	ATH79_MACH_AP136_020,		/* Atheros AP136-020 reference board */
  	ATH79_MACH_AP81,		/* Atheros AP81 reference board */
  	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
  	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
