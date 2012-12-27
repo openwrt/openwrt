@@ -537,11 +537,4 @@ enable_interface()
 	[ "$mode" == "router" ] && enable_router "$network" "$device"
 	[ "$mode" == "6to4" -o "$mode" == "6rd" ] && enable_6to4 "$network" "$device" "$mode"
 	[ "$mode" == "relay" ] && restart_master_relay "$network" forced
-
-	# Create / Delete site border
-	local site_border
-	local cmd="delulaborder"
-	config_get_bool site_border global site_border 0
-	[ "$site_border" == "1" ] && cmd="newulaborder"
-	ubus call 6distributed "$cmd"
 }
