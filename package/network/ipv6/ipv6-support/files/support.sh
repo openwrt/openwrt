@@ -11,7 +11,7 @@ conf_get() {
 	local __return="$1"
 	local __device="$2"
 	local __option="$3"
-	local __value=$(cat "/proc/sys/net/ipv6/conf/$device/$option")
+	local __value=$(cat "/proc/sys/net/ipv6/conf/$__device/$__option")
 	eval "$__return=$__value"
 }
 
@@ -110,8 +110,9 @@ setup_npt_chain() {
 announce_prefix() {
 	local prefix="$1"
 	local network="$2"
-	local cmd="$3"
-	local type="$4"
+	local device="$3"
+	local cmd="$4"
+	local type="$5"
 
 	local addr=$(echo "$prefix" | cut -d/ -f1)
 	local rem=$(echo "$prefix" | cut -d/ -f2)
@@ -142,6 +143,12 @@ announce_prefix() {
 
 		[ "$prefix_action" == "npt" ] && msg="$msg"', "npt": 1'
 		[ "$type" == "secondary" ] && msg="$msg"', "secondary": 1'
+
+		# Detect MTU
+		local mtu
+		conf_get mtu "$device" mtu
+		msg="$msg"', "mtu": '"$mtu"
+
 		ubus call 6distributed "$cmd" "$msg}"
 	}
 
@@ -364,6 +371,7 @@ disable_interface() {
 enable_ula_prefix() {
 	local network="$1"
 	local ula="$2"
+	local device="$3"
 	[ -z "$ula" ] && ula="global"
 
 	# ULA-integration
@@ -392,7 +400,7 @@ enable_ula_prefix() {
 	}
 
 	# Announce ULA
-	[ -n "$ula_prefix" ] && announce_prefix "$ula_prefix" "$network" newprefix secondary
+	[ -n "$ula_prefix" ] && announce_prefix "$ula_prefix" "$network" "$device" newprefix secondary
 }
 
 
@@ -410,12 +418,12 @@ enable_static() {
 	conf_set "$device" forwarding 1
 
 	# Enable ULA
-	enable_ula_prefix "$network"
+	enable_ula_prefix "$network" global "$device"
 	# Compatibility (deprecated)
-	enable_ula_prefix "$network" "$network"
+	enable_ula_prefix "$network" "$network" "$device"
 
 	# Announce all static prefixes
-	config_list_foreach "$network" static_prefix announce_prefix $network
+	config_list_foreach "$network" static_prefix announce_prefix "$network" "$device"
 
 	# start relay if there are forced relay members
 	restart_relay "$network"
@@ -506,7 +514,7 @@ enable_6to4() {
 	local prefix=""
 	network_get_ipaddr6 prefix "$network"
 
-	announce_prefix "$prefix/$prefixlen" "$network"
+	announce_prefix "$prefix/$prefixlen" "$network" "$device"
 }
 
 
@@ -529,4 +537,11 @@ enable_interface()
 	[ "$mode" == "router" ] && enable_router "$network" "$device"
 	[ "$mode" == "6to4" -o "$mode" == "6rd" ] && enable_6to4 "$network" "$device" "$mode"
 	[ "$mode" == "relay" ] && restart_master_relay "$network" forced
+
+	# Create / Delete site border
+	local site_border
+	local cmd="delulaborder"
+	config_get_bool site_border global site_border 0
+	[ "$site_border" == "1" ] && cmd="newulaborder"
+	ubus call 6distributed "$cmd"
 }
