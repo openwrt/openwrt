@@ -15,11 +15,11 @@ resolve_network network "$device"
 
 # Announce prefixes
 for prefix in $PREFIXES; do
-	announce_prefix "$prefix" "$network"
+	announce_prefix "$prefix" "$network" "$device"
 done
 
 for prefix in $PREFIXES_LOST; do
-	announce_prefix "$prefix" "$network" delprefix
+	announce_prefix "$prefix" "$network" "$device" delprefix
 done
 
 
