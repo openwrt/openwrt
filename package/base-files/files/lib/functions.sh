@@ -197,7 +197,7 @@ config_list_foreach() {
 	[ -z "$len" ] && return 0
 	while [ $c -le "$len" ]; do
 		config_get val "${section}" "${option}_ITEM$c"
-		eval "$function \"\$val\" \"$@\""
+		eval "$function \"\$val\" \"\$@\""
 		c="$(($c + 1))"
 	done
 }
