@@ -57,7 +57,7 @@
  	__be32	daddr;
  	/*The options start here. */
 -};
-+} __packed;
++} __packed __attribute__((aligned(2)));
  
  #ifdef __KERNEL__
  #include <linux/skbuff.h>
@@ -68,7 +68,7 @@
  	struct	in6_addr	saddr;
  	struct	in6_addr	daddr;
 -};
-+} __packed;
++} __packed __attribute__((aligned(2)));
  
  #ifdef __KERNEL__
  /*
@@ -79,7 +79,7 @@
  	__sum16	check;
  	__be16	urg_ptr;
 -};
-+} __packed;
++} __packed __attribute__((aligned(2)));
  
  /*
   *	The union cast uses a gcc extension to avoid aliasing problems
@@ -90,7 +90,7 @@
  	__be16	len;
  	__sum16	check;
 -};
-+} __packed;
++} __packed __attribute__((aligned(2)));
  
  /* UDP socket options */
  #define UDP_CORK	1	/* Never send partially complete segments */
