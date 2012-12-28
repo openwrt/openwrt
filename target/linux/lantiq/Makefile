@@ -13,7 +13,7 @@ SUBTARGETS=xway ase falcon
 
 LINUX_VERSION:=3.7.1
 
-CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
+CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves -mno-branch-likely
 
 define Target/Description
 	Build firmware images for Lantiq SoC
