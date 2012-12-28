@@ -1,0 +1,6 @@
+#!/bin/sh
+uci -q batch <<-EOF >/dev/null
+	set firewall.ipv6_support=include
+	set firewall.ipv6_support.path=/lib/ipv6/firewall.sh
+	commit firewall
+EOF

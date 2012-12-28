@@ -346,6 +346,35 @@ restart_master_relay() {
 }
 
 
+set_site_border() {
+	local network="$1"
+	local device="$2"
+
+	local fwscript="/var/etc/ipv6-firewall.d/site-border-$network.sh"
+	local chain="ipv6-site-border-$network"
+
+	if [ -n "$device" ]; then
+		local site_border
+		config_get_bool site_border "$network" site_border 0
+		[ "$site_border" == "1" ] || return
+
+		mkdir -p $(dirname "$fwscript")
+		echo "ip6tables -N $chain" > "$fwscript"
+		echo "ip6tables -F $chain" >> "$fwscript"
+		echo "ip6tables -A $chain -o $device -j REJECT --reject-with icmp6-no-route" >> "$fwscript"
+		echo "ip6tables -A $chain -i $device -j REJECT --reject-with icmp6-no-route" >> "$fwscript"
+		echo "ip6tables -A ipv6-site-border -j $chain" >> "$fwscript"
+		. "$fwscript"
+	else
+		[ -f "$fwscript" ] || return
+		rm -f "$fwscript"
+		ip6tables -D ipv6-site-border -j "$chain"
+		ip6tables -F "$chain"
+		ip6tables -X "$chain"
+	fi
+}
+
+
 disable_interface() {
 	local network="$1"
 
@@ -365,6 +394,9 @@ disable_interface() {
 
 	# Disable DHCPv6 client if enabled, state script will take care
 	stop_service /usr/sbin/odhcp6c "/var/run/ipv6-dhcpv6-$network.pid"
+
+	# Stop site-border
+	set_site_border "$network"
 }
 
 
@@ -444,6 +476,9 @@ enable_router() {
 	local router_service
 	config_get router_service global router_service
 
+	local always_default
+	config_get_bool always_default "$network" always_default 0
+
 	if [ "$router_service" == "dnsmasq" ]; then
 		local dnsmasq_opts
 		config_get dnsmasq_opts "$network" dnsmasq_opts
@@ -455,8 +490,11 @@ enable_router() {
 		echo "enable-ra" >> $conf
 		/etc/init.d/dnsmasq restart
 	else
+		local opts=""
+		[ "$always_default" == "1" ] && opts="-u"
+
 		local pid="/var/run/ipv6-router-$network.pid"
-		start_service "/usr/sbin/6relayd -S . $device" "$pid"
+		start_service "/usr/sbin/6relayd -S $opts . $device" "$pid"
 	fi
 
 	# Try relaying if necessary
@@ -530,6 +568,9 @@ enable_interface()
 	# Compatibility with old mode names
 	[ "$mode" == "downstream" ] && mode=router
 	[ "$mode" == "upstream" ] && mode=dhcpv6
+
+	# Enable site-border
+	[ "$mode" == "static" -o "$mode" == "dhcpv6" -o "$mode" == "6to4" -o "$mode" == "6in4" ] && set_site_border "$network" "$device"
 
 	# Run mode startup code
 	enable_static "$network" "$device"
