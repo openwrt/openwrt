@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ipv6-support
-PKG_VERSION:=2012-12-28
+PKG_VERSION:=2012-12-29
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -43,8 +43,11 @@ define Package/ipv6-support/install
 	$(INSTALL_DIR) $(1)/lib/ipv6
 	$(INSTALL_DATA) ./files/support.sh $(1)/lib/ipv6/support.sh
 	$(INSTALL_BIN) ./files/dhcpv6.sh $(1)/lib/ipv6/dhcpv6.sh
+	$(INSTALL_BIN) ./files/firewall.sh $(1)/lib/ipv6/firewall.sh
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/network6.config $(1)/etc/config/network6
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/ipv6-support.defaults $(1)/etc/uci-defaults/ipv6-support.defaults
 endef
 
 $(eval $(call BuildPackage,ipv6-support))
