@@ -1,7 +1,7 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
 @@ -90,8 +90,8 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
- cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
+ cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
 -KBUILD_AFLAGS_MODULE		+= -mlong-calls
