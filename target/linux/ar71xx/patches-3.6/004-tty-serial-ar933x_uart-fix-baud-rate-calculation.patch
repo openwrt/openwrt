@@ -1,3 +1,61 @@
+From 2dff8ad92661b6c99e9ba8b5918e43b522551556 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 14 Nov 2012 10:38:13 +0100
+Subject: [PATCH] tty/serial/ar933x_uart: fix baud rate calculation
+
+commit 2dff8ad92661b6c99e9ba8b5918e43b522551556 upstream.
+
+The UART of the AR933x SoC implements a fractional divisor
+for generating the desired baud rate.
+
+The current code uses a fixed value for the fractional
+part of the divisor, and this leads to improperly
+calculated baud rates:
+
+   baud    scale   step  real baud         diff
+     300   5207*   8192     17756     17456   5818.66%
+     600   2603*   8192     35511     34911   5818.50%
+    1200   1301*   8192     71023     69823   5818.58%
+    2400    650*   8192     11241      8841    368.37%
+    4800    324*   8192     22645     17845    371.77%
+    9600    161    8192      9645        45      0.46%
+   14400    107    8192     14468        68      0.47%
+   19200     80    8192     19290        90      0.46%
+   28800     53    8192     28935       135      0.46%
+   38400     39    8192     39063       663      1.72%
+   57600     26    8192     57870       270      0.46%
+  115200     12    8192    120192      4992      4.33%
+  230400      5    8192    260417     30017     13.02%
+  460800      2    8192    520833     60033     13.02%
+  921600      0    8192   1562500    640900     69.93%
+
+After the patch, the integer and fractional parts of the
+divisor will be calculated dynamically. This ensures that
+the UART will use correct baud rates:
+
+   baud    scale   step  real baud         diff
+     300      6      11       300         0      0.00%
+     600     54     173       600         0      0.00%
+    1200     30     195      1200         0      0.00%
+    2400     30     390      2400         0      0.00%
+    4800     48    1233      4800         0      0.00%
+    9600     78    3976      9600         0      0.00%
+   14400     98    7474     14400         0      0.00%
+   19200     55    5637     19200         0      0.00%
+   28800    130   19780     28800         0      0.00%
+   38400     36    7449     38400         0      0.00%
+   57600     78   23857     57600         0      0.00%
+  115200     43   26575    115200         0      0.00%
+  230400     23   28991    230400         0      0.00%
+  460800     11   28991    460800         0      0.00%
+  921600      5   28991    921599        -1      0.00%
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/tty/serial/ar933x_uart.c |   90 +++++++++++++++++++++++++++++++++++---
+ 1 file changed, 85 insertions(+), 5 deletions(-)
+
 --- a/drivers/tty/serial/ar933x_uart.c
 +++ b/drivers/tty/serial/ar933x_uart.c
 @@ -25,11 +25,19 @@
@@ -133,8 +191,8 @@
  
 +	/* reenable the UART */
 +	ar933x_uart_rmw(up, AR933X_UART_CS_REG,
-+		        AR933X_UART_CS_IF_MODE_M << AR933X_UART_CS_IF_MODE_S,
-+		        AR933X_UART_CS_IF_MODE_DCE << AR933X_UART_CS_IF_MODE_S);
++			AR933X_UART_CS_IF_MODE_M << AR933X_UART_CS_IF_MODE_S,
++			AR933X_UART_CS_IF_MODE_DCE << AR933X_UART_CS_IF_MODE_S);
 +
  	spin_unlock_irqrestore(&up->port.lock, flags);
  
