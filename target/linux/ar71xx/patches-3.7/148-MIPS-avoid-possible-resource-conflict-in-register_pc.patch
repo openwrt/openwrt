@@ -1,0 +1,35 @@
+From a018b28d3953a32008de839d997a992a724ae314 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 24 Jun 2012 17:40:45 +0200
+Subject: [PATCH 09/34] MIPS: avoid possible resource conflict in register_pci_controller
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/pci/pci.c |   15 +++++++++++++--
+ 1 files changed, 13 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/pci/pci.c
++++ b/arch/mips/pci/pci.c
+@@ -176,9 +176,20 @@ static DEFINE_MUTEX(pci_scan_mutex);
+ 
+ void __devinit register_pci_controller(struct pci_controller *hose)
+ {
+-	if (request_resource(&iomem_resource, hose->mem_resource) < 0)
++	struct resource *parent;
++
++	parent = hose->mem_resource->parent;
++	if (!parent)
++		parent = &iomem_resource;
++
++	if (request_resource(parent, hose->mem_resource) < 0)
+ 		goto out;
+-	if (request_resource(&ioport_resource, hose->io_resource) < 0) {
++
++	parent = hose->io_resource->parent;
++	if (!parent)
++		parent = &ioport_resource;
++
++	if (request_resource(parent, hose->io_resource) < 0) {
+ 		release_resource(hose->mem_resource);
+ 		goto out;
+ 	}

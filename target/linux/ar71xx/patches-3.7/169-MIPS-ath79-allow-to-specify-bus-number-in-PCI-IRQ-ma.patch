@@ -1,0 +1,34 @@
+From 12c68e4fccadc22a0470177141a57892a76e4a2b Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 24 Jun 2012 15:33:16 +0200
+Subject: [PATCH 25/34] MIPS: ath79: allow to specify bus number in PCI IRQ maps
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ath79/pci.c |    4 +++-
+ arch/mips/ath79/pci.h |    1 +
+ 2 files changed, 4 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/ath79/pci.c
++++ b/arch/mips/ath79/pci.c
+@@ -75,7 +75,9 @@ int __init pcibios_map_irq(const struct
+ 		const struct ath79_pci_irq *entry;
+ 
+ 		entry = &ath79_pci_irq_map[i];
+-		if (entry->slot == slot && entry->pin == pin) {
++		if (entry->bus == dev->bus->number &&
++		    entry->slot == slot &&
++		    entry->pin == pin) {
+ 			irq = entry->irq;
+ 			break;
+ 		}
+--- a/arch/mips/ath79/pci.h
++++ b/arch/mips/ath79/pci.h
+@@ -14,6 +14,7 @@
+ #define _ATH79_PCI_H
+ 
+ struct ath79_pci_irq {
++	int	bus;
+ 	u8	slot;
+ 	u8	pin;
+ 	int	irq;
