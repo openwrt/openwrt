@@ -355,7 +355,7 @@ set_site_border() {
 
 	if [ -n "$device" ]; then
 		local site_border
-		config_get_bool site_border "$network" site_border 0
+		config_get_bool site_border "$network" site_border 1
 		[ "$site_border" == "1" ] || return
 
 		mkdir -p $(dirname "$fwscript")
