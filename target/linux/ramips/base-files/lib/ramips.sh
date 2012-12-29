@@ -53,6 +53,9 @@ ramips_board_name() {
 	*"Edimax 3g-6200n")
 		name="3g-6200n"
 		;;
+	*"AirLive Air3GII")
+		name="air3gii"
+		;;
 	*"Allnet ALL0239-3G")
 		name="all0239-3g"
 		;;

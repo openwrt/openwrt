@@ -18,6 +18,10 @@ case $board in
 		set_wifi_led "edimax:amber:wlan"
 		set_usb_led "edimax:blue:3g"
 		;;
+	air3gii)
+		set_wifi_led "airlive:green:wlan"
+		set_usb_led "airlive:green:mobile"
+		;;
 	all0256n)
 		ucidef_set_rssimon "wlan0" "40000" "1"
 		ucidef_set_led_rssi "rssilow" "RSSILOW" "all0256n:green:rssilow" "wlan0" "1" "40" "0" "6"

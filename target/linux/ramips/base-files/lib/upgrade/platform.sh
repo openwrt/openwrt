@@ -15,6 +15,7 @@ platform_check_image() {
 
 	case "$board" in
 	3g-6200n | \
+	air3gii | \
 	all0239-3g | \
 	all0256n | \
 	all5002 | \
