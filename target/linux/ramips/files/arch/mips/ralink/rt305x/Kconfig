@@ -17,6 +17,11 @@ config RT305X_MACH_WR6202
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_AIR3GII
+	bool "AirLive Air3GII board support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_ALL0256N
 	bool "Allnet ALL0256N support"
 	select RALINK_DEV_GPIO_BUTTONS
