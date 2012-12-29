@@ -410,6 +410,21 @@ define BuildFirmware/WLITX4AG300N
 	$(call BuildFirmware/Buffalo2,$(1),wli-tx4-ag300n,WLI-TX4-AG300N,$(call mkmtd/phys,$(mtdlayout_wlitx4ag300n)),917504,2883584)
 endef
 
+mtdlayout_mzkw300nh2=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2816k(rootfs),128k@0x3e0000(cimage)ro,3648k@0x50000(firmware)
+kernel_size_mzkw300nh2=851968
+rootfs_size_mzkw300nh2=2883584
+define BuildFirmware/MZKW300NH2
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_mzkw300nh2)),$(kernel_size_mzkw300nh2),$(rootfs_size_mzkw300nh2))
+	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,`expr $(kernel_size_mzkw300nh2) - 20`,$(KDIR)/root.$(1),$(rootfs_size_mzkw300nh2),$(call imgname,$(1),$(2))-factory.bin)
+	mkedimaximg -i $(call imgname,$(1),$(2))-factory.bin \
+		-o $(call imgname,$(1),$(2))-factory.bin \
+		-s CSYS -m RN52 -f 0x50000 -S 0xc0000;
+endef
+
+define BuildFirmware/MZKW300NH2/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_mzkw300nh2)))
+endef
+
 #
 # Templates
 #
@@ -537,6 +552,10 @@ define Image/Build/Profile/NBG419N
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,nbg-419n,NBG-419N,ttyS1,57600,phys)
 endef
 
+define Image/Build/Profile/MZKW3000NH2
+	$(call Image/Build/Template/$(fs_squash)/$(1),MZKW300NH2,mzk-w300nh2,MZK-W300NH2,ttyS1,57600,phys)
+endef
+
 define Image/Build/Profile/NW718
 	$(call Image/Build/Template/$(fs_squash)/$(1),NW718,nw718)
 endef
@@ -642,6 +661,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/FREESTATION5,$(1))
 	$(call Image/Build/Profile/HW5503G,$(1))
 	$(call Image/Build/Profile/MOFI35003GN,$(1))
+	$(call Image/Build/Profile/MZKW3000NH2,$(1))
 	$(call Image/Build/Profile/NBG419N,$(1))
 	$(call Image/Build/Profile/NW718,$(1))
 	$(call Image/Build/Profile/OMNIEMB,$(1))
