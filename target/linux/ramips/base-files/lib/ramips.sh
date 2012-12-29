@@ -140,6 +140,9 @@ ramips_board_name() {
 	*"Petatel PSR-680W"*)
 		name="psr-680w"
 		;;
+	*"Planex MZK-W300NH2"*)
+		name="mzk-w300nh2"
+		;;
 	*"PWH2004")
 		name="pwh2004"
 		;;
