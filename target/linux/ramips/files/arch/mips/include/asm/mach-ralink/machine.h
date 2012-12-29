@@ -75,5 +75,8 @@ enum ramips_mach_type {
 
 	/* RT3883 based machines */
 	RAMIPS_MACH_TEW_691GR,		/* TRENDnet TEW-691GR */
-	RAMIPS_MACH_TEW_692GR		/* TRENDnet TEW-692GR */
+	RAMIPS_MACH_TEW_692GR,		/* TRENDnet TEW-692GR */
+
+	/* RT5350 based machines */
+	RAMIPS_MACH_AIR3GII,		/* AirLive Air3GII */
 };
