@@ -1,0 +1,15 @@
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -649,4 +649,12 @@ config GPIO_MSIC
+ 	  Enable support for GPIO on intel MSIC controllers found in
+ 	  intel MID devices
+ 
++comment "Other GPIO expanders"
++
++config GPIO_NXP_74HC153
++	tristate "NXP 74HC153 Dual 4-input multiplexer"
++	help
++	  Platform driver for NXP 74HC153 Dual 4-input Multiplexer. This
++	  provides a GPIO interface supporting input mode only.
++
+ endif

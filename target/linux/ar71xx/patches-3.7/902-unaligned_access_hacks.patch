@@ -1,0 +1,117 @@
+--- a/arch/mips/include/asm/checksum.h
++++ b/arch/mips/include/asm/checksum.h
+@@ -12,6 +12,7 @@
+ #define _ASM_CHECKSUM_H
+ 
+ #include <linux/in6.h>
++#include <linux/unaligned/packed_struct.h>
+ 
+ #include <asm/uaccess.h>
+ 
+@@ -104,26 +105,30 @@ static inline __sum16 ip_fast_csum(const
+ 	const unsigned int *stop = word + ihl;
+ 	unsigned int csum;
+ 	int carry;
++	unsigned int w;
+ 
+-	csum = word[0];
+-	csum += word[1];
+-	carry = (csum < word[1]);
++	csum = __get_unaligned_cpu32(word++);
++
++	w = __get_unaligned_cpu32(word++);
++	csum += w;
++	carry = (csum < w);
+ 	csum += carry;
+ 
+-	csum += word[2];
+-	carry = (csum < word[2]);
++	w = __get_unaligned_cpu32(word++);
++	csum += w;
++	carry = (csum < w);
+ 	csum += carry;
+ 
+-	csum += word[3];
+-	carry = (csum < word[3]);
++	w = __get_unaligned_cpu32(word++);
++	csum += w;
++	carry = (csum < w);
+ 	csum += carry;
+ 
+-	word += 4;
+ 	do {
+-		csum += *word;
+-		carry = (csum < *word);
++		w = __get_unaligned_cpu32(word++);
++		csum += w;
++		carry = (csum < w);
+ 		csum += carry;
+-		word++;
+ 	} while (word != stop);
+ 
+ 	return csum_fold(csum);
+--- a/include/uapi/linux/ip.h
++++ b/include/uapi/linux/ip.h
+@@ -102,7 +102,7 @@ struct iphdr {
+ 	__be32	saddr;
+ 	__be32	daddr;
+ 	/*The options start here. */
+-};
++} __packed __attribute__((aligned(2)));
+ 
+ 
+ struct ip_auth_hdr {
+--- a/include/uapi/linux/ipv6.h
++++ b/include/uapi/linux/ipv6.h
+@@ -123,7 +123,7 @@ struct ipv6hdr {
+ 
+ 	struct	in6_addr	saddr;
+ 	struct	in6_addr	daddr;
+-};
++} __packed __attribute__((aligned(2)));
+ 
+ 
+ /* index values for the variables in ipv6_devconf */
+--- a/include/uapi/linux/tcp.h
++++ b/include/uapi/linux/tcp.h
+@@ -54,7 +54,7 @@ struct tcphdr {
+ 	__be16	window;
+ 	__sum16	check;
+ 	__be16	urg_ptr;
+-};
++} __packed __attribute__((aligned(2)));
+ 
+ /*
+  *	The union cast uses a gcc extension to avoid aliasing problems
+--- a/include/uapi/linux/udp.h
++++ b/include/uapi/linux/udp.h
+@@ -24,7 +24,7 @@ struct udphdr {
+ 	__be16	dest;
+ 	__be16	len;
+ 	__sum16	check;
+-};
++} __packed __attribute__((aligned(2)));
+ 
+ /* UDP socket options */
+ #define UDP_CORK	1	/* Never send partially complete segments */
+--- a/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
++++ b/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
+@@ -14,6 +14,7 @@
+ #include <linux/skbuff.h>
+ #include <linux/icmp.h>
+ #include <linux/sysctl.h>
++#include <linux/unaligned/packed_struct.h>
+ #include <net/route.h>
+ #include <net/ip.h>
+ 
+@@ -39,8 +40,8 @@ static bool ipv4_pkt_to_tuple(const stru
+ 	if (ap == NULL)
+ 		return false;
+ 
+-	tuple->src.u3.ip = ap[0];
+-	tuple->dst.u3.ip = ap[1];
++	tuple->src.u3.ip = __get_unaligned_cpu32(ap++);
++	tuple->dst.u3.ip = __get_unaligned_cpu32(ap);
+ 
+ 	return true;
+ }
