@@ -57,7 +57,9 @@
 #include <linux/uaccess.h>
 
 #include <asm/current.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
 #include <asm/system.h>
+#endif
 
 #include <bcm47xx.h>
 #include <nvram.h>
