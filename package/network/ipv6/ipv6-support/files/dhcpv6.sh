@@ -30,7 +30,7 @@ setup_prefix_fallback "$fallback" "$network" "$device"
 
 
 # Operations in case of success
-[ "$state" == "timeout" || "$state" == "unbound" ] && exit 0
+[ "$state" == "timeout" -o "$state" == "unbound" ] && exit 0
 
 local peerdns
 config_get_bool peerdns "$network" peerdns 1
