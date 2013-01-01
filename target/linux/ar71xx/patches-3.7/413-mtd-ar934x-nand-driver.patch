@@ -5,8 +5,8 @@
  	depends on MTD_NAND && ATH79_MACH_RB750
  
 +config MTD_NAND_AR934X
-+	tristate "NAND flash driver for the Atheros AR934x SoCs"
-+	depends on SOC_AR934X
++	tristate "NAND flash driver for the Qualcomm Atheros AR934x/QCA955x SoCs"
++	depends on (SOC_AR934X || SOC_QCA955X)
 +
  endif # MTD_NAND
 --- a/drivers/mtd/nand/Makefile
