@@ -7,7 +7,7 @@
   *
   * Copyright (c) 2012 Qualcomm Atheros
   * Copyright (c) 2012 Gabor Juhos <juhosg@openwrt.org>
-@@ -18,23 +18,27 @@
+@@ -18,23 +18,28 @@
   *
   */
  
@@ -26,6 +26,7 @@
  #include "dev-leds-gpio.h"
 -#include "dev-spi.h"
 +#include "dev-m25p80.h"
++#include "dev-nfc.h"
  #include "dev-usb.h"
  #include "dev-wmac.h"
 -#include "pci.h"
@@ -43,7 +44,7 @@
  #define AP136_GPIO_LED_WPS_GREEN	20
  
  #define AP136_GPIO_BTN_WPS		16
-@@ -43,8 +47,10 @@
+@@ -43,8 +48,10 @@
  #define AP136_KEYS_POLL_INTERVAL	20	/* msecs */
  #define AP136_KEYS_DEBOUNCE_INTERVAL	(3 * AP136_KEYS_POLL_INTERVAL)
  
@@ -56,7 +57,7 @@
  
  static struct gpio_led ap136_leds_gpio[] __initdata = {
  	{
-@@ -98,64 +104,156 @@ static struct gpio_keys_button ap136_gpi
+@@ -98,64 +105,158 @@ static struct gpio_keys_button ap136_gpi
  	},
  };
  
@@ -156,6 +157,8 @@
  	ath79_register_usb();
 -	ath79_register_wmac(art + AP136_WMAC_CALDATA_OFFSET);
 -	ap136_pci_init(art + AP136_PCIE_CALDATA_OFFSET);
++	ath79_register_nfc();
++
 +	ath79_register_wmac(art + AP136_WMAC_CALDATA_OFFSET, NULL);
 +	ap91_pci_init(art + AP136_PCIE_CALDATA_OFFSET, NULL);
 +
@@ -266,7 +269,7 @@
  	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -16,7 +16,7 @@ config ATH79_MACH_AP121
+@@ -16,16 +16,17 @@ config ATH79_MACH_AP121
  	  Atheros AP121 reference board.
  
  config ATH79_MACH_AP136
@@ -275,7 +278,9 @@
  	select SOC_QCA955X
  	select ATH79_DEV_GPIO_BUTTONS
  	select ATH79_DEV_LEDS_GPIO
-@@ -25,7 +25,7 @@ config ATH79_MACH_AP136
++	select ATH79_DEV_NFC
+ 	select ATH79_DEV_SPI
+ 	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
  	help
  	  Say 'Y' here if you want your kernel to support the
