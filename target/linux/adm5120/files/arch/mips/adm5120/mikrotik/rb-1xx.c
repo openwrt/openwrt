@@ -83,7 +83,6 @@ struct platform_nand_data rb1xx_nand_data __initdata = {
 		.nr_partitions	= ARRAY_SIZE(rb1xx_nand_parts),
 		.partitions	= rb1xx_nand_parts,
 		.chip_delay	= RB1XX_NAND_CHIP_DELAY,
-		.options	= NAND_NO_AUTOINCR,
 		.chip_fixup	= rb1xx_nand_fixup,
 	},
 };
