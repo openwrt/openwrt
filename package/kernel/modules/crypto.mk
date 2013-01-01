@@ -332,6 +332,17 @@ endef
 
 $(eval $(call KernelPackage,crypto-sha1))
 
+define KernelPackage/crypto-sha256
+  TITLE:=SHA224 SHA256 digest CryptoAPI module
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:=CONFIG_CRYPTO_SHA256
+  FILES:=$(LINUX_DIR)/crypto/sha256_generic.ko
+  AUTOLOAD:=$(call AutoLoad,09,sha256_generic)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-sha256))
+
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.6.0)),1)
 camellia_mod_suffix=_generic
 endif
@@ -351,7 +362,6 @@ define KernelPackage/crypto-misc
 	CONFIG_CRYPTO_FCRYPT \
 	CONFIG_CRYPTO_KHAZAD \
 	CONFIG_CRYPTO_SERPENT \
-	CONFIG_CRYPTO_SHA256 \
 	CONFIG_CRYPTO_SHA512 \
 	CONFIG_CRYPTO_TEA \
 	CONFIG_CRYPTO_TGR192 \
@@ -366,7 +376,6 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/cast6$(cast56_mod_suffix).ko \
 	$(LINUX_DIR)/crypto/fcrypt.ko \
 	$(LINUX_DIR)/crypto/khazad.ko \
-	$(LINUX_DIR)/crypto/sha256_generic.ko \
 	$(LINUX_DIR)/crypto/sha512_generic.ko \
 	$(LINUX_DIR)/crypto/tea.ko \
 	$(LINUX_DIR)/crypto/tgr192.ko \
