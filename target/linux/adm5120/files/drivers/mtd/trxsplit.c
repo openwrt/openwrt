@@ -53,8 +53,7 @@ static int trxsplit_checktrx(struct mtd_info *mtd, unsigned long offset)
 	size_t retlen;
 	int err;
 
-	err = mtd->read(mtd, offset, sizeof(trx_hdr), &retlen,
-			(void *)&trx_hdr);
+	err = mtd_read(mtd, offset, sizeof(trx_hdr), &retlen, (void *)&trx_hdr);
 	if (err) {
 		printk(KERN_ALERT PFX "unable to read from '%s'\n", mtd->name);
 		goto err_out;
