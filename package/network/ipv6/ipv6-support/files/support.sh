@@ -529,11 +529,6 @@ enable_dhcpv6() {
 	# Start DHCPv6 client
 	local pid="/var/run/ipv6-dhcpv6-$network.pid"
 	start_service "/usr/sbin/odhcp6c -s/lib/ipv6/dhcpv6.sh $dhcp6_opts" "$pid"
-
-	# Refresh RA on all interfaces
-	for pid in /var/run/ipv6-router-*.pid; do
-		kill -SIGUSR1 $(cat "$pid")
-	done
 }
 
 
