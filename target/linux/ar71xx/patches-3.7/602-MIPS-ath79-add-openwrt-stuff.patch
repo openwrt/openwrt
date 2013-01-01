@@ -26,7 +26,7 @@
  	def_bool n
  
 +config ATH79_DEV_NFC
-+	depends on (SOC_AR934X)
++	depends on (SOC_AR934X || SOC_QCA955X)
 +	def_bool n
 +
  config ATH79_DEV_SPI
