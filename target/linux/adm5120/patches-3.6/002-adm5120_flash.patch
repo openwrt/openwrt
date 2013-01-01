@@ -1,0 +1,21 @@
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -527,4 +527,8 @@ config MTD_LATCH_ADDR
+ 
+           If compiled as a module, it will be called latch-addr-flash.
+ 
++config MTD_ADM5120
++	tristate "Map driver for ADM5120 based boards"
++	depends on ADM5120
++
+ endmenu
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -38,6 +38,7 @@ obj-$(CONFIG_MTD_SCx200_DOCFLASH)+= scx2
+ obj-$(CONFIG_MTD_DBOX2)		+= dbox2-flash.o
+ obj-$(CONFIG_MTD_SOLUTIONENGINE)+= solutionengine.o
+ obj-$(CONFIG_MTD_PCI)		+= pci.o
++obj-$(CONFIG_MTD_ADM5120)	+= adm5120-flash.o
+ obj-$(CONFIG_MTD_AUTCPU12)	+= autcpu12-nvram.o
+ obj-$(CONFIG_MTD_IMPA7)		+= impa7.o
+ obj-$(CONFIG_MTD_FORTUNET)	+= fortunet.o
