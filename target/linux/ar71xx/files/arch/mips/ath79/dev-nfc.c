@@ -38,6 +38,22 @@ static struct platform_device ath79_nfc_device = {
 	},
 };
 
+static void __init ath79_nfc_init_resource(struct resource res[2],
+					   unsigned long base,
+					   unsigned long size,
+					   int irq)
+{
+	memset(res, 0, sizeof(res));
+
+	res[0].flags = IORESOURCE_MEM;
+	res[0].start = base;
+	res[0].end = base + size - 1;
+
+	res[1].flags = IORESOURCE_IRQ;
+	res[1].start = irq;
+	res[1].end = irq;
+}
+
 static void ar934x_nfc_hw_reset(bool active)
 {
 	if (active) {
@@ -57,15 +73,33 @@ static void ar934x_nfc_hw_reset(bool active)
 
 static void ar934x_nfc_setup(void)
 {
-	ath79_nfc_resources[0].start = AR934X_NFC_BASE;
-	ath79_nfc_resources[0].end = AR934X_NFC_BASE + AR934X_NFC_SIZE - 1;
-	ath79_nfc_resources[0].flags = IORESOURCE_MEM;
-
-	ath79_nfc_resources[1].start = ATH79_MISC_IRQ(21);
-	ath79_nfc_resources[1].end = ATH79_MISC_IRQ(21);
-	ath79_nfc_resources[1].flags = IORESOURCE_IRQ;
-
 	ath79_nfc_data.hw_reset = ar934x_nfc_hw_reset;
+
+	ath79_nfc_init_resource(ath79_nfc_resources,
+				AR934X_NFC_BASE, AR934X_NFC_SIZE,
+				ATH79_MISC_IRQ(21));
+
+	platform_device_register(&ath79_nfc_device);
+}
+
+static void qca955x_nfc_hw_reset(bool active)
+{
+	if (active) {
+		ath79_device_reset_set(QCA955X_RESET_NANDF);
+		udelay(250);
+	} else {
+		ath79_device_reset_clear(QCA955X_RESET_NANDF);
+		udelay(100);
+	}
+}
+
+static void qca955x_nfc_setup(void)
+{
+	ath79_nfc_data.hw_reset = qca955x_nfc_hw_reset;
+
+	ath79_nfc_init_resource(ath79_nfc_resources,
+				QCA955X_NFC_BASE, QCA955X_NFC_SIZE,
+				ATH79_MISC_IRQ(21));
 
 	platform_device_register(&ath79_nfc_device);
 }
@@ -95,6 +129,8 @@ void __init ath79_register_nfc(void)
 {
 	if (soc_is_ar934x())
 		ar934x_nfc_setup();
+	else if (soc_is_qca955x())
+		qca955x_nfc_setup();
 	else
 		BUG();
 }
