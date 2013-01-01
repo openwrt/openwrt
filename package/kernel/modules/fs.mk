@@ -58,7 +58,8 @@ define KernelPackage/fs-cifs
     +kmod-crypto-md5 \
     +kmod-crypto-md4 \
     +kmod-crypto-des \
-    +kmod-crypto-ecb
+    +kmod-crypto-ecb \
+    +!LINUX_3_3&&!LINUX_3_6:kmod-crypto-sha256
 endef
 
 define KernelPackage/fs-cifs/description
