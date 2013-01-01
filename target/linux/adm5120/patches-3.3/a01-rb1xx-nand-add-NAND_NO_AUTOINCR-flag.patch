@@ -1,0 +1,11 @@
+reverted:
+--- b/arch/mips/adm5120/mikrotik/rb-1xx.c
++++ a/arch/mips/adm5120/mikrotik/rb-1xx.c
+@@ -83,6 +83,7 @@
+ 		.nr_partitions	= ARRAY_SIZE(rb1xx_nand_parts),
+ 		.partitions	= rb1xx_nand_parts,
+ 		.chip_delay	= RB1XX_NAND_CHIP_DELAY,
++		.options	= NAND_NO_AUTOINCR,
+ 		.chip_fixup	= rb1xx_nand_fixup,
+ 	},
+ };
