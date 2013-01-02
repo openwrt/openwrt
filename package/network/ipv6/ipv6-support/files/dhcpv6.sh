@@ -12,6 +12,29 @@ resolve_network network "$device"
 # Unknown network
 [ -z "$network" ] && exit 0
 
+if [ "$state" == "started" ]; then
+	# Start border
+	set_forward_border "$network" "$device" enable
+
+	# Configure device
+	conf_set "$device" accept_ra 2
+	conf_set "$device" forwarding 2
+
+	# Trigger RS
+	conf_set "$device" disable_ipv6 1
+	conf_set "$device" disable_ipv6 0
+
+	exit 0
+elif [ "$state" == "stopped" ]; then
+	# Deconfigure device
+	conf_set "$device" accept_ra 1
+	conf_set "$device" forwarding 1
+
+	# Disable border
+	set_forward_border "$network" "$device" disable
+
+	exit 0
+fi
 
 # Announce prefixes
 for prefix in $PREFIXES; do
@@ -23,7 +46,7 @@ for prefix in $PREFIXES_LOST; do
 done
 
 
-# Enable relaying if requested
+# Enable relaying if requested and we didn't get a prefix, disable otherwise
 local fallback="stop"
 [ -z "$PREFIXES" -a "$state" != "unbound" ] && fallback="start"
 setup_prefix_fallback "$fallback" "$network" "$device"
@@ -31,6 +54,9 @@ setup_prefix_fallback "$fallback" "$network" "$device"
 
 # Operations in case of success
 [ "$state" == "timeout" -o "$state" == "unbound" ] && exit 0
+
+# Handshake completed, disable forwarding border
+set_forward_border "$network" "$device" disable
 
 local peerdns
 config_get_bool peerdns "$network" peerdns 1
