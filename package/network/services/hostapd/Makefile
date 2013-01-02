@@ -86,7 +86,7 @@ ifneq ($(LOCAL_TYPE),hostapd)
 	CONFIG_DRIVER_ROBOSWITCH=$(CONFIG_PACKAGE_kmod-switch)
 endif
 
-DRV_DEPENDS:=+PACKAGE_kmod-mac80211:libnl-tiny @(!(TARGET_avr32||TARGET_etrax)||BROKEN)
+DRV_DEPENDS:=+PACKAGE_kmod-mac80211:libnl-tiny @(!TARGET_avr32||BROKEN)
 
 define Package/hostapd/Default
   SECTION:=net

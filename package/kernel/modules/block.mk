@@ -25,7 +25,7 @@ $(eval $(call KernelPackage,aoe))
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
-  DEPENDS:=@PCI_SUPPORT +kmod-scsi-core @!TARGET_etrax
+  DEPENDS:=@PCI_SUPPORT +kmod-scsi-core
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.ko
   AUTOLOAD:=$(call AutoLoad,21,libata,1)
