@@ -1,7 +1,7 @@
 /*
  * iwinfo - Wireless Information Library - NL80211 Backend
  *
- *   Copyright (C) 2010 Jo-Philipp Wich <xm@subsignal.org>
+ *   Copyright (C) 2010-2013 Jo-Philipp Wich <xm@subsignal.org>
  *
  * The iwinfo library is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version 2
@@ -448,12 +448,17 @@ static char * nl80211_ifname2phy(const char *ifname)
 
 static char * nl80211_hostapd_info(const char *ifname)
 {
+	int mode;
 	char *phy;
 	char path[32] = { 0 };
 	static char buf[4096] = { 0 };
 	FILE *conf;
 
-	if ((phy = nl80211_ifname2phy(ifname)) != NULL)
+	if (nl80211_get_mode(ifname, &mode))
+		return NULL;
+
+	if ((mode == IWINFO_OPMODE_MASTER || mode == IWINFO_OPMODE_AP_VLAN) &&
+	    (phy = nl80211_ifname2phy(ifname)) != NULL)
 	{
 		snprintf(path, sizeof(path), "/var/run/hostapd-%s.conf", phy);
 
@@ -716,50 +721,180 @@ void nl80211_close(void)
 	}
 }
 
+
+static int nl80211_get_mode_cb(struct nl_msg *msg, void *arg)
+{
+	int *mode = arg;
+	struct nlattr **tb = nl80211_parse(msg);
+	const int ifmodes[NL80211_IFTYPE_MAX + 1] = {
+		IWINFO_OPMODE_UNKNOWN,		/* unspecified */
+		IWINFO_OPMODE_ADHOC,		/* IBSS */
+		IWINFO_OPMODE_CLIENT,		/* managed */
+		IWINFO_OPMODE_MASTER,		/* AP */
+		IWINFO_OPMODE_AP_VLAN,		/* AP/VLAN */
+		IWINFO_OPMODE_WDS,			/* WDS */
+		IWINFO_OPMODE_MONITOR,		/* monitor */
+		IWINFO_OPMODE_MESHPOINT,	/* mesh point */
+		IWINFO_OPMODE_P2P_CLIENT,	/* P2P-client */
+		IWINFO_OPMODE_P2P_GO,		/* P2P-GO */
+	};
+
+	if (tb[NL80211_ATTR_IFTYPE])
+		*mode = ifmodes[nla_get_u32(tb[NL80211_ATTR_IFTYPE])];
+
+	return NL_SKIP;
+}
+
 int nl80211_get_mode(const char *ifname, int *buf)
 {
-	return wext_get_mode(ifname, buf);
+	char *res;
+	struct nl80211_msg_conveyor *req;
+
+	res = nl80211_phy2ifname(ifname);
+	req = nl80211_msg(res ? res : ifname, NL80211_CMD_GET_INTERFACE, 0);
+	*buf = IWINFO_OPMODE_UNKNOWN;
+
+	if (req)
+	{
+		nl80211_send(req, nl80211_get_mode_cb, buf);
+		nl80211_free(req);
+	}
+
+	return (*buf == IWINFO_OPMODE_UNKNOWN) ? -1 : 0;
+}
+
+
+struct nl80211_ssid_bssid {
+	unsigned char *ssid;
+	unsigned char bssid[7];
+};
+
+static int nl80211_get_ssid_bssid_cb(struct nl_msg *msg, void *arg)
+{
+	int ielen;
+	unsigned char *ie;
+	struct nl80211_ssid_bssid *sb = arg;
+	struct nlattr **tb = nl80211_parse(msg);
+	struct nlattr *bss[NL80211_BSS_MAX + 1];
+
+	static struct nla_policy bss_policy[NL80211_BSS_MAX + 1] = {
+		[NL80211_BSS_INFORMATION_ELEMENTS] = {                 },
+		[NL80211_BSS_STATUS]               = { .type = NLA_U32 },
+	};
+
+	if (!tb[NL80211_ATTR_BSS] ||
+	    nla_parse_nested(bss, NL80211_BSS_MAX, tb[NL80211_ATTR_BSS],
+	                     bss_policy) ||
+	    !bss[NL80211_BSS_BSSID] ||
+	    !bss[NL80211_BSS_STATUS] ||
+	    !bss[NL80211_BSS_INFORMATION_ELEMENTS])
+	{
+		return NL_SKIP;
+	}
+
+	switch (nla_get_u32(bss[NL80211_BSS_STATUS]))
+	{
+	case NL80211_BSS_STATUS_ASSOCIATED:
+	case NL80211_BSS_STATUS_AUTHENTICATED:
+	case NL80211_BSS_STATUS_IBSS_JOINED:
+
+		if (sb->ssid)
+		{
+			ie = nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]);
+			ielen = nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]);
+
+			while (ielen >= 2 && ielen >= ie[1])
+			{
+				if (ie[0] == 0)
+				{
+					memcpy(sb->ssid, ie + 2, min(ie[1], IWINFO_ESSID_MAX_SIZE));
+					return NL_SKIP;
+				}
+
+				ielen -= ie[1] + 2;
+				ie += ie[1] + 2;
+			}
+		}
+		else
+		{
+			sb->bssid[0] = 1;
+			memcpy(sb->bssid + 1, nla_data(bss[NL80211_BSS_BSSID]), 6);
+			return NL_SKIP;
+		}
+
+	default:
+		return NL_SKIP;
+	}
 }
 
 int nl80211_get_ssid(const char *ifname, char *buf)
 {
-	char *ssid;
+	char *res;
+	struct nl80211_msg_conveyor *req;
+	struct nl80211_ssid_bssid sb;
 
-	if (!wext_get_ssid(ifname, buf))
+	/* try to find ssid from scan dump results */
+	res = nl80211_phy2ifname(ifname);
+	req = nl80211_msg(res ? res : ifname, NL80211_CMD_GET_SCAN, NLM_F_DUMP);
+
+	sb.ssid = buf;
+	*buf = 0;
+
+	if (req)
 	{
-		return 0;
-	}
-	else if ((ssid = nl80211_hostapd_info(ifname)) &&
-	         (ssid = nl80211_getval(ifname, ssid, "ssid")))
-	{
-		memcpy(buf, ssid, strlen(ssid));
-		return 0;
+		nl80211_send(req, nl80211_get_ssid_bssid_cb, &sb);
+		nl80211_free(req);
 	}
 
-	return -1;
+	/* failed, try to find from hostapd info */
+	if ((*buf == 0) &&
+	    (res = nl80211_hostapd_info(ifname)) &&
+	    (res = nl80211_getval(ifname, res, "ssid")))
+	{
+		memcpy(buf, res, strlen(res));
+	}
+
+	return (*buf == 0) ? -1 : 0;
 }
 
 int nl80211_get_bssid(const char *ifname, char *buf)
 {
-	char *bssid;
-	unsigned char mac[6];
+	char *res;
+	struct nl80211_msg_conveyor *req;
+	struct nl80211_ssid_bssid sb;
 
-	if (!wext_get_bssid(ifname, buf))
+	/* try to find bssid from scan dump results */
+	res = nl80211_phy2ifname(ifname);
+	req = nl80211_msg(res ? res : ifname, NL80211_CMD_GET_SCAN, NLM_F_DUMP);
+
+	sb.ssid = NULL;
+	sb.bssid[0] = 0;
+
+	if (req)
 	{
-		return 0;
+		nl80211_send(req, nl80211_get_ssid_bssid_cb, &sb);
+		nl80211_free(req);
 	}
-	else if ((bssid = nl80211_hostapd_info(ifname)) &&
-	         (bssid = nl80211_getval(ifname, bssid, "bssid")))
-	{
-		mac[0] = strtol(&bssid[0],  NULL, 16);
-		mac[1] = strtol(&bssid[3],  NULL, 16);
-		mac[2] = strtol(&bssid[6],  NULL, 16);
-		mac[3] = strtol(&bssid[9],  NULL, 16);
-		mac[4] = strtol(&bssid[12], NULL, 16);
-		mac[5] = strtol(&bssid[15], NULL, 16);
 
+	/* failed, try to find mac from hostapd info */
+	if ((sb.bssid[0] == 0) &&
+	    (res = nl80211_hostapd_info(ifname)) &&
+	    (res = nl80211_getval(ifname, res, "bssid")))
+	{
+		sb.bssid[0] = 1;
+		sb.bssid[1] = strtol(&res[0],  NULL, 16);
+		sb.bssid[2] = strtol(&res[3],  NULL, 16);
+		sb.bssid[3] = strtol(&res[6],  NULL, 16);
+		sb.bssid[4] = strtol(&res[9],  NULL, 16);
+		sb.bssid[5] = strtol(&res[12], NULL, 16);
+		sb.bssid[6] = strtol(&res[15], NULL, 16);
+	}
+
+	if (sb.bssid[0])
+	{
 		sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
-		        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+		        sb.bssid[1], sb.bssid[2], sb.bssid[3],
+		        sb.bssid[4], sb.bssid[5], sb.bssid[6]);
 
 		return 0;
 	}
@@ -768,7 +903,7 @@ int nl80211_get_bssid(const char *ifname, char *buf)
 }
 
 
-static int nl80211_get_frequency_cb(struct nl_msg *msg, void *arg)
+static int nl80211_get_frequency_scan_cb(struct nl_msg *msg, void *arg)
 {
 	int *freq = arg;
 	struct nlattr **attr = nl80211_parse(msg);
@@ -789,14 +924,36 @@ static int nl80211_get_frequency_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
+static int nl80211_get_frequency_info_cb(struct nl_msg *msg, void *arg)
+{
+	int *freq = arg;
+	struct nlattr **tb = nl80211_parse(msg);
+
+	if (tb[NL80211_ATTR_WIPHY_FREQ])
+		*freq = nla_get_u32(tb[NL80211_ATTR_WIPHY_FREQ]);
+
+	return NL_SKIP;
+}
+
 int nl80211_get_frequency(const char *ifname, int *buf)
 {
 	char *res, *channel;
 	struct nl80211_msg_conveyor *req;
 
+	/* try to find frequency from interface info */
+	res = nl80211_phy2ifname(ifname);
+	req = nl80211_msg(res ? res : ifname, NL80211_CMD_GET_INTERFACE, 0);
 	*buf = 0;
 
-	if ((res = nl80211_hostapd_info(ifname)) &&
+	if (req)
+	{
+		nl80211_send(req, nl80211_get_frequency_info_cb, buf);
+		nl80211_free(req);
+	}
+
+	/* failed, try to find frequency from hostapd info */
+	if ((*buf == 0) &&
+	    (res = nl80211_hostapd_info(ifname)) &&
 	    (channel = nl80211_getval(NULL, res, "channel")))
 	{
 		*buf = nl80211_channel2freq(atoi(channel),
@@ -804,13 +961,18 @@ int nl80211_get_frequency(const char *ifname, int *buf)
 	}
 	else
 	{
-		res = nl80211_phy2ifname(ifname);
-		req = nl80211_msg(res ? res : ifname, NL80211_CMD_GET_SCAN, NLM_F_DUMP);
-
-		if (req)
+		/* failed, try to find frequency from scan results */
+		if (*buf == 0)
 		{
-			nl80211_send(req, nl80211_get_frequency_cb, buf);
-			nl80211_free(req);
+			res = nl80211_phy2ifname(ifname);
+			req = nl80211_msg(res ? res : ifname, NL80211_CMD_GET_SCAN,
+			                  NLM_F_DUMP);
+
+			if (req)
+			{
+				nl80211_send(req, nl80211_get_frequency_scan_cb, buf);
+				nl80211_free(req);
+			}
 		}
 	}
 
@@ -831,6 +993,16 @@ int nl80211_get_channel(const char *ifname, int *buf)
 
 int nl80211_get_txpower(const char *ifname, int *buf)
 {
+	char *res;
+	char path[PATH_MAX];
+
+	res = nl80211_ifname2phy(ifname);
+	snprintf(path, sizeof(path), "/sys/kernel/debug/ieee80211/%s/power",
+	         res ? res : ifname);
+
+	if ((*buf = nl80211_readint(path)) > -1)
+		return 0;
+
 	return wext_get_txpower(ifname, buf);
 }
 
@@ -931,9 +1103,6 @@ int nl80211_get_bitrate(const char *ifname, int *buf)
 {
 	struct nl80211_rssi_rate rr;
 
-	if (!wext_get_bitrate(ifname, buf))
-		return 0;
-
 	nl80211_fill_signal(ifname, &rr);
 
 	if (rr.rate)
@@ -948,9 +1117,6 @@ int nl80211_get_bitrate(const char *ifname, int *buf)
 int nl80211_get_signal(const char *ifname, int *buf)
 {
 	struct nl80211_rssi_rate rr;
-
-	if (!wext_get_signal(ifname, buf))
-		return 0;
 
 	nl80211_fill_signal(ifname, &rr);
 
@@ -1018,43 +1184,39 @@ int nl80211_get_quality(const char *ifname, int *buf)
 {
 	int signal;
 
-	if (wext_get_quality(ifname, buf))
+	if (!nl80211_get_signal(ifname, &signal))
 	{
-		*buf = 0;
-
-		if (!nl80211_get_signal(ifname, &signal))
+		/* A positive signal level is usually just a quality
+		 * value, pass through as-is */
+		if (signal >= 0)
 		{
-			/* A positive signal level is usually just a quality
-			 * value, pass through as-is */
-			if (signal >= 0)
-			{
-				*buf = signal;
-			}
-
-			/* The cfg80211 wext compat layer assumes a signal range
-			 * of -110 dBm to -40 dBm, the quality value is derived
-			 * by adding 110 to the signal level */
-			else
-			{
-				if (signal < -110)
-					signal = -110;
-				else if (signal > -40)
-					signal = -40;
-
-				*buf = (signal + 110);
-			}
+			*buf = signal;
 		}
+
+		/* The cfg80211 wext compat layer assumes a signal range
+		 * of -110 dBm to -40 dBm, the quality value is derived
+		 * by adding 110 to the signal level */
+		else
+		{
+			if (signal < -110)
+				signal = -110;
+			else if (signal > -40)
+				signal = -40;
+
+			*buf = (signal + 110);
+		}
+
+		return 0;
 	}
 
-	return 0;
+	return -1;
 }
 
 int nl80211_get_quality_max(const char *ifname, int *buf)
 {
-	if (wext_get_quality_max(ifname, buf))
-		/* The cfg80211 wext compat layer assumes a maximum
-		 * quality of 70 */
-		*buf = 70;
+	/* The cfg80211 wext compat layer assumes a maximum
+	 * quality of 70 */
+	*buf = 70;
 
 	return 0;
 }
