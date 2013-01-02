@@ -122,7 +122,7 @@ $(eval $(call KernelPackage,fuse))
 
 define KernelPackage/fs-hfs
   SUBMENU:=$(FS_MENU)
-  TITLE:=HFS+ filesystem support
+  TITLE:=HFS filesystem support
   KCONFIG:=CONFIG_HFS_FS
   FILES:=$(LINUX_DIR)/fs/hfs/hfs.ko
   AUTOLOAD:=$(call AutoLoad,30,hfs)
