@@ -12,7 +12,7 @@ DEFAULT_PACKAGES += \
 			kmod-i2c-scx200-acb \
 			kmod-usb-core kmod-usb2 kmod-usb-ohci \
 			kmod-cfg80211 kmod-mac80211 \
-			kmod-mppe kmod-pppoe kmod-pppo2ltp \
+			kmod-mppe kmod-pppoe kmod-pppol2tp \
 			kmod-ath5k kmod-ath9k \
 			kmod-leds-gpio kmod-input-gpio-keys-polled \
 			kmod-button-hotplug \
