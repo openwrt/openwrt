@@ -12,6 +12,7 @@ export DELAY=
 export CONF_IMAGE=
 export CONF_BACKUP=
 export CONF_RESTORE=
+export NEED_IMAGE=
 export HELP=0
 export FORCE=0
 
@@ -24,8 +25,8 @@ while [ -n "$1" ]; do
 		-q) export VERBOSE="$(($VERBOSE - 1))";;
 		-n) export SAVE_CONFIG=0;;
 		-c) export SAVE_OVERLAY=1;;
-		-b|--create-backup) export CONF_BACKUP="$2"; shift;;
-		-r|--restore-backup) export CONF_RESTORE="$2"; shift;;
+		-b|--create-backup) export CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
+		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
 		-f) export CONF_IMAGE="$2"; shift;;
 		-F|--force) export FORCE=1;;
 		-h|--help) export HELP=1; break;;
@@ -44,7 +45,7 @@ export CONF_TAR=/tmp/sysupgrade.tgz
 export ARGV="$*"
 export ARGC="$#"
 
-[ -z "$ARGV" -a -z "$CONF_BACKUP" -o $HELP -gt 0 ] && {
+[ -z "$ARGV" -a -z "$NEED_IMAGE" -o $HELP -gt 0 ] && {
 	cat <<EOF
 Usage: $0 [options] <image file or URL>
 
@@ -72,10 +73,10 @@ EOF
 	exit 1
 }
 
-[ -n "$ARGV" -a -n "$CONF_BACKUP" ] && {
+[ -n "$ARGV" -a -n "$NEED_IMAGE" ] && {
 	cat <<-EOF
-		-b/--create-backup does not perform a firmware upgrade. Do not
-		specify both -b and a firmware image.
+		-b/--create-backup and -r/--restore-backup do not perform a firmware upgrade.
+		Do not specify both -b/-r and a firmware image.
 	EOF
 	exit 1
 }
