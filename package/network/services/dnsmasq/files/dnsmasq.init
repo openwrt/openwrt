@@ -253,10 +253,15 @@ dhcp_host_add() {
 	config_get ip "$cfg" ip
 	[ -n "$ip" -o -n "$name" ] || return 0
 
-	macs=""
 	config_get mac "$cfg" mac
+	[ -z "$mac" ] && {
+		[ -n "$name" ] || return 0
+		mac="$name"
+		name=""
+	}
+
+	macs=""
 	for m in $mac; do append macs "$m" ","; done
-	[ -n "$macs" ] || return 0
 
 	config_get tag "$cfg" tag
 
