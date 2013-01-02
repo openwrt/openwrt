@@ -1430,11 +1430,11 @@ define Build/InstallDev
 endef
 
 define KernelPackage/libertas-usb/install
-	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DIR) $(1)/lib/firmware/libertas
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8388_v9.bin \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8682.bin \
-		$(1)/lib/firmware/
+		$(1)/lib/firmware/libertas/
 endef
 
 define KernelPackage/libertas-sd/install
