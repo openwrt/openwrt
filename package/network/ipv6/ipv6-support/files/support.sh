@@ -329,8 +329,6 @@ setup_prefix_fallback() {
 restart_master_relay() {
 	local network="$1"
 	local mode="$2"
-	local pid_fallback="/var/run/ipv6-relay-fallback-$network.pid"
-	local pid_forced="/var/run/ipv6-relay-forced-$network.pid"
 
 	# Disable active relaying to this interface
 	config_get relay_master "$network" relay_master
@@ -338,8 +336,10 @@ restart_master_relay() {
 	network_is_up "$relay_master" || return
 
 	# Detect running mode
-	[ -z "$mode" && -f "$pid_fallback" ] && mode="fallback"
-	[ -z "$mode" && -f "$pid_forced" ] && mode="forced"
+	local pid_fallback="/var/run/ipv6-relay-fallback-$relay_master.pid"
+	local pid_forced="/var/run/ipv6-relay-forced-$relay_master.pid"
+	[ -z "$mode" -a -f "$pid_fallback" ] && mode="fallback"
+	[ -z "$mode" -a -f "$pid_forced" ] && mode="forced"
 
 	# Restart relay if running or start requested
 	[ -n "$mode" ] && restart_relay "$relay_master" "$mode"
@@ -371,6 +371,26 @@ set_site_border() {
 		ip6tables -D ipv6-site-border -j "$chain"
 		ip6tables -F "$chain"
 		ip6tables -X "$chain"
+	fi
+}
+
+
+set_forward_border() {
+	local network="$1"
+	local device="$2"
+	local method="$3"
+	local fwscript="/var/etc/ipv6-firewall.d/forward-border-$network.sh"
+
+	if [ "$method" == "enable" ]; then
+		mkdir -p $(dirname "$fwscript")
+		echo "ip6tables -A forwarding_rule -o \"$device\" -j REJECT --reject-with icmp6-no-route" > "$fwscript"
+		. "$fwscript"
+	else
+		[ -f "$fwscript" ] || return
+		rm -f "$fwscript"
+		# Racy race race
+		ip6tables -D forwarding_rule -o "$device" -j REJECT --reject-with icmp6-no-route 2>/dev/null
+		ip6tables -D forwarding_rule -o "$device" -j REJECT --reject-with icmp6-no-route 2>/dev/null
 	fi
 }
 
@@ -446,8 +466,8 @@ enable_static() {
 	[ "$global_forward" != "1" ] && conf_set all forwarding 1
 
 	# Configure device
-	conf_set "$device" accept_ra 1
 	conf_set "$device" forwarding 1
+	conf_set "$device" accept_ra 1
 
 	# Enable ULA
 	enable_ula_prefix "$network" global "$device"
@@ -506,14 +526,6 @@ enable_dhcpv6() {
 	local network="$1"
 	local device="$2"
 	
-	# Configure device
-	conf_set "$device" accept_ra 2
-	conf_set "$device" forwarding 2
-	
-	# Trigger RS
-	conf_set "$device" disable_ipv6 1
-	conf_set "$device" disable_ipv6 0
-
 	# Configure DHCPv6-client
 	local dhcp6_opts="$device"
 
