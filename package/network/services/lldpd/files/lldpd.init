@@ -5,13 +5,25 @@ START=90
 
 SERVICE_USE_PID=1
 
+find_release_info()
+{
+	[ -s /etc/openwrt_release ] && . /etc/openwrt_release
+	[ -z "$DISTRIB_DESCRIPTION" ] && [ -s /etc/openwrt_version ] && \
+		DISTRIB_DESCRIPTION="$(cat /etc/openwrt_version)"
+
+	echo "${DISTRIB_DESCRIPTION:-Unknown OpenWrt release} @ $(cat /proc/sys/kernel/hostname)"
+}
+
 start() {
+	. /lib/functions/network.sh
+
 	local enable_cdp
 	local enable_fdp
 	local enable_sonmp
 	local enable_edp
 	local lldp_class
 	local lldp_location
+	local lldp_description
 
 	config_load 'lldpd'
 	config_get_bool enable_cdp 'config' 'enable_cdp' 0
@@ -20,6 +32,18 @@ start() {
 	config_get_bool enable_edp 'config' 'enable_edp' 0
 	config_get lldp_class 'config' 'lldp_class'
 	config_get lldp_location 'config' 'lldp_location'
+	config_get lldp_description 'config' 'lldp_description' "$(find_release_info)"
+
+	local ifaces
+	config_get ifaces 'config' 'interface'
+
+	local iface
+	for iface in $ifaces; do
+		local ifname=""
+		if network_get_device ifname "$iface" || [ -e "/sys/class/net/$iface" ]; then
+			append args "-I ${ifname:-$iface}"
+		fi
+	done
 
 	[ $enable_cdp -gt 0 ] && append args '-c'
 	[ $enable_fdp -gt 0 ] && append args '-f'
@@ -33,7 +57,8 @@ start() {
 	chown lldp:lldp /var/run/lldp
 
 	service_start /usr/sbin/lldpd $args \
-		${lldp_class:+ -M $lldp_class}
+		${lldp_class:+ -M $lldp_class} \
+		${lldp_description:+ -S "$lldp_description"}
 
 	[ -n "$lldp_location" ] && {
 		sleep 1
