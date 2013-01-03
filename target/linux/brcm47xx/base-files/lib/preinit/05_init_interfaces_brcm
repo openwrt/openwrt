@@ -6,6 +6,7 @@ set_preinit_iface() {
 	insmod diag
 	insmod hwmon
 	insmod tg3
+	insmod b44
 
 	# hardware specific overrides
 	case "$(cat /proc/diag/model)" in
