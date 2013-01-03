@@ -21,18 +21,18 @@
  	cc->nr_serial_ports = (cc->capabilities & BCMA_CC_CAP_NRUART);
 --- a/drivers/bcma/driver_mips.c
 +++ b/drivers/bcma/driver_mips.c
-@@ -81,7 +81,7 @@ static u32 bcma_core_mips_irqflag(struct
- /* Get the MIPS IRQ assignment for a specified device.
-  * If unassigned, 0 is returned.
+@@ -86,7 +86,7 @@ static u32 bcma_core_mips_irqflag(struct
+  * If disabled, 5 is returned.
+  * If not supported, 6 is returned.
   */
 -unsigned int bcma_core_mips_irq(struct bcma_device *dev)
 +static unsigned int bcma_core_mips_irq(struct bcma_device *dev)
  {
  	struct bcma_device *mdev = dev->bus->drv_mips.core;
  	u32 irqflag;
-@@ -96,7 +96,12 @@ unsigned int bcma_core_mips_irq(struct b
+@@ -106,7 +106,12 @@ unsigned int bcma_core_mips_irq(struct b
  
- 	return 0;
+ 	return 5;
  }
 -EXPORT_SYMBOL(bcma_core_mips_irq);
 +
