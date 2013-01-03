@@ -1,6 +1,6 @@
 --- a/include/linux/bcma/bcma_driver_mips.h
 +++ b/include/linux/bcma/bcma_driver_mips.h
-@@ -49,6 +49,6 @@ static inline void bcma_core_mips_early_
+@@ -48,6 +48,6 @@ static inline void bcma_core_mips_early_
  
  extern u32 bcma_cpu_clock(struct bcma_drv_mips *mcore);
  
@@ -30,7 +30,7 @@
  {
  	struct bcma_device *mdev = dev->bus->drv_mips.core;
  	u32 irqflag;
-@@ -106,7 +106,12 @@ unsigned int bcma_core_mips_irq(struct b
+@@ -103,7 +103,13 @@ unsigned int bcma_core_mips_irq(struct b
  
  	return 5;
  }
@@ -38,7 +38,8 @@
 +
 +unsigned int bcma_core_irq(struct bcma_device *dev)
 +{
-+	return bcma_core_mips_irq(dev) + 2;
++	unsigned int mips_irq = bcma_core_mips_irq(dev);
++	return mips_irq <= 4 ? mips_irq + 2 : 0;
 +}
 +EXPORT_SYMBOL(bcma_core_irq);
  

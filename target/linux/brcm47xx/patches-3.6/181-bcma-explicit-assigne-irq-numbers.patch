@@ -23,17 +23,7 @@
  static void bcma_core_mips_print_irq(struct bcma_device *dev, unsigned int irq)
  {
  	int i;
-@@ -247,7 +263,8 @@ void bcma_core_mips_early_init(struct bc
- void bcma_core_mips_init(struct bcma_drv_mips *mcore)
- {
- 	struct bcma_bus *bus;
--	struct bcma_device *core;
-+	int irq;
-+
- 	bus = mcore->core->bus;
- 
- 	if (mcore->setup_done)
-@@ -259,35 +276,44 @@ void bcma_core_mips_init(struct bcma_drv
+@@ -259,35 +275,47 @@ void bcma_core_mips_init(struct bcma_drv
  
  	mcore->assigned_irqs = 1;
  
@@ -65,7 +55,6 @@
 -				bcma_core_mips_set_irq(core,
 -						       mcore->assigned_irqs++);
 -			break;
--		}
 +	switch (bus->chipinfo.id) {
 +	case BCMA_CHIP_ID_BCM4716:
 +	case BCMA_CHIP_ID_BCM4748:
@@ -101,6 +90,9 @@
 +					    0);
 +		break;
 +	default:
++		list_for_each_entry(core, &bus->cores, list) {
++			core->irq = bcma_core_irq(core);
+ 		}
 +		bcma_err(bus,
 +			 "Unknown device (0x%x) found, can not configure IRQs\n",
 +			 bus->chipinfo.id);
