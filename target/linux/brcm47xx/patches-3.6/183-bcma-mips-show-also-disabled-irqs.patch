@@ -18,27 +18,25 @@
   */
  unsigned int bcma_core_mips_irq(struct bcma_device *dev)
  {
-@@ -88,13 +93,18 @@ unsigned int bcma_core_mips_irq(struct b
+@@ -88,13 +93,15 @@ unsigned int bcma_core_mips_irq(struct b
  	unsigned int irq;
  
  	irqflag = bcma_core_mips_irqflag(dev);
 +	if (irqflag == 0x3f)
 +		return 6;
  
- 	for (irq = 1; irq <= 4; irq++)
+-	for (irq = 1; irq <= 4; irq++)
++	for (irq = 0; irq <= 4; irq++)
  		if (bcma_read32(mdev, BCMA_MIPS_MIPS74K_INTMASK(irq)) &
  		    (1 << irqflag))
  			return irq;
  
 -	return 0;
-+	if ((1 << irqflag) & bcma_read32(mdev, BCMA_MIPS_MIPS74K_INTMASK(0)))
-+		return 0;
-+
 +	return 5;
  }
  EXPORT_SYMBOL(bcma_core_mips_irq);
  
-@@ -115,7 +125,7 @@ static void bcma_core_mips_set_irq(struc
+@@ -115,7 +122,7 @@ static void bcma_core_mips_set_irq(struc
  		bcma_write32(mdev, BCMA_MIPS_MIPS74K_INTMASK(0),
  			    bcma_read32(mdev, BCMA_MIPS_MIPS74K_INTMASK(0)) &
  			    ~(1 << irqflag));
@@ -47,3 +45,12 @@
  		bcma_write32(mdev, BCMA_MIPS_MIPS74K_INTMASK(oldirq), 0);
  
  	/* assign the new one */
+@@ -145,7 +152,7 @@ static void bcma_core_mips_set_irq(struc
+ 	}
+ 
+ 	bcma_debug(bus, "set_irq: core 0x%04x, irq %d => %d\n",
+-		   dev->id.id, oldirq + 2, irq + 2);
++		   dev->id.id, oldirq <= 4 ? oldirq + 2 : 0, irq + 2);
+ }
+ 
+ static void bcma_core_mips_set_irq_name(struct bcma_bus *bus, unsigned int irq,

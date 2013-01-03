@@ -20,7 +20,7 @@
  	for (i = 0; i <= 6; i++)
  		printk(" %s%s", irq_name[i], i == irq ? "*" : " ");
  	printk("\n");
-@@ -270,7 +270,7 @@ void bcma_core_mips_init(struct bcma_drv
+@@ -269,7 +269,7 @@ void bcma_core_mips_init(struct bcma_drv
  	if (mcore->setup_done)
  		return;
  
@@ -29,7 +29,7 @@
  
  	bcma_core_mips_early_init(mcore);
  
-@@ -315,7 +315,7 @@ void bcma_core_mips_init(struct bcma_drv
+@@ -317,7 +317,7 @@ void bcma_core_mips_init(struct bcma_drv
  			 "Unknown device (0x%x) found, can not configure IRQs\n",
  			 bus->chipinfo.id);
  	}
