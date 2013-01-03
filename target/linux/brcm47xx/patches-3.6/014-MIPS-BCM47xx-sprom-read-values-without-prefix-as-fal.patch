@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -96,7 +96,7 @@ static int bcm47xx_get_sprom_ssb(struct
+@@ -94,7 +94,7 @@ static int bcm47xx_get_sprom_ssb(struct
  		snprintf(prefix, sizeof(prefix), "pci/%u/%u/",
  			 bus->host_pci->bus->number + 1,
  			 PCI_SLOT(bus->host_pci->devfn));
@@ -9,7 +9,7 @@
  		return 0;
  	} else {
  		printk(KERN_WARNING "bcm47xx: unable to fill SPROM for given bustype.\n");
-@@ -115,7 +115,7 @@ static int bcm47xx_get_invariants(struct
+@@ -113,7 +113,7 @@ static int bcm47xx_get_invariants(struct
  	bcm47xx_fill_ssb_boardinfo(&iv->boardinfo, NULL);
  
  	memset(&iv->sprom, 0, sizeof(struct ssb_sprom));
@@ -18,7 +18,7 @@
  
  	if (nvram_getenv("cardbus", buf, sizeof(buf)) >= 0)
  		iv->has_cardbus_slot = !!simple_strtoul(buf, NULL, 10);
-@@ -196,18 +196,17 @@ static int bcm47xx_get_sprom_bcma(struct
+@@ -165,18 +165,17 @@ static int bcm47xx_get_sprom_bcma(struct
  		snprintf(prefix, sizeof(prefix), "pci/%u/%u/",
  			 bus->host_pci->bus->number + 1,
  			 PCI_SLOT(bus->host_pci->devfn));

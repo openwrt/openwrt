@@ -8,7 +8,7 @@
   *
   *  This program is free software; you can redistribute  it and/or modify it
   *  under  the terms of  the GNU General  Public License as published by the
-@@ -60,6 +61,7 @@ static __init void prom_init_mem(void)
+@@ -128,6 +129,7 @@ static __init void prom_init_mem(void)
  {
  	unsigned long mem;
  	unsigned long max;
@@ -16,7 +16,7 @@
  	struct cpuinfo_mips *c = &current_cpu_data;
  
  	/* Figure out memory size by finding aliases.
-@@ -77,15 +79,15 @@ static __init void prom_init_mem(void)
+@@ -145,15 +147,15 @@ static __init void prom_init_mem(void)
  	 * max contains the biggest possible address supported by the platform.
  	 * If the method wants to try something above we assume 128MB ram.
  	 */

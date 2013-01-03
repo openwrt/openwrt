@@ -8,7 +8,7 @@
  #include <asm/bootinfo.h>
  #include <asm/fw/cfe/cfe_api.h>
  #include <asm/fw/cfe/cfe_error.h>
-@@ -59,6 +60,7 @@ static __init void prom_init_mem(void)
+@@ -127,6 +128,7 @@ static __init void prom_init_mem(void)
  {
  	unsigned long mem;
  	unsigned long max;
@@ -16,7 +16,7 @@
  
  	/* Figure out memory size by finding aliases.
  	 *
-@@ -87,6 +89,14 @@ static __init void prom_init_mem(void)
+@@ -155,6 +157,14 @@ static __init void prom_init_mem(void)
  			break;
  	}
  
