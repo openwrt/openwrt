@@ -1,0 +1,21 @@
+--- a/drivers/base/regmap/Kconfig
++++ b/drivers/base/regmap/Kconfig
+@@ -3,15 +3,16 @@
+ # subsystems should select the appropriate symbols.
+ 
+ config REGMAP
+-	default y if (REGMAP_I2C || REGMAP_SPI)
+ 	select LZO_COMPRESS
+ 	select LZO_DECOMPRESS
+-	bool
++	tristate
+ 
+ config REGMAP_I2C
++	select REGMAP
+ 	tristate
+ 
+ config REGMAP_SPI
++	select REGMAP
+ 	tristate
+ 
+ config REGMAP_IRQ
