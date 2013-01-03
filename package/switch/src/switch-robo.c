@@ -103,8 +103,7 @@ static u16 mdio_read(__u16 phy_id, __u8 reg)
 
 	err = do_ioctl(SIOCGMIIREG);
 	if (err < 0) {
-		printk(KERN_ERR PFX
-		       "[%s:%d] SIOCGMIIREG failed! err: %i\n", __FILE__, __LINE__, err);
+		printk(KERN_ERR PFX "failed to read mdio reg %i with err %i.\n", reg, err);
 
 		return 0xffff;
 	}
@@ -123,8 +122,7 @@ static void mdio_write(__u16 phy_id, __u8 reg, __u16 val)
 
 	err = do_ioctl(SIOCSMIIREG);
 	if (err < 0) {
-		printk(KERN_ERR PFX
-		       "[%s:%d] SIOCSMIIREG failed! err: %i\n", __FILE__, __LINE__, err);
+		printk(KERN_ERR PFX "failed to write mdio reg: %i with err %i.\n", reg, err);
 		return;
 	}
 }
@@ -147,7 +145,7 @@ static int robo_reg(__u8 page, __u8 reg, __u8 op)
 			return 0;
 	}
 
-	printk(KERN_ERR PFX "[%s:%d] timeout in robo_reg!\n", __FILE__, __LINE__);
+	printk(KERN_ERR PFX "timeout in robo_reg on page %i and reg %i with op %i.\n", page, reg, op);
 
 	return 0;
 }
@@ -224,7 +222,7 @@ static int robo_switch_enable(void)
 		robo_write16(ROBO_CTRL_PAGE, ROBO_SWITCH_MODE, val);
 		val = robo_read16(ROBO_CTRL_PAGE, ROBO_SWITCH_MODE);
 		if (!(val & (1 << 1))) {
-			printk("Failed to enable switch\n");
+			printk(KERN_ERR PFX "Failed to enable switch\n");
 			return -EBUSY;
 		}
 
@@ -262,15 +260,15 @@ static int robo_probe(char *devname)
 	unsigned int i;
 	int err = 1;
 
-	printk(KERN_INFO PFX "Probing device %s: ", devname);
+	printk(KERN_INFO PFX "Probing device '%s'\n", devname);
 	strcpy(robo.ifr.ifr_name, devname);
 
 	if ((robo.dev = dev_get_by_name(&init_net, devname)) == NULL) {
-		printk("No such device\n");
+		printk(KERN_ERR PFX "No such device\n");
 		return 1;
 	}
 	if (!robo.dev->netdev_ops || !robo.dev->netdev_ops->ndo_do_ioctl) {
-		printk("ndo_do_ioctl not implemented in ethernet driver\n");
+		printk(KERN_ERR PFX "ndo_do_ioctl not implemented in ethernet driver\n");
 		return 1;
 	}
 
@@ -280,8 +278,9 @@ static int robo_probe(char *devname)
 	robo.port[5] = 8;
 
 	/* try access using MII ioctls - get phy address */
-	if (do_ioctl(SIOCGMIIPHY) < 0) {
-		printk("error while accessing MII phy registers with ioctls\n");
+	err = do_ioctl(SIOCGMIIPHY);
+	if (err < 0) {
+		printk(KERN_ERR PFX "error (%i) while accessing MII phy registers with ioctls\n", err);
 		goto done;
 	}
 
@@ -290,7 +289,7 @@ static int robo_probe(char *devname)
 	if ((mii->phy_id != ROBO_PHY_ADDR) &&
 	    (mii->phy_id != ROBO_PHY_ADDR_BCM63XX) &&
 	    (mii->phy_id != ROBO_PHY_ADDR_TG3)) {
-		printk("Invalid phy address (%d)\n", mii->phy_id);
+		printk(KERN_ERR PFX "Invalid phy address (%d)\n", mii->phy_id);
 		goto done;
 	}
 
@@ -298,7 +297,7 @@ static int robo_probe(char *devname)
 		(mdio_read(ROBO_PHY_ADDR, 0x3) << 16);
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
-		printk("No Robo switch in managed mode found, phy_id = 0x%08x\n", phyid);
+		printk(KERN_ERR PFX "No Robo switch in managed mode found, phy_id = 0x%08x\n", phyid);
 		goto done;
 	}
 
@@ -319,8 +318,8 @@ static int robo_probe(char *devname)
 		goto done;
 	err = 0;
 
-	printk("found a 5%s%x!%s\n", robo.devid & 0xff00 ? "" : "3", robo.devid,
-		robo.is_5350 ? " It's a 5350." : "");
+	printk(KERN_INFO PFX "found a 5%s%x!%s at %s\n", robo.devid & 0xff00 ? "" : "3", robo.devid,
+		robo.is_5350 ? " It's a 5350." : "", devname);
 
 done:
 	if (err) {
