@@ -8,6 +8,7 @@
 #define SWITCH_MEDIA_AUTO	1
 #define SWITCH_MEDIA_100	2
 #define SWITCH_MEDIA_FD		4
+#define SWITCH_MEDIA_1000	8
 
 typedef int (*switch_handler)(void *driver, char *buf, int nr);
 

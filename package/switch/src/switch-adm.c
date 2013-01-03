@@ -386,7 +386,7 @@ static int handle_port_media_write(void *driver, char *buf, int nr)
 	int media = switch_parse_media(buf);
 	int reg = adm_rreg(0, port_conf[nr]);
 
-	if (media < 0)
+	if (media < 0 || media & SWITCH_MEDIA_1000)
 		return -1;
 
 	reg &= ~((1 << 1) | (1 << 2) | (1 << 3));

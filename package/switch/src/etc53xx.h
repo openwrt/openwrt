@@ -15,9 +15,10 @@
 #define __BCM535M_H_
 
 /* ROBO embedded device type */
-#define ROBO_DEV_5380 1
-#define ROBO_DEV_5365 2
-#define ROBO_DEV_5350 3
+#define ROBO_DEV_5380  1
+#define ROBO_DEV_5365  2
+#define ROBO_DEV_5350  3
+#define ROBO_DEV_53115 4
 
 /* BCM5325m GLOBAL PAGE REGISTER MAP */
 #ifndef _CFE_
@@ -316,6 +317,18 @@ typedef struct _ROBO_ARL_SEARCH_RESULT_MCAST_STRUC
 #define ROBO_ARL_SEARCH_RESULT_EXT 0x2c /* ARL Search Result Extension (5350): 8bit */
 #define ROBO_ARL_VID_ENTRY0       0x30 /* ARL VID Entry 0: 64bit */
 #define ROBO_ARL_VID_ENTRY1       0x32 /* ARL VID Entry 1: 64bit */
+#define ROBO_ARL_SEARCH_CTRL_53115       0x50 /* ARL Search Control: 8bit */
+#define ROBO_ARL_SEARCH_ADDR_53115       0x51 /* ARL Search Address: 16bit */
+#define ROBO_ARL_SEARCH_RESULT_53115     0x60 /* ARL Search Result: 64bit */
+#define ROBO_ARL_SEARCH_RESULT_EXT_53115 0x68 /* ARL Search Result Extension (53115): 16bit */
+
+/* BCM5395/5397/5398/53115 */
+#define ROBO_VTBL_ACCESS          0x60 /* VLAN table access: 8bit */
+#define ROBO_VTBL_INDX            0x61 /* VLAN table address index: 16bit */
+#define ROBO_VTBL_ENTRY           0x63 /* VLAN table entry: 32bit */
+#define ROBO_VTBL_ACCESS_5395     0x80 /* VLAN table access: 8bit */
+#define ROBO_VTBL_INDX_5395       0x81 /* VLAN table address index: 16bit */
+#define ROBO_VTBL_ENTRY_5395      0x83 /* VLAN table entry: 32bit */
 
 /* BCM5325m MANAGEMENT FRAME REGISTERS (0x6) REGISTER MAP: 8/16 bit regs */
 #define ROBO_MGMT_FRAME_RD_DATA   0x00 /* Management Frame Read Data :8bit*/
@@ -342,6 +355,8 @@ typedef struct _ROBO_ARL_SEARCH_RESULT_MCAST_STRUC
 #define NUM_VLAN_TABLE_ENTRIES_5350 16  /* number of entries in VLAN table */
 #define ARL_TABLE_ADDR_5350 0x1c00      /* offset of ARL table start (5350) */
 #endif
+#define NUM_ARL_TABLE_ENTRIES_53115 4096 /* number of entries in ARL table (53115) */
+#define NUM_VLAN_TABLE_ENTRIES_53115 4096 /* number of entries in VLAN table */
 typedef struct _ROBO_MEM_ACCESS_CTRL_STRUC
 {
     unsigned int    memAddr:14; /* 64-bit memory address */
@@ -529,6 +544,7 @@ typedef struct _ROBO_VLAN_CTRL0_STRUC
 #define VLAN_ID_HIGH_BITS 0             /* static high bits in table access reg */
 #define VLAN_ID_MAX 255                 /* max VLAN id */
 #define VLAN_ID_MAX5350 15              /* max VLAN id (5350) */
+#define VLAN_ID_MAX5395 4094            /* max VLAN id (5395) */
 #define VLAN_ID_MASK VLAN_ID_MAX        /* VLAN id mask */
 #ifdef BCM5380
 #define VLAN_UNTAG_SHIFT 13             /* for postioning untag bits in write reg */
@@ -594,26 +610,15 @@ typedef struct _ROBO_VLAN_READ_WRITE_STRUC_5350
 #define ROBO_VLAN_PORT5_DEF_TAG     0x1a /* 16b: VLAN Port 5 Default Tag Register */
 #define ROBO_VLAN_PORT6_DEF_TAG     0x1c /* 16b: VLAN Port 6 Default Tag Register */
 #define ROBO_VLAN_PORT7_DEF_TAG     0x1e /* 16b: VLAN Port 7 Default Tag Register */
-
-/* obsolete */
-#define ROBO_VLAN_PORT0_CTRL       0x00 /* 16b: Port 0 VLAN  Register */
-#define ROBO_VLAN_PORT1_CTRL       0x02 /* 16b: Port 1 VLAN  Register */
-#define ROBO_VLAN_PORT2_CTRL       0x04 /* 16b: Port 2 VLAN  Register */
-#define ROBO_VLAN_PORT3_CTRL       0x06 /* 16b: Port 3 VLAN  Register */
-#define ROBO_VLAN_PORT4_CTRL       0x08 /* 16b: Port 4 VLAN  Register */
-#define ROBO_VLAN_IM_PORT_CTRL     0x10 /* 16b: Inverse MII Port VLAN Reg */
-#define ROBO_VLAN_SMP_PORT_CTRL    0x12 /* 16b: Serial Port VLAN  Register */
-#define ROBO_VLAN_PORTSPI_DEF_TAG  0x1c /* 16b: VLAN Port SPI Default Tag Register */
-#define ROBO_VLAN_PRIORITY_REMAP   0x20 /* 24b: VLAN Priority Re-Map Register */
+#define ROBO_VLAN_PORT8_DEF_TAG     0x20 /* 16b: VLAN Port 8 Default Tag Register */
+/* 53115 only */
+#define ROBO_DUPLEX_STAT_SUMMARY_53115 0x08 /* Duplex Status Summary: 16bit */
+#define ROBO_JUMBO_PAGE                0x40
+#define ROBO_JUMBO_CTRL                0x01 /* 32bit */
+#define ROBO_JUMBO_SIZE                0x05 /* 16bit */
 
 #ifndef _CFE_
 #pragma pack()
 #endif
 
-
 #endif /* !__BCM535M_H_ */
-
-
-
-
-
