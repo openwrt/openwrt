@@ -36,3 +36,18 @@ define KernelPackage/ocf-ubsec-ssb/description
 endef
 
 $(eval $(call KernelPackage,ocf-ubsec-ssb))
+
+define KernelPackage/bgmac
+  TITLE:=Broadcom bgmac driver
+  KCONFIG:=CONFIG_BGMAC
+  DEPENDS:=@TARGET_brcm47xx
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac.ko
+  AUTOLOAD:=$(call AutoLoad,50,bgmac)
+endef
+
+define KernelPackage/bgmac/description
+ Kernel modules for Broadcom bgmac Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,bgmac))

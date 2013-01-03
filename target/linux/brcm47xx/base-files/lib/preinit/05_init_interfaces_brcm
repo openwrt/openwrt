@@ -7,6 +7,7 @@ set_preinit_iface() {
 	insmod hwmon
 	insmod tg3
 	insmod b44
+	insmod bgmac
 
 	# hardware specific overrides
 	case "$(cat /proc/diag/model)" in
