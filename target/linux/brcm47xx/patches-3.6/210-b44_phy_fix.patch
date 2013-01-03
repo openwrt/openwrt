@@ -15,7 +15,7 @@
 +		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
 +	} else {
 +		/* WL-HDD */
-+		if (nvram_getenv("hardware_version", buf, sizeof(buf)) >= 0 &&
++		if (bcm47xx_nvram_getenv("hardware_version", buf, sizeof(buf)) >= 0 &&
 +		    !strncmp(buf, "WL300-", strlen("WL300-"))) {
 +			if (sdev->bus->sprom.et0phyaddr == 0 &&
 +			    sdev->bus->sprom.et1phyaddr == 1)

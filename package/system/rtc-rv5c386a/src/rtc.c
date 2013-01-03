@@ -62,7 +62,7 @@
 #endif
 
 #include <bcm47xx.h>
-#include <nvram.h>
+#include <bcm47xx_nvram.h>
 
 #define RTC_IS_OPEN		0x01	/* Means /dev/rtc is in use.  */
 
@@ -530,7 +530,7 @@ static void platform_detect(void)
 	int et0phyaddr, et1phyaddr;
 
 	/* Based on "model_no".  */
-	if (nvram_getenv("model_no", buf, sizeof(buf)) >= 0) {
+	if (bcm47xx_nvram_getenv("model_no", buf, sizeof(buf)) >= 0) {
 		if (startswith(buf, "WL700")) { /* WL700* */
 			sda_index = 2;
 			scl_index = 5;
@@ -538,12 +538,12 @@ static void platform_detect(void)
 		}
 	}
 
-	if (nvram_getenv("et0phyaddr", buf, sizeof(buf)) >= 0 )
+	if (bcm47xx_nvram_getenv("et0phyaddr", buf, sizeof(buf)) >= 0 )
 		et0phyaddr = simple_strtoul(buf, NULL, 0);
-	if (nvram_getenv("et1phyaddr", buf, sizeof(buf)) >= 0 )
+	if (bcm47xx_nvram_getenv("et1phyaddr", buf, sizeof(buf)) >= 0 )
 		et1phyaddr = simple_strtoul(buf, NULL, 0);
 
-	if (nvram_getenv("hardware_version", buf, sizeof(buf)) >= 0) {
+	if (bcm47xx_nvram_getenv("hardware_version", buf, sizeof(buf)) >= 0) {
 		/* Either WL-300g or WL-HDD, do more extensive checks */
 		if (startswith(buf, "WL300-") && et0phyaddr == 0 && et1phyaddr == 1) {
 			sda_index = 4;

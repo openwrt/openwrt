@@ -1,9 +1,9 @@
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -183,3 +183,30 @@ int nvram_getenv(char *name, char *val,
- 	return NVRAM_ERR_ENVNOTFOUND;
+@@ -196,3 +196,30 @@ int bcm47xx_nvram_getenv(char *name, cha
+ 	return -ENOENT;
  }
- EXPORT_SYMBOL(nvram_getenv);
+ EXPORT_SYMBOL(bcm47xx_nvram_getenv);
 +
 +char *nvram_get(const char *name)
 +{
@@ -13,7 +13,7 @@
 +		return NULL;
 +
 +	if (!nvram_buf[0])
-+		early_nvram_init();
++		nvram_init();
 +
 +	/* Look for name=value and return value */
 +	var = &nvram_buf[sizeof(struct nvram_header)];

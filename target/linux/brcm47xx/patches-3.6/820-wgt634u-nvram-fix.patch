@@ -254,7 +254,7 @@ out the configuration than the in kernel cfe config reader.
  
  static u32 find_nvram_size(u32 end)
  {
-@@ -47,6 +49,26 @@ static void early_nvram_init_fill(u32 ba
+@@ -47,6 +49,26 @@ static int nvram_find_and_copy(u32 base,
  	u32 *src, *dst;
  	u32 size;
  
@@ -274,16 +274,16 @@ out the configuration than the in kernel cfe config reader.
 +				*dst++ = *src++;
 +			}
 +			cfe_env = 1;
-+			return;
++			return 0;
 +		}
 +	}
 +
  	/* TODO: when nvram is on nand flash check for bad blocks first. */
  	off = FLASH_MIN;
  	while (off <= lim) {
-@@ -166,6 +188,12 @@ int nvram_getenv(char *name, char *val,
- 	if (!nvram_buf[0])
- 		early_nvram_init();
+@@ -179,6 +201,12 @@ int bcm47xx_nvram_getenv(char *name, cha
+ 			return err;
+ 	}
  
 +	if (cfe_env) {
 +		value = cfe_env_get(nvram_buf, name);
@@ -294,9 +294,9 @@ out the configuration than the in kernel cfe config reader.
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
  	end = nvram_buf + sizeof(nvram_buf) - 2;
-@@ -194,6 +222,9 @@ char *nvram_get(const char *name)
+@@ -207,6 +235,9 @@ char *nvram_get(const char *name)
  	if (!nvram_buf[0])
- 		early_nvram_init();
+ 		nvram_init();
  
 +	if (cfe_env)
 +		return cfe_env_get(nvram_buf, name);
