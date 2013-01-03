@@ -15,9 +15,8 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/mmc-over-gpio
   SUBMENU:=Other modules
-  DEPENDS:=@GPIO_SUPPORT +kmod-mmc-spi +kmod-spi-gpio-old
-  KCONFIG:=CONFIG_GPIOMMC \
-	CONFIG_CONFIGFS_FS=y
+  DEPENDS:=@GPIO_SUPPORT +kmod-mmc-spi +kmod-spi-gpio-old +kmod-fs-configfs
+  KCONFIG:=CONFIG_GPIOMMC
   TITLE:=MMC/SD card over GPIO support
   FILES:=$(LINUX_DIR)/drivers/mmc/host/gpiommc.ko
   AUTOLOAD:=$(call AutoLoad,93,gpiommc)
