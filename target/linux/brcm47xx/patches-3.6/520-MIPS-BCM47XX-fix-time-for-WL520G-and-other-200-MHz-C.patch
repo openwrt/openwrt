@@ -4,7 +4,7 @@
  #include <linux/ssb/ssb.h>
  #include <asm/time.h>
  #include <bcm47xx.h>
-+#include <nvram.h>
++#include <bcm47xx_nvram.h>
  
  void __init plat_time_init(void)
  {
@@ -31,10 +31,10 @@
  	}
  
 +	if (chip_id == 0x5354) {
-+		len = nvram_getenv("clkfreq", buf, sizeof(buf));
++		len = bcm47xx_nvram_getenv("clkfreq", buf, sizeof(buf));
 +		if (len >= 0 && !strncmp(buf, "200", 4))
 +			hz = 100000000;
-+		len = nvram_getenv("hardware_version", buf, sizeof(buf));
++		len = bcm47xx_nvram_getenv("hardware_version", buf, sizeof(buf));
 +		if (len >= 0 && !strncmp(buf, "WL520G", 6))
 +			hz = 100000000;
 +

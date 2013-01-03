@@ -35,7 +35,7 @@
 #include "etc53xx.h"
 
 #ifdef CONFIG_BCM47XX
-#include <nvram.h>
+#include <bcm47xx_nvram.h>
 #endif
 
 #define DRIVER_NAME		"bcm53xx"
@@ -236,7 +236,7 @@ static int robo_switch_enable(void)
 
 #ifdef CONFIG_BCM47XX
 	/* WAN port LED, except for Netgear WGT634U */
-	if (nvram_getenv("nvram_type", buf, sizeof(buf)) >= 0) {
+	if (bcm47xx_nvram_getenv("nvram_type", buf, sizeof(buf)) >= 0) {
 		if (strcmp(buf, "cfe") != 0)
 			robo_write16(ROBO_CTRL_PAGE, 0x16, 0x1F);
 	}

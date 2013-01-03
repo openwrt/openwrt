@@ -26,7 +26,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	 Support for BCM47XX based boards
 --- a/arch/mips/bcm47xx/prom.c
 +++ b/arch/mips/bcm47xx/prom.c
-@@ -31,96 +31,28 @@
+@@ -33,96 +33,28 @@
  #include <asm/fw/cfe/cfe_api.h>
  #include <asm/fw/cfe/cfe_error.h>
  
@@ -130,7 +130,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  }
  
  static __init void prom_init_mem(void)
-@@ -161,8 +93,6 @@ static __init void prom_init_mem(void)
+@@ -173,8 +105,6 @@ static __init void prom_init_mem(void)
  void __init prom_init(void)
  {
  	prom_init_cfe();

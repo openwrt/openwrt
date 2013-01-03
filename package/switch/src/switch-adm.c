@@ -38,7 +38,7 @@
 #include "gpio.h"
 
 #ifdef CONFIG_BCM47XX
-#include <nvram.h>
+#include <bcm47xx_nvram.h>
 #endif
 
 #define DRIVER_NAME "adm6996"
@@ -89,7 +89,7 @@ static unsigned int get_gpiopin(char *pin_name, unsigned int def_pin)
 	/* Go thru all possibilities till a match in pin name */
 	for (pin = 0; pin < 16; pin ++) {
 		sprintf(name, "gpio%d", pin);
-		if (nvram_getenv(name, val, sizeof(val)) >= 0) {
+		if (bcm47xx_nvram_getenv(name, val, sizeof(val)) >= 0) {
 			if (!strcmp(val, pin_name))
 				return pin;
 		}
@@ -497,10 +497,10 @@ static int detect_adm(void)
 	int boardflags = 0;
 	int boardnum = 0;
 		
-	if (nvram_getenv("boardflags", buf, sizeof(buf)) >= 0)
+	if (bcm47xx_nvram_getenv("boardflags", buf, sizeof(buf)) >= 0)
 		boardflags = simple_strtoul(buf, NULL, 0);
 
-	if (nvram_getenv("boardnum", buf, sizeof(buf)) >= 0)
+	if (bcm47xx_nvram_getenv("boardnum", buf, sizeof(buf)) >= 0)
 		boardnum = simple_strtoul(buf, NULL, 0);
 
 	if ((boardnum == 44) && (boardflags == 0x0388)) {  /* Trendware TEW-411BRP+ */
@@ -519,9 +519,9 @@ static int detect_adm(void)
 		eedi = get_gpiopin("adm_eedi", 4);
 		eerc = get_gpiopin("adm_rc", 0);
 
-	} else if (nvram_getenv("boardtype", buf, sizeof(buf)) >= 0) {
+	} else if (bcm47xx_nvram_getenv("boardtype", buf, sizeof(buf)) >= 0) {
 		if (strcmp(buf, "bcm94710dev") == 0) {
-			if (nvram_getenv("boardnum", buf, sizeof(buf)) >= 0) {
+			if (bcm47xx_nvram_getenv("boardnum", buf, sizeof(buf)) >= 0) {
 				if (strncmp(buf, "42", 2) == 0) {
 					/* WRT54G v1.1 hack */
 					eecs = 2;
