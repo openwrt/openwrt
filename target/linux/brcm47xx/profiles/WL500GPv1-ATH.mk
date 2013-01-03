@@ -7,7 +7,7 @@
 
 define Profile/WL500GPv1
   NAME:=ASUS WL-500g Premium v1 (Atheros WiFi using ath5k)
-  PACKAGES:=kmod-ath5k kmod-usb-core kmod-usb-uhci kmod-usb2
+  PACKAGES:=kmod-b44 kmod-ath5k kmod-usb-core kmod-usb-uhci kmod-usb2
 endef
 
 define Profile/WL500GPv1/Description

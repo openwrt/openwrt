@@ -7,7 +7,7 @@
 
 define Profile/Broadcom-none
   NAME:=No WiFi
-  PACKAGES:=-wpad-mini
+  PACKAGES:=-wpad-mini kmod-b44
 endef
 
 define Profile/None/Description

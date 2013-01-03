@@ -7,7 +7,7 @@
 
 define Profile/Broadcom-ath5k
   NAME:=Atheros WiFi (ath5k)
-  PACKAGES:=kmod-ath5k
+  PACKAGES:=kmod-b44 kmod-ath5k
 endef
 
 define Profile/Atheros/Description
