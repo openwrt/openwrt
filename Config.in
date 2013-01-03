@@ -268,6 +268,10 @@ menu "Global build settings"
 		bool "Compile the kernel with asynchronous IO support"
 		default n
 
+	config KERNEL_DIRECT_IO
+		bool "Compile the kernel with direct IO support"
+		default n
+
 	config KERNEL_MAGIC_SYSRQ
 		bool "Compile the kernel with SysRq support"
 		default y
