@@ -698,12 +698,15 @@ $(eval $(call KernelPackage,acpi-button))
 define KernelPackage/regmap
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Generic register map support
+  DEPENDS:=+kmod-lib-lzo
   KCONFIG:=CONFIG_REGMAP=y \
 	   CONFIG_REGMAP_SPI \
 	   CONFIG_REGMAP_I2C
-  FILES:=$(LINUX_DIR)/drivers/base/regmap/regmap-i2c.ko \
-	 $(LINUX_DIR)/drivers/base/regmap/regmap-spi.ko
-  AUTOLOAD:=$(call AutoLoad,10,regmap-i2c regmap-spi)
+  FILES:= \
+	$(LINUX_DIR)/drivers/base/regmap/regmap.ko \
+	$(LINUX_DIR)/drivers/base/regmap/regmap-i2c.ko \
+	$(LINUX_DIR)/drivers/base/regmap/regmap-spi.ko
+  AUTOLOAD:=$(call AutoLoad,10,regmap regmap-i2c regmap-spi)
 endef
 
 define KernelPackage/regmap/description

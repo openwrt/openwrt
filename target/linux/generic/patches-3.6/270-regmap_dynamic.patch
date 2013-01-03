@@ -1,0 +1,37 @@
+--- a/drivers/base/regmap/Kconfig
++++ b/drivers/base/regmap/Kconfig
+@@ -3,19 +3,21 @@
+ # subsystems should select the appropriate symbols.
+ 
+ config REGMAP
+-	default y if (REGMAP_I2C || REGMAP_SPI)
+ 	select LZO_COMPRESS
+ 	select LZO_DECOMPRESS
+ 	select IRQ_DOMAIN if REGMAP_IRQ
+-	bool
++	tristate
+ 
+ config REGMAP_I2C
++	select REGMAP
+ 	tristate
+ 
+ config REGMAP_SPI
++	select REGMAP
+ 	tristate
+ 
+ config REGMAP_MMIO
++	select REGMAP
+ 	tristate
+ 
+ config REGMAP_IRQ
+--- a/include/linux/regmap.h
++++ b/include/linux/regmap.h
+@@ -43,7 +43,7 @@ struct reg_default {
+ 	unsigned int def;
+ };
+ 
+-#ifdef CONFIG_REGMAP
++#if IS_ENABLED(CONFIG_REGMAP)
+ 
+ enum regmap_endian {
+ 	/* Unspecified -> 0 -> Backwards compatible default */
