@@ -69,6 +69,22 @@ endef
 $(eval $(call KernelPackage,fs-cifs))
 
 
+define KernelPackage/fs-configfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Configuration filesystem support
+  KCONFIG:= \
+	CONFIG_CONFIGFS_FS
+  FILES:=$(LINUX_DIR)/fs/configfs/configfs.ko
+  AUTOLOAD:=$(call AutoLoad,30,configfs)
+endef
+
+define KernelPackage/fs-configfs/description
+ Kernel module for configfs support
+endef
+
+$(eval $(call KernelPackage,fs-configfs))
+
+
 define KernelPackage/fs-exportfs
   SUBMENU:=$(FS_MENU)
   TITLE:=exportfs kernel server support
