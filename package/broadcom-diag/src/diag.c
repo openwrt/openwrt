@@ -63,6 +63,7 @@ enum {
 	WRT600NV11,
 	WRT610N,
 	WRT610NV2,
+	E1000V1,
 	E3000V1,
 
 	/* ASUS */
@@ -419,6 +420,25 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "ses_amber",	.gpio = 1 << 0,	.polarity = REVERSE },	// WiFi protected setup LED amber
 			{ .name = "ses_blue",	.gpio = 1 << 3,	.polarity = REVERSE },	// WiFi protected setup LED blue
 			{ .name = "wlan",	.gpio = 1 << 1,	.polarity = NORMAL },	// Wireless LED
+		},
+	},
+	/* same hardware as WRT160NV3 and Cisco Valet M10V1, but different board detection, combine? */
+	[E1000V1] = {
+		.name           = "Linksys E1000 V1",
+		.buttons        = {
+			{ .name = "reset",      .gpio = 1 << 6 },
+			{ .name = "wps",        .gpio = 1 << 5 }, /* nvram get gpio5=wps_button */
+		},
+		.leds           = {
+			/** turns on leds for all ethernet ports (wan too)
+			 *  this also disconnects some, or maybe all, ethernet ports 
+			 *  1: leds work normally
+			 *  0: all lit all the time */
+			/* nvram get gpio3=robo_reset */
+			{ .name = "wlan",       .gpio = 1 << 0, .polarity = NORMAL },
+			{ .name = "power",      .gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "ses_blue",   .gpio = 1 << 4, .polarity = REVERSE }, /* nvram get gpio4=wps_led */
+			{ .name = "ses_orange", .gpio = 1 << 2, .polarity = REVERSE }, /* nvram get gpio2=wps_status_led */
 		},
 	},
 	[E3000V1] = {
@@ -1153,6 +1173,13 @@ static struct platform_t __init *platform_detect(void)
 						return &platforms[WRT160NV1];
 					else if(!strcmp(getvar("boot_hw_ver"), "3.0"))
 						return &platforms[WRT160NV3];
+				}
+			}
+
+			if (!strcmp(boardtype, "0x04cd")) {
+				if (!strcmp(getvar("boot_hw_model"), "E100")) {
+					if (!strcmp(getvar("boot_hw_ver"), "1.0"))
+						return &platforms[E1000V1];
 				}
 			}
 
