@@ -26,7 +26,7 @@
  *   enable_vlan:            "0", "1"
  *   port/<port-number>/
  *     enabled:              "0", "1"
- *     media:                "AUTO", "100FD", "100HD", "10FD", "10HD"
+ *     media:                "AUTO", "1000FD", "1000HD", "100FD", "100HD", "10FD", "10HD"
  *   vlan/<port-number>/
  *     ports: same syntax as for nvram's vlan*ports (eg. "1 2 3 4 5*")
  */
@@ -305,6 +305,10 @@ int switch_parse_media(char *buf)
 
 	if (strncmp(str, "AUTO", 4) == 0)
 		return SWITCH_MEDIA_AUTO;
+	else if (strncmp(str, "1000FD", 6) == 0)
+		return SWITCH_MEDIA_1000 | SWITCH_MEDIA_FD;
+	else if (strncmp(str, "1000HD", 6) == 0)
+		return SWITCH_MEDIA_1000;
 	else if (strncmp(str, "100FD", 5) == 0)
 		return SWITCH_MEDIA_100 | SWITCH_MEDIA_FD;
 	else if (strncmp(str, "100HD", 5) == 0)
@@ -322,14 +326,18 @@ int switch_print_media(char *buf, int media)
 
 	if (media & SWITCH_MEDIA_AUTO)
 		len = sprintf(buf, "Auto");
+	else if (media == (SWITCH_MEDIA_1000 | SWITCH_MEDIA_FD))
+		len = sprintf(buf, "1000FD");
+	else if (media == SWITCH_MEDIA_1000)
+		len = sprintf(buf, "1000HD");
 	else if (media == (SWITCH_MEDIA_100 | SWITCH_MEDIA_FD))
 		len = sprintf(buf, "100FD");
 	else if (media == SWITCH_MEDIA_100)
-		len = sprintf(buf,  "100HD");
+		len = sprintf(buf, "100HD");
 	else if (media == SWITCH_MEDIA_FD)
-		len = sprintf(buf,  "10FD");
+		len = sprintf(buf, "10FD");
 	else if (media == 0)
-		len = sprintf(buf,  "10HD");
+		len = sprintf(buf, "10HD");
 	else
 		len = sprintf(buf, "Invalid");
 
