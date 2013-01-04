@@ -39,7 +39,7 @@ define Package/libiwinfo-lua
   SECTION:=lang
   CATEGORY:=Languages
   TITLE:=libiwinfo Lua binding
-  DEPENDS:=+libiwinfo +liblua +lua
+  DEPENDS:=+libiwinfo +liblua
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
 
