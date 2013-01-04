@@ -56,6 +56,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
+	HW556*)
+		status_led="HW556:red:power"
+		brcm63xx_has_reset_button="true"
+		ifname=eth0
+		;;
 	96348GW-11)
 		status_led="power"
 		brcm63xx_has_reset_button="true"
