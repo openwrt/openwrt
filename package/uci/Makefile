@@ -7,20 +7,20 @@
 
 include $(TOPDIR)/rules.mk
 
-UCI_VERSION=2012-11-09
+UCI_VERSION=2013-01-04
 UCI_RELEASE=1
 
 PKG_NAME:=uci
 PKG_VERSION:=$(UCI_VERSION)$(if $(UCI_RELEASE),.$(UCI_RELEASE))
 PKG_RELEASE:=1
-PKG_REV:=e81961bde820a84bf67ccd5e40b29f7952dd1f77
+PKG_REV:=e4516d01a7d2b0a5a8def7b5791c7d4032138287
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=git://nbd.name/uci.git
 PKG_SOURCE_SUBDIR:=uci-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_PROTO:=git
-PKG_MIRROR_MD5SUM:=b6a82d18e6b4e40847a52336589e666b
+PKG_MIRROR_MD5SUM:=c7c4fd6723b607ae7fa039a1078fe7d5
 
 PKG_LICENSE:=LGPLv2.1 GPLv2
 PKG_LICENSE_FILES:=
@@ -84,7 +84,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/uci{,_config,map}.h $(1)/usr/include
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libuci.so* $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libuci.a $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libucimap.a $(1)/usr/lib
 endef
 
