@@ -84,12 +84,11 @@ define KernelPackage/mac80211/config
 
 	config PACKAGE_MAC80211_DEBUGFS
 		bool "Export mac80211 internals in DebugFS"
+		select KERNEL_DEBUG_FS
 		default y
 		help
 		  Select this to see extensive information about
 		  the internal state of mac80211 in debugfs.
-
-		  Say N unless you know you need this.
 
 	config PACKAGE_MAC80211_MESH
 		bool "Enable 802.11s mesh support"
