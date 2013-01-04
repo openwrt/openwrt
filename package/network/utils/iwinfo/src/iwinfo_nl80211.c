@@ -993,6 +993,7 @@ int nl80211_get_channel(const char *ifname, int *buf)
 
 int nl80211_get_txpower(const char *ifname, int *buf)
 {
+#if 0
 	char *res;
 	char path[PATH_MAX];
 
@@ -1002,6 +1003,7 @@ int nl80211_get_txpower(const char *ifname, int *buf)
 
 	if ((*buf = nl80211_readint(path)) > -1)
 		return 0;
+#endif
 
 	return wext_get_txpower(ifname, buf);
 }
