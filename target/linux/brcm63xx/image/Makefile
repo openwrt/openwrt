@@ -60,6 +60,15 @@ define Image/Build/CFEHW553
 		--block-size 0x20000 --image-offset $(4)
 endef
 
+define Image/Build/CFEHW556
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
+	--output $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin \
+	--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
+	--load-addr $(LOADADDR) --tag-version 8 --rsa-signature "$(5)" \
+	--image-offset $(4) --info1 "$(6)" --block-size 0x20000
+endef
+
 define Image/Build/CFEAGPF
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
@@ -257,6 +266,9 @@ define Image/Build
 
 	#HW553
 	$(call Image/Build/CFEHW553,$(1),HW553,6358,0x20000,HW553)
+
+	#HW556
+	$(call Image/Build/CFEHW556,$(1),HW556,6358,0x20000,EchoLife_HG556a,OpenWRT-$(REVISION))
 
 	# T-Com Speedport W 303V Typ B
 	$(call Image/Build/SPW303V,$(1),96358-502V,6358,SPW303V)
