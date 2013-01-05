@@ -1,7 +1,5 @@
-Index: linux-3.7.1/drivers/base/regmap/Kconfig
-===================================================================
---- linux-3.7.1.orig/drivers/base/regmap/Kconfig	2012-12-17 20:14:54.000000000 +0100
-+++ linux-3.7.1/drivers/base/regmap/Kconfig	2013-01-05 01:07:25.712704474 +0100
+--- a/drivers/base/regmap/Kconfig
++++ b/drivers/base/regmap/Kconfig
 @@ -3,20 +3,23 @@
  # subsystems should select the appropriate symbols.
  
@@ -30,11 +28,9 @@ Index: linux-3.7.1/drivers/base/regmap/Kconfig
  config REGMAP_IRQ
 +	select REGMAP
  	bool
-Index: linux-3.7.1/include/linux/regmap.h
-===================================================================
---- linux-3.7.1.orig/include/linux/regmap.h	2012-12-17 20:14:54.000000000 +0100
-+++ linux-3.7.1/include/linux/regmap.h	2013-01-05 01:03:32.012694484 +0100
-@@ -43,7 +43,7 @@
+--- a/include/linux/regmap.h
++++ b/include/linux/regmap.h
+@@ -43,7 +43,7 @@ struct reg_default {
  	unsigned int def;
  };
  
@@ -43,10 +39,8 @@ Index: linux-3.7.1/include/linux/regmap.h
  
  enum regmap_endian {
  	/* Unspecified -> 0 -> Backwards compatible default */
-Index: linux-3.7.1/drivers/base/regmap/Makefile
-===================================================================
---- linux-3.7.1.orig/drivers/base/regmap/Makefile	2012-12-17 20:14:54.000000000 +0100
-+++ linux-3.7.1/drivers/base/regmap/Makefile	2013-01-05 01:08:16.592706650 +0100
+--- a/drivers/base/regmap/Makefile
++++ b/drivers/base/regmap/Makefile
 @@ -1,6 +1,8 @@
 -obj-$(CONFIG_REGMAP) += regmap.o regcache.o
 -obj-$(CONFIG_REGMAP) += regcache-rbtree.o regcache-lzo.o
