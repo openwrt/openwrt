@@ -1,6 +1,8 @@
---- a/drivers/base/regmap/Kconfig
-+++ b/drivers/base/regmap/Kconfig
-@@ -3,15 +3,16 @@
+Index: linux-3.3.8/drivers/base/regmap/Kconfig
+===================================================================
+--- linux-3.3.8.orig/drivers/base/regmap/Kconfig	2013-01-04 23:40:36.288481779 +0100
++++ linux-3.3.8/drivers/base/regmap/Kconfig	2013-01-04 23:40:39.760481927 +0100
+@@ -3,16 +3,17 @@
  # subsystems should select the appropriate symbols.
  
  config REGMAP
@@ -8,14 +10,33 @@
  	select LZO_COMPRESS
  	select LZO_DECOMPRESS
 -	bool
-+	tristate
++	tristate "Regmap"
  
  config REGMAP_I2C
+-	tristate
 +	select REGMAP
- 	tristate
++	tristate "Regmap I2C"
  
  config REGMAP_SPI
+-	tristate
 +	select REGMAP
- 	tristate
++	tristate "Regmap SPI"
  
  config REGMAP_IRQ
+ 	bool
+Index: linux-3.3.8/drivers/base/regmap/Makefile
+===================================================================
+--- linux-3.3.8.orig/drivers/base/regmap/Makefile	2012-06-01 09:16:13.000000000 +0200
++++ linux-3.3.8/drivers/base/regmap/Makefile	2013-01-05 00:20:31.236584162 +0100
+@@ -1,6 +1,8 @@
+-obj-$(CONFIG_REGMAP) += regmap.o regcache.o
+-obj-$(CONFIG_REGMAP) += regcache-rbtree.o regcache-lzo.o
+-obj-$(CONFIG_DEBUG_FS) += regmap-debugfs.o
++regmap-core-objs = regmap.o regcache.o regcache-rbtree.o regcache-lzo.o
++ifdef CONFIG_DEBUGFS
++regmap-core-objs += regmap-debugfs.o
++endif
++obj-$(CONFIG_REGMAP) += regmap-core.o
+ obj-$(CONFIG_REGMAP_I2C) += regmap-i2c.o
+ obj-$(CONFIG_REGMAP_SPI) += regmap-spi.o
+ obj-$(CONFIG_REGMAP_IRQ) += regmap-irq.o

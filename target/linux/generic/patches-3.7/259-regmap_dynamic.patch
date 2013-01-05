@@ -1,5 +1,7 @@
---- a/drivers/base/regmap/Kconfig
-+++ b/drivers/base/regmap/Kconfig
+Index: linux-3.7.1/drivers/base/regmap/Kconfig
+===================================================================
+--- linux-3.7.1.orig/drivers/base/regmap/Kconfig	2012-12-17 20:14:54.000000000 +0100
++++ linux-3.7.1/drivers/base/regmap/Kconfig	2013-01-05 01:07:25.712704474 +0100
 @@ -3,20 +3,23 @@
  # subsystems should select the appropriate symbols.
  
@@ -9,15 +11,17 @@
  	select LZO_DECOMPRESS
  	select IRQ_DOMAIN if REGMAP_IRQ
 -	bool
-+	tristate
++	tristate "Regmap"
  
  config REGMAP_I2C
+-	tristate
 +	select REGMAP
- 	tristate
++	tristate "Regmap I2C"
  
  config REGMAP_SPI
+-	tristate
 +	select REGMAP
- 	tristate
++	tristate "Regmap SPI"
  
  config REGMAP_MMIO
 +	select REGMAP
@@ -26,9 +30,11 @@
  config REGMAP_IRQ
 +	select REGMAP
  	bool
---- a/include/linux/regmap.h
-+++ b/include/linux/regmap.h
-@@ -43,7 +43,7 @@ struct reg_default {
+Index: linux-3.7.1/include/linux/regmap.h
+===================================================================
+--- linux-3.7.1.orig/include/linux/regmap.h	2012-12-17 20:14:54.000000000 +0100
++++ linux-3.7.1/include/linux/regmap.h	2013-01-05 01:03:32.012694484 +0100
+@@ -43,7 +43,7 @@
  	unsigned int def;
  };
  
@@ -37,3 +43,19 @@
  
  enum regmap_endian {
  	/* Unspecified -> 0 -> Backwards compatible default */
+Index: linux-3.7.1/drivers/base/regmap/Makefile
+===================================================================
+--- linux-3.7.1.orig/drivers/base/regmap/Makefile	2012-12-17 20:14:54.000000000 +0100
++++ linux-3.7.1/drivers/base/regmap/Makefile	2013-01-05 01:08:16.592706650 +0100
+@@ -1,6 +1,8 @@
+-obj-$(CONFIG_REGMAP) += regmap.o regcache.o
+-obj-$(CONFIG_REGMAP) += regcache-rbtree.o regcache-lzo.o
+-obj-$(CONFIG_DEBUG_FS) += regmap-debugfs.o
++regmap-core-objs = regmap.o regcache.o regcache-rbtree.o regcache-lzo.o
++ifdef CONFIG_DEBUG_FS
++regmap-core-objs += regmap-debugfs.o
++endif
++obj-$(CONFIG_REGMAP) += regmap-core.o
+ obj-$(CONFIG_REGMAP_I2C) += regmap-i2c.o
+ obj-$(CONFIG_REGMAP_SPI) += regmap-spi.o
+ obj-$(CONFIG_REGMAP_MMIO) += regmap-mmio.o
