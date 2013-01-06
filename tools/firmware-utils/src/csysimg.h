@@ -49,6 +49,7 @@
 #define SIG_BR6114WG	SIG_BR6104IPC
 #define SIG_BR6524K	"2-K-"
 #define SIG_BR6524KP	"2-KP"	/* FIXME: valid? */
+#define SIG_BR6524N	"WNRA"
 #define SIG_BR6524WG	"2-WG"	/* FIXME: valid? */
 #define SIG_BR6524WP	"2-WP"	/* FIXME: valid? */
 #define SIG_BR6541K	"4--K"
