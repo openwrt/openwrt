@@ -539,6 +539,23 @@ endef
 $(eval $(call KernelPackage,pwm-gpio))
 
 
+define KernelPackage/rtc-isl1208
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Intersil ISL1208 RTC support
+  $(call AddDepends/rtc)
+  DEPENDS+=+kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_ISL1208
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-isl1208.ko
+  AUTOLOAD:=$(call AutoLoad,60,rtc-isl1208)
+endef
+
+define KernelPackage/rtc-isl1208/description
+ Kernel module for Intersil ISL1208 RTC.
+endef
+
+$(eval $(call KernelPackage,rtc-isl1208))
+
+
 define KernelPackage/rtc-marvell
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell SoC built-in RTC support
