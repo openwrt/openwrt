@@ -474,7 +474,7 @@ config BUSYBOX_CONFIG_FEATURE_MDEV_LOAD_FIRMWARE
 
 config BUSYBOX_CONFIG_MKSWAP
 	bool "mkswap"
-	default n
+	default y
 	help
 	  The mkswap utility is used to configure a file or disk partition as
 	  Linux swap space. This allows Linux to use the entire file or
@@ -652,7 +652,7 @@ config BUSYBOX_CONFIG_SETARCH
 
 config BUSYBOX_CONFIG_SWAPONOFF
 	bool "swaponoff"
-	default n
+	default y
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This option enables both the 'swapon' and the 'swapoff' utilities.

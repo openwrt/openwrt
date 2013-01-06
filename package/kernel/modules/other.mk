@@ -747,3 +747,24 @@ define KernelPackage/ikconfig/description
 endef
 
 $(eval $(call KernelPackage,ikconfig))
+
+
+define KernelPackage/zram
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=ZRAM
+  DEPENDS:=@!LINUX_3_3 +kmod-lib-lzo
+  KCONFIG:= \
+	CONFIG_ZSMALLOC \
+	CONFIG_ZRAM \
+	CONFIG_ZRAM_DEBUG=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/staging/zsmalloc/zsmalloc.ko \
+	$(LINUX_DIR)/drivers/staging/zram/zram.ko	
+  AUTOLOAD:=$(call AutoLoad,20,zsmalloc zram)
+endef
+
+define KernelPackage/zram/description
+ Compressed RAM block device support
+endef
+
+$(eval $(call KernelPackage,zram))
