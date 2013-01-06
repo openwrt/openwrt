@@ -6,6 +6,11 @@ config RT288X_MACH_F5D8235_V1
 	bool "Belkin F5D8235 V1 board support"
 	select RALINK_DEV_GPIO_LEDS
 
+config RT288X_MACH_BR6524N
+	bool "Edimax BR6524N support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT288X_MACH_RT_N15
 	bool "Asus RT-N15 board support"
 	select RALINK_DEV_GPIO_BUTTONS

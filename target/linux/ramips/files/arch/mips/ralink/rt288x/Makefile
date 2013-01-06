@@ -14,6 +14,7 @@ obj-y	:= irq.o setup.o rt288x.o devices.o clock.o
 obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
 
 obj-$(CONFIG_RT288X_MACH_F5D8235_V1)	+= mach-f5d8235-v1.o
+obj-$(CONFIG_RT288X_MACH_BR6524N)	+= mach-br6524n.o
 obj-$(CONFIG_RT288X_MACH_RT_N15)	+= mach-rt-n15.o
 obj-$(CONFIG_RT288X_MACH_V11ST_FE)	+= mach-v11st-fe.o
 obj-$(CONFIG_RT288X_MACH_WLI_TX4_AG300N) += mach-wli-tx4-ag300n.o
