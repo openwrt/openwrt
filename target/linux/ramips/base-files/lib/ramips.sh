@@ -71,6 +71,9 @@ ramips_board_name() {
 	*"Argus ATP-52B")
 		name="argus-atp52b"
 		;;
+	*"BR6524N")
+		name="br6524n"
+		;;
 	*"Asus WL-330N")
 		name="wl-330n"
 		;;

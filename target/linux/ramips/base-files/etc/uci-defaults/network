@@ -84,6 +84,7 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
 
+	br6524n | \
 	v11st-fe)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"

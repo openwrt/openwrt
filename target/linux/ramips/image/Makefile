@@ -259,6 +259,11 @@ define BuildFirmware/Edimax
 	fi
 endef
 
+define BuildFirmware/BR6524N
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)),917484,2949120)
+	$(call BuildFirmware/Edimax,$(1),br6524n,CSYS,WNRA,0x50000,0xc00000)
+endef
+
 mtdlayout_f5d8235=320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(factory),7744k@0x50000(firmware)
 mtd_f5d8235_kernel_part_size=1572864
 mtd_f5d8235_rootfs_part_size=6356992
@@ -443,6 +448,10 @@ define Image/Build/Profile/F5D8235V1
 	$(call Image/Build/Template/$(fs_squash)/$(1),F5D8235,f5d8235v1,F5D8235_V1)
 endef
 
+define Image/Build/Profile/BR6524N
+	$(call Image/Build/Template/$(fs_squash)/$(1),BR6524N,br6524n,BR6524N,ttyS1,57600,phys)
+endef
+
 define Image/Build/Profile/RTN15
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,rt-n15,RT-N15,ttyS1,57600,phys)
 endef
@@ -458,6 +467,7 @@ endef
 ifeq ($(CONFIG_RALINK_RT288X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/F5D8235V1,$(1))
+	$(call Image/Build/Profile/BR6524N,$(1))
 	$(call Image/Build/Profile/RTN15,$(1))
 	$(call Image/Build/Profile/V11STFE,$(1))
 	$(call Image/Build/Profile/WLITX4AG300N,$(1))
