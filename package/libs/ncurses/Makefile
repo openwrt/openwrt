@@ -67,7 +67,7 @@ CONFIGURE_ARGS += \
 	--with-terminfo-dirs=/usr/share/terminfo \
 	--with-default-terminfo-dir=/usr/share/terminfo
 
-ifneq ($(INSTALL_LIBSTDCPP),y)
+ifneq ($(CONFIG_INSTALL_LIBSTDCPP),y)
 CONFIGURE_ARGS += \
 	--without-cxx-binding
 endif
