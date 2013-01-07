@@ -13,3 +13,13 @@
 +	  provides a GPIO interface supporting input mode only.
 +
  endif
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -43,6 +43,7 @@ obj-$(CONFIG_GPIO_MSM_V1)	+= gpio-msm-v1
+ obj-$(CONFIG_GPIO_MSM_V2)	+= gpio-msm-v2.o
+ obj-$(CONFIG_GPIO_MXC)		+= gpio-mxc.o
+ obj-$(CONFIG_GPIO_MXS)		+= gpio-mxs.o
++obj-$(CONFIG_GPIO_NXP_74HC153)	+= gpio-nxp-74hc153.o
+ obj-$(CONFIG_ARCH_OMAP)		+= gpio-omap.o
+ obj-$(CONFIG_GPIO_PCA953X)	+= gpio-pca953x.o
+ obj-$(CONFIG_GPIO_PCF857X)	+= gpio-pcf857x.o
