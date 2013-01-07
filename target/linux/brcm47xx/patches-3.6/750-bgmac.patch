@@ -608,7 +608,7 @@
 +	if (bgmac->phyaddr == BGMAC_PHY_NOREGS)
 +		return;
 +
-+	if (bgmac->autoneg)
++	if (!bgmac->autoneg)
 +		return;
 +
 +	/* Adv selected 10/100 speeds */
@@ -1097,13 +1097,13 @@
 +	case SIOCGMIIREG:
 +		if (!netif_running(net_dev))
 +			return -EAGAIN;
-+		data->val_out = bgmac_phy_read(bgmac, bgmac->phyaddr,
++		data->val_out = bgmac_phy_read(bgmac, data->phy_id,
 +					       data->reg_num & 0x1f);
 +		return 0;
 +	case SIOCSMIIREG:
 +		if (!netif_running(net_dev))
 +			return -EAGAIN;
-+		bgmac_phy_write(bgmac, bgmac->phyaddr, data->reg_num & 0x1f,
++		bgmac_phy_write(bgmac, data->phy_id, data->reg_num & 0x1f,
 +				data->val_in);
 +		return 0;
 +	default:
