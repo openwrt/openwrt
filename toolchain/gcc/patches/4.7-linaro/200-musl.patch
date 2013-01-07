@@ -315,3 +315,17 @@ diff --git a/libstdc++-v3/configure.host b/libstdc++-v3/configure.host
    hpux*)
      os_include_dir="os/hpux"
      ;;
+diff --git a/gcc/config/mips/linux64.h b/gcc/config/mips/linux64.h
+--- a/gcc/config/mips/linux64.h	2012-11-13 12:42:00.000000000 +0100
++++ b/gcc/config/mips/linux64.h	2012-11-29 15:35:10.434361723 +0100
+@@ -28,6 +28,9 @@
+ #define GLIBC_DYNAMIC_LINKERN32 "/lib32/ld.so.1"
+ #define UCLIBC_DYNAMIC_LINKERN32 "/lib32/ld-uClibc.so.0"
+ #define BIONIC_DYNAMIC_LINKERN32 "/system/bin/linker32"
++#define MUSL_DYNAMIC_LINKERN32 "/lib32/ld-musl-mips.so.1"
++#define MUSL_DYNAMIC_LINKER32 "/lib32/ld-musl-mips.so.1"
++#define MUSL_DYNAMIC_LINKER64 "/lib64/ld-musl-mips.so.1"
+ #define GNU_USER_DYNAMIC_LINKERN32 \
+   CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKERN32, UCLIBC_DYNAMIC_LINKERN32, \
+-			 BIONIC_DYNAMIC_LINKERN32)
++			 BIONIC_DYNAMIC_LINKERN32, MUSL_DYNAMIC_LINKERN32)
