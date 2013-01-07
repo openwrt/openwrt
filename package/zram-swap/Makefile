@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zram-swap
 PKG_VERSION:=1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
@@ -39,8 +39,8 @@ define Build/Compile
 endef
 
 define Package/zram-swap/install
-	$(INSTALL_DIR) $(1)
-	$(CP) ./files/* $(1)/
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/zram.init $(1)/etc/init.d/zram
 endef
 
 $(eval $(call BuildPackage,zram-swap))
