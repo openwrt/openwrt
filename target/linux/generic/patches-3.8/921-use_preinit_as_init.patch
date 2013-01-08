@@ -1,0 +1,14 @@
+--- a/init/main.c
++++ b/init/main.c
+@@ -835,10 +835,7 @@ static int __ref kernel_init(void *unuse
+ 		printk(KERN_WARNING "Failed to execute %s.  Attempting "
+ 					"defaults...\n", execute_command);
+ 	}
+-	if (!run_init_process("/sbin/init") ||
+-	    !run_init_process("/etc/init") ||
+-	    !run_init_process("/bin/init") ||
+-	    !run_init_process("/bin/sh"))
++	if (!run_init_process("/etc/preinit"))
+ 		return 0;
+ 
+ 	panic("No init found.  Try passing init= option to kernel. "

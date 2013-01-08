@@ -1,0 +1,93 @@
+--- a/include/uapi/linux/netfilter_ipv4/ip_tables.h
++++ b/include/uapi/linux/netfilter_ipv4/ip_tables.h
+@@ -87,6 +87,7 @@ struct ipt_ip {
+ #define IPT_F_FRAG		0x01	/* Set if rule is a fragment rule */
+ #define IPT_F_GOTO		0x02	/* Set if jump is a goto */
+ #define IPT_F_MASK		0x03	/* All possible flag bits mask. */
++#define IPT_F_NO_DEF_MATCH	0x80	/* Internal: no default match rules present */
+ 
+ /* Values for "inv" field in struct ipt_ip. */
+ #define IPT_INV_VIA_IN		0x01	/* Invert the sense of IN IFACE. */
+--- a/net/ipv4/netfilter/ip_tables.c
++++ b/net/ipv4/netfilter/ip_tables.c
+@@ -81,6 +81,9 @@ ip_packet_match(const struct iphdr *ip,
+ 
+ #define FWINV(bool, invflg) ((bool) ^ !!(ipinfo->invflags & (invflg)))
+ 
++	if (ipinfo->flags & IPT_F_NO_DEF_MATCH)
++		return true;
++
+ 	if (FWINV((ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
+ 		  IPT_INV_SRCIP) ||
+ 	    FWINV((ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
+@@ -134,6 +137,29 @@ ip_packet_match(const struct iphdr *ip,
+ 	return true;
+ }
+ 
++static void
++ip_checkdefault(struct ipt_ip *ip)
++{
++	static const char iface_mask[IFNAMSIZ] = {};
++
++	if (ip->invflags || ip->flags & IPT_F_FRAG)
++		return;
++
++	if (memcmp(ip->iniface_mask, iface_mask, IFNAMSIZ) != 0)
++		return;
++
++	if (memcmp(ip->outiface_mask, iface_mask, IFNAMSIZ) != 0)
++		return;
++
++	if (ip->smsk.s_addr || ip->dmsk.s_addr)
++		return;
++
++	if (ip->proto)
++		return;
++
++	ip->flags |= IPT_F_NO_DEF_MATCH;
++}
++
+ static bool
+ ip_checkentry(const struct ipt_ip *ip)
+ {
+@@ -560,7 +586,7 @@ static void cleanup_match(struct xt_entr
+ }
+ 
+ static int
+-check_entry(const struct ipt_entry *e, const char *name)
++check_entry(struct ipt_entry *e, const char *name)
+ {
+ 	const struct xt_entry_target *t;
+ 
+@@ -569,6 +595,8 @@ check_entry(const struct ipt_entry *e, c
+ 		return -EINVAL;
+ 	}
+ 
++	ip_checkdefault(&e->ip);
++
+ 	if (e->target_offset + sizeof(struct xt_entry_target) >
+ 	    e->next_offset)
+ 		return -EINVAL;
+@@ -930,6 +958,7 @@ copy_entries_to_user(unsigned int total_
+ 	const struct xt_table_info *private = table->private;
+ 	int ret = 0;
+ 	const void *loc_cpu_entry;
++	u8 flags;
+ 
+ 	counters = alloc_counters(table);
+ 	if (IS_ERR(counters))
+@@ -960,6 +989,14 @@ copy_entries_to_user(unsigned int total_
+ 			ret = -EFAULT;
+ 			goto free_counters;
+ 		}
++
++		flags = e->ip.flags & IPT_F_MASK;
++		if (copy_to_user(userptr + off
++				 + offsetof(struct ipt_entry, ip.flags),
++				 &flags, sizeof(flags)) != 0) {
++			ret = -EFAULT;
++			goto free_counters;
++		}
+ 
+ 		for (i = sizeof(struct ipt_entry);
+ 		     i < e->target_offset;
