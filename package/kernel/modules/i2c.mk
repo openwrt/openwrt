@@ -107,7 +107,7 @@ OF_I2C_MODULES:=\
 define KernelPackage/of-i2c
   $(call i2c_defaults,$(OF_I2C_MODULES),58)
   TITLE:=OpenFirmware I2C accessors
-  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx||TARGET_mpc52xx||TARGET_mpc83xx||TARGET_mpc85xx \
+  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx||TARGET_mpc52xx||TARGET_mpc83xx||TARGET_mpc85xx||TARGET_mvebu \
           kmod-i2c-core
 endef
 
@@ -154,7 +154,7 @@ I2C_MV64XXX_MODULES:=\
 define KernelPackage/i2c-mv64xxx
   $(call i2c_defaults,$(I2C_MV64XXX_MODULES),59)
   TITLE:=Orion Platform I2C interface support
-  DEPENDS:=@TARGET_kirkwood||TARGET_orion||TARGET_mvebu +kmod-i2c-core
+  DEPENDS:=@TARGET_kirkwood||TARGET_orion||TARGET_mvebu +kmod-i2c-core TARGET_mvebu:kmod-of-i2c
 endef
 
 define KernelPackage/i2c-mv64xxx/description
