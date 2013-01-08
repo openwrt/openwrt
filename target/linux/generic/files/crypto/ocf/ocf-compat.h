@@ -161,7 +161,13 @@ struct ocf_device {
 	sigemptyset(&current->blocked); \
 	recalc_sigpending(current); \
 	spin_unlock_irq(&current->sigmask_lock); \
-	sprintf(current->comm, str);
+	sprintf(current->comm, str); \
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0) \
+	spin_lock_irq(&current->sigmask_lock); \
+	sigemptyset(&current->blocked); \
+	recalc_sigpending(current); \
+	spin_unlock_irq(&current->sigmask_lock); \
+	sprintf(current->comm, str); \
 #else
 #define ocf_daemonize(str) daemonize(str);
 #endif
