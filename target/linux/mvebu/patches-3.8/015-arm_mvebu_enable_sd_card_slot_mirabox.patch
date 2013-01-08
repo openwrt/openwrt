@@ -1,0 +1,31 @@
+The Globalscale Mirabox uses the SDIO interface of the Armada 370 to
+connect to a Wifi/Bluetooth SD8787 chip, so we enable the SDIO
+interface of this board in its Device Tree file.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+---
+ arch/arm/boot/dts/armada-370-mirabox.dts |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/boot/dts/armada-370-mirabox.dts b/arch/arm/boot/dts/armada-370-mirabox.dts
+index 3b40713..1864820 100644
+--- a/arch/arm/boot/dts/armada-370-mirabox.dts
++++ b/arch/arm/boot/dts/armada-370-mirabox.dts
+@@ -52,5 +52,15 @@
+ 			phy = <&phy1>;
+ 			phy-mode = "rgmii-id";
+ 		};
++
++		mvsdio@d00d4000 {
++			pinctrl-0 = <&sdio_pins2>;
++			pinctrl-names = "default";
++			status = "okay";
++			/*
++			 * No CD or WP GPIOs: SDIO interface used for
++			 * Wifi/Bluetooth chip
++			 */
++		};
+ 	};
+ };
+-- 
+1.7.9.5
