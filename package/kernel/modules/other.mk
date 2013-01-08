@@ -479,14 +479,14 @@ $(eval $(call KernelPackage,wdt-omap))
 define KernelPackage/wdt-orion
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell Orion Watchdog timer
-  DEPENDS:=@TARGET_orion||@TARGET_kirkwood
+  DEPENDS:=@TARGET_orion||TARGET_kirkwood||TARGET_mvebu
   KCONFIG:=CONFIG_ORION_WATCHDOG
   FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/orion_wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,orion_wdt)
 endef
 
 define KernelPackage/wdt-orion/description
-  Kernel module for Marvell orion watchdog timer.
+  Kernel module for Marvell Orion, Kirkwood and Armada XP/370 watchdog timer.
 endef
 
 $(eval $(call KernelPackage,wdt-orion))
