@@ -836,7 +836,12 @@ define KernelPackage/sctp
      CONFIG_SCTP_DBG_OBJCNT=n \
      CONFIG_SCTP_HMAC_NONE=n \
      CONFIG_SCTP_HMAC_SHA1=n \
-     CONFIG_SCTP_HMAC_MD5=y
+     CONFIG_SCTP_HMAC_MD5=y \
+     CONFIG_SCTP_COOKIE_HMAC_SHA1=n \
+     CONFIG_SCTP_COOKIE_HMAC_MD5=y \
+     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_NONE=n \
+     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_SHA1=n \
+     CONFIG_SCTP_DEFAULT_COOKIE_HMAC_MD5=y
   FILES:= $(LINUX_DIR)/net/sctp/sctp.ko
   AUTOLOAD:= $(call AutoLoad,32,sctp)
   DEPENDS:=+kmod-lib-crc32c +kmod-crypto-md5 +kmod-crypto-hmac
