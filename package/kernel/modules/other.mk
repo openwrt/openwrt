@@ -768,3 +768,19 @@ define KernelPackage/zram/description
 endef
 
 $(eval $(call KernelPackage,zram))
+
+
+define KernelPackage/mvsdio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Marvell SDIO support
+  DEPENDS:=@TARGET_orion||TARGET_kirkwood||TARGET_mvebu +kmod-mmc
+  KCONFIG:=CONFIG_MMC_MVSDIO
+  FILES:=$(LINUX_DIR)/drivers/mmc/host/mvsdio.ko
+  AUTOLOAD:=$(call AutoLoad,91,mvsdio)
+endef
+
+define KernelPacakge/mvsdio/description
+  Kernel support for the Marvell SDIO controller
+endef
+
+$(eval $(call KernelPackage,mvsdio))
