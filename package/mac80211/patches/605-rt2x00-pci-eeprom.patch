@@ -4,22 +4,22 @@
  	rt2x00pci_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
  }
  
--static void rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
+-static int rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
 +static void rt2800pci_read_eeprom_file(struct rt2x00_dev *rt2x00dev)
  {
  	memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data, EEPROM_SIZE);
- }
-@@ -976,8 +976,9 @@ static irqreturn_t rt2800pci_interrupt(i
-  */
- static void rt2800pci_read_eeprom(struct rt2x00_dev *rt2x00dev)
+ 	return 0;
+@@ -983,8 +983,9 @@ static int rt2800pci_read_eeprom(struct 
  {
+ 	int retval;
+ 
 -	if (rt2x00_is_soc(rt2x00dev))
--		rt2800pci_read_eeprom_soc(rt2x00dev);
+-		retval = rt2800pci_read_eeprom_soc(rt2x00dev);
 +	if (rt2x00_is_soc(rt2x00dev) ||
 +	    test_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags))
 +		rt2800pci_read_eeprom_file(rt2x00dev);
  	else if (rt2800pci_efuse_detect(rt2x00dev))
- 		rt2800pci_read_eeprom_efuse(rt2x00dev);
+ 		retval = rt2800pci_read_eeprom_efuse(rt2x00dev);
  	else
 --- a/drivers/net/wireless/rt2x00/rt2x00pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00pci.c

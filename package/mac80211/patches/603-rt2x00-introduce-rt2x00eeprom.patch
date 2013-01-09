@@ -186,29 +186,34 @@
  obj-$(CONFIG_RT2X00_LIB_PCI)		+= rt2x00pci.o
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -89,20 +89,10 @@ static void rt2800pci_mcu_status(struct 
+@@ -89,25 +89,11 @@ static void rt2800pci_mcu_status(struct 
  	rt2x00pci_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
  }
  
 -#if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT305X)
- static void rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
+ static int rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
  {
 -	void __iomem *base_addr = ioremap(0x1F040000, EEPROM_SIZE);
+-
+-	if (!base_addr)
+-		return -ENOMEM;
 -
 -	memcpy_fromio(rt2x00dev->eeprom, base_addr, EEPROM_SIZE);
 -
 -	iounmap(base_addr);
 +	memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data, EEPROM_SIZE);
+ 	return 0;
  }
 -#else
--static inline void rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
+-static inline int rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
 -{
+-	return -ENOMEM;
 -}
 -#endif /* CONFIG_RALINK_RT288X || CONFIG_RALINK_RT305X */
  
  #ifdef CONFIG_PCI
  static void rt2800pci_eepromregister_read(struct eeprom_93cx6 *eeprom)
-@@ -322,6 +312,20 @@ static int rt2800pci_write_firmware(stru
+@@ -331,6 +317,20 @@ static int rt2800pci_write_firmware(stru
  }
  
  /*
@@ -229,7 +234,7 @@
   * Initialization functions.
   */
  static bool rt2800pci_get_entry_state(struct queue_entry *entry)
-@@ -1033,6 +1037,7 @@ static const struct rt2x00lib_ops rt2800
+@@ -1046,6 +1046,7 @@ static const struct rt2x00lib_ops rt2800
  	.get_firmware_name	= rt2800pci_get_firmware_name,
  	.check_firmware		= rt2800_check_firmware,
  	.load_firmware		= rt2800_load_firmware,

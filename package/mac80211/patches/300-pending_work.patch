@@ -1,79 +1,3 @@
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -5090,7 +5090,8 @@ static int rt2800_probe_hw_mode(struct r
- 	    IEEE80211_HW_SUPPORTS_PS |
- 	    IEEE80211_HW_PS_NULLFUNC_STACK |
- 	    IEEE80211_HW_AMPDU_AGGREGATION |
--	    IEEE80211_HW_REPORTS_TX_ACK_STATUS;
-+	    IEEE80211_HW_REPORTS_TX_ACK_STATUS |
-+	    IEEE80211_HW_TEARDOWN_AGGR_ON_BAR_FAIL;
- 
- 	/*
- 	 * Don't set IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING for USB devices
---- a/drivers/net/wireless/rt2x00/rt2x00dev.c
-+++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -392,10 +392,9 @@ void rt2x00lib_txdone(struct queue_entry
- 		tx_info->flags |= IEEE80211_TX_STAT_AMPDU;
- 		tx_info->status.ampdu_len = 1;
- 		tx_info->status.ampdu_ack_len = success ? 1 : 0;
--		/*
--		 * TODO: Need to tear down BA session here
--		 * if not successful.
--		 */
-+
-+		if (!success)
-+			tx_info->flags |= IEEE80211_TX_STAT_AMPDU_NO_BACK;
- 	}
- 
- 	if (rate_flags & IEEE80211_TX_RC_USE_RTS_CTS) {
---- a/include/net/mac80211.h
-+++ b/include/net/mac80211.h
-@@ -173,7 +173,7 @@ struct ieee80211_chanctx_conf {
- 
- 	u8 rx_chains_static, rx_chains_dynamic;
- 
--	u8 drv_priv[0] __attribute__((__aligned__(sizeof(void *))));
-+	u8 drv_priv[0] __aligned(sizeof(void *));
- };
- 
- /**
-@@ -1059,7 +1059,7 @@ struct ieee80211_vif {
- 	u32 driver_flags;
- 
- 	/* must be last */
--	u8 drv_priv[0] __attribute__((__aligned__(sizeof(void *))));
-+	u8 drv_priv[0] __aligned(sizeof(void *));
- };
- 
- static inline bool ieee80211_vif_is_mesh(struct ieee80211_vif *vif)
-@@ -1209,7 +1209,7 @@ struct ieee80211_sta {
- 	u8 max_sp;
- 
- 	/* must be last */
--	u8 drv_priv[0] __attribute__((__aligned__(sizeof(void *))));
-+	u8 drv_priv[0] __aligned(sizeof(void *));
- };
- 
- /**
-@@ -1369,6 +1369,10 @@ struct ieee80211_tx_control {
-  * @IEEE80211_HW_P2P_DEV_ADDR_FOR_INTF: Use the P2P Device address for any
-  *	P2P Interface. This will be honoured even if more than one interface
-  *	is supported.
-+ *
-+ * @IEEE80211_HW_TEARDOWN_AGGR_ON_BAR_FAIL: On this hardware TX BA session
-+ *	should be tear down once BAR frame will not be acked.
-+ *
-  */
- enum ieee80211_hw_flags {
- 	IEEE80211_HW_HAS_RATE_CONTROL			= 1<<0,
-@@ -1397,6 +1401,7 @@ enum ieee80211_hw_flags {
- 	IEEE80211_HW_TX_AMPDU_SETUP_IN_HW		= 1<<23,
- 	IEEE80211_HW_SCAN_WHILE_IDLE			= 1<<24,
- 	IEEE80211_HW_P2P_DEV_ADDR_FOR_INTF		= 1<<25,
-+	IEEE80211_HW_TEARDOWN_AGGR_ON_BAR_FAIL		= 1<<26,
- };
- 
- /**
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
 @@ -203,6 +203,8 @@ static void ieee80211_send_addba_resp(st
@@ -97,7 +21,7 @@
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
-@@ -460,6 +461,7 @@ int ieee80211_start_tx_ba_session(struct
+@@ -520,6 +521,7 @@ int ieee80211_start_tx_ba_session(struct
  	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  	    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -121,61 +45,17 @@
  			    TEST(MFP), TEST(BLOCK_BA), TEST(PSPOLL),
  			    TEST(UAPSD), TEST(SP), TEST(TDLS_PEER),
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
---- a/net/mac80211/ibss.c
-+++ b/net/mac80211/ibss.c
-@@ -201,6 +201,20 @@ static void __ieee80211_sta_join_ibss(st
- 	bss_change |= BSS_CHANGED_BASIC_RATES;
- 	bss_change |= BSS_CHANGED_HT;
- 	bss_change |= BSS_CHANGED_IBSS;
-+
-+	/*
-+	 * In 5 GHz/802.11a, we can always use short slot time.
-+	 * (IEEE 802.11-2012 18.3.8.7)
-+	 *
-+	 * In 2.4GHz, we must always use long slots in IBSS for compatibility
-+	 * reasons.
-+	 * (IEEE 802.11-2012 19.4.5)
-+	 *
-+	 * HT follows these specifications (IEEE 802.11-2012 20.3.18)
-+	 */
-+	sdata->vif.bss_conf.use_short_slot = chan->band == IEEE80211_BAND_5GHZ;
-+	bss_change |= BSS_CHANGED_ERP_SLOT;
-+
- 	sdata->vif.bss_conf.ibss_joined = true;
- 	sdata->vif.bss_conf.ibss_creator = creator;
- 	ieee80211_bss_info_change_notify(sdata, bss_change);
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -508,9 +508,9 @@ static void ieee80211_del_virtual_monito
- int ieee80211_do_open(struct wireless_dev *wdev, bool coming_up)
- {
+@@ -501,7 +501,6 @@ int ieee80211_do_open(struct wireless_de
  	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
-+	struct ieee80211_sub_if_data *ap_sdata;
  	struct net_device *dev = wdev->netdev;
  	struct ieee80211_local *local = sdata->local;
 -	struct sta_info *sta;
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -587,10 +587,14 @@ int ieee80211_do_open(struct wireless_de
- 	switch (sdata->vif.type) {
- 	case NL80211_IFTYPE_AP_VLAN:
- 		/* no need to tell driver, but set carrier */
--		if (rtnl_dereference(sdata->bss->beacon))
--			netif_carrier_on(dev);
--		else
-+		if (!rtnl_dereference(sdata->bss->beacon)) {
- 			netif_carrier_off(dev);
-+			break;
-+		}
-+
-+		ap_sdata = get_bss_sdata(sdata);
-+		ieee80211_vif_copy_channel(sdata, ap_sdata);
-+		netif_carrier_on(dev);
- 		break;
- 	case NL80211_IFTYPE_MONITOR:
- 		if (sdata->u.mntr_flags & MONITOR_FLAG_COOK_FRAMES) {
-@@ -665,30 +669,8 @@ int ieee80211_do_open(struct wireless_de
+@@ -658,30 +657,8 @@ int ieee80211_do_open(struct wireless_de
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -207,16 +87,7 @@
  
  	/*
  	 * set_multicast_list will be invoked by the networking core
-@@ -844,6 +826,8 @@ static void ieee80211_do_stop(struct iee
- 	switch (sdata->vif.type) {
- 	case NL80211_IFTYPE_AP_VLAN:
- 		list_del(&sdata->u.vlan.list);
-+		netif_carrier_off(sdata->dev);
-+		ieee80211_vif_release_channel(sdata);
- 		/* no need to tell driver */
- 		break;
- 	case NL80211_IFTYPE_MONITOR:
-@@ -1072,6 +1056,72 @@ static void ieee80211_if_setup(struct ne
+@@ -1066,6 +1043,72 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -289,7 +160,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1176,6 +1226,9 @@ static void ieee80211_iface_work(struct 
+@@ -1170,6 +1213,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -301,37 +172,7 @@
  			break;
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -378,9 +378,6 @@ ieee80211_rx_monitor(struct ieee80211_lo
- 	 * the SKB because it has a bad FCS/PLCP checksum.
- 	 */
- 
--	/* room for the radiotap header based on driver features */
--	needed_headroom = ieee80211_rx_radiotap_space(local, status);
--
- 	if (local->hw.flags & IEEE80211_HW_RX_INCLUDES_FCS)
- 		present_fcs_len = FCS_LEN;
- 
-@@ -399,6 +396,9 @@ ieee80211_rx_monitor(struct ieee80211_lo
- 		return remove_monitor_info(local, origskb);
- 	}
- 
-+	/* room for the radiotap header based on driver features */
-+	needed_headroom = ieee80211_rx_radiotap_space(local, status);
-+
- 	if (should_drop_frame(origskb, present_fcs_len)) {
- 		/* only need to expand headroom if necessary */
- 		skb = origskb;
-@@ -2333,7 +2333,8 @@ ieee80211_rx_h_action(struct ieee80211_r
- 	if (len < IEEE80211_MIN_ACTION_SIZE)
- 		return RX_DROP_UNUSABLE;
- 
--	if (!rx->sta && mgmt->u.action.category != WLAN_CATEGORY_PUBLIC)
-+	if (!rx->sta && mgmt->u.action.category != WLAN_CATEGORY_PUBLIC &&
-+	    mgmt->u.action.category != WLAN_CATEGORY_SELF_PROTECTED)
- 		return RX_DROP_UNUSABLE;
- 
- 	if (!(status->rx_flags & IEEE80211_RX_RA_MATCH))
-@@ -2349,6 +2350,7 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2350,6 +2350,7 @@ ieee80211_rx_h_action(struct ieee80211_r
  		    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  		    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -339,7 +180,7 @@
  		    sdata->vif.type != NL80211_IFTYPE_ADHOC)
  			break;
  
-@@ -2625,14 +2627,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2655,14 +2656,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -357,7 +198,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_ASSOC_RESP):
  	case cpu_to_le16(IEEE80211_STYPE_REASSOC_RESP):
-@@ -2957,10 +2960,16 @@ static int prepare_for_handlers(struct i
+@@ -2987,10 +2989,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
@@ -394,824 +235,234 @@
  	WLAN_STA_CLEAR_PS_FILT,
  	WLAN_STA_MFP,
  	WLAN_STA_BLOCK_BA,
---- a/net/mac80211/status.c
-+++ b/net/mac80211/status.c
-@@ -502,7 +502,11 @@ void ieee80211_tx_status(struct ieee8021
- 				       IEEE80211_BAR_CTRL_TID_INFO_MASK) >>
- 				      IEEE80211_BAR_CTRL_TID_INFO_SHIFT;
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -324,7 +324,6 @@ struct ath_rx {
  
--				ieee80211_set_bar_pending(sta, tid, ssn);
-+				if (local->hw.flags &
-+				    IEEE80211_HW_TEARDOWN_AGGR_ON_BAR_FAIL)
-+					ieee80211_stop_tx_ba_session(&sta->sta, tid);
-+				else
-+					ieee80211_set_bar_pending(sta, tid, ssn);
- 			}
- 		}
+ int ath_startrecv(struct ath_softc *sc);
+ bool ath_stoprecv(struct ath_softc *sc);
+-void ath_flushrecv(struct ath_softc *sc);
+ u32 ath_calcrxfilter(struct ath_softc *sc);
+ int ath_rx_init(struct ath_softc *sc, int nbufs);
+ void ath_rx_cleanup(struct ath_softc *sc);
+@@ -641,7 +640,6 @@ void ath_ant_comb_update(struct ath_soft
+ enum sc_op_flags {
+ 	SC_OP_INVALID,
+ 	SC_OP_BEACONS,
+-	SC_OP_RXFLUSH,
+ 	SC_OP_ANI_RUN,
+ 	SC_OP_PRIM_STA_VIF,
+ 	SC_OP_HW_RESET,
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -147,6 +147,7 @@ static struct ath_buf *ath9k_beacon_gene
+ 				 skb->len, DMA_TO_DEVICE);
+ 		dev_kfree_skb_any(skb);
+ 		bf->bf_buf_addr = 0;
++		bf->bf_mpdu = NULL;
+ 	}
  
---- a/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h
-@@ -534,98 +534,98 @@ static const u32 ar9300_2p2_baseband_cor
+ 	skb = ieee80211_beacon_get(hw, vif);
+@@ -359,7 +360,6 @@ void ath9k_beacon_tasklet(unsigned long 
+ 		return;
  
- static const u32 ar9300Modes_high_power_tx_gain_table_2p2[][5] = {
- 	/* Addr      5G_HT20     5G_HT40     2G_HT40     2G_HT20   */
--	{0x0000a2dc, 0x00033800, 0x00033800, 0x03aaa352, 0x03aaa352},
--	{0x0000a2e0, 0x0003c000, 0x0003c000, 0x03ccc584, 0x03ccc584},
--	{0x0000a2e4, 0x03fc0000, 0x03fc0000, 0x03f0f800, 0x03f0f800},
-+	{0x0000a2dc, 0x0380c7fc, 0x0380c7fc, 0x03aaa352, 0x03aaa352},
-+	{0x0000a2e0, 0x0000f800, 0x0000f800, 0x03ccc584, 0x03ccc584},
-+	{0x0000a2e4, 0x03ff0000, 0x03ff0000, 0x03f0f800, 0x03f0f800},
- 	{0x0000a2e8, 0x00000000, 0x00000000, 0x03ff0000, 0x03ff0000},
--	{0x0000a410, 0x000050d9, 0x000050d9, 0x000050d9, 0x000050d9},
--	{0x0000a500, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
--	{0x0000a504, 0x06000003, 0x06000003, 0x04000002, 0x04000002},
--	{0x0000a508, 0x0a000020, 0x0a000020, 0x08000004, 0x08000004},
--	{0x0000a50c, 0x10000023, 0x10000023, 0x0b000200, 0x0b000200},
--	{0x0000a510, 0x16000220, 0x16000220, 0x0f000202, 0x0f000202},
--	{0x0000a514, 0x1c000223, 0x1c000223, 0x12000400, 0x12000400},
--	{0x0000a518, 0x21002220, 0x21002220, 0x16000402, 0x16000402},
--	{0x0000a51c, 0x27002223, 0x27002223, 0x19000404, 0x19000404},
--	{0x0000a520, 0x2b022220, 0x2b022220, 0x1c000603, 0x1c000603},
--	{0x0000a524, 0x2f022222, 0x2f022222, 0x21000a02, 0x21000a02},
--	{0x0000a528, 0x34022225, 0x34022225, 0x25000a04, 0x25000a04},
--	{0x0000a52c, 0x3a02222a, 0x3a02222a, 0x28000a20, 0x28000a20},
--	{0x0000a530, 0x3e02222c, 0x3e02222c, 0x2c000e20, 0x2c000e20},
--	{0x0000a534, 0x4202242a, 0x4202242a, 0x30000e22, 0x30000e22},
--	{0x0000a538, 0x4702244a, 0x4702244a, 0x34000e24, 0x34000e24},
--	{0x0000a53c, 0x4b02244c, 0x4b02244c, 0x38001640, 0x38001640},
--	{0x0000a540, 0x4e02246c, 0x4e02246c, 0x3c001660, 0x3c001660},
--	{0x0000a544, 0x52022470, 0x52022470, 0x3f001861, 0x3f001861},
--	{0x0000a548, 0x55022490, 0x55022490, 0x43001a81, 0x43001a81},
--	{0x0000a54c, 0x59022492, 0x59022492, 0x47001a83, 0x47001a83},
--	{0x0000a550, 0x5d022692, 0x5d022692, 0x4a001c84, 0x4a001c84},
--	{0x0000a554, 0x61022892, 0x61022892, 0x4e001ce3, 0x4e001ce3},
--	{0x0000a558, 0x65024890, 0x65024890, 0x52001ce5, 0x52001ce5},
--	{0x0000a55c, 0x69024892, 0x69024892, 0x56001ce9, 0x56001ce9},
--	{0x0000a560, 0x6e024c92, 0x6e024c92, 0x5a001ceb, 0x5a001ceb},
--	{0x0000a564, 0x74026e92, 0x74026e92, 0x5d001eec, 0x5d001eec},
--	{0x0000a568, 0x74026e92, 0x74026e92, 0x5d001eec, 0x5d001eec},
--	{0x0000a56c, 0x74026e92, 0x74026e92, 0x5d001eec, 0x5d001eec},
--	{0x0000a570, 0x74026e92, 0x74026e92, 0x5d001eec, 0x5d001eec},
--	{0x0000a574, 0x74026e92, 0x74026e92, 0x5d001eec, 0x5d001eec},
--	{0x0000a578, 0x74026e92, 0x74026e92, 0x5d001eec, 0x5d001eec},
--	{0x0000a57c, 0x74026e92, 0x74026e92, 0x5d001eec, 0x5d001eec},
--	{0x0000a580, 0x00800000, 0x00800000, 0x00800000, 0x00800000},
--	{0x0000a584, 0x06800003, 0x06800003, 0x04800002, 0x04800002},
--	{0x0000a588, 0x0a800020, 0x0a800020, 0x08800004, 0x08800004},
--	{0x0000a58c, 0x10800023, 0x10800023, 0x0b800200, 0x0b800200},
--	{0x0000a590, 0x16800220, 0x16800220, 0x0f800202, 0x0f800202},
--	{0x0000a594, 0x1c800223, 0x1c800223, 0x12800400, 0x12800400},
--	{0x0000a598, 0x21802220, 0x21802220, 0x16800402, 0x16800402},
--	{0x0000a59c, 0x27802223, 0x27802223, 0x19800404, 0x19800404},
--	{0x0000a5a0, 0x2b822220, 0x2b822220, 0x1c800603, 0x1c800603},
--	{0x0000a5a4, 0x2f822222, 0x2f822222, 0x21800a02, 0x21800a02},
--	{0x0000a5a8, 0x34822225, 0x34822225, 0x25800a04, 0x25800a04},
--	{0x0000a5ac, 0x3a82222a, 0x3a82222a, 0x28800a20, 0x28800a20},
--	{0x0000a5b0, 0x3e82222c, 0x3e82222c, 0x2c800e20, 0x2c800e20},
--	{0x0000a5b4, 0x4282242a, 0x4282242a, 0x30800e22, 0x30800e22},
--	{0x0000a5b8, 0x4782244a, 0x4782244a, 0x34800e24, 0x34800e24},
--	{0x0000a5bc, 0x4b82244c, 0x4b82244c, 0x38801640, 0x38801640},
--	{0x0000a5c0, 0x4e82246c, 0x4e82246c, 0x3c801660, 0x3c801660},
--	{0x0000a5c4, 0x52822470, 0x52822470, 0x3f801861, 0x3f801861},
--	{0x0000a5c8, 0x55822490, 0x55822490, 0x43801a81, 0x43801a81},
--	{0x0000a5cc, 0x59822492, 0x59822492, 0x47801a83, 0x47801a83},
--	{0x0000a5d0, 0x5d822692, 0x5d822692, 0x4a801c84, 0x4a801c84},
--	{0x0000a5d4, 0x61822892, 0x61822892, 0x4e801ce3, 0x4e801ce3},
--	{0x0000a5d8, 0x65824890, 0x65824890, 0x52801ce5, 0x52801ce5},
--	{0x0000a5dc, 0x69824892, 0x69824892, 0x56801ce9, 0x56801ce9},
--	{0x0000a5e0, 0x6e824c92, 0x6e824c92, 0x5a801ceb, 0x5a801ceb},
--	{0x0000a5e4, 0x74826e92, 0x74826e92, 0x5d801eec, 0x5d801eec},
--	{0x0000a5e8, 0x74826e92, 0x74826e92, 0x5d801eec, 0x5d801eec},
--	{0x0000a5ec, 0x74826e92, 0x74826e92, 0x5d801eec, 0x5d801eec},
--	{0x0000a5f0, 0x74826e92, 0x74826e92, 0x5d801eec, 0x5d801eec},
--	{0x0000a5f4, 0x74826e92, 0x74826e92, 0x5d801eec, 0x5d801eec},
--	{0x0000a5f8, 0x74826e92, 0x74826e92, 0x5d801eec, 0x5d801eec},
--	{0x0000a5fc, 0x74826e92, 0x74826e92, 0x5d801eec, 0x5d801eec},
-+	{0x0000a410, 0x000050d8, 0x000050d8, 0x000050d9, 0x000050d9},
-+	{0x0000a500, 0x00002220, 0x00002220, 0x00000000, 0x00000000},
-+	{0x0000a504, 0x04002222, 0x04002222, 0x04000002, 0x04000002},
-+	{0x0000a508, 0x09002421, 0x09002421, 0x08000004, 0x08000004},
-+	{0x0000a50c, 0x0d002621, 0x0d002621, 0x0b000200, 0x0b000200},
-+	{0x0000a510, 0x13004620, 0x13004620, 0x0f000202, 0x0f000202},
-+	{0x0000a514, 0x19004a20, 0x19004a20, 0x11000400, 0x11000400},
-+	{0x0000a518, 0x1d004e20, 0x1d004e20, 0x15000402, 0x15000402},
-+	{0x0000a51c, 0x21005420, 0x21005420, 0x19000404, 0x19000404},
-+	{0x0000a520, 0x26005e20, 0x26005e20, 0x1b000603, 0x1b000603},
-+	{0x0000a524, 0x2b005e40, 0x2b005e40, 0x1f000a02, 0x1f000a02},
-+	{0x0000a528, 0x2f005e42, 0x2f005e42, 0x23000a04, 0x23000a04},
-+	{0x0000a52c, 0x33005e44, 0x33005e44, 0x26000a20, 0x26000a20},
-+	{0x0000a530, 0x38005e65, 0x38005e65, 0x2a000e20, 0x2a000e20},
-+	{0x0000a534, 0x3c005e69, 0x3c005e69, 0x2e000e22, 0x2e000e22},
-+	{0x0000a538, 0x40005e6b, 0x40005e6b, 0x31000e24, 0x31000e24},
-+	{0x0000a53c, 0x44005e6d, 0x44005e6d, 0x34001640, 0x34001640},
-+	{0x0000a540, 0x49005e72, 0x49005e72, 0x38001660, 0x38001660},
-+	{0x0000a544, 0x4e005eb2, 0x4e005eb2, 0x3b001861, 0x3b001861},
-+	{0x0000a548, 0x53005f12, 0x53005f12, 0x3e001a81, 0x3e001a81},
-+	{0x0000a54c, 0x59025eb2, 0x59025eb2, 0x42001a83, 0x42001a83},
-+	{0x0000a550, 0x5e025f12, 0x5e025f12, 0x44001c84, 0x44001c84},
-+	{0x0000a554, 0x61027f12, 0x61027f12, 0x48001ce3, 0x48001ce3},
-+	{0x0000a558, 0x6702bf12, 0x6702bf12, 0x4c001ce5, 0x4c001ce5},
-+	{0x0000a55c, 0x6b02bf14, 0x6b02bf14, 0x50001ce9, 0x50001ce9},
-+	{0x0000a560, 0x6f02bf16, 0x6f02bf16, 0x54001ceb, 0x54001ceb},
-+	{0x0000a564, 0x6f02bf16, 0x6f02bf16, 0x56001eec, 0x56001eec},
-+	{0x0000a568, 0x6f02bf16, 0x6f02bf16, 0x56001eec, 0x56001eec},
-+	{0x0000a56c, 0x6f02bf16, 0x6f02bf16, 0x56001eec, 0x56001eec},
-+	{0x0000a570, 0x6f02bf16, 0x6f02bf16, 0x56001eec, 0x56001eec},
-+	{0x0000a574, 0x6f02bf16, 0x6f02bf16, 0x56001eec, 0x56001eec},
-+	{0x0000a578, 0x6f02bf16, 0x6f02bf16, 0x56001eec, 0x56001eec},
-+	{0x0000a57c, 0x6f02bf16, 0x6f02bf16, 0x56001eec, 0x56001eec},
-+	{0x0000a580, 0x00802220, 0x00802220, 0x00800000, 0x00800000},
-+	{0x0000a584, 0x04802222, 0x04802222, 0x04800002, 0x04800002},
-+	{0x0000a588, 0x09802421, 0x09802421, 0x08800004, 0x08800004},
-+	{0x0000a58c, 0x0d802621, 0x0d802621, 0x0b800200, 0x0b800200},
-+	{0x0000a590, 0x13804620, 0x13804620, 0x0f800202, 0x0f800202},
-+	{0x0000a594, 0x19804a20, 0x19804a20, 0x11800400, 0x11800400},
-+	{0x0000a598, 0x1d804e20, 0x1d804e20, 0x15800402, 0x15800402},
-+	{0x0000a59c, 0x21805420, 0x21805420, 0x19800404, 0x19800404},
-+	{0x0000a5a0, 0x26805e20, 0x26805e20, 0x1b800603, 0x1b800603},
-+	{0x0000a5a4, 0x2b805e40, 0x2b805e40, 0x1f800a02, 0x1f800a02},
-+	{0x0000a5a8, 0x2f805e42, 0x2f805e42, 0x23800a04, 0x23800a04},
-+	{0x0000a5ac, 0x33805e44, 0x33805e44, 0x26800a20, 0x26800a20},
-+	{0x0000a5b0, 0x38805e65, 0x38805e65, 0x2a800e20, 0x2a800e20},
-+	{0x0000a5b4, 0x3c805e69, 0x3c805e69, 0x2e800e22, 0x2e800e22},
-+	{0x0000a5b8, 0x40805e6b, 0x40805e6b, 0x31800e24, 0x31800e24},
-+	{0x0000a5bc, 0x44805e6d, 0x44805e6d, 0x34801640, 0x34801640},
-+	{0x0000a5c0, 0x49805e72, 0x49805e72, 0x38801660, 0x38801660},
-+	{0x0000a5c4, 0x4e805eb2, 0x4e805eb2, 0x3b801861, 0x3b801861},
-+	{0x0000a5c8, 0x53805f12, 0x53805f12, 0x3e801a81, 0x3e801a81},
-+	{0x0000a5cc, 0x59825eb2, 0x59825eb2, 0x42801a83, 0x42801a83},
-+	{0x0000a5d0, 0x5e825f12, 0x5e825f12, 0x44801c84, 0x44801c84},
-+	{0x0000a5d4, 0x61827f12, 0x61827f12, 0x48801ce3, 0x48801ce3},
-+	{0x0000a5d8, 0x6782bf12, 0x6782bf12, 0x4c801ce5, 0x4c801ce5},
-+	{0x0000a5dc, 0x6b82bf14, 0x6b82bf14, 0x50801ce9, 0x50801ce9},
-+	{0x0000a5e0, 0x6f82bf16, 0x6f82bf16, 0x54801ceb, 0x54801ceb},
-+	{0x0000a5e4, 0x6f82bf16, 0x6f82bf16, 0x56801eec, 0x56801eec},
-+	{0x0000a5e8, 0x6f82bf16, 0x6f82bf16, 0x56801eec, 0x56801eec},
-+	{0x0000a5ec, 0x6f82bf16, 0x6f82bf16, 0x56801eec, 0x56801eec},
-+	{0x0000a5f0, 0x6f82bf16, 0x6f82bf16, 0x56801eec, 0x56801eec},
-+	{0x0000a5f4, 0x6f82bf16, 0x6f82bf16, 0x56801eec, 0x56801eec},
-+	{0x0000a5f8, 0x6f82bf16, 0x6f82bf16, 0x56801eec, 0x56801eec},
-+	{0x0000a5fc, 0x6f82bf16, 0x6f82bf16, 0x56801eec, 0x56801eec},
- 	{0x0000a600, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
- 	{0x0000a604, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
- 	{0x0000a608, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
- 	{0x0000a60c, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
--	{0x0000a610, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
--	{0x0000a614, 0x02004000, 0x02004000, 0x01404000, 0x01404000},
--	{0x0000a618, 0x02004801, 0x02004801, 0x01404501, 0x01404501},
--	{0x0000a61c, 0x02808a02, 0x02808a02, 0x02008501, 0x02008501},
--	{0x0000a620, 0x0380ce03, 0x0380ce03, 0x0280ca03, 0x0280ca03},
--	{0x0000a624, 0x04411104, 0x04411104, 0x03010c04, 0x03010c04},
--	{0x0000a628, 0x04411104, 0x04411104, 0x04014c04, 0x04014c04},
--	{0x0000a62c, 0x04411104, 0x04411104, 0x04015005, 0x04015005},
--	{0x0000a630, 0x04411104, 0x04411104, 0x04015005, 0x04015005},
--	{0x0000a634, 0x04411104, 0x04411104, 0x04015005, 0x04015005},
--	{0x0000a638, 0x04411104, 0x04411104, 0x04015005, 0x04015005},
--	{0x0000a63c, 0x04411104, 0x04411104, 0x04015005, 0x04015005},
--	{0x0000b2dc, 0x00033800, 0x00033800, 0x03aaa352, 0x03aaa352},
--	{0x0000b2e0, 0x0003c000, 0x0003c000, 0x03ccc584, 0x03ccc584},
--	{0x0000b2e4, 0x03fc0000, 0x03fc0000, 0x03f0f800, 0x03f0f800},
-+	{0x0000a610, 0x00804000, 0x00804000, 0x00000000, 0x00000000},
-+	{0x0000a614, 0x00804201, 0x00804201, 0x01404000, 0x01404000},
-+	{0x0000a618, 0x0280c802, 0x0280c802, 0x01404501, 0x01404501},
-+	{0x0000a61c, 0x0280ca03, 0x0280ca03, 0x02008501, 0x02008501},
-+	{0x0000a620, 0x04c15104, 0x04c15104, 0x0280ca03, 0x0280ca03},
-+	{0x0000a624, 0x04c15305, 0x04c15305, 0x03010c04, 0x03010c04},
-+	{0x0000a628, 0x04c15305, 0x04c15305, 0x04014c04, 0x04014c04},
-+	{0x0000a62c, 0x04c15305, 0x04c15305, 0x04015005, 0x04015005},
-+	{0x0000a630, 0x04c15305, 0x04c15305, 0x04015005, 0x04015005},
-+	{0x0000a634, 0x04c15305, 0x04c15305, 0x04015005, 0x04015005},
-+	{0x0000a638, 0x04c15305, 0x04c15305, 0x04015005, 0x04015005},
-+	{0x0000a63c, 0x04c15305, 0x04c15305, 0x04015005, 0x04015005},
-+	{0x0000b2dc, 0x0380c7fc, 0x0380c7fc, 0x03aaa352, 0x03aaa352},
-+	{0x0000b2e0, 0x0000f800, 0x0000f800, 0x03ccc584, 0x03ccc584},
-+	{0x0000b2e4, 0x03ff0000, 0x03ff0000, 0x03f0f800, 0x03f0f800},
- 	{0x0000b2e8, 0x00000000, 0x00000000, 0x03ff0000, 0x03ff0000},
--	{0x0000c2dc, 0x00033800, 0x00033800, 0x03aaa352, 0x03aaa352},
--	{0x0000c2e0, 0x0003c000, 0x0003c000, 0x03ccc584, 0x03ccc584},
--	{0x0000c2e4, 0x03fc0000, 0x03fc0000, 0x03f0f800, 0x03f0f800},
-+	{0x0000c2dc, 0x0380c7fc, 0x0380c7fc, 0x03aaa352, 0x03aaa352},
-+	{0x0000c2e0, 0x0000f800, 0x0000f800, 0x03ccc584, 0x03ccc584},
-+	{0x0000c2e4, 0x03ff0000, 0x03ff0000, 0x03f0f800, 0x03f0f800},
- 	{0x0000c2e8, 0x00000000, 0x00000000, 0x03ff0000, 0x03ff0000},
- 	{0x00016044, 0x012492d4, 0x012492d4, 0x012492d4, 0x012492d4},
- 	{0x00016048, 0x66480001, 0x66480001, 0x66480001, 0x66480001},
+ 	bf = ath9k_beacon_generate(sc->hw, vif);
+-	WARN_ON(!bf);
+ 
+ 	if (sc->beacon.bmisscnt != 0) {
+ 		ath_dbg(common, BSTUCK, "resume beacon xmit after %u misses\n",
+--- a/drivers/net/wireless/ath/ath9k/debug.c
++++ b/drivers/net/wireless/ath/ath9k/debug.c
+@@ -861,7 +861,6 @@ static ssize_t read_file_recv(struct fil
+ 	RXS_ERR("RX-LENGTH-ERR", rx_len_err);
+ 	RXS_ERR("RX-OOM-ERR", rx_oom_err);
+ 	RXS_ERR("RX-RATE-ERR", rx_rate_err);
+-	RXS_ERR("RX-DROP-RXFLUSH", rx_drop_rxflush);
+ 	RXS_ERR("RX-TOO-MANY-FRAGS", rx_too_many_frags_err);
+ 
+ 	PHY_ERR("UNDERRUN ERR", ATH9K_PHYERR_UNDERRUN);
 --- a/drivers/net/wireless/ath/ath9k/debug.h
 +++ b/drivers/net/wireless/ath/ath9k/debug.h
-@@ -242,7 +242,7 @@ struct ath_rx_stats {
- 
- struct ath_stats {
- 	struct ath_interrupt_stats istats;
--	struct ath_tx_stats txstats[IEEE80211_NUM_ACS];
-+	struct ath_tx_stats txstats[ATH9K_NUM_TX_QUEUES];
- 	struct ath_rx_stats rxstats;
- 	struct ath_dfs_stats dfs_stats;
- 	u32 reset[__RESET_TYPE_MAX];
---- a/drivers/net/wireless/ath/carl9170/rx.c
-+++ b/drivers/net/wireless/ath/carl9170/rx.c
-@@ -684,7 +684,7 @@ static int carl9170_handle_mpdu(struct a
- 	if (!skb)
- 		return -ENOMEM;
- 
--	memcpy(IEEE80211_SKB_RXCB(skb), &status, sizeof(status));
-+	memcpy(IEEE80211_SKB_RXCB(skb), status, sizeof(*status));
- 	ieee80211_rx(ar->hw, skb);
- 	return 0;
- }
---- a/drivers/net/wireless/ath/ath9k/calib.c
-+++ b/drivers/net/wireless/ath/ath9k/calib.c
-@@ -69,6 +69,7 @@ s16 ath9k_hw_getchan_noise(struct ath_hw
- 
- 	if (chan && chan->noisefloor) {
- 		s8 delta = chan->noisefloor -
-+			   ATH9K_NF_CAL_NOISE_THRESH -
- 			   ath9k_hw_get_default_nf(ah, chan);
- 		if (delta > 0)
- 			noise += delta;
---- a/drivers/net/wireless/ath/ath9k/calib.h
-+++ b/drivers/net/wireless/ath/ath9k/calib.h
-@@ -21,6 +21,9 @@
- 
- #define AR_PHY_CCA_FILTERWINDOW_LENGTH          5
- 
-+/* Internal noise floor can vary by about 6db depending on the frequency */
-+#define ATH9K_NF_CAL_NOISE_THRESH		6
-+
- #define NUM_NF_READINGS       6
- #define ATH9K_NF_CAL_HIST_MAX 5
- 
---- a/drivers/net/wireless/ath/ath5k/base.c
-+++ b/drivers/net/wireless/ath/ath5k/base.c
-@@ -851,7 +851,7 @@ ath5k_txbuf_free_skb(struct ath5k_hw *ah
- 		return;
- 	dma_unmap_single(ah->dev, bf->skbaddr, bf->skb->len,
- 			DMA_TO_DEVICE);
--	dev_kfree_skb_any(bf->skb);
-+	ieee80211_free_txskb(ah->hw, bf->skb);
- 	bf->skb = NULL;
- 	bf->skbaddr = 0;
- 	bf->desc->ds_data = 0;
-@@ -1578,7 +1578,7 @@ ath5k_tx_queue(struct ieee80211_hw *hw, 
- 	return;
- 
- drop_packet:
--	dev_kfree_skb_any(skb);
-+	ieee80211_free_txskb(hw, skb);
+@@ -216,7 +216,6 @@ struct ath_tx_stats {
+  * @rx_oom_err:  No. of frames dropped due to OOM issues.
+  * @rx_rate_err:  No. of frames dropped due to rate errors.
+  * @rx_too_many_frags_err:  Frames dropped due to too-many-frags received.
+- * @rx_drop_rxflush: No. of frames dropped due to RX-FLUSH.
+  * @rx_beacons:  No. of beacons received.
+  * @rx_frags:  No. of rx-fragements received.
+  */
+@@ -235,7 +234,6 @@ struct ath_rx_stats {
+ 	u32 rx_oom_err;
+ 	u32 rx_rate_err;
+ 	u32 rx_too_many_frags_err;
+-	u32 rx_drop_rxflush;
+ 	u32 rx_beacons;
+ 	u32 rx_frags;
+ };
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -182,7 +182,7 @@ static void ath_restart_work(struct ath_
+ 	ath_start_ani(sc);
  }
  
- static void
---- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
-+++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
-@@ -65,7 +65,7 @@ ath5k_tx(struct ieee80211_hw *hw, struct
- 	u16 qnum = skb_get_queue_mapping(skb);
- 
- 	if (WARN_ON(qnum >= ah->ah_capabilities.cap_queues.q_tx_num)) {
--		dev_kfree_skb_any(skb);
-+		ieee80211_free_txskb(hw, skb);
- 		return;
- 	}
- 
---- a/drivers/net/wireless/b43/dma.c
-+++ b/drivers/net/wireless/b43/dma.c
-@@ -409,7 +409,10 @@ static inline
- 				struct b43_dmadesc_meta *meta)
+-static bool ath_prepare_reset(struct ath_softc *sc, bool retry_tx, bool flush)
++static bool ath_prepare_reset(struct ath_softc *sc, bool retry_tx)
  {
- 	if (meta->skb) {
--		dev_kfree_skb_any(meta->skb);
-+		if (ring->tx)
-+			ieee80211_free_txskb(ring->dev->wl->hw, meta->skb);
-+		else
-+			dev_kfree_skb_any(meta->skb);
- 		meta->skb = NULL;
- 	}
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	bool ret = true;
+@@ -196,19 +196,15 @@ static bool ath_prepare_reset(struct ath
+ 	ath9k_debug_samp_bb_mac(sc);
+ 	ath9k_hw_disable_interrupts(ah);
+ 
++	tasklet_disable(&sc->intr_tq);
++
+ 	if (!ath_stoprecv(sc))
+ 		ret = false;
+ 
+ 	if (!ath_drain_all_txq(sc, retry_tx))
+ 		ret = false;
+ 
+-	if (!flush) {
+-		if (ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
+-			ath_rx_tasklet(sc, 1, true);
+-		ath_rx_tasklet(sc, 1, false);
+-	} else {
+-		ath_flushrecv(sc);
+-	}
++	tasklet_enable(&sc->intr_tq);
+ 
+ 	return ret;
  }
-@@ -1454,7 +1457,7 @@ int b43_dma_tx(struct b43_wldev *dev, st
- 	if (unlikely(err == -ENOKEY)) {
- 		/* Drop this packet, as we don't have the encryption key
- 		 * anymore and must not transmit it unencrypted. */
--		dev_kfree_skb_any(skb);
-+		ieee80211_free_txskb(dev->wl->hw, skb);
- 		err = 0;
- 		goto out;
- 	}
---- a/drivers/net/wireless/b43/main.c
-+++ b/drivers/net/wireless/b43/main.c
-@@ -3397,7 +3397,7 @@ static void b43_tx_work(struct work_stru
- 				break;
- 			}
- 			if (unlikely(err))
--				dev_kfree_skb(skb); /* Drop it */
-+				ieee80211_free_txskb(wl->hw, skb);
- 			err = 0;
- 		}
+@@ -262,7 +258,6 @@ static int ath_reset_internal(struct ath
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ath9k_hw_cal_data *caldata = NULL;
+ 	bool fastcc = true;
+-	bool flush = false;
+ 	int r;
  
-@@ -3419,7 +3419,7 @@ static void b43_op_tx(struct ieee80211_h
+ 	__ath_cancel_work(sc);
+@@ -276,11 +271,10 @@ static int ath_reset_internal(struct ath
  
- 	if (unlikely(skb->len < 2 + 2 + 6)) {
- 		/* Too short, this can't be a valid frame. */
--		dev_kfree_skb_any(skb);
-+		ieee80211_free_txskb(hw, skb);
- 		return;
- 	}
- 	B43_WARN_ON(skb_shinfo(skb)->nr_frags);
-@@ -4234,8 +4234,12 @@ redo:
- 
- 	/* Drain all TX queues. */
- 	for (queue_num = 0; queue_num < B43_QOS_QUEUE_NUM; queue_num++) {
--		while (skb_queue_len(&wl->tx_queue[queue_num]))
--			dev_kfree_skb(skb_dequeue(&wl->tx_queue[queue_num]));
-+		while (skb_queue_len(&wl->tx_queue[queue_num])) {
-+			struct sk_buff *skb;
-+
-+			skb = skb_dequeue(&wl->tx_queue[queue_num]);
-+			ieee80211_free_txskb(wl->hw, skb);
-+		}
+ 	if (!hchan) {
+ 		fastcc = false;
+-		flush = true;
+ 		hchan = ah->curchan;
  	}
  
- 	b43_mac_suspend(dev);
---- a/drivers/net/wireless/b43/pio.c
-+++ b/drivers/net/wireless/b43/pio.c
-@@ -196,7 +196,7 @@ static void b43_pio_cancel_tx_packets(st
- 	for (i = 0; i < ARRAY_SIZE(q->packets); i++) {
- 		pack = &(q->packets[i]);
- 		if (pack->skb) {
--			dev_kfree_skb_any(pack->skb);
-+			ieee80211_free_txskb(q->dev->wl->hw, pack->skb);
- 			pack->skb = NULL;
- 		}
+-	if (!ath_prepare_reset(sc, retry_tx, flush))
++	if (!ath_prepare_reset(sc, retry_tx))
+ 		fastcc = false;
+ 
+ 	ath_dbg(common, CONFIG, "Reset to %u MHz, HT40: %d fastcc: %d\n",
+@@ -804,7 +798,7 @@ static void ath9k_stop(struct ieee80211_
+ 		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
  	}
-@@ -552,7 +552,7 @@ int b43_pio_tx(struct b43_wldev *dev, st
- 	if (unlikely(err == -ENOKEY)) {
- 		/* Drop this packet, as we don't have the encryption key
- 		 * anymore and must not transmit it unencrypted. */
--		dev_kfree_skb_any(skb);
-+		ieee80211_free_txskb(dev->wl->hw, skb);
- 		err = 0;
- 		goto out;
- 	}
---- a/net/mac80211/cfg.c
-+++ b/net/mac80211/cfg.c
-@@ -915,6 +915,12 @@ static int ieee80211_start_ap(struct wip
- 	if (err)
- 		return err;
  
-+	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list) {
-+		err = ieee80211_vif_copy_channel(vlan, sdata);
-+		if (err)
-+			return err;
-+	}
-+
- 	/*
- 	 * Apply control port protocol, this allows us to
- 	 * not encrypt dynamic WEP control frames.
-@@ -998,8 +1004,11 @@ static int ieee80211_stop_ap(struct wiph
- 	old_probe_resp = rtnl_dereference(sdata->u.ap.probe_resp);
+-	ath_prepare_reset(sc, false, true);
++	ath_prepare_reset(sc, false);
  
- 	/* turn off carrier for this interface and dependent VLANs */
--	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list)
-+	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list) {
-+		sta_info_flush(local, vlan);
- 		netif_carrier_off(vlan->dev);
-+		ieee80211_vif_release_channel(vlan);
-+	}
- 	netif_carrier_off(dev);
+ 	if (sc->rx.frag) {
+ 		dev_kfree_skb_any(sc->rx.frag);
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -280,7 +280,6 @@ int ath_rx_init(struct ath_softc *sc, in
  
- 	/* remove beacon and probe response */
---- a/net/mac80211/chan.c
-+++ b/net/mac80211/chan.c
-@@ -119,14 +119,17 @@ static int ieee80211_assign_vif_chanctx(
+ 	spin_lock_init(&sc->sc_pcu_lock);
+ 	spin_lock_init(&sc->rx.rxbuflock);
+-	clear_bit(SC_OP_RXFLUSH, &sc->sc_flags);
  
- 	lockdep_assert_held(&local->chanctx_mtx);
- 
--	ret = drv_assign_vif_chanctx(local, sdata, ctx);
--	if (ret)
--		return ret;
-+	if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN) {
-+		ret = drv_assign_vif_chanctx(local, sdata, ctx);
-+		if (ret)
-+			return ret;
-+	}
- 
- 	rcu_assign_pointer(sdata->vif.chanctx_conf, &ctx->conf);
- 	ctx->refcount++;
- 
--	ieee80211_recalc_txpower(sdata);
-+	if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN)
-+		ieee80211_recalc_txpower(sdata);
- 
+ 	common->rx_bufsize = IEEE80211_MAX_MPDU_LEN / 2 +
+ 			     sc->sc_ah->caps.rx_status_len;
+@@ -464,6 +463,13 @@ start_recv:
  	return 0;
  }
-@@ -174,7 +177,8 @@ static void ieee80211_unassign_vif_chanc
- 	ctx->refcount--;
- 	rcu_assign_pointer(sdata->vif.chanctx_conf, NULL);
  
--	drv_unassign_vif_chanctx(local, sdata, ctx);
-+	if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN)
-+		drv_unassign_vif_chanctx(local, sdata, ctx);
- 
- 	if (ctx->refcount > 0) {
- 		ieee80211_recalc_chanctx_chantype(sdata->local, ctx);
-@@ -285,6 +289,30 @@ void ieee80211_recalc_smps_chanctx(struc
- 	drv_change_chanctx(local, chanctx, IEEE80211_CHANCTX_CHANGE_RX_CHAINS);
- }
- 
-+int ieee80211_vif_copy_channel(struct ieee80211_sub_if_data *sdata,
-+			       struct ieee80211_sub_if_data *parent)
++static void ath_flushrecv(struct ath_softc *sc)
 +{
-+	struct ieee80211_local *local = sdata->local;
-+	struct ieee80211_chanctx_conf *conf;
-+	struct ieee80211_chanctx *ctx;
-+
-+	int ret;
-+
-+	mutex_lock(&local->chanctx_mtx);
-+	conf = rcu_dereference_protected(parent->vif.chanctx_conf,
-+					 lockdep_is_held(&local->chanctx_mtx));
-+	if (!conf) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+
-+	ctx = container_of(conf, struct ieee80211_chanctx, conf);
-+	ret = ieee80211_assign_vif_chanctx(sdata, ctx);
-+out:
-+	mutex_unlock(&local->chanctx_mtx);
-+	return ret;
++	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
++		ath_rx_tasklet(sc, 1, true);
++	ath_rx_tasklet(sc, 1, false);
 +}
 +
- int ieee80211_vif_use_channel(struct ieee80211_sub_if_data *sdata,
- 			      const struct cfg80211_chan_def *chandef,
- 			      enum ieee80211_chanctx_mode mode)
---- a/net/mac80211/ieee80211_i.h
-+++ b/net/mac80211/ieee80211_i.h
-@@ -1633,6 +1633,8 @@ ieee80211_vif_use_channel(struct ieee802
- 			  const struct cfg80211_chan_def *chandef,
- 			  enum ieee80211_chanctx_mode mode);
- void ieee80211_vif_release_channel(struct ieee80211_sub_if_data *sdata);
-+int ieee80211_vif_copy_channel(struct ieee80211_sub_if_data *sdata,
-+			       struct ieee80211_sub_if_data *parent);
+ bool ath_stoprecv(struct ath_softc *sc)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+@@ -474,6 +480,8 @@ bool ath_stoprecv(struct ath_softc *sc)
+ 	ath9k_hw_setrxfilter(ah, 0);
+ 	stopped = ath9k_hw_stopdmarecv(ah, &reset);
  
- void ieee80211_recalc_smps_chanctx(struct ieee80211_local *local,
- 				   struct ieee80211_chanctx *chanctx);
---- a/include/linux/ieee80211.h
-+++ b/include/linux/ieee80211.h
-@@ -180,7 +180,7 @@ struct ieee80211_hdr {
- 	u8 addr3[6];
- 	__le16 seq_ctrl;
- 	u8 addr4[6];
--} __attribute__ ((packed));
-+} __packed;
++	ath_flushrecv(sc);
++
+ 	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
+ 		ath_edma_stop_recv(sc);
+ 	else
+@@ -490,15 +498,6 @@ bool ath_stoprecv(struct ath_softc *sc)
+ 	return stopped && !reset;
+ }
  
- struct ieee80211_hdr_3addr {
- 	__le16 frame_control;
-@@ -189,7 +189,7 @@ struct ieee80211_hdr_3addr {
- 	u8 addr2[6];
- 	u8 addr3[6];
- 	__le16 seq_ctrl;
--} __attribute__ ((packed));
-+} __packed;
- 
- struct ieee80211_qos_hdr {
- 	__le16 frame_control;
-@@ -199,7 +199,7 @@ struct ieee80211_qos_hdr {
- 	u8 addr3[6];
- 	__le16 seq_ctrl;
- 	__le16 qos_ctrl;
--} __attribute__ ((packed));
-+} __packed;
- 
- /**
-  * ieee80211_has_tods - check if IEEE80211_FCTL_TODS is set
-@@ -576,7 +576,7 @@ struct ieee80211s_hdr {
- 	__le32 seqnum;
- 	u8 eaddr1[6];
- 	u8 eaddr2[6];
--} __attribute__ ((packed));
-+} __packed;
- 
- /* Mesh flags */
- #define MESH_FLAGS_AE_A4 	0x1
-@@ -614,7 +614,7 @@ struct ieee80211_quiet_ie {
- 	u8 period;
- 	__le16 duration;
- 	__le16 offset;
--} __attribute__ ((packed));
-+} __packed;
- 
- /**
-  * struct ieee80211_msrment_ie
-@@ -626,7 +626,7 @@ struct ieee80211_msrment_ie {
- 	u8 mode;
- 	u8 type;
- 	u8 request[0];
--} __attribute__ ((packed));
-+} __packed;
- 
- /**
-  * struct ieee80211_channel_sw_ie
-@@ -637,7 +637,7 @@ struct ieee80211_channel_sw_ie {
- 	u8 mode;
- 	u8 new_ch_num;
- 	u8 count;
--} __attribute__ ((packed));
-+} __packed;
- 
- /**
-  * struct ieee80211_tim
-@@ -650,7 +650,7 @@ struct ieee80211_tim_ie {
- 	u8 bitmap_ctrl;
- 	/* variable size: 1 - 251 bytes */
- 	u8 virtual_map[1];
--} __attribute__ ((packed));
-+} __packed;
- 
- /**
-  * struct ieee80211_meshconf_ie
-@@ -665,7 +665,7 @@ struct ieee80211_meshconf_ie {
- 	u8 meshconf_auth;
- 	u8 meshconf_form;
- 	u8 meshconf_cap;
--} __attribute__ ((packed));
-+} __packed;
- 
- /**
-  * enum mesh_config_capab_flags - Mesh Configuration IE capability field flags
-@@ -695,7 +695,7 @@ struct ieee80211_rann_ie {
- 	__le32 rann_seq;
- 	__le32 rann_interval;
- 	__le32 rann_metric;
--} __attribute__ ((packed));
-+} __packed;
- 
- enum ieee80211_rann_flags {
- 	RANN_FLAG_IS_GATE = 1 << 0,
-@@ -717,33 +717,33 @@ struct ieee80211_mgmt {
- 			__le16 status_code;
- 			/* possibly followed by Challenge text */
- 			u8 variable[0];
--		} __attribute__ ((packed)) auth;
-+		} __packed auth;
- 		struct {
- 			__le16 reason_code;
--		} __attribute__ ((packed)) deauth;
-+		} __packed deauth;
- 		struct {
- 			__le16 capab_info;
- 			__le16 listen_interval;
- 			/* followed by SSID and Supported rates */
- 			u8 variable[0];
--		} __attribute__ ((packed)) assoc_req;
-+		} __packed assoc_req;
- 		struct {
- 			__le16 capab_info;
- 			__le16 status_code;
- 			__le16 aid;
- 			/* followed by Supported rates */
- 			u8 variable[0];
--		} __attribute__ ((packed)) assoc_resp, reassoc_resp;
-+		} __packed assoc_resp, reassoc_resp;
- 		struct {
- 			__le16 capab_info;
- 			__le16 listen_interval;
- 			u8 current_ap[6];
- 			/* followed by SSID and Supported rates */
- 			u8 variable[0];
--		} __attribute__ ((packed)) reassoc_req;
-+		} __packed reassoc_req;
- 		struct {
- 			__le16 reason_code;
--		} __attribute__ ((packed)) disassoc;
-+		} __packed disassoc;
- 		struct {
- 			__le64 timestamp;
- 			__le16 beacon_int;
-@@ -751,11 +751,11 @@ struct ieee80211_mgmt {
- 			/* followed by some of SSID, Supported rates,
- 			 * FH Params, DS Params, CF Params, IBSS Params, TIM */
- 			u8 variable[0];
--		} __attribute__ ((packed)) beacon;
-+		} __packed beacon;
- 		struct {
- 			/* only variable items: SSID, Supported rates */
- 			u8 variable[0];
--		} __attribute__ ((packed)) probe_req;
-+		} __packed probe_req;
- 		struct {
- 			__le64 timestamp;
- 			__le16 beacon_int;
-@@ -763,7 +763,7 @@ struct ieee80211_mgmt {
- 			/* followed by some of SSID, Supported rates,
- 			 * FH Params, DS Params, CF Params, IBSS Params */
- 			u8 variable[0];
--		} __attribute__ ((packed)) probe_resp;
-+		} __packed probe_resp;
- 		struct {
- 			u8 category;
- 			union {
-@@ -772,55 +772,55 @@ struct ieee80211_mgmt {
- 					u8 dialog_token;
- 					u8 status_code;
- 					u8 variable[0];
--				} __attribute__ ((packed)) wme_action;
-+				} __packed wme_action;
- 				struct{
- 					u8 action_code;
- 					u8 element_id;
- 					u8 length;
- 					struct ieee80211_channel_sw_ie sw_elem;
--				} __attribute__((packed)) chan_switch;
-+				} __packed chan_switch;
- 				struct{
- 					u8 action_code;
- 					u8 dialog_token;
- 					u8 element_id;
- 					u8 length;
- 					struct ieee80211_msrment_ie msr_elem;
--				} __attribute__((packed)) measurement;
-+				} __packed measurement;
- 				struct{
- 					u8 action_code;
- 					u8 dialog_token;
- 					__le16 capab;
- 					__le16 timeout;
- 					__le16 start_seq_num;
--				} __attribute__((packed)) addba_req;
-+				} __packed addba_req;
- 				struct{
- 					u8 action_code;
- 					u8 dialog_token;
- 					__le16 status;
- 					__le16 capab;
- 					__le16 timeout;
--				} __attribute__((packed)) addba_resp;
-+				} __packed addba_resp;
- 				struct{
- 					u8 action_code;
- 					__le16 params;
- 					__le16 reason_code;
--				} __attribute__((packed)) delba;
-+				} __packed delba;
- 				struct {
- 					u8 action_code;
- 					u8 variable[0];
--				} __attribute__((packed)) self_prot;
-+				} __packed self_prot;
- 				struct{
- 					u8 action_code;
- 					u8 variable[0];
--				} __attribute__((packed)) mesh_action;
-+				} __packed mesh_action;
- 				struct {
- 					u8 action;
- 					u8 trans_id[WLAN_SA_QUERY_TR_ID_LEN];
--				} __attribute__ ((packed)) sa_query;
-+				} __packed sa_query;
- 				struct {
- 					u8 action;
- 					u8 smps_control;
--				} __attribute__ ((packed)) ht_smps;
-+				} __packed ht_smps;
- 				struct {
- 					u8 action_code;
- 					u8 dialog_token;
-@@ -828,9 +828,9 @@ struct ieee80211_mgmt {
- 					u8 variable[0];
- 				} __packed tdls_discover_resp;
- 			} u;
--		} __attribute__ ((packed)) action;
-+		} __packed action;
- 	} u;
--} __attribute__ ((packed));
-+} __packed;
- 
- /* Supported Rates value encodings in 802.11n-2009 7.3.2.2 */
- #define BSS_MEMBERSHIP_SELECTOR_HT_PHY	127
-@@ -846,7 +846,7 @@ struct ieee80211_mmie {
- 	__le16 key_id;
- 	u8 sequence_number[6];
- 	u8 mic[8];
--} __attribute__ ((packed));
-+} __packed;
- 
- struct ieee80211_vendor_ie {
- 	u8 element_id;
-@@ -861,20 +861,20 @@ struct ieee80211_rts {
- 	__le16 duration;
- 	u8 ra[6];
- 	u8 ta[6];
--} __attribute__ ((packed));
-+} __packed;
- 
- struct ieee80211_cts {
- 	__le16 frame_control;
- 	__le16 duration;
- 	u8 ra[6];
--} __attribute__ ((packed));
-+} __packed;
- 
- struct ieee80211_pspoll {
- 	__le16 frame_control;
- 	__le16 aid;
- 	u8 bssid[6];
- 	u8 ta[6];
--} __attribute__ ((packed));
-+} __packed;
- 
- /* TDLS */
- 
-@@ -967,7 +967,7 @@ struct ieee80211_bar {
- 	__u8 ta[6];
- 	__le16 control;
- 	__le16 start_seq_num;
--} __attribute__((packed));
-+} __packed;
- 
- /* 802.11 BAR control masks */
- #define IEEE80211_BAR_CTRL_ACK_POLICY_NORMAL	0x0000
-@@ -992,7 +992,7 @@ struct ieee80211_mcs_info {
- 	__le16 rx_highest;
- 	u8 tx_params;
- 	u8 reserved[3];
--} __attribute__((packed));
-+} __packed;
- 
- /* 802.11n HT capability MSC set */
- #define IEEE80211_HT_MCS_RX_HIGHEST_MASK	0x3ff
-@@ -1031,7 +1031,7 @@ struct ieee80211_ht_cap {
- 	__le16 extended_ht_cap_info;
- 	__le32 tx_BF_cap_info;
- 	u8 antenna_selection_info;
--} __attribute__ ((packed));
-+} __packed;
- 
- /* 802.11n HT capabilities masks (for cap_info) */
- #define IEEE80211_HT_CAP_LDPC_CODING		0x0001
-@@ -1102,7 +1102,7 @@ struct ieee80211_ht_operation {
- 	__le16 operation_mode;
- 	__le16 stbc_param;
- 	u8 basic_set[16];
--} __attribute__ ((packed));
-+} __packed;
- 
- /* for ht_param */
- #define IEEE80211_HT_PARAM_CHA_SEC_OFFSET		0x03
-@@ -1832,14 +1832,14 @@ struct ieee80211_country_ie_triplet {
- 			u8 first_channel;
- 			u8 num_channels;
- 			s8 max_power;
--		} __attribute__ ((packed)) chans;
-+		} __packed chans;
- 		struct {
- 			u8 reg_extension_id;
- 			u8 reg_class;
- 			u8 coverage_class;
--		} __attribute__ ((packed)) ext;
-+		} __packed ext;
- 	};
--} __attribute__ ((packed));
-+} __packed;
- 
- enum ieee80211_timeout_interval_type {
- 	WLAN_TIMEOUT_REASSOC_DEADLINE = 1 /* 802.11r */,
---- a/include/net/cfg80211.h
-+++ b/include/net/cfg80211.h
-@@ -1256,7 +1256,7 @@ struct cfg80211_bss {
- 
- 	u8 bssid[ETH_ALEN];
- 
--	u8 priv[0] __attribute__((__aligned__(sizeof(void *))));
-+	u8 priv[0] __aligned(sizeof(void *));
- };
- 
- /**
-@@ -2395,7 +2395,7 @@ struct wiphy {
- 	const struct iw_handler_def *wext;
- #endif
- 
--	char priv[0] __attribute__((__aligned__(NETDEV_ALIGN)));
-+	char priv[0] __aligned(NETDEV_ALIGN);
- };
- 
- static inline struct net *wiphy_net(struct wiphy *wiphy)
---- a/net/wireless/core.h
-+++ b/net/wireless/core.h
-@@ -86,7 +86,7 @@ struct cfg80211_registered_device {
- 
- 	/* must be last because of the way we do wiphy_priv(),
- 	 * and it should at least be aligned to NETDEV_ALIGN */
--	struct wiphy wiphy __attribute__((__aligned__(NETDEV_ALIGN)));
-+	struct wiphy wiphy __aligned(NETDEV_ALIGN);
- };
- 
- static inline
---- a/drivers/net/wireless/ath/ath9k/hw.c
-+++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -2578,7 +2578,7 @@ int ath9k_hw_fill_cap_info(struct ath_hw
- 
- 	if (AR_SREV_9300_20_OR_LATER(ah)) {
- 		ah->enabled_cals |= TX_IQ_CAL;
--		if (AR_SREV_9485_OR_LATER(ah))
-+		if (AR_SREV_9485_OR_LATER(ah) && !AR_SREV_9340(ah))
- 			ah->enabled_cals |= TX_IQ_ON_AGC_CAL;
+-void ath_flushrecv(struct ath_softc *sc)
+-{
+-	set_bit(SC_OP_RXFLUSH, &sc->sc_flags);
+-	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
+-		ath_rx_tasklet(sc, 1, true);
+-	ath_rx_tasklet(sc, 1, false);
+-	clear_bit(SC_OP_RXFLUSH, &sc->sc_flags);
+-}
+-
+ static bool ath_beacon_dtim_pending_cab(struct sk_buff *skb)
+ {
+ 	/* Check whether the Beacon frame has DTIM indicating buffered bc/mc */
+@@ -735,6 +734,7 @@ static struct ath_buf *ath_get_next_rx_b
+ 			return NULL;
  	}
+ 
++	list_del(&bf->list);
+ 	if (!bf->bf_mpdu)
+ 		return bf;
+ 
+@@ -1057,9 +1057,6 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 
+ 	do {
+ 		bool decrypt_error = false;
+-		/* If handling rx interrupt and flush is in progress => exit */
+-		if (test_bit(SC_OP_RXFLUSH, &sc->sc_flags) && (flush == 0))
+-			break;
+ 
+ 		memset(&rs, 0, sizeof(rs));
+ 		if (edma)
+@@ -1102,15 +1099,6 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 
+ 		ath_debug_stat_rx(sc, &rs);
+ 
+-		/*
+-		 * If we're asked to flush receive queue, directly
+-		 * chain it back at the queue without processing it.
+-		 */
+-		if (test_bit(SC_OP_RXFLUSH, &sc->sc_flags)) {
+-			RX_STAT_INC(rx_drop_rxflush);
+-			goto requeue_drop_frag;
+-		}
+-
+ 		memset(rxs, 0, sizeof(struct ieee80211_rx_status));
+ 
+ 		rxs->mactime = (tsf & ~0xffffffffULL) | rs.rs_tstamp;
+@@ -1245,14 +1233,15 @@ requeue_drop_frag:
+ 			sc->rx.frag = NULL;
+ 		}
+ requeue:
++		list_add_tail(&bf->list, &sc->rx.rxbuf);
++		if (!flush)
++			continue;
++
+ 		if (edma) {
+-			list_add_tail(&bf->list, &sc->rx.rxbuf);
+ 			ath_rx_edma_buf_link(sc, qtype);
+ 		} else {
+-			list_move_tail(&bf->list, &sc->rx.rxbuf);
+ 			ath_rx_buf_link(sc, bf);
+-			if (!flush)
+-				ath9k_hw_rxena(ah);
++			ath9k_hw_rxena(ah);
+ 		}
+ 	} while (1);
  

@@ -18,7 +18,7 @@
  	u8 ps_dtim_period;
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1132,6 +1132,7 @@ struct ieee80211_local {
+@@ -1144,6 +1144,7 @@ struct ieee80211_local {
  	bool disable_dynamic_ps;
  
  	int user_power_level; /* in dBm, for all interfaces */
@@ -72,7 +72,7 @@
  		u32 tx_ant, rx_ant;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2127,6 +2127,19 @@ static int ieee80211_get_tx_power(struct
+@@ -2155,6 +2155,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -92,7 +92,7 @@
  static int ieee80211_set_wds_peer(struct wiphy *wiphy, struct net_device *dev,
  				  const u8 *addr)
  {
-@@ -3250,6 +3263,7 @@ struct cfg80211_ops mac80211_config_ops 
+@@ -3278,6 +3291,7 @@ struct cfg80211_ops mac80211_config_ops 
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
@@ -152,7 +152,7 @@
  		local->hw.cur_power_level = power;
  		local->hw.conf.power_level = power;
  	}
-@@ -646,6 +659,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+@@ -582,6 +595,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
  					 IEEE80211_RADIOTAP_MCS_HAVE_BW;
  	local->hw.radiotap_vht_details = IEEE80211_RADIOTAP_VHT_KNOWN_GI |
  					 IEEE80211_RADIOTAP_VHT_KNOWN_BANDWIDTH;

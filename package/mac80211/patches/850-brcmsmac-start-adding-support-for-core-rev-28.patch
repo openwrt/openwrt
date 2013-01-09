@@ -28,7 +28,7 @@
  		if (BRCMS_ISNPHY(wlc_hw->band)) {
  			brcms_ucode_write(wlc_hw, ucode->bcm43xx_16_mimo,
  					  ucode->bcm43xx_16_mimosz);
-@@ -3218,7 +3218,7 @@ static void brcms_b_coreinit(struct brcm
+@@ -3217,7 +3217,7 @@ static void brcms_b_coreinit(struct brcm
  
  	sflags = bcma_aread32(core, BCMA_IOST);
  
@@ -37,7 +37,7 @@
  		if (BRCMS_ISNPHY(wlc_hw->band))
  			brcms_c_write_inits(wlc_hw, ucode->d11n0initvals16);
  		else
-@@ -5675,6 +5675,8 @@ static bool brcms_c_chipmatch_soc(struct
+@@ -5674,6 +5674,8 @@ static bool brcms_c_chipmatch_soc(struct
  
  	if (chipinfo->id == BCMA_CHIP_ID_BCM4716)
  		return true;
