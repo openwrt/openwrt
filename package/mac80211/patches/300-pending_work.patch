@@ -466,3 +466,524 @@
  		}
  	} while (1);
  
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -4586,14 +4586,14 @@ static int ar9003_hw_cal_pier_get(struct
+ 	return 0;
+ }
+ 
+-static int ar9003_hw_power_control_override(struct ath_hw *ah,
+-					    int frequency,
+-					    int *correction,
+-					    int *voltage, int *temperature)
++static void ar9003_hw_power_control_override(struct ath_hw *ah,
++					     int frequency,
++					     int *correction,
++					     int *voltage, int *temperature)
+ {
+-	int tempSlope = 0;
++	int temp_slope = 0, temp_slope1 = 0, temp_slope2 = 0;
+ 	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	int f[8], t[8], i;
++	int f[8], t[8], t1[3], t2[3], i;
+ 
+ 	REG_RMW(ah, AR_PHY_TPC_11_B0,
+ 		(correction[0] << AR_PHY_TPC_OLPC_GAIN_DELTA_S),
+@@ -4624,38 +4624,108 @@ static int ar9003_hw_power_control_overr
+ 	 * enable temperature compensation
+ 	 * Need to use register names
+ 	 */
+-	if (frequency < 4000)
+-		tempSlope = eep->modalHeader2G.tempSlope;
+-	else if ((eep->baseEepHeader.miscConfiguration & 0x20) != 0) {
+-		for (i = 0; i < 8; i++) {
+-			t[i] = eep->base_ext1.tempslopextension[i];
+-			f[i] = FBIN2FREQ(eep->calFreqPier5G[i], 0);
+-		}
+-		tempSlope = ar9003_hw_power_interpolate((s32) frequency,
+-							f, t, 8);
+-	} else if (eep->base_ext2.tempSlopeLow != 0) {
+-		t[0] = eep->base_ext2.tempSlopeLow;
+-		f[0] = 5180;
+-		t[1] = eep->modalHeader5G.tempSlope;
+-		f[1] = 5500;
+-		t[2] = eep->base_ext2.tempSlopeHigh;
+-		f[2] = 5785;
+-		tempSlope = ar9003_hw_power_interpolate((s32) frequency,
+-							f, t, 3);
+-	} else
+-		tempSlope = eep->modalHeader5G.tempSlope;
++	if (frequency < 4000) {
++		temp_slope = eep->modalHeader2G.tempSlope;
++	} else {
++		if (AR_SREV_9550(ah)) {
++			t[0] = eep->base_ext1.tempslopextension[2];
++			t1[0] = eep->base_ext1.tempslopextension[3];
++			t2[0] = eep->base_ext1.tempslopextension[4];
++			f[0] = 5180;
++
++			t[1] = eep->modalHeader5G.tempSlope;
++			t1[1] = eep->base_ext1.tempslopextension[0];
++			t2[1] = eep->base_ext1.tempslopextension[1];
++			f[1] = 5500;
++
++			t[2] = eep->base_ext1.tempslopextension[5];
++			t1[2] = eep->base_ext1.tempslopextension[6];
++			t2[2] = eep->base_ext1.tempslopextension[7];
++			f[2] = 5785;
++
++			temp_slope = ar9003_hw_power_interpolate(frequency,
++								 f, t, 3);
++			temp_slope1 = ar9003_hw_power_interpolate(frequency,
++								   f, t1, 3);
++			temp_slope2 = ar9003_hw_power_interpolate(frequency,
++								   f, t2, 3);
++
++			goto tempslope;
++		}
++
++		if ((eep->baseEepHeader.miscConfiguration & 0x20) != 0) {
++			for (i = 0; i < 8; i++) {
++				t[i] = eep->base_ext1.tempslopextension[i];
++				f[i] = FBIN2FREQ(eep->calFreqPier5G[i], 0);
++			}
++			temp_slope = ar9003_hw_power_interpolate((s32) frequency,
++								 f, t, 8);
++		} else if (eep->base_ext2.tempSlopeLow != 0) {
++			t[0] = eep->base_ext2.tempSlopeLow;
++			f[0] = 5180;
++			t[1] = eep->modalHeader5G.tempSlope;
++			f[1] = 5500;
++			t[2] = eep->base_ext2.tempSlopeHigh;
++			f[2] = 5785;
++			temp_slope = ar9003_hw_power_interpolate((s32) frequency,
++								 f, t, 3);
++		} else {
++			temp_slope = eep->modalHeader5G.tempSlope;
++		}
++	}
+ 
+-	REG_RMW_FIELD(ah, AR_PHY_TPC_19, AR_PHY_TPC_19_ALPHA_THERM, tempSlope);
++tempslope:
++	if (AR_SREV_9550(ah)) {
++		/*
++		 * AR955x has tempSlope register for each chain.
++		 * Check whether temp_compensation feature is enabled or not.
++		 */
++		if (eep->baseEepHeader.featureEnable & 0x1) {
++			if (frequency < 4000) {
++				REG_RMW_FIELD(ah, AR_PHY_TPC_19,
++					      AR_PHY_TPC_19_ALPHA_THERM,
++					      eep->base_ext2.tempSlopeLow);
++				REG_RMW_FIELD(ah, AR_PHY_TPC_19_B1,
++					      AR_PHY_TPC_19_ALPHA_THERM,
++					      temp_slope);
++				REG_RMW_FIELD(ah, AR_PHY_TPC_19_B2,
++					      AR_PHY_TPC_19_ALPHA_THERM,
++					      eep->base_ext2.tempSlopeHigh);
++			} else {
++				REG_RMW_FIELD(ah, AR_PHY_TPC_19,
++					      AR_PHY_TPC_19_ALPHA_THERM,
++					      temp_slope);
++				REG_RMW_FIELD(ah, AR_PHY_TPC_19_B1,
++					      AR_PHY_TPC_19_ALPHA_THERM,
++					      temp_slope1);
++				REG_RMW_FIELD(ah, AR_PHY_TPC_19_B2,
++					      AR_PHY_TPC_19_ALPHA_THERM,
++					      temp_slope2);
++			}
++		} else {
++			/*
++			 * If temp compensation is not enabled,
++			 * set all registers to 0.
++			 */
++			REG_RMW_FIELD(ah, AR_PHY_TPC_19,
++				      AR_PHY_TPC_19_ALPHA_THERM, 0);
++			REG_RMW_FIELD(ah, AR_PHY_TPC_19_B1,
++				      AR_PHY_TPC_19_ALPHA_THERM, 0);
++			REG_RMW_FIELD(ah, AR_PHY_TPC_19_B2,
++				      AR_PHY_TPC_19_ALPHA_THERM, 0);
++		}
++	} else {
++		REG_RMW_FIELD(ah, AR_PHY_TPC_19,
++			      AR_PHY_TPC_19_ALPHA_THERM, temp_slope);
++	}
+ 
+ 	if (AR_SREV_9462_20(ah))
+ 		REG_RMW_FIELD(ah, AR_PHY_TPC_19_B1,
+-			      AR_PHY_TPC_19_B1_ALPHA_THERM, tempSlope);
++			      AR_PHY_TPC_19_B1_ALPHA_THERM, temp_slope);
+ 
+ 
+ 	REG_RMW_FIELD(ah, AR_PHY_TPC_18, AR_PHY_TPC_18_THERM_CAL_VALUE,
+ 		      temperature[0]);
+-
+-	return 0;
+ }
+ 
+ /* Apply the recorded correction values. */
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -68,7 +68,7 @@ static const int m2ThreshExt_off = 127;
+ static int ar9003_hw_set_channel(struct ath_hw *ah, struct ath9k_channel *chan)
+ {
+ 	u16 bMode, fracMode = 0, aModeRefSel = 0;
+-	u32 freq, channelSel = 0, reg32 = 0;
++	u32 freq, chan_frac, div, channelSel = 0, reg32 = 0;
+ 	struct chan_centers centers;
+ 	int loadSynthChannel;
+ 
+@@ -77,9 +77,6 @@ static int ar9003_hw_set_channel(struct 
+ 
+ 	if (freq < 4800) {     /* 2 GHz, fractional mode */
+ 		if (AR_SREV_9330(ah)) {
+-			u32 chan_frac;
+-			u32 div;
+-
+ 			if (ah->is_clk_25mhz)
+ 				div = 75;
+ 			else
+@@ -89,34 +86,40 @@ static int ar9003_hw_set_channel(struct 
+ 			chan_frac = (((freq * 4) % div) * 0x20000) / div;
+ 			channelSel = (channelSel << 17) | chan_frac;
+ 		} else if (AR_SREV_9485(ah) || AR_SREV_9565(ah)) {
+-			u32 chan_frac;
+-
+ 			/*
+-			 * freq_ref = 40 / (refdiva >> amoderefsel); where refdiva=1 and amoderefsel=0
++			 * freq_ref = 40 / (refdiva >> amoderefsel);
++			 * where refdiva=1 and amoderefsel=0
+ 			 * ndiv = ((chan_mhz * 4) / 3) / freq_ref;
+ 			 * chansel = int(ndiv), chanfrac = (ndiv - chansel) * 0x20000
+ 			 */
+ 			channelSel = (freq * 4) / 120;
+ 			chan_frac = (((freq * 4) % 120) * 0x20000) / 120;
+ 			channelSel = (channelSel << 17) | chan_frac;
+-		} else if (AR_SREV_9340(ah) || AR_SREV_9550(ah)) {
++		} else if (AR_SREV_9340(ah)) {
+ 			if (ah->is_clk_25mhz) {
+-				u32 chan_frac;
+-
+ 				channelSel = (freq * 2) / 75;
+ 				chan_frac = (((freq * 2) % 75) * 0x20000) / 75;
+ 				channelSel = (channelSel << 17) | chan_frac;
+-			} else
++			} else {
+ 				channelSel = CHANSEL_2G(freq) >> 1;
+-		} else
++			}
++		} else if (AR_SREV_9550(ah)) {
++			if (ah->is_clk_25mhz)
++				div = 75;
++			else
++				div = 120;
++
++			channelSel = (freq * 4) / div;
++			chan_frac = (((freq * 4) % div) * 0x20000) / div;
++			channelSel = (channelSel << 17) | chan_frac;
++		} else {
+ 			channelSel = CHANSEL_2G(freq);
++		}
+ 		/* Set to 2G mode */
+ 		bMode = 1;
+ 	} else {
+ 		if ((AR_SREV_9340(ah) || AR_SREV_9550(ah)) &&
+ 		    ah->is_clk_25mhz) {
+-			u32 chan_frac;
+-
+ 			channelSel = freq / 75;
+ 			chan_frac = ((freq % 75) * 0x20000) / 75;
+ 			channelSel = (channelSel << 17) | chan_frac;
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
+@@ -1028,7 +1028,7 @@
+ #define AR_PHY_TPC_5_B2          (AR_SM2_BASE + 0x208)
+ #define AR_PHY_TPC_6_B2          (AR_SM2_BASE + 0x20c)
+ #define AR_PHY_TPC_11_B2         (AR_SM2_BASE + 0x220)
+-#define AR_PHY_PDADC_TAB_2       (AR_SM2_BASE + 0x240)
++#define AR_PHY_TPC_19_B2         (AR_SM2_BASE + 0x240)
+ #define AR_PHY_TX_IQCAL_STATUS_B2   (AR_SM2_BASE + 0x48c)
+ #define AR_PHY_TX_IQCAL_CORR_COEFF_B2(_i)    (AR_SM2_BASE + 0x450 + ((_i) << 2))
+ 
+--- a/drivers/net/wireless/ath/ath9k/ar955x_1p0_initvals.h
++++ b/drivers/net/wireless/ath/ath9k/ar955x_1p0_initvals.h
+@@ -23,16 +23,16 @@
+ static const u32 ar955x_1p0_radio_postamble[][5] = {
+ 	/* Addr      5G_HT20     5G_HT40     2G_HT40     2G_HT20   */
+ 	{0x00016098, 0xd2dd5554, 0xd2dd5554, 0xd28b3330, 0xd28b3330},
+-	{0x0001609c, 0x0a566f3a, 0x0a566f3a, 0x06345f2a, 0x06345f2a},
+-	{0x000160ac, 0xa4647c00, 0xa4647c00, 0xa4646800, 0xa4646800},
+-	{0x000160b0, 0x01885f52, 0x01885f52, 0x04accf3a, 0x04accf3a},
+-	{0x00016104, 0xb7a00001, 0xb7a00001, 0xb7a00001, 0xb7a00001},
++	{0x0001609c, 0x0a566f3a, 0x0a566f3a, 0x0a566f3a, 0x0a566f3a},
++	{0x000160ac, 0xa4647c00, 0xa4647c00, 0x24647c00, 0x24647c00},
++	{0x000160b0, 0x01885f52, 0x01885f52, 0x01885f52, 0x01885f52},
++	{0x00016104, 0xb7a00000, 0xb7a00000, 0xb7a00001, 0xb7a00001},
+ 	{0x0001610c, 0xc0000000, 0xc0000000, 0xc0000000, 0xc0000000},
+ 	{0x00016140, 0x10804008, 0x10804008, 0x10804008, 0x10804008},
+-	{0x00016504, 0xb7a00001, 0xb7a00001, 0xb7a00001, 0xb7a00001},
++	{0x00016504, 0xb7a00000, 0xb7a00000, 0xb7a00001, 0xb7a00001},
+ 	{0x0001650c, 0xc0000000, 0xc0000000, 0xc0000000, 0xc0000000},
+ 	{0x00016540, 0x10804008, 0x10804008, 0x10804008, 0x10804008},
+-	{0x00016904, 0xb7a00001, 0xb7a00001, 0xb7a00001, 0xb7a00001},
++	{0x00016904, 0xb7a00000, 0xb7a00000, 0xb7a00001, 0xb7a00001},
+ 	{0x0001690c, 0xc0000000, 0xc0000000, 0xc0000000, 0xc0000000},
+ 	{0x00016940, 0x10804008, 0x10804008, 0x10804008, 0x10804008},
+ };
+@@ -69,15 +69,15 @@ static const u32 ar955x_1p0_baseband_pos
+ 	{0x0000a204, 0x005c0ec0, 0x005c0ec4, 0x005c0ec4, 0x005c0ec0},
+ 	{0x0000a208, 0x00000104, 0x00000104, 0x00000004, 0x00000004},
+ 	{0x0000a22c, 0x07e26a2f, 0x07e26a2f, 0x01026a2f, 0x01026a2f},
+-	{0x0000a230, 0x0000000a, 0x00000014, 0x00000016, 0x0000000b},
++	{0x0000a230, 0x0000400a, 0x00004014, 0x00004016, 0x0000400b},
+ 	{0x0000a234, 0x00000fff, 0x10000fff, 0x10000fff, 0x00000fff},
+ 	{0x0000a238, 0xffb01018, 0xffb01018, 0xffb01018, 0xffb01018},
+ 	{0x0000a250, 0x00000000, 0x00000000, 0x00000210, 0x00000108},
+ 	{0x0000a254, 0x000007d0, 0x00000fa0, 0x00001130, 0x00000898},
+ 	{0x0000a258, 0x02020002, 0x02020002, 0x02020002, 0x02020002},
+-	{0x0000a25c, 0x01000e0e, 0x01000e0e, 0x01000e0e, 0x01000e0e},
++	{0x0000a25c, 0x01000e0e, 0x01000e0e, 0x01010e0e, 0x01010e0e},
+ 	{0x0000a260, 0x0a021501, 0x0a021501, 0x3a021501, 0x3a021501},
+-	{0x0000a264, 0x00000e0e, 0x00000e0e, 0x00000e0e, 0x00000e0e},
++	{0x0000a264, 0x00000e0e, 0x00000e0e, 0x01000e0e, 0x01000e0e},
+ 	{0x0000a280, 0x00000007, 0x00000007, 0x0000000b, 0x0000000b},
+ 	{0x0000a284, 0x00000000, 0x00000000, 0x00000010, 0x00000010},
+ 	{0x0000a288, 0x00000110, 0x00000110, 0x00000110, 0x00000110},
+@@ -125,7 +125,7 @@ static const u32 ar955x_1p0_radio_core[]
+ 	{0x00016094, 0x00000000},
+ 	{0x000160a0, 0x0a108ffe},
+ 	{0x000160a4, 0x812fc370},
+-	{0x000160a8, 0x423c8000},
++	{0x000160a8, 0x423c8100},
+ 	{0x000160b4, 0x92480080},
+ 	{0x000160c0, 0x006db6d0},
+ 	{0x000160c4, 0x6db6db60},
+@@ -134,7 +134,7 @@ static const u32 ar955x_1p0_radio_core[]
+ 	{0x00016100, 0x11999601},
+ 	{0x00016108, 0x00080010},
+ 	{0x00016144, 0x02084080},
+-	{0x00016148, 0x000080c0},
++	{0x00016148, 0x00008040},
+ 	{0x00016280, 0x01800804},
+ 	{0x00016284, 0x00038dc5},
+ 	{0x00016288, 0x00000000},
+@@ -178,7 +178,7 @@ static const u32 ar955x_1p0_radio_core[]
+ 	{0x00016500, 0x11999601},
+ 	{0x00016508, 0x00080010},
+ 	{0x00016544, 0x02084080},
+-	{0x00016548, 0x000080c0},
++	{0x00016548, 0x00008040},
+ 	{0x00016780, 0x00000000},
+ 	{0x00016784, 0x00000000},
+ 	{0x00016788, 0x00400705},
+@@ -218,7 +218,7 @@ static const u32 ar955x_1p0_radio_core[]
+ 	{0x00016900, 0x11999601},
+ 	{0x00016908, 0x00080010},
+ 	{0x00016944, 0x02084080},
+-	{0x00016948, 0x000080c0},
++	{0x00016948, 0x00008040},
+ 	{0x00016b80, 0x00000000},
+ 	{0x00016b84, 0x00000000},
+ 	{0x00016b88, 0x00400705},
+@@ -245,9 +245,9 @@ static const u32 ar955x_1p0_radio_core[]
+ 
+ static const u32 ar955x_1p0_modes_xpa_tx_gain_table[][9] = {
+ 	/* Addr      5G_HT20_L   5G_HT40_L   5G_HT20_M   5G_HT40_M   5G_HT20_H   5G_HT40_H   2G_HT40     2G_HT20  */
+-	{0x0000a2dc, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xfffd5aaa, 0xfffd5aaa},
+-	{0x0000a2e0, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xfffe9ccc, 0xfffe9ccc},
+-	{0x0000a2e4, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xffffe0f0, 0xffffe0f0},
++	{0x0000a2dc, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xfffd5aaa, 0xfffd5aaa},
++	{0x0000a2e0, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffe9ccc, 0xfffe9ccc},
++	{0x0000a2e4, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffffe0f0, 0xffffe0f0},
+ 	{0x0000a2e8, 0xffffff00, 0xffffff00, 0xffffff00, 0xffffff00, 0xffffff00, 0xffffff00, 0xfffcff00, 0xfffcff00},
+ 	{0x0000a410, 0x000050de, 0x000050de, 0x000050de, 0x000050de, 0x000050de, 0x000050de, 0x000050da, 0x000050da},
+ 	{0x0000a500, 0x00000003, 0x00000003, 0x00000003, 0x00000003, 0x00000003, 0x00000003, 0x00000000, 0x00000000},
+@@ -256,63 +256,63 @@ static const u32 ar955x_1p0_modes_xpa_tx
+ 	{0x0000a50c, 0x0c00000b, 0x0c00000b, 0x0c00000b, 0x0c00000b, 0x0c00000b, 0x0c00000b, 0x0c000006, 0x0c000006},
+ 	{0x0000a510, 0x1000000d, 0x1000000d, 0x1000000d, 0x1000000d, 0x1000000d, 0x1000000d, 0x0f00000a, 0x0f00000a},
+ 	{0x0000a514, 0x14000011, 0x14000011, 0x14000011, 0x14000011, 0x14000011, 0x14000011, 0x1300000c, 0x1300000c},
+-	{0x0000a518, 0x19004008, 0x19004008, 0x19004008, 0x19004008, 0x18004008, 0x18004008, 0x1700000e, 0x1700000e},
+-	{0x0000a51c, 0x1d00400a, 0x1d00400a, 0x1d00400a, 0x1d00400a, 0x1c00400a, 0x1c00400a, 0x1b000064, 0x1b000064},
+-	{0x0000a520, 0x230020a2, 0x230020a2, 0x210020a2, 0x210020a2, 0x200020a2, 0x200020a2, 0x1f000242, 0x1f000242},
+-	{0x0000a524, 0x2500006e, 0x2500006e, 0x2500006e, 0x2500006e, 0x2400006e, 0x2400006e, 0x23000229, 0x23000229},
+-	{0x0000a528, 0x29022221, 0x29022221, 0x28022221, 0x28022221, 0x27022221, 0x27022221, 0x270002a2, 0x270002a2},
+-	{0x0000a52c, 0x2d00062a, 0x2d00062a, 0x2c00062a, 0x2c00062a, 0x2a00062a, 0x2a00062a, 0x2c001203, 0x2c001203},
+-	{0x0000a530, 0x340220a5, 0x340220a5, 0x320220a5, 0x320220a5, 0x2f0220a5, 0x2f0220a5, 0x30001803, 0x30001803},
+-	{0x0000a534, 0x380022c5, 0x380022c5, 0x350022c5, 0x350022c5, 0x320022c5, 0x320022c5, 0x33000881, 0x33000881},
+-	{0x0000a538, 0x3b002486, 0x3b002486, 0x39002486, 0x39002486, 0x36002486, 0x36002486, 0x38001809, 0x38001809},
+-	{0x0000a53c, 0x3f00248a, 0x3f00248a, 0x3d00248a, 0x3d00248a, 0x3a00248a, 0x3a00248a, 0x3a000814, 0x3a000814},
+-	{0x0000a540, 0x4202242c, 0x4202242c, 0x4102242c, 0x4102242c, 0x3f02242c, 0x3f02242c, 0x3f001a0c, 0x3f001a0c},
+-	{0x0000a544, 0x490044c6, 0x490044c6, 0x460044c6, 0x460044c6, 0x420044c6, 0x420044c6, 0x43001a0e, 0x43001a0e},
+-	{0x0000a548, 0x4d024485, 0x4d024485, 0x4a024485, 0x4a024485, 0x46024485, 0x46024485, 0x46001812, 0x46001812},
+-	{0x0000a54c, 0x51044483, 0x51044483, 0x4e044483, 0x4e044483, 0x4a044483, 0x4a044483, 0x49001884, 0x49001884},
+-	{0x0000a550, 0x5404a40c, 0x5404a40c, 0x5204a40c, 0x5204a40c, 0x4d04a40c, 0x4d04a40c, 0x4d001e84, 0x4d001e84},
+-	{0x0000a554, 0x57024632, 0x57024632, 0x55024632, 0x55024632, 0x52024632, 0x52024632, 0x50001e69, 0x50001e69},
+-	{0x0000a558, 0x5c00a634, 0x5c00a634, 0x5900a634, 0x5900a634, 0x5600a634, 0x5600a634, 0x550006f4, 0x550006f4},
+-	{0x0000a55c, 0x5f026832, 0x5f026832, 0x5d026832, 0x5d026832, 0x5a026832, 0x5a026832, 0x59000ad3, 0x59000ad3},
+-	{0x0000a560, 0x6602b012, 0x6602b012, 0x6202b012, 0x6202b012, 0x5d02b012, 0x5d02b012, 0x5e000ad5, 0x5e000ad5},
+-	{0x0000a564, 0x6e02d0e1, 0x6e02d0e1, 0x6802d0e1, 0x6802d0e1, 0x6002d0e1, 0x6002d0e1, 0x61001ced, 0x61001ced},
+-	{0x0000a568, 0x7202b4c4, 0x7202b4c4, 0x6c02b4c4, 0x6c02b4c4, 0x6502b4c4, 0x6502b4c4, 0x660018d4, 0x660018d4},
+-	{0x0000a56c, 0x75007894, 0x75007894, 0x70007894, 0x70007894, 0x6b007894, 0x6b007894, 0x660018d4, 0x660018d4},
+-	{0x0000a570, 0x7b025c74, 0x7b025c74, 0x75025c74, 0x75025c74, 0x70025c74, 0x70025c74, 0x660018d4, 0x660018d4},
+-	{0x0000a574, 0x8300bcb5, 0x8300bcb5, 0x7a00bcb5, 0x7a00bcb5, 0x7600bcb5, 0x7600bcb5, 0x660018d4, 0x660018d4},
+-	{0x0000a578, 0x8a04dc74, 0x8a04dc74, 0x7f04dc74, 0x7f04dc74, 0x7c04dc74, 0x7c04dc74, 0x660018d4, 0x660018d4},
+-	{0x0000a57c, 0x8a04dc74, 0x8a04dc74, 0x7f04dc74, 0x7f04dc74, 0x7c04dc74, 0x7c04dc74, 0x660018d4, 0x660018d4},
++	{0x0000a518, 0x1700002b, 0x1700002b, 0x1700002b, 0x1700002b, 0x1600002b, 0x1600002b, 0x1700000e, 0x1700000e},
++	{0x0000a51c, 0x1b00002d, 0x1b00002d, 0x1b00002d, 0x1b00002d, 0x1a00002d, 0x1a00002d, 0x1b000064, 0x1b000064},
++	{0x0000a520, 0x20000031, 0x20000031, 0x1f000031, 0x1f000031, 0x1e000031, 0x1e000031, 0x1f000242, 0x1f000242},
++	{0x0000a524, 0x24000051, 0x24000051, 0x23000051, 0x23000051, 0x23000051, 0x23000051, 0x23000229, 0x23000229},
++	{0x0000a528, 0x27000071, 0x27000071, 0x27000071, 0x27000071, 0x26000071, 0x26000071, 0x270002a2, 0x270002a2},
++	{0x0000a52c, 0x2b000092, 0x2b000092, 0x2b000092, 0x2b000092, 0x2b000092, 0x2b000092, 0x2c001203, 0x2c001203},
++	{0x0000a530, 0x3000028c, 0x3000028c, 0x2f00028c, 0x2f00028c, 0x2e00028c, 0x2e00028c, 0x30001803, 0x30001803},
++	{0x0000a534, 0x34000290, 0x34000290, 0x33000290, 0x33000290, 0x32000290, 0x32000290, 0x33000881, 0x33000881},
++	{0x0000a538, 0x37000292, 0x37000292, 0x36000292, 0x36000292, 0x35000292, 0x35000292, 0x38001809, 0x38001809},
++	{0x0000a53c, 0x3b02028d, 0x3b02028d, 0x3a02028d, 0x3a02028d, 0x3902028d, 0x3902028d, 0x3a000814, 0x3a000814},
++	{0x0000a540, 0x3f020291, 0x3f020291, 0x3e020291, 0x3e020291, 0x3d020291, 0x3d020291, 0x3f001a0c, 0x3f001a0c},
++	{0x0000a544, 0x44020490, 0x44020490, 0x43020490, 0x43020490, 0x42020490, 0x42020490, 0x43001a0e, 0x43001a0e},
++	{0x0000a548, 0x48020492, 0x48020492, 0x47020492, 0x47020492, 0x46020492, 0x46020492, 0x46001812, 0x46001812},
++	{0x0000a54c, 0x4c020692, 0x4c020692, 0x4b020692, 0x4b020692, 0x4a020692, 0x4a020692, 0x49001884, 0x49001884},
++	{0x0000a550, 0x50020892, 0x50020892, 0x4f020892, 0x4f020892, 0x4e020892, 0x4e020892, 0x4d001e84, 0x4d001e84},
++	{0x0000a554, 0x53040891, 0x53040891, 0x53040891, 0x53040891, 0x52040891, 0x52040891, 0x50001e69, 0x50001e69},
++	{0x0000a558, 0x58040893, 0x58040893, 0x57040893, 0x57040893, 0x56040893, 0x56040893, 0x550006f4, 0x550006f4},
++	{0x0000a55c, 0x5c0408b4, 0x5c0408b4, 0x5a0408b4, 0x5a0408b4, 0x5a0408b4, 0x5a0408b4, 0x59000ad3, 0x59000ad3},
++	{0x0000a560, 0x610408b6, 0x610408b6, 0x5e0408b6, 0x5e0408b6, 0x5e0408b6, 0x5e0408b6, 0x5e000ad5, 0x5e000ad5},
++	{0x0000a564, 0x670408f6, 0x670408f6, 0x620408f6, 0x620408f6, 0x620408f6, 0x620408f6, 0x61001ced, 0x61001ced},
++	{0x0000a568, 0x6a040cf6, 0x6a040cf6, 0x66040cf6, 0x66040cf6, 0x66040cf6, 0x66040cf6, 0x660018d4, 0x660018d4},
++	{0x0000a56c, 0x6d040d76, 0x6d040d76, 0x6a040d76, 0x6a040d76, 0x6a040d76, 0x6a040d76, 0x660018d4, 0x660018d4},
++	{0x0000a570, 0x70060db6, 0x70060db6, 0x6e060db6, 0x6e060db6, 0x6e060db6, 0x6e060db6, 0x660018d4, 0x660018d4},
++	{0x0000a574, 0x730a0df6, 0x730a0df6, 0x720a0df6, 0x720a0df6, 0x720a0df6, 0x720a0df6, 0x660018d4, 0x660018d4},
++	{0x0000a578, 0x770a13f6, 0x770a13f6, 0x760a13f6, 0x760a13f6, 0x760a13f6, 0x760a13f6, 0x660018d4, 0x660018d4},
++	{0x0000a57c, 0x770a13f6, 0x770a13f6, 0x760a13f6, 0x760a13f6, 0x760a13f6, 0x760a13f6, 0x660018d4, 0x660018d4},
+ 	{0x0000a600, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
+ 	{0x0000a604, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
+ 	{0x0000a608, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
+-	{0x0000a60c, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x03804000, 0x03804000},
+-	{0x0000a610, 0x04c08c01, 0x04c08c01, 0x04808b01, 0x04808b01, 0x04808a01, 0x04808a01, 0x0300ca02, 0x0300ca02},
+-	{0x0000a614, 0x00c0c303, 0x00c0c303, 0x00c0c303, 0x00c0c303, 0x00c0c303, 0x00c0c303, 0x00000e04, 0x00000e04},
+-	{0x0000a618, 0x04010c01, 0x04010c01, 0x03c10b01, 0x03c10b01, 0x03810a01, 0x03810a01, 0x03014000, 0x03014000},
+-	{0x0000a61c, 0x03814e05, 0x03814e05, 0x03414d05, 0x03414d05, 0x03414d05, 0x03414d05, 0x00000000, 0x00000000},
+-	{0x0000a620, 0x04010303, 0x04010303, 0x03c10303, 0x03c10303, 0x03810303, 0x03810303, 0x00000000, 0x00000000},
+-	{0x0000a624, 0x03814e05, 0x03814e05, 0x03414d05, 0x03414d05, 0x03414d05, 0x03414d05, 0x03014000, 0x03014000},
+-	{0x0000a628, 0x00c0c000, 0x00c0c000, 0x00c0c000, 0x00c0c000, 0x00c0c000, 0x00c0c000, 0x03804c05, 0x03804c05},
+-	{0x0000a62c, 0x00c0c303, 0x00c0c303, 0x00c0c303, 0x00c0c303, 0x00c0c303, 0x00c0c303, 0x0701de06, 0x0701de06},
+-	{0x0000a630, 0x03418000, 0x03418000, 0x03018000, 0x03018000, 0x02c18000, 0x02c18000, 0x07819c07, 0x07819c07},
+-	{0x0000a634, 0x03815004, 0x03815004, 0x03414f04, 0x03414f04, 0x03414e04, 0x03414e04, 0x0701dc07, 0x0701dc07},
+-	{0x0000a638, 0x03005302, 0x03005302, 0x02c05202, 0x02c05202, 0x02805202, 0x02805202, 0x0701dc07, 0x0701dc07},
+-	{0x0000a63c, 0x04c09302, 0x04c09302, 0x04809202, 0x04809202, 0x04809202, 0x04809202, 0x0701dc07, 0x0701dc07},
+-	{0x0000b2dc, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xfffd5aaa, 0xfffd5aaa},
+-	{0x0000b2e0, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xfffe9ccc, 0xfffe9ccc},
+-	{0x0000b2e4, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xffffe0f0, 0xffffe0f0},
++	{0x0000a60c, 0x02c04b01, 0x02c04b01, 0x02c04b01, 0x02c04b01, 0x02c04b01, 0x02c04b01, 0x03804000, 0x03804000},
++	{0x0000a610, 0x04008b01, 0x04008b01, 0x04008b01, 0x04008b01, 0x03c08b01, 0x03c08b01, 0x0300ca02, 0x0300ca02},
++	{0x0000a614, 0x05811403, 0x05811403, 0x05411303, 0x05411303, 0x05411303, 0x05411303, 0x00000e04, 0x00000e04},
++	{0x0000a618, 0x05811604, 0x05811604, 0x05411504, 0x05411504, 0x05411504, 0x05411504, 0x03014000, 0x03014000},
++	{0x0000a61c, 0x05811604, 0x05811604, 0x05411504, 0x05411504, 0x05411504, 0x05411504, 0x00000000, 0x00000000},
++	{0x0000a620, 0x05811604, 0x05811604, 0x05411504, 0x05411504, 0x05411504, 0x05411504, 0x00000000, 0x00000000},
++	{0x0000a624, 0x05811604, 0x05811604, 0x05411504, 0x05411504, 0x05411504, 0x05411504, 0x03014000, 0x03014000},
++	{0x0000a628, 0x05811604, 0x05811604, 0x05411504, 0x05411504, 0x05411504, 0x05411504, 0x03804c05, 0x03804c05},
++	{0x0000a62c, 0x06815604, 0x06815604, 0x06415504, 0x06415504, 0x06015504, 0x06015504, 0x0701de06, 0x0701de06},
++	{0x0000a630, 0x07819a05, 0x07819a05, 0x07419905, 0x07419905, 0x07019805, 0x07019805, 0x07819c07, 0x07819c07},
++	{0x0000a634, 0x07819e06, 0x07819e06, 0x07419d06, 0x07419d06, 0x07019c06, 0x07019c06, 0x0701dc07, 0x0701dc07},
++	{0x0000a638, 0x07819e06, 0x07819e06, 0x07419d06, 0x07419d06, 0x07019c06, 0x07019c06, 0x0701dc07, 0x0701dc07},
++	{0x0000a63c, 0x07819e06, 0x07819e06, 0x07419d06, 0x07419d06, 0x07019c06, 0x07019c06, 0x0701dc07, 0x0701dc07},
++	{0x0000b2dc, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xfffd5aaa, 0xfffd5aaa},
++	{0x0000b2e0, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffe9ccc, 0xfffe9ccc},
++	{0x0000b2e4, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffffe0f0, 0xffffe0f0},
+ 	{0x0000b2e8, 0xffffff00, 0xffffff00, 0xffffff00, 0xffffff00, 0xffffff00, 0xffffff00, 0xfffcff00, 0xfffcff00},
+-	{0x0000c2dc, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xffffaaaa, 0xfffd5aaa, 0xfffd5aaa},
+-	{0x0000c2e0, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xffffcccc, 0xfffe9ccc, 0xfffe9ccc},
+-	{0x0000c2e4, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xfffff0f0, 0xffffe0f0, 0xffffe0f0},
++	{0x0000c2dc, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xffff6aaa, 0xfffd5aaa, 0xfffd5aaa},
++	{0x0000c2e0, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffdcccc, 0xfffe9ccc, 0xfffe9ccc},
++	{0x0000c2e4, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffe3b0f0, 0xffffe0f0, 0xffffe0f0},
+ 	{0x0000c2e8, 0xffffff00, 0xffffff00, 0xffffff00, 0xffffff00, 0xffffff00, 0xffffff00, 0xfffcff00, 0xfffcff00},
+ 	{0x00016044, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x010002d4, 0x010002d4},
+-	{0x00016048, 0x62482401, 0x62482401, 0x62482401, 0x62482401, 0x62482401, 0x62482401, 0x66482401, 0x66482401},
++	{0x00016048, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401},
+ 	{0x00016280, 0x01801e84, 0x01801e84, 0x01801e84, 0x01801e84, 0x01801e84, 0x01801e84, 0x01808e84, 0x01808e84},
+ 	{0x00016444, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x010002d4, 0x010002d4},
+-	{0x00016448, 0x62482401, 0x62482401, 0x62482401, 0x62482401, 0x62482401, 0x62482401, 0x66482401, 0x66482401},
++	{0x00016448, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401},
+ 	{0x00016844, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x056db2d4, 0x010002d4, 0x010002d4},
+-	{0x00016848, 0x62482401, 0x62482401, 0x62482401, 0x62482401, 0x62482401, 0x62482401, 0x66482401, 0x66482401},
++	{0x00016848, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401, 0x66482401},
+ };
+ 
+ static const u32 ar955x_1p0_mac_core[][2] = {
+@@ -846,7 +846,7 @@ static const u32 ar955x_1p0_baseband_cor
+ 	{0x0000a44c, 0x00000001},
+ 	{0x0000a450, 0x00010000},
+ 	{0x0000a458, 0x00000000},
+-	{0x0000a644, 0x3fad9d74},
++	{0x0000a644, 0xbfad9d74},
+ 	{0x0000a648, 0x0048060a},
+ 	{0x0000a64c, 0x00003c37},
+ 	{0x0000a670, 0x03020100},
+@@ -1277,7 +1277,7 @@ static const u32 ar955x_1p0_modes_fast_c
+ 	{0x0000801c, 0x148ec02b, 0x148ec057},
+ 	{0x00008318, 0x000044c0, 0x00008980},
+ 	{0x00009e00, 0x0372131c, 0x0372131c},
+-	{0x0000a230, 0x0000000b, 0x00000016},
++	{0x0000a230, 0x0000400b, 0x00004016},
+ 	{0x0000a254, 0x00000898, 0x00001130},
+ };
+ 
+--- a/drivers/net/wireless/ath/ath9k/htc_hst.c
++++ b/drivers/net/wireless/ath/ath9k/htc_hst.c
+@@ -347,6 +347,8 @@ void ath9k_htc_txcompletion_cb(struct ht
+ 			endpoint->ep_callbacks.tx(endpoint->ep_callbacks.priv,
+ 						  skb, htc_hdr->endpoint_id,
+ 						  txok);
++		} else {
++			kfree_skb(skb);
+ 		}
+ 	}
+ 
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -142,8 +142,8 @@ static void rcu_free_regdom(const struct
+ 
+ static struct regulatory_request *get_last_request(void)
+ {
+-	return rcu_dereference_protected(last_request,
+-					 lockdep_is_held(&reg_mutex));
++	return rcu_dereference_check(last_request,
++				     lockdep_is_held(&reg_mutex));
+ }
+ 
+ /* Used to queue up regulatory hints */
+@@ -1850,7 +1850,7 @@ static void restore_regulatory_settings(
+ 	mutex_lock(&cfg80211_mutex);
+ 	mutex_lock(&reg_mutex);
+ 
+-	reset_regdomains(true, cfg80211_world_regdom);
++	reset_regdomains(true, &world_regdom);
+ 	restore_alpha2(alpha2, reset_user);
+ 
+ 	/*
+@@ -2251,14 +2251,21 @@ int set_regdom(const struct ieee80211_re
+ 
+ int reg_device_uevent(struct device *dev, struct kobj_uevent_env *env)
+ {
+-	struct regulatory_request *lr = get_last_request();
++	struct regulatory_request *lr;
++	u8 alpha2[2];
++	bool add = false;
+ 
++	rcu_read_lock();
++	lr = get_last_request();
+ 	if (lr && !lr->processed) {
+-		if (add_uevent_var(env, "COUNTRY=%c%c",
+-				   lr->alpha2[0], lr->alpha2[1]))
+-			return -ENOMEM;
++		memcpy(alpha2, lr->alpha2, 2);
++		add = true;
+ 	}
++	rcu_read_unlock();
+ 
++	if (add)
++		return add_uevent_var(env, "COUNTRY=%c%c",
++				      alpha2[0], alpha2[1]);
+ 	return 0;
+ }
+ 
