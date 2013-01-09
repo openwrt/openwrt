@@ -62,7 +62,7 @@
  	debugfs_create_file("interrupt", S_IRUSR, sc->debug.debugfs_phy, sc,
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -498,6 +498,12 @@ enum {
+@@ -499,6 +499,12 @@ enum {
  	ATH9K_RESET_COLD,
  };
  
@@ -75,7 +75,7 @@
  struct ath9k_hw_version {
  	u32 magic;
  	u16 devid;
-@@ -742,6 +748,8 @@ struct ath_hw {
+@@ -740,6 +746,8 @@ struct ath_hw {
  	u32 rfkill_polarity;
  	u32 ah_flags;
  
@@ -84,7 +84,7 @@
  	bool reset_power_on;
  	bool htc_reset_init;
  
-@@ -1010,6 +1018,7 @@ void ath9k_hw_set_sta_beacon_timers(stru
+@@ -1007,6 +1015,7 @@ void ath9k_hw_set_sta_beacon_timers(stru
  bool ath9k_hw_check_alive(struct ath_hw *ah);
  
  bool ath9k_hw_setpower(struct ath_hw *ah, enum ath9k_power_mode mode);
@@ -94,7 +94,7 @@
  void ath9k_debug_sync_cause(struct ath_common *common, u32 sync_cause);
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1762,6 +1762,20 @@ fail:
+@@ -1754,6 +1754,20 @@ fail:
  	return -EINVAL;
  }
  
@@ -115,7 +115,7 @@
  int ath9k_hw_reset(struct ath_hw *ah, struct ath9k_channel *chan,
  		   struct ath9k_hw_cal_data *caldata, bool fastcc)
  {
-@@ -2039,6 +2053,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -2031,6 +2045,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  	}
  
  	ath9k_hw_apply_gpio_override(ah);

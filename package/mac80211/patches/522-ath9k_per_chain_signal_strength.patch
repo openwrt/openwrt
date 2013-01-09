@@ -21,7 +21,7 @@
  	u8 vendor_radiotap_oui[3];
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -329,6 +329,11 @@ struct sta_info {
+@@ -335,6 +335,11 @@ struct sta_info {
  	int last_signal;
  	struct ewma avg_signal;
  	int last_ack_signal;
@@ -65,7 +65,7 @@
  	 * exchange sequence.
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -324,6 +324,8 @@ struct sta_info *sta_info_alloc(struct i
+@@ -356,6 +356,8 @@ struct sta_info *sta_info_alloc(struct i
  	do_posix_clock_monotonic_gettime(&uptime);
  	sta->last_connected = uptime.tv_sec;
  	ewma_init(&sta->avg_signal, 1024, 8);
@@ -135,7 +135,7 @@
  	u8 rs_num_delims;
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -955,6 +955,7 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -946,6 +946,7 @@ static int ath9k_rx_skb_preprocess(struc
  				   bool *decrypt_error)
  {
  	struct ath_hw *ah = common->ah;
@@ -143,7 +143,7 @@
  
  	/*
  	 * everything but the rate is checked here, the rate check is done
-@@ -980,6 +981,20 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -971,6 +972,20 @@ static int ath9k_rx_skb_preprocess(struc
  	if (rx_stats->rs_moreaggr)
  		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
  
@@ -248,7 +248,7 @@
  	RX_SAMP_DBG(rate) = rs->rs_rate;
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -1834,6 +1834,8 @@ enum nl80211_sta_bss_param {
+@@ -1838,6 +1838,8 @@ enum nl80211_sta_bss_param {
   * @NL80211_STA_INFO_STA_FLAGS: Contains a struct nl80211_sta_flag_update.
   * @NL80211_STA_INFO_BEACON_LOSS: count of times beacon loss was detected (u32)
   * @NL80211_STA_INFO_T_OFFSET: timing offset with respect to this STA (s64)
@@ -257,7 +257,7 @@
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -1858,6 +1860,8 @@ enum nl80211_sta_info {
+@@ -1862,6 +1864,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_STA_FLAGS,
  	NL80211_STA_INFO_BEACON_LOSS,
  	NL80211_STA_INFO_T_OFFSET,

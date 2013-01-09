@@ -36,7 +36,7 @@
  
  /* Mesh flags */
  #define MESH_FLAGS_AE_A4 	0x1
-@@ -830,7 +830,7 @@ struct ieee80211_mgmt {
+@@ -839,7 +839,7 @@ struct ieee80211_mgmt {
  			} u;
  		} __packed action;
  	} u;
@@ -45,7 +45,7 @@
  
  /* Supported Rates value encodings in 802.11n-2009 7.3.2.2 */
  #define BSS_MEMBERSHIP_SELECTOR_HT_PHY	127
-@@ -861,20 +861,20 @@ struct ieee80211_rts {
+@@ -870,20 +870,20 @@ struct ieee80211_rts {
  	__le16 duration;
  	u8 ra[6];
  	u8 ta[6];
