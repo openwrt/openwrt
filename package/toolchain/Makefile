@@ -451,6 +451,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
+  ifneq ($(CONFIG_USE_MUSL),y)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libpthread.so.* \
 		$(if $(BUILD_LIBGCC),\
@@ -458,6 +459,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 			$(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_SO_VERSION).so \
 		) \
 		$(1)/lib/
+  endif
   endef
 
   define Package/libthread-db/install
