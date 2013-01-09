@@ -451,7 +451,7 @@
  		}
  requeue:
 +		list_add_tail(&bf->list, &sc->rx.rxbuf);
-+		if (!flush)
++		if (flush)
 +			continue;
 +
  		if (edma) {
