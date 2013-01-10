@@ -59,9 +59,9 @@ __set_direction(struct cns3xxx_gpio_chip *cchip, unsigned pin, int input)
 
 	reg = __raw_readl(cchip->base + GPIO_DIR);
 	if (input)
-		reg |= 1 << pin;
+		reg &= ~(1 << pin);
 	else
-		reg &= !(1 << pin);
+		reg |= (1 << pin);
 	__raw_writel(reg, cchip->base + GPIO_DIR);
 }
 
