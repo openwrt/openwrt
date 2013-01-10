@@ -1,6 +1,6 @@
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -45,6 +45,7 @@ int bcma_sprom_get(struct bcma_bus *bus)
+@@ -47,6 +47,7 @@ int bcma_sprom_get(struct bcma_bus *bus)
  /* driver_chipcommon.c */
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  void bcma_chipco_serial_init(struct bcma_drv_cc *cc);
@@ -18,7 +18,7 @@
  
  /* The 47162a0 hangs when reading MIPS DMP registers registers */
  static inline bool bcma_core_mips_bcm47162a0_quirk(struct bcma_device *dev)
-@@ -178,6 +179,19 @@ u32 bcma_cpu_clock(struct bcma_drv_mips
+@@ -201,6 +202,19 @@ u32 bcma_cpu_clock(struct bcma_drv_mips
  }
  EXPORT_SYMBOL(bcma_cpu_clock);
  
@@ -38,7 +38,7 @@
  static void bcma_core_mips_flash_detect(struct bcma_drv_mips *mcore)
  {
  	struct bcma_bus *bus = mcore->core->bus;
-@@ -200,6 +214,9 @@ static void bcma_core_mips_flash_detect(
+@@ -223,6 +237,9 @@ static void bcma_core_mips_flash_detect(
  			cc->pflash.buswidth = 1;
  		else
  			cc->pflash.buswidth = 2;

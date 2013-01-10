@@ -1,47 +1,36 @@
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
-@@ -143,6 +143,11 @@ config SSB_EMBEDDED
- 	depends on SSB_DRIVER_MIPS
+@@ -139,7 +139,7 @@ config SSB_DRIVER_MIPS
+ 
+ config SSB_SFLASH
+ 	bool "SSB serial flash support"
+-	depends on SSB_DRIVER_MIPS && BROKEN
++	depends on SSB_DRIVER_MIPS
  	default y
  
-+config SSB_SFLASH
-+	bool
-+	depends on SSB_DRIVER_MIPS
-+	default y
-+
- config SSB_DRIVER_EXTIF
- 	bool "SSB Broadcom EXTIF core driver"
- 	depends on SSB_DRIVER_MIPS
---- a/drivers/ssb/Makefile
-+++ b/drivers/ssb/Makefile
-@@ -11,6 +11,7 @@ ssb-$(CONFIG_SSB_SDIOHOST)		+= sdio.o
- # built-in drivers
- ssb-y					+= driver_chipcommon.o
- ssb-y					+= driver_chipcommon_pmu.o
-+ssb-$(CONFIG_SSB_SFLASH)		+= driver_chipcommon_sflash.o
- ssb-$(CONFIG_SSB_DRIVER_MIPS)		+= driver_mipscore.o
- ssb-$(CONFIG_SSB_DRIVER_EXTIF)		+= driver_extif.o
- ssb-$(CONFIG_SSB_DRIVER_PCICORE)	+= driver_pcicore.o
---- /dev/null
+ # Assumption: We are on embedded, if we compile the MIPS core.
+--- a/drivers/ssb/driver_chipcommon_sflash.c
 +++ b/drivers/ssb/driver_chipcommon_sflash.c
-@@ -0,0 +1,395 @@
-+/*
-+ * Broadcom specific AMBA
-+ * ChipCommon serial flash interface
+@@ -1,18 +1,395 @@
+ /*
+  * Sonics Silicon Backplane
+  * ChipCommon serial flash interface
 + * Copyright 2011, Jonas Gorski <jonas.gorski@gmail.com>
 + * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
 + * Copyright 2010, Broadcom Corporation
-+ *
-+ * Licensed under the GNU/GPL. See COPYING for details.
-+ */
-+
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+ 
 +#include <linux/platform_device.h>
 +#include <linux/delay.h>
-+#include <linux/ssb/ssb.h>
+ #include <linux/ssb/ssb.h>
 +#include <linux/ssb/ssb_driver_chipcommon.h>
-+
-+#include "ssb_private.h"
-+
+ 
+ #include "ssb_private.h"
+ 
+-/* Initialize serial flash access */
+-int ssb_sflash_init(struct ssb_chipcommon *cc)
 +#define NUM_RETRIES	3
 +
 +static struct resource ssb_sflash_resource = {
@@ -169,7 +158,8 @@
 +
 +/* Poll for command completion. Returns zero when complete. */
 +static int ssb_sflash_poll(struct bcm47xx_sflash *dev, u32 offset)
-+{
+ {
+-	pr_err("Serial flash support is not implemented yet!\n");
 +	struct ssb_chipcommon *chipco = dev->scc;
 +
 +	if (offset >= chipco->sflash.size)
@@ -417,21 +407,10 @@
 +	ssb_sflash_dev.resource[0].end = ssb_sflash_dev.resource[0].start +
 +					  sflash->size;
 +	ssb_sflash_dev.dev.platform_data = sflash;
-+
+ 
+-	return -ENOTSUPP;
 +	return 0;
-+}
---- a/drivers/ssb/driver_mipscore.c
-+++ b/drivers/ssb/driver_mipscore.c
-@@ -203,7 +203,8 @@ static void ssb_mips_flash_detect(struct
- 	switch (bus->chipco.capabilities & SSB_CHIPCO_CAP_FLASHT) {
- 	case SSB_CHIPCO_FLASHT_STSER:
- 	case SSB_CHIPCO_FLASHT_ATSER:
--		pr_err("Serial flash not supported\n");
-+		pr_debug("Found serial flash\n");
-+		ssb_sflash_init(&bus->chipco);
- 		break;
- 	case SSB_CHIPCO_FLASHT_PARA:
- 		pr_debug("Found parallel flash\n");
+ }
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
 @@ -19,6 +19,7 @@
@@ -460,23 +439,14 @@
  	/* Unwind the already registered devices. */
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
-@@ -242,4 +242,16 @@ static inline int ssb_watchdog_register(
- }
- #endif /* CONFIG_SSB_EMBEDDED */
- 
-+#ifdef CONFIG_SSB_SFLASH
-+/* driver_chipcommon_sflash.c */
-+int ssb_sflash_init(struct ssb_chipcommon *chipco);
+@@ -220,6 +220,7 @@ extern u32 ssb_chipco_watchdog_timer_set
+ /* driver_chipcommon_sflash.c */
+ #ifdef CONFIG_SSB_SFLASH
+ int ssb_sflash_init(struct ssb_chipcommon *cc);
 +extern struct platform_device ssb_sflash_dev;
-+#else
-+static inline int ssb_sflash_init(struct ssb_chipcommon *chipco)
-+{
-+	pr_err("Serial flash not supported\n");
-+	return 0;
-+}
-+#endif /* CONFIG_SSB_SFLASH */
-+
- #endif /* LINUX_SSB_PRIVATE_H_ */
+ #else
+ static inline int ssb_sflash_init(struct ssb_chipcommon *cc)
+ {
 --- a/include/linux/ssb/ssb_driver_chipcommon.h
 +++ b/include/linux/ssb/ssb_driver_chipcommon.h
 @@ -13,6 +13,8 @@
@@ -515,7 +485,7 @@
  #define SSB_CHIPCO_FLASHCTL_ST_RES	0x03AB		/* Read Electronic Signature */
  #define SSB_CHIPCO_FLASHCTL_ST_CSA	0x1000		/* Keep chip select asserted */
  #define SSB_CHIPCO_FLASHCTL_ST_SSE	0x0220		/* Sub-sector Erase */
-@@ -593,6 +606,9 @@ struct ssb_chipcommon {
+@@ -594,6 +607,9 @@ struct ssb_chipcommon {
  	struct ssb_chipcommon_pmu pmu;
  	u32 ticks_per_ms;
  	u32 max_timer_ms;

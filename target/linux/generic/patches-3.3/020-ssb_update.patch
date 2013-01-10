@@ -1,3 +1,75 @@
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -43,8 +43,8 @@ static void early_nvram_init(void)
+ #ifdef CONFIG_BCM47XX_SSB
+ 	case BCM47XX_BUS_TYPE_SSB:
+ 		mcore_ssb = &bcm47xx_bus.ssb.mipscore;
+-		base = mcore_ssb->flash_window;
+-		lim = mcore_ssb->flash_window_size;
++		base = mcore_ssb->pflash.window;
++		lim = mcore_ssb->pflash.window_size;
+ 		break;
+ #endif
+ #ifdef CONFIG_BCM47XX_BCMA
+--- a/arch/mips/bcm47xx/wgt634u.c
++++ b/arch/mips/bcm47xx/wgt634u.c
+@@ -156,10 +156,10 @@ static int __init wgt634u_init(void)
+ 					    SSB_CHIPCO_IRQ_GPIO);
+ 		}
+ 
+-		wgt634u_flash_data.width = mcore->flash_buswidth;
+-		wgt634u_flash_resource.start = mcore->flash_window;
+-		wgt634u_flash_resource.end = mcore->flash_window
+-					   + mcore->flash_window_size
++		wgt634u_flash_data.width = mcore->pflash.buswidth;
++		wgt634u_flash_resource.start = mcore->pflash.window;
++		wgt634u_flash_resource.end = mcore->pflash.window
++					   + mcore->pflash.window_size
+ 					   - 1;
+ 		return platform_add_devices(wgt634u_devices,
+ 					    ARRAY_SIZE(wgt634u_devices));
+--- a/drivers/ssb/Kconfig
++++ b/drivers/ssb/Kconfig
+@@ -136,6 +136,11 @@ config SSB_DRIVER_MIPS
+ 
+ 	  If unsure, say N
+ 
++config SSB_SFLASH
++	bool "SSB serial flash support"
++	depends on SSB_DRIVER_MIPS && BROKEN
++	default y
++
+ # Assumption: We are on embedded, if we compile the MIPS core.
+ config SSB_EMBEDDED
+ 	bool
+@@ -160,4 +165,12 @@ config SSB_DRIVER_GIGE
+ 
+ 	  If unsure, say N
+ 
++config SSB_DRIVER_GPIO
++	bool "SSB GPIO driver"
++	depends on SSB && GPIOLIB
++	help
++	  Driver to provide access to the GPIO pins on the bus.
++
++	  If unsure, say N
++
+ endmenu
+--- a/drivers/ssb/Makefile
++++ b/drivers/ssb/Makefile
+@@ -11,10 +11,12 @@ ssb-$(CONFIG_SSB_SDIOHOST)		+= sdio.o
+ # built-in drivers
+ ssb-y					+= driver_chipcommon.o
+ ssb-y					+= driver_chipcommon_pmu.o
++ssb-$(CONFIG_SSB_SFLASH)		+= driver_chipcommon_sflash.o
+ ssb-$(CONFIG_SSB_DRIVER_MIPS)		+= driver_mipscore.o
+ ssb-$(CONFIG_SSB_DRIVER_EXTIF)		+= driver_extif.o
+ ssb-$(CONFIG_SSB_DRIVER_PCICORE)	+= driver_pcicore.o
+ ssb-$(CONFIG_SSB_DRIVER_GIGE)		+= driver_gige.o
++ssb-$(CONFIG_SSB_DRIVER_GPIO)		+= driver_gpio.o
+ 
+ # b43 pci-ssb-bridge driver
+ # Not strictly a part of SSB, but kept here for convenience
 --- a/drivers/ssb/b43_pci_bridge.c
 +++ b/drivers/ssb/b43_pci_bridge.c
 @@ -29,11 +29,15 @@ static const struct pci_device_id b43_pc
@@ -34,7 +106,7 @@
  
  #include "ssb_private.h"
  
-@@ -280,6 +282,69 @@ static void calc_fast_powerup_delay(stru
+@@ -280,10 +282,76 @@ static void calc_fast_powerup_delay(stru
  	cc->fast_pwrup_delay = tmp;
  }
  
@@ -104,7 +176,14 @@
  void ssb_chipcommon_init(struct ssb_chipcommon *cc)
  {
  	if (!cc->dev)
-@@ -297,6 +362,11 @@ void ssb_chipcommon_init(struct ssb_chip
+ 		return; /* We don't have a ChipCommon */
++
++	spin_lock_init(&cc->gpio_lock);
++
+ 	if (cc->dev->id.revision >= 11)
+ 		cc->status = chipco_read32(cc, SSB_CHIPCO_CHIPSTAT);
+ 	ssb_dprintk(KERN_INFO PFX "chipcommon status is 0x%x\n", cc->status);
+@@ -297,6 +365,11 @@ void ssb_chipcommon_init(struct ssb_chip
  	chipco_powercontrol_init(cc);
  	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
  	calc_fast_powerup_delay(cc);
@@ -116,7 +195,7 @@
  }
  
  void ssb_chipco_suspend(struct ssb_chipcommon *cc)
-@@ -395,10 +465,27 @@ void ssb_chipco_timing_init(struct ssb_c
+@@ -395,10 +468,27 @@ void ssb_chipco_timing_init(struct ssb_c
  }
  
  /* Set chip watchdog reset timer to fire in 'ticks' backplane cycles */
@@ -147,7 +226,106 @@
  }
  
  void ssb_chipco_irq_mask(struct ssb_chipcommon *cc, u32 mask, u32 value)
-@@ -473,12 +560,7 @@ int ssb_chipco_serial_init(struct ssb_ch
+@@ -418,28 +508,93 @@ u32 ssb_chipco_gpio_in(struct ssb_chipco
+ 
+ u32 ssb_chipco_gpio_out(struct ssb_chipcommon *cc, u32 mask, u32 value)
+ {
+-	return chipco_write32_masked(cc, SSB_CHIPCO_GPIOOUT, mask, value);
++	unsigned long flags;
++	u32 res = 0;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = chipco_write32_masked(cc, SSB_CHIPCO_GPIOOUT, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
+ 
+ u32 ssb_chipco_gpio_outen(struct ssb_chipcommon *cc, u32 mask, u32 value)
+ {
+-	return chipco_write32_masked(cc, SSB_CHIPCO_GPIOOUTEN, mask, value);
++	unsigned long flags;
++	u32 res = 0;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = chipco_write32_masked(cc, SSB_CHIPCO_GPIOOUTEN, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
+ 
+ u32 ssb_chipco_gpio_control(struct ssb_chipcommon *cc, u32 mask, u32 value)
+ {
+-	return chipco_write32_masked(cc, SSB_CHIPCO_GPIOCTL, mask, value);
++	unsigned long flags;
++	u32 res = 0;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = chipco_write32_masked(cc, SSB_CHIPCO_GPIOCTL, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
+ EXPORT_SYMBOL(ssb_chipco_gpio_control);
+ 
+ u32 ssb_chipco_gpio_intmask(struct ssb_chipcommon *cc, u32 mask, u32 value)
+ {
+-	return chipco_write32_masked(cc, SSB_CHIPCO_GPIOIRQ, mask, value);
++	unsigned long flags;
++	u32 res = 0;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = chipco_write32_masked(cc, SSB_CHIPCO_GPIOIRQ, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
+ 
+ u32 ssb_chipco_gpio_polarity(struct ssb_chipcommon *cc, u32 mask, u32 value)
+ {
+-	return chipco_write32_masked(cc, SSB_CHIPCO_GPIOPOL, mask, value);
++	unsigned long flags;
++	u32 res = 0;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = chipco_write32_masked(cc, SSB_CHIPCO_GPIOPOL, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
++}
++
++u32 ssb_chipco_gpio_pullup(struct ssb_chipcommon *cc, u32 mask, u32 value)
++{
++	unsigned long flags;
++	u32 res = 0;
++
++	if (cc->dev->id.revision < 20)
++		return 0xffffffff;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = chipco_write32_masked(cc, SSB_CHIPCO_GPIOPULLUP, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
++}
++
++u32 ssb_chipco_gpio_pulldown(struct ssb_chipcommon *cc, u32 mask, u32 value)
++{
++	unsigned long flags;
++	u32 res = 0;
++
++	if (cc->dev->id.revision < 20)
++		return 0xffffffff;
++
++	spin_lock_irqsave(&cc->gpio_lock, flags);
++	res = chipco_write32_masked(cc, SSB_CHIPCO_GPIOPULLDOWN, mask, value);
++	spin_unlock_irqrestore(&cc->gpio_lock, flags);
++
++	return res;
+ }
+ 
+ #ifdef CONFIG_SSB_SERIAL
+@@ -473,12 +628,7 @@ int ssb_chipco_serial_init(struct ssb_ch
  				       chipco_read32(cc, SSB_CHIPCO_CORECTL)
  				       | SSB_CHIPCO_CORECTL_UARTCLK0);
  		} else if ((ccrev >= 11) && (ccrev != 15)) {
@@ -288,9 +466,30 @@
 +		return 0;
 +	}
 +}
+--- /dev/null
++++ b/drivers/ssb/driver_chipcommon_sflash.c
+@@ -0,0 +1,18 @@
++/*
++ * Sonics Silicon Backplane
++ * ChipCommon serial flash interface
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <linux/ssb/ssb.h>
++
++#include "ssb_private.h"
++
++/* Initialize serial flash access */
++int ssb_sflash_init(struct ssb_chipcommon *cc)
++{
++	pr_err("Serial flash support is not implemented yet!\n");
++
++	return -ENOTSUPP;
++}
 --- a/drivers/ssb/driver_extif.c
 +++ b/drivers/ssb/driver_extif.c
-@@ -112,10 +112,30 @@ void ssb_extif_get_clockcontrol(struct s
+@@ -112,10 +112,37 @@ void ssb_extif_get_clockcontrol(struct s
  	*m = extif_read32(extif, SSB_EXTIF_CLOCK_SB);
  }
  
@@ -320,9 +519,250 @@
  	extif_write32(extif, SSB_EXTIF_WATCHDOG, ticks);
 +
 +	return ticks;
++}
++
++void ssb_extif_init(struct ssb_extif *extif)
++{
++	if (!extif->dev)
++		return; /* We don't have a Extif core */
++	spin_lock_init(&extif->gpio_lock);
  }
  
  u32 ssb_extif_gpio_in(struct ssb_extif *extif, u32 mask)
+@@ -125,22 +152,50 @@ u32 ssb_extif_gpio_in(struct ssb_extif *
+ 
+ u32 ssb_extif_gpio_out(struct ssb_extif *extif, u32 mask, u32 value)
+ {
+-	return extif_write32_masked(extif, SSB_EXTIF_GPIO_OUT(0),
++	unsigned long flags;
++	u32 res = 0;
++
++	spin_lock_irqsave(&extif->gpio_lock, flags);
++	res = extif_write32_masked(extif, SSB_EXTIF_GPIO_OUT(0),
+ 				   mask, value);
++	spin_unlock_irqrestore(&extif->gpio_lock, flags);
++
++	return res;
+ }
+ 
+ u32 ssb_extif_gpio_outen(struct ssb_extif *extif, u32 mask, u32 value)
+ {
+-	return extif_write32_masked(extif, SSB_EXTIF_GPIO_OUTEN(0),
++	unsigned long flags;
++	u32 res = 0;
++
++	spin_lock_irqsave(&extif->gpio_lock, flags);
++	res = extif_write32_masked(extif, SSB_EXTIF_GPIO_OUTEN(0),
+ 				   mask, value);
++	spin_unlock_irqrestore(&extif->gpio_lock, flags);
++
++	return res;
+ }
+ 
+ u32 ssb_extif_gpio_polarity(struct ssb_extif *extif, u32 mask, u32 value)
+ {
+-	return extif_write32_masked(extif, SSB_EXTIF_GPIO_INTPOL, mask, value);
++	unsigned long flags;
++	u32 res = 0;
++
++	spin_lock_irqsave(&extif->gpio_lock, flags);
++	res = extif_write32_masked(extif, SSB_EXTIF_GPIO_INTPOL, mask, value);
++	spin_unlock_irqrestore(&extif->gpio_lock, flags);
++
++	return res;
+ }
+ 
+ u32 ssb_extif_gpio_intmask(struct ssb_extif *extif, u32 mask, u32 value)
+ {
+-	return extif_write32_masked(extif, SSB_EXTIF_GPIO_INTMASK, mask, value);
++	unsigned long flags;
++	u32 res = 0;
++
++	spin_lock_irqsave(&extif->gpio_lock, flags);
++	res = extif_write32_masked(extif, SSB_EXTIF_GPIO_INTMASK, mask, value);
++	spin_unlock_irqrestore(&extif->gpio_lock, flags);
++
++	return res;
+ }
+--- /dev/null
++++ b/drivers/ssb/driver_gpio.c
+@@ -0,0 +1,176 @@
++/*
++ * Sonics Silicon Backplane
++ * GPIO driver
++ *
++ * Copyright 2011, Broadcom Corporation
++ * Copyright 2012, Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <linux/gpio.h>
++#include <linux/export.h>
++#include <linux/ssb/ssb.h>
++
++#include "ssb_private.h"
++
++static struct ssb_bus *ssb_gpio_get_bus(struct gpio_chip *chip)
++{
++	return container_of(chip, struct ssb_bus, gpio);
++}
++
++static int ssb_gpio_chipco_get_value(struct gpio_chip *chip, unsigned gpio)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	return !!ssb_chipco_gpio_in(&bus->chipco, 1 << gpio);
++}
++
++static void ssb_gpio_chipco_set_value(struct gpio_chip *chip, unsigned gpio,
++				      int value)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	ssb_chipco_gpio_out(&bus->chipco, 1 << gpio, value ? 1 << gpio : 0);
++}
++
++static int ssb_gpio_chipco_direction_input(struct gpio_chip *chip,
++					   unsigned gpio)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	ssb_chipco_gpio_outen(&bus->chipco, 1 << gpio, 0);
++	return 0;
++}
++
++static int ssb_gpio_chipco_direction_output(struct gpio_chip *chip,
++					    unsigned gpio, int value)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	ssb_chipco_gpio_outen(&bus->chipco, 1 << gpio, 1 << gpio);
++	ssb_chipco_gpio_out(&bus->chipco, 1 << gpio, value ? 1 << gpio : 0);
++	return 0;
++}
++
++static int ssb_gpio_chipco_request(struct gpio_chip *chip, unsigned gpio)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	ssb_chipco_gpio_control(&bus->chipco, 1 << gpio, 0);
++	/* clear pulldown */
++	ssb_chipco_gpio_pulldown(&bus->chipco, 1 << gpio, 0);
++	/* Set pullup */
++	ssb_chipco_gpio_pullup(&bus->chipco, 1 << gpio, 1 << gpio);
++
++	return 0;
++}
++
++static void ssb_gpio_chipco_free(struct gpio_chip *chip, unsigned gpio)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	/* clear pullup */
++	ssb_chipco_gpio_pullup(&bus->chipco, 1 << gpio, 0);
++}
++
++static int ssb_gpio_chipco_init(struct ssb_bus *bus)
++{
++	struct gpio_chip *chip = &bus->gpio;
++
++	chip->label		= "ssb_chipco_gpio";
++	chip->owner		= THIS_MODULE;
++	chip->request		= ssb_gpio_chipco_request;
++	chip->free		= ssb_gpio_chipco_free;
++	chip->get		= ssb_gpio_chipco_get_value;
++	chip->set		= ssb_gpio_chipco_set_value;
++	chip->direction_input	= ssb_gpio_chipco_direction_input;
++	chip->direction_output	= ssb_gpio_chipco_direction_output;
++	chip->ngpio		= 16;
++	/* There is just one SoC in one device and its GPIO addresses should be
++	 * deterministic to address them more easily. The other buses could get
++	 * a random base number. */
++	if (bus->bustype == SSB_BUSTYPE_SSB)
++		chip->base		= 0;
++	else
++		chip->base		= -1;
++
++	return gpiochip_add(chip);
++}
++
++#ifdef CONFIG_SSB_DRIVER_EXTIF
++
++static int ssb_gpio_extif_get_value(struct gpio_chip *chip, unsigned gpio)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	return !!ssb_extif_gpio_in(&bus->extif, 1 << gpio);
++}
++
++static void ssb_gpio_extif_set_value(struct gpio_chip *chip, unsigned gpio,
++				     int value)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	ssb_extif_gpio_out(&bus->extif, 1 << gpio, value ? 1 << gpio : 0);
++}
++
++static int ssb_gpio_extif_direction_input(struct gpio_chip *chip,
++					  unsigned gpio)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	ssb_extif_gpio_outen(&bus->extif, 1 << gpio, 0);
++	return 0;
++}
++
++static int ssb_gpio_extif_direction_output(struct gpio_chip *chip,
++					   unsigned gpio, int value)
++{
++	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
++
++	ssb_extif_gpio_outen(&bus->extif, 1 << gpio, 1 << gpio);
++	ssb_extif_gpio_out(&bus->extif, 1 << gpio, value ? 1 << gpio : 0);
++	return 0;
++}
++
++static int ssb_gpio_extif_init(struct ssb_bus *bus)
++{
++	struct gpio_chip *chip = &bus->gpio;
++
++	chip->label		= "ssb_extif_gpio";
++	chip->owner		= THIS_MODULE;
++	chip->get		= ssb_gpio_extif_get_value;
++	chip->set		= ssb_gpio_extif_set_value;
++	chip->direction_input	= ssb_gpio_extif_direction_input;
++	chip->direction_output	= ssb_gpio_extif_direction_output;
++	chip->ngpio		= 5;
++	/* There is just one SoC in one device and its GPIO addresses should be
++	 * deterministic to address them more easily. The other buses could get
++	 * a random base number. */
++	if (bus->bustype == SSB_BUSTYPE_SSB)
++		chip->base		= 0;
++	else
++		chip->base		= -1;
++
++	return gpiochip_add(chip);
++}
++
++#else
++static int ssb_gpio_extif_init(struct ssb_bus *bus)
++{
++	return -ENOTSUPP;
++}
++#endif
++
++int ssb_gpio_init(struct ssb_bus *bus)
++{
++	if (ssb_chipco_available(&bus->chipco))
++		return ssb_gpio_chipco_init(bus);
++	else if (ssb_extif_available(&bus->extif))
++		return ssb_gpio_extif_init(bus);
++	else
++		SSB_WARN_ON(1);
++
++	return -1;
++}
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
 @@ -178,9 +178,9 @@ static void ssb_mips_serial_init(struct
@@ -337,7 +777,7 @@
  		mcore->nr_serial_ports = ssb_chipco_serial_init(&bus->chipco, mcore->serial_ports);
  	else
  		mcore->nr_serial_ports = 0;
-@@ -190,16 +190,32 @@ static void ssb_mips_flash_detect(struct
+@@ -190,16 +190,33 @@ static void ssb_mips_flash_detect(struct
  {
  	struct ssb_bus *bus = mcore->dev->bus;
  
@@ -358,7 +798,8 @@
 +	switch (bus->chipco.capabilities & SSB_CHIPCO_CAP_FLASHT) {
 +	case SSB_CHIPCO_FLASHT_STSER:
 +	case SSB_CHIPCO_FLASHT_ATSER:
-+		pr_err("Serial flash not supported\n");
++		pr_debug("Found serial flash\n");
++		ssb_sflash_init(&bus->chipco);
 +		break;
 +	case SSB_CHIPCO_FLASHT_PARA:
 +		pr_debug("Found parallel flash\n");
@@ -378,7 +819,7 @@
  	}
  }
  
-@@ -208,9 +224,12 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
+@@ -208,9 +225,12 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
  	struct ssb_bus *bus = mcore->dev->bus;
  	u32 pll_type, n, m, rate = 0;
  
@@ -393,7 +834,7 @@
  		ssb_chipco_get_clockcpu(&bus->chipco, &pll_type, &n, &m);
  	} else
  		return 0;
-@@ -246,9 +265,9 @@ void ssb_mipscore_init(struct ssb_mipsco
+@@ -246,9 +266,9 @@ void ssb_mipscore_init(struct ssb_mipsco
  		hz = 100000000;
  	ns = 1000000000 / hz;
  
@@ -534,7 +975,22 @@
  		ssb_bus_may_powerdown(bus);
  
  		err = ssb_devices_register(bus);
-@@ -1094,6 +1086,9 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
+@@ -812,7 +804,14 @@ static int __devinit ssb_bus_register(st
+ 	if (err)
+ 		goto err_pcmcia_exit;
+ 	ssb_chipcommon_init(&bus->chipco);
++	ssb_extif_init(&bus->extif);
+ 	ssb_mipscore_init(&bus->mipscore);
++	err = ssb_gpio_init(bus);
++	if (err == -ENOTSUPP)
++		ssb_dprintk(KERN_DEBUG PFX "GPIO driver not activated\n");
++	else if (err)
++		ssb_dprintk(KERN_ERR PFX
++			   "Error registering GPIO driver: %i\n", err);
+ 	err = ssb_fetch_invariants(bus, get_invariants);
+ 	if (err) {
+ 		ssb_bus_may_powerdown(bus);
+@@ -1094,6 +1093,9 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
  	u32 plltype;
  	u32 clkctl_n, clkctl_m;
  
@@ -544,7 +1000,7 @@
  	if (ssb_extif_available(&bus->extif))
  		ssb_extif_get_clockcontrol(&bus->extif, &plltype,
  					   &clkctl_n, &clkctl_m);
-@@ -1131,8 +1126,7 @@ static u32 ssb_tmslow_reject_bitmask(str
+@@ -1131,8 +1133,7 @@ static u32 ssb_tmslow_reject_bitmask(str
  	case SSB_IDLOW_SSBREV_27:     /* same here */
  		return SSB_TMSLOW_REJECT;	/* this is a guess */
  	default:
@@ -890,7 +1346,7 @@
  
  
  #define PFX	"ssb: "
-@@ -207,4 +208,38 @@ static inline void b43_pci_ssb_bridge_ex
+@@ -207,4 +208,66 @@ static inline void b43_pci_ssb_bridge_ex
  }
  #endif /* CONFIG_SSB_B43_PCI_BRIDGE */
  
@@ -902,6 +1358,17 @@
 +extern u32 ssb_chipco_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt,
 +					     u32 ticks);
 +extern u32 ssb_chipco_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms);
++
++/* driver_chipcommon_sflash.c */
++#ifdef CONFIG_SSB_SFLASH
++int ssb_sflash_init(struct ssb_chipcommon *cc);
++#else
++static inline int ssb_sflash_init(struct ssb_chipcommon *cc)
++{
++	pr_err("Serial flash not supported\n");
++	return 0;
++}
++#endif /* CONFIG_SSB_SFLASH */
 +
 +#ifdef CONFIG_SSB_DRIVER_EXTIF
 +extern u32 ssb_extif_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt, u32 ticks);
@@ -928,18 +1395,38 @@
 +}
 +#endif /* CONFIG_SSB_EMBEDDED */
 +
++#ifdef CONFIG_SSB_DRIVER_EXTIF
++extern void ssb_extif_init(struct ssb_extif *extif);
++#else
++static inline void ssb_extif_init(struct ssb_extif *extif)
++{
++}
++#endif
++
++#ifdef CONFIG_SSB_DRIVER_GPIO
++extern int ssb_gpio_init(struct ssb_bus *bus);
++#else /* CONFIG_SSB_DRIVER_GPIO */
++static inline int ssb_gpio_init(struct ssb_bus *bus)
++{
++	return -ENOTSUPP;
++}
++#endif /* CONFIG_SSB_DRIVER_GPIO */
++
  #endif /* LINUX_SSB_PRIVATE_H_ */
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -8,6 +8,7 @@
+@@ -6,8 +6,10 @@
+ #include <linux/types.h>
+ #include <linux/spinlock.h>
  #include <linux/pci.h>
++#include <linux/gpio.h>
  #include <linux/mod_devicetable.h>
  #include <linux/dma-mapping.h>
 +#include <linux/platform_device.h>
  
  #include <linux/ssb/ssb_regs.h>
  
-@@ -16,6 +17,12 @@ struct pcmcia_device;
+@@ -16,6 +18,12 @@ struct pcmcia_device;
  struct ssb_bus;
  struct ssb_driver;
  
@@ -952,7 +1439,7 @@
  struct ssb_sprom {
  	u8 revision;
  	u8 il0mac[6];		/* MAC address for 802.11b/g */
-@@ -26,9 +33,12 @@ struct ssb_sprom {
+@@ -26,9 +34,12 @@ struct ssb_sprom {
  	u8 et0mdcport;		/* MDIO for enet0 */
  	u8 et1mdcport;		/* MDIO for enet1 */
  	u16 board_rev;		/* Board revision number from SPROM. */
@@ -967,7 +1454,7 @@
  	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
  	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
  	u16 pa0b0;
-@@ -47,10 +57,10 @@ struct ssb_sprom {
+@@ -47,10 +58,10 @@ struct ssb_sprom {
  	u8 gpio1;		/* GPIO pin 1 */
  	u8 gpio2;		/* GPIO pin 2 */
  	u8 gpio3;		/* GPIO pin 3 */
@@ -982,7 +1469,7 @@
  	u8 itssi_a;		/* Idle TSSI Target for A-PHY */
  	u8 itssi_bg;		/* Idle TSSI Target for B/G-PHY */
  	u8 tri2g;		/* 2.4GHz TX isolation */
-@@ -61,8 +71,8 @@ struct ssb_sprom {
+@@ -61,8 +72,8 @@ struct ssb_sprom {
  	u8 txpid5gl[4];		/* 4.9 - 5.1GHz TX power index */
  	u8 txpid5g[4];		/* 5.1 - 5.5GHz TX power index */
  	u8 txpid5gh[4];		/* 5.5 - ...GHz TX power index */
@@ -993,7 +1480,7 @@
  	u8 rssisav2g;		/* 2GHz RSSI params */
  	u8 rssismc2g;
  	u8 rssismf2g;
-@@ -82,16 +92,13 @@ struct ssb_sprom {
+@@ -82,16 +93,13 @@ struct ssb_sprom {
  	u16 boardflags2_hi;	/* Board flags (bits 48-63) */
  	/* TODO store board flags in a single u64 */
  
@@ -1013,7 +1500,7 @@
  	} antenna_gain;
  
  	struct {
-@@ -103,14 +110,85 @@ struct ssb_sprom {
+@@ -103,14 +111,85 @@ struct ssb_sprom {
  		} ghz5;
  	} fem;
  
@@ -1101,7 +1588,7 @@
  };
  
  
-@@ -166,6 +244,7 @@ struct ssb_bus_ops {
+@@ -166,6 +245,7 @@ struct ssb_bus_ops {
  #define SSB_DEV_MINI_MACPHY	0x823
  #define SSB_DEV_ARM_1176	0x824
  #define SSB_DEV_ARM_7TDMI	0x825
@@ -1109,14 +1596,18 @@
  
  /* Vendor-ID values */
  #define SSB_VENDOR_BROADCOM	0x4243
-@@ -354,6 +433,7 @@ struct ssb_bus {
+@@ -354,7 +434,11 @@ struct ssb_bus {
  #ifdef CONFIG_SSB_EMBEDDED
  	/* Lock for GPIO register access. */
  	spinlock_t gpio_lock;
 +	struct platform_device *watchdog;
  #endif /* EMBEDDED */
++#ifdef CONFIG_SSB_DRIVER_GPIO
++	struct gpio_chip gpio;
++#endif /* DRIVER_GPIO */
  
  	/* Internal-only stuff follows. Do not touch. */
+ 	struct list_head list;
 --- a/include/linux/ssb/ssb_driver_chipcommon.h
 +++ b/include/linux/ssb/ssb_driver_chipcommon.h
 @@ -504,7 +504,9 @@
@@ -1130,16 +1621,18 @@
  
  /* Status register bits for ST flashes */
  #define SSB_CHIPCO_FLASHSTA_ST_WIP	0x01		/* Write In Progress */
-@@ -589,6 +591,8 @@ struct ssb_chipcommon {
+@@ -588,7 +590,10 @@ struct ssb_chipcommon {
+ 	u32 status;
  	/* Fast Powerup Delay constant */
  	u16 fast_pwrup_delay;
++	spinlock_t gpio_lock;
  	struct ssb_chipcommon_pmu pmu;
 +	u32 ticks_per_ms;
 +	u32 max_timer_ms;
  };
  
  static inline bool ssb_chipco_available(struct ssb_chipcommon *cc)
-@@ -628,8 +632,7 @@ enum ssb_clkmode {
+@@ -628,8 +633,7 @@ enum ssb_clkmode {
  extern void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
  				     enum ssb_clkmode mode);
  
@@ -1149,9 +1642,18 @@
  
  void ssb_chipco_irq_mask(struct ssb_chipcommon *cc, u32 mask, u32 value);
  
+@@ -642,6 +646,8 @@ u32 ssb_chipco_gpio_outen(struct ssb_chi
+ u32 ssb_chipco_gpio_control(struct ssb_chipcommon *cc, u32 mask, u32 value);
+ u32 ssb_chipco_gpio_intmask(struct ssb_chipcommon *cc, u32 mask, u32 value);
+ u32 ssb_chipco_gpio_polarity(struct ssb_chipcommon *cc, u32 mask, u32 value);
++u32 ssb_chipco_gpio_pullup(struct ssb_chipcommon *cc, u32 mask, u32 value);
++u32 ssb_chipco_gpio_pulldown(struct ssb_chipcommon *cc, u32 mask, u32 value);
+ 
+ #ifdef CONFIG_SSB_SERIAL
+ extern int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
 --- a/include/linux/ssb/ssb_driver_extif.h
 +++ b/include/linux/ssb/ssb_driver_extif.h
-@@ -152,6 +152,9 @@
+@@ -152,12 +152,16 @@
  /* watchdog */
  #define SSB_EXTIF_WATCHDOG_CLK		48000000	/* Hz */
  
@@ -1161,7 +1663,14 @@
  
  
  #ifdef CONFIG_SSB_DRIVER_EXTIF
-@@ -171,8 +174,7 @@ extern void ssb_extif_get_clockcontrol(s
+ 
+ struct ssb_extif {
+ 	struct ssb_device *dev;
++	spinlock_t gpio_lock;
+ };
+ 
+ static inline bool ssb_extif_available(struct ssb_extif *extif)
+@@ -171,8 +175,7 @@ extern void ssb_extif_get_clockcontrol(s
  extern void ssb_extif_timing_init(struct ssb_extif *extif,
  				  unsigned long ns);
  
@@ -1171,7 +1680,7 @@
  
  /* Extif GPIO pin access */
  u32 ssb_extif_gpio_in(struct ssb_extif *extif, u32 mask);
-@@ -205,10 +207,52 @@ void ssb_extif_get_clockcontrol(struct s
+@@ -205,10 +208,52 @@ void ssb_extif_get_clockcontrol(struct s
  }
  
  static inline
@@ -1414,3 +1923,25 @@
  /* Values for boardflags_lo read from SPROM */
  #define SSB_BFL_BTCOEXIST		0x0001	/* implements Bluetooth coexistance */
  #define SSB_BFL_PACTRL			0x0002	/* GPIO 9 controlling the PA */
+--- /dev/null
++++ b/include/linux/bcm47xx_wdt.h
+@@ -0,0 +1,19 @@
++#ifndef LINUX_BCM47XX_WDT_H_
++#define LINUX_BCM47XX_WDT_H_
++
++#include <linux/types.h>
++
++
++struct bcm47xx_wdt {
++	u32 (*timer_set)(struct bcm47xx_wdt *, u32);
++	u32 (*timer_set_ms)(struct bcm47xx_wdt *, u32);
++	u32 max_timer_ms;
++
++	void *driver_data;
++};
++
++static inline void *bcm47xx_wdt_get_drvdata(struct bcm47xx_wdt *wdt)
++{
++	return wdt->driver_data;
++}
++#endif /* LINUX_BCM47XX_WDT_H_ */
