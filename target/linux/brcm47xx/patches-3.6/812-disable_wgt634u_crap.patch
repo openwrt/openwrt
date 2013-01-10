@@ -1,13 +1,13 @@
 --- a/arch/mips/bcm47xx/Makefile
 +++ b/arch/mips/bcm47xx/Makefile
-@@ -4,4 +4,3 @@
- #
+@@ -5,4 +5,3 @@
  
- obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o sprom.o
+ obj-y 				+= irq.o nvram.o prom.o serial.o setup.o time.o sprom.o
+ obj-y 				+= gpio.o
 -obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- a/arch/mips/bcm47xx/wgt634u.c
 +++ /dev/null
-@@ -1,177 +0,0 @@
+@@ -1,174 +0,0 @@
 -/*
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
@@ -21,6 +21,7 @@
 -#include <linux/leds.h>
 -#include <linux/mtd/physmap.h>
 -#include <linux/ssb/ssb.h>
+-#include <linux/ssb/ssb_embedded.h>
 -#include <linux/interrupt.h>
 -#include <linux/reboot.h>
 -#include <linux/gpio.h>
@@ -126,7 +127,8 @@
 -
 -	/* Interrupt are level triggered, revert the interrupt polarity
 -	   to clear the interrupt. */
--	gpio_polarity(WGT634U_GPIO_RESET, state);
+-	ssb_gpio_polarity(&bcm47xx_bus.ssb, 1 << WGT634U_GPIO_RESET,
+-			  state ? 1 << WGT634U_GPIO_RESET : 0);
 -
 -	if (!state) {
 -		printk(KERN_INFO "Reset button pressed");
@@ -143,7 +145,6 @@
 -	 * been allocated ranges 00:09:5b:xx:xx:xx and 00:0f:b5:xx:xx:xx.
 -	 */
 -	u8 *et0mac;
--	int err;
 -
 -	if (bcm47xx_bus_type != BCM47XX_BUS_TYPE_SSB)
 -		return -ENODEV;
@@ -157,17 +158,13 @@
 -
 -		printk(KERN_INFO "WGT634U machine detected.\n");
 -
--		err = gpio_request(WGT634U_GPIO_RESET, "reset-buton");
--		if (err) {
--			printk(KERN_INFO "Can not register gpio for reset button\n");
--			return 0;
--		}
--
 -		if (!request_irq(gpio_to_irq(WGT634U_GPIO_RESET),
 -				 gpio_interrupt, IRQF_SHARED,
 -				 "WGT634U GPIO", &bcm47xx_bus.ssb.chipco)) {
 -			gpio_direction_input(WGT634U_GPIO_RESET);
--			gpio_intmask(WGT634U_GPIO_RESET, 1);
+-			ssb_gpio_intmask(&bcm47xx_bus.ssb,
+-					 1 << WGT634U_GPIO_RESET,
+-					 1 << WGT634U_GPIO_RESET);
 -			ssb_chipco_irq_mask(&bcm47xx_bus.ssb.chipco,
 -					    SSB_CHIPCO_IRQ_GPIO,
 -					    SSB_CHIPCO_IRQ_GPIO);

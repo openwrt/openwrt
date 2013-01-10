@@ -9,7 +9,7 @@
   *
   * This program is free software; you can redistribute  it and/or modify it
   * under  the terms of  the GNU General  Public License as published by the
-@@ -18,83 +18,166 @@
+@@ -18,83 +18,168 @@
  #include <linux/kernel.h>
  #include <linux/string.h>
  #include <asm/addrspace.h>
@@ -122,14 +122,15 @@
 +	memset(dst, 0x0, NVRAM_SPACE - i);
 +
 +	return 0;
- }
- 
--int nvram_getenv(char *name, char *val, size_t val_len)
++}
++
 +#ifdef CONFIG_BCM47XX_SSB
 +static int nvram_init_ssb(void)
 +{
 +	struct ssb_mipscore *mcore = &bcm47xx_bus.ssb.mipscore;
++#ifdef CONFIG_SSB_SFLASH
 +	struct ssb_chipcommon *chipco = &bcm47xx_bus.ssb.chipco;
++#endif
 +	u32 base;
 +	u32 lim;
 +
@@ -177,9 +178,10 @@
 +	}
 +
 +	return nvram_find_and_copy(base, lim);
-+}
+ }
 +#endif
-+
+ 
+-int nvram_getenv(char *name, char *val, size_t val_len)
 +static int nvram_init(void)
 +{
 +	switch (bcm47xx_bus_type) {
@@ -214,7 +216,7 @@
  
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
-@@ -110,6 +193,6 @@ int nvram_getenv(char *name, char *val,
+@@ -110,6 +195,6 @@ int nvram_getenv(char *name, char *val,
  			return snprintf(val, val_len, "%s", value);
  		}
  	}

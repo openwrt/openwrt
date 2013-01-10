@@ -181,15 +181,15 @@
 +}
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -4,6 +4,7 @@
- #include <linux/platform_device.h>
+@@ -5,6 +5,7 @@
+ #include <linux/gpio.h>
  
  #include <linux/mtd/bcm47xx_sflash.h>
 +#include <linux/mtd/bcm47xx_nand.h>
  
  /** ChipCommon core registers. **/
  #define BCMA_CC_ID			0x0000
-@@ -521,17 +522,6 @@ struct bcma_pflash {
+@@ -522,17 +523,6 @@ struct bcma_pflash {
  };
  
  
@@ -207,7 +207,7 @@
  struct bcma_serial_port {
  	void *regs;
  	unsigned long clockspeed;
-@@ -557,7 +547,7 @@ struct bcma_drv_cc {
+@@ -558,7 +548,7 @@ struct bcma_drv_cc {
  	struct bcm47xx_sflash sflash;
  #endif
  #ifdef CONFIG_BCMA_NFLASH
@@ -216,7 +216,7 @@
  #endif
  
  	int nr_serial_ports;
-@@ -616,4 +606,13 @@ extern void bcma_chipco_regctl_maskset(s
+@@ -625,4 +615,13 @@ extern void bcma_chipco_regctl_maskset(s
  				       u32 offset, u32 mask, u32 set);
  extern void bcma_pmu_spuravoid_pllupdate(struct bcma_drv_cc *cc, int spuravoid);
  

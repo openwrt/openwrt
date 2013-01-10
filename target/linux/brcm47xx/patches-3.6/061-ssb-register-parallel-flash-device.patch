@@ -67,9 +67,9 @@
  error:
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
-@@ -254,4 +254,6 @@ static inline int ssb_sflash_init(struct
+@@ -271,4 +271,6 @@ static inline int ssb_gpio_init(struct s
  }
- #endif /* CONFIG_SSB_SFLASH */
+ #endif /* CONFIG_SSB_DRIVER_GPIO */
  
 +extern struct platform_device ssb_pflash_dev;
 +
