@@ -952,7 +952,18 @@
  }
  
  /* Used to queue up regulatory hints */
-@@ -1850,7 +1850,7 @@ static void restore_regulatory_settings(
+@@ -1125,7 +1125,9 @@ static bool is_ht40_allowed(struct ieee8
+ 	if (chan->flags & IEEE80211_CHAN_DISABLED)
+ 		return false;
+ 	/* This would happen when regulatory rules disallow HT40 completely */
+-	return !(chan->flags & IEEE80211_CHAN_NO_HT40);
++	if ((chan->flags & IEEE80211_CHAN_NO_HT40) == IEEE80211_CHAN_NO_HT40)
++		return false;
++	return true;
+ }
+ 
+ static void reg_process_ht_flags_channel(struct wiphy *wiphy,
+@@ -1850,7 +1852,7 @@ static void restore_regulatory_settings(
  	mutex_lock(&cfg80211_mutex);
  	mutex_lock(&reg_mutex);
  
@@ -961,7 +972,7 @@
  	restore_alpha2(alpha2, reset_user);
  
  	/*
-@@ -2251,14 +2251,21 @@ int set_regdom(const struct ieee80211_re
+@@ -2251,14 +2253,21 @@ int set_regdom(const struct ieee80211_re
  
  int reg_device_uevent(struct device *dev, struct kobj_uevent_env *env)
  {
