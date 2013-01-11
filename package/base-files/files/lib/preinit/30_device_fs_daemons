@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 
 init_devfs() {
@@ -8,8 +8,8 @@ init_devfs() {
 
 init_hotplug2() {
     [ -c /dev/console ] || mknod /dev/console c 5 1
-    /sbin/hotplug2 --set-worker /lib/hotplug2/worker_fork.so --set-rules-file /etc/hotplug2-init.rules --no-persistent --set-coldplug-cmd /sbin/udevtrigger
-    /sbin/hotplug2 --set-worker /lib/hotplug2/worker_fork.so --set-rules-file /etc/hotplug2-init.rules --persistent &
+    /sbin/hotplug2 --set-rules-file /etc/hotplug2-init.rules --no-persistent --set-coldplug-cmd /sbin/udevtrigger
+    /sbin/hotplug2 --set-rules-file /etc/hotplug2-init.rules --persistent &
 }
 
 init_udev() {
