@@ -13,7 +13,7 @@ SUBTARGETS:=rt288x rt305x rt3883
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves -mno-branch-likely
 FEATURES:=squashfs
 
-LINUX_VERSION:=3.6.11
+LINUX_VERSION:=3.7.2
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=\
