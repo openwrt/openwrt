@@ -108,7 +108,7 @@ $(eval $(call KernelPackage,ledtrig-netfilter))
 define KernelPackage/ledtrig-usbdev
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED USB device Trigger
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core
+  DEPENDS:=@USB_SUPPORT kmod-usb-core
   KCONFIG:=CONFIG_LEDS_TRIGGER_USBDEV
   FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-usbdev.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-usbdev)
