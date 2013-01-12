@@ -45,6 +45,15 @@
  
  static void bcma_core_mips_set_irq(struct bcma_device *dev, unsigned int irq)
  {
+@@ -316,7 +322,7 @@ void bcma_core_mips_init(struct bcma_drv
+ 		break;
+ 	default:
+ 		list_for_each_entry(core, &bus->cores, list) {
+-			core->irq = bcma_core_mips_irq(core) + 2;
++			core->irq = bcma_core_irq(core);
+ 		}
+ 		bcma_err(bus,
+ 			 "Unknown device (0x%x) found, can not configure IRQs\n",
 --- a/drivers/bcma/driver_pci_host.c
 +++ b/drivers/bcma/driver_pci_host.c
 @@ -577,7 +577,7 @@ int bcma_core_pci_plat_dev_init(struct p
