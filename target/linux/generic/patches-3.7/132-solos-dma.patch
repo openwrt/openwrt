@@ -44,21 +44,6 @@ Date:   Wed Dec 19 11:01:18 2012 +0000
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
     Signed-off-by: David S. Miller <davem@davemloft.net>
 
-commit cae49ede00ec3d0cda290b03fee55b72b49efc11
-Author: David Woodhouse <dwmw2@infradead.org>
-Date:   Tue Dec 11 14:57:14 2012 +0000
-
-    solos-pci: fix double-free of TX skb in DMA mode
-    
-    We weren't clearing card->tx_skb[port] when processing the TX done interrupt.
-    If there wasn't another skb ready to transmit immediately, this led to a
-    double-free because we'd free it *again* next time we did have a packet to
-    send.
-    
-    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
-    Cc: stable@kernel.org
-    Signed-off-by: David S. Miller <davem@davemloft.net>
-
 ==
 There is a typo here so we do a double lock instead of an unlock.
 
@@ -314,21 +299,7 @@ solos-pci: add GPIO support for newer versions on Geos board
  			if(card->fpga_version > LEGACY_BUFFERS)
  				iowrite32(word, FLASH_BUF + i);
  			else
-@@ -945,10 +1069,11 @@ static uint32_t fpga_tx(struct solos_car
- 	for (port = 0; tx_pending; tx_pending >>= 1, port++) {
- 		if (tx_pending & 1) {
- 			struct sk_buff *oldskb = card->tx_skb[port];
--			if (oldskb)
-+			if (oldskb) {
- 				pci_unmap_single(card->dev, SKB_CB(oldskb)->dma_addr,
- 						 oldskb->len, PCI_DMA_TODEVICE);
--
-+				card->tx_skb[port] = NULL;
-+			}
- 			spin_lock(&card->tx_queue_lock);
- 			skb = skb_dequeue(&card->tx_queue[port]);
- 			if (!skb)
-@@ -960,7 +1085,12 @@ static uint32_t fpga_tx(struct solos_car
+@@ -961,7 +1085,12 @@ static uint32_t fpga_tx(struct solos_car
  				tx_started |= 1 << port;
  				oldskb = skb; /* We're done with this skb already */
  			} else if (skb && card->using_dma) {
@@ -342,7 +313,7 @@ solos-pci: add GPIO support for newer versions on Geos board
  								       skb->len, PCI_DMA_TODEVICE);
  				card->tx_skb[port] = skb;
  				iowrite32(SKB_CB(skb)->dma_addr,
-@@ -1134,18 +1264,33 @@ static int fpga_probe(struct pci_dev *de
+@@ -1135,18 +1264,33 @@ static int fpga_probe(struct pci_dev *de
  		db_fpga_upgrade = db_firmware_upgrade = 0;
  	}
  
@@ -379,7 +350,7 @@ solos-pci: add GPIO support for newer versions on Geos board
  	pci_set_drvdata(dev, card);
  
  	tasklet_init(&card->tlet, solos_bh, (unsigned long)card);
-@@ -1180,6 +1325,10 @@ static int fpga_probe(struct pci_dev *de
+@@ -1181,6 +1325,10 @@ static int fpga_probe(struct pci_dev *de
  	if (err)
  		goto out_free_irq;
  
@@ -390,7 +361,7 @@ solos-pci: add GPIO support for newer versions on Geos board
  	return 0;
  
   out_free_irq:
-@@ -1188,6 +1337,7 @@ static int fpga_probe(struct pci_dev *de
+@@ -1189,6 +1337,7 @@ static int fpga_probe(struct pci_dev *de
  	tasklet_kill(&card->tlet);
  	
   out_unmap_both:
@@ -398,7 +369,7 @@ solos-pci: add GPIO support for newer versions on Geos board
  	pci_set_drvdata(dev, NULL);
  	pci_iounmap(dev, card->buffers);
   out_unmap_config:
-@@ -1290,11 +1440,16 @@ static void fpga_remove(struct pci_dev *
+@@ -1291,11 +1440,16 @@ static void fpga_remove(struct pci_dev *
  	iowrite32(1, card->config_regs + FPGA_MODE);
  	(void)ioread32(card->config_regs + FPGA_MODE); 
  
