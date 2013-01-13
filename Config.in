@@ -276,8 +276,12 @@ menu "Global build settings"
 		bool "Compile the kernel with SysRq support"
 		default y
 
+	config KERNEL_COREDUMP
+		bool
+
 	config KERNEL_ELF_CORE
 		bool "Enable process core dump support"
+		select KERNEL_COREDUMP
 		default y
 
 	config KERNEL_PROVE_LOCKING
