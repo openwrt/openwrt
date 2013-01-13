@@ -42,6 +42,76 @@
  	} while (word != stop);
  
  	return csum_fold(csum);
+@@ -192,69 +196,4 @@ static inline __sum16 ip_compute_csum(co
+ 	return csum_fold(csum_partial(buff, len, 0));
+ }
+ 
+-#define _HAVE_ARCH_IPV6_CSUM
+-static __inline__ __sum16 csum_ipv6_magic(const struct in6_addr *saddr,
+-				          const struct in6_addr *daddr,
+-					  __u32 len, unsigned short proto,
+-					  __wsum sum)
+-{
+-	__asm__(
+-	"	.set	push		# csum_ipv6_magic\n"
+-	"	.set	noreorder	\n"
+-	"	.set	noat		\n"
+-	"	addu	%0, %5		# proto (long in network byte order)\n"
+-	"	sltu	$1, %0, %5	\n"
+-	"	addu	%0, $1		\n"
+-
+-	"	addu	%0, %6		# csum\n"
+-	"	sltu	$1, %0, %6	\n"
+-	"	lw	%1, 0(%2)	# four words source address\n"
+-	"	addu	%0, $1		\n"
+-	"	addu	%0, %1		\n"
+-	"	sltu	$1, %0, %1	\n"
+-
+-	"	lw	%1, 4(%2)	\n"
+-	"	addu	%0, $1		\n"
+-	"	addu	%0, %1		\n"
+-	"	sltu	$1, %0, %1	\n"
+-
+-	"	lw	%1, 8(%2)	\n"
+-	"	addu	%0, $1		\n"
+-	"	addu	%0, %1		\n"
+-	"	sltu	$1, %0, %1	\n"
+-
+-	"	lw	%1, 12(%2)	\n"
+-	"	addu	%0, $1		\n"
+-	"	addu	%0, %1		\n"
+-	"	sltu	$1, %0, %1	\n"
+-
+-	"	lw	%1, 0(%3)	\n"
+-	"	addu	%0, $1		\n"
+-	"	addu	%0, %1		\n"
+-	"	sltu	$1, %0, %1	\n"
+-
+-	"	lw	%1, 4(%3)	\n"
+-	"	addu	%0, $1		\n"
+-	"	addu	%0, %1		\n"
+-	"	sltu	$1, %0, %1	\n"
+-
+-	"	lw	%1, 8(%3)	\n"
+-	"	addu	%0, $1		\n"
+-	"	addu	%0, %1		\n"
+-	"	sltu	$1, %0, %1	\n"
+-
+-	"	lw	%1, 12(%3)	\n"
+-	"	addu	%0, $1		\n"
+-	"	addu	%0, %1		\n"
+-	"	sltu	$1, %0, %1	\n"
+-
+-	"	addu	%0, $1		# Add final carry\n"
+-	"	.set	pop"
+-	: "=r" (sum), "=r" (proto)
+-	: "r" (saddr), "r" (daddr),
+-	  "0" (htonl(len)), "1" (htonl(proto)), "r" (sum));
+-
+-	return csum_fold(sum);
+-}
+-
+ #endif /* _ASM_CHECKSUM_H */
 --- a/include/uapi/linux/ip.h
 +++ b/include/uapi/linux/ip.h
 @@ -102,7 +102,7 @@ struct iphdr {
@@ -97,15 +167,7 @@
  #define UDP_CORK	1	/* Never send partially complete segments */
 --- a/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
 +++ b/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
-@@ -14,6 +14,7 @@
- #include <linux/skbuff.h>
- #include <linux/icmp.h>
- #include <linux/sysctl.h>
-+#include <linux/unaligned/packed_struct.h>
- #include <net/route.h>
- #include <net/ip.h>
- 
-@@ -39,8 +40,8 @@ static bool ipv4_pkt_to_tuple(const stru
+@@ -39,8 +39,8 @@ static bool ipv4_pkt_to_tuple(const stru
  	if (ap == NULL)
  		return false;
  
@@ -189,15 +251,7 @@
  		if (nlen != skb_network_header_len(p) ||
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -59,6 +59,7 @@
- #include <net/netlink.h>
- 
- #include <asm/uaccess.h>
-+#include <asm/unaligned.h>
- 
- #ifdef CONFIG_SYSCTL
- #include <linux/sysctl.h>
-@@ -938,7 +939,7 @@ void ip6_route_input(struct sk_buff *skb
+@@ -938,7 +938,7 @@ void ip6_route_input(struct sk_buff *skb
  		.flowi6_iif = skb->dev->ifindex,
  		.daddr = iph->daddr,
  		.saddr = iph->saddr,
@@ -206,7 +260,7 @@
  		.flowi6_mark = skb->mark,
  		.flowi6_proto = iph->nexthdr,
  	};
-@@ -1108,7 +1109,7 @@ void ip6_update_pmtu(struct sk_buff *skb
+@@ -1108,7 +1108,7 @@ void ip6_update_pmtu(struct sk_buff *skb
  	fl6.flowi6_flags = 0;
  	fl6.daddr = iph->daddr;
  	fl6.saddr = iph->saddr;
@@ -215,7 +269,7 @@
  
  	dst = ip6_route_output(net, NULL, &fl6);
  	if (!dst->error)
-@@ -1136,7 +1137,7 @@ void ip6_redirect(struct sk_buff *skb, s
+@@ -1136,7 +1136,7 @@ void ip6_redirect(struct sk_buff *skb, s
  	fl6.flowi6_flags = 0;
  	fl6.daddr = iph->daddr;
  	fl6.saddr = iph->saddr;
@@ -632,3 +686,80 @@
  
  	switch (type) {
  	default:
+--- a/include/uapi/linux/igmp.h
++++ b/include/uapi/linux/igmp.h
+@@ -32,7 +32,7 @@ struct igmphdr {
+ 	__u8 code;		/* For newer IGMP */
+ 	__sum16 csum;
+ 	__be32 group;
+-};
++} __attribute__((packed, aligned(2)));
+ 
+ /* V3 group record types [grec_type] */
+ #define IGMPV3_MODE_IS_INCLUDE		1
+@@ -48,7 +48,7 @@ struct igmpv3_grec {
+ 	__be16	grec_nsrcs;
+ 	__be32	grec_mca;
+ 	__be32	grec_src[0];
+-};
++} __attribute__((packed, aligned(2)));
+ 
+ struct igmpv3_report {
+ 	__u8 type;
+@@ -57,7 +57,7 @@ struct igmpv3_report {
+ 	__be16 resv2;
+ 	__be16 ngrec;
+ 	struct igmpv3_grec grec[0];
+-};
++} __attribute__((packed, aligned(2)));
+ 
+ struct igmpv3_query {
+ 	__u8 type;
+@@ -78,7 +78,7 @@ struct igmpv3_query {
+ 	__u8 qqic;
+ 	__be16 nsrcs;
+ 	__be32 srcs[0];
+-};
++} __attribute__((packed, aligned(2)));
+ 
+ #define IGMP_HOST_MEMBERSHIP_QUERY	0x11	/* From RFC1112 */
+ #define IGMP_HOST_MEMBERSHIP_REPORT	0x12	/* Ditto */
+--- a/net/core/flow_dissector.c
++++ b/net/core/flow_dissector.c
+@@ -137,7 +137,7 @@ ipv6:
+ 		nhoff += poff;
+ 		ports = skb_header_pointer(skb, nhoff, sizeof(_ports), &_ports);
+ 		if (ports)
+-			flow->ports = *ports;
++			flow->ports = net_hdr_word(ports);
+ 	}
+ 
+ 	return true;
+--- a/include/uapi/linux/icmpv6.h
++++ b/include/uapi/linux/icmpv6.h
+@@ -76,7 +76,7 @@ struct icmp6hdr {
+ #define icmp6_addrconf_other	icmp6_dataun.u_nd_ra.other
+ #define icmp6_rt_lifetime	icmp6_dataun.u_nd_ra.rt_lifetime
+ #define icmp6_router_pref	icmp6_dataun.u_nd_ra.router_pref
+-};
++} __attribute__((packed, aligned(2)));
+ 
+ 
+ #define ICMPV6_ROUTER_PREF_LOW		0x3
+--- a/include/net/ndisc.h
++++ b/include/net/ndisc.h
+@@ -142,10 +142,10 @@ static inline u32 ndisc_hashfn(const voi
+ {
+ 	const u32 *p32 = pkey;
+ 
+-	return (((p32[0] ^ hash32_ptr(dev)) * hash_rnd[0]) +
+-		(p32[1] * hash_rnd[1]) +
+-		(p32[2] * hash_rnd[2]) +
+-		(p32[3] * hash_rnd[3]));
++	return (((net_hdr_word(&p32[0]) ^ hash32_ptr(dev)) * hash_rnd[0]) +
++		(net_hdr_word(&p32[1]) * hash_rnd[1]) +
++		(net_hdr_word(&p32[2]) * hash_rnd[2]) +
++		(net_hdr_word(&p32[3]) * hash_rnd[3]));
+ }
+ 
+ static inline struct neighbour *__ipv6_neigh_lookup(struct neigh_table *tbl, struct net_device *dev, const void *pkey)
