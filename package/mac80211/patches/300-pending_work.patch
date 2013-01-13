@@ -1915,3 +1915,20 @@
  	struct ar5416IniArray iniBank7;
  	struct ar5416IniArray iniAddac;
  	struct ar5416IniArray iniPcieSerdes;
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1677,10 +1677,10 @@ netdev_tx_t ieee80211_monitor_start_xmit
+ 			chanctx_conf =
+ 				rcu_dereference(tmp_sdata->vif.chanctx_conf);
+ 	}
+-	if (!chanctx_conf)
+-		goto fail_rcu;
+-
+-	chan = chanctx_conf->def.chan;
++	if (chanctx_conf)
++		chan = chanctx_conf->def.chan;
++	else
++		chan = local->_oper_channel;
+ 
+ 	/*
+ 	 * Frame injection is not allowed if beaconing is not allowed
