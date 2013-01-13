@@ -763,3 +763,25 @@
  }
  
  static inline struct neighbour *__ipv6_neigh_lookup(struct neigh_table *tbl, struct net_device *dev, const void *pkey)
+--- a/net/sched/cls_u32.c
++++ b/net/sched/cls_u32.c
+@@ -142,7 +142,7 @@ next_knode:
+ 			data = skb_header_pointer(skb, toff, 4, &hdata);
+ 			if (!data)
+ 				goto out;
+-			if ((*data ^ key->val) & key->mask) {
++			if ((net_hdr_word(data) ^ key->val) & key->mask) {
+ 				n = n->next;
+ 				goto next_knode;
+ 			}
+@@ -193,8 +193,8 @@ check_terminal:
+ 						  &hdata);
+ 			if (!data)
+ 				goto out;
+-			sel = ht->divisor & u32_hash_fold(*data, &n->sel,
+-							  n->fshift);
++			sel = ht->divisor & u32_hash_fold(net_hdr_word(data),
++							  &n->sel, n->fshift);
+ 		}
+ 		if (!(n->sel.flags & (TC_U32_VAROFFSET | TC_U32_OFFSET | TC_U32_EAT)))
+ 			goto next_ht;
