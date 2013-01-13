@@ -83,6 +83,15 @@
  
  /*
   *	The union cast uses a gcc extension to avoid aliasing problems
+@@ -64,7 +64,7 @@ struct tcphdr {
+ union tcp_word_hdr { 
+ 	struct tcphdr hdr;
+ 	__be32 		  words[5];
+-}; 
++} __packed __attribute__((aligned(2)));
+ 
+ #define tcp_flag_word(tp) ( ((union tcp_word_hdr *)(tp))->words [3]) 
+ 
 --- a/include/uapi/linux/udp.h
 +++ b/include/uapi/linux/udp.h
 @@ -24,7 +24,7 @@ struct udphdr {
@@ -115,3 +124,35 @@
  
  	return true;
  }
+--- a/include/uapi/linux/icmp.h
++++ b/include/uapi/linux/icmp.h
+@@ -80,7 +80,7 @@ struct icmphdr {
+ 		__be16	mtu;
+ 	} frag;
+   } un;
+-};
++} __packed __attribute__((aligned(2)));
+ 
+ 
+ /*
+--- a/net/ipv4/tcp_input.c
++++ b/net/ipv4/tcp_input.c
+@@ -3842,13 +3842,14 @@ static bool tcp_parse_aligned_timestamp(
+ {
+ 	const __be32 *ptr = (const __be32 *)(th + 1);
+ 
+-	if (*ptr == htonl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16)
+-			  | (TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP)) {
++	if (__get_unaligned_cpu32(ptr) ==
++	    htonl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16) |
++	    (TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP)) {
+ 		tp->rx_opt.saw_tstamp = 1;
+ 		++ptr;
+-		tp->rx_opt.rcv_tsval = ntohl(*ptr);
++		tp->rx_opt.rcv_tsval = get_unaligned_be32(ptr);
+ 		++ptr;
+-		tp->rx_opt.rcv_tsecr = ntohl(*ptr);
++		tp->rx_opt.rcv_tsecr = get_unaligned_be32(ptr);
+ 		return true;
+ 	}
+ 	return false;
