@@ -20,9 +20,8 @@ if [ "$state" == "started" ]; then
 	conf_set "$device" accept_ra 2
 	conf_set "$device" forwarding 2
 
-	# Trigger RS
-	conf_set "$device" disable_ipv6 1
-	conf_set "$device" disable_ipv6 0
+	# Send RS on interface
+	[ -x /usr/sbin/6relayd ] && /usr/sbin/6relayd -s "$device"
 
 	exit 0
 elif [ "$state" == "stopped" ]; then
