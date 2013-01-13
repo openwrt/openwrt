@@ -57,7 +57,7 @@
  	__be32	daddr;
  	/*The options start here. */
 -};
-+} __packed __attribute__((aligned(2)));
++} __attribute__((packed, aligned(2)));
  
  
  struct ip_auth_hdr {
@@ -68,7 +68,7 @@
  	struct	in6_addr	saddr;
  	struct	in6_addr	daddr;
 -};
-+} __packed __attribute__((aligned(2)));
++} __attribute__((packed, aligned(2)));
  
  
  /* index values for the variables in ipv6_devconf */
@@ -79,7 +79,7 @@
  	__sum16	check;
  	__be16	urg_ptr;
 -};
-+} __packed __attribute__((aligned(2)));
++} __attribute__((packed, aligned(2)));
  
  /*
   *	The union cast uses a gcc extension to avoid aliasing problems
@@ -88,7 +88,7 @@
  	struct tcphdr hdr;
  	__be32 		  words[5];
 -}; 
-+} __packed __attribute__((aligned(2)));
++} __attribute__((packed, aligned(2)));
  
  #define tcp_flag_word(tp) ( ((union tcp_word_hdr *)(tp))->words [3]) 
  
@@ -99,7 +99,7 @@
  	__be16	len;
  	__sum16	check;
 -};
-+} __packed __attribute__((aligned(2)));
++} __attribute__((packed, aligned(2)));
  
  /* UDP socket options */
  #define UDP_CORK	1	/* Never send partially complete segments */
@@ -131,7 +131,7 @@
  	} frag;
    } un;
 -};
-+} __packed __attribute__((aligned(2)));
++} __attribute__((packed, aligned(2)));
  
  
  /*
@@ -156,3 +156,34 @@
  		return true;
  	}
  	return false;
+--- a/include/uapi/linux/in6.h
++++ b/include/uapi/linux/in6.h
+@@ -36,7 +36,7 @@ struct in6_addr {
+ #define s6_addr			in6_u.u6_addr8
+ #define s6_addr16		in6_u.u6_addr16
+ #define s6_addr32		in6_u.u6_addr32
+-};
++} __attribute__((packed, aligned(2)));
+ 
+ /* IPv6 Wildcard Address (::) and Loopback Address (::1) defined in RFC2553
+  * NOTE: Be aware the IN6ADDR_* constants and in6addr_* externals are defined
+--- a/net/ipv6/af_inet6.c
++++ b/net/ipv6/af_inet6.c
+@@ -61,6 +61,7 @@
+ #endif
+ 
+ #include <asm/uaccess.h>
++#include <asm/unaligned.h>
+ #include <linux/mroute6.h>
+ 
+ MODULE_AUTHOR("Cast of dozens");
+@@ -880,7 +881,8 @@ static struct sk_buff **ipv6_gro_receive
+ 			continue;
+ 
+ 		iph2 = ipv6_hdr(p);
+-		first_word = *(__be32 *)iph ^ *(__be32 *)iph2 ;
++		first_word = __get_unaligned_cpu32((__u32 *) iph) ^
++			     __get_unaligned_cpu32((__u32 *) iph2);
+ 
+ 		/* All fields must match except length and Traffic Class. */
+ 		if (nlen != skb_network_header_len(p) ||
