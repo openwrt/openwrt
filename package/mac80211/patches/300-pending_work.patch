@@ -1315,6 +1315,15 @@
  }
  
  static void ar9003_rx_gain_table_mode0(struct ath_hw *ah)
+@@ -673,7 +704,7 @@ void ar9003_hw_attach_ops(struct ath_hw 
+ 	struct ath_hw_private_ops *priv_ops = ath9k_hw_private_ops(ah);
+ 	struct ath_hw_ops *ops = ath9k_hw_ops(ah);
+ 
+-	priv_ops->init_mode_regs = ar9003_hw_init_mode_regs;
++	ar9003_hw_init_mode_regs(ah);
+ 	priv_ops->init_mode_gain_regs = ar9003_hw_init_mode_gain_regs;
+ 
+ 	ops->config_pci_powersave = ar9003_hw_configpcipowersave;
 --- a/drivers/net/wireless/ath/ath9k/ar9340_initvals.h
 +++ b/drivers/net/wireless/ath/ath9k/ar9340_initvals.h
 @@ -1172,6 +1172,106 @@ static const u32 ar9340Modes_mixed_ob_db
@@ -1707,3 +1716,202 @@
  			disable_40 = true;
  		break;
  	default:
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -485,9 +485,7 @@ static int ar5008_hw_rf_alloc_ext_banks(
+ 	ATH_ALLOC_BANK(ah->analogBank2Data, ah->iniBank2.ia_rows);
+ 	ATH_ALLOC_BANK(ah->analogBank3Data, ah->iniBank3.ia_rows);
+ 	ATH_ALLOC_BANK(ah->analogBank6Data, ah->iniBank6.ia_rows);
+-	ATH_ALLOC_BANK(ah->analogBank6TPCData, ah->iniBank6TPC.ia_rows);
+ 	ATH_ALLOC_BANK(ah->analogBank7Data, ah->iniBank7.ia_rows);
+-	ATH_ALLOC_BANK(ah->bank6Temp, ah->iniBank6.ia_rows);
+ 
+ 	return 0;
+ #undef ATH_ALLOC_BANK
+@@ -517,6 +515,7 @@ static bool ar5008_hw_set_rf_regs(struct
+ 	u32 ob5GHz = 0, db5GHz = 0;
+ 	u32 ob2GHz = 0, db2GHz = 0;
+ 	int regWrites = 0;
++	int i;
+ 
+ 	/*
+ 	 * Software does not need to program bank data
+@@ -541,13 +540,9 @@ static bool ar5008_hw_set_rf_regs(struct
+ 	/* Setup Bank 6 Write */
+ 	ar5008_rf_bank_setup(ah->analogBank3Data, &ah->iniBank3,
+ 		      modesIndex);
+-	{
+-		int i;
+-		for (i = 0; i < ah->iniBank6TPC.ia_rows; i++) {
+-			ah->analogBank6Data[i] =
+-			    INI_RA(&ah->iniBank6TPC, i, modesIndex);
+-		}
+-	}
++
++	for (i = 0; i < ah->iniBank6.ia_rows; i++)
++		ah->analogBank6Data[i] = INI_RA(&ah->iniBank6, i, modesIndex);
+ 
+ 	/* Only the 5 or 2 GHz OB/DB need to be set for a mode */
+ 	if (eepMinorRev >= 2) {
+@@ -572,18 +567,12 @@ static bool ar5008_hw_set_rf_regs(struct
+ 	ar5008_rf_bank_setup(ah->analogBank7Data, &ah->iniBank7, 1);
+ 
+ 	/* Write Analog registers */
+-	REG_WRITE_RF_ARRAY(&ah->iniBank0, ah->analogBank0Data,
+-			   regWrites);
+-	REG_WRITE_RF_ARRAY(&ah->iniBank1, ah->analogBank1Data,
+-			   regWrites);
+-	REG_WRITE_RF_ARRAY(&ah->iniBank2, ah->analogBank2Data,
+-			   regWrites);
+-	REG_WRITE_RF_ARRAY(&ah->iniBank3, ah->analogBank3Data,
+-			   regWrites);
+-	REG_WRITE_RF_ARRAY(&ah->iniBank6TPC, ah->analogBank6Data,
+-			   regWrites);
+-	REG_WRITE_RF_ARRAY(&ah->iniBank7, ah->analogBank7Data,
+-			   regWrites);
++	REG_WRITE_RF_ARRAY(&ah->iniBank0, ah->analogBank0Data, regWrites);
++	REG_WRITE_RF_ARRAY(&ah->iniBank1, ah->analogBank1Data, regWrites);
++	REG_WRITE_RF_ARRAY(&ah->iniBank2, ah->analogBank2Data, regWrites);
++	REG_WRITE_RF_ARRAY(&ah->iniBank3, ah->analogBank3Data, regWrites);
++	REG_WRITE_RF_ARRAY(&ah->iniBank6, ah->analogBank6Data, regWrites);
++	REG_WRITE_RF_ARRAY(&ah->iniBank7, ah->analogBank7Data, regWrites);
+ 
+ 	return true;
+ }
+--- a/drivers/net/wireless/ath/ath9k/ar9002_hw.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_hw.c
+@@ -23,13 +23,13 @@
+ 
+ /* General hardware code for the A5008/AR9001/AR9002 hadware families */
+ 
+-static void ar9002_hw_init_mode_regs(struct ath_hw *ah)
++static int ar9002_hw_init_mode_regs(struct ath_hw *ah)
+ {
+ 	if (AR_SREV_9271(ah)) {
+ 		INIT_INI_ARRAY(&ah->iniModes, ar9271Modes_9271);
+ 		INIT_INI_ARRAY(&ah->iniCommon, ar9271Common_9271);
+ 		INIT_INI_ARRAY(&ah->iniModes_9271_ANI_reg, ar9271Modes_9271_ANI_reg);
+-		return;
++		return 0;
+ 	}
+ 
+ 	if (ah->config.pcie_clock_req)
+@@ -67,12 +67,10 @@ static void ar9002_hw_init_mode_regs(str
+ 	} else if (AR_SREV_9100_OR_LATER(ah)) {
+ 		INIT_INI_ARRAY(&ah->iniModes, ar5416Modes_9100);
+ 		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common_9100);
+-		INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6_9100);
+ 		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac_9100);
+ 	} else {
+ 		INIT_INI_ARRAY(&ah->iniModes, ar5416Modes);
+ 		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common);
+-		INIT_INI_ARRAY(&ah->iniBank6TPC, ar5416Bank6TPC);
+ 		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac);
+ 	}
+ 
+@@ -86,14 +84,11 @@ static void ar9002_hw_init_mode_regs(str
+ 		INIT_INI_ARRAY(&ah->iniBank3, ar5416Bank3);
+ 		INIT_INI_ARRAY(&ah->iniBank7, ar5416Bank7);
+ 
+-		/* Common for AR5416, AR9160 */
+-		if (!AR_SREV_9100(ah))
+-			INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6);
+-
+ 		/* Common for AR913x, AR9160 */
+ 		if (!AR_SREV_5416(ah))
+-			INIT_INI_ARRAY(&ah->iniBank6TPC,
+-				      ar5416Bank6TPC_9100);
++			INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6TPC_9100);
++		else
++			INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6TPC);
+ 	}
+ 
+ 	/* iniAddac needs to be modified for these chips */
+@@ -104,7 +99,7 @@ static void ar9002_hw_init_mode_regs(str
+ 
+ 		data = devm_kzalloc(ah->dev, size, GFP_KERNEL);
+ 		if (!data)
+-			return;
++			return -ENOMEM;
+ 
+ 		memcpy(data, addac->ia_array, size);
+ 		addac->ia_array = data;
+@@ -120,6 +115,7 @@ static void ar9002_hw_init_mode_regs(str
+ 		INIT_INI_ARRAY(&ah->iniCckfirJapan2484,
+ 		       ar9287Common_japan_2484_cck_fir_coeff_9287_1_1);
+ 	}
++	return 0;
+ }
+ 
+ static void ar9280_20_hw_init_rxgain_ini(struct ath_hw *ah)
+@@ -415,7 +411,10 @@ int ar9002_hw_attach_ops(struct ath_hw *
+ 	struct ath_hw_ops *ops = ath9k_hw_ops(ah);
+ 	int ret;
+ 
+-	priv_ops->init_mode_regs = ar9002_hw_init_mode_regs;
++	ret = ar9002_hw_init_mode_regs(ah);
++	if (ret)
++		return ret;
++
+ 	priv_ops->init_mode_gain_regs = ar9002_hw_init_mode_gain_regs;
+ 
+ 	ops->config_pci_powersave = ar9002_hw_configpcipowersave;
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -54,11 +54,6 @@ static void ath9k_hw_init_cal_settings(s
+ 	ath9k_hw_private_ops(ah)->init_cal_settings(ah);
+ }
+ 
+-static void ath9k_hw_init_mode_regs(struct ath_hw *ah)
+-{
+-	ath9k_hw_private_ops(ah)->init_mode_regs(ah);
+-}
+-
+ static u32 ath9k_hw_compute_pll_control(struct ath_hw *ah,
+ 					struct ath9k_channel *chan)
+ {
+@@ -670,8 +665,6 @@ static int __ath9k_hw_init(struct ath_hw
+ 	if (!AR_SREV_9300_20_OR_LATER(ah))
+ 		ah->ani_function &= ~ATH9K_ANI_MRC_CCK;
+ 
+-	ath9k_hw_init_mode_regs(ah);
+-
+ 	if (!ah->is_pciexpress)
+ 		ath9k_hw_disablepcie(ah);
+ 
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -599,7 +599,6 @@ struct ath_hw_radar_conf {
+  * @init_cal_settings: setup types of calibrations supported
+  * @init_cal: starts actual calibration
+  *
+- * @init_mode_regs: Initializes mode registers
+  * @init_mode_gain_regs: Initialize TX/RX gain registers
+  *
+  * @rf_set_freq: change frequency
+@@ -618,7 +617,6 @@ struct ath_hw_private_ops {
+ 	void (*init_cal_settings)(struct ath_hw *ah);
+ 	bool (*init_cal)(struct ath_hw *ah, struct ath9k_channel *chan);
+ 
+-	void (*init_mode_regs)(struct ath_hw *ah);
+ 	void (*init_mode_gain_regs)(struct ath_hw *ah);
+ 	void (*setup_calibration)(struct ath_hw *ah,
+ 				  struct ath9k_cal_list *currCal);
+@@ -815,9 +813,7 @@ struct ath_hw {
+ 	u32 *analogBank2Data;
+ 	u32 *analogBank3Data;
+ 	u32 *analogBank6Data;
+-	u32 *analogBank6TPCData;
+ 	u32 *analogBank7Data;
+-	u32 *bank6Temp;
+ 
+ 	int coverage_class;
+ 	u32 slottime;
+@@ -858,7 +854,6 @@ struct ath_hw {
+ 	struct ar5416IniArray iniBank2;
+ 	struct ar5416IniArray iniBank3;
+ 	struct ar5416IniArray iniBank6;
+-	struct ar5416IniArray iniBank6TPC;
+ 	struct ar5416IniArray iniBank7;
+ 	struct ar5416IniArray iniAddac;
+ 	struct ar5416IniArray iniPcieSerdes;
