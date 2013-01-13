@@ -19,6 +19,9 @@ prepare_interface() {
 
 	ipv6_conf "$device" accept_ra 2
 	ipv6_conf "$device" forwarding 2
+
+	# Send RS
+	[ -x /usr/sbin/6relayd ] && /usr/sbin/6relayd -s "$device"
 }
 
 cleanup_interface() {
