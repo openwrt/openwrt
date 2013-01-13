@@ -1,26 +1,13 @@
 #!/bin/sh /etc/rc.common
 # Copyright (c) 2011-2012 OpenWrt.org
 START=80
-
-resolve_ifname() {
-	grep -qs "^ *$1:" /proc/net/dev && {
-		append ifaces "$1"
-	}
-}
-
-resolve_network() {
-	local ifn
-	fixup_interface "$1"
-	config_get ifn "$1" ifname
-	[ -z "$ifn" ] && return 1
-	resolve_ifname "$ifn"
-}
+. /lib/functions/network.sh
+. /lib/functions/service.sh
 
 start_6relayd() {
 	local cfg="$1"
 	local mode="$2"
-	local args="-s -l"
-	local ifaces=""
+	local args=""
 
 	SERVICE_DAEMONIZE=1
 	SERVICE_WRITE_PID=1
@@ -33,40 +20,96 @@ start_6relayd() {
 		fi
 	}
 
-	local net networks
-	config_get networks "$cfg" network
-	for net in $networks; do
-		resolve_network "$net" || {
-			return 1
-		}
+	# Detect master interface
+	local master masterif
+	config_get masterif "$cfg" master
+	network_get_device master "$masterif"
+	[ -z "$master" ] && master="."
+
+	# Detect slave interfaces
+	local slaves=""
+	local slaveifs
+	config_get slaveifs "$cfg" network
+	for slaveif in $slaveifs; do
+		local slave
+		network_get_device slave "$slaveif"
+		# Compatibility with old config format
+		if [ "$mode" = "relay" -a "$master" = "." ]; then
+			[ -z "$slave" ] && return 0
+			master="$slave"
+		else
+			[ -n "$slave" ] && append slaves "$slave"
+		fi
 	done
 
-	local ifn ifnames
-	config_get ifnames "$cfg" ifname
-	for ifn in $ifnames; do
-		resolve_ifname "$ifn"
-	done
+	# Bail if no slaves are active
+	[ -z "$slaves" ] && return 0
 
-	local rd
+	# Configure services
+	local rd dhcpv6 ndp
 	config_get rd "$cfg" rd
-	[ -n "$rd" ] && append args "-R$rd"
-
-	local dhcpv6
 	config_get dhcpv6 "$cfg" dhcpv6
-	[ -n "$dhcpv6" ] && append args "-D$dhcpv6"
-
-	local ndp
 	config_get ndp "$cfg" ndp
-	[ "$ndp" == "relay" ] && append args "-N -r"
 
+	# Test for fallback mode
+	local fallback fallback_relay
+	config_get fallback_relay "$cfg" fallback_relay
+
+	if [ -n "$fallback_relay" -a "$master" != "." ]; then
+		local prefix
+		network_get_prefix6 prefix "$masterif"
+		[ -z "$prefix" ] && fallback=1
+	fi
+
+	if [ -n "$fallback" ]; then
+		for service in $fallback_relay; do
+			eval "$service=relay"
+		done
+	fi
+
+	# Configure feature options
 	local always_rewrite_dns
 	config_get_bool always_rewrite_dns "$cfg" always_rewrite_dns 0
-	[ $always_rewrite_dns -eq 1 ] && append args "-n"
+	[ "$always_rewrite_dns" -eq 1 ] && append args "-n"
 
-	# In server mode the first interface needs to be passed twice
-	[ "$mode" == "server" ] && ifaces=". $ifaces"
+	local always_assume_default
+	config_get_bool always_assume_default "$cfg" always_assume_default 0
+	[ "$always_assume_default" -eq 1 ] && append args "-u"
 
-	service_start /usr/sbin/6relayd $args $ifaces
+	[ "$ndp" = "relay" ] && append args "-N -s -l"
+	[ "$rd" = "relay" ] && append args "-Rrelay"
+	[ "$rd" = "server" ] && append args "-Rserver"
+	[ "$dhcpv6" = "relay" ] && append args "-Drelay"
+	[ "$dhcpv6" = "server" ] && append args "-Dserver"
+	[ "$ndp" != "relay" -a "$rd" != "relay" -a "$dhcpv6" != "relay" ] && master="."
+
+	service_start /usr/sbin/6relayd $args $master $slaves
+}
+
+restart_affected_6relayd() {
+	local cfg="$1"
+	local net="$2"
+	local mode="$3"
+
+	local master slaves
+	config_get master "$cfg" master
+	config_get slaves "$cfg" network
+
+	for iface in $master $slaves; do
+		if [ "$iface" = "$net" ]; then
+			SERVICE_PID_FILE="/var/run/6relayd-$cfg.pid"
+			service_stop /usr/sbin/6relayd
+			rm -f "$SERVICE_PID_FILE"
+			start_6relayd "$cfg" "$mode"
+		fi
+	done
+}
+
+restart_affected() {
+	local net="$1"
+	config_load 6relayd
+	config_foreach restart_affected_6relayd server "$net"
+	config_foreach restart_affected_6relayd relay "$net" "relay"
 }
 
 stop() {
@@ -78,8 +121,7 @@ stop() {
 }
 
 start() {
-	include /lib/network
 	config_load 6relayd
+	config_foreach start_6relayd server
 	config_foreach start_6relayd relay relay
-	config_foreach start_6relayd server server
 }
