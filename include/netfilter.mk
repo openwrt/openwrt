@@ -76,8 +76,7 @@ $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_TA
 
 # extra
 
-# kernel only
-
+$(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_ADDRTYPE, $(if $(NF_KMOD),$(P_XT)xt_addrtype,$(P_XT)ipt_addrtype)))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_OWNER, $(P_XT)xt_owner))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_PHYSDEV, $(P_XT)xt_physdev))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_PKTTYPE, $(P_XT)xt_pkttype))

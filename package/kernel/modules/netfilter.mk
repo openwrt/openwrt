@@ -377,6 +377,7 @@ endef
 define KernelPackage/ipt-extra/description
  Other Netfilter (IPv4) kernel modules
  Includes:
+ - addrtype
  - owner
  - physdev (if bridge support was enabled in kernel)
  - pkttype
