@@ -318,15 +318,7 @@
  {
  	struct ath_hw *ah = sc->sc_ah;
  	bool ret = true;
-@@ -196,19 +196,15 @@ static bool ath_prepare_reset(struct ath
- 	ath9k_debug_samp_bb_mac(sc);
- 	ath9k_hw_disable_interrupts(ah);
- 
-+	tasklet_disable(&sc->intr_tq);
-+
- 	if (!ath_stoprecv(sc))
- 		ret = false;
- 
+@@ -202,14 +202,6 @@ static bool ath_prepare_reset(struct ath
  	if (!ath_drain_all_txq(sc, retry_tx))
  		ret = false;
  
@@ -337,11 +329,11 @@
 -	} else {
 -		ath_flushrecv(sc);
 -	}
-+	tasklet_enable(&sc->intr_tq);
- 
+-
  	return ret;
  }
-@@ -262,7 +258,6 @@ static int ath_reset_internal(struct ath
+ 
+@@ -262,11 +254,11 @@ static int ath_reset_internal(struct ath
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ath9k_hw_cal_data *caldata = NULL;
  	bool fastcc = true;
@@ -349,7 +341,12 @@
  	int r;
  
  	__ath_cancel_work(sc);
-@@ -276,11 +271,10 @@ static int ath_reset_internal(struct ath
+ 
++	tasklet_disable(&sc->intr_tq);
+ 	spin_lock_bh(&sc->sc_pcu_lock);
+ 
+ 	if (!(sc->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL)) {
+@@ -276,11 +268,10 @@ static int ath_reset_internal(struct ath
  
  	if (!hchan) {
  		fastcc = false;
@@ -362,7 +359,16 @@
  		fastcc = false;
  
  	ath_dbg(common, CONFIG, "Reset to %u MHz, HT40: %d fastcc: %d\n",
-@@ -804,7 +798,7 @@ static void ath9k_stop(struct ieee80211_
+@@ -302,6 +293,8 @@ static int ath_reset_internal(struct ath
+ 
+ out:
+ 	spin_unlock_bh(&sc->sc_pcu_lock);
++	tasklet_enable(&sc->intr_tq);
++
+ 	return r;
+ }
+ 
+@@ -804,7 +797,7 @@ static void ath9k_stop(struct ieee80211_
  		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
  	}
  
