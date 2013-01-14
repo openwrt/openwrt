@@ -135,7 +135,7 @@
  	u8 rs_num_delims;
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -946,6 +946,7 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -936,6 +936,7 @@ static int ath9k_rx_skb_preprocess(struc
  				   bool *decrypt_error)
  {
  	struct ath_hw *ah = common->ah;
@@ -143,7 +143,7 @@
  
  	/*
  	 * everything but the rate is checked here, the rate check is done
-@@ -971,6 +972,20 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -961,6 +962,20 @@ static int ath9k_rx_skb_preprocess(struc
  	if (rx_stats->rs_moreaggr)
  		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
  
