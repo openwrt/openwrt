@@ -1,14 +1,6 @@
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
-@@ -579,7 +579,6 @@ static int ohci_run (struct ohci_hcd *oh
- 
- 	/* boot firmware should have set this up (5.1.1.3.1) */
- 	if (first) {
--
- 		val = ohci_readl (ohci, &ohci->regs->fminterval);
- 		ohci->fminterval = val & 0x3fff;
- 		if (ohci->fminterval != FI)
-@@ -663,6 +662,9 @@ retry:
+@@ -663,6 +663,9 @@ retry:
  
  	periodic_reinit (ohci);
  
@@ -18,7 +10,7 @@
  	/* some OHCI implementations are finicky about how they init.
  	 * bogus values here mean not even enumeration could work.
  	 */
-@@ -1105,6 +1107,11 @@ MODULE_LICENSE ("GPL");
+@@ -1105,6 +1108,11 @@ MODULE_LICENSE ("GPL");
  #define PLATFORM_DRIVER		ohci_hcd_tilegx_driver
  #endif
  
@@ -30,55 +22,6 @@
  #ifdef CONFIG_USB_CNS3XXX_OHCI
  #include "ohci-cns3xxx.c"
  #define PLATFORM_DRIVER		ohci_hcd_cns3xxx_driver
-@@ -1117,7 +1124,7 @@ MODULE_LICENSE ("GPL");
- 
- #ifdef CONFIG_USB_OHCI_HCD_PLATFORM
- #include "ohci-platform.c"
--#define PLATFORM_DRIVER		ohci_platform_driver
-+#define OHCI_PLATFORM_DRIVER		ohci_platform_driver
- #endif
- 
- #if	!defined(PCI_DRIVER) &&		\
-@@ -1128,7 +1135,8 @@ MODULE_LICENSE ("GPL");
- 	!defined(SA1111_DRIVER) &&	\
- 	!defined(PS3_SYSTEM_BUS_DRIVER) && \
- 	!defined(SM501_OHCI_DRIVER) && \
--	!defined(TMIO_OHCI_DRIVER)
-+	!defined(TMIO_OHCI_DRIVER) && \
-+	!defined(OHCI_PLATFORM_DRIVER)
- #error "missing bus glue for ohci-hcd"
- #endif
- 
-@@ -1206,9 +1214,19 @@ static int __init ohci_hcd_mod_init(void
- 		goto error_tmio;
- #endif
- 
-+#ifdef OHCI_PLATFORM_DRIVER
-+	retval = platform_driver_register(&OHCI_PLATFORM_DRIVER);
-+	if (retval < 0)
-+		goto error_ohci;
-+#endif
-+
- 	return retval;
- 
- 	/* Error path */
-+#ifdef OHCI_PLATFORM_DRIVER
-+	platform_driver_unregister(&OHCI_PLATFORM_DRIVER);
-+ error_ohci:
-+#endif
- #ifdef TMIO_OHCI_DRIVER
- 	platform_driver_unregister(&TMIO_OHCI_DRIVER);
-  error_tmio:
-@@ -1258,6 +1276,9 @@ module_init(ohci_hcd_mod_init);
- 
- static void __exit ohci_hcd_mod_exit(void)
- {
-+#ifdef OHCI_PLATFORM_DRIVER
-+	platform_driver_unregister(&OHCI_PLATFORM_DRIVER);
-+#endif
- #ifdef TMIO_OHCI_DRIVER
- 	platform_driver_unregister(&TMIO_OHCI_DRIVER);
- #endif
 --- /dev/null
 +++ b/drivers/usb/host/ohci-cns21xx.c
 @@ -0,0 +1,176 @@
