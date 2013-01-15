@@ -1,0 +1,18 @@
+#!/bin/sh
+
+[ "$(uci get network.globals.ula_prefix)" != "auto" ] && exit 0
+# Sometimes results are empty, therefore try until it works...          
+local r1 r2 r3
+while [ -z "$r1" -o -z "$r2" -o -z "$r3" ]; do
+	r1=$(printf "%02x" $(($(</dev/urandom tr -dc 0-9 | dd bs=9 count=1) % 256)))
+	r2=$(printf "%01x" $(($(</dev/urandom tr -dc 0-9 | dd bs=9 count=1) % 65536)))
+	r3=$(printf "%01x" $(($(</dev/urandom tr -dc 0-9 | dd bs=9 count=1) % 65536)))
+done
+
+uci -q batch <<-EOF >/dev/null
+	set network.globals.ula_prefix=fd$r1:$r2:$r3::/48
+	commit network
+EOF
+
+exit 0
+
