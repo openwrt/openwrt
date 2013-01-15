@@ -1,0 +1,28 @@
+Cc: Lior Amsalem <alior@marvell.com>
+Cc: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Cc: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+---
+ arch/arm/boot/dts/armada-370-mirabox.dts |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/armada-370-mirabox.dts b/arch/arm/boot/dts/armada-370-mirabox.dts
+index 1864820..dd0c57d 100644
+--- a/arch/arm/boot/dts/armada-370-mirabox.dts
++++ b/arch/arm/boot/dts/armada-370-mirabox.dts
+@@ -62,5 +62,13 @@
+ 			 * Wifi/Bluetooth chip
+ 			 */
+ 		};
++
++		usb@d0050000 {
++			status = "okay";
++		};
++
++		usb@d0051000 {
++			status = "okay";
++		};
+ 	};
+ };
+-- 
+1.7.8.6

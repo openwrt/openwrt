@@ -1,0 +1,31 @@
+Cc: Lior Amsalem <alior@marvell.com>
+Cc: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Cc: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+---
+ arch/arm/boot/dts/armada-xp-openblocks-ax3-4.dts |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/armada-xp-openblocks-ax3-4.dts b/arch/arm/boot/dts/armada-xp-openblocks-ax3-4.dts
+index b24644f..55f5b6f 100644
+--- a/arch/arm/boot/dts/armada-xp-openblocks-ax3-4.dts
++++ b/arch/arm/boot/dts/armada-xp-openblocks-ax3-4.dts
+@@ -127,5 +127,14 @@
+ 			nr-ports = <2>;
+ 			status = "okay";
+ 		};
++		usb@d0050000 {
++			status = "okay";
++		};
++		usb@d0051000 {
++			status = "okay";
++		};
++		usb@d0052000 {
++			status = "okay";
++		};
+ 	};
+ };
+-- 
+1.7.8.6
+
+

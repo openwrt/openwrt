@@ -1,0 +1,32 @@
+Cc: Lior Amsalem <alior@marvell.com>
+Cc: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Cc: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+---
+ arch/arm/boot/dts/armada-xp-db.dts |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/armada-xp-db.dts b/arch/arm/boot/dts/armada-xp-db.dts
+index c7035c5..c84e1fe 100644
+--- a/arch/arm/boot/dts/armada-xp-db.dts
++++ b/arch/arm/boot/dts/armada-xp-db.dts
+@@ -97,5 +97,17 @@
+ 			status = "okay";
+ 			/* No CD or WP GPIOs */
+ 		};
++
++		usb@d0050000 {
++			status = "okay";
++		};
++
++		usb@d0051000 {
++			status = "okay";
++		};
++
++		usb@d0052000 {
++			status = "okay";
++		};
+ 	};
+ };
+-- 
+1.7.8.6
