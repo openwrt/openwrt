@@ -393,7 +393,7 @@ define KernelPackage/rtc-marvell
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell SoC built-in RTC support
   $(call AddDepends/rtc)
-  DEPENDS+=@TARGET_kirkwood||TARGET_orion
+  DEPENDS+=@TARGET_kirkwood||TARGET_orion||TARGET_mvebu
   KCONFIG:=CONFIG_RTC_DRV_MV
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
   AUTOLOAD:=$(call AutoLoad,60,rtc-mv)
