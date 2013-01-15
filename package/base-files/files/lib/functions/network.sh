@@ -57,6 +57,20 @@ __network_parse_ifstatus()
 			fi
 		done
 
+		# parse prefixes
+		if json_is_a "ipv6_prefix" array; then
+			json_select "ipv6_prefix"
+
+			if json_is_a 1 object; then
+				json_select 1
+				__network_set_cache "${__key}_prefix6_address"	address
+				__network_set_cache "${__key}_prefix6_mask"	mask
+				json_select ".."
+			fi
+
+			json_select ".."
+		fi
+
 		# parse routes
 		if json_is_a route array; then
 
@@ -169,6 +183,22 @@ network_get_subnet()  { __network_ipaddr "$1" "$2" 4 1; }
 # 1: destination variable
 # 2: interface
 network_get_subnet6() { __network_ipaddr "$1" "$2" 6 1; }
+
+# determine IPv6 prefix
+network_get_prefix6() {
+	local __prefix="$1"
+	local __iface="$2"
+	local __address
+	local __mask
+
+	__network_parse_ifstatus "$__iface" || return 1
+	__network_export __address "${__iface}_prefix6_address"
+	local return="$?"
+	[ "$return" -eq 0 ] || return $?
+	__network_export __mask "${__iface}_prefix6_mask"
+	eval "$__prefix=$__address/$__mask"
+	return 0
+}
 
 
 __network_gateway()
