@@ -1,0 +1,11 @@
+#!/bin/sh
+uci -q batch <<-EOF >/dev/null
+	set network.globals=globals
+	set network.globals.ula_prefix=auto
+	set network.wan6=interface
+	set network.wan6.proto=dhcpv6
+	set network.wan6.ifname=@wan
+	set network.lan.ip6assign=64
+	set network.wan.ipv6=1
+	commit network
+EOF

@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ipv6-support
-PKG_VERSION:=2013-01-13
+PKG_VERSION:=2013-01-15
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ipv6-support
   SECTION:=ipv6
   CATEGORY:=IPv6
-  DEPENDS:=+kmod-ipv6 +6relayd +odhcp6c +6distributed +ip6tables +ubus
+  DEPENDS:=+kmod-ipv6 +6relayd +odhcp6c +ip6tables
   TITLE:=Basic IPv6-support for Customer Edge Routers
   MAINTAINER:=Steven Barth <steven@midlink.org>
   PKGARCH:=all
@@ -33,21 +33,9 @@ endef
 define Build/Configure
 endef
 
-define Package/ipv6-support/conffiles
-/etc/config/network6
-endef
-
 define Package/ipv6-support/install
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_DATA) ./files/ipv6.hotplug $(1)/etc/hotplug.d/iface/20-ipv6
-	$(INSTALL_DIR) $(1)/lib/ipv6
-	$(INSTALL_DATA) ./files/support.sh $(1)/lib/ipv6/support.sh
-	$(INSTALL_BIN) ./files/dhcpv6.sh $(1)/lib/ipv6/dhcpv6.sh
-	$(INSTALL_BIN) ./files/firewall.sh $(1)/lib/ipv6/firewall.sh
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/network6.config $(1)/etc/config/network6
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/ipv6-support.defaults $(1)/etc/uci-defaults/ipv6-support.defaults
+	$(INSTALL_BIN) ./files/enable-ipv6.defaults $(1)/etc/uci-defaults/enable-ipv6
 endef
 
 $(eval $(call BuildPackage,ipv6-support))
