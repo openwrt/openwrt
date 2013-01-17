@@ -15,11 +15,9 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  2 files changed, 62 insertions(+)
  create mode 100644 arch/arm/boot/dts/armada-370-rd.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index b7246d6..7a75171 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -78,6 +78,7 @@ dtb-$(CONFIG_ARCH_MSM) += msm8660-surf.dtb \
+@@ -77,6 +77,7 @@ dtb-$(CONFIG_ARCH_MSM) += msm8660-surf.d
  	msm8960-cdp.dtb
  dtb-$(CONFIG_ARCH_MVEBU) += armada-370-db.dtb \
  	armada-370-mirabox.dtb \
@@ -27,9 +25,6 @@ index b7246d6..7a75171 100644
  	armada-xp-db.dtb \
  	armada-xp-openblocks-ax3-4.dtb
  dtb-$(CONFIG_ARCH_MXC) += imx51-babbage.dtb \
-diff --git a/arch/arm/boot/dts/armada-370-rd.dts b/arch/arm/boot/dts/armada-370-rd.dts
-new file mode 100644
-index 0000000..d62dfac
 --- /dev/null
 +++ b/arch/arm/boot/dts/armada-370-rd.dts
 @@ -0,0 +1,61 @@
@@ -94,6 +89,3 @@ index 0000000..d62dfac
 +		};
 +	};
 +};
--- 
-1.7.10.4
-

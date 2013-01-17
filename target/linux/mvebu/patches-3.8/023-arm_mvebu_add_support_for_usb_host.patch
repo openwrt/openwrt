@@ -13,13 +13,11 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
  arch/arm/mach-mvebu/Kconfig          |    1 +
  4 files changed, 42 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/boot/dts/armada-370-xp.dtsi b/arch/arm/boot/dts/armada-370-xp.dtsi
-index 28276fe..fa025c4 100644
 --- a/arch/arm/boot/dts/armada-370-xp.dtsi
 +++ b/arch/arm/boot/dts/armada-370-xp.dtsi
 @@ -145,6 +145,21 @@
- 			clocks = <&gateclk 17>;
- 			status = "disabled";
+ 			reg = <0xd0010300 0x20>;
+ 			interrupts = <50>;
  		};
 +
 +		usb@d0050000 {
@@ -39,8 +37,6 @@ index 28276fe..fa025c4 100644
  	};
  };
  
-diff --git a/arch/arm/boot/dts/armada-370.dtsi b/arch/arm/boot/dts/armada-370.dtsi
-index 88f9bab..8188d13 100644
 --- a/arch/arm/boot/dts/armada-370.dtsi
 +++ b/arch/arm/boot/dts/armada-370.dtsi
 @@ -144,5 +144,14 @@
@@ -58,8 +54,6 @@ index 88f9bab..8188d13 100644
 +
  	};
  };
-diff --git a/arch/arm/boot/dts/armada-xp.dtsi b/arch/arm/boot/dts/armada-xp.dtsi
-index 390ba98..1443949 100644
 --- a/arch/arm/boot/dts/armada-xp.dtsi
 +++ b/arch/arm/boot/dts/armada-xp.dtsi
 @@ -134,5 +134,22 @@
@@ -85,8 +79,6 @@ index 390ba98..1443949 100644
 +
  	};
  };
-diff --git a/arch/arm/mach-mvebu/Kconfig b/arch/arm/mach-mvebu/Kconfig
-index 440b13e..5e4fcde 100644
 --- a/arch/arm/mach-mvebu/Kconfig
 +++ b/arch/arm/mach-mvebu/Kconfig
 @@ -24,6 +24,7 @@ config MACH_ARMADA_370_XP
@@ -97,5 +89,3 @@ index 440b13e..5e4fcde 100644
  
  config MACH_ARMADA_370
  	bool "Marvell Armada 370 boards"
--- 
-1.7.8.6

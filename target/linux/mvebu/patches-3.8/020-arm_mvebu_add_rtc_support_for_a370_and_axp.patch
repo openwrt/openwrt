@@ -8,12 +8,10 @@ Acked-by: Andrew Lunn <andrew@lunn.ch>
  arch/arm/boot/dts/armada-370-xp.dtsi |    6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/armada-370-xp.dtsi b/arch/arm/boot/dts/armada-370-xp.dtsi
-index cf6c48a..86dccfa 100644
 --- a/arch/arm/boot/dts/armada-370-xp.dtsi
 +++ b/arch/arm/boot/dts/armada-370-xp.dtsi
-@@ -129,6 +129,12 @@
- 			clocks = <&coreclk 0>;
+@@ -139,6 +139,12 @@
+ 			clocks = <&gateclk 17>;
  			status = "disabled";
  		};
 +
@@ -25,5 +23,3 @@ index cf6c48a..86dccfa 100644
  	};
  };
  
--- 
-1.7.9.5

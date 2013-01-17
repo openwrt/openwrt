@@ -17,9 +17,6 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  2 files changed, 62 insertions(+), 15 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/mmc/orion-sdio.txt
 
-diff --git a/Documentation/devicetree/bindings/mmc/orion-sdio.txt b/Documentation/devicetree/bindings/mmc/orion-sdio.txt
-new file mode 100644
-index 0000000..84f0ebd
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/mmc/orion-sdio.txt
 @@ -0,0 +1,17 @@
@@ -40,8 +37,6 @@ index 0000000..84f0ebd
 +		clocks = <&gateclk 17>;
 +		status = "disabled";
 +	};
-diff --git a/drivers/mmc/host/mvsdio.c b/drivers/mmc/host/mvsdio.c
-index baf19fc..56954bc 100644
 --- a/drivers/mmc/host/mvsdio.c
 +++ b/drivers/mmc/host/mvsdio.c
 @@ -21,6 +21,8 @@
@@ -53,7 +48,7 @@ index baf19fc..56954bc 100644
  #include <linux/mmc/host.h>
  #include <linux/mmc/slot-gpio.h>
  
-@@ -683,17 +685,17 @@ mv_conf_mbus_windows(struct mvsd_host *host,
+@@ -683,17 +685,17 @@ mv_conf_mbus_windows(struct mvsd_host *h
  
  static int __init mvsd_probe(struct platform_device *pdev)
  {
@@ -74,7 +69,7 @@ index baf19fc..56954bc 100644
  		return -ENXIO;
  
  	r = request_mem_region(r->start, SZ_1K, DRIVER_NAME);
-@@ -710,7 +712,35 @@ static int __init mvsd_probe(struct platform_device *pdev)
+@@ -710,7 +712,35 @@ static int __init mvsd_probe(struct plat
  	host->mmc = mmc;
  	host->dev = &pdev->dev;
  	host->res = r;
@@ -111,7 +106,7 @@ index baf19fc..56954bc 100644
  
  	mmc->ops = &mvsd_ops;
  
-@@ -750,21 +780,14 @@ static int __init mvsd_probe(struct platform_device *pdev)
+@@ -750,21 +780,14 @@ static int __init mvsd_probe(struct plat
  	} else
  		host->irq = irq;
  
@@ -136,7 +131,7 @@ index baf19fc..56954bc 100644
  
  	setup_timer(&host->timer, mvsd_timeout_timer, (unsigned long)host);
  	platform_set_drvdata(pdev, mmc);
-@@ -776,7 +799,7 @@ static int __init mvsd_probe(struct platform_device *pdev)
+@@ -776,7 +799,7 @@ static int __init mvsd_probe(struct plat
  			   mmc_hostname(mmc), DRIVER_NAME);
  	if (!(mmc->caps & MMC_CAP_NEEDS_POLL))
  		printk("using GPIO %d for card detection\n",
@@ -145,7 +140,7 @@ index baf19fc..56954bc 100644
  	else
  		printk("lacking card detect (fall back to polling)\n");
  	return 0;
-@@ -855,12 +878,19 @@ static int mvsd_resume(struct platform_device *dev)
+@@ -855,12 +878,19 @@ static int mvsd_resume(struct platform_d
  #define mvsd_resume	NULL
  #endif
  
@@ -165,5 +160,3 @@ index baf19fc..56954bc 100644
  	},
  };
  
--- 
-1.7.9.5
