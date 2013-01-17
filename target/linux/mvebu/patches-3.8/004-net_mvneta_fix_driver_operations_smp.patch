@@ -22,11 +22,9 @@ This is 3.8-rc material.
  drivers/net/ethernet/marvell/mvneta.c |   17 +++++++++++++++--
  1 file changed, 15 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index b6025c3..af2c421 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -1310,6 +1310,17 @@ static u32 mvneta_skb_tx_csum(struct mvneta_port *pp, struct sk_buff *skb)
+@@ -1310,6 +1310,17 @@ static u32 mvneta_skb_tx_csum(struct mvn
  	return MVNETA_TX_L4_CSUM_NOT;
  }
  
@@ -54,7 +52,7 @@ index b6025c3..af2c421 100644
  	struct mvneta_tx_desc *tx_desc;
  	struct netdev_queue *nq;
  	int frags = 0;
-@@ -1486,7 +1498,7 @@ static int mvneta_tx(struct sk_buff *skb, struct net_device *dev)
+@@ -1486,7 +1498,7 @@ static int mvneta_tx(struct sk_buff *skb
  		goto out;
  
  	frags = skb_shinfo(skb)->nr_frags + 1;
@@ -63,7 +61,7 @@ index b6025c3..af2c421 100644
  
  	/* Get a descriptor for the first part of the packet */
  	tx_desc = mvneta_txq_next_desc_get(txq);
-@@ -2550,6 +2562,7 @@ static const struct net_device_ops mvneta_netdev_ops = {
+@@ -2550,6 +2562,7 @@ static const struct net_device_ops mvnet
  	.ndo_change_mtu      = mvneta_change_mtu,
  	.ndo_tx_timeout      = mvneta_tx_timeout,
  	.ndo_get_stats64     = mvneta_get_stats64,
@@ -71,5 +69,3 @@ index b6025c3..af2c421 100644
  };
  
  const struct ethtool_ops mvneta_eth_tool_ops = {
--- 
-1.7.9.5

@@ -14,11 +14,9 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  arch/arm/boot/dts/armada-xp-mv78460.dtsi |    6 ++++++
  3 files changed, 18 insertions(+)
 
-diff --git a/arch/arm/boot/dts/armada-xp-mv78230.dtsi b/arch/arm/boot/dts/armada-xp-mv78230.dtsi
-index c45c7b4..3fa9c84 100644
 --- a/arch/arm/boot/dts/armada-xp-mv78230.dtsi
 +++ b/arch/arm/boot/dts/armada-xp-mv78230.dtsi
-@@ -40,6 +40,12 @@
+@@ -47,6 +47,12 @@
  		pinctrl {
  			compatible = "marvell,mv78230-pinctrl";
  			reg = <0xd0018000 0x38>;
@@ -31,8 +29,6 @@ index c45c7b4..3fa9c84 100644
  		};
  
  		gpio0: gpio@d0018100 {
-diff --git a/arch/arm/boot/dts/armada-xp-mv78260.dtsi b/arch/arm/boot/dts/armada-xp-mv78260.dtsi
-index a2aee57..5a907b3 100644
 --- a/arch/arm/boot/dts/armada-xp-mv78260.dtsi
 +++ b/arch/arm/boot/dts/armada-xp-mv78260.dtsi
 @@ -48,6 +48,12 @@
@@ -48,8 +44,6 @@ index a2aee57..5a907b3 100644
  		};
  
  		gpio0: gpio@d0018100 {
-diff --git a/arch/arm/boot/dts/armada-xp-mv78460.dtsi b/arch/arm/boot/dts/armada-xp-mv78460.dtsi
-index da03a12..6dcdc50d 100644
 --- a/arch/arm/boot/dts/armada-xp-mv78460.dtsi
 +++ b/arch/arm/boot/dts/armada-xp-mv78460.dtsi
 @@ -63,6 +63,12 @@
@@ -65,5 +59,3 @@ index da03a12..6dcdc50d 100644
  		};
  
  		gpio0: gpio@d0018100 {
--- 
-1.7.9.5

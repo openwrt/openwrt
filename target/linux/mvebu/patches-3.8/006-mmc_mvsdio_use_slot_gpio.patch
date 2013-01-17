@@ -10,8 +10,6 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  drivers/mmc/host/mvsdio.c |   34 +++++-----------------------------
  1 file changed, 5 insertions(+), 29 deletions(-)
 
-diff --git a/drivers/mmc/host/mvsdio.c b/drivers/mmc/host/mvsdio.c
-index de4c20b..a24a22f 100644
 --- a/drivers/mmc/host/mvsdio.c
 +++ b/drivers/mmc/host/mvsdio.c
 @@ -22,6 +22,7 @@
@@ -30,7 +28,7 @@ index de4c20b..a24a22f 100644
  };
  
  #define mvsd_write(offs, val)	writel(val, iobase + (offs))
-@@ -566,20 +566,6 @@ static void mvsd_enable_sdio_irq(struct mmc_host *mmc, int enable)
+@@ -566,20 +566,6 @@ static void mvsd_enable_sdio_irq(struct
  	spin_unlock_irqrestore(&host->lock, flags);
  }
  
@@ -51,7 +49,7 @@ index de4c20b..a24a22f 100644
  static void mvsd_power_up(struct mvsd_host *host)
  {
  	void __iomem *iobase = host->base;
-@@ -676,7 +662,7 @@ static void mvsd_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -676,7 +662,7 @@ static void mvsd_set_ios(struct mmc_host
  
  static const struct mmc_host_ops mvsd_ops = {
  	.request		= mvsd_request,
@@ -60,7 +58,7 @@ index de4c20b..a24a22f 100644
  	.set_ios		= mvsd_set_ios,
  	.enable_sdio_irq	= mvsd_enable_sdio_irq,
  };
-@@ -798,15 +784,7 @@ static int __init mvsd_probe(struct platform_device *pdev)
+@@ -798,15 +784,7 @@ static int __init mvsd_probe(struct plat
  	if (!host->gpio_card_detect)
  		mmc->caps |= MMC_CAP_NEEDS_POLL;
  
@@ -87,7 +85,7 @@ index de4c20b..a24a22f 100644
  		if (host->base)
  			iounmap(host->base);
  	}
-@@ -861,8 +838,7 @@ static int __exit mvsd_remove(struct platform_device *pdev)
+@@ -861,8 +838,7 @@ static int __exit mvsd_remove(struct pla
  		}
  		mmc_remove_host(mmc);
  		free_irq(host->irq, host);
@@ -97,5 +95,3 @@ index de4c20b..a24a22f 100644
  		del_timer_sync(&host->timer);
  		mvsd_power_down(host);
  		iounmap(host->base);
--- 
-1.7.9.5

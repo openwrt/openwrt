@@ -10,8 +10,6 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  drivers/mmc/host/mvsdio.c |   44 +++++++++-----------------------------------
  1 file changed, 9 insertions(+), 35 deletions(-)
 
-diff --git a/drivers/mmc/host/mvsdio.c b/drivers/mmc/host/mvsdio.c
-index a24a22f..baf19fc 100644
 --- a/drivers/mmc/host/mvsdio.c
 +++ b/drivers/mmc/host/mvsdio.c
 @@ -54,7 +54,6 @@ struct mvsd_host {
@@ -22,7 +20,7 @@ index a24a22f..baf19fc 100644
  };
  
  #define mvsd_write(offs, val)	writel(val, iobase + (offs))
-@@ -540,13 +539,6 @@ static void mvsd_timeout_timer(unsigned long data)
+@@ -540,13 +539,6 @@ static void mvsd_timeout_timer(unsigned
  		mmc_request_done(host->mmc, mrq);
  }
  
@@ -36,7 +34,7 @@ index a24a22f..baf19fc 100644
  static void mvsd_enable_sdio_irq(struct mmc_host *mmc, int enable)
  {
  	struct mvsd_host *host = mmc_priv(mmc);
-@@ -765,23 +757,11 @@ static int __init mvsd_probe(struct platform_device *pdev)
+@@ -765,23 +757,11 @@ static int __init mvsd_probe(struct plat
  		clk_prepare_enable(host->clk);
  	}
  
@@ -65,7 +63,7 @@ index a24a22f..baf19fc 100644
  		mmc->caps |= MMC_CAP_NEEDS_POLL;
  
  	mmc_gpio_request_ro(mmc, mvsd_data->gpio_write_protect);
-@@ -794,9 +774,9 @@ static int __init mvsd_probe(struct platform_device *pdev)
+@@ -794,9 +774,9 @@ static int __init mvsd_probe(struct plat
  
  	pr_notice("%s: %s driver initialized, ",
  			   mmc_hostname(mmc), DRIVER_NAME);
@@ -89,7 +87,7 @@ index a24a22f..baf19fc 100644
  		mmc_gpio_free_ro(mmc);
  		if (host->base)
  			iounmap(host->base);
-@@ -832,10 +809,7 @@ static int __exit mvsd_remove(struct platform_device *pdev)
+@@ -832,10 +809,7 @@ static int __exit mvsd_remove(struct pla
  	if (mmc) {
  		struct mvsd_host *host = mmc_priv(mmc);
  
@@ -101,5 +99,3 @@ index a24a22f..baf19fc 100644
  		mmc_remove_host(mmc);
  		free_irq(host->irq, host);
  		mmc_gpio_free_ro(mmc);
--- 
-1.7.9.5

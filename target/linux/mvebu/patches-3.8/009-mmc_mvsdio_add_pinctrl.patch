@@ -13,8 +13,6 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  drivers/mmc/host/mvsdio.c |    6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/mmc/host/mvsdio.c b/drivers/mmc/host/mvsdio.c
-index 56954bc..feb16bd 100644
 --- a/drivers/mmc/host/mvsdio.c
 +++ b/drivers/mmc/host/mvsdio.c
 @@ -25,6 +25,7 @@
@@ -25,7 +23,7 @@ index 56954bc..feb16bd 100644
  
  #include <asm/sizes.h>
  #include <asm/unaligned.h>
-@@ -692,6 +693,7 @@ static int __init mvsd_probe(struct platform_device *pdev)
+@@ -692,6 +693,7 @@ static int __init mvsd_probe(struct plat
  	struct resource *r;
  	int ret, irq;
  	int gpio_card_detect, gpio_write_protect;
@@ -33,7 +31,7 @@ index 56954bc..feb16bd 100644
  
  	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	irq = platform_get_irq(pdev, 0);
-@@ -713,6 +715,10 @@ static int __init mvsd_probe(struct platform_device *pdev)
+@@ -713,6 +715,10 @@ static int __init mvsd_probe(struct plat
  	host->dev = &pdev->dev;
  	host->res = r;
  
@@ -44,5 +42,3 @@ index 56954bc..feb16bd 100644
  	/* Some non-DT platforms do not pass a clock, and the clock
  	   frequency is passed through platform_data. On DT platforms,
  	   a clock must always be passed, even if there is no gatable
--- 
-1.7.9.5
