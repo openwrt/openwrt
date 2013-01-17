@@ -1,0 +1,23 @@
+--- a/arch/arm/boot/dts/armada-370-rd.dts
++++ b/arch/arm/boot/dts/armada-370-rd.dts
+@@ -71,5 +71,20 @@
+ 		usb@d0051000 {
+ 			status = "okay";
+ 		};
++
++		pcie-controller {
++			status = "okay";
++			/*
++			 * The two PCIe units are accessible through
++			 * both standard PCIe slots and mini-PCIe
++			 * slots on the board.
++			 */
++			pcie0@0xd0040000 {
++				status = "okay";
++			};
++			pcie1@0xd0080000 {
++				status = "okay";
++			};
++		};
+ 	};
+ };
