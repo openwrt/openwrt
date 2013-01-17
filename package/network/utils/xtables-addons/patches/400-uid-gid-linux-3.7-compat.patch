@@ -58,8 +58,8 @@
  #endif
  
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0)
-+#  define XT_UID(x) make_kuid(current_user_ns(), x)
-+#  define XT_GID(x) make_kgid(current_user_ns(), x)
++#  define XT_UID(x) KUIDT_INIT(x)
++#  define XT_GID(x) KGIDT_INIT(x)
 +#else
 +#  define XT_UID(x) (x)
 +#  define XT_GID(x) (x)
