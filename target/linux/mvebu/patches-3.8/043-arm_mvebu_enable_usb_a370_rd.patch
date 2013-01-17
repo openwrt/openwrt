@@ -1,0 +1,16 @@
+--- a/arch/arm/boot/dts/armada-370-rd.dts
++++ b/arch/arm/boot/dts/armada-370-rd.dts
+@@ -63,5 +63,13 @@
+ 			pinctrl-names = "default";
+ 			status = "okay";
+ 		};
++
++		usb@d0050000 {
++			status = "okay";
++		};
++
++		usb@d0051000 {
++			status = "okay";
++		};
+ 	};
+ };
