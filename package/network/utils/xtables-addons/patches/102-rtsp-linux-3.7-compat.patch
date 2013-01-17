@@ -1,0 +1,155 @@
+--- a/extensions/rtsp/nf_conntrack_rtsp.c
++++ b/extensions/rtsp/nf_conntrack_rtsp.c
+@@ -73,7 +73,7 @@ static DEFINE_SPINLOCK(rtsp_buffer_lock)
+ static struct nf_conntrack_expect_policy rtsp_exp_policy; 
+ 
+ unsigned int (*nf_nat_rtsp_hook)(struct sk_buff *skb,
+-				 enum ip_conntrack_info ctinfo,
++				 enum ip_conntrack_info ctinfo, unsigned int protoff,
+ 				 unsigned int matchoff, unsigned int matchlen,struct ip_ct_rtsp_expect* prtspexp,
+ 				 struct nf_conntrack_expect *exp);
+ void (*nf_nat_rtsp_hook_expectfn)(struct nf_conn *ct, struct nf_conntrack_expect *exp);
+@@ -269,7 +269,7 @@ void expected(struct nf_conn *ct, struct
+ 
+ static inline int
+ help_out(struct sk_buff *skb, unsigned char *rb_ptr, unsigned int datalen,
+-                struct nf_conn *ct, enum ip_conntrack_info ctinfo)
++	 struct nf_conn *ct, enum ip_conntrack_info ctinfo, unsigned int protoff)
+ {
+ 	struct ip_ct_rtsp_expect expinfo;
+ 	
+@@ -353,7 +353,7 @@ help_out(struct sk_buff *skb, unsigned c
+ 		nf_nat_rtsp = rcu_dereference(nf_nat_rtsp_hook);
+ 		if (nf_nat_rtsp && ct->status & IPS_NAT_MASK)
+ 			/* pass the request off to the nat helper */
+-			ret = nf_nat_rtsp(skb, ctinfo, hdrsoff, hdrslen, &expinfo, exp);
++			ret = nf_nat_rtsp(skb, ctinfo, protoff, hdrsoff, hdrslen, &expinfo, exp);
+ 		else if (nf_ct_expect_related(exp) != 0) {
+ 			pr_info("nf_conntrack_expect_related failed\n");
+ 			ret  = NF_DROP;
+@@ -420,7 +420,7 @@ static int help(struct sk_buff *skb, uns
+ 
+ 	switch (CTINFO2DIR(ctinfo)) {
+ 	case IP_CT_DIR_ORIGINAL:
+-		ret = help_out(skb, rb_ptr, datalen, ct, ctinfo);
++		ret = help_out(skb, rb_ptr, datalen, ct, ctinfo, protoff);
+ 		break;
+ 	case IP_CT_DIR_REPLY:
+ 		pr_debug("IP_CT_DIR_REPLY\n");
+--- a/extensions/rtsp/nf_conntrack_rtsp.h
++++ b/extensions/rtsp/nf_conntrack_rtsp.h
+@@ -50,6 +50,7 @@ struct ip_ct_rtsp_expect
+ 
+ extern unsigned int (*nf_nat_rtsp_hook)(struct sk_buff *skb,
+ 				 enum ip_conntrack_info ctinfo,
++				 unsigned int protoff,
+ 				 unsigned int matchoff, unsigned int matchlen,
+ 				 struct ip_ct_rtsp_expect *prtspexp,
+ 				 struct nf_conntrack_expect *exp);
+--- a/extensions/rtsp/nf_nat_rtsp.c
++++ b/extensions/rtsp/nf_nat_rtsp.c
+@@ -32,10 +32,10 @@
+ 
+ #include <linux/module.h>
+ #include <net/tcp.h>
++#include <net/netfilter/nf_conntrack_expect.h>
+ #include <net/netfilter/nf_nat_helper.h>
+-#include <net/netfilter/nf_nat_rule.h>
++#include <net/netfilter/nf_nat.h>
+ #include "nf_conntrack_rtsp.h"
+-#include <net/netfilter/nf_conntrack_expect.h>
+ 
+ #include <linux/inet.h>
+ #include <linux/ctype.h>
+@@ -102,8 +102,8 @@ get_skb_tcpdata(struct sk_buff* skb, cha
+ static int
+ rtsp_mangle_tran(enum ip_conntrack_info ctinfo,
+                  struct nf_conntrack_expect* exp,
+-								 struct ip_ct_rtsp_expect* prtspexp,
+-                 struct sk_buff* skb, uint tranoff, uint tranlen)
++		 struct ip_ct_rtsp_expect* prtspexp,
++                 struct sk_buff* skb, uint protoff, uint tranoff, uint tranlen)
+ {
+     char*       ptcp;
+     uint        tcplen;
+@@ -256,7 +256,7 @@ rtsp_mangle_tran(enum ip_conntrack_info 
+                 if (dstact == DSTACT_STRIP || (dstact == DSTACT_AUTO && !is_stun))
+                 {
+                     diff = nextfieldoff-off;
+-                    if (!nf_nat_mangle_tcp_packet(skb, ct, ctinfo,
++                    if (!nf_nat_mangle_tcp_packet(skb, ct, ctinfo, protoff,
+                                                          off, diff, NULL, 0))
+                     {
+                         /* mangle failed, all we can do is bail */
+@@ -326,7 +326,7 @@ rtsp_mangle_tran(enum ip_conntrack_info 
+                      * parameter 4 below is offset from start of tcp data.
+                      */
+                     diff = origlen-rbuflen;
+-                    if (!nf_nat_mangle_tcp_packet(skb, ct, ctinfo,
++                    if (!nf_nat_mangle_tcp_packet(skb, ct, ctinfo, protoff,
+                                               origoff, origlen, rbuf, rbuflen))
+                     {
+                         /* mangle failed, all we can do is bail */
+@@ -351,7 +351,7 @@ rtsp_mangle_tran(enum ip_conntrack_info 
+ }
+ 
+ static uint
+-help_out(struct sk_buff *skb, enum ip_conntrack_info ctinfo,
++help_out(struct sk_buff *skb, enum ip_conntrack_info ctinfo, unsigned int protoff,
+ 	 unsigned int matchoff, unsigned int matchlen, struct ip_ct_rtsp_expect* prtspexp, 
+ 	 struct nf_conntrack_expect* exp)
+ {
+@@ -389,7 +389,7 @@ help_out(struct sk_buff *skb, enum ip_co
+         {
+             uint oldtcplen = tcplen;
+ 	    pr_debug("hdr: Transport\n");
+-            if (!rtsp_mangle_tran(ctinfo, exp, prtspexp, skb, lineoff, linelen))
++            if (!rtsp_mangle_tran(ctinfo, exp, prtspexp, skb, protoff, lineoff, linelen))
+             {
+ 		pr_debug("hdr: Transport mangle failed");
+                 break;
+@@ -407,7 +407,7 @@ help_out(struct sk_buff *skb, enum ip_co
+ }
+ 
+ static unsigned int
+-help(struct sk_buff *skb, enum ip_conntrack_info ctinfo, 
++help(struct sk_buff *skb, enum ip_conntrack_info ctinfo, unsigned int protoff,
+      unsigned int matchoff, unsigned int matchlen, struct ip_ct_rtsp_expect* prtspexp,
+      struct nf_conntrack_expect* exp)
+ {
+@@ -417,7 +417,7 @@ help(struct sk_buff *skb, enum ip_conntr
+     switch (dir)
+     {
+     case IP_CT_DIR_ORIGINAL:
+-        rc = help_out(skb, ctinfo, matchoff, matchlen, prtspexp, exp);
++	    rc = help_out(skb, ctinfo, protoff, matchoff, matchlen, prtspexp, exp);
+         break;
+     case IP_CT_DIR_REPLY:
+ 	pr_debug("unmangle ! %u\n", ctinfo);
+@@ -432,7 +432,7 @@ help(struct sk_buff *skb, enum ip_conntr
+ 
+ static void expected(struct nf_conn* ct, struct nf_conntrack_expect *exp)
+ {
+-    struct nf_nat_ipv4_multi_range_compat mr;
++    struct nf_nat_range nr;
+     u_int32_t newdstip, newsrcip, newip;
+ 
+     struct nf_conn *master = ct->master;
+@@ -446,12 +446,13 @@ static void expected(struct nf_conn* ct,
+     pr_debug("newsrcip=%pI4, newdstip=%pI4, newip=%pI4\n",
+            &newsrcip, &newdstip, &newip);
+ 
+-    mr.rangesize = 1;
++    memset(&nr, 0, sizeof(nr));
++
+     // We don't want to manip the per-protocol, just the IPs. 
+-    mr.range[0].flags = NF_NAT_RANGE_MAP_IPS;
+-    mr.range[0].min_ip = mr.range[0].max_ip = newip;
++    nr.flags = NF_NAT_RANGE_MAP_IPS;
++    nr.min_addr.ip = nr.max_addr.ip = newip;
+ 
+-    nf_nat_setup_info(ct, &mr.range[0], NF_NAT_MANIP_DST);
++    nf_nat_setup_info(ct, &nr, NF_NAT_MANIP_DST);
+ }
+ 
+ 

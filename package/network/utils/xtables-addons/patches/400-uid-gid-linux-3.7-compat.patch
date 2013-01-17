@@ -1,0 +1,83 @@
+--- a/extensions/xt_DNETMAP.c
++++ b/extensions/xt_DNETMAP.c
+@@ -21,6 +21,7 @@
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ #include <linux/inet.h>
+ #include <linux/ip.h>
++#include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/netdevice.h>
+ #include <linux/netfilter.h>
+@@ -328,8 +329,8 @@ static int dnetmap_tg_check(const struct
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+-	pde_data->uid = proc_uid;
+-	pde_data->gid = proc_gid;
++	pde_data->uid = XT_UID(proc_uid);
++	pde_data->gid = XT_GID(proc_gid);
+ 
+ 	/* statistics */
+ 	pde_stat = create_proc_entry(p->proc_str_stat, proc_perms,
+@@ -341,8 +342,8 @@ static int dnetmap_tg_check(const struct
+ 	}
+ 	pde_stat->data = p;
+ 	pde_stat->read_proc = dnetmap_stat_proc_read;
+-	pde_stat->uid = proc_uid;
+-	pde_stat->gid = proc_gid;
++	pde_stat->uid = XT_UID(proc_uid);
++	pde_stat->gid = XT_GID(proc_gid);
+ #endif
+ 
+ 	spin_lock_bh(&dnetmap_lock);
+--- a/extensions/xt_condition.c
++++ b/extensions/xt_condition.c
+@@ -14,6 +14,7 @@
+  */
+ #include <linux/kernel.h>
+ #include <linux/list.h>
++#include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/proc_fs.h>
+ #include <linux/spinlock.h>
+@@ -155,8 +156,8 @@ static int condition_mt_check(const stru
+ 	var->status_proc->read_proc  = condition_proc_read;
+ 	var->status_proc->write_proc = condition_proc_write;
+ 	list_add(&var->list, &conditions_list);
+-	var->status_proc->uid = condition_uid_perms;
+-	var->status_proc->gid = condition_gid_perms;
++	var->status_proc->uid = XT_UID(condition_uid_perms);
++	var->status_proc->gid = XT_GID(condition_gid_perms);
+ 	mutex_unlock(&proc_lock);
+ 	info->condvar = var;
+ 	return 0;
+--- a/extensions/compat_xtables.h
++++ b/extensions/compat_xtables.h
+@@ -12,6 +12,14 @@
+ #	warning Kernels below 3.7 not supported.
+ #endif
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0)
++#  define XT_UID(x) make_kuid(current_user_ns(), x)
++#  define XT_GID(x) make_kgid(current_user_ns(), x)
++#else
++#  define XT_UID(x) (x)
++#  define XT_GID(x) (x)
++#endif
++
+ #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
+ #	if !defined(CONFIG_NF_CONNTRACK_MARK)
+ #		warning You have CONFIG_NF_CONNTRACK enabled, but CONFIG_NF_CONNTRACK_MARK is not (please enable).
+--- a/extensions/xt_quota2.c
++++ b/extensions/xt_quota2.c
+@@ -131,8 +131,8 @@ q2_get_counter(const struct xt_quota_mti
+ 	p->data         = e;
+ 	p->read_proc    = quota_proc_read;
+ 	p->write_proc   = quota_proc_write;
+-	p->uid          = quota_list_uid;
+-	p->gid          = quota_list_gid;
++	p->uid          = XT_UID(quota_list_uid);
++	p->gid          = XT_GID(quota_list_gid);
+ 	list_add_tail(&e->list, &counter_list);
+ 	spin_unlock_bh(&counter_list_lock);
+ 	return e;

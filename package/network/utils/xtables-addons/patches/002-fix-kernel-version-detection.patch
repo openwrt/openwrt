@@ -1,0 +1,22 @@
+--- a/configure
++++ b/configure
+@@ -11892,7 +11892,7 @@ regular_CFLAGS="-Wall -Waggregate-return
+ if test -n "$kbuilddir"; then
+ 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking kernel version that we will build against" >&5
+ $as_echo_n "checking kernel version that we will build against... " >&6; }
+-	krel="$(make -sC "$kbuilddir" M=$PWD kernelrelease)";
++	krel="$(make -sC "$kbuilddir" M=$PWD kernelversion)";
+ 	kmajor="${krel%%[^0-9]*}";
+ 	kmajor="$(($kmajor+0))";
+ 	krel="${krel:${#kmajor}}";
+--- a/configure.ac
++++ b/configure.ac
+@@ -44,7 +44,7 @@ regular_CFLAGS="-Wall -Waggregate-return
+ 
+ if test -n "$kbuilddir"; then
+ 	AC_MSG_CHECKING([kernel version that we will build against])
+-	krel="$(make -sC "$kbuilddir" M=$PWD kernelrelease)";
++	krel="$(make -sC "$kbuilddir" M=$PWD kernelversion)";
+ 	kmajor="${krel%%[[^0-9]]*}";
+ 	kmajor="$(($kmajor+0))";
+ 	krel="${krel:${#kmajor}}";

@@ -1,0 +1,22 @@
+--- a/extensions/rtsp/nf_conntrack_rtsp.c
++++ b/extensions/rtsp/nf_conntrack_rtsp.c
+@@ -28,6 +28,7 @@
+  * 			- Port to new NF API
+  */
+ 
++#include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/netfilter.h>
+ #include <linux/ip.h>
+@@ -496,7 +497,11 @@ init(void)
+ 		} else {
+ 			sprintf(tmpname, "rtsp-%d", i);
+ 		}
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0)
++		strncpy(hlpr->name, tmpname, sizeof(hlpr->name));
++#else
+ 		hlpr->name = tmpname;
++#endif
+ 
+ 		pr_debug("port #%d: %d\n", i, ports[i]);
+ 
