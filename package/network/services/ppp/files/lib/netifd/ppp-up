@@ -8,7 +8,6 @@ proto_set_keep 1
 	[ -n "$IPLOCAL" ] && proto_add_ipv4_address "$IPLOCAL" 32
 	[ -n "$IPREMOTE" ] && proto_add_ipv4_route 0.0.0.0 0 "$IPREMOTE"
 	[ -n "$LLLOCAL" ] && proto_add_ipv6_address "$LLLOCAL" 128
-	[ -n "$LLREMOTE" ] && proto_add_ipv6_route "::0" 0 "$LLREMOTE"
 	[ -n "$DNS1" ] && proto_add_dns_server "$DNS1"
 	[ -n "$DNS2" -a "$DNS1" != "$DNS2" ] && proto_add_dns_server "$DNS2"
 }
