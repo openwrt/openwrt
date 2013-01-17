@@ -1,0 +1,40 @@
+The Armada 370 SoC has two 1x PCIe 2.0 interfaces, so we add the
+necessary Device Tree informations to make these interfaces availabel.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+---
+ arch/arm/boot/dts/armada-370.dtsi |   25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--- a/arch/arm/boot/dts/armada-370.dtsi
++++ b/arch/arm/boot/dts/armada-370.dtsi
+@@ -153,5 +153,29 @@
+ 			clocks = <&coreclk 0>;
+ 		};
+ 
++		pcie-controller {
++			compatible = "marvell,armada-370-xp-pcie";
++			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges = <0      0xd0040000 0x2000
++			          0x2000 0xd0080000 0x2000>;
++
++			pcie0@0xd0040000 {
++				reg = <0x0 0x2000>;
++				interrupts = <58>;
++				clocks = <&gateclk 5>;
++				status = "disabled";
++				marvell,pcie-port = <0>;
++			};
++
++			pcie1@0xd0080000 {
++				reg = <0x2000 0x2000>;
++				interrupts = <62>;
++				clocks = <&gateclk 9>;
++				status = "disabled";
++				marvell,pcie-port = <1>;
++			};
++		};
+ 	};
+ };

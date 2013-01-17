@@ -1,0 +1,44 @@
+The Marvell evaluation board (DB) for the Armada XP SoC has 6
+physicals full-size PCIe slots, so we enable the corresponding PCIe
+interfaces in the Device Tree.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+---
+ arch/arm/boot/dts/armada-xp-db.dts |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+--- a/arch/arm/boot/dts/armada-xp-db.dts
++++ b/arch/arm/boot/dts/armada-xp-db.dts
+@@ -109,5 +109,32 @@
+ 		usb@d0052000 {
+ 			status = "okay";
+ 		};
++
++		pcie-controller {
++			status = "okay";
++
++			/*
++			 * All 6 slots are physically present as
++			 * standard PCIe slots on the board.
++			 */
++			pcie0.0@0xd0040000 {
++				status = "okay";
++			};
++			pcie0.1@0xd0044000 {
++				status = "okay";
++			};
++			pcie0.2@0xd0048000 {
++				status = "okay";
++			};
++			pcie0.3@0xd004C000 {
++				status = "okay";
++			};
++			pcie2@0xd0042000 {
++				status = "okay";
++			};
++			pcie3@0xd0082000 {
++				status = "okay";
++			};
++		};
+ 	};
+ };

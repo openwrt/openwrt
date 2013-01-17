@@ -1,0 +1,474 @@
+This driver implements the hw_pci operations needed by the core ARM
+PCI code to setup PCI devices and get their corresponding IRQs, and
+the pci_ops operations that are used by the PCI core to read/write the
+configuration space of PCI devices.
+
+In addition, this driver enumerates the different PCIe slots, and for
+those having a device plugged in, it allocates the necessary address
+decoding windows, using the new armada_370_xp_alloc_pcie_window()
+function from mach-mvebu/addr-map.c.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+---
+ .../devicetree/bindings/pci/armada-370-xp-pcie.txt |  136 +++++++++
+ arch/arm/mach-mvebu/Makefile                       |    1 +
+ arch/arm/mach-mvebu/pcie.c                         |  306 ++++++++++++++++++++
+ 3 files changed, 443 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pci/armada-370-xp-pcie.txt
+ create mode 100644 arch/arm/mach-mvebu/pcie.c
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/armada-370-xp-pcie.txt
+@@ -0,0 +1,136 @@
++* Marvell Armada 370/XP PCIe interfaces
++
++Mandatory properties:
++- compatible: must be "marvell,armada-370-xp-pcie"
++- status: either "disabled" or "okay"
++- #address-cells, set to <1>
++- #size-cells, set to <1>
++- ranges: describes the association between the physical addresses of
++  the PCIe registers for each PCIe interface with "virtual" addresses
++  as seen by the sub-nodes. One entry per PCIe interface. Each entry
++  must have 3 values: the "virtual" address seen by the sub-nodes, the
++  real physical address of the PCIe registers, and the size.
++
++In addition, the Device Tree node must have sub-nodes describing each
++PCIe interface, having the following mandatory properties:
++- reg: the address and size of the PCIe registers (translated
++  addresses according to the ranges property of the parent)
++- interrupts: the interrupt number of this PCIe interface
++- clocks: the clock associated to this PCIe interface
++- marvell,pcie-port: the physical PCIe port number
++- status: either "disabled" or "okay"
++
++and the following optional properties:
++- marvell,pcie-lane: the physical PCIe lane number, for ports having
++  multiple lanes. If this property is not found, we assume that the
++  value is 0.
++
++Example:
++
++pcie-controller {
++	compatible = "marvell,armada-370-xp-pcie";
++	status = "disabled";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	ranges = <0       0xd0040000 0x2000 /* port0x1_port0 */
++		  0x2000  0xd0042000 0x2000 /* port2x1_port0 */
++		  0x4000  0xd0044000 0x2000 /* port0x1_port1 */
++		  0x8000  0xd0048000 0x2000 /* port0x1_port2 */
++		  0xC000  0xd004C000 0x2000 /* port0x1_port3 */
++		  0x10000 0xd0080000 0x2000 /* port1x1_port0 */
++		  0x12000 0xd0082000 0x2000 /* port3x1_port0 */
++		  0x14000 0xd0084000 0x2000 /* port1x1_port1 */
++		  0x18000 0xd0088000 0x2000 /* port1x1_port2 */
++		  0x1C000 0xd008C000 0x2000 /* port1x1_port3 */>;
++
++	pcie0.0@0xd0040000 {
++		reg = <0x0 0x2000>;
++		interrupts = <58>;
++		clocks = <&gateclk 5>;
++		marvell,pcie-port = <0>;
++		marvell,pcie-lane = <0>;
++		status = "disabled";
++	};
++
++	pcie0.1@0xd0044000 {
++		reg = <0x4000 0x2000>;
++		interrupts = <59>;
++		clocks = <&gateclk 5>;
++		marvell,pcie-port = <0>;
++		marvell,pcie-lane = <1>;
++		status = "disabled";
++	};
++
++	pcie0.2@0xd0048000 {
++		reg = <0x8000 0x2000>;
++		interrupts = <60>;
++		clocks = <&gateclk 5>;
++		marvell,pcie-port = <0>;
++		marvell,pcie-lane = <2>;
++		status = "disabled";
++	};
++
++	pcie0.3@0xd004C000 {
++		reg = <0xC000 0x2000>;
++		interrupts = <61>;
++		clocks = <&gateclk 5>;
++		marvell,pcie-port = <0>;
++		marvell,pcie-lane = <3>;
++		status = "disabled";
++	};
++
++	pcie1.0@0xd0040000 {
++		reg = <0x10000 0x2000>;
++		interrupts = <62>;
++		clocks = <&gateclk 6>;
++		marvell,pcie-port = <1>;
++		marvell,pcie-lane = <0>;
++		status = "disabled";
++	};
++
++	pcie1.1@0xd0044000 {
++		reg = <0x14000 0x2000>;
++		interrupts = <63>;
++		clocks = <&gateclk 6>;
++		marvell,pcie-port = <1>;
++		marvell,pcie-lane = <1>;
++		status = "disabled";
++	};
++
++	pcie1.2@0xd0048000 {
++		reg = <0x18000 0x2000>;
++		interrupts = <64>;
++		clocks = <&gateclk 6>;
++		marvell,pcie-port = <1>;
++		marvell,pcie-lane = <2>;
++		status = "disabled";
++	};
++
++	pcie1.3@0xd004C000 {
++		reg = <0x1C000 0x2000>;
++		interrupts = <65>;
++		clocks = <&gateclk 6>;
++		marvell,pcie-port = <1>;
++		marvell,pcie-lane = <3>;
++		status = "disabled";
++	};
++
++	pcie2@0xd0042000 {
++		reg = <0x2000 0x2000>;
++		interrupts = <99>;
++		clocks = <&gateclk 7>;
++		marvell,pcie-port = <2>;
++		marvell,pcie-lane = <0>;
++		status = "disabled";
++	};
++
++	pcie3@0xd0082000 {
++		reg = <0x12000 0x2000>;
++		interrupts = <103>;
++		clocks = <&gateclk 8>;
++		marvell,pcie-port = <3>;
++		marvell,pcie-lane = <0>;
++		status = "disabled";
++	};
++};
++
+--- a/arch/arm/mach-mvebu/Makefile
++++ b/arch/arm/mach-mvebu/Makefile
+@@ -5,3 +5,4 @@ obj-y += system-controller.o
+ obj-$(CONFIG_MACH_ARMADA_370_XP) += armada-370-xp.o irq-armada-370-xp.o addr-map.o coherency.o coherency_ll.o pmsu.o
+ obj-$(CONFIG_SMP)                += platsmp.o headsmp.o
+ obj-$(CONFIG_HOTPLUG_CPU)        += hotplug.o
++obj-$(CONFIG_PCI)		 += pcie.o
+--- /dev/null
++++ b/arch/arm/mach-mvebu/pcie.c
+@@ -0,0 +1,306 @@
++/*
++ * PCIe driver for Marvell Armada 370 and Armada XP SoCs
++ *
++ * This file is licensed under the terms of the GNU General Public
++ * License version 2.  This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++#include <linux/kernel.h>
++#include <linux/pci.h>
++#include <linux/clk.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/platform_device.h>
++#include <linux/of_address.h>
++#include <linux/of_pci.h>
++#include <linux/of_irq.h>
++#include <linux/of_platform.h>
++#include <plat/pcie.h>
++#include "common.h"
++
++struct pcie_port {
++	u8		  root_bus_nr;
++	void __iomem	 *base;
++	spinlock_t	  conf_lock;
++	int		  irq;
++	struct resource	  res;
++	int               haslink;
++	u32               port;
++	u32               lane;
++	struct clk       *clk;
++};
++
++static struct pcie_port *pcie_ports;
++
++static int pcie_valid_config(struct pcie_port *pp, int bus, int dev)
++{
++	/*
++	 * Don't go out when trying to access --
++	 * 1. nonexisting device on local bus
++	 * 2. where there's no device connected (no link)
++	 */
++	if (bus == pp->root_bus_nr && dev == 0)
++		return 1;
++
++	if (!orion_pcie_link_up(pp->base))
++		return 0;
++
++	if (bus == pp->root_bus_nr && dev != 1)
++		return 0;
++
++	return 1;
++}
++
++/*
++ * PCIe config cycles are done by programming the PCIE_CONF_ADDR register
++ * and then reading the PCIE_CONF_DATA register. Need to make sure these
++ * transactions are atomic.
++ */
++static int pcie_rd_conf(struct pci_bus *bus, u32 devfn, int where,
++			int size, u32 *val)
++{
++	struct pci_sys_data *sys = bus->sysdata;
++	struct pcie_port *pp = sys->private_data;
++	unsigned long flags;
++	int ret;
++
++	if (pcie_valid_config(pp, bus->number, PCI_SLOT(devfn)) == 0) {
++		*val = 0xffffffff;
++		return PCIBIOS_DEVICE_NOT_FOUND;
++	}
++
++	spin_lock_irqsave(&pp->conf_lock, flags);
++	ret = orion_pcie_rd_conf(pp->base, bus, devfn, where, size, val);
++	spin_unlock_irqrestore(&pp->conf_lock, flags);
++
++	return ret;
++}
++
++static int pcie_wr_conf(struct pci_bus *bus, u32 devfn,
++			int where, int size, u32 val)
++{
++	struct pci_sys_data *sys = bus->sysdata;
++	struct pcie_port *pp = sys->private_data;
++	unsigned long flags;
++	int ret;
++
++	if (pcie_valid_config(pp, bus->number, PCI_SLOT(devfn)) == 0)
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	spin_lock_irqsave(&pp->conf_lock, flags);
++	ret = orion_pcie_wr_conf(pp->base, bus, devfn, where, size, val);
++	spin_unlock_irqrestore(&pp->conf_lock, flags);
++
++	return ret;
++}
++
++static struct pci_ops pcie_ops = {
++	.read = pcie_rd_conf,
++	.write = pcie_wr_conf,
++};
++
++/*
++ * Returns 0 when the device could not be initialized, 1 when
++ * initialization is successful
++ */
++static int __init armada_370_xp_pcie_setup(int nr, struct pci_sys_data *sys)
++{
++	struct pcie_port *port = &pcie_ports[nr];
++	unsigned long membase, iobase;
++	int ret;
++
++	if (!port->haslink)
++		return 0;
++
++	sys->private_data = port;
++	port->root_bus_nr = sys->busnr;
++	spin_lock_init(&port->conf_lock);
++
++	ret = armada_370_xp_alloc_pcie_window(port->port, port->lane,
++					      IORESOURCE_MEM, SZ_64M, &membase);
++	if (ret) {
++		pr_err("PCIe%d.%d: Cannot get memory window, device disabled\n",
++		       port->port, port->lane);
++		return 0;
++	}
++
++	ret = armada_370_xp_alloc_pcie_window(port->port, port->lane,
++					      IORESOURCE_IO, SZ_64K, &iobase);
++	if (ret) {
++		pr_err("PCIe%d.%d: Cannot get I/O window, device disabled\n",
++		       port->port, port->lane);
++		armada_370_xp_free_pcie_window(IORESOURCE_MEM, membase, SZ_64M);
++		return 0;
++	}
++
++	port->res.name = kasprintf(GFP_KERNEL, "PCIe %d.%d MEM",
++				   port->port, port->lane);
++	if (!port->res.name) {
++		armada_370_xp_free_pcie_window(IORESOURCE_IO, iobase, SZ_64K);
++		armada_370_xp_free_pcie_window(IORESOURCE_MEM, membase, SZ_64M);
++		return 0;
++	}
++
++	port->res.start = membase;
++	port->res.end = membase + SZ_32M - 1;
++	port->res.flags = IORESOURCE_MEM;
++
++	pci_ioremap_io(SZ_64K * sys->busnr, iobase);
++
++	if (request_resource(&iomem_resource, &port->res)) {
++		pr_err("PCIe%d.%d: Cannot request memory resource\n",
++		       port->port, port->lane);
++		kfree(port->res.name);
++		armada_370_xp_free_pcie_window(IORESOURCE_IO, iobase, SZ_64K);
++		armada_370_xp_free_pcie_window(IORESOURCE_MEM, membase, SZ_64M);
++		return 0;
++	}
++
++	pci_add_resource_offset(&sys->resources, &port->res, sys->mem_offset);
++
++	orion_pcie_set_local_bus_nr(port->base, sys->busnr);
++	orion_pcie_setup(port->base);
++
++	return 1;
++}
++
++static void __devinit rc_pci_fixup(struct pci_dev *dev)
++{
++	/*
++	 * Prevent enumeration of root complex.
++	 */
++	if (dev->bus->parent == NULL && dev->devfn == 0) {
++		int i;
++
++		for (i = 0; i < DEVICE_COUNT_RESOURCE; i++) {
++			dev->resource[i].start = 0;
++			dev->resource[i].end   = 0;
++			dev->resource[i].flags = 0;
++		}
++	}
++}
++DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_MARVELL, PCI_ANY_ID, rc_pci_fixup);
++
++static int __init armada_370_xp_pcie_map_irq(const struct pci_dev *dev, u8 slot,
++					     u8 pin)
++{
++	struct pci_sys_data *sys = dev->sysdata;
++	struct pcie_port *port = sys->private_data;
++
++	return port->irq;
++}
++
++static struct hw_pci armada_370_xp_pci __initdata = {
++	.setup		= armada_370_xp_pcie_setup,
++	.map_irq	= armada_370_xp_pcie_map_irq,
++	.ops            = &pcie_ops,
++};
++
++static int __init armada_370_xp_pcie_probe(struct platform_device *pdev)
++{
++	struct device_node *child;
++	int nports, i;
++
++	nports = 0;
++	for_each_child_of_node(pdev->dev.of_node, child) {
++		if (!of_device_is_available(child))
++			continue;
++		nports++;
++	}
++
++	pcie_ports = devm_kzalloc(&pdev->dev, nports * sizeof(*pcie_ports),
++				  GFP_KERNEL);
++	if (!pcie_ports)
++		return -ENOMEM;
++
++	i = 0;
++	for_each_child_of_node(pdev->dev.of_node, child) {
++		struct pcie_port *port = &pcie_ports[i];
++
++		if (!of_device_is_available(child))
++			continue;
++
++		if (of_property_read_u32(child, "marvell,pcie-port",
++					 &port->port))
++			continue;
++
++		if (of_property_read_u32(child, "marvell,pcie-lane",
++					 &port->lane))
++			port->lane = 0;
++
++		port->base = of_iomap(child, 0);
++		if (!port->base) {
++			dev_err(&pdev->dev, "PCIe%d.%d: cannot map registers\n",
++				port->port, port->lane);
++			continue;
++		}
++
++		if (orion_pcie_link_up(port->base)) {
++			port->haslink = 1;
++			dev_info(&pdev->dev, "PCIe%d.%d: link up\n",
++				 port->port, port->lane);
++		} else {
++			port->haslink = 0;
++			dev_info(&pdev->dev, "PCIe%d.%d: link down\n",
++				 port->port, port->lane);
++			iounmap(port->base);
++			continue;
++		}
++
++		port->irq = irq_of_parse_and_map(child, 0);
++		if (port->irq == 0) {
++			dev_err(&pdev->dev, "PCIe%d.%d: cannot parse and map IRQ\n",
++				port->port, port->lane);
++			iounmap(port->base);
++			port->haslink = 0;
++			continue;
++		}
++
++		port->clk = of_clk_get_by_name(child, NULL);
++		if (!port->clk) {
++			dev_err(&pdev->dev, "PCIe%d.%d: cannot get clock\n",
++			       port->port, port->lane);
++			irq_dispose_mapping(port->irq);
++			iounmap(port->base);
++			port->haslink = 0;
++			continue;
++		}
++
++		clk_prepare_enable(port->clk);
++
++		i++;
++	}
++
++	armada_370_xp_pci.nr_controllers = nports;
++	pci_common_init(&armada_370_xp_pci);
++
++	return 0;
++}
++
++static const struct of_device_id armada_370_xp_pcie_of_match_table[] = {
++	{ .compatible = "marvell,armada-370-xp-pcie", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, armada_370_xp_pcie_of_match_table);
++
++static struct platform_driver armada_370_xp_pcie_driver = {
++	.driver = {
++		.owner = THIS_MODULE,
++		.name = "armada-370-xp-pcie",
++		.of_match_table =
++		   of_match_ptr(armada_370_xp_pcie_of_match_table),
++	},
++};
++
++static int armada_370_xp_pcie_init(void)
++{
++	return platform_driver_probe(&armada_370_xp_pcie_driver,
++				     armada_370_xp_pcie_probe);
++}
++
++subsys_initcall(armada_370_xp_pcie_init);
++
++MODULE_AUTHOR("Thomas Petazzoni <thomas.petazzoni@free-electrons.com>");
++MODULE_DESCRIPTION("Marvell Armada 370/XP PCIe driver");
++MODULE_LICENSE("GPL");
