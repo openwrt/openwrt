@@ -1,0 +1,89 @@
+--- a/extensions/LUA/xt_LUA_target.c
++++ b/extensions/LUA/xt_LUA_target.c
+@@ -64,10 +64,10 @@ uint32_t  lua_state_refs[LUA_STATE_ARRAY
+  * XT_CONTINUE inside the *register_lua_packet_lib* function.
+  */
+ 
+-spinlock_t lock = SPIN_LOCK_UNLOCKED;
++DEFINE_SPINLOCK(lock);
+ 
+ static uint32_t 
+-lua_tg(struct sk_buff *pskb, const struct xt_target_param *par)
++lua_tg(struct sk_buff *pskb, const struct xt_action_param *par)
+ {
+ 	uint32_t  verdict;
+ 	lua_packet_segment *p;
+@@ -208,16 +208,16 @@ static bool load_script_into_state(uint3
+  * some workqueue initialization. So far this is done each time this function
+  * is called, subject to change.
+  */
+-static bool
++static int
+ lua_tg_checkentry(const struct xt_tgchk_param *par)
+ {
+ 	const struct xt_lua_tginfo *info = par->targinfo;
+ 
+ 	if (load_script_into_state(info->state_id, info->script_size, (char *)info->buf)) {
+ 		lua_state_refs[info->state_id]++;
+-		return true;
++		return 0;
+ 	}
+-	return false;
++	return -EINVAL;
+ }
+ 
+ /*::*
+--- a/extensions/LUA/lua/llimits.h
++++ b/extensions/LUA/lua/llimits.h
+@@ -8,7 +8,6 @@
+ #define llimits_h
+ 
+ #include <stddef.h>
+-#include <limits.h>
+ 
+ #include "lua.h"
+ 
+--- a/extensions/LUA/lua/lapi.c
++++ b/extensions/LUA/lua/lapi.c
+@@ -4,9 +4,6 @@
+ ** See Copyright Notice in lua.h
+ */
+ 
+-#include <stdarg.h>
+-#include <math.h>
+-#include <assert.h>
+ #include <string.h>
+ 
+ #define lapi_c
+--- a/extensions/LUA/lua/ltable.c
++++ b/extensions/LUA/lua/ltable.c
+@@ -18,7 +18,6 @@
+ ** Hence even when the load factor reaches 100%, performance remains good.
+ */
+ 
+-#include <math.h>
+ #include <string.h>
+ 
+ #define ltable_c
+--- a/extensions/LUA/lua/luaconf.h
++++ b/extensions/LUA/lua/luaconf.h
+@@ -13,6 +13,10 @@
+ #if !defined(__KERNEL__)
+ #include <limits.h>
+ #else
++#undef UCHAR_MAX
++#undef SHRT_MAX
++#undef BUFSIZ
++#undef NO_FPU
+ #define UCHAR_MAX	255
+ #define SHRT_MAX        32767
+ #define BUFSIZ 		8192
+@@ -637,6 +641,8 @@ union luai_Cast { double l_d; long l_l; 
+ */
+ #if defined(__KERNEL__)
+ #undef LUA_USE_ULONGJMP
++#define setjmp __builtin_setjmp
++#define longjmp __builtin_longjmp
+ #endif
+ 
+ #if defined(__cplusplus)
