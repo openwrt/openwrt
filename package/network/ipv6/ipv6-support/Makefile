@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ipv6-support
-PKG_VERSION:=2013-01-15
+PKG_VERSION:=2013-01-16
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -35,7 +35,7 @@ endef
 
 define Package/ipv6-support/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/enable-ipv6.defaults $(1)/etc/uci-defaults/enable-ipv6
+	$(INSTALL_BIN) ./files/network-enable-ipv6.defaults $(1)/etc/uci-defaults/network-enable-ipv6
 endef
 
 $(eval $(call BuildPackage,ipv6-support))
