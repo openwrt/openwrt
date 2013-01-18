@@ -21,7 +21,7 @@ DEFAULT_PACKAGES += \
             kmod-cpu-msr \
             soloscli linux-atm br2684ctl ppp-mod-pppoa pppdump pppstats \
             hwclock wpad flashrom tc
-LINUX_VERSION:=3.7.2
+LINUX_VERSION:=3.7.3
 CS5535_MASK:=0x0E000048
 
 CFLAGS += -march=geode -Os -mmmx -m3dnow -fno-align-jumps -fno-align-functions \

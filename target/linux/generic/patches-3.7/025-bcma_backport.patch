@@ -734,17 +734,15 @@
  }
  EXPORT_SYMBOL(bcma_core_mips_irq);
  
-@@ -114,8 +121,8 @@ static void bcma_core_mips_set_irq(struc
+@@ -114,7 +121,7 @@ static void bcma_core_mips_set_irq(struc
  		bcma_write32(mdev, BCMA_MIPS_MIPS74K_INTMASK(0),
  			    bcma_read32(mdev, BCMA_MIPS_MIPS74K_INTMASK(0)) &
  			    ~(1 << irqflag));
 -	else
--		bcma_write32(mdev, BCMA_MIPS_MIPS74K_INTMASK(irq), 0);
 +	else if (oldirq != 5)
-+		bcma_write32(mdev, BCMA_MIPS_MIPS74K_INTMASK(oldirq), 0);
+ 		bcma_write32(mdev, BCMA_MIPS_MIPS74K_INTMASK(oldirq), 0);
  
  	/* assign the new one */
- 	if (irq == 0) {
 @@ -123,9 +130,9 @@ static void bcma_core_mips_set_irq(struc
  			    bcma_read32(mdev, BCMA_MIPS_MIPS74K_INTMASK(0)) |
  			    (1 << irqflag));
@@ -1357,7 +1355,7 @@
  #endif /* LINUX_BCMA_REGS_H_ */
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -4656,7 +4656,7 @@ static int b43_wireless_core_init(struct
+@@ -4684,7 +4684,7 @@ static int b43_wireless_core_init(struct
  	switch (dev->dev->bus_type) {
  #ifdef CONFIG_B43_BCMA
  	case B43_BUS_BCMA:
