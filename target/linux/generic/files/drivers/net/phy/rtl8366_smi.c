@@ -1109,6 +1109,7 @@ int rtl8366_sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 
 	port = &val->value.ports[0];
 	for (i = 0; i < val->len; i++, port++) {
+		int pvid;
 		member |= BIT(port->id);
 
 		if (!(port->flags & BIT(SWITCH_PORT_FLAG_TAGGED)))
@@ -1118,9 +1119,14 @@ int rtl8366_sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 		 * To ensure that we have a valid MC entry for this VLAN,
 		 * initialize the port VLAN ID here.
 		 */
-		err = rtl8366_set_pvid(smi, port->id, val->port_vlan);
+		err = rtl8366_get_pvid(smi, port->id, &pvid);
 		if (err < 0)
 			return err;
+		if (pvid == 0) {
+			err = rtl8366_set_pvid(smi, port->id, val->port_vlan);
+			if (err < 0)
+				return err;
+		}
 	}
 
 	return rtl8366_set_vlan(smi, val->port_vlan, member, untag, 0);
