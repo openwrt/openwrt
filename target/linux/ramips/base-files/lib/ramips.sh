@@ -182,6 +182,9 @@ ramips_board_name() {
 	*"Sitecom WL-351 v1 002")
 		name="wl-351"
 		;;
+	*"Tenda 3G300M")
+		name="3g300m"
+		;;
 	*"Tenda W306R V2.0")
 		name="w306r-v20"
 		;;

@@ -42,6 +42,7 @@ ramips_setup_interfaces()
 	ucidef_set_interface_loopback
 
 	case $board in
+	3g300m | \
 	all0256n | \
 	all5002 | \
 	broadway)
@@ -148,6 +149,7 @@ ramips_setup_macs()
 		lan_mac=$(ramips_get_mac_binary factory 40)
 		;;
 	3g-6200n | \
+	3g300m | \
 	air3gii | \
 	argus-atp52b | \
 	bc2 | \
