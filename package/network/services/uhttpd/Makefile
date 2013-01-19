@@ -8,24 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_VERSION:=2012-10-30
+PKG_VERSION:=2013-01-19
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://nbd.name/uhttpd.git
+PKG_SOURCE_URL:=git://nbd.name/uhttpd2.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=e57bf6d8bfa465a50eea2c30269acdfe751a46fd
+PKG_SOURCE_VERSION:=3560e89406c81814254bdb45db19498387265cb7
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
-PKG_CONFIG_DEPENDS := \
-	CONFIG_PACKAGE_uhttpd_debug \
-	CONFIG_PACKAGE_uhttpd-mod-lua \
-	CONFIG_PACKAGE_uhttpd-mod-tls \
-	CONFIG_PACKAGE_uhttpd-mod-tls_cyassl \
-	CONFIG_PACKAGE_uhttpd-mod-tls_openssl \
-	CONFIG_PACKAGE_uhttpd-mod-ubus
-
+PKG_CONFIG_DEPENDS = CONFIG_PACKAGE_uhttpd-mod-tls
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
@@ -58,7 +51,7 @@ endef
 define Package/uhttpd-mod-tls
   $(Package/uhttpd/default)
   TITLE+= (TLS plugin)
-  DEPENDS:=uhttpd +PACKAGE_uhttpd-mod-tls_cyassl:libcyassl +PACKAGE_uhttpd-mod-tls_openssl:libopenssl
+  DEPENDS:=uhttpd +PACKAGE_uhttpd-mod-tls_cyassl:libustream-cyassl +PACKAGE_uhttpd-mod-tls_openssl:libustream-cyassl
 endef
 
 define Package/uhttpd-mod-tls/description
@@ -78,22 +71,6 @@ define Package/uhttpd-mod-tls/config
       bool "OpenSSL"
   endchoice
 endef
-
-UHTTPD_TLS:=none
-TLS_CFLAGS:=
-TLS_LDFLAGS:=
-
-ifneq ($(CONFIG_PACKAGE_uhttpd-mod-tls_cyassl),)
-  UHTTPD_TLS:=cyassl
-  TLS_CFLAGS:=-I$(STAGING_DIR)/usr/include/cyassl
-  TLS_LDFLAGS:=-lcyassl -lm
-endif
-
-ifneq ($(CONFIG_PACKAGE_uhttpd-mod-tls_openssl),)
-  UHTTPD_TLS:=openssl
-  TLS_LDFLAGS:=-lssl
-endif
-
 
 define Package/uhttpd-mod-lua
   $(Package/uhttpd/default)
@@ -117,23 +94,15 @@ define Package/uhttpd-mod-ubus/description
  session.* namespace and procedures.
 endef
 
-
-TARGET_LDFLAGS += -lubox -lcrypt
-
-CMAKE_OPTIONS += \
-	-DDEBUG=$(if $(CONFIG_PACKAGE_uhttpd_debug),ON,OFF) \
-	-DLUA_SUPPORT=$(if $(CONFIG_PACKAGE_uhttpd-mod-lua),ON,OFF) \
-	-DUBUS_SUPPORT=$(if $(CONFIG_PACKAGE_uhttpd-mod-ubus),ON,OFF) \
-	-DTLS_SUPPORT=$(UHTTPD_TLS) \
-	-DTLS_CFLAGS="$(TLS_CFLAGS)" \
-	-DTLS_LDFLAGS="$(TLS_LDFLAGS)" \
-
-
 define Package/uhttpd/conffiles
 /etc/config/uhttpd
 /etc/uhttpd.crt
 /etc/uhttpd.key
 endef
+
+TARGET_LDFLAGS += -lcrypt
+
+CMAKE_OPTIONS = -DTLS_SUPPORT=$(if $(CONFIG_PACKAGE_uhttpd-mod-tls),on,off)
 
 define Package/uhttpd/install
 	$(INSTALL_DIR) $(1)/etc/init.d
@@ -145,8 +114,7 @@ define Package/uhttpd/install
 endef
 
 define Package/uhttpd-mod-tls/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd_tls.so $(1)/usr/lib/
+	true
 endef
 
 define Package/uhttpd-mod-lua/install
