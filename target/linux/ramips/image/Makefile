@@ -83,7 +83,8 @@ define CatFiles
 endef
 
 define Sysupgrade/KRuImage
-	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)))
+	$(eval output_name=$(if $(5),$(call imgname,$(1),$(2))-$(5),$(call sysupname,$(1),$(2))))
+	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(output_name))
 endef
 
 define mkmtd
@@ -109,7 +110,7 @@ endef
 
 define BuildFirmware/Generic
 	$(call MkImageLzma,$(2),$(3),$(6))
-	$(call Sysupgrade/KRuImage,$(1),$(2),$(4),$(5))
+	$(call Sysupgrade/KRuImage,$(1),$(2),$(4),$(5),$(7))
 endef
 
 define BuildFirmware/Generic/initramfs
@@ -119,7 +120,7 @@ endef
 
 mtdlayout_4M=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
 define BuildFirmware/GENERIC_4M
-	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)),917504,2949120)
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)),917504,2949120,$(7),$(8))
 endef
 
 define BuildFirmware/GENERIC_4M/initramfs
@@ -130,7 +131,7 @@ mtdlayout_8M=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),6976k(
 kernel_size_8M=917504
 rootfs_size_8M=7143424
 define BuildFirmware/GENERIC_8M
-	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M)),$(kernel_size_8M),$(rootfs_size_8M))
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M)),$(kernel_size_8M),$(rootfs_size_8M),$(7),$(8))
 endef
 
 define BuildFirmware/GENERIC_8M/initramfs
