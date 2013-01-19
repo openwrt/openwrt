@@ -12,6 +12,7 @@ obj-y	:= irq.o setup.o devices.o rt305x.o clock.o
 obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
 
 obj-$(CONFIG_RT305X_MACH_3G_6200N)	+= mach-3g-6200n.o
+obj-$(CONFIG_RT305X_MACH_3G300M)	+= mach-3g300m.o
 obj-$(CONFIG_RT305X_MACH_ARGUS_ATP52B)	+= mach-argus-atp52b.o
 obj-$(CONFIG_RT305X_MACH_BC2)		+= mach-bc2.o
 obj-$(CONFIG_RT305X_MACH_AIR3GII)	+= mach-air3gii.o
