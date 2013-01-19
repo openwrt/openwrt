@@ -206,7 +206,7 @@ mtd_dir300b1_kernel_part_size=917504
 mtd_dir300b1_rootfs_part_size=2949120
 define BuildFirmware/DIR300B1
 	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),ttyS1,57600) $(call mkmtd/phys,$(mtdlayout_dir300b1)),$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
-	mkwrgimg -s $(4) -d /dev/mtdblock/2 \
+	-mkwrgimg -s $(4) -d /dev/mtdblock/2 \
 		-i $(call sysupname,$(1),$(2)) \
 		-o $(call imgname,$(1),$(2))-factory.bin
 endef
@@ -218,7 +218,7 @@ endef
 mtdlayout_dir615h1=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
 define BuildFirmware/DIR615H1
         $(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_dir615h1)),917504,2949120)
-	mkdir615h1 -e $(call sysupname,$(1),$(2)) \
+	-mkdir615h1 -e $(call sysupname,$(1),$(2)) \
 		-o $(call imgname,$(1),$(2))-factory.bin
 endef
 
@@ -231,7 +231,7 @@ mtd_dap1350_kernel_part_size=1114112
 mtd_dap1350_rootfs_part_size=6553600
 define BuildFirmware/DAP1350
 	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),ttyS1,115200) $(call mkmtd/phys,$(mtdlayout_dap1350)),$(mtd_dap1350_kernel_part_size),$(mtd_dap1350_rootfs_part_size))
-	mkdapimg -s $(4) \
+	-mkdapimg -s $(4) \
 		-i $(call sysupname,$(1),$(2)) \
 		-o $(call imgname,$(1),$(2))-factory.bin
 endef
@@ -421,7 +421,7 @@ rootfs_size_mzkw300nh2=2883584
 define BuildFirmware/MZKW300NH2
 	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_mzkw300nh2)),$(kernel_size_mzkw300nh2),$(rootfs_size_mzkw300nh2))
 	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,`expr $(kernel_size_mzkw300nh2) - 20`,$(KDIR)/root.$(1),$(rootfs_size_mzkw300nh2),$(call imgname,$(1),$(2))-factory.bin)
-	mkedimaximg -i $(call imgname,$(1),$(2))-factory.bin \
+	-mkedimaximg -i $(call imgname,$(1),$(2))-factory.bin \
 		-o $(call imgname,$(1),$(2))-factory.bin \
 		-s CSYS -m RN52 -f 0x50000 -S 0xc0000;
 endef
