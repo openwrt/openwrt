@@ -37,6 +37,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_WL_330N3G,		/* Asus WL-330N3G */
 
 	/* RT3052 based machines */
+	RAMIPS_MACH_3G300M,		/* Tenda 3G300M */
 	RAMIPS_MACH_ALL0239_3G,		/* ALL0239-3G */
 	RAMIPS_MACH_ARGUS_ATP52B,	/* Argus ATP-52B */
 	RAMIPS_MACH_BC2,		/* NexAira BC2 */
