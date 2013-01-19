@@ -462,6 +462,11 @@ define Image/Build/Profile/3G6200N
 	$(call Image/Build/Template/$(fs_squash)/$(1),3G6200N,3g-6200n,3G-6200N,ttyS1,57600,phys)
 endef
 
+define Image/Build/Profile/3G300M
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,3g300m,3G300M,ttyS1,57600,spi,3G150M_SPI Kernel Image,factory.bin)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,3g300m,3G300M,ttyS1,57600,spi)
+endef
+
 define Image/Build/Profile/AIR3GII
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,air3gii,AIR3GII,ttyS1,57600,spi)
 endef
@@ -633,6 +638,7 @@ endef
 ifeq ($(CONFIG_RALINK_RT305X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/3G6200N,$(1))
+	$(call Image/Build/Profile/3G300M,$(1))
 	$(call Image/Build/Profile/AIR3GII,$(1))
 	$(call Image/Build/Profile/ALL02393G,$(1))
 	$(call Image/Build/Profile/ALL0256N,$(1))
