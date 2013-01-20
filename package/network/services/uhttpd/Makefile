@@ -51,7 +51,7 @@ endef
 define Package/uhttpd-mod-tls
   $(Package/uhttpd/default)
   TITLE+= (TLS plugin)
-  DEPENDS:=uhttpd +PACKAGE_uhttpd-mod-tls_cyassl:libustream-cyassl +PACKAGE_uhttpd-mod-tls_openssl:libustream-cyassl
+  DEPENDS:=uhttpd +PACKAGE_uhttpd-mod-tls_cyassl:libustream-cyassl +PACKAGE_uhttpd-mod-tls_openssl:libustream-openssl
 endef
 
 define Package/uhttpd-mod-tls/description
