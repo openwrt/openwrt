@@ -253,7 +253,19 @@
  u32 ath_calcrxfilter(struct ath_softc *sc);
  int ath_rx_init(struct ath_softc *sc, int nbufs);
  void ath_rx_cleanup(struct ath_softc *sc);
-@@ -641,7 +639,6 @@ void ath_ant_comb_update(struct ath_soft
+@@ -334,9 +332,8 @@ void ath_txq_lock(struct ath_softc *sc, 
+ void ath_txq_unlock(struct ath_softc *sc, struct ath_txq *txq);
+ void ath_txq_unlock_complete(struct ath_softc *sc, struct ath_txq *txq);
+ void ath_tx_cleanupq(struct ath_softc *sc, struct ath_txq *txq);
+-bool ath_drain_all_txq(struct ath_softc *sc, bool retry_tx);
+-void ath_draintxq(struct ath_softc *sc,
+-		     struct ath_txq *txq, bool retry_tx);
++bool ath_drain_all_txq(struct ath_softc *sc);
++void ath_draintxq(struct ath_softc *sc, struct ath_txq *txq);
+ void ath_tx_node_init(struct ath_softc *sc, struct ath_node *an);
+ void ath_tx_node_cleanup(struct ath_softc *sc, struct ath_node *an);
+ void ath_txq_schedule(struct ath_softc *sc, struct ath_txq *txq);
+@@ -641,7 +638,6 @@ void ath_ant_comb_update(struct ath_soft
  enum sc_op_flags {
  	SC_OP_INVALID,
  	SC_OP_BEACONS,
@@ -271,6 +283,15 @@
  	}
  
  	skb = ieee80211_beacon_get(hw, vif);
+@@ -198,7 +199,7 @@ static struct ath_buf *ath9k_beacon_gene
+ 		if (sc->nvifs > 1) {
+ 			ath_dbg(common, BEACON,
+ 				"Flushing previous cabq traffic\n");
+-			ath_draintxq(sc, cabq, false);
++			ath_draintxq(sc, cabq);
+ 		}
+ 	}
+ 
 @@ -359,7 +360,6 @@ void ath9k_beacon_tasklet(unsigned long 
  		return;
  
@@ -314,12 +335,20 @@
  }
  
 -static bool ath_prepare_reset(struct ath_softc *sc, bool retry_tx, bool flush)
-+static bool ath_prepare_reset(struct ath_softc *sc, bool retry_tx)
++static bool ath_prepare_reset(struct ath_softc *sc)
  {
  	struct ath_hw *ah = sc->sc_ah;
  	bool ret = true;
-@@ -202,14 +202,6 @@ static bool ath_prepare_reset(struct ath
- 	if (!ath_drain_all_txq(sc, retry_tx))
+@@ -196,20 +196,12 @@ static bool ath_prepare_reset(struct ath
+ 	ath9k_debug_samp_bb_mac(sc);
+ 	ath9k_hw_disable_interrupts(ah);
+ 
+-	if (!ath_stoprecv(sc))
++	if (!ath_drain_all_txq(sc))
+ 		ret = false;
+ 
+-	if (!ath_drain_all_txq(sc, retry_tx))
++	if (!ath_stoprecv(sc))
  		ret = false;
  
 -	if (!flush) {
@@ -333,7 +362,15 @@
  	return ret;
  }
  
-@@ -262,11 +254,11 @@ static int ath_reset_internal(struct ath
+@@ -255,18 +247,17 @@ static bool ath_complete_reset(struct at
+ 	return true;
+ }
+ 
+-static int ath_reset_internal(struct ath_softc *sc, struct ath9k_channel *hchan,
+-			      bool retry_tx)
++static int ath_reset_internal(struct ath_softc *sc, struct ath9k_channel *hchan)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ath9k_hw_cal_data *caldata = NULL;
  	bool fastcc = true;
@@ -346,7 +383,7 @@
  	spin_lock_bh(&sc->sc_pcu_lock);
  
  	if (!(sc->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL)) {
-@@ -276,11 +268,10 @@ static int ath_reset_internal(struct ath
+@@ -276,11 +267,10 @@ static int ath_reset_internal(struct ath
  
  	if (!hchan) {
  		fastcc = false;
@@ -355,11 +392,11 @@
  	}
  
 -	if (!ath_prepare_reset(sc, retry_tx, flush))
-+	if (!ath_prepare_reset(sc, retry_tx))
++	if (!ath_prepare_reset(sc))
  		fastcc = false;
  
  	ath_dbg(common, CONFIG, "Reset to %u MHz, HT40: %d fastcc: %d\n",
-@@ -302,6 +293,8 @@ static int ath_reset_internal(struct ath
+@@ -302,6 +292,8 @@ static int ath_reset_internal(struct ath
  
  out:
  	spin_unlock_bh(&sc->sc_pcu_lock);
@@ -368,15 +405,81 @@
  	return r;
  }
  
-@@ -804,7 +797,7 @@ static void ath9k_stop(struct ieee80211_
+@@ -319,7 +311,7 @@ static int ath_set_channel(struct ath_so
+ 	if (test_bit(SC_OP_INVALID, &sc->sc_flags))
+ 		return -EIO;
+ 
+-	r = ath_reset_internal(sc, hchan, false);
++	r = ath_reset_internal(sc, hchan);
+ 
+ 	return r;
+ }
+@@ -549,23 +541,21 @@ chip_reset:
+ #undef SCHED_INTR
+ }
+ 
+-static int ath_reset(struct ath_softc *sc, bool retry_tx)
++static int ath_reset(struct ath_softc *sc)
+ {
+-	int r;
++	int i, r;
+ 
+ 	ath9k_ps_wakeup(sc);
+ 
+-	r = ath_reset_internal(sc, NULL, retry_tx);
++	r = ath_reset_internal(sc, NULL);
+ 
+-	if (retry_tx) {
+-		int i;
+-		for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
+-			if (ATH_TXQ_SETUP(sc, i)) {
+-				spin_lock_bh(&sc->tx.txq[i].axq_lock);
+-				ath_txq_schedule(sc, &sc->tx.txq[i]);
+-				spin_unlock_bh(&sc->tx.txq[i].axq_lock);
+-			}
+-		}
++	for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
++		if (!ATH_TXQ_SETUP(sc, i))
++			continue;
++
++		spin_lock_bh(&sc->tx.txq[i].axq_lock);
++		ath_txq_schedule(sc, &sc->tx.txq[i]);
++		spin_unlock_bh(&sc->tx.txq[i].axq_lock);
+ 	}
+ 
+ 	ath9k_ps_restore(sc);
+@@ -586,7 +576,7 @@ void ath_reset_work(struct work_struct *
+ {
+ 	struct ath_softc *sc = container_of(work, struct ath_softc, hw_reset_work);
+ 
+-	ath_reset(sc, true);
++	ath_reset(sc);
+ }
+ 
+ /**********************/
+@@ -804,7 +794,7 @@ static void ath9k_stop(struct ieee80211_
  		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
  	}
  
 -	ath_prepare_reset(sc, false, true);
-+	ath_prepare_reset(sc, false);
++	ath_prepare_reset(sc);
  
  	if (sc->rx.frag) {
  		dev_kfree_skb_any(sc->rx.frag);
+@@ -1731,11 +1721,11 @@ static void ath9k_flush(struct ieee80211
+ 	if (drop) {
+ 		ath9k_ps_wakeup(sc);
+ 		spin_lock_bh(&sc->sc_pcu_lock);
+-		drain_txq = ath_drain_all_txq(sc, false);
++		drain_txq = ath_drain_all_txq(sc);
+ 		spin_unlock_bh(&sc->sc_pcu_lock);
+ 
+ 		if (!drain_txq)
+-			ath_reset(sc, false);
++			ath_reset(sc);
+ 
+ 		ath9k_ps_restore(sc);
+ 		ieee80211_wake_queues(hw);
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
 @@ -248,8 +248,6 @@ rx_init_fail:
@@ -1784,17 +1887,92 @@
  	default:
 --- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-@@ -485,9 +485,7 @@ static int ar5008_hw_rf_alloc_ext_banks(
- 	ATH_ALLOC_BANK(ah->analogBank2Data, ah->iniBank2.ia_rows);
- 	ATH_ALLOC_BANK(ah->analogBank3Data, ah->iniBank3.ia_rows);
- 	ATH_ALLOC_BANK(ah->analogBank6Data, ah->iniBank6.ia_rows);
+@@ -18,6 +18,7 @@
+ #include "hw-ops.h"
+ #include "../regd.h"
+ #include "ar9002_phy.h"
++#include "ar5008_initvals.h"
+ 
+ /* All code below is for AR5008, AR9001, AR9002 */
+ 
+@@ -43,23 +44,16 @@ static const int m2ThreshLowExt_off = 12
+ static const int m1ThreshExt_off = 127;
+ static const int m2ThreshExt_off = 127;
+ 
++static const struct ar5416IniArray bank0 = STATIC_INI_ARRAY(ar5416Bank0);
++static const struct ar5416IniArray bank1 = STATIC_INI_ARRAY(ar5416Bank1);
++static const struct ar5416IniArray bank2 = STATIC_INI_ARRAY(ar5416Bank2);
++static const struct ar5416IniArray bank3 = STATIC_INI_ARRAY(ar5416Bank3);
++static const struct ar5416IniArray bank7 = STATIC_INI_ARRAY(ar5416Bank7);
+ 
+-static void ar5008_rf_bank_setup(u32 *bank, struct ar5416IniArray *array,
+-				 int col)
+-{
+-	int i;
+-
+-	for (i = 0; i < array->ia_rows; i++)
+-		bank[i] = INI_RA(array, i, col);
+-}
+-
+-
+-#define REG_WRITE_RF_ARRAY(iniarray, regData, regWr) \
+-	ar5008_write_rf_array(ah, iniarray, regData, &(regWr))
+-
+-static void ar5008_write_rf_array(struct ath_hw *ah, struct ar5416IniArray *array,
+-				  u32 *data, unsigned int *writecnt)
++static void ar5008_write_bank6(struct ath_hw *ah, unsigned int *writecnt)
+ {
++	struct ar5416IniArray *array = &ah->iniBank6;
++	u32 *data = ah->analogBank6Data;
+ 	int r;
+ 
+ 	ENABLE_REGWRITE_BUFFER(ah);
+@@ -165,7 +159,7 @@ static void ar5008_hw_force_bias(struct 
+ 	ar5008_hw_phy_modify_rx_buffer(ah->analogBank6Data, tmp_reg, 3, 181, 3);
+ 
+ 	/* write Bank 6 with new params */
+-	REG_WRITE_RF_ARRAY(&ah->iniBank6, ah->analogBank6Data, reg_writes);
++	ar5008_write_bank6(ah, &reg_writes);
+ }
+ 
+ /**
+@@ -469,31 +463,16 @@ static void ar5008_hw_spur_mitigate(stru
+  */
+ static int ar5008_hw_rf_alloc_ext_banks(struct ath_hw *ah)
+ {
+-#define ATH_ALLOC_BANK(bank, size) do { \
+-		bank = devm_kzalloc(ah->dev, sizeof(u32) * size, GFP_KERNEL); \
+-		if (!bank) \
+-			goto error; \
+-	} while (0);
+-
+-	struct ath_common *common = ath9k_hw_common(ah);
++	int size = ah->iniBank6.ia_rows * sizeof(u32);
+ 
+ 	if (AR_SREV_9280_20_OR_LATER(ah))
+ 	    return 0;
+ 
+-	ATH_ALLOC_BANK(ah->analogBank0Data, ah->iniBank0.ia_rows);
+-	ATH_ALLOC_BANK(ah->analogBank1Data, ah->iniBank1.ia_rows);
+-	ATH_ALLOC_BANK(ah->analogBank2Data, ah->iniBank2.ia_rows);
+-	ATH_ALLOC_BANK(ah->analogBank3Data, ah->iniBank3.ia_rows);
+-	ATH_ALLOC_BANK(ah->analogBank6Data, ah->iniBank6.ia_rows);
 -	ATH_ALLOC_BANK(ah->analogBank6TPCData, ah->iniBank6TPC.ia_rows);
- 	ATH_ALLOC_BANK(ah->analogBank7Data, ah->iniBank7.ia_rows);
+-	ATH_ALLOC_BANK(ah->analogBank7Data, ah->iniBank7.ia_rows);
 -	ATH_ALLOC_BANK(ah->bank6Temp, ah->iniBank6.ia_rows);
++	ah->analogBank6Data = devm_kzalloc(ah->dev, size, GFP_KERNEL);
++	if (!ah->analogBank6Data)
++		return -ENOMEM;
  
  	return 0;
- #undef ATH_ALLOC_BANK
-@@ -517,6 +515,7 @@ static bool ar5008_hw_set_rf_regs(struct
+-#undef ATH_ALLOC_BANK
+-error:
+-	ath_err(common, "Cannot allocate RF banks\n");
+-	return -ENOMEM;
+ }
+ 
+ 
+@@ -517,6 +496,7 @@ static bool ar5008_hw_set_rf_regs(struct
  	u32 ob5GHz = 0, db5GHz = 0;
  	u32 ob2GHz = 0, db2GHz = 0;
  	int regWrites = 0;
@@ -1802,10 +1980,22 @@
  
  	/*
  	 * Software does not need to program bank data
-@@ -541,13 +540,9 @@ static bool ar5008_hw_set_rf_regs(struct
- 	/* Setup Bank 6 Write */
- 	ar5008_rf_bank_setup(ah->analogBank3Data, &ah->iniBank3,
- 		      modesIndex);
+@@ -529,25 +509,8 @@ static bool ar5008_hw_set_rf_regs(struct
+ 	/* Setup rf parameters */
+ 	eepMinorRev = ah->eep_ops->get_eeprom(ah, EEP_MINOR_REV);
+ 
+-	/* Setup Bank 0 Write */
+-	ar5008_rf_bank_setup(ah->analogBank0Data, &ah->iniBank0, 1);
+-
+-	/* Setup Bank 1 Write */
+-	ar5008_rf_bank_setup(ah->analogBank1Data, &ah->iniBank1, 1);
+-
+-	/* Setup Bank 2 Write */
+-	ar5008_rf_bank_setup(ah->analogBank2Data, &ah->iniBank2, 1);
+-
+-	/* Setup Bank 6 Write */
+-	ar5008_rf_bank_setup(ah->analogBank3Data, &ah->iniBank3,
+-		      modesIndex);
 -	{
 -		int i;
 -		for (i = 0; i < ah->iniBank6TPC.ia_rows; i++) {
@@ -1813,15 +2003,18 @@
 -			    INI_RA(&ah->iniBank6TPC, i, modesIndex);
 -		}
 -	}
-+
 +	for (i = 0; i < ah->iniBank6.ia_rows; i++)
 +		ah->analogBank6Data[i] = INI_RA(&ah->iniBank6, i, modesIndex);
  
  	/* Only the 5 or 2 GHz OB/DB need to be set for a mode */
  	if (eepMinorRev >= 2) {
-@@ -572,18 +567,12 @@ static bool ar5008_hw_set_rf_regs(struct
- 	ar5008_rf_bank_setup(ah->analogBank7Data, &ah->iniBank7, 1);
+@@ -568,22 +531,13 @@ static bool ar5008_hw_set_rf_regs(struct
+ 		}
+ 	}
  
+-	/* Setup Bank 7 Setup */
+-	ar5008_rf_bank_setup(ah->analogBank7Data, &ah->iniBank7, 1);
+-
  	/* Write Analog registers */
 -	REG_WRITE_RF_ARRAY(&ah->iniBank0, ah->analogBank0Data,
 -			   regWrites);
@@ -1835,12 +2028,12 @@
 -			   regWrites);
 -	REG_WRITE_RF_ARRAY(&ah->iniBank7, ah->analogBank7Data,
 -			   regWrites);
-+	REG_WRITE_RF_ARRAY(&ah->iniBank0, ah->analogBank0Data, regWrites);
-+	REG_WRITE_RF_ARRAY(&ah->iniBank1, ah->analogBank1Data, regWrites);
-+	REG_WRITE_RF_ARRAY(&ah->iniBank2, ah->analogBank2Data, regWrites);
-+	REG_WRITE_RF_ARRAY(&ah->iniBank3, ah->analogBank3Data, regWrites);
-+	REG_WRITE_RF_ARRAY(&ah->iniBank6, ah->analogBank6Data, regWrites);
-+	REG_WRITE_RF_ARRAY(&ah->iniBank7, ah->analogBank7Data, regWrites);
++	REG_WRITE_ARRAY(&bank0, 1, regWrites);
++	REG_WRITE_ARRAY(&bank1, 1, regWrites);
++	REG_WRITE_ARRAY(&bank2, 1, regWrites);
++	REG_WRITE_ARRAY(&bank3, modesIndex, regWrites);
++	ar5008_write_bank6(ah, &regWrites);
++	REG_WRITE_ARRAY(&bank7, 1, regWrites);
  
  	return true;
  }
@@ -1875,10 +2068,16 @@
  		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac);
  	}
  
-@@ -86,14 +84,11 @@ static void ar9002_hw_init_mode_regs(str
- 		INIT_INI_ARRAY(&ah->iniBank3, ar5416Bank3);
- 		INIT_INI_ARRAY(&ah->iniBank7, ar5416Bank7);
+@@ -80,20 +78,11 @@ static void ar9002_hw_init_mode_regs(str
+ 		/* Common for AR5416, AR913x, AR9160 */
+ 		INIT_INI_ARRAY(&ah->iniBB_RfGain, ar5416BB_RfGain);
  
+-		INIT_INI_ARRAY(&ah->iniBank0, ar5416Bank0);
+-		INIT_INI_ARRAY(&ah->iniBank1, ar5416Bank1);
+-		INIT_INI_ARRAY(&ah->iniBank2, ar5416Bank2);
+-		INIT_INI_ARRAY(&ah->iniBank3, ar5416Bank3);
+-		INIT_INI_ARRAY(&ah->iniBank7, ar5416Bank7);
+-
 -		/* Common for AR5416, AR9160 */
 -		if (!AR_SREV_9100(ah))
 -			INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6);
@@ -1893,7 +2092,7 @@
  	}
  
  	/* iniAddac needs to be modified for these chips */
-@@ -104,7 +99,7 @@ static void ar9002_hw_init_mode_regs(str
+@@ -104,7 +93,7 @@ static void ar9002_hw_init_mode_regs(str
  
  		data = devm_kzalloc(ah->dev, size, GFP_KERNEL);
  		if (!data)
@@ -1902,7 +2101,7 @@
  
  		memcpy(data, addac->ia_array, size);
  		addac->ia_array = data;
-@@ -120,6 +115,7 @@ static void ar9002_hw_init_mode_regs(str
+@@ -120,6 +109,7 @@ static void ar9002_hw_init_mode_regs(str
  		INIT_INI_ARRAY(&ah->iniCckfirJapan2484,
  		       ar9287Common_japan_2484_cck_fir_coeff_9287_1_1);
  	}
@@ -1910,7 +2109,7 @@
  }
  
  static void ar9280_20_hw_init_rxgain_ini(struct ath_hw *ah)
-@@ -415,7 +411,10 @@ int ar9002_hw_attach_ops(struct ath_hw *
+@@ -415,7 +405,10 @@ int ar9002_hw_attach_ops(struct ath_hw *
  	struct ath_hw_ops *ops = ath9k_hw_ops(ah);
  	int ret;
  
@@ -1936,7 +2135,28 @@
  static u32 ath9k_hw_compute_pll_control(struct ath_hw *ah,
  					struct ath9k_channel *chan)
  {
-@@ -670,8 +665,6 @@ static int __ath9k_hw_init(struct ath_hw
+@@ -208,7 +203,7 @@ void ath9k_hw_synth_delay(struct ath_hw 
+ 	udelay(hw_delay + BASE_ACTIVATE_DELAY);
+ }
+ 
+-void ath9k_hw_write_array(struct ath_hw *ah, struct ar5416IniArray *array,
++void ath9k_hw_write_array(struct ath_hw *ah, const struct ar5416IniArray *array,
+ 			  int column, unsigned int *writecnt)
+ {
+ 	int r;
+@@ -554,10 +549,8 @@ static int ath9k_hw_post_init(struct ath
+ 		ah->eep_ops->get_eeprom_ver(ah),
+ 		ah->eep_ops->get_eeprom_rev(ah));
+ 
+-	if (ah->config.enable_ani) {
+-		ath9k_hw_ani_setup(ah);
++	if (ah->config.enable_ani)
+ 		ath9k_hw_ani_init(ah);
+-	}
+ 
+ 	return 0;
+ }
+@@ -670,8 +663,6 @@ static int __ath9k_hw_init(struct ath_hw
  	if (!AR_SREV_9300_20_OR_LATER(ah))
  		ah->ani_function &= ~ATH9K_ANI_MRC_CCK;
  
@@ -1963,24 +2183,56 @@
  	void (*init_mode_gain_regs)(struct ath_hw *ah);
  	void (*setup_calibration)(struct ath_hw *ah,
  				  struct ath9k_cal_list *currCal);
-@@ -815,9 +813,7 @@ struct ath_hw {
- 	u32 *analogBank2Data;
- 	u32 *analogBank3Data;
+@@ -810,14 +808,7 @@ struct ath_hw {
+ 	struct ath_hw_ops ops;
+ 
+ 	/* Used to program the radio on non single-chip devices */
+-	u32 *analogBank0Data;
+-	u32 *analogBank1Data;
+-	u32 *analogBank2Data;
+-	u32 *analogBank3Data;
  	u32 *analogBank6Data;
 -	u32 *analogBank6TPCData;
- 	u32 *analogBank7Data;
+-	u32 *analogBank7Data;
 -	u32 *bank6Temp;
  
  	int coverage_class;
  	u32 slottime;
-@@ -858,7 +854,6 @@ struct ath_hw {
- 	struct ar5416IniArray iniBank2;
- 	struct ar5416IniArray iniBank3;
+@@ -826,10 +817,6 @@ struct ath_hw {
+ 	/* ANI */
+ 	u32 proc_phyerr;
+ 	u32 aniperiod;
+-	int totalSizeDesired[5];
+-	int coarse_high[5];
+-	int coarse_low[5];
+-	int firpwr[5];
+ 	enum ath9k_ani_cmd ani_function;
+ 	u32 ani_skip_count;
+ 
+@@ -852,14 +839,8 @@ struct ath_hw {
+ 
+ 	struct ar5416IniArray iniModes;
+ 	struct ar5416IniArray iniCommon;
+-	struct ar5416IniArray iniBank0;
+ 	struct ar5416IniArray iniBB_RfGain;
+-	struct ar5416IniArray iniBank1;
+-	struct ar5416IniArray iniBank2;
+-	struct ar5416IniArray iniBank3;
  	struct ar5416IniArray iniBank6;
 -	struct ar5416IniArray iniBank6TPC;
- 	struct ar5416IniArray iniBank7;
+-	struct ar5416IniArray iniBank7;
  	struct ar5416IniArray iniAddac;
  	struct ar5416IniArray iniPcieSerdes;
+ #ifdef CONFIG_PM_SLEEP
+@@ -975,7 +956,7 @@ void ath9k_hw_setantenna(struct ath_hw *
+ void ath9k_hw_synth_delay(struct ath_hw *ah, struct ath9k_channel *chan,
+ 			  int hw_delay);
+ bool ath9k_hw_wait(struct ath_hw *ah, u32 reg, u32 mask, u32 val, u32 timeout);
+-void ath9k_hw_write_array(struct ath_hw *ah, struct ar5416IniArray *array,
++void ath9k_hw_write_array(struct ath_hw *ah, const struct ar5416IniArray *array,
+ 			  int column, unsigned int *writecnt);
+ u32 ath9k_hw_reverse_bits(u32 val, u32 n);
+ u16 ath9k_hw_computetxtime(struct ath_hw *ah,
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
 @@ -1677,10 +1677,10 @@ netdev_tx_t ieee80211_monitor_start_xmit
@@ -1998,3 +2250,323 @@
  
  	/*
  	 * Frame injection is not allowed if beaconing is not allowed
+--- a/drivers/net/wireless/ath/ath9k/ani.c
++++ b/drivers/net/wireless/ath/ath9k/ani.c
+@@ -152,7 +152,8 @@ static void ath9k_hw_set_ofdm_nil(struct
+ 	ath_dbg(common, ANI, "**** ofdmlevel %d=>%d, rssi=%d[lo=%d hi=%d]\n",
+ 		aniState->ofdmNoiseImmunityLevel,
+ 		immunityLevel, BEACON_RSSI(ah),
+-		aniState->rssiThrLow, aniState->rssiThrHigh);
++		ATH9K_ANI_RSSI_THR_LOW,
++		ATH9K_ANI_RSSI_THR_HIGH);
+ 
+ 	if (!scan)
+ 		aniState->ofdmNoiseImmunityLevel = immunityLevel;
+@@ -173,7 +174,7 @@ static void ath9k_hw_set_ofdm_nil(struct
+ 
+ 	weak_sig = entry_ofdm->ofdm_weak_signal_on;
+ 	if (ah->opmode == NL80211_IFTYPE_STATION &&
+-	    BEACON_RSSI(ah) <= aniState->rssiThrHigh)
++	    BEACON_RSSI(ah) <= ATH9K_ANI_RSSI_THR_HIGH)
+ 		weak_sig = true;
+ 
+ 	if (aniState->ofdmWeakSigDetect != weak_sig)
+@@ -216,11 +217,11 @@ static void ath9k_hw_set_cck_nil(struct 
+ 
+ 	ath_dbg(common, ANI, "**** ccklevel %d=>%d, rssi=%d[lo=%d hi=%d]\n",
+ 		aniState->cckNoiseImmunityLevel, immunityLevel,
+-		BEACON_RSSI(ah), aniState->rssiThrLow,
+-		aniState->rssiThrHigh);
++		BEACON_RSSI(ah), ATH9K_ANI_RSSI_THR_LOW,
++		ATH9K_ANI_RSSI_THR_HIGH);
+ 
+ 	if (ah->opmode == NL80211_IFTYPE_STATION &&
+-	    BEACON_RSSI(ah) <= aniState->rssiThrLow &&
++	    BEACON_RSSI(ah) <= ATH9K_ANI_RSSI_THR_LOW &&
+ 	    immunityLevel > ATH9K_ANI_CCK_MAX_LEVEL_LOW_RSSI)
+ 		immunityLevel = ATH9K_ANI_CCK_MAX_LEVEL_LOW_RSSI;
+ 
+@@ -418,9 +419,6 @@ void ath9k_hw_ani_monitor(struct ath_hw 
+ 		return;
+ 
+ 	aniState = &ah->curchan->ani;
+-	if (WARN_ON(!aniState))
+-		return;
+-
+ 	if (!ath9k_hw_ani_read_counters(ah))
+ 		return;
+ 
+@@ -489,23 +487,6 @@ void ath9k_hw_disable_mib_counters(struc
+ }
+ EXPORT_SYMBOL(ath9k_hw_disable_mib_counters);
+ 
+-void ath9k_hw_ani_setup(struct ath_hw *ah)
+-{
+-	int i;
+-
+-	static const int totalSizeDesired[] = { -55, -55, -55, -55, -62 };
+-	static const int coarseHigh[] = { -14, -14, -14, -14, -12 };
+-	static const int coarseLow[] = { -64, -64, -64, -64, -70 };
+-	static const int firpwr[] = { -78, -78, -78, -78, -80 };
+-
+-	for (i = 0; i < 5; i++) {
+-		ah->totalSizeDesired[i] = totalSizeDesired[i];
+-		ah->coarse_high[i] = coarseHigh[i];
+-		ah->coarse_low[i] = coarseLow[i];
+-		ah->firpwr[i] = firpwr[i];
+-	}
+-}
+-
+ void ath9k_hw_ani_init(struct ath_hw *ah)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
+@@ -531,8 +512,6 @@ void ath9k_hw_ani_init(struct ath_hw *ah
+ 
+ 		ani->ofdmsTurn = true;
+ 
+-		ani->rssiThrHigh = ATH9K_ANI_RSSI_THR_HIGH;
+-		ani->rssiThrLow = ATH9K_ANI_RSSI_THR_LOW;
+ 		ani->ofdmWeakSigDetect = ATH9K_ANI_USE_OFDM_WEAK_SIG;
+ 		ani->cckNoiseImmunityLevel = ATH9K_ANI_CCK_DEF_LEVEL;
+ 		ani->ofdmNoiseImmunityLevel = ATH9K_ANI_OFDM_DEF_LEVEL;
+--- a/drivers/net/wireless/ath/ath9k/ani.h
++++ b/drivers/net/wireless/ath/ath9k/ani.h
+@@ -104,7 +104,6 @@ struct ath9k_ani_default {
+ };
+ 
+ struct ar5416AniState {
+-	struct ath9k_channel *c;
+ 	u8 noiseImmunityLevel;
+ 	u8 ofdmNoiseImmunityLevel;
+ 	u8 cckNoiseImmunityLevel;
+@@ -113,15 +112,9 @@ struct ar5416AniState {
+ 	u8 spurImmunityLevel;
+ 	u8 firstepLevel;
+ 	u8 ofdmWeakSigDetect;
+-	u8 cckWeakSigThreshold;
+ 	u32 listenTime;
+-	int32_t rssiThrLow;
+-	int32_t rssiThrHigh;
+ 	u32 ofdmPhyErrCount;
+ 	u32 cckPhyErrCount;
+-	int16_t pktRssi[2];
+-	int16_t ofdmErrRssi[2];
+-	int16_t cckErrRssi[2];
+ 	struct ath9k_ani_default iniDef;
+ };
+ 
+@@ -147,7 +140,6 @@ struct ar5416Stats {
+ 
+ void ath9k_enable_mib_counters(struct ath_hw *ah);
+ void ath9k_hw_disable_mib_counters(struct ath_hw *ah);
+-void ath9k_hw_ani_setup(struct ath_hw *ah);
+ void ath9k_hw_ani_init(struct ath_hw *ah);
+ 
+ #endif /* ANI_H */
+--- a/drivers/net/wireless/ath/ath9k/calib.h
++++ b/drivers/net/wireless/ath/ath9k/calib.h
+@@ -33,6 +33,12 @@ struct ar5416IniArray {
+ 	u32 ia_columns;
+ };
+ 
++#define STATIC_INI_ARRAY(array) {			\
++		.ia_array = (u32 *)(array),		\
++		.ia_rows = ARRAY_SIZE(array),		\
++		.ia_columns = ARRAY_SIZE(array[0]),	\
++	}
++
+ #define INIT_INI_ARRAY(iniarray, array) do {	\
+ 		(iniarray)->ia_array = (u32 *)(array);		\
+ 		(iniarray)->ia_rows = ARRAY_SIZE(array);	\
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -378,7 +378,7 @@ static void ath_tx_count_frames(struct a
+ 
+ static void ath_tx_complete_aggr(struct ath_softc *sc, struct ath_txq *txq,
+ 				 struct ath_buf *bf, struct list_head *bf_q,
+-				 struct ath_tx_status *ts, int txok, bool retry)
++				 struct ath_tx_status *ts, int txok)
+ {
+ 	struct ath_node *an = NULL;
+ 	struct sk_buff *skb;
+@@ -490,7 +490,7 @@ static void ath_tx_complete_aggr(struct 
+ 		} else if (!isaggr && txok) {
+ 			/* transmit completion */
+ 			acked_cnt++;
+-		} else if ((tid->state & AGGR_CLEANUP) || !retry) {
++		} else if (tid->state & AGGR_CLEANUP) {
+ 			/*
+ 			 * cleanup in progress, just fail
+ 			 * the un-acked sub-frames
+@@ -604,6 +604,37 @@ static void ath_tx_complete_aggr(struct 
+ 		ath9k_queue_reset(sc, RESET_TYPE_TX_ERROR);
+ }
+ 
++static bool bf_is_ampdu_not_probing(struct ath_buf *bf)
++{
++    struct ieee80211_tx_info *info = IEEE80211_SKB_CB(bf->bf_mpdu);
++    return bf_isampdu(bf) && !(info->flags & IEEE80211_TX_CTL_RATE_CTRL_PROBE);
++}
++
++static void ath_tx_process_buffer(struct ath_softc *sc, struct ath_txq *txq,
++				  struct ath_tx_status *ts, struct ath_buf *bf,
++				  struct list_head *bf_head)
++{
++	bool txok, flush;
++
++	txok = !(ts->ts_status & ATH9K_TXERR_MASK);
++	flush = !!(ts->ts_status & ATH9K_TX_FLUSH);
++	txq->axq_tx_inprogress = false;
++
++	txq->axq_depth--;
++	if (bf_is_ampdu_not_probing(bf))
++		txq->axq_ampdu_depth--;
++
++	if (!bf_isampdu(bf)) {
++		if (!flush)
++			ath_tx_rc_status(sc, bf, ts, 1, txok ? 0 : 1, txok);
++		ath_tx_complete_buf(sc, bf, txq, bf_head, ts, txok);
++	} else
++		ath_tx_complete_aggr(sc, txq, bf, bf_head, ts, txok);
++
++	if ((sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT) && !flush)
++		ath_txq_schedule(sc, txq);
++}
++
+ static bool ath_lookup_legacy(struct ath_buf *bf)
+ {
+ 	struct sk_buff *skb;
+@@ -1331,23 +1362,6 @@ void ath_tx_aggr_resume(struct ath_softc
+ /* Queue Management */
+ /********************/
+ 
+-static void ath_txq_drain_pending_buffers(struct ath_softc *sc,
+-					  struct ath_txq *txq)
+-{
+-	struct ath_atx_ac *ac, *ac_tmp;
+-	struct ath_atx_tid *tid, *tid_tmp;
+-
+-	list_for_each_entry_safe(ac, ac_tmp, &txq->axq_acq, list) {
+-		list_del(&ac->list);
+-		ac->sched = false;
+-		list_for_each_entry_safe(tid, tid_tmp, &ac->tid_q, list) {
+-			list_del(&tid->list);
+-			tid->sched = false;
+-			ath_tid_drain(sc, txq, tid);
+-		}
+-	}
+-}
+-
+ struct ath_txq *ath_txq_setup(struct ath_softc *sc, int qtype, int subtype)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+@@ -1470,14 +1484,8 @@ int ath_cabq_update(struct ath_softc *sc
+ 	return 0;
+ }
+ 
+-static bool bf_is_ampdu_not_probing(struct ath_buf *bf)
+-{
+-    struct ieee80211_tx_info *info = IEEE80211_SKB_CB(bf->bf_mpdu);
+-    return bf_isampdu(bf) && !(info->flags & IEEE80211_TX_CTL_RATE_CTRL_PROBE);
+-}
+-
+ static void ath_drain_txq_list(struct ath_softc *sc, struct ath_txq *txq,
+-			       struct list_head *list, bool retry_tx)
++			       struct list_head *list)
+ {
+ 	struct ath_buf *bf, *lastbf;
+ 	struct list_head bf_head;
+@@ -1499,16 +1507,7 @@ static void ath_drain_txq_list(struct at
+ 
+ 		lastbf = bf->bf_lastbf;
+ 		list_cut_position(&bf_head, list, &lastbf->list);
+-
+-		txq->axq_depth--;
+-		if (bf_is_ampdu_not_probing(bf))
+-			txq->axq_ampdu_depth--;
+-
+-		if (bf_isampdu(bf))
+-			ath_tx_complete_aggr(sc, txq, bf, &bf_head, &ts, 0,
+-					     retry_tx);
+-		else
+-			ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0);
++		ath_tx_process_buffer(sc, txq, &ts, bf, &bf_head);
+ 	}
+ }
+ 
+@@ -1518,7 +1517,7 @@ static void ath_drain_txq_list(struct at
+  * This assumes output has been stopped and
+  * we do not need to block ath_tx_tasklet.
+  */
+-void ath_draintxq(struct ath_softc *sc, struct ath_txq *txq, bool retry_tx)
++void ath_draintxq(struct ath_softc *sc, struct ath_txq *txq)
+ {
+ 	ath_txq_lock(sc, txq);
+ 
+@@ -1526,8 +1525,7 @@ void ath_draintxq(struct ath_softc *sc, 
+ 		int idx = txq->txq_tailidx;
+ 
+ 		while (!list_empty(&txq->txq_fifo[idx])) {
+-			ath_drain_txq_list(sc, txq, &txq->txq_fifo[idx],
+-					   retry_tx);
++			ath_drain_txq_list(sc, txq, &txq->txq_fifo[idx]);
+ 
+ 			INCR(idx, ATH_TXFIFO_DEPTH);
+ 		}
+@@ -1536,16 +1534,12 @@ void ath_draintxq(struct ath_softc *sc, 
+ 
+ 	txq->axq_link = NULL;
+ 	txq->axq_tx_inprogress = false;
+-	ath_drain_txq_list(sc, txq, &txq->axq_q, retry_tx);
+-
+-	/* flush any pending frames if aggregation is enabled */
+-	if ((sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT) && !retry_tx)
+-		ath_txq_drain_pending_buffers(sc, txq);
++	ath_drain_txq_list(sc, txq, &txq->axq_q);
+ 
+ 	ath_txq_unlock_complete(sc, txq);
+ }
+ 
+-bool ath_drain_all_txq(struct ath_softc *sc, bool retry_tx)
++bool ath_drain_all_txq(struct ath_softc *sc)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+@@ -1581,7 +1575,7 @@ bool ath_drain_all_txq(struct ath_softc 
+ 		 */
+ 		txq = &sc->tx.txq[i];
+ 		txq->stopped = false;
+-		ath_draintxq(sc, txq, retry_tx);
++		ath_draintxq(sc, txq);
+ 	}
+ 
+ 	return !npend;
+@@ -2175,28 +2169,6 @@ static void ath_tx_rc_status(struct ath_
+ 	tx_info->status.rates[tx_rateindex].count = ts->ts_longretry + 1;
+ }
+ 
+-static void ath_tx_process_buffer(struct ath_softc *sc, struct ath_txq *txq,
+-				  struct ath_tx_status *ts, struct ath_buf *bf,
+-				  struct list_head *bf_head)
+-{
+-	int txok;
+-
+-	txq->axq_depth--;
+-	txok = !(ts->ts_status & ATH9K_TXERR_MASK);
+-	txq->axq_tx_inprogress = false;
+-	if (bf_is_ampdu_not_probing(bf))
+-		txq->axq_ampdu_depth--;
+-
+-	if (!bf_isampdu(bf)) {
+-		ath_tx_rc_status(sc, bf, ts, 1, txok ? 0 : 1, txok);
+-		ath_tx_complete_buf(sc, bf, txq, bf_head, ts, txok);
+-	} else
+-		ath_tx_complete_aggr(sc, txq, bf, bf_head, ts, txok, true);
+-
+-	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT)
+-		ath_txq_schedule(sc, txq);
+-}
+-
+ static void ath_tx_processq(struct ath_softc *sc, struct ath_txq *txq)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
