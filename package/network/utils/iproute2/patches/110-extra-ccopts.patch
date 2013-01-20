@@ -1,11 +1,11 @@
 --- a/Makefile
 +++ b/Makefile
 @@ -29,7 +29,7 @@ ADDLIB+=ipx_ntop.o ipx_pton.o
- 
  CC = gcc
  HOSTCC = gcc
--CCOPTS = -D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall
-+CCOPTS = -D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall $(EXTRA_CCOPTS)
- CFLAGS = $(CCOPTS) -I../include $(DEFINES)
+ DEFINES += -D_GNU_SOURCE
+-CCOPTS = -O2
++CCOPTS = -O2 $(EXTRA_CCOPTS)
+ WFLAGS = -Wall -Wstrict-prototypes
+ CFLAGS = $(WFLAGS) $(CCOPTS) -I../include $(DEFINES)
  YACCFLAGS = -d -t -v
- 
