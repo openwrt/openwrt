@@ -1,0 +1,58 @@
+From 11e8a1034656eba6571401286b99dabbd9842dac Mon Sep 17 00:00:00 2001
+From: Jan Engelhardt <jengelh@inai.de>
+Date: Tue, 18 Dec 2012 09:18:45 -0800
+Subject: [PATCH] build: unbreak linakge of m_xt.so
+
+Commit v3.7.0~10 caused the variable new PKG_CONFIG variable never
+to be present at the time of calling make, leading to tc/m_xt.so
+not linked with -lxtables (result from pkg-config xtables --libs),
+that in turn leading to
+
+tc: symbol lookup error: /usr/lib64/tc//m_xt.so: undefined symbol:
+xtables_init_all
+
+Fixing that.
+
+Signed-off-by: Jan Engelhardt <jengelh@inai.de>
+
+Conflicts:
+	configure
+---
+ configure | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -2,14 +2,20 @@
+ # This is not an autconf generated configure
+ #
+ INCLUDE=${1:-"$PWD/include"}
+-: ${PKG_CONFIG:=pkg-config}
+-: ${CC=gcc}
+-echo "PKG_CONFIG:=${PKG_CONFIG}" >>Config
+ 
+ # Make a temp directory in build tree.
+ TMPDIR=$(mktemp -d config.XXXXXX)
+ trap 'status=$?; rm -rf $TMPDIR; exit $status' EXIT HUP INT QUIT TERM
+ 
++check_toolchain()
++{
++: ${PKG_CONFIG:=pkg-config}
++: ${AR=ar}
++: ${CC=gcc}
++echo "AR:=${AR}" >>Config
++echo "CC:=${CC}" >>Config
++}
++
+ check_atm()
+ {
+ cat >$TMPDIR/atmtest.c <<EOF
+@@ -224,6 +230,8 @@ rm -f $TMPDIR/ipsettest.c $TMPDIR/ipsett
+ }
+ 
+ echo "# Generated config based on" $INCLUDE >Config
++echo "PKG_CONFIG:=${PKG_CONFIG}" >>Config
++check_toolchain
+ 
+ echo "TC schedulers"
+ 
