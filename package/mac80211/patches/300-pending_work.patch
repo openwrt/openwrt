@@ -480,6 +480,16 @@
  
  		ath9k_ps_restore(sc);
  		ieee80211_wake_queues(hw);
+@@ -1835,6 +1825,9 @@ static u32 fill_chainmask(u32 cap, u32 n
+ 
+ static bool validate_antenna_mask(struct ath_hw *ah, u32 val)
+ {
++	if (AR_SREV_9300_20_OR_LATER(ah))
++		return true;
++
+ 	switch (val & 0x7) {
+ 	case 0x1:
+ 	case 0x3:
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
 @@ -248,8 +248,6 @@ rx_init_fail:
@@ -863,6 +873,46 @@
  			channelSel = freq / 75;
  			chan_frac = ((freq % 75) * 0x20000) / 75;
  			channelSel = (channelSel << 17) | chan_frac;
+@@ -586,32 +589,19 @@ static void ar9003_hw_init_bb(struct ath
+ 	ath9k_hw_synth_delay(ah, chan, synthDelay);
+ }
+ 
+-static void ar9003_hw_set_chain_masks(struct ath_hw *ah, u8 rx, u8 tx)
++void ar9003_hw_set_chain_masks(struct ath_hw *ah, u8 rx, u8 tx)
+ {
+-	switch (rx) {
+-	case 0x5:
++	if (ah->caps.tx_chainmask == 5 || ah->caps.rx_chainmask == 5)
+ 		REG_SET_BIT(ah, AR_PHY_ANALOG_SWAP,
+ 			    AR_PHY_SWAP_ALT_CHAIN);
+-	case 0x3:
+-	case 0x1:
+-	case 0x2:
+-	case 0x7:
+-		REG_WRITE(ah, AR_PHY_RX_CHAINMASK, rx);
+-		REG_WRITE(ah, AR_PHY_CAL_CHAINMASK, rx);
+-		break;
+-	default:
+-		break;
+-	}
++
++	REG_WRITE(ah, AR_PHY_RX_CHAINMASK, rx);
++	REG_WRITE(ah, AR_PHY_CAL_CHAINMASK, rx);
+ 
+ 	if ((ah->caps.hw_caps & ATH9K_HW_CAP_APM) && (tx == 0x7))
+-		REG_WRITE(ah, AR_SELFGEN_MASK, 0x3);
+-	else
+-		REG_WRITE(ah, AR_SELFGEN_MASK, tx);
++		tx = 3;
+ 
+-	if (tx == 0x5) {
+-		REG_SET_BIT(ah, AR_PHY_ANALOG_SWAP,
+-			    AR_PHY_SWAP_ALT_CHAIN);
+-	}
++	REG_WRITE(ah, AR_SELFGEN_MASK, tx);
+ }
+ 
+ /*
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
 @@ -1028,7 +1028,7 @@
@@ -1178,7 +1228,16 @@
  	bool rtt = !!(ah->caps.hw_caps & ATH9K_HW_CAP_RTT);
  	u32 agc_ctrl = 0, agc_supp_cals = AR_PHY_AGC_CONTROL_OFFSET_CAL |
  					  AR_PHY_AGC_CONTROL_FLTR_CAL   |
-@@ -1013,7 +1013,8 @@ static bool ar9003_hw_init_cal(struct at
+@@ -977,6 +977,8 @@ static bool ar9003_hw_init_cal(struct at
+ 					  AR_PHY_CL_TAB_1,
+ 					  AR_PHY_CL_TAB_2 };
+ 
++	ar9003_hw_set_chain_masks(ah, ah->caps.rx_chainmask, ah->caps.tx_chainmask);
++
+ 	if (rtt) {
+ 		if (!ar9003_hw_rtt_restore(ah, chan))
+ 			run_rtt_cal = true;
+@@ -1013,7 +1015,8 @@ static bool ar9003_hw_init_cal(struct at
  		}
  	}
  
@@ -1188,7 +1247,7 @@
  		goto skip_tx_iqcal;
  
  	/* Do Tx IQ Calibration */
-@@ -1033,21 +1034,22 @@ static bool ar9003_hw_init_cal(struct at
+@@ -1033,21 +1036,22 @@ static bool ar9003_hw_init_cal(struct at
  			REG_CLR_BIT(ah, AR_PHY_TX_IQCAL_CONTROL_0,
  				    AR_PHY_TX_IQCAL_CONTROL_0_ENABLE_TXIQ_CAL);
  		txiqcal_done = run_agc_cal = true;
@@ -2233,6 +2292,14 @@
  			  int column, unsigned int *writecnt);
  u32 ath9k_hw_reverse_bits(u32 val, u32 n);
  u16 ath9k_hw_computetxtime(struct ath_hw *ah,
+@@ -1062,6 +1043,7 @@ void ar9003_paprd_setup_gain_table(struc
+ int ar9003_paprd_init_table(struct ath_hw *ah);
+ bool ar9003_paprd_is_done(struct ath_hw *ah);
+ bool ar9003_is_paprd_enabled(struct ath_hw *ah);
++void ar9003_hw_set_chain_masks(struct ath_hw *ah, u8 rx, u8 tx);
+ 
+ /* Hardware family op attach helpers */
+ int ar5008_hw_attach_phy_ops(struct ath_hw *ah);
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
 @@ -1677,10 +1677,10 @@ netdev_tx_t ieee80211_monitor_start_xmit
