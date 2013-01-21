@@ -39,6 +39,7 @@ start_6relayd() {
 			master="$slave"
 		else
 			[ -n "$slave" ] && append slaves "$slave"
+			echo 1 > "/proc/sys/net/ipv6/conf/$slave/forwarding"
 		fi
 	done
 
