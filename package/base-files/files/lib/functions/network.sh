@@ -186,18 +186,15 @@ network_get_subnet6() { __network_ipaddr "$1" "$2" 6 1; }
 
 # determine IPv6 prefix
 network_get_prefix6() {
-	local __prefix="$1"
+	local __var="$1"
 	local __iface="$2"
 	local __address
 	local __mask
 
 	__network_parse_ifstatus "$__iface" || return 1
-	__network_export __address "${__iface}_prefix6_address"
-	local return="$?"
-	[ "$return" -eq 0 ] || return $?
-	__network_export __mask "${__iface}_prefix6_mask"
-	eval "$__prefix=$__address/$__mask"
-	return 0
+	__network_export __mask "${__iface}_prefix6_mask" || return 1
+	__network_export __var "${__iface}_prefix6_address" "$__mask"
+	return $?
 }
 
 
