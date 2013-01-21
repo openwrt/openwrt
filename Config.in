@@ -215,7 +215,7 @@ menu "Global build settings"
 
 	config KERNEL_KALLSYMS
 		bool "Compile the kernel with symbol table information"
-		default n
+		default y
 		help
 		  This will give you more information in stack traces from kernel oopses
 
@@ -234,7 +234,7 @@ menu "Global build settings"
 
 	config KERNEL_DEBUG_INFO
 		bool "Compile the kernel with debug information"
-		default n
+		default y
 		select KERNEL_DEBUG_KERNEL
 		help
 		  This will compile your kernel and modules with debug information.
