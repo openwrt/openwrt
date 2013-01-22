@@ -1,0 +1,264 @@
+From 66b56aa3a4810f10e0b0c77bb87279a8d64b566b Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Fri, 16 Dec 2011 11:55:45 +0100
+Subject: MIPS: add board support for Gigaset SX76X
+
+Signed-off-by: Luka Perkov <luka@openwrt.org>
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+
+--- /dev/null
++++ b/board/gigaset/sx76x/Makefile
+@@ -0,0 +1,29 @@
++#
++# This file is released under the terms of GPL v2 and any later version.
++# See the file COPYING in the root directory of the source tree for details.
++#
++# Copyright (C) 2000-2011 Wolfgang Denk, DENX Software Engineering, wd@denx.de
++# Copyright (C) 2011 Daniel Schwierzeck, daniel.schwierzeck@googlemail.com
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(BOARD).o
++
++COBJS	= $(BOARD).o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
++OBJS	:= $(addprefix $(obj),$(COBJS))
++SOBJS	:= $(addprefix $(obj),$(SOBJS))
++
++$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
++	$(call cmd_link_o_target, $(OBJS) $(SOBJS))
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+--- /dev/null
++++ b/board/gigaset/sx76x/config.mk
+@@ -0,0 +1,8 @@
++#
++# This file is released under the terms of GPL v2 and any later version.
++# See the file COPYING in the root directory of the source tree for details.
++#
++# Copyright (C) 2011 Daniel Schwierzeck, daniel.schwierzeck@googlemail.com
++#
++
++PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
+--- /dev/null
++++ b/board/gigaset/sx76x/ddr_settings.h
+@@ -0,0 +1,56 @@
++/*
++ * This file is released under the terms of GPL v2 and any later version.
++ * See the file COPYING in the root directory of the source tree for details.
++ *
++ * generated with lantiq_ram_extract_magic.awk
++ *
++ * Copyright (C) 2011 Luka Perkov <luka@openwrt.org>
++ */
++
++#define MC_DC00_VALUE	0x1B1B
++#define MC_DC01_VALUE	0x0
++#define MC_DC02_VALUE	0x0
++#define MC_DC03_VALUE	0x0
++#define MC_DC04_VALUE	0x0
++#define MC_DC05_VALUE	0x200
++#define MC_DC06_VALUE	0x605
++#define MC_DC07_VALUE	0x303
++#define MC_DC08_VALUE	0x202
++#define MC_DC09_VALUE	0x70A
++#define MC_DC10_VALUE	0x203
++#define MC_DC11_VALUE	0xC02
++#define MC_DC12_VALUE	0x1C8
++#define MC_DC13_VALUE	0x1
++#define MC_DC14_VALUE	0x0
++#define MC_DC15_VALUE	0xF3E
++#define MC_DC16_VALUE	0xC800
++#define MC_DC17_VALUE	0xD
++#define MC_DC18_VALUE	0x300
++#define MC_DC19_VALUE	0x200
++#define MC_DC20_VALUE	0xA04
++#define MC_DC21_VALUE	0xF00
++#define MC_DC22_VALUE	0xF0F
++#define MC_DC23_VALUE	0x0
++#define MC_DC24_VALUE	0x63
++#define MC_DC25_VALUE	0x0
++#define MC_DC26_VALUE	0x100
++#define MC_DC27_VALUE	0x0
++#define MC_DC28_VALUE	0x514
++#define MC_DC29_VALUE	0x2D89
++#define MC_DC30_VALUE	0x8300
++#define MC_DC31_VALUE	0x2002
++#define MC_DC32_VALUE	0x0
++#define MC_DC33_VALUE	0x0
++#define MC_DC34_VALUE	0x0
++#define MC_DC35_VALUE	0x0
++#define MC_DC36_VALUE	0x0
++#define MC_DC37_VALUE	0x0
++#define MC_DC38_VALUE	0x0
++#define MC_DC39_VALUE	0x0
++#define MC_DC40_VALUE	0x0
++#define MC_DC41_VALUE	0x0
++#define MC_DC42_VALUE	0x0
++#define MC_DC43_VALUE	0x0
++#define MC_DC44_VALUE	0x0
++#define MC_DC45_VALUE	0x500
++#define MC_DC46_VALUE	0x0
+--- /dev/null
++++ b/board/gigaset/sx76x/sx76x.c
+@@ -0,0 +1,66 @@
++/*
++ * This file is released under the terms of GPL v2 and any later version.
++ * See the file COPYING in the root directory of the source tree for details.
++ *
++ * Copyright (C) 2011 Luka Perkov <luka@openwrt.org>
++ */
++
++#include <common.h>
++#include <switch.h>
++#include <asm/gpio.h>
++#include <asm/lantiq/eth.h>
++#include <asm/lantiq/reset.h>
++#include <asm/lantiq/chipid.h>
++
++static void gpio_init(void)
++{
++	/* Activate reset line of ADM6996I switch */
++	gpio_direction_output(19, 0);
++}
++
++int board_early_init_f(void)
++{
++	gpio_init();
++
++	return 0;
++}
++
++int checkboard(void)
++{
++	puts("Board: " CONFIG_BOARD_NAME "\n");
++	ltq_chip_print_info();
++
++	return 0;
++}
++
++static const struct ltq_eth_port_config eth_port_config[] = {
++	/* MAC0: Lantiq ADM6996I switch */
++	{ 0, 0x0, LTQ_ETH_PORT_SWITCH, PHY_INTERFACE_MODE_RMII },
++};
++
++static const struct ltq_eth_board_config eth_board_config = {
++	.ports = eth_port_config,
++	.num_ports = ARRAY_SIZE(eth_port_config),
++};
++
++int board_eth_init(bd_t *bis)
++{
++	return ltq_eth_initialize(&eth_board_config);
++}
++
++static struct switch_device adm6996i_dev = {
++	.name = "adm6996i",
++	.cpu_port = 5,
++	.port_mask = 0xF,
++};
++
++int board_switch_init(void)
++{
++	/* Deactivate reset line of ADM6996I switch */
++	gpio_set_value(19, 1);
++
++	/* ADM6996I needs some time to come out of reset */
++	__udelay(50000);
++
++	return switch_device_register(&adm6996i_dev);
++}
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -447,6 +447,8 @@ pb1000                       mips
+ easy50712_nor                mips        mips32      easy50712           lantiq         danube      easy50712:SYS_BOOT_NOR
+ easy50712_norspl             mips        mips32      easy50712           lantiq         danube      easy50712:SYS_BOOT_NORSPL
+ easy50712_ram                mips        mips32      easy50712           lantiq         danube      easy50712:SYS_BOOT_RAM
++gigasx76x_nor                mips        mips32      sx76x               gigaset        danube      sx76x:SYS_BOOT_NOR
++gigasx76x_ram                mips        mips32      sx76x               gigaset        danube      sx76x:SYS_BOOT_RAM
+ incaip                       mips        mips32      incaip              -              incaip
+ incaip_100MHz                mips        mips32      incaip              -              incaip      incaip:CPU_CLOCK_RATE=100000000
+ incaip_133MHz                mips        mips32      incaip              -              incaip      incaip:CPU_CLOCK_RATE=133000000
+--- /dev/null
++++ b/include/configs/sx76x.h
+@@ -0,0 +1,71 @@
++/*
++ * This file is released under the terms of GPL v2 and any later version.
++ * See the file COPYING in the root directory of the source tree for details.
++ *
++ * Copyright (C) 2011 Luka Perkov <luka@openwrt.org>
++ */
++
++#ifndef __CONFIG_H
++#define __CONFIG_H
++
++#define CONFIG_MACH_TYPE	"GIGASX76X"
++#define CONFIG_IDENT_STRING	" sx76x"
++#define CONFIG_BOARD_NAME	"Gigaset sx76x"
++
++/* Configure SoC */
++#define CONFIG_LTQ_SUPPORT_UART		/* Enable ASC and UART */
++
++#define CONFIG_LTQ_SUPPORT_ETHERNET	/* Enable ethernet */
++
++#define CONFIG_LTQ_SUPPORT_NOR_FLASH	/* Have a parallel NOR flash */
++
++/* Switch devices */
++#define CONFIG_SWITCH_MULTI
++#define CONFIG_SWITCH_ADM6996I
++
++/* Environment */
++#if defined(CONFIG_SYS_BOOT_NOR)
++#define CONFIG_ENV_IS_IN_FLASH
++#define CONFIG_ENV_OVERWRITE
++#define CONFIG_ENV_OFFSET		(256 * 1024)
++#define CONFIG_ENV_SIZE			(8 * 1024)
++#define CONFIG_ENV_SECT_SIZE		(64 * 1024)
++#else
++#define CONFIG_ENV_IS_NOWHERE
++#define CONFIG_ENV_SIZE			(2 * 1024)
++#endif
++
++#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
++
++/* Console */
++#define CONFIG_LTQ_ADVANCED_CONSOLE
++#define CONFIG_BAUDRATE			115200
++#define CONFIG_CONSOLE_ASC		1
++#define CONFIG_CONSOLE_DEV		"ttyLTQ1"
++
++/* Commands */
++#define CONFIG_CMD_PING
++
++/* Pull in default board configs for Lantiq XWAY Danube */
++#include <asm/lantiq/config.h>
++#include <asm/arch/config.h>
++
++/* Compression */
++#define CONFIG_LZMA
++
++/* Auto boot */
++#define CONFIG_BOOTDELAY		2
++
++/* Environment configuration */
++#define CONFIG_BOOTCOMMAND			\
++	"run addeth; bootm ${kernel_addr}"
++
++#define CONFIG_ENV_UPDATE_UBOOT_NOR		\
++	"update-uboot-nor=run load-uboot-nor write-uboot-nor\0"
++
++#define CONFIG_EXTRA_ENV_SETTINGS	\
++	CONFIG_ENV_LANTIQ_DEFAULTS	\
++	CONFIG_ENV_UPDATE_UBOOT_NOR	\
++	"kernel_addr=0xB0040000\0"
++
++#endif /* __CONFIG_H */

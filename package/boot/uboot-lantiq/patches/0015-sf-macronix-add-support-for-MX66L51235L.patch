@@ -1,0 +1,21 @@
+From a2d80b6b91ac63beea31455ce8d136230c030500 Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Wed, 7 Nov 2012 15:14:40 +0100
+Subject: sf: macronix: add support for MX66L51235L
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+
+--- a/drivers/mtd/spi/macronix.c
++++ b/drivers/mtd/spi/macronix.c
+@@ -84,6 +84,11 @@ static const struct macronix_spi_flash_p
+ 		.nr_blocks = 512,
+ 		.name = "MX25L25635E",
+ 	},
++	{
++		.idcode = 0x201A,
++		.nr_blocks = 1024,
++		.name = "MX66L51235L",
++	},
+ };
+ 
+ static __maybe_unused int macronix_set_4byte_mode(struct spi_flash *flash)

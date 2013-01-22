@@ -1,0 +1,44 @@
+From 207662a9270cc542709fbab0d25fbc361b39748c Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Wed, 7 Nov 2012 15:13:49 +0100
+Subject: sf: macronix: add support for 4-byte address mode
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+
+--- a/drivers/mtd/spi/macronix.c
++++ b/drivers/mtd/spi/macronix.c
+@@ -35,6 +35,8 @@
+ 
+ #include "spi_flash_internal.h"
+ 
++#define MX25XX_EN4B		0xb7	/* Enter 4-byte mode */
++
+ struct macronix_spi_flash_params {
+ 	u16 idcode;
+ 	u16 nr_blocks;
+@@ -79,6 +81,13 @@ static const struct macronix_spi_flash_p
+ 	},
+ };
+ 
++static __maybe_unused int macronix_set_4byte_mode(struct spi_flash *flash)
++{
++	struct spi_slave *spi = flash->spi;
++
++	return spi_flash_cmd(spi, MX25XX_EN4B, NULL, 0);
++}
++
+ int spi_flash_probe_macronix(struct spi_flash *flash, u8 *idcode)
+ {
+ 	const struct macronix_spi_flash_params *params;
+@@ -106,6 +115,11 @@ int spi_flash_probe_macronix(struct spi_
+ 	flash->sector_size = 256 * 16 * 16;
+ 	flash->size = flash->sector_size * params->nr_blocks;
+ 
++#ifdef CONFIG_SPI_FLASH_4BYTE_MODE
++	if (flash->size > (1 << 24))
++		flash->set_4byte_mode = macronix_set_4byte_mode;
++#endif
++
+ 	/* Clear BP# bits for read-only flash */
+ 	spi_flash_cmd_write_status(flash, 0);
+ 
