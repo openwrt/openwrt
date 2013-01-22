@@ -1,0 +1,719 @@
+From 73d127565b5a4b19bcaacabc505689ee039f16fd Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Sun, 11 Nov 2012 03:11:38 +0100
+Subject: sf: factor out malloc from SPI flash drivers
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+
+--- a/drivers/mtd/spi/atmel.c
++++ b/drivers/mtd/spi/atmel.c
+@@ -40,18 +40,6 @@ struct atmel_spi_flash_params {
+ 	const char	*name;
+ };
+ 
+-/* spi_flash needs to be first so upper layers can free() it */
+-struct atmel_spi_flash {
+-	struct spi_flash flash;
+-	const struct atmel_spi_flash_params *params;
+-};
+-
+-static inline struct atmel_spi_flash *
+-to_atmel_spi_flash(struct spi_flash *flash)
+-{
+-	return container_of(flash, struct atmel_spi_flash, flash);
+-}
+-
+ static const struct atmel_spi_flash_params atmel_spi_flash_table[] = {
+ 	{
+ 		.idcode1		= 0x22,
+@@ -156,7 +144,8 @@ static int at45_wait_ready(struct spi_fl
+  * Assemble the address part of a command for AT45 devices in
+  * non-power-of-two page size mode.
+  */
+-static void at45_build_address(struct atmel_spi_flash *asf, u8 *cmd, u32 offset)
++static void at45_build_address(const struct atmel_spi_flash_params *params,
++				u8 *cmd, u32 offset)
+ {
+ 	unsigned long page_addr;
+ 	unsigned long byte_addr;
+@@ -167,7 +156,7 @@ static void at45_build_address(struct at
+ 	 * The "extra" space per page is the power-of-two page size
+ 	 * divided by 32.
+ 	 */
+-	page_shift = asf->params->l2_page_size;
++	page_shift = params->l2_page_size;
+ 	page_size = (1 << page_shift) + (1 << (page_shift - 5));
+ 	page_shift++;
+ 	page_addr = offset / page_size;
+@@ -181,11 +170,11 @@ static void at45_build_address(struct at
+ static int dataflash_read_fast_at45(struct spi_flash *flash,
+ 		u32 offset, size_t len, void *buf)
+ {
+-	struct atmel_spi_flash *asf = to_atmel_spi_flash(flash);
++	const struct atmel_spi_flash_params *params = flash->priv;
+ 	u8 cmd[5];
+ 
+ 	cmd[0] = CMD_READ_ARRAY_FAST;
+-	at45_build_address(asf, cmd + 1, offset);
++	at45_build_address(params, cmd + 1, offset);
+ 	cmd[4] = 0x00;
+ 
+ 	return spi_flash_read_common(flash, cmd, sizeof(cmd), buf, len);
+@@ -197,7 +186,7 @@ static int dataflash_read_fast_at45(stru
+ static int dataflash_write_p2(struct spi_flash *flash,
+ 		u32 offset, size_t len, const void *buf)
+ {
+-	struct atmel_spi_flash *asf = to_atmel_spi_flash(flash);
++	const struct atmel_spi_flash_params *params = flash->priv;
+ 	unsigned long page_size;
+ 	u32 addr = offset;
+ 	size_t chunk_len;
+@@ -211,7 +200,7 @@ static int dataflash_write_p2(struct spi
+ 	 * the other is being programmed into main memory.
+ 	 */
+ 
+-	page_size = (1 << asf->params->l2_page_size);
++	page_size = (1 << params->l2_page_size);
+ 
+ 	ret = spi_claim_bus(flash->spi);
+ 	if (ret) {
+@@ -263,7 +252,7 @@ out:
+ static int dataflash_write_at45(struct spi_flash *flash,
+ 		u32 offset, size_t len, const void *buf)
+ {
+-	struct atmel_spi_flash *asf = to_atmel_spi_flash(flash);
++	const struct atmel_spi_flash_params *params = flash->priv;
+ 	unsigned long page_addr;
+ 	unsigned long byte_addr;
+ 	unsigned long page_size;
+@@ -279,7 +268,7 @@ static int dataflash_write_at45(struct s
+ 	 * the other is being programmed into main memory.
+ 	 */
+ 
+-	page_shift = asf->params->l2_page_size;
++	page_shift = params->l2_page_size;
+ 	page_size = (1 << page_shift) + (1 << (page_shift - 5));
+ 	page_shift++;
+ 	page_addr = offset / page_size;
+@@ -338,7 +327,7 @@ out:
+  */
+ static int dataflash_erase_p2(struct spi_flash *flash, u32 offset, size_t len)
+ {
+-	struct atmel_spi_flash *asf = to_atmel_spi_flash(flash);
++	const struct atmel_spi_flash_params *params = flash->priv;
+ 	unsigned long page_size;
+ 
+ 	size_t actual;
+@@ -351,7 +340,7 @@ static int dataflash_erase_p2(struct spi
+ 	 * when possible.
+ 	 */
+ 
+-	page_size = (1 << asf->params->l2_page_size);
++	page_size = (1 << params->l2_page_size);
+ 
+ 	if (offset % page_size || len % page_size) {
+ 		debug("SF: Erase offset/length not multiple of page size\n");
+@@ -397,7 +386,7 @@ out:
+ 
+ static int dataflash_erase_at45(struct spi_flash *flash, u32 offset, size_t len)
+ {
+-	struct atmel_spi_flash *asf = to_atmel_spi_flash(flash);
++	const struct atmel_spi_flash_params *params = flash->priv;
+ 	unsigned long page_addr;
+ 	unsigned long page_size;
+ 	unsigned int page_shift;
+@@ -411,7 +400,7 @@ static int dataflash_erase_at45(struct s
+ 	 * when possible.
+ 	 */
+ 
+-	page_shift = asf->params->l2_page_size;
++	page_shift = params->l2_page_size;
+ 	page_size = (1 << page_shift) + (1 << (page_shift - 5));
+ 	page_shift++;
+ 	page_addr = offset / page_size;
+@@ -458,12 +447,12 @@ out:
+ 	return ret;
+ }
+ 
+-struct spi_flash *spi_flash_probe_atmel(struct spi_slave *spi, u8 *idcode)
++int spi_flash_probe_atmel(struct spi_flash *flash, u8 *idcode)
+ {
+ 	const struct atmel_spi_flash_params *params;
++	struct spi_slave *spi = flash->spi;
+ 	unsigned page_size;
+ 	unsigned int family;
+-	struct atmel_spi_flash *asf;
+ 	unsigned int i;
+ 	int ret;
+ 	u8 status;
+@@ -477,18 +466,11 @@ struct spi_flash *spi_flash_probe_atmel(
+ 	if (i == ARRAY_SIZE(atmel_spi_flash_table)) {
+ 		debug("SF: Unsupported DataFlash ID %02x\n",
+ 				idcode[1]);
+-		return NULL;
+-	}
+-
+-	asf = malloc(sizeof(struct atmel_spi_flash));
+-	if (!asf) {
+-		debug("SF: Failed to allocate memory\n");
+-		return NULL;
++		return 0;
+ 	}
+ 
+-	asf->params = params;
+-	asf->flash.spi = spi;
+-	asf->flash.name = params->name;
++	flash->priv = (void *)params;
++	flash->name = params->name;
+ 
+ 	/* Assuming power-of-two page size initially. */
+ 	page_size = 1 << params->l2_page_size;
+@@ -503,48 +485,44 @@ struct spi_flash *spi_flash_probe_atmel(
+ 		 */
+ 		ret = spi_flash_cmd(spi, CMD_AT45_READ_STATUS, &status, 1);
+ 		if (ret)
+-			goto err;
++			return -1;
+ 
+ 		debug("SF: AT45 status register: %02x\n", status);
+ 
+ 		if (!(status & AT45_STATUS_P2_PAGE_SIZE)) {
+-			asf->flash.read = dataflash_read_fast_at45;
+-			asf->flash.write = dataflash_write_at45;
+-			asf->flash.erase = dataflash_erase_at45;
++			flash->read = dataflash_read_fast_at45;
++			flash->write = dataflash_write_at45;
++			flash->erase = dataflash_erase_at45;
+ 			page_size += 1 << (params->l2_page_size - 5);
+ 		} else {
+-			asf->flash.read = spi_flash_cmd_read_fast;
+-			asf->flash.write = dataflash_write_p2;
+-			asf->flash.erase = dataflash_erase_p2;
++			flash->read = spi_flash_cmd_read_fast;
++			flash->write = dataflash_write_p2;
++			flash->erase = dataflash_erase_p2;
+ 		}
+ 
+-		asf->flash.page_size = page_size;
+-		asf->flash.sector_size = page_size;
++		flash->page_size = page_size;
++		flash->sector_size = page_size;
+ 		break;
+ 
+ 	case DF_FAMILY_AT26F:
+ 	case DF_FAMILY_AT26DF:
+-		asf->flash.read = spi_flash_cmd_read_fast;
+-		asf->flash.write = spi_flash_cmd_write_multi;
+-		asf->flash.erase = spi_flash_cmd_erase;
+-		asf->flash.page_size = page_size;
+-		asf->flash.sector_size = 4096;
++		flash->read = spi_flash_cmd_read_fast;
++		flash->write = spi_flash_cmd_write_multi;
++		flash->erase = spi_flash_cmd_erase;
++		flash->page_size = page_size;
++		flash->sector_size = 4096;
+ 		/* clear SPRL# bit for locked flash */
+-		spi_flash_cmd_write_status(&asf->flash, 0);
++		spi_flash_cmd_write_status(flash, 0);
+ 		break;
+ 
+ 	default:
+ 		debug("SF: Unsupported DataFlash family %u\n", family);
+-		goto err;
++		return -1;
+ 	}
+ 
+-	asf->flash.size = page_size * params->pages_per_block
++	flash->size = page_size * params->pages_per_block
+ 				* params->blocks_per_sector
+ 				* params->nr_sectors;
+ 
+-	return &asf->flash;
+-
+-err:
+-	free(asf);
+-	return NULL;
++	return 1;
+ }
+--- a/drivers/mtd/spi/eon.c
++++ b/drivers/mtd/spi/eon.c
+@@ -29,10 +29,9 @@ static const struct eon_spi_flash_params
+ 	},
+ };
+ 
+-struct spi_flash *spi_flash_probe_eon(struct spi_slave *spi, u8 *idcode)
++int spi_flash_probe_eon(struct spi_flash *flash, u8 *idcode)
+ {
+ 	const struct eon_spi_flash_params *params;
+-	struct spi_flash *flash;
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(eon_spi_flash_table); ++i) {
+@@ -43,16 +42,10 @@ struct spi_flash *spi_flash_probe_eon(st
+ 
+ 	if (i == ARRAY_SIZE(eon_spi_flash_table)) {
+ 		debug("SF: Unsupported EON ID %02x\n", idcode[1]);
+-		return NULL;
++		return 0;
+ 	}
+ 
+-	flash = malloc(sizeof(*flash));
+-	if (!flash) {
+-		debug("SF: Failed to allocate memory\n");
+-		return NULL;
+-	}
+-
+-	flash->spi = spi;
++	flash->priv = (void *)params;
+ 	flash->name = params->name;
+ 
+ 	flash->write = spi_flash_cmd_write_multi;
+@@ -63,5 +56,5 @@ struct spi_flash *spi_flash_probe_eon(st
+ 	flash->size = 256 * 16
+ 	    * params->nr_sectors;
+ 
+-	return flash;
++	return 1;
+ }
+--- a/drivers/mtd/spi/macronix.c
++++ b/drivers/mtd/spi/macronix.c
+@@ -79,10 +79,9 @@ static const struct macronix_spi_flash_p
+ 	},
+ };
+ 
+-struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
++int spi_flash_probe_macronix(struct spi_flash *flash, u8 *idcode)
+ {
+ 	const struct macronix_spi_flash_params *params;
+-	struct spi_flash *flash;
+ 	unsigned int i;
+ 	u16 id = idcode[2] | idcode[1] << 8;
+ 
+@@ -94,16 +93,10 @@ struct spi_flash *spi_flash_probe_macron
+ 
+ 	if (i == ARRAY_SIZE(macronix_spi_flash_table)) {
+ 		debug("SF: Unsupported Macronix ID %04x\n", id);
+-		return NULL;
++		return 0;
+ 	}
+ 
+-	flash = malloc(sizeof(*flash));
+-	if (!flash) {
+-		debug("SF: Failed to allocate memory\n");
+-		return NULL;
+-	}
+-
+-	flash->spi = spi;
++	flash->priv = (void *)params;
+ 	flash->name = params->name;
+ 
+ 	flash->write = spi_flash_cmd_write_multi;
+@@ -116,5 +109,5 @@ struct spi_flash *spi_flash_probe_macron
+ 	/* Clear BP# bits for read-only flash */
+ 	spi_flash_cmd_write_status(flash, 0);
+ 
+-	return flash;
++	return 1;
+ }
+--- a/drivers/mtd/spi/ramtron.c
++++ b/drivers/mtd/spi/ramtron.c
+@@ -69,17 +69,6 @@ struct ramtron_spi_fram_params {
+ 	const char *name;	/* name for display and/or matching */
+ };
+ 
+-struct ramtron_spi_fram {
+-	struct spi_flash flash;
+-	const struct ramtron_spi_fram_params *params;
+-};
+-
+-static inline struct ramtron_spi_fram *to_ramtron_spi_fram(struct spi_flash
+-							     *flash)
+-{
+-	return container_of(flash, struct ramtron_spi_fram, flash);
+-}
+-
+ /*
+  * table describing supported FRAM chips:
+  * chips without RDID command must have the values 0xff for id1 and id2
+@@ -155,18 +144,18 @@ static const struct ramtron_spi_fram_par
+ static int ramtron_common(struct spi_flash *flash,
+ 		u32 offset, size_t len, void *buf, u8 command)
+ {
+-	struct ramtron_spi_fram *sn = to_ramtron_spi_fram(flash);
++	const struct ramtron_spi_fram_params *params = flash->priv;
+ 	u8 cmd[4];
+ 	int cmd_len;
+ 	int ret;
+ 
+-	if (sn->params->addr_len == 3 && sn->params->merge_cmd == 0) {
++	if (params->addr_len == 3 && params->merge_cmd == 0) {
+ 		cmd[0] = command;
+ 		cmd[1] = offset >> 16;
+ 		cmd[2] = offset >> 8;
+ 		cmd[3] = offset;
+ 		cmd_len = 4;
+-	} else if (sn->params->addr_len == 2 && sn->params->merge_cmd == 0) {
++	} else if (params->addr_len == 2 && params->merge_cmd == 0) {
+ 		cmd[0] = command;
+ 		cmd[1] = offset >> 8;
+ 		cmd[2] = offset;
+@@ -230,10 +219,9 @@ static int ramtron_erase(struct spi_flas
+  * nore: we are called here with idcode pointing to the first non-0x7f byte
+  * already!
+  */
+-struct spi_flash *spi_fram_probe_ramtron(struct spi_slave *spi, u8 *idcode)
++int spi_fram_probe_ramtron(struct spi_flash *flash, u8 *idcode)
+ {
+ 	const struct ramtron_spi_fram_params *params;
+-	struct ramtron_spi_fram *sn;
+ 	unsigned int i;
+ #ifdef CONFIG_SPI_FRAM_RAMTRON_NON_JEDEC
+ 	int ret;
+@@ -259,11 +247,11 @@ struct spi_flash *spi_fram_probe_ramtron
+ 		 */
+ 		ret = spi_flash_cmd(spi, CMD_READ_STATUS, &sr, 1);
+ 		if (ret)
+-			return NULL;
++			return 0;
+ 
+ 		/* Bits 5,4,0 are fixed 0 for all devices */
+ 		if ((sr & 0x31) != 0x00)
+-			return NULL;
++			return 0;
+ 		/* now find the device */
+ 		for (i = 0; i < ARRAY_SIZE(ramtron_spi_fram_table); i++) {
+ 			params = &ramtron_spi_fram_table[i];
+@@ -281,23 +269,16 @@ struct spi_flash *spi_fram_probe_ramtron
+ 	/* arriving here means no method has found a device we can handle */
+ 	debug("SF/ramtron: unsupported device id0=%02x id1=%02x id2=%02x\n",
+ 		idcode[0], idcode[1], idcode[2]);
+-	return NULL;
++	return 0;
+ 
+ found:
+-	sn = malloc(sizeof(*sn));
+-	if (!sn) {
+-		debug("SF: Failed to allocate memory\n");
+-		return NULL;
+-	}
++	flash->priv = (void *)params;
++	flash->name = params->name;
+ 
+-	sn->params = params;
+-	sn->flash.spi = spi;
+-	sn->flash.name = params->name;
+-
+-	sn->flash.write = ramtron_write;
+-	sn->flash.read = ramtron_read;
+-	sn->flash.erase = ramtron_erase;
+-	sn->flash.size = params->size;
++	flash->write = ramtron_write;
++	flash->read = ramtron_read;
++	flash->erase = ramtron_erase;
++	flash->size = params->size;
+ 
+-	return &sn->flash;
++	return 1;
+ }
+--- a/drivers/mtd/spi/spansion.c
++++ b/drivers/mtd/spi/spansion.c
+@@ -105,10 +105,9 @@ static const struct spansion_spi_flash_p
+ 	},
+ };
+ 
+-struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode)
++int spi_flash_probe_spansion(struct spi_flash *flash, u8 *idcode)
+ {
+ 	const struct spansion_spi_flash_params *params;
+-	struct spi_flash *flash;
+ 	unsigned int i;
+ 	unsigned short jedec, ext_jedec;
+ 
+@@ -125,16 +124,10 @@ struct spi_flash *spi_flash_probe_spansi
+ 
+ 	if (i == ARRAY_SIZE(spansion_spi_flash_table)) {
+ 		debug("SF: Unsupported SPANSION ID %04x %04x\n", jedec, ext_jedec);
+-		return NULL;
++		return 0;
+ 	}
+ 
+-	flash = malloc(sizeof(*flash));
+-	if (!flash) {
+-		debug("SF: Failed to allocate memory\n");
+-		return NULL;
+-	}
+-
+-	flash->spi = spi;
++	flash->priv = (void *)params;
+ 	flash->name = params->name;
+ 
+ 	flash->write = spi_flash_cmd_write_multi;
+@@ -144,5 +137,5 @@ struct spi_flash *spi_flash_probe_spansi
+ 	flash->sector_size = 256 * params->pages_per_sector;
+ 	flash->size = flash->sector_size * params->nr_sectors;
+ 
+-	return flash;
++	return 1;
+ }
+--- a/drivers/mtd/spi/spi_flash.c
++++ b/drivers/mtd/spi/spi_flash.c
+@@ -296,7 +296,7 @@ int spi_flash_cmd_write_status(struct sp
+ static struct {
+ 	const u8 shift;
+ 	const u8 idcode;
+-	struct spi_flash *(*probe) (struct spi_slave *spi, u8 *idcode);
++	int (*probe) (struct spi_flash *flash, u8 *idcode);
+ } flashes[] = {
+ 	/* Keep it sorted by define name */
+ #ifdef CONFIG_SPI_FLASH_ATMEL
+@@ -343,7 +343,7 @@ struct spi_flash *spi_flash_probe(unsign
+ 		unsigned int max_hz, unsigned int spi_mode)
+ {
+ 	struct spi_slave *spi;
+-	struct spi_flash *flash = NULL;
++	struct spi_flash *flash;
+ 	int ret, i, shift;
+ 	u8 idcode[IDCODE_LEN], *idp;
+ #ifdef CONFIG_NEEDS_MANUAL_RELOC
+@@ -379,6 +379,15 @@ struct spi_flash *spi_flash_probe(unsign
+ 	print_buffer(0, idcode, 1, sizeof(idcode), 0);
+ #endif
+ 
++	flash = malloc(sizeof(*flash));
++	if (!flash) {
++		debug("SF: failed to alloc memory\n");
++		goto err_malloc;
++	}
++
++	memset(flash, 0, sizeof(*flash));
++	flash->spi = spi;
++
+ 	/* count the number of continuation bytes */
+ 	for (shift = 0, idp = idcode;
+ 	     shift < IDCODE_CONT_LEN && *idp == 0x7f;
+@@ -389,12 +398,12 @@ struct spi_flash *spi_flash_probe(unsign
+ 	for (i = 0; i < ARRAY_SIZE(flashes); ++i)
+ 		if (flashes[i].shift == shift && flashes[i].idcode == *idp) {
+ 			/* we have a match, call probe */
+-			flash = flashes[i].probe(spi, idp);
+-			if (flash)
++			ret = flashes[i].probe(flash, idp);
++			if (ret)
+ 				break;
+ 		}
+ 
+-	if (!flash) {
++	if (ret <= 0) {
+ 		printf("SF: Unsupported manufacturer %02x\n", *idp);
+ 		goto err_manufacturer_probe;
+ 	}
+@@ -408,6 +417,8 @@ struct spi_flash *spi_flash_probe(unsign
+ 	return flash;
+ 
+ err_manufacturer_probe:
++	free(flash);
++err_malloc:
+ err_read_id:
+ 	spi_release_bus(spi);
+ err_claim_bus:
+--- a/drivers/mtd/spi/spi_flash_internal.h
++++ b/drivers/mtd/spi/spi_flash_internal.h
+@@ -98,11 +98,11 @@ int spi_flash_cmd_wait_ready(struct spi_
+ int spi_flash_cmd_erase(struct spi_flash *flash, u32 offset, size_t len);
+ 
+ /* Manufacturer-specific probe functions */
+-struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode);
+-struct spi_flash *spi_flash_probe_atmel(struct spi_slave *spi, u8 *idcode);
+-struct spi_flash *spi_flash_probe_eon(struct spi_slave *spi, u8 *idcode);
+-struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode);
+-struct spi_flash *spi_flash_probe_sst(struct spi_slave *spi, u8 *idcode);
+-struct spi_flash *spi_flash_probe_stmicro(struct spi_slave *spi, u8 *idcode);
+-struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode);
+-struct spi_flash *spi_fram_probe_ramtron(struct spi_slave *spi, u8 *idcode);
++int spi_flash_probe_spansion(struct spi_flash *flash, u8 *idcode);
++int spi_flash_probe_atmel(struct spi_flash *flash, u8 *idcode);
++int spi_flash_probe_eon(struct spi_flash *flash, u8 *idcode);
++int spi_flash_probe_macronix(struct spi_flash *flash, u8 *idcode);
++int spi_flash_probe_sst(struct spi_flash *flash, u8 *idcode);
++int spi_flash_probe_stmicro(struct spi_flash *flash, u8 *idcode);
++int spi_flash_probe_winbond(struct spi_flash *flash, u8 *idcode);
++int spi_fram_probe_ramtron(struct spi_flash *flash, u8 *idcode);
+--- a/drivers/mtd/spi/sst.c
++++ b/drivers/mtd/spi/sst.c
+@@ -39,11 +39,6 @@ struct sst_spi_flash_params {
+ 	const char *name;
+ };
+ 
+-struct sst_spi_flash {
+-	struct spi_flash flash;
+-	const struct sst_spi_flash_params *params;
+-};
+-
+ static const struct sst_spi_flash_params sst_spi_flash_table[] = {
+ 	{
+ 		.idcode1 = 0x8d,
+@@ -185,11 +180,9 @@ sst_write_wp(struct spi_flash *flash, u3
+ 	return ret;
+ }
+ 
+-struct spi_flash *
+-spi_flash_probe_sst(struct spi_slave *spi, u8 *idcode)
++int spi_flash_probe_sst(struct spi_flash *flash, u8 *idcode)
+ {
+ 	const struct sst_spi_flash_params *params;
+-	struct sst_spi_flash *stm;
+ 	size_t i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(sst_spi_flash_table); ++i) {
+@@ -200,31 +193,24 @@ spi_flash_probe_sst(struct spi_slave *sp
+ 
+ 	if (i == ARRAY_SIZE(sst_spi_flash_table)) {
+ 		debug("SF: Unsupported SST ID %02x\n", idcode[1]);
+-		return NULL;
+-	}
+-
+-	stm = malloc(sizeof(*stm));
+-	if (!stm) {
+-		debug("SF: Failed to allocate memory\n");
+-		return NULL;
++		return 0;
+ 	}
+ 
+-	stm->params = params;
+-	stm->flash.spi = spi;
+-	stm->flash.name = params->name;
++	flash->priv = (void *)params;
++	flash->name = params->name;
+ 
+-	if (stm->params->flags & SST_FEAT_WP)
+-		stm->flash.write = sst_write_wp;
++	if (params->flags & SST_FEAT_WP)
++		flash->write = sst_write_wp;
+ 	else
+-		stm->flash.write = spi_flash_cmd_write_multi;
+-	stm->flash.erase = spi_flash_cmd_erase;
+-	stm->flash.read = spi_flash_cmd_read_fast;
+-	stm->flash.page_size = 256;
+-	stm->flash.sector_size = 4096;
+-	stm->flash.size = stm->flash.sector_size * params->nr_sectors;
++		flash->write = spi_flash_cmd_write_multi;
++	flash->erase = spi_flash_cmd_erase;
++	flash->read = spi_flash_cmd_read_fast;
++	flash->page_size = 256;
++	flash->sector_size = 4096;
++	flash->size = flash->sector_size * params->nr_sectors;
+ 
+ 	/* Flash powers up read-only, so clear BP# bits */
+-	spi_flash_cmd_write_status(&stm->flash, 0);
++	spi_flash_cmd_write_status(flash, 0);
+ 
+-	return &stm->flash;
++	return 1;
+ }
+--- a/drivers/mtd/spi/stmicro.c
++++ b/drivers/mtd/spi/stmicro.c
+@@ -112,10 +112,10 @@ static const struct stmicro_spi_flash_pa
+ 	},
+ };
+ 
+-struct spi_flash *spi_flash_probe_stmicro(struct spi_slave *spi, u8 * idcode)
++int spi_flash_probe_stmicro(struct spi_flash *flash, u8 * idcode)
+ {
+ 	const struct stmicro_spi_flash_params *params;
+-	struct spi_flash *flash;
++	struct spi_slave *spi = flash->spi;
+ 	unsigned int i;
+ 	u16 id;
+ 
+@@ -123,13 +123,13 @@ struct spi_flash *spi_flash_probe_stmicr
+ 		i = spi_flash_cmd(spi, CMD_M25PXX_RES,
+ 				  idcode, 4);
+ 		if (i)
+-			return NULL;
++			return 0;
+ 		if ((idcode[3] & 0xf0) == 0x10) {
+ 			idcode[0] = 0x20;
+ 			idcode[1] = 0x20;
+ 			idcode[2] = idcode[3] + 1;
+ 		} else
+-			return NULL;
++			return 0;
+ 	}
+ 
+ 	id = ((idcode[1] << 8) | idcode[2]);
+@@ -143,16 +143,10 @@ struct spi_flash *spi_flash_probe_stmicr
+ 
+ 	if (i == ARRAY_SIZE(stmicro_spi_flash_table)) {
+ 		debug("SF: Unsupported STMicro ID %04x\n", id);
+-		return NULL;
++		return 0;
+ 	}
+ 
+-	flash = malloc(sizeof(*flash));
+-	if (!flash) {
+-		debug("SF: Failed to allocate memory\n");
+-		return NULL;
+-	}
+-
+-	flash->spi = spi;
++	flash->priv = (void *)params;
+ 	flash->name = params->name;
+ 
+ 	flash->write = spi_flash_cmd_write_multi;
+@@ -162,5 +156,5 @@ struct spi_flash *spi_flash_probe_stmicr
+ 	flash->sector_size = 256 * params->pages_per_sector;
+ 	flash->size = flash->sector_size * params->nr_sectors;
+ 
+-	return flash;
++	return 1;
+ }
+--- a/drivers/mtd/spi/winbond.c
++++ b/drivers/mtd/spi/winbond.c
+@@ -69,10 +69,9 @@ static const struct winbond_spi_flash_pa
+ 	},
+ };
+ 
+-struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
++int spi_flash_probe_winbond(struct spi_flash *flash, u8 *idcode)
+ {
+ 	const struct winbond_spi_flash_params *params;
+-	struct spi_flash *flash;
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(winbond_spi_flash_table); i++) {
+@@ -84,16 +83,10 @@ struct spi_flash *spi_flash_probe_winbon
+ 	if (i == ARRAY_SIZE(winbond_spi_flash_table)) {
+ 		debug("SF: Unsupported Winbond ID %02x%02x\n",
+ 				idcode[1], idcode[2]);
+-		return NULL;
++		return 0;
+ 	}
+ 
+-	flash = malloc(sizeof(*flash));
+-	if (!flash) {
+-		debug("SF: Failed to allocate memory\n");
+-		return NULL;
+-	}
+-
+-	flash->spi = spi;
++	flash->priv = (void *)params;
+ 	flash->name = params->name;
+ 
+ 	flash->write = spi_flash_cmd_write_multi;
+@@ -103,5 +96,5 @@ struct spi_flash *spi_flash_probe_winbon
+ 	flash->sector_size = 4096;
+ 	flash->size = 4096 * 16 * params->nr_blocks;
+ 
+-	return flash;
++	return 1;
+ }
+--- a/include/spi_flash.h
++++ b/include/spi_flash.h
+@@ -31,6 +31,7 @@ struct spi_flash {
+ 	struct spi_slave *spi;
+ 
+ 	const char	*name;
++	void		*priv;
+ 
+ 	/* Total flash size */
+ 	u32		size;

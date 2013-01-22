@@ -1,0 +1,133 @@
+From 7f6ded11965b09daf6da44d4fa98da17b9fba36c Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Tue, 6 Nov 2012 19:41:26 +0100
+Subject: sf: add MTD layer driver for SPI flash devices
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+
+--- a/drivers/mtd/spi/Makefile
++++ b/drivers/mtd/spi/Makefile
+@@ -30,6 +30,7 @@ COBJS-$(CONFIG_SPL_SPI_LOAD)	+= spi_spl_
+ endif
+ 
+ COBJS-$(CONFIG_SPI_FLASH)	+= spi_flash.o
++COBJS-$(CONFIG_SPI_FLASH_MTD)	+= spi_flash_mtd.o
+ COBJS-$(CONFIG_SPI_FLASH_ATMEL)	+= atmel.o
+ COBJS-$(CONFIG_SPI_FLASH_EON)	+= eon.o
+ COBJS-$(CONFIG_SPI_FLASH_MACRONIX)	+= macronix.o
+--- a/drivers/mtd/spi/spi_flash_internal.h
++++ b/drivers/mtd/spi/spi_flash_internal.h
+@@ -122,6 +122,9 @@ static inline int spi_flash_set_4byte_mo
+ }
+ #endif
+ 
++/* SPI flash MTD adapter init */
++int spi_flash_mtd_init(struct spi_flash *flash);
++
+ /* Manufacturer-specific probe functions */
+ int spi_flash_probe_spansion(struct spi_flash *flash, u8 *idcode);
+ int spi_flash_probe_atmel(struct spi_flash *flash, u8 *idcode);
+--- /dev/null
++++ b/drivers/mtd/spi/spi_flash_mtd.c
+@@ -0,0 +1,101 @@
++/*
++ * (C) Copyright 2012 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++ *
++ * MTD layer driver for SPI flash devices
++ *
++ * This file is released under the terms of GPL v2 and any later version.
++ * See the file COPYING in the root directory of the source tree for details.
++ */
++
++#include <common.h>
++#include <malloc.h>
++#include <asm/errno.h>
++#include <linux/mtd/mtd.h>
++#include <spi_flash.h>
++
++static struct mtd_info sf_mtd_info;
++static char sf_mtd_name[8];
++
++static int spi_flash_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
++{
++	struct spi_flash *flash = mtd->priv;
++	int err;
++
++	instr->state = MTD_ERASING;
++
++	err = spi_flash_erase(flash, instr->addr, instr->len);
++	if (err) {
++		instr->state = MTD_ERASE_FAILED;
++		instr->fail_addr = MTD_FAIL_ADDR_UNKNOWN;
++		return -EIO;
++	}
++
++	instr->state = MTD_ERASE_DONE;
++	mtd_erase_callback(instr);
++
++	return 0;
++}
++
++static int spi_flash_mtd_read(struct mtd_info *mtd, loff_t from, size_t len,
++	size_t *retlen, u_char *buf)
++{
++	struct spi_flash *flash = mtd->priv;
++	int err;
++
++	err = spi_flash_read(flash, from, len, buf);
++	if (!err)
++		*retlen = len;
++
++	return err;
++}
++
++static int spi_flash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len,
++	size_t *retlen, const u_char *buf)
++{
++	struct spi_flash *flash = mtd->priv;
++	int err;
++
++	err = spi_flash_write(flash, to, len, buf);
++	if (!err)
++		*retlen = len;
++
++	return err;
++}
++
++static void spi_flash_mtd_sync(struct mtd_info *mtd)
++{
++}
++
++static int spi_flash_mtd_number(void)
++{
++#ifdef CONFIG_SYS_MAX_FLASH_BANKS
++	return CONFIG_SYS_MAX_FLASH_BANKS;
++#else
++	return 0;
++#endif
++}
++
++int spi_flash_mtd_init(struct spi_flash *flash)
++{
++	memset(&sf_mtd_info, 0, sizeof(sf_mtd_info));
++	sprintf(sf_mtd_name, "nor%d", spi_flash_mtd_number());
++
++	sf_mtd_info.name = sf_mtd_name;
++	sf_mtd_info.type = MTD_NORFLASH;
++	sf_mtd_info.flags = MTD_CAP_NORFLASH;
++	sf_mtd_info.writesize = 1;
++
++	sf_mtd_info.erase = spi_flash_mtd_erase;
++	sf_mtd_info.read = spi_flash_mtd_read;
++	sf_mtd_info.write = spi_flash_mtd_write;
++	sf_mtd_info.sync = spi_flash_mtd_sync;
++
++	sf_mtd_info.size = flash->size;
++	sf_mtd_info.priv = flash;
++
++	/* Only uniform flash devices for now */
++	sf_mtd_info.numeraseregions = 0;
++	sf_mtd_info.erasesize = flash->sector_size;
++
++	return add_mtd_device(&sf_mtd_info);
++}

@@ -1,0 +1,23 @@
+From bff335ac524843bc90163c3b231091a5016f8670 Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Wed, 7 Nov 2012 15:07:54 +0100
+Subject: sf: spansion: add support for S25FL512S
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+
+--- a/drivers/mtd/spi/spansion.c
++++ b/drivers/mtd/spi/spansion.c
+@@ -114,6 +114,13 @@ static const struct spansion_spi_flash_p
+ 		.nr_sectors = 128,
+ 		.name = "S25FL256S_256K",
+ 	},
++	{
++		.idcode1 = 0x0220,
++		.idcode2 = 0x4d00,
++		.pages_per_sector = 1024,
++		.nr_sectors = 256,
++		.name = "S25FL512S_256K",
++	},
+ };
+ 
+ static __maybe_unused int spansion_set_4byte_mode(struct spi_flash *flash)

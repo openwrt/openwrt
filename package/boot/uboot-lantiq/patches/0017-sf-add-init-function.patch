@@ -1,0 +1,57 @@
+From aa9d5d64ca6441cb24e22dc3c1f707da62da2887 Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Tue, 6 Nov 2012 19:35:17 +0100
+Subject: sf: add init function
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+
+--- a/drivers/mtd/spi/spi_flash.c
++++ b/drivers/mtd/spi/spi_flash.c
+@@ -482,3 +482,36 @@ void spi_flash_free(struct spi_flash *fl
+ 	spi_flash_free_spl(flash);
+ 	free(flash);
+ }
++
++#ifdef CONFIG_SPI_FLASH_MTD
++static int spi_flash_mtd_register(void)
++{
++	struct spi_flash *flash;
++	int err;
++
++	flash = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
++			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
++	if (!flash)
++		return -1;
++
++	err = spi_flash_mtd_init(flash);
++	if (err)
++		spi_flash_free(flash);
++
++	return err;
++}
++#else
++static int spi_flash_mtd_register(void)
++{
++	return 0;
++}
++#endif
++
++int spi_flash_init(void)
++{
++	int err;
++
++	err = spi_flash_mtd_register();
++
++	return err;
++}
+--- a/include/spi_flash.h
++++ b/include/spi_flash.h
+@@ -51,6 +51,8 @@ struct spi_flash {
+ #endif
+ };
+ 
++int spi_flash_init(void);
++
+ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
+ 		unsigned int max_hz, unsigned int spi_mode);
+ void spi_flash_free(struct spi_flash *flash);
