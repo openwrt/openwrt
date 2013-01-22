@@ -193,7 +193,7 @@ network_get_prefix6() {
 
 	__network_parse_ifstatus "$__iface" || return 1
 	__network_export __mask "${__iface}_prefix6_mask" || return 1
-	__network_export __var "${__iface}_prefix6_address" "/$__mask"
+	__network_export "$__var" "${__iface}_prefix6_address" "/$__mask"
 	return $?
 }
 
