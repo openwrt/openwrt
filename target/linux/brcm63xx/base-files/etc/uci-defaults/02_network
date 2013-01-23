@@ -14,38 +14,86 @@ ucidef_set_interface_loopback
 
 case "$board_name" in
 
-96328avng |\
-96328A-1241N |\
-96328A-1441N1 |\
-963281TAN |\
-963281T_TEF |\
-96348A-122 |\
+96348W3 |\
 96358-502V |\
-CT6373-1 |\
-AW4339U |\
-CPVA642 |\
-CT536_CT5621 |\
-D-4P-W |\
-"F@ST2604" |\
-HW556* |\
-NB6 |\
-SPW303V |\
-SPW500V |\
-V2110 |\
-96348W3)
+SPW500V)
 	ucidef_set_interface_lan "eth0"
 	;;
 
-AW4139)
+96338GW |\
+96338W |\
+96338W2_E7T |\
+96348A-122 |\
+96348W3 |\
+CPVA642 |\
+CT536_CT5621 |\
+CT6373-1 |\
+D-4P-W |\
+"F@ST2604" |\
+RTA1320_16M |\
+RTA770BW |\
+V2110)
+	ucidef_set_interface_lan "eth0"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4 5"
+	;;
+
+96348GW |\
+96348GW-10 |\
+96348GW-11 |\
+96348GW-A |\
+96358VW |\
+96358VW2 |\
+AGPF-S0 |\
+"CPVA502+" |\
+DV201AMR |\
+DWV-S0 |\
+"F@ST2404" |\
+HW553 |\
+MAGIC |\
+RTA1025W_16 |\
+V2500V_BB)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "eth1" "1" "1"
+	ucidef_add_switch_vlan "eth1" "1" "0 1 2 3 4 5"
+	;;
+
+AW4139 |\
+HW556*)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4 5t"
 	;;
 
+NB4-* |\
 DVG3810BN)
 	ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 	ucidef_add_switch "eth1" "1" "1"
 	ucidef_add_switch_vlan "eth1" "1" "0 1 2 3 4 5t"
+	;;
+
+96328avng |\
+96328A-1241N |\
+96328A-1441N1 |\
+963281TAN |\
+963281T_TEF |\
+96368MVNgr)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 8t"
+	;;
+
+96368MVWG)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "1 2 4 5 8t"
+	;;
+
+NB6)
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 9t"
+	ucidef_add_switch_vlan "switch0" "2" "0 9t"
 	;;
 
 *)
