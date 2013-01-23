@@ -1,4 +1,7 @@
 #!/bin/sh
+# Don't override existing settings
+uci get network.globals && exit 0
+
 uci -q batch <<-EOF >/dev/null
 	set network.globals=globals
 	set network.globals.ula_prefix=auto
