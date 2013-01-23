@@ -9,7 +9,6 @@ define Profile/GW6X00
   NAME:=Tecom GW6X00
   PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-usb-storage \
 	kmod-fs-ext4 kmod-nls-cp437 kmod-nls-iso8859-1 e2fsprogs \
-	kmod-bcm63xx-spi \
 	kmod-ipt-nathelper-extra wlc
 endef
 
