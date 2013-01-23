@@ -167,8 +167,8 @@ ap121_mtdlayout_2M=mtdparts=spi0.0:64k(u-boot)ro,1216k(rootfs),704k(kernel),64k(
 ap121_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
 ap135_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14528k(rootfs),1408k(kernel),64k(mib0),64k(art)ro,7744k@0x50000(firmware)
 ap136_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(mib0),64k(art)ro,7744k@0x50000(firmware)
-cameo7240_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,960k(kernel),2752k(rootfs),64k(mac)ro,64k(art)ro,3712k@0x40000(firmware)
-cameo913x_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,960k(kernel),2880k(rootfs),64k(art)ro,3840k@0x30000(firmware)
+cameo7240_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,1024k(kernel),2688k(rootfs),64k(mac)ro,64k(art)ro,3712k@0x40000(firmware)
+cameo913x_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,1024k(kernel),2752k(rootfs),64k(art)ro,3840k@0x30000(firmware)
 cameo933x_mtdlayout=mtdparts=spi0.0:64k(u-boot)ro,64k(art)ro,64k(mac)ro,64k(nvram)ro,192k(language)ro,896k(kernel),2752k(rootfs),3648k@0x70000(firmware)
 cap4200ag_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe),64k(art),13632k@0xa0000(firmware)
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
@@ -178,11 +178,11 @@ ew-dorin_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),1024k(kerne
 dlrtdev_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,640k(certs),960k(unknown)ro,6208k@0x50000(firmware),64k@0x7f0000(caldata_copy)
 dlrtdev_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),6544k(rootfs),640k(certs),64k(caldata)ro,7168k@0x50000(firmware),64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
 pb92_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
-planex_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,960k(kernel),6784k(rootfs),128k(art)ro,7744k@0x50000(firmware)
+planex_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6656k(rootfs),128k(art)ro,7744k@0x50000(firmware)
 ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6528k(rootfs),256k(cfg)ro,64k(EEPROM)ro,7552k@0x50000(firmware)
 uap_pro_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1536k(kernel),14208k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
 ubdev_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6464k(rootfs),64k(certs),256k(cfg)ro,64k(EEPROM)ro,7488k@0x50000(firmware)
-whrhpg300n_mtdlayout=mtdparts=spi0.0:248k(u-boot)ro,8k(u-boot-env)ro,960k(kernel),2816k(rootfs),64k(art)ro,3712k@0x40000(firmware)
+whrhpg300n_mtdlayout=mtdparts=spi0.0:248k(u-boot)ro,8k(u-boot-env)ro,1024k(kernel),2752k(rootfs),64k(art)ro,3712k@0x40000(firmware)
 wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
 wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),14848k(rootfs),64k(art)ro,15872k@0x70000(firmware)
 wndr4300_mtdlayout=mtdparts=ar934x-nfc:256k(u-boot)ro,256k(u-boot-env)ro,256k(caldata),512k(pot),2048k(language),512k(config),3072k(traffic_meter),1152k(kernel),24448k(rootfs),25600k@0x6c0000(firmware),256k(caldata_backup),-(reserved)
@@ -284,7 +284,7 @@ endef
 
 define Image/Build/WHRHPG300N
 	$(call MkuImageLzma,$(2),$(3) $(4))
-	$(call Sysupgrade/KRuImage,$(1),$(2),983040,2883584)
+	$(call Sysupgrade/KRuImage,$(1),$(2),1048576,2818048)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
@@ -329,7 +329,7 @@ define Image/Build/CameoHornet
 endef
 
 define Image/Build/Cameo913x
-	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo913x_mtdlayout),983040,2949120,$(4))
+	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo913x_mtdlayout),1048576,2883584,$(4))
 endef
 
 define Image/Build/Cameo913x/initramfs
@@ -337,7 +337,7 @@ define Image/Build/Cameo913x/initramfs
 endef
 
 define Image/Build/Cameo7240
-	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo7240_mtdlayout),983040,2818048,$(4))
+	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo7240_mtdlayout),1048576,2752512,$(4))
 endef
 
 define Image/Build/Cameo7240/initramfs
@@ -473,7 +473,7 @@ define Image/Build/Planex
 		dd if=$(KDIR_TMP)/vmlinux-$(2).uImage bs=8k count=1 conv=sync; \
 		dd if=$(KDIR_TMP)/vmlinux-$(2).okli; \
 	) > $(KDIR_TMP)/kernel-$(2).bin
-	$(call Sysupgrade/KR,$(1),$(KDIR_TMP)/kernel-$(2).bin,983040,6815744,$(2))
+	$(call Sysupgrade/KR,$(1),$(KDIR_TMP)/kernel-$(2).bin,1048576,6750208,$(2))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkplanexfw \
 			-B $(2) \
