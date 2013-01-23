@@ -22,7 +22,7 @@
  static struct board_info board;
  
  /*
-@@ -709,6 +717,586 @@ static struct board_info __initdata boar
+@@ -709,6 +717,596 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -77,6 +77,8 @@
 +	},
 +
 +	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},
@@ -188,6 +190,8 @@
 +	},
 +
 +	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},
@@ -299,6 +303,8 @@
 +	},
 +
 +	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},
@@ -410,6 +416,8 @@
 +	},
 +
 +	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},
@@ -516,6 +524,8 @@
 +	},
 +
 +	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},

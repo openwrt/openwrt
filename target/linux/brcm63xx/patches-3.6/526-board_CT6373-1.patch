@@ -14,7 +14,7 @@
  static struct board_info board;
  
  /*
-@@ -2264,6 +2271,111 @@ static struct board_info __initdata boar
+@@ -2264,6 +2271,113 @@ static struct board_info __initdata boar
  	.num_spis = ARRAY_SIZE(nb4_spi_devices),
  };
  
@@ -64,6 +64,8 @@
 +
 +	.has_enet1			= 1,
 +	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},
