@@ -28,7 +28,7 @@
  
 --- a/drivers/tty/serial/8250/8250.c
 +++ b/drivers/tty/serial/8250/8250.c
-@@ -308,9 +308,9 @@ static void default_serial_dl_write(stru
+@@ -314,9 +314,9 @@ static void default_serial_dl_write(stru
  	serial_out(up, UART_DLM, value >> 8 & 0xff);
  }
  
@@ -40,7 +40,7 @@
  static const u8 au_io_in_map[] = {
  	[UART_RX]  = 0,
  	[UART_IER] = 2,
-@@ -489,7 +489,7 @@ static void set_io_from_upio(struct uart
+@@ -495,7 +495,7 @@ static void set_io_from_upio(struct uart
  		break;
  #endif
  
@@ -49,7 +49,7 @@
  	case UPIO_AU:
  		p->serial_in = au_serial_in;
  		p->serial_out = au_serial_out;
-@@ -701,22 +701,19 @@ static int size_fifo(struct uart_8250_po
+@@ -707,22 +707,19 @@ static int size_fifo(struct uart_8250_po
   */
  static unsigned int autoconfig_read_divisor_id(struct uart_8250_port *p)
  {
@@ -78,7 +78,7 @@
  	serial_out(p, UART_LCR, old_lcr);
  
  	return id;
-@@ -842,7 +839,7 @@ static int broken_efr(struct uart_8250_p
+@@ -848,7 +845,7 @@ static int broken_efr(struct uart_8250_p
  	/*
  	 * Exar ST16C2550 "A2" devices incorrectly detect as
  	 * having an EFR, and report an ID of 0x0201.  See

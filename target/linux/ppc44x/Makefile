@@ -13,7 +13,7 @@ FEATURES:=squashfs broken
 CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=440
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.7.3
+LINUX_VERSION:=3.7.4
 
 include $(INCLUDE_DIR)/target.mk
 
