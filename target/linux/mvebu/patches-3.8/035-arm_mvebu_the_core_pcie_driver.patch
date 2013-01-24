@@ -333,7 +333,7 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 +	return 1;
 +}
 +
-+static void __devinit rc_pci_fixup(struct pci_dev *dev)
++static void rc_pci_fixup(struct pci_dev *dev)
 +{
 +	/*
 +	 * Prevent enumeration of root complex.
