@@ -265,7 +265,7 @@
  
  static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_REGIONS] __initdata_memblock;
  static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_REGIONS] __initdata_memblock;
-@@ -342,6 +343,8 @@ static void __init_memblock memblock_ins
+@@ -343,6 +344,8 @@ static void __init_memblock memblock_ins
  	memblock_set_region_node(rgn, nid);
  	type->cnt++;
  	type->total_size += size;
