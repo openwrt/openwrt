@@ -288,7 +288,7 @@
  #include <asm/uaccess.h>
  
  #include <linux/proc_fs.h>
-@@ -851,10 +852,10 @@ static void tcp_v6_send_response(struct
+@@ -851,10 +852,10 @@ static void tcp_v6_send_response(struct 
  	topt = (__be32 *)(t1 + 1);
  
  	if (ts) {
@@ -415,7 +415,7 @@
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
  		fl6.flowi6_mark = skb->mark;
  
-@@ -1256,7 +1256,7 @@ static int ip6gre_header(struct sk_buff
+@@ -1256,7 +1256,7 @@ static int ip6gre_header(struct sk_buff 
  	struct ipv6hdr *ipv6h = (struct ipv6hdr *)skb_push(skb, t->hlen);
  	__be16 *p = (__be16 *)(ipv6h+1);
  

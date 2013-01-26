@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -634,7 +634,7 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -630,7 +630,7 @@ static int ehci_run (struct usb_hcd *hcd
  		"USB %x.%x started, EHCI %x.%02x%s\n",
  		((ehci->sbrn & 0xf0)>>4), (ehci->sbrn & 0x0f),
  		temp >> 8, temp & 0xff,
@@ -31,7 +31,7 @@
  			/*
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -196,6 +196,7 @@ struct ehci_hcd {			/* one per controlle
+@@ -200,6 +200,7 @@ struct ehci_hcd {			/* one per controlle
  	unsigned		use_dummy_qh:1;	/* AMD Frame List table quirk*/
  	unsigned		has_synopsys_hc_bug:1; /* Synopsys HC */
  	unsigned		frame_index_bug:1; /* MosChip (AKA NetMos) */

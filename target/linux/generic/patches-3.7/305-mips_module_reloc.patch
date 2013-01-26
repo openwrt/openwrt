@@ -3,7 +3,7 @@
 @@ -90,8 +90,13 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
  cflags-y			+= -msoft-float
- LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
+ LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib --gc-sections
 +ifdef CONFIG_64BIT
  KBUILD_AFLAGS_MODULE		+= -mlong-calls
  KBUILD_CFLAGS_MODULE		+= -mlong-calls
@@ -12,7 +12,7 @@
 +KBUILD_CFLAGS_MODULE		+= -mno-long-calls
 +endif
  
- cflags-y += -ffreestanding
+ KBUILD_CFLAGS_KERNEL		+= -ffunction-sections -fdata-sections
  
 --- a/arch/mips/include/asm/module.h
 +++ b/arch/mips/include/asm/module.h
