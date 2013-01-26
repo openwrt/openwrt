@@ -1,0 +1,50 @@
+--- a/drivers/bcma/driver_gpio.c
++++ b/drivers/bcma/driver_gpio.c
+@@ -73,6 +73,16 @@ static void bcma_gpio_free(struct gpio_c
+ 	bcma_chipco_gpio_pullup(cc, 1 << gpio, 0);
+ }
+ 
++static int bcma_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
++{
++	struct bcma_drv_cc *cc = bcma_gpio_get_cc(chip);
++
++	if (cc->core->bus->hosttype == BCMA_HOSTTYPE_SOC)
++		return bcma_core_irq(cc->core);
++	else
++		return -EINVAL;
++}
++
+ int bcma_gpio_init(struct bcma_drv_cc *cc)
+ {
+ 	struct gpio_chip *chip = &cc->gpio;
+@@ -85,6 +95,7 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+ 	chip->set		= bcma_gpio_set_value;
+ 	chip->direction_input	= bcma_gpio_direction_input;
+ 	chip->direction_output	= bcma_gpio_direction_output;
++	chip->to_irq		= bcma_gpio_to_irq;
+ 	chip->ngpio		= 16;
+ 	/* There is just one SoC in one device and its GPIO addresses should be
+ 	 * deterministic to address them more easily. The other buses could get
+--- a/include/linux/bcma/bcma_driver_mips.h
++++ b/include/linux/bcma/bcma_driver_mips.h
+@@ -42,13 +42,18 @@ struct bcma_drv_mips {
+ #ifdef CONFIG_BCMA_DRIVER_MIPS
+ extern void bcma_core_mips_init(struct bcma_drv_mips *mcore);
+ extern void bcma_core_mips_early_init(struct bcma_drv_mips *mcore);
++
++extern unsigned int bcma_core_irq(struct bcma_device *core);
+ #else
+ static inline void bcma_core_mips_init(struct bcma_drv_mips *mcore) { }
+ static inline void bcma_core_mips_early_init(struct bcma_drv_mips *mcore) { }
++
++static inline unsigned int bcma_core_irq(struct bcma_device *core)
++{
++	return 0;
++}
+ #endif
+ 
+ extern u32 bcma_cpu_clock(struct bcma_drv_mips *mcore);
+ 
+-extern unsigned int bcma_core_irq(struct bcma_device *core);
+-
+ #endif /* LINUX_BCMA_DRIVER_MIPS_H_ */
