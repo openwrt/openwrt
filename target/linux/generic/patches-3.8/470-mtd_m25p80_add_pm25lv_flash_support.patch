@@ -27,7 +27,7 @@
  	/* Spansion -- single (large) sector size only, at least
  	 * for the chips listed here (without boot sectors).
  	 */
-@@ -909,6 +915,9 @@ static int m25p_probe(struct spi_device
+@@ -909,6 +915,9 @@ static int m25p_probe(struct spi_device 
  	if (info->flags & SECT_4K) {
  		flash->erase_opcode = OPCODE_BE_4K;
  		flash->mtd.erasesize = 4096;

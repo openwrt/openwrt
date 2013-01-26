@@ -1,6 +1,6 @@
 --- a/init/main.c
 +++ b/init/main.c
-@@ -878,7 +878,7 @@ static void __init kernel_init_freeable(
+@@ -878,7 +878,7 @@ static noinline void __init kernel_init_
  
  	/* Open the /dev/console on the rootfs, this should never fail */
  	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)

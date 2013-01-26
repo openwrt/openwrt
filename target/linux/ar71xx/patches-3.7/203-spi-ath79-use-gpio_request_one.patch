@@ -32,19 +32,18 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 -		status = gpio_request(cdata->gpio, dev_name(&spi->dev));
 -		if (status)
 -			return status;
--
++		flags = GPIOF_DIR_OUT;
++		if (spi->mode & SPI_CS_HIGH)
++			flags |= GPIOF_INIT_HIGH;
++		else
++			flags |= GPIOF_INIT_LOW;
+ 
 -		status = gpio_direction_output(cdata->gpio,
 -					       spi->mode & SPI_CS_HIGH);
 -		if (status) {
 -			gpio_free(cdata->gpio);
 -			return status;
 -		}
-+		flags = GPIOF_DIR_OUT;
-+		if (spi->mode & SPI_CS_HIGH)
-+			flags |= GPIOF_INIT_HIGH;
-+		else
-+			flags |= GPIOF_INIT_LOW;
-+
 +		status = gpio_request_one(cdata->gpio, flags,
 +					  dev_name(&spi->dev));
  	}
