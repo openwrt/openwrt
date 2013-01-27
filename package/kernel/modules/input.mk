@@ -163,7 +163,7 @@ define KernelPackage/input-matrixkmap
    SUBMENU:=$(INPUT_MODULES_MENU)
    TITLE:=Input matrix devices support
    KCONFIG:=CONFIG_INPUT_MATRIXKMAP
-   DEPENDS:=@LINUX_3_6||@LINUX_3_7
+   DEPENDS:=@!LINUX_3_3
    FILES:=$(LINUX_DIR)/drivers/input/matrix-keymap.ko
    AUTOLOAD:=$(call AutoLoad,20,matrix-keymap)
    $(call AddDepends/input)
