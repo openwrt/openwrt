@@ -8,7 +8,7 @@ menuconfig B53
 
 config B53_SPI_DRIVER
 	tristate "B53 SPI connected switch driver"
-	depends on B53
+	depends on B53 && SPI
 	help
 	  Select to enable support for registering switches configured through SPI.
 
