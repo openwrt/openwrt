@@ -112,15 +112,22 @@ $(eval $(call KernelPackage,usb-ohci,1))
 
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
-  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx
+  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx +(PCI_SUPPORT&&LINUX_3_8):usb2-pci
   KCONFIG:=CONFIG_USB_EHCI_HCD \
 	CONFIG_USB_EHCI_ATH79=y \
 	CONFIG_USB_EHCI_BCM63XX=y \
 	CONFIG_USB_OCTEON_EHCI=y \
 	CONFIG_USB_EHCI_FSL=n \
 	CONFIG_USB_EHCI_HCD_PLATFORM=y
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.8.0)),1)
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/host/ehci-hcd.ko \
+	$(LINUX_DIR)/drivers/usb/host/ehci-platform.ko
+  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform,1)
+else
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,40,ehci-hcd,1)
+endif
   $(call AddDepends/usb)
 endef
 
@@ -129,6 +136,22 @@ define KernelPackage/usb2/description
 endef
 
 $(eval $(call KernelPackage,usb2))
+
+
+define KernelPackage/usb2-pci
+  TITLE:=Support for PCI USB2 controllers
+  DEPENDS:=@PCI_SUPPORT @LINUX_3_8
+  KCONFIG:=CONFIG_USB_EHCI_PCI
+  FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-pci.ko
+  AUTOLOAD:=$(call AutoLoad,40,ehci-pci,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb2-pci/description
+ Kernel support for PCI USB2 (EHCI) controllers
+endef
+
+$(eval $(call KernelPackage,usb2-pci))
 
 
 define KernelPackage/usb-acm
