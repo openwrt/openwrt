@@ -602,3 +602,37 @@ define KernelPacakge/mvsdio/description
 endef
 
 $(eval $(call KernelPackage,mvsdio))
+
+
+define KernelPackage/pps
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PPS support
+  KCONFIG:=CONFIG_PPS
+  FILES:=$(LINUX_DIR)/drivers/pps/pps_core.ko
+  AUTOLOAD:=$(call AutoLoad,20,pps_core)
+endef
+
+define KernelPacakge/pps/description
+  PPS (Pulse Per Second) is a special pulse provided by some GPS
+  antennae. Userland can use it to get a high-precision time
+  reference.
+endef
+
+$(eval $(call KernelPackage,pps))
+
+
+define KernelPackage/ptp
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PTP clock support
+  DEPENDS:=+kmod-pps
+  KCONFIG:=CONFIG_PTP_1588_CLOCK
+  FILES:=$(LINUX_DIR)/drivers/ptp/ptp.ko
+  AUTOLOAD:=$(call AutoLoad,25,ptp)
+endef
+
+define KernelPacakge/ptp/description
+  The IEEE 1588 standard defines a method to precisely
+  synchronize distributed clocks over Ethernet networks.
+endef
+
+$(eval $(call KernelPackage,ptp))
