@@ -308,7 +308,7 @@ static void gpio_keys_polled_poll(struct work_struct *work)
 	gpio_keys_polled_queue_work(bdev);
 }
 
-static void __devinit gpio_keys_polled_open(struct gpio_keys_polled_dev *bdev)
+static void gpio_keys_polled_open(struct gpio_keys_polled_dev *bdev)
 {
 	struct gpio_keys_platform_data *pdata = bdev->pdata;
 	int i;
@@ -324,7 +324,7 @@ static void __devinit gpio_keys_polled_open(struct gpio_keys_polled_dev *bdev)
 }
 
 #ifdef CONFIG_OF
-static struct gpio_keys_platform_data * __devinit
+static struct gpio_keys_platform_data *
 gpio_keys_polled_get_devtree_pdata(struct device *dev)
 {
 	struct device_node *node, *pp;
@@ -417,7 +417,7 @@ gpio_keys_polled_get_devtree_pdata(struct device *dev)
 }
 #endif
 
-static void __devexit gpio_keys_polled_close(struct gpio_keys_polled_dev *bdev)
+static void gpio_keys_polled_close(struct gpio_keys_polled_dev *bdev)
 {
 	struct gpio_keys_platform_data *pdata = bdev->pdata;
 
@@ -427,7 +427,7 @@ static void __devexit gpio_keys_polled_close(struct gpio_keys_polled_dev *bdev)
 		pdata->disable(bdev->dev);
 }
 
-static int __devinit gpio_keys_polled_probe(struct platform_device *pdev)
+static int gpio_keys_polled_probe(struct platform_device *pdev)
 {
 	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
 	struct device *dev = &pdev->dev;
@@ -517,7 +517,7 @@ err_free_pdata:
 	return error;
 }
 
-static int __devexit gpio_keys_polled_remove(struct platform_device *pdev)
+static int gpio_keys_polled_remove(struct platform_device *pdev)
 {
 	struct gpio_keys_polled_dev *bdev = platform_get_drvdata(pdev);
 	struct gpio_keys_platform_data *pdata = bdev->pdata;
@@ -536,7 +536,7 @@ static int __devexit gpio_keys_polled_remove(struct platform_device *pdev)
 
 static struct platform_driver gpio_keys_polled_driver = {
 	.probe	= gpio_keys_polled_probe,
-	.remove	= __devexit_p(gpio_keys_polled_remove),
+	.remove	= gpio_keys_polled_remove,
 	.driver	= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,
