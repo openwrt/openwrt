@@ -1,0 +1,85 @@
+--- a/mem.c
++++ b/mem.c
+@@ -2002,7 +2002,7 @@ int acx100mem_ioctl_set_phy_amp_bias(str
+  *	  configuration
+  * id	- ptr to the device id entry that matched this device
+  */
+-static int __devinit acxmem_probe(struct platform_device *pdev)
++static int acxmem_probe(struct platform_device *pdev)
+ {
+ 	acx_device_t *adev = NULL;
+ 	const char *chip_name;
+@@ -2268,7 +2268,7 @@ done:
+  * pdev - ptr to PCI device structure containing info about pci
+  * configuration
+  */
+-static int __devexit acxmem_remove(struct platform_device *pdev)
++static int acxmem_remove(struct platform_device *pdev)
+ {
+ 	struct ieee80211_hw *hw = (struct ieee80211_hw *)
+ 		platform_get_drvdata(pdev);
+@@ -2470,7 +2470,7 @@ static struct platform_driver acxmem_dri
+ 		.name = "acx-mem",
+ 	},
+ 	.probe = acxmem_probe,
+-	.remove = __devexit_p(acxmem_remove),
++	.remove = acxmem_remove,
+ 
+ #ifdef CONFIG_PM
+ 	.suspend = acxmem_e_suspend,
+--- a/pci.c
++++ b/pci.c
+@@ -982,7 +982,7 @@ int acx100pci_ioctl_set_phy_amp_bias(str
+  * id	- ptr to the device id entry that matched this device
+  */
+ #ifdef CONFIG_PCI
+-static int __devinit acxpci_probe(struct pci_dev *pdev,
++static int acxpci_probe(struct pci_dev *pdev,
+ 				const struct pci_device_id *id)
+ {
+ 	acx111_ie_configoption_t co;
+@@ -1346,7 +1346,7 @@ done:
+  *
+  * pdev - ptr to PCI device structure containing info about pci configuration
+  */
+-static void __devexit acxpci_remove(struct pci_dev *pdev)
++static void acxpci_remove(struct pci_dev *pdev)
+ {
+ 	struct ieee80211_hw *hw
+ 		= (struct ieee80211_hw *) pci_get_drvdata(pdev);
+@@ -1537,7 +1537,7 @@ static int acxpci_e_resume(struct pci_de
+  */
+ 
+ #if 0 // use later ?
+-static struct acxpci_device_info acxpci_info_tbl[] __devinitdata = {
++static struct acxpci_device_info acxpci_info_tbl[] = {
+         [0] = {
+                 .part_name      = "acx111",
+                 .helper_image   = "tiacx1111r16", // probly wrong !!
+@@ -1564,7 +1564,7 @@ static struct pci_driver acxpci_driver =
+ 	.name		= "acx_pci",
+ 	.id_table	= acxpci_id_tbl,
+ 	.probe		= acxpci_probe,
+-	.remove		= __devexit_p(acxpci_remove),
++	.remove		= acxpci_remove,
+ #ifdef CONFIG_PM
+ 	.suspend	= acxpci_e_suspend,
+ 	.resume		= acxpci_e_resume
+@@ -1662,7 +1662,7 @@ static struct vlynq_device_id acx_vlynq_
+ };
+ 
+ 
+-static __devinit int vlynq_probe(struct vlynq_device *vdev,
++static int vlynq_probe(struct vlynq_device *vdev,
+ 				 struct vlynq_device_id *id)
+ {
+ 	int result = -EIO, i;
+@@ -1971,7 +1971,7 @@ static struct vlynq_driver vlynq_acx = {
+ 	.name = "acx_vlynq",
+ 	.id_table = acx_vlynq_id,
+ 	.probe = vlynq_probe,
+-	.remove = __devexit_p(vlynq_remove),
++	.remove = vlynq_remove,
+ };
+ #endif /* CONFIG_VLYNQ */
+ 
