@@ -1,6 +1,6 @@
 --- a/main.h
 +++ b/main.h
-@@ -44,8 +44,11 @@ void acx_process_rxbuf(acx_device_t *ade
+@@ -44,8 +44,11 @@ int acx_e_op_get_tx_stats(struct ieee802
  
  #if CONFIG_ACX_MAC80211_VERSION < KERNEL_VERSION(2, 6, 39)
  int acx_op_tx(struct ieee80211_hw *hw, struct sk_buff *skb);
@@ -15,7 +15,7 @@
  
 --- a/main.c
 +++ b/main.c
-@@ -1024,7 +1024,12 @@ out:
+@@ -1024,7 +1024,12 @@ int acx_e_op_get_tx_stats(struct ieee802
   * acx_compat, and hiding this #if/else.  OTOH, inclusion doesnt care
   * about old kernels
   */

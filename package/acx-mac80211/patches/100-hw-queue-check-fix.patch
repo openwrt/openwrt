@@ -1,6 +1,6 @@
 --- a/mem.c
 +++ b/mem.c
-@@ -2026,7 +2026,7 @@ static int __devinit acxmem_probe(struct
+@@ -2036,7 +2036,7 @@ static int acxmem_probe(struct platform_
  	 */
  	ieee->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION)
  					| BIT(NL80211_IFTYPE_ADHOC);
@@ -11,7 +11,7 @@
  	/* TODO: although in the original driver the maximum value was
 --- a/pci.c
 +++ b/pci.c
-@@ -1010,7 +1010,7 @@ static int __devinit acxpci_probe(struct
+@@ -1022,7 +1022,7 @@ static int acxpci_probe(struct pci_dev *
  			BIT(NL80211_IFTYPE_STATION) |
  			BIT(NL80211_IFTYPE_ADHOC) |
  			BIT(NL80211_IFTYPE_AP);
@@ -20,7 +20,7 @@
  	/* OW TODO Check if RTS/CTS threshold can be included here */
  
  	/* TODO: although in the original driver the maximum value was
-@@ -1682,7 +1682,7 @@ static __devinit int vlynq_probe(struct
+@@ -1691,7 +1691,7 @@ static int vlynq_probe(struct vlynq_devi
  			BIT(NL80211_IFTYPE_STATION)	|
  			BIT(NL80211_IFTYPE_ADHOC) |
  			BIT(NL80211_IFTYPE_AP);
@@ -31,7 +31,7 @@
  	 * TODO OW 20100615 This should into a common init code
 --- a/usb.c
 +++ b/usb.c
-@@ -1627,7 +1627,7 @@ acxusb_probe(struct usb_interface *intf,
+@@ -1624,7 +1624,7 @@ acxusb_probe(struct usb_interface *intf,
  	 */
  	ieee->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION)
  			| BIT(NL80211_IFTYPE_ADHOC);
