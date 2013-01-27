@@ -181,8 +181,6 @@ PKG_EXTRA_CFLAGS:= \
 	$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS), -DCONFIG_CFG80211_DEBUGFS -DCONFIG_MAC80211_DEBUGFS) \
 	$(if $(CONFIG_PACKAGE_MAC80211_MESH), -DCONFIG_MAC80211_MESH) \
 
-LINUX_AUTOCONF_FILE:= generated/autoconf.h
-
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		ARCH="$(LINUX_KARCH)" \
@@ -190,9 +188,11 @@ define Build/Compile
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		$(PKG_EXTRA_KCONFIG) \
 		EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS) -DCONFIG_ACX_MAC80211_VERSION=\"KERNEL_VERSION(3,8,0)\"" \
-		LINUXINCLUDE="-I$(STAGING_DIR)/usr/include/mac80211/uapi -I$(STAGING_DIR)/usr/include/mac80211 -I$(LINUX_DIR)/include \
-			-Iarch/$(LINUX_KARCH)/include \
-			-include $(LINUX_AUTOCONF_FILE) \
+		LINUXINCLUDE="-I$(STAGING_DIR)/usr/include/mac80211/uapi -I$(STAGING_DIR)/usr/include/mac80211 \
+			-I$(LINUX_DIR)/include -I$(LINUX_DIR)/include/$(LINUX_UAPI_DIR) \
+			-I$(LINUX_DIR)/include/generated/uapi/ -Iarch/$(LINUX_KARCH)/include \
+			-Iarch/$(LINUX_KARCH)/include/$(LINUX_UAPI_DIR) \
+			-include generated/autoconf.h \
 			-include linux/compat-2.6.h" \
 		V="$(V)" \
 		modules
