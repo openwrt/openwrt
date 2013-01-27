@@ -112,7 +112,7 @@ $(eval $(call KernelPackage,usb-ohci,1))
 
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
-  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx +(PCI_SUPPORT&&LINUX_3_8):usb2-pci
+  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx
   KCONFIG:=CONFIG_USB_EHCI_HCD \
 	CONFIG_USB_EHCI_ATH79=y \
 	CONFIG_USB_EHCI_BCM63XX=y \
@@ -140,10 +140,10 @@ $(eval $(call KernelPackage,usb2))
 
 define KernelPackage/usb2-pci
   TITLE:=Support for PCI USB2 controllers
-  DEPENDS:=@PCI_SUPPORT @LINUX_3_8
+  DEPENDS:=@PCI_SUPPORT @LINUX_3_8 +kmod-usb2
   KCONFIG:=CONFIG_USB_EHCI_PCI
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-pci.ko
-  AUTOLOAD:=$(call AutoLoad,40,ehci-pci,1)
+  AUTOLOAD:=$(call AutoLoad,42,ehci-pci,1)
   $(call AddDepends/usb)
 endef
 
