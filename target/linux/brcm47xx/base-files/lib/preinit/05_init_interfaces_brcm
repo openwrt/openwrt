@@ -5,6 +5,8 @@ set_preinit_iface() {
 
 	insmod diag
 	insmod hwmon
+	insmod pps_core
+	insmod ptp
 	insmod tg3
 	insmod b44
 	insmod bgmac
