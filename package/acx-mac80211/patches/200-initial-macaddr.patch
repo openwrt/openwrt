@@ -1,6 +1,6 @@
---- a/cardsetting.c	2012-07-03 16:21:25.934102662 -0700
-+++ b/cardsetting.c	2012-07-03 16:49:26.910438174 -0700
-@@ -710,12 +710,27 @@
+--- a/cardsetting.c
++++ b/cardsetting.c
+@@ -710,12 +710,27 @@ static int acx1xx_get_station_id(acx_dev
  	u8 stationID[4 + acx_ie_descs[ACX1xx_IE_DOT11_STATION_ID].len];
  	const u8 *paddr;
  	int i, res;
