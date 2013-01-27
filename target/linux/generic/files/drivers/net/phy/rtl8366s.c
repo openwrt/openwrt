@@ -1050,7 +1050,7 @@ static struct rtl8366_smi_ops rtl8366s_smi_ops = {
 	.enable_port	= rtl8366s_enable_port,
 };
 
-static int __devinit rtl8366s_probe(struct platform_device *pdev)
+static int rtl8366s_probe(struct platform_device *pdev)
 {
 	static int rtl8366_smi_version_printed;
 	struct rtl8366_smi *smi;
@@ -1094,7 +1094,7 @@ static int __devinit rtl8366s_probe(struct platform_device *pdev)
 	return err;
 }
 
-static int __devexit rtl8366s_remove(struct platform_device *pdev)
+static int rtl8366s_remove(struct platform_device *pdev)
 {
 	struct rtl8366_smi *smi = platform_get_drvdata(pdev);
 
@@ -1125,7 +1125,7 @@ static struct platform_driver rtl8366s_driver = {
 #endif
 	},
 	.probe		= rtl8366s_probe,
-	.remove		= __devexit_p(rtl8366s_remove),
+	.remove		= rtl8366s_remove,
 };
 
 static int __init rtl8366s_module_init(void)
