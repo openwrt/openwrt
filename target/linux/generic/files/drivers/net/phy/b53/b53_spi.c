@@ -278,7 +278,7 @@ static struct b53_io_ops b53_spi_ops = {
 	.write64 = b53_spi_write64,
 };
 
-static int __devinit b53_spi_probe(struct spi_device *spi)
+static int b53_spi_probe(struct spi_device *spi)
 {
 	struct b53_device *dev;
 	int ret;
@@ -299,7 +299,7 @@ static int __devinit b53_spi_probe(struct spi_device *spi)
 	return 0;
 }
 
-static int __devexit b53_spi_remove(struct spi_device *spi)
+static int b53_spi_remove(struct spi_device *spi)
 {
 	struct b53_device *dev = spi->dev.platform_data;
 
@@ -319,7 +319,7 @@ static struct spi_driver b53_spi_driver = {
 		.owner	= THIS_MODULE,
 	},
 	.probe	= b53_spi_probe,
-	.remove	= __devexit_p(b53_spi_remove),
+	.remove	= b53_spi_remove,
 };
 
 module_spi_driver(b53_spi_driver);

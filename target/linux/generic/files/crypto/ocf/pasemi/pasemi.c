@@ -38,7 +38,7 @@
 
 #define TIMER_INTERVAL 1000
 
-static void __devexit pasemi_dma_remove(struct pci_dev *pdev);
+static void pasemi_dma_remove(struct pci_dev *pdev);
 static struct pasdma_status volatile * dma_status;
 
 static int debug;
@@ -790,7 +790,7 @@ static device_method_t pasemi_methods = {
 /* Set up the crypto device structure, private data,
  * and anything else we need before we start */
 
-static int __devinit
+static int
 pasemi_dma_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
 	struct pasemi_softc *sc;
@@ -943,7 +943,7 @@ static void pasemi_free_tx_resources(struct pasemi_softc *sc, int chan)
 	del_timer(&ring->crypto_timer);
 }
 
-static void __devexit pasemi_dma_remove(struct pci_dev *pdev)
+static void pasemi_dma_remove(struct pci_dev *pdev)
 {
 	struct pasemi_softc *sc = pci_get_drvdata(pdev);
 	int i;
@@ -984,7 +984,7 @@ static struct pci_driver pasemi_dma_driver = {
 	.name		= "pasemi_dma",
 	.id_table	= pasemi_dma_pci_tbl,
 	.probe		= pasemi_dma_probe,
-	.remove		= __devexit_p(pasemi_dma_remove),
+	.remove		= pasemi_dma_remove,
 };
 
 static void __exit pasemi_dma_cleanup_module(void)

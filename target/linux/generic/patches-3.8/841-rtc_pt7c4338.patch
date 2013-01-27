@@ -209,7 +209,7 @@
 +	return ret;
 +}
 +
-+static int __devexit pt7c4338_remove(struct i2c_client *client)
++static int pt7c4338_remove(struct i2c_client *client)
 +{
 +	struct pt7c4338 *pt7c4338 = i2c_get_clientdata(client);
 +
@@ -225,7 +225,7 @@
 +		.owner = THIS_MODULE,
 +	},
 +	.probe = pt7c4338_probe,
-+	.remove = __devexit_p(pt7c4338_remove),
++	.remove = pt7c4338_remove,
 +	.id_table = pt7c4338_id,
 +};
 +

@@ -104,9 +104,9 @@
  * Prototypes 
  */
 static irqreturn_t ubsec_ssb_isr(int, void *, struct pt_regs *);
-static int __devinit ubsec_ssb_probe(struct ssb_device *sdev,
+static int ubsec_ssb_probe(struct ssb_device *sdev,
     const struct ssb_device_id *ent);
-static void __devexit ubsec_ssb_remove(struct ssb_device *sdev);
+static void ubsec_ssb_remove(struct ssb_device *sdev);
 int ubsec_attach(struct ssb_device *sdev, const struct ssb_device_id *ent, 
     struct device *self);
 static void ubsec_setup_mackey(struct ubsec_session *ses, int algo, 
@@ -185,7 +185,7 @@ static struct ssb_driver ubsec_ssb_driver = {
     .name       = DRV_MODULE_NAME,
     .id_table   = ubsec_ssb_tbl,
     .probe      = ubsec_ssb_probe,
-    .remove     = __devexit_p(ubsec_ssb_remove),
+    .remove     = ubsec_ssb_remove,
      /*
     .suspend    = ubsec_ssb_suspend,
     .resume     = ubsec_ssb_resume
@@ -482,8 +482,8 @@ ubsec_setup_mackey(struct ubsec_session *ses, int algo, caddr_t key, int klen)
 }
 #undef N
 
-static int 
-__devinit ubsec_ssb_probe(struct ssb_device *sdev, 
+static int
+ubsec_ssb_probe(struct ssb_device *sdev, 
     const struct ssb_device_id *ent) 
 {
     int err;
@@ -553,7 +553,7 @@ err_out:
     return err;
 }
 
-static void __devexit ubsec_ssb_remove(struct ssb_device *sdev) {
+static void ubsec_ssb_remove(struct ssb_device *sdev) {
 
     struct ubsec_softc *sc;
     unsigned int ctrlflgs;

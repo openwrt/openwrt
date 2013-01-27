@@ -82,7 +82,7 @@ static void gpio_buttons_poll(struct input_polled_dev *dev)
 	}
 }
 
-static int __devinit gpio_buttons_probe(struct platform_device *pdev)
+static int gpio_buttons_probe(struct platform_device *pdev)
 {
 	struct gpio_buttons_platform_data *pdata = pdev->dev.platform_data;
 	struct device *dev = &pdev->dev;
@@ -186,7 +186,7 @@ err_free_bdev:
 	return error;
 }
 
-static int __devexit gpio_buttons_remove(struct platform_device *pdev)
+static int gpio_buttons_remove(struct platform_device *pdev)
 {
 	struct gpio_buttons_dev *bdev = platform_get_drvdata(pdev);
 	struct gpio_buttons_platform_data *pdata = bdev->pdata;
@@ -207,7 +207,7 @@ static int __devexit gpio_buttons_remove(struct platform_device *pdev)
 
 static struct platform_driver gpio_buttons_driver = {
 	.probe	= gpio_buttons_probe,
-	.remove	= __devexit_p(gpio_buttons_remove),
+	.remove	= gpio_buttons_remove,
 	.driver	= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,

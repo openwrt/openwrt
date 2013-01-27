@@ -1382,7 +1382,7 @@ static int rtl8367b_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 	return err;
 }
 
-static int __devinit rtl8367b_detect(struct rtl8366_smi *smi)
+static int rtl8367b_detect(struct rtl8366_smi *smi)
 {
 	const char *chip_name;
 	u32 chip_num;
@@ -1455,7 +1455,7 @@ static struct rtl8366_smi_ops rtl8367b_smi_ops = {
 	.enable_port	= rtl8367b_enable_port,
 };
 
-static int __devinit rtl8367b_probe(struct platform_device *pdev)
+static int  rtl8367b_probe(struct platform_device *pdev)
 {
 	struct rtl8366_smi *smi;
 	int err;
@@ -1494,7 +1494,7 @@ static int __devinit rtl8367b_probe(struct platform_device *pdev)
 	return err;
 }
 
-static int __devexit rtl8367b_remove(struct platform_device *pdev)
+static int rtl8367b_remove(struct platform_device *pdev)
 {
 	struct rtl8366_smi *smi = platform_get_drvdata(pdev);
 
@@ -1533,7 +1533,7 @@ static struct platform_driver rtl8367b_driver = {
 #endif
 	},
 	.probe		= rtl8367b_probe,
-	.remove		= __devexit_p(rtl8367b_remove),
+	.remove		= rtl8367b_remove,
 	.shutdown	= rtl8367b_shutdown,
 };
 
