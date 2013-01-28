@@ -1,22 +1,24 @@
-Index: linux-3.7-rc8/arch/mips/lantiq/xway/Makefile
+Index: linux-3.7.4/arch/mips/lantiq/xway/Makefile
 ===================================================================
---- linux-3.7-rc8.orig/arch/mips/lantiq/xway/Makefile	2012-12-13 10:59:54.176314899 +0100
-+++ linux-3.7-rc8/arch/mips/lantiq/xway/Makefile	2012-12-13 13:58:51.696584083 +0100
+--- linux-3.7.4.orig/arch/mips/lantiq/xway/Makefile	2013-01-28 18:08:39.000000000 +0100
++++ linux-3.7.4/arch/mips/lantiq/xway/Makefile	2013-01-28 18:10:31.416141818 +0100
 @@ -1,3 +1,6 @@
  obj-y := prom.o sysctrl.o clk.o reset.o dma.o timer.o dcdc.o
  
 +obj-y += eth_mac.o
-+obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o
++obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
 +
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
-Index: linux-3.7-rc8/arch/mips/lantiq/xway/ath_eep.c
+Index: linux-3.7.4/arch/mips/lantiq/xway/ath_eep.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.7-rc8/arch/mips/lantiq/xway/ath_eep.c	2012-12-13 13:49:12.472569552 +0100
-@@ -0,0 +1,120 @@
++++ linux-3.7.4/arch/mips/lantiq/xway/ath_eep.c	2013-01-28 18:13:43.256146389 +0100
+@@ -0,0 +1,206 @@
 +/*
++ *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
 + *  Copyright (C) 2011 Andrej Vlašić <andrej.vlasic0@gmail.com>
++ *  Copyright (C) 2013 Álvaro Fernández Rojas <noltari@gmail.com>
 + *
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -30,32 +32,116 @@ Index: linux-3.7-rc8/arch/mips/lantiq/xway/ath_eep.c
 +#include <linux/ath5k_platform.h>
 +#include <linux/ath9k_platform.h>
 +#include <linux/pci.h>
++#include <pci-ath-fixup.h>
 +
 +extern int (*ltq_pci_plat_dev_init)(struct pci_dev *dev);
 +struct ath5k_platform_data ath5k_pdata;
-+/*struct ath9k_platform_data ath9k_pdata = {
++struct ath9k_platform_data ath9k_pdata = {
 +	.led_pin = -1,
-+	.endian_check = true,
-+};*/
++};
 +static u16 ath5k_eeprom_data[ATH5K_PLAT_EEP_MAX_WORDS];
-+//static u16 ath9k_eeprom_data[ATH9K_PLAT_EEP_MAX_WORDS];
 +static u8 athxk_eeprom_mac[6];
 +
-+/*static int
-+ath9k_pci_plat_dev_init(struct pci_dev *dev)
++static int ath9k_pci_plat_dev_init(struct pci_dev *dev)
 +{
 +	dev->dev.platform_data = &ath9k_pdata;
 +	return 0;
 +}
 +
-+void __init
-+ltq_register_ath9k(u16 *eeprom_data, u8 *macaddr)
++int __init of_ath9k_eeprom_probe(struct platform_device *pdev)
 +{
-+	memcpy(ath9k_pdata.eeprom_data, eeprom_data, sizeof(ath9k_pdata.eeprom_data));
-+	ath9k_pdata.macaddr = macaddr;
++	struct device_node *np = pdev->dev.of_node;
++	struct resource *eep_res, *mac_res;
++	void __iomem *eep, *mac;
++	int mac_offset;
++	u32 mac_inc = 0, pci_slot = 0;
++	int i;
++	u16 *eepdata, sum, el;
++
++	eep_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	mac_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++
++	if (!eep_res) {
++		dev_err(&pdev->dev, "failed to load eeprom address\n");
++		return -ENODEV;
++	}
++	if (resource_size(eep_res) != ATH9K_PLAT_EEP_MAX_WORDS) {
++		dev_err(&pdev->dev, "eeprom has an invalid size\n");
++		return -EINVAL;
++	}
++
++	eep = ioremap(eep_res->start, resource_size(eep_res));
++	memcpy_fromio(ath9k_pdata.eeprom_data, eep, ATH9K_PLAT_EEP_MAX_WORDS);
++
++	if (of_find_property(np, "ath,eep-swap", NULL)) {
++		ath9k_pdata.endian_check = true;
++
++		dev_info(&pdev->dev, "endian check enabled.\n");
++	}
++
++	if (of_find_property(np, "ath,eep-csum", NULL)) {
++		sum = ath9k_pdata.eeprom_data[0x200>>1];
++		el = sum / sizeof(u16) - 2;  /* skip length and (old) checksum */
++		eepdata = (u16 *) (&ath9k_pdata.eeprom_data[0x204>>1]); /* after checksum */
++		for (i = 0; i < el; i++)
++			sum ^= *eepdata++;
++		sum ^= 0xffff;
++		ath9k_pdata.eeprom_data[0x202>>1] = sum;
++
++		dev_info(&pdev->dev, "checksum fixed.\n");
++	}
++
++	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
++		memcpy_fromio(athxk_eeprom_mac, (void*) ath9k_pdata.eeprom_data, 6);
++	} else if (mac_res) {
++		if (resource_size(mac_res) != 6) {
++			dev_err(&pdev->dev, "mac has an invalid size\n");
++			return -EINVAL;
++		}
++		mac = ioremap(mac_res->start, resource_size(mac_res));
++		memcpy_fromio(athxk_eeprom_mac, mac, 6);
++	} else {
++		dev_warn(&pdev->dev, "using random mac\n");
++		random_ether_addr(athxk_eeprom_mac);
++	}
++
++	if (!of_property_read_u32(np, "ath,mac-increment", &mac_inc))
++		athxk_eeprom_mac[5] += mac_inc;
++
++	ath9k_pdata.macaddr = athxk_eeprom_mac;
 +	ltq_pci_plat_dev_init = ath9k_pci_plat_dev_init;
++
++	if (!of_property_read_u32(np, "ath,pci-slot", &pci_slot)) {
++		ltq_pci_ath_fixup(pci_slot, ath9k_pdata.eeprom_data);
++
++		dev_info(&pdev->dev, "pci slot: %u\n", pci_slot);
++	}
++
++	dev_info(&pdev->dev, "loaded ath9k eeprom\n");
++
++	return 0;
 +}
-+*/
++
++static struct of_device_id ath9k_eeprom_ids[] = {
++	{ .compatible = "ath9k,eeprom" },
++	{ }
++};
++
++static struct platform_driver ath9k_eeprom_driver = {
++	.driver		= {
++		.name		= "ath9k,eeprom",
++		.owner	= THIS_MODULE,
++		.of_match_table	= of_match_ptr(ath9k_eeprom_ids),
++	},
++};
++
++static int __init of_ath9k_eeprom_init(void)
++{
++	return platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
++}
++arch_initcall(of_ath9k_eeprom_init);
++
++
 +static int ath5k_pci_plat_dev_init(struct pci_dev *dev)
 +{
 +	dev->dev.platform_data = &ath5k_pdata;
@@ -134,23 +220,23 @@ Index: linux-3.7-rc8/arch/mips/lantiq/xway/ath_eep.c
 +	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
 +}
 +device_initcall(of_ath5k_eeprom_init);
-Index: linux-3.7-rc8/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+Index: linux-3.7.4/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 ===================================================================
---- linux-3.7-rc8.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2012-12-13 10:59:57.300314976 +0100
-+++ linux-3.7-rc8/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2012-12-13 10:59:57.308314977 +0100
-@@ -93,5 +93,8 @@
- /* allow tapi driver to read the gptu value */
- long gptu_get_count(struct clk *clk);
+--- linux-3.7.4.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2013-01-28 18:08:38.000000000 +0100
++++ linux-3.7.4/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2013-01-28 18:10:03.616141155 +0100
+@@ -90,5 +90,8 @@
+ extern void ltq_pmu_enable(unsigned int module);
+ extern void ltq_pmu_disable(unsigned int module);
  
 +/* allow the ethernet driver to load a flash mapped mac addr */
 +const u8* ltq_get_eth_mac(void);
 +
  #endif /* CONFIG_SOC_TYPE_XWAY */
  #endif /* _LTQ_XWAY_H__ */
-Index: linux-3.7-rc8/arch/mips/lantiq/xway/eth_mac.c
+Index: linux-3.7.4/arch/mips/lantiq/xway/eth_mac.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.7-rc8/arch/mips/lantiq/xway/eth_mac.c	2012-12-13 10:59:57.308314977 +0100
++++ linux-3.7.4/arch/mips/lantiq/xway/eth_mac.c	2013-01-28 18:10:03.620141154 +0100
 @@ -0,0 +1,76 @@
 +/*
 + *  Copyright (C) 2012 John Crispin <blogic@openwrt.org>
@@ -228,11 +314,11 @@ Index: linux-3.7-rc8/arch/mips/lantiq/xway/eth_mac.c
 +	return platform_driver_probe(&eth_mac_driver, of_eth_mac_probe);
 +}
 +device_initcall(of_eth_mac_init);
-Index: linux-3.7-rc8/drivers/net/ethernet/lantiq_etop.c
+Index: linux-3.7.4/drivers/net/ethernet/lantiq_etop.c
 ===================================================================
---- linux-3.7-rc8.orig/drivers/net/ethernet/lantiq_etop.c	2012-12-13 10:59:54.176314899 +0100
-+++ linux-3.7-rc8/drivers/net/ethernet/lantiq_etop.c	2012-12-13 10:59:57.308314977 +0100
-@@ -816,7 +816,8 @@
+--- linux-3.7.4.orig/drivers/net/ethernet/lantiq_etop.c	2013-01-28 18:08:39.000000000 +0100
++++ linux-3.7.4/drivers/net/ethernet/lantiq_etop.c	2013-01-28 18:10:03.620141154 +0100
+@@ -825,7 +825,8 @@
  
  	ltq_etop_change_mtu(dev, 1500);
  
@@ -242,7 +328,7 @@ Index: linux-3.7-rc8/drivers/net/ethernet/lantiq_etop.c
  	if (!is_valid_ether_addr(mac.sa_data)) {
  		pr_warn("etop: invalid MAC, using random\n");
  		random_ether_addr(mac.sa_data);
-@@ -940,7 +941,9 @@
+@@ -949,7 +950,9 @@
  	priv->tx_irq = irqres[0].start;
  	priv->rx_irq = irqres[1].start;
  	priv->mii_mode = of_get_phy_mode(pdev->dev.of_node);
@@ -253,10 +339,10 @@ Index: linux-3.7-rc8/drivers/net/ethernet/lantiq_etop.c
  
  	priv->clk_ppe = clk_get(&pdev->dev, NULL);
  	if (IS_ERR(priv->clk_ppe))
-Index: linux-3.7-rc8/arch/mips/lantiq/xway/rt_eep.c
+Index: linux-3.7.4/arch/mips/lantiq/xway/rt_eep.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.7-rc8/arch/mips/lantiq/xway/rt_eep.c	2012-12-13 13:55:43.132579350 +0100
++++ linux-3.7.4/arch/mips/lantiq/xway/rt_eep.c	2013-01-28 18:10:03.620141154 +0100
 @@ -0,0 +1,60 @@
 +/*
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -318,3 +404,128 @@ Index: linux-3.7-rc8/arch/mips/lantiq/xway/rt_eep.c
 +	return platform_driver_probe(&ralink_eeprom_driver, of_ralink_eeprom_probe);
 +}
 +device_initcall(of_ralink_eeprom_init);
+Index: linux-3.7.4/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.7.4/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h	2013-01-28 18:10:03.620141154 +0100
+@@ -0,0 +1,6 @@
++#ifndef _PCI_ATH_FIXUP
++#define _PCI_ATH_FIXUP
++
++void ltq_pci_ath_fixup(unsigned slot, u16 *cal_data) __init;
++
++#endif /* _PCI_ATH_FIXUP */
+Index: linux-3.7.4/arch/mips/lantiq/xway/pci-ath-fixup.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.7.4/arch/mips/lantiq/xway/pci-ath-fixup.c	2013-01-28 18:10:03.624141153 +0100
+@@ -0,0 +1,109 @@
++/*
++ *  Atheros AP94 reference board PCI initialization
++ *
++ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#include <linux/pci.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <lantiq_soc.h>
++
++#define LTQ_PCI_MEM_BASE		0x18000000
++
++struct ath_fixup {
++	u16		*cal_data;
++	unsigned	slot;
++};
++
++static int ath_num_fixups;
++static struct ath_fixup ath_fixups[2];
++
++static void ath_pci_fixup(struct pci_dev *dev)
++{
++	void __iomem *mem;
++	u16 *cal_data = NULL;
++	u16 cmd;
++	u32 bar0;
++	u32 val;
++	unsigned i;
++
++	for (i = 0; i < ath_num_fixups; i++) {
++		if (ath_fixups[i].cal_data == NULL)
++			continue;
++
++		if (ath_fixups[i].slot != PCI_SLOT(dev->devfn))
++			continue;
++
++		cal_data = ath_fixups[i].cal_data;
++		break;
++	}
++
++	if (cal_data == NULL)
++		return;
++
++	if (*cal_data != 0xa55a) {
++		pr_err("pci %s: invalid calibration data\n", pci_name(dev));
++		return;
++	}
++
++	pr_info("pci %s: fixup device configuration\n", pci_name(dev));
++
++	mem = ioremap(LTQ_PCI_MEM_BASE, 0x10000);
++	if (!mem) {
++		pr_err("pci %s: ioremap error\n", pci_name(dev));
++		return;
++	}
++
++	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
++	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, LTQ_PCI_MEM_BASE);
++	pci_read_config_word(dev, PCI_COMMAND, &cmd);
++	cmd |= PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
++	pci_write_config_word(dev, PCI_COMMAND, cmd);
++
++	/* set pointer to first reg address */
++	cal_data += 3;
++	while (*cal_data != 0xffff) {
++		u32 reg;
++		reg = *cal_data++;
++		val = *cal_data++;
++		val |= (*cal_data++) << 16;
++
++		ltq_w32(swab32(val), mem + reg);
++		udelay(100);
++	}
++
++	pci_read_config_dword(dev, PCI_VENDOR_ID, &val);
++	dev->vendor = val & 0xffff;
++	dev->device = (val >> 16) & 0xffff;
++
++	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
++	dev->revision = val & 0xff;
++	dev->class = val >> 8; /* upper 3 bytes */
++
++	pr_info("pci %s: fixup info: [%04x:%04x] revision %02x class %#08x\n", 
++		pci_name(dev), dev->vendor, dev->device, dev->revision, dev->class);
++
++	pci_read_config_word(dev, PCI_COMMAND, &cmd);
++	cmd &= ~(PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY);
++	pci_write_config_word(dev, PCI_COMMAND, cmd);
++
++	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, bar0);
++
++	iounmap(mem);
++}
++DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ath_pci_fixup);
++
++void __init ltq_pci_ath_fixup(unsigned slot, u16 *cal_data)
++{
++	if (ath_num_fixups >= ARRAY_SIZE(ath_fixups))
++		return;
++
++	ath_fixups[ath_num_fixups].slot = slot;
++	ath_fixups[ath_num_fixups].cal_data = cal_data;
++	ath_num_fixups++;
++}

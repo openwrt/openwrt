@@ -1,19 +1,19 @@
-Index: linux-3.7.1/arch/mips/lantiq/xway/Makefile
+Index: linux-3.7.4/arch/mips/lantiq/xway/Makefile
 ===================================================================
---- linux-3.7.1.orig/arch/mips/lantiq/xway/Makefile	2013-01-09 09:30:35.000000000 +0100
-+++ linux-3.7.1/arch/mips/lantiq/xway/Makefile	2013-01-09 09:33:03.932167465 +0100
+--- linux-3.7.4.orig/arch/mips/lantiq/xway/Makefile	2013-01-28 18:10:31.000000000 +0100
++++ linux-3.7.4/arch/mips/lantiq/xway/Makefile	2013-01-28 18:14:12.224147075 +0100
 @@ -1,6 +1,6 @@
  obj-y := prom.o sysctrl.o clk.o reset.o dma.o timer.o dcdc.o
  
 -obj-y += eth_mac.o
 +obj-y += eth_mac.o vmmc.o
- obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o
+ obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
  
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
-Index: linux-3.7.1/arch/mips/lantiq/xway/vmmc.c
+Index: linux-3.7.4/arch/mips/lantiq/xway/vmmc.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.7.1/arch/mips/lantiq/xway/vmmc.c	2013-01-09 09:31:49.264164272 +0100
++++ linux-3.7.4/arch/mips/lantiq/xway/vmmc.c	2013-01-28 18:13:53.128146621 +0100
 @@ -0,0 +1,63 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
