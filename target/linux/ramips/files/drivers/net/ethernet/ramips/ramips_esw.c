@@ -498,6 +498,10 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 		       RT305X_ESW_SGC2_LAN_PMAP_M << RT305X_ESW_SGC2_LAN_PMAP_S,
 		       port_map << RT305X_ESW_SGC2_LAN_PMAP_S);
 
+	/* make the switch leds blink */
+	for (i = 0; i < RT305X_ESW_NUM_LEDS; i++)
+		esw->ports[i].led = 0x05;
+
 	/* Apply the empty config. */
 	rt305x_esw_apply_config(&esw->swdev);
 }
