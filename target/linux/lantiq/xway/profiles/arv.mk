@@ -18,8 +18,8 @@ endef
 
 $(eval $(call Profile,ARV7525PW))
 
-define Profile/ARV4518PW
-  NAME:=SMC7908A-ISP, Airties WAV-221 - ARV4518PW
+define Profile/ARV4518PWR01
+  NAME:=ARV4518PWR01
   PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
@@ -28,7 +28,19 @@ define Profile/ARV4518PW
 	swconfig
 endef
 
-$(eval $(call Profile,ARV4518PW))
+$(eval $(call Profile,ARV4518PWR01))
+
+define Profile/ARV4518PWR01A
+  NAME:=ARV4518PWR01A
+  PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+        kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+        kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+        ltq-adsl-app ppp-mod-pppoa \
+        kmod-ath5k wpad-mini \
+        swconfig
+endef
+
+$(eval $(call Profile,ARV4518PWR01A))
 
 define Profile/ARV4510PW
   NAME:=Wippies Homebox - ARV4510PW

@@ -140,8 +140,11 @@ Image/Build/Profile/ARV4525PW=$(call Image/Build/$(1),$(1),ARV4525PW)
 Image/BuildKernel/Profile/ARV7525PW=$(call Image/BuildKernel/Template,ARV7525PW)
 Image/Build/Profile/ARV7525PW=$(call Image/Build/$(1),$(1),ARV7525PW)
 
-Image/BuildKernel/Profile/ARV4518PW=$(call Image/BuildKernel/Template,ARV4518PW)
-Image/Build/Profile/ARV4518PW=$(call Image/Build/$(1),$(1),ARV4518PW)
+Image/BuildKernel/Profile/ARV4518PWR01=$(call Image/BuildKernel/Template,ARV4518PWR01)
+Image/Build/Profile/ARV4518PWR01=$(call Image/Build/$(1),$(1),ARV4518PWR01)
+
+Image/BuildKernel/Profile/ARV4518PWR01A=$(call Image/BuildKernel/Template,ARV4518PWR01A)
+Image/Build/Profile/ARV4518PWR01A=$(call Image/Build/$(1),$(1),ARV4518PWR01A)
 
 Image/BuildKernel/Profile/ARV4520PW=$(call Image/BuildKernel/Template,ARV4520PW)
 Image/Build/Profile/ARV4520PW=$(call Image/Build/$(1),$(1),ARV4520PW)
