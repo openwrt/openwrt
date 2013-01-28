@@ -7,34 +7,29 @@ ipv6_conf() {
 	echo "$3" > "/proc/sys/net/ipv6/conf/$1/$2"
 }
 
-# RFC 6204 requires us to block forwarding until address acquisition is complete
-ipv6_block_forwarding() {
-	ip6tables "-$2" forwarding_rule -o "$1" -j REJECT --reject-with no-route 2>/dev/null
-}
-
 prepare_interface() {
 	local device="$1"
-
-	ipv6_block_forwarding "$device" A
-
 	ipv6_conf "$device" accept_ra 2
 	ipv6_conf "$device" forwarding 2
 
 	# Send RS
-	[ -x /usr/sbin/6relayd ] && /usr/sbin/6relayd -s "$device"
+	if [ -x /usr/sbin/6relayd ]; then
+		sleep 1
+		/usr/sbin/6relayd -s "$device"
+		sleep 4
+		/usr/sbin/6relayd -s "$device"
+	fi
+
 }
 
 cleanup_interface() {
 	local device="$1"
 	ipv6_conf "$device" accept_ra 1
 	ipv6_conf "$device" forwarding 1
-	ipv6_block_forwarding "$device" D
 }
 
 setup_interface () {
 	local device="$1"
-	ipv6_block_forwarding "$device" D
-
 	proto_init_update "*" 1
 
 	for dns in $RDNSS; do
@@ -60,16 +55,12 @@ teardown_interface() {
 }
 
 case "$2" in
-	started)
-		prepare_interface "$1"
-	;;
-	stopped)
-		cleanup_interface "$1"
-	;;
 	informed|bound|updated|rebound)
 		setup_interface "$1"
+		prepare_interface "$1"
 	;;
-	unbound|timeout)
+	started|stopped|unbound)
+		cleanup_interface "$1"
 		teardown_interface "$1"
 	;;
 esac
