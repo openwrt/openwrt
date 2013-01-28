@@ -46,6 +46,7 @@ ramips_setup_interfaces()
 	all0256n | \
 	all5002 | \
 	broadway)
+		ucidef_add_switch "switch0" "1" "0"
 		ucidef_set_interface_lan "eth0"
 		;;
 
