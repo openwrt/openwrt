@@ -169,6 +169,22 @@ endef
 $(eval $(call KernelPackage,usb-acm))
 
 
+define KernelPackage/usb-wdm
+  TITLE:=USB Wireless Device Management
+  KCONFIG:=CONFIG_USB_WDM
+  FILES:=$(LINUX_DIR)/drivers/usb/class/cdc-wdm.ko
+  AUTOLOAD:=$(call AutoLoad,60,cdc-wdm)
+$(call AddDepends/usb)
+$(call AddDepends/usb-net)
+endef
+
+define KernelPackage/usb-wdm/description
+ USB Wireless Device Management support
+endef
+
+$(eval $(call KernelPackage,usb-wdm))
+
+
 define KernelPackage/usb-audio
   TITLE:=Support for USB audio devices
   KCONFIG:= \
@@ -780,6 +796,21 @@ endef
 $(eval $(call KernelPackage,usb-net-cdc-ether))
 
 
+define KernelPackage/usb-net-qmi-wwan
+  TITLE:=QMI WWAN driver
+  KCONFIG:=CONFIG_USB_NET_QMI_WWAN
+  FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/qmi_wwan.ko
+  AUTOLOAD:=$(call AutoLoad,61,qmi_wwan)
+  $(call AddDepends/usb-net,+kmod-usb-wdm)
+endef
+
+define KernelPackage/usb-net-qmi-wwan/description
+ QMI WWAN driver for Qualcomm MSM based 3G and LTE modems
+endef
+
+$(eval $(call KernelPackage,usb-net-qmi-wwan))
+
+
 define KernelPackage/usb-net-rndis
   TITLE:=Support for RNDIS connections
   KCONFIG:=CONFIG_USB_NET_RNDIS_HOST
@@ -793,6 +824,21 @@ define KernelPackage/usb-net-rndis/description
 endef
 
 $(eval $(call KernelPackage,usb-net-rndis))
+
+define KernelPackage/usb-net-cdc-ncm
+  TITLE:=Support for CDC NCM connections
+  KCONFIG:=CONFIG_USB_NET_CDC_NCM
+  FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_ncm.ko
+  AUTOLOAD:=$(call AutoLoad,61,cdc_ncm)
+  $(call AddDepends/usb-net)
+endef
+
+define KernelPackage/usb-net-cdc-ncm/description
+ Kernel support for CDC NCM connections
+endef
+
+$(eval $(call KernelPackage,usb-net-cdc-ncm))
+
 
 define KernelPackage/usb-net-sierrawireless
   TITLE:=Support for Sierra Wireless devices
