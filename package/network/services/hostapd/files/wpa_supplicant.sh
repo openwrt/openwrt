@@ -106,7 +106,7 @@ wpa_supplicant_setup_vif() {
 					config_get password "$vif" password
 					phase2="phase2=\"auth=${auth:-MSCHAPV2}\""
 					identity="identity=\"$identity\""
-					password="password=\"$password\""
+					password="${password:+password=\"$password\"}"
 				;;
 			esac
 			eap_type="eap=$(echo $eap_type | tr 'a-z' 'A-Z')"
