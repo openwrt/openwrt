@@ -106,6 +106,9 @@ fw_configure_interface() {
 		fw $action $mode r PREROUTING ${chain}_notrack    $ { -i "$ifname" $inet }
 		fw $action $mode n POSTROUTING ${chain}_nat       $ { -o "$ifname" $onet }
 
+		# Flush conntrack table
+		echo f >/proc/net/nf_conntrack 2>/dev/null
+
 		lock -u /var/run/firewall-interface.lock
 	}
 
