@@ -12,11 +12,9 @@ Subject: [PATCH 117/123] NET: MIPS: lantiq: adds xrx200-net
  create mode 100644 drivers/net/ethernet/lantiq_pce.h
  create mode 100644 drivers/net/ethernet/lantiq_xrx200.c
 
-Index: linux-3.7.1/drivers/net/ethernet/Kconfig
-===================================================================
---- linux-3.7.1.orig/drivers/net/ethernet/Kconfig	2012-12-17 20:14:54.000000000 +0100
-+++ linux-3.7.1/drivers/net/ethernet/Kconfig	2012-12-21 10:30:29.629462283 +0100
-@@ -83,7 +83,13 @@
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -83,7 +83,13 @@ config LANTIQ_ETOP
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
  	---help---
@@ -31,11 +29,9 @@ Index: linux-3.7.1/drivers/net/ethernet/Kconfig
  
  source "drivers/net/ethernet/marvell/Kconfig"
  source "drivers/net/ethernet/mellanox/Kconfig"
-Index: linux-3.7.1/drivers/net/ethernet/Makefile
-===================================================================
---- linux-3.7.1.orig/drivers/net/ethernet/Makefile	2012-12-17 20:14:54.000000000 +0100
-+++ linux-3.7.1/drivers/net/ethernet/Makefile	2012-12-21 10:30:29.629462283 +0100
-@@ -36,6 +36,7 @@
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -36,6 +36,7 @@ obj-$(CONFIG_IP1000) += icplus/
  obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
@@ -43,10 +39,8 @@ Index: linux-3.7.1/drivers/net/ethernet/Makefile
  obj-$(CONFIG_NET_VENDOR_MARVELL) += marvell/
  obj-$(CONFIG_NET_VENDOR_MELLANOX) += mellanox/
  obj-$(CONFIG_NET_VENDOR_MICREL) += micrel/
-Index: linux-3.7.1/drivers/net/ethernet/lantiq_pce.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.7.1/drivers/net/ethernet/lantiq_pce.h	2012-12-21 10:30:29.629462283 +0100
+--- /dev/null
++++ b/drivers/net/ethernet/lantiq_pce.h
 @@ -0,0 +1,163 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
@@ -211,10 +205,8 @@ Index: linux-3.7.1/drivers/net/ethernet/lantiq_pce.h
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +};
-Index: linux-3.7.1/drivers/net/ethernet/lantiq_xrx200.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.7.1/drivers/net/ethernet/lantiq_xrx200.c	2012-12-21 12:06:26.473599462 +0100
+--- /dev/null
++++ b/drivers/net/ethernet/lantiq_xrx200.c
 @@ -0,0 +1,1203 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it

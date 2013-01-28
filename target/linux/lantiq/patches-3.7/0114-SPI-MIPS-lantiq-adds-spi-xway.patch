@@ -16,11 +16,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 986 insertions(+)
  create mode 100644 drivers/spi/spi-xway.c
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 1acae35..d79a587 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -434,6 +434,14 @@ config SPI_NUC900
+@@ -443,6 +443,14 @@ config SPI_NUC900
  	help
  	  SPI driver for Nuvoton NUC900 series ARM SoCs
  
@@ -35,19 +33,14 @@ index 1acae35..d79a587 100644
  #
  # Add new SPI master controllers in alphabetical order above this line
  #
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index c48df47..7e344a9 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -66,4 +66,5 @@ obj-$(CONFIG_SPI_TOPCLIFF_PCH)		+= spi-topcliff-pch.o
+@@ -67,4 +67,5 @@ obj-$(CONFIG_SPI_TOPCLIFF_PCH)		+= spi-t
  obj-$(CONFIG_SPI_TXX9)			+= spi-txx9.o
  obj-$(CONFIG_SPI_XCOMM)		+= spi-xcomm.o
  obj-$(CONFIG_SPI_XILINX)		+= spi-xilinx.o
 +obj-$(CONFIG_SPI_XWAY)		+= spi-xway.o
  
-diff --git a/drivers/spi/spi-xway.c b/drivers/spi/spi-xway.c
-new file mode 100644
-index 0000000..8441085
 --- /dev/null
 +++ b/drivers/spi/spi-xway.c
 @@ -0,0 +1,977 @@
@@ -1028,6 +1021,3 @@ index 0000000..8441085
 +MODULE_AUTHOR("Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:spi-xway");
--- 
-1.7.10.4
-

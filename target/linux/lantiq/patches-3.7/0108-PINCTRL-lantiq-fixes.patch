@@ -9,11 +9,9 @@ Subject: [PATCH] PINCTRL: lantiq: fixes
  drivers/pinctrl/pinctrl-xway.c   |   70 ++++++++++++++++++++++++++++++++++----
  3 files changed, 99 insertions(+), 26 deletions(-)
 
-Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.c
-===================================================================
---- linux-3.7-rc8.orig/drivers/pinctrl/pinctrl-lantiq.c	2012-12-03 20:22:37.000000000 +0100
-+++ linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.c	2012-12-14 22:59:40.687563565 +0100
-@@ -64,11 +64,13 @@
+--- a/drivers/pinctrl/pinctrl-lantiq.c
++++ b/drivers/pinctrl/pinctrl-lantiq.c
+@@ -64,11 +64,13 @@ static void ltq_pinctrl_pin_dbg_show(str
  	seq_printf(s, " %s", dev_name(pctldev->dev));
  }
  
@@ -28,7 +26,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.c
  	unsigned long configs[3];
  	unsigned num_configs = 0;
  	struct property *prop;
-@@ -76,8 +78,20 @@
+@@ -76,8 +78,20 @@ static int ltq_pinctrl_dt_subnode_to_map
  	const char *function;
  	int ret, i;
  
@@ -50,7 +48,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.c
  		of_property_for_each_string(np, "lantiq,groups", prop, group) {
  			(*map)->type = PIN_MAP_TYPE_MUX_GROUP;
  			(*map)->name = function;
-@@ -85,11 +99,6 @@
+@@ -85,11 +99,6 @@ static int ltq_pinctrl_dt_subnode_to_map
  			(*map)->data.mux.function = function;
  			(*map)++;
  		}
@@ -62,7 +60,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.c
  	}
  
  	for (i = 0; i < info->num_params; i++) {
-@@ -103,7 +112,7 @@
+@@ -103,7 +112,7 @@ static int ltq_pinctrl_dt_subnode_to_map
  	}
  
  	if (!num_configs)
@@ -71,7 +69,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.c
  
  	of_property_for_each_string(np, "lantiq,pins", prop, pin) {
  		(*map)->data.configs.configs = kmemdup(configs,
-@@ -115,7 +124,16 @@
+@@ -115,7 +124,16 @@ static int ltq_pinctrl_dt_subnode_to_map
  		(*map)->data.configs.num_configs = num_configs;
  		(*map)++;
  	}
@@ -89,7 +87,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.c
  }
  
  static int ltq_pinctrl_dt_subnode_size(struct device_node *np)
-@@ -135,23 +153,19 @@
+@@ -135,23 +153,19 @@ int ltq_pinctrl_dt_node_to_map(struct pi
  {
  	struct pinctrl_map *tmp;
  	struct device_node *np;
@@ -120,11 +118,9 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.c
  	return 0;
  }
  
-Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.h
-===================================================================
---- linux-3.7-rc8.orig/drivers/pinctrl/pinctrl-lantiq.h	2012-12-03 20:22:37.000000000 +0100
-+++ linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.h	2012-12-14 22:55:26.591557194 +0100
-@@ -34,6 +34,7 @@
+--- a/drivers/pinctrl/pinctrl-lantiq.h
++++ b/drivers/pinctrl/pinctrl-lantiq.h
+@@ -34,6 +34,7 @@ enum ltq_pinconf_param {
  	LTQ_PINCONF_PARAM_OPEN_DRAIN,
  	LTQ_PINCONF_PARAM_DRIVE_CURRENT,
  	LTQ_PINCONF_PARAM_SLEW_RATE,
@@ -132,11 +128,9 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-lantiq.h
  };
  
  struct ltq_cfg_param {
-Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
-===================================================================
---- linux-3.7-rc8.orig/drivers/pinctrl/pinctrl-xway.c	2012-12-14 22:55:26.567557195 +0100
-+++ linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c	2012-12-14 22:55:26.595557195 +0100
-@@ -443,7 +443,7 @@
+--- a/drivers/pinctrl/pinctrl-xway.c
++++ b/drivers/pinctrl/pinctrl-xway.c
+@@ -443,7 +443,7 @@ static int xway_pinconf_get(struct pinct
  		else
  			reg = GPIO_OD(pin);
  		*config = LTQ_PINCONF_PACK(param,
@@ -145,7 +139,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
  		break;
  
  	case LTQ_PINCONF_PARAM_PULL:
-@@ -466,6 +466,11 @@
+@@ -466,6 +466,11 @@ static int xway_pinconf_get(struct pinct
  			*config = LTQ_PINCONF_PACK(param, 1);
  		break;
  
@@ -157,7 +151,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
  	default:
  		dev_err(pctldev->dev, "Invalid config param %04x\n", param);
  		return -ENOTSUPP;
-@@ -489,7 +494,10 @@
+@@ -489,7 +494,10 @@ static int xway_pinconf_set(struct pinct
  			reg = GPIO3_OD;
  		else
  			reg = GPIO_OD(pin);
@@ -169,7 +163,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
  		break;
  
  	case LTQ_PINCONF_PARAM_PULL:
-@@ -515,6 +523,14 @@
+@@ -515,6 +523,14 @@ static int xway_pinconf_set(struct pinct
  			dev_err(pctldev->dev, "Invalid pull value %d\n", arg);
  		break;
  
@@ -184,7 +178,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
  	default:
  		dev_err(pctldev->dev, "Invalid config param %04x\n", param);
  		return -ENOTSUPP;
-@@ -522,9 +538,25 @@
+@@ -522,9 +538,25 @@ static int xway_pinconf_set(struct pinct
  	return 0;
  }
  
@@ -210,7 +204,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
  };
  
  static struct pinctrl_desc xway_pctrl_desc = {
-@@ -532,10 +564,9 @@
+@@ -532,10 +564,9 @@ static struct pinctrl_desc xway_pctrl_de
  	.confops	= &xway_pinconf_ops,
  };
  
@@ -222,7 +216,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
  	int port = PORT(pin);
  	u32 alt1_reg = GPIO_ALT1(pin);
  
-@@ -555,9 +586,18 @@
+@@ -555,9 +586,18 @@ static inline int xway_mux_apply(struct
  	return 0;
  }
  
@@ -241,7 +235,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
  };
  
  static struct ltq_pinmux_info xway_info = {
-@@ -598,6 +638,10 @@
+@@ -598,6 +638,10 @@ static int xway_gpio_dir_out(struct gpio
  {
  	struct ltq_pinmux_info *info = dev_get_drvdata(chip->dev);
  
@@ -252,7 +246,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
  	gpio_setbit(info->membase[0], GPIO_DIR(pin), PORT_PIN(pin));
  	xway_gpio_set(chip, pin, val);
  
-@@ -618,6 +662,18 @@
+@@ -618,6 +662,18 @@ static void xway_gpio_free(struct gpio_c
  	pinctrl_free_gpio(gpio);
  }
  
@@ -271,7 +265,7 @@ Index: linux-3.7-rc8/drivers/pinctrl/pinctrl-xway.c
  static struct gpio_chip xway_chip = {
  	.label = "gpio-xway",
  	.direction_input = xway_gpio_dir_in,
-@@ -626,6 +682,7 @@
+@@ -626,6 +682,7 @@ static struct gpio_chip xway_chip = {
  	.set = xway_gpio_set,
  	.request = xway_gpio_req,
  	.free = xway_gpio_free,

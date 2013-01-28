@@ -9,8 +9,6 @@ with the ar8316 switch.
  drivers/net/ethernet/lantiq_etop.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/net/ethernet/lantiq_etop.c b/drivers/net/ethernet/lantiq_etop.c
-index e695f71..fc963f6 100644
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
 @@ -83,6 +83,7 @@
@@ -32,7 +30,7 @@ index e695f71..fc963f6 100644
  /* register information for the gbit's MDIO bus */
  #define MDIO_XR9_REQUEST	0x00008000
  #define MDIO_XR9_READ		0x00000800
-@@ -329,6 +334,9 @@ ltq_etop_gbit_init(struct net_device *dev)
+@@ -329,6 +334,9 @@ ltq_etop_gbit_init(struct net_device *de
  	/* Due to traffic halt when burst length 8,
  		replace default IPG value with 0x3B */
  	ltq_gbit_w32(0x3B, LTQ_GBIT_PMAC_RX_IPG);
@@ -42,6 +40,3 @@ index e695f71..fc963f6 100644
  }
  
  static int
--- 
-1.7.11.7
-

@@ -16,11 +16,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/xway/sysctrl.c            |   12 ++++----
  6 files changed, 69 insertions(+), 10 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq.h b/arch/mips/include/asm/mach-lantiq/lantiq.h
-index 5e8a6e9..76be7a0 100644
 --- a/arch/mips/include/asm/mach-lantiq/lantiq.h
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq.h
-@@ -41,6 +41,7 @@ extern void clk_deactivate(struct clk *clk);
+@@ -41,6 +41,7 @@ extern void clk_deactivate(struct clk *c
  extern struct clk *clk_get_cpu(void);
  extern struct clk *clk_get_fpi(void);
  extern struct clk *clk_get_io(void);
@@ -28,8 +26,6 @@ index 5e8a6e9..76be7a0 100644
  
  /* find out what bootsource we have */
  extern unsigned char ltq_boot_select(void);
-diff --git a/arch/mips/lantiq/clk.c b/arch/mips/lantiq/clk.c
-index 9128ff8..292ef1a 100644
 --- a/arch/mips/lantiq/clk.c
 +++ b/arch/mips/lantiq/clk.c
 @@ -26,13 +26,15 @@
@@ -63,8 +59,6 @@ index 9128ff8..292ef1a 100644
  static inline int clk_good(struct clk *clk)
  {
  	return clk && !IS_ERR(clk);
-diff --git a/arch/mips/lantiq/clk.h b/arch/mips/lantiq/clk.h
-index c169e2b..4739366 100644
 --- a/arch/mips/lantiq/clk.h
 +++ b/arch/mips/lantiq/clk.h
 @@ -27,12 +27,15 @@
@@ -103,8 +97,6 @@ index c169e2b..4739366 100644
  
  extern unsigned long ltq_svip_cpu_hz(void);
  extern unsigned long ltq_svip_fpi_hz(void);
-diff --git a/arch/mips/lantiq/falcon/sysctrl.c b/arch/mips/lantiq/falcon/sysctrl.c
-index 2d4ced3..ff4894a 100644
 --- a/arch/mips/lantiq/falcon/sysctrl.c
 +++ b/arch/mips/lantiq/falcon/sysctrl.c
 @@ -241,9 +241,9 @@ void __init ltq_soc_init(void)
@@ -119,8 +111,6 @@ index 2d4ced3..ff4894a 100644
  
  	/* add our clock domains */
  	clkdev_add_sys("1d810000.gpio", SYSCTL_SYSETH, ACTS_P0);
-diff --git a/arch/mips/lantiq/xway/clk.c b/arch/mips/lantiq/xway/clk.c
-index 9aa17f7..1ab576d 100644
 --- a/arch/mips/lantiq/xway/clk.c
 +++ b/arch/mips/lantiq/xway/clk.c
 @@ -53,6 +53,29 @@ unsigned long ltq_danube_cpu_hz(void)
@@ -153,10 +143,12 @@ index 9aa17f7..1ab576d 100644
  unsigned long ltq_ar9_sys_hz(void)
  {
  	if (((ltq_cgu_r32(CGU_SYS) >> 3) & 0x3) == 0x2)
-@@ -149,3 +172,23 @@ unsigned long ltq_vr9_fpi_hz(void)
+@@ -147,5 +170,25 @@ unsigned long ltq_vr9_fpi_hz(void)
+ 		break;
+ 	}
  
- 	return clk;
- }
++	return clk;
++}
 +
 +unsigned long ltq_vr9_pp32_hz(void)
 +{
@@ -175,10 +167,8 @@ index 9aa17f7..1ab576d 100644
 +		break;
 +	}
 +
-+	return clk;
-+}
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 6e0e135..75e1b7d 100644
+ 	return clk;
+ }
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -356,14 +356,16 @@ void __init ltq_soc_init(void)
@@ -214,6 +204,3 @@ index 6e0e135..75e1b7d 100644
 +				ltq_danube_fpi_hz(), ltq_danube_pp32_hz());
  	}
  }
--- 
-1.7.10.4
-

@@ -22,8 +22,6 @@ Subject: [PATCH 101/123] MIPS: lantiq: adds support for SVIP SoC Family
  create mode 100644 arch/mips/lantiq/svip/reset.c
  create mode 100644 arch/mips/lantiq/svip/sysctrl.c
 
-diff --git a/arch/mips/kernel/cevt-r4k.c b/arch/mips/kernel/cevt-r4k.c
-index 7532392..06b45e4 100644
 --- a/arch/mips/kernel/cevt-r4k.c
 +++ b/arch/mips/kernel/cevt-r4k.c
 @@ -176,8 +176,10 @@ int __cpuinit r4k_clockevent_init(void)
@@ -38,8 +36,6 @@ index 7532392..06b45e4 100644
  
  	/*
  	 * With vectored interrupts things are getting platform specific.
-diff --git a/arch/mips/lantiq/Kconfig b/arch/mips/lantiq/Kconfig
-index c002191..edeb58c 100644
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
 @@ -22,6 +22,10 @@ config SOC_FALCON
@@ -53,26 +49,20 @@ index c002191..edeb58c 100644
  endchoice
  
  choice
-diff --git a/arch/mips/lantiq/Makefile b/arch/mips/lantiq/Makefile
-index d6bdc57..edeb30b 100644
 --- a/arch/mips/lantiq/Makefile
 +++ b/arch/mips/lantiq/Makefile
-@@ -12,3 +12,4 @@ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+@@ -12,3 +12,4 @@ obj-$(CONFIG_EARLY_PRINTK) += early_prin
  
  obj-$(CONFIG_SOC_TYPE_XWAY) += xway/
  obj-$(CONFIG_SOC_FALCON) += falcon/
 +obj-$(CONFIG_SOC_SVIP) += svip/
-diff --git a/arch/mips/lantiq/Platform b/arch/mips/lantiq/Platform
-index b3ec498..857548c 100644
 --- a/arch/mips/lantiq/Platform
 +++ b/arch/mips/lantiq/Platform
-@@ -7,3 +7,4 @@ cflags-$(CONFIG_LANTIQ)		+= -I$(srctree)/arch/mips/include/asm/mach-lantiq
+@@ -7,3 +7,4 @@ cflags-$(CONFIG_LANTIQ)		+= -I$(srctree)
  load-$(CONFIG_LANTIQ)		= 0xffffffff80002000
  cflags-$(CONFIG_SOC_TYPE_XWAY)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/xway
  cflags-$(CONFIG_SOC_FALCON)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/falcon
 +cflags-$(CONFIG_SOC_SVIP)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/svip
-diff --git a/arch/mips/lantiq/clk.c b/arch/mips/lantiq/clk.c
-index ce2f129..9128ff8 100644
 --- a/arch/mips/lantiq/clk.c
 +++ b/arch/mips/lantiq/clk.c
 @@ -163,8 +163,15 @@ void __init plat_time_init(void)
@@ -91,11 +81,9 @@ index ce2f129..9128ff8 100644
  	pr_info("CPU Clock: %ldMHz\n", clk_get_rate(clk) / 1000000);
  	clk_put(clk);
  }
-diff --git a/arch/mips/lantiq/clk.h b/arch/mips/lantiq/clk.h
-index fa67060..c169e2b 100644
 --- a/arch/mips/lantiq/clk.h
 +++ b/arch/mips/lantiq/clk.h
-@@ -75,4 +75,8 @@ extern unsigned long ltq_ar9_fpi_hz(void);
+@@ -75,4 +75,8 @@ extern unsigned long ltq_ar9_fpi_hz(void
  extern unsigned long ltq_vr9_cpu_hz(void);
  extern unsigned long ltq_vr9_fpi_hz(void);
  
@@ -104,16 +92,10 @@ index fa67060..c169e2b 100644
 +extern unsigned long ltq_svip_io_hz(void);
 +
  #endif
-diff --git a/arch/mips/lantiq/svip/Makefile b/arch/mips/lantiq/svip/Makefile
-new file mode 100644
-index 0000000..74308b2
 --- /dev/null
 +++ b/arch/mips/lantiq/svip/Makefile
 @@ -0,0 +1 @@
 +obj-y := prom.o reset.o sysctrl.o clk.o
-diff --git a/arch/mips/lantiq/svip/clk.c b/arch/mips/lantiq/svip/clk.c
-new file mode 100644
-index 0000000..3a7b665
 --- /dev/null
 +++ b/arch/mips/lantiq/svip/clk.c
 @@ -0,0 +1,70 @@
@@ -187,9 +169,6 @@ index 0000000..3a7b665
 +	div = SYS1_FPICR_FPIDIV_GET(ltq_sys1_r32(SYS1_FPICR));
 +	return ltq_svip_cpu_hz() / fbs0_div[div];
 +}
-diff --git a/arch/mips/lantiq/svip/prom.c b/arch/mips/lantiq/svip/prom.c
-new file mode 100644
-index 0000000..01d2018
 --- /dev/null
 +++ b/arch/mips/lantiq/svip/prom.c
 @@ -0,0 +1,43 @@
@@ -236,9 +215,6 @@ index 0000000..01d2018
 +		break;
 +	}
 +}
-diff --git a/arch/mips/lantiq/svip/reset.c b/arch/mips/lantiq/svip/reset.c
-new file mode 100644
-index 0000000..4b41dd1
 --- /dev/null
 +++ b/arch/mips/lantiq/svip/reset.c
 @@ -0,0 +1,105 @@
@@ -347,9 +323,6 @@ index 0000000..4b41dd1
 +}
 +
 +arch_initcall(mips_reboot_setup);
-diff --git a/arch/mips/lantiq/svip/sysctrl.c b/arch/mips/lantiq/svip/sysctrl.c
-new file mode 100644
-index 0000000..d2b636b
 --- /dev/null
 +++ b/arch/mips/lantiq/svip/sysctrl.c
 @@ -0,0 +1,81 @@
@@ -434,6 +407,3 @@ index 0000000..d2b636b
 +	clkdev_add_static(ltq_svip_cpu_hz(), ltq_svip_fpi_hz(),
 +				ltq_svip_io_hz());
 +}
--- 
-1.7.10.4
-

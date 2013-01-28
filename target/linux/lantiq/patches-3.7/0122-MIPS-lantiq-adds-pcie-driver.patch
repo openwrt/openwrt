@@ -36,8 +36,6 @@ Subject: [PATCH 122/123] MIPS: lantiq: adds pcie driver
  create mode 100644 arch/mips/pci/ifxmips_pcie_reg.h
  create mode 100644 arch/mips/pci/ifxmips_pcie_vr9.h
 
-diff --git a/arch/mips/lantiq/Kconfig b/arch/mips/lantiq/Kconfig
-index edeb58c..116765a 100644
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
 @@ -17,6 +17,7 @@ config SOC_XWAY
@@ -64,8 +62,6 @@ index edeb58c..116765a 100644
  config XRX200_PHY_FW
  	bool "XRX200 PHY firmware loader"
  	depends on SOC_XWAY
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 75e1b7d..b077d49 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -377,6 +377,8 @@ void __init ltq_soc_init(void)
@@ -77,11 +73,9 @@ index 75e1b7d..b077d49 100644
  	} else if (of_machine_is_compatible("lantiq,ar9")) {
  		clkdev_add_static(ltq_ar9_cpu_hz(), ltq_ar9_fpi_hz(),
  				ltq_ar9_fpi_hz(), CLOCK_250M);
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index e13a71c..46d7096 100644
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -44,6 +44,8 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1480.o pci-bcm1480ht.o
+@@ -44,6 +44,8 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1
  obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -90,9 +84,6 @@ index e13a71c..46d7096 100644
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
  obj-$(CONFIG_TANBAC_TB0287)	+= fixup-tb0287.o
-diff --git a/arch/mips/pci/fixup-lantiq-pcie.c b/arch/mips/pci/fixup-lantiq-pcie.c
-new file mode 100644
-index 0000000..50a1c3b
 --- /dev/null
 +++ b/arch/mips/pci/fixup-lantiq-pcie.c
 @@ -0,0 +1,82 @@
@@ -178,8 +169,6 @@ index 0000000..50a1c3b
 +
 +DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_LANTIQ, PCI_DEVICE_ID_LANTIQ_PCIE,
 +     ifx_pcie_rc_class_early_fixup);
-diff --git a/arch/mips/pci/fixup-lantiq.c b/arch/mips/pci/fixup-lantiq.c
-index 6c829df..cf5c4e0 100644
 --- a/arch/mips/pci/fixup-lantiq.c
 +++ b/arch/mips/pci/fixup-lantiq.c
 @@ -11,6 +11,7 @@
@@ -190,7 +179,7 @@ index 6c829df..cf5c4e0 100644
  
  int pcibios_plat_dev_init(struct pci_dev *dev)
  {
-@@ -28,6 +29,8 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+@@ -28,6 +29,8 @@ int __init pcibios_map_irq(const struct
  	struct of_irq dev_irq;
  	int irq;
  
@@ -199,9 +188,6 @@ index 6c829df..cf5c4e0 100644
  	if (of_irq_map_pci(dev, &dev_irq)) {
  		dev_err(&dev->dev, "trying to map irq for unknown slot:%d pin:%d\n",
  			slot, pin);
-diff --git a/arch/mips/pci/ifxmips_pci_common.h b/arch/mips/pci/ifxmips_pci_common.h
-new file mode 100755
-index 0000000..5f6ab83
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pci_common.h
 @@ -0,0 +1,57 @@
@@ -262,9 +248,6 @@ index 0000000..5f6ab83
 +
 +#endif /* IFXMIPS_PCI_COMMON_H */
 +
-diff --git a/arch/mips/pci/ifxmips_pcie.c b/arch/mips/pci/ifxmips_pcie.c
-new file mode 100644
-index 0000000..de6e2fa
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie.c
 @@ -0,0 +1,1607 @@
@@ -1875,9 +1858,6 @@ index 0000000..de6e2fa
 +MODULE_SUPPORTED_DEVICE("Infineon builtin PCIe RC module");
 +MODULE_DESCRIPTION("Infineon builtin PCIe RC driver");
 +
-diff --git a/arch/mips/pci/ifxmips_pcie.h b/arch/mips/pci/ifxmips_pcie.h
-new file mode 100644
-index 0000000..49a4d2f
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie.h
 @@ -0,0 +1,135 @@
@@ -2016,9 +1996,6 @@ index 0000000..49a4d2f
 +
 +#endif  /* IFXMIPS_PCIE_H */
 +
-diff --git a/arch/mips/pci/ifxmips_pcie_ar10.h b/arch/mips/pci/ifxmips_pcie_ar10.h
-new file mode 100644
-index 0000000..99ff463
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie_ar10.h
 @@ -0,0 +1,290 @@
@@ -2312,9 +2289,6 @@ index 0000000..99ff463
 +}
 +
 +#endif /* IFXMIPS_PCIE_AR10_H */
-diff --git a/arch/mips/pci/ifxmips_pcie_msi.c b/arch/mips/pci/ifxmips_pcie_msi.c
-new file mode 100644
-index 0000000..5bee7f8
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie_msi.c
 @@ -0,0 +1,392 @@
@@ -2710,9 +2684,6 @@ index 0000000..5bee7f8
 +MODULE_SUPPORTED_DEVICE("Infineon PCIe IP builtin MSI PIC module");
 +MODULE_DESCRIPTION("Infineon PCIe IP builtin MSI PIC driver");
 +
-diff --git a/arch/mips/pci/ifxmips_pcie_phy.c b/arch/mips/pci/ifxmips_pcie_phy.c
-new file mode 100644
-index 0000000..a4171a7
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie_phy.c
 @@ -0,0 +1,478 @@
@@ -3194,9 +3165,6 @@ index 0000000..a4171a7
 +#endif
 +}
 +
-diff --git a/arch/mips/pci/ifxmips_pcie_pm.c b/arch/mips/pci/ifxmips_pcie_pm.c
-new file mode 100644
-index 0000000..a10ecad
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie_pm.c
 @@ -0,0 +1,176 @@
@@ -3376,9 +3344,6 @@ index 0000000..a10ecad
 +    ifx_pmcu_unregister(&pmcuUnRegister);
 +}
 +
-diff --git a/arch/mips/pci/ifxmips_pcie_pm.h b/arch/mips/pci/ifxmips_pcie_pm.h
-new file mode 100644
-index 0000000..6ece20d
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie_pm.h
 @@ -0,0 +1,36 @@
@@ -3418,9 +3383,6 @@ index 0000000..6ece20d
 +
 +#endif /* IFXMIPS_PCIE_PM_H  */
 +
-diff --git a/arch/mips/pci/ifxmips_pcie_reg.h b/arch/mips/pci/ifxmips_pcie_reg.h
-new file mode 100644
-index 0000000..e7e4b6c
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie_reg.h
 @@ -0,0 +1,1001 @@
@@ -4425,9 +4387,6 @@ index 0000000..e7e4b6c
 +
 +#endif /* IFXMIPS_PCIE_REG_H */
 +
-diff --git a/arch/mips/pci/ifxmips_pcie_vr9.h b/arch/mips/pci/ifxmips_pcie_vr9.h
-new file mode 100644
-index 0000000..57d9368
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie_vr9.h
 @@ -0,0 +1,271 @@
@@ -4702,8 +4661,6 @@ index 0000000..57d9368
 +
 +#endif /* IFXMIPS_PCIE_VR9_H */
 +
-diff --git a/arch/mips/pci/pci.c b/arch/mips/pci/pci.c
-index 04e35bc..2e85529 100644
 --- a/arch/mips/pci/pci.c
 +++ b/arch/mips/pci/pci.c
 @@ -250,6 +250,31 @@ static int __init pcibios_init(void)
@@ -4738,8 +4695,6 @@ index 04e35bc..2e85529 100644
  static int pcibios_enable_resources(struct pci_dev *dev, int mask)
  {
  	u16 cmd, old_cmd;
-diff --git a/drivers/pci/pcie/aer/Kconfig b/drivers/pci/pcie/aer/Kconfig
-index 50e94e0..4bf848f 100644
 --- a/drivers/pci/pcie/aer/Kconfig
 +++ b/drivers/pci/pcie/aer/Kconfig
 @@ -5,7 +5,7 @@
@@ -4751,11 +4706,9 @@ index 50e94e0..4bf848f 100644
  	help
  	  This enables PCI Express Root Port Advanced Error Reporting
  	  (AER) driver support. Error reporting messages sent to Root
-diff --git a/include/linux/pci.h b/include/linux/pci.h
-index ee21795..0d08026 100644
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1038,6 +1038,8 @@ void pci_walk_bus(struct pci_bus *top, int (*cb)(struct pci_dev *, void *),
+@@ -1038,6 +1038,8 @@ void pci_walk_bus(struct pci_bus *top, i
  int pci_cfg_space_size_ext(struct pci_dev *dev);
  int pci_cfg_space_size(struct pci_dev *dev);
  unsigned char pci_bus_max_busnr(struct pci_bus *bus);
@@ -4764,8 +4717,6 @@ index ee21795..0d08026 100644
  void pci_setup_bridge(struct pci_bus *bus);
  resource_size_t pcibios_window_alignment(struct pci_bus *bus,
  					 unsigned long type);
-diff --git a/include/linux/pci_ids.h b/include/linux/pci_ids.h
-index 9d36b82..493ada4 100644
 --- a/include/linux/pci_ids.h
 +++ b/include/linux/pci_ids.h
 @@ -1040,6 +1040,12 @@
@@ -4781,6 +4732,3 @@ index 9d36b82..493ada4 100644
  #define PCI_VENDOR_ID_WINBOND		0x10ad
  #define PCI_DEVICE_ID_WINBOND_82C105	0x0105
  #define PCI_DEVICE_ID_WINBOND_83C553	0x0565
--- 
-1.7.10.4
-

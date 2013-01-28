@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/mtd/nand/xway_nand.c |   12 ++++++++++--
  1 file changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mtd/nand/xway_nand.c b/drivers/mtd/nand/xway_nand.c
-index 3f81dc8..4731300 100644
 --- a/drivers/mtd/nand/xway_nand.c
 +++ b/drivers/mtd/nand/xway_nand.c
-@@ -58,15 +58,23 @@ static void xway_reset_chip(struct nand_chip *chip)
+@@ -58,15 +58,23 @@ static void xway_reset_chip(struct nand_
  {
  	unsigned long nandaddr = (unsigned long) chip->IO_ADDR_W;
  	unsigned long flags;
@@ -42,6 +40,3 @@ index 3f81dc8..4731300 100644
  	spin_unlock_irqrestore(&ebu_lock, flags);
  }
  
--- 
-1.7.10.4
-

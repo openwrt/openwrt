@@ -1,8 +1,6 @@
-Index: linux-3.7-rc8/arch/mips/pci/pci-lantiq.c
-===================================================================
---- linux-3.7-rc8.orig/arch/mips/pci/pci-lantiq.c	2012-12-03 20:22:37.000000000 +0100
-+++ linux-3.7-rc8/arch/mips/pci/pci-lantiq.c	2012-12-14 23:28:24.355606776 +0100
-@@ -129,8 +129,15 @@
+--- a/arch/mips/pci/pci-lantiq.c
++++ b/arch/mips/pci/pci-lantiq.c
+@@ -129,8 +129,15 @@ static int __devinit ltq_pci_startup(str
  
  	/* setup reset gpio used by pci */
  	reset_gpio = of_get_named_gpio(node, "gpio-reset", 0);
