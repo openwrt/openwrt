@@ -1,0 +1,16 @@
+case "$ACTION" in
+	ifup)
+		. /lib/functions.sh
+
+		local proto ip6slaac
+		config_load network
+		config_get proto "$INTERFACE" proto
+		config_get_bool ip6slaac "$INTERFACE" ip6slaac
+
+		if [ "$proto" = "static" -a "$ip6slaac" = "1" ]; then
+			echo 2 > "/proc/sys/net/ipv6/conf/$DEVICE/accept_ra"
+			echo 2 > "/proc/sys/net/ipv6/conf/$DEVICE/forwarding"
+		fi
+	;;
+esac
+
