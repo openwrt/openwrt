@@ -16,8 +16,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/i2c/busses/i2c-lantiq.c
  create mode 100644 drivers/i2c/busses/i2c-lantiq.h
 
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index e9df461..e03f821 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -460,6 +460,16 @@ config I2C_IOP3XX
@@ -37,11 +35,9 @@ index e9df461..e03f821 100644
  config I2C_MPC
  	tristate "MPC107/824x/85xx/512x/52xx/83xx/86xx"
  	depends on PPC
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index 395b516..74a789a 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -45,6 +45,7 @@ obj-$(CONFIG_I2C_IBM_IIC)	+= i2c-ibm_iic.o
+@@ -45,6 +45,7 @@ obj-$(CONFIG_I2C_IBM_IIC)	+= i2c-ibm_iic
  obj-$(CONFIG_I2C_IMX)		+= i2c-imx.o
  obj-$(CONFIG_I2C_INTEL_MID)	+= i2c-intel-mid.o
  obj-$(CONFIG_I2C_IOP3XX)	+= i2c-iop3xx.o
@@ -49,9 +45,6 @@ index 395b516..74a789a 100644
  obj-$(CONFIG_I2C_MPC)		+= i2c-mpc.o
  obj-$(CONFIG_I2C_MV64XXX)	+= i2c-mv64xxx.o
  obj-$(CONFIG_I2C_MXS)		+= i2c-mxs.o
-diff --git a/drivers/i2c/busses/i2c-lantiq.c b/drivers/i2c/busses/i2c-lantiq.c
-new file mode 100644
-index 0000000..9a5f58b
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-lantiq.c
 @@ -0,0 +1,747 @@
@@ -802,9 +795,6 @@ index 0000000..9a5f58b
 +MODULE_ALIAS("platform:" DRV_NAME);
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION(DRV_VERSION);
-diff --git a/drivers/i2c/busses/i2c-lantiq.h b/drivers/i2c/busses/i2c-lantiq.h
-new file mode 100644
-index 0000000..7a86b89
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-lantiq.h
 @@ -0,0 +1,234 @@
@@ -1042,6 +1032,3 @@ index 0000000..7a86b89
 +
 +
 +#endif /* I2C_LANTIQ_H */
--- 
-1.7.10.4
-

@@ -10,10 +10,8 @@ Subject: [PATCH 20/25] owrt atm
  net/atm/proc.c         |    2 +-
  4 files changed, 11 insertions(+), 1 deletions(-)
 
-Index: linux-3.7-rc6/arch/mips/lantiq/irq.c
-===================================================================
---- linux-3.7-rc6.orig/arch/mips/lantiq/irq.c	2012-12-06 21:02:42.000000000 +0100
-+++ linux-3.7-rc6/arch/mips/lantiq/irq.c	2012-12-06 21:03:13.850060387 +0100
+--- a/arch/mips/lantiq/irq.c
++++ b/arch/mips/lantiq/irq.c
 @@ -14,6 +14,7 @@
  #include <linux/of_platform.h>
  #include <linux/of_address.h>
@@ -22,7 +20,7 @@ Index: linux-3.7-rc6/arch/mips/lantiq/irq.c
  
  #include <asm/bootinfo.h>
  #include <asm/irq_cpu.h>
-@@ -99,6 +100,7 @@
+@@ -99,6 +100,7 @@ void ltq_mask_and_ack_irq(struct irq_dat
  	ltq_icu_w32(im, ltq_icu_r32(im, ier) & ~BIT(offset), ier);
  	ltq_icu_w32(im, BIT(offset), isr);
  }
@@ -30,11 +28,9 @@ Index: linux-3.7-rc6/arch/mips/lantiq/irq.c
  
  static void ltq_ack_irq(struct irq_data *d)
  {
-Index: linux-3.7-rc6/arch/mips/mm/cache.c
-===================================================================
---- linux-3.7-rc6.orig/arch/mips/mm/cache.c	2012-12-06 21:02:40.000000000 +0100
-+++ linux-3.7-rc6/arch/mips/mm/cache.c	2012-12-06 21:03:13.850060387 +0100
-@@ -58,6 +58,8 @@
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -58,6 +58,8 @@ void (*_dma_cache_wback)(unsigned long s
  void (*_dma_cache_inv)(unsigned long start, unsigned long size);
  
  EXPORT_SYMBOL(_dma_cache_wback_inv);
@@ -43,11 +39,9 @@ Index: linux-3.7-rc6/arch/mips/mm/cache.c
  
  #endif /* CONFIG_DMA_NONCOHERENT */
  
-Index: linux-3.7-rc6/net/atm/common.c
-===================================================================
---- linux-3.7-rc6.orig/net/atm/common.c	2012-11-17 02:42:40.000000000 +0100
-+++ linux-3.7-rc6/net/atm/common.c	2012-12-06 21:03:13.850060387 +0100
-@@ -62,11 +62,17 @@
+--- a/net/atm/common.c
++++ b/net/atm/common.c
+@@ -62,11 +62,17 @@ static void vcc_remove_socket(struct soc
  	write_unlock_irq(&vcc_sklist_lock);
  }
  
@@ -65,11 +59,9 @@ Index: linux-3.7-rc6/net/atm/common.c
  	if (sk_wmem_alloc_get(sk) && !atm_may_send(vcc, size)) {
  		pr_debug("Sorry: wmem_alloc = %d, size = %d, sndbuf = %d\n",
  			 sk_wmem_alloc_get(sk), size, sk->sk_sndbuf);
-Index: linux-3.7-rc6/net/atm/proc.c
-===================================================================
---- linux-3.7-rc6.orig/net/atm/proc.c	2012-11-17 02:42:40.000000000 +0100
-+++ linux-3.7-rc6/net/atm/proc.c	2012-12-06 21:03:13.850060387 +0100
-@@ -154,7 +154,7 @@
+--- a/net/atm/proc.c
++++ b/net/atm/proc.c
+@@ -154,7 +154,7 @@ static void *vcc_seq_next(struct seq_fil
  static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
  {
  	static const char *const class_name[] = {
@@ -78,10 +70,8 @@ Index: linux-3.7-rc6/net/atm/proc.c
  	static const char *const aal_name[] = {
  		"---",	"1",	"2",	"3/4",	/*  0- 3 */
  		"???",	"5",	"???",	"???",	/*  4- 7 */
-Index: linux-3.7-rc6/arch/mips/include/asm/mach-lantiq/lantiq_atm.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.7-rc6/arch/mips/include/asm/mach-lantiq/lantiq_atm.h	2012-12-06 21:03:13.850060387 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-lantiq/lantiq_atm.h
 @@ -0,0 +1,196 @@
 +/******************************************************************************
 +**
@@ -279,10 +269,8 @@ Index: linux-3.7-rc6/arch/mips/include/asm/mach-lantiq/lantiq_atm.h
 +
 +#endif  //  IFX_ATM_H
 +
-Index: linux-3.7-rc6/arch/mips/include/asm/mach-lantiq/lantiq_ptm.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.7-rc6/arch/mips/include/asm/mach-lantiq/lantiq_ptm.h	2012-12-06 21:03:13.854060387 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-lantiq/lantiq_ptm.h
 @@ -0,0 +1,203 @@
 +/******************************************************************************
 +**
@@ -487,10 +475,8 @@ Index: linux-3.7-rc6/arch/mips/include/asm/mach-lantiq/lantiq_ptm.h
 +
 +#endif  //  IFX_PTM_H
 +
-Index: linux-3.7-rc6/include/uapi/linux/atm.h
-===================================================================
---- linux-3.7-rc6.orig/include/uapi/linux/atm.h	2012-12-06 21:02:41.458059575 +0100
-+++ linux-3.7-rc6/include/uapi/linux/atm.h	2012-12-06 21:04:21.282062078 +0100
+--- a/include/uapi/linux/atm.h
++++ b/include/uapi/linux/atm.h
 @@ -130,8 +130,14 @@
  #define ATM_ABR		4
  #define ATM_ANYCLASS	5		/* compatible with everything */

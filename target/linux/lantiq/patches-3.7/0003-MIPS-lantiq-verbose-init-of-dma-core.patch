@@ -11,8 +11,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4520
  arch/mips/lantiq/xway/dma.c |    9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/arch/mips/lantiq/xway/dma.c b/arch/mips/lantiq/xway/dma.c
-index 55d2c4f..b5d76d1 100644
 --- a/arch/mips/lantiq/xway/dma.c
 +++ b/arch/mips/lantiq/xway/dma.c
 @@ -25,6 +25,7 @@
@@ -23,7 +21,7 @@ index 55d2c4f..b5d76d1 100644
  #define LTQ_DMA_CTRL		0x10
  #define LTQ_DMA_CPOLL		0x14
  #define LTQ_DMA_CS		0x18
-@@ -214,6 +215,7 @@ ltq_dma_init(struct platform_device *pdev)
+@@ -214,6 +215,7 @@ ltq_dma_init(struct platform_device *pde
  {
  	struct clk *clk;
  	struct resource *res;
@@ -31,7 +29,7 @@ index 55d2c4f..b5d76d1 100644
  	int i;
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-@@ -243,7 +245,12 @@ ltq_dma_init(struct platform_device *pdev)
+@@ -243,7 +245,12 @@ ltq_dma_init(struct platform_device *pde
  		ltq_dma_w32(DMA_POLL | DMA_CLK_DIV4, LTQ_DMA_CPOLL);
  		ltq_dma_w32_mask(DMA_CHAN_ON, 0, LTQ_DMA_CCTRL);
  	}
@@ -45,6 +43,3 @@ index 55d2c4f..b5d76d1 100644
  	return 0;
  }
  
--- 
-1.7.10.4
-

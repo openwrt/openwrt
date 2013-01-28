@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-xway.c |   28 ++++++++++++++--------------
  1 file changed, 14 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
-index b9bcaec..48ab09b 100644
 --- a/drivers/pinctrl/pinctrl-xway.c
 +++ b/drivers/pinctrl/pinctrl-xway.c
-@@ -441,17 +441,17 @@ static int xway_pinconf_get(struct pinctrl_dev *pctldev,
+@@ -441,17 +441,17 @@ static int xway_pinconf_get(struct pinct
  		if (port == PORT3)
  			reg = GPIO3_OD;
  		else
@@ -38,7 +36,7 @@ index b9bcaec..48ab09b 100644
  			*config = LTQ_PINCONF_PACK(param, 0);
  			break;
  		}
-@@ -459,8 +459,8 @@ static int xway_pinconf_get(struct pinctrl_dev *pctldev,
+@@ -459,8 +459,8 @@ static int xway_pinconf_get(struct pinct
  		if (port == PORT3)
  			reg = GPIO3_PUDSEL;
  		else
@@ -49,7 +47,7 @@ index b9bcaec..48ab09b 100644
  			*config = LTQ_PINCONF_PACK(param, 2);
  		else
  			*config = LTQ_PINCONF_PACK(param, 1);
-@@ -488,29 +488,29 @@ static int xway_pinconf_set(struct pinctrl_dev *pctldev,
+@@ -488,29 +488,29 @@ static int xway_pinconf_set(struct pinct
  		if (port == PORT3)
  			reg = GPIO3_OD;
  		else
@@ -87,6 +85,3 @@ index b9bcaec..48ab09b 100644
  		else
  			dev_err(pctldev->dev, "Invalid pull value %d\n", arg);
  		break;
--- 
-1.7.10.4
-

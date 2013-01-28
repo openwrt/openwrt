@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/xway/sysctrl.c |    1 +
  2 files changed, 10 insertions(+)
 
-diff --git a/arch/mips/lantiq/xway/reset.c b/arch/mips/lantiq/xway/reset.c
-index 544dbb7..1fa0f17 100644
 --- a/arch/mips/lantiq/xway/reset.c
 +++ b/arch/mips/lantiq/xway/reset.c
 @@ -78,10 +78,19 @@ static struct ltq_xrx200_gphy_reset {
@@ -35,8 +33,6 @@ index 544dbb7..1fa0f17 100644
  	if (id > 1) {
  		dev_err(dev, "%u is an invalid gphy id\n", id);
  		return -EINVAL;
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 3925e66..6e0e135 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -374,6 +374,7 @@ void __init ltq_soc_init(void)
@@ -47,6 +43,3 @@ index 3925e66..6e0e135 100644
  	} else if (of_machine_is_compatible("lantiq,ar9")) {
  		clkdev_add_static(ltq_ar9_cpu_hz(), ltq_ar9_fpi_hz(),
  				ltq_ar9_fpi_hz());
--- 
-1.7.10.4
-

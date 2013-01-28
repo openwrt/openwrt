@@ -8,11 +8,9 @@ Subject: [PATCH 100/123] MIPS: lantiq: honour model property inside
  arch/mips/lantiq/prom.c |   20 ++++++++++++++++++--
  1 file changed, 18 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
-index 9f9e875..fa12dc1 100644
 --- a/arch/mips/lantiq/prom.c
 +++ b/arch/mips/lantiq/prom.c
-@@ -57,6 +57,21 @@ static void __init prom_init_cmdline(void)
+@@ -57,6 +57,21 @@ static void __init prom_init_cmdline(voi
  	}
  }
  
@@ -54,6 +52,3 @@ index 9f9e875..fa12dc1 100644
  	pr_info("SoC: %s\n", soc_info.sys_type);
  	prom_init_cmdline();
  
--- 
-1.7.10.4
-

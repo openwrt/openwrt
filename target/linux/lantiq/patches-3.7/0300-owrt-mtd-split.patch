@@ -10,10 +10,6 @@ Subject: [PATCH 19/25] owrt mtd split
  drivers/mtd/mtdpart.c                              |  173 +++++++++++++++++++-
  4 files changed, 184 insertions(+), 1 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 1ec8f2a..1ff93cc 100644
-diff --git a/drivers/mtd/Kconfig b/drivers/mtd/Kconfig
-index 982a98b..e2f3f3e 100644
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -31,6 +31,10 @@ config MTD_ROOTFS_SPLIT
@@ -27,11 +23,9 @@ index 982a98b..e2f3f3e 100644
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	---help---
-diff --git a/drivers/mtd/mtdpart.c b/drivers/mtd/mtdpart.c
-index 855b70b..93711e2 100644
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -867,6 +867,168 @@ static int refresh_rootfs_split(struct mtd_info *mtd)
+@@ -844,6 +844,168 @@ static int refresh_rootfs_split(struct m
  }
  #endif /* CONFIG_MTD_ROOTFS_SPLIT */
  
@@ -200,7 +194,7 @@ index 855b70b..93711e2 100644
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -883,7 +1045,7 @@ int add_mtd_partitions(struct mtd_info *master,
+@@ -860,7 +1022,7 @@ int add_mtd_partitions(struct mtd_info *
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
  	int i;
@@ -209,7 +203,7 @@ index 855b70b..93711e2 100644
  	int ret;
  #endif
  
-@@ -900,6 +1062,15 @@ int add_mtd_partitions(struct mtd_info *master,
+@@ -877,6 +1039,15 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
@@ -225,6 +219,3 @@ index 855b70b..93711e2 100644
  		if (!strcmp(parts[i].name, "rootfs")) {
  #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
  			if (ROOT_DEV == 0) {
--- 
-1.7.9.1
-

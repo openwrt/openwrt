@@ -12,8 +12,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4519
  arch/mips/lantiq/xway/reset.c |   22 +++++++++++++++-------
  1 file changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/arch/mips/lantiq/xway/reset.c b/arch/mips/lantiq/xway/reset.c
-index 22c55f7..2799212 100644
 --- a/arch/mips/lantiq/xway/reset.c
 +++ b/arch/mips/lantiq/xway/reset.c
 @@ -34,11 +34,12 @@
@@ -66,6 +64,3 @@ index 22c55f7..2799212 100644
  		panic("Failed to get rcu memory range");
  
  	if (request_mem_region(res.start, resource_size(&res), res.name) < 0)
--- 
-1.7.10.4
-

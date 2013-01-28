@@ -7,11 +7,9 @@ Subject: [PATCH 121/123] owrt: lantiq dtb image hack
  arch/mips/lantiq/prom.c |    4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-Index: linux-3.7-rc8/arch/mips/lantiq/prom.c
-===================================================================
---- linux-3.7-rc8.orig/arch/mips/lantiq/prom.c	2012-12-14 23:08:36.451576994 +0100
-+++ linux-3.7-rc8/arch/mips/lantiq/prom.c	2012-12-14 23:08:36.607576999 +0100
-@@ -72,6 +72,8 @@
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -72,6 +72,8 @@ int __init early_init_dt_scan_model(unsi
  	return 0;
  }
  
@@ -20,7 +18,7 @@ Index: linux-3.7-rc8/arch/mips/lantiq/prom.c
  void __init plat_mem_setup(void)
  {
  	ioport_resource.start = IOPORT_RESOURCE_START;
-@@ -85,7 +87,7 @@
+@@ -85,7 +87,7 @@ void __init plat_mem_setup(void)
  	 * Load the builtin devicetree. This causes the chosen node to be
  	 * parsed resulting in our memory appearing
  	 */
@@ -29,10 +27,8 @@ Index: linux-3.7-rc8/arch/mips/lantiq/prom.c
  
  	of_scan_flat_dt(early_init_dt_scan_model, NULL);
  }
-Index: linux-3.7-rc8/arch/mips/lantiq/Makefile
-===================================================================
---- linux-3.7-rc8.orig/arch/mips/lantiq/Makefile	2012-12-14 23:08:36.459576996 +0100
-+++ linux-3.7-rc8/arch/mips/lantiq/Makefile	2012-12-15 01:40:16.519805129 +0100
+--- a/arch/mips/lantiq/Makefile
++++ b/arch/mips/lantiq/Makefile
 @@ -6,8 +6,6 @@
  
  obj-y := irq.o clk.o prom.o
