@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 #
 #   Script to install host system binaries along with required libraries.
-#   Refer to the --help output for more information.
 #
-#   Copyright (C) 2012 Jo-Philipp Wich <jow@openwrt.org>
+#   Copyright (C) 2012-2013 Jo-Philipp Wich <jow@openwrt.org>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -90,17 +89,19 @@ for BIN in "$@"; do
 	if [ -n "$LDSO" ]; then
 		_cp "$BIN" "$DIR/bundled/${BIN##*/}"
 
-		[ -x "$DIR/bundled/run.sh" ] || {
-			cat <<-EOF > "$DIR/bundled/run.sh"
+		RUN="${LDSO#ld-}"; RUN="run-${RUN%%.so*}.sh"
+
+		[ -x "$DIR/bundled/$RUN" ] || {
+			cat <<-EOF > "$DIR/bundled/$RUN"
 				#!/usr/bin/env bash
 				dir="\$(dirname "\$0")"
 				bin="\$(basename "\$0")"
 				exec -a "\$0" "\$dir/bundled/lib/$LDSO" --library-path "\$dir/bundled/lib" "\$dir/bundled/\$bin" "\$@"
 			EOF
-			chmod ${VERBOSE:+-v} 0755 "$DIR/bundled/run.sh"
+			chmod ${VERBOSE:+-v} 0755 "$DIR/bundled/$RUN"
 		}
 
-		_ln "./bundled/run.sh" "$DIR/${BIN##*/}"
+		_ln "./bundled/$RUN" "$DIR/${BIN##*/}"
 
 	# is a static executable or non-elf binary
 	else
