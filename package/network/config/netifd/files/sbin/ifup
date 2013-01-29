@@ -6,7 +6,7 @@ setup_wifi=
 if_call() {
 	local interface="$1"
 	for mode in $modes; do
-		ubus call $interface $mode
+		ubus call network.interface $mode "{ \"interface\" : \"$interface\" }"
 	done
 }
 
@@ -38,7 +38,7 @@ done
 [ "$modes" = "down up" ] && ubus call network reload
 if [ -n "$ifup_all" ]; then
 	for interface in `ubus -S list 'network.interface.*'`; do
-		if_call "$interface"
+		if_call "${interface##network.interface.}"
 	done
 	[ -n "$setup_wifi" ] && /sbin/wifi up
 	exit
@@ -47,7 +47,7 @@ else
 		echo "Interface $1 not found"
 		exit
 	}
-	if_call "network.interface.$1"
+	if_call "$1"
 fi
 
 if [ -n "$setup_wifi" ] && grep -sq config /etc/config/wireless; then

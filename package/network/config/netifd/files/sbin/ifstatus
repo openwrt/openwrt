@@ -10,4 +10,4 @@ ubus -S list "network.interface.$INTERFACE" >/dev/null || {
 	echo "Interface $INTERFACE not found"
 	exit 1
 }
-ubus call network.interface."$INTERFACE" status
+ubus call network.interface status "{ \"interface\" : \"$INTERFACE\" }"
