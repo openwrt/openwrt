@@ -38,6 +38,17 @@ endef
 
 $(eval $(call Profile,AP121MINI))
 
+define Profile/AP132
+	NAME:=Atheros AP132 reference board
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-usb-storage
+endef
+
+define Profile/AP132/Description
+	Package set optimized for the Atheros AP132 reference board.
+endef
+
+$(eval $(call Profile,AP132))
+
 define Profile/AP135
 	NAME:=Atheros AP135 reference board
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-usb-storage
