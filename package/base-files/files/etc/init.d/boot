@@ -95,6 +95,9 @@ start() {
 		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
 		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
 	}
+
+	# run early sysctl
+	[ -f /etc/sysctl_early.conf ] && sysctl -p /etc/sysctl_early.conf -e >&-
 }
 
 stop() {
