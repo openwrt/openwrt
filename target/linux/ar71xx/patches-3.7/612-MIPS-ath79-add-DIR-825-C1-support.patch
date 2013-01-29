@@ -1,0 +1,40 @@
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -39,6 +39,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_DIR_615_C1,		/* D-Link DIR-615 rev. C1 */
+ 	ATH79_MACH_DIR_615_E4,		/* D-Link DIR-615 rev. E4 */
+ 	ATH79_MACH_DIR_825_B1,		/* D-Link DIR-825 rev. B1 */
++	ATH79_MACH_DIR_825_C1,		/* D-Link DIR-825 rev. C1 */
+ 	ATH79_MACH_EW_DORIN,		/* embedded wireless Dorin Platform */
+ 	ATH79_MACH_EW_DORIN_ROUTER,	/* embedded wireless Dorin Router Platform */
+ 	ATH79_MACH_EAP7660D,		/* Senao EAP7660D */
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -283,6 +283,17 @@ config ATH79_MACH_DIR_825_B1
+ 	select ATH79_DEV_M25P80
+ 	select ATH79_DEV_USB
+ 
++config ATH79_MACH_DIR_825_C1
++        bool "D-Link DIR-825 rev. C1 board support"
++        select SOC_AR934X
++        select ATH79_DEV_AP9X_PCI if PCI
++        select ATH79_DEV_ETH
++        select ATH79_DEV_GPIO_BUTTONS
++        select ATH79_DEV_LEDS_GPIO
++        select ATH79_DEV_M25P80
++        select ATH79_DEV_USB
++        select ATH79_DEV_WMAC
++
+ config ATH79_MACH_EW_DORIN
+ 	bool "embedded wireless Dorin Platform support"
+ 	select SOC_AR933X
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -55,6 +55,7 @@ obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-
+ obj-$(CONFIG_ATH79_MACH_DIR_600_A1)	+= mach-dir-600-a1.o
+ obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
+ obj-$(CONFIG_ATH79_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
++obj-$(CONFIG_ATH79_MACH_DIR_825_C1)	+= mach-dir-825-c1.o
+ obj-$(CONFIG_ATH79_MACH_EW_DORIN)	+= mach-ew-dorin.o
+ obj-$(CONFIG_ATH79_MACH_EAP7660D)	+= mach-eap7660d.o
+ obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o
