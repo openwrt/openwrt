@@ -59,7 +59,7 @@
  	wkssvc_cb.shutdown     = NULL;
 --- a/source3/smbd/server_exit.c
 +++ b/source3/smbd/server_exit.c
-@@ -133,7 +133,9 @@ static void exit_server_common(enum serv
+@@ -132,7 +132,9 @@ static void exit_server_common(enum serv
  
  	if (am_parent) {
  		rpc_wkssvc_shutdown();

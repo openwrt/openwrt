@@ -30,7 +30,7 @@
  			"supported by backend");
 --- a/source3/smbd/server.c
 +++ b/source3/smbd/server.c
-@@ -1210,8 +1210,10 @@ extern void build_options(bool screen);
+@@ -1184,8 +1184,10 @@ extern void build_options(bool screen);
  		exit(1);
  	}
  
@@ -39,5 +39,5 @@
  		exit(1);
 +#endif
  
- #ifdef PRINTER_SUPPORT
- 	if (!print_backend_init(smbd_messaging_context()))
+ 	/* Open the share_info.tdb here, so we don't have to open
+ 	   after the fork on every single connection.  This is a small
