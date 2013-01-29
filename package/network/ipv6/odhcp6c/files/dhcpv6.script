@@ -10,7 +10,6 @@ ipv6_conf() {
 prepare_interface() {
 	local device="$1"
 	ipv6_conf "$device" accept_ra 2
-	ipv6_conf "$device" forwarding 2
 
 	# Send RS
 	if [ -x /usr/sbin/6relayd ]; then
@@ -24,8 +23,7 @@ prepare_interface() {
 
 cleanup_interface() {
 	local device="$1"
-	ipv6_conf "$device" accept_ra 1
-	ipv6_conf "$device" forwarding 1
+	ipv6_conf "$device" accept_ra 0
 }
 
 setup_interface () {
