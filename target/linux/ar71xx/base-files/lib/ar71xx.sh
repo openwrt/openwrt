@@ -216,6 +216,9 @@ ar71xx_board_detect() {
 	*"DIR-825 rev. B1")
 		name="dir-825-b1"
 		;;
+	*"DIR-825 rev. C1")
+		name="dir-825-c1"
+		;;
 	*EAP7660D)
 		name="eap7660d"
 		;;

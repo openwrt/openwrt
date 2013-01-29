@@ -108,6 +108,7 @@ platform_check_image() {
 	dir-600-a1 | \
 	dir-615-c1 | \
 	dir-615-e4 | \
+	dir-825-c1 | \
 	ew-dorin | \
 	ew-dorin-router | \
 	mzk-w04nu | \
