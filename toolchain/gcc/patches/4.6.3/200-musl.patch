@@ -236,9 +236,9 @@ diff --git a/gcc/config/mips/linux64.h b/gcc/config/mips/linux64.h
  #define GLIBC_DYNAMIC_LINKERN32 "/lib32/ld.so.1"
  #define UCLIBC_DYNAMIC_LINKERN32 "/lib32/ld-uClibc.so.0"
  #define BIONIC_DYNAMIC_LINKERN32 "/system/bin/linker32"
-+#define MUSL_DYNAMIC_LINKERN32 "/lib32/ld-musl-mips.so.1"
-+#define MUSL_DYNAMIC_LINKER32 "/lib32/ld-musl-mips.so.1"
-+#define MUSL_DYNAMIC_LINKER64 "/lib64/ld-musl-mips.so.1"
++#define MUSL_DYNAMIC_LINKERN32 "/lib/ld-musl-mips.so.1"
++#define MUSL_DYNAMIC_LINKER32 "/lib/ld-musl-mips.so.1"
++#define MUSL_DYNAMIC_LINKER64 "/lib/ld-musl-mips.so.1"
  #define LINUX_DYNAMIC_LINKERN32 \
    CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKERN32, UCLIBC_DYNAMIC_LINKERN32, \
 -			 BIONIC_DYNAMIC_LINKERN32)
