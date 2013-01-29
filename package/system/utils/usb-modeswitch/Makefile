@@ -8,13 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=usb-modeswitch
-PKG_UTIL_VERSION:=1.2.5
+PKG_VERSION:=1.2.5
 PKG_DATA_VERSION:=20121109
-PKG_VERSION:=$(PKG_UTIL_VERSION)+$(PKG_DATA_VERSION)
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_UTIL_VERSION)
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_UTIL_VERSION).tar.bz2
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.draisberghof.de/usb_modeswitch
 PKG_MD5SUM:=c393603908eceab95444c5bde790f6f0
 
@@ -38,6 +37,21 @@ define Package/usb-modeswitch/description
   "flip flop" (multiple device) USB gear.
 endef
 
+define Package/usb-modeswitch-data
+  SECTION:=utils
+  CATEGORY:=Utilities
+  DEPENDS:=usb-modeswitch
+  VERSION:=$(PKG_DATA_VERSION)
+  TITLE:=USB ModeSwitch - Dongle configuration database
+  URL:=http://www.draisberghof.de/usb_modeswitch/
+endef
+
+define Package/usb-modeswitch-data/description
+  Configuration database for usb-modeswitch.
+  Contains definitions for many USB devices required to
+  autoswitch "flip flop" gear.
+endef
+
 define Download/data
   FILE:=$(PKG_DATA_FILENAME)
   URL:=$(PKG_SOURCE_URL)
@@ -57,7 +71,12 @@ define Package/usb-modeswitch/install
 	$(INSTALL_DIR) $(1)/usr/bin $(1)/etc/hotplug.d/usb
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/usb_modeswitch-OpenWrt $(1)/usr/bin/usb_modeswitch
 	$(INSTALL_DATA) ./files/modeswitch.hotplug $(1)/etc/hotplug.d/usb/20-modeswitch
+endef
+
+define Package/usb-modeswitch-data/install
+	$(INSTALL_DIR) $(1)/etc
 	$(CP) $(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d $(1)/etc/
 endef
 
 $(eval $(call BuildPackage,usb-modeswitch))
+$(eval $(call BuildPackage,usb-modeswitch-data))
