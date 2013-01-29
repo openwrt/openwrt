@@ -104,6 +104,7 @@ platform_check_image() {
 		;;
 	ap81 | \
 	ap83 | \
+	ap132 | \
 	dir-600-a1 | \
 	dir-615-c1 | \
 	dir-615-e4 | \
