@@ -57,20 +57,18 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  extern int (*_machine_kexec_prepare)(struct kimage *);
 --- a/arch/mips/kernel/machine_kexec.c
 +++ b/arch/mips/kernel/machine_kexec.c
-@@ -13,12 +13,6 @@
- #include <asm/cacheflush.h>
+@@ -14,10 +14,6 @@
  #include <asm/page.h>
  
--extern const unsigned char relocate_new_kernel[];
+ extern const unsigned char relocate_new_kernel[];
 -extern const size_t relocate_new_kernel_size;
 -
 -extern unsigned long kexec_start_address;
 -extern unsigned long kexec_indirection_page;
--
+ 
  int (*_machine_kexec_prepare)(struct kimage *) = NULL;
  void (*_machine_kexec_shutdown)(void) = NULL;
- void (*_machine_crash_shutdown)(struct pt_regs *regs) = NULL;
-@@ -61,21 +55,34 @@ typedef void (*noretfun_t)(void) __attri
+@@ -61,21 +57,34 @@ typedef void (*noretfun_t)(void) __attri
  void
  machine_kexec(struct kimage *image)
  {
@@ -107,7 +105,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  
  	/*
  	 * The generic kexec code builds a page list with physical
-@@ -96,8 +103,8 @@ machine_kexec(struct kimage *image)
+@@ -96,8 +105,8 @@ machine_kexec(struct kimage *image)
  	 */
  	local_irq_disable();
  
@@ -118,7 +116,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  	__flush_cache_all();
  #ifdef CONFIG_SMP
  	/* All secondary cpus now may jump to kexec_wait cycle */
-@@ -108,4 +115,3 @@ machine_kexec(struct kimage *image)
+@@ -108,4 +117,3 @@ machine_kexec(struct kimage *image)
  #endif
  	((noretfun_t) reboot_code_buffer)();
  }

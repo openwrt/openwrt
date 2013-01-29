@@ -1,6 +1,6 @@
 --- a/arch/mips/kernel/machine_kexec.c
 +++ b/arch/mips/kernel/machine_kexec.c
-@@ -23,67 +23,104 @@ void (*relocated_kexec_smp_wait) (void *
+@@ -25,67 +25,104 @@ void (*relocated_kexec_smp_wait) (void *
  atomic_t kexec_ready_to_reboot = ATOMIC_INIT(0);
  #endif
  
@@ -151,7 +151,7 @@
  }
  
  int
-@@ -95,8 +132,14 @@ machine_kexec_prepare(struct kimage *kim
+@@ -97,8 +134,14 @@ machine_kexec_prepare(struct kimage *kim
  	 *
  	 * This can be overrided by _machine_kexec_prepare().
  	 */
@@ -168,7 +168,7 @@
  
  	if (_machine_kexec_prepare)
  		return _machine_kexec_prepare(kimage);
-@@ -152,11 +195,13 @@ machine_kexec(struct kimage *image)
+@@ -154,11 +197,13 @@ machine_kexec(struct kimage *image)
  	pr_info("kexec_indirection_page = %p\n",
  			(void *)kexec_indirection_page);
  
