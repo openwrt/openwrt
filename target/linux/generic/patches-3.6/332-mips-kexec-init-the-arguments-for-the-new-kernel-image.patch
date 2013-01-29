@@ -19,7 +19,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  #include <asm/cacheflush.h>
  #include <asm/page.h>
  
-@@ -21,9 +22,30 @@ void (*relocated_kexec_smp_wait) (void *
+@@ -23,9 +24,30 @@ void (*relocated_kexec_smp_wait) (void *
  atomic_t kexec_ready_to_reboot = ATOMIC_INIT(0);
  #endif
  

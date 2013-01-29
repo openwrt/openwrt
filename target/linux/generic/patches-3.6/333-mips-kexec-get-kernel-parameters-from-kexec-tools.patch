@@ -19,9 +19,9 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  #include <asm/page.h>
 +#include <asm/uaccess.h>
  
- int (*_machine_kexec_prepare)(struct kimage *) = NULL;
- void (*_machine_kexec_shutdown)(void) = NULL;
-@@ -35,6 +36,56 @@ static void machine_kexec_init_args(void
+ extern const unsigned char relocate_new_kernel[];
+ 
+@@ -37,6 +38,56 @@ static void machine_kexec_init_args(void
  	pr_info("kexec_args[3] (desc): %p\n", (void *)kexec_args[3]);
  }
  
@@ -78,7 +78,7 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  int
  machine_kexec_prepare(struct kimage *kimage)
  {
-@@ -45,6 +96,7 @@ machine_kexec_prepare(struct kimage *kim
+@@ -47,6 +98,7 @@ machine_kexec_prepare(struct kimage *kim
  	 * This can be overrided by _machine_kexec_prepare().
  	 */
  	machine_kexec_init_args();
