@@ -1,0 +1,140 @@
+#!/bin/sh
+
+local uVid uPid uMa uPr uSe
+local sVe sMo sRe
+
+local modeswitch="/usr/bin/usb_modeswitch"
+
+
+log() {
+	logger -t "usb-modeswitch" "$@"
+}
+
+sanitize() {
+	sed -e 's/[[:space:]]\+$//; s/[[:space:]]\+/_/g' "$@"
+}
+
+find_scsi_attrs() {
+	[ -n "$DEVPATH" ] && [ -d /sys/$DEVPATH/host* ] && {
+		log "$DEVICENAME is a SCSI device, waiting for it to settle..."
+		local timeout=20
+		while [ $((--timeout)) -ge 0 ]; do
+			[ -d /sys/$DEVPATH/host*/target* ] && {
+				local scsi_dir
+				for scsi_dir in /sys/$DEVPATH/host*/target*/*; do
+					[ -d "$scsi_dir" ] || break
+					case "$scsi_dir" in
+						*/host*/target*/*:*:*:*)
+							sVe=$(sanitize "$scsi_dir/vendor")
+							sMo=$(sanitize "$scsi_dir/model")
+							sRe=$(sanitize "$scsi_dir/rev")
+
+							log "$DEVICENAME: Vendor=${sVe:-?} Model=${sMo:-?} Revision=${sRe:-?}"
+							return 0
+						;;
+					esac
+				done
+			} || {
+				sleep 1
+			}
+		done
+		log "$DEVICENAME: Failed to get SCSI attributes!"
+	}
+
+	return 1
+}
+
+find_usb_attrs() {
+	local usb_dir="/sys/$DEVPATH"
+	[ -f "$usb_dir/idVendor" ] || usb_dir="${usb_dir%/*}"
+
+	uVid=$(cat "$usb_dir/idVendor")
+	uPid=$(cat "$usb_dir/idProduct")
+	uMa=$(sanitize "$usb_dir/manufacturer")
+	uPr=$(sanitize "$usb_dir/product")
+	uSe=$(sanitize "$usb_dir/serial")
+
+	log "$DEVICENAME: Manufacturer=${uMa:-?} Product=${uPr:-?} Serial=${uSe:-?}"
+}
+
+match_config_tag() {
+	local conf="$1"
+	local tag="$2"
+
+	case "${conf##*/}" in
+		*:*$tag=*)
+			local cmp; eval "cmp=\$$tag"
+			local pat="${conf#*:$tag=}"; pat="${pat%%:*}"
+			case "$cmp" in
+				*$pat*) return 0 ;;
+				*) return 1 ;;
+			esac
+		;;
+	esac
+
+	return 0
+}
+
+match_config() {
+	local conf="$1"
+	local tag
+
+	for tag in uMa uPr uSe sVe sMo sRe; do
+		match_config_tag "$conf" "$tag" || return 1
+	done
+
+	return 0
+}
+
+
+
+if [ "$ACTION" = add ]; then
+	[ -d "/etc/usb_modeswitch.d" ] && [ -x "$modeswitch" ] && {
+		case "$DEVICENAME" in
+			*-*:*.*) : ;;
+			*) exit 0 ;;
+		esac
+
+		find_usb_attrs
+
+		local candidates=0
+		local conf configs
+		for conf in /etc/usb_modeswitch.d/$uVid:$uPid*; do
+			[ -f "$conf" ] || break
+			configs="${configs:+$configs }$conf"
+			$((candidates++))
+		done
+
+		# Found more than one candidate, read SCSI attributes and find the best match
+		[ $candidates -gt 1 ] && {
+			find_scsi_attrs
+			for conf in $configs; do
+				match_config "$conf" && {
+					configs="$conf"
+					candidates=1
+					break
+				}
+			done
+		}
+
+		# If a candidate is remaining, start usb-modeswitch
+		[ -n "$configs" ] && {
+			log "$DEVICENAME: Selecting ${configs%% *} for mode switching"
+			# ugly workaround, but working for all hw we got for testing
+			switching_done=0
+			switching_tries=0
+			local usb_dir="/sys/$DEVPATH"
+			[ -f "$usb_dir/idVendor" ] || usb_dir="${usb_dir%/*}"
+			while [ $switching_done -lt 1 -a $switching_tries -le 6 ]; do
+				$modeswitch -v $uVid -p $uPid -I -D -n -s 30 -c "${configs%% *}"
+				if [ $(sanitize "$usb_dir/idProduct") = $uPid ]; then
+					log "$DEVICENAME: Switching seemingly failed"
+					sleep 1
+				else
+					switching_done=1
+				fi
+				switching_tries=$(( $switching_tries + 1 ))
+			done
+		}
+	}
+fi
