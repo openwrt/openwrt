@@ -515,7 +515,7 @@ menu "Global build settings"
 	choice
 		prompt "Binary stripping method"
 		default USE_STRIP   if EXTERNAL_TOOLCHAIN
-		default USE_STRIP   if USE_GLIBC || USE_EGLIBC
+		default USE_STRIP   if USE_GLIBC || USE_EGLIBC || USE_MUSL
 		default USE_SSTRIP
 		help
 		  Select the binary stripping method you wish to use.
