@@ -113,5 +113,6 @@ void __init ath79_register_m25p80_multi(struct flash_platform_data *pdata)
 	add_mtd_concat_notifier();
 	ath79_spi_data.bus_num = 0;
 	ath79_spi_data.num_chipselect = 2;
+	ath79_spi0_cdata.is_flash = true;
 	ath79_register_spi(&ath79_spi_data, ath79_spi_info, 2);
 }
