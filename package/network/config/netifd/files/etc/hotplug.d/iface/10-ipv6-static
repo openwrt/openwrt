@@ -9,7 +9,6 @@ case "$ACTION" in
 
 		if [ "$proto" = "static" -a "$ip6slaac" = "1" ]; then
 			echo 2 > "/proc/sys/net/ipv6/conf/$DEVICE/accept_ra"
-			echo 2 > "/proc/sys/net/ipv6/conf/$DEVICE/forwarding"
 
 			# Though this should be save here, it is not recommended
 			echo 1 > "/proc/sys/net/ipv6/conf/$DEVICE/disable_ipv6"
