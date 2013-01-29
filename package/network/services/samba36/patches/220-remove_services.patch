@@ -69,7 +69,7 @@
  	initshutdown_cb.shutdown     = NULL;
 --- a/source3/smbd/server_exit.c
 +++ b/source3/smbd/server_exit.c
-@@ -141,9 +141,11 @@ static void exit_server_common(enum serv
+@@ -140,9 +140,11 @@ static void exit_server_common(enum serv
  #endif
  		rpc_netdfs_shutdown();
  		rpc_initshutdown_shutdown();

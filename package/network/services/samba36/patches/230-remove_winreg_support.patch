@@ -59,7 +59,7 @@
  	srvsvc_cb.shutdown     = NULL;
 --- a/source3/smbd/server_exit.c
 +++ b/source3/smbd/server_exit.c
-@@ -151,7 +151,9 @@ static void exit_server_common(enum serv
+@@ -150,7 +150,9 @@ static void exit_server_common(enum serv
  #endif
  
  		rpc_srvsvc_shutdown();

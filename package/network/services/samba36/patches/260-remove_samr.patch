@@ -63,7 +63,7 @@
  	netlogon_cb.init         = netlogon_init_cb;
 --- a/source3/smbd/server_exit.c
 +++ b/source3/smbd/server_exit.c
-@@ -160,7 +160,9 @@ static void exit_server_common(enum serv
+@@ -159,7 +159,9 @@ static void exit_server_common(enum serv
  #ifdef NETLOGON_SUPPORT
  		rpc_netlogon_shutdown();
  #endif

@@ -48,7 +48,7 @@
  	}
 --- a/source3/smbd/server_exit.c
 +++ b/source3/smbd/server_exit.c
-@@ -157,7 +157,9 @@ static void exit_server_common(enum serv
+@@ -156,7 +156,9 @@ static void exit_server_common(enum serv
  		rpc_winreg_shutdown();
  #endif
  
@@ -172,7 +172,7 @@
  }
 --- a/source3/smbd/process.c
 +++ b/source3/smbd/process.c
-@@ -2483,8 +2483,10 @@ static bool housekeeping_fn(const struct
+@@ -2484,8 +2484,10 @@ static bool housekeeping_fn(const struct
  	/* check if we need to reload services */
  	check_reload(sconn, time_mono(NULL));
  

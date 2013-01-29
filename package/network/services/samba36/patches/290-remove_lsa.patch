@@ -14,7 +14,7 @@
  		return false;
 --- a/source3/smbd/server_exit.c
 +++ b/source3/smbd/server_exit.c
-@@ -163,7 +163,9 @@ static void exit_server_common(enum serv
+@@ -162,7 +162,9 @@ static void exit_server_common(enum serv
  #ifdef SAMR_SUPPORT
  		rpc_samr_shutdown();
  #endif
