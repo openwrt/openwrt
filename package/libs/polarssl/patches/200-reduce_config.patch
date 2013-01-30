@@ -1,0 +1,112 @@
+--- a/include/polarssl/config.h
++++ b/include/polarssl/config.h
+@@ -166,8 +166,8 @@
+  * Requires: POLARSSL_BIGNUM_C, POLARSSL_RSA_C
+  *
+  * Enable the RSA prime-number generation code.
+- */
+ #define POLARSSL_GENPRIME
++ */
+ 
+ /**
+  * \def POLARSSL_FS_IO
+@@ -224,8 +224,8 @@
+  * \def POLARSSL_SELF_TEST
+  *
+  * Enable the checkup functions (*_self_test).
+- */
+ #define POLARSSL_SELF_TEST
++ */
+ 
+ /**
+  * \def POLARSSL_SSL_HW_RECORD_ACCEL
+@@ -384,8 +384,8 @@
+  *      TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256
+  *      TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256
+  *      TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256
+- */
+ #define POLARSSL_CAMELLIA_C
++ */
+ 
+ /**
+  * \def POLARSSL_CERTS_C
+@@ -396,8 +396,8 @@
+  * Caller:
+  *
+  * This module is used for testing (ssl_client/server).
+- */
+ #define POLARSSL_CERTS_C
++ */
+ 
+ /**
+  * \def POLARSSL_CIPHER_C
+@@ -436,8 +436,8 @@
+  *          library/ssl_tls.c
+  *
+  * This module provides debugging functions.
+- */
+ #define POLARSSL_DEBUG_C
++ */
+ 
+ /**
+  * \def POLARSSL_DES_C
+@@ -519,8 +519,8 @@
+  * enabled as well):
+  *      TLS_RSA_WITH_AES_128_GCM_SHA256
+  *      TLS_RSA_WITH_AES_256_GCM_SHA384
+- */
+ #define POLARSSL_GCM_C
++ */
+ 
+ /**
+  * \def POLARSSL_HAVEGE_C
+@@ -533,8 +533,8 @@
+  * Requires: POLARSSL_TIMING_C
+  *
+  * This module enables the HAVEGE random number generator.
+- */
+ #define POLARSSL_HAVEGE_C
++ */
+ 
+ /**
+  * \def POLARSSL_MD_C
+@@ -608,8 +608,8 @@
+  * Caller:  library/aes.c
+  *
+  * This modules adds support for the VIA PadLock on x86.
+- */
+ #define POLARSSL_PADLOCK_C
++ */
+ 
+ /**
+  * \def POLARSSL_PBKDF2_C
+@@ -722,8 +722,8 @@
+  * Caller:
+  *
+  * Requires: POLARSSL_SSL_CACHE_C
+- */
+ #define POLARSSL_SSL_CACHE_C
++ */
+ 
+ /**
+  * \def POLARSSL_SSL_CLI_C
+@@ -777,8 +777,8 @@
+  * Caller:  library/havege.c
+  *
+  * This module is used by the HAVEGE random number generator.
+- */
+ #define POLARSSL_TIMING_C
++ */
+ 
+ /**
+  * \def POLARSSL_VERSION_C
+@@ -827,8 +827,8 @@
+  *
+  * Module:  library/xtea.c
+  * Caller:
+- */
+ #define POLARSSL_XTEA_C
++ */
+ /* \} name */
+ 
+ #endif /* config.h */
