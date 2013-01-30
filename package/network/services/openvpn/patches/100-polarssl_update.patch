@@ -1,0 +1,60 @@
+--- a/src/openvpn/crypto_polarssl.h
++++ b/src/openvpn/crypto_polarssl.h
+@@ -60,7 +60,7 @@ typedef md_context_t hmac_ctx_t;
+ #define OPENVPN_MODE_OFB 	POLARSSL_MODE_OFB
+ 
+ /** Cipher is in CFB mode */
+-#define OPENVPN_MODE_CFB 	POLARSSL_MODE_CFB128
++#define OPENVPN_MODE_CFB 	POLARSSL_MODE_CFB
+ 
+ /** Cipher should encrypt */
+ #define OPENVPN_OP_ENCRYPT 	POLARSSL_ENCRYPT
+--- a/src/openvpn/ssl_polarssl.c
++++ b/src/openvpn/ssl_polarssl.c
+@@ -65,23 +65,6 @@ tls_clear_error()
+ {
+ }
+ 
+-static int default_ciphersuites[] =
+-{
+-    SSL_EDH_RSA_AES_256_SHA,
+-    SSL_EDH_RSA_CAMELLIA_256_SHA,
+-    SSL_EDH_RSA_AES_128_SHA,
+-    SSL_EDH_RSA_CAMELLIA_128_SHA,
+-    SSL_EDH_RSA_DES_168_SHA,
+-    SSL_RSA_AES_256_SHA,
+-    SSL_RSA_CAMELLIA_256_SHA,
+-    SSL_RSA_AES_128_SHA,
+-    SSL_RSA_CAMELLIA_128_SHA,
+-    SSL_RSA_DES_168_SHA,
+-    SSL_RSA_RC4_128_SHA,
+-    SSL_RSA_RC4_128_MD5,
+-    0
+-};
+-
+ void
+ tls_ctx_server_new(struct tls_root_ctx *ctx)
+ {
+@@ -515,11 +498,11 @@ void key_state_ssl_init(struct key_state
+       ssl_set_rng (ks_ssl->ctx, ctr_drbg_random, rand_ctx_get());
+ 
+       ALLOC_OBJ_CLEAR (ks_ssl->ssn, ssl_session);
+-      ssl_set_session (ks_ssl->ctx, 0, 0, ks_ssl->ssn );
++      ssl_set_session (ks_ssl->ctx, ks_ssl->ssn );
+       if (ssl_ctx->allowed_ciphers)
+ 	ssl_set_ciphersuites (ks_ssl->ctx, ssl_ctx->allowed_ciphers);
+       else
+-	ssl_set_ciphersuites (ks_ssl->ctx, default_ciphersuites);
++	ssl_set_ciphersuites (ks_ssl->ctx, ssl_default_ciphersuites);
+ 
+       /* Initialise authentication information */
+       if (is_server)
+@@ -828,7 +811,7 @@ print_details (struct key_state_ssl * ks
+ 		    ssl_get_version (ks_ssl->ctx),
+ 		    ssl_get_ciphersuite(ks_ssl->ctx));
+ 
+-  cert = ks_ssl->ctx->peer_cert;
++  cert = ssl_get_peer_cert(ks_ssl->ctx);
+   if (cert != NULL)
+     {
+       openvpn_snprintf (s2, sizeof (s2), ", " counter_format " bit RSA", (counter_type) cert->rsa.len * 8);

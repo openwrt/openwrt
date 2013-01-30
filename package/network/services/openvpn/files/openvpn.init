@@ -1,0 +1,154 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2011 OpenWrt.org
+# Copyright (C) 2008 Jo-Philipp Wich
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+
+START=95
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
+EXTRA_COMMANDS="up down"
+
+LIST_SEP="
+"
+
+append_param() {
+	local v="$1"
+	case "$v" in
+		*_*_*_*) v=${v%%_*}-${v#*_}; v=${v%%_*}-${v#*_}; v=${v%%_*}-${v#*_} ;;
+		*_*_*)   v=${v%%_*}-${v#*_}; v=${v%%_*}-${v#*_} ;;
+		*_*)     v=${v%%_*}-${v#*_} ;;
+	esac
+	ARGS="$ARGS --$v"
+	return 0
+}
+
+append_bools() {
+	local p; local v; local s="$1"; shift
+	for p in $*; do
+		config_get_bool v "$s" "$p"
+		[ "$v" == 1 ] && append_param "$p"
+	done
+}
+
+append_params() {
+	local p; local v; local s="$1"; shift
+	for p in $*; do
+		config_get v "$s" "$p"
+		IFS="$LIST_SEP"
+		for v in $v; do
+			[ -n "$v" ] && append_param "$p" && ARGS="$ARGS $v"
+		done
+		unset IFS
+	done
+}
+
+section_enabled() {
+	config_get_bool enable  "$1" 'enable'  0
+	config_get_bool enabled "$1" 'enabled' 0
+	[ $enable -gt 0 ] || [ $enabled -gt 0 ]
+}
+
+start_instance() {
+	local s="$1"
+
+	section_enabled "$s" || return 1
+
+	ARGS=""
+
+	# append flags
+	append_bools "$s" \
+		auth_nocache auth_retry auth_user_pass_optional bind ccd_exclusive client client_cert_not_required \
+		client_to_client comp_lzo comp_noadapt disable \
+		disable_occ down_pre duplicate_cn fast_io float http_proxy_retry \
+		ifconfig_noexec ifconfig_nowarn ifconfig_pool_linear management_forget_disconnect management_hold \
+		management_query_passwords management_signal mktun mlock mtu_test multihome mute_replay_warnings \
+		nobind no_iv no_name_remapping no_replay opt_verify passtos persist_key persist_local_ip \
+		persist_remote_ip persist_tun ping_timer_rem pull push_reset \
+		remote_random rmtun route_noexec route_nopull single_session socks_proxy_retry \
+		suppress_timestamps tcp_nodelay test_crypto tls_client tls_exit tls_server \
+		tun_ipv6 up_delay up_restart username_as_common_name
+
+	# append params
+	append_params "$s" \
+		cd askpass auth auth_user_pass auth_user_pass_verify bcast_buffers ca cert \
+		chroot cipher client_config_dir client_connect client_disconnect config connect_freq \
+		connect_retry connect_timeout connect_retry_max crl_verify dev dev_node dev_type dh \
+		echo engine explicit_exit_notify fragment group hand_window hash_size \
+		http_proxy http_proxy_option http_proxy_timeout ifconfig ifconfig_pool \
+		ifconfig_pool_persist ifconfig_push inactive ipchange iroute keepalive \
+		key key_method keysize learn_address link_mtu lladdr local log log_append \
+		lport management management_log_cache max_clients \
+		max_routes_per_client mode mssfix mtu_disc mute nice ns_cert_type ping \
+		ping_exit ping_restart pkcs12 plugin port port_share prng proto rcvbuf \
+		redirect_gateway remap_usr1 remote remote_cert_eku remote_cert_ku remote_cert_tls \
+		reneg_bytes reneg_pkts reneg_sec \
+		replay_persist replay_window resolv_retry route route_delay route_gateway \
+		route_metric route_up rport script_security secret server server_bridge setenv shaper sndbuf \
+		socks_proxy status status_version syslog tcp_queue_limit tls_auth \
+		tls_cipher tls_remote tls_timeout tls_verify tmp_dir topology tran_window \
+		tun_mtu tun_mtu_extra txqueuelen user verb down push up
+
+
+	SERVICE_PID_FILE="/var/run/openvpn-$s.pid"
+	service_start /usr/sbin/openvpn --syslog "openvpn($s)" --writepid "$SERVICE_PID_FILE" $ARGS
+}
+
+stop_instance() {
+	local s="$1"
+
+	section_enabled "$s" || return 1
+
+	SERVICE_PID_FILE="/var/run/openvpn-$s.pid"
+	service_stop /usr/sbin/openvpn
+}
+
+reload_instance() {
+	local s="$1"
+
+	section_enabled "$s" || return 1
+
+	SERVICE_PID_FILE="/var/run/openvpn-$s.pid"
+	service_reload /usr/sbin/openvpn
+}
+
+start() {
+	config_load 'openvpn'
+	config_foreach start_instance 'openvpn'
+}
+
+stop() {
+	config_load 'openvpn'
+	config_foreach stop_instance 'openvpn'
+}
+
+reload() {
+	config_load 'openvpn'
+	config_foreach reload_instance 'openvpn'
+}
+
+up() {
+	local exists
+	local instance
+	config_load 'openvpn'
+	for instance in "$@"; do
+		config_get exists "$instance" 'TYPE'
+		if [ "$exists" == "openvpn" ]; then
+			start_instance "$instance"
+		fi
+	done
+}
+
+down() {
+	local exists
+	local instance
+	config_load 'openvpn'
+	for instance in "$@"; do
+		config_get exists "$instance" 'TYPE'
+		if [ "$exists" == "openvpn" ]; then
+			stop_instance "$instance"
+		fi
+	done
+}
