@@ -65,8 +65,10 @@ proto_6in4_setup() {
 		local max=3
 
 		while [ $((++try)) -le $max ]; do
-			wget -qO/dev/null "$url" 2>/dev/null && break
-			sleep 1
+			( wget -qO/dev/null "$url" 2>/dev/null ) &
+			local pid=$!
+			( sleep 5; kill $pid 2>/dev/null ) &
+			wait $pid && break
 		done
 	}
 }
