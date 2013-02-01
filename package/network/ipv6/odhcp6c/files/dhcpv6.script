@@ -3,32 +3,18 @@
 . /lib/functions.sh
 . /lib/netifd/netifd-proto.sh
 
-ipv6_conf() {
-	echo "$3" > "/proc/sys/net/ipv6/conf/$1/$2"
-}
-
-prepare_interface() {
-	local device="$1"
-	ipv6_conf "$device" accept_ra 2
-
-	# Send RS
-	if [ -x /usr/sbin/6relayd ]; then
-		sleep 1
-		/usr/sbin/6relayd -s "$device"
-		sleep 4
-		/usr/sbin/6relayd -s "$device"
-	fi
-
-}
-
-cleanup_interface() {
-	local device="$1"
-	ipv6_conf "$device" accept_ra 0
-}
-
 setup_interface () {
 	local device="$1"
 	proto_init_update "*" 1
+
+	# Merge RA-DNS
+	for radns in $RA_DNS; do
+		local duplicate=0
+		for dns in $RDNSS; do
+			[ "$radns" = "$dns" ] && duplicate=1
+		done
+		[ "$duplicate" = 0 ] && RDNSS="$RDNSS $radns"
+	done
 
 	for dns in $RDNSS; do
 		proto_add_dns_server "$dns"
@@ -42,6 +28,43 @@ setup_interface () {
 		proto_add_ipv6_prefix "$prefix"
 	done
 
+	# Merge addresses
+	for entry in $RA_ADDRESSES; do
+		local duplicate=0
+		local addr="${entry%%/*}"
+		for dentry in $ADDRESSES; do
+			local daddr="${dentry%%/*}"
+			[ "$addr" = "$daddr" ] && duplicate=1
+		done
+		[ "$duplicate" = "0" ] && ADDRESSES="$ADDRESSES $entry"
+	done
+
+	for entry in $ADDRESSES; do
+		local addr="${entry%%/*}"
+		entry="${entry#*/}"
+		local mask="${entry%%,*}"
+		entry="${entry#*,}"
+		local preferred="${entry%%,*}"
+		entry="${entry#*,}"
+		local valid="${entry%%,*}"
+
+		proto_add_ipv6_address "$addr" "$mask" "$preferred" "$valid" 1
+	done
+
+	for entry in $RA_ROUTES; do
+		local addr="${entry%%/*}"
+		entry="${entry#*/}"
+		local mask="${entry%%,*}"
+		entry="${entry#*,}"
+		local gw="${entry%%,*}"
+		entry="${entry#*,}"
+		local valid="${entry%%,*}"
+		entry="${entry#*,}"
+		local metric="${entry%%,*}"
+
+		proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid"
+	done
+
 	proto_send_update "$INTERFACE"
 
 	# TODO: $SNTP_IP $SIP_IP $SNTP_FQDN $SIP_DOMAIN
@@ -53,12 +76,10 @@ teardown_interface() {
 }
 
 case "$2" in
-	informed|bound|updated|rebound)
+	informed|bound|updated|rebound|ra-updated)
 		setup_interface "$1"
-		prepare_interface "$1"
 	;;
 	started|stopped|unbound)
-		cleanup_interface "$1"
 		teardown_interface "$1"
 	;;
 esac
