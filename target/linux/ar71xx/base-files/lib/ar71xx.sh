@@ -246,6 +246,9 @@ ar71xx_board_detect() {
 	*LS-SR71)
 		name="ls-sr71"
 		;;
+	*MR600v2)
+		name="mr600v2"
+		;;
 	*MR600)
 		name="mr600"
 		;;
