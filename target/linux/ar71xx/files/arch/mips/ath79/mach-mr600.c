@@ -35,8 +35,17 @@
 #include "machtypes.h"
 
 #define MR600_GPIO_LED_WLAN58		12
-#define MR600_GPIO_LED_WPS		13
-#define MR600_GPIO_LED_POWER		14
+#define MR600_GPIO_LED_WPS			13
+#define MR600_GPIO_LED_POWER			14
+
+#define MR600V2_GPIO_LED_WLAN58_RED		12
+#define MR600V2_GPIO_LED_WPS			13
+#define MR600V2_GPIO_LED_POWER			14
+#define MR600V2_GPIO_LED_WLAN24_GREEN		18
+#define MR600V2_GPIO_LED_WLAN24_YELLOW		19
+#define MR600V2_GPIO_LED_WLAN24_RED		20
+#define MR600V2_GPIO_LED_WLAN58_GREEN		21
+#define MR600V2_GPIO_LED_WLAN58_YELLOW		22
 
 #define MR600_GPIO_BTN_RESET		17
 
@@ -65,6 +74,49 @@ static struct gpio_led mr600_leds_gpio[] __initdata = {
 	},
 };
 
+static struct gpio_led mr600v2_leds_gpio[] __initdata = {
+	{
+		.name		= "mr600:blue:power",
+		.gpio		= MR600V2_GPIO_LED_POWER,
+		.active_low	= 1,
+	},
+	{
+		.name		= "mr600:blue:wps",
+		.gpio		= MR600V2_GPIO_LED_WPS,
+		.active_low	= 1,
+	},
+	{
+		.name		= "mr600:red:wlan24",
+		.gpio		= MR600V2_GPIO_LED_WLAN24_RED,
+		.active_low	= 1,
+	},
+	{
+		.name		= "mr600:yellow:wlan24",
+		.gpio		= MR600V2_GPIO_LED_WLAN24_YELLOW,
+		.active_low	= 1,
+	},
+	{
+		.name		= "mr600:green:wlan24",
+		.gpio		= MR600V2_GPIO_LED_WLAN24_GREEN,
+		.active_low	= 1,
+	},
+	{
+		.name		= "mr600:red:wlan58",
+		.gpio		= MR600V2_GPIO_LED_WLAN58_RED,
+		.active_low	= 1,
+	},
+	{
+		.name		= "mr600:yellow:wlan58",
+		.gpio		= MR600V2_GPIO_LED_WLAN58_YELLOW,
+		.active_low	= 1,
+	},
+	{
+		.name		= "mr600:green:wlan58",
+		.gpio		= MR600V2_GPIO_LED_WLAN58_GREEN,
+		.active_low	= 1,
+	},
+};
+
 static struct gpio_keys_button mr600_gpio_keys[] __initdata = {
 	{
 		.desc		= "Reset button",
@@ -76,15 +128,14 @@ static struct gpio_keys_button mr600_gpio_keys[] __initdata = {
 	},
 };
 
-static void __init mr600_setup(void)
+static void __init mr600_base_setup(unsigned num_leds, struct gpio_led *leds)
 {
-	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+	u8 *art = (u8 *)KSEG1ADDR(0x1fff0000);
 	u8 mac[6];
 
 	ath79_register_m25p80(NULL);
 
-	ath79_register_leds_gpio(-1, ARRAY_SIZE(mr600_leds_gpio),
-				 mr600_leds_gpio);
+	ath79_register_leds_gpio(-1, num_leds, leds);
 	ath79_register_gpio_keys_polled(-1, MR600_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(mr600_gpio_keys),
 					mr600_gpio_keys);
@@ -110,4 +161,16 @@ static void __init mr600_setup(void)
 	ath79_register_eth(0);
 }
 
+static void __init mr600_setup(void)
+{
+	mr600_base_setup(ARRAY_SIZE(mr600_leds_gpio), mr600_leds_gpio);
+}
+
 MIPS_MACHINE(ATH79_MACH_MR600, "MR600", "OpenMesh MR600", mr600_setup);
+
+static void __init mr600v2_setup(void)
+{
+	mr600_base_setup(ARRAY_SIZE(mr600v2_leds_gpio), mr600v2_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_MR600V2, "MR600v2", "OpenMesh MR600v2", mr600v2_setup);
