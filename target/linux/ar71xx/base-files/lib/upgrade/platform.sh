@@ -145,6 +145,7 @@ platform_check_image() {
 		;;
 
 	mr600 | \
+	mr600v2 | \
 	om2p | \
 	om2p-hs | \
 	om2p-lc)
@@ -284,6 +285,7 @@ platform_do_upgrade() {
 		platform_do_upgrade_dir825b "$ARGV"
 		;;
 	mr600 | \
+	mr600v2 | \
 	om2p | \
 	om2p-hs | \
 	om2p-lc)
