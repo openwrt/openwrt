@@ -9,14 +9,15 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string "reqprefix"
 	proto_config_add_string "clientid"
 	proto_config_add_string "reqopts"
+	proto_config_add_string "allow_slaaconly"
 }
 
 proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts
-	json_get_vars reqaddress reqprefix clientid reqopts
+	local reqaddress reqprefix clientid reqopts allow_slaaconly
+	json_get_vars reqaddress reqprefix clientid reqopts allow_slaaconly
 
 
 	# Configure
@@ -27,6 +28,8 @@ proto_dhcpv6_setup() {
 	[ "$reqprefix" != "no" ] && append opts "-P$reqprefix"
 
 	[ -n "$clientid" ] && append opts "-c$clientid"
+
+	[ "$allow_slaaconly" = "1" ] && append opts "-S"
 
 	for opt in $reqopts; do
 		append opts "-r$opt"
