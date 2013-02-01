@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DTS_TARGETS = mpc8548cds pb1010rdb
+DTS_TARGETS = mpc8548cds p1010rdb
 
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/powerpc/boot/zImage $(KDIR)/zImage
