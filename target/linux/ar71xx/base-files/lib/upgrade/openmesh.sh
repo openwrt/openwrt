@@ -119,7 +119,7 @@ platform_do_upgrade_openmesh()
 	local kernel_start_addr= kernel_start_addr1= kernel_start_addr2=
 	local kernel_size= kernel_md5=
 	local rootfs_size= rootfs_checksize= rootfs_md5=
-	local kernel_bsize= total_size=7340032
+	local kernel_bsize= total_size=
 	local data_offset=$((64 * 1024)) block_size= offset=
 	local uboot_env_upgrade="/tmp/fw_env_upgrade"
 	local cfg_size= kernel_size= rootfs_size=
@@ -137,11 +137,13 @@ platform_do_upgrade_openmesh()
 	case $img_board_target in
 		OM2P)
 			block_size=$((256 * 1024))
+			total_size=7340032
 			kernel_start_addr1=0x9f1c0000
 			kernel_start_addr2=0x9f8c0000
 			;;
 		MR600)
 			block_size=$((64 * 1024))
+			total_size=7995392
 			kernel_start_addr1=0x9f0b0000
 			kernel_start_addr2=0x9f850000
 			;;
