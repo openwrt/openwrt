@@ -37,8 +37,6 @@
 #define MR600_GPIO_LED_WLAN58		12
 #define MR600_GPIO_LED_WPS		13
 #define MR600_GPIO_LED_POWER		14
-#define MR600_GPIO_LED_WLAN24		15
-#define MR600_GPIO_LED_LAN		16
 
 #define MR600_GPIO_BTN_RESET		17
 
@@ -61,18 +59,8 @@ static struct gpio_led mr600_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "mr600:green:wlan24",
-		.gpio		= MR600_GPIO_LED_WLAN24,
-		.active_low	= 1,
-	},
-	{
 		.name		= "mr600:green:wlan58",
 		.gpio		= MR600_GPIO_LED_WLAN58,
-		.active_low	= 1,
-	},
-	{
-		.name		= "mr600:blue:lan",
-		.gpio		= MR600_GPIO_LED_LAN,
 		.active_low	= 1,
 	},
 };
@@ -92,9 +80,6 @@ static void __init mr600_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 	u8 mac[6];
-
-	ath79_gpio_output_select(MR600_GPIO_LED_LAN, AR934X_GPIO_OUT_GPIO);
-	ath79_gpio_output_select(MR600_GPIO_LED_WLAN24, AR934X_GPIO_OUT_GPIO);
 
 	ath79_register_m25p80(NULL);
 
