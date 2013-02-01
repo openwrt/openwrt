@@ -96,8 +96,12 @@ start() {
 		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
 	}
 
-	# run early sysctl
-	[ -f /etc/sysctl_early.conf ] && sysctl -p /etc/sysctl_early.conf -e >&-
+	# early sysctl to avoid networking races
+	if [ -d /proc/sys/net/ipv6/conf ]; then
+		for i in /proc/sys/net/ipv6/conf/*/accept_ra; do
+			echo 0 > $i
+		done
+	fi
 }
 
 stop() {
