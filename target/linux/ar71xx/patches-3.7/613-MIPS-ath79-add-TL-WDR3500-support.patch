@@ -1,0 +1,40 @@
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -84,6 +84,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_TL_WA7510N_V1,	/* TP-LINK TL-WA7510N v1*/
+ 	ATH79_MACH_TL_WA901ND,		/* TP-LINK TL-WA901ND */
+ 	ATH79_MACH_TL_WA901ND_V2,	/* TP-LINK TL-WA901ND v2 */
++	ATH79_MACH_TL_WDR3500,		/* TP-LINK TL-WDR3500 */
+ 	ATH79_MACH_TL_WDR4300,		/* TP-LINK TL-WDR4300 */
+ 	ATH79_MACH_TL_WR1041N_V2,	/* TP-LINK TL-WR1041N v2 */
+ 	ATH79_MACH_TL_WR1043ND,		/* TP-LINK TL-WR1043ND */
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -514,6 +514,17 @@ config ATH79_MACH_TL_WA901ND_V2
+ 	select ATH79_DEV_M25P80
+ 	select ATH79_DEV_WMAC
+ 
++config ATH79_MACH_TL_WDR3500
++	bool "TP-LINK TL-WDR3500 board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_TL_WDR4300
+ 	bool "TP-LINK TL-WDR3600/4300/4310 board support"
+ 	select SOC_AR934X
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -81,6 +81,7 @@ obj-$(CONFIG_ATH79_MACH_TL_MR3020)	+= ma
+ obj-$(CONFIG_ATH79_MACH_TL_MR3X20)	+= mach-tl-mr3x20.o
+ obj-$(CONFIG_ATH79_MACH_TL_WA901ND)	+= mach-tl-wa901nd.o
+ obj-$(CONFIG_ATH79_MACH_TL_WA901ND_V2)	+= mach-tl-wa901nd-v2.o
++obj-$(CONFIG_ATH79_MACH_TL_WDR3500)     += mach-tl-wdr3500.o
+ obj-$(CONFIG_ATH79_MACH_TL_WDR4300)     += mach-tl-wdr4300.o
+ obj-$(CONFIG_ATH79_MACH_TL_WR741ND)	+= mach-tl-wr741nd.o
+ obj-$(CONFIG_ATH79_MACH_TL_WR741ND_V4)	+= mach-tl-wr741nd-v4.o
