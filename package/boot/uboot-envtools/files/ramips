@@ -21,6 +21,11 @@ all5002)
 	;;
 esac
 
+br6425)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
+	;;
+esac
+
 config_load ubootenv
 config_foreach ubootenv_add_app_config ubootenv
 
