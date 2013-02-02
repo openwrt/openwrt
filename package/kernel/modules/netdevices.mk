@@ -663,3 +663,18 @@ define KernelPackage/dm9000/description
 endef
 
 $(eval $(call KernelPackage,dm9000))
+
+define KernelPackage/forcedeth
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=nForce Ethernet support
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:=CONFIG_FORCEDETH
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/nvidia/forcedeth.ko
+  AUTOLOAD:=$(call AutoLoad,50,forcedeth)
+endef
+
+define KernelPackage/forcedeth/description
+ Kernel driver for Nvidia Ethernet support
+endef
+
+$(eval $(call KernelPackage,forcedeth))
