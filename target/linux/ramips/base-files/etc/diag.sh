@@ -42,6 +42,9 @@ get_status_led() {
 	br6524n)
 		status_led="edimax:blue:power"
 		;;
+	br6425)
+		status_led="edimax:green:power"
+		;;
 	dir-300-b1 | dir-600-b1 | dir-600-b2 | dir-615-h1 | dir-615-d | dir-620-a1)
 		status_led="d-link:green:status"
 		;;
