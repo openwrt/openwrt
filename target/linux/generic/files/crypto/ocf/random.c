@@ -49,6 +49,7 @@
 #include <linux/unistd.h>
 #include <linux/poll.h>
 #include <linux/random.h>
+#include <linux/kthread.h>
 #include <cryptodev.h>
 
 #ifdef CONFIG_OCF_FIPS
@@ -79,9 +80,9 @@ struct random_op {
 	void *arg;
 };
 
+static struct task_struct *random_thread;
 static int random_proc(void *arg);
 
-static pid_t		randomproc = (pid_t) -1;
 static spinlock_t	random_lock;
 
 /*
@@ -141,12 +142,10 @@ crypto_rregister(
 	spin_lock_irqsave(&random_lock, flags);
 	list_add_tail(&rops->random_list, &random_ops);
 	if (!started) {
-		randomproc = kernel_thread(random_proc, NULL, CLONE_FS|CLONE_FILES);
-		if (randomproc < 0) {
-			ret = randomproc;
-			printk("crypto: crypto_rregister cannot start random thread; "
-					"error %d", ret);
-		} else
+		random_thread = kthread_run(random_proc, NULL, "ocf-random");
+		if (IS_ERR(random_thread))
+			ret = PTR_ERR(random_thread);
+		else
 			started = 1;
 	}
 	spin_unlock_irqrestore(&random_lock, flags);
@@ -172,7 +171,7 @@ crypto_runregister_all(u_int32_t driverid)
 
 	spin_lock_irqsave(&random_lock, flags);
 	if (list_empty(&random_ops) && started)
-		kill_proc(randomproc, SIGKILL, 1);
+		kthread_stop(random_thread);
 	spin_unlock_irqrestore(&random_lock, flags);
 	return(0);
 }
@@ -203,7 +202,6 @@ random_proc(void *arg)
 	sprintf(current->comm, "ocf-random");
 #else
 	daemonize("ocf-random");
-	allow_signal(SIGKILL);
 #endif
 
 	(void) get_fs();
@@ -306,12 +304,11 @@ random_proc(void *arg)
 #endif
 		}
 	}
-	
+
 	kfree(buf);
 
 bad_alloc:
 	spin_lock_irq(&random_lock);
-	randomproc = (pid_t) -1;
 	started = 0;
 	spin_unlock_irq(&random_lock);
 
