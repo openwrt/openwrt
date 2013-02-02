@@ -140,10 +140,10 @@ static void __init mr600_base_setup(unsigned num_leds, struct gpio_led *leds)
 					ARRAY_SIZE(mr600_gpio_keys),
 					mr600_gpio_keys);
 
-	ath79_init_mac(mac, art + MR600_MAC_OFFSET, -1);
+	ath79_init_mac(mac, art + MR600_MAC_OFFSET, 1);
 	ath79_register_wmac(art + MR600_WMAC_CALDATA_OFFSET, mac);
 
-	ath79_init_mac(mac, art + MR600_MAC_OFFSET, -2);
+	ath79_init_mac(mac, art + MR600_MAC_OFFSET, 8);
 	ap91_pci_init(art + MR600_PCIE_CALDATA_OFFSET, mac);
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
@@ -151,7 +151,7 @@ static void __init mr600_base_setup(unsigned num_leds, struct gpio_led *leds)
 
 	ath79_register_mdio(0, 0x0);
 
-	ath79_init_mac(ath79_eth0_data.mac_addr, art + MR600_MAC_OFFSET, -2);
+	ath79_init_mac(ath79_eth0_data.mac_addr, art + MR600_MAC_OFFSET, 0);
 
 	/* GMAC0 is connected to an external PHY */
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
