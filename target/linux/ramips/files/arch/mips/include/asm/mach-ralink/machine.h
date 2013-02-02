@@ -75,6 +75,7 @@ enum ramips_mach_type {
 
 	/* RT3662 based machines */
 	RAMIPS_MACH_DIR_645,		/* D-Link DIR-645 */
+	RAMIPS_MACH_OMNI_EMB_HPM,	/* Omnima EMB HPM */
 	RAMIPS_MACH_RT_N56U,		/* Asus RT-N56U */
 
 	/* RT3883 based machines */
