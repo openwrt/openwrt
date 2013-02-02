@@ -84,6 +84,11 @@ case $board in
 	nw718)
 		set_usb_led "nw718:amber:usb"
 		;;
+	omni-emb-hpm)
+		ucidef_set_led_default "power" "POWER" "emb:orange:power" "1"
+		ucidef_set_led_netdev "eth" "ETH" "emb:green:eth" "eth0"
+		set_wifi_led "emb:green:wifi"
+		;;
 	sl-r7205)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;

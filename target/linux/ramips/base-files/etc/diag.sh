@@ -79,7 +79,8 @@ get_status_led() {
 	nw718)
 		status_led="nw718:amber:cpu"
 		;;
-	omni-emb)
+	omni-emb|\
+	omni-emb-hpm)
 		status_led="emb:green:status"
 		;;
 	psr-680w)
