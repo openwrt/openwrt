@@ -115,7 +115,7 @@
  	BRANCH_PROFILE()						\
 -	TRACE_PRINTKS()
 +	TRACE_PRINTKS()							\
-+	*(.data.*)
++	*(.data.[a-zA-Z_]*)
  
  /*
   * Data section helpers
