@@ -291,6 +291,17 @@ define BuildFirmware/NW718
 	$(call BuildFirmware/Generic,$(1),$(2),$(cmdline_nw718),$(kernel_size_nw718),$(rootfs_size_nw718))
 endef
 
+mtdlayout_omniembhpm=192k(u-boot)ro,64k(config)ro,64k(factory)ro,1024k(kernel),15040k(rootfs),16064k@0x50000(firmware)
+kernel_size_omniembhpm=1048576
+rootfs_size_omniembhpm=15400960
+define BuildFirmware/OMNIEMBHPM
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),ttyS1,115200) $(call mkmtd/spi,$(mtdlayout_omniembhpm)),$(kernel_size_omniembhpm),$(rootfs_size_omniembhpm))
+endef
+
+define BuildFirmware/OMNIEMBHPM/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),ttyS1,115200) $(call mkmtd/spi,$(mtdlayout_omniembhpm)))
+endef
+
 mtdlayout_rtg32b1=192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
 mtd_rtg32b1_kernel_part_size=917504
 mtd_rtg32b1_rootfs_part_size=2949120
@@ -688,6 +699,10 @@ define Image/Build/Profile/DIR645
 	$(call Image/Build/Template/$(fs_squash)/$(1),DIR645,dir-645,DIR-645,ttyS1,57600,spi,wrgn39_dlob.hans_dir645)
 endef
 
+define Image/Build/Profile/OMNIEMBHPM
+	$(call Image/Build/Template/$(fs_squash)/$(1),OMNIEMBHPM,omni-emb-hpm,OMNI-EMB-HPM)
+endef
+
 define Image/Build/Profile/RTN56U
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,rt-n56u,RT-N56U,ttyS1,57600,phys)
 endef
@@ -703,6 +718,7 @@ endef
 ifeq ($(CONFIG_RALINK_RT3883),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR645,$(1))
+	$(call Image/Build/Profile/OMNIEMBHPM,$(1))
 	$(call Image/Build/Profile/RTN56U,$(1))
 	$(call Image/Build/Profile/TEW691GR,$(1))
 	$(call Image/Build/Profile/TEW692GR,$(1))
