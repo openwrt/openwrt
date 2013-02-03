@@ -101,6 +101,7 @@ else
     define Image/mkfs/ubifs
 		$(CP) ./ubinize.cfg $(KDIR)
 		$(STAGING_DIR_HOST)/bin/mkfs.ubifs $(UBIFS_OPTS) -o $(KDIR)/root.ubifs -d $(TARGET_DIR)
+		$(call Image/Build,ubifs)
 		(cd $(KDIR); \
 		$(STAGING_DIR_HOST)/bin/ubinize $(UBINIZE_OPTS) -o $(KDIR)/root.ubi ubinize.cfg)
 		$(call Image/Build,ubi)
