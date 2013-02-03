@@ -28,7 +28,7 @@ static int ioctl_socket = -1;
 static int iwinfo_ioctl_socket(void)
 {
 	/* Prepare socket */
-	if( ioctl_socket == -1 )
+	if (ioctl_socket == -1)
 	{
 		ioctl_socket = socket(AF_INET, SOCK_DGRAM, 0);
 		fcntl(ioctl_socket, F_SETFD, fcntl(ioctl_socket, F_GETFD) | FD_CLOEXEC);
@@ -82,7 +82,7 @@ int iwinfo_ifup(const char *ifname)
 
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
-	if( iwinfo_ioctl(SIOCGIFFLAGS, &ifr) )
+	if (iwinfo_ioctl(SIOCGIFFLAGS, &ifr))
 		return 0;
 
 	ifr.ifr_flags |= (IFF_UP | IFF_RUNNING);
@@ -96,7 +96,7 @@ int iwinfo_ifdown(const char *ifname)
 
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
-	if( iwinfo_ioctl(SIOCGIFFLAGS, &ifr) )
+	if (iwinfo_ioctl(SIOCGIFFLAGS, &ifr))
 		return 0;
 
 	ifr.ifr_flags &= ~(IFF_UP | IFF_RUNNING);
@@ -110,7 +110,7 @@ int iwinfo_ifmac(const char *ifname)
 
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
-	if( iwinfo_ioctl(SIOCGIFHWADDR, &ifr) )
+	if (iwinfo_ioctl(SIOCGIFHWADDR, &ifr))
 		return 0;
 
 	ifr.ifr_hwaddr.sa_data[1]++;
@@ -121,8 +121,10 @@ int iwinfo_ifmac(const char *ifname)
 
 void iwinfo_close(void)
 {
-	if( ioctl_socket > -1 )
+	if (ioctl_socket > -1)
 		close(ioctl_socket);
+
+	ioctl_socket = -1;
 }
 
 struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
