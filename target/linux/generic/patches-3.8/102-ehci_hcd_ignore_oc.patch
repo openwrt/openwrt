@@ -1,3 +1,23 @@
+From 1e311820ec3055e3f08e687de6564692a7cec675 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Mon, 28 Jan 2013 20:06:29 +0100
+Subject: [PATCH 11/12] USB: EHCI: add ignore_oc flag to disable overcurrent
+ checking
+
+This patch adds an ignore_oc flag which can be set by EHCI controller
+not supporting or wanting to disable overcurrent checking. The EHCI
+platform data in include/linux/usb/ehci_pdriver.h is also augmented to
+take advantage of this new flag.
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+---
+ drivers/usb/host/ehci-hcd.c      |    2 +-
+ drivers/usb/host/ehci-hub.c      |    4 ++--
+ drivers/usb/host/ehci-platform.c |    1 +
+ drivers/usb/host/ehci.h          |    1 +
+ include/linux/usb/ehci_pdriver.h |    1 +
+ 5 files changed, 6 insertions(+), 3 deletions(-)
+
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
 @@ -630,7 +630,7 @@ static int ehci_run (struct usb_hcd *hcd
@@ -29,6 +49,16 @@
  			status |= USB_PORT_STAT_C_OVERCURRENT << 16;
  
  			/*
+--- a/drivers/usb/host/ehci-platform.c
++++ b/drivers/usb/host/ehci-platform.c
+@@ -44,6 +44,7 @@ static int ehci_platform_reset(struct us
+ 	ehci->has_synopsys_hc_bug = pdata->has_synopsys_hc_bug;
+ 	ehci->big_endian_desc = pdata->big_endian_desc;
+ 	ehci->big_endian_mmio = pdata->big_endian_mmio;
++	ehci->ignore_oc = pdata->ignore_oc;
+ 
+ 	ehci->caps = hcd->regs + pdata->caps_offset;
+ 	retval = ehci_setup(hcd);
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
 @@ -200,6 +200,7 @@ struct ehci_hcd {			/* one per controlle
@@ -39,3 +69,13 @@
  
  	/* required for usb32 quirk */
  	#define OHCI_CTRL_HCFS          (3 << 6)
+--- a/include/linux/usb/ehci_pdriver.h
++++ b/include/linux/usb/ehci_pdriver.h
+@@ -42,6 +42,7 @@ struct usb_ehci_pdata {
+ 	unsigned	big_endian_desc:1;
+ 	unsigned	big_endian_mmio:1;
+ 	unsigned	no_io_watchdog:1;
++	unsigned	ignore_oc:1;
+ 
+ 	/* Turn on all power and clocks */
+ 	int (*power_on)(struct platform_device *pdev);
