@@ -34,7 +34,7 @@ fw_load_rule() {
 	fw_callback pre rule
 
 	local table=f
-	local chain=input
+	local chain=delegate_output
 	local target="${rule_target:-REJECT}"
 	if [ "$target" == "NOTRACK" ]; then
 		table=r
@@ -42,16 +42,23 @@ fw_load_rule() {
 	else
 		if [ -n "$rule_src" ]; then
 			if [ "$rule_src" != "*" ]; then
-				chain="zone_${rule_src}${rule_dest:+_forward}"
+				if [ -n "$rule_dest" ]; then
+					chain="zone_${rule_src}_forward"
+				else
+					chain="zone_${rule_src}_input"
+				fi
 			else
-				chain="${rule_dest:+forward}"
-				chain="${chain:-input}"
+				chain="${rule_dest:+delegate_forward}"
+				chain="${chain:-delegate_input}"
 			fi
 		fi
 
 		if [ -n "$rule_dest" ]; then
 			if [ "$rule_dest" != "*" ]; then
-				target="zone_${rule_dest}_${target}"
+				target="zone_${rule_dest}_dest_${target}"
+				if [ -z "$rule_src" ]; then
+					chain="zone_${rule_dest}_output"
+				fi
 			elif [ "$target" = REJECT ]; then
 				target=reject
 			fi

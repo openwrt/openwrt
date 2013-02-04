@@ -170,7 +170,7 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 					fw_log info "ICMP type '$2' is not valid for $fam address family, skipping rule"
 					return 1
 				fi
-				shift	
+				shift
 			;;
 			*) cmdline="$cmdline $1" ;;
 		esac
