@@ -1,3 +1,20 @@
+From patchwork Wed Jan 16 13:13:57 2013
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [2/5] mmc: mvsdio: use slot-gpio infrastructure for write protect gpio
+Date: Wed, 16 Jan 2013 13:13:57 -0000
+From: Andrew Lunn <andrew@lunn.ch>
+X-Patchwork-Id: 1987931
+Message-Id: <1358342040-7130-3-git-send-email-andrew@lunn.ch>
+To: Jason Cooper <jason@lakedaemon.net>
+Cc: linux ARM <linux-arm-kernel@lists.infradead.org>,
+ linux-mmc@vger.kernel.org, linux@arm.linux.org.uk,
+ Thomas Petazzoni <thomas.petazzoni@free-electrons.com>,
+ Andrew Lunn <andrew@lunn.ch>
+
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+
 The MMC core subsystem provides in drivers/mmc/core/slot-gpio.c a nice
 set of helper functions to simplify the management of the write
 protect GPIO in MMC host drivers. This patch migrates the mvsdio
@@ -6,9 +23,14 @@ simpler, and therefore ease the process of adding a Device Tree
 binding for this driver.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+Tested-by: Stefan Peter <s.peter@mpl.ch>
+Tested-by: Florian Fainelli <florian@openwrt.org>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+
 ---
- drivers/mmc/host/mvsdio.c |   34 +++++-----------------------------
- 1 file changed, 5 insertions(+), 29 deletions(-)
+drivers/mmc/host/mvsdio.c |   30 +++++-------------------------
+ 1 file changed, 5 insertions(+), 25 deletions(-)
 
 --- a/drivers/mmc/host/mvsdio.c
 +++ b/drivers/mmc/host/mvsdio.c
@@ -20,15 +42,15 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  
  #include <asm/sizes.h>
  #include <asm/unaligned.h>
-@@ -54,7 +55,6 @@ struct mvsd_host {
- 	int irq;
+@@ -52,7 +53,6 @@ struct mvsd_host {
+ 	struct device *dev;
  	struct clk *clk;
  	int gpio_card_detect;
 -	int gpio_write_protect;
  };
  
  #define mvsd_write(offs, val)	writel(val, iobase + (offs))
-@@ -566,20 +566,6 @@ static void mvsd_enable_sdio_irq(struct
+@@ -564,20 +564,6 @@ static void mvsd_enable_sdio_irq(struct
  	spin_unlock_irqrestore(&host->lock, flags);
  }
  
@@ -49,7 +71,7 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  static void mvsd_power_up(struct mvsd_host *host)
  {
  	void __iomem *iobase = host->base;
-@@ -676,7 +662,7 @@ static void mvsd_set_ios(struct mmc_host
+@@ -674,7 +660,7 @@ static void mvsd_set_ios(struct mmc_host
  
  static const struct mmc_host_ops mvsd_ops = {
  	.request		= mvsd_request,
@@ -58,15 +80,15 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  	.set_ios		= mvsd_set_ios,
  	.enable_sdio_irq	= mvsd_enable_sdio_irq,
  };
-@@ -798,15 +784,7 @@ static int __init mvsd_probe(struct plat
+@@ -793,15 +779,7 @@ static int __init mvsd_probe(struct plat
  	if (!host->gpio_card_detect)
  		mmc->caps |= MMC_CAP_NEEDS_POLL;
  
 -	if (mvsd_data->gpio_write_protect) {
--		ret = gpio_request(mvsd_data->gpio_write_protect,
--				   DRIVER_NAME " wp");
+-		ret = devm_gpio_request_one(&pdev->dev,
+-					    mvsd_data->gpio_write_protect,
+-					    GPIOF_IN, DRIVER_NAME " wp");
 -		if (ret == 0) {
--			gpio_direction_input(mvsd_data->gpio_write_protect);
 -			host->gpio_write_protect =
 -				mvsd_data->gpio_write_protect;
 -		}
@@ -75,23 +97,19 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  
  	setup_timer(&host->timer, mvsd_timeout_timer, (unsigned long)host);
  	platform_set_drvdata(pdev, mmc);
-@@ -831,8 +809,7 @@ out:
- 			free_irq(gpio_to_irq(host->gpio_card_detect), host);
- 			gpio_free(host->gpio_card_detect);
- 		}
--		if (host->gpio_write_protect)
--			gpio_free(host->gpio_write_protect);
+@@ -820,6 +798,7 @@ static int __init mvsd_probe(struct plat
+ 
+ out:
+ 	if (mmc) {
 +		mmc_gpio_free_ro(mmc);
- 		if (host->base)
- 			iounmap(host->base);
- 	}
-@@ -861,8 +838,7 @@ static int __exit mvsd_remove(struct pla
- 		}
- 		mmc_remove_host(mmc);
- 		free_irq(host->irq, host);
--		if (host->gpio_write_protect)
--			gpio_free(host->gpio_write_protect);
-+		mmc_gpio_free_ro(mmc);
- 		del_timer_sync(&host->timer);
- 		mvsd_power_down(host);
- 		iounmap(host->base);
+ 		if (!IS_ERR(host->clk))
+ 			clk_disable_unprepare(host->clk);
+ 		mmc_free_host(mmc);
+@@ -834,6 +813,7 @@ static int __exit mvsd_remove(struct pla
+ 
+ 	struct mvsd_host *host = mmc_priv(mmc);
+ 
++	mmc_gpio_free_ro(mmc);
+ 	mmc_remove_host(mmc);
+ 	del_timer_sync(&host->timer);
+ 	mvsd_power_down(host);

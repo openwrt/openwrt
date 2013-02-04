@@ -1,6 +1,6 @@
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -261,10 +261,34 @@ static int ct_open(struct inode *inode, 
+@@ -267,10 +267,34 @@ static int ct_open(struct inode *inode,
  			sizeof(struct ct_iter_state));
  }
  
@@ -35,7 +35,7 @@
  	.llseek  = seq_lseek,
  	.release = seq_release_net,
  };
-@@ -366,7 +390,7 @@ static int nf_conntrack_standalone_init_
+@@ -372,7 +396,7 @@ static int nf_conntrack_standalone_init_
  {
  	struct proc_dir_entry *pde;
  

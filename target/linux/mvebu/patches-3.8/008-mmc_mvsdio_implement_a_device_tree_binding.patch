@@ -1,3 +1,20 @@
+From patchwork Wed Jan 16 13:13:59 2013
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [4/5] mmc: mvsdio: implement a Device Tree binding
+Date: Wed, 16 Jan 2013 13:13:59 -0000
+From: Andrew Lunn <andrew@lunn.ch>
+X-Patchwork-Id: 1987921
+Message-Id: <1358342040-7130-5-git-send-email-andrew@lunn.ch>
+To: Jason Cooper <jason@lakedaemon.net>
+Cc: linux ARM <linux-arm-kernel@lists.infradead.org>,
+ linux-mmc@vger.kernel.org, linux@arm.linux.org.uk,
+ Thomas Petazzoni <thomas.petazzoni@free-electrons.com>,
+ Andrew Lunn <andrew@lunn.ch>
+
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+
 This patch adds a simple Device Tree binding for the mvsdio driver, as
 well as the necessary documentation for it. Compatibility with non-DT
 platforms is preserved, by keeping the platform_data based
@@ -11,10 +28,15 @@ reference is not mandatory, but the clock frequency must be passed in
 the "clock" field of the mvsdio_platform_data structure.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+Tested-by: Stefan Peter <s.peter@mpl.ch>
+Tested-by: Florian Fainelli <florian@openwrt.org>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+
 ---
- .../devicetree/bindings/mmc/orion-sdio.txt         |   17 ++++++
- drivers/mmc/host/mvsdio.c                          |   60 +++++++++++++++-----
- 2 files changed, 62 insertions(+), 15 deletions(-)
+.../devicetree/bindings/mmc/orion-sdio.txt         |   17 ++++++
+ drivers/mmc/host/mvsdio.c                          |   62 +++++++++++++++-----
+ 2 files changed, 64 insertions(+), 15 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/mmc/orion-sdio.txt
 
 --- /dev/null
@@ -48,7 +70,7 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  #include <linux/mmc/host.h>
  #include <linux/mmc/slot-gpio.h>
  
-@@ -683,17 +685,17 @@ mv_conf_mbus_windows(struct mvsd_host *h
+@@ -681,17 +683,17 @@ mv_conf_mbus_windows(struct mvsd_host *h
  
  static int __init mvsd_probe(struct platform_device *pdev)
  {
@@ -68,19 +90,20 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 +	if (!r || irq < 0)
  		return -ENXIO;
  
- 	r = request_mem_region(r->start, SZ_1K, DRIVER_NAME);
-@@ -710,7 +712,35 @@ static int __init mvsd_probe(struct plat
+ 	mmc = mmc_alloc_host(sizeof(struct mvsd_host), &pdev->dev);
+@@ -703,8 +705,37 @@ static int __init mvsd_probe(struct plat
+ 	host = mmc_priv(mmc);
  	host->mmc = mmc;
  	host->dev = &pdev->dev;
- 	host->res = r;
 -	host->base_clock = mvsd_data->clock / 2;
+-	host->clk = ERR_PTR(-EINVAL);
 +
 +	/* Some non-DT platforms do not pass a clock, and the clock
 +	   frequency is passed through platform_data. On DT platforms,
 +	   a clock must always be passed, even if there is no gatable
 +	   clock associated to the SDIO interface (it can simply be a
 +	   fixed rate clock). */
-+	host->clk = clk_get(&pdev->dev, NULL);
++	host->clk = devm_clk_get(&pdev->dev, NULL);
 +	if (!IS_ERR(host->clk))
 +		clk_prepare_enable(host->clk);
 +
@@ -97,8 +120,10 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 +	} else {
 +		const struct mvsdio_platform_data *mvsd_data;
 +		mvsd_data = pdev->dev.platform_data;
-+		if (!mvsd_data)
-+			return -ENXIO;
++		if (!mvsd_data) {
++			ret = -ENXIO;
++			goto out;
++		}
 +		host->base_clock = mvsd_data->clock / 2;
 +		gpio_card_detect = mvsd_data->gpio_card_detect;
 +		gpio_write_protect = mvsd_data->gpio_write_protect;
@@ -106,16 +131,15 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  
  	mmc->ops = &mvsd_ops;
  
-@@ -750,21 +780,14 @@ static int __init mvsd_probe(struct plat
- 	} else
- 		host->irq = irq;
+@@ -743,20 +774,14 @@ static int __init mvsd_probe(struct plat
+ 		goto out;
+ 	}
  
 -	/* Not all platforms can gate the clock, so it is not
 -	   an error if the clock does not exists. */
--	host->clk = clk_get(&pdev->dev, NULL);
--	if (!IS_ERR(host->clk)) {
+-	host->clk = devm_clk_get(&pdev->dev, NULL);
+-	if (!IS_ERR(host->clk))
 -		clk_prepare_enable(host->clk);
--	}
 -
 -	if (gpio_is_valid(mvsd_data->gpio_card_detect)) {
 -		ret = mmc_gpio_request_cd(mmc, mvsd_data->gpio_card_detect);
@@ -131,7 +155,7 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  
  	setup_timer(&host->timer, mvsd_timeout_timer, (unsigned long)host);
  	platform_set_drvdata(pdev, mmc);
-@@ -776,7 +799,7 @@ static int __init mvsd_probe(struct plat
+@@ -768,7 +793,7 @@ static int __init mvsd_probe(struct plat
  			   mmc_hostname(mmc), DRIVER_NAME);
  	if (!(mmc->caps & MMC_CAP_NEEDS_POLL))
  		printk("using GPIO %d for card detection\n",
@@ -140,7 +164,7 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  	else
  		printk("lacking card detect (fall back to polling)\n");
  	return 0;
-@@ -855,12 +878,19 @@ static int mvsd_resume(struct platform_d
+@@ -832,12 +857,19 @@ static int mvsd_resume(struct platform_d
  #define mvsd_resume	NULL
  #endif
  
