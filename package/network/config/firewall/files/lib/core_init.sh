@@ -115,13 +115,13 @@ fw_load_defaults() {
 		fw add i n POSTROUTING postrouting_rule
 	}
 
-	fw add i f input
-	fw add i f output
-	fw add i f forward
+	fw add i f delegate_input
+	fw add i f delegate_output
+	fw add i f delegate_forward
 
-	fw add i f INPUT   input
-	fw add i f OUTPUT  output
-	fw add i f FORWARD forward
+	fw add i f INPUT   delegate_input
+	fw add i f OUTPUT  delegate_output
+	fw add i f FORWARD delegate_forward
 
 	fw add i f reject
 	fw add i f reject REJECT { --reject-with tcp-reset -p tcp }
@@ -138,21 +138,28 @@ fw_config_get_zone() {
 	fw_config_get_section "$1" zone { \
 		string name "$1" \
 		string network "" \
+		string device "" \
+		string subnet "" \
 		string input "$FW_DEFAULT_INPUT_POLICY" \
 		string output "$FW_DEFAULT_OUTPUT_POLICY" \
 		string forward "$FW_DEFAULT_FORWARD_POLICY" \
 		boolean masq 0 \
 		string masq_src "" \
 		string masq_dest "" \
+		string extra "" \
+		string extra_src "" \
+		string extra_dest "" \
 		boolean conntrack 0 \
 		boolean mtu_fix 0 \
-		boolean custom_chains "$FW_ADD_CUSTOM_CHAINS" \
+		boolean custom_chains 0 \
 		boolean log 0 \
 		string log_limit 10 \
 		string family "" \
 	} || return
 	[ -n "$zone_name" ] || zone_name=$zone_NAME
-	[ -n "$zone_network" ] || zone_network=$zone_name
+	[ -n "$zone_extra_src" ] || zone_extra_src="$zone_extra"
+	[ -n "$zone_extra_dest" ] || zone_extra_dest="$zone_extra"
+	[ -n "$zone_network$zone_subnet$zone_device$zone_extra_src$zone_extra_dest" ] || zone_network=$zone_name
 }
 
 fw_load_zone() {
@@ -192,19 +199,22 @@ fw_load_zone() {
 
 	local chain=zone_${zone_name}
 
-	fw add $mode f ${chain}_ACCEPT
-	fw add $mode f ${chain}_DROP
-	fw add $mode f ${chain}_REJECT
+	fw add $mode f ${chain}_src_ACCEPT
+	fw add $mode f ${chain}_src_DROP
+	fw add $mode f ${chain}_src_REJECT
 
-	# TODO: Rename to ${chain}_input
-	fw add $mode f ${chain}
-	fw add $mode f ${chain} ${chain}_${zone_input} $
+	fw add $mode f ${chain}_dest_ACCEPT
+	fw add $mode f ${chain}_dest_DROP
+	fw add $mode f ${chain}_dest_REJECT
+
+	fw add $mode f ${chain}_input
+	fw add $mode f ${chain}_input ${chain}_src_${zone_input} $
 
 	fw add $mode f ${chain}_forward
-	fw add $mode f ${chain}_forward ${chain}_${zone_forward} $
+	fw add $mode f ${chain}_forward ${chain}_dest_${zone_forward} $
 
-	# TODO: add ${chain}_output
-	fw add $mode f output ${chain}_${zone_output} $
+	fw add $mode f ${chain}_output
+	fw add $mode f ${chain}_output ${chain}_dest_${zone_output} $
 
 	# TODO: Rename to ${chain}_MASQUERADE
 	fw add $mode n ${chain}_nat
@@ -223,7 +233,7 @@ fw_load_zone() {
 			fw_die "zone ${zone_name}: custom_chains globally disabled"
 
 		fw add $mode f input_${zone_name}
-		fw add $mode f ${chain} input_${zone_name} ^
+		fw add $mode f ${chain}_input input_${zone_name} ^
 
 		fw add $mode f forwarding_${zone_name}
 		fw add $mode f ${chain}_forward forwarding_${zone_name} ^
@@ -238,13 +248,16 @@ fw_load_zone() {
 
 		local t
 		for t in REJECT DROP; do
-			fw add $mode f ${chain}_${t} LOG ^ \
-				{ -m limit --limit $zone_log_limit --log-prefix "$t($zone_name): " }
+			local d
+			for d in src dest; do
+				fw add $mode f ${chain}_${d}_${t} LOG ^ \
+					{ -m limit --limit $zone_log_limit --log-prefix "$t($d $zone_name): " }
+			done
 		done
 
 		[ $zone_mtu_fix == 1 ] && \
 			fw add $mode m ${chain}_MSSFIX LOG ^ \
-				{ -m limit --limit $zone_log_limit --log-prefix "MSSFIX($zone_name): " }
+				{ -p tcp --tcp-flags SYN,RST SYN -m limit --limit $zone_log_limit --log-prefix "MSSFIX($zone_name): " }
 	}
 
 	# NB: if MASQUERADING for IPv6 becomes available we'll need a family check here
@@ -266,6 +279,16 @@ fw_load_zone() {
 			done
 		done
 	fi
+
+	local dev
+	for dev in ${zone_device:-""}; do
+		local net
+		for net in ${zone_subnet:-""}; do
+			[ -n "$dev" ] || [ -n "$net" ] || continue
+			fw_do_interface_rules add "${zone_name}" "$dev" "$net" \
+                "${zone_extra_src}" "${zone_extra_dest}"
+		done
+	done
 
 	fw_callback post zone
 }
@@ -293,7 +316,7 @@ fw_load_include() {
 			fw_log error "You cannot use UCI in firewall includes!" >&2
 			exit 1
 		}
-		. $path 
+		. $path
 	)
 }
 

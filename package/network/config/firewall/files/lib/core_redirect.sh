@@ -41,7 +41,7 @@ fw_load_redirect() {
 		# in this case match only DNATed traffic and allow it on input, not forward
 		if [ -z "$redirect_dest_ip" ] || /sbin/ifconfig | grep -qE "addr:${redirect_dest_ip//./\\.}\b"; then
 			fwdopt="-m conntrack --ctstate DNAT"
-			fwdchain="zone_${redirect_src}"
+			fwdchain="zone_${redirect_src}_input"
 		else
 			fwdchain="zone_${redirect_src}_forward"
 		fi
@@ -114,7 +114,7 @@ fw_load_redirect() {
 				$redirect_options \
 			}
 
-			fw add $mode f ${fwdchain:-forward} ACCEPT + \
+			fw add $mode f ${fwdchain:-delegate_forward} ACCEPT + \
 				{ $redirect_src_ip $redirect_dest_ip } { \
 				$srcaddr $destaddr \
 				$pr \

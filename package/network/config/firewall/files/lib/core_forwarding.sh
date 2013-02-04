@@ -17,14 +17,14 @@ fw_load_forwarding() {
 
 	fw_callback pre forwarding
 
-	local chain=forward
+	local chain=delegate_forward
 	[ -n "$forwarding_src" ] && {
 		chain=zone_${forwarding_src}_forward 
 	}
 
 	local target=ACCEPT
 	[ -n "$forwarding_dest" ] && {
-		target=zone_${forwarding_dest}_ACCEPT
+		target=zone_${forwarding_dest}_dest_ACCEPT
 	}
 
 	local mode
