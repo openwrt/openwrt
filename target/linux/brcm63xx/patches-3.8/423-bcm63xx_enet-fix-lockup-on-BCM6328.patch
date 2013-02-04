@@ -1,0 +1,93 @@
+From 382a0b0dc4cbd0e0fbfd6c2d132e972c3d1245b0 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 13 Nov 2011 14:59:37 +0100
+Subject: [PATCH 39/84] bcm63xx_enet: fix lockup on BCM6328
+
+BCM6328 locks up on a maxburst size of 16, reduce it to 8 for BCM6328 and
+BCM6368.
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c |   13 +++++++------
+ drivers/net/ethernet/broadcom/bcm63xx_enet.h |    4 ++++
+ 2 files changed, 11 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -261,7 +261,6 @@ static int bcm_enet_refill_rx(struct net
+ 			if (!skb)
+ 				break;
+ 			priv->rx_skb[desc_idx] = skb;
+-
+ 			p = dma_map_single(&priv->pdev->dev, skb->data,
+ 					   priv->rx_skb_size,
+ 					   DMA_FROM_DEVICE);
+@@ -995,9 +994,9 @@ static int bcm_enet_open(struct net_devi
+ 	enet_writel(priv, priv->hw_mtu, ENET_TXMAXLEN_REG);
+ 
+ 	/* set dma maximum burst len */
+-	enet_dmac_writel(priv, BCMENET_DMA_MAXBURST,
++	enet_dmac_writel(priv, priv->dma_maxburst,
+ 			 ENETDMAC_MAXBURST_REG(priv->rx_chan));
+-	enet_dmac_writel(priv, BCMENET_DMA_MAXBURST,
++	enet_dmac_writel(priv, priv->dma_maxburst,
+ 			 ENETDMAC_MAXBURST_REG(priv->tx_chan));
+ 
+ 	/* set correct transmit fifo watermark */
+@@ -1593,7 +1592,7 @@ static int compute_hw_mtu(struct bcm_ene
+ 	 * it's appended
+ 	 */
+ 	priv->rx_skb_size = ALIGN(actual_mtu + ETH_FCS_LEN,
+-				  BCMENET_DMA_MAXBURST * 4);
++				  priv->dma_maxburst * 4);
+ 	return 0;
+ }
+ 
+@@ -1701,6 +1700,7 @@ static int bcm_enet_probe(struct platfor
+ 	priv = netdev_priv(dev);
+ 
+ 	priv->enet_is_sw = false;
++	priv->dma_maxburst = BCMENET_DMA_MAXBURST;
+ 
+ 	ret = compute_hw_mtu(priv, dev->mtu);
+ 	if (ret)
+@@ -2282,9 +2282,9 @@ static int bcm_enetsw_open(struct net_de
+ 	enet_dmas_writel(priv, 0, ENETDMAS_SRAM4_REG(priv->tx_chan));
+ 
+ 	/* set dma maximum burst len */
+-	enet_dmac_writel(priv, BCMENET_DMA_MAXBURST,
++	enet_dmac_writel(priv, priv->dma_maxburst,
+ 			 ENETDMAC_MAXBURST_REG(priv->rx_chan));
+-	enet_dmac_writel(priv, BCMENET_DMA_MAXBURST,
++	enet_dmac_writel(priv, priv->dma_maxburst,
+ 			 ENETDMAC_MAXBURST_REG(priv->tx_chan));
+ 
+ 	/* set flow control low/high threshold to 1/3 / 2/3 */
+@@ -2749,6 +2749,7 @@ static int bcm_enetsw_probe(struct platf
+ 	priv->irq_tx = irq_tx;
+ 	priv->rx_ring_size = BCMENET_DEF_RX_DESC;
+ 	priv->tx_ring_size = BCMENET_DEF_TX_DESC;
++	priv->dma_maxburst = BCMENETSW_DMA_MAXBURST;
+ 
+ 	pd = pdev->dev.platform_data;
+ 	if (pd) {
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.h
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.h
+@@ -18,6 +18,7 @@
+ 
+ /* maximum burst len for dma (4 bytes unit) */
+ #define BCMENET_DMA_MAXBURST	16
++#define BCMENETSW_DMA_MAXBURST	8
+ 
+ /* tx transmit threshold (4 bytes unit), fifo is 256 bytes, the value
+  * must be low enough so that a DMA transfer of above burst length can
+@@ -252,6 +253,9 @@ struct bcm_enet_priv {
+ 	/* number of dma desc in tx ring */
+ 	int tx_ring_size;
+ 
++	/* maximum dma burst size */
++	int dma_maxburst;
++
+ 	/* cpu view of rx dma ring */
+ 	struct bcm_enet_desc *tx_desc_cpu;
+ 

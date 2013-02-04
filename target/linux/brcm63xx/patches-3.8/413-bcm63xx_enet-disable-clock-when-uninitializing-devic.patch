@@ -1,0 +1,20 @@
+From fd15ecd10c95480be5635f8993b781fe3a1527c2 Mon Sep 17 00:00:00 2001
+From: Maxime Bizon <mbizon@freebox.fr>
+Date: Fri, 29 Apr 2011 16:54:50 +0200
+Subject: [PATCH 29/63] bcm63xx_enet: disable clock when uninitializing device.
+
+---
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -1870,6 +1870,8 @@ static int bcm_enet_remove(struct platfo
+ 	}
+ 
+ 	/* release device resources */
++	clk_disable(priv->mac_clk);
++	clk_put(priv->mac_clk);
+ 	iounmap(priv->base);
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	release_mem_region(res->start, resource_size(res));

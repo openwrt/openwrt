@@ -1,0 +1,67 @@
+From eac04ec501cac3069c279ccaa72fce4f530a4071 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 8 Jul 2012 21:07:12 +0200
+Subject: [PATCH 68/72] MIPS: BCM63XX: enable enetsw for BCM6362
+
+---
+ arch/mips/bcm63xx/clk.c                               |    4 +++-
+ arch/mips/bcm63xx/dev-enet.c                          |    6 ++++--
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_enet.h |    1 +
+ 3 files changed, 8 insertions(+), 3 deletions(-)
+
+--- a/arch/mips/bcm63xx/clk.c
++++ b/arch/mips/bcm63xx/clk.c
+@@ -121,11 +121,13 @@ static void enetsw_set(struct clk *clk,
+ {
+ 	u32 mask;
+ 
+-	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6368())
++	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6362() && !BCMCPU_IS_6368())
+ 		return;
+ 
+ 	if (BCMCPU_IS_6328())
+ 		mask = CKCTL_6328_ROBOSW_EN;
++	else if (BCMCPU_IS_6362())
++		mask = CKCTL_6362_ROBOSW_EN;
+ 	else
+ 		mask = CKCTL_6368_ROBOSW_EN | CKCTL_6368_SWPKT_USB_EN |
+ 			CKCTL_6368_SWPKT_SAR_EN;
+--- a/arch/mips/bcm63xx/dev-enet.c
++++ b/arch/mips/bcm63xx/dev-enet.c
+@@ -141,7 +141,7 @@ static int __init register_shared(void)
+ 	shared_res[0].end = shared_res[0].start;
+ 	shared_res[0].end += (RSET_ENETDMA_SIZE)  - 1;
+ 
+-	if (BCMCPU_IS_6328() || BCMCPU_IS_6368())
++	if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
+ 		chan_count = 32;
+ 	else
+ 		chan_count = 16;
+@@ -224,7 +224,7 @@ bcm63xx_enetsw_register(const struct bcm
+ {
+ 	int ret;
+ 
+-	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6368())
++	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6362() && !BCMCPU_IS_6368())
+ 		return -ENODEV;
+ 
+ 	ret = register_shared();
+@@ -243,6 +243,8 @@ bcm63xx_enetsw_register(const struct bcm
+ 
+ 	if (BCMCPU_IS_6328())
+ 		enetsw_pd.num_ports = ENETSW_PORTS_6328;
++	else if (BCMCPU_IS_6362())
++		enetsw_pd.num_ports = ENETSW_PORTS_6362;
+ 	else if (BCMCPU_IS_6368())
+ 		enetsw_pd.num_ports = ENETSW_PORTS_6368;
+ 
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_enet.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_enet.h
+@@ -44,6 +44,7 @@ struct bcm63xx_enet_platform_data {
+  */
+ #define ENETSW_MAX_PORT	6
+ #define ENETSW_PORTS_6328 5 /* 4 FE PHY + 1 RGMII */
++#define ENETSW_PORTS_6362 6 /* 4 FE PHY + 2 RGMII */
+ #define ENETSW_PORTS_6368 6 /* 4 FE PHY + 2 RGMII */
+ 
+ #define ENETSW_RGMII_PORT0	4
