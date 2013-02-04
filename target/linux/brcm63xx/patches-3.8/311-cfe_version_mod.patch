@@ -1,0 +1,26 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -798,6 +798,8 @@ void __init board_prom_init(void)
+ 	if (!memcmp(cfe, "cfe-v", 5))
+ 		snprintf(cfe_version, sizeof(cfe_version), "%u.%u.%u-%u.%u",
+ 			 cfe[5], cfe[6], cfe[7], cfe[8], cfe[9]);
++	else if (!memcmp(cfe, "cfe-", 4))
++		snprintf(cfe_version, 16, "%s", (char *) &cfe[4]);
+ 	else
+ 		strcpy(cfe_version, "unknown");
+ 	printk(KERN_INFO PFX "CFE version: %s\n", cfe_version);
+--- a/drivers/mtd/bcm63xxpart.c
++++ b/drivers/mtd/bcm63xxpart.c
+@@ -54,10 +54,10 @@ static int bcm63xx_detect_cfe(struct mtd
+ 	if (ret)
+ 		return ret;
+ 
+-	if (strncmp("cfe-v", buf, 5) == 0)
++	if (strncmp("cfe-", buf, 4) == 0)
+ 		return 0;
+ 
+-	/* very old CFE's do not have the cfe-v string, so check for magic */
++	/* very old CFE's do not have the cfe- string, so check for magic */
+ 	ret = mtd_read(master, BCM63XX_CFE_MAGIC_OFFSET, 8, &retlen,
+ 		       (void *)buf);
+ 	buf[retlen] = 0;
