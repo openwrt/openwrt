@@ -1,0 +1,38 @@
+From 3f650fc30aa0badf9d02842ce396cea3eef2eeaa Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Fri, 1 Jul 2011 23:16:47 +0200
+Subject: [PATCH 49/79] SPI: Allow specifying the parsers for SPI flash
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ include/linux/spi/flash.h |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/include/linux/spi/flash.h
++++ b/include/linux/spi/flash.h
+@@ -2,7 +2,7 @@
+ #define LINUX_SPI_FLASH_H
+ 
+ struct mtd_partition;
+-
++struct mtd_part_parser_data;
+ /**
+  * struct flash_platform_data: board-specific flash data
+  * @name: optional flash device name (eg, as used with mtdparts=)
+@@ -10,6 +10,8 @@ struct mtd_partition;
+  * @nr_parts: number of mtd_partitions for static partitoning
+  * @type: optional flash device type (e.g. m25p80 vs m25p64), for use
+  *	with chips that can't be queried for JEDEC or other IDs
++ * @part_probe_types: optional list of MTD parser names to use for
++ *	partitioning
+  *
+  * Board init code (in arch/.../mach-xxx/board-yyy.c files) can
+  * provide information about SPI flash parts (such as DataFlash) to
+@@ -25,6 +27,7 @@ struct flash_platform_data {
+ 
+ 	char		*type;
+ 
++	const char	**part_probe_types;
+ 	/* we'll likely add more ... use JEDEC IDs, etc */
+ };
+ 

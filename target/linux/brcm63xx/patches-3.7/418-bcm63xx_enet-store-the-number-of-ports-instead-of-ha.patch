@@ -1,0 +1,98 @@
+From efe31ec8fca92162fc21630611971345014a81a0 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 10 Jul 2012 10:39:30 +0200
+Subject: [PATCH 33/84] bcm63xx_enet: store the number of ports instead of hardcoding them
+
+This will be needed for devices with a different number of ports
+---
+ arch/mips/bcm63xx/dev-enet.c                       |    2 ++
+ .../include/asm/mach-bcm63xx/bcm63xx_dev_enet.h    |    2 ++
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c       |    9 +++++----
+ drivers/net/ethernet/broadcom/bcm63xx_enet.h       |    1 +
+ 4 files changed, 10 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/bcm63xx/dev-enet.c
++++ b/arch/mips/bcm63xx/dev-enet.c
+@@ -239,6 +239,8 @@ bcm63xx_enetsw_register(const struct bcm
+ 
+ 	memcpy(bcm63xx_enetsw_device.dev.platform_data, pd, sizeof (*pd));
+ 
++	enetsw_pd.num_ports = ENETSW_PORTS_6368;
++
+ 	ret = platform_device_register(&bcm63xx_enetsw_device);
+ 	if (ret)
+ 		return ret;
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_enet.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_enet.h
+@@ -43,6 +43,7 @@ struct bcm63xx_enet_platform_data {
+  * on board ethernet switch platform data
+  */
+ #define ENETSW_MAX_PORT	6
++#define ENETSW_PORTS_6368 6 /* 4 FE PHY + 2 RGMII */
+ 
+ struct bcm63xx_enetsw_port {
+ 	int		used;
+@@ -58,6 +59,7 @@ struct bcm63xx_enetsw_port {
+ 
+ struct bcm63xx_enetsw_platform_data {
+ 	char mac_addr[ETH_ALEN];
++	int num_ports;
+ 	struct bcm63xx_enetsw_port used_ports[ENETSW_MAX_PORT];
+ };
+ 
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -2041,7 +2041,7 @@ static void swphy_poll_timer(unsigned lo
+ 	struct bcm_enet_priv *priv = (struct bcm_enet_priv *)data;
+ 	unsigned int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(priv->used_ports); i++) {
++	for (i = 0; i < priv->num_ports; i++) {
+ 		struct bcm63xx_enetsw_port *port;
+ 		int val, j, up, advertise, lpa, lpa2, speed, duplex, media;
+ 		u8 override;
+@@ -2207,7 +2207,7 @@ static int bcm_enetsw_open(struct net_de
+ 	priv->rx_curr_desc = 0;
+ 
+ 	/* disable all ports */
+-	for (i = 0; i < 6; i++) {
++	for (i = 0; i < priv->num_ports; i++) {
+ 		enetsw_writeb(priv, ENETSW_PORTOV_ENABLE_MASK,
+ 			      ENETSW_PORTOV_REG(i));
+ 		enetsw_writeb(priv, ENETSW_PTCTRL_RXDIS_MASK |
+@@ -2303,7 +2303,7 @@ static int bcm_enetsw_open(struct net_de
+ 	/*
+ 	 * apply override config for bypass_link ports here.
+ 	 */
+-	for (i = 0; i < ARRAY_SIZE(priv->used_ports); i++) {
++	for (i = 0; i < priv->num_ports; i++) {
+ 		struct bcm63xx_enetsw_port *port;
+ 		u8 override;
+ 		port = &priv->used_ports[i];
+@@ -2447,7 +2447,7 @@ static int bcm_enetsw_phy_is_external(st
+ {
+ 	int i;
+ 
+-	for (i = 0; i < (int)ARRAY_SIZE(priv->used_ports); ++i) {
++	for (i = 0; i < priv->num_ports; ++i) {
+ 		if (!priv->used_ports[i].used)
+ 			continue;
+ 		if (priv->used_ports[i].phy_id == phy_id)
+@@ -2735,6 +2735,7 @@ static int __devinit bcm_enetsw_probe(st
+ 		memcpy(dev->dev_addr, pd->mac_addr, ETH_ALEN);
+ 		memcpy(priv->used_ports, pd->used_ports,
+ 		       sizeof (pd->used_ports));
++		priv->num_ports = pd->num_ports;
+ 	}
+ 
+ 	ret = compute_hw_mtu(priv, dev->mtu);
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.h
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.h
+@@ -326,6 +326,7 @@ struct bcm_enet_priv {
+ 	unsigned int hw_mtu;
+ 
+ 	/* port mapping for switch devices */
++	int num_ports;
+ 	struct bcm63xx_enetsw_port used_ports[ENETSW_MAX_PORT];
+ 	int sw_port_link[ENETSW_MAX_PORT];
+ 

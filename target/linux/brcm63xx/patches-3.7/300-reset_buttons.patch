@@ -1,0 +1,116 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -12,6 +12,8 @@
+ #include <linux/string.h>
+ #include <linux/platform_device.h>
+ #include <linux/ssb/ssb.h>
++#include <linux/gpio_keys.h>
++#include <linux/input.h>
+ #include <asm/addrspace.h>
+ #include <bcm63xx_board.h>
+ #include <bcm63xx_cpu.h>
+@@ -30,6 +32,9 @@
+ 
+ #define PFX	"board_bcm963xx: "
+ 
++#define BCM963XX_KEYS_POLL_INTERVAL	20
++#define BCM963XX_KEYS_DEBOUNCE_INTERVAL	(BCM963XX_KEYS_POLL_INTERVAL * 3)
++
+ static struct board_info board;
+ 
+ /*
+@@ -341,6 +346,16 @@ static struct board_info __initdata boar
+ 			.active_low	= 1,
+ 		},
+ 	},
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 33,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
+ };
+ 
+ static struct board_info __initdata board_96348gw = {
+@@ -399,6 +414,16 @@ static struct board_info __initdata boar
+ 			.active_low	= 1,
+ 		},
+ 	},
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 36,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
+ };
+ 
+ static struct board_info __initdata board_FAST2404 = {
+@@ -826,11 +851,23 @@ static struct platform_device bcm63xx_gp
+ 	.dev.platform_data	= &bcm63xx_led_data,
+ };
+ 
++static struct gpio_keys_platform_data bcm63xx_gpio_keys_data = {
++	.poll_interval  = BCM963XX_KEYS_POLL_INTERVAL,
++};
++
++static struct platform_device bcm63xx_gpio_keys_device = {
++	.name		= "gpio-keys-polled",
++	.id		= 0,
++	.dev.platform_data = &bcm63xx_gpio_keys_data,
++};
++
+ /*
+  * third stage init callback, register all board devices.
+  */
+ int __init board_register_devices(void)
+ {
++	int button_count = 0;
++
+ 	if (board.has_uart0)
+ 		bcm63xx_uart_register(0);
+ 
+@@ -876,5 +913,16 @@ int __init board_register_devices(void)
+ 
+ 	platform_device_register(&bcm63xx_gpio_leds);
+ 
++	/* count number of BUTTONs defined by this device */
++	while (button_count < ARRAY_SIZE(board.buttons) && board.buttons[button_count].desc)
++		button_count++;
++
++	if (button_count) {
++		bcm63xx_gpio_keys_data.nbuttons = button_count;
++		bcm63xx_gpio_keys_data.buttons = board.buttons;
++
++		platform_device_register(&bcm63xx_gpio_keys_device);
++	}
++
+ 	return 0;
+ }
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -3,6 +3,7 @@
+ 
+ #include <linux/types.h>
+ #include <linux/gpio.h>
++#include <linux/gpio_keys.h>
+ #include <linux/leds.h>
+ #include <bcm63xx_dev_enet.h>
+ #include <bcm63xx_dev_usb_usbd.h>
+@@ -45,6 +46,9 @@ struct board_info {
+ 
+ 	/* GPIO LEDs */
+ 	struct gpio_led leds[5];
++
++	/* Buttons */
++	struct gpio_keys_button buttons[4];
+ };
+ 
+ #endif /* ! BOARD_BCM963XX_H_ */
