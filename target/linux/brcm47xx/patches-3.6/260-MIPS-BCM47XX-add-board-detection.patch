@@ -8,7 +8,7 @@
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/board.c
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,219 @@
 +#include <linux/export.h>
 +#include <linux/string.h>
 +#include <bcm47xx_board.h>
@@ -39,6 +39,7 @@
 +};
 +
 +static const struct bcm47xx_board_type_list bcm47xx_board_list_hardware_version[] = {
++	{{BCM47XX_BOARD_ASUS_RTN16, "Asus RT-N16"}, "RT-N16-",},
 +	{{BCM47XX_BOARD_ASUS_WL330GE, "Asus WL330GE"}, "WL330GE-",},
 +	{{BCM47XX_BOARD_ASUS_WL500GPV1, "Asus WL500GPV1"}, "WL500gp-",},
 +	{{BCM47XX_BOARD_ASUS_WL500GPV2, "Asus WL500GPV2"}, "WL500GPV2-",},
@@ -148,14 +149,14 @@
 +
 +	if (bcm47xx_nvram_getenv("model_no", buf1, sizeof(buf1)) >= 0) {
 +		for (e = bcm47xx_board_list_model_no; e->value1; e++) {
-+			if (!strcmp(buf1, e->value1))
++			if (strstarts(buf1, e->value1))
 +				return &e->board;
 +		}
 +	}
 +
 +	if (bcm47xx_nvram_getenv("hardware_version", buf1, sizeof(buf1)) >= 0) {
 +		for (e = bcm47xx_board_list_hardware_version; e->value1; e++) {
-+			if (!strcmp(buf1, e->value1))
++			if (strstarts(buf1, e->value1))
 +				return &e->board;
 +		}
 +	}
