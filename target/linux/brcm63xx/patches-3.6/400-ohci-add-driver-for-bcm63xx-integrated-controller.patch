@@ -211,7 +211,7 @@ Subject: [PATCH 23/63] ohci: add driver for bcm63xx integrated controller.
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
 @@ -1120,6 +1120,11 @@ MODULE_LICENSE ("GPL");
- #define PLATFORM_DRIVER		ohci_platform_driver
+ #define OHCI_PLATFORM_DRIVER		ohci_platform_driver
  #endif
  
 +#ifdef CONFIG_USB_OHCI_BCM63XX
