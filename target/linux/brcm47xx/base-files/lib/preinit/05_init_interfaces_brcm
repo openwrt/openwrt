@@ -14,6 +14,7 @@ set_preinit_iface() {
 	# hardware specific overrides
 	case "$(cat /proc/diag/model)" in
 		"Linksys WAP54G V1") ifname=eth1;;
+		"Linksys E3000 V1"|"Linksys WRT610N V2") cpu_port="8u*";;
 		"ASUS WL-HDD") ifname=eth1;;
 		"ASUS WL-300g") ifname=eth1;;
 		"ASUS (unknown, BCM4702)") ifname=eth1;;
