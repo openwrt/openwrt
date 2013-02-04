@@ -1,0 +1,73 @@
+From ef581388c45dbc48f7bbe050e87deb1e3c63a698 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 10 Jul 2012 10:52:02 +0200
+Subject: [PATCH 35/84] bcm63xx_enet: store is_sw in a variable instead of checking the cpuid
+
+Reduces the number of changes needed for making enetsw work on new
+chips.
+---
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c |    7 +++++--
+ drivers/net/ethernet/broadcom/bcm63xx_enet.h |   10 ++--------
+ 2 files changed, 7 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -364,7 +364,7 @@ static int bcm_enet_receive_queue(struct
+ 		}
+ 
+ 		/* recycle packet if it's marked as bad */
+-		if (!bcm_enet_is_sw(priv) &&
++		if (!priv->enet_is_sw &&
+ 		    unlikely(len_stat & DMADESC_ERR_MASK)) {
+ 			dev->stats.rx_errors++;
+ 
+@@ -597,7 +597,7 @@ static int bcm_enet_start_xmit(struct sk
+ 	}
+ 
+ 	/* pad small packets sent on a switch device */
+-	if (bcm_enet_is_sw(priv) && skb->len < 64) {
++	if (priv->enet_is_sw && skb->len < 64) {
+ 		int needed = 64 - skb->len;
+ 		char *data;
+ 
+@@ -1700,6 +1700,8 @@ static int __devinit bcm_enet_probe(stru
+ 		return -ENOMEM;
+ 	priv = netdev_priv(dev);
+ 
++	priv->enet_is_sw = false;
++
+ 	ret = compute_hw_mtu(priv, dev->mtu);
+ 	if (ret)
+ 		goto out;
+@@ -2725,6 +2727,7 @@ static int __devinit bcm_enetsw_probe(st
+ 	memset(priv, 0, sizeof(*priv));
+ 
+ 	/* initialize default and fetch platform data */
++	priv->enet_is_sw = true;
+ 	priv->irq_rx = irq_rx;
+ 	priv->irq_tx = irq_tx;
+ 	priv->rx_ring_size = BCMENET_DEF_RX_DESC;
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.h
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.h
+@@ -325,6 +325,8 @@ struct bcm_enet_priv {
+ 	/* maximum hardware transmit/receive size */
+ 	unsigned int hw_mtu;
+ 
++	bool enet_is_sw;
++
+ 	/* port mapping for switch devices */
+ 	int num_ports;
+ 	struct bcm63xx_enetsw_port used_ports[ENETSW_MAX_PORT];
+@@ -335,12 +337,4 @@ struct bcm_enet_priv {
+ 	spinlock_t enetsw_mdio_lock;
+ };
+ 
+-static inline int bcm_enet_is_sw(struct bcm_enet_priv *priv)
+-{
+-	if (BCMCPU_IS_6368())
+-		return 1;
+-	else
+-		return 0;
+-}
+-
+ #endif /* ! BCM63XX_ENET_H_ */

@@ -1,0 +1,98 @@
+From 5b837e6c8499aa9bdf9f76889247feac553870d0 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 28 Oct 2012 13:09:38 +0100
+Subject: [PATCH 3/3] MIPS: BCM63XX: use the new reset helper
+
+Use the new reset helper where appropriate.
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ arch/mips/bcm63xx/clk.c     |   19 +++++--------------
+ arch/mips/pci/pci-bcm63xx.c |   19 ++++++-------------
+ 2 files changed, 11 insertions(+), 27 deletions(-)
+
+--- a/arch/mips/bcm63xx/clk.c
++++ b/arch/mips/bcm63xx/clk.c
+@@ -14,6 +14,7 @@
+ #include <bcm63xx_cpu.h>
+ #include <bcm63xx_io.h>
+ #include <bcm63xx_regs.h>
++#include <bcm63xx_reset.h>
+ #include <bcm63xx_clk.h>
+ 
+ static DEFINE_MUTEX(clocks_mutex);
+@@ -124,15 +125,10 @@ static void enetsw_set(struct clk *clk,
+ 			CKCTL_6368_SWPKT_USB_EN |
+ 			CKCTL_6368_SWPKT_SAR_EN, enable);
+ 	if (enable) {
+-		u32 val;
+-
+ 		/* reset switch core afer clock change */
+-		val = bcm_perf_readl(PERF_SOFTRESET_6368_REG);
+-		val &= ~SOFTRESET_6368_ENETSW_MASK;
+-		bcm_perf_writel(val, PERF_SOFTRESET_6368_REG);
++		bcm63xx_core_set_reset(BCM63XX_RESET_ENETSW, 1);
+ 		msleep(10);
+-		val |= SOFTRESET_6368_ENETSW_MASK;
+-		bcm_perf_writel(val, PERF_SOFTRESET_6368_REG);
++		bcm63xx_core_set_reset(BCM63XX_RESET_ENETSW, 0);
+ 		msleep(10);
+ 	}
+ }
+@@ -222,15 +218,10 @@ static void xtm_set(struct clk *clk, int
+ 			CKCTL_6368_SWPKT_SAR_EN, enable);
+ 
+ 	if (enable) {
+-		u32 val;
+-
+ 		/* reset sar core afer clock change */
+-		val = bcm_perf_readl(PERF_SOFTRESET_6368_REG);
+-		val &= ~SOFTRESET_6368_SAR_MASK;
+-		bcm_perf_writel(val, PERF_SOFTRESET_6368_REG);
++		bcm63xx_core_set_reset(BCM63XX_RESET_SAR, 1);
+ 		mdelay(1);
+-		val |= SOFTRESET_6368_SAR_MASK;
+-		bcm_perf_writel(val, PERF_SOFTRESET_6368_REG);
++		bcm63xx_core_set_reset(BCM63XX_RESET_SAR, 0);
+ 		mdelay(1);
+ 	}
+ }
+--- a/arch/mips/pci/pci-bcm63xx.c
++++ b/arch/mips/pci/pci-bcm63xx.c
+@@ -13,6 +13,8 @@
+ #include <linux/delay.h>
+ #include <asm/bootinfo.h>
+ 
++#include <bcm63xx_reset.h>
++
+ #include "pci-bcm63xx.h"
+ 
+ /*
+@@ -130,23 +132,14 @@ static void __init bcm63xx_reset_pcie(vo
+ 	bcm_misc_writel(val, MISC_SERDES_CTRL_REG);
+ 
+ 	/* reset the PCIe core */
+-	val = bcm_perf_readl(PERF_SOFTRESET_6328_REG);
+-
+-	val &= ~SOFTRESET_6328_PCIE_MASK;
+-	val &= ~SOFTRESET_6328_PCIE_CORE_MASK;
+-	val &= ~SOFTRESET_6328_PCIE_HARD_MASK;
+-	val &= ~SOFTRESET_6328_PCIE_EXT_MASK;
+-	bcm_perf_writel(val, PERF_SOFTRESET_6328_REG);
++	bcm63xx_core_set_reset(BCM63XX_RESET_PCIE, 1);
++	bcm63xx_core_set_reset(BCM63XX_RESET_PCIE_EXT, 1);
+ 	mdelay(10);
+ 
+-	val |= SOFTRESET_6328_PCIE_MASK;
+-	val |= SOFTRESET_6328_PCIE_CORE_MASK;
+-	val |= SOFTRESET_6328_PCIE_HARD_MASK;
+-	bcm_perf_writel(val, PERF_SOFTRESET_6328_REG);
++	bcm63xx_core_set_reset(BCM63XX_RESET_PCIE, 0);
+ 	mdelay(10);
+ 
+-	val |= SOFTRESET_6328_PCIE_EXT_MASK;
+-	bcm_perf_writel(val, PERF_SOFTRESET_6328_REG);
++	bcm63xx_core_set_reset(BCM63XX_RESET_PCIE_EXT, 0);
+ 	mdelay(200);
+ }
+ 

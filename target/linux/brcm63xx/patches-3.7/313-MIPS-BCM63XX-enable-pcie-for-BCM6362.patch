@@ -1,0 +1,65 @@
+From e9ad4456c6415b0d3adcbb41b8d34c9298dd28e4 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Mon, 21 Nov 2011 00:53:26 +0100
+Subject: [PATCH 030/118] MIPS: BCM63XX: enable pcie for BCM6362
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h |    3 ++-
+ arch/mips/pci/pci-bcm63xx.c                       |   19 ++++++++++++++++---
+ 2 files changed, 18 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+@@ -1396,7 +1396,8 @@
+ /*************************************************************************
+  * _REG relative to RSET_MISC
+  *************************************************************************/
+-#define MISC_SERDES_CTRL_REG		0x0
++#define MISC_SERDES_CTRL_6328_REG	0x0
++#define MISC_SERDES_CTRL_6362_REG	0x4
+ #define SERDES_PCIE_EN			(1 << 0)
+ #define SERDES_PCIE_EXD_EN		(1 << 15)
+ 
+--- a/arch/mips/pci/pci-bcm63xx.c
++++ b/arch/mips/pci/pci-bcm63xx.c
+@@ -120,16 +120,28 @@ void __iomem *pci_iospace_start;
+ static void __init bcm63xx_reset_pcie(void)
+ {
+ 	u32 val;
++	u32 mask;
++	u32 reg;
+ 
+ 	/* enable clock */
++	if (BCMCPU_IS_6328())
++		mask = CKCTL_6328_PCIE_EN;
++	else
++		mask = CKCTL_6362_PCIE_EN;
++
+ 	val = bcm_perf_readl(PERF_CKCTL_REG);
+-	val |= CKCTL_6328_PCIE_EN;
++	val |= mask;
+ 	bcm_perf_writel(val, PERF_CKCTL_REG);
+ 
+ 	/* enable SERDES */
+-	val = bcm_misc_readl(MISC_SERDES_CTRL_REG);
++	if (BCMCPU_IS_6328())
++		reg = MISC_SERDES_CTRL_6328_REG;
++	else
++		reg = MISC_SERDES_CTRL_6362_REG;
++
++	val = bcm_misc_readl(reg);
+ 	val |= SERDES_PCIE_EN | SERDES_PCIE_EXD_EN;
+-	bcm_misc_writel(val, MISC_SERDES_CTRL_REG);
++	bcm_misc_writel(val, reg);
+ 
+ 	/* reset the PCIe core */
+ 	bcm63xx_core_set_reset(BCM63XX_RESET_PCIE, 1);
+@@ -325,6 +337,7 @@ static int __init bcm63xx_pci_init(void)
+ 
+ 	switch (bcm63xx_get_cpu_id()) {
+ 	case BCM6328_CPU_ID:
++	case BCM6362_CPU_ID:
+ 		return bcm63xx_register_pcie();
+ 	case BCM6348_CPU_ID:
+ 	case BCM6358_CPU_ID:

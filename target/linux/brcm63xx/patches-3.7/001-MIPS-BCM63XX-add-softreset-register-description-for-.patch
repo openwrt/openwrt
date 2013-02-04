@@ -1,0 +1,38 @@
+From 761420215cd4c8b31500aaf5e8f5116abb962d1d Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 28 Oct 2012 12:48:56 +0100
+Subject: [PATCH 1/3] MIPS: BCM63XX: add softreset register description for BCM6358
+
+The softreset register description for BCM6358 was missing, so add it.
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+@@ -191,6 +191,7 @@
+ /* Soft Reset register */
+ #define PERF_SOFTRESET_REG		0x28
+ #define PERF_SOFTRESET_6328_REG		0x10
++#define PERF_SOFTRESET_6358_REG		0x34
+ #define PERF_SOFTRESET_6368_REG		0x10
+ 
+ #define SOFTRESET_6328_SPI_MASK		(1 << 0)
+@@ -244,6 +245,15 @@
+ 				  SOFTRESET_6348_ACLC_MASK |		\
+ 				  SOFTRESET_6348_ADSLMIPSPLL_MASK)
+ 
++#define SOFTRESET_6358_SPI_MASK		(1 << 0)
++#define SOFTRESET_6358_ENET_MASK	(1 << 2)
++#define SOFTRESET_6358_MPI_MASK		(1 << 3)
++#define SOFTRESET_6358_EPHY_MASK	(1 << 6)
++#define SOFTRESET_6358_SAR_MASK		(1 << 7)
++#define SOFTRESET_6358_USBH_MASK	(1 << 12)
++#define SOFTRESET_6358_PCM_MASK		(1 << 13)
++#define SOFTRESET_6358_ADSL_MASK	(1 << 14)
++
+ #define SOFTRESET_6368_SPI_MASK		(1 << 0)
+ #define SOFTRESET_6368_MPI_MASK		(1 << 3)
+ #define SOFTRESET_6368_EPHY_MASK	(1 << 6)

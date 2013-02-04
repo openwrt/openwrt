@@ -1,0 +1,101 @@
+From eef84812bc7ffd590da6ad6b83bfeebaa43a7055 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Thu, 5 Jul 2012 21:19:20 +0200
+Subject: [PATCH 58/84] MIPS: BCM63XX: enable SPI controller for BCM6362
+
+---
+ arch/mips/bcm63xx/clk.c                            |    2 ++
+ arch/mips/bcm63xx/dev-spi.c                        |   11 ++++++++++-
+ .../include/asm/mach-bcm63xx/bcm63xx_dev_spi.h     |    3 +++
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h  |   16 ++++++++++++++++
+ 4 files changed, 31 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/bcm63xx/clk.c
++++ b/arch/mips/bcm63xx/clk.c
+@@ -203,6 +203,8 @@ static void spi_set(struct clk *clk, int
+ 		mask = CKCTL_6348_SPI_EN;
+ 	else if (BCMCPU_IS_6358())
+ 		mask = CKCTL_6358_SPI_EN;
++	else if (BCMCPU_IS_6362())
++		mask = CKCTL_6362_SPI_EN;
+ 	else
+ 		/* BCMCPU_IS_6368 */
+ 		mask = CKCTL_6368_SPI_EN;
+--- a/arch/mips/bcm63xx/dev-spi.c
++++ b/arch/mips/bcm63xx/dev-spi.c
+@@ -34,6 +34,10 @@ static const unsigned long bcm6358_regs_
+ 	__GEN_SPI_REGS_TABLE(6358)
+ };
+ 
++static const unsigned long bcm6362_regs_spi[] = {
++	__GEN_SPI_REGS_TABLE(6362)
++};
++
+ static const unsigned long bcm6368_regs_spi[] = {
+ 	__GEN_SPI_REGS_TABLE(6368)
+ };
+@@ -49,6 +53,8 @@ static __init void bcm63xx_spi_regs_init
+ 		bcm63xx_regs_spi = bcm6348_regs_spi;
+ 	if (BCMCPU_IS_6358())
+ 		bcm63xx_regs_spi = bcm6358_regs_spi;
++	if (BCMCPU_IS_6362())
++		bcm63xx_regs_spi = bcm6362_regs_spi;
+ 	if (BCMCPU_IS_6368())
+ 		bcm63xx_regs_spi = bcm6368_regs_spi;
+ }
+@@ -99,6 +105,9 @@ int __init bcm63xx_spi_register(void)
+ 	/* Set bus frequency */
+ 	spi_pdata.speed_hz = clk_get_rate(periph_clk);
+ 
++	if (BCMCPU_IS_6362())
++		spi_pdata.bus_num = 1;
++
+ 	spi_resources[0].start = bcm63xx_regset_address(RSET_SPI);
+ 	spi_resources[0].end = spi_resources[0].start;
+ 	spi_resources[1].start = bcm63xx_get_irq_number(IRQ_SPI);
+@@ -110,7 +119,7 @@ int __init bcm63xx_spi_register(void)
+ 		spi_pdata.msg_ctl_width = SPI_6338_MSG_CTL_WIDTH;
+ 	}
+ 
+-	if (BCMCPU_IS_6358() || BCMCPU_IS_6368()) {
++	if (BCMCPU_IS_6358() || BCMCPU_IS_6362() || BCMCPU_IS_6368()) {
+ 		spi_resources[0].end += BCM_6358_RSET_SPI_SIZE - 1;
+ 		spi_pdata.fifo_size = SPI_6358_MSG_DATA_SIZE;
+ 		spi_pdata.msg_type_shift = SPI_6358_MSG_TYPE_SHIFT;
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h
+@@ -81,6 +81,9 @@ static inline unsigned long bcm63xx_spir
+ #ifdef CONFIG_BCM63XX_CPU_6358
+ 	__GEN_SPI_RSET(6358)
+ #endif
++#ifdef CONFIG_BCM63XX_CPU_6362
++	__GEN_SPI_RSET(6362)
++#endif
+ #ifdef CONFIG_BCM63XX_CPU_6368
+ 	__GEN_SPI_RSET(6368)
+ #endif
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+@@ -1388,6 +1388,22 @@
+ #define SPI_6358_MSG_TAIL		0x709
+ #define SPI_6358_RX_TAIL		0x70B
+ 
++/* BCM 6362 SPI core */
++#define SPI_6362_MSG_CTL		0x00	/* 16-bits register */
++#define SPI_6362_MSG_DATA		0x02
++#define SPI_6362_MSG_DATA_SIZE		0x21e
++#define SPI_6362_RX_DATA		0x400
++#define SPI_6362_RX_DATA_SIZE		0x220
++#define SPI_6362_CMD			0x700	/* 16-bits register */
++#define SPI_6362_INT_STATUS		0x702
++#define SPI_6362_INT_MASK_ST		0x703
++#define SPI_6362_INT_MASK		0x704
++#define SPI_6362_ST			0x705
++#define SPI_6362_CLK_CFG		0x706
++#define SPI_6362_FILL_BYTE		0x707
++#define SPI_6362_MSG_TAIL		0x709
++#define SPI_6362_RX_TAIL		0x70B
++
+ /* BCM 6358 SPI core */
+ #define SPI_6368_MSG_CTL		0x00	/* 16-bits register */
+ #define SPI_6368_MSG_CTL_WIDTH		16
