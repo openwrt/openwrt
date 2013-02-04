@@ -17,7 +17,7 @@
  
  #define CT6373_PID_OFFSET		0xff80
  #define CT6373_74X164_GPIO_BASE	64
-@@ -2582,6 +2585,103 @@ static struct board_info __initdata boar
+@@ -2622,6 +2625,103 @@ static struct board_info __initdata boar
  };
  #endif
  
@@ -121,7 +121,7 @@
  /*
   * known 6368 boards
   */
-@@ -2778,6 +2878,10 @@ static const struct board_info __initdat
+@@ -2818,6 +2918,10 @@ static const struct board_info __initdat
  	&board_DVAG3810BN,
  #endif
  
@@ -132,7 +132,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
-@@ -2845,6 +2949,11 @@ static void __init boardid_fixup(u8 *boo
+@@ -2885,6 +2989,11 @@ static void __init boardid_fixup(u8 *boo
  		}
  	}
  
