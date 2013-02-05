@@ -1125,7 +1125,7 @@ ar8327_init_port(struct ar8216_priv *priv, int port)
 		cfg = NULL;
 
 	ar8327_config_port(priv, port, cfg);
-	
+
 	priv->write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
 	t = 1 << AR8327_PORT_VLAN0_DEF_SVID_S;
@@ -1864,7 +1864,7 @@ ar8216_config_init(struct phy_device *pdev)
 	if (ret)
 		goto err_free_priv;
 
-	ret = register_switch(&priv->dev, pdev->attached_dev);
+	ret = register_switch(swdev, pdev->attached_dev);
 	if (ret)
 		goto err_cleanup_mib;
 
@@ -1875,11 +1875,11 @@ ar8216_config_init(struct phy_device *pdev)
 
 	ret = priv->chip->hw_init(priv);
 	if (ret)
-		goto err_cleanup_mib;
+		goto err_unregister_switch;
 
 	ret = ar8216_sw_reset_switch(&priv->dev);
 	if (ret)
-		goto err_cleanup_mib;
+		goto err_unregister_switch;
 
 	dev->phy_ptr = priv;
 
@@ -1896,6 +1896,8 @@ ar8216_config_init(struct phy_device *pdev)
 
 	return 0;
 
+err_unregister_switch:
+	unregister_switch(&priv->dev);
 err_cleanup_mib:
 	ar8xxx_mib_cleanup(priv);
 err_free_priv:
