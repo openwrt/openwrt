@@ -1,7 +1,5 @@
 #!/bin/sh
 
-. /lib/brcm63xx.sh
-
 enable_reset_button() {
 	if [ "$brcm63xx_has_reset_button" = "true" ]; then
 		insmod input-core

@@ -1,10 +1,6 @@
 #!/bin/sh
 
 set_preinit_iface() {
-	ifname=eth1
-
-	. /lib/brcm63xx.sh	
-
 	ifconfig $ifname 0.0.0.0 up
 }
 

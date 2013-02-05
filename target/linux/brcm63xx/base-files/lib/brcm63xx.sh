@@ -9,6 +9,7 @@ status_led=""
 status_led2=""
 sys_mtd_part=""
 brcm63xx_has_reset_button=""
+ifname=""
 
 brcm63xx_detect() {
 	board_name=$(awk 'BEGIN{FS="[ \t:/]+"} /system type/ {print $4}' /proc/cpuinfo)
