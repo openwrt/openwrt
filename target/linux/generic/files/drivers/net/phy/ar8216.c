@@ -1902,6 +1902,7 @@ err_cleanup_mib:
 	ar8xxx_mib_cleanup(priv);
 err_free_priv:
 	kfree(priv);
+	pdev->priv = NULL;
 	return ret;
 }
 
@@ -1982,6 +1983,8 @@ ar8216_remove(struct phy_device *pdev)
 
 	if (!priv)
 		return;
+
+	pdev->priv = NULL;
 
 	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
 	dev->eth_mangle_rx = NULL;
