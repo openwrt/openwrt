@@ -14,6 +14,8 @@ ucidef_set_interface_loopback
 
 case "$board_name" in
 
+RTA770BW |\
+RTA770W |\
 96348W3 |\
 96358-502V |\
 SPW500V)
@@ -31,7 +33,6 @@ CT6373-1 |\
 D-4P-W |\
 "F@ST2604" |\
 RTA1320_16M |\
-RTA770BW |\
 V2110)
 	ucidef_set_interface_lan "eth0"
 	ucidef_add_switch "eth0" "1" "1"
