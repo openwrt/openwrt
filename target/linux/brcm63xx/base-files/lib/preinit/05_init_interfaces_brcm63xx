@@ -8,19 +8,4 @@ set_preinit_iface() {
 	ifconfig $ifname 0.0.0.0 up
 }
 
-check_module () {
-  module="$1"; shift; params="$*"
-
-  insmod "$module" "$params"
-  sleep 1
-  grep "^$module" /proc/modules
-  return $?
-}
-
-init_iface() {
-	insmod switch-core
-	check_module switch-robo || check_module switch-adm || rmmod switch-core
-}
-
 boot_hook_add preinit_main set_preinit_iface
-boot_hook_add preinit_main init_iface
