@@ -198,7 +198,11 @@ static const struct ar8xxx_mib_desc ar8236_mibs[] = {
 	MIB_DESC(1, AR8236_STATS_TXLATECOL, "TxLateCol"),
 };
 
-#define to_ar8216(_dev) container_of(_dev, struct ar8216_priv, dev)
+static inline struct ar8216_priv *
+swdev_to_ar8216(struct switch_dev *swdev)
+{
+	return container_of(swdev, struct ar8216_priv, dev);
+}
 
 static inline bool ar8xxx_has_gige(struct ar8216_priv *priv)
 {
@@ -1259,7 +1263,7 @@ static int
 ar8216_sw_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 		   struct switch_val *val)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	priv->vlan = !!val->value.i;
 	return 0;
 }
@@ -1268,7 +1272,7 @@ static int
 ar8216_sw_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 		   struct switch_val *val)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	val->value.i = priv->vlan;
 	return 0;
 }
@@ -1277,7 +1281,7 @@ ar8216_sw_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 static int
 ar8216_sw_set_pvid(struct switch_dev *dev, int port, int vlan)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 
 	/* make sure no invalid PVIDs get set */
 
@@ -1291,7 +1295,7 @@ ar8216_sw_set_pvid(struct switch_dev *dev, int port, int vlan)
 static int
 ar8216_sw_get_pvid(struct switch_dev *dev, int port, int *vlan)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	*vlan = priv->pvid[port];
 	return 0;
 }
@@ -1300,7 +1304,7 @@ static int
 ar8216_sw_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 		  struct switch_val *val)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	priv->vlan_id[val->port_vlan] = val->value.i;
 	return 0;
 }
@@ -1309,7 +1313,7 @@ static int
 ar8216_sw_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 		  struct switch_val *val)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	val->value.i = priv->vlan_id[val->port_vlan];
 	return 0;
 }
@@ -1318,7 +1322,7 @@ static int
 ar8216_sw_get_port_link(struct switch_dev *dev, int port,
 			struct switch_port_link *link)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 
 	ar8216_read_port_link(priv, port, link);
 	return 0;
@@ -1327,7 +1331,7 @@ ar8216_sw_get_port_link(struct switch_dev *dev, int port,
 static int
 ar8216_sw_get_ports(struct switch_dev *dev, struct switch_val *val)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	u8 ports = priv->vlan_table[val->port_vlan];
 	int i;
 
@@ -1351,7 +1355,7 @@ ar8216_sw_get_ports(struct switch_dev *dev, struct switch_val *val)
 static int
 ar8216_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	u8 *vt = &priv->vlan_table[val->port_vlan];
 	int i, j;
 
@@ -1382,7 +1386,7 @@ ar8216_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 static int
 ar8216_sw_hw_apply(struct switch_dev *dev)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	u8 portmask[AR8X16_MAX_PORTS];
 	int i, j;
 
@@ -1449,7 +1453,7 @@ ar8216_sw_hw_apply(struct switch_dev *dev)
 static int
 ar8216_sw_reset_switch(struct switch_dev *dev)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	int i;
 
 	mutex_lock(&priv->reg_mutex);
@@ -1474,7 +1478,7 @@ ar8216_sw_set_reset_mibs(struct switch_dev *dev,
 			 const struct switch_attr *attr,
 			 struct switch_val *val)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	unsigned int len;
 	int ret;
 
@@ -1502,7 +1506,7 @@ ar8216_sw_set_port_reset_mib(struct switch_dev *dev,
 			     const struct switch_attr *attr,
 			     struct switch_val *val)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	int port;
 	int ret;
 
@@ -1532,7 +1536,7 @@ ar8216_sw_get_port_mib(struct switch_dev *dev,
 		       const struct switch_attr *attr,
 		       struct switch_val *val)
 {
-	struct ar8216_priv *priv = to_ar8216(dev);
+	struct ar8216_priv *priv = swdev_to_ar8216(dev);
 	const struct ar8xxx_chip *chip = priv->chip;
 	u64 *mib_stats;
 	int port;
