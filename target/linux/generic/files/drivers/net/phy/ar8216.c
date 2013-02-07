@@ -79,6 +79,7 @@ struct ar8xxx_chip {
 
 struct ar8216_priv {
 	struct switch_dev dev;
+	struct mii_bus *mii_bus;
 	struct phy_device *phy;
 	u32 (*read)(struct ar8216_priv *priv, int reg);
 	void (*write)(struct ar8216_priv *priv, int reg, u32 val);
@@ -245,8 +246,7 @@ split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
 static u32
 ar8216_mii_read(struct ar8216_priv *priv, int reg)
 {
-	struct phy_device *phy = priv->phy;
-	struct mii_bus *bus = phy->bus;
+	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, page;
 	u16 lo, hi;
 
@@ -267,8 +267,7 @@ ar8216_mii_read(struct ar8216_priv *priv, int reg)
 static void
 ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
 {
-	struct phy_device *phy = priv->phy;
-	struct mii_bus *bus = phy->bus;
+	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, r3;
 	u16 lo, hi;
 
@@ -295,7 +294,7 @@ static void
 ar8216_phy_dbg_write(struct ar8216_priv *priv, int phy_addr,
 		     u16 dbg_addr, u16 dbg_data)
 {
-	struct mii_bus *bus = priv->phy->bus;
+	struct mii_bus *bus = priv->mii_bus;
 
 	mutex_lock(&bus->mdio_lock);
 	bus->write(bus, phy_addr, MII_ATH_DBG_ADDR, dbg_addr);
@@ -306,7 +305,7 @@ ar8216_phy_dbg_write(struct ar8216_priv *priv, int phy_addr,
 static void
 ar8216_phy_mmd_write(struct ar8216_priv *priv, int phy_addr, u16 addr, u16 data)
 {
-	struct mii_bus *bus = priv->phy->bus;
+	struct mii_bus *bus = priv->mii_bus;
 
 	mutex_lock(&bus->mdio_lock);
 	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr);
@@ -737,7 +736,7 @@ ar8236_hw_init(struct ar8216_priv *priv)
 		return 0;
 
 	/* Initialize the PHYs */
-	bus = priv->phy->bus;
+	bus = priv->mii_bus;
 	for (i = 0; i < 5; i++) {
 		mdiobus_write(bus, i, MII_ADVERTISE,
 			      ADVERTISE_ALL | ADVERTISE_PAUSE_CAP |
@@ -812,7 +811,7 @@ ar8316_hw_init(struct ar8216_priv *priv)
 	priv->write(priv, 0x8, newval);
 
 	/* Initialize the ports */
-	bus = priv->phy->bus;
+	bus = priv->mii_bus;
 	for (i = 0; i < 5; i++) {
 		if ((i == 4) && priv->port4_phy &&
 		    priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
@@ -1034,7 +1033,7 @@ ar8327_hw_init(struct ar8216_priv *priv)
 		priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
 	}
 
-	bus = priv->phy->bus;
+	bus = priv->mii_bus;
 	for (i = 0; i < AR8327_NUM_PHYS; i++) {
 		ar8327_phy_fixup(priv, i);
 
@@ -1688,8 +1687,8 @@ ar8216_id_chip(struct ar8216_priv *priv)
 		printk(KERN_DEBUG
 			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
 			priv->chip_ver, priv->chip_rev,
-			mdiobus_read(priv->phy->bus, priv->phy->addr, 2),
-			mdiobus_read(priv->phy->bus, priv->phy->addr, 3));
+			mdiobus_read(priv->mii_bus, priv->phy->addr, 2),
+			mdiobus_read(priv->mii_bus, priv->phy->addr, 3));
 
 		return -ENODEV;
 	}
@@ -1780,6 +1779,7 @@ ar8216_config_init(struct phy_device *pdev)
 			return -ENOMEM;
 	}
 
+	priv->mii_bus = pdev->bus;
 	priv->phy = pdev;
 
 	ret = ar8216_id_chip(priv);
@@ -1967,6 +1967,7 @@ ar8216_probe(struct phy_device *pdev)
 	if (priv == NULL)
 		return -ENOMEM;
 
+	priv->mii_bus = pdev->bus;
 	priv->phy = pdev;
 
 	ret = ar8216_id_chip(priv);
