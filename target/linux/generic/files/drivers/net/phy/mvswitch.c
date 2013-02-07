@@ -348,16 +348,26 @@ mvswitch_config_aneg(struct phy_device *phydev)
 }
 
 static void
-mvswitch_remove(struct phy_device *pdev)
+mvswitch_detach(struct phy_device *pdev)
 {
 	struct mvswitch_priv *priv = to_mvsw(pdev);
 	struct net_device *dev = pdev->attached_dev;
+
+	if (!dev)
+		return;
 
 	dev->phy_ptr = NULL;
 	dev->eth_mangle_rx = NULL;
 	dev->eth_mangle_tx = NULL;
 	dev->features = priv->orig_features;
 	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
+}
+
+static void
+mvswitch_remove(struct phy_device *pdev)
+{
+	struct mvswitch_priv *priv = to_mvsw(pdev);
+
 	kfree(priv);
 }
 
@@ -399,6 +409,7 @@ static struct phy_driver mvswitch_driver = {
 	.features	= PHY_BASIC_FEATURES,
 	.probe		= &mvswitch_probe,
 	.remove		= &mvswitch_remove,
+	.detach		= &mvswitch_detach,
 	.config_init	= &mvswitch_config_init,
 	.config_aneg	= &mvswitch_config_aneg,
 	.read_status	= &mvswitch_read_status,
