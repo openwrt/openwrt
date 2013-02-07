@@ -1976,19 +1976,28 @@ ar8216_probe(struct phy_device *pdev)
 }
 
 static void
+ar8216_detach(struct phy_device *pdev)
+{
+	struct net_device *dev = pdev->attached_dev;
+
+	if (!dev)
+		return;
+
+	dev->phy_ptr = NULL;
+	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
+	dev->eth_mangle_rx = NULL;
+	dev->eth_mangle_tx = NULL;
+}
+
+static void
 ar8216_remove(struct phy_device *pdev)
 {
 	struct ar8216_priv *priv = pdev->priv;
-	struct net_device *dev = pdev->attached_dev;
 
 	if (!priv)
 		return;
 
 	pdev->priv = NULL;
-
-	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
-	dev->eth_mangle_rx = NULL;
-	dev->eth_mangle_tx = NULL;
 
 	if (pdev->addr == 0)
 		unregister_switch(&priv->dev);
@@ -2004,6 +2013,7 @@ static struct phy_driver ar8216_driver = {
 	.features	= PHY_BASIC_FEATURES,
 	.probe		= ar8216_probe,
 	.remove		= ar8216_remove,
+	.detach		= ar8216_detach,
 	.config_init	= &ar8216_config_init,
 	.config_aneg	= &ar8216_config_aneg,
 	.read_status	= &ar8216_read_status,
