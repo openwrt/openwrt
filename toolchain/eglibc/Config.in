@@ -13,6 +13,10 @@ choice
 		bool "eglibc 2.16"
 		depends !GCC_VERSION_LLVM
 
+	config EGLIBC_VERSION_2_17
+		bool "eglibc 2.17"
+		depends !GCC_VERSION_LLVM
+
 endchoice
 
 config EGLIBC_REVISION
@@ -20,6 +24,7 @@ config EGLIBC_REVISION
 	depends on TOOLCHAINOPTS && USE_EGLIBC
 	default "18909" if EGLIBC_VERSION_2_15
 	default "21110" if EGLIBC_VERSION_2_16
+	default "22243" if EGLIBC_VERSION_2_17
 	default ""
 
 menu "eglibc configuration"
