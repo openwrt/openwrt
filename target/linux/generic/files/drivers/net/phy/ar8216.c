@@ -1653,7 +1653,7 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	u16 id;
 	int i;
 
-	val = ar8216_mii_read(priv, AR8216_REG_CTRL);
+	val = priv->read(priv, AR8216_REG_CTRL);
 	if (val == ~0)
 		return -ENODEV;
 
@@ -1661,7 +1661,7 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	for (i = 0; i < AR8X16_PROBE_RETRIES; i++) {
 		u16 t;
 
-		val = ar8216_mii_read(priv, AR8216_REG_CTRL);
+		val = priv->read(priv, AR8216_REG_CTRL);
 		if (val == ~0)
 			return -ENODEV;
 
@@ -1689,10 +1689,8 @@ ar8216_id_chip(struct ar8216_priv *priv)
 		break;
 	default:
 		printk(KERN_DEBUG
-			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
-			priv->chip_ver, priv->chip_rev,
-			mdiobus_read(priv->mii_bus, priv->phy->addr, 2),
-			mdiobus_read(priv->mii_bus, priv->phy->addr, 3));
+			"ar8216: Unknown Atheros device [ver=%d, rev=%d]\n",
+			priv->chip_ver, priv->chip_rev);
 
 		return -ENODEV;
 	}
@@ -1784,6 +1782,9 @@ ar8216_config_init(struct phy_device *pdev)
 	}
 
 	priv->mii_bus = pdev->bus;
+	priv->read = ar8216_mii_read;
+	priv->write = ar8216_mii_write;
+
 	priv->phy = pdev;
 
 	ret = ar8216_id_chip(priv);
@@ -1833,8 +1834,6 @@ ar8216_config_init(struct phy_device *pdev)
 	pdev->advertising = pdev->supported;
 
 	mutex_init(&priv->reg_mutex);
-	priv->read = ar8216_mii_read;
-	priv->write = ar8216_mii_write;
 
 	pdev->priv = priv;
 
@@ -1972,6 +1971,8 @@ ar8216_probe(struct phy_device *pdev)
 		return -ENOMEM;
 
 	priv->mii_bus = pdev->bus;
+	priv->read = ar8216_mii_read;
+	priv->write = ar8216_mii_write;
 	priv->phy = pdev;
 
 	ret = ar8216_id_chip(priv);
