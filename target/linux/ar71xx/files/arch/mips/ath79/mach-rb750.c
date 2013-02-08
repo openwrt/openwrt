@@ -282,7 +282,6 @@ MIPS_MACHINE(ATH79_MACH_RB_750G_R3, "750Gr3", "MikroTik RouterBOARD 750GL",
 
 #define RB751_HARDCONFIG	0x1f00b000
 #define RB751_HARDCONFIG_SIZE	0x1000
-#define RB751_MAC_ADDRESS_OFFSET 0xE80
 
 static void __init rb751_wlan_setup(void)
 {
@@ -290,6 +289,8 @@ static void __init rb751_wlan_setup(void)
 	struct ath9k_platform_data *wmac_data;
 	u16 tag_len;
 	u8 *tag;
+	u16 mac_len;
+	u8 *mac;
 	int err;
 
 	wmac_data = ap9x_pci_get_wmac_data(0);
@@ -314,7 +315,14 @@ static void __init rb751_wlan_setup(void)
 		return;
 	}
 
-	ap91_pci_init(NULL, hardconfig + RB751_MAC_ADDRESS_OFFSET);
+	err = routerboot_find_tag(hardconfig, RB751_HARDCONFIG_SIZE,
+                                 RB_ID_MAC_ADDRESS_PACK, &mac, &mac_len);
+	if (err) {
+		pr_err("rb75x: no mac address found\n");
+		return;
+	}
+
+	ap91_pci_init(NULL, mac);
 }
 
 static void __init rb751_setup(void)
