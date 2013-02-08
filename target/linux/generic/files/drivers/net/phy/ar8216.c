@@ -1791,12 +1791,13 @@ ar8216_config_init(struct phy_device *pdev)
 	if (ret)
 		goto err_free_priv;
 
-	if (pdev->addr != 0) {
-		if (ar8xxx_has_gige(priv)) {
-			pdev->supported |= SUPPORTED_1000baseT_Full;
-			pdev->advertising |= ADVERTISED_1000baseT_Full;
-		}
+	if (ar8xxx_has_gige(priv))
+		pdev->supported = SUPPORTED_1000baseT_Full;
+	else
+		pdev->supported = SUPPORTED_100baseT_Full;
+	pdev->advertising = pdev->supported;
 
+	if (pdev->addr != 0) {
 		if (chip_is_ar8316(priv)) {
 			/* check if we're attaching to the switch twice */
 			pdev = pdev->bus->phy_map[0];
@@ -1826,12 +1827,6 @@ ar8216_config_init(struct phy_device *pdev)
 		kfree(priv);
 		return 0;
 	}
-
-	if (ar8xxx_has_gige(priv))
-		pdev->supported = SUPPORTED_1000baseT_Full;
-	else
-		pdev->supported = SUPPORTED_100baseT_Full;
-	pdev->advertising = pdev->supported;
 
 	mutex_init(&priv->reg_mutex);
 
