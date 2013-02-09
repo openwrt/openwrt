@@ -833,8 +833,9 @@ ar8316_hw_init(struct ar8216_priv *priv)
 			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
 		mdiobus_write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
 		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
-		msleep(1000);
 	}
+
+	msleep(1000);
 
 out:
 	priv->initialized = true;
