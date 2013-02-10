@@ -1756,7 +1756,7 @@ ar8xxx_mib_start(struct ar8216_priv *priv)
 }
 
 static void
-ar8xxx_mib_cleanup(struct ar8216_priv *priv)
+ar8xxx_mib_stop(struct ar8216_priv *priv)
 {
 	if (!ar8xxx_has_mib_counters(priv))
 		return;
@@ -2071,7 +2071,7 @@ ar8216_remove(struct phy_device *pdev)
 	if (pdev->addr == 0)
 		unregister_switch(&priv->dev);
 
-	ar8xxx_mib_cleanup(priv);
+	ar8xxx_mib_stop(priv);
 	ar8xxx_free(priv);
 }
 
