@@ -788,7 +788,7 @@ ar8316_hw_init(struct ar8216_priv *priv)
 	u32 val, newval;
 	struct mii_bus *bus;
 
-	val = priv->read(priv, 0x8);
+	val = priv->read(priv, AR8316_REG_POSTRIP);
 
 	if (priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
 		if (priv->port4_phy) {
@@ -812,7 +812,7 @@ ar8316_hw_init(struct ar8216_priv *priv)
 	if (val == newval)
 		goto out;
 
-	priv->write(priv, 0x8, newval);
+	priv->write(priv, AR8316_REG_POSTRIP, newval);
 
 	/* Initialize the ports */
 	bus = priv->mii_bus;
