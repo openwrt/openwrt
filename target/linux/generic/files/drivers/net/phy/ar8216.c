@@ -1780,17 +1780,17 @@ ar8216_config_init(struct phy_device *pdev)
 		priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
 		if (priv == NULL)
 			return -ENOMEM;
+
+		priv->mii_bus = pdev->bus;
+		priv->read = ar8216_mii_read;
+		priv->write = ar8216_mii_write;
+
+		ret = ar8216_id_chip(priv);
+		if (ret)
+			goto err_free_priv;
 	}
 
-	priv->mii_bus = pdev->bus;
-	priv->read = ar8216_mii_read;
-	priv->write = ar8216_mii_write;
-
 	priv->phy = pdev;
-
-	ret = ar8216_id_chip(priv);
-	if (ret)
-		goto err_free_priv;
 
 	if (ar8xxx_has_gige(priv))
 		pdev->supported = SUPPORTED_1000baseT_Full;
