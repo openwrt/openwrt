@@ -267,7 +267,7 @@ static int b53_phy_probe(struct phy_device *phydev)
 	mutex_init(&dev.reg_mutex);
 
 	ret = b53_switch_detect(&dev);
-	if (!ret)
+	if (ret)
 		return ret;
 
 	if (is5325(&dev) || is5365(&dev))
