@@ -1880,10 +1880,9 @@ ar8216_config_init(struct phy_device *pdev)
 	if (ret)
 		goto err_unregister_switch;
 
-	dev->phy_ptr = priv;
-
 	/* VID fixup only needed on ar8216 */
 	if (chip_is_ar8216(priv) && pdev->addr == 0) {
+		dev->phy_ptr = priv;
 		dev->priv_flags |= IFF_NO_IP_ALIGN;
 		dev->eth_mangle_rx = ar8216_mangle_rx;
 		dev->eth_mangle_tx = ar8216_mangle_tx;
