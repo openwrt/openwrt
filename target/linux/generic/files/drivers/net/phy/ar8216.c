@@ -1803,6 +1803,45 @@ ar8xxx_create_mii(struct mii_bus *bus)
 }
 
 static int
+ar8xxx_probe_switch(struct ar8216_priv *priv)
+{
+	struct switch_dev *swdev;
+	int ret;
+
+	ret = ar8216_id_chip(priv);
+	if (ret)
+		return ret;
+
+	swdev = &priv->dev;
+	swdev->cpu_port = AR8216_PORT_CPU;
+	swdev->ops = &ar8216_sw_ops;
+
+	if (chip_is_ar8316(priv)) {
+		swdev->name = "Atheros AR8316";
+		swdev->vlans = AR8X16_MAX_VLANS;
+		swdev->ports = AR8216_NUM_PORTS;
+	} else if (chip_is_ar8236(priv)) {
+		swdev->name = "Atheros AR8236";
+		swdev->vlans = AR8216_NUM_VLANS;
+		swdev->ports = AR8216_NUM_PORTS;
+	} else if (chip_is_ar8327(priv)) {
+		swdev->name = "Atheros AR8327";
+		swdev->vlans = AR8X16_MAX_VLANS;
+		swdev->ports = AR8327_NUM_PORTS;
+	} else {
+		swdev->name = "Atheros AR8216";
+		swdev->vlans = AR8216_NUM_VLANS;
+		swdev->ports = AR8216_NUM_PORTS;
+	}
+
+	ret = ar8xxx_mib_init(priv);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+static int
 ar8216_config_init(struct phy_device *pdev)
 {
 	struct ar8216_priv *priv = pdev->priv;
@@ -1815,7 +1854,7 @@ ar8216_config_init(struct phy_device *pdev)
 		if (priv == NULL)
 			return -ENOMEM;
 
-		ret = ar8216_id_chip(priv);
+		ret = ar8xxx_probe_switch(priv);
 		if (ret)
 			goto err_free_priv;
 	}
@@ -1840,6 +1879,7 @@ ar8216_config_init(struct phy_device *pdev)
 			/* switch device has not been initialized, reuse priv */
 			if (!pdev->priv) {
 				priv->port4_phy = true;
+				priv->dev.ports = (AR8216_NUM_PORTS - 1);
 				pdev->priv = priv;
 				return 0;
 			}
@@ -1862,35 +1902,6 @@ ar8216_config_init(struct phy_device *pdev)
 	pdev->priv = priv;
 
 	swdev = &priv->dev;
-	swdev->cpu_port = AR8216_PORT_CPU;
-	swdev->ops = &ar8216_sw_ops;
-	swdev->ports = AR8216_NUM_PORTS;
-
-	if (chip_is_ar8316(priv)) {
-		swdev->name = "Atheros AR8316";
-		swdev->vlans = AR8X16_MAX_VLANS;
-
-		if (priv->port4_phy) {
-			/* port 5 connected to the other mac, therefore unusable */
-			swdev->ports = (AR8216_NUM_PORTS - 1);
-		}
-	} else if (chip_is_ar8236(priv)) {
-		swdev->name = "Atheros AR8236";
-		swdev->vlans = AR8216_NUM_VLANS;
-		swdev->ports = AR8216_NUM_PORTS;
-	} else if (chip_is_ar8327(priv)) {
-		swdev->name = "Atheros AR8327";
-		swdev->vlans = AR8X16_MAX_VLANS;
-		swdev->ports = AR8327_NUM_PORTS;
-	} else {
-		swdev->name = "Atheros AR8216";
-		swdev->vlans = AR8216_NUM_VLANS;
-	}
-
-	ret = ar8xxx_mib_init(priv);
-	if (ret)
-		goto err_free_priv;
-
 	ret = register_switch(swdev, pdev->attached_dev);
 	if (ret)
 		goto err_free_priv;
@@ -2038,7 +2049,7 @@ ar8216_probe(struct phy_device *pdev)
 
 	priv->phy = pdev;
 
-	ret = ar8216_id_chip(priv);
+	ret = ar8xxx_probe_switch(priv);
 	ar8xxx_free(priv);
 
 	return ret;
