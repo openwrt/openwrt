@@ -1956,6 +1956,44 @@ ar8216_config_aneg(struct phy_device *phydev)
 	return genphy_config_aneg(phydev);
 }
 
+static const u32 ar8xxx_phy_ids[] = {
+	0x004dd033,
+	0x004dd041,
+	0x004dd042,
+};
+
+static bool
+ar8xxx_phy_match(u32 phy_id)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(ar8xxx_phy_ids); i++)
+		if (phy_id == ar8xxx_phy_ids[i])
+			return true;
+
+	return false;
+}
+
+static bool
+ar8xxx_is_possible(struct mii_bus *bus)
+{
+	unsigned i;
+
+	for (i = 0; i < 4; i++) {
+		u32 phy_id;
+
+		phy_id = mdiobus_read(bus, i, MII_PHYSID1) << 16;
+		phy_id |= mdiobus_read(bus, i, MII_PHYSID2);
+		if (!ar8xxx_phy_match(phy_id)) {
+			pr_debug("ar8xxx: unknown PHY at %s:%02x id:%08x\n",
+				 dev_name(&bus->dev), i, phy_id);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static int
 ar8216_probe(struct phy_device *pdev)
 {
@@ -1964,6 +2002,9 @@ ar8216_probe(struct phy_device *pdev)
 
 	/* skip PHYs at unused adresses */
 	if (pdev->addr != 0 && pdev->addr != 4)
+		return -ENODEV;
+
+	if (!ar8xxx_is_possible(pdev->bus))
 		return -ENODEV;
 
 	priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
