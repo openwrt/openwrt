@@ -1742,9 +1742,6 @@ ar8xxx_mib_init(struct ar8216_priv *priv)
 	if (!priv->mib_stats)
 		return -ENOMEM;
 
-	mutex_init(&priv->mib_lock);
-	INIT_DELAYED_WORK(&priv->mib_work, ar8xxx_mib_work_func);
-
 	return 0;
 }
 
@@ -1768,6 +1765,37 @@ ar8xxx_mib_cleanup(struct ar8216_priv *priv)
 	kfree(priv->mib_stats);
 }
 
+static struct ar8216_priv *
+ar8xxx_create(void)
+{
+	struct ar8216_priv *priv;
+
+	priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
+	if (priv == NULL)
+		return NULL;
+
+	mutex_init(&priv->reg_mutex);
+	mutex_init(&priv->mib_lock);
+	INIT_DELAYED_WORK(&priv->mib_work, ar8xxx_mib_work_func);
+
+	return priv;
+}
+
+static struct ar8216_priv *
+ar8xxx_create_mii(struct mii_bus *bus)
+{
+	struct ar8216_priv *priv;
+
+	priv = ar8xxx_create();
+	if (priv) {
+		priv->mii_bus = bus;
+		priv->read = ar8216_mii_read;
+		priv->write = ar8216_mii_write;
+	}
+
+	return priv;
+}
+
 static int
 ar8216_config_init(struct phy_device *pdev)
 {
@@ -1777,13 +1805,9 @@ ar8216_config_init(struct phy_device *pdev)
 	int ret;
 
 	if (!priv) {
-		priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
+		priv = ar8xxx_create_mii(pdev->bus);
 		if (priv == NULL)
 			return -ENOMEM;
-
-		priv->mii_bus = pdev->bus;
-		priv->read = ar8216_mii_read;
-		priv->write = ar8216_mii_write;
 
 		ret = ar8216_id_chip(priv);
 		if (ret)
@@ -1828,8 +1852,6 @@ ar8216_config_init(struct phy_device *pdev)
 		kfree(priv);
 		return 0;
 	}
-
-	mutex_init(&priv->reg_mutex);
 
 	pdev->priv = priv;
 
@@ -2006,13 +2028,10 @@ ar8216_probe(struct phy_device *pdev)
 	if (!ar8xxx_is_possible(pdev->bus))
 		return -ENODEV;
 
-	priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
+	priv = ar8xxx_create_mii(pdev->bus);
 	if (priv == NULL)
 		return -ENOMEM;
 
-	priv->mii_bus = pdev->bus;
-	priv->read = ar8216_mii_read;
-	priv->write = ar8216_mii_write;
 	priv->phy = pdev;
 
 	ret = ar8216_id_chip(priv);
