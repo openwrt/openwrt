@@ -1762,7 +1762,6 @@ ar8xxx_mib_cleanup(struct ar8216_priv *priv)
 		return;
 
 	cancel_delayed_work(&priv->mib_work);
-	kfree(priv->mib_stats);
 }
 
 static struct ar8216_priv *
@@ -1784,6 +1783,7 @@ ar8xxx_create(void)
 static void
 ar8xxx_free(struct ar8216_priv *priv)
 {
+	kfree(priv->mib_stats);
 	kfree(priv);
 }
 
@@ -1893,7 +1893,7 @@ ar8216_config_init(struct phy_device *pdev)
 
 	ret = register_switch(swdev, pdev->attached_dev);
 	if (ret)
-		goto err_cleanup_mib;
+		goto err_free_priv;
 
 	printk(KERN_INFO "%s: %s switch driver attached.\n",
 		pdev->attached_dev->name, swdev->name);
@@ -1924,8 +1924,6 @@ ar8216_config_init(struct phy_device *pdev)
 
 err_unregister_switch:
 	unregister_switch(&priv->dev);
-err_cleanup_mib:
-	ar8xxx_mib_cleanup(priv);
 err_free_priv:
 	ar8xxx_free(priv);
 	pdev->priv = NULL;
