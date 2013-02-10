@@ -429,6 +429,9 @@ static void __init rb493g_setup(void)
 				    rb4xx_leds_gpio);
 
 	spi_register_board_info(rb4xx_spi_info, ARRAY_SIZE(rb4xx_spi_info));
+	spi_register_board_info(rb4xx_microsd_info,
+				ARRAY_SIZE(rb4xx_microsd_info));
+
 	platform_device_register(&rb4xx_spi_device);
 	platform_device_register(&rb4xx_nand_device);
 
