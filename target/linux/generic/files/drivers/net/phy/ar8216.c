@@ -1781,6 +1781,12 @@ ar8xxx_create(void)
 	return priv;
 }
 
+static void
+ar8xxx_free(struct ar8216_priv *priv)
+{
+	kfree(priv);
+}
+
 static struct ar8216_priv *
 ar8xxx_create_mii(struct mii_bus *bus)
 {
@@ -1827,7 +1833,7 @@ ar8216_config_init(struct phy_device *pdev)
 			/* check if we're attaching to the switch twice */
 			pdev = pdev->bus->phy_map[0];
 			if (!pdev) {
-				kfree(priv);
+				ar8xxx_free(priv);
 				return 0;
 			}
 
@@ -1838,7 +1844,7 @@ ar8216_config_init(struct phy_device *pdev)
 				return 0;
 			}
 
-			kfree(priv);
+			ar8xxx_free(priv);
 
 			/* switch device has been initialized, reinit */
 			priv = pdev->priv;
@@ -1849,7 +1855,7 @@ ar8216_config_init(struct phy_device *pdev)
 			return 0;
 		}
 
-		kfree(priv);
+		ar8xxx_free(priv);
 		return 0;
 	}
 
@@ -1921,7 +1927,7 @@ err_unregister_switch:
 err_cleanup_mib:
 	ar8xxx_mib_cleanup(priv);
 err_free_priv:
-	kfree(priv);
+	ar8xxx_free(priv);
 	pdev->priv = NULL;
 	return ret;
 }
@@ -2035,7 +2041,7 @@ ar8216_probe(struct phy_device *pdev)
 	priv->phy = pdev;
 
 	ret = ar8216_id_chip(priv);
-	kfree(priv);
+	ar8xxx_free(priv);
 
 	return ret;
 }
@@ -2068,7 +2074,7 @@ ar8216_remove(struct phy_device *pdev)
 		unregister_switch(&priv->dev);
 
 	ar8xxx_mib_cleanup(priv);
-	kfree(priv);
+	ar8xxx_free(priv);
 }
 
 static struct phy_driver ar8216_driver = {
