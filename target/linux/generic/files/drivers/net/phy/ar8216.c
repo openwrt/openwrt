@@ -1962,6 +1962,10 @@ ar8216_probe(struct phy_device *pdev)
 	struct ar8216_priv *priv;
 	int ret;
 
+	/* skip PHYs at unused adresses */
+	if (pdev->addr != 0 && pdev->addr != 4)
+		return -ENODEV;
+
 	priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
 	if (priv == NULL)
 		return -ENOMEM;
