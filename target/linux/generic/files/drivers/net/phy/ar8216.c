@@ -1861,18 +1861,6 @@ ar8216_config_init(struct phy_device *phydev)
 
 	if (phydev->addr != 0) {
 		if (chip_is_ar8316(priv)) {
-			/* check if we're attaching to the switch twice */
-			phydev = phydev->bus->phy_map[0];
-			if (!phydev)
-				return 0;
-
-			/* switch device has not been initialized, reuse priv */
-			if (!phydev->priv) {
-				priv->port4_phy = true;
-				priv->dev.ports = (AR8216_NUM_PORTS - 1);
-				return 0;
-			}
-
 			/* switch device has been initialized, reinit */
 			priv->dev.ports = (AR8216_NUM_PORTS - 1);
 			priv->initialized = false;
