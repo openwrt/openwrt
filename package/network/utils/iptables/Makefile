@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.4.10
-PKG_RELEASE:=4
+PKG_RELEASE:=1
 
 PKG_MD5SUM:=f382fe693f0b59d87bd47bea65eca198
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2

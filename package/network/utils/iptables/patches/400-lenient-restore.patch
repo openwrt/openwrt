@@ -1,0 +1,172 @@
+--- a/ip6tables-restore.c
++++ b/ip6tables-restore.c
+@@ -16,6 +16,8 @@
+ #include <string.h>
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <stdarg.h>
++#include <setjmp.h>
+ #include "ip6tables.h"
+ #include "xtables.h"
+ #include "libiptc/libip6tc.h"
+@@ -27,6 +29,7 @@
+ #define DEBUGP(x, args...)
+ #endif
+ 
++static jmp_buf jmp;
+ static int binary = 0, counters = 0, verbose = 0, noflush = 0;
+ 
+ /* Keeping track of external matches and targets.  */
+@@ -37,6 +40,7 @@ static const struct option options[] = {
+ 	{.name = "test",     .has_arg = false, .val = 't'},
+ 	{.name = "help",     .has_arg = false, .val = 'h'},
+ 	{.name = "noflush",  .has_arg = false, .val = 'n'},
++	{.name = "lenient",  .has_arg = false, .val = 'l'},
+ 	{.name = "modprobe", .has_arg = true,  .val = 'M'},
+ 	{NULL},
+ };
+@@ -52,6 +56,7 @@ static void print_usage(const char *name
+ 			"	   [ --test ]\n"
+ 			"	   [ --help ]\n"
+ 			"	   [ --noflush ]\n"
++			"	   [ --lenient ]\n"
+ 			"          [ --modprobe=<command>]\n", name);
+ 
+ 	exit(1);
+@@ -114,6 +119,17 @@ static void free_argv(void) {
+ 		free(newargv[i]);
+ }
+ 
++static void catch_exit_error(enum xtables_exittype status, const char *msg, ...)
++{
++	va_list args;
++	fprintf(stderr, "line %d: ", line);
++	va_start(args, msg);
++	vfprintf(stderr, msg, args);
++	va_end(args);
++	fprintf(stderr, "\n");
++	longjmp(jmp, status);
++}
++
+ #ifdef IPTABLES_MULTI
+ int ip6tables_restore_main(int argc, char *argv[])
+ #else
+@@ -141,7 +157,7 @@ int main(int argc, char *argv[])
+ 	init_extensions();
+ #endif
+ 
+-	while ((c = getopt_long(argc, argv, "bcvthnM:", options, NULL)) != -1) {
++	while ((c = getopt_long(argc, argv, "bcvthnlM:", options, NULL)) != -1) {
+ 		switch (c) {
+ 			case 'b':
+ 				binary = 1;
+@@ -162,6 +178,9 @@ int main(int argc, char *argv[])
+ 			case 'n':
+ 				noflush = 1;
+ 				break;
++			case 'l':
++				ip6tables_globals.exit_err = catch_exit_error;
++				break;
+ 			case 'M':
+ 				xtables_modprobe_program = optarg;
+ 				break;
+@@ -440,8 +459,11 @@ int main(int argc, char *argv[])
+ 			for (a = 0; a < newargc; a++)
+ 				DEBUGP("argv[%u]: %s\n", a, newargv[a]);
+ 
+-			ret = do_command6(newargc, newargv,
+-					 &newargv[2], &handle);
++			if (!setjmp(jmp))
++				ret = do_command6(newargc, newargv,
++						 &newargv[2], &handle);
++			else
++				ret = 1;
+ 
+ 			free_argv();
+ 			fflush(stdout);
+--- a/iptables-restore.c
++++ b/iptables-restore.c
+@@ -13,6 +13,8 @@
+ #include <string.h>
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <stdarg.h>
++#include <setjmp.h>
+ #include "iptables.h"
+ #include "xtables.h"
+ #include "libiptc/libiptc.h"
+@@ -24,6 +26,7 @@
+ #define DEBUGP(x, args...)
+ #endif
+ 
++static jmp_buf jmp;
+ static int binary = 0, counters = 0, verbose = 0, noflush = 0;
+ 
+ /* Keeping track of external matches and targets.  */
+@@ -34,6 +37,7 @@ static const struct option options[] = {
+ 	{.name = "test",     .has_arg = false, .val = 't'},
+ 	{.name = "help",     .has_arg = false, .val = 'h'},
+ 	{.name = "noflush",  .has_arg = false, .val = 'n'},
++	{.name = "lenient",  .has_arg = false, .val = 'l'},
+ 	{.name = "modprobe", .has_arg = true,  .val = 'M'},
+ 	{.name = "table",    .has_arg = true,  .val = 'T'},
+ 	{NULL},
+@@ -52,6 +56,7 @@ static void print_usage(const char *name
+ 			"	   [ --test ]\n"
+ 			"	   [ --help ]\n"
+ 			"	   [ --noflush ]\n"
++			"	   [ --lenient ]\n"
+ 			"	   [ --table=<TABLE> ]\n"
+ 			"          [ --modprobe=<command>]\n", name);
+ 
+@@ -114,6 +119,17 @@ static void free_argv(void) {
+ 		free(newargv[i]);
+ }
+ 
++static void catch_exit_error(enum xtables_exittype status, const char *msg, ...)
++{
++	va_list args;
++	fprintf(stderr, "line %d: ", line);
++	va_start(args, msg);
++	vfprintf(stderr, msg, args);
++	va_end(args);
++	fprintf(stderr, "\n");
++	longjmp(jmp, status);
++}
++
+ #ifdef IPTABLES_MULTI
+ int
+ iptables_restore_main(int argc, char *argv[])
+@@ -144,7 +160,7 @@ main(int argc, char *argv[])
+ 	init_extensions();
+ #endif
+ 
+-	while ((c = getopt_long(argc, argv, "bcvthnM:T:", options, NULL)) != -1) {
++	while ((c = getopt_long(argc, argv, "bcvthnlM:T:", options, NULL)) != -1) {
+ 		switch (c) {
+ 			case 'b':
+ 				binary = 1;
+@@ -165,6 +181,9 @@ main(int argc, char *argv[])
+ 			case 'n':
+ 				noflush = 1;
+ 				break;
++			case 'l':
++				iptables_globals.exit_err = catch_exit_error;
++				break;
+ 			case 'M':
+ 				xtables_modprobe_program = optarg;
+ 				break;
+@@ -445,8 +464,11 @@ main(int argc, char *argv[])
+ 			for (a = 0; a < newargc; a++)
+ 				DEBUGP("argv[%u]: %s\n", a, newargv[a]);
+ 
+-			ret = do_command(newargc, newargv,
+-					 &newargv[2], &handle);
++			if (!setjmp(jmp))
++				ret = do_command(newargc, newargv,
++						 &newargv[2], &handle);
++			else
++				ret = 1;
+ 
+ 			free_argv();
+ 			fflush(stdout);
