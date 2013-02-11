@@ -209,6 +209,7 @@
 #define   AR934X_REG_OPER_MODE1_PHY4_MII_EN	BIT(28)
 
 #define AR934X_REG_FLOOD_MASK		0x2c
+#define   AR934X_FLOOD_MASK_MC_DP(_p)	BIT(16 + (_p))
 #define   AR934X_FLOOD_MASK_BC_DP(_p)	BIT(25 + (_p))
 
 #define AR934X_REG_QM_CTRL		0x3c
@@ -580,9 +581,10 @@ static void ar7240sw_setup(struct ar7240sw *as)
 		/* Enable ARP frame acknowledge */
 		ar7240sw_reg_set(mii, AR934X_REG_QM_CTRL,
 				 AR934X_QM_CTRL_ARP_EN);
-		/* Enable Broadcast frames transmitted to the CPU */
+		/* Enable Broadcast/Multicast frames transmitted to the CPU */
 		ar7240sw_reg_set(mii, AR934X_REG_FLOOD_MASK,
-				 AR934X_FLOOD_MASK_BC_DP(0));
+				 AR934X_FLOOD_MASK_BC_DP(0) |
+				 AR934X_FLOOD_MASK_MC_DP(0));
 
 		/* Enable MIB counters */
 		ar7240sw_reg_set(mii, AR7240_REG_MIB_FUNCTION0,
