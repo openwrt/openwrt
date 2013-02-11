@@ -101,6 +101,9 @@ struct ar8216_priv {
 	int mib_next_port;
 	u64 *mib_stats;
 
+	struct list_head list;
+	unsigned int use_count;
+
 	/* all fields below are cleared on reset */
 	bool vlan;
 	u16 vlan_id[AR8X16_MAX_VLANS];
@@ -197,6 +200,9 @@ static const struct ar8xxx_mib_desc ar8236_mibs[] = {
 	MIB_DESC(1, AR8236_STATS_TXDEFER, "TxDefer"),
 	MIB_DESC(1, AR8236_STATS_TXLATECOL, "TxLateCol"),
 };
+
+static DEFINE_MUTEX(ar8xxx_dev_list_lock);
+static LIST_HEAD(ar8xxx_dev_list);
 
 static inline struct ar8216_priv *
 swdev_to_ar8216(struct switch_dev *swdev)
@@ -1848,15 +1854,8 @@ ar8216_config_init(struct phy_device *phydev)
 	struct switch_dev *swdev;
 	int ret;
 
-	if (!priv) {
-		priv = ar8xxx_create_mii(phydev->bus);
-		if (priv == NULL)
-			return -ENOMEM;
-
-		ret = ar8xxx_probe_switch(priv);
-		if (ret)
-			goto err_free_priv;
-	}
+	if (WARN_ON(!priv))
+		return -ENODEV;
 
 	priv->phy = phydev;
 
@@ -1864,23 +1863,17 @@ ar8216_config_init(struct phy_device *phydev)
 		if (chip_is_ar8316(priv)) {
 			/* check if we're attaching to the switch twice */
 			phydev = phydev->bus->phy_map[0];
-			if (!phydev) {
-				ar8xxx_free(priv);
+			if (!phydev)
 				return 0;
-			}
 
 			/* switch device has not been initialized, reuse priv */
 			if (!phydev->priv) {
 				priv->port4_phy = true;
 				priv->dev.ports = (AR8216_NUM_PORTS - 1);
-				phydev->priv = priv;
 				return 0;
 			}
 
-			ar8xxx_free(priv);
-
 			/* switch device has been initialized, reinit */
-			priv = phydev->priv;
 			priv->dev.ports = (AR8216_NUM_PORTS - 1);
 			priv->initialized = false;
 			priv->port4_phy = true;
@@ -1888,16 +1881,13 @@ ar8216_config_init(struct phy_device *phydev)
 			return 0;
 		}
 
-		ar8xxx_free(priv);
 		return 0;
 	}
-
-	phydev->priv = priv;
 
 	swdev = &priv->dev;
 	ret = register_switch(swdev, phydev->attached_dev);
 	if (ret)
-		goto err_free_priv;
+		goto err;
 
 	pr_info("%s: %s switch driver attached.\n",
 		phydev->attached_dev->name, swdev->name);
@@ -1928,9 +1918,7 @@ ar8216_config_init(struct phy_device *phydev)
 
 err_unregister_switch:
 	unregister_switch(&priv->dev);
-err_free_priv:
-	ar8xxx_free(priv);
-	phydev->priv = NULL;
+err:
 	return ret;
 }
 
@@ -2036,16 +2024,22 @@ ar8216_probe(struct phy_device *phydev)
 	if (!ar8xxx_is_possible(phydev->bus))
 		return -ENODEV;
 
-	priv = ar8xxx_create_mii(phydev->bus);
-	if (priv == NULL)
-		return -ENOMEM;
+	mutex_lock(&ar8xxx_dev_list_lock);
+	list_for_each_entry(priv, &ar8xxx_dev_list, list)
+		if (priv->mii_bus == phydev->bus)
+			goto found;
 
-	priv->phy = phydev;
+	priv = ar8xxx_create_mii(phydev->bus);
+	if (priv == NULL) {
+		ret = -ENOMEM;
+		goto unlock;
+	}
 
 	ret = ar8xxx_probe_switch(priv);
 	if (ret)
-		goto out;
+		goto free_priv;
 
+found:
 	if (phydev->addr == 0) {
 		if (ar8xxx_has_gige(priv)) {
 			phydev->supported = SUPPORTED_1000baseT_Full;
@@ -2061,10 +2055,19 @@ ar8216_probe(struct phy_device *phydev)
 		}
 	}
 
-	ret = 0;
+	phydev->priv = priv;
+	priv->use_count++;
 
-out:
+	list_add(&priv->list, &ar8xxx_dev_list);
+
+	mutex_unlock(&ar8xxx_dev_list_lock);
+
+	return 0;
+
+free_priv:
 	ar8xxx_free(priv);
+unlock:
+	mutex_unlock(&ar8xxx_dev_list_lock);
 	return ret;
 }
 
@@ -2087,14 +2090,18 @@ ar8216_remove(struct phy_device *phydev)
 {
 	struct ar8216_priv *priv = phydev->priv;
 
-	if (!priv)
+	if (WARN_ON(!priv))
 		return;
 
 	phydev->priv = NULL;
+	if (--priv->use_count > 0)
+		return;
 
-	if (phydev->addr == 0)
-		unregister_switch(&priv->dev);
+	mutex_lock(&ar8xxx_dev_list_lock);
+	list_del(&priv->list);
+	mutex_unlock(&ar8xxx_dev_list_lock);
 
+	unregister_switch(&priv->dev);
 	ar8xxx_mib_stop(priv);
 	ar8xxx_free(priv);
 }
