@@ -12,6 +12,7 @@ hostapd_set_bss_options() {
 	config_get_bool disassoc_low_ack "$vif" disassoc_low_ack 1
 	config_get max_num_sta "$vif" max_num_sta 0
 	config_get max_inactivity "$vif" max_inactivity 0
+	config_get_bool preamble "$vif" short_preamble 1
 
 	config_get device "$vif" device
 	config_get hwmode "$device" hwmode
@@ -29,6 +30,9 @@ hostapd_set_bss_options() {
 		append "$var" "ap_max_inactivity=$max_inactivity" "$N"
 	fi
 	append "$var" "disassoc_low_ack=$disassoc_low_ack" "$N"
+	if [ "$preamble" -gt 0 ]; then
+		append "$var" "preamble=$preamble" "$N"
+	fi
 
 	# Examples:
 	# psk-mixed/tkip 	=> WPA1+2 PSK, TKIP

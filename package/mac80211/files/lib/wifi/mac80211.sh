@@ -14,7 +14,6 @@ mac80211_hostapd_setup_base() {
 	config_get beacon_int "$device" beacon_int
 	config_get basic_rate_list "$device" basic_rate
 	config_get_bool noscan "$device" noscan
-	config_get_bool short_preamble "$device" short_preamble "0"
 
 	hostapd_set_log_options base_cfg "$device"
 
@@ -58,8 +57,6 @@ mac80211_hostapd_setup_base() {
 		done
 	}
 
-	append base_cfg "preamble=$short_preamble" "$N"
-	
 	cat >> "$cfgfile" <<EOF
 ctrl_interface=/var/run/hostapd-$phy
 driver=nl80211
