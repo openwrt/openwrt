@@ -1841,15 +1841,15 @@ ar8xxx_probe_switch(struct ar8216_priv *priv)
 }
 
 static int
-ar8216_config_init(struct phy_device *pdev)
+ar8216_config_init(struct phy_device *phydev)
 {
-	struct ar8216_priv *priv = pdev->priv;
-	struct net_device *dev = pdev->attached_dev;
+	struct ar8216_priv *priv = phydev->priv;
+	struct net_device *dev = phydev->attached_dev;
 	struct switch_dev *swdev;
 	int ret;
 
 	if (!priv) {
-		priv = ar8xxx_create_mii(pdev->bus);
+		priv = ar8xxx_create_mii(phydev->bus);
 		if (priv == NULL)
 			return -ENOMEM;
 
@@ -1858,29 +1858,29 @@ ar8216_config_init(struct phy_device *pdev)
 			goto err_free_priv;
 	}
 
-	priv->phy = pdev;
+	priv->phy = phydev;
 
-	if (pdev->addr != 0) {
+	if (phydev->addr != 0) {
 		if (chip_is_ar8316(priv)) {
 			/* check if we're attaching to the switch twice */
-			pdev = pdev->bus->phy_map[0];
-			if (!pdev) {
+			phydev = phydev->bus->phy_map[0];
+			if (!phydev) {
 				ar8xxx_free(priv);
 				return 0;
 			}
 
 			/* switch device has not been initialized, reuse priv */
-			if (!pdev->priv) {
+			if (!phydev->priv) {
 				priv->port4_phy = true;
 				priv->dev.ports = (AR8216_NUM_PORTS - 1);
-				pdev->priv = priv;
+				phydev->priv = priv;
 				return 0;
 			}
 
 			ar8xxx_free(priv);
 
 			/* switch device has been initialized, reinit */
-			priv = pdev->priv;
+			priv = phydev->priv;
 			priv->dev.ports = (AR8216_NUM_PORTS - 1);
 			priv->initialized = false;
 			priv->port4_phy = true;
@@ -1892,15 +1892,15 @@ ar8216_config_init(struct phy_device *pdev)
 		return 0;
 	}
 
-	pdev->priv = priv;
+	phydev->priv = priv;
 
 	swdev = &priv->dev;
-	ret = register_switch(swdev, pdev->attached_dev);
+	ret = register_switch(swdev, phydev->attached_dev);
 	if (ret)
 		goto err_free_priv;
 
 	pr_info("%s: %s switch driver attached.\n",
-		pdev->attached_dev->name, swdev->name);
+		phydev->attached_dev->name, swdev->name);
 
 	priv->init = true;
 
@@ -1930,7 +1930,7 @@ err_unregister_switch:
 	unregister_switch(&priv->dev);
 err_free_priv:
 	ar8xxx_free(priv);
-	pdev->priv = NULL;
+	phydev->priv = NULL;
 	return ret;
 }
 
@@ -2024,40 +2024,40 @@ ar8xxx_is_possible(struct mii_bus *bus)
 }
 
 static int
-ar8216_probe(struct phy_device *pdev)
+ar8216_probe(struct phy_device *phydev)
 {
 	struct ar8216_priv *priv;
 	int ret;
 
 	/* skip PHYs at unused adresses */
-	if (pdev->addr != 0 && pdev->addr != 4)
+	if (phydev->addr != 0 && phydev->addr != 4)
 		return -ENODEV;
 
-	if (!ar8xxx_is_possible(pdev->bus))
+	if (!ar8xxx_is_possible(phydev->bus))
 		return -ENODEV;
 
-	priv = ar8xxx_create_mii(pdev->bus);
+	priv = ar8xxx_create_mii(phydev->bus);
 	if (priv == NULL)
 		return -ENOMEM;
 
-	priv->phy = pdev;
+	priv->phy = phydev;
 
 	ret = ar8xxx_probe_switch(priv);
 	if (ret)
 		goto out;
 
-	if (pdev->addr == 0) {
+	if (phydev->addr == 0) {
 		if (ar8xxx_has_gige(priv)) {
-			pdev->supported = SUPPORTED_1000baseT_Full;
-			pdev->advertising = ADVERTISED_1000baseT_Full;
+			phydev->supported = SUPPORTED_1000baseT_Full;
+			phydev->advertising = ADVERTISED_1000baseT_Full;
 		} else {
-			pdev->supported = SUPPORTED_100baseT_Full;
-			pdev->advertising = ADVERTISED_100baseT_Full;
+			phydev->supported = SUPPORTED_100baseT_Full;
+			phydev->advertising = ADVERTISED_100baseT_Full;
 		}
 	} else {
 		if (ar8xxx_has_gige(priv)) {
-			pdev->supported |= SUPPORTED_1000baseT_Full;
-			pdev->advertising |= ADVERTISED_1000baseT_Full;
+			phydev->supported |= SUPPORTED_1000baseT_Full;
+			phydev->advertising |= ADVERTISED_1000baseT_Full;
 		}
 	}
 
@@ -2069,9 +2069,9 @@ out:
 }
 
 static void
-ar8216_detach(struct phy_device *pdev)
+ar8216_detach(struct phy_device *phydev)
 {
-	struct net_device *dev = pdev->attached_dev;
+	struct net_device *dev = phydev->attached_dev;
 
 	if (!dev)
 		return;
@@ -2083,16 +2083,16 @@ ar8216_detach(struct phy_device *pdev)
 }
 
 static void
-ar8216_remove(struct phy_device *pdev)
+ar8216_remove(struct phy_device *phydev)
 {
-	struct ar8216_priv *priv = pdev->priv;
+	struct ar8216_priv *priv = phydev->priv;
 
 	if (!priv)
 		return;
 
-	pdev->priv = NULL;
+	phydev->priv = NULL;
 
-	if (pdev->addr == 0)
+	if (phydev->addr == 0)
 		unregister_switch(&priv->dev);
 
 	ar8xxx_mib_stop(priv);
