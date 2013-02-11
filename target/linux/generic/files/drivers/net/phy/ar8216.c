@@ -1885,12 +1885,13 @@ ar8216_config_init(struct phy_device *phydev)
 	}
 
 	swdev = &priv->dev;
-	ret = register_switch(swdev, phydev->attached_dev);
+	swdev->alias = dev_name(&priv->mii_bus->dev);
+	ret = register_switch(swdev, NULL);
 	if (ret)
 		goto err;
 
-	pr_info("%s: %s switch driver attached.\n",
-		phydev->attached_dev->name, swdev->name);
+	pr_info("%s: %s switch registered on %s\n",
+		swdev->devname, swdev->name, dev_name(&priv->mii_bus->dev));
 
 	priv->init = true;
 
