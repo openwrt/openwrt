@@ -1861,12 +1861,6 @@ ar8216_config_init(struct phy_device *pdev)
 
 	priv->phy = pdev;
 
-	if (ar8xxx_has_gige(priv))
-		pdev->supported = SUPPORTED_1000baseT_Full;
-	else
-		pdev->supported = SUPPORTED_100baseT_Full;
-	pdev->advertising = pdev->supported;
-
 	if (pdev->addr != 0) {
 		if (chip_is_ar8316(priv)) {
 			/* check if we're attaching to the switch twice */
@@ -2050,8 +2044,28 @@ ar8216_probe(struct phy_device *pdev)
 	priv->phy = pdev;
 
 	ret = ar8xxx_probe_switch(priv);
-	ar8xxx_free(priv);
+	if (ret)
+		goto out;
 
+	if (pdev->addr == 0) {
+		if (ar8xxx_has_gige(priv)) {
+			pdev->supported = SUPPORTED_1000baseT_Full;
+			pdev->advertising = ADVERTISED_1000baseT_Full;
+		} else {
+			pdev->supported = SUPPORTED_100baseT_Full;
+			pdev->advertising = ADVERTISED_100baseT_Full;
+		}
+	} else {
+		if (ar8xxx_has_gige(priv)) {
+			pdev->supported |= SUPPORTED_1000baseT_Full;
+			pdev->advertising |= ADVERTISED_1000baseT_Full;
+		}
+	}
+
+	ret = 0;
+
+out:
+	ar8xxx_free(priv);
 	return ret;
 }
 
