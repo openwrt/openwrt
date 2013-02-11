@@ -794,18 +794,18 @@ ar8316_hw_init(struct ar8216_priv *priv)
 		if (priv->port4_phy) {
 			/* value taken from Ubiquiti RouterStation Pro */
 			newval = 0x81461bea;
-			printk(KERN_INFO "ar8316: Using port 4 as PHY\n");
+			pr_info("ar8316: Using port 4 as PHY\n");
 		} else {
 			newval = 0x01261be2;
-			printk(KERN_INFO "ar8316: Using port 4 as switch port\n");
+			pr_info("ar8316: Using port 4 as switch port\n");
 		}
 	} else if (priv->phy->interface == PHY_INTERFACE_MODE_GMII) {
 		/* value taken from AVM Fritz!Box 7390 sources */
 		newval = 0x010e5b71;
 	} else {
 		/* no known value for phy interface */
-		printk(KERN_ERR "ar8316: unsupported mii mode: %d.\n",
-			priv->phy->interface);
+		pr_err("ar8316: unsupported mii mode: %d.\n",
+		       priv->phy->interface);
 		return -EINVAL;
 	}
 
@@ -1689,9 +1689,8 @@ ar8216_id_chip(struct ar8216_priv *priv)
 		priv->chip = &ar8327_chip;
 		break;
 	default:
-		printk(KERN_DEBUG
-			"ar8216: Unknown Atheros device [ver=%d, rev=%d]\n",
-			priv->chip_ver, priv->chip_rev);
+		pr_err("ar8216: Unknown Atheros device [ver=%d, rev=%d]\n",
+		       priv->chip_ver, priv->chip_rev);
 
 		return -ENODEV;
 	}
@@ -1900,7 +1899,7 @@ ar8216_config_init(struct phy_device *pdev)
 	if (ret)
 		goto err_free_priv;
 
-	printk(KERN_INFO "%s: %s switch driver attached.\n",
+	pr_info("%s: %s switch driver attached.\n",
 		pdev->attached_dev->name, swdev->name);
 
 	priv->init = true;
