@@ -48,31 +48,31 @@ db120 |\
 rb-2011l | \
 rb-2011uas-2hnd)
 	ucidef_set_interfaces_lan_wan "eth0.1 eth1" "eth0.2"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "0t 2 3 4 5"
-	ucidef_add_switch_vlan "eth0" "2" "0t 1"
-	ucidef_add_switch "eth1" "1" "1"
-	ucidef_add_switch_vlan "eth1" "1" "0 1 2 3 4 5"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
+	ucidef_add_switch_vlan "switch0" "2" "0t 1"
+	ucidef_add_switch "switch1" "1" "1"
+	ucidef_add_switch_vlan "switch1" "1" "0 1 2 3 4 5"
 	;;
 
 dir-825-b1|\
 tew-673gru)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
-	ucidef_add_switch "rtl8366s" "1" "1"
-	ucidef_add_switch_vlan "rtl8366s" "1" "0 1 2 3 5t"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 	;;
 
 dir-825-c1)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "0t 2 3 4 5"
-	ucidef_add_switch_vlan "eth0" "2" "0t 1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
+	ucidef_add_switch_vlan "switch0" "2" "0t 1"
 	;;
 
 nbg460n_550n_550nh)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	ucidef_add_switch "rtl8366s" "1" "1"
-	ucidef_add_switch_vlan "rtl8366s" "0" "0 1 2 3 5"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "0" "0 1 2 3 5"
 	;;
 
 rb-433 |\
@@ -90,8 +90,8 @@ rb-435g)
 
 rb-450)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
-	ucidef_add_switch "eth1" "1" "1"
-	ucidef_add_switch_vlan "eth1" "1" "0 1 2 3 5"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5"
 	;;
 
 rb-450g |\
@@ -124,24 +124,24 @@ wzr-hp-g300nh2 |\
 pb92 |\
 ap113)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "0t 1 3 4 5"
-	ucidef_add_switch_vlan "eth0" "2" "0t 2"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 1 3 4 5"
+	ucidef_add_switch_vlan "switch0" "2" "0t 2"
 	;;
 
 tl-wdr4300|\
 tl-wr1041n-v2)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "0t 2 3 4 5"
-	ucidef_add_switch_vlan "eth0" "2" "0t 1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
+	ucidef_add_switch_vlan "switch0" "2" "0t 1"
 	;;
 
 tl-wr1043nd)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-	ucidef_add_switch "rtl8366rb" "1" "1"
-	ucidef_add_switch_vlan "rtl8366rb" "1" "1 2 3 4 5t"
-	ucidef_add_switch_vlan "rtl8366rb" "2" "0 5t"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
+	ucidef_add_switch_vlan "switch0" "2" "0 5t"
 	;;
 
 tl-wr2543n)
@@ -171,8 +171,8 @@ uap-pro)
 
 wrt160nl)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4 5"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4 5"
 	;;
 
 wzr-hp-g300nh)
@@ -240,27 +240,27 @@ whr-hp-g300n |\
 whr-hp-gn |\
 wzr-hp-ag300h)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4"
 	;;
 
 wzr-hp-g450h)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "0t 2 3 4 5"
-	ucidef_add_switch_vlan "eth0" "2" "0t 1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
+	ucidef_add_switch_vlan "switch0" "2" "0t 1"
 	;;
 
 ew-dorin)
 	ucidef_set_interface_lan "eth0"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3"
 	;;
 
 ew-dorin-router)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "0 2 3"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 2 3"
 	;;
 
 *)
