@@ -104,68 +104,21 @@
  	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5906) {
  		/* Wait up to 20ms for init done. */
  		for (i = 0; i < 200; i++) {
-@@ -3310,6 +3332,8 @@ static int tg3_nvram_write_block(struct
- {
- 	int ret;
- 
-+	if (tg3_flag(tp, IS_SSB_CORE))
-+		return -ENODEV;
- 	if (tg3_flag(tp, EEPROM_WRITE_PROT)) {
- 		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
- 		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
-@@ -3385,6 +3409,11 @@ static int tg3_halt_cpu(struct tg3 *tp,
+@@ -3385,6 +3407,13 @@ static int tg3_halt_cpu(struct tg3 *tp,
  		tw32_f(offset + CPU_MODE,  CPU_MODE_HALT);
  		udelay(10);
  	} else {
-+		/* There is only an Rx CPU for the 5750 derivative in the
-+		 * BCM4785. */
++		/*
++		 * There is only an Rx CPU for the 5750 derivative in the
++		 * BCM4785.
++		 */
 +		if (tg3_flag(tp, IS_SSB_CORE))
 +			return 0;
 +
  		for (i = 0; i < 10000; i++) {
  			tw32(offset + CPU_STATE, 0xffffffff);
  			tw32(offset + CPU_MODE,  CPU_MODE_HALT);
-@@ -3399,9 +3428,12 @@ static int tg3_halt_cpu(struct tg3 *tp,
- 		return -ENODEV;
- 	}
- 
--	/* Clear firmware's nvram arbitration. */
--	if (tg3_flag(tp, NVRAM))
--		tw32(NVRAM_SWARB, SWARB_REQ_CLR0);
-+	if (!tg3_flag(tp, IS_SSB_CORE)) {
-+		/* Clear firmware's nvram arbitration. */
-+		if (tg3_flag(tp, NVRAM))
-+			tw32(NVRAM_SWARB, SWARB_REQ_CLR0);
-+	}
-+
- 	return 0;
- }
- 
-@@ -3464,6 +3496,11 @@ static int tg3_load_5701_a0_firmware_fix
- 	const __be32 *fw_data;
- 	int err, i;
- 
-+	if (tg3_flag(tp, IS_SSB_CORE)) {
-+		/* We don't use firmware. */
-+		return 0;
-+	}
-+
- 	fw_data = (void *)tp->fw->data;
- 
- 	/* Firmware blob starts with version numbers, followed by
-@@ -3520,6 +3557,11 @@ static int tg3_load_tso_firmware(struct
- 	unsigned long cpu_base, cpu_scratch_base, cpu_scratch_size;
- 	int err, i;
- 
-+	if (tg3_flag(tp, IS_SSB_CORE)) {
-+		/* We don't use firmware. */
-+		return 0;
-+	}
-+
- 	if (tg3_flag(tp, HW_TSO_1) ||
- 	    tg3_flag(tp, HW_TSO_2) ||
- 	    tg3_flag(tp, HW_TSO_3))
-@@ -3860,8 +3902,9 @@ static int tg3_power_down_prepare(struct
+@@ -3860,8 +3889,9 @@ static int tg3_power_down_prepare(struct
  	tg3_frob_aux_power(tp, true);
  
  	/* Workaround for unstable PLL clock */
@@ -177,13 +130,14 @@
  		u32 val = tr32(0x7d00);
  
  		val &= ~((1 << 16) | (1 << 4) | (1 << 2) | (1 << 1) | 1);
-@@ -4363,6 +4406,14 @@ relink:
+@@ -4363,6 +4393,15 @@ relink:
  	if (current_link_up == 0 || (tp->phy_flags & TG3_PHYFLG_IS_LOW_POWER)) {
  		tg3_phy_copper_begin(tp);
  
 +		if (tg3_flag(tp, ROBOSWITCH)) {
 +			current_link_up = 1;
-+			current_speed = SPEED_1000; /* FIXME */
++			/* FIXME: when BCM5325 switch is used use 100 MBit/s */
++			current_speed = SPEED_1000;
 +			current_duplex = DUPLEX_FULL;
 +			tp->link_config.active_speed = current_speed;
 +			tp->link_config.active_duplex = current_duplex;
@@ -192,7 +146,7 @@
  		tg3_readphy(tp, MII_BMSR, &bmsr);
  		if ((!tg3_readphy(tp, MII_BMSR, &bmsr) && (bmsr & BMSR_LSTATUS)) ||
  		    (tp->mac_mode & MAC_MODE_PORT_INT_LPBACK))
-@@ -4381,6 +4432,26 @@ relink:
+@@ -4381,6 +4420,26 @@ relink:
  	else
  		tp->mac_mode |= MAC_MODE_PORT_MODE_GMII;
  
@@ -219,14 +173,16 @@
  	tp->mac_mode &= ~MAC_MODE_HALF_DUPLEX;
  	if (tp->link_config.active_duplex == DUPLEX_HALF)
  		tp->mac_mode |= MAC_MODE_HALF_DUPLEX;
-@@ -8108,6 +8179,14 @@ static int tg3_chip_reset(struct tg3 *tp
+@@ -8108,6 +8167,16 @@ static int tg3_chip_reset(struct tg3 *tp
  		tw32(0x5000, 0x400);
  	}
  
 +	if (tg3_flag(tp, IS_SSB_CORE)) {
-+		/* BCM4785: In order to avoid repercussions from using
++		/*
++		 * BCM4785: In order to avoid repercussions from using
 +		 * potentially defective internal ROM, stop the Rx RISC CPU,
-+		 * which is not required. */
++		 * which is not required.
++		 */
 +		tg3_stop_fw(tp);
 +		tg3_halt_cpu(tp, RX_CPU_BASE);
 +	}
@@ -234,7 +190,7 @@
  	tw32(GRC_MODE, tp->grc_mode);
  
  	if (tp->pci_chip_rev_id == CHIPREV_ID_5705_A0) {
-@@ -9720,6 +9799,11 @@ static void tg3_timer(unsigned long __op
+@@ -9720,6 +9789,11 @@ static void tg3_timer(unsigned long __op
  	    tg3_flag(tp, 57765_CLASS))
  		tg3_chk_missed_msi(tp);
  
@@ -246,24 +202,7 @@
  	if (!tg3_flag(tp, TAGGED_STATUS)) {
  		/* All of this garbage is because when using non-tagged
  		 * IRQ status the mailbox/status_block protocol the chip
-@@ -11415,6 +11499,11 @@ static int tg3_test_nvram(struct tg3 *tp
- 	if (tg3_flag(tp, NO_NVRAM))
- 		return 0;
- 
-+	if (tg3_flag(tp, IS_SSB_CORE)) {
-+		/* We don't have NVRAM. */
-+		return 0;
-+	}
-+
- 	if (tg3_nvram_read(tp, 0, &magic) != 0)
- 		return -EIO;
- 
-@@ -12383,11 +12472,12 @@ static int tg3_ioctl(struct net_device *
- 		if (tp->phy_flags & TG3_PHYFLG_PHY_SERDES)
- 			break;			/* We have no PHY */
- 
--		if (!netif_running(dev))
-+		if (tp->phy_flags & TG3_PHYFLG_IS_LOW_POWER)
+@@ -12387,7 +12461,8 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -273,12 +212,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		data->val_out = mii_regval;
-@@ -12399,11 +12489,12 @@ static int tg3_ioctl(struct net_device *
- 		if (tp->phy_flags & TG3_PHYFLG_PHY_SERDES)
- 			break;			/* We have no PHY */
- 
--		if (!netif_running(dev))
-+		if (tp->phy_flags & TG3_PHYFLG_IS_LOW_POWER)
+@@ -12403,7 +12478,8 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -288,7 +222,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		return err;
-@@ -13251,6 +13342,13 @@ static void __devinit tg3_get_5720_nvram
+@@ -13251,6 +13327,14 @@ static void __devinit tg3_get_5720_nvram
  /* Chips other than 5700/5701 use the NVRAM for fetching info. */
  static void __devinit tg3_nvram_init(struct tg3 *tp)
  {
@@ -296,13 +230,14 @@
 +		/* No NVRAM and EEPROM on the SSB Broadcom GigE core. */
 +		tg3_flag_clear(tp, NVRAM);
 +		tg3_flag_clear(tp, NVRAM_BUFFERED);
++		tg3_flag_set(tp, NO_NVRAM);
 +		return;
 +	}
 +
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -13743,10 +13841,19 @@ static int __devinit tg3_phy_probe(struc
+@@ -13743,10 +13827,19 @@ static int __devinit tg3_phy_probe(struc
  			 * subsys device table.
  			 */
  			p = tg3_lookup_by_subsys(tp);
@@ -324,7 +259,7 @@
  			if (!tp->phy_id ||
  			    tp->phy_id == TG3_PHY_ID_BCM8002)
  				tp->phy_flags |= TG3_PHYFLG_PHY_SERDES;
-@@ -14756,6 +14863,11 @@ static int __devinit tg3_get_invariants(
+@@ -14756,6 +14849,11 @@ static int __devinit tg3_get_invariants(
  		}
  	}
  
@@ -336,31 +271,39 @@
  	/* Get eeprom hw config before calling tg3_set_power_state().
  	 * In particular, the TG3_FLAG_IS_NIC flag must be
  	 * determined before calling tg3_set_power_state() so that
-@@ -15165,6 +15277,10 @@ static int __devinit tg3_get_device_addr
- 	}
+@@ -15104,12 +15202,19 @@ static int __devinit tg3_get_device_addr
+ 	struct net_device *dev = tp->dev;
+ 	u32 hi, lo, mac_offset;
+ 	int addr_ok = 0;
++	int err;
  
- 	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
-+		if (tg3_flag(tp, IS_SSB_CORE))
-+			ssb_gige_get_macaddr(tp->pdev, &dev->dev_addr[0]);
-+	}
-+	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
  #ifdef CONFIG_SPARC
- 		if (!tg3_get_default_macaddr_sparc(tp))
- 			return 0;
-@@ -15449,7 +15565,8 @@ static int __devinit tg3_test_dma(struct
- 			if (tg3_flag(tp, 40BIT_DMA_BUG) &&
- 			    GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5704)
- 				tp->dma_rwctrl |= 0x8000;
--			else if (ccval == 0x6 || ccval == 0x7)
-+			else if ((ccval == 0x6 || ccval == 0x7) ||
-+				 tg3_flag(tp, ONE_DMA_AT_ONCE))
- 				tp->dma_rwctrl |= DMA_RWCTRL_ONE_DMA;
+ 	if (!tg3_get_macaddr_sparc(tp))
+ 		return 0;
+ #endif
  
- 			if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5703)
-@@ -15811,6 +15928,17 @@ static int __devinit tg3_init_one(struct
- 		tp->msg_enable = tg3_debug;
++	if (tg3_flag(tp, IS_SSB_CORE)) {
++		err = ssb_gige_get_macaddr(tp->pdev, &dev->dev_addr[0]);
++		if (!err && is_valid_ether_addr(&dev->dev_addr[0]))
++			return 0;
++	}
++
+ 	mac_offset = 0x7c;
+ 	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5704 ||
+ 	    tg3_flag(tp, 5780_CLASS)) {
+@@ -15469,6 +15574,8 @@ static int __devinit tg3_test_dma(struct
+ 			tp->dma_rwctrl |= 0x001b000f;
+ 		}
+ 	}
++	if (tg3_flag(tp, ONE_DMA_AT_ONCE))
++		tp->dma_rwctrl |= DMA_RWCTRL_ONE_DMA;
+ 
+ 	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5703 ||
+ 	    GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5704)
+@@ -15812,6 +15919,18 @@ static int __devinit tg3_init_one(struct
  	else
  		tp->msg_enable = TG3_DEF_MSG_ENABLE;
+ 
 +	if (pdev_is_ssb_gige_core(pdev)) {
 +		tg3_flag_set(tp, IS_SSB_CORE);
 +		if (ssb_gige_must_flush_posted_writes(pdev))
@@ -372,9 +315,10 @@
 +		if (ssb_gige_is_rgmii(pdev))
 +			tg3_flag_set(tp, RGMII_MODE);
 +	}
- 
++
  	/* The word/byte swap controls here control register access byte
  	 * swapping.  DMA data byte swapping is controlled in the GRC_MODE
+ 	 * setting below.
 --- a/drivers/net/ethernet/broadcom/tg3.h
 +++ b/drivers/net/ethernet/broadcom/tg3.h
 @@ -2973,6 +2973,11 @@ enum TG3_FLAGS {
@@ -401,13 +345,13 @@
  #define PCI_DEVICE_ID_TIGON3_5715S	0x1679
 --- a/include/linux/ssb/ssb_driver_gige.h
 +++ b/include/linux/ssb/ssb_driver_gige.h
-@@ -97,21 +97,12 @@ static inline bool ssb_gige_must_flush_p
+@@ -97,21 +97,16 @@ static inline bool ssb_gige_must_flush_p
  	return 0;
  }
  
 -#ifdef CONFIG_BCM47XX
 -#include <bcm47xx_nvram.h>
--/* Get the device MAC address */
+ /* Get the device MAC address */
 -static inline void ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
 -{
 -	char buf[20];
@@ -416,22 +360,27 @@
 -	bcm47xx_nvram_parse_macaddr(buf, macaddr);
 -}
 -#else
- static inline void ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
+-static inline void ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
++static inline int ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
  {
 +	struct ssb_gige *dev = pdev_to_ssb_gige(pdev);
++	if (!dev)
++		return -ENODEV;
 +
 +	memcpy(macaddr, dev->dev->bus->sprom.et0mac, 6);
++	return 0;
  }
 -#endif
  
  extern int ssb_gige_pcibios_plat_dev_init(struct ssb_device *sdev,
  					  struct pci_dev *pdev);
-@@ -175,6 +166,9 @@ static inline bool ssb_gige_must_flush_p
+@@ -175,6 +170,10 @@ static inline bool ssb_gige_must_flush_p
  {
  	return 0;
  }
-+static inline void ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
++static inline int ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
 +{
++	return -ENODEV;
 +}
  
  #endif /* CONFIG_SSB_DRIVER_GIGE */
