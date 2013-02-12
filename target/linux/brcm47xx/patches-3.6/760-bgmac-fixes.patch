@@ -19,9 +19,9 @@
 +	struct bgmac *bgmac = netdev_priv(net_dev);
 +
 +	if (net_dev->flags & IFF_PROMISC)
-+		bgmac_cmdcfg_maskset(bgmac, ~0, BGMAC_CMDCFG_PROM, false);
++		bgmac_cmdcfg_maskset(bgmac, ~0, BGMAC_CMDCFG_PROM, true);
 +	else
-+		bgmac_cmdcfg_maskset(bgmac, ~BGMAC_CMDCFG_PROM, 0, false);
++		bgmac_cmdcfg_maskset(bgmac, ~BGMAC_CMDCFG_PROM, 0, true);
 +}
 +
  #if 0 /* We don't use that regs yet */
@@ -40,7 +40,15 @@
  		}
  		bcma_chipco_chipctl_maskset(cc, 1,
  					    ~(BGMAC_CHIPCTL_1_IF_TYPE_MASK |
-@@ -1004,8 +1026,6 @@ static void bgmac_enable(struct bgmac *b
+@@ -948,6 +970,7 @@ static void bgmac_chip_intrs_on(struct b
+ static void bgmac_chip_intrs_off(struct bgmac *bgmac)
+ {
+ 	bgmac_write(bgmac, BGMAC_INT_MASK, 0);
++	bgmac_read(bgmac, BGMAC_INT_MASK);
+ }
+ 
+ /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/gmac_enable */
+@@ -1004,8 +1027,6 @@ static void bgmac_enable(struct bgmac *b
  static void bgmac_chip_init(struct bgmac *bgmac, bool full_init)
  {
  	struct bgmac_dma_ring *ring;
@@ -49,7 +57,7 @@
  	int i;
  
  	/* 1 interrupt per received frame */
-@@ -1014,16 +1034,9 @@ static void bgmac_chip_init(struct bgmac
+@@ -1014,21 +1035,14 @@ static void bgmac_chip_init(struct bgmac
  	/* Enable 802.3x tx flow control (honor received PAUSE frames) */
  	bgmac_cmdcfg_maskset(bgmac, ~BGMAC_CMDCFG_RPI, 0, true);
  
@@ -67,8 +75,15 @@
 +	bgmac_write_mac_address(bgmac, bgmac->net_dev->dev_addr);
  
  	if (bgmac->loopback)
- 		bgmac_cmdcfg_maskset(bgmac, ~0, BGMAC_CMDCFG_ML, true);
-@@ -1160,6 +1173,19 @@ static netdev_tx_t bgmac_start_xmit(stru
+-		bgmac_cmdcfg_maskset(bgmac, ~0, BGMAC_CMDCFG_ML, true);
++		bgmac_cmdcfg_maskset(bgmac, ~0, BGMAC_CMDCFG_ML, false);
+ 	else
+-		bgmac_cmdcfg_maskset(bgmac, ~BGMAC_CMDCFG_ML, 0, true);
++		bgmac_cmdcfg_maskset(bgmac, ~BGMAC_CMDCFG_ML, 0, false);
+ 
+ 	bgmac_write(bgmac, BGMAC_RXMAX_LENGTH, 32 + ETHER_MAX_LEN);
+ 
+@@ -1160,6 +1174,19 @@ static netdev_tx_t bgmac_start_xmit(stru
  	return bgmac_dma_tx_add(bgmac, ring, skb);
  }
  
@@ -88,7 +103,7 @@
  static int bgmac_ioctl(struct net_device *net_dev, struct ifreq *ifr, int cmd)
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
-@@ -1190,7 +1216,9 @@ static const struct net_device_ops bgmac
+@@ -1190,7 +1217,9 @@ static const struct net_device_ops bgmac
  	.ndo_open		= bgmac_open,
  	.ndo_stop		= bgmac_stop,
  	.ndo_start_xmit		= bgmac_start_xmit,
@@ -99,6 +114,19 @@
  	.ndo_do_ioctl           = bgmac_ioctl,
  };
  
+@@ -1290,6 +1319,12 @@ static int bgmac_probe(struct bcma_devic
+ 		return -ENOTSUPP;
+ 	}
+ 
++	if (!is_valid_ether_addr(mac)) {
++		dev_err(&core->dev, "Invalid MAC addr: %pM\n", mac);
++		eth_random_addr(mac);
++		dev_warn(&core->dev, "Using random MAC: %pM\n", mac);
++	}
++
+ 	/* Allocation and references */
+ 	net_dev = alloc_etherdev(sizeof(*bgmac));
+ 	if (!net_dev)
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
 @@ -339,7 +339,7 @@
