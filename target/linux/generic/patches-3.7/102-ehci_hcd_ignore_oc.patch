@@ -20,7 +20,7 @@
  		mask = PORT_CSC | PORT_PEC | PORT_OCC;
  	else
  		mask = PORT_CSC | PORT_PEC;
-@@ -804,7 +804,7 @@ static int ehci_hub_control (
+@@ -808,7 +808,7 @@ static int ehci_hub_control (
  		if (temp & PORT_PEC)
  			status |= USB_PORT_STAT_C_ENABLE << 16;
  

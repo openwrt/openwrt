@@ -9,7 +9,7 @@ Subject: [PATCH 123/123] USB: fix roothub for IFXHCD
 
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -3906,7 +3906,7 @@ hub_port_init (struct usb_hub *hub, stru
+@@ -3940,7 +3940,7 @@ hub_port_init (struct usb_hub *hub, stru
  		udev->ttport = hdev->ttport;
  	} else if (udev->speed != USB_SPEED_HIGH
  			&& hdev->speed == USB_SPEED_HIGH) {
