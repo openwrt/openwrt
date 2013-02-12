@@ -28,6 +28,8 @@ setup_interface () {
 		proto_add_ipv6_prefix "$prefix"
 	done
 
+	[ -n "$USERPREFIX" ] && proto_add_ipv6_prefix "$USERPREFIX"
+
 	# Merge addresses
 	for entry in $RA_ADDRESSES; do
 		local duplicate=0
