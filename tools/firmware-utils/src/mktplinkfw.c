@@ -39,6 +39,7 @@
 #define HWID_TL_WA801ND_V1	0x08010001
 #define HWID_TL_WA901ND_V1	0x09010001
 #define HWID_TL_WA901ND_V2	0x09010002
+#define HWID_TL_WDR4900_V1	0x49000001
 #define HWID_TL_WR703N_V1	0x07030101
 #define HWID_TL_WR741ND_V1	0x07410001
 #define HWID_TL_WR741ND_V4	0x07410004
@@ -176,6 +177,12 @@ static struct flash_layout layouts[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0x100000,
 	}, {
+		.id		= "16Mppc",
+		.fw_max_len	= 0xf80000,
+		.kernel_la	= 0x00000000,
+		.kernel_ep	= 0xc0000000,
+		.rootfs_ofs	= 0x2a0000,
+	}, {
 		/* terminating entry */
 	}
 };
@@ -226,6 +233,11 @@ static struct board_info boards[] = {
 		.hw_id          = HWID_TL_WA901ND_V2,
 		.hw_rev         = 1,
 		.layout_id	= "4M",
+	}, {
+		.id             = "TL-WDR4900v1",
+		.hw_id          = HWID_TL_WDR4900_V1,
+		.hw_rev         = 1,
+		.layout_id	= "16Mppc",
 	}, {
 		.id		= "TL-WR741NDv1",
 		.hw_id		= HWID_TL_WR741ND_V1,
