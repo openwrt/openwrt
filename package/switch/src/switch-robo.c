@@ -78,7 +78,7 @@ struct robo_switch {
 	int gpio_lanports_enable;
 	struct ifreq ifr;
 	struct net_device *dev;
-	unsigned char port[6];
+	unsigned char port[9];
 };
 
 /* Currently we can only have one device in the system. */
@@ -308,9 +308,6 @@ static int robo_probe(char *devname)
 	}
 
 	robo.device = devname;
-	for (i = 0; i < 5; i++)
-		robo.port[i] = i;
-	robo.port[5] = 8;
 
 	/* try access using MII ioctls - get phy address */
 	err = do_ioctl(SIOCGMIIPHY);
@@ -386,6 +383,14 @@ static int robo_probe(char *devname)
 		robo.is_5365 = false;
 
 	robo.gmii = robo_gmii();
+	if (robo.devid == ROBO_DEVICE_ID_5325) {
+		for (i = 0; i < 5; i++)
+			robo.port[i] = i;
+	} else {
+		for (i = 0; i < 8; i++)
+			robo.port[i] = i;
+	}
+	robo.port[i] = ROBO_IM_PORT_CTRL;
 
 	robo_switch_reset();
 	err = robo_switch_enable();
