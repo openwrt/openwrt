@@ -693,12 +693,16 @@ static int handle_enable_vlan_read(void *driver, char *buf, int nr)
 
 static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 {
+	__u16 val16;
 	int disable = ((buf[0] != '1') ? 1 : 0);
 
+	val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, disable ? 0 :
-		(1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
+		val16 | (1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
+
+	val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1, disable ? 0 :
-		(robo.devid == ROBO_DEVICE_ID_5325 ? (1 << 1) :
+		val16 | (robo.devid == ROBO_DEVICE_ID_5325 ? (1 << 1) :
 		0) | (1 << 2) | (1 << 3)); /* RSV multicast */
 
 	if (robo.devid != ROBO_DEVICE_ID_5325)
@@ -712,14 +716,10 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 	return 0;
 }
 
-static int handle_reset(void *driver, char *buf, int nr)
+static void handle_reset_old(switch_driver *d, char *buf, int nr)
 {
-	switch_driver *d = (switch_driver *) driver;
 	int j;
 	__u16 val16;
-
-	/* disable switching */
-	set_switch(0);
 
 	/* reset vlans */
 	for (j = 0; j <= ((robo.is_5365) ? VLAN_ID_MAX_5365 : VLAN_ID_MAX); j++) {
@@ -733,6 +733,44 @@ static int handle_reset(void *driver, char *buf, int nr)
 							    ROBO_VLAN_TABLE_ACCESS,
 			     val16);
 	}
+}
+
+static void handle_reset_new(switch_driver *d, char *buf, int nr)
+{
+	int j;
+	__u8 vtbl_entry, vtbl_index, vtbl_access;
+
+	if ((robo.devid == ROBO_DEVICE_ID_5395) ||
+	    (robo.devid == ROBO_DEVICE_ID_53115)) {
+		vtbl_access = ROBO_VTBL_ACCESS_5395;
+		vtbl_index = ROBO_VTBL_INDX_5395;
+		vtbl_entry = ROBO_VTBL_ENTRY_5395;
+	} else {
+		vtbl_access = ROBO_VTBL_ACCESS;
+		vtbl_index = ROBO_VTBL_INDX;
+		vtbl_entry = ROBO_VTBL_ENTRY;
+	}
+
+	for (j = 0; j <= VLAN_ID_MAX; j++) {
+		/* write config now */
+		robo_write32(ROBO_ARLIO_PAGE, vtbl_entry, 0);
+		robo_write16(ROBO_ARLIO_PAGE, vtbl_index, j);
+		robo_write16(ROBO_ARLIO_PAGE, vtbl_access, 1 << 7);
+	}
+}
+
+static int handle_reset(void *driver, char *buf, int nr)
+{
+	int j;
+	switch_driver *d = (switch_driver *) driver;
+
+	/* disable switching */
+	set_switch(0);
+
+	if (robo.devid != ROBO_DEVICE_ID_5325)
+		handle_reset_new(d, buf, nr);
+	else
+		handle_reset_old(d, buf, nr);
 
 	/* reset ports to a known good state */
 	for (j = 0; j < d->ports; j++) {
