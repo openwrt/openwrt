@@ -419,17 +419,17 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 
 	val16 = (nr) /* vlan */ | (0 << 12) /* read */ | (1 << 13) /* enable */;
 
-	if (!robo.is_5365) {
-		u32 val32;
-		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
+	if (robo.is_5365) {
+		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5365, val16);
 		/* actual read */
-		val32 = robo_read32(ROBO_VLAN_PAGE, ROBO_VLAN_READ);
-		if ((val32 & (1 << 20)) /* valid */) {
+		val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_READ);
+		if ((val16 & (1 << 14)) /* valid */) {
 			for (j = 0; j < 6; j++) {
-				if (val32 & (1 << j)) {
+				if (val16 & (1 << j)) {
 					len += sprintf(buf + len, "%d", j);
-					if (val32 & (1 << (j + 6))) {
-						if (j == 5) buf[len++] = 'u';
+					if (val16 & (1 << (j + 7))) {
+						if (j == 5)
+							buf[len++] = 'u';
 					} else {
 						buf[len++] = 't';
 						if (robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (j << 1)) == nr)
@@ -441,15 +441,17 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 			len += sprintf(buf + len, "\n");
 		}
 	} else {
-		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5365, val16);
+		u32 val32;
+		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
 		/* actual read */
-		val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_READ);
-		if ((val16 & (1 << 14)) /* valid */) {
+		val32 = robo_read32(ROBO_VLAN_PAGE, ROBO_VLAN_READ);
+		if ((val32 & (1 << 20)) /* valid */) {
 			for (j = 0; j < 6; j++) {
-				if (val16 & (1 << j)) {
+				if (val32 & (1 << j)) {
 					len += sprintf(buf + len, "%d", j);
-					if (val16 & (1 << (j + 7))) {
-						if (j == 5) buf[len++] = 'u';
+					if (val32 & (1 << (j + 6))) {
+						if (j == 5)
+							buf[len++] = 'u';
 					} else {
 						buf[len++] = 't';
 						if (robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (j << 1)) == nr)
