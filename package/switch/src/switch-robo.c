@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA.
  */
 
@@ -314,7 +314,7 @@ static int robo_probe(char *devname)
 		goto done;
 	}
 
-	phyid = mdio_read(ROBO_PHY_ADDR, 0x2) | 
+	phyid = mdio_read(ROBO_PHY_ADDR, 0x2) |
 		(mdio_read(ROBO_PHY_ADDR, 0x3) << 16);
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
@@ -534,7 +534,7 @@ static int handle_port_media_write(void *driver, char *buf, int nr)
 	}
 
 	bmcr_mask = ~(BMCR_SPEED1000 | BMCR_SPEED100 | BMCR_FULLDPLX | BMCR_ANENABLE | BMCR_ANRESTART);
-	mdio_write(robo.port[nr], MII_BMCR, 
+	mdio_write(robo.port[nr], MII_BMCR,
 		(mdio_read(robo.port[nr], MII_BMCR) & bmcr_mask) | bmcr);
 
 	return 0;
