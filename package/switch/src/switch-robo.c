@@ -63,6 +63,7 @@
 #define  ROBO_DEVICE_ID_5397	0x97
 #define  ROBO_DEVICE_ID_5398	0x98
 #define  ROBO_DEVICE_ID_53115	0x3115
+#define  ROBO_DEVICE_ID_53125	0x3125
 
 /* Private et.o ioctls */
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
@@ -246,6 +247,13 @@ static int robo_switch_enable(void)
 
 		/* No spanning tree on IMP port too */
 		robo_write16(ROBO_CTRL_PAGE, ROBO_IM_PORT_CTRL, 0);
+	}
+
+	if (robo.devid == ROBO_DEVICE_ID_53125) {
+		/* Make IM port status link by default */
+		val = robo_read16(ROBO_CTRL_PAGE, ROBO_PORT_OVERRIDE_CTRL) | 0xb1;
+		robo_write16(ROBO_CTRL_PAGE, ROBO_PORT_OVERRIDE_CTRL, val);
+		// TODO: init EEE feature
 	}
 
 #ifdef CONFIG_BCM47XX
@@ -486,7 +494,8 @@ static int handle_vlan_port_read_new(switch_driver *d, char *buf, int nr)
 	int j;
 
 	if ((robo.devid == ROBO_DEVICE_ID_5395) ||
-	    (robo.devid == ROBO_DEVICE_ID_53115)) {
+	    (robo.devid == ROBO_DEVICE_ID_53115) ||
+	    (robo.devid == ROBO_DEVICE_ID_53125)) {
 		vtbl_access = ROBO_VTBL_ACCESS_5395;
 		vtbl_index = ROBO_VTBL_INDX_5395;
 		vtbl_entry = ROBO_VTBL_ENTRY_5395;
@@ -557,7 +566,8 @@ static void handle_vlan_port_write_new(switch_driver *d, switch_vlan_config *c, 
 
 	/* write config now */
 	if ((robo.devid == ROBO_DEVICE_ID_5395) ||
-	    (robo.devid == ROBO_DEVICE_ID_53115)) {
+	    (robo.devid == ROBO_DEVICE_ID_53115) ||
+	    (robo.devid == ROBO_DEVICE_ID_53125)) {
 		vtbl_access = ROBO_VTBL_ACCESS_5395;
 		vtbl_index = ROBO_VTBL_INDX_5395;
 		vtbl_entry = ROBO_VTBL_ENTRY_5395;
@@ -741,7 +751,8 @@ static void handle_reset_new(switch_driver *d, char *buf, int nr)
 	__u8 vtbl_entry, vtbl_index, vtbl_access;
 
 	if ((robo.devid == ROBO_DEVICE_ID_5395) ||
-	    (robo.devid == ROBO_DEVICE_ID_53115)) {
+	    (robo.devid == ROBO_DEVICE_ID_53115) ||
+	    (robo.devid == ROBO_DEVICE_ID_53125)) {
 		vtbl_access = ROBO_VTBL_ACCESS_5395;
 		vtbl_index = ROBO_VTBL_INDX_5395;
 		vtbl_entry = ROBO_VTBL_ENTRY_5395;
