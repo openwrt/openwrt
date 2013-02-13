@@ -62,13 +62,6 @@ tew-673gru)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 	;;
 
-dir-825-c1)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-	ucidef_add_switch "switch0" "1" "1"
-	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
-	ucidef_add_switch_vlan "switch0" "2" "0t 1"
-	;;
-
 nbg460n_550n_550nh)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "switch0" "1" "1"
@@ -181,6 +174,7 @@ wzr-hp-g300nh)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 	;;
 
+dir-825-c1|\
 wndr4300)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" "1" "1"
