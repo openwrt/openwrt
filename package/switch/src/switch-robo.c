@@ -237,10 +237,14 @@ static int robo_switch_enable(void)
 			return -EBUSY;
 		}
 
+		/* No spanning tree for unmanaged mode */
 		last_port = (robo.devid == ROBO_DEVICE_ID_5398) ?
-				ROBO_PORT6_CTRL : ROBO_PORT3_CTRL;
-		for (i = ROBO_PORT0_CTRL; i < last_port + 1; i++)
+				ROBO_PORT7_CTRL : ROBO_PORT4_CTRL;
+		for (i = ROBO_PORT0_CTRL; i <= last_port; i++)
 			robo_write16(ROBO_CTRL_PAGE, i, 0);
+
+		/* No spanning tree on IMP port too */
+		robo_write16(ROBO_CTRL_PAGE, ROBO_IM_PORT_CTRL, 0);
 	}
 
 #ifdef CONFIG_BCM47XX
