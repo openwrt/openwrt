@@ -29,6 +29,7 @@
 #include <linux/ethtool.h>
 #include <linux/mii.h>
 #include <linux/delay.h>
+#include <linux/gpio.h>
 #include <asm/uaccess.h>
 
 #include "switch-core.h"
@@ -73,6 +74,8 @@ struct robo_switch {
 	u16 devid;			/* ROBO_DEVICE_ID_53xx */
 	bool is_5350;
 	u8 gmii;			/* gigabit mii */
+	int gpio_robo_reset;
+	int gpio_lanports_enable;
 	struct ifreq ifr;
 	struct net_device *dev;
 	unsigned char port[6];
@@ -274,6 +277,27 @@ static void robo_switch_reset(void)
 	}
 }
 
+#ifdef CONFIG_BCM47XX
+static int get_gpio_pin(const char *name)
+{
+	int i, err;
+	char nvram_var[10];
+	char buf[30];
+
+	for (i = 0; i < 16; i++) {
+		err = snprintf(nvram_var, sizeof(nvram_var), "gpio%i", i);
+		if (err <= 0)
+			continue;
+		err = bcm47xx_nvram_getenv(nvram_var, buf, sizeof(buf));
+		if (err <= 0)
+			continue;
+		if (!strcmp(name, buf))
+			return i;
+	}
+	return -1;
+}
+#endif
+
 static int robo_probe(char *devname)
 {
 	__u32 phyid;
@@ -317,13 +341,46 @@ static int robo_probe(char *devname)
 		goto err_put;
 	}
 
+#ifdef CONFIG_BCM47XX
+	robo.gpio_lanports_enable = get_gpio_pin("lanports_enable");
+	if (robo.gpio_lanports_enable >= 0) {
+		err = gpio_request(robo.gpio_lanports_enable, "lanports_enable");
+		if (err) {
+			printk(KERN_ERR PFX "error (%i) requesting lanports_enable gpio (%i)\n",
+			       err, robo.gpio_lanports_enable);
+			goto err_put;
+		}
+		gpio_direction_output(robo.gpio_lanports_enable, 1);
+		mdelay(5);
+	}
+
+	robo.gpio_robo_reset = get_gpio_pin("robo_reset");
+	if (robo.gpio_robo_reset >= 0) {
+		err = gpio_request(robo.gpio_robo_reset, "robo_reset");
+		if (err) {
+			printk(KERN_ERR PFX "error (%i) requesting robo_reset gpio (%i)\n",
+			       err, robo.gpio_robo_reset);
+			goto err_gpio_robo;
+		}
+		gpio_set_value(robo.gpio_robo_reset, 0);
+		gpio_direction_output(robo.gpio_robo_reset, 1);
+		gpio_set_value(robo.gpio_robo_reset, 0);
+		mdelay(50);
+
+		gpio_set_value(robo.gpio_robo_reset, 1);
+		mdelay(20);
+	} else {
+		// TODO: reset the internal robo switch
+	}
+#endif
+
 	phyid = mdio_read(ROBO_PHY_ADDR, 0x2) |
 		(mdio_read(ROBO_PHY_ADDR, 0x3) << 16);
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		printk(KERN_ERR PFX "No Robo switch in managed mode found, phy_id = 0x%08x\n", phyid);
 		err = -ENODEV;
-		goto err_put;
+		goto err_gpio_lanports;
 	}
 
 	/* Get the device ID */
@@ -340,12 +397,19 @@ static int robo_probe(char *devname)
 	robo_switch_reset();
 	err = robo_switch_enable();
 	if (err)
-		goto err_put;
+		goto err_gpio_lanports;
 
 	printk(KERN_INFO PFX "found a 5%s%x!%s at %s\n", robo.devid & 0xff00 ? "" : "3", robo.devid,
 		robo.is_5350 ? " It's a 5350." : "", devname);
 
 	return 0;
+
+err_gpio_lanports:
+	if (robo.gpio_lanports_enable >= 0)
+		gpio_free(robo.gpio_lanports_enable);
+err_gpio_robo:
+	if (robo.gpio_robo_reset >= 0)
+		gpio_free(robo.gpio_robo_reset);
 err_put:
 	dev_put(robo.dev);
 	robo.dev = NULL;
@@ -680,6 +744,10 @@ static void __exit robo_exit(void)
 	switch_unregister_driver(DRIVER_NAME);
 	if (robo.dev)
 		dev_put(robo.dev);
+	if (robo.gpio_robo_reset >= 0)
+		gpio_free(robo.gpio_robo_reset);
+	if (robo.gpio_lanports_enable >= 0)
+		gpio_free(robo.gpio_lanports_enable);
 	kfree(robo.device);
 }
 
