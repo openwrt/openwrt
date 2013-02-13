@@ -166,7 +166,10 @@ start() {
 		}
 
 		# generic broadcom 4716 processor with 53115 switch
-		if (tolower(nvram["boardtype"]) == "0x04cf") {
+		if ((tolower(nvram["boardtype"]) == "0x04cf") || \
+			(tolower(nvram["boardtype"]) == "0xf5b2") || \
+			(tolower(nvram["boardtype"]) == "0xf52a") || \
+			(tolower(nvram["boardtype"]) == "0xf52e")) {
 			c["vlan0ports"] = "1 2 3 4 8*"
 			c["vlan1ports"] = "0 8"
 		}
