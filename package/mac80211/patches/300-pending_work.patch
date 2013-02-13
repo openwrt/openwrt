@@ -2721,13 +2721,13 @@
 +	CCK_ACK_DURATION(55, _short),			\
 +	CCK_ACK_DURATION(110, _short)
 +
-+#define CCK_GROUP					\
-+	{						\
-+		.streams = 0,				\
-+		.duration = {				\
-+			CCK_DURATION_LIST(false),	\
-+			CCK_DURATION_LIST(true)		\
-+		}					\
++#define CCK_GROUP						\
++	[MINSTREL_MAX_STREAMS * MINSTREL_STREAM_GROUPS] = {	\
++		.streams = 0,					\
++		.duration = {					\
++			CCK_DURATION_LIST(false),		\
++			CCK_DURATION_LIST(true)			\
++		}						\
 +	}
 +
  /*
@@ -2763,7 +2763,7 @@
 +	} else {
 +		group = MINSTREL_CCK_GROUP;
 +
-+		for (idx = 0; idx <= ARRAY_SIZE(mp->cck_rates); idx++)
++		for (idx = 0; idx < ARRAY_SIZE(mp->cck_rates); idx++)
 +			if (rate->idx == mp->cck_rates[idx])
 +				break;
 +
@@ -2822,7 +2822,7 @@
  		return false;
  
 -	return !!(rate->flags & IEEE80211_TX_RC_MCS);
-+	if (rate->flags & IEEE80211_TX_RC_MCS);
++	if (rate->flags & IEEE80211_TX_RC_MCS)
 +		return true;
 +
 +	return rate->idx == mp->cck_rates[0] ||
