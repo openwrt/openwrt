@@ -355,7 +355,7 @@ define Image/Build/Cameo933x/initramfs
 endef
 
 define Image/Build/Cameo934x
-	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo934x_mtdlayout),1310720,15007744,$(4))
+	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo934x_mtdlayout),1310720,15007718,$(4))
 endef
 
 define Image/Build/Cameo934x/initramfs
