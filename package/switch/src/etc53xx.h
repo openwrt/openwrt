@@ -542,9 +542,9 @@ typedef struct _ROBO_VLAN_CTRL0_STRUC
 #define VLAN_TABLE_WRITE 1              /* for read/write state in table access reg */
 #define VLAN_TABLE_READ 0               /* for read/write state in table access reg */
 #define VLAN_ID_HIGH_BITS 0             /* static high bits in table access reg */
-#define VLAN_ID_MAX 255                 /* max VLAN id */
-#define VLAN_ID_MAX5350 15              /* max VLAN id (5350) */
-#define VLAN_ID_MAX5395 4094            /* max VLAN id (5395) */
+#define VLAN_ID_MAX 15                  /* max VLAN id (5350) */
+#define VLAN_ID_MAX_5365 255            /* max VLAN id */
+#define VLAN_ID_MAX_5395 4094           /* max VLAN id (5395) */
 #define VLAN_ID_MASK VLAN_ID_MAX        /* VLAN id mask */
 #ifdef BCM5380
 #define VLAN_UNTAG_SHIFT 13             /* for postioning untag bits in write reg */
@@ -595,10 +595,10 @@ typedef struct _ROBO_VLAN_READ_WRITE_STRUC_5350
 #define ROBO_VLAN_CTRL3             0x03 /* 8b: VLAN Control 3 Register */
 #define ROBO_VLAN_CTRL4             0x04 /* 8b: VLAN Control 4 Register */
 #define ROBO_VLAN_CTRL5             0x05 /* 8b: VLAN Control 5 Register */
-#define ROBO_VLAN_TABLE_ACCESS      0x08 /* 14b: VLAN Table Access Register */
-#define ROBO_VLAN_TABLE_ACCESS_5350 0x06 /* 14b: VLAN Table Access Register (5350) */
-#define ROBO_VLAN_WRITE             0x0a /* 15b: VLAN Write Register */
-#define ROBO_VLAN_WRITE_5350        0x08 /* 15b: VLAN Write Register (5350) */
+#define ROBO_VLAN_TABLE_ACCESS_5365 0x08 /* 14b: VLAN Table Access Register */
+#define ROBO_VLAN_TABLE_ACCESS      0x06 /* 14b: VLAN Table Access Register (5350) */
+#define ROBO_VLAN_WRITE_5365        0x0a /* 15b: VLAN Write Register */
+#define ROBO_VLAN_WRITE             0x08 /* 15b: VLAN Write Register (5350) */
 #define ROBO_VLAN_READ              0x0c /* 15b: VLAN Read Register */
 #define ROBO_VLAN_PORT0_DEF_TAG     0x10 /* 16b: VLAN Port 0 Default Tag Register */
 #define ROBO_VLAN_PORT1_DEF_TAG     0x12 /* 16b: VLAN Port 1 Default Tag Register */
