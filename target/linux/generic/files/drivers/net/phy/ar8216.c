@@ -1851,7 +1851,6 @@ ar8216_config_init(struct phy_device *phydev)
 {
 	struct ar8216_priv *priv = phydev->priv;
 	struct net_device *dev = phydev->attached_dev;
-	struct switch_dev *swdev;
 	int ret;
 
 	if (WARN_ON(!priv))
@@ -1872,24 +1871,15 @@ ar8216_config_init(struct phy_device *phydev)
 		return 0;
 	}
 
-	swdev = &priv->dev;
-	swdev->alias = dev_name(&priv->mii_bus->dev);
-	ret = register_switch(swdev, NULL);
-	if (ret)
-		goto err;
-
-	pr_info("%s: %s switch registered on %s\n",
-		swdev->devname, swdev->name, dev_name(&priv->mii_bus->dev));
-
 	priv->init = true;
 
 	ret = priv->chip->hw_init(priv);
 	if (ret)
-		goto err_unregister_switch;
+		return ret;
 
 	ret = ar8216_sw_reset_switch(&priv->dev);
 	if (ret)
-		goto err_unregister_switch;
+		return ret;
 
 	/* VID fixup only needed on ar8216 */
 	if (chip_is_ar8216(priv)) {
@@ -1904,11 +1894,6 @@ ar8216_config_init(struct phy_device *phydev)
 	ar8xxx_mib_start(priv);
 
 	return 0;
-
-err_unregister_switch:
-	unregister_switch(&priv->dev);
-err:
-	return ret;
 }
 
 static int
@@ -2004,6 +1989,7 @@ static int
 ar8216_probe(struct phy_device *phydev)
 {
 	struct ar8216_priv *priv;
+	struct switch_dev *swdev;
 	int ret;
 
 	/* skip PHYs at unused adresses */
@@ -2027,6 +2013,15 @@ ar8216_probe(struct phy_device *phydev)
 	ret = ar8xxx_probe_switch(priv);
 	if (ret)
 		goto free_priv;
+
+	swdev = &priv->dev;
+	swdev->alias = dev_name(&priv->mii_bus->dev);
+	ret = register_switch(swdev, NULL);
+	if (ret)
+		goto free_priv;
+
+	pr_info("%s: %s switch registered on %s\n",
+		swdev->devname, swdev->name, dev_name(&priv->mii_bus->dev));
 
 found:
 	if (phydev->addr == 0) {
