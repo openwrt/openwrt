@@ -156,6 +156,12 @@ static int handle_driver_vlans(void *driver, char *buf, int nr)
 	return sprintf(buf, "%i\n", vlans);
 }
 
+static int handle_driver_dev_name(void *driver, char *buf, int nr)
+{
+	char *dev_name = ((switch_driver *) driver)->dev_name;
+	return sprintf(buf, "%s\n", dev_name);
+}
+
 static void add_handler(switch_driver *driver, const switch_config *handler, struct proc_dir_entry *parent, int nr)
 {
 	switch_priv *priv = (switch_priv *) driver->data;
@@ -242,6 +248,7 @@ switch_config global_driver_handlers[] = {
 	{"cpuport", handle_driver_cpuport, NULL},
 	{"ports", handle_driver_ports, NULL},
 	{"vlans", handle_driver_vlans, NULL},
+	{"dev_name", handle_driver_dev_name, NULL},
 	{NULL, NULL, NULL}
 };
 
