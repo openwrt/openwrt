@@ -138,6 +138,24 @@ static int handle_driver_version(void *driver, char *buf, int nr)
 	return sprintf(buf, "%s\n", version);
 }
 
+static int handle_driver_cpuport(void *driver, char *buf, int nr)
+{
+	int cpuport = ((switch_driver *) driver)->cpuport;
+	return sprintf(buf, "%i\n", cpuport);
+}
+
+static int handle_driver_ports(void *driver, char *buf, int nr)
+{
+	int ports = ((switch_driver *) driver)->ports;
+	return sprintf(buf, "%i\n", ports);
+}
+
+static int handle_driver_vlans(void *driver, char *buf, int nr)
+{
+	int vlans = ((switch_driver *) driver)->vlans;
+	return sprintf(buf, "%i\n", vlans);
+}
+
 static void add_handler(switch_driver *driver, const switch_config *handler, struct proc_dir_entry *parent, int nr)
 {
 	switch_priv *priv = (switch_priv *) driver->data;
@@ -221,6 +239,9 @@ static void do_unregister(switch_driver *driver)
 switch_config global_driver_handlers[] = {
 	{"driver", handle_driver_name, NULL},
 	{"version", handle_driver_version, NULL},
+	{"cpuport", handle_driver_cpuport, NULL},
+	{"ports", handle_driver_ports, NULL},
+	{"vlans", handle_driver_vlans, NULL},
 	{NULL, NULL, NULL}
 };
 
