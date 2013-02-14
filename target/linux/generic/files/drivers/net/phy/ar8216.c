@@ -820,20 +820,20 @@ ar8316_hw_init(struct ar8216_priv *priv)
 
 	priv->write(priv, AR8316_REG_POSTRIP, newval);
 
+	if (priv->port4_phy &&
+	    priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
+		/* work around for phy4 rgmii mode */
+		ar8216_phy_dbg_write(priv, 4, 0x12, 0x480c);
+		/* rx delay */
+		ar8216_phy_dbg_write(priv, 4, 0x0, 0x824e);
+		/* tx delay */
+		ar8216_phy_dbg_write(priv, 4, 0x5, 0x3d47);
+		msleep(1000);
+	}
+
 	/* Initialize the ports */
 	bus = priv->mii_bus;
 	for (i = 0; i < 5; i++) {
-		if ((i == 4) && priv->port4_phy &&
-		    priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
-			/* work around for phy4 rgmii mode */
-			ar8216_phy_dbg_write(priv, i, 0x12, 0x480c);
-			/* rx delay */
-			ar8216_phy_dbg_write(priv, i, 0x0, 0x824e);
-			/* tx delay */
-			ar8216_phy_dbg_write(priv, i, 0x5, 0x3d47);
-			msleep(1000);
-		}
-
 		/* initialize the port itself */
 		mdiobus_write(bus, i, MII_ADVERTISE,
 			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
