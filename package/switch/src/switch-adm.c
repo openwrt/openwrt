@@ -578,6 +578,7 @@ static int __init adm_init(void)
 		port_handlers: port,
 		vlan_handlers: vlan,
 	};
+	snprintf(driver.dev_name, SWITCH_NAME_BUFSZ, DRIVER_NAME);
 
 	if (!detect_adm())
 		return -ENODEV;

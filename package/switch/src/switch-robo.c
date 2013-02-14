@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2005 Felix Fietkau <nbd@nbd.name>
  * Copyright (C) 2008 Michael Buesch <mb@bu3sch.de>
+ * Copyright (C) 2013 Hauke Mehrtens <hauke@hauke-m.de>
  * Based on 'robocfg' by Oleg I. Vdovikin
  *
  * This program is free software; you can redistribute it and/or
@@ -40,7 +41,7 @@
 #endif
 
 #define DRIVER_NAME		"bcm53xx"
-#define DRIVER_VERSION		"0.02"
+#define DRIVER_VERSION		"0.03"
 #define PFX			"roboswitch: "
 
 #define ROBO_PHY_ADDR		0x1E	/* robo switch phy address */
@@ -862,6 +863,10 @@ static int __init robo_init(void)
 			driver.ports = 9;
 			driver.cpuport = 8;
 		}
+		if (robo.is_5365)
+			snprintf(driver.dev_name, SWITCH_NAME_BUFSZ, "BCM5365");
+		else
+			snprintf(driver.dev_name, SWITCH_NAME_BUFSZ, "BCM5%s%x", robo.devid & 0xff00 ? "" : "3", robo.devid);
 
 		return switch_register_driver(&driver);
 	}

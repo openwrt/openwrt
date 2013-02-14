@@ -4,6 +4,7 @@
 #include <linux/version.h>
 #include <linux/list.h>
 #define SWITCH_MAX_BUFSZ	4096
+#define SWITCH_NAME_BUFSZ	16
 
 #define SWITCH_MEDIA_AUTO	1
 #define SWITCH_MEDIA_100	2
@@ -28,6 +29,7 @@ typedef struct {
 	const switch_config *driver_handlers, *port_handlers, *vlan_handlers;
 	void *data;
 	void *priv;
+	char dev_name[SWITCH_NAME_BUFSZ];
 } switch_driver;
 
 typedef struct {
