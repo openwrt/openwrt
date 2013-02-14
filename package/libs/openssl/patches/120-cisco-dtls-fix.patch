@@ -1,0 +1,31 @@
+From 9fe4603b8245425a4c46986ed000fca054231253 Mon Sep 17 00:00:00 2001
+From: David Woodhouse <dwmw2@infradead.org>
+Date: Tue, 12 Feb 2013 14:55:32 +0000
+Subject: [PATCH] Check DTLS_BAD_VER for version number.
+
+The version check for DTLS1_VERSION was redundant as
+DTLS1_VERSION > TLS1_1_VERSION, however we do need to
+check for DTLS1_BAD_VER for compatibility.
+
+PR:2984
+(cherry picked from commit d980abb22e22661e98e5cee33d760ab0c7584ecc)
+---
+ ssl/s3_cbc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ssl/s3_cbc.c b/ssl/s3_cbc.c
+index 02edf3f..443a31e 100644
+--- a/ssl/s3_cbc.c
++++ b/ssl/s3_cbc.c
+@@ -148,7 +148,7 @@ int tls1_cbc_remove_padding(const SSL* s,
+ 	unsigned padding_length, good, to_check, i;
+ 	const unsigned overhead = 1 /* padding length byte */ + mac_size;
+ 	/* Check if version requires explicit IV */
+-	if (s->version >= TLS1_1_VERSION || s->version == DTLS1_VERSION)
++	if (s->version >= TLS1_1_VERSION || s->version == DTLS1_BAD_VER)
+ 		{
+ 		/* These lengths are all public so we can test them in
+ 		 * non-constant time.
+-- 
+1.8.1.2
+
