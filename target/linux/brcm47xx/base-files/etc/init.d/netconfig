@@ -91,6 +91,14 @@ start() {
 			if (mac_check != "") mac_check = mac_check ":"
 			mac_check = mac_check "[0-9a-fA-F][0-9a-fA-F]"
 		}
+		if (system("[ -d /proc/switch/eth0 ] ") == 0) {
+			getline < "/proc/switch/eth0/cpuport"
+			cpuport=$0
+			if (cpuport == "8") {
+				c["vlan0ports"]="1 2 3 4 8"
+				c["vlan1ports"]="0 8"
+			}
+		}
 	}
 
 	($1 == "boardnum") || ($1 == "boardtype") || ($1 == "boardflags") || ($1 ~ /macaddr/) {
@@ -156,22 +164,6 @@ start() {
 			c["vlan1ports"] = ""
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
-		}
-		# generic broadcom 4705/4785 processor with 5397 switch?
-		#  EXCEPT Linksys WRT300N V1.1
-		if ((nvram["boardtype"] == "0x478") && \
-		    (model != "Linksys WRT300N V1.1")) {
-			c["vlan0ports"] = "1 2 3 4 8*"
-			c["vlan1ports"] = "0 8"
-		}
-
-		# generic broadcom 4716 processor with 53115 switch
-		if ((tolower(nvram["boardtype"]) == "0x04cf") || \
-			(tolower(nvram["boardtype"]) == "0xf5b2") || \
-			(tolower(nvram["boardtype"]) == "0xf52a") || \
-			(tolower(nvram["boardtype"]) == "0xf52e")) {
-			c["vlan0ports"] = "1 2 3 4 8*"
-			c["vlan1ports"] = "0 8"
 		}
 
 		# WAP54G
