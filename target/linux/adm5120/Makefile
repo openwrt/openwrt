@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 BOARD:=adm5120
 BOARDNAME:=Infineon/ADMtek ADM5120
-LINUX_VERSION:=3.7.7
+LINUX_VERSION:=3.7.8
 SUBTARGETS:=router_le router_be rb1xx
 INITRAMFS_EXTRA_FILES:=
 
