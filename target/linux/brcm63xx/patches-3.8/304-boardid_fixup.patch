@@ -48,9 +48,9 @@
  /*
   * early init callback, read nvram data from flash and checksum it
   */
-@@ -778,6 +807,11 @@ void __init board_prom_init(void)
- 		return;
- 	}
+@@ -775,6 +804,11 @@ void __init board_prom_init(void)
+ 
+ 	bcm63xx_nvram_init(boot_addr + BCM963XX_NVRAM_OFFSET);
  
 +	if (strcmp(cfe_version, "unknown") != 0) {
 +		/* cfe present */

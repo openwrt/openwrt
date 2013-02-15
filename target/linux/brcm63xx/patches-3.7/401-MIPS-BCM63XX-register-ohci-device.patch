@@ -71,7 +71,7 @@ Subject: [PATCH 31/72] MIPS: BCM63XX: register ohci device.
  #include <bcm63xx_dev_usb_usbd.h>
  #include <board_bcm963xx.h>
  
-@@ -926,6 +927,9 @@ int __init board_register_devices(void)
+@@ -923,6 +924,9 @@ int __init board_register_devices(void)
  	if (board.has_usbd)
  		bcm63xx_usbd_register(&board.usbd);
  

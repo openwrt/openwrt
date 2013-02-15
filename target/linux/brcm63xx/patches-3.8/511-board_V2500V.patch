@@ -88,8 +88,8 @@
 +	if (boot_addr == (u8 *)0xbf800000) {
 +		u8 *tmp_boot_addr = (u8*)0xbfc00000;
 +
-+		if (!bcm63xx_nvram_init(tmp_boot_addr + BCM963XX_NVRAM_OFFSET) &&
-+		    !strcmp(bcm63xx_nvram_get_name(), "V2500V_BB")) {
++		bcm63xx_nvram_init(tmp_boot_addr + BCM963XX_NVRAM_OFFSET);
++		if (!strcmp(bcm63xx_nvram_get_name(), "V2500V_BB")) {
 +			printk(KERN_INFO PFX "V2500V: nvram bank 0\n");
 +			boot_addr = tmp_boot_addr;
 +		}
