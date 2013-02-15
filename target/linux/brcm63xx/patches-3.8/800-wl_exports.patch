@@ -11,10 +11,10 @@
 +char nvram_buf[NVRAM_SPACE];
 +EXPORT_SYMBOL(nvram_buf);
 +
- int __init bcm63xx_nvram_init(void *addr)
+ void __init bcm63xx_nvram_init(void *addr)
  {
  	unsigned int check_len;
-@@ -47,6 +54,7 @@ int __init bcm63xx_nvram_init(void *addr
+@@ -47,6 +54,7 @@ void __init bcm63xx_nvram_init(void *add
  
  	/* extract nvram data */
  	memcpy(&nvram, addr, sizeof(nvram));

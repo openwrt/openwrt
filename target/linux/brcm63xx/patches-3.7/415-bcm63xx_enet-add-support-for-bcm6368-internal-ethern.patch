@@ -13,7 +13,7 @@ Subject: [PATCH 31/63] bcm63xx_enet: add support for bcm6368 internal ethernet s
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -930,6 +930,10 @@ int __init board_register_devices(void)
+@@ -927,6 +927,10 @@ int __init board_register_devices(void)
  	if (board.has_usbd)
  		bcm63xx_usbd_register(&board.usbd);
  

@@ -100,7 +100,7 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
  };
  
  /*
-@@ -2412,12 +2488,25 @@ void __init board_prom_init(void)
+@@ -2409,12 +2485,25 @@ void __init board_prom_init(void)
  		bcm63xx_pci_enabled = 1;
  		if (BCMCPU_IS_6348())
  			val |= GPIO_MODE_6348_G2_PCI;
