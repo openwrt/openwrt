@@ -280,20 +280,21 @@ out the configuration than the in kernel cfe config reader.
  	/* TODO: when nvram is on nand flash check for bad blocks first. */
  	off = FLASH_MIN;
  	while (off <= lim) {
-@@ -181,6 +203,12 @@ int bcm47xx_nvram_getenv(char *name, cha
+@@ -181,6 +203,13 @@ int bcm47xx_nvram_getenv(char *name, cha
  			return err;
  	}
  
 +	if (cfe_env) {
 +		value = cfe_env_get(nvram_buf, name);
-+		snprintf(val, val_len, "%s", value);
-+		return 0;
++		if (!value)
++			return -ENOENT;
++		return snprintf(val, val_len, "%s", value);
 +	}
 +
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
  	end = nvram_buf + sizeof(nvram_buf) - 2;
-@@ -209,6 +237,9 @@ char *nvram_get(const char *name)
+@@ -209,6 +238,9 @@ char *nvram_get(const char *name)
  	if (!nvram_buf[0])
  		nvram_init();
  
