@@ -43,7 +43,7 @@ define KernelPackage/bgmac
   DEPENDS:=@TARGET_brcm47xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac.ko
-  AUTOLOAD:=$(call AutoLoad,50,bgmac)
+  AUTOLOAD:=$(call AutoLoad,19,bgmac)
 endef
 
 define KernelPackage/bgmac/description
