@@ -1,0 +1,50 @@
+--- a/drivers/mtd/nand/bcm47xxnflash/bcm47xxnflash.h
++++ b/drivers/mtd/nand/bcm47xxnflash/bcm47xxnflash.h
+@@ -1,6 +1,10 @@
+ #ifndef __BCM47XXNFLASH_H
+ #define __BCM47XXNFLASH_H
+ 
++#ifndef pr_fmt
++#define pr_fmt(fmt)		KBUILD_MODNAME ": " fmt
++#endif
++
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/nand.h>
+ 
+--- a/drivers/mtd/nand/bcm47xxnflash/main.c
++++ b/drivers/mtd/nand/bcm47xxnflash/main.c
+@@ -9,14 +9,14 @@
+  *
+  */
+ 
++#include "bcm47xxnflash.h"
++
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/slab.h>
+ #include <linux/platform_device.h>
+ #include <linux/bcma/bcma.h>
+ 
+-#include "bcm47xxnflash.h"
+-
+ MODULE_DESCRIPTION("NAND flash driver for BCMA bus");
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Rafał Miłecki");
+--- a/drivers/mtd/nand/bcm47xxnflash/ops_bcm4706.c
++++ b/drivers/mtd/nand/bcm47xxnflash/ops_bcm4706.c
+@@ -9,13 +9,13 @@
+  *
+  */
+ 
++#include "bcm47xxnflash.h"
++
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/slab.h>
+ #include <linux/bcma/bcma.h>
+ 
+-#include "bcm47xxnflash.h"
+-
+ /* Broadcom uses 1'000'000 but it seems to be too many. Tests on WNDR4500 has
+  * shown ~1000 retries as maxiumum. */
+ #define NFLASH_READY_RETRIES		10000

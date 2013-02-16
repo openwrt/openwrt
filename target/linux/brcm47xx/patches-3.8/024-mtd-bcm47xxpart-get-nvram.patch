@@ -1,0 +1,34 @@
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -58,6 +58,7 @@ static int bcm47xxpart_parse(struct mtd_
+ 	int trx_part = -1;
+ 	int last_trx_part = -1;
+ 	int max_bytes_to_read = 0x8004;
++	bool found_nvram = false;
+ 
+ 	if (blocksize <= 0x10000)
+ 		blocksize = 0x10000;
+@@ -107,6 +108,7 @@ static int bcm47xxpart_parse(struct mtd_
+ 			bcm47xxpart_add_part(&parts[curr_part++], "nvram",
+ 					     offset, 0);
+ 			offset = rounddown(offset, blocksize);
++			found_nvram = true;
+ 			continue;
+ 		}
+ 
+@@ -194,6 +196,15 @@ static int bcm47xxpart_parse(struct mtd_
+ 					       parts[trx_part].offset;
+ 	}
+ 
++	if (!found_nvram) {
++		pr_err("can not find a nvram partition reserve last block\n");
++		bcm47xxpart_add_part(&parts[curr_part++], "nvram_guess",
++				     master->size - blocksize, MTD_WRITEABLE);
++		for (i = 0; i < curr_part; i++) {
++			if (parts[i].size + parts[i].offset == master->size)
++				parts[i].offset -= blocksize;
++		}
++	}
+ 	*pparts = parts;
+ 	return curr_part;
+ };
