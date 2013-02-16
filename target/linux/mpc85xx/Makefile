@@ -17,7 +17,9 @@ LINUX_VERSION:=3.7.8
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += kmod-booke-wdt
+DEFAULT_PACKAGES += \
+	kmod-input-core kmod-input-gpio-keys kmod-button-hotplug \
+	kmod-booke-wdt
 
 define Target/Description
 	Build images for the Freescale MPC85xx based boards.

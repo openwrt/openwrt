@@ -1,0 +1,11 @@
+#
+# Copyright (C) 2013 OpenWrt.org
+#
+
+preinit_mpc85xx_load_input_drivers() {
+	insmod input-core
+	insmod gpio_keys
+	insmod button-hotplug
+}
+
+boot_hook_add preinit_main preinit_mpc85xx_load_input_drivers
