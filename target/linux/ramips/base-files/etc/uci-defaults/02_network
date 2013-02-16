@@ -4,11 +4,6 @@
 . /lib/ramips.sh
 . /lib/functions/uci-defaults.sh
 
-if [ ! -x /usr/sbin/maccalc ]; then
-	echo "$0: maccalc not found!"
-	return
-fi
-
 ramips_setup_rt3x5x_vlans()
 {
 	if [ ! -x /sbin/swconfig ]; then
@@ -165,31 +160,31 @@ ramips_setup_macs()
 	sl-r7205 | \
 	wl-351)
 		lan_mac=$(mtd_get_mac_binary factory 4)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
 	w306r-v20)
 		lan_mac=$(mtd_get_mac_binary factory 4)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 5)
+		wan_mac=$(macaddr_add "$lan_mac" 5)
 		;;
 
 	rt-n13u | \
 	fonera20n)
 		lan_mac=$(mtd_get_mac_binary factory 40)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
 	dir-300-b1 |\
 	dir-300-b2 |\
 	dir-600-b1)
 		lan_mac=$(mtd_get_mac_binary devdata 16388)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
 	dir-620-a1)
 		lan_mac=$(mtd_get_mac_binary factory 4)
-		lan_mac=$(maccalc or "$lan_mac" "02:00:00:00:00:00")
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		lan_mac=$(macaddr_setbit_la "$lan_mac")
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
 	dir-645)
@@ -200,7 +195,7 @@ ramips_setup_macs()
 	esr-9753 | \
 	ur-336un)
 		lan_mac=$(mtd_get_mac_binary devdata 16388)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
 	nbg-419n | \
@@ -215,7 +210,7 @@ ramips_setup_macs()
 
 	f5d8235-v2)
 		lan_mac=$(mtd_get_mac_binary "u-boot" 262148)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
 	rt-n56u)
@@ -225,12 +220,12 @@ ramips_setup_macs()
 
 	tew-691gr)
 		lan_mac=$(mtd_get_mac_binary factory 40)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 3)
+		wan_mac=$(macaddr_add "$lan_mac" 3)
 		;;
 
 	tew-692gr)
 		lan_mac=$(mtd_get_mac_binary factory 40)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 4)
+		wan_mac=$(macaddr_add "$lan_mac" 4)
 		;;
 
 	all0239-3g | \
@@ -242,7 +237,7 @@ ramips_setup_macs()
 
 	wl341v3)
 		lan_mac=$(mtd_get_mac_binary board-nvram 65440)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
 	wli-tx4-ag300n)

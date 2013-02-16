@@ -27,7 +27,7 @@ preinit_set_mac_address() {
 	rt-n56u |\
 	sl-r7205)
 		mac=$(mtd_get_mac_binary factory 4)
-		mac=$(maccalc or "$mac" "02:00:00:00:00:00")
+		mac=$(macaddr_setbit_la "$mac")
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
 	dir-300-b1 |\
@@ -38,7 +38,7 @@ preinit_set_mac_address() {
                 ;;
 	dir-645)
 		mac=$(mtd_get_mac_ascii nvram lanmac)
-		mac=$(maccalc or "$mac" "02:00:00:00:00:00")
+		mac=$(macaddr_setbit_la "$mac")
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
 	dap-1350)
