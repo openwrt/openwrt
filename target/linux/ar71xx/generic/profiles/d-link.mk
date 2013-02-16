@@ -64,7 +64,7 @@ $(eval $(call Profile,DIR825B1))
 
 define Profile/DIR825C1
 	NAME:=D-Link DIR-825 rev. C1
-	PACKAGES:=kmod-usb-core mod-usb2 kmod-ledtrig-usbdev
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/DIR825C1/Description
