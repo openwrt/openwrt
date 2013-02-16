@@ -101,11 +101,22 @@ start() {
 		}
 	}
 
-	($1 == "boardnum") || ($1 == "boardtype") || ($1 == "boardflags") || ($1 ~ /macaddr/) {
+	($1 == "boardnum") || ($1 == "boardtype") || ($1 == "boardflags") || ($1 ~ /macaddr/) || \
+	 ($1 ~ /^vlan[0-9]{1,2}ports$/) {
 		nvram[$1] = $2
 	}
 
 	END {
+		if (((nvram["vlan0ports"] ~ /^0 1 2 3 8/ ) && (nvram["vlan1ports"] ~ /^4 8/ && (cpuport == "8"))) || \
+		    ((nvram["vlan1ports"] ~ /^0 1 2 3 8/ ) && (nvram["vlan2ports"] ~ /^4 8/ && (cpuport == "8")))) {
+			c["vlan0ports"] = "0 1 2 3 8"
+			c["vlan1ports"] = "4 8"
+		}
+		if (((nvram["vlan0ports"] ~ /^0 1 2 3 5/ ) && (nvram["vlan1ports"] ~ /^4 5/ && (cpuport == "5"))) || \
+		    ((nvram["vlan1ports"] ~ /^0 1 2 3 5/ ) && (nvram["vlan2ports"] ~ /^4 5/ && (cpuport == "5")))) {
+			c["vlan0ports"] = "0 1 2 3 5"
+			c["vlan1ports"] = "4 5"
+		}
 		if ((model == "ASUS WL-HDD") || (model == "ASUS WL-300g") || (model == "Linksys WAP54G V1")) {
 			c["wan_ifname"] = ""
 			c["lan_ifname"] = "eth1"
