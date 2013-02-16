@@ -113,7 +113,7 @@
 +	}
 +
 +	if (!find_passwd_line(fp, user, &p1)) {
-+		printf("User %s not found or invalid in /etc/passwd\n");
++		printf("User %s not found or invalid in /etc/passwd\n", user);
 +		goto out;
 +	}
 +
