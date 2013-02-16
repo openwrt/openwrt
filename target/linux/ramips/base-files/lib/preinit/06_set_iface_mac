@@ -5,6 +5,7 @@
 preinit_set_mac_address() {
 	local mac
 
+	. /lib/functions.sh
 	. /lib/ramips.sh
 
 	case $(ramips_board_name) in
@@ -13,7 +14,7 @@ preinit_set_mac_address() {
 	mzk-w300nh2 |\
 	wl-330n |\
 	wl-330n3g)
-		mac=$(ramips_get_mac_binary factory 4)
+		mac=$(mtd_get_mac_binary factory 4)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
 	bc2 |\
@@ -25,23 +26,23 @@ preinit_set_mac_address() {
 	psr-680w |\
 	rt-n56u |\
 	sl-r7205)
-		mac=$(ramips_get_mac_binary factory 4)
+		mac=$(mtd_get_mac_binary factory 4)
 		mac=$(maccalc or "$mac" "02:00:00:00:00:00")
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
 	dir-300-b1 |\
 	dir-300-b2 |\
 	dir-600-b1)
-                mac=$(ramips_get_mac_binary devdata 16388)
+                mac=$(mtd_get_mac_binary devdata 16388)
                 ifconfig eth0 hw ether $mac 2>/dev/null
                 ;;
 	dir-645)
-		mac=$(ramips_get_mac_nvram nvram lanmac)
+		mac=$(mtd_get_mac_ascii nvram lanmac)
 		mac=$(maccalc or "$mac" "02:00:00:00:00:00")
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
 	dap-1350)
-		mac=$(ramips_get_mac_binary devdata 46)
+		mac=$(mtd_get_mac_binary devdata 46)
 		ifconfig eth0 hw ether $mac 2>/dev/null
                 ;;
 	all0239-3g |\
@@ -61,15 +62,15 @@ preinit_set_mac_address() {
 	w502u    |\
 	wr6202 |\
 	xdxrn502j)
-		mac=$(ramips_get_mac_binary factory 40)
+		mac=$(mtd_get_mac_binary factory 40)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
 	wl341v3)
-		mac=$(ramips_get_mac_binary board-nvram 65440)
+		mac=$(mtd_get_mac_binary board-nvram 65440)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
 	rt-n10-plus)
-		mac=$(ramips_get_mac_binary devconf 4)
+		mac=$(mtd_get_mac_binary devconf 4)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
 	esac
