@@ -1,6 +1,50 @@
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -761,6 +761,26 @@ static void bgmac_cmdcfg_maskset(struct
+@@ -301,8 +301,9 @@ static int bgmac_dma_rx_read(struct bgma
+ 			bgmac_err(bgmac, "Found poisoned packet at slot %d, DMA issue!\n",
+ 				  ring->start);
+ 		} else {
+-			new_skb = netdev_alloc_skb(bgmac->net_dev, len);
++			new_skb = netdev_alloc_skb(bgmac->net_dev, len + 2);
+ 			if (new_skb) {
++				skb_reserve(new_skb, 2);
+ 				skb_put(new_skb, len);
+ 				skb_copy_from_linear_data_offset(skb, BGMAC_RX_FRAME_OFFSET,
+ 								 new_skb->data,
+@@ -535,7 +536,7 @@ static void bgmac_dma_init(struct bgmac
+  * PHY ops
+  **************************************************/
+ 
+-u16 bgmac_phy_read(struct bgmac *bgmac, u8 phyaddr, u8 reg)
++static u16 bgmac_phy_read(struct bgmac *bgmac, u8 phyaddr, u8 reg)
+ {
+ 	struct bcma_device *core;
+ 	u16 phy_access_addr;
+@@ -584,7 +585,7 @@ u16 bgmac_phy_read(struct bgmac *bgmac,
+ }
+ 
+ /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipphywr */
+-void bgmac_phy_write(struct bgmac *bgmac, u8 phyaddr, u8 reg, u16 value)
++static int bgmac_phy_write(struct bgmac *bgmac, u8 phyaddr, u8 reg, u16 value)
+ {
+ 	struct bcma_device *core;
+ 	u16 phy_access_addr;
+@@ -617,9 +618,13 @@ void bgmac_phy_write(struct bgmac *bgmac
+ 	tmp |= value;
+ 	bcma_write32(core, phy_access_addr, tmp);
+ 
+-	if (!bgmac_wait_value(core, phy_access_addr, BGMAC_PA_START, 0, 1000))
++	if (!bgmac_wait_value(core, phy_access_addr, BGMAC_PA_START, 0, 1000)) {
+ 		bgmac_err(bgmac, "Writing to PHY %d register 0x%X failed\n",
+ 			  phyaddr, reg);
++		return -ETIMEDOUT;
++	}
++
++	return 0;
+ }
+ 
+ /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipphyforce */
+@@ -761,6 +766,26 @@ static void bgmac_cmdcfg_maskset(struct
  	udelay(2);
  }
  
@@ -27,7 +71,7 @@
  #if 0 /* We don't use that regs yet */
  static void bgmac_chip_stats_update(struct bgmac *bgmac)
  {
-@@ -889,8 +909,10 @@ static void bgmac_chip_reset(struct bgma
+@@ -889,8 +914,10 @@ static void bgmac_chip_reset(struct bgma
  			sw_type = et_swtype;
  		} else if (ci->id == BCMA_CHIP_ID_BCM5357 && ci->pkg == 9) {
  			sw_type = BGMAC_CHIPCTL_1_SW_TYPE_EPHYRMII;
@@ -40,7 +84,7 @@
  		}
  		bcma_chipco_chipctl_maskset(cc, 1,
  					    ~(BGMAC_CHIPCTL_1_IF_TYPE_MASK |
-@@ -948,6 +970,7 @@ static void bgmac_chip_intrs_on(struct b
+@@ -948,6 +975,7 @@ static void bgmac_chip_intrs_on(struct b
  static void bgmac_chip_intrs_off(struct bgmac *bgmac)
  {
  	bgmac_write(bgmac, BGMAC_INT_MASK, 0);
@@ -48,7 +92,7 @@
  }
  
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/gmac_enable */
-@@ -1004,8 +1027,6 @@ static void bgmac_enable(struct bgmac *b
+@@ -1004,8 +1032,6 @@ static void bgmac_enable(struct bgmac *b
  static void bgmac_chip_init(struct bgmac *bgmac, bool full_init)
  {
  	struct bgmac_dma_ring *ring;
@@ -57,7 +101,7 @@
  	int i;
  
  	/* 1 interrupt per received frame */
-@@ -1014,21 +1035,14 @@ static void bgmac_chip_init(struct bgmac
+@@ -1014,21 +1040,14 @@ static void bgmac_chip_init(struct bgmac
  	/* Enable 802.3x tx flow control (honor received PAUSE frames) */
  	bgmac_cmdcfg_maskset(bgmac, ~BGMAC_CMDCFG_RPI, 0, true);
  
@@ -83,7 +127,7 @@
  
  	bgmac_write(bgmac, BGMAC_RXMAX_LENGTH, 32 + ETHER_MAX_LEN);
  
-@@ -1160,6 +1174,19 @@ static netdev_tx_t bgmac_start_xmit(stru
+@@ -1160,6 +1179,19 @@ static netdev_tx_t bgmac_start_xmit(stru
  	return bgmac_dma_tx_add(bgmac, ring, skb);
  }
  
@@ -103,7 +147,7 @@
  static int bgmac_ioctl(struct net_device *net_dev, struct ifreq *ifr, int cmd)
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
-@@ -1190,7 +1217,9 @@ static const struct net_device_ops bgmac
+@@ -1190,7 +1222,9 @@ static const struct net_device_ops bgmac
  	.ndo_open		= bgmac_open,
  	.ndo_stop		= bgmac_stop,
  	.ndo_start_xmit		= bgmac_start_xmit,
@@ -114,7 +158,7 @@
  	.ndo_do_ioctl           = bgmac_ioctl,
  };
  
-@@ -1290,6 +1319,12 @@ static int bgmac_probe(struct bcma_devic
+@@ -1290,6 +1324,12 @@ static int bgmac_probe(struct bcma_devic
  		return -ENOTSUPP;
  	}
  
@@ -138,3 +182,11 @@
  #define BGMAC_CHIPCTL_1_RXC_DLL_BYPASS		0x00010000
  
  #define BGMAC_SPEED_10				0x0001
+@@ -450,7 +450,4 @@ static inline void bgmac_set(struct bgma
+ 	bgmac_maskset(bgmac, offset, ~0, set);
+ }
+ 
+-u16 bgmac_phy_read(struct bgmac *bgmac, u8 phyaddr, u8 reg);
+-void bgmac_phy_write(struct bgmac *bgmac, u8 phyaddr, u8 reg, u16 value);
+-
+ #endif /* _BGMAC_H */
