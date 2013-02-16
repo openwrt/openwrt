@@ -274,6 +274,30 @@ mtd_get_mac_binary() {
 	dd bs=1 skip=$offset count=6 if=$part 2>/dev/null | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"'
 }
 
+macaddr_add() {
+	local mac=$1
+	local val=$2
+	local oui=${mac%:*:*:*}
+	local nic=${mac#*:*:*:}
+
+	nic=$(printf "%06x" $((0x${nic//:/} + $val & 0xffffff)) | sed 's/^\(.\{2\}\)\(.\{2\}\)\(.\{2\}\)/\1:\2:\3/')
+	echo $oui:$nic
+}
+
+macaddr_setbit_la()
+{
+	local mac=$1
+
+	printf "%02x:%s" $((0x${mac%%:*} | 0x02)) ${mac#*:}
+}
+
+macaddr_2bin()
+{
+	local mac=$1
+
+	echo -ne \\x${mac//:/\\x}
+}
+
 strtok() { # <string> { <variable> [<separator>] ... }
 	local tmp
 	local val="$1"
