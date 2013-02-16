@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Copyright (C) 2007 OpenWrt.org
+#
+#
+
+do_fixcrc() {
+	mtd fixtrx firmware
+}
+
+case `uname -r` in
+	3.8* | 3.9* ) do_fixcrc;;
+esac
+

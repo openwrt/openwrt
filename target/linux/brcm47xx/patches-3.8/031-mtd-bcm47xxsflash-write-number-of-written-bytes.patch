@@ -1,0 +1,10 @@
+--- a/drivers/mtd/devices/bcm47xxsflash.c
++++ b/drivers/mtd/devices/bcm47xxsflash.c
+@@ -23,6 +23,7 @@ static int bcm47xxsflash_read(struct mtd
+ 
+ 	memcpy_fromio(buf, (void __iomem *)KSEG0ADDR(b47s->window + from),
+ 		      len);
++	*retlen = len;
+ 
+ 	return len;
+ }

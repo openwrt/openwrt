@@ -1,0 +1,18 @@
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -26,6 +26,7 @@ struct ssb_sprom_core_pwr_info {
+ 
+ struct ssb_sprom {
+ 	u8 revision;
++	u8 country_code;	/* Country Code */
+ 	u8 il0mac[6];		/* MAC address for 802.11b/g */
+ 	u8 et0mac[6];		/* MAC address for Ethernet */
+ 	u8 et1mac[6];		/* MAC address for 802.11a */
+@@ -36,7 +37,6 @@ struct ssb_sprom {
+ 	u16 board_rev;		/* Board revision number from SPROM. */
+ 	u16 board_num;		/* Board number from SPROM. */
+ 	u16 board_type;		/* Board type from SPROM. */
+-	u8 country_code;	/* Country Code */
+ 	char alpha2[2];		/* Country Code as two chars like EU or US */
+ 	u8 leddc_on_time;	/* LED Powersave Duty Cycle On Count */
+ 	u8 leddc_off_time;	/* LED Powersave Duty Cycle Off Count */
