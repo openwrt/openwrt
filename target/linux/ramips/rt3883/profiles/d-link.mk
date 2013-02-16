@@ -7,7 +7,7 @@
 
 define Profile/DIR645
 	NAME:=D-Link DIR-645
-	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb-usb2 swconfig
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
 
 define Profile/DIR645/Description
