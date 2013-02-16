@@ -217,6 +217,12 @@ start() {
 			c["vlan0ports"] = "0 1 2 3 5"
 			c["vlan1ports"] = "4 5"
 		}
+		if (model == "SimpleTech SimpleShare NAS") {
+			c["lan_ifname"] = "eth0"
+			c["wan_ifname"] = ""
+			c["vlan0ports"] = ""
+			c["vlan1ports"] = ""
+		}
 
 		if (c["vlan0ports"] || c["vlan1ports"]) {
 			print "#### VLAN configuration "
