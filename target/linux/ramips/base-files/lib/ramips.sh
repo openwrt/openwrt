@@ -3,43 +3,6 @@
 # Copyright (C) 2010 OpenWrt.org
 #
 
-ramips_get_mac_binary()
-{
-	local mtdname="$1"
-	local seek="$2"
-	local part
-
-	. /lib/functions.sh
-
-	part=$(find_mtd_part "$mtdname")
-	if [ -z "$part" ]; then
-		echo "ramips_get_mac_binary: partition $mtdname not found!" >&2
-		return
-	fi
-
-	dd bs=1 skip=$seek count=6 if=$part 2>/dev/null | /usr/sbin/maccalc bin2mac
-}
-
-ramips_get_mac_nvram()
-{
-	local mtdname="$1"
-	local key="$2"
-	local part
-	local mac_dirty
-
-	. /lib/functions.sh
-
-	part=$(find_mtd_part "$mtdname")
-	if [ -z "$part" ]; then
-		echo "ramips_get_mac_nvram: partition $mtdname not found!" >&2
-		return
-	fi
-
-	mac_dirty=$(strings "$part" | sed -n 's/'"$key"'=//p')
-	# "canonicalize" mac
-	/usr/sbin/maccalc add "$mac_dirty" 0
-}
-
 ramips_board_name() {
 	local machine
 	local name

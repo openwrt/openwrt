@@ -148,7 +148,7 @@ ramips_setup_macs()
 	all0256n | \
 	all5002 | \
 	dir-615-h1)
-		lan_mac=$(ramips_get_mac_binary factory 40)
+		lan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 	3g-6200n | \
 	3g300m | \
@@ -164,89 +164,89 @@ ramips_setup_macs()
 	rt-n15 | \
 	sl-r7205 | \
 	wl-351)
-		lan_mac=$(ramips_get_mac_binary factory 4)
+		lan_mac=$(mtd_get_mac_binary factory 4)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
 	w306r-v20)
-		lan_mac=$(ramips_get_mac_binary factory 4)
+		lan_mac=$(mtd_get_mac_binary factory 4)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 5)
 		;;
 
 	rt-n13u | \
 	fonera20n)
-		lan_mac=$(ramips_get_mac_binary factory 40)
+		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
 	dir-300-b1 |\
 	dir-300-b2 |\
 	dir-600-b1)
-		lan_mac=$(ramips_get_mac_binary devdata 16388)
+		lan_mac=$(mtd_get_mac_binary devdata 16388)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
 	dir-620-a1)
-		lan_mac=$(ramips_get_mac_binary factory 4)
+		lan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(maccalc or "$lan_mac" "02:00:00:00:00:00")
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
 	dir-645)
-		lan_mac=$(ramips_get_mac_nvram nvram lanmac)
-		wan_mac=$(ramips_get_mac_nvram nvram wanmac)
+		lan_mac=$(mtd_get_mac_ascii nvram lanmac)
+		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
 		;;
 
 	esr-9753 | \
 	ur-336un)
-		lan_mac=$(ramips_get_mac_binary devdata 16388)
+		lan_mac=$(mtd_get_mac_binary devdata 16388)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
 	nbg-419n | \
 	wcr-150gn)
-                lan_mac=$(ramips_get_mac_binary factory 4)
-                wan_mac=$(ramips_get_mac_binary factory 40)
+                lan_mac=$(mtd_get_mac_binary factory 4)
+                wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 
 	omni-emb-hpm)
-		lan_mac=$(ramips_get_mac_binary factory 40)
+		lan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 
 	f5d8235-v2)
-		lan_mac=$(ramips_get_mac_binary "u-boot" 262148)
+		lan_mac=$(mtd_get_mac_binary "u-boot" 262148)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
 	rt-n56u)
-		lan_mac=$(ramips_get_mac_binary factory 4)
-		wan_mac=$(ramips_get_mac_binary factory 32772)
+		lan_mac=$(mtd_get_mac_binary factory 4)
+		wan_mac=$(mtd_get_mac_binary factory 32772)
 		;;
 
 	tew-691gr)
-		lan_mac=$(ramips_get_mac_binary factory 40)
+		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 3)
 		;;
 
 	tew-692gr)
-		lan_mac=$(ramips_get_mac_binary factory 40)
+		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 4)
 		;;
 
 	all0239-3g | \
 	carambola | \
 	w502u)
-		lan_mac=$(ramips_get_mac_binary factory 40)
-		wan_mac=$(ramips_get_mac_binary factory 46)
+		lan_mac=$(mtd_get_mac_binary factory 40)
+		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
 
 	wl341v3)
-		lan_mac=$(ramips_get_mac_binary board-nvram 65440)
+		lan_mac=$(mtd_get_mac_binary board-nvram 65440)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
 	wli-tx4-ag300n)
-		lan_mac=$(ramips_get_mac_binary factory 4)
+		lan_mac=$(mtd_get_mac_binary factory 4)
 		;;
 
 	esac
