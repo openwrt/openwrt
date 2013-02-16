@@ -110,14 +110,31 @@ endef
 $(eval $(call KernelPackage,usb-ohci,1))
 
 
+define KernelPackage/usb2-fsl
+  TITLE:=Support for Freescale USB2 controllers
+  DEPENDS:=TARGET_mpc85xx
+  KCONFIG:=\
+	CONFIG_USB_FSL_MPH_DR_OF \
+  	CONFIG_USB_EHCI_FSL=y
+  FILES:=$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
+  AUTOLOAD:=$(call AutoLoad,39,fsl-mph-dr-of,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb2-fsl/description
+ Kernel support for Freescale USB2 (EHCI) controllers
+endef
+
+$(eval $(call KernelPackage,usb2-fsl))
+
+
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
-  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx
+  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx +TARGET_mpc85xx:kmod-usb2-fsl
   KCONFIG:=CONFIG_USB_EHCI_HCD \
 	CONFIG_USB_EHCI_ATH79=y \
 	CONFIG_USB_EHCI_BCM63XX=y \
 	CONFIG_USB_OCTEON_EHCI=y \
-	CONFIG_USB_EHCI_FSL=n \
 	CONFIG_USB_EHCI_HCD_PLATFORM=y
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.8.0)),1)
   FILES:= \
