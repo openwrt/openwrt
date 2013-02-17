@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=19
+
+boot() {
+	# Be silent on boot, firewall might be started by hotplug already,
+	# so don't complain in syslog.
+	fw3 -q start
+}
+
+start() {
+	fw3 start
+}
+
+stop() {
+	fw3 stop
+}
