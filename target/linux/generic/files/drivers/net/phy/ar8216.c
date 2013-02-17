@@ -42,7 +42,7 @@
 
 #define AR8XXX_MIB_WORK_DELAY	2000 /* msecs */
 
-struct ar8216_priv;
+struct ar8xxx_priv;
 
 #define AR8XXX_CAP_GIGE			BIT(0)
 #define AR8XXX_CAP_MIB_COUNTERS		BIT(1)
@@ -63,26 +63,26 @@ struct ar8xxx_mib_desc {
 struct ar8xxx_chip {
 	unsigned long caps;
 
-	int (*hw_init)(struct ar8216_priv *priv);
-	void (*init_globals)(struct ar8216_priv *priv);
-	void (*init_port)(struct ar8216_priv *priv, int port);
-	void (*setup_port)(struct ar8216_priv *priv, int port, u32 egress,
+	int (*hw_init)(struct ar8xxx_priv *priv);
+	void (*init_globals)(struct ar8xxx_priv *priv);
+	void (*init_port)(struct ar8xxx_priv *priv, int port);
+	void (*setup_port)(struct ar8xxx_priv *priv, int port, u32 egress,
 			   u32 ingress, u32 members, u32 pvid);
-	u32 (*read_port_status)(struct ar8216_priv *priv, int port);
-	int (*atu_flush)(struct ar8216_priv *priv);
-	void (*vtu_flush)(struct ar8216_priv *priv);
-	void (*vtu_load_vlan)(struct ar8216_priv *priv, u32 vid, u32 port_mask);
+	u32 (*read_port_status)(struct ar8xxx_priv *priv, int port);
+	int (*atu_flush)(struct ar8xxx_priv *priv);
+	void (*vtu_flush)(struct ar8xxx_priv *priv);
+	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
 
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
 };
 
-struct ar8216_priv {
+struct ar8xxx_priv {
 	struct switch_dev dev;
 	struct mii_bus *mii_bus;
 	struct phy_device *phy;
-	u32 (*read)(struct ar8216_priv *priv, int reg);
-	void (*write)(struct ar8216_priv *priv, int reg, u32 val);
+	u32 (*read)(struct ar8xxx_priv *priv, int reg);
+	void (*write)(struct ar8xxx_priv *priv, int reg, u32 val);
 	const struct net_device_ops *ndo_old;
 	struct net_device_ops ndo;
 	struct mutex reg_mutex;
@@ -204,38 +204,38 @@ static const struct ar8xxx_mib_desc ar8236_mibs[] = {
 static DEFINE_MUTEX(ar8xxx_dev_list_lock);
 static LIST_HEAD(ar8xxx_dev_list);
 
-static inline struct ar8216_priv *
-swdev_to_ar8216(struct switch_dev *swdev)
+static inline struct ar8xxx_priv *
+swdev_to_ar8xxx(struct switch_dev *swdev)
 {
-	return container_of(swdev, struct ar8216_priv, dev);
+	return container_of(swdev, struct ar8xxx_priv, dev);
 }
 
-static inline bool ar8xxx_has_gige(struct ar8216_priv *priv)
+static inline bool ar8xxx_has_gige(struct ar8xxx_priv *priv)
 {
 	return priv->chip->caps & AR8XXX_CAP_GIGE;
 }
 
-static inline bool ar8xxx_has_mib_counters(struct ar8216_priv *priv)
+static inline bool ar8xxx_has_mib_counters(struct ar8xxx_priv *priv)
 {
 	return priv->chip->caps & AR8XXX_CAP_MIB_COUNTERS;
 }
 
-static inline bool chip_is_ar8216(struct ar8216_priv *priv)
+static inline bool chip_is_ar8216(struct ar8xxx_priv *priv)
 {
 	return priv->chip_ver == AR8XXX_VER_AR8216;
 }
 
-static inline bool chip_is_ar8236(struct ar8216_priv *priv)
+static inline bool chip_is_ar8236(struct ar8xxx_priv *priv)
 {
 	return priv->chip_ver == AR8XXX_VER_AR8236;
 }
 
-static inline bool chip_is_ar8316(struct ar8216_priv *priv)
+static inline bool chip_is_ar8316(struct ar8xxx_priv *priv)
 {
 	return priv->chip_ver == AR8XXX_VER_AR8316;
 }
 
-static inline bool chip_is_ar8327(struct ar8216_priv *priv)
+static inline bool chip_is_ar8327(struct ar8xxx_priv *priv)
 {
 	return priv->chip_ver == AR8XXX_VER_AR8327;
 }
@@ -254,7 +254,7 @@ split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
 }
 
 static u32
-ar8216_mii_read(struct ar8216_priv *priv, int reg)
+ar8216_mii_read(struct ar8xxx_priv *priv, int reg)
 {
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, page;
@@ -275,7 +275,7 @@ ar8216_mii_read(struct ar8216_priv *priv, int reg)
 }
 
 static void
-ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
+ar8216_mii_write(struct ar8xxx_priv *priv, int reg, u32 val)
 {
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, r3;
@@ -301,7 +301,7 @@ ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
 }
 
 static void
-ar8216_phy_dbg_write(struct ar8216_priv *priv, int phy_addr,
+ar8216_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
 		     u16 dbg_addr, u16 dbg_data)
 {
 	struct mii_bus *bus = priv->mii_bus;
@@ -313,7 +313,7 @@ ar8216_phy_dbg_write(struct ar8216_priv *priv, int phy_addr,
 }
 
 static void
-ar8216_phy_mmd_write(struct ar8216_priv *priv, int phy_addr, u16 addr, u16 data)
+ar8216_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data)
 {
 	struct mii_bus *bus = priv->mii_bus;
 
@@ -324,7 +324,7 @@ ar8216_phy_mmd_write(struct ar8216_priv *priv, int phy_addr, u16 addr, u16 data)
 }
 
 static u32
-ar8216_rmw(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
+ar8216_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 {
 	u32 v;
 
@@ -339,7 +339,7 @@ ar8216_rmw(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
 }
 
 static inline void
-ar8216_reg_set(struct ar8216_priv *priv, int reg, u32 val)
+ar8216_reg_set(struct ar8xxx_priv *priv, int reg, u32 val)
 {
 	u32 v;
 
@@ -351,7 +351,7 @@ ar8216_reg_set(struct ar8216_priv *priv, int reg, u32 val)
 }
 
 static int
-ar8216_reg_wait(struct ar8216_priv *priv, u32 reg, u32 mask, u32 val,
+ar8216_reg_wait(struct ar8xxx_priv *priv, u32 reg, u32 mask, u32 val,
 		unsigned timeout)
 {
 	int i;
@@ -370,7 +370,7 @@ ar8216_reg_wait(struct ar8216_priv *priv, u32 reg, u32 mask, u32 val,
 }
 
 static int
-ar8216_mib_op(struct ar8216_priv *priv, u32 op)
+ar8216_mib_op(struct ar8xxx_priv *priv, u32 op)
 {
 	unsigned mib_func;
 	int ret;
@@ -399,19 +399,19 @@ out:
 }
 
 static int
-ar8216_mib_capture(struct ar8216_priv *priv)
+ar8216_mib_capture(struct ar8xxx_priv *priv)
 {
 	return ar8216_mib_op(priv, AR8216_MIB_FUNC_CAPTURE);
 }
 
 static int
-ar8216_mib_flush(struct ar8216_priv *priv)
+ar8216_mib_flush(struct ar8xxx_priv *priv)
 {
 	return ar8216_mib_op(priv, AR8216_MIB_FUNC_FLUSH);
 }
 
 static void
-ar8216_mib_fetch_port_stat(struct ar8216_priv *priv, int port, bool flush)
+ar8216_mib_fetch_port_stat(struct ar8xxx_priv *priv, int port, bool flush)
 {
 	unsigned int base;
 	u64 *mib_stats;
@@ -451,7 +451,7 @@ ar8216_mib_fetch_port_stat(struct ar8216_priv *priv, int port, bool flush)
 }
 
 static void
-ar8216_read_port_link(struct ar8216_priv *priv, int port,
+ar8216_read_port_link(struct ar8xxx_priv *priv, int port,
 		      struct switch_port_link *link)
 {
 	u32 status;
@@ -496,7 +496,7 @@ ar8216_read_port_link(struct ar8216_priv *priv, int port,
 static struct sk_buff *
 ar8216_mangle_tx(struct net_device *dev, struct sk_buff *skb)
 {
-	struct ar8216_priv *priv = dev->phy_ptr;
+	struct ar8xxx_priv *priv = dev->phy_ptr;
 	unsigned char *buf;
 
 	if (unlikely(!priv))
@@ -525,7 +525,7 @@ error:
 static void
 ar8216_mangle_rx(struct net_device *dev, struct sk_buff *skb)
 {
-	struct ar8216_priv *priv;
+	struct ar8xxx_priv *priv;
 	unsigned char *buf;
 	int port, vlan;
 
@@ -560,7 +560,7 @@ ar8216_mangle_rx(struct net_device *dev, struct sk_buff *skb)
 }
 
 static int
-ar8216_wait_bit(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
+ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 {
 	int timeout = 20;
 	u32 t = 0;
@@ -582,7 +582,7 @@ ar8216_wait_bit(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
 }
 
 static void
-ar8216_vtu_op(struct ar8216_priv *priv, u32 op, u32 val)
+ar8216_vtu_op(struct ar8xxx_priv *priv, u32 op, u32 val)
 {
 	if (ar8216_wait_bit(priv, AR8216_REG_VTU, AR8216_VTU_ACTIVE, 0))
 		return;
@@ -596,13 +596,13 @@ ar8216_vtu_op(struct ar8216_priv *priv, u32 op, u32 val)
 }
 
 static void
-ar8216_vtu_flush(struct ar8216_priv *priv)
+ar8216_vtu_flush(struct ar8xxx_priv *priv)
 {
 	ar8216_vtu_op(priv, AR8216_VTU_OP_FLUSH, 0);
 }
 
 static void
-ar8216_vtu_load_vlan(struct ar8216_priv *priv, u32 vid, u32 port_mask)
+ar8216_vtu_load_vlan(struct ar8xxx_priv *priv, u32 vid, u32 port_mask)
 {
 	u32 op;
 
@@ -611,7 +611,7 @@ ar8216_vtu_load_vlan(struct ar8216_priv *priv, u32 vid, u32 port_mask)
 }
 
 static int
-ar8216_atu_flush(struct ar8216_priv *priv)
+ar8216_atu_flush(struct ar8xxx_priv *priv)
 {
 	int ret;
 
@@ -623,13 +623,13 @@ ar8216_atu_flush(struct ar8216_priv *priv)
 }
 
 static u32
-ar8216_read_port_status(struct ar8216_priv *priv, int port)
+ar8216_read_port_status(struct ar8xxx_priv *priv, int port)
 {
 	return priv->read(priv, AR8216_REG_PORT_STATUS(port));
 }
 
 static void
-ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
+ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 egress, u32 ingress,
 		  u32 members, u32 pvid)
 {
 	u32 header;
@@ -656,13 +656,13 @@ ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 }
 
 static int
-ar8216_hw_init(struct ar8216_priv *priv)
+ar8216_hw_init(struct ar8xxx_priv *priv)
 {
 	return 0;
 }
 
 static void
-ar8216_init_globals(struct ar8216_priv *priv)
+ar8216_init_globals(struct ar8xxx_priv *priv)
 {
 	/* standard atheros magic */
 	priv->write(priv, 0x38, 0xc000050e);
@@ -672,7 +672,7 @@ ar8216_init_globals(struct ar8216_priv *priv)
 }
 
 static void
-ar8216_init_port(struct ar8216_priv *priv, int port)
+ar8216_init_port(struct ar8xxx_priv *priv, int port)
 {
 	/* Enable port learning and tx */
 	priv->write(priv, AR8216_REG_PORT_CTRL(port),
@@ -714,7 +714,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 };
 
 static void
-ar8236_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
+ar8236_setup_port(struct ar8xxx_priv *priv, int port, u32 egress, u32 ingress,
 		  u32 members, u32 pvid)
 {
 	ar8216_rmw(priv, AR8216_REG_PORT_CTRL(port),
@@ -737,7 +737,7 @@ ar8236_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 }
 
 static int
-ar8236_hw_init(struct ar8216_priv *priv)
+ar8236_hw_init(struct ar8xxx_priv *priv)
 {
 	int i;
 	struct mii_bus *bus;
@@ -760,7 +760,7 @@ ar8236_hw_init(struct ar8216_priv *priv)
 }
 
 static void
-ar8236_init_globals(struct ar8216_priv *priv)
+ar8236_init_globals(struct ar8xxx_priv *priv)
 {
 	/* enable jumbo frames */
 	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
@@ -788,7 +788,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 };
 
 static int
-ar8316_hw_init(struct ar8216_priv *priv)
+ar8316_hw_init(struct ar8xxx_priv *priv)
 {
 	int i;
 	u32 val, newval;
@@ -849,7 +849,7 @@ out:
 }
 
 static void
-ar8316_init_globals(struct ar8216_priv *priv)
+ar8316_init_globals(struct ar8xxx_priv *priv)
 {
 	/* standard atheros magic */
 	priv->write(priv, 0x38, 0xc000050e);
@@ -977,7 +977,7 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 }
 
 static void
-ar8327_phy_fixup(struct ar8216_priv *priv, int phy)
+ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
 {
 	switch (priv->chip_rev) {
 	case 1:
@@ -1003,7 +1003,7 @@ ar8327_phy_fixup(struct ar8216_priv *priv, int phy)
 }
 
 static int
-ar8327_hw_init(struct ar8216_priv *priv)
+ar8327_hw_init(struct ar8xxx_priv *priv)
 {
 	struct ar8327_platform_data *pdata;
 	struct ar8327_led_cfg *led_cfg;
@@ -1062,7 +1062,7 @@ ar8327_hw_init(struct ar8216_priv *priv)
 }
 
 static void
-ar8327_init_globals(struct ar8216_priv *priv)
+ar8327_init_globals(struct ar8xxx_priv *priv)
 {
 	u32 t;
 
@@ -1087,7 +1087,7 @@ ar8327_init_globals(struct ar8216_priv *priv)
 }
 
 static void
-ar8327_config_port(struct ar8216_priv *priv, unsigned int port,
+ar8327_config_port(struct ar8xxx_priv *priv, unsigned int port,
 		    struct ar8327_port_cfg *cfg)
 {
 	u32 t;
@@ -1119,7 +1119,7 @@ ar8327_config_port(struct ar8216_priv *priv, unsigned int port,
 }
 
 static void
-ar8327_init_port(struct ar8216_priv *priv, int port)
+ar8327_init_port(struct ar8xxx_priv *priv, int port)
 {
 	struct ar8327_platform_data *pdata;
 	struct ar8327_port_cfg *cfg;
@@ -1151,13 +1151,13 @@ ar8327_init_port(struct ar8216_priv *priv, int port)
 }
 
 static u32
-ar8327_read_port_status(struct ar8216_priv *priv, int port)
+ar8327_read_port_status(struct ar8xxx_priv *priv, int port)
 {
 	return priv->read(priv, AR8327_REG_PORT_STATUS(port));
 }
 
 static int
-ar8327_atu_flush(struct ar8216_priv *priv)
+ar8327_atu_flush(struct ar8xxx_priv *priv)
 {
 	int ret;
 
@@ -1171,7 +1171,7 @@ ar8327_atu_flush(struct ar8216_priv *priv)
 }
 
 static void
-ar8327_vtu_op(struct ar8216_priv *priv, u32 op, u32 val)
+ar8327_vtu_op(struct ar8xxx_priv *priv, u32 op, u32 val)
 {
 	if (ar8216_wait_bit(priv, AR8327_REG_VTU_FUNC1,
 			    AR8327_VTU_FUNC1_BUSY, 0))
@@ -1185,13 +1185,13 @@ ar8327_vtu_op(struct ar8216_priv *priv, u32 op, u32 val)
 }
 
 static void
-ar8327_vtu_flush(struct ar8216_priv *priv)
+ar8327_vtu_flush(struct ar8xxx_priv *priv)
 {
 	ar8327_vtu_op(priv, AR8327_VTU_FUNC1_OP_FLUSH, 0);
 }
 
 static void
-ar8327_vtu_load_vlan(struct ar8216_priv *priv, u32 vid, u32 port_mask)
+ar8327_vtu_load_vlan(struct ar8xxx_priv *priv, u32 vid, u32 port_mask)
 {
 	u32 op;
 	u32 val;
@@ -1217,7 +1217,7 @@ ar8327_vtu_load_vlan(struct ar8216_priv *priv, u32 vid, u32 port_mask)
 }
 
 static void
-ar8327_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
+ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 egress, u32 ingress,
 		  u32 members, u32 pvid)
 {
 	u32 t;
@@ -1270,7 +1270,7 @@ static int
 ar8216_sw_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 		   struct switch_val *val)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	priv->vlan = !!val->value.i;
 	return 0;
 }
@@ -1279,7 +1279,7 @@ static int
 ar8216_sw_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 		   struct switch_val *val)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	val->value.i = priv->vlan;
 	return 0;
 }
@@ -1288,7 +1288,7 @@ ar8216_sw_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 static int
 ar8216_sw_set_pvid(struct switch_dev *dev, int port, int vlan)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 
 	/* make sure no invalid PVIDs get set */
 
@@ -1302,7 +1302,7 @@ ar8216_sw_set_pvid(struct switch_dev *dev, int port, int vlan)
 static int
 ar8216_sw_get_pvid(struct switch_dev *dev, int port, int *vlan)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	*vlan = priv->pvid[port];
 	return 0;
 }
@@ -1311,7 +1311,7 @@ static int
 ar8216_sw_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 		  struct switch_val *val)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	priv->vlan_id[val->port_vlan] = val->value.i;
 	return 0;
 }
@@ -1320,7 +1320,7 @@ static int
 ar8216_sw_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 		  struct switch_val *val)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	val->value.i = priv->vlan_id[val->port_vlan];
 	return 0;
 }
@@ -1329,7 +1329,7 @@ static int
 ar8216_sw_get_port_link(struct switch_dev *dev, int port,
 			struct switch_port_link *link)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 
 	ar8216_read_port_link(priv, port, link);
 	return 0;
@@ -1338,7 +1338,7 @@ ar8216_sw_get_port_link(struct switch_dev *dev, int port,
 static int
 ar8216_sw_get_ports(struct switch_dev *dev, struct switch_val *val)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	u8 ports = priv->vlan_table[val->port_vlan];
 	int i;
 
@@ -1362,7 +1362,7 @@ ar8216_sw_get_ports(struct switch_dev *dev, struct switch_val *val)
 static int
 ar8216_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	u8 *vt = &priv->vlan_table[val->port_vlan];
 	int i, j;
 
@@ -1393,7 +1393,7 @@ ar8216_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 static int
 ar8216_sw_hw_apply(struct switch_dev *dev)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	u8 portmask[AR8X16_MAX_PORTS];
 	int i, j;
 
@@ -1460,12 +1460,12 @@ ar8216_sw_hw_apply(struct switch_dev *dev)
 static int
 ar8216_sw_reset_switch(struct switch_dev *dev)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	int i;
 
 	mutex_lock(&priv->reg_mutex);
-	memset(&priv->vlan, 0, sizeof(struct ar8216_priv) -
-		offsetof(struct ar8216_priv, vlan));
+	memset(&priv->vlan, 0, sizeof(struct ar8xxx_priv) -
+		offsetof(struct ar8xxx_priv, vlan));
 
 	for (i = 0; i < AR8X16_MAX_VLANS; i++)
 		priv->vlan_id[i] = i;
@@ -1485,7 +1485,7 @@ ar8216_sw_set_reset_mibs(struct switch_dev *dev,
 			 const struct switch_attr *attr,
 			 struct switch_val *val)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	unsigned int len;
 	int ret;
 
@@ -1513,7 +1513,7 @@ ar8216_sw_set_port_reset_mib(struct switch_dev *dev,
 			     const struct switch_attr *attr,
 			     struct switch_val *val)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	int port;
 	int ret;
 
@@ -1543,7 +1543,7 @@ ar8216_sw_get_port_mib(struct switch_dev *dev,
 		       const struct switch_attr *attr,
 		       struct switch_val *val)
 {
-	struct ar8216_priv *priv = swdev_to_ar8216(dev);
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	const struct ar8xxx_chip *chip = priv->chip;
 	u64 *mib_stats;
 	int port;
@@ -1654,7 +1654,7 @@ static const struct switch_dev_ops ar8216_sw_ops = {
 };
 
 static int
-ar8216_id_chip(struct ar8216_priv *priv)
+ar8216_id_chip(struct ar8xxx_priv *priv)
 {
 	u32 val;
 	u16 id;
@@ -1707,10 +1707,10 @@ ar8216_id_chip(struct ar8216_priv *priv)
 static void
 ar8xxx_mib_work_func(struct work_struct *work)
 {
-	struct ar8216_priv *priv;
+	struct ar8xxx_priv *priv;
 	int err;
 
-	priv = container_of(work, struct ar8216_priv, mib_work.work);
+	priv = container_of(work, struct ar8xxx_priv, mib_work.work);
 
 	mutex_lock(&priv->mib_lock);
 
@@ -1731,7 +1731,7 @@ next_port:
 }
 
 static int
-ar8xxx_mib_init(struct ar8216_priv *priv)
+ar8xxx_mib_init(struct ar8xxx_priv *priv)
 {
 	unsigned int len;
 
@@ -1751,7 +1751,7 @@ ar8xxx_mib_init(struct ar8216_priv *priv)
 }
 
 static void
-ar8xxx_mib_start(struct ar8216_priv *priv)
+ar8xxx_mib_start(struct ar8xxx_priv *priv)
 {
 	if (!ar8xxx_has_mib_counters(priv))
 		return;
@@ -1761,7 +1761,7 @@ ar8xxx_mib_start(struct ar8216_priv *priv)
 }
 
 static void
-ar8xxx_mib_stop(struct ar8216_priv *priv)
+ar8xxx_mib_stop(struct ar8xxx_priv *priv)
 {
 	if (!ar8xxx_has_mib_counters(priv))
 		return;
@@ -1769,12 +1769,12 @@ ar8xxx_mib_stop(struct ar8216_priv *priv)
 	cancel_delayed_work(&priv->mib_work);
 }
 
-static struct ar8216_priv *
+static struct ar8xxx_priv *
 ar8xxx_create(void)
 {
-	struct ar8216_priv *priv;
+	struct ar8xxx_priv *priv;
 
-	priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
+	priv = kzalloc(sizeof(struct ar8xxx_priv), GFP_KERNEL);
 	if (priv == NULL)
 		return NULL;
 
@@ -1786,16 +1786,16 @@ ar8xxx_create(void)
 }
 
 static void
-ar8xxx_free(struct ar8216_priv *priv)
+ar8xxx_free(struct ar8xxx_priv *priv)
 {
 	kfree(priv->mib_stats);
 	kfree(priv);
 }
 
-static struct ar8216_priv *
+static struct ar8xxx_priv *
 ar8xxx_create_mii(struct mii_bus *bus)
 {
-	struct ar8216_priv *priv;
+	struct ar8xxx_priv *priv;
 
 	priv = ar8xxx_create();
 	if (priv) {
@@ -1808,7 +1808,7 @@ ar8xxx_create_mii(struct mii_bus *bus)
 }
 
 static int
-ar8xxx_probe_switch(struct ar8216_priv *priv)
+ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 {
 	struct switch_dev *swdev;
 	int ret;
@@ -1849,7 +1849,7 @@ ar8xxx_probe_switch(struct ar8216_priv *priv)
 static int
 ar8216_config_init(struct phy_device *phydev)
 {
-	struct ar8216_priv *priv = phydev->priv;
+	struct ar8xxx_priv *priv = phydev->priv;
 	struct net_device *dev = phydev->attached_dev;
 	int ret;
 
@@ -1899,7 +1899,7 @@ ar8216_config_init(struct phy_device *phydev)
 static int
 ar8216_read_status(struct phy_device *phydev)
 {
-	struct ar8216_priv *priv = phydev->priv;
+	struct ar8xxx_priv *priv = phydev->priv;
 	struct switch_port_link link;
 	int ret;
 
@@ -1988,7 +1988,7 @@ ar8xxx_is_possible(struct mii_bus *bus)
 static int
 ar8216_probe(struct phy_device *phydev)
 {
-	struct ar8216_priv *priv;
+	struct ar8xxx_priv *priv;
 	struct switch_dev *swdev;
 	int ret;
 
@@ -2072,7 +2072,7 @@ ar8216_detach(struct phy_device *phydev)
 static void
 ar8216_remove(struct phy_device *phydev)
 {
-	struct ar8216_priv *priv = phydev->priv;
+	struct ar8xxx_priv *priv = phydev->priv;
 
 	if (WARN_ON(!priv))
 		return;
