@@ -1,6 +1,7 @@
 #!/bin/sh
-# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 # Copyright (C) 2006 Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
+# Copyright (C) 2010 Vertical Communications
 
 
 debug () {
@@ -406,10 +407,6 @@ pi_include() {
 	return 0
 }
 
-#!/bin/sh
-# Copyright (C) 2006-2010 OpenWrt.org
-# Copyright (C) 2010 Vertical Communications
-
 boot_hook_splice_start() {
 	export -n PI_HOOK_SPLICE=1
 }
@@ -472,7 +469,7 @@ boot_run_hook() {
 	done
 }
 
-jffs2_ready () {
+jffs2_ready() {
 	mtdpart="$(find_mtd_part rootfs_data)"
 	[ -z "$mtdpart" ] && return 1
 	magic=$(hexdump $mtdpart -n 4 -e '4/1 "%02x"')
