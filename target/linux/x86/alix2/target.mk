@@ -19,7 +19,7 @@ DEFAULT_PACKAGES += \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
 			kmod-ledtrig-netdev \
 			kmod-cpu-msr hwclock wpad
-LINUX_VERSION:=3.7.8
+LINUX_VERSION:=3.7.9
 CS5535_MASK:=0x0b000042
 
 CFLAGS += -march=geode -Os -mmmx -m3dnow -fno-align-jumps -fno-align-functions \
