@@ -1,19 +1,17 @@
 #!/bin/sh
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2013 OpenWrt.org
 
-set_led() {
-	local led="$1"
-	local state="$2"
-	[ -d "/sys/class/leds/rb500led:$led" ] && echo "$state" > "/sys/class/leds/rb500led:$led/brightness"
-}
+. /lib/functions/leds.sh
+
+status_led="rb500led:amber"
 
 set_state() {
 	case "$1" in
-		preinit)
-			set_led amber 1
+	preinit)
+		status_led_on
 		;;
-		done)
-			set_led amber 0
+	done)
+		status_led_off
 		;;
 	esac
 }
