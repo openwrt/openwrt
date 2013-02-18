@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2007-2012 OpenWrt.org
+# Copyright (C) 2007-2013 OpenWrt.org
 
 # This setup gives us 4.5 distinguishable states:
 #
@@ -12,37 +12,31 @@
 # (1-LED) Heartbeat:    normal operation
 # (2-LED) Solid GREEN:  normal operation
 
+. /lib/functions/leds.sh
+
+get_status_led() {
+	[ -d "/sys/class/leds/status" ] && status_led="status"
+	[ -d "/sys/class/leds/power:green" ] && status_led="power:green"
+}
+
 set_state() {
-        case "$1" in
-                preinit)
-                        [ -d /sys/class/leds/status ] && {
-                                echo timer >/sys/class/leds/status/trigger
-                                echo 100 >/sys/class/leds/status/delay_on
-                                echo 100 >/sys/class/leds/status/delay_off
-                        :; } || [ -d /sys/class/leds/power\:green ] && {
-                                echo timer >/sys/class/leds/power\:green/trigger
-                                echo 100 >/sys/class/leds/power\:green/delay_on
-                                echo 100 >/sys/class/leds/power\:green/delay_off
-                        }
-                ;;
-                failsafe)
-                        [ -d /sys/class/leds/status ] && {
-                                echo timer >/sys/class/leds/status/trigger
-                                echo 50 >/sys/class/leds/status/delay_on
-                                echo 50 >/sys/class/leds/status/delay_off
-                        :; } || [ -d /sys/class/leds/power\:green ] && {
-                                echo timer >/sys/class/leds/power\:green/trigger
-                                echo 50 >/sys/class/leds/power\:green/delay_on
-                                echo 50 >/sys/class/leds/power\:green/delay_off
-                        }
-                ;;
-                done)
-                        [ -d /sys/class/leds/status ] && {
-                                echo heartbeat >/sys/class/leds/status/trigger
-                        :; } || [ -d /sys/class/leds/power\:green ] && {
-                                echo default-on >/sys/class/leds/power\:green/trigger
-                                echo none >/sys/class/leds/power\:red/trigger
-                        }
-                ;;
-        esac
+	get_status_led
+
+	case "$1" in
+	preinit)
+		status_led_set_timer 100 100
+		;;
+	failsafe)
+		status_led_set_timer 50 50
+		;;
+	done)
+		[ "$status_led" = "status" ] && {
+			status_led_set_heartbeat
+		}
+		[ "$status_led" = "power:green" ] && {
+			status_led_set_on
+			led_off "power:red"
+		}
+		;;
+	esac
 }
