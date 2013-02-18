@@ -1,32 +1,8 @@
 #!/bin/sh
-#
-# Copyright (C) 2009 OpenWrt.org
-#
-#
+# Copyright (C) 2009-2013 OpenWrt.org
 
+. /lib/functions/leds.sh
 . /lib/ar71xx.sh
-
-status_led=""
-
-led_set_attr() {
-	[ -f "/sys/class/leds/$1/$2" ] && echo "$3" > "/sys/class/leds/$1/$2"
-}
-
-status_led_set_timer() {
-	led_set_attr $status_led "trigger" "timer"
-	led_set_attr $status_led "delay_on" "$1"
-	led_set_attr $status_led "delay_off" "$2"
-}
-
-status_led_on() {
-	led_set_attr $status_led "trigger" "none"
-	led_set_attr $status_led "brightness" 255
-}
-
-status_led_off() {
-	led_set_attr $status_led "trigger" "none"
-	led_set_attr $status_led "brightness" 0
-}
 
 get_status_led() {
 	case $(ar71xx_board_name) in
@@ -200,7 +176,7 @@ get_status_led() {
 	zcn-1523h-2 | zcn-1523h-5)
 		status_led="zcn-1523h:amber:init"
 		;;
-	esac;
+	esac
 }
 
 set_state() {
@@ -211,10 +187,10 @@ set_state() {
 		insmod leds-gpio
 		insmod ledtrig-default-on
 		insmod ledtrig-timer
-		status_led_set_timer 200 200
+		status_led_blink_preinit
 		;;
 	failsafe)
-		status_led_set_timer 50 50
+		status_led_blink_failsafe
 		;;
 	done)
 		status_led_on
