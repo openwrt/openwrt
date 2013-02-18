@@ -1,20 +1,17 @@
 #!/bin/sh
-# Copyright (C) 2009-2011 OpenWrt.org
+# Copyright (C) 2009-2013 OpenWrt.org
 
-front_led=/sys/class/leds/qube::front
+. /lib/functions/leds.sh
+
+status_led="qube::front"
 
 set_state() {
-        case "$1" in
-                preinit)
-                        [ -d $front_led ] && {
-                                echo none > $front_led/trigger
-                                echo 255 > $front_led/brightness
-                        }
-                ;;
-                done)
-                        [ -d $front_led ] && {
-				echo 0 > $front_led/brightness
-                        }
-                ;;
-        esac
+	case "$1" in
+	preinit)
+		status_led_on
+		;;
+	done)
+		status_led_off
+		;;
+	esac
 }
