@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
 	kmod-input-core kmod-input-gpio-keys kmod-button-hotplug \
-	kmod-booke-wdt
+	kmod-booke-wdt swconfig
 
 define Target/Description
 	Build images for the Freescale MPC85xx based boards.
