@@ -205,7 +205,7 @@ static int ag71xx_mdio_write(struct mii_bus *bus, int addr, int reg, u16 val)
 	return 0;
 }
 
-static int __devinit ag71xx_mdio_probe(struct platform_device *pdev)
+static int ag71xx_mdio_probe(struct platform_device *pdev)
 {
 	struct ag71xx_mdio_platform_data *pdata;
 	struct ag71xx_mdio *am;
@@ -281,7 +281,7 @@ err_out:
 	return err;
 }
 
-static int __devexit ag71xx_mdio_remove(struct platform_device *pdev)
+static int ag71xx_mdio_remove(struct platform_device *pdev)
 {
 	struct ag71xx_mdio *am = platform_get_drvdata(pdev);
 
@@ -298,7 +298,7 @@ static int __devexit ag71xx_mdio_remove(struct platform_device *pdev)
 
 static struct platform_driver ag71xx_mdio_driver = {
 	.probe		= ag71xx_mdio_probe,
-	.remove		= __exit_p(ag71xx_mdio_remove),
+	.remove		= ag71xx_mdio_remove,
 	.driver = {
 		.name	= "ag71xx-mdio",
 	}

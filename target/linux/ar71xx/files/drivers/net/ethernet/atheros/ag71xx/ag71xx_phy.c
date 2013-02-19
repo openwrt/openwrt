@@ -193,7 +193,7 @@ static struct mii_bus *dev_to_mii_bus(struct device *dev)
 	return NULL;
 }
 
-int __devinit ag71xx_phy_connect(struct ag71xx *ag)
+int ag71xx_phy_connect(struct ag71xx *ag)
 {
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 

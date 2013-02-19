@@ -248,7 +248,7 @@ static void __init rb750_nand_gpio_init(struct rb750_nand_info *info)
 	info->pdata->latch_change(~out & RB750_NAND_IO0, out & RB750_NAND_IO0);
 }
 
-static int __devinit rb750_nand_probe(struct platform_device *pdev)
+static int rb750_nand_probe(struct platform_device *pdev)
 {
 	struct rb750_nand_info	*info;
 	struct rb7xx_nand_platform_data *pdata;
@@ -315,7 +315,7 @@ err_free_info:
 	return ret;
 }
 
-static int __devexit rb750_nand_remove(struct platform_device *pdev)
+static int rb750_nand_remove(struct platform_device *pdev)
 {
 	struct rb750_nand_info *info = platform_get_drvdata(pdev);
 
@@ -328,7 +328,7 @@ static int __devexit rb750_nand_remove(struct platform_device *pdev)
 
 static struct platform_driver rb750_nand_driver = {
 	.probe	= rb750_nand_probe,
-	.remove	= __devexit_p(rb750_nand_remove),
+	.remove	= rb750_nand_remove,
 	.driver	= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,

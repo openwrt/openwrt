@@ -356,7 +356,7 @@ static int rb4xx_cpld_gpio_init(struct rb4xx_cpld *cpld, unsigned int base)
 	return err;
 }
 
-static int __devinit rb4xx_cpld_probe(struct spi_device *spi)
+static int rb4xx_cpld_probe(struct spi_device *spi)
 {
 	struct rb4xx_cpld *cpld;
 	struct rb4xx_cpld_platform_data *pdata;
@@ -401,7 +401,7 @@ err_drvdata:
 	return err;
 }
 
-static int __devexit rb4xx_cpld_remove(struct spi_device *spi)
+static int rb4xx_cpld_remove(struct spi_device *spi)
 {
 	struct rb4xx_cpld *cpld;
 
@@ -420,7 +420,7 @@ static struct spi_driver rb4xx_cpld_driver = {
 		.owner		= THIS_MODULE,
 	},
 	.probe		= rb4xx_cpld_probe,
-	.remove		= __devexit_p(rb4xx_cpld_remove),
+	.remove		= rb4xx_cpld_remove,
 };
 
 static int __init rb4xx_cpld_init(void)

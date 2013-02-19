@@ -1056,7 +1056,7 @@ static const struct net_device_ops ag71xx_netdev_ops = {
 #endif
 };
 
-static __devinit const char *ag71xx_get_phy_if_mode_name(phy_interface_t mode)
+static const char *ag71xx_get_phy_if_mode_name(phy_interface_t mode)
 {
 	switch (mode) {
 	case PHY_INTERFACE_MODE_MII:
@@ -1077,7 +1077,7 @@ static __devinit const char *ag71xx_get_phy_if_mode_name(phy_interface_t mode)
 }
 
 
-static int __devinit ag71xx_probe(struct platform_device *pdev)
+static int ag71xx_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
 	struct resource *res;
@@ -1210,7 +1210,7 @@ err_out:
 	return err;
 }
 
-static int __devexit ag71xx_remove(struct platform_device *pdev)
+static int ag71xx_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 
@@ -1231,7 +1231,7 @@ static int __devexit ag71xx_remove(struct platform_device *pdev)
 
 static struct platform_driver ag71xx_driver = {
 	.probe		= ag71xx_probe,
-	.remove		= __exit_p(ag71xx_remove),
+	.remove		= ag71xx_remove,
 	.driver = {
 		.name	= AG71XX_DRV_NAME,
 	}

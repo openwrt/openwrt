@@ -151,7 +151,7 @@ static struct i2c_board_info nbg460n_i2c_devs[] __initdata = {
 	},
 };
 
-static void __devinit nbg460n_i2c_init(void)
+static void nbg460n_i2c_init(void)
 {
 	/* The gpio interface */
 	platform_device_register(&nbg460n_i2c_device);
