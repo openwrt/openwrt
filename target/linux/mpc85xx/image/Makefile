@@ -24,6 +24,11 @@ define Image/Build/ext2
 	cp $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-ext2.img
 endef
 
+define Image/Build/squashfs
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	cp $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs
+endef
+
 define Image/Build
 	$(call Image/Build/$(1),$(1))
 endef
