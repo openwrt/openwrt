@@ -28,6 +28,9 @@ CONFIGURE_ARGS += \
 	--without-pam \
 	--disable-libwrap
 
+CONFIGURE_VARS += \
+	CC="$(TARGET_CC) $(TARGET_CFLAGS)"
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
