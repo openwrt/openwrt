@@ -872,7 +872,7 @@ ar934x_nfc_irq_handler(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-static int __devinit
+static int
 ar934x_nfc_init_tail(struct mtd_info *mtd)
 {
 	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
@@ -998,7 +998,7 @@ ar934x_nfc_init_tail(struct mtd_info *mtd)
 	return err;
 }
 
-static int __devinit
+static int
 ar934x_nfc_probe(struct platform_device *pdev)
 {
 	static const char *part_probes[] = { "cmdlinepart", NULL, };
@@ -1128,7 +1128,7 @@ err_free_nand:
 	return ret;
 }
 
-static int __devexit
+static int
 ar934x_nfc_remove(struct platform_device *pdev)
 {
 	struct ar934x_nfc *nfc;
@@ -1147,7 +1147,7 @@ ar934x_nfc_remove(struct platform_device *pdev)
 
 static struct platform_driver ar934x_nfc_driver = {
 	.probe		= ar934x_nfc_probe,
-	.remove		= __devexit_p(ar934x_nfc_remove),
+	.remove		= ar934x_nfc_remove,
 	.driver = {
 		.name	= AR934X_NFC_DRIVER_NAME,
 		.owner	= THIS_MODULE,

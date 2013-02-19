@@ -526,7 +526,7 @@ static int vsc7385_detect(struct vsc7385 *vsc)
 	return 0;
 }
 
-static int __devinit vsc7385_probe(struct spi_device *spi)
+static int vsc7385_probe(struct spi_device *spi)
 {
 	struct vsc7385 *vsc;
 	struct vsc7385_platform_data *pdata;
@@ -581,7 +581,7 @@ err_drvdata:
 	return err;
 }
 
-static int __devexit vsc7385_remove(struct spi_device *spi)
+static int vsc7385_remove(struct spi_device *spi)
 {
 	struct vsc7385_data	*vsc;
 
@@ -599,7 +599,7 @@ static struct spi_driver vsc7385_driver = {
 		.owner		= THIS_MODULE,
 	},
 	.probe		= vsc7385_probe,
-	.remove		= __devexit_p(vsc7385_remove),
+	.remove		= vsc7385_remove,
 };
 
 static int __init vsc7385_init(void)

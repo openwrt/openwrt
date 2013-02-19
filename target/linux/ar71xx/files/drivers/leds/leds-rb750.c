@@ -52,7 +52,7 @@ static void rb750_led_brightness_set(struct led_classdev *led_cdev,
 		rbled->latch_change(rbled->mask, 0);
 }
 
-static int __devinit rb750_led_probe(struct platform_device *pdev)
+static int rb750_led_probe(struct platform_device *pdev)
 {
 	struct rb750_led_platform_data *pdata;
 	struct rb750_led_drvdata *drvdata;
@@ -101,7 +101,7 @@ err:
 	return ret;
 }
 
-static int __devexit rb750_led_remove(struct platform_device *pdev)
+static int rb750_led_remove(struct platform_device *pdev)
 {
 	struct rb750_led_drvdata *drvdata;
 	int i;
@@ -116,7 +116,7 @@ static int __devexit rb750_led_remove(struct platform_device *pdev)
 
 static struct platform_driver rb750_led_driver = {
 	.probe		= rb750_led_probe,
-	.remove		= __devexit_p(rb750_led_remove),
+	.remove		= rb750_led_remove,
 	.driver		= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,

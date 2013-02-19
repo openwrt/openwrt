@@ -74,7 +74,7 @@ static void nxp_74hc153_set_value(struct gpio_chip *gc,
 	/* not supported */
 }
 
-static int __devinit nxp_74hc153_probe(struct platform_device *pdev)
+static int nxp_74hc153_probe(struct platform_device *pdev)
 {
 	struct nxp_74hc153_platform_data *pdata;
 	struct nxp_74hc153_chip *nxp;
@@ -222,7 +222,7 @@ static int nxp_74hc153_remove(struct platform_device *pdev)
 
 static struct platform_driver nxp_74hc153_driver = {
 	.probe		= nxp_74hc153_probe,
-	.remove		= __devexit_p(nxp_74hc153_remove),
+	.remove		= nxp_74hc153_remove,
 	.driver = {
 		.name	= NXP_74HC153_DRIVER_NAME,
 		.owner	= THIS_MODULE,

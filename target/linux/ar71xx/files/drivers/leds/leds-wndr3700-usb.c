@@ -37,12 +37,12 @@ static struct led_classdev wndr3700_usb_led = {
 	.brightness_get = wndr3700_usb_led_get,
 };
 
-static int __devinit wndr3700_usb_led_probe(struct platform_device *pdev)
+static int wndr3700_usb_led_probe(struct platform_device *pdev)
 {
 	return led_classdev_register(&pdev->dev, &wndr3700_usb_led);
 }
 
-static int __devexit wndr3700_usb_led_remove(struct platform_device *pdev)
+static int wndr3700_usb_led_remove(struct platform_device *pdev)
 {
 	led_classdev_unregister(&wndr3700_usb_led);
 	return 0;
@@ -50,7 +50,7 @@ static int __devexit wndr3700_usb_led_remove(struct platform_device *pdev)
 
 static struct platform_driver wndr3700_usb_led_driver = {
 	.probe = wndr3700_usb_led_probe,
-	.remove = __devexit_p(wndr3700_usb_led_remove),
+	.remove = wndr3700_usb_led_remove,
 	.driver = {
 		.name = DRIVER_NAME,
 		.owner = THIS_MODULE,

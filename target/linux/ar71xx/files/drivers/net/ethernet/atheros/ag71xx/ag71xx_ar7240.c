@@ -1165,7 +1165,7 @@ void ag71xx_ar7240_stop(struct ag71xx *ag)
 	cancel_delayed_work_sync(&ag->link_work);
 }
 
-int __devinit ag71xx_ar7240_init(struct ag71xx *ag)
+int ag71xx_ar7240_init(struct ag71xx *ag)
 {
 	struct ar7240sw *as;
 

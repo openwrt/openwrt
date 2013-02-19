@@ -136,7 +136,7 @@ static void rb4xx_nand_read_buf(struct mtd_info *mtd, unsigned char *buf,
 		pr_err("rb4xx_nand: read buf failed, err=%d\n", err);
 }
 
-static int __devinit rb4xx_nand_probe(struct platform_device *pdev)
+static int rb4xx_nand_probe(struct platform_device *pdev)
 {
 	struct rb4xx_nand_info	*info;
 	int ret;
@@ -261,7 +261,7 @@ err:
 	return ret;
 }
 
-static int __devexit rb4xx_nand_remove(struct platform_device *pdev)
+static int rb4xx_nand_remove(struct platform_device *pdev)
 {
 	struct rb4xx_nand_info *info = platform_get_drvdata(pdev);
 
@@ -278,7 +278,7 @@ static int __devexit rb4xx_nand_remove(struct platform_device *pdev)
 
 static struct platform_driver rb4xx_nand_driver = {
 	.probe	= rb4xx_nand_probe,
-	.remove	= __devexit_p(rb4xx_nand_remove),
+	.remove	= rb4xx_nand_remove,
 	.driver	= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,
