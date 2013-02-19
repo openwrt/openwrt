@@ -40,7 +40,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  		mask = PORT_CSC | PORT_PEC | PORT_OCC;
  	else
  		mask = PORT_CSC | PORT_PEC;
-@@ -825,7 +825,7 @@ static int ehci_hub_control (
+@@ -829,7 +829,7 @@ static int ehci_hub_control (
  		if (temp & PORT_PEC)
  			status |= USB_PORT_STAT_C_ENABLE << 16;
  

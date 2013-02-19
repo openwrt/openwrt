@@ -49,7 +49,7 @@
  
  int ipv6_get_lladdr(struct net_device *dev, struct in6_addr *addr,
  		    unsigned char banned_flags)
-@@ -4946,6 +4945,9 @@ int __init addrconf_init(void)
+@@ -4947,6 +4946,9 @@ int __init addrconf_init(void)
  
  	ipv6_addr_label_rtnl_register();
  
@@ -59,7 +59,7 @@
  	return 0;
  errout:
  	rtnl_af_unregister(&inet6_ops);
-@@ -4964,6 +4966,9 @@ void addrconf_cleanup(void)
+@@ -4965,6 +4967,9 @@ void addrconf_cleanup(void)
  	struct net_device *dev;
  	int i;
  

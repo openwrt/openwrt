@@ -83,7 +83,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (!net_eq(dev_net(dev), sock_net(sk)))
  		goto drop;
  
-@@ -2537,6 +2539,7 @@ static int packet_create(struct net *net
+@@ -2539,6 +2541,7 @@ static int packet_create(struct net *net
  	spin_lock_init(&po->bind_lock);
  	mutex_init(&po->pg_vec_lock);
  	po->prot_hook.func = packet_rcv;
@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	if (sock->type == SOCK_PACKET)
  		po->prot_hook.func = packet_rcv_spkt;
-@@ -3150,6 +3153,16 @@ packet_setsockopt(struct socket *sock, i
+@@ -3152,6 +3155,16 @@ packet_setsockopt(struct socket *sock, i
  		po->tp_tx_has_off = !!val;
  		return 0;
  	}
@@ -108,7 +108,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	default:
  		return -ENOPROTOOPT;
  	}
-@@ -3204,6 +3217,13 @@ static int packet_getsockopt(struct sock
+@@ -3206,6 +3219,13 @@ static int packet_getsockopt(struct sock
  	case PACKET_VNET_HDR:
  		val = po->has_vnet_hdr;
  		break;
