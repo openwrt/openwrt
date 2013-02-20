@@ -356,7 +356,7 @@ define KernelPackage/md-raid456/description
     async_memcpy.ko
     async_pq.ko
     async_raid5_recov.ko
-    raid6_pq.ko 
+    raid6_pq.ko
 endef
 
 $(eval $(call KernelPackage,md-raid456))
