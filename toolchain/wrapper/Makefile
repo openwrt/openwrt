@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/toolchain-build.mk
 define toolchain_util
 $(strip $(SCRIPT_DIR)/ext-toolchain.sh --toolchain $(CONFIG_TOOLCHAIN_ROOT) \
 	--cflags $(CONFIG_TARGET_OPTIMIZATION) \
-	--cflags "-muclibc $(if $(CONFIG_SOFT_FLOAT),-msoft-float)" \
+	--cflags "$(if $(call qstrip,$(CONFIG_TOOLCHAIN_LIBC)),-m$(call qstrip,$(CONFIG_TOOLCHAIN_LIBC))) $(if $(CONFIG_SOFT_FLOAT),-msoft-float)" \
 	--cflags "$(patsubst ./%,-I$(TOOLCHAIN_ROOT_DIR)/%,$(call qstrip,$(CONFIG_TOOLCHAIN_INC_PATH)))" \
 	--cflags "$(patsubst ./%,-L$(TOOLCHAIN_ROOT_DIR)/%,$(call qstrip,$(CONFIG_TOOLCHAIN_LIB_PATH)))" \
 	$(1))
