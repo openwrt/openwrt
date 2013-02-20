@@ -50,6 +50,17 @@ menuconfig EXTERNAL_TOOLCHAIN
 		default "/opt/cross/powerpc-unknown-linux-gnu"  if powerpc
 		default "/opt/cross/x86_64-unknown-linux-gnu"   if x86_64
 
+	config TOOLCHAIN_LIBC
+		string
+		prompt "Toolchain libc"  if DEVEL
+		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "uclibc"
+		help
+		  Specify the libc type used by the external toolchain. The given value us passed as -m
+		  flag to all gcc and g++ invocations. This is mainly intended for multilib toolchains
+		  which support glibc and uclibc at the same time. If no value is specified, no -m flag
+		  is passed.
+
 	config TOOLCHAIN_BIN_PATH
 		string
 		prompt "Toolchain program path"  if DEVEL

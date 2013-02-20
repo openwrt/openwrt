@@ -356,6 +356,10 @@ print_config() {
 	echo "CONFIG_TOOLCHAIN_PREFIX=\"$prefix\"" >> "$config"
 	echo "CONFIG_TARGET_NAME=\"$target\"" >> "$config"
 
+	if [ "$LIBC_TYPE" != glibc ]; then
+		echo "CONFIG_TOOLCHAIN_LIBC=\"$LIBC_TYPE\"" >> "$config"
+	fi
+
 	local lib
 	for lib in C RT PTHREAD GCC STDCPP SSP GFORTRAN; do
 		local file
