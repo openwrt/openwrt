@@ -81,10 +81,10 @@ start() {
 
 	BEGIN {
 		FS="="
-		c["lan_ifname"]="eth0.0"
-		c["wan_ifname"]="eth0.1"
-		c["vlan0ports"]="1 2 3 4 5"
-		c["vlan1ports"]="0 5"
+		c["lan_ifname"]="eth0.1"
+		c["wan_ifname"]="eth0.2"
+		c["vlan1ports"]="1 2 3 4 5"
+		c["vlan2ports"]="0 5"
 		getline < "/proc/diag/model"
 		model=$0
 		for (i = 0; i < 6; i++) {
@@ -95,8 +95,8 @@ start() {
 			getline < "/proc/switch/eth0/cpuport"
 			cpuport=$0
 			if (cpuport == "8") {
-				c["vlan0ports"]="1 2 3 4 8"
-				c["vlan1ports"]="0 8"
+				c["vlan1ports"]="1 2 3 4 8"
+				c["vlan2ports"]="0 8"
 			}
 		}
 	}
@@ -109,13 +109,13 @@ start() {
 	END {
 		if (((nvram["vlan0ports"] ~ /^0 1 2 3 8/ ) && (nvram["vlan1ports"] ~ /^4 8/ && (cpuport == "8"))) || \
 		    ((nvram["vlan1ports"] ~ /^0 1 2 3 8/ ) && (nvram["vlan2ports"] ~ /^4 8/ && (cpuport == "8")))) {
-			c["vlan0ports"] = "0 1 2 3 8"
-			c["vlan1ports"] = "4 8"
+			c["vlan1ports"] = "0 1 2 3 8"
+			c["vlan2ports"] = "4 8"
 		}
 		if (((nvram["vlan0ports"] ~ /^0 1 2 3 5/ ) && (nvram["vlan1ports"] ~ /^4 5/ && (cpuport == "5"))) || \
 		    ((nvram["vlan1ports"] ~ /^0 1 2 3 5/ ) && (nvram["vlan2ports"] ~ /^4 5/ && (cpuport == "5")))) {
-			c["vlan0ports"] = "0 1 2 3 5"
-			c["vlan1ports"] = "4 5"
+			c["vlan1ports"] = "0 1 2 3 5"
+			c["vlan2ports"] = "4 5"
 		}
 		if ((model == "ASUS WL-HDD") || (model == "ASUS WL-300g") || (model == "Linksys WAP54G V1")) {
 			c["wan_ifname"] = ""
@@ -123,23 +123,23 @@ start() {
 		}
 		if (model == "ASUS WL-330gE") {
 			c["wan_ifname"] = ""
-			c["lan_ifname"] = "eth0.0"
-			c["vlan0ports"] = "4 5"
-			c["vlan1ports"] = ""
+			c["lan_ifname"] = "eth0.1"
+			c["vlan1ports"] = "4 5"
+			c["vlan2ports"] = ""
 		}
 		if ((model == "ASUS WL-500g") || (model == "Microsoft MN-700")) {
 			c["wan_ifname"] = "eth1"
 			c["lan_ifname"] = "eth0"
 		}
 		if ((model == "ASUS WL-500g Premium V2") || (model == "Dell TrueMobile 2300 v2") || (model == "Buffalo WHR-G125")) {
-			c["vlan0ports"] = "0 1 2 3 5"
-			c["vlan1ports"] = "4 5"
+			c["vlan1ports"] = "0 1 2 3 5"
+			c["vlan2ports"] = "4 5"
 		}
 		if (model == "Dell TrueMobile 2300") {
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
-			c["vlan0ports"] = "0 1 2 3 4 5u"
-			c["vlan1ports"] = ""
+			c["vlan1ports"] = "0 1 2 3 4 5u"
+			c["vlan2ports"] = ""
 		}
 		if (nvram["boardtype"] == "bcm94710r4") {
 			# Toshiba WRC-1000
@@ -147,18 +147,18 @@ start() {
 			c["wan_ifname"] = "eth1"
 		}
 		if ((nvram["boardtype"] == "wgt634u") || (nvram["boardtype"] == "0x0467")) {
-			c["vlan0ports"] = "0 1 2 3 5"
-			c["vlan1ports"] = "4 5"
+			c["vlan1ports"] = "0 1 2 3 5"
+			c["vlan2ports"] = "4 5"
 		}
 		if ((nvram["boardtype"] == "0x042f") || (nvram["boardtype"] == "0x0472")) {
 			if (nvram["boardnum"] == "45") {
 				# WL-500gP
-				c["vlan0ports"] = "1 2 3 4 5"
-				c["vlan1ports"] = "0 5"
+				c["vlan1ports"] = "1 2 3 4 5"
+				c["vlan2ports"] = "0 5"
 			} else {
 				# Generic BCM94704
-				c["vlan0ports"] = "0 1 2 3 4 5u"
-				c["vlan1ports"] = ""
+				c["vlan1ports"] = "0 1 2 3 4 5u"
+				c["vlan2ports"] = ""
 				c["lan_ifname"] = "eth0"
 				c["wan_ifname"] = "eth1"
 
@@ -171,8 +171,8 @@ start() {
 		}
 		# Buffalo WBR-B11 and Buffalo WBR-G54
 		if (nvram["boardtype"] == "bcm94710ap") {
-			c["vlan0ports"] = "0 1 2 3 4 5u"
-			c["vlan1ports"] = ""
+			c["vlan1ports"] = "0 1 2 3 4 5u"
+			c["vlan2ports"] = ""
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
 		}
@@ -196,41 +196,41 @@ start() {
 		# Generic BCM94704 settings instead so we revert to proper settings here.
 		# Hopefully someone will fix this properly soon.
 		if (model == "ASUS WL-700gE") {
-			c["lan_ifname"]="eth0.0"
-			c["wan_ifname"]="eth0.1"
-			c["vlan0ports"]="1 2 3 4 5"
-			c["vlan1ports"]="0 5"
+			c["lan_ifname"]="eth0.1"
+			c["wan_ifname"]="eth0.2"
+			c["vlan1ports"]="1 2 3 4 5"
+			c["vlan2ports"]="0 5"
 		}
 		if ((model == "Motorola WR850G V2/V3") || (model == "Siemens SE505 V2")) {
-			c["vlan0ports"]="0 1 2 3 5"
-			c["vlan1ports"]="4 5"
+			c["vlan1ports"]="0 1 2 3 5"
+			c["vlan2ports"]="4 5"
 		}
 		if (model == "ASUS WL-500W") {
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
-			c["vlan0ports"] = "0 1 2 3 4 5u"
-			c["vlan1ports"] = ""
+			c["vlan1ports"] = "0 1 2 3 4 5u"
+			c["vlan2ports"] = ""
 		}
 		if (model == "OvisLink WL-1600GL") {
-			c["lan_ifname"] = "eth0.0"
-			c["wan_ifname"] = "eth0.1"
-			c["vlan0ports"] = "0 1 2 3 5"
-			c["vlan1ports"] = "4 5"
+			c["lan_ifname"] = "eth0.1"
+			c["wan_ifname"] = "eth0.2"
+			c["vlan1ports"] = "0 1 2 3 5"
+			c["vlan2ports"] = "4 5"
 		}
 		if (model == "SimpleTech SimpleShare NAS") {
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = ""
-			c["vlan0ports"] = ""
 			c["vlan1ports"] = ""
+			c["vlan2ports"] = ""
 		}
 
-		if (c["vlan0ports"] || c["vlan1ports"]) {
+		if (c["vlan1ports"] || c["vlan2ports"]) {
 			print "#### VLAN configuration "
 			print "config switch eth0"
 			print "	option enable   1"
 			print ""
-			vlan(0, "vlan0ports")
 			vlan(1, "vlan1ports")
+			vlan(2, "vlan2ports")
 		}
 		print "#### Loopback configuration"
 		print "config interface loopback"

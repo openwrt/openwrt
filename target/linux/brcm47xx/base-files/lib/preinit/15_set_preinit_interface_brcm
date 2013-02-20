@@ -27,11 +27,11 @@ preinit_net_echo() {
 		# this would be easier if we blasted the message across all ports
 		# but we don't want packets leaking across interfaces
 		for port in $(seq 0 4); do {
-			echo "$port ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
+			echo "$port ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/1/ports
 			port_net_echo $1
 		}; done
 
-		echo "0 1 2 3 4 ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
+		echo "0 1 2 3 4 ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/1/ports
 
 	} || port_net_echo $1
 }
