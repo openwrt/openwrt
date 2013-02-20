@@ -105,7 +105,7 @@ define KernelPackage/xen-fbdev
   	$(LINUX_DIR)/drivers/video/syscopyarea.ko \
   	$(LINUX_DIR)/drivers/video/sysfillrect.ko \
   	$(LINUX_DIR)/drivers/video/fb_sys_fops.ko \
-  	$(LINUX_DIR)/drivers/video/sysimgblt.ko  	
+  	$(LINUX_DIR)/drivers/video/sysimgblt.ko
   AUTOLOAD:=$(call AutoLoad,07, \
   	fb \
   	syscopyarea \

@@ -10,7 +10,7 @@ FS_MENU:=Filesystems
 define KernelPackage/fs-autofs4
   SUBMENU:=$(FS_MENU)
   TITLE:=AUTOFS4 filesystem support
-  KCONFIG:=CONFIG_AUTOFS4_FS 
+  KCONFIG:=CONFIG_AUTOFS4_FS
   FILES:=$(LINUX_DIR)/fs/autofs4/autofs4.ko
   AUTOLOAD:=$(call AutoLoad,30,autofs4)
 endef

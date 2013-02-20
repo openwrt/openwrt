@@ -81,7 +81,7 @@ define KernelPackage/ac97
   KCONFIG:=CONFIG_SND_AC97_CODEC
   FILES:= \
 	$(LINUX_DIR)/sound/ac97_bus.ko \
-	$(LINUX_DIR)/sound/pci/ac97/snd-ac97-codec.ko 
+	$(LINUX_DIR)/sound/pci/ac97/snd-ac97-codec.ko
   AUTOLOAD:=$(call AutoLoad,35,ac97_bus snd-ac97-codec)
   $(call AddDepends/sound)
 endef
@@ -121,7 +121,7 @@ endef
 
 define KernelPackage/sound-i8x0/description
  support for the integrated AC97 sound device on motherboards
- with Intel/SiS/nVidia/AMD chipsets, or ALi chipsets using 
+ with Intel/SiS/nVidia/AMD chipsets, or ALi chipsets using
  the M5455 Audio Controller.
 endef
 

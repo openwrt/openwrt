@@ -15,7 +15,7 @@ define KernelPackage/sis190
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/sis/sis190.ko
   AUTOLOAD:=$(call AutoLoad,50,sis190)
 endef
- 
+
 $(eval $(call KernelPackage,sis190))
 
 define KernelPackage/skge
@@ -581,7 +581,7 @@ define KernelPackage/tulip
     CONFIG_DE4X5 \
     CONFIG_WINBOND_840 \
     CONFIG_DM9102 \
-    CONFIG_ULI526X 
+    CONFIG_ULI526X
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ethernet/dec/tulip/tulip.ko \
 	$(LINUX_DIR)/drivers/net/ethernet/dec/tulip/de2104x.ko \

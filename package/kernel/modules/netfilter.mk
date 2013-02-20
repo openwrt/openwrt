@@ -553,7 +553,7 @@ define KernelPackage/nf-conntrack-netlink
 endef
 
 define KernelPackage/nf-conntrack-netlink/description
- Kernel modules support for a netlink-based connection tracking 
+ Kernel modules support for a netlink-based connection tracking
  userspace interface
 endef
 

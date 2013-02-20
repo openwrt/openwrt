@@ -73,7 +73,7 @@ define KernelPackage/w1-master-ds2490
   AUTOLOAD:=$(call AutoLoad,60,ds2490)
   $(call AddDepends/w1)
 endef
- 
+
 define KernelPackage/w1-master-ds2490/description
   Kernel module for the DS2490 usb 1-wire bus master driver
 endef
