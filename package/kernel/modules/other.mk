@@ -636,3 +636,20 @@ define KernelPacakge/ptp/description
 endef
 
 $(eval $(call KernelPackage,ptp))
+
+
+define KernelPackage/ptp-gianfar
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Freescale Gianfar PTP support
+  DEPENDS:=@TARGET_mpc85xx +kmod-gianfar +kmod-ptp
+  KCONFIG:=CONFIG_PTP_1588_CLOCK_GIANFAR
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/freescale/gianfar_ptp.ko
+  AUTOLOAD:=$(call AutoLoad,51,gianfar_ptp)
+endef
+
+define KernelPacakge/ptp-gianfar/description
+  Kernel module for IEEE 1588 support for Freescale
+  Gianfar Ethernet drivers.
+endef
+
+$(eval $(call KernelPackage,ptp-gianfar))
