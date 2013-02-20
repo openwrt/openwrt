@@ -60,7 +60,7 @@ ifneq ($(filter -march=armv%,$(TARGET_OPTIMIZATION)),)
   ARCH_SUFFIX:=_$(patsubst -march=arm%,%,$(filter -march=armv%,$(TARGET_OPTIMIZATION)))
   GCC_ARCH:=$(patsubst -march=%,%,$(filter -march=armv%,$(TARGET_OPTIMIZATION)))
 endif
-ifneq ($(findstring -mips32r2,$(TARGET_OPTIMIZATION)),)
+ifneq ($(filter -mips%r2,$(TARGET_OPTIMIZATION)),)
   ARCH_SUFFIX:=_r2
 endif
 ifdef CONFIG_HAS_SPE_FPU
