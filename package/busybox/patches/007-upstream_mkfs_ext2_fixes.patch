@@ -575,7 +575,7 @@
  
 --- a/e2fsprogs/old_e2fsprogs/e2fsck.c
 +++ b/e2fsprogs/old_e2fsprogs/e2fsck.c
-@@ -11577,7 +11577,7 @@ static void check_resize_inode(e2fsck_t 
+@@ -11577,7 +11577,7 @@ static void check_resize_inode(e2fsck_t
  	 * s_reserved_gdt_blocks must be zero.
  	 */
  	if (!(fs->super->s_feature_compat &
@@ -584,7 +584,7 @@
  		if (fs->super->s_reserved_gdt_blocks) {
  			pctx.num = fs->super->s_reserved_gdt_blocks;
  			if (fix_problem(ctx, PR_0_NONZERO_RESERVED_GDT_BLOCKS,
-@@ -11593,7 +11593,7 @@ static void check_resize_inode(e2fsck_t 
+@@ -11593,7 +11593,7 @@ static void check_resize_inode(e2fsck_t
  	retval = ext2fs_read_inode(fs, EXT2_RESIZE_INO, &inode);
  	if (retval) {
  		if (fs->super->s_feature_compat &
@@ -593,7 +593,7 @@
  			ctx->flags |= E2F_FLAG_RESIZE_INODE;
  		return;
  	}
-@@ -11603,7 +11603,7 @@ static void check_resize_inode(e2fsck_t 
+@@ -11603,7 +11603,7 @@ static void check_resize_inode(e2fsck_t
  	 * the resize inode is cleared; then we're done.
  	 */
  	if (!(fs->super->s_feature_compat &

@@ -9,7 +9,7 @@
  	{ OPTION_STRING                           , 0xfc }, /* DHCP_WPAD          */
  
  	/* Options below have no match in dhcp_option_strings[],
-@@ -127,6 +129,8 @@ const char dhcp_option_strings[] ALIGN1 
+@@ -127,6 +129,8 @@ const char dhcp_option_strings[] ALIGN1
  	"vlanpriority" "\0"/* DHCP_VLAN_PRIORITY  */
  #endif
  	"msstaticroutes""\0"/* DHCP_MS_STATIC_ROUTES */
@@ -46,7 +46,7 @@
  	[OPTION_STRING          ] = 1,
  	[OPTION_STRING_HOST     ] = 1,
  #if ENABLE_FEATURE_UDHCP_RFC3397
-@@ -124,6 +125,23 @@ static int sprint_nip(char *dest, const 
+@@ -124,6 +125,23 @@ static int sprint_nip(char *dest, const
  	return sprintf(dest, "%s%u.%u.%u.%u", pre, ip[0], ip[1], ip[2], ip[3]);
  }
  
@@ -70,10 +70,11 @@
  /* really simple implementation, just count the bits */
  static int mton(uint32_t mask)
  {
-@@ -293,6 +311,70 @@ static NOINLINE char *xmalloc_optname_op
+@@ -292,6 +310,70 @@ static NOINLINE char *xmalloc_optname_op
+ 			}
  
  			return ret;
- 		}
++		}
 +		case OPTION_6RD: {
 +			/* Option binary format:
 +			 *  0                   1                   2                   3
@@ -137,7 +138,6 @@
 +			}
 +
 +			return ret;
-+		}
+ 		}
  #if ENABLE_FEATURE_UDHCP_RFC3397
  		case OPTION_DNS_STRING:
- 			/* unpack option into dest; use ret for prefix (i.e., "optname=") */
