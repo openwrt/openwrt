@@ -238,7 +238,7 @@ ipkg_download() {
 	case "$src" in
 	http://* | ftp://*)
 		if ! wget --passive-ftp $proxyoption $proxyuser $proxypassword -P $IPKG_TMP $src; then
-			echo "ipkg_download: ERROR: Failed to retrieve $src, returning $err"
+			echo "ipkg_download: ERROR: Failed to retrieve $src, returning $err" >&2
 			return 1
 		fi
 		mv $IPKG_TMP/$src_file $dest_dir/$dest_file 2>/dev/null
@@ -685,8 +685,8 @@ Status: install ok not-installed" | ipkg_status_update_sd $sd $pkg
 			done
 
 			if [ -z "$filename" ]; then
-				echo "ipkg_get_install: ERROR: Cannot find package $pkg in $IPKG_LISTS_DIR"
-				echo "ipkg_get_install:        Check the spelling and maybe run \`ipkg update'."
+				echo "ipkg_get_install: ERROR: Cannot find package $pkg in $IPKG_LISTS_DIR" >&2
+				echo "ipkg_get_install:        Check the spelling and maybe run \`ipkg update'." >&2
 				ipkg_status_remove_sd $sd $pkg
 				return 1;
 			fi
@@ -698,8 +698,8 @@ Status: install ok not-installed" | ipkg_status_update_sd $sd $pkg
 			fi
 
 			if ! ipkg_install_file_dest $dest $tmp_pkg_file; then
-				echo "ipkg_get_install: ERROR: Failed to install $tmp_pkg_file"
-				echo "ipkg_get_install: I'll leave it there for you to try a manual installation"
+				echo "ipkg_get_install: ERROR: Failed to install $tmp_pkg_file" >&2
+				echo "ipkg_get_install: I'll leave it there for you to try a manual installation" >&2
 				return 1
 			fi
 
@@ -731,7 +731,7 @@ ipkg_install_file_dest() {
 	local info_dir=$sd/info
 
 	if [ ! -f "$filename" ]; then
-		echo "ipkg_install_file: ERROR: File $filename not found"
+		echo "ipkg_install_file: ERROR: File $filename not found" >&2
 		return 1
 	fi
 
@@ -743,7 +743,7 @@ ipkg_install_file_dest() {
 	elif [ "$ext" = "deb" ]; then
 		pkg_extract_stdout="ar p"
 	else
-		echo "ipkg_install_file: ERROR: File $filename has unknown extension $ext (not .ipk or .deb)"
+		echo "ipkg_install_file: ERROR: File $filename has unknown extension $ext (not .ipk or .deb)" >&2
 		return 1
 	fi
 
@@ -760,11 +760,11 @@ ipkg_install_file_dest() {
 
 	if [ ! -z "$missing_deps" ]; then
 		if [ -n "$FORCE_DEPENDS" ]; then
-			echo "ipkg_install_file: Warning: $pkg depends on the following uninstalled programs: $missing_deps"
+			echo "ipkg_install_file: Warning: $pkg depends on the following uninstalled programs: $missing_deps" >&2
 		else
 			echo "ipkg_install_file: ERROR: $pkg depends on the following uninstalled programs:
-	$missing_deps"
-			echo "ipkg_install_file: You may want to use \`ipkg install' to install these."
+	$missing_deps" >&2
+			echo "ipkg_install_file: You may want to use \`ipkg install' to install these." >&2
 			return 1
 		fi
 	fi
@@ -774,14 +774,14 @@ ipkg_install_file_dest() {
 	mkdir -p $info_dir
 
 	if ! $pkg_extract_stdout $filename ./control.tar.gz | (cd $IPKG_TMP/$pkg/control; zcat | tar -xf - ) ; then
-		echo "ipkg_install_file: ERROR unpacking control.tar.gz from $filename"
+		echo "ipkg_install_file: ERROR unpacking control.tar.gz from $filename" >&2
 		return 1
 	fi
 
 	if [ -n "$IPKG_OFFLINE_ROOT" ]; then
 		if grep -q '^InstallsOffline:[[:space:]]*no' $IPKG_TMP/$pkg/control/control; then
-			echo "*** Warning: Package $pkg may not be installed in offline mode"
-			echo "*** Warning: Scheduling $filename for pending installation (installing into $IPKG_PENDING_DIR)"
+			echo "*** Warning: Package $pkg may not be installed in offline mode" >&2
+			echo "*** Warning: Scheduling $filename for pending installation (installing into $IPKG_PENDING_DIR)" >&2
 			echo "Package: $pkg
 Status: install ok pending" | ipkg_status_update_sd $sd $pkg
 			mkdir -p $IPKG_PENDING_DIR
@@ -804,7 +804,7 @@ Status: install ok pending" | ipkg_status_update_sd $sd $pkg
 	rm -r $IPKG_TMP/$pkg/control
 
 	if ! $pkg_extract_stdout $filename ./data.tar.gz | (cd $IPKG_TMP/$pkg/data; zcat | tar -xf - ) ; then
-		echo "ipkg_install_file: ERROR unpacking data.tar.gz from $filename"
+		echo "ipkg_install_file: ERROR unpacking data.tar.gz from $filename" >&2
 		return 1
 	fi
 	echo "Done."
@@ -1161,10 +1161,10 @@ case "$cmd" in
 update|upgrade|list|info|status|install_pending)
 	;;
 install|depends|remove|files|search)
-	[ $# -lt 1 ] && ipkg_usage "ERROR: the \`\`$cmd'' command requires an argument"
+	[ $# -lt 1 ] && ipkg_usage "ERROR: the \`\`$cmd'' command requires an argument" >&2
 	;;
 *)
-	echo "ERROR: unknown sub-command \`$cmd'"
+	echo "ERROR: unknown sub-command \`$cmd'" >&2
 	ipkg_usage
 	;;
 esac
