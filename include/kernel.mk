@@ -163,11 +163,11 @@ $(call KernelPackage/$(1)/config)
 				if grep -q "$$$$$$$${mod##$(LINUX_DIR)/}" "$(LINUX_DIR)/modules.builtin"; then \
 					echo "NOTICE: module '$$$$$$$$mod' is built-in."; \
 				else \
-					echo "ERROR: module '$$$$$$$$mod' is missing."; \
+					echo "ERROR: module '$$$$$$$$mod' is missing." >&2; \
 					exit 1; \
 				fi; \
 			else \
-				echo "WARNING: module '$$$$$$$$mod' missing and modules.builtin not available, assuming built-in."; \
+				echo "WARNING: module '$$$$$$$$mod' missing and modules.builtin not available, assuming built-in." >&2; \
 			fi; \
 		  done;
 		  $(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
@@ -178,7 +178,7 @@ $(call KernelPackage/$(1)/config)
     else
       compile: kmod-$(1)-unavailable
       kmod-$(1)-unavailable:
-		@echo "WARNING: kmod-$(1) is not available in the kernel config"
+		@echo "WARNING: kmod-$(1) is not available in the kernel config" >&2
   )
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
