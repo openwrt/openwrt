@@ -1,0 +1,69 @@
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
+@@ -1288,8 +1288,8 @@ static int __xipram do_write_oneword(str
+ 			break;
+ 		}
+ 
+-		if (chip_ready(map, adr))
+-			break;
++		if (chip_good(map, adr, datum))
++			goto enable_xip;
+ 
+ 		/* Latency issues. Drop the lock, wait a while and retry */
+ 		UDELAY(map, chip, adr, 1);
+@@ -1305,6 +1305,8 @@ static int __xipram do_write_oneword(str
+ 
+ 		ret = -EIO;
+ 	}
++
++ enable_xip:
+ 	xip_enable(map, chip, adr);
+  op_done:
+ 	chip->state = FL_READY;
+@@ -1875,7 +1877,6 @@ static int cfi_amdstd_panic_write(struct
+ 	return 0;
+ }
+ 
+-
+ /*
+  * Handle devices with one erase region, that only implement
+  * the chip erase command.
+@@ -1939,8 +1940,8 @@ static int __xipram do_erase_chip(struct
+ 			chip->erase_suspended = 0;
+ 		}
+ 
+-		if (chip_ready(map, adr))
+-			break;
++		if (chip_good(map, adr, map_word_ff(map)))
++			goto op_done;
+ 
+ 		if (time_after(jiffies, timeo)) {
+ 			printk(KERN_WARNING "MTD %s(): software timeout\n",
+@@ -1960,6 +1961,7 @@ static int __xipram do_erase_chip(struct
+ 		ret = -EIO;
+ 	}
+ 
++ op_done:
+ 	chip->state = FL_READY;
+ 	xip_enable(map, chip, adr);
+ 	DISABLE_VPP(map);
+@@ -2028,9 +2030,9 @@ static int __xipram do_erase_oneblock(st
+ 			chip->erase_suspended = 0;
+ 		}
+ 
+-		if (chip_ready(map, adr)) {
++		if (chip_good(map, adr, map_word_ff(map))) {
+ 			xip_enable(map, chip, adr);
+-			break;
++			goto op_done;
+ 		}
+ 
+ 		if (time_after(jiffies, timeo)) {
+@@ -2052,6 +2054,7 @@ static int __xipram do_erase_oneblock(st
+ 		ret = -EIO;
+ 	}
+ 
++ op_done:
+ 	chip->state = FL_READY;
+ 	DISABLE_VPP(map);
+ 	put_chip(map, chip, adr);

@@ -1,0 +1,70 @@
+From 0568e7f92ecf2bfd2af0a5c59b1249fef002c89f Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 3 Jul 2012 10:24:43 +0200
+Subject: [PATCH 24/34] MIPS: ath79: add WMAC registration code for the QCA955X SoCs
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ath79/Kconfig                        |    2 +-
+ arch/mips/ath79/dev-wmac.c                     |   20 ++++++++++++++++++++
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    2 ++
+ 3 files changed, 23 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -108,7 +108,7 @@ config ATH79_DEV_USB
+ 	def_bool n
+ 
+ config ATH79_DEV_WMAC
+-	depends on (SOC_AR913X || SOC_AR933X || SOC_AR934X)
++	depends on (SOC_AR913X || SOC_AR933X || SOC_AR934X || SOC_QCA955X)
+ 	def_bool n
+ 
+ endif
+--- a/arch/mips/ath79/dev-wmac.c
++++ b/arch/mips/ath79/dev-wmac.c
+@@ -116,6 +116,24 @@ static void ar934x_wmac_setup(void)
+ 		ath79_wmac_data.is_clk_25mhz = true;
+ }
+ 
++static void qca955x_wmac_setup(void)
++{
++	u32 t;
++
++	ath79_wmac_device.name = "qca955x_wmac";
++
++	ath79_wmac_resources[0].start = QCA955X_WMAC_BASE;
++	ath79_wmac_resources[0].end = QCA955X_WMAC_BASE + QCA955X_WMAC_SIZE - 1;
++	ath79_wmac_resources[1].start = ATH79_IP2_IRQ(1);
++	ath79_wmac_resources[1].start = ATH79_IP2_IRQ(1);
++
++	t = ath79_reset_rr(QCA955X_RESET_REG_BOOTSTRAP);
++	if (t & QCA955X_BOOTSTRAP_REF_CLK_40)
++		ath79_wmac_data.is_clk_25mhz = false;
++	else
++		ath79_wmac_data.is_clk_25mhz = true;
++}
++
+ void __init ath79_register_wmac(u8 *cal_data)
+ {
+ 	if (soc_is_ar913x())
+@@ -124,6 +142,8 @@ void __init ath79_register_wmac(u8 *cal_
+ 		ar933x_wmac_setup();
+ 	else if (soc_is_ar934x())
+ 		ar934x_wmac_setup();
++	else if (soc_is_qca955x())
++		qca955x_wmac_setup();
+ 	else
+ 		BUG();
+ 
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -94,6 +94,8 @@
+ #define AR934X_SRIF_BASE	(AR71XX_APB_BASE + 0x00116000)
+ #define AR934X_SRIF_SIZE	0x1000
+ 
++#define QCA955X_WMAC_BASE	(AR71XX_APB_BASE + 0x00100000)
++#define QCA955X_WMAC_SIZE	0x20000
+ #define QCA955X_EHCI0_BASE	0x1b000000
+ #define QCA955X_EHCI1_BASE	0x1b400000
+ #define QCA955X_EHCI_SIZE	0x200
