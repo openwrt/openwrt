@@ -116,9 +116,9 @@ endef
 
 define CatFiles
 	if [ `stat -c%s "$(1)"` -gt $(2) ]; then \
-		echo "Warning: $(1) is too big"; \
+		echo "Warning: $(1) is too big" >&2; \
 	else if [ `stat -c%s $(3)` -gt $(4) ]; then \
-		echo "Warning: $(3) is too big"; \
+		echo "Warning: $(3) is too big" >&2; \
 	else \
 		( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
 	fi; fi
@@ -219,7 +219,7 @@ define Image/Build/DIR825B1
 			echo -n "$(4)"; \
 		) > $(call imgname,$(1),$(2))-backup-loader.bin; \
 		if [ `stat -c%s $(call sysupname,$(1),$(2))` -gt 4194304 ]; then \
-			echo "Warning: $(call sysupname,$(1),$(2)) is too big"; \
+			echo "Warning: $(call sysupname,$(1),$(2)) is too big" >&2; \
 		else \
 			( \
 				dd if=$(call sysupname,$(1),$(2)) bs=4096k conv=sync; \
@@ -247,7 +247,7 @@ define Image/Build/DLRTDEV
 			echo -n "$(4)"; \
 		) > $(call imgname,$(1),$(2))-backup-loader.bin; \
 		if [ `stat -c%s $(call sysupname,$(1),$(2))` -gt 4194304 ]; then \
-			echo "Warning: $(call sysupname,$(1),$(2)) is too big"; \
+			echo "Warning: $(call sysupname,$(1),$(2)) is too big" >&2; \
 		else \
 			( \
 				dd if=$(call sysupname,$(1),$(2)) bs=4096k conv=sync; \
@@ -708,7 +708,7 @@ ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
 	$(call Sysupgrade/KRuImage,$(1),$(2),917504,2752512)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		if [ ! -f $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin ]; then \
-			echo "Warning: $(IMG_PREFIX)-$(2)-u-boot.bin not found"; \
+			echo "Warning: $(IMG_PREFIX)-$(2)-u-boot.bin not found" >&2; \
 		else \
 			$(STAGING_DIR_HOST)/bin/mkzynfw \
 				-B $(4) \
