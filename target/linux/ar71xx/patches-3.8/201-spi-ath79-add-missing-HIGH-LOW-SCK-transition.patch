@@ -1,0 +1,21 @@
+From bcb0fdebc08f828b54d0a2eb74a9d1378701a8e0 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 11 Jan 2012 20:33:41 +0100
+Subject: [PATCH 29/34] spi/ath79: add missing HIGH->LOW SCK transition
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/spi/spi-ath79.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -200,6 +200,8 @@ static u32 ath79_spi_txrx_mode0(struct s
+ 		ath79_spi_delay(sp, nsecs);
+ 		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, out | AR71XX_SPI_IOC_CLK);
+ 		ath79_spi_delay(sp, nsecs);
++		if (bits == 1)
++			ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, out);
+ 
+ 		word <<= 1;
+ 	}

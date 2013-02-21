@@ -1,0 +1,131 @@
+From f1c3a7dadf7b77809cda7f77df4b1ba3b24fbfa3 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 27 Jun 2012 10:12:50 +0200
+Subject: [PATCH 11/34] MIPS: pci-ar724x: remove static PCI resources
+
+Get those from the platform device instead.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ath79/pci.c      |   21 ++++++++++++++++++++-
+ arch/mips/pci/pci-ar724x.c |   40 ++++++++++++++++++++++++----------------
+ 2 files changed, 44 insertions(+), 17 deletions(-)
+
+--- a/arch/mips/ath79/pci.c
++++ b/arch/mips/ath79/pci.c
+@@ -137,10 +137,13 @@ static struct platform_device *
+ ath79_register_pci_ar724x(int id,
+ 			  unsigned long cfg_base,
+ 			  unsigned long ctrl_base,
++			  unsigned long mem_base,
++			  unsigned long mem_size,
++			  unsigned long io_base,
+ 			  int irq)
+ {
+ 	struct platform_device *pdev;
+-	struct resource res[3];
++	struct resource res[5];
+ 
+ 	memset(res, 0, sizeof(res));
+ 
+@@ -158,6 +161,16 @@ ath79_register_pci_ar724x(int id,
+ 	res[2].start = irq;
+ 	res[2].end = irq;
+ 
++	res[3].name = "mem_base";
++	res[3].flags = IORESOURCE_MEM;
++	res[3].start = mem_base;
++	res[3].end = mem_base + mem_size - 1;
++
++	res[4].name = "io_base";
++	res[4].flags = IORESOURCE_IO;
++	res[4].start = io_base;
++	res[4].end = io_base;
++
+ 	pdev = platform_device_register_simple("ar724x-pci", id,
+ 					       res, ARRAY_SIZE(res));
+ 	return pdev;
+@@ -173,6 +186,9 @@ int __init ath79_register_pci(void)
+ 		pdev = ath79_register_pci_ar724x(-1,
+ 						 AR724X_PCI_CFG_BASE,
+ 						 AR724X_PCI_CTRL_BASE,
++						 AR724X_PCI_MEM_BASE,
++						 AR724X_PCI_MEM_SIZE,
++						 0,
+ 						 ATH79_CPU_IRQ_IP2);
+ 	} else if (soc_is_ar9342() ||
+ 		   soc_is_ar9344()) {
+@@ -185,6 +201,9 @@ int __init ath79_register_pci(void)
+ 		pdev = ath79_register_pci_ar724x(-1,
+ 						 AR724X_PCI_CFG_BASE,
+ 						 AR724X_PCI_CTRL_BASE,
++						 AR724X_PCI_MEM_BASE,
++						 AR724X_PCI_MEM_SIZE,
++						 0,
+ 						 ATH79_IP2_IRQ(0));
+ 	} else {
+ 		/* No PCI support */
+--- a/arch/mips/pci/pci-ar724x.c
++++ b/arch/mips/pci/pci-ar724x.c
+@@ -42,6 +42,8 @@ struct ar724x_pci_controller {
+ 	spinlock_t lock;
+ 
+ 	struct pci_controller pci_controller;
++	struct resource io_res;
++	struct resource mem_res;
+ };
+ 
+ static inline bool ar724x_pci_check_link(struct ar724x_pci_controller *apc)
+@@ -190,20 +192,6 @@ static struct pci_ops ar724x_pci_ops = {
+ 	.write	= ar724x_pci_write,
+ };
+ 
+-static struct resource ar724x_io_resource = {
+-	.name   = "PCI IO space",
+-	.start  = 0,
+-	.end    = 0,
+-	.flags  = IORESOURCE_IO,
+-};
+-
+-static struct resource ar724x_mem_resource = {
+-	.name   = "PCI memory space",
+-	.start  = AR724X_PCI_MEM_BASE,
+-	.end    = AR724X_PCI_MEM_BASE + AR724X_PCI_MEM_SIZE - 1,
+-	.flags  = IORESOURCE_MEM,
+-};
+-
+ static void ar724x_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
+ {
+ 	struct ar724x_pci_controller *apc;
+@@ -331,9 +319,29 @@ static int ar724x_pci_probe(struct platf
+ 
+ 	spin_lock_init(&apc->lock);
+ 
++	res = platform_get_resource_byname(pdev, IORESOURCE_IO, "io_base");
++	if (!res)
++		return -EINVAL;
++
++	apc->io_res.parent = res;
++	apc->io_res.name = "PCI IO space";
++	apc->io_res.start = res->start;
++	apc->io_res.end = res->end;
++	apc->io_res.flags = IORESOURCE_IO;
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mem_base");
++	if (!res)
++		return -EINVAL;
++
++	apc->mem_res.parent = res;
++	apc->mem_res.name = "PCI memory space";
++	apc->mem_res.start = res->start;
++	apc->mem_res.end = res->end;
++	apc->mem_res.flags = IORESOURCE_MEM;
++
+ 	apc->pci_controller.pci_ops = &ar724x_pci_ops;
+-	apc->pci_controller.io_resource = &ar724x_io_resource;
+-	apc->pci_controller.mem_resource = &ar724x_mem_resource;
++	apc->pci_controller.io_resource = &apc->io_res;
++	apc->pci_controller.mem_resource = &apc->mem_res;
+ 
+ 	apc->link_up = ar724x_pci_check_link(apc);
+ 	if (!apc->link_up)

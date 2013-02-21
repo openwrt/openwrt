@@ -1,0 +1,93 @@
+From e4ba5e2bffd1f373f57dd692233aa6b7b46ae76c Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 24 Jun 2012 13:47:35 +0200
+Subject: [PATCH 23/34] MIPS: ath79: add USB controller registration code for the QCA955X SoCs
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ath79/dev-usb.c                      |   46 ++++++++++++++++++++++++
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    4 ++
+ 2 files changed, 50 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/dev-usb.c
++++ b/arch/mips/ath79/dev-usb.c
+@@ -73,6 +73,8 @@ static void __init ath79_usb_init_resour
+ 					   unsigned long size,
+ 					   int irq)
+ {
++	memset(res, 0, sizeof(res));
++
+ 	res[0].flags = IORESOURCE_MEM;
+ 	res[0].start = base;
+ 	res[0].end = base + size - 1;
+@@ -217,6 +219,48 @@ static void __init ar934x_usb_setup(void
+ 	platform_device_register(&ath79_ehci_device);
+ }
+ 
++static void __init qca955x_usb_setup(void)
++{
++	struct platform_device *pdev;
++
++	ath79_usb_init_resource(ath79_ehci_resources,
++				QCA955X_EHCI0_BASE, QCA955X_EHCI_SIZE,
++				ATH79_IP3_IRQ(0));
++
++	pdev = platform_device_register_resndata(NULL, "ehci-platform", 0,
++						 ath79_ehci_resources,
++						 ARRAY_SIZE(ath79_ehci_resources),
++						 &ath79_ehci_pdata_v2,
++						 sizeof(ath79_ehci_pdata_v2));
++	if (IS_ERR(pdev)) {
++		pr_err("Unable to register USB %d device, err=%d\n", 0,
++			(int) PTR_ERR(pdev));
++		return;
++	}
++
++	pdev->dev.dma_mask = &ath79_ehci_dmamask;
++	pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
++
++	ath79_usb_init_resource(ath79_ehci_resources,
++				QCA955X_EHCI1_BASE, QCA955X_EHCI_SIZE,
++				ATH79_IP3_IRQ(1));
++
++	pdev = platform_device_register_resndata(NULL, "ehci-platform", 1,
++						 ath79_ehci_resources,
++						 ARRAY_SIZE(ath79_ehci_resources),
++						 &ath79_ehci_pdata_v2,
++						 sizeof(ath79_ehci_pdata_v2));
++
++	if (IS_ERR(pdev)) {
++		pr_err("Unable to register USB %d device, err=%d\n", 1,
++			(int) PTR_ERR(pdev));
++		return;
++	}
++
++	pdev->dev.dma_mask = &ath79_ehci_dmamask;
++	pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
++}
++
+ void __init ath79_register_usb(void)
+ {
+ 	if (soc_is_ar71xx())
+@@ -231,6 +275,8 @@ void __init ath79_register_usb(void)
+ 		ar933x_usb_setup();
+ 	else if (soc_is_ar934x())
+ 		ar934x_usb_setup();
++	else if (soc_is_qca955x())
++		qca955x_usb_setup();
+ 	else
+ 		BUG();
+ }
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -94,6 +94,10 @@
+ #define AR934X_SRIF_BASE	(AR71XX_APB_BASE + 0x00116000)
+ #define AR934X_SRIF_SIZE	0x1000
+ 
++#define QCA955X_EHCI0_BASE	0x1b000000
++#define QCA955X_EHCI1_BASE	0x1b400000
++#define QCA955X_EHCI_SIZE	0x200
++
+ /*
+  * DDR_CTRL block
+  */

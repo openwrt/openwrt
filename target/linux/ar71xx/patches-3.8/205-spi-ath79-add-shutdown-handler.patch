@@ -1,0 +1,28 @@
+From dab305def68a9ea28c1c0ca2fc20bba645944914 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 11 Jan 2012 22:19:32 +0100
+Subject: [PATCH 33/34] spi/ath79: add shutdown handler
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/spi/spi-ath79.c |   12 +++++++++++-
+ 1 files changed, 11 insertions(+), 1 deletions(-)
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -308,9 +308,15 @@ static int ath79_spi_remove(struct platf
+ 	return 0;
+ }
+ 
++static void ath79_spi_shutdown(struct platform_device *pdev)
++{
++	ath79_spi_remove(pdev);
++}
++
+ static struct platform_driver ath79_spi_driver = {
+ 	.probe		= ath79_spi_probe,
+ 	.remove		= ath79_spi_remove,
++	.shutdown	= ath79_spi_shutdown,
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 		.owner	= THIS_MODULE,

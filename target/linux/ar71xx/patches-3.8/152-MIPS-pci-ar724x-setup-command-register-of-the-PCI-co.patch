@@ -1,0 +1,165 @@
+From 93824983ceb36d4ce1f4a644031ec6fb5f332f1d Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 26 Jun 2012 15:14:47 +0200
+Subject: [PATCH 13/34] MIPS: pci-ar724x: setup command register of the PCI controller
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ath79/pci.c                          |   10 +++-
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    2 +
+ arch/mips/pci/pci-ar724x.c                     |   63 ++++++++++++++++++++++++
+ 3 files changed, 74 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/ath79/pci.c
++++ b/arch/mips/ath79/pci.c
+@@ -137,13 +137,14 @@ static struct platform_device *
+ ath79_register_pci_ar724x(int id,
+ 			  unsigned long cfg_base,
+ 			  unsigned long ctrl_base,
++			  unsigned long crp_base,
+ 			  unsigned long mem_base,
+ 			  unsigned long mem_size,
+ 			  unsigned long io_base,
+ 			  int irq)
+ {
+ 	struct platform_device *pdev;
+-	struct resource res[5];
++	struct resource res[6];
+ 
+ 	memset(res, 0, sizeof(res));
+ 
+@@ -171,6 +172,11 @@ ath79_register_pci_ar724x(int id,
+ 	res[4].start = io_base;
+ 	res[4].end = io_base;
+ 
++	res[5].name = "crp_base";
++	res[5].flags = IORESOURCE_MEM;
++	res[5].start = crp_base;
++	res[5].end = crp_base + AR724X_PCI_CRP_SIZE - 1;
++
+ 	pdev = platform_device_register_simple("ar724x-pci", id,
+ 					       res, ARRAY_SIZE(res));
+ 	return pdev;
+@@ -186,6 +192,7 @@ int __init ath79_register_pci(void)
+ 		pdev = ath79_register_pci_ar724x(-1,
+ 						 AR724X_PCI_CFG_BASE,
+ 						 AR724X_PCI_CTRL_BASE,
++						 AR724X_PCI_CRP_BASE,
+ 						 AR724X_PCI_MEM_BASE,
+ 						 AR724X_PCI_MEM_SIZE,
+ 						 0,
+@@ -201,6 +208,7 @@ int __init ath79_register_pci(void)
+ 		pdev = ath79_register_pci_ar724x(-1,
+ 						 AR724X_PCI_CFG_BASE,
+ 						 AR724X_PCI_CTRL_BASE,
++						 AR724X_PCI_CRP_BASE,
+ 						 AR724X_PCI_MEM_BASE,
+ 						 AR724X_PCI_MEM_SIZE,
+ 						 0,
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -67,6 +67,8 @@
+ 
+ #define AR724X_PCI_CFG_BASE	0x14000000
+ #define AR724X_PCI_CFG_SIZE	0x1000
++#define AR724X_PCI_CRP_BASE	(AR71XX_APB_BASE + 0x000c0000)
++#define AR724X_PCI_CRP_SIZE	0x1000
+ #define AR724X_PCI_CTRL_BASE	(AR71XX_APB_BASE + 0x000f0000)
+ #define AR724X_PCI_CTRL_SIZE	0x100
+ 
+--- a/arch/mips/pci/pci-ar724x.c
++++ b/arch/mips/pci/pci-ar724x.c
+@@ -29,9 +29,17 @@
+ 
+ #define AR7240_BAR0_WAR_VALUE	0xffff
+ 
++#define AR724X_PCI_CMD_INIT	(PCI_COMMAND_MEMORY |		\
++				 PCI_COMMAND_MASTER |		\
++				 PCI_COMMAND_INVALIDATE |	\
++				 PCI_COMMAND_PARITY |		\
++				 PCI_COMMAND_SERR |		\
++				 PCI_COMMAND_FAST_BACK)
++
+ struct ar724x_pci_controller {
+ 	void __iomem *devcfg_base;
+ 	void __iomem *ctrl_base;
++	void __iomem *crp_base;
+ 
+ 	int irq;
+ 	int irq_base;
+@@ -64,6 +72,51 @@ pci_bus_to_ar724x_controller(struct pci_
+ 	return container_of(hose, struct ar724x_pci_controller, pci_controller);
+ }
+ 
++static int ar724x_pci_local_write(struct ar724x_pci_controller *apc,
++				  int where, int size, u32 value)
++{
++	unsigned long flags;
++	void __iomem *base;
++	u32 data;
++	int s;
++
++	WARN_ON(where & (size - 1));
++
++	if (!apc->link_up)
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	base = apc->crp_base;
++
++	spin_lock_irqsave(&apc->lock, flags);
++	data = __raw_readl(base + (where & ~3));
++
++	switch (size) {
++	case 1:
++		s = ((where & 3) * 8);
++		data &= ~(0xff << s);
++		data |= ((value & 0xff) << s);
++		break;
++	case 2:
++		s = ((where & 2) * 8);
++		data &= ~(0xffff << s);
++		data |= ((value & 0xffff) << s);
++		break;
++	case 4:
++		data = value;
++		break;
++	default:
++		spin_unlock_irqrestore(&apc->lock, flags);
++		return PCIBIOS_BAD_REGISTER_NUMBER;
++	}
++
++	__raw_writel(data, base + (where & ~3));
++	/* flush write */
++	__raw_readl(base + (where & ~3));
++	spin_unlock_irqrestore(&apc->lock, flags);
++
++	return PCIBIOS_SUCCESSFUL;
++}
++
+ static int ar724x_pci_read(struct pci_bus *bus, unsigned int devfn, int where,
+ 			    int size, uint32_t *value)
+ {
+@@ -324,6 +377,14 @@ static int ar724x_pci_probe(struct platf
+ 	if (!apc->devcfg_base)
+ 		return -EBUSY;
+ 
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "crp_base");
++	if (!res)
++		return -EINVAL;
++
++	apc->crp_base = devm_request_and_ioremap(&pdev->dev, res);
++	if (apc->crp_base == NULL)
++		return -EBUSY;
++
+ 	apc->irq = platform_get_irq(pdev, 0);
+ 	if (apc->irq < 0)
+ 		return -EINVAL;
+@@ -360,6 +421,8 @@ static int ar724x_pci_probe(struct platf
+ 
+ 	ar724x_pci_irq_init(apc, id);
+ 
++	ar724x_pci_local_write(apc, PCI_COMMAND, 4, AR724X_PCI_CMD_INIT);
++
+ 	register_pci_controller(&apc->pci_controller);
+ 
+ 	return 0;
