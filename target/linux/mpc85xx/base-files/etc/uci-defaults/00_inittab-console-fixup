@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# Copyright (C) 2011 OpenWrt.org
+#
+
+enable_console_login() {
+	local cons=$1
+	local initline="$cons::askfirst:/bin/ash --login"
+
+	grep -qs "^$initline" /etc/inittab || {
+		echo "$initline" >> /etc/inittab
+		sync
+		kill -HUP 1
+	}
+}
+
+inittab_console_fixup() {
+	for cons in ttyS0 ttyS1; do
+		grep -qs "console=$cons" /proc/cmdline && {
+			enable_console_login $cons
+		}
+	done
+}
+
+inittab_console_fixup
+
+exit 0
