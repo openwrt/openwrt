@@ -63,9 +63,9 @@ endef
 define MkCombineduImage
 	$(call PatchKernelLzma,$(2),$(3))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt `expr $(4) - 64` ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big" >&2; \
 	else if [ `stat -c%s "$(KDIR)/root.$(1)"` -gt $(5) ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+		echo "Warning: $(KDIR)/root.$(1) is too big" >&2; \
 	else \
 		( dd if=$(KDIR)/vmlinux-$(2).bin.lzma bs=`expr $(4) - 64` conv=sync ; dd if=$(KDIR)/root.$(1) ) > $(KDIR)/vmlinux-$(2).bin.lzma.combined ; \
 	fi ; fi
@@ -74,9 +74,9 @@ endef
 
 define CatFiles
 	if [ `stat -c%s "$(1)"` -gt $(2) ]; then \
-		echo "Warning: $(1) is too big"; \
+		echo "Warning: $(1) is too big" >&2; \
 	else if [ `stat -c%s $(3)` -gt $(4) ]; then \
-		echo "Warning: $(3) is too big"; \
+		echo "Warning: $(3) is too big" >&2; \
 	else \
 		( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
 	fi; fi
@@ -319,9 +319,9 @@ endef
 define BuildFirmware/Seama
 	$(call PatchKernelLzma,$(2),$(3))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt $(4) ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big" >&2; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(5) ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+		echo "Warning: $(KDIR)/root.$(1) is too big" >&2; \
 	else \
 		( \
 			dd if=$(KDIR)/vmlinux-$(2).bin.lzma bs=$(4) count=1 conv=sync; \
