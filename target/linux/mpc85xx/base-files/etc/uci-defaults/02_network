@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# Copyright (C) 2013 OpenWrt.org
+#
+
+tplink_set_mac()
+{
+	local cfg=$1
+	local offset=$2
+	local mac
+
+	. /lib/functions.sh
+
+	mac=$(mtd_get_mac_binary u-boot 326656)
+	mac=$(macaddr_add $mac $offset)
+
+	ucidef_set_interface_macaddr $cfg $mac
+}
+
+
+[ -e /etc/config/network ] && exit 0
+
+touch /etc/config/network
+
+. /lib/functions/uci-defaults.sh
+. /lib/mpc85xx.sh
+
+ucidef_set_interface_loopback
+
+board=$(mpc85xx_board_name)
+
+case "$board" in
+tl-wdr4900-v1)
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
+	ucidef_add_switch_vlan "switch0" "2" "0t 1"
+	tplink_set_mac lan -2
+	tplink_set_mac wan 1
+	;;
+
+*)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	;;
+esac
+
+uci commit network
+
+exit 0
