@@ -210,7 +210,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +}
 --- /dev/null
 +++ b/arch/powerpc/boot/dts/tl-wdr4900-v1.dts
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,198 @@
 +/*
 + * TP-Link TL-WDR4900 v1 Device Tree Source
 + *
@@ -306,9 +306,41 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +			};
 +		};
 +
++		mdio@25000 {
++			status = "disabled";
++		};
++
++		mdio@26000 {
++			status = "disabled";
++		};
++
 +		enet0: ethernet@b0000 {
 +			phy-handle = <&phy0>;
 +			phy-connection-type = "rgmii-id";
++		};
++
++		enet1: ethernet@b1000 {
++			status = "disabled";
++		};
++
++		enet2: ethernet@b2000 {
++			status = "disabled";
++		};
++
++		sdhc@2e000 {
++			status = "disabled";
++		};
++
++		serial1: serial@4600 {
++			status = "disabled";
++		};
++
++		can0: can@1c000 {
++			status = "disabled";
++		};
++
++		can1: can@1d000 {
++			status = "disabled";
 +		};
 +	};
 +
