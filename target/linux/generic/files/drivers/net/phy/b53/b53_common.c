@@ -362,7 +362,7 @@ static void b53_enable_ports(struct b53_device *dev)
 		u8 port_ctrl;
 		u16 pvlan_mask;
 
-		/* 
+		/*
 		 * prevent leaking packets between wan and lan in unmanaged
 		 * mode through port vlans.
 		 */
@@ -371,7 +371,7 @@ static void b53_enable_ports(struct b53_device *dev)
 		else if (is531x5(dev))
 			/* BCM53115 may use a different port as cpu port */
 			pvlan_mask = BIT(dev->sw_dev.cpu_port);
-		else 
+		else
 			pvlan_mask = BIT(B53_CPU_PORT);
 
 		/* BCM5325 CPU port is at 8 */
