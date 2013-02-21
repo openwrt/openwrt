@@ -138,7 +138,8 @@ static bool __init dir825b1_is_caldata_valid(u8 *p)
 static void __init dir825b1_wlan_init(void)
 {
 	u8 *caldata;
-	u8 mac1[ETH_ALEN], mac2[ETH_ALEN];
+	u8 mac0[ETH_ALEN], mac1[ETH_ALEN];
+	u8 wmac0[ETH_ALEN], wmac1[ETH_ALEN];
 
 	caldata = (u8 *) KSEG1ADDR(DIR825B1_CAL_LOCATION_0);
 	if (!dir825b1_is_caldata_valid(caldata)) {
@@ -149,17 +150,19 @@ static void __init dir825b1_wlan_init(void)
 		}
 	}
 
-	dir825b1_read_ascii_mac(mac1, caldata + DIR825B1_MAC0_OFFSET);
-	dir825b1_read_ascii_mac(mac2, caldata + DIR825B1_MAC1_OFFSET);
+	dir825b1_read_ascii_mac(mac0, caldata + DIR825B1_MAC0_OFFSET);
+	dir825b1_read_ascii_mac(mac1, caldata + DIR825B1_MAC1_OFFSET);
 
-	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 2);
-	ath79_init_mac(ath79_eth1_data.mac_addr, mac1, 3);
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac0, 0);
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac1, 0);
+	ath79_init_mac(wmac0, mac0, 0);
+	ath79_init_mac(wmac1, mac1, 1);
 
 	ap9x_pci_setup_wmac_led_pin(0, 5);
 	ap9x_pci_setup_wmac_led_pin(1, 5);
 
-	ap94_pci_init(caldata + DIR825B1_CAL0_OFFSET, mac1,
-		      caldata + DIR825B1_CAL1_OFFSET, mac2);
+	ap94_pci_init(caldata + DIR825B1_CAL0_OFFSET, wmac0,
+		      caldata + DIR825B1_CAL1_OFFSET, wmac1);
 }
 
 static void __init dir825b1_setup(void)
