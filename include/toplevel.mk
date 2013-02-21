@@ -148,7 +148,7 @@ prereq:: prepare-tmpinfo .config
 		cp .config tmp/.config; \
 		./scripts/config/conf -D tmp/.config -w tmp/.config Config.in > /dev/null 2>&1; \
 		if ./scripts/kconfig.pl '>' .config tmp/.config | grep -q CONFIG; then \
-			echo "WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!"; \
+			echo "WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!" >&2; \
 		fi \
 	)
 	@+$(ULIMIT_FIX) $(SUBMAKE) -r $@
