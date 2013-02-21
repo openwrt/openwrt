@@ -20,15 +20,23 @@ set_jffs_part
 if [ "${0##*/}" = "firstboot" ]; then
     if [ "$1" = "switch2jffs" ]; then
 	boot_run_hook switch2jffs
-    elif [ -n "$jffs" ]; then
-	reset_has_fo=true
-	echo "firstboot has already been run"
-	echo "jffs2 partition is mounted, only resetting files"
-	boot_run_hook jffs2reset
     else
-	mtd erase "$partname"
-	mount -o noatime "$mtdpart" /overlay -t jffs2
-	fopivot /overlay /rom 1
+	local input
+
+	echo -n  "firstboot will erase all settings and remove any installed packages. Are you sure? [N/y]"
+	read input
+	[ "$input" = "y" ] || [ "$input" = "Y" ] || return 0
+
+	if [ -n "$jffs" ]; then
+	    reset_has_fo=true
+	    echo "firstboot has already been run"
+	    echo "jffs2 partition is mounted, only resetting files"
+	    boot_run_hook jffs2reset
+	else
+	    mtd erase "$partname"
+	    mount -o noatime "$mtdpart" /overlay -t jffs2
+	    fopivot /overlay /rom 1
+	fi
     fi
 fi
 
