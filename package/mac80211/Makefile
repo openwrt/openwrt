@@ -636,7 +636,7 @@ endef
 
 define KernelPackage/iwlagn
   $(call KernelPackage/mac80211/Default)
-  DEPENDS:= +kmod-mac80211 @PCI_SUPPORT
+  DEPENDS:= +kmod-mac80211 @PCI_SUPPORT +@DRIVER_11N_SUPPORT
   TITLE:=Intel AGN Wireless support
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/iwlwifi.ko
   AUTOLOAD:=$(call AutoLoad,60,iwlwifi)
@@ -762,7 +762,7 @@ endef
 
 define KernelPackage/iwl4965
   $(call KernelPackage/mac80211/Default)
-  DEPENDS:= +kmod-mac80211 +kmod-iwl-legacy
+  DEPENDS:= +kmod-mac80211 +kmod-iwl-legacy +@DRIVER_11N_SUPPORT
   TITLE:=Intel iwl4965 Wireless support
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl4965.ko
   AUTOLOAD:=$(call AutoLoad,61,iwl4965)
@@ -777,7 +777,7 @@ define KernelPackage/mwl8k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for Marvell TOPDOG 802.11 Wireless cards
   URL:=http://wireless.kernel.org/en/users/Drivers/mwl8k
-  DEPENDS+= @PCI_SUPPORT +kmod-mac80211
+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 +@DRIVER_11N_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mwl8k.ko
   AUTOLOAD:=$(call AutoLoad,27,mwl8k)
 endef
