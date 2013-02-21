@@ -1,0 +1,2507 @@
+--- /dev/null
++++ b/drivers/net/ethernet/cns21xx/cns21xx_gec_main.c
+@@ -0,0 +1,2464 @@
++/*
++ *  Copyright (c) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
++ *
++ *  This driver has been derived from the ethernet driver of the
++ *  Star STR81xx SoC.
++ *	Copyright (c) 2008 Cavium Networks
++ *
++ *  This file is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License, Version 2, as
++ *  published by the Free Software Foundation.
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/bootmem.h>
++#include <linux/sched.h>
++#include <linux/types.h>
++#include <linux/fcntl.h>
++#include <linux/interrupt.h>
++#include <linux/ptrace.h>
++#include <linux/ioport.h>
++#include <linux/in.h>
++#include <linux/slab.h>
++#include <linux/init.h>
++#include <linux/bitops.h>
++#include <linux/irq.h>
++#include <linux/io.h>
++#include <linux/pci.h>
++#include <linux/errno.h>
++#include <linux/delay.h>
++#include <linux/netdevice.h>
++#include <linux/etherdevice.h>
++#include <linux/platform_device.h>
++#include <linux/skbuff.h>
++#include <linux/ip.h>
++#include <linux/if_ether.h>
++#include <linux/icmp.h>
++#include <linux/udp.h>
++#include <linux/tcp.h>
++#include <linux/if_arp.h>
++#include <net/arp.h>
++
++#include <mach/hardware.h>
++#include <mach/cns21xx.h>
++#include <mach/cns21xx_misc.h>
++#include <mach/cns21xx_powermgmt.h>
++#include <mach/cns21xx_gec_platform.h>
++
++#define DRIVER_NAME	"cns21xx-gec"
++
++/* VSC8601 and WavePlus Phy are the same */
++#define CNS21XX_GEC_PHY_ADDR	0
++
++#define CNS21XX_GEC_TX_HW_CHECKSUM
++#define CNS21XX_GEC_RX_HW_CHECKSUM
++
++#define CNS21XX_PEND_INT_COUNT	16
++#define CNS21XX_PEND_INT_TIME	5	/* 5 x 20 usecs */
++
++#define	MAX_PACKET_LEN		1536
++
++#define CNS21XX_GEC_NUM_TXDS	48 /* FIXME: original 64 will cause UDP fail */
++#define CNS21XX_GEC_NUM_RXDS	64
++
++struct cns21xx_gec_mib_info {
++	u32	mib_rx_ok_pkt;
++	u64	mib_rx_ok_byte;
++	u32	mib_rx_runt;
++	u32	mib_rx_over_size;
++	u32	mib_rx_no_buffer_drop;
++	u32	mib_rx_crc_err;
++	u32	mib_rx_arl_drop;
++	u32	mib_rx_myvid_drop;
++	u32	mib_rx_csum_err;
++	u32	mib_rx_pause_frame;
++	u32	mib_tx_ok_pkt;
++	u64	mib_tx_ok_byte;
++	u32	mib_tx_pause_frame;
++};
++
++/*
++ * Network Driver, Receive/Send and Initial Buffer Function
++ */
++struct cns21xx_gec_txd {
++	/* 1st 32Bits */
++	u32 sdp;
++
++	/* 2nd 32Bits */
++	u32 length:16;
++	u32 reserved0:7;
++	u32 tco:1;
++	u32 uco:1;
++	u32 ico:1;
++	u32 insv:1;
++	u32 intr:1;
++	u32 ls:1;
++	u32 fs:1;
++	u32 eor:1;
++	u32 cown:1;
++
++	/* 3rd 32Bits */
++	u32 vid:12;
++	u32 cfi:1;
++	u32 pri:3;
++	u32 epid:16;
++
++	/* 4th 32Bits */
++	u32 reserved1;
++} __packed;
++
++struct cns21xx_gec_rxd {
++	/* 1st 32Bits */
++	u32 sdp;
++
++	/* 2nd  32Bits */
++	u32 length:16;
++	u32 l4f:1;
++	u32 ipf:1;
++	u32 prot:2;
++	u32 vted:1;
++	u32 mymac:1;
++	u32 hhit:1;
++	u32 rmc:1;
++	u32 crce:1;
++	u32 osize:1;
++	u32 reserved0:2;
++	u32 ls:1;
++	u32 fs:1;
++	u32 eor:1;
++	u32 cown:1;
++
++	/* 3rd 32Bits */
++	u32 vid:12;
++	u32 cfi:1;
++	u32 pri:3;
++	u32 epid:16;
++
++	/* 4th 32Bits */
++	u32 reserved1;
++} __packed;
++
++struct cns21xx_gec_ring {
++	u32		desc_dma;
++	void		*desc_cpu;
++	u32		curr;
++	u32		dirty;
++	u32		count;
++	struct sk_buff	**skbs;
++};
++
++#define CNS21XX_GEC_NUM_VLANS	4
++struct cns21xx_gec_vlan {
++	u32 vid;	/* 0~4095 */
++	u32 control;	/* ENABLE or DISABLE */
++};
++
++/* store this information for the driver.. */
++struct cns21xx_gec {
++	struct napi_struct      napi;
++	struct net_device       *netdev;
++	struct device		*parent;
++	struct cns21xx_gec_ring	txring;
++	struct cns21xx_gec_ring	rxring;
++
++	void __iomem		*base;
++	struct resource		*mem_res;
++	struct cns21xx_gec_plat_data *pdata;
++	spinlock_t		lock;
++	spinlock_t		tx_lock;
++
++	int			status_irq;
++	int			rxrc_irq;
++	int			rxqf_irq;
++	int			txtc_irq;
++	int			txqe_irq;
++	unsigned long		rx_queue_full;
++
++	struct cns21xx_gec_vlan	vlans[CNS21XX_GEC_NUM_VLANS];
++
++	struct timer_list	internal_phy_timer;
++	struct timer_list	nic_timer;
++	u8 phy_addr;
++	u16 phy_id;
++	struct cns21xx_gec_mib_info mib_info;
++};
++
++#define GEC_REG_PHY_CTRL0	0x000
++#define GEC_REG_PHY_CTRL1	0x004
++#define GEC_REG_MAC_CFG		0x008
++#define GEC_REG_FC_CFG		0x00c
++#define GEC_REG_ARL_CFG		0x010
++#define GEC_REG_MY_MAC_H	0x014
++#define GEC_REG_MY_MAC_L	0x018
++#define GEC_REG_HASH_CTRL	0x01c
++#define GEC_REG_VLAN_CTRL	0x020
++#define GEC_REG_VLAN_ID_0_1	0x024
++#define GEC_REG_VLAN_ID_2_3	0x028
++#define GEC_REG_DMA_CFG		0x030
++#define GEC_REG_TX_DMA_CTRL	0x034
++#define GEC_REG_RX_DMA_CTRL	0x038
++#define GEC_REG_TX_DPTR		0x03c
++#define GEC_REG_RX_DPTR		0x040
++#define GEC_REG_TX_BASE_ADDR	0x044
++#define GEC_REG_RX_BASE_ADDR	0x048
++#define GEC_REG_DLY_INT_CFG	0x04c
++#define GEC_REG_INT		0x050
++#define GEC_REG_INT_MASK	0x054
++#define GEC_REG_TEST0		0x058
++#define GEC_REG_TEST1		0x05c
++#define GEC_REG_EXTEND_CFG	0x060
++
++#define	GEC_REG_RX_OK_PKT_CNTR		0x100
++#define	GEC_REG_RX_OK_BYTE_CNTR		0x104
++#define	GEC_REG_RX_RUNT_BYTE_CNTR	0x108
++#define	GEC_REG_RX_OSIZE_DROP_PKT_CNTR	0x10c
++#define	GEC_REG_RX_NO_BUF_DROP_PKT_CNTR	0x110
++#define	GEC_REG_RX_CRC_ERR_PKT_CNTR	0x114
++#define	GEC_REG_RX_ARL_DROP_PKT_CNTR	0x118
++#define	GEC_REG_MYVLANID_MISMATCH_DROP_PKT_CNTR 0x11c
++#define	GEC_REG_RX_CHKSUM_ERR_PKT_CNTR	0x120
++#define	GEC_REG_RX_PAUSE_FRAME_PKT_CNTR	0x124
++#define	GEC_REG_TX_OK_PKT_CNTR		0x128
++#define	GEC_REG_TX_OK_BYTE_CNTR		0x12c
++#define	GEC_REG_TX_COLLISION_CNTR	0x130
++#define	GEC_REG_TX_PAUSE_FRAME_CNTR	0x130
++#define	GEC_REG_TX_FIFO_UNDERRUN_RETX_CNTR 0x134
++
++#define GEC_INT_MIB_COUNTER_TH	BIT(3)
++#define GEC_INT_PORT_STATUS_CHG	BIT(2)
++
++#define FE_PHY_LED_MODE (0x1 << 12)
++
++static void internal_phy_init_timer(struct cns21xx_gec *gec);
++static void internal_phy_start_timer(struct cns21xx_gec *gec);
++static void internal_phy_stop_timer(struct cns21xx_gec *gec);
++
++static void cns21xx_gec_phy_powerdown(struct cns21xx_gec *gec);
++static void cns21xx_gec_phy_powerup(struct cns21xx_gec *gec);
++
++static inline u32 cns21xx_gec_rr(struct cns21xx_gec *gec, unsigned int reg)
++{
++	return __raw_readl(gec->base + reg);
++}
++
++static inline void cns21xx_gec_wr(struct cns21xx_gec *gec, unsigned int reg,
++			       u32 val)
++{
++	__raw_writel(val, gec->base + reg);
++}
++
++static void cns21xx_gec_timer_func(unsigned long data)
++{
++	struct cns21xx_gec *gec = (struct cns21xx_gec *) data;
++	struct cns21xx_gec_ring *txring = &gec->txring;
++	int i;
++	int txsd_index;
++	int txsd_current;
++	int skb_free_count = 0;
++	struct cns21xx_gec_txd *txd;
++	unsigned long flags;
++
++	local_irq_save(flags);
++	txsd_current = cns21xx_gec_rr(gec, GEC_REG_TX_DPTR);
++	txsd_index = (txsd_current - (u32)txring->desc_dma) >> 4;
++	if (txsd_index > txring->dirty) {
++		skb_free_count = txsd_index - txring->dirty;
++	} else if (txsd_index <= txring->dirty) {
++		skb_free_count = txring->count + txsd_index -
++				 txring->dirty;
++	}
++	for (i = 0; i < skb_free_count; i++) {
++		txd = ((struct cns21xx_gec_txd *) txring->desc_cpu) +
++		      txring->dirty;
++
++		if (txd->cown == 0)
++			break;
++
++		if (txring->skbs[txring->dirty]) {
++			dev_kfree_skb_any(txring->skbs[txring->dirty]);
++			txring->skbs[txring->dirty] = NULL;
++
++			dma_unmap_single(gec->parent,
++					 txd->sdp,
++					 txd->length,
++					 DMA_TO_DEVICE);
++		}
++
++		txring->dirty++;
++		if (txring->dirty == txring->count)
++			txring->dirty = 0;
++	}
++	local_irq_restore(flags);
++}
++
++static void __init cns21xx_gec_timer_init(struct cns21xx_gec *gec)
++{
++	init_timer(&gec->nic_timer);
++	gec->nic_timer.function = &cns21xx_gec_timer_func;
++	gec->nic_timer.data = (unsigned long) gec;
++}
++
++static void cns21xx_gec_timer_modify(struct cns21xx_gec *gec, unsigned int t)
++{
++	mod_timer(&gec->nic_timer, jiffies + t);
++}
++
++static int cns21xx_gec_write_phy(struct cns21xx_gec *gec,
++			      u8 addr, u8 reg, u16 val)
++{
++	int i;
++
++	if (addr > 31 || reg > 31)
++		return -EINVAL;
++
++	/* clear previous rw_ok status */
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL0, 0x1 << 15);
++
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL0,
++		    addr | (reg  << 8) | (val << 16) | (0x1 << 13));
++
++	for (i = 0; i < 10000; i++) {
++		u32 status;
++
++		status = cns21xx_gec_rr(gec, GEC_REG_PHY_CTRL0);
++		if (status & (0x1 << 15)) {
++			/*
++			 * clear the rw_ok status,
++			 * and clear other bits value
++			 */
++			cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL0, (0x1 << 15));
++			return 0;
++		}
++		udelay(1000);
++	}
++
++	dev_err(&gec->netdev->dev,
++		"%s timed out, phy_addr:0x%x, phy_reg:0x%x, write_data:0x%x\n",
++	       __func__, addr, reg, val);
++
++	return -EIO;
++}
++
++static int cns21xx_gec_read_phy(struct cns21xx_gec *gec,
++			     u8 addr, u8 reg, u16 *val)
++{
++	int i;
++
++	if (addr > 31 || reg > 31)
++		return -EINVAL;
++
++	/* clear previous rw_ok status */
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL0, 0x1 << 15);
++
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL0,
++		    addr | (reg << 8) | (0x1 << 14));
++
++	for (i = 0; i < 10000; i++) {
++		u32 status;
++
++		status = cns21xx_gec_rr(gec, GEC_REG_PHY_CTRL0);
++		if (status & (0x1 << 15)) {
++			/*
++			 * clear the rw_ok status,
++			 * and clear other bits value
++			 */
++			cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL0, (0x1 << 15));
++			*val = (status >> 16) & 0xffff;
++			return 0;
++		}
++		udelay(1000);
++	}
++
++	dev_err(&gec->netdev->dev,
++		"%s timed out, phy_addr:0x%x, phy_reg:0x%x\n",
++	       __func__, addr, reg);
++
++	*val = 0xffff;
++	return -EIO;
++}
++
++static void cns21xx_gec_dma_config(struct cns21xx_gec *gec)
++{
++	u32 dma_config = 0;
++
++	dma_config = cns21xx_gec_rr(gec, GEC_REG_DMA_CFG);
++
++	/* Config TX DMA */
++	/* TX auto polling: 1 us */
++	dma_config &= ~(0x3 << 6);
++	/* TX auto polling :100us */
++	dma_config |= (0x2 << 6);
++	/* TX auto polling C-bit enable */
++	dma_config |= (0x1 << 5);
++	/* TX can transmit packets, No suspend */
++	dma_config &= ~(0x1 << 4);
++
++	/* Config RX DMA */
++	/* RX auto polling: 1 us */
++	dma_config &=  ~(0x3 << 2);
++	/* RX auto polling :100us */
++	dma_config |=  (0x2 << 2);
++	/* RX auto polling C-bit enable */
++	dma_config |=  (0x1 << 1);
++	/* RX can receive packets, No suspend */
++	dma_config &=  ~0x1;
++
++	/* 4N+2(for Linux) */
++	dma_config &= ~(0x1 << 16);
++
++	cns21xx_gec_wr(gec, GEC_REG_DMA_CFG, dma_config);
++}
++
++static void cns21xx_gec_mac_config(struct cns21xx_gec *gec)
++{
++	u32 mac_config;
++
++	mac_config = cns21xx_gec_rr(gec, GEC_REG_MAC_CFG);
++
++#ifdef CNS21XX_GEC_TX_HW_CHECKSUM
++	/* Tx ChkSum offload On: TCP/UDP/IP */
++	mac_config |= (0x1 << 26);
++#else
++	/* Tx ChkSum offload Off: TCP/UDP/IP */
++	mac_config &= ~(0x1 << 26);
++#endif
++
++#ifdef CNS21XX_GEC_RX_HW_CHECKSUM
++	/* Rx ChkSum offload On: TCP/UDP/IP */
++	mac_config |= (0x1 << 25);
++#else
++	/* Rx ChkSum offload Off: TCP/UDP/IP */
++	mac_config &= ~(0x1 << 25);
++#endif
++
++	/* Accept CSUM error pkt */
++	mac_config |= (0x1 << 24);
++	/* IST disable */
++	mac_config &= ~(0x1 << 23);
++	/* Strip vlan tag */
++	mac_config |= (0x1 << 22);
++	/* Accept CRC error pkt */
++	mac_config |= (0x1 << 21);
++	/* CRC strip */
++	mac_config |= (0x1 << 20);
++
++	/* Discard oversize pkt */
++	mac_config &= ~(0x1 << 18);
++
++	/* clear, set 1518 */
++	mac_config &= ~(0x3 << 16);
++
++	/* 1536 */
++	mac_config |= (0x2 << 16);
++
++	/* IPG */
++	mac_config |= (0x1f << 10);
++
++	/* Do not skip 16 consecutive collisions pkt */
++	/* allow to re-tx */
++	mac_config |= (0x1 << 9);
++	/* Fast retry */
++	mac_config |= (0x1 << 8);
++
++	cns21xx_gec_wr(gec, GEC_REG_MAC_CFG, mac_config);
++}
++
++static void cns21xx_gec_fc_config(struct cns21xx_gec *gec)
++{
++	u32 fc_config;
++
++	fc_config = cns21xx_gec_rr(gec, GEC_REG_FC_CFG);
++
++	/* Send pause on frame threshold */
++	/* Clear */
++	fc_config &= ~(0xfff << 16);
++	fc_config |= (0x360 << 16);
++	/* Disable UC_PAUSE */
++	fc_config &= ~(0x1 << 8);
++	/* Enable Half Duplex backpressure */
++	fc_config |= (0x1 << 7);
++	/* Collision-based BP */
++	fc_config &= ~(0x1 << 6);
++	/* Disable max BP collision */
++	fc_config &= ~(0x1 << 5);
++	/* Clear */
++	fc_config &= ~(0x1f);
++	/* Set */
++	fc_config |= (0xc);
++
++	cns21xx_gec_wr(gec, GEC_REG_FC_CFG, fc_config);
++}
++
++static void cns21xx_gec_internal_phy_config(struct cns21xx_gec *gec)
++{
++	u32 phy_ctrl1;
++	u32 phy_addr;
++
++	dev_info(&gec->netdev->dev, "Internal PHY\n");
++
++	phy_addr = CNS21XX_GEC_PHY_ADDR;
++	gec->phy_addr = phy_addr;
++
++	phy_ctrl1 = cns21xx_gec_rr(gec, GEC_REG_PHY_CTRL1);
++
++	/* set phy addr for auto-polling */
++	phy_ctrl1 |= (phy_addr & 0x1f) << 24;
++
++	/* set internal phy mode */
++	/* internel 10/100 phy */
++	phy_ctrl1 |= 0x1 << 18;
++
++	/* MII */
++	phy_ctrl1 &= ~(0x1 << 17);
++
++	/* MAC mode */
++	phy_ctrl1 &= ~(0x1 << 16);
++
++	/* config PHY LED bit[13:12] */
++	cns21xx_gec_read_phy(gec, phy_addr, 31, (u16 *)(&phy_ctrl1));
++	/* clear LED control */
++	phy_ctrl1 &= ~(0x3 << 12);
++	phy_ctrl1 |= FE_PHY_LED_MODE;
++	cns21xx_gec_write_phy(gec, phy_addr, 31, phy_ctrl1);
++
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL1, phy_ctrl1);
++}
++
++static void cns21xx_gec_vsc8601_phy_config(struct cns21xx_gec *gec)
++{
++	u32 phy_ctrl1;
++	u32 phy_addr;
++	u16 phy_data;
++
++	phy_addr = CNS21XX_GEC_PHY_ADDR;
++	gec->phy_addr = phy_addr;
++
++	phy_ctrl1 = cns21xx_gec_rr(gec, GEC_REG_PHY_CTRL1);
++
++	/* phy addr for auto-polling */
++	phy_ctrl1 |= phy_addr << 24;
++
++	/* set external phy mode */
++	phy_ctrl1 &= ~(0x1 << 18);
++
++	/* set RGMII */
++	phy_ctrl1 |= (0x1 << 17);
++
++	/* set MII interface */
++	phy_ctrl1 &= ~(0x1 << 16);
++
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL1, phy_ctrl1);
++
++	/* set phy addr for auto-polling */
++	phy_ctrl1 |= phy_addr << 24;
++
++	/* set external phy mode */
++	/* MII/RGMII interface */
++	phy_ctrl1 &= ~(0x1 << 18);
++
++	/* RGMII */
++	phy_ctrl1 |= (0x1 << 17);
++
++	/* MAC mode */
++	phy_ctrl1 &= ~(0x1 << 16);
++
++	cns21xx_gec_read_phy(gec, phy_addr, 3, &phy_data);
++	if ((phy_data & 0x000f) == 0x0000) {
++		/* type A chip */
++		u16 tmp16;
++
++		dev_info(&gec->netdev->dev, "VSC8601 Type A Chip\n");
++		cns21xx_gec_write_phy(gec, phy_addr, 31, 0x52B5);
++		cns21xx_gec_write_phy(gec, phy_addr, 16, 0xAF8A);
++
++		phy_data = 0x0;
++		cns21xx_gec_read_phy(gec, phy_addr, 18, &tmp16);
++		phy_data |= (tmp16 & ~0x0);
++		cns21xx_gec_write_phy(gec, phy_addr, 18, phy_data);
++
++		phy_data = 0x0008;
++		cns21xx_gec_read_phy(gec, phy_addr, 17, &tmp16);
++		phy_data |= (tmp16 & ~0x000C);
++		cns21xx_gec_write_phy(gec, phy_addr, 17, phy_data);
++
++		cns21xx_gec_write_phy(gec, phy_addr, 16, 0x8F8A);
++		cns21xx_gec_write_phy(gec, phy_addr, 16, 0xAF86);
++
++		phy_data = 0x0008;
++		cns21xx_gec_read_phy(gec, phy_addr, 18, &tmp16);
++		phy_data |= (tmp16 & ~0x000C);
++		cns21xx_gec_write_phy(gec, phy_addr, 18, phy_data);
++
++		phy_data = 0x0;
++		cns21xx_gec_read_phy(gec, phy_addr, 17, &tmp16);
++		phy_data |= (tmp16 & ~0x0);
++		cns21xx_gec_write_phy(gec, phy_addr, 17, phy_data);
++
++		cns21xx_gec_write_phy(gec, phy_addr, 16, 0x8F8A);
++
++		cns21xx_gec_write_phy(gec, phy_addr, 16, 0xAF82);
++
++		phy_data = 0x0;
++		cns21xx_gec_read_phy(gec, phy_addr, 18, &tmp16);
++		phy_data |= (tmp16 & ~0x0);
++		cns21xx_gec_write_phy(gec, phy_addr, 18, phy_data);
++
++		phy_data = 0x0100;
++		cns21xx_gec_read_phy(gec, phy_addr, 17, &tmp16);
++		phy_data |= (tmp16 & ~0x0180);
++		cns21xx_gec_write_phy(gec, phy_addr, 17, phy_data);
++
++		cns21xx_gec_write_phy(gec, phy_addr, 16, 0x8F82);
++
++		cns21xx_gec_write_phy(gec, phy_addr, 31, 0x0);
++
++		/* Set port type: single port */
++		cns21xx_gec_read_phy(gec, phy_addr, 9, &phy_data);
++		phy_data &= ~(0x1 << 10);
++		cns21xx_gec_write_phy(gec, phy_addr, 9, phy_data);
++	} else if ((phy_data & 0x000f) == 0x0001) {
++		/* type B chip */
++		dev_info(&gec->netdev->dev, "VSC8601 Type B Chip\n");
++
++		cns21xx_gec_read_phy(gec, phy_addr, 23, &phy_data);
++		phy_data |= (0x1 << 8); 	/* set RGMII timing skew */
++		cns21xx_gec_write_phy(gec, phy_addr, 23, phy_data);
++	}
++
++	/* change to extened registers */
++	cns21xx_gec_write_phy(gec, phy_addr, 31, 0x0001);
++
++	cns21xx_gec_read_phy(gec, phy_addr, 28, &phy_data);
++	phy_data &= ~(0x3 << 14); 		/* set RGMII TX timing skew */
++	phy_data |= (0x3 << 14); 		/* 2.0ns */
++	phy_data &= ~(0x3 << 12); 		/* set RGMII RX timing skew */
++	phy_data |= (0x3 << 12); 		/* 2.0ns */
++	cns21xx_gec_write_phy(gec, phy_addr, 28, phy_data);
++
++	/* change to normal registers */
++	cns21xx_gec_write_phy(gec, phy_addr, 31, 0x0000);
++
++#if 0
++	/* set TX and RX clock skew */
++	cns21xx_gec_wr(gec, GEC_REG_TEST0, (0x2 << 2) | (0x2 << 0));
++#endif
++
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL1, phy_ctrl1);
++}
++
++static void cns21xx_gec_ip101a_phy_config(struct cns21xx_gec *gec)
++{
++	u32 phy_ctrl1;
++	u32 phy_addr;
++
++	dev_info(&gec->netdev->dev, "ICPlus IP101A\n");
++
++	phy_addr = 1;
++	gec->phy_addr = phy_addr;
++
++	phy_ctrl1 = cns21xx_gec_rr(gec, GEC_REG_PHY_CTRL1);
++
++	/* set phy addr for auto-polling */
++	phy_ctrl1 |= phy_addr << 24;
++
++	/* set external phy mode */
++	/* MII/RGMII interface */
++	phy_ctrl1 &= ~(0x1 << 18);
++
++	/* MII */
++	phy_ctrl1 &= ~(0x1 << 17);
++
++	/* MAC mode */
++	phy_ctrl1 &= ~(0x1 << 16);
++
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL1, phy_ctrl1);
++}
++
++static void cns21xx_gec_ip1001_phy_config(struct cns21xx_gec *gec)
++{
++	u32 phy_ctrl1;
++	u32 phy_addr;
++	u16 phy_data;
++
++	dev_info(&gec->netdev->dev, "ICPlus IP1001\n");
++
++	phy_addr = 1;
++	gec->phy_addr = phy_addr;
++
++	phy_ctrl1 = cns21xx_gec_rr(gec, GEC_REG_PHY_CTRL1);
++
++	/* set phy addr for auto-polling */
++	phy_ctrl1 |= phy_addr << 24;
++
++	/* set external phy mode */
++	/* MII/RGMII interface */
++	phy_ctrl1 &= ~(0x1 << 18);
++
++	/* RGMII */
++	phy_ctrl1 |= (0x1 << 17);
++
++	/* MAC mode */
++	phy_ctrl1 &= ~(0x1 << 16);
++
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL1, phy_ctrl1);
++	cns21xx_gec_read_phy(gec, phy_addr, 2, &phy_data);
++
++	/* set AN capability */
++	cns21xx_gec_read_phy(gec, phy_addr, 4, &phy_data);
++	/* clear existing values */
++	phy_data &= ~(0xf << 5);
++	/* 10Half */
++	phy_data |= (0x1 << 5);
++	/* 10Full */
++	phy_data |= (0x1 << 6);
++	/* 100Half */
++	phy_data |= (0x1 << 7);
++	/* 100Full */
++	phy_data |= (0x1 << 8);
++	/* FC on */
++	phy_data |= (0x1 << 10);
++	cns21xx_gec_write_phy(gec, phy_addr, 4, phy_data);
++
++	cns21xx_gec_read_phy(gec, phy_addr, 9, &phy_data);
++	/* 1000Full on */
++	phy_data |= (0x1 << 9);
++	phy_data &= ~(0x1 << 10);
++	phy_data |= (0x1 << 12);
++	cns21xx_gec_write_phy(gec, phy_addr, 9, phy_data);
++
++	cns21xx_gec_read_phy(gec, phy_addr, 16, &phy_data);
++	/* Smart function off */
++	phy_data &= ~(0x1 << 11);
++	/* TX delay */
++	phy_data |= (0x1 << 0);
++	/* RX delay */
++	phy_data |= (0x1 << 1);
++	cns21xx_gec_write_phy(gec, phy_addr, 16, phy_data);
++
++	cns21xx_gec_read_phy(gec, phy_addr, 16, &phy_data);
++
++#if 0
++	cns21xx_gec_read_phy(gec, phy_addr, 20, &phy_data);
++	phy_data &= ~(0x1<<2);
++
++	phy_data |=  (0x1<<9);
++	cns21xx_gec_write_phy(gec, phy_addr, 20, phy_data);
++#endif
++
++	cns21xx_gec_read_phy(gec, phy_addr, 0, &phy_data);
++	phy_data |= (0x1 << 9); 			/* re-AN */
++	cns21xx_gec_write_phy(gec, phy_addr, 0, phy_data);
++
++	cns21xx_gec_read_phy(gec, phy_addr, 9, &phy_data);
++
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL1, phy_ctrl1);
++}
++
++static int cns21xx_gec_phy_config(struct cns21xx_gec *gec)
++{
++	u32 phy_ctrl1;
++
++	switch (gec->pdata->phy_type) {
++	case CNS21XX_GEC_PHY_TYPE_INTERNAL:
++		cns21xx_gec_internal_phy_config(gec);
++		break;
++
++	case CNS21XX_GEC_PHY_TYPE_VSC8601:
++		cns21xx_gec_vsc8601_phy_config(gec);
++		break;
++
++	case CNS21XX_GEC_PHY_TYPE_IP101A:
++		cns21xx_gec_ip101a_phy_config(gec);
++		break;
++
++	case CNS21XX_GEC_PHY_TYPE_IP1001:
++		cns21xx_gec_ip1001_phy_config(gec);
++		break;
++
++	default:
++		return -EINVAL;
++	}
++
++	phy_ctrl1 = cns21xx_gec_rr(gec, GEC_REG_PHY_CTRL1);
++
++	/* AN On */
++	phy_ctrl1 |= (0x1 << 8);
++	if (!((phy_ctrl1 >> 8) & 0x1)) { 	/* AN disable */
++		/* Force to FullDuplex mode */
++		phy_ctrl1 &= ~(0x1 << 11);	/* Half */
++
++		/* Force to 100Mbps mode */
++		phy_ctrl1 &= ~(0x3 << 9);	/* clear to 10M */
++		phy_ctrl1 |= (0x1 << 9);	/* set to 100M */
++	}
++
++	/* Force TX FlowCtrl On,in 1000M */
++	phy_ctrl1 |= (0x1 << 13);
++
++	/* Force TX FlowCtrl On, in 10/100M */
++	phy_ctrl1 |= (0x1 << 12);
++
++	/* Enable MII auto polling */
++	phy_ctrl1 &= ~(0x1 << 7);
++
++	cns21xx_gec_wr(gec, GEC_REG_PHY_CTRL1, phy_ctrl1);
++	cns21xx_gec_phy_powerdown(gec);
++
++	return 0;
++}
++
++static void cns21xx_gec_vlan_config(struct cns21xx_gec *gec)
++{
++	/* setup VLAN entries */
++	gec->vlans[0].vid = 2;
++	gec->vlans[0].control = 0;
++	gec->vlans[1].vid = 2;
++	gec->vlans[1].control = 1;
++	gec->vlans[2].vid = 1;
++	gec->vlans[2].control = 1;
++	gec->vlans[3].vid = 1;
++	gec->vlans[3].control = 0;
++
++	cns21xx_gec_wr(gec, GEC_REG_VLAN_ID_0_1,
++		       (gec->vlans[0].vid & 0x0fff) |
++		       ((gec->vlans[1].vid & 0x0fff) << 16));
++
++	cns21xx_gec_wr(gec, GEC_REG_VLAN_ID_2_3,
++		       (gec->vlans[2].vid & 0x0fff) |
++		       ((gec->vlans[3].vid & 0x0fff) << 16));
++
++	cns21xx_gec_wr(gec, GEC_REG_VLAN_CTRL,
++		       (gec->vlans[0].control << 0) |
++		       (gec->vlans[1].control << 1) |
++		       (gec->vlans[2].control << 2) |
++		       (gec->vlans[3].control << 3));
++}
++
++static int cns21xx_gec_arl_config(struct cns21xx_gec *gec)
++{
++	u32 arl_config;
++
++	arl_config = cns21xx_gec_rr(gec, GEC_REG_ARL_CFG);
++
++	/* Misc Mode ON */
++	arl_config |= (0x1 << 4);
++
++	/* My MAC only enable */
++	arl_config |= (0x1 << 3);
++
++	/* Learn SA On */
++	arl_config &= ~(0x1 << 2);
++
++	/* Forward MC to CPU */
++	arl_config &= ~(0x1 << 1);
++
++	/* Hash direct mode */
++	arl_config &= ~(0x1);
++
++	cns21xx_gec_wr(gec, GEC_REG_ARL_CFG, arl_config);
++
++	return 0;
++}
++
++static void cns21xx_gec_phy_powerdown(struct cns21xx_gec *gec)
++{
++	u16 phy_data = 0;
++
++	cns21xx_gec_read_phy(gec, gec->phy_addr, 0, &phy_data);
++	phy_data |= (0x1 << 11);
++	cns21xx_gec_write_phy(gec, gec->phy_addr, 0, phy_data);
++
++	PWRMGT_SOFTWARE_RESET_CONTROL_REG |= (0x1 << 15);
++	PWRMGT_SOFTWARE_RESET_CONTROL_REG &= ~(0x1 << 15);
++}
++
++static void cns21xx_gec_phy_powerup(struct cns21xx_gec *gec)
++{
++	u16 phy_data = 0;
++
++	cns21xx_gec_read_phy(gec, gec->phy_addr, 0, &phy_data);
++	phy_data &= ~(0x1 << 11);
++	cns21xx_gec_write_phy(gec, gec->phy_addr, 0, phy_data);
++
++	PWRMGT_SOFTWARE_RESET_CONTROL_REG |= (0x1 << 15);
++}
++
++static void cns21xx_gec_enable(struct cns21xx_gec *gec)
++{
++	/* start Rx DMA */
++	cns21xx_gec_wr(gec, GEC_REG_RX_DMA_CTRL, 1);
++
++	cns21xx_gec_phy_powerup(gec);
++	internal_phy_start_timer(gec);
++}
++
++static void cns21xx_gec_shutdown(struct cns21xx_gec *gec)
++{
++	/* stop Rx and Tx DMA */
++	cns21xx_gec_wr(gec, GEC_REG_RX_DMA_CTRL, 0);
++	cns21xx_gec_wr(gec, GEC_REG_TX_DMA_CTRL, 0);
++
++	internal_phy_stop_timer(gec);
++}
++
++static irqreturn_t cns21xx_gec_receive_isr(int irq, void *dev_id)
++{
++	struct cns21xx_gec *gec = dev_id;
++
++	if (!test_bit(NAPI_STATE_SCHED, &gec->napi.state)) {
++		if (likely(napi_schedule_prep(&gec->napi)))
++			__napi_schedule(&gec->napi);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static int cns21xx_gec_install_receive_isr(struct cns21xx_gec *gec)
++{
++	int err;
++
++	err = request_irq(gec->rxrc_irq, cns21xx_gec_receive_isr,
++			  IRQF_SHARED, dev_name(&gec->netdev->dev), gec);
++	if (err)
++		dev_err(&gec->netdev->dev,
++			"unable to get IRQ %d (err=%d)\n",
++			 gec->rxrc_irq, err);
++
++	return err;
++}
++
++static void cns21xx_gec_uninstall_receive_isr(struct cns21xx_gec *gec)
++{
++	free_irq(gec->rxrc_irq, gec);
++}
++
++static irqreturn_t cns21xx_gec_rxqf_isr(int irq, void *dev_id)
++{
++	struct cns21xx_gec *gec = dev_id;
++
++	/*
++	 * because in normal state, fsql only invoke once
++	 * and set_bit is atomic function, so don't mask it
++	 */
++	set_bit(0, &gec->rx_queue_full);
++	if (!test_bit(NAPI_STATE_SCHED, &gec->napi.state)) {
++		if (likely(napi_schedule_prep(&gec->napi)))
++			__napi_schedule(&gec->napi);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static int cns21xx_gec_install_rxqf_isr(struct cns21xx_gec *gec)
++{
++	int err;
++
++	/*  QUEUE full interrupt handler */
++	err = request_irq(gec->rxqf_irq, cns21xx_gec_rxqf_isr,
++			  IRQF_SHARED, dev_name(&gec->netdev->dev), gec);
++	if (err)
++		dev_err(&gec->netdev->dev,
++			"unable to get IRQ %d (err=%d)\n",
++			 gec->rxqf_irq, err);
++
++	return err;
++}
++
++static void cns21xx_gec_uninstall_rxqf_isr(struct cns21xx_gec *gec)
++{
++	free_irq(gec->rxqf_irq, gec);
++}
++
++static void cns21xx_gec_mib_reset(struct cns21xx_gec *gec)
++{
++	unsigned long flags;
++
++	local_irq_save(flags);
++	(void) cns21xx_gec_rr(gec, GEC_REG_RX_OK_PKT_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_RX_OK_BYTE_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_RX_RUNT_BYTE_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_RX_OSIZE_DROP_PKT_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_RX_NO_BUF_DROP_PKT_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_RX_CRC_ERR_PKT_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_RX_ARL_DROP_PKT_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_MYVLANID_MISMATCH_DROP_PKT_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_RX_CHKSUM_ERR_PKT_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_RX_PAUSE_FRAME_PKT_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_TX_OK_PKT_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_TX_OK_BYTE_CNTR);
++	(void) cns21xx_gec_rr(gec, GEC_REG_TX_PAUSE_FRAME_CNTR);
++	local_irq_restore(flags);
++}
++
++static void cns21xx_gec_mib_read(struct cns21xx_gec *gec)
++{
++	unsigned long flags;
++
++	local_irq_save(flags);
++	gec->mib_info.mib_rx_ok_pkt +=
++		cns21xx_gec_rr(gec, GEC_REG_RX_OK_PKT_CNTR);
++	gec->mib_info.mib_rx_ok_byte +=
++		cns21xx_gec_rr(gec, GEC_REG_RX_OK_BYTE_CNTR);
++	gec->mib_info.mib_rx_runt +=
++		cns21xx_gec_rr(gec, GEC_REG_RX_RUNT_BYTE_CNTR);
++	gec->mib_info.mib_rx_over_size +=
++		cns21xx_gec_rr(gec, GEC_REG_RX_OSIZE_DROP_PKT_CNTR);
++	gec->mib_info.mib_rx_no_buffer_drop +=
++		cns21xx_gec_rr(gec, GEC_REG_RX_NO_BUF_DROP_PKT_CNTR);
++	gec->mib_info.mib_rx_crc_err +=
++		cns21xx_gec_rr(gec, GEC_REG_RX_CRC_ERR_PKT_CNTR);
++	gec->mib_info.mib_rx_arl_drop +=
++		cns21xx_gec_rr(gec, GEC_REG_RX_ARL_DROP_PKT_CNTR);
++	gec->mib_info.mib_rx_myvid_drop +=
++		cns21xx_gec_rr(gec, GEC_REG_MYVLANID_MISMATCH_DROP_PKT_CNTR);
++	gec->mib_info.mib_rx_csum_err +=
++		cns21xx_gec_rr(gec, GEC_REG_RX_CHKSUM_ERR_PKT_CNTR);
++	gec->mib_info.mib_rx_pause_frame +=
++		cns21xx_gec_rr(gec, GEC_REG_RX_PAUSE_FRAME_PKT_CNTR);
++	gec->mib_info.mib_tx_ok_pkt +=
++		cns21xx_gec_rr(gec, GEC_REG_TX_OK_PKT_CNTR);
++	gec->mib_info.mib_tx_ok_byte +=
++		cns21xx_gec_rr(gec, GEC_REG_TX_OK_BYTE_CNTR);
++	gec->mib_info.mib_tx_pause_frame +=
++		cns21xx_gec_rr(gec, GEC_REG_TX_PAUSE_FRAME_CNTR);
++	local_irq_restore(flags);
++}
++
++static const char *cns21xx_gec_speed_str(u32 phy_ctrl1)
++{
++	switch ((phy_ctrl1 >> 2) & 3) {
++	case 0:
++		return "10";
++	case 1:
++		return "100";
++	case 2:
++		return "1000";
++	}
++
++	return "???";
++}
++
++static irqreturn_t cns21xx_gec_status_isr(int irq, void *dev_id)
++{
++	struct cns21xx_gec *gec = dev_id;
++	u32 int_status;
++
++	int_status = cns21xx_gec_rr(gec, GEC_REG_INT);
++	cns21xx_gec_wr(gec, GEC_REG_INT, int_status);
++
++	/* flush write */
++	(void) cns21xx_gec_rr(gec, GEC_REG_INT);
++
++	if (int_status & GEC_INT_MIB_COUNTER_TH)
++		cns21xx_gec_mib_read(gec);
++
++	if (int_status & GEC_INT_PORT_STATUS_CHG) {
++		u32 phy_ctrl1;
++
++		phy_ctrl1 = cns21xx_gec_rr(gec, GEC_REG_PHY_CTRL1);
++		if (phy_ctrl1 & BIT(0)) {
++			netif_carrier_on(gec->netdev);
++			dev_info(&gec->netdev->dev,
++				"link up (%sMbps/%s duplex)\n",
++				cns21xx_gec_speed_str(phy_ctrl1),
++				(phy_ctrl1 & BIT(4)) ? "Full" : "Half");
++		} else {
++			netif_carrier_off(gec->netdev);
++			dev_info(&gec->netdev->dev, "link down\n");
++		}
++	}
++
++	return IRQ_HANDLED;
++}
++
++static inline void cns21xx_gec_enable_interrupt(struct cns21xx_gec *gec,
++					     u32 mask)
++{
++	cns21xx_gec_wr(gec, GEC_REG_INT_MASK,
++		    cns21xx_gec_rr(gec, GEC_REG_INT_MASK) & ~mask);
++}
++
++static int cns21xx_gec_install_status_isr(struct cns21xx_gec *gec)
++{
++	int err;
++
++	err = request_irq(gec->status_irq, cns21xx_gec_status_isr,
++			  IRQF_DISABLED, dev_name(&gec->netdev->dev), gec);
++
++	if (err) {
++		dev_err(&gec->netdev->dev,
++			"unable to get IRQ %d (err=%d)\n",
++			 gec->status_irq, err);
++		return err;
++	}
++
++	cns21xx_gec_enable_interrupt(gec, GEC_INT_MIB_COUNTER_TH |
++					  GEC_INT_PORT_STATUS_CHG);
++
++	return 0;
++}
++
++static inline void cns21xx_gec_uninstall_status_isr(struct cns21xx_gec *gec)
++{
++	free_irq(gec->status_irq, gec);
++}
++
++static void cns21xx_gec_uninstall_isr(struct cns21xx_gec *gec)
++{
++	cns21xx_gec_uninstall_rxqf_isr(gec);
++	cns21xx_gec_uninstall_status_isr(gec);
++	cns21xx_gec_uninstall_receive_isr(gec);
++}
++
++static int cns21xx_gec_install_isr(struct cns21xx_gec *gec)
++{
++	int err;
++
++	/* setup delayed interrupts */
++	cns21xx_gec_wr(gec, GEC_REG_DLY_INT_CFG,
++		       (1 << 16) |
++		       ((CNS21XX_PEND_INT_COUNT & 0xFF) << 8) |
++		       (CNS21XX_PEND_INT_TIME & 0xFF));
++
++	err = cns21xx_gec_install_receive_isr(gec);
++	if (err)
++		goto err_out;
++
++	err = cns21xx_gec_install_rxqf_isr(gec);
++	if (err)
++		goto err_uninstall_receive;
++
++	err = cns21xx_gec_install_status_isr(gec);
++	if (err)
++		goto err_uninstall_rxqf;
++
++	return 0;
++
++ err_uninstall_rxqf:
++	cns21xx_gec_uninstall_rxqf_isr(gec);
++ err_uninstall_receive:
++	cns21xx_gec_uninstall_receive_isr(gec);
++ err_out:
++	return err;
++}
++
++static int cns21xx_gec_lan_open(struct net_device *dev)
++{
++	struct cns21xx_gec *gec = netdev_priv(dev);
++	int err;
++
++	dev_dbg(&gec->netdev->dev, "open\n");
++
++#ifdef MODULE
++	MOD_INC_USE_COUNT;
++#endif
++
++	napi_enable(&gec->napi);
++	netif_start_queue(dev);
++	err = cns21xx_gec_install_isr(gec);
++	if (err)
++		goto err;
++
++	cns21xx_gec_enable(gec);
++
++	return 0;
++
++ err:
++	netif_stop_queue(dev);
++	napi_disable(&gec->napi);
++	return err;
++}
++
++static void cns21xx_gec_timeout(struct net_device *dev)
++{
++	dev_dbg(&dev->dev, "timeout\n");
++	netif_wake_queue(dev);
++	dev->trans_start = jiffies;
++}
++
++static int cns21xx_gec_close(struct net_device *dev)
++{
++	struct cns21xx_gec *gec = netdev_priv(dev);
++
++	cns21xx_gec_phy_powerdown(gec);
++	cns21xx_gec_uninstall_isr(gec);
++	napi_disable(&gec->napi);
++	netif_stop_queue(dev);
++	cns21xx_gec_shutdown(gec);
++
++#ifdef MODULE
++	MOD_DEC_USE_COUNT;
++#endif
++
++	return 0;
++}
++
++static inline struct sk_buff *cns21xx_gec_alloc_skb(void)
++{
++	struct sk_buff *skb;
++
++	skb = dev_alloc_skb(MAX_PACKET_LEN + 2);
++
++	if (unlikely(!skb))
++		return NULL;
++
++	/* Make buffer alignment 2 beyond a 16 byte boundary
++	 * this will result in a 16 byte aligned IP header after
++	 * the 14 byte MAC header is removed
++	 */
++	skb_reserve(skb, 2);	/* 16 bit alignment */
++
++	return skb;
++}
++
++static inline int cns21xx_gec_tx_dma_size(struct cns21xx_gec *gec)
++{
++	return gec->txring.count * sizeof(struct cns21xx_gec_txd);
++}
++
++static inline int cns21xx_gec_rx_dma_size(struct cns21xx_gec *gec)
++{
++	return gec->rxring.count * sizeof(struct cns21xx_gec_rxd);
++}
++
++static void __init cns21xx_gec_buffer_free(struct cns21xx_gec *gec)
++{
++	struct cns21xx_gec_ring *txring = &gec->txring;
++	struct cns21xx_gec_ring *rxring = &gec->rxring;
++	int i;
++
++	if (rxring->desc_cpu) {
++		for (i = 0; i < rxring->count; i++) {
++			if (rxring->skbs[i])
++				dev_kfree_skb(rxring->skbs[i]);
++		}
++
++		dma_free_coherent(gec->parent, cns21xx_gec_rx_dma_size(gec),
++				  rxring->desc_cpu, rxring->desc_dma);
++		memset((void *)&rxring, 0, cns21xx_gec_rx_dma_size(gec));
++	}
++
++	if (txring->desc_cpu) {
++		dma_free_coherent(gec->parent, cns21xx_gec_tx_dma_size(gec),
++				  txring->desc_cpu, txring->desc_dma);
++		memset((void *)&txring, 0, cns21xx_gec_tx_dma_size(gec));
++	}
++
++	kfree(txring->skbs);
++	kfree(rxring->skbs);
++}
++
++static int __init cns21xx_gec_buffer_alloc(struct cns21xx_gec *gec)
++{
++	struct cns21xx_gec_ring *txring = &gec->txring;
++	struct cns21xx_gec_ring *rxring = &gec->rxring;
++	struct cns21xx_gec_rxd *rxd;
++	struct cns21xx_gec_txd *txd;
++	struct sk_buff	*skb;
++	int err = -ENOMEM;
++	int i;
++
++	rxring->skbs = kzalloc(rxring->count * sizeof(struct skb *),
++			       GFP_KERNEL);
++
++	if (rxring->skbs == NULL) {
++		dev_err(&gec->netdev->dev,
++			"%s allocation failed\n", "RX buffer");
++		goto err_out;
++	}
++
++	txring->skbs = kzalloc(txring->count * sizeof(struct skb *),
++			       GFP_KERNEL);
++
++	if (txring->skbs == NULL) {
++		dev_err(&gec->netdev->dev,
++			"%s allocation failed\n", "TX buffer");
++		goto err_out;
++	}
++
++	rxring->desc_cpu = dma_alloc_coherent(gec->parent,
++					      cns21xx_gec_rx_dma_size(gec),
++					      &rxring->desc_dma,
++					      GFP_KERNEL);
++	if (!rxring->desc_cpu) {
++		dev_err(&gec->netdev->dev,
++			"%s allocation failed\n", "RX ring");
++		goto err_out;
++	}
++
++	txring->desc_cpu = dma_alloc_coherent(gec->parent,
++					      cns21xx_gec_tx_dma_size(gec),
++					      &txring->desc_dma,
++					      GFP_KERNEL);
++	if (!txring->desc_cpu) {
++		dev_err(&gec->netdev->dev,
++			"%s allocation failed\n", "TX ring");
++		goto err_out;
++	}
++
++	/* Clean RX Memory */
++	memset((void *)rxring->desc_cpu, 0, cns21xx_gec_rx_dma_size(gec));
++	dev_dbg(&gec->netdev->dev,
++		"rxring->desc_cpu=0x%08X rxring->desc_dma=0x%08X\n",
++		(u32) rxring->desc_cpu,
++		(u32) rxring->desc_dma);
++
++	/* Set cur_index Point to Zero */
++	rxring->curr = 0;
++	rxd = rxring->desc_cpu;
++	for (i = 0; i < rxring->count; i++, rxd++) {
++		if (i == (rxring->count - 1)) {
++			/* End bit == 0; */
++			rxd->eor = 1;
++		}
++		skb = cns21xx_gec_alloc_skb();
++		if (!skb) {
++			dev_err(&gec->netdev->dev,
++				"%s allocation failed\n", "skb");
++			goto err_out;
++		}
++
++		/* Trans Packet from Virtual Memory to Physical Memory */
++		rxring->skbs[i]	= skb;
++		rxd->sdp = dma_map_single(gec->parent,
++						      skb->data,
++						      MAX_PACKET_LEN,
++						      DMA_TO_DEVICE);
++		rxd->length	= MAX_PACKET_LEN;
++	}
++
++	/* Clear TX Memory */
++	memset((void *)txring->desc_cpu, 0, cns21xx_gec_tx_dma_size(gec));
++	dev_dbg(&gec->netdev->dev,
++		"txring->desc_cpu=0x%08X txring->desc_dma=0x%08X\n",
++		(u32) txring->desc_cpu,
++		(u32) txring->desc_dma);
++
++	/* Set cur_index Point to Zero */
++	txring->curr = 0;
++	txd = txring->desc_cpu;
++	for (i = 0; i < txring->count; i++, txd++) {
++		if (i == (txring->count - 1)) {
++			/* End of Ring ==1 */
++			txd->eor = 1;
++		}
++		/* TX Ring , Cown == 1 */
++		txd->cown = 1;
++
++#ifdef CNS21XX_GEC_TX_HW_CHECKSUM
++		/* Enable Checksum */
++		txd->ico		= 1;
++		txd->uco		= 1;
++		txd->tco		= 1;
++#else
++		txd->ico		= 0;
++		txd->uco		= 0;
++		txd->tco		= 0;
++#endif
++		/* clear txring->skbs */
++		txring->skbs[i] 	= NULL;
++	}
++
++	return 0;
++
++err_out:
++	cns21xx_gec_buffer_free(gec);
++	return err;
++}
++
++static int cns21xx_gec_get_rfd_buff(struct cns21xx_gec *gec, int index)
++{
++	struct cns21xx_gec_ring *rxring = &gec->rxring;
++	struct cns21xx_gec_rxd *rxd;
++	struct sk_buff *skb;
++	unsigned char *data;
++	int len;
++
++	/* TODO: get rxdesc ptr */
++	rxd = ((struct cns21xx_gec_rxd *) rxring->desc_cpu) + index;
++	skb = rxring->skbs[index];
++
++	len = rxd->length;
++
++	dma_unmap_single(gec->parent, rxd->sdp, len,
++			 DMA_FROM_DEVICE);
++
++	data = skb_put(skb, len);
++
++	skb->dev = gec->netdev;
++
++#ifdef CNS21XX_GEC_RX_HW_CHECKSUM
++	if (rxd->ipf == 1 || rxd->l4f == 1) {
++		if (rxd->prot != 0x11) {
++			skb->ip_summed = CHECKSUM_NONE;
++		} else {
++			/* CheckSum Fail */
++			skb->dev->stats.rx_errors++;
++			goto freepacket;
++		}
++	} else {
++			skb->ip_summed = CHECKSUM_UNNECESSARY;
++	}
++#else
++	skb->ip_summed = CHECKSUM_NONE;
++#endif
++
++	/* this line must, if no, packet will not send to network layer */
++	skb->protocol = eth_type_trans(skb, skb->dev);
++
++	skb->dev->stats.rx_packets++;
++	skb->dev->stats.rx_bytes += len;
++	skb->dev->last_rx = jiffies;
++
++	/* if netif_rx any package, will let this driver core dump. */
++	netif_receive_skb(skb);
++
++	return 0;
++
++freepacket:
++	dev_kfree_skb_any(skb);
++	return 0;
++}
++
++static void cns21xx_gec_receive_packet(struct cns21xx_gec *gec,
++				    int mode, int *work_done, int work_to_do)
++{
++	struct cns21xx_gec_ring *rxring = &gec->rxring;
++	int rxsd_index;
++	u32 rxsd_current;
++	struct cns21xx_gec_rxd *rxd;
++	struct sk_buff *skb;
++	int i, rxcount = 0;
++
++	rxd = ((struct cns21xx_gec_rxd *) rxring->desc_cpu) + rxring->curr;
++	rxsd_current = cns21xx_gec_rr(gec, GEC_REG_RX_DPTR);
++	rxsd_index = (rxsd_current - (u32)rxring->desc_dma) >> 4;
++
++	if (rxsd_index > rxring->curr) {
++		rxcount = rxsd_index - rxring->curr;
++	} else if (rxsd_index < rxring->curr) {
++		rxcount = (rxring->count - rxring->curr) +
++			  rxsd_index;
++	} else {
++		if (rxd->cown == 0) {
++			goto receive_packet_exit;
++		} else {
++			/* Queue Full */
++			rxcount = rxring->count;
++		}
++	}
++
++	for (i = 0; i < rxcount; i++) {
++		if (*work_done >= work_to_do)
++			break;
++
++		++(*work_done);
++
++		if (rxd->cown != 0) {
++			/* Alloc New skb_buff */
++			skb = cns21xx_gec_alloc_skb();
++
++			/* Check skb_buff */
++			if (skb != NULL) {
++				cns21xx_gec_get_rfd_buff(gec, rxring->curr);
++				rxring->skbs[rxring->curr] = skb;
++				rxd->sdp =
++					dma_map_single(gec->parent,
++						       skb->data,
++						       MAX_PACKET_LEN,
++						       DMA_TO_DEVICE);
++				rxd->length = MAX_PACKET_LEN;
++
++				/* set cbit to 0 for CPU Transfer */
++				rxd->cown = 0;
++			} else {
++				/*
++				 * TODO: I will add dev->lp.stats->rx_dropped,
++				 * it will effect the performance
++				 */
++				dev_warn(&gec->netdev->dev,
++					 "skb allocation failed, reuse the buffer\n");
++
++				/* set cbit to 0 for CPU Transfer */
++				rxd->cown = 0;
++				return;
++			}
++		} else {
++#if 0
++			dev_err(&gec->netdev->dev, "encounter COWN == 0 BUG\n");
++#endif
++		}
++
++		if (rxring->curr == (rxring->count - 1)) {
++			rxring->curr = 0;
++			rxd = rxring->desc_cpu;
++		} else {
++			rxring->curr++;
++			rxd++;
++		}
++	}
++
++ receive_packet_exit:
++	return;
++}
++
++static int cns21xx_gec_poll(struct napi_struct *napi, int budget)
++{
++	struct cns21xx_gec *gec;
++	int work_done = 0;
++	int work_to_do = budget;
++
++	gec = container_of(napi, struct cns21xx_gec, napi);
++	cns21xx_gec_receive_packet(gec, 0, &work_done, work_to_do);
++
++	budget -= work_done;
++
++	/* if no Tx and not enough Rx work done, exit the polling mode */
++	if (work_done) {
++		if (test_bit(0, &gec->rx_queue_full) == 1) {
++			/* queue full */
++			clear_bit(0, &gec->rx_queue_full);
++			/* start Rx DMA */
++			cns21xx_gec_wr(gec, GEC_REG_RX_DMA_CTRL, 1);
++			return 1;
++		}
++	} else {
++		napi_complete(&gec->napi);
++#ifdef CONFIG_STAR_NIC_NAPI_MASK_IRQ
++		enable_irq(gec->rxrc_irq);
++#endif
++		return 0;
++	}
++
++	return work_done;
++}
++
++static int cns21xx_gec_send_packet(struct sk_buff *skb, struct net_device *dev)
++{
++	struct cns21xx_gec *gec = netdev_priv(dev);
++	struct cns21xx_gec_txd *txd;
++	struct cns21xx_gec_ring *txring = &gec->txring;
++	struct sk_buff *skb_free = NULL;
++	unsigned long flags;
++	unsigned int len;
++
++	if (skb_padto(skb, ETH_ZLEN))
++		return NETDEV_TX_OK;
++
++	len = max_t(unsigned int, skb->len, ETH_ZLEN);
++
++	spin_lock_irqsave(&gec->tx_lock, flags);
++
++	txd = ((struct cns21xx_gec_txd *) txring->desc_cpu) + txring->curr;
++	if (txd->cown == 0) {
++		/* This TFD is busy */
++		spin_unlock_irqrestore(&gec->tx_lock, flags);
++		/* re-queue the skb */
++		return NETDEV_TX_BUSY;
++	}
++
++	if (txd->sdp != 0) {
++		/* MUST TODO: Free skbuff */
++		skb_free = txring->skbs[txring->curr];
++
++		dma_unmap_single(gec->parent,
++				 txd->sdp,
++				 txd->length,
++				 DMA_TO_DEVICE);
++		txring->dirty = txring->curr + 1;
++		if (txring->dirty == txring->count)
++			txring->dirty = 0;
++	}
++
++#ifdef CNS21XX_GEC_TX_HW_CHECKSUM
++	if (skb->protocol == __constant_htons(ETH_P_IP)) {
++		if (ip_hdr(skb)->protocol == IPPROTO_UDP) {
++			txd->uco = 1;
++			txd->tco = 0;
++		} else if (ip_hdr(skb)->protocol == IPPROTO_TCP) {
++			txd->uco = 0;
++			txd->tco = 1;
++		} else {
++			txd->uco = 0;
++			txd->tco = 0;
++		}
++	} else {
++		txd->ico = 0;
++		txd->uco = 0;
++		txd->tco = 0;
++	}
++#endif /* CNS21XX_GEC_TX_HW_CHECKSUM */
++
++	txring->skbs[txring->curr] = skb;
++
++	txd->length = len;
++	txd->sdp = dma_map_single(gec->parent, skb->data, len,
++					      DMA_TO_DEVICE);
++
++	txd->fs = 1;
++	txd->ls = 1;
++
++	/* Wake interrupt */
++	txd->intr = 0;
++	txd->cown = 0;
++
++	mb();
++
++	/* Start Tx DMA */
++	cns21xx_gec_wr(gec, GEC_REG_TX_DMA_CTRL, 1);
++
++	dev->stats.tx_packets++;
++	dev->stats.tx_bytes += skb->len;
++	dev->trans_start = jiffies;
++
++	txring->curr++;
++	if (txring->curr == txring->count)
++		txring->curr = 0;
++
++	spin_unlock_irqrestore(&gec->tx_lock, flags);
++
++	if (skb_free)
++		dev_kfree_skb(skb_free);
++
++	cns21xx_gec_timer_modify(gec, 10);
++
++	return NETDEV_TX_OK;
++}
++
++static void cns21xx_gec_set_mac_addr(struct cns21xx_gec *gec,
++				  const char *mac_addr)
++{
++	cns21xx_gec_wr(gec, GEC_REG_MY_MAC_H,
++		    (mac_addr[0] << 8) | mac_addr[1]);
++
++	cns21xx_gec_wr(gec, GEC_REG_MY_MAC_L,
++		    (mac_addr[2] << 24) | (mac_addr[3] << 16) |
++		    (mac_addr[4] << 8) |  mac_addr[5]);
++
++	dev_dbg(&gec->netdev->dev, "MAC address: %pM", mac_addr);
++}
++
++static int cns21xx_gec_set_lan_mac_addr(struct net_device *dev, void *addr)
++{
++	struct sockaddr *sock_addr = addr;
++	struct cns21xx_gec *gec = netdev_priv(dev);
++
++	spin_lock_irq(&gec->lock);
++	memcpy(dev->dev_addr, sock_addr->sa_data, 6);
++	cns21xx_gec_set_mac_addr(gec, sock_addr->sa_data);
++	spin_unlock_irq(&gec->lock);
++
++	return 0;
++}
++
++static int __init cns21xx_gec_setup(struct cns21xx_gec *gec)
++{
++	int err;
++
++	/* set high */
++	PWRMGT_SOFTWARE_RESET_CONTROL_REG |= (0x1 << 15);
++	/* set low */
++	PWRMGT_SOFTWARE_RESET_CONTROL_REG &= ~(0x1 << 15);
++	/* set high */
++	PWRMGT_SOFTWARE_RESET_CONTROL_REG |= (0x1 << 15);
++	/* set NIC clock to 67.5MHz */
++	PWRMGT_SYSTEM_CLOCK_CONTROL_REG |= (0x1 << 7);
++
++	/* enable NIC clock */
++	HAL_PWRMGT_ENABLE_NIC_CLOCK();
++#if 0
++	cns21xx_gec_wr(gec, GEC_REG_MAC_CFG, 0x00527C00);
++#endif
++	udelay(100);
++
++	/* Configure GPIO for NIC MDC/MDIO pins */
++	HAL_MISC_ENABLE_MDC_MDIO_PINS();
++	HAL_MISC_ENABLE_NIC_COL_PINS();
++
++#if 0
++	MISC_GPIOA_PIN_ENABLE_REG |= (0x7 << 22);
++	MISC_FAST_ETHERNET_PHY_CONFIG_REG |=  (FE_PHY_LED_MODE >> 12) & 0x3;
++
++	/* set high */
++	PWRMGT_SOFTWARE_RESET_CONTROL_REG |= (0x1 << 15);
++	/* set low */
++	PWRMGT_SOFTWARE_RESET_CONTROL_REG &= ~(0x1 << 15);
++	/* set high */
++	PWRMGT_SOFTWARE_RESET_CONTROL_REG |= (0x1 << 15);
++#endif
++
++	/* disable all interrupt status sources */
++	cns21xx_gec_wr(gec, GEC_REG_INT_MASK, ~(0));
++	/* clear pending interrupts */
++	cns21xx_gec_wr(gec, GEC_REG_INT, ~(0));
++
++	/* stop Rx and Tx DMA */
++	cns21xx_gec_wr(gec, GEC_REG_TX_DMA_CTRL, 0);
++	cns21xx_gec_wr(gec, GEC_REG_RX_DMA_CTRL, 0);
++
++	gec->txring.count = CNS21XX_GEC_NUM_TXDS;
++	gec->rxring.count = CNS21XX_GEC_NUM_RXDS;
++	err = cns21xx_gec_buffer_alloc(gec);
++	if (err)
++		return err;
++
++	cns21xx_gec_mac_config(gec);
++	cns21xx_gec_fc_config(gec);
++
++	err = cns21xx_gec_phy_config(gec);
++	if (err) {
++		cns21xx_gec_buffer_free(gec);
++		return err;
++	}
++
++	cns21xx_gec_vlan_config(gec);
++	cns21xx_gec_arl_config(gec);
++	cns21xx_gec_set_mac_addr(gec, gec->netdev->dev_addr);
++	cns21xx_gec_mib_reset(gec);
++
++	MISC_DEBUG_PROBE_SELECTION_REG = 0x00000125;    /* 0x00000105 pb0_nic */
++
++	cns21xx_gec_wr(gec, GEC_REG_TX_DPTR, gec->txring.desc_dma);
++	cns21xx_gec_wr(gec, GEC_REG_TX_BASE_ADDR, gec->txring.desc_dma);
++	cns21xx_gec_wr(gec, GEC_REG_RX_DPTR, gec->rxring.desc_dma);
++	cns21xx_gec_wr(gec, GEC_REG_RX_BASE_ADDR, gec->rxring.desc_dma);
++
++	cns21xx_gec_dma_config(gec);
++	internal_phy_init_timer(gec);
++	cns21xx_gec_timer_init(gec);
++
++	return 0;
++}
++
++static const struct net_device_ops cns21xx_gec_netdev_ops = {
++	.ndo_open		= cns21xx_gec_lan_open,
++	.ndo_stop		= cns21xx_gec_close,
++	.ndo_start_xmit		= cns21xx_gec_send_packet,
++	.ndo_set_mac_address	= cns21xx_gec_set_lan_mac_addr,
++	.ndo_tx_timeout		= cns21xx_gec_timeout,
++	.ndo_validate_addr	= eth_validate_addr,
++	.ndo_change_mtu		= eth_change_mtu,
++};
++
++static int __init cns21xx_gec_probe(struct platform_device *pdev)
++{
++	struct net_device *netdev;
++	struct cns21xx_gec *gec;
++	struct cns21xx_gec_plat_data *pdata;
++	int err;
++
++	pdata = pdev->dev.platform_data;
++	if (!pdata) {
++		dev_dbg(&pdev->dev, "no platform data\n");
++		err = -EINVAL;
++		goto err_out;
++	}
++
++	if (!pdata->mac_addr) {
++		dev_dbg(&pdev->dev, "no mac address\n");
++		err = -EINVAL;
++		goto err_out;
++	}
++
++	netdev = alloc_etherdev(sizeof(struct cns21xx_gec));
++	if (!netdev) {
++		err = -ENOMEM;
++		goto err_out;
++	}
++
++	SET_NETDEV_DEV(netdev, &pdev->dev);
++
++	gec = netdev_priv(netdev);
++	gec->pdata = pdata;
++	gec->parent = &pdev->dev;
++
++	gec->mem_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!gec->mem_res) {
++		dev_dbg(&pdev->dev, "no iomem resource\n");
++		err = -EINVAL;
++		goto err_free_netdev;
++	}
++
++	gec->status_irq = platform_get_irq_byname(pdev,
++						   CNS21XX_GEC_STATUS_IRQ_NAME);
++	if (gec->status_irq < 0) {
++		dev_dbg(&pdev->dev, "%s irq not specified\n",
++			CNS21XX_GEC_STATUS_IRQ_NAME);
++		err = -EINVAL;
++		goto err_free_netdev;
++	}
++
++	gec->rxrc_irq = platform_get_irq_byname(pdev,
++						CNS21XX_GEC_RXRC_IRQ_NAME);
++	if (gec->rxrc_irq < 0) {
++		dev_dbg(&pdev->dev, "%s irq not specified\n",
++			CNS21XX_GEC_RXRC_IRQ_NAME);
++		err = -EINVAL;
++		goto err_free_netdev;
++	}
++
++	gec->rxqf_irq = platform_get_irq_byname(pdev,
++						CNS21XX_GEC_RXQF_IRQ_NAME);
++	if (gec->rxqf_irq < 0) {
++		dev_dbg(&pdev->dev, "%s irq not specified\n",
++			CNS21XX_GEC_RXQF_IRQ_NAME);
++		err = -EINVAL;
++		goto err_free_netdev;
++	}
++
++	gec->txtc_irq = platform_get_irq_byname(pdev,
++						CNS21XX_GEC_TXTC_IRQ_NAME);
++	if (gec->txtc_irq < 0) {
++		dev_dbg(&pdev->dev, "%s irq not specified\n",
++			CNS21XX_GEC_TXTC_IRQ_NAME);
++		err = -EINVAL;
++		goto err_free_netdev;
++	}
++
++	gec->txqe_irq = platform_get_irq_byname(pdev,
++						CNS21XX_GEC_TXQE_IRQ_NAME);
++	if (gec->txqe_irq < 0) {
++		dev_dbg(&pdev->dev, "%s irq not specified\n",
++			CNS21XX_GEC_TXQE_IRQ_NAME);
++		err = -EINVAL;
++		goto err_free_netdev;
++	}
++
++	if (!request_mem_region(gec->mem_res->start,
++				resource_size(gec->mem_res), pdev->name)) {
++		dev_err(&pdev->dev, "unable to request mem region\n");
++		err = -EBUSY;
++		goto err_free_netdev;
++	}
++
++	gec->base = ioremap(gec->mem_res->start, resource_size(gec->mem_res));
++	if (!gec->base) {
++		dev_err(&pdev->dev, "ioremap failed \n");
++		err = -ENXIO;
++		goto err_release_mem;
++	}
++
++	platform_set_drvdata(pdev, netdev);
++
++	spin_lock_init(&gec->lock);
++	spin_lock_init(&gec->tx_lock);
++
++	netdev->base_addr = gec->mem_res->start;
++	netdev->netdev_ops = &cns21xx_gec_netdev_ops;
++#if defined(CNS21XX_GEC_TX_HW_CHECKSUM)
++	netdev->features = NETIF_F_IP_CSUM;
++#endif
++	memcpy(netdev->dev_addr, pdata->mac_addr, 6);
++	netif_napi_add(netdev, &gec->napi, cns21xx_gec_poll, 64);
++
++	gec->netdev = netdev;
++	err = register_netdev(netdev);
++	if (err)
++		goto err_unmap;
++
++	err = cns21xx_gec_setup(gec);
++	if (err)
++		goto err_unregister_netdev;
++
++	return 0;
++
++ err_unregister_netdev:
++	unregister_netdev(netdev);
++ err_unmap:
++	platform_set_drvdata(pdev, NULL);
++	iounmap(gec->base);
++ err_release_mem:
++	release_mem_region(gec->mem_res->start, resource_size(gec->mem_res));
++ err_free_netdev:
++	free_netdev(netdev);
++ err_out:
++	return err;
++}
++
++static int cns21xx_gec_remove(struct platform_device *pdev)
++{
++	struct net_device *netdev = platform_get_drvdata(pdev);
++	struct cns21xx_gec *gec = netdev_priv(netdev);
++
++	unregister_netdev(netdev);
++	platform_set_drvdata(pdev, NULL);
++	iounmap(gec->base);
++	release_mem_region(gec->mem_res->start, resource_size(gec->mem_res));
++	free_netdev(netdev);
++
++	return 0;
++}
++
++static struct platform_driver cns21xx_gec_driver = {
++	.remove	= cns21xx_gec_remove,
++	.driver = {
++		.name	= "cns21xx-gec",
++		.owner	= THIS_MODULE,
++	}
++};
++
++static int __init cns21xx_gec_init(void)
++{
++	return platform_driver_probe(&cns21xx_gec_driver, cns21xx_gec_probe);
++}
++
++static void __exit cns21xx_gec_exit(void)
++{
++	platform_driver_unregister(&cns21xx_gec_driver);
++}
++
++module_init(cns21xx_gec_init);
++module_exit(cns21xx_gec_exit);
++
++#define INTERNAL_PHY_PATCH_CHECKCNT	16
++#define INTERNAL_PHY_PATCH_CHECK_PERIOD	1000 /* ms */
++
++static void (*phy_statemachine)(struct cns21xx_gec*, int, int, int);
++
++#define ETH3220_PHY_MON_PERIOD INTERNAL_PHY_PATCH_CHECK_PERIOD
++
++/*  phy monitor state  */
++#define NUM_PHY 1
++#define PHY_STATE_INIT				0
++#define LINK_DOWN_POSITIVE			1
++#define WAIT_LINK_UP_POSITIVE			2
++#define LINK_UP_POSITIVE			3
++#define WAIT_BYPASS_LINK_UP_POSITIVE		4
++#define BYPASS_AND_LINK_UP_POSITIVE		5
++#define LINK_UP_8101_POSITIVE			6
++#define WAIT_8101_LINK_UP_POSITIVE		7
++
++#define PHY_STATE_LAST				(WAIT_8101_LINK_UP_POSITIVE+1)
++
++/*  time setting  */
++#define WAIT_BYPASS_LINK_UP_POSITIVE_TIMEOUT	5000	/*  5000 ms  */
++#define WAIT_BYPASS_LINK_UP_NEGATIVE_TIMEOUT	5000	/*  5000 ms  */
++#define LINK_DOWN_ABILITY_DETECT_TIMEOUT	5000	/*  5000 ms  */
++#define DETECT_8101_PERIOD			7000	/*  7000 ms  */
++#define WAIT_8101_LINK_UP_TIMEOUT		3000	/*  3000 ms  */
++
++#define MAX_PHY_PORT				1
++#define DEFAULT_AGC_TRAIN			16
++#define MAX_AGC_TRAIN				16	/* train 16 times */
++static int agc_train_num = DEFAULT_AGC_TRAIN;
++u32 port_displaybuf[NUM_PHY][MAX_AGC_TRAIN + 1] = {
++	{0}
++};
++
++static int cuv[3][3] = {
++	{1, 1, 4},
++	{1, 1, 0},
++	{1, 1, -4}
++};
++
++static u32 link_status_old;
++
++struct eth3220_phy {
++	u16 state;
++	u16 linkdown_cnt;
++	u32 state_time;
++	u32 timer;
++};
++
++#define DEBUG_PHY_STATE_TRANSITION			1
++#if DEBUG_PHY_STATE_TRANSITION
++/*
++ * show state transition of debug phy port.
++ *  -1 for all ports
++ *  -2 for disable all ports
++ *  0 - 4 for each port
++ */
++static int debug_phy_port = -2;
++static char *phystate_name[] = {
++	"init",			/*  PHY_STATE_INIT  */
++	"ldp",			/*  LINK_DOWN_POSITIVE  */
++	"wait_lup",		/*  WAIT_LINK_UP_POSITIVE  */
++	"lup",			/*  LINK_UP_POSITIVE  */
++	"wait_bp_lup",		/*  WAIT_BYPASS_LINK_UP_POSITIVE  */
++	"bp_lup",		/*  BYPASS_AND_LINK_UP_POSITIVE  */
++	"8101_lup",		/*  LINK_UP_8101_POSITIVE  */
++	"wait_8101_lup",	/*  WAIT_8101_LINK_UP_POSITIVE  */
++	"err",
++};
++#endif  /*  DEBUG_PHY_STATE_TRANSITION  */
++
++static struct eth3220_phy phy[5] = {
++	{PHY_STATE_INIT, 0, 0, 0},
++	{PHY_STATE_INIT, 0, 0, 0},
++	{PHY_STATE_INIT, 0, 0, 0},
++	{PHY_STATE_INIT, 0, 0, 0},
++	{PHY_STATE_INIT, 0, 0, 0}
++};
++
++static u16 long_cable_global_reg[32] = {
++	0x0000, 0x19a0, 0x1d00, 0x0e80,
++	0x0f60, 0x07c0, 0x07e0, 0x03e0,
++	0x0000, 0x0000, 0x0000, 0x2000,
++	0x8250, 0x1700, 0x0000, 0x0000,
++	0x0000, 0x0000, 0x0000, 0x0000,
++	0x0000, 0x204b, 0x01c2, 0x0000,
++	0x0000, 0x0000, 0x0fff, 0x4100,
++	0x9319, 0x0021, 0x0034, 0x270a | FE_PHY_LED_MODE
++};
++
++static u16 long_cable_local_reg[32] = {
++	0x3100, 0x786d, 0x01c1, 0xca51,
++	0x05e1, 0x45e1, 0x0003, 0x001c,
++	0x2000, 0x9828, 0xf3c4, 0x400c,
++	0xf8ff, 0x6940, 0xb906, 0x503c,
++	0x8000, 0x297a, 0x1010, 0x5010,
++	0x6ae1, 0x7c73, 0x783c, 0xfbdf,
++	0x2080, 0x3244, 0x1301, 0x1a80,
++	0x8e8f, 0x8000, 0x9c29, 0xa70a | FE_PHY_LED_MODE
++};
++
++/*=============================================================*
++ *  eth3220ac_rt8101_phy_setting
++ *=============================================================*/
++static  void eth3220ac_rt8101_phy_setting(struct cns21xx_gec *gec, int port)
++{
++	cns21xx_gec_write_phy(gec, port, 12, 0x18ff);
++	cns21xx_gec_write_phy(gec, port, 18, 0x6400);
++}
++
++static void eth3220ac_release_bpf(struct cns21xx_gec *gec, int port)
++{
++	cns21xx_gec_write_phy(gec, port, 18, 0x6210);
++}
++
++static  void eth3220ac_def_bpf(struct cns21xx_gec *gec, int port)
++{
++	cns21xx_gec_write_phy(gec, port, 18, 0x6bff);
++}
++
++static  void eth3220ac_def_linkdown_setting(struct cns21xx_gec *gec, int port)
++{
++	cns21xx_gec_write_phy(gec, port, 13, 0xe901);
++	cns21xx_gec_write_phy(gec, port, 14, 0xa3c6);
++}
++
++static  void eth3220ac_def_linkup_setting(struct cns21xx_gec *gec, int port)
++{
++	cns21xx_gec_write_phy(gec, port, 13, 0x6901);
++	cns21xx_gec_write_phy(gec, port, 14, 0xa286);
++}
++
++/*=============================================================*
++ *  eth3220ac_link_agc:
++ *=============================================================*/
++static int eth3220ac_link_agc(struct cns21xx_gec *gec, int port, int speed)
++{
++	u16 reg;
++	u32 agc_data = 0;
++	u32 short_cable;
++	int i, jj;
++
++	/* if speed = 100MHz, then continue */
++	if (speed == 0)
++		return 0;
++
++	short_cable = 0;
++	jj = 0;
++	for (i = 0; i < agc_train_num; i++) {
++		cns21xx_gec_read_phy(gec, port, 15, &reg);
++		reg &= 0x7f;
++		if (reg <= 0x12) {
++			short_cable = 1;
++			jj++;
++			agc_data += (u32)reg;
++		}
++	}
++
++	if (short_cable)
++		agc_data = (agc_data / jj) + 4;
++	else
++		agc_data = (cuv[2][0] * agc_data) / cuv[2][1] /
++			   agc_train_num - 4;
++
++	/*  Fix AGC  */
++	agc_data = 0xd0 | (agc_data << 9);
++	cns21xx_gec_write_phy(gec, port, 15, agc_data);
++	udelay(1000);
++	cns21xx_gec_read_phy(gec, port, 15, &reg);
++	reg &= ~(0x1 << 7);
++	cns21xx_gec_write_phy(gec, port, 15, reg);
++
++	return 0;
++}
++
++/*=============================================================*
++ *  eth3220ac_unlink_agc:
++ *=============================================================*/
++static void eth3220ac_unlink_agc(struct cns21xx_gec *gec, int port)
++{
++	/* start AGC adaptive */
++	cns21xx_gec_write_phy(gec, port, 15, 0xa050);
++}
++
++/*=============================================================*
++ *  eth3220ac_rt8100_check
++ *=============================================================*/
++static int eth3220ac_rt8100_check(struct cns21xx_gec *gec, int port)
++{
++	u16 reg, reg2;
++
++	/* Read reg27 (error register) */
++	cns21xx_gec_read_phy(gec, port, 27, &reg);
++	/* if error exists, set Bypass Filter enable */
++	if ((reg & 0xfffc)) {
++		cns21xx_gec_read_phy(gec, port, 15, &reg);
++		cns21xx_gec_read_phy(gec, port, 27, &reg2);
++		if ((reg2 & 0xfffc) && (((reg >> 9) & 0xff) < 0x1c)) {
++			dev_err(&gec->netdev->dev, "8100 pos err\n");
++
++			/* Bypass agcgain disable */
++			cns21xx_gec_write_phy(gec, port, 15, (reg & (~(0x1 << 7))));
++
++			/* repeat counts when reaching threshold error */
++			cns21xx_gec_write_phy(gec, port, 13, 0x4940);
++
++			/*
++			 * Speed up AN speed and compensate threshold
++			 * phase error
++			 */
++			cns21xx_gec_write_phy(gec, port, 14, 0xa306);
++
++			/* Bypass Filter enable */
++			cns21xx_gec_read_phy(gec, port, 18, &reg2);
++
++			cns21xx_gec_write_phy(gec, port, 18, (reg | 0x400));
++
++			/* restart AN */
++			cns21xx_gec_write_phy(gec, port, 0, 0x3300);
++			return 1;
++		}
++	}
++	return 0;
++}
++
++
++/*=============================================================*
++ *  eth3220ac_rt8100_linkdown
++ *=============================================================*/
++static void eth3220ac_rt8100_linkdown(struct cns21xx_gec *gec, int port)
++{
++	u16 reg;
++
++	/* Bypass Filter disable */
++	cns21xx_gec_read_phy(gec, port, 18, &reg);
++	cns21xx_gec_write_phy(gec, port, 18, (reg & (~(0x1 << 10))));
++	eth3220ac_def_linkdown_setting(gec, port);
++}
++
++static void eth3220ac_normal_phy_setting(struct cns21xx_gec *gec, int port)
++{
++	cns21xx_gec_write_phy(gec, port, 12, 0xd8ff);
++	eth3220ac_def_bpf(gec, port);
++}
++
++/*=============================================================*
++ *  wp3220ac_phystate
++ *=============================================================*/
++static void wp3220ac_phystate(struct cns21xx_gec *gec, int port, int link, int speed)
++{
++	int next_state;
++	u16 reg, reg2;
++
++	phy[port].timer += ETH3220_PHY_MON_PERIOD;
++
++	if (link) {
++		/*  Link up state  */
++		switch (phy[port].state) {
++		case LINK_UP_POSITIVE:
++			next_state = eth3220ac_rt8100_check(gec, port) ?
++				WAIT_BYPASS_LINK_UP_POSITIVE :
++				LINK_UP_POSITIVE;
++			break;
++
++		case PHY_STATE_INIT:
++		case WAIT_LINK_UP_POSITIVE:
++		case LINK_DOWN_POSITIVE:
++			next_state = LINK_UP_POSITIVE;
++			eth3220ac_def_linkup_setting(gec, port);
++			eth3220ac_link_agc(gec, port, speed);
++			eth3220ac_release_bpf(gec, port);
++			break;
++
++		case WAIT_BYPASS_LINK_UP_POSITIVE:
++		case BYPASS_AND_LINK_UP_POSITIVE:
++			next_state = BYPASS_AND_LINK_UP_POSITIVE;
++			break;
++
++		case WAIT_8101_LINK_UP_POSITIVE:
++			next_state = LINK_UP_8101_POSITIVE;
++			eth3220ac_link_agc(gec, port, speed);
++			cns21xx_gec_write_phy(gec, port, 12, 0x98ff);
++			break;
++
++		case LINK_UP_8101_POSITIVE:
++			next_state = LINK_UP_8101_POSITIVE;
++			break;
++
++		default:
++			next_state = LINK_UP_POSITIVE;
++			eth3220ac_def_linkup_setting(gec, port);
++			eth3220ac_link_agc(gec, port, speed);
++		}
++	} else {
++		/*  Link down state  */
++		switch (phy[port].state) {
++		case LINK_DOWN_POSITIVE:
++			cns21xx_gec_read_phy(gec, port, 5, &reg);
++			cns21xx_gec_read_phy(gec, port, 28, &reg2);
++
++			/* AN Link Partner Ability Register or NLP */
++			if (reg || (reg2 & 0x100))
++				next_state = WAIT_LINK_UP_POSITIVE;
++			else
++				next_state = LINK_DOWN_POSITIVE;
++			break;
++
++		case WAIT_LINK_UP_POSITIVE:
++			if (phy[port].state_time >
++					LINK_DOWN_ABILITY_DETECT_TIMEOUT)
++				next_state = LINK_DOWN_POSITIVE;
++			else
++				next_state = WAIT_LINK_UP_POSITIVE;
++			break;
++
++		case WAIT_BYPASS_LINK_UP_POSITIVE:
++			/* set timeout = 5 sec */
++			if (phy[port].state_time >
++					WAIT_BYPASS_LINK_UP_POSITIVE_TIMEOUT) {
++				next_state = LINK_DOWN_POSITIVE;
++
++				/* Bypass Filter disable */
++				eth3220ac_rt8100_linkdown(gec, port);
++				eth3220ac_def_bpf(gec, port);
++			} else {
++				next_state = WAIT_BYPASS_LINK_UP_POSITIVE;
++			}
++			break;
++
++		case BYPASS_AND_LINK_UP_POSITIVE:
++			next_state = LINK_DOWN_POSITIVE;
++			eth3220ac_rt8100_linkdown(gec, port);
++			eth3220ac_def_bpf(gec, port);
++			break;
++
++		case WAIT_8101_LINK_UP_POSITIVE:
++			if (phy[port].state_time > WAIT_8101_LINK_UP_TIMEOUT) {
++				next_state = LINK_DOWN_POSITIVE;
++				eth3220ac_normal_phy_setting(gec, port);
++				eth3220ac_def_linkdown_setting(gec, port);
++			} else {
++				next_state = WAIT_8101_LINK_UP_POSITIVE;
++			}
++			break;
++
++		case LINK_UP_POSITIVE:
++			eth3220ac_unlink_agc(gec, port);
++			eth3220ac_def_linkdown_setting(gec, port);
++			eth3220ac_def_bpf(gec, port);
++			if (phy[port].timer > DETECT_8101_PERIOD) {
++				next_state = LINK_DOWN_POSITIVE;
++				phy[port].timer = 0;
++				phy[port].linkdown_cnt = 1;
++			} else {
++				if (++phy[port].linkdown_cnt > 2) {
++					next_state = WAIT_8101_LINK_UP_POSITIVE;
++					eth3220ac_rt8101_phy_setting(gec, port);
++				} else {
++					next_state = LINK_DOWN_POSITIVE;
++				}
++			}
++			break;
++
++		case LINK_UP_8101_POSITIVE:
++			eth3220ac_normal_phy_setting(gec, port);
++			/*  fall down to phy normal state  */
++		case PHY_STATE_INIT:
++			eth3220ac_def_linkdown_setting(gec, port);
++			eth3220ac_unlink_agc(gec, port);
++		default:
++			next_state = LINK_DOWN_POSITIVE;
++		}
++	}
++
++	if (phy[port].state != next_state) {
++		phy[port].state_time = 0;
++#if DEBUG_PHY_STATE_TRANSITION
++		if (debug_phy_port == -1 || port == debug_phy_port) {
++			if ((phy[port].state < PHY_STATE_LAST) &&
++			    (next_state < PHY_STATE_LAST))
++				dev_dbg(&gec->netdev->dev,
++					"p%d: %s->%s, %d, %d\n",
++					port, phystate_name[phy[port].state],
++					phystate_name[next_state],
++					phy[port].timer,
++					phy[port].linkdown_cnt);
++			else
++				dev_dbg(&gec->netdev->dev,
++					"p%d: %d->%d\n",
++					port, phy[port].state, next_state);
++		}
++#endif   /*  DEBUG_PHY_STATE_TRANSITION  */
++	} else {
++		phy[port].state_time += ETH3220_PHY_MON_PERIOD;
++	}
++	phy[port].state = next_state;
++}
++
++/*=============================================================*
++ *  eth3220_phyinit:
++ *=============================================================*/
++static void eth3220ac_10m_agc(struct cns21xx_gec *gec)
++{
++	/* Force 10M AGC = 2c globally */
++	cns21xx_gec_write_phy(gec, 0, 31, 0x2f1a);
++	cns21xx_gec_write_phy(gec, 0, 12, 0x112c);
++	cns21xx_gec_write_phy(gec, 0, 13, 0x2e21);
++	cns21xx_gec_write_phy(gec, 0, 31, 0xaf1a);
++}
++
++static void eth3220ac_dfe_init(struct cns21xx_gec *gec)
++{
++	int i;
++
++	cns21xx_gec_write_phy(gec, 0, 31, 0x2f1a);
++	for (i = 0; i <= 7; i++)
++		cns21xx_gec_write_phy(gec, 0, i, 0);
++	cns21xx_gec_write_phy(gec, 0, 11, 0x0b50);
++	cns21xx_gec_write_phy(gec, 0, 31, 0xaf1a);
++}
++
++static void eth3220ac_phy_cdr_training_init(struct cns21xx_gec *gec)
++{
++	int i;
++
++	/* Force all port in 10M FD mode */
++	for (i = 0; i < NUM_PHY; i++)
++		cns21xx_gec_write_phy(gec, i, 0, 0x100);
++
++	/* Global setting */
++	cns21xx_gec_write_phy(gec, 0, 31, 0x2f1a);
++	cns21xx_gec_write_phy(gec, 0, 29, 0x5021);
++	udelay(2000); 		/* 2ms, wait > 1 ms */
++	cns21xx_gec_write_phy(gec, 0, 29, 0x4021);
++	udelay(2000);		/* 2ms, wait > 1 ms */
++	cns21xx_gec_write_phy(gec, 0, 31, 0xaf1a);
++
++	/* Enable phy AN */
++	for (i = 0; i < NUM_PHY; i++)
++		cns21xx_gec_write_phy(gec, i, 0, 0x3100);
++}
++
++static void eth3220_phyinit(struct cns21xx_gec *gec)
++{
++	eth3220ac_10m_agc(gec);
++	eth3220ac_dfe_init(gec);
++	eth3220ac_phy_cdr_training_init(gec);
++}
++
++static void eth3220_phycfg(struct cns21xx_gec *gec, int phyaddr)
++{
++	eth3220ac_def_linkdown_setting(gec, phyaddr);
++	eth3220ac_normal_phy_setting(gec, phyaddr);
++	cns21xx_gec_write_phy(gec, phyaddr, 9, 0x7f);
++}
++
++static void internal_phy_patch_check(struct cns21xx_gec *gec, int init)
++{
++	u32 short_cable_agc_detect_count;
++	u32 link_status = 0, link_speed;
++	u32 phy_addr = gec->phy_addr;
++	u16 phy_data;
++	u16 phy_data2;
++	int i;
++
++	cns21xx_gec_read_phy(gec, phy_addr, 1, &phy_data);
++	udelay(100);
++	cns21xx_gec_read_phy(gec, phy_addr, 1, &phy_data2);
++	if (((phy_data & 0x0004) != 0x0004) &&
++	    ((phy_data2 & 0x0004) != 0x0004)) {
++		/* link down */
++		short_cable_agc_detect_count = 0;
++		for (i = 0; i < INTERNAL_PHY_PATCH_CHECKCNT; i++) {
++			cns21xx_gec_read_phy(gec, phy_addr, 15, &phy_data);
++			udelay(1000);
++			if ((phy_data & 0x7F) <= 0x12) {
++				/* short cable */
++				short_cable_agc_detect_count++;
++				break;
++			}
++		}
++		if (short_cable_agc_detect_count) {
++			u32 mac_cfg;
++
++			/* short cable */
++			phy_statemachine = wp3220ac_phystate;
++			eth3220_phyinit(gec);
++			cns21xx_gec_read_phy(gec, phy_addr, 1, &phy_data);
++			if (phy_data & 0x0040)
++				link_status = 1;
++
++			mac_cfg = cns21xx_gec_rr(gec, GEC_REG_MAC_CFG);
++			if ((mac_cfg & 0xC) == 0x4) /* 100Mbps */
++				link_speed = 1;
++			else
++				link_speed = 0;
++
++			link_status_old = link_status;
++			for (i = 0; i < MAX_PHY_PORT; link_status >>= 1, i++)
++				eth3220_phycfg(gec, i);
++		} else {
++			/* long cable */
++			/* set to global domain */
++			cns21xx_gec_write_phy(gec, phy_addr, 31,
++					      0x2f1a);
++			for (i = 0; i < 32; i++)
++				cns21xx_gec_write_phy(gec, phy_addr, i,
++						      long_cable_global_reg[i]);
++
++			/* set to local domain */
++			cns21xx_gec_write_phy(gec, phy_addr, 31,
++					      0xaf1a);
++			for (i = 0; i < 32; i++)
++				cns21xx_gec_write_phy(gec, phy_addr, i,
++						      long_cable_local_reg[i]);
++		}
++	}
++}
++
++static void internal_phy_timer_func(unsigned long data)
++{
++	struct cns21xx_gec *gec = (struct cns21xx_gec *) data;
++
++	internal_phy_patch_check(gec, 0);
++	mod_timer(&gec->internal_phy_timer,
++		  jiffies + INTERNAL_PHY_PATCH_CHECK_PERIOD / 10);
++}
++
++static void internal_phy_init_timer(struct cns21xx_gec *gec)
++{
++	init_timer(&gec->internal_phy_timer);
++	gec->internal_phy_timer.function = internal_phy_timer_func;
++	gec->internal_phy_timer.data = (unsigned long) gec;
++}
++
++static void internal_phy_start_timer(struct cns21xx_gec *gec)
++{
++	dev_dbg(&gec->netdev->dev, "starting patch check.\n");
++
++	internal_phy_patch_check(gec, 1);
++	mod_timer(&gec->internal_phy_timer,
++		  jiffies + INTERNAL_PHY_PATCH_CHECK_PERIOD / 10);
++}
++
++static void internal_phy_stop_timer(struct cns21xx_gec *gec)
++{
++	dev_dbg(&gec->netdev->dev, "stopping patch check.\n");
++
++	del_timer_sync(&gec->internal_phy_timer);
++}
+--- /dev/null
++++ b/drivers/net/ethernet/cns21xx/Kconfig
+@@ -0,0 +1,7 @@
++config CNS21XX_GEC
++	tristate  "CNS21XX Gigabit Ethernet Controller support"
++	depends on ARCH_CNS21XX
++	help
++	  If you wish to compile a kernel for Cavium Networks CNS21XX
++	  with ethernet support, then you should always answer Y to this.
++
+--- /dev/null
++++ b/drivers/net/ethernet/cns21xx/Makefile
+@@ -0,0 +1,7 @@
++#
++# Makefile for the Cavium Networks CNS21XX ethernet driver
++#
++
++cns21xx_gec-y	+= cns21xx_gec_main.o
++
++obj-$(CONFIG_CNS21XX_GEC) += cns21xx_gec.o
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -32,6 +32,7 @@ source "drivers/net/ethernet/calxeda/Kco
+ source "drivers/net/ethernet/chelsio/Kconfig"
+ source "drivers/net/ethernet/cirrus/Kconfig"
+ source "drivers/net/ethernet/cisco/Kconfig"
++source "drivers/net/ethernet/cns21xx/Kconfig"
+ source "drivers/net/ethernet/davicom/Kconfig"
+ 
+ config DNET
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -18,6 +18,7 @@ obj-$(CONFIG_NET_CALXEDA_XGMAC) += calxe
+ obj-$(CONFIG_NET_VENDOR_CHELSIO) += chelsio/
+ obj-$(CONFIG_NET_VENDOR_CIRRUS) += cirrus/
+ obj-$(CONFIG_NET_VENDOR_CISCO) += cisco/
++obj-$(CONFIG_CNS21XX_GEC) += cns21xx/
+ obj-$(CONFIG_DM9000) += davicom/
+ obj-$(CONFIG_DNET) += dnet.o
+ obj-$(CONFIG_NET_VENDOR_DEC) += dec/

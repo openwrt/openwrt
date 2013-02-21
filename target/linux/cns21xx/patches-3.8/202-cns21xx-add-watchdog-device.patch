@@ -1,0 +1,63 @@
+--- a/arch/arm/mach-cns21xx/common.h
++++ b/arch/arm/mach-cns21xx/common.h
+@@ -20,5 +20,6 @@ extern struct sys_timer cns21xx_timer;
+ int cns21xx_register_uart0(void);
+ int cns21xx_register_uart1(void);
+ int cns21xx_register_usb(void);
++int cns21xx_register_wdt(void);
+ 
+ #endif /* _MACH_CNS21XX_COMMON_H */
+--- a/arch/arm/mach-cns21xx/devices.c
++++ b/arch/arm/mach-cns21xx/devices.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/serial_8250.h>
++#include <linux/fa_wdt.h>
+ 
+ #include <mach/irqs.h>
+ #include <mach/hardware.h>
+@@ -77,3 +78,32 @@ int __init cns21xx_register_uart1(void)
+ 	HAL_MISC_ENABLE_UART1_PINS();
+ 	return platform_device_register(&cns21xx_uart1_device);
+ }
++
++static struct resource cns21xx_wdt_resources[] = {
++	{
++		.start	= CNS21XX_WDT_BASE,
++		.end	= CNS21XX_WDT_BASE + SZ_4K - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++#define CNS21XX_WDT_CLOCK	10	/* 10 Hz */
++
++static struct fa_wdt_platform_data cns21xx_wdt_data = {
++	.clock	= CNS21XX_WDT_CLOCK,
++};
++
++static struct platform_device cns21xx_wdt_device = {
++	.name			= "fa-wdt",
++	.id			= -1,
++	.resource 		= cns21xx_wdt_resources,
++	.num_resources		= ARRAY_SIZE(cns21xx_wdt_resources),
++	.dev = {
++		.platform_data	= &cns21xx_wdt_data,
++	},
++};
++
++int __init cns21xx_register_wdt(void)
++{
++	return platform_device_register(&cns21xx_wdt_device);
++}
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -366,7 +366,7 @@ config IMX2_WDT
+ 
+ config FA_WATCHDOG
+ 	tristate "Faraday watchdog"
+-	depends on ARCH_GEMINI
++	depends on ARCH_GEMINI || ARCH_CNS21XX
+ 	help
+ 	  Say Y here if you want support for the built-in watchdog timer
+ 	  found in some Faraday FA526 based SoCs.
