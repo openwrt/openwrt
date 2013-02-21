@@ -1,0 +1,458 @@
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -364,6 +364,13 @@ config IMX2_WDT
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called imx2_wdt.
+ 
++config FA_WATCHDOG
++	tristate "Faraday watchdog"
++	depends on ARCH_GEMINI
++	help
++	  Say Y here if you want support for the built-in watchdog timer
++	  found in some Faraday FA526 based SoCs.
++
+ # AVR32 Architecture
+ 
+ config AT32AP700X_WDT
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -52,6 +52,7 @@ obj-$(CONFIG_STMP3XXX_WATCHDOG) += stmp3
+ obj-$(CONFIG_NUC900_WATCHDOG) += nuc900_wdt.o
+ obj-$(CONFIG_TS72XX_WATCHDOG) += ts72xx_wdt.o
+ obj-$(CONFIG_IMX2_WDT) += imx2_wdt.o
++obj-$(CONFIG_FA_WATCHDOG) += fa_wdt.o
+ 
+ # AVR32 Architecture
+ obj-$(CONFIG_AT32AP700X_WDT) += at32ap700x_wdt.o
+--- /dev/null
++++ b/drivers/watchdog/fa_wdt.c
+@@ -0,0 +1,413 @@
++/*
++ *  Watchdog driver for SoCs based on the Faraday FA526 core
++ *
++ *  Copyright (C) 2009 Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
++ *  Copyright (C) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/fs.h>
++#include <linux/notifier.h>
++#include <linux/reboot.h>
++#include <linux/uaccess.h>
++#include <linux/miscdevice.h>
++#include <linux/platform_device.h>
++#include <linux/watchdog.h>
++#include <linux/slab.h>
++#include <linux/fa_wdt.h>
++
++#define FA_WDCOUNTER		0x0
++#define FA_WDLOAD		0x4
++#define FA_WDRESTART		0x8
++
++#define WDRESTART_MAGIC		0x5AB9
++
++#define FA_WDCR			0xC
++
++#define WDCR_CLOCK_5MHZ		(1 << 4)
++#define WDCR_SYS_RST		(1 << 1)
++#define WDCR_ENABLE		(1 << 0)
++
++#define WDT_DEFAULT_TIMEOUT	13
++
++/* status bits */
++#define WDT_ACTIVE		0
++#define WDT_OK_TO_CLOSE		1
++
++static unsigned int timeout = WDT_DEFAULT_TIMEOUT;
++static int nowayout = WATCHDOG_NOWAYOUT;
++
++static DEFINE_SPINLOCK(fa_wdt_lock);
++
++static struct platform_device *fa_wdt_dev;
++
++struct fa_wdt_struct {
++	struct resource		*res;
++	struct device		*dev;
++	void __iomem		*base;
++	unsigned long		status;
++	unsigned int		clock;
++	unsigned int		max_timeout;
++};
++
++static const struct watchdog_info fa_wdt_info = {
++	.identity	= "Faraday watchdog",
++	.options	= WDIOF_MAGICCLOSE | WDIOF_KEEPALIVEPING |
++			  WDIOF_SETTIMEOUT,
++};
++
++/* Disable the watchdog. */
++static void fa_wdt_stop(struct fa_wdt_struct *fa_wdt)
++{
++	spin_lock(&fa_wdt_lock);
++
++	__raw_writel(0, fa_wdt->base + FA_WDCR);
++
++	clear_bit(WDT_ACTIVE, &fa_wdt->status);
++
++	spin_unlock(&fa_wdt_lock);
++}
++
++/* Service the watchdog */
++static void fa_wdt_service(struct fa_wdt_struct *fa_wdt)
++{
++	__raw_writel(WDRESTART_MAGIC, fa_wdt->base + FA_WDRESTART);
++}
++
++/* Enable and reset the watchdog. */
++static void fa_wdt_start(struct fa_wdt_struct *fa_wdt)
++{
++	spin_lock(&fa_wdt_lock);
++
++	__raw_writel(timeout * fa_wdt->clock,
++		     fa_wdt->base + FA_WDLOAD);
++
++	fa_wdt_service(fa_wdt);
++
++	/* set clock before enabling */
++	__raw_writel(WDCR_CLOCK_5MHZ | WDCR_SYS_RST,
++			fa_wdt->base + FA_WDCR);
++
++	__raw_writel(WDCR_CLOCK_5MHZ | WDCR_SYS_RST | WDCR_ENABLE,
++			fa_wdt->base + FA_WDCR);
++
++	set_bit(WDT_ACTIVE, &fa_wdt->status);
++
++	spin_unlock(&fa_wdt_lock);
++}
++
++/* Watchdog device is opened, and watchdog starts running. */
++static int fa_wdt_open(struct inode *inode, struct file *file)
++{
++	struct fa_wdt_struct *fa_wdt = platform_get_drvdata(fa_wdt_dev);
++
++	if (test_bit(WDT_ACTIVE, &fa_wdt->status))
++		return -EBUSY;
++
++	file->private_data = fa_wdt;
++
++	fa_wdt_start(fa_wdt);
++
++	return nonseekable_open(inode, file);
++}
++
++/* Close the watchdog device. */
++static int fa_wdt_close(struct inode *inode, struct file *file)
++{
++	struct fa_wdt_struct *fa_wdt = file->private_data;
++
++	/* Disable the watchdog if possible */
++	if (test_bit(WDT_OK_TO_CLOSE, &fa_wdt->status))
++		fa_wdt_stop(fa_wdt);
++	else
++		dev_warn(fa_wdt->dev, "Device closed unexpectedly - timer will not stop\n");
++
++	return 0;
++}
++
++/* Handle commands from user-space. */
++static long fa_wdt_ioctl(struct file *file, unsigned int cmd,
++			 unsigned long arg)
++{
++	struct fa_wdt_struct *fa_wdt = file->private_data;
++
++	int value;
++
++	switch (cmd) {
++	case WDIOC_KEEPALIVE:
++		fa_wdt_service(fa_wdt);
++		return 0;
++
++	case WDIOC_GETSUPPORT:
++		return copy_to_user((struct watchdog_info *)arg, &fa_wdt_info,
++			sizeof(fa_wdt_info)) ? -EFAULT : 0;
++
++	case WDIOC_SETTIMEOUT:
++		if (get_user(value, (int *)arg))
++			return -EFAULT;
++
++		if ((value < 1) || (value > fa_wdt->max_timeout))
++			return -EINVAL;
++
++		timeout = value;
++
++		/* restart wdt to use new timeout */
++		fa_wdt_stop(fa_wdt);
++		fa_wdt_start(fa_wdt);
++
++		/* Fall through */
++	case WDIOC_GETTIMEOUT:
++		return put_user(timeout, (int *)arg);
++
++	case WDIOC_GETTIMELEFT:
++		value = __raw_readl(fa_wdt->base + FA_WDCOUNTER);
++		return put_user(value / fa_wdt->clock, (int *)arg);
++
++	default:
++		return -ENOTTY;
++	}
++}
++
++/* Refresh the watchdog whenever device is written to. */
++static ssize_t fa_wdt_write(struct file *file, const char *data,
++			    size_t len, loff_t *ppos)
++{
++	struct fa_wdt_struct *fa_wdt = file->private_data;
++
++	if (len) {
++		if (!nowayout) {
++			size_t i;
++
++			clear_bit(WDT_OK_TO_CLOSE, &fa_wdt->status);
++			for (i = 0; i != len; i++) {
++				char c;
++
++				if (get_user(c, data + i))
++					return -EFAULT;
++				if (c == 'V')
++					set_bit(WDT_OK_TO_CLOSE,
++						&fa_wdt->status);
++			}
++		}
++		fa_wdt_service(fa_wdt);
++	}
++
++	return len;
++}
++
++static int fa_wdt_notify_sys(struct notifier_block *this,
++			     unsigned long code, void *unused)
++{
++	struct fa_wdt_struct *fa_wdt = platform_get_drvdata(fa_wdt_dev);
++
++	if (code == SYS_DOWN || code == SYS_HALT)
++		fa_wdt_stop(fa_wdt);
++
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block fa_wdt_notifier = {
++	.notifier_call = fa_wdt_notify_sys,
++};
++
++static const struct file_operations fa_wdt_fops = {
++	.owner		= THIS_MODULE,
++	.llseek		= no_llseek,
++	.unlocked_ioctl	= fa_wdt_ioctl,
++	.open		= fa_wdt_open,
++	.release	= fa_wdt_close,
++	.write		= fa_wdt_write,
++};
++
++static struct miscdevice fa_wdt_miscdev = {
++	.minor		= WATCHDOG_MINOR,
++	.name		= "watchdog",
++	.fops		= &fa_wdt_fops,
++};
++
++static void fa_wdt_shutdown(struct platform_device *pdev)
++{
++	struct fa_wdt_struct *fa_wdt = platform_get_drvdata(pdev);
++
++	fa_wdt_stop(fa_wdt);
++}
++
++static int fa_wdt_probe(struct platform_device *pdev)
++{
++	int ret;
++	int res_size;
++	struct resource *res;
++	void __iomem *base;
++	struct fa_wdt_struct *fa_wdt;
++	struct fa_wdt_platform_data *pdata;
++
++	pdata = pdev->dev.platform_data;
++	if (!pdata) {
++		dev_err(&pdev->dev, "no platform data specified\n");
++		return -EINVAL;
++	}
++
++	if (!pdata->clock) {
++		dev_err(&pdev->dev, "invalid clock value\n");
++		return -EINVAL;
++	}
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "can't get device resources\n");
++		return -ENODEV;
++	}
++
++	res_size = resource_size(res);
++	if (!request_mem_region(res->start, res_size, res->name)) {
++		dev_err(&pdev->dev, "can't allocate %d bytes at %d address\n",
++			res_size, res->start);
++		return -ENOMEM;
++	}
++
++	base = ioremap(res->start, res_size);
++	if (!base) {
++		dev_err(&pdev->dev, "ioremap failed\n");
++		ret = -EIO;
++		goto fail0;
++	}
++
++	fa_wdt = kzalloc(sizeof(struct fa_wdt_struct), GFP_KERNEL);
++	if (!fa_wdt) {
++		dev_err(&pdev->dev, "can't allocate interface\n");
++		ret = -ENOMEM;
++		goto fail1;
++	}
++
++	/* Setup fa_wdt driver structure */
++	fa_wdt->base = base;
++	fa_wdt->res = res;
++	fa_wdt->dev = &pdev->dev;
++	fa_wdt->clock = pdata->clock;
++	fa_wdt->max_timeout = 0xffffffffU / pdata->clock;
++
++	/* Set up platform driver data */
++	platform_set_drvdata(pdev, fa_wdt);
++	fa_wdt_dev = pdev;
++
++	if (fa_wdt_miscdev.parent) {
++		ret = -EBUSY;
++		goto fail2;
++	}
++
++	ret = register_reboot_notifier(&fa_wdt_notifier);
++	if (ret)
++		goto fail2;
++
++	fa_wdt_miscdev.parent = &pdev->dev;
++
++	ret = misc_register(&fa_wdt_miscdev);
++	if (ret)
++		goto fail3;
++
++	return 0;
++
++fail3:
++	unregister_reboot_notifier(&fa_wdt_notifier);
++fail2:
++	platform_set_drvdata(pdev, NULL);
++	kfree(fa_wdt);
++fail1:
++	iounmap(base);
++fail0:
++	release_mem_region(res->start, res_size);
++
++	return ret;
++}
++
++static int fa_wdt_remove(struct platform_device *pdev)
++{
++	struct fa_wdt_struct *fa_wdt = platform_get_drvdata(pdev);
++
++	platform_set_drvdata(pdev, NULL);
++	misc_deregister(&fa_wdt_miscdev);
++	unregister_reboot_notifier(&fa_wdt_notifier);
++	fa_wdt_dev = NULL;
++	iounmap(fa_wdt->base);
++	release_mem_region(fa_wdt->res->start, resource_size(fa_wdt->res));
++
++	kfree(fa_wdt);
++
++	return 0;
++}
++
++#ifdef CONFIG_PM
++static int fa_wdt_suspend(struct platform_device *pdev, pm_message_t message)
++{
++	struct fa_wdt_struct *fa_wdt = platform_get_drvdata(pdev);
++	unsigned int reg;
++
++	reg = __raw_readw(fa_wdt->base + FA_WDCR);
++	reg &= ~(WDCR_WDENABLE);
++	__raw_writel(reg, fa_wdt->base + FA_WDCR);
++
++	return 0;
++}
++
++static int fa_wdt_resume(struct platform_device *pdev)
++{
++	struct fa_wdt_struct *fa_wdt = platform_get_drvdata(pdev);
++	unsigned int reg;
++
++	if (fa_wdt->status) {
++		reg = __raw_readw(fa_wdt->base + FA_WDCR);
++		reg |= WDCR_WDENABLE;
++		__raw_writel(reg, fa_wdt->base + FA_WDCR);
++	}
++
++	return 0;
++}
++#else
++#define fa_wdt_suspend	NULL
++#define fa_wdt_resume	NULL
++#endif
++
++static struct platform_driver fa_wdt_driver = {
++	.probe		= fa_wdt_probe,
++	.remove		= fa_wdt_remove,
++	.shutdown	= fa_wdt_shutdown,
++	.suspend	= fa_wdt_suspend,
++	.resume		= fa_wdt_resume,
++	.driver		= {
++		.name	= "fa-wdt",
++		.owner	= THIS_MODULE,
++	},
++};
++
++static int __init fa_wdt_init(void)
++{
++	return platform_driver_probe(&fa_wdt_driver, fa_wdt_probe);
++}
++
++static void __exit fa_wdt_exit(void)
++{
++	platform_driver_unregister(&fa_wdt_driver);
++}
++
++module_init(fa_wdt_init);
++module_exit(fa_wdt_exit);
++
++module_param(timeout, uint, 0);
++MODULE_PARM_DESC(timeout, "Watchdog timeout in seconds");
++
++module_param(nowayout, int, 0);
++MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started");
++
++MODULE_AUTHOR("Paulius Zaleckas");
++MODULE_AUTHOR("Gabor Juhos");
++MODULE_DESCRIPTION("Watchdog driver for Faraday FA526 based SoCs");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS_MISCDEV(WATCHDOG_MINOR);
++MODULE_ALIAS("platform:fa-wdt");
+--- /dev/null
++++ b/include/linux/fa_wdt.h
+@@ -0,0 +1,13 @@
++/*
++ * Platform data definition for the Faraday watchdog driver
++ */
++
++#ifndef _FA_WDT_H
++#define _FA_WDT_H
++
++struct fa_wdt_platform_data {
++	unsigned int	clock;
++};
++
++#endif /* _FA_WDT_H */
++
