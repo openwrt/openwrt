@@ -1,0 +1,93 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -69,6 +69,12 @@ config VITESSE_PHY
+         ---help---
+           Currently supports the vsc8244
+ 
++config VITESSE_PHY_8601_SKEW
++	bool "Enable skew timing to vsc8601"
++	depends on VITESSE_PHY
++	---help---
++	  Apply clock timing adjustments for vsc8601
++
+ config SMSC_PHY
+ 	tristate "Drivers for SMSC PHYs"
+ 	---help---
+--- a/drivers/net/phy/vitesse.c
++++ b/drivers/net/phy/vitesse.c
+@@ -26,6 +26,11 @@
+ #define MII_VSC8244_EXTCON1_TX_SKEW	0x0800
+ #define MII_VSC8244_EXTCON1_RX_SKEW	0x0200
+ 
++/* EXT_CON1 Register values for VSC8601 */
++#define MII_VSC8601_EXTCON1_INIT       0x0000
++#define MII_VSC8601_EXTCON1_SKEW       0x0100
++#define MII_VSC8601_EXTCON1_ACTIPHY    0x0020
++
+ /* Vitesse Interrupt Mask Register */
+ #define MII_VSC8244_IMASK		0x19
+ #define MII_VSC8244_IMASK_IEN		0x8000
+@@ -56,6 +61,7 @@
+ 
+ #define PHY_ID_VSC8244			0x000fc6c0
+ #define PHY_ID_VSC8221			0x000fc550
++#define PHY_ID_VSC8601			0x00070420
+ 
+ MODULE_DESCRIPTION("Vitesse PHY driver");
+ MODULE_AUTHOR("Kriston Carson");
+@@ -98,10 +104,34 @@ static int vsc824x_config_init(struct ph
+ 	return err;
+ }
+ 
++static int vsc8601_config_init(struct phy_device *phydev)
++{
++	int err;
++	int extcon;
++
++	err = phy_write(phydev, MII_VSC8244_AUX_CONSTAT,
++					MII_VSC8244_AUXCONSTAT_INIT);
++
++	if (err < 0)
++		return err;
++
++#ifdef CONFIG_VITESSE_PHY_8601_SKEW
++	extcon = phy_read(phydev, MII_VSC8244_EXT_CON1);
++	if (err < 0)
++		return err;
++
++	extcon |= MII_VSC8601_EXTCON1_SKEW;
++
++	err = phy_write(phydev, MII_VSC8244_EXT_CON1, extcon);
++#endif
++
++	return err;
++}
++
+ static int vsc824x_ack_interrupt(struct phy_device *phydev)
+ {
+ 	int err = 0;
+-	
++
+ 	/*
+ 	 * Don't bother to ACK the interrupts if interrupts
+ 	 * are disabled.  The 824x cannot clear the interrupts
+@@ -177,6 +207,19 @@ static struct phy_driver vsc82xx_driver[
+ 	.ack_interrupt	= &vsc824x_ack_interrupt,
+ 	.config_intr	= &vsc82xx_config_intr,
+ 	.driver		= { .owner = THIS_MODULE,},
++}, {
++	/* Vitesse 8601 */
++	.phy_id         = PHY_ID_VSC8601,
++	.name           = "Vitesse VSC8601",
++	.phy_id_mask    = 0x000ffff8,
++	.features       = PHY_GBIT_FEATURES,
++	.flags          = PHY_HAS_INTERRUPT,
++	.config_init    = &vsc8601_config_init,
++	.config_aneg    = &genphy_config_aneg,
++	.read_status    = &genphy_read_status,
++	.ack_interrupt  = &vsc824x_ack_interrupt,
++	.config_intr    = &vsc82xx_config_intr,
++	.driver         = { .owner = THIS_MODULE,},
+ } };
+ 
+ static int __init vsc82xx_init(void)
