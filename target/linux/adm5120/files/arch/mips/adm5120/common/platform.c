@@ -200,7 +200,7 @@ struct amba_device adm5120_uart0_device = {
 		.end	= ADM5120_UART0_BASE + ADM5120_UART_SIZE - 1,
 		.flags	= IORESOURCE_MEM,
 	},
-	.irq		= { ADM5120_IRQ_UART0, -1 },
+	.irq		= { ADM5120_IRQ_UART0, 0 },
 	.periphid	= 0x0041010,
 };
 
@@ -218,7 +218,7 @@ struct amba_device adm5120_uart1_device = {
 		.end	= ADM5120_UART1_BASE + ADM5120_UART_SIZE - 1,
 		.flags	= IORESOURCE_MEM,
 	},
-	.irq		= { ADM5120_IRQ_UART1, -1 },
+	.irq		= { ADM5120_IRQ_UART1, 0 },
 	.periphid	= 0x0041010,
 };
 
