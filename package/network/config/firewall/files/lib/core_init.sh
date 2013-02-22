@@ -251,7 +251,7 @@ fw_load_zone() {
 			local d
 			for d in src dest; do
 				fw add $mode f ${chain}_${d}_${t} LOG ^ \
-					{ -m limit --limit $zone_log_limit --log-prefix "$t($d $zone_name): " }
+					{ -m limit --limit $zone_log_limit --log-prefix "$t($d:$zone_name): " }
 			done
 		done
 
