@@ -4,5 +4,5 @@
 
 fw3 -q network "$INTERFACE" >/dev/null || exit 0
 
-logger -t firewall "Restarting firewall due to ifup of $INTERFACE ($DEVICE)"
-fw3 -q restart
+logger -t firewall "Reloading firewall due to ifup of $INTERFACE ($DEVICE)"
+fw3 -q reload
