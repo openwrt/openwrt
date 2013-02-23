@@ -158,6 +158,15 @@
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
+@@ -107,7 +107,7 @@ void ieee80211_recalc_idle(struct ieee80
+ 
+ 	lockdep_assert_held(&local->mtx);
+ 
+-	active = !list_empty(&local->chanctx_list);
++	active = !list_empty(&local->chanctx_list) || local->monitors;
+ 
+ 	if (!local->ops->remain_on_channel) {
+ 		list_for_each_entry(roc, &local->roc_list, list) {
 @@ -436,7 +436,6 @@ int ieee80211_do_open(struct wireless_de
  	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
  	struct net_device *dev = wdev->netdev;
