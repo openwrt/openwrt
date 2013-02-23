@@ -85,6 +85,7 @@ define KernelPackage/mac80211/config
 	config PACKAGE_MAC80211_DEBUGFS
 		bool "Export mac80211 internals in DebugFS"
 		select KERNEL_DEBUG_FS
+		select KERNEL_RELAY if PACKAGE_kmod-ath9k-common
 		default y
 		help
 		  Select this to see extensive information about
@@ -385,7 +386,6 @@ define KernelPackage/ath/config
 
 	config PACKAGE_ATH_DEBUG
 		bool "Atheros wireless debugging"
-		select KERNEL_RELAY
 		help
 		  Say Y, if you want to debug atheros wireless drivers.
 		  Right now only ath9k makes use of this.
