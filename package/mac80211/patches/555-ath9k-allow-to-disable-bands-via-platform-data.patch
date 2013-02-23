@@ -48,7 +48,7 @@
  	    AR_SREV_9285(ah) ||
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -908,6 +908,8 @@ struct ath_hw {
+@@ -961,6 +961,8 @@ struct ath_hw {
  	bool is_clk_25mhz;
  	int (*get_mac_revision)(void);
  	int (*external_reset)(void);
@@ -59,7 +59,7 @@
  };
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -582,6 +582,8 @@ static int ath9k_init_softc(u16 devid, s
+@@ -587,6 +587,8 @@ static int ath9k_init_softc(u16 devid, s
  		ah->is_clk_25mhz = pdata->is_clk_25mhz;
  		ah->get_mac_revision = pdata->get_mac_revision;
  		ah->external_reset = pdata->external_reset;

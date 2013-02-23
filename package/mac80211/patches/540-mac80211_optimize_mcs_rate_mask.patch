@@ -1,6 +1,6 @@
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -764,6 +764,8 @@ struct ieee80211_sub_if_data {
+@@ -739,6 +739,8 @@ struct ieee80211_sub_if_data {
  
  	/* bitmap of allowed (non-MCS) rate indexes for rate control */
  	u32 rc_rateidx_mask[IEEE80211_NUM_BANDS];
@@ -11,7 +11,7 @@
  	union {
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2328,9 +2328,20 @@ static int ieee80211_set_bitrate_mask(st
+@@ -2386,9 +2386,20 @@ static int ieee80211_set_bitrate_mask(st
  	}
  
  	for (i = 0; i < IEEE80211_NUM_BANDS; i++) {
@@ -34,7 +34,7 @@
  	return 0;
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -3985,7 +3985,7 @@ void ieee80211_send_bar(struct ieee80211
+@@ -4091,7 +4091,7 @@ void ieee80211_send_bar(struct ieee80211
   *	(deprecated; this will be removed once drivers get updated to use
   *	rate_idx_mask)
   * @rate_idx_mask: user-requested (legacy) rate mask
@@ -43,7 +43,7 @@
   * @bss: whether this frame is sent out in AP or IBSS mode
   */
  struct ieee80211_tx_rate_control {
-@@ -3997,7 +3997,7 @@ struct ieee80211_tx_rate_control {
+@@ -4103,7 +4103,7 @@ struct ieee80211_tx_rate_control {
  	bool rts, short_preamble;
  	u8 max_rate_idx;
  	u32 rate_idx_mask;
@@ -54,7 +54,7 @@
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -636,9 +636,11 @@ ieee80211_tx_h_rate_ctrl(struct ieee8021
+@@ -641,9 +641,11 @@ ieee80211_tx_h_rate_ctrl(struct ieee8021
  		txrc.max_rate_idx = -1;
  	else
  		txrc.max_rate_idx = fls(txrc.rate_idx_mask) - 1;
@@ -69,7 +69,7 @@
  	txrc.bss = (tx->sdata->vif.type == NL80211_IFTYPE_AP ||
  		    tx->sdata->vif.type == NL80211_IFTYPE_MESH_POINT ||
  		    tx->sdata->vif.type == NL80211_IFTYPE_ADHOC);
-@@ -2502,8 +2504,6 @@ struct sk_buff *ieee80211_beacon_get_tim
+@@ -2505,8 +2507,6 @@ struct sk_buff *ieee80211_beacon_get_tim
  		txrc.max_rate_idx = -1;
  	else
  		txrc.max_rate_idx = fls(txrc.rate_idx_mask) - 1;
