@@ -8,7 +8,7 @@
 I2C_MENU:=I2C support
 
 ModuleConfVar=$(word 1,$(subst :,$(space),$(1)))
-ModuleFullPath=$(if $(findstring y,$($(call ModuleConfVar,$(1)))),,$(LINUX_DIR)/$(word 2,$(subst :,$(space),$(1))).ko)
+ModuleFullPath=$(LINUX_DIR)/$(word 2,$(subst :,$(space),$(1))).ko
 ModuleKconfig=$(foreach mod,$(1),$(call ModuleConfVar,$(mod)))
 ModuleFiles=$(foreach mod,$(1),$(call ModuleFullPath,$(mod)))
 ModuleAuto=$(call AutoLoad,$(1),$(foreach mod,$(2),$(basename $(notdir $(call ModuleFullPath,$(mod))))),$(3))
