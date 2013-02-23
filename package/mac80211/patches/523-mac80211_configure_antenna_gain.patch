@@ -1,6 +1,6 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -955,6 +955,7 @@ enum ieee80211_smps_mode {
+@@ -978,6 +978,7 @@ enum ieee80211_smps_mode {
   *
   * @power_level: requested transmit power (in dBm), backward compatibility
   *	value only that is set to the minimum of all interfaces
@@ -8,7 +8,7 @@
   *
   * @channel: the channel to tune to
   * @channel_type: the channel (HT) type
-@@ -976,6 +977,7 @@ struct ieee80211_conf {
+@@ -1000,6 +1001,7 @@ struct ieee80211_conf {
  	u32 flags;
  	int power_level, dynamic_ps_timeout;
  	int max_sleep_period;
@@ -18,8 +18,8 @@
  	u8 ps_dtim_period;
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1144,6 +1144,7 @@ struct ieee80211_local {
- 	bool disable_dynamic_ps;
+@@ -1116,6 +1116,7 @@ struct ieee80211_local {
+ 	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */
 +	int user_antenna_gain; /* in dBi */
@@ -28,9 +28,9 @@
  
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -1580,6 +1580,8 @@ enum nl80211_attrs {
- 	NL80211_ATTR_P2P_CTWINDOW,
- 	NL80211_ATTR_P2P_OPPPS,
+@@ -1654,6 +1654,8 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_STA_CAPABILITY,
+ 	NL80211_ATTR_STA_EXT_CAPABILITY,
  
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
 +
@@ -39,15 +39,15 @@
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -365,6 +365,7 @@ static const struct nla_policy nl80211_p
- 	[NL80211_ATTR_SCAN_FLAGS] = { .type = NLA_U32 },
- 	[NL80211_ATTR_P2P_CTWINDOW] = { .type = NLA_U8 },
- 	[NL80211_ATTR_P2P_OPPPS] = { .type = NLA_U8 },
+@@ -370,6 +370,7 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_MAC_ADDRS] = { .type = NLA_NESTED },
+ 	[NL80211_ATTR_STA_CAPABILITY] = { .type = NLA_U16 },
+ 	[NL80211_ATTR_STA_EXT_CAPABILITY] = { .type = NLA_BINARY, },
 +	[NL80211_ATTR_WIPHY_ANTENNA_GAIN] = { .type = NLA_U32 },
  };
  
  /* policy for the key attributes */
-@@ -1652,6 +1653,22 @@ static int nl80211_set_wiphy(struct sk_b
+@@ -1706,6 +1707,22 @@ static int nl80211_set_wiphy(struct sk_b
  			goto bad_res;
  	}
  
@@ -72,7 +72,7 @@
  		u32 tx_ant, rx_ant;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2155,6 +2155,19 @@ static int ieee80211_get_tx_power(struct
+@@ -2212,6 +2212,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -92,7 +92,7 @@
  static int ieee80211_set_wds_peer(struct wiphy *wiphy, struct net_device *dev,
  				  const u8 *addr)
  {
-@@ -3278,6 +3291,7 @@ struct cfg80211_ops mac80211_config_ops 
+@@ -3369,6 +3382,7 @@ struct cfg80211_ops mac80211_config_ops 
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
@@ -102,7 +102,7 @@
  	CFG80211_TESTMODE_CMD(ieee80211_testmode_cmd)
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1693,6 +1693,7 @@ struct cfg80211_gtk_rekey_data {
+@@ -1862,6 +1862,7 @@ struct cfg80211_gtk_rekey_data {
   *	(as advertised by the nl80211 feature flag.)
   * @get_tx_power: store the current TX power into the dbm variable;
   *	return 0 if successful
@@ -110,7 +110,7 @@
   *
   * @set_wds_peer: set the WDS peer for a WDS interface
   *
-@@ -1893,6 +1894,7 @@ struct cfg80211_ops {
+@@ -2071,6 +2072,7 @@ struct cfg80211_ops {
  				enum nl80211_tx_power_setting type, int mbm);
  	int	(*get_tx_power)(struct wiphy *wiphy, struct wireless_dev *wdev,
  				int *dbm);
@@ -120,7 +120,7 @@
  				const u8 *addr);
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -102,7 +102,7 @@ static u32 ieee80211_hw_conf_chan(struct
+@@ -101,7 +101,7 @@ static u32 ieee80211_hw_conf_chan(struct
  	struct ieee80211_sub_if_data *sdata;
  	struct ieee80211_channel *chan;
  	u32 changed = 0;
@@ -129,7 +129,7 @@
  	enum nl80211_channel_type channel_type;
  	u32 offchannel_flag;
  	bool scanning = false;
-@@ -165,8 +165,21 @@ static u32 ieee80211_hw_conf_chan(struct
+@@ -164,8 +164,21 @@ static u32 ieee80211_hw_conf_chan(struct
  	}
  	rcu_read_unlock();
  
@@ -152,7 +152,7 @@
  		local->hw.cur_power_level = power;
  		local->hw.conf.power_level = power;
  	}
-@@ -582,6 +595,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+@@ -612,6 +625,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
  					 IEEE80211_RADIOTAP_MCS_HAVE_BW;
  	local->hw.radiotap_vht_details = IEEE80211_RADIOTAP_VHT_KNOWN_GI |
  					 IEEE80211_RADIOTAP_VHT_KNOWN_BANDWIDTH;

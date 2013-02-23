@@ -101,7 +101,7 @@
 +}
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -561,6 +561,7 @@ struct rt2x00lib_ops {
+@@ -559,6 +559,7 @@ struct rt2x00lib_ops {
  			       const u8 *data, const size_t len);
  	int (*load_firmware) (struct rt2x00_dev *rt2x00dev,
  			      const u8 *data, const size_t len);
@@ -109,7 +109,7 @@
  
  	/*
  	 * Device initialization/deinitialization handlers.
-@@ -721,6 +722,7 @@ enum rt2x00_capability_flags {
+@@ -719,6 +720,7 @@ enum rt2x00_capability_flags {
  	REQUIRE_SW_SEQNO,
  	REQUIRE_HT_TX_DESC,
  	REQUIRE_PS_AUTOWAKE,
@@ -117,7 +117,7 @@
  
  	/*
  	 * Capabilities
-@@ -990,6 +992,11 @@ struct rt2x00_dev {
+@@ -988,6 +990,11 @@ struct rt2x00_dev {
  	const struct firmware *fw;
  
  	/*
@@ -244,7 +244,7 @@
  	.get_entry_state	= rt2800pci_get_entry_state,
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -1214,6 +1214,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
+@@ -1314,6 +1314,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
  
  	rt2x00dev->hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
  
@@ -255,7 +255,7 @@
  	/*
  	 * Initialize work.
  	 */
-@@ -1338,6 +1342,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
+@@ -1438,6 +1442,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
  	 */
  	if (rt2x00dev->drv_data)
  		kfree(rt2x00dev->drv_data);

@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2013-01-07
+PKG_VERSION:=2013-02-22
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=bc4924720ebd8f3fcd9588e3c0f4db1c
+PKG_MD5SUM:=de1a03ca1f72748d4523672c8facbf7e
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -385,6 +385,7 @@ define KernelPackage/ath/config
 
 	config PACKAGE_ATH_DEBUG
 		bool "Atheros wireless debugging"
+		select KERNEL_RELAY
 		help
 		  Say Y, if you want to debug atheros wireless drivers.
 		  Right now only ath9k makes use of this.

@@ -24,7 +24,7 @@ Helmut
 
 --- a/drivers/net/wireless/rt2x00/rt2x00queue.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00queue.c
-@@ -151,36 +151,14 @@ void rt2x00queue_align_frame(struct sk_b
+@@ -162,36 +162,14 @@ void rt2x00queue_align_frame(struct sk_b
  void rt2x00queue_insert_l2pad(struct sk_buff *skb, unsigned int header_length)
  {
  	unsigned int payload_length = skb->len - header_length;
