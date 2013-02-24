@@ -1,0 +1,21 @@
+--- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
+@@ -4327,7 +4327,6 @@ static void brcms_c_info_init(struct brc
+ 
+ 	/* WME QoS mode is Auto by default */
+ 	wlc->pub->_ampdu = AMPDU_AGG_HOST;
+-	wlc->pub->bcmerror = 0;
+ }
+ 
+ static uint brcms_c_attach_module(struct brcms_c_info *wlc)
+--- a/drivers/net/wireless/brcm80211/brcmsmac/pub.h
++++ b/drivers/net/wireless/brcm80211/brcmsmac/pub.h
+@@ -164,8 +164,6 @@ struct brcms_pub {
+ 
+ 	u8 cur_etheraddr[ETH_ALEN];	/* our local ethernet address */
+ 
+-	int bcmerror;		/* last bcm error */
+-
+ 	u32 radio_disabled;	/* bit vector for radio disabled reasons */
+ 
+ 	u16 boardrev;	/* version # of particular board */
