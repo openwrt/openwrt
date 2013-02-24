@@ -148,7 +148,7 @@ static void rb153_pata_setup_port(struct ata_host *ah)
 	ap->ioaddr.data_addr = info->iobase + RB153_CF_REG_DATA;
 }
 
-static __devinit int rb153_pata_driver_probe(struct platform_device *pdev)
+static int rb153_pata_driver_probe(struct platform_device *pdev)
 {
 	unsigned int irq;
 	int gpio;
@@ -222,7 +222,7 @@ err_free_gpio:
 	return ret;
 }
 
-static __devexit int rb153_pata_driver_remove(struct platform_device *pdev)
+static int rb153_pata_driver_remove(struct platform_device *pdev)
 {
 	struct ata_host *ah = platform_get_drvdata(pdev);
 	struct rb153_cf_info *info = ah->private_data;
@@ -235,7 +235,7 @@ static __devexit int rb153_pata_driver_remove(struct platform_device *pdev)
 
 static struct platform_driver rb153_pata_platform_driver = {
 	.probe		= rb153_pata_driver_probe,
-	.remove		= __devexit_p(rb153_pata_driver_remove),
+	.remove		= rb153_pata_driver_remove,
 	.driver	 = {
 		.name   = DRV_NAME,
 		.owner  = THIS_MODULE,

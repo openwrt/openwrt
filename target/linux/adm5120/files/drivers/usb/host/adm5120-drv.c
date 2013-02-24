@@ -109,7 +109,7 @@ static void admhc_adm5120_remove(struct usb_hcd *hcd,
 	usb_put_hcd(hcd);
 }
 
-static int __devinit admhc_adm5120_start(struct usb_hcd *hcd)
+static int admhc_adm5120_start(struct usb_hcd *hcd)
 {
 	struct admhcd	*ahcd = hcd_to_admhcd(hcd);
 	int		ret;
