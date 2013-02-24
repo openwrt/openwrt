@@ -66,6 +66,7 @@ enum {
 	WRT610NV2,
 	E1000V1,
 	E3000V1,
+	E3200V1,
 
 	/* ASUS */
 	WLHDD,
@@ -455,6 +456,18 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "ses_amber",	.gpio = 1 << 0,	.polarity = REVERSE },	// WiFi protected setup LED amber
 			{ .name = "ses_blue",	.gpio = 1 << 3,	.polarity = REVERSE },	// WiFi protected setup LED blue
 			{ .name = "wlan",	.gpio = 1 << 1,	.polarity = NORMAL },	// Wireless LED
+		},
+	},
+	[E3200V1] = {
+		.name		= "Linksys E3200 V1",
+		.buttons	= {
+			/* { .name = "switch",	.gpio = 1 << 4 },*/	/* nvram get gpio4=robo_reset */
+			{ .name = "reset",	.gpio = 1 << 5 },	/* nvram get reset_gpio=5 */
+			{ .name = "wps",	.gpio = 1 << 8 },	/* nvram get gpio8=wps_button */
+			/* { .name = "wombo",	.gpio = 1 << 23 },*/	/* nvram get gpio23=wombo_reset - wireless on motherboard */
+		},
+		.leds	= {
+			{ .name = "power",	.gpio = 1 << 3, .polarity = REVERSE },	/* Power LED */
 		},
 	},
 	/* Asus */
@@ -1269,6 +1282,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[E1000V1];
 	case BCM47XX_BOARD_LINKSYS_E3000V1:
 		return &platforms[E3000V1];
+	case BCM47XX_BOARD_LINKSYS_E3200V1:
+		return &platforms[E3200V1];
 	case BCM47XX_BOARD_LINKSYS_WRT150NV1:
 		return &platforms[WRT150NV1];
 	case BCM47XX_BOARD_LINKSYS_WRT150NV11:
