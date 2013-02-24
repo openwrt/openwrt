@@ -121,6 +121,7 @@ enum {
 	WGT634U,
 	WNR834BV1,
 	WNR834BV2,
+	WNDR3400V1,
 
 	/* Trendware */
 	TEW411BRPP,
@@ -897,6 +898,22 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "connected",	.gpio = 1 << 7, .polarity = NORMAL },
 		},
 	},
+	[WNDR3400V1] = {
+		.name		= "Netgear WNDR3400 V1",
+		.buttons	= {
+			/* nvram get gpio5=robo_reset */
+			{ .name = "reset",	.gpio = 1 << 4 },
+			{ .name = "wps",	.gpio = 1 << 6 },
+			{ .name = "wlan",	.gpio = 1 << 8 },
+		},
+		.leds		= {
+			{ .name = "wlan",	.gpio = 0 << 0, .polarity = NORMAL },
+			{ .name = "connected",	.gpio = 1 << 0, .polarity = NORMAL },
+			{ .name = "power",	.gpio = 1 << 3, .polarity = NORMAL },
+			{ .name = "diag",	.gpio = 1 << 7, .polarity = NORMAL },
+			{ .name = "usb",	.gpio = 1 << 2, .polarity = REVERSE },
+		},
+	},
 	/* Trendware */
 	[TEW411BRPP] = {
 		.name           = "Trendware TEW411BRP+",
@@ -1274,6 +1291,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[WR850GP];
 	case BCM47XX_BOARD_MOTOROLA_WR850GV2V3:
 		return &platforms[WR850GV2V3];
+	case BCM47XX_BOARD_NETGEAR_WNDR3400V1:
+		return &platforms[WNDR3400V1];
 	case BCM47XX_BOARD_UNKNOWN:
 	case BCM47XX_BOARD_NON:
 		printk(MODULE_NAME ": unknown board found, try legacy detect\n");
