@@ -32,6 +32,7 @@
 #include <linux/netlink.h>
 #include <linux/kobject.h>
 #include <net/sock.h>
+#include <bcm47xx_board.h>
 extern u64 uevent_next_seqnum(void);
 
 #include "gpio.h"
@@ -1038,85 +1039,13 @@ static struct platform_t __initdata platforms[] = {
 	},
 };
 
-static struct platform_t __init *platform_detect(void)
+static struct platform_t __init *platform_detect_legacy(void)
 {
 	char *boardnum, *boardtype, *buf;
 
 	if (strcmp(getvar("nvram_type"), "cfe") == 0)
 		return &platforms[WGT634U];
 
-	/* Look for a model identifier */
-
-	/* Based on "model_name" */
-	if ((buf = nvram_get("model_name"))) {
-		if (!strcmp(buf, "DIR-130"))
-			return &platforms[DIR130];
-		if (!strcmp(buf, "DIR-330"))
-			return &platforms[DIR330];
-	}
-
-	/* Based on "wsc_modelname */
-	if ((buf = nvram_get("wsc_modelname"))) {
-		if (!strcmp(buf, "WRT610N"))
-			return &platforms[WRT610N];
-	}
-
-	/* Based on "model_no" */
-	if ((buf = nvram_get("model_no"))) {
-		if (startswith(buf,"WL700")) /* WL700* */
-			return &platforms[WL700GE];
-	}
-
-	/* Based on "hardware_version" */
-	if ((buf = nvram_get("hardware_version"))) {
-		if (startswith(buf,"WL500GPV2-")) /* WL500GPV2-* */
-			return &platforms[WL500GPV2];
-		if (startswith(buf,"WL520GC-")) /* WL520GU-* */
-			return &platforms[WL520GC];
-		if (startswith(buf,"WL520GU-")) /* WL520GU-* */
-			return &platforms[WL520GU];
-		if (startswith(buf,"WL330GE-")) /* WL330GE-* */
-			return &platforms[WL330GE];
-		if (startswith(buf,"RT-N16-")) /* RT-N16-* */
-			return &platforms[RTN16];
-		if (startswith(buf,"F7D4301")) /* F7D4301* */
-			return &platforms[BELKIN_F7D4301];
-	}
-
-	/* Based on "ModelId" */
-	if ((buf = nvram_get("ModelId"))) {
-		if (!strcmp(buf, "WR850GP"))
-			return &platforms[WR850GP];
-		if (!strcmp(buf, "WR850G"))
-			return &platforms[WR850GV2V3];
-		if (!strcmp(buf, "WX-5565") && !strcmp(getvar("boardtype"),"bcm94710ap"))
-			return &platforms[TM2300]; /* Dell TrueMobile 2300 */
-		if (startswith(buf,"WE800G")) /* WE800G* */
-			return &platforms[WE800G];
-	}
-
-	/* Buffalo */
-	if ((buf = (nvram_get("melco_id") ?: nvram_get("buffalo_id")))) {
-		/* Buffalo hardware, check id for specific hardware matches */
-		if (!strcmp(buf, "29bb0332"))
-			return &platforms[WBR2_G54];
-		if (!strcmp(buf, "29129"))
-			return &platforms[WLA2_G54L];
-		if (!strcmp(buf, "30189"))
-			return &platforms[WHR_HP_G54];
-		if (!strcmp(buf, "32093"))
-			return &platforms[WHR_G125];
-		if (!strcmp(buf, "30182"))
-			return &platforms[WHR_G54S];
-		if (!strcmp(buf, "290441dd"))
-			return &platforms[WHR2_A54G54];
-		if (!strcmp(buf, "31120"))
-			return &platforms[WZR_G300N];
-		if (!strcmp(buf, "30083"))
-			return &platforms[WZR_RS_G54];
-		if (!strcmp(buf, "30103"))
-			return &platforms[WZR_RS_G54HP];
-	}
 
 	/* no easy model number, attempt to guess */
 	boardnum = getvar("boardnum");
@@ -1130,58 +1059,17 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[WRT600N];
 	}
 
-	/*
-	 * Normally, these would go inside the "CFE based - newer hardware" block below; however, during early init, the
-	 * "pmon_ver" variable is not available on the E3000v1 (and probably the WRT610Nv2 also).  Until this is figured out,
-	 * these will need to remain here in order for platform detection to work.
-	 */
-	if (!strcmp(boardnum, "42")) { /* Linksys */
-		if (!strcmp(boardtype, "0x04cf") && !strcmp(getvar("boot_hw_model"), "E300") && !strcmp(getvar("boot_hw_ver"), "1.0"))
-			return &platforms[E3000V1];
-
-		if (!strcmp(boardtype, "0x04cf") && !strcmp(getvar("boot_hw_model"), "WRT610N") && !strcmp(getvar("boot_hw_ver"), "2.0"))
-			return &platforms[WRT610NV2];
-	}
-
 	if (startswith(getvar("pmon_ver"), "CFE")) {
 		/* CFE based - newer hardware */
 		if (!strcmp(boardnum, "42")) { /* Linksys */
-			if (!strcmp(boardtype, "0x478") && !strcmp(getvar("boot_hw_model"), "WRT300N") && !strcmp(getvar("boot_hw_ver"), "1.1"))
-				return &platforms[WRT300NV11];
-
 			if (!strcmp(boardtype, "0x478") && !strcmp(getvar("cardbus"), "1"))
 				return &platforms[WRT350N];
 
 			if (!strcmp(boardtype, "0x0101") && !strcmp(getvar("boot_ver"), "v3.6"))
 				return &platforms[WRT54G3G];
 
-			if (!strcmp(boardtype, "0x042f") && !strcmp(getvar("model_name"), "WRT54G3GV2-VF"))
-				return &platforms[WRT54G3GV2_VF];
-
 			if (!strcmp(getvar("et1phyaddr"),"5") && !strcmp(getvar("et1mdcport"), "1"))
 				return &platforms[WRTSL54GS];
-
-			if (!strcmp(boardtype, "0x0472")) {
-				if(!strcmp(getvar("boot_hw_model"), "WRT150N")) {
-					if(!strcmp(getvar("boot_hw_ver"), "1"))
-						return &platforms[WRT150NV1];
-					else if(!strcmp(getvar("boot_hw_ver"), "1.1"))
-						return &platforms[WRT150NV11];
-				}
-				else if(!strcmp(getvar("boot_hw_model"), "WRT160N")) {
-					if(!strcmp(getvar("boot_hw_ver"), "1.0"))
-						return &platforms[WRT160NV1];
-					else if(!strcmp(getvar("boot_hw_ver"), "3.0"))
-						return &platforms[WRT160NV3];
-				}
-			}
-
-			if (!strcmp(boardtype, "0x04cd")) {
-				if (!strcmp(getvar("boot_hw_model"), "E100")) {
-					if (!strcmp(getvar("boot_hw_ver"), "1.0"))
-						return &platforms[E1000V1];
-				}
-			}
 
 			/* default to WRT54G */
 			return &platforms[WRT54G];
@@ -1199,9 +1087,7 @@ static struct platform_t __init *platform_detect(void)
 		}
 
 		if (!strcmp(boardnum, "45")) { /* ASUS */
-			if (!strcmp(boardtype,"0x042f"))
-				return &platforms[WL500GP];
-			else if (!strcmp(boardtype,"0x0472"))
+			if (!strcmp(boardtype,"0x0472"))
 				return &platforms[WL500W];
 			else if (!strcmp(boardtype,"0x467"))
 				return &platforms[WL320GE];
@@ -1308,6 +1194,96 @@ static struct platform_t __init *platform_detect(void)
 
 	/* not found */
 	return NULL;
+}
+
+static struct platform_t __init *platform_detect(void)
+{
+	enum bcm47xx_board board;
+	const char *board_name;
+
+
+	board = bcm47xx_board_get();
+	board_name = bcm47xx_board_get_name();
+	if (board != BCM47XX_BOARD_UNKNOWN && board != BCM47XX_BOARD_NON)
+		printk(MODULE_NAME ": kernel found a \"%s\"\n", board_name);
+
+	switch(board) {
+	case BCM47XX_BOARD_ASUS_RTN16:
+		return &platforms[RTN16];
+	case BCM47XX_BOARD_ASUS_WL330GE:
+		return &platforms[WL330GE];
+	case BCM47XX_BOARD_ASUS_WL500GPV1:
+		return &platforms[WL500GP];
+	case BCM47XX_BOARD_ASUS_WL500GPV2:
+		return &platforms[WL500GPV2];
+	case BCM47XX_BOARD_ASUS_WL520GC:
+		return &platforms[WL520GC];
+	case BCM47XX_BOARD_ASUS_WL520GU:
+		return &platforms[WL520GU];
+	case BCM47XX_BOARD_ASUS_WL700GE:
+		return &platforms[WL700GE];
+	case BCM47XX_BOARD_BELKIN_F7D4301:
+		return &platforms[BELKIN_F7D4301];
+	case BCM47XX_BOARD_BUFFALO_WBR2_G54:
+		return &platforms[WBR2_G54];
+	case BCM47XX_BOARD_BUFFALO_WHR2_A54G54:
+		return &platforms[WHR2_A54G54];
+	case BCM47XX_BOARD_BUFFALO_WHR_G125:
+		return &platforms[WHR_G125];
+	case BCM47XX_BOARD_BUFFALO_WHR_G54S:
+		return &platforms[WHR_G54S];
+	case BCM47XX_BOARD_BUFFALO_WHR_HP_G54:
+		return &platforms[WHR_HP_G54];
+	case BCM47XX_BOARD_BUFFALO_WLA2_G54L:
+		return &platforms[WLA2_G54L];
+	case BCM47XX_BOARD_BUFFALO_WZR_G300N:
+		return &platforms[WZR_G300N];
+	case BCM47XX_BOARD_BUFFALO_WZR_RS_G54:
+		return &platforms[WZR_RS_G54];
+	case BCM47XX_BOARD_BUFFALO_WZR_RS_G54HP:
+		return &platforms[WZR_RS_G54HP];
+	case BCM47XX_BOARD_DELL_TM2300:
+		return &platforms[TM2300];
+	case BCM47XX_BOARD_DLINK_DIR130:
+		return &platforms[DIR130];
+	case BCM47XX_BOARD_DLINK_DIR330:
+		return &platforms[DIR330];
+	case BCM47XX_BOARD_LINKSYS_E1000V1:
+		return &platforms[E1000V1];
+	case BCM47XX_BOARD_LINKSYS_E3000V1:
+		return &platforms[E3000V1];
+	case BCM47XX_BOARD_LINKSYS_WRT150NV1:
+		return &platforms[WRT150NV1];
+	case BCM47XX_BOARD_LINKSYS_WRT150NV11:
+		return &platforms[WRT150NV11];
+	case BCM47XX_BOARD_LINKSYS_WRT160NV1:
+		return &platforms[WRT160NV1];
+	case BCM47XX_BOARD_LINKSYS_WRT160NV3:
+		return &platforms[WRT160NV3];
+	case BCM47XX_BOARD_LINKSYS_WRT300NV11:
+		return &platforms[WRT300NV11];
+	case BCM47XX_BOARD_LINKSYS_WRT54G3GV2:
+		return &platforms[WRT54G3GV2_VF];
+	case BCM47XX_BOARD_LINKSYS_WRT610NV1:
+		return &platforms[WRT610N];
+	case BCM47XX_BOARD_LINKSYS_WRT610NV2:
+		return &platforms[WRT610NV2];
+	case BCM47XX_BOARD_MOTOROLA_WE800G:
+		return &platforms[WE800G];
+	case BCM47XX_BOARD_MOTOROLA_WR850GP:
+		return &platforms[WR850GP];
+	case BCM47XX_BOARD_MOTOROLA_WR850GV2V3:
+		return &platforms[WR850GV2V3];
+	case BCM47XX_BOARD_UNKNOWN:
+	case BCM47XX_BOARD_NON:
+		printk(MODULE_NAME ": unknown board found, try legacy detect\n");
+		printk(MODULE_NAME ": please open a ticket at https://dev.openwrt.org and attach the complete nvram\n");
+		return platform_detect_legacy();
+	default:
+		printk(MODULE_NAME ": board was detected as \"%s\", but not gpio configuration available\n", board_name);
+		printk(MODULE_NAME ": now trying legacy detect\n");
+		return platform_detect_legacy();
+	}
 }
 
 static inline void ssb_maskset32(struct ssb_device *dev,
