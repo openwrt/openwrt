@@ -1083,7 +1083,7 @@ static void adm5120_switch_cleanup(void)
 	adm5120_switch_rx_ring_free();
 }
 
-static int __devinit adm5120_switch_probe(struct platform_device *pdev)
+static int adm5120_switch_probe(struct platform_device *pdev)
 {
 	u32 t;
 	int i, err;
