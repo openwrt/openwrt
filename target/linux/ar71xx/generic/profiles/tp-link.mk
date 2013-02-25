@@ -102,6 +102,16 @@ define Profile/TLWA801/Description
 endef
 $(eval $(call Profile,TLWA801))
 
+define Profile/TLWA830
+	NAME:=TP-LINK TL-WA830RE
+	PACKAGES:=
+endef
+
+define Profile/TLWA830/Description
+	Package set optimized for the TP-LINK TL-WA830RE.
+endef
+$(eval $(call Profile,TLWA830))
+
 
 define Profile/TLWA901
 	NAME:=TP-LINK TL-WA901N/ND
