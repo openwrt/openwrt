@@ -90,6 +90,9 @@ tplink_board_detect() {
 	"080100"*)
 		model="TP-Link TL-WA801N/ND"
 		;;
+	"083000"*)
+		model="TP-Link TL-WA830RE"
+		;;
 	"084100"*)
 		model="TP-Link TL-WR841N/ND"
 		;;
