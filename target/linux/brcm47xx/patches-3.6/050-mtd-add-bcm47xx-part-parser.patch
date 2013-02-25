@@ -26,7 +26,7 @@
  obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o
 --- /dev/null
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -0,0 +1,541 @@
+@@ -0,0 +1,504 @@
 +/*
 + *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
@@ -79,6 +79,7 @@
 +#include <bcm47xx_nvram.h>
 +#include <bcm47xx.h>
 +#include <asm/fw/cfe/cfe_api.h>
++#include <bcm47xx_board.h>
 +
 +
 +#define TRX_MAGIC	0x30524448	/* "HDR0" */
@@ -106,13 +107,6 @@
 +#define EDIMAX_PS_HEADER_LEN	0xc /* 12 bytes long for edimax header */
 +
 +#define NVRAM_SPACE 0x8000
-+
-+#define ROUTER_NETGEAR_WGR614L		1
-+#define ROUTER_NETGEAR_WNR834B		2
-+#define ROUTER_NETGEAR_WNDR3300		3
-+#define ROUTER_NETGEAR_WNR3500L		4
-+#define ROUTER_SIMPLETECH_SIMPLESHARE	5
-+#define ROUTER_NETGEAR_WNDR3400		6
 +
 +static int
 +find_cfe_size(struct mtd_info *mtd)
@@ -367,73 +361,32 @@
 +	return part->size;
 +}
 +
-+static int get_router(void)
++static bool is_simpletech_simpleshare(void)
 +{
 +	char buf[20];
-+	u32 boardnum = 0;
 +	u16 boardtype = 0;
 +	u16 boardrev = 0;
 +	u32 boardflags = 0;
-+	u16 sdram_init = 0;
-+	u16 cardbus = 0;
 +	u16 strev = 0;
 +
-+	if (bcm47xx_nvram_getenv("boardnum", buf, sizeof(buf)) >= 0)
-+		boardnum = simple_strtoul(buf, NULL, 0);
 +	if (bcm47xx_nvram_getenv("boardtype", buf, sizeof(buf)) >= 0)
 +		boardtype = simple_strtoul(buf, NULL, 0);
 +	if (bcm47xx_nvram_getenv("boardrev", buf, sizeof(buf)) >= 0)
 +		boardrev = simple_strtoul(buf, NULL, 0);
 +	if (bcm47xx_nvram_getenv("boardflags", buf, sizeof(buf)) >= 0)
 +		boardflags = simple_strtoul(buf, NULL, 0);
-+	if (bcm47xx_nvram_getenv("sdram_init", buf, sizeof(buf)) >= 0)
-+		sdram_init = simple_strtoul(buf, NULL, 0);
-+	if (bcm47xx_nvram_getenv("cardbus", buf, sizeof(buf)) >= 0)
-+		cardbus = simple_strtoul(buf, NULL, 0);
 +	if (bcm47xx_nvram_getenv("st_rev", buf, sizeof(buf)) >= 0)
 +		strev = simple_strtoul(buf, NULL, 0);
-+
-+	if ((boardnum == 8 || boardnum == 01)
-+	  && boardtype == 0x0472 && cardbus == 1) {
-+		/* Netgear WNR834B, Netgear WNR834Bv2 */
-+		return ROUTER_NETGEAR_WNR834B;
-+	}
-+
-+	if (boardnum == 01 && boardtype == 0x0472 && boardrev == 0x23) {
-+		/* Netgear WNDR-3300 */
-+		return ROUTER_NETGEAR_WNDR3300;
-+	}
-+
-+	if ((boardnum == 83258 || boardnum == 01)
-+	  && boardtype == 0x048e
-+	  && (boardrev == 0x11 || boardrev == 0x10)
-+	  && boardflags == 0x750
-+	  && sdram_init == 0x000A) {
-+		/* Netgear WGR614v8/L/WW 16MB ram, cfe v1.3 or v1.5 */
-+		return ROUTER_NETGEAR_WGR614L;
-+	}
-+
-+	if ((boardnum == 1 || boardnum == 3500)
-+	  && boardtype == 0x04CF
-+	  && (boardrev == 0x1213 || boardrev == 02)) {
-+		/* Netgear WNR3500v2/U/L */
-+		return ROUTER_NETGEAR_WNR3500L;
-+	}
-+
-+	if (boardnum == 1 && boardtype == 0xb4cf && boardrev == 0x1100) {
-+		/* Netgear WNDR3400 */
-+		return ROUTER_NETGEAR_WNDR3400;
-+	}
 +
 +	if (boardtype == 0x042f
 +	  && boardrev == 0x10
 +	  && boardflags == 0
 +	  && strev == 0x11) {
 +		/* Simpletech Simpleshare */
-+		return ROUTER_SIMPLETECH_SIMPLESHARE;
++		return true;
 +	}
 +
-+	return 0;
++	return false;
 +}
 +
 +static int parse_bcm47xx_partitions(struct mtd_info *mtd,
@@ -468,12 +421,22 @@
 +	/* nvram */
 +	if (cfe_size != 384 * 1024) {
 +
-+		switch (get_router()) {
-+		case ROUTER_NETGEAR_WGR614L:
-+		case ROUTER_NETGEAR_WNR834B:
-+		case ROUTER_NETGEAR_WNDR3300:
-+		case ROUTER_NETGEAR_WNR3500L:
-+		case ROUTER_NETGEAR_WNDR3400:
++		switch (bcm47xx_board_get()) {
++		case BCM47XX_BOARD_NETGEAR_WGR614V8:
++		case BCM47XX_BOARD_NETGEAR_WGR614V9:
++		case BCM47XX_BOARD_NETGEAR_WNDR3300:
++		case BCM47XX_BOARD_NETGEAR_WNDR3400V1:
++		case BCM47XX_BOARD_NETGEAR_WNDR3400V2:
++		case BCM47XX_BOARD_NETGEAR_WNDR3400VCNA:
++		case BCM47XX_BOARD_NETGEAR_WNDR3700V3:
++		case BCM47XX_BOARD_NETGEAR_WNDR4000:
++		case BCM47XX_BOARD_NETGEAR_WNDR4500:
++		case BCM47XX_BOARD_NETGEAR_WNR2000:
++		case BCM47XX_BOARD_NETGEAR_WNR3500L:
++		case BCM47XX_BOARD_NETGEAR_WNR3500U:
++		case BCM47XX_BOARD_NETGEAR_WNR3500V2:
++		case BCM47XX_BOARD_NETGEAR_WNR3500V2VC:
++		case BCM47XX_BOARD_NETGEAR_WNR834BV2:
 +			/* Netgear: checksum is @ 0x003AFFF8 for 4M flash or checksum
 +			 * is @ 0x007AFFF8 for 8M flash
 +			 */
@@ -488,24 +451,24 @@
 +			bcm47xx_parts[4].size   = custom_data_size;
 +			break;
 +
-+		case ROUTER_SIMPLETECH_SIMPLESHARE:
-+			/* Fixup Simpletech Simple share nvram  */
-+
-+			pr_notice("Setting up simpletech nvram\n");
-+			custom_data_size = mtd->erasesize;
-+
-+			bcm47xx_parts[3].offset = mtd->size - roundup(NVRAM_SPACE, mtd->erasesize) * 2;
-+			bcm47xx_parts[3].size   = roundup(NVRAM_SPACE, mtd->erasesize);
-+
-+			/* Place backup nvram into a partition */
-+			bcm47xx_parts[4].name = "nvram_copy";
-+			bcm47xx_parts[4].offset = mtd->size - roundup(NVRAM_SPACE, mtd->erasesize);
-+			bcm47xx_parts[4].size   = roundup(NVRAM_SPACE, mtd->erasesize);
-+			break;
-+
 +		default:
-+			bcm47xx_parts[3].offset = mtd->size - roundup(NVRAM_SPACE, mtd->erasesize);
-+			bcm47xx_parts[3].size   = roundup(NVRAM_SPACE, mtd->erasesize);
++			if (is_simpletech_simpleshare()) {
++				/* Fixup Simpletech Simple share nvram  */
++
++				pr_notice("Setting up simpletech nvram\n");
++				custom_data_size = mtd->erasesize;
++
++				bcm47xx_parts[3].offset = mtd->size - roundup(NVRAM_SPACE, mtd->erasesize) * 2;
++				bcm47xx_parts[3].size   = roundup(NVRAM_SPACE, mtd->erasesize);
++
++				/* Place backup nvram into a partition */
++				bcm47xx_parts[4].name = "nvram_copy";
++				bcm47xx_parts[4].offset = mtd->size - roundup(NVRAM_SPACE, mtd->erasesize);
++				bcm47xx_parts[4].size   = roundup(NVRAM_SPACE, mtd->erasesize);
++			} else {
++				bcm47xx_parts[3].offset = mtd->size - roundup(NVRAM_SPACE, mtd->erasesize);
++				bcm47xx_parts[3].size   = roundup(NVRAM_SPACE, mtd->erasesize);
++			}
 +		}
 +
 +	} else {
@@ -519,7 +482,7 @@
 +	dual_image_offset = find_dual_image_off(mtd);
 +	/* linux (kernel and rootfs) */
 +	if (cfe_size != 384 * 1024) {
-+		if (get_router() == ROUTER_SIMPLETECH_SIMPLESHARE) {
++		if (is_simpletech_simpleshare()) {
 +			bcm47xx_parts[1].offset = bcm47xx_parts[0].size;
 +			bcm47xx_parts[1].size   = bcm47xx_parts[4].offset - dual_image_offset -
 +				bcm47xx_parts[1].offset - custom_data_size;
