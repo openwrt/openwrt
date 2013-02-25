@@ -1,0 +1,26 @@
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -1076,6 +1076,13 @@ config LANTIQ_WDT
+ 	help
+ 	  Hardware driver for the Lantiq SoC Watchdog Timer.
+ 
++config RAMIPS_WDT
++	tristate "Ralink RT288X/RT305X Watchdog Timer"
++	depends on (SOC_RT288X || SOC_RT305X || SOC_RT3883)
++	help
++	  Hardware driver for the built-in watchdog timer on the
++	  Ralink RT288X/RT305X SoCs.
++
+ # PARISC Architecture
+ 
+ # POWERPC Architecture
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -132,6 +132,7 @@ obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
+ obj-$(CONFIG_OCTEON_WDT) += octeon-wdt.o
+ octeon-wdt-y := octeon-wdt-main.o octeon-wdt-nmi.o
+ obj-$(CONFIG_LANTIQ_WDT) += lantiq_wdt.o
++obj-$(CONFIG_RAMIPS_WDT) += ramips_wdt.o
+ 
+ # PARISC Architecture
+ 
