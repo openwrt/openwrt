@@ -501,7 +501,7 @@ out_put_master:
 	return status;
 }
 
-static int __devexit ramips_spi_remove(struct platform_device *pdev)
+static int ramips_spi_remove(struct platform_device *pdev)
 {
 	struct spi_master *master;
 	struct ramips_spi *rs;
@@ -530,7 +530,7 @@ static struct platform_driver ramips_spi_driver = {
 		.name	= DRIVER_NAME,
 		.owner	= THIS_MODULE,
 	},
-	.remove		= __devexit_p(ramips_spi_remove),
+	.remove		= ramips_spi_remove,
 };
 
 static int __init ramips_spi_init(void)
