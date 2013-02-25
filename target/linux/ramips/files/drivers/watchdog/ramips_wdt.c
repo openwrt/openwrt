@@ -255,7 +255,7 @@ static struct miscdevice ramips_wdt_miscdev = {
 	.fops = &ramips_wdt_fops,
 };
 
-static int __devinit ramips_wdt_probe(struct platform_device *pdev)
+static int ramips_wdt_probe(struct platform_device *pdev)
 {
 	struct resource *res;
 	int err;
@@ -313,7 +313,7 @@ err_unmap:
 	return err;
 }
 
-static int __devexit ramips_wdt_remove(struct platform_device *pdev)
+static int ramips_wdt_remove(struct platform_device *pdev)
 {
 	misc_deregister(&ramips_wdt_miscdev);
 	clk_disable(ramips_wdt_clk);
@@ -328,7 +328,7 @@ static void ramips_wdt_shutdown(struct platform_device *pdev)
 }
 
 static struct platform_driver ramips_wdt_driver = {
-	.remove		= __devexit_p(ramips_wdt_remove),
+	.remove		= ramips_wdt_remove,
 	.shutdown	= ramips_wdt_shutdown,
 	.driver		= {
 		.name	= DRIVER_NAME,
