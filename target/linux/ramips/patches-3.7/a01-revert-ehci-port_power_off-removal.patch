@@ -1,0 +1,22 @@
+reverted:
+--- a/arch/mips/ralink/rt3883/devices.c
++++ b/arch/mips/ralink/rt3883/devices.c
+@@ -177,6 +177,7 @@
+ }
+ 
+ static struct usb_ehci_pdata rt3883_ehci_data = {
++	.port_power_off	= 1,
+ 	.power_on	= rt3883_usb_power_on,
+ 	.power_off	= rt3883_usb_power_off,
+ };
+reverted:
+--- b/arch/mips/ralink/rt305x/devices.c
++++ a/arch/mips/ralink/rt305x/devices.c
+@@ -356,6 +356,7 @@
+ }
+ 
+ static struct usb_ehci_pdata rt3352_ehci_data = {
++	.port_power_off	= 1,
+ 	.power_on	= rt3352_usb_power_on,
+ 	.power_off	= rt3352_usb_power_off,
+ };

@@ -356,7 +356,6 @@ static void rt3352_usb_power_off(struct platform_device *pdev)
 }
 
 static struct usb_ehci_pdata rt3352_ehci_data = {
-	.port_power_off	= 1,
 	.power_on	= rt3352_usb_power_on,
 	.power_off	= rt3352_usb_power_off,
 };
