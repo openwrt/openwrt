@@ -50,7 +50,7 @@ endef
 
 define MkImage
 	$(eval imagename=$(if $(4),$(4),MIPS OpenWrt Linux-$(LINUX_VERSION)))
-	mkimage -A mips -O linux -T kernel -C $(1) $(call kernel_entry)\
+	-mkimage -A mips -O linux -T kernel -C $(1) $(call kernel_entry)\
 		-n "$(imagename)" \
 		-d $(2) $(3)
 endef
