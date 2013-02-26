@@ -172,6 +172,7 @@ endef
 
 define Package/libthread-db
 $(call Package/libc/Default)
+  DEPENDS:=@!USE_MUSL
   TITLE:=POSIX thread library debugging support
 endef
 
@@ -230,6 +231,7 @@ endef
 
 define Package/ldd
 $(call Package/libc/Default)
+  DEPENDS:=@!USE_MUSL
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=LDD trace utility
@@ -258,6 +260,7 @@ endef
 
 define Package/ldconfig
 $(call Package/libc/Default)
+  DEPENDS:=@!USE_MUSL
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Shared library path configuration
@@ -479,10 +482,12 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/librt/install
 	$(INSTALL_DIR) $(1)/lib
+  ifneq ($(CONFIG_USE_MUSL),y)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/librt.so.* \
 		$(TOOLCHAIN_DIR)/lib/librt-$(LIBC_SO_VERSION).so \
 		$(1)/lib/
+  endif
   endef
 
   define Package/ldd/install
