@@ -1,6 +1,6 @@
 --- a/gcc/config/arm/linux-eabi.h
 +++ b/gcc/config/arm/linux-eabi.h
-@@ -95,10 +95,6 @@
+@@ -99,10 +99,6 @@
  #define ENDFILE_SPEC \
    LINUX_OR_ANDROID_LD (LINUX_TARGET_ENDFILE_SPEC, ANDROID_ENDFILE_SPEC)
  
@@ -24,7 +24,7 @@
  #define LINUX_TARGET_LINK_SPEC  "%{h*} %{version:-v} \
 --- a/gcc/config/linux.h
 +++ b/gcc/config/linux.h
-@@ -116,6 +116,10 @@ see the files COPYING3 and COPYING.RUNTI
+@@ -117,6 +117,10 @@ see the files COPYING3 and COPYING.RUNTI
  #define USE_LD_AS_NEEDED 1
  #endif
  

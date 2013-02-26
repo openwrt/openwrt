@@ -14,9 +14,9 @@ Modified:
     branches/gcc-4_6-branch/gcc/config/mips/mips.c
     branches/gcc-4_6-branch/gcc/config/sparc/sparc.c
 ---
---- gcc-4_6-branch/gcc/config/mips/mips.c	2012/09/02 10:36:54	190859
-+++ gcc-4_6-branch/gcc/config/mips/mips.c	2012/09/02 10:37:49	190860
-@@ -15083,7 +15083,10 @@
+--- a/gcc/config/mips/mips.c
++++ b/gcc/config/mips/mips.c
+@@ -15083,7 +15083,10 @@ mips_reorg (void)
      }
  
    if (optimize > 0 && flag_delayed_branch)
@@ -28,9 +28,9 @@ Modified:
    mips_reorg_process_insns ();
    if (!TARGET_MIPS16
        && TARGET_EXPLICIT_RELOCS
---- gcc-4_6-branch/gcc/config/sparc/sparc.c	2012/09/02 10:36:54	190859
-+++ gcc-4_6-branch/gcc/config/sparc/sparc.c	2012/09/02 10:37:49	190860
-@@ -9456,7 +9456,10 @@
+--- a/gcc/config/sparc/sparc.c
++++ b/gcc/config/sparc/sparc.c
+@@ -9452,7 +9452,10 @@ sparc_reorg (void)
    /* We need to have the (essentially) final form of the insn stream in order
       to properly detect the various hazards.  Run delay slot scheduling.  */
    if (optimize > 0 && flag_delayed_branch)
@@ -42,4 +42,3 @@ Modified:
  
    /* Now look for specific patterns in the insn stream.  */
    for (insn = get_insns (); insn; insn = next)
-

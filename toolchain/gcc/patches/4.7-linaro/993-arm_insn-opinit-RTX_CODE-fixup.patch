@@ -12,5 +12,5 @@
  extern int const_ok_for_arm (HOST_WIDE_INT);
 +#ifdef RTX_CODE
  extern int const_ok_for_op (HOST_WIDE_INT, enum rtx_code);
+ extern int const_ok_for_dimode_op (HOST_WIDE_INT, enum rtx_code);
  extern int arm_split_constant (RTX_CODE, enum machine_mode, rtx,
- 			       HOST_WIDE_INT, rtx, rtx, int);

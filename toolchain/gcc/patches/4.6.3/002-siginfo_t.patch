@@ -31,10 +31,9 @@ gcc/
         * config/xtensa/linux-unwind.h (xtensa_fallback_frame_state): Likewise.
 
 ---
-diff -urN gcc-linaro-4.6-2012.02/gcc/config/alpha/linux-unwind.h gcc-linaro-4.6-2012.02.new/gcc/config/alpha/linux-unwind.h
---- gcc-linaro-4.6-2012.02/gcc/config/alpha/linux-unwind.h	2012-02-07 11:33:31.000000000 +0100
-+++ gcc-linaro-4.6-2012.02.new/gcc/config/alpha/linux-unwind.h	2012-09-13 10:25:52.919072751 +0200
-@@ -49,7 +49,7 @@
+--- a/gcc/config/alpha/linux-unwind.h
++++ b/gcc/config/alpha/linux-unwind.h
+@@ -49,7 +49,7 @@ alpha_fallback_frame_state (struct _Unwi
    else if (pc[1] == 0x201f015f)		/* lda $0,NR_rt_sigreturn */
      {
        struct rt_sigframe {
@@ -43,10 +42,9 @@ diff -urN gcc-linaro-4.6-2012.02/gcc/config/alpha/linux-unwind.h gcc-linaro-4.6-
  	struct ucontext uc;
        } *rt_ = context->cfa;
        sc = &rt_->uc.uc_mcontext;
-diff -urN gcc-linaro-4.6-2012.02/gcc/config/bfin/linux-unwind.h gcc-linaro-4.6-2012.02.new/gcc/config/bfin/linux-unwind.h
---- gcc-linaro-4.6-2012.02/gcc/config/bfin/linux-unwind.h	2012-02-07 11:33:31.000000000 +0100
-+++ gcc-linaro-4.6-2012.02.new/gcc/config/bfin/linux-unwind.h	2012-09-13 10:26:14.819073313 +0200
-@@ -48,10 +48,10 @@
+--- a/gcc/config/bfin/linux-unwind.h
++++ b/gcc/config/bfin/linux-unwind.h
+@@ -48,10 +48,10 @@ bfin_fallback_frame_state (struct _Unwin
      {
        struct rt_sigframe {
  	int sig;
@@ -59,10 +57,9 @@ diff -urN gcc-linaro-4.6-2012.02/gcc/config/bfin/linux-unwind.h gcc-linaro-4.6-2
  	struct ucontext uc;
        } *rt_ = context->cfa;
  
-diff -urN gcc-linaro-4.6-2012.02/gcc/config/i386/linux-unwind.h gcc-linaro-4.6-2012.02.new/gcc/config/i386/linux-unwind.h
---- gcc-linaro-4.6-2012.02/gcc/config/i386/linux-unwind.h	2012-02-07 11:33:31.000000000 +0100
-+++ gcc-linaro-4.6-2012.02.new/gcc/config/i386/linux-unwind.h	2012-09-13 10:26:41.891074005 +0200
-@@ -133,9 +133,9 @@
+--- a/gcc/config/i386/linux-unwind.h
++++ b/gcc/config/i386/linux-unwind.h
+@@ -133,9 +133,9 @@ x86_fallback_frame_state (struct _Unwind
      {
        struct rt_sigframe {
  	int sig;
@@ -74,10 +71,9 @@ diff -urN gcc-linaro-4.6-2012.02/gcc/config/i386/linux-unwind.h gcc-linaro-4.6-2
  	struct ucontext uc;
        } *rt_ = context->cfa;
        /* The void * cast is necessary to avoid an aliasing warning.
-diff -urN gcc-linaro-4.6-2012.02/gcc/config/ia64/linux-unwind.h gcc-linaro-4.6-2012.02.new/gcc/config/ia64/linux-unwind.h
---- gcc-linaro-4.6-2012.02/gcc/config/ia64/linux-unwind.h	2012-02-07 11:33:31.000000000 +0100
-+++ gcc-linaro-4.6-2012.02.new/gcc/config/ia64/linux-unwind.h	2012-09-13 10:26:59.251074450 +0200
-@@ -47,7 +47,7 @@
+--- a/gcc/config/ia64/linux-unwind.h
++++ b/gcc/config/ia64/linux-unwind.h
+@@ -47,7 +47,7 @@ ia64_fallback_frame_state (struct _Unwin
        struct sigframe {
  	char scratch[16];
  	unsigned long sig_number;
@@ -86,7 +82,7 @@ diff -urN gcc-linaro-4.6-2012.02/gcc/config/ia64/linux-unwind.h gcc-linaro-4.6-2
  	struct sigcontext *sc;
        } *frame_ = (struct sigframe *)context->psp;
        struct sigcontext *sc = frame_->sc;
-@@ -137,7 +137,7 @@
+@@ -137,7 +137,7 @@ ia64_handle_unwabi (struct _Unwind_Conte
        struct sigframe {
  	char scratch[16];
  	unsigned long sig_number;
@@ -95,10 +91,9 @@ diff -urN gcc-linaro-4.6-2012.02/gcc/config/ia64/linux-unwind.h gcc-linaro-4.6-2
  	struct sigcontext *sc;
        } *frame = (struct sigframe *)context->psp;
        struct sigcontext *sc = frame->sc;
-diff -urN gcc-linaro-4.6-2012.02/gcc/config/mips/linux-unwind.h gcc-linaro-4.6-2012.02.new/gcc/config/mips/linux-unwind.h
---- gcc-linaro-4.6-2012.02/gcc/config/mips/linux-unwind.h	2012-02-07 11:33:31.000000000 +0100
-+++ gcc-linaro-4.6-2012.02.new/gcc/config/mips/linux-unwind.h	2012-09-13 10:27:17.947074929 +0200
-@@ -75,7 +75,7 @@
+--- a/gcc/config/mips/linux-unwind.h
++++ b/gcc/config/mips/linux-unwind.h
+@@ -75,7 +75,7 @@ mips_fallback_frame_state (struct _Unwin
        struct rt_sigframe {
  	u_int32_t ass[4];  /* Argument save space for o32.  */
  	u_int32_t trampoline[2];
@@ -107,10 +102,9 @@ diff -urN gcc-linaro-4.6-2012.02/gcc/config/mips/linux-unwind.h gcc-linaro-4.6-2
  	_sig_ucontext_t uc;
        } *rt_ = context->cfa;
        sc = &rt_->uc.uc_mcontext;
-diff -urN gcc-linaro-4.6-2012.02/gcc/config/pa/linux-unwind.h gcc-linaro-4.6-2012.02.new/gcc/config/pa/linux-unwind.h
---- gcc-linaro-4.6-2012.02/gcc/config/pa/linux-unwind.h	2012-02-07 11:33:31.000000000 +0100
-+++ gcc-linaro-4.6-2012.02.new/gcc/config/pa/linux-unwind.h	2012-09-13 10:27:27.491075173 +0200
-@@ -63,7 +63,7 @@
+--- a/gcc/config/pa/linux-unwind.h
++++ b/gcc/config/pa/linux-unwind.h
+@@ -63,7 +63,7 @@ pa32_fallback_frame_state (struct _Unwin
    int i;
    struct sigcontext *sc;
    struct rt_sigframe {
@@ -119,10 +113,9 @@ diff -urN gcc-linaro-4.6-2012.02/gcc/config/pa/linux-unwind.h gcc-linaro-4.6-201
      struct ucontext uc;
    } *frame;
  
-diff -urN gcc-linaro-4.6-2012.02/gcc/config/sh/linux-unwind.h gcc-linaro-4.6-2012.02.new/gcc/config/sh/linux-unwind.h
---- gcc-linaro-4.6-2012.02/gcc/config/sh/linux-unwind.h	2012-02-07 11:33:31.000000000 +0100
-+++ gcc-linaro-4.6-2012.02.new/gcc/config/sh/linux-unwind.h	2012-09-13 10:27:58.551075969 +0200
-@@ -80,9 +80,9 @@
+--- a/gcc/config/sh/linux-unwind.h
++++ b/gcc/config/sh/linux-unwind.h
+@@ -80,9 +80,9 @@ shmedia_fallback_frame_state (struct _Un
  	   && (*(unsigned long *) (pc+11)  == 0x6ff0fff0))
      {
        struct rt_sigframe {
@@ -134,7 +127,7 @@ diff -urN gcc-linaro-4.6-2012.02/gcc/config/sh/linux-unwind.h gcc-linaro-4.6-201
  	struct ucontext uc;
        } *rt_ = context->cfa;
        /* The void * cast is necessary to avoid an aliasing warning.
-@@ -179,7 +179,7 @@
+@@ -179,7 +179,7 @@ sh_fallback_frame_state (struct _Unwind_
  		&& (*(unsigned short *) (pc+14)  == 0x00ad))))
      {
        struct rt_sigframe {
@@ -143,10 +136,9 @@ diff -urN gcc-linaro-4.6-2012.02/gcc/config/sh/linux-unwind.h gcc-linaro-4.6-201
  	struct ucontext uc;
        } *rt_ = context->cfa;
        /* The void * cast is necessary to avoid an aliasing warning.
-diff -urN gcc-linaro-4.6-2012.02/gcc/config/xtensa/linux-unwind.h gcc-linaro-4.6-2012.02.new/gcc/config/xtensa/linux-unwind.h
---- gcc-linaro-4.6-2012.02/gcc/config/xtensa/linux-unwind.h	2012-02-07 11:33:31.000000000 +0100
-+++ gcc-linaro-4.6-2012.02.new/gcc/config/xtensa/linux-unwind.h	2012-09-13 10:28:13.827076359 +0200
-@@ -62,7 +62,7 @@
+--- a/gcc/config/xtensa/linux-unwind.h
++++ b/gcc/config/xtensa/linux-unwind.h
+@@ -62,7 +62,7 @@ xtensa_fallback_frame_state (struct _Unw
    struct sigcontext *sc;
  
    struct rt_sigframe {
