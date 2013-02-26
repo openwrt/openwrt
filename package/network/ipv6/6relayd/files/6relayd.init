@@ -66,13 +66,18 @@ start_6relayd() {
 	fi
 
 	# Configure feature options
-	local always_rewrite_dns
+	local always_rewrite_dns rewrite_dns_addr
 	config_get_bool always_rewrite_dns "$cfg" always_rewrite_dns 0
-	[ "$always_rewrite_dns" -eq 1 ] && append args "-n"
+	config_get rewrite_dns_addr "$cfg" rewrite_dns_addr
+	[ "$always_rewrite_dns" -eq 1 ] && append args "-n$rewrite_dns_addr"
 
 	local always_assume_default
 	config_get_bool always_assume_default "$cfg" always_assume_default 0
 	[ "$always_assume_default" -eq 1 ] && append args "-u"
+
+	local compat_ula
+	config_get_bool compat_ula "$cfg" compat_ula 0
+	[ "$compat_ula" -eq 1 ] && append args "-c"
 
 	[ "$ndp" = "relay" ] && append args "-N -s -l"
 	[ "$rd" = "relay" ] && append args "-Rrelay"
