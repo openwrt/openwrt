@@ -1,6 +1,6 @@
 --- a/ld/emultempl/elf32.em
 +++ b/ld/emultempl/elf32.em
-@@ -1270,6 +1270,8 @@ fragment <<EOF
+@@ -1272,6 +1272,8 @@ fragment <<EOF
  	      && command_line.rpath == NULL)
  	    {
  	      lib_path = (const char *) getenv ("LD_RUN_PATH");
@@ -9,7 +9,7 @@
  	      if (gld${EMULATION_NAME}_search_needed (lib_path, &n,
  						      force))
  		break;
-@@ -1497,6 +1499,8 @@ gld${EMULATION_NAME}_before_allocation (
+@@ -1499,6 +1501,8 @@ gld${EMULATION_NAME}_before_allocation (
    rpath = command_line.rpath;
    if (rpath == NULL)
      rpath = (const char *) getenv ("LD_RUN_PATH");

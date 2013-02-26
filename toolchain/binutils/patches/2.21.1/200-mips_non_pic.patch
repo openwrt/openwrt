@@ -57,7 +57,7 @@
  /* True if NAME is the recognized name of any SHT_MIPS_OPTIONS section.
     Some IRIX system files do not use MIPS_ELF_OPTIONS_SECTION_NAME.  */
  #define MIPS_ELF_OPTIONS_SECTION_NAME_P(NAME) \
-@@ -7686,7 +7694,9 @@ _bfd_mips_elf_check_relocs (bfd *abfd, s
+@@ -7690,7 +7698,9 @@ _bfd_mips_elf_check_relocs (bfd *abfd, s
  
  	      /* We need a stub, not a plt entry for the undefined
  		 function.  But we record it as if it needs plt.  See
@@ -68,7 +68,7 @@
  	      h->needs_plt = 1;
  	      h->type = STT_FUNC;
  	    }
-@@ -7793,6 +7803,8 @@ _bfd_mips_elf_check_relocs (bfd *abfd, s
+@@ -7796,6 +7806,8 @@ _bfd_mips_elf_check_relocs (bfd *abfd, s
  	case R_MIPS_32:
  	case R_MIPS_REL32:
  	case R_MIPS_64:
@@ -77,7 +77,7 @@
  	  /* In VxWorks executables, references to external symbols
  	     are handled using copy relocs or PLT stubs, so there's
  	     no need to add a .rela.dyn entry for this relocation.  */
-@@ -7848,11 +7860,21 @@ _bfd_mips_elf_check_relocs (bfd *abfd, s
+@@ -7851,11 +7863,21 @@ _bfd_mips_elf_check_relocs (bfd *abfd, s
  	case R_MIPS_GPREL16:
  	case R_MIPS_LITERAL:
  	case R_MIPS_GPREL32:
@@ -99,7 +99,7 @@
  	  /* This relocation describes the C++ object vtable hierarchy.
  	     Reconstruct it for later use during GC.  */
  	case R_MIPS_GNU_VTINHERIT:
-@@ -7875,20 +7897,20 @@ _bfd_mips_elf_check_relocs (bfd *abfd, s
+@@ -7878,20 +7900,20 @@ _bfd_mips_elf_check_relocs (bfd *abfd, s
  
        /* We must not create a stub for a symbol that has relocations
  	 related to taking the function's address.  This doesn't apply to
@@ -125,7 +125,7 @@
  	  }
  
        /* See if this reloc would need to refer to a MIPS16 hard-float stub,
-@@ -12601,7 +12623,9 @@ _bfd_mips_elf_merge_private_bfd_data (bf
+@@ -12607,7 +12629,9 @@ _bfd_mips_elf_merge_private_bfd_data (bf
  	  break;
  	}
      }
@@ -179,7 +179,7 @@
  
    if (! bfd_set_arch_mach (stdoutput, bfd_arch_mips, file_mips_arch))
      as_warn (_("Could not set architecture and machine"));
-@@ -11270,6 +11276,7 @@ enum options
+@@ -11256,6 +11262,7 @@ enum options
      OPTION_PDR,
      OPTION_NO_PDR,
      OPTION_MVXWORKS_PIC,
@@ -187,7 +187,7 @@
  #endif /* OBJ_ELF */
      OPTION_END_OF_ENUM    
    };
-@@ -11377,6 +11384,7 @@ struct option md_longopts[] =
+@@ -11363,6 +11370,7 @@ struct option md_longopts[] =
    {"mpdr", no_argument, NULL, OPTION_PDR},
    {"mno-pdr", no_argument, NULL, OPTION_NO_PDR},
    {"mvxworks-pic", no_argument, NULL, OPTION_MVXWORKS_PIC},
@@ -195,7 +195,7 @@
  #endif /* OBJ_ELF */
  
    {NULL, no_argument, NULL, 0}
-@@ -11825,6 +11833,11 @@ md_parse_option (int c, char *arg)
+@@ -11811,6 +11819,11 @@ md_parse_option (int c, char *arg)
      case OPTION_MVXWORKS_PIC:
        mips_pic = VXWORKS_PIC;
        break;

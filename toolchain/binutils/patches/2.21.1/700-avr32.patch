@@ -31,7 +31,7 @@
      &bfd_cr16c_arch,
 --- a/bfd/bfd-in2.h
 +++ b/bfd/bfd-in2.h
-@@ -2053,6 +2053,12 @@ enum bfd_architecture
+@@ -2060,6 +2060,12 @@ enum bfd_architecture
  #define bfd_mach_avr5          5
  #define bfd_mach_avr51         51
  #define bfd_mach_avr6          6
@@ -44,7 +44,7 @@
    bfd_arch_bfin,        /* ADI Blackfin */
  #define bfd_mach_bfin          1
    bfd_arch_cr16,       /* National Semiconductor CompactRISC (ie CR16). */
-@@ -3989,6 +3995,88 @@ instructions  */
+@@ -3996,6 +4002,88 @@ instructions  */
    BFD_RELOC_RX_ABS16UL,
    BFD_RELOC_RX_RELAX,
  
@@ -148,7 +148,7 @@
      ;;
 --- a/bfd/configure
 +++ b/bfd/configure
-@@ -15040,6 +15040,7 @@ do
+@@ -15188,6 +15188,7 @@ do
      bfd_pei_ia64_vec)		tb="$tb pei-ia64.lo pepigen.lo cofflink.lo"; target_size=64 ;;
      bfd_elf32_am33lin_vec)	tb="$tb elf32-am33lin.lo elf32.lo $elf" ;;
      bfd_elf32_avr_vec)		tb="$tb elf32-avr.lo elf32.lo $elf" ;;
@@ -158,7 +158,7 @@
      bfd_elf32_big_generic_vec) 	tb="$tb elf32-gen.lo elf32.lo $elf" ;;
 --- a/bfd/configure.in
 +++ b/bfd/configure.in
-@@ -675,6 +675,7 @@ do
+@@ -679,6 +679,7 @@ do
      bfd_pei_ia64_vec)		tb="$tb pei-ia64.lo pepigen.lo cofflink.lo"; target_size=64 ;;
      bfd_elf32_am33lin_vec)	tb="$tb elf32-am33lin.lo elf32.lo $elf" ;;
      bfd_elf32_avr_vec)		tb="$tb elf32-avr.lo elf32.lo $elf" ;;
@@ -223,7 +223,7 @@
 +  N(bfd_mach_avr32_ap, "avr32", TRUE, &cpu_info[0]);
 --- /dev/null
 +++ b/bfd/elf32-avr32.c
-@@ -0,0 +1,3915 @@
+@@ -0,0 +1,3944 @@
 +/* AVR32-specific support for 32-bit ELF.
 +   Copyright 2003,2004,2005,2006,2007,2008,2009 Atmel Corporation.
 +
@@ -578,7 +578,8 @@
 +  unsigned int relax_pass;
 +};
 +#define avr32_elf_hash_table(p)				\
-+  ((struct elf_avr32_link_hash_table *)((p)->hash))
++  (elf_hash_table_id ((struct elf_link_hash_table *) ((p)->hash)) \
++  == AVR32_ELF_DATA ? ((struct elf_avr32_link_hash_table *) ((p)->hash)) : NULL)
 +
 +static struct bfd_hash_entry *
 +avr32_elf_link_hash_newfunc(struct bfd_hash_entry *entry,
@@ -640,7 +641,8 @@
 +
 +  if (! _bfd_elf_link_hash_table_init(&ret->root, abfd,
 +				      avr32_elf_link_hash_newfunc,
-+                      sizeof (struct elf_avr32_link_hash_entry)))
++                      sizeof (struct elf_avr32_link_hash_entry),
++                      AVR32_ELF_DATA))
 +    {
 +      free(ret);
 +      return NULL;
@@ -723,6 +725,9 @@
 +  htab = avr32_elf_hash_table(info);
 +  flags = bed->dynamic_sec_flags;
 +
++  if (htab == NULL)
++    return FALSE;
++
 +  if (htab->sgot)
 +    return TRUE;
 +
@@ -759,6 +764,9 @@
 +
 +  htab = avr32_elf_hash_table(info);
 +  flags = bed->dynamic_sec_flags;
++
++  if (htab == NULL)
++    return FALSE;
 +
 +  if (!avr32_elf_create_got_section (dynobj, info))
 +    return FALSE;
@@ -800,6 +808,9 @@
 +  symtab_hdr = &elf_tdata(abfd)->symtab_hdr;
 +  sym_hashes = elf_sym_hashes(abfd);
 +  htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
 +  local_got_ents = elf_local_got_ents(abfd);
 +  sgot = htab->sgot;
 +
@@ -981,6 +992,9 @@
 +  htab = avr32_elf_hash_table(info);
 +  havr = (struct elf_avr32_link_hash_entry *)h;
 +  dynobj = elf_hash_table(info)->dynobj;
++
++  if (htab == NULL)
++    return FALSE;
 +
 +  /* Make sure we know what is going on here.  */
 +  BFD_ASSERT (dynobj != NULL
@@ -1292,6 +1306,9 @@
 +  htab = avr32_elf_hash_table(info);
 +  havr = (struct elf_avr32_link_hash_entry *)h;
 +
++  if (htab == NULL)
++    return FALSE;
++
 +  got = h->got.glist;
 +
 +  /* If got is NULL, the symbol is never referenced through the GOT */
@@ -1343,6 +1360,9 @@
 +  pr_debug("(4) size dynamic sections\n");
 +
 +  htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
 +  dynobj = htab->root.dynobj;
 +  BFD_ASSERT(dynobj != NULL);
 +
@@ -3486,6 +3506,9 @@
 +    return TRUE;
 +
 +  htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
 +  symtab_hdr = &elf_tdata(input_bfd)->symtab_hdr;
 +  sym_hashes = elf_sym_hashes(input_bfd);
 +  local_got_ents = elf_local_got_ents(input_bfd);
@@ -3808,6 +3831,9 @@
 +  pr_debug("(7) finish dynamic symbol: %s\n", h->root.root.string);
 +
 +  htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
 +  got = h->got.glist;
 +
 +  if (got && got->refcount > 0)
@@ -3874,6 +3900,9 @@
 +  pr_debug("(8) finish dynamic sections\n");
 +
 +  htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
 +  sgot = htab->sgot;
 +  sdyn = bfd_get_section_by_name(htab->root.dynobj, ".dynamic");
 +
@@ -4165,9 +4194,9 @@
 +
 +void bfd_elf32_avr32_set_options(struct bfd_link_info *info,
 +				 int direct_data_refs);
---- b/bfd/elf-bfd.h
+--- a/bfd/elf-bfd.h
 +++ b/bfd/elf-bfd.h
-@@ -406,6 +406,7 @@
+@@ -402,6 +402,7 @@ enum elf_target_id
    ALPHA_ELF_DATA = 1,
    ARM_ELF_DATA,
    AVR_ELF_DATA,
@@ -4175,7 +4204,7 @@
    BFIN_ELF_DATA,
    CRIS_ELF_DATA,
    FRV_ELF_DATA,
-@@ -1553,6 +1554,10 @@
+@@ -1549,6 +1550,10 @@ struct elf_obj_tdata
       find_nearest_line.  */
    struct mips_elf_find_line *find_line_info;
  
@@ -4409,7 +4438,7 @@
  
 --- a/binutils/doc/binutils.info
 +++ b/binutils/doc/binutils.info
-@@ -1705,6 +1705,10 @@ equivalent.  At least one option from th
+@@ -1707,6 +1707,10 @@ equivalent.  At least one option from th
       useful when attempting to disassemble thumb code produced by other
       compilers.
  
@@ -4422,7 +4451,7 @@
       the following may be specified as a comma separated string.
 --- a/binutils/doc/binutils.texi
 +++ b/binutils/doc/binutils.texi
-@@ -1980,6 +1980,10 @@ using the switch @option{--disassembler-
+@@ -1982,6 +1982,10 @@ using the switch @option{--disassembler-
  useful when attempting to disassemble thumb code produced by other
  compilers.
  
@@ -4448,7 +4477,7 @@
  following may be specified as a comma separated string.
 --- a/binutils/readelf.c
 +++ b/binutils/readelf.c
-@@ -95,6 +95,7 @@
+@@ -96,6 +96,7 @@
  #include "elf/arc.h"
  #include "elf/arm.h"
  #include "elf/avr.h"
@@ -4456,7 +4485,7 @@
  #include "elf/bfin.h"
  #include "elf/cr16.h"
  #include "elf/cris.h"
-@@ -619,6 +620,7 @@ guess_is_rela (unsigned int e_machine)
+@@ -544,6 +545,7 @@ guess_is_rela (unsigned int e_machine)
      case EM_ALPHA:
      case EM_ALTERA_NIOS2:
      case EM_AVR:
@@ -4464,7 +4493,7 @@
      case EM_AVR_OLD:
      case EM_BLACKFIN:
      case EM_CR16:
-@@ -1072,6 +1074,10 @@ dump_relocations (FILE * file,
+@@ -997,6 +999,10 @@ dump_relocations (FILE * file,
  	  rtype = elf_avr_reloc_type (type);
  	  break;
  
@@ -4477,7 +4506,7 @@
  	case EM_SPARCV9:
 --- a/gas/as.c
 +++ b/gas/as.c
-@@ -459,10 +459,10 @@ parse_args (int * pargc, char *** pargv)
+@@ -464,10 +464,10 @@ parse_args (int * pargc, char *** pargv)
         the end of the preceeding line so that it is simpler to
         selectively add and remove lines from this list.  */
      {"alternate", no_argument, NULL, OPTION_ALTERNATE}
@@ -4492,7 +4521,7 @@
      ,{"a", optional_argument, NULL, 'a'}
      /* Handle -al=<FILE>.  */
      ,{"al", optional_argument, NULL, OPTION_AL}
-@@ -839,8 +839,15 @@ This program has absolutely no warranty.
+@@ -854,8 +854,15 @@ This program has absolutely no warranty.
  	case 'a':
  	  if (optarg)
  	    {
@@ -9786,7 +9815,7 @@
  @set CRIS
 --- a/gas/doc/as.texinfo
 +++ b/gas/doc/as.texinfo
-@@ -6865,6 +6865,9 @@ subject, see the hardware manufacturer's
+@@ -6877,6 +6877,9 @@ subject, see the hardware manufacturer's
  @ifset AVR
  * AVR-Dependent::               AVR Dependent Features
  @end ifset
@@ -9796,7 +9825,7 @@
  @ifset Blackfin
  * Blackfin-Dependent::		Blackfin Dependent Features
  @end ifset
-@@ -7006,6 +7009,10 @@ subject, see the hardware manufacturer's
+@@ -7018,6 +7021,10 @@ subject, see the hardware manufacturer's
  @include c-avr.texi
  @end ifset
  
@@ -18299,7 +18328,7 @@
 +.L2:	nop
 --- a/gas/write.c
 +++ b/gas/write.c
-@@ -2221,6 +2221,10 @@ relax_frag (segT segment, fragS *fragP,
+@@ -2227,6 +2227,10 @@ relax_frag (segT segment, fragS *fragP,
  
  #endif /* defined (TC_GENERIC_RELAX_TABLE)  */
  
@@ -18310,7 +18339,7 @@
  /* Relax_align. Advance location counter to next address that has 'alignment'
     lowest order bits all 0s, return size of adjustment made.  */
  static relax_addressT
-@@ -2240,6 +2244,7 @@ relax_align (register relax_addressT add
+@@ -2246,6 +2250,7 @@ relax_align (register relax_addressT add
  #endif
    return (new_address - address);
  }
@@ -18318,7 +18347,7 @@
  
  /* Now we have a segment, not a crowd of sub-segments, we can make
     fr_address values.
-@@ -2286,7 +2291,7 @@ relax_segment (struct frag *segment_frag
+@@ -2292,7 +2297,7 @@ relax_segment (struct frag *segment_frag
  	case rs_align_code:
  	case rs_align_test:
  	  {
@@ -18327,7 +18356,7 @@
  
  	    if (fragP->fr_subtype != 0 && offset > fragP->fr_subtype)
  	      offset = 0;
-@@ -2497,10 +2502,10 @@ relax_segment (struct frag *segment_frag
+@@ -2503,10 +2508,10 @@ relax_segment (struct frag *segment_frag
  		{
  		  addressT oldoff, newoff;
  
@@ -19095,7 +19124,7 @@
 +LDEMUL_SET_SYMBOLS=avr32_elf_set_symbols
 --- a/ld/Makefile.am
 +++ b/ld/Makefile.am
-@@ -162,6 +162,53 @@ ALL_EMULATION_SOURCES = \
+@@ -163,6 +163,53 @@ ALL_EMULATION_SOURCES = \
  	eavr5.c \
  	eavr51.c \
  	eavr6.c \
@@ -19148,8 +19177,8 @@
 +	eavr32linux.c \
  	ecoff_i860.c \
  	ecoff_sparc.c \
- 	eelf32_spu.c \
-@@ -760,6 +807,214 @@ eavr6.c: $(srcdir)/emulparams/avr6.sh $(
+ 	ecrisaout.c \
+@@ -766,6 +813,214 @@ eavr6.c: $(srcdir)/emulparams/avr6.sh $(
    $(ELF_DEPS) $(srcdir)/scripttempl/avr.sc \
    ${GEN_DEPENDS}
  	${GENSCRIPTS} avr6 "$(tdir_avr2)"
@@ -19364,7 +19393,7 @@
  ecoff_i860.c: $(srcdir)/emulparams/coff_i860.sh \
    $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/i860coff.sc ${GEN_DEPENDS}
  	${GENSCRIPTS} coff_i860 "$(tdir_coff_i860)"
-@@ -2052,7 +2307,9 @@ install-exec-local: ld-new$(EXEEXT) inst
+@@ -2059,7 +2314,9 @@ install-exec-local: ld-new$(EXEEXT) inst
  	  fi; \
  	fi
  
@@ -19377,7 +19406,7 @@
  	  $(INSTALL_DATA) $$f $(DESTDIR)$(scriptdir)/$$f ; \
 --- a/ld/Makefile.in
 +++ b/ld/Makefile.in
-@@ -462,6 +462,53 @@ ALL_EMULATION_SOURCES = \
+@@ -468,6 +468,53 @@ ALL_EMULATION_SOURCES = \
  	eavr5.c \
  	eavr51.c \
  	eavr6.c \
@@ -19430,8 +19459,8 @@
 +	eavr32linux.c \
  	ecoff_i860.c \
  	ecoff_sparc.c \
- 	eelf32_spu.c \
-@@ -2183,6 +2230,194 @@ eavr6.c: $(srcdir)/emulparams/avr6.sh $(
+ 	ecrisaout.c \
+@@ -2201,6 +2248,194 @@ eavr6.c: $(srcdir)/emulparams/avr6.sh $(
    $(ELF_DEPS) $(srcdir)/scripttempl/avr.sc \
    ${GEN_DEPENDS}
  	${GENSCRIPTS} avr6 "$(tdir_avr2)"
@@ -30765,115 +30794,3 @@
  #ifdef ARCH_s390
    print_s390_disassembler_options (stream);
  #endif
---- a/bfd/elf32-avr32.c
-+++ b/bfd/elf32-avr32.c
-@@ -352,7 +352,8 @@ struct elf_avr32_link_hash_table
-   unsigned int relax_pass;
- };
- #define avr32_elf_hash_table(p)				\
--  ((struct elf_avr32_link_hash_table *)((p)->hash))
-+  (elf_hash_table_id ((struct elf_link_hash_table *) ((p)->hash)) \
-+  == AVR32_ELF_DATA ? ((struct elf_avr32_link_hash_table *) ((p)->hash)) : NULL)
- 
- static struct bfd_hash_entry *
- avr32_elf_link_hash_newfunc(struct bfd_hash_entry *entry,
-@@ -414,7 +415,8 @@ avr32_elf_link_hash_table_create(bfd *ab
- 
-   if (! _bfd_elf_link_hash_table_init(&ret->root, abfd,
- 				      avr32_elf_link_hash_newfunc,
--                      sizeof (struct elf_avr32_link_hash_entry)))
-+                      sizeof (struct elf_avr32_link_hash_entry),
-+                      AVR32_ELF_DATA))
-     {
-       free(ret);
-       return NULL;
-@@ -497,6 +499,9 @@ avr32_elf_create_got_section (bfd *dynob
-   htab = avr32_elf_hash_table(info);
-   flags = bed->dynamic_sec_flags;
- 
-+  if (htab == NULL)
-+    return FALSE;
-+
-   if (htab->sgot)
-     return TRUE;
- 
-@@ -534,6 +539,9 @@ avr32_elf_create_dynamic_sections (bfd *
-   htab = avr32_elf_hash_table(info);
-   flags = bed->dynamic_sec_flags;
- 
-+  if (htab == NULL)
-+    return FALSE;
-+
-   if (!avr32_elf_create_got_section (dynobj, info))
-     return FALSE;
- 
-@@ -574,6 +582,9 @@ avr32_check_relocs (bfd *abfd, struct bf
-   symtab_hdr = &elf_tdata(abfd)->symtab_hdr;
-   sym_hashes = elf_sym_hashes(abfd);
-   htab = avr32_elf_hash_table(info);
-+  if (htab == NULL)
-+    return FALSE;
-+
-   local_got_ents = elf_local_got_ents(abfd);
-   sgot = htab->sgot;
- 
-@@ -756,6 +767,9 @@ avr32_elf_adjust_dynamic_symbol(struct b
-   havr = (struct elf_avr32_link_hash_entry *)h;
-   dynobj = elf_hash_table(info)->dynobj;
- 
-+  if (htab == NULL)
-+    return FALSE;
-+
-   /* Make sure we know what is going on here.  */
-   BFD_ASSERT (dynobj != NULL
- 	      && (h->u.weakdef != NULL
-@@ -1066,6 +1080,9 @@ allocate_dynrelocs(struct elf_link_hash_
-   htab = avr32_elf_hash_table(info);
-   havr = (struct elf_avr32_link_hash_entry *)h;
- 
-+  if (htab == NULL)
-+    return FALSE;
-+
-   got = h->got.glist;
- 
-   /* If got is NULL, the symbol is never referenced through the GOT */
-@@ -1117,6 +1134,9 @@ avr32_elf_size_dynamic_sections (bfd *ou
-   pr_debug("(4) size dynamic sections\n");
- 
-   htab = avr32_elf_hash_table(info);
-+  if (htab == NULL)
-+    return FALSE;
-+
-   dynobj = htab->root.dynobj;
-   BFD_ASSERT(dynobj != NULL);
- 
-@@ -3260,6 +3280,9 @@ avr32_elf_relocate_section(bfd *output_b
-     return TRUE;
- 
-   htab = avr32_elf_hash_table(info);
-+  if (htab == NULL)
-+    return FALSE;
-+
-   symtab_hdr = &elf_tdata(input_bfd)->symtab_hdr;
-   sym_hashes = elf_sym_hashes(input_bfd);
-   local_got_ents = elf_local_got_ents(input_bfd);
-@@ -3582,6 +3605,9 @@ avr32_elf_finish_dynamic_symbol(bfd *out
-   pr_debug("(7) finish dynamic symbol: %s\n", h->root.root.string);
- 
-   htab = avr32_elf_hash_table(info);
-+  if (htab == NULL)
-+    return FALSE;
-+
-   got = h->got.glist;
- 
-   if (got && got->refcount > 0)
-@@ -3648,6 +3674,9 @@ avr32_elf_finish_dynamic_sections(bfd *o
-   pr_debug("(8) finish dynamic sections\n");
- 
-   htab = avr32_elf_hash_table(info);
-+  if (htab == NULL)
-+    return FALSE;
-+
-   sgot = htab->sgot;
-   sdyn = bfd_get_section_by_name(htab->root.dynobj, ".dynamic");
- 
