@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/gdb/Default
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:=@!(avr32||cris) +libthread-db +PACKAGE_zlib:zlib
+  DEPENDS:=@!(avr32||cris) +!USE_MUSL:libthread-db +PACKAGE_zlib:zlib
   URL:=http://www.gnu.org/software/gdb/
 endef
 
