@@ -1,6 +1,6 @@
 --- a/gcc/crtstuff.c
 +++ b/gcc/crtstuff.c
-@@ -100,15 +100,20 @@
+@@ -100,15 +100,20 @@ call_ ## FUNC (void)					\
  #if defined(OBJECT_FORMAT_ELF) \
      && !defined(OBJECT_FORMAT_FLAT) \
      && defined(HAVE_LD_EH_FRAME_HDR) \
