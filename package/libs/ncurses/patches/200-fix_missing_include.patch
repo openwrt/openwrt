@@ -1,10 +1,11 @@
 --- a/ncurses/curses.priv.h
 +++ b/ncurses/curses.priv.h
-@@ -54,6 +54,10 @@ extern "C" {
+@@ -54,6 +54,11 @@ extern "C" {
  
  #include <ncurses_cfg.h>
  
 +#if NEED_WCHAR_H
++#include <stdarg.h>
 +#include <wchar.h>
 +#endif
 +
