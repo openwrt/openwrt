@@ -58,6 +58,7 @@ $(curdir)/ppl/compile := $(curdir)/gmp/install
 $(curdir)/cloog/compile := $(curdir)/ppl/install
 $(curdir)/mtd-utils/compile := $(curdir)/e2fsprogs/install $(curdir)/xz/install
 $(curdir)/mkimage/compile := $(curdir)/sed/install
+$(curdir)/mklibs/compile := $(curdir)/automake/install
 $(curdir)/qemu/compile := $(curdir)/e2fsprogs/install
 $(curdir)/upslug2/compile := $(curdir)/automake/install
 $(curdir)/mm-macros/compile := $(curdir)/automake/install
