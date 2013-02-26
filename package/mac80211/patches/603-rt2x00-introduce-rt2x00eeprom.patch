@@ -244,7 +244,7 @@
  	.get_entry_state	= rt2800pci_get_entry_state,
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -1314,6 +1314,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
+@@ -1318,6 +1318,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
  
  	rt2x00dev->hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
  
@@ -255,7 +255,7 @@
  	/*
  	 * Initialize work.
  	 */
-@@ -1438,6 +1442,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
+@@ -1442,6 +1446,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
  	 */
  	if (rt2x00dev->drv_data)
  		kfree(rt2x00dev->drv_data);
