@@ -69,7 +69,7 @@ start_6relayd() {
 	local always_rewrite_dns rewrite_dns_addr
 	config_get_bool always_rewrite_dns "$cfg" always_rewrite_dns 0
 	config_get rewrite_dns_addr "$cfg" rewrite_dns_addr
-	[ "$always_rewrite_dns" -eq 1 ] && append args "-n$rewrite_dns_addr"
+	[ "$always_rewrite_dns" -eq 1 -o -n "$rewrite_dns_addr" ] && append args "-n$rewrite_dns_addr"
 
 	local always_assume_default
 	config_get_bool always_assume_default "$cfg" always_assume_default 0
