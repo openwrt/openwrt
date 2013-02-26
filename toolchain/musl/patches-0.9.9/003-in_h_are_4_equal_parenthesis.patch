@@ -1,0 +1,12 @@
+diff -urN musl-0.9.8/include/netinet/in.h musl-0.9.8.new/include/netinet/in.h
+--- musl-0.9.8/include/netinet/in.h	2013-01-25 14:14:07.000000000 +0100
++++ musl-0.9.8.new/include/netinet/in.h	2013-01-29 21:43:46.843051396 +0100
+@@ -141,7 +141,7 @@
+         (IN6_IS_ADDR_MULTICAST(a) && ((((uint8_t *) (a))[1] & 0xf) == 0xe))
+ 
+ #define __ARE_4_EQUAL(a,b) \
+-	(!( 0[a]-0[b] | 1[a]-1[b] | 2[a]-2[b] | 3[a]-3[b] ))
++	(!( (0[a]-0[b]) | (1[a]-1[b]) | (2[a]-2[b]) | (3[a]-3[b]) ))
+ #define IN6_ARE_ADDR_EQUAL(a,b) \
+ 	__ARE_4_EQUAL((const uint32_t *)(a), (const uint32_t *)(b))
+ 

@@ -1,0 +1,33 @@
+From d432b2c057fc64256645422382c2f7e32c45b3cc Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Sun, 03 Feb 2013 06:26:33 +0000
+Subject: fix regression that made shared libs crash on arm
+
+---
+diff --git a/crt/arm/crti.s b/crt/arm/crti.s
+index 2f658b7..35ae6ae 100644
+--- a/crt/arm/crti.s
++++ b/crt/arm/crti.s
+@@ -5,6 +5,8 @@ _init:
+ 
+ .weak __fini_array_start
+ .weak __fini_array_end
++.hidden __fini_array_start
++.hidden __fini_array_end
+ 
+ .section .fini
+ .global _fini
+diff --git a/crt/arm/crtn.s b/crt/arm/crtn.s
+index 928e068..eb0e883 100644
+--- a/crt/arm/crtn.s
++++ b/crt/arm/crtn.s
+@@ -1,5 +1,7 @@
+ .weak __init_array_start
+ .weak __init_array_end
++.hidden __init_array_start
++.hidden __init_array_end
+ 
+ .section .init
+ 	adr lr, 1f
+--
+cgit v0.9.0.3-65-g4555
