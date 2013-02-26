@@ -1,9 +1,8 @@
 See http://sourceware.org/bugzilla/show_bug.cgi?id=13990 for details.
 ---
-diff -u -r1.287 -r1.288
---- a/bfd/elf32-arm.c	2012/04/24 05:12:31	1.287
-+++ b/bfd/elf32-arm.c	2012/04/24 16:09:12	1.288
-@@ -12256,8 +12256,19 @@
+--- a/bfd/elf32-arm.c
++++ b/bfd/elf32-arm.c
+@@ -12046,8 +12046,19 @@ elf32_arm_gc_sweep_hook (bfd *
        if (may_need_local_target_p
  	  && elf32_arm_get_plt_info (abfd, eh, r_symndx, &root_plt, &arm_plt))
  	{
@@ -25,4 +24,3 @@ diff -u -r1.287 -r1.288
  
  	  if (!call_reloc_p)
  	    arm_plt->noncall_refcount--;
-

@@ -20,7 +20,7 @@ make[4]: *** [as-new] Error 1
 
 --- a/gas/configure.tgt
 +++ b/gas/configure.tgt
-@@ -428,6 +428,12 @@ case ${generic_target} in
+@@ -450,6 +450,12 @@ case ${generic_target} in
    *-*-netware)				fmt=elf em=netware ;;
  esac
  
@@ -31,5 +31,5 @@ make[4]: *** [as-new] Error 1
 +esac
 +
  case ${cpu_type} in
-   alpha | arm | i386 | ia64 | microblaze | mips | ns32k | pdp11 | ppc | sparc | z80 | z8k)
+   aarch64 | alpha | arm | i386 | ia64 | microblaze | mips | ns32k | pdp11 | ppc | sparc | z80 | z8k)
      bfd_gas=yes

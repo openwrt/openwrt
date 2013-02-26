@@ -1,7 +1,6 @@
-diff --git a/config.sub b/config.sub
 --- a/config.sub
 +++ b/config.sub
-@@ -125,6 +125,7 @@
+@@ -125,6 +125,7 @@ esac
  maybe_os=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\2/'`
  case $maybe_os in
    nto-qnx* | linux-gnu* | linux-android* | linux-dietlibc | linux-newlib* | \
@@ -9,11 +8,3 @@ diff --git a/config.sub b/config.sub
    linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
    knetbsd*-gnu* | netbsd*-gnu* | \
    kopensolaris*-gnu* | \
-@@ -1335,6 +1336,7 @@
- 	      | -cygwin* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
- 	      | -mingw32* | -linux-gnu* | -linux-android* \
- 	      | -linux-newlib* | -linux-uclibc* \
-+	      | -linux-musl* \
- 	      | -uxpv* | -beos* | -mpeix* | -udk* \
- 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
- 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
