@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=ccache
-PKG_VERSION:=3.1.7
+PKG_VERSION:=3.1.9
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://samba.org/ftp/ccache/
-PKG_MD5SUM:=80a698c22d0b06b19c88ac58e8d8b632
+PKG_MD5SUM:=522a6016bda56892653612bbdefff3e0
 
 include $(INCLUDE_DIR)/host-build.mk
 
