@@ -9,7 +9,62 @@
  			if (new_skb) {
  				skb_put(new_skb, len);
  				skb_copy_from_linear_data_offset(skb, BGMAC_RX_FRAME_OFFSET,
-@@ -535,7 +535,7 @@ static void bgmac_dma_init(struct bgmac
+@@ -436,6 +436,8 @@ static int bgmac_dma_alloc(struct bgmac
+ 	}
+ 
+ 	for (i = 0; i < BGMAC_MAX_RX_RINGS; i++) {
++		int j;
++
+ 		ring = &bgmac->rx_ring[i];
+ 		ring->num_slots = BGMAC_RX_RING_SLOTS;
+ 		ring->mmio_base = ring_base[i];
+@@ -458,8 +460,8 @@ static int bgmac_dma_alloc(struct bgmac
+ 			bgmac_warn(bgmac, "DMA address using 0xC0000000 bit(s), it may need translation trick\n");
+ 
+ 		/* Alloc RX slots */
+-		for (i = 0; i < ring->num_slots; i++) {
+-			err = bgmac_dma_rx_skb_for_slot(bgmac, &ring->slots[i]);
++		for (j = 0; j < ring->num_slots; j++) {
++			err = bgmac_dma_rx_skb_for_slot(bgmac, &ring->slots[j]);
+ 			if (err) {
+ 				bgmac_err(bgmac, "Can't allocate skb for slot in RX ring\n");
+ 				goto err_dma_free;
+@@ -496,6 +498,8 @@ static void bgmac_dma_init(struct bgmac
+ 	}
+ 
+ 	for (i = 0; i < BGMAC_MAX_RX_RINGS; i++) {
++		int j;
++
+ 		ring = &bgmac->rx_ring[i];
+ 
+ 		/* We don't implement unaligned addressing, so enable first */
+@@ -505,11 +509,11 @@ static void bgmac_dma_init(struct bgmac
+ 		bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_RINGHI,
+ 			    upper_32_bits(ring->dma_base));
+ 
+-		for (i = 0, dma_desc = ring->cpu_base; i < ring->num_slots;
+-		     i++, dma_desc++) {
++		for (j = 0, dma_desc = ring->cpu_base; j < ring->num_slots;
++		     j++, dma_desc++) {
+ 			ctl0 = ctl1 = 0;
+ 
+-			if (i == ring->num_slots - 1)
++			if (j == ring->num_slots - 1)
+ 				ctl0 |= BGMAC_DESC_CTL0_EOT;
+ 			ctl1 |= BGMAC_RX_BUF_SIZE & BGMAC_DESC_CTL1_LEN;
+ 			/* Is there any BGMAC device that requires extension? */
+@@ -517,8 +521,8 @@ static void bgmac_dma_init(struct bgmac
+ 			 * B43_DMA64_DCTL1_ADDREXT_MASK;
+ 			 */
+ 
+-			dma_desc->addr_low = cpu_to_le32(lower_32_bits(ring->slots[i].dma_addr));
+-			dma_desc->addr_high = cpu_to_le32(upper_32_bits(ring->slots[i].dma_addr));
++			dma_desc->addr_low = cpu_to_le32(lower_32_bits(ring->slots[j].dma_addr));
++			dma_desc->addr_high = cpu_to_le32(upper_32_bits(ring->slots[j].dma_addr));
+ 			dma_desc->ctl0 = cpu_to_le32(ctl0);
+ 			dma_desc->ctl1 = cpu_to_le32(ctl1);
+ 		}
+@@ -535,7 +539,7 @@ static void bgmac_dma_init(struct bgmac
   * PHY ops
   **************************************************/
  
@@ -18,7 +73,7 @@
  {
  	struct bcma_device *core;
  	u16 phy_access_addr;
-@@ -584,7 +584,7 @@ u16 bgmac_phy_read(struct bgmac *bgmac,
+@@ -584,7 +588,7 @@ u16 bgmac_phy_read(struct bgmac *bgmac,
  }
  
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipphywr */
@@ -27,7 +82,7 @@
  {
  	struct bcma_device *core;
  	u16 phy_access_addr;
-@@ -617,9 +617,13 @@ void bgmac_phy_write(struct bgmac *bgmac
+@@ -617,9 +621,13 @@ void bgmac_phy_write(struct bgmac *bgmac
  	tmp |= value;
  	bcma_write32(core, phy_access_addr, tmp);
  
@@ -42,7 +97,7 @@
  }
  
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipphyforce */
-@@ -761,6 +765,26 @@ static void bgmac_cmdcfg_maskset(struct
+@@ -761,6 +769,26 @@ static void bgmac_cmdcfg_maskset(struct
  	udelay(2);
  }
  
@@ -69,7 +124,7 @@
  #if 0 /* We don't use that regs yet */
  static void bgmac_chip_stats_update(struct bgmac *bgmac)
  {
-@@ -889,8 +913,10 @@ static void bgmac_chip_reset(struct bgma
+@@ -889,8 +917,10 @@ static void bgmac_chip_reset(struct bgma
  			sw_type = et_swtype;
  		} else if (ci->id == BCMA_CHIP_ID_BCM5357 && ci->pkg == 9) {
  			sw_type = BGMAC_CHIPCTL_1_SW_TYPE_EPHYRMII;
@@ -82,7 +137,7 @@
  		}
  		bcma_chipco_chipctl_maskset(cc, 1,
  					    ~(BGMAC_CHIPCTL_1_IF_TYPE_MASK |
-@@ -948,6 +974,7 @@ static void bgmac_chip_intrs_on(struct b
+@@ -948,6 +978,7 @@ static void bgmac_chip_intrs_on(struct b
  static void bgmac_chip_intrs_off(struct bgmac *bgmac)
  {
  	bgmac_write(bgmac, BGMAC_INT_MASK, 0);
@@ -90,7 +145,7 @@
  }
  
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/gmac_enable */
-@@ -1004,8 +1031,6 @@ static void bgmac_enable(struct bgmac *b
+@@ -1004,8 +1035,6 @@ static void bgmac_enable(struct bgmac *b
  static void bgmac_chip_init(struct bgmac *bgmac, bool full_init)
  {
  	struct bgmac_dma_ring *ring;
@@ -99,7 +154,7 @@
  	int i;
  
  	/* 1 interrupt per received frame */
-@@ -1014,21 +1039,14 @@ static void bgmac_chip_init(struct bgmac
+@@ -1014,21 +1043,14 @@ static void bgmac_chip_init(struct bgmac
  	/* Enable 802.3x tx flow control (honor received PAUSE frames) */
  	bgmac_cmdcfg_maskset(bgmac, ~BGMAC_CMDCFG_RPI, 0, true);
  
@@ -125,7 +180,7 @@
  
  	bgmac_write(bgmac, BGMAC_RXMAX_LENGTH, 32 + ETHER_MAX_LEN);
  
-@@ -1160,6 +1178,19 @@ static netdev_tx_t bgmac_start_xmit(stru
+@@ -1160,6 +1182,19 @@ static netdev_tx_t bgmac_start_xmit(stru
  	return bgmac_dma_tx_add(bgmac, ring, skb);
  }
  
@@ -145,7 +200,7 @@
  static int bgmac_ioctl(struct net_device *net_dev, struct ifreq *ifr, int cmd)
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
-@@ -1190,7 +1221,9 @@ static const struct net_device_ops bgmac
+@@ -1190,7 +1225,9 @@ static const struct net_device_ops bgmac
  	.ndo_open		= bgmac_open,
  	.ndo_stop		= bgmac_stop,
  	.ndo_start_xmit		= bgmac_start_xmit,
@@ -156,7 +211,7 @@
  	.ndo_do_ioctl           = bgmac_ioctl,
  };
  
-@@ -1290,6 +1323,12 @@ static int bgmac_probe(struct bcma_devic
+@@ -1290,6 +1327,12 @@ static int bgmac_probe(struct bcma_devic
  		return -ENOTSUPP;
  	}
  
