@@ -156,3 +156,5 @@ $(eval $(call BuildTemplate,rawnat,RAWNAT,xt_RAWDNAT xt_RAWSNAT,xt_RAWNAT,46,+km
 $(eval $(call BuildTemplate,steal,STEAL,xt_STEAL,xt_STEAL,46,+kmod-ipt-compat-xtables))
 $(eval $(call BuildTemplate,sysrq,SYSRQ,xt_SYSRQ,xt_SYSRQ,46,+kmod-ipt-compat-xtables))
 $(eval $(call BuildTemplate,tarpit,TARPIT,xt_TARPIT,xt_TARPIT,46,+kmod-ipt-compat-xtables))
+
+$(eval $(call BuildPackage,iptaccount))
