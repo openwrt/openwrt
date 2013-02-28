@@ -153,13 +153,10 @@ foreach my $mirror (@ARGV) {
 		}
 	} elsif ($mirror =~ /^\@GNU\/(.+)$/) {
 		push @mirrors, "ftp://ftp.gnu.org/gnu/$1";
+		push @mirrors, "http://ftpmirror.gnu.org/$1";
 		push @mirrors, "ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/$1";
 		push @mirrors, "ftp://ftp.mirror.nl/pub/mirror/gnu/$1";
 		push @mirrors, "http://mirror.switch.ch/ftp/mirror/gnu/$1";
-		push @mirrors, "ftp://ftp.uu.net/archive/systems/gnu/$1";
-		push @mirrors, "ftp://ftp.eu.uu.net/pub/gnu/$1";
-		push @mirrors, "ftp://ftp.leo.org/pub/comp/os/unix/gnu/$1";
-		push @mirrors, "ftp://ftp.digex.net/pub/gnu/$1";
 	} elsif ($mirror =~ /^\@KERNEL\/(.+)$/) {
 		my @extra = ( $1 );
 		if ($filename =~ /linux-\d+\.\d+(?:\.\d+)?-rc/) {
