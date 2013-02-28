@@ -1,0 +1,27 @@
+--- a/assembler/Makefile
++++ b/assembler/Makefile
+@@ -30,7 +30,7 @@ BIN		= b43-asm.bin
+ SRCS		= parser.c scanner.c main.c initvals.c util.c args.c
+ 
+ # YACC related CFLAGS
+-CFLAGS		+= -DYYSTYPE="void *" -DYYERROR_VERBOSE -DYYDEBUG -DYYENABLE_NLS=0 -DYYLTYPE_IS_TRIVIAL=0 -Wno-unused
++CFLAGS		+= -DYYSTYPE="void *" -DYYERROR_VERBOSE -DYYDEBUG=1 -DYYENABLE_NLS=0 -DYYLTYPE_IS_TRIVIAL=0 -Wno-unused
+ 
+ .SUFFIXES:
+ .PHONY: all install clean distclean
+diff --git a/assembler/main.c b/assembler/main.c
+index afca996..a62a15e 100644
+--- a/assembler/main.c
++++ b/assembler/main.c
+@@ -1260,7 +1260,7 @@ static void initialize(void)
+ {
+ 	INIT_LIST_HEAD(&infile.sl);
+ 	INIT_LIST_HEAD(&infile.ivals);
+-#ifdef YYDEBUG
++#if YYDEBUG
+ 	if (IS_INSANE_DEBUG)
+ 		yydebug = 1;
+ 	else
+-- 
+1.7.10.4
+
