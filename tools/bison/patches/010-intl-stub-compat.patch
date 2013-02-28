@@ -1,8 +1,8 @@
 --- a/src/main.c
 +++ b/src/main.c
-@@ -58,9 +58,9 @@ main (int argc, char *argv[])
+@@ -60,9 +60,9 @@ main (int argc, char *argv[])
  {
-   program_name = argv[0];
+   set_program_name (argv[0]);
    setlocale (LC_ALL, "");
 -  (void) bindtextdomain (PACKAGE, LOCALEDIR);
 -  (void) bindtextdomain ("bison-runtime", LOCALEDIR);
@@ -11,5 +11,5 @@
 +  bindtextdomain ("bison-runtime", LOCALEDIR);
 +  textdomain (PACKAGE);
  
-   uniqstrs_new ();
-   muscle_init ();
+   {
+     char const *cp = getenv ("LC_CTYPE");

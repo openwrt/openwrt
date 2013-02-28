@@ -3,18 +3,18 @@
 @@ -81,6 +81,7 @@ MOSTLYCLEANFILES = yacc
  
  yacc:
- 	echo '#! /bin/sh' >$@
-+	echo 'test -n "$$STAGING_DIR" && exec "$$STAGING_DIR/../host/bin/bison" -y "$$@"' >>$@
- 	echo "exec '$(bindir)/bison' -y "'"$$@"' >>$@
- 	chmod a+x $@
+ 	$(AM_V_GEN)echo '#! /bin/sh' >$@
++	$(AM_V_at)echo 'test -n "$$STAGING_DIR" && exec "$$STAGING_DIR/../host/bin/bison" -y "$$@"' >>$@
+ 	$(AM_V_at)echo "exec '$(bindir)/bison' -y "'"$$@"' >>$@
+ 	$(AM_V_at)chmod a+x $@
  
 --- a/src/Makefile.in
 +++ b/src/Makefile.in
-@@ -1609,6 +1609,7 @@ uninstall-am: uninstall-binPROGRAMS unin
+@@ -1919,6 +1919,7 @@ uninstall-am: uninstall-binPROGRAMS unin
  
  yacc:
- 	echo '#! /bin/sh' >$@
-+	echo 'test -n "$$STAGING_DIR" && exec "$$STAGING_DIR/../host/bin/bison" -y "$$@"' >>$@
- 	echo "exec '$(bindir)/bison' -y "'"$$@"' >>$@
- 	chmod a+x $@
+ 	$(AM_V_GEN)echo '#! /bin/sh' >$@
++	$(AM_V_at)echo 'test -n "$$STAGING_DIR" && exec "$$STAGING_DIR/../host/bin/bison" -y "$$@"' >>$@
+ 	$(AM_V_at)echo "exec '$(bindir)/bison' -y "'"$$@"' >>$@
+ 	$(AM_V_at)chmod a+x $@
  
