@@ -125,6 +125,7 @@ platform_check_image() {
 	wzr-hp-g300nh | \
 	wzr-hp-g450h | \
 	wzr-hp-ag300h | \
+	wzr-600dhp | \
 	whr-g301n | \
 	whr-hp-g300n | \
 	whr-hp-gn | \
