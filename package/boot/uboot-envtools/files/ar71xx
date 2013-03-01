@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2011-2012 OpenWrt.org
+# Copyright (C) 2011-2013 OpenWrt.org
 #
 
 [ -e /etc/config/ubootenv ] && exit 0
@@ -26,6 +26,10 @@ om2p | \
 om2p-hs | \
 om2p-lc)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
+	;;
+wzr-hp-ag300h | \
+wzr-600dhp)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
 	;;
 esac
 

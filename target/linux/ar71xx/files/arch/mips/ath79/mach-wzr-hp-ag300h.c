@@ -36,7 +36,6 @@ static struct mtd_partition wzrhpag300h_flash_partitions[] = {
 		.name		= "u-boot-env",
 		.offset		= 0x0040000,
 		.size		= 0x0010000,
-		.mask_flags	= MTD_WRITEABLE,
 	}, {
 		.name		= "art",
 		.offset		= 0x0050000,
@@ -211,4 +210,7 @@ static void __init wzrhpag300h_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_WZR_HP_AG300H, "WZR-HP-AG300H",
 	     "Buffalo WZR-HP-AG300H", wzrhpag300h_setup);
+
+MIPS_MACHINE(ATH79_MACH_WZR_600DHP, "WZR-600DHP",
+	     "Buffalo WZR-600DHP", wzrhpag300h_setup);
 

@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,22 +16,112 @@
+@@ -16,22 +16,113 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -108,6 +108,7 @@
 +	ATH79_MACH_WZR_HP_G300NH,	/* Buffalo WZR-HP-G300NH */
 +	ATH79_MACH_WZR_HP_G300NH2,	/* Buffalo WZR-HP-G300NH2 */
 +	ATH79_MACH_WZR_HP_G450H,	/* Buffalo WZR-HP-G450H */
++	ATH79_MACH_WZR_600DHP,		/* Buffalo WZR-600DHP */
 +	ATH79_MACH_ZCN_1523H_2,		/* Zcomax ZCN-1523H-2-xx */
 +	ATH79_MACH_ZCN_1523H_5,		/* Zcomax ZCN-1523H-5-xx */
  };
@@ -216,7 +217,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -68,6 +148,488 @@ config ATH79_MACH_PB44
+@@ -68,6 +148,497 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -288,6 +289,15 @@
 +	select SOC_AR724X
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++
++config ATH79_MACH_WZR_600DHP
++	bool "Buffalo WZR-600DHP board support"
++	select SOC_AR71XX
++	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
@@ -705,7 +715,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
  	select SOC_AR724X
-@@ -83,6 +645,24 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +654,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -730,7 +740,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -118,10 +698,6 @@ config SOC_QCA955X
+@@ -118,10 +707,6 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -741,7 +751,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -132,7 +708,14 @@ config ATH79_DEV_DSA
+@@ -132,7 +717,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -757,7 +767,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -164,4 +747,7 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -164,4 +756,7 @@ config ATH79_PCI_ATH9K_FIXUP
  config ATH79_ROUTERBOOT
  	def_bool n
  
@@ -767,7 +777,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,71 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,72 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -837,6 +847,7 @@
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G300NH2)	+= mach-wzr-hp-g300nh2.o
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_AG300H)	+= mach-wzr-hp-ag300h.o
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
++obj-$(CONFIG_ATH79_MACH_WZR_600DHP)	+= mach-wzr-hp-ag300h.o
 +obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
 +
 --- a/arch/mips/ath79/prom.c

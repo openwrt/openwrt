@@ -152,7 +152,8 @@ get_status_led() {
 		status_led="buffalo:green:status"
 		;;
 	wzr-hp-ag300h | \
-	wzr-hp-g300nh2)
+	wzr-hp-g300nh2 | \
+	wzr-600dhp)
 		status_led="buffalo:red:diag"
 		;;
 	wndr3700)
