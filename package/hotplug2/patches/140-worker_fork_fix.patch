@@ -20,7 +20,91 @@
  
 --- a/workers/worker_fork.c
 +++ b/workers/worker_fork.c
-@@ -380,6 +380,7 @@ static void worker_fork_deinit(void *in_
+@@ -1,6 +1,69 @@
+ #include "worker_fork.h"
+ 
+ static struct worker_fork_ctx_t *global_ctx;
++static struct worker_fork_uevent_t *uevent_list;
++
++static void worker_fork_uevent_free(struct worker_fork_uevent_t *node) {
++	uevent_free(node->uevent);
++	free(node);
++}
++
++static void worker_fork_uevent_add(void *in_ctx, struct uevent_t *uevent) {
++	char **env;
++	int i;
++	struct worker_fork_ctx_t *ctx = in_ctx;
++	struct worker_fork_uevent_t *node, *walker;
++
++	node = malloc(sizeof (struct worker_fork_uevent_t));
++	node->uevent = uevent_dup(uevent);
++	node->next = NULL;
++
++	if (!uevent_list) uevent_list = node;
++	else {
++		/*
++		 * Put events that need to fork first and in reverse order
++		 */
++		env = xmalloc(sizeof(char *) * node->uevent->env_vars_c);
++		for (i = 0; i < node->uevent->env_vars_c; i++) {
++			env[i] = alloc_env(node->uevent->env_vars[i].key, node->uevent->env_vars[i].value);
++			putenv(env[i]);
++		}
++		if (ruleset_flags(&ctx->settings->rules, uevent) & FLAG_SLOW) {
++			node->next = uevent_list;
++			uevent_list = node;
++		}
++		else {
++			for (walker = uevent_list; walker->next; walker = walker->next);
++			walker->next = node;
++		}
++		for (i = 0; i < node->uevent->env_vars_c; i++) {
++			unsetenv(node->uevent->env_vars[i].key);
++			free(env[i]);
++		}
++		free(env);
++	}
++}
++
++static void worker_fork_uevent_del(struct worker_fork_uevent_t *node) {
++	struct worker_fork_uevent_t *walker;
++
++	if (node == uevent_list) {
++		uevent_list = node->next;
++	}
++	else {
++		for (walker = uevent_list; walker->next; walker = walker->next)
++			if (walker->next == node) walker->next = node->next;
++	}
++	worker_fork_uevent_free(node);
++}
++
++static void worker_fork_uevent_empty(void) {
++	struct worker_fork_uevent_t *walker;
++
++	if (!uevent_list) return;
++	for (walker = uevent_list; walker->next; walker = walker->next) worker_fork_uevent_free(walker);
++	uevent_list = NULL;
++}
+ 
+ /**
+  * Destroys data structures related to the given child ID (not PID).
+@@ -315,6 +378,8 @@ static void *worker_fork_init(struct set
+ 	struct worker_fork_ctx_t *ctx;
+ 	PRINTFUNC();
+ 
++	uevent_list = NULL;
++
+ 	ctx = malloc(sizeof(struct worker_fork_ctx_t));
+ 	ctx->children = NULL;
+ 	ctx->children_count = 0;
+@@ -376,26 +441,39 @@ static void worker_fork_deinit(void *in_
+ 	free(ctx->children);
+ 	free(ctx);
+ 	global_ctx = NULL;
++	worker_fork_uevent_empty();
+ }
  
  
  static int worker_fork_process(void *in_ctx, struct uevent_t *uevent) {
@@ -28,29 +112,115 @@
  	int i;
  	struct worker_fork_child_t *child;
  	struct worker_fork_ctx_t *ctx = in_ctx;
-@@ -406,6 +407,12 @@ static int worker_fork_process(void *in_
++	struct worker_fork_uevent_t *node, *walker;
++	event_seqnum_t seqnum;
++
++	worker_fork_uevent_add(ctx, uevent);
++	walker = uevent_list;
+ 
+ 	/*
+-	 * A big loop, because if we fail to process the event,
++	 * A big loop, because if we fail to process the events,
+ 	 * we don't want to give up.
+ 	 *
+ 	 * TODO: Decide if we want to limit the number of attempts
+ 	 * or set a time limit before reporting terminal failure.
+ 	 */
+ 	do {
++		/*
++		 * If more events are waiting, return to receive them
++		 */
++		if (!seqnum_get(&seqnum) && seqnum > uevent->seqnum) break;
++
++		node = walker;
+ 		worker_fork_update_children(ctx);
+ 
+ 		child = NULL;
+-		for (i = 0; i < ctx->children_count; i++) {
++		for (i = 0; i < ctx->children_count && i < ctx->max_children; i++) {
+ 			if (ctx->children[i]->busy == 0) {
+ 				child = ctx->children[i];
+ 				break;
+@@ -406,21 +484,37 @@ static int worker_fork_process(void *in_
  		 * No child process is currently available.
  		 */
  		if (child == NULL) {
-+			env = xmalloc(sizeof(char *) * uevent->env_vars_c);
-+			for (i = 0; i < uevent->env_vars_c; i++) {
-+				env[i] = alloc_env(uevent->env_vars[i].key, uevent->env_vars[i].value);
++			env = xmalloc(sizeof(char *) * node->uevent->env_vars_c);
++			for (i = 0; i < node->uevent->env_vars_c; i++) {
++				env[i] = alloc_env(node->uevent->env_vars[i].key, node->uevent->env_vars[i].value);
 +				putenv(env[i]);
 +			}
 +
  			/*
  			 * Are the matching rules trivial enough that we
  			 * can execute them in the main process?
-@@ -421,6 +428,12 @@ static int worker_fork_process(void *in_
  			 */
- 			if (ctx->children_count < ctx->max_children)
+ 			if (ctx->always_fork == 0 && ctx->settings->dumb == 0 && 
+-			(ruleset_flags(&ctx->settings->rules, uevent) & FLAG_MASK_SLOW) == 0) {
+-				action_perform(ctx->settings, uevent);
++			(ruleset_flags(&ctx->settings->rules, node->uevent) & FLAG_MASK_SLOW) == 0) {
++				action_perform(ctx->settings, node->uevent);
++				walker = walker->next;
++				worker_fork_uevent_del(node);
++				if (walker) continue;
+ 				break;
+ 			}
+-			
++
+ 			/*
+ 			 * We have to fork off a new child.
+ 			 */
+-			if (ctx->children_count < ctx->max_children)
++			if (ctx->children_count < ctx->max_children ||
++			(ruleset_flags(&ctx->settings->rules, node->uevent) & FLAG_SLOW))
  				child = worker_fork_spawn(ctx);
 +
-+			for (i = 0; i < uevent->env_vars_c; i++) {
-+				unsetenv(uevent->env_vars[i].key);
++			for (i = 0; i < node->uevent->env_vars_c; i++) {
++				unsetenv(node->uevent->env_vars[i].key);
 +				free(env[i]);
 +			}
 +			free(env);
  		}
  
  		/*
+@@ -428,9 +522,14 @@ static int worker_fork_process(void *in_
+ 		 */
+ 		if (child != NULL) {
+ 			child->busy = 1;
+-			if (!worker_fork_relay_event(child->event_fd, uevent));
+-				break;
+-			child->busy = 0;
++			if (worker_fork_relay_event(child->event_fd, node->uevent)) {
++				child->busy = 0;
++				continue;
++			}
++			walker = walker->next;
++			worker_fork_uevent_del(node);
++			if (walker) continue;
++			break;
+ 		}
+ 
+ 		/* 
+--- a/uevent.c
++++ b/uevent.c
+@@ -132,6 +132,8 @@ struct uevent_t *uevent_dup(const struct
+ 	
+ 	dest = xmalloc(sizeof(struct uevent_t));
+ 	dest->action = src->action;
++	dest->seqnum = src->seqnum;
++	dest->action_str = strdup(src->action_str);
+ 	dest->env_vars_c = src->env_vars_c;
+ 	dest->env_vars = xmalloc(sizeof(struct env_var_t) * dest->env_vars_c);
+ 	dest->plain_s = src->plain_s;
+--- a/workers/worker_fork.h
++++ b/workers/worker_fork.h
+@@ -35,4 +35,9 @@ struct worker_fork_ctx_t {
+ 	struct settings_t			*settings;
+ };
+ 
++struct worker_fork_uevent_t {
++	struct uevent_t *uevent;
++	struct worker_fork_uevent_t *next;
++};
++
+ #endif
