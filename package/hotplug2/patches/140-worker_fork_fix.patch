@@ -141,24 +141,34 @@
  			if (ctx->children[i]->busy == 0) {
  				child = ctx->children[i];
  				break;
-@@ -406,21 +484,37 @@ static int worker_fork_process(void *in_
+@@ -406,21 +484,40 @@ static int worker_fork_process(void *in_
  		 * No child process is currently available.
  		 */
  		if (child == NULL) {
++			bool is_slow;
++
 +			env = xmalloc(sizeof(char *) * node->uevent->env_vars_c);
 +			for (i = 0; i < node->uevent->env_vars_c; i++) {
 +				env[i] = alloc_env(node->uevent->env_vars[i].key, node->uevent->env_vars[i].value);
 +				putenv(env[i]);
 +			}
 +
++			is_slow = !!(ruleset_flags(&ctx->settings->rules, node->uevent) & FLAG_MASK_SLOW);
++
++			for (i = 0; i < node->uevent->env_vars_c; i++) {
++				unsetenv(node->uevent->env_vars[i].key);
++				free(env[i]);
++			}
++			free(env);
++
  			/*
  			 * Are the matching rules trivial enough that we
  			 * can execute them in the main process?
  			 */
- 			if (ctx->always_fork == 0 && ctx->settings->dumb == 0 && 
+-			if (ctx->always_fork == 0 && ctx->settings->dumb == 0 && 
 -			(ruleset_flags(&ctx->settings->rules, uevent) & FLAG_MASK_SLOW) == 0) {
 -				action_perform(ctx->settings, uevent);
-+			(ruleset_flags(&ctx->settings->rules, node->uevent) & FLAG_MASK_SLOW) == 0) {
++			if (ctx->always_fork == 0 && ctx->settings->dumb == 0 && !is_slow) {
 +				action_perform(ctx->settings, node->uevent);
 +				walker = walker->next;
 +				worker_fork_uevent_del(node);
@@ -170,20 +180,13 @@
  			/*
  			 * We have to fork off a new child.
  			 */
--			if (ctx->children_count < ctx->max_children)
-+			if (ctx->children_count < ctx->max_children ||
-+			(ruleset_flags(&ctx->settings->rules, node->uevent) & FLAG_SLOW))
+ 			if (ctx->children_count < ctx->max_children)
  				child = worker_fork_spawn(ctx);
 +
-+			for (i = 0; i < node->uevent->env_vars_c; i++) {
-+				unsetenv(node->uevent->env_vars[i].key);
-+				free(env[i]);
-+			}
-+			free(env);
  		}
  
  		/*
-@@ -428,9 +522,14 @@ static int worker_fork_process(void *in_
+@@ -428,9 +525,14 @@ static int worker_fork_process(void *in_
  		 */
  		if (child != NULL) {
  			child->busy = 1;
@@ -214,7 +217,15 @@
  	dest->plain_s = src->plain_s;
 --- a/workers/worker_fork.h
 +++ b/workers/worker_fork.h
-@@ -35,4 +35,9 @@ struct worker_fork_ctx_t {
+@@ -5,6 +5,7 @@
+ #include <sys/types.h>
+ #include <sys/select.h>
+ #include <unistd.h>
++#include <stdbool.h>
+ 
+ #include "../rules/execution.h"
+ 
+@@ -35,4 +36,9 @@ struct worker_fork_ctx_t {
  	struct settings_t			*settings;
  };
  
