@@ -32,7 +32,7 @@ ramips_board_detect() {
 	*"Allnet ALL0256N")
 		name="all0256n"
 		;;
-	*"Allnet ALL5002")
+	*"Allnet ALL5002/ALL5003")
 		name="all5002"
 		;;
 	*"ARC FreeStation5")

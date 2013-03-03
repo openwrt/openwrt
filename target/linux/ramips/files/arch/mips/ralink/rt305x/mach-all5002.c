@@ -57,5 +57,5 @@ static void __init all5002_init(void)
 	rt305x_register_usb();
 }
 
-MIPS_MACHINE(RAMIPS_MACH_ALL5002, "ALL5002", "Allnet ALL5002",
+MIPS_MACHINE(RAMIPS_MACH_ALL5002, "ALL5002", "Allnet ALL5002/ALL5003",
 	     all5002_init);
