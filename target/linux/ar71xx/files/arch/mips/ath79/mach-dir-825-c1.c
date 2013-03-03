@@ -29,8 +29,9 @@
 #include "machtypes.h"
 
 #define DIR825C1_GPIO_LED_BLUE_USB		11
-#define DIR825C1_GPIO_LED_ORANGE_POWER		15
-#define DIR825C1_GPIO_LED_BLUE_POWER		14
+#define DIR825C1_GPIO_LED_ORANGE_POWER		14
+#define DIR825C1_GPIO_LED_BLUE_POWER		22
+#define DIR825C1_GPIO_LED_BLUE_WPS		15
 #define DIR825C1_GPIO_LED_ORANGE_PLANET		19
 #define DIR825C1_GPIO_LED_BLUE_PLANET		18
 
@@ -50,23 +51,32 @@ static struct gpio_led dir825c1_leds_gpio[] __initdata = {
 		.name		= "d-link:blue:usb",
 		.gpio		= DIR825C1_GPIO_LED_BLUE_USB,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.name		= "d-link:orange:power",
 		.gpio		= DIR825C1_GPIO_LED_ORANGE_POWER,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.name		= "d-link:blue:power",
 		.gpio		= DIR825C1_GPIO_LED_BLUE_POWER,
 		.active_low	= 1,
-	}, {
+	},
+	{
+		.name		= "d-link:blue:wps",
+		.gpio		= DIR825C1_GPIO_LED_BLUE_WPS,
+		.active_low	= 1,
+	},
+	{
 		.name		= "d-link:orange:planet",
 		.gpio		= DIR825C1_GPIO_LED_ORANGE_PLANET,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.name		= "d-link:blue:planet",
 		.gpio		= DIR825C1_GPIO_LED_BLUE_PLANET,
 		.active_low	= 1,
-	}
+	},
 };
 
 static struct gpio_keys_button dir825c1_gpio_keys[] __initdata = {
@@ -77,14 +87,15 @@ static struct gpio_keys_button dir825c1_gpio_keys[] __initdata = {
 		.debounce_interval = DIR825C1_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= DIR825C1_GPIO_BTN_RESET,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = DIR825C1_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= DIR825C1_GPIO_BTN_WPS,
 		.active_low	= 1,
-	}
+	},
 };
 
 static struct ar8327_pad_cfg dir825c1_ar8327_pad0_cfg = {
