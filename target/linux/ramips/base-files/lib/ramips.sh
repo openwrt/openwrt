@@ -70,9 +70,9 @@ ramips_board_name() {
 	*"DIR-645")
 		name="dir-645"
 		;;
-        *"DAP-1350")
-                name="dap-1350"
-                ;;
+	*"DAP-1350")
+		name="dap-1350"
+		;;
 	*"ESR-9753")
 		name="esr-9753"
 		;;
