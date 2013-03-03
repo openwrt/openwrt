@@ -242,7 +242,7 @@
  		     np->rxopt.bits.osrcrt)) ||
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -994,7 +994,7 @@ void ip6_route_input(struct sk_buff *skb
+@@ -995,7 +995,7 @@ void ip6_route_input(struct sk_buff *skb
  		.flowi6_iif = skb->dev->ifindex,
  		.daddr = iph->daddr,
  		.saddr = iph->saddr,
@@ -467,7 +467,7 @@
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1391,8 +1391,8 @@ static struct sk_buff **inet_gro_receive
+@@ -1396,8 +1396,8 @@ static struct sk_buff **inet_gro_receive
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out_unlock;
  

@@ -1,6 +1,6 @@
 --- a/drivers/mtd/redboot.c
 +++ b/drivers/mtd/redboot.c
-@@ -79,6 +79,11 @@ static int parse_redboot_partitions(stru
+@@ -79,12 +79,18 @@ static int parse_redboot_partitions(stru
  	static char nullstring[] = "unallocated";
  #endif
  
@@ -11,8 +11,7 @@
 + restart:
  	if ( directory < 0 ) {
  		offset = master->size + directory * master->erasesize;
- 		while (mtd_can_have_bb(master) &&
-@@ -86,6 +91,7 @@ static int parse_redboot_partitions(stru
+ 		while (mtd_block_isbad(master, offset)) {
  			if (!offset) {
  			nogood:
  				printk(KERN_NOTICE "Failed to find a non-bad block to check for RedBoot partition table\n");
@@ -20,7 +19,7 @@
  				return -EIO;
  			}
  			offset -= master->erasesize;
-@@ -99,10 +105,6 @@ static int parse_redboot_partitions(stru
+@@ -97,10 +103,6 @@ static int parse_redboot_partitions(stru
  				goto nogood;
  		}
  	}
@@ -31,7 +30,7 @@
  
  	printk(KERN_NOTICE "Searching for RedBoot partition table in %s at offset 0x%lx\n",
  	       master->name, offset);
-@@ -175,6 +177,11 @@ static int parse_redboot_partitions(stru
+@@ -173,6 +175,11 @@ static int parse_redboot_partitions(stru
  	}
  	if (i == numslots) {
  		/* Didn't find it */

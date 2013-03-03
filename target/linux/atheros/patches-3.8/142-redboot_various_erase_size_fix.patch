@@ -31,7 +31,7 @@
  	unsigned long offset;
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	static char nullstring[] = "unallocated";
-@@ -188,7 +205,10 @@ static int parse_redboot_partitions(stru
+@@ -186,7 +203,10 @@ static int parse_redboot_partitions(stru
  		goto out;
  	}
  
@@ -43,7 +43,7 @@
  		struct fis_list *new_fl, **prev;
  
  		if (buf[i].name[0] == 0xff) {
-@@ -263,12 +283,13 @@ static int parse_redboot_partitions(stru
+@@ -261,12 +281,13 @@ static int parse_redboot_partitions(stru
  	}
  #endif
  	for ( ; i<nrparts; i++) {
@@ -59,7 +59,7 @@
  		strcpy(names, fl->img->name);
  #ifdef CONFIG_MTD_REDBOOT_PARTS_READONLY
  		if (!memcmp(names, "RedBoot", 8) ||
-@@ -298,7 +319,9 @@ static int parse_redboot_partitions(stru
+@@ -296,7 +317,9 @@ static int parse_redboot_partitions(stru
  		fl = fl->next;
  		kfree(tmp_fl);
  	}
