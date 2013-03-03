@@ -42,8 +42,7 @@ if [ $phyname -a $ACTION = "add" ]; then
 	. /lib/ar71xx.sh
 	
 	case $(ar71xx_board_name) in
-		wzr-hp-ag300h|\
-		wzr-600dhp)
+		wzr-hp-ag300h)
 			ar922x_disable_gpio_jtag $phyname
 			;;
 	esac;
