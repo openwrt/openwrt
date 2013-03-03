@@ -1,9 +1,13 @@
 #!/bin/sh
 #
-# Copyright (C) 2010 OpenWrt.org
+# Copyright (C) 2010-2013 OpenWrt.org
 #
 
-ramips_board_name() {
+RAMIPS_BOARD_NAME=
+RAMIPS_MODEL=
+
+
+ramips_board_detect() {
 	local machine
 	local name
 
@@ -189,5 +193,20 @@ ramips_board_name() {
 		;;
 	esac
 
-	echo $name
+	[ -z "$RAMIPS_BOARD_NAME" ] && RAMIPS_BOARD_NAME="$name"
+	[ -z "$RAMIPS_MODEL" ] && RAMIPS_MODEL="$machine"
+
+	[ -e "/tmp/sysinfo/" ] || mkdir -p "/tmp/sysinfo/"
+
+	echo "$RAMIPS_BOARD_NAME" > /tmp/sysinfo/board_name
+	echo "$RAMIPS_MODEL" > /tmp/sysinfo/model
+}
+
+ramips_board_name() {
+	local name
+
+	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
+	[ -z "$name" ] && name="unknown"
+
+	echo "$name"
 }
