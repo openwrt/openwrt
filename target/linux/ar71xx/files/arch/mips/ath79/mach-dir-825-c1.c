@@ -150,11 +150,11 @@ static void __init dir825c1_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1ffe0000);
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
-	u8 tmpmac[ETH_ALEN];
-	u8 mac1[ETH_ALEN], mac2[ETH_ALEN];
+	u8 mac0[ETH_ALEN], mac1[ETH_ALEN];
+	u8 wmac0[ETH_ALEN], wmac1[ETH_ALEN];
 
-	dir825c1_read_ascii_mac(mac1, mac + DIR825C1_MAC0_OFFSET);
-	dir825c1_read_ascii_mac(mac2, mac + DIR825C1_MAC1_OFFSET);
+	dir825c1_read_ascii_mac(mac0, mac + DIR825C1_MAC0_OFFSET);
+	dir825c1_read_ascii_mac(mac1, mac + DIR825C1_MAC1_OFFSET);
 
 	ath79_gpio_output_select(DIR825C1_GPIO_LED_BLUE_USB, AR934X_GPIO_OUT_GPIO);
 
@@ -169,11 +169,11 @@ static void __init dir825c1_setup(void)
 	ap9x_pci_setup_wmac_led_pin(0, 13);
 	ap9x_pci_setup_wmac_led_pin(1, 32);
 
-	ath79_init_mac(tmpmac, mac1, 0);
-	ath79_register_wmac(art + DIR825C1_WMAC_CALDATA_OFFSET, tmpmac);
+	ath79_init_mac(wmac0, mac0, 0);
+	ath79_register_wmac(art + DIR825C1_WMAC_CALDATA_OFFSET, wmac0);
 
-	ath79_init_mac(tmpmac, mac2, 0);
-	ap91_pci_init(art + DIR825C1_PCIE_CALDATA_OFFSET, tmpmac);
+	ath79_init_mac(wmac1, mac1, 1);
+	ap91_pci_init(art + DIR825C1_PCIE_CALDATA_OFFSET, wmac1);
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
 
@@ -182,7 +182,7 @@ static void __init dir825c1_setup(void)
 
 	ath79_register_mdio(0, 0x0);
 
-	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 0);
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac0, 0);
 
 	/* GMAC0 is connected to an AR8327N switch */
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
