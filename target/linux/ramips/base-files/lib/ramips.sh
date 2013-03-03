@@ -6,6 +6,19 @@
 RAMIPS_BOARD_NAME=
 RAMIPS_MODEL=
 
+all500x_board_detect() {
+	local systype
+
+	systype=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /system type/ {print $2}' /proc/cpuinfo)
+	case "$systype" in
+	*"RT5350"*)
+		RAMIPS_MODEL="Allnet ALL5003"
+		;;
+	*"RT3352"*)
+		RAMIPS_MODEL="Allnet ALL5002"
+		;;
+	esac
+}
 
 ramips_board_detect() {
 	local machine
@@ -190,6 +203,12 @@ ramips_board_detect() {
 		;;
 	*)
 		name="generic"
+		;;
+	esac
+
+	case "$machine" in
+	*"Allnet ALL5002/ALL5003")
+		all500x_board_detect
 		;;
 	esac
 
