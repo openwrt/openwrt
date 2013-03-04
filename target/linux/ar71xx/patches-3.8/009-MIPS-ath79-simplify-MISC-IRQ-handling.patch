@@ -1,3 +1,27 @@
+From 1690e8f8efdeedbd23bb34a3bc5803c34f2d3f66 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 29 Jan 2013 16:13:17 +0000
+Subject: [PATCH] MIPS: ath79: simplify MISC IRQ handling
+
+commit 9c099c4e79b67d5578ce8142e6214950be4fcf43 upstream.
+
+The current code uses multiple if statements for
+demultiplexing the different interrupt sources.
+Additionally, the MISC interrupt controller has
+32 interrupt sources and the current code does not
+handles all of them.
+
+Get rid of the if statements and process all interrupt
+sources in a loop to fix these issues.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4874/
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ath79/irq.c                  |   45 +++++++-------------------------
+ arch/mips/include/asm/mach-ath79/irq.h |    1 +
+ 2 files changed, 10 insertions(+), 36 deletions(-)
+
 --- a/arch/mips/ath79/irq.c
 +++ b/arch/mips/ath79/irq.c
 @@ -35,44 +35,17 @@ static void ath79_misc_irq_handler(unsig
