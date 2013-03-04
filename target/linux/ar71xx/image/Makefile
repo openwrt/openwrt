@@ -284,6 +284,10 @@ define Image/Build/WZRHPG30XNH
 	fi
 endef
 
+define Image/Build/WZRHPG30XNH/initramfs
+	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
+endef
+
 define Image/Build/WHRHPG300N
 	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/KRuImage,$(1),$(2),1048576,2818048)
