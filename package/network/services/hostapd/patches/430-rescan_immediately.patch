@@ -1,9 +1,9 @@
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2388,7 +2388,7 @@ static struct wpa_supplicant * wpa_suppl
+@@ -2416,7 +2416,7 @@ static struct wpa_supplicant * wpa_suppl
  	if (wpa_s == NULL)
  		return NULL;
- 	wpa_s->scan_req = 1;
+ 	wpa_s->scan_req = INITIAL_SCAN_REQ;
 -	wpa_s->scan_interval = 5;
 +	wpa_s->scan_interval = 1;
  	wpa_s->new_connection = 1;

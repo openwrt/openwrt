@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2495,6 +2495,10 @@ static int hostapd_config_fill(struct ho
+@@ -2474,6 +2474,10 @@ static int hostapd_config_fill(struct ho
  					   "ht_capab", line);
  				errors++;
  			}
@@ -13,7 +13,7 @@
  #endif /* CONFIG_IEEE80211N */
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -501,6 +501,7 @@ struct hostapd_config {
+@@ -514,6 +514,7 @@ struct hostapd_config {
  	int ieee80211n;
  	int secondary_channel;
  	int require_ht;
@@ -31,7 +31,7 @@
  #include "ieee802_11_auth.h"
  #include "vlan_init.h"
  #include "wpa_auth.h"
-@@ -323,6 +324,7 @@ static void hostapd_cleanup_iface_pre(st
+@@ -332,6 +333,7 @@ static void hostapd_cleanup_iface_pre(st
  
  static void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
  {
@@ -41,7 +41,7 @@
  	os_free(iface->current_rates);
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -251,6 +251,9 @@ struct hostapd_iface {
+@@ -265,6 +265,9 @@ struct hostapd_iface {
  	/* Overlapping BSS information */
  	int olbc_ht;
  
@@ -53,7 +53,7 @@
  };
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -1220,6 +1220,9 @@ static void handle_beacon(struct hostapd
+@@ -1484,6 +1484,9 @@ static void handle_beacon(struct hostapd
  					     sizeof(mgmt->u.beacon)), &elems,
  				      0);
  
@@ -65,7 +65,7 @@
  
 --- a/src/ap/ieee802_11.h
 +++ b/src/ap/ieee802_11.h
-@@ -78,4 +78,17 @@ int hostapd_update_time_adv(struct hosta
+@@ -81,4 +81,17 @@ int hostapd_update_time_adv(struct hosta
  void hostapd_client_poll_ok(struct hostapd_data *hapd, const u8 *addr);
  u8 * hostapd_eid_bss_max_idle_period(struct hostapd_data *hapd, u8 *eid);
  
@@ -119,7 +119,7 @@
  
  	pos += sizeof(*oper);
  
-@@ -271,3 +276,80 @@ void hostapd_get_ht_capab(struct hostapd
+@@ -270,3 +275,84 @@ void hostapd_get_ht_capab(struct hostapd
  
  	neg_ht_cap->ht_capabilities_info = host_to_le16(cap);
  }
@@ -168,9 +168,13 @@
 +			secondary_channel = hapd->iconf->secondary_channel;
 +
 +		if (hostapd_set_freq(hapd, hapd->iconf->hw_mode, iface->freq,
-+					 hapd->iconf->channel,
-+					 hapd->iconf->ieee80211n,
-+					 secondary_channel)) {
++				     hapd->iconf->channel,
++				     hapd->iconf->ieee80211n,
++				     hapd->iconf->ieee80211ac,
++				     secondary_channel,
++				     hapd->iconf->vht_oper_chwidth,
++				     hapd->iconf->vht_oper_centr_freq_seg0_idx,
++				     hapd->iconf->vht_oper_centr_freq_seg1_idx)) {
 +			wpa_printf(MSG_ERROR, "Could not set channel for "
 +				   "kernel driver");
 +		}

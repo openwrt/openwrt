@@ -22,7 +22,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "common/defs.h"
  
  #define HOSTAPD_CHAN_DISABLED 0x00000001
-@@ -351,6 +352,11 @@ struct wpa_driver_associate_params {
+@@ -363,6 +364,11 @@ struct wpa_driver_associate_params {
  	 */
  	int freq;
  
@@ -44,7 +44,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "config.h"
  
  
-@@ -1463,6 +1464,97 @@ static char * wpa_config_write_p2p_clien
+@@ -1369,6 +1370,97 @@ static char * wpa_config_write_p2p_clien
  
  #endif /* CONFIG_P2P */
  
@@ -142,12 +142,11 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  /* Helper macros for network block parser */
  
  #ifdef OFFSET
-@@ -1638,6 +1730,10 @@ static const struct parse_data ssid_fiel
- #endif /* CONFIG_HT_OVERRIDES */
+@@ -1546,6 +1638,9 @@ static const struct parse_data ssid_fiel
  	{ INT(ap_max_inactivity) },
  	{ INT(dtim_period) },
+ 	{ INT(beacon_int) },
 +	{ INT_RANGE(fixed_freq, 0, 1) },
-+	{ INT_RANGE(beacon_interval, 0, 1000) },
 +	{ FUNC(rates) },
 +	{ FUNC(mcast_rate) },
  };
@@ -163,13 +162,12 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  
  #define MAX_SSID_LEN 32
  
-@@ -529,6 +530,11 @@ struct wpa_ssid {
- 	 * disabled_until - Network block disabled until this time if non-zero
+@@ -571,6 +572,10 @@ struct wpa_ssid {
+ 	 * dereferences since it may not be updated in all cases.
  	 */
- 	struct os_time disabled_until;
+ 	void *parent_cred;
 +
 +	int fixed_freq;
-+	int beacon_interval;
 +	unsigned char rates[NL80211_MAX_SUPP_RATES];
 +	double mcast_rate;
  };
@@ -177,7 +175,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #endif /* CONFIG_SSID_H */
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1561,15 +1561,24 @@ void wpa_supplicant_associate(struct wpa
+@@ -1570,15 +1570,24 @@ void wpa_supplicant_associate(struct wpa
  		params.ssid_len = ssid->ssid_len;
  	}
  
@@ -194,7 +192,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
 +			/* Initial channel for IBSS */
 +			params.freq = ssid->frequency;
 +		params.fixed_freq = ssid->fixed_freq;
-+		params.beacon_interval = ssid->beacon_interval;
++		params.beacon_interval = ssid->beacon_int;
 +		i = 0;
 +		while (i < NL80211_MAX_SUPP_RATES) {
 +			params.rates[i] = ssid->rates[i];
