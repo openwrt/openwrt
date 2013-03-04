@@ -1,11 +1,19 @@
-From f1c3a7dadf7b77809cda7f77df4b1ba3b24fbfa3 Mon Sep 17 00:00:00 2001
+From d80b05d19c2772ded40403d578d8e90d38c85257 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Wed, 27 Jun 2012 10:12:50 +0200
-Subject: [PATCH 11/34] MIPS: pci-ar724x: remove static PCI resources
+Date: Sun, 3 Feb 2013 09:59:45 +0000
+Subject: [PATCH] MIPS: pci-ar724x: remove static PCI IO/MEM resources
 
-Get those from the platform device instead.
+commit 34b134aebda89888b6985b7a3139e9cbdf209236 upstream.
+
+Static resources become impractical when multiple
+PCI controllers are present. Move the resources
+into the platform device registration code and
+change the probe routine to get those from there
+platform device's resources.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4914/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/ath79/pci.c      |   21 ++++++++++++++++++++-
  arch/mips/pci/pci-ar724x.c |   40 ++++++++++++++++++++++++----------------
@@ -13,7 +21,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/arch/mips/ath79/pci.c
 +++ b/arch/mips/ath79/pci.c
-@@ -137,10 +137,13 @@ static struct platform_device *
+@@ -139,10 +139,13 @@ static struct platform_device *
  ath79_register_pci_ar724x(int id,
  			  unsigned long cfg_base,
  			  unsigned long ctrl_base,
@@ -28,7 +36,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
  	memset(res, 0, sizeof(res));
  
-@@ -158,6 +161,16 @@ ath79_register_pci_ar724x(int id,
+@@ -160,6 +163,16 @@ ath79_register_pci_ar724x(int id,
  	res[2].start = irq;
  	res[2].end = irq;
  
@@ -45,7 +53,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	pdev = platform_device_register_simple("ar724x-pci", id,
  					       res, ARRAY_SIZE(res));
  	return pdev;
-@@ -173,6 +186,9 @@ int __init ath79_register_pci(void)
+@@ -175,6 +188,9 @@ int __init ath79_register_pci(void)
  		pdev = ath79_register_pci_ar724x(-1,
  						 AR724X_PCI_CFG_BASE,
  						 AR724X_PCI_CTRL_BASE,
@@ -55,7 +63,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  						 ATH79_CPU_IRQ_IP2);
  	} else if (soc_is_ar9342() ||
  		   soc_is_ar9344()) {
-@@ -185,6 +201,9 @@ int __init ath79_register_pci(void)
+@@ -187,6 +203,9 @@ int __init ath79_register_pci(void)
  		pdev = ath79_register_pci_ar724x(-1,
  						 AR724X_PCI_CFG_BASE,
  						 AR724X_PCI_CTRL_BASE,

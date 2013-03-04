@@ -1,12 +1,22 @@
-From 2fdf8dcff3ffaa806e9f9d7f1c1bd876222cff4d Mon Sep 17 00:00:00 2001
+From 87cdbe4315e4c72c2bc8568d1258e1207e1c772b Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Mon, 11 Jun 2012 13:39:32 +0200
-Subject: [PATCH 07/34] MIPS: ath79: register platform devices for the PCI controllers
+Date: Sat, 2 Feb 2013 11:44:24 +0000
+Subject: [PATCH] MIPS: ath79: register platform devices for the PCI
+ controllers
+
+commit 9fc1ca5b73a82daedffa2d1d5daa48dd2093c39a upstream.
+
+The pci-ar71xx and pci-ar724x drivers were converted
+into platform drivers. Register the corresponding
+platform devices for the PCI controllers instead
+of using the ar7{1x,24}x_pcibios_init functions.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4908/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- arch/mips/ath79/pci.c |   87 +++++++++++++++++++++++++++++++++++++++++++-----
- 1 files changed, 78 insertions(+), 9 deletions(-)
+ arch/mips/ath79/pci.c |   87 ++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 78 insertions(+), 9 deletions(-)
 
 --- a/arch/mips/ath79/pci.c
 +++ b/arch/mips/ath79/pci.c

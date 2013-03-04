@@ -54,7 +54,7 @@ Subject: [PATCH 26/34] MIPS: ath79: add PCI controller registration code for the
  		} else {
  			pr_crit("pci %s: invalid irq map\n",
  				pci_name((struct pci_dev *) dev));
-@@ -215,6 +233,24 @@ int __init ath79_register_pci(void)
+@@ -225,6 +243,24 @@ int __init ath79_register_pci(void)
  						 AR724X_PCI_MEM_SIZE,
  						 0,
  						 ATH79_IP2_IRQ(0));

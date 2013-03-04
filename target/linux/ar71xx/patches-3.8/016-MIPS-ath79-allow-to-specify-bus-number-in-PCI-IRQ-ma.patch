@@ -1,13 +1,19 @@
-From 12c68e4fccadc22a0470177141a57892a76e4a2b Mon Sep 17 00:00:00 2001
+From 53ba4919664636487155c810fb49781169780e0c Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Sun, 24 Jun 2012 15:33:16 +0200
-Subject: [PATCH 25/34] MIPS: ath79: allow to specify bus number in PCI IRQ maps
+Date: Sun, 3 Feb 2013 09:58:37 +0000
+Subject: [PATCH] MIPS: ath79: allow to specify bus number in PCI IRQ maps
+
+commit 617fed41e98417f3ea3e9974be251e125c8796f2 upstream.
+
+This is needed for multiple PCI bus support.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4913/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/ath79/pci.c |    4 +++-
  arch/mips/ath79/pci.h |    1 +
- 2 files changed, 4 insertions(+), 1 deletions(-)
+ 2 files changed, 4 insertions(+), 1 deletion(-)
 
 --- a/arch/mips/ath79/pci.c
 +++ b/arch/mips/ath79/pci.c

@@ -1,0 +1,113 @@
+From f073cb029873ed487e14784d3682b6aa25afe997 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Thu, 7 Feb 2013 19:28:15 +0000
+Subject: [PATCH] MIPS: pci-ar71xx: remove static PCI IO/MEM resources
+
+commit 42cb60d1fab4c81ef24876d985e08fc5bb899e41 upstream.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4927/
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ath79/pci.c      |   12 +++++++++++-
+ arch/mips/pci/pci-ar71xx.c |   40 ++++++++++++++++++++++++----------------
+ 2 files changed, 35 insertions(+), 17 deletions(-)
+
+--- a/arch/mips/ath79/pci.c
++++ b/arch/mips/ath79/pci.c
+@@ -117,7 +117,7 @@ static struct platform_device *
+ ath79_register_pci_ar71xx(void)
+ {
+ 	struct platform_device *pdev;
+-	struct resource res[2];
++	struct resource res[4];
+ 
+ 	memset(res, 0, sizeof(res));
+ 
+@@ -130,6 +130,16 @@ ath79_register_pci_ar71xx(void)
+ 	res[1].start = ATH79_CPU_IRQ_IP2;
+ 	res[1].end = ATH79_CPU_IRQ_IP2;
+ 
++	res[2].name = "io_base";
++	res[2].flags = IORESOURCE_IO;
++	res[2].start = 0;
++	res[2].end = 0;
++
++	res[3].name = "mem_base";
++	res[3].flags = IORESOURCE_MEM;
++	res[3].start = AR71XX_PCI_MEM_BASE;
++	res[3].end = AR71XX_PCI_MEM_BASE + AR71XX_PCI_MEM_SIZE - 1;
++
+ 	pdev = platform_device_register_simple("ar71xx-pci", -1,
+ 					       res, ARRAY_SIZE(res));
+ 	return pdev;
+--- a/arch/mips/pci/pci-ar71xx.c
++++ b/arch/mips/pci/pci-ar71xx.c
+@@ -53,6 +53,8 @@ struct ar71xx_pci_controller {
+ 	spinlock_t lock;
+ 	int irq;
+ 	struct pci_controller pci_ctrl;
++	struct resource io_res;
++	struct resource mem_res;
+ };
+ 
+ /* Byte lane enable bits */
+@@ -234,20 +236,6 @@ static struct pci_ops ar71xx_pci_ops = {
+ 	.write	= ar71xx_pci_write_config,
+ };
+ 
+-static struct resource ar71xx_pci_io_resource = {
+-	.name		= "PCI IO space",
+-	.start		= 0,
+-	.end		= 0,
+-	.flags		= IORESOURCE_IO,
+-};
+-
+-static struct resource ar71xx_pci_mem_resource = {
+-	.name		= "PCI memory space",
+-	.start		= AR71XX_PCI_MEM_BASE,
+-	.end		= AR71XX_PCI_MEM_BASE + AR71XX_PCI_MEM_SIZE - 1,
+-	.flags		= IORESOURCE_MEM
+-};
+-
+ static void ar71xx_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
+ {
+ 	void __iomem *base = ath79_reset_base;
+@@ -370,6 +358,26 @@ static int ar71xx_pci_probe(struct platf
+ 	if (apc->irq < 0)
+ 		return -EINVAL;
+ 
++	res = platform_get_resource_byname(pdev, IORESOURCE_IO, "io_base");
++	if (!res)
++		return -EINVAL;
++
++	apc->io_res.parent = res;
++	apc->io_res.name = "PCI IO space";
++	apc->io_res.start = res->start;
++	apc->io_res.end = res->end;
++	apc->io_res.flags = IORESOURCE_IO;
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mem_base");
++	if (!res)
++		return -EINVAL;
++
++	apc->mem_res.parent = res;
++	apc->mem_res.name = "PCI memory space";
++	apc->mem_res.start = res->start;
++	apc->mem_res.end = res->end;
++	apc->mem_res.flags = IORESOURCE_MEM;
++
+ 	ar71xx_pci_reset();
+ 
+ 	/* setup COMMAND register */
+@@ -383,8 +391,8 @@ static int ar71xx_pci_probe(struct platf
+ 	ar71xx_pci_irq_init(apc);
+ 
+ 	apc->pci_ctrl.pci_ops = &ar71xx_pci_ops;
+-	apc->pci_ctrl.mem_resource = &ar71xx_pci_mem_resource;
+-	apc->pci_ctrl.io_resource = &ar71xx_pci_io_resource;
++	apc->pci_ctrl.mem_resource = &apc->mem_res;
++	apc->pci_ctrl.io_resource = &apc->io_res;
+ 
+ 	register_pci_controller(&apc->pci_ctrl);
+ 

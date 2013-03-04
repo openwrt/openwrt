@@ -1,12 +1,26 @@
-From 242aedf3246dc5085271aca56134ac455bfb64b5 Mon Sep 17 00:00:00 2001
+From 21b3cafae425cf2e317a22292a9a5773ff0e2e5e Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Sun, 24 Jun 2012 11:51:34 +0200
-Subject: [PATCH 10/34] MIPS: pci-ar724x: use dynamically allocated PCI controller structure
+Date: Sun, 3 Feb 2013 09:58:38 +0000
+Subject: [PATCH] MIPS: pci-ar724x: use dynamically allocated PCI controller
+ structure
+
+commit 908339ef25b1d5e80f1c6fab22b9958174708b4a upstream.
+
+The current code uses static variables to store the
+PCI controller specific data. This works if the system
+contains one PCI controller only, however it becomes
+impractical when multiple PCI controllers are present.
+
+Move the variables into a dynamically allocated controller
+specific structure, and use that instead of the static
+variables.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4912/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/pci/pci-ar724x.c |  129 ++++++++++++++++++++++++++++----------------
- 1 files changed, 82 insertions(+), 47 deletions(-)
+ 1 file changed, 82 insertions(+), 47 deletions(-)
 
 --- a/arch/mips/pci/pci-ar724x.c
 +++ b/arch/mips/pci/pci-ar724x.c
