@@ -1,12 +1,20 @@
-From f2d2d928c3900b67a5f95e53b86de5b61a3ab12c Mon Sep 17 00:00:00 2001
+From 42541838d9fdbad8573141d69cf8e38831a6cbb6 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Mon, 11 Jun 2012 13:19:44 +0200
-Subject: [PATCH 04/34] MIPS: pci-ar724x: convert to a platform driver
+Date: Sat, 2 Feb 2013 11:40:42 +0000
+Subject: [PATCH] MIPS: pci-ar724x: convert into a platform driver
+
+commit 58d2e9bcd682d76bcb9575dc56c85f1d82a81bfa upstream.
+
+The patch converts the pci-ar724x driver into a
+platform driver. This makes it possible to register
+the PCI controller as a plain platform device.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4905/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- arch/mips/pci/pci-ar724x.c |   57 ++++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 55 insertions(+), 2 deletions(-)
+ arch/mips/pci/pci-ar724x.c |   57 ++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 55 insertions(+), 2 deletions(-)
 
 --- a/arch/mips/pci/pci-ar724x.c
 +++ b/arch/mips/pci/pci-ar724x.c

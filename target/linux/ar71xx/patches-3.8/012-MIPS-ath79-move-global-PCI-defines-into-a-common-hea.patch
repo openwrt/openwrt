@@ -1,11 +1,15 @@
-From c3a8b5fa196cedc4b940c1e5ec482dd875aa3180 Mon Sep 17 00:00:00 2001
+From 1dece618b107f5db28c8f63d4d32424dd18324d1 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Mon, 11 Jun 2012 13:38:06 +0200
-Subject: [PATCH 06/34] MIPS: ath79: move global PCI defines into a common header
+Date: Mon, 4 Feb 2013 11:56:53 +0100
+Subject: [PATCH] MIPS: ath79: move global PCI defines into a common header
+
+commit ad4ce92e919f7ad5561a2060deb58899de58b40c upstream.
 
 The constants will be used by a subsequent patch.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4907/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/include/asm/mach-ath79/ar71xx_regs.h |   24 ++++++++++++++++++++++++
  arch/mips/pci/pci-ar71xx.c                     |   16 ----------------

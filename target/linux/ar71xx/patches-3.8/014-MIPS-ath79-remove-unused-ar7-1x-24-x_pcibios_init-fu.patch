@@ -1,17 +1,22 @@
-From 07224e2fa5f889162ee0560c6ab1eb8cd16a8dd2 Mon Sep 17 00:00:00 2001
+From db36c9d6a6be232bdee245407fc8ccde53ea69c6 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Mon, 11 Jun 2012 14:59:39 +0200
-Subject: [PATCH 08/34] MIPS: ath79: remove unused ar7{1x,24}x_pcibios_init functions
+Date: Mon, 4 Feb 2013 11:58:49 +0100
+Subject: [PATCH] MIPS: ath79: remove unused ar7{1x,24}x_pcibios_init
+ functions
+
+commit 6e783865b4e60f2ecf7708f8ea24db5c5ea07ced upstream.
 
 The functions are unused now, so remove them.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4909/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/ath79/pci.c                  |    1 -
  arch/mips/include/asm/mach-ath79/pci.h |   28 ----------------------------
  arch/mips/pci/pci-ar71xx.c             |   26 --------------------------
  arch/mips/pci/pci-ar724x.c             |   32 --------------------------------
- 4 files changed, 0 insertions(+), 87 deletions(-)
+ 4 files changed, 87 deletions(-)
  delete mode 100644 arch/mips/include/asm/mach-ath79/pci.h
 
 --- a/arch/mips/ath79/pci.c

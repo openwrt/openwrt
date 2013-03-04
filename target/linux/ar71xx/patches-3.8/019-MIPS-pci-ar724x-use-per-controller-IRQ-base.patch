@@ -1,12 +1,19 @@
-From d258929cd4c8c495f619f0e66d9d1c23f3f9246f Mon Sep 17 00:00:00 2001
+From d85015ff3ab6df0e776c2aefc51f2da023c1edcf Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Tue, 26 Jun 2012 11:59:45 +0200
-Subject: [PATCH 12/34] MIPS: pci-ar724x: use per-controller IRQ base
+Date: Sun, 3 Feb 2013 10:00:16 +0000
+Subject: [PATCH] MIPS: pci-ar724x: use per-controller IRQ base
+
+commit 8b66d461187ff61c5755001af7296e6edde48423 upstream.
+
+Change to the code to use per-controller IRQ base.
+This is needed for multiple PCI controller support.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4915/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/pci/pci-ar724x.c |   31 +++++++++++++++++++++----------
- 1 files changed, 21 insertions(+), 10 deletions(-)
+ 1 file changed, 21 insertions(+), 10 deletions(-)
 
 --- a/arch/mips/pci/pci-ar724x.c
 +++ b/arch/mips/pci/pci-ar724x.c
@@ -69,7 +76,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
 -static void ar724x_pci_irq_init(struct ar724x_pci_controller *apc)
 +static void ar724x_pci_irq_init(struct ar724x_pci_controller *apc,
-+					  int id)
++				int id)
  {
  	void __iomem *base;
  	int i;
