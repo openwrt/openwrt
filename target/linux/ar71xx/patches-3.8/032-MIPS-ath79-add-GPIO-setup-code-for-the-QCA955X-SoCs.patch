@@ -1,13 +1,24 @@
-From c9a552f3007f0621b2440ae17bad816578299e52 Mon Sep 17 00:00:00 2001
+From 8817bcbbaf64d54bd4d06659cc77d1bfc9e53dad Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Sun, 24 Jun 2012 13:45:27 +0200
-Subject: [PATCH 20/34] MIPS: ath79: add GPIO setup code for the QCA955X SoCs
+Date: Fri, 15 Feb 2013 13:38:19 +0000
+Subject: [PATCH] MIPS: ath79: add GPIO setup code for the QCA955X SoCs
 
+commit f818ca3e6894d4a630a1ecc673c91df8fb6f6898 upstream.
+
+The existing code can handle the GPIO controller of
+the QCA955x SoCs. Add a minimal glue code to make it
+working.
+
+Cc: Rodriguez, Luis <rodrigue@qca.qualcomm.com>
+Cc: Giori, Kathy <kgiori@qca.qualcomm.com>
+Cc: QCA Linux Team <qca-linux-team@qca.qualcomm.com>
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4947/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/ath79/gpio.c                         |    4 +++-
  arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    1 +
- 2 files changed, 4 insertions(+), 1 deletions(-)
+ 2 files changed, 4 insertions(+), 1 deletion(-)
 
 --- a/arch/mips/ath79/gpio.c
 +++ b/arch/mips/ath79/gpio.c
@@ -29,7 +40,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	}
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-@@ -509,6 +509,7 @@
+@@ -510,6 +510,7 @@
  #define AR913X_GPIO_COUNT		22
  #define AR933X_GPIO_COUNT		30
  #define AR934X_GPIO_COUNT		23

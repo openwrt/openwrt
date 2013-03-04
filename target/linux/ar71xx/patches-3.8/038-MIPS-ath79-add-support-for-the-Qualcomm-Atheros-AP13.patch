@@ -1,15 +1,26 @@
-From a034da3e4d4960266a94d15c811d5f4529fdff44 Mon Sep 17 00:00:00 2001
+From 7f8c0c731409b9c3e62fa8a6eb4830ace8568769 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Sun, 24 Jun 2012 13:52:23 +0200
-Subject: [PATCH 27/34] MIPS: ath79: add support for the Qualcomm Atheros AP136 board
+Date: Fri, 15 Feb 2013 13:38:25 +0000
+Subject: [PATCH] MIPS: ath79: add support for the Qualcomm Atheros AP136-010
+ board
 
+commit 27ea052acb9eaca98cc90bf1b8738b6d0ea5bc2f upstream.
+
+Also enable the board in the default configuration.
+
+Cc: Rodriguez, Luis <rodrigue@qca.qualcomm.com>
+Cc: Giori, Kathy <kgiori@qca.qualcomm.com>
+Cc: QCA Linux Team <qca-linux-team@qca.qualcomm.com>
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4953/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- arch/mips/ath79/Kconfig      |   12 +++
- arch/mips/ath79/Makefile     |    1 +
- arch/mips/ath79/mach-ap136.c |  155 ++++++++++++++++++++++++++++++++++++++++++
- arch/mips/ath79/machtypes.h  |    1 +
- 4 files changed, 169 insertions(+), 0 deletions(-)
+ arch/mips/ath79/Kconfig           |   12 +++
+ arch/mips/ath79/Makefile          |    1 +
+ arch/mips/ath79/mach-ap136.c      |  156 +++++++++++++++++++++++++++++++++++++
+ arch/mips/ath79/machtypes.h       |    1 +
+ arch/mips/configs/ath79_defconfig |    1 +
+ 5 files changed, 171 insertions(+)
  create mode 100644 arch/mips/ath79/mach-ap136.c
 
 --- a/arch/mips/ath79/Kconfig
@@ -45,12 +56,12 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  obj-$(CONFIG_ATH79_MACH_PB44)		+= mach-pb44.o
 --- /dev/null
 +++ b/arch/mips/ath79/mach-ap136.c
-@@ -0,0 +1,155 @@
+@@ -0,0 +1,156 @@
 +/*
 + * Qualcomm Atheros AP136 reference board support
 + *
 + * Copyright (c) 2012 Qualcomm Atheros
-+ * Copyright (c) 2012 Gabor Juhos <juhosg@openwrt.org>
++ * Copyright (c) 2012-2013 Gabor Juhos <juhosg@openwrt.org>
 + *
 + * Permission to use, copy, modify, and/or distribute this software for any
 + * purpose with or without fee is hereby granted, provided that the above
@@ -96,32 +107,32 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +
 +static struct gpio_led ap136_leds_gpio[] __initdata = {
 +	{
-+		.name		= "ap136:green:status",
++		.name		= "qca:green:status",
 +		.gpio		= AP136_GPIO_LED_STATUS_GREEN,
 +		.active_low	= 1,
 +	},
 +	{
-+		.name		= "ap136:red:status",
++		.name		= "qca:red:status",
 +		.gpio		= AP136_GPIO_LED_STATUS_RED,
 +		.active_low	= 1,
 +	},
 +	{
-+		.name		= "ap136:green:wps",
++		.name		= "qca:green:wps",
 +		.gpio		= AP136_GPIO_LED_WPS_GREEN,
 +		.active_low	= 1,
 +	},
 +	{
-+		.name		= "ap136:red:wps",
++		.name		= "qca:red:wps",
 +		.gpio		= AP136_GPIO_LED_WPS_RED,
 +		.active_low	= 1,
 +	},
 +	{
-+		.name		= "ap136:red:wlan-2g",
++		.name		= "qca:red:wlan-2g",
 +		.gpio		= AP136_GPIO_LED_WLAN_2G,
 +		.active_low	= 1,
 +	},
 +	{
-+		.name		= "ap136:red:usb",
++		.name		= "qca:red:usb",
 +		.gpio		= AP136_GPIO_LED_USB,
 +		.active_low	= 1,
 +	}
@@ -199,7 +210,8 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +	ap136_pci_init(art + AP136_PCIE_CALDATA_OFFSET);
 +}
 +
-+MIPS_MACHINE(ATH79_MACH_AP136, "AP136", "Atheros AP136 reference board",
++MIPS_MACHINE(ATH79_MACH_AP136_010, "AP136-010",
++	     "Atheros AP136-010 reference board",
 +	     ap136_setup);
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
@@ -207,7 +219,16 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
  	ATH79_MACH_AP121,		/* Atheros AP121 reference board */
-+	ATH79_MACH_AP136,		/* Atheros AP136 reference board */
++	ATH79_MACH_AP136_010,		/* Atheros AP136-010 reference board */
  	ATH79_MACH_AP81,		/* Atheros AP81 reference board */
  	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
  	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
+--- a/arch/mips/configs/ath79_defconfig
++++ b/arch/mips/configs/ath79_defconfig
+@@ -1,5 +1,6 @@
+ CONFIG_ATH79=y
+ CONFIG_ATH79_MACH_AP121=y
++CONFIG_ATH79_MACH_AP136=y
+ CONFIG_ATH79_MACH_AP81=y
+ CONFIG_ATH79_MACH_DB120=y
+ CONFIG_ATH79_MACH_PB44=y

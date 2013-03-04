@@ -1,0 +1,85 @@
+From f4414336ae509d20c043264bc9f8f6bafb0e8a6f Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Thu, 7 Feb 2013 19:32:24 +0000
+Subject: [PATCH] ath79: remove ATH79_MISC_IRQ_* defines
+
+commit fd633cf1cfe978003888dc78ff94f926fbe7dd8a upstream.
+
+Use the ATH79_MISC_IRQ() macro instead.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4930/
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ath79/dev-common.c           |    6 +++---
+ arch/mips/ath79/dev-usb.c              |    2 +-
+ arch/mips/ath79/irq.c                  |    2 +-
+ arch/mips/include/asm/mach-ath79/irq.h |   13 -------------
+ 4 files changed, 5 insertions(+), 18 deletions(-)
+
+--- a/arch/mips/ath79/dev-common.c
++++ b/arch/mips/ath79/dev-common.c
+@@ -36,7 +36,7 @@ static struct resource ath79_uart_resour
+ static struct plat_serial8250_port ath79_uart_data[] = {
+ 	{
+ 		.mapbase	= AR71XX_UART_BASE,
+-		.irq		= ATH79_MISC_IRQ_UART,
++		.irq		= ATH79_MISC_IRQ(3),
+ 		.flags		= AR71XX_UART_FLAGS,
+ 		.iotype		= UPIO_MEM32,
+ 		.regshift	= 2,
+@@ -62,8 +62,8 @@ static struct resource ar933x_uart_resou
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	{
+-		.start	= ATH79_MISC_IRQ_UART,
+-		.end	= ATH79_MISC_IRQ_UART,
++		.start	= ATH79_MISC_IRQ(3),
++		.end	= ATH79_MISC_IRQ(3),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+--- a/arch/mips/ath79/dev-usb.c
++++ b/arch/mips/ath79/dev-usb.c
+@@ -107,7 +107,7 @@ static void __init ath79_usb_setup(void)
+ 	mdelay(900);
+ 
+ 	ath79_usb_init_resource(ath79_ohci_resources, AR71XX_OHCI_BASE,
+-				AR71XX_OHCI_SIZE, ATH79_MISC_IRQ_OHCI);
++				AR71XX_OHCI_SIZE, ATH79_MISC_IRQ(6));
+ 	platform_device_register(&ath79_ohci_device);
+ 
+ 	ath79_usb_init_resource(ath79_ehci_resources, AR71XX_EHCI_BASE,
+--- a/arch/mips/ath79/irq.c
++++ b/arch/mips/ath79/irq.c
+@@ -265,7 +265,7 @@ void __init arch_init_irq(void)
+ 		BUG();
+ 	}
+ 
+-	cp0_perfcount_irq = ATH79_MISC_IRQ_PERFC;
++	cp0_perfcount_irq = ATH79_MISC_IRQ(5);
+ 	mips_cpu_irq_init();
+ 	ath79_misc_irq_init();
+ 
+--- a/arch/mips/include/asm/mach-ath79/irq.h
++++ b/arch/mips/include/asm/mach-ath79/irq.h
+@@ -26,19 +26,6 @@
+ #define ATH79_IP2_IRQ_COUNT	2
+ #define ATH79_IP2_IRQ(_x)	(ATH79_IP2_IRQ_BASE + (_x))
+ 
+-#define ATH79_MISC_IRQ_TIMER	(ATH79_MISC_IRQ_BASE + 0)
+-#define ATH79_MISC_IRQ_ERROR	(ATH79_MISC_IRQ_BASE + 1)
+-#define ATH79_MISC_IRQ_GPIO	(ATH79_MISC_IRQ_BASE + 2)
+-#define ATH79_MISC_IRQ_UART	(ATH79_MISC_IRQ_BASE + 3)
+-#define ATH79_MISC_IRQ_WDOG	(ATH79_MISC_IRQ_BASE + 4)
+-#define ATH79_MISC_IRQ_PERFC	(ATH79_MISC_IRQ_BASE + 5)
+-#define ATH79_MISC_IRQ_OHCI	(ATH79_MISC_IRQ_BASE + 6)
+-#define ATH79_MISC_IRQ_DMA	(ATH79_MISC_IRQ_BASE + 7)
+-#define ATH79_MISC_IRQ_TIMER2	(ATH79_MISC_IRQ_BASE + 8)
+-#define ATH79_MISC_IRQ_TIMER3	(ATH79_MISC_IRQ_BASE + 9)
+-#define ATH79_MISC_IRQ_TIMER4	(ATH79_MISC_IRQ_BASE + 10)
+-#define ATH79_MISC_IRQ_ETHSW	(ATH79_MISC_IRQ_BASE + 12)
+-
+ #include_next <irq.h>
+ 
+ #endif /* __ASM_MACH_ATH79_IRQ_H */

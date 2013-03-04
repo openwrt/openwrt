@@ -1,0 +1,53 @@
+From d3cc7a15c1e1a04e8d561c0b05d176434142bf9a Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 15 Feb 2013 13:38:20 +0000
+Subject: [PATCH] MIPS: ath79: add QCA955X specific glue to
+ ath79_device_reset_{set, clear}
+
+commit 7d4c2af9bdbbe789fe4a93f32c5890d72cbf60a1 upstream.
+
+The ath79_device_reset_* are causing BUG when
+those are used on the QCA955x SoCs. The patch
+adds the required code to avoid that.
+
+Cc: Rodriguez, Luis <rodrigue@qca.qualcomm.com>
+Cc: Giori, Kathy <kgiori@qca.qualcomm.com>
+Cc: QCA Linux Team <qca-linux-team@qca.qualcomm.com>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4948/
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ath79/common.c                       |    4 ++++
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    1 +
+ 2 files changed, 5 insertions(+)
+
+--- a/arch/mips/ath79/common.c
++++ b/arch/mips/ath79/common.c
+@@ -72,6 +72,8 @@ void ath79_device_reset_set(u32 mask)
+ 		reg = AR933X_RESET_REG_RESET_MODULE;
+ 	else if (soc_is_ar934x())
+ 		reg = AR934X_RESET_REG_RESET_MODULE;
++	else if (soc_is_qca955x())
++		reg = QCA955X_RESET_REG_RESET_MODULE;
+ 	else
+ 		BUG();
+ 
+@@ -98,6 +100,8 @@ void ath79_device_reset_clear(u32 mask)
+ 		reg = AR933X_RESET_REG_RESET_MODULE;
+ 	else if (soc_is_ar934x())
+ 		reg = AR934X_RESET_REG_RESET_MODULE;
++	else if (soc_is_qca955x())
++		reg = QCA955X_RESET_REG_RESET_MODULE;
+ 	else
+ 		BUG();
+ 
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -299,6 +299,7 @@
+ #define AR934X_RESET_REG_BOOTSTRAP		0xb0
+ #define AR934X_RESET_REG_PCIE_WMAC_INT_STATUS	0xac
+ 
++#define QCA955X_RESET_REG_RESET_MODULE		0x1c
+ #define QCA955X_RESET_REG_BOOTSTRAP		0xb0
+ #define QCA955X_RESET_REG_EXT_INT_STATUS	0xac
+ 

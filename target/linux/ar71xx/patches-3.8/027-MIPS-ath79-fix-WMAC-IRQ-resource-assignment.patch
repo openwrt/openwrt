@@ -1,0 +1,29 @@
+From acb28a2a03a93e351e26230511a9f38d0da62fdd Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 15 Feb 2013 18:51:57 +0000
+Subject: [PATCH] MIPS: ath79: fix WMAC IRQ resource assignment
+
+commit e3b25cead4b58fbf60270ba73a1669bf9e5635f5 upstream.
+
+The '.start' field of the IRQ resource assigned twice
+in ar934x_wmac_setup(). The second assignment must
+set the '.end' field. Fix it.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4954/
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ath79/dev-wmac.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/ath79/dev-wmac.c
++++ b/arch/mips/ath79/dev-wmac.c
+@@ -107,7 +107,7 @@ static void ar934x_wmac_setup(void)
+ 	ath79_wmac_resources[0].start = AR934X_WMAC_BASE;
+ 	ath79_wmac_resources[0].end = AR934X_WMAC_BASE + AR934X_WMAC_SIZE - 1;
+ 	ath79_wmac_resources[1].start = ATH79_IP2_IRQ(1);
+-	ath79_wmac_resources[1].start = ATH79_IP2_IRQ(1);
++	ath79_wmac_resources[1].end = ATH79_IP2_IRQ(1);
+ 
+ 	t = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
+ 	if (t & AR934X_BOOTSTRAP_REF_CLK_40)

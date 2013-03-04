@@ -1,13 +1,25 @@
-From 8bb54348722216a1dd6905d9d031ebdaa3a544a4 Mon Sep 17 00:00:00 2001
+From bc14333054c5ecee4bc7e8760d0ffbb730f32c54 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Sun, 24 Jun 2012 23:05:20 +0200
-Subject: [PATCH 26/34] MIPS: ath79: add PCI controller registration code for the QCA9558 SoC
+Date: Fri, 15 Feb 2013 13:38:23 +0000
+Subject: [PATCH] MIPS: ath79: add PCI controller registration code for the
+ QCA955X SoCs
 
+commit 0a5f3b1c9f20eb44142e3b37662de15c944f759d upstream.
+
+Add SoC specific PCI IRQ map, and register platform
+devices for the two built-in PCIe RCs.
+
+Cc: Rodriguez, Luis <rodrigue@qca.qualcomm.com>
+Cc: Giori, Kathy <kgiori@qca.qualcomm.com>
+Cc: QCA Linux Team <qca-linux-team@qca.qualcomm.com>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4951/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- arch/mips/ath79/Kconfig                        |    2 +
+ arch/mips/ath79/Kconfig                        |    2 ++
  arch/mips/ath79/pci.c                          |   36 ++++++++++++++++++++++++
- arch/mips/include/asm/mach-ath79/ar71xx_regs.h |   13 ++++++++
- 3 files changed, 51 insertions(+), 0 deletions(-)
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |   13 +++++++++
+ 3 files changed, 51 insertions(+)
 
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
@@ -100,4 +112,4 @@ Subject: [PATCH 26/34] MIPS: ath79: add PCI controller registration code for the
 +
  #define QCA955X_WMAC_BASE	(AR71XX_APB_BASE + 0x00100000)
  #define QCA955X_WMAC_SIZE	0x20000
- #define QCA955X_EHCI0_BASE	0x1b000000
+ 

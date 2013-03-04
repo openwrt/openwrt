@@ -1,13 +1,23 @@
-From f465a16766a015a31d4e83af1ad62cc718d64f5a Mon Sep 17 00:00:00 2001
+From 64d8592fd1f7265de8b31dbf294928eaf9983db5 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Sun, 24 Jun 2012 13:43:08 +0200
-Subject: [PATCH 18/34] MIPS: ath79: add clock setup for the QCA955X SoCs
+Date: Fri, 15 Feb 2013 13:38:17 +0000
+Subject: [PATCH] MIPS: ath79: add clock setup code for the QCA955X SoCs
 
+commit 41583c05c15cd3adb848f9ee8316bf8084c961cb upstream.
+
+The patch adds code to get various clock frequencies
+from the PLLs used in the QCA955x SoCs.
+
+Cc: Rodriguez, Luis <rodrigue@qca.qualcomm.com>
+Cc: Giori, Kathy <kgiori@qca.qualcomm.com>
+Cc: QCA Linux Team <qca-linux-team@qca.qualcomm.com>
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4945/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/ath79/clock.c                        |   78 ++++++++++++++++++++++++
  arch/mips/include/asm/mach-ath79/ar71xx_regs.h |   39 ++++++++++++
- 2 files changed, 117 insertions(+), 0 deletions(-)
+ 2 files changed, 117 insertions(+)
 
 --- a/arch/mips/ath79/clock.c
 +++ b/arch/mips/ath79/clock.c
