@@ -1,0 +1,35 @@
+From 5e25d5207d21e65b5a2e58b64aba6804653e95b8 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Thu, 27 Dec 2012 15:38:25 +0100
+Subject: [PATCH] MIPS: ath79: use dynamically allocated watchdog device
+
+commit 0f2ad9ed7c6fecb008372e8a709595a2a21059aa upstream.
+
+Remove the static watchdog device variable and use
+the 'platform_device_register_simple' helper to
+allocate and register the device in one step.
+
+This allows us to save a few bytes in the kernel image.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Wim Van Sebroeck <wim@iguana.be>
+---
+ arch/mips/ath79/dev-common.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+--- a/arch/mips/ath79/dev-common.c
++++ b/arch/mips/ath79/dev-common.c
+@@ -102,12 +102,7 @@ void __init ath79_register_uart(void)
+ 	}
+ }
+ 
+-static struct platform_device ath79_wdt_device = {
+-	.name		= "ath79-wdt",
+-	.id		= -1,
+-};
+-
+ void __init ath79_register_wdt(void)
+ {
+-	platform_device_register(&ath79_wdt_device);
++	platform_device_register_simple("ath79-wdt", -1, NULL, 0);
+ }
