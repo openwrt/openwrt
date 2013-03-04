@@ -1,0 +1,51 @@
+From 7ddf72f2337b5f7790994df966c26cd1180e1585 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Thu, 27 Dec 2012 15:38:24 +0100
+Subject: [PATCH] watchdog: ath79_wdt: convert to use devm_clk_get
+
+commit 5071a88475b758bf60191e53606463fe7290c71e upstream.
+
+Use the managed version of clk_get. This allows to
+simplify the probe/remove functions a bit.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Wim Van Sebroeck <wim@iguana.be>
+---
+ drivers/watchdog/ath79_wdt.c |    7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+--- a/drivers/watchdog/ath79_wdt.c
++++ b/drivers/watchdog/ath79_wdt.c
+@@ -229,13 +229,13 @@ static int ath79_wdt_probe(struct platfo
+ 	u32 ctrl;
+ 	int err;
+ 
+-	wdt_clk = clk_get(&pdev->dev, "wdt");
++	wdt_clk = devm_clk_get(&pdev->dev, "wdt");
+ 	if (IS_ERR(wdt_clk))
+ 		return PTR_ERR(wdt_clk);
+ 
+ 	err = clk_enable(wdt_clk);
+ 	if (err)
+-		goto err_clk_put;
++		return err;
+ 
+ 	wdt_freq = clk_get_rate(wdt_clk);
+ 	if (!wdt_freq) {
+@@ -265,8 +265,6 @@ static int ath79_wdt_probe(struct platfo
+ 
+ err_clk_disable:
+ 	clk_disable(wdt_clk);
+-err_clk_put:
+-	clk_put(wdt_clk);
+ 	return err;
+ }
+ 
+@@ -274,7 +272,6 @@ static int ath79_wdt_remove(struct platf
+ {
+ 	misc_deregister(&ath79_wdt_miscdev);
+ 	clk_disable(wdt_clk);
+-	clk_put(wdt_clk);
+ 	return 0;
+ }
+ 
