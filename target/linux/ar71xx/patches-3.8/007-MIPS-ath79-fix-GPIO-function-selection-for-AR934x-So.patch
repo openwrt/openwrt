@@ -1,10 +1,12 @@
-From 177dc53a07e2c660d1c1a6cec4576c802325e330 Mon Sep 17 00:00:00 2001
+From 2e6a41e0be6a09ed839e3afbe1fb413a015d8870 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Wed, 14 Nov 2012 09:02:01 +0100
+Date: Tue, 29 Jan 2013 08:19:12 +0000
 Subject: [PATCH] MIPS: ath79: fix GPIO function selection for AR934x SoCs
 
+commit 8838becdf5f7261d7f5dfbbe957fe9b9ed188aec upstream.
+
 GPIO function selection is not working on the AR934x
-SoCs because the offset of the  function selection
+SoCs because the offset of the function selection
 register is different on those.
 
 Add a helper routine which returns the correct
@@ -12,6 +14,8 @@ register address based on the SoC type, and use
 that in the 'ath79_gpio_function_*' routines.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4870/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/ath79/gpio.c                         |   38 ++++++++++++++++--------
  arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    2 ++
@@ -95,7 +99,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  }
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-@@ -521,6 +521,8 @@
+@@ -401,6 +401,8 @@
  #define AR71XX_GPIO_REG_INT_ENABLE	0x24
  #define AR71XX_GPIO_REG_FUNC		0x28
  

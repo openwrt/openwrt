@@ -1,0 +1,72 @@
+From 6c888a88f2a9939182bf41151f079a6b59f1593c Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 29 Jan 2013 08:19:13 +0000
+Subject: [PATCH] MIPS: ath79: simplify ath79_gpio_function_* routines
+
+commit f160a289e0e8848391f5ec48ff1a014b9c04b162 upstream.
+
+Make ath79_gpio_function_{en,dis}able to be wrappers
+around ath79_gpio_function_setup.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4871/
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ath79/gpio.c |   30 ++++++------------------------
+ 1 file changed, 6 insertions(+), 24 deletions(-)
+
+--- a/arch/mips/ath79/gpio.c
++++ b/arch/mips/ath79/gpio.c
+@@ -154,46 +154,28 @@ static void __iomem *ath79_gpio_get_func
+ 	return ath79_gpio_base + reg;
+ }
+ 
+-void ath79_gpio_function_enable(u32 mask)
++void ath79_gpio_function_setup(u32 set, u32 clear)
+ {
+ 	void __iomem *reg = ath79_gpio_get_function_reg();
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&ath79_gpio_lock, flags);
+ 
+-	__raw_writel(__raw_readl(reg) | mask, reg);
++	__raw_writel((__raw_readl(reg) & ~clear) | set, reg);
+ 	/* flush write */
+ 	__raw_readl(reg);
+ 
+ 	spin_unlock_irqrestore(&ath79_gpio_lock, flags);
+ }
+ 
+-void ath79_gpio_function_disable(u32 mask)
++void ath79_gpio_function_enable(u32 mask)
+ {
+-	void __iomem *reg = ath79_gpio_get_function_reg();
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&ath79_gpio_lock, flags);
+-
+-	__raw_writel(__raw_readl(reg) & ~mask, reg);
+-	/* flush write */
+-	__raw_readl(reg);
+-
+-	spin_unlock_irqrestore(&ath79_gpio_lock, flags);
++	ath79_gpio_function_setup(mask, 0);
+ }
+ 
+-void ath79_gpio_function_setup(u32 set, u32 clear)
++void ath79_gpio_function_disable(u32 mask)
+ {
+-	void __iomem *reg = ath79_gpio_get_function_reg();
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&ath79_gpio_lock, flags);
+-
+-	__raw_writel((__raw_readl(reg) & ~clear) | set, reg);
+-	/* flush write */
+-	__raw_readl(reg);
+-
+-	spin_unlock_irqrestore(&ath79_gpio_lock, flags);
++	ath79_gpio_function_setup(0, mask);
+ }
+ 
+ void __init ath79_gpio_init(void)
