@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -886,11 +886,8 @@ int hostapd_setup_interface_complete(str
+@@ -895,11 +895,8 @@ int hostapd_setup_interface_complete(str
  	size_t j;
  	u8 *prev_addr;
  
@@ -14,8 +14,8 @@
  
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (hapd->iconf->channel) {
-@@ -906,7 +903,7 @@ int hostapd_setup_interface_complete(str
- 				     hapd->iconf->secondary_channel)) {
+@@ -919,7 +916,7 @@ int hostapd_setup_interface_complete(str
+ 				     hapd->iconf->vht_oper_centr_freq_seg1_idx)) {
  			wpa_printf(MSG_ERROR, "Could not set channel for "
  				   "kernel driver");
 -			return -1;
@@ -23,7 +23,7 @@
  		}
  	}
  
-@@ -917,7 +914,7 @@ int hostapd_setup_interface_complete(str
+@@ -930,7 +927,7 @@ int hostapd_setup_interface_complete(str
  			hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
  				       HOSTAPD_LEVEL_WARNING,
  				       "Failed to prepare rates table.");
@@ -32,7 +32,7 @@
  		}
  	}
  
-@@ -925,14 +922,14 @@ int hostapd_setup_interface_complete(str
+@@ -938,14 +935,14 @@ int hostapd_setup_interface_complete(str
  	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
  		wpa_printf(MSG_ERROR, "Could not set RTS threshold for "
  			   "kernel driver");
@@ -49,7 +49,7 @@
  	}
  
  	prev_addr = hapd->own_addr;
-@@ -942,7 +939,7 @@ int hostapd_setup_interface_complete(str
+@@ -955,7 +952,7 @@ int hostapd_setup_interface_complete(str
  		if (j)
  			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
  		if (hostapd_setup_bss(hapd, j == 0))
@@ -58,7 +58,7 @@
  		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
  			prev_addr = hapd->own_addr;
  	}
-@@ -954,7 +951,7 @@ int hostapd_setup_interface_complete(str
+@@ -967,7 +964,7 @@ int hostapd_setup_interface_complete(str
  	if (hostapd_driver_commit(hapd) < 0) {
  		wpa_printf(MSG_ERROR, "%s: Failed to commit driver "
  			   "configuration", __func__);
@@ -67,7 +67,7 @@
  	}
  
  	/*
-@@ -975,6 +972,11 @@ int hostapd_setup_interface_complete(str
+@@ -988,6 +985,11 @@ int hostapd_setup_interface_complete(str
  		   iface->bss[0]->conf->iface);
  
  	return 0;

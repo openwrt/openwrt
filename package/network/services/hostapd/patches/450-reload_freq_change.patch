@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -140,6 +140,20 @@ int hostapd_reload_config(struct hostapd
+@@ -140,6 +140,24 @@ int hostapd_reload_config(struct hostapd
  	oldconf = hapd->iconf;
  	iface->conf = newconf;
  
@@ -10,7 +10,11 @@
 +	if (hostapd_set_freq(hapd, newconf->hw_mode, iface->freq,
 +			     newconf->channel,
 +			     newconf->ieee80211n,
-+			     newconf->secondary_channel)) {
++			     newconf->ieee80211ac,
++			     newconf->secondary_channel,
++			     newconf->vht_oper_chwidth,
++			     newconf->vht_oper_centr_freq_seg0_idx,
++			     newconf->vht_oper_centr_freq_seg1_idx)) {
 +		wpa_printf(MSG_ERROR, "Could not set channel for "
 +			   "kernel driver");
 +	}

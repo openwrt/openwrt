@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -7144,8 +7144,6 @@ static int wpa_driver_nl80211_set_mode(s
+@@ -7346,8 +7346,6 @@ static int wpa_driver_nl80211_set_mode(s
  			ret = nl80211_set_mode(drv, drv->ifindex, nlmode);
  			if (ret == -EACCES)
  				break;
@@ -9,7 +9,7 @@
  			if (res && !ret)
  				ret = -1;
  			else if (ret != -EBUSY)
-@@ -7161,6 +7159,7 @@ static int wpa_driver_nl80211_set_mode(s
+@@ -7363,6 +7361,7 @@ static int wpa_driver_nl80211_set_mode(s
  			   "interface is down");
  		drv->nlmode = nlmode;
  		drv->ignore_if_down_event = 1;

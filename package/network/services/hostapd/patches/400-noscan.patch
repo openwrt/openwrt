@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2485,6 +2485,8 @@ static int hostapd_config_fill(struct ho
+@@ -2464,6 +2464,8 @@ static int hostapd_config_fill(struct ho
  			}
  #endif /* CONFIG_IEEE80211W */
  #ifdef CONFIG_IEEE80211N
@@ -11,7 +11,7 @@
  		} else if (os_strcmp(buf, "ht_capab") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -497,6 +497,7 @@ struct hostapd_config {
+@@ -510,6 +510,7 @@ struct hostapd_config {
  
  	int ht_op_mode_fixed;
  	u16 ht_capab;
@@ -21,7 +21,7 @@
  	int require_ht;
 --- a/src/ap/hw_features.c
 +++ b/src/ap/hw_features.c
-@@ -493,7 +493,7 @@ static int ieee80211n_check_40mhz(struct
+@@ -494,7 +494,7 @@ static int ieee80211n_check_40mhz(struct
  {
  	struct wpa_driver_scan_params params;
  

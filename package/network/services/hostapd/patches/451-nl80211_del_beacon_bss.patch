@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -3394,16 +3394,18 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -3538,16 +3538,18 @@ wpa_driver_nl80211_finish_drv_init(struc
  }
  
  
@@ -21,7 +21,7 @@
  
  	return send_and_recv_msgs(drv, msg, NULL, NULL);
   nla_put_failure:
-@@ -3411,6 +3413,21 @@ static int wpa_driver_nl80211_del_beacon
+@@ -3555,6 +3557,21 @@ static int wpa_driver_nl80211_del_beacon
  	return -ENOBUFS;
  }
  
@@ -43,7 +43,7 @@
  
  /**
   * wpa_driver_nl80211_deinit - Deinitialize nl80211 driver interface
-@@ -9238,4 +9255,5 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -9547,4 +9564,5 @@ const struct wpa_driver_ops wpa_driver_n
  	.send_tdls_mgmt = nl80211_send_tdls_mgmt,
  	.tdls_oper = nl80211_tdls_oper,
  #endif /* CONFIG_TDLS */
@@ -51,7 +51,7 @@
  };
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -2053,6 +2053,9 @@ struct wpa_driver_ops {
+@@ -2071,6 +2071,9 @@ struct wpa_driver_ops {
  	 */
  	int (*probe_req_report)(void *priv, int report);
  
