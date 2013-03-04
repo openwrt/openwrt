@@ -1,19 +1,23 @@
-From cbb3ade4765bc715b5c2eae4a7b6eaf3ff7ad958 Mon Sep 17 00:00:00 2001
+From 486c150478777ef53cfef6f0d46840b9406b0612 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Wed, 11 Jan 2012 20:06:35 +0100
-Subject: [PATCH 28/34] spi/ath79: add delay between SCK changes
+Date: Thu, 27 Dec 2012 10:42:24 +0100
+Subject: [PATCH] spi/ath79: add delay between SCK changes
+
+commit 440114fdb13cbc53ea734bcc05b86bcf5b1e430c upstream.
 
 The driver uses the "as fast as it can" approach
 to drive the SCK signal. However this does not
 work with certain low speed SPI chips (e.g. the
-PCF2123 RTC chip). Add per-bit slowdowns in order
-to be able to use the driver with such chips as
-well.
+PCF2123 RTC chip).
+
+The patch adds per-bit slowdowns in order to be
+able to use the driver with such chips as well.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
 ---
  drivers/spi/spi-ath79.c |   44 +++++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 43 insertions(+), 1 deletions(-)
+ 1 file changed, 43 insertions(+), 1 deletion(-)
 
 --- a/drivers/spi/spi-ath79.c
 +++ b/drivers/spi/spi-ath79.c

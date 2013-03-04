@@ -1,7 +1,10 @@
-From e63ceaa0c4f7be0498cd452981073d3ce8e7d1f5 Mon Sep 17 00:00:00 2001
+From d731c08cf1d264fd6113b9a97790c5a3a86ea520 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Mon, 9 Jan 2012 15:00:46 +0100
-Subject: [PATCH 32/34] spi/ath79: avoid multiple initialization of the SPI controller
+Date: Thu, 27 Dec 2012 10:42:28 +0100
+Subject: [PATCH] spi/ath79: avoid multiple initialization of the SPI
+ controller
+
+commit c4a31f43005512b366e8bfc346e7f14c1a7a1ba7 upstream.
 
 Currently we are initializing the SPI controller in
 the chip select line function, and that function is
@@ -14,9 +17,10 @@ and call those from probe/response in order to avoid
 the mutliple initialization of the controller.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
 ---
  drivers/spi/spi-ath79.c |   41 ++++++++++++++++++++++++-----------------
- 1 files changed, 24 insertions(+), 17 deletions(-)
+ 1 file changed, 24 insertions(+), 17 deletions(-)
 
 --- a/drivers/spi/spi-ath79.c
 +++ b/drivers/spi/spi-ath79.c

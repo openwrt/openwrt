@@ -1,0 +1,54 @@
+From a32b0e7851320cba0144d20e87e5326ee81e1063 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 5 Feb 2013 20:57:55 +0100
+Subject: [PATCH] spi/ath79: add shutdown handler
+
+commit 7410e848583f9120dd5f9414629f01bb76b5ee5f upstream.
+
+The SPI controller of the AR7xxx/AR9xxx SoCs
+have a special mode which allows the SoC to
+directly read data from SPI flash chips. In
+this mode, the content of the SPI flash chip
+can be accessed via a memory mapped region.
+
+During early init time, the kernel expects
+that the flash chip is accessible through
+that memory region because it reads board
+specific values (e.g. MAC address, WiFi
+calibration data) from the flash on various
+boards.
+
+This is working if the kernel is loaded
+directly by the bootloader because that
+leaves the SPI controller in the special
+mode. However it is not working in a kexec'd
+kernel because the SPI driver does not restore
+the special mode during shutdown.
+
+The patch adds a shutdown handler to fix this
+issue.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
+---
+ drivers/spi/spi-ath79.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -308,9 +308,15 @@ static int ath79_spi_remove(struct platf
+ 	return 0;
+ }
+ 
++static void ath79_spi_shutdown(struct platform_device *pdev)
++{
++	ath79_spi_remove(pdev);
++}
++
+ static struct platform_driver ath79_spi_driver = {
+ 	.probe		= ath79_spi_probe,
+ 	.remove		= ath79_spi_remove,
++	.shutdown	= ath79_spi_shutdown,
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 		.owner	= THIS_MODULE,

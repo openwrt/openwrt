@@ -1,7 +1,9 @@
-From 06752f9b169493cd1323f8337c147ad2dd31025c Mon Sep 17 00:00:00 2001
+From 622d87da7f99b29dde053881bf42c46de7572ce5 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Mon, 9 Jan 2012 15:03:28 +0100
-Subject: [PATCH 30/34] spi/ath79: remove superfluous chip select code
+Date: Thu, 27 Dec 2012 10:42:26 +0100
+Subject: [PATCH] spi/ath79: remove superfluous chip select code
+
+commit f1e8fc9898fd8ca78b7438d3c2e60028d3ae2a34 upstream.
 
 The spi_bitbang driver calls the chipselect function
 of the driver from spi_bitbang_setup in order to
@@ -9,9 +11,10 @@ deselect the given SPI chip, so we don't have to
 initialize the CS line here.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
 ---
  drivers/spi/spi-ath79.c |    6 ------
- 1 files changed, 0 insertions(+), 6 deletions(-)
+ 1 file changed, 6 deletions(-)
 
 --- a/drivers/spi/spi-ath79.c
 +++ b/drivers/spi/spi-ath79.c

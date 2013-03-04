@@ -1,14 +1,17 @@
-From 6bd876a46b977643f27d2cc63f49e1bc84b78134 Mon Sep 17 00:00:00 2001
+From f0b166c931c9971f2ae9614881565d23f58b3178 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Mon, 9 Jan 2012 15:04:21 +0100
-Subject: [PATCH 31/34] spi/ath79: use gpio_request_one
+Date: Thu, 27 Dec 2012 10:42:27 +0100
+Subject: [PATCH] spi/ath79: use gpio_request_one
+
+commit 95d79419feffb326a3d5cb50e2248129dec06bb0 upstream.
 
 Use gpio_request_one() instead of multiple gpiolib calls.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
 ---
- drivers/spi/spi-ath79.c |   26 +++++++++++++-------------
- 1 files changed, 13 insertions(+), 13 deletions(-)
+ drivers/spi/spi-ath79.c |   22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
 
 --- a/drivers/spi/spi-ath79.c
 +++ b/drivers/spi/spi-ath79.c
