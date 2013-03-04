@@ -1,0 +1,43 @@
+From 8a4de56e3b7a6fbb777c78f87142bafc22c32ac2 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 15 Feb 2013 13:38:15 +0000
+Subject: [PATCH] MIPS: ath79: add early printk support for the QCA955X SoCs
+
+commit 908987797076b848f01b32c21d61d0e152efc236 upstream.
+
+The patch allows to see kernel messages on the
+QCA955X SoCs in early boot stage.
+
+Cc: Rodriguez, Luis <rodrigue@qca.qualcomm.com>
+Cc: Giori, Kathy <kgiori@qca.qualcomm.com>
+Cc: QCA Linux Team <qca-linux-team@qca.qualcomm.com>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4944/
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ath79/early_printk.c                 |    2 ++
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    2 ++
+ 2 files changed, 4 insertions(+)
+
+--- a/arch/mips/ath79/early_printk.c
++++ b/arch/mips/ath79/early_printk.c
+@@ -74,6 +74,8 @@ static void prom_putchar_init(void)
+ 	case REV_ID_MAJOR_AR9341:
+ 	case REV_ID_MAJOR_AR9342:
+ 	case REV_ID_MAJOR_AR9344:
++	case REV_ID_MAJOR_QCA9556:
++	case REV_ID_MAJOR_QCA9558:
+ 		_prom_putchar = prom_putchar_ar71xx;
+ 		break;
+ 
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -370,6 +370,8 @@
+ #define REV_ID_MAJOR_AR9341		0x0120
+ #define REV_ID_MAJOR_AR9342		0x1120
+ #define REV_ID_MAJOR_AR9344		0x2120
++#define REV_ID_MAJOR_QCA9556		0x0130
++#define REV_ID_MAJOR_QCA9558		0x1130
+ 
+ #define AR71XX_REV_ID_MINOR_MASK	0x3
+ #define AR71XX_REV_ID_MINOR_AR7130	0x0

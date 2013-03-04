@@ -8,7 +8,7 @@
  
  u32 ath79_cpu_freq;
  EXPORT_SYMBOL_GPL(ath79_cpu_freq);
-@@ -109,3 +110,16 @@ void ath79_device_reset_clear(u32 mask)
+@@ -111,3 +112,16 @@ void ath79_device_reset_clear(u32 mask)
  	spin_unlock_irqrestore(&ath79_device_reset_lock, flags);
  }
  EXPORT_SYMBOL_GPL(ath79_device_reset_clear);

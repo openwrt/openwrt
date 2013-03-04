@@ -439,8 +439,8 @@ static struct resource ath79_eth0_resources[] = {
 	}, {
 		.name	= "mac_irq",
 		.flags	= IORESOURCE_IRQ,
-		.start	= ATH79_CPU_IRQ_GE0,
-		.end	= ATH79_CPU_IRQ_GE0,
+		.start	= ATH79_CPU_IRQ(4),
+		.end	= ATH79_CPU_IRQ(4),
 	},
 };
 
@@ -467,8 +467,8 @@ static struct resource ath79_eth1_resources[] = {
 	}, {
 		.name	= "mac_irq",
 		.flags	= IORESOURCE_IRQ,
-		.start	= ATH79_CPU_IRQ_GE1,
-		.end	= ATH79_CPU_IRQ_GE1,
+		.start	= ATH79_CPU_IRQ(5),
+		.end	= ATH79_CPU_IRQ(5),
 	},
 };
 

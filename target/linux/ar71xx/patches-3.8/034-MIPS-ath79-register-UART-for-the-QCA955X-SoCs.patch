@@ -1,0 +1,34 @@
+From 25320dbceda508afc5b2de1986072caa9e04ad1b Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 15 Feb 2013 13:38:21 +0000
+Subject: [PATCH] MIPS: ath79: register UART for the QCA955X SoCs
+
+commit 13992303fa705ae1e4acf4660c69687672996029 upstream.
+
+Similarly to the preceding SoCs, the QCA955X SoCs
+also have a built-in NS16650 compatible UART.
+Register the platform device for that to make
+it usable.
+
+Cc: Rodriguez, Luis <rodrigue@qca.qualcomm.com>
+Cc: Giori, Kathy <kgiori@qca.qualcomm.com>
+Cc: QCA Linux Team <qca-linux-team@qca.qualcomm.com>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4949/
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ath79/dev-common.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/mips/ath79/dev-common.c
++++ b/arch/mips/ath79/dev-common.c
+@@ -90,7 +90,8 @@ void __init ath79_register_uart(void)
+ 	if (soc_is_ar71xx() ||
+ 	    soc_is_ar724x() ||
+ 	    soc_is_ar913x() ||
+-	    soc_is_ar934x()) {
++	    soc_is_ar934x() ||
++	    soc_is_qca955x()) {
+ 		ath79_uart_data[0].uartclk = clk_get_rate(clk);
+ 		platform_device_register(&ath79_uart_device);
+ 	} else if (soc_is_ar933x()) {

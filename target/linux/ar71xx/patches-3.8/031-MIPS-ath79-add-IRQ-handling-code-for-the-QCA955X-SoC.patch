@@ -1,14 +1,25 @@
-From 5d0de52f8e36916485a61b820916b71b5d918e6f Mon Sep 17 00:00:00 2001
+From f1c0239d61d6d43469133d144e458f485b6cbda6 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Sun, 24 Jun 2012 13:44:23 +0200
-Subject: [PATCH 19/34] MIPS: ath79: add IRQ handling code for the QCA955X SoCs
+Date: Fri, 15 Feb 2013 18:53:47 +0000
+Subject: [PATCH] MIPS: ath79: add IRQ handling code for the QCA955X SoCs
 
+commit 53330332f176eaa9567481c69bbad8b2176b4eb5 upstream.
+
+The IRQ routing in the QCA955x SoCs is slightly
+different from the routing implemented in the
+already supported SoCs.
+
+Cc: Rodriguez, Luis <rodrigue@qca.qualcomm.com>
+Cc: Giori, Kathy <kgiori@qca.qualcomm.com>
+Cc: QCA Linux Team <qca-linux-team@qca.qualcomm.com>
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4955/
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/ath79/irq.c                          |  110 ++++++++++++++++++++++--
  arch/mips/include/asm/mach-ath79/ar71xx_regs.h |   32 +++++++
- arch/mips/include/asm/mach-ath79/irq.h         |    9 ++-
- 3 files changed, 142 insertions(+), 9 deletions(-)
+ arch/mips/include/asm/mach-ath79/irq.h         |    6 +-
+ 3 files changed, 140 insertions(+), 8 deletions(-)
 
 --- a/arch/mips/ath79/irq.c
 +++ b/arch/mips/ath79/irq.c
@@ -25,7 +36,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	else
  		BUG();
 @@ -150,6 +153,88 @@ static void ar934x_ip2_irq_init(void)
- 	irq_set_chained_handler(ATH79_CPU_IRQ_IP2, ar934x_ip2_irq_dispatch);
+ 	irq_set_chained_handler(ATH79_CPU_IRQ(2), ar934x_ip2_irq_dispatch);
  }
  
 +static void qca955x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
@@ -48,7 +59,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +	}
 +
 +	if (status & QCA955X_EXT_INT_WMAC_ALL) {
-+		/* TODO: flsuh DDR? */
++		/* TODO: flush DDR? */
 +		generic_handle_irq(ATH79_IP2_IRQ(1));
 +	}
 +
@@ -78,7 +89,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +	}
 +
 +	if (status & QCA955X_EXT_INT_USB2) {
-+		/* TODO: flsuh DDR? */
++		/* TODO: flush DDR? */
 +		generic_handle_irq(ATH79_IP3_IRQ(1));
 +	}
 +
@@ -100,14 +111,14 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +		irq_set_chip_and_handler(i, &dummy_irq_chip,
 +					 handle_level_irq);
 +
-+	irq_set_chained_handler(ATH79_CPU_IRQ_IP2, qca955x_ip2_irq_dispatch);
++	irq_set_chained_handler(ATH79_CPU_IRQ(2), qca955x_ip2_irq_dispatch);
 +
 +	for (i = ATH79_IP3_IRQ_BASE;
 +	     i < ATH79_IP3_IRQ_BASE + ATH79_IP3_IRQ_COUNT; i++)
 +		irq_set_chip_and_handler(i, &dummy_irq_chip,
 +					 handle_level_irq);
 +
-+	irq_set_chained_handler(ATH79_CPU_IRQ_IP3, qca955x_ip3_irq_dispatch);
++	irq_set_chained_handler(ATH79_CPU_IRQ(3), qca955x_ip3_irq_dispatch);
 +}
 +
  asmlinkage void plat_irq_dispatch(void)
@@ -120,24 +131,24 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +
 +static void ath79_default_ip2_handler(void)
 +{
-+	do_IRQ(ATH79_CPU_IRQ_IP2);
++	do_IRQ(ATH79_CPU_IRQ(2));
 +}
 +
 +static void ath79_default_ip3_handler(void)
 +{
-+	do_IRQ(ATH79_CPU_IRQ_USB);
++	do_IRQ(ATH79_CPU_IRQ(3));
 +}
 +
  static void ar71xx_ip2_handler(void)
  {
  	ath79_ddr_wb_flush(AR71XX_DDR_REG_FLUSH_PCI);
 @@ -209,11 +305,6 @@ static void ar933x_ip2_handler(void)
- 	do_IRQ(ATH79_CPU_IRQ_IP2);
+ 	do_IRQ(ATH79_CPU_IRQ(2));
  }
  
 -static void ar934x_ip2_handler(void)
 -{
--	do_IRQ(ATH79_CPU_IRQ_IP2);
+-	do_IRQ(ATH79_CPU_IRQ(2));
 -}
 -
  static void ar71xx_ip3_handler(void)
@@ -220,9 +231,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 -#define NR_IRQS			48
 +#define NR_IRQS			51
  
- #define ATH79_MISC_IRQ_BASE	8
- #define ATH79_MISC_IRQ_COUNT	32
-@@ -24,8 +24,13 @@
+ #define ATH79_CPU_IRQ(_x)	(MIPS_CPU_IRQ_BASE + (_x))
+ 
+@@ -26,6 +26,10 @@
  #define ATH79_IP2_IRQ_COUNT	2
  #define ATH79_IP2_IRQ(_x)	(ATH79_IP2_IRQ_BASE + (_x))
  
@@ -230,10 +241,6 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +#define ATH79_IP3_IRQ_COUNT     3
 +#define ATH79_IP3_IRQ(_x)       (ATH79_IP3_IRQ_BASE + (_x))
 +
- #define ATH79_CPU_IRQ_IP2	(MIPS_CPU_IRQ_BASE + 2)
--#define ATH79_CPU_IRQ_USB	(MIPS_CPU_IRQ_BASE + 3)
-+#define ATH79_CPU_IRQ_IP3	(MIPS_CPU_IRQ_BASE + 3)
-+#define ATH79_CPU_IRQ_USB	ATH79_CPU_IRQ_IP3
- #define ATH79_CPU_IRQ_GE0	(MIPS_CPU_IRQ_BASE + 4)
- #define ATH79_CPU_IRQ_GE1	(MIPS_CPU_IRQ_BASE + 5)
- #define ATH79_CPU_IRQ_MISC	(MIPS_CPU_IRQ_BASE + 6)
+ #include_next <irq.h>
+ 
+ #endif /* __ASM_MACH_ATH79_IRQ_H */
