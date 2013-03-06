@@ -9,15 +9,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
-PKG_VERSION:=1.4.18
-PKG_RELEASE:=1
+PKG_VERSION:=1.4.10
+PKG_RELEASE:=5
 
+PKG_MD5SUM:=f382fe693f0b59d87bd47bea65eca198
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.be.netfilter.org/pub/netfilter/iptables/ \
 	ftp://ftp.de.netfilter.org/pub/netfilter/iptables/ \
 	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
-PKG_MD5SUM:=a819199d5ec013b82da13a8ffbba857e
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
@@ -49,13 +49,13 @@ endef
 
 define Package/iptables
 $(call Package/iptables/Default)
-  TITLE:=IP firewall administration tool
+  TITLE:=IPv4 firewall administration tool
   MENU:=1
-  DEPENDS+= +kmod-ipt-core +libip4tc +IPV6:libip6tc +libxtables
+  DEPENDS+= +kmod-ipt-core +libip4tc +libxtables
 endef
 
 define Package/iptables/description
-IP firewall administration tool.
+IPv4 firewall administration tool.
 
  Matches:
   - icmp
@@ -300,7 +300,7 @@ endef
 
 define Package/ip6tables
 $(call Package/iptables/Default)
-  DEPENDS:=@IPV6 +kmod-ip6tables +iptables
+  DEPENDS:=+kmod-ip6tables +libip6tc +libxtables
   CATEGORY:=IPv6
   TITLE:=IPv6 firewall administration tool
   MENU:=1
@@ -365,9 +365,9 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/net/netfilter
 
 	# XXX: iptables header fixup, some headers are not installed by iptables anymore
+	$(CP) $(PKG_BUILD_DIR)/include/net/netfilter/*.h $(1)/usr/include/net/netfilter/
 	$(CP) $(PKG_BUILD_DIR)/include/iptables/*.h $(1)/usr/include/iptables/
 	$(CP) $(PKG_BUILD_DIR)/include/iptables.h $(1)/usr/include/
-	$(CP) $(PKG_BUILD_DIR)/include/ip6tables.h $(1)/usr/include/
 	$(CP) $(PKG_BUILD_DIR)/include/libipulog $(1)/usr/include/
 	$(CP) $(PKG_BUILD_DIR)/include/libiptc $(1)/usr/include/
 
@@ -382,14 +382,21 @@ endef
 
 define Package/iptables/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/xtables-multi $(1)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables{,-restore,-save} $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/iptables $(1)/usr/sbin/
+	$(LN) iptables $(1)/usr/sbin/iptables-save
+	$(LN) iptables $(1)/usr/sbin/iptables-restore
 	$(INSTALL_DIR) $(1)/usr/lib/iptables
 endef
 
 define Package/ip6tables/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables{,-restore,-save} $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables $(1)/usr/sbin/
+	$(LN) ip6tables $(1)/usr/sbin/ip6tables-save
+	$(LN) ip6tables $(1)/usr/sbin/ip6tables-restore
+	$(INSTALL_DIR) $(1)/usr/lib/iptables
+	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
+		$(CP) libip6t_*.so $(1)/usr/lib/iptables/ \
+	)
 endef
 
 define Package/libiptc/install

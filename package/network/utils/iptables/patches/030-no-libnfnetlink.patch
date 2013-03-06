@@ -1,6 +1,6 @@
 --- a/configure
 +++ b/configure
-@@ -12173,77 +12173,7 @@ $as_echo "no" >&6; }
+@@ -10917,75 +10917,7 @@ $as_echo "no" >&6; }
  	fi
  fi
  
@@ -18,7 +18,6 @@
 -  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
 -  test $ac_status = 0; }; then
 -  pkg_cv_libnfnetlink_CFLAGS=`$PKG_CONFIG --cflags "libnfnetlink >= 1.0" 2>/dev/null`
--		      test "x$?" != "x0" && pkg_failed=yes
 -else
 -  pkg_failed=yes
 -fi
@@ -35,7 +34,6 @@
 -  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
 -  test $ac_status = 0; }; then
 -  pkg_cv_libnfnetlink_LIBS=`$PKG_CONFIG --libs "libnfnetlink >= 1.0" 2>/dev/null`
--		      test "x$?" != "x0" && pkg_failed=yes
 -else
 -  pkg_failed=yes
 -fi
@@ -55,9 +53,9 @@
 -        _pkg_short_errors_supported=no
 -fi
 -        if test $_pkg_short_errors_supported = yes; then
--	        libnfnetlink_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libnfnetlink >= 1.0" 2>&1`
+-	        libnfnetlink_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libnfnetlink >= 1.0" 2>&1`
 -        else
--	        libnfnetlink_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libnfnetlink >= 1.0" 2>&1`
+-	        libnfnetlink_PKG_ERRORS=`$PKG_CONFIG --print-errors "libnfnetlink >= 1.0" 2>&1`
 -        fi
 -	# Put the nasty error message in config.log where it belongs
 -	echo "$libnfnetlink_PKG_ERRORS" >&5
@@ -81,7 +79,7 @@
  else
 --- a/configure.ac
 +++ b/configure.ac
-@@ -89,9 +89,7 @@ AM_CONDITIONAL([ENABLE_LARGEFILE], [test
+@@ -79,9 +79,7 @@ AM_CONDITIONAL([ENABLE_LARGEFILE], [test
  AM_CONDITIONAL([ENABLE_DEVEL], [test "$enable_devel" = "yes"])
  AM_CONDITIONAL([ENABLE_LIBIPQ], [test "$enable_libipq" = "yes"])
  
@@ -90,5 +88,5 @@
 -AM_CONDITIONAL([HAVE_LIBNFNETLINK], [test "$nfnetlink" = 1])
 +AM_CONDITIONAL([HAVE_LIBNFNETLINK], [false])
  
- regular_CFLAGS="-Wall -Waggregate-return -Wmissing-declarations \
- 	-Wmissing-prototypes -Wredundant-decls -Wshadow -Wstrict-prototypes \
+ regular_CFLAGS="${largefile_cflags} \
+ 	-D_REENTRANT -Wall -Waggregate-return -Wmissing-declarations \
