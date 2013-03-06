@@ -1,8 +1,6 @@
-Index: iptables-1.4.18/iptables/ip6tables-restore.c
-===================================================================
---- iptables-1.4.18.orig/iptables/ip6tables-restore.c	2013-03-05 16:37:31.000000000 +0100
-+++ iptables-1.4.18/iptables/ip6tables-restore.c	2013-03-05 16:42:57.475249794 +0100
-@@ -14,6 +14,8 @@
+--- a/ip6tables-restore.c
++++ b/ip6tables-restore.c
+@@ -16,6 +16,8 @@
  #include <string.h>
  #include <stdio.h>
  #include <stdlib.h>
@@ -11,7 +9,7 @@ Index: iptables-1.4.18/iptables/ip6tables-restore.c
  #include "ip6tables.h"
  #include "xtables.h"
  #include "libiptc/libip6tc.h"
-@@ -25,6 +27,7 @@
+@@ -27,6 +29,7 @@
  #define DEBUGP(x, args...)
  #endif
  
@@ -19,15 +17,15 @@ Index: iptables-1.4.18/iptables/ip6tables-restore.c
  static int binary = 0, counters = 0, verbose = 0, noflush = 0;
  
  /* Keeping track of external matches and targets.  */
-@@ -35,6 +38,7 @@
+@@ -37,6 +40,7 @@ static const struct option options[] = {
  	{.name = "test",     .has_arg = false, .val = 't'},
  	{.name = "help",     .has_arg = false, .val = 'h'},
  	{.name = "noflush",  .has_arg = false, .val = 'n'},
 +	{.name = "lenient",  .has_arg = false, .val = 'l'},
  	{.name = "modprobe", .has_arg = true,  .val = 'M'},
- 	{.name = "table",    .has_arg = true,  .val = 'T'},
  	{NULL},
-@@ -51,6 +55,7 @@
+ };
+@@ -52,6 +56,7 @@ static void print_usage(const char *name
  			"	   [ --test ]\n"
  			"	   [ --help ]\n"
  			"	   [ --noflush ]\n"
@@ -35,7 +33,7 @@ Index: iptables-1.4.18/iptables/ip6tables-restore.c
  			"          [ --modprobe=<command>]\n", name);
  
  	exit(1);
-@@ -114,6 +119,17 @@
+@@ -114,6 +119,17 @@ static void free_argv(void) {
  		free(newargv[i]);
  }
  
@@ -50,19 +48,19 @@ Index: iptables-1.4.18/iptables/ip6tables-restore.c
 +	longjmp(jmp, status);
 +}
 +
- static void add_param_to_argv(char *parsestart)
- {
- 	int quote_open = 0, escaped = 0, param_len = 0;
-@@ -204,7 +220,7 @@
- 	init_extensions6();
+ #ifdef IPTABLES_MULTI
+ int ip6tables_restore_main(int argc, char *argv[])
+ #else
+@@ -141,7 +157,7 @@ int main(int argc, char *argv[])
+ 	init_extensions();
  #endif
  
--	while ((c = getopt_long(argc, argv, "bcvthnM:T:", options, NULL)) != -1) {
-+	while ((c = getopt_long(argc, argv, "bcvthnlM:T:", options, NULL)) != -1) {
+-	while ((c = getopt_long(argc, argv, "bcvthnM:", options, NULL)) != -1) {
++	while ((c = getopt_long(argc, argv, "bcvthnlM:", options, NULL)) != -1) {
  		switch (c) {
  			case 'b':
  				binary = 1;
-@@ -225,6 +241,9 @@
+@@ -162,6 +178,9 @@ int main(int argc, char *argv[])
  			case 'n':
  				noflush = 1;
  				break;
@@ -72,7 +70,7 @@ Index: iptables-1.4.18/iptables/ip6tables-restore.c
  			case 'M':
  				xtables_modprobe_program = optarg;
  				break;
-@@ -437,8 +456,11 @@
+@@ -440,8 +459,11 @@ int main(int argc, char *argv[])
  			for (a = 0; a < newargc; a++)
  				DEBUGP("argv[%u]: %s\n", a, newargv[a]);
  
@@ -86,11 +84,9 @@ Index: iptables-1.4.18/iptables/ip6tables-restore.c
  
  			free_argv();
  			fflush(stdout);
-Index: iptables-1.4.18/iptables/iptables-restore.c
-===================================================================
---- iptables-1.4.18.orig/iptables/iptables-restore.c	2013-03-05 16:37:31.000000000 +0100
-+++ iptables-1.4.18/iptables/iptables-restore.c	2013-03-05 16:44:56.303247355 +0100
-@@ -11,6 +11,8 @@
+--- a/iptables-restore.c
++++ b/iptables-restore.c
+@@ -13,6 +13,8 @@
  #include <string.h>
  #include <stdio.h>
  #include <stdlib.h>
@@ -99,7 +95,7 @@ Index: iptables-1.4.18/iptables/iptables-restore.c
  #include "iptables.h"
  #include "xtables.h"
  #include "libiptc/libiptc.h"
-@@ -22,6 +24,7 @@
+@@ -24,6 +26,7 @@
  #define DEBUGP(x, args...)
  #endif
  
@@ -107,7 +103,7 @@ Index: iptables-1.4.18/iptables/iptables-restore.c
  static int binary = 0, counters = 0, verbose = 0, noflush = 0;
  
  /* Keeping track of external matches and targets.  */
-@@ -32,6 +35,7 @@
+@@ -34,6 +37,7 @@ static const struct option options[] = {
  	{.name = "test",     .has_arg = false, .val = 't'},
  	{.name = "help",     .has_arg = false, .val = 'h'},
  	{.name = "noflush",  .has_arg = false, .val = 'n'},
@@ -115,7 +111,7 @@ Index: iptables-1.4.18/iptables/iptables-restore.c
  	{.name = "modprobe", .has_arg = true,  .val = 'M'},
  	{.name = "table",    .has_arg = true,  .val = 'T'},
  	{NULL},
-@@ -50,6 +54,7 @@
+@@ -52,6 +56,7 @@ static void print_usage(const char *name
  			"	   [ --test ]\n"
  			"	   [ --help ]\n"
  			"	   [ --noflush ]\n"
@@ -123,7 +119,7 @@ Index: iptables-1.4.18/iptables/iptables-restore.c
  			"	   [ --table=<TABLE> ]\n"
  			"          [ --modprobe=<command>]\n", name);
  
-@@ -113,6 +118,17 @@
+@@ -114,6 +119,17 @@ static void free_argv(void) {
  		free(newargv[i]);
  }
  
@@ -138,11 +134,11 @@ Index: iptables-1.4.18/iptables/iptables-restore.c
 +	longjmp(jmp, status);
 +}
 +
- static void add_param_to_argv(char *parsestart)
- {
- 	int quote_open = 0, escaped = 0, param_len = 0;
-@@ -204,7 +220,7 @@
- 	init_extensions4();
+ #ifdef IPTABLES_MULTI
+ int
+ iptables_restore_main(int argc, char *argv[])
+@@ -144,7 +160,7 @@ main(int argc, char *argv[])
+ 	init_extensions();
  #endif
  
 -	while ((c = getopt_long(argc, argv, "bcvthnM:T:", options, NULL)) != -1) {
@@ -150,7 +146,7 @@ Index: iptables-1.4.18/iptables/iptables-restore.c
  		switch (c) {
  			case 'b':
  				binary = 1;
-@@ -225,6 +241,9 @@
+@@ -165,6 +181,9 @@ main(int argc, char *argv[])
  			case 'n':
  				noflush = 1;
  				break;
@@ -160,14 +156,14 @@ Index: iptables-1.4.18/iptables/iptables-restore.c
  			case 'M':
  				xtables_modprobe_program = optarg;
  				break;
-@@ -437,8 +456,11 @@
+@@ -445,8 +464,11 @@ main(int argc, char *argv[])
  			for (a = 0; a < newargc; a++)
  				DEBUGP("argv[%u]: %s\n", a, newargv[a]);
  
--			ret = do_command4(newargc, newargv,
+-			ret = do_command(newargc, newargv,
 -					 &newargv[2], &handle);
 +			if (!setjmp(jmp))
-+				ret = do_command4(newargc, newargv,
++				ret = do_command(newargc, newargv,
 +						 &newargv[2], &handle);
 +			else
 +				ret = 1;
