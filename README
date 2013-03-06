@@ -6,9 +6,10 @@ configuration for the toolchain and firmware.
 You need to have installed gcc, binutils, patch, bzip2, flex,
 make, gettext, pkg-config, unzip, libz-dev and libc headers.
 
-Run "./scripts/feeds update" to get the latest package definitions
+Run "./scripts/feeds update -a" to get all the latest package definitions
 defined in feeds.conf / feeds.conf.default respectively
-and "./scripts/feeds install" to install symlinks into "package/feeds/*".
+and "./scripts/feeds install -a" to install symlinks of all of them into
+package/feeds/.
 
 Use "make menuconfig" to configure your image.
 
