@@ -39,6 +39,8 @@ $(eval $(call Require,case-sensitive-fs, \
 ))
 
 define Require/getopt
+	gnugetopt --help 2>&1 | grep long >/dev/null || \
+	/usr/local/bin/getopt --help 2>&1 | grep long >/dev/null || \
 	getopt --help 2>&1 | grep long >/dev/null
 endef
 $(eval $(call Require,getopt, \
@@ -134,15 +136,11 @@ $(eval $(call RequireCommand,bzip2, \
 	Please install bzip2. \
 ))
 
-$(eval $(call RequireCommand,patch, \
-	Please install patch. \
-))
-
 $(eval $(call RequireCommand,perl, \
 	Please install perl. \
 ))
 
-$(eval $(call RequireCommand,python, \
+$(eval $(call RequireCommand,$(PYTHON), \
 	Please install python. \
 ))
 

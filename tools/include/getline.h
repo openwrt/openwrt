@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(__linux__) && !(defined(__APPLE__) && __DARWIN_C_LEVEL >= 200809L)
+#if !defined(__linux__) && !defined(__OpenBSD__) && !(defined(__APPLE__) && __DARWIN_C_LEVEL >= 200809L)
 /*
  * Emulate glibc getline() via BSD fgetln().
  * Note that outsize is not changed unless memory is allocated.

@@ -15,12 +15,8 @@ PKG_MD5SUM:=f77adda60039ffa753f3c584a286f12b
 
 include $(INCLUDE_DIR)/host-build.mk
 
-GETOPT:=$(shell which getopt)
-
 HOST_CONFIGURE_ARGS += \
-	--with-patch=$(PATCH) \
-	--with-find=$(FIND) \
-	--with-getopt=$(GETOPT)
+	--with-find=$(FIND)
 
 define Host/Configure
 	cd $(HOST_BUILD_DIR) && autoconf

@@ -62,6 +62,9 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		PATCH=`which gpatch 2>/dev/null`; \
 		[ -n "$$PATCH" -a -x "$$PATCH" ] || PATCH=`which patch 2>/dev/null`; \
 		echo "PATCH:=$$PATCH" >> $@; \
+		PYTHON=`which python2.7 2>/dev/null`; \
+		[ -n "$$PYTHON" -a -x "$$PYTHON" ] || PYTHON=`which python 2>/dev/null`; \
+		echo "PYTHON:=$$PYTHON" >> $@; \
 	)
 
 endif

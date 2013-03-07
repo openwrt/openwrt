@@ -1,0 +1,26 @@
+diff -Nur squashfs4.2.orig/squashfs-tools/mksquashfs.c squashfs4.2/squashfs-tools/mksquashfs.c
+--- squashfs4.2.orig/squashfs-tools/mksquashfs.c	Tue Mar  5 16:20:49 2013
++++ squashfs4.2/squashfs-tools/mksquashfs.c	Tue Mar  5 16:25:10 2013
+@@ -32,6 +32,9 @@
+ #include <stdio.h>
+ #include <stddef.h>
+ #include <sys/time.h>
++#if defined(__OpenBSD__)
++#include <sys/param.h>
++#endif
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+diff -Nur squashfs4.2.orig/squashfs-tools/unsquashfs.h squashfs4.2/squashfs-tools/unsquashfs.h
+--- squashfs4.2.orig/squashfs-tools/unsquashfs.h	Tue Mar  5 16:20:49 2013
++++ squashfs4.2/squashfs-tools/unsquashfs.h	Tue Mar  5 16:25:57 2013
+@@ -25,6 +25,9 @@
+ #define TRUE 1
+ #define FALSE 0
+ #include <stdio.h>
++#if defined(__OpenBSD__)
++#include <sys/param.h>
++#endif
+ #include <sys/types.h>
+ #include <unistd.h>
+ #include <stdlib.h>
