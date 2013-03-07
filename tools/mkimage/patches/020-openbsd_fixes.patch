@@ -1,0 +1,19 @@
+diff -Nur u-boot-2012.04.01.orig/tools/mkimage.c u-boot-2012.04.01/tools/mkimage.c
+--- u-boot-2012.04.01.orig/tools/mkimage.c	Wed Apr 25 15:22:50 2012
++++ u-boot-2012.04.01/tools/mkimage.c	Wed Mar  6 17:09:29 2013
+@@ -449,6 +449,7 @@
+ #if defined(_POSIX_SYNCHRONIZED_IO) && \
+    !defined(__sun__) && \
+    !defined(__FreeBSD__) && \
++   !defined(__OpenBSD__) && \
+    !defined(__APPLE__)
+ 	(void) fdatasync (ifd);
+ #else
+@@ -492,6 +493,7 @@
+ #if defined(_POSIX_SYNCHRONIZED_IO) && \
+    !defined(__sun__) && \
+    !defined(__FreeBSD__) && \
++   !defined(__OpenBSD__) && \
+    !defined(__APPLE__)
+ 	(void) fdatasync (ifd);
+ #else

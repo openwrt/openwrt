@@ -1,0 +1,1 @@
+env PACKAGESITE=ftp://ftp.freebsd.org/pub/FreeBSD/ports/amd64/packages-9.0-release/All/ pkg_add -r gmake-3.82.tbz bash-4.1.11.tbz python27-2.7.2_3.tbz gtar-1.26.tbz findutils-4.5.10_2.tbz coreutils-8.12.tbz getopt-1.1.4_2.tbz wget-1.13.4_1.tbz gnugrep-2.9.tbz gawk-4.0.0.tbz

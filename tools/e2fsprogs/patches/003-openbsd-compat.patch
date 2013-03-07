@@ -1,0 +1,24 @@
+diff -Nur e2fsprogs-1.42.7.orig/lib/blkid/getsize.c e2fsprogs-1.42.7/lib/blkid/getsize.c
+--- e2fsprogs-1.42.7.orig/lib/blkid/getsize.c	Fri Nov 30 03:40:18 2012
++++ e2fsprogs-1.42.7/lib/blkid/getsize.c	Thu Mar  7 14:21:59 2013
+@@ -26,6 +26,9 @@
+ #include <fcntl.h>
+ #ifdef HAVE_SYS_IOCTL_H
+ #include <sys/ioctl.h>
++#ifdef __OpenBSD__
++#include <sys/dkio.h>
++#endif
+ #endif
+ #ifdef HAVE_LINUX_FD_H
+ #include <linux/fd.h>
+diff -Nur e2fsprogs-1.42.7.orig/lib/quota/mkquota.c e2fsprogs-1.42.7/lib/quota/mkquota.c
+--- e2fsprogs-1.42.7.orig/lib/quota/mkquota.c	Wed Jan  2 01:47:20 2013
++++ e2fsprogs-1.42.7/lib/quota/mkquota.c	Thu Mar  7 14:21:59 2013
+@@ -8,6 +8,7 @@
+ #include <sys/stat.h>
+ #include <unistd.h>
+ #include <errno.h>
++#include <stdint.h>
+ #include <string.h>
+ #include <fcntl.h>
+ 

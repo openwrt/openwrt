@@ -71,7 +71,7 @@ HOST_CONFIGURE_ARGS = \
 
 HOST_MAKE_FLAGS =
 
-HOST_CONFIGURE_CMD = ./configure
+HOST_CONFIGURE_CMD = $(BASH) ./configure
 
 ifneq ($(HOST_OS),Darwin)
   ifeq ($(CONFIG_BUILD_STATIC_TOOLS),y)
