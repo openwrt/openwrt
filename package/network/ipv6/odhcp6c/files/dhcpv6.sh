@@ -10,6 +10,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string "clientid"
 	proto_config_add_string "reqopts"
 	proto_config_add_string "noslaaconly"
+	proto_config_add_string "norelease"
 	proto_config_add_string "ip6prefix"
 }
 
@@ -17,8 +18,8 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts noslaaconly ip6prefix
-	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly ip6prefix
+	local reqaddress reqprefix clientid reqopts noslaaconly norelease ip6prefix
+	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly norelease ip6prefix
 
 
 	# Configure
@@ -31,6 +32,8 @@ proto_dhcpv6_setup() {
 	[ -n "$clientid" ] && append opts "-c$clientid"
 
 	[ "$noslaaconly" = "1" ] && append opts "-S"
+
+	[ "$norelease" = "1" ] && append opts "-k"
 
 	for opt in $reqopts; do
 		append opts "-r$opt"
