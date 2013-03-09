@@ -259,7 +259,7 @@ static irqreturn_t cns3xxx_i2c_isr(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int __devinit cns3xxx_i2c_probe(struct platform_device *pdev)
+static int cns3xxx_i2c_probe(struct platform_device *pdev)
 {
 	struct cns3xxx_i2c *i2c;
 	struct resource *res, *res2;
@@ -331,7 +331,7 @@ static int __devinit cns3xxx_i2c_probe(struct platform_device *pdev)
 	return ret;
 }
 
-static int __devexit cns3xxx_i2c_remove(struct platform_device *pdev)
+static int cns3xxx_i2c_remove(struct platform_device *pdev)
 {
 	struct cns3xxx_i2c *i2c = platform_get_drvdata(pdev);
 	struct resource *res;

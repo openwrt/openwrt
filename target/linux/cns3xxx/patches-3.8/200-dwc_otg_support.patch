@@ -1,0 +1,48 @@
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -81,6 +81,7 @@ obj-$(CONFIG_PARIDE) 		+= block/paride/
+ obj-$(CONFIG_TC)		+= tc/
+ obj-$(CONFIG_UWB)		+= uwb/
+ obj-$(CONFIG_USB_OTG_UTILS)	+= usb/
++obj-$(CONFIG_USB_DWC_OTG)	+= usb/dwc/
+ obj-$(CONFIG_USB)		+= usb/
+ obj-$(CONFIG_PCI)		+= usb/
+ obj-$(CONFIG_USB_GADGET)	+= usb/
+--- a/drivers/usb/Kconfig
++++ b/drivers/usb/Kconfig
+@@ -138,6 +138,8 @@ source "drivers/usb/chipidea/Kconfig"
+ 
+ source "drivers/usb/renesas_usbhs/Kconfig"
+ 
++source "drivers/usb/dwc/Kconfig"
++
+ source "drivers/usb/class/Kconfig"
+ 
+ source "drivers/usb/storage/Kconfig"
+--- a/drivers/usb/core/urb.c
++++ b/drivers/usb/core/urb.c
+@@ -17,7 +17,11 @@ static void urb_destroy(struct kref *kre
+ 
+ 	if (urb->transfer_flags & URB_FREE_BUFFER)
+ 		kfree(urb->transfer_buffer);
+-
++	if (urb->aligned_transfer_buffer) {
++		kfree(urb->aligned_transfer_buffer);
++		urb->aligned_transfer_buffer = 0;
++		urb->aligned_transfer_dma = 0;
++	}
+ 	kfree(urb);
+ }
+ 
+--- a/include/linux/usb.h
++++ b/include/linux/usb.h
+@@ -1401,6 +1401,9 @@ struct urb {
+ 	unsigned int transfer_flags;	/* (in) URB_SHORT_NOT_OK | ...*/
+ 	void *transfer_buffer;		/* (in) associated data buffer */
+ 	dma_addr_t transfer_dma;	/* (in) dma addr for transfer_buffer */
++	void *aligned_transfer_buffer;	/* (in) associeated data buffer */
++	dma_addr_t aligned_transfer_dma;/* (in) dma addr for transfer_buffer */
++	u32 aligned_transfer_buffer_length; /* (in) data buffer length */
+ 	struct scatterlist *sg;		/* (in) scatter gather buffer list */
+ 	int num_mapped_sgs;		/* (internal) mapped sg entries */
+ 	int num_sgs;			/* (in) number of entries in the sg list */

@@ -1,0 +1,57 @@
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -130,6 +130,13 @@ config SPI_CLPS711X
+ 	  This enables dedicated general purpose SPI/Microwire1-compatible
+ 	  master mode interface (SSI1) for CLPS711X-based CPUs.
+ 
++config SPI_CNS3XXX
++	tristate "CNS3XXX SPI controller"
++	depends on ARCH_CNS3XXX && SPI_MASTER
++	select SPI_BITBANG
++	help
++	  This enables using the CNS3XXX SPI controller in master mode.
++
+ config SPI_COLDFIRE_QSPI
+ 	tristate "Freescale Coldfire QSPI controller"
+ 	depends on (M520x || M523x || M5249 || M525x || M527x || M528x || M532x)
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_SPI_BFIN5XX)		+= spi-bfin5x
+ obj-$(CONFIG_SPI_BFIN_SPORT)		+= spi-bfin-sport.o
+ obj-$(CONFIG_SPI_BITBANG)		+= spi-bitbang.o
+ obj-$(CONFIG_SPI_BUTTERFLY)		+= spi-butterfly.o
++obj-$(CONFIG_SPI_CNS3XXX)		+= spi-cns3xxx.o
+ obj-$(CONFIG_SPI_CLPS711X)		+= spi-clps711x.o
+ obj-$(CONFIG_SPI_COLDFIRE_QSPI)		+= spi-coldfire-qspi.o
+ obj-$(CONFIG_SPI_DAVINCI)		+= spi-davinci.o
+--- a/drivers/spi/spi-bitbang.c
++++ b/drivers/spi/spi-bitbang.c
+@@ -328,6 +328,12 @@ static void bitbang_work(struct work_str
+ 				 */
+ 				if (!m->is_dma_mapped)
+ 					t->rx_dma = t->tx_dma = 0;
++
++				if (t->transfer_list.next == &m->transfers)
++					t->last_in_message_list = 1;
++				else
++					t->last_in_message_list = 0;
++
+ 				status = bitbang->txrx_bufs(spi, t);
+ 			}
+ 			if (status > 0)
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -511,6 +511,13 @@ struct spi_transfer {
+ 	u32		speed_hz;
+ 
+ 	struct list_head transfer_list;
++
++#ifdef CONFIG_ARCH_CNS3XXX
++	unsigned	last_in_message_list;
++#ifdef CONFIG_SPI_CNS3XXX_2IOREAD
++	u8	dio_read;
++#endif
++#endif
+ };
+ 
+ /**

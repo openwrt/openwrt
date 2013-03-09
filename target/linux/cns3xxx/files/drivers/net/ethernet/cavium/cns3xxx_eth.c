@@ -629,7 +629,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		dma_unmap_single(NULL, rx_ring->phys_tab[i],
 				 RX_SEGMENT_MRU, DMA_FROM_DEVICE);
 
-		skb = build_skb(rx_ring->buff_tab[i]);
+		skb = build_skb(rx_ring->buff_tab[i], 0);
 		if (!skb)
 			break;
 
@@ -1153,7 +1153,7 @@ static const struct net_device_ops cns3xxx_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 };
 
-static int __devinit eth_init_one(struct platform_device *pdev)
+static int eth_init_one(struct platform_device *pdev)
 {
 	int i;
 	struct port *port;
@@ -1297,7 +1297,7 @@ err_free:
 	return err;
 }
 
-static int __devexit eth_remove_one(struct platform_device *pdev)
+static int eth_remove_one(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct sw *sw = netdev_priv(dev);
