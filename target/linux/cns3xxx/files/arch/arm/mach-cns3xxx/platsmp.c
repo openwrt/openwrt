@@ -49,12 +49,6 @@ struct cpu_cache_fns cpu_cache_save;
 #define SCU_CPU_STATUS 0x08
 static void __iomem *scu_base;
 
-/*
- * control for which core is the next to come out of the secondary
- * boot "holding pen"
- */
-volatile int __cpuinitdata pen_release = -1;
-
 static void __init cns3xxx_set_fiq_regs(void)
 {
 	struct pt_regs FIQ_regs;
@@ -108,7 +102,7 @@ static void __cpuinit write_pen_release(int val)
 
 static DEFINE_SPINLOCK(boot_lock);
 
-void __cpuinit platform_secondary_init(unsigned int cpu)
+static void __cpuinit cns3xxx_secondary_init(unsigned int cpu)
 {
 	/*
 	 * if any interrupts are already enabled for the primary
@@ -143,7 +137,7 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	spin_unlock(&boot_lock);
 }
 
-int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
+static int __cpuinit cns3xxx_boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
 	unsigned long timeout;
 
@@ -192,7 +186,7 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
  * Initialise the CPU possible map early - this describes the CPUs
  * which may be present or become present in the system.
  */
-void __init smp_init_cpus(void)
+static void __init cns3xxx_smp_init_cpus(void)
 {
 	unsigned int i, ncores;
 	unsigned int status;
@@ -214,7 +208,7 @@ void __init smp_init_cpus(void)
 	set_smp_cross_call(gic_raise_softirq);
 }
 
-void __init platform_smp_prepare_cpus(unsigned int max_cpus)
+static void __init cns3xxx_smp_prepare_cpus(unsigned int max_cpus)
 {
 	int i;
 
@@ -348,3 +342,10 @@ void smp_dma_flush_range(const void *start, const void *end)
 	}
 	raw_local_irq_restore(flags);
 }
+
+struct smp_operations cns3xxx_smp_ops __initdata = {
+	.smp_init_cpus      = cns3xxx_smp_init_cpus,
+	.smp_prepare_cpus   = cns3xxx_smp_prepare_cpus,
+	.smp_secondary_init = cns3xxx_secondary_init,
+	.smp_boot_secondary = cns3xxx_boot_secondary,
+};

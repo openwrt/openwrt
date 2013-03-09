@@ -820,7 +820,7 @@ struct free_param {
 	dma_addr_t dma_addr;
 	uint32_t size;
 };
-void free_list_agent_fn(void *data){
+static void free_list_agent_fn(struct work_struct *work) {
 	struct list_head free_list;
 	struct free_param *cur,*next;
 
@@ -830,7 +830,7 @@ void free_list_agent_fn(void *data){
 	spin_unlock(&tofree_list_lock);
 
 	list_for_each_entry_safe(cur,next,&free_list,list){
-		if(cur==&free_list) break;
+		if(&cur->list==&free_list) break;
 		dma_free_coherent(NULL,cur->size,cur->addr,cur->dma_addr);
 		list_del(&cur->list);
 		kfree(cur);

@@ -1,0 +1,19 @@
+--- a/arch/arm/mach-cns3xxx/core.c
++++ b/arch/arm/mach-cns3xxx/core.c
+@@ -58,6 +58,16 @@ static struct map_desc cns3xxx_io_desc[]
+ 		.pfn		= __phys_to_pfn(CNS3XXX_PM_BASE),
+ 		.length		= SZ_4K,
+ 		.type		= MT_DEVICE,
++	}, {
++		.virtual	= CNS3XXX_SWITCH_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_SWITCH_BASE),
++		.length		= SZ_4K,
++		.type		= MT_DEVICE,
++	}, {
++		.virtual	= CNS3XXX_SSP_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_SSP_BASE),
++		.length		= SZ_4K,
++		.type		= MT_DEVICE,
+ 	},
+ };
+ 

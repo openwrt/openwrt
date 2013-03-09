@@ -324,7 +324,7 @@ static void __init cns3xxx_spi_initial(void)
 	return;
 }
 
-static int __devinit cns3xxx_spi_probe(struct platform_device *pdev)
+static int cns3xxx_spi_probe(struct platform_device *pdev)
 {
 	struct spi_master *master;
 	struct cns3xxx_spi *hw;
@@ -384,7 +384,7 @@ err_nomem:
 	return err;
 }
 
-static int __devexit cns3xxx_spi_remove(struct platform_device *dev)
+static int cns3xxx_spi_remove(struct platform_device *dev)
 {
 	struct cns3xxx_spi *hw = platform_get_drvdata(dev);
 
@@ -419,7 +419,7 @@ static int cns3xxx_spi_resume(struct platform_device *pdev)
 
 static struct platform_driver cns3xxx_spi_driver = {
 	.probe		= cns3xxx_spi_probe,
-	.remove		= __devexit_p(cns3xxx_spi_remove),
+	.remove		= cns3xxx_spi_remove,
 	.suspend	= cns3xxx_spi_suspend,
 	.resume		= cns3xxx_spi_resume,
 	.driver		= {

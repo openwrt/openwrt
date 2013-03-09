@@ -1,0 +1,77 @@
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -368,6 +368,7 @@ config ARCH_CNS3XXX
+ 	select CLKDEV_LOOKUP
+ 	select CPU_CACHE_FORCE_MULTI
+ 	select HAVE_SMP
++	select FIQ
+ 	help
+ 	  Support for Cavium Networks CNS3XXX platform.
+ 
+--- a/arch/arm/kernel/fiq.c
++++ b/arch/arm/kernel/fiq.c
+@@ -49,6 +49,8 @@
+ 
+ static unsigned long no_fiq_insn;
+ 
++unsigned int fiq_number[2] = {0, 0};
++
+ /* Default reacquire function
+  * - we always relinquish FIQ control
+  * - we always reacquire FIQ control
+@@ -70,9 +72,12 @@ static struct fiq_handler *current_fiq =
+ 
+ int show_fiq_list(struct seq_file *p, int prec)
+ {
+-	if (current_fiq != &default_owner)
+-		seq_printf(p, "%*s:              %s\n", prec, "FIQ",
+-			current_fiq->name);
++	if (current_fiq != &default_owner) {
++		seq_printf(p, "%*s: ", prec, "FIQ");
++		seq_printf(p, "%10u ", fiq_number[0]);
++		seq_printf(p, "%10u ", fiq_number[1]);
++		seq_printf(p, "      %s\n", current_fiq->name);
++	}
+ 
+ 	return 0;
+ }
+--- a/arch/arm/mach-cns3xxx/Makefile
++++ b/arch/arm/mach-cns3xxx/Makefile
+@@ -1,5 +1,5 @@
+ obj-$(CONFIG_ARCH_CNS3XXX)		+= core.o pm.o devices.o
+ obj-$(CONFIG_PCI)			+= pcie.o
+ obj-$(CONFIG_MACH_CNS3420VB)		+= cns3420vb.o
+-obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o
++obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o cns3xxx_fiq.o
+ obj-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o
+--- a/arch/arm/mach-cns3xxx/include/mach/cns3xxx.h
++++ b/arch/arm/mach-cns3xxx/include/mach/cns3xxx.h
+@@ -294,6 +294,7 @@
+ #define MISC_PCIE_INT_MASK(x)			MISC_MEM_MAP(0x978 + (x) * 0x100)
+ #define MISC_PCIE_INT_STATUS(x)			MISC_MEM_MAP(0x97C + (x) * 0x100)
+ 
++#define MISC_FIQ_CPU(x)				MISC_MEM_MAP(0xA58 - (x) * 0x4)
+ /*
+  * Power management and clock control
+  */
+--- a/arch/arm/mach-cns3xxx/include/mach/irqs.h
++++ b/arch/arm/mach-cns3xxx/include/mach/irqs.h
+@@ -14,6 +14,7 @@
+ #define IRQ_LOCALTIMER		29
+ #define IRQ_LOCALWDOG		30
+ #define IRQ_TC11MP_GIC_START	32
++#define FIQ_START 0
+ 
+ #include <mach/cns3xxx.h>
+ 
+--- a/arch/arm/mm/Kconfig
++++ b/arch/arm/mm/Kconfig
+@@ -773,7 +773,7 @@ config NEEDS_SYSCALL_FOR_CMPXCHG
+ 
+ config DMA_CACHE_RWFO
+ 	bool "Enable read/write for ownership DMA cache maintenance"
+-	depends on CPU_V6K && SMP
++	depends on CPU_V6K && SMP && !ARCH_CNS3XXX
+ 	default y
+ 	help
+ 	  The Snoop Control Unit on ARM11MPCore does not detect the

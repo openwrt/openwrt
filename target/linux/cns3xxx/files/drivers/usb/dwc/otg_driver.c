@@ -636,7 +636,7 @@ static int dwc_otg_driver_cleanup(struct platform_device *pdev)
  *
  * @param[in] lmdev  lm_device definition
  */
-static int __devinit dwc_otg_driver_probe(struct platform_device *pdev)
+static int dwc_otg_driver_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	int retval = 0;
@@ -795,7 +795,7 @@ static int __devinit dwc_otg_driver_probe(struct platform_device *pdev)
 	return retval;
 }
 
-static int __devexit dwc_otg_driver_remove(struct platform_device *pdev)
+static int dwc_otg_driver_remove(struct platform_device *pdev)
 {
 	return dwc_otg_driver_cleanup(pdev);
 }
@@ -803,7 +803,7 @@ static int __devexit dwc_otg_driver_remove(struct platform_device *pdev)
 static struct platform_driver dwc_otg_platform_driver = {
 	.driver.name = "dwc_otg",
 	.probe = dwc_otg_driver_probe,
-	.remove = __devexit_p(dwc_otg_driver_remove),
+	.remove = dwc_otg_driver_remove,
 };
 
 static int __init dwc_otg_init_module(void)
