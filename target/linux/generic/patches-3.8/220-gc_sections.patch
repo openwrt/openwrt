@@ -409,6 +409,15 @@
  	VMLINUX_SYMBOL(__idmap_text_end) = .;
  
  #ifdef CONFIG_HOTPLUG_CPU
+@@ -93,7 +93,7 @@ SECTIONS
+ 	.text : {			/* Real text segment		*/
+ 		_stext = .;		/* Text and read-only data	*/
+ 			__exception_text_start = .;
+-			*(.exception.text)
++			KEEP(*(.exception.text))
+ 			__exception_text_end = .;
+ 			IRQENTRY_TEXT
+ 			TEXT_TEXT
 @@ -118,7 +118,7 @@ SECTIONS
  	__ex_table : AT(ADDR(__ex_table) - LOAD_OFFSET) {
  		__start___ex_table = .;
