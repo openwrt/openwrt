@@ -516,17 +516,19 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 	for (received += rx_ring->alloc_count; received > 0; received--) {
 		buf = kzalloc(RX_SEGMENT_ALLOC_SIZE, GFP_ATOMIC);
 		if (!buf)
-			goto out;
+			break;
 
 		phys = dma_map_single(NULL, buf + SKB_HEAD_ALIGN,
 				      RX_SEGMENT_MRU, DMA_FROM_DEVICE);
 		if (dma_mapping_error(NULL, phys)) {
 			kfree(buf);
-			goto out;
+			break;
 		}
 
 		desc->sdl = RX_SEGMENT_MRU;
 		desc->sdp = phys;
+
+		wmb();
 
 		/* put the new buffer on RX-free queue */
 		rx_ring->buff_tab[i] = buf;
@@ -543,7 +545,7 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 			desc++;
 		}
 	}
-out:
+
 	rx_ring->alloc_count = received;
 	rx_ring->alloc_index = i;
 }
@@ -713,6 +715,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		enable_irq(IRQ_CNS3XXX_SW_R0RXC);
 	}
 
+	wmb();
 	enable_rx_dma(sw);
 
 	spin_lock_bh(&tx_lock);
@@ -739,7 +742,7 @@ static void eth_set_desc(struct _tx_ring *tx_ring, int index, int index_last,
 	if (index == index_last)
 		config0 |= LAST_SEGMENT;
 
-	mb();
+	wmb();
 	tx_desc->config0 = config0;
 }
 
@@ -812,7 +815,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 	eth_set_desc(tx_ring, index0, index_last, skb->data, len0,
 		     config0 | FIRST_SEGMENT, pmap);
 
-	mb();
+	wmb();
 
 	spin_lock(&tx_lock);
 	tx_ring->num_used += nr_desc + 1;
