@@ -26,7 +26,7 @@
 
 #define DRV_NAME "cns3xxx_eth"
 
-#define RX_DESCS 128
+#define RX_DESCS 256
 #define TX_DESCS 128
 #define TX_DESC_RESERVE	20
 
