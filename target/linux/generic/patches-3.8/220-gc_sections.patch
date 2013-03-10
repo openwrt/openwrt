@@ -471,3 +471,13 @@
  		__pv_table_end = .;
  	}
  	.init.data : {
+--- a/arch/arm/boot/compressed/Makefile
++++ b/arch/arm/boot/compressed/Makefile
+@@ -119,6 +119,7 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
+ ORIG_CFLAGS := $(KBUILD_CFLAGS)
+ KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
+ endif
++KBUILD_CFLAGS_KERNEL := $(patsubst -f%-sections,,$(KBUILD_CFLAGS_KERNEL))
+ 
+ ccflags-y := -fpic -fno-builtin -I$(obj)
+ asflags-y := -Wa,-march=all -DZIMAGE
