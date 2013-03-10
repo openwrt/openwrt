@@ -514,7 +514,7 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 	unsigned int phys;
 
 	for (received += rx_ring->alloc_count; received > 0; received--) {
-		buf = kzalloc(RX_SEGMENT_ALLOC_SIZE, GFP_ATOMIC);
+		buf = kmalloc(RX_SEGMENT_ALLOC_SIZE, GFP_ATOMIC);
 		if (!buf)
 			break;
 
