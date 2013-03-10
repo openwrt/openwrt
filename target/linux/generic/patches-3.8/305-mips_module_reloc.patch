@@ -12,8 +12,8 @@
 +KBUILD_CFLAGS_MODULE		+= -mno-long-calls
 +endif
  
+ ifndef CONFIG_FUNCTION_TRACER
  KBUILD_CFLAGS_KERNEL		+= -ffunction-sections -fdata-sections
- 
 --- a/arch/mips/include/asm/module.h
 +++ b/arch/mips/include/asm/module.h
 @@ -11,6 +11,11 @@ struct mod_arch_specific {

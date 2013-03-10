@@ -1,6 +1,6 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -89,10 +89,12 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
+@@ -89,10 +89,14 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
  #
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
  cflags-y			+= -msoft-float
@@ -9,7 +9,9 @@
  KBUILD_AFLAGS_MODULE		+= -mlong-calls
  KBUILD_CFLAGS_MODULE		+= -mlong-calls
  
++ifndef CONFIG_FUNCTION_TRACER
 +KBUILD_CFLAGS_KERNEL		+= -ffunction-sections -fdata-sections
++endif
 +
  cflags-y += -ffreestanding
  
@@ -370,3 +372,93 @@
  #else
  #define INIT_RAM_FS
  #endif
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -17,11 +17,16 @@ LDFLAGS_vmlinux	:=-p --no-undefined -X
+ ifeq ($(CONFIG_CPU_ENDIAN_BE8),y)
+ LDFLAGS_vmlinux	+= --be8
+ endif
++LDFLAGS_vmlinux += --gc-sections
+ 
+ OBJCOPYFLAGS	:=-O binary -R .comment -S
+ GZFLAGS		:=-9
+ #KBUILD_CFLAGS	+=-pipe
+ 
++ifndef CONFIG_FUNCTION_TRACER
++KBUILD_CFLAGS_KERNEL += -ffunction-sections -fdata-sections
++endif
++
+ # Never generate .eh_frame
+ KBUILD_CFLAGS	+= $(call cc-option,-fno-dwarf2-cfi-asm)
+ 
+--- a/arch/arm/kernel/vmlinux.lds.S
++++ b/arch/arm/kernel/vmlinux.lds.S
+@@ -12,13 +12,13 @@
+ #define PROC_INFO							\
+ 	. = ALIGN(4);							\
+ 	VMLINUX_SYMBOL(__proc_info_begin) = .;				\
+-	*(.proc.info.init)						\
++	KEEP(*(.proc.info.init))					\
+ 	VMLINUX_SYMBOL(__proc_info_end) = .;
+ 
+ #define IDMAP_TEXT							\
+ 	ALIGN_FUNCTION();						\
+ 	VMLINUX_SYMBOL(__idmap_text_start) = .;				\
+-	*(.idmap.text)							\
++	KEEP(*(.idmap.text))						\
+ 	VMLINUX_SYMBOL(__idmap_text_end) = .;
+ 
+ #ifdef CONFIG_HOTPLUG_CPU
+@@ -118,7 +118,7 @@ SECTIONS
+ 	__ex_table : AT(ADDR(__ex_table) - LOAD_OFFSET) {
+ 		__start___ex_table = .;
+ #ifdef CONFIG_MMU
+-		*(__ex_table)
++		KEEP(*(__ex_table))
+ #endif
+ 		__stop___ex_table = .;
+ 	}
+@@ -130,12 +130,12 @@ SECTIONS
+ 	. = ALIGN(8);
+ 	.ARM.unwind_idx : {
+ 		__start_unwind_idx = .;
+-		*(.ARM.exidx*)
++		KEEP(*(.ARM.exidx*))
+ 		__stop_unwind_idx = .;
+ 	}
+ 	.ARM.unwind_tab : {
+ 		__start_unwind_tab = .;
+-		*(.ARM.extab*)
++		KEEP(*(.ARM.extab*))
+ 		__stop_unwind_tab = .;
+ 	}
+ #endif
+@@ -158,24 +158,24 @@ SECTIONS
+ 	}
+ 	.init.arch.info : {
+ 		__arch_info_begin = .;
+-		*(.arch.info.init)
++		KEEP(*(.arch.info.init))
+ 		__arch_info_end = .;
+ 	}
+ 	.init.tagtable : {
+ 		__tagtable_begin = .;
+-		*(.taglist.init)
++		KEEP(*(.taglist.init))
+ 		__tagtable_end = .;
+ 	}
+ #ifdef CONFIG_SMP_ON_UP
+ 	.init.smpalt : {
+ 		__smpalt_begin = .;
+-		*(.alt.smp.init)
++		KEEP(*(.alt.smp.init))
+ 		__smpalt_end = .;
+ 	}
+ #endif
+ 	.init.pv_table : {
+ 		__pv_table_begin = .;
+-		*(.pv_table)
++		KEEP(*(.pv_table))
+ 		__pv_table_end = .;
+ 	}
+ 	.init.data : {
