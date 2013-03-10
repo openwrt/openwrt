@@ -706,14 +706,14 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		}
 	}
 
-	cns3xxx_alloc_rx_buf(sw, received);
-
-	rx_ring->cur_index = i;
-
-	if (received != budget) {
+	if (!received) {
 		napi_complete(napi);
 		enable_irq(IRQ_CNS3XXX_SW_R0RXC);
 	}
+
+	cns3xxx_alloc_rx_buf(sw, received);
+
+	rx_ring->cur_index = i;
 
 	wmb();
 	enable_rx_dma(sw);
