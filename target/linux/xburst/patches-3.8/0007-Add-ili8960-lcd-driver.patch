@@ -186,7 +186,7 @@ Subject: [PATCH 07/21] Add ili8960 lcd driver
 +	.set_mode = ili8960_set_mode,
 +};
 +
-+static int __devinit ili8960_probe(struct spi_device *spi)
++static int ili8960_probe(struct spi_device *spi)
 +{
 +	int ret;
 +	struct ili8960 *ili8960;
@@ -236,7 +236,7 @@ Subject: [PATCH 07/21] Add ili8960 lcd driver
 +	return ret;
 +}
 +
-+static int __devexit ili8960_remove(struct spi_device *spi)
++static int ili8960_remove(struct spi_device *spi)
 +{
 +	struct ili8960 *ili8960 = spi_get_drvdata(spi);
 +
@@ -281,7 +281,7 @@ Subject: [PATCH 07/21] Add ili8960 lcd driver
 +		.owner = THIS_MODULE,
 +	},
 +	.probe = ili8960_probe,
-+	.remove = __devexit_p(ili8960_remove),
++	.remove = ili8960_remove,
 +	.suspend = ili8960_suspend,
 +	.resume = ili8960_resume,
 +};
