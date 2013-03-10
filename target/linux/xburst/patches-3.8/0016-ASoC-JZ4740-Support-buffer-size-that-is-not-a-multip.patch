@@ -1,0 +1,89 @@
+From 8a5087fe59e31efb8641e704058328997c3c8ff1 Mon Sep 17 00:00:00 2001
+From: Maarten ter Huurne <maarten@treewalker.org>
+Date: Wed, 10 Aug 2011 00:25:11 +0200
+Subject: [PATCH 16/21] ASoC: JZ4740: Support buffer size that is not a
+ multiple of period size.
+
+This fixes glitches triggered by libao, which sets time-based intervals
+instead of byte-based intervals like SDL does.
+
+Thanks to Paul Cercueil for figuring out that the buffer size was causing
+the glitches and to Lars Clausen for helping me write the fix.
+---
+ sound/soc/jz4740/jz4740-pcm.c |   21 ++++++++++++++++++---
+ 1 files changed, 18 insertions(+), 3 deletions(-)
+
+--- a/sound/soc/jz4740/jz4740-pcm.c
++++ b/sound/soc/jz4740/jz4740-pcm.c
+@@ -31,6 +31,7 @@
+ 
+ struct jz4740_runtime_data {
+ 	unsigned long dma_period;
++	unsigned long dma_period_left;
+ 	dma_addr_t dma_start;
+ 	dma_addr_t dma_pos;
+ 	dma_addr_t dma_end;
+@@ -67,10 +68,13 @@ static void jz4740_pcm_start_transfer(st
+ 	if (prtd->dma_pos == prtd->dma_end)
+ 		prtd->dma_pos = prtd->dma_start;
+ 
+-	if (prtd->dma_pos + prtd->dma_period > prtd->dma_end)
++	if (prtd->dma_period_left == 0)
++		prtd->dma_period_left = prtd->dma_period;
++
++	if (prtd->dma_pos + prtd->dma_period_left > prtd->dma_end)
+ 		count = prtd->dma_end - prtd->dma_pos;
+ 	else
+-		count = prtd->dma_period;
++		count = prtd->dma_period_left;
+ 
+ 	jz4740_dma_disable(prtd->dma);
+ 
+@@ -85,6 +89,7 @@ static void jz4740_pcm_start_transfer(st
+ 	jz4740_dma_set_transfer_count(prtd->dma, count);
+ 
+ 	prtd->dma_pos += count;
++	prtd->dma_period_left -= count;
+ 
+ 	jz4740_dma_enable(prtd->dma);
+ }
+@@ -96,7 +101,8 @@ static void jz4740_pcm_dma_transfer_done
+ 	struct snd_pcm_runtime *runtime = substream->runtime;
+ 	struct jz4740_runtime_data *prtd = runtime->private_data;
+ 
+-	snd_pcm_period_elapsed(substream);
++	if (prtd->dma_period_left == 0)
++		snd_pcm_period_elapsed(substream);
+ 
+ 	jz4740_pcm_start_transfer(prtd, substream);
+ }
+@@ -133,6 +139,7 @@ static int jz4740_pcm_hw_params(struct s
+ 	runtime->dma_bytes = params_buffer_bytes(params);
+ 
+ 	prtd->dma_period = params_period_bytes(params);
++	prtd->dma_period_left = 0;
+ 	prtd->dma_start = runtime->dma_addr;
+ 	prtd->dma_pos = prtd->dma_start;
+ 	prtd->dma_end = prtd->dma_start + runtime->dma_bytes;
+@@ -160,6 +167,7 @@ static int jz4740_pcm_prepare(struct snd
+ 	if (!prtd->dma)
+ 		return -EBUSY;
+ 
++	prtd->dma_period_left = 0;
+ 	prtd->dma_pos = prtd->dma_start;
+ 
+ 	return 0;
+@@ -219,6 +227,13 @@ static int jz4740_pcm_open(struct snd_pc
+ 	if (prtd == NULL)
+ 		return -ENOMEM;
+ 
++	/* Force period and buffer size to be a multiple of the DMA transfer
++	 * size, which is 16 bytes. */
++	snd_pcm_hw_constraint_step(runtime, 0,
++				   SNDRV_PCM_HW_PARAM_PERIOD_BYTES, 16);
++	snd_pcm_hw_constraint_step(runtime, 0,
++				   SNDRV_PCM_HW_PARAM_BUFFER_BYTES, 16);
++
+ 	snd_soc_set_runtime_hwparams(substream, &jz4740_pcm_hardware);
+ 
+ 	runtime->private_data = prtd;

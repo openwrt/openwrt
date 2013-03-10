@@ -1,0 +1,351 @@
+From 27ff621cd9a5347efda4be502abbef13a99146ce Mon Sep 17 00:00:00 2001
+From: Maarten ter Huurne <maarten@treewalker.org>
+Date: Sun, 29 Aug 2010 08:11:00 +0200
+Subject: [PATCH 11/21] MIPS: JZ4740: Added setting of PLL rate and main
+ dividers.
+
+This functionality makes a cpufreq driver possible.
+Squashed version of the development done in the jz-2.6.39 branch.
+---
+ arch/mips/jz4740/clock.c |  230 ++++++++++++++++++++++++++++++++++++++++++++--
+ arch/mips/jz4740/clock.h |    4 +
+ 2 files changed, 224 insertions(+), 10 deletions(-)
+
+--- a/arch/mips/jz4740/clock.c
++++ b/arch/mips/jz4740/clock.c
+@@ -1,5 +1,8 @@
+ /*
++ *  Copyright (c) 2006-2007, Ingenic Semiconductor Inc.
+  *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
++ *  Copyright (c) 2010, Ulrich Hecht <ulrich.hecht@gmail.com>
++ *  Copyright (c) 2010, Maarten ter Huurne <maarten@treewalker.org>
+  *  JZ4740 SoC clock support
+  *
+  *  This program is free software; you can redistribute it and/or modify it
+@@ -41,16 +44,20 @@
+ #define JZ_CLOCK_CTRL_I2S_SRC_PLL	BIT(31)
+ #define JZ_CLOCK_CTRL_KO_ENABLE		BIT(30)
+ #define JZ_CLOCK_CTRL_UDC_SRC_PLL	BIT(29)
+-#define JZ_CLOCK_CTRL_UDIV_MASK		0x1f800000
+ #define JZ_CLOCK_CTRL_CHANGE_ENABLE	BIT(22)
+ #define JZ_CLOCK_CTRL_PLL_HALF		BIT(21)
+-#define JZ_CLOCK_CTRL_LDIV_MASK		0x001f0000
+ #define JZ_CLOCK_CTRL_UDIV_OFFSET	23
+ #define JZ_CLOCK_CTRL_LDIV_OFFSET	16
+ #define JZ_CLOCK_CTRL_MDIV_OFFSET	12
+ #define JZ_CLOCK_CTRL_PDIV_OFFSET	 8
+ #define JZ_CLOCK_CTRL_HDIV_OFFSET	 4
+ #define JZ_CLOCK_CTRL_CDIV_OFFSET	 0
++#define JZ_CLOCK_CTRL_UDIV_MASK		(0x3f << JZ_CLOCK_CTRL_UDIV_OFFSET)
++#define JZ_CLOCK_CTRL_LDIV_MASK		(0x1f << JZ_CLOCK_CTRL_LDIV_OFFSET)
++#define JZ_CLOCK_CTRL_MDIV_MASK		(0x0f << JZ_CLOCK_CTRL_MDIV_OFFSET)
++#define JZ_CLOCK_CTRL_PDIV_MASK		(0x0f << JZ_CLOCK_CTRL_PDIV_OFFSET)
++#define JZ_CLOCK_CTRL_HDIV_MASK		(0x0f << JZ_CLOCK_CTRL_HDIV_OFFSET)
++#define JZ_CLOCK_CTRL_CDIV_MASK		(0x0f << JZ_CLOCK_CTRL_CDIV_OFFSET)
+ 
+ #define JZ_CLOCK_GATE_UART0	BIT(0)
+ #define JZ_CLOCK_GATE_TCU	BIT(1)
+@@ -90,6 +97,7 @@
+ #define JZ_CLOCK_PLL_M_OFFSET		23
+ #define JZ_CLOCK_PLL_N_OFFSET		18
+ #define JZ_CLOCK_PLL_OD_OFFSET		16
++#define JZ_CLOCK_PLL_STABILIZE_OFFSET	0
+ 
+ #define JZ_CLOCK_LOW_POWER_MODE_DOZE BIT(2)
+ #define JZ_CLOCK_LOW_POWER_MODE_SLEEP BIT(0)
+@@ -97,10 +105,15 @@
+ #define JZ_CLOCK_SLEEP_CTRL_SUSPEND_UHC BIT(7)
+ #define JZ_CLOCK_SLEEP_CTRL_ENABLE_UDC BIT(6)
+ 
++#define JZ_REG_EMC_RTCNT	0x88
++#define JZ_REG_EMC_RTCOR	0x8C
++
+ static void __iomem *jz_clock_base;
+ static spinlock_t jz_clock_lock;
+ static LIST_HEAD(jz_clocks);
+ 
++static void __iomem *jz_emc_base;
++
+ struct main_clk {
+ 	struct clk clk;
+ 	uint32_t div_offset;
+@@ -204,25 +217,88 @@ static int jz_clk_ko_is_enabled(struct c
+ 	return !!(jz_clk_reg_read(JZ_REG_CLOCK_CTRL) & JZ_CLOCK_CTRL_KO_ENABLE);
+ }
+ 
++static struct static_clk jz_clk_ext;
++
++static unsigned long jz_clk_pll_calc_rate(
++	unsigned int in_div, unsigned int feedback, unsigned int out_div)
++{
++	return ((jz_clk_ext.rate / in_div) * feedback) / out_div;
++}
++
++static void jz_clk_pll_calc_dividers(unsigned long rate,
++	unsigned int *in_div, unsigned int *feedback, unsigned int *out_div)
++{
++	unsigned int target;
++
++	/* The frequency after the input divider must be between 1 and 15 MHz.
++	   The highest divider yields the best resolution. */
++	*in_div = jz_clk_ext.rate / 1000000;
++	if (*in_div >= 34)
++		*in_div = 33;
++
++	/* The frequency before the output divider must be between 100 and
++	   500 MHz. The lowest target rate is more energy efficient. */
++	if (rate < 25000000) {
++		*out_div = 4;
++		target = 25000000 * 4;
++	} else if (rate <= 50000000) {
++		*out_div = 4;
++		target = rate * 4;
++	} else if (rate <= 100000000) {
++		*out_div = 2;
++		target = rate * 2;
++	} else if (rate <= 500000000) {
++		*out_div = 1;
++		target = rate;
++	} else {
++		*out_div = 1;
++		target = 500000000;
++	}
++
++	/* Compute the feedback divider.
++	   Since the divided input is at least 1 MHz and the target frequency
++	   at most 500 MHz, the feedback will be at most 500 and will therefore
++	   always fit in the 9-bit register.
++	   Similarly, the divided input is at most 15 MHz and the target
++	   frequency at least 100 MHz, so the feedback will be at least 6
++	   where the minimum supported value is 2. */
++	*feedback = ((target / 1000) * *in_div) / (jz_clk_ext.rate / 1000);
++}
++
++static unsigned long jz_clk_pll_round_rate(struct clk *clk, unsigned long rate)
++{
++	unsigned int in_div, feedback, out_div;
++	/* The PLL frequency must be a multiple of 24 MHz, since the LCD pixel
++	 * clock must be exactly 12 MHz for the TV-out to work.
++	 * TODO: A multiple of 12 MHz for the PLL would work if the PLL would
++	 *       not be divided by 2 before being passed to the set of derived
++	 *       clocks that includes the LCD pixel clock.
++	 * TODO: Systemwide decisions like this should be made by the board
++	 *       support code, so add some kind of hook for that.
++	 */
++	unsigned long rate24 = (rate / 24000000) * 24000000;
++
++	jz_clk_pll_calc_dividers(rate24, &in_div, &feedback, &out_div);
++	return jz_clk_pll_calc_rate(in_div, feedback, out_div);
++}
++
+ static const int pllno[] = {1, 2, 2, 4};
+ 
+ static unsigned long jz_clk_pll_get_rate(struct clk *clk)
+ {
+ 	uint32_t val;
+-	int m;
+-	int n;
+-	int od;
++	unsigned int in_div, feedback, out_div;
+ 
+ 	val = jz_clk_reg_read(JZ_REG_CLOCK_PLL);
+ 
+ 	if (val & JZ_CLOCK_PLL_BYPASS)
+ 		return clk_get_rate(clk->parent);
+ 
+-	m = ((val >> 23) & 0x1ff) + 2;
+-	n = ((val >> 18) & 0x1f) + 2;
+-	od = (val >> 16) & 0x3;
++	feedback = ((val >> 23) & 0x1ff) + 2;
++	in_div = ((val >> 18) & 0x1f) + 2;
++	out_div = pllno[(val >> 16) & 0x3];
+ 
+-	return ((clk_get_rate(clk->parent) / n) * m) / pllno[od];
++	return jz_clk_pll_calc_rate(in_div, feedback, out_div);
+ }
+ 
+ static unsigned long jz_clk_pll_half_get_rate(struct clk *clk)
+@@ -235,7 +311,77 @@ static unsigned long jz_clk_pll_half_get
+ 	return jz_clk_pll_get_rate(clk->parent) >> 1;
+ }
+ 
+-static const int jz_clk_main_divs[] = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32};
++#define SDRAM_TREF 15625   /* Refresh period: 4096 refresh cycles/64ms */
++
++static void sdram_set_pll(unsigned int pllin)
++{
++	unsigned int ns, sdramclock;
++
++	ns = 1000000000 / pllin;
++	sdramclock = (SDRAM_TREF / ns) / 64 + 1;
++	if (sdramclock > 0xff) sdramclock = 0xff;
++	/* Set refresh registers */
++	writew(sdramclock, jz_emc_base + JZ_REG_EMC_RTCOR);
++	writew(sdramclock, jz_emc_base + JZ_REG_EMC_RTCNT);
++}
++
++static int jz_clk_pll_set_rate(struct clk *clk, unsigned long rate)
++{
++	unsigned int ctrl, plcr1;
++	unsigned int feedback, in_div, out_div, pllout, pllout2;
++
++	jz_clk_pll_calc_dividers(rate, &in_div, &feedback, &out_div);
++
++	ctrl = jz_clk_reg_read(JZ_REG_CLOCK_CTRL);
++	pllout = jz_clk_pll_calc_rate(in_div, feedback, out_div);
++	pllout2 = (ctrl & JZ_CLOCK_CTRL_PLL_HALF) ? pllout : (pllout / 2);
++
++	/* Init UHC clock */
++	writel(pllout2 / 48000000 - 1, jz_clock_base + JZ_REG_CLOCK_UHC);
++
++	plcr1 = ((feedback - 2) << JZ_CLOCK_PLL_M_OFFSET) |
++		((in_div - 2) << JZ_CLOCK_PLL_N_OFFSET) |
++		((out_div - 1) << JZ_CLOCK_PLL_OD_OFFSET) |
++		(0x20 << JZ_CLOCK_PLL_STABILIZE_OFFSET) |
++		JZ_CLOCK_PLL_ENABLED;
++
++	sdram_set_pll(pllout);
++
++	/* LCD pixclock */
++	writel(pllout2 / 12000000 - 1, jz_clock_base + JZ_REG_CLOCK_LCD);
++
++	/* configure PLL */
++	__asm__ __volatile__(
++		".set noreorder\n\t"
++		".align 5\n"
++		"sw %1,0(%0)\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		".set reorder\n\t"
++		:
++		: "r" (jz_clock_base + JZ_REG_CLOCK_PLL), "r" (plcr1));
++
++	/* MtH: For some reason the MSC will have problems if this flag is not
++	        restored, even though the MSC is supposedly the only divider
++	        that is not affected by this flag. */
++	jz_clk_reg_set_bits(JZ_REG_CLOCK_CTRL, JZ_CLOCK_CTRL_CHANGE_ENABLE);
++
++	return 0;
++}
++
++static const unsigned int jz_clk_main_divs[] = {
++	1, 2, 3, 4, 6, 8, 12, 16, 24, 32
++};
++static const unsigned int jz_clk_main_divs_inv[] = {
++	-1,  0,  1,  2,  3, -1,  4, -1,  5, -1, -1, -1,  6, -1, -1, -1,
++	 7, -1, -1, -1, -1, -1, -1, -1,  8, -1, -1, -1, -1, -1, -1, -1,
++	 9
++};
+ 
+ static unsigned long jz_clk_main_round_rate(struct clk *clk, unsigned long rate)
+ {
+@@ -290,6 +436,64 @@ static int jz_clk_main_set_rate(struct c
+ 	return 0;
+ }
+ 
++static struct main_clk jz_clk_cpu;
++
++int clk_main_set_dividers(bool immediate, unsigned int cdiv, unsigned int hdiv,
++			  unsigned int mdiv, unsigned int pdiv)
++{
++	unsigned int cdiv_enc, hdiv_enc, mdiv_enc, pdiv_enc;
++	unsigned int ctrl;
++	unsigned int tmp, wait;
++
++	if (cdiv >= ARRAY_SIZE(jz_clk_main_divs_inv) ||
++	    hdiv >= ARRAY_SIZE(jz_clk_main_divs_inv) ||
++	    mdiv >= ARRAY_SIZE(jz_clk_main_divs_inv) ||
++	    pdiv >= ARRAY_SIZE(jz_clk_main_divs_inv))
++		return -EINVAL;
++	cdiv_enc = jz_clk_main_divs_inv[cdiv];
++	hdiv_enc = jz_clk_main_divs_inv[hdiv];
++	mdiv_enc = jz_clk_main_divs_inv[mdiv];
++	pdiv_enc = jz_clk_main_divs_inv[pdiv];
++	if (cdiv_enc == (unsigned int)-1 ||
++	    hdiv_enc == (unsigned int)-1 ||
++	    mdiv_enc == (unsigned int)-1 ||
++	    pdiv_enc == (unsigned int)-1)
++		return -EINVAL;
++
++	ctrl = jz_clk_reg_read(JZ_REG_CLOCK_CTRL);
++	ctrl &= ~(JZ_CLOCK_CTRL_CHANGE_ENABLE |
++		  JZ_CLOCK_CTRL_CDIV_MASK | JZ_CLOCK_CTRL_HDIV_MASK |
++		  JZ_CLOCK_CTRL_MDIV_MASK | JZ_CLOCK_CTRL_PDIV_MASK);
++	if (immediate) ctrl |= JZ_CLOCK_CTRL_CHANGE_ENABLE;
++	ctrl |= (cdiv_enc << JZ_CLOCK_CTRL_CDIV_OFFSET) |
++		(hdiv_enc << JZ_CLOCK_CTRL_HDIV_OFFSET) |
++		(mdiv_enc << JZ_CLOCK_CTRL_MDIV_OFFSET) |
++		(pdiv_enc << JZ_CLOCK_CTRL_PDIV_OFFSET);
++
++	/* set dividers */
++	/* delay loops lifted from the old Ingenic cpufreq driver */
++	wait = ((clk_get_rate(&jz_clk_cpu.clk) / 1000000) * 500) / 1000;
++	__asm__ __volatile__(
++		".set noreorder\n\t"
++		".align 5\n"
++		"sw %2,0(%1)\n\t"
++		"li %0,0\n\t"
++		"1:\n\t"
++		"bne %0,%3,1b\n\t"
++		"addi %0, 1\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		"nop\n\t"
++		".set reorder\n\t"
++		: "=r" (tmp)
++		: "r" (jz_clock_base + JZ_REG_CLOCK_CTRL), "r" (ctrl),
++		  "r" (wait));
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(clk_main_set_dividers);
++
+ static struct clk_ops jz_clk_static_ops = {
+ 	.get_rate = jz_clk_static_get_rate,
+ 	.enable = jz_clk_enable_gating,
+@@ -307,6 +511,8 @@ static struct static_clk jz_clk_ext = {
+ 
+ static struct clk_ops jz_clk_pll_ops = {
+ 	.get_rate = jz_clk_pll_get_rate,
++	.set_rate = jz_clk_pll_set_rate,
++	.round_rate = jz_clk_pll_round_rate,
+ };
+ 
+ static struct clk jz_clk_pll = {
+@@ -897,6 +1103,10 @@ static int jz4740_clock_init(void)
+ 	if (!jz_clock_base)
+ 		return -EBUSY;
+ 
++	jz_emc_base = ioremap(JZ4740_EMC_BASE_ADDR, 0x100);
++	if (!jz_emc_base)
++		return -EBUSY;
++
+ 	spin_lock_init(&jz_clock_lock);
+ 
+ 	jz_clk_ext.rate = jz4740_clock_bdata.ext_rate;
+--- a/arch/mips/jz4740/clock.h
++++ b/arch/mips/jz4740/clock.h
+@@ -17,6 +17,7 @@
+ #define __MIPS_JZ4740_CLOCK_H__
+ 
+ #include <linux/list.h>
++#include <linux/types.h>
+ 
+ struct jz4740_clock_board_data {
+ 	unsigned long ext_rate;
+@@ -63,6 +64,9 @@ struct clk {
+ 
+ int clk_is_enabled(struct clk *clk);
+ 
++int clk_main_set_dividers(bool immediate, unsigned int cdiv, unsigned int hdiv,
++			  unsigned int mdiv, unsigned int pdiv);
++
+ #ifdef CONFIG_DEBUG_FS
+ void jz4740_clock_debugfs_init(void);
+ void jz4740_clock_debugfs_add_clk(struct clk *clk);
