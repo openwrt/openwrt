@@ -326,7 +326,7 @@
 +		      ap->ioaddr.ctl_addr);
 +}
 +
-+static int __devinit magicbox_cf_of_probe(struct platform_device *op)
++static int magicbox_cf_of_probe(struct platform_device *op)
 +{
 +	struct magicbox_cf_info *info;
 +	struct ata_host *host;
@@ -385,7 +385,7 @@
 +	return ret;
 +}
 +
-+static __devexit int magicbox_cf_of_remove(struct platform_device *op)
++static int magicbox_cf_of_remove(struct platform_device *op)
 +{
 +	struct ata_host *host = dev_get_drvdata(&op->dev);
 +	struct magicbox_cf_info *info = host->private_data;
@@ -405,7 +405,7 @@
 +
 +static struct platform_driver magicbox_cf_of_platform_driver = {
 +	.probe		= magicbox_cf_of_probe,
-+	.remove		= __devexit_p(magicbox_cf_of_remove),
++	.remove		= magicbox_cf_of_remove,
 +	.driver		= {
 +		.name = DRV_NAME,
 +		.owner = THIS_MODULE,
