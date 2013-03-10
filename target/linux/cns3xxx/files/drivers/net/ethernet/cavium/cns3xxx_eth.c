@@ -286,8 +286,8 @@ struct sw {
 	struct switch_regs __iomem *regs;
 	struct napi_struct napi;
 	struct cns3xxx_plat_info *plat;
-	struct _tx_ring *tx_ring;
-	struct _rx_ring *rx_ring;
+	struct _tx_ring tx_ring;
+	struct _rx_ring rx_ring;
 	struct sk_buff *frag_first;
 	struct sk_buff *frag_last;
 };
@@ -507,7 +507,7 @@ irqreturn_t eth_stat_irq(int irq, void *pdev)
 
 static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 {
-	struct _rx_ring *rx_ring = sw->rx_ring;
+	struct _rx_ring *rx_ring = &sw->rx_ring;
 	unsigned int i = rx_ring->alloc_index;
 	struct rx_desc *desc = &(rx_ring)->desc[i];
 	void *buf;
@@ -579,7 +579,7 @@ static void eth_check_num_used(struct _tx_ring *tx_ring)
 
 static void eth_complete_tx(struct sw *sw)
 {
-	struct _tx_ring *tx_ring = sw->tx_ring;
+	struct _tx_ring *tx_ring = &sw->tx_ring;
 	struct tx_desc *desc;
 	int i;
 	int index;
@@ -614,7 +614,7 @@ static void eth_complete_tx(struct sw *sw)
 static int eth_poll(struct napi_struct *napi, int budget)
 {
 	struct sw *sw = container_of(napi, struct sw, napi);
-	struct _rx_ring *rx_ring = sw->rx_ring;
+	struct _rx_ring *rx_ring = &sw->rx_ring;
 	int received = 0;
 	unsigned int length;
 	unsigned int i = rx_ring->cur_index;
@@ -750,7 +750,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct port *port = netdev_priv(dev);
 	struct sw *sw = port->sw;
-	struct _tx_ring *tx_ring = sw->tx_ring;
+	struct _tx_ring *tx_ring = &sw->tx_ring;
 	struct sk_buff *skb1;
 	char pmap = (1 << port->id);
 	int nr_frags = skb_shinfo(skb)->nr_frags;
@@ -877,8 +877,8 @@ static struct ethtool_ops cns3xxx_ethtool_ops = {
 static int init_rings(struct sw *sw)
 {
 	int i;
-	struct _rx_ring *rx_ring = sw->rx_ring;
-	struct _tx_ring *tx_ring = sw->tx_ring;
+	struct _rx_ring *rx_ring = &sw->rx_ring;
+	struct _tx_ring *tx_ring = &sw->tx_ring;
 
 	__raw_writel(0, &sw->regs->fs_dma_ctrl0);
 	__raw_writel(TS_SUSPEND | FS_SUSPEND, &sw->regs->dma_auto_poll_cfg);
@@ -950,11 +950,11 @@ static int init_rings(struct sw *sw)
 static void destroy_rings(struct sw *sw)
 {
 	int i;
-	if (sw->rx_ring->desc) {
+	if (sw->rx_ring.desc) {
 		for (i = 0; i < RX_DESCS; i++) {
-			struct _rx_ring *rx_ring = sw->rx_ring;
+			struct _rx_ring *rx_ring = &sw->rx_ring;
 			struct rx_desc *desc = &(rx_ring)->desc[i];
-			struct sk_buff *skb = sw->rx_ring->buff_tab[i];
+			struct sk_buff *skb = sw->rx_ring.buff_tab[i];
 
 			if (!skb)
 				continue;
@@ -963,26 +963,26 @@ static void destroy_rings(struct sw *sw)
 					 DMA_FROM_DEVICE);
 			dev_kfree_skb(skb);
 		}
-		dma_pool_free(rx_dma_pool, sw->rx_ring->desc, sw->rx_ring->phys_addr);
+		dma_pool_free(rx_dma_pool, sw->rx_ring.desc, sw->rx_ring.phys_addr);
 		dma_pool_destroy(rx_dma_pool);
 		rx_dma_pool = 0;
-		sw->rx_ring->desc = 0;
+		sw->rx_ring.desc = 0;
 	}
-	if (sw->tx_ring->desc) {
+	if (sw->tx_ring.desc) {
 		for (i = 0; i < TX_DESCS; i++) {
-			struct _tx_ring *tx_ring = sw->tx_ring;
+			struct _tx_ring *tx_ring = &sw->tx_ring;
 			struct tx_desc *desc = &(tx_ring)->desc[i];
-			struct sk_buff *skb = sw->tx_ring->buff_tab[i];
+			struct sk_buff *skb = sw->tx_ring.buff_tab[i];
 			if (skb) {
 				dma_unmap_single(NULL, desc->sdp,
 					skb->len, DMA_TO_DEVICE);
 				dev_kfree_skb(skb);
 			}
 		}
-		dma_pool_free(tx_dma_pool, sw->tx_ring->desc, sw->tx_ring->phys_addr);
+		dma_pool_free(tx_dma_pool, sw->tx_ring.desc, sw->tx_ring.phys_addr);
 		dma_pool_destroy(tx_dma_pool);
 		tx_dma_pool = 0;
-		sw->tx_ring->desc = 0;
+		sw->tx_ring.desc = 0;
 	}
 }
 
@@ -1204,22 +1204,10 @@ static int eth_init_one(struct platform_device *pdev)
 	__raw_writel(UNKNOWN_VLAN_TO_CPU |
 		     CRC_STRIPPING, &sw->regs->mac_glob_cfg);
 
-	if (!(sw->rx_ring = kmalloc(sizeof(struct _rx_ring), GFP_KERNEL))) {
-		err = -ENOMEM;
-		goto err_free;
-	}
-	memset(sw->rx_ring, 0, sizeof(struct _rx_ring));
-
-	if (!(sw->tx_ring = kmalloc(sizeof(struct _tx_ring), GFP_KERNEL))) {
-		err = -ENOMEM;
-		goto err_free_rx;
-	}
-	memset(sw->tx_ring, 0, sizeof(struct _tx_ring));
-
 	if ((err = init_rings(sw)) != 0) {
 		destroy_rings(sw);
 		err = -ENOMEM;
-		goto err_free_rings;
+		goto err_free;
 	}
 	platform_set_drvdata(pdev, napi_dev);
 
@@ -1291,10 +1279,6 @@ free_ports:
 			free_netdev(dev);
 		}
 	}
-err_free_rings:
-	kfree(sw->tx_ring);
-err_free_rx:
-	kfree(sw->rx_ring);
 err_free:
 	free_netdev(napi_dev);
 	return err;
