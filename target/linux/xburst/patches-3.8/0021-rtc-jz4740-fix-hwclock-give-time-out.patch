@@ -1,0 +1,20 @@
+From a37ca6eb8cb52d620feff3323a3be4da24f5bee8 Mon Sep 17 00:00:00 2001
+From: Xiangfu <xiangfu@openmobilefree.net>
+Date: Fri, 16 Mar 2012 17:48:45 +0800
+Subject: [PATCH 21/21] rtc: jz4740 fix hwclock give time out
+
+---
+ drivers/rtc/rtc-jz4740.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+--- a/drivers/rtc/rtc-jz4740.c
++++ b/drivers/rtc/rtc-jz4740.c
+@@ -280,6 +280,8 @@ static int jz4740_rtc_probe(struct platf
+ 		}
+ 	}
+ 
++	jz4740_rtc_ctrl_set_bits(rtc, JZ_RTC_CTRL_1HZ_IRQ, 1);
++
+ 	return 0;
+ 
+ err_free_irq:
