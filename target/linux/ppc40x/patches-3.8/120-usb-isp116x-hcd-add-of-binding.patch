@@ -44,7 +44,7 @@
 +#define isp116x_of_delay	NULL
 +#endif
 +
-+static int __devinit isp116x_of_probe(struct platform_device *op)
++static int isp116x_of_probe(struct platform_device *op)
 +{
 +	struct device_node *dn = op->dev.of_node;
 +	struct usb_hcd *hcd;
@@ -164,7 +164,7 @@
 +	return ret;
 +}
 +
-+static __devexit int isp116x_of_remove(struct platform_device *op)
++static int isp116x_of_remove(struct platform_device *op)
 +{
 +	struct usb_hcd *hcd = dev_get_drvdata(&op->dev);
 +	struct isp116x *isp116x;
@@ -202,7 +202,7 @@
 +
 +static struct platform_driver isp116x_of_platform_driver = {
 +	.probe		= isp116x_of_probe,
-+	.remove		= __devexit_p(isp116x_of_remove),
++	.remove		= isp116x_of_remove,
 +	.driver		= {
 +		.name	= "isp116x-hcd-of",
 +		.owner	= THIS_MODULE,
