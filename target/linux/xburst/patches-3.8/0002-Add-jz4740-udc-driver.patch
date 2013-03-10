@@ -2096,7 +2096,7 @@ History:
 +	},
 +};
 +
-+static int __devinit jz4740_udc_probe(struct platform_device *pdev)
++static int jz4740_udc_probe(struct platform_device *pdev)
 +{
 +	struct jz4740_udc *jz4740_udc = &jz4740_udc_controller;
 +	int ret;
@@ -2179,7 +2179,7 @@ History:
 +	return ret;
 +}
 +
-+static int __devexit jz4740_udc_remove(struct platform_device *pdev)
++static int jz4740_udc_remove(struct platform_device *pdev)
 +{
 +	struct jz4740_udc *dev = platform_get_drvdata(pdev);
 +
@@ -2231,7 +2231,7 @@ History:
 +
 +static struct platform_driver udc_driver = {
 +	.probe		= jz4740_udc_probe,
-+	.remove		= __devexit_p(jz4740_udc_remove),
++	.remove		= jz4740_udc_remove,
 +	.driver		= {
 +		.name	= "jz-udc",
 +		.owner	= THIS_MODULE,
