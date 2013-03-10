@@ -619,8 +619,9 @@ static int eth_poll(struct napi_struct *napi, int budget)
 	unsigned int length;
 	unsigned int i = rx_ring->cur_index;
 	struct rx_desc *desc = &(rx_ring)->desc[i];
+	unsigned int alloc_count = rx_ring->alloc_count;
 
-	while (desc->cown) {
+	while (desc->cown && alloc_count + received < RX_DESCS - 1) {
 		struct sk_buff *skb;
 		int reserve = SKB_HEAD_ALIGN;
 
