@@ -381,6 +381,9 @@ ar71xx_board_detect() {
 	*TL-MR3420)
 		name="tl-mr3420"
 		;;
+	*"TL-MR3420 v2")
+		name="tl-mr3420-v2"
+		;;
 	*TL-WA7510N)
 		name="tl-wa7510n"
 		;;
