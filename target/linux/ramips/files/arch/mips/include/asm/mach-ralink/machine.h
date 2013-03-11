@@ -67,6 +67,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_WR6202,		/* Accton WR6202 */
 	RAMIPS_MACH_MZKW300NH2,		/* Planex MZK-W300NH2 Router */
 	RAMIPS_MACH_XDXRN502J,          /* unknown XDX-RN502J */
+	RAMIPS_MACH_UR_326N4G,		/* UPVEL ROUTER */
 	RAMIPS_MACH_UR_336UN,		/* UPVEL ROUTER */
 
 	/* RT3352 based machines */
