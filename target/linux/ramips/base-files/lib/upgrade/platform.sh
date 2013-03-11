@@ -58,6 +58,7 @@ platform_check_image() {
 	wl-351 | \
 	wli-tx4-ag300n | \
 	whr-g300n |\
+	ur-326n4g |\
 	ur-336un |\
 	wr512-3gn)
 		[ "$magic" != "27051956" ] && {

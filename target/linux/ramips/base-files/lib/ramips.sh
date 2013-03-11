@@ -192,6 +192,9 @@ ramips_board_detect() {
 	*"WR512-3GN-like router")
 		name="wr512-3gn"
 		;;
+	*"UR-326N4G Wireless N router")
+		name="ur-326n4g"
+ 		;;
 	*"UR-336UN Wireless N router")
 		name="ur-336un"
 		;;
