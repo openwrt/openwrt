@@ -175,7 +175,8 @@ wzr-hp-g300nh)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 	;;
 
-dir-825-c1|\
+dir-825-c1 |\
+dir-835-a1 |\
 wndr4300)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" "1" "1"
