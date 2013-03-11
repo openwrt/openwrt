@@ -1,10 +1,11 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -39,6 +39,7 @@ enum ath79_mach_type {
+@@ -39,6 +39,8 @@ enum ath79_mach_type {
  	ATH79_MACH_DIR_615_C1,		/* D-Link DIR-615 rev. C1 */
  	ATH79_MACH_DIR_615_E4,		/* D-Link DIR-615 rev. E4 */
  	ATH79_MACH_DIR_825_B1,		/* D-Link DIR-825 rev. B1 */
 +	ATH79_MACH_DIR_825_C1,		/* D-Link DIR-825 rev. C1 */
++	ATH79_MACH_DIR_835_A1,		/* D-Link DIR-835 rev. A1 */
  	ATH79_MACH_EW_DORIN,		/* embedded wireless Dorin Platform */
  	ATH79_MACH_EW_DORIN_ROUTER,	/* embedded wireless Dorin Router Platform */
  	ATH79_MACH_EAP7660D,		/* Senao EAP7660D */
@@ -15,7 +16,7 @@
  	select ATH79_DEV_USB
  
 +config ATH79_MACH_DIR_825_C1
-+	bool "D-Link DIR-825 rev. C1 board support"
++	bool "D-Link DIR-825 rev. C1/DIR-835 rev. A1 board support"
 +	select SOC_AR934X
 +	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_ETH
