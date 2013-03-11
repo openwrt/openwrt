@@ -718,16 +718,16 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		enable_irq(IRQ_CNS3XXX_SW_R0RXC);
 	}
 
+	spin_lock_bh(&tx_lock);
+	eth_complete_tx(sw);
+	spin_unlock_bh(&tx_lock);
+
 	cns3xxx_alloc_rx_buf(sw, received);
 
 	rx_ring->cur_index = i;
 
 	wmb();
 	enable_rx_dma(sw);
-
-	spin_lock_bh(&tx_lock);
-	eth_complete_tx(sw);
-	spin_unlock_bh(&tx_lock);
 
 	return received;
 }
