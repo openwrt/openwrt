@@ -34,6 +34,7 @@
 #define HWID_TL_MR3220_V1	0x32200001
 #define HWID_TL_MR3220_V2	0x32200002
 #define HWID_TL_MR3420_V1	0x34200001
+#define HWID_TL_MR3420_V2	0x34200002
 #define HWID_TL_WA701N_V1	0x07010001
 #define HWID_TL_WA7510N_V1	0x75100001
 #define HWID_TL_WA801ND_V1	0x08010001
@@ -210,6 +211,11 @@ static struct board_info boards[] = {
 		.hw_id		= HWID_TL_MR3420_V1,
 		.hw_rev		= 1,
 		.layout_id	= "4M",
+	}, {
+		.id		= "TL-MR3420v2",
+		.hw_id		= HWID_TL_MR3420_V2,
+		.hw_rev		= 1,
+		.layout_id	= "4Mlzma",
 	}, {
 		.id		= "TL-WA701Nv1",
 		.hw_id		= HWID_TL_WA701N_V1,
