@@ -436,14 +436,20 @@ static void cns3xxx_adjust_link(struct net_device *dev)
 	       dev->name, port->speed, port->duplex ? "full" : "half");
 }
 
+static void eth_schedule_poll(struct sw *sw)
+{
+	if (unlikely(!napi_schedule_prep(&sw->napi)))
+		return;
+
+	disable_irq_nosync(IRQ_CNS3XXX_SW_R0RXC);
+	__napi_schedule(&sw->napi);
+}
+
 irqreturn_t eth_rx_irq(int irq, void *pdev)
 {
 	struct net_device *dev = pdev;
 	struct sw *sw = netdev_priv(dev);
-	if (likely(napi_schedule_prep(&sw->napi))) {
-		disable_irq_nosync(IRQ_CNS3XXX_SW_R0RXC);
-		__napi_schedule(&sw->napi);
-	}
+	eth_schedule_poll(sw);
 	return (IRQ_HANDLED);
 }
 
@@ -767,9 +773,8 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 	skb_walk_frags(skb, skb1)
 		nr_desc++;
 
+	eth_schedule_poll(sw);
 	spin_lock_bh(&tx_lock);
-
-	eth_complete_tx(sw);
 	if ((tx_ring->num_used + nr_desc + 1) >= TX_DESCS) {
 		spin_unlock_bh(&tx_lock);
 		return NETDEV_TX_BUSY;
