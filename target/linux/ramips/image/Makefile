@@ -633,6 +633,9 @@ define Image/Build/Profile/WR5123GN
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr512-3gn-8M,WR512-3GN,ttyS1,57600,phys)
 endef
 
+define Image/Build/Profile/UPVEL_326
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,ur-326n4g,UR-326N4G,ttyS1,57600,phys)
+endef
 
 define Image/Build/Profile/UPVEL
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,ur-336un,UR-336UN,ttyS1,57600,phys)
@@ -673,6 +676,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/NBG419N,$(1))
 	$(call Image/Build/Profile/NW718,$(1))
 	$(call Image/Build/Profile/OMNIEMB,$(1))
+	$(call Image/Build/Profile/UPVEL_326,$(1))
 	$(call Image/Build/Profile/PSR680W,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
 	$(call Image/Build/Profile/RTG32B1,$(1))
