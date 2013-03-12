@@ -40,14 +40,14 @@ endef
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	( \
-		dd if=$(KDIR)/uImage bs=1024k conv=sync; \
+		dd if=$(KDIR)/uImage-lzma bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1).img
 endef
 
 define Image/Build/jffs2-64k
 	( \
-		dd if=$(KDIR)/uImage bs=1024k conv=sync; \
+		dd if=$(KDIR)/uImage-lzma bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1).img
 endef
