@@ -17,3 +17,15 @@
  	},
  	{
  		.name           = "env",
+@@ -55,6 +60,11 @@ static struct mtd_partition flash_parts[
+ 		.size           = 0x00010000,
+ 		.mask_flags     = MTD_WRITEABLE,
+ 	},
++	{
++		.name           = "firmware",
++		.offset         = 0x00020000,
++		.size           = 0x007d0000,
++	},
+ };
+ 
+ static struct physmap_flash_data flash_data = {
