@@ -131,6 +131,9 @@ ifeq ($(CONFIG_TARGET_lantiq_xway),y)
 Image/BuildKernel/Profile/EASY50712=$(call Image/BuildKernel/Template,EASY50712)
 Image/Build/Profile/EASY50712=$(call Image/Build/$(1),$(1),EASY50712)
 
+Image/BuildKernel/Profile/ACMP252=$(call Image/BuildKernel/Template,ACMP252)
+Image/Build/Profile/ACMP252=$(call Image/Build/$(1),$(1),ACMP252)
+
 Image/BuildKernel/Profile/ARV4510PW=$(call Image/BuildKernel/Template,ARV4510PW)
 Image/Build/Profile/ARV4510PW=$(call Image/Build/$(1),$(1),ARV4510PW)
 
