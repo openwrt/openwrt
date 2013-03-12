@@ -1,0 +1,75 @@
+--- a/arch/arm/mach-gemini/devices.c
++++ b/arch/arm/mach-gemini/devices.c
+@@ -185,3 +185,62 @@ int __init platform_register_ethernet(st
+ 
+ 	return platform_device_register(&ethernet_device);
+ }
++
++static u64 usb0_dmamask = DMA_BIT_MASK(32);
++static struct resource usb0_resources[] = {
++	{
++		.start	= 0x68000000,
++		.end	= 0x68000fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		.start	= IRQ_USB0,
++		.end	= IRQ_USB0,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static u64 usb1_dmamask = DMA_BIT_MASK(32);
++static struct resource usb1_resources[] = {
++	{
++		.start	= 0x69000000,
++		.end	= 0x69000fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		.start	= IRQ_USB1,
++		.end	= IRQ_USB1,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device usb_device[] = {
++	{
++		.name	= "ehci-fotg2xx",
++		.id	= 0,
++		.dev	= {
++			.dma_mask = &usb0_dmamask,
++			.coherent_dma_mask = DMA_BIT_MASK(32),
++		},
++		.num_resources	= ARRAY_SIZE(usb0_resources),
++		.resource	= usb0_resources,
++	},
++	{
++		.name	= "ehci-fotg2xx",
++		.id	= 1,
++		.dev	= {
++			.dma_mask = &usb1_dmamask,
++			.coherent_dma_mask = DMA_BIT_MASK(32),
++		},
++		.num_resources	= ARRAY_SIZE(usb1_resources),
++		.resource	= usb1_resources,
++	},
++};
++
++int __init platform_register_usb(unsigned int id)
++{
++	if (id > 1)
++		return -EINVAL;
++
++	return platform_device_register(&usb_device[id]);
++}
+--- a/arch/arm/mach-gemini/common.h
++++ b/arch/arm/mach-gemini/common.h
+@@ -28,6 +28,7 @@ extern int platform_register_pflash(unsi
+ 				    unsigned int nr_parts);
+ extern int platform_register_watchdog(void);
+ extern int platform_register_ethernet(struct gemini_gmac_platform_data *pdata);
++extern int platform_register_usb(unsigned int id);
+ 
+ extern void gemini_restart(char mode, const char *cmd);
+ 
