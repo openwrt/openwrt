@@ -77,7 +77,7 @@
 		gpio-mosi = <&gpio 17 0>;
 		gpio-sck = <&gpio 18 0>;
 		num-chipselects = <1>;
-		cs-gpios = <&gpio 10 0>;
+		cs-gpios = <&gpio 10 1>;
 
 		m25p80@0 {
 			#address-cells = <1>;
@@ -86,9 +86,6 @@
 			reg = <0 0>;
 			linux,modalias = "m25p80", "mx25l3205d";
 			spi-max-frequency = <1000000>;
-			spi-cpha;
-			spi-cpol;
-			spi-cs-high;
 
 			partition@0 {
 				reg = <0x0 0x10000>;
