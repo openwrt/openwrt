@@ -1,0 +1,17 @@
+Index: linux-3.7.10/drivers/mtd/maps/lantiq-flash.c
+===================================================================
+--- linux-3.7.10.orig/drivers/mtd/maps/lantiq-flash.c	2013-02-27 18:22:04.000000000 +0100
++++ linux-3.7.10/drivers/mtd/maps/lantiq-flash.c	2013-03-12 10:10:22.954382685 +0100
+@@ -134,7 +134,11 @@
+ 	}
+ 
+ 	ltq_mtd->map = kzalloc(sizeof(struct map_info), GFP_KERNEL);
+-	ltq_mtd->map->phys = ltq_mtd->res->start;
++	if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
++		ltq_mtd->map->phys = NO_XIP;
++	else
++		ltq_mtd->map->phys = ltq_mtd->res->start;
++	ltq_mtd->res->start;
+ 	ltq_mtd->map->size = resource_size(ltq_mtd->res);
+ 	ltq_mtd->map->virt = devm_request_and_ioremap(&pdev->dev, ltq_mtd->res);
+ 	if (!ltq_mtd->map->virt) {
