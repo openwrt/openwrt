@@ -1,0 +1,80 @@
+[
+	[ "case", "ACTION", {
+		"add": [
+			[ "if",
+				[ "and",
+					[ "has", "MAJOR" ],
+					[ "has", "MINOR" ],
+				],
+				[
+					[ "if",
+						[ "or",
+							[ "eq", "DEVNAME",
+								[ "null", "full", "ptmx", "zero" ],
+							],
+							[ "regex", "DEVNAME",
+								[ "^gpio", "^hvc", "^tty" ],
+							],
+						],
+						[
+							[ "makedev", "/dev/%DEVNAME%", "0666" ],
+							[ "return" ],
+						]
+					],
+					[ "if",
+						[ "or",
+							[ "eq", "DEVNAME", "mapper/control" ],
+							[ "regex", "DEVPATH", "^ppp" ],
+						],
+						[
+							[ "makedev", "/dev/%DEVNAME%", "0600" ],
+							[ "return" ],
+						],
+					],
+					[ "if",
+						[ "has", "DEVNAME" ],
+						[
+							[ "makedev", "/dev/%DEVNAME%", "0644" ],
+							[ "return" ],
+						],
+					],
+				],
+			],
+			[ "if",
+				[ "has", "FIRMWARE" ],
+				[
+					[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ],
+					[ "load-firmware", "/lib/firmware" ],
+					[ "return" ]
+				]
+			],
+		],
+		"remove" : [
+			[ "if",
+				[ "and",
+					[ "has", "DEVNAME" ],
+					[ "has", "MAJOR" ],
+					[ "has", "MINOR" ],
+				],
+				[ "rm", "/dev/%DEVNAME%" ]
+			]
+		]
+	} ],
+	[ "if",
+		[ "eq", "SUBSYSTEM", "platform" ],
+		[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
+	],
+	[ "if",
+		[ "and",
+			[ "has", "BUTTON" ],
+			[ "eq", "SUBSYSTEM", "button" ],
+		],
+		[ "exec", "/etc/rc.button/%BUTTON%" ]
+	],
+	[ "if",
+		[ "eq", "SUBSYSTEM",
+			[ "net", "input", "usb", "ieee1394", "block", "atm", "zaptel", "tty" ]
+		],
+		[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
+	],
+]
