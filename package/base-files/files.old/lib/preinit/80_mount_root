@@ -6,4 +6,5 @@ do_mount_root() {
     boot_run_hook preinit_mount_root
 }
 
-[ "$INITRAMFS" = "1" ] || boot_hook_add preinit_main do_mount_root
+boot_hook_add preinit_main do_mount_root
+

@@ -38,7 +38,7 @@ supivot() { # <new_root> <old_root>
 	mkdir -p $1$2 $1/proc $1/sys $1/dev $1/tmp $1/overlay && \
 	mount -o noatime,move /proc $1/proc && \
 	pivot_root $1 $1$2 || {
-        umount -l $1 $1
+        umount $1 $1
 		return 1
 	}
 

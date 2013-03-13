@@ -3,13 +3,7 @@
 # Copyright (C) 2010 Vertical Communications
 
 run_init() {
-    preinit_echo "- init -"
     preinit_ip_deconfig
-    if [ "$pi_init_suppress_stderr" = "y" ]; then
-	exec env - PATH=$pi_init_path $pi_init_env $pi_init_cmd 2>&0
-    else
-	exec env - PATH=$pi_init_path $pi_init_env $pi_init_cmd
-    fi
 }
 
 boot_hook_add preinit_main run_init

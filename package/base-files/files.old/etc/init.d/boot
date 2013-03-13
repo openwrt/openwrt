@@ -24,6 +24,27 @@ system_config() {
 
 	# apply timezone to kernel
 	date -k
+
+	if [ -x /sbin/syslogd ]; then
+		local args log_ip log_size log_port log_type log_file
+		config_get log_ip "$cfg" log_ip 
+		config_get log_size "$cfg" log_size 16
+		config_get log_port "$cfg" log_port 514
+		config_get log_type "$cfg" log_type circular
+		config_get log_file "$cfg" log_file "/var/log/messages"
+		args="${log_ip:+-L -R ${log_ip}:${log_port}} ${conloglevel:+-l $conloglevel}"
+		if [ "$log_type" = "file" ]; then
+			args="$args -s $log_size -O $log_file -S"
+		else
+			args="$args -C${log_size}"
+		fi
+		service_start /sbin/syslogd $args
+	fi
+	if [ -x /sbin/klogd ]; then
+		config_get klogconloglevel "$cfg" klogconloglevel
+		args="${klogconloglevel:+-c $klogconloglevel}"
+		service_start /sbin/klogd $args
+	fi
 }
 
 apply_uci_config() {
@@ -63,6 +84,12 @@ start() {
 	config_load system
 	config_foreach system_config system
 
+	killall -q hotplug2
+	[ -x /sbin/hotplug2 ] && /sbin/hotplug2 --override --persistent \
+			--set-rules-file /etc/hotplug2.rules \
+			--set-coldplug-cmd /sbin/udevtrigger \
+			--max-children 1 >/dev/null 2>&1 &
+
 	# create /dev/root if it doesn't exist
 	[ -e /dev/root -o -h /dev/root ] || {
 		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
@@ -75,4 +102,9 @@ start() {
 			echo 0 > $i
 		done
 	fi
+}
+
+stop() {
+	service_stop /sbin/klogd
+	service_stop /sbin/syslogd
 }
