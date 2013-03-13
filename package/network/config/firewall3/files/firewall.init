@@ -13,9 +13,13 @@ start() {
 }
 
 stop() {
-	fw3 stop
+	fw3 flush
 }
 
 restart() {
 	fw3 restart
+}
+
+reload() {
+	fw3 reload
 }
