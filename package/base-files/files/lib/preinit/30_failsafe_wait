@@ -61,11 +61,10 @@ fs_wait_for_key () {
     }
     lock -w $keypress_wait
 
-    trap - INT
-    trap - USR1
-
     keypressed=1
     [ "$(cat $keypress_true)" = "true" ] && keypressed=0
+    [ -f "/tmp/failsafe_button" ] && keypressed=1
+    
     rm -f $keypress_true
     rm -f $keypress_wait
     rm -f $keypress_sec
