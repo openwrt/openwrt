@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=procd
-PKG_VERSION:=2012-03-13
+PKG_VERSION:=2013-03-13
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/cmake.mk
 define Package/procd
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubusd +ubus +libjson_script
+  DEPENDS:=+ubusd +ubus +libjson-script
   TITLE:=OpenWrt system process manager
 endef
 
