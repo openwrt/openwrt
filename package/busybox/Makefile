@@ -17,6 +17,7 @@ PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
 PKG_MD5SUM:=9c0cae5a0379228e7b55e5b29528df8e
 
+PKG_CONFIG_DEPENDS:=CONFIG_PROCD_INIT
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_FEATURE_HAVE_RPC:librpc
 PKG_BUILD_PARALLEL:=1
 
@@ -112,6 +113,7 @@ define Package/busybox/install
 		$(INSTALL_BIN) ./files/$$$$tmp $(1)/etc/init.d/$$$$tmp; \
 	done
 	-rm -rf $(1)/lib64
+	$(if $(CONFIG_PROCD_INIT),rm -f $(1)/sbin/init $(1)/sbin/logread)
 endef
 
 $(eval $(call BuildPackage,busybox))

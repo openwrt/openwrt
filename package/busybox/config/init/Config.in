@@ -73,6 +73,7 @@ config BUSYBOX_CONFIG_INIT
 	bool "init"
 	default y
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
+	depends on !PROCD_INIT
 	help
 	  init is the first program run when the system boots.
 
