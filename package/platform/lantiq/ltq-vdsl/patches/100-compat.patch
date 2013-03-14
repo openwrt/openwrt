@@ -1,0 +1,148 @@
+Index: drv_dsl_cpe_api-4.11.4/src/include/drv_dsl_cpe_os_linux.h
+===================================================================
+--- drv_dsl_cpe_api-4.11.4.orig/src/include/drv_dsl_cpe_os_linux.h	2011-10-26 00:35:29.000000000 +0200
++++ drv_dsl_cpe_api-4.11.4/src/include/drv_dsl_cpe_os_linux.h	2012-11-28 23:05:38.766342592 +0100
+@@ -17,7 +17,7 @@
+ #endif
+ 
+ #include <asm/ioctl.h>
+-#include <linux/autoconf.h>
++#include <generated/autoconf.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+@@ -28,7 +28,7 @@
+ #include <linux/sched.h>
+ 
+ #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+-   #include <linux/utsrelease.h>
++   #include <generated/utsrelease.h>
+ #endif
+ 
+ #include <linux/types.h>
+@@ -40,7 +40,6 @@
+ #include <linux/delay.h>
+ #include <linux/poll.h>
+ #include <asm/uaccess.h>
+-#include <linux/smp_lock.h>
+ 
+ #ifdef INCLUDE_DSL_CPE_API_IFXOS_SUPPORT
+ /** IFXOS includes*/
+Index: drv_dsl_cpe_api-4.11.4/src/Makefile.in
+===================================================================
+--- drv_dsl_cpe_api-4.11.4.orig/src/Makefile.in	2012-03-05 15:24:31.000000000 +0100
++++ drv_dsl_cpe_api-4.11.4/src/Makefile.in	2012-11-28 23:05:38.770342592 +0100
+@@ -72,7 +72,7 @@
+ 
+ # the headerfile of linux kernels 2.6.x contain to much arithmetic
+ # with void pointers (which is allowed for gcc!)
+-@KERNEL_2_6_FALSE@am__append_8 = -Wpointer-arith
++@KERNEL_2_6_FALSE@am__append_8 =
+ subdir = src
+ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+Index: drv_dsl_cpe_api-4.11.4/src/common/drv_dsl_cpe_os_linux.c
+===================================================================
+--- drv_dsl_cpe_api-4.11.4.orig/src/common/drv_dsl_cpe_os_linux.c	2011-10-26 00:35:28.000000000 +0200
++++ drv_dsl_cpe_api-4.11.4/src/common/drv_dsl_cpe_os_linux.c	2012-11-28 23:05:38.770342592 +0100
+@@ -12,6 +12,7 @@
+ 
+ #define DSL_INTERN
+ 
++#include <linux/device.h>
+ #include "drv_dsl_cpe_api.h"
+ #include "drv_dsl_cpe_api_ioctl.h"
+ 
+@@ -34,7 +35,7 @@
+ static DSL_ssize_t DSL_DRV_Write(DSL_DRV_file_t *pFile, const DSL_char_t * pBuf,
+                                  DSL_DRV_size_t nSize, DSL_DRV_offset_t * pLoff);
+ 
+-static DSL_int_t DSL_DRV_Ioctls(DSL_DRV_inode_t * pINode, DSL_DRV_file_t * pFile,
++static long DSL_DRV_Ioctls(DSL_DRV_file_t * pFile,
+                          DSL_uint_t nCommand, unsigned long nArg);
+ 
+ static int DSL_DRV_Open(DSL_DRV_inode_t * ino, DSL_DRV_file_t * fil);
+@@ -71,7 +72,7 @@
+    open:    DSL_DRV_Open,
+    release: DSL_DRV_Release,
+    write:   DSL_DRV_Write,
+-   ioctl:   DSL_DRV_Ioctls,
++   unlocked_ioctl:   DSL_DRV_Ioctls,
+    poll:    DSL_DRV_Poll
+ };
+ #else
+@@ -172,7 +173,7 @@
+    \return  Success or failure.
+    \ingroup Internal
+ */
+-static DSL_int_t DSL_DRV_Ioctls(DSL_DRV_inode_t * pINode,
++static long DSL_DRV_Ioctls(
+    DSL_DRV_file_t * pFile,
+    DSL_uint_t nCommand,
+    unsigned long nArg)
+@@ -222,14 +223,7 @@
+       }
+    }
+ 
+-   if (pINode == DSL_NULL)
+-   {
+-      bIsInKernel = DSL_TRUE;
+-   }
+-   else
+-   {
+       bIsInKernel = DSL_FALSE;
+-   }
+ 
+    if ( (_IOC_TYPE(nCommand) == DSL_IOC_MAGIC_CPE_API) ||
+         (_IOC_TYPE(nCommand) == DSL_IOC_MAGIC_CPE_API_G997) ||
+@@ -1082,6 +1076,7 @@
+ int __init DSL_ModuleInit(void)
+ {
+    DSL_int_t i;
++   static struct class *dsl_class;
+ 
+    printk(DSL_DRV_CRLF DSL_DRV_CRLF "Lantiq CPE API Driver version: %s" DSL_DRV_CRLF,
+       &(dsl_cpe_api_version[4]));
+@@ -1127,6 +1122,10 @@
+ 
+    DSL_DRV_DevNodeInit();
+ 
++   dsl_class = class_create(THIS_MODULE, "dsl_cpe_api0");
++   device_create(dsl_class, NULL, MKDEV(DRV_DSL_CPE_API_DEV_MAJOR, 0), NULL, "dsl_cpe_api0");
++
++
+    return 0;
+ }
+ 
+Index: drv_dsl_cpe_api-4.11.4/src/device/drv_dsl_cpe_msg_vrx.c
+===================================================================
+--- drv_dsl_cpe_api-4.11.4.orig/src/device/drv_dsl_cpe_msg_vrx.c	2012-03-05 11:25:21.000000000 +0100
++++ drv_dsl_cpe_api-4.11.4/src/device/drv_dsl_cpe_msg_vrx.c	2012-11-28 23:06:46.418344288 +0100
+@@ -685,6 +685,7 @@
+    DSL_ProfileType_t nProfile = DSL_PROFILE_LAST;
+    DSL_G997_XTUSystemEnablingData_t data = {{0,0,0,0,0,0,0,0}};
+ 
++   //printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
+    DSL_DEBUG( DSL_DBG_MSG,
+       (pContext, SYS_DBG_MSG"DSL[%02d]: IN - DSL_DRV_VXX_SendMsgSelectedProfileVdsl2Get"
+       DSL_DRV_CRLF, DSL_DEV_NUM(pContext)));
+@@ -985,8 +988,10 @@
+ 
+    /* Check consistency of XTSE status setting - Only one bit should be set at
+       a time */
++   //printk("XTSE (%d) - ", DSL_G997_NUM_XTSE_OCTETS);
+    for (i = 0, nBitCount = 0; i < DSL_G997_NUM_XTSE_OCTETS; i++)
+    {
++      //printk("%02X ", data.XTSE[i]);
+       for (j = 0; j < 8; j++)
+       {
+          if ( ((data.XTSE[i] >> j) & 0x01) != 0)
+@@ -996,6 +1001,8 @@
+       }
+    }
+ 
++	//printk("\n");
++
+    if (nBitCount > 1)
+    {
+       DSL_DEBUG( DSL_DBG_ERR,
