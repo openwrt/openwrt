@@ -315,6 +315,8 @@ static int ifxusb_driver_probe(struct platform_device *_pdev)
         np = of_find_compatible_node(NULL, NULL, "lantiq,ifxhcd-arx100");
 #elif defined __IS_VR9__
         np = of_find_compatible_node(NULL, NULL, "lantiq,ifxhcd-xrx200");
+#elif defined __IS_AR10__
+        np = of_find_compatible_node(NULL, NULL, "lantiq,ifxhcd-arx300");
 #endif
 	if (!np) {
 		dev_err(&_pdev->dev, "failed to find hcd device node\n");
