@@ -930,7 +930,7 @@ static int ptm_showtime_exit(void)
 
 
 
-static int __devinit ifx_ptm_init(void)
+static int ifx_ptm_init(void)
 {
     int ret;
     int i;

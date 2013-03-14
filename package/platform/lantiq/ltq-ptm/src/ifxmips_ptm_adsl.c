@@ -1422,7 +1422,7 @@ static int ptm_showtime_exit(void)
  *    0    --- successful
  *    else --- failure, usually it is negative value of error code
  */
-static int __devinit ifx_ptm_init(void)
+static int ifx_ptm_init(void)
 {
     int ret;
     struct port_cell_info port_cell = {0};
