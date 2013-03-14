@@ -1,0 +1,26 @@
+Index: dsl_cpe_control-4.11.4/src/dsl_cpe_init_cfg.c
+===================================================================
+--- dsl_cpe_control-4.11.4.orig/src/dsl_cpe_init_cfg.c	2011-10-26 00:35:26.000000000 +0200
++++ dsl_cpe_control-4.11.4/src/dsl_cpe_init_cfg.c	2012-11-28 15:53:10.857692092 +0100
+@@ -43,7 +43,7 @@
+    {
+    DSL_CPE_LL_CFG_SET(-1, -1, DSL_DEV_HS_TONE_GROUP_VDSL2_B43, \
+       DSL_DEV_HS_TONE_GROUP_VDSL2_B43, DSL_DEV_HS_TONE_GROUP_VDSL2_B43, \
+-      0x1E116000, 0x37, -1),
++      0x1E116000, 0x3f, -1),
+ #endif
+ 
+ #if defined(INCLUDE_DSL_CPE_API_VINAX)
+Index: dsl_cpe_control-4.11.4/src/dsl_cpe_control.c
+===================================================================
+--- dsl_cpe_control-4.11.4.orig/src/dsl_cpe_control.c	2012-01-13 15:15:34.000000000 +0100
++++ dsl_cpe_control-4.11.4/src/dsl_cpe_control.c	2012-11-28 15:53:23.465692408 +0100
+@@ -6432,7 +6432,7 @@
+    for (nDevice = 0; nDevice < DSL_CPE_MAX_DEVICE_NUMBER; nDevice++)
+    {
+ #if defined(INCLUDE_DSL_CPE_API_VINAX) || defined(INCLUDE_DSL_CPE_API_VRX)
+-      sprintf (device, "%s/%d", DSL_CPE_DEVICE_NAME, nDevice);
++      sprintf (device, "%s%d", DSL_CPE_DEVICE_NAME, nDevice);
+ #else
+       sprintf (device, "%s", DSL_CPE_DEVICE_NAME);
+ #endif /* defined(INCLUDE_DSL_CPE_API_VINAX) || defined(INCLUDE_DSL_CPE_API_VRX)*/
