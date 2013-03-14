@@ -1,0 +1,29 @@
+From 88bc909507f7e9347a24e38185a11a38e51cc773 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 13 Mar 2013 10:04:34 +0100
+Subject: [PATCH 34/40] MTD: lantiq: handle NO_XIP on cfi0001 flash
+
+---
+ drivers/mtd/maps/lantiq-flash.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/maps/lantiq-flash.c b/drivers/mtd/maps/lantiq-flash.c
+index 3c3c791..343cfaa 100644
+--- a/drivers/mtd/maps/lantiq-flash.c
++++ b/drivers/mtd/maps/lantiq-flash.c
+@@ -134,7 +134,11 @@ ltq_mtd_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	ltq_mtd->map = kzalloc(sizeof(struct map_info), GFP_KERNEL);
+-	ltq_mtd->map->phys = ltq_mtd->res->start;
++	if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
++		ltq_mtd->map->phys = NO_XIP;
++	else
++		ltq_mtd->map->phys = ltq_mtd->res->start;
++	ltq_mtd->res->start;
+ 	ltq_mtd->map->size = resource_size(ltq_mtd->res);
+ 	ltq_mtd->map->virt = devm_request_and_ioremap(&pdev->dev, ltq_mtd->res);
+ 	if (!ltq_mtd->map->virt) {
+-- 
+1.7.10.4
+

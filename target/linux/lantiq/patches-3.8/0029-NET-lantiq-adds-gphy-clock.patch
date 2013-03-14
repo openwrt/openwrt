@@ -1,0 +1,24 @@
+From 9dee771f3a7e51411a408cbb1070e73a50cbd285 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 13 Mar 2013 09:47:44 +0100
+Subject: [PATCH 29/40] NET: lantiq: adds gphy clock
+
+---
+ arch/mips/lantiq/xway/sysctrl.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
+index 3390fcd..c24924f 100644
+--- a/arch/mips/lantiq/xway/sysctrl.c
++++ b/arch/mips/lantiq/xway/sysctrl.c
+@@ -376,6 +376,7 @@ void __init ltq_soc_init(void)
+ 				PMU_SWITCH | PMU_PPE_DPLUS | PMU_PPE_DPLUM |
+ 				PMU_PPE_EMA | PMU_PPE_TC | PMU_PPE_SLL01 |
+ 				PMU_PPE_QSB | PMU_PPE_TOP);
++		clkdev_add_pmu("1f203000.rcu", "gphy", 0, PMU_GPHY);
+ 	} else if (of_machine_is_compatible("lantiq,ar9")) {
+ 		clkdev_add_static(ltq_ar9_cpu_hz(), ltq_ar9_fpi_hz(),
+ 				ltq_ar9_fpi_hz(), CLOCK_250M);
+-- 
+1.7.10.4
+
