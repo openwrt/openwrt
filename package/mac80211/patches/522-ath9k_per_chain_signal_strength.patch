@@ -175,7 +175,7 @@
  	switch (len - SPECTRAL_HT20_TOTAL_DATA_LEN) {
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -475,12 +475,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -475,12 +475,12 @@ int ath9k_hw_process_rxdesc_edma(struct
  
  	/* XXX: Keycache */
  	rxs->rs_rssi = MS(rxsp->status5, AR_RxRSSICombined);
@@ -236,7 +236,7 @@
  	if (ads.ds_rxstatus8 & AR_RxKeyIdxValid)
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -940,12 +940,12 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -940,12 +940,12 @@ void ath_debug_stat_rx(struct ath_softc
  #ifdef CONFIG_ATH9K_MAC_DEBUG
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;
@@ -277,7 +277,7 @@
  	__NL80211_STA_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -3082,6 +3082,32 @@ static bool nl80211_put_sta_rate(struct 
+@@ -3082,6 +3082,32 @@ static bool nl80211_put_sta_rate(struct
  	return true;
  }
  
@@ -372,7 +372,7 @@
  	 * hardware stores this as 8 bit signed value.
 --- a/drivers/net/wireless/ath/ath9k/antenna.c
 +++ b/drivers/net/wireless/ath/ath9k/antenna.c
-@@ -546,14 +546,14 @@ void ath_ant_comb_scan(struct ath_softc 
+@@ -546,14 +546,14 @@ void ath_ant_comb_scan(struct ath_softc
  	struct ath_ant_comb *antcomb = &sc->ant_comb;
  	int alt_ratio = 0, alt_rssi_avg = 0, main_rssi_avg = 0, curr_alt_set;
  	int curr_main_set;
