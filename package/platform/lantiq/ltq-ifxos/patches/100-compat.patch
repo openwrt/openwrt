@@ -1,6 +1,8 @@
---- a/configure.in
-+++ b/configure.in
-@@ -64,7 +64,7 @@ dnl Set kernel build path
+Index: lib_ifxos-1.5.14/configure.in
+===================================================================
+--- lib_ifxos-1.5.14.orig/configure.in	2010-07-22 18:34:07.000000000 +0200
++++ lib_ifxos-1.5.14/configure.in	2013-03-14 08:23:57.481810836 +0100
+@@ -64,7 +64,7 @@
  AC_ARG_ENABLE(kernelbuild,
  	AS_HELP_STRING(--enable-kernelbuild=x,Set the target kernel build path (only for kernel 2.6.x)),
  	[
@@ -9,13 +11,86 @@
  			AC_SUBST([KERNEL_BUILD_PATH],[$enableval])
  		else
  			AC_MSG_ERROR([The kernel build directory is not valid or not configured!])
---- a/src/linux/ifxos_linux_thread_drv.c
-+++ b/src/linux/ifxos_linux_thread_drv.c
-@@ -34,7 +34,6 @@
+Index: lib_ifxos-1.5.14/src/linux/ifxos_linux_thread_drv.c
+===================================================================
+--- lib_ifxos-1.5.14.orig/src/linux/ifxos_linux_thread_drv.c	2010-01-08 18:10:47.000000000 +0100
++++ lib_ifxos-1.5.14/src/linux/ifxos_linux_thread_drv.c	2013-03-14 08:23:57.481810836 +0100
+@@ -34,8 +34,8 @@
  #include <linux/sched.h>
  #include <linux/version.h>
  #include <linux/completion.h>
 -#include <linux/smp_lock.h>
  #include <linux/signal.h>
++#include <linux/kthread.h>
  
  
+ #include "ifx_types.h"
+@@ -68,10 +68,6 @@
+ #if ( defined(IFXOS_HAVE_THREAD) && (IFXOS_HAVE_THREAD == 1) )
+ 
+ 
+-IFXOS_STATIC IFX_int32_t IFXOS_KernelThreadStartup(
+-                              IFXOS_ThreadCtrl_t *pThrCntrl);
+-
+-
+ /* ============================================================================
+    IFX Linux adaptation - Kernel Thread handling
+    ========================================================================= */
+@@ -96,9 +92,9 @@
+    - IFX_SUCCESS on success
+    - IFX_ERROR on error
+ */
+-IFXOS_STATIC IFX_int32_t IFXOS_KernelThreadStartup(
+-                              IFXOS_ThreadCtrl_t *pThrCntrl)
++int IFXOS_KernelThreadStartup(void *data)
+ {
++   IFXOS_ThreadCtrl_t *pThrCntrl = (IFXOS_ThreadCtrl_t*) data;
+    IFX_int32_t retVal          = IFX_ERROR;
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
+    struct task_struct *kthread = current;
+@@ -139,7 +135,7 @@
+    /* let others run */
+    unlock_kernel();
+ #else
+-   daemonize(pThrCntrl->thrParams.pName);
++   //daemonize(pThrCntrl->thrParams.pName);
+ 
+    /* Enable signals in Kernel >= 2.6 */
+    allow_signal(SIGKILL);
+@@ -218,9 +214,7 @@
+          init_completion(&pThrCntrl->thrCompletion);
+ 
+          /* start kernel thread via the wrapper function */
+-         pThrCntrl->tid = kernel_thread( (IFXOS_KERNEL_THREAD_StartRoutine)IFXOS_KernelThreadStartup,
+-                        (void *)pThrCntrl,
+-                        IFXOS_DRV_THREAD_OPTIONS);
++         pThrCntrl->tid = kthread_run(IFXOS_KernelThreadStartup, (void *)pThrCntrl, "ifxos");
+ 
+          pThrCntrl->bValid = IFX_TRUE;
+ 
+Index: lib_ifxos-1.5.14/src/include/ifxos_thread.h
+===================================================================
+--- lib_ifxos-1.5.14.orig/src/include/ifxos_thread.h	2010-01-14 10:59:13.000000000 +0100
++++ lib_ifxos-1.5.14/src/include/ifxos_thread.h	2013-03-14 08:24:43.577812806 +0100
+@@ -111,7 +111,7 @@
+ /**
+    Function type of the user thread/task function.
+ */
+-typedef IFX_int32_t (*IFXOS_ThreadFunction_t)(IFXOS_ThreadParams_t *);
++typedef int (*IFXOS_ThreadFunction_t)(void*);
+ 
+ /** @} */
+ 
+Index: lib_ifxos-1.5.14/src/include/linux/ifxos_linux_thread.h
+===================================================================
+--- lib_ifxos-1.5.14.orig/src/include/linux/ifxos_linux_thread.h	2010-01-08 18:10:27.000000000 +0100
++++ lib_ifxos-1.5.14/src/include/linux/ifxos_linux_thread.h	2013-03-14 08:25:13.193814073 +0100
+@@ -152,7 +152,7 @@
+    IFXOS_ThreadFunction_t  pThrFct;
+ 
+    /** Kernel thread process ID */
+-   IFX_int32_t             tid;
++   struct task_struct             *tid;
+ 
+    /** requested kernel thread priority */
+    IFX_int32_t             nPriority;
