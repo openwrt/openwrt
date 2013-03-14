@@ -82,7 +82,7 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 28 0>;
+			gpios = <&gpio 3 0>;
 		};
 
 		etop@E180000 {
@@ -91,13 +91,6 @@
 
 		pci@E105400 {
 			status = "okay";
-			interrupt-map = <0x7000 0 0 1 &icu0 135 1>;
-			req-mask = <0x1>;
 		};
-	};
-
-	ralink_eep {
-		compatible = "ralink,eeprom";
-		ralink,eeprom = "RT2860.eeprom";
 	};
 };
