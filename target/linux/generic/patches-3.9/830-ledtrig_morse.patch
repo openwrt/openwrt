@@ -1,0 +1,28 @@
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -571,4 +571,8 @@ config LEDS_TRIGGER_TRANSIENT
+ 	  GPIO/PWM based hardware.
+ 	  If unsure, say Y.
+ 
++config LEDS_TRIGGER_MORSE
++	tristate "LED Morse Trigger"
++	depends on LEDS_TRIGGERS
++
+ endif # NEW_LEDS
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -66,3 +66,4 @@ obj-$(CONFIG_LEDS_TRIGGER_GPIO)		+= ledt
+ obj-$(CONFIG_LEDS_TRIGGER_CPU)		+= ledtrig-cpu.o
+ obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o
+ obj-$(CONFIG_LEDS_TRIGGER_TRANSIENT)	+= ledtrig-transient.o
++obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
+--- a/drivers/leds/ledtrig-morse.c
++++ b/drivers/leds/ledtrig-morse.c
+@@ -26,7 +26,6 @@
+ #include <linux/list.h>
+ #include <linux/spinlock.h>
+ #include <linux/device.h>
+-#include <linux/sysdev.h>
+ #include <linux/timer.h>
+ #include <linux/ctype.h>
+ #include <linux/leds.h>
