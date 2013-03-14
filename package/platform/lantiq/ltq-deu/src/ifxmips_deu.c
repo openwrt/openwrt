@@ -78,7 +78,7 @@ void chip_version(void);
  *  \return ret 
 */  
                                
-static int __devinit ltq_deu_probe(struct platform_device *pdev)
+static int ltq_deu_probe(struct platform_device *pdev)
 {
     int ret = -ENOSYS;
 
@@ -139,7 +139,7 @@ static int __devinit ltq_deu_probe(struct platform_device *pdev)
  *  \ingroup IFX_DEU_FUNCTIONS
  *  \brief remove the loaded crypto algorithms   
 */                                 
-static int __devexit ltq_deu_remove(struct platform_device *pdev)
+static int ltq_deu_remove(struct platform_device *pdev)
 {
 //#ifdef CONFIG_CRYPTO_DEV_PWR_SAVE_MODE
     #if defined(CONFIG_CRYPTO_DEV_DES)
@@ -195,7 +195,7 @@ MODULE_DEVICE_TABLE(of, ltq_deu_match);
 
 static struct platform_driver ltq_deu_driver = {
 	.probe = ltq_deu_probe,
-	.remove = __devexit_p(ltq_deu_remove),
+	.remove = ltq_deu_remove,
 	.driver = {
 		.name = "deu",
 		.owner = THIS_MODULE,
