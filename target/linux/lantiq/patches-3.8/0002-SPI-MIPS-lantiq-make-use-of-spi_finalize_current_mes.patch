@@ -1,0 +1,31 @@
+From 8b921ffd449431543832b0e76389eb289cc78bb8 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 29 Jan 2013 21:24:17 +0100
+Subject: [PATCH 02/40] SPI: MIPS: lantiq: make use of
+ spi_finalize_current_message
+
+Rather than calling m->complete() directly we choose the sane way and call
+spi_finalize_current_message instead.
+
+Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/spi/spi-falcon.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-falcon.c b/drivers/spi/spi-falcon.c
+index 6a6f62e..f9c66c2 100644
+--- a/drivers/spi/spi-falcon.c
++++ b/drivers/spi/spi-falcon.c
+@@ -398,7 +398,7 @@ static int falcon_sflash_xfer_one(struct spi_master *master,
+ 	}
+ 
+ 	m->status = ret;
+-	m->complete(m->context);
++	spi_finalize_current_message(master);
+ 
+ 	return 0;
+ }
+-- 
+1.7.10.4
+

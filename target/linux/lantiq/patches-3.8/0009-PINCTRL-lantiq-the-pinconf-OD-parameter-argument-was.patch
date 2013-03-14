@@ -1,0 +1,33 @@
+From 879fe8a24167983d2923f635cb37dc9e02f6cf57 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 30 Jan 2013 18:39:34 +0100
+Subject: [PATCH 09/40] PINCTRL: lantiq: the pinconf OD parameter argument was
+ ignored
+
+When setting the OpenDrain bit we should really honour the argument passed
+inside the devicetree.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/pinctrl/pinctrl-xway.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
+index b23b895..53cb6a3 100644
+--- a/drivers/pinctrl/pinctrl-xway.c
++++ b/drivers/pinctrl/pinctrl-xway.c
+@@ -494,7 +494,10 @@ static int xway_pinconf_set(struct pinctrl_dev *pctldev,
+ 			reg = GPIO3_OD;
+ 		else
+ 			reg = GPIO_OD(pin);
+-		gpio_setbit(info->membase[0], reg, PORT_PIN(pin));
++		if (arg == 0)
++			gpio_setbit(info->membase[0], reg, PORT_PIN(pin));
++		else
++			gpio_clearbit(info->membase[0], reg, PORT_PIN(pin));
+ 		break;
+ 
+ 	case LTQ_PINCONF_PARAM_PULL:
+-- 
+1.7.10.4
+

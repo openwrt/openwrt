@@ -1,0 +1,29 @@
+From a50f7db5b527c317c4bf2ae44a4ccdc8c7e598ab Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 29 Jan 2013 21:26:39 +0100
+Subject: [PATCH 03/40] SPI: MIPS: lantiq: set SPI_MASTER_HALF_DUPLEX flag
+
+Due to hardware limitations of the spi/flash frontend of the EBU we need to set
+the SPI_MASTER_HALF_DUPLEX flag.
+
+Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/spi/spi-falcon.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/spi/spi-falcon.c b/drivers/spi/spi-falcon.c
+index f9c66c2..c7a74f0 100644
+--- a/drivers/spi/spi-falcon.c
++++ b/drivers/spi/spi-falcon.c
+@@ -423,6 +423,7 @@ static int falcon_sflash_probe(struct platform_device *pdev)
+ 
+ 	master->mode_bits = SPI_MODE_3;
+ 	master->num_chipselect = 1;
++	master->flags = SPI_MASTER_HALF_DUPLEX;
+ 	master->bus_num = -1;
+ 	master->setup = falcon_sflash_setup;
+ 	master->prepare_transfer_hardware = falcon_sflash_prepare_xfer;
+-- 
+1.7.10.4
+
