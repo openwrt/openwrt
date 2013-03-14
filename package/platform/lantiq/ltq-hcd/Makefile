@@ -23,13 +23,14 @@ define KernelPackage/ltq-hcd-template
   VARIANT:=$(1)
   DEPENDS:=@TARGET_lantiq_$(2) +kmod-usb-core
   FILES:=$(PKG_BUILD_DIR)/ltq_hcd_$(1).ko
-  AUTOLOAD:=$(call AutoLoad,50,ltq_hcd_$(1))
+  AUTOLOAD:=$(call AutoLoad,50,ltq_hcd_$(1),1)
 endef
 
 KernelPackage/ltq-hcd-ase=$(call KernelPackage/ltq-hcd-template,ase,ase)
 KernelPackage/ltq-hcd-danube=$(call KernelPackage/ltq-hcd-template,danube,xway)
 KernelPackage/ltq-hcd-ar9=$(call KernelPackage/ltq-hcd-template,ar9,xway)
 KernelPackage/ltq-hcd-vr9=$(call KernelPackage/ltq-hcd-template,vr9,xway)
+KernelPackage/ltq-hcd-ar10=$(call KernelPackage/ltq-hcd-template,ar10,xway)
 
 define Build/Prepare
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)
@@ -49,3 +50,4 @@ $(eval $(call KernelPackage,ltq-hcd-ase))
 $(eval $(call KernelPackage,ltq-hcd-danube))
 $(eval $(call KernelPackage,ltq-hcd-ar9))
 $(eval $(call KernelPackage,ltq-hcd-vr9))
+$(eval $(call KernelPackage,ltq-hcd-ar10))
