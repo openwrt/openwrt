@@ -6,11 +6,11 @@
 	model = "FRITZ3370 - Fritz!Box WLAN 3370";
 
 	chosen {
-		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit rootfstype=jffs2";
 	};
 
 	memory@0 {
-		reg = <0x0 0x4000000>;
+		reg = <0x0 0x8000000>;
 	};
 	
 	fpi@10000000 {
@@ -23,17 +23,17 @@
 				#size-cells = <1>;
 
 				partition@0 {
-					label = "linux";
+					label = "kernel";
 					reg = <0x00000 0x400000>;
 				};
 
 				partition@400000 {
-					label = "filesystem";
+					label = "rootfs";
 					reg = <0x400000 0x3000000>;
 				};
 
 				partition@3400000 {
-					label = "reserved-kernel";
+					label = "vr9_firmware";
 					reg = <0x3400000 0x400000>;
 				};
 				partition@3800000 {
