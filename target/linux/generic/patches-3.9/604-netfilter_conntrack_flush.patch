@@ -1,0 +1,46 @@
+--- a/net/netfilter/nf_conntrack_standalone.c
++++ b/net/netfilter/nf_conntrack_standalone.c
+@@ -267,10 +267,34 @@ static int ct_open(struct inode *inode,
+ 			sizeof(struct ct_iter_state));
+ }
+ 
++static int kill_all(struct nf_conn *i, void *data)
++{
++    return 1;
++}
++
++static ssize_t ct_file_write(struct file *file, const char __user *buf,
++			     size_t count, loff_t *ppos)
++{
++	struct seq_file *seq = file->private_data;
++	struct net *net = seq_file_net(seq);
++
++	if (count) {
++		char c;
++
++		if (get_user(c, buf))
++			return -EFAULT;
++
++		if (c == 'f')
++			nf_ct_iterate_cleanup(net, kill_all, NULL);
++	}
++	return count;
++}
++
+ static const struct file_operations ct_file_ops = {
+ 	.owner   = THIS_MODULE,
+ 	.open    = ct_open,
+ 	.read    = seq_read,
++	.write	 = ct_file_write,
+ 	.llseek  = seq_lseek,
+ 	.release = seq_release_net,
+ };
+@@ -372,7 +396,7 @@ static int nf_conntrack_standalone_init_
+ {
+ 	struct proc_dir_entry *pde;
+ 
+-	pde = proc_create("nf_conntrack", 0440, net->proc_net, &ct_file_ops);
++	pde = proc_create("nf_conntrack", 0660, net->proc_net, &ct_file_ops);
+ 	if (!pde)
+ 		goto out_nf_conntrack;
+ 

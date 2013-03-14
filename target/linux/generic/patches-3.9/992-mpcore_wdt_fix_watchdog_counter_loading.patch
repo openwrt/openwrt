@@ -1,0 +1,76 @@
+Although the commit "98af057092f8f0dabe63c5df08adc2bbfbddb1d2
+ ARM: 6126/1: ARM mpcore_wdt: fix build failure and other fixes"
+resolved long standing mpcore_wdt driver build problems, it
+introduced an error in the relationship between the MPcore watchdog
+timer clock rate and mpcore_margin, "MPcore timer margin in seconds",
+such that watchdog timeouts are now arbitrary rather than the number
+of seconds specified by mpcore_margin.
+
+This change restores mpcore_wdt_keepalive() to its equivalent
+implementation prior to commit 98af057 such that watchdog timeouts now
+occur as specified by mpcore_margin.
+
+The variable 'mpcore_timer_rate' which caused that build failure was
+replaced by 'twd_timer_rate'. Adding exported function to obtain
+'twd_timer_rate' value in mpcore_wdt driver.
+
+MPCORE_WATCHDOG needed to build 'mpcore_wdt' already depends on
+HAVE_ARM_TWD needed to build 'smp_twd', so from the point of view of
+'mpcore_wdt' driver the exported function will always exist.
+
+Signed-off-by: Valentine Barshak <vbarshak@mvista.com>
+Signed-off-by: Vitaly Kuzmichev <vkuzmichev@mvista.com>
+---
+
+ arch/arm/include/asm/smp_twd.h |    1 +
+ arch/arm/kernel/smp_twd.c      |    7 +++++++
+ drivers/watchdog/mpcore_wdt.c  |    4 +---
+ 3 files changed, 9 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/include/asm/smp_twd.h
++++ b/arch/arm/include/asm/smp_twd.h
+@@ -33,6 +33,7 @@ struct twd_local_timer name __initdata =
+ };
+ 
+ int twd_local_timer_register(struct twd_local_timer *);
++unsigned long twd_timer_get_rate(void);
+ 
+ #ifdef CONFIG_HAVE_ARM_TWD
+ void twd_local_timer_of_register(void);
+--- a/arch/arm/kernel/smp_twd.c
++++ b/arch/arm/kernel/smp_twd.c
+@@ -10,6 +10,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/export.h>
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/device.h>
+@@ -360,6 +361,13 @@ int __init twd_local_timer_register(stru
+ 	return twd_local_timer_common_register(NULL);
+ }
+ 
++/* Needed by mpcore_wdt */
++unsigned long twd_timer_get_rate(void)
++{
++	return twd_timer_rate;
++}
++EXPORT_SYMBOL_GPL(twd_timer_get_rate);
++
+ #ifdef CONFIG_OF
+ const static struct of_device_id twd_of_match[] __initconst = {
+ 	{ .compatible = "arm,cortex-a9-twd-timer",	},
+--- a/drivers/watchdog/mpcore_wdt.c
++++ b/drivers/watchdog/mpcore_wdt.c
+@@ -101,9 +101,7 @@ static void mpcore_wdt_keepalive(struct
+ 
+ 	spin_lock(&wdt_lock);
+ 	/* Assume prescale is set to 256 */
+-	count =  __raw_readl(wdt->base + TWD_WDOG_COUNTER);
+-	count = (0xFFFFFFFFU - count) * (HZ / 5);
+-	count = (count / 256) * mpcore_margin;
++	count = (twd_timer_get_rate() / 256) * mpcore_margin;
+ 
+ 	/* Reload the counter */
+ 	writel(count + wdt->perturb, wdt->base + TWD_WDOG_LOAD);
