@@ -70,6 +70,10 @@ define Image/BuildEVA/squashfs
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva)
 endef
 
+define Image/BuildNANDEVA/jffs2-128k
+	cp $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).rootfs
+endef
+
 define Image/Build/jffs2-64k
 	dd if=$(KDIR)/uImage-$(2) of=$(KDIR)/uImage-$(2)-$(1) bs=64k conv=sync
 	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
@@ -190,7 +194,7 @@ Image/BuildKernel/Profile/EASY80920NOR=$(call Image/BuildKernel/Template,EASY809
 Image/Build/Profile/EASY80920NOR=$(call Image/Build/$(1),$(1),EASY80920NOR)
 
 Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
-Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
+Image/Build/Profile/FRITZ3370=$(call Image/BuildNANDEVA/$(1),$(1),FRITZ3370)
 
 endif
 
