@@ -284,25 +284,17 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
-		reset {
+/*		reset {
 			label = "reset";
 			gpios = <&gpio 7 1>;
 			linux,code = <0x198>;
-		};
+		};*/
 		paging {
 			label = "paging";
 			gpios = <&gpio 11 1>;
 			linux,code = <0x100>;
 		};
 	};
-
-/*	gpio-keys {
-		compatible = "gpio-keys";
-		wps {
-			gpios = <&gpio 2 0>;
-			linux,code = <0x100>;
-		};
-	};*/
 
 	gpio-leds {
 		compatible = "gpio-leds";
