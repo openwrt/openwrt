@@ -2717,7 +2717,7 @@ EXPORT_SYMBOL(ifx_mei_atm_showtime_check);
 /*
  * Writing function for linux proc filesystem
  */
-static int __devinit ltq_mei_probe(struct platform_device *pdev)
+static int ltq_mei_probe(struct platform_device *pdev)
 {
 	int i = 0;
 	static struct class *dsl_class;
@@ -2743,7 +2743,7 @@ static int __devinit ltq_mei_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int __devexit ltq_mei_remove(struct platform_device *pdev)
+static int ltq_mei_remove(struct platform_device *pdev)
 {
 	int i = 0;
 	int num;
@@ -2767,7 +2767,7 @@ static const struct of_device_id ltq_mei_match[] = {
 
 static struct platform_driver ltq_mei_driver = {
 	.probe = ltq_mei_probe,
-	.remove = __devexit_p(ltq_mei_remove),
+	.remove = ltq_mei_remove,
 	.driver = {
 		.name = "lantiq,mei-xway",
 		.owner = THIS_MODULE,
