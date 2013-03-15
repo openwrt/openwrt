@@ -300,7 +300,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1126,6 +1175,9 @@ static void ieee80211_iface_work(struct
+@@ -1126,6 +1175,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -806,3 +806,56 @@
  
  	/* time of last status update */
  	unsigned long stats_update;
+--- a/drivers/net/wireless/ath/ath9k/ar9003_calib.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_calib.c
+@@ -1023,6 +1023,7 @@ static bool ar9003_hw_init_cal(struct at
+ 					  AR_PHY_AGC_CONTROL_FLTR_CAL   |
+ 					  AR_PHY_AGC_CONTROL_PKDET_CAL;
+ 
++	/* Use chip chainmask only for calibration */
+ 	ar9003_hw_set_chain_masks(ah, ah->caps.rx_chainmask, ah->caps.tx_chainmask);
+ 
+ 	if (rtt) {
+@@ -1150,6 +1151,9 @@ skip_tx_iqcal:
+ 		ar9003_hw_rtt_disable(ah);
+ 	}
+ 
++	/* Revert chainmask to runtime parameters */
++	ar9003_hw_set_chain_masks(ah, ah->rxchainmask, ah->txchainmask);
++
+ 	/* Initialize list pointers */
+ 	ah->cal_list = ah->cal_list_last = ah->cal_list_curr = NULL;
+ 
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -3606,6 +3606,12 @@ static void ar9003_hw_ant_ctrl_apply(str
+ 	value = ar9003_hw_ant_ctrl_common_2_get(ah, is2ghz);
+ 	REG_RMW_FIELD(ah, AR_PHY_SWITCH_COM_2, AR_SWITCH_TABLE_COM2_ALL, value);
+ 
++	if ((AR_SREV_9462(ah)) && (ah->rxchainmask == 0x2)) {
++		value = ar9003_hw_ant_ctrl_chain_get(ah, 1, is2ghz);
++		REG_RMW_FIELD(ah, switch_chain_reg[0],
++			      AR_SWITCH_TABLE_ALL, value);
++	}
++
+ 	for (chain = 0; chain < AR9300_MAX_CHAINS; chain++) {
+ 		if ((ah->rxchainmask & BIT(chain)) ||
+ 		    (ah->txchainmask & BIT(chain))) {
+@@ -3772,6 +3778,17 @@ static void ar9003_hw_atten_apply(struct
+ 					  AR_PHY_EXT_ATTEN_CTL_2,
+ 					 };
+ 
++	if ((AR_SREV_9462(ah)) && (ah->rxchainmask == 0x2)) {
++		value = ar9003_hw_atten_chain_get(ah, 1, chan);
++		REG_RMW_FIELD(ah, ext_atten_reg[0],
++			      AR_PHY_EXT_ATTEN_CTL_XATTEN1_DB, value);
++
++		value = ar9003_hw_atten_chain_get_margin(ah, 1, chan);
++		REG_RMW_FIELD(ah, ext_atten_reg[0],
++			      AR_PHY_EXT_ATTEN_CTL_XATTEN1_MARGIN,
++			      value);
++	}
++
+ 	/* Test value. if 0 then attenuation is unused. Don't load anything. */
+ 	for (i = 0; i < 3; i++) {
+ 		if (ah->txchainmask & BIT(i)) {
