@@ -1945,6 +1945,9 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	if (WARN_ON(!priv))
 		return -ENODEV;
 
+	if (chip_is_ar8327(priv))
+		return 0;
+
 	priv->phy = phydev;
 
 	if (phydev->addr != 0) {
@@ -2103,6 +2106,8 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 		swdev->devname, swdev->name, dev_name(&priv->mii_bus->dev));
 
 found:
+	priv->use_count++;
+
 	if (phydev->addr == 0) {
 		if (ar8xxx_has_gige(priv)) {
 			phydev->supported = SUPPORTED_1000baseT_Full;
@@ -2110,6 +2115,14 @@ found:
 		} else {
 			phydev->supported = SUPPORTED_100baseT_Full;
 			phydev->advertising = ADVERTISED_100baseT_Full;
+		}
+
+		if (chip_is_ar8327(priv)) {
+			priv->phy = phydev;
+
+			ret = ar8xxx_start(priv);
+			if (ret)
+				goto err_unregister_switch;
 		}
 	} else {
 		if (ar8xxx_has_gige(priv)) {
@@ -2119,13 +2132,18 @@ found:
 	}
 
 	phydev->priv = priv;
-	priv->use_count++;
 
 	list_add(&priv->list, &ar8xxx_dev_list);
 
 	mutex_unlock(&ar8xxx_dev_list_lock);
 
 	return 0;
+
+err_unregister_switch:
+	if (--priv->use_count)
+		goto unlock;
+
+	unregister_switch(&priv->dev);
 
 free_priv:
 	ar8xxx_free(priv);
