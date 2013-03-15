@@ -77,6 +77,11 @@ struct ar8xxx_chip {
 	unsigned num_mibs;
 };
 
+struct ar8327_data {
+	u32 port0_status;
+	u32 port6_status;
+};
+
 struct ar8xxx_priv {
 	struct switch_dev dev;
 	struct mii_bus *mii_bus;
@@ -89,6 +94,9 @@ struct ar8xxx_priv {
 	u8 chip_ver;
 	u8 chip_rev;
 	const struct ar8xxx_chip *chip;
+	union {
+		struct ar8327_data ar8327;
+	} chip_data;
 	bool initialized;
 	bool port4_phy;
 	char buf[2048];
@@ -1035,6 +1043,7 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 {
 	struct ar8327_platform_data *pdata;
 	struct ar8327_led_cfg *led_cfg;
+	struct ar8327_data *data;
 	struct mii_bus *bus;
 	u32 pos, new_pos;
 	u32 t;
@@ -1043,6 +1052,11 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	pdata = priv->phy->dev.platform_data;
 	if (!pdata)
 		return -EINVAL;
+
+	data = &priv->chip_data.ar8327;
+
+	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
+	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
 
 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
 	priv->write(priv, AR8327_REG_PAD0_MODE, t);
@@ -1117,15 +1131,12 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 static void
 ar8327_init_port(struct ar8xxx_priv *priv, int port)
 {
-	struct ar8327_platform_data *pdata;
 	u32 t;
 
-	pdata = priv->phy->dev.platform_data;
-
 	if (port == AR8216_PORT_CPU)
-		t = ar8327_get_port_init_status(&pdata->port0_cfg);
+		t = priv->chip_data.ar8327.port0_status;
 	else if (port == 6)
-		t = ar8327_get_port_init_status(&pdata->port6_cfg);
+		t = priv->chip_data.ar8327.port6_status;
 	else
 		t = AR8216_PORT_STATUS_LINK_AUTO;
 
