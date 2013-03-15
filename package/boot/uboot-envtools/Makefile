@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,17 +9,16 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
-PKG_VERSION:=2012.04.01
+PKG_VERSION:=2013.01.01
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=192bb231082d9159fb6e16de3039b6b2
-PKG_BUILD_DEPENDS:=zlib
+PKG_MD5SUM:=73939f78606f89a1775c7e9acb2ca617
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/u-boot-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
-
-TAR_OPTIONS+= --strip-components=3 -C $(PKG_BUILD_DIR) $(PKG_DISTNAME)-$(PKG_VERSION)/tools/env
 
 define Package/uboot-envtools
   SECTION:=utils
@@ -32,10 +31,15 @@ define Package/uboot-envtools/description
  This package includes tools to read and modify U-Boot bootloader environment.
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	tar xvjf $(DL_DIR)/$(PKG_SOURCE) --strip-components=2 -C $(PKG_BUILD_DIR) $(PKG_DISTNAME)-$(PKG_VERSION)/lib/crc32.c
-	$(call Build/Prepare/Default)
+define Build/Configure
+endef
+
+define Build/Compile
+	touch $(PKG_BUILD_DIR)/include/config.h
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		HOSTCC="$(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)gcc" \
+		HOSTSTRIP="$(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)strip" \
+		env
 endef
 
 define Package/uboot-envtools/conffiles
@@ -45,7 +49,7 @@ endef
 
 define Package/uboot-envtools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fw_printenv $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/env/fw_printenv $(1)/usr/sbin
 	ln -s fw_printenv $(1)/usr/sbin/fw_setenv
 	$(INSTALL_DIR) $(1)/lib
 	$(INSTALL_DATA) ./files/uboot-envtools.sh $(1)/lib
