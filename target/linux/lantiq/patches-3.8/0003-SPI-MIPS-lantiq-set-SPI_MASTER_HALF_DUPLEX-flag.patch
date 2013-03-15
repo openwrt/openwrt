@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/spi/spi-falcon.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/spi/spi-falcon.c b/drivers/spi/spi-falcon.c
-index f9c66c2..c7a74f0 100644
 --- a/drivers/spi/spi-falcon.c
 +++ b/drivers/spi/spi-falcon.c
-@@ -423,6 +423,7 @@ static int falcon_sflash_probe(struct platform_device *pdev)
+@@ -423,6 +423,7 @@ static int falcon_sflash_probe(struct pl
  
  	master->mode_bits = SPI_MODE_3;
  	master->num_chipselect = 1;
@@ -24,6 +22,3 @@ index f9c66c2..c7a74f0 100644
  	master->bus_num = -1;
  	master->setup = falcon_sflash_setup;
  	master->prepare_transfer_hardware = falcon_sflash_prepare_xfer;
--- 
-1.7.10.4
-

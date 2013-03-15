@@ -10,11 +10,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-xway.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
-index 69dec9b..c49c9db 100644
 --- a/drivers/pinctrl/pinctrl-xway.c
 +++ b/drivers/pinctrl/pinctrl-xway.c
-@@ -443,7 +443,7 @@ static int xway_pinconf_get(struct pinctrl_dev *pctldev,
+@@ -443,7 +443,7 @@ static int xway_pinconf_get(struct pinct
  		else
  			reg = GPIO_OD(pin);
  		*config = LTQ_PINCONF_PACK(param,
@@ -23,6 +21,3 @@ index 69dec9b..c49c9db 100644
  		break;
  
  	case LTQ_PINCONF_PARAM_PULL:
--- 
-1.7.10.4
-

@@ -63,7 +63,7 @@ Signed-off-by: Vitaly Kuzmichev <vkuzmichev@mvista.com>
  	{ .compatible = "arm,cortex-a9-twd-timer",	},
 --- a/drivers/watchdog/mpcore_wdt.c
 +++ b/drivers/watchdog/mpcore_wdt.c
-@@ -101,9 +101,7 @@ static void mpcore_wdt_keepalive(struct 
+@@ -101,9 +101,7 @@ static void mpcore_wdt_keepalive(struct
  
  	spin_lock(&wdt_lock);
  	/* Assume prescale is set to 256 */

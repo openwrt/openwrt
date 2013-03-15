@@ -9,8 +9,6 @@ Subject: [PATCH 38/40] owrt: lantiq: handle vmmc memory reservation
  2 files changed, 64 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/lantiq/xway/vmmc.c
 
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index 51f0eba..3a01d22 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,6 +1,6 @@
@@ -21,9 +19,6 @@ index 51f0eba..3a01d22 100644
  obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
  
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
-diff --git a/arch/mips/lantiq/xway/vmmc.c b/arch/mips/lantiq/xway/vmmc.c
-new file mode 100644
-index 0000000..6dedf77
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/vmmc.c
 @@ -0,0 +1,63 @@
@@ -90,6 +85,3 @@ index 0000000..6dedf77
 +};
 +
 +module_platform_driver(vmmc_driver);
--- 
-1.7.10.4
-

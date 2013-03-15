@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-xway.c   |   14 ++++++++++++++
  2 files changed, 15 insertions(+)
 
-diff --git a/drivers/pinctrl/pinctrl-lantiq.h b/drivers/pinctrl/pinctrl-lantiq.h
-index 4419d32..6d07f02 100644
 --- a/drivers/pinctrl/pinctrl-lantiq.h
 +++ b/drivers/pinctrl/pinctrl-lantiq.h
 @@ -34,6 +34,7 @@ enum ltq_pinconf_param {
@@ -24,11 +22,9 @@ index 4419d32..6d07f02 100644
  };
  
  struct ltq_cfg_param {
-diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
-index aa4c8b8..b23b895 100644
 --- a/drivers/pinctrl/pinctrl-xway.c
 +++ b/drivers/pinctrl/pinctrl-xway.c
-@@ -466,6 +466,11 @@ static int xway_pinconf_get(struct pinctrl_dev *pctldev,
+@@ -466,6 +466,11 @@ static int xway_pinconf_get(struct pinct
  			*config = LTQ_PINCONF_PACK(param, 1);
  		break;
  
@@ -40,7 +36,7 @@ index aa4c8b8..b23b895 100644
  	default:
  		dev_err(pctldev->dev, "Invalid config param %04x\n", param);
  		return -ENOTSUPP;
-@@ -515,6 +520,14 @@ static int xway_pinconf_set(struct pinctrl_dev *pctldev,
+@@ -515,6 +520,14 @@ static int xway_pinconf_set(struct pinct
  			dev_err(pctldev->dev, "Invalid pull value %d\n", arg);
  		break;
  
@@ -55,7 +51,7 @@ index aa4c8b8..b23b895 100644
  	default:
  		dev_err(pctldev->dev, "Invalid config param %04x\n", param);
  		return -ENOTSUPP;
-@@ -573,6 +586,7 @@ static inline int xway_mux_apply(struct pinctrl_dev *pctrldev,
+@@ -573,6 +586,7 @@ static inline int xway_mux_apply(struct
  static const struct ltq_cfg_param xway_cfg_params[] = {
  	{"lantiq,pull",		LTQ_PINCONF_PARAM_PULL},
  	{"lantiq,open-drain",	LTQ_PINCONF_PARAM_OPEN_DRAIN},
@@ -63,6 +59,3 @@ index aa4c8b8..b23b895 100644
  };
  
  static struct ltq_pinmux_info xway_info = {
--- 
-1.7.10.4
-

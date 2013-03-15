@@ -16,8 +16,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 92 insertions(+)
  create mode 100644 drivers/mtd/nand/falcon_nand.c
 
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index 5819eb5..058939d 100644
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
 @@ -575,4 +575,12 @@ config MTD_NAND_XWAY
@@ -33,20 +31,15 @@ index 5819eb5..058939d 100644
 +	  attached to the External Bus Unit (EBU).
 +
  endif # MTD_NAND
-diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
-index d76d912..1a61bf0 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -53,5 +53,6 @@ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740_nand.o
+@@ -53,5 +53,6 @@ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740
  obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
  obj-$(CONFIG_MTD_NAND_XWAY)		+= xway_nand.o
  obj-$(CONFIG_MTD_NAND_BCM47XXNFLASH)	+= bcm47xxnflash/
 +obj-$(CONFIG_MTD_NAND_FALCON)		+= falcon_nand.o
  
  nand-objs := nand_base.o nand_bbt.o
-diff --git a/drivers/mtd/nand/falcon_nand.c b/drivers/mtd/nand/falcon_nand.c
-new file mode 100644
-index 0000000..13458d3
 --- /dev/null
 +++ b/drivers/mtd/nand/falcon_nand.c
 @@ -0,0 +1,83 @@
@@ -133,6 +126,3 @@ index 0000000..13458d3
 +}
 +
 +arch_initcall(falcon_register_nand);
--- 
-1.7.10.4
-

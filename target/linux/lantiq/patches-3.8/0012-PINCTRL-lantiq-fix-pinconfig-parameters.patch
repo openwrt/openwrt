@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-falcon.c |    2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/pinctrl/pinctrl-falcon.c b/drivers/pinctrl/pinctrl-falcon.c
-index 249a405..c5a9868 100644
 --- a/drivers/pinctrl/pinctrl-falcon.c
 +++ b/drivers/pinctrl/pinctrl-falcon.c
-@@ -360,6 +360,8 @@ static const struct ltq_cfg_param falcon_cfg_params[] = {
+@@ -360,6 +360,8 @@ static const struct ltq_cfg_param falcon
  static struct ltq_pinmux_info falcon_info = {
  	.desc		= &falcon_pctrl_desc,
  	.apply_mux	= falcon_mux_apply,
@@ -25,6 +23,3 @@ index 249a405..c5a9868 100644
  };
  
  
--- 
-1.7.10.4
-
