@@ -1002,6 +1002,34 @@ ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
 	}
 }
 
+static u32
+ar8327_get_port_init_status(struct ar8327_port_cfg *cfg)
+{
+	u32 t;
+
+	if (!cfg->force_link)
+		return AR8216_PORT_STATUS_LINK_AUTO;
+
+	t = AR8216_PORT_STATUS_TXMAC | AR8216_PORT_STATUS_RXMAC;
+	t |= cfg->duplex ? AR8216_PORT_STATUS_DUPLEX : 0;
+	t |= cfg->rxpause ? AR8216_PORT_STATUS_RXFLOW : 0;
+	t |= cfg->txpause ? AR8216_PORT_STATUS_TXFLOW : 0;
+
+	switch (cfg->speed) {
+	case AR8327_PORT_SPEED_10:
+		t |= AR8216_PORT_SPEED_10M;
+		break;
+	case AR8327_PORT_SPEED_100:
+		t |= AR8216_PORT_SPEED_100M;
+		break;
+	case AR8327_PORT_SPEED_1000:
+		t |= AR8216_PORT_SPEED_1000M;
+		break;
+	}
+
+	return t;
+}
+
 static int
 ar8327_hw_init(struct ar8xxx_priv *priv)
 {
@@ -1084,34 +1112,6 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	/* Enable MIB counters */
 	ar8xxx_reg_set(priv, AR8327_REG_MODULE_EN,
 		       AR8327_MODULE_EN_MIB);
-}
-
-static u32
-ar8327_get_port_init_status(struct ar8327_port_cfg *cfg)
-{
-	u32 t;
-
-	if (!cfg->force_link)
-		return AR8216_PORT_STATUS_LINK_AUTO;
-
-	t = AR8216_PORT_STATUS_TXMAC | AR8216_PORT_STATUS_RXMAC;
-	t |= cfg->duplex ? AR8216_PORT_STATUS_DUPLEX : 0;
-	t |= cfg->rxpause ? AR8216_PORT_STATUS_RXFLOW : 0;
-	t |= cfg->txpause ? AR8216_PORT_STATUS_TXFLOW : 0;
-
-	switch (cfg->speed) {
-	case AR8327_PORT_SPEED_10:
-		t |= AR8216_PORT_SPEED_10M;
-		break;
-	case AR8327_PORT_SPEED_100:
-		t |= AR8216_PORT_SPEED_100M;
-		break;
-	case AR8327_PORT_SPEED_1000:
-		t |= AR8216_PORT_SPEED_1000M;
-		break;
-	}
-
-	return t;
 }
 
 static void
