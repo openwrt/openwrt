@@ -1914,6 +1914,28 @@ ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 }
 
 static int
+ar8xxx_start(struct ar8xxx_priv *priv)
+{
+	int ret;
+
+	priv->init = true;
+
+	ret = priv->chip->hw_init(priv);
+	if (ret)
+		return ret;
+
+	ret = ar8xxx_sw_reset_switch(&priv->dev);
+	if (ret)
+		return ret;
+
+	priv->init = false;
+
+	ar8xxx_mib_start(priv);
+
+	return 0;
+}
+
+static int
 ar8xxx_phy_config_init(struct phy_device *phydev)
 {
 	struct ar8xxx_priv *priv = phydev->priv;
@@ -1938,13 +1960,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 		return 0;
 	}
 
-	priv->init = true;
-
-	ret = priv->chip->hw_init(priv);
-	if (ret)
-		return ret;
-
-	ret = ar8xxx_sw_reset_switch(&priv->dev);
+	ret = ar8xxx_start(priv);
 	if (ret)
 		return ret;
 
@@ -1955,10 +1971,6 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 		dev->eth_mangle_rx = ar8216_mangle_rx;
 		dev->eth_mangle_tx = ar8216_mangle_tx;
 	}
-
-	priv->init = false;
-
-	ar8xxx_mib_start(priv);
 
 	return 0;
 }
