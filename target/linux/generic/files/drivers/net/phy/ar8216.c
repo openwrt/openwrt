@@ -1127,9 +1127,9 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 
 	pdata = priv->phy->dev.platform_data;
 
-	if (pdata && port == AR8216_PORT_CPU)
+	if (port == AR8216_PORT_CPU)
 		cfg = &pdata->port0_cfg;
-	else if (pdata && port == 6)
+	else if (port == 6)
 		cfg = &pdata->port6_cfg;
 	else
 		cfg = NULL;
