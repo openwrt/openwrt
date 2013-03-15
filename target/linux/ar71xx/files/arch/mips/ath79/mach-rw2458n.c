@@ -1,7 +1,7 @@
 /*
  *  Redwave RW2458N support
  *
- *  Copyright (C) 2011-2012 Cezary Jackiewicz <cezary@eko.one.pl>
+ *  Copyright (C) 2011-2013 Cezary Jackiewicz <cezary@eko.one.pl>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -17,6 +17,7 @@
 #include "dev-m25p80.h"
 #include "dev-usb.h"
 #include "machtypes.h"
+#include "pci.h"
 
 #define RW2458N_GPIO_LED_D3	1
 #define RW2458N_GPIO_LED_D4	0
@@ -64,7 +65,6 @@ static void __init rw2458n_setup(void)
 {
 	u8 *mac1 = (u8 *) KSEG1ADDR(0x1fff0000);
 	u8 *mac2 = (u8 *) KSEG1ADDR(0x1fff0000 + ETH_ALEN);
-	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	ath79_register_m25p80(NULL);
 
@@ -76,8 +76,6 @@ static void __init rw2458n_setup(void)
 	ath79_register_eth(0);
 	ath79_register_eth(1);
 
-	ap91_pci_init(ee, NULL);
-
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rw2458n_leds_gpio),
 				 rw2458n_leds_gpio);
 
@@ -85,6 +83,8 @@ static void __init rw2458n_setup(void)
 					ARRAY_SIZE(rw2458n_gpio_keys),
 					rw2458n_gpio_keys);
 	ath79_register_usb();
+
+	ath79_register_pci();
 }
 
 MIPS_MACHINE(ATH79_MACH_RW2458N, "RW2458N", "Redwave RW2458N",
