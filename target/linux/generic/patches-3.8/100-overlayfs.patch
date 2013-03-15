@@ -301,7 +301,7 @@
  
  /**
   * sb_permission - Check superblock-level permissions
-@@ -2878,9 +2879,12 @@ finish_open_created:
+@@ -2876,9 +2877,12 @@ finish_open_created:
  	error = may_open(&nd->path, acc_mode, open_flag);
  	if (error)
  		goto out;

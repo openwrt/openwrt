@@ -11,13 +11,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 226 insertions(+)
  create mode 100644 drivers/net/phy/lantiq.c
 
-diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
-index 961f0b2..41a2992 100644
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -107,6 +107,11 @@ config MICREL_PHY
+@@ -150,6 +150,11 @@ config MICREL_PHY
  	---help---
- 	  Supports the KSZ9021, VSC8201, KS8001 PHYs.
+ 	  Currently has a driver for the KSZ8041
  
 +config LANTIQ_PHY
 +	tristate "Driver for Lantiq PHYs"
@@ -27,11 +25,9 @@ index 961f0b2..41a2992 100644
  config FIXED_PHY
  	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
  	depends on PHYLIB=y
-diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
-index 9645e38..e2eeee3 100644
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -23,6 +23,7 @@ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
+@@ -39,6 +39,7 @@ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
  obj-$(CONFIG_DP83640_PHY)	+= dp83640.o
  obj-$(CONFIG_STE10XP)		+= ste10Xp.o
  obj-$(CONFIG_MICREL_PHY)	+= micrel.o
@@ -39,9 +35,6 @@ index 9645e38..e2eeee3 100644
  obj-$(CONFIG_MDIO_OCTEON)	+= mdio-octeon.o
  obj-$(CONFIG_MICREL_KS8995MA)	+= spi_ks8995.o
  obj-$(CONFIG_AT803X_PHY)	+= at803x.o
-diff --git a/drivers/net/phy/lantiq.c b/drivers/net/phy/lantiq.c
-new file mode 100644
-index 0000000..418dff0
 --- /dev/null
 +++ b/drivers/net/phy/lantiq.c
 @@ -0,0 +1,220 @@
@@ -265,6 +258,3 @@ index 0000000..418dff0
 +MODULE_DESCRIPTION("Lantiq PHY drivers");
 +MODULE_AUTHOR("Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>");
 +MODULE_LICENSE("GPL");
--- 
-1.7.10.4
-

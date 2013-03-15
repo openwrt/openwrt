@@ -7,8 +7,6 @@ Subject: [PATCH 29/40] NET: lantiq: adds gphy clock
  arch/mips/lantiq/xway/sysctrl.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 3390fcd..c24924f 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -376,6 +376,7 @@ void __init ltq_soc_init(void)
@@ -19,6 +17,3 @@ index 3390fcd..c24924f 100644
  	} else if (of_machine_is_compatible("lantiq,ar9")) {
  		clkdev_add_static(ltq_ar9_cpu_hz(), ltq_ar9_fpi_hz(),
  				ltq_ar9_fpi_hz(), CLOCK_250M);
--- 
-1.7.10.4
-

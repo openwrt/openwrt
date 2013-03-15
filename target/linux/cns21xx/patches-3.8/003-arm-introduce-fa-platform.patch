@@ -18,7 +18,7 @@
  	select GENERIC_CLOCKEVENTS
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -202,6 +202,7 @@ machine-$(CONFIG_ARCH_SUNXI)		+= sunxi
+@@ -207,6 +207,7 @@ machine-$(CONFIG_ARCH_SUNXI)		+= sunxi
  plat-$(CONFIG_ARCH_OMAP)	+= omap
  plat-$(CONFIG_ARCH_S3C64XX)	+= samsung
  plat-$(CONFIG_PLAT_IOP)		+= iop
@@ -26,7 +26,7 @@
  plat-$(CONFIG_PLAT_ORION)	+= orion
  plat-$(CONFIG_PLAT_PXA)		+= pxa
  plat-$(CONFIG_PLAT_S3C24XX)	+= s3c24xx samsung
-@@ -311,7 +312,7 @@ define archhelp
+@@ -316,7 +317,7 @@ define archhelp
    echo  '  Image         - Uncompressed kernel image (arch/$(ARCH)/boot/Image)'
    echo  '* xipImage      - XIP kernel image, if configured (arch/$(ARCH)/boot/xipImage)'
    echo  '  uImage        - U-Boot wrapped zImage'

@@ -12,8 +12,6 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
  create mode 100644 drivers/net/ethernet/lantiq_pce.h
  create mode 100644 drivers/net/ethernet/lantiq_xrx200.c
 
-diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
-index e4ff389..35cb7b0 100644
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
 @@ -83,7 +83,13 @@ config LANTIQ_ETOP
@@ -31,8 +29,6 @@ index e4ff389..35cb7b0 100644
  
  source "drivers/net/ethernet/marvell/Kconfig"
  source "drivers/net/ethernet/mellanox/Kconfig"
-diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
-index d447307..4f95100 100644
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
 @@ -36,6 +36,7 @@ obj-$(CONFIG_IP1000) += icplus/
@@ -43,9 +39,6 @@ index d447307..4f95100 100644
  obj-$(CONFIG_NET_VENDOR_MARVELL) += marvell/
  obj-$(CONFIG_NET_VENDOR_MELLANOX) += mellanox/
  obj-$(CONFIG_NET_VENDOR_MICREL) += micrel/
-diff --git a/drivers/net/ethernet/lantiq_pce.h b/drivers/net/ethernet/lantiq_pce.h
-new file mode 100644
-index 0000000..0c38efe
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_pce.h
 @@ -0,0 +1,163 @@
@@ -212,9 +205,6 @@ index 0000000..0c38efe
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +};
-diff --git a/drivers/net/ethernet/lantiq_xrx200.c b/drivers/net/ethernet/lantiq_xrx200.c
-new file mode 100644
-index 0000000..f815165
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
 @@ -0,0 +1,1203 @@
@@ -1421,6 +1411,3 @@ index 0000000..f815165
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Lantiq SoC XRX200 ethernet");
 +MODULE_LICENSE("GPL");
--- 
-1.7.10.4
-

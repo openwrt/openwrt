@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-falcon.c |   31 +++++++++++++++++++++++++++++++
  1 file changed, 31 insertions(+)
 
-diff --git a/drivers/pinctrl/pinctrl-falcon.c b/drivers/pinctrl/pinctrl-falcon.c
-index c5a9868..4a0d54a 100644
 --- a/drivers/pinctrl/pinctrl-falcon.c
 +++ b/drivers/pinctrl/pinctrl-falcon.c
-@@ -315,6 +315,37 @@ static int falcon_pinconf_set(struct pinctrl_dev *pctrldev,
+@@ -315,6 +315,37 @@ static int falcon_pinconf_set(struct pin
  static void falcon_pinconf_dbg_show(struct pinctrl_dev *pctrldev,
  			struct seq_file *s, unsigned offset)
  {
@@ -55,6 +53,3 @@ index c5a9868..4a0d54a 100644
  }
  
  static void falcon_pinconf_group_dbg_show(struct pinctrl_dev *pctrldev,
--- 
-1.7.10.4
-

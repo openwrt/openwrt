@@ -13,7 +13,7 @@ FEATURES:=squashfs fpu gpio pcie usb usbgadget
 CFLAGS:=-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.8.2
+LINUX_VERSION:=3.8.3
 
 include $(INCLUDE_DIR)/target.mk
 

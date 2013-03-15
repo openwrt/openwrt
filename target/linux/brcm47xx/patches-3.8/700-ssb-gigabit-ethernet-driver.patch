@@ -104,7 +104,7 @@
  	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5906) {
  		/* Wait up to 20ms for init done. */
  		for (i = 0; i < 200; i++) {
-@@ -3447,6 +3469,13 @@ static int tg3_halt_cpu(struct tg3 *tp,
+@@ -3443,6 +3465,13 @@ static int tg3_halt_cpu(struct tg3 *tp,
  		tw32_f(offset + CPU_MODE,  CPU_MODE_HALT);
  		udelay(10);
  	} else {
@@ -118,7 +118,7 @@
  		for (i = 0; i < 10000; i++) {
  			tw32(offset + CPU_STATE, 0xffffffff);
  			tw32(offset + CPU_MODE,  CPU_MODE_HALT);
-@@ -3914,8 +3943,9 @@ static int tg3_power_down_prepare(struct
+@@ -3910,8 +3939,9 @@ static int tg3_power_down_prepare(struct
  	tg3_frob_aux_power(tp, true);
  
  	/* Workaround for unstable PLL clock */
@@ -130,7 +130,7 @@
  		u32 val = tr32(0x7d00);
  
  		val &= ~((1 << 16) | (1 << 4) | (1 << 2) | (1 << 1) | 1);
-@@ -4435,6 +4465,15 @@ relink:
+@@ -4431,6 +4461,15 @@ relink:
  	if (current_link_up == 0 || (tp->phy_flags & TG3_PHYFLG_IS_LOW_POWER)) {
  		tg3_phy_copper_begin(tp);
  
@@ -146,7 +146,7 @@
  		tg3_readphy(tp, MII_BMSR, &bmsr);
  		if ((!tg3_readphy(tp, MII_BMSR, &bmsr) && (bmsr & BMSR_LSTATUS)) ||
  		    (tp->mac_mode & MAC_MODE_PORT_INT_LPBACK))
-@@ -4453,6 +4492,26 @@ relink:
+@@ -4449,6 +4488,26 @@ relink:
  	else
  		tp->mac_mode |= MAC_MODE_PORT_MODE_GMII;
  
@@ -173,7 +173,7 @@
  	tp->mac_mode &= ~MAC_MODE_HALF_DUPLEX;
  	if (tp->link_config.active_duplex == DUPLEX_HALF)
  		tp->mac_mode |= MAC_MODE_HALF_DUPLEX;
-@@ -8431,6 +8490,16 @@ static int tg3_chip_reset(struct tg3 *tp
+@@ -8427,6 +8486,16 @@ static int tg3_chip_reset(struct tg3 *tp
  		tw32(0x5000, 0x400);
  	}
  
@@ -190,7 +190,7 @@
  	tw32(GRC_MODE, tp->grc_mode);
  
  	if (tp->pci_chip_rev_id == CHIPREV_ID_5705_A0) {
-@@ -10064,6 +10133,11 @@ static void tg3_timer(unsigned long __op
+@@ -10060,6 +10129,11 @@ static void tg3_timer(unsigned long __op
  	    tg3_flag(tp, 57765_CLASS))
  		tg3_chk_missed_msi(tp);
  
@@ -202,7 +202,7 @@
  	if (!tg3_flag(tp, TAGGED_STATUS)) {
  		/* All of this garbage is because when using non-tagged
  		 * IRQ status the mailbox/status_block protocol the chip
-@@ -12937,7 +13011,8 @@ static int tg3_ioctl(struct net_device *
+@@ -12933,7 +13007,8 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -212,7 +212,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		data->val_out = mii_regval;
-@@ -12953,7 +13028,8 @@ static int tg3_ioctl(struct net_device *
+@@ -12949,7 +13024,8 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -222,7 +222,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		return err;
-@@ -13806,6 +13882,14 @@ static void tg3_get_5720_nvram_info(stru
+@@ -13802,6 +13878,14 @@ static void tg3_get_5720_nvram_info(stru
  /* Chips other than 5700/5701 use the NVRAM for fetching info. */
  static void tg3_nvram_init(struct tg3 *tp)
  {
@@ -237,7 +237,7 @@
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -14298,10 +14382,19 @@ static int tg3_phy_probe(struct tg3 *tp)
+@@ -14294,10 +14378,19 @@ static int tg3_phy_probe(struct tg3 *tp)
  			 * subsys device table.
  			 */
  			p = tg3_lookup_by_subsys(tp);
@@ -259,7 +259,7 @@
  			if (!tp->phy_id ||
  			    tp->phy_id == TG3_PHY_ID_BCM8002)
  				tp->phy_flags |= TG3_PHYFLG_PHY_SERDES;
-@@ -15346,6 +15439,11 @@ static int tg3_get_invariants(struct tg3
+@@ -15342,6 +15435,11 @@ static int tg3_get_invariants(struct tg3
  		}
  	}
  
@@ -271,7 +271,7 @@
  	/* Get eeprom hw config before calling tg3_set_power_state().
  	 * In particular, the TG3_FLAG_IS_NIC flag must be
  	 * determined before calling tg3_set_power_state() so that
-@@ -15679,12 +15777,19 @@ static int tg3_get_device_address(struct
+@@ -15675,12 +15773,19 @@ static int tg3_get_device_address(struct
  	struct net_device *dev = tp->dev;
  	u32 hi, lo, mac_offset;
  	int addr_ok = 0;
@@ -291,7 +291,7 @@
  	mac_offset = 0x7c;
  	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5704 ||
  	    tg3_flag(tp, 5780_CLASS)) {
-@@ -16045,6 +16150,8 @@ static int tg3_test_dma(struct tg3 *tp)
+@@ -16041,6 +16146,8 @@ static int tg3_test_dma(struct tg3 *tp)
  			tp->dma_rwctrl |= 0x001b000f;
  		}
  	}
@@ -300,7 +300,7 @@
  
  	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5703 ||
  	    GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5704)
-@@ -16389,6 +16496,18 @@ static int tg3_init_one(struct pci_dev *
+@@ -16385,6 +16492,18 @@ static int tg3_init_one(struct pci_dev *
  	else
  		tp->msg_enable = TG3_DEF_MSG_ENABLE;
  

@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-falcon.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/pinctrl/pinctrl-falcon.c b/drivers/pinctrl/pinctrl-falcon.c
-index 8ed20e8..6331c5c 100644
 --- a/drivers/pinctrl/pinctrl-falcon.c
 +++ b/drivers/pinctrl/pinctrl-falcon.c
-@@ -398,6 +398,9 @@ static int pinctrl_falcon_probe(struct platform_device *pdev)
+@@ -398,6 +398,9 @@ static int pinctrl_falcon_probe(struct p
  		u32 avail;
  		int pins;
  
@@ -25,6 +23,3 @@ index 8ed20e8..6331c5c 100644
  		if (!ppdev) {
  			dev_err(&pdev->dev, "failed to find pad pdev\n");
  			continue;
--- 
-1.7.10.4
-

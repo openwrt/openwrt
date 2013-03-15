@@ -13,7 +13,7 @@ FEATURES:=targz usb jffs2 pci pcie gpio
 CFLAGS:=-Os -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.8.2
+LINUX_VERSION:=3.8.3
 
 include $(INCLUDE_DIR)/target.mk
 

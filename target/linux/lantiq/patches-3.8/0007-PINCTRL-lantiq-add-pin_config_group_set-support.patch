@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-xway.c   |   15 +++++++++++
  2 files changed, 49 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-lantiq.c b/drivers/pinctrl/pinctrl-lantiq.c
-index 15f501d..7d11072 100644
 --- a/drivers/pinctrl/pinctrl-lantiq.c
 +++ b/drivers/pinctrl/pinctrl-lantiq.c
-@@ -64,11 +64,13 @@ static void ltq_pinctrl_pin_dbg_show(struct pinctrl_dev *pctldev,
+@@ -64,11 +64,13 @@ static void ltq_pinctrl_pin_dbg_show(str
  	seq_printf(s, " %s", dev_name(pctldev->dev));
  }
  
@@ -31,7 +29,7 @@ index 15f501d..7d11072 100644
  	unsigned long configs[3];
  	unsigned num_configs = 0;
  	struct property *prop;
-@@ -76,8 +78,20 @@ static int ltq_pinctrl_dt_subnode_to_map(struct pinctrl_dev *pctldev,
+@@ -76,8 +78,20 @@ static int ltq_pinctrl_dt_subnode_to_map
  	const char *function;
  	int ret, i;
  
@@ -53,7 +51,7 @@ index 15f501d..7d11072 100644
  		of_property_for_each_string(np, "lantiq,groups", prop, group) {
  			(*map)->type = PIN_MAP_TYPE_MUX_GROUP;
  			(*map)->name = function;
-@@ -85,11 +99,6 @@ static int ltq_pinctrl_dt_subnode_to_map(struct pinctrl_dev *pctldev,
+@@ -85,11 +99,6 @@ static int ltq_pinctrl_dt_subnode_to_map
  			(*map)->data.mux.function = function;
  			(*map)++;
  		}
@@ -65,7 +63,7 @@ index 15f501d..7d11072 100644
  	}
  
  	for (i = 0; i < info->num_params; i++) {
-@@ -103,7 +112,7 @@ static int ltq_pinctrl_dt_subnode_to_map(struct pinctrl_dev *pctldev,
+@@ -103,7 +112,7 @@ static int ltq_pinctrl_dt_subnode_to_map
  	}
  
  	if (!num_configs)
@@ -74,7 +72,7 @@ index 15f501d..7d11072 100644
  
  	of_property_for_each_string(np, "lantiq,pins", prop, pin) {
  		(*map)->data.configs.configs = kmemdup(configs,
-@@ -115,7 +124,16 @@ static int ltq_pinctrl_dt_subnode_to_map(struct pinctrl_dev *pctldev,
+@@ -115,7 +124,16 @@ static int ltq_pinctrl_dt_subnode_to_map
  		(*map)->data.configs.num_configs = num_configs;
  		(*map)++;
  	}
@@ -92,7 +90,7 @@ index 15f501d..7d11072 100644
  }
  
  static int ltq_pinctrl_dt_subnode_size(struct device_node *np)
-@@ -135,23 +153,19 @@ static int ltq_pinctrl_dt_node_to_map(struct pinctrl_dev *pctldev,
+@@ -135,23 +153,19 @@ static int ltq_pinctrl_dt_node_to_map(st
  {
  	struct pinctrl_map *tmp;
  	struct device_node *np;
@@ -123,11 +121,9 @@ index 15f501d..7d11072 100644
  	return 0;
  }
  
-diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
-index c49c9db..aa4c8b8 100644
 --- a/drivers/pinctrl/pinctrl-xway.c
 +++ b/drivers/pinctrl/pinctrl-xway.c
-@@ -522,9 +522,24 @@ static int xway_pinconf_set(struct pinctrl_dev *pctldev,
+@@ -522,9 +522,24 @@ static int xway_pinconf_set(struct pinct
  	return 0;
  }
  
@@ -152,6 +148,3 @@ index c49c9db..aa4c8b8 100644
  };
  
  static struct pinctrl_desc xway_pctrl_desc = {
--- 
-1.7.10.4
-

@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-falcon.c |   11 ++++++++---
  1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-falcon.c b/drivers/pinctrl/pinctrl-falcon.c
-index 4a0d54a..de9d1db 100644
 --- a/drivers/pinctrl/pinctrl-falcon.c
 +++ b/drivers/pinctrl/pinctrl-falcon.c
-@@ -455,12 +455,17 @@ static int pinctrl_falcon_probe(struct platform_device *pdev)
+@@ -455,12 +455,17 @@ static int pinctrl_falcon_probe(struct p
  				*bank);
  			return -ENOMEM;
  		}
@@ -38,6 +36,3 @@ index 4a0d54a..de9d1db 100644
  		dev_dbg(&pdev->dev, "found %s with %d pads\n",
  				res.name, pins);
  	}
--- 
-1.7.10.4
-
