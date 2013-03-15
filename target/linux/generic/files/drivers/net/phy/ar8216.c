@@ -33,6 +33,8 @@
 #include <linux/lockdep.h>
 #include <linux/ar8216_platform.h>
 #include <linux/workqueue.h>
+#include <linux/of_device.h>
+
 #include "ar8216.h"
 
 /* size of the vlan table */
@@ -1086,6 +1088,50 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	return 0;
 }
 
+#ifdef CONFIG_OF
+static int
+ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
+{
+	const __be32 *paddr;
+	int len;
+	int i;
+
+	paddr = of_get_property(np, "qca,ar8327-initvals", &len);
+	if (!paddr || len < (2 * sizeof(*paddr)))
+		return -EINVAL;
+
+	len /= sizeof(*paddr);
+
+	for (i = 0; i < len - 1; i += 2) {
+		u32 reg;
+		u32 val;
+
+		reg = be32_to_cpup(paddr + i);
+		val = be32_to_cpup(paddr + i + 1);
+
+		switch (reg) {
+		case AR8327_REG_PORT_STATUS(0):
+			priv->chip_data.ar8327.port0_status = val;
+			break;
+		case AR8327_REG_PORT_STATUS(6):
+			priv->chip_data.ar8327.port6_status = val;
+			break;
+		default:
+			priv->write(priv, reg, val);
+			break;
+		}
+	}
+
+	return 0;
+}
+#else
+static inline int
+ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
+{
+	return -EINVAL;
+}
+#endif
+
 static int
 ar8327_hw_init(struct ar8xxx_priv *priv)
 {
@@ -1093,7 +1139,12 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	int ret;
 	int i;
 
-	ret = ar8327_hw_config_pdata(priv, priv->phy->dev.platform_data);
+	if (priv->phy->dev.of_node)
+		ret = ar8327_hw_config_of(priv, priv->phy->dev.of_node);
+	else
+		ret = ar8327_hw_config_pdata(priv,
+					     priv->phy->dev.platform_data);
+
 	if (ret)
 		return ret;
 
