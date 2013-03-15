@@ -1039,17 +1039,14 @@ ar8327_get_port_init_status(struct ar8327_port_cfg *cfg)
 }
 
 static int
-ar8327_hw_init(struct ar8xxx_priv *priv)
+ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
+		       struct ar8327_platform_data *pdata)
 {
-	struct ar8327_platform_data *pdata;
 	struct ar8327_led_cfg *led_cfg;
 	struct ar8327_data *data;
-	struct mii_bus *bus;
 	u32 pos, new_pos;
 	u32 t;
-	int i;
 
-	pdata = priv->phy->dev.platform_data;
 	if (!pdata)
 		return -EINVAL;
 
@@ -1085,6 +1082,20 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 		new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
 		priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
 	}
+
+	return 0;
+}
+
+static int
+ar8327_hw_init(struct ar8xxx_priv *priv)
+{
+	struct mii_bus *bus;
+	int ret;
+	int i;
+
+	ret = ar8327_hw_config_pdata(priv, priv->phy->dev.platform_data);
+	if (ret)
+		return ret;
 
 	bus = priv->mii_bus;
 	for (i = 0; i < AR8327_NUM_PHYS; i++) {
