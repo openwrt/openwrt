@@ -1086,17 +1086,13 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 		       AR8327_MODULE_EN_MIB);
 }
 
-static void
-ar8327_config_port(struct ar8xxx_priv *priv, unsigned int port,
-		    struct ar8327_port_cfg *cfg)
+static u32
+ar8327_get_port_init_status(struct ar8327_port_cfg *cfg)
 {
 	u32 t;
 
-	if (!cfg || !cfg->force_link) {
-		priv->write(priv, AR8327_REG_PORT_STATUS(port),
-			    AR8216_PORT_STATUS_LINK_AUTO);
-		return;
-	}
+	if (!cfg->force_link)
+		return AR8216_PORT_STATUS_LINK_AUTO;
 
 	t = AR8216_PORT_STATUS_TXMAC | AR8216_PORT_STATUS_RXMAC;
 	t |= cfg->duplex ? AR8216_PORT_STATUS_DUPLEX : 0;
@@ -1115,27 +1111,25 @@ ar8327_config_port(struct ar8xxx_priv *priv, unsigned int port,
 		break;
 	}
 
-	priv->write(priv, AR8327_REG_PORT_STATUS(port), t);
+	return t;
 }
 
 static void
 ar8327_init_port(struct ar8xxx_priv *priv, int port)
 {
 	struct ar8327_platform_data *pdata;
-	struct ar8327_port_cfg *cfg;
 	u32 t;
 
 	pdata = priv->phy->dev.platform_data;
 
 	if (port == AR8216_PORT_CPU)
-		cfg = &pdata->port0_cfg;
+		t = ar8327_get_port_init_status(&pdata->port0_cfg);
 	else if (port == 6)
-		cfg = &pdata->port6_cfg;
+		t = ar8327_get_port_init_status(&pdata->port6_cfg);
 	else
-		cfg = NULL;
+		t = AR8216_PORT_STATUS_LINK_AUTO;
 
-	ar8327_config_port(priv, port, cfg);
-
+	priv->write(priv, AR8327_REG_PORT_STATUS(port), t);
 	priv->write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
 	t = 1 << AR8327_PORT_VLAN0_DEF_SVID_S;
