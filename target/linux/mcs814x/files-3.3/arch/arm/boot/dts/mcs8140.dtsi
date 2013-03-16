@@ -37,6 +37,9 @@
 			ranges;
 
 			eth0: ethernet@40084000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
 				compatible = "moschip,nuport-mac";
 				reg = <0x40084000 0xd8		// mac
 					0x40080000 0x58>;	// dma channels

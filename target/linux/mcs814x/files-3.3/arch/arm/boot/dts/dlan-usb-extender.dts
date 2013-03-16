@@ -19,6 +19,14 @@
 
 	ahb {
 		vci {
+			eth0: ethernet@40084000 {
+				phy = <&phy0>;
+				phy-mode = "mii";
+
+				phy0: ethernet-phy@0 {
+					reg = <8>;
+				};
+			};
 
 			adc {
 				sdram: memory@0,0 {

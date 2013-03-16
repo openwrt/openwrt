@@ -21,6 +21,12 @@
 		vci {
 			eth0: ethernet@40084000 {
 				nuport-mac,link-activity = <0x01>;
+				phy = <&phy0>;
+				phy-mode = "mii";
+
+				phy0: ethernet-phy@0 {
+					reg = <1>;
+				};
 			};
 
 			adc {
