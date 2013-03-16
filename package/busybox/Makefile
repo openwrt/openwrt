@@ -62,7 +62,7 @@ endef
 define Build/Configure
 	rm -f $(PKG_BUILD_DIR)/.configured*
 	grep 'CONFIG_BUSYBOX_' $(TOPDIR)/.config | sed -e "s,\\(# \)\\?CONFIG_BUSYBOX_\\(.*\\),\\1\\2,g" > $(PKG_BUILD_DIR)/.config
-	yes '' | $(MAKE) -C $(PKG_BUILD_DIR) \
+	yes 'n' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		KBUILD_HAVE_NLS=no \
@@ -113,7 +113,6 @@ define Package/busybox/install
 		$(INSTALL_BIN) ./files/$$$$tmp $(1)/etc/init.d/$$$$tmp; \
 	done
 	-rm -rf $(1)/lib64
-	$(if $(CONFIG_PROCD_INIT),rm -f $(1)/sbin/init $(1)/sbin/logread)
 endef
 
 $(eval $(call BuildPackage,busybox))
