@@ -19,6 +19,8 @@
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
 #include <linux/of.h>
+#include <linux/of_mdio.h>
+#include <linux/of_net.h>
 #include <linux/irq.h>
 #include <linux/err.h>
 #include <linux/phy.h>
@@ -168,6 +170,8 @@ struct nuport_mac_priv {
 	struct platform_device	*pdev;
 	struct mii_bus		*mii_bus;
 	struct phy_device	*phydev;
+	struct device_node	*phy_node;
+	phy_interface_t		phy_interface;
 	int			old_link;
 	int			old_duplex;
 	u32			msg_level;
@@ -898,9 +902,9 @@ static int nuport_mac_mii_probe(struct net_device *dev)
 		goto out;
 	}
 
-	phydev = phy_connect(dev, dev_name(&phydev->dev),
+	phydev = of_phy_connect(dev, priv->phy_node,
 			nuport_mac_adjust_link, 0,
-			PHY_INTERFACE_MODE_MII);
+			priv->phy_interface);
 	if (IS_ERR(phydev)) {
 		netdev_err(dev, "could not attach PHY\n");
 		ret = PTR_ERR(phydev);
@@ -1082,6 +1086,20 @@ static int __init nuport_mac_probe(struct platform_device *pdev)
 
 	netif_napi_add(dev, &priv->napi, nuport_mac_poll, 64);
 
+	priv->phy_node = of_parse_phandle(pdev->dev.of_node, "phy", 0);
+	if (!priv->phy_node) {
+		dev_err(&pdev->dev, "no associated PHY\n");
+		ret = -ENODEV;
+		goto out;
+	}
+
+	priv->phy_interface = of_get_phy_mode(pdev->dev.of_node);
+	if (priv->phy_interface < 0) {
+		dev_err(&pdev->dev, "invalid PHY mode\n");
+		ret = -EINVAL;
+		goto out;
+	}
+
 	priv->mii_bus = mdiobus_alloc();
 	if (!priv->mii_bus) {
 		dev_err(&pdev->dev, "mii bus allocation failed\n");
@@ -1106,7 +1124,7 @@ static int __init nuport_mac_probe(struct platform_device *pdev)
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		priv->mii_bus->irq[i] = PHY_IGNORE_INTERRUPT;
 
-	ret = mdiobus_register(priv->mii_bus);
+	ret = of_mdiobus_register(priv->mii_bus, pdev->dev.of_node);
 	if (ret) {
 		dev_err(&pdev->dev, "failed to register mii_bus\n");
 		goto out_mdio_irq;
