@@ -652,19 +652,31 @@
  
  #define CCK_ACK_DURATION(_bitrate, _short)			\
  	(CCK_DURATION((_bitrate > 10 ? 20 : 10), false, 60) +	\
-@@ -211,7 +211,8 @@ static void
+@@ -211,20 +211,32 @@ static void
  minstrel_ht_calc_tp(struct minstrel_ht_sta *mi, int group, int rate)
  {
  	struct minstrel_rate_stats *mr;
 -	unsigned int usecs = 0;
 +	unsigned int nsecs = 0;
 +	unsigned int tp;
++	unsigned int prob;
  
  	mr = &mi->groups[group].rates[rate];
++	prob = mr->probability;
  
-@@ -221,10 +222,12 @@ minstrel_ht_calc_tp(struct minstrel_ht_s
+-	if (mr->probability < MINSTREL_FRAC(1, 10)) {
++	if (prob < MINSTREL_FRAC(1, 10)) {
+ 		mr->cur_tp = 0;
+ 		return;
  	}
  
++	/*
++	 * For the throughput calculation, limit the probability value to 90% to
++	 * account for collision related packet error rate fluctuation
++	 */
++	if (prob > MINSTREL_FRAC(9, 10))
++		prob = MINSTREL_FRAC(9, 10);
++
  	if (group != MINSTREL_CCK_GROUP)
 -		usecs = mi->overhead / MINSTREL_TRUNC(mi->avg_ampdu_len);
 +		nsecs = 1000 * mi->overhead / MINSTREL_TRUNC(mi->avg_ampdu_len);
@@ -678,7 +690,7 @@
  }
  
  /*
-@@ -308,8 +311,8 @@ minstrel_ht_update_stats(struct minstrel
+@@ -308,8 +320,8 @@ minstrel_ht_update_stats(struct minstrel
  		}
  	}
  
@@ -689,7 +701,7 @@
  
  	cur_prob = 0;
  	cur_prob_tp = 0;
-@@ -320,20 +323,13 @@ minstrel_ht_update_stats(struct minstrel
+@@ -320,20 +332,13 @@ minstrel_ht_update_stats(struct minstrel
  		if (!mg->supported)
  			continue;
  
@@ -711,7 +723,7 @@
  		}
  
  		mr = minstrel_get_ratestats(mi, mg->max_tp_rate2);
-@@ -343,6 +339,23 @@ minstrel_ht_update_stats(struct minstrel
+@@ -343,6 +348,23 @@ minstrel_ht_update_stats(struct minstrel
  		}
  	}
  
@@ -735,7 +747,7 @@
  	mi->stats_update = jiffies;
  }
  
-@@ -467,7 +480,7 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -467,7 +489,7 @@ minstrel_ht_tx_status(void *priv, struct
  
  	if (!mi->sample_wait && !mi->sample_tries && mi->sample_count > 0) {
  		mi->sample_wait = 16 + 2 * MINSTREL_TRUNC(mi->avg_ampdu_len);
@@ -744,7 +756,7 @@
  		mi->sample_count--;
  	}
  
-@@ -536,7 +549,7 @@ minstrel_calc_retransmit(struct minstrel
+@@ -536,7 +558,7 @@ minstrel_calc_retransmit(struct minstrel
  	mr->retry_updated = true;
  
  	group = &minstrel_mcs_groups[index / MCS_GROUP_RATES];
@@ -753,7 +765,7 @@
  
  	/* Contention time for first 2 tries */
  	ctime = (t_slot * cw) >> 1;
-@@ -616,6 +629,7 @@ minstrel_get_sample_rate(struct minstrel
+@@ -616,6 +638,7 @@ minstrel_get_sample_rate(struct minstrel
  {
  	struct minstrel_rate_stats *mr;
  	struct minstrel_mcs_group_data *mg;
@@ -761,7 +773,7 @@
  	int sample_idx = 0;
  
  	if (mi->sample_wait > 0) {
-@@ -626,11 +640,11 @@ minstrel_get_sample_rate(struct minstrel
+@@ -626,39 +649,46 @@ minstrel_get_sample_rate(struct minstrel
  	if (!mi->sample_tries)
  		return -1;
  
@@ -775,7 +787,28 @@
  	minstrel_next_sample_idx(mi);
  
  	/*
-@@ -651,14 +665,18 @@ minstrel_get_sample_rate(struct minstrel
+ 	 * Sampling might add some overhead (RTS, no aggregation)
+ 	 * to the frame. Hence, don't use sampling for the currently
+-	 * used max TP rate.
++	 * used rates.
+ 	 */
+-	if (sample_idx == mi->max_tp_rate)
++	if (sample_idx == mi->max_tp_rate ||
++	    sample_idx == mi->max_tp_rate2 ||
++	    sample_idx == mi->max_prob_rate)
+ 		return -1;
++
+ 	/*
+-	 * When not using MRR, do not sample if the probability is already
+-	 * higher than 95% to avoid wasting airtime
++	 * Do not sample if the probability is already higher than 95%
++	 * to avoid wasting airtime.
+ 	 */
+-	if (!mp->has_mrr && (mr->probability > MINSTREL_FRAC(95, 100)))
++	if (mr->probability > MINSTREL_FRAC(95, 100))
+ 		return -1;
+ 
+ 	/*
  	 * Make sure that lower rates get sampled only occasionally,
  	 * if the link is working perfectly.
  	 */
