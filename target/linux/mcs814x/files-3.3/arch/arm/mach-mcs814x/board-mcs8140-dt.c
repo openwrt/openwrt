@@ -40,5 +40,6 @@ DT_MACHINE_START(mcs8140_dt, "Moschip MCS8140 board")
 	.init_machine	= mcs814x_dt_device_init,
 	.restart	= mcs814x_restart,
 	.dt_compat	= mcs8140_dt_board_compat,
+	.handle_irq	= mcs814x_handle_irq,
 MACHINE_END
 
