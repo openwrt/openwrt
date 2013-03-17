@@ -61,14 +61,7 @@ static int mcs814x_rng_probe(struct platform_device *pdev)
 	rng->name = pdev->name;
 	rng->data_read = mcs814x_rng_data_read;
 
-	if (!devm_request_mem_region(&pdev->dev,
-				res->start, resource_size(res),
-				pdev->name)) {
-		ret = -EBUSY;
-		goto out_rng;
-	}
-
-	priv->regs = devm_ioremap(&pdev->dev, res->start, resource_size(res));
+	priv->regs = devm_request_and_ioremap(&pdev->dev, res);
 	if (!priv->regs) {
 		ret = -ENOMEM;
 		goto out_rng;
