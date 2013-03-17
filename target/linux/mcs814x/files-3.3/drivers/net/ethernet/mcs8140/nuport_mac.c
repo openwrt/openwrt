@@ -1044,16 +1044,14 @@ static int __init nuport_mac_probe(struct platform_device *pdev)
 	else
 		priv->buffer_shifting_len = 2;
 
-	priv->mac_base = devm_ioremap(&pdev->dev,
-				regs->start, resource_size(regs));
+	priv->mac_base = devm_request_and_ioremap(&pdev->dev, regs);
 	if (!priv->mac_base) {
 		dev_err(&pdev->dev, "failed to remap regs\n");
 		ret = -ENOMEM;
 		goto out_platform;
 	}
 
-	priv->dma_base = devm_ioremap(&pdev->dev,
-				dma->start, resource_size(dma));
+	priv->dma_base = devm_request_and_ioremap(&pdev->dev, dma);
 	if (!priv->dma_base) {
 		dev_err(&pdev->dev, "failed to remap dma-regs\n");
 		ret = -ENOMEM;
