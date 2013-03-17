@@ -39,3 +39,19 @@
  
  enum regmap_endian {
  	/* Unspecified -> 0 -> Backwards compatible default */
+--- a/drivers/base/regmap/regmap.c
++++ b/drivers/base/regmap/regmap.c
+@@ -13,6 +13,7 @@
+ #include <linux/device.h>
+ #include <linux/slab.h>
+ #include <linux/export.h>
++#include <linux/module.h>
+ #include <linux/mutex.h>
+ #include <linux/err.h>
+ #include <linux/rbtree.h>
+@@ -1777,3 +1778,5 @@ static int __init regmap_initcall(void)
+ 	return 0;
+ }
+ postcore_initcall(regmap_initcall);
++
++MODULE_LICENSE("GPL");
