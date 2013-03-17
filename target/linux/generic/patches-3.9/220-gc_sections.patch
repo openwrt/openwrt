@@ -479,5 +479,5 @@
  endif
 +KBUILD_CFLAGS_KERNEL := $(patsubst -f%-sections,,$(KBUILD_CFLAGS_KERNEL))
  
- ccflags-y := -fpic -fno-builtin -I$(obj)
+ ccflags-y := -fpic -mno-single-pic-base -fno-builtin -I$(obj)
  asflags-y := -Wa,-march=all -DZIMAGE
