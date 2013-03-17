@@ -112,8 +112,6 @@ This should be part of your 3.9-rc3 pull request if I may ;)
  arch/mips/kernel/Makefile        |   14 ---
  2 files changed, 190 insertions(+), 33 deletions(-)
 
-diff --git a/arch/mips/include/asm/mipsregs.h b/arch/mips/include/asm/mipsregs.h
-index 12b70c2..0da44d4 100644
 --- a/arch/mips/include/asm/mipsregs.h
 +++ b/arch/mips/include/asm/mipsregs.h
 @@ -1166,7 +1166,10 @@ do {									\
@@ -345,8 +343,6 @@ index 12b70c2..0da44d4 100644
  
  #else
  
-diff --git a/arch/mips/kernel/Makefile b/arch/mips/kernel/Makefile
-index f81d98f..2e8a9c1 100644
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
 @@ -109,20 +109,6 @@ obj-$(CONFIG_JUMP_LABEL)	+= jump_label.o
@@ -370,6 +366,3 @@ index f81d98f..2e8a9c1 100644
  CFLAGS_signal.o			= $(CFLAGS_DSP)
  CFLAGS_signal32.o		= $(CFLAGS_DSP)
  CFLAGS_process.o		= $(CFLAGS_DSP)
--- 
-1.7.10.4
-
