@@ -14,9 +14,4 @@
 
 #define NR_IRQS		32
 
-#define IRQ_PCI_INTA            22
-#define IRQ_PCI_INTB            23
-#define IRQ_PCI_INTC            24
-#define IRQ_PCI_INTD            26
-
 #endif
