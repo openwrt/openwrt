@@ -9,6 +9,8 @@
 RELEASE:=Barrier Breaker
 PREP_MK= OPENWRT_BUILD= QUIET=0
 
+export IS_TTY=$(shell tty -s && echo 1 || echo 0)
+
 include $(TOPDIR)/include/verbose.mk
 
 ifeq ($(SDK),1)
@@ -22,7 +24,6 @@ OPENWRTVERSION:=$(RELEASE)$(if $(REVISION), ($(REVISION)))
 export RELEASE
 export REVISION
 export OPENWRTVERSION
-export IS_TTY=$(shell tty -s && echo 1 || echo 0)
 export LD_LIBRARY_PATH:=$(subst ::,:,$(if $(LD_LIBRARY_PATH),$(LD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib)
 export DYLD_LIBRARY_PATH:=$(subst ::,:,$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib)
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
@@ -148,7 +149,7 @@ prereq:: prepare-tmpinfo .config
 		cp .config tmp/.config; \
 		./scripts/config/conf -D tmp/.config -w tmp/.config Config.in > /dev/null 2>&1; \
 		if ./scripts/kconfig.pl '>' .config tmp/.config | grep -q CONFIG; then \
-			echo "WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!" >&2; \
+			printf "$(_R)WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!$(_N)\n" >&2; \
 		fi \
 	)
 	@+$(ULIMIT_FIX) $(SUBMAKE) -r $@
