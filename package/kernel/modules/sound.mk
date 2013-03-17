@@ -32,6 +32,14 @@ SOUNDCORE_FILES ?= \
 	$(LINUX_DIR)/sound/core/oss/snd-mixer-oss.ko \
 	$(LINUX_DIR)/sound/core/oss/snd-pcm-oss.ko
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.3.0)),1)
+SOUNDCORE_LOAD += \
+	snd-compress
+
+SOUNDCORE_FILES += \
+	$(LINUX_DIR)/sound/core/snd-compress.ko
+endif
+
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
@@ -50,7 +58,8 @@ define KernelPackage/sound-core
 	CONFIG_HOSTAUDIO \
 	CONFIG_SND_PCM_OSS \
 	CONFIG_SND_MIXER_OSS \
-	CONFIG_SOUND_OSS_CORE_PRECLAIM=y
+	CONFIG_SOUND_OSS_CORE_PRECLAIM=y \
+	CONFIG_SND_COMPRESS_OFFLOAD
   FILES:=$(SOUNDCORE_FILES)
   AUTOLOAD:=$(call AutoLoad,30,$(SOUNDCORE_LOAD))
   $(call AddDepends/input)
