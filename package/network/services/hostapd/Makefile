@@ -93,7 +93,7 @@ define Package/hostapd/Default
   CATEGORY:=Network
   TITLE:=IEEE 802.1x Authenticator
   URL:=http://hostap.epitest.fi/
-  DEPENDS:=$(DRV_DEPENDS)
+  DEPENDS:=$(DRV_DEPENDS) +libubus
 endef
 
 define Package/hostapd
@@ -138,7 +138,7 @@ endef
 define Package/wpad
 $(call Package/wpad/Default)
   TITLE+= (full)
-  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl
+  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl +libubus
   VARIANT:=wpad-full
 endef
 
@@ -150,7 +150,7 @@ endef
 define Package/wpad-mini
 $(call Package/wpad/Default)
   TITLE+= (WPA-PSK only)
-  DEPENDS:=$(DRV_DEPENDS)
+  DEPENDS:=$(DRV_DEPENDS) +libubus
   VARIANT:=wpad-mini
 endef
 
@@ -225,6 +225,7 @@ TARGET_CPPFLAGS := \
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
+TARGET_LDFLAGS += -lubox -lubus
 
 ifdef CONFIG_PACKAGE_kmod-mac80211
   TARGET_LDFLAGS += -lm -lnl-tiny
