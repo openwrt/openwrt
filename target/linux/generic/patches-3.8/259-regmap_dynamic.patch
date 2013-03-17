@@ -53,3 +53,19 @@
  obj-$(CONFIG_REGMAP_I2C) += regmap-i2c.o
  obj-$(CONFIG_REGMAP_SPI) += regmap-spi.o
  obj-$(CONFIG_REGMAP_MMIO) += regmap-mmio.o
+--- a/drivers/base/regmap/regmap.c
++++ b/drivers/base/regmap/regmap.c
+@@ -13,6 +13,7 @@
+ #include <linux/device.h>
+ #include <linux/slab.h>
+ #include <linux/export.h>
++#include <linux/module.h>
+ #include <linux/mutex.h>
+ #include <linux/err.h>
+ #include <linux/rbtree.h>
+@@ -1530,3 +1531,5 @@ static int __init regmap_initcall(void)
+ 	return 0;
+ }
+ postcore_initcall(regmap_initcall);
++
++MODULE_LICENSE("GPL");
