@@ -79,27 +79,6 @@
 				interrupts = <19 27>;		// done, error
 			};
 
-			pci@400b0000 {
-				compatible = "moschip,mcs8140-pci", "moschip,mcs814x-pci";
-				reg = <0x400b0000 0x44		// PCI master
-					0x400d8000 0xe4>;	// EEPROM emulator
-				interrupts = <25>;		// abort interrupt
-				status = "disabled";
-				#address-cells = <3>;
-				#size-cells = <2>;
-
-				ranges = <0x01000000 0 0x80000000 0x80000000 0 0x04000000   // IO
-					  0x42000000 0 0x90000000 0x90000000 0 0x20000000   // non-prefetch
-					  0x02000000 0 0xb0000000 0xb0000000 0 0x10000000>; // prefecth
-
-				#interrupt-cells = <1>;
-				interrupt-map-mask = <>;
-				interrupt-map = <0 0 0 1 &intc 22 0
-						 0 0 0 2 &intc 23 0
-						 0 0 0 3 &intc 24 0
-						 0 0 0 4 &intc 26 0>;
-			};
-
 			gpio: gpio@400d0000 {
 				compatible = "moschip,mcs814x-gpio";
 				reg = <0x400d0000 0x670>;
