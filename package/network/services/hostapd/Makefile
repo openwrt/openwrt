@@ -225,7 +225,9 @@ TARGET_CPPFLAGS := \
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
-TARGET_LDFLAGS += -lubox -lubus
+ifeq ($(findstring supplicant,$(BUILD_VARIANT)),)
+  TARGET_LDFLAGS += -lubox -lubus
+endif
 
 ifdef CONFIG_PACKAGE_kmod-mac80211
   TARGET_LDFLAGS += -lm -lnl-tiny

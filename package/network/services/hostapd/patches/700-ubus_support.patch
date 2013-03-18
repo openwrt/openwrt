@@ -422,13 +422,13 @@
 +	const u8 *addr;
 +};
 +
++struct hostapd_iface;
++struct hostapd_data;
++
 +#ifdef UBUS_SUPPORT
 +
 +#include <libubox/avl.h>
 +#include <libubus.h>
-+
-+struct hostapd_iface;
-+struct hostapd_data;
 +
 +struct hostapd_ubus_iface {
 +	struct ubus_object obj;
