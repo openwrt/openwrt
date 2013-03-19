@@ -1,6 +1,6 @@
 --- a/sound/core/Kconfig
 +++ b/sound/core/Kconfig
-@@ -7,7 +7,7 @@ config SND_PCM
+@@ -7,13 +7,13 @@ config SND_PCM
  	select SND_TIMER
  
  config SND_HWDEP
@@ -9,3 +9,10 @@
  
  config SND_RAWMIDI
  	tristate
+ 
+ config SND_COMPRESS_OFFLOAD
+-	tristate
++	tristate "Compression offloading support"
+ 
+ # To be effective this also requires INPUT - users should say:
+ #    select SND_JACK if INPUT=y || INPUT=SND
