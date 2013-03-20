@@ -72,7 +72,7 @@
  {
      char*       ptcp;
      uint        tcplen;
-@@ -256,7 +256,7 @@ rtsp_mangle_tran(enum ip_conntrack_info 
+@@ -256,7 +256,7 @@ rtsp_mangle_tran(enum ip_conntrack_info
                  if (dstact == DSTACT_STRIP || (dstact == DSTACT_AUTO && !is_stun))
                  {
                      diff = nextfieldoff-off;
@@ -81,7 +81,7 @@
                                                           off, diff, NULL, 0))
                      {
                          /* mangle failed, all we can do is bail */
-@@ -326,7 +326,7 @@ rtsp_mangle_tran(enum ip_conntrack_info 
+@@ -326,7 +326,7 @@ rtsp_mangle_tran(enum ip_conntrack_info
                       * parameter 4 below is offset from start of tcp data.
                       */
                      diff = origlen-rbuflen;
@@ -90,7 +90,7 @@
                                                origoff, origlen, rbuf, rbuflen))
                      {
                          /* mangle failed, all we can do is bail */
-@@ -351,7 +351,7 @@ rtsp_mangle_tran(enum ip_conntrack_info 
+@@ -351,7 +351,7 @@ rtsp_mangle_tran(enum ip_conntrack_info
  }
  
  static uint

@@ -1,0 +1,14 @@
+--- a/extensions/compat_xtables.h
++++ b/extensions/compat_xtables.h
+@@ -57,4 +57,11 @@
+ 
+ #define xt_request_find_match xtnu_request_find_match
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
++static inline void proc_net_remove(struct net *net, const char *name)
++{
++       remove_proc_entry(name, net->proc_net);
++}
++#endif
++
+ #endif /* _XTABLES_COMPAT_H */
