@@ -1,6 +1,6 @@
 --- a/drivers/base/regmap/Kconfig
 +++ b/drivers/base/regmap/Kconfig
-@@ -3,20 +3,23 @@
+@@ -3,20 +3,24 @@
  # subsystems should select the appropriate symbols.
  
  config REGMAP
@@ -19,6 +19,7 @@
  config REGMAP_SPI
 -	tristate
 +	select REGMAP
++	depends on SPI_MASTER
 +	tristate "Regmap SPI"
  
  config REGMAP_MMIO
