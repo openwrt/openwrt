@@ -21,8 +21,8 @@ install_bin() { # <file> [ <symlink> ... ]
 	files=$1
 	[ -x "$src" ] && files="$src $(libs $src)"
 	install_file $files
-	[ -e /lib/ld-linux.so.3 ] && {
-		install_file /lib/ld-linux.so.3
+	[ -e /lib/ld.so.1 ] && {
+		install_file /lib/ld.so.1
 	}
 	shift
 	for link in "$@"; do {
