@@ -1118,6 +1118,13 @@ PKG_BRCMSMAC_FW_SOURCE:=$(PKG_BRCMSMAC_FW_NAME)-$(PKG_BRCMSMAC_FW_VERSION).tar.b
 PKG_BRCMSMAC_FW_SOURCE_URL:=http://www.lwfinger.com/b43-firmware/
 PKG_BRCMSMAC_FW_MD5SUM:=f4e357b09eaf5d8b1f1920cf3493a555
 
+define Download/brcmsmac
+  FILE:=$(PKG_BRCMSMAC_FW_SOURCE)
+  URL:=$(PKG_BRCMSMAC_FW_SOURCE_URL)
+  MD5SUM:=$(PKG_BRCMSMAC_FW_MD5SUM)
+endef
+$(eval $(call Download,brcmsmac))
+
 define KernelPackage/brcmsmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n PCIe SoftMAC WLAN driver
