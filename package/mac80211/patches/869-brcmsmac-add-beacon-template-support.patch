@@ -170,12 +170,12 @@
  /*
   * Update all beacons for the system.
   */
-@@ -7386,9 +7494,31 @@ void brcms_c_update_beacon(struct brcms_
- {
+@@ -7387,9 +7495,31 @@ void brcms_c_update_beacon(struct brcms_
  	struct brcms_bss_cfg *bsscfg = wlc->bsscfg;
  
--	if (wlc->pub->up && bsscfg->type == BRCMS_TYPE_AP)
-+	if (wlc->pub->up && bsscfg->type == BRCMS_TYPE_AP) {
+ 	if (wlc->pub->up && (bsscfg->type == BRCMS_TYPE_AP ||
+-			     bsscfg->type == BRCMS_TYPE_ADHOC))
++			     bsscfg->type == BRCMS_TYPE_ADHOC)) {
  		/* Clear the soft intmask */
  		wlc->defmacintmask &= ~MI_BCNTPL;
 +		if (!wlc->beacon)
@@ -203,7 +203,7 @@
  }
  
  /* Write ssid into shared memory */
-@@ -7786,6 +7916,10 @@ bool brcms_c_dpc(struct brcms_c_info *wl
+@@ -7788,6 +7918,10 @@ bool brcms_c_dpc(struct brcms_c_info *wl
  		brcms_rfkill_set_hw_state(wlc->wl);
  	}
  
@@ -214,7 +214,7 @@
  	/* it isn't done and needs to be resched if macintstatus is non-zero */
  	return wlc->macintstatus != 0;
  
-@@ -7917,6 +8051,7 @@ brcms_c_attach(struct brcms_info *wl, st
+@@ -7919,6 +8053,7 @@ brcms_c_attach(struct brcms_info *wl, st
  	pub->unit = unit;
  	pub->_piomode = piomode;
  	wlc->bandinit_pending = false;
