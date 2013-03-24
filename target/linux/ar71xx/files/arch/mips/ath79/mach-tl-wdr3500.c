@@ -29,7 +29,7 @@
 #include "dev-wmac.h"
 #include "machtypes.h"
 
-#define WDR3500_GPIO_LED_USB1		11
+#define WDR3500_GPIO_LED_USB		11
 #define WDR3500_GPIO_LED_WLAN2G		13
 #define WDR3500_GPIO_LED_SYSTEM		14
 #define WDR3500_GPIO_LED_QSS		15
@@ -37,7 +37,7 @@
 #define WDR3500_GPIO_BTN_WPS		16
 #define WDR3500_GPIO_BTN_RFKILL		17
 
-#define WDR3500_GPIO_USB1_POWER		22
+#define WDR3500_GPIO_USB_POWER		22
 
 #define WDR3500_KEYS_POLL_INTERVAL	20	/* msecs */
 #define WDR3500_KEYS_DEBOUNCE_INTERVAL	(3 * WDR3500_KEYS_POLL_INTERVAL)
@@ -68,8 +68,8 @@ static struct gpio_led wdr3500_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "tp-link:green:usb1",
-		.gpio		= WDR3500_GPIO_LED_USB1,
+		.name		= "tp-link:green:usb",
+		.gpio		= WDR3500_GPIO_LED_USB,
 		.active_low	= 1,
 	},
 	{
@@ -142,9 +142,9 @@ static void __init wdr3500_setup(void)
 
 	ath79_register_eth(0);
 
-	gpio_request_one(WDR3500_GPIO_USB1_POWER,
+	gpio_request_one(WDR3500_GPIO_USB_POWER,
 			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
-			 "USB1 power");
+			 "USB power");
 	ath79_register_usb();
 }
 
