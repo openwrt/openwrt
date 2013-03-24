@@ -121,6 +121,7 @@ get_status_led() {
 	tl-mr3420-v2 | \
 	tl-wa901nd | \
 	tl-wa901nd-v2 | \
+	tl-wdr3500 | \
 	tl-wr1041n-v2 | \
 	tl-wr1043nd | \
 	tl-wr741nd | \
