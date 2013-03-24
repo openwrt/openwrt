@@ -106,7 +106,7 @@
  int brcms_c_get_header_len(void)
  {
  	return TXOFF;
-@@ -7530,6 +7469,20 @@ void brcms_c_set_new_beacon(struct brcms
+@@ -7531,6 +7470,20 @@ void brcms_c_set_new_beacon(struct brcms
  	brcms_c_update_beacon(wlc);
  }
  
@@ -127,7 +127,7 @@
  /* Write ssid into shared memory */
  static void
  brcms_c_shm_ssid_upd(struct brcms_c_info *wlc, struct brcms_bss_cfg *cfg)
-@@ -7549,30 +7502,19 @@ brcms_c_shm_ssid_upd(struct brcms_c_info
+@@ -7550,30 +7503,19 @@ brcms_c_shm_ssid_upd(struct brcms_c_info
  static void
  brcms_c_bss_update_probe_resp(struct brcms_c_info *wlc,
  			      struct brcms_bss_cfg *cfg,
@@ -162,7 +162,7 @@
  
  	/* write the length of the probe response frame (+PLCP/-FCS) */
  	brcms_b_write_shm(wlc->hw, M_PRB_RESP_FRM_LEN, (u16) len);
-@@ -7586,13 +7528,11 @@ brcms_c_bss_update_probe_resp(struct brc
+@@ -7587,13 +7529,11 @@ brcms_c_bss_update_probe_resp(struct brc
  	 * PLCP header for the call to brcms_c_mod_prb_rsp_rate_table()
  	 * by subtracting the PLCP len and adding the FCS.
  	 */
@@ -178,13 +178,13 @@
  }
  
  void brcms_c_update_probe_resp(struct brcms_c_info *wlc, bool suspend)
-@@ -7600,8 +7540,12 @@ void brcms_c_update_probe_resp(struct br
- 	struct brcms_bss_cfg *bsscfg = wlc->bsscfg;
+@@ -7602,8 +7542,12 @@ void brcms_c_update_probe_resp(struct br
  
  	/* update AP or IBSS probe responses */
--	if (wlc->pub->up && bsscfg->type == BRCMS_TYPE_AP)
+ 	if (wlc->pub->up && (bsscfg->type == BRCMS_TYPE_AP ||
+-			     bsscfg->type == BRCMS_TYPE_ADHOC))
 -		brcms_c_bss_update_probe_resp(wlc, bsscfg, suspend);
-+	if (wlc->pub->up && bsscfg->type == BRCMS_TYPE_AP) {
++			     bsscfg->type == BRCMS_TYPE_ADHOC)) {
 +		if (!wlc->probe_resp)
 +			return;
 +		brcms_c_bss_update_probe_resp(wlc, bsscfg, wlc->probe_resp,

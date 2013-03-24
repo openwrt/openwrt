@@ -1,15 +1,20 @@
 --- a/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
-@@ -360,7 +360,8 @@ brcms_ops_add_interface(struct ieee80211
+@@ -359,10 +359,11 @@ brcms_ops_add_interface(struct ieee80211
+ {
  	struct brcms_info *wl = hw->priv;
  
- 	/* Just STA for now */
+-	/* Just STA for now */
 -	if (vif->type != NL80211_IFTYPE_STATION) {
++	/* Just STA and AP for now */
 +	if (vif->type != NL80211_IFTYPE_STATION &&
 +	    vif->type != NL80211_IFTYPE_AP) {
  		brcms_err(wl->wlc->hw->d11core,
- 			  "%s: Attempt to add type %d, only STA for now\n",
+-			  "%s: Attempt to add type %d, only STA for now\n",
++			  "%s: Attempt to add type %d, only STA and AP for now\n",
  			  __func__, vif->type);
+ 		return -EOPNOTSUPP;
+ 	}
 @@ -372,6 +373,9 @@ brcms_ops_add_interface(struct ieee80211
  	brcms_c_mute(wl->wlc, false);
  	if (vif->type == NL80211_IFTYPE_STATION)
@@ -20,7 +25,7 @@
  	spin_unlock_bh(&wl->lock);
  
  	return 0;
-@@ -1046,7 +1050,8 @@ static int ieee_hw_init(struct ieee80211
+@@ -1052,7 +1056,8 @@ static int ieee_hw_init(struct ieee80211
  
  	/* channel change time is dependent on chip and band  */
  	hw->channel_change_time = 7 * 1000;
@@ -28,8 +33,8 @@
 +	hw->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
 +				     BIT(NL80211_IFTYPE_AP);
  
- 	hw->wiphy->flags |= WIPHY_FLAG_AP_PROBE_RESP_OFFLOAD;
- 
+ 	/*
+ 	 * deactivate sending probe responses by ucude, because this will
 --- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
 @@ -2176,6 +2176,18 @@ void brcms_c_start_station(struct brcms_
