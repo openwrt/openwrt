@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if [ -f /etc/sysctl.conf ] && [ "$ACTION" = add ]; then
+	sed -ne "/^[[:space:]]*net\..*\.$DEVICENAME\./p" /etc/sysctl.conf | \
+		sysctl -e -p - | logger -t sysctl
+fi
