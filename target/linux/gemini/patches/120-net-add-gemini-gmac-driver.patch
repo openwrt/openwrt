@@ -1276,7 +1276,7 @@
 +	if (register_netdev(dev))
 +		return -1;
 +
-+	gmac->phydev = phy_connect(dev, pdata->bus_id[num], &gmac_get_phy_status, 0,
++	gmac->phydev = phy_connect(dev, pdata->bus_id[num], &gmac_get_phy_status,
 +				 pdata->interface[num]);
 +	if (IS_ERR(gmac->phydev))
 +		return PTR_ERR(gmac->phydev);

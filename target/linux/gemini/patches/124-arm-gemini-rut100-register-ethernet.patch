@@ -36,7 +36,7 @@
  static struct gpio_keys_button rut1xx_keys[] = {
  	{
  		.code		= KEY_SETUP,
-@@ -85,6 +107,8 @@ static void __init rut1xx_init(void)
+@@ -81,6 +103,8 @@ static void __init rut1xx_init(void)
  	platform_device_register(&rut1xx_keys_device);
  	platform_register_rtc();
  	platform_register_watchdog();
