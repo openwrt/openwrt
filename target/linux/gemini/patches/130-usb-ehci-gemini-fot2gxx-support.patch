@@ -514,7 +514,7 @@
  
  	if (ehci->debug)
  		dbgp_external_startup(ehci_to_hcd(ehci));
-@@ -340,11 +346,14 @@ static void ehci_silence_controller(stru
+@@ -341,11 +347,14 @@ static void ehci_silence_controller(stru
  	ehci->rh_state = EHCI_RH_HALTED;
  	ehci_turn_off_all_ports(ehci);
  
@@ -529,7 +529,7 @@
  	spin_unlock_irq(&ehci->lock);
  }
  
-@@ -599,7 +608,9 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -600,7 +609,9 @@ static int ehci_run (struct usb_hcd *hcd
  	// Philips, Intel, and maybe others need CMD_RUN before the
  	// root hub will detect new devices (why?); NEC doesn't
  	ehci->command &= ~(CMD_LRESET|CMD_IAAD|CMD_PSE|CMD_ASE|CMD_RESET);
@@ -539,7 +539,7 @@
  	ehci_writel(ehci, ehci->command, &ehci->regs->command);
  	dbg_cmd (ehci, "init", ehci->command);
  
-@@ -619,9 +630,11 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -620,9 +631,11 @@ static int ehci_run (struct usb_hcd *hcd
  	 */
  	down_write(&ehci_cf_port_reset_rwsem);
  	ehci->rh_state = EHCI_RH_RUNNING;
@@ -551,7 +551,7 @@
  	up_write(&ehci_cf_port_reset_rwsem);
  	ehci->last_periodic_enable = ktime_get_real();
  
-@@ -1242,6 +1255,11 @@ MODULE_DESCRIPTION(DRIVER_DESC);
+@@ -1241,6 +1254,11 @@ MODULE_DESCRIPTION(DRIVER_DESC);
  MODULE_AUTHOR (DRIVER_AUTHOR);
  MODULE_LICENSE ("GPL");
  

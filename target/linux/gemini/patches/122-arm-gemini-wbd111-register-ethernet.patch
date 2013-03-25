@@ -30,7 +30,7 @@
  static struct gpio_keys_button wbd111_keys[] = {
  	{
  		.code		= KEY_SETUP,
-@@ -127,6 +147,8 @@ static void __init wbd111_init(void)
+@@ -123,6 +143,8 @@ static void __init wbd111_init(void)
  	platform_device_register(&wbd111_keys_device);
  	platform_register_rtc();
  	platform_register_watchdog();
