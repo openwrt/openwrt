@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/usb/host/ehci-fotg2xx.c
-@@ -0,0 +1,465 @@
+@@ -0,0 +1,459 @@
 +/*
 + *  EHCI Host Controller driver
 + *
@@ -176,13 +176,7 @@
 +	if (result)
 +		return result;
 +
-+	result = ehci_init(hcd);
-+	if (result)
-+		return result;
-+
-+	ehci_port_power(ehci, 0);
-+
-+	return result;
++	return ehci_init(hcd);
 +}
 +
 +/*
