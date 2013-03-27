@@ -300,7 +300,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1126,6 +1175,9 @@ static void ieee80211_iface_work(struct 
+@@ -1126,6 +1175,9 @@ static void ieee80211_iface_work(struct
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
