@@ -63,7 +63,7 @@ ifneq ($(ARCH),)
 		$(if $(QUIET),,set -x;) \
 		mkdir -p "$$dir"; \
 		cd "$$dir"; \
-		ln -sf lib lib64; \
+		ln -nsf lib lib64; \
 		mkdir -p stamp lib usr/include usr/lib ; \
 	); done
 	@grep GCC_VERSION $@ >/dev/null 2>&1 || $(INSTALL_DATA) $(TOPDIR)/toolchain/info.mk $@
