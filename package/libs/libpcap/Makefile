@@ -46,7 +46,8 @@ TARGET_CFLAGS += \
 
 CONFIGURE_VARS += \
 	ac_cv_linux_vers=$(LINUX_VERSION) \
-	ac_cv_header_libusb_1_0_libusb_h=no
+	ac_cv_header_libusb_1_0_libusb_h=no \
+	ac_cv_netfilter_can_compile=no
 
 
 CONFIGURE_ARGS += \
@@ -58,7 +59,8 @@ CONFIGURE_ARGS += \
 	--with-pcap=linux \
 	--without-septel \
 	--without-dag \
-	--without-libnl
+	--without-libnl \
+	--disable-can
 
 MAKE_FLAGS += \
 	CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include"
