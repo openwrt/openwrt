@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
 	kmod-input-core kmod-input-gpio-keys kmod-button-hotplug \
 	kmod-leds-gpio kmod-booke-wdt \
-	swconfig
+	swconfig kmod-ath9k wpad-mini
 
 define Target/Description
 	Build images for the Freescale MPC85xx based boards.
