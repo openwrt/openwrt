@@ -110,10 +110,6 @@ GCC_CONFIGURE:= \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 --with-abi=64) \
-		$(if $(CONFIG_sparc),--with-long-double-128) \
-
-GCC_BUILD_TARGET_LIBGCC:=y
-GCC_CONFIGURE+= \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
 		--with-mpfr=$(TOPDIR)/staging_dir/host \
 		--disable-decimal-float
@@ -121,7 +117,7 @@ ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
   GCC_CONFIGURE += --with-mips-plt
 endif
 
-ifneq ($(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6)$(CONFIG_GCC_VERSION_4_7),)
+ifeq ($(CONFIG_GCC_VERSION_4_4),)
   GCC_CONFIGURE+= \
 		--with-mpc=$(TOPDIR)/staging_dir/host
 endif
@@ -141,7 +137,9 @@ ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
 endif
 
 ifdef CONFIG_sparc
-  GCC_CONFIGURE+= --enable-targets=all
+  GCC_CONFIGURE+= \
+		--enable-targets=all \
+		--with-long-double-128
 endif
 
 ifeq ($(LIBC),uClibc)
