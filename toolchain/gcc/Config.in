@@ -26,16 +26,11 @@ choice
 	config GCC_VERSION_4_7_LINARO
 		bool "gcc 4.7.x with Linaro enhancements"
 
-	config GCC_VERSION_LLVM
-		bool "llvm-gcc 4.2"
-		depends BROKEN
-
 endchoice
 
 config GCC_USE_GRAPHITE
 	bool
 	prompt "Compile in support for the new Graphite framework in GCC 4.4+" if TOOLCHAINOPTS
-	depends !GCC_VERSION_LLVM
 
 config GCC_USE_SYSTEM_PPL_CLOOG
 	bool
@@ -82,7 +77,6 @@ config INSTALL_LIBSTDCPP
 
 config INSTALL_LIBGCJ
 	bool
-	depends on !GCC_VERSION_LLVM
 	prompt "Build/install java compiler and GNU classpath ?" if TOOLCHAINOPTS
 	default n
 	help

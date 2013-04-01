@@ -25,17 +25,6 @@ GCC_VERSION:=$(call qstrip,$(CONFIG_GCC_VERSION))
 PKG_VERSION:=$(firstword $(subst +, ,$(GCC_VERSION)))
 GCC_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 
-ifdef CONFIG_GCC_VERSION_LLVM
-  PKG_SOURCE_VERSION:=c98c494b72ff875884c0c7286be67f16f9f6d7ab
-  PKG_REV:=83504
-  GCC_DIR:=llvm-gcc-4.2-r$(PKG_REV)
-  PKG_VERSION:=4.2.1
-  PKG_SOURCE:=$(GCC_DIR).tar.gz
-  PKG_SOURCE_PROTO:=git
-  PKG_SOURCE_URL:=git://repo.or.cz/llvm-gcc-4.2.git
-  PKG_SOURCE_SUBDIR:=$(GCC_DIR)
-  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)
-else
 ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
     ifeq ($(CONFIG_GCC_VERSION),"4.5-linaro")
       PKG_REV:=4.5-2012.03
@@ -72,7 +61,6 @@ else
   ifeq ($(PKG_VERSION),4.7.2)
     PKG_MD5SUM:=cc308a0891e778cfda7a151ab8a6e762
   endif
-endif
 endif
 
 PATCH_DIR=../patches/$(GCC_VERSION)
@@ -122,18 +110,15 @@ GCC_CONFIGURE:= \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 --with-abi=64) \
-		$(if $(CONFIG_GCC_VERSION_LLVM),--enable-llvm=$(BUILD_DIR_BASE)/host/llvm) \
 		$(if $(CONFIG_sparc),--with-long-double-128) \
 
-ifeq ($(CONFIG_GCC_LLVM),)
-  GCC_BUILD_TARGET_LIBGCC:=y
-  GCC_CONFIGURE+= \
+GCC_BUILD_TARGET_LIBGCC:=y
+GCC_CONFIGURE+= \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
 		--with-mpfr=$(TOPDIR)/staging_dir/host \
 		--disable-decimal-float
-  ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
-    GCC_CONFIGURE += --with-mips-plt
-  endif
+ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
+  GCC_CONFIGURE += --with-mips-plt
 endif
 
 ifneq ($(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6),)
