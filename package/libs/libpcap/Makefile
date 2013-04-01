@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
-PKG_VERSION:=1.1.1
-PKG_RELEASE:=2
+PKG_VERSION:=1.3.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/
-PKG_MD5SUM:=1bca27d206970badae248cfa471bbb47
+PKG_MD5SUM:=f78455a92622b7a3c05c58b6ad1cec7e
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
@@ -45,7 +45,9 @@ TARGET_CFLAGS += \
 	-fdata-sections
 
 CONFIGURE_VARS += \
-	ac_cv_linux_vers=$(LINUX_VERSION)
+	ac_cv_linux_vers=$(LINUX_VERSION) \
+	ac_cv_header_libusb_1_0_libusb_h=no
+
 
 CONFIGURE_ARGS += \
 	--enable-shared \
