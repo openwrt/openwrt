@@ -2,7 +2,7 @@
 # Copyright (C) 2002-2003 Erik Andersen <andersen@uclibc.org>
 # Copyright (C) 2004 Manuel Novoa III <mjn3@uclibc.org>
 # Copyright (C) 2005-2006 Felix Fietkau <nbd@openwrt.org>
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
   GCC_CONFIGURE += --with-mips-plt
 endif
 
-ifneq ($(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6),)
+ifneq ($(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6)$(CONFIG_GCC_VERSION_4_7),)
   GCC_CONFIGURE+= \
 		--with-mpc=$(TOPDIR)/staging_dir/host
 endif
