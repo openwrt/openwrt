@@ -1,20 +1,15 @@
 Debian-specific modifications to the upstream Makefile.in to
 build a shared library.
----
- Makefile.in  |   45 ++++++++++++++++++++++++++++++++++++++++++---
- configure    |    2 +-
- configure.in |    2 +-
- 3 files changed, 44 insertions(+), 5 deletions(-)
 
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -40,6 +40,14 @@ mandir = @mandir@
+@@ -40,6 +40,14 @@
  srcdir = @srcdir@
  VPATH = @srcdir@
  
 +# some defines for shared library compilation
-+MAJ=1.1
-+LIBVERSION=$(MAJ).1
++MAJ=1.3
++LIBVERSION=$(MAJ).0
 +LIBNAME=pcap
 +LIBRARY=lib$(LIBNAME).a
 +SOLIBRARY=lib$(LIBNAME).so
@@ -23,28 +18,30 @@ build a shared library.
  #
  # You shouldn't need to edit anything below.
  #
-@@ -59,6 +67,7 @@ PROG=libpcap
+@@ -60,7 +68,8 @@
+ PROG=libpcap
  
  # Standard CFLAGS
- CFLAGS = $(CCOPT) $(INCLS) $(DEFS)
+-FULL_CFLAGS = $(CCOPT) $(INCLS) $(DEFS) $(CFLAGS)
++FULL_CFLAGS = $(CCOPT) $(INCLS) $(DEFS) $(CFLAGS) $(CPPFLAGS)
 +CFLAGS_SHARED = -shared -Wl,-soname,$(SOLIBRARY).$(MAJ)
  
  INSTALL = @INSTALL@
  INSTALL_PROGRAM = @INSTALL_PROGRAM@
-@@ -78,7 +87,11 @@ YACC = @V_YACC@
+@@ -80,7 +89,11 @@
  # problem if you don't own the file but can write to the directory.
  .c.o:
  	@rm -f $@
--	$(CC) $(CFLAGS) -c $(srcdir)/$*.c
-+	$(CC) $(CFLAGS) -c -o $@ $(srcdir)/$*.c
+-	$(CC) $(FULL_CFLAGS) -c $(srcdir)/$*.c
++	$(CC) $(FULL_CFLAGS) -c -o $@ $(srcdir)/$*.c
 +
 +%_pic.o: %.c
 +	@rm -f $@
-+	$(CC) -fPIC $(CFLAGS) -c -o $@ $(srcdir)/$*.c
++	$(CC) -fPIC $(FULL_CFLAGS) -c -o $@ $(srcdir)/$*.c
  
- PSRC =	pcap-@V_PCAP@.c @USB_SRC@ @BT_SRC@ @CAN_SRC@
+ PSRC =	pcap-@V_PCAP@.c @USB_SRC@ @BT_SRC@ @CAN_SRC@ @NETFILTER_SRC@ @CANUSB_SRC@
  FSRC =  fad-@V_FINDALLDEVS@.c
-@@ -94,6 +107,7 @@ SRC =	$(PSRC) $(FSRC) $(CSRC) $(SSRC) $(
+@@ -96,6 +109,7 @@
  # We would like to say "OBJ = $(SRC:.c=.o)" but Ultrix's make cannot
  # hack the extra indirection
  OBJ =	$(PSRC:.c=.o) $(FSRC:.c=.o) $(CSRC:.c=.o) $(SSRC:.c=.o) $(GENSRC:.c=.o) $(LIBOBJS)
@@ -52,97 +49,77 @@ build a shared library.
  PUBHDR = \
  	pcap.h \
  	pcap-bpf.h \
-@@ -131,7 +145,7 @@ TAGFILES = \
+@@ -148,7 +162,7 @@
  
- CLEANFILES = $(OBJ) libpcap.* filtertest findalldevstest selpolltest \
- 	opentest $(PROG)-`cat $(srcdir)/VERSION`.tar.gz $(GENSRC) $(GENHDR) \
+ CLEANFILES = $(OBJ) libpcap.* $(TESTS) \
+ 	$(PROG)-`cat $(srcdir)/VERSION`.tar.gz $(GENSRC) $(GENHDR) \
 -	lex.yy.c pcap-config
 +	lex.yy.c pcap-config $(OBJ_PIC)
  
  MAN1 = pcap-config.1
  
-@@ -324,21 +338,14 @@ EXTRA_DIST = \
- 	Win32/Src/inet_net.c \
- 	Win32/Src/inet_pton.c
- 
--all: libpcap.a shared pcap-config
-+all: libpcap.a shared pcap-config $(SHAREDLIB)
- 
- libpcap.a: $(OBJ)
- 	@rm -f $@
- 	ar rc $@ $(OBJ) $(ADDLARCHIVEOBJS)
+@@ -352,7 +366,7 @@
+ 	$(AR) rc $@ $(OBJ) $(ADDLARCHIVEOBJS)
  	$(RANLIB) $@
  
 -shared: libpcap.$(DYEXT)
--
--libpcap.so: $(OBJ)
--	@rm -f $@
--	VER=`cat $(srcdir)/VERSION`; \
--	MAJOR_VER=`sed 's/\([0-9][0-9]*\)\..*/\1/' $(srcdir)/VERSION`; \
--	@V_SHLIB_CMD@ @V_SHLIB_OPT@ @V_SONAME_OPT@$@.$$MAJOR_VER $(LDFLAGS) \
--	    -o $@.$$VER $(OBJ) $(ADDLOBJS) $(LIBS)
 +shared: $(SHAREDLIB)
  
- #
- # The following rule succeeds, but the result is untested.
-@@ -409,6 +416,13 @@ libpcap.shareda: $(OBJ)
+ libpcap.so: $(OBJ)
+ 	@rm -f $@
+@@ -430,6 +444,13 @@
  #
  libpcap.none:
  
 +$(SHAREDLIB): $(OBJ_PIC)
 +	-@rm -f $@
 +	-@rm -f $(SOLIBRARY) $(SOLIBRARY).$(MAJ)
-+	$(CC) $(CFLAGS_SHARED) -o $(SHAREDLIB) $(OBJ_PIC) -lc
++	$(CC) $(CFLAGS_SHARED) $(LDFLAGS) -o $(SHAREDLIB) $(OBJ_PIC) -lc $(LIBS)
 +	ln -s $(SHAREDLIB) $(SOLIBRARY).$(MAJ)
 +	ln -s $(SOLIBRARY).$(MAJ) $(SOLIBRARY)
 +
  scanner.c: $(srcdir)/scanner.l
  	@rm -f $@
  	$(srcdir)/runlex.sh $(LEX) -o$@ $<
-@@ -416,6 +430,9 @@ scanner.c: $(srcdir)/scanner.l
+@@ -437,6 +458,9 @@
  scanner.o: scanner.c tokdefs.h
- 	$(CC) $(CFLAGS) -c scanner.c
+ 	$(CC) $(FULL_CFLAGS) -c scanner.c
  
 +scanner_pic.o: scanner.c tokdefs.h
-+	$(CC) -fPIC $(CFLAGS) -o $@ -c scanner.c
++	$(CC) -fPIC $(FULL_CFLAGS) -o $@ -c scanner.c
 +
  pcap.o: version.h
  
  tokdefs.h: grammar.c
-@@ -429,9 +446,17 @@ grammar.o: grammar.c
+@@ -450,9 +474,16 @@
  	@rm -f $@
- 	$(CC) $(CFLAGS) -Dyylval=pcap_lval -c grammar.c
+ 	$(CC) $(FULL_CFLAGS) -Dyylval=pcap_lval -c grammar.c
  
 +grammar_pic.o: grammar.c
 +	@rm -f $@
-+	$(CC) -fPIC $(CFLAGS) -Dyylval=pcap_lval -o $@ -c grammar.c
++	$(CC) -fPIC $(FULL_CFLAGS) -Dyylval=pcap_lval -o $@ -c grammar.c 
 +
  version.o: version.c
- 	$(CC) $(CFLAGS) -c version.c
+ 	$(CC) $(FULL_CFLAGS) -c version.c
  
 +version_pic.o: version.c
-+	$(CC) -fPIC $(CFLAGS) -c version.c -o $@
-+
++	$(CC) -fPIC $(FULL_CFLAGS) -c version.c -o $@
 +
  snprintf.o: $(srcdir)/missing/snprintf.c
- 	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/missing/snprintf.c
+ 	$(CC) $(FULL_CFLAGS) -o $@ -c $(srcdir)/missing/snprintf.c
  
-@@ -469,6 +494,9 @@ bpf_filter.c: $(srcdir)/bpf/net/bpf_filt
+@@ -490,6 +521,9 @@
  bpf_filter.o: bpf_filter.c
- 	$(CC) $(CFLAGS) -c bpf_filter.c
+ 	$(CC) $(FULL_CFLAGS) -c bpf_filter.c
  
 +bpf_filter_pic.o: bpf_filter.c
-+	$(CC) -fPIC $(CFLAGS) -c bpf_filter.c -o $@
++	$(CC) -fPIC $(FULL_CFLAGS) -c bpf_filter.c -o $@
 +
  #
  # Generate the pcap-config script.
  #
-@@ -562,14 +590,12 @@ install: install-shared install-archive 
- 		    $(DESTDIR)$(mandir)/man@MAN_MISC_INFO@/`echo $$i | sed 's/.manmisc.in/.@MAN_MISC_INFO@/'`; done
- 
- install-shared: install-shared-$(DYEXT)
--install-shared-so: libpcap.so
-+install-shared-so: $(SHAREDLIB)
+@@ -607,11 +641,9 @@
+ install-shared-so: libpcap.so
  	[ -d $(DESTDIR)$(libdir) ] || \
  	    (mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir))
 -	VER=`cat $(srcdir)/VERSION`; \
@@ -156,18 +133,18 @@ build a shared library.
  install-shared-dylib: libpcap.dylib
  	[ -d $(DESTDIR)$(libdir) ] || \
  	    (mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir))
---- a/configure
-+++ b/configure
-@@ -3229,7 +3229,7 @@ _ACEOF
- 		    # or accepts command-line arguments like
- 		    # those the GNU linker accepts.
- 		    #
--		    V_CCOPT="$V_CCOPT -fpic"
+--- a/aclocal.m4
++++ b/aclocal.m4
+@@ -262,7 +262,7 @@
+ 			esac
+ 			;;
+ 		    esac
+-		    V_CCOPT="$V_CCOPT $PIC_OPT"
 +		    V_CCOPT="$V_CCOPT"
  		    V_SONAME_OPT="-Wl,-soname,"
  		    V_RPATH_OPT="-Wl,-rpath,"
  		    ;;
-@@ -3292,7 +3292,7 @@ _ACEOF
+@@ -325,7 +325,7 @@
  		    #
  		    # "cc" is GCC.
  		    #
@@ -176,3 +153,22 @@ build a shared library.
  		    V_SHLIB_CMD="\$(CC)"
  		    V_SHLIB_OPT="-shared"
  		    V_SONAME_OPT="-Wl,-soname,"
+--- a/pcap-config.in
++++ b/pcap-config.in
+@@ -36,16 +36,6 @@
+ 	esac
+ 	shift
+ done
+-if [ "$V_RPATH_OPT" != "" ]
+-then
+-	#
+-	# If libdir isn't /usr/lib, add it to the run-time linker path.
+-	#
+-	if [ "$libdir" != "/usr/lib" ]
+-	then
+-		RPATH=$V_RPATH_OPT$libdir
+-	fi
+-fi
+ if [ "$static" = 1 ]
+ then
+ 	#
