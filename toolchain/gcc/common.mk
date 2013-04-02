@@ -55,6 +55,9 @@ else
   ifeq ($(PKG_VERSION),4.7.2)
     PKG_MD5SUM:=cc308a0891e778cfda7a151ab8a6e762
   endif
+  ifeq ($(PKG_VERSION),4.8.0)
+    PKG_MD5SUM:=e6040024eb9e761c3bea348d1fa5abb0
+  endif
 endif
 
 PATCH_DIR=../patches/$(GCC_VERSION)
