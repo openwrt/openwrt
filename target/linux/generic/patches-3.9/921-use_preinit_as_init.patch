@@ -1,14 +1,14 @@
---- a/init/main.c
-+++ b/init/main.c
-@@ -848,10 +848,7 @@ static int __ref kernel_init(void *unuse
+Index: linux-3.8.3/init/main.c
+===================================================================
+--- linux-3.8.3.orig/init/main.c	2013-04-02 21:43:30.000000000 +0200
++++ linux-3.8.3/init/main.c	2013-04-02 21:44:26.362130897 +0200
+@@ -835,7 +835,8 @@
  		printk(KERN_WARNING "Failed to execute %s.  Attempting "
  					"defaults...\n", execute_command);
  	}
 -	if (!run_init_process("/sbin/init") ||
--	    !run_init_process("/etc/init") ||
--	    !run_init_process("/bin/init") ||
--	    !run_init_process("/bin/sh"))
-+	if (!run_init_process("/etc/preinit"))
- 		return 0;
- 
- 	panic("No init found.  Try passing init= option to kernel. "
++	if (!run_init_process("/etc/preinit") ||
++	    !run_init_process("/sbin/init") ||
+ 	    !run_init_process("/etc/init") ||
+ 	    !run_init_process("/bin/init") ||
+ 	    !run_init_process("/bin/sh"))
