@@ -60,6 +60,21 @@ endef
 $(eval $(call KernelPackage,hwmon-adt7475))
 
 
+define KernelPackage/hwmon-ina2xx
+  TITLE:=INA2XX monitoring support
+  KCONFIG:=CONFIG_SENSORS_INA2XX
+  FILES:=$(LINUX_DIR)/drivers/hwmon/ina2xx.ko
+  AUTOLOAD:=$(call AutoLoad,60,ina2xx)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-ina2xx/description
+ Kernel module for ina2xx dc current monitor chips
+endef
+
+$(eval $(call KernelPackage,hwmon-ina2xx))
+
+
 define KernelPackage/hwmon-lm63
   TITLE:=LM63/64 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM63
