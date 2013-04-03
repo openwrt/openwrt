@@ -63,6 +63,11 @@ endif
 PATCH_DIR=../patches/$(GCC_VERSION)
 
 BUGURL=https://dev.openwrt.org/
+ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
+  PKGVERSION=OpenWrt/Linaro GCC $(PKG_REV) $(REVISION)
+else
+  PKGVERSION=OpenWrt GCC $(PKG_VERSION) $(REVISION)
+endif
 
 HOST_BUILD_PARALLEL:=1
 
@@ -92,6 +97,8 @@ endif
 GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
 	$(HOST_SOURCE_DIR)/configure \
+		--with-bugurl=$(BUGURL) \
+		--with-pkgversion="$(PKGVERSION)" \
 		--prefix=$(TOOLCHAIN_DIR) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
