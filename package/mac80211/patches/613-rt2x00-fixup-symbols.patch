@@ -1,0 +1,49 @@
+Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800pci.c
+===================================================================
+--- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/rt2800pci.c	2013-03-31 19:25:51.185815171 +0200
++++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800pci.c	2013-03-31 19:27:59.805818237 +0200
+@@ -1179,7 +1179,7 @@
+ #endif /* CONFIG_PCI */
+ MODULE_LICENSE("GPL");
+ 
+-#if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT305X)
++#if defined(CONFIG_SOC_RT288X) || defined(CONFIG_SOC_RT305X)
+ static int rt2800soc_probe(struct platform_device *pdev)
+ {
+ 	return rt2x00soc_probe(pdev, &rt2800pci_ops);
+@@ -1203,7 +1203,7 @@
+ 	.suspend	= rt2x00soc_suspend,
+ 	.resume		= rt2x00soc_resume,
+ };
+-#endif /* CONFIG_RALINK_RT288X || CONFIG_RALINK_RT305X */
++#endif /* CONFIG_SOC_RT288X || CONFIG_SOC_RT305X */
+ 
+ #ifdef CONFIG_PCI
+ static int rt2800pci_probe(struct pci_dev *pci_dev,
+@@ -1226,7 +1226,7 @@
+ {
+ 	int ret = 0;
+ 
+-#if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT305X)
++#if defined(CONFIG_SOC_RT288X) || defined(CONFIG_SOC_RT305X)
+ 	ret = platform_driver_register(&rt2800soc_driver);
+ 	if (ret)
+ 		return ret;
+@@ -1234,7 +1234,7 @@
+ #ifdef CONFIG_PCI
+ 	ret = pci_register_driver(&rt2800pci_driver);
+ 	if (ret) {
+-#if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT305X)
++#if defined(CONFIG_SOC_RT288X) || defined(CONFIG_SOC_RT305X)
+ 		platform_driver_unregister(&rt2800soc_driver);
+ #endif
+ 		return ret;
+@@ -1249,7 +1249,7 @@
+ #ifdef CONFIG_PCI
+ 	pci_unregister_driver(&rt2800pci_driver);
+ #endif
+-#if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT305X)
++#if defined(CONFIG_SOC_RT288X) || defined(CONFIG_SOC_RT305X)
+ 	platform_driver_unregister(&rt2800soc_driver);
+ #endif
+ }

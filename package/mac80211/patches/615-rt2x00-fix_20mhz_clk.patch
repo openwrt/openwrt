@@ -1,0 +1,31 @@
+Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
+===================================================================
+--- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/rt2800lib.c	2013-04-02 10:56:56.245205151 +0200
++++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c	2013-04-02 11:24:06.057243987 +0200
+@@ -38,6 +38,7 @@
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
++#include <linux/clk.h>
+ 
+ #include "rt2x00.h"
+ #include "rt2800lib.h"
+@@ -5505,13 +5506,14 @@
+ 
+ int rt2800_probe_clk(struct rt2x00_dev *rt2x00dev)
+ {
+-	struct rt2x00_platform_data *pdata = rt2x00dev->dev->platform_data;
+ 	struct hw_mode_spec *spec = &rt2x00dev->spec;
++	struct clk *clk = clk_get(rt2x00dev->dev, NULL);
+ 
+-	if (!pdata)
+-		return -EINVAL;
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
+ 
+-	spec->clk_is_20mhz = pdata->clk_is_20mhz;
++	if (clk_get_rate(clk) == 20000000)
++		spec->clk_is_20mhz = 1;
+ 
+ 	return 0;
+ }
