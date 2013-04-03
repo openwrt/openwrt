@@ -1,0 +1,95 @@
+/dts-v1/;
+
+/include/ "rt3352.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "ALL5002", "ralink,rt3352-soc";
+	model = "Allnet ALL5002/ALL5003";
+
+	memorydetect {
+		ralink,memory = <0x0 0x200000 0x10000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600 mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,32448k@0x50000(firmware)";
+	};
+
+	palmbus@10000000 {
+		sysc@0 {
+			ralink,pinmmux = "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
+			ralink,gpiomux = "i2c";
+			ralink,uartmux = "gpio";
+			ralink,wdtmux = <1>;
+		};
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l25635e";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "mx25l25635e";
+				spi-max-frequency = <10000000>;
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+	};
+
+	esw@10110000 {
+		status = "okay";
+		ralink,portmap = <0x3f>;
+	};
+
+	wmac@10180000 {
+		status = "okay";
+	};
+
+	ehci@101c0000 {
+		status = "okay";
+	};
+
+	ohci@101c1000 {
+		status = "okay";
+	};
+
+	i2c-gpio {
+		compatible = "i2c-gpio";
+
+		gpios = <&gpio0 1 0 &gpio0 2 0>;
+		i2c-gpio,delay-us = <10>;
+
+		pcf0: iexp@38 {
+			#gpio-cells = <2>;
+			compatible = "inxp,pcf8574a";
+			reg = <0x38>;
+			gpio-controller;
+		};
+
+		hwmon@4b {
+			compatible = "national,lm92";
+			reg = <0x4b>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		ld1 {
+			label = "allnet:green:ld1";
+			gpios = <&pcf0 0 1>;
+		};
+		ld2 {
+			label = "allnet:green:ld2";
+			gpios = <&pcf0 1 1>;
+		};
+	};
+};

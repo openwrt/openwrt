@@ -1,0 +1,119 @@
+/dts-v1/;
+
+/include/ "rt3883.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "OMNI-EMB-HPM", "ralink,rt3883-soc";
+	model = "Omnima EMB HPM";
+
+	memorydetect {
+		ralink,memory = <0x0 0x200000 0x10000000>;
+	};
+
+	palmbus@10000000 {
+		sysc@0 {
+			ralink,pinmmux = "uartlite", "spi";
+			ralink,gpiomux = "i2c", "jtag";
+			ralink,uartmux = "gpio";
+			ralink,wdtmux = <1>;
+		};
+
+		timer@100 {
+			status = "okay";
+		};
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l6405d";
+				reg = <0 0>;
+				linux,modalias = "m25p80";
+				spi-max-frequency = <25000000>;
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+		ralink,phy-mask = <0x10>;
+		phy-mode = "rgmii";
+	};
+
+	wmac@10180000 {
+		status = "okay";
+	};
+
+	ehci@101c0000 {
+		status = "okay";
+	};
+
+	ohci@101c1000 {
+		status = "okay";
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+		reset {
+			label = "reset";
+			gpios = <&gpio0 14 0>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		
+		power {
+			label = "emb:orange:power";
+			gpios = <&gpio0 7 1>;
+		};
+		status {
+			label = "emb:green:status";
+			gpios = <&gpio0 21 1>;
+		};
+		eth {
+			label = "emb:green:eth";
+			gpios = <&gpio0 20 1>;
+		};
+		eth2 {
+			label = "emb:red:eth";
+			gpios = <&gpio0 18 1>;
+		};
+		wifi {
+			label = "emb:green:wifi";
+			gpios = <&gpio0 17 1>;
+		};
+		wifi2 {
+			label = "emb:red:wifi";
+			gpios = <&gpio0 19 1>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+		/* gpio 12 and 13 handle the OC input */
+		usb0 {
+			gpio-export,name = "usb0";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 2 0>;
+		};
+		usb1 {
+			gpio-export,name = "usb1";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 1 0>;
+		};
+	};
+};

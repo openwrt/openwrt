@@ -1,0 +1,84 @@
+/dts-v1/;
+
+/include/ "rt3050.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "WL_330N", "ralink,rt3050-soc";
+	model = "Asus WL-330N";
+
+	memorydetect {
+		ralink,memory = <0x0 0x200000 0x4000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600 mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,3776k@0x50000(firmware)";
+	};
+
+	palmbus@10000000 {
+		sysc@0 {
+			ralink,pinmmux = "i2c", "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
+			ralink,uartmux = "gpio";
+			ralink,wdtmux = <1>;
+		};
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l3205d";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "mx25l3205d";
+				spi-max-frequency = <10000000>;
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+	};
+
+	esw@10110000 {
+		status = "okay";
+		ralink,portmap = <0x3e>;
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		link {
+			label = "asus:blue:link";
+			gpios = <&gpio0 9 1>;
+		};
+		power {
+			label = "asus:blue:power";
+			gpios = <&gpio0 11 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio0 0 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	wmac@10180000 {
+		status = "okay";
+	};
+};
