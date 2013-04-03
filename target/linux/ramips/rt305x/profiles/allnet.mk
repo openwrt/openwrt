@@ -31,7 +31,8 @@ $(eval $(call Profile,ALL0256N))
 
 define Profile/ALL5002
 	NAME:=Allnet ALL5002
-	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
+	kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
 endef
 
 define Profile/ALL5002/Description
