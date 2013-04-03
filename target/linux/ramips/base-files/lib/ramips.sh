@@ -180,6 +180,9 @@ ramips_board_detect() {
 	*"Tenda W306R V2.0")
 		name="w306r-v20"
 		;;
+	*"Tenda W150M")
+		name="w150m"
+		;;
 	*"TEW-691GR")
 		name="tew-691gr"
 		;;

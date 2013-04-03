@@ -17,6 +17,7 @@ platform_check_image() {
 	3g-6200n | \
 	3g-6200nl | \
 	3g300m | \
+	w150m | \
 	air3gii | \
 	all0239-3g | \
 	all0256n | \
