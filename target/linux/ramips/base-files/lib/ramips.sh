@@ -33,6 +33,9 @@ ramips_board_detect() {
 	*"Edimax 3g-6200n")
 		name="3g-6200n"
 		;;
+	*"Edimax 3g-6200nl")
+		name="3g-6200nl"
+		;;
 	*"AirLive Air3GII")
 		name="air3gii"
 		;;
