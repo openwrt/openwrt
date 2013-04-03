@@ -146,6 +146,21 @@ endef
 
 $(eval $(call KernelPackage,gpio-nxp-74hc164))
 
+define KernelPackage/gpio-pcf857x
+  SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
+  TITLE:=PCX857x, PCA967x and MAX732X I2C GPIO expanders
+  KCONFIG:=CONFIG_GPIO_PCF857X
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-pcf857x.ko
+  AUTOLOAD:=$(call AutoLoad,55,gpio-pcf857x)
+endef
+
+define KernelPackage/gpio-pcf857x/description
+  Kernel module for PCF857x, PCA{85,96}7x, and MAX732[89] I2C GPIO expanders
+endef
+
+$(eval $(call KernelPackage,gpio-pcf857x))
+
 define KernelPackage/lp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port and line printer support
