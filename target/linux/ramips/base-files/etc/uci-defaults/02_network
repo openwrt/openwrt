@@ -125,6 +125,7 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.2" "eth0.1"
 		;;
 
+	d105 | \
 	omni-emb-hpm|\
 	wli-tx4-ag300n)
 		ucidef_set_interface_lan "eth0"
@@ -249,6 +250,7 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
+	d105 | \
 	wli-tx4-ag300n)
 		lan_mac=$(mtd_get_mac_binary factory 4)
 		;;

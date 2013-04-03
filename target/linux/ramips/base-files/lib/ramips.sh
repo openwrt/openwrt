@@ -105,6 +105,9 @@ ramips_board_detect() {
 	*"Hauppauge Broadway")
 		name="broadway"
 		;;
+	*"Huawei D105")
+		name="d105"
+		;;
 	*"La Fonera 2.0N")
 		name="fonera20n"
 		;;

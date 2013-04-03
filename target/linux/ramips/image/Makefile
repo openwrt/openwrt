@@ -268,6 +268,8 @@ Image/Build/Profile/BROADWAY=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),b
 
 Image/Build/Profile/CARAMBOLA=$(call BuildFirmware/Default8M/$(1),$(1),carambola,CARAMBOLA)
 
+Image/Build/Profile/D105=$(call BuildFirmware/Default4M/$(1),$(1),d105,D105)
+
 define BuildFirmware/DIR300B1/squashfs
 	$(call BuildFirmware/Default4M/$(1),$(1),$(2),$(3))
 	-mkwrgimg -s $(4) -d /dev/mtdblock/2 \
@@ -409,6 +411,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/BC2,$(1))
 	$(call Image/Build/Profile/BROADWAY,$(1))
 	$(call Image/Build/Profile/CARAMBOLA,$(1))
+	$(call Image/Build/Profile/D105,$(1))
 	$(call Image/Build/Profile/DIR-300-B1,$(1))
 	$(call Image/Build/Profile/DIR-600-B1,$(1))
 	$(call Image/Build/Profile/DIR-600-B2,$(1))
