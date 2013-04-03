@@ -11,7 +11,7 @@ BOARD:=ramips
 BOARDNAME:=Ralink RT288x/RT3xxx
 SUBTARGETS:=rt288x rt305x rt3883
 CFLAGS:=-Os -pipe -fno-caller-saves -mno-branch-likely
-FEATURES:=squashfs
+FEATURES:=squashfs gpio
 
 LINUX_VERSION:=3.7.10
 
