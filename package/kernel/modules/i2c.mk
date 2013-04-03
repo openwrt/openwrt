@@ -22,6 +22,7 @@ endef
 
 I2C_CORE_MODULES:= \
   CONFIG_I2C:drivers/i2c/i2c-core \
+  CONFIG_OF_I2C:drivers/of/of_i2c \
   CONFIG_I2C_CHARDEV:drivers/i2c/i2c-dev
 
 define KernelPackage/i2c-core
@@ -99,23 +100,6 @@ define KernelPackage/i2c-gpio/description
 endef
 
 $(eval $(call KernelPackage,i2c-gpio))
-
-
-OF_I2C_MODULES:=\
-  CONFIG_OF_I2C:drivers/of/of_i2c
-
-define KernelPackage/of-i2c
-  $(call i2c_defaults,$(OF_I2C_MODULES),58)
-  TITLE:=OpenFirmware I2C accessors
-  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx||TARGET_mpc52xx||TARGET_mpc83xx||TARGET_mpc85xx||TARGET_mvebu \
-          kmod-i2c-core
-endef
-
-define KernelPackage/of-i2c/description
- Kernel module for OpenFirmware I2C accessors.
-endef
-
-$(eval $(call KernelPackage,of-i2c))
 
 I2C_MPC_MODULES:=\
   CONFIG_I2C_MPC:drivers/i2c/busses/i2c-mpc
