@@ -5,26 +5,26 @@
 # See /LICENSE for more information.
 #
 
-define Profile/UPVEL
+define Profile/UR-336UN
 	NAME:=UPVEL UR-336UN
 	PACKAGES:=\
 		kmod-usb-core kmod-usb-rt305x-dwc_otg \
 		kmod-ledtrig-usbdev
 endef
 
-define Profile/UPVEL/Description
+define Profile/UR-336UN/Description
 	Default package set compatible with URVEL router board.
 endef
-$(eval $(call Profile,UPVEL))
+$(eval $(call Profile,UR-336UN))
 
-define Profile/UPVEL_326
+define Profile/UR-326N4G
 	NAME:=UPVEL UR-326N4G
 	PACKAGES:=\
 		kmod-usb-core kmod-usb-rt305x-dwc_otg \
 		kmod-ledtrig-usbdev
 endef
 
-define Profile/UPVEL/Description
+define Profile/UR-326N4G/Description
 	Default package set compatible with URVEL router board.
 endef
-$(eval $(call Profile,UPVEL_326))
+$(eval $(call Profile,UR-326N4G))
