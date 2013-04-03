@@ -842,6 +842,22 @@ endef
 
 $(eval $(call KernelPackage,usb-net-rndis))
 
+define KernelPackage/usb-net-cdc-mbim
+  SUBMENU:=$(USB_MENU)
+  TITLE:=Kernel module for MBIM Devices
+  KCONFIG:=CONFIG_USB_NET_CDC_MBIM
+  FILES:= \
+   $(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_mbim.ko
+  AUTOLOAD:=$(call AutoLoad,61,cdc_mbim)
+  $(call AddDepends/usb-net,+kmod-usb-wdm,+kmod-usb-net-cdc-ncm)
+endef
+
+define KernelPackage/usb-net-cdc-mbim/description
+ Kernel module for Option USB High Speed Mobile Devices
+endef
+
+$(eval $(call KernelPackage,usb-net-cdc-mbim))
+
 define KernelPackage/usb-net-cdc-ncm
   TITLE:=Support for CDC NCM connections
   KCONFIG:=CONFIG_USB_NET_CDC_NCM
