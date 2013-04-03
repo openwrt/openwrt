@@ -1,0 +1,32 @@
+From 6ffb42870411ca082e8e46d96d72bc5d8881ce8d Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 22 Jan 2013 16:01:07 +0100
+Subject: [PATCH 116/121] serial: of: allow au1x00 and rt288x to load from OF
+
+In order to make serial_8250 loadable via OF on Au1x00 and Ralink WiSoC we need
+to default the iotype to UPIO_AU.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/tty/serial/of_serial.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/of_serial.c b/drivers/tty/serial/of_serial.c
+index b025d54..42f8550 100644
+--- a/drivers/tty/serial/of_serial.c
++++ b/drivers/tty/serial/of_serial.c
+@@ -98,7 +98,10 @@ static int of_platform_serial_setup(struct platform_device *ofdev,
+ 		port->regshift = prop;
+ 
+ 	port->irq = irq_of_parse_and_map(np, 0);
+-	port->iotype = UPIO_MEM;
++	if (of_device_is_compatible(np, "ralink,rt2880-uart"))
++		port->iotype = UPIO_AU;
++	else
++		port->iotype = UPIO_MEM;
+ 	if (of_property_read_u32(np, "reg-io-width", &prop) == 0) {
+ 		switch (prop) {
+ 		case 1:
+-- 
+1.7.10.4
+

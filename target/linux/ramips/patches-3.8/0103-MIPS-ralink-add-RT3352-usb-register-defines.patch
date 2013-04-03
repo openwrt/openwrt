@@ -1,0 +1,36 @@
+From 5157985fbc0f071276b0c3381ac8ed191878358a Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 21 Mar 2013 19:01:49 +0100
+Subject: [PATCH 103/121] MIPS: ralink: add RT3352 usb register defines
+
+Add a few missing defines that are needed to make USB work on the RT3352
+and RT5350.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/mach-ralink/rt305x.h |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+Index: linux-3.8.3/arch/mips/include/asm/mach-ralink/rt305x.h
+===================================================================
+--- linux-3.8.3.orig/arch/mips/include/asm/mach-ralink/rt305x.h	2013-04-02 13:30:35.601424833 +0200
++++ linux-3.8.3/arch/mips/include/asm/mach-ralink/rt305x.h	2013-04-02 13:39:37.721437754 +0200
+@@ -144,4 +144,18 @@
+ #define RT305X_GPIO_MODE_SDRAM		BIT(8)
+ #define RT305X_GPIO_MODE_RGMII		BIT(9)
+ 
++#define RT3352_SYSC_REG_SYSCFG1         0x014
++#define RT3352_SYSC_REG_CLKCFG1         0x030
++#define RT3352_SYSC_REG_RSTCTRL         0x034
++#define RT3352_SYSC_REG_USB_PS          0x05c
++
++#define RT3352_CLKCFG1_UPHY0_CLK_EN	BIT(18)
++#define RT3352_CLKCFG1_UPHY1_CLK_EN	BIT(20)
++#define RT3352_RSTCTRL_UHST		BIT(22)
++#define RT3352_RSTCTRL_UDEV		BIT(25)
++#define RT3352_SYSCFG1_USB0_HOST_MODE	BIT(10)
++
++#define RT3352_SYSC_REG_SYSCFG0		0x010
++#define	RT3352_CLKCFG0_XTAL_SEL		BIT(20)
++
+ #endif

@@ -1,0 +1,155 @@
+From 2a295753a10823a47542c779a25bbb1f52c71281 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Aug 2012 10:27:13 +0200
+Subject: [PATCH 19/25] owrt mtd split
+
+---
+ .../mips/include/asm/mach-lantiq/xway/lantiq_soc.h |    1 +
+ arch/mips/lantiq/setup.c                           |    7 +
+ drivers/mtd/Kconfig                                |    4 +
+ drivers/mtd/mtdpart.c                              |  173 +++++++++++++++++++-
+ 4 files changed, 184 insertions(+), 1 deletions(-)
+
+Index: linux-3.9-rc4/drivers/mtd/Kconfig
+===================================================================
+--- linux-3.9-rc4.orig/drivers/mtd/Kconfig	2013-03-27 09:26:32.005789709 +0100
++++ linux-3.9-rc4/drivers/mtd/Kconfig	2013-03-27 09:26:35.669789796 +0100
+@@ -31,6 +31,10 @@
+ 	bool "Automatically split 'rootfs' partition for squashfs"
+ 	default y
+ 
++config MTD_UIMAGE_SPLIT
++	bool "Automatically split 'linux' partition into 'kernel' and 'rootfs'"
++	default y
++
+ config MTD_REDBOOT_PARTS
+ 	tristate "RedBoot partition table parsing"
+ 	---help---
+Index: linux-3.9-rc4/drivers/mtd/mtdpart.c
+===================================================================
+--- linux-3.9-rc4.orig/drivers/mtd/mtdpart.c	2013-03-27 09:26:32.281789715 +0100
++++ linux-3.9-rc4/drivers/mtd/mtdpart.c	2013-03-27 17:20:12.874466937 +0100
+@@ -844,6 +844,99 @@
+ }
+ #endif /* CONFIG_MTD_ROOTFS_SPLIT */
+ 
++#ifdef CONFIG_MTD_UIMAGE_SPLIT
++static unsigned long find_uimage_size(struct mtd_info *mtd,
++				      unsigned long offset)
++{
++#define UBOOT_MAGIC	0x56190527
++	unsigned long magic = 0;
++	unsigned long temp;
++	size_t len;
++	int ret;
++
++	ret = mtd_read(mtd, offset, 4, &len, (void *)&magic);
++	if (ret || len != sizeof(magic))
++		return 0;
++
++	if (le32_to_cpu(magic) != UBOOT_MAGIC)
++		return 0;
++
++	ret = mtd_read(mtd, offset + 12, 4, &len, (void *)&temp);
++	if (ret || len != sizeof(temp))
++		return 0;
++
++	return be32_to_cpu(temp) + 0x40;
++}
++
++static int detect_squashfs_partition(struct mtd_info *mtd, unsigned long offset)
++{
++	unsigned long temp;
++	size_t len;
++	int ret;
++
++	ret = mtd_read(mtd, offset, 4, &len, (void *)&temp);
++	if (ret || len != sizeof(temp))
++		return 0;
++
++	return le32_to_cpu(temp) == SQUASHFS_MAGIC;
++}
++
++static unsigned long find_squashfs_offset(struct mtd_info *mtd, unsigned long _offset)
++{
++	/* scan the first 2MB at 64K offsets */
++	int i;
++
++	for (i = 0; i < 32; i++) {
++		unsigned long offset = i * 64 * 1024;
++		if (detect_squashfs_partition(mtd, _offset + offset))
++			return offset;
++	}
++	return 0;
++}
++
++static int split_uimage(struct mtd_info *mtd,
++			const struct mtd_partition *part)
++{
++	static struct mtd_partition split_partitions[] = {
++		{
++			.name = "kernel",
++			.offset = 0x0,
++			.size = 0x0,
++		}, {
++			.name = "rootfs",
++			.offset = 0x0,
++			.size = 0x0,
++		},
++	};
++
++	split_partitions[0].size = find_uimage_size(mtd, part->offset);
++	if (!split_partitions[0].size) {
++		split_partitions[0].size = find_squashfs_offset(mtd, part->offset);
++		if (!split_partitions[0].size) {
++			pr_err("failed to split firmware partition\n");
++			return -1;
++		}
++	}
++
++	if (!detect_squashfs_partition(mtd,
++				       part->offset
++				       + split_partitions[0].size)) {
++		split_partitions[0].size &= ~(mtd->erasesize - 1);
++		split_partitions[0].size += mtd->erasesize;
++	} else {
++		pr_info("found squashfs behind kernel\n");
++	}
++
++	split_partitions[0].offset = part->offset;
++	split_partitions[1].offset = part->offset + split_partitions[0].size;
++	split_partitions[1].size = part->size - split_partitions[0].size;
++
++	add_mtd_partitions(mtd, split_partitions, 2);
++
++	return 0;
++}
++#endif
++
+ /*
+  * This function, given a master MTD object and a partition table, creates
+  * and registers slave MTD objects which are bound to the master according to
+@@ -860,7 +953,7 @@
+ 	struct mtd_part *slave;
+ 	uint64_t cur_offset = 0;
+ 	int i;
+-#ifdef CONFIG_MTD_ROOTFS_SPLIT
++#if defined(CONFIG_MTD_ROOTFS_SPLIT) || defined(CONFIG_MTD_UIMAGE_SPLIT)
+ 	int ret;
+ #endif
+ 
+@@ -877,6 +970,14 @@
+ 
+ 		add_mtd_device(&slave->mtd);
+ 
++#ifdef CONFIG_MTD_UIMAGE_SPLIT
++		if (!strcmp(parts[i].name, "firmware")) {
++			ret = split_uimage(master, &parts[i]);
++			if (ret)
++				printk(KERN_WARNING "Can't split firmware partition\n");
++		}
++#endif
++
+ 		if (!strcmp(parts[i].name, "rootfs")) {
+ #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
+ 			if (ROOT_DEV == 0) {

@@ -1,0 +1,180 @@
+From 806a489c720767f63bf5046c2ccd87ded9549c1c Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 16 Mar 2013 00:50:57 +0100
+Subject: [PATCH 104/121] MIPS: ralink: add pinmux driver
+
+Add code to setup the pinmux on ralonk SoC. The SoC has a single 32 bit register
+for this functionality with simple on/off bits. Building a full featured pinctrl
+driver would be overkill.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/Makefile |    2 +-
+ arch/mips/ralink/common.h |    5 ++-
+ arch/mips/ralink/of.c     |    2 ++
+ arch/mips/ralink/pinmux.c |   76 +++++++++++++++++++++++++++++++++++++++++++++
+ arch/mips/ralink/rt305x.c |    6 ++--
+ 5 files changed, 85 insertions(+), 6 deletions(-)
+ create mode 100644 arch/mips/ralink/pinmux.c
+
+diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
+index 939757f..39ef249 100644
+--- a/arch/mips/ralink/Makefile
++++ b/arch/mips/ralink/Makefile
+@@ -6,7 +6,7 @@
+ # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
+ # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
+ 
+-obj-y := prom.o of.o reset.o clk.o irq.o
++obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o
+ 
+ obj-$(CONFIG_SOC_RT305X) += rt305x.o
+ 
+diff --git a/arch/mips/ralink/common.h b/arch/mips/ralink/common.h
+index 3009903..ed99f23 100644
+--- a/arch/mips/ralink/common.h
++++ b/arch/mips/ralink/common.h
+@@ -22,9 +22,10 @@ struct ralink_pinmux {
+ 	struct ralink_pinmux_grp *mode;
+ 	struct ralink_pinmux_grp *uart;
+ 	int uart_shift;
++	u32 uart_mask;
+ 	void (*wdt_reset)(void);
+ };
+-extern struct ralink_pinmux gpio_pinmux;
++extern struct ralink_pinmux rt_pinmux;
+ 
+ struct ralink_soc_info {
+ 	unsigned char sys_type[RAMIPS_SYS_TYPE_LEN];
+@@ -41,4 +42,6 @@ extern void prom_soc_init(struct ralink_soc_info *soc_info);
+ 
+ __iomem void *plat_of_remap_node(const char *node);
+ 
++void ralink_pinmux(void);
++
+ #endif /* _RALINK_COMMON_H__ */
+diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
+index 4165e70..ecf1482 100644
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -101,6 +101,8 @@ static int __init plat_of_setup(void)
+ 	if (of_platform_populate(NULL, of_ids, NULL, NULL))
+ 		panic("failed to populate DT\n");
+ 
++	ralink_pinmux();
++
+ 	return 0;
+ }
+ 
+diff --git a/arch/mips/ralink/pinmux.c b/arch/mips/ralink/pinmux.c
+new file mode 100644
+index 0000000..7477deb
+--- /dev/null
++++ b/arch/mips/ralink/pinmux.c
+@@ -0,0 +1,76 @@
++/*
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ *
++ *  Copyright (C) 2013 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/kernel.h>
++#include <linux/of.h>
++
++#include <asm/mach-ralink/ralink_regs.h>
++
++#include "common.h"
++
++#define SYSC_REG_GPIO_MODE	0x60
++
++static u32 ralink_mux_mask(const char *name, struct ralink_pinmux_grp *grps)
++{
++	for (; grps->name; grps++)
++		if (!strcmp(grps->name, name))
++			return grps->mask;
++
++	return 0;
++}
++
++void ralink_pinmux(void)
++{
++	const __be32 *wdt;
++	struct device_node *np;
++	struct property *prop;
++	const char *uart, *pin;
++	u32 mode = 0;
++
++	np = of_find_compatible_node(NULL, NULL, "ralink,rt3050-sysc");
++	if (!np)
++		return;
++
++	of_property_for_each_string(np, "ralink,gpiomux", prop, pin) {
++		int m = ralink_mux_mask(pin, rt_pinmux.mode);
++		if (m) {
++			mode |= m;
++			pr_debug("pinmux: registered gpiomux \"%s\"\n", pin);
++		} else {
++			pr_err("pinmux: failed to load \"%s\"\n", pin);
++		}
++	}
++
++	of_property_for_each_string(np, "ralink,pinmmux", prop, pin) {
++		int m = ralink_mux_mask(pin, rt_pinmux.mode);
++		if (m) {
++			mode &= ~m;
++			pr_debug("pinmux: registered pinmux \"%s\"\n", pin);
++		} else {
++			pr_err("pinmux: failed to load group \"%s\"\n", pin);
++		}
++	}
++
++	of_property_read_string(np, "ralink,uartmux", &uart);
++	if (uart) {
++		int m = ralink_mux_mask(uart, rt_pinmux.uart);
++		mode |= rt_pinmux.uart_mask << rt_pinmux.uart_shift;
++		if (m) {
++			mode &= ~(m << rt_pinmux.uart_shift);
++			pr_debug("pinmux: registered uartmux \"%s\"\n", uart);
++		} else {
++			pr_debug("pinmux: registered uartmux \"gpio\"\n");
++		}
++	}
++
++	wdt = of_get_property(np, "ralink,wdtmux", NULL);
++	if (wdt && *wdt && rt_pinmux.wdt_reset)
++		rt_pinmux.wdt_reset();
++
++	rt_sysc_w32(mode, SYSC_REG_GPIO_MODE);
++}
+diff --git a/arch/mips/ralink/rt305x.c b/arch/mips/ralink/rt305x.c
+index 856ebff..d9ea53d 100644
+--- a/arch/mips/ralink/rt305x.c
++++ b/arch/mips/ralink/rt305x.c
+@@ -97,9 +97,6 @@ struct ralink_pinmux_grp uart_mux[] = {
+ 		.mask = RT305X_GPIO_MODE_GPIO_I2S,
+ 		.gpio_first = RT305X_GPIO_7,
+ 		.gpio_last = RT305X_GPIO_14,
+-	}, {
+-		.name = "gpio",
+-		.mask = RT305X_GPIO_MODE_GPIO,
+ 	}, {0}
+ };
+ 
+@@ -114,10 +111,11 @@ void rt305x_wdt_reset(void)
+ 	rt_sysc_w32(t, SYSC_REG_SYSTEM_CONFIG);
+ }
+ 
+-struct ralink_pinmux gpio_pinmux = {
++struct ralink_pinmux rt_pinmux = {
+ 	.mode = mode_mux,
+ 	.uart = uart_mux,
+ 	.uart_shift = RT305X_GPIO_MODE_UART0_SHIFT,
++	.uart_mask = RT305X_GPIO_MODE_GPIO,
+ 	.wdt_reset = rt305x_wdt_reset,
+ };
+ 
+-- 
+1.7.10.4
+

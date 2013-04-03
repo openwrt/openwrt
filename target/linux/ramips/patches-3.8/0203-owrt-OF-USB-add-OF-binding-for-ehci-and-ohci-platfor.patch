@@ -1,0 +1,66 @@
+From 3c99a50d689cb4811b13b9810d18c9316587216f Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 18 Mar 2013 20:51:21 +0100
+Subject: [PATCH 203/208] owrt: OF: USB: add OF binding for ehci and ohci
+ platform driver
+
+Make ohci-platform and ehci-platform loadable from OF.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/usb/host/ehci-platform.c |    7 +++++++
+ drivers/usb/host/ohci-platform.c |    7 +++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
+index ca75063..fdddce1 100644
+--- a/drivers/usb/host/ehci-platform.c
++++ b/drivers/usb/host/ehci-platform.c
+@@ -183,6 +183,12 @@ static int ehci_platform_resume(struct device *dev)
+ #define ehci_platform_resume	NULL
+ #endif /* CONFIG_PM */
+ 
++static const struct of_device_id ehci_match_table[] = {
++	{ .compatible = "ehci-platform" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, ehci_match_table);
++
+ static const struct platform_device_id ehci_platform_table[] = {
+ 	{ "ehci-platform", 0 },
+ 	{ }
+@@ -203,6 +209,7 @@ static struct platform_driver ehci_platform_driver = {
+ 		.owner	= THIS_MODULE,
+ 		.name	= "ehci-platform",
+ 		.pm	= &ehci_platform_pm_ops,
++		.of_match_table = ehci_match_table,
+ 	}
+ };
+ 
+diff --git a/drivers/usb/host/ohci-platform.c b/drivers/usb/host/ohci-platform.c
+index c3e7287..6d7d30b 100644
+--- a/drivers/usb/host/ohci-platform.c
++++ b/drivers/usb/host/ohci-platform.c
+@@ -201,6 +201,12 @@ static int ohci_platform_resume(struct device *dev)
+ #define ohci_platform_resume	NULL
+ #endif /* CONFIG_PM */
+ 
++static const struct of_device_id ohci_match_table[] = {
++	{ .compatible = "ohci-platform" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, ohci_match_table);
++
+ static const struct platform_device_id ohci_platform_table[] = {
+ 	{ "ohci-platform", 0 },
+ 	{ }
+@@ -221,5 +227,6 @@ static struct platform_driver ohci_platform_driver = {
+ 		.owner	= THIS_MODULE,
+ 		.name	= "ohci-platform",
+ 		.pm	= &ohci_platform_pm_ops,
++		.of_match_table = ohci_match_table,
+ 	}
+ };
+-- 
+1.7.10.4
+

@@ -1,0 +1,156 @@
+From ae2b5bb6570481b50a7175c64176b82da0a81836 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 20 Jan 2013 22:05:30 +0100
+Subject: [PATCH 10/14] MIPS: ralink: adds Kbuild files
+
+Add the Kbuild symbols and Makefiles needed to actually build the ralink code
+from this series
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4899/
+---
+ arch/mips/Kbuild.platforms    |    1 +
+ arch/mips/Kconfig             |   17 +++++++++++++++++
+ arch/mips/ralink/Kconfig      |   32 ++++++++++++++++++++++++++++++++
+ arch/mips/ralink/Makefile     |   15 +++++++++++++++
+ arch/mips/ralink/Platform     |   10 ++++++++++
+ arch/mips/ralink/dts/Makefile |    1 +
+ 6 files changed, 76 insertions(+)
+ create mode 100644 arch/mips/ralink/Kconfig
+ create mode 100644 arch/mips/ralink/Makefile
+ create mode 100644 arch/mips/ralink/Platform
+ create mode 100644 arch/mips/ralink/dts/Makefile
+
+diff --git a/arch/mips/Kbuild.platforms b/arch/mips/Kbuild.platforms
+index 91b9d69..9a73ce6 100644
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
+@@ -22,6 +22,7 @@ platforms += pmc-sierra
+ platforms += pnx833x
+ platforms += pnx8550
+ platforms += powertv
++platforms += ralink
+ platforms += rb532
+ platforms += sgi-ip22
+ platforms += sgi-ip27
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 8f8666c..79ad1d0 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -437,6 +437,22 @@ config POWERTV
+ 	help
+ 	  This enables support for the Cisco PowerTV Platform.
+ 
++config RALINK
++	bool "Ralink based machines"
++	select CEVT_R4K
++	select CSRC_R4K
++	select BOOT_RAW
++	select DMA_NONCOHERENT
++	select IRQ_CPU
++	select USE_OF
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_HAS_CPU_MIPS32_R2
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_LITTLE_ENDIAN
++	select SYS_HAS_EARLY_PRINTK
++	select HAVE_MACH_CLKDEV
++	select CLKDEV_LOOKUP
++
+ config SGI_IP22
+ 	bool "SGI IP22 (Indy/Indigo2)"
+ 	select FW_ARC
+@@ -849,6 +865,7 @@ source "arch/mips/lantiq/Kconfig"
+ source "arch/mips/lasat/Kconfig"
+ source "arch/mips/pmc-sierra/Kconfig"
+ source "arch/mips/powertv/Kconfig"
++source "arch/mips/ralink/Kconfig"
+ source "arch/mips/sgi-ip27/Kconfig"
+ source "arch/mips/sibyte/Kconfig"
+ source "arch/mips/txx9/Kconfig"
+diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
+new file mode 100644
+index 0000000..a0b0197
+--- /dev/null
++++ b/arch/mips/ralink/Kconfig
+@@ -0,0 +1,32 @@
++if RALINK
++
++choice
++	prompt "Ralink SoC selection"
++	default SOC_RT305X
++	help
++	  Select Ralink MIPS SoC type.
++
++	config SOC_RT305X
++		bool "RT305x"
++		select USB_ARCH_HAS_HCD
++		select USB_ARCH_HAS_OHCI
++		select USB_ARCH_HAS_EHCI
++
++endchoice
++
++choice
++	prompt "Devicetree selection"
++	default DTB_RT_NONE
++	help
++	  Select the devicetree.
++
++	config DTB_RT_NONE
++		bool "None"
++
++	config DTB_RT305X_EVAL
++		bool "RT305x eval kit"
++		depends on SOC_RT305X
++
++endchoice
++
++endif
+diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
+new file mode 100644
+index 0000000..939757f
+--- /dev/null
++++ b/arch/mips/ralink/Makefile
+@@ -0,0 +1,15 @@
++# This program is free software; you can redistribute it and/or modify it
++# under the terms of the GNU General Public License version 2 as published
++# by the Free Software Foundation.#
++# Makefile for the Ralink common stuff
++#
++# Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
++# Copyright (C) 2013 John Crispin <blogic@openwrt.org>
++
++obj-y := prom.o of.o reset.o clk.o irq.o
++
++obj-$(CONFIG_SOC_RT305X) += rt305x.o
++
++obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
++
++obj-y += dts/
+diff --git a/arch/mips/ralink/Platform b/arch/mips/ralink/Platform
+new file mode 100644
+index 0000000..6babd65
+--- /dev/null
++++ b/arch/mips/ralink/Platform
+@@ -0,0 +1,10 @@
++#
++# Ralink SoC common stuff
++#
++core-$(CONFIG_RALINK)		+= arch/mips/ralink/
++cflags-$(CONFIG_RALINK)		+= -I$(srctree)/arch/mips/include/asm/mach-ralink
++
++#
++# Ralink RT305x
++#
++load-$(CONFIG_SOC_RT305X)	+= 0xffffffff80000000
+diff --git a/arch/mips/ralink/dts/Makefile b/arch/mips/ralink/dts/Makefile
+new file mode 100644
+index 0000000..1a69fb3
+--- /dev/null
++++ b/arch/mips/ralink/dts/Makefile
+@@ -0,0 +1 @@
++obj-$(CONFIG_DTB_RT305X_EVAL) := rt3052_eval.dtb.o
+-- 
+1.7.10.4
+
