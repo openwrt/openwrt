@@ -24,6 +24,7 @@ platform_check_image() {
 	bc2 | \
 	broadway | \
 	carambola | \
+	d105 | \
 	dir-300-b1 | \
 	dir-600-b1 | \
 	dir-600-b2 | \

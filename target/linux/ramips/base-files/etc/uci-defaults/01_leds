@@ -48,6 +48,10 @@ case $board in
 	br6524n)
 		set_wifi_led "edimax:blue:wlan"
 		;;
+	d105)
+		ucidef_set_led_default "power" "POWER" "d105:red:power" "1"
+		set_usb_led "d105:green:usb"
+		;;
 	dir-300-b1|\
 	dir-600-b1|\
 	dir-600-b2|\
