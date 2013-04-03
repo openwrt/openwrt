@@ -134,6 +134,20 @@ endef
 
 $(eval $(call KernelPackage,hwmon-lm90))
 
+define KernelPackage/hwmon-lm92
+  TITLE:=LM92 monitoring support
+  KCONFIG:=CONFIG_SENSORS_LM92
+  FILES:=$(LINUX_DIR)/drivers/hwmon/lm92.ko
+  AUTOLOAD:=$(call AutoLoad,60,lm92)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-lm92/description
+ Kernel module for LM92 thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-lm92))
+
 define KernelPackage/hwmon-lm95241
   TITLE:=LM95241 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM95241
