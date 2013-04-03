@@ -1,0 +1,61 @@
+From 6beb1af1b1475478c8f275b9579c9ebe4dad2904 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 19 Mar 2013 10:16:42 +0100
+Subject: [PATCH 205/208] owrt: MIPS: add OWRTDTB secion
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/kernel/head.S   |    3 +++
+ arch/mips/ralink/Makefile |    2 +-
+ arch/mips/ralink/of.c     |    4 +++-
+ 3 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/kernel/head.S b/arch/mips/kernel/head.S
+index c61cdae..b4e55bb 100644
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -140,6 +140,9 @@ FEXPORT(__kernel_entry)
+ 	j	kernel_entry
+ #endif
+ 
++	.ascii  "OWRTDTB:"
++	EXPORT(__image_dtb)
++	.fill   0x4000
+ 	__REF
+ 
+ NESTED(kernel_entry, 16, sp)			# kernel entry point
+diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
+index 8572538..9e58aa1 100644
+--- a/arch/mips/ralink/Makefile
++++ b/arch/mips/ralink/Makefile
+@@ -15,4 +15,4 @@ obj-$(CONFIG_SOC_MT7620) += mt7620.o
+ 
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+-obj-y += dts/
++#obj-y += dts/
+diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
+index f438145..ee998b7 100644
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -76,6 +76,8 @@ void __init device_tree_init(void)
+ 	free_bootmem(base, size);
+ }
+ 
++extern struct boot_param_header __image_dtb;
++
+ void __init plat_mem_setup(void)
+ {
+ 	set_io_port_base(KSEG1);
+@@ -84,7 +86,7 @@ void __init plat_mem_setup(void)
+ 	 * Load the builtin devicetree. This causes the chosen node to be
+ 	 * parsed resulting in our memory appearing
+ 	 */
+-	__dt_setup_arch(&__dtb_start);
++	__dt_setup_arch(&__image_dtb);
+ }
+ 
+ static int __init plat_of_setup(void)
+-- 
+1.7.10.4
+

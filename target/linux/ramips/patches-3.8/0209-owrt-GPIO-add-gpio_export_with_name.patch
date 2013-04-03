@@ -1,0 +1,266 @@
+From eda15425bcd2703ea1cfeebd65847305c17e5f0a Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 27 Mar 2013 18:38:48 +0100
+Subject: [PATCH] owrt: GPIO: add gpio_export_with_name
+
+http://lists.infradead.org/pipermail/linux-arm-kernel/2012-November/133856.html
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ Documentation/devicetree/bindings/gpio/gpio.txt |   60 ++++++++++++++++++++++
+ drivers/gpio/gpiolib-of.c                       |   61 +++++++++++++++++++++++
+ drivers/gpio/gpiolib.c                          |   18 +++++--
+ include/asm-generic/gpio.h                      |    6 ++-
+ include/linux/gpio.h                            |   23 ++++++++-
+ 5 files changed, 160 insertions(+), 8 deletions(-)
+
+Index: linux-3.8.3/Documentation/devicetree/bindings/gpio/gpio.txt
+===================================================================
+--- linux-3.8.3.orig/Documentation/devicetree/bindings/gpio/gpio.txt	2013-03-14 19:27:14.000000000 +0100
++++ linux-3.8.3/Documentation/devicetree/bindings/gpio/gpio.txt	2013-04-01 11:11:42.151167467 +0200
+@@ -112,3 +112,63 @@
+ 
+ The pinctrl node must have "#gpio-range-cells" property to show number of
+ arguments to pass with phandle from gpio controllers node.
++
++3) gpio-export
++--------------
++
++gpio-export will allow you to automatically export gpio
++
++required properties:
++- compatible: Should be "gpio-export"
++
++in each child node will reprensent a gpio or if no name is specified
++a list of gpio to export
++
++required properties:
++- gpios: gpio to export
++
++optional properties:
++ - gpio-export,name: export name
++ - gpio-export,output: to set the as output with default value
++ 		       if no present gpio as input
++ - pio-export,direction_may_change: boolean to allow the direction to be controllable
++
++Example:
++
++
++gpio_export {
++	compatible = "gpio-export";
++	#size-cells = <0>;
++
++	in {
++		gpio-export,name = "in";
++		gpios = <&pioC 20 0>;
++	};
++
++	out {
++		gpio-export,name = "out";
++		gpio-export,output = <1>;
++		gpio-export,direction_may_change;
++		gpios = <&pioC 21 0>;
++	};
++
++	in_out {
++		gpio-export,name = "in_out";
++		gpio-export,direction_may_change;
++		gpios = <&pioC 21 0>;
++	};
++
++	gpios_in {
++		gpios = <&pioB 0 0
++			 &pioB 3 0
++			 &pioC 4 0>;
++		gpio-export,direction_may_change;
++	};
++
++	gpios_out {
++		gpios = <&pioB 1 0
++			 &pioB 2 0
++			 &pioC 3 0>;
++		gpio-export,output = <1>;
++	};
++};
+Index: linux-3.8.3/drivers/gpio/gpiolib-of.c
+===================================================================
+--- linux-3.8.3.orig/drivers/gpio/gpiolib-of.c	2013-03-14 19:27:14.000000000 +0100
++++ linux-3.8.3/drivers/gpio/gpiolib-of.c	2013-04-01 11:11:42.151167467 +0200
+@@ -21,6 +21,8 @@
+ #include <linux/of_gpio.h>
+ #include <linux/pinctrl/pinctrl.h>
+ #include <linux/slab.h>
++#include <linux/init.h>
++#include <linux/platform_device.h>
+ 
+ /* Private data structure for of_gpiochip_find_and_xlate */
+ struct gg_data {
+@@ -289,3 +291,62 @@
+ 	if (chip->of_node)
+ 		of_node_put(chip->of_node);
+ }
++
++static struct of_device_id gpio_export_ids[] = {
++	{ .compatible = "gpio-export" },
++	{ /* sentinel */ }
++};
++
++static int __init of_gpio_export_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	struct device_node *cnp;
++	u32 val;
++	int nb = 0;
++
++	for_each_child_of_node(np, cnp) {
++		const char *name = NULL;
++		int gpio;
++		bool dmc;
++		int max_gpio = 1;
++		int i;
++
++		of_property_read_string(cnp, "gpio-export,name", &name);
++
++		if (!name)
++			max_gpio = of_gpio_count(cnp);
++
++		for (i = 0; i < max_gpio; i++) {
++			gpio = of_get_gpio(cnp, i);
++			if (devm_gpio_request(&pdev->dev, gpio, name ? name : of_node_full_name(np)))
++				continue;
++
++			if (!of_property_read_u32(cnp, "gpio-export,output", &val))
++				gpio_direction_output(gpio, val);
++			else
++				gpio_direction_input(gpio);
++
++			dmc = of_property_read_bool(np, "gpio-export,direction_may_change");
++			gpio_export_with_name(gpio, dmc, name);
++			nb++;
++		}
++	}
++
++	dev_info(&pdev->dev, "%d gpio(s) exported\n", nb);
++
++	return 0;
++}
++
++static struct platform_driver gpio_export_driver = {
++	.driver		= {
++		.name		= "gpio-export",
++		.owner	= THIS_MODULE,
++		.of_match_table	= of_match_ptr(gpio_export_ids),
++	},
++};
++
++static int __init of_gpio_export_init(void)
++{
++	return platform_driver_probe(&gpio_export_driver, of_gpio_export_probe);
++}
++device_initcall(of_gpio_export_init);
+Index: linux-3.8.3/drivers/gpio/gpiolib.c
+===================================================================
+--- linux-3.8.3.orig/drivers/gpio/gpiolib.c	2013-03-14 19:27:14.000000000 +0100
++++ linux-3.8.3/drivers/gpio/gpiolib.c	2013-04-01 11:12:29.263168590 +0200
+@@ -714,9 +714,10 @@
+ 
+ 
+ /**
+- * gpio_export - export a GPIO through sysfs
++ * gpio_export_with_name - export a GPIO through sysfs
+  * @gpio: gpio to make available, already requested
+  * @direction_may_change: true if userspace may change gpio direction
++ * @name: gpio name
+  * Context: arch_initcall or later
+  *
+  * When drivers want to make a GPIO accessible to userspace after they
+@@ -728,7 +729,7 @@
+  *
+  * Returns zero on success, else an error.
+  */
+-int gpio_export(unsigned gpio, bool direction_may_change)
++int gpio_export_with_name(unsigned gpio, bool direction_may_change, const char *name)
+ {
+ 	unsigned long		flags;
+ 	struct gpio_desc	*desc;
+@@ -762,6 +763,8 @@
+ 		goto fail_unlock;
+ 	}
+ 
++	if (name)
++		ioname = name;
+ 	if (!desc->chip->direction_input || !desc->chip->direction_output)
+ 		direction_may_change = false;
+ 	spin_unlock_irqrestore(&gpio_lock, flags);
+@@ -804,7 +807,7 @@
+ 	pr_debug("%s: gpio%d status %d\n", __func__, gpio, status);
+ 	return status;
+ }
+-EXPORT_SYMBOL_GPL(gpio_export);
++EXPORT_SYMBOL_GPL(gpio_export_with_name);
+ 
+ static int match_export(struct device *dev, void *data)
+ {
+Index: linux-3.8.3/include/asm-generic/gpio.h
+===================================================================
+--- linux-3.8.3.orig/include/asm-generic/gpio.h	2013-03-14 19:27:14.000000000 +0100
++++ linux-3.8.3/include/asm-generic/gpio.h	2013-04-01 11:11:42.155167467 +0200
+@@ -204,7 +204,8 @@
+  * A sysfs interface can be exported by individual drivers if they want,
+  * but more typically is configured entirely from userspace.
+  */
+-extern int gpio_export(unsigned gpio, bool direction_may_change);
++extern int gpio_export_with_name(unsigned gpio, bool direction_may_change,
++			const char *name);
+ extern int gpio_export_link(struct device *dev, const char *name,
+ 			unsigned gpio);
+ extern int gpio_sysfs_set_active_low(unsigned gpio, int value);
+@@ -249,7 +250,8 @@
+ 
+ /* sysfs support is only available with gpiolib, where it's optional */
+ 
+-static inline int gpio_export(unsigned gpio, bool direction_may_change)
++static inline int gpio_export_with_name(unsigned gpio,
++	bool direction_may_change, const char *name)
+ {
+ 	return -ENOSYS;
+ }
+Index: linux-3.8.3/include/linux/gpio.h
+===================================================================
+--- linux-3.8.3.orig/include/linux/gpio.h	2013-03-14 19:27:14.000000000 +0100
++++ linux-3.8.3/include/linux/gpio.h	2013-04-01 11:11:42.159167467 +0200
+@@ -189,7 +189,8 @@
+ 	WARN_ON(1);
+ }
+ 
+-static inline int gpio_export(unsigned gpio, bool direction_may_change)
++static inline int gpio_export_with_name(unsigned gpio,
++	bool direction_may_change, const char *name)
+ {
+ 	/* GPIO can never have been requested or set as {in,out}put */
+ 	WARN_ON(1);
+@@ -248,4 +249,24 @@
+ 
+ #endif /* ! CONFIG_GENERIC_GPIO */
+ 
++/**
++ * gpio_export - export a GPIO through sysfs
++ * @gpio: gpio to make available, already requested
++ * @direction_may_change: true if userspace may change gpio direction
++ * Context: arch_initcall or later
++ *
++ * When drivers want to make a GPIO accessible to userspace after they
++ * have requested it -- perhaps while debugging, or as part of their
++ * public interface -- they may use this routine.  If the GPIO can
++ * change direction (some can't) and the caller allows it, userspace
++ * will see "direction" sysfs attribute which may be used to change
++ * the gpio's direction.  A "value" attribute will always be provided.
++ *
++ * Returns zero on success, else an error.
++ */
++static inline int gpio_export(unsigned gpio,bool direction_may_change)
++{
++	return gpio_export_with_name(gpio, direction_may_change, NULL);
++}
++
+ #endif /* __LINUX_GPIO_H */

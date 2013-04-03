@@ -1,0 +1,180 @@
+From 5644da4f635a30fc03b4f12d81b2197d716d9cef Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 22 Jan 2013 20:19:33 +0100
+Subject: [PATCH 09/14] MIPS: ralink: adds rt305x devicetree
+
+This adds the devicetree file that describes the rt305x evaluation kit.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/4898/
+---
+ arch/mips/ralink/dts/rt3050.dtsi     |   96 ++++++++++++++++++++++++++++++++++
+ arch/mips/ralink/dts/rt3052_eval.dts |   52 ++++++++++++++++++
+ 2 files changed, 148 insertions(+)
+ create mode 100644 arch/mips/ralink/dts/rt3050.dtsi
+ create mode 100644 arch/mips/ralink/dts/rt3052_eval.dts
+
+diff --git a/arch/mips/ralink/dts/rt3050.dtsi b/arch/mips/ralink/dts/rt3050.dtsi
+new file mode 100644
+index 0000000..fd49daa
+--- /dev/null
++++ b/arch/mips/ralink/dts/rt3050.dtsi
+@@ -0,0 +1,96 @@
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	compatible = "ralink,rt3050-soc", "ralink,rt3052-soc";
++
++	cpus {
++		cpu@0 {
++			compatible = "mips,mips24KEc";
++		};
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,57600 init=/init";
++	};
++
++	palmbus@10000000 {
++		compatible = "palmbus";
++		reg = <0x10000000 0x200000>;
++                ranges = <0x0 0x10000000 0x1FFFFF>;
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		sysc@0 {
++			compatible = "ralink,rt3052-sysc", "ralink,rt3050-sysc";
++			reg = <0x0 0x100>;
++		};
++
++		timer@100 {
++			compatible = "ralink,rt3052-wdt", "ralink,rt2880-wdt";
++			reg = <0x100 0x100>;
++		};
++
++		intc: intc@200 {
++			compatible = "ralink,rt3052-intc", "ralink,rt2880-intc";
++			reg = <0x200 0x100>;
++
++			interrupt-controller;
++			#interrupt-cells = <1>;
++		};
++
++		memc@300 {
++			compatible = "ralink,rt3052-memc", "ralink,rt3050-memc";
++			reg = <0x300 0x100>;
++		};
++
++		gpio0: gpio@600 {
++			compatible = "ralink,rt3052-gpio", "ralink,rt2880-gpio";
++			reg = <0x600 0x34>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			ralink,ngpio = <24>;
++			ralink,regs = [ 00 04 08 0c
++					20 24 28 2c
++					30 34 ];
++		};
++
++		gpio1: gpio@638 {
++			compatible = "ralink,rt3052-gpio", "ralink,rt2880-gpio";
++			reg = <0x638 0x24>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			ralink,ngpio = <16>;
++			ralink,regs = [ 00 04 08 0c
++					10 14 18 1c
++					20 24 ];
++		};
++
++		gpio2: gpio@660 {
++			compatible = "ralink,rt3052-gpio", "ralink,rt2880-gpio";
++			reg = <0x660 0x24>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			ralink,ngpio = <12>;
++			ralink,regs = [ 00 04 08 0c
++					10 14 18 1c
++					20 24 ];
++		};
++
++		uartlite@c00 {
++			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
++			reg = <0xc00 0x100>;
++
++			interrupt-parent = <&intc>;
++			interrupts = <12>;
++
++			reg-shift = <2>;
++		};
++	};
++};
+diff --git a/arch/mips/ralink/dts/rt3052_eval.dts b/arch/mips/ralink/dts/rt3052_eval.dts
+new file mode 100644
+index 0000000..148a590
+--- /dev/null
++++ b/arch/mips/ralink/dts/rt3052_eval.dts
+@@ -0,0 +1,52 @@
++/dts-v1/;
++
++/include/ "rt3050.dtsi"
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	compatible = "ralink,rt3052-eval-board", "ralink,rt3052-soc";
++	model = "Ralink RT3052 evaluation board";
++
++	memory@0 {
++		reg = <0x0 0x2000000>;
++	};
++
++	palmbus@10000000 {
++		sysc@0 {
++			ralink,pinmmux = "uartlite", "spi";
++			ralink,uartmux = "gpio";
++			ralink,wdtmux = <0>;
++		};
++	};
++
++	cfi@1f000000 {
++		compatible = "cfi-flash";
++		reg = <0x1f000000 0x800000>;
++
++		bank-width = <2>;
++		device-width = <2>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			label = "uboot";
++			reg = <0x0 0x30000>;
++			read-only;
++		};
++		partition@30000 {
++			label = "uboot-env";
++			reg = <0x30000 0x10000>;
++			read-only;
++		};
++		partition@40000 {
++			label = "calibration";
++			reg = <0x40000 0x10000>;
++			read-only;
++		};
++		partition@50000 {
++			label = "linux";
++			reg = <0x50000 0x7b0000>;
++		};
++	};
++};
+-- 
+1.7.10.4
+

@@ -1,0 +1,85 @@
+From d3d2b4200b5a42851365e903d101f8f0882eb9eb Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Thu, 31 Jan 2013 20:43:30 +0100
+Subject: [PATCH 14/14] MIPS: ralink: add CPU interrupt controller to
+ of_irq_ids
+
+Convert the ralink IRQ code to make use of the new MIPS IRQ controller OF
+mappings.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Acked-by: David Daney <david.daney@cavium.com>
+Patchwork: http://patchwork.linux-mips.org/patch/4900/
+---
+ arch/mips/ralink/dts/rt3050.dtsi |   10 ++++++++++
+ arch/mips/ralink/irq.c           |   10 +++++++---
+ 2 files changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/arch/mips/ralink/dts/rt3050.dtsi b/arch/mips/ralink/dts/rt3050.dtsi
+index fd49daa..069d066 100644
+--- a/arch/mips/ralink/dts/rt3050.dtsi
++++ b/arch/mips/ralink/dts/rt3050.dtsi
+@@ -13,6 +13,13 @@
+ 		bootargs = "console=ttyS0,57600 init=/init";
+ 	};
+ 
++	cpuintc: cpuintc@0 {
++		#address-cells = <0>;
++		#interrupt-cells = <1>;
++		interrupt-controller;
++		compatible = "mti,cpu-interrupt-controller";
++	};
++
+ 	palmbus@10000000 {
+ 		compatible = "palmbus";
+ 		reg = <0x10000000 0x200000>;
+@@ -37,6 +44,9 @@
+ 
+ 			interrupt-controller;
+ 			#interrupt-cells = <1>;
++
++			interrupt-parent = <&cpuintc>;
++			interrupts = <2>;
+ 		};
+ 
+ 		memc@300 {
+diff --git a/arch/mips/ralink/irq.c b/arch/mips/ralink/irq.c
+index e62c975..6d054c5 100644
+--- a/arch/mips/ralink/irq.c
++++ b/arch/mips/ralink/irq.c
+@@ -128,8 +128,11 @@ static int __init intc_of_init(struct device_node *node,
+ {
+ 	struct resource res;
+ 	struct irq_domain *domain;
++	int irq;
+ 
+-	mips_cpu_irq_init();
++	irq = irq_of_parse_and_map(node, 0);
++	if (!irq)
++		panic("Failed to get INTC IRQ");
+ 
+ 	if (of_address_to_resource(node, 0, &res))
+ 		panic("Failed to get intc memory range");
+@@ -156,8 +159,8 @@ static int __init intc_of_init(struct device_node *node,
+ 
+ 	rt_intc_w32(INTC_INT_GLOBAL, INTC_REG_ENABLE);
+ 
+-	irq_set_chained_handler(RALINK_CPU_IRQ_INTC, ralink_intc_irq_handler);
+-	irq_set_handler_data(RALINK_CPU_IRQ_INTC, domain);
++	irq_set_chained_handler(irq, ralink_intc_irq_handler);
++	irq_set_handler_data(irq, domain);
+ 
+ 	cp0_perfcount_irq = irq_create_mapping(domain, 9);
+ 
+@@ -165,6 +168,7 @@ static int __init intc_of_init(struct device_node *node,
+ }
+ 
+ static struct of_device_id __initdata of_irq_ids[] = {
++	{ .compatible = "mti,cpu-interrupt-controller", .data = mips_cpu_intc_init },
+ 	{ .compatible = "ralink,rt2880-intc", .data = intc_of_init },
+ 	{},
+ };
+-- 
+1.7.10.4
+

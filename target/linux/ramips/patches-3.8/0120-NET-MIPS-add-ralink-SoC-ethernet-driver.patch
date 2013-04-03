@@ -1,0 +1,3160 @@
+From 1c31c288bc1e853e3226ba593a13a0492b39c9e8 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 15 Mar 2013 19:07:05 +0100
+Subject: [PATCH 120/121] NET: MIPS: add ralink SoC ethernet driver
+
+Add support for Ralink FE and ESW.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ .../include/asm/mach-ralink/rt305x_esw_platform.h  |   27 +
+ arch/mips/ralink/rt305x.c                          |    1 +
+ drivers/net/ethernet/Kconfig                       |    1 +
+ drivers/net/ethernet/Makefile                      |    1 +
+ drivers/net/ethernet/ramips/Kconfig                |   18 +
+ drivers/net/ethernet/ramips/Makefile               |    9 +
+ drivers/net/ethernet/ramips/ramips_debugfs.c       |  127 ++
+ drivers/net/ethernet/ramips/ramips_esw.c           | 1220 +++++++++++++++++++
+ drivers/net/ethernet/ramips/ramips_eth.h           |  375 ++++++
+ drivers/net/ethernet/ramips/ramips_main.c          | 1285 ++++++++++++++++++++
+ 10 files changed, 3064 insertions(+)
+ create mode 100644 arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
+ create mode 100644 drivers/net/ethernet/ramips/Kconfig
+ create mode 100644 drivers/net/ethernet/ramips/Makefile
+ create mode 100644 drivers/net/ethernet/ramips/ramips_debugfs.c
+ create mode 100644 drivers/net/ethernet/ramips/ramips_esw.c
+ create mode 100644 drivers/net/ethernet/ramips/ramips_eth.h
+ create mode 100644 drivers/net/ethernet/ramips/ramips_main.c
+
+Index: linux-3.8.3/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.3/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h	2013-04-02 11:45:25.221274467 +0200
+@@ -0,0 +1,27 @@
++/*
++ *  Ralink RT305x SoC platform device registration
++ *
++ *  Copyright (C) 2010 Gabor Juhos <juhosg@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#ifndef _RT305X_ESW_PLATFORM_H
++#define _RT305X_ESW_PLATFORM_H
++
++enum {
++	RT305X_ESW_VLAN_CONFIG_NONE = 0,
++	RT305X_ESW_VLAN_CONFIG_LLLLW,
++	RT305X_ESW_VLAN_CONFIG_WLLLL,
++};
++
++struct rt305x_esw_platform_data
++{
++	u8 vlan_config;
++	u32 reg_initval_fct2;
++	u32 reg_initval_fpa2;
++};
++
++#endif /* _RT305X_ESW_PLATFORM_H */
+Index: linux-3.8.3/arch/mips/ralink/rt305x.c
+===================================================================
+--- linux-3.8.3.orig/arch/mips/ralink/rt305x.c	2013-04-02 11:45:25.025274462 +0200
++++ linux-3.8.3/arch/mips/ralink/rt305x.c	2013-04-02 11:45:25.221274467 +0200
+@@ -182,6 +182,7 @@
+ 	}
+ 
+ 	ralink_clk_add("cpu", cpu_rate);
++	ralink_clk_add("sys", sys_rate);
+ 	ralink_clk_add("10000b00.spi", sys_rate);
+ 	ralink_clk_add("10000100.timer", wdt_rate);
+ 	ralink_clk_add("10000120.watchdog", wdt_rate);
+Index: linux-3.8.3/drivers/net/ethernet/Kconfig
+===================================================================
+--- linux-3.8.3.orig/drivers/net/ethernet/Kconfig	2013-03-14 19:27:14.000000000 +0100
++++ linux-3.8.3/drivers/net/ethernet/Kconfig	2013-04-02 11:45:25.221274467 +0200
+@@ -136,6 +136,7 @@
+ source "drivers/net/ethernet/pasemi/Kconfig"
+ source "drivers/net/ethernet/qlogic/Kconfig"
+ source "drivers/net/ethernet/racal/Kconfig"
++source "drivers/net/ethernet/ramips/Kconfig"
+ source "drivers/net/ethernet/realtek/Kconfig"
+ source "drivers/net/ethernet/renesas/Kconfig"
+ source "drivers/net/ethernet/rdc/Kconfig"
+Index: linux-3.8.3/drivers/net/ethernet/Makefile
+===================================================================
+--- linux-3.8.3.orig/drivers/net/ethernet/Makefile	2013-03-14 19:27:14.000000000 +0100
++++ linux-3.8.3/drivers/net/ethernet/Makefile	2013-04-02 11:45:25.221274467 +0200
+@@ -54,6 +54,7 @@
+ obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
+ obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
+ obj-$(CONFIG_NET_VENDOR_RACAL) += racal/
++obj-$(CONFIG_NET_RAMIPS) += ramips/
+ obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
+ obj-$(CONFIG_SH_ETH) += renesas/
+ obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
+Index: linux-3.8.3/drivers/net/ethernet/ramips/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.3/drivers/net/ethernet/ramips/Kconfig	2013-04-02 11:45:25.221274467 +0200
+@@ -0,0 +1,18 @@
++config NET_RAMIPS
++       tristate "Ralink RT288X/RT3X5X/RT3662/RT3883 ethernet driver"
++       depends on RALINK
++       select PHYLIB if (SOC_RT288X || SOC_RT3883)
++       select SWCONFIG if SOC_RT305X
++       help
++         This driver supports the etehrnet mac inside the ralink wisocs
++
++if NET_RAMIPS
++
++config NET_RAMIPS_DEBUG
++       bool "Enable debug messages in the Ralink ethernet driver"
++
++config NET_RAMIPS_DEBUG_FS
++	bool "Enable debugfs support for the Ralink ethernet driver"
++	depends on DEBUG_FS
++
++endif
+Index: linux-3.8.3/drivers/net/ethernet/ramips/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.3/drivers/net/ethernet/ramips/Makefile	2013-04-02 11:45:25.221274467 +0200
+@@ -0,0 +1,9 @@
++#
++# Makefile for the Ramips SoCs built-in ethernet macs
++#
++
++ramips-y	+= ramips_main.o
++
++ramips-$(CONFIG_NET_RAMIPS_DEBUG_FS)	+= ramips_debugfs.o
++
++obj-$(CONFIG_NET_RAMIPS)	+= ramips.o
+Index: linux-3.8.3/drivers/net/ethernet/ramips/ramips_debugfs.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.3/drivers/net/ethernet/ramips/ramips_debugfs.c	2013-04-02 11:45:25.225274468 +0200
+@@ -0,0 +1,127 @@
++/*
++ *  Ralink SoC ethernet driver debugfs code
++ *
++ *  Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#include <linux/debugfs.h>
++#include <linux/module.h>
++#include <linux/phy.h>
++
++#include "ramips_eth.h"
++
++static struct dentry *raeth_debugfs_root;
++
++static int raeth_debugfs_generic_open(struct inode *inode, struct file *file)
++{
++	file->private_data = inode->i_private;
++	return 0;
++}
++
++void raeth_debugfs_update_int_stats(struct raeth_priv *re, u32 status)
++{
++	re->debug.int_stats.total += !!status;
++
++	re->debug.int_stats.rx_delayed += !!(status & RAMIPS_RX_DLY_INT);
++	re->debug.int_stats.rx_done0 += !!(status & RAMIPS_RX_DONE_INT0);
++	re->debug.int_stats.rx_coherent += !!(status & RAMIPS_RX_COHERENT);
++
++	re->debug.int_stats.tx_delayed += !!(status & RAMIPS_TX_DLY_INT);
++	re->debug.int_stats.tx_done0 += !!(status & RAMIPS_TX_DONE_INT0);
++	re->debug.int_stats.tx_done1 += !!(status & RAMIPS_TX_DONE_INT1);
++	re->debug.int_stats.tx_done2 += !!(status & RAMIPS_TX_DONE_INT2);
++	re->debug.int_stats.tx_done3 += !!(status & RAMIPS_TX_DONE_INT3);
++	re->debug.int_stats.tx_coherent += !!(status & RAMIPS_TX_COHERENT);
++
++	re->debug.int_stats.pse_fq_empty += !!(status & RAMIPS_PSE_FQ_EMPTY);
++	re->debug.int_stats.pse_p0_fc += !!(status & RAMIPS_PSE_P0_FC);
++	re->debug.int_stats.pse_p1_fc += !!(status & RAMIPS_PSE_P1_FC);
++	re->debug.int_stats.pse_p2_fc += !!(status & RAMIPS_PSE_P2_FC);
++	re->debug.int_stats.pse_buf_drop += !!(status & RAMIPS_PSE_BUF_DROP);
++}
++
++static ssize_t read_file_int_stats(struct file *file, char __user *user_buf,
++				   size_t count, loff_t *ppos)
++{
++#define PR_INT_STAT(_label, _field)					\
++	len += snprintf(buf + len, sizeof(buf) - len,			\
++		"%-18s: %10lu\n", _label, re->debug.int_stats._field);
++
++	struct raeth_priv *re = file->private_data;
++	char buf[512];
++	unsigned int len = 0;
++	unsigned long flags;
++
++	spin_lock_irqsave(&re->page_lock, flags);
++
++	PR_INT_STAT("RX Delayed", rx_delayed);
++	PR_INT_STAT("RX Done 0", rx_done0);
++	PR_INT_STAT("RX Coherent", rx_coherent);
++
++	PR_INT_STAT("TX Delayed", tx_delayed);
++	PR_INT_STAT("TX Done 0", tx_done0);
++	PR_INT_STAT("TX Done 1", tx_done1);
++	PR_INT_STAT("TX Done 2", tx_done2);
++	PR_INT_STAT("TX Done 3", tx_done3);
++	PR_INT_STAT("TX Coherent", tx_coherent);
++
++	PR_INT_STAT("PSE FQ empty", pse_fq_empty);
++	PR_INT_STAT("CDMA Flow control", pse_p0_fc);
++	PR_INT_STAT("GDMA1 Flow control", pse_p1_fc);
++	PR_INT_STAT("GDMA2 Flow control", pse_p2_fc);
++	PR_INT_STAT("PSE discard", pse_buf_drop);
++
++	len += snprintf(buf + len, sizeof(buf) - len, "\n");
++	PR_INT_STAT("Total", total);
++
++	spin_unlock_irqrestore(&re->page_lock, flags);
++
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++#undef PR_INT_STAT
++}
++
++static const struct file_operations raeth_fops_int_stats = {
++	.open	= raeth_debugfs_generic_open,
++	.read	= read_file_int_stats,
++	.owner	= THIS_MODULE
++};
++
++void raeth_debugfs_exit(struct raeth_priv *re)
++{
++	debugfs_remove_recursive(re->debug.debugfs_dir);
++}
++
++int raeth_debugfs_init(struct raeth_priv *re)
++{
++	re->debug.debugfs_dir = debugfs_create_dir(re->netdev->name,
++						   raeth_debugfs_root);
++	if (!re->debug.debugfs_dir)
++		return -ENOMEM;
++
++	debugfs_create_file("int_stats", S_IRUGO, re->debug.debugfs_dir,
++			    re, &raeth_fops_int_stats);
++
++	return 0;
++}
++
++int raeth_debugfs_root_init(void)
++{
++	if (raeth_debugfs_root)
++		return -EBUSY;
++
++	raeth_debugfs_root = debugfs_create_dir("raeth", NULL);
++	if (!raeth_debugfs_root)
++		return -ENOENT;
++
++	return 0;
++}
++
++void raeth_debugfs_root_exit(void)
++{
++	debugfs_remove(raeth_debugfs_root);
++	raeth_debugfs_root = NULL;
++}
+Index: linux-3.8.3/drivers/net/ethernet/ramips/ramips_esw.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.3/drivers/net/ethernet/ramips/ramips_esw.c	2013-04-02 11:45:25.225274468 +0200
+@@ -0,0 +1,1220 @@
++#include <linux/ioport.h>
++#include <linux/switch.h>
++#include <linux/mii.h>
++
++#include <ralink_regs.h>
++#include <rt305x.h>
++#include <rt305x_esw_platform.h>
++
++/*
++ * HW limitations for this switch:
++ * - No large frame support (PKT_MAX_LEN at most 1536)
++ * - Can't have untagged vlan and tagged vlan on one port at the same time,
++ *   though this might be possible using the undocumented PPE.
++ */
++
++#define RT305X_ESW_REG_ISR		0x00
++#define RT305X_ESW_REG_IMR		0x04
++#define RT305X_ESW_REG_FCT0		0x08
++#define RT305X_ESW_REG_PFC1		0x14
++#define RT305X_ESW_REG_ATS		0x24
++#define RT305X_ESW_REG_ATS0		0x28
++#define RT305X_ESW_REG_ATS1		0x2c
++#define RT305X_ESW_REG_ATS2		0x30
++#define RT305X_ESW_REG_PVIDC(_n)	(0x40 + 4 * (_n))
++#define RT305X_ESW_REG_VLANI(_n)	(0x50 + 4 * (_n))
++#define RT305X_ESW_REG_VMSC(_n)		(0x70 + 4 * (_n))
++#define RT305X_ESW_REG_POA		0x80
++#define RT305X_ESW_REG_FPA		0x84
++#define RT305X_ESW_REG_SOCPC		0x8c
++#define RT305X_ESW_REG_POC0		0x90
++#define RT305X_ESW_REG_POC1		0x94
++#define RT305X_ESW_REG_POC2		0x98
++#define RT305X_ESW_REG_SGC		0x9c
++#define RT305X_ESW_REG_STRT		0xa0
++#define RT305X_ESW_REG_PCR0		0xc0
++#define RT305X_ESW_REG_PCR1		0xc4
++#define RT305X_ESW_REG_FPA2		0xc8
++#define RT305X_ESW_REG_FCT2		0xcc
++#define RT305X_ESW_REG_SGC2		0xe4
++#define RT305X_ESW_REG_P0LED		0xa4
++#define RT305X_ESW_REG_P1LED		0xa8
++#define RT305X_ESW_REG_P2LED		0xac
++#define RT305X_ESW_REG_P3LED		0xb0
++#define RT305X_ESW_REG_P4LED		0xb4
++#define RT305X_ESW_REG_P0PC		0xe8
++#define RT305X_ESW_REG_P1PC		0xec
++#define RT305X_ESW_REG_P2PC		0xf0
++#define RT305X_ESW_REG_P3PC		0xf4
++#define RT305X_ESW_REG_P4PC		0xf8
++#define RT305X_ESW_REG_P5PC		0xfc
++
++#define RT305X_ESW_LED_LINK		0
++#define RT305X_ESW_LED_100M		1
++#define RT305X_ESW_LED_DUPLEX		2
++#define RT305X_ESW_LED_ACTIVITY		3
++#define RT305X_ESW_LED_COLLISION	4
++#define RT305X_ESW_LED_LINKACT		5
++#define RT305X_ESW_LED_DUPLCOLL		6
++#define RT305X_ESW_LED_10MACT		7
++#define RT305X_ESW_LED_100MACT		8
++/* Additional led states not in datasheet: */
++#define RT305X_ESW_LED_BLINK		10
++#define RT305X_ESW_LED_ON		12
++
++#define RT305X_ESW_LINK_S		25
++#define RT305X_ESW_DUPLEX_S		9
++#define RT305X_ESW_SPD_S		0
++
++#define RT305X_ESW_PCR0_WT_NWAY_DATA_S	16
++#define RT305X_ESW_PCR0_WT_PHY_CMD	BIT(13)
++#define RT305X_ESW_PCR0_CPU_PHY_REG_S	8
++
++#define RT305X_ESW_PCR1_WT_DONE		BIT(0)
++
++#define RT305X_ESW_ATS_TIMEOUT		(5 * HZ)
++#define RT305X_ESW_PHY_TIMEOUT		(5 * HZ)
++
++#define RT305X_ESW_PVIDC_PVID_M		0xfff
++#define RT305X_ESW_PVIDC_PVID_S		12
++
++#define RT305X_ESW_VLANI_VID_M		0xfff
++#define RT305X_ESW_VLANI_VID_S		12
++
++#define RT305X_ESW_VMSC_MSC_M		0xff
++#define RT305X_ESW_VMSC_MSC_S		8
++
++#define RT305X_ESW_SOCPC_DISUN2CPU_S	0
++#define RT305X_ESW_SOCPC_DISMC2CPU_S	8
++#define RT305X_ESW_SOCPC_DISBC2CPU_S	16
++#define RT305X_ESW_SOCPC_CRC_PADDING	BIT(25)
++
++#define RT305X_ESW_POC0_EN_BP_S		0
++#define RT305X_ESW_POC0_EN_FC_S		8
++#define RT305X_ESW_POC0_DIS_RMC2CPU_S	16
++#define RT305X_ESW_POC0_DIS_PORT_M	0x7f
++#define RT305X_ESW_POC0_DIS_PORT_S	23
++
++#define RT305X_ESW_POC2_UNTAG_EN_M	0xff
++#define RT305X_ESW_POC2_UNTAG_EN_S	0
++#define RT305X_ESW_POC2_ENAGING_S	8
++#define RT305X_ESW_POC2_DIS_UC_PAUSE_S	16
++
++#define RT305X_ESW_SGC2_DOUBLE_TAG_M	0x7f
++#define RT305X_ESW_SGC2_DOUBLE_TAG_S	0
++#define RT305X_ESW_SGC2_LAN_PMAP_M	0x3f
++#define RT305X_ESW_SGC2_LAN_PMAP_S	24
++
++#define RT305X_ESW_PFC1_EN_VLAN_M	0xff
++#define RT305X_ESW_PFC1_EN_VLAN_S	16
++#define RT305X_ESW_PFC1_EN_TOS_S	24
++
++#define RT305X_ESW_VLAN_NONE		0xfff
++
++#define RT305X_ESW_POA_LINK_MASK	0x1f
++#define RT305X_ESW_POA_LINK_SHIFT	25
++
++#define RT305X_ESW_PORT_ST_CHG		BIT(26)
++#define RT305X_ESW_PORT0		0
++#define RT305X_ESW_PORT1		1
++#define RT305X_ESW_PORT2		2
++#define RT305X_ESW_PORT3		3
++#define RT305X_ESW_PORT4		4
++#define RT305X_ESW_PORT5		5
++#define RT305X_ESW_PORT6		6
++
++#define RT305X_ESW_PORTS_NONE		0
++
++#define RT305X_ESW_PMAP_LLLLLL		0x3f
++#define RT305X_ESW_PMAP_LLLLWL		0x2f
++#define RT305X_ESW_PMAP_WLLLLL		0x3e
++
++#define RT305X_ESW_PORTS_INTERNAL					\
++		(BIT(RT305X_ESW_PORT0) | BIT(RT305X_ESW_PORT1) |	\
++		 BIT(RT305X_ESW_PORT2) | BIT(RT305X_ESW_PORT3) |	\
++		 BIT(RT305X_ESW_PORT4))
++
++#define RT305X_ESW_PORTS_NOCPU						\
++		(RT305X_ESW_PORTS_INTERNAL | BIT(RT305X_ESW_PORT5))
++
++#define RT305X_ESW_PORTS_CPU	BIT(RT305X_ESW_PORT6)
++
++#define RT305X_ESW_PORTS_ALL						\
++		(RT305X_ESW_PORTS_NOCPU | RT305X_ESW_PORTS_CPU)
++
++#define RT305X_ESW_NUM_VLANS		16
++#define RT305X_ESW_NUM_VIDS		4096
++#define RT305X_ESW_NUM_PORTS		7
++#define RT305X_ESW_NUM_LANWAN		6
++#define RT305X_ESW_NUM_LEDS		5
++
++enum {
++	/* Global attributes. */
++	RT305X_ESW_ATTR_ENABLE_VLAN,
++	RT305X_ESW_ATTR_ALT_VLAN_DISABLE,
++	/* Port attributes. */
++	RT305X_ESW_ATTR_PORT_DISABLE,
++	RT305X_ESW_ATTR_PORT_DOUBLETAG,
++	RT305X_ESW_ATTR_PORT_UNTAG,
++	RT305X_ESW_ATTR_PORT_LED,
++	RT305X_ESW_ATTR_PORT_LAN,
++	RT305X_ESW_ATTR_PORT_RECV_BAD,
++	RT305X_ESW_ATTR_PORT_RECV_GOOD,
++};
++
++struct rt305x_esw_port {
++	bool	disable;
++	bool	doubletag;
++	bool	untag;
++	u8	led;
++	u16	pvid;
++};
++
++struct rt305x_esw_vlan {
++	u8	ports;
++	u16	vid;
++};
++
++struct rt305x_esw {
++	struct device		*dev;
++	void __iomem		*base;
++	int			irq;
++	const struct rt305x_esw_platform_data *pdata;
++	/* Protects against concurrent register rmw operations. */
++	spinlock_t		reg_rw_lock;
++
++	unsigned char		port_map;
++	unsigned int		reg_initval_fct2;
++	unsigned int		reg_initval_fpa2;
++
++
++	struct switch_dev	swdev;
++	bool			global_vlan_enable;
++	bool			alt_vlan_disable;
++	struct rt305x_esw_vlan vlans[RT305X_ESW_NUM_VLANS];
++	struct rt305x_esw_port ports[RT305X_ESW_NUM_PORTS];
++
++};
++
++static inline void
++rt305x_esw_wr(struct rt305x_esw *esw, u32 val, unsigned reg)
++{
++	__raw_writel(val, esw->base + reg);
++}
++
++static inline u32
++rt305x_esw_rr(struct rt305x_esw *esw, unsigned reg)
++{
++	return __raw_readl(esw->base + reg);
++}
++
++static inline void
++rt305x_esw_rmw_raw(struct rt305x_esw *esw, unsigned reg, unsigned long mask,
++		   unsigned long val)
++{
++	unsigned long t;
++
++	t = __raw_readl(esw->base + reg) & ~mask;
++	__raw_writel(t | val, esw->base + reg);
++}
++
++static void
++rt305x_esw_rmw(struct rt305x_esw *esw, unsigned reg, unsigned long mask,
++	       unsigned long val)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&esw->reg_rw_lock, flags);
++	rt305x_esw_rmw_raw(esw, reg, mask, val);
++	spin_unlock_irqrestore(&esw->reg_rw_lock, flags);
++}
++
++static u32
++rt305x_mii_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
++		 u32 write_data)
++{
++	unsigned long t_start = jiffies;
++	int ret = 0;
++
++	while (1) {
++		if (!(rt305x_esw_rr(esw, RT305X_ESW_REG_PCR1) &
++		      RT305X_ESW_PCR1_WT_DONE))
++			break;
++		if (time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT)) {
++			ret = 1;
++			goto out;
++		}
++	}
++
++	write_data &= 0xffff;
++	rt305x_esw_wr(esw,
++		      (write_data << RT305X_ESW_PCR0_WT_NWAY_DATA_S) |
++		      (phy_register << RT305X_ESW_PCR0_CPU_PHY_REG_S) |
++		      (phy_addr) | RT305X_ESW_PCR0_WT_PHY_CMD,
++		      RT305X_ESW_REG_PCR0);
++
++	t_start = jiffies;
++	while (1) {
++		if (rt305x_esw_rr(esw, RT305X_ESW_REG_PCR1) &
++		    RT305X_ESW_PCR1_WT_DONE)
++			break;
++
++		if (time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT)) {
++			ret = 1;
++			break;
++		}
++	}
++out:
++	if (ret)
++		printk(KERN_ERR "ramips_eth: MDIO timeout\n");
++	return ret;
++}
++
++static unsigned
++rt305x_esw_get_vlan_id(struct rt305x_esw *esw, unsigned vlan)
++{
++	unsigned s;
++	unsigned val;
++
++	s = RT305X_ESW_VLANI_VID_S * (vlan % 2);
++	val = rt305x_esw_rr(esw, RT305X_ESW_REG_VLANI(vlan / 2));
++	val = (val >> s) & RT305X_ESW_VLANI_VID_M;
++
++	return val;
++}
++
++static void
++rt305x_esw_set_vlan_id(struct rt305x_esw *esw, unsigned vlan, unsigned vid)
++{
++	unsigned s;
++
++	s = RT305X_ESW_VLANI_VID_S * (vlan % 2);
++	rt305x_esw_rmw(esw,
++		       RT305X_ESW_REG_VLANI(vlan / 2),
++		       RT305X_ESW_VLANI_VID_M << s,
++		       (vid & RT305X_ESW_VLANI_VID_M) << s);
++}
++
++static unsigned
++rt305x_esw_get_pvid(struct rt305x_esw *esw, unsigned port)
++{
++	unsigned s, val;
++
++	s = RT305X_ESW_PVIDC_PVID_S * (port % 2);
++	val = rt305x_esw_rr(esw, RT305X_ESW_REG_PVIDC(port / 2));
++	return (val >> s) & RT305X_ESW_PVIDC_PVID_M;
++}
++
++static void
++rt305x_esw_set_pvid(struct rt305x_esw *esw, unsigned port, unsigned pvid)
++{
++	unsigned s;
++
++	s = RT305X_ESW_PVIDC_PVID_S * (port % 2);
++	rt305x_esw_rmw(esw,
++		       RT305X_ESW_REG_PVIDC(port / 2),
++		       RT305X_ESW_PVIDC_PVID_M << s,
++		       (pvid & RT305X_ESW_PVIDC_PVID_M) << s);
++}
++
++static unsigned
++rt305x_esw_get_vmsc(struct rt305x_esw *esw, unsigned vlan)
++{
++	unsigned s, val;
++
++	s = RT305X_ESW_VMSC_MSC_S * (vlan % 4);
++	val = rt305x_esw_rr(esw, RT305X_ESW_REG_VMSC(vlan / 4));
++	val = (val >> s) & RT305X_ESW_VMSC_MSC_M;
++
++	return val;
++}
++
++static void
++rt305x_esw_set_vmsc(struct rt305x_esw *esw, unsigned vlan, unsigned msc)
++{
++	unsigned s;
++
++	s = RT305X_ESW_VMSC_MSC_S * (vlan % 4);
++	rt305x_esw_rmw(esw,
++		       RT305X_ESW_REG_VMSC(vlan / 4),
++		       RT305X_ESW_VMSC_MSC_M << s,
++		       (msc & RT305X_ESW_VMSC_MSC_M) << s);
++}
++
++static unsigned
++rt305x_esw_get_port_disable(struct rt305x_esw *esw)
++{
++	unsigned reg;
++	reg = rt305x_esw_rr(esw, RT305X_ESW_REG_POC0);
++	return (reg >> RT305X_ESW_POC0_DIS_PORT_S) &
++	       RT305X_ESW_POC0_DIS_PORT_M;
++}
++
++static void
++rt305x_esw_set_port_disable(struct rt305x_esw *esw, unsigned disable_mask)
++{
++	unsigned old_mask;
++	unsigned enable_mask;
++	unsigned changed;
++	int i;
++
++	old_mask = rt305x_esw_get_port_disable(esw);
++	changed = old_mask ^ disable_mask;
++	enable_mask = old_mask & disable_mask;
++
++	/* enable before writing to MII */
++	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC0,
++		       (RT305X_ESW_POC0_DIS_PORT_M <<
++			RT305X_ESW_POC0_DIS_PORT_S),
++		       enable_mask << RT305X_ESW_POC0_DIS_PORT_S);
++
++	for (i = 0; i < RT305X_ESW_NUM_LEDS; i++) {
++		if (!(changed & (1 << i)))
++			continue;
++		if (disable_mask & (1 << i)) {
++			/* disable */
++			rt305x_mii_write(esw, i, MII_BMCR,
++					 BMCR_PDOWN);
++		} else {
++			/* enable */
++			rt305x_mii_write(esw, i, MII_BMCR,
++					 BMCR_FULLDPLX |
++					 BMCR_ANENABLE |
++					 BMCR_ANRESTART |
++					 BMCR_SPEED100);
++		}
++	}
++
++	/* disable after writing to MII */
++	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC0,
++		       (RT305X_ESW_POC0_DIS_PORT_M <<
++			RT305X_ESW_POC0_DIS_PORT_S),
++		       disable_mask << RT305X_ESW_POC0_DIS_PORT_S);
++}
++
++static int
++rt305x_esw_apply_config(struct switch_dev *dev);
++
++static void
++rt305x_esw_hw_init(struct rt305x_esw *esw)
++{
++	int i;
++	u8 port_disable = 0;
++	u8 port_map = RT305X_ESW_PMAP_LLLLLL;
++
++	/* vodoo from original driver */
++	rt305x_esw_wr(esw, 0xC8A07850, RT305X_ESW_REG_FCT0);
++	rt305x_esw_wr(esw, 0x00000000, RT305X_ESW_REG_SGC2);
++	/* Port priority 1 for all ports, vlan enabled. */
++	rt305x_esw_wr(esw, 0x00005555 |
++		      (RT305X_ESW_PORTS_ALL << RT305X_ESW_PFC1_EN_VLAN_S),
++		      RT305X_ESW_REG_PFC1);
++
++	/* Enable Back Pressure, and Flow Control */
++	rt305x_esw_wr(esw,
++		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_BP_S) |
++		       (RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_FC_S)),
++		      RT305X_ESW_REG_POC0);
++
++	/* Enable Aging, and VLAN TAG removal */
++	rt305x_esw_wr(esw,
++		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC2_ENAGING_S) |
++		       (RT305X_ESW_PORTS_NOCPU << RT305X_ESW_POC2_UNTAG_EN_S)),
++		      RT305X_ESW_REG_POC2);
++
++	if (esw->reg_initval_fct2)
++		rt305x_esw_wr(esw, esw->reg_initval_fct2, RT305X_ESW_REG_FCT2);
++	else
++		rt305x_esw_wr(esw, esw->pdata->reg_initval_fct2, RT305X_ESW_REG_FCT2);
++
++	/*
++	 * 300s aging timer, max packet len 1536, broadcast storm prevention
++	 * disabled, disable collision abort, mac xor48 hash, 10 packet back
++	 * pressure jam, GMII disable was_transmit, back pressure disabled,
++	 * 30ms led flash, unmatched IGMP as broadcast, rmc tb fault to all
++	 * ports.
++	 */
++	rt305x_esw_wr(esw, 0x0008a301, RT305X_ESW_REG_SGC);
++
++	/* Setup SoC Port control register */
++	rt305x_esw_wr(esw,
++		      (RT305X_ESW_SOCPC_CRC_PADDING |
++		       (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISUN2CPU_S) |
++		       (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISMC2CPU_S) |
++		       (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISBC2CPU_S)),
++		      RT305X_ESW_REG_SOCPC);
++
++	if (esw->reg_initval_fpa2)
++		rt305x_esw_wr(esw, esw->reg_initval_fpa2, RT305X_ESW_REG_FPA2);
++	else
++		rt305x_esw_wr(esw, esw->pdata->reg_initval_fpa2, RT305X_ESW_REG_FPA2);
++	rt305x_esw_wr(esw, 0x00000000, RT305X_ESW_REG_FPA);
++
++	/* Force Link/Activity on ports */
++	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P0LED);
++	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P1LED);
++	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P2LED);
++	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P3LED);
++	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P4LED);
++
++	/* Copy disabled port configuration from bootloader setup */
++	port_disable = rt305x_esw_get_port_disable(esw);
++	for (i = 0; i < 6; i++)
++		esw->ports[i].disable = (port_disable & (1 << i)) != 0;
++
++	rt305x_mii_write(esw, 0, 31, 0x8000);
++	for (i = 0; i < 5; i++) {
++		if (esw->ports[i].disable) {
++			rt305x_mii_write(esw, i, MII_BMCR, BMCR_PDOWN);
++		} else {
++			rt305x_mii_write(esw, i, MII_BMCR,
++					 BMCR_FULLDPLX |
++					 BMCR_ANENABLE |
++					 BMCR_SPEED100);
++		}
++		/* TX10 waveform coefficient */
++		rt305x_mii_write(esw, i, 26, 0x1601);
++		/* TX100/TX10 AD/DA current bias */
++		rt305x_mii_write(esw, i, 29, 0x7058);
++		/* TX100 slew rate control */
++		rt305x_mii_write(esw, i, 30, 0x0018);
++	}
++
++	/* PHY IOT */
++	/* select global register */
++	rt305x_mii_write(esw, 0, 31, 0x0);
++	/* tune TP_IDL tail and head waveform */
++	rt305x_mii_write(esw, 0, 22, 0x052f);
++	/* set TX10 signal amplitude threshold to minimum */
++	rt305x_mii_write(esw, 0, 17, 0x0fe0);
++	/* set squelch amplitude to higher threshold */
++	rt305x_mii_write(esw, 0, 18, 0x40ba);
++	/* longer TP_IDL tail length */
++	rt305x_mii_write(esw, 0, 14, 0x65);
++	/* select local register */
++	rt305x_mii_write(esw, 0, 31, 0x8000);
++
++	if (esw->port_map)
++		port_map = esw->port_map;
++	else
++		port_map = RT305X_ESW_PMAP_LLLLLL;
++
++	/*
++	 * Unused HW feature, but still nice to be consistent here...
++	 * This is also exported to userspace ('lan' attribute) so it's
++	 * conveniently usable to decide which ports go into the wan vlan by
++	 * default.
++	 */
++	rt305x_esw_rmw(esw, RT305X_ESW_REG_SGC2,
++		       RT305X_ESW_SGC2_LAN_PMAP_M << RT305X_ESW_SGC2_LAN_PMAP_S,
++		       port_map << RT305X_ESW_SGC2_LAN_PMAP_S);
++
++	/* make the switch leds blink */
++	for (i = 0; i < RT305X_ESW_NUM_LEDS; i++)
++		esw->ports[i].led = 0x05;
++
++	/* Apply the empty config. */
++	rt305x_esw_apply_config(&esw->swdev);
++}
++
++static irqreturn_t
++rt305x_esw_interrupt(int irq, void *_esw)
++{
++	struct rt305x_esw *esw = (struct rt305x_esw *) _esw;
++	u32 status;
++
++	status = rt305x_esw_rr(esw, RT305X_ESW_REG_ISR);
++	if (status & RT305X_ESW_PORT_ST_CHG) {
++		u32 link = rt305x_esw_rr(esw, RT305X_ESW_REG_POA);
++		link >>= RT305X_ESW_POA_LINK_SHIFT;
++		link &= RT305X_ESW_POA_LINK_MASK;
++		dev_info(esw->dev, "link changed 0x%02X\n", link);
++	}
++	rt305x_esw_wr(esw, RT305X_ESW_PORT_ST_CHG, RT305X_ESW_REG_ISR);
++
++	return IRQ_HANDLED;
++}
++
++static void
++rt305x_esw_request_irq(struct rt305x_esw *esw)
++{
++	/* Only unmask the port change interrupt */
++	rt305x_esw_wr(esw, ~RT305X_ESW_PORT_ST_CHG, RT305X_ESW_REG_IMR);
++
++	/* request the irq handler */
++	request_irq(esw->irq, rt305x_esw_interrupt, 0, "esw", esw);
++}
++
++static int
++rt305x_esw_apply_config(struct switch_dev *dev)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	int i;
++	u8 disable = 0;
++	u8 doubletag = 0;
++	u8 en_vlan = 0;
++	u8 untag = 0;
++
++	for (i = 0; i < RT305X_ESW_NUM_VLANS; i++) {
++		u32 vid, vmsc;
++		if (esw->global_vlan_enable) {
++			vid = esw->vlans[i].vid;
++			vmsc = esw->vlans[i].ports;
++		} else {
++			vid = RT305X_ESW_VLAN_NONE;
++			vmsc = RT305X_ESW_PORTS_NONE;
++		}
++		rt305x_esw_set_vlan_id(esw, i, vid);
++		rt305x_esw_set_vmsc(esw, i, vmsc);
++	}
++
++	for (i = 0; i < RT305X_ESW_NUM_PORTS; i++) {
++		u32 pvid;
++		disable |= esw->ports[i].disable << i;
++		if (esw->global_vlan_enable) {
++			doubletag |= esw->ports[i].doubletag << i;
++			en_vlan   |= 1                       << i;
++			untag     |= esw->ports[i].untag     << i;
++			pvid       = esw->ports[i].pvid;
++		} else {
++			int x = esw->alt_vlan_disable ? 0 : 1;
++			doubletag |= x << i;
++			en_vlan   |= x << i;
++			untag     |= x << i;
++			pvid       = 0;
++		}
++		rt305x_esw_set_pvid(esw, i, pvid);
++		if (i < RT305X_ESW_NUM_LEDS)
++			rt305x_esw_wr(esw, esw->ports[i].led,
++				      RT305X_ESW_REG_P0LED + 4*i);
++	}
++
++	rt305x_esw_set_port_disable(esw, disable);
++	rt305x_esw_rmw(esw, RT305X_ESW_REG_SGC2,
++		       (RT305X_ESW_SGC2_DOUBLE_TAG_M <<
++			RT305X_ESW_SGC2_DOUBLE_TAG_S),
++		       doubletag << RT305X_ESW_SGC2_DOUBLE_TAG_S);
++	rt305x_esw_rmw(esw, RT305X_ESW_REG_PFC1,
++		       RT305X_ESW_PFC1_EN_VLAN_M << RT305X_ESW_PFC1_EN_VLAN_S,
++		       en_vlan << RT305X_ESW_PFC1_EN_VLAN_S);
++	rt305x_esw_rmw(esw, RT305X_ESW_REG_POC2,
++		       RT305X_ESW_POC2_UNTAG_EN_M << RT305X_ESW_POC2_UNTAG_EN_S,
++		       untag << RT305X_ESW_POC2_UNTAG_EN_S);
++
++	if (!esw->global_vlan_enable) {
++		/*
++		 * Still need to put all ports into vlan 0 or they'll be
++		 * isolated.
++		 * NOTE: vlan 0 is special, no vlan tag is prepended
++		 */
++		rt305x_esw_set_vlan_id(esw, 0, 0);
++		rt305x_esw_set_vmsc(esw, 0, RT305X_ESW_PORTS_ALL);
++	}
++
++	return 0;
++}
++
++static int
++rt305x_esw_reset_switch(struct switch_dev *dev)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	esw->global_vlan_enable = 0;
++	memset(esw->ports, 0, sizeof(esw->ports));
++	memset(esw->vlans, 0, sizeof(esw->vlans));
++	rt305x_esw_hw_init(esw);
++
++	return 0;
++}
++
++static int
++rt305x_esw_get_vlan_enable(struct switch_dev *dev,
++			   const struct switch_attr *attr,
++			   struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++
++	val->value.i = esw->global_vlan_enable;
++
++	return 0;
++}
++
++static int
++rt305x_esw_set_vlan_enable(struct switch_dev *dev,
++			   const struct switch_attr *attr,
++			   struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++
++	esw->global_vlan_enable = val->value.i != 0;
++
++	return 0;
++}
++
++static int
++rt305x_esw_get_alt_vlan_disable(struct switch_dev *dev,
++				const struct switch_attr *attr,
++				struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++
++	val->value.i = esw->alt_vlan_disable;
++
++	return 0;
++}
++
++static int
++rt305x_esw_set_alt_vlan_disable(struct switch_dev *dev,
++				const struct switch_attr *attr,
++				struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++
++	esw->alt_vlan_disable = val->value.i != 0;
++
++	return 0;
++}
++
++static int
++rt305x_esw_get_port_link(struct switch_dev *dev,
++			 int port,
++			 struct switch_port_link *link)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	u32 speed, poa;
++
++	if (port < 0 || port >= RT305X_ESW_NUM_PORTS)
++		return -EINVAL;
++
++	poa = rt305x_esw_rr(esw, RT305X_ESW_REG_POA) >> port;
++
++	link->link = (poa >> RT305X_ESW_LINK_S) & 1;
++	link->duplex = (poa >> RT305X_ESW_DUPLEX_S) & 1;
++	if (port < RT305X_ESW_NUM_LEDS) {
++		speed = (poa >> RT305X_ESW_SPD_S) & 1;
++	} else {
++		if (port == RT305X_ESW_NUM_PORTS - 1)
++			poa >>= 1;
++		speed = (poa >> RT305X_ESW_SPD_S) & 3;
++	}
++	switch (speed) {
++	case 0:
++		link->speed = SWITCH_PORT_SPEED_10;
++		break;
++	case 1:
++		link->speed = SWITCH_PORT_SPEED_100;
++		break;
++	case 2:
++	case 3: /* forced gige speed can be 2 or 3 */
++		link->speed = SWITCH_PORT_SPEED_1000;
++		break;
++	default:
++		link->speed = SWITCH_PORT_SPEED_UNKNOWN;
++		break;
++	}
++
++	return 0;
++}
++
++static int
++rt305x_esw_get_port_bool(struct switch_dev *dev,
++			 const struct switch_attr *attr,
++			 struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	int idx = val->port_vlan;
++	u32 x, reg, shift;
++
++	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS)
++		return -EINVAL;
++
++	switch (attr->id) {
++	case RT305X_ESW_ATTR_PORT_DISABLE:
++		reg = RT305X_ESW_REG_POC0;
++		shift = RT305X_ESW_POC0_DIS_PORT_S;
++		break;
++	case RT305X_ESW_ATTR_PORT_DOUBLETAG:
++		reg = RT305X_ESW_REG_SGC2;
++		shift = RT305X_ESW_SGC2_DOUBLE_TAG_S;
++		break;
++	case RT305X_ESW_ATTR_PORT_UNTAG:
++		reg = RT305X_ESW_REG_POC2;
++		shift = RT305X_ESW_POC2_UNTAG_EN_S;
++		break;
++	case RT305X_ESW_ATTR_PORT_LAN:
++		reg = RT305X_ESW_REG_SGC2;
++		shift = RT305X_ESW_SGC2_LAN_PMAP_S;
++		if (idx >= RT305X_ESW_NUM_LANWAN)
++			return -EINVAL;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	x = rt305x_esw_rr(esw, reg);
++	val->value.i = (x >> (idx + shift)) & 1;
++
++	return 0;
++}
++
++static int
++rt305x_esw_set_port_bool(struct switch_dev *dev,
++			 const struct switch_attr *attr,
++			 struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	int idx = val->port_vlan;
++
++	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS ||
++	    val->value.i < 0 || val->value.i > 1)
++		return -EINVAL;
++
++	switch (attr->id) {
++	case RT305X_ESW_ATTR_PORT_DISABLE:
++		esw->ports[idx].disable = val->value.i;
++		break;
++	case RT305X_ESW_ATTR_PORT_DOUBLETAG:
++		esw->ports[idx].doubletag = val->value.i;
++		break;
++	case RT305X_ESW_ATTR_PORT_UNTAG:
++		esw->ports[idx].untag = val->value.i;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int
++rt305x_esw_get_port_recv_badgood(struct switch_dev *dev,
++				 const struct switch_attr *attr,
++				 struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	int idx = val->port_vlan;
++	int shift = attr->id == RT305X_ESW_ATTR_PORT_RECV_GOOD ? 0 : 16;
++	u32 reg;
++
++	if (idx < 0 || idx >= RT305X_ESW_NUM_LANWAN)
++		return -EINVAL;
++
++	reg = rt305x_esw_rr(esw, RT305X_ESW_REG_P0PC + 4*idx);
++	val->value.i = (reg >> shift) & 0xffff;
++
++	return 0;
++}
++
++static int
++rt305x_esw_get_port_led(struct switch_dev *dev,
++			const struct switch_attr *attr,
++			struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	int idx = val->port_vlan;
++
++	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS ||
++	    idx >= RT305X_ESW_NUM_LEDS)
++		return -EINVAL;
++
++	val->value.i = rt305x_esw_rr(esw, RT305X_ESW_REG_P0LED + 4*idx);
++
++	return 0;
++}
++
++static int
++rt305x_esw_set_port_led(struct switch_dev *dev,
++			const struct switch_attr *attr,
++			struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	int idx = val->port_vlan;
++
++	if (idx < 0 || idx >= RT305X_ESW_NUM_LEDS)
++		return -EINVAL;
++
++	esw->ports[idx].led = val->value.i;
++
++	return 0;
++}
++
++static int
++rt305x_esw_get_port_pvid(struct switch_dev *dev, int port, int *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++
++	if (port >= RT305X_ESW_NUM_PORTS)
++		return -EINVAL;
++
++	*val = rt305x_esw_get_pvid(esw, port);
++
++	return 0;
++}
++
++static int
++rt305x_esw_set_port_pvid(struct switch_dev *dev, int port, int val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++
++	if (port >= RT305X_ESW_NUM_PORTS)
++		return -EINVAL;
++
++	esw->ports[port].pvid = val;
++
++	return 0;
++}
++
++static int
++rt305x_esw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	u32 vmsc, poc2;
++	int vlan_idx = -1;
++	int i;
++
++	val->len = 0;
++
++	if (val->port_vlan < 0 || val->port_vlan >= RT305X_ESW_NUM_VIDS)
++		return -EINVAL;
++
++	/* valid vlan? */
++	for (i = 0; i < RT305X_ESW_NUM_VLANS; i++) {
++		if (rt305x_esw_get_vlan_id(esw, i) == val->port_vlan &&
++		    rt305x_esw_get_vmsc(esw, i) != RT305X_ESW_PORTS_NONE) {
++			vlan_idx = i;
++			break;
++		}
++	}
++
++	if (vlan_idx == -1)
++		return -EINVAL;
++
++	vmsc = rt305x_esw_get_vmsc(esw, vlan_idx);
++	poc2 = rt305x_esw_rr(esw, RT305X_ESW_REG_POC2);
++
++	for (i = 0; i < RT305X_ESW_NUM_PORTS; i++) {
++		struct switch_port *p;
++		int port_mask = 1 << i;
++
++		if (!(vmsc & port_mask))
++			continue;
++
++		p = &val->value.ports[val->len++];
++		p->id = i;
++		if (poc2 & (port_mask << RT305X_ESW_POC2_UNTAG_EN_S))
++			p->flags = 0;
++		else
++			p->flags = 1 << SWITCH_PORT_FLAG_TAGGED;
++	}
++
++	return 0;
++}
++
++static int
++rt305x_esw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
++{
++	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
++	int ports;
++	int vlan_idx = -1;
++	int i;
++
++	if (val->port_vlan < 0 || val->port_vlan >= RT305X_ESW_NUM_VIDS ||
++	    val->len > RT305X_ESW_NUM_PORTS)
++		return -EINVAL;
++
++	/* one of the already defined vlans? */
++	for (i = 0; i < RT305X_ESW_NUM_VLANS; i++) {
++		if (esw->vlans[i].vid == val->port_vlan &&
++		    esw->vlans[i].ports != RT305X_ESW_PORTS_NONE) {
++			vlan_idx = i;
++			break;
++		}
++	}
++
++	/* select a free slot */
++	for (i = 0; vlan_idx == -1 && i < RT305X_ESW_NUM_VLANS; i++) {
++		if (esw->vlans[i].ports == RT305X_ESW_PORTS_NONE)
++			vlan_idx = i;
++	}
++
++	/* bail if all slots are in use */
++	if (vlan_idx == -1)
++		return -EINVAL;
++
++	ports = RT305X_ESW_PORTS_NONE;
++	for (i = 0; i < val->len; i++) {
++		struct switch_port *p = &val->value.ports[i];
++		int port_mask = 1 << p->id;
++		bool untagged = !(p->flags & (1 << SWITCH_PORT_FLAG_TAGGED));
++
++		if (p->id >= RT305X_ESW_NUM_PORTS)
++			return -EINVAL;
++
++		ports |= port_mask;
++		esw->ports[p->id].untag = untagged;
++	}
++	esw->vlans[vlan_idx].ports = ports;
++	if (ports == RT305X_ESW_PORTS_NONE)
++		esw->vlans[vlan_idx].vid = RT305X_ESW_VLAN_NONE;
++	else
++		esw->vlans[vlan_idx].vid = val->port_vlan;
++
++	return 0;
++}
++
++static const struct switch_attr rt305x_esw_global[] = {
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "enable_vlan",
++		.description = "VLAN mode (1:enabled)",
++		.max = 1,
++		.id = RT305X_ESW_ATTR_ENABLE_VLAN,
++		.get = rt305x_esw_get_vlan_enable,
++		.set = rt305x_esw_set_vlan_enable,
++	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "alternate_vlan_disable",
++		.description = "Use en_vlan instead of doubletag to disable"
++				" VLAN mode",
++		.max = 1,
++		.id = RT305X_ESW_ATTR_ALT_VLAN_DISABLE,
++		.get = rt305x_esw_get_alt_vlan_disable,
++		.set = rt305x_esw_set_alt_vlan_disable,
++	},
++};
++
++static const struct switch_attr rt305x_esw_port[] = {
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "disable",
++		.description = "Port state (1:disabled)",
++		.max = 1,
++		.id = RT305X_ESW_ATTR_PORT_DISABLE,
++		.get = rt305x_esw_get_port_bool,
++		.set = rt305x_esw_set_port_bool,
++	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "doubletag",
++		.description = "Double tagging for incoming vlan packets "
++				"(1:enabled)",
++		.max = 1,
++		.id = RT305X_ESW_ATTR_PORT_DOUBLETAG,
++		.get = rt305x_esw_get_port_bool,
++		.set = rt305x_esw_set_port_bool,
++	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "untag",
++		.description = "Untag (1:strip outgoing vlan tag)",
++		.max = 1,
++		.id = RT305X_ESW_ATTR_PORT_UNTAG,
++		.get = rt305x_esw_get_port_bool,
++		.set = rt305x_esw_set_port_bool,
++	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "led",
++		.description = "LED mode (0:link, 1:100m, 2:duplex, 3:activity,"
++				" 4:collision, 5:linkact, 6:duplcoll, 7:10mact,"
++				" 8:100mact, 10:blink, 12:on)",
++		.max = 15,
++		.id = RT305X_ESW_ATTR_PORT_LED,
++		.get = rt305x_esw_get_port_led,
++		.set = rt305x_esw_set_port_led,
++	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "lan",
++		.description = "HW port group (0:wan, 1:lan)",
++		.max = 1,
++		.id = RT305X_ESW_ATTR_PORT_LAN,
++		.get = rt305x_esw_get_port_bool,
++	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "recv_bad",
++		.description = "Receive bad packet counter",
++		.id = RT305X_ESW_ATTR_PORT_RECV_BAD,
++		.get = rt305x_esw_get_port_recv_badgood,
++	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "recv_good",
++		.description = "Receive good packet counter",
++		.id = RT305X_ESW_ATTR_PORT_RECV_GOOD,
++		.get = rt305x_esw_get_port_recv_badgood,
++	},
++};
++
++static const struct switch_attr rt305x_esw_vlan[] = {
++};
++
++static const struct switch_dev_ops rt305x_esw_ops = {
++	.attr_global = {
++		.attr = rt305x_esw_global,
++		.n_attr = ARRAY_SIZE(rt305x_esw_global),
++	},
++	.attr_port = {
++		.attr = rt305x_esw_port,
++		.n_attr = ARRAY_SIZE(rt305x_esw_port),
++	},
++	.attr_vlan = {
++		.attr = rt305x_esw_vlan,
++		.n_attr = ARRAY_SIZE(rt305x_esw_vlan),
++	},
++	.get_vlan_ports = rt305x_esw_get_vlan_ports,
++	.set_vlan_ports = rt305x_esw_set_vlan_ports,
++	.get_port_pvid = rt305x_esw_get_port_pvid,
++	.set_port_pvid = rt305x_esw_set_port_pvid,
++	.get_port_link = rt305x_esw_get_port_link,
++	.apply_config = rt305x_esw_apply_config,
++	.reset_switch = rt305x_esw_reset_switch,
++};
++
++static struct rt305x_esw_platform_data rt3050_esw_data = {
++	/* All ports are LAN ports. */
++	.vlan_config            = RT305X_ESW_VLAN_CONFIG_NONE,
++	.reg_initval_fct2       = 0x00d6500c,
++	/*
++	 * ext phy base addr 31, enable port 5 polling, rx/tx clock skew 1,
++	 * turbo mii off, rgmi 3.3v off
++	 * port5: disabled
++	 * port6: enabled, gige, full-duplex, rx/tx-flow-control
++	 */
++	.reg_initval_fpa2       = 0x3f502b28,
++};
++
++static const struct of_device_id ralink_esw_match[] = {
++	{ .compatible = "ralink,rt3050-esw", .data = &rt3050_esw_data },
++	{},
++};
++MODULE_DEVICE_TABLE(of, ralink_esw_match);
++
++static int
++rt305x_esw_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	const struct rt305x_esw_platform_data *pdata;
++	const __be32 *port_map, *reg_init;
++	struct rt305x_esw *esw;
++	struct switch_dev *swdev;
++	struct resource *res, *irq;
++	int err;
++
++	pdata = pdev->dev.platform_data;
++	if (!pdata) {
++		const struct of_device_id *match;
++		match = of_match_device(ralink_esw_match, &pdev->dev);
++		if (match)
++			pdata = (struct rt305x_esw_platform_data *) match->data;
++	}
++	if (!pdata)
++		return -EINVAL;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "no memory resource found\n");
++		return -ENOMEM;
++	}
++
++	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
++	if (!irq) {
++		dev_err(&pdev->dev, "no irq resource found\n");
++		return -ENOMEM;
++	}
++
++	esw = kzalloc(sizeof(struct rt305x_esw), GFP_KERNEL);
++	if (!esw) {
++		dev_err(&pdev->dev, "no memory for private data\n");
++		return -ENOMEM;
++	}
++
++	esw->dev = &pdev->dev;
++	esw->irq = irq->start;
++	esw->base = ioremap(res->start, resource_size(res));
++	if (!esw->base) {
++		dev_err(&pdev->dev, "ioremap failed\n");
++		err = -ENOMEM;
++		goto free_esw;
++	}
++
++	port_map = of_get_property(np, "ralink,portmap", NULL);
++        if (port_map)
++		esw->port_map = be32_to_cpu(*port_map);
++
++	reg_init = of_get_property(np, "ralink,fct2", NULL);
++        if (reg_init)
++		esw->reg_initval_fct2 = be32_to_cpu(*reg_init);
++
++	reg_init = of_get_property(np, "ralink,fpa2", NULL);
++        if (reg_init)
++		esw->reg_initval_fpa2 = be32_to_cpu(*reg_init);
++
++	swdev = &esw->swdev;
++	swdev->name = "rt305x-esw";
++	swdev->alias = "rt305x";
++	swdev->cpu_port = RT305X_ESW_PORT6;
++	swdev->ports = RT305X_ESW_NUM_PORTS;
++	swdev->vlans = RT305X_ESW_NUM_VIDS;
++	swdev->ops = &rt305x_esw_ops;
++
++	err = register_switch(swdev, NULL);
++	if (err < 0) {
++		dev_err(&pdev->dev, "register_switch failed\n");
++		goto unmap_base;
++	}
++
++	platform_set_drvdata(pdev, esw);
++
++	esw->pdata = pdata;
++	spin_lock_init(&esw->reg_rw_lock);
++	rt305x_esw_hw_init(esw);
++	rt305x_esw_request_irq(esw);
++
++	return 0;
++
++unmap_base:
++	iounmap(esw->base);
++free_esw:
++	kfree(esw);
++	return err;
++}
++
++static int
++rt305x_esw_remove(struct platform_device *pdev)
++{
++	struct rt305x_esw *esw;
++
++	esw = platform_get_drvdata(pdev);
++	if (esw) {
++		unregister_switch(&esw->swdev);
++		platform_set_drvdata(pdev, NULL);
++		iounmap(esw->base);
++		kfree(esw);
++	}
++
++	return 0;
++}
++
++static struct platform_driver rt305x_esw_driver = {
++	.probe = rt305x_esw_probe,
++	.remove = rt305x_esw_remove,
++	.driver = {
++		.name = "rt305x-esw",
++		.owner = THIS_MODULE,
++		.of_match_table = ralink_esw_match,
++	},
++};
++
++static int __init
++rt305x_esw_init(void)
++{
++	return platform_driver_register(&rt305x_esw_driver);
++}
++
++static void
++rt305x_esw_exit(void)
++{
++	platform_driver_unregister(&rt305x_esw_driver);
++}
+Index: linux-3.8.3/drivers/net/ethernet/ramips/ramips_eth.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.3/drivers/net/ethernet/ramips/ramips_eth.h	2013-04-02 11:45:25.225274468 +0200
+@@ -0,0 +1,375 @@
++/*
++ *   This program is free software; you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; version 2 of the License
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *   GNU General Public License for more details.
++ *
++ *   You should have received a copy of the GNU General Public License
++ *   along with this program; if not, write to the Free Software
++ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
++ *
++ *   based on Ralink SDK3.3
++ *   Copyright (C) 2009 John Crispin <blogic@openwrt.org>
++ */
++
++#ifndef RAMIPS_ETH_H
++#define RAMIPS_ETH_H
++
++#include <linux/mii.h>
++#include <linux/interrupt.h>
++#include <linux/netdevice.h>
++#include <linux/dma-mapping.h>
++
++#define NUM_RX_DESC     256
++#define NUM_TX_DESC     256
++
++#define RAMIPS_DELAY_EN_INT		0x80
++#define RAMIPS_DELAY_MAX_INT		0x04
++#define RAMIPS_DELAY_MAX_TOUT		0x04
++#define RAMIPS_DELAY_CHAN		(((RAMIPS_DELAY_EN_INT | RAMIPS_DELAY_MAX_INT) << 8) | RAMIPS_DELAY_MAX_TOUT)
++#define RAMIPS_DELAY_INIT		((RAMIPS_DELAY_CHAN << 16) | RAMIPS_DELAY_CHAN)
++#define RAMIPS_PSE_FQFC_CFG_INIT	0x80504000
++
++/* interrupt bits */
++#define RAMIPS_CNT_PPE_AF		BIT(31)
++#define RAMIPS_CNT_GDM_AF		BIT(29)
++#define RAMIPS_PSE_P2_FC		BIT(26)
++#define RAMIPS_PSE_BUF_DROP		BIT(24)
++#define RAMIPS_GDM_OTHER_DROP		BIT(23)
++#define RAMIPS_PSE_P1_FC		BIT(22)
++#define RAMIPS_PSE_P0_FC		BIT(21)
++#define RAMIPS_PSE_FQ_EMPTY		BIT(20)
++#define RAMIPS_GE1_STA_CHG		BIT(18)
++#define RAMIPS_TX_COHERENT		BIT(17)
++#define RAMIPS_RX_COHERENT		BIT(16)
++#define RAMIPS_TX_DONE_INT3		BIT(11)
++#define RAMIPS_TX_DONE_INT2		BIT(10)
++#define RAMIPS_TX_DONE_INT1		BIT(9)
++#define RAMIPS_TX_DONE_INT0		BIT(8)
++#define RAMIPS_RX_DONE_INT0		BIT(2)
++#define RAMIPS_TX_DLY_INT		BIT(1)
++#define RAMIPS_RX_DLY_INT		BIT(0)
++
++#define RT5350_RX_DLY_INT		BIT(30)
++#define RT5350_TX_DLY_INT		BIT(28)
++
++/* registers */
++#define RAMIPS_FE_OFFSET		0x0000
++#define RAMIPS_GDMA_OFFSET		0x0020
++#define RAMIPS_PSE_OFFSET		0x0040
++#define RAMIPS_GDMA2_OFFSET		0x0060
++#define RAMIPS_CDMA_OFFSET		0x0080
++#define RAMIPS_PDMA_OFFSET		0x0100
++#define RAMIPS_PPE_OFFSET		0x0200
++#define RAMIPS_CMTABLE_OFFSET		0x0400
++#define RAMIPS_POLICYTABLE_OFFSET	0x1000
++
++#define RT5350_PDMA_OFFSET		0x0800
++#define RT5350_SDM_OFFSET		0x0c00
++
++#define RAMIPS_MDIO_ACCESS		(RAMIPS_FE_OFFSET + 0x00)
++#define RAMIPS_MDIO_CFG			(RAMIPS_FE_OFFSET + 0x04)
++#define RAMIPS_FE_GLO_CFG		(RAMIPS_FE_OFFSET + 0x08)
++#define RAMIPS_FE_RST_GL		(RAMIPS_FE_OFFSET + 0x0C)
++#define RAMIPS_FE_INT_STATUS		(RAMIPS_FE_OFFSET + 0x10)
++#define RAMIPS_FE_INT_ENABLE		(RAMIPS_FE_OFFSET + 0x14)
++#define RAMIPS_MDIO_CFG2		(RAMIPS_FE_OFFSET + 0x18)
++#define RAMIPS_FOC_TS_T			(RAMIPS_FE_OFFSET + 0x1C)
++
++#define	RAMIPS_GDMA1_FWD_CFG		(RAMIPS_GDMA_OFFSET + 0x00)
++#define RAMIPS_GDMA1_SCH_CFG		(RAMIPS_GDMA_OFFSET + 0x04)
++#define RAMIPS_GDMA1_SHPR_CFG		(RAMIPS_GDMA_OFFSET + 0x08)
++#define RAMIPS_GDMA1_MAC_ADRL		(RAMIPS_GDMA_OFFSET + 0x0C)
++#define RAMIPS_GDMA1_MAC_ADRH		(RAMIPS_GDMA_OFFSET + 0x10)
++
++#define	RAMIPS_GDMA2_FWD_CFG		(RAMIPS_GDMA2_OFFSET + 0x00)
++#define RAMIPS_GDMA2_SCH_CFG		(RAMIPS_GDMA2_OFFSET + 0x04)
++#define RAMIPS_GDMA2_SHPR_CFG		(RAMIPS_GDMA2_OFFSET + 0x08)
++#define RAMIPS_GDMA2_MAC_ADRL		(RAMIPS_GDMA2_OFFSET + 0x0C)
++#define RAMIPS_GDMA2_MAC_ADRH		(RAMIPS_GDMA2_OFFSET + 0x10)
++
++#define RAMIPS_PSE_FQ_CFG		(RAMIPS_PSE_OFFSET + 0x00)
++#define RAMIPS_CDMA_FC_CFG		(RAMIPS_PSE_OFFSET + 0x04)
++#define RAMIPS_GDMA1_FC_CFG		(RAMIPS_PSE_OFFSET + 0x08)
++#define RAMIPS_GDMA2_FC_CFG		(RAMIPS_PSE_OFFSET + 0x0C)
++
++#define RAMIPS_CDMA_CSG_CFG		(RAMIPS_CDMA_OFFSET + 0x00)
++#define RAMIPS_CDMA_SCH_CFG		(RAMIPS_CDMA_OFFSET + 0x04)
++
++#define RT5350_TX_BASE_PTR0		(RT5350_PDMA_OFFSET + 0x00)
++#define RT5350_TX_MAX_CNT0		(RT5350_PDMA_OFFSET + 0x04)
++#define RT5350_TX_CTX_IDX0		(RT5350_PDMA_OFFSET + 0x08)
++#define RT5350_TX_DTX_IDX0		(RT5350_PDMA_OFFSET + 0x0C)
++#define RT5350_TX_BASE_PTR1		(RT5350_PDMA_OFFSET + 0x10)
++#define RT5350_TX_MAX_CNT1		(RT5350_PDMA_OFFSET + 0x14)
++#define RT5350_TX_CTX_IDX1		(RT5350_PDMA_OFFSET + 0x18)
++#define RT5350_TX_DTX_IDX1		(RT5350_PDMA_OFFSET + 0x1C)
++#define RT5350_TX_BASE_PTR2		(RT5350_PDMA_OFFSET + 0x20)
++#define RT5350_TX_MAX_CNT2		(RT5350_PDMA_OFFSET + 0x24)
++#define RT5350_TX_CTX_IDX2		(RT5350_PDMA_OFFSET + 0x28)
++#define RT5350_TX_DTX_IDX2		(RT5350_PDMA_OFFSET + 0x2C)
++#define RT5350_TX_BASE_PTR3		(RT5350_PDMA_OFFSET + 0x30)
++#define RT5350_TX_MAX_CNT3		(RT5350_PDMA_OFFSET + 0x34)
++#define RT5350_TX_CTX_IDX3		(RT5350_PDMA_OFFSET + 0x38)
++#define RT5350_TX_DTX_IDX3		(RT5350_PDMA_OFFSET + 0x3C)
++#define RT5350_RX_BASE_PTR0		(RT5350_PDMA_OFFSET + 0x100)
++#define RT5350_RX_MAX_CNT0		(RT5350_PDMA_OFFSET + 0x104)
++#define RT5350_RX_CALC_IDX0		(RT5350_PDMA_OFFSET + 0x108)
++#define RT5350_RX_DRX_IDX0		(RT5350_PDMA_OFFSET + 0x10C)
++#define RT5350_RX_BASE_PTR1		(RT5350_PDMA_OFFSET + 0x110)
++#define RT5350_RX_MAX_CNT1		(RT5350_PDMA_OFFSET + 0x114)
++#define RT5350_RX_CALC_IDX1		(RT5350_PDMA_OFFSET + 0x118)
++#define RT5350_RX_DRX_IDX1		(RT5350_PDMA_OFFSET + 0x11C)
++#define RT5350_PDMA_GLO_CFG		(RT5350_PDMA_OFFSET + 0x204)
++#define RT5350_PDMA_RST_CFG		(RT5350_PDMA_OFFSET + 0x208)
++#define RT5350_DLY_INT_CFG		(RT5350_PDMA_OFFSET + 0x20c)
++#define RT5350_FE_INT_STATUS		(RT5350_PDMA_OFFSET + 0x220)
++#define RT5350_FE_INT_ENABLE		(RT5350_PDMA_OFFSET + 0x228)
++#define RT5350_PDMA_SCH_CFG		(RT5350_PDMA_OFFSET + 0x280)
++
++
++#define RAMIPS_PDMA_GLO_CFG		(RAMIPS_PDMA_OFFSET + 0x00)
++#define RAMIPS_PDMA_RST_CFG		(RAMIPS_PDMA_OFFSET + 0x04)
++#define RAMIPS_PDMA_SCH_CFG		(RAMIPS_PDMA_OFFSET + 0x08)
++#define RAMIPS_DLY_INT_CFG		(RAMIPS_PDMA_OFFSET + 0x0C)
++#define RAMIPS_TX_BASE_PTR0		(RAMIPS_PDMA_OFFSET + 0x10)
++#define RAMIPS_TX_MAX_CNT0		(RAMIPS_PDMA_OFFSET + 0x14)
++#define RAMIPS_TX_CTX_IDX0		(RAMIPS_PDMA_OFFSET + 0x18)
++#define RAMIPS_TX_DTX_IDX0		(RAMIPS_PDMA_OFFSET + 0x1C)
++#define RAMIPS_TX_BASE_PTR1		(RAMIPS_PDMA_OFFSET + 0x20)
++#define RAMIPS_TX_MAX_CNT1		(RAMIPS_PDMA_OFFSET + 0x24)
++#define RAMIPS_TX_CTX_IDX1		(RAMIPS_PDMA_OFFSET + 0x28)
++#define RAMIPS_TX_DTX_IDX1		(RAMIPS_PDMA_OFFSET + 0x2C)
++#define RAMIPS_RX_BASE_PTR0		(RAMIPS_PDMA_OFFSET + 0x30)
++#define RAMIPS_RX_MAX_CNT0		(RAMIPS_PDMA_OFFSET + 0x34)
++#define RAMIPS_RX_CALC_IDX0		(RAMIPS_PDMA_OFFSET + 0x38)
++#define RAMIPS_RX_DRX_IDX0		(RAMIPS_PDMA_OFFSET + 0x3C)
++#define RAMIPS_TX_BASE_PTR2		(RAMIPS_PDMA_OFFSET + 0x40)
++#define RAMIPS_TX_MAX_CNT2		(RAMIPS_PDMA_OFFSET + 0x44)
++#define RAMIPS_TX_CTX_IDX2		(RAMIPS_PDMA_OFFSET + 0x48)
++#define RAMIPS_TX_DTX_IDX2		(RAMIPS_PDMA_OFFSET + 0x4C)
++#define RAMIPS_TX_BASE_PTR3		(RAMIPS_PDMA_OFFSET + 0x50)
++#define RAMIPS_TX_MAX_CNT3		(RAMIPS_PDMA_OFFSET + 0x54)
++#define RAMIPS_TX_CTX_IDX3		(RAMIPS_PDMA_OFFSET + 0x58)
++#define RAMIPS_TX_DTX_IDX3		(RAMIPS_PDMA_OFFSET + 0x5C)
++#define RAMIPS_RX_BASE_PTR1		(RAMIPS_PDMA_OFFSET + 0x60)
++#define RAMIPS_RX_MAX_CNT1		(RAMIPS_PDMA_OFFSET + 0x64)
++#define RAMIPS_RX_CALC_IDX1		(RAMIPS_PDMA_OFFSET + 0x68)
++#define RAMIPS_RX_DRX_IDX1		(RAMIPS_PDMA_OFFSET + 0x6C)
++
++#define RT5350_SDM_CFG			(RT5350_SDM_OFFSET + 0x00)  //Switch DMA configuration
++#define RT5350_SDM_RRING		(RT5350_SDM_OFFSET + 0x04)  //Switch DMA Rx Ring
++#define RT5350_SDM_TRING		(RT5350_SDM_OFFSET + 0x08)  //Switch DMA Tx Ring
++#define RT5350_SDM_MAC_ADRL		(RT5350_SDM_OFFSET + 0x0C)  //Switch MAC address LSB
++#define RT5350_SDM_MAC_ADRH		(RT5350_SDM_OFFSET + 0x10)  //Switch MAC Address MSB
++#define RT5350_SDM_TPCNT		(RT5350_SDM_OFFSET + 0x100) //Switch DMA Tx packet count
++#define RT5350_SDM_TBCNT		(RT5350_SDM_OFFSET + 0x104) //Switch DMA Tx byte count
++#define RT5350_SDM_RPCNT		(RT5350_SDM_OFFSET + 0x108) //Switch DMA rx packet count
++#define RT5350_SDM_RBCNT		(RT5350_SDM_OFFSET + 0x10C) //Switch DMA rx byte count
++#define RT5350_SDM_CS_ERR		(RT5350_SDM_OFFSET + 0x110) //Switch DMA rx checksum error count
++
++#define RT5350_SDM_ICS_EN		BIT(16)
++#define RT5350_SDM_TCS_EN		BIT(17)
++#define RT5350_SDM_UCS_EN		BIT(18)
++
++
++/* MDIO_CFG register bits */
++#define RAMIPS_MDIO_CFG_AUTO_POLL_EN	BIT(29)
++#define RAMIPS_MDIO_CFG_GP1_BP_EN	BIT(16)
++#define RAMIPS_MDIO_CFG_GP1_FRC_EN	BIT(15)
++#define RAMIPS_MDIO_CFG_GP1_SPEED_10	(0 << 13)
++#define RAMIPS_MDIO_CFG_GP1_SPEED_100	(1 << 13)
++#define RAMIPS_MDIO_CFG_GP1_SPEED_1000	(2 << 13)
++#define RAMIPS_MDIO_CFG_GP1_DUPLEX	BIT(12)
++#define RAMIPS_MDIO_CFG_GP1_FC_TX	BIT(11)
++#define RAMIPS_MDIO_CFG_GP1_FC_RX	BIT(10)
++#define RAMIPS_MDIO_CFG_GP1_LNK_DWN	BIT(9)
++#define RAMIPS_MDIO_CFG_GP1_AN_FAIL	BIT(8)
++#define RAMIPS_MDIO_CFG_MDC_CLK_DIV_1	(0 << 6)
++#define RAMIPS_MDIO_CFG_MDC_CLK_DIV_2	(1 << 6)
++#define RAMIPS_MDIO_CFG_MDC_CLK_DIV_4	(2 << 6)
++#define RAMIPS_MDIO_CFG_MDC_CLK_DIV_8	(3 << 6)
++#define RAMIPS_MDIO_CFG_TURBO_MII_FREQ	BIT(5)
++#define RAMIPS_MDIO_CFG_TURBO_MII_MODE	BIT(4)
++#define RAMIPS_MDIO_CFG_RX_CLK_SKEW_0	(0 << 2)
++#define RAMIPS_MDIO_CFG_RX_CLK_SKEW_200	(1 << 2)
++#define RAMIPS_MDIO_CFG_RX_CLK_SKEW_400	(2 << 2)
++#define RAMIPS_MDIO_CFG_RX_CLK_SKEW_INV	(3 << 2)
++#define RAMIPS_MDIO_CFG_TX_CLK_SKEW_0	0
++#define RAMIPS_MDIO_CFG_TX_CLK_SKEW_200	1
++#define RAMIPS_MDIO_CFG_TX_CLK_SKEW_400	2
++#define RAMIPS_MDIO_CFG_TX_CLK_SKEW_INV	3
++
++/* uni-cast port */
++#define RAMIPS_GDM1_ICS_EN		BIT(22)
++#define RAMIPS_GDM1_TCS_EN		BIT(21)
++#define RAMIPS_GDM1_UCS_EN		BIT(20)
++#define RAMIPS_GDM1_JMB_EN		BIT(19)
++#define RAMIPS_GDM1_STRPCRC		BIT(16)
++#define RAMIPS_GDM1_UFRC_P_CPU		(0 << 12)
++#define RAMIPS_GDM1_UFRC_P_GDMA1	(1 << 12)
++#define RAMIPS_GDM1_UFRC_P_PPE		(6 << 12)
++
++/* checksums */
++#define RAMIPS_ICS_GEN_EN		BIT(2)
++#define RAMIPS_UCS_GEN_EN		BIT(1)
++#define RAMIPS_TCS_GEN_EN		BIT(0)
++
++/* dma ring */
++#define RAMIPS_PST_DRX_IDX0		BIT(16)
++#define RAMIPS_PST_DTX_IDX3		BIT(3)
++#define RAMIPS_PST_DTX_IDX2		BIT(2)
++#define RAMIPS_PST_DTX_IDX1		BIT(1)
++#define RAMIPS_PST_DTX_IDX0		BIT(0)
++
++#define RAMIPS_TX_WB_DDONE		BIT(6)
++#define RAMIPS_RX_DMA_BUSY		BIT(3)
++#define RAMIPS_TX_DMA_BUSY		BIT(1)
++#define RAMIPS_RX_DMA_EN		BIT(2)
++#define RAMIPS_TX_DMA_EN		BIT(0)
++
++#define RAMIPS_PDMA_SIZE_4DWORDS	(0 << 4)
++#define RAMIPS_PDMA_SIZE_8DWORDS	(1 << 4)
++#define RAMIPS_PDMA_SIZE_16DWORDS	(2 << 4)
++
++#define RAMIPS_US_CYC_CNT_MASK		0xff
++#define RAMIPS_US_CYC_CNT_SHIFT		0x8
++#define RAMIPS_US_CYC_CNT_DIVISOR	1000000
++
++#define RX_DMA_PLEN0(_x)		(((_x) >> 16) & 0x3fff)
++#define RX_DMA_LSO			BIT(30)
++#define RX_DMA_DONE			BIT(31)
++
++struct ramips_rx_dma {
++	unsigned int rxd1;
++	unsigned int rxd2;
++	unsigned int rxd3;
++	unsigned int rxd4;
++} __packed __aligned(4);
++
++#define TX_DMA_PLEN0_MASK		((0x3fff) << 16)
++#define TX_DMA_PLEN0(_x)		(((_x) & 0x3fff) << 16)
++#define TX_DMA_LSO			BIT(30)
++#define TX_DMA_DONE			BIT(31)
++#define TX_DMA_QN(_x)			((_x) << 16)
++#define TX_DMA_PN(_x)			((_x) << 24)
++#define TX_DMA_QN_MASK			TX_DMA_QN(0x7)
++#define TX_DMA_PN_MASK			TX_DMA_PN(0x7)
++
++struct ramips_tx_dma {
++	unsigned int txd1;
++	unsigned int txd2;
++	unsigned int txd3;
++	unsigned int txd4;
++} __packed __aligned(4);
++
++struct raeth_tx_info {
++	struct ramips_tx_dma	*tx_desc;
++	struct sk_buff		*tx_skb;
++};
++
++struct raeth_rx_info {
++	struct ramips_rx_dma	*rx_desc;
++	struct sk_buff		*rx_skb;
++	dma_addr_t		rx_dma;
++	unsigned int		pad;
++};
++
++struct raeth_int_stats {
++	unsigned long		rx_delayed;
++	unsigned long		tx_delayed;
++	unsigned long		rx_done0;
++	unsigned long		tx_done0;
++	unsigned long		tx_done1;
++	unsigned long		tx_done2;
++	unsigned long		tx_done3;
++	unsigned long		rx_coherent;
++	unsigned long		tx_coherent;
++
++	unsigned long		pse_fq_empty;
++	unsigned long		pse_p0_fc;
++	unsigned long		pse_p1_fc;
++	unsigned long		pse_p2_fc;
++	unsigned long		pse_buf_drop;
++
++	unsigned long		total;
++};
++
++struct raeth_debug {
++	struct dentry		*debugfs_dir;
++
++	struct raeth_int_stats	int_stats;
++};
++
++struct raeth_priv
++{
++	struct device_node	*of_node;
++
++	struct raeth_rx_info	*rx_info;
++	dma_addr_t		rx_desc_dma;
++	struct tasklet_struct	rx_tasklet;
++	struct ramips_rx_dma	*rx;
++
++	struct raeth_tx_info	*tx_info;
++	dma_addr_t		tx_desc_dma;
++	struct tasklet_struct	tx_housekeeping_tasklet;
++	struct ramips_tx_dma	*tx;
++
++	unsigned int		skb_free_idx;
++
++	spinlock_t		page_lock;
++	struct net_device	*netdev;
++	struct device		*parent;
++
++	int			link;
++	int			speed;
++	int			duplex;
++	int			tx_fc;
++	int			rx_fc;
++
++	struct mii_bus		*mii_bus;
++	int			mii_irq[PHY_MAX_ADDR];
++	struct phy_device	*phy_dev;
++	spinlock_t		phy_lock;
++	unsigned long		sys_freq;
++
++	unsigned char		mac[6];
++	void			(*reset_fe)(void);
++	int			min_pkt_len;
++
++	u32			phy_mask;
++	phy_interface_t		phy_if_mode;
++
++#ifdef CONFIG_NET_RAMIPS_DEBUG_FS
++	struct raeth_debug	debug;
++#endif
++};
++
++struct ramips_soc_data
++{
++	unsigned char mac[6];
++	void (*reset_fe)(void);
++	int min_pkt_len;
++};
++
++
++#ifdef CONFIG_NET_RAMIPS_DEBUG_FS
++int raeth_debugfs_root_init(void);
++void raeth_debugfs_root_exit(void);
++int raeth_debugfs_init(struct raeth_priv *re);
++void raeth_debugfs_exit(struct raeth_priv *re);
++void raeth_debugfs_update_int_stats(struct raeth_priv *re, u32 status);
++#else
++static inline int raeth_debugfs_root_init(void) { return 0; }
++static inline void raeth_debugfs_root_exit(void) {}
++static inline int raeth_debugfs_init(struct raeth_priv *re) { return 0; }
++static inline void raeth_debugfs_exit(struct raeth_priv *re) {}
++static inline void raeth_debugfs_update_int_stats(struct raeth_priv *re,
++						  u32 status) {}
++#endif /* CONFIG_NET_RAMIPS_DEBUG_FS */
++
++#endif /* RAMIPS_ETH_H */
+Index: linux-3.8.3/drivers/net/ethernet/ramips/ramips_main.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.3/drivers/net/ethernet/ramips/ramips_main.c	2013-04-02 12:07:58.749306720 +0200
+@@ -0,0 +1,1285 @@
++/*
++ *   This program is free software; you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; version 2 of the License
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *   GNU General Public License for more details.
++ *
++ *   You should have received a copy of the GNU General Public License
++ *   along with this program; if not, write to the Free Software
++ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
++ *
++ *   Copyright (C) 2009 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/types.h>
++#include <linux/dma-mapping.h>
++#include <linux/init.h>
++#include <linux/skbuff.h>
++#include <linux/etherdevice.h>
++#include <linux/ethtool.h>
++#include <linux/platform_device.h>
++#include <linux/phy.h>
++#include <linux/of_device.h>
++#include <linux/clk.h>
++#include <linux/of_net.h>
++
++#include "ramips_eth.h"
++
++#define TX_TIMEOUT (20 * HZ / 100)
++#define	MAX_RX_LENGTH	1600
++
++#ifdef CONFIG_SOC_RT305X
++#include <rt305x.h>
++#include "ramips_esw.c"
++#else
++#include <asm/mach-ralink/ralink_regs.h>
++static inline int rt305x_esw_init(void) { return 0; }
++static inline void rt305x_esw_exit(void) { }
++static inline int soc_is_rt5350(void) { return 0; }
++#endif
++
++#define phys_to_bus(a)  (a & 0x1FFFFFFF)
++
++#ifdef CONFIG_NET_RAMIPS_DEBUG
++#define RADEBUG(fmt, args...)	printk(KERN_DEBUG fmt, ## args)
++#else
++#define RADEBUG(fmt, args...)	do {} while (0)
++#endif
++
++#define RX_DLY_INT ((soc_is_rt5350())?(RT5350_RX_DLY_INT):(RAMIPS_RX_DLY_INT))
++#define TX_DLY_INT ((soc_is_rt5350())?(RT5350_TX_DLY_INT):(RAMIPS_TX_DLY_INT))
++
++enum raeth_reg {
++	RAETH_REG_PDMA_GLO_CFG = 0,
++	RAETH_REG_PDMA_RST_CFG,
++	RAETH_REG_DLY_INT_CFG,
++	RAETH_REG_TX_BASE_PTR0,
++	RAETH_REG_TX_MAX_CNT0,
++	RAETH_REG_TX_CTX_IDX0,
++	RAETH_REG_RX_BASE_PTR0,
++	RAETH_REG_RX_MAX_CNT0,
++	RAETH_REG_RX_CALC_IDX0,
++	RAETH_REG_FE_INT_ENABLE,
++	RAETH_REG_FE_INT_STATUS,
++	RAETH_REG_COUNT
++};
++
++static const u32 ramips_reg_table[RAETH_REG_COUNT] = {
++	[RAETH_REG_PDMA_GLO_CFG] = RAMIPS_PDMA_GLO_CFG,
++	[RAETH_REG_PDMA_RST_CFG] = RAMIPS_PDMA_RST_CFG,
++	[RAETH_REG_DLY_INT_CFG] = RAMIPS_DLY_INT_CFG,
++	[RAETH_REG_TX_BASE_PTR0] = RAMIPS_TX_BASE_PTR0,
++	[RAETH_REG_TX_MAX_CNT0] = RAMIPS_TX_MAX_CNT0,
++	[RAETH_REG_TX_CTX_IDX0] = RAMIPS_TX_CTX_IDX0,
++	[RAETH_REG_RX_BASE_PTR0] = RAMIPS_RX_BASE_PTR0,
++	[RAETH_REG_RX_MAX_CNT0] = RAMIPS_RX_MAX_CNT0,
++	[RAETH_REG_RX_CALC_IDX0] = RAMIPS_RX_CALC_IDX0,
++	[RAETH_REG_FE_INT_ENABLE] = RAMIPS_FE_INT_ENABLE,
++	[RAETH_REG_FE_INT_STATUS] = RAMIPS_FE_INT_STATUS,
++};
++
++static const u32 rt5350_reg_table[RAETH_REG_COUNT] = {
++	[RAETH_REG_PDMA_GLO_CFG] = RT5350_PDMA_GLO_CFG,
++	[RAETH_REG_PDMA_RST_CFG] = RT5350_PDMA_RST_CFG,
++	[RAETH_REG_DLY_INT_CFG] = RT5350_DLY_INT_CFG,
++	[RAETH_REG_TX_BASE_PTR0] = RT5350_TX_BASE_PTR0,
++	[RAETH_REG_TX_MAX_CNT0] = RT5350_TX_MAX_CNT0,
++	[RAETH_REG_TX_CTX_IDX0] = RT5350_TX_CTX_IDX0,
++	[RAETH_REG_RX_BASE_PTR0] = RT5350_RX_BASE_PTR0,
++	[RAETH_REG_RX_MAX_CNT0] = RT5350_RX_MAX_CNT0,
++	[RAETH_REG_RX_CALC_IDX0] = RT5350_RX_CALC_IDX0,
++	[RAETH_REG_FE_INT_ENABLE] = RT5350_FE_INT_ENABLE,
++	[RAETH_REG_FE_INT_STATUS] = RT5350_FE_INT_STATUS,
++};
++
++static struct net_device * ramips_dev;
++static void __iomem *ramips_fe_base = 0;
++
++static inline u32 get_reg_offset(enum raeth_reg reg)
++{
++	const u32 *table;
++
++	if (soc_is_rt5350())
++		table = rt5350_reg_table;
++	else
++		table = ramips_reg_table;
++
++	return table[reg];
++}
++
++static inline void
++ramips_fe_wr(u32 val, unsigned reg)
++{
++	__raw_writel(val, ramips_fe_base + reg);
++}
++
++static inline u32
++ramips_fe_rr(unsigned reg)
++{
++	return __raw_readl(ramips_fe_base + reg);
++}
++
++static inline void
++ramips_fe_twr(u32 val, enum raeth_reg reg)
++{
++	ramips_fe_wr(val, get_reg_offset(reg));
++}
++
++static inline u32
++ramips_fe_trr(enum raeth_reg reg)
++{
++	return ramips_fe_rr(get_reg_offset(reg));
++}
++
++static inline void
++ramips_fe_int_disable(u32 mask)
++{
++	ramips_fe_twr(ramips_fe_trr(RAETH_REG_FE_INT_ENABLE) & ~mask,
++		     RAETH_REG_FE_INT_ENABLE);
++	/* flush write */
++	ramips_fe_trr(RAETH_REG_FE_INT_ENABLE);
++}
++
++static inline void
++ramips_fe_int_enable(u32 mask)
++{
++	ramips_fe_twr(ramips_fe_trr(RAETH_REG_FE_INT_ENABLE) | mask,
++		     RAETH_REG_FE_INT_ENABLE);
++	/* flush write */
++	ramips_fe_trr(RAETH_REG_FE_INT_ENABLE);
++}
++
++static inline void
++ramips_hw_set_macaddr(unsigned char *mac)
++{
++	if (soc_is_rt5350()) {
++		ramips_fe_wr((mac[0] << 8) | mac[1], RT5350_SDM_MAC_ADRH);
++		ramips_fe_wr((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
++			     RT5350_SDM_MAC_ADRL);
++	} else {
++		ramips_fe_wr((mac[0] << 8) | mac[1], RAMIPS_GDMA1_MAC_ADRH);
++		ramips_fe_wr((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
++			     RAMIPS_GDMA1_MAC_ADRL);
++	}
++}
++
++static struct sk_buff *
++ramips_alloc_skb(struct raeth_priv *re)
++{
++	struct sk_buff *skb;
++
++	skb = netdev_alloc_skb(re->netdev, MAX_RX_LENGTH + NET_IP_ALIGN);
++	if (!skb)
++		return NULL;
++
++	skb_reserve(skb, NET_IP_ALIGN);
++
++	return skb;
++}
++
++static void
++ramips_ring_setup(struct raeth_priv *re)
++{
++	int len;
++	int i;
++
++	memset(re->tx_info, 0, NUM_TX_DESC * sizeof(struct raeth_tx_info));
++
++	len = NUM_TX_DESC * sizeof(struct ramips_tx_dma);
++	memset(re->tx, 0, len);
++
++	for (i = 0; i < NUM_TX_DESC; i++) {
++		struct raeth_tx_info *txi;
++		struct ramips_tx_dma *txd;
++
++		txd = &re->tx[i];
++		txd->txd4 = TX_DMA_QN(3) | TX_DMA_PN(1);
++		txd->txd2 = TX_DMA_LSO | TX_DMA_DONE;
++
++		txi = &re->tx_info[i];
++		txi->tx_desc = txd;
++		if (txi->tx_skb != NULL) {
++			netdev_warn(re->netdev,
++				    "dirty skb for TX desc %d\n", i);
++			txi->tx_skb = NULL;
++		}
++	}
++
++	len = NUM_RX_DESC * sizeof(struct ramips_rx_dma);
++	memset(re->rx, 0, len);
++
++	for (i = 0; i < NUM_RX_DESC; i++) {
++		struct raeth_rx_info *rxi;
++		struct ramips_rx_dma *rxd;
++		dma_addr_t dma_addr;
++
++		rxd = &re->rx[i];
++		rxi = &re->rx_info[i];
++		BUG_ON(rxi->rx_skb == NULL);
++		dma_addr = dma_map_single(&re->netdev->dev, rxi->rx_skb->data,
++					  MAX_RX_LENGTH, DMA_FROM_DEVICE);
++		rxi->rx_dma = dma_addr;
++		rxi->rx_desc = rxd;
++
++		rxd->rxd1 = (unsigned int) dma_addr;
++		rxd->rxd2 = RX_DMA_LSO;
++	}
++
++	/* flush descriptors */
++	wmb();
++}
++
++static void
++ramips_ring_cleanup(struct raeth_priv *re)
++{
++	int i;
++
++	for (i = 0; i < NUM_RX_DESC; i++) {
++		struct raeth_rx_info *rxi;
++
++		rxi = &re->rx_info[i];
++		if (rxi->rx_skb)
++			dma_unmap_single(&re->netdev->dev, rxi->rx_dma,
++					 MAX_RX_LENGTH, DMA_FROM_DEVICE);
++	}
++
++	for (i = 0; i < NUM_TX_DESC; i++) {
++		struct raeth_tx_info *txi;
++
++		txi = &re->tx_info[i];
++		if (txi->tx_skb) {
++			dev_kfree_skb_any(txi->tx_skb);
++			txi->tx_skb = NULL;
++		}
++	}
++
++	netdev_reset_queue(re->netdev);
++}
++
++#if defined(CONFIG_SOC_RT288X) || defined(CONFIG_SOC_RT3883)
++
++#define RAMIPS_MDIO_RETRY	1000
++
++static unsigned char *ramips_speed_str(struct raeth_priv *re)
++{
++	switch (re->speed) {
++	case SPEED_1000:
++		return "1000";
++	case SPEED_100:
++		return "100";
++	case SPEED_10:
++		return "10";
++	}
++
++	return "?";
++}
++
++static void ramips_link_adjust(struct raeth_priv *re)
++{
++	u32 mdio_cfg;
++
++	if (!re->link) {
++		netif_carrier_off(re->netdev);
++		netdev_info(re->netdev, "link down\n");
++		return;
++	}
++
++	mdio_cfg = RAMIPS_MDIO_CFG_TX_CLK_SKEW_200 |
++		   RAMIPS_MDIO_CFG_TX_CLK_SKEW_200 |
++		   RAMIPS_MDIO_CFG_GP1_FRC_EN;
++
++	if (re->duplex == DUPLEX_FULL)
++		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_DUPLEX;
++
++	if (re->tx_fc)
++		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_FC_TX;
++
++	if (re->rx_fc)
++		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_FC_RX;
++
++	switch (re->speed) {
++	case SPEED_10:
++		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_SPEED_10;
++		break;
++	case SPEED_100:
++		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_SPEED_100;
++		break;
++	case SPEED_1000:
++		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_SPEED_1000;
++		break;
++	default:
++		BUG();
++	}
++
++	ramips_fe_wr(mdio_cfg, RAMIPS_MDIO_CFG);
++
++	netif_carrier_on(re->netdev);
++	netdev_info(re->netdev, "link up (%sMbps/%s duplex)\n",
++		    ramips_speed_str(re),
++		    (DUPLEX_FULL == re->duplex) ? "Full" : "Half");
++}
++
++static int
++ramips_mdio_wait_ready(struct raeth_priv *re)
++{
++	int retries;
++
++	retries = RAMIPS_MDIO_RETRY;
++	while (1) {
++		u32 t;
++
++		t = ramips_fe_rr(RAMIPS_MDIO_ACCESS);
++		if ((t & (0x1 << 31)) == 0)
++			return 0;
++
++		if (retries-- == 0)
++			break;
++
++		udelay(1);
++	}
++
++	dev_err(re->parent, "MDIO operation timed out\n");
++	return -ETIMEDOUT;
++}
++
++static int
++ramips_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
++{
++	struct raeth_priv *re = bus->priv;
++	int err;
++	u32 t;
++
++	err = ramips_mdio_wait_ready(re);
++	if (err)
++		return 0xffff;
++
++	t = (phy_addr << 24) | (phy_reg << 16);
++	ramips_fe_wr(t, RAMIPS_MDIO_ACCESS);
++	t |= (1 << 31);
++	ramips_fe_wr(t, RAMIPS_MDIO_ACCESS);
++
++	err = ramips_mdio_wait_ready(re);
++	if (err)
++		return 0xffff;
++
++	RADEBUG("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
++		phy_addr, phy_reg, ramips_fe_rr(RAMIPS_MDIO_ACCESS) & 0xffff);
++
++	return ramips_fe_rr(RAMIPS_MDIO_ACCESS) & 0xffff;
++}
++
++static int
++ramips_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
++{
++	struct raeth_priv *re = bus->priv;
++	int err;
++	u32 t;
++
++	RADEBUG("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
++		phy_addr, phy_reg, ramips_fe_rr(RAMIPS_MDIO_ACCESS) & 0xffff);
++
++	err = ramips_mdio_wait_ready(re);
++	if (err)
++		return err;
++
++	t = (1 << 30) | (phy_addr << 24) | (phy_reg << 16) | val;
++	ramips_fe_wr(t, RAMIPS_MDIO_ACCESS);
++	t |= (1 << 31);
++	ramips_fe_wr(t, RAMIPS_MDIO_ACCESS);
++
++	return ramips_mdio_wait_ready(re);
++}
++
++static int
++ramips_mdio_reset(struct mii_bus *bus)
++{
++	/* TODO */
++	return 0;
++}
++
++static int
++ramips_mdio_init(struct raeth_priv *re)
++{
++	int err;
++	int i;
++
++	re->mii_bus = mdiobus_alloc();
++	if (re->mii_bus == NULL)
++		return -ENOMEM;
++
++	re->mii_bus->name = "ramips_mdio";
++	re->mii_bus->read = ramips_mdio_read;
++	re->mii_bus->write = ramips_mdio_write;
++	re->mii_bus->reset = ramips_mdio_reset;
++	re->mii_bus->irq = re->mii_irq;
++	re->mii_bus->priv = re;
++	re->mii_bus->parent = re->parent;
++
++	snprintf(re->mii_bus->id, MII_BUS_ID_SIZE, "%s", "ramips_mdio");
++	re->mii_bus->phy_mask = 0;
++
++	for (i = 0; i < PHY_MAX_ADDR; i++)
++		re->mii_irq[i] = PHY_POLL;
++
++	err = mdiobus_register(re->mii_bus);
++	if (err)
++		goto err_free_bus;
++
++	return 0;
++
++err_free_bus:
++	kfree(re->mii_bus);
++	return err;
++}
++
++static void
++ramips_mdio_cleanup(struct raeth_priv *re)
++{
++	mdiobus_unregister(re->mii_bus);
++	kfree(re->mii_bus);
++}
++
++static void
++ramips_phy_link_adjust(struct net_device *dev)
++{
++	struct raeth_priv *re = netdev_priv(dev);
++	struct phy_device *phydev = re->phy_dev;
++	unsigned long flags;
++	int status_change = 0;
++
++	spin_lock_irqsave(&re->phy_lock, flags);
++
++	if (phydev->link)
++		if (re->duplex != phydev->duplex ||
++		    re->speed != phydev->speed)
++			status_change = 1;
++
++	if (phydev->link != re->link)
++		status_change = 1;
++
++	re->link = phydev->link;
++	re->duplex = phydev->duplex;
++	re->speed = phydev->speed;
++
++	if (status_change)
++		ramips_link_adjust(re);
++
++	spin_unlock_irqrestore(&re->phy_lock, flags);
++}
++
++static int
++ramips_phy_connect_multi(struct raeth_priv *re)
++{
++	struct net_device *netdev = re->netdev;
++	struct phy_device *phydev = NULL;
++	int phy_addr;
++	int ret = 0;
++
++	for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++) {
++		if (!(re->phy_mask & (1 << phy_addr)))
++			continue;
++
++		if (re->mii_bus->phy_map[phy_addr] == NULL)
++			continue;
++
++		RADEBUG("%s: PHY found at %s, uid=%08x\n",
++			netdev->name,
++			dev_name(&re->mii_bus->phy_map[phy_addr]->dev),
++			re->mii_bus->phy_map[phy_addr]->phy_id);
++
++		if (phydev == NULL)
++			phydev = re->mii_bus->phy_map[phy_addr];
++	}
++
++	if (!phydev) {
++		netdev_err(netdev, "no PHY found with phy_mask=%08x\n",
++			   re->phy_mask);
++		return -ENODEV;
++	}
++
++	re->phy_dev = phy_connect(netdev, dev_name(&phydev->dev),
++				  ramips_phy_link_adjust, 0, re->phy_if_mode);
++
++	if (IS_ERR(re->phy_dev)) {
++		netdev_err(netdev, "could not connect to PHY at %s\n",
++			   dev_name(&phydev->dev));
++		return PTR_ERR(re->phy_dev);
++	}
++
++	phydev->supported &= PHY_GBIT_FEATURES;
++	phydev->advertising = phydev->supported;
++
++	RADEBUG("%s: connected to PHY at %s [uid=%08x, driver=%s]\n",
++		netdev->name, dev_name(&phydev->dev),
++		phydev->phy_id, phydev->drv->name);
++
++	re->link = 0;
++	re->speed = 0;
++	re->duplex = -1;
++	re->rx_fc = 0;
++	re->tx_fc = 0;
++
++	return ret;
++}
++
++static int
++ramips_phy_connect_fixed(struct raeth_priv *re)
++{
++	if (!re->speed) {
++		const __be32 *link;
++		int size;
++
++		link = of_get_property(re->of_node,
++					"ralink,fixed-link", &size);
++		if (!link || size != (4 * sizeof(*link)))
++			return -ENOENT;
++
++		re->speed = be32_to_cpup(link++);
++		re->duplex = be32_to_cpup(link++);
++		re->tx_fc = be32_to_cpup(link++);
++		re->rx_fc = be32_to_cpup(link++);
++	}
++
++	switch (re->speed) {
++	case SPEED_10:
++	case SPEED_100:
++	case SPEED_1000:
++		break;
++	default:
++		netdev_err(re->netdev, "invalid speed specified\n");
++		return -EINVAL;
++	}
++
++	pr_info("%s: using fixed link parameters\n", re->netdev->name);
++	return 0;
++}
++
++static int
++ramips_phy_connect(struct raeth_priv *re)
++{
++	const __be32 *mask;
++
++	mask = of_get_property(re->of_node, "ralink,phy-mask", NULL);
++	re->phy_if_mode = of_get_phy_mode(re->of_node);
++
++	if (!re->phy_if_mode || !mask)
++		return ramips_phy_connect_fixed(re);
++
++	re->phy_mask = be32_to_cpup(mask);
++	return ramips_phy_connect_multi(re);
++
++}
++
++static void
++ramips_phy_disconnect(struct raeth_priv *re)
++{
++	if (re->phy_dev)
++		phy_disconnect(re->phy_dev);
++}
++
++static void
++ramips_phy_start(struct raeth_priv *re)
++{
++	unsigned long flags;
++
++	if (re->phy_dev) {
++		phy_start(re->phy_dev);
++	} else {
++		spin_lock_irqsave(&re->phy_lock, flags);
++		re->link = 1;
++		ramips_link_adjust(re);
++		spin_unlock_irqrestore(&re->phy_lock, flags);
++	}
++}
++
++static void
++ramips_phy_stop(struct raeth_priv *re)
++{
++	unsigned long flags;
++
++	if (re->phy_dev)
++		phy_stop(re->phy_dev);
++
++	spin_lock_irqsave(&re->phy_lock, flags);
++	re->link = 0;
++	ramips_link_adjust(re);
++	spin_unlock_irqrestore(&re->phy_lock, flags);
++}
++#else
++static inline int
++ramips_mdio_init(struct raeth_priv *re)
++{
++	return 0;
++}
++
++static inline void
++ramips_mdio_cleanup(struct raeth_priv *re)
++{
++}
++
++static inline int
++ramips_phy_connect(struct raeth_priv *re)
++{
++	return 0;
++}
++
++static inline void
++ramips_phy_disconnect(struct raeth_priv *re)
++{
++}
++
++static inline void
++ramips_phy_start(struct raeth_priv *re)
++{
++}
++
++static inline void
++ramips_phy_stop(struct raeth_priv *re)
++{
++}
++#endif /* CONFIG_SOC_RT288X || CONFIG_SOC_RT3883 */
++
++static void
++ramips_ring_free(struct raeth_priv *re)
++{
++	int len;
++	int i;
++
++	if (re->rx_info) {
++		for (i = 0; i < NUM_RX_DESC; i++) {
++			struct raeth_rx_info *rxi;
++
++			rxi = &re->rx_info[i];
++			if (rxi->rx_skb)
++				dev_kfree_skb_any(rxi->rx_skb);
++		}
++		kfree(re->rx_info);
++	}
++
++	if (re->rx) {
++		len = NUM_RX_DESC * sizeof(struct ramips_rx_dma);
++		dma_free_coherent(&re->netdev->dev, len, re->rx,
++				  re->rx_desc_dma);
++	}
++
++	if (re->tx) {
++		len = NUM_TX_DESC * sizeof(struct ramips_tx_dma);
++		dma_free_coherent(&re->netdev->dev, len, re->tx,
++				  re->tx_desc_dma);
++	}
++
++	kfree(re->tx_info);
++}
++
++static int
++ramips_ring_alloc(struct raeth_priv *re)
++{
++	int len;
++	int err = -ENOMEM;
++	int i;
++
++	re->tx_info = kzalloc(NUM_TX_DESC * sizeof(struct raeth_tx_info),
++			      GFP_ATOMIC);
++	if (!re->tx_info)
++		goto err_cleanup;
++
++	re->rx_info = kzalloc(NUM_RX_DESC * sizeof(struct raeth_rx_info),
++			      GFP_ATOMIC);
++	if (!re->rx_info)
++		goto err_cleanup;
++
++	/* allocate tx ring */
++	len = NUM_TX_DESC * sizeof(struct ramips_tx_dma);
++	re->tx = dma_alloc_coherent(&re->netdev->dev, len,
++					  &re->tx_desc_dma, GFP_ATOMIC);
++	if (!re->tx)
++		goto err_cleanup;
++
++	/* allocate rx ring */
++	len = NUM_RX_DESC * sizeof(struct ramips_rx_dma);
++	re->rx = dma_alloc_coherent(&re->netdev->dev, len,
++				    &re->rx_desc_dma, GFP_ATOMIC);
++	if (!re->rx)
++		goto err_cleanup;
++
++	for (i = 0; i < NUM_RX_DESC; i++) {
++		struct sk_buff *skb;
++
++		skb = ramips_alloc_skb(re);
++		if (!skb)
++			goto err_cleanup;
++
++		re->rx_info[i].rx_skb = skb;
++	}
++
++	return 0;
++
++err_cleanup:
++	ramips_ring_free(re);
++	return err;
++}
++
++static void
++ramips_setup_dma(struct raeth_priv *re)
++{
++	ramips_fe_twr(re->tx_desc_dma, RAETH_REG_TX_BASE_PTR0);
++	ramips_fe_twr(NUM_TX_DESC, RAETH_REG_TX_MAX_CNT0);
++	ramips_fe_twr(0, RAETH_REG_TX_CTX_IDX0);
++	ramips_fe_twr(RAMIPS_PST_DTX_IDX0, RAETH_REG_PDMA_RST_CFG);
++
++	ramips_fe_twr(re->rx_desc_dma, RAETH_REG_RX_BASE_PTR0);
++	ramips_fe_twr(NUM_RX_DESC, RAETH_REG_RX_MAX_CNT0);
++	ramips_fe_twr((NUM_RX_DESC - 1), RAETH_REG_RX_CALC_IDX0);
++	ramips_fe_twr(RAMIPS_PST_DRX_IDX0, RAETH_REG_PDMA_RST_CFG);
++}
++
++static int
++ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct raeth_priv *re = netdev_priv(dev);
++	struct raeth_tx_info *txi, *txi_next;
++	struct ramips_tx_dma *txd, *txd_next;
++	unsigned long tx;
++	unsigned int tx_next;
++	dma_addr_t mapped_addr;
++
++	if (re->min_pkt_len) {
++		if (skb->len < re->min_pkt_len) {
++			if (skb_padto(skb, re->min_pkt_len)) {
++				printk(KERN_ERR
++				       "ramips_eth: skb_padto failed\n");
++				kfree_skb(skb);
++				return 0;
++			}
++			skb_put(skb, re->min_pkt_len - skb->len);
++		}
++	}
++
++	dev->trans_start = jiffies;
++	mapped_addr = dma_map_single(&re->netdev->dev, skb->data, skb->len,
++				     DMA_TO_DEVICE);
++
++	spin_lock(&re->page_lock);
++	tx = ramips_fe_trr(RAETH_REG_TX_CTX_IDX0);
++	tx_next = (tx + 1) % NUM_TX_DESC;
++
++	txi = &re->tx_info[tx];
++	txd = txi->tx_desc;
++	txi_next = &re->tx_info[tx_next];
++	txd_next = txi_next->tx_desc;
++
++	if ((txi->tx_skb) || (txi_next->tx_skb) ||
++	    !(txd->txd2 & TX_DMA_DONE) ||
++	    !(txd_next->txd2 & TX_DMA_DONE))
++		goto out;
++
++	txi->tx_skb = skb;
++
++	txd->txd1 = (unsigned int) mapped_addr;
++	wmb();
++	txd->txd2 = TX_DMA_LSO | TX_DMA_PLEN0(skb->len);
++	dev->stats.tx_packets++;
++	dev->stats.tx_bytes += skb->len;
++	ramips_fe_twr(tx_next, RAETH_REG_TX_CTX_IDX0);
++	netdev_sent_queue(dev, skb->len);
++	spin_unlock(&re->page_lock);
++	return NETDEV_TX_OK;
++
++ out:
++	spin_unlock(&re->page_lock);
++	dev->stats.tx_dropped++;
++	kfree_skb(skb);
++	return NETDEV_TX_OK;
++}
++
++static void
++ramips_eth_rx_hw(unsigned long ptr)
++{
++	struct net_device *dev = (struct net_device *) ptr;
++	struct raeth_priv *re = netdev_priv(dev);
++	int rx;
++	int max_rx = 16;
++
++	rx = ramips_fe_trr(RAETH_REG_RX_CALC_IDX0);
++
++	while (max_rx) {
++		struct raeth_rx_info *rxi;
++		struct ramips_rx_dma *rxd;
++		struct sk_buff *rx_skb, *new_skb;
++		int pktlen;
++
++		rx = (rx + 1) % NUM_RX_DESC;
++
++		rxi = &re->rx_info[rx];
++		rxd = rxi->rx_desc;
++		if (!(rxd->rxd2 & RX_DMA_DONE))
++			break;
++
++		rx_skb = rxi->rx_skb;
++		pktlen = RX_DMA_PLEN0(rxd->rxd2);
++
++		new_skb = ramips_alloc_skb(re);
++		/* Reuse the buffer on allocation failures */
++		if (new_skb) {
++			dma_addr_t dma_addr;
++
++			dma_unmap_single(&re->netdev->dev, rxi->rx_dma,
++					 MAX_RX_LENGTH, DMA_FROM_DEVICE);
++
++			skb_put(rx_skb, pktlen);
++			rx_skb->dev = dev;
++			rx_skb->protocol = eth_type_trans(rx_skb, dev);
++			rx_skb->ip_summed = CHECKSUM_NONE;
++			dev->stats.rx_packets++;
++			dev->stats.rx_bytes += pktlen;
++			netif_rx(rx_skb);
++
++			rxi->rx_skb = new_skb;
++
++			dma_addr = dma_map_single(&re->netdev->dev,
++						  new_skb->data,
++						  MAX_RX_LENGTH,
++						  DMA_FROM_DEVICE);
++			rxi->rx_dma = dma_addr;
++			rxd->rxd1 = (unsigned int) dma_addr;
++			wmb();
++		} else {
++			dev->stats.rx_dropped++;
++		}
++
++		rxd->rxd2 = RX_DMA_LSO;
++		ramips_fe_twr(rx, RAETH_REG_RX_CALC_IDX0);
++		max_rx--;
++	}
++
++	if (max_rx == 0)
++		tasklet_schedule(&re->rx_tasklet);
++	else
++		ramips_fe_int_enable(RX_DLY_INT);
++}
++
++static void
++ramips_eth_tx_housekeeping(unsigned long ptr)
++{
++	struct net_device *dev = (struct net_device*)ptr;
++	struct raeth_priv *re = netdev_priv(dev);
++	unsigned int bytes_compl = 0, pkts_compl = 0;
++
++	spin_lock(&re->page_lock);
++	while (1) {
++		struct raeth_tx_info *txi;
++		struct ramips_tx_dma *txd;
++
++		txi = &re->tx_info[re->skb_free_idx];
++		txd = txi->tx_desc;
++
++		if (!(txd->txd2 & TX_DMA_DONE) || !(txi->tx_skb))
++			break;
++
++		pkts_compl++;
++		bytes_compl += txi->tx_skb->len;
++
++		dev_kfree_skb_irq(txi->tx_skb);
++		txi->tx_skb = NULL;
++		re->skb_free_idx++;
++		if (re->skb_free_idx >= NUM_TX_DESC)
++			re->skb_free_idx = 0;
++	}
++	netdev_completed_queue(dev, pkts_compl, bytes_compl);
++	spin_unlock(&re->page_lock);
++
++	ramips_fe_int_enable(TX_DLY_INT);
++}
++
++static void
++ramips_eth_timeout(struct net_device *dev)
++{
++	struct raeth_priv *re = netdev_priv(dev);
++
++	tasklet_schedule(&re->tx_housekeeping_tasklet);
++}
++
++static irqreturn_t
++ramips_eth_irq(int irq, void *dev)
++{
++	struct raeth_priv *re = netdev_priv(dev);
++	unsigned int status;
++
++	status = ramips_fe_trr(RAETH_REG_FE_INT_STATUS);
++	status &= ramips_fe_trr(RAETH_REG_FE_INT_ENABLE);
++
++	if (!status)
++		return IRQ_NONE;
++
++	ramips_fe_twr(status, RAETH_REG_FE_INT_STATUS);
++
++	if (status & RX_DLY_INT) {
++		ramips_fe_int_disable(RX_DLY_INT);
++		tasklet_schedule(&re->rx_tasklet);
++	}
++
++	if (status & TX_DLY_INT) {
++		ramips_fe_int_disable(TX_DLY_INT);
++		tasklet_schedule(&re->tx_housekeeping_tasklet);
++	}
++
++	raeth_debugfs_update_int_stats(re, status);
++
++	return IRQ_HANDLED;
++}
++
++static int
++ramips_eth_hw_init(struct net_device *dev)
++{
++	struct raeth_priv *re = netdev_priv(dev);
++	int err;
++
++	err = request_irq(dev->irq, ramips_eth_irq, IRQF_DISABLED,
++			  dev_name(re->parent), dev);
++	if (err)
++		return err;
++
++	err = ramips_ring_alloc(re);
++	if (err)
++		goto err_free_irq;
++
++	ramips_ring_setup(re);
++	ramips_hw_set_macaddr(dev->dev_addr);
++
++	ramips_setup_dma(re);
++	ramips_fe_wr((ramips_fe_rr(RAMIPS_FE_GLO_CFG) &
++		~(RAMIPS_US_CYC_CNT_MASK << RAMIPS_US_CYC_CNT_SHIFT)) |
++		((re->sys_freq / RAMIPS_US_CYC_CNT_DIVISOR) << RAMIPS_US_CYC_CNT_SHIFT),
++		RAMIPS_FE_GLO_CFG);
++
++	tasklet_init(&re->tx_housekeeping_tasklet, ramips_eth_tx_housekeeping,
++		     (unsigned long)dev);
++	tasklet_init(&re->rx_tasklet, ramips_eth_rx_hw, (unsigned long)dev);
++
++
++	ramips_fe_twr(RAMIPS_DELAY_INIT, RAETH_REG_DLY_INT_CFG);
++	ramips_fe_twr(TX_DLY_INT | RX_DLY_INT, RAETH_REG_FE_INT_ENABLE);
++	if (soc_is_rt5350()) {
++		ramips_fe_wr(ramips_fe_rr(RT5350_SDM_CFG) &
++			~(RT5350_SDM_ICS_EN | RT5350_SDM_TCS_EN | RT5350_SDM_UCS_EN | 0xffff),
++			RT5350_SDM_CFG);
++	} else {
++		ramips_fe_wr(ramips_fe_rr(RAMIPS_GDMA1_FWD_CFG) &
++			~(RAMIPS_GDM1_ICS_EN | RAMIPS_GDM1_TCS_EN | RAMIPS_GDM1_UCS_EN | 0xffff),
++			RAMIPS_GDMA1_FWD_CFG);
++		ramips_fe_wr(ramips_fe_rr(RAMIPS_CDMA_CSG_CFG) &
++			~(RAMIPS_ICS_GEN_EN | RAMIPS_TCS_GEN_EN | RAMIPS_UCS_GEN_EN),
++			RAMIPS_CDMA_CSG_CFG);
++		ramips_fe_wr(RAMIPS_PSE_FQFC_CFG_INIT, RAMIPS_PSE_FQ_CFG);
++	}
++	ramips_fe_wr(1, RAMIPS_FE_RST_GL);
++	ramips_fe_wr(0, RAMIPS_FE_RST_GL);
++
++	return 0;
++
++err_free_irq:
++	free_irq(dev->irq, dev);
++	return err;
++}
++
++static int
++ramips_eth_open(struct net_device *dev)
++{
++	struct raeth_priv *re = netdev_priv(dev);
++
++	ramips_fe_twr((ramips_fe_trr(RAETH_REG_PDMA_GLO_CFG) & 0xff) |
++		(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN |
++		RAMIPS_TX_DMA_EN | RAMIPS_PDMA_SIZE_4DWORDS),
++		RAETH_REG_PDMA_GLO_CFG);
++	ramips_phy_start(re);
++	netif_start_queue(dev);
++	return 0;
++}
++
++static int
++ramips_eth_stop(struct net_device *dev)
++{
++	struct raeth_priv *re = netdev_priv(dev);
++
++	ramips_fe_twr(ramips_fe_trr(RAETH_REG_PDMA_GLO_CFG) &
++		     ~(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN | RAMIPS_TX_DMA_EN),
++		     RAETH_REG_PDMA_GLO_CFG);
++
++	netif_stop_queue(dev);
++	ramips_phy_stop(re);
++	RADEBUG("ramips_eth: stopped\n");
++	return 0;
++}
++
++static int __init
++ramips_eth_probe(struct net_device *dev)
++{
++	struct raeth_priv *re = netdev_priv(dev);
++	int err;
++
++	BUG_ON(!re->reset_fe);
++	re->reset_fe();
++	net_srandom(jiffies);
++	memcpy(dev->dev_addr, re->mac, ETH_ALEN);
++	of_get_mac_address_mtd(re->of_node, dev->dev_addr);
++	ether_setup(dev);
++	dev->mtu = 1500;
++	dev->watchdog_timeo = TX_TIMEOUT;
++	spin_lock_init(&re->page_lock);
++	spin_lock_init(&re->phy_lock);
++
++	err = ramips_mdio_init(re);
++	if (err)
++		return err;
++
++	err = ramips_phy_connect(re);
++	if (err)
++		goto err_mdio_cleanup;
++
++	err = raeth_debugfs_init(re);
++	if (err)
++		goto err_phy_disconnect;
++
++	err = ramips_eth_hw_init(dev);
++	if (err)
++		goto err_debugfs;
++
++	return 0;
++
++err_debugfs:
++	raeth_debugfs_exit(re);
++err_phy_disconnect:
++	ramips_phy_disconnect(re);
++err_mdio_cleanup:
++	ramips_mdio_cleanup(re);
++	return err;
++}
++
++static void
++ramips_eth_uninit(struct net_device *dev)
++{
++	struct raeth_priv *re = netdev_priv(dev);
++
++	raeth_debugfs_exit(re);
++	ramips_phy_disconnect(re);
++	ramips_mdio_cleanup(re);
++	ramips_fe_twr(0, RAETH_REG_FE_INT_ENABLE);
++	free_irq(dev->irq, dev);
++	tasklet_kill(&re->tx_housekeeping_tasklet);
++	tasklet_kill(&re->rx_tasklet);
++	ramips_ring_cleanup(re);
++	ramips_ring_free(re);
++}
++
++static const struct net_device_ops ramips_eth_netdev_ops = {
++	.ndo_init		= ramips_eth_probe,
++	.ndo_uninit		= ramips_eth_uninit,
++	.ndo_open		= ramips_eth_open,
++	.ndo_stop		= ramips_eth_stop,
++	.ndo_start_xmit		= ramips_eth_hard_start_xmit,
++	.ndo_tx_timeout		= ramips_eth_timeout,
++	.ndo_change_mtu		= eth_change_mtu,
++	.ndo_set_mac_address	= eth_mac_addr,
++	.ndo_validate_addr	= eth_validate_addr,
++};
++
++#ifdef CONFIG_SOC_RT305X
++static void rt305x_fe_reset(void)
++{
++#define RT305X_RESET_FE		BIT(21)
++#define RT305X_RESET_ESW	BIT(23)
++#define SYSC_REG_RESET_CTRL	0x034
++	u32 reset_bits = RT305X_RESET_FE;
++
++	if (soc_is_rt5350())
++		reset_bits |= RT305X_RESET_ESW;
++	rt_sysc_w32(reset_bits, SYSC_REG_RESET_CTRL);
++	rt_sysc_w32(0, SYSC_REG_RESET_CTRL);
++}
++
++struct ramips_soc_data rt3050_data = {
++	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
++	.reset_fe = rt305x_fe_reset,
++	.min_pkt_len = 64,
++};
++
++static const struct of_device_id ralink_eth_match[] = {
++	{ .compatible = "ralink,rt3050-eth", .data = &rt3050_data },
++	{},
++};
++#else
++static void rt3883_fe_reset(void)
++{
++#define RT3883_SYSC_REG_RSTCTRL	0x34
++#define RT3883_RSTCTRL_FE	BIT(21)
++	u32 t;
++
++	t = rt_sysc_r32(RT3883_SYSC_REG_RSTCTRL);
++	t |= RT3883_RSTCTRL_FE;
++	rt_sysc_w32(t , RT3883_SYSC_REG_RSTCTRL);
++
++	t &= ~RT3883_RSTCTRL_FE;
++	rt_sysc_w32(t, RT3883_SYSC_REG_RSTCTRL);
++}
++
++struct ramips_soc_data rt3883_data = {
++	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
++	.reset_fe = rt3883_fe_reset,
++	.min_pkt_len = 64,
++};
++
++static const struct of_device_id ralink_eth_match[] = {
++	{ .compatible = "ralink,rt3883-eth", .data = &rt3883_data },
++	{},
++};
++#endif
++MODULE_DEVICE_TABLE(of, ralink_eth_match);
++
++static int
++ramips_eth_plat_probe(struct platform_device *plat)
++{
++	struct raeth_priv *re;
++	struct resource *res;
++	struct clk *clk;
++	int err;
++	const struct of_device_id *match;
++	const struct ramips_soc_data *soc = NULL;
++
++	match = of_match_device(ralink_eth_match, &plat->dev);
++	if (match)
++		soc = (const struct ramips_soc_data *) match->data;
++
++	if (!soc) {
++		dev_err(&plat->dev, "no platform data specified\n");
++		return -EINVAL;
++	}
++
++	res = platform_get_resource(plat, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&plat->dev, "no memory resource found\n");
++		return -ENXIO;
++	}
++
++	ramips_fe_base = ioremap_nocache(res->start, res->end - res->start + 1);
++	if (!ramips_fe_base)
++		return -ENOMEM;
++
++	ramips_dev = alloc_etherdev(sizeof(struct raeth_priv));
++	if (!ramips_dev) {
++		dev_err(&plat->dev, "alloc_etherdev failed\n");
++		err = -ENOMEM;
++		goto err_unmap;
++	}
++
++	strcpy(ramips_dev->name, "eth%d");
++	ramips_dev->irq = platform_get_irq(plat, 0);
++	if (ramips_dev->irq < 0) {
++		dev_err(&plat->dev, "no IRQ resource found\n");
++		err = -ENXIO;
++		goto err_free_dev;
++	}
++	ramips_dev->addr_len = ETH_ALEN;
++	ramips_dev->base_addr = (unsigned long)ramips_fe_base;
++	ramips_dev->netdev_ops = &ramips_eth_netdev_ops;
++
++	re = netdev_priv(ramips_dev);
++
++	clk = clk_get(&plat->dev, NULL);
++	if (IS_ERR(clk))
++		panic("unable to get SYS clock, err=%ld", PTR_ERR(clk));
++	re->sys_freq = clk_get_rate(clk);
++
++	re->netdev = ramips_dev;
++	re->of_node = plat->dev.of_node;
++	re->parent = &plat->dev;
++	memcpy(re->mac, soc->mac, 6);
++	re->reset_fe = soc->reset_fe;
++	re->min_pkt_len = soc->min_pkt_len;
++
++	err = register_netdev(ramips_dev);
++	if (err) {
++		dev_err(&plat->dev, "error bringing up device\n");
++		goto err_free_dev;
++	}
++
++	netdev_info(ramips_dev, "done loading\n");
++	return 0;
++
++ err_free_dev:
++	kfree(ramips_dev);
++ err_unmap:
++	iounmap(ramips_fe_base);
++	return err;
++}
++
++static int
++ramips_eth_plat_remove(struct platform_device *plat)
++{
++	unregister_netdev(ramips_dev);
++	free_netdev(ramips_dev);
++	RADEBUG("ramips_eth: unloaded\n");
++	return 0;
++}
++
++
++
++static struct platform_driver ramips_eth_driver = {
++	.probe = ramips_eth_plat_probe,
++	.remove = ramips_eth_plat_remove,
++	.driver = {
++		.name = "ramips_eth",
++		.owner = THIS_MODULE,
++		.of_match_table = ralink_eth_match
++	},
++};
++
++static int __init
++ramips_eth_init(void)
++{
++	int ret;
++
++	ret = raeth_debugfs_root_init();
++	if (ret)
++		goto err_out;
++
++	ret = rt305x_esw_init();
++	if (ret)
++		goto err_debugfs_exit;
++
++	ret = platform_driver_register(&ramips_eth_driver);
++	if (ret) {
++		printk(KERN_ERR
++		       "ramips_eth: Error registering platfom driver!\n");
++		goto esw_cleanup;
++	}
++
++	return 0;
++
++esw_cleanup:
++	rt305x_esw_exit();
++err_debugfs_exit:
++	raeth_debugfs_root_exit();
++err_out:
++	return ret;
++}
++
++static void __exit
++ramips_eth_cleanup(void)
++{
++	platform_driver_unregister(&ramips_eth_driver);
++	rt305x_esw_exit();
++	raeth_debugfs_root_exit();
++}
++
++module_init(ramips_eth_init);
++module_exit(ramips_eth_cleanup);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
++MODULE_DESCRIPTION("ethernet driver for ramips boards");

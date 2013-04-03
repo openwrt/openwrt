@@ -1,0 +1,164 @@
+From 45e797ec7555c50775d9ac7fc7a17a544344aa3f Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 21 Mar 2013 17:47:07 +0100
+Subject: [PATCH 105/121] MIPS: extend RT3050 dtsi file
+
+Add some additional properties to the dtsi file for ethernet and wifi.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/dts/rt3050.dtsi |   96 ++++++++++++++++++++++++++++++++------
+ 1 file changed, 81 insertions(+), 15 deletions(-)
+
+diff --git a/arch/mips/ralink/dts/rt3050.dtsi b/arch/mips/ralink/dts/rt3050.dtsi
+index 069d066..5aede8d 100644
+--- a/arch/mips/ralink/dts/rt3050.dtsi
++++ b/arch/mips/ralink/dts/rt3050.dtsi
+@@ -1,7 +1,7 @@
+ / {
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+-	compatible = "ralink,rt3050-soc", "ralink,rt3052-soc";
++	compatible = "ralink,rt3050-soc", "ralink,rt3052-soc", "ralink,rt3350-soc";
+ 
+ 	cpus {
+ 		cpu@0 {
+@@ -23,7 +23,7 @@
+ 	palmbus@10000000 {
+ 		compatible = "palmbus";
+ 		reg = <0x10000000 0x200000>;
+-                ranges = <0x0 0x10000000 0x1FFFFF>;
++		ranges = <0x0 0x10000000 0x1FFFFF>;
+ 
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+@@ -34,8 +34,18 @@
+ 		};
+ 
+ 		timer@100 {
++			compatible = "ralink,rt3052-timer", "ralink,rt2880-timer";
++			reg = <0x100 0x20>;
++
++			interrupt-parent = <&intc>;
++			interrupts = <1>;
++
++			status = "disabled";
++		};
++
++		watchdog@120 {
+ 			compatible = "ralink,rt3052-wdt", "ralink,rt2880-wdt";
+-			reg = <0x100 0x100>;
++			reg = <0x120 0x10>;
+ 		};
+ 
+ 		intc: intc@200 {
+@@ -61,10 +71,12 @@
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 
+-			ralink,ngpio = <24>;
+-			ralink,regs = [ 00 04 08 0c
+-					20 24 28 2c
+-					30 34 ];
++			ralink,num-gpios = <24>;
++			ralink,register-map = [ 00 04 08 0c
++						20 24 28 2c
++						30 34 ];
++
++			status = "disabled";
+ 		};
+ 
+ 		gpio1: gpio@638 {
+@@ -74,10 +86,12 @@
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 
+-			ralink,ngpio = <16>;
+-			ralink,regs = [ 00 04 08 0c
+-					10 14 18 1c
+-					20 24 ];
++			ralink,num-gpios = <16>;
++			ralink,register-map = [ 00 04 08 0c
++						10 14 18 1c
++						20 24 ];
++
++			status = "disabled";
+ 		};
+ 
+ 		gpio2: gpio@660 {
+@@ -87,10 +101,21 @@
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 
+-			ralink,ngpio = <12>;
+-			ralink,regs = [ 00 04 08 0c
+-					10 14 18 1c
+-					20 24 ];
++			ralink,num-gpios = <12>;
++			ralink,register-map = [ 00 04 08 0c
++						10 14 18 1c
++						20 24 ];
++
++			status = "disabled";
++		};
++
++		spi@b00 {
++			compatible = "ralink,rt3050-spi", "ralink,rt2880-spi";
++			reg = <0xb00 0x100>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
+ 		};
+ 
+ 		uartlite@c00 {
+@@ -102,5 +127,46 @@
+ 
+ 			reg-shift = <2>;
+ 		};
++
++	};
++
++	ethernet@10100000 {
++		compatible = "ralink,rt3050-eth";
++		reg = <0x10100000 10000>;
++
++		interrupt-parent = <&cpuintc>;
++		interrupts = <5>;
++
++		status = "disabled";
++	};
++
++	esw@10110000 {
++		compatible = "ralink,rt3050-esw";
++		reg = <0x10110000 8000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <17>;
++
++		status = "disabled";
++	};
++
++	wmac@10180000 {
++		compatible = "ralink,rt3050-wmac", "ralink,rt2880-wmac";
++		reg = <0x10180000 40000>;
++
++		interrupt-parent = <&cpuintc>;
++		interrupts = <6>;
++
++		status = "disabled";
++	};
++
++	otg@101c0000 {
++		compatible = "ralink,rt3050-otg";
++		reg = <0x101c0000 40000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <18>;
++
++		status = "disabled";
+ 	};
+ };
+-- 
+1.7.10.4
+

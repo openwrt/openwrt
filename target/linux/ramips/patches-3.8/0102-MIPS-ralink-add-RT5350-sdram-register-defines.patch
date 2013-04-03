@@ -1,0 +1,35 @@
+From ac2614707be7ddceb0f0b623d55d200f28695d5f Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 25 Mar 2013 11:19:58 +0100
+Subject: [PATCH 102/121] MIPS: ralink: add RT5350 sdram register defines
+
+Add a few missing defines that are needed to make memory detection work on the
+RT5350.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/mach-ralink/rt305x.h |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/mips/include/asm/mach-ralink/rt305x.h b/arch/mips/include/asm/mach-ralink/rt305x.h
+index 7d344f2..4e62cef 100644
+--- a/arch/mips/include/asm/mach-ralink/rt305x.h
++++ b/arch/mips/include/asm/mach-ralink/rt305x.h
+@@ -97,6 +97,14 @@ static inline int soc_is_rt5350(void)
+ #define RT5350_SYSCFG0_CPUCLK_320	0x2
+ #define RT5350_SYSCFG0_CPUCLK_300	0x3
+ 
++#define RT5350_SYSCFG0_DRAM_SIZE_SHIFT  12
++#define RT5350_SYSCFG0_DRAM_SIZE_MASK   7
++#define RT5350_SYSCFG0_DRAM_SIZE_2M     0
++#define RT5350_SYSCFG0_DRAM_SIZE_8M     1
++#define RT5350_SYSCFG0_DRAM_SIZE_16M    2
++#define RT5350_SYSCFG0_DRAM_SIZE_32M    3
++#define RT5350_SYSCFG0_DRAM_SIZE_64M    4
++
+ /* multi function gpio pins */
+ #define RT305X_GPIO_I2C_SD		1
+ #define RT305X_GPIO_I2C_SCLK		2
+-- 
+1.7.10.4
+
