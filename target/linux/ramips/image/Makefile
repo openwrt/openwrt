@@ -203,7 +203,15 @@ define BuildFirmware/UMedia/squashfs
 endef
 BuildFirmware/UMedia/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
 
-
+# sign dap 1350 based images
+dap1350_mtd_size=7667712
+define BuildFirmware/dap1350/squashfs
+	$(call BuildFirmware/CustomFlash/$(1),$(1),$(2),$(3),$(dap1350_mtd_size))
+	-mkdapimg -s $(4) \
+		-i $(call sysupname,$(1),$(2)) \
+		-o $(call imgname,$(1),$(2))-factory.bin
+endef
+BuildFirmware/dap1350/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
 
 #
 # RT288X Profiles
@@ -292,15 +300,9 @@ endef
 BuildFirmware/DIR615H1/initramfs=$(call BuildFirmware/OF/initramfs,$(1),dir-615-h1,DIR-615-H1)
 Image/Build/Profile/DIR615H1=$(call BuildFirmware/DIR615H1/$(1),$(1))
 
-dap1350_mtd_size=7667712
-define BuildFirmware/DAP1350/squashfs
-	$(call BuildFirmware/CustomFlash/$(1),$(1),dap-1350,DAP-1350,$(dap1350_mtd_size))
-	-mkdapimg -s $(4) \
-		-i $(call sysupname,$(1),dap-1350) \
-		-o $(call imgname,$(1),dap-1350)-factory.bin
-endef
-BuildFirmware/DAP1350/initramfs=$(call BuildFirmware/OF/initramfs,$(1),dap-1350,DAP-1350)
-Image/Build/Profile/DAP1350=$(call BuildFirmware/DAP1350/$(1),$(1),)
+Image/Build/Profile/DAP1350=$(call BuildFirmware/dap1350/$(1),$(1),dap-1350,DAP-1350,RT3052-AP-DAP1350-3)
+
+Image/Build/Profile/DAP1350WW=$(call BuildFirmware/dap1350/$(1),$(1),dap-1350WW,DAP-1350,RT3052-AP-DAP1350WW-3)
 
 Image/Build/Profile/ESR-9753=$(call BuildFirmware/Default4M/$(1),$(1),esr-9753,ESR-9753)
 
@@ -419,6 +421,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR-620-A1,$(1))
 	$(call Image/Build/Profile/DIR615H1,$(1))
 	$(call Image/Build/Profile/DAP1350,$(1))
+	$(call Image/Build/Profile/DAP1350WW,$(1))
 	$(call Image/Build/Profile/ESR-9753,$(1))
 	$(call Image/Build/Profile/F5D8235V2,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))
