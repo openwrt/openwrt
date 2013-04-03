@@ -1,0 +1,22 @@
+Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800pci.c
+===================================================================
+--- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/rt2800pci.c	2013-03-31 19:27:59.805818237 +0200
++++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800pci.c	2013-03-31 19:40:07.313835573 +0200
+@@ -322,11 +322,17 @@
+ static char *rt2800pci_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
+ {
+ 	struct rt2x00_platform_data *pdata;
++	struct device_node *np;
++	char *eep;
+ 
+ 	pdata = rt2x00dev->dev->platform_data;
+ 	if (pdata)
+ 		return pdata->eeprom_file_name;
+ 
++	np = rt2x00dev->dev->of_node;
++	if (np && !of_property_read_string(np, "ralink,eeprom", &eep))
++		return eep;
++
+ 	return NULL;
+ }
+ 
