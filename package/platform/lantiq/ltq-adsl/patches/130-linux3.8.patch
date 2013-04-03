@@ -71,15 +71,6 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/common/drv_dsl_cpe_os_linux.c
     /*DSL_DRV_ThreadPriorityModify(pThrCntrl->nPriority);*/
  
     pThrCntrl->thrParams.bRunning = 1;
-@@ -629,7 +606,7 @@
-       if (DSL_DRV_THREAD_INIT_VALID(pThrCntrl) == DSL_FALSE)
-       {
-          /* set thread function arguments */
--         strcpy(pThrCntrl->thrParams.pName, pName);
-+         snprintf(pThrCntrl->thrParams.pName, DSL_DRV_THREAD_NAME_LEN, "adsl - %s", pName);
-          pThrCntrl->nPriority = nPriority;
-          pThrCntrl->thrParams.nArg1 = nArg1;
-          pThrCntrl->thrParams.nArg2 = nArg2;
 @@ -639,9 +616,7 @@
           init_completion(&pThrCntrl->thrCompletion);
  
