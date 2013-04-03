@@ -1,0 +1,88 @@
+/dts-v1/;
+
+/include/ "rt3883.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "TEW-692GR", "ralink,rt3883-soc";
+	model = "TRENDnet TEW-692GR";
+
+	memorydetect {
+		ralink,memory = <0x0 0x200000 0x10000000>;
+	};
+
+	palmbus@10000000 {
+		sysc@0 {
+			ralink,pinmmux = "uartlite", "spi";
+			ralink,gpiomux = "i2c", "jtag";
+			ralink,uartmux = "gpio";
+			ralink,wdtmux = <1>;
+		};
+
+		timer@100 {
+			status = "okay";
+		};
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		gpio1: gpio@638 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l6405d";
+				reg = <0 0>;
+				linux,modalias = "m25p80";
+				spi-max-frequency = <25000000>;
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+		ralink,phy-mask = <0x1>;
+		phy-mode = "rgmii";
+	};
+
+	wmac@10180000 {
+		status = "okay";
+		ralink,5ghz = <0>;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		wps {
+			label = "trendnet:orange:wps";
+			gpios = <&gpio0 9 1>;
+		};
+		wps2 {
+			label = "trendnet:green:wps";
+			gpios = <&gpio1 4 1>;
+		};
+	};
+};

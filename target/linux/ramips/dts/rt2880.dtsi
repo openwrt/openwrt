@@ -1,0 +1,114 @@
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "ralink,rt2880-soc";
+
+	cpus {
+		cpu@0 {
+			compatible = "mips,mips24KEc";
+		};
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600 init=/init";
+	};
+
+	cpuintc: cpuintc@0 {
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-controller;
+		compatible = "mti,cpu-interrupt-controller";
+	};
+
+	palmbus@10000000 {
+		compatible = "palmbus";
+		reg = <0x10000000 0x200000>;
+                ranges = <0x0 0x10000000 0x1FFFFF>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sysc@300000 {
+			compatible = "ralink,rt2880-sysc";
+			reg = <0x300000 0x100>;
+		};
+
+		timer@300100 {
+			compatible = "ralink,rt2880-timer";
+			reg = <0x300100 0x20>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <1>;
+		};
+
+		watchdog@300120 {
+			compatible = "ralink,rt2880-wdt";
+			reg = <0x300120 0x10>;
+		};
+
+		intc: intc@300200 {
+			compatible = "ralink,rt2880-intc";
+			reg = <0x300200 0x100>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpuintc>;
+			interrupts = <2>;
+		};
+
+		memc@300300 {
+			compatible = "ralink,rt2880-memc";
+			reg = <0x300300 0x100>;
+		};
+
+		gpio0: gpio@300600 {
+			compatible = "ralink,rt2880-gpio";
+			reg = <0x300600 0x34>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ralink,num-gpios = <24>;
+			ralink,register-map = [ 00 04 08 0c
+						20 24 28 2c
+						30 34 ];
+		};
+
+		gpio1: gpio@300638 {
+			compatible = "ralink,rt2880-gpio";
+			reg = <0x300638 0x24>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ralink,num-gpios = <16>;
+			ralink,register-map = [ 00 04 08 0c
+						10 14 18 1c
+						20 24 ];
+		};
+
+		gpio2: gpio@300660 {
+			compatible = "ralink,rt2880-gpio";
+			reg = <0x300660 0x24>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ralink,num-gpios = <32>;
+			ralink,register-map = [ 00 04 08 0c
+						10 14 18 1c
+						20 24 ];
+		};
+
+		uartlite@300c00 {
+			compatible = "ralink,rt2880-uart", "ns16550a";
+			reg = <0x300c00 0x100>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <12>;
+
+			reg-shift = <2>;
+		};
+	};
+};

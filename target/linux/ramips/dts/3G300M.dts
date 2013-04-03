@@ -1,0 +1,105 @@
+/dts-v1/;
+
+/include/ "rt3050.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "3G300M", "ralink,rt3052-soc";
+	model = "Tenda 3G300M";
+
+	memorydetect {
+		ralink,memory = <0x0 0x200000 0x4000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600 mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,3776k@0x50000(firmware)";
+	};
+
+	palmbus@10000000 {
+		sysc@0 {
+			ralink,pinmmux = "i2c", "spi", "uartlite", "mdio", "sdram", "rgmii";
+			ralink,gpiommux = "jtag";
+			ralink,uartmux = "gpio";
+			ralink,wdtmux = <1>;
+		};
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l3205d";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "mx25l3205d";
+				spi-max-frequency = <10000000>;
+			};
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		3grouter {
+			label = "tenda:blue:3grouter";
+			gpios = <&gpio0 11 1>;
+		};
+		ap {
+			label = "tenda:blue:ap";
+			gpios = <&gpio0 12 1>;
+		};
+		wisprouter {
+			label = "tenda:blue:wisprouter";
+			gpios = <&gpio0 9 1>;
+		};
+		wirelessrouter {
+			label = "tenda:blue:wirelessrouter";
+			gpios = <&gpio0 13 1>;
+		};
+		3g {
+			label = "tenda:blue:3g";
+			gpios = <&gpio0 7 1>;
+		};
+		wpsreset {
+			label = "tenda:blue:wpsreset";
+			gpios = <&gpio0 14 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		reset {
+			label = "reset";
+			gpios = <&gpio0 0 1>;
+			linux,code = <0x198>;
+		};
+		mode {
+			label = "mode";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x100>;
+		};
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+	};
+
+	esw@10110000 {
+		status = "okay";
+		ralink,portmap = <0x2f>;
+	};
+
+	wmac@10180000 {
+		status = "okay";
+	};
+
+	otg@101c0000 {
+		status = "okay";
+	};
+};

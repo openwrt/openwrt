@@ -1,0 +1,91 @@
+/dts-v1/;
+
+/include/ "rt3050.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "3G-6200N", "ralink,rt3050-soc";
+	model = "Edimax 3g-6200n";
+
+	memorydetect {
+		ralink,memory = <0x0 0x200000 0x4000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600 mtdparts=1f000000.cfi:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,128k@0x3e0000(cimage)ro,3648k@0x50000(firmware)";
+	};
+
+	palmbus@10000000 {
+		sysc@0 {
+			ralink,pinmmux = "i2c", "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
+			ralink,uartmux = "gpio";
+			ralink,wdtmux = <1>;
+		};
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+	};
+
+	cfi@1f000000 {
+		compatible = "cfi-flash";
+		reg = <0x1f000000 0x800000>;
+
+		bank-width = <2>;
+		device-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+	};
+
+	esw@10110000 {
+		status = "okay";
+		ralink,portmap = <0x2f>;
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		power {
+			label = "edimax:green:power";
+			gpios = <&gpio0 9 1>;
+		};
+		wlan {
+			label = "edimax:amber:wlan";
+			gpios = <&gpio0 14 1>;
+		};
+		3g {
+			label = "edimax:blue:3g";
+			gpios = <&gpio0 7 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		wps {
+			label = "wps";
+			gpios = <&gpio0 12 1>;
+			linux,code = <0x211>;
+		};
+		wlanswitch {
+			label = "wlanswitch";
+			gpios = <&gpio0 13 1>;
+			linux,code = <0x100>;
+		};
+	};
+
+	wmac@10180000 {
+		status = "okay";
+	};
+
+	otg@101c0000 {
+		status = "okay";
+	};
+};

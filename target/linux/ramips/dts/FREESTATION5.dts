@@ -1,0 +1,45 @@
+/dts-v1/;
+
+/include/ "rt3050.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "FREESTATION5", "ralink,rt3052-soc";
+	model = "ARC FreeStation5";
+
+	memorydetect {
+		ralink,memory = <0x0 0x200000 0x4000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 mtdparts=1f000000.cfi:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,7872k@0x50000(firmware)";
+	};
+
+	cfi@1f000000 {
+		compatible = "cfi-flash";
+		reg = <0x1f000000 0x800000>;
+
+		bank-width = <2>;
+		device-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+	};
+
+	esw@10110000 {
+		status = "okay";
+		ralink,portmap = <0x3e>;
+	};
+
+	wmac@10180000 {
+		status = "okay";
+	};
+
+	otg@101c0000 {
+		status = "okay";
+	};
+};
