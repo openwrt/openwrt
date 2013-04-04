@@ -1,0 +1,106 @@
+From 339fe73f340161a624cc08e738d2244814852c3e Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 17 Mar 2013 00:55:04 +0100
+Subject: [PATCH] rt2x00: load eeprom on SoC from a mtd device defines inside
+ OF
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/wireless/rt2x00/Kconfig     |    1 +
+ drivers/net/wireless/rt2x00/rt2800pci.c |   44 ++++++++++++++++++++++++++-----
+ 2 files changed, 39 insertions(+), 6 deletions(-)
+
+Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/Kconfig
+===================================================================
+--- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/Kconfig	2013-04-04 14:20:02.621776831 +0200
++++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/Kconfig	2013-04-04 14:20:02.977776837 +0200
+@@ -64,6 +64,7 @@
+ 	select RT2X00_LIB_CRYPTO
+ 	select CRC_CCITT
+ 	select EEPROM_93CX6
++	select MTD if SOC_RT288X || SOC_RT305X
+ 	---help---
+ 	  This adds support for rt27xx/rt28xx/rt30xx wireless chipset family.
+ 	  Supported chips: RT2760, RT2790, RT2860, RT2880, RT2890, RT3052,
+Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2x00eeprom.c
+===================================================================
+--- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/rt2x00eeprom.c	2013-04-04 14:20:02.621776831 +0200
++++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2x00eeprom.c	2013-04-04 15:23:19.601807539 +0200
+@@ -30,12 +30,77 @@
+ #include "rt2x00.h"
+ #include "rt2x00lib.h"
+ 
++#ifdef CONFIG_OF
++#include <linux/of.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++
++static struct firmware mtd_fw;
++
++static int rt2800pci_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
++{
++	struct device_node *np = rt2x00dev->dev->of_node, *mtd_np = NULL;
++	size_t retlen, len = rt2x00dev->ops->eeprom_size;
++	int ret, size, offset = 0;
++	struct mtd_info *mtd;
++	const char *part;
++	const __be32 *list;
++	phandle phandle;
++
++	list = of_get_property(np, "ralink,mtd-eeprom", &size);
++	if (!list) {
++		dev_err(rt2x00dev->dev, "failed to load eeprom property\n");
++		return -ENOENT;
++	}
++
++	phandle = be32_to_cpup(list++);
++	if (phandle)
++		mtd_np = of_find_node_by_phandle(phandle);
++	if (!mtd_np) {
++		dev_err(rt2x00dev->dev, "failed to load mtd phandle\n");
++		return -EINVAL;
++	}
++
++	part = of_get_property(mtd_np, "label", NULL);
++	if (!part)
++		part = mtd_np->name;
++
++	mtd = get_mtd_device_nm(part);
++	if (IS_ERR(mtd)) {
++		dev_err(rt2x00dev->dev, "failed to get mtd device \"%s\"\n", part);
++		return PTR_ERR(mtd);
++	}
++
++	if (size > sizeof(*list))
++		offset = be32_to_cpup(list);
++
++	ret = mtd_read(mtd, offset, len, &retlen, (u_char *) rt2x00dev->eeprom);
++	put_mtd_device(mtd);
++
++	if (!ret) {
++		rt2x00dev->eeprom_file = &mtd_fw;
++		mtd_fw.size = len;
++		mtd_fw.data = rt2x00dev->eeprom;
++	}
++
++	return ret;
++}
++#else
++static inline int rt2800pci_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
++{
++	return -EINVAL;
++}
++#endif
++
+ static int rt2x00lib_request_eeprom_file(struct rt2x00_dev *rt2x00dev)
+ {
+ 	const struct firmware *ee;
+ 	char *ee_name;
+ 	int retval;
+ 
++	if (!rt2800pci_read_eeprom_mtd(rt2x00dev))
++		return 0;
++
+ 	ee_name = rt2x00dev->ops->lib->get_eeprom_file_name(rt2x00dev);
+ 	if (!ee_name) {
+ 		ERROR(rt2x00dev,
