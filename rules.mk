@@ -132,7 +132,7 @@ endif
 LIBRPC=-lrpc
 LIBRPC_DEPENDS=+librpc
 
-ifneq ($(findstring $(ARCH) , mips64 x86_64 ),)
+ifeq ($(CONFIG_ARCH_64BIT),y)
   LIB_SUFFIX:=64
 endif
 
