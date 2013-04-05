@@ -65,6 +65,7 @@ ifneq ($(filter -mips%r2,$(TARGET_OPTIMIZATION)),)
 endif
 ifneq ($(findstring -mips16,$(TARGET_OPTIMIZATION)),)
   TARGET_ASFLAGS_OVERRIDE:=-mno-mips16
+  ARCH_SUFFIX:= $(ARCH_SUFFIX)_m16
 endif
 ifdef CONFIG_HAS_SPE_FPU
   TARGET_SUFFIX:=$(TARGET_SUFFIX)spe
