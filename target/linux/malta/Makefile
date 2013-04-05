@@ -8,7 +8,6 @@ include $(TOPDIR)/rules.mk
 
 BOARD:=malta
 BOARDNAME:=MIPS Malta CoreLV board (qemu)
-CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 SUBTARGETS:=le be
 INITRAMFS_EXTRA_FILES:=
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
