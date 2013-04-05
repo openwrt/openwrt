@@ -124,6 +124,7 @@ define Build/Compile
 		depend
 	$(_SINGLE)$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
+		ASFLAGS="$(TARGET_ASFLAGS) -c" \
 		AR="$(TARGET_CROSS)ar r" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
@@ -131,6 +132,7 @@ define Build/Compile
 		all
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
+		ASFLAGS="$(TARGET_ASFLAGS) -c" \
 		AR="$(TARGET_CROSS)ar r" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
