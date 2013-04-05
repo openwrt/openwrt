@@ -44,6 +44,8 @@ GEN_CONFIG=$(SCRIPT_DIR)/kconfig.pl -n \
 		$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD), \
 			$(if $(CONFIG_HAS_SPE_FPU),$(if $(wildcard $(CONFIG_DIR)/$(ARCH).e500),.e500))))
 
+TARGET_CFLAGS := $(filter-out -mips16,$(TARGET_CFLAGS))
+
 CPU_CFLAGS = \
 	-funsigned-char -fno-builtin -fno-asm \
 	--std=gnu99 -ffunction-sections -fdata-sections \
