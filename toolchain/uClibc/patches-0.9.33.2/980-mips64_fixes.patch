@@ -1,0 +1,25 @@
+diff -Nur uClibc-0.9.33.2.orig/extra/Configs/Config.in uClibc-0.9.33.2/extra/Configs/Config.in
+--- uClibc-0.9.33.2.orig/extra/Configs/Config.in	2012-05-15 09:20:09.000000000 +0200
++++ uClibc-0.9.33.2/extra/Configs/Config.in	2012-10-01 12:17:14.000000000 +0200
+@@ -235,6 +235,9 @@
+ 	default "i486" if CONFIG_486
+ 	default "i586" if CONFIG_586 || CONFIG_586MMX
+ 	default "i686" if TARGET_ARCH = "i386"
++	default "mips" if CONFIG_MIPS_N32_ABI
++	default "mips" if CONFIG_MIPS_O32_ABI
++	default "mips64" if CONFIG_MIPS_N64_ABI
+ 	default ""
+ 
+ source "extra/Configs/Config.in.arch"
+diff -Nur uClibc-0.9.33.2.orig/Rules.mak uClibc-0.9.33.2/Rules.mak
+--- uClibc-0.9.33.2.orig/Rules.mak	2012-05-15 09:20:09.000000000 +0200
++++ uClibc-0.9.33.2/Rules.mak	2012-10-01 11:28:26.000000000 +0200
+@@ -118,7 +118,7 @@
+ LIBC := libc
+ SHARED_LIBNAME := $(LIBC).so.$(ABI_VERSION)
+ UBACKTRACE_DSO := libubacktrace.so.$(ABI_VERSION)
+-ifneq ($(findstring  $(TARGET_ARCH) , hppa64 ia64 mips64 powerpc64 s390x sparc64 x86_64 ),)
++ifneq ($(findstring  $(TARGET_SUBARCH) , hppa64 ia64 mips64 powerpc64 s390x sparc64 x86_64 ),)
+ UCLIBC_LDSO_NAME := ld64-uClibc
+ ARCH_NATIVE_BIT := 64
+ else
