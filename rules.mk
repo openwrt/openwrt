@@ -63,6 +63,9 @@ endif
 ifneq ($(filter -mips%r2,$(TARGET_OPTIMIZATION)),)
   ARCH_SUFFIX:=_r2
 endif
+ifneq ($(findstring -mips16,$(TARGET_OPTIMIZATION)),)
+  TARGET_ASFLAGS_OVERRIDE:=-mno-mips16
+endif
 ifdef CONFIG_HAS_SPE_FPU
   TARGET_SUFFIX:=$(TARGET_SUFFIX)spe
 endif
@@ -111,6 +114,7 @@ PKG_INFO_DIR := $(STAGING_DIR)/pkginfo
 TARGET_PATH:=$(STAGING_DIR_HOST)/bin:$(subst $(space),:,$(filter-out .,$(filter-out ./,$(subst :,$(space),$(PATH)))))
 TARGET_CFLAGS:=$(TARGET_OPTIMIZATION)$(if $(CONFIG_DEBUG), -g3)
 TARGET_CXXFLAGS = $(TARGET_CFLAGS)
+TARGET_ASFLAGS = $(TARGET_CFLAGS) $(TARGET_ASFLAGS_OVERRIDE)
 TARGET_CPPFLAGS:=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
 TARGET_LDFLAGS:=-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
 ifneq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
@@ -211,7 +215,7 @@ endif
 
 TARGET_CONFIGURE_OPTS = \
   AR=$(TARGET_CROSS)ar \
-  AS="$(TARGET_CC) -c $(TARGET_CFLAGS)" \
+  AS="$(TARGET_CC) -c $(TARGET_ASFLAGS)" \
   LD=$(TARGET_CROSS)ld \
   NM=$(TARGET_CROSS)nm \
   CC="$(TARGET_CC)" \
