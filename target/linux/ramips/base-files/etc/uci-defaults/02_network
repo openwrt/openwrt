@@ -46,7 +46,6 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "eth0"
 		;;
 
-	dir-615-h1 | \
 	3g-6200nl | \
 	wl-330n)
 		ucidef_set_interface_lan "eth0.1"
@@ -70,6 +69,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "2" "0 6t"
 		;;
 
+	dir-615-h1 | \
 	mzk-w300nh2)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
