@@ -130,6 +130,25 @@ menuconfig EXTRA_TARGET_ARCH
 		  both powerpc and powerpc64 binaries, you'll need to
 		  specify -m64 here.
 
+
+	choice
+		prompt "MIPS64 user-land ABI" if TOOLCHAINOPTS && (mips64 || mips64el)
+		default MIPS64_ABI_N64
+		help
+		   MIPS64 supports 3 different user-land ABIs: o32 (legacy),
+		   n32 and n64.
+
+		config MIPS64_ABI_N64
+			bool "n64"
+
+		config MIPS64_ABI_N32
+			bool "n32"
+
+		config MIPS64_ABI_O32
+			bool "o32"
+
+	endchoice
+
 comment "Binary tools"
 	depends TOOLCHAINOPTS
 
@@ -218,3 +237,11 @@ config TARGET_SUFFIX
 	default "uclibc"          if USE_UCLIBC && !(arm || armeb)
 	default "muslgnueabi"     if USE_MUSL && (arm || armeb)
 	default "musl"            if USE_MUSL && !(arm || armeb)
+
+config MIPS64_ABI
+	depends mips64 || mips64el
+	string
+	default "64" if MIPS64_ABI_N64
+	default "n32" if MIPS64_ABI_N32
+	default "32" if MIPS64_ABI_O32
+	default "64"

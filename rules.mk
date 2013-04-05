@@ -73,6 +73,11 @@ endif
 ifdef CONFIG_HAS_SPE_FPU
   TARGET_SUFFIX:=$(TARGET_SUFFIX)spe
 endif
+ifdef CONFIG_MIPS64_ABI
+  ifneq ($(CONFIG_MIPS64_ABI_O32),y)
+     ARCH_SUFFIX:=$(ARCH_SUFFIX)_$(subst ",,$(CONFIG_MIPS64_ABI))
+  endif
+endif
 
 DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)
 BIN_DIR:=$(TOPDIR)/bin/$(BOARD)
