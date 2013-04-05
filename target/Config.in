@@ -66,6 +66,10 @@ config PROFILE_KCONFIG
 config NOMMU
 	bool
 
+config HAS_MIPS16
+	depends (mips || mipsel || mips64 || mips64el)
+	bool
+
 # Architecture selection
 
 config arm
