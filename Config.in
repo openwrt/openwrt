@@ -681,6 +681,17 @@ menuconfig TARGET_OPTIONS
 
 		  Most people will answer N.
 
+	config USE_MIPS16
+		bool "Build packages with MIPS16 instructions" if TARGET_OPTIONS
+		depends on HAS_MIPS16
+		help
+		   If your target CPU does support the MIPS16 instruction set
+		   and you want to use it for packages, enable this option.
+		   MIPS16 produces smaller binaries thus reducing pressure on
+		   caches and TLB.
+
+		   Most people will answer N.
+
 source "toolchain/Config.in"
 
 source "target/imagebuilder/Config.in"

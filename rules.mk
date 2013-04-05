@@ -63,6 +63,9 @@ endif
 ifneq ($(filter -mips%r2,$(TARGET_OPTIMIZATION)),)
   ARCH_SUFFIX:=_r2
 endif
+ifdef CONFIG_USE_MIPS16
+   TARGET_OPTIMIZATION+= -minterlink-mips16 -mips16
+endif
 ifneq ($(findstring -mips16,$(TARGET_OPTIMIZATION)),)
   TARGET_ASFLAGS_OVERRIDE:=-mno-mips16
   ARCH_SUFFIX:= $(ARCH_SUFFIX)_m16
