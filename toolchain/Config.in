@@ -177,6 +177,7 @@ choice
 
 	config USE_MUSL
 		bool "Use musl"
+		depends !(mips64 || mips64el)
 
 endchoice
 
