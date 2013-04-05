@@ -70,6 +70,9 @@ config HAS_MIPS16
 	depends (mips || mipsel || mips64 || mips64el)
 	bool
 
+config ARCH_64BIT
+	bool
+
 # Architecture selection
 
 config arm
@@ -104,9 +107,11 @@ config mipsel
 
 config mips64
 	select BIG_ENDIAN
+	select ARCH_64BIT
 	bool
 
 config mips64el
+	select ARCH_64BIT
 	bool
 
 config powerpc
@@ -115,6 +120,7 @@ config powerpc
 
 config powerpc64
 	select BIG_ENDIAN
+	select ARCH_64BIT
 	bool
 
 config sh3
@@ -136,6 +142,7 @@ config sparc
 	bool
 
 config x86_64
+	select ARCH_64BIT
 	bool
 
 config ARCH
