@@ -8,7 +8,7 @@
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/board.c
-@@ -0,0 +1,220 @@
+@@ -0,0 +1,222 @@
 +#include <linux/export.h>
 +#include <linux/string.h>
 +#include <bcm47xx_board.h>
@@ -209,8 +209,10 @@
 +	if (bcm47xx_board != NULL)
 +		return;
 +	/* check if the nvram is available */
-+	if (bcm47xx_nvram_getenv("boardtype", buf, sizeof(buf)) == -ENXIO)
++	if (bcm47xx_nvram_getenv("boardtype", buf, sizeof(buf)) == -ENXIO) {
++		bcm47xx_board = bcm47xx_board_unknown;
 +		return;
++	}
 +
 +	bcm47xx_board = bcm47xx_board_get_nvram();
 +	pr_info("Found board: \"%s\"\n", bcm47xx_board->name);
