@@ -1736,7 +1736,7 @@ static void rtl8367_shutdown(struct platform_device *pdev)
 
 #ifdef CONFIG_OF
 static const struct of_device_id rtl8367_match[] = {
-       { .compatible = "rtl8367" },
+       { .compatible = "realtek,rtl8367" },
        {},
 };
 MODULE_DEVICE_TABLE(of, rtl83767_match);
