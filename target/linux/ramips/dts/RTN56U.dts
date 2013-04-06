@@ -31,47 +31,6 @@
 		gpio1: gpio@638 {
 			status = "okay";
 		};
-
-		spi@b00 {
-			status = "okay";
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "mx25l6405d";
-				reg = <0 0>;
-				linux,modalias = "m25p80";
-				spi-max-frequency = <25000000>;
-				partition@0 {
-					label = "uboot";
-					reg = <0x0 0x30000>;
-					read-only;
-				};
-				partition@30000 {
-					label = "uboot-env";
-					reg = <0x30000 0x4000>;
-					read-only;
-				};
-				factory: partition@34000 {
-					label = "factory";
-					reg = <0x34000 0x4000>;
-					read-only;
-				};
-				partition@38000 {
-					label = "nvram";
-					reg = <0x38000 0x8000>;
-					read-only;
-				};
-				partition@40000 {
-					label = "devdata";
-					reg = <0x40000 0x10000>;
-				};
-				partition@50000 {
-					label = "firmware";
-					reg = <0x50000 0x7b0000>;
-				};
-			};
-		};
 	};
 
 	ethernet@10100000 {
@@ -119,7 +78,7 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		
+
 		power {
 			label = "asus:blue:power";
 			gpios = <&gpio0 0 1>;
