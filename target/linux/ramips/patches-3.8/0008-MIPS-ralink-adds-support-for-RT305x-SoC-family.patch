@@ -17,9 +17,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4896/
  create mode 100644 arch/mips/include/asm/mach-ralink/rt305x.h
  create mode 100644 arch/mips/ralink/rt305x.c
 
-diff --git a/arch/mips/include/asm/mach-ralink/rt305x.h b/arch/mips/include/asm/mach-ralink/rt305x.h
-new file mode 100644
-index 0000000..7d344f2
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/rt305x.h
 @@ -0,0 +1,139 @@
@@ -162,9 +159,6 @@ index 0000000..7d344f2
 +#define RT305X_GPIO_MODE_RGMII		BIT(9)
 +
 +#endif
-diff --git a/arch/mips/ralink/rt305x.c b/arch/mips/ralink/rt305x.c
-new file mode 100644
-index 0000000..0a4bbdc
 --- /dev/null
 +++ b/arch/mips/ralink/rt305x.c
 @@ -0,0 +1,242 @@
@@ -410,6 +404,3 @@ index 0000000..0a4bbdc
 +		(id >> CHIP_ID_ID_SHIFT) & CHIP_ID_ID_MASK,
 +		(id & CHIP_ID_REV_MASK));
 +}
--- 
-1.7.10.4
-

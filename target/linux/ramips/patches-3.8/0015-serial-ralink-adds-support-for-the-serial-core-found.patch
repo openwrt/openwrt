@@ -15,11 +15,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  include/linux/serial_core.h     |    2 +-
  3 files changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/tty/serial/8250/8250.c b/drivers/tty/serial/8250/8250.c
-index 24939ca..0efc815 100644
 --- a/drivers/tty/serial/8250/8250.c
 +++ b/drivers/tty/serial/8250/8250.c
-@@ -317,9 +317,9 @@ static void default_serial_dl_write(struct uart_8250_port *up, int value)
+@@ -345,9 +345,9 @@ static void default_serial_dl_write(stru
  	serial_out(up, UART_DLM, value >> 8 & 0xff);
  }
  
@@ -31,20 +29,18 @@ index 24939ca..0efc815 100644
  static const u8 au_io_in_map[] = {
  	[UART_RX]  = 0,
  	[UART_IER] = 2,
-@@ -440,7 +440,7 @@ static void set_io_from_upio(struct uart_port *p)
- 		p->serial_out = mem32_serial_out;
+@@ -527,7 +527,7 @@ static void set_io_from_upio(struct uart
  		break;
+ #endif
  
 -#ifdef CONFIG_MIPS_ALCHEMY
 +#if defined(CONFIG_MIPS_ALCHEMY) || defined(CONFIG_SERIAL_8250_RT288X)
  	case UPIO_AU:
  		p->serial_in = au_serial_in;
  		p->serial_out = au_serial_out;
-diff --git a/drivers/tty/serial/8250/Kconfig b/drivers/tty/serial/8250/Kconfig
-index d31f4c6..2ef9537 100644
 --- a/drivers/tty/serial/8250/Kconfig
 +++ b/drivers/tty/serial/8250/Kconfig
-@@ -276,3 +276,11 @@ config SERIAL_8250_EM
+@@ -277,3 +277,11 @@ config SERIAL_8250_EM
  	  Selecting this option will add support for the integrated serial
  	  port hardware found on the Emma Mobile line of processors.
  	  If unsure, say N.
@@ -56,8 +52,6 @@ index d31f4c6..2ef9537 100644
 +	  If you have a Ralink RT288x/RT305x SoC based board and want to use the
 +	  serial port, say Y to this option. The driver can handle up to 2 serial
 +	  ports. If unsure, say N.
-diff --git a/include/linux/serial_core.h b/include/linux/serial_core.h
-index 82aebc8..d971421 100644
 --- a/include/linux/serial_core.h
 +++ b/include/linux/serial_core.h
 @@ -134,7 +134,7 @@ struct uart_port {
@@ -67,8 +61,5 @@ index 82aebc8..d971421 100644
 -#define UPIO_AU			(4)			/* Au1x00 type IO */
 +#define UPIO_AU			(4)			/* Au1x00 and RT288x type IO */
  #define UPIO_TSI		(5)			/* Tsi108/109 type IO */
+ #define UPIO_RM9000		(6)			/* RM9000 type IO */
  
- 	unsigned int		read_status_mask;	/* driver specific */
--- 
-1.7.10.4
-

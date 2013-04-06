@@ -17,8 +17,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 126 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/ralink/memory.c
 
-diff --git a/arch/mips/include/asm/prom.h b/arch/mips/include/asm/prom.h
-index a4ad354..91e83e3 100644
 --- a/arch/mips/include/asm/prom.h
 +++ b/arch/mips/include/asm/prom.h
 @@ -20,6 +20,9 @@
@@ -31,11 +29,9 @@ index a4ad354..91e83e3 100644
  extern void device_tree_init(void);
  
  static inline unsigned long pci_address_to_pio(phys_addr_t address)
-diff --git a/arch/mips/kernel/prom.c b/arch/mips/kernel/prom.c
-index 1aa68a2..feac917 100644
 --- a/arch/mips/kernel/prom.c
 +++ b/arch/mips/kernel/prom.c
-@@ -88,6 +88,9 @@ void __init early_init_devtree(void *params)
+@@ -88,6 +88,9 @@ void __init early_init_devtree(void *par
  	of_scan_flat_dt(early_init_dt_scan_memory_arch, NULL);
  
  	/* try to load the mips machine name */
@@ -45,8 +41,6 @@ index 1aa68a2..feac917 100644
  	of_scan_flat_dt(early_init_dt_scan_model, NULL);
  }
  
-diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
-index 9e58aa1..800f98b 100644
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
 @@ -6,7 +6,7 @@
@@ -58,9 +52,6 @@ index 9e58aa1..800f98b 100644
  
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o rt305x-usb.o
-diff --git a/arch/mips/ralink/memory.c b/arch/mips/ralink/memory.c
-new file mode 100644
-index 0000000..54da31d
 --- /dev/null
 +++ b/arch/mips/ralink/memory.c
 @@ -0,0 +1,119 @@
@@ -183,6 +174,3 @@ index 0000000..54da31d
 +
 +	return 0;
 +}
--- 
-1.7.10.4
-

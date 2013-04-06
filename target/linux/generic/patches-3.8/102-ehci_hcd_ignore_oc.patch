@@ -20,7 +20,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -630,7 +630,7 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -631,7 +631,7 @@ static int ehci_run (struct usb_hcd *hcd
  		"USB %x.%x started, EHCI %x.%02x%s\n",
  		((ehci->sbrn & 0xf0)>>4), (ehci->sbrn & 0x0f),
  		temp >> 8, temp & 0xff,

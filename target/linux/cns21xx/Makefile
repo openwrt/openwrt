@@ -12,7 +12,7 @@ BOARDNAME:=Cavium Networks Econa CNS21xx
 FEATURES:=squashfs
 CFLAGS:=-Os -pipe -march=armv4 -mtune=fa526 -fno-caller-saves
 
-LINUX_VERSION:=3.8.3
+LINUX_VERSION:=3.8.6
 
 include $(INCLUDE_DIR)/target.mk
 

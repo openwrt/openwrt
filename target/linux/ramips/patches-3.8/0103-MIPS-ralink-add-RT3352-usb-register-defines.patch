@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/include/asm/mach-ralink/rt305x.h |   11 +++++++++++
  1 file changed, 11 insertions(+)
 
-Index: linux-3.8.3/arch/mips/include/asm/mach-ralink/rt305x.h
-===================================================================
---- linux-3.8.3.orig/arch/mips/include/asm/mach-ralink/rt305x.h	2013-04-02 13:30:35.601424833 +0200
-+++ linux-3.8.3/arch/mips/include/asm/mach-ralink/rt305x.h	2013-04-02 13:39:37.721437754 +0200
-@@ -144,4 +144,18 @@
+--- a/arch/mips/include/asm/mach-ralink/rt305x.h
++++ b/arch/mips/include/asm/mach-ralink/rt305x.h
+@@ -144,4 +144,18 @@ static inline int soc_is_rt5350(void)
  #define RT305X_GPIO_MODE_SDRAM		BIT(8)
  #define RT305X_GPIO_MODE_RGMII		BIT(9)
  

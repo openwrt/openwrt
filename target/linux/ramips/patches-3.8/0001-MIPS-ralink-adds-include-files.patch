@@ -17,9 +17,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4893/
  create mode 100644 arch/mips/include/asm/mach-ralink/war.h
  create mode 100644 arch/mips/ralink/common.h
 
-diff --git a/arch/mips/include/asm/mach-ralink/ralink_regs.h b/arch/mips/include/asm/mach-ralink/ralink_regs.h
-new file mode 100644
-index 0000000..5a508f9
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/ralink_regs.h
 @@ -0,0 +1,39 @@
@@ -62,9 +59,6 @@ index 0000000..5a508f9
 +}
 +
 +#endif /* _RALINK_REGS_H_ */
-diff --git a/arch/mips/include/asm/mach-ralink/war.h b/arch/mips/include/asm/mach-ralink/war.h
-new file mode 100644
-index 0000000..a7b712c
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/war.h
 @@ -0,0 +1,25 @@
@@ -93,9 +87,6 @@ index 0000000..a7b712c
 +#define MIPS34K_MISSED_ITLB_WAR		0
 +
 +#endif /* __ASM_MACH_RALINK_WAR_H */
-diff --git a/arch/mips/ralink/common.h b/arch/mips/ralink/common.h
-new file mode 100644
-index 0000000..3009903
 --- /dev/null
 +++ b/arch/mips/ralink/common.h
 @@ -0,0 +1,44 @@
@@ -143,6 +134,3 @@ index 0000000..3009903
 +__iomem void *plat_of_remap_node(const char *node);
 +
 +#endif /* _RALINK_COMMON_H__ */
--- 
-1.7.10.4
-

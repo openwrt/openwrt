@@ -17,8 +17,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/dts/rt3883.dtsi
  create mode 100644 arch/mips/ralink/dts/rt3883_eval.dts
 
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index f21cbaa..2ef69ee 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -39,6 +39,10 @@ choice
@@ -32,17 +30,12 @@ index f21cbaa..2ef69ee 100644
  endchoice
  
  endif
-diff --git a/arch/mips/ralink/dts/Makefile b/arch/mips/ralink/dts/Makefile
-index f635a01..040a986 100644
 --- a/arch/mips/ralink/dts/Makefile
 +++ b/arch/mips/ralink/dts/Makefile
 @@ -1,2 +1,3 @@
  obj-$(CONFIG_DTB_RT2880_EVAL) := rt2880_eval.dtb.o
  obj-$(CONFIG_DTB_RT305X_EVAL) := rt3052_eval.dtb.o
 +obj-$(CONFIG_DTB_RT3883_EVAL) := rt3883_eval.dtb.o
-diff --git a/arch/mips/ralink/dts/rt3883.dtsi b/arch/mips/ralink/dts/rt3883.dtsi
-new file mode 100644
-index 0000000..1e80ad3
 --- /dev/null
 +++ b/arch/mips/ralink/dts/rt3883.dtsi
 @@ -0,0 +1,186 @@
@@ -232,9 +225,6 @@ index 0000000..1e80ad3
 +		status = "disabled";
 +	};
 +};
-diff --git a/arch/mips/ralink/dts/rt3883_eval.dts b/arch/mips/ralink/dts/rt3883_eval.dts
-new file mode 100644
-index 0000000..d4c06ed
 --- /dev/null
 +++ b/arch/mips/ralink/dts/rt3883_eval.dts
 @@ -0,0 +1,52 @@
@@ -290,6 +280,3 @@ index 0000000..d4c06ed
 +		};
 +	};
 +};
--- 
-1.7.10.4
-

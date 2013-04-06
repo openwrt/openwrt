@@ -173,7 +173,7 @@
  		goto err;
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4578,9 +4578,11 @@ static int __net_init dev_proc_net_init(
+@@ -4584,9 +4584,11 @@ static int __net_init dev_proc_net_init(
  
  	if (!proc_net_fops_create(net, "dev", S_IRUGO, &dev_seq_fops))
  		goto out;
@@ -187,7 +187,7 @@
  		goto out_softnet;
  
  	if (wext_proc_init(net))
-@@ -4589,9 +4591,11 @@ static int __net_init dev_proc_net_init(
+@@ -4595,9 +4597,11 @@ static int __net_init dev_proc_net_init(
  out:
  	return rc;
  out_ptype:
@@ -201,7 +201,7 @@
  out_dev:
  	proc_net_remove(net, "dev");
  	goto out;
-@@ -4601,8 +4605,10 @@ static void __net_exit dev_proc_net_exit
+@@ -4607,8 +4611,10 @@ static void __net_exit dev_proc_net_exit
  {
  	wext_proc_exit(net);
  

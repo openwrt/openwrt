@@ -13,7 +13,7 @@ CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=8540
 FEATURES:=spe_fpu squashfs
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.8.3
+LINUX_VERSION:=3.8.6
 
 include $(INCLUDE_DIR)/target.mk
 
