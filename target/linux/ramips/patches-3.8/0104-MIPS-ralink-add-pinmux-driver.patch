@@ -111,7 +111,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		}
 +	}
 +
-+	of_property_for_each_string(np, "ralink,pinmmux", prop, pin) {
++	of_property_for_each_string(np, "ralink,pinmux", prop, pin) {
 +		int m = ralink_mux_mask(pin, rt_pinmux.mode);
 +		if (m) {
 +			mode &= ~m;
