@@ -1739,7 +1739,7 @@ static const struct of_device_id rtl8367_match[] = {
        { .compatible = "realtek,rtl8367" },
        {},
 };
-MODULE_DEVICE_TABLE(of, rtl83767_match);
+MODULE_DEVICE_TABLE(of, rtl8367_match);
 #endif
 
 static struct platform_driver rtl8367_driver = {
