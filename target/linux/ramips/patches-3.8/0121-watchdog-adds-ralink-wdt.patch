@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 359 insertions(+)
  create mode 100644 drivers/watchdog/ralink_wdt.c
 
-diff --git a/drivers/watchdog/Kconfig b/drivers/watchdog/Kconfig
-index 9fcc70c..c4b508e 100644
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1104,6 +1104,12 @@ config LANTIQ_WDT
+@@ -1077,6 +1077,12 @@ config LANTIQ_WDT
  	help
  	  Hardware driver for the Lantiq SoC Watchdog Timer.
  
@@ -30,11 +28,9 @@ index 9fcc70c..c4b508e 100644
  # PARISC Architecture
  
  # POWERPC Architecture
-diff --git a/drivers/watchdog/Makefile b/drivers/watchdog/Makefile
-index a300b94..3a8ad6a 100644
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -134,6 +134,7 @@ obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
+@@ -132,6 +132,7 @@ obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
  obj-$(CONFIG_OCTEON_WDT) += octeon-wdt.o
  octeon-wdt-y := octeon-wdt-main.o octeon-wdt-nmi.o
  obj-$(CONFIG_LANTIQ_WDT) += lantiq_wdt.o
@@ -42,9 +38,6 @@ index a300b94..3a8ad6a 100644
  
  # PARISC Architecture
  
-diff --git a/drivers/watchdog/ralink_wdt.c b/drivers/watchdog/ralink_wdt.c
-new file mode 100644
-index 0000000..8a8dc76
 --- /dev/null
 +++ b/drivers/watchdog/ralink_wdt.c
 @@ -0,0 +1,352 @@
@@ -400,6 +393,3 @@ index 0000000..8a8dc76
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:" DRIVER_NAME);
 +MODULE_ALIAS_MISCDEV(WATCHDOG_MINOR);
--- 
-1.7.10.4
-

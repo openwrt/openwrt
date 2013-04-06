@@ -16,8 +16,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/dts/rt2880.dtsi
  create mode 100644 arch/mips/ralink/dts/rt2880_eval.dts
 
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index 6723b94..0d312fc 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -26,6 +26,10 @@ choice
@@ -31,16 +29,11 @@ index 6723b94..0d312fc 100644
  	config DTB_RT305X_EVAL
  		bool "RT305x eval kit"
  		depends on SOC_RT305X
-diff --git a/arch/mips/ralink/dts/Makefile b/arch/mips/ralink/dts/Makefile
-index 1a69fb3..f635a01 100644
 --- a/arch/mips/ralink/dts/Makefile
 +++ b/arch/mips/ralink/dts/Makefile
 @@ -1 +1,2 @@
 +obj-$(CONFIG_DTB_RT2880_EVAL) := rt2880_eval.dtb.o
  obj-$(CONFIG_DTB_RT305X_EVAL) := rt3052_eval.dtb.o
-diff --git a/arch/mips/ralink/dts/rt2880.dtsi b/arch/mips/ralink/dts/rt2880.dtsi
-new file mode 100644
-index 0000000..b51c227
 --- /dev/null
 +++ b/arch/mips/ralink/dts/rt2880.dtsi
 @@ -0,0 +1,116 @@
@@ -160,9 +153,6 @@ index 0000000..b51c227
 +		};
 +	};
 +};
-diff --git a/arch/mips/ralink/dts/rt2880_eval.dts b/arch/mips/ralink/dts/rt2880_eval.dts
-new file mode 100644
-index 0000000..7c74e16
 --- /dev/null
 +++ b/arch/mips/ralink/dts/rt2880_eval.dts
 @@ -0,0 +1,52 @@
@@ -218,6 +208,3 @@ index 0000000..7c74e16
 +		};
 +	};
 +};
--- 
-1.7.10.4
-

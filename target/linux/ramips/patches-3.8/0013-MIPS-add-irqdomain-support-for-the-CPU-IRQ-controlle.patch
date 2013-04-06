@@ -15,8 +15,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4902/
  arch/mips/kernel/irq_cpu.c      |   42 +++++++++++++++++++++++++++++++++++++++
  2 files changed, 48 insertions(+)
 
-diff --git a/arch/mips/include/asm/irq_cpu.h b/arch/mips/include/asm/irq_cpu.h
-index ef6a07c..3f11fdb 100644
 --- a/arch/mips/include/asm/irq_cpu.h
 +++ b/arch/mips/include/asm/irq_cpu.h
 @@ -17,4 +17,10 @@ extern void mips_cpu_irq_init(void);
@@ -30,8 +28,6 @@ index ef6a07c..3f11fdb 100644
 +#endif
 +
  #endif /* _ASM_IRQ_CPU_H */
-diff --git a/arch/mips/kernel/irq_cpu.c b/arch/mips/kernel/irq_cpu.c
-index 972263b..49bc9ca 100644
 --- a/arch/mips/kernel/irq_cpu.c
 +++ b/arch/mips/kernel/irq_cpu.c
 @@ -31,6 +31,7 @@
@@ -87,6 +83,3 @@ index 972263b..49bc9ca 100644
 +	return 0;
 +}
 +#endif /* CONFIG_IRQ_DOMAIN */
--- 
-1.7.10.4
-

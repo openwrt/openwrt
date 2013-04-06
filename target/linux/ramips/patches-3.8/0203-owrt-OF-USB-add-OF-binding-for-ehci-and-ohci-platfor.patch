@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/usb/host/ohci-platform.c |    7 +++++++
  2 files changed, 14 insertions(+)
 
-diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
-index ca75063..fdddce1 100644
 --- a/drivers/usb/host/ehci-platform.c
 +++ b/drivers/usb/host/ehci-platform.c
-@@ -183,6 +183,12 @@ static int ehci_platform_resume(struct device *dev)
+@@ -183,6 +183,12 @@ static int ehci_platform_resume(struct d
  #define ehci_platform_resume	NULL
  #endif /* CONFIG_PM */
  
@@ -29,7 +27,7 @@ index ca75063..fdddce1 100644
  static const struct platform_device_id ehci_platform_table[] = {
  	{ "ehci-platform", 0 },
  	{ }
-@@ -203,6 +209,7 @@ static struct platform_driver ehci_platform_driver = {
+@@ -203,6 +209,7 @@ static struct platform_driver ehci_platf
  		.owner	= THIS_MODULE,
  		.name	= "ehci-platform",
  		.pm	= &ehci_platform_pm_ops,
@@ -37,11 +35,9 @@ index ca75063..fdddce1 100644
  	}
  };
  
-diff --git a/drivers/usb/host/ohci-platform.c b/drivers/usb/host/ohci-platform.c
-index c3e7287..6d7d30b 100644
 --- a/drivers/usb/host/ohci-platform.c
 +++ b/drivers/usb/host/ohci-platform.c
-@@ -201,6 +201,12 @@ static int ohci_platform_resume(struct device *dev)
+@@ -200,6 +200,12 @@ static int ohci_platform_resume(struct d
  #define ohci_platform_resume	NULL
  #endif /* CONFIG_PM */
  
@@ -54,13 +50,10 @@ index c3e7287..6d7d30b 100644
  static const struct platform_device_id ohci_platform_table[] = {
  	{ "ohci-platform", 0 },
  	{ }
-@@ -221,5 +227,6 @@ static struct platform_driver ohci_platform_driver = {
+@@ -220,5 +226,6 @@ static struct platform_driver ohci_platf
  		.owner	= THIS_MODULE,
  		.name	= "ohci-platform",
  		.pm	= &ohci_platform_pm_ops,
 +		.of_match_table = ohci_match_table,
  	}
  };
--- 
-1.7.10.4
-

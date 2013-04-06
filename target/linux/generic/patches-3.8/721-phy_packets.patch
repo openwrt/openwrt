@@ -34,7 +34,7 @@
  #define IF_GET_IFACE	0x0001		/* for querying only */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -1752,6 +1752,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -1757,6 +1757,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -45,7 +45,7 @@
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -1854,16 +1858,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -1859,16 +1863,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  
@@ -79,7 +79,7 @@
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -2361,9 +2361,19 @@ int dev_hard_start_xmit(struct sk_buff *
+@@ -2360,9 +2360,19 @@ int dev_hard_start_xmit(struct sk_buff *
  		if (!list_empty(&ptype_all))
  			dev_queue_xmit_nit(skb, dev);
  
@@ -102,7 +102,7 @@
  		if (rc == NETDEV_TX_OK)
  			txq_trans_update(txq);
  		return rc;
-@@ -2386,9 +2396,19 @@ gso:
+@@ -2385,9 +2395,19 @@ gso:
  		if (!list_empty(&ptype_all))
  			dev_queue_xmit_nit(nskb, dev);
  

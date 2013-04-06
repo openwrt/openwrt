@@ -10,11 +10,9 @@ Subject: [PATCH 19/25] owrt mtd split
  drivers/mtd/mtdpart.c                              |  173 +++++++++++++++++++-
  4 files changed, 184 insertions(+), 1 deletions(-)
 
-Index: linux-3.9-rc4/drivers/mtd/Kconfig
-===================================================================
---- linux-3.9-rc4.orig/drivers/mtd/Kconfig	2013-03-27 09:26:32.005789709 +0100
-+++ linux-3.9-rc4/drivers/mtd/Kconfig	2013-03-27 09:26:35.669789796 +0100
-@@ -31,6 +31,10 @@
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -31,6 +31,10 @@ config MTD_ROOTFS_SPLIT
  	bool "Automatically split 'rootfs' partition for squashfs"
  	default y
  
@@ -25,11 +23,9 @@ Index: linux-3.9-rc4/drivers/mtd/Kconfig
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	---help---
-Index: linux-3.9-rc4/drivers/mtd/mtdpart.c
-===================================================================
---- linux-3.9-rc4.orig/drivers/mtd/mtdpart.c	2013-03-27 09:26:32.281789715 +0100
-+++ linux-3.9-rc4/drivers/mtd/mtdpart.c	2013-03-27 17:20:12.874466937 +0100
-@@ -844,6 +844,99 @@
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -844,6 +844,99 @@ static int refresh_rootfs_split(struct m
  }
  #endif /* CONFIG_MTD_ROOTFS_SPLIT */
  
@@ -129,7 +125,7 @@ Index: linux-3.9-rc4/drivers/mtd/mtdpart.c
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -860,7 +953,7 @@
+@@ -860,7 +953,7 @@ int add_mtd_partitions(struct mtd_info *
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
  	int i;
@@ -138,7 +134,7 @@ Index: linux-3.9-rc4/drivers/mtd/mtdpart.c
  	int ret;
  #endif
  
-@@ -877,6 +970,14 @@
+@@ -877,6 +970,14 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  

@@ -18,9 +18,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/include/asm/mach-ralink/mt7620.h
  create mode 100644 arch/mips/ralink/mt7620.c
 
-diff --git a/arch/mips/include/asm/mach-ralink/mt7620.h b/arch/mips/include/asm/mach-ralink/mt7620.h
-new file mode 100644
-index 0000000..3d51235
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/mt7620.h
 @@ -0,0 +1,66 @@
@@ -90,8 +87,6 @@ index 0000000..3d51235
 +#define MT7620_GPIO_MODE_WDT		BIT(22)
 +
 +#endif
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index 2ef69ee..493411f 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -20,6 +20,9 @@ choice
@@ -104,11 +99,9 @@ index 2ef69ee..493411f 100644
  endchoice
  
  choice
-diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
-index 87f6ca9..341b4de 100644
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
-@@ -11,6 +11,7 @@ obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o
+@@ -11,6 +11,7 @@ obj-y := prom.o of.o reset.o clk.o irq.o
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
  obj-$(CONFIG_SOC_RT3883) += rt3883.o
@@ -116,11 +109,9 @@ index 87f6ca9..341b4de 100644
  
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
-diff --git a/arch/mips/ralink/Platform b/arch/mips/ralink/Platform
-index f67c08d..b2cbf16 100644
 --- a/arch/mips/ralink/Platform
 +++ b/arch/mips/ralink/Platform
-@@ -18,3 +18,8 @@ load-$(CONFIG_SOC_RT305X)	+= 0xffffffff80000000
+@@ -18,3 +18,8 @@ load-$(CONFIG_SOC_RT305X)	+= 0xffffffff8
  # Ralink RT3883
  #
  load-$(CONFIG_SOC_RT3883)	+= 0xffffffff80000000
@@ -129,9 +120,6 @@ index f67c08d..b2cbf16 100644
 +# Ralink MT7620
 +#
 +load-$(CONFIG_SOC_MT7620)	+= 0xffffffff80000000
-diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
-new file mode 100644
-index 0000000..9d0dc8b
 --- /dev/null
 +++ b/arch/mips/ralink/mt7620.c
 @@ -0,0 +1,215 @@
@@ -350,6 +338,3 @@ index 0000000..9d0dc8b
 +		(rev >> CHIP_REV_VER_SHIFT) & CHIP_REV_VER_MASK,
 +		(rev & CHIP_REV_ECO_MASK));
 +}
--- 
-1.7.10.4
-

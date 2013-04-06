@@ -319,7 +319,7 @@
  		goto out;
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1417,6 +1417,24 @@ void drop_collected_mounts(struct vfsmou
+@@ -1421,6 +1421,24 @@ void drop_collected_mounts(struct vfsmou
  	release_mounts(&umount_list);
  }
  
@@ -3163,7 +3163,7 @@
  static inline bool execute_ok(struct inode *inode)
 --- a/include/linux/mount.h
 +++ b/include/linux/mount.h
-@@ -66,6 +66,9 @@ extern void mnt_pin(struct vfsmount *mnt
+@@ -68,6 +68,9 @@ extern void mnt_pin(struct vfsmount *mnt
  extern void mnt_unpin(struct vfsmount *mnt);
  extern int __mnt_is_readonly(struct vfsmount *mnt);
  

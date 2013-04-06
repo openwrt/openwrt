@@ -16,8 +16,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4900/
  arch/mips/ralink/irq.c           |   10 +++++++---
  2 files changed, 17 insertions(+), 3 deletions(-)
 
-diff --git a/arch/mips/ralink/dts/rt3050.dtsi b/arch/mips/ralink/dts/rt3050.dtsi
-index fd49daa..069d066 100644
 --- a/arch/mips/ralink/dts/rt3050.dtsi
 +++ b/arch/mips/ralink/dts/rt3050.dtsi
 @@ -13,6 +13,13 @@
@@ -44,11 +42,9 @@ index fd49daa..069d066 100644
  		};
  
  		memc@300 {
-diff --git a/arch/mips/ralink/irq.c b/arch/mips/ralink/irq.c
-index e62c975..6d054c5 100644
 --- a/arch/mips/ralink/irq.c
 +++ b/arch/mips/ralink/irq.c
-@@ -128,8 +128,11 @@ static int __init intc_of_init(struct device_node *node,
+@@ -128,8 +128,11 @@ static int __init intc_of_init(struct de
  {
  	struct resource res;
  	struct irq_domain *domain;
@@ -61,7 +57,7 @@ index e62c975..6d054c5 100644
  
  	if (of_address_to_resource(node, 0, &res))
  		panic("Failed to get intc memory range");
-@@ -156,8 +159,8 @@ static int __init intc_of_init(struct device_node *node,
+@@ -156,8 +159,8 @@ static int __init intc_of_init(struct de
  
  	rt_intc_w32(INTC_INT_GLOBAL, INTC_REG_ENABLE);
  
@@ -72,7 +68,7 @@ index e62c975..6d054c5 100644
  
  	cp0_perfcount_irq = irq_create_mapping(domain, 9);
  
-@@ -165,6 +168,7 @@ static int __init intc_of_init(struct device_node *node,
+@@ -165,6 +168,7 @@ static int __init intc_of_init(struct de
  }
  
  static struct of_device_id __initdata of_irq_ids[] = {
@@ -80,6 +76,3 @@ index e62c975..6d054c5 100644
  	{ .compatible = "ralink,rt2880-intc", .data = intc_of_init },
  	{},
  };
--- 
-1.7.10.4
-
