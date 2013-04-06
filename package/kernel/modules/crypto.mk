@@ -119,6 +119,20 @@ define KernelPackage/crypto-iv
 endef
 $(eval $(call KernelPackage,crypto-iv))
 
+define KernelPackage/crypto-hw-talitos
+  TITLE:=Freescale integrated security engine (SEC) driver
+  DEPENDS:=+kmod-crypto-aes
+  KCONFIG:= \
+	CONFIG_CRYPTO_DEV_TALITOS
+  FILES:= \
+	$(LINUX_DIR)/drivers/crypto/talitos.ko
+  AUTOLOAD:=$(call AutoLoad,09,talitos)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-hw-talitos))
+
+
 define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
   DEPENDS:=+kmod-crypto-aes
