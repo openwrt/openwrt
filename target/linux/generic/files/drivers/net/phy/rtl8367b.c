@@ -863,19 +863,26 @@ static int rtl8367b_extif_init(struct rtl8366_smi *smi, int id,
 }
 
 #ifdef CONFIG_OF
-static int rtl8367b_extif_init_of(struct rtl8366_smi *smi, int id, const char *name)
+static int rtl8367b_extif_init_of(struct rtl8366_smi *smi, int id,
+				  const char *name)
 {
 	struct rtl8367_extif_config *cfg;
 	const __be32 *prop;
 	int size;
+	int err;
 
 	prop = of_get_property(smi->parent->of_node, name, &size);
-	if (!prop || size != (9 * sizeof(*prop)))
-		return 0;
+	if (!prop)
+		return rtl8367b_extif_init(smi, id, NULL);
+
+	if (size != (9 * sizeof(*prop))) {
+		dev_err(smi->parent, "%s property is invalid\n", name);
+		return -EINVAL;
+	}
 
 	cfg = kzalloc(sizeof(struct rtl8367_extif_config), GFP_KERNEL);
 	if (!cfg)
-		return -1;
+		return -ENOMEM;
 
 	cfg->txdelay = be32_to_cpup(prop++);
 	cfg->rxdelay = be32_to_cpup(prop++);
@@ -887,12 +894,16 @@ static int rtl8367b_extif_init_of(struct rtl8366_smi *smi, int id, const char *n
 	cfg->ability.duplex = be32_to_cpup(prop++);
 	cfg->ability.speed = be32_to_cpup(prop++);
 
-	return rtl8367b_extif_init(smi, id, cfg);
+	err = rtl8367b_extif_init(smi, id, cfg);
+	kfree(cfg);
+
+	return err;
 }
 #else
-static int rtl8367b_extif_init_of(struct rtl8366_smi *smi, int id, const char *name)
+static int rtl8367b_extif_init_of(struct rtl8366_smi *smi, int id,
+				  const char *name)
 {
-	return -1;
+	return -EINVAL;
 }
 #endif
 
