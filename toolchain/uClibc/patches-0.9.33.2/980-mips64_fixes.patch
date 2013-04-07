@@ -19,7 +19,7 @@ diff -Nur uClibc-0.9.33.2.orig/Rules.mak uClibc-0.9.33.2/Rules.mak
  SHARED_LIBNAME := $(LIBC).so.$(ABI_VERSION)
  UBACKTRACE_DSO := libubacktrace.so.$(ABI_VERSION)
 -ifneq ($(findstring  $(TARGET_ARCH) , hppa64 ia64 mips64 powerpc64 s390x sparc64 x86_64 ),)
-+ifneq ($(findstring  $(TARGET_SUBARCH) , hppa64 ia64 mips64 powerpc64 s390x sparc64 x86_64 ),)
++ifneq ($(strip $(findstring  $(TARGET_SUBARCH) , hppa64 ia64 mips64 powerpc64 s390x sparc64 x86_64 )),)
  UCLIBC_LDSO_NAME := ld64-uClibc
  ARCH_NATIVE_BIT := 64
  else
