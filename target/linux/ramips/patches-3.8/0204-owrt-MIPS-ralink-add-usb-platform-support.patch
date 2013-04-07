@@ -34,7 +34,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
 --- a/arch/mips/ralink/common.h
 +++ b/arch/mips/ralink/common.h
-@@ -43,5 +43,6 @@ extern void prom_soc_init(struct ralink_
+@@ -46,5 +46,6 @@ extern void prom_soc_init(struct ralink_
  __iomem void *plat_of_remap_node(const char *node);
  
  void ralink_pinmux(void);

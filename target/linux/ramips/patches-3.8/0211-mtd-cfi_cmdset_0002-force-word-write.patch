@@ -43,7 +43,7 @@
  static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
  				    unsigned long adr, const u_char *buf,
  				    int len)
-@@ -1555,7 +1560,6 @@ static int __xipram do_write_buffer(stru
+@@ -1567,7 +1572,6 @@ static int __xipram do_write_buffer(stru
  	return ret;
  }
  
@@ -51,7 +51,7 @@
  static int cfi_amdstd_write_buffers(struct mtd_info *mtd, loff_t to, size_t len,
  				    size_t *retlen, const u_char *buf)
  {
-@@ -1630,6 +1634,7 @@ static int cfi_amdstd_write_buffers(stru
+@@ -1642,6 +1646,7 @@ static int cfi_amdstd_write_buffers(stru
  
  	return 0;
  }
