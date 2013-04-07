@@ -38,6 +38,16 @@
 		ralink,fixed-link = <1000 1 1 1>;
 	};
 
+	pci@10140000 {
+		status = "okay";
+
+		host-bridge {
+			pci-bridge@1 {
+				status = "okay";
+			};
+		};
+	};
+
 	wmac@10180000 {
 		status = "okay";
 		ralink,2ghz = <0>;
