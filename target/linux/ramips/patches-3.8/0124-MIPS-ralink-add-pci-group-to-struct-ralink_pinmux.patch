@@ -1,0 +1,24 @@
+From 8818e2d260e7f98fd5388f9ba56f54b788e175f0 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 27 Mar 2013 20:42:18 +0100
+Subject: [PATCH 2/5] MIPS: ralink: add pci group to struct ralink_pinmux
+
+This will be used for RT3662/RT3883.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ralink/common.h |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/arch/mips/ralink/common.h
++++ b/arch/mips/ralink/common.h
+@@ -24,6 +24,9 @@ struct ralink_pinmux {
+ 	int uart_shift;
+ 	u32 uart_mask;
+ 	void (*wdt_reset)(void);
++	struct ralink_pinmux_grp *pci;
++	int pci_shift;
++	u32 pci_mask;
+ };
+ extern struct ralink_pinmux rt_pinmux;
+ 

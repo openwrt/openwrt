@@ -1,0 +1,40 @@
+From 34a9a634432a95d8ae9af86d41fdaf32fb039c2c Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 27 Mar 2013 21:10:14 +0100
+Subject: [PATCH 1/5] MIPS: ralink: fix uartmux group handling
+
+ * don't try get 'ralink,uartmux' porperty if the pinmux.uart is
+   not initialized,
+ * don't touch 'mode' value if mux mask is zero
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ralink/pinmux.c |   12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/ralink/pinmux.c
++++ b/arch/mips/ralink/pinmux.c
+@@ -56,15 +56,19 @@ void ralink_pinmux(void)
+ 		}
+ 	}
+ 
+-	of_property_read_string(np, "ralink,uartmux", &uart);
++	uart = NULL;
++	if (rt_pinmux.uart)
++		of_property_read_string(np, "ralink,uartmux", &uart);
++
+ 	if (uart) {
+ 		int m = ralink_mux_mask(uart, rt_pinmux.uart);
+-		mode |= rt_pinmux.uart_mask << rt_pinmux.uart_shift;
++
+ 		if (m) {
+-			mode &= ~(m << rt_pinmux.uart_shift);
++			mode &= ~(rt_pinmux.uart_mask << rt_pinmux.uart_shift);
++			mode |= m << rt_pinmux.uart_shift;
+ 			pr_debug("pinmux: registered uartmux \"%s\"\n", uart);
+ 		} else {
+-			pr_debug("pinmux: registered uartmux \"gpio\"\n");
++			pr_debug("pinmux: unknown uartmux \"%s\"\n", uart);
+ 		}
+ 	}
+ 
