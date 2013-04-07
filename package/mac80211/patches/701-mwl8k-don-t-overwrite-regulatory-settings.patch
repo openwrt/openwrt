@@ -49,7 +49,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	/*
  	 * Running count of TX packets in flight, to avoid
-@@ -2401,6 +2402,9 @@ mwl8k_set_caps(struct ieee80211_hw *hw,
+@@ -2401,6 +2402,9 @@ mwl8k_set_caps(struct ieee80211_hw *hw, 
  {
  	struct mwl8k_priv *priv = hw->priv;
  
@@ -59,7 +59,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	if ((caps & MWL8K_CAP_2GHZ4) || !(caps & MWL8K_CAP_BAND_MASK)) {
  		mwl8k_setup_2ghz_band(hw);
  		if (caps & MWL8K_CAP_MIMO)
-@@ -2412,6 +2416,8 @@ mwl8k_set_caps(struct ieee80211_hw *hw,
+@@ -2412,6 +2416,8 @@ mwl8k_set_caps(struct ieee80211_hw *hw, 
  		if (caps & MWL8K_CAP_MIMO)
  			mwl8k_set_ht_caps(hw, &priv->band_50, caps);
  	}

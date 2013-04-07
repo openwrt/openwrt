@@ -10,11 +10,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/wireless/rt2x00/rt2800pci.c |   44 ++++++++++++++++++++++++++-----
  2 files changed, 39 insertions(+), 6 deletions(-)
 
-Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/Kconfig
-===================================================================
---- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/Kconfig	2013-04-04 14:20:02.621776831 +0200
-+++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/Kconfig	2013-04-04 14:20:02.977776837 +0200
-@@ -64,6 +64,7 @@
+--- a/drivers/net/wireless/rt2x00/Kconfig
++++ b/drivers/net/wireless/rt2x00/Kconfig
+@@ -64,6 +64,7 @@ config RT2800PCI
  	select RT2X00_LIB_CRYPTO
  	select CRC_CCITT
  	select EEPROM_93CX6
@@ -22,10 +20,8 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/Kconfig
  	---help---
  	  This adds support for rt27xx/rt28xx/rt30xx wireless chipset family.
  	  Supported chips: RT2760, RT2790, RT2860, RT2880, RT2890, RT3052,
-Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2x00eeprom.c
-===================================================================
---- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/rt2x00eeprom.c	2013-04-04 14:20:02.621776831 +0200
-+++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2x00eeprom.c	2013-04-04 15:23:19.601807539 +0200
+--- a/drivers/net/wireless/rt2x00/rt2x00eeprom.c
++++ b/drivers/net/wireless/rt2x00/rt2x00eeprom.c
 @@ -30,12 +30,77 @@
  #include "rt2x00.h"
  #include "rt2x00lib.h"
