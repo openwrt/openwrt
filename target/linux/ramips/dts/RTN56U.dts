@@ -51,6 +51,38 @@
 		status = "okay";
 	};
 
+	nor-flash@1c000000 {
+		compatible = "cfi-flash";
+		reg = <0x1c000000 0x800000>;
+
+		bank-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x0 0x0030000>;
+			label = "u-boot";
+			read-only;
+		};
+
+		partition@30000 {
+			reg = <0x00030000 0x00010000>;
+			label = "u-boot-env";
+			read-only;
+		};
+
+		partition@40000 {
+			reg = <0x00040000 0x00010000>;
+			label = "factory";
+			read-only;
+		};
+
+		partition@50000 {
+			reg = <0x00050000 0x007b0000>;
+			label = "firmware";
+		};
+	};
+
 	rtl8367 {
 		compatible = "realtek,rtl8367";
 		gpio-sda = <&gpio0 1 0>;
