@@ -158,6 +158,15 @@
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
+@@ -78,7 +78,7 @@ void ieee80211_recalc_txpower(struct iee
+ 		ieee80211_bss_info_change_notify(sdata, BSS_CHANGED_TXPOWER);
+ }
+ 
+-static u32 ieee80211_idle_off(struct ieee80211_local *local)
++u32 ieee80211_idle_off(struct ieee80211_local *local)
+ {
+ 	if (!(local->hw.conf.flags & IEEE80211_CONF_IDLE))
+ 		return 0;
 @@ -107,7 +107,7 @@ void ieee80211_recalc_idle(struct ieee80
  
  	lockdep_assert_held(&local->mtx);
@@ -300,7 +309,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1126,6 +1175,9 @@ static void ieee80211_iface_work(struct
+@@ -1126,6 +1175,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -961,3 +970,58 @@
  	sta->dead = true;
  
  	local->num_sta--;
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -63,6 +63,7 @@ ieee80211_new_chanctx(struct ieee80211_l
+ 		      enum ieee80211_chanctx_mode mode)
+ {
+ 	struct ieee80211_chanctx *ctx;
++	u32 changed;
+ 	int err;
+ 
+ 	lockdep_assert_held(&local->chanctx_mtx);
+@@ -76,6 +77,13 @@ ieee80211_new_chanctx(struct ieee80211_l
+ 	ctx->conf.rx_chains_dynamic = 1;
+ 	ctx->mode = mode;
+ 
++	/* acquire mutex to prevent idle from changing */
++	mutex_lock(&local->mtx);
++	/* turn idle off *before* setting channel -- some drivers need that */
++	changed = ieee80211_idle_off(local);
++	if (changed)
++		ieee80211_hw_config(local, changed);
++
+ 	if (!local->use_chanctx) {
+ 		local->_oper_channel_type =
+ 			cfg80211_get_chandef_type(chandef);
+@@ -85,14 +93,17 @@ ieee80211_new_chanctx(struct ieee80211_l
+ 		err = drv_add_chanctx(local, ctx);
+ 		if (err) {
+ 			kfree(ctx);
+-			return ERR_PTR(err);
++			ctx = ERR_PTR(err);
++
++			ieee80211_recalc_idle(local);
++			goto out;
+ 		}
+ 	}
+ 
++	/* and keep the mutex held until the new chanctx is on the list */
+ 	list_add_rcu(&ctx->list, &local->chanctx_list);
+ 
+-	mutex_lock(&local->mtx);
+-	ieee80211_recalc_idle(local);
++ out:
+ 	mutex_unlock(&local->mtx);
+ 
+ 	return ctx;
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1366,6 +1366,7 @@ int ieee80211_if_change_type(struct ieee
+ 			     enum nl80211_iftype type);
+ void ieee80211_if_remove(struct ieee80211_sub_if_data *sdata);
+ void ieee80211_remove_interfaces(struct ieee80211_local *local);
++u32 ieee80211_idle_off(struct ieee80211_local *local);
+ void ieee80211_recalc_idle(struct ieee80211_local *local);
+ void ieee80211_adjust_monitor_flags(struct ieee80211_sub_if_data *sdata,
+ 				    const int offset);

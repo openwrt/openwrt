@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/wireless/rt2x00/rt2800pci.c |    7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800pci.c b/drivers/net/wireless/rt2x00/rt2800pci.c
-index ded73da..e5deb9e 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -1183,11 +1183,18 @@ static int rt2800soc_probe(struct platform_device *pdev)
+@@ -1185,11 +1185,18 @@ static int rt2800soc_probe(struct platfo
  	return rt2x00soc_probe(pdev, &rt2800pci_ops);
  }
  
@@ -34,6 +32,3 @@ index ded73da..e5deb9e 100644
  	},
  	.probe		= rt2800soc_probe,
  	.remove		= rt2x00soc_remove,
--- 
-1.7.10.4
-

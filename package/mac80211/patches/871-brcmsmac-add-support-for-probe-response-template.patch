@@ -27,7 +27,7 @@
  	hw->sta_data_size = 0;
 --- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
 +++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
-@@ -453,6 +453,8 @@ static void brcms_c_detach_mfree(struct
+@@ -453,6 +453,8 @@ static void brcms_c_detach_mfree(struct 
  	kfree(wlc->hw);
  	if (wlc->beacon)
  		dev_kfree_skb_any(wlc->beacon);

@@ -1,7 +1,5 @@
-Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800.h
-===================================================================
---- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/rt2800.h	2013-04-01 18:42:38.843812191 +0200
-+++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800.h	2013-04-01 18:42:44.483812325 +0200
+--- a/drivers/net/wireless/rt2x00/rt2800.h
++++ b/drivers/net/wireless/rt2x00/rt2800.h
 @@ -69,6 +69,7 @@
  #define RF3322				0x000c
  #define RF3053				0x000d
@@ -10,11 +8,9 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800.h
  #define RF5360				0x5360
  #define RF5370				0x5370
  #define RF5372				0x5372
-Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
-===================================================================
---- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/rt2800lib.c	2013-04-01 18:42:38.843812191 +0200
-+++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c	2013-04-01 18:43:27.907813351 +0200
-@@ -2137,6 +2137,15 @@
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -2138,6 +2138,15 @@ static void rt2800_config_channel_rf53xx
  	if (rf->channel <= 14) {
  		int idx = rf->channel-1;
  
@@ -30,7 +26,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  		if (test_bit(CAPABILITY_BT_COEXIST, &rt2x00dev->cap_flags)) {
  			if (rt2x00_rt_rev_gte(rt2x00dev, RT5390, REV_RT5390F)) {
  				/* r55/r59 value array of channel 1~14 */
-@@ -2218,6 +2227,7 @@
+@@ -2219,6 +2228,7 @@ static void rt2800_config_channel(struct
  	case RF3322:
  		rt2800_config_channel_rf3322(rt2x00dev, conf, rf, info);
  		break;
@@ -38,7 +34,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	case RF5360:
  	case RF5370:
  	case RF5372:
-@@ -2231,6 +2241,7 @@
+@@ -2232,6 +2242,7 @@ static void rt2800_config_channel(struct
  
  	if (rt2x00_rf(rt2x00dev, RF3290) ||
  	    rt2x00_rf(rt2x00dev, RF3322) ||
@@ -46,7 +42,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rf(rt2x00dev, RF5360) ||
  	    rt2x00_rf(rt2x00dev, RF5370) ||
  	    rt2x00_rf(rt2x00dev, RF5372) ||
-@@ -2361,7 +2372,8 @@
+@@ -2362,7 +2373,8 @@ static void rt2800_config_channel(struct
  	/*
  	 * Clear update flag
  	 */
@@ -56,7 +52,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  		rt2800_bbp_read(rt2x00dev, 49, &bbp);
  		rt2x00_set_field8(&bbp, BBP49_UPDATE_FLAG, 0);
  		rt2800_bbp_write(rt2x00dev, 49, bbp);
-@@ -2800,6 +2812,7 @@
+@@ -2801,6 +2813,7 @@ void rt2800_vco_calibration(struct rt2x0
  		rt2800_rfcsr_write(rt2x00dev, 7, rfcsr);
  		break;
  	case RF3290:
@@ -64,7 +60,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	case RF5360:
  	case RF5370:
  	case RF5372:
-@@ -3124,7 +3137,8 @@
+@@ -3125,7 +3138,8 @@ static int rt2800_init_registers(struct 
  	} else if (rt2x00_rt(rt2x00dev, RT3572)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000400);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
@@ -74,7 +70,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  		   rt2x00_rt(rt2x00dev, RT5392)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
-@@ -3506,6 +3520,10 @@
+@@ -3507,6 +3521,10 @@ static int rt2800_init_bbp(struct rt2x00
  		rt2800_bbp_write(rt2x00dev, 4, 0x50);
  	}
  
@@ -85,7 +81,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392)) {
-@@ -3518,11 +3536,13 @@
+@@ -3519,11 +3537,13 @@ static int rt2800_init_bbp(struct rt2x00
  	    rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT3352) ||
  	    rt2x00_rt(rt2x00dev, RT3572) ||
@@ -100,7 +96,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  		rt2800_bbp_write(rt2x00dev, 47, 0x48);
  
  	rt2800_bbp_write(rt2x00dev, 65, 0x2c);
-@@ -3530,6 +3550,7 @@
+@@ -3531,6 +3551,7 @@ static int rt2800_init_bbp(struct rt2x00
  
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT3352) ||
@@ -108,7 +104,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_bbp_write(rt2x00dev, 68, 0x0b);
-@@ -3539,6 +3560,7 @@
+@@ -3540,6 +3561,7 @@ static int rt2800_init_bbp(struct rt2x00
  		rt2800_bbp_write(rt2x00dev, 73, 0x12);
  	} else if (rt2x00_rt(rt2x00dev, RT3290) ||
  		   rt2x00_rt(rt2x00dev, RT3352) ||
@@ -116,7 +112,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  		   rt2x00_rt(rt2x00dev, RT5390) ||
  		   rt2x00_rt(rt2x00dev, RT5392)) {
  		rt2800_bbp_write(rt2x00dev, 69, 0x12);
-@@ -3575,7 +3597,8 @@
+@@ -3576,7 +3598,8 @@ static int rt2800_init_bbp(struct rt2x00
  		rt2800_bbp_write(rt2x00dev, 79, 0x18);
  		rt2800_bbp_write(rt2x00dev, 80, 0x09);
  		rt2800_bbp_write(rt2x00dev, 81, 0x33);
@@ -126,7 +122,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  		rt2800_bbp_write(rt2x00dev, 78, 0x0e);
  		rt2800_bbp_write(rt2x00dev, 80, 0x08);
  		rt2800_bbp_write(rt2x00dev, 81, 0x37);
-@@ -3585,6 +3608,7 @@
+@@ -3586,6 +3609,7 @@ static int rt2800_init_bbp(struct rt2x00
  
  	rt2800_bbp_write(rt2x00dev, 82, 0x62);
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
@@ -134,7 +130,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_bbp_write(rt2x00dev, 83, 0x7a);
-@@ -3594,6 +3618,7 @@
+@@ -3595,6 +3619,7 @@ static int rt2800_init_bbp(struct rt2x00
  	if (rt2x00_rt_rev(rt2x00dev, RT2860, REV_RT2860D))
  		rt2800_bbp_write(rt2x00dev, 84, 0x19);
  	else if (rt2x00_rt(rt2x00dev, RT3290) ||
@@ -142,7 +138,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  		 rt2x00_rt(rt2x00dev, RT5390) ||
  		 rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_bbp_write(rt2x00dev, 84, 0x9a);
-@@ -3602,6 +3627,7 @@
+@@ -3603,6 +3628,7 @@ static int rt2800_init_bbp(struct rt2x00
  
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT3352) ||
@@ -150,7 +146,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_bbp_write(rt2x00dev, 86, 0x38);
-@@ -3616,6 +3642,7 @@
+@@ -3617,6 +3643,7 @@ static int rt2800_init_bbp(struct rt2x00
  
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT3352) ||
@@ -158,7 +154,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_bbp_write(rt2x00dev, 92, 0x02);
-@@ -3634,6 +3661,7 @@
+@@ -3635,6 +3662,7 @@ static int rt2800_init_bbp(struct rt2x00
  	    rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT3352) ||
  	    rt2x00_rt(rt2x00dev, RT3572) ||
@@ -166,7 +162,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392) ||
  	    rt2800_is_305x_soc(rt2x00dev))
-@@ -3643,6 +3671,7 @@
+@@ -3644,6 +3672,7 @@ static int rt2800_init_bbp(struct rt2x00
  
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT3352) ||
@@ -174,7 +170,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_bbp_write(rt2x00dev, 104, 0x92);
-@@ -3653,13 +3682,15 @@
+@@ -3654,13 +3683,15 @@ static int rt2800_init_bbp(struct rt2x00
  		rt2800_bbp_write(rt2x00dev, 105, 0x1c);
  	else if (rt2x00_rt(rt2x00dev, RT3352))
  		rt2800_bbp_write(rt2x00dev, 105, 0x34);
@@ -191,7 +187,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rt(rt2x00dev, RT5390))
  		rt2800_bbp_write(rt2x00dev, 106, 0x03);
  	else if (rt2x00_rt(rt2x00dev, RT3352))
-@@ -3669,11 +3700,13 @@
+@@ -3670,11 +3701,13 @@ static int rt2800_init_bbp(struct rt2x00
  	else
  		rt2800_bbp_write(rt2x00dev, 106, 0x35);
  
@@ -206,7 +202,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_bbp_write(rt2x00dev, 128, 0x12);
-@@ -3683,13 +3716,15 @@
+@@ -3684,13 +3717,15 @@ static int rt2800_init_bbp(struct rt2x00
  		rt2800_bbp_write(rt2x00dev, 135, 0xf6);
  	}
  
@@ -223,7 +219,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392)) {
  		rt2800_bbp_read(rt2x00dev, 138, &value);
-@@ -3726,7 +3761,8 @@
+@@ -3727,7 +3762,8 @@ static int rt2800_init_bbp(struct rt2x00
  		rt2800_bbp_write(rt2x00dev, 3, value);
  	}
  
@@ -233,7 +229,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  		rt2800_bbp_write(rt2x00dev, 163, 0xbd);
  		/* Set ITxBF timeout to 0x9c40=1000msec */
  		rt2800_bbp_write(rt2x00dev, 179, 0x02);
-@@ -3748,6 +3784,14 @@
+@@ -3749,6 +3785,14 @@ static int rt2800_init_bbp(struct rt2x00
  		rt2800_bbp_write(rt2x00dev, 148, 0xc8);
  	}
  
@@ -248,7 +244,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	if (rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392)) {
  		int ant, div_mode;
-@@ -4142,6 +4186,76 @@
+@@ -4143,6 +4187,76 @@ static void rt2800_init_rfcsr_3572(struc
  	rt2800_rfcsr_write(rt2x00dev, 31, 0x10);
  }
  
@@ -325,7 +321,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  static void rt2800_init_rfcsr_5390(struct rt2x00_dev *rt2x00dev)
  {
  	rt2800_rfcsr_write(rt2x00dev, 1, 0x0f);
-@@ -4304,6 +4418,7 @@
+@@ -4305,6 +4419,7 @@ static int rt2800_init_rfcsr(struct rt2x
  	    !rt2x00_rt(rt2x00dev, RT3352) &&
  	    !rt2x00_rt(rt2x00dev, RT3390) &&
  	    !rt2x00_rt(rt2x00dev, RT3572) &&
@@ -333,7 +329,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	    !rt2x00_rt(rt2x00dev, RT5390) &&
  	    !rt2x00_rt(rt2x00dev, RT5392) &&
  	    !rt2800_is_305x_soc(rt2x00dev))
-@@ -4354,6 +4469,9 @@
+@@ -4355,6 +4470,9 @@ static int rt2800_init_rfcsr(struct rt2x
  	case RT3572:
  		rt2800_init_rfcsr_3572(rt2x00dev);
  		break;
@@ -343,7 +339,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	case RT5390:
  		rt2800_init_rfcsr_5390(rt2x00dev);
  		break;
-@@ -4750,6 +4868,12 @@
+@@ -4751,6 +4869,12 @@ static int rt2800_validate_eeprom(struct
  		if (rt2x00_get_field16(word, EEPROM_NIC_CONF0_RXPATH) > 2)
  			rt2x00_set_field16(&word, EEPROM_NIC_CONF0_RXPATH, 2);
  		rt2x00_eeprom_write(rt2x00dev, EEPROM_NIC_CONF0, word);
@@ -356,7 +352,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	}
  
  	rt2x00_eeprom_read(rt2x00dev, EEPROM_NIC_CONF1, &word);
-@@ -4874,6 +4998,8 @@
+@@ -4875,6 +4999,8 @@ static int rt2800_init_eeprom(struct rt2
  	    rt2x00_get_field32(reg, MAC_CSR0_CHIPSET) == RT5390 ||
  	    rt2x00_get_field32(reg, MAC_CSR0_CHIPSET) == RT5392)
  		rt2x00_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &value);
@@ -365,7 +361,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	else
  		value = rt2x00_get_field16(eeprom, EEPROM_NIC_CONF0_RF_TYPE);
  
-@@ -4891,6 +5017,7 @@
+@@ -4892,6 +5018,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RT3352:
  	case RT3390:
  	case RT3572:
@@ -373,7 +369,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	case RT5390:
  	case RT5392:
  		break;
-@@ -4912,6 +5039,7 @@
+@@ -4913,6 +5040,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF3290:
  	case RF3320:
  	case RF3322:
@@ -381,7 +377,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	case RF5360:
  	case RF5370:
  	case RF5372:
-@@ -5274,7 +5402,8 @@
+@@ -5275,7 +5403,8 @@ static int rt2800_probe_hw_mode(struct r
  		   rt2x00_rf(rt2x00dev, RF5392)) {
  		spec->num_channels = 14;
  		spec->channels = rf_vals_3x;
@@ -391,7 +387,7 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  		spec->num_channels = 14;
  		if (spec->clk_is_20mhz)
  			spec->channels = rf_vals_xtal20mhz_3x;
-@@ -5363,6 +5492,7 @@
+@@ -5364,6 +5493,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3290:
  	case RF5360:
  	case RF5370:
@@ -399,11 +395,9 @@ Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2800lib.c
  	case RF5372:
  	case RF5390:
  	case RF5392:
-Index: compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2x00.h
-===================================================================
---- compat-wireless-2013-02-22.orig/drivers/net/wireless/rt2x00/rt2x00.h	2013-04-01 18:42:38.843812191 +0200
-+++ compat-wireless-2013-02-22/drivers/net/wireless/rt2x00/rt2x00.h	2013-04-01 18:42:44.487812326 +0200
-@@ -192,6 +192,7 @@
+--- a/drivers/net/wireless/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/rt2x00/rt2x00.h
+@@ -192,6 +192,7 @@ struct rt2x00_chip {
  #define RT3572		0x3572
  #define RT3593		0x3593
  #define RT3883		0x3883	/* WSOC */
