@@ -156,6 +156,92 @@
 		status = "disabled";
 	};
 
+	pci@10140000 {
+		compatible = "ralink,rt3883-pci";
+		reg = <0x10140000 0x20000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges; /* direct mapping */
+
+		status = "disabled";
+
+		pciintc: interrupt-controller {
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpuintc>;
+			interrupts = <4>;
+		};
+
+		host-bridge {
+			#address-cells = <3>;
+			#size-cells = <2>;
+			#interrupt-cells = <1>;
+
+			device_type = "pci";
+
+			bus-range = <0 255>;
+			ranges = <
+				0x02000000 0 0x00000000 0x20000000 0 0x10000000 /* pci memory */
+				0x01000000 0 0x00000000 0x10160000 0 0x00010000 /* io space */
+			>;
+
+			interrupt-map-mask = <0xf800 0 0 7>;
+			interrupt-map = <
+				/* IDSEL 17 */
+				0x8800 0 0 1 &pciintc 18
+				0x8800 0 0 2 &pciintc 18
+				0x8800 0 0 3 &pciintc 18
+				0x8800 0 0 4 &pciintc 18
+				/* IDSEL 18 */
+				0x9000 0 0 1 &pciintc 19
+				0x9000 0 0 2 &pciintc 19
+				0x9000 0 0 3 &pciintc 19
+				0x9000 0 0 4 &pciintc 19
+			>;
+
+			pci-bridge@1 {
+				reg = <0x0800 0 0 0 0>;
+				device_type = "pci";
+				#interrupt-cells = <1>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+
+				status = "disabled";
+
+				ralink,pci-slot = <1>;
+
+				interrupt-map-mask = <0x0 0 0 0>;
+				interrupt-map = <0x0 0 0 0 &pciintc 20>;
+			};
+
+			pci-slot@17 {
+				reg = <0x8800 0 0 0 0>;
+				device_type = "pci";
+				#interrupt-cells = <1>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+
+				ralink,pci-slot = <17>;
+
+				status = "disabled";
+			};
+
+			pci-slot@18 {
+				reg = <0x9000 0 0 0 0>;
+				device_type = "pci";
+				#interrupt-cells = <1>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+
+				ralink,pci-slot = <18>;
+
+				status = "disabled";
+			};
+		};
+	};
+
 	wmac@10180000 {
 		compatible = "ralink,rt3883-wmac", "ralink,rt2880-wmac";
 		reg = <0x10180000 40000>;
