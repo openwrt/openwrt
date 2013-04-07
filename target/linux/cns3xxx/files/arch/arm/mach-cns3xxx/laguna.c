@@ -567,11 +567,6 @@ static struct resource laguna_watchdog_resources[] = {
 		.end	= CNS3XXX_TC11MP_TWD_BASE + SZ_4K - 1,
 		.flags	= IORESOURCE_MEM,
 	},
-	[1] = {
-		.start	= IRQ_LOCALWDOG,
-		.end	= IRQ_LOCALWDOG,
-		.flags	= IORESOURCE_IRQ,
-	}
 };
 
 static struct platform_device laguna_watchdog = {
