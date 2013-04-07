@@ -52,13 +52,6 @@ config SSP_SUPPORT
 	help
 	    Enable Stack-Smashing Protection support
 
-config TLS_SUPPORT
-	bool
-	prompt "Enable Thread-local storage (TLS) support" if TOOLCHAINOPTS
-	default n
-	help
-	    Enable Thread-local storage support
-
 config SJLJ_EXCEPTIONS
 	bool
 	prompt "Use setjump()/longjump() exceptions" if TOOLCHAINOPTS
