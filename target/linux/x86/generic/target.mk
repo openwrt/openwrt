@@ -1,6 +1,6 @@
 BOARDNAME:=Generic
 
-LINUX_VERSION:=3.7.10
+LINUX_VERSION:=3.8.6
 
 define Target/Description
 	Build firmware images for x86 based boards
