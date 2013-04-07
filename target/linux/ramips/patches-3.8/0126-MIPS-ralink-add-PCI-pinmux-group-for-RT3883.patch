@@ -1,0 +1,58 @@
+From 2c868d77c161ce7dea8facf203c155924d776c33 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 27 Mar 2013 20:50:40 +0100
+Subject: [PATCH 4/5] MIPS: ralink: add PCI pinmux group for RT3883
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ralink/rt3883.c |   32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+--- a/arch/mips/ralink/rt3883.c
++++ b/arch/mips/ralink/rt3883.c
+@@ -113,6 +113,35 @@ struct ralink_pinmux_grp uart_mux[] = {
+ 	}, {0}
+ };
+ 
++struct ralink_pinmux_grp pci_mux[] = {
++	{
++		.name = "pci-dev",
++		.mask = 0,
++		.gpio_first = RT3883_GPIO_PCI_AD0,
++		.gpio_last = RT3883_GPIO_PCI_AD31,
++	}, {
++		.name = "pci-host2",
++		.mask = 1,
++		.gpio_first = RT3883_GPIO_PCI_AD0,
++		.gpio_last = RT3883_GPIO_PCI_AD31,
++	}, {
++		.name = "pci-host1",
++		.mask = 2,
++		.gpio_first = RT3883_GPIO_PCI_AD0,
++		.gpio_last = RT3883_GPIO_PCI_AD31,
++	}, {
++		.name = "pci-fnc",
++		.mask = 3,
++		.gpio_first = RT3883_GPIO_PCI_AD0,
++		.gpio_last = RT3883_GPIO_PCI_AD31,
++	}, {
++		.name = "pci-gpio",
++		.mask = 7,
++		.gpio_first = RT3883_GPIO_PCI_AD0,
++		.gpio_last = RT3883_GPIO_PCI_AD31,
++	}, {0}
++};
++
+ static void rt3883_wdt_reset(void)
+ {
+ 	u32 t;
+@@ -129,6 +158,9 @@ struct ralink_pinmux rt_pinmux = {
+ 	.uart_shift = RT3883_GPIO_MODE_UART0_SHIFT,
+ 	.uart_mask = RT3883_GPIO_MODE_GPIO,
+ 	.wdt_reset = rt3883_wdt_reset,
++	.pci = pci_mux,
++	.pci_shift = RT3883_GPIO_MODE_PCI_SHIFT,
++	.pci_mask = RT3883_GPIO_MODE_PCI_MASK,
+ };
+ 
+ void __init ralink_clk_init(void)
