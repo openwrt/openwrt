@@ -34,20 +34,52 @@
 			status = "okay";
 
 			m25p80@0 {
+				compatible = "macronix,mx25l12805d";
+				spi-max-frequency = <25000000>;
+				reg = <0>;
+
 				#address-cells = <1>;
 				#size-cells = <1>;
-				compatible = "mx25l6405d";
-				reg = <0 0>;
-				linux,modalias = "m25p80";
-				spi-max-frequency = <25000000>;
+
+				partition@0 {
+					reg = <0x0 0x0030000>;
+					label = "u-boot";
+					read-only;
+				};
+
+				partition@30000 {
+					reg = <0x00030000 0x00010000>;
+					label = "config";
+					read-only;
+				};
+
+				partition@40000 {
+					reg = <0x00040000 0x00010000>;
+					label = "factory";
+					read-only;
+				};
+
+				partition@50000 {
+					reg = <0x00050000 0x00fb0000>;
+					label = "firmware";
+				};
 			};
 		};
 	};
 
 	ethernet@10100000 {
 		status = "okay";
-		ralink,phy-mask = <0x10>;
+
+		phy-handle = <&phy0>;
 		phy-mode = "rgmii";
+
+		mdio-bus {
+			status = "okay";
+
+			phy0: ethernet-phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 
 	wmac@10180000 {
