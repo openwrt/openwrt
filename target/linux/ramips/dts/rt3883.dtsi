@@ -154,6 +154,13 @@
 		interrupts = <5>;
 
 		status = "disabled";
+
+		mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
 	};
 
 	pci@10140000 {
