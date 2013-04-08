@@ -12,9 +12,10 @@
 
 	palmbus@10000000 {
 		sysc@0 {
-			ralink,pinmux = "uartlite", "spi";
-			ralink,gpiomux = "i2c", "jtag";
+			ralink,pinmux = "uartlite";
+			ralink,gpiomux = "i2c", "jtag", "spi";
 			ralink,uartmux = "gpio";
+			ralink,pcimux = "pci-fnc";
 			ralink,wdtmux = <1>;
 		};
 
@@ -29,19 +30,6 @@
 		gpio1: gpio@638 {
 			status = "okay";
 		};
-
-		spi@b00 {
-			status = "okay";
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "mx25l6405d";
-				reg = <0 0>;
-				linux,modalias = "m25p80";
-				spi-max-frequency = <25000000>;
-			};
-		};
 	};
 
 	ethernet@10100000 {
@@ -50,9 +38,51 @@
 		phy-mode = "rgmii";
 	};
 
+	pci@10140000 {
+		status = "okay";
+
+		host-bridge {
+			pci-bridge@1 {
+				status = "okay";
+			};
+		};
+	};
+
 	wmac@10180000 {
 		status = "okay";
 		ralink,5ghz = <0>;
+	};
+
+	nor-flash@1c000000 {
+		compatible = "cfi-flash";
+		reg = <0x1c000000 0x800000>;
+
+		bank-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x0 0x0030000>;
+			label = "u-boot";
+			read-only;
+		};
+
+		partition@30000 {
+			reg = <0x00030000 0x00010000>;
+			label = "u-boot-env";
+			read-only;
+		};
+
+		partition@40000 {
+			reg = <0x00040000 0x00010000>;
+			label = "factory";
+			read-only;
+		};
+
+		partition@50000 {
+			reg = <0x00050000 0x007b0000>;
+			label = "firmware";
+		};
 	};
 
 	gpio-keys-polled {
