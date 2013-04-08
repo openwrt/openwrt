@@ -10,6 +10,10 @@
 		ralink,memory = <0x0 0x200000 0x10000000>;
 	};
 
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "uartlite", "spi";
