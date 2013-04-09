@@ -155,6 +155,11 @@ struct switch_port {
 };
 
 /**
+ * swlib_list: list all switches
+ */
+void swlib_list(void);
+
+/**
  * swlib_connect: connect to the switch through netlink
  * @name: name of the ethernet interface,
  *
