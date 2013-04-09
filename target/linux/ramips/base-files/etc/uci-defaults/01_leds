@@ -112,6 +112,9 @@ case $board in
 	wcr-150gn)
 		set_usb_led "wcr150gn:amber:user"
 		;;
+	wnce2001)
+		set_wifi_led "netgear:green:wlan"
+		;;
 esac
 
 ucidef_commit_leds

@@ -392,6 +392,18 @@ Image/Build/Profile/WL341V3=$(call BuildFirmware/WL341V3/$(1),$(1))
 
 Image/Build/Profile/WL-351=$(call BuildFirmware/Default4M/$(1),$(1),wl-351,WL-351)
 
+define BuildFirmware/WNCE2001/squashfs
+	$(call BuildFirmware/Default4M/$(1),$(1),$(2),$(3))
+	-mkdapimg -s RT3052-AP-WNCE2001-3 -r WW -v 1.0.0.99 \
+		-i $(call sysupname,$(1),$(2)) \
+		-o $(call imgname,$(1),$(2))-factory-worldwide.bin
+	-mkdapimg -s RT3052-AP-WNCE2001-3 -r NA -v 1.0.0.99 \
+		-i $(call sysupname,$(1),$(2)) \
+		-o $(call imgname,$(1),$(2))-factory-northamerica.bin
+endef
+BuildFirmware/WNCE2001/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
+Image/Build/Profile/WNCE2001=$(call BuildFirmware/WNCE2001/$(1),$(1),wnce2001,WNCE2001)
+
 Image/Build/Profile/WR512-3GN=$(call BuildFirmware/DefaultDualSize/$(1),$(1),wr512-3ng,WR512-3GN)
 
 Image/Build/Profile/UR-326N4G=$(call BuildFirmware/Default4M/$(1),$(1),ur-326n4g,UR-326N4G)
@@ -451,6 +463,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WL_330N3G,$(1))
 	$(call Image/Build/Profile/WL341V3,$(1))
 	$(call Image/Build/Profile/WL-351,$(1))
+	$(call Image/Build/Profile/WNCE2001,$(1))
 	$(call Image/Build/Profile/WR512-3GN,$(1))
 	$(call Image/Build/Profile/WR6202,$(1))
 	$(call Image/Build/Profile/XDXRN502J,$(1))

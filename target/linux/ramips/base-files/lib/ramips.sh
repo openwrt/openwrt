@@ -120,6 +120,9 @@ ramips_board_detect() {
 	*"NBG-419N")
 		name="nbg-419n"
 		;;
+	*"Netgear WNCE2001")
+		name="wnce2001"
+		;;
 	*"NexAira BC2")
 		name="bc2"
 		;;
