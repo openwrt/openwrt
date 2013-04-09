@@ -987,7 +987,7 @@ of_switch_load_portmap(struct switch_dev *dev)
 		const char *segment;
 		int size, phys;
 
-		if (of_device_is_compatible(port, "swconfig,port"))
+		if (!of_device_is_compatible(port, "swconfig,port"))
 			continue;
 
 		if (of_property_read_string(port, "swconfig,segment", &segment))
