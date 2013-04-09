@@ -1,6 +1,6 @@
 --- a/include/linux/switch.h
 +++ b/include/linux/switch.h
-@@ -13,11 +13,86 @@
+@@ -13,11 +13,95 @@
   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   * GNU General Public License for more details.
   */
@@ -35,6 +35,7 @@
 +	SWITCH_ATTR_NAME,
 +	SWITCH_ATTR_VLANS,
 +	SWITCH_ATTR_PORTS,
++	SWITCH_ATTR_PORTMAP,
 +	SWITCH_ATTR_CPU_PORT,
 +	/* attributes */
 +	SWITCH_ATTR_OP_ID,
@@ -49,6 +50,14 @@
 +	/* port lists */
 +	SWITCH_ATTR_PORT,
 +	SWITCH_ATTR_MAX
++};
++
++enum {
++	/* port map */
++	SWITCH_PORTMAP_PORTS,
++	SWITCH_PORTMAP_SEGMENT,
++	SWITCH_PORTMAP_VIRT,
++	SWITCH_PORTMAP_MAX
 +};
 +
 +/* commands */
@@ -90,7 +99,7 @@
  
  struct switch_dev;
  struct switch_op;
-@@ -157,4 +232,6 @@ struct switch_attr {
+@@ -164,4 +248,6 @@ struct switch_attr {
  	int max;
  };
  
