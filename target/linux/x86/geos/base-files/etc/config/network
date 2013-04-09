@@ -12,6 +12,7 @@ config interface lan
 	option proto	static
 	option ipaddr	192.168.1.1
 	option netmask	255.255.255.0
+	option ip6assign 64
 
 config atm-bridge
 	option unit	0
@@ -27,6 +28,14 @@ config interface wan
 	option ifname	nas0
 	# clone your eth0 address here
 	# option macaddr '00:0A:FA:22:00:80'
+
+config interface wan6
+	option ifname   @wan
+	option proto    dhcpv6
+
+config globals globals
+	option ula_prefix auto
+
 
 # 2nd interface on Geos2
 #config interface wan

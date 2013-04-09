@@ -9,3 +9,8 @@ config interface loopback
 config interface wlan
         option ifname   eth0
         option proto    dhcp
+
+config interface wlan6
+        option ifname   @wlan
+        option proto    dhcpv6
+        option reqprefix no

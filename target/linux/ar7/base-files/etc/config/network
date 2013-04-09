@@ -13,6 +13,14 @@ config interface lan
 	option ipaddr	192.168.1.1
 	option netmask	255.255.255.0
 	option nat	1
+	option ip6assign 64
+
+config interface wan6
+        option ifname   @wan
+        option proto    dhcpv6
+
+config globals globals
+        option ula_prefix auto
 
 ## Example for ATM bridging.
 ## Useful for PPPoE or IP over ATM. Will create 'nas${unit}'

@@ -11,6 +11,10 @@ set_lan_dhcp() {
 set network.lan='interface'
 set network.lan.ifname='$ifname'
 set network.lan.proto='dhcp'
+set network.lan6='interface'
+set network.lan6.ifname='@lan'
+set network.lan6.proto='dhcpv6'
+set network.lan6.reqprefix='no'
 EOF
 }
 
