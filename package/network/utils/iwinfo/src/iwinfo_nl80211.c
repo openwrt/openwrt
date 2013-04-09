@@ -346,23 +346,30 @@ static int nl80211_freq2channel(int freq)
 {
 	if (freq == 2484)
 		return 14;
-
-	if (freq < 2484)
+	else if (freq < 2484)
 		return (freq - 2407) / 5;
-
-	return (freq / 5) - 1000;
+	else if (freq >= 4910 && freq <= 4980)
+		return (freq - 4000) / 5;
+	else
+		return (freq - 5000) / 5;
 }
 
 static int nl80211_channel2freq(int channel, const char *band)
 {
-	if (channel == 14)
-		return 2484;
-
-	if ((channel < 14) && (!band || band[0] != 'a'))
-		return (channel * 5) + 2407;
-
-	if (channel > 0)
-		return (1000 + channel) * 5;
+	if (!band || band[0] != 'a')
+	{
+		if (channel == 14)
+			return 2484;
+		else if (channel < 14)
+			return (channel * 5) + 2407;
+	}
+	else
+	{
+		if (channel >= 182 && channel <= 196)
+			return (channel * 5) + 4000;
+		else
+			return (channel * 5) + 5000;
+	}
 
 	return 0;
 }
