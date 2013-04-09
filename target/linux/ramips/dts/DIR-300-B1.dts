@@ -6,10 +6,6 @@
 	compatible = "DIR-300-B1", "ralink,rt3050-soc";
 	model = "D-Link DIR-300 B1";
 
-	memorydetect {
-		ralink,memory = <0x0 0x200000 0x4000000>;
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";

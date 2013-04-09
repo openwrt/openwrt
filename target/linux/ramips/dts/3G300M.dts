@@ -6,10 +6,6 @@
 	compatible = "3G300M", "ralink,rt3052-soc";
 	model = "Tenda 3G300M";
 
-	memorydetect {
-		ralink,memory = <0x0 0x200000 0x4000000>;
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "i2c", "spi", "uartlite", "mdio", "sdram", "rgmii";

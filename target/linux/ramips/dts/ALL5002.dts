@@ -6,10 +6,6 @@
 	compatible = "ALL5002", "ralink,rt3352-soc";
 	model = "Allnet ALL5002/ALL5003";
 
-	memorydetect {
-		ralink,memory = <0x0 0x200000 0x10000000>;
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
