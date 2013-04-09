@@ -109,6 +109,7 @@ enum swlib_port_flags {
 struct switch_dev;
 struct switch_attr;
 struct switch_port;
+struct switch_port_map;
 struct switch_val;
 struct uci_package;
 
@@ -123,6 +124,7 @@ struct switch_dev {
 	struct switch_attr *ops;
 	struct switch_attr *port_ops;
 	struct switch_attr *vlan_ops;
+	struct switch_portmap *maps;
 	struct switch_dev *next;
 	void *priv;
 };
@@ -154,10 +156,21 @@ struct switch_port {
 	unsigned int flags;
 };
 
+struct switch_portmap {
+	unsigned int virt;
+	const char *segment;
+};
+
 /**
  * swlib_list: list all switches
  */
 void swlib_list(void);
+
+/**
+ * swlib_print_portmap: get portmap
+ * @dev: switch device struct
+ */
+void swlib_print_portmap(struct switch_dev *dev, char *segment);
 
 /**
  * swlib_connect: connect to the switch through netlink
