@@ -41,9 +41,14 @@ static struct genl_family *family;
 static struct nlattr *tb[SWITCH_ATTR_MAX + 1];
 static int refcount = 0;
 
-static struct nla_policy port_policy[] = {
+static struct nla_policy port_policy[SWITCH_ATTR_MAX] = {
 	[SWITCH_PORT_ID] = { .type = NLA_U32 },
 	[SWITCH_PORT_FLAG_TAGGED] = { .type = NLA_FLAG },
+};
+
+static struct nla_policy portmap_policy[SWITCH_PORTMAP_MAX] = {
+	[SWITCH_PORTMAP_SEGMENT] = { .type = NLA_STRING },
+	[SWITCH_PORTMAP_VIRT] = { .type = NLA_U32 },
 };
 
 static inline void *
@@ -574,6 +579,41 @@ struct swlib_scan_arg {
 };
 
 static int
+add_port_map(struct switch_dev *dev, struct nlattr *nla)
+{
+	struct nlattr *p;
+	int err = 0, idx = 0;
+	int remaining;
+
+	dev->maps = malloc(sizeof(struct switch_portmap) * dev->ports);
+	if (!dev->maps)
+		return -1;
+	memset(dev->maps, 0, sizeof(struct switch_portmap) * dev->ports);
+
+	nla_for_each_nested(p, nla, remaining) {
+		struct nlattr *tb[SWITCH_PORTMAP_MAX+1];
+
+		if (idx >= dev->ports)
+			continue;
+
+		err = nla_parse_nested(tb, SWITCH_PORTMAP_MAX, p, portmap_policy);
+		if (err < 0)
+			continue;
+
+
+		if (tb[SWITCH_PORTMAP_SEGMENT] && tb[SWITCH_PORTMAP_VIRT]) {
+			dev->maps[idx].segment = strdup(nla_get_string(tb[SWITCH_PORTMAP_SEGMENT]));
+			dev->maps[idx].virt = nla_get_u32(tb[SWITCH_PORTMAP_VIRT]);
+		}
+		idx++;
+	}
+
+out:
+	return err;
+}
+
+
+static int
 add_switch(struct nl_msg *msg, void *arg)
 {
 	struct swlib_scan_arg *sa = arg;
@@ -610,6 +650,8 @@ add_switch(struct nl_msg *msg, void *arg)
 		dev->vlans = nla_get_u32(tb[SWITCH_ATTR_VLANS]);
 	if (tb[SWITCH_ATTR_CPU_PORT])
 		dev->cpu_port = nla_get_u32(tb[SWITCH_ATTR_CPU_PORT]);
+	if (tb[SWITCH_ATTR_PORTMAP])
+		add_port_map(dev, tb[SWITCH_ATTR_PORTMAP]);
 
 	if (!sa->head) {
 		sa->head = dev;
@@ -653,6 +695,34 @@ swlib_list(void)
 		return;
 	swlib_call(SWITCH_CMD_GET_SWITCH, list_switch, NULL, NULL);
 	swlib_priv_free();
+}
+
+void
+swlib_print_portmap(struct switch_dev *dev, char *segment)
+{
+	int i;
+
+	if (segment) {
+		if (!strcmp(segment, "cpu")) {
+			printf("%d ", dev->cpu_port);
+		} else if (!strcmp(segment, "disabled")) {
+			for (i = 0; i < dev->ports; i++)
+				if (!dev->maps[i].segment)
+					printf("%d ", i);
+		} else for (i = 0; i < dev->ports; i++) {
+			if (dev->maps[i].segment && !strcmp(dev->maps[i].segment, segment))
+				printf("%d ", i);
+		}
+	} else {
+		printf("%s - %s\n", dev->dev_name, dev->name);
+		for (i = 0; i < dev->ports; i++)
+			if (i == dev->cpu_port)
+				printf("port%d:\tcpu\n", i);
+			else if (dev->maps[i].segment)
+				printf("port%d:\t%s.%d\n", i, dev->maps[i].segment, dev->maps[i].virt);
+			else
+				printf("port%d:\tdisabled\n", i);
+	}
 }
 
 struct switch_dev *

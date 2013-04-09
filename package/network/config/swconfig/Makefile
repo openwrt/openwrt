@@ -26,7 +26,8 @@ TARGET_CPPFLAGS := \
 	-D_GNU_SOURCE \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
 	-I$(PKG_BUILD_DIR) \
-	$(TARGET_CPPFLAGS)
+	$(TARGET_CPPFLAGS) \
+	-I$(LINUX_DIR)/user_headers/include
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
