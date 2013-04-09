@@ -13,6 +13,10 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
+	memorydetect {
+		ralink,memory = <0x0 0x200000 0x4000000>;
+	};
+
 	cpuintc: cpuintc@0 {
 		#address-cells = <0>;
 		#interrupt-cells = <1>;

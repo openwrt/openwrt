@@ -6,10 +6,6 @@
 	compatible = "MOFI3500-3GN", "ralink,rt3052-soc";
 	model = "MoFi Network MOFI3500-3GN";
 
-	memorydetect {
-		ralink,memory = <0x0 0x200000 0x4000000>;
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "sdram", "rgmii";

@@ -6,10 +6,6 @@
 	compatible = "NW718", "ralink,rt3050-soc";
 	model = "Netcore NW718";
 
-	memorydetect {
-		ralink,memory = <0x0 0x200000 0x4000000>;
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";

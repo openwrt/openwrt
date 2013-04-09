@@ -6,10 +6,6 @@
 	compatible = "F5D8235_V2", "ralink,rt3052-soc";
 	model = "Belkin F5D8235 v2";
 
-	memorydetect {
-		ralink,memory = <0x0 0x200000 0x4000000>;
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "uartlite", "jtag", "sdram", "rgmii";
