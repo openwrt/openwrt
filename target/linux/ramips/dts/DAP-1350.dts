@@ -35,6 +35,35 @@
 		device-width = <2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		partition@30000 {
+			label = "devdata";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "devconf";
+			reg = <0x40000 0x30000>;
+			read-only;
+		};
+
+		partition@70000 {
+			label = "devlang";
+			reg = <0x70000 0x40000>;
+			read-only;
+		};
+
+		partition@b0000 {
+			label = "firmware";
+			reg = <0xb0000 0x750000>;
+		};
 	};
 
 	ethernet@10100000 {
