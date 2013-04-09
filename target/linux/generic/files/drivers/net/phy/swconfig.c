@@ -23,6 +23,7 @@
 #include <linux/capability.h>
 #include <linux/skbuff.h>
 #include <linux/switch.h>
+#include <linux/of.h>
 
 //#define DEBUG 1
 #ifdef DEBUG
@@ -844,7 +845,9 @@ static int
 swconfig_send_switch(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 		const struct switch_dev *dev)
 {
+	struct nlattr *p = NULL, *m = NULL;
 	void *hdr;
+	int i;
 
 	hdr = genlmsg_put(msg, pid, seq, &switch_fam, flags,
 			SWITCH_CMD_NEW_ATTR);
@@ -866,6 +869,22 @@ swconfig_send_switch(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 	if (nla_put_u32(msg, SWITCH_ATTR_CPU_PORT, dev->cpu_port))
 		goto nla_put_failure;
 
+	m = nla_nest_start(msg, SWITCH_ATTR_PORTMAP);
+	if (!m)
+		goto nla_put_failure;
+	for (i = 0; i < dev->ports; i++) {
+		p = nla_nest_start(msg, SWITCH_ATTR_PORTS);
+		if (!p)
+			continue;
+		if (dev->portmap[i].s) {
+			if (nla_put_string(msg, SWITCH_PORTMAP_SEGMENT, dev->portmap[i].s))
+				goto nla_put_failure;
+			if (nla_put_u32(msg, SWITCH_PORTMAP_VIRT, dev->portmap[i].virt))
+				goto nla_put_failure;
+		}
+		nla_nest_end(msg, p);
+	}
+	nla_nest_end(msg, m);
 	return genlmsg_end(msg, hdr);
 nla_put_failure:
 	genlmsg_cancel(msg, hdr);
@@ -954,6 +973,49 @@ static struct genl_ops swconfig_ops[] = {
 	}
 };
 
+#ifdef CONFIG_OF
+void
+of_switch_load_portmap(struct switch_dev *dev)
+{
+	struct device_node *port;
+
+	if (!dev->of_node)
+		return;
+
+	for_each_child_of_node(dev->of_node, port) {
+		const __be32 *prop;
+		const char *segment;
+		int size, phys;
+
+		if (of_device_is_compatible(port, "swconfig,port"))
+			continue;
+
+		if (of_property_read_string(port, "swconfig,segment", &segment))
+			continue;
+
+		prop = of_get_property(port, "swconfig,portmap", &size);
+		if (!prop)
+			continue;
+
+		if (size != (2 * sizeof(*prop))) {
+			pr_err("%s: failed to parse port mapping\n", port->name);
+			continue;
+		}
+
+		phys = be32_to_cpup(prop++);
+		if ((phys < 0) | (phys >= dev->ports)) {
+			pr_err("%s: physical port index out of range\n", port->name);
+			continue;
+		}
+
+		dev->portmap[phys].s = kstrdup(segment, GFP_KERNEL);
+		dev->portmap[phys].virt = be32_to_cpup(prop);
+		pr_debug("Found port: %s, physical: %d, virtual: %d\n",
+			segment, phys, dev->portmap[phys].virt);
+	}
+}
+#endif
+
 int
 register_switch(struct switch_dev *dev, struct net_device *netdev)
 {
@@ -976,6 +1038,12 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 				GFP_KERNEL);
 		if (!dev->portbuf)
 			return -ENOMEM;
+		dev->portmap = kzalloc(sizeof(struct switch_portmap) * dev->ports,
+				GFP_KERNEL);
+		if (!dev->portmap) {
+			kfree(dev->portbuf);
+			return -ENOMEM;
+		}
 	}
 	swconfig_defaults_init(dev);
 	mutex_init(&dev->sw_mutex);
@@ -996,6 +1064,11 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 		swconfig_unlock();
 		return -ENFILE;
 	}
+
+#ifdef CONFIG_OF
+	if (dev->ports)
+		of_switch_load_portmap(dev);
+#endif
 
 	/* fill device name */
 	snprintf(dev->devname, IFNAMSIZ, SWCONFIG_DEVNAME, i);
