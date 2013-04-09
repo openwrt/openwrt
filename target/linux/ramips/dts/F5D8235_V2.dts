@@ -37,6 +37,27 @@
 		device-width = <2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x50000>;
+			read-only;
+		};
+
+		partition@50000 {
+			label = "firmware";
+			reg = <0x50000 0x790000>;
+		};
+
+		partition@7e0000 {
+			label = "nvram";
+			reg = <0x7e0000 0x10000>;
+		};
+
+		factory: partition@7f0000 {
+			label = "factory";
+			reg = <0x7f0000 0x10000>;
+		};
 	};
 
 	ethernet@10100000 {
