@@ -111,6 +111,9 @@ get_status_led() {
 	wr512-3gn)
 		status_led="wr512:green:wps"
 		;;
+	wnce2001)
+		status_led="netgear:green:power"
+		;;
 	mzk-w300nh2)
 		status_led="mzkw300nh2:green:power"
 		;;

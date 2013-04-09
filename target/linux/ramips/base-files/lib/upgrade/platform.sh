@@ -59,6 +59,7 @@ platform_check_image() {
 	wl341v3 | \
 	wl-330n | \
 	wl-351 | \
+	wnce2001 | \
 	wli-tx4-ag300n | \
 	whr-g300n |\
 	ur-326n4g |\

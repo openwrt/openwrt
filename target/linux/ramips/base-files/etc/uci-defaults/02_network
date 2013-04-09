@@ -41,7 +41,8 @@ ramips_setup_interfaces()
 	w150m | \
 	all0256n | \
 	all5002 | \
-	broadway)
+	broadway | \
+	wnce2001)
 		ucidef_add_switch "switch0" "1" "0"
 		ucidef_set_interface_lan "eth0"
 		;;
@@ -242,7 +243,8 @@ ramips_setup_macs()
 
 	all0239-3g | \
 	carambola | \
-	w502u)
+	w502u | \
+	wnce2001)
 		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;

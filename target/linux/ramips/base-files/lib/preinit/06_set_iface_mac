@@ -64,6 +64,7 @@ preinit_set_mac_address() {
 	w306r-v20 |\
 	w502u    |\
 	wr6202 |\
+	wnce2001 |\
 	xdxrn502j)
 		mac=$(mtd_get_mac_binary factory 40)
 		ifconfig eth0 hw ether $mac 2>/dev/null
