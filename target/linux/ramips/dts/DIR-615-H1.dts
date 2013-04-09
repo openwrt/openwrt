@@ -10,10 +10,6 @@
 		ralink,memory = <0x0 0x200000 0x10000000>;
 	};
 
-	chosen {
-		bootargs = "console=ttyS0,57600 mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,3776k@0x50000(firmware)";
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
