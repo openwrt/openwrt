@@ -243,7 +243,7 @@
          will be called when part or all of the page is to be removed
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -5905,6 +5905,13 @@ F:	drivers/scsi/osd/
+@@ -5911,6 +5911,13 @@ F:	drivers/scsi/osd/
  F:	include/scsi/osd_*
  F:	fs/exofs/
  
@@ -335,7 +335,7 @@
  		goto out;
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1399,6 +1399,24 @@ void drop_collected_mounts(struct vfsmou
+@@ -1403,6 +1403,24 @@ void drop_collected_mounts(struct vfsmou
  	release_mounts(&umount_list);
  }
  
@@ -3118,7 +3118,7 @@
 +module_exit(ovl_exit);
 --- a/fs/splice.c
 +++ b/fs/splice.c
-@@ -1308,6 +1308,7 @@ long do_splice_direct(struct file *in, l
+@@ -1310,6 +1310,7 @@ long do_splice_direct(struct file *in, l
  
  	return ret;
  }
@@ -3179,7 +3179,7 @@
  static inline bool execute_ok(struct inode *inode)
 --- a/include/linux/mount.h
 +++ b/include/linux/mount.h
-@@ -66,6 +66,9 @@ extern void mnt_pin(struct vfsmount *mnt
+@@ -68,6 +68,9 @@ extern void mnt_pin(struct vfsmount *mnt
  extern void mnt_unpin(struct vfsmount *mnt);
  extern int __mnt_is_readonly(struct vfsmount *mnt);
  
