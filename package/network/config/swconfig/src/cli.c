@@ -167,6 +167,7 @@ show_vlan(struct switch_dev *dev, int vlan, bool all)
 static void
 print_usage(void)
 {
+	printf("swconfig list\n");
 	printf("swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>|show)\n");
 	exit(1);
 }
@@ -213,6 +214,11 @@ int main(int argc, char **argv)
 	int cvlan = -1;
 	char *ckey = NULL;
 	char *cvalue = NULL;
+
+	if((argc == 2) && !strcmp(argv[1], "list")) {
+		swlib_list();
+		return 0;
+	}
 
 	if(argc < 4)
 		print_usage();

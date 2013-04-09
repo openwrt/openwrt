@@ -624,6 +624,36 @@ done:
 	return NL_SKIP;
 }
 
+static int
+list_switch(struct nl_msg *msg, void *arg)
+{
+	struct swlib_scan_arg *sa = arg;
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct switch_dev *dev;
+	const char *name;
+	const char *alias;
+
+	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
+		goto done;
+
+	if (!tb[SWITCH_ATTR_DEV_NAME] || !tb[SWITCH_ATTR_NAME])
+		goto done;
+
+	printf("Found: %s - %s\n", nla_get_string(tb[SWITCH_ATTR_DEV_NAME]),
+		nla_get_string(tb[SWITCH_ATTR_ALIAS]));
+
+done:
+	return NL_SKIP;
+}
+
+void
+swlib_list(void)
+{
+	if (swlib_priv_init() < 0)
+		return;
+	swlib_call(SWITCH_CMD_GET_SWITCH, list_switch, NULL, NULL);
+	swlib_priv_free();
+}
 
 struct switch_dev *
 swlib_connect(const char *name)
