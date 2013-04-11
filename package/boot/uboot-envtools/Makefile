@@ -69,6 +69,10 @@ ifneq ($(CONFIG_TARGET_ramips),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/ramips $(1)/etc/uci-defaults/uboot-envtools
 endif
+ifneq ($(CONFIG_TARGET_cns3xxx),)
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/cns3xxx $(1)/etc/uci-defaults/uboot-envtools
+endif
 endef
 
 $(eval $(call BuildPackage,uboot-envtools))
