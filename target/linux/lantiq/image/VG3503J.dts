@@ -1,0 +1,189 @@
+/dts-v1/;
+
+/include/ "vr9.dtsi"
+
+/ {
+	model = "VG3503J - BT OpenReach VDSL Modem";
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
+
+	memory@0 {
+		reg = <0x0 0x2000000>;
+	};
+
+	fpi@10000000 {
+		localbus@0 {
+			ranges = <0 0 0x0 0x3ffffff>;
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x2000000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x00000 0x20000>;
+				};
+
+				partition@20000 {
+					label = "kernel";
+					reg = <0x20000 0x400000>;
+				};
+
+				partition@420000 {
+					label = "rootfs";
+					reg = <0x420000 0x320000>;
+				};
+
+				partition@740000 {
+					label = "btagent";
+					reg = <0x740000 0x80000>;
+				};
+
+				partition@7c0000 {
+					label = "pri_bfocus_cfg";
+					reg = <0x7c0000 0x10000>;
+				};
+
+				partition@7d0000 {
+					label = "sec_bfocus_cfg";
+					reg = <0x7d0000 0x10000>;
+				};
+
+				partition@7e0000 {
+					label = "sysconfig";
+					reg = <0x7e0000 0x10000>;
+				};
+
+				partition@7f0000 {
+					label = "misc_cfg";
+					reg = <0x7f0000 0x10000>;
+				};
+			};
+		};
+
+		gpio: pinmux@E100B10 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			state_default: pinmux {
+				mdio {
+					lantiq,groups = "mdio";
+					lantiq,function = "mdio";
+				};
+			};
+		};
+
+		eth@E108000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "lantiq,xrx200-net";
+			reg = <	0xE108000 0x3000 /* switch */
+				0xE10B100 0x70 /* mdio */
+				0xE10B1D8 0x30 /* mii */
+				0xE10B308 0x30 /* pmac */
+			>;
+			interrupt-parent = <&icu0>;
+			interrupts = <73 72>;
+
+			lan: interface@0 {
+				compatible = "lantiq,xrx200-pdi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+				mac-address = [ 00 11 22 33 44 55 ];
+
+				ethernet@2 {
+					compatible = "lantiq,xrx200-pdi-port";
+					reg = <2>;
+					phy-mode = "mii";
+					phy-handle = <&phy11>;
+				};
+				ethernet@4 {
+					compatible = "lantiq,xrx200-pdi-port";
+					reg = <4>;
+					phy-mode = "mii";
+					phy-handle = <&phy13>;
+				};
+			};
+
+			mdio@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "lantiq,xrx200-mdio";
+				phy11: ethernet-phy@11 {
+					reg = <0x11>;
+					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+					lantiq,c45-reg-init = <1 0 0 0>;
+				};
+				phy13: ethernet-phy@13 {
+					reg = <0x13>;
+					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+					lantiq,c45-reg-init = <1 0 0 0>;
+				};
+			};
+		};
+	};
+
+	gphy-xrx200 {
+		compatible = "lantiq,phy-xrx200";
+		firmware = "lantiq/vr9_phy22f_a1x.bin";
+		phys = [ 00 01 ];
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+		reset {
+			label = "reset";
+			gpios = <&gpio 6 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		port2green {
+			label = "bt:green:port2";
+			gpios = <&gpio 2 0>;
+		};
+		lan2 {
+			label = "bt:green:lan2";
+			gpios = <&gpio 5 0>;
+		};
+		port2orange {
+			label = "bt:orange:port2";
+			gpios = <&gpio 7 0>;
+		};
+		power2 {
+			label = "power2";
+			gpios = <&gpio 14 1>;
+		};
+		dsl {
+			label = "dsl";
+			gpios = <&gpio 19 1>;
+		};
+		power {
+			label = "power";
+			gpios = <&gpio 28 1>;
+		};
+		lan1 {
+			label = "bt:green:lan1";
+			gpios = <&gpio 44 0>;
+		};
+		port1green {
+			label = "bt:green:port1";
+			gpios = <&gpio 45 0>;
+		};
+		port1orange {
+			label = "bt:orange:port1";
+			gpios = <&gpio 47 0>;
+		};
+	};
+};

@@ -25,6 +25,12 @@ define PatchKernelLzma
 	$(call CompressLzma,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).lzma)
 endef
 
+define PatchKernelRaw
+	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(KDIR)/$(1).dtb ./$(1).dts
+	$(STAGING_DIR_HOST)/bin/patch-dtb $(KDIR)/vmlinux-$(1) $(KDIR)/$(1).dtb
+endef
+
 define MkBrnImage
 	mkbrncmdline -i $(KDIR)/vmlinux-$(4) -o $(KDIR)/vmlinux-$(4)-brn BRN-BOOT $(6)
 	$(call CompressLzma,$(KDIR)/vmlinux-$(4)-brn,$(KDIR)/vmlinux-$(4)-brn.lzma)
@@ -70,6 +76,12 @@ define Image/BuildEVA/squashfs
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva)
 endef
 
+define Image/BuildRaw/squashfs
+	dd if=$(KDIR)/vmlinux-$(2) of=$(KDIR)/vmlinux-$(2)-$(1) bs=1M conv=sync
+	cat $(KDIR)/vmlinux-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
+	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
+endef
+
 define Image/BuildNANDEVA/jffs2-128k
 	cp $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).rootfs
 endef
@@ -93,6 +105,11 @@ define Image/BuildKernel/Template
 	$(call PatchKernelLzma,$(1),$(if $(2),$(2) machtype=$(1),))
 	$(call MkImageLzma,$(1))
 	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
+endef
+
+define Image/BuildKernelRaw/Template
+	$(call PatchKernelRaw,$(1))
+	$(CP) $(KDIR)/vmlinux-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux
 endef
 
 define Image/BuildKernelEVA/Template
@@ -195,6 +212,9 @@ Image/Build/Profile/EASY80920NOR=$(call Image/Build/$(1),$(1),EASY80920NOR)
 
 Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
 Image/Build/Profile/FRITZ3370=$(call Image/BuildNANDEVA/$(1),$(1),FRITZ3370)
+
+Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelRaw/Template,VG3503J)
+Image/Build/Profile/VG3503J=$(call Image/BuildRaw/$(1),$(1),VG3503J)
 
 endif
 
