@@ -256,7 +256,7 @@ static int rtl8366s_setup(struct rtl8366_smi *smi)
 	int err;
 
 	pdata = smi->parent->platform_data;
-	if (pdata->num_initvals && pdata->initvals) {
+	if (pdata && pdata->num_initvals && pdata->initvals) {
 		unsigned i;
 
 		dev_info(smi->parent, "applying initvals\n");
@@ -1110,7 +1110,7 @@ static int rtl8366s_remove(struct platform_device *pdev)
 
 #ifdef CONFIG_OF
 static const struct of_device_id rtl8366s_match[] = {
-	{ .compatible = "rtl8366s" },
+	{ .compatible = "realtek,rtl8366s" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, rtl8366s_match);
