@@ -223,7 +223,7 @@ Image/Build/Profile/F5D8235V1=$(call BuildFirmware/CustomFlash/$(1),$(1),f5d8235
 
 Image/Build/Profile/BR6524N=$(call BuildFirmware/Edimax/$(1),$(1),br6524n,BR6524N,$(ralink_default_fw_size_4M),CSYS,WNRA,0x50000,0xc0000)
 
-Image/Build/Profile/RTN15=$(call BuildFirmware/Default4M/$(1),$(1),rt-n15,RTN15)
+Image/Build/Profile/RTN15=$(call BuildFirmware/Default4M/$(1),$(1),rt-n15,RT-N15)
 
 Image/Build/Profile/V11STFE=$(call BuildFirmware/Default4M/$(1),$(1),v11st-fe,V11STFE)
 
