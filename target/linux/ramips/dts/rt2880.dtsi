@@ -13,6 +13,10 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
+	memorydetect {
+		ralink,memory = <0x8000000 0x200000 0x8000000>;
+	};
+
 	cpuintc: cpuintc@0 {
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
@@ -20,35 +24,37 @@
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
-	palmbus@10000000 {
+	palmbus@300000 {
 		compatible = "palmbus";
-		reg = <0x10000000 0x200000>;
-                ranges = <0x0 0x10000000 0x1FFFFF>;
+		reg = <0x300000 0x200000>;
+                ranges = <0x0 0x300000 0x1FFFFF>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sysc@300000 {
+		sysc@0 {
 			compatible = "ralink,rt2880-sysc";
-			reg = <0x300000 0x100>;
+			reg = <0x000 0x100>;
 		};
 
-		timer@300100 {
+		timer@100 {
 			compatible = "ralink,rt2880-timer";
-			reg = <0x300100 0x20>;
+			reg = <0x100 0x20>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <1>;
+
+			status = "disabled";
 		};
 
-		watchdog@300120 {
+		watchdog@120 {
 			compatible = "ralink,rt2880-wdt";
-			reg = <0x300120 0x10>;
+			reg = <0x120 0x10>;
 		};
 
-		intc: intc@300200 {
+		intc: intc@200 {
 			compatible = "ralink,rt2880-intc";
-			reg = <0x300200 0x100>;
+			reg = <0x200 0x100>;
 
 			interrupt-controller;
 			#interrupt-cells = <1>;
@@ -57,14 +63,14 @@
 			interrupts = <2>;
 		};
 
-		memc@300300 {
+		memc@300 {
 			compatible = "ralink,rt2880-memc";
-			reg = <0x300300 0x100>;
+			reg = <0x300 0x100>;
 		};
 
-		gpio0: gpio@300600 {
+		gpio0: gpio@600 {
 			compatible = "ralink,rt2880-gpio";
-			reg = <0x300600 0x34>;
+			reg = <0x600 0x34>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -75,9 +81,9 @@
 						30 34 ];
 		};
 
-		gpio1: gpio@300638 {
+		gpio1: gpio@638 {
 			compatible = "ralink,rt2880-gpio";
-			reg = <0x300638 0x24>;
+			reg = <0x638 0x24>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -86,11 +92,13 @@
 			ralink,register-map = [ 00 04 08 0c
 						10 14 18 1c
 						20 24 ];
+
+			status = "disabled";
 		};
 
-		gpio2: gpio@300660 {
+		gpio2: gpio@660 {
 			compatible = "ralink,rt2880-gpio";
-			reg = <0x300660 0x24>;
+			reg = <0x660 0x24>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -99,16 +107,48 @@
 			ralink,register-map = [ 00 04 08 0c
 						10 14 18 1c
 						20 24 ];
+
+			status = "disabled";
 		};
 
-		uartlite@300c00 {
+		uartlite@c00 {
 			compatible = "ralink,rt2880-uart", "ns16550a";
-			reg = <0x300c00 0x100>;
+			reg = <0xc00 0x100>;
 
 			interrupt-parent = <&intc>;
-			interrupts = <12>;
+			interrupts = <8>;
 
 			reg-shift = <2>;
 		};
 	};
+
+	ethernet@400000 {
+		compatible = "ralink,rt2880-eth";
+		reg = <0x00400000 10000>;
+
+		interrupt-parent = <&cpuintc>;
+		interrupts = <5>;
+
+		status = "disabled";
+
+		mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+	};
+
+	wmac@480000 {
+		compatible = "ralink,rt2880-wmac";
+		reg = <0x480000 40000>;
+
+		interrupt-parent = <&cpuintc>;
+		interrupts = <6>;
+
+		ralink,eeprom = "soc_wmac.eeprom";
+
+		status = "disabled";
+	};
+
 };
