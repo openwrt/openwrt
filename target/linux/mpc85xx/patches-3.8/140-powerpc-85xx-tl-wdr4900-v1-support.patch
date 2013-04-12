@@ -210,7 +210,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +}
 --- /dev/null
 +++ b/arch/powerpc/boot/dts/tl-wdr4900-v1.dts
-@@ -0,0 +1,208 @@
+@@ -0,0 +1,212 @@
 +/*
 + * TP-Link TL-WDR4900 v1 Device Tree Source
 + *
@@ -233,6 +233,10 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +/*
 +		linux,stdout-path = "/soc@ffe00000/serial@4500";
 +*/
++	};
++
++	aliases {
++		spi0 = &spi0;
 +	};
 +
 +	memory {
