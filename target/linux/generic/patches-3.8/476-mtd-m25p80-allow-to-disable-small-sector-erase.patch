@@ -30,7 +30,7 @@
  /****************************************************************************/
  
  struct m25p {
-@@ -917,7 +923,7 @@ static int m25p_probe(struct spi_device
+@@ -918,7 +924,7 @@ static int m25p_probe(struct spi_device
  		flash->mtd._write = m25p80_write;
  
  	/* prefer "small sector" erase if possible */

@@ -13,7 +13,7 @@ Cc: linux-kernel@vger.kernel.org
 
 --- a/lib/devres.c
 +++ b/lib/devres.c
-@@ -195,6 +195,7 @@ void devm_ioport_unmap(struct device *de
+@@ -226,6 +226,7 @@ void devm_ioport_unmap(struct device *de
  			       devm_ioport_map_match, (void *)addr));
  }
  EXPORT_SYMBOL(devm_ioport_unmap);
@@ -21,7 +21,7 @@ Cc: linux-kernel@vger.kernel.org
  
  #ifdef CONFIG_PCI
  /*
-@@ -400,4 +401,3 @@ void pcim_iounmap_regions(struct pci_dev
+@@ -431,4 +432,3 @@ void pcim_iounmap_regions(struct pci_dev
  }
  EXPORT_SYMBOL(pcim_iounmap_regions);
  #endif /* CONFIG_PCI */
