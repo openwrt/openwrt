@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 firmware/lantiq/COPYING
  create mode 100644 firmware/lantiq/README
 
-Index: linux-3.8.6/firmware/Makefile
-===================================================================
---- linux-3.8.6.orig/firmware/Makefile	2013-04-05 18:49:06.000000000 +0200
-+++ linux-3.8.6/firmware/Makefile	2013-04-11 11:25:42.252465469 +0200
-@@ -134,6 +134,9 @@
+--- a/firmware/Makefile
++++ b/firmware/Makefile
+@@ -134,6 +134,9 @@ fw-shipped-$(CONFIG_USB_SERIAL_KEYSPAN_P
  fw-shipped-$(CONFIG_USB_SERIAL_XIRCOM) += keyspan_pda/xircom_pgs.fw
  fw-shipped-$(CONFIG_USB_VICAM) += vicam/firmware.fw
  fw-shipped-$(CONFIG_VIDEO_CPIA2) += cpia2/stv0672_vp4.bin
@@ -26,10 +24,8 @@ Index: linux-3.8.6/firmware/Makefile
  fw-shipped-$(CONFIG_YAM) += yam/1200.bin yam/9600.bin
  
  fw-shipped-all := $(fw-shipped-y) $(fw-shipped-m) $(fw-shipped-)
-Index: linux-3.8.6/firmware/lantiq/COPYING
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.8.6/firmware/lantiq/COPYING	2013-04-11 10:23:19.408305468 +0200
+--- /dev/null
++++ b/firmware/lantiq/COPYING
 @@ -0,0 +1,286 @@
 +All firmware files are copyrighted by Lantiq Deutschland GmbH.
 +The files have been extracted from header files found in Lantiq BSPs.
@@ -317,10 +313,8 @@ Index: linux-3.8.6/firmware/lantiq/COPYING
 +POSSIBILITY OF SUCH DAMAGES.
 +
 +		     END OF TERMS AND CONDITIONS
-Index: linux-3.8.6/firmware/lantiq/README
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.8.6/firmware/lantiq/README	2013-04-11 10:23:19.408305468 +0200
+--- /dev/null
++++ b/firmware/lantiq/README
 @@ -0,0 +1,45 @@
 +#
 +# This program is free software; you can redistribute it and/or
