@@ -1,8 +1,11 @@
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
-@@ -5,6 +5,7 @@
+@@ -3,8 +3,9 @@
+ # 
+ 
  menuconfig NET_SCHED
- 	bool "QoS and/or fair queueing"
+-	bool "QoS and/or fair queueing"
++	def_bool y
  	select NET_SCH_FIFO
 +	select NET_SCH_FQ_CODEL
  	---help---
