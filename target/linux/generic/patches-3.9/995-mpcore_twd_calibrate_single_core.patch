@@ -1,6 +1,6 @@
 --- a/arch/arm/kernel/smp_twd.c
 +++ b/arch/arm/kernel/smp_twd.c
-@@ -186,7 +186,7 @@ core_initcall(twd_cpufreq_init);
+@@ -188,7 +188,7 @@ core_initcall(twd_cpufreq_init);
  
  #endif
  
@@ -9,7 +9,7 @@
  {
  	unsigned long count;
  	u64 waitjiffies;
-@@ -223,8 +223,11 @@ static void __cpuinit twd_calibrate_rate
+@@ -225,8 +225,11 @@ static void __cpuinit twd_calibrate_rate
  		printk("%lu.%02luMHz.\n", twd_timer_rate / 1000000,
  			(twd_timer_rate / 10000) % 100);
  	}
