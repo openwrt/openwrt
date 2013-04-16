@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -686,6 +689,13 @@ enum spectral_mode {
+@@ -685,6 +688,13 @@ enum spectral_mode {
  	SPECTRAL_CHANSCAN,
  };
  
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -727,9 +737,8 @@ struct ath_softc {
+@@ -726,9 +736,8 @@ struct ath_softc {
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
  #ifdef CONFIG_MAC80211_LEDS
