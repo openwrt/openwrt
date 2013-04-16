@@ -1,0 +1,14 @@
+--- a/arch/mips/ralink/rt305x.c
++++ b/arch/mips/ralink/rt305x.c
+@@ -97,6 +97,11 @@ struct ralink_pinmux_grp uart_mux[] = {
+ 		.mask = RT305X_GPIO_MODE_GPIO_I2S,
+ 		.gpio_first = RT305X_GPIO_7,
+ 		.gpio_last = RT305X_GPIO_14,
++	}, {
++		.name = "gpio",
++		.mask = RT305X_GPIO_MODE_GPIO,
++		.gpio_first = RT305X_GPIO_7,
++		.gpio_last = RT305X_GPIO_14,
+ 	}, {0}
+ };
+ 
