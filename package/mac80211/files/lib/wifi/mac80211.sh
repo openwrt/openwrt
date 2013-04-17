@@ -270,19 +270,33 @@ get_freq() {
 }
 
 mac80211_generate_mac() {
-	local off="$1"
-	local mac="$2"
+	local id="$1"
+	local ref="$2"
 	local mask="$3"
-	local oIFS="$IFS"; IFS=":"; set -- $mac; IFS="$oIFS"
 
-	local b2mask=0x00
-	[ $off -gt 0 ] &&
-		[ "$mask" = "00:00:00:00:00:00" -o $(( 0x${mask%%:*} & 0x2 )) -gt 0 ] && b2mask=0x02
+	[ "$mask" = "00:00:00:00:00:00" ] && mask="ff:ff:ff:ff:ff:ff";
+	local oIFS="$IFS"; IFS=":"; set -- $mask; IFS="$oIFS"
 
-	printf "%02x:%s:%s:%s:%02x:%02x" \
-		$(( 0x$1 | $b2mask )) $2 $3 $4 \
-		$(( (0x$5 + ($off / 0x100)) % 0x100 )) \
-		$(( (0x$6 + $off) % 0x100 ))
+	local mask1=$1
+	local mask6=$6
+
+	local oIFS="$IFS"; IFS=":"; set -- $ref; IFS="$oIFS"
+	[ "$((0x$mask1))" -gt 0 ] && {
+		b1=$(((0x$1 | 0x2) ^ ($id << 2)))
+		printf "%02x:%s:%s:%s:%s:%s" $b1 $2 $3 $4 $5 $6
+		return
+	}
+
+	[ "$((0x$mask6))" -lt 255 ] && {
+		printf "%s:%s:%s:%s:%s:%02x" $1 $2 $3 $4 $5 $(( 0x$6 ^ $id ))
+		return
+	}
+
+	off2=$(( (0x$6 + $id) / 0x100 ))
+	printf "%s:%s:%s:%s:%02x:%02x" \
+		$1 $2 $3 $4 \
+		$(( (0x$5 + $off2) % 0x100 )) \
+		$(( (0x$6 + $id) % 0x100 ))
 }
 
 enable_mac80211() {
