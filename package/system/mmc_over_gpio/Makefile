@@ -25,7 +25,7 @@ endef
 
 define Package/kmod-mmc-over-gpio/config
 	menu "Configuration"
-		depends PACKAGE_kmod-mmc-over-gpio
+		depends on PACKAGE_kmod-mmc-over-gpio
 
 	config KMOD_MMC_OVER_GPIO_DI_PIN
 		int "GPIO DI (Data-In) pin"

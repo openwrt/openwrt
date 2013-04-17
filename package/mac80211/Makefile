@@ -221,7 +221,7 @@ define KernelPackage/rt2x00-lib/config
 
 	config PACKAGE_RT2X00_LIB_DEBUGFS
 		bool "Enable rt2x00 debugfs support"
-		depends PACKAGE_MAC80211_DEBUGFS
+		depends on PACKAGE_MAC80211_DEBUGFS
 		help
 		  Enable creation of debugfs files for the rt2x00 drivers.
 		  These debugfs files support both reading and writing of the

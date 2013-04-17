@@ -9,7 +9,7 @@ choice
 
 	config GCC_VERSION_4_4_7
 		bool "gcc 4.4.7"
-		depends avr32
+		depends on avr32
 
 	config GCC_VERSION_4_6_3
 		bool "gcc 4.6.3"
@@ -35,7 +35,7 @@ config GCC_USE_GRAPHITE
 config GCC_USE_SYSTEM_PPL_CLOOG
 	bool
 	prompt "Use the system versions of PPL and CLooG"
-	depends GCC_USE_GRAPHITE
+	depends on GCC_USE_GRAPHITE
 	default n
 
 config EXTRA_GCC_CONFIG_OPTIONS

@@ -3,7 +3,7 @@ source "tmp/.config-target.in"
 # Kernel/Hardware features
 
 config HAS_SPE_FPU
-	depends powerpc
+	depends on powerpc
 	select HAS_FPU
 	bool
 
@@ -67,7 +67,7 @@ config NOMMU
 	bool
 
 config HAS_MIPS16
-	depends (mips || mipsel || mips64 || mips64el)
+	depends on (mips || mipsel || mips64 || mips64el)
 	bool
 
 config ARCH_64BIT

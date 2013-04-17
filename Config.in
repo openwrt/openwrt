@@ -25,7 +25,7 @@ menu "Target Images"
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ar71xx
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
 			default TARGET_INITRAMFS_COMPRESSION_NONE
-			depends TARGET_ROOTFS_INITRAMFS
+			depends on TARGET_ROOTFS_INITRAMFS
 			help
 			  Select ramdisk compression.
 
@@ -74,7 +74,7 @@ menu "Target Images"
 	config TARGET_ROOTFS_EXT4FS
 		bool "ext4"
 		default y if USES_EXT4
-		depends !TARGET_ROOTFS_INITRAMFS
+		depends on !TARGET_ROOTFS_INITRAMFS
 		help
 		  Ext4 file system with some free space for uml images
 
@@ -82,28 +82,28 @@ menu "Target Images"
 		bool "iso"
 		default n
 		depends on TARGET_x86_generic
-		depends !TARGET_ROOTFS_INITRAMFS
+		depends on !TARGET_ROOTFS_INITRAMFS
 		help
 		  Create some bootable ISO image
 
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		default y if USES_JFFS2
-		depends !TARGET_ROOTFS_INITRAMFS
+		depends on !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a jffs2 root filesystem
 
 	config TARGET_ROOTFS_SQUASHFS
 		bool "squashfs"
 		default y if USES_SQUASHFS
-		depends !TARGET_ROOTFS_INITRAMFS
+		depends on !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a squashfs-lzma root filesystem
 
 	config TARGET_ROOTFS_UBIFS
 		bool "ubifs"
 		default y if USES_UBIFS
-		depends !TARGET_ROOTFS_INITRAMFS && USES_UBIFS
+		depends on !TARGET_ROOTFS_INITRAMFS && USES_UBIFS
 		help
 		  Build a ubifs root filesystem
 
@@ -113,21 +113,21 @@ menu "Target Images"
 
 	config TARGET_ROOTFS_PARTSIZE
 		int "Root filesystem partition size (in MB)"
-		depends X86_GRUB_IMAGES || TARGET_ROOTFS_EXT4FS || TARGET_rb532
+		depends on X86_GRUB_IMAGES || TARGET_ROOTFS_EXT4FS || TARGET_rb532
 		default 48
 		help
 		    Allows you to change the root filesystem partition size
 
 	config TARGET_ROOTFS_MAXINODE
 		int "Maximum number of inodes in root filesystem"
-		depends TARGET_ROOTFS_EXT4FS
+		depends on TARGET_ROOTFS_EXT4FS
 		default 6000
 		help
 		    Allows you to change the maximum number of inodes in the root filesystem
 
 	config TARGET_ROOTFS_RESERVED_PCT
 		int "Percentage of reserved blocks in root filesystem"
-		depends TARGET_ROOTFS_EXT4FS
+		depends on TARGET_ROOTFS_EXT4FS
 		default 0
 		help
 		    Allows you to change the percentage of reserved blocks in the root filesystem
@@ -303,90 +303,90 @@ menu "Global build settings"
 	config KERNEL_FREEZER
 		bool
 		default y if KERNEL_CGROUP_FREEZER
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_FREEZER
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_DEVICE
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CPUSETS
 		bool
 		default y if KERNEL_CGROUP_CPUACCT
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_PROC_PID_CPUSET
 		bool
 		default y if KERNEL_CGROUP_CPUACCT
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_CPUACCT
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_RESOURCE_COUNTERS
 		bool
 		default y if KERNEL_CGROUP_MEM_RES_CTLR
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_MEM_RES_CTLR
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_MEM_RES_CTLR_SWAP
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_MEM_RES_CTLR_SWAP_ENABLED
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_MEM_RES_CTLR_KMEM
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_PERF
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CFS_BANDWIDTH
 		bool
 		default y if KERNEL_FAIR_GROUP_SCHED
-		depends KERNEL_CGROUP_SCHED
+		depends on KERNEL_CGROUP_SCHED
 
 	config KERNEL_FAIR_GROUP_SCHED
 		bool
 		default y if KERNEL_CGROUP_SCHED
-		depends KERNEL_CGROUP_SCHED
+		depends on KERNEL_CGROUP_SCHED
 
 	config KERNEL_RT_GROUP_SCHED
 		bool
 		default y if KERNEL_CGROUP_SCHED
-		depends KERNEL_CGROUP_SCHED
+		depends on KERNEL_CGROUP_SCHED
 
 	config KERNEL_CGROUP_SCHED
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_NET_CLS_CGROUP
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_NETPRIO_CGROUP
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_BLK_CGROUP
 		bool
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_DEBUG_BLK_CGROUP
 		bool
 		default n if KERNEL_CGROUPS
-		depends KERNEL_CGROUPS
+		depends on KERNEL_CGROUPS
 
 	config KERNEL_CGROUPS
 		bool "Enable kernel cgroups"
@@ -410,27 +410,27 @@ menu "Global build settings"
 
 	config KERNEL_UTS_NS
 		bool
-		depends KERNEL_NAMESPACES
+		depends on KERNEL_NAMESPACES
 
 	config KERNEL_IPC_NS
 		bool
-		depends KERNEL_NAMESPACES
+		depends on KERNEL_NAMESPACES
 
 	config KERNEL_USER_NS
 		bool
-		depends KERNEL_NAMESPACES
+		depends on KERNEL_NAMESPACES
 
 	config KERNEL_PID_NS
 		bool
-		depends KERNEL_NAMESPACES
+		depends on KERNEL_NAMESPACES
 
 	config KERNEL_NET_NS
 		bool
-		depends KERNEL_NAMESPACES
+		depends on KERNEL_NAMESPACES
 
 	config KERNEL_DEVPTS_MULTIPLE_INSTANCES
 		bool
-		depends KERNEL_NAMESPACES
+		depends on KERNEL_NAMESPACES
 
 	config KERNEL_NAMESPACES
 		bool "Enable kernel namespaces"
@@ -536,9 +536,9 @@ menu "Global build settings"
 
 		config USE_SSTRIP
 			bool "sstrip"
-			depends !DEBUG
-			depends !USE_GLIBC
-			depends !USE_EGLIBC
+			depends on !DEBUG
+			depends on !USE_GLIBC
+			depends on !USE_EGLIBC
 			help
 			  This will install binaries stripped using sstrip
 	endchoice
@@ -546,7 +546,7 @@ menu "Global build settings"
 	config STRIP_ARGS
 		string
 		prompt "Strip arguments"
-		depends USE_STRIP
+		depends on USE_STRIP
 		default "--strip-unneeded --remove-section=.comment --remove-section=.note" if DEBUG
 		default "--strip-all"
 		help

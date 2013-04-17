@@ -1,16 +1,16 @@
 config AT91_DFBOOT
 	bool "Build dataflashboot loader"
-	depends TARGET_at91
+	depends on TARGET_at91
 	default n
 
 config AT91_UBOOT
 	bool "Build U-Boot bootloader"
-	depends TARGET_at91
+	depends on TARGET_at91
 	default n
 
 config UBOOT_TARGET
 	string "U-Boot target board"
-	depends AT91_UBOOT
+	depends on AT91_UBOOT
 	default "netusg20"
 	help
 	  For all supported boards there are ready-to-use default
@@ -18,20 +18,20 @@ config UBOOT_TARGET
 
 config UBOOT_IPADDR
 	string "IP Address for U-Boot"
-	depends AT91_UBOOT
+	depends on AT91_UBOOT
 	default "192.168.0.178"
 	help
 	  IP address of device to be used in U-Boot
 
 config UBOOT_SERVERIP
 	string "IP Address of TFTP server"
-	depends AT91_UBOOT
+	depends on AT91_UBOOT
 	default "192.168.0.232"
 	help
 	  IP address of TFTP server for U-Boot
 
 config FLEXIBITY_ROOT
 	bool "Build Flexibity RootFS (with embedded kernel)"
-	depends TARGET_at91_flexibity
+	depends on TARGET_at91_flexibity
 	default n
 

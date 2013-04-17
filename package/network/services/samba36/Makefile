@@ -49,7 +49,7 @@ endef
 define Package/samba36-server/config
 	config PACKAGE_SAMBA_MAX_DEBUG_LEVEL
 		int "Maximum level of compiled-in debug messages"
-		depends PACKAGE_samba36-server || PACKAGE_samba36-client
+		depends on PACKAGE_samba36-server || PACKAGE_samba36-client
 		default -1
 
 endef

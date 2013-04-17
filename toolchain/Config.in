@@ -9,7 +9,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 	config NATIVE_TOOLCHAIN
 		bool
 		prompt "Use host's toolchain"  if DEVEL
-		depends EXTERNAL_TOOLCHAIN
+		depends on EXTERNAL_TOOLCHAIN
 		select NO_STRIP
 		help
 		  If enabled, OpenWrt will compile using the native toolchain for your host instead of compiling one
@@ -17,7 +17,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 	config TARGET_NAME
 		string
 		prompt "Target name"  if DEVEL
-		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "arm-unknown-linux-gnu"      if arm
 		default "armeb-unknown-linux-gnu"    if armeb
 		default "i486-unknown-linux-gnu"     if i386
@@ -29,7 +29,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 	config TOOLCHAIN_PREFIX
 		string
 		prompt "Toolchain prefix"  if DEVEL
-		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "arm-unknown-linux-gnu-"      if arm
 		default "armeb-unknown-linux-gnu-"    if armeb
 		default "i486-unknown-linux-gnu-"     if i386
@@ -41,7 +41,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 	config TOOLCHAIN_ROOT
 		string
 		prompt "Toolchain root"  if DEVEL
-		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "/opt/cross/arm-unknown-linux-gnu"      if arm
 		default "/opt/cross/armeb-unknown-linux-gnu"    if armeb
 		default "/opt/cross/i486-unknown-linux-gnu"     if i386
@@ -53,7 +53,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 	config TOOLCHAIN_LIBC
 		string
 		prompt "Toolchain libc"  if DEVEL
-		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "uclibc"
 		help
 		  Specify the libc type used by the external toolchain. The given value us passed as -m
@@ -64,7 +64,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 	config TOOLCHAIN_BIN_PATH
 		string
 		prompt "Toolchain program path"  if DEVEL
-		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "./usr/bin ./bin"
 		help
 		  Specify additional directories searched for toolchain binaries (override PATH)
@@ -73,7 +73,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 	config TOOLCHAIN_INC_PATH
 		string
 		prompt "Toolchain include path"  if DEVEL
-		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "./usr/include ./include"
 		help
 		  Specify additional directories searched for header files (override CPPFLAGS)
@@ -82,7 +82,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 	config TOOLCHAIN_LIB_PATH
 		string
 		prompt "Toolchain library path"  if DEVEL
-		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "./usr/lib ./lib"
 		help
 		  Specify additional directories searched for libraries (override LDFLAGS)
@@ -90,17 +90,17 @@ menuconfig EXTERNAL_TOOLCHAIN
 
 config NEED_TOOLCHAIN
 	bool
-	depends DEVEL
+	depends on DEVEL
 	default y if !EXTERNAL_TOOLCHAIN
 
 menuconfig TOOLCHAINOPTS
 	bool "Toolchain Options"  if DEVEL
-	depends NEED_TOOLCHAIN
+	depends on NEED_TOOLCHAIN
 
 menuconfig EXTRA_TARGET_ARCH
 	bool
 	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
-	depends !sparc
+	depends on !sparc
 	default y	if powerpc64
 	default n
 	help
@@ -150,17 +150,17 @@ menuconfig EXTRA_TARGET_ARCH
 	endchoice
 
 comment "Binary tools"
-	depends TOOLCHAINOPTS
+	depends on TOOLCHAINOPTS
 
 source "toolchain/binutils/Config.in"
 
 comment "Compiler"
-	depends TOOLCHAINOPTS
+	depends on TOOLCHAINOPTS
 
 source "toolchain/gcc/Config.in"
 
 comment "C Library"
-	depends TOOLCHAINOPTS
+	depends on TOOLCHAINOPTS
 
 choice
 	prompt "C Library implementation" if TOOLCHAINOPTS
@@ -170,14 +170,14 @@ choice
 
 	config USE_EGLIBC
 		bool "Use eglibc"
-		depends !avr32
+		depends on !avr32
 	
 	config USE_UCLIBC
 		bool "Use uClibc"
 
 	config USE_MUSL
 		bool "Use musl"
-		depends !(mips64 || mips64el)
+		depends on !(mips64 || mips64el)
 
 endchoice
 
@@ -186,11 +186,11 @@ source "toolchain/uClibc/Config.in"
 source "toolchain/musl/Config.in"
 
 comment "Debuggers"
-	depends TOOLCHAINOPTS
+	depends on TOOLCHAINOPTS
 
 config GDB
 	bool
-	depends !avr32
+	depends on !avr32
 	prompt "Build gdb" if TOOLCHAINOPTS
 	default y
 	help
@@ -240,7 +240,7 @@ config TARGET_SUFFIX
 	default "musl"            if USE_MUSL && !(arm || armeb)
 
 config MIPS64_ABI
-	depends mips64 || mips64el
+	depends on mips64 || mips64el
 	string
 	default "64" if MIPS64_ABI_N64
 	default "n32" if MIPS64_ABI_N32
