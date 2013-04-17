@@ -1,15 +1,15 @@
 menu "Configuration"
-	depends PACKAGE_libpcap
+	depends on PACKAGE_libpcap
 
 config PCAP_HAS_USB
 	bool "Include USB support"
-	depends PACKAGE_kmod-usb-core
+	depends on PACKAGE_kmod-usb-core
 	default n
 
 config PCAP_HAS_BT
 	bool "Include bluetooth support"
-	depends PACKAGE_kmod-bluetooth
-	depends BROKEN
+	depends on PACKAGE_kmod-bluetooth
+	depends on BROKEN
 	default n
 
 endmenu

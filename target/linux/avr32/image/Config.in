@@ -1,12 +1,12 @@
 config AVR32_UBOOT
 	bool "Build U-Boot bootloader"
-	depends TARGET_avr32
+	depends on TARGET_avr32
 	default n
 
 config AVR32_UBOOT_TARGET
 	string "U-Boot target board"
-	depends TARGET_avr32
-	depends AVR32_UBOOT
+	depends on TARGET_avr32
+	depends on AVR32_UBOOT
 	default "atngw100"
 	help
 	  For all supported boards there are ready-to-use default

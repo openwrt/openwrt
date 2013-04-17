@@ -1,8 +1,8 @@
 config IB
 	bool "Build the OpenWrt Image Builder"
-	depends !TARGET_ROOTFS_INITRAMFS
-	depends !PROFILE_KCONFIG
-	depends !EXTERNAL_TOOLCHAIN
+	depends on !TARGET_ROOTFS_INITRAMFS
+	depends on !PROFILE_KCONFIG
+	depends on !EXTERNAL_TOOLCHAIN
 	help
 	  This is essentially a stripped-down version of the buildroot
 	  with precompiled packages, kernel image and image building tools.

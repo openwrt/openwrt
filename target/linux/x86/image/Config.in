@@ -1,13 +1,13 @@
 config X86_ETHERBOOT_IMAGES
 	bool "Build Etherboot image"
-	depends TARGET_x86 && TARGET_x86_thincan_DBE61
+	depends on TARGET_x86 && TARGET_x86_thincan_DBE61
 	default y
 	help
 	  Builds network bootable image for ThinCan DBE61 (Etherboot BIOS)
 
 config X86_ETHERBOOT_BOOTOPTS
 	string "Extra kernel boot options"
-	depends X86_ETHERBOOT_IMAGES
+	depends on X86_ETHERBOOT_IMAGES
 	default "ip=dhcp nbdport=2000 " if TARGET_ROOTFS_SQUASHFS
 	default "ip=dhcp root=/dev/nfs nfsroot=192.168.0.1:/srv/dbe61"
 	help
@@ -15,26 +15,26 @@ config X86_ETHERBOOT_BOOTOPTS
 
 config X86_GRUB_IMAGES
 	bool "Build GRUB images (Linux x86 or x86_64 host only)"
-	depends TARGET_x86 && !(TARGET_x86_olpc || TARGET_x86_rdc)
-	depends TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+	depends on TARGET_x86 && !(TARGET_x86_olpc || TARGET_x86_rdc)
+	depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 	select PACKAGE_grub2
 	default y
 
 config X86_GRUB_CONSOLE
 	bool "Use Console Terminal (in addition to Serial)"
-	depends X86_GRUB_IMAGES
+	depends on X86_GRUB_IMAGES
 	default n if (TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501 || TARGET_x86_geos || TARGET_x86_alix2)
 	default y
 
 config X86_GRUB_SERIAL
 	string "Serial port device"
-	depends X86_GRUB_IMAGES
+	depends on X86_GRUB_IMAGES
 	default "hvc0" if TARGET_x86_xen_domu
 	default "ttyS0" if ! TARGET_x86_xen_domu
 
 config X86_GRUB_BAUDRATE
 	int "Serial port baud rate"
-	depends X86_GRUB_IMAGES
+	depends on X86_GRUB_IMAGES
 	default 19200 if TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501
 	default 38400 if TARGET_x86_alix2
 	default 115200 if TARGET_x86_geos || TARGET_x86_kvm_guest
@@ -42,57 +42,57 @@ config X86_GRUB_BAUDRATE
 
 config X86_GRUB_BOOTOPTS
 	string "Extra kernel boot options"
-	depends X86_GRUB_IMAGES
+	depends on X86_GRUB_IMAGES
 	default "xencons=hvc" if TARGET_x86_xen_domu
 	help
 	  If you don't know, just leave it blank.
 
 config X86_GRUB_TIMEOUT
 	string "Seconds to wait before booting the default entry"
-	depends X86_GRUB_IMAGES
+	depends on X86_GRUB_IMAGES
 	default "5"
 	help
 	  If you don't know, 5 seconds is a reasonable default.
 
 config X86_VDI_IMAGES
 	bool "Build VirtualBox image files (VDI)"
-	depends X86_GRUB_IMAGES
-	depends TARGET_x86
-	depends TARGET_ROOTFS_EXT4FS
+	depends on X86_GRUB_IMAGES
+	depends on TARGET_x86
+	depends on TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-pcnet32
 
 config X86_VMDK_IMAGES
 	bool "Build VMware image files (VMDK)"
-	depends X86_GRUB_IMAGES
-	depends TARGET_x86
-	depends TARGET_ROOTFS_EXT4FS
+	depends on X86_GRUB_IMAGES
+	depends on TARGET_x86
+	depends on TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-e1000
 
 
 config OLPC_BOOTSCRIPT_IMAGES
 	bool "Build images with bootscript"
-	depends TARGET_x86_olpc
-	depends TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+	depends on TARGET_x86_olpc
+	depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 	default TARGET_x86_olpc
 
 
 config TARGET_IMAGES_PAD
 	bool "Pad images to filesystem size (for JFFS2)"
-	depends OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
+	depends on OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
 
 config TARGET_IMAGES_GZIP
 	bool "GZip images"
-	depends TARGET_IMAGES_PAD || TARGET_ROOTFS_EXT4FS
+	depends on TARGET_IMAGES_PAD || TARGET_ROOTFS_EXT4FS
 	default y
 
 config TARGET_KERNEL_PARTSIZE
 	int "Kernel partition size (in MB)"
-	depends OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
+	depends on OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
 	default 4
 
 config TARGET_ROOTFS_PARTNAME
 	string "Root partition on target device"
-	depends OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
+	depends on OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
 	default "/dev/vda2" if TARGET_x86_kvm_guest
 	default "/dev/xvda2" if TARGET_x86_xen_domu
 	default "/dev/sda2" if ! (TARGET_x86_kvm_guest || TARGET_x86_xen_domu)

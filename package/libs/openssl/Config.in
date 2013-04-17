@@ -7,7 +7,7 @@ config OPENSSL_ENGINE_CRYPTO
 
 config OPENSSL_ENGINE_DIGEST
 	bool
-	depends OPENSSL_ENGINE_CRYPTO
+	depends on OPENSSL_ENGINE_CRYPTO
 	prompt "Digests acceleration support"
 
 endmenu

@@ -11,19 +11,19 @@ choice
 		bool "binutils 2.19.1"
 
 	config BINUTILS_VERSION_2_20_1
-		depends avr32
+		depends on avr32
 		bool "binutils 2.20.1"
 
 	config BINUTILS_VERSION_2_21_1
-		depends !avr32 || (avr32 && BROKEN)
+		depends on !avr32 || (avr32 && BROKEN)
 		bool "binutils 2.21.1"
 
 	config BINUTILS_VERSION_2_22
-		depends !avr32 || (avr32 && BROKEN)
+		depends on !avr32 || (avr32 && BROKEN)
 		bool "binutils 2.22"
 
 	config BINUTILS_VERSION_2_23_1
-		depends !avr32 || (avr32 && BROKEN)
+		depends on !avr32 || (avr32 && BROKEN)
 		bool "binutils 2.23.1"
 
 endchoice
