@@ -500,10 +500,6 @@ endif
 #
 # Generic Targets
 #
-define Image/Build/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-endef
-
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(VMLINUX).elf
 	cp $(KDIR)/vmlinux $(BIN_DIR)/$(VMLINUX).bin
