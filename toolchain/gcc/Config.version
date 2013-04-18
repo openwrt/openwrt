@@ -1,15 +1,22 @@
-config GCC_DEFAULT_VERSION
+config GCC_VERSION_4_4_7
+	default y if (!TOOLCHAINOPTS && avr32)
 	bool
 
-config GCC_DEFAULT_VERSION_4_4_7
-	select GCC_DEFAULT_VERSION
-	default y if avr32
+config GCC_VERSION_4_6_3
 	bool
 
-config GCC_DEFAULT_VERSION_4_6_LINARO
-	default y if !(GCC_DEFAULT_VERSION)
+config GCC_VERSION_4_7_2
 	bool
 
+config GCC_VERSION_4_6_LINARO
+	default y if (!TOOLCHAINOPTS && !avr32)
+	bool
+
+config GCC_VERSION_4_7_LINARO
+	bool
+
+config GCC_VERSION_4_8_0
+	bool
 
 config GCC_VERSION
 	string
@@ -37,14 +44,3 @@ config GCC_VERSION_4_8
 	bool
 	default y	if GCC_VERSION_4_8_0
 
-if !TOOLCHAINOPTS
-
-	config GCC_VERSION_4_4_7
-		default y if GCC_DEFAULT_VERSION_4_4_7
-		bool
-
-	config GCC_VERSION_4_6_LINARO
-		default y if GCC_DEFAULT_VERSION_4_6_LINARO
-		bool
-
-endif
