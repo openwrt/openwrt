@@ -13,41 +13,39 @@
 # Platform specific fixes
 #
 # FreeBSD
-export CFLAGS+=-DKBUILD_NO_NLS
+
+check_lxdialog = $(shell $(SHELL) $(CURDIR)/lxdialog/check-lxdialog.sh -$(1))
+export CFLAGS += -DKBUILD_NO_NLS -I. $(call check_lxdialog,ccflags)
 
 conf-objs	:= conf.o zconf.tab.o
 mconf-objs	:= mconf.o zconf.tab.o
+lxdialog-objs := \
+	lxdialog/checklist.o lxdialog/util.o lxdialog/inputbox.o \
+	lxdialog/textbox.o lxdialog/yesno.o lxdialog/menubox.o
 
-clean-files	:= lkc_defs.h qconf.moc .tmp_qtcheck \
-		   .tmp_gtkcheck zconf.tab.c lex.zconf.c zconf.hash.c
+clean-files	:= zconf.tab.c lex.zconf.c zconf.hash.c
 
-all: conf mconf lxdialog/lxdialog
-
-lxdialog/lxdialog:
-	$(MAKE) -C lxdialog
+all: conf mconf
 
 conf: $(conf-objs)
-mconf: $(mconf-objs) 
+mconf: $(mconf-objs) $(lxdialog-objs)
+	$(CC) -o $@ $^ $(call check_lxdialog,ldflags $(CC))
 
 clean:
-	rm -f *.o $(clean-files) conf mconf
-	$(MAKE) -C lxdialog clean
+	rm -f *.o lxdialog/*.o $(clean-files) conf mconf
 
-zconf.tab.o: lex.zconf.c zconf.hash.c confdata.c
+zconf.tab.o: zconf.lex.c zconf.hash.c confdata.c
 
 kconfig_load.o: lkc_defs.h
 
-lkc_defs.h: $(src)/lkc_proto.h
-	sed < $< > $@ 's/P(\([^,]*\),.*/#define \1 (\*\1_p)/'
-
 zconf.tab.c: zconf.y
-lex.zconf.c: zconf.l
+zconf.lex.c: zconf.l
 zconf.hash.c: zconf.gperf
 
 %.tab.c: %.y
 	cp $@_shipped $@ || bison -l -b $* -p $(notdir $*) $<
 
-lex.%.c: %.l
+%.lex.c: %.l
 	cp $@_shipped $@ || flex -L -P$(notdir $*) -o$@ $<
 
 %.hash.c: %.gperf
