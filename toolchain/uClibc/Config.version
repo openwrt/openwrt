@@ -4,10 +4,6 @@ config UCLIBC_VERSION
 	default "0.9.33.2"       if UCLIBC_VERSION_0_9_33
 	default "0.9.33.2"
 
-if !TOOLCHAINOPTS
-
-	config UCLIBC_VERSION_0_9_33
-		default y if USE_UCLIBC
-		bool
-
-endif
+config UCLIBC_VERSION_0_9_33
+	default y if !TOOLCHAINOPTS && USE_UCLIBC
+	bool

@@ -3,15 +3,15 @@
 choice
 	prompt "uClibc Version"
 	depends on TOOLCHAINOPTS && USE_UCLIBC
-	default UCLIBC_VERSION_0_9_33
+	default UCLIBC_USE_VERSION_0_9_33
 	help
 	  Select the version of uClibc you wish to use.
 
-	config UCLIBC_VERSION_0_9_33
+	config UCLIBC_USE_VERSION_0_9_33
+		select UCLIBC_VERSION_0_9_33
 		bool "uClibc 0.9.33.2"
 
 endchoice
-
 
 # Debug version.
 
