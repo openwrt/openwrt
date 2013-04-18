@@ -164,19 +164,22 @@ comment "C Library"
 
 choice
 	prompt "C Library implementation" if TOOLCHAINOPTS
-	default USE_UCLIBC
+	default LIBC_USE_UCLIBC
 	help
 	  Select the C library implementation.
 
-	config USE_EGLIBC
+	config LIBC_USE_EGLIBC
 		bool "Use eglibc"
+		select USE_EGLIBC
 		depends on !avr32
-	
-	config USE_UCLIBC
+
+	config LIBC_USE_UCLIBC
+		select USE_UCLIBC
 		bool "Use uClibc"
 
-	config USE_MUSL
+	config LIBC_USE_MUSL
 		bool "Use musl"
+		select USE_MUSL
 		depends on !(mips64 || mips64el)
 
 endchoice
@@ -204,9 +207,15 @@ config INSIGHT
 	help
 		Enable if you want to build insight-gdb
 
+config USE_EGLIBC
+	bool
+
 config USE_UCLIBC
 	bool
 	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+
+config USE_MUSL
+	bool
 
 config USE_EXTERNAL_LIBC
 	bool
