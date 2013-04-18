@@ -89,7 +89,7 @@ config-clean: FORCE
 
 defconfig: scripts/config/conf prepare-tmpinfo FORCE
 	touch .config
-	$< --defconfig .config Config.in
+	$< --defconfig=.config Config.in
 
 confdefault-y=allyes
 confdefault-m=allmod
