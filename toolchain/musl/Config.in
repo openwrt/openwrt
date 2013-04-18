@@ -3,14 +3,16 @@
 choice
 	prompt "musl Version"
 	depends on TOOLCHAINOPTS && USE_MUSL
-	default MUSL_VERSION_0_9_8
+	default MUSL_USE_VERSION_0_9_8
 	help
 	  Select the version of musl you wish to use.
 
-	config MUSL_VERSION_0_9_8
+	config MUSL_USE_VERSION_0_9_8
+		select MUSL_VERSION_0_9_8
 		bool "musl 0.9.8"
 
-	config MUSL_VERSION_0_9_9
+	config MUSL_USE_VERSION_0_9_9
+		select MUSL_VERSION_0_9_9
 		bool "musl 0.9.9"
 
 endchoice
