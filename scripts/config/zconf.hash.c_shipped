@@ -1,4 +1,4 @@
-/* ANSI-C code produced by gperf version 3.0.1 */
+/* ANSI-C code produced by gperf version 3.0.4 */
 /* Command-line: gperf  */
 /* Computed positions: -k'1,3' */
 
@@ -30,46 +30,44 @@
 #endif
 
 struct kconf_id;
-/* maximum key range = 40, duplicates = 0 */
+/* maximum key range = 47, duplicates = 0 */
 
-#ifdef __GNUC__
-__inline
-#else
-#ifdef __cplusplus
+#if (defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || defined(__cplusplus) || defined(__GNUC_STDC_INLINE__)
 inline
-#endif
+#elif defined(__GNUC__)
+__inline
 #endif
 static unsigned int
 kconf_id_hash (register const char *str, register unsigned int len)
 {
   static unsigned char asso_values[] =
     {
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 35,  0, 20,
-       5,  0,  5, 42,  0, 25, 42, 42,  5,  5,
-      10,  0, 25, 15,  0,  0,  0, 10, 42, 42,
-       0, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42, 42, 42, 42, 42,
-      42, 42, 42, 42, 42, 42
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 40,  5,
+       0,  0,  5, 49,  5, 20, 49, 49,  5, 20,
+       5,  0, 35, 49,  0, 15,  0, 10, 15, 49,
+      25, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49, 49, 49, 49, 49,
+      49, 49, 49, 49, 49, 49
     };
   register int hval = len;
 
@@ -89,129 +87,139 @@ kconf_id_hash (register const char *str, register unsigned int len)
 struct kconf_id_strings_t
   {
     char kconf_id_strings_str2[sizeof("on")];
-    char kconf_id_strings_str3[sizeof("hex")];
-    char kconf_id_strings_str4[sizeof("bool")];
-    char kconf_id_strings_str5[sizeof("reset")];
-    char kconf_id_strings_str6[sizeof("string")];
-    char kconf_id_strings_str7[sizeof("boolean")];
+    char kconf_id_strings_str5[sizeof("endif")];
+    char kconf_id_strings_str6[sizeof("option")];
+    char kconf_id_strings_str7[sizeof("endmenu")];
     char kconf_id_strings_str8[sizeof("optional")];
-    char kconf_id_strings_str9[sizeof("help")];
-    char kconf_id_strings_str10[sizeof("endif")];
-    char kconf_id_strings_str11[sizeof("select")];
-    char kconf_id_strings_str12[sizeof("endmenu")];
-    char kconf_id_strings_str13[sizeof("deselect")];
-    char kconf_id_strings_str14[sizeof("endchoice")];
-    char kconf_id_strings_str15[sizeof("range")];
-    char kconf_id_strings_str16[sizeof("source")];
-    char kconf_id_strings_str17[sizeof("default")];
-    char kconf_id_strings_str18[sizeof("def_bool")];
-    char kconf_id_strings_str19[sizeof("menu")];
-    char kconf_id_strings_str21[sizeof("def_boolean")];
-    char kconf_id_strings_str22[sizeof("def_tristate")];
-    char kconf_id_strings_str23[sizeof("requires")];
-    char kconf_id_strings_str25[sizeof("menuconfig")];
-    char kconf_id_strings_str26[sizeof("choice")];
-    char kconf_id_strings_str27[sizeof("if")];
-    char kconf_id_strings_str28[sizeof("int")];
-    char kconf_id_strings_str31[sizeof("prompt")];
+    char kconf_id_strings_str9[sizeof("endchoice")];
+    char kconf_id_strings_str10[sizeof("range")];
+    char kconf_id_strings_str11[sizeof("choice")];
+    char kconf_id_strings_str12[sizeof("default")];
+    char kconf_id_strings_str13[sizeof("def_bool")];
+    char kconf_id_strings_str14[sizeof("help")];
+    char kconf_id_strings_str16[sizeof("config")];
+    char kconf_id_strings_str17[sizeof("def_tristate")];
+    char kconf_id_strings_str18[sizeof("env")];
+    char kconf_id_strings_str19[sizeof("defconfig_list")];
+    char kconf_id_strings_str20[sizeof("reset")];
+    char kconf_id_strings_str21[sizeof("string")];
+    char kconf_id_strings_str22[sizeof("if")];
+    char kconf_id_strings_str23[sizeof("int")];
+    char kconf_id_strings_str26[sizeof("select")];
+    char kconf_id_strings_str27[sizeof("modules")];
+    char kconf_id_strings_str28[sizeof("tristate")];
+    char kconf_id_strings_str29[sizeof("menu")];
+    char kconf_id_strings_str31[sizeof("source")];
     char kconf_id_strings_str32[sizeof("comment")];
-    char kconf_id_strings_str33[sizeof("tristate")];
-    char kconf_id_strings_str36[sizeof("config")];
-    char kconf_id_strings_str37[sizeof("depends")];
-    char kconf_id_strings_str38[sizeof("mainmenu")];
-    char kconf_id_strings_str41[sizeof("enable")];
+    char kconf_id_strings_str33[sizeof("hex")];
+    char kconf_id_strings_str35[sizeof("menuconfig")];
+    char kconf_id_strings_str37[sizeof("visible")];
+    char kconf_id_strings_str41[sizeof("prompt")];
+    char kconf_id_strings_str42[sizeof("depends")];
+    char kconf_id_strings_str44[sizeof("bool")];
+    char kconf_id_strings_str47[sizeof("boolean")];
+    char kconf_id_strings_str48[sizeof("mainmenu")];
   };
 static struct kconf_id_strings_t kconf_id_strings_contents =
   {
     "on",
-    "hex",
-    "bool",
-    "reset",
-    "string",
-    "boolean",
-    "optional",
-    "help",
     "endif",
-    "select",
+    "option",
     "endmenu",
-    "deselect",
+    "optional",
     "endchoice",
     "range",
-    "source",
+    "choice",
     "default",
     "def_bool",
-    "menu",
-    "def_boolean",
+    "help",
+    "config",
     "def_tristate",
-    "requires",
-    "menuconfig",
-    "choice",
+    "env",
+    "defconfig_list",
+    "reset",
+    "string",
     "if",
     "int",
-    "prompt",
-    "comment",
+    "select",
+    "modules",
     "tristate",
-    "config",
+    "menu",
+    "source",
+    "comment",
+    "hex",
+    "menuconfig",
+    "visible",
+    "prompt",
     "depends",
-    "mainmenu",
-    "enable"
+    "bool",
+    "boolean",
+    "mainmenu"
   };
 #define kconf_id_strings ((const char *) &kconf_id_strings_contents)
 #ifdef __GNUC__
 __inline
+#if defined __GNUC_STDC_INLINE__ || defined __GNUC_GNU_INLINE__
+__attribute__ ((__gnu_inline__))
+#endif
 #endif
 struct kconf_id *
 kconf_id_lookup (register const char *str, register unsigned int len)
 {
   enum
     {
-      TOTAL_KEYWORDS = 32,
+      TOTAL_KEYWORDS = 33,
       MIN_WORD_LENGTH = 2,
-      MAX_WORD_LENGTH = 12,
+      MAX_WORD_LENGTH = 14,
       MIN_HASH_VALUE = 2,
-      MAX_HASH_VALUE = 41
+      MAX_HASH_VALUE = 48
     };
 
   static struct kconf_id wordlist[] =
     {
       {-1}, {-1},
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str2,		T_ON,		TF_PARAM},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str3,		T_TYPE,		TF_COMMAND, S_HEX},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str4,		T_TYPE,		TF_COMMAND, S_BOOLEAN},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str5,		T_RESET,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str6,		T_TYPE,		TF_COMMAND, S_STRING},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str7,	T_TYPE,		TF_COMMAND, S_BOOLEAN},
+      {-1}, {-1},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str5,		T_ENDIF,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str6,		T_OPTION,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str7,	T_ENDMENU,	TF_COMMAND},
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str8,	T_OPTIONAL,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str9,		T_HELP,		TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str10,		T_ENDIF,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str11,		T_SELECT,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str12,	T_ENDMENU,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str13,	T_DESELECT,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str14,	T_ENDCHOICE,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str15,		T_RANGE,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str16,		T_SOURCE,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str17,	T_DEFAULT,	TF_COMMAND, S_UNKNOWN},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str18,	T_DEFAULT,	TF_COMMAND, S_BOOLEAN},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str19,		T_MENU,		TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str9,	T_ENDCHOICE,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str10,		T_RANGE,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str11,		T_CHOICE,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str12,	T_DEFAULT,	TF_COMMAND, S_UNKNOWN},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str13,	T_DEFAULT,	TF_COMMAND, S_BOOLEAN},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str14,		T_HELP,		TF_COMMAND},
       {-1},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str21,	T_DEFAULT,	TF_COMMAND, S_BOOLEAN},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str22,	T_DEFAULT,	TF_COMMAND, S_TRISTATE},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str23,	T_REQUIRES,	TF_COMMAND},
-      {-1},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str25,	T_MENUCONFIG,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str26,		T_CHOICE,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str27,		T_IF,		TF_COMMAND|TF_PARAM},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str28,		T_TYPE,		TF_COMMAND, S_INT},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str16,		T_CONFIG,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str17,	T_DEFAULT,	TF_COMMAND, S_TRISTATE},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str18,		T_OPT_ENV,	TF_OPTION},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str19,	T_OPT_DEFCONFIG_LIST,TF_OPTION},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str20,		T_RESET,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str21,		T_TYPE,		TF_COMMAND, S_STRING},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str22,		T_IF,		TF_COMMAND|TF_PARAM},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str23,		T_TYPE,		TF_COMMAND, S_INT},
       {-1}, {-1},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str31,		T_PROMPT,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str26,		T_SELECT,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str27,	T_OPT_MODULES,	TF_OPTION},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str28,	T_TYPE,		TF_COMMAND, S_TRISTATE},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str29,		T_MENU,		TF_COMMAND},
+      {-1},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str31,		T_SOURCE,	TF_COMMAND},
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str32,	T_COMMENT,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str33,	T_TYPE,		TF_COMMAND, S_TRISTATE},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str33,		T_TYPE,		TF_COMMAND, S_HEX},
+      {-1},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str35,	T_MENUCONFIG,	TF_COMMAND},
+      {-1},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str37,	T_VISIBLE,	TF_COMMAND},
+      {-1}, {-1}, {-1},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str41,		T_PROMPT,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str42,	T_DEPENDS,	TF_COMMAND},
+      {-1},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str44,		T_TYPE,		TF_COMMAND, S_BOOLEAN},
       {-1}, {-1},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str36,		T_CONFIG,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str37,	T_DEPENDS,	TF_COMMAND},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str38,	T_MAINMENU,	TF_COMMAND},
-      {-1}, {-1},
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str41,		T_SELECT,	TF_COMMAND}
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str47,	T_TYPE,		TF_COMMAND, S_BOOLEAN},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str48,	T_MAINMENU,	TF_COMMAND}
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)

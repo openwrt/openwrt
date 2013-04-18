@@ -3,11 +3,14 @@
  * Released under the terms of the GNU GPL v2.0.
  */
 
+#include <ctype.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define LKC_DIRECT_LINK
 #include "lkc.h"
+
+static const char nohelp_text[] = "There is no help available for this option.";
 
 struct menu rootmenu;
 static struct menu **last_entry_ptr;
@@ -15,7 +18,7 @@ static struct menu **last_entry_ptr;
 struct file *file_list;
 struct file *current_file;
 
-static void menu_warn(struct menu *menu, const char *fmt, ...)
+void menu_warn(struct menu *menu, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -35,7 +38,7 @@ static void prop_warn(struct property *prop, const char *fmt, ...)
 	va_end(ap);
 }
 
-void menu_init(void)
+void _menu_init(void)
 {
 	current_entry = current_menu = &rootmenu;
 	last_entry_ptr = &rootmenu.list;
@@ -45,7 +48,7 @@ void menu_add_entry(struct symbol *sym)
 {
 	struct menu *menu;
 
-	menu = malloc(sizeof(*menu));
+	menu = xmalloc(sizeof(*menu));
 	memset(menu, 0, sizeof(*menu));
 	menu->sym = sym;
 	menu->parent = current_menu;
@@ -55,6 +58,8 @@ void menu_add_entry(struct symbol *sym)
 	*last_entry_ptr = menu;
 	last_entry_ptr = &menu->next;
 	current_entry = menu;
+	if (sym)
+		menu_add_symbol(P_SYMBOL, sym, NULL);
 }
 
 void menu_end_entry(void)
@@ -74,9 +79,34 @@ void menu_end_menu(void)
 	current_menu = current_menu->parent;
 }
 
+static struct expr *menu_check_dep(struct expr *e)
+{
+	if (!e)
+		return e;
+
+	switch (e->type) {
+	case E_NOT:
+		e->left.expr = menu_check_dep(e->left.expr);
+		break;
+	case E_OR:
+	case E_AND:
+		e->left.expr = menu_check_dep(e->left.expr);
+		e->right.expr = menu_check_dep(e->right.expr);
+		break;
+	case E_SYMBOL:
+		/* change 'm' into 'm' && MODULES */
+		if (e->left.sym == &symbol_mod)
+			return expr_alloc_and(e, expr_alloc_symbol(modules_sym));
+		break;
+	default:
+		break;
+	}
+	return e;
+}
+
 void menu_add_dep(struct expr *dep)
 {
-	current_entry->dep = expr_alloc_and(current_entry->dep, dep);
+	current_entry->dep = expr_alloc_and(current_entry->dep, menu_check_dep(dep));
 }
 
 void menu_set_type(int type)
@@ -89,7 +119,7 @@ void menu_set_type(int type)
 		sym->type = type;
 		return;
 	}
-	menu_warn(current_entry, "type of '%s' redefined from '%s' to '%s'\n",
+	menu_warn(current_entry, "type of '%s' redefined from '%s' to '%s'",
 	    sym->name ? sym->name : "<choice>",
 	    sym_type_name(sym->type), sym_type_name(type));
 }
@@ -99,15 +129,34 @@ struct property *menu_add_prop(enum prop_type type, char *prompt, struct expr *e
 	struct property *prop = prop_alloc(type, current_entry->sym);
 
 	prop->menu = current_entry;
-	prop->text = prompt;
 	prop->expr = expr;
-	prop->visible.expr = dep;
+	prop->visible.expr = menu_check_dep(dep);
 
 	if (prompt) {
-		if (current_entry->prompt)
-			menu_warn(current_entry, "prompt redefined\n");
+		if (isspace(*prompt)) {
+			prop_warn(prop, "leading whitespace ignored");
+			while (isspace(*prompt))
+				prompt++;
+		}
+		if (current_entry->prompt && current_entry != &rootmenu)
+			prop_warn(prop, "prompt redefined");
+
+		/* Apply all upper menus' visibilities to actual prompts. */
+		if(type == P_PROMPT) {
+			struct menu *menu = current_entry;
+
+			while ((menu = menu->parent) != NULL) {
+				if (!menu->visibility)
+					continue;
+				prop->visible.expr
+					= expr_alloc_and(prop->visible.expr,
+							 menu->visibility);
+			}
+		}
+
 		current_entry->prompt = prop;
 	}
+	prop->text = prompt;
 
 	return prop;
 }
@@ -115,6 +164,12 @@ struct property *menu_add_prop(enum prop_type type, char *prompt, struct expr *e
 struct property *menu_add_prompt(enum prop_type type, char *prompt, struct expr *dep)
 {
 	return menu_add_prop(type, prompt, NULL, dep);
+}
+
+void menu_add_visibility(struct expr *expr)
+{
+	current_entry->visibility = expr_alloc_and(current_entry->visibility,
+	    expr);
 }
 
 void menu_add_expr(enum prop_type type, struct expr *expr, struct expr *dep)
@@ -127,13 +182,34 @@ void menu_add_symbol(enum prop_type type, struct symbol *sym, struct expr *dep)
 	menu_add_prop(type, NULL, expr_alloc_symbol(sym), dep);
 }
 
-static int menu_range_valid_sym(struct symbol *sym, struct symbol *sym2)
+void menu_add_option(int token, char *arg)
+{
+	struct property *prop;
+
+	switch (token) {
+	case T_OPT_MODULES:
+		prop = prop_alloc(P_DEFAULT, modules_sym);
+		prop->expr = expr_alloc_symbol(current_entry->sym);
+		break;
+	case T_OPT_DEFCONFIG_LIST:
+		if (!sym_defconfig_list)
+			sym_defconfig_list = current_entry->sym;
+		else if (sym_defconfig_list != current_entry->sym)
+			zconf_error("trying to redefine defconfig symbol");
+		break;
+	case T_OPT_ENV:
+		prop_add_env(arg);
+		break;
+	}
+}
+
+static int menu_validate_number(struct symbol *sym, struct symbol *sym2)
 {
 	return sym2->type == S_INT || sym2->type == S_HEX ||
 	       (sym2->type == S_UNKNOWN && sym_string_valid(sym, sym2->name));
 }
 
-void sym_check_prop(struct symbol *sym)
+static void sym_check_prop(struct symbol *sym)
 {
 	struct property *prop;
 	struct symbol *sym2;
@@ -143,8 +219,17 @@ void sym_check_prop(struct symbol *sym)
 			if ((sym->type == S_STRING || sym->type == S_INT || sym->type == S_HEX) &&
 			    prop->expr->type != E_SYMBOL)
 				prop_warn(prop,
-				    "default for config symbol '%'"
+				    "default for config symbol '%s'"
 				    " must be a single symbol", sym->name);
+			if (prop->expr->type != E_SYMBOL)
+				break;
+			sym2 = prop_get_symbol(prop);
+			if (sym->type == S_HEX || sym->type == S_INT) {
+				if (!menu_validate_number(sym, sym2))
+					prop_warn(prop,
+					    "'%s': number is invalid",
+					    sym->name);
+			}
 			break;
 		case P_SELECT:
 			sym2 = prop_get_symbol(prop);
@@ -152,31 +237,11 @@ void sym_check_prop(struct symbol *sym)
 				prop_warn(prop,
 				    "config symbol '%s' uses select, but is "
 				    "not boolean or tristate", sym->name);
-			else if (sym2->type == S_UNKNOWN)
-				prop_warn(prop,
-				    "'select' used by config symbol '%s' "
-				    "refer to undefined symbol '%s'",
-				    sym->name, sym2->name);
-			else if (sym2->type != S_BOOLEAN && sym2->type != S_TRISTATE)
+			else if (sym2->type != S_UNKNOWN &&
+			         sym2->type != S_BOOLEAN &&
+			         sym2->type != S_TRISTATE)
 				prop_warn(prop,
 				    "'%s' has wrong type. 'select' only "
-				    "accept arguments of boolean and "
-				    "tristate type", sym2->name);
-			break;
-		case P_DESELECT:
-			sym2 = prop_get_symbol(prop);
-			if (sym->type != S_BOOLEAN && sym->type != S_TRISTATE)
-				prop_warn(prop,
-				    "config symbol '%s' uses deselect, but is "
-				    "not boolean or tristate", sym->name);
-			else if (sym2->type == S_UNKNOWN)
-				prop_warn(prop,
-				    "'deselect' used by config symbol '%s' "
-				    "refer to undefined symbol '%s'",
-				    sym->name, sym2->name);
-			else if (sym2->type != S_BOOLEAN && sym2->type != S_TRISTATE)
-				prop_warn(prop,
-				    "'%s' has wrong type. 'deselect' only "
 				    "accept arguments of boolean and "
 				    "tristate type", sym2->name);
 			break;
@@ -184,8 +249,8 @@ void sym_check_prop(struct symbol *sym)
 			if (sym->type != S_INT && sym->type != S_HEX)
 				prop_warn(prop, "range is only allowed "
 				                "for int or hex symbols");
-			if (!menu_range_valid_sym(sym, prop->expr->left.sym) ||
-			    !menu_range_valid_sym(sym, prop->expr->right.sym))
+			if (!menu_validate_number(sym, prop->expr->left.sym) ||
+			    !menu_validate_number(sym, prop->expr->right.sym))
 				prop_warn(prop, "range is invalid");
 			break;
 		default:
@@ -204,15 +269,21 @@ void menu_finalize(struct menu *parent)
 	sym = parent->sym;
 	if (parent->list) {
 		if (sym && sym_is_choice(sym)) {
-			/* find the first choice value and find out choice type */
-			for (menu = parent->list; menu; menu = menu->next) {
-				if (menu->sym) {
-					current_entry = parent;
-					menu_set_type(menu->sym->type);
-					current_entry = menu;
-					menu_set_type(sym->type);
-					break;
+			if (sym->type == S_UNKNOWN) {
+				/* find the first choice value to find out choice type */
+				current_entry = parent;
+				for (menu = parent->list; menu; menu = menu->next) {
+					if (menu->sym && menu->sym->type != S_UNKNOWN) {
+						menu_set_type(menu->sym->type);
+						break;
+					}
 				}
+			}
+			/* set the type of the remaining choice values */
+			for (menu = parent->list; menu; menu = menu->next) {
+				current_entry = menu;
+				if (menu->sym && menu->sym->type == S_UNKNOWN)
+					menu_set_type(sym->type);
 			}
 			parentdep = expr_alloc_symbol(sym);
 		} else if (parent->prompt)
@@ -229,12 +300,11 @@ void menu_finalize(struct menu *parent)
 				prop = menu->sym->prop;
 			else
 				prop = menu->prompt;
-
 			for (; prop; prop = prop->next) {
 				if (prop->menu != menu)
 					continue;
 				dep = expr_transform(prop->visible.expr);
-				dep = expr_alloc_and(expr_copy(menu->dep), dep);
+				dep = expr_alloc_and(expr_copy(basedep), dep);
 				dep = expr_eliminate_dups(dep);
 				if (menu->sym && menu->sym->type != S_TRISTATE)
 					dep = expr_trans_bool(dep);
@@ -242,11 +312,6 @@ void menu_finalize(struct menu *parent)
 				if (prop->type == P_SELECT) {
 					struct symbol *es = prop_get_symbol(prop);
 					es->rev_dep.expr = expr_alloc_or(es->rev_dep.expr,
-							expr_alloc_and(expr_alloc_symbol(menu->sym), expr_copy(dep)));
-				}
-				if (prop->type == P_DESELECT) {
-					struct symbol *es = prop_get_symbol(prop);
-					es->rev_dep_inv.expr = expr_alloc_or(es->rev_dep_inv.expr,
 							expr_alloc_and(expr_alloc_symbol(menu->sym), expr_copy(dep)));
 				}
 			}
@@ -284,26 +349,47 @@ void menu_finalize(struct menu *parent)
 			parent->next = last_menu->next;
 			last_menu->next = NULL;
 		}
+
+		sym->dir_dep.expr = expr_alloc_or(sym->dir_dep.expr, parent->dep);
 	}
 	for (menu = parent->list; menu; menu = menu->next) {
-		if (sym && sym_is_choice(sym) && menu->sym) {
+		if (sym && sym_is_choice(sym) &&
+		    menu->sym && !sym_is_choice_value(menu->sym)) {
+			current_entry = menu;
 			menu->sym->flags |= SYMBOL_CHOICEVAL;
 			if (!menu->prompt)
 				menu_warn(menu, "choice value must have a prompt");
 			for (prop = menu->sym->prop; prop; prop = prop->next) {
-				if (prop->type == P_PROMPT && prop->menu != menu) {
-					prop_warn(prop, "choice values "
-					    "currently only support a "
-					    "single prompt");
+				if (prop->type == P_DEFAULT)
+					prop_warn(prop, "defaults for choice "
+						  "values not supported");
+				if (prop->menu == menu)
+					continue;
+				if (prop->type == P_PROMPT &&
+				    prop->menu->parent->sym != sym)
+					prop_warn(prop, "choice value used outside its choice group");
+			}
+			/* Non-tristate choice values of tristate choices must
+			 * depend on the choice being set to Y. The choice
+			 * values' dependencies were propagated to their
+			 * properties above, so the change here must be re-
+			 * propagated.
+			 */
+			if (sym->type == S_TRISTATE && menu->sym->type != S_TRISTATE) {
+				basedep = expr_alloc_comp(E_EQUAL, sym, &symbol_yes);
+				menu->dep = expr_alloc_and(basedep, menu->dep);
+				for (prop = menu->sym->prop; prop; prop = prop->next) {
+					if (prop->menu != menu)
+						continue;
+					prop->visible.expr = expr_alloc_and(expr_copy(basedep),
+									    prop->visible.expr);
 				}
 			}
-			current_entry = menu;
-			menu_set_type(sym->type);
 			menu_add_symbol(P_CHOICE, sym, NULL);
 			prop = sym_get_choice_prop(sym);
 			for (ep = &prop->expr; *ep; ep = &(*ep)->left.expr)
 				;
-			*ep = expr_alloc_one(E_CHOICE, NULL);
+			*ep = expr_alloc_one(E_LIST, NULL);
 			(*ep)->right.sym = menu->sym;
 		}
 		if (menu->list && (!menu->prompt || !menu->prompt->text)) {
@@ -320,11 +406,10 @@ void menu_finalize(struct menu *parent)
 
 	if (sym && !(sym->flags & SYMBOL_WARNED)) {
 		if (sym->type == S_UNKNOWN)
-			menu_warn(parent, "config symbol defined "
-			    "without type\n");
+			menu_warn(parent, "config symbol defined without type");
 
 		if (sym_is_choice(sym) && !parent->prompt)
-			menu_warn(parent, "choice must have a prompt\n");
+			menu_warn(parent, "choice must have a prompt");
 
 		/* Check properties connected to this symbol */
 		sym_check_prop(sym);
@@ -338,6 +423,13 @@ void menu_finalize(struct menu *parent)
 	}
 }
 
+bool menu_has_prompt(struct menu *menu)
+{
+	if (!menu->prompt)
+		return false;
+	return true;
+}
+
 bool menu_is_visible(struct menu *menu)
 {
 	struct menu *child;
@@ -346,6 +438,12 @@ bool menu_is_visible(struct menu *menu)
 
 	if (!menu->prompt)
 		return false;
+
+	if (menu->visibility) {
+		if (expr_calc_value(menu->visibility) == no)
+			return no;
+	}
+
 	sym = menu->sym;
 	if (sym) {
 		sym_calc_value(sym);
@@ -355,21 +453,27 @@ bool menu_is_visible(struct menu *menu)
 
 	if (visible != no)
 		return true;
+
 	if (!sym || sym_get_tristate_value(menu->sym) == no)
 		return false;
 
-	for (child = menu->list; child; child = child->next)
-		if (menu_is_visible(child))
+	for (child = menu->list; child; child = child->next) {
+		if (menu_is_visible(child)) {
+			if (sym)
+				sym->flags |= SYMBOL_DEF_USER;
 			return true;
+		}
+	}
+
 	return false;
 }
 
 const char *menu_get_prompt(struct menu *menu)
 {
 	if (menu->prompt)
-		return _(menu->prompt->text);
+		return menu->prompt->text;
 	else if (menu->sym)
-		return _(menu->sym->name);
+		return menu->sym->name;
 	return NULL;
 }
 
@@ -390,3 +494,151 @@ struct menu *menu_get_parent_menu(struct menu *menu)
 	return menu;
 }
 
+bool menu_has_help(struct menu *menu)
+{
+	return menu->help != NULL;
+}
+
+const char *menu_get_help(struct menu *menu)
+{
+	if (menu->help)
+		return menu->help;
+	else
+		return "";
+}
+
+static void get_prompt_str(struct gstr *r, struct property *prop,
+			   struct list_head *head)
+{
+	int i, j;
+	struct menu *submenu[8], *menu, *location = NULL;
+	struct jump_key *jump;
+
+	str_printf(r, _("Prompt: %s\n"), _(prop->text));
+	str_printf(r, _("  Defined at %s:%d\n"), prop->menu->file->name,
+		prop->menu->lineno);
+	if (!expr_is_yes(prop->visible.expr)) {
+		str_append(r, _("  Depends on: "));
+		expr_gstr_print(prop->visible.expr, r);
+		str_append(r, "\n");
+	}
+	menu = prop->menu->parent;
+	for (i = 0; menu != &rootmenu && i < 8; menu = menu->parent) {
+		bool accessible = menu_is_visible(menu);
+
+		submenu[i++] = menu;
+		if (location == NULL && accessible)
+			location = menu;
+	}
+	if (head && location) {
+		jump = xmalloc(sizeof(struct jump_key));
+
+		if (menu_is_visible(prop->menu)) {
+			/*
+			 * There is not enough room to put the hint at the
+			 * beginning of the "Prompt" line. Put the hint on the
+			 * last "Location" line even when it would belong on
+			 * the former.
+			 */
+			jump->target = prop->menu;
+		} else
+			jump->target = location;
+
+		if (list_empty(head))
+			jump->index = 0;
+		else
+			jump->index = list_entry(head->prev, struct jump_key,
+						 entries)->index + 1;
+
+		list_add_tail(&jump->entries, head);
+	}
+
+	if (i > 0) {
+		str_printf(r, _("  Location:\n"));
+		for (j = 4; --i >= 0; j += 2) {
+			menu = submenu[i];
+			if (head && location && menu == location)
+				jump->offset = r->len - 1;
+			str_printf(r, "%*c-> %s", j, ' ',
+				   _(menu_get_prompt(menu)));
+			if (menu->sym) {
+				str_printf(r, " (%s [=%s])", menu->sym->name ?
+					menu->sym->name : _("<choice>"),
+					sym_get_string_value(menu->sym));
+			}
+			str_append(r, "\n");
+		}
+	}
+}
+
+/*
+ * head is optional and may be NULL
+ */
+void get_symbol_str(struct gstr *r, struct symbol *sym,
+		    struct list_head *head)
+{
+	bool hit;
+	struct property *prop;
+
+	if (sym && sym->name) {
+		str_printf(r, "Symbol: %s [=%s]\n", sym->name,
+			   sym_get_string_value(sym));
+		str_printf(r, "Type  : %s\n", sym_type_name(sym->type));
+		if (sym->type == S_INT || sym->type == S_HEX) {
+			prop = sym_get_range_prop(sym);
+			if (prop) {
+				str_printf(r, "Range : ");
+				expr_gstr_print(prop->expr, r);
+				str_append(r, "\n");
+			}
+		}
+	}
+	for_all_prompts(sym, prop)
+		get_prompt_str(r, prop, head);
+	hit = false;
+	for_all_properties(sym, prop, P_SELECT) {
+		if (!hit) {
+			str_append(r, "  Selects: ");
+			hit = true;
+		} else
+			str_printf(r, " && ");
+		expr_gstr_print(prop->expr, r);
+	}
+	if (hit)
+		str_append(r, "\n");
+	if (sym->rev_dep.expr) {
+		str_append(r, _("  Selected by: "));
+		expr_gstr_print(sym->rev_dep.expr, r);
+		str_append(r, "\n");
+	}
+	str_append(r, "\n\n");
+}
+
+struct gstr get_relations_str(struct symbol **sym_arr, struct list_head *head)
+{
+	struct symbol *sym;
+	struct gstr res = str_new();
+	int i;
+
+	for (i = 0; sym_arr && (sym = sym_arr[i]); i++)
+		get_symbol_str(&res, sym, head);
+	if (!i)
+		str_append(&res, _("No matches found.\n"));
+	return res;
+}
+
+
+void menu_get_ext_help(struct menu *menu, struct gstr *help)
+{
+	struct symbol *sym = menu->sym;
+	const char *help_text = nohelp_text;
+
+	if (menu_has_help(menu)) {
+		if (sym->name)
+			str_printf(help, "%s%s:\n\n", CONFIG_, sym->name);
+		help_text = menu_get_help(menu);
+	}
+	str_printf(help, "%s\n", _(help_text));
+	if (sym)
+		get_symbol_str(help, sym, NULL);
+}
