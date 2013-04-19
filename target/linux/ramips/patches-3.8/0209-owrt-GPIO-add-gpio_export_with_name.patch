@@ -91,7 +91,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  /* Private data structure for of_gpiochip_find_and_xlate */
  struct gg_data {
-@@ -289,3 +291,62 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -288,3 +290,62 @@ void of_gpiochip_remove(struct gpio_chip
  	if (chip->of_node)
  		of_node_put(chip->of_node);
  }
