@@ -224,12 +224,12 @@
  #include <linux/bcma/bcma.h>
  
  static inline u32 bcma_cc_write32_masked(struct bcma_drv_cc *cc, u16 offset,
-@@ -22,20 +25,119 @@ static inline u32 bcma_cc_write32_masked
+@@ -22,20 +25,120 @@ static inline u32 bcma_cc_write32_masked
  	return value;
  }
  
 -void bcma_core_chipcommon_init(struct bcma_drv_cc *cc)
-+static u32 bcma_chipco_get_alp_clock(struct bcma_drv_cc *cc)
++u32 bcma_chipco_get_alp_clock(struct bcma_drv_cc *cc)
  {
 -	u32 leddc_on = 10;
 -	u32 leddc_off = 90;
@@ -239,6 +239,7 @@
 -	if (cc->setup_done)
 +	return 20000000;
 +}
++EXPORT_SYMBOL_GPL(bcma_chipco_get_alp_clock);
 +
 +static u32 bcma_chipco_watchdog_get_max_timer(struct bcma_drv_cc *cc)
 +{
@@ -348,7 +349,7 @@
  	if (cc->core->id.rev >= 20) {
  		bcma_cc_write32(cc, BCMA_CC_GPIOPULLUP, 0);
  		bcma_cc_write32(cc, BCMA_CC_GPIOPULLDOWN, 0);
-@@ -44,7 +146,7 @@ void bcma_core_chipcommon_init(struct bc
+@@ -44,7 +147,7 @@ void bcma_core_chipcommon_init(struct bc
  	if (cc->capabilities & BCMA_CC_CAP_PMU)
  		bcma_pmu_init(cc);
  	if (cc->capabilities & BCMA_CC_CAP_PCTL)
@@ -357,7 +358,7 @@
  
  	if (cc->core->id.rev >= 16) {
  		if (cc->core->bus->sprom.leddc_on_time &&
-@@ -56,15 +158,33 @@ void bcma_core_chipcommon_init(struct bc
+@@ -56,15 +159,33 @@ void bcma_core_chipcommon_init(struct bc
  			((leddc_on << BCMA_CC_GPIOTIMER_ONTIME_SHIFT) |
  			 (leddc_off << BCMA_CC_GPIOTIMER_OFFTIME_SHIFT)));
  	}
@@ -394,7 +395,7 @@
  }
  
  void bcma_chipco_irq_mask(struct bcma_drv_cc *cc, u32 mask, u32 value)
-@@ -84,28 +204,97 @@ u32 bcma_chipco_gpio_in(struct bcma_drv_
+@@ -84,28 +205,99 @@ u32 bcma_chipco_gpio_in(struct bcma_drv_
  
  u32 bcma_chipco_gpio_out(struct bcma_drv_cc *cc, u32 mask, u32 value)
  {
@@ -408,6 +409,7 @@
 +
 +	return res;
  }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_out);
  
  u32 bcma_chipco_gpio_outen(struct bcma_drv_cc *cc, u32 mask, u32 value)
  {
@@ -421,6 +423,7 @@
 +
 +	return res;
  }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_outen);
  
 +/*
 + * If the bit is set to 0, chipcommon controlls this GPIO,
@@ -497,7 +500,7 @@
  }
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
-@@ -118,8 +307,7 @@ void bcma_chipco_serial_init(struct bcma
+@@ -118,8 +310,7 @@ void bcma_chipco_serial_init(struct bcma
  	struct bcma_serial_port *ports = cc->serial_ports;
  
  	if (ccrev >= 11 && ccrev != 15) {
@@ -507,7 +510,7 @@
  		if (ccrev >= 21) {
  			/* Turn off UART clock before switching clocksource. */
  			bcma_cc_write32(cc, BCMA_CC_CORECTL,
-@@ -137,8 +325,7 @@ void bcma_chipco_serial_init(struct bcma
+@@ -137,8 +328,7 @@ void bcma_chipco_serial_init(struct bcma
  				       | BCMA_CC_CORECTL_UARTCLKEN);
  		}
  	} else {
@@ -748,7 +751,7 @@
  	if (cc->pmu.rev == 1)
  		bcma_cc_mask32(cc, BCMA_CC_PMU_CTL,
  			      ~BCMA_CC_PMU_CTL_NOILPONW);
-@@ -174,37 +165,31 @@ void bcma_pmu_init(struct bcma_drv_cc *c
+@@ -174,37 +165,47 @@ void bcma_pmu_init(struct bcma_drv_cc *c
  		bcma_cc_set32(cc, BCMA_CC_PMU_CTL,
  			     BCMA_CC_PMU_CTL_NOILPONW);
  
@@ -774,21 +777,37 @@
 -	case 0x5357:
 -	case 0x4749:
 -	case 53572:
-+	case BCMA_CHIP_ID_BCM4716:
-+	case BCMA_CHIP_ID_BCM4748:
-+	case BCMA_CHIP_ID_BCM47162:
 +	case BCMA_CHIP_ID_BCM4313:
-+	case BCMA_CHIP_ID_BCM5357:
++	case BCMA_CHIP_ID_BCM43224:
++	case BCMA_CHIP_ID_BCM43225:
++	case BCMA_CHIP_ID_BCM43227:
++	case BCMA_CHIP_ID_BCM43228:
++	case BCMA_CHIP_ID_BCM4331:
++	case BCMA_CHIP_ID_BCM43421:
++	case BCMA_CHIP_ID_BCM43428:
++	case BCMA_CHIP_ID_BCM43431:
++	case BCMA_CHIP_ID_BCM4716:
++	case BCMA_CHIP_ID_BCM47162:
++	case BCMA_CHIP_ID_BCM4748:
 +	case BCMA_CHIP_ID_BCM4749:
++	case BCMA_CHIP_ID_BCM5357:
 +	case BCMA_CHIP_ID_BCM53572:
++	case BCMA_CHIP_ID_BCM6362:
  		/* always 20Mhz */
  		return 20000 * 1000;
 -	case 0x5356:
 -	case 0x5300:
-+	case BCMA_CHIP_ID_BCM5356:
 +	case BCMA_CHIP_ID_BCM4706:
++	case BCMA_CHIP_ID_BCM5356:
  		/* always 25Mhz */
  		return 25000 * 1000;
++	case BCMA_CHIP_ID_BCM43460:
++	case BCMA_CHIP_ID_BCM4352:
++	case BCMA_CHIP_ID_BCM4360:
++		if (cc->status & BCMA_CC_CHIPST_4360_XTAL_40MZ)
++			return 40000 * 1000;
++		else
++			return 20000 * 1000;
  	default:
 -		pr_warn("No ALP clock specified for %04X device, "
 -			"pmu rev. %d, using default %d Hz\n",
@@ -798,7 +817,7 @@
  	}
  	return BCMA_CC_PMU_ALP_CLOCK;
  }
-@@ -212,7 +197,7 @@ u32 bcma_pmu_alp_clock(struct bcma_drv_c
+@@ -212,7 +213,7 @@ u32 bcma_pmu_alp_clock(struct bcma_drv_c
  /* Find the output of the "m" pll divider given pll controls that start with
   * pllreg "pll0" i.e. 12 for main 6 for phy, 0 for misc.
   */
@@ -807,7 +826,7 @@
  {
  	u32 tmp, div, ndiv, p1, p2, fc;
  	struct bcma_bus *bus = cc->core->bus;
-@@ -221,7 +206,8 @@ static u32 bcma_pmu_clock(struct bcma_dr
+@@ -221,7 +222,8 @@ static u32 bcma_pmu_clock(struct bcma_dr
  
  	BUG_ON(!m || m > 4);
  
@@ -817,7 +836,7 @@
  		/* Detect failure in clock setting */
  		tmp = bcma_cc_read32(cc, BCMA_CC_CHIPSTAT);
  		if (tmp & 0x40000)
-@@ -240,60 +226,95 @@ static u32 bcma_pmu_clock(struct bcma_dr
+@@ -240,60 +242,95 @@ static u32 bcma_pmu_clock(struct bcma_dr
  	ndiv = (tmp & BCMA_CC_PPL_NDIV_MASK) >> BCMA_CC_PPL_NDIV_SHIFT;
  
  	/* Do calculation in Mhz */
@@ -939,7 +958,7 @@
  			pll = BCMA_CC_PMU5357_MAINPLL_PLL0;
  			break;
  		default:
-@@ -301,10 +322,189 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
+@@ -301,10 +338,189 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
  			break;
  		}
  
@@ -996,7 +1015,7 @@
 +		tmp |= (bcm5357_bcm43236_ndiv[spuravoid]) << BCMA_CC_PMU1_PLL0_PC2_NDIV_INT_SHIFT;
 +		bcma_cc_write32(cc, BCMA_CC_PLLCTL_DATA, tmp);
 +
-+		tmp = 1 << 10;
++		tmp = BCMA_CC_PMU_CTL_PLL_UPD;
 +		break;
 +
 +	case BCMA_CHIP_ID_BCM4331:
@@ -1017,7 +1036,7 @@
 +			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL2,
 +						     0x03000a08);
 +		}
-+		tmp = 1 << 10;
++		tmp = BCMA_CC_PMU_CTL_PLL_UPD;
 +		break;
 +
 +	case BCMA_CHIP_ID_BCM43224:
@@ -1050,7 +1069,7 @@
 +			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL5,
 +						     0x88888815);
 +		}
-+		tmp = 1 << 10;
++		tmp = BCMA_CC_PMU_CTL_PLL_UPD;
 +		break;
 +
 +	case BCMA_CHIP_ID_BCM4716:
@@ -1084,7 +1103,7 @@
 +						     0x88888815);
 +		}
 +
-+		tmp = 3 << 9;
++		tmp = BCMA_CC_PMU_CTL_PLL_UPD | BCMA_CC_PMU_CTL_NOILPONW;
 +		break;
 +
 +	case BCMA_CHIP_ID_BCM43227:
@@ -1120,7 +1139,7 @@
 +			bcma_pmu_spuravoid_pll_write(cc, BCMA_CC_PMU_PLL_CTL5,
 +						     0x88888815);
 +		}
-+		tmp = 1 << 10;
++		tmp = BCMA_CC_PMU_CTL_PLL_UPD;
 +		break;
 +	default:
 +		bcma_err(bus, "Unknown spuravoidance settings for chip 0x%04X, not changing PLL\n",
@@ -1555,7 +1574,7 @@
  		bcma_core_mips_print_irq(core, bcma_core_mips_irq(core));
  	}
  }
-@@ -171,9 +194,9 @@ u32 bcma_cpu_clock(struct bcma_drv_mips
+@@ -171,9 +194,9 @@ u32 bcma_cpu_clock(struct bcma_drv_mips 
  	struct bcma_bus *bus = mcore->core->bus;
  
  	if (bus->drv_cc.capabilities & BCMA_CC_CAP_PMU)
@@ -1913,7 +1932,7 @@
  }
  
  /**************************************************
-@@ -138,88 +143,108 @@ static void bcma_pcie_mdio_write(struct
+@@ -138,88 +143,108 @@ static void bcma_pcie_mdio_write(struct 
  
  static u8 bcma_pcicore_polarity_workaround(struct bcma_drv_pci *pc)
  {
@@ -2771,7 +2790,7 @@
  {
  	struct bcma_bus *bus = pci_get_drvdata(dev);
  
-@@ -234,7 +238,7 @@ static void bcma_host_pci_remove(struct
+@@ -234,7 +238,7 @@ static void bcma_host_pci_remove(struct 
  	pci_set_drvdata(dev, NULL);
  }
  
@@ -3212,12 +3231,12 @@
 +		break;
 +	default:
 +		return "UNKNOWN";
- 	}
++	}
 +
 +	for (i = 0; i < size; i++) {
 +		if (names[i].id == id->id)
 +			return names[i].name;
-+	}
+ 	}
 +
  	return "UNKNOWN";
  }
@@ -3601,71 +3620,7 @@
 +		SPEX(core_pwr_info[i].pa_5gh[1], o + SSB_SROM8_5GH_PA_1, ~0, 0);
 +		SPEX(core_pwr_info[i].pa_5gh[2], o + SSB_SROM8_5GH_PA_2, ~0, 0);
 +	}
- 
--	bus->sprom.txpid2g[0] = (sprom[SPOFF(SSB_SPROM4_TXPID2G01)] &
--	     SSB_SPROM4_TXPID2G0) >> SSB_SPROM4_TXPID2G0_SHIFT;
--	bus->sprom.txpid2g[1] = (sprom[SPOFF(SSB_SPROM4_TXPID2G01)] &
--	     SSB_SPROM4_TXPID2G1) >> SSB_SPROM4_TXPID2G1_SHIFT;
--	bus->sprom.txpid2g[2] = (sprom[SPOFF(SSB_SPROM4_TXPID2G23)] &
--	     SSB_SPROM4_TXPID2G2) >> SSB_SPROM4_TXPID2G2_SHIFT;
--	bus->sprom.txpid2g[3] = (sprom[SPOFF(SSB_SPROM4_TXPID2G23)] &
--	     SSB_SPROM4_TXPID2G3) >> SSB_SPROM4_TXPID2G3_SHIFT;
--
--	bus->sprom.txpid5gl[0] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL01)] &
--	     SSB_SPROM4_TXPID5GL0) >> SSB_SPROM4_TXPID5GL0_SHIFT;
--	bus->sprom.txpid5gl[1] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL01)] &
--	     SSB_SPROM4_TXPID5GL1) >> SSB_SPROM4_TXPID5GL1_SHIFT;
--	bus->sprom.txpid5gl[2] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL23)] &
--	     SSB_SPROM4_TXPID5GL2) >> SSB_SPROM4_TXPID5GL2_SHIFT;
--	bus->sprom.txpid5gl[3] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL23)] &
--	     SSB_SPROM4_TXPID5GL3) >> SSB_SPROM4_TXPID5GL3_SHIFT;
--
--	bus->sprom.txpid5g[0] = (sprom[SPOFF(SSB_SPROM4_TXPID5G01)] &
--	     SSB_SPROM4_TXPID5G0) >> SSB_SPROM4_TXPID5G0_SHIFT;
--	bus->sprom.txpid5g[1] = (sprom[SPOFF(SSB_SPROM4_TXPID5G01)] &
--	     SSB_SPROM4_TXPID5G1) >> SSB_SPROM4_TXPID5G1_SHIFT;
--	bus->sprom.txpid5g[2] = (sprom[SPOFF(SSB_SPROM4_TXPID5G23)] &
--	     SSB_SPROM4_TXPID5G2) >> SSB_SPROM4_TXPID5G2_SHIFT;
--	bus->sprom.txpid5g[3] = (sprom[SPOFF(SSB_SPROM4_TXPID5G23)] &
--	     SSB_SPROM4_TXPID5G3) >> SSB_SPROM4_TXPID5G3_SHIFT;
--
--	bus->sprom.txpid5gh[0] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH01)] &
--	     SSB_SPROM4_TXPID5GH0) >> SSB_SPROM4_TXPID5GH0_SHIFT;
--	bus->sprom.txpid5gh[1] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH01)] &
--	     SSB_SPROM4_TXPID5GH1) >> SSB_SPROM4_TXPID5GH1_SHIFT;
--	bus->sprom.txpid5gh[2] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH23)] &
--	     SSB_SPROM4_TXPID5GH2) >> SSB_SPROM4_TXPID5GH2_SHIFT;
--	bus->sprom.txpid5gh[3] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH23)] &
--	     SSB_SPROM4_TXPID5GH3) >> SSB_SPROM4_TXPID5GH3_SHIFT;
--
--	bus->sprom.boardflags_lo = sprom[SPOFF(SSB_SPROM8_BFLLO)];
--	bus->sprom.boardflags_hi = sprom[SPOFF(SSB_SPROM8_BFLHI)];
--	bus->sprom.boardflags2_lo = sprom[SPOFF(SSB_SPROM8_BFL2LO)];
--	bus->sprom.boardflags2_hi = sprom[SPOFF(SSB_SPROM8_BFL2HI)];
--
--	bus->sprom.country_code = sprom[SPOFF(SSB_SPROM8_CCODE)];
--
--	bus->sprom.fem.ghz2.tssipos = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
--		SSB_SROM8_FEM_TSSIPOS) >> SSB_SROM8_FEM_TSSIPOS_SHIFT;
--	bus->sprom.fem.ghz2.extpa_gain = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
--		SSB_SROM8_FEM_EXTPA_GAIN) >> SSB_SROM8_FEM_EXTPA_GAIN_SHIFT;
--	bus->sprom.fem.ghz2.pdet_range = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
--		SSB_SROM8_FEM_PDET_RANGE) >> SSB_SROM8_FEM_PDET_RANGE_SHIFT;
--	bus->sprom.fem.ghz2.tr_iso = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
--		SSB_SROM8_FEM_TR_ISO) >> SSB_SROM8_FEM_TR_ISO_SHIFT;
--	bus->sprom.fem.ghz2.antswlut = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
--		SSB_SROM8_FEM_ANTSWLUT) >> SSB_SROM8_FEM_ANTSWLUT_SHIFT;
--
--	bus->sprom.fem.ghz5.tssipos = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
--		SSB_SROM8_FEM_TSSIPOS) >> SSB_SROM8_FEM_TSSIPOS_SHIFT;
--	bus->sprom.fem.ghz5.extpa_gain = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
--		SSB_SROM8_FEM_EXTPA_GAIN) >> SSB_SROM8_FEM_EXTPA_GAIN_SHIFT;
--	bus->sprom.fem.ghz5.pdet_range = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
--		SSB_SROM8_FEM_PDET_RANGE) >> SSB_SROM8_FEM_PDET_RANGE_SHIFT;
--	bus->sprom.fem.ghz5.tr_iso = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
--		SSB_SROM8_FEM_TR_ISO) >> SSB_SROM8_FEM_TR_ISO_SHIFT;
--	bus->sprom.fem.ghz5.antswlut = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
--		SSB_SROM8_FEM_ANTSWLUT) >> SSB_SROM8_FEM_ANTSWLUT_SHIFT;
++
 +	SPEX(fem.ghz2.tssipos, SSB_SPROM8_FEM2G, SSB_SROM8_FEM_TSSIPOS,
 +	     SSB_SROM8_FEM_TSSIPOS_SHIFT);
 +	SPEX(fem.ghz2.extpa_gain, SSB_SPROM8_FEM2G, SSB_SROM8_FEM_EXTPA_GAIN,
@@ -3847,7 +3802,71 @@
 +	case BCMA_CHIP_ID_BCM4331:
 +		present_mask = BCMA_CC_CHIPST_4331_SPROM_PRESENT;
 +		break;
-+
+ 
+-	bus->sprom.txpid2g[0] = (sprom[SPOFF(SSB_SPROM4_TXPID2G01)] &
+-	     SSB_SPROM4_TXPID2G0) >> SSB_SPROM4_TXPID2G0_SHIFT;
+-	bus->sprom.txpid2g[1] = (sprom[SPOFF(SSB_SPROM4_TXPID2G01)] &
+-	     SSB_SPROM4_TXPID2G1) >> SSB_SPROM4_TXPID2G1_SHIFT;
+-	bus->sprom.txpid2g[2] = (sprom[SPOFF(SSB_SPROM4_TXPID2G23)] &
+-	     SSB_SPROM4_TXPID2G2) >> SSB_SPROM4_TXPID2G2_SHIFT;
+-	bus->sprom.txpid2g[3] = (sprom[SPOFF(SSB_SPROM4_TXPID2G23)] &
+-	     SSB_SPROM4_TXPID2G3) >> SSB_SPROM4_TXPID2G3_SHIFT;
+-
+-	bus->sprom.txpid5gl[0] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL01)] &
+-	     SSB_SPROM4_TXPID5GL0) >> SSB_SPROM4_TXPID5GL0_SHIFT;
+-	bus->sprom.txpid5gl[1] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL01)] &
+-	     SSB_SPROM4_TXPID5GL1) >> SSB_SPROM4_TXPID5GL1_SHIFT;
+-	bus->sprom.txpid5gl[2] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL23)] &
+-	     SSB_SPROM4_TXPID5GL2) >> SSB_SPROM4_TXPID5GL2_SHIFT;
+-	bus->sprom.txpid5gl[3] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL23)] &
+-	     SSB_SPROM4_TXPID5GL3) >> SSB_SPROM4_TXPID5GL3_SHIFT;
+-
+-	bus->sprom.txpid5g[0] = (sprom[SPOFF(SSB_SPROM4_TXPID5G01)] &
+-	     SSB_SPROM4_TXPID5G0) >> SSB_SPROM4_TXPID5G0_SHIFT;
+-	bus->sprom.txpid5g[1] = (sprom[SPOFF(SSB_SPROM4_TXPID5G01)] &
+-	     SSB_SPROM4_TXPID5G1) >> SSB_SPROM4_TXPID5G1_SHIFT;
+-	bus->sprom.txpid5g[2] = (sprom[SPOFF(SSB_SPROM4_TXPID5G23)] &
+-	     SSB_SPROM4_TXPID5G2) >> SSB_SPROM4_TXPID5G2_SHIFT;
+-	bus->sprom.txpid5g[3] = (sprom[SPOFF(SSB_SPROM4_TXPID5G23)] &
+-	     SSB_SPROM4_TXPID5G3) >> SSB_SPROM4_TXPID5G3_SHIFT;
+-
+-	bus->sprom.txpid5gh[0] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH01)] &
+-	     SSB_SPROM4_TXPID5GH0) >> SSB_SPROM4_TXPID5GH0_SHIFT;
+-	bus->sprom.txpid5gh[1] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH01)] &
+-	     SSB_SPROM4_TXPID5GH1) >> SSB_SPROM4_TXPID5GH1_SHIFT;
+-	bus->sprom.txpid5gh[2] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH23)] &
+-	     SSB_SPROM4_TXPID5GH2) >> SSB_SPROM4_TXPID5GH2_SHIFT;
+-	bus->sprom.txpid5gh[3] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH23)] &
+-	     SSB_SPROM4_TXPID5GH3) >> SSB_SPROM4_TXPID5GH3_SHIFT;
+-
+-	bus->sprom.boardflags_lo = sprom[SPOFF(SSB_SPROM8_BFLLO)];
+-	bus->sprom.boardflags_hi = sprom[SPOFF(SSB_SPROM8_BFLHI)];
+-	bus->sprom.boardflags2_lo = sprom[SPOFF(SSB_SPROM8_BFL2LO)];
+-	bus->sprom.boardflags2_hi = sprom[SPOFF(SSB_SPROM8_BFL2HI)];
+-
+-	bus->sprom.country_code = sprom[SPOFF(SSB_SPROM8_CCODE)];
+-
+-	bus->sprom.fem.ghz2.tssipos = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
+-		SSB_SROM8_FEM_TSSIPOS) >> SSB_SROM8_FEM_TSSIPOS_SHIFT;
+-	bus->sprom.fem.ghz2.extpa_gain = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
+-		SSB_SROM8_FEM_EXTPA_GAIN) >> SSB_SROM8_FEM_EXTPA_GAIN_SHIFT;
+-	bus->sprom.fem.ghz2.pdet_range = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
+-		SSB_SROM8_FEM_PDET_RANGE) >> SSB_SROM8_FEM_PDET_RANGE_SHIFT;
+-	bus->sprom.fem.ghz2.tr_iso = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
+-		SSB_SROM8_FEM_TR_ISO) >> SSB_SROM8_FEM_TR_ISO_SHIFT;
+-	bus->sprom.fem.ghz2.antswlut = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
+-		SSB_SROM8_FEM_ANTSWLUT) >> SSB_SROM8_FEM_ANTSWLUT_SHIFT;
+-
+-	bus->sprom.fem.ghz5.tssipos = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
+-		SSB_SROM8_FEM_TSSIPOS) >> SSB_SROM8_FEM_TSSIPOS_SHIFT;
+-	bus->sprom.fem.ghz5.extpa_gain = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
+-		SSB_SROM8_FEM_EXTPA_GAIN) >> SSB_SROM8_FEM_EXTPA_GAIN_SHIFT;
+-	bus->sprom.fem.ghz5.pdet_range = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
+-		SSB_SROM8_FEM_PDET_RANGE) >> SSB_SROM8_FEM_PDET_RANGE_SHIFT;
+-	bus->sprom.fem.ghz5.tr_iso = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
+-		SSB_SROM8_FEM_TR_ISO) >> SSB_SROM8_FEM_TR_ISO_SHIFT;
+-	bus->sprom.fem.ghz5.antswlut = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
+-		SSB_SROM8_FEM_ANTSWLUT) >> SSB_SROM8_FEM_ANTSWLUT_SHIFT;
 +	default:
 +		return true;
 +	}
@@ -4176,7 +4195,7 @@
  #define BCMA_CC_IRQSTAT			0x0020
  #define BCMA_CC_IRQMASK			0x0024
  #define	 BCMA_CC_IRQ_GPIO		0x00000001	/* gpio intr */
-@@ -79,6 +88,22 @@
+@@ -79,6 +88,23 @@
  #define	 BCMA_CC_IRQ_WDRESET		0x80000000	/* watchdog reset occurred */
  #define BCMA_CC_CHIPCTL			0x0028		/* Rev >= 11 only */
  #define BCMA_CC_CHIPSTAT		0x002C		/* Rev >= 11 only */
@@ -4196,10 +4215,11 @@
 +#define  BCMA_CC_CHIPST_4706_MIPS_BENDIAN	BIT(3) /* 0: little, 1: big endian */
 +#define  BCMA_CC_CHIPST_4706_PCIE1_DISABLE	BIT(5) /* PCIE1 enable strap pin */
 +#define  BCMA_CC_CHIPST_5357_NAND_BOOT		BIT(4) /* NAND boot, valid for CC rev 38 and/or BCM5357 */
++#define  BCMA_CC_CHIPST_4360_XTAL_40MZ		0x00000001
  #define BCMA_CC_JCMD			0x0030		/* Rev >= 10 only */
  #define  BCMA_CC_JCMD_START		0x80000000
  #define  BCMA_CC_JCMD_BUSY		0x80000000
-@@ -108,10 +133,58 @@
+@@ -108,10 +134,58 @@
  #define  BCMA_CC_JCTL_EXT_EN		2		/* Enable external targets */
  #define  BCMA_CC_JCTL_EN		1		/* Enable Jtag master */
  #define BCMA_CC_FLASHCTL		0x0040
@@ -4258,7 +4278,7 @@
  #define BCMA_CC_BCAST_ADDR		0x0050
  #define BCMA_CC_BCAST_DATA		0x0054
  #define BCMA_CC_GPIOPULLUP		0x0058		/* Rev >= 20 only */
-@@ -181,6 +254,45 @@
+@@ -181,6 +255,45 @@
  #define BCMA_CC_FLASH_CFG		0x0128
  #define  BCMA_CC_FLASH_CFG_DS		0x0010	/* Data size, 0=8bit, 1=16bit */
  #define BCMA_CC_FLASH_WAITCNT		0x012C
@@ -4304,7 +4324,7 @@
  /* 0x1E0 is defined as shared BCMA_CLKCTLST */
  #define BCMA_CC_HW_WORKAROUND		0x01E4 /* Hardware workaround (rev >= 20) */
  #define BCMA_CC_UART0_DATA		0x0300
-@@ -240,7 +352,60 @@
+@@ -240,7 +353,60 @@
  #define BCMA_CC_PLLCTL_ADDR		0x0660
  #define BCMA_CC_PLLCTL_DATA		0x0664
  #define BCMA_CC_SPROM			0x0800 /* SPROM beginning */
@@ -4366,7 +4386,7 @@
  
  /* Divider allocation in 4716/47162/5356 */
  #define BCMA_CC_PMU5_MAINPLL_CPU	1
-@@ -256,6 +421,15 @@
+@@ -256,6 +422,15 @@
  
  /* 4706 PMU */
  #define BCMA_CC_PMU4706_MAINPLL_PLL0	0
@@ -4382,7 +4402,7 @@
  
  /* ALP clock on pre-PMU chips */
  #define BCMA_CC_PMU_ALP_CLOCK		20000000
-@@ -284,6 +458,19 @@
+@@ -284,6 +459,19 @@
  #define BCMA_CC_PPL_PCHI_OFF		5
  #define BCMA_CC_PPL_PCHI_MASK		0x0000003f
  
@@ -4402,7 +4422,7 @@
  /* BCM4331 ChipControl numbers. */
  #define BCMA_CHIPCTL_4331_BT_COEXIST		BIT(0)	/* 0 disable */
  #define BCMA_CHIPCTL_4331_SECI			BIT(1)	/* 0 SECI is disabled (JATG functional) */
-@@ -297,9 +484,25 @@
+@@ -297,9 +485,25 @@
  #define BCMA_CHIPCTL_4331_OVR_PIPEAUXPWRDOWN	BIT(9)	/* override core control on pipe_AuxPowerDown */
  #define BCMA_CHIPCTL_4331_PCIE_AUXCLKEN		BIT(10)	/* pcie_auxclkenable */
  #define BCMA_CHIPCTL_4331_PCIE_PIPE_PLLDOWN	BIT(11)	/* pcie_pipe_pllpowerdown */
@@ -4428,7 +4448,7 @@
  /* Data for the PMU, if available.
   * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
   */
-@@ -310,11 +513,35 @@ struct bcma_chipcommon_pmu {
+@@ -310,11 +514,35 @@ struct bcma_chipcommon_pmu {
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  struct bcma_pflash {
@@ -4464,7 +4484,7 @@
  struct bcma_serial_port {
  	void *regs;
  	unsigned long clockspeed;
-@@ -330,15 +557,30 @@ struct bcma_drv_cc {
+@@ -330,15 +558,30 @@ struct bcma_drv_cc {
  	u32 capabilities;
  	u32 capabilities_ext;
  	u8 setup_done:1;
@@ -4495,7 +4515,7 @@
  };
  
  /* Register access */
-@@ -355,14 +597,14 @@ struct bcma_drv_cc {
+@@ -355,14 +598,16 @@ struct bcma_drv_cc {
  	bcma_cc_write32(cc, offset, (bcma_cc_read32(cc, offset) & (mask)) | (set))
  
  extern void bcma_core_chipcommon_init(struct bcma_drv_cc *cc);
@@ -4509,10 +4529,12 @@
 -extern void bcma_chipco_watchdog_timer_set(struct bcma_drv_cc *cc,
 -					  u32 ticks);
 +extern u32 bcma_chipco_watchdog_timer_set(struct bcma_drv_cc *cc, u32 ticks);
++
++extern u32 bcma_chipco_get_alp_clock(struct bcma_drv_cc *cc);
  
  void bcma_chipco_irq_mask(struct bcma_drv_cc *cc, u32 mask, u32 value);
  
-@@ -375,9 +617,12 @@ u32 bcma_chipco_gpio_outen(struct bcma_d
+@@ -375,9 +620,12 @@ u32 bcma_chipco_gpio_outen(struct bcma_d
  u32 bcma_chipco_gpio_control(struct bcma_drv_cc *cc, u32 mask, u32 value);
  u32 bcma_chipco_gpio_intmask(struct bcma_drv_cc *cc, u32 mask, u32 value);
  u32 bcma_chipco_gpio_polarity(struct bcma_drv_cc *cc, u32 mask, u32 value);
@@ -4525,7 +4547,7 @@
  
  extern void bcma_chipco_pll_write(struct bcma_drv_cc *cc, u32 offset,
  				  u32 value);
-@@ -387,5 +632,6 @@ extern void bcma_chipco_chipctl_maskset(
+@@ -387,5 +635,6 @@ extern void bcma_chipco_chipctl_maskset(
  					u32 offset, u32 mask, u32 set);
  extern void bcma_chipco_regctl_maskset(struct bcma_drv_cc *cc,
  				       u32 offset, u32 mask, u32 set);

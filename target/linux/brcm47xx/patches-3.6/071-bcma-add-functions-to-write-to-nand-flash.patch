@@ -25,7 +25,7 @@
  	.num_resources	= 0,
  };
  
-@@ -31,6 +38,11 @@ int bcma_nflash_init(struct bcma_drv_cc
+@@ -31,6 +38,11 @@ int bcma_nflash_init(struct bcma_drv_cc 
  		return -ENODEV;
  	}
  
@@ -37,7 +37,7 @@
  	cc->nflash.present = true;
  	if (cc->core->id.rev == 38 &&
  	    (cc->status & BCMA_CC_CHIPST_5357_NAND_BOOT))
-@@ -42,3 +54,141 @@ int bcma_nflash_init(struct bcma_drv_cc
+@@ -42,3 +54,141 @@ int bcma_nflash_init(struct bcma_drv_cc 
  
  	return 0;
  }
@@ -189,7 +189,7 @@
  
  /** ChipCommon core registers. **/
  #define BCMA_CC_ID			0x0000
-@@ -522,17 +523,6 @@ struct bcma_pflash {
+@@ -523,17 +524,6 @@ struct bcma_pflash {
  };
  
  
@@ -207,7 +207,7 @@
  struct bcma_serial_port {
  	void *regs;
  	unsigned long clockspeed;
-@@ -558,7 +548,7 @@ struct bcma_drv_cc {
+@@ -559,7 +549,7 @@ struct bcma_drv_cc {
  	struct bcm47xx_sflash sflash;
  #endif
  #ifdef CONFIG_BCMA_NFLASH
@@ -216,7 +216,7 @@
  #endif
  
  	int nr_serial_ports;
-@@ -625,4 +615,13 @@ extern void bcma_chipco_regctl_maskset(s
+@@ -628,4 +618,13 @@ extern void bcma_chipco_regctl_maskset(s
  				       u32 offset, u32 mask, u32 set);
  extern void bcma_pmu_spuravoid_pllupdate(struct bcma_drv_cc *cc, int spuravoid);
  

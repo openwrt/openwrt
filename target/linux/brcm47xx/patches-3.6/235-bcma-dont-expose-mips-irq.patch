@@ -10,7 +10,7 @@
  #endif /* LINUX_BCMA_DRIVER_MIPS_H_ */
 --- a/drivers/bcma/driver_chipcommon.c
 +++ b/drivers/bcma/driver_chipcommon.c
-@@ -329,7 +329,7 @@ void bcma_chipco_serial_init(struct bcma
+@@ -332,7 +332,7 @@ void bcma_chipco_serial_init(struct bcma
  		return;
  	}
  
@@ -65,7 +65,7 @@
  	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
  
  	return 0;
-@@ -596,6 +596,6 @@ int bcma_core_pci_pcibios_map_irq(const
+@@ -596,6 +596,6 @@ int bcma_core_pci_pcibios_map_irq(const 
  
  	pc_host = container_of(dev->bus->ops, struct bcma_drv_pci_host,
  			       pci_ops);

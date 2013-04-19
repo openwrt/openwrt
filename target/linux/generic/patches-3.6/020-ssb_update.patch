@@ -384,6 +384,39 @@
  u32 ssb_pmu_get_cpu_clock(struct ssb_chipcommon *cc)
  {
  	struct ssb_bus *bus = cc->dev->bus;
+@@ -645,3 +675,32 @@ u32 ssb_pmu_get_controlclock(struct ssb_
+ 		return 0;
+ 	}
+ }
++
++void ssb_pmu_spuravoid_pllupdate(struct ssb_chipcommon *cc, int spuravoid)
++{
++	u32 pmu_ctl = 0;
++
++	switch (cc->dev->bus->chip_id) {
++	case 0x4322:
++		ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL0, 0x11100070);
++		ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL1, 0x1014140a);
++		ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL5, 0x88888854);
++		if (spuravoid == 1)
++			ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL2, 0x05201828);
++		else
++			ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL2, 0x05001828);
++		pmu_ctl = SSB_CHIPCO_PMU_CTL_PLL_UPD;
++		break;
++	case 43222:
++		/* TODO: BCM43222 requires updating PLLs too */
++		return;
++	default:
++		ssb_printk(KERN_ERR PFX
++			   "Unknown spuravoidance settings for chip 0x%04X, not changing PLL\n",
++			   cc->dev->bus->chip_id);
++		return;
++	}
++
++	chipco_set32(cc, SSB_CHIPCO_PMU_CTL, pmu_ctl);
++}
++EXPORT_SYMBOL_GPL(ssb_pmu_spuravoid_pllupdate);
 --- /dev/null
 +++ b/drivers/ssb/driver_chipcommon_sflash.c
 @@ -0,0 +1,18 @@
@@ -683,7 +716,7 @@
 +}
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
-@@ -178,9 +178,9 @@ static void ssb_mips_serial_init(struct
+@@ -178,9 +178,9 @@ static void ssb_mips_serial_init(struct 
  {
  	struct ssb_bus *bus = mcore->dev->bus;
  
@@ -974,7 +1007,15 @@
  	struct list_head list;
 --- a/include/linux/ssb/ssb_driver_chipcommon.h
 +++ b/include/linux/ssb/ssb_driver_chipcommon.h
-@@ -504,7 +504,9 @@
+@@ -219,6 +219,7 @@
+ #define SSB_CHIPCO_PMU_CTL			0x0600 /* PMU control */
+ #define  SSB_CHIPCO_PMU_CTL_ILP_DIV		0xFFFF0000 /* ILP div mask */
+ #define  SSB_CHIPCO_PMU_CTL_ILP_DIV_SHIFT	16
++#define  SSB_CHIPCO_PMU_CTL_PLL_UPD		0x00000400
+ #define  SSB_CHIPCO_PMU_CTL_NOILPONW		0x00000200 /* No ILP on wait */
+ #define  SSB_CHIPCO_PMU_CTL_HTREQEN		0x00000100 /* HT req enable */
+ #define  SSB_CHIPCO_PMU_CTL_ALPREQEN		0x00000080 /* ALP req enable */
+@@ -504,7 +505,9 @@
  #define SSB_CHIPCO_FLASHCTL_ST_SE	0x02D8		/* Sector Erase */
  #define SSB_CHIPCO_FLASHCTL_ST_BE	0x00C7		/* Bulk Erase */
  #define SSB_CHIPCO_FLASHCTL_ST_DP	0x00B9		/* Deep Power-down */
@@ -985,7 +1026,7 @@
  
  /* Status register bits for ST flashes */
  #define SSB_CHIPCO_FLASHSTA_ST_WIP	0x01		/* Write In Progress */
-@@ -588,7 +590,10 @@ struct ssb_chipcommon {
+@@ -588,7 +591,10 @@ struct ssb_chipcommon {
  	u32 status;
  	/* Fast Powerup Delay constant */
  	u16 fast_pwrup_delay;
@@ -996,7 +1037,7 @@
  };
  
  static inline bool ssb_chipco_available(struct ssb_chipcommon *cc)
-@@ -628,8 +633,7 @@ enum ssb_clkmode {
+@@ -628,8 +634,7 @@ enum ssb_clkmode {
  extern void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
  				     enum ssb_clkmode mode);
  
@@ -1006,7 +1047,7 @@
  
  void ssb_chipco_irq_mask(struct ssb_chipcommon *cc, u32 mask, u32 value);
  
-@@ -642,6 +646,8 @@ u32 ssb_chipco_gpio_outen(struct ssb_chi
+@@ -642,6 +647,8 @@ u32 ssb_chipco_gpio_outen(struct ssb_chi
  u32 ssb_chipco_gpio_control(struct ssb_chipcommon *cc, u32 mask, u32 value);
  u32 ssb_chipco_gpio_intmask(struct ssb_chipcommon *cc, u32 mask, u32 value);
  u32 ssb_chipco_gpio_polarity(struct ssb_chipcommon *cc, u32 mask, u32 value);
@@ -1015,6 +1056,13 @@
  
  #ifdef CONFIG_SSB_SERIAL
  extern int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
+@@ -661,5 +668,6 @@ enum ssb_pmu_ldo_volt_id {
+ void ssb_pmu_set_ldo_voltage(struct ssb_chipcommon *cc,
+ 			     enum ssb_pmu_ldo_volt_id id, u32 voltage);
+ void ssb_pmu_set_ldo_paref(struct ssb_chipcommon *cc, bool on);
++void ssb_pmu_spuravoid_pllupdate(struct ssb_chipcommon *cc, int spuravoid);
+ 
+ #endif /* LINUX_SSB_CHIPCO_H_ */
 --- a/include/linux/ssb/ssb_driver_extif.h
 +++ b/include/linux/ssb/ssb_driver_extif.h
 @@ -152,12 +152,16 @@
@@ -1127,6 +1175,23 @@
  extern void ssb_mipscore_init(struct ssb_mipscore *mcore);
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
+@@ -289,11 +289,11 @@
+ #define  SSB_SPROM4_ETHPHY_ET1A_SHIFT	5
+ #define  SSB_SPROM4_ETHPHY_ET0M		(1<<14)	/* MDIO for enet0 */
+ #define  SSB_SPROM4_ETHPHY_ET1M		(1<<15)	/* MDIO for enet1 */
+-#define SSB_SPROM4_ANTAVAIL		0x005D  /* Antenna available bitfields */
+-#define  SSB_SPROM4_ANTAVAIL_A		0x00FF	/* A-PHY bitfield */
+-#define  SSB_SPROM4_ANTAVAIL_A_SHIFT	0
+-#define  SSB_SPROM4_ANTAVAIL_BG		0xFF00	/* B-PHY and G-PHY bitfield */
+-#define  SSB_SPROM4_ANTAVAIL_BG_SHIFT	8
++#define SSB_SPROM4_ANTAVAIL		0x005C  /* Antenna available bitfields */
++#define  SSB_SPROM4_ANTAVAIL_BG		0x00FF	/* B-PHY and G-PHY bitfield */
++#define  SSB_SPROM4_ANTAVAIL_BG_SHIFT	0
++#define  SSB_SPROM4_ANTAVAIL_A		0xFF00	/* A-PHY bitfield */
++#define  SSB_SPROM4_ANTAVAIL_A_SHIFT	8
+ #define SSB_SPROM4_AGAIN01		0x005E	/* Antenna Gain (in dBm Q5.2) */
+ #define  SSB_SPROM4_AGAIN0		0x00FF	/* Antenna 0 */
+ #define  SSB_SPROM4_AGAIN0_SHIFT	0
 @@ -485,7 +485,7 @@
  #define  SSB_SPROM8_HWIQ_IQSWP_IQCAL_SWP_SHIFT	4
  #define  SSB_SPROM8_HWIQ_IQSWP_HW_IQCAL	0x0020
@@ -1158,3 +1223,58 @@
 +	return wdt->driver_data;
 +}
 +#endif /* LINUX_BCM47XX_WDT_H_ */
+--- a/drivers/net/wireless/b43/phy_n.c
++++ b/drivers/net/wireless/b43/phy_n.c
+@@ -4583,7 +4583,8 @@ static void b43_nphy_pmu_spur_avoid(stru
+ #endif
+ #ifdef CONFIG_B43_SSB
+ 	case B43_BUS_SSB:
+-		/* FIXME */
++		ssb_pmu_spuravoid_pllupdate(&dev->dev->sdev->bus->chipco,
++					    avoid);
+ 		break;
+ #endif
+ 	}
+--- a/drivers/ssb/pci.c
++++ b/drivers/ssb/pci.c
+@@ -339,6 +339,21 @@ static s8 r123_extract_antgain(u8 sprom_
+ 	return (s8)gain;
+ }
+ 
++static void sprom_extract_r23(struct ssb_sprom *out, const u16 *in)
++{
++	SPEX(boardflags_hi, SSB_SPROM2_BFLHI, 0xFFFF, 0);
++	SPEX(opo, SSB_SPROM2_OPO, SSB_SPROM2_OPO_VALUE, 0);
++	SPEX(pa1lob0, SSB_SPROM2_PA1LOB0, 0xFFFF, 0);
++	SPEX(pa1lob1, SSB_SPROM2_PA1LOB1, 0xFFFF, 0);
++	SPEX(pa1lob2, SSB_SPROM2_PA1LOB2, 0xFFFF, 0);
++	SPEX(pa1hib0, SSB_SPROM2_PA1HIB0, 0xFFFF, 0);
++	SPEX(pa1hib1, SSB_SPROM2_PA1HIB1, 0xFFFF, 0);
++	SPEX(pa1hib2, SSB_SPROM2_PA1HIB2, 0xFFFF, 0);
++	SPEX(maxpwr_ah, SSB_SPROM2_MAXP_A, SSB_SPROM2_MAXP_A_HI, 0);
++	SPEX(maxpwr_al, SSB_SPROM2_MAXP_A, SSB_SPROM2_MAXP_A_LO,
++	     SSB_SPROM2_MAXP_A_LO_SHIFT);
++}
++
+ static void sprom_extract_r123(struct ssb_sprom *out, const u16 *in)
+ {
+ 	int i;
+@@ -398,8 +413,7 @@ static void sprom_extract_r123(struct ss
+ 	     SSB_SPROM1_ITSSI_A_SHIFT);
+ 	SPEX(itssi_bg, SSB_SPROM1_ITSSI, SSB_SPROM1_ITSSI_BG, 0);
+ 	SPEX(boardflags_lo, SSB_SPROM1_BFLLO, 0xFFFF, 0);
+-	if (out->revision >= 2)
+-		SPEX(boardflags_hi, SSB_SPROM2_BFLHI, 0xFFFF, 0);
++
+ 	SPEX(alpha2[0], SSB_SPROM1_CCODE, 0xff00, 8);
+ 	SPEX(alpha2[1], SSB_SPROM1_CCODE, 0x00ff, 0);
+ 
+@@ -410,6 +424,8 @@ static void sprom_extract_r123(struct ss
+ 	out->antenna_gain.a1 = r123_extract_antgain(out->revision, in,
+ 						    SSB_SPROM1_AGAIN_A,
+ 						    SSB_SPROM1_AGAIN_A_SHIFT);
++	if (out->revision >= 2)
++		sprom_extract_r23(out, in);
+ }
+ 
+ /* Revs 4 5 and 8 have partially shared layout */

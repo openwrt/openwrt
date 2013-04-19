@@ -292,7 +292,7 @@
  	u32 id, id2;
  
  	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
-@@ -150,6 +375,12 @@ int bcma_sflash_init(struct bcma_drv_cc
+@@ -150,6 +375,12 @@ int bcma_sflash_init(struct bcma_drv_cc 
  	sflash->numblocks = e->numblocks;
  	sflash->size = sflash->blocksize * sflash->numblocks;
  	sflash->present = true;
@@ -316,7 +316,7 @@
  /** ChipCommon core registers. **/
  #define BCMA_CC_ID			0x0000
  #define  BCMA_CC_ID_ID			0x0000FFFF
-@@ -519,17 +521,6 @@ struct bcma_pflash {
+@@ -520,17 +522,6 @@ struct bcma_pflash {
  	u32 window_size;
  };
  
@@ -334,7 +334,7 @@
  
  #ifdef CONFIG_BCMA_NFLASH
  struct mtd_info;
-@@ -564,7 +555,7 @@ struct bcma_drv_cc {
+@@ -565,7 +556,7 @@ struct bcma_drv_cc {
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  	struct bcma_pflash pflash;
  #ifdef CONFIG_BCMA_SFLASH

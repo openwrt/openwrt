@@ -476,7 +476,7 @@
  #define SSB_CHIPCO_BCAST_ADDR		0x0050
  #define SSB_CHIPCO_BCAST_DATA		0x0054
  #define SSB_CHIPCO_GPIOPULLUP		0x0058		/* Rev >= 20 only */
-@@ -503,7 +516,7 @@
+@@ -504,7 +517,7 @@
  #define SSB_CHIPCO_FLASHCTL_ST_PP	0x0302		/* Page Program */
  #define SSB_CHIPCO_FLASHCTL_ST_SE	0x02D8		/* Sector Erase */
  #define SSB_CHIPCO_FLASHCTL_ST_BE	0x00C7		/* Bulk Erase */
@@ -485,7 +485,7 @@
  #define SSB_CHIPCO_FLASHCTL_ST_RES	0x03AB		/* Read Electronic Signature */
  #define SSB_CHIPCO_FLASHCTL_ST_CSA	0x1000		/* Keep chip select asserted */
  #define SSB_CHIPCO_FLASHCTL_ST_SSE	0x0220		/* Sub-sector Erase */
-@@ -594,6 +607,9 @@ struct ssb_chipcommon {
+@@ -595,6 +608,9 @@ struct ssb_chipcommon {
  	struct ssb_chipcommon_pmu pmu;
  	u32 ticks_per_ms;
  	u32 max_timer_ms;
