@@ -5,9 +5,9 @@
  					const struct in6_addr *addr);
  
 +extern int			(*ipv6_dev_get_saddr_hook)(struct net *net,
-+						struct net_device *dev,
++						const struct net_device *dev,
 +						const struct in6_addr *daddr,
-+						unsigned int srcprefs,
++						unsigned int prefs,
 +						struct in6_addr *saddr);
 +
  static inline unsigned long addrconf_timeout_fixup(u32 timeout,
@@ -81,13 +81,13 @@
 +#include <linux/export.h>
 +#include <net/ipv6.h>
 +
-+int (*ipv6_dev_get_saddr_hook)(struct net *net, struct net_device *dev,
-+			const struct in6_addr *daddr, unsigned int srcprefs,
++int (*ipv6_dev_get_saddr_hook)(struct net *net, const struct net_device *dev,
++			const struct in6_addr *daddr, unsigned int prefs,
 +			struct in6_addr *saddr);
 +
 +EXPORT_SYMBOL(ipv6_dev_get_saddr_hook);
 +
-+int ipv6_dev_get_saddr(struct net *net, struct net_device *dst_dev,
++int ipv6_dev_get_saddr(struct net *net, const struct net_device *dst_dev,
 +			const struct in6_addr *daddr, unsigned int prefs,
 +			struct in6_addr *saddr)
 +{
