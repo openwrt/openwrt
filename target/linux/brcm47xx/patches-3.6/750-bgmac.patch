@@ -43,7 +43,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/bcma/driver_chipcommon_pmu.c
 +++ b/drivers/bcma/driver_chipcommon_pmu.c
-@@ -264,7 +264,7 @@ static u32 bcma_pmu_pll_clock_bcm4706(st
+@@ -280,7 +280,7 @@ static u32 bcma_pmu_pll_clock_bcm4706(st
  }
  
  /* query bus clock frequency for PMU-enabled chipcommon */
@@ -52,7 +52,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  {
  	struct bcma_bus *bus = cc->core->bus;
  
-@@ -293,6 +293,7 @@ static u32 bcma_pmu_get_bus_clock(struct
+@@ -309,6 +309,7 @@ static u32 bcma_pmu_get_bus_clock(struct
  	}
  	return BCMA_CC_PMU_HT_CLOCK;
  }
@@ -1969,7 +1969,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +#endif /* _BGMAC_H */
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -624,4 +624,6 @@ int bcma_nflash_erase(struct bcma_drv_cc
+@@ -627,4 +627,6 @@ int bcma_nflash_erase(struct bcma_drv_cc
  int bcma_nflash_commit(struct bcma_drv_cc *cc, u32 offset, u32 len, const u8 *buf);
  #endif
  
