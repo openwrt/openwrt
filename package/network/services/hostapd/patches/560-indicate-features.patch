@@ -1,6 +1,6 @@
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -13,6 +13,7 @@
+@@ -14,6 +14,7 @@
  
  #include "utils/common.h"
  #include "utils/eloop.h"
@@ -8,16 +8,16 @@
  #include "crypto/random.h"
  #include "crypto/tls.h"
  #include "common/version.h"
-@@ -560,7 +561,7 @@ int main(int argc, char *argv[])
+@@ -584,7 +585,7 @@ int main(int argc, char *argv[])
  
  	wpa_supplicant_event = hostapd_wpa_event;
  	for (;;) {
--		c = getopt(argc, argv, "Bde:f:hKP:tvg:");
-+		c = getopt(argc, argv, "Bde:f:hKP:tg:v::");
+-		c = getopt(argc, argv, "Bde:f:hKP:tvg:G:");
++		c = getopt(argc, argv, "Bde:f:hKP:tg:G:v::");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -592,6 +593,8 @@ int main(int argc, char *argv[])
+@@ -616,6 +617,8 @@ int main(int argc, char *argv[])
  			wpa_debug_timestamp++;
  			break;
  		case 'v':

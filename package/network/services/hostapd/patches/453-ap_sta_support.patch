@@ -9,7 +9,7 @@
  };
  
  /**
-@@ -305,6 +307,8 @@ struct wpa_supplicant {
+@@ -306,6 +308,8 @@ struct wpa_supplicant {
  #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
  	char bridge_ifname[16];
  
@@ -100,7 +100,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -676,8 +725,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -667,8 +716,16 @@ void wpa_supplicant_set_state(struct wpa
  #endif /* CONFIG_P2P */
  
  		sme_sched_obss_scan(wpa_s, 1);
@@ -117,7 +117,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2778,6 +2835,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2853,6 +2910,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
@@ -149,16 +149,17 @@
  #include "drivers/driver.h"
  #include "wpa_supplicant_i.h"
  #include "config.h"
-@@ -227,6 +228,8 @@ struct wpa_bss * wpa_bss_get(struct wpa_
+@@ -245,6 +246,9 @@ static void calculate_update_time(const 
  static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
  			     struct os_time *fetch_time)
  {
 +	struct ieee80211_ht_capabilities *capab;
 +	struct ieee802_11_elems elems;
- 	os_time_t usec;
- 
++
  	dst->flags = src->flags;
-@@ -239,6 +242,12 @@ static void wpa_bss_copy_res(struct wpa_
+ 	os_memcpy(dst->bssid, src->bssid, ETH_ALEN);
+ 	dst->freq = src->freq;
+@@ -255,6 +259,12 @@ static void wpa_bss_copy_res(struct wpa_
  	dst->level = src->level;
  	dst->tsf = src->tsf;
  
@@ -168,9 +169,9 @@
 +	if (capab)
 +		dst->ht_capab = le_to_host16(capab->ht_capabilities_info);
 +
- 	dst->last_update.sec = fetch_time->sec;
- 	dst->last_update.usec = fetch_time->usec;
- 	dst->last_update.sec -= src->age / 1000;
+ 	calculate_update_time(fetch_time, src->age, &dst->last_update);
+ }
+ 
 --- a/wpa_supplicant/main.c
 +++ b/wpa_supplicant/main.c
 @@ -25,7 +25,7 @@ static void usage(void)
