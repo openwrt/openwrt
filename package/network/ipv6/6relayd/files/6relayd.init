@@ -79,7 +79,7 @@ start_6relayd() {
 	config_get_bool compat_ula "$cfg" compat_ula 0
 	[ "$compat_ula" -eq 1 ] && append args "-c"
 
-	[ "$ndp" = "relay" ] && append args "-N -s -l"
+	[ "$ndp" = "relay" ] && append args "-N -s"
 	[ "$rd" = "relay" ] && append args "-Rrelay"
 	[ "$rd" = "server" ] && append args "-Rserver"
 	[ "$dhcpv6" = "relay" ] && append args "-Drelay"

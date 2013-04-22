@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6relayd
-PKG_VERSION:=2013-02-28.1
+PKG_VERSION:=2013-04-22
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=git://github.com/sbyx/6relayd.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=be18c9722e8fa76ca96de16fb927b85bfe3197bc
+PKG_SOURCE_VERSION:=e9eaa12f29f8ab5c58c5c64402baf4d7cd43bda3
 
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 
@@ -36,7 +36,7 @@ define Package/6relayd/description
  of a master interface. This is useful to avoid NAT in chained IPv6-routers.
 
  It can also be used as a lightweight router advertisement daemon and provide
- stateless DHCPv6 service where size matters.
+ stateless DHCPv6 service for clients and act as PD-server where size matters.
 endef
 
 define Package/6relayd/conffiles
