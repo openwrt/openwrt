@@ -145,7 +145,7 @@
 +	struct sk_buff *skb = __netdev_alloc_skb(dev, length + NET_IP_ALIGN, gfp);
 +
 +#ifdef CONFIG_ETHERNET_PACKET_MANGLE
-+	if (dev->priv_flags & IFF_NO_IP_ALIGN)
++	if (dev && (dev->priv_flags & IFF_NO_IP_ALIGN))
 +		return skb;
 +#endif
 +
