@@ -22,7 +22,7 @@
  
  struct wpa_driver_ops;
  struct wpa_ctrl_dst;
-@@ -71,6 +72,7 @@ struct hostapd_data {
+@@ -72,6 +73,7 @@ struct hostapd_data {
  	struct hostapd_iface *iface;
  	struct hostapd_config *iconf;
  	struct hostapd_bss_config *conf;
@@ -30,7 +30,7 @@
  	int interface_added; /* virtual interface added for this BSS */
  
  	u8 own_addr[ETH_ALEN];
-@@ -212,6 +214,7 @@ struct hostapd_iface {
+@@ -213,6 +215,7 @@ struct hostapd_iface {
  	void *owner;
  	char *config_fname;
  	struct hostapd_config *conf;
@@ -478,7 +478,7 @@
 +#endif
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -254,6 +254,7 @@ static int hostapd_broadcast_wep_set(str
+@@ -270,6 +270,7 @@ static int hostapd_broadcast_wep_set(str
  
  static void hostapd_free_hapd_data(struct hostapd_data *hapd)
  {
@@ -486,7 +486,7 @@
  	iapp_deinit(hapd->iapp);
  	hapd->iapp = NULL;
  	accounting_deinit(hapd);
-@@ -818,6 +819,8 @@ static int hostapd_setup_bss(struct host
+@@ -834,6 +835,8 @@ static int hostapd_setup_bss(struct host
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -495,7 +495,7 @@
  	return 0;
  }
  
-@@ -900,6 +903,7 @@ int hostapd_setup_interface_complete(str
+@@ -916,6 +919,7 @@ int hostapd_setup_interface_complete(str
  	if (err)
  		goto error;
  
@@ -503,7 +503,7 @@
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (hapd->iconf->channel) {
  		iface->freq = hostapd_hw_get_freq(hapd, hapd->iconf->channel);
-@@ -990,6 +994,7 @@ int hostapd_setup_interface_complete(str
+@@ -1006,6 +1010,7 @@ int hostapd_setup_interface_complete(str
  
  error:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -511,7 +511,7 @@
  	eloop_terminate();
  	return -1;
  }
-@@ -1088,6 +1093,8 @@ void hostapd_interface_deinit_free(struc
+@@ -1104,6 +1109,8 @@ void hostapd_interface_deinit_free(struc
  	void *drv_priv;
  	if (iface == NULL)
  		return;

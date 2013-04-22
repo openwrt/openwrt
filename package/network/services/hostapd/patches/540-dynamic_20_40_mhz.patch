@@ -13,7 +13,7 @@
  #endif /* CONFIG_IEEE80211N */
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -514,6 +514,7 @@ struct hostapd_config {
+@@ -515,6 +515,7 @@ struct hostapd_config {
  	int ieee80211n;
  	int secondary_channel;
  	int require_ht;
@@ -31,7 +31,7 @@
  #include "ieee802_11_auth.h"
  #include "vlan_init.h"
  #include "wpa_auth.h"
-@@ -332,6 +333,7 @@ static void hostapd_cleanup_iface_pre(st
+@@ -348,6 +349,7 @@ static void hostapd_cleanup_iface_pre(st
  
  static void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
  {
@@ -41,7 +41,7 @@
  	os_free(iface->current_rates);
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -265,6 +265,9 @@ struct hostapd_iface {
+@@ -269,6 +269,9 @@ struct hostapd_iface {
  	/* Overlapping BSS information */
  	int olbc_ht;
  
