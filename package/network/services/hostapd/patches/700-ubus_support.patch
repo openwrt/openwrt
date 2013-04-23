@@ -40,7 +40,7 @@
  	struct hostapd_data **bss;
 --- /dev/null
 +++ b/src/ap/ubus.c
-@@ -0,0 +1,354 @@
+@@ -0,0 +1,356 @@
 +/*
 + * hostapd / ubus support
 + * Copyright (c) 2013, Felix Fietkau <nbd@openwrt.org>
@@ -180,6 +180,7 @@
 +	};
 +
 +	blob_buf_init(&b, 0);
++	blobmsg_add_u32(&b, "freq", hapd->iface->freq);
 +	list = blobmsg_open_table(&b, "clients");
 +	for (sta = hapd->sta_list; sta; sta = sta->next) {
 +		int i;
@@ -383,6 +384,7 @@
 +		blobmsg_add_macaddr(&b, "target", req->mgmt_frame->da);
 +	if (req->frame_info)
 +		blobmsg_add_u32(&b, "signal", req->frame_info->ssi_signal);
++	blobmsg_add_u32(&b, "freq", hapd->iface->freq);
 +
 +	if (ubus_notify_async(ctx, &hapd->ubus.obj, type, b.head, &ureq.nreq))
 +		return 0;
