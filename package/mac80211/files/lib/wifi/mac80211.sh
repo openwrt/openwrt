@@ -282,7 +282,9 @@ mac80211_generate_mac() {
 
 	local oIFS="$IFS"; IFS=":"; set -- $ref; IFS="$oIFS"
 	[ "$((0x$mask1))" -gt 0 ] && {
-		b1=$(((0x$1 | 0x2) ^ ($id << 2)))
+		b1="0x$1"
+		[ "$id" -gt 0 ] && \
+			b1=$((($b1 | 0x2) ^ (($id - 1) << 2)))
 		printf "%02x:%s:%s:%s:%s:%s" $b1 $2 $3 $4 $5 $6
 		return
 	}
