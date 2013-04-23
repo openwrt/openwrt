@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2012 OpenWrt.org
+# Copyright (C) 2009-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnetfilter_conntrack
-PKG_VERSION:=0.9.1
+PKG_VERSION:=1.0.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libnetfilter_conntrack/files/ \
 	ftp://ftp.netfilter.org/pub/libnetfilter_conntrack/
-PKG_MD5SUM:=b7506cbb7580433859809d8eac53a199
+PKG_MD5SUM:=73394a3d8d0cfecc6abb6027b4792d52
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
 PKG_FIXUP:=autoreconf
@@ -27,7 +27,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/libnetfilter-conntrack
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libnfnetlink +kmod-nf-conntrack-netlink
+  DEPENDS:=+libnfnetlink +kmod-nf-conntrack-netlink +libmnl
   TITLE:=API to the in-kernel connection tracking state table
   URL:=http://www.netfilter.org/projects/libnetfilter_conntrack/
 endef
