@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/nvram.c
 +++ b/arch/mips/bcm63xx/nvram.c
-@@ -40,6 +40,13 @@ struct bcm963xx_nvram {
+@@ -41,6 +41,13 @@ struct bcm963xx_nvram {
  static struct bcm963xx_nvram nvram;
  static int mac_addr_used;
  
@@ -14,7 +14,7 @@
  void __init bcm63xx_nvram_init(void *addr)
  {
  	unsigned int check_len;
-@@ -47,6 +54,7 @@ void __init bcm63xx_nvram_init(void *add
+@@ -48,6 +55,7 @@ void __init bcm63xx_nvram_init(void *add
  
  	/* extract nvram data */
  	memcpy(&nvram, addr, sizeof(nvram));
