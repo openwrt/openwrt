@@ -132,6 +132,22 @@ endef
 $(eval $(call KernelPackage,gpio-dev))
 
 
+define KernelPackage/gpio-mcp23s08
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Microchip MCP23xxx I/O expander
+  DEPENDS:=@GPIO_SUPPORT
+  KCONFIG:=CONFIG_GPIO_MCP23S08
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-mcp23s08.ko
+  AUTOLOAD:=$(call AutoLoad,40,gpio-mcp23s08)
+endef
+
+define KernelPackage/gpio-mcp23s08/description
+  Kernel module for Microchip MCP23xxx SPI/I2C I/O expander
+endef
+
+$(eval $(call KernelPackage,gpio-mcp23s08))
+
+
 define KernelPackage/gpio-nxp-74hc164
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NXP 74HC164 GPIO expander support
