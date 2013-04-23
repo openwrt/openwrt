@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libmnl
-PKG_VERSION:=1.0.1
+PKG_VERSION:=1.0.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libmnl/files \
 	ftp://ftp.netfilter.org/pub/libmnl
-PKG_MD5SUM:=e936236bb57a2375afa4e70e75dc3ba9
+PKG_MD5SUM:=7d95fc3bea3365bc03c48e484224f65f
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
