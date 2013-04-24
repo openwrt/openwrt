@@ -22,6 +22,20 @@ endef
 
 $(eval $(call KernelPackage,hid))
 
+define KernelPackage/hid-generic
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=Generic HID device support
+  KCONFIG:=CONFIG_HID_GENERIC
+  FILES:=$(LINUX_DIR)/drivers/hid/hid-generic.ko
+  AUTOLOAD:=$(call AutoLoad,62,hid-generic)
+  $(call AddDepends/hid)
+endef
+
+define KernelPackage/hid/description
+  Kernel modules for generic HID device (e.g. keyboards and mice) support
+endef
+
+$(eval $(call KernelPackage,hid-generic))
 
 define KernelPackage/input-core
   SUBMENU:=$(INPUT_MODULES_MENU)
