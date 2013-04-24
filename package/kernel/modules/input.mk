@@ -10,7 +10,7 @@ INPUT_MODULES_MENU:=Input modules
 define KernelPackage/hid
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=HID Devices
-  KCONFIG:=CONFIG_HID
+  KCONFIG:=CONFIG_HID CONFIG_HIDRAW=y
   FILES:=$(LINUX_DIR)/drivers/hid/hid.ko
   AUTOLOAD:=$(call AutoLoad,61,hid)
   $(call AddDepends/input,+kmod-input-evdev)
