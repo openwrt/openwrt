@@ -25,18 +25,17 @@ include $(INCLUDE_DIR)/cmake.mk
 define Package/6relayd
   SECTION:=ipv6
   CATEGORY:=IPv6
-  TITLE:=IPv6-Relay and Server (RD-, DHCPv6- & NDP-Proxy)
+  TITLE:=DHCPv6(-PD)/RA Server & Relay
   DEPENDS:=+kmod-ipv6
 endef
 
 define Package/6relayd/description
- 6relayd is an IPv6-tool that relays IPv6-management protocols like router
- discovery, neighbor discovery and DHCPv6 so that clients on routed (non-
- bridged) interfaces can use the public address prefix, DHCPv6 and DNS-service
- of a master interface. This is useful to avoid NAT in chained IPv6-routers.
+ 6relayd is a daemon for serving and relaying IPv6 management protocols to
+ configure clients and downstream routers.
 
- It can also be used as a lightweight router advertisement daemon and provide
- stateless DHCPv6 service for clients and act as PD-server where size matters.
+ 6relayd provides server services for RA, stateless DHCPv6, DHCPv6-PD and can
+ be used to relay RA, DHCPv6 and NDP between routed (non-bridged) interfaces
+ in case no delegated prefixes are provided by the upstream router.
 endef
 
 define Package/6relayd/conffiles
