@@ -944,6 +944,7 @@ static int nl80211_get_frequency_info_cb(struct nl_msg *msg, void *arg)
 
 int nl80211_get_frequency(const char *ifname, int *buf)
 {
+	int chn;
 	char *res, *channel;
 	struct nl80211_msg_conveyor *req;
 
@@ -963,8 +964,8 @@ int nl80211_get_frequency(const char *ifname, int *buf)
 	    (res = nl80211_hostapd_info(ifname)) &&
 	    (channel = nl80211_getval(NULL, res, "channel")))
 	{
-		*buf = nl80211_channel2freq(atoi(channel),
-		                            nl80211_getval(NULL, res, "hw_mode"));
+		chn = atoi(channel);
+		*buf = nl80211_channel2freq(chn, nl80211_getval(NULL, res, "hw_mode"));
 	}
 	else
 	{

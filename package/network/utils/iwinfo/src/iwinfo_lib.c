@@ -361,8 +361,9 @@ const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[] = {
 	{ VENDOR_UBNT, "SR4C",                  0x168c, 0x0013, 0x7777, 0x1004,  6,     0 },
 	{ VENDOR_UBNT, "SR5",                   0x168c, 0x0013, 0x168c, 0x2042,  7,     0 },
 	{ VENDOR_UBNT, "SR9",                   0x168c, 0x0013, 0x7777, 0x2009, 12, -1500 },
-	{ VENDOR_UBNT, "SR71A",                 0x168c, 0x0027, 0x168c, 0x2082, 10,     0 },
-	{ VENDOR_UBNT, "SR71",                  0x168c, 0x0027, 0x0777, 0x4082, 10,     0 },
+	{ VENDOR_UBNT, "SR71A",                 0x168c, 0x0027, 0x168c, 0x2082,  7,     0 },
+	{ VENDOR_UBNT, "SR71",                  0x168c, 0x0027, 0x0777, 0x4082,  7,     0 },
+	{ VENDOR_UBNT, "SR71-15",		0x168c, 0x0029, 0x0777, 0x4005,  7,     0 },
 #endif
 #ifdef USE_NL80211
 	{ VENDOR_UBNT, "PicoStation M2",        0x168c, 0x002a, 0x0777, 0xe302, 12,     0 }, /* ToDo: confirm offset */
