@@ -1,6 +1,8 @@
---- a/src/dhcp.c
-+++ b/src/dhcp.c
-@@ -134,7 +134,7 @@ void dhcp_packet(time_t now, int pxe_fd)
+Index: dnsmasq-2.66/src/dhcp.c
+===================================================================
+--- dnsmasq-2.66.orig/src/dhcp.c	2013-04-17 14:52:49.000000000 +0200
++++ dnsmasq-2.66/src/dhcp.c	2013-04-24 08:24:20.393711625 +0200
+@@ -140,7 +140,7 @@
    struct iovec iov;
    ssize_t sz; 
    int iface_index = 0, unicast_dest = 0, is_inform = 0;
@@ -9,7 +11,7 @@
    struct iface_param parm;
  #ifdef HAVE_LINUX_NETWORK
    struct arpreq arp_req;
-@@ -246,11 +246,9 @@ void dhcp_packet(time_t now, int pxe_fd)
+@@ -252,11 +252,9 @@
    
    ifr.ifr_addr.sa_family = AF_INET;
    if (ioctl(daemon->dhcpfd, SIOCGIFADDR, &ifr) != -1 )
@@ -23,16 +25,16 @@
      }
    
    for (tmp = daemon->dhcp_except; tmp; tmp = tmp->next)
-@@ -272,7 +270,7 @@ void dhcp_packet(time_t now, int pxe_fd)
+@@ -270,7 +268,7 @@
    parm.current = NULL;
    parm.ind = iface_index;
  
--  if (!iface_check(AF_INET, (struct all_addr *)&iface_addr, ifr.ifr_name))
-+  if (!iface_check(AF_INET, (struct all_addr *)addrp, ifr.ifr_name))
+-  if (!iface_check(AF_INET, (struct all_addr *)&iface_addr, ifr.ifr_name, NULL))
++  if (!iface_check(AF_INET, (struct all_addr *)addrp, ifr.ifr_name, NULL))
      {
        /* If we failed to match the primary address of the interface, see if we've got a --listen-address
  	 for a secondary */
-@@ -291,7 +289,13 @@ void dhcp_packet(time_t now, int pxe_fd)
+@@ -289,7 +287,13 @@
  	 there is more than one address on the interface in the same subnet */
        complete_context(match.addr, iface_index, match.netmask, match.broadcast, &parm);
      }    
