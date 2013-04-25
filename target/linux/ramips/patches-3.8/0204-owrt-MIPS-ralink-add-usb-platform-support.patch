@@ -34,7 +34,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
 --- a/arch/mips/ralink/common.h
 +++ b/arch/mips/ralink/common.h
-@@ -46,5 +46,6 @@ extern void prom_soc_init(struct ralink_
+@@ -51,5 +51,6 @@ extern void prom_soc_init(struct ralink_
  __iomem void *plat_of_remap_node(const char *node);
  
  void ralink_pinmux(void);
@@ -43,8 +43,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #endif /* _RALINK_COMMON_H__ */
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
-@@ -146,6 +146,11 @@ struct ralink_pinmux rt_pinmux = {
- //	.wdt_reset = rt305x_wdt_reset,
+@@ -140,6 +140,11 @@ struct ralink_pinmux rt_gpio_pinmux = {
+ 	.uart_mask = MT7620_GPIO_MODE_GPIO,
  };
  
 +void ralink_usb_platform(void)
@@ -57,7 +57,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	unsigned long cpu_rate, sys_rate;
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
-@@ -102,6 +102,7 @@ static int __init plat_of_setup(void)
+@@ -111,6 +111,7 @@ static int __init plat_of_setup(void)
  		panic("failed to populate DT\n");
  
  	ralink_pinmux();
