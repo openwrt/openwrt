@@ -22,6 +22,7 @@ platform_check_image() {
 	all0239-3g | \
 	all0256n | \
 	all5002 | \
+	asl26555 | \
 	bc2 | \
 	broadway | \
 	carambola | \

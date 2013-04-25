@@ -269,6 +269,18 @@ Image/Build/Profile/ALL5002=$(call BuildFirmware/CustomFlash/$(1),$(1),all5002,A
 argus_atp52b_mtd_size=7995392
 Image/Build/Profile/ARGUS_ATP52B=$(call BuildFirmware/CustomFlash/$(1),$(1),argus_atp52b,ARGUS_ATP52B,$(argus_atp52b_mtd_size))
 
+asl26555_8mb_mtd_size=7929856
+asl26555_16mb_mtd_size=16252928
+define BuildFirmware/ASL26555/squashfs
+	$(call BuildFirmware/CustomFlash/$(1),$(1),$(2)-8M,$(3)-8M,$(asl26555_8mb_mtd_size))
+	$(call BuildFirmware/CustomFlash/$(1),$(1),$(2)-16M,$(3)-16M,$(asl26555_16mb_mtd_size))
+endef
+define BuildFirmware/ASL26555/initramfs
+	$(call BuildFirmware/OF/initramfs,$(1),$(2)-8M,$(3)-8M)
+	$(call BuildFirmware/OF/initramfs,$(1),$(2)-16M,$(3)-16M)
+endef
+Image/Build/Profile/ASL26555=$(call BuildFirmware/ASL26555/$(1),$(1),asl26555,ASL26555)
+
 Image/Build/Profile/BC2=$(call BuildFirmware/Default8M/$(1),$(1),bc2,BC2)
 
 broadway_mtd_size=7929856
@@ -425,6 +437,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ALL0256N,$(1))
 	$(call Image/Build/Profile/ALL5002,$(1))
 	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
+	$(call Image/Build/Profile/ASL26555,$(1))
 	$(call Image/Build/Profile/BC2,$(1))
 	$(call Image/Build/Profile/BROADWAY,$(1))
 	$(call Image/Build/Profile/CARAMBOLA,$(1))

@@ -15,6 +15,9 @@ get_status_led() {
 	argus-atp52b)
 		status_led="argus-atp52b:green:run"
 		;;
+	asl26555)
+		status_led="asl26555:green:power"
+		;;
 	br6524n)
 		status_led="edimax:blue:power"
 		;;
