@@ -40,3 +40,15 @@ define Profile/ALL5002/Description
 endef
 
 $(eval $(call Profile,ALL5002))
+
+define Profile/ALL5003
+	NAME:=Allnet ALL5003
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
+	kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
+endef
+
+define Profile/ALL5003/Description
+	Package set for Allnet ALL5003
+endef
+
+$(eval $(call Profile,ALL5003))

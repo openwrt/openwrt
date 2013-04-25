@@ -48,8 +48,11 @@ ramips_board_detect() {
 	*"Allnet ALL0256N")
 		name="all0256n"
 		;;
-	*"Allnet ALL5002/ALL5003")
+	*"Allnet ALL5002")
 		name="all5002"
+		;;
+	*"Allnet ALL5003")
+		name="all5003"
 		;;
 	*"ARC FreeStation5")
 		name="freestation5"
@@ -212,7 +215,7 @@ ramips_board_detect() {
 		;;
 	*"UR-326N4G Wireless N router")
 		name="ur-326n4g"
- 		;;
+		;;
 	*"UR-336UN Wireless N router")
 		name="ur-336un"
 		;;
@@ -228,7 +231,7 @@ ramips_board_detect() {
 	esac
 
 	case "$machine" in
-	*"Allnet ALL5002/ALL5003")
+	*"Allnet ALL500"[23]*)
 		all500x_board_detect
 		;;
 	esac
