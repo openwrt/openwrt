@@ -32,7 +32,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#obj-y += dts/
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
-@@ -76,6 +76,8 @@ void __init device_tree_init(void)
+@@ -77,6 +77,8 @@ void __init device_tree_init(void)
  	free_bootmem(base, size);
  }
  
@@ -41,12 +41,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  void __init plat_mem_setup(void)
  {
  	set_io_port_base(KSEG1);
-@@ -84,7 +86,7 @@ void __init plat_mem_setup(void)
+@@ -85,7 +87,7 @@ void __init plat_mem_setup(void)
  	 * Load the builtin devicetree. This causes the chosen node to be
  	 * parsed resulting in our memory appearing
  	 */
 -	__dt_setup_arch(&__dtb_start);
 +	__dt_setup_arch(&__image_dtb);
- }
  
- static int __init plat_of_setup(void)
+ 	if (soc_info.mem_size)
+ 		add_memory_region(soc_info.mem_base, soc_info.mem_size,
