@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# Copyright (C) 2013 OpenWrt.org
+#
+
+. /lib/ramips.sh
+
+ramips_set_preinit_iface() {
+	ifname=eth0
+}
+
+boot_hook_add preinit_main ramips_set_preinit_iface
