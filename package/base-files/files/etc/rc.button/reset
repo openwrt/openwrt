@@ -14,5 +14,5 @@ then
 elif [ "$SEEN" -gt 5 ]
 then
 	echo "FACTORY RESET" > /dev/console
-	firstboot && reboot &
+	jffs2reset -y && reboot &
 fi
