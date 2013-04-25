@@ -65,6 +65,9 @@ case $board in
 		ucidef_set_led_default "status" "Status LED (amber)" "d-link:amber:status" "0"
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
+	dir-620-d1)
+		set_wifi_led "d-link:green:wifi"
+		;;
 	esr-9753)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;

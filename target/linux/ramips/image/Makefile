@@ -291,6 +291,7 @@ Image/Build/Profile/DIR-600-B2=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-600-b
 Image/Build/Profile/DIR-615-D=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-615-d,DIR-615-D,wrgn23_dlwbr_dir615d)
 
 Image/Build/Profile/DIR-620-A1=$(call BuildFirmware/Default8M/$(1),$(1),dir-620-a1,DIR-620-A1)
+Image/Build/Profile/DIR-620-D1=$(call BuildFirmware/Default8M/$(1),$(1),dir-620-d1,DIR-620-D1)
 
 define BuildFirmware/DIR615H1/squashfs
 	$(call BuildFirmware/Default4M/$(1),$(1),dir-615-h1,DIR-615-H1)
@@ -433,6 +434,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR-600-B2,$(1))
 	$(call Image/Build/Profile/DIR-615-D,$(1))
 	$(call Image/Build/Profile/DIR-620-A1,$(1))
+	$(call Image/Build/Profile/DIR-620-D1,$(1))
 	$(call Image/Build/Profile/DIR615H1,$(1))
 	$(call Image/Build/Profile/DAP1350,$(1))
 	$(call Image/Build/Profile/DAP1350WW,$(1))
