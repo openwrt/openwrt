@@ -35,6 +35,12 @@ case $board in
 		ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "all0256n:green:rssihigh" "wlan0" "70" "100" "-69" "8"
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
+	asl26555)
+		ucidef_set_led_default "power" "POWER" "asl26555:green:power" "1"
+		ucidef_set_led_netdev "eth" "ETH" "asl26555:green:eth" "eth0"
+		set_wifi_led "asl26555:green:wlan"
+		set_usb_led "asl26555:green:3g"
+		;;
 	bc2)
 		set_usb_led "bc2:blue:usb"
 		;;

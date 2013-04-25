@@ -34,6 +34,7 @@ preinit_set_mac_address() {
 		mac=$(macaddr_setbit_la "$mac")
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
+	asl26555 |\
 	dir-300-b1 |\
 	dir-300-b2 |\
 	dir-600-b1)

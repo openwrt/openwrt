@@ -66,6 +66,9 @@ ramips_board_detect() {
 	*"Asus WL-330N3G")
 		name="wl-330n3g"
 		;;
+	*"Alpha ASL26555")
+		name="asl26555"
+		;;
 	*"Aztech HW550-3G")
 		name="hw550-3g"
 		;;
