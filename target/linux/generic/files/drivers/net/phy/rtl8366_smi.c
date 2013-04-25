@@ -1109,7 +1109,7 @@ int rtl8366_sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 
 	port = &val->value.ports[0];
 	for (i = 0; i < val->len; i++, port++) {
-		int pvid;
+		int pvid = 0;
 		member |= BIT(port->id);
 
 		if (!(port->flags & BIT(SWITCH_PORT_FLAG_TAGGED)))
