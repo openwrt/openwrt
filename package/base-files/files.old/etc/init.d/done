@@ -5,7 +5,7 @@ START=95
 boot() {
 	[ -d /tmp/root ] && {
 		lock /tmp/.switch2jffs
-		switch2jffs
+		firstboot switch2jffs
 		lock -u /tmp/.switch2jffs
 	}
 
