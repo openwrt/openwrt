@@ -14,6 +14,18 @@ include $(INCLUDE_DIR)/image.mk
 
 JFFS2_BLOCKSIZE = 64k 128k 256k
 
+LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
+
+define Image/BuildLoader/Template
+	-rm -rf $(KDIR)/lzma-loader
+	$(LOADER_MAKE) LOADER=loader-$(1).$(2)\
+		LZMA_TEXT_START=0x80a00000 \
+		LOADADDR=0x80002000 \
+		LOADER_DATA="$(KDIR)/vmlinux-$(1).lzma" BOARD="$(1)" \
+		compile loader.$(2)
+endef
+
+
 define CompressLzma
   $(STAGING_DIR_HOST)/bin/lzma e $(1) $(2)
 endef
@@ -23,12 +35,6 @@ define PatchKernelLzma
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(KDIR)/$(1).dtb ./$(1).dts
 	$(STAGING_DIR_HOST)/bin/patch-dtb $(KDIR)/vmlinux-$(1) $(KDIR)/$(1).dtb
 	$(call CompressLzma,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).lzma)
-endef
-
-define PatchKernelRaw
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
-	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(KDIR)/$(1).dtb ./$(1).dts
-	$(STAGING_DIR_HOST)/bin/patch-dtb $(KDIR)/vmlinux-$(1) $(KDIR)/$(1).dtb
 endef
 
 define MkBrnImage
@@ -76,9 +82,9 @@ define Image/BuildEVA/squashfs
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva)
 endef
 
-define Image/BuildRaw/squashfs
-	dd if=$(KDIR)/vmlinux-$(2) of=$(KDIR)/vmlinux-$(2)-$(1) bs=1M conv=sync
-	cat $(KDIR)/vmlinux-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
+define Image/BuildLoader/squashfs
+	dd if=$(KDIR)/loader-$(2).bin of=$(KDIR)/loader-$(2).bin.padded bs=1536k conv=sync
+	cat $(KDIR)/loader-$(2).bin.padded $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
 endef
 
@@ -107,8 +113,10 @@ define Image/BuildKernel/Template
 	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
 endef
 
-define Image/BuildKernelRaw/Template
-	$(call PatchKernelRaw,$(1))
+define Image/BuildKernelLoader/Template
+	$(call PatchKernelLzma,$(1))
+	$(call Image/BuildLoader/Template,$(1),bin)
+	$(CP) $(KDIR)/loader-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-loader
 	$(CP) $(KDIR)/vmlinux-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux
 endef
 
@@ -213,8 +221,8 @@ Image/Build/Profile/EASY80920NOR=$(call Image/Build/$(1),$(1),EASY80920NOR)
 Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
 Image/Build/Profile/FRITZ3370=$(call Image/BuildNANDEVA/$(1),$(1),FRITZ3370)
 
-Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelRaw/Template,VG3503J)
-Image/Build/Profile/VG3503J=$(call Image/BuildRaw/$(1),$(1),VG3503J)
+Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
+Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
 endif
 
