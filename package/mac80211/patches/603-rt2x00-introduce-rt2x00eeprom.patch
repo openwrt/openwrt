@@ -101,7 +101,7 @@
 +}
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -559,6 +559,7 @@ struct rt2x00lib_ops {
+@@ -560,6 +560,7 @@ struct rt2x00lib_ops {
  			       const u8 *data, const size_t len);
  	int (*load_firmware) (struct rt2x00_dev *rt2x00dev,
  			      const u8 *data, const size_t len);
@@ -109,7 +109,7 @@
  
  	/*
  	 * Device initialization/deinitialization handlers.
-@@ -719,6 +720,7 @@ enum rt2x00_capability_flags {
+@@ -720,6 +721,7 @@ enum rt2x00_capability_flags {
  	REQUIRE_SW_SEQNO,
  	REQUIRE_HT_TX_DESC,
  	REQUIRE_PS_AUTOWAKE,
@@ -117,7 +117,7 @@
  
  	/*
  	 * Capabilities
-@@ -988,6 +990,11 @@ struct rt2x00_dev {
+@@ -989,6 +991,11 @@ struct rt2x00_dev {
  	const struct firmware *fw;
  
  	/*
@@ -156,15 +156,15 @@
  #ifdef CONFIG_RT2X00_LIB_DEBUGFS
 --- a/drivers/net/wireless/rt2x00/Kconfig
 +++ b/drivers/net/wireless/rt2x00/Kconfig
-@@ -60,6 +60,7 @@ config RT2800PCI
+@@ -64,6 +64,7 @@ config RT2800PCI
  	select RT2X00_LIB_PCI if PCI
- 	select RT2X00_LIB_SOC if RALINK_RT288X || RALINK_RT305X
+ 	select RT2X00_LIB_SOC if SOC_RT288X || SOC_RT305X
  	select RT2X00_LIB_FIRMWARE
 +	select RT2X00_LIB_EEPROM
  	select RT2X00_LIB_CRYPTO
  	select CRC_CCITT
  	select EEPROM_93CX6
-@@ -212,6 +213,9 @@ config RT2X00_LIB_FIRMWARE
+@@ -221,6 +222,9 @@ config RT2X00_LIB_FIRMWARE
  config RT2X00_LIB_CRYPTO
  	boolean
  
@@ -183,14 +183,14 @@
 +rt2x00lib-$(CONFIG_RT2X00_LIB_EEPROM)	+= rt2x00eeprom.o
  
  obj-$(CONFIG_RT2X00_LIB)		+= rt2x00lib.o
- obj-$(CONFIG_RT2X00_LIB_PCI)		+= rt2x00pci.o
+ obj-$(CONFIG_RT2X00_LIB_MMIO)		+= rt2x00mmio.o
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -89,25 +89,11 @@ static void rt2800pci_mcu_status(struct 
- 	rt2x00pci_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
+@@ -90,25 +90,11 @@ static void rt2800pci_mcu_status(struct 
+ 	rt2x00mmio_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
  }
  
--#if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT305X)
+-#if defined(CONFIG_SOC_RT288X) || defined(CONFIG_SOC_RT305X)
  static int rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
  {
 -	void __iomem *base_addr = ioremap(0x1F040000, EEPROM_SIZE);
@@ -209,11 +209,11 @@
 -{
 -	return -ENOMEM;
 -}
--#endif /* CONFIG_RALINK_RT288X || CONFIG_RALINK_RT305X */
+-#endif /* CONFIG_SOC_RT288X || CONFIG_SOC_RT305X */
  
  #ifdef CONFIG_PCI
  static void rt2800pci_eepromregister_read(struct eeprom_93cx6 *eeprom)
-@@ -331,6 +317,20 @@ static int rt2800pci_write_firmware(stru
+@@ -332,6 +318,20 @@ static int rt2800pci_write_firmware(stru
  }
  
  /*
@@ -234,13 +234,13 @@
   * Initialization functions.
   */
  static bool rt2800pci_get_entry_state(struct queue_entry *entry)
-@@ -1046,6 +1046,7 @@ static const struct rt2x00lib_ops rt2800
+@@ -1162,6 +1162,7 @@ static const struct rt2x00lib_ops rt2800
  	.get_firmware_name	= rt2800pci_get_firmware_name,
  	.check_firmware		= rt2800_check_firmware,
  	.load_firmware		= rt2800_load_firmware,
-+	.get_eeprom_file_name   = rt2800pci_get_eeprom_file_name,
- 	.initialize		= rt2x00pci_initialize,
- 	.uninitialize		= rt2x00pci_uninitialize,
++	.get_eeprom_file_name	= rt2800pci_get_eeprom_file_name,
+ 	.initialize		= rt2x00mmio_initialize,
+ 	.uninitialize		= rt2x00mmio_uninitialize,
  	.get_entry_state	= rt2800pci_get_entry_state,
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
