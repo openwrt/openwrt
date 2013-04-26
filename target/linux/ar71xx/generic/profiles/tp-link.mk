@@ -72,6 +72,18 @@ endef
 $(eval $(call Profile,TLWR703))
 
 
+define Profile/TLWR720
+	NAME:=TP-LINK TL-WR720N
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+
+
+define Profile/TLWR720/Description
+	Package set optimized for the TP-LINK TL-WR720N.
+endef
+$(eval $(call Profile,TLWR720))
+
+
 define Profile/TLWA701
 	NAME:=TP-LINK TL-WA701N/ND
 	PACKAGES:=
