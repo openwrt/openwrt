@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2013-02-22
+PKG_VERSION:=2013-04-16
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=de1a03ca1f72748d4523672c8facbf7e
+PKG_MD5SUM:=ec4cd40f0a8838aeea2ccff3ec5deb1a
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -212,7 +212,7 @@ $(call KernelPackage/rt2x00/Default)
   DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-mac80211 +kmod-lib-crc-itu-t
   TITLE+= (LIB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00lib.ko
-  AUTOLOAD:=$(call AutoLoad,25,rt2x00lib)
+  AUTOLOAD:=$(call AutoLoad,24,rt2x00lib)
   MENU:=1
 endef
 
@@ -239,8 +239,10 @@ define KernelPackage/rt2x00-pci
 $(call KernelPackage/rt2x00/Default)
   DEPENDS+= @(PCI_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-eeprom-93cx6
   TITLE+= (PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00pci.ko
-  AUTOLOAD:=$(call AutoLoad,26,rt2x00pci)
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00pci.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00mmio.ko
+  AUTOLOAD:=$(call AutoLoad,25,rt2x00mmio rt2x00pci)
 endef
 
 define KernelPackage/rt2x00-usb
@@ -1269,6 +1271,7 @@ MAKE_OPTS:= \
 	CONFIG_P54_SPI_DEFAULT_EEPROM=n \
 	CONFIG_RT2X00=$(if $(CONFIG_PACKAGE_kmod-rt2x00-lib),m) \
 	CONFIG_RT2X00_LIB=$(if $(CONFIG_PACKAGE_kmod-rt2x00-lib),m) \
+	CONFIG_RT2X00_LIB_MMIO=$(if $(CONFIG_PACKAGE_kmod-rt2x00-pci),m) \
 	CONFIG_RT2X00_LIB_PCI=$(if $(CONFIG_PACKAGE_kmod-rt2x00-pci),m) \
 	CONFIG_RT2X00_LIB_USB=$(if $(CONFIG_PACKAGE_kmod-rt2x00-usb),m) \
 	CONFIG_RT2X00_LIB_SOC=$(if $(CONFIG_PACKAGE_kmod-rt2x00-soc),m) \
@@ -1290,7 +1293,7 @@ MAKE_OPTS:= \
 	CONFIG_RTL8187=$(if $(CONFIG_PACKAGE_kmod-rtl8187),m) \
 	CONFIG_RTL8192CE= \
 	CONFIG_RTLWIFI= \
-	CONFIG_MAC80211_HWSIM=$(if $(CONFIG_PACKAGE_kmod-mac80211-hwsim),m) \
+	CONFIG_COMPAT_MAC80211_HWSIM=$(if $(CONFIG_PACKAGE_kmod-mac80211-hwsim),m) \
 	CONFIG_PCMCIA= \
 	CONFIG_LIBIPW=$(if $(CONFIG_PACKAGE_kmod-net-libipw),m) \
 	CONFIG_LIBERTAS=$(if $(CONFIG_PACKAGE_kmod-libertas-sd)$(CONFIG_PACKAGE_kmod-libertas-usb),m) \

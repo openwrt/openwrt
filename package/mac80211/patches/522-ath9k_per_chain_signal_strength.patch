@@ -1,121 +1,3 @@
---- a/include/net/mac80211.h
-+++ b/include/net/mac80211.h
-@@ -839,6 +839,9 @@ enum mac80211_rx_flags {
-  * @signal: signal strength when receiving this frame, either in dBm, in dB or
-  *	unspecified depending on the hardware capabilities flags
-  *	@IEEE80211_HW_SIGNAL_*
-+ * @chains: bitmask of receive chains for which separate signal strength
-+ *	values were filled.
-+ * @chain_signal: per-chain signal strength, same format as @signal
-  * @antenna: antenna used
-  * @rate_idx: index of data rate into band's supported rates or MCS index if
-  *	HT or VHT is used (%RX_FLAG_HT/%RX_FLAG_VHT)
-@@ -870,6 +873,8 @@ struct ieee80211_rx_status {
- 	u8 band;
- 	u8 antenna;
- 	s8 signal;
-+	u8 chains;
-+	s8 chain_signal[4];
- 	u8 ampdu_delimiter_crc;
- 	u8 vendor_radiotap_align;
- 	u8 vendor_radiotap_oui[3];
---- a/net/mac80211/sta_info.h
-+++ b/net/mac80211/sta_info.h
-@@ -342,6 +342,11 @@ struct sta_info {
- 	int last_signal;
- 	struct ewma avg_signal;
- 	int last_ack_signal;
-+
-+	u8 chains;
-+	s8 chain_signal_last[4];
-+	struct ewma chain_signal_avg[4];
-+
- 	/* Plus 1 for non-QoS frames */
- 	__le16 last_seq_ctrl[IEEE80211_NUM_TIDS + 1];
- 
---- a/net/mac80211/rx.c
-+++ b/net/mac80211/rx.c
-@@ -1383,6 +1383,7 @@ ieee80211_rx_h_sta_process(struct ieee80
- 	struct sk_buff *skb = rx->skb;
- 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
- 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
-+	int i;
- 
- 	if (!sta)
- 		return RX_CONTINUE;
-@@ -1433,6 +1434,19 @@ ieee80211_rx_h_sta_process(struct ieee80
- 		ewma_add(&sta->avg_signal, -status->signal);
- 	}
- 
-+	if (status->chains) {
-+		sta->chains = status->chains;
-+		for (i = 0; i < 4; i++) {
-+			int signal = status->chain_signal[i];
-+
-+			if (!(status->chains & BIT(i)))
-+				continue;
-+
-+			sta->chain_signal_last[i] = signal;
-+			ewma_add(&sta->chain_signal_avg[i], -signal);
-+		}
-+	}
-+
- 	/*
- 	 * Change STA power saving mode only at the end of a frame
- 	 * exchange sequence.
---- a/net/mac80211/sta_info.c
-+++ b/net/mac80211/sta_info.c
-@@ -353,6 +353,8 @@ struct sta_info *sta_info_alloc(struct i
- 	do_posix_clock_monotonic_gettime(&uptime);
- 	sta->last_connected = uptime.tv_sec;
- 	ewma_init(&sta->avg_signal, 1024, 8);
-+	for (i = 0; i < ARRAY_SIZE(sta->chain_signal_avg); i++)
-+		ewma_init(&sta->chain_signal_avg[i], 1024, 8);
- 
- 	if (sta_prepare_rate_control(local, sta, gfp)) {
- 		kfree(sta);
---- a/include/net/cfg80211.h
-+++ b/include/net/cfg80211.h
-@@ -721,6 +721,8 @@ struct station_parameters {
-  * @STATION_INFO_LOCAL_PM: @local_pm filled
-  * @STATION_INFO_PEER_PM: @peer_pm filled
-  * @STATION_INFO_NONPEER_PM: @nonpeer_pm filled
-+ * @STATION_INFO_CHAIN_SIGNAL: @chain_signal filled
-+ * @STATION_INFO_CHAIN_SIGNAL_AVG: @chain_signal_avg filled
-  */
- enum station_info_flags {
- 	STATION_INFO_INACTIVE_TIME	= 1<<0,
-@@ -749,6 +751,8 @@ enum station_info_flags {
- 	STATION_INFO_NONPEER_PM		= 1<<23,
- 	STATION_INFO_RX_BYTES64		= 1<<24,
- 	STATION_INFO_TX_BYTES64		= 1<<25,
-+	STATION_INFO_CHAIN_SIGNAL	= 1<<26,
-+	STATION_INFO_CHAIN_SIGNAL_AVG	= 1<<27,
- };
- 
- /**
-@@ -842,6 +846,9 @@ struct sta_bss_parameters {
-  *	For CFG80211_SIGNAL_TYPE_MBM, value is expressed in _dBm_.
-  * @signal_avg: Average signal strength, type depends on the wiphy's signal_type.
-  *	For CFG80211_SIGNAL_TYPE_MBM, value is expressed in _dBm_.
-+ * @chains: bitmask for filled values in @chain_signal, @chain_signal_avg
-+ * @chain_signal: per-chain signal strength of last received packet in dBm
-+ * @chain_signal_avg: per-chain signal strength average in dBm
-  * @txrate: current unicast bitrate from this station
-  * @rxrate: current unicast bitrate to this station
-  * @rx_packets: packets received from this station
-@@ -877,6 +884,11 @@ struct station_info {
- 	u8 plink_state;
- 	s8 signal;
- 	s8 signal_avg;
-+
-+	u8 chains;
-+	s8 chain_signal[4];
-+	s8 chain_signal_avg[4];
-+
- 	struct rate_info txrate;
- 	struct rate_info rxrate;
- 	u32 rx_packets;
 --- a/drivers/net/wireless/ath/ath9k/mac.h
 +++ b/drivers/net/wireless/ath/ath9k/mac.h
 @@ -133,12 +133,8 @@ struct ath_rx_status {
@@ -135,15 +17,15 @@
  	u8 rs_num_delims;
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -937,6 +937,7 @@ static int ath9k_rx_skb_preprocess(struc
- 				   bool *decrypt_error)
- {
- 	struct ath_hw *ah = common->ah;
+@@ -950,6 +950,7 @@ static int ath9k_rx_skb_preprocess(struc
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	bool discard_current = sc->rx.discard_next;
 +	int i, j;
  
- 	/*
- 	 * everything but the rate is checked here, the rate check is done
-@@ -962,6 +963,20 @@ static int ath9k_rx_skb_preprocess(struc
+ 	sc->rx.discard_next = rx_stats->rs_more;
+ 	if (discard_current)
+@@ -979,6 +980,21 @@ static int ath9k_rx_skb_preprocess(struc
  	if (rx_stats->rs_moreaggr)
  		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
  
@@ -161,10 +43,11 @@
 +		j++;
 +	}
 +
++
+ 	sc->rx.discard_next = false;
  	return 0;
  }
- 
-@@ -1070,7 +1085,7 @@ static int ath_process_fft(struct ath_so
+@@ -1088,7 +1104,7 @@ static int ath_process_fft(struct ath_so
  	fft_sample.tlv.length = __cpu_to_be16(length);
  
  	fft_sample.freq = __cpu_to_be16(ah->curchan->chan->center_freq);
@@ -236,7 +119,7 @@
  	if (ads.ds_rxstatus8 & AR_RxKeyIdxValid)
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -940,12 +940,12 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -943,12 +943,12 @@ void ath_debug_stat_rx(struct ath_softc 
  #ifdef CONFIG_ATH9K_MAC_DEBUG
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;
@@ -255,108 +138,6 @@
  	RX_SAMP_DBG(antenna) = rs->rs_antenna;
  	RX_SAMP_DBG(rssi) = rs->rs_rssi;
  	RX_SAMP_DBG(rate) = rs->rs_rate;
---- a/include/uapi/linux/nl80211.h
-+++ b/include/uapi/linux/nl80211.h
-@@ -1918,6 +1918,8 @@ enum nl80211_sta_bss_param {
-  * @NL80211_STA_INFO_PEER_PM: peer mesh STA link-specific power mode
-  * @NL80211_STA_INFO_NONPEER_PM: neighbor mesh STA power save mode towards
-  *	non-peer STA
-+ * @NL80211_STA_INFO_CHAIN_SIGNAL: per-chain signal strength of last PPDU
-+ * @NL80211_STA_INFO_CHAIN_SIGNAL_AVG: per-chain signal strength average
-  * @__NL80211_STA_INFO_AFTER_LAST: internal
-  * @NL80211_STA_INFO_MAX: highest possible station info attribute
-  */
-@@ -1947,6 +1949,8 @@ enum nl80211_sta_info {
- 	NL80211_STA_INFO_NONPEER_PM,
- 	NL80211_STA_INFO_RX_BYTES64,
- 	NL80211_STA_INFO_TX_BYTES64,
-+	NL80211_STA_INFO_CHAIN_SIGNAL,
-+	NL80211_STA_INFO_CHAIN_SIGNAL_AVG,
- 
- 	/* keep last */
- 	__NL80211_STA_INFO_AFTER_LAST,
---- a/net/wireless/nl80211.c
-+++ b/net/wireless/nl80211.c
-@@ -3082,6 +3082,32 @@ static bool nl80211_put_sta_rate(struct 
- 	return true;
- }
- 
-+static bool nl80211_put_signal(struct sk_buff *msg, u8 mask, s8 *signal,
-+			       int id)
-+{
-+	void *attr;
-+	int i = 0;
-+
-+	if (!mask)
-+		return true;
-+
-+	attr = nla_nest_start(msg, id);
-+	if (!attr)
-+		return false;
-+
-+	for (i = 0; i < 4; i++) {
-+		if (!(mask & BIT(i)))
-+			continue;
-+
-+		if (nla_put_u8(msg, i, signal[i]))
-+			return false;
-+	}
-+
-+	nla_nest_end(msg, attr);
-+
-+	return true;
-+}
-+
- static int nl80211_send_station(struct sk_buff *msg, u32 portid, u32 seq,
- 				int flags,
- 				struct cfg80211_registered_device *rdev,
-@@ -3153,6 +3179,18 @@ static int nl80211_send_station(struct s
- 	default:
- 		break;
- 	}
-+	if (sinfo->filled & STATION_INFO_CHAIN_SIGNAL) {
-+		if (!nl80211_put_signal(msg, sinfo->chains,
-+					sinfo->chain_signal,
-+					NL80211_STA_INFO_CHAIN_SIGNAL))
-+			goto nla_put_failure;
-+	}
-+	if (sinfo->filled & STATION_INFO_CHAIN_SIGNAL_AVG) {
-+		if (!nl80211_put_signal(msg, sinfo->chains,
-+					sinfo->chain_signal_avg,
-+					NL80211_STA_INFO_CHAIN_SIGNAL_AVG))
-+			goto nla_put_failure;
-+	}
- 	if (sinfo->filled & STATION_INFO_TX_BITRATE) {
- 		if (!nl80211_put_sta_rate(msg, &sinfo->txrate,
- 					  NL80211_STA_INFO_TX_BITRATE))
---- a/net/mac80211/cfg.c
-+++ b/net/mac80211/cfg.c
-@@ -445,6 +445,7 @@ static void sta_set_sinfo(struct sta_inf
- 	struct ieee80211_sub_if_data *sdata = sta->sdata;
- 	struct ieee80211_local *local = sdata->local;
- 	struct timespec uptime;
-+	int i;
- 
- 	sinfo->generation = sdata->local->sta_generation;
- 
-@@ -484,6 +485,17 @@ static void sta_set_sinfo(struct sta_inf
- 			sinfo->signal = (s8)sta->last_signal;
- 		sinfo->signal_avg = (s8) -ewma_read(&sta->avg_signal);
- 	}
-+	if (sta->chains) {
-+		sinfo->filled |= STATION_INFO_CHAIN_SIGNAL |
-+				 STATION_INFO_CHAIN_SIGNAL_AVG;
-+
-+		sinfo->chains = sta->chains;
-+		for (i = 0; i < ARRAY_SIZE(sinfo->chain_signal); i++) {
-+			sinfo->chain_signal[i] = sta->chain_signal_last[i];
-+			sinfo->chain_signal_avg[i] =
-+				(s8) -ewma_read(&sta->chain_signal_avg[i]);
-+		}
-+	}
- 
- 	sta_set_rate_info_tx(sta, &sta->last_tx_rate, &sinfo->txrate);
- 	sta_set_rate_info_rx(sta, &sinfo->rxrate);
 --- a/drivers/net/wireless/ath/ath9k/dfs.c
 +++ b/drivers/net/wireless/ath/ath9k/dfs.c
 @@ -164,8 +164,8 @@ void ath9k_dfs_process_phyerr(struct ath
