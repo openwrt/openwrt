@@ -166,6 +166,7 @@ platform_check_image() {
 	tl-wdr3500 | \
 	tl-wdr4300 | \
 	tl-wr703n | \
+	tl-wr720n-v3 | \
 	tl-wr741nd | \
 	tl-wr741nd-v4 | \
 	tl-wr841n-v1 | \
