@@ -28,3 +28,14 @@ endef
 
 $(eval $(call Profile,WNDR4300))
 
+
+define Profile/WNR2000V3
+	NAME:=NETGEAR WNR2000V3
+endef
+
+define Profile/WNR2000V3/Description
+	Package set optimized for the NETGEAR WNR2000V3
+endef
+
+$(eval $(call Profile,WNR2000V3))
+
