@@ -269,7 +269,7 @@
  
  /** ChipCommon core registers. **/
  #define BCMA_CC_ID			0x0000
-@@ -519,19 +520,6 @@ struct bcma_pflash {
+@@ -520,19 +521,6 @@ struct bcma_pflash {
  	u32 window_size;
  };
  
@@ -289,7 +289,7 @@
  #ifdef CONFIG_BCMA_NFLASH
  struct mtd_info;
  
-@@ -565,7 +553,7 @@ struct bcma_drv_cc {
+@@ -566,7 +554,7 @@ struct bcma_drv_cc {
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  	struct bcma_pflash pflash;
  #ifdef CONFIG_BCMA_SFLASH

@@ -558,7 +558,7 @@
  		return cap_ptr;
  
  	/* check if the capability pointer field exists */
-@@ -426,7 +429,7 @@ void bcma_core_pci_hostmode_init(struct 
+@@ -426,7 +429,7 @@ void bcma_core_pci_hostmode_init(struct
  	/* Reset RC */
  	usleep_range(3000, 5000);
  	pcicore_write32(pc, BCMA_CORE_PCI_CTL, BCMA_CORE_PCI_CTL_RST_OE);
@@ -567,7 +567,7 @@
  	pcicore_write32(pc, BCMA_CORE_PCI_CTL, BCMA_CORE_PCI_CTL_RST |
  			BCMA_CORE_PCI_CTL_RST_OE);
  
-@@ -488,6 +491,17 @@ void bcma_core_pci_hostmode_init(struct 
+@@ -488,6 +491,17 @@ void bcma_core_pci_hostmode_init(struct
  
  	bcma_core_pci_enable_crs(pc);
  
@@ -594,7 +594,7 @@
  	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
  
  	return 0;
-@@ -595,6 +609,6 @@ int bcma_core_pci_pcibios_map_irq(const 
+@@ -595,6 +609,6 @@ int bcma_core_pci_pcibios_map_irq(const
  
  	pc_host = container_of(dev->bus->ops, struct bcma_drv_pci_host,
  			       pci_ops);
