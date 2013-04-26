@@ -40,7 +40,7 @@ define KernelPackage/at91-adc
   TITLE:=ADC on atmel SoC
   DEPENDS:=@TARGET_at91
   KCONFIG:=CONFIG_AT91_ADC
-  FILES:=$(LINUX_DIR)/drivers/misc/at91-adc.ko
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/at91-adc.ko
   AUTOLOAD:=$(call AutoLoad,40,at91-adc)
 endef
 
