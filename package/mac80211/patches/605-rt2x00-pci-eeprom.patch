@@ -8,7 +8,7 @@
 +static int rt2800pci_read_eeprom_file(struct rt2x00_dev *rt2x00dev)
  {
  	memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data, EEPROM_SIZE);
- 	return -ENOMEM;
+ 	return 0;
 @@ -1099,8 +1099,9 @@ static int rt2800pci_read_eeprom(struct 
  {
  	int retval;
