@@ -131,7 +131,7 @@ struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
 {
 	FILE *db;
 	char buf[256] = { 0 };
-	static struct iwinfo_hardware_entry e;
+	static struct iwinfo_hardware_entry e, *rv = NULL;
 
 	if (!(db = fopen(IWINFO_HARDWARE_FILE, "r")))
 		return NULL;
@@ -161,15 +161,12 @@ struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
 			(e.subsystem_device_id != id->subsystem_device_id))
 			continue;
 
+		rv = &e;
 		break;
 	}
 
 	fclose(db);
-
-	if (e.device_name[0])
-		return &e;
-
-	return NULL;
+	return rv;
 }
 
 int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
