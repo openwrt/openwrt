@@ -366,7 +366,7 @@
  			bcma_cc_write32(cc, BCMA_CC_CORECTL,
 --- a/drivers/bcma/driver_chipcommon_nflash.c
 +++ b/drivers/bcma/driver_chipcommon_nflash.c
-@@ -32,6 +32,9 @@ int bcma_nflash_init(struct bcma_drv_cc 
+@@ -32,6 +32,9 @@ int bcma_nflash_init(struct bcma_drv_cc
  	}
  
  	cc->nflash.present = true;
@@ -393,7 +393,7 @@
  
  void bcma_chipco_pll_write(struct bcma_drv_cc *cc, u32 offset, u32 value)
  {
-@@ -144,7 +145,7 @@ static void bcma_pmu_workarounds(struct 
+@@ -144,7 +145,7 @@ static void bcma_pmu_workarounds(struct
  	}
  }
  
@@ -662,7 +662,7 @@
  	{ 0 },
  };
  
-@@ -84,6 +111,8 @@ int bcma_sflash_init(struct bcma_drv_cc 
+@@ -84,6 +111,8 @@ int bcma_sflash_init(struct bcma_drv_cc
  					break;
  			}
  			break;
@@ -671,7 +671,7 @@
  		default:
  			for (e = bcma_sflash_st_tbl; e->name; e++) {
  				if (e->id == id)
-@@ -116,7 +145,7 @@ int bcma_sflash_init(struct bcma_drv_cc 
+@@ -116,7 +145,7 @@ int bcma_sflash_init(struct bcma_drv_cc
  		return -ENOTSUPP;
  	}
  
@@ -885,7 +885,7 @@
  	for (i = 0; i <= 6; i++)
  		printk(" %s%s", irq_name[i], i == irq ? "*" : " ");
  	printk("\n");
-@@ -171,7 +194,7 @@ u32 bcma_cpu_clock(struct bcma_drv_mips 
+@@ -171,7 +194,7 @@ u32 bcma_cpu_clock(struct bcma_drv_mips
  	struct bcma_bus *bus = mcore->core->bus;
  
  	if (bus->drv_cc.capabilities & BCMA_CC_CAP_PMU)
@@ -1288,7 +1288,15 @@
  
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -157,6 +157,7 @@ struct bcma_host_ops {
+@@ -134,6 +134,7 @@ struct bcma_host_ops {
+ #define BCMA_CORE_I2S			0x834
+ #define BCMA_CORE_SDR_DDR1_MEM_CTL	0x835	/* SDR/DDR1 memory controller core */
+ #define BCMA_CORE_SHIM			0x837	/* SHIM component in ubus/6362 */
++#define BCMA_CORE_ARM_CR4		0x83e
+ #define BCMA_CORE_DEFAULT		0xFFF
+ 
+ #define BCMA_MAX_NR_CORES		16
+@@ -157,6 +158,7 @@ struct bcma_host_ops {
  
  /* Chip IDs of SoCs */
  #define BCMA_CHIP_ID_BCM4706	0x5300
@@ -1296,7 +1304,7 @@
  #define BCMA_CHIP_ID_BCM4716	0x4716
  #define  BCMA_PKG_ID_BCM4716	8
  #define  BCMA_PKG_ID_BCM4717	9
-@@ -166,7 +167,11 @@ struct bcma_host_ops {
+@@ -166,7 +168,11 @@ struct bcma_host_ops {
  #define BCMA_CHIP_ID_BCM4749	0x4749
  #define BCMA_CHIP_ID_BCM5356	0x5356
  #define BCMA_CHIP_ID_BCM5357	0x5357
@@ -1308,7 +1316,7 @@
  
  struct bcma_device {
  	struct bcma_bus *bus;
-@@ -251,7 +256,7 @@ struct bcma_bus {
+@@ -251,7 +257,7 @@ struct bcma_bus {
  	u8 num;
  
  	struct bcma_drv_cc drv_cc;
@@ -1317,7 +1325,7 @@
  	struct bcma_drv_mips drv_mips;
  	struct bcma_drv_gmac_cmn drv_gmac_cmn;
  
-@@ -345,6 +350,7 @@ extern void bcma_core_set_clockmode(stru
+@@ -345,6 +351,7 @@ extern void bcma_core_set_clockmode(stru
  				    enum bcma_clkmode clkmode);
  extern void bcma_core_pll_ctl(struct bcma_device *core, u32 req, u32 status,
  			      bool on);
@@ -1345,7 +1353,17 @@
  #define BCMA_CC_JCMD			0x0030		/* Rev >= 10 only */
  #define  BCMA_CC_JCMD_START		0x80000000
  #define  BCMA_CC_JCMD_BUSY		0x80000000
-@@ -510,6 +514,7 @@ struct bcma_chipcommon_pmu {
+@@ -312,6 +316,9 @@
+ #define BCMA_CC_PMU_CTL			0x0600 /* PMU control */
+ #define  BCMA_CC_PMU_CTL_ILP_DIV	0xFFFF0000 /* ILP div mask */
+ #define  BCMA_CC_PMU_CTL_ILP_DIV_SHIFT	16
++#define  BCMA_CC_PMU_CTL_RES		0x00006000 /* reset control mask */
++#define  BCMA_CC_PMU_CTL_RES_SHIFT	13
++#define  BCMA_CC_PMU_CTL_RES_RELOAD	0x2	/* reload POR values */
+ #define  BCMA_CC_PMU_CTL_PLL_UPD	0x00000400
+ #define  BCMA_CC_PMU_CTL_NOILPONW	0x00000200 /* No ILP on wait */
+ #define  BCMA_CC_PMU_CTL_HTREQEN	0x00000100 /* HT req enable */
+@@ -510,6 +517,7 @@ struct bcma_chipcommon_pmu {
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  struct bcma_pflash {
@@ -1353,7 +1371,7 @@
  	u8 buswidth;
  	u32 window;
  	u32 window_size;
-@@ -532,6 +537,7 @@ struct mtd_info;
+@@ -532,6 +540,7 @@ struct mtd_info;
  
  struct bcma_nflash {
  	bool present;
@@ -1361,7 +1379,7 @@
  
  	struct mtd_info *mtd;
  };
-@@ -552,6 +558,7 @@ struct bcma_drv_cc {
+@@ -552,6 +561,7 @@ struct bcma_drv_cc {
  	u32 capabilities;
  	u32 capabilities_ext;
  	u8 setup_done:1;
@@ -1369,7 +1387,7 @@
  	/* Fast Powerup Delay constant */
  	u16 fast_pwrup_delay;
  	struct bcma_chipcommon_pmu pmu;
-@@ -567,6 +574,14 @@ struct bcma_drv_cc {
+@@ -567,6 +577,14 @@ struct bcma_drv_cc {
  	int nr_serial_ports;
  	struct bcma_serial_port serial_ports[4];
  #endif /* CONFIG_BCMA_DRIVER_MIPS */
@@ -1384,7 +1402,7 @@
  };
  
  /* Register access */
-@@ -583,14 +598,16 @@ struct bcma_drv_cc {
+@@ -583,14 +601,16 @@ struct bcma_drv_cc {
  	bcma_cc_write32(cc, offset, (bcma_cc_read32(cc, offset) & (mask)) | (set))
  
  extern void bcma_core_chipcommon_init(struct bcma_drv_cc *cc);
@@ -1403,7 +1421,7 @@
  
  void bcma_chipco_irq_mask(struct bcma_drv_cc *cc, u32 mask, u32 value);
  
-@@ -603,9 +620,12 @@ u32 bcma_chipco_gpio_outen(struct bcma_d
+@@ -603,9 +623,12 @@ u32 bcma_chipco_gpio_outen(struct bcma_d
  u32 bcma_chipco_gpio_control(struct bcma_drv_cc *cc, u32 mask, u32 value);
  u32 bcma_chipco_gpio_intmask(struct bcma_drv_cc *cc, u32 mask, u32 value);
  u32 bcma_chipco_gpio_polarity(struct bcma_drv_cc *cc, u32 mask, u32 value);
@@ -1437,7 +1455,15 @@
  extern u32 bcma_cpu_clock(struct bcma_drv_mips *mcore);
 --- a/include/linux/bcma/bcma_regs.h
 +++ b/include/linux/bcma/bcma_regs.h
-@@ -85,6 +85,9 @@
+@@ -37,6 +37,7 @@
+ #define  BCMA_IOST_BIST_DONE		0x8000
+ #define BCMA_RESET_CTL			0x0800
+ #define  BCMA_RESET_CTL_RESET		0x0001
++#define BCMA_RESET_ST			0x0804
+ 
+ /* BCMA PCI config space registers. */
+ #define BCMA_PCI_PMCSR			0x44
+@@ -85,6 +86,9 @@
  							 * (2 ZettaBytes), high 32 bits
  							 */
  

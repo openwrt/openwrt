@@ -1,6 +1,6 @@
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -682,6 +682,7 @@
+@@ -676,6 +676,7 @@ static const struct spi_device_id m25p_i
  	/* PMC -- pm25x "blocks" are 32K, sectors are 4K */
  	{ "pm25lv512", INFO(0, 0, 32 * 1024, 2, SECT_4K_PMC) },
  	{ "pm25lv010", INFO(0, 0, 32 * 1024, 4, SECT_4K_PMC) },
