@@ -123,6 +123,7 @@ enum {
 	WNR834BV1,
 	WNR834BV2,
 	WNDR3400V1,
+	WNDR3700V3,
 
 	/* Trendware */
 	TEW411BRPP,
@@ -927,6 +928,28 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "usb",	.gpio = 1 << 2, .polarity = REVERSE },
 		},
 	},
+	[WNDR3700V3] = {
+		.name		= "Netgear WNDR3700 V3",
+		.buttons	= {
+			/* { .name = "usb",	.gpio = 1 << 1 }, */ /* this button doesn't seem to exist. */
+			{ .name = "wlan",	.gpio = 1 << 2 },
+			{ .name = "reset",	.gpio = 1 << 3 },
+			{ .name = "wps",	.gpio = 1 << 4 },
+			/* { .name = "switch",	.gpio = 1 << 5 },*/	/* nvram get gpio5=robo_reset */
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = (1 << 0) | GPIO_TYPE_SHIFT, .polarity = REVERSE },
+			{ .name = "diag",	.gpio = (1 << 1) | GPIO_TYPE_SHIFT, .polarity = REVERSE },
+			/* WAN LED doesn't respond to GPIO control. The switch is probably driving it.
+			 * { .name = "wan",	.gpio = (1 << 2) | GPIO_TYPE_SHIFT, .polarity = REVERSE },
+			 */
+			{ .name = "wlan2g",	.gpio = (1 << 3) | GPIO_TYPE_SHIFT, .polarity = REVERSE },
+			{ .name = "wlan5g",	.gpio = (1 << 4) | GPIO_TYPE_SHIFT, .polarity = REVERSE },
+			{ .name = "usb",	.gpio = (1 << 5) | GPIO_TYPE_SHIFT, .polarity = REVERSE },
+			{ .name = "wps",	.gpio = (1 << 6) | GPIO_TYPE_SHIFT, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = (1 << 7) | GPIO_TYPE_SHIFT, .polarity = REVERSE },
+		},
+	},
 	/* Trendware */
 	[TEW411BRPP] = {
 		.name           = "Trendware TEW411BRP+",
@@ -1308,6 +1331,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[WR850GV2V3];
 	case BCM47XX_BOARD_NETGEAR_WNDR3400V1:
 		return &platforms[WNDR3400V1];
+	case BCM47XX_BOARD_NETGEAR_WNDR3700V3:
+		return &platforms[WNDR3700V3];
 	case BCM47XX_BOARD_UNKNOWN:
 	case BCM47XX_BOARD_NON:
 		printk(MODULE_NAME ": unknown board found, try legacy detect\n");
@@ -1476,13 +1501,23 @@ static void register_leds(struct led_t *l)
 		if (l->gpio & gpiomask)
 			continue;
 
-		if (l->gpio & GPIO_TYPE_EXTIF) {
+		switch (l->gpio & GPIO_TYPE_MASK) {
+		case GPIO_TYPE_EXTIF:
 			l->state = 0;
 			set_led_extif(l);
-		} else {
+			break;
+		case GPIO_TYPE_SHIFT:
+			mask |= (SHIFTREG_DATA | SHIFTREG_CLK);
+			oe_mask |= (SHIFTREG_DATA | SHIFTREG_CLK);
+			l->state = (l->polarity != NORMAL);
+			set_led_shift(l);
+			break;
+		case GPIO_TYPE_NORMAL:
+		default:
 			if (l->polarity != INPUT) oe_mask |= l->gpio;
 			mask |= l->gpio;
 			val |= (l->polarity == NORMAL)?0:l->gpio;
+			break;
 		}
 
 		if (l->polarity == INPUT) continue;
@@ -1518,20 +1553,68 @@ static void set_led_extif(struct led_t *led)
 		*addr;
 }
 
+/*
+ * This should be extended to allow the platform to specify the pins and width
+ * of the shift register. They're hardcoded for now because only the WNDR3700v3
+ * uses it.
+ */
+static void shiftreg_output(unsigned int val)
+{
+	unsigned int mask;
+
+	bcm47xx_gpio_out(SHIFTREG_DATA, SHIFTREG_DATA); /* init off, pull high */
+	bcm47xx_gpio_out(SHIFTREG_CLK, 0); /* init reset */
+
+	/* shift 8 times */
+	for(mask = 1 << (SHIFTREG_MAX_BITS-1); mask; mask >>= 1)
+	{
+		bcm47xx_gpio_out(SHIFTREG_DATA, (val & mask) ? SHIFTREG_DATA : 0);
+		bcm47xx_gpio_out(SHIFTREG_CLK, SHIFTREG_CLK); /* pull high to trigger */
+		bcm47xx_gpio_out(SHIFTREG_CLK, 0); /* reset to low */
+	}
+}
+
+static void set_led_shift(struct led_t *led)
+{
+	static u32	shiftreg = 0;
+	u32			old = shiftreg;
+	u32			pin = (led->gpio & ~GPIO_TYPE_MASK);
+
+	if (led->state) {
+		shiftreg |= pin;
+	} else {
+		shiftreg &= ~pin;
+	}
+
+	/* Clock the bits out. */
+	if (shiftreg != old) {
+		shiftreg_output(shiftreg);
+	}
+}
+
+
 static void led_flash(unsigned long dummy) {
 	struct led_t *l;
 	u32 mask = 0;
 	u8 extif_blink = 0;
 
 	for (l = platform.leds; l->name; l++) {
-		if (l->flash) {
-			if (l->gpio & GPIO_TYPE_EXTIF) {
-				extif_blink = 1;
-				l->state = !l->state;
-				set_led_extif(l);
-			} else {
-				mask |= l->gpio;
-			}
+		if (!l->flash) continue;
+		switch (l->gpio & GPIO_TYPE_MASK) {
+		case GPIO_TYPE_EXTIF:
+			extif_blink = 1;
+			l->state = !l->state;
+			set_led_extif(l);
+			break;
+		case GPIO_TYPE_SHIFT:
+			extif_blink = 1;
+			l->state = !l->state;
+			set_led_shift(l);
+			break;
+		case GPIO_TYPE_NORMAL:
+		default:
+			mask |= l->gpio;
+			break;
 		}
 	}
 
@@ -1562,16 +1645,14 @@ static ssize_t diag_proc_read(struct file *file, char *buf, size_t count, loff_t
 		switch (handler->type) {
 			case PROC_LED: {
 				struct led_t * led = (struct led_t *) handler->ptr;
+				u8 p = (led->polarity == NORMAL ? 0 : 1);
 				if (led->flash) {
 					len = sprintf(page, "f\n");
+				} else if ((led->gpio & GPIO_TYPE_MASK) != GPIO_TYPE_NORMAL) {
+					len = sprintf(page, "%d\n", ((led->state ^ p) ? 1 : 0));
 				} else {
-					if (led->gpio & GPIO_TYPE_EXTIF) {
-						len = sprintf(page, "%d\n", led->state);
-					} else {
-						u32 in = (bcm47xx_gpio_in(~0) & led->gpio ? 1 : 0);
-						u8 p = (led->polarity == NORMAL ? 0 : 1);
-						len = sprintf(page, "%d\n", ((in ^ p) ? 1 : 0));
-					}
+					u32 in = (bcm47xx_gpio_in(~0) & led->gpio ? 1 : 0);
+					len = sprintf(page, "%d\n", ((in ^ p) ? 1 : 0));
 				}
 				break;
 			}
@@ -1628,9 +1709,12 @@ static ssize_t diag_proc_write(struct file *file, const char *buf, size_t count,
 					led_flash(0);
 				} else {
 					led->flash = 0;
-					if (led->gpio & GPIO_TYPE_EXTIF) {
+					if ((led->gpio & GPIO_TYPE_MASK) == GPIO_TYPE_EXTIF) {
 						led->state = p ^ ((page[0] == '1') ? 1 : 0);
 						set_led_extif(led);
+					} else if ((led->gpio & GPIO_TYPE_MASK) == GPIO_TYPE_SHIFT) {
+						led->state = p ^ ((page[0] == '1') ? 1 : 0);
+						set_led_shift(led);
 					} else {
 						bcm47xx_gpio_outen(led->gpio, led->gpio);
 						bcm47xx_gpio_control(led->gpio, 0);
