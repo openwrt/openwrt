@@ -1075,7 +1075,7 @@
  	for (i = 0; i <= 6; i++)
  		printk(" %s%s", irq_name[i], i == irq ? "*" : " ");
  	printk("\n");
-@@ -171,7 +194,7 @@ u32 bcma_cpu_clock(struct bcma_drv_mips 
+@@ -171,7 +194,7 @@ u32 bcma_cpu_clock(struct bcma_drv_mips
  	struct bcma_bus *bus = mcore->core->bus;
  
  	if (bus->drv_cc.capabilities & BCMA_CC_CAP_PMU)
@@ -1261,7 +1261,7 @@
  	}
  	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_CONTROL, 0);
  	return ret;
-@@ -132,7 +132,7 @@ static void bcma_pcie_mdio_write(struct 
+@@ -132,7 +132,7 @@ static void bcma_pcie_mdio_write(struct
  		v = pcicore_read32(pc, BCMA_CORE_PCI_MDIO_CONTROL);
  		if (v & BCMA_CORE_PCI_MDIOCTL_ACCESS_DONE)
  			break;
@@ -1649,7 +1649,15 @@
  
  struct bcma_device;
  struct bcma_bus;
-@@ -157,6 +157,7 @@ struct bcma_host_ops {
+@@ -134,6 +134,7 @@ struct bcma_host_ops {
+ #define BCMA_CORE_I2S			0x834
+ #define BCMA_CORE_SDR_DDR1_MEM_CTL	0x835	/* SDR/DDR1 memory controller core */
+ #define BCMA_CORE_SHIM			0x837	/* SHIM component in ubus/6362 */
++#define BCMA_CORE_ARM_CR4		0x83e
+ #define BCMA_CORE_DEFAULT		0xFFF
+ 
+ #define BCMA_MAX_NR_CORES		16
+@@ -157,6 +158,7 @@ struct bcma_host_ops {
  
  /* Chip IDs of SoCs */
  #define BCMA_CHIP_ID_BCM4706	0x5300
@@ -1657,7 +1665,7 @@
  #define BCMA_CHIP_ID_BCM4716	0x4716
  #define  BCMA_PKG_ID_BCM4716	8
  #define  BCMA_PKG_ID_BCM4717	9
-@@ -166,7 +167,11 @@ struct bcma_host_ops {
+@@ -166,7 +168,11 @@ struct bcma_host_ops {
  #define BCMA_CHIP_ID_BCM4749	0x4749
  #define BCMA_CHIP_ID_BCM5356	0x5356
  #define BCMA_CHIP_ID_BCM5357	0x5357
@@ -1669,7 +1677,7 @@
  
  struct bcma_device {
  	struct bcma_bus *bus;
-@@ -251,7 +256,7 @@ struct bcma_bus {
+@@ -251,7 +257,7 @@ struct bcma_bus {
  	u8 num;
  
  	struct bcma_drv_cc drv_cc;
@@ -1678,7 +1686,7 @@
  	struct bcma_drv_mips drv_mips;
  	struct bcma_drv_gmac_cmn drv_gmac_cmn;
  
-@@ -345,6 +350,7 @@ extern void bcma_core_set_clockmode(stru
+@@ -345,6 +351,7 @@ extern void bcma_core_set_clockmode(stru
  				    enum bcma_clkmode clkmode);
  extern void bcma_core_pll_ctl(struct bcma_device *core, u32 req, u32 status,
  			      bool on);
@@ -1737,7 +1745,17 @@
  /* 0x1E0 is defined as shared BCMA_CLKCTLST */
  #define BCMA_CC_HW_WORKAROUND		0x01E4 /* Hardware workaround (rev >= 20) */
  #define BCMA_CC_UART0_DATA		0x0300
-@@ -325,6 +353,60 @@
+@@ -288,6 +316,9 @@
+ #define BCMA_CC_PMU_CTL			0x0600 /* PMU control */
+ #define  BCMA_CC_PMU_CTL_ILP_DIV	0xFFFF0000 /* ILP div mask */
+ #define  BCMA_CC_PMU_CTL_ILP_DIV_SHIFT	16
++#define  BCMA_CC_PMU_CTL_RES		0x00006000 /* reset control mask */
++#define  BCMA_CC_PMU_CTL_RES_SHIFT	13
++#define  BCMA_CC_PMU_CTL_RES_RELOAD	0x2	/* reload POR values */
+ #define  BCMA_CC_PMU_CTL_PLL_UPD	0x00000400
+ #define  BCMA_CC_PMU_CTL_NOILPONW	0x00000200 /* No ILP on wait */
+ #define  BCMA_CC_PMU_CTL_HTREQEN	0x00000100 /* HT req enable */
+@@ -325,6 +356,60 @@
  #define BCMA_CC_PLLCTL_ADDR		0x0660
  #define BCMA_CC_PLLCTL_DATA		0x0664
  #define BCMA_CC_SPROM			0x0800 /* SPROM beginning */
@@ -1798,7 +1816,7 @@
  
  /* Divider allocation in 4716/47162/5356 */
  #define BCMA_CC_PMU5_MAINPLL_CPU	1
-@@ -415,6 +497,13 @@
+@@ -415,6 +500,13 @@
  /* 4313 Chip specific ChipControl register bits */
  #define BCMA_CCTRL_4313_12MA_LED_DRIVE		0x00000007	/* 12 mA drive strengh for later 4313 */
  
@@ -1812,7 +1830,7 @@
  /* Data for the PMU, if available.
   * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
   */
-@@ -425,11 +514,35 @@ struct bcma_chipcommon_pmu {
+@@ -425,11 +517,35 @@ struct bcma_chipcommon_pmu {
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  struct bcma_pflash {
@@ -1848,7 +1866,7 @@
  struct bcma_serial_port {
  	void *regs;
  	unsigned long clockspeed;
-@@ -445,15 +558,30 @@ struct bcma_drv_cc {
+@@ -445,15 +561,30 @@ struct bcma_drv_cc {
  	u32 capabilities;
  	u32 capabilities_ext;
  	u8 setup_done:1;
@@ -1879,7 +1897,7 @@
  };
  
  /* Register access */
-@@ -470,14 +598,16 @@ struct bcma_drv_cc {
+@@ -470,14 +601,16 @@ struct bcma_drv_cc {
  	bcma_cc_write32(cc, offset, (bcma_cc_read32(cc, offset) & (mask)) | (set))
  
  extern void bcma_core_chipcommon_init(struct bcma_drv_cc *cc);
@@ -1898,7 +1916,7 @@
  
  void bcma_chipco_irq_mask(struct bcma_drv_cc *cc, u32 mask, u32 value);
  
-@@ -490,9 +620,12 @@ u32 bcma_chipco_gpio_outen(struct bcma_d
+@@ -490,9 +623,12 @@ u32 bcma_chipco_gpio_outen(struct bcma_d
  u32 bcma_chipco_gpio_control(struct bcma_drv_cc *cc, u32 mask, u32 value);
  u32 bcma_chipco_gpio_intmask(struct bcma_drv_cc *cc, u32 mask, u32 value);
  u32 bcma_chipco_gpio_polarity(struct bcma_drv_cc *cc, u32 mask, u32 value);
@@ -1946,7 +1964,15 @@
  /* Is there any BCM4328 on BCMA bus? */
  #define  BCMA_CLKCTLST_4328A0_HAVEHT	0x00010000 /* 4328a0 has reversed bits */
  #define  BCMA_CLKCTLST_4328A0_HAVEALP	0x00020000 /* 4328a0 has reversed bits */
-@@ -83,4 +85,9 @@
+@@ -35,6 +37,7 @@
+ #define  BCMA_IOST_BIST_DONE		0x8000
+ #define BCMA_RESET_CTL			0x0800
+ #define  BCMA_RESET_CTL_RESET		0x0001
++#define BCMA_RESET_ST			0x0804
+ 
+ /* BCMA PCI config space registers. */
+ #define BCMA_PCI_PMCSR			0x44
+@@ -83,4 +86,9 @@
  							 * (2 ZettaBytes), high 32 bits
  							 */
  
