@@ -113,8 +113,8 @@
 +#endif /* BCM47XXSFLASH */
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -529,6 +529,7 @@ struct bcma_sflash {
- 	u32 size;
+@@ -544,6 +544,7 @@ struct bcma_nflash {
+ 	bool boot;		/* This is the flash the SoC boots from */
  
  	struct mtd_info *mtd;
 +	void *priv;

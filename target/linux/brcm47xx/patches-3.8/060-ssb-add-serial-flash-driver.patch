@@ -296,7 +296,7 @@
  }
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -549,6 +549,15 @@ static int ssb_devices_register(struct s
+@@ -545,6 +545,15 @@ static int ssb_devices_register(struct s
  		dev_idx++;
  	}
  
@@ -314,7 +314,7 @@
  		err = platform_device_register(&ssb_pflash_dev);
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
-@@ -220,6 +220,7 @@ extern u32 ssb_chipco_watchdog_timer_set
+@@ -231,6 +231,7 @@ extern u32 ssb_chipco_watchdog_timer_set
  /* driver_chipcommon_sflash.c */
  #ifdef CONFIG_SSB_SFLASH
  int ssb_sflash_init(struct ssb_chipcommon *cc);
