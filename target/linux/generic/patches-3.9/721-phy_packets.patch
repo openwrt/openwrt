@@ -79,7 +79,7 @@
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -2529,9 +2529,19 @@ int dev_hard_start_xmit(struct sk_buff *
+@@ -2532,9 +2532,19 @@ int dev_hard_start_xmit(struct sk_buff *
  		if (!list_empty(&ptype_all))
  			dev_queue_xmit_nit(skb, dev);
  
@@ -102,7 +102,7 @@
  		if (rc == NETDEV_TX_OK)
  			txq_trans_update(txq);
  		return rc;
-@@ -2554,9 +2564,19 @@ gso:
+@@ -2557,9 +2567,19 @@ gso:
  		if (!list_empty(&ptype_all))
  			dev_queue_xmit_nit(nskb, dev);
  
