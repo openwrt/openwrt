@@ -1,27 +1,3 @@
---- a/drivers/ssb/Kconfig
-+++ b/drivers/ssb/Kconfig
-@@ -136,6 +136,11 @@ config SSB_DRIVER_MIPS
- 
- 	  If unsure, say N
- 
-+config SSB_SFLASH
-+	bool "SSB serial flash support"
-+	depends on SSB_DRIVER_MIPS && BROKEN
-+	default y
-+
- # Assumption: We are on embedded, if we compile the MIPS core.
- config SSB_EMBEDDED
- 	bool
---- a/drivers/ssb/Makefile
-+++ b/drivers/ssb/Makefile
-@@ -11,6 +11,7 @@ ssb-$(CONFIG_SSB_SDIOHOST)		+= sdio.o
- # built-in drivers
- ssb-y					+= driver_chipcommon.o
- ssb-y					+= driver_chipcommon_pmu.o
-+ssb-$(CONFIG_SSB_SFLASH)		+= driver_chipcommon_sflash.o
- ssb-$(CONFIG_SSB_DRIVER_MIPS)		+= driver_mipscore.o
- ssb-$(CONFIG_SSB_DRIVER_EXTIF)		+= driver_extif.o
- ssb-$(CONFIG_SSB_DRIVER_PCICORE)	+= driver_pcicore.o
 --- a/drivers/ssb/driver_chipcommon.c
 +++ b/drivers/ssb/driver_chipcommon.c
 @@ -354,7 +354,7 @@ void ssb_chipcommon_init(struct ssb_chip
@@ -172,238 +148,9 @@
  	default:
  		ssb_printk(KERN_ERR PFX
  			   "Unknown spuravoidance settings for chip 0x%04X, not changing PLL\n",
---- /dev/null
-+++ b/drivers/ssb/driver_chipcommon_sflash.c
-@@ -0,0 +1,140 @@
-+/*
-+ * Sonics Silicon Backplane
-+ * ChipCommon serial flash interface
-+ *
-+ * Licensed under the GNU/GPL. See COPYING for details.
-+ */
-+
-+#include <linux/ssb/ssb.h>
-+
-+#include "ssb_private.h"
-+
-+struct ssb_sflash_tbl_e {
-+	char *name;
-+	u32 id;
-+	u32 blocksize;
-+	u16 numblocks;
-+};
-+
-+static struct ssb_sflash_tbl_e ssb_sflash_st_tbl[] = {
-+	{ "M25P20", 0x11, 0x10000, 4, },
-+	{ "M25P40", 0x12, 0x10000, 8, },
-+
-+	{ "M25P16", 0x14, 0x10000, 32, },
-+	{ "M25P32", 0x15, 0x10000, 64, },
-+	{ "M25P64", 0x16, 0x10000, 128, },
-+	{ "M25FL128", 0x17, 0x10000, 256, },
-+	{ 0 },
-+};
-+
-+static struct ssb_sflash_tbl_e ssb_sflash_sst_tbl[] = {
-+	{ "SST25WF512", 1, 0x1000, 16, },
-+	{ "SST25VF512", 0x48, 0x1000, 16, },
-+	{ "SST25WF010", 2, 0x1000, 32, },
-+	{ "SST25VF010", 0x49, 0x1000, 32, },
-+	{ "SST25WF020", 3, 0x1000, 64, },
-+	{ "SST25VF020", 0x43, 0x1000, 64, },
-+	{ "SST25WF040", 4, 0x1000, 128, },
-+	{ "SST25VF040", 0x44, 0x1000, 128, },
-+	{ "SST25VF040B", 0x8d, 0x1000, 128, },
-+	{ "SST25WF080", 5, 0x1000, 256, },
-+	{ "SST25VF080B", 0x8e, 0x1000, 256, },
-+	{ "SST25VF016", 0x41, 0x1000, 512, },
-+	{ "SST25VF032", 0x4a, 0x1000, 1024, },
-+	{ "SST25VF064", 0x4b, 0x1000, 2048, },
-+	{ 0 },
-+};
-+
-+static struct ssb_sflash_tbl_e ssb_sflash_at_tbl[] = {
-+	{ "AT45DB011", 0xc, 256, 512, },
-+	{ "AT45DB021", 0x14, 256, 1024, },
-+	{ "AT45DB041", 0x1c, 256, 2048, },
-+	{ "AT45DB081", 0x24, 256, 4096, },
-+	{ "AT45DB161", 0x2c, 512, 4096, },
-+	{ "AT45DB321", 0x34, 512, 8192, },
-+	{ "AT45DB642", 0x3c, 1024, 8192, },
-+	{ 0 },
-+};
-+
-+static void ssb_sflash_cmd(struct ssb_chipcommon *cc, u32 opcode)
-+{
-+	int i;
-+	chipco_write32(cc, SSB_CHIPCO_FLASHCTL,
-+		       SSB_CHIPCO_FLASHCTL_START | opcode);
-+	for (i = 0; i < 1000; i++) {
-+		if (!(chipco_read32(cc, SSB_CHIPCO_FLASHCTL) &
-+		      SSB_CHIPCO_FLASHCTL_BUSY))
-+			return;
-+		cpu_relax();
-+	}
-+	pr_err("SFLASH control command failed (timeout)!\n");
-+}
-+
-+/* Initialize serial flash access */
-+int ssb_sflash_init(struct ssb_chipcommon *cc)
-+{
-+	struct ssb_sflash_tbl_e *e;
-+	u32 id, id2;
-+
-+	switch (cc->capabilities & SSB_CHIPCO_CAP_FLASHT) {
-+	case SSB_CHIPCO_FLASHT_STSER:
-+		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_DP);
-+
-+		chipco_write32(cc, SSB_CHIPCO_FLASHADDR, 0);
-+		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_RES);
-+		id = chipco_read32(cc, SSB_CHIPCO_FLASHDATA);
-+
-+		chipco_write32(cc, SSB_CHIPCO_FLASHADDR, 1);
-+		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_RES);
-+		id2 = chipco_read32(cc, SSB_CHIPCO_FLASHDATA);
-+
-+		switch (id) {
-+		case 0xbf:
-+			for (e = ssb_sflash_sst_tbl; e->name; e++) {
-+				if (e->id == id2)
-+					break;
-+			}
-+			break;
-+		case 0x13:
-+			return -ENOTSUPP;
-+		default:
-+			for (e = ssb_sflash_st_tbl; e->name; e++) {
-+				if (e->id == id)
-+					break;
-+			}
-+			break;
-+		}
-+		if (!e->name) {
-+			pr_err("Unsupported ST serial flash (id: 0x%X, id2: 0x%X)\n",
-+			       id, id2);
-+			return -ENOTSUPP;
-+		}
-+
-+		break;
-+	case SSB_CHIPCO_FLASHT_ATSER:
-+		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_AT_STATUS);
-+		id = chipco_read32(cc, SSB_CHIPCO_FLASHDATA) & 0x3c;
-+
-+		for (e = ssb_sflash_at_tbl; e->name; e++) {
-+			if (e->id == id)
-+				break;
-+		}
-+		if (!e->name) {
-+			pr_err("Unsupported Atmel serial flash (id: 0x%X)\n",
-+			       id);
-+			return -ENOTSUPP;
-+		}
-+
-+		break;
-+	default:
-+		pr_err("Unsupported flash type\n");
-+		return -ENOTSUPP;
-+	}
-+
-+	pr_info("Found %s serial flash (blocksize: 0x%X, blocks: %d)\n",
-+		e->name, e->blocksize, e->numblocks);
-+
-+	pr_err("Serial flash support is not implemented yet!\n");
-+
-+	return -ENOTSUPP;
-+}
---- a/drivers/ssb/driver_gpio.c
-+++ b/drivers/ssb/driver_gpio.c
-@@ -74,6 +74,16 @@ static void ssb_gpio_chipco_free(struct
- 	ssb_chipco_gpio_pullup(&bus->chipco, 1 << gpio, 0);
- }
- 
-+static int ssb_gpio_chipco_to_irq(struct gpio_chip *chip, unsigned gpio)
-+{
-+	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
-+
-+	if (bus->bustype == SSB_BUSTYPE_SSB)
-+		return ssb_mips_irq(bus->chipco.dev) + 2;
-+	else
-+		return -EINVAL;
-+}
-+
- static int ssb_gpio_chipco_init(struct ssb_bus *bus)
- {
- 	struct gpio_chip *chip = &bus->gpio;
-@@ -86,6 +96,7 @@ static int ssb_gpio_chipco_init(struct s
- 	chip->set		= ssb_gpio_chipco_set_value;
- 	chip->direction_input	= ssb_gpio_chipco_direction_input;
- 	chip->direction_output	= ssb_gpio_chipco_direction_output;
-+	chip->to_irq		= ssb_gpio_chipco_to_irq;
- 	chip->ngpio		= 16;
- 	/* There is just one SoC in one device and its GPIO addresses should be
- 	 * deterministic to address them more easily. The other buses could get
-@@ -134,6 +145,16 @@ static int ssb_gpio_extif_direction_outp
- 	return 0;
- }
- 
-+static int ssb_gpio_extif_to_irq(struct gpio_chip *chip, unsigned gpio)
-+{
-+	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
-+
-+	if (bus->bustype == SSB_BUSTYPE_SSB)
-+		return ssb_mips_irq(bus->extif.dev) + 2;
-+	else
-+		return -EINVAL;
-+}
-+
- static int ssb_gpio_extif_init(struct ssb_bus *bus)
- {
- 	struct gpio_chip *chip = &bus->gpio;
-@@ -144,6 +165,7 @@ static int ssb_gpio_extif_init(struct ss
- 	chip->set		= ssb_gpio_extif_set_value;
- 	chip->direction_input	= ssb_gpio_extif_direction_input;
- 	chip->direction_output	= ssb_gpio_extif_direction_output;
-+	chip->to_irq		= ssb_gpio_extif_to_irq;
- 	chip->ngpio		= 5;
- 	/* There is just one SoC in one device and its GPIO addresses should be
- 	 * deterministic to address them more easily. The other buses could get
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
-@@ -10,6 +10,7 @@
- 
- #include <linux/ssb/ssb.h>
- 
-+#include <linux/mtd/physmap.h>
- #include <linux/serial.h>
- #include <linux/serial_core.h>
- #include <linux/serial_reg.h>
-@@ -17,6 +18,25 @@
- 
- #include "ssb_private.h"
- 
-+static const char *part_probes[] = { "bcm47xxpart", NULL };
-+
-+static struct physmap_flash_data ssb_pflash_data = {
-+	.part_probe_types	= part_probes,
-+};
-+
-+static struct resource ssb_pflash_resource = {
-+	.name	= "ssb_pflash",
-+	.flags  = IORESOURCE_MEM,
-+};
-+
-+struct platform_device ssb_pflash_dev = {
-+	.name		= "physmap-flash",
-+	.dev		= {
-+		.platform_data  = &ssb_pflash_data,
-+	},
-+	.resource	= &ssb_pflash_resource,
-+	.num_resources	= 1,
-+};
- 
- static inline u32 mips_read32(struct ssb_mipscore *mcore,
- 			      u16 offset)
-@@ -147,21 +167,22 @@ static void set_irq(struct ssb_device *d
+@@ -167,21 +167,22 @@ static void set_irq(struct ssb_device *d
  		irqflag |= (ipsflag & ~ipsflag_irq_mask[irq]);
  		ssb_write32(mdev, SSB_IPSFLAG, irqflag);
  	}
@@ -436,62 +183,7 @@
  }
  
  static void dump_irq(struct ssb_bus *bus)
-@@ -189,34 +210,43 @@ static void ssb_mips_serial_init(struct
- static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
- {
- 	struct ssb_bus *bus = mcore->dev->bus;
-+	struct ssb_pflash *pflash = &mcore->pflash;
- 
- 	/* When there is no chipcommon on the bus there is 4MB flash */
- 	if (!ssb_chipco_available(&bus->chipco)) {
--		mcore->pflash.present = true;
--		mcore->pflash.buswidth = 2;
--		mcore->pflash.window = SSB_FLASH1;
--		mcore->pflash.window_size = SSB_FLASH1_SZ;
--		return;
-+		pflash->present = true;
-+		pflash->buswidth = 2;
-+		pflash->window = SSB_FLASH1;
-+		pflash->window_size = SSB_FLASH1_SZ;
-+		goto ssb_pflash;
- 	}
- 
- 	/* There is ChipCommon, so use it to read info about flash */
- 	switch (bus->chipco.capabilities & SSB_CHIPCO_CAP_FLASHT) {
- 	case SSB_CHIPCO_FLASHT_STSER:
- 	case SSB_CHIPCO_FLASHT_ATSER:
--		pr_err("Serial flash not supported\n");
-+		pr_debug("Found serial flash\n");
-+		ssb_sflash_init(&bus->chipco);
- 		break;
- 	case SSB_CHIPCO_FLASHT_PARA:
- 		pr_debug("Found parallel flash\n");
--		mcore->pflash.present = true;
--		mcore->pflash.window = SSB_FLASH2;
--		mcore->pflash.window_size = SSB_FLASH2_SZ;
-+		pflash->present = true;
-+		pflash->window = SSB_FLASH2;
-+		pflash->window_size = SSB_FLASH2_SZ;
- 		if ((ssb_read32(bus->chipco.dev, SSB_CHIPCO_FLASH_CFG)
- 		               & SSB_CHIPCO_CFG_DS16) == 0)
--			mcore->pflash.buswidth = 1;
-+			pflash->buswidth = 1;
- 		else
--			mcore->pflash.buswidth = 2;
-+			pflash->buswidth = 2;
- 		break;
- 	}
-+
-+ssb_pflash:
-+	if (pflash->present) {
-+		ssb_pflash_data.width = pflash->buswidth;
-+		ssb_pflash_resource.start = pflash->window;
-+		ssb_pflash_resource.end = pflash->window + pflash->window_size;
-+	}
- }
- 
- u32 ssb_cpu_clock(struct ssb_mipscore *mcore)
-@@ -257,7 +287,7 @@ void ssb_mipscore_init(struct ssb_mipsco
+@@ -286,7 +287,7 @@ void ssb_mipscore_init(struct ssb_mipsco
  	if (!mcore->dev)
  		return; /* We don't have a MIPS core */
  
@@ -500,7 +192,7 @@
  
  	bus = mcore->dev->bus;
  	hz = ssb_clockspeed(bus);
-@@ -305,7 +335,7 @@ void ssb_mipscore_init(struct ssb_mipsco
+@@ -334,7 +335,7 @@ void ssb_mipscore_init(struct ssb_mipsco
  			break;
  		}
  	}
@@ -626,22 +318,7 @@
  			/* Set dev to NULL to not unregister
  			 * dev on error unwinding. */
  			sdev->dev = NULL;
-@@ -549,6 +545,14 @@ static int ssb_devices_register(struct s
- 		dev_idx++;
- 	}
- 
-+#ifdef CONFIG_SSB_DRIVER_MIPS
-+	if (bus->mipscore.pflash.present) {
-+		err = platform_device_register(&ssb_pflash_dev);
-+		if (err)
-+			pr_err("Error registering parallel flash\n");
-+	}
-+#endif
-+
- 	return 0;
- error:
- 	/* Unwind the already registered devices. */
-@@ -817,10 +821,9 @@ static int ssb_bus_register(struct ssb_b
+@@ -825,10 +821,9 @@ static int ssb_bus_register(struct ssb_b
  	ssb_mipscore_init(&bus->mipscore);
  	err = ssb_gpio_init(bus);
  	if (err == -ENOTSUPP)
@@ -654,7 +331,7 @@
  	err = ssb_fetch_invariants(bus, get_invariants);
  	if (err) {
  		ssb_bus_may_powerdown(bus);
-@@ -870,11 +873,11 @@ int ssb_bus_pcibus_register(struct ssb_b
+@@ -878,11 +873,11 @@ int ssb_bus_pcibus_register(struct ssb_b
  
  	err = ssb_bus_register(bus, ssb_pci_get_invariants, 0);
  	if (!err) {
@@ -670,7 +347,7 @@
  	}
  
  	return err;
-@@ -895,8 +898,8 @@ int ssb_bus_pcmciabus_register(struct ss
+@@ -903,8 +898,8 @@ int ssb_bus_pcmciabus_register(struct ss
  
  	err = ssb_bus_register(bus, ssb_pcmcia_get_invariants, baseaddr);
  	if (!err) {
@@ -681,7 +358,7 @@
  	}
  
  	return err;
-@@ -917,8 +920,8 @@ int ssb_bus_sdiobus_register(struct ssb_
+@@ -925,8 +920,8 @@ int ssb_bus_sdiobus_register(struct ssb_
  
  	err = ssb_bus_register(bus, ssb_sdio_get_invariants, ~0);
  	if (!err) {
@@ -692,7 +369,7 @@
  	}
  
  	return err;
-@@ -936,8 +939,8 @@ int ssb_bus_ssbbus_register(struct ssb_b
+@@ -944,8 +939,8 @@ int ssb_bus_ssbbus_register(struct ssb_b
  
  	err = ssb_bus_register(bus, get_invariants, baseaddr);
  	if (!err) {
@@ -703,7 +380,7 @@
  	}
  
  	return err;
-@@ -1331,7 +1334,7 @@ out:
+@@ -1339,7 +1334,7 @@ out:
  #endif
  	return err;
  error:
@@ -712,7 +389,7 @@
  	goto out;
  }
  EXPORT_SYMBOL(ssb_bus_may_powerdown);
-@@ -1354,7 +1357,7 @@ int ssb_bus_powerup(struct ssb_bus *bus,
+@@ -1362,7 +1357,7 @@ int ssb_bus_powerup(struct ssb_bus *bus,
  
  	return 0;
  error:
@@ -721,7 +398,7 @@
  	return err;
  }
  EXPORT_SYMBOL(ssb_bus_powerup);
-@@ -1462,15 +1465,13 @@ static int __init ssb_modinit(void)
+@@ -1470,15 +1465,13 @@ static int __init ssb_modinit(void)
  
  	err = b43_pci_ssb_bridge_init();
  	if (err) {
@@ -1297,28 +974,6 @@
  #endif
  
  #ifdef CONFIG_SSB_DEBUG
-@@ -217,6 +228,21 @@ extern u32 ssb_chipco_watchdog_timer_set
- 					     u32 ticks);
- extern u32 ssb_chipco_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms);
- 
-+/* driver_chipcommon_sflash.c */
-+#ifdef CONFIG_SSB_SFLASH
-+int ssb_sflash_init(struct ssb_chipcommon *cc);
-+#else
-+static inline int ssb_sflash_init(struct ssb_chipcommon *cc)
-+{
-+	pr_err("Serial flash not supported\n");
-+	return 0;
-+}
-+#endif /* CONFIG_SSB_SFLASH */
-+
-+#ifdef CONFIG_SSB_DRIVER_MIPS
-+extern struct platform_device ssb_pflash_dev;
-+#endif
-+
- #ifdef CONFIG_SSB_DRIVER_EXTIF
- extern u32 ssb_extif_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt, u32 ticks);
- extern u32 ssb_extif_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms);
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
 @@ -26,9 +26,9 @@ struct ssb_sprom_core_pwr_info {
@@ -1399,62 +1054,6 @@
  /* chip_package */
  #define SSB_CHIPPACK_BCM4712S	1	/* Small 200pin 4712 */
  #define SSB_CHIPPACK_BCM4712M	2	/* Medium 225pin 4712 */
---- a/include/linux/ssb/ssb_driver_gige.h
-+++ b/include/linux/ssb/ssb_driver_gige.h
-@@ -97,21 +97,16 @@ static inline bool ssb_gige_must_flush_p
- 	return 0;
- }
- 
--#ifdef CONFIG_BCM47XX
--#include <asm/mach-bcm47xx/nvram.h>
- /* Get the device MAC address */
--static inline void ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
--{
--	char buf[20];
--	if (nvram_getenv("et0macaddr", buf, sizeof(buf)) < 0)
--		return;
--	nvram_parse_macaddr(buf, macaddr);
--}
--#else
--static inline void ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
-+static inline int ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
- {
-+	struct ssb_gige *dev = pdev_to_ssb_gige(pdev);
-+	if (!dev)
-+		return -ENODEV;
-+
-+	memcpy(macaddr, dev->dev->bus->sprom.et0mac, 6);
-+	return 0;
- }
--#endif
- 
- extern int ssb_gige_pcibios_plat_dev_init(struct ssb_device *sdev,
- 					  struct pci_dev *pdev);
-@@ -175,6 +170,10 @@ static inline bool ssb_gige_must_flush_p
- {
- 	return 0;
- }
-+static inline int ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
-+{
-+	return -ENODEV;
-+}
- 
- #endif /* CONFIG_SSB_DRIVER_GIGE */
- #endif /* LINUX_SSB_DRIVER_GIGE_H_ */
---- a/include/linux/ssb/ssb_driver_mips.h
-+++ b/include/linux/ssb/ssb_driver_mips.h
-@@ -45,6 +45,11 @@ void ssb_mipscore_init(struct ssb_mipsco
- {
- }
- 
-+static inline unsigned int ssb_mips_irq(struct ssb_device *dev)
-+{
-+	return 0;
-+}
-+
- #endif /* CONFIG_SSB_DRIVER_MIPS */
- 
- #endif /* LINUX_SSB_MIPSCORE_H_ */
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
 @@ -289,11 +289,11 @@

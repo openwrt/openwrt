@@ -41,25 +41,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  create mode 100644 drivers/net/ethernet/broadcom/bgmac.c
  create mode 100644 drivers/net/ethernet/broadcom/bgmac.h
 
---- a/drivers/bcma/driver_chipcommon_pmu.c
-+++ b/drivers/bcma/driver_chipcommon_pmu.c
-@@ -280,7 +280,7 @@ static u32 bcma_pmu_pll_clock_bcm4706(st
- }
- 
- /* query bus clock frequency for PMU-enabled chipcommon */
--static u32 bcma_pmu_get_bus_clock(struct bcma_drv_cc *cc)
-+u32 bcma_pmu_get_bus_clock(struct bcma_drv_cc *cc)
- {
- 	struct bcma_bus *bus = cc->core->bus;
- 
-@@ -309,6 +309,7 @@ static u32 bcma_pmu_get_bus_clock(struct
- 	}
- 	return BCMA_CC_PMU_HT_CLOCK;
- }
-+EXPORT_SYMBOL_GPL(bcma_pmu_get_bus_clock);
- 
- /* query cpu clock frequency for PMU-enabled chipcommon */
- u32 bcma_pmu_get_cpu_clock(struct bcma_drv_cc *cc)
 --- a/drivers/net/ethernet/broadcom/Kconfig
 +++ b/drivers/net/ethernet/broadcom/Kconfig
 @@ -121,4 +121,13 @@ config BNX2X
@@ -1967,12 +1948,3 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +void bgmac_phy_write(struct bgmac *bgmac, u8 phyaddr, u8 reg, u16 value);
 +
 +#endif /* _BGMAC_H */
---- a/include/linux/bcma/bcma_driver_chipcommon.h
-+++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -626,4 +626,6 @@ extern void bcma_chipco_regctl_maskset(s
- 				       u32 offset, u32 mask, u32 set);
- extern void bcma_pmu_spuravoid_pllupdate(struct bcma_drv_cc *cc, int spuravoid);
- 
-+extern u32 bcma_pmu_get_bus_clock(struct bcma_drv_cc *cc);
-+
- #endif /* LINUX_BCMA_DRIVER_CC_H_ */
