@@ -104,6 +104,7 @@ static void register_leds(struct led_t *l);
 static void unregister_leds(struct led_t *l);
 
 static void set_led_extif(struct led_t *led);
+static void set_led_shift(struct led_t *led);
 static void led_flash(unsigned long dummy);
 
 /* 2.4 compatibility */

@@ -140,6 +140,7 @@ define Image/Build
 	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wndr3400_v2,U12H187T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wndr3400_vcna,U12H155T01_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr3700_v3,U12H194T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wndr4000,U12H181T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wnr834b_v2,U12H081T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wnr2000v2,U12H114T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
