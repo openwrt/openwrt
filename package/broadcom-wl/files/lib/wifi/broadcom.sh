@@ -370,12 +370,15 @@ detect_broadcom() {
 	local i=-1
 
 	while grep -qs "^ *wl$((++i)):" /proc/net/dev; do
+		local channel
+
 		config_get type wl${i} type
 		[ "$type" = broadcom ] && continue
+		channel=`wlc ifname wl${i} channel`
 		cat <<EOF
 config wifi-device  wl${i}
 	option type     broadcom
-	option channel  11
+	option channel  ${channel:-11}
 
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
