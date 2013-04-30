@@ -25,7 +25,7 @@ Subject: [PATCH 19/25] owrt mtd split
  	---help---
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -844,6 +844,168 @@ static int refresh_rootfs_split(struct m
+@@ -833,6 +833,168 @@ static int refresh_rootfs_split(struct m
  }
  #endif /* CONFIG_MTD_ROOTFS_SPLIT */
  
@@ -194,7 +194,7 @@ Subject: [PATCH 19/25] owrt mtd split
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -860,7 +1022,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -849,7 +1011,7 @@ int add_mtd_partitions(struct mtd_info *
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
  	int i;
@@ -203,7 +203,7 @@ Subject: [PATCH 19/25] owrt mtd split
  	int ret;
  #endif
  
-@@ -877,6 +1039,15 @@ int add_mtd_partitions(struct mtd_info *
+@@ -866,6 +1028,15 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
