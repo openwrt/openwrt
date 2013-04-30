@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -119,6 +119,7 @@ enum ath79_mach_type {
+@@ -120,6 +120,7 @@ enum ath79_mach_type {
  	ATH79_MACH_WNDR3700,		/* NETGEAR WNDR3700/WNDR3800/WNDRMAC */
  	ATH79_MACH_WNDR4300,		/* NETGEAR WNDR4300 */
  	ATH79_MACH_WNR2000,		/* NETGEAR WNR2000 */
@@ -28,7 +28,7 @@
  	select SOC_AR724X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -100,6 +100,7 @@ obj-$(CONFIG_ATH79_MACH_WLAE_AG300N)	+= 
+@@ -101,6 +101,7 @@ obj-$(CONFIG_ATH79_MACH_WLAE_AG300N)	+=
  obj-$(CONFIG_ATH79_MACH_WNDR3700)	+= mach-wndr3700.o
  obj-$(CONFIG_ATH79_MACH_WNDR4300)	+= mach-wndr4300.o
  obj-$(CONFIG_ATH79_MACH_WNR2000)	+= mach-wnr2000.o
