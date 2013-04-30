@@ -1,7 +1,7 @@
-From fe17cba0e4efb6cf6d1e4e79fa4c6e062fe32b39 Mon Sep 17 00:00:00 2001
+From 9a97cd43f4ef62520a852b5a2348233b0f37455b Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Wed, 3 Apr 2013 19:28:50 +0200
-Subject: [PATCH 2/2] MIPS: implement pcibios_get_phb_of_node
+Date: Thu, 4 Apr 2013 20:01:23 +0200
+Subject: [PATCH 2/2] MIPS/PCI: Implement pcibios_get_phb_of_node
 
 The of_node field of the device assigned to a
 PCI bus is used during scanning of the PCI bus.
@@ -17,6 +17,7 @@ Also remove the local assignment of bus->dev.of_node,
 it is not needed after the patch.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 ---
  arch/mips/pci/pci.c |    8 +++++++-
  1 file changed, 7 insertions(+), 1 deletion(-)
