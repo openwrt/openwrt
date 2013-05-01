@@ -191,7 +191,7 @@
  /*
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3868,13 +3868,14 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3896,13 +3896,14 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -279,7 +279,7 @@
  #include <asm/uaccess.h>
  
  #include <linux/proc_fs.h>
-@@ -763,10 +764,10 @@ static void tcp_v6_send_response(struct
+@@ -764,10 +765,10 @@ static void tcp_v6_send_response(struct
  	topt = (__be32 *)(t1 + 1);
  
  	if (ts) {

@@ -13,7 +13,7 @@ CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=603e
 FEATURES:=squashfs targz
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.8.10
+LINUX_VERSION:=3.8.11
 
 include $(INCLUDE_DIR)/target.mk
 
