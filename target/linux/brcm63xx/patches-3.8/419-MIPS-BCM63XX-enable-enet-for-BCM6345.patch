@@ -189,7 +189,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  };
  
  int __init bcm63xx_enet_register(int unit,
-@@ -70,4 +96,66 @@ int __init bcm63xx_enet_register(int uni
+@@ -70,4 +96,67 @@ int __init bcm63xx_enet_register(int uni
  
  int bcm63xx_enetsw_register(const struct bcm63xx_enetsw_platform_data *pd);
  
@@ -231,8 +231,9 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 +		return ENETDMA_6345_LEN_REG;
 +	}
 +#endif
-+#if defined(CONFIG_BCM6XX_CPU_6338) || defined(CONFIG_BCM63XX_CPU_6348) \
-+	defined(CONFIG_BCM63XX_CPU_6358) || defined(CONFIG_BCM63XX_CPU_6362) \
++#if defined(CONFIG_BCM6XX_CPU_6338) || defined(CONFIG_BCM63XX_CPU_6348) || \
++	defined(CONFIG_BCM63XX_CPU_6358) || \
++	defined(CONFIG_BCM63XX_CPU_6362) || \
 +	defined(CONFIG_BCM63XX_CPU_6368)
 +	switch (reg) {
 +	case ENETDMAC_CHANCFG:
