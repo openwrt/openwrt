@@ -83,7 +83,7 @@
  {
  	char name [MAX_NAMELEN];
  
-+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
++	if (IS_ENABLED(CONFIG_PROC_STRIPPED) && !IS_ENABLED(CONFIG_SMP))
 +		return;
 +
  	if (!root_irq_dir || (desc->irq_data.chip == &no_irq_chip) || desc->dir)
@@ -93,7 +93,7 @@
  {
  	char name [MAX_NAMELEN];
  
-+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
++	if (IS_ENABLED(CONFIG_PROC_STRIPPED) && !IS_ENABLED(CONFIG_SMP))
 +		return;
 +
  	if (!root_irq_dir || !desc->dir)
@@ -103,7 +103,7 @@
  	unsigned int irq;
  	struct irq_desc *desc;
  
-+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
++	if (IS_ENABLED(CONFIG_PROC_STRIPPED) && !IS_ENABLED(CONFIG_SMP))
 +		return;
 +
  	/* create /proc/irq */
