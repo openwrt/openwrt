@@ -2106,7 +2106,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,694 @@
+@@ -0,0 +1,692 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2788,8 +2788,6 @@
 +
 +	if (!is_2315())
 +		return;
-+
-+	gpio_request(AR2315_RESET_GPIO, "reset");
 +
 +	/* Clear any lingering AHB errors */
 +	config = read_c0_config();
