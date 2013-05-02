@@ -402,7 +402,7 @@ endef
 
 $(eval $(call KernelPackage,ip6tables))
 
-
+ARP_MODULES = arp_tables arpt_mangle arptable_filter
 define KernelPackage/arptables
   SUBMENU:=$(NF_MENU)
   TITLE:=ARP firewalling modules
@@ -410,7 +410,7 @@ define KernelPackage/arptables
   KCONFIG:=CONFIG_IP_NF_ARPTABLES \
     CONFIG_IP_NF_ARPFILTER \
     CONFIG_IP_NF_ARP_MANGLE
-  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(patsubst %.ko,%,$(wildcard $(LINUX_DIR)/net/ipv4/netfilter/arp*.ko))))
+  AUTOLOAD:=$(call AutoLoad,49,$(ARP_MODULES))
 endef
 
 define KernelPackage/arptables/description
