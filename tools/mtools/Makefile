@@ -16,6 +16,9 @@ PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOST_CONFIGURE_VARS += \
+	ac_cv_header_iconv_h=no
+
 HOST_LDFLAGS += $(HOST_STATIC_LINKING)
 
 define Host/Compile
