@@ -266,19 +266,6 @@
  	return register_pernet_subsys(&igmp_net_ops);
  }
  #endif
---- a/net/ipv4/ipmr.c
-+++ b/net/ipv4/ipmr.c
-@@ -70,6 +70,10 @@
- #define CONFIG_IP_PIMSM	1
- #endif
- 
-+#ifdef CONFIG_PROC_STRIPPED
-+#undef CONFIG_PROC_FS
-+#endif
-+
- struct mr_table {
- 	struct list_head	list;
- #ifdef CONFIG_NET_NS
 --- a/net/ipv4/proc.c
 +++ b/net/ipv4/proc.c
 @@ -502,6 +502,9 @@ static __net_initdata struct pernet_oper

@@ -255,19 +255,6 @@
  	proc_net_remove(net, "route");
  }
  
---- a/net/ipv4/ipmr.c
-+++ b/net/ipv4/ipmr.c
-@@ -71,6 +71,10 @@
- #define CONFIG_IP_PIMSM	1
- #endif
- 
-+#ifdef CONFIG_PROC_STRIPPED
-+#undef CONFIG_PROC_FS
-+#endif
-+
- struct mr_table {
- 	struct list_head	list;
- #ifdef CONFIG_NET_NS
 --- a/net/ipv4/proc.c
 +++ b/net/ipv4/proc.c
 @@ -502,6 +502,9 @@ static __net_initdata struct pernet_oper
