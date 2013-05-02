@@ -18,7 +18,7 @@
 +obj-$(CONFIG_BOARD_LIVEBOX)		+= board_livebox.o
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_livebox.c
-@@ -0,0 +1,368 @@
+@@ -0,0 +1,369 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -228,6 +228,7 @@
 +
 +#ifdef CONFIG_PCI
 +	if (board.has_pci) {
++		bcm63xx_pci_enabled = 1;
 +		if (BCMCPU_IS_6348())
 +			val |= GPIO_MODE_6348_G2_PCI;
 +	}
