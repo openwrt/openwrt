@@ -502,7 +502,6 @@ int main(int ac, char **av)
 	tty_stdio = isatty(0) && isatty(1) && isatty(2);
 
 	while ((opt = getopt_long(ac, av, "r:w:", long_opts, NULL)) != -1) {
-		input_mode = (enum input_mode)opt;
 		switch (opt) {
 		case silentoldconfig:
 			sync_kconfig = 1;
@@ -537,15 +536,16 @@ int main(int ac, char **av)
 			break;
 		case 'r':
 			input_file = optarg;
-			break;
+			continue;
 		case 'w':
 			output_file = optarg;
-			break;
+			continue;
 		case '?':
 			conf_usage(progname);
 			exit(1);
 			break;
 		}
+		input_mode = (enum input_mode)opt;
 	}
 	if (ac == optind) {
 		printf(_("%s: Kconfig file missing\n"), av[0]);
