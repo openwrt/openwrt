@@ -120,21 +120,21 @@ menu "Target Images"
 		depends on X86_GRUB_IMAGES || TARGET_ROOTFS_EXT4FS || TARGET_rb532
 		default 48
 		help
-		    Allows you to change the root filesystem partition size
+		  Allows you to change the root filesystem partition size
 
 	config TARGET_ROOTFS_MAXINODE
 		int "Maximum number of inodes in root filesystem"
 		depends on TARGET_ROOTFS_EXT4FS
 		default 6000
 		help
-		    Allows you to change the maximum number of inodes in the root filesystem
+		  Allows you to change the maximum number of inodes in the root filesystem
 
 	config TARGET_ROOTFS_RESERVED_PCT
 		int "Percentage of reserved blocks in root filesystem"
 		depends on TARGET_ROOTFS_EXT4FS
 		default 0
 		help
-		    Allows you to change the percentage of reserved blocks in the root filesystem
+		  Allows you to change the percentage of reserved blocks in the root filesystem
 
 endmenu
 
@@ -184,7 +184,7 @@ menu "Global build settings"
 		prompt "Remove ipkg/opkg status data files in final images"
 		default n
 		help
-			This removes all ipkg/opkg status data files from the target directory before building the root fs
+		  This removes all ipkg/opkg status data files from the target directory before building the root fs
 
 	config COLLECT_KERNEL_DEBUG
 		bool
@@ -192,8 +192,8 @@ menu "Global build settings"
 		select KERNEL_DEBUG_INFO
 		default n
 		help
-			This collects debugging symbols from the kernel and all compiled modules.
-			Useful for release builds, so that kernel issues can be debugged offline later.
+		  This collects debugging symbols from the kernel and all compiled modules.
+		  Useful for release builds, so that kernel issues can be debugged offline later.
 
 	comment "Kernel build options"
 
@@ -689,12 +689,12 @@ menuconfig TARGET_OPTIONS
 		bool "Build packages with MIPS16 instructions" if TARGET_OPTIONS
 		depends on HAS_MIPS16
 		help
-		   If your target CPU does support the MIPS16 instruction set
-		   and you want to use it for packages, enable this option.
-		   MIPS16 produces smaller binaries thus reducing pressure on
-		   caches and TLB.
+		  If your target CPU does support the MIPS16 instruction set
+		  and you want to use it for packages, enable this option.
+		  MIPS16 produces smaller binaries thus reducing pressure on
+		  caches and TLB.
 
-		   Most people will answer N.
+		  Most people will answer N.
 
 source "toolchain/Config.in"
 
