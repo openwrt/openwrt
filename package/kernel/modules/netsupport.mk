@@ -476,6 +476,23 @@ endef
 $(eval $(call KernelPackage,tun))
 
 
+define KernelPackage/veth
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Virtual ethernet pair device
+  KCONFIG:=CONFIG_VETH
+  FILES:=$(LINUX_DIR)/drivers/net/veth.ko
+  AUTOLOAD:=$(call AutoLoad,30,veth)
+endef
+
+define KernelPackage/veth/description
+ This device is a local ethernet tunnel. Devices are created in pairs.
+ When one end receives the packet it appears on its pair and vice
+ versa.
+endef
+
+$(eval $(call KernelPackage,veth))
+
+
 define KernelPackage/ppp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPP modules
