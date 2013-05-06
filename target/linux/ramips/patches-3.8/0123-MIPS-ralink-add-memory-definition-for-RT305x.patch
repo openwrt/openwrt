@@ -65,7 +65,7 @@ Patchwork: http://patchwork.linux-mips.org/patch/5180/
 +		break;
 +	}
 +
-+	return ret;
++	return ret * 1024 * 1024;
 +}
 +
  void __init ralink_clk_init(void)
