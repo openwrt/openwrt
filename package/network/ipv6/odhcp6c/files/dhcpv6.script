@@ -78,7 +78,11 @@ teardown_interface() {
 }
 
 case "$2" in
-	informed|bound|updated|rebound|ra-updated)
+	bound)
+		teardown_interface "$1"
+		setup_interface "$1"
+	;;
+	informed|updated|rebound|ra-updated)
 		setup_interface "$1"
 	;;
 	started|stopped|unbound)
