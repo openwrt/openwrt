@@ -1,0 +1,64 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 OpenWrt.org
+
+START=61
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
+
+find_nameserver() {
+	. /lib/functions/network.sh
+
+	local tmp
+	if network_find_wan tmp && network_get_dnsserver tmp "$tmp"; then
+		echo "${tmp%% *}"
+		return 0
+	fi
+
+	return 1
+}
+
+start_instance() {
+	local cfg="$1"
+	local ipset port dns
+
+	config_get ipset "$cfg" ipset
+	[ -n "$ipset" ] || {
+		echo "No ipset specified for instance $cfg" >&2
+		return 1
+	}
+
+	config_get dns "$cfg" dns "$DEFNS"
+	[ -n "$dns" ] || {
+		echo "No DNS server specified for instance $cfg" >&2
+		return 1
+	}
+
+	config_get port "$cfg" port $((PORT++))
+
+	SERVICE_PID_FILE="/var/run/ipset-dns-$port.pid" \
+		service_start /usr/sbin/ipset-dns "$ipset" "$port" "$dns"
+}
+
+start() {
+	PORT=53001
+	DEFNS="$(find_nameserver)"
+
+	# required by ipset-dns to not daemonize itself
+	export NO_DAEMONIZE=1
+
+	config_load ipset-dns
+	config_foreach start_instance ipset-dns
+}
+
+stop() {
+	local pid
+	for pid in /var/run/ipset-dns-*.pid; do
+		[ -f "$pid" ] || continue
+		SERVICE_PID_FILE="$pid" \
+			service_stop /usr/sbin/ipset-dns
+		rm -f "$pid"
+	done
+}
+
