@@ -129,7 +129,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "2" "0t 5"
 		;;
 
-	freestation5 | \
 	wcr-150gn)
 		ucidef_set_interfaces_lan_wan "eth0.2" "eth0.1"
 		;;
@@ -255,6 +254,7 @@ ramips_setup_macs()
 
 	all0239-3g | \
 	carambola | \
+	freestation5 | \
 	w502u | \
 	wnce2001)
 		lan_mac=$(mtd_get_mac_binary factory 40)
