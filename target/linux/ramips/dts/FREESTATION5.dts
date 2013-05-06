@@ -3,11 +3,23 @@
 /include/ "rt3050.dtsi"
 
 / {
-	compatible = "FREESTATION5", "ralink,rt3052-soc";
+	compatible = "FREESTATION5", "ralink,rt3050-soc";
 	model = "ARC FreeStation5";
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
+	};
+
+	palmbus@10000000 {
+		sysc@0 {
+			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
+			ralink,uartmux = "gpio";
+			ralink,wdtmux = <1>;
+		};
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
 	};
 
 	cfi@1f000000 {
@@ -49,7 +61,7 @@
 
 	esw@10110000 {
 		status = "okay";
-		ralink,portmap = <0x3e>;
+		ralink,portmap = <0x01>;
 	};
 
 	wmac@10180000 {
@@ -58,5 +70,34 @@
 
 	otg@101c0000 {
 		status = "okay";
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		// Used to enable power-over-ethernet passthrough from port0 to port1.
+		// Disable passthrough by default to prevent accidental equipment damage.
+		poe {
+			gpio-export,name = "poe-passthrough";
+			gpio-export,output = <1>; // OUT_INIT_HIGH
+			gpios = <&gpio0 11 1>;    // GPIO 11, ACTIVE_LOW
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		// The following leds are defined in the ArcOS firmware, but reportedly
+		// not present in the Freestation5 device.
+		wifi {
+			label = "freestation:unknown:wifi";
+			gpios = <&gpio0 7 1>;
+		};
+		powerg {
+			label = "freestation:unknown:powerg";
+			gpios = <&gpio0 9 1>;
+		};
+		usb {
+			label = "freestation:unknown:usb";
+			gpios = <&gpio0 14 1>;
+		};
 	};
 };
