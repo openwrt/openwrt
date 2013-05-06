@@ -26,8 +26,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/ramips/ramips_eth.h
  create mode 100644 drivers/net/ethernet/ramips/ramips_main.c
 
---- /dev/null
-+++ b/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
+Index: linux-3.8.11/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.11/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h	2013-05-06 12:43:38.148652601 +0200
 @@ -0,0 +1,27 @@
 +/*
 + *  Ralink RT305x SoC platform device registration
@@ -56,9 +58,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +#endif /* _RT305X_ESW_PLATFORM_H */
---- a/arch/mips/ralink/rt305x.c
-+++ b/arch/mips/ralink/rt305x.c
-@@ -221,6 +221,7 @@ void __init ralink_clk_init(void)
+Index: linux-3.8.11/arch/mips/ralink/rt305x.c
+===================================================================
+--- linux-3.8.11.orig/arch/mips/ralink/rt305x.c	2013-05-06 12:43:38.016652594 +0200
++++ linux-3.8.11/arch/mips/ralink/rt305x.c	2013-05-06 12:43:38.148652601 +0200
+@@ -221,6 +221,7 @@
  	}
  
  	ralink_clk_add("cpu", cpu_rate);
@@ -66,9 +70,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	ralink_clk_add("10000b00.spi", sys_rate);
  	ralink_clk_add("10000100.timer", wdt_rate);
  	ralink_clk_add("10000120.watchdog", wdt_rate);
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -136,6 +136,7 @@ source "drivers/net/ethernet/packetengin
+Index: linux-3.8.11/drivers/net/ethernet/Kconfig
+===================================================================
+--- linux-3.8.11.orig/drivers/net/ethernet/Kconfig	2013-05-01 18:56:10.000000000 +0200
++++ linux-3.8.11/drivers/net/ethernet/Kconfig	2013-05-06 12:43:38.148652601 +0200
+@@ -136,6 +136,7 @@
  source "drivers/net/ethernet/pasemi/Kconfig"
  source "drivers/net/ethernet/qlogic/Kconfig"
  source "drivers/net/ethernet/racal/Kconfig"
@@ -76,9 +82,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  source "drivers/net/ethernet/realtek/Kconfig"
  source "drivers/net/ethernet/renesas/Kconfig"
  source "drivers/net/ethernet/rdc/Kconfig"
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -54,6 +54,7 @@ obj-$(CONFIG_NET_PACKET_ENGINE) += packe
+Index: linux-3.8.11/drivers/net/ethernet/Makefile
+===================================================================
+--- linux-3.8.11.orig/drivers/net/ethernet/Makefile	2013-05-01 18:56:10.000000000 +0200
++++ linux-3.8.11/drivers/net/ethernet/Makefile	2013-05-06 12:43:38.148652601 +0200
+@@ -54,6 +54,7 @@
  obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
  obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
  obj-$(CONFIG_NET_VENDOR_RACAL) += racal/
@@ -86,8 +94,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
  obj-$(CONFIG_SH_ETH) += renesas/
  obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
---- /dev/null
-+++ b/drivers/net/ethernet/ramips/Kconfig
+Index: linux-3.8.11/drivers/net/ethernet/ramips/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.11/drivers/net/ethernet/ramips/Kconfig	2013-05-06 12:43:38.148652601 +0200
 @@ -0,0 +1,18 @@
 +config NET_RAMIPS
 +       tristate "Ralink RT288X/RT3X5X/RT3662/RT3883 ethernet driver"
@@ -107,8 +117,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	depends on DEBUG_FS
 +
 +endif
---- /dev/null
-+++ b/drivers/net/ethernet/ramips/Makefile
+Index: linux-3.8.11/drivers/net/ethernet/ramips/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.11/drivers/net/ethernet/ramips/Makefile	2013-05-06 12:43:38.148652601 +0200
 @@ -0,0 +1,9 @@
 +#
 +# Makefile for the Ramips SoCs built-in ethernet macs
@@ -119,8 +131,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +ramips-$(CONFIG_NET_RAMIPS_DEBUG_FS)	+= ramips_debugfs.o
 +
 +obj-$(CONFIG_NET_RAMIPS)	+= ramips.o
---- /dev/null
-+++ b/drivers/net/ethernet/ramips/ramips_debugfs.c
+Index: linux-3.8.11/drivers/net/ethernet/ramips/ramips_debugfs.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.11/drivers/net/ethernet/ramips/ramips_debugfs.c	2013-05-06 12:43:38.148652601 +0200
 @@ -0,0 +1,127 @@
 +/*
 + *  Ralink SoC ethernet driver debugfs code
@@ -249,8 +263,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	debugfs_remove(raeth_debugfs_root);
 +	raeth_debugfs_root = NULL;
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ramips/ramips_esw.c
+Index: linux-3.8.11/drivers/net/ethernet/ramips/ramips_esw.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.11/drivers/net/ethernet/ramips/ramips_esw.c	2013-05-06 12:43:38.148652601 +0200
 @@ -0,0 +1,1221 @@
 +#include <linux/ioport.h>
 +#include <linux/switch.h>
@@ -1473,8 +1489,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	platform_driver_unregister(&rt305x_esw_driver);
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ramips/ramips_eth.h
+Index: linux-3.8.11/drivers/net/ethernet/ramips/ramips_eth.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.11/drivers/net/ethernet/ramips/ramips_eth.h	2013-05-06 12:43:38.152652600 +0200
 @@ -0,0 +1,375 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -1851,8 +1869,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif /* CONFIG_NET_RAMIPS_DEBUG_FS */
 +
 +#endif /* RAMIPS_ETH_H */
---- /dev/null
-+++ b/drivers/net/ethernet/ramips/ramips_main.c
+Index: linux-3.8.11/drivers/net/ethernet/ramips/ramips_main.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.11/drivers/net/ethernet/ramips/ramips_main.c	2013-05-06 13:55:12.572838852 +0200
 @@ -0,0 +1,1281 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2148,7 +2168,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	mdio_cfg = RAMIPS_MDIO_CFG_TX_CLK_SKEW_200 |
-+		   RAMIPS_MDIO_CFG_TX_CLK_SKEW_200 |
++		   RAMIPS_MDIO_CFG_RX_CLK_SKEW_200 |
 +		   RAMIPS_MDIO_CFG_GP1_FRC_EN;
 +
 +	if (re->duplex == DUPLEX_FULL)
