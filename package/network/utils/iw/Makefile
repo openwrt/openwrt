@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
-PKG_VERSION:=3.6
+PKG_VERSION:=3.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://wireless.kernel.org/download/iw/
-PKG_MD5SUM:=1c18bfbbc8773629e5e8ac733a39540c
+PKG_SOURCE_URL:=https://www.kernel.org/pub/software/network/iw
+PKG_MD5SUM:=0dc736963455937278b10fe8a2157e47
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 

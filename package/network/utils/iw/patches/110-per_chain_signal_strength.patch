@@ -1,7 +1,7 @@
 --- a/station.c
 +++ b/station.c
-@@ -65,6 +65,33 @@ static void print_sta_bitrate(struct nla
- 	}
+@@ -91,6 +91,33 @@ void parse_bitrate(struct nlattr *bitrat
+ 				" VHT-NSS %d", nla_get_u8(rinfo[NL80211_RATE_INFO_VHT_NSS]));
  }
  
 +static char *get_chain_signal(struct nlattr *attr_list)
@@ -34,10 +34,10 @@
  static int print_sta_handler(struct nl_msg *msg, void *arg)
  {
  	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-@@ -89,7 +116,10 @@ static int print_sta_handler(struct nl_m
- 		[NL80211_STA_INFO_TX_FAILED] = { .type = NLA_U32 },
- 		[NL80211_STA_INFO_STA_FLAGS] =
- 			{ .minlen = sizeof(struct nl80211_sta_flag_update) },
+@@ -118,7 +145,10 @@ static int print_sta_handler(struct nl_m
+ 		[NL80211_STA_INFO_LOCAL_PM] = { .type = NLA_U32},
+ 		[NL80211_STA_INFO_PEER_PM] = { .type = NLA_U32},
+ 		[NL80211_STA_INFO_NONPEER_PM] = { .type = NLA_U32},
 +		[NL80211_STA_INFO_CHAIN_SIGNAL] = { .type = NLA_NESTED },
 +		[NL80211_STA_INFO_CHAIN_SIGNAL_AVG] = { .type = NLA_NESTED },
  	};
@@ -45,7 +45,7 @@
  
  	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
  		  genlmsg_attrlen(gnlh, 0), NULL);
-@@ -136,12 +166,19 @@ static int print_sta_handler(struct nl_m
+@@ -165,12 +195,19 @@ static int print_sta_handler(struct nl_m
  	if (sinfo[NL80211_STA_INFO_TX_FAILED])
  		printf("\n\ttx failed:\t%u",
  			nla_get_u32(sinfo[NL80211_STA_INFO_TX_FAILED]));
