@@ -80,16 +80,20 @@ __network_parse_ifstatus()
 			while json_is_a "$__idx" object; do
 
 				json_select "$((__idx++))"
-				json_get_var __tmp target
+				json_get_var __tmp table
 
-				case "${__tmp}" in
-					0.0.0.0)
-						__network_set_cache "${__key}_gateway4" nexthop
-					;;
-					::)
-						__network_set_cache "${__key}_gateway6" nexthop
-					;;
-				esac
+				if [ -z "$__tmp" ]; then
+					json_get_var __tmp target
+
+					case "${__tmp}" in
+						0.0.0.0)
+							__network_set_cache "${__key}_gateway4" nexthop
+						;;
+						::)
+							__network_set_cache "${__key}_gateway6" nexthop
+						;;
+					esac
+				fi
 
 				json_select ".."
 
