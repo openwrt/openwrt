@@ -221,8 +221,6 @@ BuildFirmware/dap1350/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3)
 belkin_f5d8235v1_mtd_size=7929856
 Image/Build/Profile/F5D8235V1=$(call BuildFirmware/CustomFlash/$(1),$(1),f5d8235v1,F5D8235_V1,$(belkin_f5d8235v1_mtd_size))
 
-Image/Build/Profile/BR6524N=$(call BuildFirmware/Edimax/$(1),$(1),br6524n,BR6524N,$(ralink_default_fw_size_4M),CSYS,WNRA,0x50000,0xc0000)
-
 Image/Build/Profile/RTN15=$(call BuildFirmware/Default4M/$(1),$(1),rt-n15,RT-N15)
 
 Image/Build/Profile/V11STFE=$(call BuildFirmware/Default4M/$(1),$(1),v11st-fe,V11STFE)
@@ -232,7 +230,6 @@ Image/Build/Profile/WLITX4AG300N=$(call BuildFirmware/Default4M/$(1),$(1),wli-tx
 ifeq ($(SUBTARGET),rt288x)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/F5D8235V1,$(1))
-	$(call Image/Build/Profile/BR6524N,$(1))
 	$(call Image/Build/Profile/RTN15,$(1))
 	$(call Image/Build/Profile/V11STFE,$(1))
 	$(call Image/Build/Profile/WLITX4AG300N,$(1))

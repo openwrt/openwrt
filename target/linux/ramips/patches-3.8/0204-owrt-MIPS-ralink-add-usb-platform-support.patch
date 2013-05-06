@@ -19,8 +19,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/rt305x-usb.c
  create mode 100644 arch/mips/ralink/rt3883-usb.c
 
---- a/arch/mips/ralink/Makefile
-+++ b/arch/mips/ralink/Makefile
+Index: linux-3.8.11/arch/mips/ralink/Makefile
+===================================================================
+--- linux-3.8.11.orig/arch/mips/ralink/Makefile	2013-05-06 09:58:57.772224085 +0200
++++ linux-3.8.11/arch/mips/ralink/Makefile	2013-05-06 10:01:59.252231955 +0200
 @@ -9,8 +9,8 @@
  obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o timer.o
  
@@ -32,18 +34,22 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SOC_MT7620) += mt7620.o
  
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
---- a/arch/mips/ralink/common.h
-+++ b/arch/mips/ralink/common.h
-@@ -51,5 +51,6 @@ extern void prom_soc_init(struct ralink_
+Index: linux-3.8.11/arch/mips/ralink/common.h
+===================================================================
+--- linux-3.8.11.orig/arch/mips/ralink/common.h	2013-05-06 09:58:57.748224086 +0200
++++ linux-3.8.11/arch/mips/ralink/common.h	2013-05-06 09:58:58.100224099 +0200
+@@ -51,5 +51,6 @@
  __iomem void *plat_of_remap_node(const char *node);
  
  void ralink_pinmux(void);
 +void ralink_usb_platform(void);
  
  #endif /* _RALINK_COMMON_H__ */
---- a/arch/mips/ralink/mt7620.c
-+++ b/arch/mips/ralink/mt7620.c
-@@ -140,6 +140,11 @@ struct ralink_pinmux rt_gpio_pinmux = {
+Index: linux-3.8.11/arch/mips/ralink/mt7620.c
+===================================================================
+--- linux-3.8.11.orig/arch/mips/ralink/mt7620.c	2013-05-06 09:58:57.696224079 +0200
++++ linux-3.8.11/arch/mips/ralink/mt7620.c	2013-05-06 09:58:58.100224099 +0200
+@@ -140,6 +140,11 @@
  	.uart_mask = MT7620_GPIO_MODE_GPIO,
  };
  
@@ -55,9 +61,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  void __init ralink_clk_init(void)
  {
  	unsigned long cpu_rate, sys_rate;
---- a/arch/mips/ralink/of.c
-+++ b/arch/mips/ralink/of.c
-@@ -111,6 +111,7 @@ static int __init plat_of_setup(void)
+Index: linux-3.8.11/arch/mips/ralink/of.c
+===================================================================
+--- linux-3.8.11.orig/arch/mips/ralink/of.c	2013-05-06 09:58:57.748224086 +0200
++++ linux-3.8.11/arch/mips/ralink/of.c	2013-05-06 10:01:59.252231955 +0200
+@@ -111,6 +111,7 @@
  		panic("failed to populate DT\n");
  
  	ralink_pinmux();
@@ -65,8 +73,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return 0;
  }
---- /dev/null
-+++ b/arch/mips/ralink/rt305x-usb.c
+Index: linux-3.8.11/arch/mips/ralink/rt305x-usb.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.11/arch/mips/ralink/rt305x-usb.c	2013-05-06 09:58:58.100224099 +0200
 @@ -0,0 +1,120 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
@@ -188,8 +198,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +				&rt3352_ehci_data, &rt3352_ehci_dmamask);
 +	}
 +}
---- /dev/null
-+++ b/arch/mips/ralink/rt3883-usb.c
+Index: linux-3.8.11/arch/mips/ralink/rt3883-usb.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.11/arch/mips/ralink/rt3883-usb.c	2013-05-06 09:58:58.100224099 +0200
 @@ -0,0 +1,118 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
@@ -309,3 +321,19 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	ralink_add_usb("ehci-platform",
 +			&rt3883_ehci_data, &rt3883_ehci_dmamask);
 +}
+Index: linux-3.8.11/arch/mips/ralink/rt288x.c
+===================================================================
+--- linux-3.8.11.orig/arch/mips/ralink/rt288x.c	2013-05-06 09:58:57.644224079 +0200
++++ linux-3.8.11/arch/mips/ralink/rt288x.c	2013-05-06 10:02:32.216233389 +0200
+@@ -74,6 +74,11 @@
+ 	.wdt_reset = rt288x_wdt_reset,
+ };
+ 
++void ralink_usb_platform(void)
++{
++
++}
++
+ void __init ralink_clk_init(void)
+ {
+ 	unsigned long cpu_rate;
