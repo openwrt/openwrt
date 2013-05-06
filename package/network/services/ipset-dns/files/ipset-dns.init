@@ -21,10 +21,11 @@ find_nameserver() {
 
 start_instance() {
 	local cfg="$1"
-	local ipset port dns
+	local ipset ipset6 port dns
 
 	config_get ipset "$cfg" ipset
-	[ -n "$ipset" ] || {
+	config_get ipset6 "$cfg" ipset6
+	[ -n "$ipset$ipset6" ] || {
 		echo "No ipset specified for instance $cfg" >&2
 		return 1
 	}
@@ -38,7 +39,7 @@ start_instance() {
 	config_get port "$cfg" port $((PORT++))
 
 	SERVICE_PID_FILE="/var/run/ipset-dns-$port.pid" \
-		service_start /usr/sbin/ipset-dns "$ipset" "$port" "$dns"
+		service_start /usr/sbin/ipset-dns "$ipset" "$ipset6" "$port" "$dns"
 }
 
 start() {
