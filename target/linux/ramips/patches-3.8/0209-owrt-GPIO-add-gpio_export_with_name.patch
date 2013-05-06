@@ -14,9 +14,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  include/linux/gpio.h                            |   23 ++++++++-
  5 files changed, 160 insertions(+), 8 deletions(-)
 
---- a/Documentation/devicetree/bindings/gpio/gpio.txt
-+++ b/Documentation/devicetree/bindings/gpio/gpio.txt
-@@ -112,3 +112,63 @@ where,
+Index: linux-3.8.11/Documentation/devicetree/bindings/gpio/gpio.txt
+===================================================================
+--- linux-3.8.11.orig/Documentation/devicetree/bindings/gpio/gpio.txt	2013-05-01 18:56:10.000000000 +0200
++++ linux-3.8.11/Documentation/devicetree/bindings/gpio/gpio.txt	2013-05-06 12:43:38.252652605 +0200
+@@ -112,3 +112,63 @@
  
  The pinctrl node must have "#gpio-range-cells" property to show number of
  arguments to pass with phandle from gpio controllers node.
@@ -80,8 +82,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		gpio-export,output = <1>;
 +	};
 +};
---- a/drivers/gpio/gpiolib-of.c
-+++ b/drivers/gpio/gpiolib-of.c
+Index: linux-3.8.11/drivers/gpio/gpiolib-of.c
+===================================================================
+--- linux-3.8.11.orig/drivers/gpio/gpiolib-of.c	2013-05-01 18:56:10.000000000 +0200
++++ linux-3.8.11/drivers/gpio/gpiolib-of.c	2013-05-06 13:35:56.452788709 +0200
 @@ -21,6 +21,8 @@
  #include <linux/of_gpio.h>
  #include <linux/pinctrl/pinctrl.h>
@@ -91,7 +95,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  /* Private data structure for of_gpiochip_find_and_xlate */
  struct gg_data {
-@@ -288,3 +290,62 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -288,3 +290,69 @@
  	if (chip->of_node)
  		of_node_put(chip->of_node);
  }
@@ -121,16 +125,23 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +			max_gpio = of_gpio_count(cnp);
 +
 +		for (i = 0; i < max_gpio; i++) {
-+			gpio = of_get_gpio(cnp, i);
-+			if (devm_gpio_request(&pdev->dev, gpio, name ? name : of_node_full_name(np)))
-+				continue;
++			unsigned flags = 0;
++			enum of_gpio_flags of_flags;
++
++			gpio = of_get_gpio_flags(cnp, i, &of_flags);
++
++			if (of_flags == OF_GPIO_ACTIVE_LOW)
++				flags |= GPIOF_ACTIVE_LOW;
 +
 +			if (!of_property_read_u32(cnp, "gpio-export,output", &val))
-+				gpio_direction_output(gpio, val);
++				flags |= val ? GPIOF_OUT_INIT_HIGH : GPIOF_OUT_INIT_LOW;
 +			else
-+				gpio_direction_input(gpio);
++				flags |= GPIOF_IN;
 +
-+			dmc = of_property_read_bool(np, "gpio-export,direction_may_change");
++			if (devm_gpio_request_one(&pdev->dev, gpio, flags, name ? name : of_node_full_name(np)))
++				continue;
++
++			dmc = of_property_read_bool(cnp, "gpio-export,direction_may_change");
 +			gpio_export_with_name(gpio, dmc, name);
 +			nb++;
 +		}
@@ -154,9 +165,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return platform_driver_probe(&gpio_export_driver, of_gpio_export_probe);
 +}
 +device_initcall(of_gpio_export_init);
---- a/drivers/gpio/gpiolib.c
-+++ b/drivers/gpio/gpiolib.c
-@@ -714,9 +714,10 @@ static struct class gpio_class = {
+Index: linux-3.8.11/drivers/gpio/gpiolib.c
+===================================================================
+--- linux-3.8.11.orig/drivers/gpio/gpiolib.c	2013-05-01 18:56:10.000000000 +0200
++++ linux-3.8.11/drivers/gpio/gpiolib.c	2013-05-06 13:31:35.060777376 +0200
+@@ -714,9 +714,10 @@
  
  
  /**
@@ -168,7 +181,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
   * Context: arch_initcall or later
   *
   * When drivers want to make a GPIO accessible to userspace after they
-@@ -728,7 +729,7 @@ static struct class gpio_class = {
+@@ -728,7 +729,7 @@
   *
   * Returns zero on success, else an error.
   */
@@ -177,7 +190,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	unsigned long		flags;
  	struct gpio_desc	*desc;
-@@ -762,6 +763,8 @@ int gpio_export(unsigned gpio, bool dire
+@@ -762,6 +763,8 @@
  		goto fail_unlock;
  	}
  
@@ -186,7 +199,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (!desc->chip->direction_input || !desc->chip->direction_output)
  		direction_may_change = false;
  	spin_unlock_irqrestore(&gpio_lock, flags);
-@@ -804,7 +807,7 @@ fail_unlock:
+@@ -804,7 +807,7 @@
  	pr_debug("%s: gpio%d status %d\n", __func__, gpio, status);
  	return status;
  }
@@ -195,9 +208,21 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  static int match_export(struct device *dev, void *data)
  {
---- a/include/asm-generic/gpio.h
-+++ b/include/asm-generic/gpio.h
-@@ -204,7 +204,8 @@ void devm_gpio_free(struct device *dev,
+@@ -1418,6 +1421,9 @@
+ 	if (flags & GPIOF_OPEN_SOURCE)
+ 		set_bit(FLAG_OPEN_SOURCE, &gpio_desc[gpio].flags);
+ 
++	if (flags & GPIOF_ACTIVE_LOW)
++		set_bit(FLAG_ACTIVE_LOW, &gpio_desc[gpio].flags);
++
+ 	if (flags & GPIOF_DIR_IN)
+ 		err = gpio_direction_input(gpio);
+ 	else
+Index: linux-3.8.11/include/asm-generic/gpio.h
+===================================================================
+--- linux-3.8.11.orig/include/asm-generic/gpio.h	2013-05-01 18:56:10.000000000 +0200
++++ linux-3.8.11/include/asm-generic/gpio.h	2013-05-06 12:43:38.252652605 +0200
+@@ -204,7 +204,8 @@
   * A sysfs interface can be exported by individual drivers if they want,
   * but more typically is configured entirely from userspace.
   */
@@ -207,7 +232,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  extern int gpio_export_link(struct device *dev, const char *name,
  			unsigned gpio);
  extern int gpio_sysfs_set_active_low(unsigned gpio, int value);
-@@ -249,7 +250,8 @@ struct device;
+@@ -249,7 +250,8 @@
  
  /* sysfs support is only available with gpiolib, where it's optional */
  
@@ -217,9 +242,21 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	return -ENOSYS;
  }
---- a/include/linux/gpio.h
-+++ b/include/linux/gpio.h
-@@ -189,7 +189,8 @@ static inline void gpio_set_value_cansle
+Index: linux-3.8.11/include/linux/gpio.h
+===================================================================
+--- linux-3.8.11.orig/include/linux/gpio.h	2013-05-01 18:56:10.000000000 +0200
++++ linux-3.8.11/include/linux/gpio.h	2013-05-06 13:32:59.796781050 +0200
+@@ -27,6 +27,9 @@
+ #define GPIOF_EXPORT_DIR_FIXED	(GPIOF_EXPORT)
+ #define GPIOF_EXPORT_DIR_CHANGEABLE (GPIOF_EXPORT | GPIOF_EXPORT_CHANGEABLE)
+ 
++#define GPIOF_ACTIVE_LOW	(1 << 6)
++
++
+ /**
+  * struct gpio - a structure describing a GPIO with configuration
+  * @gpio:	the GPIO number
+@@ -189,7 +192,8 @@
  	WARN_ON(1);
  }
  
@@ -229,7 +266,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	/* GPIO can never have been requested or set as {in,out}put */
  	WARN_ON(1);
-@@ -248,4 +249,24 @@ gpiochip_remove_pin_ranges(struct gpio_c
+@@ -248,4 +252,24 @@
  
  #endif /* ! CONFIG_GENERIC_GPIO */
  
