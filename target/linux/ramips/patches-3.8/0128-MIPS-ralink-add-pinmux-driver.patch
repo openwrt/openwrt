@@ -19,7 +19,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 Index: linux-3.8.11/arch/mips/ralink/Makefile
 ===================================================================
 --- linux-3.8.11.orig/arch/mips/ralink/Makefile	2013-05-03 17:53:16.612004798 +0200
-+++ linux-3.8.11/arch/mips/ralink/Makefile	2013-05-04 13:20:48.455042975 +0200
++++ linux-3.8.11/arch/mips/ralink/Makefile	2013-05-06 12:29:27.516615708 +0200
 @@ -6,7 +6,7 @@
  # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
@@ -32,7 +32,7 @@ Index: linux-3.8.11/arch/mips/ralink/Makefile
 Index: linux-3.8.11/arch/mips/ralink/common.h
 ===================================================================
 --- linux-3.8.11.orig/arch/mips/ralink/common.h	2013-05-03 17:53:16.720004800 +0200
-+++ linux-3.8.11/arch/mips/ralink/common.h	2013-05-04 13:20:48.055042959 +0200
++++ linux-3.8.11/arch/mips/ralink/common.h	2013-05-06 12:29:27.108615690 +0200
 @@ -50,4 +50,6 @@
  
  __iomem void *plat_of_remap_node(const char *node);
@@ -43,7 +43,7 @@ Index: linux-3.8.11/arch/mips/ralink/common.h
 Index: linux-3.8.11/arch/mips/ralink/of.c
 ===================================================================
 --- linux-3.8.11.orig/arch/mips/ralink/of.c	2013-05-03 17:53:16.780004804 +0200
-+++ linux-3.8.11/arch/mips/ralink/of.c	2013-05-04 13:20:48.055042959 +0200
++++ linux-3.8.11/arch/mips/ralink/of.c	2013-05-06 12:29:27.108615690 +0200
 @@ -110,6 +110,8 @@
  	if (of_platform_populate(NULL, of_ids, NULL, NULL))
  		panic("failed to populate DT\n");
@@ -56,7 +56,7 @@ Index: linux-3.8.11/arch/mips/ralink/of.c
 Index: linux-3.8.11/arch/mips/ralink/pinmux.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.8.11/arch/mips/ralink/pinmux.c	2013-05-04 13:19:22.975039268 +0200
++++ linux-3.8.11/arch/mips/ralink/pinmux.c	2013-05-06 12:29:41.212616302 +0200
 @@ -0,0 +1,77 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ Index: linux-3.8.11/arch/mips/ralink/pinmux.c
 +
 +static int ralink_mux_mask(const char *name, struct ralink_pinmux_grp *grps, u32* mask)
 +{
-+	for (; grps->name; grps++)
++	for (; grps && grps->name; grps++)
 +		if (!strcmp(grps->name, name)) {
 +			*mask = grps->mask;
 +			return 0;
@@ -119,12 +119,12 @@ Index: linux-3.8.11/arch/mips/ralink/pinmux.c
 +
 +	of_property_read_string(np, "ralink,uartmux", &uart);
 +	if (uart) {
-+		mode |= rt_gpio_pinmux.uart_mask << rt_gpio_pinmux.uart_shift;
++		mode &= ~(rt_gpio_pinmux.uart_mask << rt_gpio_pinmux.uart_shift);
 +		if (ralink_mux_mask(uart, rt_gpio_pinmux.uart, &m)) {
 +			pr_err("pinmux: failed to load uartmux \"%s\"\n", uart);
++			mode |= rt_gpio_pinmux.uart_mask << rt_gpio_pinmux.uart_shift;
 +		} else {
-+			if (m != rt_gpio_pinmux.uart_mask)
-+				mode &= ~(m << rt_gpio_pinmux.uart_shift);
++			mode |= m << rt_gpio_pinmux.uart_shift;
 +			pr_debug("pinmux: registered uartmux \"%s\"\n", uart);
 +		}
 +	}
