@@ -16,7 +16,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/grub
 PKG_MD5SUM:=e927540b6eda8b024fb0391eeaa4091c
 
-PKG_HOST_ONLY:=1
 HOST_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=grub2/host
 
@@ -31,6 +30,23 @@ define Package/grub2
   URL:=http://www.gnu.org/software/grub/
   DEPENDS:=@TARGET_x86
 endef
+
+define Package/grub2-editenv
+  CATEGORY:=Utilities
+  SECTION:=utils
+  TITLE:=Grub2 Environment editor
+  URL:=http://www.gnu.org/software/grub/
+  DEPENDS:=@TARGET_x86
+endef
+
+define Package/grub2-editenv/description
+	Edit grub2 environment files.
+endef
+
+CONFIGURE_ARGS += \
+	--target=$(REAL_GNU_TARGET_NAME) \
+	--disable-werror \
+	--disable-nls
 
 HOST_CONFIGURE_ARGS += \
 	--target=$(REAL_GNU_TARGET_NAME) \
@@ -47,5 +63,11 @@ define Host/Configure
 	$(Host/Configure/Default)
 endef
 
+define Package/grub2-editenv/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-editenv $(1)/usr/sbin/
+endef
+
 $(eval $(call HostBuild))
 $(eval $(call BuildPackage,grub2))
+$(eval $(call BuildPackage,grub2-editenv))
