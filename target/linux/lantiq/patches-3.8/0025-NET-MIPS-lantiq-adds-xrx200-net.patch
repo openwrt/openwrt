@@ -244,11 +244,11 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +
 +#define SW_POLLING
 +#define SW_ROUTING
-+//#define SW_PORTMAP
++#define SW_PORTMAP
 +
 +#ifdef SW_ROUTING
 +  #ifdef SW_PORTMAP
-+#define XRX200_MAX_DEV		7
++#define XRX200_MAX_DEV		2
 +  #else
 +#define XRX200_MAX_DEV		2
 +  #endif
