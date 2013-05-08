@@ -61,6 +61,7 @@ static struct file_info kernel_info;
 static struct file_info rootfs_info;
 static uint32_t kernel_size;
 static uint32_t image_size;
+static int combined;
 
 /*
  * Message macros
@@ -91,6 +92,7 @@ static void usage(int status)
 "\n"
 "Options:\n"
 "  -k <file>       read kernel image from the file <file>\n"
+"  -c              use the kernel image as a combined image\n"
 "  -M <model>      set model to <model>\n"
 "  -o <file>       write output to the file <file>\n"
 "  -r <file>       read rootfs image from the file <file>\n"
@@ -196,37 +198,55 @@ static int check_options(void)
 	CHKSTRLEN(version, "version");
 	CHKSTR(ofname, "output file");
 	CHKSTR(kernel_info.file_name, "kernel image");
-	CHKSTR(rootfs_info.file_name, "rootfs image");
 
 	ret = get_file_stat(&kernel_info);
 	if (ret)
 		return ret;
 
-	ret = get_file_stat(&rootfs_info);
-	if (ret)
-		return ret;
+	if (combined) {
+		if (!kernel_size) {
+			ERR("kernel size must be specified for combined images");
+			return -1;				\
+		}
 
-	if (kernel_size) {
-		/* override kernel size */
-		kernel_info.write_size = kernel_size;
-	}
+		if (!image_size)
+			image_size = kernel_info.file_size;
 
-	if (image_size) {
-		if (image_size < kernel_info.write_size)
-			kernel_info.write_size = image_size;
+		if (kernel_info.file_size > image_size) {
+			ERR("kernel image is too big");
+			return -1;
+		}
 
-		/* override rootfs size */
-		rootfs_info.write_size = image_size - kernel_info.write_size;
-	}
+		kernel_info.write_size = image_size;
+	} else {
+		CHKSTR(rootfs_info.file_name, "rootfs image");
 
-	if (kernel_info.file_size > kernel_info.write_size) {
-		ERR("kernel image is too big");
-		return -1;
-	}
+		ret = get_file_stat(&rootfs_info);
+		if (ret)
+			return ret;
 
-	if (rootfs_info.file_size > rootfs_info.write_size) {
-		ERR("rootfs image is too big");
-		return -1;
+		if (kernel_size) {
+			/* override kernel size */
+			kernel_info.write_size = kernel_size;
+		}
+
+		if (image_size) {
+			if (image_size < kernel_info.write_size)
+				kernel_info.write_size = image_size;
+
+			/* override rootfs size */
+			rootfs_info.write_size = image_size - kernel_info.write_size;
+		}
+
+		if (kernel_info.file_size > kernel_info.write_size) {
+			ERR("kernel image is too big");
+			return -1;
+		}
+
+		if (rootfs_info.file_size > rootfs_info.write_size) {
+			ERR("rootfs image is too big");
+			return -1;
+		}
 	}
 
 	return 0;
@@ -301,12 +321,14 @@ static int build_fw(void)
 	if (ret)
 		goto out_free_buf;
 
-	p += kernel_info.write_size;
+	if (!combined) {
+		p += kernel_info.write_size;
 
-	/* read rootfs data */
-	ret = read_to_buf(&rootfs_info, p);
-	if (ret)
-		goto out_free_buf;
+		/* read rootfs data */
+		ret = read_to_buf(&rootfs_info, p);
+		if (ret)
+			goto out_free_buf;
+	}
 
 	csum = get_csum((unsigned char *)(buf + sizeof(struct img_header)),
 			buflen - sizeof(struct img_header));
@@ -316,7 +338,10 @@ static int build_fw(void)
 
 	hdr->checksum = htonl(csum);
 	hdr->image_size = htonl(buflen - sizeof(struct img_header));
-	hdr->kernel_size = htonl(kernel_info.write_size);
+	if (!combined)
+		hdr->kernel_size = htonl(kernel_info.write_size);
+	else
+		hdr->kernel_size = htonl(kernel_size);
 	hdr->header_len = sizeof(struct img_header);
 	strncpy(hdr->model, model, sizeof(hdr->model));
 	strncpy(hdr->signature, signature, sizeof(hdr->signature));
@@ -344,7 +369,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		c = getopt(argc, argv, "M:S:V:R:k:K:I:r:o:h");
+		c = getopt(argc, argv, "M:S:V:R:k:K:I:r:o:hc");
 		if (c == -1)
 			break;
 
@@ -380,6 +405,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'r':
 			rootfs_info.file_name = optarg;
+			break;
+		case 'c':
+			combined = 1;
 			break;
 		case 'o':
 			ofname = optarg;
