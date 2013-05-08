@@ -170,7 +170,7 @@ ap135_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14528k(rootfs),
 ap136_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(mib0),64k(art)ro,7744k@0x50000(firmware)
 cameo7240_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,1024k(kernel),2688k(rootfs),64k(mac)ro,64k(art)ro,3712k@0x40000(firmware)
 cameo913x_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,1024k(kernel),2752k(rootfs),64k(art)ro,3840k@0x30000(firmware)
-cameo933x_mtdlayout=mtdparts=spi0.0:64k(u-boot)ro,64k(art)ro,64k(mac)ro,64k(nvram)ro,192k(language)ro,896k(kernel),2752k(rootfs),3648k@0x70000(firmware)
+cameo933x_mtdlayout=mtdparts=spi0.0:64k(u-boot)ro,64k(art)ro,64k(mac)ro,64k(nvram)ro,192k(language)ro,1024k(kernel),2624k(rootfs),3648k@0x70000(firmware)
 cameo934x_mtdlayout=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,1280k(kernel),14656k(rootfs),192k(lang)ro,64k(mac)ro,64k(art)ro,15936k@0x20000(firmware)
 cap4200ag_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe),64k(art),13632k@0xa0000(firmware)
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
@@ -328,10 +328,9 @@ define Image/Build/CameoHornet
 	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		mkcameofw -M HORNET -R "DEF" -S $(7) -V "1.99" \
-			-K $(5) -I $$$$(($(5)+$(6))) \
-			-k $(KDIR_TMP)/vmlinux-$(2).uImage \
-			-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		mkcameofw -M HORNET -R "DEF" -S $(7) -V "1.99" -c \
+			-K 0xe0000 -I $$$$(($(5)+$(6))) \
+			-k "$(call sysupname,$(1),$(2))" \
 			-o $(call factoryname,$(1),$(2)); \
 	fi
 endef
@@ -353,7 +352,7 @@ define Image/Build/Cameo7240/initramfs
 endef
 
 define Image/Build/Cameo933x
-	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),917504,2818048,$(4))
+	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),1048576,2686976,$(4))
 endef
 
 define Image/Build/Cameo933x/initramfs
