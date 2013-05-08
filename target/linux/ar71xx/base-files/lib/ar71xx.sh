@@ -62,12 +62,22 @@ tplink_get_hwid() {
 	dd if=$part bs=4 count=1 skip=16 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
+tplink_get_mid() {
+	local part
+
+	part=$(find_mtd_part firmware)
+	[ -z "$part" ] && return 1
+
+	dd if=$part bs=4 count=1 skip=17 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
 tplink_board_detect() {
 	local model="$1"
 	local hwid
 	local hwver
 
 	hwid=$(tplink_get_hwid)
+	mid=$(tplink_get_mid)
 	hwver=${hwid:6:2}
 	hwver="v${hwver#0}"
 
@@ -106,7 +116,12 @@ tplink_board_detect() {
 		model="TP-Link TL-WA901N/ND"
 		;;
 	"094100"*)
-		model="TP-Link TL-WR941N/ND"
+		if [ "$hwid" == "09410002" -a "$mid" == "00420001" ]; then
+			model="Rosewill RNX-N360RT"
+			hwver=""
+		else
+			model="TP-Link TL-WR941N/ND"
+		fi
 		;;
 	"104100"*)
 		model="TP-Link TL-WR1041N/ND"
