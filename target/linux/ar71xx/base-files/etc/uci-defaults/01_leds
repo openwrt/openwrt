@@ -200,6 +200,10 @@ wrt160nl)
 	ucidef_set_led_wlan "wlan" "WLAN" "wrt160nl:blue:wlan" "phy0tpt"
 	;;
 
+wndap360)
+        ucidef_set_led_power "power" "POWER GREEN" "wndap360:green:power" "1"
+        ;;
+
 wndr3700)
 	ucidef_set_led_default "wan" "WAN LED (green)" "wndr3700:green:wan" "0"
 	ucidef_set_led_usbdev "usb" "USB" "wndr3700:green:usb" "1-1"
