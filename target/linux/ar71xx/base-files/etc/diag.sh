@@ -159,6 +159,9 @@ get_status_led() {
 	wzr-hp-g300nh2)
 		status_led="buffalo:red:diag"
 		;;
+	wndap360)
+		status_led="wndap360:green:power"
+		;;
 	wndr3700)
 		status_led="wndr3700:green:power"
 		;;
