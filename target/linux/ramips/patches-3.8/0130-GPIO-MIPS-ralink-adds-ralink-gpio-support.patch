@@ -17,11 +17,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/include/asm/mach-ralink/gpio.h
  create mode 100644 drivers/gpio/gpio-ralink.c
 
-Index: linux-3.8.11/arch/mips/Kconfig
-===================================================================
---- linux-3.8.11.orig/arch/mips/Kconfig	2013-05-04 13:20:48.399042973 +0200
-+++ linux-3.8.11/arch/mips/Kconfig	2013-05-04 13:20:54.963043258 +0200
-@@ -449,6 +449,7 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -449,6 +449,7 @@ config RALINK
  	select SYS_HAS_EARLY_PRINTK
  	select HAVE_MACH_CLKDEV
  	select CLKDEV_LOOKUP
@@ -29,10 +27,8 @@ Index: linux-3.8.11/arch/mips/Kconfig
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-Index: linux-3.8.11/arch/mips/include/asm/mach-ralink/gpio.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.8.11/arch/mips/include/asm/mach-ralink/gpio.h	2013-05-04 13:20:54.963043258 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ralink/gpio.h
 @@ -0,0 +1,24 @@
 +/*
 + *  Ralink SoC GPIO API support
@@ -58,11 +54,9 @@ Index: linux-3.8.11/arch/mips/include/asm/mach-ralink/gpio.h
 +#define gpio_to_irq	__gpio_to_irq
 +
 +#endif /* __ASM_MACH_RALINK_GPIO_H */
-Index: linux-3.8.11/drivers/gpio/Kconfig
-===================================================================
---- linux-3.8.11.orig/drivers/gpio/Kconfig	2013-05-04 13:20:48.399042973 +0200
-+++ linux-3.8.11/drivers/gpio/Kconfig	2013-05-04 13:20:54.963043258 +0200
-@@ -201,6 +201,12 @@
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -201,6 +201,12 @@ config GPIO_PXA
  	help
  	  Say yes here to support the PXA GPIO device
  
@@ -75,11 +69,9 @@ Index: linux-3.8.11/drivers/gpio/Kconfig
  config GPIO_SPEAR_SPICS
  	bool "ST SPEAr13xx SPI Chip Select as GPIO support"
  	depends on PLAT_SPEAR
-Index: linux-3.8.11/drivers/gpio/Makefile
-===================================================================
---- linux-3.8.11.orig/drivers/gpio/Makefile	2013-05-04 13:20:48.399042973 +0200
-+++ linux-3.8.11/drivers/gpio/Makefile	2013-05-04 13:20:54.963043258 +0200
-@@ -54,6 +54,7 @@
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -54,6 +54,7 @@ obj-$(CONFIG_GPIO_PCF857X)	+= gpio-pcf85
  obj-$(CONFIG_GPIO_PCH)		+= gpio-pch.o
  obj-$(CONFIG_GPIO_PL061)	+= gpio-pl061.o
  obj-$(CONFIG_GPIO_PXA)		+= gpio-pxa.o
@@ -87,10 +79,8 @@ Index: linux-3.8.11/drivers/gpio/Makefile
  obj-$(CONFIG_GPIO_RC5T583)	+= gpio-rc5t583.o
  obj-$(CONFIG_GPIO_RDC321X)	+= gpio-rdc321x.o
  obj-$(CONFIG_PLAT_SAMSUNG)	+= gpio-samsung.o
-Index: linux-3.8.11/drivers/gpio/gpio-ralink.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.8.11/drivers/gpio/gpio-ralink.c	2013-05-06 11:39:24.816485479 +0200
+--- /dev/null
++++ b/drivers/gpio/gpio-ralink.c
 @@ -0,0 +1,182 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it

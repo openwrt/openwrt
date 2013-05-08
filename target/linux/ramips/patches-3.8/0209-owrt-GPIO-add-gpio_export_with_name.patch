@@ -14,11 +14,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  include/linux/gpio.h                            |   23 ++++++++-
  5 files changed, 160 insertions(+), 8 deletions(-)
 
-Index: linux-3.8.11/Documentation/devicetree/bindings/gpio/gpio.txt
-===================================================================
---- linux-3.8.11.orig/Documentation/devicetree/bindings/gpio/gpio.txt	2013-05-01 18:56:10.000000000 +0200
-+++ linux-3.8.11/Documentation/devicetree/bindings/gpio/gpio.txt	2013-05-06 12:43:38.252652605 +0200
-@@ -112,3 +112,63 @@
+--- a/Documentation/devicetree/bindings/gpio/gpio.txt
++++ b/Documentation/devicetree/bindings/gpio/gpio.txt
+@@ -112,3 +112,63 @@ where,
  
  The pinctrl node must have "#gpio-range-cells" property to show number of
  arguments to pass with phandle from gpio controllers node.
@@ -82,10 +80,8 @@ Index: linux-3.8.11/Documentation/devicetree/bindings/gpio/gpio.txt
 +		gpio-export,output = <1>;
 +	};
 +};
-Index: linux-3.8.11/drivers/gpio/gpiolib-of.c
-===================================================================
---- linux-3.8.11.orig/drivers/gpio/gpiolib-of.c	2013-05-01 18:56:10.000000000 +0200
-+++ linux-3.8.11/drivers/gpio/gpiolib-of.c	2013-05-06 13:35:56.452788709 +0200
+--- a/drivers/gpio/gpiolib-of.c
++++ b/drivers/gpio/gpiolib-of.c
 @@ -21,6 +21,8 @@
  #include <linux/of_gpio.h>
  #include <linux/pinctrl/pinctrl.h>
@@ -95,7 +91,7 @@ Index: linux-3.8.11/drivers/gpio/gpiolib-of.c
  
  /* Private data structure for of_gpiochip_find_and_xlate */
  struct gg_data {
-@@ -288,3 +290,69 @@
+@@ -288,3 +290,69 @@ void of_gpiochip_remove(struct gpio_chip
  	if (chip->of_node)
  		of_node_put(chip->of_node);
  }
@@ -165,11 +161,9 @@ Index: linux-3.8.11/drivers/gpio/gpiolib-of.c
 +	return platform_driver_probe(&gpio_export_driver, of_gpio_export_probe);
 +}
 +device_initcall(of_gpio_export_init);
-Index: linux-3.8.11/drivers/gpio/gpiolib.c
-===================================================================
---- linux-3.8.11.orig/drivers/gpio/gpiolib.c	2013-05-01 18:56:10.000000000 +0200
-+++ linux-3.8.11/drivers/gpio/gpiolib.c	2013-05-06 13:31:35.060777376 +0200
-@@ -714,9 +714,10 @@
+--- a/drivers/gpio/gpiolib.c
++++ b/drivers/gpio/gpiolib.c
+@@ -714,9 +714,10 @@ static struct class gpio_class = {
  
  
  /**
@@ -181,7 +175,7 @@ Index: linux-3.8.11/drivers/gpio/gpiolib.c
   * Context: arch_initcall or later
   *
   * When drivers want to make a GPIO accessible to userspace after they
-@@ -728,7 +729,7 @@
+@@ -728,7 +729,7 @@ static struct class gpio_class = {
   *
   * Returns zero on success, else an error.
   */
@@ -190,7 +184,7 @@ Index: linux-3.8.11/drivers/gpio/gpiolib.c
  {
  	unsigned long		flags;
  	struct gpio_desc	*desc;
-@@ -762,6 +763,8 @@
+@@ -762,6 +763,8 @@ int gpio_export(unsigned gpio, bool dire
  		goto fail_unlock;
  	}
  
@@ -199,7 +193,7 @@ Index: linux-3.8.11/drivers/gpio/gpiolib.c
  	if (!desc->chip->direction_input || !desc->chip->direction_output)
  		direction_may_change = false;
  	spin_unlock_irqrestore(&gpio_lock, flags);
-@@ -804,7 +807,7 @@
+@@ -804,7 +807,7 @@ fail_unlock:
  	pr_debug("%s: gpio%d status %d\n", __func__, gpio, status);
  	return status;
  }
@@ -208,7 +202,7 @@ Index: linux-3.8.11/drivers/gpio/gpiolib.c
  
  static int match_export(struct device *dev, void *data)
  {
-@@ -1418,6 +1421,9 @@
+@@ -1418,6 +1421,9 @@ int gpio_request_one(unsigned gpio, unsi
  	if (flags & GPIOF_OPEN_SOURCE)
  		set_bit(FLAG_OPEN_SOURCE, &gpio_desc[gpio].flags);
  
@@ -218,11 +212,9 @@ Index: linux-3.8.11/drivers/gpio/gpiolib.c
  	if (flags & GPIOF_DIR_IN)
  		err = gpio_direction_input(gpio);
  	else
-Index: linux-3.8.11/include/asm-generic/gpio.h
-===================================================================
---- linux-3.8.11.orig/include/asm-generic/gpio.h	2013-05-01 18:56:10.000000000 +0200
-+++ linux-3.8.11/include/asm-generic/gpio.h	2013-05-06 12:43:38.252652605 +0200
-@@ -204,7 +204,8 @@
+--- a/include/asm-generic/gpio.h
++++ b/include/asm-generic/gpio.h
+@@ -204,7 +204,8 @@ void devm_gpio_free(struct device *dev,
   * A sysfs interface can be exported by individual drivers if they want,
   * but more typically is configured entirely from userspace.
   */
@@ -232,7 +224,7 @@ Index: linux-3.8.11/include/asm-generic/gpio.h
  extern int gpio_export_link(struct device *dev, const char *name,
  			unsigned gpio);
  extern int gpio_sysfs_set_active_low(unsigned gpio, int value);
-@@ -249,7 +250,8 @@
+@@ -249,7 +250,8 @@ struct device;
  
  /* sysfs support is only available with gpiolib, where it's optional */
  
@@ -242,10 +234,8 @@ Index: linux-3.8.11/include/asm-generic/gpio.h
  {
  	return -ENOSYS;
  }
-Index: linux-3.8.11/include/linux/gpio.h
-===================================================================
---- linux-3.8.11.orig/include/linux/gpio.h	2013-05-01 18:56:10.000000000 +0200
-+++ linux-3.8.11/include/linux/gpio.h	2013-05-06 13:32:59.796781050 +0200
+--- a/include/linux/gpio.h
++++ b/include/linux/gpio.h
 @@ -27,6 +27,9 @@
  #define GPIOF_EXPORT_DIR_FIXED	(GPIOF_EXPORT)
  #define GPIOF_EXPORT_DIR_CHANGEABLE (GPIOF_EXPORT | GPIOF_EXPORT_CHANGEABLE)
@@ -256,7 +246,7 @@ Index: linux-3.8.11/include/linux/gpio.h
  /**
   * struct gpio - a structure describing a GPIO with configuration
   * @gpio:	the GPIO number
-@@ -189,7 +192,8 @@
+@@ -189,7 +192,8 @@ static inline void gpio_set_value_cansle
  	WARN_ON(1);
  }
  
@@ -266,7 +256,7 @@ Index: linux-3.8.11/include/linux/gpio.h
  {
  	/* GPIO can never have been requested or set as {in,out}put */
  	WARN_ON(1);
-@@ -248,4 +252,24 @@
+@@ -248,4 +252,24 @@ gpiochip_remove_pin_ranges(struct gpio_c
  
  #endif /* ! CONFIG_GENERIC_GPIO */
  
