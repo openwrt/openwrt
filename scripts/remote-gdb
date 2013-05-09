@@ -6,7 +6,7 @@ use FindBin '$Bin';
 use File::Temp 'tempfile';
 
 @ARGV == 2 || do {
-	die "Usage: $0 <host:port> <executable>\n";
+	die "Usage: $0 <corefile|host:port> <executable>\n";
 	exit 1;
 };
 
@@ -61,7 +61,9 @@ if( opendir SD, "$Bin/../staging_dir" )
 		my ($sysroot) = glob("$Bin/../staging_dir/target-${arch}_${libc}/root-*/");
 
 		print $fh "set sysroot $sysroot\n" if $sysroot;
-		print $fh "target remote $ARGV[0]\n";
+		my $cmd = "target remote";
+		-f $ARGV[0] and $cmd = "core-file";
+		print $fh "$cmd $ARGV[0]\n";
 
 		my $file = -f "$sysroot/$ARGV[1]" ? "$sysroot/$ARGV[1]" : $ARGV[1];
 		system($gdb, '-x', $fp, $file);
