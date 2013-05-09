@@ -5,12 +5,16 @@ config MUSL_VERSION
 	depends on USE_MUSL
 	default "0.9.8"       if MUSL_VERSION_0_9_8
 	default "0.9.9"       if MUSL_VERSION_0_9_9
+	default "0.9.10"       if MUSL_VERSION_0_9_10
 
 config MUSL_VERSION_0_9_8
 	default y if !TOOLCHAINOPTS
 	bool
 
 config MUSL_VERSION_0_9_9
+	bool
+
+config MUSL_VERSION_0_9_10
 	bool
 
 endif
