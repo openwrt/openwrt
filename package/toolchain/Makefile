@@ -84,7 +84,6 @@ define Package/libstdcpp
 $(call Package/gcc/Default)
   NAME:=libstdc++
   TITLE:=GNU Standard C++ Library v3
-  DEPENDS+=@INSTALL_LIBSTDCPP
 endef
 
 define Package/libstdcpp/config
