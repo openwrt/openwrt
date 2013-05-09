@@ -944,7 +944,7 @@ static const struct switch_dev_ops b53_switch_ops_25 = {
 
 static const struct switch_dev_ops b53_switch_ops_65 = {
 	.attr_global = {
-		.attr = b53_global_ops_25,
+		.attr = b53_global_ops_65,
 		.n_attr = ARRAY_SIZE(b53_global_ops_65),
 	},
 	.attr_port = {
