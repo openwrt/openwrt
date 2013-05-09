@@ -71,13 +71,6 @@ config SJLJ_EXCEPTIONS
 	    frame unwinding exceptions handling routines.  Warning: increases
 	    code size and runtime memory usage.
 
-config INSTALL_LIBSTDCPP
-	bool
-	prompt "Build/install c++ compiler and libstdc++?" if TOOLCHAINOPTS
-	default y if !USE_MUSL
-	help
-	    Build/install c++ compiler and libstdc++?
-
 config INSTALL_LIBGCJ
 	bool
 	prompt "Build/install java compiler and GNU classpath ?" if TOOLCHAINOPTS
