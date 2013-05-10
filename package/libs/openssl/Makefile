@@ -111,7 +111,7 @@ define Build/Configure
 	)
 endef
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS := $(filter-out -mips16 -minterlink-mips16,$(TARGET_CFLAGS)) $(FPIC)
 
 define Build/Compile
 	# XXX: OpenSSL "make depend" will look for installed headers before its own,
