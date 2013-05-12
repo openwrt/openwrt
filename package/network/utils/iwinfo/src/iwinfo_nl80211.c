@@ -918,13 +918,14 @@ static int nl80211_get_frequency_scan_cb(struct nl_msg *msg, void *arg)
 
 	static struct nla_policy bss_policy[NL80211_BSS_MAX + 1] = {
 		[NL80211_BSS_FREQUENCY] = { .type = NLA_U32 },
+		[NL80211_BSS_STATUS]    = { .type = NLA_U32 },
 	};
 
 	if (attr[NL80211_ATTR_BSS] &&
 	    !nla_parse_nested(binfo, NL80211_BSS_MAX,
 	                      attr[NL80211_ATTR_BSS], bss_policy))
 	{
-		if (binfo[NL80211_BSS_FREQUENCY])
+		if (binfo[NL80211_BSS_STATUS] && binfo[NL80211_BSS_FREQUENCY])
 			*freq = nla_get_u32(binfo[NL80211_BSS_FREQUENCY]);
 	}
 
