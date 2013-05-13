@@ -35,6 +35,30 @@ setup_interface () {
 	done
 	proto_send_update "$INTERFACE"
 
+	if [ -n "$IFACE6RD" -a -n "$ip6rd" ]; then
+		local v4mask="${ip6rd%% *}"
+		ip6rd="${ip6rd#* }"
+		local ip6rdprefixlen="${ip6rd%% *}"
+		ip6rd="${ip6rd#* }"
+		local ip6rdprefix="${ip6rd%% *}"
+		ip6rd="${ip6rd#* }"
+		local ip6rdbr="${ip6rd%% *}"
+
+uci -q batch <<-EOF >/dev/null
+set network.$IFACE6RD.proto=6rd
+set network.$IFACE6RD.auto=0
+set network.$IFACE6RD.peeraddr=$ip6rdbr
+set network.$IFACE6RD.ip4prefixlen=$v4mask
+set network.$IFACE6RD.ip6prefix=$ip6rdprefix
+set network.$IFCAE6RD.ip6prefixlen=$ip6rdprefixlen
+commit network
+EOF
+
+		ifdown "$IFACE6RD"
+		/etc/init.d/network reload
+		ifup "$IFACE6RD"
+	fi
+
 	# TODO
 	# [ -n "$ntpsrv" ] && 	change_state network "$ifc" lease_ntpsrv "$ntpsrv"
 	# [ -n "$timesvr" ] && 	change_state network "$ifc" lease_timesrv "$timesvr"
