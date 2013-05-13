@@ -153,6 +153,7 @@ sub target_config_features(@) {
 	my $ret;
 
 	while ($_ = shift @_) {
+		/arm_v(\w+)/ and $ret .= "\tselect arm_v$1\n";
 		/broken/ and $ret .= "\tdepends on BROKEN\n";
 		/audio/ and $ret .= "\tselect AUDIO_SUPPORT\n";
 		/display/ and $ret .= "\tselect DISPLAY_SUPPORT\n";
