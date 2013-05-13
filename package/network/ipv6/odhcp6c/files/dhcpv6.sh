@@ -18,8 +18,8 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts noslaaconly norelease ip6prefix
-	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly norelease ip6prefix
+	local reqaddress reqprefix clientid reqopts noslaaconly norelease ip6prefix iface_dslite
+	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly norelease ip6prefix iface_dslite
 
 
 	# Configure
@@ -40,6 +40,7 @@ proto_dhcpv6_setup() {
 	done
 
 	[ -n "$ip6prefix" ] && proto_export "USERPREFIX=$ip6prefix"
+	[ -n "$iface_dslite" ] && proto_export "IFACE_DSLITE=$iface_dslite"
 
 	proto_export "INTERFACE=$config"
 	proto_run_command "$config" odhcp6c \
