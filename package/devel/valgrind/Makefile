@@ -26,7 +26,7 @@ include $(INCLUDE_DIR)/kernel.mk
 define Package/valgrind
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:=@mips||mipsel||i386||powerpc||TARGET_omap4 +libpthread +librt
+  DEPENDS:=@mips||mipsel||i386||powerpc||arm_v7 +libpthread +librt
   TITLE:=debugging and profiling tools for Linux
   URL:=http://www.valgrind.org
 endef
