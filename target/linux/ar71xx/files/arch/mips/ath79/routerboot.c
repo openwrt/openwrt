@@ -30,6 +30,26 @@ static u16 get_u16(void *buf)
 }
 
 __init int
+routerboot_find_magic(u8 *buf, unsigned int buflen, u32 *offset, bool hard)
+{
+	u32 magic_ref = hard ? RB_MAGIC_HARD : RB_MAGIC_SOFT;
+	u32 magic;
+	u32 cur = *offset;
+
+	while (cur < buflen) {
+		magic = get_u32(buf + cur);
+		if (magic == magic_ref) {
+			*offset = cur;
+			return 0;
+		}
+
+		cur += 0x1000;
+	}
+
+	return -ENOENT;
+}
+
+__init int
 routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 		    u8 **tag_data, u16 *tag_len)
 {
