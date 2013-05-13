@@ -2031,6 +2031,7 @@ ar8xxx_phy_config_aneg(struct phy_device *phydev)
 
 static const u32 ar8xxx_phy_ids[] = {
 	0x004dd033,
+	0x004dd034,
 	0x004dd041,
 	0x004dd042,
 };
