@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=firewall3
-PKG_VERSION:=2013-05-02
+PKG_VERSION:=2013-05-13
 PKG_RELEASE:=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
@@ -49,8 +49,6 @@ define Package/firewall3/install
 	$(INSTALL_DATA) ./files/firewall.config $(1)/etc/config/firewall
 	$(INSTALL_DIR) $(1)/etc/
 	$(INSTALL_DATA) ./files/firewall.user $(1)/etc/firewall.user
-	$(INSTALL_DIR) $(1)/usr/share/firewall/
-	$(INSTALL_BIN) ./files/ipv6-ula-border.sh $(1)/usr/share/firewall/ipv6-ula-border.sh
 endef
 
 $(eval $(call BuildPackage,firewall3))
