@@ -37,8 +37,8 @@ THC_DEPENDS_thcping6 := +librt
 define BuildTool
   define Package/thc-ipv6-$(subst _,-,$(1))
     TITLE:=THC-IPv6 $(1) utility
-    SECTION:=ipv6
-    CATEGORY:=IPv6
+    SECTION:=net
+    CATEGORY:=Network
     DEPENDS:=+libpcap $(THC_DEPENDS_$(1))
     URL:=http://freeworld.thc.org/
     SUBMENU:=THC-IPv6 attack and analyzing toolkit

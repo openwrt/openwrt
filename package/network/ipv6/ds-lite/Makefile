@@ -14,8 +14,8 @@ PKG_RELEASE:=1
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ds-lite
-  SECTION:=ipv6
-  CATEGORY:=IPv6
+  SECTION:=net
+  CATEGORY:=Network
   DEPENDS:=+kmod-ipv6 +kmod-ip6-tunnel
   TITLE:=Dual-Stack Lite (DS-Lite) configuration support
   MAINTAINER:=Steven Barth <steven@midlink.org>
