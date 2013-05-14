@@ -1,8 +1,10 @@
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -1,4 +1,4 @@
+@@ -1,6 +1,6 @@
+ include ../Config
+ 
 -CFLAGS += -fPIC
-+CFLAGS+=$(FPIC)
++CFLAGS += $(FPIC)
  
  UTILOBJ=utils.o rt_names.o ll_types.o ll_proto.o ll_addr.o inet_proto.o
  
