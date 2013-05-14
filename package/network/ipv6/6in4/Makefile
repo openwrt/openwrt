@@ -14,8 +14,8 @@ PKG_RELEASE:=1
 include $(INCLUDE_DIR)/package.mk
 
 define Package/6in4
-  SECTION:=ipv6
-  CATEGORY:=IPv6
+  SECTION:=net
+  CATEGORY:=Network
   DEPENDS:=+kmod-ipv6 +kmod-sit
   TITLE:=IPv6-in-IPv4 configuration support
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>

@@ -14,8 +14,8 @@ PKG_RELEASE:=1
 include $(INCLUDE_DIR)/package.mk
 
 define Package/6rd
-  SECTION:=ipv6
-  CATEGORY:=IPv6
+  SECTION:=net
+  CATEGORY:=Network
   DEPENDS:=+kmod-ipv6 +kmod-sit
   TITLE:=6rd configuration support
   MAINTAINER:=Stéphan Kochen <stephan@kochen.nl>
