@@ -10,7 +10,7 @@
  TCMODULES += p_icmp.o
 --- /dev/null
 +++ b/tc/m_connmark.c
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,74 @@
 +/*
 + * m_connmark.c		Connection tracking marking import
 + *
@@ -61,6 +61,9 @@
 +		return -1;
 +
 +	NEXT_ARG();
++
++	if (matches(*argv, "help") == 0)
++		usage();
 +
 +	*argc_p = argc;
 +	*argv_p = argv;
