@@ -411,7 +411,12 @@ enable_mac80211() {
 			# We attempt to set the channel for all interfaces, although
 			# mac80211 may not support it or the driver might not yet
 			# for ap mode this is handled by hostapd
-			[ -n "$fixed" -a -n "$channel" ] && iw dev "$ifname" set channel "$channel"
+			config_get htmode "$device" htmode
+			case "$htmode" in
+				HT20|HT40+|HT40-) ;;
+				*) htmode= ;;
+			esac
+			[ -n "$fixed" -a -n "$channel" ] && iw dev "$ifname" set channel "$channel" $htmode
 		fi
 
 		i=$(($i + 1))
