@@ -531,6 +531,20 @@ enable_mac80211() {
 					${mcval:+mcast-rate $mcval} \
 					${keyspec:+keys $keyspec}
 			;;
+			mesh)
+				mp_list="mesh_retry_timeout mesh_confirm_timeout mesh_holding_timeout mesh_max_peer_links
+					mesh_max_retries mesh_ttl mesh_element_ttl mesh_auto_open_plinks mesh_hwmp_max_preq_retries
+					mesh_path_refresh_time mesh_min_discovery_timeout mesh_hwmp_active_path_timeout
+					mesh_hwmp_preq_min_interval mesh_hwmp_net_diameter_traversal_time mesh_hwmp_rootmode
+					mesh_hwmp_rann_interval mesh_gate_announcements mesh_fwding mesh_sync_offset_max_neighor
+					mesh_rssi_threshold mesh_hwmp_active_path_to_root_timeout mesh_hwmp_root_interval
+					mesh_hwmp_confirmation_interval mesh_power_mode mesh_awake_window"
+				for mp in $mp_list
+				do
+					config_get mp_val "$vif" "$mp" ""
+					[ -n "$mp_val" ] && iw dev "$ifname" set mesh_param "$mp" "$mp_val"
+				done
+			;;
 			sta)
 				if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
 					wpa_supplicant_setup_vif "$vif" nl80211 "${hostapd_ctrl:+-H $hostapd_ctrl}" || {
