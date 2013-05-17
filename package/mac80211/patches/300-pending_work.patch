@@ -8,7 +8,25 @@
  	struct ath_buf_state bf_state;
  };
  
-@@ -658,11 +659,10 @@ enum sc_op_flags {
+@@ -253,6 +254,7 @@ struct ath_atx_tid {
+ 	int sched;
+ 	int paused;
+ 	u8 state;
++	bool stop_cb;
+ };
+ 
+ struct ath_node {
+@@ -350,7 +352,8 @@ void ath_tx_tasklet(struct ath_softc *sc
+ void ath_tx_edma_tasklet(struct ath_softc *sc);
+ int ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
+ 		      u16 tid, u16 *ssn);
+-void ath_tx_aggr_stop(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid);
++bool ath_tx_aggr_stop(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid,
++		      bool flush);
+ void ath_tx_aggr_resume(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid);
+ 
+ void ath_tx_aggr_wakeup(struct ath_softc *sc, struct ath_node *an);
+@@ -658,11 +661,10 @@ enum sc_op_flags {
  struct ath_rate_table;
  
  struct ath9k_vif_iter_data {
@@ -139,6 +157,32 @@
  }
  
  static int ath9k_sta_remove(struct ieee80211_hw *hw,
+@@ -1678,6 +1687,7 @@ static int ath9k_ampdu_action(struct iee
+ 			      u16 tid, u16 *ssn, u8 buf_size)
+ {
+ 	struct ath_softc *sc = hw->priv;
++	bool flush = false, cb;
+ 	int ret = 0;
+ 
+ 	local_bh_disable();
+@@ -1694,12 +1704,14 @@ static int ath9k_ampdu_action(struct iee
+ 			ieee80211_start_tx_ba_cb_irqsafe(vif, sta->addr, tid);
+ 		ath9k_ps_restore(sc);
+ 		break;
+-	case IEEE80211_AMPDU_TX_STOP_CONT:
+ 	case IEEE80211_AMPDU_TX_STOP_FLUSH:
+ 	case IEEE80211_AMPDU_TX_STOP_FLUSH_CONT:
++		flush = true;
++	case IEEE80211_AMPDU_TX_STOP_CONT:
+ 		ath9k_ps_wakeup(sc);
+-		ath_tx_aggr_stop(sc, sta, tid);
+-		ieee80211_stop_tx_ba_cb_irqsafe(vif, sta->addr, tid);
++		cb = ath_tx_aggr_stop(sc, sta, tid, flush);
++		if (cb)
++			ieee80211_stop_tx_ba_cb_irqsafe(vif, sta->addr, tid);
+ 		ath9k_ps_restore(sc);
+ 		break;
+ 	case IEEE80211_AMPDU_TX_OPERATIONAL:
 --- a/drivers/net/wireless/ath/ath9k/reg.h
 +++ b/drivers/net/wireless/ath/ath9k/reg.h
 @@ -1493,9 +1493,6 @@ enum {
@@ -3653,10 +3697,11 @@
  		 hw->flags |= IEEE80211_HW_AMPDU_AGGREGATION;
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -157,6 +157,13 @@ static void ath_send_bar(struct ath_atx_
+@@ -157,7 +157,27 @@ static void ath_send_bar(struct ath_atx_
  			   seqno << IEEE80211_SEQ_SEQ_SHIFT);
  }
  
+-static void ath_tx_flush_tid(struct ath_softc *sc, struct ath_atx_tid *tid)
 +static void ath_set_rates(struct ieee80211_vif *vif, struct ieee80211_sta *sta,
 +			  struct ath_buf *bf)
 +{
@@ -3664,10 +3709,44 @@
 +			       ARRAY_SIZE(bf->rates));
 +}
 +
- static void ath_tx_flush_tid(struct ath_softc *sc, struct ath_atx_tid *tid)
++static void ath_tx_clear_tid(struct ath_softc *sc, struct ath_atx_tid *tid)
++{
++	tid->state &= ~AGGR_ADDBA_COMPLETE;
++	tid->state &= ~AGGR_CLEANUP;
++	if (!tid->stop_cb)
++		return;
++
++	ieee80211_start_tx_ba_cb_irqsafe(tid->an->vif, tid->an->sta->addr,
++					 tid->tidno);
++	tid->stop_cb = false;
++}
++
++static void ath_tx_flush_tid(struct ath_softc *sc, struct ath_atx_tid *tid,
++			     bool flush_packets)
  {
  	struct ath_txq *txq = tid->ac->txq;
-@@ -189,6 +196,7 @@ static void ath_tx_flush_tid(struct ath_
+ 	struct sk_buff *skb;
+@@ -174,31 +194,29 @@ static void ath_tx_flush_tid(struct ath_
+ 	while ((skb = __skb_dequeue(&tid->buf_q))) {
+ 		fi = get_frame_info(skb);
+ 		bf = fi->bf;
++		if (!bf && !flush_packets)
++			bf = ath_tx_setup_buffer(sc, txq, tid, skb);
+ 
+ 		if (!bf) {
+-			bf = ath_tx_setup_buffer(sc, txq, tid, skb);
+-			if (!bf) {
+-				ieee80211_free_txskb(sc->hw, skb);
+-				continue;
+-			}
++			ieee80211_free_txskb(sc->hw, skb);
++			continue;
+ 		}
+ 
+-		if (fi->retries) {
++		if (fi->retries || flush_packets) {
+ 			list_add_tail(&bf->list, &bf_head);
+ 			ath_tx_update_baw(sc, tid, bf->bf_state.seqno);
  			ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0);
  			sendbar = true;
  		} else {
@@ -3675,7 +3754,31 @@
  			ath_tx_send_normal(sc, txq, NULL, skb);
  		}
  	}
-@@ -407,7 +415,7 @@ static void ath_tx_complete_aggr(struct 
+ 
+-	if (tid->baw_head == tid->baw_tail) {
+-		tid->state &= ~AGGR_ADDBA_COMPLETE;
+-		tid->state &= ~AGGR_CLEANUP;
+-	}
++	if (tid->baw_head == tid->baw_tail)
++		ath_tx_clear_tid(sc, tid);
+ 
+-	if (sendbar) {
++	if (sendbar && !flush_packets) {
+ 		ath_txq_unlock(sc, txq);
+ 		ath_send_bar(tid, tid->seq_start);
+ 		ath_txq_lock(sc, txq);
+@@ -269,9 +287,7 @@ static void ath_tid_drain(struct ath_sof
+ 
+ 		list_add_tail(&bf->list, &bf_head);
+ 
+-		if (fi->retries)
+-			ath_tx_update_baw(sc, tid, bf->bf_state.seqno);
+-
++		ath_tx_update_baw(sc, tid, bf->bf_state.seqno);
+ 		ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0);
+ 	}
+ 
+@@ -407,7 +423,7 @@ static void ath_tx_complete_aggr(struct 
  
  	tx_info = IEEE80211_SKB_CB(skb);
  
@@ -3684,7 +3787,47 @@
  
  	retries = ts->ts_longretry + 1;
  	for (i = 0; i < ts->ts_rateindex; i++)
-@@ -736,8 +744,6 @@ static int ath_compute_num_delims(struct
+@@ -594,7 +610,7 @@ static void ath_tx_complete_aggr(struct 
+ 	}
+ 
+ 	if (tid->state & AGGR_CLEANUP)
+-		ath_tx_flush_tid(sc, tid);
++		ath_tx_flush_tid(sc, tid, false);
+ 
+ 	rcu_read_unlock();
+ 
+@@ -612,6 +628,7 @@ static void ath_tx_process_buffer(struct
+ 				  struct ath_tx_status *ts, struct ath_buf *bf,
+ 				  struct list_head *bf_head)
+ {
++	struct ieee80211_tx_info *info;
+ 	bool txok, flush;
+ 
+ 	txok = !(ts->ts_status & ATH9K_TXERR_MASK);
+@@ -623,8 +640,12 @@ static void ath_tx_process_buffer(struct
+ 		txq->axq_ampdu_depth--;
+ 
+ 	if (!bf_isampdu(bf)) {
+-		if (!flush)
++		if (!flush) {
++			info = IEEE80211_SKB_CB(bf->bf_mpdu);
++			memcpy(info->control.rates, bf->rates,
++			       sizeof(info->control.rates));
+ 			ath_tx_rc_status(sc, bf, ts, 1, txok ? 0 : 1, txok);
++		}
+ 		ath_tx_complete_buf(sc, bf, txq, bf_head, ts, txok);
+ 	} else
+ 		ath_tx_complete_aggr(sc, txq, bf, bf_head, ts, txok);
+@@ -668,7 +689,7 @@ static u32 ath_lookup_rate(struct ath_so
+ 
+ 	skb = bf->bf_mpdu;
+ 	tx_info = IEEE80211_SKB_CB(skb);
+-	rates = tx_info->control.rates;
++	rates = bf->rates;
+ 
+ 	/*
+ 	 * Find the lowest frame length among the rate series that will have a
+@@ -736,8 +757,6 @@ static int ath_compute_num_delims(struct
  				  bool first_subfrm)
  {
  #define FIRST_DESC_NDELIMS 60
@@ -3693,7 +3836,7 @@
  	u32 nsymbits, nsymbols;
  	u16 minlen;
  	u8 flags, rix;
-@@ -778,8 +784,8 @@ static int ath_compute_num_delims(struct
+@@ -778,8 +797,8 @@ static int ath_compute_num_delims(struct
  	if (tid->an->mpdudensity == 0)
  		return ndelim;
  
@@ -3704,7 +3847,7 @@
  	width = (flags & IEEE80211_TX_RC_40_MHZ_WIDTH) ? 1 : 0;
  	half_gi = (flags & IEEE80211_TX_RC_SHORT_GI) ? 1 : 0;
  
-@@ -858,6 +864,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+@@ -858,6 +877,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_
  			bf_first = bf;
  
  		if (!rl) {
@@ -3712,7 +3855,7 @@
  			aggr_limit = ath_lookup_rate(sc, bf, tid);
  			rl = 1;
  		}
-@@ -998,14 +1005,14 @@ static void ath_buf_set_rate(struct ath_
+@@ -998,14 +1018,14 @@ static void ath_buf_set_rate(struct ath_
  
  	skb = bf->bf_mpdu;
  	tx_info = IEEE80211_SKB_CB(skb);
@@ -3729,7 +3872,55 @@
  		bool is_40, is_sgi, is_sp;
  		int phy;
  
-@@ -1743,6 +1750,7 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1249,18 +1269,23 @@ int ath_tx_aggr_start(struct ath_softc *
+ 	return 0;
+ }
+ 
+-void ath_tx_aggr_stop(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid)
++bool ath_tx_aggr_stop(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid,
++		      bool flush)
+ {
+ 	struct ath_node *an = (struct ath_node *)sta->drv_priv;
+ 	struct ath_atx_tid *txtid = ATH_AN_2_TID(an, tid);
+ 	struct ath_txq *txq = txtid->ac->txq;
++	bool ret = !flush;
++
++	if (flush)
++		txtid->stop_cb = false;
+ 
+ 	if (txtid->state & AGGR_CLEANUP)
+-		return;
++		return false;
+ 
+ 	if (!(txtid->state & AGGR_ADDBA_COMPLETE)) {
+ 		txtid->state &= ~AGGR_ADDBA_PROGRESS;
+-		return;
++		return ret;
+ 	}
+ 
+ 	ath_txq_lock(sc, txq);
+@@ -1272,13 +1297,17 @@ void ath_tx_aggr_stop(struct ath_softc *
+ 	 * TID can only be reused after all in-progress subframes have been
+ 	 * completed.
+ 	 */
+-	if (txtid->baw_head != txtid->baw_tail)
++	if (txtid->baw_head != txtid->baw_tail) {
+ 		txtid->state |= AGGR_CLEANUP;
+-	else
++		ret = false;
++		txtid->stop_cb = !flush;
++	} else {
+ 		txtid->state &= ~AGGR_ADDBA_COMPLETE;
++	}
+ 
+-	ath_tx_flush_tid(sc, txtid);
++	ath_tx_flush_tid(sc, txtid, flush);
+ 	ath_txq_unlock_complete(sc, txq);
++	return ret;
+ }
+ 
+ void ath_tx_aggr_sleep(struct ieee80211_sta *sta, struct ath_softc *sc,
+@@ -1743,6 +1772,7 @@ static void ath_tx_send_ampdu(struct ath
  		return;
  	}
  
@@ -3737,7 +3928,7 @@
  	bf->bf_state.bf_type = BUF_AMPDU;
  	INIT_LIST_HEAD(&bf_head);
  	list_add(&bf->list, &bf_head);
-@@ -1892,49 +1900,6 @@ static struct ath_buf *ath_tx_setup_buff
+@@ -1892,49 +1922,6 @@ static struct ath_buf *ath_tx_setup_buff
  	return bf;
  }
  
@@ -3787,7 +3978,7 @@
  /* Upon failure caller should free skb */
  int ath_tx_start(struct ieee80211_hw *hw, struct sk_buff *skb,
  		 struct ath_tx_control *txctl)
-@@ -1945,8 +1910,11 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1945,8 +1932,11 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ieee80211_vif *vif = info->control.vif;
  	struct ath_softc *sc = hw->priv;
  	struct ath_txq *txq = txctl->txq;
@@ -3799,7 +3990,7 @@
  	int q;
  
  	/* NOTE:  sta can be NULL according to net/mac80211.h */
-@@ -2002,8 +1970,41 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2002,8 +1992,41 @@ int ath_tx_start(struct ieee80211_hw *hw
  		txq->stopped = true;
  	}
  
@@ -3820,7 +4011,7 @@
 +		ath_tx_send_ampdu(sc, tid, skb, txctl);
 +		goto out;
 +	}
-+
+ 
 +	bf = ath_tx_setup_buffer(sc, txctl->txq, tid, skb);
 +	if (!bf) {
 +		if (txctl->paprd)
@@ -3837,11 +4028,29 @@
 +
 +	ath_set_rates(vif, sta, bf);
 +	ath_tx_send_normal(sc, txctl->txq, tid, skb);
- 
++
 +out:
  	ath_txq_unlock(sc, txq);
  
  	return 0;
+@@ -2414,6 +2437,7 @@ void ath_tx_node_init(struct ath_softc *
+ 		tid->ac = &an->ac[acno];
+ 		tid->state &= ~AGGR_ADDBA_COMPLETE;
+ 		tid->state &= ~AGGR_ADDBA_PROGRESS;
++		tid->stop_cb = false;
+ 	}
+ 
+ 	for (acno = 0, ac = &an->ac[acno];
+@@ -2450,8 +2474,7 @@ void ath_tx_node_cleanup(struct ath_soft
+ 		}
+ 
+ 		ath_tid_drain(sc, txq, tid);
+-		tid->state &= ~AGGR_ADDBA_COMPLETE;
+-		tid->state &= ~AGGR_CLEANUP;
++		ath_tx_clear_tid(sc, tid);
+ 
+ 		ath_txq_unlock(sc, txq);
+ 	}
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
 @@ -124,7 +124,7 @@ static bool ath_rx_edma_buf_link(struct 
