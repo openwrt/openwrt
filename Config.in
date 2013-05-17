@@ -568,6 +568,18 @@ menu "Global build settings"
 			  Allow user space to create what appear to be multiple instances
 			  of the network stack.
 
+	endif
+
+	#
+	# LXC related symbols
+	#
+
+	config KERNEL_LXC_MISC
+		bool "Enable miscellaneous LXC related options"
+		default n
+
+	if KERNEL_LXC_MISC
+
 		config KERNEL_DEVPTS_MULTIPLE_INSTANCES
 			bool "Support multiple instances of devpts"
 			default y
@@ -577,6 +589,20 @@ menu "Global build settings"
 			  say Y here. Otherwise, say N. If enabled, each mount of devpts
 			  filesystem with the '-o newinstance' option will create an
 			  independent PTY namespace.
+
+		config KERNEL_POSIX_MQUEUE
+			bool "POSIX Message Queues"
+			default n
+			help
+			  POSIX variant of message queues is a part of IPC. In POSIX message
+			  queues every message has a priority which decides about succession
+			  of receiving it by a process. If you want to compile and run
+			  programs written e.g. for Solaris with use of its POSIX message
+			  queues (functions mq_*) say Y here.
+
+			  POSIX message queues are visible as a filesystem called 'mqueue'
+			  and can be mounted somewhere if you want to do filesystem
+			  operations on message queues.
 
 	endif
 
