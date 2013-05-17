@@ -1,11 +1,23 @@
 #!/bin/sh /etc/rc.common
 # Copyright (c) 2011-2012 OpenWrt.org
 START=80
+args=""
+
+add_static_lease() {
+	local cfg="$1"
+
+	local duid id
+	config_get duid "$cfg" duid
+	config_get id "$cfg" id
+
+	[ -n "$duid" -a -n "$id" ] && append args "-a$duid:$id"
+
+}
 
 start_6relayd() {
 	local cfg="$1"
 	local mode="$2"
-	local args=""
+	args="-l/tmp/hosts/6relayd,/usr/sbin/6relayd-update"
 
 	SERVICE_DAEMONIZE=1
 	SERVICE_WRITE_PID=1
@@ -78,6 +90,12 @@ start_6relayd() {
 	local compat_ula
 	config_get_bool compat_ula "$cfg" compat_ula 0
 	[ "$compat_ula" -eq 1 ] && append args "-c"
+
+	local management_level
+	config_get management_level "$cfg" management_level
+	[ -n "$management_level" ] && append args "-m$management_level"
+
+	config_foreach add_static_lease lease
 
 	[ "$ndp" = "relay" ] && append args "-N -s"
 	[ "$rd" = "relay" ] && append args "-Rrelay"

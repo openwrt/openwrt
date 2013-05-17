@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6relayd
-PKG_VERSION:=2013-05-13
+PKG_VERSION:=2013-05-17
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=git://github.com/sbyx/6relayd.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=29454ff5fb3763fb61a672860de9dde62799f25b
+PKG_SOURCE_VERSION:=24aada7911a50c5fdb3517679095e54a581950aa
 
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 
@@ -45,6 +45,7 @@ endef
 define Package/6relayd/install
 	$(INSTALL_DIR) $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/6relayd $(1)/usr/sbin/
+	$(INSTALL_BIN) ./files/6relayd-update $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/6relayd.hotplug $(1)/etc/hotplug.d/iface/30-6relay
 	$(INSTALL_DIR) $(1)/etc/config
