@@ -1,0 +1,709 @@
+From 48c4ac976ae995f263cde8f09578de86bc8e9f1d Mon Sep 17 00:00:00 2001
+From: David Daney <david.daney@cavium.com>
+Date: Mon, 13 May 2013 13:56:44 -0700
+Subject: [PATCH 2/3] Revert "MIPS: Allow ASID size to be determined at boot
+ time."
+
+This reverts commit d532f3d26716a39dfd4b88d687bd344fbe77e390.
+
+The original commit has several problems:
+
+1) Doesn't work with 64-bit kernels.
+
+2) Calls TLBMISS_HANDLER_SETUP() before the code is generated.
+
+3) Calls TLBMISS_HANDLER_SETUP() twice in per_cpu_trap_init() when
+   only one call is needed.
+
+[ralf@linux-mips.org: Also revert the bits of the ASID patch which were
+hidden in the KVM merge.]
+
+Signed-off-by: David Daney <david.daney@cavium.com>
+Cc: linux-mips@linux-mips.org
+Cc: linux-kernel@vger.kernel.org
+Cc: "Steven J. Hill" <Steven.Hill@imgtec.com>
+Cc: David Daney <david.daney@cavium.com>
+Patchwork: https://patchwork.linux-mips.org/patch/5242/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/include/asm/kvm_host.h    |    2 +-
+ arch/mips/include/asm/mmu_context.h |   95 +++++++++++++----------------------
+ arch/mips/kernel/genex.S            |    2 +-
+ arch/mips/kernel/smtc.c             |   10 ++--
+ arch/mips/kernel/traps.c            |    6 +--
+ arch/mips/kvm/kvm_mips_emul.c       |   29 ++++++-----
+ arch/mips/kvm/kvm_tlb.c             |   26 ++++++----
+ arch/mips/lib/dump_tlb.c            |    5 +-
+ arch/mips/lib/r3k_dump_tlb.c        |    7 ++-
+ arch/mips/mm/tlb-r3k.c              |   20 ++++----
+ arch/mips/mm/tlb-r4k.c              |    2 +-
+ arch/mips/mm/tlb-r8k.c              |    2 +-
+ arch/mips/mm/tlbex.c                |   49 ------------------
+ 13 files changed, 93 insertions(+), 162 deletions(-)
+
+--- a/arch/mips/include/asm/kvm_host.h
++++ b/arch/mips/include/asm/kvm_host.h
+@@ -336,7 +336,7 @@ enum emulation_result {
+ #define VPN2_MASK           0xffffe000
+ #define TLB_IS_GLOBAL(x)    (((x).tlb_lo0 & MIPS3_PG_G) && ((x).tlb_lo1 & MIPS3_PG_G))
+ #define TLB_VPN2(x)         ((x).tlb_hi & VPN2_MASK)
+-#define TLB_ASID(x)         (ASID_MASK((x).tlb_hi))
++#define TLB_ASID(x)         ((x).tlb_hi & ASID_MASK)
+ #define TLB_IS_VALID(x, va) (((va) & (1 << PAGE_SHIFT)) ? ((x).tlb_lo1 & MIPS3_PG_V) : ((x).tlb_lo0 & MIPS3_PG_V))
+ 
+ struct kvm_mips_tlb {
+--- a/arch/mips/include/asm/mmu_context.h
++++ b/arch/mips/include/asm/mmu_context.h
+@@ -67,68 +67,45 @@ extern unsigned long pgd_current[];
+ 	TLBMISS_HANDLER_SETUP_PGD(swapper_pg_dir)
+ #endif
+ #endif /* CONFIG_MIPS_PGD_C0_CONTEXT*/
++#if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
+ 
+-#define ASID_INC(asid)						\
+-({								\
+-	unsigned long __asid = asid;				\
+-	__asm__("1:\taddiu\t%0,1\t\t\t\t# patched\n\t"		\
+-	".section\t__asid_inc,\"a\"\n\t"			\
+-	".word\t1b\n\t"						\
+-	".previous"						\
+-	:"=r" (__asid)						\
+-	:"0" (__asid));						\
+-	__asid;							\
+-})
+-#define ASID_MASK(asid)						\
+-({								\
+-	unsigned long __asid = asid;				\
+-	__asm__("1:\tandi\t%0,%1,0xfc0\t\t\t# patched\n\t"	\
+-	".section\t__asid_mask,\"a\"\n\t"			\
+-	".word\t1b\n\t"						\
+-	".previous"						\
+-	:"=r" (__asid)						\
+-	:"r" (__asid));						\
+-	__asid;							\
+-})
+-#define ASID_VERSION_MASK					\
+-({								\
+-	unsigned long __asid;					\
+-	__asm__("1:\taddiu\t%0,$0,0xff00\t\t\t\t# patched\n\t"	\
+-	".section\t__asid_version_mask,\"a\"\n\t"		\
+-	".word\t1b\n\t"						\
+-	".previous"						\
+-	:"=r" (__asid));					\
+-	__asid;							\
+-})
+-#define ASID_FIRST_VERSION					\
+-({								\
+-	unsigned long __asid = asid;				\
+-	__asm__("1:\tli\t%0,0x100\t\t\t\t# patched\n\t"		\
+-	".section\t__asid_first_version,\"a\"\n\t"		\
+-	".word\t1b\n\t"						\
+-	".previous"						\
+-	:"=r" (__asid));					\
+-	__asid;							\
+-})
+-
+-#define ASID_FIRST_VERSION_R3000	0x1000
+-#define ASID_FIRST_VERSION_R4000	0x100
+-#define ASID_FIRST_VERSION_R8000	0x1000
+-#define ASID_FIRST_VERSION_RM9000	0x1000
++#define ASID_INC	0x40
++#define ASID_MASK	0xfc0
++
++#elif defined(CONFIG_CPU_R8000)
++
++#define ASID_INC	0x10
++#define ASID_MASK	0xff0
++
++#elif defined(CONFIG_MIPS_MT_SMTC)
++
++#define ASID_INC	0x1
++extern unsigned long smtc_asid_mask;
++#define ASID_MASK	(smtc_asid_mask)
++#define HW_ASID_MASK	0xff
++/* End SMTC/34K debug hack */
++#else /* FIXME: not correct for R6000 */
++
++#define ASID_INC	0x1
++#define ASID_MASK	0xff
+ 
+-#ifdef CONFIG_MIPS_MT_SMTC
+-#define SMTC_HW_ASID_MASK		0xff
+-extern unsigned int smtc_asid_mask;
+ #endif
+ 
+ #define cpu_context(cpu, mm)	((mm)->context.asid[cpu])
+-#define cpu_asid(cpu, mm)	ASID_MASK(cpu_context((cpu), (mm)))
++#define cpu_asid(cpu, mm)	(cpu_context((cpu), (mm)) & ASID_MASK)
+ #define asid_cache(cpu)		(cpu_data[cpu].asid_cache)
+ 
+ static inline void enter_lazy_tlb(struct mm_struct *mm, struct task_struct *tsk)
+ {
+ }
+ 
++/*
++ *  All unused by hardware upper bits will be considered
++ *  as a software asid extension.
++ */
++#define ASID_VERSION_MASK  ((unsigned long)~(ASID_MASK|(ASID_MASK-1)))
++#define ASID_FIRST_VERSION ((unsigned long)(~ASID_VERSION_MASK) + 1)
++
+ #ifndef CONFIG_MIPS_MT_SMTC
+ /* Normal, classic MIPS get_new_mmu_context */
+ static inline void
+@@ -137,7 +114,7 @@ get_new_mmu_context(struct mm_struct *mm
+ 	extern void kvm_local_flush_tlb_all(void);
+ 	unsigned long asid = asid_cache(cpu);
+ 
+-	if (!ASID_MASK((asid = ASID_INC(asid)))) {
++	if (! ((asid += ASID_INC) & ASID_MASK) ) {
+ 		if (cpu_has_vtag_icache)
+ 			flush_icache_all();
+ #ifdef CONFIG_VIRTUALIZATION
+@@ -200,7 +177,7 @@ static inline void switch_mm(struct mm_s
+ 	 * free up the ASID value for use and flush any old
+ 	 * instances of it from the TLB.
+ 	 */
+-	oldasid = ASID_MASK(read_c0_entryhi());
++	oldasid = (read_c0_entryhi() & ASID_MASK);
+ 	if(smtc_live_asid[mytlb][oldasid]) {
+ 		smtc_live_asid[mytlb][oldasid] &= ~(0x1 << cpu);
+ 		if(smtc_live_asid[mytlb][oldasid] == 0)
+@@ -211,7 +188,7 @@ static inline void switch_mm(struct mm_s
+ 	 * having ASID_MASK smaller than the hardware maximum,
+ 	 * make sure no "soft" bits become "hard"...
+ 	 */
+-	write_c0_entryhi((read_c0_entryhi() & ~SMTC_HW_ASID_MASK) |
++	write_c0_entryhi((read_c0_entryhi() & ~HW_ASID_MASK) |
+ 			 cpu_asid(cpu, next));
+ 	ehb(); /* Make sure it propagates to TCStatus */
+ 	evpe(mtflags);
+@@ -264,15 +241,15 @@ activate_mm(struct mm_struct *prev, stru
+ #ifdef CONFIG_MIPS_MT_SMTC
+ 	/* See comments for similar code above */
+ 	mtflags = dvpe();
+-	oldasid = ASID_MASK(read_c0_entryhi());
++	oldasid = read_c0_entryhi() & ASID_MASK;
+ 	if(smtc_live_asid[mytlb][oldasid]) {
+ 		smtc_live_asid[mytlb][oldasid] &= ~(0x1 << cpu);
+ 		if(smtc_live_asid[mytlb][oldasid] == 0)
+ 			 smtc_flush_tlb_asid(oldasid);
+ 	}
+ 	/* See comments for similar code above */
+-	write_c0_entryhi((read_c0_entryhi() & ~SMTC_HW_ASID_MASK) |
+-	                 cpu_asid(cpu, next));
++	write_c0_entryhi((read_c0_entryhi() & ~HW_ASID_MASK) |
++			 cpu_asid(cpu, next));
+ 	ehb(); /* Make sure it propagates to TCStatus */
+ 	evpe(mtflags);
+ #else
+@@ -309,14 +286,14 @@ drop_mmu_context(struct mm_struct *mm, u
+ #ifdef CONFIG_MIPS_MT_SMTC
+ 		/* See comments for similar code above */
+ 		prevvpe = dvpe();
+-		oldasid = ASID_MASK(read_c0_entryhi());
++		oldasid = (read_c0_entryhi() & ASID_MASK);
+ 		if (smtc_live_asid[mytlb][oldasid]) {
+ 			smtc_live_asid[mytlb][oldasid] &= ~(0x1 << cpu);
+ 			if(smtc_live_asid[mytlb][oldasid] == 0)
+ 				smtc_flush_tlb_asid(oldasid);
+ 		}
+ 		/* See comments for similar code above */
+-		write_c0_entryhi((read_c0_entryhi() & ~SMTC_HW_ASID_MASK)
++		write_c0_entryhi((read_c0_entryhi() & ~HW_ASID_MASK)
+ 				| cpu_asid(cpu, mm));
+ 		ehb(); /* Make sure it propagates to TCStatus */
+ 		evpe(prevvpe);
+--- a/arch/mips/kernel/genex.S
++++ b/arch/mips/kernel/genex.S
+@@ -493,7 +493,7 @@ NESTED(nmi_handler, PT_SIZE, sp)
+ 	.set	noreorder
+ 	/* check if TLB contains a entry for EPC */
+ 	MFC0	k1, CP0_ENTRYHI
+-	andi	k1, 0xff	/* ASID_MASK patched at run-time!! */
++	andi	k1, 0xff	/* ASID_MASK */
+ 	MFC0	k0, CP0_EPC
+ 	PTR_SRL k0, _PAGE_SHIFT + 1
+ 	PTR_SLL k0, _PAGE_SHIFT + 1
+--- a/arch/mips/kernel/smtc.c
++++ b/arch/mips/kernel/smtc.c
+@@ -111,7 +111,7 @@ static int vpe0limit;
+ static int ipibuffers;
+ static int nostlb;
+ static int asidmask;
+-unsigned int smtc_asid_mask = 0xff;
++unsigned long smtc_asid_mask = 0xff;
+ 
+ static int __init vpe0tcs(char *str)
+ {
+@@ -1395,7 +1395,7 @@ void smtc_get_new_mmu_context(struct mm_
+ 	asid = asid_cache(cpu);
+ 
+ 	do {
+-		if (!ASID_MASK(ASID_INC(asid))) {
++		if (!((asid += ASID_INC) & ASID_MASK) ) {
+ 			if (cpu_has_vtag_icache)
+ 				flush_icache_all();
+ 			/* Traverse all online CPUs (hack requires contiguous range) */
+@@ -1414,7 +1414,7 @@ void smtc_get_new_mmu_context(struct mm_
+ 						mips_ihb();
+ 					}
+ 					tcstat = read_tc_c0_tcstatus();
+-					smtc_live_asid[tlb][ASID_MASK(tcstat)] |= (asiduse)(0x1 << i);
++					smtc_live_asid[tlb][(tcstat & ASID_MASK)] |= (asiduse)(0x1 << i);
+ 					if (!prevhalt)
+ 						write_tc_c0_tchalt(0);
+ 				}
+@@ -1423,7 +1423,7 @@ void smtc_get_new_mmu_context(struct mm_
+ 				asid = ASID_FIRST_VERSION;
+ 			local_flush_tlb_all();	/* start new asid cycle */
+ 		}
+-	} while (smtc_live_asid[tlb][ASID_MASK(asid)]);
++	} while (smtc_live_asid[tlb][(asid & ASID_MASK)]);
+ 
+ 	/*
+ 	 * SMTC shares the TLB within VPEs and possibly across all VPEs.
+@@ -1461,7 +1461,7 @@ void smtc_flush_tlb_asid(unsigned long a
+ 		tlb_read();
+ 		ehb();
+ 		ehi = read_c0_entryhi();
+-		if (ASID_MASK(ehi) == asid) {
++		if ((ehi & ASID_MASK) == asid) {
+ 		    /*
+ 		     * Invalidate only entries with specified ASID,
+ 		     * makiing sure all entries differ.
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
+@@ -1656,7 +1656,6 @@ void __cpuinit per_cpu_trap_init(bool is
+ 	unsigned int cpu = smp_processor_id();
+ 	unsigned int status_set = ST0_CU0;
+ 	unsigned int hwrena = cpu_hwrena_impl_bits;
+-	unsigned long asid = 0;
+ #ifdef CONFIG_MIPS_MT_SMTC
+ 	int secondaryTC = 0;
+ 	int bootTC = (cpu == 0);
+@@ -1740,9 +1739,8 @@ void __cpuinit per_cpu_trap_init(bool is
+ 	}
+ #endif /* CONFIG_MIPS_MT_SMTC */
+ 
+-	asid = ASID_FIRST_VERSION;
+-	cpu_data[cpu].asid_cache = asid;
+-	TLBMISS_HANDLER_SETUP();
++	if (!cpu_data[cpu].asid_cache)
++		cpu_data[cpu].asid_cache = ASID_FIRST_VERSION;
+ 
+ 	atomic_inc(&init_mm.mm_count);
+ 	current->active_mm = &init_mm;
+--- a/arch/mips/kvm/kvm_mips_emul.c
++++ b/arch/mips/kvm/kvm_mips_emul.c
+@@ -525,16 +525,18 @@ kvm_mips_emulate_CP0(uint32_t inst, uint
+ 				printk("MTCz, cop0->reg[EBASE]: %#lx\n",
+ 				       kvm_read_c0_guest_ebase(cop0));
+ 			} else if (rd == MIPS_CP0_TLB_HI && sel == 0) {
+-				uint32_t nasid = ASID_MASK(vcpu->arch.gprs[rt]);
++				uint32_t nasid =
++				    vcpu->arch.gprs[rt] & ASID_MASK;
+ 				if ((KSEGX(vcpu->arch.gprs[rt]) != CKSEG0)
+ 				    &&
+-				    (ASID_MASK(kvm_read_c0_guest_entryhi(cop0))
+-				      != nasid)) {
++				    ((kvm_read_c0_guest_entryhi(cop0) &
++				      ASID_MASK) != nasid)) {
+ 
+ 					kvm_debug
+ 					    ("MTCz, change ASID from %#lx to %#lx\n",
+-					     ASID_MASK(kvm_read_c0_guest_entryhi(cop0)),
+-					     ASID_MASK(vcpu->arch.gprs[rt]));
++					     kvm_read_c0_guest_entryhi(cop0) &
++					     ASID_MASK,
++					     vcpu->arch.gprs[rt] & ASID_MASK);
+ 
+ 					/* Blow away the shadow host TLBs */
+ 					kvm_mips_flush_host_tlb(1);
+@@ -986,7 +988,8 @@ kvm_mips_emulate_cache(uint32_t inst, ui
+ 		 * resulting handler will do the right thing
+ 		 */
+ 		index = kvm_mips_guest_tlb_lookup(vcpu, (va & VPN2_MASK) |
+-						  ASID_MASK(kvm_read_c0_guest_entryhi(cop0)));
++						  (kvm_read_c0_guest_entryhi
++						   (cop0) & ASID_MASK));
+ 
+ 		if (index < 0) {
+ 			vcpu->arch.host_cp0_entryhi = (va & VPN2_MASK);
+@@ -1151,7 +1154,7 @@ kvm_mips_emulate_tlbmiss_ld(unsigned lon
+ 	struct kvm_vcpu_arch *arch = &vcpu->arch;
+ 	enum emulation_result er = EMULATE_DONE;
+ 	unsigned long entryhi = (vcpu->arch.  host_cp0_badvaddr & VPN2_MASK) |
+-				ASID_MASK(kvm_read_c0_guest_entryhi(cop0));
++				(kvm_read_c0_guest_entryhi(cop0) & ASID_MASK);
+ 
+ 	if ((kvm_read_c0_guest_status(cop0) & ST0_EXL) == 0) {
+ 		/* save old pc */
+@@ -1198,7 +1201,7 @@ kvm_mips_emulate_tlbinv_ld(unsigned long
+ 	enum emulation_result er = EMULATE_DONE;
+ 	unsigned long entryhi =
+ 		(vcpu->arch.host_cp0_badvaddr & VPN2_MASK) |
+-		ASID_MASK(kvm_read_c0_guest_entryhi(cop0));
++		(kvm_read_c0_guest_entryhi(cop0) & ASID_MASK);
+ 
+ 	if ((kvm_read_c0_guest_status(cop0) & ST0_EXL) == 0) {
+ 		/* save old pc */
+@@ -1243,7 +1246,7 @@ kvm_mips_emulate_tlbmiss_st(unsigned lon
+ 	struct kvm_vcpu_arch *arch = &vcpu->arch;
+ 	enum emulation_result er = EMULATE_DONE;
+ 	unsigned long entryhi = (vcpu->arch.host_cp0_badvaddr & VPN2_MASK) |
+-				ASID_MASK(kvm_read_c0_guest_entryhi(cop0));
++				(kvm_read_c0_guest_entryhi(cop0) & ASID_MASK);
+ 
+ 	if ((kvm_read_c0_guest_status(cop0) & ST0_EXL) == 0) {
+ 		/* save old pc */
+@@ -1287,7 +1290,7 @@ kvm_mips_emulate_tlbinv_st(unsigned long
+ 	struct kvm_vcpu_arch *arch = &vcpu->arch;
+ 	enum emulation_result er = EMULATE_DONE;
+ 	unsigned long entryhi = (vcpu->arch.host_cp0_badvaddr & VPN2_MASK) |
+-		ASID_MASK(kvm_read_c0_guest_entryhi(cop0));
++		(kvm_read_c0_guest_entryhi(cop0) & ASID_MASK);
+ 
+ 	if ((kvm_read_c0_guest_status(cop0) & ST0_EXL) == 0) {
+ 		/* save old pc */
+@@ -1356,7 +1359,7 @@ kvm_mips_emulate_tlbmod(unsigned long ca
+ {
+ 	struct mips_coproc *cop0 = vcpu->arch.cop0;
+ 	unsigned long entryhi = (vcpu->arch.host_cp0_badvaddr & VPN2_MASK) |
+-				ASID_MASK(kvm_read_c0_guest_entryhi(cop0));
++				(kvm_read_c0_guest_entryhi(cop0) & ASID_MASK);
+ 	struct kvm_vcpu_arch *arch = &vcpu->arch;
+ 	enum emulation_result er = EMULATE_DONE;
+ 
+@@ -1783,8 +1786,8 @@ kvm_mips_handle_tlbmiss(unsigned long ca
+ 	 */
+ 	index = kvm_mips_guest_tlb_lookup(vcpu,
+ 					  (va & VPN2_MASK) |
+-					  ASID_MASK(kvm_read_c0_guest_entryhi
+-					   (vcpu->arch.cop0)));
++					  (kvm_read_c0_guest_entryhi
++					   (vcpu->arch.cop0) & ASID_MASK));
+ 	if (index < 0) {
+ 		if (exccode == T_TLB_LD_MISS) {
+ 			er = kvm_mips_emulate_tlbmiss_ld(cause, opc, run, vcpu);
+--- a/arch/mips/kvm/kvm_tlb.c
++++ b/arch/mips/kvm/kvm_tlb.c
+@@ -51,13 +51,13 @@ EXPORT_SYMBOL(kvm_mips_is_error_pfn);
+ 
+ uint32_t kvm_mips_get_kernel_asid(struct kvm_vcpu *vcpu)
+ {
+-	return ASID_MASK(vcpu->arch.guest_kernel_asid[smp_processor_id()]);
++	return vcpu->arch.guest_kernel_asid[smp_processor_id()] & ASID_MASK;
+ }
+ 
+ 
+ uint32_t kvm_mips_get_user_asid(struct kvm_vcpu *vcpu)
+ {
+-	return ASID_MASK(vcpu->arch.guest_user_asid[smp_processor_id()]);
++	return vcpu->arch.guest_user_asid[smp_processor_id()] & ASID_MASK;
+ }
+ 
+ inline uint32_t kvm_mips_get_commpage_asid (struct kvm_vcpu *vcpu)
+@@ -84,7 +84,7 @@ void kvm_mips_dump_host_tlbs(void)
+ 	old_pagemask = read_c0_pagemask();
+ 
+ 	printk("HOST TLBs:\n");
+-	printk("ASID: %#lx\n", ASID_MASK(read_c0_entryhi()));
++	printk("ASID: %#lx\n", read_c0_entryhi() & ASID_MASK);
+ 
+ 	for (i = 0; i < current_cpu_data.tlbsize; i++) {
+ 		write_c0_index(i);
+@@ -428,7 +428,7 @@ int kvm_mips_guest_tlb_lookup(struct kvm
+ 
+ 	for (i = 0; i < KVM_MIPS_GUEST_TLB_SIZE; i++) {
+ 		if (((TLB_VPN2(tlb[i]) & ~tlb[i].tlb_mask) == ((entryhi & VPN2_MASK) & ~tlb[i].tlb_mask)) &&
+-			(TLB_IS_GLOBAL(tlb[i]) || (TLB_ASID(tlb[i]) == ASID_MASK(entryhi)))) {
++			(TLB_IS_GLOBAL(tlb[i]) || (TLB_ASID(tlb[i]) == (entryhi & ASID_MASK)))) {
+ 			index = i;
+ 			break;
+ 		}
+@@ -626,7 +626,7 @@ kvm_get_new_mmu_context(struct mm_struct
+ {
+ 	unsigned long asid = asid_cache(cpu);
+ 
+-	if (!(ASID_MASK(ASID_INC(asid)))) {
++	if (!((asid += ASID_INC) & ASID_MASK)) {
+ 		if (cpu_has_vtag_icache) {
+ 			flush_icache_all();
+ 		}
+@@ -804,7 +804,8 @@ void kvm_arch_vcpu_load(struct kvm_vcpu
+ 	if (!newasid) {
+ 		/* If we preempted while the guest was executing, then reload the pre-empted ASID */
+ 		if (current->flags & PF_VCPU) {
+-			write_c0_entryhi(ASID_MASK(vcpu->arch.preempt_entryhi));
++			write_c0_entryhi(vcpu->arch.
++					 preempt_entryhi & ASID_MASK);
+ 			ehb();
+ 		}
+ 	} else {
+@@ -816,11 +817,13 @@ void kvm_arch_vcpu_load(struct kvm_vcpu
+ 		 */
+ 		if (current->flags & PF_VCPU) {
+ 			if (KVM_GUEST_KERNEL_MODE(vcpu))
+-				write_c0_entryhi(ASID_MASK(vcpu->arch.
+-						 guest_kernel_asid[cpu]));
++				write_c0_entryhi(vcpu->arch.
++						 guest_kernel_asid[cpu] &
++						 ASID_MASK);
+ 			else
+-				write_c0_entryhi(ASID_MASK(vcpu->arch.
+-						 guest_user_asid[cpu]));
++				write_c0_entryhi(vcpu->arch.
++						 guest_user_asid[cpu] &
++						 ASID_MASK);
+ 			ehb();
+ 		}
+ 	}
+@@ -879,7 +882,8 @@ uint32_t kvm_get_inst(uint32_t *opc, str
+ 			    kvm_mips_guest_tlb_lookup(vcpu,
+ 						      ((unsigned long) opc & VPN2_MASK)
+ 						      |
+-						      ASID_MASK(kvm_read_c0_guest_entryhi(cop0)));
++						      (kvm_read_c0_guest_entryhi
++						       (cop0) & ASID_MASK));
+ 			if (index < 0) {
+ 				kvm_err
+ 				    ("%s: get_user_failed for %p, vcpu: %p, ASID: %#lx\n",
+--- a/arch/mips/lib/dump_tlb.c
++++ b/arch/mips/lib/dump_tlb.c
+@@ -11,7 +11,6 @@
+ #include <asm/page.h>
+ #include <asm/pgtable.h>
+ #include <asm/tlbdebug.h>
+-#include <asm/mmu_context.h>
+ 
+ static inline const char *msk2str(unsigned int mask)
+ {
+@@ -56,7 +55,7 @@ static void dump_tlb(int first, int last
+ 	s_pagemask = read_c0_pagemask();
+ 	s_entryhi = read_c0_entryhi();
+ 	s_index = read_c0_index();
+-	asid = ASID_MASK(s_entryhi);
++	asid = s_entryhi & 0xff;
+ 
+ 	for (i = first; i <= last; i++) {
+ 		write_c0_index(i);
+@@ -86,7 +85,7 @@ static void dump_tlb(int first, int last
+ 
+ 			printk("va=%0*lx asid=%02lx\n",
+ 			       width, (entryhi & ~0x1fffUL),
+-			       ASID_MASK(entryhi));
++			       entryhi & 0xff);
+ 			printk("\t[pa=%0*llx c=%d d=%d v=%d g=%d] ",
+ 			       width,
+ 			       (entrylo0 << 6) & PAGE_MASK, c0,
+--- a/arch/mips/lib/r3k_dump_tlb.c
++++ b/arch/mips/lib/r3k_dump_tlb.c
+@@ -9,7 +9,6 @@
+ #include <linux/mm.h>
+ 
+ #include <asm/mipsregs.h>
+-#include <asm/mmu_context.h>
+ #include <asm/page.h>
+ #include <asm/pgtable.h>
+ #include <asm/tlbdebug.h>
+@@ -22,7 +21,7 @@ static void dump_tlb(int first, int last
+ 	unsigned int asid;
+ 	unsigned long entryhi, entrylo0;
+ 
+-	asid = ASID_MASK(read_c0_entryhi());
++	asid = read_c0_entryhi() & 0xfc0;
+ 
+ 	for (i = first; i <= last; i++) {
+ 		write_c0_index(i<<8);
+@@ -36,7 +35,7 @@ static void dump_tlb(int first, int last
+ 
+ 		/* Unused entries have a virtual address of KSEG0.  */
+ 		if ((entryhi & 0xffffe000) != 0x80000000
+-		    && (ASID_MASK(entryhi) == asid)) {
++		    && (entryhi & 0xfc0) == asid) {
+ 			/*
+ 			 * Only print entries in use
+ 			 */
+@@ -45,7 +44,7 @@ static void dump_tlb(int first, int last
+ 			printk("va=%08lx asid=%08lx"
+ 			       "  [pa=%06lx n=%d d=%d v=%d g=%d]",
+ 			       (entryhi & 0xffffe000),
+-			       ASID_MASK(entryhi),
++			       entryhi & 0xfc0,
+ 			       entrylo0 & PAGE_MASK,
+ 			       (entrylo0 & (1 << 11)) ? 1 : 0,
+ 			       (entrylo0 & (1 << 10)) ? 1 : 0,
+--- a/arch/mips/mm/tlb-r3k.c
++++ b/arch/mips/mm/tlb-r3k.c
+@@ -51,7 +51,7 @@ void local_flush_tlb_all(void)
+ #endif
+ 
+ 	local_irq_save(flags);
+-	old_ctx = ASID_MASK(read_c0_entryhi());
++	old_ctx = read_c0_entryhi() & ASID_MASK;
+ 	write_c0_entrylo0(0);
+ 	entry = r3k_have_wired_reg ? read_c0_wired() : 8;
+ 	for (; entry < current_cpu_data.tlbsize; entry++) {
+@@ -87,13 +87,13 @@ void local_flush_tlb_range(struct vm_are
+ 
+ #ifdef DEBUG_TLB
+ 		printk("[tlbrange<%lu,0x%08lx,0x%08lx>]",
+-			ASID_MASK(cpu_context(cpu, mm)), start, end);
++			cpu_context(cpu, mm) & ASID_MASK, start, end);
+ #endif
+ 		local_irq_save(flags);
+ 		size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
+ 		if (size <= current_cpu_data.tlbsize) {
+-			int oldpid = ASID_MASK(read_c0_entryhi());
+-			int newpid = ASID_MASK(cpu_context(cpu, mm));
++			int oldpid = read_c0_entryhi() & ASID_MASK;
++			int newpid = cpu_context(cpu, mm) & ASID_MASK;
+ 
+ 			start &= PAGE_MASK;
+ 			end += PAGE_SIZE - 1;
+@@ -166,10 +166,10 @@ void local_flush_tlb_page(struct vm_area
+ #ifdef DEBUG_TLB
+ 		printk("[tlbpage<%lu,0x%08lx>]", cpu_context(cpu, vma->vm_mm), page);
+ #endif
+-		newpid = ASID_MASK(cpu_context(cpu, vma->vm_mm));
++		newpid = cpu_context(cpu, vma->vm_mm) & ASID_MASK;
+ 		page &= PAGE_MASK;
+ 		local_irq_save(flags);
+-		oldpid = ASID_MASK(read_c0_entryhi());
++		oldpid = read_c0_entryhi() & ASID_MASK;
+ 		write_c0_entryhi(page | newpid);
+ 		BARRIER;
+ 		tlb_probe();
+@@ -197,10 +197,10 @@ void __update_tlb(struct vm_area_struct
+ 	if (current->active_mm != vma->vm_mm)
+ 		return;
+ 
+-	pid = ASID_MASK(read_c0_entryhi());
++	pid = read_c0_entryhi() & ASID_MASK;
+ 
+ #ifdef DEBUG_TLB
+-	if ((pid != ASID_MASK(cpu_context(cpu, vma->vm_mm))) || (cpu_context(cpu, vma->vm_mm) == 0)) {
++	if ((pid != (cpu_context(cpu, vma->vm_mm) & ASID_MASK)) || (cpu_context(cpu, vma->vm_mm) == 0)) {
+ 		printk("update_mmu_cache: Wheee, bogus tlbpid mmpid=%lu tlbpid=%d\n",
+ 		       (cpu_context(cpu, vma->vm_mm)), pid);
+ 	}
+@@ -241,7 +241,7 @@ void add_wired_entry(unsigned long entry
+ 
+ 		local_irq_save(flags);
+ 		/* Save old context and create impossible VPN2 value */
+-		old_ctx = ASID_MASK(read_c0_entryhi());
++		old_ctx = read_c0_entryhi() & ASID_MASK;
+ 		old_pagemask = read_c0_pagemask();
+ 		w = read_c0_wired();
+ 		write_c0_wired(w + 1);
+@@ -264,7 +264,7 @@ void add_wired_entry(unsigned long entry
+ #endif
+ 
+ 		local_irq_save(flags);
+-		old_ctx = ASID_MASK(read_c0_entryhi());
++		old_ctx = read_c0_entryhi() & ASID_MASK;
+ 		write_c0_entrylo0(entrylo0);
+ 		write_c0_entryhi(entryhi);
+ 		write_c0_index(wired);
+--- a/arch/mips/mm/tlb-r4k.c
++++ b/arch/mips/mm/tlb-r4k.c
+@@ -287,7 +287,7 @@ void __update_tlb(struct vm_area_struct
+ 
+ 	ENTER_CRITICAL(flags);
+ 
+-	pid = ASID_MASK(read_c0_entryhi());
++	pid = read_c0_entryhi() & ASID_MASK;
+ 	address &= (PAGE_MASK << 1);
+ 	write_c0_entryhi(address | pid);
+ 	pgdp = pgd_offset(vma->vm_mm, address);
+--- a/arch/mips/mm/tlb-r8k.c
++++ b/arch/mips/mm/tlb-r8k.c
+@@ -195,7 +195,7 @@ void __update_tlb(struct vm_area_struct
+ 	if (current->active_mm != vma->vm_mm)
+ 		return;
+ 
+-	pid = ASID_MASK(read_c0_entryhi());
++	pid = read_c0_entryhi() & ASID_MASK;
+ 
+ 	local_irq_save(flags);
+ 	address &= PAGE_MASK;
+--- a/arch/mips/mm/tlbex.c
++++ b/arch/mips/mm/tlbex.c
+@@ -29,7 +29,6 @@
+ #include <linux/init.h>
+ #include <linux/cache.h>
+ 
+-#include <asm/mmu_context.h>
+ #include <asm/cacheflush.h>
+ #include <asm/pgtable.h>
+ #include <asm/war.h>
+@@ -306,48 +305,6 @@ static struct uasm_reloc relocs[128] __c
+ static int check_for_high_segbits __cpuinitdata;
+ #endif
+ 
+-static void __cpuinit insn_fixup(unsigned int **start, unsigned int **stop,
+-					unsigned int i_const)
+-{
+-	unsigned int **p, *ip;
+-
+-	for (p = start; p < stop; p++) {
+-		ip = *p;
+-		*ip = (*ip & 0xffff0000) | i_const;
+-	}
+-	local_flush_icache_range((unsigned long)*p, (unsigned long)((*p) + 1));
+-}
+-
+-#define asid_insn_fixup(section, const)					\
+-do {									\
+-	extern unsigned int *__start_ ## section;			\
+-	extern unsigned int *__stop_ ## section;			\
+-	insn_fixup(&__start_ ## section, &__stop_ ## section, const);	\
+-} while(0)
+-
+-/*
+- * Caller is assumed to flush the caches before the first context switch.
+- */
+-static void __cpuinit setup_asid(unsigned int inc, unsigned int mask,
+-				 unsigned int version_mask,
+-				 unsigned int first_version)
+-{
+-	extern asmlinkage void handle_ri_rdhwr_vivt(void);
+-	unsigned long *vivt_exc;
+-
+-	asid_insn_fixup(__asid_inc, inc);
+-	asid_insn_fixup(__asid_mask, mask);
+-	asid_insn_fixup(__asid_version_mask, version_mask);
+-	asid_insn_fixup(__asid_first_version, first_version);
+-
+-	/* Patch up the 'handle_ri_rdhwr_vivt' handler. */
+-	vivt_exc = (unsigned long *) &handle_ri_rdhwr_vivt;
+-	vivt_exc++;
+-	*vivt_exc = (*vivt_exc & ~mask) | mask;
+-
+-	current_cpu_data.asid_cache = first_version;
+-}
+-
+ static int check_for_high_segbits __cpuinitdata;
+ 
+ static unsigned int kscratch_used_mask __cpuinitdata;
+@@ -2226,7 +2183,6 @@ void __cpuinit build_tlb_refill_handler(
+ 	case CPU_TX3922:
+ 	case CPU_TX3927:
+ #ifndef CONFIG_MIPS_PGD_C0_CONTEXT
+-		setup_asid(0x40, 0xfc0, 0xf000, ASID_FIRST_VERSION_R3000);
+ 		if (cpu_has_local_ebase)
+ 			build_r3000_tlb_refill_handler();
+ 		if (!run_once) {
+@@ -2252,11 +2208,6 @@ void __cpuinit build_tlb_refill_handler(
+ 		break;
+ 
+ 	default:
+-#ifndef CONFIG_MIPS_MT_SMTC
+-		setup_asid(0x1, 0xff, 0xff00, ASID_FIRST_VERSION_R4000);
+-#else
+-		setup_asid(0x1, smtc_asid_mask, 0xff00, ASID_FIRST_VERSION_R4000);
+-#endif
+ 		if (!run_once) {
+ 			scratch_reg = allocate_kscratch();
+ #ifdef CONFIG_MIPS_PGD_C0_CONTEXT
