@@ -15,7 +15,7 @@
  	/* 240-255: Unused at present */
 --- a/drivers/mtd/bcm63xxpart.c
 +++ b/drivers/mtd/bcm63xxpart.c
-@@ -134,7 +134,8 @@ static int bcm63xx_parse_cfe_partitions(
+@@ -110,7 +110,8 @@ static int bcm63xx_parse_cfe_partitions(
  		} else {
  			/* OpenWrt layout */
  			rootfsaddr = kerneladdr + kernellen;
