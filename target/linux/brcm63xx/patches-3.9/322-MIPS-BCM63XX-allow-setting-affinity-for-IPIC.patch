@@ -1,0 +1,61 @@
+From a8bb19e5ba9a3a73fe6a761295b67b641a7bc9df Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Fri, 26 Apr 2013 12:06:03 +0200
+Subject: [PATCH 13/13] MIPS: BCM63XX: allow setting affinity for IPIC
+
+Add support for setting the SMP affinity for the IPIC IRQs.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/bcm63xx/irq.c |   27 ++++++++++++++++++++++++++-
+ 1 file changed, 26 insertions(+), 1 deletion(-)
+
+--- a/arch/mips/bcm63xx/irq.c
++++ b/arch/mips/bcm63xx/irq.c
+@@ -418,9 +418,14 @@ static void bcm63xx_internal_irq_mask(st
+ static void bcm63xx_internal_irq_unmask(struct irq_data *d)
+ {
+ 	unsigned long flags;
++	const struct cpumask *dest = cpu_online_mask;
+ 
+ 	spin_lock_irqsave(&ipic_lock, flags);
+-	internal_irq_unmask(d->irq - IRQ_INTERNAL_BASE, cpu_online_mask);
++#ifdef CONFIG_SMP
++	if (irqd_affinity_was_set(d))
++		dest = d->affinity;
++#endif
++	internal_irq_unmask(d->irq - IRQ_INTERNAL_BASE, dest);
+ 	spin_unlock_irqrestore(&ipic_lock, flags);
+ }
+ 
+@@ -596,10 +601,30 @@ static int bcm63xx_external_irq_set_type
+ 	return IRQ_SET_MASK_OK_NOCOPY;
+ }
+ 
++#ifdef CONFIG_SMP
++static int bcm63xx_internal_set_affinity(struct irq_data *data,
++					 const struct cpumask *dest,
++					 bool force)
++{
++	unsigned int irq = data->irq - IRQ_INTERNAL_BASE;
++	unsigned long flags;
++
++	spin_lock_irqsave(&ipic_lock, flags);
++	if (!irqd_irq_disabled(data))
++		internal_irq_unmask(irq, dest);
++	spin_unlock_irqrestore(&ipic_lock, flags);
++
++	return 0;
++}
++#endif
++
+ static struct irq_chip bcm63xx_internal_irq_chip = {
+ 	.name		= "bcm63xx_ipic",
+ 	.irq_mask	= bcm63xx_internal_irq_mask,
+ 	.irq_unmask	= bcm63xx_internal_irq_unmask,
++#ifdef CONFIG_SMP
++	.irq_set_affinity = bcm63xx_internal_set_affinity,
++#endif
+ };
+ 
+ static struct irq_chip bcm63xx_external_irq_chip = {

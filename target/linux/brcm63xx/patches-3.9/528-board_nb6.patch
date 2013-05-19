@@ -1,0 +1,146 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -17,6 +17,7 @@
+ #include <linux/spi/spi.h>
+ #include <linux/spi/spi_gpio.h>
+ #include <linux/spi/74x164.h>
++#include <linux/rtl8367.h>
+ #include <asm/addrspace.h>
+ #include <bcm63xx_board.h>
+ #include <bcm63xx_cpu.h>
+@@ -53,6 +54,8 @@
+ #define NB4_SPI_GPIO_MOSI	7
+ #define NB4_SPI_GPIO_CLK	6
+ #define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
++#define NB6_GPIO_RTL8367_SDA	18
++#define NB6_GPIO_RTL8367_SCK	20
+ 
+ #define CT6373_PID_OFFSET		0xff80
+ #define CT6373_74X164_GPIO_BASE	64
+@@ -2630,6 +2633,103 @@ static struct board_info __initdata boar
+ };
+ #endif
+ 
++#ifdef CONFIG_BCM63XX_CPU_6362
++static struct rtl8367_extif_config nb6_rtl8367_extif0_cfg = {
++	.mode = RTL8367_EXTIF_MODE_RGMII,
++	.txdelay = 1,
++	.rxdelay = 5,
++	.ability = {
++		.force_mode = 1,
++		.txpause = 1,
++		.rxpause = 1,
++		.link = 1,
++		.duplex = 1,
++		.speed = RTL8367_PORT_SPEED_1000,
++	},
++};
++
++static struct rtl8367_platform_data nb6_rtl8367_data = {
++	.gpio_sda	= NB6_GPIO_RTL8367_SDA,
++	.gpio_sck	= NB6_GPIO_RTL8367_SCK,
++	.extif0_cfg	= &nb6_rtl8367_extif0_cfg,
++};
++
++static struct platform_device nb6_rtl8367_device = {
++	.name		= RTL8367_DRIVER_NAME,
++	.id		= -1,
++	.dev = {
++		.platform_data	= &nb6_rtl8367_data,
++	}
++};
++
++static struct platform_device * __initdata nb6_devices[] = {
++	&nb6_rtl8367_device,
++};
++
++static struct board_info __initdata board_nb6 = {
++	.name				= "NB6",
++	.expected_cpu_id		= 0x6362,
++
++	.has_uart0			= 1,
++
++	.has_ohci0			= 1,
++	.has_ehci0			= 1,
++
++	.has_enetsw			= 1,
++
++	.enetsw = {
++		.used_ports = {
++			[4] = {
++				.used	= 1,
++				.phy_id	= 0xff,
++				.bypass_link = 1,
++				.force_speed = 1000,
++				.force_duplex_full = 1,
++				.name	= "RGMII",
++			},
++		},
++	},
++
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 24,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 25,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++		{
++			.desc		= "wlan",
++			.gpio		= 12,
++			.type		= EV_KEY,
++			.code		= KEY_WLAN,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++		{
++			.desc		= "service",
++			.gpio		= 10,
++			.type		= EV_KEY,
++			.code		= BTN_0,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++	},
++
++	.devs = nb6_devices,
++	.num_devs = ARRAY_SIZE(nb6_devices),
++};
++#endif
++
+ /*
+  * known 6368 boards
+  */
+@@ -2826,6 +2926,10 @@ static const struct board_info __initcon
+ 	&board_DVAG3810BN,
+ #endif
+ 
++#ifdef CONFIG_BCM63XX_CPU_6362
++	&board_nb6,
++#endif
++
+ #ifdef CONFIG_BCM63XX_CPU_6368
+ 	&board_96368mvwg,
+ 	&board_96368mvngr,
+@@ -2893,6 +2997,11 @@ static void __init boardid_fixup(u8 *boo
+ 		}
+ 	}
+ 
++	if (BCMCPU_IS_6362() && (!strncmp(board_name, "NB6-", sizeof("NB6-") - 1))) {
++		board_name[sizeof("NB6") - 1] = '\0';
++		return ;
++	}
++
+ 	/* check if bcm_tag is at 64k offset */
+ 	if (strncmp(board_name, tag->board_id, BOARDID_LEN) != 0) {
+ 		/* else try 128k */
