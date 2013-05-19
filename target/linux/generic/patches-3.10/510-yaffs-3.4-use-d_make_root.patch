@@ -1,0 +1,14 @@
+--- a/fs/yaffs2/yaffs_vfs_glue.c
++++ b/fs/yaffs2/yaffs_vfs_glue.c
+@@ -3119,7 +3119,11 @@ static struct super_block *yaffs_interna
+ 
+ 	T(YAFFS_TRACE_OS, (TSTR("yaffs_read_super: got root inode\n")));
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
++	root = d_make_root(inode);
++#else
+ 	root = d_alloc_root(inode);
++#endif
+ 
+ 	T(YAFFS_TRACE_OS, (TSTR("yaffs_read_super: d_alloc_root done\n")));
+ 

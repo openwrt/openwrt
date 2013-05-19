@@ -1,0 +1,570 @@
+--- a/fs/yaffs2/yaffs_vfs_glue.c
++++ b/fs/yaffs2/yaffs_vfs_glue.c
+@@ -243,11 +243,10 @@ static inline void yaffs_dec_link_count(
+ }
+ #endif
+ 
+-
+ #define update_dir_time(dir) do {\
+ 			(dir)->i_ctime = (dir)->i_mtime = CURRENT_TIME; \
+ 		} while(0)
+-		
++
+ static void yaffs_put_super(struct super_block *sb);
+ 
+ static ssize_t yaffs_file_write(struct file *f, const char *buf, size_t n,
+@@ -397,6 +396,33 @@ static struct address_space_operations y
+ #endif
+ };
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0))
++#define YCRED_FSUID()	from_kuid(&init_user_ns, current_fsuid())
++#define YCRED_FSGID()	from_kgid(&init_user_ns, current_fsgid())
++#else
++#define YCRED_FSUID()	YCRED(current)->fsuid
++#define YCRED_FSGID()	YCRED(current)->fsgid
++
++static inline uid_t i_uid_read(const struct inode *inode)
++{
++	return inode->i_uid;
++}
++
++static inline gid_t i_gid_read(const struct inode *inode)
++{
++	return inode->i_gid;
++}
++
++static inline void i_uid_write(struct inode *inode, uid_t uid)
++{
++	inode->i_uid = uid;
++}
++
++static inline void i_gid_write(struct inode *inode, gid_t gid)
++{
++	inode->i_gid = gid;
++}
++#endif
+ 
+ #if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 22))
+ static const struct file_operations yaffs_file_operations = {
+@@ -549,7 +575,7 @@ static unsigned yaffs_gc_control_callbac
+ {
+ 	return yaffs_gc_control;
+ }
+-                	                                                                                          	
++
+ static void yaffs_gross_lock(yaffs_dev_t *dev)
+ {
+ 	T(YAFFS_TRACE_LOCK, (TSTR("yaffs locking %p\n"), current));
+@@ -1379,8 +1405,8 @@ static void yaffs_fill_inode_from_obj(st
+ 
+ 		inode->i_ino = obj->obj_id;
+ 		inode->i_mode = obj->yst_mode;
+-		inode->i_uid = obj->yst_uid;
+-		inode->i_gid = obj->yst_gid;
++		i_uid_write(inode, obj->yst_uid);
++		i_gid_write(inode, obj->yst_gid);
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19))
+ 		inode->i_blksize = inode->i_sb->s_blocksize;
+ #endif
+@@ -1406,7 +1432,7 @@ static void yaffs_fill_inode_from_obj(st
+ 
+ 		T(YAFFS_TRACE_OS,
+ 			(TSTR("yaffs_fill_inode mode %x uid %d gid %d size %d count %d\n"),
+-			inode->i_mode, inode->i_uid, inode->i_gid,
++			inode->i_mode, i_uid_read(inode), i_gid_read(inode),
+ 			(int)inode->i_size, atomic_read(&inode->i_count)));
+ 
+ 		switch (obj->yst_mode & S_IFMT) {
+@@ -1715,8 +1741,8 @@ static int yaffs_mknod(struct inode *dir
+ 	yaffs_obj_t *parent = yaffs_InodeToObject(dir);
+ 
+ 	int error = -ENOSPC;
+-	uid_t uid = YCRED(current)->fsuid;
+-	gid_t gid = (dir->i_mode & S_ISGID) ? dir->i_gid : YCRED(current)->fsgid;
++	uid_t uid = YCRED_FSUID();
++	gid_t gid = (dir->i_mode & S_ISGID) ? i_gid_read(dir) : YCRED_FSGID();
+ 
+ 	if ((dir->i_mode & S_ISGID) && S_ISDIR(mode))
+ 		mode |= S_ISGID;
+@@ -1892,8 +1918,8 @@ static int yaffs_symlink(struct inode *d
+ {
+ 	yaffs_obj_t *obj;
+ 	yaffs_dev_t *dev;
+-	uid_t uid = YCRED(current)->fsuid;
+-	gid_t gid = (dir->i_mode & S_ISGID) ? dir->i_gid : YCRED(current)->fsgid;
++	uid_t uid = YCRED_FSUID();
++	gid_t gid = (dir->i_mode & S_ISGID) ? i_gid_read(dir) : YCRED_FSGID();
+ 
+ 	T(YAFFS_TRACE_OS, (TSTR("yaffs_symlink\n")));
+ 
+@@ -2009,7 +2035,7 @@ static int yaffs_setattr(struct dentry *
+ 		(TSTR("yaffs_setattr of object %d\n"),
+ 		yaffs_InodeToObject(inode)->obj_id));
+ 
+-	/* Fail if a requested resize >= 2GB */		
++	/* Fail if a requested resize >= 2GB */
+ 	if (attr->ia_valid & ATTR_SIZE &&
+ 		(attr->ia_size >> 31))
+ 		error = -EINVAL;
+@@ -2240,7 +2266,7 @@ static void yaffs_flush_inodes(struct su
+ {
+ 	struct inode *iptr;
+ 	yaffs_obj_t *obj;
+-	
++
+ 	list_for_each_entry(iptr,&sb->s_inodes, i_sb_list){
+ 		obj = yaffs_InodeToObject(iptr);
+ 		if(obj){
+@@ -2254,10 +2280,10 @@ static void yaffs_flush_inodes(struct su
+ 
+ static void yaffs_flush_super(struct super_block *sb, int do_checkpoint)
+ {
+-	yaffs_dev_t *dev = yaffs_SuperToDevice(sb);	
++	yaffs_dev_t *dev = yaffs_SuperToDevice(sb);
+ 	if(!dev)
+ 		return;
+-	
++
+ 	yaffs_flush_inodes(sb);
+ 	yaffs_update_dirty_dirs(dev);
+ 	yaffs_flush_whole_cache(dev);
+@@ -2325,7 +2351,7 @@ static int yaffs_do_sync_fs(struct super
+  * yaffs_bg_start() launches the background thread.
+  * yaffs_bg_stop() cleans up the background thread.
+  *
+- * NB: 
++ * NB:
+  * The thread should only run after the yaffs is initialised
+  * The thread should be stopped before yaffs is unmounted.
+  * The thread should not do any writing while the fs is in read only.
+@@ -2924,7 +2950,7 @@ static struct super_block *yaffs_interna
+ 
+ 	dev = kmalloc(sizeof(yaffs_dev_t), GFP_KERNEL);
+ 	context = kmalloc(sizeof(struct yaffs_LinuxContext),GFP_KERNEL);
+-	
++
+ 	if(!dev || !context ){
+ 		if(dev)
+ 			kfree(dev);
+@@ -2957,7 +2983,7 @@ static struct super_block *yaffs_interna
+ #else
+ 	sb->u.generic_sbp = dev;
+ #endif
+-	
++
+ 	dev->driver_context = mtd;
+ 	param->name = mtd->name;
+ 
+@@ -3057,7 +3083,7 @@ static struct super_block *yaffs_interna
+ 	param->gc_control = yaffs_gc_control_callback;
+ 
+ 	yaffs_dev_to_lc(dev)->superBlock= sb;
+-	
++
+ 
+ #ifndef CONFIG_YAFFS_DOES_ECC
+ 	param->use_nand_ecc = 1;
+@@ -3099,10 +3125,10 @@ static struct super_block *yaffs_interna
+ 	T(YAFFS_TRACE_OS,
+ 	  (TSTR("yaffs_read_super: guts initialised %s\n"),
+ 	   (err == YAFFS_OK) ? "OK" : "FAILED"));
+-	   
++
+ 	if(err == YAFFS_OK)
+ 		yaffs_bg_start(dev);
+-		
++
+ 	if(!context->bgThread)
+ 		param->defered_dir_update = 0;
+ 
+@@ -3345,7 +3371,7 @@ static int yaffs_proc_read(char *page,
+ 		buf += sprintf(buf,"\n");
+ 	else {
+ 		step-=2;
+-		
++
+ 		mutex_lock(&yaffs_context_lock);
+ 
+ 		/* Locate and print the Nth entry.  Order N-squared but N is small. */
+@@ -3362,7 +3388,7 @@ static int yaffs_proc_read(char *page,
+ 				buf = yaffs_dump_dev_part0(buf, dev);
+ 			} else
+ 				buf = yaffs_dump_dev_part1(buf, dev);
+-			
++
+ 			break;
+ 		}
+ 		mutex_unlock(&yaffs_context_lock);
+@@ -3389,7 +3415,7 @@ static int yaffs_stats_proc_read(char *p
+ 		int erasedChunks;
+ 
+ 		erasedChunks = dev->n_erased_blocks * dev->param.chunks_per_block;
+-		
++
+ 		buf += sprintf(buf,"%d, %d, %d, %u, %u, %u, %u\n",
+ 				n, dev->n_free_chunks, erasedChunks,
+ 				dev->bg_gcs, dev->oldest_dirty_gc_count,
+--- a/fs/yaffs2/yaffs_guts.c
++++ b/fs/yaffs2/yaffs_guts.c
+@@ -370,7 +370,7 @@ static int yaffs_verify_chunk_written(ya
+ 	yaffs_ext_tags tempTags;
+ 	__u8 *buffer = yaffs_get_temp_buffer(dev,__LINE__);
+ 	int result;
+-	
++
+ 	result = yaffs_rd_chunk_tags_nand(dev,nand_chunk,buffer,&tempTags);
+ 	if(memcmp(buffer,data,dev->data_bytes_per_chunk) ||
+ 		tempTags.obj_id != tags->obj_id ||
+@@ -424,7 +424,7 @@ static int yaffs_write_new_chunk(struct
+ 		 * lot of checks that are most likely not needed.
+ 		 *
+ 		 * Mods to the above
+-		 * If an erase check fails or the write fails we skip the 
++		 * If an erase check fails or the write fails we skip the
+ 		 * rest of the block.
+ 		 */
+ 
+@@ -486,7 +486,7 @@ static int yaffs_write_new_chunk(struct
+ }
+ 
+ 
+- 
++
+ /*
+  * Block retiring for handling a broken block.
+  */
+@@ -496,7 +496,7 @@ static void yaffs_retire_block(yaffs_dev
+ 	yaffs_block_info_t *bi = yaffs_get_block_info(dev, flash_block);
+ 
+ 	yaffs2_checkpt_invalidate(dev);
+-	
++
+ 	yaffs2_clear_oldest_dirty_seq(dev,bi);
+ 
+ 	if (yaffs_mark_bad(dev, flash_block) != YAFFS_OK) {
+@@ -899,7 +899,7 @@ static int yaffs_find_chunk_in_group(yaf
+ 	for (j = 0; theChunk && j < dev->chunk_grp_size; j++) {
+ 		if (yaffs_check_chunk_bit(dev, theChunk / dev->param.chunks_per_block,
+ 				theChunk % dev->param.chunks_per_block)) {
+-			
++
+ 			if(dev->chunk_grp_size == 1)
+ 				return theChunk;
+ 			else {
+@@ -1802,7 +1802,7 @@ int yaffs_rename_obj(yaffs_obj_t *old_di
+ 		yaffs_update_parent(old_dir);
+ 		if(new_dir != old_dir)
+ 			yaffs_update_parent(new_dir);
+-		
++
+ 		return result;
+ 	}
+ 	return YAFFS_FAIL;
+@@ -2125,7 +2125,7 @@ static int yaffs_gc_block(yaffs_dev_t *d
+ 
+ 	if(bi->block_state == YAFFS_BLOCK_STATE_FULL)
+ 		bi->block_state = YAFFS_BLOCK_STATE_COLLECTING;
+-	
++
+ 	bi->has_shrink_hdr = 0;	/* clear the flag so that the block can erase */
+ 
+ 	dev->gc_disable = 1;
+@@ -2207,7 +2207,7 @@ static int yaffs_gc_block(yaffs_dev_t *d
+ 					 * No need to copy this, just forget about it and
+ 					 * fix up the object.
+ 					 */
+-					 
++
+ 					/* Free chunks already includes softdeleted chunks.
+ 					 * How ever this chunk is going to soon be really deleted
+ 					 * which will increment free chunks.
+@@ -2752,7 +2752,7 @@ int yaffs_put_chunk_in_file(yaffs_obj_t
+ 					NULL);
+ 	if (!tn)
+ 		return YAFFS_FAIL;
+-	
++
+ 	if(!nand_chunk)
+ 		/* Dummy insert, bail now */
+ 		return YAFFS_OK;
+@@ -2881,7 +2881,7 @@ void yaffs_chunk_del(yaffs_dev_t *dev, i
+ 			 chunk_id));
+ 
+ 	bi = yaffs_get_block_info(dev, block);
+-	
++
+ 	yaffs2_update_oldest_dirty_seq(dev, block, bi);
+ 
+ 	T(YAFFS_TRACE_DELETION,
+@@ -2966,8 +2966,8 @@ static int yaffs_wr_data_obj(yaffs_obj_t
+ 		(TSTR("Writing %d bytes to chunk!!!!!!!!!" TENDSTR), n_bytes));
+ 		YBUG();
+ 	}
+-	
+-		
++
++
+ 	newChunkId =
+ 	    yaffs_write_new_chunk(dev, buffer, &newTags,
+ 					      useReserve);
+@@ -3795,14 +3795,14 @@ int yaffs_resize_file(yaffs_obj_t *in, l
+ 
+ 	if (new_size == oldFileSize)
+ 		return YAFFS_OK;
+-		
++
+ 	if(new_size > oldFileSize){
+ 		yaffs2_handle_hole(in,new_size);
+ 		in->variant.file_variant.file_size = new_size;
+ 	} else {
+-		/* new_size < oldFileSize */ 
++		/* new_size < oldFileSize */
+ 		yaffs_resize_file_down(in, new_size);
+-	} 
++	}
+ 
+ 	/* Write a new object header to reflect the resize.
+ 	 * show we've shrunk the file, if need be
+@@ -4231,7 +4231,7 @@ static void yaffs_strip_deleted_objs(yaf
+  * This fixes the problem where directories might have inadvertently been deleted
+  * leaving the object "hanging" without being rooted in the directory tree.
+  */
+- 
++
+ static int yaffs_has_null_parent(yaffs_dev_t *dev, yaffs_obj_t *obj)
+ {
+ 	return (obj == dev->del_dir ||
+@@ -4262,7 +4262,7 @@ static void yaffs_fix_hanging_objs(yaffs
+ 			if (lh) {
+ 				obj = ylist_entry(lh, yaffs_obj_t, hash_link);
+ 				parent= obj->parent;
+-				
++
+ 				if(yaffs_has_null_parent(dev,obj)){
+ 					/* These directories are not hanging */
+ 					hanging = 0;
+@@ -4311,7 +4311,7 @@ static void yaffs_del_dir_contents(yaffs
+ 
+ 	if(dir->variant_type != YAFFS_OBJECT_TYPE_DIRECTORY)
+ 		YBUG();
+-	
++
+ 	ylist_for_each_safe(lh, n, &dir->variant.dir_variant.children) {
+ 		if (lh) {
+ 			obj = ylist_entry(lh, yaffs_obj_t, siblings);
+@@ -4325,10 +4325,10 @@ static void yaffs_del_dir_contents(yaffs
+ 			/* Need to use UnlinkObject since Delete would not handle
+ 			 * hardlinked objects correctly.
+ 			 */
+-			yaffs_unlink_obj(obj); 
++			yaffs_unlink_obj(obj);
+ 		}
+ 	}
+-			
++
+ }
+ 
+ static void yaffs_empty_l_n_f(yaffs_dev_t *dev)
+@@ -4410,7 +4410,7 @@ static void yaffs_check_obj_details_load
+  * If the directory updating is defered then yaffs_update_dirty_dirs must be
+  * called periodically.
+  */
+- 
++
+ static void yaffs_update_parent(yaffs_obj_t *obj)
+ {
+ 	yaffs_dev_t *dev;
+@@ -4422,8 +4422,8 @@ static void yaffs_update_parent(yaffs_ob
+ 	obj->dirty = 1;
+ 	obj->yst_mtime = obj->yst_ctime = Y_CURRENT_TIME;
+ 	if(dev->param.defered_dir_update){
+-		struct ylist_head *link = &obj->variant.dir_variant.dirty; 
+-	
++		struct ylist_head *link = &obj->variant.dir_variant.dirty;
++
+ 		if(ylist_empty(link)){
+ 			ylist_add(link,&dev->dirty_dirs);
+ 			T(YAFFS_TRACE_BACKGROUND, (TSTR("Added object %d to dirty directories" TENDSTR),obj->obj_id));
+@@ -4446,7 +4446,7 @@ void yaffs_update_dirty_dirs(yaffs_dev_t
+ 	while(!ylist_empty(&dev->dirty_dirs)){
+ 		link = dev->dirty_dirs.next;
+ 		ylist_del_init(link);
+-		
++
+ 		dS=ylist_entry(link,yaffs_dir_s,dirty);
+ 		oV = ylist_entry(dS,yaffs_obj_variant,dir_variant);
+ 		obj = ylist_entry(oV,yaffs_obj_t,variant);
+@@ -4474,7 +4474,7 @@ static void yaffs_remove_obj_from_dir(ya
+ 
+ 	ylist_del_init(&obj->siblings);
+ 	obj->parent = NULL;
+-	
++
+ 	yaffs_verify_dir(parent);
+ }
+ 
+@@ -4645,7 +4645,7 @@ yaffs_obj_t *yaffs_get_equivalent_obj(ya
+  * system to share files.
+  *
+  * These automatic unicode are stored slightly differently...
+- *  - If the name can fit in the ASCII character space then they are saved as 
++ *  - If the name can fit in the ASCII character space then they are saved as
+  *    ascii names as per above.
+  *  - If the name needs Unicode then the name is saved in Unicode
+  *    starting at oh->name[1].
+@@ -4686,7 +4686,7 @@ static void yaffs_load_name_from_oh(yaff
+ 				asciiOhName++;
+ 				n--;
+ 			}
+-		} else 
++		} else
+ 			yaffs_strncpy(name,ohName+1, bufferSize -1);
+ 	} else
+ #endif
+@@ -4705,7 +4705,7 @@ static void yaffs_load_oh_from_name(yaff
+ 
+ 		isAscii = 1;
+ 		w = name;
+-	
++
+ 		/* Figure out if the name will fit in ascii character set */
+ 		while(isAscii && *w){
+ 			if((*w) & 0xff00)
+@@ -4729,7 +4729,7 @@ static void yaffs_load_oh_from_name(yaff
+ 			yaffs_strncpy(ohName+1,name, YAFFS_MAX_NAME_LENGTH -2);
+ 		}
+ 	}
+-	else 
++	else
+ #endif
+ 		yaffs_strncpy(ohName,name, YAFFS_MAX_NAME_LENGTH - 1);
+ 
+@@ -4738,12 +4738,12 @@ static void yaffs_load_oh_from_name(yaff
+ int yaffs_get_obj_name(yaffs_obj_t * obj, YCHAR * name, int buffer_size)
+ {
+ 	memset(name, 0, buffer_size * sizeof(YCHAR));
+-	
++
+ 	yaffs_check_obj_details_loaded(obj);
+ 
+ 	if (obj->obj_id == YAFFS_OBJECTID_LOSTNFOUND) {
+ 		yaffs_strncpy(name, YAFFS_LOSTNFOUND_NAME, buffer_size - 1);
+-	} 
++	}
+ #ifdef CONFIG_YAFFS_SHORT_NAMES_IN_RAM
+ 	else if (obj->short_name[0]) {
+ 		yaffs_strcpy(name, obj->short_name);
+@@ -4861,9 +4861,9 @@ int yaffs_set_attribs(yaffs_obj_t *obj,
+ 	if (valid & ATTR_MODE)
+ 		obj->yst_mode = attr->ia_mode;
+ 	if (valid & ATTR_UID)
+-		obj->yst_uid = attr->ia_uid;
++		obj->yst_uid = ia_uid_read(attr);
+ 	if (valid & ATTR_GID)
+-		obj->yst_gid = attr->ia_gid;
++		obj->yst_gid = ia_gid_read(attr);
+ 
+ 	if (valid & ATTR_ATIME)
+ 		obj->yst_atime = Y_TIME_CONVERT(attr->ia_atime);
+@@ -4886,9 +4886,9 @@ int yaffs_get_attribs(yaffs_obj_t *obj,
+ 
+ 	attr->ia_mode = obj->yst_mode;
+ 	valid |= ATTR_MODE;
+-	attr->ia_uid = obj->yst_uid;
++	ia_uid_write(attr, obj->yst_uid);
+ 	valid |= ATTR_UID;
+-	attr->ia_gid = obj->yst_gid;
++	ia_gid_write(attr, obj->yst_gid);
+ 	valid |= ATTR_GID;
+ 
+ 	Y_TIME_CONVERT(attr->ia_atime) = obj->yst_atime;
+--- a/fs/yaffs2/yportenv.h
++++ b/fs/yaffs2/yportenv.h
+@@ -170,7 +170,7 @@
+ #define O_RDWR		02
+ #endif
+ 
+-#ifndef O_CREAT		
++#ifndef O_CREAT
+ #define O_CREAT 	0100
+ #endif
+ 
+@@ -218,7 +218,7 @@
+ #define EACCES	13
+ #endif
+ 
+-#ifndef EXDEV	
++#ifndef EXDEV
+ #define EXDEV	18
+ #endif
+ 
+@@ -281,7 +281,7 @@
+ #define S_IFREG		0100000
+ #endif
+ 
+-#ifndef S_IREAD 
++#ifndef S_IREAD
+ #define S_IREAD		0000400
+ #endif
+ 
+--- a/fs/yaffs2/devextras.h
++++ b/fs/yaffs2/devextras.h
+@@ -87,6 +87,8 @@ struct iattr {
+ 	unsigned int ia_attr_flags;
+ };
+ 
++/* TODO: add ia_* functions */
++
+ #endif
+ 
+ #else
+@@ -95,7 +97,48 @@ struct iattr {
+ #include <linux/fs.h>
+ #include <linux/stat.h>
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0))
++static inline uid_t ia_uid_read(const struct iattr *iattr)
++{
++	return from_kuid(&init_user_ns, iattr->ia_uid);
++}
++
++static inline gid_t ia_gid_read(const struct iattr *iattr)
++{
++	return from_kgid(&init_user_ns, iattr->ia_gid);
++}
++
++static inline void ia_uid_write(struct iattr *iattr, uid_t uid)
++{
++	iattr->ia_uid = make_kuid(&init_user_ns, uid);
++}
++
++static inline void ia_gid_write(struct iattr *iattr, gid_t gid)
++{
++	iattr->ia_gid = make_kgid(&init_user_ns, gid);
++}
++#else
++static inline uid_t ia_uid_read(const struct iattr *iattr)
++{
++	return iattr->ia_uid;
++}
++
++static inline gid_t ia_gid_read(const struct iattr *inode)
++{
++	return iattr->ia_gid;
++}
++
++static inline void ia_uid_write(struct iattr *iattr, uid_t uid)
++{
++	iattr->ia_uid = uid;
++}
++
++static inline void ia_gid_write(struct iattr *iattr, gid_t gid)
++{
++	iattr->ia_gid = gid;
++}
+ #endif
+ 
++#endif
+ 
+ #endif

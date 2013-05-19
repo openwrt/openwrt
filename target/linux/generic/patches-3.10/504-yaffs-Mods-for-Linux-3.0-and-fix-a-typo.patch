@@ -1,0 +1,110 @@
+From e1537a700c2e750c5eacc5ad93f30821f1e94424 Mon Sep 17 00:00:00 2001
+From: Charles Manning <cdhmanning@gmail.com>
+Date: Mon, 15 Aug 2011 11:40:30 +1200
+Subject: [PATCH 2/2] Mods for Linux 3.0 and fix a typo
+
+commit a7b5dcf904ba6f7890e4b77ce1f56388b855d0f6 upstream.
+
+Roll in NCB's patch and some other changes for Linux 3.0.
+Also fix a dumb type retired_writes->retried_writes
+
+Signed-off-by: Charles Manning <cdhmanning@gmail.com>
+---
+ patch-ker.sh      |    2 +-
+ yaffs_vfs_glue.c |   42 ++++++++++++++++++++++++++++++++++--------
+ 2 files changed, 35 insertions(+), 9 deletions(-)
+
+--- a/fs/yaffs2/yaffs_vfs_glue.c
++++ b/fs/yaffs2/yaffs_vfs_glue.c
+@@ -72,7 +72,9 @@
+ #include <linux/init.h>
+ #include <linux/fs.h>
+ #include <linux/proc_fs.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39))
+ #include <linux/smp_lock.h>
++#endif
+ #include <linux/pagemap.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/interrupt.h>
+@@ -236,7 +238,9 @@ static int yaffs_file_flush(struct file
+ static int yaffs_file_flush(struct file *file);
+ #endif
+ 
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
++static int yaffs_sync_object(struct file *file, loff_t start, loff_t end, int datasync);
++#elif (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34))
+ static int yaffs_sync_object(struct file *file, int datasync);
+ #else
+ static int yaffs_sync_object(struct file *file, struct dentry *dentry,
+@@ -1864,7 +1868,9 @@ static int yaffs_symlink(struct inode *d
+ 	return -ENOMEM;
+ }
+ 
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
++static int yaffs_sync_object(struct file *file, loff_t start, loff_t end, int datasync)
++#elif (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34))
+ static int yaffs_sync_object(struct file *file, int datasync)
+ #else
+ static int yaffs_sync_object(struct file *file, struct dentry *dentry,
+@@ -3067,7 +3073,13 @@ static int yaffs_internal_read_super_mtd
+ 	return yaffs_internal_read_super(1, sb, data, silent) ? 0 : -EINVAL;
+ }
+ 
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
++static struct dentry *yaffs_mount(struct file_system_type *fs_type, int flags,
++        const char *dev_name, void *data)
++{
++    return mount_bdev(fs_type, flags, dev_name, data, yaffs_internal_read_super_mtd);
++}
++#elif (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
+ static int yaffs_read_super(struct file_system_type *fs,
+ 			    int flags, const char *dev_name,
+ 			    void *data, struct vfsmount *mnt)
+@@ -3090,8 +3102,12 @@ static struct super_block *yaffs_read_su
+ static struct file_system_type yaffs_fs_type = {
+ 	.owner = THIS_MODULE,
+ 	.name = "yaffs",
+-	.get_sb = yaffs_read_super,
+-	.kill_sb = kill_block_super,
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
++        .mount = yaffs_mount,
++#else
++        .get_sb = yaffs_read_super,
++#endif
++     	.kill_sb = kill_block_super,
+ 	.fs_flags = FS_REQUIRES_DEV,
+ };
+ #else
+@@ -3115,7 +3131,13 @@ static int yaffs2_internal_read_super_mt
+ 	return yaffs_internal_read_super(2, sb, data, silent) ? 0 : -EINVAL;
+ }
+ 
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
++static struct dentry *yaffs2_mount(struct file_system_type *fs_type, int flags,
++        const char *dev_name, void *data)
++{
++        return mount_bdev(fs_type, flags, dev_name, data, yaffs2_internal_read_super_mtd);
++}
++#elif (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
+ static int yaffs2_read_super(struct file_system_type *fs,
+ 			int flags, const char *dev_name, void *data,
+ 			struct vfsmount *mnt)
+@@ -3137,8 +3159,12 @@ static struct super_block *yaffs2_read_s
+ static struct file_system_type yaffs2_fs_type = {
+ 	.owner = THIS_MODULE,
+ 	.name = "yaffs2",
+-	.get_sb = yaffs2_read_super,
+-	.kill_sb = kill_block_super,
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
++        .mount = yaffs2_mount,
++#else
++        .get_sb = yaffs2_read_super,
++#endif
++     	.kill_sb = kill_block_super,
+ 	.fs_flags = FS_REQUIRES_DEV,
+ };
+ #else

@@ -1,0 +1,45 @@
+From 4fec4a2d70efa390268d1098bd4b008dda0e399e Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Thu, 2 May 2013 13:33:52 +0000
+Subject: [PATCH 3/3] MIPS: Enable interrupts in arch_cpu_idle()
+
+commit cdbedc61c8 (mips: Use generic idle loop) broke MIPS as I did
+not realize that MIPS wants to invoke the wait instructions with
+interrupts enabled. Don't ask why that works correctly; Ralf suggested
+to get thoroughly drunk before even thinking about it. Looking sober
+at commit c65a5480 ([MIPS] Fix potential latency problem due to
+non-atomic cpu_wait) is not recommended.
+
+Enable interrupts in arch_cpu_idle() on mips to repair the issue.
+
+Reported-and-tested-by: Jonas Gorski <jogo@openwrt.org>
+Reported-by: EunBong Song <eunb.song@samsung.com>
+Booze-recommended-by: Ralf Baechle <ralf@linux-mips.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/mips/kernel/process.c |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/kernel/process.c
++++ b/arch/mips/kernel/process.c
+@@ -51,13 +51,18 @@ void arch_cpu_idle_dead(void)
+ }
+ #endif
+ 
+-void arch_cpu_idle(void)
++static void smtc_idle_hook(void)
+ {
+ #ifdef CONFIG_MIPS_MT_SMTC
+ 	extern void smtc_idle_loop_hook(void);
+-
+ 	smtc_idle_loop_hook();
+ #endif
++}
++
++void arch_cpu_idle(void)
++{
++	local_irq_enable();
++	smtc_idle_hook();
+ 	if (cpu_wait)
+ 		(*cpu_wait)();
+ 	else
