@@ -28,7 +28,7 @@ define KernelPackage/ledtrig-heartbeat
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED Heartbeat Trigger
   KCONFIG:=CONFIG_LEDS_TRIGGER_HEARTBEAT
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-heartbeat.ko
+  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-heartbeat.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-heartbeat)
 endef
 
@@ -43,7 +43,7 @@ define KernelPackage/ledtrig-gpio
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED GPIO Trigger
   KCONFIG:=CONFIG_LEDS_TRIGGER_GPIO
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-gpio.ko
+  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-gpio.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-gpio)
 endef
 
@@ -125,7 +125,7 @@ define KernelPackage/ledtrig-default-on
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED Default ON Trigger
   KCONFIG:=CONFIG_LEDS_TRIGGER_DEFAULT_ON
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-default-on.ko
+  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-default-on.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-default-on)
 endef
 
@@ -140,7 +140,7 @@ define KernelPackage/ledtrig-timer
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED Timer Trigger
   KCONFIG:=CONFIG_LEDS_TRIGGER_TIMER
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-timer.ko
+  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-timer.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-timer)
 endef
 
@@ -157,7 +157,7 @@ define KernelPackage/ledtrig-oneshot
   TITLE:=LED One-Shot Trigger
   DEPENDS:=@!LINUX_3_3
   KCONFIG:=CONFIG_LEDS_TRIGGER_ONESHOT
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-oneshot.ko
+  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-oneshot.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-oneshot)
 endef
 
