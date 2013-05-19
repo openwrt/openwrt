@@ -1,0 +1,66 @@
+From e00adf39134028d65023c327b427074728c18f7e Mon Sep 17 00:00:00 2001
+From: Akinobu Mita <akinobu.mita@gmail.com>
+Date: Tue, 7 May 2013 16:18:15 -0700
+Subject: [PATCH] drivers/net: rename random32() to prandom_u32()
+
+Use preferable function name which implies using a pseudo-random number
+generator.
+
+[akpm@linux-foundation.org: convert team_mode_random.c]
+Signed-off-by: Akinobu Mita <akinobu.mita@gmail.com>
+Acked-by: Thomas Sailer <t.sailer@alumni.ethz.ch>
+Acked-by: Bing Zhao <bzhao@marvell.com> [mwifiex]
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Michael Chan <mchan@broadcom.com>
+Cc: Thomas Sailer <t.sailer@alumni.ethz.ch>
+Cc: Jean-Paul Roubelat <jpr@f6fbb.org>
+Cc: Bing Zhao <bzhao@marvell.com>
+Cc: Brett Rudley <brudley@broadcom.com>
+Cc: Arend van Spriel <arend@broadcom.com>
+Cc: "Franky (Zhenhui) Lin" <frankyl@broadcom.com>
+Cc: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+---
+ drivers/net/wireless/brcm80211/brcmfmac/p2p.c |    2 +-
+ drivers/net/wireless/mwifiex/cfg80211.c       |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/brcm80211/brcmfmac/p2p.c b/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
+index 2b90da0..e7a1a47 100644
+--- a/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
+@@ -1117,7 +1117,7 @@ static void brcmf_p2p_afx_handler(struct work_struct *work)
+ 	if (afx_hdl->is_listen && afx_hdl->my_listen_chan)
+ 		/* 100ms ~ 300ms */
+ 		err = brcmf_p2p_discover_listen(p2p, afx_hdl->my_listen_chan,
+-						100 * (1 + (random32() % 3)));
++						100 * (1 + prandom_u32() % 3));
+ 	else
+ 		err = brcmf_p2p_act_frm_search(p2p, afx_hdl->peer_listen_chan);
+ 
+diff --git a/drivers/net/wireless/mwifiex/cfg80211.c b/drivers/net/wireless/mwifiex/cfg80211.c
+index a0cb077..d3c8ece 100644
+--- a/drivers/net/wireless/mwifiex/cfg80211.c
++++ b/drivers/net/wireless/mwifiex/cfg80211.c
+@@ -216,7 +216,7 @@ mwifiex_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
+ 	mwifiex_form_mgmt_frame(skb, buf, len);
+ 	mwifiex_queue_tx_pkt(priv, skb);
+ 
+-	*cookie = random32() | 1;
++	*cookie = prandom_u32() | 1;
+ 	cfg80211_mgmt_tx_status(wdev, *cookie, buf, len, true, GFP_ATOMIC);
+ 
+ 	wiphy_dbg(wiphy, "info: management frame transmitted\n");
+@@ -271,7 +271,7 @@ mwifiex_cfg80211_remain_on_channel(struct wiphy *wiphy,
+ 					 duration);
+ 
+ 	if (!ret) {
+-		*cookie = random32() | 1;
++		*cookie = prandom_u32() | 1;
+ 		priv->roc_cfg.cookie = *cookie;
+ 		priv->roc_cfg.chan = *chan;
+ 
+-- 
+1.7.10.4
+
