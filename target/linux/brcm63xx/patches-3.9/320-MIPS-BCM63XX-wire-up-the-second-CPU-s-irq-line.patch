@@ -1,0 +1,96 @@
+From 1baec3216529f795905b6376f9c8e4f14b114ba2 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Fri, 26 Apr 2013 12:03:15 +0200
+Subject: [PATCH 11/13] MIPS: BCM63XX: wire up the second CPU's irq line
+
+It's hardwired to IRQ3, so we don't need to actually check the CPU id.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/bcm63xx/irq.c |   40 ++++++++++++++++++++++++++++++++--------
+ 1 file changed, 32 insertions(+), 8 deletions(-)
+
+--- a/arch/mips/bcm63xx/irq.c
++++ b/arch/mips/bcm63xx/irq.c
+@@ -329,11 +329,15 @@ static void __internal_irq_mask_##width(
+ 	u32 val;							\
+ 	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
+ 	unsigned bit = irq & 0x1f;					\
+-	u32 irq_mask_addr = get_irq_mask_addr(0);			\
++	int cpu;							\
+ 									\
+-	val = bcm_readl(irq_mask_addr + reg * sizeof(u32));		\
+-	val &= ~(1 << bit);						\
+-	bcm_writel(val, irq_mask_addr + reg * sizeof(u32));		\
++	for_each_online_cpu(cpu) {					\
++		u32 irq_mask_addr = get_irq_mask_addr(cpu);		\
++									\
++		val = bcm_readl(irq_mask_addr + reg * sizeof(u32));	\
++		val &= ~(1 << bit);					\
++		bcm_writel(val, irq_mask_addr + reg * sizeof(u32));	\
++	}								\
+ }									\
+ 									\
+ static void __internal_irq_unmask_##width(unsigned int irq)		\
+@@ -341,11 +345,15 @@ static void __internal_irq_unmask_##widt
+ 	u32 val;							\
+ 	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
+ 	unsigned bit = irq & 0x1f; 					\
+-	u32 irq_mask_addr = get_irq_mask_addr(0);			\
++	int cpu;							\
++									\
++	for_each_online_cpu(cpu) {					\
++		u32 irq_mask_addr = get_irq_mask_addr(cpu);		\
+ 									\
+-	val = bcm_readl(irq_mask_addr + reg * sizeof(u32));		\
+-	val |= (1 << bit); 						\
+-	bcm_writel(val, irq_mask_addr + reg * sizeof(u32));		\
++		val = bcm_readl(irq_mask_addr + reg * sizeof(u32));	\
++		val |= (1 << bit); 					\
++		bcm_writel(val, irq_mask_addr + reg * sizeof(u32));	\
++	}								\
+ }
+ 
+ BUILD_IPIC_INTERNAL(32);
+@@ -369,6 +377,10 @@ asmlinkage void plat_irq_dispatch(void)
+ 			do_IRQ(1);
+ 		if (cause & CAUSEF_IP2)
+ 			dispatch_internal(0);
++#ifdef CONFIG_SMP
++		if (cause & CAUSEF_IP3)
++			dispatch_internal(1);
++#else
+ 		if (!is_ext_irq_cascaded) {
+ 			if (cause & CAUSEF_IP3)
+ 				do_IRQ(IRQ_EXT_0);
+@@ -379,6 +391,7 @@ asmlinkage void plat_irq_dispatch(void)
+ 			if (cause & CAUSEF_IP6)
+ 				do_IRQ(IRQ_EXT_3);
+ 		}
++#endif
+ 	} while (1);
+ }
+ 
+@@ -598,6 +611,14 @@ static struct irqaction cpu_ip2_cascade_
+ 	.flags		= IRQF_NO_THREAD,
+ };
+ 
++#ifdef CONFIG_SMP
++static struct irqaction cpu_ip3_cascade_action = {
++	.handler	= no_action,
++	.name		= "cascade_ip3",
++	.flags		= IRQF_NO_THREAD,
++};
++#endif
++
+ static struct irqaction cpu_ext_cascade_action = {
+ 	.handler	= no_action,
+ 	.name		= "cascade_extirq",
+@@ -624,4 +645,7 @@ void __init arch_init_irq(void)
+ 	}
+ 
+ 	setup_irq(MIPS_CPU_IRQ_BASE + 2, &cpu_ip2_cascade_action);
++#ifdef CONFIG_SMP
++	setup_irq(MIPS_CPU_IRQ_BASE + 3, &cpu_ip3_cascade_action);
++#endif
+ }
