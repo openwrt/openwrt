@@ -8,13 +8,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=brcm2708-gpu-fw
-PKG_REV:=6baaefd041f415912dd1868ed45a18904562acec
-PKG_VERSION:=20120529
+PKG_REV:=d5b05be2147bf5dc0137798837af24b0bbbe398d
+PKG_VERSION:=20130517
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_REV).tar.gz
 PKG_SOURCE_URL:=https://github.com/Hexxeh/rpi-firmware/archive/
-PKG_MD5SUM:=12f8bc52bfbe5f569108263562219fa1
+PKG_MD5SUM:=9b0ce0a530e237f4c6fe43a36ccf57c3
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_REV)
 
