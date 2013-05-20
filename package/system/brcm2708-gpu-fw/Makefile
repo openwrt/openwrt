@@ -8,17 +8,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=brcm2708-gpu-fw
-PKG_REV:=29ce6bcf278e7e79cd8a2b84c6aa9db9864ca91d
+PKG_REV:=6baaefd041f415912dd1868ed45a18904562acec
 PKG_VERSION:=20120529
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=git://github.com/raspberrypi/firmware.git
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=$(PKG_REV)
+PKG_SOURCE:=$(PKG_REV).tar.gz
+PKG_SOURCE_URL:=https://github.com/Hexxeh/rpi-firmware/archive/
+PKG_MD5SUM:=12f8bc52bfbe5f569108263562219fa1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_REV)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -39,7 +37,7 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(BUILD_DIR)/brcm2708-gpu-fw-boot
-	$(CP) $(PKG_BUILD_DIR)/boot/* $(BUILD_DIR)/brcm2708-gpu-fw-boot
+	$(CP) $(PKG_BUILD_DIR)/* $(BUILD_DIR)/brcm2708-gpu-fw-boot
 endef
 
 $(eval $(call BuildPackage,brcm2708-gpu-fw))
