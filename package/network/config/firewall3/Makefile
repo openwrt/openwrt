@@ -8,25 +8,26 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=firewall3
-PKG_VERSION:=2013-05-13
+PKG_VERSION:=2013-05-21
 PKG_RELEASE:=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/firewall3.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=8875f2d067b84a40731983fd495f3e0e4daa493b
+PKG_SOURCE_VERSION:=54904110e3122f4fcded32f5ff6ef30f7de7363c
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 define Package/firewall3
   SECTION:=net
   CATEGORY:=Network
   TITLE:=UCI C Firewall
-  DEPENDS:=+libubox +libubus +libuci
+  DEPENDS:=+libubox +libubus +libuci +libip4tc +libip6tc +libxtables
 endef
 
 define Package/firewall3/description
@@ -37,6 +38,16 @@ define Package/firewall3/conffiles
 /etc/config/firewall
 /etc/firewall.user
 endef
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) $(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext.a)) $(PKG_BUILD_DIR)/libext.a
+	$(CP) $(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext4.a)) $(PKG_BUILD_DIR)/libext4.a
+	$(CP) $(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext6.a)) $(PKG_BUILD_DIR)/libext6.a
+endef
+
+TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_LDFLAGS += -Wl,--gc-sections
 
 define Package/firewall3/install
 	$(INSTALL_DIR) $(1)/sbin
