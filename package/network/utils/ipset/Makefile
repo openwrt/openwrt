@@ -31,7 +31,7 @@ define Package/ipset
 $(call Package/ipset/Default)
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS+= +iptables-mod-ipset +kmod-ipt-ipset +libmnl
+  DEPENDS+= +kmod-ipt-ipset +libmnl
   TITLE:=IPset administration utility
   URL:=http://ipset.netfilter.org/
 endef
