@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.4.18
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
@@ -342,7 +342,11 @@ TARGET_CPPFLAGS := \
 
 TARGET_CFLAGS += \
 	-I$(PKG_BUILD_DIR)/include \
-	-I$(LINUX_DIR)/user_headers/include
+	-I$(LINUX_DIR)/user_headers/include \
+	-ffunction-sections -fdata-sections
+
+TARGET_LDFLAGS += \
+	-Wl,--gc-sections
 
 CONFIGURE_ARGS += \
 	--enable-shared \
