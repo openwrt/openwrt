@@ -39,11 +39,11 @@ define Package/firewall3/conffiles
 /etc/firewall.user
 endef
 
-define Build/Prepare
-	$(call Build/Prepare/Default)
+define Build/Compile
 	$(CP) $(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext.a)) $(PKG_BUILD_DIR)/libext.a
 	$(CP) $(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext4.a)) $(PKG_BUILD_DIR)/libext4.a
 	$(CP) $(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext6.a)) $(PKG_BUILD_DIR)/libext6.a
+	$(call Build/Compile/Default)
 endef
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
