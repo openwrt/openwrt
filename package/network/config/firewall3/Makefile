@@ -14,7 +14,7 @@ PKG_RELEASE:=$(PKG_SOURCE_VERSION)
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/firewall3.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=c3a5b984f6cec4014c1120ee900a53b452eb9e32
+PKG_SOURCE_VERSION:=a93d95470803e9026c725fc7081ac8a06191ea6a
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
@@ -47,7 +47,7 @@ define Build/Compile
 endef
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
-TARGET_LDFLAGS += -Wl,--gc-sections
+TARGET_LDFLAGS += -Wl,--gc-sections -Wl,--whole-archive
 
 define Package/firewall3/install
 	$(INSTALL_DIR) $(1)/sbin
