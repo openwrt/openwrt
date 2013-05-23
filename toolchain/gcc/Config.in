@@ -16,10 +16,6 @@ choice
 		select GCC_VERSION_4_6_3
 		bool "gcc 4.6.3"
 
-	config GCC_USE_VERSION_4_7_2
-		select GCC_VERSION_4_7_2
-		bool "gcc 4.7.2"
-
 	config GCC_USE_VERSION_4_8_0
 		select GCC_VERSION_4_8_0
 		bool "gcc 4.8.0"
@@ -27,10 +23,6 @@ choice
 	config GCC_USE_VERSION_4_6_LINARO
 		select GCC_VERSION_4_6_LINARO
 		bool "gcc 4.6.x with Linaro enhancements"
-
-	config GCC_USE_VERSION_4_7_LINARO
-		select GCC_VERSION_4_7_LINARO
-		bool "gcc 4.7.x with Linaro enhancements"
 
 	config GCC_USE_VERSION_4_8_LINARO
 		select GCC_VERSION_4_8_LINARO
