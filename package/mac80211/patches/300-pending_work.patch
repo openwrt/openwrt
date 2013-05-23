@@ -49,7 +49,55 @@
  	int nstations; /* number of station vifs */
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1366,7 +1366,10 @@ static bool ath9k_hw_set_reset(struct at
+@@ -1171,6 +1171,7 @@ u32 ath9k_regd_get_ctl(struct ath_regula
+ static inline void ath9k_hw_set_dma(struct ath_hw *ah)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	int txbuf_size;
+ 
+ 	ENABLE_REGWRITE_BUFFER(ah);
+ 
+@@ -1224,13 +1225,17 @@ static inline void ath9k_hw_set_dma(stru
+ 		 * So set the usable tx buf size also to half to
+ 		 * avoid data/delimiter underruns
+ 		 */
+-		REG_WRITE(ah, AR_PCU_TXBUF_CTRL,
+-			  AR_9285_PCU_TXBUF_CTRL_USABLE_SIZE);
+-	} else if (!AR_SREV_9271(ah)) {
+-		REG_WRITE(ah, AR_PCU_TXBUF_CTRL,
+-			  AR_PCU_TXBUF_CTRL_USABLE_SIZE);
++		txbuf_size = AR_9285_PCU_TXBUF_CTRL_USABLE_SIZE;
++	} else if (AR_SREV_9340_13_OR_LATER(ah)) {
++		/* Uses fewer entries for AR934x v1.3+ to prevent rx overruns */
++		txbuf_size = AR_9340_PCU_TXBUF_CTRL_USABLE_SIZE;
++	} else {
++		txbuf_size = AR_PCU_TXBUF_CTRL_USABLE_SIZE;
+ 	}
+ 
++	if (!AR_SREV_9271(ah))
++		REG_WRITE(ah, AR_PCU_TXBUF_CTRL, txbuf_size);
++
+ 	REGWRITE_BUFFER_FLUSH(ah);
+ 
+ 	if (AR_SREV_9300_20_OR_LATER(ah))
+@@ -1305,9 +1310,13 @@ static bool ath9k_hw_set_reset(struct at
+ 			AR_RTC_RC_COLD_RESET | AR_RTC_RC_WARM_RESET;
+ 	} else {
+ 		tmpReg = REG_READ(ah, AR_INTR_SYNC_CAUSE);
+-		if (tmpReg &
+-		    (AR_INTR_SYNC_LOCAL_TIMEOUT |
+-		     AR_INTR_SYNC_RADM_CPL_TIMEOUT)) {
++		if (AR_SREV_9340(ah))
++			tmpReg &= AR9340_INTR_SYNC_LOCAL_TIMEOUT;
++		else
++			tmpReg &= AR_INTR_SYNC_LOCAL_TIMEOUT |
++				  AR_INTR_SYNC_RADM_CPL_TIMEOUT;
++
++		if (tmpReg) {
+ 			u32 val;
+ 			REG_WRITE(ah, AR_INTR_SYNC_ENABLE, 0);
+ 
+@@ -1366,7 +1375,10 @@ static bool ath9k_hw_set_reset(struct at
  
  	REGWRITE_BUFFER_FLUSH(ah);
  
@@ -61,7 +109,7 @@
  
  	REG_WRITE(ah, AR_RTC_RC, 0);
  	if (!ath9k_hw_wait(ah, AR_RTC_RC, AR_RTC_RC_M, 0, AH_WAIT_TIMEOUT)) {
-@@ -1377,8 +1380,12 @@ static bool ath9k_hw_set_reset(struct at
+@@ -1377,8 +1389,12 @@ static bool ath9k_hw_set_reset(struct at
  	if (!AR_SREV_9100(ah))
  		REG_WRITE(ah, AR_RC, 0);
  
@@ -75,7 +123,7 @@
  
  	return true;
  }
-@@ -1464,7 +1471,8 @@ static bool ath9k_hw_chip_reset(struct a
+@@ -1464,7 +1480,8 @@ static bool ath9k_hw_chip_reset(struct a
  			reset_type = ATH9K_RESET_POWER_ON;
  		else
  			reset_type = ATH9K_RESET_COLD;
@@ -85,7 +133,7 @@
  		   (REG_READ(ah, AR_CR) & AR_CR_RXE))
  		reset_type = ATH9K_RESET_COLD;
  
-@@ -1698,12 +1706,11 @@ static void ath9k_hw_reset_opmode(struct
+@@ -1698,12 +1715,11 @@ static void ath9k_hw_reset_opmode(struct
  
  	ENABLE_REGWRITE_BUFFER(ah);
  
@@ -190,7 +238,38 @@
  	case IEEE80211_AMPDU_TX_OPERATIONAL:
 --- a/drivers/net/wireless/ath/ath9k/reg.h
 +++ b/drivers/net/wireless/ath/ath9k/reg.h
-@@ -1493,9 +1493,6 @@ enum {
+@@ -798,6 +798,10 @@
+ #define AR_SREV_REVISION_9485_10	0
+ #define AR_SREV_REVISION_9485_11        1
+ #define AR_SREV_VERSION_9340		0x300
++#define AR_SREV_REVISION_9340_10	0
++#define AR_SREV_REVISION_9340_11	1
++#define AR_SREV_REVISION_9340_12	2
++#define AR_SREV_REVISION_9340_13	3
+ #define AR_SREV_VERSION_9580		0x1C0
+ #define AR_SREV_REVISION_9580_10	4 /* AR9580 1.0 */
+ #define AR_SREV_VERSION_9462		0x280
+@@ -897,6 +901,10 @@
+ #define AR_SREV_9340(_ah) \
+ 	(((_ah)->hw_version.macVersion == AR_SREV_VERSION_9340))
+ 
++#define AR_SREV_9340_13_OR_LATER(_ah) \
++	(AR_SREV_9340((_ah)) && \
++	 ((_ah)->hw_version.macRev >= AR_SREV_REVISION_9340_13))
++
+ #define AR_SREV_9285E_20(_ah) \
+     (AR_SREV_9285_12_OR_LATER(_ah) && \
+      ((REG_READ(_ah, AR_AN_SYNTH9) & 0x7) == 0x1))
+@@ -1007,6 +1015,8 @@ enum {
+ 				AR_INTR_SYNC_LOCAL_TIMEOUT |
+ 				AR_INTR_SYNC_MAC_SLEEP_ACCESS),
+ 
++	AR9340_INTR_SYNC_LOCAL_TIMEOUT = 0x00000010,
++
+ 	AR_INTR_SYNC_SPURIOUS = 0xFFFFFFFF,
+ 
+ };
+@@ -1493,9 +1503,6 @@ enum {
  #define AR9271_RADIO_RF_RST			0x20
  #define AR9271_GATE_MAC_CTL			0x4000
  
@@ -200,6 +279,14 @@
  #define AR_STA_ID1_STA_AP          0x00010000
  #define AR_STA_ID1_ADHOC           0x00020000
  #define AR_STA_ID1_PWR_SAV         0x00040000
+@@ -1884,6 +1891,7 @@ enum {
+ #define AR_PCU_TXBUF_CTRL_SIZE_MASK     0x7FF
+ #define AR_PCU_TXBUF_CTRL_USABLE_SIZE   0x700
+ #define AR_9285_PCU_TXBUF_CTRL_USABLE_SIZE   0x380
++#define AR_9340_PCU_TXBUF_CTRL_USABLE_SIZE   0x500
+ 
+ #define AR_PCU_MISC_MODE2               0x8344
+ #define AR_PCU_MISC_MODE2_MGMT_CRYPTO_ENABLE           0x00000002
 --- a/drivers/net/wireless/ath/hw.c
 +++ b/drivers/net/wireless/ath/hw.c
 @@ -118,6 +118,12 @@
@@ -4204,3 +4291,26 @@
  }
  
  
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -334,7 +334,8 @@ static void ar9003_hw_spur_ofdm(struct a
+ 	REG_RMW_FIELD(ah, AR_PHY_SPUR_REG,
+ 		      AR_PHY_SPUR_REG_EN_VIT_SPUR_RSSI, 1);
+ 
+-	if (REG_READ_FIELD(ah, AR_PHY_MODE,
++	if (!AR_SREV_9340(ah) &&
++	    REG_READ_FIELD(ah, AR_PHY_MODE,
+ 			   AR_PHY_MODE_DYNAMIC) == 0x1)
+ 		REG_RMW_FIELD(ah, AR_PHY_SPUR_REG,
+ 			      AR_PHY_SPUR_REG_ENABLE_NF_RSSI_SPUR_MIT, 1);
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -410,7 +410,7 @@ bool ath9k_hw_resettxqueue(struct ath_hw
+ 
+ 	REG_WRITE(ah, AR_QMISC(q), AR_Q_MISC_DCU_EARLY_TERM_REQ);
+ 
+-	if (AR_SREV_9340(ah))
++	if (AR_SREV_9340(ah) && !AR_SREV_9340_13_OR_LATER(ah))
+ 		REG_WRITE(ah, AR_DMISC(q),
+ 			  AR_D_MISC_CW_BKOFF_EN | AR_D_MISC_FRAG_WAIT_EN | 0x1);
+ 	else
