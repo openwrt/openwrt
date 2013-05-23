@@ -32,12 +32,6 @@ ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
       PKG_VERSION_MAJOR:=4.6
       PKG_MD5SUM:=6b6c6a4faa026edd1193cf6426309039
     endif
-    ifeq ($(CONFIG_GCC_VERSION),"4.7-linaro")
-      PKG_REV:=4.7-2013.03
-      PKG_VERSION:=4.7.3
-      PKG_VERSION_MAJOR:=4.7
-      PKG_MD5SUM:=72e37ed0601f72e4d7e842d7e5373148
-    endif
     ifeq ($(CONFIG_GCC_VERSION),"4.8-linaro")
       PKG_REV:=4.8-2013.04
       PKG_VERSION:=4.8.1
@@ -57,9 +51,6 @@ else
   endif
   ifeq ($(PKG_VERSION),4.6.3)
     PKG_MD5SUM:=773092fe5194353b02bb0110052a972e
-  endif
-  ifeq ($(PKG_VERSION),4.7.2)
-    PKG_MD5SUM:=cc308a0891e778cfda7a151ab8a6e762
   endif
   ifeq ($(PKG_VERSION),4.8.0)
     PKG_MD5SUM:=e6040024eb9e761c3bea348d1fa5abb0
