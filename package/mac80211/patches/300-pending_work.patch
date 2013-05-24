@@ -1304,7 +1304,17 @@
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -609,30 +608,8 @@ int ieee80211_do_open(struct wireless_de
+@@ -474,6 +473,9 @@ int ieee80211_do_open(struct wireless_de
+ 			master->control_port_protocol;
+ 		sdata->control_port_no_encrypt =
+ 			master->control_port_no_encrypt;
++		sdata->vif.cab_queue = master->vif.cab_queue;
++		memcpy(sdata->vif.hw_queue, master->vif.hw_queue,
++		       sizeof(sdata->vif.hw_queue));
+ 		break;
+ 		}
+ 	case NL80211_IFTYPE_AP:
+@@ -609,30 +611,8 @@ int ieee80211_do_open(struct wireless_de
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -1336,7 +1346,20 @@
  
  	/*
  	 * set_multicast_list will be invoked by the networking core
-@@ -1092,6 +1069,74 @@ static void ieee80211_if_setup(struct ne
+@@ -653,7 +633,11 @@ int ieee80211_do_open(struct wireless_de
+ 
+ 	ieee80211_recalc_ps(local, -1);
+ 
+-	if (dev) {
++	if (sdata->vif.type == NL80211_IFTYPE_MONITOR ||
++	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
++		/* XXX: for AP_VLAN, actually track AP queues */
++		netif_tx_start_all_queues(dev);
++	} else if (dev) {
+ 		unsigned long flags;
+ 		int n_acs = IEEE80211_NUM_ACS;
+ 		int ac;
+@@ -1092,6 +1076,74 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -1411,7 +1434,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1196,6 +1241,9 @@ static void ieee80211_iface_work(struct 
+@@ -1196,6 +1248,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -1421,6 +1444,22 @@
  		default:
  			WARN(1, "frame for unexpected interface type");
  			break;
+@@ -1718,6 +1773,15 @@ void ieee80211_remove_interfaces(struct 
+ 
+ 	ASSERT_RTNL();
+ 
++	/*
++	 * Close all AP_VLAN interfaces first, as otherwise they
++	 * might be closed while the AP interface they belong to
++	 * is closed, causing unregister_netdevice_many() to crash.
++	 */
++	list_for_each_entry(sdata, &local->interfaces, list)
++		if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++			dev_close(sdata->dev);
++
+ 	mutex_lock(&local->iflist_mtx);
+ 	list_for_each_entry_safe(sdata, tmp, &local->interfaces, list) {
+ 		list_del(&sdata->list);
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
 @@ -674,6 +674,7 @@ int ieee80211_register_hw(struct ieee802
