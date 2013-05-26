@@ -132,10 +132,10 @@ tplink_board_detect() {
 	"254300"*)
 		model="TP-Link TL-WR2543N/ND"
 		;;
-	"100101"*)
+	"001001"*)
 		model="TP-Link TL-MR10U"
 		;;
-	"110101"*)
+	"001101"*)
 		model="TP-Link TL-MR11U"
 		;;
 	"302000"*)
