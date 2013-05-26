@@ -13,7 +13,7 @@ FEATURES:=squashfs jffs2 ext4 targz usb display sound
 CFLAGS:=-Os -pipe -march=armv4t -fno-caller-saves
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.8.12
+LINUX_VERSION:=3.8.13
 
 DEVICE_TYPE:=developerboard
 

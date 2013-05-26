@@ -13,7 +13,7 @@ SUBTARGETS:=rt288x rt305x rt3883
 CFLAGS:=-Os -pipe -fno-caller-saves -mno-branch-likely
 FEATURES:=squashfs gpio
 
-LINUX_VERSION:=3.8.12
+LINUX_VERSION:=3.8.13
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=\
