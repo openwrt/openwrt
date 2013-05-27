@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=firewall3
-PKG_VERSION:=2013-05-26
+PKG_VERSION:=2013-05-27
 PKG_RELEASE:=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/firewall3.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=d2a8a3f6a29746a3a07d2e3415737bcc2241afce
+PKG_SOURCE_VERSION:=73805dcc03e242fe5e25c9764ed33456acebdb95
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
@@ -27,7 +27,7 @@ define Package/firewall3
   SECTION:=net
   CATEGORY:=Network
   TITLE:=UCI C Firewall
-  DEPENDS:=+libubox +libubus +libuci +libip4tc +libip6tc +libxtables
+  DEPENDS:=+libubox +libubus +libuci +libip4tc +IPV6:libip6tc +libxtables
 endef
 
 define Package/firewall3/description
@@ -39,15 +39,16 @@ define Package/firewall3/conffiles
 /etc/firewall.user
 endef
 
-define Build/Compile
-	$(CP) $(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext.a)) $(PKG_BUILD_DIR)/libext.a
-	$(CP) $(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext4.a)) $(PKG_BUILD_DIR)/libext4.a
-	$(CP) $(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext6.a)) $(PKG_BUILD_DIR)/libext6.a
-	$(call Build/Compile/Default)
+define Build/Configure
+	$(foreach file,$(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext.a)),$(CP) $(file) $(PKG_BUILD_DIR)/libext.a)
+	$(foreach file,$(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext4.a)),$(CP) $(file) $(PKG_BUILD_DIR)/libext4.a)
+	$(foreach file,$(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext6.a)),$(CP) $(file) $(PKG_BUILD_DIR)/libext6.a)
+	$(call Build/Configure/Default)
 endef
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
+CMAKE_OPTIONS += $(if $(CONFIG_IPV6),,-DDISABLE_IPV6=1)
 
 define Package/firewall3/install
 	$(INSTALL_DIR) $(1)/sbin
