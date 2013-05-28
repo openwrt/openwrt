@@ -740,7 +740,15 @@
  	struct rate_info txrate;
  	struct rate_info rxrate;
  	u32 rx_packets;
-@@ -4027,6 +4041,17 @@ bool cfg80211_reg_can_beacon(struct wiph
+@@ -954,6 +968,7 @@ enum monitor_flags {
+ 	MONITOR_FLAG_CONTROL		= 1<<NL80211_MNTR_FLAG_CONTROL,
+ 	MONITOR_FLAG_OTHER_BSS		= 1<<NL80211_MNTR_FLAG_OTHER_BSS,
+ 	MONITOR_FLAG_COOK_FRAMES	= 1<<NL80211_MNTR_FLAG_COOK_FRAMES,
++	MONITOR_FLAG_ACTIVE		= 1<<NL80211_MNTR_FLAG_ACTIVE,
+ };
+ 
+ /**
+@@ -4027,6 +4042,17 @@ bool cfg80211_reg_can_beacon(struct wiph
  void cfg80211_ch_switch_notify(struct net_device *dev,
  			       struct cfg80211_chan_def *chandef);
  
@@ -1024,7 +1032,31 @@
  
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -444,7 +444,7 @@ static void sta_set_sinfo(struct sta_inf
+@@ -73,16 +73,19 @@ static int ieee80211_change_iface(struct
+ 		struct ieee80211_local *local = sdata->local;
+ 
+ 		if (ieee80211_sdata_running(sdata)) {
++			u32 mask = MONITOR_FLAG_COOK_FRAMES |
++				   MONITOR_FLAG_ACTIVE;
++
+ 			/*
+-			 * Prohibit MONITOR_FLAG_COOK_FRAMES to be
+-			 * changed while the interface is up.
++			 * Prohibit MONITOR_FLAG_COOK_FRAMES and
++			 * MONITOR_FLAG_ACTIVE to be changed while the
++			 * interface is up.
+ 			 * Else we would need to add a lot of cruft
+ 			 * to update everything:
+ 			 *	cooked_mntrs, monitor and all fif_* counters
+ 			 *	reconfigure hardware
+ 			 */
+-			if ((*flags & MONITOR_FLAG_COOK_FRAMES) !=
+-			    (sdata->u.mntr_flags & MONITOR_FLAG_COOK_FRAMES))
++			if ((*flags & mask) != (sdata->u.mntr_flags & mask))
+ 				return -EBUSY;
+ 
+ 			ieee80211_adjust_monitor_flags(sdata, -1);
+@@ -444,7 +447,7 @@ static void sta_set_sinfo(struct sta_inf
  	struct ieee80211_local *local = sdata->local;
  	struct timespec uptime;
  	u64 packets = 0;
@@ -1033,7 +1065,7 @@
  
  	sinfo->generation = sdata->local->sta_generation;
  
-@@ -488,6 +488,17 @@ static void sta_set_sinfo(struct sta_inf
+@@ -488,6 +491,17 @@ static void sta_set_sinfo(struct sta_inf
  			sinfo->signal = (s8)sta->last_signal;
  		sinfo->signal_avg = (s8) -ewma_read(&sta->avg_signal);
  	}
@@ -1051,7 +1083,7 @@
  
  	sta_set_rate_info_tx(sta, &sta->last_tx_rate, &sinfo->txrate);
  	sta_set_rate_info_rx(sta, &sinfo->rxrate);
-@@ -1052,6 +1063,7 @@ static int ieee80211_stop_ap(struct wiph
+@@ -1052,6 +1066,7 @@ static int ieee80211_stop_ap(struct wiph
  	ieee80211_free_keys(sdata);
  
  	sdata->vif.bss_conf.enable_beacon = false;
@@ -1059,7 +1091,7 @@
  	clear_bit(SDATA_STATE_OFFCHANNEL_BEACON_STOPPED, &sdata->state);
  	ieee80211_bss_info_change_notify(sdata, BSS_CHANGED_BEACON_ENABLED);
  
-@@ -2416,9 +2428,22 @@ static int ieee80211_set_bitrate_mask(st
+@@ -2416,9 +2431,22 @@ static int ieee80211_set_bitrate_mask(st
  	}
  
  	for (i = 0; i < IEEE80211_NUM_BANDS; i++) {
@@ -1296,7 +1328,51 @@
  u32 ieee80211_mandatory_rates(struct ieee80211_local *local,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -450,7 +450,6 @@ int ieee80211_do_open(struct wireless_de
+@@ -159,7 +159,8 @@ static int ieee80211_change_mtu(struct n
+ 	return 0;
+ }
+ 
+-static int ieee80211_verify_mac(struct ieee80211_local *local, u8 *addr)
++static int ieee80211_verify_mac(struct ieee80211_local *local, u8 *addr,
++				bool check_dup)
+ {
+ 	struct ieee80211_sub_if_data *sdata;
+ 	u64 new, mask, tmp;
+@@ -179,10 +180,13 @@ static int ieee80211_verify_mac(struct i
+ 		((u64)m[2] << 3*8) | ((u64)m[3] << 2*8) |
+ 		((u64)m[4] << 1*8) | ((u64)m[5] << 0*8);
+ 
++	if (!check_dup)
++		return ret;
+ 
+ 	mutex_lock(&local->iflist_mtx);
+ 	list_for_each_entry(sdata, &local->interfaces, list) {
+-		if (sdata->vif.type == NL80211_IFTYPE_MONITOR)
++		if (sdata->vif.type == NL80211_IFTYPE_MONITOR &&
++		    !(sdata->u.mntr_flags & MONITOR_FLAG_ACTIVE))
+ 			continue;
+ 
+ 		m = sdata->vif.addr;
+@@ -204,12 +208,17 @@ static int ieee80211_change_mac(struct n
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+ 	struct sockaddr *sa = addr;
++	bool check_dup = true;
+ 	int ret;
+ 
+ 	if (ieee80211_sdata_running(sdata))
+ 		return -EBUSY;
+ 
+-	ret = ieee80211_verify_mac(sdata->local, sa->sa_data);
++	if (sdata->vif.type == NL80211_IFTYPE_MONITOR &&
++	    !(sdata->u.mntr_flags & MONITOR_FLAG_ACTIVE))
++		check_dup = false;
++
++	ret = ieee80211_verify_mac(sdata->local, sa->sa_data, check_dup);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -450,7 +459,6 @@ int ieee80211_do_open(struct wireless_de
  	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
  	struct net_device *dev = wdev->netdev;
  	struct ieee80211_local *local = sdata->local;
@@ -1304,7 +1380,7 @@
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -474,6 +473,9 @@ int ieee80211_do_open(struct wireless_de
+@@ -474,6 +482,9 @@ int ieee80211_do_open(struct wireless_de
  			master->control_port_protocol;
  		sdata->control_port_no_encrypt =
  			master->control_port_no_encrypt;
@@ -1314,7 +1390,20 @@
  		break;
  		}
  	case NL80211_IFTYPE_AP:
-@@ -609,30 +611,8 @@ int ieee80211_do_open(struct wireless_de
+@@ -538,7 +549,11 @@ int ieee80211_do_open(struct wireless_de
+ 			break;
+ 		}
+ 
+-		if (local->monitors == 0 && local->open_count == 0) {
++		if (sdata->u.mntr_flags & MONITOR_FLAG_ACTIVE) {
++			res = drv_add_interface(local, sdata);
++			if (res)
++				goto err_stop;
++		} else if (local->monitors == 0 && local->open_count == 0) {
+ 			res = ieee80211_add_virtual_monitor(local);
+ 			if (res)
+ 				goto err_stop;
+@@ -609,30 +624,8 @@ int ieee80211_do_open(struct wireless_de
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -1346,7 +1435,7 @@
  
  	/*
  	 * set_multicast_list will be invoked by the networking core
-@@ -653,7 +633,11 @@ int ieee80211_do_open(struct wireless_de
+@@ -653,7 +646,11 @@ int ieee80211_do_open(struct wireless_de
  
  	ieee80211_recalc_ps(local, -1);
  
@@ -1359,7 +1448,29 @@
  		unsigned long flags;
  		int n_acs = IEEE80211_NUM_ACS;
  		int ac;
-@@ -1092,6 +1076,74 @@ static void ieee80211_if_setup(struct ne
+@@ -916,7 +913,11 @@ static void ieee80211_do_stop(struct iee
+ 		mutex_lock(&local->mtx);
+ 		ieee80211_recalc_idle(local);
+ 		mutex_unlock(&local->mtx);
+-		break;
++
++		if (!(sdata->u.mntr_flags & MONITOR_FLAG_ACTIVE))
++			break;
++
++		/* fall through */
+ 	default:
+ 		if (going_down)
+ 			drv_remove_interface(local, sdata);
+@@ -1075,7 +1076,7 @@ static const struct net_device_ops ieee8
+ 	.ndo_start_xmit		= ieee80211_monitor_start_xmit,
+ 	.ndo_set_rx_mode	= ieee80211_set_multicast_list,
+ 	.ndo_change_mtu 	= ieee80211_change_mtu,
+-	.ndo_set_mac_address 	= eth_mac_addr,
++	.ndo_set_mac_address 	= ieee80211_change_mac,
+ 	.ndo_select_queue	= ieee80211_monitor_select_queue,
+ };
+ 
+@@ -1092,6 +1093,74 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -1434,7 +1545,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1196,6 +1248,9 @@ static void ieee80211_iface_work(struct 
+@@ -1196,6 +1265,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -1444,7 +1555,7 @@
  		default:
  			WARN(1, "frame for unexpected interface type");
  			break;
-@@ -1718,6 +1773,15 @@ void ieee80211_remove_interfaces(struct 
+@@ -1718,6 +1790,15 @@ void ieee80211_remove_interfaces(struct 
  
  	ASSERT_RTNL();
  
@@ -3608,7 +3719,27 @@
  	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
  	return ret;
  }
-@@ -660,7 +661,7 @@ void ieee80211_queue_delayed_work(struct
+@@ -559,6 +560,9 @@ void ieee80211_iterate_active_interfaces
+ 	list_for_each_entry(sdata, &local->interfaces, list) {
+ 		switch (sdata->vif.type) {
+ 		case NL80211_IFTYPE_MONITOR:
++			if (!(sdata->u.mntr_flags & MONITOR_FLAG_ACTIVE))
++				continue;
++			break;
+ 		case NL80211_IFTYPE_AP_VLAN:
+ 			continue;
+ 		default:
+@@ -597,6 +601,9 @@ void ieee80211_iterate_active_interfaces
+ 	list_for_each_entry_rcu(sdata, &local->interfaces, list) {
+ 		switch (sdata->vif.type) {
+ 		case NL80211_IFTYPE_MONITOR:
++			if (!(sdata->u.mntr_flags & MONITOR_FLAG_ACTIVE))
++				continue;
++			break;
+ 		case NL80211_IFTYPE_AP_VLAN:
+ 			continue;
+ 		default:
+@@ -660,7 +667,7 @@ void ieee80211_queue_delayed_work(struct
  }
  EXPORT_SYMBOL(ieee80211_queue_delayed_work);
  
@@ -3617,7 +3748,7 @@
  			       struct ieee802_11_elems *elems,
  			       u64 filter, u32 crc)
  {
-@@ -668,6 +669,7 @@ u32 ieee802_11_parse_elems_crc(u8 *start
+@@ -668,6 +675,7 @@ u32 ieee802_11_parse_elems_crc(u8 *start
  	u8 *pos = start;
  	bool calc_crc = filter != 0;
  	DECLARE_BITMAP(seen_elems, 256);
@@ -3625,7 +3756,7 @@
  
  	bitmap_zero(seen_elems, 256);
  	memset(elems, 0, sizeof(*elems));
-@@ -715,6 +717,12 @@ u32 ieee802_11_parse_elems_crc(u8 *start
+@@ -715,6 +723,12 @@ u32 ieee802_11_parse_elems_crc(u8 *start
  		case WLAN_EID_COUNTRY:
  		case WLAN_EID_PWR_CONSTRAINT:
  		case WLAN_EID_TIMEOUT_INTERVAL:
@@ -3638,7 +3769,7 @@
  			if (test_bit(id, seen_elems)) {
  				elems->parse_error = true;
  				left -= elen;
-@@ -862,6 +870,48 @@ u32 ieee802_11_parse_elems_crc(u8 *start
+@@ -862,6 +876,48 @@ u32 ieee802_11_parse_elems_crc(u8 *start
  			}
  			elems->ch_switch_ie = (void *)pos;
  			break;
@@ -3749,6 +3880,31 @@
  
  	/* keep last */
  	__NL80211_STA_INFO_AFTER_LAST,
+@@ -2395,6 +2401,8 @@ enum nl80211_survey_info {
+  * @NL80211_MNTR_FLAG_OTHER_BSS: disable BSSID filtering
+  * @NL80211_MNTR_FLAG_COOK_FRAMES: report frames after processing.
+  *	overrides all other flags.
++ * @NL80211_MNTR_FLAG_ACTIVE: use the configured MAC address
++ *	and ACK incoming unicast packets.
+  *
+  * @__NL80211_MNTR_FLAG_AFTER_LAST: internal use
+  * @NL80211_MNTR_FLAG_MAX: highest possible monitor flag
+@@ -2406,6 +2414,7 @@ enum nl80211_mntr_flags {
+ 	NL80211_MNTR_FLAG_CONTROL,
+ 	NL80211_MNTR_FLAG_OTHER_BSS,
+ 	NL80211_MNTR_FLAG_COOK_FRAMES,
++	NL80211_MNTR_FLAG_ACTIVE,
+ 
+ 	/* keep last */
+ 	__NL80211_MNTR_FLAG_AFTER_LAST,
+@@ -3557,6 +3566,7 @@ enum nl80211_feature_flags {
+ 	NL80211_FEATURE_ADVERTISE_CHAN_LIMITS		= 1 << 14,
+ 	NL80211_FEATURE_FULL_AP_CLIENT_STATE		= 1 << 15,
+ 	NL80211_FEATURE_USERSPACE_MPM			= 1 << 16,
++	NL80211_FEATURE_ACTIVE_MONITOR			= 1 << 17,
+ };
+ 
+ /**
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
 @@ -358,6 +358,8 @@ struct sta_info *sta_info_alloc(struct i
@@ -3762,7 +3918,38 @@
  		kfree(sta);
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -3367,6 +3367,32 @@ static bool nl80211_put_sta_rate(struct 
+@@ -2270,6 +2270,7 @@ static const struct nla_policy mntr_flag
+ 	[NL80211_MNTR_FLAG_CONTROL] = { .type = NLA_FLAG },
+ 	[NL80211_MNTR_FLAG_OTHER_BSS] = { .type = NLA_FLAG },
+ 	[NL80211_MNTR_FLAG_COOK_FRAMES] = { .type = NLA_FLAG },
++	[NL80211_MNTR_FLAG_ACTIVE] = { .type = NLA_FLAG },
+ };
+ 
+ static int parse_monitor_flags(struct nlattr *nla, u32 *mntrflags)
+@@ -2381,6 +2382,10 @@ static int nl80211_set_interface(struct 
+ 		change = true;
+ 	}
+ 
++	if ((*flags & NL80211_MNTR_FLAG_ACTIVE) &&
++	    !(rdev->wiphy.features & NL80211_FEATURE_ACTIVE_MONITOR))
++		return -EOPNOTSUPP;
++
+ 	if (change)
+ 		err = cfg80211_change_iface(rdev, dev, ntype, flags, &params);
+ 	else
+@@ -2438,6 +2443,11 @@ static int nl80211_new_interface(struct 
+ 	err = parse_monitor_flags(type == NL80211_IFTYPE_MONITOR ?
+ 				  info->attrs[NL80211_ATTR_MNTR_FLAGS] : NULL,
+ 				  &flags);
++
++	if (!err && (flags & NL80211_MNTR_FLAG_ACTIVE) &&
++	    !(rdev->wiphy.features & NL80211_FEATURE_ACTIVE_MONITOR))
++		return -EOPNOTSUPP;
++
+ 	wdev = rdev_add_virtual_intf(rdev,
+ 				nla_data(info->attrs[NL80211_ATTR_IFNAME]),
+ 				type, err ? NULL : &flags, &params);
+@@ -3367,6 +3377,32 @@ static bool nl80211_put_sta_rate(struct 
  	return true;
  }
  
@@ -3795,7 +3982,7 @@
  static int nl80211_send_station(struct sk_buff *msg, u32 portid, u32 seq,
  				int flags,
  				struct cfg80211_registered_device *rdev,
-@@ -3402,7 +3428,7 @@ static int nl80211_send_station(struct s
+@@ -3402,7 +3438,7 @@ static int nl80211_send_station(struct s
  			(u32)sinfo->rx_bytes))
  		goto nla_put_failure;
  	if ((sinfo->filled & (STATION_INFO_TX_BYTES |
@@ -3804,7 +3991,7 @@
  	    nla_put_u32(msg, NL80211_STA_INFO_TX_BYTES,
  			(u32)sinfo->tx_bytes))
  		goto nla_put_failure;
-@@ -3438,6 +3464,18 @@ static int nl80211_send_station(struct s
+@@ -3438,6 +3474,18 @@ static int nl80211_send_station(struct s
  	default:
  		break;
  	}
@@ -3835,6 +4022,15 @@
  
  	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT)
  		 hw->flags |= IEEE80211_HW_AMPDU_AGGREGATION;
+@@ -776,6 +777,8 @@ void ath9k_set_hw_capab(struct ath_softc
+ 	if (AR_SREV_9160_10_OR_LATER(sc->sc_ah) || ath9k_modparam_nohwcrypt)
+ 		hw->flags |= IEEE80211_HW_MFP_CAPABLE;
+ 
++	hw->wiphy->features |= NL80211_FEATURE_ACTIVE_MONITOR;
++
+ 	hw->wiphy->interface_modes =
+ 		BIT(NL80211_IFTYPE_P2P_GO) |
+ 		BIT(NL80211_IFTYPE_P2P_CLIENT) |
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
 @@ -125,24 +125,6 @@ static void ath_tx_queue_tid(struct ath_
@@ -4362,3 +4558,15 @@
  		REG_WRITE(ah, AR_DMISC(q),
  			  AR_D_MISC_CW_BKOFF_EN | AR_D_MISC_FRAG_WAIT_EN | 0x1);
  	else
+--- a/net/mac80211/driver-ops.h
++++ b/net/mac80211/driver-ops.h
+@@ -146,7 +146,8 @@ static inline int drv_add_interface(stru
+ 
+ 	if (WARN_ON(sdata->vif.type == NL80211_IFTYPE_AP_VLAN ||
+ 		    (sdata->vif.type == NL80211_IFTYPE_MONITOR &&
+-		     !(local->hw.flags & IEEE80211_HW_WANT_MONITOR_VIF))))
++		     !(local->hw.flags & IEEE80211_HW_WANT_MONITOR_VIF) &&
++		     !(sdata->u.mntr_flags & MONITOR_FLAG_ACTIVE))))
+ 		return -EINVAL;
+ 
+ 	trace_drv_add_interface(local, sdata);
