@@ -3930,7 +3930,7 @@
  		change = true;
  	}
  
-+	if ((*flags & NL80211_MNTR_FLAG_ACTIVE) &&
++	if (flags && (*flags & NL80211_MNTR_FLAG_ACTIVE) &&
 +	    !(rdev->wiphy.features & NL80211_FEATURE_ACTIVE_MONITOR))
 +		return -EOPNOTSUPP;
 +
