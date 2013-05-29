@@ -333,6 +333,15 @@ sub lookup_package($$) {
 	return;
 }
 
+sub is_core_package($) {
+	my $package = shift;
+	foreach my $file ("tmp/info/.packageinfo-$package", glob("tmp/info/.packageinfo-*_$package")) {
+		next unless index($file, "tmp/info/.packageinfo-feeds_");
+		return 1 if -s $file;
+	}
+	return 0;
+}
+
 sub install_package {
 	my $feed = shift;
 	my $name = shift;
@@ -342,7 +351,7 @@ sub install_package {
 	$feed or do {
 		$installed{$name} and return 0;
 		# TODO: check if it's already installed within ./package directory
-		$feed_src->{$name} or -d "./package/$name" or warn "WARNING: No feed for package '$name' found, maybe it's already part of the standard packages?\n";
+		$feed_src->{$name} or is_core_package($name) or warn "WARNING: No feed for package '$name' found, maybe it's already part of the standard packages?\n";
 		return 0;
 	};
 
