@@ -1,6 +1,8 @@
---- a/configure
-+++ b/configure
-@@ -12173,77 +12173,7 @@ $as_echo "no" >&6; }
+Index: iptables-1.4.19.1/configure
+===================================================================
+--- iptables-1.4.19.1.orig/configure	2013-05-29 16:37:33.176674855 +0200
++++ iptables-1.4.19.1/configure	2013-05-29 16:37:33.168674855 +0200
+@@ -12198,77 +12198,7 @@
  	fi
  fi
  
@@ -79,11 +81,13 @@
    HAVE_LIBNFNETLINK_TRUE=
    HAVE_LIBNFNETLINK_FALSE='#'
  else
---- a/configure.ac
-+++ b/configure.ac
-@@ -89,9 +89,7 @@ AM_CONDITIONAL([ENABLE_LARGEFILE], [test
- AM_CONDITIONAL([ENABLE_DEVEL], [test "$enable_devel" = "yes"])
+Index: iptables-1.4.19.1/configure.ac
+===================================================================
+--- iptables-1.4.19.1.orig/configure.ac	2013-05-29 16:37:33.176674855 +0200
++++ iptables-1.4.19.1/configure.ac	2013-05-29 16:37:33.168674855 +0200
+@@ -93,9 +93,7 @@
  AM_CONDITIONAL([ENABLE_LIBIPQ], [test "$enable_libipq" = "yes"])
+ AM_CONDITIONAL([ENABLE_BPFC], [test "$enable_bpfc" = "yes"])
  
 -PKG_CHECK_MODULES([libnfnetlink], [libnfnetlink >= 1.0],
 -	[nfnetlink=1], [nfnetlink=0])

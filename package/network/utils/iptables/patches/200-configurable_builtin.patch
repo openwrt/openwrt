@@ -1,8 +1,8 @@
-Index: iptables-1.4.18/extensions/GNUmakefile.in
+Index: iptables-1.4.19.1/extensions/GNUmakefile.in
 ===================================================================
---- iptables-1.4.18.orig/extensions/GNUmakefile.in	2013-03-03 22:40:11.000000000 +0100
-+++ iptables-1.4.18/extensions/GNUmakefile.in	2013-03-05 16:37:07.583256974 +0100
-@@ -46,9 +46,24 @@
+--- iptables-1.4.19.1.orig/extensions/GNUmakefile.in	2013-05-29 16:37:41.304675049 +0200
++++ iptables-1.4.19.1/extensions/GNUmakefile.in	2013-05-29 16:37:41.296675048 +0200
+@@ -45,9 +45,24 @@
  pfx_build_mod := $(filter-out @blacklist_modules@,${pfx_build_mod})
  pf4_build_mod := $(filter-out @blacklist_modules@,${pf4_build_mod})
  pf6_build_mod := $(filter-out @blacklist_modules@,${pf6_build_mod})
@@ -30,7 +30,7 @@ Index: iptables-1.4.18/extensions/GNUmakefile.in
  pfx_solibs    := $(patsubst %,libxt_%.so,${pfx_build_mod} ${pfx_symlinks})
  pf4_solibs    := $(patsubst %,libipt_%.so,${pf4_build_mod})
  pf6_solibs    := $(patsubst %,libip6t_%.so,${pf6_build_mod})
-@@ -59,11 +74,11 @@
+@@ -58,11 +73,11 @@
  #
  targets := libext.a libext4.a libext6.a matches.man targets.man
  targets_install :=
@@ -47,7 +47,7 @@ Index: iptables-1.4.18/extensions/GNUmakefile.in
  
  .SECONDARY:
  
-@@ -128,9 +143,9 @@
+@@ -123,9 +138,9 @@
  libext6.a: initext6.o ${libext6_objs}
  	${AM_VERBOSE_AR} ${AR} crs $@ $^;
  
