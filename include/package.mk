@@ -171,6 +171,11 @@ define Build/DefaultTargets
 	$(foreach hook,$(Hooks/InstallDev/Post),\
 		$(call $(hook),$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host)$(sep)\
 	)
+	if [ -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) ]; then \
+		$(SCRIPT_DIR)/clean-package.sh \
+			"$(STAGING_DIR)/packages/$(STAGING_FILES_LIST)" \
+			"$(STAGING_DIR)"; \
+	fi
 	if [ -d $(TMP_DIR)/stage-$(PKG_NAME) ]; then \
 		(cd $(TMP_DIR)/stage-$(PKG_NAME); find ./ > $(TMP_DIR)/stage-$(PKG_NAME).files); \
 		$(call locked, \
