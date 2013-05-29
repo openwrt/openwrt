@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=json-c
-PKG_VERSION:=0.9
+PKG_VERSION:=0.11
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://oss.metaparadigm.com/json-c/
-PKG_MD5SUM:=3a13d264528dcbaf3931b0cede24abae
+PKG_SOURCE_URL:=https://s3.amazonaws.com/json-c_releases/releases/
+PKG_MD5SUM:=aa02367d2f7a830bf1e3376f77881e98
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
@@ -41,15 +41,19 @@ endef
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/json $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/json-c $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libjson.{a,so*} $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libjson-c.{a,so*} $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/json.pc $(1)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/json-c.pc $(1)/usr/lib/pkgconfig/
 endef
 
 define Package/libjson/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libjson.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libjson-c.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libjson))
