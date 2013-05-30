@@ -153,17 +153,17 @@
 		};*/
 		restart {
 			label = "restart";
-			gpios = <&gpio 12 0>;
+			gpios = <&gpio 12 1>;
 			linux,code = <0x110>;
 		};
 		dsl {
 			label = "dsl";
-			gpios = <&gpio 13 0>;
+			gpios = <&gpio 13 1>;
 			linux,code = <0x111>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 28 0>;
+			gpios = <&gpio 28 1>;
 			linux,code = <0x198>;
 		};
 	};
