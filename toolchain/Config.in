@@ -195,7 +195,7 @@ config GDB
 	bool
 	depends on !avr32
 	prompt "Build gdb" if TOOLCHAINOPTS
-	default y
+	default y if !EXTERNAL_TOOLCHAIN
 	help
 		Enable if you want to build the gdb
 
