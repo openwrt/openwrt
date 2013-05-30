@@ -5,6 +5,17 @@
 # See /LICENSE for more information.
 #
 
+define Profile/ARCHERC7
+	NAME:=TP-LINK Archer C7
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+endef
+
+define Profile/ARCHERC7/Description
+	Package set optimized for the TP-LINK Archer C7.
+endef
+$(eval $(call Profile,ARCHERC7))
+
+
 define Profile/TLMR11U
 	NAME:=TP-LINK TL-MR11U
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
