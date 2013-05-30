@@ -222,6 +222,9 @@ ar71xx_board_detect() {
 	*AP83)
 		name="ap83"
 		;;
+	*"Archer C7")
+		name="archer-c7"
+		;;
 	*"Atheros AP96")
 		name="ap96"
 		;;
