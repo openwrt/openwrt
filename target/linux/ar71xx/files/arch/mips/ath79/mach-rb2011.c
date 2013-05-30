@@ -212,6 +212,8 @@ static int rb2011_nand_scan_fixup(struct mtd_info *mtd)
 
 static void __init rb2011_nand_init(void)
 {
+	gpio_request_one(RB2011_GPIO_NAND_NCE, GPIOF_OUT_INIT_HIGH, "NAND nCE");
+
 	ath79_nfc_set_scan_fixup(rb2011_nand_scan_fixup);
 	ath79_nfc_set_parts(rb2011_nand_partitions,
 			    ARRAY_SIZE(rb2011_nand_partitions));
@@ -220,15 +222,9 @@ static void __init rb2011_nand_init(void)
 	ath79_register_nfc();
 }
 
-static void __init rb2011_gpio_init(void)
-{
-	gpio_request_one(RB2011_GPIO_NAND_NCE, GPIOF_OUT_INIT_HIGH, "NAND nCE");
-}
-
 static void __init rb2011_setup(void)
 {
 	rb2011_init_partitions();
-	rb2011_gpio_init();
 
 	ath79_register_m25p80(&rb2011_spi_flash_data);
 	rb2011_nand_init();
