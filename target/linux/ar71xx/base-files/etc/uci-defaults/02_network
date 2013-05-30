@@ -55,6 +55,13 @@ rb-2011uas-2hnd)
 	ucidef_add_switch_vlan "switch0" "2" "0t 1"
 	ucidef_add_switch "switch1" "1" "1"
 	ucidef_add_switch_vlan "switch1" "1" "0 1 2 3 4 5"
+
+	case "$board" in
+	rb-2011uas*)
+		ucidef_set_interface_raw "sfp" "eth0.3"
+		ucidef_add_switch_vlan "switch0" "3" "0t 6"
+		;;
+	esac
 	;;
 
 dir-825-b1|\
