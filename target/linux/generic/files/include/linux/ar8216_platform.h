@@ -78,6 +78,8 @@ struct ar8327_platform_data {
 	struct ar8327_port_cfg port0_cfg;
 	struct ar8327_port_cfg port6_cfg;
 	struct ar8327_led_cfg *led_cfg;
+
+	int (*get_port_link)(unsigned port);
 };
 
 #endif /* AR8216_PLATFORM_H */

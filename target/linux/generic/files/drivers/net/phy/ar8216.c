@@ -88,8 +88,12 @@ struct ar8xxx_priv {
 	struct switch_dev dev;
 	struct mii_bus *mii_bus;
 	struct phy_device *phy;
+
 	u32 (*read)(struct ar8xxx_priv *priv, int reg);
 	void (*write)(struct ar8xxx_priv *priv, int reg, u32 val);
+
+	int (*get_port_link)(unsigned port);
+
 	const struct net_device_ops *ndo_old;
 	struct net_device_ops ndo;
 	struct mutex reg_mutex;
@@ -480,11 +484,20 @@ ar8216_read_port_link(struct ar8xxx_priv *priv, int port,
 	link->aneg = !!(status & AR8216_PORT_STATUS_LINK_AUTO);
 	if (link->aneg) {
 		link->link = !!(status & AR8216_PORT_STATUS_LINK_UP);
-		if (!link->link)
-			return;
 	} else {
 		link->link = true;
+
+		if (priv->get_port_link) {
+			int err;
+
+			err = priv->get_port_link(port);
+			if (err >= 0)
+				link->link = !!err;
+		}
 	}
+
+	if (!link->link)
+		return;
 
 	link->duplex = !!(status & AR8216_PORT_STATUS_DUPLEX);
 	link->tx_flow = !!(status & AR8216_PORT_STATUS_TXFLOW);
@@ -1057,6 +1070,8 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 
 	if (!pdata)
 		return -EINVAL;
+
+	priv->get_port_link = pdata->get_port_link;
 
 	data = &priv->chip_data.ar8327;
 
