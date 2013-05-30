@@ -263,6 +263,14 @@ static void __init rb2011_setup(void)
 MIPS_MACHINE(ATH79_MACH_RB_2011L, "2011L", "MikroTik RouterBOARD 2011L",
 	     rb2011_setup);
 
+static void __init rb2011us_setup(void)
+{
+	rb2011_setup();
+}
+
+MIPS_MACHINE(ATH79_MACH_RB_2011US, "2011US", "MikroTik RouterBOARD 2011UAS",
+	     rb2011us_setup);
+
 static void __init rb2011g_setup(void)
 {
 	rb2011_setup();
