@@ -1099,12 +1099,31 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		priv->write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
 		priv->write(priv, AR8327_REG_LED_CTRL2, led_cfg->led_ctrl2);
 		priv->write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
+
+		if (new_pos != pos)
+			new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
 	}
 
-	if (new_pos != pos) {
-		new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
-		priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
+	if (pdata->sgmii_cfg) {
+		t = pdata->sgmii_cfg->sgmii_ctrl;
+		if (priv->chip_rev == 1)
+			t |= AR8327_SGMII_CTRL_EN_PLL |
+			     AR8327_SGMII_CTRL_EN_RX |
+			     AR8327_SGMII_CTRL_EN_TX;
+		else
+			t &= ~(AR8327_SGMII_CTRL_EN_PLL |
+			       AR8327_SGMII_CTRL_EN_RX |
+			       AR8327_SGMII_CTRL_EN_TX);
+
+		priv->write(priv, AR8327_REG_SGMII_CTRL, t);
+
+		if (pdata->sgmii_cfg->serdes_aen)
+			new_pos &= ~AR8327_POWER_ON_STRIP_SERDES_AEN;
+		else
+			new_pos |= AR8327_POWER_ON_STRIP_SERDES_AEN;
 	}
+
+	priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
 
 	return 0;
 }
