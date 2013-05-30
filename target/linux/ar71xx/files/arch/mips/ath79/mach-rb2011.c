@@ -37,6 +37,7 @@
 #include "routerboot.h"
 
 #define RB2011_GPIO_NAND_NCE	14
+#define RB2011_GPIO_SFP_LOS	21
 
 #define RB_ROUTERBOOT_OFFSET	0x0000
 #define RB_ROUTERBOOT_MIN_SIZE	0xb000
@@ -118,6 +119,9 @@ static struct ar8327_pad_cfg rb2011_ar8327_pad0_cfg = {
 	.txclk_delay_sel = AR8327_CLK_DELAY_SEL3,
 	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0,
 };
+
+static struct ar8327_pad_cfg rb2011_ar8327_pad6_cfg;
+static struct ar8327_sgmii_cfg rb2011_ar8327_sgmii_cfg;
 
 static struct ar8327_led_cfg rb2011_ar8327_led_cfg = {
 	.led_ctrl0 = 0x0000c731,
@@ -231,6 +235,35 @@ static void __init rb2011_nand_init(void)
 	ath79_register_nfc();
 }
 
+static int rb2011_get_port_link(unsigned port)
+{
+	if (port != 6)
+		return -EINVAL;
+
+	/* The Loss of signal line is active low */
+	return !gpio_get_value(RB2011_GPIO_SFP_LOS);
+}
+
+static void __init rb2011_sfp_init(void)
+{
+	gpio_request_one(RB2011_GPIO_SFP_LOS, GPIOF_IN, "SFP LOS");
+
+	rb2011_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_SGMII;
+
+	rb2011_ar8327_data.pad6_cfg = &rb2011_ar8327_pad6_cfg;
+
+	rb2011_ar8327_sgmii_cfg.sgmii_ctrl = 0xc70167d0;
+	rb2011_ar8327_sgmii_cfg.serdes_aen = true;
+
+	rb2011_ar8327_data.sgmii_cfg = &rb2011_ar8327_sgmii_cfg;
+
+	rb2011_ar8327_data.port6_cfg.force_link = 1;
+	rb2011_ar8327_data.port6_cfg.speed = AR8327_PORT_SPEED_1000;
+	rb2011_ar8327_data.port6_cfg.duplex = 1;
+
+	rb2011_ar8327_data.get_port_link = rb2011_get_port_link;
+}
+
 static void __init rb2011_setup(void)
 {
 	rb2011_init_partitions();
@@ -271,6 +304,7 @@ MIPS_MACHINE(ATH79_MACH_RB_2011L, "2011L", "MikroTik RouterBOARD 2011L",
 static void __init rb2011us_setup(void)
 {
 	rb2011_setup();
+	rb2011_sfp_init();
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_2011US, "2011US", "MikroTik RouterBOARD 2011UAS",
@@ -279,6 +313,7 @@ MIPS_MACHINE(ATH79_MACH_RB_2011US, "2011US", "MikroTik RouterBOARD 2011UAS",
 static void __init rb2011g_setup(void)
 {
 	rb2011_setup();
+	rb2011_sfp_init();
 	rb2011_wlan_init();
 }
 
