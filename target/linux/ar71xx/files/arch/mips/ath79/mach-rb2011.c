@@ -32,6 +32,7 @@
 #include "dev-eth.h"
 #include "dev-m25p80.h"
 #include "dev-nfc.h"
+#include "dev-usb.h"
 #include "dev-wmac.h"
 #include "machtypes.h"
 #include "routerboot.h"
@@ -305,6 +306,8 @@ static void __init rb2011us_setup(void)
 {
 	rb2011_setup();
 	rb2011_sfp_init();
+
+	ath79_register_usb();
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_2011US, "2011US", "MikroTik RouterBOARD 2011UAS",
@@ -315,6 +318,8 @@ static void __init rb2011g_setup(void)
 	rb2011_setup();
 	rb2011_sfp_init();
 	rb2011_wlan_init();
+
+	ath79_register_usb();
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_2011G, "2011G", "MikroTik RouterBOARD 2011UAS-2HnD",
