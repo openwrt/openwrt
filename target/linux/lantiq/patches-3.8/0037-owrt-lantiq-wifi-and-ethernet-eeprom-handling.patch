@@ -176,7 +176,7 @@ Subject: [PATCH 37/40] owrt: lantiq: wifi and ethernet eeprom handling
 +{
 +	return platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
 +}
-+arch_initcall(of_ath9k_eeprom_init);
++late_initcall(of_ath9k_eeprom_init);
 +
 +
 +static int ath5k_pci_plat_dev_init(struct pci_dev *dev)
@@ -256,7 +256,7 @@ Subject: [PATCH 37/40] owrt: lantiq: wifi and ethernet eeprom handling
 +{
 +	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
 +}
-+device_initcall(of_ath5k_eeprom_init);
++late_initcall(of_ath5k_eeprom_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/eth_mac.c
 @@ -0,0 +1,76 @@
@@ -544,3 +544,11 @@ Subject: [PATCH 37/40] owrt: lantiq: wifi and ethernet eeprom handling
  
  	priv->clk_ppe = clk_get(&pdev->dev, NULL);
  	if (IS_ERR(priv->clk_ppe))
+--- a/arch/mips/pci/pci-lantiq.c
++++ b/arch/mips/pci/pci-lantiq.c
+@@ -260,4 +260,4 @@ int __init pcibios_init(void)
+ 	return ret;
+ }
+ 
+-arch_initcall(pcibios_init);
++late_initcall(pcibios_init);
