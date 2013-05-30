@@ -63,6 +63,11 @@ struct ar8327_port_cfg {
 	int duplex:1;
 };
 
+struct ar8327_sgmii_cfg {
+	u32 sgmii_ctrl;
+	bool serdes_aen;
+};
+
 struct ar8327_led_cfg {
 	u32 led_ctrl0;
 	u32 led_ctrl1;
@@ -75,6 +80,7 @@ struct ar8327_platform_data {
 	struct ar8327_pad_cfg *pad0_cfg;
 	struct ar8327_pad_cfg *pad5_cfg;
 	struct ar8327_pad_cfg *pad6_cfg;
+	struct ar8327_sgmii_cfg *sgmii_cfg;
 	struct ar8327_port_cfg port0_cfg;
 	struct ar8327_port_cfg port6_cfg;
 	struct ar8327_led_cfg *led_cfg;
