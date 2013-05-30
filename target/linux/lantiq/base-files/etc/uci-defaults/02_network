@@ -72,6 +72,11 @@ WBMR)
 VG3503J)
 	ucidef_set_interface_lan 'eth0 eth1'
 	;;
+DGN3500*)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "3 2 1 0 5t"
+	;;
 esac
 
 [ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"
