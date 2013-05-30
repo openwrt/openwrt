@@ -119,6 +119,14 @@ static struct ar8327_pad_cfg rb2011_ar8327_pad0_cfg = {
 	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0,
 };
 
+static struct ar8327_led_cfg rb2011_ar8327_led_cfg = {
+	.led_ctrl0 = 0x0000c731,
+	.led_ctrl1 = 0x00000000,
+	.led_ctrl2 = 0x00000000,
+	.led_ctrl3 = 0x0030c300,
+	.open_drain = false,
+};
+
 static struct ar8327_platform_data rb2011_ar8327_data = {
 	.pad0_cfg = &rb2011_ar8327_pad0_cfg,
 	.port0_cfg = {
@@ -127,7 +135,8 @@ static struct ar8327_platform_data rb2011_ar8327_data = {
 		.duplex = 1,
 		.txpause = 1,
 		.rxpause = 1,
-	}
+	},
+	.led_cfg = &rb2011_ar8327_led_cfg,
 };
 
 static struct mdio_board_info rb2011_mdio0_info[] = {
