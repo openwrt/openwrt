@@ -2413,8 +2413,9 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 	if (ret)
 		goto free_priv;
 
-	pr_info("%s: %s switch registered on %s\n",
-		swdev->devname, swdev->name, dev_name(&priv->mii_bus->dev));
+	pr_info("%s: %s rev. %u switch registered on %s\n",
+		swdev->devname, swdev->name, priv->chip_rev,
+		dev_name(&priv->mii_bus->dev));
 
 found:
 	priv->use_count++;
