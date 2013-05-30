@@ -1,0 +1,39 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -495,6 +495,16 @@ config ATH79_MACH_EAP7660D
+ 	select ATH79_DEV_LEDS_GPIO
+ 	select ATH79_DEV_M25P80
+ 
++config ATH79_MACH_ARCHER_C7
++	bool "TP-LINK Archer C7 board support"
++	select SOC_QCA955X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_SPI
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_TL_MR11U
+ 	bool "TP-LINK TL-MR11U/TL-MR3040 support"
+ 	select SOC_AR933X
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -31,6 +31,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_AP81,		/* Atheros AP81 reference board */
+ 	ATH79_MACH_AP83,		/* Atheros AP83 */
+ 	ATH79_MACH_AP96,		/* Atheros AP96 */
++	ATH79_MACH_ARCHER_C7,		/* TP-LINK Archer C7 board */
+ 	ATH79_MACH_AW_NR580,		/* AzureWave AW-NR580 */
+ 	ATH79_MACH_CAP4200AG,		/* Senao CAP4200AG */
+ 	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -49,6 +49,7 @@ obj-$(CONFIG_ATH79_MACH_AP136)		+= mach-
+ obj-$(CONFIG_ATH79_MACH_AP81)		+= mach-ap81.o
+ obj-$(CONFIG_ATH79_MACH_AP83)		+= mach-ap83.o
+ obj-$(CONFIG_ATH79_MACH_AP96)		+= mach-ap96.o
++obj-$(CONFIG_ATH79_MACH_ARCHER_C7)	+= mach-archer-c7.o
+ obj-$(CONFIG_ATH79_MACH_AW_NR580)	+= mach-aw-nr580.o
+ obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
+ obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
