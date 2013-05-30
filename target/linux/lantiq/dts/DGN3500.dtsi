@@ -2,7 +2,7 @@
 
 / {
 	chosen {
-		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+		bootargs-append = "console=ttyLTQ0,115200 init=/etc/preinit";
 	};
 
 	memory@0 {
@@ -99,7 +99,7 @@
 				read-only;
 			};
 
-			partition@20000 {
+			ath9k_cal: partition@20000 {
 				reg = <0x20000 0x10000>;
 				label = "calibration";
 				read-only;
@@ -110,6 +110,13 @@
 				label = "linux";
 			};
 		};
+	};
+
+	ath9k_eep {
+		compatible = "ath9k,eeprom";
+		ath,eep-flash = <&ath9k_cal 0xf000>;
+		ath,pci-slot = <14>;
+		ath,eep-swap;
 	};
 
 	rtl8366rb {
@@ -144,7 +151,7 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 		internet {
-			label = "inernet";
+			label = "internet";
 			gpios = <&gpio 2 1>;
 		};
 		dsl {
@@ -158,7 +165,6 @@
 		power {
 			label = "power";
 			gpios = <&gpio 34 1>;
-			default-state = "on";
 		};
 		power2 {
 			label = "power2";
