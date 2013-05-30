@@ -328,10 +328,14 @@ define Image/Build/CameoHornet
 	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		mkcameofw -M HORNET -R "DEF" -S $(7) -V $(8) -c \
-			-K 0xe0000 -I $$$$(($(5)+$(6))) \
-			-k "$(call sysupname,$(1),$(2))" \
-			-o $(call factoryname,$(1),$(2)); \
+		for r in $(9); do \
+			[ -n "$$$$r" ] && dashr="-$$$$r" || dashr=; \
+			[ -z "$$$$r" ] && r="DEF"; \
+			mkcameofw -M HORNET -R "$$$$r" -S $(7) -V $(8) -c \
+				-K 0xe0000 -I $$$$(($(5)+$(6))) \
+				-k "$(call sysupname,$(1),$(2))" \
+				-o $(call imgname,$(1),$(2))-factory$$$$dashr.bin; \
+		done; \
 	fi
 endef
 
@@ -352,7 +356,7 @@ define Image/Build/Cameo7240/initramfs
 endef
 
 define Image/Build/Cameo933x
-	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),1048576,2686976,$(4),$(5))
+	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),1048576,2686976,$(4),$(5),$(6))
 endef
 
 define Image/Build/Cameo933x/initramfs
@@ -857,7 +861,7 @@ $(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW632BRP,tew-632brp,TEW-632B
 $(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_FW,tew-652brp,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-080609-05"))
 $(eval $(call SingleProfile,Cameo913x,$(fs_squash),TEW652BRP_RECOVERY,tew-652brp-recovery,TEW-632BRP,ttyS0,115200,"AP81-AR9130-RT-070614-02"))
 
-$(eval $(call SingleProfile,Cameo933x,$(fs_squash),TEW712BR,tew-712br,TEW-712BR,ttyATH0,115200,"HORNET-RT-TEW712BR-3",1.99))
+$(eval $(call SingleProfile,Cameo933x,$(fs_squash),TEW712BR,tew-712br,TEW-712BR,ttyATH0,115200,"HORNET-RT-TEW712BR-3",1.99,""))
 
 $(eval $(call SingleProfile,Cameo934x,$(fs_64k),DIR825C1,dir-825-c1,DIR-825-C1,ttyS0,115200,"00DB120AR9344-RT-101214-00"))
 $(eval $(call SingleProfile,Cameo934x,$(fs_64k),DIR835A1,dir-835-a1,DIR-835-A1,ttyS0,115200,"00DB120AR9344-RT-101214-00"))
