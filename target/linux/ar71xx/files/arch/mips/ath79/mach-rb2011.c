@@ -115,8 +115,8 @@ static struct ar8327_pad_cfg rb2011_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
 	.rxclk_delay_en = true,
-	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
-	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+	.txclk_delay_sel = AR8327_CLK_DELAY_SEL3,
+	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0,
 };
 
 static struct ar8327_platform_data rb2011_ar8327_data = {
