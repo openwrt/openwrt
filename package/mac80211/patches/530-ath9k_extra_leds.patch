@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -549,6 +549,9 @@ struct ath9k_wow_pattern {
+@@ -555,6 +555,9 @@ struct ath9k_wow_pattern {
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
  void ath_fill_led_pin(struct ath_softc *sc);
@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -683,6 +686,13 @@ enum spectral_mode {
+@@ -689,6 +692,13 @@ enum spectral_mode {
  	SPECTRAL_CHANSCAN,
  };
  
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -724,9 +734,8 @@ struct ath_softc {
+@@ -730,9 +740,8 @@ struct ath_softc {
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
  #ifdef CONFIG_MAC80211_LEDS
@@ -162,7 +162,7 @@
  void ath_fill_led_pin(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -893,7 +893,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -895,7 +895,7 @@ int ath9k_init_device(u16 devid, struct 
  
  #ifdef CONFIG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
