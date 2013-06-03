@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mklibs
-PKG_VERSION:=0.1.35
+PKG_VERSION:=0.1.37
 
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://ftp.de.debian.org/debian/pool/main/m/mklibs/
-PKG_MD5SUM:=3d2a4bd0bbf5ba964b0a1ecdafd1ea9a
+PKG_MD5SUM:=099cc99d51f09ea51e58a56e62a46af7
 
 HOST_FIXUP:=autoreconf
 

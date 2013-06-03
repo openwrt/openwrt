@@ -1,6 +1,6 @@
 --- a/src/mklibs
 +++ b/src/mklibs
-@@ -106,14 +106,14 @@ def library_depends(obj):
+@@ -106,14 +106,14 @@
  
  # Return a list of libraries the passed objects depend on. The
  # libraries are in "-lfoo" format suitable for passing to gcc.
@@ -17,7 +17,7 @@
              if match.group('ld'):
                  ret.append(find_lib(match.group(0)))
              elif match.group('lib'):
-@@ -619,7 +619,7 @@ while 1:
+@@ -617,7 +617,7 @@
              cmd.extend(extra_flags)
              cmd.append("-lgcc")
              cmd.extend(["-L%s" % a for a in [dest_path] + [sysroot + b for b in lib_path if sysroot == "" or b not in ("/" + libdir + "/", "/usr/" + libdir + "/")]])
