@@ -1,6 +1,6 @@
 --- a/src/mklibs
 +++ b/src/mklibs
-@@ -524,7 +524,7 @@ while 1:
+@@ -522,7 +522,7 @@
          # No progress in last pass. Verify all remaining symbols are weak.
          for name in unresolved:
              if not needed_symbols[name].weak:
@@ -9,7 +9,7 @@
          break
  
      previous_pass_unresolved = unresolved
-@@ -559,7 +559,7 @@ while 1:
+@@ -557,7 +557,7 @@
      for name in needed_symbols:
          if not name in symbol_provider:
              if not needed_symbols[name].weak:
