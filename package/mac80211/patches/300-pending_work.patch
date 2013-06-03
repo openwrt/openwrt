@@ -4262,7 +4262,7 @@
  	width = (flags & IEEE80211_TX_RC_40_MHZ_WIDTH) ? 1 : 0;
  	half_gi = (flags & IEEE80211_TX_RC_SHORT_GI) ? 1 : 0;
  
-@@ -803,24 +790,16 @@ static int ath_compute_num_delims(struct
+@@ -803,25 +790,20 @@ static int ath_compute_num_delims(struct
  	return ndelim;
  }
  
@@ -4290,9 +4290,13 @@
 -	do {
 +	while (1) {
  		skb = skb_peek(&tid->buf_q);
++		if (!skb)
++			break;
++
  		fi = get_frame_info(skb);
  		bf = fi->bf;
-@@ -837,10 +816,8 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+ 		if (!fi->bf)
+@@ -837,10 +819,8 @@ static enum ATH_AGGR_STATUS ath_tx_form_
  		seqno = bf->bf_state.seqno;
  
  		/* do not step over block-ack window */
@@ -4304,7 +4308,7 @@
  
  		if (tid->bar_index > ATH_BA_INDEX(tid->seq_start, seqno)) {
  			struct ath_tx_status ts = {};
-@@ -854,10 +831,45 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+@@ -854,10 +834,45 @@ static enum ATH_AGGR_STATUS ath_tx_form_
  			continue;
  		}
  
@@ -4350,7 +4354,7 @@
  			aggr_limit = ath_lookup_rate(sc, bf, tid);
  			rl = 1;
  		}
-@@ -898,7 +910,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+@@ -898,7 +913,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_
  
  		/* link buffers of this frame to the aggregate */
  		if (!fi->retries)
@@ -4359,7 +4363,7 @@
  		bf->bf_state.ndelim = ndelim;
  
  		__skb_unlink(skb, &tid->buf_q);
-@@ -998,14 +1010,14 @@ static void ath_buf_set_rate(struct ath_
+@@ -998,14 +1013,14 @@ static void ath_buf_set_rate(struct ath_
  
  	skb = bf->bf_mpdu;
  	tx_info = IEEE80211_SKB_CB(skb);
@@ -4376,7 +4380,7 @@
  		bool is_40, is_sgi, is_sp;
  		int phy;
  
-@@ -1107,9 +1119,8 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1107,9 +1122,8 @@ static void ath_tx_fill_desc(struct ath_
  {
  	struct ath_hw *ah = sc->sc_ah;
  	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(bf->bf_mpdu);
@@ -4387,7 +4391,7 @@
  
  	memset(&info, 0, sizeof(info));
  	info.is_first = true;
-@@ -1117,24 +1128,17 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1117,24 +1131,17 @@ static void ath_tx_fill_desc(struct ath_
  	info.txpower = MAX_RATE_POWER;
  	info.qcu = txq->axq_qnum;
  
@@ -4415,7 +4419,7 @@
  
  		info.type = get_hw_packet_type(skb);
  		if (bf->bf_next)
-@@ -1142,6 +1146,21 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1142,6 +1149,21 @@ static void ath_tx_fill_desc(struct ath_
  		else
  			info.link = 0;
  
@@ -4437,7 +4441,7 @@
  		info.buf_addr[0] = bf->bf_buf_addr;
  		info.buf_len[0] = skb->len;
  		info.pkt_len = fi->framelen;
-@@ -1151,7 +1170,7 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1151,7 +1173,7 @@ static void ath_tx_fill_desc(struct ath_
  		if (aggr) {
  			if (bf == bf_first)
  				info.aggr = AGGR_BUF_FIRST;
@@ -4446,7 +4450,7 @@
  				info.aggr = AGGR_BUF_LAST;
  			else
  				info.aggr = AGGR_BUF_MIDDLE;
-@@ -1160,6 +1179,9 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1160,6 +1182,9 @@ static void ath_tx_fill_desc(struct ath_
  			info.aggr_len = len;
  		}
  
@@ -4456,7 +4460,7 @@
  		ath9k_hw_set_txdesc(ah, bf->bf_desc, &info);
  		bf = bf->bf_next;
  	}
-@@ -1224,9 +1246,6 @@ int ath_tx_aggr_start(struct ath_softc *
+@@ -1224,9 +1249,6 @@ int ath_tx_aggr_start(struct ath_softc *
  	an = (struct ath_node *)sta->drv_priv;
  	txtid = ATH_AN_2_TID(an, tid);
  
@@ -4466,7 +4470,7 @@
  	/* update ampdu factor/density, they may have changed. This may happen
  	 * in HT IBSS when a beacon with HT-info is received after the station
  	 * has already been added.
-@@ -1238,7 +1257,7 @@ int ath_tx_aggr_start(struct ath_softc *
+@@ -1238,7 +1260,7 @@ int ath_tx_aggr_start(struct ath_softc *
  		an->mpdudensity = density;
  	}
  
@@ -4475,7 +4479,7 @@
  	txtid->paused = true;
  	*ssn = txtid->seq_start = txtid->seq_next;
  	txtid->bar_index = -1;
-@@ -1255,28 +1274,9 @@ void ath_tx_aggr_stop(struct ath_softc *
+@@ -1255,28 +1277,9 @@ void ath_tx_aggr_stop(struct ath_softc *
  	struct ath_atx_tid *txtid = ATH_AN_2_TID(an, tid);
  	struct ath_txq *txq = txtid->ac->txq;
  
@@ -4505,7 +4509,7 @@
  	ath_tx_flush_tid(sc, txtid);
  	ath_txq_unlock_complete(sc, txq);
  }
-@@ -1342,18 +1342,92 @@ void ath_tx_aggr_wakeup(struct ath_softc
+@@ -1342,18 +1345,92 @@ void ath_tx_aggr_wakeup(struct ath_softc
  	}
  }
  
@@ -4605,7 +4609,7 @@
  }
  
  /********************/
-@@ -1709,8 +1783,9 @@ static void ath_tx_txqaddbuf(struct ath_
+@@ -1709,8 +1786,9 @@ static void ath_tx_txqaddbuf(struct ath_
  	}
  }
  
@@ -4617,7 +4621,7 @@
  {
  	struct ath_frame_info *fi = get_frame_info(skb);
  	struct list_head bf_head;
-@@ -1723,26 +1798,28 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1723,26 +1801,28 @@ static void ath_tx_send_ampdu(struct ath
  	 * - seqno is not within block-ack window
  	 * - h/w queue depth exceeds low water mark
  	 */
@@ -4652,7 +4656,7 @@
  	bf->bf_state.bf_type = BUF_AMPDU;
  	INIT_LIST_HEAD(&bf_head);
  	list_add(&bf->list, &bf_head);
-@@ -1751,10 +1828,10 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1751,10 +1831,10 @@ static void ath_tx_send_ampdu(struct ath
  	ath_tx_addto_baw(sc, tid, bf->bf_state.seqno);
  
  	/* Queue to h/w without aggregation */
@@ -4666,7 +4670,7 @@
  }
  
  static void ath_tx_send_normal(struct ath_softc *sc, struct ath_txq *txq,
-@@ -1892,49 +1969,6 @@ static struct ath_buf *ath_tx_setup_buff
+@@ -1892,49 +1972,6 @@ static struct ath_buf *ath_tx_setup_buff
  	return bf;
  }
  
@@ -4716,7 +4720,7 @@
  /* Upon failure caller should free skb */
  int ath_tx_start(struct ieee80211_hw *hw, struct sk_buff *skb,
  		 struct ath_tx_control *txctl)
-@@ -1945,8 +1979,11 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1945,8 +1982,11 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ieee80211_vif *vif = info->control.vif;
  	struct ath_softc *sc = hw->priv;
  	struct ath_txq *txq = txctl->txq;
@@ -4728,7 +4732,7 @@
  	int q;
  
  	/* NOTE:  sta can be NULL according to net/mac80211.h */
-@@ -2002,8 +2039,47 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2002,8 +2042,47 @@ int ath_tx_start(struct ieee80211_hw *hw
  		txq->stopped = true;
  	}
  
@@ -4777,7 +4781,7 @@
  	ath_txq_unlock(sc, txq);
  
  	return 0;
-@@ -2054,7 +2130,12 @@ static void ath_tx_complete(struct ath_s
+@@ -2054,7 +2133,12 @@ static void ath_tx_complete(struct ath_s
  	}
  	spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
  
@@ -4790,7 +4794,7 @@
  	if (txq == sc->tx.txq_map[q]) {
  		if (WARN_ON(--txq->pending_frames < 0))
  			txq->pending_frames = 0;
-@@ -2065,8 +2146,6 @@ static void ath_tx_complete(struct ath_s
+@@ -2065,8 +2149,6 @@ static void ath_tx_complete(struct ath_s
  			txq->stopped = false;
  		}
  	}
@@ -4799,7 +4803,7 @@
  }
  
  static void ath_tx_complete_buf(struct ath_softc *sc, struct ath_buf *bf,
-@@ -2408,12 +2487,10 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2408,12 +2490,10 @@ void ath_tx_node_init(struct ath_softc *
  		tid->baw_head  = tid->baw_tail = 0;
  		tid->sched     = false;
  		tid->paused    = false;
@@ -4813,7 +4817,7 @@
  	}
  
  	for (acno = 0, ac = &an->ac[acno];
-@@ -2450,9 +2527,9 @@ void ath_tx_node_cleanup(struct ath_soft
+@@ -2450,9 +2530,9 @@ void ath_tx_node_cleanup(struct ath_soft
  		}
  
  		ath_tid_drain(sc, txq, tid);
