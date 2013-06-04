@@ -7,14 +7,14 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=firewall3
+PKG_NAME:=firewall
 PKG_VERSION:=2013-06-04
 PKG_RELEASE:=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://nbd.name/firewall3.git
+PKG_SOURCE_URL:=git://nbd.name/firewall.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=182abe47ae4686944482580b42a972827a0e4b51
+PKG_SOURCE_VERSION:=5ee2129eaa23a28bfef6d20c273cafc0be559b3d
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
@@ -23,18 +23,18 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-define Package/firewall3
+define Package/firewall
   SECTION:=net
-  CATEGORY:=Network
-  TITLE:=UCI C Firewall
+  CATEGORY:=Base system
+  TITLE:=OpenWrt C Firewall
   DEPENDS:=+libubox +libubus +libuci +libip4tc +IPV6:libip6tc +libxtables
 endef
 
-define Package/firewall3/description
+define Package/firewall/description
  This package provides a config-compatible C implementation of the UCI firewall.
 endef
 
-define Package/firewall3/conffiles
+define Package/firewall/conffiles
 /etc/config/firewall
 /etc/firewall.user
 endef
@@ -50,9 +50,9 @@ TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 CMAKE_OPTIONS += $(if $(CONFIG_IPV6),,-DDISABLE_IPV6=1)
 
-define Package/firewall3/install
+define Package/firewall/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/firewall3 $(1)/sbin/fw3
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/firewall $(1)/sbin/fw3
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/firewall.init $(1)/etc/init.d/firewall
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
@@ -63,4 +63,4 @@ define Package/firewall3/install
 	$(INSTALL_DATA) ./files/firewall.user $(1)/etc/firewall.user
 endef
 
-$(eval $(call BuildPackage,firewall3))
+$(eval $(call BuildPackage,firewall))
