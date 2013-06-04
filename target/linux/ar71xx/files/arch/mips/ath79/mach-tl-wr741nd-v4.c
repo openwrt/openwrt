@@ -34,6 +34,9 @@
 #define TL_WR741NDV4_GPIO_LED_LAN4	17
 #define TL_WR741NDV4_GPIO_LED_SYSTEM	27
 
+#define TL_MR3220V2_GPIO_BTN_WPS	11
+#define TL_MR3220V2_GPIO_BTN_WIFI	24
+
 #define TL_MR3220V2_GPIO_LED_3G		26
 #define TL_MR3220V2_GPIO_USB_POWER	8
 
@@ -99,12 +102,29 @@ static struct gpio_keys_button tl_wr741ndv4_gpio_keys[] __initdata = {
 		.gpio		= TL_WR741NDV4_GPIO_BTN_RESET,
 		.active_low	= 0,
 	}, {
-		/* the WPS button is only present on the WR741ND v4 */
 		.desc		= "WPS",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = TL_WR741NDV4_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= TL_WR741NDV4_GPIO_BTN_WPS,
+		.active_low	= 0,
+	}
+};
+
+static struct gpio_keys_button tl_mr3220v2_gpio_keys[] __initdata = {
+	{
+		.desc		= "WPS",
+		.type		= EV_KEY,
+		.code		= KEY_WPS_BUTTON,
+		.debounce_interval = TL_WR741NDV4_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= TL_MR3220V2_GPIO_BTN_WPS,
+		.active_low	= 0,
+	}, {
+		.desc		= "WIFI button",
+		.type		= EV_KEY,
+		.code		= KEY_RFKILL,
+		.debounce_interval = TL_WR741NDV4_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= TL_MR3220V2_GPIO_BTN_WIFI,
 		.active_low	= 0,
 	}
 };
@@ -159,8 +179,8 @@ static void __init tl_mr3220v2_setup(void)
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr741ndv4_leds_gpio),
 				 tl_wr741ndv4_leds_gpio);
 	ath79_register_gpio_keys_polled(1, TL_WR741NDV4_KEYS_POLL_INTERVAL,
-					ARRAY_SIZE(tl_wr741ndv4_gpio_keys) - 1,
-					tl_wr741ndv4_gpio_keys);
+					ARRAY_SIZE(tl_mr3220v2_gpio_keys),
+					tl_mr3220v2_gpio_keys);
 }
 
 MIPS_MACHINE(ATH79_MACH_TL_MR3220_V2, "TL-MR3220-v2",
