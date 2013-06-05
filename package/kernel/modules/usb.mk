@@ -849,7 +849,7 @@ define KernelPackage/usb-net-cdc-mbim
   KCONFIG:=CONFIG_USB_NET_CDC_MBIM
   FILES:= \
    $(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_mbim.ko
-  AUTOLOAD:=$(call AutoLoad,61,cdc_mbim)
+  AUTOLOAD:=$(call AutoLoad,62,cdc_mbim)
   $(call AddDepends/usb-net,+kmod-usb-wdm,+kmod-usb-net-cdc-ncm)
 endef
 
