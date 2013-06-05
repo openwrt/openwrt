@@ -4415,10 +4415,11 @@
  		bool is_40, is_sgi, is_sp;
  		int phy;
  
-@@ -1107,9 +1122,8 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1106,10 +1121,8 @@ static void ath_tx_fill_desc(struct ath_
+ 			     struct ath_txq *txq, int len)
  {
  	struct ath_hw *ah = sc->sc_ah;
- 	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(bf->bf_mpdu);
+-	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(bf->bf_mpdu);
 -	struct ath_buf *bf_first = bf;
 +	struct ath_buf *bf_first = NULL;
  	struct ath_tx_info info;
@@ -4426,7 +4427,7 @@
  
  	memset(&info, 0, sizeof(info));
  	info.is_first = true;
-@@ -1117,24 +1131,17 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1117,24 +1130,14 @@ static void ath_tx_fill_desc(struct ath_
  	info.txpower = MAX_RATE_POWER;
  	info.qcu = txq->axq_qnum;
  
@@ -4439,22 +4440,21 @@
 -	ath_buf_set_rate(sc, bf, &info, len);
 -
 -	if (tx_info->flags & IEEE80211_TX_CTL_CLEAR_PS_FILT)
-+	if ((tx_info->flags & IEEE80211_TX_CTL_CLEAR_PS_FILT) ||
-+	    txq == sc->tx.uapsdq)
- 		info.flags |= ATH9K_TXDESC_CLRDMASK;
- 
+-		info.flags |= ATH9K_TXDESC_CLRDMASK;
+-
  	if (bf->bf_state.bfs_paprd)
  		info.flags |= (u32) bf->bf_state.bfs_paprd << ATH9K_TXDESC_PAPRD_S;
  
 -
  	while (bf) {
  		struct sk_buff *skb = bf->bf_mpdu;
++		struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
  		struct ath_frame_info *fi = get_frame_info(skb);
 +		bool aggr = !!(bf->bf_state.bf_type & BUF_AGGR);
  
  		info.type = get_hw_packet_type(skb);
  		if (bf->bf_next)
-@@ -1142,6 +1149,21 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1142,6 +1145,25 @@ static void ath_tx_fill_desc(struct ath_
  		else
  			info.link = 0;
  
@@ -4462,6 +4462,10 @@
 +			bf_first = bf;
 +
 +			info.flags = ATH9K_TXDESC_INTREQ;
++			if ((tx_info->flags & IEEE80211_TX_CTL_CLEAR_PS_FILT) ||
++			    txq == sc->tx.uapsdq)
++				info.flags |= ATH9K_TXDESC_CLRDMASK;
++
 +			if (tx_info->flags & IEEE80211_TX_CTL_NO_ACK)
 +				info.flags |= ATH9K_TXDESC_NOACK;
 +			if (tx_info->flags & IEEE80211_TX_CTL_LDPC)
@@ -4777,7 +4781,7 @@
 +		txq = sc->tx.uapsdq;
 +		ath_txq_lock(sc, txq);
 +	}
-+
+ 
 +	if (txctl->an && ieee80211_is_data_qos(hdr->frame_control)) {
 +		tidno = ieee80211_get_qos_ctl(hdr)[0] &
 +			IEEE80211_QOS_CTL_TID_MASK;
@@ -4811,7 +4815,7 @@
 +
 +	ath_set_rates(vif, sta, bf);
 +	ath_tx_send_normal(sc, txq, tid, skb);
- 
++
 +out:
  	ath_txq_unlock(sc, txq);
  
