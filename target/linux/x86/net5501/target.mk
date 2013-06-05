@@ -1,5 +1,5 @@
 BOARDNAME:=Soekris net5501
-FEATURES:=squashfs jffs2 ext4 pci usb gpio
+FEATURES:=squashfs ext4 pci usb gpio
 DEFAULT_PACKAGES += kmod-crypto-hw-geode kmod-crypto-ocf \
 			kmod-gpio-cs5535-new kmod-gpio-nsc \
 			kmod-wdt-geode kmod-cs5535-clockevt kmod-cs5535-mfgpt \

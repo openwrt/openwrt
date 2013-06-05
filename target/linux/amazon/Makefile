@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=amazon
 BOARDNAME:=Infineon Amazon
-FEATURES:=squashfs jffs2 broken
+FEATURES:=squashfs broken
 LINUX_VERSION:=3.3.8
 
 include $(INCLUDE_DIR)/target.mk
