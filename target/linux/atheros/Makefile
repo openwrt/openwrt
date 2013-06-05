@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=atheros
 BOARDNAME:=Atheros AR231x/AR5312
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs
 
 LINUX_VERSION:=3.8.13
 

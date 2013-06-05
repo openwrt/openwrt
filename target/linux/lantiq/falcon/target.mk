@@ -1,7 +1,7 @@
 ARCH:=mips
 SUBTARGET:=falcon
 BOARDNAME:=Falcon
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs
 DEVICE_TYPE:=other
 
 DEFAULT_PACKAGES+= kmod-ifxos gpon-base-files kmod-leds-gpio kmod-ledtrig-heartbeat \

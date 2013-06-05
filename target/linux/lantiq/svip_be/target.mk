@@ -1,7 +1,7 @@
 ARCH:=mips
 SUBTARGET:=svip_be
 BOARDNAME:=SVIP Big Endian
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs
 DEVICE_TYPE:=other
 
 DEFAULT_PACKAGES+= uboot-svip hostapd-mini

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=pxa
 BOARDNAME:=Marvell/Intel PXA2xx
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=3.3.8

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=mvebu
 BOARDNAME:=Marvell Armada XP/370
-FEATURES:=targz usb jffs2 pci pcie gpio
+FEATURES:=targz usb pci pcie gpio
 CFLAGS:=-Os -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
