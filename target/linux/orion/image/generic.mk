@@ -82,7 +82,9 @@ define Image/BuildKernel/ARM/uImage
 	'$(STAGING_DIR_HOST)/bin/mkimage' -A arm -O linux -T kernel \
 	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
 	-d '$(KDIR)/$(1)-zImage' '$(KDIR)/$(1)-uImage'
+ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)  # only copy uImage for ramdisk build
 	cp '$(KDIR)/$(1)-uImage' '$(BIN_DIR)/openwrt-$(1)-uImage'
+ endif
 endef
 
 define Image/BuildKernel/JFFS2uImage
