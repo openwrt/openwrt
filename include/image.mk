@@ -77,15 +77,25 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 
 else
 
-  ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2),)
-    define Image/mkfs/jffs2/sub
+  define Image/mkfs/jffs2/sub
 		# FIXME: removing this line will cause strange behaviour in the foreach loop below
-		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(JFFS2OPTS) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(1) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
-		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(1))
-		$(call Image/Build,jffs2-$(1))
-    endef
+		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
+		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(2))
+		$(call Image/Build,jffs2-$(2))
+  endef
+
+  ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2),)
     define Image/mkfs/jffs2
-		$(foreach SZ,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/sub,$(SZ)))
+		$(foreach SZ,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/sub,$(SZ),$(SZ),$(JFFS2OPS)))
+    endef
+  endif
+
+  ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2_NAND),)
+    define Image/mkfs/jffs2_nand
+		$(foreach SZ,$(NAND_BLOCKSIZE), $(call Image/mkfs/jffs2/sub, \
+			$(word 2,$(subst :, ,$(SZ))),nand-$(subst :,-,$(SZ)), \
+			$(JFFS2OPTS) --no-cleanmarkers --pagesize=$(word 1,$(subst :, ,$(SZ)))) \
+		)
     endef
   endif
 
@@ -188,6 +198,7 @@ define BuildImage
 		$(call Image/mkfs/ext4)
 		$(call Image/mkfs/iso)
 		$(call Image/mkfs/jffs2)
+		$(call Image/mkfs/jffs2_nand)
 		$(call Image/mkfs/squashfs)
 		$(call Image/mkfs/ubifs)
 		$(call Image/Checksum)
@@ -199,6 +210,7 @@ define BuildImage
 		$(call Image/mkfs/ext4)
 		$(call Image/mkfs/iso)
 		$(call Image/mkfs/jffs2)
+		$(call Image/mkfs/jffs2_nand)
 		$(call Image/mkfs/squashfs)
 		$(call Image/mkfs/ubifs)
 		$(call Image/Checksum)

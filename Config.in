@@ -97,6 +97,13 @@ menu "Target Images"
 		help
 		  Build a jffs2 root filesystem
 
+	config TARGET_ROOTFS_JFFS2_NAND
+		bool "jffs2 for NAND"
+		default y if USES_JFFS2_NAND
+		depends on !TARGET_ROOTFS_INITRAMFS && USES_JFFS2_NAND
+		help
+		  Build a jffs2 root filesystem for NAND flash
+
 	config TARGET_ROOTFS_SQUASHFS
 		bool "squashfs"
 		default y if USES_SQUASHFS
