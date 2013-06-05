@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2012 OpenWrt.org
+# Copyright (C) 2008-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -73,7 +73,6 @@ define Image/BuildKernel/ARM/zImage
 	# $(BOARD) kernel zImage for $(1)
 	echo -en $(2) > '$(KDIR)/$(1)-zImage'
 	cat '$(LINUX_DIR)/arch/arm/boot/zImage' >> '$(KDIR)/$(1)-zImage'
-	cp '$(KDIR)/$(1)-zImage' '$(BIN_DIR)/openwrt-$(1)-zImage'
 endef
 
 define Image/BuildKernel/ARM/uImage
