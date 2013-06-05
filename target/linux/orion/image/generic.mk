@@ -27,16 +27,6 @@ JFFS2_BLOCKSIZE:=64k 128k
 
 
 ###
-### Image/Prepare
-###
-
-define Image/Prepare
-### Dummy comment for indented calls of Image/Prepare
-	cp '$(LINUX_DIR)/arch/arm/boot/zImage' '$(BIN_DIR)/$(IMG_PREFIX)-zImage'
-endef
-
-
-###
 ### Image/BuildKernel
 ###
 
@@ -126,7 +116,6 @@ endef
 
 define Image/Build/squashfs
 $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-	cp '$(KDIR)/root.squashfs' '$(BIN_DIR)/$(IMG_PREFIX)-root.squashfs'
 endef
 
 ## generate defines for all JFFS2 block sizes
