@@ -11,6 +11,9 @@ LOADADDR = 0x80010000		# RAM start + 16M
 KERNEL_ENTRY = $(LOADADDR)	# Newer kernels add a jmp to the kernel_entry at the start of the binary
 RAMSIZE = 0x01000000		# 64MB
 
+DROP_SECTIONS := .reginfo .mdebug .comment .note .pdr .options .MIPS.options
+OBJCOPY_BIN := $(TARGET_CROSS)objcopy -S -O binary $(addprefix --remove-section=,$(DROP_SECTIONS))
+
 LOADER_MAKEOPTS= \
 		KDIR=$(KDIR) \
 		LOADADDR=$(LOADADDR) \
@@ -119,11 +122,19 @@ define Image/Build/CFEOLD
 		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin
 endef
 
+define Image/Build/HCS
+	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_byte=$(3) \
+		--rev_maj=$(4) --rev_min=$(5) --input_file=$(6) \
+		--output_file=$(BIN_DIR)/openwrt-$(2)-$(1).bin
+endef
+
 define Build/Clean
 	$(MAKE) -C lzma-loader clean
 endef
 
 define Image/Prepare
+	# Binary kernel
+	$(OBJCOPY_BIN) $(LINUX_DIR)/vmlinux $(KDIR)/vmlinux.bin
 	# Standard LZMA kernel
 	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 
@@ -279,6 +290,9 @@ define Image/Build
 
 	# T-Com Speedport W 303V Typ B
 	$(call Image/Build/SPW303V,$(1),96358-502V,6358,SPW303V)
+
+	# Netgear CVG834G
+	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux.bin)
   endif
 endef
 
