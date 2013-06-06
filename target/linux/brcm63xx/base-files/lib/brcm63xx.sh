@@ -57,6 +57,10 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
+	CVG834G_E15R3921)
+		status_led="CVG834G:green:power"
+		ifname=eth0
+		;;
 	GW6000)
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
