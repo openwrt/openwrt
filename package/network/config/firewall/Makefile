@@ -20,7 +20,6 @@ PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
 
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 define Package/firewall
@@ -40,9 +39,7 @@ define Package/firewall/conffiles
 endef
 
 define Build/Configure
-	$(foreach file,$(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext.a)),$(CP) $(file) $(PKG_BUILD_DIR)/libext.a)
-	$(foreach file,$(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext4.a)),$(CP) $(file) $(PKG_BUILD_DIR)/libext4.a)
-	$(foreach file,$(lastword $(wildcard $(KERNEL_BUILD_DIR)/iptables-*/extensions/libext6.a)),$(CP) $(file) $(PKG_BUILD_DIR)/libext6.a)
+	$(foreach file,$(wildcard $(STAGING_DIR)/usr/lib/iptables/libext*.a),$(CP) $(file) $(PKG_BUILD_DIR)/$(notdir $(file));)
 	$(call Build/Configure/Default)
 endef
 
