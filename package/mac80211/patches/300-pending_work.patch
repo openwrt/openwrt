@@ -40,7 +40,16 @@
  	u32 txq_max_pending[IEEE80211_NUM_ACS];
  	u16 max_aggr_framelen[IEEE80211_NUM_ACS][4][32];
  };
-@@ -356,6 +354,11 @@ void ath_tx_aggr_resume(struct ath_softc
+@@ -346,6 +344,8 @@ int ath_txq_update(struct ath_softc *sc,
+ void ath_update_max_aggr_framelen(struct ath_softc *sc, int queue, int txop);
+ int ath_tx_start(struct ieee80211_hw *hw, struct sk_buff *skb,
+ 		 struct ath_tx_control *txctl);
++void ath_tx_cabq(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++		 struct sk_buff *skb);
+ void ath_tx_tasklet(struct ath_softc *sc);
+ void ath_tx_edma_tasklet(struct ath_softc *sc);
+ int ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
+@@ -356,6 +356,11 @@ void ath_tx_aggr_resume(struct ath_softc
  void ath_tx_aggr_wakeup(struct ath_softc *sc, struct ath_node *an);
  void ath_tx_aggr_sleep(struct ieee80211_sta *sta, struct ath_softc *sc,
  		       struct ath_node *an);
@@ -52,15 +61,7 @@
  
  /********/
  /* VIFs */
-@@ -410,6 +413,7 @@ struct ath_beacon {
- 	struct ath_descdma bdma;
- 	struct ath_txq *cabq;
- 	struct list_head bbuf;
-+	int cabq_dur;
- 
- 	bool tx_processed;
- 	bool tx_last;
-@@ -658,11 +662,10 @@ enum sc_op_flags {
+@@ -658,11 +663,10 @@ enum sc_op_flags {
  struct ath_rate_table;
  
  struct ath9k_vif_iter_data {
@@ -4454,7 +4455,7 @@
  
  		info.type = get_hw_packet_type(skb);
  		if (bf->bf_next)
-@@ -1142,6 +1145,25 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1142,6 +1145,22 @@ static void ath_tx_fill_desc(struct ath_
  		else
  			info.link = 0;
  
@@ -4472,15 +4473,12 @@
 +				info.flags |= ATH9K_TXDESC_LDPC;
 +
 +			ath_buf_set_rate(sc, bf, &info, len);
-+
-+			if (txq == sc->beacon.cabq)
-+				sc->beacon.cabq_dur += info.rates[0].PktDuration;
 +		}
 +
  		info.buf_addr[0] = bf->bf_buf_addr;
  		info.buf_len[0] = skb->len;
  		info.pkt_len = fi->framelen;
-@@ -1151,7 +1173,7 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1151,7 +1170,7 @@ static void ath_tx_fill_desc(struct ath_
  		if (aggr) {
  			if (bf == bf_first)
  				info.aggr = AGGR_BUF_FIRST;
@@ -4489,7 +4487,7 @@
  				info.aggr = AGGR_BUF_LAST;
  			else
  				info.aggr = AGGR_BUF_MIDDLE;
-@@ -1160,6 +1182,9 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1160,6 +1179,9 @@ static void ath_tx_fill_desc(struct ath_
  			info.aggr_len = len;
  		}
  
@@ -4499,7 +4497,7 @@
  		ath9k_hw_set_txdesc(ah, bf->bf_desc, &info);
  		bf = bf->bf_next;
  	}
-@@ -1224,9 +1249,6 @@ int ath_tx_aggr_start(struct ath_softc *
+@@ -1224,9 +1246,6 @@ int ath_tx_aggr_start(struct ath_softc *
  	an = (struct ath_node *)sta->drv_priv;
  	txtid = ATH_AN_2_TID(an, tid);
  
@@ -4509,7 +4507,7 @@
  	/* update ampdu factor/density, they may have changed. This may happen
  	 * in HT IBSS when a beacon with HT-info is received after the station
  	 * has already been added.
-@@ -1238,7 +1260,7 @@ int ath_tx_aggr_start(struct ath_softc *
+@@ -1238,7 +1257,7 @@ int ath_tx_aggr_start(struct ath_softc *
  		an->mpdudensity = density;
  	}
  
@@ -4518,7 +4516,7 @@
  	txtid->paused = true;
  	*ssn = txtid->seq_start = txtid->seq_next;
  	txtid->bar_index = -1;
-@@ -1255,28 +1277,9 @@ void ath_tx_aggr_stop(struct ath_softc *
+@@ -1255,28 +1274,9 @@ void ath_tx_aggr_stop(struct ath_softc *
  	struct ath_atx_tid *txtid = ATH_AN_2_TID(an, tid);
  	struct ath_txq *txq = txtid->ac->txq;
  
@@ -4548,7 +4546,7 @@
  	ath_tx_flush_tid(sc, txtid);
  	ath_txq_unlock_complete(sc, txq);
  }
-@@ -1342,18 +1345,92 @@ void ath_tx_aggr_wakeup(struct ath_softc
+@@ -1342,18 +1342,92 @@ void ath_tx_aggr_wakeup(struct ath_softc
  	}
  }
  
@@ -4648,7 +4646,7 @@
  }
  
  /********************/
-@@ -1709,8 +1786,9 @@ static void ath_tx_txqaddbuf(struct ath_
+@@ -1709,8 +1783,9 @@ static void ath_tx_txqaddbuf(struct ath_
  	}
  }
  
@@ -4660,7 +4658,7 @@
  {
  	struct ath_frame_info *fi = get_frame_info(skb);
  	struct list_head bf_head;
-@@ -1723,26 +1801,28 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1723,26 +1798,28 @@ static void ath_tx_send_ampdu(struct ath
  	 * - seqno is not within block-ack window
  	 * - h/w queue depth exceeds low water mark
  	 */
@@ -4695,7 +4693,7 @@
  	bf->bf_state.bf_type = BUF_AMPDU;
  	INIT_LIST_HEAD(&bf_head);
  	list_add(&bf->list, &bf_head);
-@@ -1751,10 +1831,10 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1751,10 +1828,10 @@ static void ath_tx_send_ampdu(struct ath
  	ath_tx_addto_baw(sc, tid, bf->bf_state.seqno);
  
  	/* Queue to h/w without aggregation */
@@ -4709,7 +4707,7 @@
  }
  
  static void ath_tx_send_normal(struct ath_softc *sc, struct ath_txq *txq,
-@@ -1892,49 +1972,6 @@ static struct ath_buf *ath_tx_setup_buff
+@@ -1892,62 +1969,16 @@ static struct ath_buf *ath_tx_setup_buff
  	return bf;
  }
  
@@ -4756,22 +4754,79 @@
 -	}
 -}
 -
- /* Upon failure caller should free skb */
- int ath_tx_start(struct ieee80211_hw *hw, struct sk_buff *skb,
- 		 struct ath_tx_control *txctl)
-@@ -1945,8 +1982,11 @@ int ath_tx_start(struct ieee80211_hw *hw
+-/* Upon failure caller should free skb */
+-int ath_tx_start(struct ieee80211_hw *hw, struct sk_buff *skb,
+-		 struct ath_tx_control *txctl)
++static int ath_tx_prepare(struct ieee80211_hw *hw, struct sk_buff *skb,
++			  struct ath_tx_control *txctl)
+ {
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 	struct ieee80211_sta *sta = txctl->sta;
  	struct ieee80211_vif *vif = info->control.vif;
  	struct ath_softc *sc = hw->priv;
- 	struct ath_txq *txq = txctl->txq;
-+	struct ath_atx_tid *tid = NULL;
-+	struct ath_buf *bf;
- 	int padpos, padsize;
+-	struct ath_txq *txq = txctl->txq;
+-	int padpos, padsize;
  	int frmlen = skb->len + FCS_LEN;
-+	u8 tidno;
- 	int q;
+-	int q;
++	int padpos, padsize;
  
  	/* NOTE:  sta can be NULL according to net/mac80211.h */
-@@ -2002,8 +2042,47 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 	if (sta)
+@@ -1968,6 +1999,11 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 		hdr->seq_ctrl |= cpu_to_le16(sc->tx.seq_no);
+ 	}
+ 
++	if ((vif && vif->type != NL80211_IFTYPE_AP &&
++	            vif->type != NL80211_IFTYPE_AP_VLAN) ||
++	    !ieee80211_is_data(hdr->frame_control))
++		info->flags |= IEEE80211_TX_CTL_CLEAR_PS_FILT;
++
+ 	/* Add the padding after the header if this is not already done */
+ 	padpos = ieee80211_hdrlen(hdr->frame_control);
+ 	padsize = padpos & 3;
+@@ -1977,16 +2013,34 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 
+ 		skb_push(skb, padsize);
+ 		memmove(skb->data, skb->data + padsize, padpos);
+-		hdr = (struct ieee80211_hdr *) skb->data;
+ 	}
+ 
+-	if ((vif && vif->type != NL80211_IFTYPE_AP &&
+-	            vif->type != NL80211_IFTYPE_AP_VLAN) ||
+-	    !ieee80211_is_data(hdr->frame_control))
+-		info->flags |= IEEE80211_TX_CTL_CLEAR_PS_FILT;
+-
+ 	setup_frame_info(hw, sta, skb, frmlen);
++	return 0;
++}
++
++
++/* Upon failure caller should free skb */
++int ath_tx_start(struct ieee80211_hw *hw, struct sk_buff *skb,
++		 struct ath_tx_control *txctl)
++{
++	struct ieee80211_hdr *hdr;
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++	struct ieee80211_sta *sta = txctl->sta;
++	struct ieee80211_vif *vif = info->control.vif;
++	struct ath_softc *sc = hw->priv;
++	struct ath_txq *txq = txctl->txq;
++	struct ath_atx_tid *tid = NULL;
++	struct ath_buf *bf;
++	u8 tidno;
++	int q;
++	int ret;
++
++	ret = ath_tx_prepare(hw, skb, txctl);
++	if (ret)
++	    return ret;
+ 
++	hdr = (struct ieee80211_hdr *) skb->data;
+ 	/*
+ 	 * At this point, the vif, hw_key and sta pointers in the tx control
+ 	 * info are no longer valid (overwritten by the ath_frame_info data.
+@@ -2002,13 +2056,120 @@ int ath_tx_start(struct ieee80211_hw *hw
  		txq->stopped = true;
  	}
  
@@ -4781,7 +4836,7 @@
 +		txq = sc->tx.uapsdq;
 +		ath_txq_lock(sc, txq);
 +	}
- 
++
 +	if (txctl->an && ieee80211_is_data_qos(hdr->frame_control)) {
 +		tidno = ieee80211_get_qos_ctl(hdr)[0] &
 +			IEEE80211_QOS_CTL_TID_MASK;
@@ -4809,7 +4864,7 @@
 +	}
 +
 +	bf->bf_state.bfs_paprd = txctl->paprd;
-+
+ 
 +	if (txctl->paprd)
 +		bf->bf_state.bfs_paprd_timestamp = jiffies;
 +
@@ -4820,7 +4875,80 @@
  	ath_txq_unlock(sc, txq);
  
  	return 0;
-@@ -2054,7 +2133,12 @@ static void ath_tx_complete(struct ath_s
+ }
+ 
++void ath_tx_cabq(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++		 struct sk_buff *skb)
++{
++	struct ath_softc *sc = hw->priv;
++	struct ath_tx_control txctl = {
++		.txq = sc->beacon.cabq
++	};
++	struct ath_tx_info info = {};
++	struct ieee80211_hdr *hdr;
++	struct ath_buf *bf_tail = NULL;
++	struct ath_buf *bf;
++	LIST_HEAD(bf_q);
++	int duration = 0;
++	int max_duration;
++
++	max_duration =
++		sc->cur_beacon_conf.beacon_interval * 1000 *
++		sc->cur_beacon_conf.dtim_period / ATH_BCBUF;
++
++	do {
++		struct ath_frame_info *fi = get_frame_info(skb);
++
++		if (ath_tx_prepare(hw, skb, &txctl))
++			break;
++
++		bf = ath_tx_setup_buffer(sc, txctl.txq, NULL, skb);
++		if (!bf)
++			break;
++
++		bf->bf_lastbf = bf;
++		ath_set_rates(vif, NULL, bf);
++		ath_buf_set_rate(sc, bf, &info, fi->framelen);
++		duration += info.rates[0].PktDuration;
++		if (bf_tail)
++			bf_tail->bf_next = bf;
++
++		list_add_tail(&bf->list, &bf_q);
++		bf_tail = bf;
++		skb = NULL;
++
++		if (duration > max_duration)
++			break;
++
++		skb = ieee80211_get_buffered_bc(hw, vif);
++	} while(skb);
++
++	if (skb)
++		ieee80211_free_txskb(hw, skb);
++
++	if (list_empty(&bf_q))
++		return;
++
++	bf = list_first_entry(&bf_q, struct ath_buf, list);
++	hdr = (struct ieee80211_hdr *) bf->bf_mpdu->data;
++
++	if (hdr->frame_control & IEEE80211_FCTL_MOREDATA) {
++		hdr->frame_control &= ~IEEE80211_FCTL_MOREDATA;
++		dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
++			sizeof(*hdr), DMA_TO_DEVICE);
++	}
++
++	ath_txq_lock(sc, txctl.txq);
++	ath_tx_fill_desc(sc, bf, txctl.txq, 0);
++	ath_tx_txqaddbuf(sc, txctl.txq, &bf_q, false);
++	TX_STAT_INC(txctl.txq->axq_qnum, queued);
++	ath_txq_unlock(sc, txctl.txq);
++}
++
+ /*****************/
+ /* TX Completion */
+ /*****************/
+@@ -2054,7 +2215,12 @@ static void ath_tx_complete(struct ath_s
  	}
  	spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
  
@@ -4833,7 +4961,7 @@
  	if (txq == sc->tx.txq_map[q]) {
  		if (WARN_ON(--txq->pending_frames < 0))
  			txq->pending_frames = 0;
-@@ -2065,8 +2149,6 @@ static void ath_tx_complete(struct ath_s
+@@ -2065,8 +2231,6 @@ static void ath_tx_complete(struct ath_s
  			txq->stopped = false;
  		}
  	}
@@ -4842,7 +4970,7 @@
  }
  
  static void ath_tx_complete_buf(struct ath_softc *sc, struct ath_buf *bf,
-@@ -2408,12 +2490,10 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2408,12 +2572,10 @@ void ath_tx_node_init(struct ath_softc *
  		tid->baw_head  = tid->baw_tail = 0;
  		tid->sched     = false;
  		tid->paused    = false;
@@ -4856,7 +4984,7 @@
  	}
  
  	for (acno = 0, ac = &an->ac[acno];
-@@ -2450,9 +2530,9 @@ void ath_tx_node_cleanup(struct ath_soft
+@@ -2450,9 +2612,9 @@ void ath_tx_node_cleanup(struct ath_soft
  		}
  
  		ath_tid_drain(sc, txq, tid);
@@ -5026,22 +5154,43 @@
  	/*
 --- a/drivers/net/wireless/ath/ath9k/beacon.c
 +++ b/drivers/net/wireless/ath/ath9k/beacon.c
-@@ -204,9 +204,15 @@ static struct ath_buf *ath9k_beacon_gene
- 	}
+@@ -107,23 +107,6 @@ static void ath9k_beacon_setup(struct at
+ 	ath9k_hw_set_txdesc(ah, bf->bf_desc, &info);
+ }
+ 
+-static void ath9k_tx_cabq(struct ieee80211_hw *hw, struct sk_buff *skb)
+-{
+-	struct ath_softc *sc = hw->priv;
+-	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+-	struct ath_tx_control txctl;
+-
+-	memset(&txctl, 0, sizeof(struct ath_tx_control));
+-	txctl.txq = sc->beacon.cabq;
+-
+-	ath_dbg(common, XMIT, "transmitting CABQ packet, skb: %p\n", skb);
+-
+-	if (ath_tx_start(hw, skb, &txctl) != 0) {
+-		ath_dbg(common, XMIT, "CABQ TX failed\n");
+-		ieee80211_free_txskb(hw, skb);
+-	}
+-}
+-
+ static struct ath_buf *ath9k_beacon_generate(struct ieee80211_hw *hw,
+ 					     struct ieee80211_vif *vif)
+ {
+@@ -205,10 +188,8 @@ static struct ath_buf *ath9k_beacon_gene
  
  	ath9k_beacon_setup(sc, vif, bf, info->control.rates[0].idx);
-+	sc->beacon.cabq_dur = 0;
  
- 	while (skb) {
- 		ath9k_tx_cabq(hw, skb);
-+
-+		if (sc->beacon.cabq_dur / 1000 - 1 >
-+		    sc->cur_beacon_conf.beacon_interval / ATH_BCBUF)
-+			break;
-+
- 		skb = ieee80211_get_buffered_bc(hw, vif);
- 	}
+-	while (skb) {
+-		ath9k_tx_cabq(hw, skb);
+-		skb = ieee80211_get_buffered_bc(hw, vif);
+-	}
++	if (skb)
++		ath_tx_cabq(hw, vif, skb);
  
+ 	return bf;
+ }
 --- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
 @@ -68,13 +68,16 @@
