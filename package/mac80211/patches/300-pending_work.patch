@@ -4428,7 +4428,7 @@
  
  	memset(&info, 0, sizeof(info));
  	info.is_first = true;
-@@ -1117,24 +1130,14 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1117,24 +1130,11 @@ static void ath_tx_fill_desc(struct ath_
  	info.txpower = MAX_RATE_POWER;
  	info.qcu = txq->axq_qnum;
  
@@ -4443,9 +4443,9 @@
 -	if (tx_info->flags & IEEE80211_TX_CTL_CLEAR_PS_FILT)
 -		info.flags |= ATH9K_TXDESC_CLRDMASK;
 -
- 	if (bf->bf_state.bfs_paprd)
- 		info.flags |= (u32) bf->bf_state.bfs_paprd << ATH9K_TXDESC_PAPRD_S;
- 
+-	if (bf->bf_state.bfs_paprd)
+-		info.flags |= (u32) bf->bf_state.bfs_paprd << ATH9K_TXDESC_PAPRD_S;
+-
 -
  	while (bf) {
  		struct sk_buff *skb = bf->bf_mpdu;
@@ -4455,7 +4455,7 @@
  
  		info.type = get_hw_packet_type(skb);
  		if (bf->bf_next)
-@@ -1142,6 +1145,22 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1142,6 +1142,26 @@ static void ath_tx_fill_desc(struct ath_
  		else
  			info.link = 0;
  
@@ -4472,13 +4472,17 @@
 +			if (tx_info->flags & IEEE80211_TX_CTL_LDPC)
 +				info.flags |= ATH9K_TXDESC_LDPC;
 +
++			if (bf->bf_state.bfs_paprd)
++				info.flags |= (u32) bf->bf_state.bfs_paprd <<
++					      ATH9K_TXDESC_PAPRD_S;
++
 +			ath_buf_set_rate(sc, bf, &info, len);
 +		}
 +
  		info.buf_addr[0] = bf->bf_buf_addr;
  		info.buf_len[0] = skb->len;
  		info.pkt_len = fi->framelen;
-@@ -1151,7 +1170,7 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1151,7 +1171,7 @@ static void ath_tx_fill_desc(struct ath_
  		if (aggr) {
  			if (bf == bf_first)
  				info.aggr = AGGR_BUF_FIRST;
@@ -4487,7 +4491,7 @@
  				info.aggr = AGGR_BUF_LAST;
  			else
  				info.aggr = AGGR_BUF_MIDDLE;
-@@ -1160,6 +1179,9 @@ static void ath_tx_fill_desc(struct ath_
+@@ -1160,6 +1180,9 @@ static void ath_tx_fill_desc(struct ath_
  			info.aggr_len = len;
  		}
  
@@ -4497,7 +4501,7 @@
  		ath9k_hw_set_txdesc(ah, bf->bf_desc, &info);
  		bf = bf->bf_next;
  	}
-@@ -1224,9 +1246,6 @@ int ath_tx_aggr_start(struct ath_softc *
+@@ -1224,9 +1247,6 @@ int ath_tx_aggr_start(struct ath_softc *
  	an = (struct ath_node *)sta->drv_priv;
  	txtid = ATH_AN_2_TID(an, tid);
  
@@ -4507,7 +4511,7 @@
  	/* update ampdu factor/density, they may have changed. This may happen
  	 * in HT IBSS when a beacon with HT-info is received after the station
  	 * has already been added.
-@@ -1238,7 +1257,7 @@ int ath_tx_aggr_start(struct ath_softc *
+@@ -1238,7 +1258,7 @@ int ath_tx_aggr_start(struct ath_softc *
  		an->mpdudensity = density;
  	}
  
@@ -4516,7 +4520,7 @@
  	txtid->paused = true;
  	*ssn = txtid->seq_start = txtid->seq_next;
  	txtid->bar_index = -1;
-@@ -1255,28 +1274,9 @@ void ath_tx_aggr_stop(struct ath_softc *
+@@ -1255,28 +1275,9 @@ void ath_tx_aggr_stop(struct ath_softc *
  	struct ath_atx_tid *txtid = ATH_AN_2_TID(an, tid);
  	struct ath_txq *txq = txtid->ac->txq;
  
@@ -4546,7 +4550,7 @@
  	ath_tx_flush_tid(sc, txtid);
  	ath_txq_unlock_complete(sc, txq);
  }
-@@ -1342,18 +1342,92 @@ void ath_tx_aggr_wakeup(struct ath_softc
+@@ -1342,18 +1343,92 @@ void ath_tx_aggr_wakeup(struct ath_softc
  	}
  }
  
@@ -4646,7 +4650,7 @@
  }
  
  /********************/
-@@ -1709,8 +1783,9 @@ static void ath_tx_txqaddbuf(struct ath_
+@@ -1709,8 +1784,9 @@ static void ath_tx_txqaddbuf(struct ath_
  	}
  }
  
@@ -4658,7 +4662,7 @@
  {
  	struct ath_frame_info *fi = get_frame_info(skb);
  	struct list_head bf_head;
-@@ -1723,26 +1798,28 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1723,26 +1799,28 @@ static void ath_tx_send_ampdu(struct ath
  	 * - seqno is not within block-ack window
  	 * - h/w queue depth exceeds low water mark
  	 */
@@ -4693,7 +4697,7 @@
  	bf->bf_state.bf_type = BUF_AMPDU;
  	INIT_LIST_HEAD(&bf_head);
  	list_add(&bf->list, &bf_head);
-@@ -1751,10 +1828,10 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1751,10 +1829,10 @@ static void ath_tx_send_ampdu(struct ath
  	ath_tx_addto_baw(sc, tid, bf->bf_state.seqno);
  
  	/* Queue to h/w without aggregation */
@@ -4707,7 +4711,7 @@
  }
  
  static void ath_tx_send_normal(struct ath_softc *sc, struct ath_txq *txq,
-@@ -1892,62 +1969,16 @@ static struct ath_buf *ath_tx_setup_buff
+@@ -1892,62 +1970,16 @@ static struct ath_buf *ath_tx_setup_buff
  	return bf;
  }
  
@@ -4773,7 +4777,7 @@
  
  	/* NOTE:  sta can be NULL according to net/mac80211.h */
  	if (sta)
-@@ -1968,6 +1999,11 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1968,6 +2000,11 @@ int ath_tx_start(struct ieee80211_hw *hw
  		hdr->seq_ctrl |= cpu_to_le16(sc->tx.seq_no);
  	}
  
@@ -4785,7 +4789,7 @@
  	/* Add the padding after the header if this is not already done */
  	padpos = ieee80211_hdrlen(hdr->frame_control);
  	padsize = padpos & 3;
-@@ -1977,16 +2013,34 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1977,16 +2014,34 @@ int ath_tx_start(struct ieee80211_hw *hw
  
  		skb_push(skb, padsize);
  		memmove(skb->data, skb->data + padsize, padpos);
@@ -4800,7 +4804,7 @@
  	setup_frame_info(hw, sta, skb, frmlen);
 +	return 0;
 +}
-+
+ 
 +
 +/* Upon failure caller should free skb */
 +int ath_tx_start(struct ieee80211_hw *hw, struct sk_buff *skb,
@@ -4821,12 +4825,12 @@
 +	ret = ath_tx_prepare(hw, skb, txctl);
 +	if (ret)
 +	    return ret;
- 
++
 +	hdr = (struct ieee80211_hdr *) skb->data;
  	/*
  	 * At this point, the vif, hw_key and sta pointers in the tx control
  	 * info are no longer valid (overwritten by the ath_frame_info data.
-@@ -2002,13 +2056,120 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2002,13 +2057,120 @@ int ath_tx_start(struct ieee80211_hw *hw
  		txq->stopped = true;
  	}
  
@@ -4948,7 +4952,7 @@
  /*****************/
  /* TX Completion */
  /*****************/
-@@ -2054,7 +2215,12 @@ static void ath_tx_complete(struct ath_s
+@@ -2054,7 +2216,12 @@ static void ath_tx_complete(struct ath_s
  	}
  	spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
  
@@ -4961,7 +4965,7 @@
  	if (txq == sc->tx.txq_map[q]) {
  		if (WARN_ON(--txq->pending_frames < 0))
  			txq->pending_frames = 0;
-@@ -2065,8 +2231,6 @@ static void ath_tx_complete(struct ath_s
+@@ -2065,8 +2232,6 @@ static void ath_tx_complete(struct ath_s
  			txq->stopped = false;
  		}
  	}
@@ -4970,7 +4974,7 @@
  }
  
  static void ath_tx_complete_buf(struct ath_softc *sc, struct ath_buf *bf,
-@@ -2408,12 +2572,10 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2408,12 +2573,10 @@ void ath_tx_node_init(struct ath_softc *
  		tid->baw_head  = tid->baw_tail = 0;
  		tid->sched     = false;
  		tid->paused    = false;
@@ -4984,7 +4988,7 @@
  	}
  
  	for (acno = 0, ac = &an->ac[acno];
-@@ -2450,9 +2612,9 @@ void ath_tx_node_cleanup(struct ath_soft
+@@ -2450,9 +2613,9 @@ void ath_tx_node_cleanup(struct ath_soft
  		}
  
  		ath_tid_drain(sc, txq, tid);
