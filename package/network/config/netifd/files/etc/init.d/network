@@ -37,6 +37,7 @@ shutdown() {
 }
 
 stop() {
+	/sbin/wifi down
 	service_stop /sbin/netifd
 }
 
