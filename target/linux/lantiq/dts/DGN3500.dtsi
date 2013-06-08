@@ -72,7 +72,7 @@
 		#size-cells = <1>;
 
 		compatible = "spi-gpio";
-		
+
 		gpio-miso = <&gpio 16 0>;
 		gpio-mosi = <&gpio 17 0>;
 		gpio-sck = <&gpio 18 0>;
@@ -130,7 +130,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
-		
+
 		rfkill {
 			label = "rfkill";
 			gpios = <&gpio 36 1>;

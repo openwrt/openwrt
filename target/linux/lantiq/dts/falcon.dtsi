@@ -16,12 +16,12 @@
 		reg = <0x10000000 0xC000000>;
 		ranges = <0x0 0x10000000 0xC000000>;
 	};
-	
+
 	ebu@18000000 {
 		compatible = "lantiq,ebu-falcon";
 		reg = <0x18000000 0x100>;
 	};
-	
+
 	sbs2@1D000000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -33,7 +33,7 @@
 			compatible = "lantiq,sysgpe-falcon";
 			reg = <0x700000 0x100>;
 		};
-	
+
 		gpio0: gpio@810000 {
 			#gpio-cells = <2>;
 			compatible = "lantiq,gpio-falcon";
@@ -43,7 +43,7 @@
 			reg = <0x810000 0x80>;
 			lantiq,bank = <0>;
 		};
-	
+
 		gpio2: gpio@810100 {
 			#gpio-cells = <2>;
 			compatible = "lantiq,gpio-falcon";
@@ -53,18 +53,18 @@
 			reg = <0x810100 0x80>;
 			lantiq,bank = <2>;
 		};
-	
+
 		syseth@B00000 {
 			compatible = "lantiq,syseth-falcon";
 			reg = <0xB00000 0x100>;
 		};
-	
+
 		pad@B01000 {
 			compatible = "lantiq,pad-falcon";
 			reg = <0xB01000 0x100>;
 			lantiq,bank = <0>;
 		};
-	
+
 		pad@B02000 {
 			compatible = "lantiq,pad-falcon";
 			reg = <0xB02000 0x100>;

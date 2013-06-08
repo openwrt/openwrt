@@ -8,7 +8,7 @@
 	memory@0 {
 		reg = <0x0 0x4000000>;
 	};
-	
+
 	fpi@10000000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -20,7 +20,7 @@
 			#address-cells = <2>;
 			#size-cells = <1>;
 			compatible = "lantiq,localbus", "simple-bus";
-			
+
 		};
 
 		spi@E100800 {
@@ -74,7 +74,7 @@
 			compatible = "lantiq,pinctrl-xr9";
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
-			
+
 			interrupt-parent = <&icu0>;
 			interrupts = <166 135 66 40 41 42 38>;
 
@@ -205,27 +205,27 @@
 				phy0: ethernet-phy@0 {
 					reg = <0x0>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
+					lantiq,c45-reg-init = <1 0 0 0>;
 				};
 				phy1: ethernet-phy@1 {
 					reg = <0x1>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
+					lantiq,c45-reg-init = <1 0 0 0>;
 				};
 				phy5: ethernet-phy@5 {
 					reg = <0x5>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
+					lantiq,c45-reg-init = <1 0 0 0>;
 				};
 				phy11: ethernet-phy@11 {
 					reg = <0x11>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
+					lantiq,c45-reg-init = <1 0 0 0>;
 				};
 				phy13: ethernet-phy@13 {
 					reg = <0x13>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
+					lantiq,c45-reg-init = <1 0 0 0>;
 				};
 			};
 		};
@@ -298,7 +298,7 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		
+
 		power {
 			label = "power";
 			gpios = <&stp 9 0>;

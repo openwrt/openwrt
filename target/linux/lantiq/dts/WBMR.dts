@@ -101,7 +101,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
-		
+
 		wps {
 			label = "wps";
 			gpios = <&gpio 0 1>;
@@ -126,6 +126,7 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power {
 			label = "power";
 			gpios = <&gpio 1 1>;

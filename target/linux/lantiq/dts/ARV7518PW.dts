@@ -30,13 +30,13 @@
 
 				partition@0 {
 					label = "uboot";
-					reg = <0x00000 0x10000>; 
+					reg = <0x00000 0x10000>;
 					read-only;
 				};
 
 				partition@10000 {
 					label = "uboot_env";
-					reg = <0x10000 0x10000>; 
+					reg = <0x10000 0x10000>;
 				};
 
 				partition@20000 {
@@ -134,7 +134,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
-		
+
 		rfkill {
 			label = "rfkill";
 			gpios = <&gpio 25 1>;
