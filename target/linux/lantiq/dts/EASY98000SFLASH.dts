@@ -12,7 +12,7 @@
 	memory@0 {
 		reg = <0x0 0x2000000>;
 	};
-	
+
 	localbus@10000000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -32,7 +32,7 @@
 				label = "SPI (RO) U-Boot Image";
 				read-only;
 			};
-	
+
 			partition@80000 {
 				reg = <0x00080000 0x00080000>;
 				label = "SPI (RO) DTB Image";
