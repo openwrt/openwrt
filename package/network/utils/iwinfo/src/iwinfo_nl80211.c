@@ -540,16 +540,21 @@ static char * nl80211_wpactl_info(const char *ifname, const char *cmd,
 	{
 		send(sock, "ATTACH", 6, 0);
 
-		if (nl80211_wpactl_recv(sock, buffer, sizeof(buffer)) <= 0)
+		if (nl80211_wpactl_recv(sock, buffer, sizeof(buffer)-1) <= 0)
 			goto out;
 	}
 
 
 	send(sock, cmd, strlen(cmd), 0);
 
-	while( numtry++ < 5 )
+	/* we might have to scan up to 72 channels / 256ms per channel */
+	/* this makes up to 18.5s hence 10 tries */
+	while( numtry++ < 10 )
 	{
-		if (nl80211_wpactl_recv(sock, buffer, sizeof(buffer)) <= 0)
+		char *bracket;
+
+		/* make sure there is a terminating nul byte */
+		if (nl80211_wpactl_recv(sock, buffer, sizeof(buffer)-1) <= 0)
 		{
 			if (event)
 				continue;
@@ -559,6 +564,13 @@ static char * nl80211_wpactl_info(const char *ifname, const char *cmd,
 
 		if ((!event && buffer[0] != '<') || (event && strstr(buffer, event)))
 			break;
+
+		/* there may be more than max(numtry) BSS-ADDED events */
+		/* ignore them similar to wpa_cli */
+		if (buffer[0] == '<' &&
+				(bracket=strchr(buffer,'>')) != NULL &&
+				strncmp(bracket+1,"CTRL-EVENT-BSS-ADDED",20) == 0)
+			numtry--;
 	}
 
 	rv = buffer;
@@ -1751,8 +1763,10 @@ static int nl80211_get_scanlist_cb(struct nl_msg *msg, void *arg)
 
 	if (caps & (1<<1))
 		sl->e->mode = IWINFO_OPMODE_ADHOC;
-	else
+	else if (caps & (1<<0))
 		sl->e->mode = IWINFO_OPMODE_MASTER;
+	else
+		sl->e->mode = IWINFO_OPMODE_MESHPOINT;
 
 	if (caps & (1<<4))
 		sl->e->crypto.enabled = 1;
@@ -1852,14 +1866,26 @@ int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 		{
 			nl80211_get_quality_max(ifname, &qmax);
 
-			/* skip header line */
-			while (*res++ != '\n');
+			count = -1;
 
-			count = 0;
-
-			while (sscanf(res, "%17s %d %d %255s%*[ \t]%127[^\n]\n",
-			              bssid, &freq, &rssi, cipher, ssid) > 0)
-			{
+			do {
+				if (res[0] == '<')
+				{
+					/* skip log lines */
+					goto nextline;
+				}
+				if (count < 0)
+				{
+					/* skip header line */
+					count++;
+					goto nextline;
+				}
+				if (sscanf(res, "%17s %d %d %255s%*[ \t]%127[^\n]\n",
+					      bssid, &freq, &rssi, cipher, ssid) < 5)
+				{
+					/* skip malformed lines */
+					goto nextline;
+				}
 				/* BSSID */
 				e->mac[0] = strtol(&bssid[0],  NULL, 16);
 				e->mac[1] = strtol(&bssid[3],  NULL, 16);
@@ -1872,7 +1898,10 @@ int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 				memcpy(e->ssid, ssid, min(strlen(ssid), sizeof(e->ssid) - 1));
 
 				/* Mode (assume master) */
-				e->mode = IWINFO_OPMODE_MASTER;
+				if (strstr(cipher,"[MESH]"))
+					e->mode = IWINFO_OPMODE_MESHPOINT;
+				else
+					e->mode = IWINFO_OPMODE_MASTER;
 
 				/* Channel */
 				e->channel = nl80211_freq2channel(freq);
@@ -1904,16 +1933,18 @@ int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 				/* Crypto */
 				nl80211_get_scancrypto(cipher, &e->crypto);
 
-				/* advance to next line */
-				while (*res && *res++ != '\n');
-
 				count++;
 				e++;
 
 				memset(ssid, 0, sizeof(ssid));
 				memset(bssid, 0, sizeof(bssid));
 				memset(cipher, 0, sizeof(cipher));
-			}
+
+			nextline:
+				/* advance to next line */
+				while( *res && *res++ != '\n' );
+ 			}
+			while( *res );
 
 			*len = count * sizeof(struct iwinfo_scanlist_entry);
 			return 0;
