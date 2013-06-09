@@ -512,6 +512,16 @@ static char * print_mbssid_supp(const struct iwinfo_ops *iw, const char *ifname)
 	return buf;
 }
 
+static char * print_phyname(const struct iwinfo_ops *iw, const char *ifname)
+{
+	static char buf[32];
+
+	if (!iw->phyname(ifname, buf))
+		return buf;
+
+	return "?";
+}
+
 
 static void print_info(const struct iwinfo_ops *iw, const char *ifname)
 {
@@ -545,8 +555,9 @@ static void print_info(const struct iwinfo_ops *iw, const char *ifname)
 		print_txpower_offset(iw, ifname));
 	printf("          Frequency offset: %s\n",
 		print_frequency_offset(iw, ifname));
-	printf("          Supports VAPs: %s\n",
-		print_mbssid_supp(iw, ifname));
+	printf("          Supports VAPs: %s  PHY name: %s\n",
+		print_mbssid_supp(iw, ifname),
+		print_phyname(iw, ifname));
 }
 
 

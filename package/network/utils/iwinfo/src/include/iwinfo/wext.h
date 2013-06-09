@@ -42,6 +42,7 @@ int wext_get_noise(const char *ifname, int *buf);
 int wext_get_quality(const char *ifname, int *buf);
 int wext_get_quality_max(const char *ifname, int *buf);
 int wext_get_encryption(const char *ifname, char *buf);
+int wext_get_phyname(const char *ifname, char *buf);
 int wext_get_assoclist(const char *ifname, char *buf, int *len);
 int wext_get_txpwrlist(const char *ifname, char *buf, int *len);
 int wext_get_scanlist(const char *ifname, char *buf, int *len);
@@ -73,6 +74,7 @@ static const struct iwinfo_ops wext_ops = {
 	.hardware_id      = wext_get_hardware_id,
 	.hardware_name    = wext_get_hardware_name,
 	.encryption       = wext_get_encryption,
+	.phyname          = wext_get_phyname,
 	.assoclist        = wext_get_assoclist,
 	.txpwrlist        = wext_get_txpwrlist,
 	.scanlist         = wext_get_scanlist,

@@ -721,6 +721,26 @@ int madwifi_get_encryption(const char *ifname, char *buf)
 	return 0;
 }
 
+int madwifi_get_phyname(const char *ifname, char *buf)
+{
+	const char *wifidev;
+
+	wifidev = madwifi_isvap(ifname, NULL);
+
+	if (wifidev)
+	{
+		strcpy(buf, wifidev);
+		return 0;
+	}
+	else if (madwifi_iswifi(ifname))
+	{
+		strcpy(buf, madwifi_phyname(ifname));
+		return 0;
+	}
+
+	return -1;
+}
+
 int madwifi_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	int bl, tl, noise;

@@ -83,6 +83,7 @@ int nl80211_get_noise(const char *ifname, int *buf);
 int nl80211_get_quality(const char *ifname, int *buf);
 int nl80211_get_quality_max(const char *ifname, int *buf);
 int nl80211_get_encryption(const char *ifname, char *buf);
+int nl80211_get_phyname(const char *ifname, char *buf);
 int nl80211_get_assoclist(const char *ifname, char *buf, int *len);
 int nl80211_get_txpwrlist(const char *ifname, char *buf, int *len);
 int nl80211_get_scanlist(const char *ifname, char *buf, int *len);
@@ -114,6 +115,7 @@ static const struct iwinfo_ops nl80211_ops = {
 	.hardware_id      = nl80211_get_hardware_id,
 	.hardware_name    = nl80211_get_hardware_name,
 	.encryption       = nl80211_get_encryption,
+	.phyname          = nl80211_get_phyname,
 	.assoclist        = nl80211_get_assoclist,
 	.txpwrlist        = nl80211_get_txpwrlist,
 	.scanlist         = nl80211_get_scanlist,

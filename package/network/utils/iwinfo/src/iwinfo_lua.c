@@ -625,6 +625,7 @@ LUA_WRAP_STRING(wl,ssid)
 LUA_WRAP_STRING(wl,bssid)
 LUA_WRAP_STRING(wl,country)
 LUA_WRAP_STRING(wl,hardware_name)
+LUA_WRAP_STRING(wl,phyname)
 LUA_WRAP_STRUCT(wl,mode)
 LUA_WRAP_STRUCT(wl,assoclist)
 LUA_WRAP_STRUCT(wl,txpwrlist)
@@ -653,6 +654,7 @@ LUA_WRAP_STRING(madwifi,ssid)
 LUA_WRAP_STRING(madwifi,bssid)
 LUA_WRAP_STRING(madwifi,country)
 LUA_WRAP_STRING(madwifi,hardware_name)
+LUA_WRAP_STRING(madwifi,phyname)
 LUA_WRAP_STRUCT(madwifi,mode)
 LUA_WRAP_STRUCT(madwifi,assoclist)
 LUA_WRAP_STRUCT(madwifi,txpwrlist)
@@ -681,6 +683,7 @@ LUA_WRAP_STRING(nl80211,ssid)
 LUA_WRAP_STRING(nl80211,bssid)
 LUA_WRAP_STRING(nl80211,country)
 LUA_WRAP_STRING(nl80211,hardware_name)
+LUA_WRAP_STRING(nl80211,phyname)
 LUA_WRAP_STRUCT(nl80211,mode)
 LUA_WRAP_STRUCT(nl80211,assoclist)
 LUA_WRAP_STRUCT(nl80211,txpwrlist)
@@ -708,6 +711,7 @@ LUA_WRAP_STRING(wext,ssid)
 LUA_WRAP_STRING(wext,bssid)
 LUA_WRAP_STRING(wext,country)
 LUA_WRAP_STRING(wext,hardware_name)
+LUA_WRAP_STRING(wext,phyname)
 LUA_WRAP_STRUCT(wext,mode)
 LUA_WRAP_STRUCT(wext,assoclist)
 LUA_WRAP_STRUCT(wext,txpwrlist)
@@ -746,6 +750,7 @@ static const luaL_reg R_wl[] = {
 	LUA_REG(wl,mbssid_support),
 	LUA_REG(wl,hardware_id),
 	LUA_REG(wl,hardware_name),
+	LUA_REG(wl,phyname),
 	{ NULL, NULL }
 };
 #endif
@@ -777,6 +782,7 @@ static const luaL_reg R_madwifi[] = {
 	LUA_REG(madwifi,mbssid_support),
 	LUA_REG(madwifi,hardware_id),
 	LUA_REG(madwifi,hardware_name),
+	LUA_REG(madwifi,phyname),
 	{ NULL, NULL }
 };
 #endif
@@ -808,6 +814,7 @@ static const luaL_reg R_nl80211[] = {
 	LUA_REG(nl80211,mbssid_support),
 	LUA_REG(nl80211,hardware_id),
 	LUA_REG(nl80211,hardware_name),
+	LUA_REG(nl80211,phyname),
 	{ NULL, NULL }
 };
 #endif
@@ -838,6 +845,7 @@ static const luaL_reg R_wext[] = {
 	LUA_REG(wext,mbssid_support),
 	LUA_REG(wext,hardware_id),
 	LUA_REG(wext,hardware_name),
+	LUA_REG(wext,phyname),
 	{ NULL, NULL }
 };
 
