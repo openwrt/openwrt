@@ -42,6 +42,7 @@ int wl_get_quality(const char *ifname, int *buf);
 int wl_get_quality_max(const char *ifname, int *buf);
 int wl_get_enctype(const char *ifname, char *buf);
 int wl_get_encryption(const char *ifname, char *buf);
+int wl_get_phyname(const char *ifname, char *buf);
 int wl_get_assoclist(const char *ifname, char *buf, int *len);
 int wl_get_txpwrlist(const char *ifname, char *buf, int *len);
 int wl_get_scanlist(const char *ifname, char *buf, int *len);
@@ -73,6 +74,7 @@ static const struct iwinfo_ops wl_ops = {
 	.hardware_id      = wl_get_hardware_id,
 	.hardware_name    = wl_get_hardware_name,
 	.encryption       = wl_get_encryption,
+	.phyname          = wl_get_phyname,
 	.assoclist        = wl_get_assoclist,
 	.txpwrlist        = wl_get_txpwrlist,
 	.scanlist         = wl_get_scanlist,

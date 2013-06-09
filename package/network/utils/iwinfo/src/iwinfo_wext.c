@@ -446,6 +446,13 @@ int wext_get_encryption(const char *ifname, char *buf)
 	return -1;
 }
 
+int wext_get_phyname(const char *ifname, char *buf)
+{
+	/* No suitable api in wext */
+	strcpy(buf, ifname);
+	return 0;
+}
+
 int wext_get_mbssid_support(const char *ifname, int *buf)
 {
 	/* No multi bssid support atm */

@@ -321,6 +321,18 @@ int wl_get_encryption(const char *ifname, char *buf)
 	return 0;
 }
 
+int wl_get_phyname(const char *ifname, char *buf)
+{
+	char *p;
+
+	strcpy(buf, ifname);
+
+	if ((p = strchr(buf, '.')) != NULL)
+		*p = 0;
+
+	return 0;
+}
+
 int wl_get_enctype(const char *ifname, char *buf)
 {
 	uint32_t wsec, wpa;

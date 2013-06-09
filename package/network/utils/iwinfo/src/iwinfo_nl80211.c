@@ -1407,6 +1407,31 @@ int nl80211_get_encryption(const char *ifname, char *buf)
 	return -1;
 }
 
+int nl80211_get_phyname(const char *ifname, char *buf)
+{
+	const char *name;
+
+	name = nl80211_ifname2phy(ifname);
+
+	if (name)
+	{
+		strcpy(buf, name);
+		return 0;
+	}
+	else if ((name = nl80211_phy2ifname(ifname)) != NULL)
+	{
+		name = nl80211_ifname2phy(name);
+
+		if (name)
+		{
+			strcpy(buf, ifname);
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
 
 static int nl80211_get_assoclist_cb(struct nl_msg *msg, void *arg)
 {

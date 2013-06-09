@@ -41,6 +41,7 @@ int madwifi_get_noise(const char *ifname, int *buf);
 int madwifi_get_quality(const char *ifname, int *buf);
 int madwifi_get_quality_max(const char *ifname, int *buf);
 int madwifi_get_encryption(const char *ifname, char *buf);
+int madwifi_get_phyname(const char *ifname, char *buf);
 int madwifi_get_assoclist(const char *ifname, char *buf, int *len);
 int madwifi_get_txpwrlist(const char *ifname, char *buf, int *len);
 int madwifi_get_scanlist(const char *ifname, char *buf, int *len);
@@ -72,6 +73,7 @@ static const struct iwinfo_ops madwifi_ops = {
 	.hardware_id      = madwifi_get_hardware_id,
 	.hardware_name    = madwifi_get_hardware_name,
 	.encryption       = madwifi_get_encryption,
+	.phyname          = madwifi_get_phyname,
 	.assoclist        = madwifi_get_assoclist,
 	.txpwrlist        = madwifi_get_txpwrlist,
 	.scanlist         = madwifi_get_scanlist,
