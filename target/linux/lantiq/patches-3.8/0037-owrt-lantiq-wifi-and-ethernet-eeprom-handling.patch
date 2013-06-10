@@ -50,7 +50,7 @@ Subject: [PATCH 37/40] owrt: lantiq: wifi and ethernet eeprom handling
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,195 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -76,7 +76,6 @@ Subject: [PATCH 37/40] owrt: lantiq: wifi and ethernet eeprom handling
 +struct ath9k_platform_data ath9k_pdata = {
 +	.led_pin = -1,
 +};
-+static u16 ath5k_eeprom_data[ATH5K_PLAT_EEP_MAX_WORDS];
 +static u8 athxk_eeprom_mac[6];
 +
 +static int ath9k_pci_plat_dev_init(struct pci_dev *dev)
@@ -93,7 +92,6 @@ Subject: [PATCH 37/40] owrt: lantiq: wifi and ethernet eeprom handling
 +	int mac_offset;
 +	u32 mac_inc = 0, pci_slot = 0;
 +	int i;
-+	u16 *eepdata, sum, el;
 +
 +	eep_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	mac_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
@@ -102,34 +100,26 @@ Subject: [PATCH 37/40] owrt: lantiq: wifi and ethernet eeprom handling
 +		dev_err(&pdev->dev, "failed to load eeprom address\n");
 +		return -ENODEV;
 +	}
-+	if (resource_size(eep_res) != ATH9K_PLAT_EEP_MAX_WORDS) {
++	if (resource_size(eep_res) != ATH9K_PLAT_EEP_MAX_WORDS << 1) {
 +		dev_err(&pdev->dev, "eeprom has an invalid size\n");
 +		return -EINVAL;
 +	}
 +
 +	eep = ioremap(eep_res->start, resource_size(eep_res));
-+	memcpy_fromio(ath9k_pdata.eeprom_data, eep, ATH9K_PLAT_EEP_MAX_WORDS);
++	memcpy_fromio(ath9k_pdata.eeprom_data, eep, ATH9K_PLAT_EEP_MAX_WORDS << 1);
 +
-+	if (of_find_property(np, "ath,eep-swap", NULL)) {
++	if (of_find_property(np, "ath,eep-swap", NULL))
++		for (i = 0; i < ATH9K_PLAT_EEP_MAX_WORDS; i++)
++			ath9k_pdata.eeprom_data[i] = swab16(ath9k_pdata.eeprom_data[i]);
++
++	if (of_find_property(np, "ath,eep-endian", NULL)) {
 +		ath9k_pdata.endian_check = true;
 +
 +		dev_info(&pdev->dev, "endian check enabled.\n");
 +	}
 +
-+	if (of_find_property(np, "ath,eep-csum", NULL)) {
-+		sum = ath9k_pdata.eeprom_data[0x200>>1];
-+		el = sum / sizeof(u16) - 2;  /* skip length and (old) checksum */
-+		eepdata = (u16 *) (&ath9k_pdata.eeprom_data[0x204>>1]); /* after checksum */
-+		for (i = 0; i < el; i++)
-+			sum ^= *eepdata++;
-+		sum ^= 0xffff;
-+		ath9k_pdata.eeprom_data[0x202>>1] = sum;
-+
-+		dev_info(&pdev->dev, "checksum fixed.\n");
-+	}
-+
 +	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
-+		memcpy_fromio(athxk_eeprom_mac, (void*) ath9k_pdata.eeprom_data, 6);
++		memcpy_fromio(athxk_eeprom_mac, (void*) ath9k_pdata.eeprom_data + mac_offset, 6);
 +	} else if (mac_res) {
 +		if (resource_size(mac_res) != 6) {
 +			dev_err(&pdev->dev, "mac has an invalid size\n");
@@ -201,20 +191,20 @@ Subject: [PATCH 37/40] owrt: lantiq: wifi and ethernet eeprom handling
 +		dev_err(&pdev->dev, "failed to load eeprom address\n");
 +		return -ENODEV;
 +	}
-+	if (resource_size(eep_res) != ATH5K_PLAT_EEP_MAX_WORDS) {
++	if (resource_size(eep_res) != ATH5K_PLAT_EEP_MAX_WORDS << 1) {
 +		dev_err(&pdev->dev, "eeprom has an invalid size\n");
 +		return -EINVAL;
 +	}
 +
 +	eep = ioremap(eep_res->start, resource_size(eep_res));
-+	memcpy_fromio(ath5k_eeprom_data, eep, ATH5K_PLAT_EEP_MAX_WORDS);
++	memcpy_fromio(ath5k_pdata.eeprom_data, eep, ATH5K_PLAT_EEP_MAX_WORDS << 1);
 +
 +	if (of_find_property(np, "ath,eep-swap", NULL))
-+		for (i = 0; i < (ATH5K_PLAT_EEP_MAX_WORDS >> 1); i++)
-+				ath5k_eeprom_data[i] = swab16(ath5k_eeprom_data[i]);
++		for (i = 0; i < ATH5K_PLAT_EEP_MAX_WORDS; i++)
++			ath5k_pdata.eeprom_data[i] = swab16(ath5k_pdata.eeprom_data[i]);
 +
 +	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
-+		memcpy_fromio(athxk_eeprom_mac, (void*) ath5k_eeprom_data, 6);
++		memcpy_fromio(athxk_eeprom_mac, (void*) ath5k_pdata.eeprom_data + mac_offset, 6);
 +	} else if (mac_res) {
 +		if (resource_size(mac_res) != 6) {
 +			dev_err(&pdev->dev, "mac has an invalid size\n");
@@ -230,7 +220,6 @@ Subject: [PATCH 37/40] owrt: lantiq: wifi and ethernet eeprom handling
 +	if (!of_property_read_u32(np, "ath,mac-increment", &mac_inc))
 +		athxk_eeprom_mac[5] += mac_inc;
 +
-+	ath5k_pdata.eeprom_data = ath5k_eeprom_data;
 +	ath5k_pdata.macaddr = athxk_eeprom_mac;
 +	ltq_pci_plat_dev_init = ath5k_pci_plat_dev_init;
 +
