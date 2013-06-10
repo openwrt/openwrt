@@ -6,6 +6,18 @@
 . /lib/ramips.sh
 
 ramips_set_preinit_iface() {
+	local board=$(ramips_board_name)
+
+	case "$board" in
+	mpr-a2)
+		#TODO
+		# Ralink ethernet driver cannot re-open ethernet if it is opened during preinit and then closed.
+		# Looks like Ralink ethernet driver has a problem.
+		# Temporary solution is not to open ethernet during preinit.
+		return 0
+		;;
+	esac
+
 	ifname=eth0
 }
 
