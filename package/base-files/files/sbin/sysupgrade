@@ -180,6 +180,7 @@ fi
 run_hooks "" $sysupgrade_pre_upgrade
 
 ubus call system upgrade
+touch /tmp/sysupgrade
 
 kill_remaining TERM
 sleep 3
