@@ -14,7 +14,7 @@ define KernelPackage/leds-gpio
   DEPENDS:= @GPIO_SUPPORT
   KCONFIG:=CONFIG_LEDS_GPIO
   FILES:=$(LINUX_DIR)/drivers/leds/leds-gpio.ko
-  AUTOLOAD:=$(call AutoLoad,60,leds-gpio)
+  AUTOLOAD:=$(call AutoLoad,60,leds-gpio,1)
 endef
 
 define KernelPackage/leds-gpio/description
@@ -126,7 +126,7 @@ define KernelPackage/ledtrig-default-on
   TITLE:=LED Default ON Trigger
   KCONFIG:=CONFIG_LEDS_TRIGGER_DEFAULT_ON
   FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-default-on.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-default-on)
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-default-on,1)
 endef
 
 define KernelPackage/ledtrig-default-on/description
@@ -141,7 +141,7 @@ define KernelPackage/ledtrig-timer
   TITLE:=LED Timer Trigger
   KCONFIG:=CONFIG_LEDS_TRIGGER_TIMER
   FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-timer.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-timer)
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-timer,1)
 endef
 
 define KernelPackage/ledtrig-timer/description
