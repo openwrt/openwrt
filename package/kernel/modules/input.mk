@@ -42,7 +42,7 @@ define KernelPackage/input-core
   TITLE:=Input device core
   KCONFIG:=CONFIG_INPUT
   FILES:=$(LINUX_DIR)/drivers/input/input-core.ko
-  AUTOLOAD:=$(call AutoLoad,19,input-core)
+  AUTOLOAD:=$(call AutoLoad,19,input-core,1)
 endef
 
 define KernelPackage/input-core/description
@@ -76,7 +76,7 @@ define KernelPackage/input-gpio-buttons
 	CONFIG_INPUT_GPIO_BUTTONS \
 	CONFIG_INPUT_MISC=y
   FILES:=$(LINUX_DIR)/drivers/input/misc/gpio_buttons.ko
-  AUTOLOAD:=$(call AutoLoad,62,gpio_buttons)
+  AUTOLOAD:=$(call AutoLoad,62,gpio_buttons,1)
 endef
 
 define KernelPackage/input-gpio-buttons/description
@@ -114,7 +114,7 @@ define KernelPackage/input-gpio-keys-polled
 	CONFIG_KEYBOARD_GPIO_POLLED \
 	CONFIG_INPUT_KEYBOARD=y
   FILES:=$(LINUX_DIR)/drivers/input/keyboard/gpio_keys_polled.ko
-  AUTOLOAD:=$(call AutoLoad,62,gpio_keys_polled)
+  AUTOLOAD:=$(call AutoLoad,62,gpio_keys_polled,1)
   $(call AddDepends/input)
 endef
 
@@ -162,7 +162,7 @@ define KernelPackage/input-polldev
   TITLE:=Polled Input device support
   KCONFIG:=CONFIG_INPUT_POLLDEV
   FILES:=$(LINUX_DIR)/drivers/input/input-polldev.ko
-  AUTOLOAD:=$(call AutoLoad,20,input-polldev)
+  AUTOLOAD:=$(call AutoLoad,20,input-polldev,1)
   $(call AddDepends/input)
 endef
 
