@@ -6,6 +6,26 @@
 status_led="power"
 
 set_state() {
+	[ -d /sys/class/leds/power2/ ] && {
+
+		case "$1" in
+		preinit)
+			led_set_attr "power2" "trigger" "heartbeat"
+			;;
+		init)
+			status_led_on
+			;;
+		failsafe)
+			led_off "power2"
+			status_led_set_timer 100 100
+			;;
+		done)
+			led_off "power2"
+			;;
+		esac
+		return
+	}
+
 	case "$1" in
 	preinit)
 		status_led_set_heartbeat
