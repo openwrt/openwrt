@@ -199,6 +199,8 @@ static inline void mailbox_oam_rx_handler(void);
 static inline void mailbox_aal_rx_handler(void);
 static irqreturn_t mailbox_irq_handler(int, void *);
 static inline void mailbox_signal(unsigned int, int);
+static void do_ppe_tasklet(unsigned long);
+DECLARE_TASKLET(g_dma_tasklet, do_ppe_tasklet, 0);
 
 /*
  *  QSB & HTU setting functions
@@ -490,6 +492,9 @@ static void ppe_close(struct atm_vcc *vcc)
 		port->tx_current_cell_rate -= vcc->qos.txtp.min_pcr;
 		break;
 	}
+
+	/* wait for incoming packets to be processed by upper layers */
+	tasklet_unlock_wait(&g_dma_tasklet);
 
 PPE_CLOSE_EXIT:
 	return;
@@ -1039,14 +1044,25 @@ static inline void mailbox_aal_rx_handler(void)
 	}
 }
 
+static void do_ppe_tasklet(unsigned long data)
+{
+	*MBOX_IGU1_ISRC = *MBOX_IGU1_ISR;
+	mailbox_oam_rx_handler();
+	mailbox_aal_rx_handler();
+
+	if ((*MBOX_IGU1_ISR & ((1 << RX_DMA_CH_AAL) | (1 << RX_DMA_CH_OAM))) != 0)
+		tasklet_schedule(&g_dma_tasklet);
+	else
+		enable_irq(PPE_MAILBOX_IGU1_INT);
+}
+
 static irqreturn_t mailbox_irq_handler(int irq, void *dev_id)
 {
 	if ( !*MBOX_IGU1_ISR )
 		return IRQ_HANDLED;
 
-	*MBOX_IGU1_ISRC = *MBOX_IGU1_ISR;
-	mailbox_oam_rx_handler();
-	mailbox_aal_rx_handler();
+	disable_irq_nosync(PPE_MAILBOX_IGU1_INT);
+	tasklet_schedule(&g_dma_tasklet);
 
 	return IRQ_HANDLED;
 }
