@@ -43,6 +43,7 @@ platform_check_image() {
 	freestation5 | \
 	hw550-3g | \
 	mofi3500-3gn | \
+	mpr-a2 | \
 	mzk-w300nh2 | \
 	nbg-419n | \
 	nw718 | \
