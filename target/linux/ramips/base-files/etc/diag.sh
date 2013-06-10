@@ -129,6 +129,9 @@ get_status_led() {
 	xdxrn502j)
 		status_led="xdxrn502j:green:power"
 		;;
+	f7c027)
+		status_led="belkin:orange:status"
+        ;;
 	esac
 }
 

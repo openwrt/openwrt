@@ -37,6 +37,7 @@ platform_check_image() {
 	dir-620-d1 | \
 	dap-1350 | \
 	esr-9753 | \
+	f7c027 | \
 	fonera20n | \
 	rt-n13u | \
 	freestation5 | \
