@@ -95,6 +95,14 @@ start_6relayd() {
 	config_get management_level "$cfg" management_level
 	[ -n "$management_level" ] && append args "-m$management_level"
 
+	local management_offlink
+	config_get_bool management_offlink "$cfg" management_offlink 0
+	[ "$management_offlink" -eq 1 ] && append args "-o"
+
+	local management_preference
+	config_get management_preference "$cfg" management_preference
+	[ -n "$management_preference" ] && append args "-i$management_preference"
+
 	config_foreach add_static_lease lease
 
 	[ "$ndp" = "relay" ] && append args "-N -s"
