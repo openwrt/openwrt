@@ -72,11 +72,4 @@ start() {
 		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
 		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
 	}
-
-	# early sysctl to avoid networking races
-	if [ -d /proc/sys/net/ipv6/conf ]; then
-		for i in /proc/sys/net/ipv6/conf/*/accept_ra; do
-			echo 0 > $i
-		done
-	fi
 }
