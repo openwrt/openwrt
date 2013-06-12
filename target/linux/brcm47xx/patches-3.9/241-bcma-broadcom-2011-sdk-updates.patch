@@ -1,0 +1,10 @@
+--- a/drivers/bcma/core.c
++++ b/drivers/bcma/core.c
+@@ -43,6 +43,7 @@ int bcma_core_enable(struct bcma_device
+ 	bcma_aread32(core, BCMA_IOCTL);
+ 
+ 	bcma_awrite32(core, BCMA_RESET_CTL, 0);
++	bcma_aread32(core, BCMA_RESET_CTL);
+ 	udelay(1);
+ 
+ 	bcma_awrite32(core, BCMA_IOCTL, (BCMA_IOCTL_CLK | flags));

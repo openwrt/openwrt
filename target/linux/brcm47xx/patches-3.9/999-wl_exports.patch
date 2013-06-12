@@ -1,0 +1,22 @@
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -21,7 +21,8 @@
+ #include <bcm47xx_nvram.h>
+ #include <asm/mach-bcm47xx/bcm47xx.h>
+ 
+-static char nvram_buf[NVRAM_SPACE];
++char nvram_buf[NVRAM_SPACE];
++EXPORT_SYMBOL(nvram_buf);
+ static int cfe_env;
+ extern char *cfe_env_get(char *nv_buf, const char *name);
+ 
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -58,6 +58,7 @@ void (*_dma_cache_wback)(unsigned long s
+ void (*_dma_cache_inv)(unsigned long start, unsigned long size);
+ 
+ EXPORT_SYMBOL(_dma_cache_wback_inv);
++EXPORT_SYMBOL(_dma_cache_inv);
+ 
+ #endif /* CONFIG_DMA_NONCOHERENT */
+ 

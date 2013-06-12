@@ -1,0 +1,66 @@
+--- a/arch/mips/include/asm/page.h
++++ b/arch/mips/include/asm/page.h
+@@ -46,6 +46,7 @@
+ #endif /* CONFIG_MIPS_HUGE_TLB_SUPPORT */
+ 
+ #include <linux/pfn.h>
++#include <asm/cpu-features.h>
+ #include <asm/io.h>
+ 
+ extern void build_clear_page(void);
+@@ -81,13 +82,16 @@ static inline void clear_user_page(void
+ 		flush_data_cache_page((unsigned long)addr);
+ }
+ 
+-extern void copy_user_page(void *vto, void *vfrom, unsigned long vaddr,
+-	struct page *to);
+-struct vm_area_struct;
+-extern void copy_user_highpage(struct page *to, struct page *from,
+-	unsigned long vaddr, struct vm_area_struct *vma);
++static inline void copy_user_page(void *vto, void *vfrom, unsigned long vaddr,
++	struct page *to)
++{
++	extern void (*flush_data_cache_page)(unsigned long addr);
+ 
+-#define __HAVE_ARCH_COPY_USER_HIGHPAGE
++	copy_page(vto, vfrom);
++	if (!cpu_has_ic_fills_f_dc ||
++	    pages_do_alias((unsigned long)vto, vaddr & PAGE_MASK))
++		flush_data_cache_page((unsigned long)vto);
++}
+ 
+ /*
+  * These are used to make use of C type-checking..
+--- a/arch/mips/mm/init.c
++++ b/arch/mips/mm/init.c
+@@ -202,30 +202,6 @@ void kunmap_coherent(void)
+ 	preempt_check_resched();
+ }
+ 
+-void copy_user_highpage(struct page *to, struct page *from,
+-	unsigned long vaddr, struct vm_area_struct *vma)
+-{
+-	void *vfrom, *vto;
+-
+-	vto = kmap_atomic(to);
+-	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
+-	    page_mapped(from) && !Page_dcache_dirty(from)) {
+-		vfrom = kmap_coherent(from, vaddr);
+-		copy_page(vto, vfrom);
+-		kunmap_coherent();
+-	} else {
+-		vfrom = kmap_atomic(from);
+-		copy_page(vto, vfrom);
+-		kunmap_atomic(vfrom);
+-	}
+-	if ((!cpu_has_ic_fills_f_dc) ||
+-	    pages_do_alias((unsigned long)vto, vaddr & PAGE_MASK))
+-		flush_data_cache_page((unsigned long)vto);
+-	kunmap_atomic(vto);
+-	/* Make sure this page is cleared on other CPU's too before using it */
+-	smp_wmb();
+-}
+-
+ void copy_to_user_page(struct vm_area_struct *vma,
+ 	struct page *page, unsigned long vaddr, void *dst, const void *src,
+ 	unsigned long len)
