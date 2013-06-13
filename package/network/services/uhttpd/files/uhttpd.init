@@ -67,12 +67,17 @@ start_instance()
 	append_arg "$cfg" cgi_prefix "-x"
 	append_arg "$cfg" lua_prefix "-l"
 	append_arg "$cfg" lua_handler "-L"
+	append_arg "$cfg" ubus_prefix "-u"
+	append_arg "$cfg" ubus_socket "-U"
 	append_arg "$cfg" script_timeout "-t"
 	append_arg "$cfg" network_timeout "-T"
+	append_arg "$cfg" http_keepalive "-k"
 	append_arg "$cfg" tcp_keepalive "-A"
 	append_arg "$cfg" error_page "-E"
 	append_arg "$cfg" max_requests "-n" 3
+	append_arg "$cfg" max_connections "-N"
 
+	append_bool "$cfg" no_ubusauth "-a" 0
 	append_bool "$cfg" no_symlinks "-S" 0
 	append_bool "$cfg" no_dirlists "-D" 0
 	append_bool "$cfg" rfc1918_filter "-R" 0
