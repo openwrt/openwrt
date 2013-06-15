@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2013-04-16
-PKG_RELEASE:=2
+PKG_VERSION:=2013-06-13
+PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=ec4cd40f0a8838aeea2ccff3ec5deb1a
+PKG_MD5SUM:=986749f5fbc5ec9b963e49c7171be300
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -195,12 +195,6 @@ define KernelPackage/p54-spi
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54spi.ko
   AUTOLOAD:=$(call AutoLoad,31,p54spi)
 endef
-
-NEED_RT2X00_LIB_CRYPTO:=y
-NEED_RT2X00_LIB_FIRMWARE:=y
-NEED_RT2X00_LIB_EEPROM:=y
-NEED_RT2X00_LIB_HT:=y
-NEED_RT2X00_LIB_LEDS:=y
 
 define KernelPackage/rt2x00/Default
   $(call KernelPackage/mac80211/Default)
@@ -1172,225 +1166,140 @@ define KernelPackage/brcmfmac/description
  Kernel module for Broadcom IEEE802.11n USB Wireless cards
 endef
 
-BUILDFLAGS:= \
-	-I$(PKG_BUILD_DIR)/include \
-	-DCONFIG_CFG80211_INTERNAL_REGDB=y \
-	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt)) \
-	$(if $(CONFIG_PCI),-DCONFIG_B43_PCI_AUTOSELECT -DCONFIG_B43_PCICORE_AUTOSELECT) \
-	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS) \
-	-DCONFIG_B43_HWRNG -DCONFIG_B43LEGACY_HWRNG \
-	$(if $(CONFIG_PCI),-DCONFIG_ATH9K_PCI) \
-	$(if $(CONFIG_TARGET_ar71xx),-DCONFIG_ATH9K_AHB) \
-	$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS), -DCONFIG_CFG80211_DEBUGFS -DCONFIG_MAC80211_DEBUGFS -DCONFIG_ATH9K_DEBUGFS -DCONFIG_CARL9170_DEBUGFS -DCONFIG_ATH9K_HTC_DEBUGFS -DCONFIG_ATH5K_DEBUG) \
-	$(if $(CONFIG_PACKAGE_MAC80211_MESH),-DCONFIG_MAC80211_MESH) \
-	$(if $(CONFIG_PACKAGE_ATH_DEBUG),-DCONFIG_ATH_DEBUG -DCONFIG_ATH9K_PKTLOG) \
-	-D__CONFIG_MAC80211_RC_DEFAULT=minstrel \
-	-DCONFIG_MAC80211_RC_MINSTREL_HT \
-	$(if $(CONFIG_ATH_USER_REGD),-DATH_USER_REGD=1) \
-	$(if $(CONFIG_PACKAGE_B43_DEBUG),-DCONFIG_B43_DEBUG) \
-	$(if $(CONFIG_PACKAGE_B43_PIO),-DCONFIG_B43_PIO) \
-	$(if $(CONFIG_PACKAGE_B43_PIO),-DCONFIG_B43_BCMA_PIO) \
-	$(if $(CONFIG_PACKAGE_B43_PHY_N),-DCONFIG_B43_PHY_N) \
-	$(if $(CONFIG_PACKAGE_B43_PHY_HT),-DCONFIG_B43_PHY_HT) \
-	$(if $(CONFIG_PACKAGE_B43_PHY_LCN),-DCONFIG_B43_PHY_LCN) \
-	-DCONFIG_B43_BCMA -DCONFIG_B43_BCMA_EXTRA \
-	-DCONFIG_B43_SSB \
-	$(if $(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS),-DCONFIG_RT2X00_LIB_DEBUGFS) \
-	$(if $(CONFIG_PACKAGE_RT2X00_DEBUG),-DCONFIG_RT2X00_DEBUG) \
-	$(if $(NEED_RT2X00_LIB_HT),-DCONFIG_RT2X00_LIB_HT) \
-	$(if $(NEED_RT2X00_LIB_CRYPTO),-DCONFIG_RT2X00_LIB_CRYPTO) \
-	$(if $(NEED_RT2X00_LIB_FIRMWARE),-DCONFIG_RT2X00_LIB_FIRMWARE) \
-	$(if $(NEED_RT2X00_LIB_EEPROM),-DCONFIG_RT2X00_LIB_EEPROM) \
-	$(if $(NEED_RT2X00_LIB_LEDS),-DCONFIG_RT2X00_LIB_LEDS) \
-	$(if $(CONFIG_PACKAGE_kmod-rt2x00-pci),-DCONFIG_RT2X00_LIB_PCI) \
-	$(if $(CONFIG_PACKAGE_kmod-rt2x00-usb),-DCONFIG_RT2X00_LIB_USB) \
-	$(if $(CONFIG_PACKAGE_kmod-rt2x00-usb),-DCONFIG_RT2800USB_RT53XX) \
-	$(if $(CONFIG_PACKAGE_kmod-rt2x00-soc),-DCONFIG_RT2X00_LIB_SOC) \
-	$(if $(CONFIG_TARGET_atheros),-DCONFIG_ATH5K_AHB,-DCONFIG_ATH5K_PCI) \
-	$(if $(CONFIG_PACKAGE_kmod-iwl3945),-DCONFIG_IWL3945) \
-	$(if $(CONFIG_PACKAGE_kmod-iwl4965),-DCONFIG_COMPAT_IWL4965) \
-	$(if $(CONFIG_PACKAGE_kmod-wl12xx),-DCONFIG_WL12XX -DCONFIG_COMPAT_WL12XX_SDIO) \
-	$(if $(CONFIG_PACKAGE_BRCM80211_DEBUG),-DCONFIG_BRCMDBG) \
-	$(if $(CONFIG_PACKAGE_kmod-brcmfmac),-DCONFIG_BRCMFMAC_USB)
+config_package=$(if $(CONFIG_PACKAGE_kmod-$(1)),m)
 
-MAKE_OPTS:= \
+config-y:= \
+	WLAN \
+	NL80211_TESTMODE \
+	CFG80211_WEXT \
+	CFG80211_INTERNAL_REGDB \
+	MAC80211_RC_MINSTREL \
+	MAC80211_RC_MINSTREL_HT \
+	MAC80211_RC_DEFAULT_MINSTREL \
+
+config-$(call config_package,cfg80211) += CFG80211
+
+config-$(call config_package,mac80211) += MAC80211
+config-$(CONFIG_PACKAGE_MAC80211_MESH) += MAC80211_MESH
+ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
+  config-y += \
+	CFG80211_DEBUGFS \
+	MAC80211_DEBUGFS \
+	ATH9K_DEBUGFS \
+	ATH9K_HTC_DEBUGFS \
+	CARL9170_DEBUGFS \
+	ATH5K_DEBUG
+endif
+
+config-$(call config_package,lib80211) += LIB80211 LIB80211_CRYPT_WEP LIB80211_CRYPT_CCMP LIB80211_CRYPT_TKIP
+
+config-$(call config_package,ath) += ATH_CARDS ATH_COMMON
+config-$(CONFIG_PACKAGE_ATH_DEBUG) += ATH_DEBUG
+
+config-$(call config_package,ath9k) += ATH9K
+config-$(call config_package,ath9k-common) += ATH9K_COMMON
+config-$(CONFIG_TARGET_ar71xx) += ATH9K_AHB
+config-$(CONFIG_PCI) += ATH9K_PCI
+config-$(CONFIG_ATH_USER_REGD) += ATH_USER_REGD
+
+config-$(call config_package,ath9k-htc) += ATH9K_HTC
+
+config-$(call config_package,ath5k) += ATH5K
+ifdef CONFIG_TARGET_atheros
+  config-y += ATH5K_AHB
+else
+  config-y += ATH5K_PCI
+endif
+
+config-$(call config_package,carl9170) += CARL9170
+
+config-$(call config_package,b43) += B43
+config-y += B43_SSB B43_BCMA B43_BCMA_EXTRA
+config-$(CONFIG_PACKAGE_B43_PHY_N) += B43_PHY_N
+config-$(CONFIG_PACKAGE_B43_PHY_LP) += B43_PHY_LP
+config-$(CONFIG_PACKAGE_B43_PHY_HT) += B43_PHY_HT
+config-$(CONFIG_PACKAGE_B43_PIO) += B43_PIO
+config-$(CONFIG_PACKAGE_B43_DEBUG) += B43_DEBUG
+
+config-$(call config_package,b43legacy) += B43LEGACY
+config-y += B43LEGACY_DMA_MODE
+
+config-$(call config_package,brcmutil) += BRCMUTIL
+config-$(call config_package,brcmsmac) += BRCMSMAC
+config-$(call config_package,brcmfmac) += BRCMFMAC BRCMFMAC_USB
+config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
+
+config-$(call config_package,mac80211-hwsim) += MAC80211_HWSIM
+
+config-$(call config_package,rt2x00-lib) += RT2X00 RT2X00_LIB
+config-$(call config_package,rt2x00-pci) += RT2X00_LIB_PCI RT2X00_LIB_MMIO
+config-$(call config_package,rt2x00-usb) += RT2X00_LIB_USB
+config-$(call config_package,rt2x00-soc) += RT2X00_LIB_SOC
+config-$(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS) += RT2X00_LIB_DEBUGFS
+config-$(CONFIG_PACKAGE_RT2X00_DEBUG) += RT2X00_DEBUG
+
+config-$(call config_package,rt2400-pci) += RT2400PCI
+config-$(call config_package,rt2500-pci) += RT2500PCI
+config-$(call config_package,rt2500-usb) += RT2500USB
+config-$(call config_package,rt61-pci) += RT61PCI
+config-$(call config_package,rt73-usb) += RT73USB
+
+config-$(call config_package,rt2800-lib) += RT2800_LIB
+config-y += RT2800PCI_RT33XX RT2800PCI_RT35XX RT2800PCI_RT53XX RT2800PCI_RT3290
+
+config-$(call config_package,rt2800-pci) += RT2800PCI
+config-$(call config_package,rt2800-usb) += RT2800USB
+
+config-$(call config_package,iwl-legacy) += IWLEGACY
+config-$(call config_package,iwl3945) += IWL3945
+config-$(call config_package,iwl4965) += IWL4965
+config-$(call config_package,iwlagn) += IWLWIFI
+
+config-$(call config_package,net-libipw) += LIBIPW
+config-$(call config_package,net-ipw2100) += IPW2100
+config-$(call config_package,net-ipw2200) += IPW2200
+
+config-$(call config_package,p54-common) += P54_COMMON
+config-$(call config_package,p54-pci) += P54_PCI
+config-$(call config_package,p54-usb) += P54_USB
+config-$(call config_package,p54-spi) += P54_SPI
+
+config-$(call config_package,net-hermes) += HERMES
+config-$(call config_package,net-hermes-pci) += PCI_HERMES
+config-$(call config_package,net-hermes-plx) += PLX_HERMES
+config-$(call config_package,net-hermes-pcmcia) += PCMCIA_HERMES
+config-y += HERMES_PRISM
+
+config-$(call config_package,adm8211) += ADM8211
+config-$(call config_package,libertas-sd) += LIBERTAS LIBERTAS_SDIO
+config-$(call config_package,libertas-usb) += LIBERTAS LIBERTAS_USB
+config-$(call config_package,mwl8k) += MWL8K
+config-$(call config_package,rtl8180) += RTL8180
+config-$(call config_package,rtl8187) += RTL8187
+config-$(call config_package,wl12xx) += WL_TI WLCORE WLCORE_SDIO WL12XX
+config-$(call config_package,zd1211rw) += ZD1211RW
+
+config-$(CONFIG_LEDS_TRIGGERS) += MAC80211_LEDS B43_LEDS B43LEGACY_LEDS
+
+MAKE_OPTS:= -C "$(PKG_BUILD_DIR)" \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
 	ARCH="$(LINUX_KARCH)" \
-	EXTRA_CFLAGS="$(BUILDFLAGS)" \
-	$(foreach opt,$(CONFOPTS),CONFIG_$(opt)=m) \
-	CONFIG_CFG80211_INTERNAL_REGDB=y \
-	CONFIG_CFG80211=$(if $(CONFIG_PACKAGE_kmod-cfg80211),m) \
-	CONFIG_MAC80211=$(if $(CONFIG_PACKAGE_kmod-mac80211),m) \
-	CONFIG_MAC80211_RC_MINSTREL=y \
-	CONFIG_MAC80211_MESH=$(CONFIG_PACKAGE_MAC80211_MESH) \
-	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
-	CONFIG_CFG80211_DEBUGFS=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
-	CONFIG_MAC80211_DEBUGFS=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
-	CONFIG_B43_PCMCIA=n CONFIG_B43_PIO=n \
-	CONFIG_B43_PCI_AUTOSELECT=$(if $(CONFIG_PCI),y) \
-	CONFIG_B43_PCICORE_AUTOSELECT=$(if $(CONFIG_PCI),y) \
-	CONFIG_B43LEGACY_LEDS=$(CONFIG_LEDS_TRIGGERS) \
-	CONFIG_B43_LEDS=$(CONFIG_LEDS_TRIGGERS) \
-	CONFIG_B43_HWRNG=$(if $(CONFIG_HW_RANDOM),y) \
-	CONFIG_B43LEGACY_HWRNG=$(if $(CONFIG_HW_RANDOM),y) \
-	CONFIG_B43=$(if $(CONFIG_PACKAGE_kmod-b43),m) \
-	CONFIG_B43LEGACY=$(if $(CONFIG_PACKAGE_kmod-b43legacy),m) \
-	CONFIG_B43_DEBUG=$(if $(CONFIG_PACKAGE_B43_DEBUG),y) \
-	CONFIG_B43_PIO=$(if $(CONFIG_PACKAGE_B43_PIO),y) \
-	CONFIG_B43_BCMA_PIO=$(if $(CONFIG_PACKAGE_B43_PIO),y) \
-	CONFIG_B43_PHY_N=$(if $(CONFIG_PACKAGE_B43_PHY_N),y) \
-	CONFIG_B43_PHY_HT=$(if $(CONFIG_PACKAGE_B43_PHY_HT),y) \
-	CONFIG_B43_PHY_LCN=$(if $(CONFIG_PACKAGE_B43_PHY_LCN),y) \
-	CONFIG_B43_BCMA=y \
-	CONFIG_B43_SSB=y \
-	CONFIG_ATH_CARDS=$(if $(CONFIG_PACKAGE_kmod-ath),m) \
-	CONFIG_ATH_COMMON=$(if $(CONFIG_PACKAGE_kmod-ath),m) \
-	CONFIG_ATH_DEBUG=$(if $(CONFIG_PACKAGE_ATH_DEBUG),y) \
-	CONFIG_ATH9K_PKTLOG=$(if $(CONFIG_PACKAGE_ATH_DEBUG),y) \
-	CONFIG_ATH5K=$(if $(CONFIG_PACKAGE_kmod-ath5k),m) \
-	CONFIG_ATH5K_PCI=$(if $(CONFIG_TARGET_atheros),,y) \
-	CONFIG_ATH5K_AHB=$(if $(CONFIG_TARGET_atheros),y) \
-	CONFIG_ATH5K_DEBUG=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
-	CONFIG_ATH9K=$(if $(CONFIG_PACKAGE_kmod-ath9k),m) \
-	CONFIG_ATH9K_PCI=$(CONFIG_PCI) \
-	CONFIG_ATH9K_AHB=$(if $(CONFIG_TARGET_ar71xx),y) \
-	CONFIG_ATH9K_HTC=$(if $(CONFIG_PACKAGE_kmod-ath9k-htc),m) \
-	CONFIG_ATH9K_HTC_DEBUGFS=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
-	CONFIG_ATH9K_HW=$(if $(CONFIG_PACKAGE_kmod-ath9k-common),m) \
-	CONFIG_ATH9K_COMMON=$(if $(CONFIG_PACKAGE_kmod-ath9k-common),m) \
-	CONFIG_ATH9K_DEBUGFS=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
-	CONFIG_AR5523= \
-	CONFIG_WIL6210= \
-	CONFIG_CARL9170=$(if $(CONFIG_PACKAGE_kmod-carl9170),m) \
-	CONFIG_CARL9170_DEBUGFS=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
-	CONFIG_COMPAT_ZD1211RW=$(if $(CONFIG_PACKAGE_kmod-zd1211rw),m) \
-	CONFIG_P54_COMMON=$(if $(CONFIG_PACKAGE_kmod-p54-common),m) \
-	CONFIG_P54_PCI=$(if $(CONFIG_PACKAGE_kmod-p54-pci),m) \
-	CONFIG_P54_USB=$(if $(CONFIG_PACKAGE_kmod-p54-usb),m) \
-	CONFIG_P54_SPI=$(if $(CONFIG_PACKAGE_kmod-p54-spi),m) \
-	CONFIG_P54_SPI_DEFAULT_EEPROM=n \
-	CONFIG_RT2X00=$(if $(CONFIG_PACKAGE_kmod-rt2x00-lib),m) \
-	CONFIG_RT2X00_LIB=$(if $(CONFIG_PACKAGE_kmod-rt2x00-lib),m) \
-	CONFIG_RT2X00_LIB_MMIO=$(if $(CONFIG_PACKAGE_kmod-rt2x00-pci),m) \
-	CONFIG_RT2X00_LIB_PCI=$(if $(CONFIG_PACKAGE_kmod-rt2x00-pci),m) \
-	CONFIG_RT2X00_LIB_USB=$(if $(CONFIG_PACKAGE_kmod-rt2x00-usb),m) \
-	CONFIG_RT2X00_LIB_SOC=$(if $(CONFIG_PACKAGE_kmod-rt2x00-soc),m) \
-	CONFIG_RT2X00_LIB_DEBUGFS=$(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS) \
-	CONFIG_RT2X00_LIB_CRYPTO=$(NEED_RT2X00_LIB_CRYPTO) \
-	CONFIG_RT2X00_LIB_FIRMWARE=$(NEED_RT2X00_LIB_FIRMWARE) \
-	CONFIG_RT2X00_LIB_EEPROM=$(NEED_RT2X00_LIB_EEPROM) \
-	CONFIG_RT2X00_LIB_HT=$(NEED_RT2X00_LIB_HT) \
-	CONFIG_RT2X00_LIB_LEDS=$(NEED_RT2X00_LIB_LEDS) \
-	CONFIG_RT2400PCI=$(if $(CONFIG_PACKAGE_kmod-rt2400-pci),m) \
-	CONFIG_RT2500PCI=$(if $(CONFIG_PACKAGE_kmod-rt2500-pci),m) \
-	CONFIG_RT2500USB=$(if $(CONFIG_PACKAGE_kmod-rt2500-usb),m) \
-	CONFIG_RT61PCI=$(if $(CONFIG_PACKAGE_kmod-rt61-pci),m) \
-	CONFIG_RT73USB=$(if $(CONFIG_PACKAGE_kmod-rt73-usb),m) \
-	CONFIG_RT2800_LIB=$(if $(CONFIG_PACKAGE_kmod-rt2800-lib),m) \
-	CONFIG_RT2800PCI=$(if $(CONFIG_PACKAGE_kmod-rt2800-pci),m) \
-	CONFIG_RT2800USB=$(if $(CONFIG_PACKAGE_kmod-rt2800-usb),m) \
-	CONFIG_RTL8180=$(if $(CONFIG_PACKAGE_kmod-rtl8180),m) \
-	CONFIG_RTL8187=$(if $(CONFIG_PACKAGE_kmod-rtl8187),m) \
-	CONFIG_RTL8192CE= \
-	CONFIG_RTLWIFI= \
-	CONFIG_COMPAT_MAC80211_HWSIM=$(if $(CONFIG_PACKAGE_kmod-mac80211-hwsim),m) \
-	CONFIG_PCMCIA= \
-	CONFIG_LIBIPW=$(if $(CONFIG_PACKAGE_kmod-net-libipw),m) \
-	CONFIG_LIBERTAS=$(if $(CONFIG_PACKAGE_kmod-libertas-sd)$(CONFIG_PACKAGE_kmod-libertas-usb),m) \
-	CONFIG_LIBERTAS_CS= \
-	CONFIG_LIBERTAS_SPI= \
-	CONFIG_COMPAT_LIBERTAS_SDIO=$(if $(CONFIG_PACKAGE_kmod-libertas-sd),m) \
-	CONFIG_LIBERTAS_THINFIRM= \
-	CONFIG_LIBERTAS_USB=$(if $(CONFIG_PACKAGE_kmod-libertas-usb),m) \
-	CONFIG_IPW2100=$(if $(CONFIG_PACKAGE_kmod-net-ipw2100),m) \
-	CONFIG_IPW2200=$(if $(CONFIG_PACKAGE_kmod-net-ipw2200),m) \
-	CONFIG_NL80211=y \
-	CONFIG_LIB80211=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
-	CONFIG_LIB80211_CRYPT_WEP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
-	CONFIG_LIB80211_CRYPT_CCMP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
-	CONFIG_LIB80211_CRYPT_TKIP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
-	CONFIG_IWLWIFI=$(if $(CONFIG_PACKAGE_kmod-iwlagn),m) \
-	CONFIG_IWLEGACY=$(if $(CONFIG_PACKAGE_kmod-iwl-legacy),m) \
-	CONFIG_COMPAT_IWL4965=$(if $(CONFIG_PACKAGE_kmod-iwl4965),m) \
-	CONFIG_IWL3945=$(if $(CONFIG_PACKAGE_kmod-iwl3945),m) \
-	CONFIG_MWL8K=$(if $(CONFIG_PACKAGE_kmod-mwl8k),m) \
-	CONFIG_ATMEL= \
-	CONFIG_PCMCIA_ATMEL= \
-	CONFIG_ADM8211=$(if $(CONFIG_PACKAGE_kmod-adm8211),m) \
-	CONFIG_USB_NET_RNDIS_HOST= \
-	CONFIG_USB_NET_RNDIS_WLAN= \
-	CONFIG_USB_NET_CDCETHER= \
-	CONFIG_USB_USBNET= \
-	CONFIG_AT76C50X_USB= \
-	CONFIG_WL_TI=$(if $(CONFIG_PACKAGE_kmod-wl12xx),m) \
-	CONFIG_WLCORE=$(if $(CONFIG_PACKAGE_kmod-wl12xx),m) \
-	CONFIG_WL12XX=$(if $(CONFIG_PACKAGE_kmod-wl12xx),m) \
-	CONFIG_WLCORE_SDIO=$(if $(CONFIG_PACKAGE_kmod-wl12xx),m) \
-	CONFIG_EEPROM_93CX6= \
-	CONFIG_HERMES=$(if $(CONFIG_PACKAGE_kmod-net-hermes),m) \
-	CONFIG_HERMES_CACHE_FW_ON_INIT= \
-	CONFIG_PCI_HERMES=$(if $(CONFIG_PACKAGE_kmod-net-hermes-pci),m) \
-	CONFIG_PLX_HERMES=$(if $(CONFIG_PACKAGE_kmod-net-hermes-plx),m) \
-	CONFIG_PCMCIA_HERMES=$(if $(CONFIG_PACKAGE_kmod-net-hermes-pcmcia),m) \
-	CONFIG_HERMES_PRISM= \
-	CONFIG_APPLE_AIRPORT= \
-	CONFIG_TMD_HERMES= \
-	CONFIG_NORTEL_HERMES= \
-	CONFIG_PCMCIA_SPECTRUM= \
-	CONFIG_ORINOCO_USB= \
-	CONFIG_IWM= \
-	CONFIG_MWIFIEX= \
-	CONFIG_ATH6KL= \
-	CONFIG_MAC80211_RC_MINSTREL_HT=y \
-	MADWIFI= \
-	CONFIG_BRCMUTIL=$(if $(CONFIG_PACKAGE_kmod-brcmutil),m) \
-	CONFIG_BRCMSMAC=$(if $(CONFIG_PACKAGE_kmod-brcmsmac),m) \
-	CONFIG_BRCMFMAC=$(if $(CONFIG_PACKAGE_kmod-brcmfmac),m) \
-	CONFIG_BRCMFMAC_USB=$(if $(CONFIG_PACKAGE_kmod-brcmfmac),y) \
-	CONFIG_BRCMDBG=$(if $(CONFIG_PACKAGE_BRCM80211_DEBUG),y) \
+	EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include" \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=true \
 	KLIB=$(TARGET_MODULES_DIR) \
 	KERNEL_SUBLEVEL=$(lastword $(subst ., ,$(KERNEL_PATCHVER))) \
 	KBUILD_LDFLAGS_MODULE_PREREQ=
 
-ifeq ($(CONFIG_PACKAGE_kmod-libertas-sd)$(CONFIG_PACKAGE_kmod-libertas-usb)$(CONFIG_PACKAGE_kmod-rt2x00-lib),)
-  MAKE_OPTS += CONFIG_COMPAT_KFIFO=
-endif
+define ConfigVars
+$(subst $(space),,$(foreach opt,$(config-$(1)),CPTCFG_$(opt)=$(1)
+))
+endef
 
-DISABLE_CONFIG = \
-	COMPAT_BLUETOOTH.* \
-	COMPAT_CORDIC \
-	COMPAT_CRC8 \
-	COMPAT_MDIO \
-	COMPAT_NETWORK_MODULES \
-	COMPAT_NET_USB_MODULES \
-	COMPAT_VAR_MODULES \
-	COMPAT_RFKILL \
-	COMPAT_RFKILL_.* \
-	COMPAT_STAGING \
-	\
-	B43_PCMCIA \
-	B43_SDIO \
-	BCMA.* \
-	COMPAT_ATH9K_RATE_CONTROL \
-	HID_GENERIC \
-	MAC80211_RC_PID \
-	PCMCIA \
-	RFKILL_BACKPORT.* \
-	SSB \
-	SSB_SDIOHOST \
-	\
-	ATH5K_PCI \
-	ATH9K_BTCOEX_SUPPORT \
-	B43_PHY_N \
-	B43_PHY_HT \
-	B43_BCMA.* \
-	MAC80211_MESH \
-	RT2X00_LIB_PCI \
-	RT2X00_LIB_USB \
-	COMPAT_MWIFIEX
-
+define mac80211_config
+$(call ConfigVars,m)$(call ConfigVars,y)
+endef
+$(eval $(call shexport,mac80211_config))
 
 define Build/Prepare
 	rm -rf $(PKG_BUILD_DIR)
@@ -1416,14 +1325,12 @@ define Build/Prepare
 
 	echo 'compat-wireless-$(PKG_VERSION)-$(PKG_RELEASE)-$(REVISION)' > $(PKG_BUILD_DIR)/compat_version
 	$(CP) ./files/regdb.txt $(PKG_BUILD_DIR)/net/wireless/db.txt
-
-	sed -i $(foreach config,$(DISABLE_CONFIG),-e 's,^\([ 	]*export *CONFIG_$(config)=\),# \1,') $(PKG_BUILD_DIR)/config.mk
 endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-cfg80211)$(CONFIG_PACKAGE_kmod-lib80211),)
  define Build/Compile/kmod
 	rm -rf $(PKG_BUILD_DIR)/modules
-	+$(MAKE) $(PKG_JOBS) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) modules
+	+$(MAKE) $(PKG_JOBS) $(MAKE_OPTS) modules
  endef
 endif
 
@@ -1431,6 +1338,8 @@ define Build/Configure
 	cmp $(PKG_BUILD_DIR)/include/linux/ath9k_platform.h $(LINUX_DIR)/include/linux/ath9k_platform.h
 	cmp $(PKG_BUILD_DIR)/include/linux/ath5k_platform.h $(LINUX_DIR)/include/linux/ath5k_platform.h
 	cmp $(PKG_BUILD_DIR)/include/linux/rt2x00_platform.h $(LINUX_DIR)/include/linux/rt2x00_platform.h
+	$(SH_FUNC) var2file "$(call shvar,mac80211_config)" $(PKG_BUILD_DIR)/.config
+	$(MAKE) $(MAKE_OPTS) allnoconfig
 endef
 
 define Build/Compile

@@ -11,7 +11,7 @@ drivers/net/wireless/ath/ath5k/debug.c |   86 ++++++++++++++++++++++++++++++++
 
 --- a/drivers/net/wireless/ath/ath5k/debug.c
 +++ b/drivers/net/wireless/ath/ath5k/debug.c
-@@ -813,6 +813,89 @@ static const struct file_operations fops
+@@ -811,6 +811,89 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -101,7 +101,7 @@ drivers/net/wireless/ath/ath5k/debug.c |   86 ++++++++++++++++++++++++++++++++
  
  /* debugfs: queues etc */
  
-@@ -904,6 +987,9 @@ ath5k_debug_init_device(struct ath5k_hw 
+@@ -902,6 +985,9 @@ ath5k_debug_init_device(struct ath5k_hw 
  	debugfs_create_file("beacon", S_IWUSR | S_IRUSR, phydir, ah,
  			    &fops_beacon);
  

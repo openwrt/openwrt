@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath5k/pci.c
 +++ b/drivers/net/wireless/ath/ath5k/pci.c
-@@ -23,6 +23,7 @@
+@@ -21,6 +21,7 @@
  #include <linux/pci-aspm.h>
  #include <linux/etherdevice.h>
  #include <linux/module.h>
@@ -8,7 +8,7 @@
  #include "../ath.h"
  #include "ath5k.h"
  #include "debug.h"
-@@ -74,7 +75,7 @@ static void ath5k_pci_read_cachesize(str
+@@ -72,7 +73,7 @@ static void ath5k_pci_read_cachesize(str
  }
  
  /*
@@ -17,7 +17,7 @@
   */
  static bool
  ath5k_pci_eeprom_read(struct ath_common *common, u32 offset, u16 *data)
-@@ -82,6 +83,19 @@ ath5k_pci_eeprom_read(struct ath_common 
+@@ -80,6 +81,19 @@ ath5k_pci_eeprom_read(struct ath_common 
  	struct ath5k_hw *ah = (struct ath5k_hw *) common->ah;
  	u32 status, timeout;
  
@@ -37,7 +37,7 @@
  	/*
  	 * Initialize EEPROM access
  	 */
-@@ -125,6 +139,16 @@ static int ath5k_pci_eeprom_read_mac(str
+@@ -123,6 +137,16 @@ static int ath5k_pci_eeprom_read_mac(str
  	u16 data;
  	int octet;
  

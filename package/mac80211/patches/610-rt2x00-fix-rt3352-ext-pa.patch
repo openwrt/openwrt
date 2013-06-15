@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -2622,15 +2622,18 @@ static void rt2800_config_channel(struct
+@@ -2631,15 +2631,18 @@ static void rt2800_config_channel(struct
  	/*
  	 * Change BBP settings
  	 */
@@ -22,15 +22,7 @@
  		rt2800_bbp_write(rt2x00dev, 86, 0);
  	}
  
-@@ -4203,6 +4206,7 @@ static int rt2800_init_bbp(struct rt2x00
- 		rt2800_bbp_write(rt2x00dev, 120, 0x50);
- 
- 	if (rt2x00_rt(rt2x00dev, RT3290) ||
-+	    rt2x00_rt(rt2x00dev, RT3352) ||
- 	    rt2x00_rt(rt2x00dev, RT5390) ||
- 	    rt2x00_rt(rt2x00dev, RT5392))
- 		rt2800_bbp_write(rt2x00dev, 128, 0x12);
-@@ -4507,6 +4511,12 @@ static void rt2800_init_rfcsr_3290(struc
+@@ -4948,6 +4951,12 @@ static void rt2800_init_rfcsr_3290(struc
  
  static void rt2800_init_rfcsr_3352(struct rt2x00_dev *rt2x00dev)
  {
@@ -40,10 +32,10 @@
 +				  &rt2x00dev->cap_flags);
 +	u8 rfcsr;
 +
+ 	rt2800_rf_init_calibration(rt2x00dev, 30);
+ 
  	rt2800_rfcsr_write(rt2x00dev, 0, 0xf0);
- 	rt2800_rfcsr_write(rt2x00dev, 1, 0x23);
- 	rt2800_rfcsr_write(rt2x00dev, 2, 0x50);
-@@ -4540,15 +4550,30 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -4983,15 +4992,30 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 31, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 32, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 33, 0x00);
@@ -53,7 +45,7 @@
 +		rt2x00_set_field8(&rfcsr, RFCSR34_TX0_EXT_PA, 1);
 +	if (!tx1_int_pa)
 +		rt2x00_set_field8(&rfcsr, RFCSR34_TX1_EXT_PA, 1);
-+	rt2800_rfcsr_write(rt2x00dev, 34, rfcsr );
++	rt2800_rfcsr_write(rt2x00dev, 34, rfcsr);
  	rt2800_rfcsr_write(rt2x00dev, 35, 0x03);
  	rt2800_rfcsr_write(rt2x00dev, 36, 0xbd);
  	rt2800_rfcsr_write(rt2x00dev, 37, 0x3c);
@@ -77,7 +69,7 @@
  	rt2800_rfcsr_write(rt2x00dev, 43, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 44, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 45, 0xdb);
-@@ -4556,15 +4581,20 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -4999,15 +5023,20 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 47, 0x0d);
  	rt2800_rfcsr_write(rt2x00dev, 48, 0x14);
  	rt2800_rfcsr_write(rt2x00dev, 49, 0x00);
@@ -107,7 +99,15 @@
  	rt2800_rfcsr_write(rt2x00dev, 59, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 60, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 61, 0x00);
-@@ -5534,7 +5564,8 @@ static int rt2800_init_eeprom(struct rt2
+@@ -5692,6 +5721,7 @@ static int rt2800_init_eeprom(struct rt2
+ 	 * RT53xx: defined in "EEPROM_CHIP_ID" field
+ 	 */
+ 	if (rt2x00_rt(rt2x00dev, RT3290) ||
++	    rt2x00_rt(rt2x00dev, RT3352) ||
+ 	    rt2x00_rt(rt2x00dev, RT5390) ||
+ 	    rt2x00_rt(rt2x00dev, RT5392))
+ 		rt2x00_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
+@@ -5781,7 +5811,8 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Detect if this device has Bluetooth co-existence.
  	 */
@@ -117,7 +117,7 @@
  		__set_bit(CAPABILITY_BT_COEXIST, &rt2x00dev->cap_flags);
  
  	/*
-@@ -5563,6 +5594,22 @@ static int rt2800_init_eeprom(struct rt2
+@@ -5810,6 +5841,22 @@ static int rt2800_init_eeprom(struct rt2
  					EIRP_MAX_TX_POWER_LIMIT)
  		__set_bit(CAPABILITY_POWER_LIMIT, &rt2x00dev->cap_flags);
  
@@ -203,7 +203,7 @@
   * EEPROM frequency
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -741,6 +741,8 @@ enum rt2x00_capability_flags {
+@@ -726,6 +726,8 @@ enum rt2x00_capability_flags {
  	CAPABILITY_DOUBLE_ANTENNA,
  	CAPABILITY_BT_COEXIST,
  	CAPABILITY_VCO_RECALIBRATION,

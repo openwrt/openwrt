@@ -1,0 +1,16 @@
+--- a/kconf/Makefile
++++ b/kconf/Makefile
+@@ -1,10 +1,10 @@
+-CFLAGS=-Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
++CFLAGS=-Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -DKBUILD_NO_NLS
+ 
+ LXDIALOG := lxdialog/checklist.o lxdialog/inputbox.o lxdialog/menubox.o lxdialog/textbox.o lxdialog/util.o lxdialog/yesno.o
+ 
+ conf: conf.o zconf.tab.o
+-mconf: LDFLAGS = -Wl,--no-as-needed $(shell ./lxdialog/check-lxdialog.sh -ldflags $(CC))
+-mconf: CFLAGS += -DCURSES_LOC="<ncurses.h>" -DLOCALE
++mconf: LDFLAGS = $(shell ./lxdialog/check-lxdialog.sh -ldflags $(CC))
++mconf: CFLAGS += -DCURSES_LOC="<ncurses.h>"
+ mconf: mconf.o zconf.tab.o $(LXDIALOG)
+ 
+ .PHONY: clean

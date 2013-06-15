@@ -9,7 +9,7 @@
  {
  	memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data, EEPROM_SIZE);
  	return 0;
-@@ -1099,8 +1099,9 @@ static int rt2800pci_read_eeprom(struct 
+@@ -1092,8 +1092,9 @@ static int rt2800pci_read_eeprom(struct 
  {
  	int retval;
  
@@ -31,7 +31,7 @@
  	struct rt2x00_dev *rt2x00dev;
  	int retval;
  	u16 chip;
-@@ -123,6 +124,12 @@ int rt2x00pci_probe(struct pci_dev *pci_
+@@ -125,6 +126,12 @@ int rt2x00pci_probe(struct pci_dev *pci_
  	rt2x00dev->irq = pci_dev->irq;
  	rt2x00dev->name = pci_name(pci_dev);
  

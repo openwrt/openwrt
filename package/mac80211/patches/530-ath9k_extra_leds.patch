@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -691,6 +694,13 @@ enum spectral_mode {
+@@ -692,6 +695,13 @@ enum spectral_mode {
  	SPECTRAL_CHANSCAN,
  };
  
@@ -24,10 +24,10 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -732,9 +742,8 @@ struct ath_softc {
+@@ -733,9 +743,8 @@ struct ath_softc {
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
- #ifdef CONFIG_MAC80211_LEDS
+ #ifdef CPTCFG_MAC80211_LEDS
 -	bool led_registered;
 -	char led_name[32];
 -	struct led_classdev led_cdev;
@@ -162,9 +162,9 @@
  void ath_fill_led_pin(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -895,7 +895,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -891,7 +891,7 @@ int ath9k_init_device(u16 devid, struct 
  
- #ifdef CONFIG_MAC80211_LEDS
+ #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
 -	sc->led_cdev.default_trigger = ieee80211_create_tpt_led_trigger(sc->hw,
 +	sc->led_default_trigger = ieee80211_create_tpt_led_trigger(sc->hw,
@@ -173,7 +173,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1489,6 +1489,61 @@ static const struct file_operations fops
+@@ -1825,6 +1825,61 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -232,10 +232,10 @@
 +
 +#endif
 +
- #ifdef CONFIG_ATH9K_MAC_DEBUG
  
- void ath9k_debug_samp_bb_mac(struct ath_softc *sc)
-@@ -2124,6 +2179,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+ int ath9k_init_debug(struct ath_hw *ah)
+ {
+@@ -1847,6 +1902,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_eeprom);
  	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
  			    sc, &fops_chanbw);

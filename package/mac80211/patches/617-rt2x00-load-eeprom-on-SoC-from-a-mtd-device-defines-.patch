@@ -12,14 +12,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/Kconfig
 +++ b/drivers/net/wireless/rt2x00/Kconfig
-@@ -68,6 +68,7 @@ config RT2800PCI
+@@ -71,6 +71,7 @@ config RT2800PCI
+ 	select RT2X00_LIB_FIRMWARE
+ 	select RT2X00_LIB_EEPROM
  	select RT2X00_LIB_CRYPTO
- 	select CRC_CCITT
- 	select EEPROM_93CX6
 +	select MTD if SOC_RT288X || SOC_RT305X
+ 	depends on CRC_CCITT
+ 	depends on EEPROM_93CX6
  	---help---
- 	  This adds support for rt27xx/rt28xx/rt30xx wireless chipset family.
- 	  Supported chips: RT2760, RT2790, RT2860, RT2880, RT2890, RT3052,
 --- a/drivers/net/wireless/rt2x00/rt2x00eeprom.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00eeprom.c
 @@ -30,12 +30,77 @@
@@ -99,4 +99,4 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
  	ee_name = rt2x00dev->ops->lib->get_eeprom_file_name(rt2x00dev);
  	if (!ee_name) {
- 		ERROR(rt2x00dev,
+ 		rt2x00_err(rt2x00dev,
