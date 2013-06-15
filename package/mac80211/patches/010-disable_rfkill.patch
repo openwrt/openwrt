@@ -1,0 +1,13 @@
+--- a/backport-include/linux/rfkill.h
++++ b/backport-include/linux/rfkill.h
+@@ -43,6 +43,10 @@ struct rfkill_ops {
+ };
+ #endif
+ 
++#undef CONFIG_RFKILL
++#undef CONFIG_RFKILL_LEDS
++#undef CONFIG_RFKILL_MODULE
++
+ /* this changes infrequently, backport manually */
+ enum rfkill_type {
+ 	RFKILL_TYPE_ALL = 0,

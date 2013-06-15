@@ -1,0 +1,68 @@
+--- a/.local-symbols
++++ b/.local-symbols
+@@ -365,42 +365,6 @@ USB_CDC_PHONET=
+ USB_IPHETH=
+ USB_SIERRA_NET=
+ USB_VL600=
+-SSB_POSSIBLE=
+-SSB=
+-SSB_SPROM=
+-SSB_BLOCKIO=
+-SSB_PCIHOST_POSSIBLE=
+-SSB_PCIHOST=
+-SSB_B43_PCI_BRIDGE=
+-SSB_PCMCIAHOST_POSSIBLE=
+-SSB_PCMCIAHOST=
+-SSB_SDIOHOST_POSSIBLE=
+-SSB_SDIOHOST=
+-SSB_SILENT=
+-SSB_DEBUG=
+-SSB_SERIAL=
+-SSB_DRIVER_PCICORE_POSSIBLE=
+-SSB_DRIVER_PCICORE=
+-SSB_PCICORE_HOSTMODE=
+-SSB_DRIVER_MIPS=
+-SSB_SFLASH=
+-SSB_EMBEDDED=
+-SSB_DRIVER_EXTIF=
+-SSB_DRIVER_GIGE=
+-SSB_DRIVER_GPIO=
+-BCMA_POSSIBLE=
+-BCMA=
+-BCMA_BLOCKIO=
+-BCMA_HOST_PCI_POSSIBLE=
+-BCMA_HOST_PCI=
+-BCMA_DRIVER_PCI_HOSTMODE=
+-BCMA_HOST_SOC=
+-BCMA_DRIVER_MIPS=
+-BCMA_SFLASH=
+-BCMA_NFLASH=
+-BCMA_DRIVER_GMAC_CMN=
+-BCMA_DRIVER_GPIO=
+-BCMA_DEBUG=
+ DRM=
+ DRM_USB=
+ DRM_KMS_HELPER=
+--- a/Kconfig
++++ b/Kconfig
+@@ -31,9 +31,6 @@ source drivers/net/wireless/Kconfig
+ source drivers/net/ethernet/Kconfig
+ source drivers/net/usb/Kconfig
+ 
+-source drivers/ssb/Kconfig
+-source drivers/bcma/Kconfig
+-
+ source drivers/gpu/drm/Kconfig
+ 
+ source net/nfc/Kconfig
+--- a/Makefile.kernel
++++ b/Makefile.kernel
+@@ -26,8 +26,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
+ obj-$(CPTCFG_WLAN) += drivers/net/wireless/
+ obj-$(CPTCFG_BT) += net/bluetooth/
+ obj-$(CPTCFG_BT) += drivers/bluetooth/
+-obj-$(CPTCFG_SSB) += drivers/ssb/
+-obj-$(CPTCFG_BCMA) += drivers/bcma/
+ obj-$(CPTCFG_ETHERNET) += drivers/net/ethernet/
+ obj-$(CPTCFG_USB_NET_RNDIS_WLAN) += drivers/net/usb/
+ obj-$(CPTCFG_DRM) += drivers/gpu/drm/

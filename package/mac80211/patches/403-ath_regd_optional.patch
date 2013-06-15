@@ -1,46 +1,58 @@
 --- a/drivers/net/wireless/ath/regd.c
 +++ b/drivers/net/wireless/ath/regd.c
-@@ -198,6 +198,10 @@ ath_reg_apply_beaconing_flags(struct wip
+@@ -196,6 +196,10 @@ ath_reg_apply_beaconing_flags(struct wip
  	struct ieee80211_channel *ch;
  	unsigned int i;
  
-+#ifdef ATH_USER_REGD
++#ifdef CPTCFG_ATH_USER_REGD
 +	return;
 +#endif
 +
  	for (band = 0; band < IEEE80211_NUM_BANDS; band++) {
  
  		if (!wiphy->bands[band])
-@@ -252,6 +256,10 @@ ath_reg_apply_active_scan_flags(struct w
+@@ -250,6 +254,10 @@ ath_reg_apply_active_scan_flags(struct w
  	struct ieee80211_channel *ch;
  	const struct ieee80211_reg_rule *reg_rule;
  
-+#ifdef ATH_USER_REGD
++#ifdef CPTCFG_ATH_USER_REGD
 +	return;
 +#endif
 +
  	sband = wiphy->bands[IEEE80211_BAND_2GHZ];
  	if (!sband)
  		return;
-@@ -301,6 +309,10 @@ static void ath_reg_apply_radar_flags(st
+@@ -299,6 +307,10 @@ static void ath_reg_apply_radar_flags(st
  	struct ieee80211_channel *ch;
  	unsigned int i;
  
-+#ifdef ATH_USER_REGD
++#ifdef CPTCFG_ATH_USER_REGD
 +	return;
 +#endif
 +
  	if (!wiphy->bands[IEEE80211_BAND_5GHZ])
  		return;
  
-@@ -505,6 +517,10 @@ ath_regd_init_wiphy(struct ath_regulator
+@@ -503,6 +515,10 @@ ath_regd_init_wiphy(struct ath_regulator
  {
  	const struct ieee80211_regdomain *regd;
  
-+#ifdef ATH_USER_REGD
++#ifdef CPTCFG_ATH_USER_REGD
 +	return 0;
 +#endif
 +
  	wiphy->reg_notifier = reg_notifier;
  	wiphy->flags |= WIPHY_FLAG_STRICT_REGULATORY;
  
+--- a/drivers/net/wireless/ath/Kconfig
++++ b/drivers/net/wireless/ath/Kconfig
+@@ -21,6 +21,9 @@ menuconfig ATH_CARDS
+ 
+ if ATH_CARDS
+ 
++config ATH_USER_REGD
++	bool "Do not enforce EEPROM regulatory restrictions"
++
+ config ATH_DEBUG
+ 	bool "Atheros wireless debugging"
+ 	---help---
