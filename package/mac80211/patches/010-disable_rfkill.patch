@@ -1,13 +1,13 @@
 --- a/backport-include/linux/rfkill.h
 +++ b/backport-include/linux/rfkill.h
-@@ -43,6 +43,10 @@ struct rfkill_ops {
- };
- #endif
+@@ -2,6 +2,10 @@
+ #define __COMPAT_RFKILL_H
+ #include <linux/version.h>
  
 +#undef CONFIG_RFKILL
 +#undef CONFIG_RFKILL_LEDS
 +#undef CONFIG_RFKILL_MODULE
 +
- /* this changes infrequently, backport manually */
- enum rfkill_type {
- 	RFKILL_TYPE_ALL = 0,
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+ #include_next <linux/rfkill.h>
+ #else
