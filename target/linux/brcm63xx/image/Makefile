@@ -157,6 +157,11 @@ define Image/Prepare
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
 
+define Image/Build/Initramfs
+	# Netgear CVG834G
+	$(call Image/Build/HCS,initramfs,cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
+endef
+
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	# Various routers
@@ -288,6 +293,9 @@ define Image/Build
 
 	# Netgear CVG834G
 	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
+  endif
+  ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	$(call Image/Build/Initramfs)
   endif
 endef
 
