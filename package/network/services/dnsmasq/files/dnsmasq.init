@@ -74,7 +74,7 @@ append_addnhosts() {
 }
 
 append_bogusnxdomain() {
-       xappend "--bogus-nxdomain=$1"
+    xappend "--bogus-nxdomain=$1"
 }
 
 dnsmasq() {
@@ -393,7 +393,7 @@ dhcp_option_add() {
 
 dhcp_domain_add() {
 	local cfg="$1"
-	local ip name names
+	local ip name names record
 
 	config_get names "$cfg" name "$2"
 	[ -n "$names" ] || return 0
@@ -401,22 +401,11 @@ dhcp_domain_add() {
 	config_get ip "$cfg" ip "$3"
 	[ -n "$ip" ] || return 0
 
-	local oIFS="$IFS"; IFS="."; set -- $ip; IFS="$oIFS"
-	local raddr="${4:+$4.$3.$2.$1.in-addr.arpa}"
-
 	for name in $names; do
-		local fqdn="$name"
-
-		[ "${fqdn%.*}" == "$fqdn" ] && \
-			fqdn="$fqdn${DOMAIN:+.$DOMAIN}"
-
-		xappend "--address=/$fqdn/$ip"
-
-		[ -n "$raddr" ] && {
-			xappend "--ptr-record=$raddr,$fqdn"
-			raddr=""
-		}
+		record="${record:+$record/}$name"
 	done
+
+	xappend "--address=/$record/$ip"
 }
 
 dhcp_srv_add() {
@@ -469,6 +458,27 @@ dhcp_cname_add() {
 	xappend "--cname=${cname},${target}"
 }
 
+dhcp_hostrecord_add() {
+	local cfg="$1"
+	local names addresses record val
+
+	config_get names "$cfg" name "$2"
+	if [ -z "$names" ]; then
+		return 0
+	fi
+
+	config_get addresses "$cfg" ip "$3"
+	if [ -z "$addresses" ]; then
+		return 0
+	fi
+
+	for val in $names $addresses; do
+		record="${record:+$record,}$val"
+	done
+
+	xappend "--host-record=$record"
+}
+
 start() {
 	include /lib/network
 	scan_interfaces
@@ -501,6 +511,14 @@ start() {
 	config_foreach dhcp_remoteid_add remoteid
 	config_foreach dhcp_subscrid_add subscrid
 	config_foreach dhcp_domain_add domain
+	config_foreach dhcp_hostrecord_add hostrecord
+
+	# add own hostname
+	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && [ -n "$lanaddr" ] && {
+		local hostname="$(uci_get system @system[0] hostname OpenWrt)"
+		dhcp_hostrecord_add "" "$hostname${DOMAIN:+.$DOMAIN $hostname}" "$lanaddr"
+	}
+
 	echo >> $CONFIGFILE
 	config_foreach dhcp_srv_add srvhost
 	config_foreach dhcp_mx_add mxhost
@@ -509,12 +527,6 @@ start() {
 	echo >> $CONFIGFILE
 	config_foreach dhcp_cname_add cname
 	echo >> $CONFIGFILE
-
-	# add own hostname
-	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && [ -n "$lanaddr" ] && {
-		local hostname="$(uci_get system.@system[0].hostname)"
-		dhcp_domain_add "" "${hostname:-OpenWrt}" "$lanaddr"
-	}
 
 	service_start /usr/sbin/dnsmasq -C $CONFIGFILE && {
 		rm -f /tmp/resolv.conf
