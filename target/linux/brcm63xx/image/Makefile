@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -10,9 +10,6 @@ include $(INCLUDE_DIR)/image.mk
 LOADADDR = 0x80010000		# RAM start + 16M 
 KERNEL_ENTRY = $(LOADADDR)	# Newer kernels add a jmp to the kernel_entry at the start of the binary
 RAMSIZE = 0x01000000		# 64MB
-
-DROP_SECTIONS := .reginfo .mdebug .comment .note .pdr .options .MIPS.options
-OBJCOPY_BIN := $(TARGET_CROSS)objcopy -S -O binary $(addprefix --remove-section=,$(DROP_SECTIONS))
 
 LOADER_MAKEOPTS= \
 		KDIR=$(KDIR) \
@@ -133,8 +130,6 @@ define Build/Clean
 endef
 
 define Image/Prepare
-	# Binary kernel
-	$(OBJCOPY_BIN) $(LINUX_DIR)/vmlinux $(KDIR)/vmlinux.bin
 	# Standard LZMA kernel
 	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 
@@ -292,7 +287,7 @@ define Image/Build
 	$(call Image/Build/SPW303V,$(1),96358-502V,6358,SPW303V)
 
 	# Netgear CVG834G
-	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux.bin)
+	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
   endif
 endef
 
