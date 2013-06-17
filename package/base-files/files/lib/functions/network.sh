@@ -13,7 +13,7 @@ __network_set_cache()
 __network_export()
 {
 	local __v="__NETWORK_CV_$2"
-	eval "export -- \"$1=\${$__v:+\$$__v$3}\"; [ -n \"\${$__v+x}\" ]"
+	eval "export -- \"$1=\${$__v:+\${$__v$4}$3}\"; [ -n \"\${$__v+x}\" ]"
 }
 
 __network_parse_ifstatus()
@@ -21,6 +21,8 @@ __network_parse_ifstatus()
 	local __iface="$1"
 	local __key="${__iface}"
 	local __tmp
+	local __idx
+	local __list
 	local __old_ns
 
 	__network_export __tmp "${__key}__parsed" && return 0
@@ -39,36 +41,76 @@ __network_parse_ifstatus()
 		# parse addresses
 		local __family
 		for __family in 4 6; do
+
+			__list=""
+
 			if json_is_a "ipv${__family}_address" array; then
 
 				json_select "ipv${__family}_address"
 
-				if json_is_a 1 object; then
+				__idx=1
 
-					json_select 1
-					__network_set_cache "${__key}_address${__family}" address
-					__network_set_cache "${__key}_mask${__family}"    mask
+				while json_is_a "$__idx" object; do
+
+					json_select "$((__idx++))"
+					json_get_var __tmp "address" && __list="${__list:+$__list }$__tmp"
+					json_get_var __tmp "mask"    && __list="${__list:+$__list/}$__tmp"
 					json_select ".."
 
-				fi
+				done
 
 				json_select ".."
 
 			fi
+
+			if json_is_a "ipv${__family}_prefix_assignment" array; then
+
+				json_select "ipv${__family}_prefix_assignment"
+
+				__idx=1
+
+				while json_is_a "$__idx" object; do
+
+					json_select "$((__idx++))"
+					json_get_var __tmp "address" && __list="${__list:+$__list }${__tmp}1"
+					json_get_var __tmp "mask"    && __list="${__list:+$__list/}$__tmp"
+					json_select ".."
+
+				done
+
+				json_select ".."
+
+			fi
+
+			if [ -n "$__list" ]; then
+				__network_set_cache "${__key}_address${__family}" "" "$__list"
+			fi
+
 		done
 
 		# parse prefixes
 		if json_is_a "ipv6_prefix" array; then
 			json_select "ipv6_prefix"
 
-			if json_is_a 1 object; then
-				json_select 1
-				__network_set_cache "${__key}_prefix6_address"	address
-				__network_set_cache "${__key}_prefix6_mask"	mask
+			__idx=1
+			__list=""
+
+			while json_is_a "$__idx" object; do
+
+				json_select "$((__idx++))"
+				json_get_var __tmp "address" && __list="${__list:+$__list }$__tmp"
+				json_get_var __tmp "mask"    && __list="${__list:+$__list/}$__tmp"
 				json_select ".."
-			fi
+
+			done
 
 			json_select ".."
+
+
+			if [ -n "$__list" ]; then
+				__network_set_cache "${__key}_prefix6" "" "$__list"
+			fi
+
 		fi
 
 		# parse routes
@@ -110,20 +152,20 @@ __network_parse_ifstatus()
 
 				json_select "$__field"
 
-				local __idx=1
-				local __dns=""
+				__idx=1
+				__list=""
 
 				while json_is_a "$__idx" string; do
 
 					json_get_var __tmp "$((__idx++))"
-					__dns="${__dns:+$__dns }$__tmp"
+					__list="${__list:+$__list }$__tmp"
 
 				done
 
 				json_select ".."
 
-				if [ -n "$__dns" ]; then
-					__network_set_cache "${__key}_${__field}" "" "$__dns"
+				if [ -n "$__list" ]; then
+					__network_set_cache "${__key}_${__field}" "" "$__list"
 				fi
 			fi
 		done
@@ -151,55 +193,77 @@ __network_ipaddr()
 {
 	local __var="$1"
 	local __iface="$2"
-	local __family="$3"
-	local __prefix="$4"
-	local __tmp
+	local __field="$3"
+	local __subst="$4"
+	local __list="$5"
+	local __tmp=""
 
 	__network_parse_ifstatus "$__iface" || return 1
 
-	if [ $__prefix -eq 1 ]; then
-		__network_export __tmp "${__iface}_mask${__family}" && \
-			__network_export "$__var" "${__iface}_address${__family}" "/$__tmp"
+	if [ $__list = 1 ] && [ -n "$__subst" ]; then
+		__network_export "__list" "${__iface}_${__field}"
+
+		for __list in $__list; do
+			eval "__tmp=\"${__tmp:+$__tmp }\${__list$__subst}\""
+		done
+
+		export -- "$__var=$__tmp"; [ -n "$__tmp" ]
 		return $?
 	fi
 
-	__network_export "$__var" "${__iface}_address${__family}"
-	return $?
-
-}
-
-# determine IPv4 address of given logical interface
-# 1: destination variable
-# 2: interface
-network_get_ipaddr()  { __network_ipaddr "$1" "$2" 4 0; }
-
-# determine IPv6 address of given logical interface
-# 1: destination variable
-# 2: interface
-network_get_ipaddr6() { __network_ipaddr "$1" "$2" 6 0; }
-
-# determine IPv4 subnet of given logical interface
-# 1: destination variable
-# 2: interface
-network_get_subnet()  { __network_ipaddr "$1" "$2" 4 1; }
-
-# determine IPv6 subnet of given logical interface
-# 1: destination variable
-# 2: interface
-network_get_subnet6() { __network_ipaddr "$1" "$2" 6 1; }
-
-# determine IPv6 prefix
-network_get_prefix6() {
-	local __var="$1"
-	local __iface="$2"
-	local __address
-	local __mask
-
-	__network_parse_ifstatus "$__iface" || return 1
-	__network_export __mask "${__iface}_prefix6_mask" || return 1
-	__network_export "$__var" "${__iface}_prefix6_address" "/$__mask"
+	__network_export "$__var" "${__iface}_${__field}" "" "$__subst"
 	return $?
 }
+
+# determine first IPv4 address of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_ipaddr()  { __network_ipaddr "$1" "$2" "address4" "%%/*" 0; }
+
+# determine first IPv6 address of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_ipaddr6() { __network_ipaddr "$1" "$2" "address6" "%%/*" 0; }
+
+# determine first IPv4 subnet of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_subnet()  { __network_ipaddr "$1" "$2" "address4" "%% *" 0; }
+
+# determine first IPv6 subnet of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_subnet6() { __network_ipaddr "$1" "$2" "address6" "%% *" 0; }
+
+# determine first IPv6 prefix of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_prefix6() { __network_ipaddr "$1" "$2" "prefix6" "%% *" 0; }
+
+# determine all IPv4 addresses of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_ipaddrs()  { __network_ipaddr "$1" "$2" "address4" "%%/*" 1; }
+
+# determine all IPv6 addresses of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_ipaddrs6() { __network_ipaddr "$1" "$2" "address6" "%%/*" 1; }
+
+# determine all IPv4 subnets of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_subnets()  { __network_ipaddr "$1" "$2" "address4" "" 1; }
+
+# determine all IPv6 subnets of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_subnets6() { __network_ipaddr "$1" "$2" "address6" "" 1; }
+
+# determine all IPv6 prefixes of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_prefixes6() { __network_ipaddr "$1" "$2" "prefix6" "" 1; }
 
 
 __network_gateway()
