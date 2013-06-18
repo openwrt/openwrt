@@ -1,0 +1,14 @@
+--- a/tools/Makefile
++++ b/tools/Makefile
+@@ -165,9 +165,9 @@ NOPEDOBJS := $(addprefix $(obj),$(NOPED_
+ # Define __KERNEL_STRICT_NAMES to prevent typedef overlaps
+ #
+ HOSTCPPFLAGS =	-include $(SRCTREE)/include/libfdt_env.h \
+-		-idirafter $(SRCTREE)/include \
++		-I $(SRCTREE)/include \
+ 		-idirafter $(OBJTREE)/include2 \
+-		-idirafter $(OBJTREE)/include \
++		-I $(OBJTREE)/include \
+ 	        -I $(SRCTREE)/lib/libfdt \
+ 		-I $(SRCTREE)/tools \
+ 		-DCONFIG_SYS_TEXT_BASE=$(CONFIG_SYS_TEXT_BASE) \
