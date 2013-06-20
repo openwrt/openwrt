@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/nvram.c
 +++ b/arch/mips/bcm63xx/nvram.c
-@@ -52,6 +52,7 @@ void __init bcm63xx_nvram_init(void *add
+@@ -45,6 +45,7 @@ void __init bcm63xx_nvram_init(void *add
  {
  	unsigned int check_len;
  	u32 crc, expected_crc;
@@ -8,7 +8,7 @@
  
  	/* extract nvram data */
  	memcpy(&nvram, addr, sizeof(nvram));
-@@ -73,6 +74,15 @@ void __init bcm63xx_nvram_init(void *add
+@@ -65,6 +66,15 @@ void __init bcm63xx_nvram_init(void *add
  	if (crc != expected_crc)
  		pr_warn("nvram checksum failed, contents may be invalid (expected %08x, got %08x)\n",
  			expected_crc, crc);

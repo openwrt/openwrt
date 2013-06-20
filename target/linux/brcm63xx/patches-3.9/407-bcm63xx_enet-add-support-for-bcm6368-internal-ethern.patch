@@ -74,7 +74,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
 +		chan_count = 32;
 +	else
-+		chan_count = 16;
++		chan_count = 8;
 +
 +	shared_res[1].start = bcm63xx_regset_address(RSET_ENETDMAC);
 +	shared_res[1].end = shared_res[1].start;
