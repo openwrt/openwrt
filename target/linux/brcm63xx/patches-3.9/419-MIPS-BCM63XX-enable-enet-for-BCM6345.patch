@@ -59,7 +59,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  static struct resource shared_res[] = {
  	{
  		.start		= -1, /* filled at runtime */
-@@ -137,12 +171,19 @@ static int __init register_shared(void)
+@@ -137,9 +171,14 @@ static int __init register_shared(void)
  	if (shared_device_registered)
  		return 0;
  
@@ -75,12 +75,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
  		chan_count = 32;
-+	else if (BCMCPU_IS_6345())
-+		chan_count = 8;
- 	else
- 		chan_count = 16;
- 
-@@ -172,7 +213,7 @@ int __init bcm63xx_enet_register(int uni
+@@ -172,7 +211,7 @@ int __init bcm63xx_enet_register(int uni
  	if (unit > 1)
  		return -ENODEV;
  
@@ -89,7 +84,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  		return -ENODEV;
  
  	ret = register_shared();
-@@ -213,6 +254,20 @@ int __init bcm63xx_enet_register(int uni
+@@ -213,6 +252,20 @@ int __init bcm63xx_enet_register(int uni
  		dpd->phy_interrupt = bcm63xx_get_irq_number(IRQ_ENET_PHY);
  	}
  
@@ -110,7 +105,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  	ret = platform_device_register(pdev);
  	if (ret)
  		return ret;
-@@ -246,6 +301,10 @@ bcm63xx_enetsw_register(const struct bcm
+@@ -246,6 +299,10 @@ bcm63xx_enetsw_register(const struct bcm
  	else if (BCMCPU_IS_6362() || BCMCPU_IS_6368())
  		enetsw_pd.num_ports = ENETSW_PORTS_6368;
  
