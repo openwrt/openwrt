@@ -281,3 +281,22 @@
   */
  struct sta_ampdu_mlme {
  	struct mutex mtx;
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -1778,9 +1778,13 @@ static void ath_tx_txqaddbuf(struct ath_
+ 	}
+ 
+ 	if (!internal) {
+-		txq->axq_depth++;
+-		if (bf_is_ampdu_not_probing(bf))
+-			txq->axq_ampdu_depth++;
++		while (bf) {
++			txq->axq_depth++;
++			if (bf_is_ampdu_not_probing(bf))
++				txq->axq_ampdu_depth++;
++
++			bf = bf->bf_lastbf->bf_next;
++		}
+ 	}
+ }
+ 
