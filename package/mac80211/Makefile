@@ -229,14 +229,20 @@ define KernelPackage/rt2x00-lib/config
   endif
 endef
 
-define KernelPackage/rt2x00-pci
+define KernelPackage/rt2x00-mmio
 $(call KernelPackage/rt2x00/Default)
   DEPENDS+= @(PCI_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-eeprom-93cx6
+  TITLE+= (MMIO)
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00mmio.ko
+  AUTOLOAD:=$(call AutoLoad,25,rt2x00mmio)
+endef
+
+define KernelPackage/rt2x00-pci
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-mmio +kmod-rt2x00-lib
   TITLE+= (PCI)
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00pci.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00mmio.ko
-  AUTOLOAD:=$(call AutoLoad,25,rt2x00mmio rt2x00pci)
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00pci.ko
+  AUTOLOAD:=$(call AutoLoad,26,rt2x00pci)
 endef
 
 define KernelPackage/rt2x00-usb
@@ -249,7 +255,7 @@ endef
 
 define KernelPackage/rt2x00-soc
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @TARGET_ramips +kmod-rt2x00-lib
+  DEPENDS+= @TARGET_ramips +kmod-rt2x00-mmio +kmod-rt2x00-lib
   TITLE+= (SoC)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00soc.ko
   AUTOLOAD:=$(call AutoLoad,26,rt2x00soc)
@@ -305,7 +311,7 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||TARGET_ramips) +kmod-rt2x00-pci +kmod-rt2800-lib +kmod-lib-crc-ccitt +TARGET_ramips:kmod-rt2x00-soc
+  DEPENDS+= @(PCI_SUPPORT||TARGET_ramips) +PCI_SUPPORT:kmod-rt2x00-pci +kmod-rt2800-lib +kmod-lib-crc-ccitt +TARGET_ramips:kmod-rt2x00-soc
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.ko
   AUTOLOAD:=$(call AutoLoad,28,rt2800pci)
@@ -1232,7 +1238,8 @@ config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
 config-$(call config_package,mac80211-hwsim) += MAC80211_HWSIM
 
 config-$(call config_package,rt2x00-lib) += RT2X00 RT2X00_LIB
-config-$(call config_package,rt2x00-pci) += RT2X00_LIB_PCI RT2X00_LIB_MMIO
+config-$(call config_package,rt2x00-pci) += RT2X00_LIB_PCI
+config-$(call config_package,rt2x00-mmio) += RT2X00_LIB_MMIO
 config-$(call config_package,rt2x00-usb) += RT2X00_LIB_USB
 config-$(call config_package,rt2x00-soc) += RT2X00_LIB_SOC
 config-$(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS) += RT2X00_LIB_DEBUGFS
@@ -1582,6 +1589,7 @@ $(eval $(call KernelPackage,p54-pci))
 $(eval $(call KernelPackage,p54-usb))
 $(eval $(call KernelPackage,p54-spi))
 $(eval $(call KernelPackage,rt2x00-lib))
+$(eval $(call KernelPackage,rt2x00-mmio))
 $(eval $(call KernelPackage,rt2x00-pci))
 $(eval $(call KernelPackage,rt2x00-usb))
 $(eval $(call KernelPackage,rt2x00-soc))
