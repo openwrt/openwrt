@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
 PKG_VERSION:=2.21.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.21
@@ -33,7 +33,7 @@ endef
 CONFIGURE_ARGS += \
 	--enable-new-mount	\
 	--with-ncurses		\
-	--disable-nls 		\
+	--disable-nls		\
 	--disable-tls		\
 	--without-udev
 
@@ -58,9 +58,9 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/libuuid/src/uuid.h $(1)/usr/include/uuid
 
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libblkid/src/.libs/libblkid.{a,so.*} $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libmount/src/.libs/libmount.{a,so.*} $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libuuid/src/.libs/libuuid.{a,so.*} $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libblkid/src/.libs/libblkid.{a,so*} $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libmount/src/.libs/libmount.{a,so*} $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libuuid/src/.libs/libuuid.{a,so*} $(1)/usr/lib
 endef
 
 define Package/libblkid
