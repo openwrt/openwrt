@@ -33,10 +33,7 @@
 					],
 					[ "if",
 						[ "has", "DEVNAME" ],
-						[
-							[ "makedev", "/dev/%DEVNAME%", "0644" ],
-							[ "return" ],
-						],
+						[ "makedev", "/dev/%DEVNAME%", "0644" ],
 					],
 				],
 			],
