@@ -15,7 +15,6 @@ PKG_RELEASE:=141
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
 PKG_BUILD_DEPENDS:=opkg/host
-PKG_CONFIG_DEPENDS:=CONFIG_PROCD_INIT
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -54,12 +53,6 @@ endef
 
 define Package/base-files/description
  This package contains a base filesystem and system scripts for OpenWrt.
-endef
-
-define Package/base-files/config
-config PROCD_INIT
-	bool "Use procd as the init process"
-	default n
 endef
 
 ifneq ($(CONFIG_PREINITOPT),)
