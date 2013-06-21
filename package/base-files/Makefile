@@ -62,12 +62,6 @@ config PROCD_INIT
 	default n
 endef
 
-ifeq ($(CONFIG_PROCD_INIT),)
-define InstallOldFiles
-	$(CP) ./files.old/* $(1)/
-endef
-endif
-
 ifneq ($(CONFIG_PREINITOPT),)
 define ImageConfigOptions
 	mkdir -p $(1)/lib/preinit
@@ -100,7 +94,6 @@ define Package/base-files/install
 	if [ -d $(GENERIC_PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(GENERIC_PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
-	$(call InstallOldFiles,$(1))
 	if [ -d $(PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
