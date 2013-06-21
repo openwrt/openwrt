@@ -17,10 +17,6 @@ set_state() {
 
 	case "$1" in
 	preinit)
-		insmod leds-gpio
-		insmod ledtrig-default-on
-		insmod ledtrig-timer
-
 		status_led_blink_preinit
 		;;
 
