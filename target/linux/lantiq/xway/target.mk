@@ -1,7 +1,7 @@
 ARCH:=mips
 SUBTARGET:=xway
 BOARDNAME:=XWAY
-FEATURES:=squashfs atm
+FEATURES:=squashfs atm mips16
 
 DEFAULT_PACKAGES+=kmod-leds-gpio kmod-gpio-button-hotplug
 
