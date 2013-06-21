@@ -87,14 +87,14 @@
 					lantiq,function = "ebu";
 				};
 				pci_in {
-					lantiq,groups = "req1", "req2";
+					lantiq,groups = "req1";
 					lantiq,function = "pci";
 					lantiq,open-drain = <1>;
 					lantiq,pull = <2>;
 					lantiq,output = <0>;
 				};
 				pci_out {
-					lantiq,groups = "gnt1", "gnt2";
+					lantiq,groups = "gnt1";
 					lantiq,function = "pci";
 					lantiq,pull = <0>;
 					lantiq,output = <1>;
@@ -103,6 +103,16 @@
 					lantiq,pins = "io21";
 					lantiq,pull = <2>;
 					lantiq,output = <1>;
+				};
+				leds {
+					lantiq,pins = "io2", "io4", "io5", "io6", "io7", "io8", "io19";
+					lantiq,output = <1>;
+				};
+				keys {
+					lantiq,pins = "io28", "io30";
+					lantiq,output = <0>;
+					lantiq,pull = <2>;
+					lantiq,open-drain = <1>;
 				};
 			};
 		};
@@ -136,21 +146,21 @@
 
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 25 1>;
+			gpios = <&gpio 28 1>;
 			linux,code = <0xf7>;
 		};
-/*		reset {
+		reset {
 			label = "reset";
 			gpios = <&gpio 30 1>;
 			linux,code = <0x198>;
-		};*/
+		};
 	};
 
 	gpio-leds {
 		compatible = "gpio-leds";
 		power {
 			label = "power";
-			gpios = <&gpio 2 0>;
+			gpios = <&gpio 2 1>;
 		};
 		dsl {
 			label = "dsl";
