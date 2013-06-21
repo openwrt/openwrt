@@ -48,11 +48,7 @@ start() {
 	grep -q debugfs /proc/filesystems && mount -o noatime -t debugfs debugfs /sys/kernel/debug
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
-	if [ -f /sbin/kmodloader ]; then
-		/sbin/kmodloader
-	else
-		load_modules /etc/modules.d/*
-	fi
+	/sbin/kmodloader
 
 	# allow wifi modules time to settle
 	sleep 1
