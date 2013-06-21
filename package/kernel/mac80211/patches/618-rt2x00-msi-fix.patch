@@ -1,0 +1,34 @@
+Index: compat-wireless-2013-06-13/drivers/net/wireless/rt2x00/rt2x00pci.c
+===================================================================
+--- compat-wireless-2013-06-13.orig/drivers/net/wireless/rt2x00/rt2x00pci.c	2013-06-20 21:19:16.205070973 +0200
++++ compat-wireless-2013-06-13/drivers/net/wireless/rt2x00/rt2x00pci.c	2013-06-20 21:18:36.705069262 +0200
+@@ -108,7 +108,9 @@
+ 		goto exit_release_regions;
+ 	}
+ 
++#ifdef CONFIG_PCI_MSI
+ 	pci_enable_msi(pci_dev);
++#endif
+ 
+ 	hw = ieee80211_alloc_hw(sizeof(struct rt2x00_dev), ops->hw);
+ 	if (!hw) {
+@@ -162,7 +164,9 @@
+ 	ieee80211_free_hw(hw);
+ 
+ exit_disable_msi:
++#ifdef CONFIG_PCI_SET_MWI
+ 	pci_disable_msi(pci_dev);
++#endif
+ 
+ exit_release_regions:
+ 	pci_release_regions(pci_dev);
+@@ -188,7 +192,9 @@
+ 	rt2x00pci_free_reg(rt2x00dev);
+ 	ieee80211_free_hw(hw);
+ 
++#ifdef CONFIG_PCI_MSI
+ 	pci_disable_msi(pci_dev);
++#endif
+ 
+ 	/*
+ 	 * Free the PCI device data.
