@@ -23,10 +23,6 @@ set_preinit_iface() {
 }
 
 init_iface() {
-	insmod switch-core
-	insmod switch-robo
-	insmod switch-adm
-
 	[ -d /proc/switch/eth0 ] && [ "$ifname" = "eth0" ] && {
 		case "$(cat /proc/switch/eth0/cpuport)" in
 			"5") cpu_port="5u*";;
