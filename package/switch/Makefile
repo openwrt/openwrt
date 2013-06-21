@@ -21,7 +21,7 @@ define KernelPackage/switch
 	$(PKG_BUILD_DIR)/switch-core.ko \
 	$(PKG_BUILD_DIR)/switch-adm.ko \
 	$(PKG_BUILD_DIR)/switch-robo.ko
-  AUTOLOAD:=$(call AutoLoad,20,switch-core switch-robo switch-adm)
+  AUTOLOAD:=$(call AutoLoad,20,switch-core switch-robo switch-adm,1)
 endef
 
 define KernelPackage/switch/description
