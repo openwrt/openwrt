@@ -203,6 +203,13 @@ config_list_foreach() {
 	done
 }
 
+insert_modules() {
+	[ -d /etc/modules.d ] && {
+		cd /etc/modules.d
+		sed 's/^[^#]/insmod &/' $* | ash 2>&- || :
+	}
+}
+
 include() {
 	local file
 
