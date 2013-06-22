@@ -1,0 +1,10 @@
+--- a/fs/overlayfs/super.c
++++ b/fs/overlayfs/super.c
+@@ -385,7 +385,6 @@ struct dentry *ovl_lookup(struct inode *
+ 
+ struct file *ovl_path_open(struct path *path, int flags)
+ {
+-	path_get(path);
+ 	return dentry_open(path, flags, current_cred());
+ }
+ 
