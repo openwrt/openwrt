@@ -532,8 +532,6 @@ define Package/swap-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/.libs/mkswap $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/.libs/swaplabel $(1)/usr/sbin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/.libs/swapon $(1)/usr/sbin/
-	ln -sf swapon $(1)/usr/sbin/swapoff
 endef
 
 define Package/uuidd/install
