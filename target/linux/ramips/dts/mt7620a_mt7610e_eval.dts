@@ -1,0 +1,99 @@
+/dts-v1/;
+
+/include/ "mt7620a.dtsi"
+
+/ {
+	compatible = "ralink,mt7620a-eval-board", "ralink,mt7620a-soc";
+	model = "Ralink MT7620A evaluation board";
+
+	memory@0 {
+		reg = <0x0 0x2000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	palmbus@10000000 {
+		sysc@0 {
+			ralink,pinmux = "spi", "uartlite", "mdio", "wled", "ephy", "rgmii1", "rgmii2";
+			ralink,gpiomux = "i2c", "jtag";
+			ralink,uartmux = "gpio";
+			ralink,wdtmux = <1>;
+		};
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+		
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "en25q64";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "en25q64";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x7b0000>;
+				};
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+	};
+
+	gsw@10110000 {
+		status = "okay";
+		ralink,port4 = "ephy";
+	};
+
+	sdhci@10130000 {
+		status = "okay";
+	};
+
+	pcie@10140000 {
+		status = "okay";
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		wps {
+			label = "wps";
+			gpios = <&gpio0 12 1>;
+			linux,code = <0x100>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 13 1>;
+			linux,code = <0x101>;
+		};
+	};
+};

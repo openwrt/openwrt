@@ -1,0 +1,45 @@
+From 6142d0fa1c7ba6050664a27d7cca87043217b01f Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 13 Apr 2013 15:15:51 +0200
+Subject: [PATCH 43/79] MIPS: ralink: make use of the new memory detection
+ code
+
+Call detect_memory_region() from plat_mem_setup() unless the size was already
+read from the system controller.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/5184/
+---
+ arch/mips/ralink/of.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
+index 4165e70..fb15695 100644
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -11,6 +11,7 @@
+ #include <linux/io.h>
+ #include <linux/clk.h>
+ #include <linux/init.h>
++#include <linux/sizes.h>
+ #include <linux/of_fdt.h>
+ #include <linux/kernel.h>
+ #include <linux/bootmem.h>
+@@ -85,6 +86,14 @@ void __init plat_mem_setup(void)
+ 	 * parsed resulting in our memory appearing
+ 	 */
+ 	__dt_setup_arch(&__dtb_start);
++
++	if (soc_info.mem_size)
++		add_memory_region(soc_info.mem_base, soc_info.mem_size,
++				  BOOT_MEM_RAM);
++	else
++		detect_memory_region(soc_info.mem_base,
++				     soc_info.mem_size_min * SZ_1M,
++				     soc_info.mem_size_max * SZ_1M);
+ }
+ 
+ static int __init plat_of_setup(void)
+-- 
+1.7.10.4
+

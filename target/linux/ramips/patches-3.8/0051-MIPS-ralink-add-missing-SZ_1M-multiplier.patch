@@ -1,0 +1,29 @@
+From 1996ffa03b1c6e0ab7db35dfd910923f4ab54b26 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 21 May 2013 17:15:54 +0200
+Subject: [PATCH 51/79] MIPS: ralink: add missing SZ_1M multiplier
+
+On RT5350 the memory size is set to Bytes and not MegaBytes due to a missing
+multiplier.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/of.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
+index f916774..b25c1f2 100644
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -88,7 +88,7 @@ void __init plat_mem_setup(void)
+ 	__dt_setup_arch(&__dtb_start);
+ 
+ 	if (soc_info.mem_size)
+-		add_memory_region(soc_info.mem_base, soc_info.mem_size,
++		add_memory_region(soc_info.mem_base, soc_info.mem_size * SZ_1M,
+ 				  BOOT_MEM_RAM);
+ 	else
+ 		detect_memory_region(soc_info.mem_base,
+-- 
+1.7.10.4
+

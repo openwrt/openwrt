@@ -1,0 +1,132 @@
+From 517d8e6ba345620c6704ec3db5b23c56fde06392 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 20 Jun 2013 19:16:03 +0200
+Subject: [PATCH 77/79] clocksource: add common of_clksrc_init() function
+
+It is desirable to move all clocksource drivers to drivers/clocksource,
+yet each requires its own initialization function. We'd rather not
+pollute <linux/> with a header for each function. Instead, create a
+single of_clksrc_init() function which will determine which clocksource
+driver to initialize based on device tree.
+
+Based on a similar patch for drivers/irqchip by Thomas Petazzoni.
+
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+---
+ drivers/clocksource/Kconfig       |    3 +++
+ drivers/clocksource/Makefile      |    1 +
+ drivers/clocksource/clksrc-of.c   |   35 +++++++++++++++++++++++++++++++++++
+ include/asm-generic/vmlinux.lds.h |    9 +++++++++
+ include/linux/clocksource.h       |    9 +++++++++
+ 5 files changed, 57 insertions(+)
+ create mode 100644 drivers/clocksource/clksrc-of.c
+
+diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
+index 7fdcbd3..a32b7a9 100644
+--- a/drivers/clocksource/Kconfig
++++ b/drivers/clocksource/Kconfig
+@@ -1,3 +1,6 @@
++config CLKSRC_OF
++	bool
++
+ config CLKSRC_I8253
+ 	bool
+ 
+diff --git a/drivers/clocksource/Makefile b/drivers/clocksource/Makefile
+index f93453d..a33f792 100644
+--- a/drivers/clocksource/Makefile
++++ b/drivers/clocksource/Makefile
+@@ -1,3 +1,4 @@
++obj-$(CONFIG_CLKSRC_OF)	+= clksrc-of.o
+ obj-$(CONFIG_ATMEL_TCB_CLKSRC)	+= tcb_clksrc.o
+ obj-$(CONFIG_X86_CYCLONE_TIMER)	+= cyclone.o
+ obj-$(CONFIG_X86_PM_TIMER)	+= acpi_pm.o
+diff --git a/drivers/clocksource/clksrc-of.c b/drivers/clocksource/clksrc-of.c
+new file mode 100644
+index 0000000..bdabdaa
+--- /dev/null
++++ b/drivers/clocksource/clksrc-of.c
+@@ -0,0 +1,35 @@
++/*
++ * Copyright (c) 2012, NVIDIA CORPORATION.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <linux/init.h>
++#include <linux/of.h>
++
++extern struct of_device_id __clksrc_of_table[];
++
++static const struct of_device_id __clksrc_of_table_sentinel
++	__used __section(__clksrc_of_table_end);
++
++void __init clocksource_of_init(void)
++{
++	struct device_node *np;
++	const struct of_device_id *match;
++	void (*init_func)(void);
++
++	for_each_matching_node_and_match(np, __clksrc_of_table, &match) {
++		init_func = match->data;
++		init_func();
++	}
++}
+diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
+index d1ea7ce..1e744c5 100644
+--- a/include/asm-generic/vmlinux.lds.h
++++ b/include/asm-generic/vmlinux.lds.h
+@@ -149,6 +149,14 @@
+ #define TRACE_SYSCALLS()
+ #endif
+ 
++#ifdef CONFIG_CLKSRC_OF
++#define CLKSRC_OF_TABLES() . = ALIGN(8);				\
++			   VMLINUX_SYMBOL(__clksrc_of_table) = .;	\
++			   *(__clksrc_of_table)				\
++			   *(__clksrc_of_table_end)
++#else
++#define CLKSRC_OF_TABLES()
++#endif
+ 
+ #define KERNEL_DTB()							\
+ 	STRUCT_ALIGN();							\
+@@ -493,6 +501,7 @@
+ 	DEV_DISCARD(init.rodata)					\
+ 	CPU_DISCARD(init.rodata)					\
+ 	MEM_DISCARD(init.rodata)					\
++	CLKSRC_OF_TABLES()						\
+ 	KERNEL_DTB()
+ 
+ #define INIT_TEXT							\
+diff --git a/include/linux/clocksource.h b/include/linux/clocksource.h
+index 4dceaf8..7944f14 100644
+--- a/include/linux/clocksource.h
++++ b/include/linux/clocksource.h
+@@ -332,4 +332,13 @@ extern int clocksource_mmio_init(void __iomem *, const char *,
+ 
+ extern int clocksource_i8253_init(void);
+ 
++#ifdef CONFIG_CLKSRC_OF
++extern void clocksource_of_init(void);
++
++#define CLOCKSOURCE_OF_DECLARE(name, compat, fn)			\
++	static const struct of_device_id __clksrc_of_table_##name	\
++		__used __section(__clksrc_of_table)			\
++		 = { .compatible = compat, .data = fn };
++#endif
++
+ #endif /* _LINUX_CLOCKSOURCE_H */
+-- 
+1.7.10.4
+

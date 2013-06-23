@@ -72,7 +72,10 @@
 		status = "okay";
 
 		mtd-mac-address = <&factory 0x28>;
-		ralink,fixed-link = <1000 1 1 1>;
+		port@0 {
+			ralink,fixed-link = <1000 1 1 0>;
+		};
+
 	};
 
 	wmac@10180000 {
@@ -125,14 +128,16 @@
 		};
 	};
 
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
+	usb0: gpio-regulator {
+		compatible = "regulator-gpio";
 
-		usb {
-			gpio-export,name = "usb";
-			gpio-export,output = <1>;
-			gpios = <&gpio1 6 0>;
-		};
+		regulator-type = "voltage";
+		regulator-name = "usb-power";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+
+		enable-active-high;
+		enable-gpio = <&gpio1 6 0>;
 	};
 };

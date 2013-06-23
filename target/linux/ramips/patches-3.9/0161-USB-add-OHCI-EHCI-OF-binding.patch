@@ -1,0 +1,245 @@
+From 9a15efea2e55327cf7c813da64589509f9c40786 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 16 May 2013 23:11:45 +0200
+Subject: [PATCH 161/164] USB: add OHCI/EHCI OF binding
+
+based on f3bc64d6d1f21c1b92d75f233a37b75d77af6963
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/Kconfig         |    2 ++
+ drivers/usb/Makefile             |    3 ++-
+ drivers/usb/host/ehci-platform.c |   44 ++++++++++++++++++++++++++++++++------
+ drivers/usb/host/ohci-platform.c |   37 +++++++++++++++++++++++++++-----
+ 4 files changed, 74 insertions(+), 12 deletions(-)
+
+diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
+index c8d5b6c..7cd1188 100644
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -27,6 +27,8 @@ choice
+ 		bool "MT7620"
+ 		select CLKEVT_RT3352
+ 		select HW_HAS_PCI
++		select USB_ARCH_HAS_OHCI
++		select USB_ARCH_HAS_EHCI
+ 
+ endchoice
+ 
+diff --git a/drivers/usb/Makefile b/drivers/usb/Makefile
+index 8f5ebce..b766256 100644
+--- a/drivers/usb/Makefile
++++ b/drivers/usb/Makefile
+@@ -12,6 +12,8 @@ obj-$(CONFIG_USB_DWC3)		+= dwc3/
+ 
+ obj-$(CONFIG_USB_MON)		+= mon/
+ 
++obj-$(CONFIG_USB_OTG_UTILS)	+= phy/
++
+ obj-$(CONFIG_PCI)		+= host/
+ obj-$(CONFIG_USB_EHCI_HCD)	+= host/
+ obj-$(CONFIG_USB_ISP116X_HCD)	+= host/
+@@ -46,7 +48,6 @@ obj-$(CONFIG_USB_MICROTEK)	+= image/
+ obj-$(CONFIG_USB_SERIAL)	+= serial/
+ 
+ obj-$(CONFIG_USB)		+= misc/
+-obj-$(CONFIG_USB_OTG_UTILS)	+= phy/
+ obj-$(CONFIG_EARLY_PRINTK_DBGP)	+= early/
+ 
+ obj-$(CONFIG_USB_ATM)		+= atm/
+diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
+index ca75063..ae32410 100644
+--- a/drivers/usb/host/ehci-platform.c
++++ b/drivers/usb/host/ehci-platform.c
+@@ -18,14 +18,18 @@
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
++#include <linux/dma-mapping.h>
+ #include <linux/err.h>
+ #include <linux/kernel.h>
+ #include <linux/hrtimer.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/usb.h>
+ #include <linux/usb/hcd.h>
++#include <linux/usb/otg.h>
++#include <linux/usb/phy.h>
+ #include <linux/usb/ehci_pdriver.h>
+ 
+ #include "ehci.h"
+@@ -62,22 +66,32 @@ static const struct ehci_driver_overrides platform_overrides __initdata = {
+ 	.reset =	ehci_platform_reset,
+ };
+ 
++static struct usb_ehci_pdata ehci_platform_defaults;
++
+ static int ehci_platform_probe(struct platform_device *dev)
+ {
+ 	struct usb_hcd *hcd;
+ 	struct resource *res_mem;
+-	struct usb_ehci_pdata *pdata = dev->dev.platform_data;
++	struct usb_ehci_pdata *pdata;
+ 	int irq;
+ 	int err = -ENOMEM;
+ 
+-	if (!pdata) {
+-		WARN_ON(1);
+-		return -ENODEV;
+-	}
+-
+ 	if (usb_disabled())
+ 		return -ENODEV;
+ 
++	/*
++	 * use reasonable defaults so platforms don't have to provide these.
++	 * with DT probing on ARM, none of these are set.
++	 */
++	if (!dev->dev.platform_data)
++		dev->dev.platform_data = &ehci_platform_defaults;
++	if (!dev->dev.dma_mask)
++		dev->dev.dma_mask = &dev->dev.coherent_dma_mask;
++	if (!dev->dev.coherent_dma_mask)
++		dev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
++
++	pdata = dev->dev.platform_data;
++
+ 	irq = platform_get_irq(dev, 0);
+ 	if (irq < 0) {
+ 		dev_err(&dev->dev, "no irq provided");
+@@ -105,6 +119,15 @@ static int ehci_platform_probe(struct platform_device *dev)
+ 	hcd->rsrc_start = res_mem->start;
+ 	hcd->rsrc_len = resource_size(res_mem);
+ 
++#ifdef CONFIG_USB_OTG_UTILS
++	hcd->phy = devm_usb_get_phy(&dev->dev, USB_PHY_TYPE_USB2);
++	if (!IS_ERR_OR_NULL(hcd->phy)) {
++		otg_set_host(hcd->phy->otg,
++				&hcd->self);
++		usb_phy_init(hcd->phy);
++	}
++#endif
++
+ 	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
+ 	if (IS_ERR(hcd->regs)) {
+ 		err = PTR_ERR(hcd->regs);
+@@ -139,6 +162,9 @@ static int ehci_platform_remove(struct platform_device *dev)
+ 	if (pdata->power_off)
+ 		pdata->power_off(dev);
+ 
++	if (pdata == &ehci_platform_defaults)
++		dev->dev.platform_data = NULL;
++
+ 	return 0;
+ }
+ 
+@@ -183,6 +209,11 @@ static int ehci_platform_resume(struct device *dev)
+ #define ehci_platform_resume	NULL
+ #endif /* CONFIG_PM */
+ 
++static const struct of_device_id ralink_ehci_ids[] = {
++	{ .compatible = "ralink,rt3xxx-ehci", },
++	{}
++};
++
+ static const struct platform_device_id ehci_platform_table[] = {
+ 	{ "ehci-platform", 0 },
+ 	{ }
+@@ -203,6 +234,7 @@ static struct platform_driver ehci_platform_driver = {
+ 		.owner	= THIS_MODULE,
+ 		.name	= "ehci-platform",
+ 		.pm	= &ehci_platform_pm_ops,
++		.of_match_table = of_match_ptr(ralink_ehci_ids),
+ 	}
+ };
+ 
+diff --git a/drivers/usb/host/ohci-platform.c b/drivers/usb/host/ohci-platform.c
+index c3e7287..dd9bac6 100644
+--- a/drivers/usb/host/ohci-platform.c
++++ b/drivers/usb/host/ohci-platform.c
+@@ -16,6 +16,10 @@
+ #include <linux/err.h>
+ #include <linux/platform_device.h>
+ #include <linux/usb/ohci_pdriver.h>
++#include <linux/dma-mapping.h>
++#include <linux/of.h>
++
++static struct usb_ohci_pdata ohci_platform_defaults;
+ 
+ static int ohci_platform_reset(struct usb_hcd *hcd)
+ {
+@@ -88,14 +92,22 @@ static int ohci_platform_probe(struct platform_device *dev)
+ {
+ 	struct usb_hcd *hcd;
+ 	struct resource *res_mem;
+-	struct usb_ohci_pdata *pdata = dev->dev.platform_data;
++	struct usb_ohci_pdata *pdata;
+ 	int irq;
+ 	int err = -ENOMEM;
+ 
+-	if (!pdata) {
+-		WARN_ON(1);
+-		return -ENODEV;
+-	}
++	/*
++	 * use reasonable defaults so platforms don't have to provide these.
++	 * with DT probing on ARM, none of these are set.
++	 */
++	if (!dev->dev.platform_data)
++		dev->dev.platform_data = &ohci_platform_defaults;
++	if (!dev->dev.dma_mask)
++		dev->dev.dma_mask = &dev->dev.coherent_dma_mask;
++	if (!dev->dev.coherent_dma_mask)
++		dev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
++
++	pdata = dev->dev.platform_data;
+ 
+ 	if (usb_disabled())
+ 		return -ENODEV;
+@@ -128,6 +140,12 @@ static int ohci_platform_probe(struct platform_device *dev)
+ 	hcd->rsrc_start = res_mem->start;
+ 	hcd->rsrc_len = resource_size(res_mem);
+ 
++#ifdef CONFIG_USB_OTG_UTILS
++	hcd->phy = devm_usb_get_phy(&dev->dev, USB_PHY_TYPE_USB2);
++	if (!IS_ERR_OR_NULL(hcd->phy))
++		usb_phy_init(hcd->phy);
++#endif
++
+ 	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
+ 	if (IS_ERR(hcd->regs)) {
+ 		err = PTR_ERR(hcd->regs);
+@@ -162,6 +180,9 @@ static int ohci_platform_remove(struct platform_device *dev)
+ 	if (pdata->power_off)
+ 		pdata->power_off(dev);
+ 
++	if (pdata == &ohci_platform_defaults)
++		dev->dev.platform_data = NULL;
++
+ 	return 0;
+ }
+ 
+@@ -201,6 +222,11 @@ static int ohci_platform_resume(struct device *dev)
+ #define ohci_platform_resume	NULL
+ #endif /* CONFIG_PM */
+ 
++static const struct of_device_id ralink_ohci_ids[] = {
++	{ .compatible = "ralink,rt3xxx-ohci", },
++	{}
++};
++
+ static const struct platform_device_id ohci_platform_table[] = {
+ 	{ "ohci-platform", 0 },
+ 	{ }
+@@ -221,5 +247,6 @@ static struct platform_driver ohci_platform_driver = {
+ 		.owner	= THIS_MODULE,
+ 		.name	= "ohci-platform",
+ 		.pm	= &ohci_platform_pm_ops,
++		.of_match_table = of_match_ptr(ralink_ohci_ids),
+ 	}
+ };
+-- 
+1.7.10.4
+

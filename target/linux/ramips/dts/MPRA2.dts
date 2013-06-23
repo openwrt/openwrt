@@ -103,19 +103,27 @@
 		};
 	};
 
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
+	usb0: gpio-regulator {
+		compatible = "regulator-gpio";
 
-		usb {
-			gpio-export,name = "usb";
-			gpio-export,output = <1>;
-			gpios = <&gpio0 7 0>;
-		};
-		root_hub {
-			gpio-export,name = "root_hub";
-			gpio-export,output = <1>;
-			gpios = <&gpio0 12 0>;
-		};
+		regulator-name = "usb0-power";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+
+		enable-active-high;
+		enable-gpio = <&gpio0 7 0>;
+	};
+
+	hub0: gpio-regulator {
+		compatible = "regulator-gpio";
+
+		regulator-name = "hub0-power";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+
+		enable-active-high;
+		enable-gpio = <&gpio0 12 0>;
 	};
 };

@@ -1,0 +1,78 @@
+From 4977695198a8daf06746cb6c499d754040b6d0ac Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 May 2013 00:04:58 +0200
+Subject: [PATCH 136/164] MIPS: use set_mode() to enable/disable the cevt-r4k
+ irq
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/kernel/cevt-r4k.c |   39 ++++++++++++++++++++++++++-------------
+ 1 file changed, 26 insertions(+), 13 deletions(-)
+
+diff --git a/arch/mips/kernel/cevt-r4k.c b/arch/mips/kernel/cevt-r4k.c
+index 07b847d..d5d94e5 100644
+--- a/arch/mips/kernel/cevt-r4k.c
++++ b/arch/mips/kernel/cevt-r4k.c
+@@ -39,12 +39,6 @@ static int mips_next_event(unsigned long delta,
+ 
+ #endif /* CONFIG_MIPS_MT_SMTC */
+ 
+-void mips_set_clock_mode(enum clock_event_mode mode,
+-				struct clock_event_device *evt)
+-{
+-	/* Nothing to do ...  */
+-}
+-
+ DEFINE_PER_CPU(struct clock_event_device, mips_clockevent_device);
+ int cp0_timer_irq_installed;
+ 
+@@ -89,6 +83,32 @@ struct irqaction c0_compare_irqaction = {
+ 	.name = "timer",
+ };
+ 
++void mips_set_clock_mode(enum clock_event_mode mode,
++				struct clock_event_device *evt)
++{
++	switch (mode) {
++	case CLOCK_EVT_MODE_ONESHOT:
++		if (cp0_timer_irq_installed)
++			break;
++
++		cp0_timer_irq_installed = 1;
++
++		setup_irq(evt->irq, &c0_compare_irqaction);
++		break;
++
++	case CLOCK_EVT_MODE_SHUTDOWN:
++		if (!cp0_timer_irq_installed)
++			break;
++
++		cp0_timer_irq_installed = 0;
++		free_irq(evt->irq, &c0_compare_irqaction);
++		break;
++
++	default:
++		pr_err("Unhandeled mips clock_mode\n");
++		break;
++	}
++}
+ 
+ void mips_event_handler(struct clock_event_device *dev)
+ {
+@@ -208,13 +228,6 @@ int __cpuinit r4k_clockevent_init(void)
+ 
+ 	clockevents_register_device(cd);
+ 
+-	if (cp0_timer_irq_installed)
+-		return 0;
+-
+-	cp0_timer_irq_installed = 1;
+-
+-	setup_irq(irq, &c0_compare_irqaction);
+-
+ 	return 0;
+ }
+ 
+-- 
+1.7.10.4
+

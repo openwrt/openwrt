@@ -519,6 +519,18 @@ define Image/Build/Profile/Default
 endef
 endif
 
+#
+# MT7620A Profiles
+#
+
+Image/Build/Profile/MT7620a=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a,MT7620a)
+
+ifeq ($(SUBTARGET),mt7620a)
+define Image/Build/Profile/Default
+	$(call Image/Build/Profile/MT7620a,$(1))
+endef
+endif
+
 
 #
 # Generic Targets

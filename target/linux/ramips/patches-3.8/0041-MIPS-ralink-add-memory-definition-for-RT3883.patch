@@ -1,0 +1,51 @@
+From 42a816a8312734e6b438e799378044365e229a07 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 13 Apr 2013 20:23:19 +0200
+Subject: [PATCH 41/79] MIPS: ralink: add memory definition for RT3883
+
+Populate struct soc_info with the data that describes our RAM window.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/5182/
+---
+ arch/mips/include/asm/mach-ralink/rt3883.h |    5 +++++
+ arch/mips/ralink/rt3883.c                  |    4 ++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/arch/mips/include/asm/mach-ralink/rt3883.h b/arch/mips/include/asm/mach-ralink/rt3883.h
+index b91c6c1..058382f 100644
+--- a/arch/mips/include/asm/mach-ralink/rt3883.h
++++ b/arch/mips/include/asm/mach-ralink/rt3883.h
+@@ -152,6 +152,7 @@
+ #define RT3883_GPIO_SPI_MISO		6
+ #define RT3883_GPIO_7			7
+ #define RT3883_GPIO_10			10
++#define RT3883_GPIO_11			11
+ #define RT3883_GPIO_14			14
+ #define RT3883_GPIO_UART1_TXD		15
+ #define RT3883_GPIO_UART1_RXD		16
+@@ -244,4 +245,8 @@
+ #define RT3883_FLASH_CFG_WIDTH_16BIT	0x1
+ #define RT3883_FLASH_CFG_WIDTH_32BIT	0x2
+ 
++#define RT3883_SDRAM_BASE		0x00000000
++#define RT3883_MEM_SIZE_MIN		2
++#define RT3883_MEM_SIZE_MAX		256
++
+ #endif /* _RT3883_REGS_H_ */
+diff --git a/arch/mips/ralink/rt3883.c b/arch/mips/ralink/rt3883.c
+index 2d90aa9..afbf2ce 100644
+--- a/arch/mips/ralink/rt3883.c
++++ b/arch/mips/ralink/rt3883.c
+@@ -239,4 +239,8 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+ 		name,
+ 		(id >> RT3883_REVID_VER_ID_SHIFT) & RT3883_REVID_VER_ID_MASK,
+ 		(id & RT3883_REVID_ECO_ID_MASK));
++
++	soc_info->mem_base = RT3883_SDRAM_BASE;
++	soc_info->mem_size_min = RT3883_MEM_SIZE_MIN;
++	soc_info->mem_size_max = RT3883_MEM_SIZE_MAX;
+ }
+-- 
+1.7.10.4
+

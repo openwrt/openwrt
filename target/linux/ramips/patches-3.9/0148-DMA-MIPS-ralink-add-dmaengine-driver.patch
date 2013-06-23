@@ -1,0 +1,341 @@
+From 27eef043b05fb8d9d3178fd3352c530f71901dd4 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 23 May 2013 18:45:29 +0200
+Subject: [PATCH 148/164] DMA: MIPS: ralink: add dmaengine driver
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/dma/Kconfig       |    7 ++
+ drivers/dma/Makefile      |    1 +
+ drivers/dma/ralink_gdma.c |  229 +++++++++++++++++++++++++++++++++++++++++++++
+ drivers/dma/ralink_gdma.h |   55 +++++++++++
+ 4 files changed, 292 insertions(+)
+ create mode 100644 drivers/dma/ralink_gdma.c
+ create mode 100644 drivers/dma/ralink_gdma.h
+
+diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
+index aeaea32..751cdc4 100644
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -322,6 +322,13 @@ config MMP_PDMA
+ 	help
+ 	  Support the MMP PDMA engine for PXA and MMP platfrom.
+ 
++config RALINK_GDMA
++	bool "Ralink Generic DMA support"
++	depends on RALINK
++	select DMA_ENGINE
++	help
++	  Support the GDMA engine for MIPS based Ralink SoC.
++
+ config DMA_ENGINE
+ 	bool
+ 
+diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
+index 488e3ff..f69e07e 100644
+--- a/drivers/dma/Makefile
++++ b/drivers/dma/Makefile
+@@ -37,3 +37,4 @@ obj-$(CONFIG_DMA_SA11X0) += sa11x0-dma.o
+ obj-$(CONFIG_MMP_TDMA) += mmp_tdma.o
+ obj-$(CONFIG_DMA_OMAP) += omap-dma.o
+ obj-$(CONFIG_MMP_PDMA) += mmp_pdma.o
++obj-$(CONFIG_RALINK_GDMA) += ralink_gdma.o
+diff --git a/drivers/dma/ralink_gdma.c b/drivers/dma/ralink_gdma.c
+new file mode 100644
+index 0000000..be7c317
+--- /dev/null
++++ b/drivers/dma/ralink_gdma.c
+@@ -0,0 +1,229 @@
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/delay.h>
++#include <linux/dma-mapping.h>
++#include <linux/spinlock.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/of_platform.h>
++#include <linux/memory.h>
++
++#include "ralink_gdma.h"
++
++#define SURFBOARDINT_DMA	10
++#define MEMCPY_DMA_CH	8
++#define to_rt2880_dma_chan(chan)            \
++	container_of(chan, struct rt2880_dma_chan, common)
++
++static dma_cookie_t rt2880_dma_tx_submit(struct dma_async_tx_descriptor *tx)
++{
++	dma_cookie_t cookie;
++
++	cookie = tx->chan->cookie;
++
++	return cookie;
++}
++
++#define MIN_RTDMA_PKT_LEN	128
++static struct dma_async_tx_descriptor *
++rt2880_dma_prep_dma_memcpy(struct dma_chan *chan, dma_addr_t dest, dma_addr_t src,
++		size_t len, unsigned long flags)
++{
++	struct rt2880_dma_chan *rt_chan = to_rt2880_dma_chan(chan);
++	unsigned long mid_offset;
++
++	spin_lock_bh(&rt_chan->lock);
++
++	if(len < MIN_RTDMA_PKT_LEN) {
++		memcpy(phys_to_virt(dest), phys_to_virt(src), len);
++	} else {
++		mid_offset = len/2;
++
++		/* Lower parts are transferred  by GDMA.
++		 * Upper parts are transferred by CPU.
++		 */
++		RT_DMA_WRITE_REG(RT_DMA_SRC_REG(MEMCPY_DMA_CH), src);
++		RT_DMA_WRITE_REG(RT_DMA_DST_REG(MEMCPY_DMA_CH), dest);
++		RT_DMA_WRITE_REG(RT_DMA_CTRL_REG(MEMCPY_DMA_CH), (mid_offset << 16) | (3 << 3) | (3 << 0));
++
++		memcpy(phys_to_virt(dest)+mid_offset, phys_to_virt(src)+mid_offset, len-mid_offset);
++
++		dma_async_tx_descriptor_init(&rt_chan->txd, chan);
++
++		while((RT_DMA_READ_REG(RT_DMA_DONEINT) & (0x1<<MEMCPY_DMA_CH))==0);
++		RT_DMA_WRITE_REG(RT_DMA_DONEINT, (1<<MEMCPY_DMA_CH));
++	}
++
++	spin_unlock_bh(&rt_chan->lock);
++
++	return &rt_chan->txd;
++}
++
++/**
++ * rt2880_dma_status - poll the status of an XOR transaction
++ * @chan: XOR channel handle
++ * @cookie: XOR transaction identifier
++ * @txstate: XOR transactions state holder (or NULL)
++ */
++static enum dma_status rt2880_dma_status(struct dma_chan *chan,
++					  dma_cookie_t cookie,
++					  struct dma_tx_state *txstate)
++{
++	return 0;
++}
++
++static irqreturn_t rt2880_dma_interrupt_handler(int irq, void *data)
++{
++
++	printk("%s\n",__FUNCTION__);
++
++	return IRQ_HANDLED;
++}
++
++static void rt2880_dma_issue_pending(struct dma_chan *chan)
++{
++}
++
++static int rt2880_dma_alloc_chan_resources(struct dma_chan *chan)
++{
++//	printk("%s\n",__FUNCTION__);
++
++	return 0;
++}
++
++static void rt2880_dma_free_chan_resources(struct dma_chan *chan)
++{
++//	printk("%s\n",__FUNCTION__);
++
++}
++
++static int rt2880_dma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd, unsigned long arg)
++{
++	switch (cmd) {
++	case DMA_TERMINATE_ALL:
++		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++		break;
++	case DMA_SLAVE_CONFIG:
++		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++		break;
++	default:
++		return -ENXIO;
++	}
++
++	return 0;
++}
++
++static int rt2880_dma_probe(struct platform_device *pdev)
++{
++	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	__iomem void *membase;
++	struct dma_device *dma_dev;
++	struct rt2880_dma_chan *rt_chan;
++	int err;
++	int ret;
++	int reg;
++	int irq;
++
++	membase = devm_request_and_ioremap(&pdev->dev, res);
++	if (IS_ERR(membase))
++		return PTR_ERR(membase);
++
++	dma_dev = devm_kzalloc(&pdev->dev, sizeof(*dma_dev), GFP_KERNEL);
++	if (!dma_dev)
++		return -ENOMEM;
++
++	irq = platform_get_irq(pdev, 0);
++	if (!irq) {
++		dev_err(&pdev->dev, "failed to load irq\n");
++		return -ENOENT;
++	}
++
++
++	INIT_LIST_HEAD(&dma_dev->channels);
++	dma_cap_zero(dma_dev->cap_mask);
++	dma_cap_set(DMA_MEMCPY, dma_dev->cap_mask);
++	dma_cap_set(DMA_SLAVE, dma_dev->cap_mask);
++	dma_dev->device_alloc_chan_resources = rt2880_dma_alloc_chan_resources;
++	dma_dev->device_free_chan_resources = rt2880_dma_free_chan_resources;
++	dma_dev->device_tx_status = rt2880_dma_status;
++	dma_dev->device_issue_pending = rt2880_dma_issue_pending;
++	dma_dev->device_prep_dma_memcpy = rt2880_dma_prep_dma_memcpy;
++	dma_dev->device_control = rt2880_dma_control;
++	dma_dev->dev = &pdev->dev;
++
++	rt_chan = devm_kzalloc(&pdev->dev, sizeof(*rt_chan), GFP_KERNEL);
++        if (!rt_chan) {
++		return -ENOMEM;
++	}
++
++	spin_lock_init(&rt_chan->lock);
++        INIT_LIST_HEAD(&rt_chan->chain);
++	INIT_LIST_HEAD(&rt_chan->completed_slots);
++	INIT_LIST_HEAD(&rt_chan->all_slots);
++	rt_chan->common.device = dma_dev;
++	rt_chan->txd.tx_submit = rt2880_dma_tx_submit;
++
++	list_add_tail(&rt_chan->common.device_node, &dma_dev->channels);
++
++	err = dma_async_device_register(dma_dev);
++	if (0 != err) {
++		pr_err("ERR_MDMA:device_register failed: %d\n", err);
++		return 1;
++	}
++
++	ret = request_irq(irq, rt2880_dma_interrupt_handler, 0, dev_name(&pdev->dev), NULL);
++	if(ret){
++		pr_err("IRQ %d is not free.\n", SURFBOARDINT_DMA);
++		return 1;
++	}
++
++	//set GDMA register in advance.
++	reg = (32 << 16) | (32 << 8) | (MEMCPY_DMA_CH << 3);
++	RT_DMA_WRITE_REG(RT_DMA_CTRL_REG1(MEMCPY_DMA_CH), reg);
++
++	dev_info(&pdev->dev, "running\n");
++
++	return 0;
++}
++
++static int rt2880_dma_remove(struct platform_device *dev)
++{
++	struct dma_device *dma_dev = platform_get_drvdata(dev);
++
++	printk("%s\n",__FUNCTION__);
++
++	dma_async_device_unregister(dma_dev);
++
++	return 0;
++}
++
++static const struct of_device_id rt2880_dma_match[] = {
++	{ .compatible = "ralink,rt2880-gdma" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, rt2880_wdt_match);
++
++static struct platform_driver rt2880_dma_driver = {
++	.probe		= rt2880_dma_probe,
++	.remove		= rt2880_dma_remove,
++	.driver		= {
++		.owner	= THIS_MODULE,
++		.name	= RT_DMA_NAME,
++		.of_match_table = rt2880_dma_match,
++	},
++};
++
++static int __init rt2880_dma_init(void)
++{
++	int rc;
++
++	rc = platform_driver_register(&rt2880_dma_driver);
++	return rc;
++}
++module_init(rt2880_dma_init);
++
++MODULE_AUTHOR("Steven Liu <steven_liu@mediatek.com>");
++MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
++MODULE_DESCRIPTION("DMA engine driver for Ralink DMA engine");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/dma/ralink_gdma.h b/drivers/dma/ralink_gdma.h
+new file mode 100644
+index 0000000..73e1948
+--- /dev/null
++++ b/drivers/dma/ralink_gdma.h
+@@ -0,0 +1,55 @@
++/*
++ * Copyright (C) 2007, 2008, Marvell International Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
++ */
++
++#ifndef RT_DMA_H
++#define RT_DMA_H
++
++#include <linux/types.h>
++#include <linux/io.h>
++#include <linux/dmaengine.h>
++#include <linux/interrupt.h>
++
++#define RT_DMA_NAME		"rt2880_dma"
++
++#define RALINK_GDMA_BASE	0xB0002800
++
++struct rt2880_dma_chan {
++        int                     pending;
++        dma_cookie_t            completed_cookie;
++        spinlock_t              lock; /* protects the descriptor slot pool */
++        void __iomem            *mmr_base;
++        unsigned int            idx;
++        enum dma_transaction_type       current_type;
++	struct dma_async_tx_descriptor txd;
++        struct list_head        chain;
++        struct list_head        completed_slots;
++        struct dma_chan         common;
++        struct list_head        all_slots;
++        int                     slots_allocated;
++        struct tasklet_struct   irq_tasklet;
++};
++
++#define RT_DMA_READ_REG(addr)             le32_to_cpu(*(volatile u32 *)(addr))
++#define RT_DMA_WRITE_REG(addr, val)       *((volatile uint32_t *)(addr)) = cpu_to_le32(val)
++
++#define RT_DMA_SRC_REG(ch)                (RALINK_GDMA_BASE + ch*16)
++#define RT_DMA_DST_REG(ch)                (RT_DMA_SRC_REG(ch) + 4)
++#define RT_DMA_CTRL_REG(ch)               (RT_DMA_DST_REG(ch) + 4)
++#define RT_DMA_CTRL_REG1(ch)              (RT_DMA_CTRL_REG(ch) + 4)
++#define RT_DMA_DONEINT			  (RALINK_GDMA_BASE + 0x204)
++
++#endif
+-- 
+1.7.10.4
+

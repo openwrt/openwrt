@@ -1,7 +1,7 @@
-From 6d63d70f9fe4c1b3d293ac3b9d2fcaf937d95cea Mon Sep 17 00:00:00 2001
+From 428bb7af86ffb6171e11c36dfcdacd87ed5341e6 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 1 Feb 2013 12:50:49 +0100
-Subject: [PATCH 11/14] MIPS: ralink: adds default config file
+Subject: [PATCH 11/79] MIPS: ralink: adds default config file
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
@@ -9,6 +9,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  1 file changed, 167 insertions(+)
  create mode 100644 arch/mips/configs/rt305x_defconfig
 
+diff --git a/arch/mips/configs/rt305x_defconfig b/arch/mips/configs/rt305x_defconfig
+new file mode 100644
+index 0000000..d1741bc
 --- /dev/null
 +++ b/arch/mips/configs/rt305x_defconfig
 @@ -0,0 +1,167 @@
@@ -179,3 +182,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +# CONFIG_XZ_DEC_ARMTHUMB is not set
 +# CONFIG_XZ_DEC_SPARC is not set
 +CONFIG_AVERAGE=y
+-- 
+1.7.10.4
+

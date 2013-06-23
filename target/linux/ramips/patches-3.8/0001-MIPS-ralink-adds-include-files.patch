@@ -1,7 +1,7 @@
-From 8563991026ee98bb5e477167236972a45dfea0e3 Mon Sep 17 00:00:00 2001
+From 72bd3fcd16225f46ca318435a4d8f3f3f154b1bc Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Mon, 21 Jan 2013 18:25:59 +0100
-Subject: [PATCH 01/14] MIPS: ralink: adds include files
+Subject: [PATCH 01/79] MIPS: ralink: adds include files
 
 Before we start adding the platform code we add the common include files.
 
@@ -17,6 +17,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4893/
  create mode 100644 arch/mips/include/asm/mach-ralink/war.h
  create mode 100644 arch/mips/ralink/common.h
 
+diff --git a/arch/mips/include/asm/mach-ralink/ralink_regs.h b/arch/mips/include/asm/mach-ralink/ralink_regs.h
+new file mode 100644
+index 0000000..5a508f9
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/ralink_regs.h
 @@ -0,0 +1,39 @@
@@ -59,6 +62,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4893/
 +}
 +
 +#endif /* _RALINK_REGS_H_ */
+diff --git a/arch/mips/include/asm/mach-ralink/war.h b/arch/mips/include/asm/mach-ralink/war.h
+new file mode 100644
+index 0000000..a7b712c
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/war.h
 @@ -0,0 +1,25 @@
@@ -87,6 +93,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4893/
 +#define MIPS34K_MISSED_ITLB_WAR		0
 +
 +#endif /* __ASM_MACH_RALINK_WAR_H */
+diff --git a/arch/mips/ralink/common.h b/arch/mips/ralink/common.h
+new file mode 100644
+index 0000000..3009903
 --- /dev/null
 +++ b/arch/mips/ralink/common.h
 @@ -0,0 +1,44 @@
@@ -134,3 +143,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4893/
 +__iomem void *plat_of_remap_node(const char *node);
 +
 +#endif /* _RALINK_COMMON_H__ */
+-- 
+1.7.10.4
+

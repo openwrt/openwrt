@@ -30,9 +30,10 @@
 
 	ethernet@10100000 {
 		status = "okay";
-		phy-handle = <&phy0>;
-		phy-mode = "rgmii";
-
+		port@0 {
+			phy-handle = <&phy0>;
+			phy-mode = "rgmii";
+		};
 		mdio-bus {
 			status = "okay";
 
