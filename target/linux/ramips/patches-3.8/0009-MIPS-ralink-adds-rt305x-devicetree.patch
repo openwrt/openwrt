@@ -1,7 +1,7 @@
-From 5644da4f635a30fc03b4f12d81b2197d716d9cef Mon Sep 17 00:00:00 2001
+From 8208a43c301d9164802dedeec7455dbdd70ca286 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 22 Jan 2013 20:19:33 +0100
-Subject: [PATCH 09/14] MIPS: ralink: adds rt305x devicetree
+Subject: [PATCH 09/79] MIPS: ralink: adds rt305x devicetree
 
 This adds the devicetree file that describes the rt305x evaluation kit.
 
@@ -15,6 +15,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4898/
  create mode 100644 arch/mips/ralink/dts/rt3050.dtsi
  create mode 100644 arch/mips/ralink/dts/rt3052_eval.dts
 
+diff --git a/arch/mips/ralink/dts/rt3050.dtsi b/arch/mips/ralink/dts/rt3050.dtsi
+new file mode 100644
+index 0000000..fd49daa
 --- /dev/null
 +++ b/arch/mips/ralink/dts/rt3050.dtsi
 @@ -0,0 +1,96 @@
@@ -114,6 +117,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4898/
 +		};
 +	};
 +};
+diff --git a/arch/mips/ralink/dts/rt3052_eval.dts b/arch/mips/ralink/dts/rt3052_eval.dts
+new file mode 100644
+index 0000000..dc56e58
 --- /dev/null
 +++ b/arch/mips/ralink/dts/rt3052_eval.dts
 @@ -0,0 +1,52 @@
@@ -169,3 +175,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4898/
 +		};
 +	};
 +};
+-- 
+1.7.10.4
+

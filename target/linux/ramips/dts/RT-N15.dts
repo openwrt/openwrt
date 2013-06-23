@@ -54,7 +54,9 @@
 	ethernet@400000 {
 		status = "okay";
 
-		ralink,fixed-link = <1000 1 1 1>;
+                port@0 {
+			ralink,fixed-link = <1000 1 1 1>;
+		};
 	};
 
 	wmac@480000 {

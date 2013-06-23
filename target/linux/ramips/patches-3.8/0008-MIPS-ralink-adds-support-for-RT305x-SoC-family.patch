@@ -1,7 +1,7 @@
-From 2809b31770d7fd934a748692e1922a5e613f06e5 Mon Sep 17 00:00:00 2001
+From 433f4f524aba81358353ca4ebc00c3e916521ec6 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 20 Jan 2013 22:03:46 +0100
-Subject: [PATCH 08/14] MIPS: ralink: adds support for RT305x SoC family
+Subject: [PATCH 08/79] MIPS: ralink: adds support for RT305x SoC family
 
 Add support code for rt3050, rt3052, rt3350, rt3352 and rt5350 SOC.
 
@@ -17,6 +17,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4896/
  create mode 100644 arch/mips/include/asm/mach-ralink/rt305x.h
  create mode 100644 arch/mips/ralink/rt305x.c
 
+diff --git a/arch/mips/include/asm/mach-ralink/rt305x.h b/arch/mips/include/asm/mach-ralink/rt305x.h
+new file mode 100644
+index 0000000..7d344f2
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/rt305x.h
 @@ -0,0 +1,139 @@
@@ -159,6 +162,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4896/
 +#define RT305X_GPIO_MODE_RGMII		BIT(9)
 +
 +#endif
+diff --git a/arch/mips/ralink/rt305x.c b/arch/mips/ralink/rt305x.c
+new file mode 100644
+index 0000000..0a4bbdc
 --- /dev/null
 +++ b/arch/mips/ralink/rt305x.c
 @@ -0,0 +1,242 @@
@@ -404,3 +410,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4896/
 +		(id >> CHIP_ID_ID_SHIFT) & CHIP_ID_ID_MASK,
 +		(id & CHIP_ID_REV_MASK));
 +}
+-- 
+1.7.10.4
+

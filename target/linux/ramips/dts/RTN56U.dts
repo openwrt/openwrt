@@ -31,7 +31,9 @@
 	ethernet@10100000 {
 		status = "okay";
 
-		ralink,fixed-link = <1000 1 1 1>;
+                port@0 {
+			ralink,fixed-link = <1000 1 1 1>;
+		};
 	};
 
 	pci@10140000 {

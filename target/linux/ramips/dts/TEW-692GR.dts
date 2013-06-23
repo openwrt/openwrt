@@ -30,8 +30,17 @@
 
 	ethernet@10100000 {
 		status = "okay";
-		ralink,phy-mask = <0x1>;
-		phy-mode = "rgmii";
+		port@0 {
+			phy-handle = <&phy0>;
+			phy-mode = "rgmii";
+		};
+		mdio-bus {
+			status = "okay";
+
+			phy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+		};
 	};
 
 	pci@10140000 {

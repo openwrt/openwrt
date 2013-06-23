@@ -1,0 +1,38 @@
+From 5d5c270635a50b82931bb32f6fe28b84d45bdb59 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 17 May 2013 01:03:45 +0200
+Subject: [PATCH 75/79] Kbuild: add missing space
+
+Currently the output looks like this:
+DTC     arch/mips/ralink/dts/mt7620a_eval.dtb
+DTB    arch/mips/ralink/dts/mt7620a_eval.dtb.S
+AS      arch/mips/ralink/dts/mt7620a_eval.dtb.o
+
+Whitespace error was introduced by initial commit
+commit aab94339cd85d726abeae78fc02351fc1910e6a4
+Author: Dirk Brandewie <dirk.brandewie@gmail.com>
+Date:   Wed Dec 22 11:57:26 2010 -0800
+
+of: Add support for linking device tree blobs into vmlinux
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ scripts/Makefile.lib |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index bdf42fd..21c1359 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -246,7 +246,7 @@ cmd_gzip = (cat $(filter-out FORCE,$^) | gzip -n -f -9 > $@) || \
+ # ---------------------------------------------------------------------------
+ 
+ # Generate an assembly file to wrap the output of the device tree compiler
+-quiet_cmd_dt_S_dtb= DTB    $@
++quiet_cmd_dt_S_dtb= DTB     $@
+ cmd_dt_S_dtb=						\
+ (							\
+ 	echo '\#include <asm-generic/vmlinux.lds.h>'; 	\
+-- 
+1.7.10.4
+

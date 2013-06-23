@@ -1,0 +1,160 @@
+From 194f30e932952d74438fce68006f30f5a180459b Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 22 Jun 2013 20:36:21 +0200
+Subject: [PATCH] net
+
+---
+ drivers/net/ethernet/ralink/mdio_rt2880.c    |   48 ++++++++++++++++++++++++--
+ drivers/net/ethernet/ralink/mdio_rt2880.h    |    3 +-
+ drivers/net/ethernet/ralink/ralink_soc_eth.h |    2 ++
+ drivers/net/ethernet/ralink/soc_rt3883.c     |    3 +-
+ 4 files changed, 51 insertions(+), 5 deletions(-)
+
+Index: linux-3.9.6/drivers/net/ethernet/ralink/mdio_rt2880.c
+===================================================================
+--- linux-3.9.6.orig/drivers/net/ethernet/ralink/mdio_rt2880.c	2013-06-22 22:46:13.596610936 +0200
++++ linux-3.9.6/drivers/net/ethernet/ralink/mdio_rt2880.c	2013-06-22 23:25:29.536713089 +0200
+@@ -32,6 +32,7 @@
+ 
+ #include "ralink_soc_eth.h"
+ #include "mdio_rt2880.h"
++#include "mdio.h"
+ 
+ #define FE_MDIO_RETRY	1000
+ 
+@@ -49,7 +50,7 @@
+ 	return "?";
+ }
+ 
+-void rt2880_mdio_link_adjust(struct fe_priv *priv)
++void rt2880_mdio_link_adjust(struct fe_priv *priv, int port)
+ {
+ 	u32 mdio_cfg;
+ 
+@@ -66,10 +67,10 @@
+ 	if (priv->phy->duplex[0] == DUPLEX_FULL)
+ 		mdio_cfg |= FE_MDIO_CFG_GP1_DUPLEX;
+ 
+-	if (priv->phy->tx_fc)
++	if (priv->phy->tx_fc[0])
+ 		mdio_cfg |= FE_MDIO_CFG_GP1_FC_TX;
+ 
+-	if (priv->phy->rx_fc)
++	if (priv->phy->rx_fc[0])
+ 		mdio_cfg |= FE_MDIO_CFG_GP1_FC_RX;
+ 
+ 	switch (priv->phy->speed[0]) {
+@@ -161,3 +162,71 @@
+ 
+ 	return rt2880_mdio_wait_ready(priv);
+ }
++
++void rt2880_port_init(struct fe_priv *priv, struct device_node *np)
++{
++	const __be32 *id = of_get_property(np, "reg", NULL);
++	const __be32 *link;
++	int size;
++	int phy_mode;
++
++	if (!id || (be32_to_cpu(*id) != 0)) {
++		pr_err("%s: invalid port id\n", np->name);
++		return;
++	}
++
++	priv->phy->phy_fixed[0] = of_get_property(np, "ralink,fixed-link", &size);
++	if (priv->phy->phy_fixed[0] && (size != (4 * sizeof(*priv->phy->phy_fixed[0])))) {
++		pr_err("%s: invalid fixed link property\n", np->name);
++		priv->phy->phy_fixed[0] = NULL;
++		return;
++	}
++
++	phy_mode = of_get_phy_mode(np);
++	switch (phy_mode) {
++	case PHY_INTERFACE_MODE_RGMII:
++		break;
++	case PHY_INTERFACE_MODE_MII:
++		break;
++	case PHY_INTERFACE_MODE_RMII:
++		break;
++	default:
++		if (!priv->phy->phy_fixed[0])
++			dev_err(priv->device, "port %d - invalid phy mode\n", priv->phy->speed[0]);
++		break;
++	}
++
++	priv->phy->phy_node[0] = of_parse_phandle(np, "phy-handle", 0);
++	if (!priv->phy->phy_node[0] && !priv->phy->phy_fixed[0])
++		return;
++
++	if (priv->phy->phy_fixed[0]) {
++		link = priv->phy->phy_fixed[0];
++		priv->phy->speed[0] = be32_to_cpup(link++);
++		priv->phy->duplex[0] = be32_to_cpup(link++);
++		priv->phy->tx_fc[0] = be32_to_cpup(link++);
++		priv->phy->rx_fc[0] = be32_to_cpup(link++);
++
++		priv->link[0] = 1;
++		switch (priv->phy->speed[0]) {
++		case SPEED_10:
++			break;
++		case SPEED_100:
++			break;
++		case SPEED_1000:
++			break;
++		default:
++			dev_err(priv->device, "invalid link speed: %d\n", priv->phy->speed[0]);
++			priv->phy->phy_fixed[0] = 0;
++			return;
++		}
++		dev_info(priv->device, "using fixed link parameters\n");
++		rt2880_mdio_link_adjust(priv, 0);
++		return;
++	}
++	if (priv->phy->phy_node[0] && priv->mii_bus->phy_map[0]) {
++		fe_connect_phy_node(priv, priv->phy->phy_node[0]);
++	}
++
++	return;
++}
+Index: linux-3.9.6/drivers/net/ethernet/ralink/mdio_rt2880.h
+===================================================================
+--- linux-3.9.6.orig/drivers/net/ethernet/ralink/mdio_rt2880.h	2013-06-22 22:46:13.600610937 +0200
++++ linux-3.9.6/drivers/net/ethernet/ralink/mdio_rt2880.h	2013-06-22 22:46:13.744610945 +0200
+@@ -18,8 +18,9 @@
+ #ifndef _RALINK_MDIO_RT2880_H__
+ #define _RALINK_MDIO_RT2880_H__
+ 
+-void rt2880_mdio_link_adjust(struct fe_priv *priv);
++void rt2880_mdio_link_adjust(struct fe_priv *priv, int port);
+ int rt2880_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg);
+ int rt2880_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val);
++void rt2880_port_init(struct fe_priv *priv, struct device_node *np);
+ 
+ #endif
+Index: linux-3.9.6/drivers/net/ethernet/ralink/ralink_soc_eth.h
+===================================================================
+--- linux-3.9.6.orig/drivers/net/ethernet/ralink/ralink_soc_eth.h	2013-06-22 22:46:13.600610937 +0200
++++ linux-3.9.6/drivers/net/ethernet/ralink/ralink_soc_eth.h	2013-06-22 22:46:13.744610945 +0200
+@@ -301,6 +301,8 @@
+ 	const __be32		*phy_fixed[8];
+ 	int			duplex[8];
+ 	int			speed[8];
++	int			tx_fc[8];
++	int			rx_fc[8];
+ 	spinlock_t		lock;
+ 
+ 	int (*connect)(struct fe_priv *priv);
+Index: linux-3.9.6/drivers/net/ethernet/ralink/soc_rt3883.c
+===================================================================
+--- linux-3.9.6.orig/drivers/net/ethernet/ralink/soc_rt3883.c	2013-06-22 22:46:13.600610937 +0200
++++ linux-3.9.6/drivers/net/ethernet/ralink/soc_rt3883.c	2013-06-22 22:46:13.744610945 +0200
+@@ -47,7 +47,8 @@
+ 	.checksum_bit = RX_DMA_L4VALID,
+ 	.mdio_read = rt2880_mdio_read,
+ 	.mdio_write = rt2880_mdio_write,
+-	.mdio_link_adjust = rt2880_mdio_link_adjust,
++	.mdio_adjust_link = rt2880_mdio_link_adjust,
++	.port_init = rt2880_port_init,
+ };
+ 
+ const struct of_device_id of_fe_match[] = {

@@ -1,7 +1,7 @@
-From d3d2b4200b5a42851365e903d101f8f0882eb9eb Mon Sep 17 00:00:00 2001
+From 9afd2ba44145009578d9d445183480a698cc04f2 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Thu, 31 Jan 2013 20:43:30 +0100
-Subject: [PATCH 14/14] MIPS: ralink: add CPU interrupt controller to
+Subject: [PATCH 14/79] MIPS: ralink: add CPU interrupt controller to
  of_irq_ids
 
 Convert the ralink IRQ code to make use of the new MIPS IRQ controller OF
@@ -16,6 +16,8 @@ Patchwork: http://patchwork.linux-mips.org/patch/4900/
  arch/mips/ralink/irq.c           |   10 +++++++---
  2 files changed, 17 insertions(+), 3 deletions(-)
 
+diff --git a/arch/mips/ralink/dts/rt3050.dtsi b/arch/mips/ralink/dts/rt3050.dtsi
+index fd49daa..069d066 100644
 --- a/arch/mips/ralink/dts/rt3050.dtsi
 +++ b/arch/mips/ralink/dts/rt3050.dtsi
 @@ -13,6 +13,13 @@
@@ -42,9 +44,11 @@ Patchwork: http://patchwork.linux-mips.org/patch/4900/
  		};
  
  		memc@300 {
+diff --git a/arch/mips/ralink/irq.c b/arch/mips/ralink/irq.c
+index e62c975..6d054c5 100644
 --- a/arch/mips/ralink/irq.c
 +++ b/arch/mips/ralink/irq.c
-@@ -128,8 +128,11 @@ static int __init intc_of_init(struct de
+@@ -128,8 +128,11 @@ static int __init intc_of_init(struct device_node *node,
  {
  	struct resource res;
  	struct irq_domain *domain;
@@ -57,7 +61,7 @@ Patchwork: http://patchwork.linux-mips.org/patch/4900/
  
  	if (of_address_to_resource(node, 0, &res))
  		panic("Failed to get intc memory range");
-@@ -156,8 +159,8 @@ static int __init intc_of_init(struct de
+@@ -156,8 +159,8 @@ static int __init intc_of_init(struct device_node *node,
  
  	rt_intc_w32(INTC_INT_GLOBAL, INTC_REG_ENABLE);
  
@@ -68,7 +72,7 @@ Patchwork: http://patchwork.linux-mips.org/patch/4900/
  
  	cp0_perfcount_irq = irq_create_mapping(domain, 9);
  
-@@ -165,6 +168,7 @@ static int __init intc_of_init(struct de
+@@ -165,6 +168,7 @@ static int __init intc_of_init(struct device_node *node,
  }
  
  static struct of_device_id __initdata of_irq_ids[] = {
@@ -76,3 +80,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4900/
  	{ .compatible = "ralink,rt2880-intc", .data = intc_of_init },
  	{},
  };
+-- 
+1.7.10.4
+

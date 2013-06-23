@@ -1,7 +1,7 @@
-From 0916b46962cbcac9465d253d0a398435b3965fd5 Mon Sep 17 00:00:00 2001
+From 65e39f763eeca6fb93f48ed5a9b296277a543429 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Thu, 31 Jan 2013 12:20:43 +0000
-Subject: [PATCH 13/14] MIPS: add irqdomain support for the CPU IRQ controller
+Subject: [PATCH 13/79] MIPS: add irqdomain support for the CPU IRQ controller
 
 Add code to load a irq_domain for the MIPS IRQ controller from a devicetree
 file.
@@ -15,6 +15,8 @@ Patchwork: http://patchwork.linux-mips.org/patch/4902/
  arch/mips/kernel/irq_cpu.c      |   42 +++++++++++++++++++++++++++++++++++++++
  2 files changed, 48 insertions(+)
 
+diff --git a/arch/mips/include/asm/irq_cpu.h b/arch/mips/include/asm/irq_cpu.h
+index ef6a07c..3f11fdb 100644
 --- a/arch/mips/include/asm/irq_cpu.h
 +++ b/arch/mips/include/asm/irq_cpu.h
 @@ -17,4 +17,10 @@ extern void mips_cpu_irq_init(void);
@@ -28,6 +30,8 @@ Patchwork: http://patchwork.linux-mips.org/patch/4902/
 +#endif
 +
  #endif /* _ASM_IRQ_CPU_H */
+diff --git a/arch/mips/kernel/irq_cpu.c b/arch/mips/kernel/irq_cpu.c
+index 972263b..49bc9ca 100644
 --- a/arch/mips/kernel/irq_cpu.c
 +++ b/arch/mips/kernel/irq_cpu.c
 @@ -31,6 +31,7 @@
@@ -83,3 +87,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4902/
 +	return 0;
 +}
 +#endif /* CONFIG_IRQ_DOMAIN */
+-- 
+1.7.10.4
+

@@ -1,7 +1,7 @@
-From 3f0a06b0368d25608841843e9d65a7289ad9f14a Mon Sep 17 00:00:00 2001
+From b99289db258ee8a84e1bd555b2897476acf390c1 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 20 Jan 2013 22:01:29 +0100
-Subject: [PATCH 05/14] MIPS: ralink: adds clkdev code
+Subject: [PATCH 05/79] MIPS: ralink: adds clkdev code
 
 These SoCs have a limited number of fixed rate clocks. Add support for the
 clk and clkdev api.
@@ -14,6 +14,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4894/
  1 file changed, 72 insertions(+)
  create mode 100644 arch/mips/ralink/clk.c
 
+diff --git a/arch/mips/ralink/clk.c b/arch/mips/ralink/clk.c
+new file mode 100644
+index 0000000..8dfa22f
 --- /dev/null
 +++ b/arch/mips/ralink/clk.c
 @@ -0,0 +1,72 @@
@@ -89,3 +92,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4894/
 +	mips_hpt_frequency = clk_get_rate(clk) / 2;
 +	clk_put(clk);
 +}
+-- 
+1.7.10.4
+

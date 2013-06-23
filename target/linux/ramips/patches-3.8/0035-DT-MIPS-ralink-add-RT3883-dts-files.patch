@@ -1,0 +1,131 @@
+From d702c2e334db0a75298654b12755fd5879dd29df Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 12 Apr 2013 06:27:39 +0000
+Subject: [PATCH 35/79] DT: MIPS: ralink: add RT3883 dts files
+
+Add a dtsi file for RT3883 SoC and a sample dts file.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Acked-by: Grant Likely <grant.likely@secretlab.ca>
+Patchwork: http://patchwork.linux-mips.org/patch/5189/
+---
+ arch/mips/ralink/Kconfig             |    4 +++
+ arch/mips/ralink/dts/Makefile        |    1 +
+ arch/mips/ralink/dts/rt3883.dtsi     |   58 ++++++++++++++++++++++++++++++++++
+ arch/mips/ralink/dts/rt3883_eval.dts |   16 ++++++++++
+ 4 files changed, 79 insertions(+)
+ create mode 100644 arch/mips/ralink/dts/rt3883.dtsi
+ create mode 100644 arch/mips/ralink/dts/rt3883_eval.dts
+
+diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
+index 2f6fbb8..493411f 100644
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -42,6 +42,10 @@ choice
+ 		bool "RT305x eval kit"
+ 		depends on SOC_RT305X
+ 
++	config DTB_RT3883_EVAL
++		bool "RT3883 eval kit"
++		depends on SOC_RT3883
++
+ endchoice
+ 
+ endif
+diff --git a/arch/mips/ralink/dts/Makefile b/arch/mips/ralink/dts/Makefile
+index f635a01..040a986 100644
+--- a/arch/mips/ralink/dts/Makefile
++++ b/arch/mips/ralink/dts/Makefile
+@@ -1,2 +1,3 @@
+ obj-$(CONFIG_DTB_RT2880_EVAL) := rt2880_eval.dtb.o
+ obj-$(CONFIG_DTB_RT305X_EVAL) := rt3052_eval.dtb.o
++obj-$(CONFIG_DTB_RT3883_EVAL) := rt3883_eval.dtb.o
+diff --git a/arch/mips/ralink/dts/rt3883.dtsi b/arch/mips/ralink/dts/rt3883.dtsi
+new file mode 100644
+index 0000000..3b131dd
+--- /dev/null
++++ b/arch/mips/ralink/dts/rt3883.dtsi
+@@ -0,0 +1,58 @@
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	compatible = "ralink,rt3883-soc";
++
++	cpus {
++		cpu@0 {
++			compatible = "mips,mips74Kc";
++		};
++	};
++
++	cpuintc: cpuintc@0 {
++		#address-cells = <0>;
++		#interrupt-cells = <1>;
++		interrupt-controller;
++		compatible = "mti,cpu-interrupt-controller";
++	};
++
++	palmbus@10000000 {
++		compatible = "palmbus";
++		reg = <0x10000000 0x200000>;
++		ranges = <0x0 0x10000000 0x1FFFFF>;
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		sysc@0 {
++			compatible = "ralink,rt3883-sysc", "ralink,rt3050-sysc";
++			reg = <0x0 0x100>;
++		};
++
++		intc: intc@200 {
++			compatible = "ralink,rt3883-intc", "ralink,rt2880-intc";
++			reg = <0x200 0x100>;
++
++			interrupt-controller;
++			#interrupt-cells = <1>;
++
++			interrupt-parent = <&cpuintc>;
++			interrupts = <2>;
++		};
++
++		memc@300 {
++			compatible = "ralink,rt3883-memc", "ralink,rt3050-memc";
++			reg = <0x300 0x100>;
++		};
++
++		uartlite@c00 {
++			compatible = "ralink,rt3883-uart", "ralink,rt2880-uart", "ns16550a";
++			reg = <0xc00 0x100>;
++
++			interrupt-parent = <&intc>;
++			interrupts = <12>;
++
++			reg-shift = <2>;
++		};
++	};
++};
+diff --git a/arch/mips/ralink/dts/rt3883_eval.dts b/arch/mips/ralink/dts/rt3883_eval.dts
+new file mode 100644
+index 0000000..2fa6b33
+--- /dev/null
++++ b/arch/mips/ralink/dts/rt3883_eval.dts
+@@ -0,0 +1,16 @@
++/dts-v1/;
++
++/include/ "rt3883.dtsi"
++
++/ {
++	compatible = "ralink,rt3883-eval-board", "ralink,rt3883-soc";
++	model = "Ralink RT3883 evaluation board";
++
++	memory@0 {
++		reg = <0x0 0x2000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,57600";
++	};
++};
+-- 
+1.7.10.4
+

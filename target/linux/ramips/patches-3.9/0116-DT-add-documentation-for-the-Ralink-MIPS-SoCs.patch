@@ -1,0 +1,44 @@
+From f8ad9ce9fceec8ffa986ac44c52ead3f6adade1e Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sat, 13 Apr 2013 09:02:40 +0200
+Subject: [PATCH 116/164] DT: add documentation for the Ralink MIPS SoCs
+
+This patch adds binding documentation for the
+compatible values of the Ralink MIPS SoCs.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Acked-by: Grant Likely <grant.likely@secretlab.ca>
+Patchwork: http://patchwork.linux-mips.org/patch/5187/
+---
+ Documentation/devicetree/bindings/mips/ralink.txt |   18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/mips/ralink.txt
+
+diff --git a/Documentation/devicetree/bindings/mips/ralink.txt b/Documentation/devicetree/bindings/mips/ralink.txt
+new file mode 100644
+index 0000000..59b6a35
+--- /dev/null
++++ b/Documentation/devicetree/bindings/mips/ralink.txt
+@@ -0,0 +1,18 @@
++Ralink MIPS SoC device tree bindings
++
++1. SoCs
++
++Each device tree must specify a compatible value for the Ralink SoC
++it uses in the compatible property of the root node. The compatible
++value must be one of the following values:
++
++  ralink,rt2880-soc
++  ralink,rt3050-soc
++  ralink,rt3052-soc
++  ralink,rt3350-soc
++  ralink,rt3352-soc
++  ralink,rt3883-soc
++  ralink,rt5350-soc
++  ralink,mt7620a-soc
++  ralink,mt7620n-soc
++
+-- 
+1.7.10.4
+

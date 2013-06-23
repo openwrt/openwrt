@@ -1,7 +1,7 @@
-From 3a5bfe7bdbfd37c9206d7c6dfd7eb9664ccc5038 Mon Sep 17 00:00:00 2001
+From 4b2f9abbbaf3463a0fc1a65afeb0d12f890ada35 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 20 Jan 2013 22:02:01 +0100
-Subject: [PATCH 06/14] MIPS: ralink: adds OF code
+Subject: [PATCH 06/79] MIPS: ralink: adds OF code
 
 Until there is a generic MIPS way of handing the DTB over from bootloader to
 kernel we rely on a built in devicetrees. The OF code also remaps those register
@@ -15,6 +15,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4895/
  1 file changed, 107 insertions(+)
  create mode 100644 arch/mips/ralink/of.c
 
+diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
+new file mode 100644
+index 0000000..4165e70
 --- /dev/null
 +++ b/arch/mips/ralink/of.c
 @@ -0,0 +1,107 @@
@@ -125,3 +128,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4895/
 +}
 +
 +arch_initcall(plat_of_setup);
+-- 
+1.7.10.4
+

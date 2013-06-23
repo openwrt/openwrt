@@ -1,0 +1,1006 @@
+From cee339922876e924295c27e274923d1b381f5057 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 30 Apr 2013 17:27:46 +0200
+Subject: [PATCH 140/164] MIPS: ralink DTS file updates
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/Kconfig                      |    8 +
+ arch/mips/ralink/dts/Makefile                 |    2 +
+ arch/mips/ralink/dts/mt7620a.dtsi             |  238 ++++++++++++++++++++++++-
+ arch/mips/ralink/dts/mt7620a_eval.dts         |  111 ++++++++++++
+ arch/mips/ralink/dts/mt7620a_mt7610e_eval.dts |   99 ++++++++++
+ arch/mips/ralink/dts/rt2880.dtsi              |   17 ++
+ arch/mips/ralink/dts/rt2880_eval.dts          |    6 +
+ arch/mips/ralink/dts/rt3050.dtsi              |   31 +++-
+ arch/mips/ralink/dts/rt3052_eval.dts          |   19 +-
+ arch/mips/ralink/dts/rt5350.dtsi              |  227 +++++++++++++++++++++++
+ arch/mips/ralink/dts/rt5350_eval.dts          |   69 +++++++
+ 11 files changed, 824 insertions(+), 3 deletions(-)
+ create mode 100644 arch/mips/ralink/dts/mt7620a_mt7610e_eval.dts
+ create mode 100644 arch/mips/ralink/dts/rt5350.dtsi
+ create mode 100644 arch/mips/ralink/dts/rt5350_eval.dts
+
+diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
+index 026e823..38540a4 100644
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -42,6 +42,10 @@ choice
+ 		bool "RT305x eval kit"
+ 		depends on SOC_RT305X
+ 
++	config DTB_RT5350_EVAL
++		bool "RT5350 eval kit"
++		depends on SOC_RT305X
++
+ 	config DTB_RT3883_EVAL
+ 		bool "RT3883 eval kit"
+ 		depends on SOC_RT3883
+@@ -50,6 +54,10 @@ choice
+ 		bool "MT7620A eval kit"
+ 		depends on SOC_MT7620
+ 
++	config DTB_MT7620A_MT7610E_EVAL
++		bool "MT7620A + MT7610E eval kit"
++		depends on SOC_MT7620
++
+ endchoice
+ 
+ endif
+diff --git a/arch/mips/ralink/dts/Makefile b/arch/mips/ralink/dts/Makefile
+index 18194fa..0bd12b5 100644
+--- a/arch/mips/ralink/dts/Makefile
++++ b/arch/mips/ralink/dts/Makefile
+@@ -1,4 +1,6 @@
+ obj-$(CONFIG_DTB_RT2880_EVAL) := rt2880_eval.dtb.o
+ obj-$(CONFIG_DTB_RT305X_EVAL) := rt3052_eval.dtb.o
++obj-$(CONFIG_DTB_RT5350_EVAL) := rt5350_eval.dtb.o
+ obj-$(CONFIG_DTB_RT3883_EVAL) := rt3883_eval.dtb.o
+ obj-$(CONFIG_DTB_MT7620A_EVAL) := mt7620a_eval.dtb.o
++obj-$(CONFIG_DTB_MT7620A_MT7610E_EVAL) := mt7620a_mt7610e_eval.dtb.o
+diff --git a/arch/mips/ralink/dts/mt7620a.dtsi b/arch/mips/ralink/dts/mt7620a.dtsi
+index 08bf24f..104abfb 100644
+--- a/arch/mips/ralink/dts/mt7620a.dtsi
++++ b/arch/mips/ralink/dts/mt7620a.dtsi
+@@ -25,14 +25,36 @@
+ 		#size-cells = <1>;
+ 
+ 		sysc@0 {
+-			compatible = "ralink,mt7620a-sysc";
++			compatible = "ralink,mt7620a-sysc", "ralink,rt3050-sysc";
+ 			reg = <0x0 0x100>;
+ 		};
+ 
++		timer@100 {
++			compatible = "ralink,mt7620a-timer", "ralink,rt2880-timer";
++			reg = <0x100 0x20>;
++
++			interrupt-parent = <&intc>;
++			interrupts = <1>;
++		};
++
++		watchdog@120 {
++			compatible = "ralink,mt7620a-wdt", "ralink,rt2880-wdt";
++			reg = <0x120 0x10>;
++
++			resets = <&rstctrl 8>;
++			reset-names = "wdt";
++
++			interrupt-parent = <&intc>;
++			interrupts = <1>;
++		};
++
+ 		intc: intc@200 {
+ 			compatible = "ralink,mt7620a-intc", "ralink,rt2880-intc";
+ 			reg = <0x200 0x100>;
+ 
++			resets = <&rstctrl 19>;
++			reset-names = "intc";
++
+ 			interrupt-controller;
+ 			#interrupt-cells = <1>;
+ 
+@@ -43,16 +65,230 @@
+ 		memc@300 {
+ 			compatible = "ralink,mt7620a-memc", "ralink,rt3050-memc";
+ 			reg = <0x300 0x100>;
++
++			resets = <&rstctrl 20>;
++			reset-names = "mc";
++
++			interrupt-parent = <&intc>;
++			interrupts = <3>;
++		};
++
++		uart@500 {
++			compatible = "ralink,mt7620a-uart", "ralink,rt2880-uart", "ns16550a";
++			reg = <0x500 0x100>;
++
++			resets = <&rstctrl 12>;
++			reset-names = "uart";
++
++			interrupt-parent = <&intc>;
++			interrupts = <5>;
++
++			reg-shift = <2>;
++
++			status = "disabled";
++		};
++
++		gpio0: gpio@600 {
++			compatible = "ralink,mt7620a-gpio", "ralink,rt2880-gpio";
++			reg = <0x600 0x34>;
++
++			resets = <&rstctrl 13>;
++			reset-names = "pio";
++
++			interrupt-parent = <&intc>;
++			interrupts = <6>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			ralink,gpio-base = <0>;
++			ralink,num-gpios = <24>;
++			ralink,register-map = [ 00 04 08 0c
++						20 24 28 2c
++						30 34 ];
++
++			status = "disabled";
++		};
++
++		gpio1: gpio@638 {
++			compatible = "ralink,mt7620a-gpio", "ralink,rt2880-gpio";
++			reg = <0x638 0x24>;
++
++			interrupt-parent = <&intc>;
++			interrupts = <6>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			ralink,gpio-base = <24>;
++			ralink,num-gpios = <16>;
++			ralink,register-map = [ 00 04 08 0c
++						10 14 18 1c
++						20 24 ];
++
++			status = "disabled";
++		};
++
++		gpio2: gpio@660 {
++			compatible = "ralink,mt7620a-gpio", "ralink,rt2880-gpio";
++			reg = <0x660 0x24>;
++
++			interrupt-parent = <&intc>;
++			interrupts = <6>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			ralink,gpio-base = <40>;
++			ralink,num-gpios = <32>;
++			ralink,register-map = [ 00 04 08 0c
++						10 14 18 1c
++						20 24 ];
++
++			status = "disabled";
++		};
++
++		i2c@900 {
++			compatible = "link,mt7620a-i2c", "ralink,rt2880-i2c";
++			reg = <0x900 0x100>;
++
++			resets = <&rstctrl 16>;
++			reset-names = "i2c";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++		};
++
++		spi@b00 {
++			compatible = "ralink,mt7620a-spi", "ralink,rt2880-spi";
++			reg = <0xb00 0x100>;
++
++			resets = <&rstctrl 18>;
++			reset-names = "spi";
++
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			status = "disabled";
+ 		};
+ 
+ 		uartlite@c00 {
+ 			compatible = "ralink,mt7620a-uart", "ralink,rt2880-uart", "ns16550a";
+ 			reg = <0xc00 0x100>;
+ 
++			resets = <&rstctrl 19>;
++			reset-names = "uartl";
++
+ 			interrupt-parent = <&intc>;
+ 			interrupts = <12>;
+ 
+ 			reg-shift = <2>;
+ 		};
++
++		systick@d00 {
++			compatible = "ralink,mt7620a-systick", "ralink,cevt-systick";
++			reg = <0xd00 0x10>;
++
++			resets = <&rstctrl 28>;
++			reset-names = "intc";
++
++			interrupt-parent = <&cpuintc>;
++			interrupts = <7>;
++		};
++
++		gdma@2800 {
++			compatible = "ralink,mt7620a-gdma", "ralink,rt2880-gdma";
++			reg = <0x2800 0x800>;
++
++			resets = <&rstctrl 14>;
++			reset-names = "dma";
++
++			interrupt-parent = <&intc>;
++			interrupts = <7>;
++		};
++	};
++
++	rstctrl: rstctrl {
++		compatible = "ralink,mt7620a-reset", "ralink,rt2880-reset";
++		#reset-cells = <1>;
++	};
++
++	ubsphy {
++		compatible = "ralink,mt7620a-usbphy";
++
++		resets = <&rstctrl 22 &rstctrl 25>;
++		reset-names = "host", "device";
++	};
++
++	ethernet@10100000 {
++		compatible = "ralink,mt7620a-eth";
++		reg = <0x10100000 10000>;
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		interrupt-parent = <&cpuintc>;
++		interrupts = <5>;
++
++		status = "disabled";
++	
++		mdio-bus {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++		};
++	};
++
++	gsw@10110000 {
++		compatible = "ralink,mt7620a-gsw";
++		reg = <0x10110000 8000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <17>;
++
++		status = "disabled";
++	};
++
++	sdhci@10130000 {
++		compatible = "ralink,mt7620a-sdhci";
++		reg = <0x10130000 4000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <14>;
++
++		status = "disabled";
++	};
++
++	ehci@101c0000 {
++		compatible = "ralink,rt3xxx-ehci";
++		reg = <0x101c0000 0x1000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <18>;
++	};
++
++	ohci@101c1000 {
++		compatible = "ralink,rt3xxx-ohci";
++		reg = <0x101c1000 0x1000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <18>;
++	};
++
++	pcie@10140000 {
++		compatible = "ralink,mt7620a-pci";
++		reg = <0x10140000 0x100
++			0x10142000 0x100>;
++
++		resets = <&rstctrl 26>;
++		reset-names = "pcie0";
++
++		interrupt-parent = <&cpuintc>;
++		interrupts = <4>;
++
++		status = "disabled";
+ 	};
+ };
+diff --git a/arch/mips/ralink/dts/mt7620a_eval.dts b/arch/mips/ralink/dts/mt7620a_eval.dts
+index 35eb874..b56f449 100644
+--- a/arch/mips/ralink/dts/mt7620a_eval.dts
++++ b/arch/mips/ralink/dts/mt7620a_eval.dts
+@@ -13,4 +13,115 @@
+ 	chosen {
+ 		bootargs = "console=ttyS0,57600";
+ 	};
++
++	palmbus@10000000 {
++		sysc@0 {
++			ralink,pinmux = "spi", "uartlite", "mdio", "wled", "ephy", "rgmii1", "rgmii2";
++			ralink,gpiomux = "i2c", "jtag";
++			ralink,uartmux = "gpio";
++			ralink,wdtmux = <1>;
++		};
++
++		gpio0: gpio@600 {
++			status = "okay";
++		};
++
++		spi@b00 {
++			status = "okay";
++		
++			m25p80@0 {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				compatible = "en25q64";
++				reg = <0 0>;
++				linux,modalias = "m25p80", "en25q64";
++				spi-max-frequency = <10000000>;
++
++				partition@0 {
++					label = "u-boot";
++					reg = <0x0 0x30000>;
++					read-only;
++				};
++
++				partition@30000 {
++					label = "u-boot-env";
++					reg = <0x30000 0x10000>;
++					read-only;
++				};
++
++				factory: partition@40000 {
++					label = "factory";
++					reg = <0x40000 0x10000>;
++					read-only;
++				};
++
++				partition@50000 {
++					label = "firmware";
++					reg = <0x50000 0x7b0000>;
++				};
++			};
++		};
++	};
++
++	ethernet@10100000 {
++		status = "okay";
++		
++		port@4 {
++			compatible = "lantiq,mt7620a-gsw-port", "ralink,eth-port";
++			reg = <4>;
++			phy-mode = "rgmii";
++			phy-handle = <&phy4>;
++		};
++
++		port@5 {
++			compatible = "lantiq,mt7620a-gsw-port", "ralink,eth-port";
++			reg = <5>;
++			phy-mode = "rgmii";
++			phy-handle = <&phy5>;
++		};
++
++		mdio-bus {
++			status = "okay";
++
++			phy4: ethernet-phy@4 {
++				reg = <4>;
++				phy-mode = "rgmii";
++			};
++
++			phy5: ethernet-phy@5 {
++				reg = <5>;
++				phy-mode = "rgmii";
++			};
++		};
++	};
++
++	gsw@10110000 {
++		status = "okay";
++		ralink,port4 = "gmac";
++	};
++
++	sdhci@10130000 {
++		status = "okay";
++	};
++
++	pcie@10140000 {
++		status = "okay";
++	};
++
++	gpio-keys-polled {
++		compatible = "gpio-keys";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		poll-interval = <20>;
++		s2 {
++			label = "S2";
++			gpios = <&gpio0 1 1>;
++			linux,code = <0x100>;
++		};
++		s3 {
++			label = "S3";
++			gpios = <&gpio0 2 1>;
++			linux,code = <0x101>;
++		};
++	};
+ };
+diff --git a/arch/mips/ralink/dts/mt7620a_mt7610e_eval.dts b/arch/mips/ralink/dts/mt7620a_mt7610e_eval.dts
+new file mode 100644
+index 0000000..0d7755b
+--- /dev/null
++++ b/arch/mips/ralink/dts/mt7620a_mt7610e_eval.dts
+@@ -0,0 +1,99 @@
++/dts-v1/;
++
++/include/ "mt7620a.dtsi"
++
++/ {
++	compatible = "ralink,mt7620a-eval-board", "ralink,mt7620a-soc";
++	model = "Ralink MT7620A evaluation board";
++
++	memory@0 {
++		reg = <0x0 0x2000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,57600";
++	};
++
++	palmbus@10000000 {
++		sysc@0 {
++			ralink,pinmux = "spi", "uartlite", "mdio", "wled", "ephy", "rgmii1", "rgmii2";
++			ralink,gpiomux = "i2c", "jtag";
++			ralink,uartmux = "gpio";
++			ralink,wdtmux = <1>;
++		};
++
++		gpio0: gpio@600 {
++			status = "okay";
++		};
++
++		spi@b00 {
++			status = "okay";
++		
++			m25p80@0 {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				compatible = "en25q64";
++				reg = <0 0>;
++				linux,modalias = "m25p80", "en25q64";
++				spi-max-frequency = <10000000>;
++
++				partition@0 {
++					label = "u-boot";
++					reg = <0x0 0x30000>;
++					read-only;
++				};
++
++				partition@30000 {
++					label = "u-boot-env";
++					reg = <0x30000 0x10000>;
++					read-only;
++				};
++
++				factory: partition@40000 {
++					label = "factory";
++					reg = <0x40000 0x10000>;
++					read-only;
++				};
++
++				partition@50000 {
++					label = "firmware";
++					reg = <0x50000 0x7b0000>;
++				};
++			};
++		};
++	};
++
++	ethernet@10100000 {
++		status = "okay";
++	};
++
++	gsw@10110000 {
++		status = "okay";
++		ralink,port4 = "ephy";
++	};
++
++	sdhci@10130000 {
++		status = "okay";
++	};
++
++	pcie@10140000 {
++		status = "okay";
++	};
++
++	gpio-keys-polled {
++		compatible = "gpio-keys";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		poll-interval = <20>;
++		wps {
++			label = "wps";
++			gpios = <&gpio0 12 1>;
++			linux,code = <0x100>;
++		};
++		reset {
++			label = "reset";
++			gpios = <&gpio0 13 1>;
++			linux,code = <0x101>;
++		};
++	};
++};
+diff --git a/arch/mips/ralink/dts/rt2880.dtsi b/arch/mips/ralink/dts/rt2880.dtsi
+index 182afde..2a34b8d 100644
+--- a/arch/mips/ralink/dts/rt2880.dtsi
++++ b/arch/mips/ralink/dts/rt2880.dtsi
+@@ -55,4 +55,21 @@
+ 			reg-shift = <2>;
+ 		};
+ 	};
++
++	ethernet@400000 {
++		compatible = "ralink,rt2880-eth";
++		reg = <0x00400000 10000>;
++
++		interrupt-parent = <&cpuintc>;
++		interrupts = <5>;
++
++		status = "disabled";
++
++		mdio-bus {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++		};
++	};
+ };
+diff --git a/arch/mips/ralink/dts/rt2880_eval.dts b/arch/mips/ralink/dts/rt2880_eval.dts
+index 322d700..58a1edf 100644
+--- a/arch/mips/ralink/dts/rt2880_eval.dts
++++ b/arch/mips/ralink/dts/rt2880_eval.dts
+@@ -43,4 +43,10 @@
+ 			reg = <0x50000 0x3b0000>;
+ 		};
+ 	};
++
++	ethernet@400000 {
++		status = "okay";
++
++		ralink,fixed-link = <1000 1 1 1>;
++	};
+ };
+diff --git a/arch/mips/ralink/dts/rt3050.dtsi b/arch/mips/ralink/dts/rt3050.dtsi
+index ef7da1e..b1ac940 100644
+--- a/arch/mips/ralink/dts/rt3050.dtsi
++++ b/arch/mips/ralink/dts/rt3050.dtsi
+@@ -1,7 +1,7 @@
+ / {
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+-	compatible = "ralink,rt3050-soc", "ralink,rt3052-soc", "ralink,rt3350-soc";
++	compatible = "ralink,rt3050-soc", "ralink,rt3052-soc";
+ 
+ 	cpus {
+ 		cpu@0 {
+@@ -45,6 +45,15 @@
+ 			reg = <0x300 0x100>;
+ 		};
+ 
++		i2c@900 {
++			compatible = "link,rt3052-i2c", "ralink,rt2880-i2c";
++			reg = <0x900 0x100>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++		};
++
+ 		uartlite@c00 {
+ 			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
+ 			reg = <0xc00 0x100>;
+@@ -55,4 +64,24 @@
+ 			reg-shift = <2>;
+ 		};
+ 	};
++
++	ethernet@10100000 {
++		compatible = "ralink,rt3050-eth";
++		reg = <0x10100000 10000>;
++
++		interrupt-parent = <&cpuintc>;
++		interrupts = <5>;
++
++		status = "disabled";
++	};
++
++	esw@10110000 {
++		compatible = "ralink,rt3050-esw";
++		reg = <0x10110000 8000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <17>;
++
++		status = "disabled";
++	};
+ };
+diff --git a/arch/mips/ralink/dts/rt3052_eval.dts b/arch/mips/ralink/dts/rt3052_eval.dts
+index df17f5f..df02957 100644
+--- a/arch/mips/ralink/dts/rt3052_eval.dts
++++ b/arch/mips/ralink/dts/rt3052_eval.dts
+@@ -3,7 +3,7 @@
+ /include/ "rt3050.dtsi"
+ 
+ / {
+-	compatible = "ralink,rt3052-eval-board", "ralink,rt3052-soc";
++	compatible = "ralink,rt3052-eval-board", "ralink,rt3052-soc", "ralink,rt5350-soc";
+ 	model = "Ralink RT3052 evaluation board";
+ 
+ 	memory@0 {
+@@ -14,6 +14,14 @@
+ 		bootargs = "console=ttyS0,57600";
+ 	};
+ 
++	palmbus@10000000 {
++		sysc@0 {
++			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
++			ralink,uartmux = "gpio";
++			ralink,wdtmux = <1>;
++		};
++	};
++
+ 	cfi@1f000000 {
+ 		compatible = "cfi-flash";
+ 		reg = <0x1f000000 0x800000>;
+@@ -43,4 +51,13 @@
+ 			reg = <0x50000 0x7b0000>;
+ 		};
+ 	};
++
++	ethernet@10100000 {
++		status = "okay";
++	};
++
++	esw@10110000 {
++		status = "okay";
++		ralink,portmap = <0x2f>;
++	};
+ };
+diff --git a/arch/mips/ralink/dts/rt5350.dtsi b/arch/mips/ralink/dts/rt5350.dtsi
+new file mode 100644
+index 0000000..3d6b3bc
+--- /dev/null
++++ b/arch/mips/ralink/dts/rt5350.dtsi
+@@ -0,0 +1,227 @@
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	compatible = "ralink,rt5350-soc";
++
++	cpus {
++		cpu@0 {
++			compatible = "mips,mips24KEc";
++		};
++	};
++
++	cpuintc: cpuintc@0 {
++		#address-cells = <0>;
++		#interrupt-cells = <1>;
++		interrupt-controller;
++		compatible = "mti,cpu-interrupt-controller";
++	};
++
++	palmbus@10000000 {
++		compatible = "palmbus";
++		reg = <0x10000000 0x200000>;
++		ranges = <0x0 0x10000000 0x1FFFFF>;
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		sysc@0 {
++			compatible = "ralink,rt5350-sysc", "ralink,rt3050-sysc";
++			reg = <0x0 0x100>;
++		};
++
++		timer@100 {
++			compatible = "ralink,rt5350-timer", "ralink,rt2880-timer";
++			reg = <0x100 0x20>;
++
++			interrupt-parent = <&intc>;
++			interrupts = <1>;
++		};
++
++		watchdog@120 {
++			compatible = "ralink,rt5350-wdt", "ralink,rt2880-wdt";
++			reg = <0x120 0x10>;
++
++			resets = <&rstctrl 8>;
++			reset-names = "wdt";
++
++			interrupt-parent = <&intc>;
++			interrupts = <1>;
++		};
++
++		intc: intc@200 {
++			compatible = "ralink,rt5350-intc", "ralink,rt2880-intc";
++			reg = <0x200 0x100>;
++
++			resets = <&rstctrl 19>;
++			reset-names = "intc";
++
++			interrupt-controller;
++			#interrupt-cells = <1>;
++
++			interrupt-parent = <&cpuintc>;
++			interrupts = <2>;
++		};
++
++		memc@300 {
++			compatible = "ralink,rt5350-memc", "ralink,rt3050-memc";
++			reg = <0x300 0x100>;
++
++			resets = <&rstctrl 20>;
++			reset-names = "mc";
++
++			interrupt-parent = <&intc>;
++			interrupts = <3>;
++		};
++
++		uart@500 {
++			compatible = "ralink,rt5350-uart", "ralink,rt2880-uart", "ns16550a";
++			reg = <0x500 0x100>;
++
++			resets = <&rstctrl 12>;
++			reset-names = "uart";
++
++			interrupt-parent = <&intc>;
++			interrupts = <5>;
++
++			reg-shift = <2>;
++
++			status = "disabled";
++		};
++
++		gpio0: gpio@600 {
++			compatible = "ralink,rt5350-gpio", "ralink,rt2880-gpio";
++			reg = <0x600 0x34>;
++
++			resets = <&rstctrl 13>;
++			reset-names = "pio";
++
++			interrupt-parent = <&intc>;
++			interrupts = <6>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			ralink,gpio-base = <0>;
++			ralink,num-gpios = <24>;
++			ralink,register-map = [ 00 04 08 0c
++						20 24 28 2c
++						30 34 ];
++
++			status = "disabled";
++		};
++
++		gpio1: gpio@638 {
++			compatible = "ralink,rt5350-gpio", "ralink,rt2880-gpio";
++			reg = <0x638 0x24>;
++
++			interrupt-parent = <&intc>;
++			interrupts = <6>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			ralink,gpio-base = <24>;
++			ralink,num-gpios = <16>;
++			ralink,register-map = [ 00 04 08 0c
++						10 14 18 1c
++						20 24 ];
++
++			status = "disabled";
++		};
++
++		i2c@900 {
++			compatible = "link,rt5350-i2c", "ralink,rt2880-i2c";
++			reg = <0x900 0x100>;
++
++			resets = <&rstctrl 16>;
++			reset-names = "i2c";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++		};
++
++		spi@b00 {
++			compatible = "ralink,rt5350-spi", "ralink,rt2880-spi";
++			reg = <0xb00 0x100>;
++
++			resets = <&rstctrl 18>;
++			reset-names = "spi";
++
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			status = "disabled";
++		};
++
++		uartlite@c00 {
++			compatible = "ralink,rt5350-uart", "ralink,rt2880-uart", "ns16550a";
++			reg = <0xc00 0x100>;
++
++			resets = <&rstctrl 19>;
++			reset-names = "uartl";
++
++			interrupt-parent = <&intc>;
++			interrupts = <12>;
++
++			reg-shift = <2>;
++		};
++
++		systick@d00 {
++			compatible = "ralink,rt5350-systick", "ralink,cevt-systick";
++			reg = <0xd00 0x10>;
++
++			interrupt-parent = <&cpuintc>;
++			interrupts = <7>;
++		};
++	};
++
++	rstctrl: rstctrl {
++		compatible = "ralink,rt5350-reset", "ralink,rt2880-reset";
++		#reset-cells = <1>;
++	};
++
++	ubsphy {
++		compatible = "ralink,rt3xxx-usbphy";
++
++		resets = <&rstctrl 22 &rstctrl 25>;
++		reset-names = "host", "device";
++	};
++
++	ethernet@10100000 {
++		compatible = "ralink,rt5350-eth";
++		reg = <0x10100000 10000>;
++
++		interrupt-parent = <&cpuintc>;
++		interrupts = <5>;
++
++		status = "disabled";
++	};
++
++	esw@10110000 {
++		compatible = "ralink,rt3050-esw";
++		reg = <0x10110000 8000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <17>;
++
++		status = "disabled";
++	};
++
++	ehci@101c0000 {
++		compatible = "ralink,rt3xxx-ehci";
++		reg = <0x101c0000 0x1000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <18>;
++	};
++
++	ohci@101c1000 {
++		compatible = "ralink,rt3xxx-ohci";
++		reg = <0x101c1000 0x1000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <18>;
++	};
++};
+diff --git a/arch/mips/ralink/dts/rt5350_eval.dts b/arch/mips/ralink/dts/rt5350_eval.dts
+new file mode 100644
+index 0000000..ab92043
+--- /dev/null
++++ b/arch/mips/ralink/dts/rt5350_eval.dts
+@@ -0,0 +1,69 @@
++/dts-v1/;
++
++/include/ "rt5350.dtsi"
++
++/ {
++	compatible = "ralink,rt5350-eval-board", "ralink,rt5350-soc";
++	model = "Ralink RT5350 evaluation board";
++
++	chosen {
++		bootargs = "console=ttyS0,57600";
++	};
++
++	palmbus@10000000 {
++		sysc@0 {
++			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
++			ralink,uartmux = "gpio";
++			ralink,wdtmux = <1>;
++		};
++
++		gpio0: gpio@600 {
++			status = "okay";
++		};
++
++		spi@b00 {
++			status = "okay";
++		
++			m25p80@0 {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				compatible = "en25q64";
++				reg = <0 0>;
++				linux,modalias = "m25p80", "mx25l3205d";
++				spi-max-frequency = <10000000>;
++
++				partition@0 {
++					label = "u-boot";
++					reg = <0x0 0x30000>;
++					read-only;
++				};
++
++				partition@30000 {
++					label = "u-boot-env";
++					reg = <0x30000 0x10000>;
++					read-only;
++				};
++
++				factory: partition@40000 {
++					label = "factory";
++					reg = <0x40000 0x10000>;
++					read-only;
++				};
++
++				partition@50000 {
++					label = "firmware";
++					reg = <0x50000 0x3b0000>;
++				};
++			};
++		};
++	};
++
++	ethernet@10100000 {
++		status = "okay";
++	};
++
++	esw@10110000 {
++		status = "okay";
++		ralink,portmap = <0x2f>;
++	};
++};
+-- 
+1.7.10.4
+

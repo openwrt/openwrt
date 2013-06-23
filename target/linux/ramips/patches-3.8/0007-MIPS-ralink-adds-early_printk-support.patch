@@ -1,7 +1,7 @@
-From 5fff610b7c60195de98e68bec00c357f393ce634 Mon Sep 17 00:00:00 2001
+From 4efba82d0e4059588f2b2fc0ac2576eaf37f1d22 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 20 Jan 2013 22:02:55 +0100
-Subject: [PATCH 07/14] MIPS: ralink: adds early_printk support
+Subject: [PATCH 07/79] MIPS: ralink: adds early_printk support
 
 Add the code needed to make early printk work.
 
@@ -13,6 +13,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4897/
  1 file changed, 44 insertions(+)
  create mode 100644 arch/mips/ralink/early_printk.c
 
+diff --git a/arch/mips/ralink/early_printk.c b/arch/mips/ralink/early_printk.c
+new file mode 100644
+index 0000000..c4ae47e
 --- /dev/null
 +++ b/arch/mips/ralink/early_printk.c
 @@ -0,0 +1,44 @@
@@ -60,3 +63,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4897/
 +	while ((uart_r32(UART_REG_LSR) & UART_LSR_THRE) == 0)
 +		;
 +}
+-- 
+1.7.10.4
+

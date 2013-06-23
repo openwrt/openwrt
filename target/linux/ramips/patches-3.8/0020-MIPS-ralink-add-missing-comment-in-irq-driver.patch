@@ -1,0 +1,29 @@
+From 7c268f1b47669be2efce1607ee02193cb49424cf Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 16 Mar 2013 16:28:54 +0100
+Subject: [PATCH 20/79] MIPS: ralink: add missing comment in irq driver
+
+Trivial patch that adds a comment that makes the code more readable.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Acked-by: Gabor Juhos <juhosg@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/5168/
+---
+ arch/mips/ralink/irq.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/ralink/irq.c b/arch/mips/ralink/irq.c
+index d9807d0..320b1f1 100644
+--- a/arch/mips/ralink/irq.c
++++ b/arch/mips/ralink/irq.c
+@@ -166,6 +166,7 @@ static int __init intc_of_init(struct device_node *node,
+ 	irq_set_chained_handler(irq, ralink_intc_irq_handler);
+ 	irq_set_handler_data(irq, domain);
+ 
++	/* tell the kernel which irq is used for performance monitoring */
+ 	cp0_perfcount_irq = irq_create_mapping(domain, 9);
+ 
+ 	return 0;
+-- 
+1.7.10.4
+

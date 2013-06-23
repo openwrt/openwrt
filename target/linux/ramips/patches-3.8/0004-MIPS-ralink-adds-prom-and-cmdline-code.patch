@@ -1,7 +1,7 @@
-From 7e47cefa69c8ed2c889522ce29fcce73ce8cf08e Mon Sep 17 00:00:00 2001
+From 36424b3f1f184c752562d19d0df1a427c8c584a2 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 20 Jan 2013 22:01:05 +0100
-Subject: [PATCH 04/14] MIPS: ralink: adds prom and cmdline code
+Subject: [PATCH 04/79] MIPS: ralink: adds prom and cmdline code
 
 Add minimal code to handle commandlines.
 
@@ -13,6 +13,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4892/
  1 file changed, 69 insertions(+)
  create mode 100644 arch/mips/ralink/prom.c
 
+diff --git a/arch/mips/ralink/prom.c b/arch/mips/ralink/prom.c
+new file mode 100644
+index 0000000..9c64f02
 --- /dev/null
 +++ b/arch/mips/ralink/prom.c
 @@ -0,0 +1,69 @@
@@ -85,3 +88,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4892/
 +void __init prom_free_prom_memory(void)
 +{
 +}
+-- 
+1.7.10.4
+

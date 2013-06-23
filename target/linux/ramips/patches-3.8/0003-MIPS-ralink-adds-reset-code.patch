@@ -1,7 +1,7 @@
-From c06e836ada59fbc6d1109277e693e5b3e056ac12 Mon Sep 17 00:00:00 2001
+From 3cdf3d713c81ffd3032d7c664f0be89d1ddce3e3 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 20 Jan 2013 22:00:57 +0100
-Subject: [PATCH 03/14] MIPS: ralink: adds reset code
+Subject: [PATCH 03/79] MIPS: ralink: adds reset code
 
 Resetting these SoCs requires no real magic. The code is straight forward.
 
@@ -13,6 +13,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4891/
  1 file changed, 44 insertions(+)
  create mode 100644 arch/mips/ralink/reset.c
 
+diff --git a/arch/mips/ralink/reset.c b/arch/mips/ralink/reset.c
+new file mode 100644
+index 0000000..22120e5
 --- /dev/null
 +++ b/arch/mips/ralink/reset.c
 @@ -0,0 +1,44 @@
@@ -60,3 +63,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4891/
 +}
 +
 +arch_initcall(mips_reboot_setup);
+-- 
+1.7.10.4
+

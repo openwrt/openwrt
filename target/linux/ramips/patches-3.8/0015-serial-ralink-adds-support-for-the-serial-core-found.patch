@@ -1,8 +1,8 @@
-From c420811f117a59a4a7d4e34b362437b91c7fafa1 Mon Sep 17 00:00:00 2001
+From 219ec2244c2e9085e6900dc515a24f6655c79827 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 25 Jan 2013 19:39:51 +0100
-Subject: [PATCH] serial: ralink: adds support for the serial core found on
- ralink wisoc
+Subject: [PATCH 15/79] serial: ralink: adds support for the serial core found
+ on ralink wisoc
 
 The MIPS based Ralink WiSoC platform has 1 or more 8250 compatible serial cores.
 To make them work we require the same quirks that are used by AU1x00.
@@ -15,9 +15,11 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  include/linux/serial_core.h     |    2 +-
  3 files changed, 12 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/tty/serial/8250/8250.c b/drivers/tty/serial/8250/8250.c
+index f932043..f72eb7d 100644
 --- a/drivers/tty/serial/8250/8250.c
 +++ b/drivers/tty/serial/8250/8250.c
-@@ -345,9 +345,9 @@ static void default_serial_dl_write(stru
+@@ -324,9 +324,9 @@ static void default_serial_dl_write(struct uart_8250_port *up, int value)
  	serial_out(up, UART_DLM, value >> 8 & 0xff);
  }
  
@@ -29,7 +31,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  static const u8 au_io_in_map[] = {
  	[UART_RX]  = 0,
  	[UART_IER] = 2,
-@@ -527,7 +527,7 @@ static void set_io_from_upio(struct uart
+@@ -506,7 +506,7 @@ static void set_io_from_upio(struct uart_port *p)
  		break;
  #endif
  
@@ -38,6 +40,8 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	case UPIO_AU:
  		p->serial_in = au_serial_in;
  		p->serial_out = au_serial_out;
+diff --git a/drivers/tty/serial/8250/Kconfig b/drivers/tty/serial/8250/Kconfig
+index c31133a..9e4febd 100644
 --- a/drivers/tty/serial/8250/Kconfig
 +++ b/drivers/tty/serial/8250/Kconfig
 @@ -277,3 +277,11 @@ config SERIAL_8250_EM
@@ -52,6 +56,8 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 +	  If you have a Ralink RT288x/RT305x SoC based board and want to use the
 +	  serial port, say Y to this option. The driver can handle up to 2 serial
 +	  ports. If unsure, say N.
+diff --git a/include/linux/serial_core.h b/include/linux/serial_core.h
+index c6690a2..0b428d6 100644
 --- a/include/linux/serial_core.h
 +++ b/include/linux/serial_core.h
 @@ -134,7 +134,7 @@ struct uart_port {
@@ -63,3 +69,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  #define UPIO_TSI		(5)			/* Tsi108/109 type IO */
  #define UPIO_RM9000		(6)			/* RM9000 type IO */
  
+-- 
+1.7.10.4
+

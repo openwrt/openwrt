@@ -1,0 +1,68 @@
+From 2ccca2ac0b54eb21890412c888cf5a5bda656bba Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 13 Apr 2013 13:15:47 +0200
+Subject: [PATCH 121/164] MIPS: add detect_memory_region()
+
+Add a generic way of detecting the available RAM. This function is based on the
+implementation already used by ath79.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/5178/
+---
+ arch/mips/include/asm/bootinfo.h |    1 +
+ arch/mips/kernel/setup.c         |   20 ++++++++++++++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/arch/mips/include/asm/bootinfo.h b/arch/mips/include/asm/bootinfo.h
+index b71dd5b..4d2cdea 100644
+--- a/arch/mips/include/asm/bootinfo.h
++++ b/arch/mips/include/asm/bootinfo.h
+@@ -104,6 +104,7 @@ struct boot_mem_map {
+ extern struct boot_mem_map boot_mem_map;
+ 
+ extern void add_memory_region(phys_t start, phys_t size, long type);
++extern void detect_memory_region(phys_t start, phys_t sz_min,  phys_t sz_max);
+ 
+ extern void prom_init(void);
+ extern void prom_free_prom_memory(void);
+diff --git a/arch/mips/kernel/setup.c b/arch/mips/kernel/setup.c
+index 4c774d5..7325793 100644
+--- a/arch/mips/kernel/setup.c
++++ b/arch/mips/kernel/setup.c
+@@ -23,6 +23,7 @@
+ #include <linux/pfn.h>
+ #include <linux/debugfs.h>
+ #include <linux/kexec.h>
++#include <linux/sizes.h>
+ 
+ #include <asm/addrspace.h>
+ #include <asm/bootinfo.h>
+@@ -122,6 +123,25 @@ void __init add_memory_region(phys_t start, phys_t size, long type)
+ 	boot_mem_map.nr_map++;
+ }
+ 
++void __init detect_memory_region(phys_t start, phys_t sz_min, phys_t sz_max)
++{
++	phys_t size;
++
++	for (size = sz_min; size < sz_max; size <<= 1) {
++		if (!memcmp(detect_memory_region,
++				detect_memory_region + size, 1024))
++			break;
++	}
++
++	pr_debug("Memory: %lluMB of RAM detected at 0x%llx (min: %lluMB, max: %lluMB)\n",
++		((unsigned long long) size) / SZ_1M,
++		(unsigned long long) start,
++		((unsigned long long) sz_min) / SZ_1M,
++		((unsigned long long) sz_max) / SZ_1M);
++
++	add_memory_region(start, size, BOOT_MEM_RAM);
++}
++
+ static void __init print_memory_map(void)
+ {
+ 	int i;
+-- 
+1.7.10.4
+

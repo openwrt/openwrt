@@ -1,7 +1,7 @@
-From 19d3814e7b325f8965fd71f329b3467a97f8d217 Mon Sep 17 00:00:00 2001
+From 833836f47b4191e93267b91fcab38dd15affcd28 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 20 Jan 2013 22:00:50 +0100
-Subject: [PATCH 02/14] MIPS: ralink: adds irq code
+Subject: [PATCH 02/79] MIPS: ralink: adds irq code
 
 All of the Ralink Wifi SoC currently supported by this series share the same
 interrupt controller (INTC).
@@ -14,6 +14,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/4890/
  1 file changed, 176 insertions(+)
  create mode 100644 arch/mips/ralink/irq.c
 
+diff --git a/arch/mips/ralink/irq.c b/arch/mips/ralink/irq.c
+new file mode 100644
+index 0000000..e62c975
 --- /dev/null
 +++ b/arch/mips/ralink/irq.c
 @@ -0,0 +1,176 @@
@@ -193,3 +196,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/4890/
 +	of_irq_init(of_irq_ids);
 +}
 +
+-- 
+1.7.10.4
+
