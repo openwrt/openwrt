@@ -11,11 +11,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 200 insertions(+)
  create mode 100644 drivers/usb/phy/ralink-phy.c
 
-diff --git a/drivers/usb/phy/Kconfig b/drivers/usb/phy/Kconfig
-index 9054938..b197c70 100644
---- a/drivers/usb/phy/Kconfig
-+++ b/drivers/usb/phy/Kconfig
-@@ -74,3 +74,11 @@ config SAMSUNG_USBPHY
+Index: linux-3.9.6/drivers/usb/phy/Kconfig
+===================================================================
+--- linux-3.9.6.orig/drivers/usb/phy/Kconfig	2013-06-13 19:52:08.000000000 +0200
++++ linux-3.9.6/drivers/usb/phy/Kconfig	2013-06-23 16:37:57.544772712 +0200
+@@ -74,3 +74,11 @@
  	help
  	  Enable this to support Samsung USB phy controller for samsung
  	  SoCs.
@@ -27,20 +27,19 @@ index 9054938..b197c70 100644
 +	help
 +	  Enable this to support ralink USB phy controller for ralink
 +	  SoCs.
-diff --git a/drivers/usb/phy/Makefile b/drivers/usb/phy/Makefile
-index b13faa1..2df30f1 100644
---- a/drivers/usb/phy/Makefile
-+++ b/drivers/usb/phy/Makefile
-@@ -12,3 +12,4 @@ obj-$(CONFIG_MV_U3D_PHY)		+= mv_u3d_phy.o
+Index: linux-3.9.6/drivers/usb/phy/Makefile
+===================================================================
+--- linux-3.9.6.orig/drivers/usb/phy/Makefile	2013-06-13 19:52:08.000000000 +0200
++++ linux-3.9.6/drivers/usb/phy/Makefile	2013-06-23 16:37:57.544772712 +0200
+@@ -12,3 +12,4 @@
  obj-$(CONFIG_USB_EHCI_TEGRA)	+= tegra_usb_phy.o
  obj-$(CONFIG_USB_RCAR_PHY)		+= rcar-phy.o
  obj-$(CONFIG_SAMSUNG_USBPHY)		+= samsung-usbphy.o
 +obj-$(CONFIG_RALINK_USBPHY)		+= ralink-phy.o
-diff --git a/drivers/usb/phy/ralink-phy.c b/drivers/usb/phy/ralink-phy.c
-new file mode 100644
-index 0000000..3fbabea
---- /dev/null
-+++ b/drivers/usb/phy/ralink-phy.c
+Index: linux-3.9.6/drivers/usb/phy/ralink-phy.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.9.6/drivers/usb/phy/ralink-phy.c	2013-06-24 13:55:19.932135036 +0200
 @@ -0,0 +1,191 @@
 +/*
 + * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
@@ -99,8 +98,8 @@ index 0000000..3fbabea
 +
 +		usb_phy_enable(1);
 +
-+		reset_control_assert(rstdev);
-+		reset_control_assert(rsthost);
++//		reset_control_assert(rstdev);
++//		reset_control_assert(rsthost);
 +
 +		if (OTG_STATE_B_HOST) {
 +			rt_sysc_m32(0, RT_SYSCFG1_USB0_HOST_MODE, RT_SYSC_REG_SYSCFG1);
@@ -233,6 +232,3 @@ index 0000000..3fbabea
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("Ralink USB phy");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
--- 
-1.7.10.4
-
