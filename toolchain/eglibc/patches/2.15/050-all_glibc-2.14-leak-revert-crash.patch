@@ -1,0 +1,110 @@
+partially revert commit 4bff6e0175ed195871f4e01cc4c4c33274b8f6e3 - caused segmentation faults in dlopen
+
+References:
+http://comments.gmane.org/gmane.comp.lib.glibc.user/1227
+http://sourceware.org/ml/libc-alpha/2011-06/msg00006.html
+
+diff --git a/libc/elf/dl-close.c b/libc/elf/dl-close.c
+index 4b17bf8..733cc1b 100644
+--- a/libc/elf/dl-close.c
++++ b/libc/elf/dl-close.c
+@@ -119,17 +119,8 @@ _dl_close_worker (struct link_map *map)
+   if (map->l_direct_opencount > 0 || map->l_type != lt_loaded
+       || dl_close_state != not_pending)
+     {
+-      if (map->l_direct_opencount == 0)
+-	{
+-	  if (map->l_type == lt_loaded)
+-	    dl_close_state = rerun;
+-	  else if (map->l_type == lt_library)
+-	    {
+-	      struct link_map **oldp = map->l_initfini;
+-	      map->l_initfini = map->l_orig_initfini;
+-	      _dl_scope_free (oldp);
+-	    }
+-	}
++      if (map->l_direct_opencount == 0 && map->l_type == lt_loaded)
++	dl_close_state = rerun;
+ 
+       /* There are still references to this object.  Do nothing more.  */
+       if (__builtin_expect (GLRO_dl_debug_mask & DL_DEBUG_FILES, 0))
+diff --git a/libc/elf/dl-deps.c b/libc/elf/dl-deps.c
+index 51cb2fa..eddcbf0 100644
+--- a/libc/elf/dl-deps.c
++++ b/libc/elf/dl-deps.c
+@@ -489,6 +489,7 @@ _dl_map_object_deps (struct link_map *map,
+ 		  nneeded * sizeof needed[0]);
+ 	  atomic_write_barrier ();
+ 	  l->l_initfini = l_initfini;
++	  l->l_free_initfini = 1;
+ 	}
+ 
+       /* If we have no auxiliary objects just go on to the next map.  */
+@@ -689,6 +690,7 @@ Filters not supported with LD_TRACE_PRELINKING"));
+   l_initfini[nlist] = NULL;
+   atomic_write_barrier ();
+   map->l_initfini = l_initfini;
++  map->l_free_initfini = 1;
+   if (l_reldeps != NULL)
+     {
+       atomic_write_barrier ();
+@@ -697,7 +699,7 @@ Filters not supported with LD_TRACE_PRELINKING"));
+       _dl_scope_free (old_l_reldeps);
+     }
+   if (old_l_initfini != NULL)
+-      map->l_orig_initfini = old_l_initfini;
++    _dl_scope_free (old_l_initfini);
+ 
+   if (errno_reason)
+     _dl_signal_error (errno_reason == -1 ? 0 : errno_reason, objname,
+diff --git a/libc/elf/dl-libc.c b/libc/elf/dl-libc.c
+index f44fa10..7563093 100644
+--- a/libc/elf/dl-libc.c
++++ b/libc/elf/dl-libc.c
+@@ -284,6 +284,10 @@ libc_freeres_fn (free_mem)
+ 	      if (! old->dont_free)
+ 		free (old);
+ 	    }
++
++	  /* Free the initfini dependency list.  */
++	  if (l->l_free_initfini)
++	    free (l->l_initfini);
+ 	}
+ 
+       if (__builtin_expect (GL(dl_ns)[ns]._ns_global_scope_alloc, 0) != 0
+diff --git a/libc/elf/rtld.c b/libc/elf/rtld.c
+index b93a01f..2fc83ce 100644
+--- a/libc/elf/rtld.c
++++ b/libc/elf/rtld.c
+@@ -2277,6 +2277,7 @@ ERROR: ld.so: object '%s' cannot be loaded as audit interface: %s; ignored.\n",
+ 	      lnp->dont_free = 1;
+ 	      lnp = lnp->next;
+ 	    }
++	  l->l_free_initfini = 0;
+ 
+ 	  if (l != &GL(dl_rtld_map))
+ 	    _dl_relocate_object (l, l->l_scope, GLRO(dl_lazy) ? RTLD_LAZY : 0,
+diff --git a/libc/include/link.h b/libc/include/link.h
+index e877104..b1b4065 100644
+--- a/libc/include/link.h
++++ b/libc/include/link.h
+@@ -192,6 +192,9 @@ struct link_map
+ 						 during LD_TRACE_PRELINKING=1
+ 						 contains any DT_SYMBOLIC
+ 						 libraries.  */
++    unsigned int l_free_initfini:1; /* Nonzero if l_initfini can be
++				       freed, ie. not allocated with
++				       the dummy malloc in ld.so.  */
+ 
+     /* Collected information about own RPATH directories.  */
+     struct r_search_path_struct l_rpath_dirs;
+@@ -240,9 +243,6 @@ struct link_map
+ 
+     /* List of object in order of the init and fini calls.  */
+     struct link_map **l_initfini;
+-    /* The init and fini list generated at startup, saved when the
+-       object is also loaded dynamically.  */
+-    struct link_map **l_orig_initfini;
+ 
+     /* List of the dependencies introduced through symbol binding.  */
+     struct link_map_reldeps
