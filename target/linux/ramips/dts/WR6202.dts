@@ -102,14 +102,14 @@
 		status = "okay";
 	};
 
-	usb0: gpio-regulator {
-		compatible = "regulator-gpio";
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
 
-		regulator-name = "usb0-power";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		regulator-boot-on;
-
-		enable-gpio = <&gpio0 11 0>;
+		usb {
+			gpio-export,name = "usb";
+			gpio-export,output = <0>;
+			gpios = <&gpio0 11 0>;
+		};
 	};
 };
