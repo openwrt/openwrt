@@ -131,28 +131,19 @@
 		};
 	};
 
-	/* gpio 12 and 13 handle the OC input */
-	usb0: gpio-regulator {
-		compatible = "regulator-gpio";
-
-		regulator-name = "usb0-power";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		regulator-boot-on;
-
-		enable-active-high;
-		enable-gpio = <&gpio0 2 0>;
-	};
-
-	usb1: gpio-regulator {
-		compatible = "regulator-gpio";
-
-		regulator-name = "usb1-power";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		regulator-boot-on;
-
-		enable-active-high;
-		enable-gpio = <&gpio0 1 0>;
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+		/* gpio 12 and 13 handle the OC input */
+		usb0 {
+			gpio-export,name = "usb0";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 2 0>;
+		};
+		usb1 {
+			gpio-export,name = "usb1";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 1 0>;
+		};
 	};
 };
