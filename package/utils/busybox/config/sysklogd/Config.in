@@ -10,7 +10,7 @@ menu "System Logging Utilities"
 
 config BUSYBOX_CONFIG_SYSLOGD
 	bool "syslogd"
-	default y
+	default n
 	help
 	  The syslogd utility is used to record logs of all the
 	  significant events that occur on a system. Every
@@ -116,7 +116,7 @@ config BUSYBOX_CONFIG_FEATURE_LOGREAD_REDUCED_LOCKING
 
 config BUSYBOX_CONFIG_KLOGD
 	bool "klogd"
-	default y
+	default n
 	help
 	  klogd is a utility which intercepts and logs all
 	  messages from the Linux kernel and sends the messages
