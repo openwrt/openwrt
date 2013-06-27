@@ -83,12 +83,13 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ),CONFIG_INITRAMFS_COMPRESSION_XZ=y\nCONFIG_RD_XZ=y,# CONFIG_INITRAMFS_COMPRESSION_XZ is not set\n# CONFIG_RD_XZ is not set)" >> $(LINUX_DIR)/.config
   endef
 else
-  define Kernel/SetInitramfs
+endif
+
+define Kernel/SetNoInitramfs
 	mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
 	grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
 	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
-  endef
-endif
+endef
 
 define Kernel/Configure/Default
 	$(LINUX_CONF_CMD) > $(LINUX_DIR)/.config.target
@@ -100,10 +101,14 @@ define Kernel/Configure/Default
 	echo "# CONFIG_KPROBES is not set" >> $(LINUX_DIR)/.config.target
 	$(SCRIPT_DIR)/metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config > $(LINUX_DIR)/.config.override
 	$(SCRIPT_DIR)/kconfig.pl 'm+' '+' $(LINUX_DIR)/.config.target /dev/null $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config
-	$(call Kernel/SetInitramfs)
+	$(call Kernel/SetNoInitramfs)
 	rm -rf $(KERNEL_BUILD_DIR)/modules
 	[ -d $(LINUX_DIR)/user_headers ] || $(MAKE) $(KERNEL_MAKEOPTS) INSTALL_HDR_PATH=$(LINUX_DIR)/user_headers headers_install
 	$(SH_FUNC) grep '=[ym]' $(LINUX_DIR)/.config | LC_ALL=C sort | md5s > $(LINUX_DIR)/.vermagic
+endef
+
+define Kernel/Configure/Initramfs
+	$(call Kernel/SetInitramfs)
 endef
 
 define Kernel/CompileModules/Default
@@ -113,13 +118,31 @@ endef
 
 OBJCOPY_STRIP = -R .reginfo -R .notes -R .note -R .comment -R .mdebug -R .note.gnu.build-id
 
+define Kernel/CopyImage
+	$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)$(1)
+	$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).elf
+endef
+
 define Kernel/CompileImage/Default
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
 	+$(MAKE) $(KERNEL_MAKEOPTS) $(subst ",,$(KERNELNAME))
 	#")
-	$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
-	$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux.elf
+	$(call Kernel/CopyImage)
 endef
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+define Kernel/CompileImage/Initramfs
+	$(call Kernel/Configure/Initramfs)
+	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
+	+$(MAKE) $(KERNEL_MAKEOPTS) $(subst ",,$(KERNELNAME))
+	#")
+	#")
+	$(call Kernel/CopyImage,-initramfs)
+endef
+else
+define Kernel/CompileImage/Initramfs
+endef
+endif
 
 define Kernel/Clean/Default
 	rm -f $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/.configured
