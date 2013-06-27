@@ -26,7 +26,7 @@ define Package/6relayd
   SECTION:=net
   CATEGORY:=Network
   TITLE:=DHCPv6(-PD)/RA Server & Relay
-  DEPENDS:=+kmod-ipv6
+  DEPENDS:=+kmod-ipv6 @!TARGET_avr32
 endef
 
 define Package/6relayd/description
