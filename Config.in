@@ -78,7 +78,6 @@ menu "Target Images"
 	config TARGET_ROOTFS_EXT4FS
 		bool "ext4"
 		default y if USES_EXT4
-		depends on !TARGET_ROOTFS_INITRAMFS
 		help
 		  Ext4 file system with some free space for uml images
 
@@ -86,35 +85,32 @@ menu "Target Images"
 		bool "iso"
 		default n
 		depends on TARGET_x86_generic
-		depends on !TARGET_ROOTFS_INITRAMFS
 		help
 		  Create some bootable ISO image
 
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		default y if USES_JFFS2
-		depends on !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a jffs2 root filesystem
 
 	config TARGET_ROOTFS_JFFS2_NAND
 		bool "jffs2 for NAND"
 		default y if USES_JFFS2_NAND
-		depends on !TARGET_ROOTFS_INITRAMFS && USES_JFFS2_NAND
+		depends on USES_JFFS2_NAND
 		help
 		  Build a jffs2 root filesystem for NAND flash
 
 	config TARGET_ROOTFS_SQUASHFS
 		bool "squashfs"
 		default y if USES_SQUASHFS
-		depends on !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a squashfs-lzma root filesystem
 
 	config TARGET_ROOTFS_UBIFS
 		bool "ubifs"
 		default y if USES_UBIFS
-		depends on !TARGET_ROOTFS_INITRAMFS && USES_UBIFS
+		depends on USES_UBIFS
 		help
 		  Build a ubifs root filesystem
 

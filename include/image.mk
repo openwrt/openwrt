@@ -67,47 +67,47 @@ define prepare_generic_squashfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(1) 4 8 64 128 256
 endef
 
-
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-
-  define Image/BuildKernel
-		cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf
-		$(call Image/Build/Initramfs)
+  define Image/BuildKernel/Initramfs
+	cp $(KDIR)/vmlinux-initramfs.elf $(BIN_DIR)/$(IMG_PREFIX)-initramfs-vmlinux.elf
+	$(call Image/Build/Initramfs)
   endef
-
 else
+  define Image/BuildKernel/Initramfs
+  endef
+endif
 
-  define Image/mkfs/jffs2/sub
+define Image/mkfs/jffs2/sub
 		# FIXME: removing this line will cause strange behaviour in the foreach loop below
 		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(2))
 		$(call Image/Build,jffs2-$(2))
-  endef
+endef
 
-  ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2),)
+ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2),)
     define Image/mkfs/jffs2
 		$(foreach SZ,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/sub,$(SZ),$(SZ),$(JFFS2OPS)))
     endef
-  endif
+endif
 
-  ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2_NAND),)
+ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2_NAND),)
     define Image/mkfs/jffs2_nand
 		$(foreach SZ,$(NAND_BLOCKSIZE), $(call Image/mkfs/jffs2/sub, \
 			$(word 2,$(subst :, ,$(SZ))),nand-$(subst :,-,$(SZ)), \
 			$(JFFS2OPTS) --no-cleanmarkers --pagesize=$(word 1,$(subst :, ,$(SZ)))) \
 		)
     endef
-  endif
+endif
 
-  ifneq ($(CONFIG_TARGET_ROOTFS_SQUASHFS),)
+ifneq ($(CONFIG_TARGET_ROOTFS_SQUASHFS),)
     define Image/mkfs/squashfs
 		@mkdir -p $(TARGET_DIR)/overlay
 		$(STAGING_DIR_HOST)/bin/mksquashfs4 $(TARGET_DIR) $(KDIR)/root.squashfs -nopad -noappend -root-owned -comp $(SQUASHFSCOMP) $(SQUASHFSOPT) -processors $(if $(CONFIG_PKG_BUILD_JOBS),$(CONFIG_PKG_BUILD_JOBS),1)
 		$(call Image/Build,squashfs)
     endef
-  endif
+endif
 
-  ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
+ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
     define Image/mkfs/ubifs
 		$(CP) ./ubinize.cfg $(KDIR)
 		$(STAGING_DIR_HOST)/bin/mkfs.ubifs $(UBIFS_OPTS) -o $(KDIR)/root.ubifs -d $(TARGET_DIR)
@@ -116,8 +116,6 @@ else
 		$(STAGING_DIR_HOST)/bin/ubinize $(UBINIZE_OPTS) -o $(KDIR)/root.ubi ubinize.cfg)
 		$(call Image/Build,ubi)
     endef
-  endif
-
 endif
 
 ifneq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),)
@@ -193,6 +191,7 @@ define BuildImage
 		$(call Image/Prepare)
 		$(call Image/mkfs/prepare)
 		$(call Image/BuildKernel)
+		$(call Image/BuildKernel/Initramfs)
 		$(call Image/mkfs/cpiogz)
 		$(call Image/mkfs/targz)
 		$(call Image/mkfs/ext4)
@@ -205,6 +204,7 @@ define BuildImage
   else
     install: compile install-targets
 		$(call Image/BuildKernel)
+		$(call Image/BuildKernel/Initramfs)
 		$(call Image/mkfs/cpiogz)
 		$(call Image/mkfs/targz)
 		$(call Image/mkfs/ext4)
