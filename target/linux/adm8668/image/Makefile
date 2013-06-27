@@ -9,10 +9,6 @@ include $(INCLUDE_DIR)/image.mk
 
 VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(IMG_PREFIX)-uImage
-ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-	VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs
-	UIMAGE:=$(IMG_PREFIX)-uImage-initramfs
-endif
 
 define kernel_entry
 -a 0x80002000 -e 0x80002000
@@ -53,6 +49,12 @@ define Image/BuildKernel
 	cp $(KDIR)/vmlinux $(VMLINUX).bin
 	$(call CompressGzip,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.gz)
 	$(call MkImage,gzip,,$(KDIR)/vmlinux.bin.gz,$(BIN_DIR)/$(UIMAGE)-gzip.bin)
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	cp $(KDIR)/vmlinux-initramfs.elf $(VMLINUX)-initramfs.elf
+	cp $(KDIR)/vmlinux $(VMLINUX)-initramfs.bin
+	$(call CompressGzip,$(KDIR)/vmlinux-initramfs,$(KDIR)/vmlinux-initramfs.bin.gz)
+	$(call MkImage,gzip,,$(KDIR)/vmlinux-initramfs.bin.gz,$(BIN_DIR)/$(UIMAGE)-initramfs-gzip.bin)
+endif
 endef
 
 $(eval $(call BuildImage))

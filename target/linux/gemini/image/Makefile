@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/image.mk
 define Image/Prepare
 # WBD111: mach id 1690 (0x69a)
 	echo -en "\x06\x1c\xa0\xe3\x9a\x10\x81\xe3" > $(KDIR)/$(IMG_PREFIX)-wbd111-zImage
-	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/$(IMG_PREFIX)-wbd111-zImage
+	cat $(KDIR)/zImage >> $(KDIR)/$(IMG_PREFIX)-wbd111-zImage
 # WBD222: mach id 2753 (0xAC1)
 	echo -en "\x0a\x1c\xa0\xe3\xc1\x10\x81\xe3" > $(KDIR)/$(IMG_PREFIX)-wbd222-zImage
-	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/$(IMG_PREFIX)-wbd222-zImage
+	cat $(KDIR)/zImage >> $(KDIR)/$(IMG_PREFIX)-wbd222-zImage
 endef
 
 define Image/BuildKernel

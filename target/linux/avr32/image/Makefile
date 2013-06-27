@@ -17,10 +17,6 @@ ifneq ($(CONFIG_AVR32_UBOOT),)
   endef
 endif
 
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/avr32/boot/images/uImage $(KDIR)/uImage
-endef
-
 define Image/BuildKernel
 	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
 

@@ -14,9 +14,6 @@ LOADADDR:=0x00008000
 JFFS2_BLOCKSIZE = 128k
 
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
-ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-	UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs
-endif
 
 define Image/Build/MkuImage
 	mkimage -A arm -O linux -T kernel -a $(LOADADDR) -C none -e $(LOADADDR) \
@@ -24,14 +21,10 @@ define Image/Build/MkuImage
 endef
 
 define Image/Build/DTB
-	cp $(KDIR)/zImage $(KDIR)/zImage-$(1);
-	cat $(LINUX_DIR)/arch/$(ARCH)/boot/$(1).dtb >> $(KDIR)/zImage-$(1);
-	$(call Image/Build/MkuImage,$(KDIR)/zImage-$(1),$(KDIR)/uImage-$(1))
-	cp $(KDIR)/uImage-$(1) $(UIMAGE)-$(1);
-endef
-
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/$(ARCH)/boot/zImage $(KDIR)/zImage
+	cp $(KDIR)/zImage$(2) $(KDIR)/zImage-$(1);
+	cat $(LINUX_DIR)/arch/$(ARCH)/boot/$(1).dtb >> $(KDIR)/zImage$(2)-$(1);
+	$(call Image/Build/MkuImage,$(KDIR)/zImage$(2)-$(1),$(KDIR)/uImage$(2)-$(1))
+	cp $(KDIR)/uImage$(2)-$(1) $(UIMAGE)$(2)-$(1);
 endef
 
 define Image/Build/Profile/dLAN_USB_Extender
@@ -42,7 +35,10 @@ endef
 
 define Image/BuildKernel
 	$(foreach dtb,$(TARGET_DTBS),$(call Image/Build/DTB,$(dtb)))
-	$(call Image/Build/Initramfs)
+endef
+
+define Image/Build/Initramfs
+	$(foreach dtb,$(TARGET_DTBS),$(call Image/Build/DTB,$(dtb),-initramfs))
 endef
 
 define Image/Build/squashfs
@@ -53,6 +49,9 @@ define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	$(call Image/Build/Profile/$(PROFILE),$(1))
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call Image/Build/Initramfs)
+endif
 endef
 
 $(eval $(call BuildImage))

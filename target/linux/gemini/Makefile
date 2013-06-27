@@ -15,6 +15,8 @@ MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=3.9.4
 
+KERNELNAME:="zImage"
+
 include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))

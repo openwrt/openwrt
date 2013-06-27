@@ -31,10 +31,6 @@ define Image/Build/Freecom
 	rm -f $(TARGET_DIR)/zImage
 endef
 
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/arm/boot/zImage $(KDIR)/zImage
-endef
-
 define Image/BuildKernel
 	cp $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
 	BIN_DIR=$(BIN_DIR) IMG_PREFIX="$(IMG_PREFIX)" $(TOPDIR)/scripts/arm-magic.sh

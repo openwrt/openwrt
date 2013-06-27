@@ -21,14 +21,6 @@ fs_all:=all
 fs_4k:=4k
 fs_64k:=64k
 fs_128k:=128k
-ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-	fs_squash:=initramfs
-	fs_all:=initramfs
-	fs_4k:=initramfs
-	fs_64k:=initramfs
-	fs_128k:=initramfs
-	VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs
-endif
 
 define Build/Clean
 	$(LOADER_MAKE) clean
@@ -111,6 +103,10 @@ endef
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
 	cp $(KDIR)/vmlinux $(VMLINUX).bin
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	cp $(KDIR)/vmlinux-initramfs.elf $(VMLINUX)-initramfs.elf
+	cp $(KDIR)/vmlinux $(VMLINUX)-initramfs.bin
+endif
 endef
 
 $(eval $(call BuildImage))

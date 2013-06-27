@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define mkimage
-	mkimage -A arm -O linux -T kernel -C none -a $(2) -e $(2) -n 'OpenWrt Linux-$(LINUX_VERSION)' -d $(LINUX_DIR)/arch/arm/boot/zImage $(KDIR)/uImage-$(1)
+	mkimage -A arm -O linux -T kernel -C none -a $(2) -e $(2) -n 'OpenWrt Linux-$(LINUX_VERSION)' -d $(KDIR)/zImage $(KDIR)/uImage-$(1)
 endef
 
 define Image/Prepare
