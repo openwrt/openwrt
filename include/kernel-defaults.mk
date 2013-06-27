@@ -118,9 +118,19 @@ endef
 
 OBJCOPY_STRIP = -R .reginfo -R .notes -R .note -R .comment -R .mdebug -R .note.gnu.build-id
 
+# AVR32 uses a non-standard location
+ifeq ($(LINUX_KARCH),avr32)
+IMAGES_DIR:=images
+endif
+
 define Kernel/CopyImage
 	$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)$(1)
 	$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).elf
+ifneq ($(subst ",,$(KERNELNAME)),)
+	#")
+	$(foreach k,$(subst ",,$(KERNELNAME)),$(CP) $(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/$(IMAGES_DIR)/$(k) $(KERNEL_BUILD_DIR)/$(k)$(1);)
+	#")
+endif
 endef
 
 define Kernel/CompileImage/Default
