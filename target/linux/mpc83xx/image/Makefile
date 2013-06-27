@@ -15,7 +15,7 @@ endef
 define Image/BuildKernel
 	cp $(LINUX_DIR)/arch/powerpc/boot/dtbImage.rb600.elf $(BIN_DIR)/openwrt-$(BOARD)-rb600.elf
 	cp $(LINUX_DIR)/arch/powerpc/boot/dtbImage.rb333.elf $(BIN_DIR)/openwrt-$(BOARD)-rb333.elf
-	cp $(LINUX_DIR)/arch/powerpc/boot/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
+	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
 endef
 
 define Image/Build

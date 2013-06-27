@@ -44,6 +44,11 @@ define Image/Prepare
 	$(OBJCOPY_SREC) $(KDIR)/vmlinux.elf $(KDIR)/vmlinux.srec
 	srec2bin $(KDIR)/loader.srec $(KDIR)/loader.bin
 	srec2bin $(KDIR)/vmlinux.srec $(KDIR)/vmlinux.bin
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(OBJCOPY_SREC) $(KDIR)/vmlinux-initramfs.elf \
+		$(KDIR)/vmlinux-initramfs.srec
+	srec2bin $(KDIR)/vmlinux-initramfs.srec $(KDIR)/vmlinux-initramfs.bin
+endif
 endef
 
 define align/jffs2-64k
@@ -86,7 +91,7 @@ define Image/Build/EVA
 endef
 
 define Image/Build/Initramfs
-	$(CP) $(KDIR)/vmlinux.bin $(BIN_DIR)/$(IMG_PREFIX)-initramfs.bin
+	$(CP) $(KDIR)/vmlinux-initramfs.bin $(BIN_DIR)/$(IMG_PREFIX)-initramfs.bin
 endef
 
 ifeq ($(CONFIG_AR7_TI),y)

@@ -19,8 +19,6 @@ VMLINUX:=$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(IMG_PREFIX)-uImage
 
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-VMLINUX:=$(IMG_PREFIX)-vmlinux-initramfs
-UIMAGE:=$(IMG_PREFIX)-uImage-initramfs
 define Image/Build/Initramfs
 	$(call Image/Build/Profile/$(PROFILE),initramfs)
 endef
@@ -541,6 +539,13 @@ define Image/BuildKernel
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 	$(call MkImage,lzma,$(KDIR)/vmlinux.bin.lzma,$(KDIR)/uImage.lzma)
 	cp $(KDIR)/uImage.lzma $(BIN_DIR)/$(UIMAGE).bin
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	cp $(KDIR)/vmlinux-initramfs.elf $(BIN_DIR)/$(VMLINUX)-initramfs.elf
+	cp $(KDIR)/vmlinux-initramfs $(BIN_DIR)/$(VMLINUX)-initramfs.bin
+	$(call CompressLzma,$(KDIR)/vmlinux-initramfs,$(KDIR)/vmlinux-initramfs.bin.lzma)
+	$(call MkImage,lzma,$(KDIR)/vmlinux-initramfs.bin.lzma,$(KDIR)/uImage-initramfs.lzma)
+	cp $(KDIR)/uImage-initramfs.lzma $(BIN_DIR)/$(UIMAGE)-initramfs.bin
+endif
 	$(call Image/Build/Initramfs)
 endef
 

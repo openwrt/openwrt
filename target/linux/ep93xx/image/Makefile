@@ -13,22 +13,12 @@ fs_all:=all
 fs_4k:=4k
 fs_64k:=64k
 fs_128k:=128k
-ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-	fs_squash:=initramfs
-	fs_all:=initramfs
-	fs_4k:=initramfs
-	fs_64k:=initramfs
-	fs_128k:=initramfs
-	UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs
-endif
-
-
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
-endef
 
 define Image/BuildKernel
 	cp $(KDIR)/uImage $(UIMAGE)
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	cp $(KDIR)/uImage-initramfs $(UIMAGE)-initramfs
+endif
 endef
 
 define Image/Build/jffs2-64k

@@ -159,7 +159,7 @@ endef
 
 define Image/Build/Initramfs
 	# Netgear CVG834G
-	$(call Image/Build/HCS,initramfs,cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
+	$(call Image/Build/HCS,initramfs,cvg834g,a020,0001,0022,$(KDIR)/vmlinux-initramfs)
 endef
 
 define Image/Build

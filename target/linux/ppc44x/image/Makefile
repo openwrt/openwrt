@@ -10,7 +10,6 @@ include $(INCLUDE_DIR)/image.mk
 JFFS2_BLOCKSIZE=256k
 
 define Image/Prepare
-	cp $(LINUX_DIR)/arch/powerpc/boot/cuImage.taishan $(KDIR)/uImage
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/canyonlands.dts > $(KDIR)/openwrt-canyonlands.dtb
 endef
 
@@ -32,11 +31,11 @@ endef
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	( \
-		dd if=$(KDIR)/uImage bs=2048k conv=sync; \
+		dd if=$(KDIR)/cuImage.taishan bs=2048k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-taishan-$(1).img
 	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=1920k conv=sync; \
+		dd if=$(KDIR)/uImage bs=1920k conv=sync; \
 		dd if=$(KDIR)/openwrt-canyonlands.dtb bs=128k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-canyonlands-$(1).img

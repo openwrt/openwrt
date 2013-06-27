@@ -15,6 +15,8 @@ SUBTARGETS=generic olpc xen_domu ep80579 net5501 kvm_guest geos alix2 thincan \
 
 LINUX_VERSION:=3.3.8
 
+KERNELNAME:=bzImage
+
 include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))

@@ -35,7 +35,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/zImage $(zImage)
+	cp $(KDIR)/zImage$(IMAGE_SUFFIX) $(zImage)
 	$(foreach dts,$(DTS_TARGETS),
 		$(LINUX_DIR)/scripts/dtc/dtc -I dts -O dtb $(LINUX_DIR)/arch/powerpc/boot/dts/$(dts).dts > $(BIN_DIR)/$(IMG_PREFIX)-$(dts).fdt
 	)

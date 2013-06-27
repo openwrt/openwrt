@@ -7,10 +7,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
-endef
-
 define Image/BuildKernel
 	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
 endef

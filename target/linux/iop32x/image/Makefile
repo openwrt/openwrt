@@ -7,10 +7,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/arm/boot/zImage $(KDIR)/zImage
-endef
-
 define Image/BuildKernel
 	cp $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
 #

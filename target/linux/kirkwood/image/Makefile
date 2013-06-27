@@ -9,10 +9,6 @@ include $(INCLUDE_DIR)/image.mk
 
 NAND_BLOCKSIZE := 2048:128k
 
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
-endef
-
 define Image/BuildKernel
 # do mach-id fixup here, if needed
 	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage

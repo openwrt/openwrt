@@ -25,7 +25,7 @@ define Image/BuildKernel
 		$(call mkfit,$(board),0x10008000)
 		cp $(LINUX_DIR)/arch/arm/boot/dts/$(board).dtb $(BIN_DIR)
 	)
-	cp $(LINUX_DIR)/arch/arm/boot/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
+	cp $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
 endef
 
 # board-specific sysupgrade image

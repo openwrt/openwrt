@@ -24,4 +24,6 @@ define Target/Description
  Build firmware images for Cavium Networks CNS21XX based boards.
 endef
 
+KERNELNAME:="zImage uImage"
+
 $(eval $(call BuildTarget))

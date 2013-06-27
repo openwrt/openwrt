@@ -40,7 +40,7 @@ endef
 
 define prepare_zimage
 	echo -en "\x$(2)\x1c\xa0\xe3\x$(3)\x10\x81\xe3" > $(KDIR)/$(call zimage_name,$(1))
-	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/$(call zimage_name,$(1))
+	cat $(KDIR)/zImage >> $(KDIR)/$(call zimage_name,$(1))
 endef
 
 define prepare_uimage

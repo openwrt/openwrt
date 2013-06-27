@@ -51,7 +51,7 @@ define Image/Prepare
 endef
 
 define Image/Build/Initramfs
-	$(OBJCOPY_SREC) $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.srec
+	$(OBJCOPY_SREC) $(KDIR)/vmlinux-initramfs.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs.srec
 endef
 
 define Image/Build

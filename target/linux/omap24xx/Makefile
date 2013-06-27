@@ -20,6 +20,8 @@ endef
 
 CFLAGS:=-Os -pipe -march=armv6 -mtune=arm1136j-s -fno-caller-saves
 
+KERNELNAME:="zImage"
+
 include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))
