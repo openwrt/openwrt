@@ -17,12 +17,14 @@ PKG_MD5SUM:=b3ced2097ce3981abba38ceedc84f939
 
 PKG_FIXUP:=autoreconf
 
+PKG_CONFIG_DEPENDS := CONFIG_KEXEC_ZLIB
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/kexec-tools
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@armeb||@arm||@i386||@powerpc64||@mipsel||@mips +zlib
+  DEPENDS:=@armeb||@arm||@i386||@powerpc64||@mipsel||@mips +KEXEC_ZLIB:zlib
   TITLE:=Kernel boots kernel
   URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
   MAINTAINER:=Florian Fainelli <florian@openwrt.org>
@@ -51,7 +53,8 @@ CONFIGURE_ARGS = \
 		--bindir=/usr/bin \
 		--sbindir=/usr/sbin \
 		--libexecdir=/usr/lib \
-		--sysconfdir=/etc
+		--sysconfdir=/etc \
+		$(if $(CONFIG_KEXEC_ZLIB),--with,--without)-zlib
 
 CONFIGURE_VARS += \
 	BUILD_CC="$(HOSTCC)" \

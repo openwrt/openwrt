@@ -18,4 +18,9 @@ config KEXEC_TOOLS_kdump
 	help
 	  Include the kdump utility.
 
+config KEXEC_ZLIB
+	bool
+	prompt "zlib support"
+	default y
+
 endmenu
