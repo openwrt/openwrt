@@ -30,7 +30,7 @@ $(call Package/e2fsprogs/Default)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Ext2/3/4 filesystem utilities
-  DEPENDS:=+libblkid +libuuid +libext2fs
+  DEPENDS:=+libuuid +libext2fs
 endef
 
 define Package/e2fsprogs/description
@@ -86,7 +86,7 @@ TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += \
 	--enable-elf-shlibs	\
 	--disable-libuuid	\
-	--disable-libblkid	\
+	--enable-libblkid	\
 	--disable-uuidd		\
 	--disable-tls		\
 	--disable-nls		\
@@ -107,6 +107,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
+		LIBBLKID="$(PKG_BUILD_DIR)/lib/libblkid.a -luuid" \
 		all
 endef
 
