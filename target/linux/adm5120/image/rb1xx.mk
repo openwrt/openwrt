@@ -11,8 +11,8 @@ define Image/cmdline/yaffs2
 endef
 
 define Image/BuildKernel/RouterBoard
-	$(CP) $(KDIR)/vmlinux.elf $(call imgname,kernel,rb1xx)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(call imgname,kernel,rb1xx) \
+	$(CP) $(KDIR)/vmlinux-initramfs.elf $(call imgname,kernel-initramfs,rb1xx)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(call imgname,kernel-initramfs,rb1xx) \
 		'$(strip $(call Image/cmdline/yaffs2))'
 endef
 
