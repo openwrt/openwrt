@@ -85,6 +85,7 @@ TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
 
 
 CONFIGURE_ARGS += \
+	--disable-testio-debug \
 	--enable-elf-shlibs	\
 	--disable-libuuid	\
 	--enable-libblkid	\
