@@ -114,17 +114,6 @@ define Build/Compile
 		all
 endef
 
-define Build/InstallDev
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		BUILDCC="$(HOSTCC)" \
-		DESTDIR="$(1)" \
-		install-libs
-	$(MAKE) -C $(PKG_BUILD_DIR)/lib/ext2fs \
-		BUILDCC="$(HOSTCC)" \
-		DESTDIR="$(1)" \
-		install
-endef
-
 define Package/e2fsprogs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e2fsck $(1)/usr/sbin/
