@@ -41,7 +41,6 @@ endef
 
 define Package/libext2fs
 $(call Package/e2fsprogs/Default)
-  DEPENDS:=+libcom_err
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=ext2/3/4 filesystem library
@@ -49,18 +48,6 @@ endef
 
 define Package/libext2fs/description
  libext2fs is a library which can access ext2, ext3 and ext4 filesystems.
-endef
-
-define Package/libcom_err
-$(call Package/e2fsprogs/Default)
-  DEPENDS:=+libpthread
-  SECTION:=libs
-  CATEGORY:=Libraries
-  TITLE:=Common error description library
-endef
-
-define Package/libcom_err/description
- libcom_err is a library providing common error descriptions
 endef
 
 define Package/tune2fs
@@ -83,6 +70,8 @@ endef
 
 TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
 
+CONFIGURE_VARS += \
+	ac_cv_lib_pthread_sem_init=no
 
 CONFIGURE_ARGS += \
 	--disable-testio-debug \
@@ -130,13 +119,14 @@ define Package/e2fsprogs/install
 endef
 
 define Package/libcom_err/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcom_err.so.* $(1)/usr/lib/
 endef
 
 define Package/libext2fs/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libext2fs.so.* $(1)/usr/lib/
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/libext2fs.so.* \
+		$(PKG_INSTALL_DIR)/usr/lib/libcom_err.so.* \
+		$(1)/usr/lib/
 endef
 
 define Package/libext2fs/install_lib
@@ -161,7 +151,6 @@ endef
 
 $(eval $(call BuildPackage,e2fsprogs))
 $(eval $(call BuildPackage,libext2fs))
-$(eval $(call BuildPackage,libcom_err))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
 $(eval $(call BuildPackage,badblocks))
