@@ -41,13 +41,12 @@ define Build/Compile
 		CC="$(TARGET_CC)" \
 		CFLAGS="$(TARGET_CFLAGS) -DHAVE_STDINT_H" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
-		mdadm mdassemble
+		mdadm
 endef
 
 define Package/mdadm/install
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mdadm $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mdassemble $(1)/sbin
 endef
 
 $(eval $(call BuildPackage,mdadm))
