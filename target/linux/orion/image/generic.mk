@@ -36,6 +36,10 @@ define Image/BuildKernel
  ## Netgear WN802T: mach id 3306 (0x0cea)
 $(call Image/BuildKernel/ARM/zImage,wn802t,"\x0c\x1c\xa0\xe3\xea\x10\x81\xe3")
 $(call Image/BuildKernel/ARM/uImage,wn802t)
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+$(call Image/BuildKernel/ARM/zImage,wn802t,"\x0c\x1c\xa0\xe3\xea\x10\x81\xe3",-initramfs)
+$(call Image/BuildKernel/ARM/uImage,wn802t,-initramfs)
+endif
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)  # nothing more to do for a ramdisk build
 $(call Image/BuildKernel/JFFS2uImage,wn802t,$(ERASE_SIZE_64K),uImage)
 $(call Image/Default/FileSizeCheck,$(KDIR)/wn802t-uImage.jffs2,$(shell expr $(KERNEL_MTD_SIZE) \* 1024))
@@ -44,6 +48,10 @@ $(call Image/Default/FileSizeCheck,$(KDIR)/wn802t-uImage.jffs2,$(shell expr $(KE
  ## Netgear WNR854T: mach id 1801 (0x0709)
 $(call Image/BuildKernel/ARM/zImage,wnr854t,"\x07\x1c\xa0\xe3\x09\x10\x81\xe3")
 $(call Image/BuildKernel/ARM/uImage,wnr854t)
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+$(call Image/BuildKernel/ARM/zImage,wnr854t,"\x07\x1c\xa0\xe3\x09\x10\x81\xe3",-initramfs)
+$(call Image/BuildKernel/ARM/uImage,wnr854t,-initramfs)
+endif
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)  # nothing more to do for a ramdisk build
 $(call Image/BuildKernel/JFFS2uImage,wnr854t,$(ERASE_SIZE_128K),uImage)
 $(call Image/Default/FileSizeCheck,$(KDIR)/wnr854t-uImage.jffs2,$(shell expr $(KERNEL_MTD_SIZE) \* 1024))
@@ -52,6 +60,10 @@ $(call Image/Default/FileSizeCheck,$(KDIR)/wnr854t-uImage.jffs2,$(shell expr $(K
  ## Linksys WRT350N v2: mach id 1633 (0x0661)
 $(call Image/BuildKernel/ARM/zImage,wrt350nv2,"\x06\x1c\xa0\xe3\x61\x10\x81\xe3")
 $(call Image/BuildKernel/ARM/uImage,wrt350nv2)
+ifeq ($($CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+$(call Image/BuildKernel/ARM/zImage,wrt350nv2,"\x06\x1c\xa0\xe3\x61\x10\x81\xe3",-initramfs)
+$(call Image/BuildKernel/ARM/uImage,wrt350nv2-initramfs)
+endif
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)  # nothing more to do for a ramdisk build
 $(call Image/Default/FileSizeCheck,$(KDIR)/wrt350nv2-uImage,$(shell expr $(KERNEL_MTD_SIZE) \* 1024))
  endif
@@ -61,8 +73,8 @@ define Image/BuildKernel/ARM/zImage
  # merge machine id and regular zImage into one file
  # parameters: 1 = machine name, 2 = machine id as string in quotes
 	# $(BOARD) kernel zImage for $(1)
-	echo -en $(2) > '$(KDIR)/$(1)-zImage'
-	cat '$(LINUX_DIR)/arch/arm/boot/zImage' >> '$(KDIR)/$(1)-zImage'
+	echo -en $(2) > '$(KDIR)/$(1)-zImage$(3)'
+	cat '$(KDIR)/zImage$(3)' >> '$(KDIR)/$(1)-zImage$(3)'
 endef
 
 define Image/BuildKernel/ARM/uImage
@@ -72,8 +84,8 @@ define Image/BuildKernel/ARM/uImage
 	'$(STAGING_DIR_HOST)/bin/mkimage' -A arm -O linux -T kernel \
 	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
 	-d '$(KDIR)/$(1)-zImage' '$(KDIR)/$(1)-uImage'
- ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)  # only copy uImage for ramdisk build
-	cp '$(KDIR)/$(1)-uImage' '$(BIN_DIR)/openwrt-$(1)-uImage'
+ ifeq ($(2),-initramfs) # only copy uImage for ramdisk build
+	cp '$(KDIR)/$(1)-uImage-initramfs' '$(BIN_DIR)/openwrt-$(1)-uImage-initramfs'
  endif
 endef
 

@@ -5,10 +5,6 @@
 # See /LICENSE for more information.
 #
 
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
-endef
-
 define Image/BuildKernel
 	# Orion Kernel uImages
  # DT2: mach id 1514 (0x5EA)
