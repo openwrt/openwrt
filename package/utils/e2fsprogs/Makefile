@@ -81,7 +81,8 @@ $(call Package/e2fsprogs)
   DEPENDS:= +e2fsprogs
 endef
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
+
 
 CONFIGURE_ARGS += \
 	--enable-elf-shlibs	\
@@ -105,6 +106,7 @@ define Build/Compile
 		LDFLAGS="" \
 		subst
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		LDFLAGS=-Wl,--gc-sections \
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		LIBBLKID="$(PKG_BUILD_DIR)/lib/libblkid.a -luuid" \
