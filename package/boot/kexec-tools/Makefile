@@ -56,6 +56,9 @@ CONFIGURE_ARGS = \
 		--sysconfdir=/etc \
 		$(if $(CONFIG_KEXEC_ZLIB),--with,--without)-zlib
 
+TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_LDFLAGS += -Wl,--gc-sections
+
 CONFIGURE_VARS += \
 	BUILD_CC="$(HOSTCC)" \
 	TARGET_CC="$(TARGET_CC)"
