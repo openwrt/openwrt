@@ -274,10 +274,16 @@ static void gpio_keys_polled_check_state(struct gpio_keys_button *button,
 	if (state != bdata->last_state) {
 		unsigned int type = button->type ?: EV_KEY;
 
+		if (bdata->count < bdata->threshold) {
+			bdata->count++;
+			return;
+		}
+
 		button_hotplug_event(bdata, type, button->code, state);
-		bdata->count = 0;
 		bdata->last_state = state;
 	}
+
+	bdata->count = 0;
 }
 
 static void gpio_keys_polled_queue_work(struct gpio_keys_polled_dev *bdev)
@@ -299,11 +305,7 @@ static void gpio_keys_polled_poll(struct work_struct *work)
 
 	for (i = 0; i < bdev->pdata->nbuttons; i++) {
 		struct gpio_keys_button_data *bdata = &bdev->data[i];
-
-		if (bdata->count < bdata->threshold)
-			bdata->count++;
-		else
-			gpio_keys_polled_check_state(&pdata->buttons[i], bdata);
+		gpio_keys_polled_check_state(&pdata->buttons[i], bdata);
 	}
 	gpio_keys_polled_queue_work(bdev);
 }
