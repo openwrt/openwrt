@@ -757,7 +757,7 @@ sub gen_package_mk() {
 					$idx = $subdir{$dep}.$dep;
 				}
 				$idx .= $suffix;
-				undef $idx if $idx =~ /^(kernel)|(base-files)$/;
+				undef $idx if $idx =~ /^(kernel\/linux)|(base-files)$/;
 				if ($idx) {
 					my $depline;
 					next if $pkg->{src} eq $pkg_dep->{src}.$suffix;
