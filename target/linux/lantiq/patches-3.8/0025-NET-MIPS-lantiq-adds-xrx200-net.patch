@@ -12,9 +12,11 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
  create mode 100644 drivers/net/ethernet/lantiq_pce.h
  create mode 100644 drivers/net/ethernet/lantiq_xrx200.c
 
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -83,7 +83,13 @@ config LANTIQ_ETOP
+Index: linux-3.8.13/drivers/net/ethernet/Kconfig
+===================================================================
+--- linux-3.8.13.orig/drivers/net/ethernet/Kconfig	2013-05-11 22:57:46.000000000 +0200
++++ linux-3.8.13/drivers/net/ethernet/Kconfig	2013-06-28 17:46:34.521054618 +0200
+@@ -83,7 +83,13 @@
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
  	---help---
@@ -29,9 +31,11 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
  
  source "drivers/net/ethernet/marvell/Kconfig"
  source "drivers/net/ethernet/mellanox/Kconfig"
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -36,6 +36,7 @@ obj-$(CONFIG_IP1000) += icplus/
+Index: linux-3.8.13/drivers/net/ethernet/Makefile
+===================================================================
+--- linux-3.8.13.orig/drivers/net/ethernet/Makefile	2013-05-11 22:57:46.000000000 +0200
++++ linux-3.8.13/drivers/net/ethernet/Makefile	2013-06-28 17:46:34.521054618 +0200
+@@ -36,6 +36,7 @@
  obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
@@ -39,8 +43,10 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
  obj-$(CONFIG_NET_VENDOR_MARVELL) += marvell/
  obj-$(CONFIG_NET_VENDOR_MELLANOX) += mellanox/
  obj-$(CONFIG_NET_VENDOR_MICREL) += micrel/
---- /dev/null
-+++ b/drivers/net/ethernet/lantiq_pce.h
+Index: linux-3.8.13/drivers/net/ethernet/lantiq_pce.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.13/drivers/net/ethernet/lantiq_pce.h	2013-06-28 17:46:34.525054619 +0200
 @@ -0,0 +1,163 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
@@ -205,8 +211,10 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +};
---- /dev/null
-+++ b/drivers/net/ethernet/lantiq_xrx200.c
+Index: linux-3.8.13/drivers/net/ethernet/lantiq_xrx200.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.13/drivers/net/ethernet/lantiq_xrx200.c	2013-06-29 18:09:53.932157475 +0200
 @@ -0,0 +1,1203 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
@@ -273,6 +281,8 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +#define XRX200_DMA_IRQ		INT_NUM_IM2_IRL0
 +#define XRX200_DMA_RX		0
 +#define XRX200_DMA_TX		1
++#define XRX200_DMA_IS_TX(x)	(x%2)
++#define XRX200_DMA_IS_RX(x)	(!XRX200_DMA_IS_TX(x))
 +
 +/* fetch / store dma */
 +#define FDMA_PCTRL0		0x2A00
@@ -414,6 +424,7 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +	struct net_device dummy_dev;
 +	struct net_device *devs[XRX200_MAX_DEV];
 +
++	struct tasklet_struct tasklet;
 +	struct napi_struct napi;
 +	struct ltq_dma_channel dma;
 +	struct sk_buff *skb[LTQ_DESC_NUM];
@@ -483,7 +494,8 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +			continue;
 +		spin_lock_irqsave(&priv->hw->lock, flags);
 +		if (!priv->hw->chan[i].refcount) {
-+			napi_enable(&priv->hw->chan[i].napi);
++			if (XRX200_DMA_IS_RX(i))
++				napi_enable(&priv->hw->chan[i].napi);
 +			ltq_dma_open(&priv->hw->chan[i].dma);
 +		}
 +		priv->hw->chan[i].refcount++;
@@ -515,7 +527,8 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +		spin_lock_irqsave(&priv->hw->lock, flags);
 +		priv->hw->chan[i].refcount--;
 +		if (!priv->hw->chan[i].refcount) {
-+			napi_disable(&priv->hw->chan[i].napi);
++			if (XRX200_DMA_IS_RX(i))
++				napi_disable(&priv->hw->chan[i].napi);
 +			ltq_dma_close(&priv->hw->chan[XRX200_DMA_RX].dma);
 +		}
 +		spin_unlock_irqrestore(&priv->hw->lock, flags);
@@ -602,7 +615,7 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +		}
 +	}
 +	if (complete || !rx) {
-+			napi_complete(&ch->napi);
++		napi_complete(&ch->napi);
 +		spin_lock_irqsave(&priv->hw->lock, flags);
 +		ltq_dma_ack_irq(&ch->dma);
 +		spin_unlock_irqrestore(&priv->hw->lock, flags);
@@ -610,17 +623,15 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +	return rx;
 +}
 +
-+static int xrx200_poll_tx(struct napi_struct *napi, int budget)
++static void xrx200_tx_housekeeping(unsigned long ptr)
 +{
-+	struct xrx200_chan *ch =
-+		container_of(napi, struct xrx200_chan, napi);
-+	struct xrx200_priv *priv = netdev_priv(ch->devs[0]);
++	struct xrx200_hw *hw = (struct xrx200_hw *) ptr;
++	struct xrx200_chan *ch = &hw->chan[XRX200_DMA_TX];
 +	unsigned long flags;
 +	int i;
 +
-+	spin_lock_irqsave(&priv->hw->lock, flags);
-+	while ((ch->dma.desc_base[ch->tx_free].ctl &
-+			(LTQ_DMA_OWN | LTQ_DMA_C)) == LTQ_DMA_C) {
++	spin_lock_irqsave(&hw->lock, flags);
++	while ((ch->dma.desc_base[ch->tx_free].ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) == LTQ_DMA_C) {
 +		dev_kfree_skb_any(ch->skb[ch->tx_free]);
 +		ch->skb[ch->tx_free] = NULL;
 +		memset(&ch->dma.desc_base[ch->tx_free], 0,
@@ -628,7 +639,7 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +		ch->tx_free++;
 +		ch->tx_free %= LTQ_DESC_NUM;
 +	}
-+	spin_unlock_irqrestore(&priv->hw->lock, flags);
++	spin_unlock_irqrestore(&hw->lock, flags);
 +
 +	for (i = 0; i < XRX200_MAX_DEV && ch->devs[i]; i++) {
 +		struct netdev_queue *txq =
@@ -636,12 +647,10 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +		if (netif_tx_queue_stopped(txq))
 +			netif_tx_start_queue(txq);
 +	}
-+	napi_complete(&ch->napi);
-+	spin_lock_irqsave(&priv->hw->lock, flags);
-+	ltq_dma_ack_irq(&ch->dma);
-+	spin_unlock_irqrestore(&priv->hw->lock, flags);
 +
-+	return 1;
++	spin_lock_irqsave(&hw->lock, flags);
++	ltq_dma_ack_irq(&ch->dma);
++	spin_unlock_irqrestore(&hw->lock, flags);
 +}
 +
 +static struct net_device_stats *xrx200_get_stats (struct net_device *dev)
@@ -733,7 +742,10 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +	struct xrx200_hw *hw = priv;
 +	int ch = irq - XRX200_DMA_IRQ;
 +
-+	napi_schedule(&hw->chan[ch].napi);
++	if (ch % 2)
++		tasklet_schedule(&hw->chan[ch].tasklet);
++	else
++		napi_schedule(&hw->chan[ch].napi);
 +
 +	return IRQ_HANDLED;
 +}
@@ -1173,7 +1185,6 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +
 +static int xrx200_of_mdio(struct xrx200_hw *hw, struct device_node *np)
 +{
-+	int i;
 +	hw->mii_bus = mdiobus_alloc();
 +	if (!hw->mii_bus)
 +		return -ENOMEM;
@@ -1319,6 +1330,7 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +	spin_lock_init(&xrx200_hw.lock);
 +	xrx200_dma_init(&xrx200_hw);
 +	xrx200_hw_init(&xrx200_hw);
++	tasklet_init(&xrx200_hw.chan[XRX200_DMA_TX].tasklet, xrx200_tx_housekeeping, (u32) &xrx200_hw);
 +
 +	/* bring up the mdio bus */
 +	mdio_np = of_find_compatible_node(pdev->dev.of_node, NULL,
@@ -1354,11 +1366,8 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +
 +	/* setup NAPI */
 +	init_dummy_netdev(&xrx200_hw.chan[XRX200_DMA_RX].dummy_dev);
-+	init_dummy_netdev(&xrx200_hw.chan[XRX200_DMA_TX].dummy_dev);
 +	netif_napi_add(&xrx200_hw.chan[XRX200_DMA_RX].dummy_dev,
 +			&xrx200_hw.chan[XRX200_DMA_RX].napi, xrx200_poll_rx, 32);
-+	netif_napi_add(&xrx200_hw.chan[XRX200_DMA_TX].dummy_dev,
-+			&xrx200_hw.chan[XRX200_DMA_TX].napi, xrx200_poll_tx, 8);
 +
 +	platform_set_drvdata(pdev, &xrx200_hw);
 +
@@ -1378,7 +1387,6 @@ Subject: [PATCH 25/40] NET: MIPS: lantiq: adds xrx200-net
 +	/* free stack related instances */
 +	netif_stop_queue(dev);
 +	netif_napi_del(&xrx200_hw.chan[XRX200_DMA_RX].napi);
-+	netif_napi_del(&xrx200_hw.chan[XRX200_DMA_TX].napi);
 +
 +	/* shut down hardware */
 +	xrx200_hw_cleanup(&xrx200_hw);
