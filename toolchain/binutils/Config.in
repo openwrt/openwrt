@@ -7,16 +7,9 @@ choice
 	help
 	  Select the version of binutils you wish to use.
 
-	config BINUTILS_VERSION_2_19_1
-		bool "binutils 2.19.1"
-
 	config BINUTILS_VERSION_2_20_1
 		depends on avr32
 		bool "binutils 2.20.1"
-
-	config BINUTILS_VERSION_2_21_1
-		depends on !avr32 || (avr32 && BROKEN)
-		bool "binutils 2.21.1"
 
 	config BINUTILS_VERSION_2_22
 		depends on !avr32 || (avr32 && BROKEN)
@@ -38,9 +31,7 @@ config EXTRA_BINUTILS_CONFIG_OPTIONS
 config BINUTILS_VERSION
 	string
 	prompt "Binutils Version" if (TOOLCHAINOPTS && NULL)
-	default "2.19.1"          if BINUTILS_VERSION_2_19_1
 	default "2.20.1"          if BINUTILS_VERSION_2_20_1
-	default "2.21.1"          if BINUTILS_VERSION_2_21_1
 	default "2.22"            if BINUTILS_VERSION_2_22
 	default "2.23.1"	  if BINUTILS_VERSION_2_23_1
 	default "2.20.1"          if avr32
