@@ -1,8 +1,6 @@
-Index: compat-wireless-2013-06-13/drivers/net/wireless/rt2x00/rt2x00pci.c
-===================================================================
---- compat-wireless-2013-06-13.orig/drivers/net/wireless/rt2x00/rt2x00pci.c	2013-06-20 21:19:16.205070973 +0200
-+++ compat-wireless-2013-06-13/drivers/net/wireless/rt2x00/rt2x00pci.c	2013-06-20 21:18:36.705069262 +0200
-@@ -108,7 +108,9 @@
+--- a/drivers/net/wireless/rt2x00/rt2x00pci.c
++++ b/drivers/net/wireless/rt2x00/rt2x00pci.c
+@@ -108,7 +108,9 @@ int rt2x00pci_probe(struct pci_dev *pci_
  		goto exit_release_regions;
  	}
  
@@ -12,7 +10,7 @@ Index: compat-wireless-2013-06-13/drivers/net/wireless/rt2x00/rt2x00pci.c
  
  	hw = ieee80211_alloc_hw(sizeof(struct rt2x00_dev), ops->hw);
  	if (!hw) {
-@@ -162,7 +164,9 @@
+@@ -162,7 +164,9 @@ exit_free_device:
  	ieee80211_free_hw(hw);
  
  exit_disable_msi:
@@ -22,7 +20,7 @@ Index: compat-wireless-2013-06-13/drivers/net/wireless/rt2x00/rt2x00pci.c
  
  exit_release_regions:
  	pci_release_regions(pci_dev);
-@@ -188,7 +192,9 @@
+@@ -188,7 +192,9 @@ void rt2x00pci_remove(struct pci_dev *pc
  	rt2x00pci_free_reg(rt2x00dev);
  	ieee80211_free_hw(hw);
  

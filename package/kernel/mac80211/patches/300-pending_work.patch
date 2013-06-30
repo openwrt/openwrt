@@ -45,32 +45,6 @@
  			    TEST(MFP), TEST(BLOCK_BA), TEST(PSPOLL),
  			    TEST(UAPSD), TEST(SP), TEST(TDLS_PEER),
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
---- a/net/mac80211/ht.c
-+++ b/net/mac80211/ht.c
-@@ -281,13 +281,14 @@ void ieee80211_ba_session_work(struct wo
- 				sta, tid, WLAN_BACK_RECIPIENT,
- 				WLAN_REASON_UNSPECIFIED, true);
- 
-+		spin_lock_bh(&sta->lock);
-+
- 		tid_tx = sta->ampdu_mlme.tid_start_tx[tid];
- 		if (tid_tx) {
- 			/*
- 			 * Assign it over to the normal tid_tx array
- 			 * where it "goes live".
- 			 */
--			spin_lock_bh(&sta->lock);
- 
- 			sta->ampdu_mlme.tid_start_tx[tid] = NULL;
- 			/* could there be a race? */
-@@ -300,6 +301,7 @@ void ieee80211_ba_session_work(struct wo
- 			ieee80211_tx_ba_session_handle_start(sta, tid);
- 			continue;
- 		}
-+		spin_unlock_bh(&sta->lock);
- 
- 		tid_tx = rcu_dereference_protected_tid_tx(sta, tid);
- 		if (tid_tx && test_and_clear_bit(HT_AGG_STATE_WANT_STOP,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
 @@ -463,7 +463,6 @@ int ieee80211_do_open(struct wireless_de
@@ -198,6 +172,28 @@
  		default:
  			WARN(1, "frame for unexpected interface type");
  			break;
+--- a/net/mac80211/rc80211_minstrel_ht.c
++++ b/net/mac80211/rc80211_minstrel_ht.c
+@@ -804,10 +804,18 @@ minstrel_ht_get_rate(void *priv, struct 
+ 
+ 	sample_group = &minstrel_mcs_groups[sample_idx / MCS_GROUP_RATES];
+ 	info->flags |= IEEE80211_TX_CTL_RATE_CTRL_PROBE;
++	rate->count = 1;
++
++	if (sample_idx / MCS_GROUP_RATES == MINSTREL_CCK_GROUP) {
++		int idx = sample_idx % ARRAY_SIZE(mp->cck_rates);
++		rate->idx = mp->cck_rates[idx];
++		rate->flags = 0;
++		return;
++	}
++
+ 	rate->idx = sample_idx % MCS_GROUP_RATES +
+ 		    (sample_group->streams - 1) * MCS_GROUP_RATES;
+ 	rate->flags = IEEE80211_TX_RC_MCS | sample_group->flags;
+-	rate->count = 1;
+ }
+ 
+ static void
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
 @@ -2369,6 +2369,7 @@ ieee80211_rx_h_action(struct ieee80211_r
@@ -245,16 +241,6 @@
  		break;
  	case NL80211_IFTYPE_P2P_DEVICE:
  		if (!ieee80211_is_public_action(hdr, skb->len) &&
---- a/net/mac80211/sta_info.c
-+++ b/net/mac80211/sta_info.c
-@@ -149,6 +149,7 @@ static void cleanup_single_sta(struct st
- 	 * directly by station destruction.
- 	 */
- 	for (i = 0; i < IEEE80211_NUM_TIDS; i++) {
-+		kfree(sta->ampdu_mlme.tid_start_tx[i]);
- 		tid_tx = rcu_dereference_raw(sta->ampdu_mlme.tid_tx[i]);
- 		if (!tid_tx)
- 			continue;
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
 @@ -32,7 +32,6 @@
@@ -273,84 +259,506 @@
  	WLAN_STA_CLEAR_PS_FILT,
  	WLAN_STA_MFP,
  	WLAN_STA_BLOCK_BA,
-@@ -203,6 +201,7 @@ struct tid_ampdu_rx {
-  *	driver requested to close until the work for it runs
-  * @mtx: mutex to protect all TX data (except non-NULL assignments
-  *	to tid_tx[idx], which are protected by the sta spinlock)
-+ *	tid_start_tx is also protected by sta->lock.
-  */
- struct sta_ampdu_mlme {
- 	struct mutex mtx;
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -1673,6 +1673,8 @@ void ath_txq_schedule(struct ath_softc *
- 	    txq->axq_ampdu_depth >= ATH_AGGR_MIN_QDEPTH)
- 		return;
- 
-+	rcu_read_lock();
-+
- 	ac = list_first_entry(&txq->axq_acq, struct ath_atx_ac, list);
- 	last_ac = list_entry(txq->axq_acq.prev, struct ath_atx_ac, list);
- 
-@@ -1711,8 +1713,10 @@ void ath_txq_schedule(struct ath_softc *
- 
- 		if (ac == last_ac ||
- 		    txq->axq_ampdu_depth >= ATH_AGGR_MIN_QDEPTH)
--			return;
-+			break;
- 	}
-+
-+	rcu_read_unlock();
+@@ -146,6 +146,28 @@ static void ath_set_rates(struct ieee802
+ 			       ARRAY_SIZE(bf->rates));
  }
  
- /***********/
-@@ -1778,9 +1782,13 @@ static void ath_tx_txqaddbuf(struct ath_
- 	}
- 
- 	if (!internal) {
--		txq->axq_depth++;
--		if (bf_is_ampdu_not_probing(bf))
--			txq->axq_ampdu_depth++;
-+		while (bf) {
-+			txq->axq_depth++;
-+			if (bf_is_ampdu_not_probing(bf))
-+				txq->axq_ampdu_depth++;
++static void ath_txq_skb_done(struct ath_softc *sc, struct ath_txq *txq,
++			     struct sk_buff *skb)
++{
++	int q;
 +
-+			bf = bf->bf_lastbf->bf_next;
-+		}
- 	}
- }
- 
---- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
-+++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
-@@ -1183,7 +1183,7 @@ static int ath9k_htc_config(struct ieee8
- 		mutex_lock(&priv->htc_pm_lock);
- 
- 		priv->ps_idle = !!(conf->flags & IEEE80211_CONF_IDLE);
--		if (priv->ps_idle)
-+		if (!priv->ps_idle)
- 			chip_reset = true;
- 
- 		mutex_unlock(&priv->htc_pm_lock);
---- a/net/mac80211/rc80211_minstrel_ht.c
-+++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -804,10 +804,18 @@ minstrel_ht_get_rate(void *priv, struct 
- 
- 	sample_group = &minstrel_mcs_groups[sample_idx / MCS_GROUP_RATES];
- 	info->flags |= IEEE80211_TX_CTL_RATE_CTRL_PROBE;
-+	rate->count = 1;
++	q = skb_get_queue_mapping(skb);
++	if (txq == sc->tx.uapsdq)
++		txq = sc->tx.txq_map[q];
 +
-+	if (sample_idx / MCS_GROUP_RATES == MINSTREL_CCK_GROUP) {
-+		int idx = sample_idx % ARRAY_SIZE(mp->cck_rates);
-+		rate->idx = mp->cck_rates[idx];
-+		rate->flags = 0;
++	if (txq != sc->tx.txq_map[q])
 +		return;
-+	}
 +
- 	rate->idx = sample_idx % MCS_GROUP_RATES +
- 		    (sample_group->streams - 1) * MCS_GROUP_RATES;
- 	rate->flags = IEEE80211_TX_RC_MCS | sample_group->flags;
--	rate->count = 1;
++	if (WARN_ON(--txq->pending_frames < 0))
++		txq->pending_frames = 0;
++
++	if (txq->stopped &&
++	    txq->pending_frames < sc->tx.txq_max_pending[q]) {
++		ieee80211_wake_queue(sc->hw, q);
++		txq->stopped = false;
++	}
++}
++
+ static void ath_tx_flush_tid(struct ath_softc *sc, struct ath_atx_tid *tid)
+ {
+ 	struct ath_txq *txq = tid->ac->txq;
+@@ -167,6 +189,7 @@ static void ath_tx_flush_tid(struct ath_
+ 		if (!bf) {
+ 			bf = ath_tx_setup_buffer(sc, txq, tid, skb);
+ 			if (!bf) {
++				ath_txq_skb_done(sc, txq, skb);
+ 				ieee80211_free_txskb(sc->hw, skb);
+ 				continue;
+ 			}
+@@ -811,6 +834,7 @@ ath_tx_get_tid_subframe(struct ath_softc
+ 
+ 		if (!bf) {
+ 			__skb_unlink(skb, &tid->buf_q);
++			ath_txq_skb_done(sc, txq, skb);
+ 			ieee80211_free_txskb(sc->hw, skb);
+ 			continue;
+ 		}
+@@ -1824,6 +1848,7 @@ static void ath_tx_send_ampdu(struct ath
+ 
+ 	bf = ath_tx_setup_buffer(sc, txq, tid, skb);
+ 	if (!bf) {
++		ath_txq_skb_done(sc, txq, skb);
+ 		ieee80211_free_txskb(sc->hw, skb);
+ 		return;
+ 	}
+@@ -2090,6 +2115,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 
+ 	bf = ath_tx_setup_buffer(sc, txq, tid, skb);
+ 	if (!bf) {
++		ath_txq_skb_done(sc, txq, skb);
+ 		if (txctl->paprd)
+ 			dev_kfree_skb_any(skb);
+ 		else
+@@ -2189,7 +2215,7 @@ static void ath_tx_complete(struct ath_s
+ 	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	struct ieee80211_hdr * hdr = (struct ieee80211_hdr *)skb->data;
+-	int q, padpos, padsize;
++	int padpos, padsize;
+ 	unsigned long flags;
+ 
+ 	ath_dbg(common, XMIT, "TX complete: skb: %p\n", skb);
+@@ -2225,21 +2251,7 @@ static void ath_tx_complete(struct ath_s
+ 	spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
+ 
+ 	__skb_queue_tail(&txq->complete_q, skb);
+-
+-	q = skb_get_queue_mapping(skb);
+-	if (txq == sc->tx.uapsdq)
+-		txq = sc->tx.txq_map[q];
+-
+-	if (txq == sc->tx.txq_map[q]) {
+-		if (WARN_ON(--txq->pending_frames < 0))
+-			txq->pending_frames = 0;
+-
+-		if (txq->stopped &&
+-		    txq->pending_frames < sc->tx.txq_max_pending[q]) {
+-			ieee80211_wake_queue(sc->hw, q);
+-			txq->stopped = false;
+-		}
+-	}
++	ath_txq_skb_done(sc, txq, skb);
  }
  
- static void
+ static void ath_tx_complete_buf(struct ath_softc *sc, struct ath_buf *bf,
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -2094,7 +2094,7 @@ static void ath9k_wow_add_pattern(struct
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath9k_wow_pattern *wow_pattern = NULL;
+-	struct cfg80211_wowlan_trig_pkt_pattern *patterns = wowlan->patterns;
++	struct cfg80211_pkt_pattern *patterns = wowlan->patterns;
+ 	int mask_len;
+ 	s8 i = 0;
+ 
+--- a/drivers/net/wireless/mwifiex/cfg80211.c
++++ b/drivers/net/wireless/mwifiex/cfg80211.c
+@@ -2298,8 +2298,7 @@ EXPORT_SYMBOL_GPL(mwifiex_del_virtual_in
+ 
+ #ifdef CONFIG_PM
+ static bool
+-mwifiex_is_pattern_supported(struct cfg80211_wowlan_trig_pkt_pattern *pat,
+-			     s8 *byte_seq)
++mwifiex_is_pattern_supported(struct cfg80211_pkt_pattern *pat, s8 *byte_seq)
+ {
+ 	int j, k, valid_byte_cnt = 0;
+ 	bool dont_care_byte = false;
+--- a/drivers/net/wireless/ti/wlcore/main.c
++++ b/drivers/net/wireless/ti/wlcore/main.c
+@@ -1315,7 +1315,7 @@ static struct sk_buff *wl12xx_alloc_dumm
+ 
+ #ifdef CONFIG_PM
+ static int
+-wl1271_validate_wowlan_pattern(struct cfg80211_wowlan_trig_pkt_pattern *p)
++wl1271_validate_wowlan_pattern(struct cfg80211_pkt_pattern *p)
+ {
+ 	int num_fields = 0, in_field = 0, fields_size = 0;
+ 	int i, pattern_len = 0;
+@@ -1458,9 +1458,9 @@ void wl1271_rx_filter_flatten_fields(str
+  * Allocates an RX filter returned through f
+  * which needs to be freed using rx_filter_free()
+  */
+-static int wl1271_convert_wowlan_pattern_to_rx_filter(
+-	struct cfg80211_wowlan_trig_pkt_pattern *p,
+-	struct wl12xx_rx_filter **f)
++static int
++wl1271_convert_wowlan_pattern_to_rx_filter(struct cfg80211_pkt_pattern *p,
++					   struct wl12xx_rx_filter **f)
+ {
+ 	int i, j, ret = 0;
+ 	struct wl12xx_rx_filter *filter;
+@@ -1562,7 +1562,7 @@ static int wl1271_configure_wowlan(struc
+ 
+ 	/* Translate WoWLAN patterns into filters */
+ 	for (i = 0; i < wow->n_patterns; i++) {
+-		struct cfg80211_wowlan_trig_pkt_pattern *p;
++		struct cfg80211_pkt_pattern *p;
+ 		struct wl12xx_rx_filter *filter = NULL;
+ 
+ 		p = &wow->patterns[i];
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1698,7 +1698,7 @@ struct cfg80211_pmksa {
+ };
+ 
+ /**
+- * struct cfg80211_wowlan_trig_pkt_pattern - packet pattern
++ * struct cfg80211_pkt_pattern - packet pattern
+  * @mask: bitmask where to match pattern and where to ignore bytes,
+  *	one bit per byte, in same format as nl80211
+  * @pattern: bytes to match where bitmask is 1
+@@ -1708,7 +1708,7 @@ struct cfg80211_pmksa {
+  * Internal note: @mask and @pattern are allocated in one chunk of
+  * memory, free @mask only!
+  */
+-struct cfg80211_wowlan_trig_pkt_pattern {
++struct cfg80211_pkt_pattern {
+ 	u8 *mask, *pattern;
+ 	int pattern_len;
+ 	int pkt_offset;
+@@ -1770,7 +1770,7 @@ struct cfg80211_wowlan {
+ 	bool any, disconnect, magic_pkt, gtk_rekey_failure,
+ 	     eap_identity_req, four_way_handshake,
+ 	     rfkill_release;
+-	struct cfg80211_wowlan_trig_pkt_pattern *patterns;
++	struct cfg80211_pkt_pattern *patterns;
+ 	struct cfg80211_wowlan_tcp *tcp;
+ 	int n_patterns;
+ };
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -3060,11 +3060,11 @@ enum nl80211_tx_power_setting {
+ };
+ 
+ /**
+- * enum nl80211_wowlan_packet_pattern_attr - WoWLAN packet pattern attribute
+- * @__NL80211_WOWLAN_PKTPAT_INVALID: invalid number for nested attribute
+- * @NL80211_WOWLAN_PKTPAT_PATTERN: the pattern, values where the mask has
++ * enum nl80211_packet_pattern_attr - packet pattern attribute
++ * @__NL80211_PKTPAT_INVALID: invalid number for nested attribute
++ * @NL80211_PKTPAT_PATTERN: the pattern, values where the mask has
+  *	a zero bit are ignored
+- * @NL80211_WOWLAN_PKTPAT_MASK: pattern mask, must be long enough to have
++ * @NL80211_PKTPAT_MASK: pattern mask, must be long enough to have
+  *	a bit for each byte in the pattern. The lowest-order bit corresponds
+  *	to the first byte of the pattern, but the bytes of the pattern are
+  *	in a little-endian-like format, i.e. the 9th byte of the pattern
+@@ -3075,23 +3075,23 @@ enum nl80211_tx_power_setting {
+  *	Note that the pattern matching is done as though frames were not
+  *	802.11 frames but 802.3 frames, i.e. the frame is fully unpacked
+  *	first (including SNAP header unpacking) and then matched.
+- * @NL80211_WOWLAN_PKTPAT_OFFSET: packet offset, pattern is matched after
++ * @NL80211_PKTPAT_OFFSET: packet offset, pattern is matched after
+  *	these fixed number of bytes of received packet
+- * @NUM_NL80211_WOWLAN_PKTPAT: number of attributes
+- * @MAX_NL80211_WOWLAN_PKTPAT: max attribute number
++ * @NUM_NL80211_PKTPAT: number of attributes
++ * @MAX_NL80211_PKTPAT: max attribute number
+  */
+-enum nl80211_wowlan_packet_pattern_attr {
+-	__NL80211_WOWLAN_PKTPAT_INVALID,
+-	NL80211_WOWLAN_PKTPAT_MASK,
+-	NL80211_WOWLAN_PKTPAT_PATTERN,
+-	NL80211_WOWLAN_PKTPAT_OFFSET,
++enum nl80211_packet_pattern_attr {
++	__NL80211_PKTPAT_INVALID,
++	NL80211_PKTPAT_MASK,
++	NL80211_PKTPAT_PATTERN,
++	NL80211_PKTPAT_OFFSET,
+ 
+-	NUM_NL80211_WOWLAN_PKTPAT,
+-	MAX_NL80211_WOWLAN_PKTPAT = NUM_NL80211_WOWLAN_PKTPAT - 1,
++	NUM_NL80211_PKTPAT,
++	MAX_NL80211_PKTPAT = NUM_NL80211_PKTPAT - 1,
+ };
+ 
+ /**
+- * struct nl80211_wowlan_pattern_support - pattern support information
++ * struct nl80211_pattern_support - packet pattern support information
+  * @max_patterns: maximum number of patterns supported
+  * @min_pattern_len: minimum length of each pattern
+  * @max_pattern_len: maximum length of each pattern
+@@ -3101,13 +3101,22 @@ enum nl80211_wowlan_packet_pattern_attr 
+  * that is part of %NL80211_ATTR_WOWLAN_TRIGGERS_SUPPORTED in the
+  * capability information given by the kernel to userspace.
+  */
+-struct nl80211_wowlan_pattern_support {
++struct nl80211_pattern_support {
+ 	__u32 max_patterns;
+ 	__u32 min_pattern_len;
+ 	__u32 max_pattern_len;
+ 	__u32 max_pkt_offset;
+ } __attribute__((packed));
+ 
++/* only for backward compatibility */
++#define __NL80211_WOWLAN_PKTPAT_INVALID __NL80211_PKTPAT_INVALID
++#define NL80211_WOWLAN_PKTPAT_MASK NL80211_PKTPAT_MASK
++#define NL80211_WOWLAN_PKTPAT_PATTERN NL80211_PKTPAT_PATTERN
++#define NL80211_WOWLAN_PKTPAT_OFFSET NL80211_PKTPAT_OFFSET
++#define NUM_NL80211_WOWLAN_PKTPAT NUM_NL80211_PKTPAT
++#define MAX_NL80211_WOWLAN_PKTPAT MAX_NL80211_PKTPAT
++#define nl80211_wowlan_pattern_support nl80211_pattern_support
++
+ /**
+  * enum nl80211_wowlan_triggers - WoWLAN trigger definitions
+  * @__NL80211_WOWLAN_TRIG_INVALID: invalid number for nested attributes
+@@ -3127,7 +3136,7 @@ struct nl80211_wowlan_pattern_support {
+  *	pattern matching is done after the packet is converted to the MSDU.
+  *
+  *	In %NL80211_ATTR_WOWLAN_TRIGGERS_SUPPORTED, it is a binary attribute
+- *	carrying a &struct nl80211_wowlan_pattern_support.
++ *	carrying a &struct nl80211_pattern_support.
+  *
+  *	When reporting wakeup. it is a u32 attribute containing the 0-based
+  *	index of the pattern that caused the wakeup, in the patterns passed
+@@ -3284,7 +3293,7 @@ struct nl80211_wowlan_tcp_data_token_fea
+  * @NL80211_WOWLAN_TCP_WAKE_PAYLOAD: wake packet payload, for advertising a
+  *	u32 attribute holding the maximum length
+  * @NL80211_WOWLAN_TCP_WAKE_MASK: Wake packet payload mask, not used for
+- *	feature advertising. The mask works like @NL80211_WOWLAN_PKTPAT_MASK
++ *	feature advertising. The mask works like @NL80211_PKTPAT_MASK
+  *	but on the TCP payload only.
+  * @NUM_NL80211_WOWLAN_TCP: number of TCP attributes
+  * @MAX_NL80211_WOWLAN_TCP: highest attribute number
+--- a/net/mac80211/mesh_ps.c
++++ b/net/mac80211/mesh_ps.c
+@@ -229,6 +229,10 @@ void ieee80211_mps_sta_status_update(str
+ 	enum nl80211_mesh_power_mode pm;
+ 	bool do_buffer;
+ 
++	/* For non-assoc STA, prevent buffering or frame transmission */
++	if (sta->sta_state < IEEE80211_STA_ASSOC)
++		return;
++
+ 	/*
+ 	 * use peer-specific power mode if peering is established and the
+ 	 * peer's power mode is known
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -974,7 +974,7 @@ static int nl80211_send_wowlan(struct sk
+ 		return -ENOBUFS;
+ 
+ 	if (dev->wiphy.wowlan->n_patterns) {
+-		struct nl80211_wowlan_pattern_support pat = {
++		struct nl80211_pattern_support pat = {
+ 			.max_patterns = dev->wiphy.wowlan->n_patterns,
+ 			.min_pattern_len = dev->wiphy.wowlan->pattern_min_len,
+ 			.max_pattern_len = dev->wiphy.wowlan->pattern_max_len,
+@@ -1568,8 +1568,10 @@ static int nl80211_dump_wiphy(struct sk_
+ 	rtnl_lock();
+ 	if (!state) {
+ 		state = kzalloc(sizeof(*state), GFP_KERNEL);
+-		if (!state)
++		if (!state) {
++			rtnl_unlock();
+ 			return -ENOMEM;
++		}
+ 		state->filter_wiphy = -1;
+ 		ret = nl80211_dump_wiphy_parse(skb, cb, state);
+ 		if (ret) {
+@@ -6615,12 +6617,14 @@ EXPORT_SYMBOL(cfg80211_testmode_alloc_ev
+ 
+ void cfg80211_testmode_event(struct sk_buff *skb, gfp_t gfp)
+ {
++	struct cfg80211_registered_device *rdev = ((void **)skb->cb)[0];
+ 	void *hdr = ((void **)skb->cb)[1];
+ 	struct nlattr *data = ((void **)skb->cb)[2];
+ 
+ 	nla_nest_end(skb, data);
+ 	genlmsg_end(skb, hdr);
+-	genlmsg_multicast(skb, 0, nl80211_testmode_mcgrp.id, gfp);
++	genlmsg_multicast_netns(wiphy_net(&rdev->wiphy), skb, 0,
++				nl80211_testmode_mcgrp.id, gfp);
+ }
+ EXPORT_SYMBOL(cfg80211_testmode_event);
+ #endif
+@@ -7593,12 +7597,11 @@ static int nl80211_send_wowlan_patterns(
+ 		if (!nl_pat)
+ 			return -ENOBUFS;
+ 		pat_len = wowlan->patterns[i].pattern_len;
+-		if (nla_put(msg, NL80211_WOWLAN_PKTPAT_MASK,
+-			    DIV_ROUND_UP(pat_len, 8),
++		if (nla_put(msg, NL80211_PKTPAT_MASK, DIV_ROUND_UP(pat_len, 8),
+ 			    wowlan->patterns[i].mask) ||
+-		    nla_put(msg, NL80211_WOWLAN_PKTPAT_PATTERN,
+-			    pat_len, wowlan->patterns[i].pattern) ||
+-		    nla_put_u32(msg, NL80211_WOWLAN_PKTPAT_OFFSET,
++		    nla_put(msg, NL80211_PKTPAT_PATTERN, pat_len,
++			    wowlan->patterns[i].pattern) ||
++		    nla_put_u32(msg, NL80211_PKTPAT_OFFSET,
+ 				wowlan->patterns[i].pkt_offset))
+ 			return -ENOBUFS;
+ 		nla_nest_end(msg, nl_pat);
+@@ -7939,7 +7942,7 @@ static int nl80211_set_wowlan(struct sk_
+ 		struct nlattr *pat;
+ 		int n_patterns = 0;
+ 		int rem, pat_len, mask_len, pkt_offset;
+-		struct nlattr *pat_tb[NUM_NL80211_WOWLAN_PKTPAT];
++		struct nlattr *pat_tb[NUM_NL80211_PKTPAT];
+ 
+ 		nla_for_each_nested(pat, tb[NL80211_WOWLAN_TRIG_PKT_PATTERN],
+ 				    rem)
+@@ -7958,26 +7961,25 @@ static int nl80211_set_wowlan(struct sk_
+ 
+ 		nla_for_each_nested(pat, tb[NL80211_WOWLAN_TRIG_PKT_PATTERN],
+ 				    rem) {
+-			nla_parse(pat_tb, MAX_NL80211_WOWLAN_PKTPAT,
+-				  nla_data(pat), nla_len(pat), NULL);
++			nla_parse(pat_tb, MAX_NL80211_PKTPAT, nla_data(pat),
++				  nla_len(pat), NULL);
+ 			err = -EINVAL;
+-			if (!pat_tb[NL80211_WOWLAN_PKTPAT_MASK] ||
+-			    !pat_tb[NL80211_WOWLAN_PKTPAT_PATTERN])
++			if (!pat_tb[NL80211_PKTPAT_MASK] ||
++			    !pat_tb[NL80211_PKTPAT_PATTERN])
+ 				goto error;
+-			pat_len = nla_len(pat_tb[NL80211_WOWLAN_PKTPAT_PATTERN]);
++			pat_len = nla_len(pat_tb[NL80211_PKTPAT_PATTERN]);
+ 			mask_len = DIV_ROUND_UP(pat_len, 8);
+-			if (nla_len(pat_tb[NL80211_WOWLAN_PKTPAT_MASK]) !=
+-			    mask_len)
++			if (nla_len(pat_tb[NL80211_PKTPAT_MASK]) != mask_len)
+ 				goto error;
+ 			if (pat_len > wowlan->pattern_max_len ||
+ 			    pat_len < wowlan->pattern_min_len)
+ 				goto error;
+ 
+-			if (!pat_tb[NL80211_WOWLAN_PKTPAT_OFFSET])
++			if (!pat_tb[NL80211_PKTPAT_OFFSET])
+ 				pkt_offset = 0;
+ 			else
+ 				pkt_offset = nla_get_u32(
+-					pat_tb[NL80211_WOWLAN_PKTPAT_OFFSET]);
++					pat_tb[NL80211_PKTPAT_OFFSET]);
+ 			if (pkt_offset > wowlan->max_pkt_offset)
+ 				goto error;
+ 			new_triggers.patterns[i].pkt_offset = pkt_offset;
+@@ -7991,11 +7993,11 @@ static int nl80211_set_wowlan(struct sk_
+ 			new_triggers.patterns[i].pattern =
+ 				new_triggers.patterns[i].mask + mask_len;
+ 			memcpy(new_triggers.patterns[i].mask,
+-			       nla_data(pat_tb[NL80211_WOWLAN_PKTPAT_MASK]),
++			       nla_data(pat_tb[NL80211_PKTPAT_MASK]),
+ 			       mask_len);
+ 			new_triggers.patterns[i].pattern_len = pat_len;
+ 			memcpy(new_triggers.patterns[i].pattern,
+-			       nla_data(pat_tb[NL80211_WOWLAN_PKTPAT_PATTERN]),
++			       nla_data(pat_tb[NL80211_PKTPAT_PATTERN]),
+ 			       pat_len);
+ 			i++;
+ 		}
+@@ -10066,7 +10068,8 @@ void cfg80211_mgmt_tx_status(struct wire
+ 
+ 	genlmsg_end(msg, hdr);
+ 
+-	genlmsg_multicast(msg, 0, nl80211_mlme_mcgrp.id, gfp);
++	genlmsg_multicast_netns(wiphy_net(&rdev->wiphy), msg, 0,
++				nl80211_mlme_mcgrp.id, gfp);
+ 	return;
+ 
+  nla_put_failure:
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -2279,7 +2279,9 @@ void wiphy_regulatory_deregister(struct 
+ static void reg_timeout_work(struct work_struct *work)
+ {
+ 	REG_DBG_PRINT("Timeout while waiting for CRDA to reply, restoring regulatory settings\n");
++	rtnl_lock();
+ 	restore_regulatory_settings(true);
++	rtnl_unlock();
+ }
+ 
+ int __init regulatory_init(void)
+--- a/net/wireless/sme.c
++++ b/net/wireless/sme.c
+@@ -34,8 +34,10 @@ struct cfg80211_conn {
+ 		CFG80211_CONN_SCAN_AGAIN,
+ 		CFG80211_CONN_AUTHENTICATE_NEXT,
+ 		CFG80211_CONN_AUTHENTICATING,
++		CFG80211_CONN_AUTH_FAILED,
+ 		CFG80211_CONN_ASSOCIATE_NEXT,
+ 		CFG80211_CONN_ASSOCIATING,
++		CFG80211_CONN_ASSOC_FAILED,
+ 		CFG80211_CONN_DEAUTH,
+ 		CFG80211_CONN_CONNECTED,
+ 	} state;
+@@ -164,6 +166,8 @@ static int cfg80211_conn_do_work(struct 
+ 					  NULL, 0,
+ 					  params->key, params->key_len,
+ 					  params->key_idx, NULL, 0);
++	case CFG80211_CONN_AUTH_FAILED:
++		return -ENOTCONN;
+ 	case CFG80211_CONN_ASSOCIATE_NEXT:
+ 		BUG_ON(!rdev->ops->assoc);
+ 		wdev->conn->state = CFG80211_CONN_ASSOCIATING;
+@@ -188,10 +192,17 @@ static int cfg80211_conn_do_work(struct 
+ 					     WLAN_REASON_DEAUTH_LEAVING,
+ 					     false);
+ 		return err;
++	case CFG80211_CONN_ASSOC_FAILED:
++		cfg80211_mlme_deauth(rdev, wdev->netdev, params->bssid,
++				     NULL, 0,
++				     WLAN_REASON_DEAUTH_LEAVING, false);
++		return -ENOTCONN;
+ 	case CFG80211_CONN_DEAUTH:
+ 		cfg80211_mlme_deauth(rdev, wdev->netdev, params->bssid,
+ 				     NULL, 0,
+ 				     WLAN_REASON_DEAUTH_LEAVING, false);
++		/* free directly, disconnected event already sent */
++		cfg80211_sme_free(wdev);
+ 		return 0;
+ 	default:
+ 		return 0;
+@@ -371,7 +382,7 @@ bool cfg80211_sme_rx_assoc_resp(struct w
+ 		return true;
+ 	}
+ 
+-	wdev->conn->state = CFG80211_CONN_DEAUTH;
++	wdev->conn->state = CFG80211_CONN_ASSOC_FAILED;
+ 	schedule_work(&rdev->conn_work);
+ 	return false;
+ }
+@@ -383,7 +394,13 @@ void cfg80211_sme_deauth(struct wireless
+ 
+ void cfg80211_sme_auth_timeout(struct wireless_dev *wdev)
+ {
+-	cfg80211_sme_free(wdev);
++	struct cfg80211_registered_device *rdev = wiphy_to_dev(wdev->wiphy);
++
++	if (!wdev->conn)
++		return;
++
++	wdev->conn->state = CFG80211_CONN_AUTH_FAILED;
++	schedule_work(&rdev->conn_work);
+ }
+ 
+ void cfg80211_sme_disassoc(struct wireless_dev *wdev)
+@@ -399,7 +416,13 @@ void cfg80211_sme_disassoc(struct wirele
+ 
+ void cfg80211_sme_assoc_timeout(struct wireless_dev *wdev)
+ {
+-	cfg80211_sme_disassoc(wdev);
++	struct cfg80211_registered_device *rdev = wiphy_to_dev(wdev->wiphy);
++
++	if (!wdev->conn)
++		return;
++
++	wdev->conn->state = CFG80211_CONN_ASSOC_FAILED;
++	schedule_work(&rdev->conn_work);
+ }
+ 
+ static int cfg80211_sme_connect(struct wireless_dev *wdev,

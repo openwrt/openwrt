@@ -164,7 +164,7 @@
  	select RT2X00_LIB_CRYPTO
  	depends on CRC_CCITT
  	depends on EEPROM_93CX6
-@@ -235,6 +236,9 @@ config RT2X00_LIB_FIRMWARE
+@@ -238,6 +239,9 @@ config RT2X00_LIB_FIRMWARE
  config RT2X00_LIB_CRYPTO
  	boolean
  
@@ -234,7 +234,7 @@
   * Initialization functions.
   */
  static bool rt2800pci_get_entry_state(struct queue_entry *entry)
-@@ -1155,6 +1155,7 @@ static const struct rt2x00lib_ops rt2800
+@@ -1156,6 +1156,7 @@ static const struct rt2x00lib_ops rt2800
  	.get_firmware_name	= rt2800pci_get_firmware_name,
  	.check_firmware		= rt2800_check_firmware,
  	.load_firmware		= rt2800_load_firmware,
@@ -279,7 +279,7 @@
  
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -272,6 +272,7 @@ RT2X00_LIB_FIRMWARE=
+@@ -271,6 +271,7 @@ RT2X00_LIB_FIRMWARE=
  RT2X00_LIB_CRYPTO=
  RT2X00_LIB_LEDS=
  RT2X00_LIB_DEBUGFS=
