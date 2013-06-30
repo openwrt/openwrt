@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -979,11 +979,8 @@ int hostapd_setup_interface_complete(str
+@@ -974,11 +974,8 @@ int hostapd_setup_interface_complete(str
  	size_t j;
  	u8 *prev_addr;
  
@@ -14,7 +14,7 @@
  
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (hapd->iconf->channel) {
-@@ -1003,7 +1000,7 @@ int hostapd_setup_interface_complete(str
+@@ -998,7 +995,7 @@ int hostapd_setup_interface_complete(str
  				     hapd->iconf->vht_oper_centr_freq_seg1_idx)) {
  			wpa_printf(MSG_ERROR, "Could not set channel for "
  				   "kernel driver");
@@ -23,7 +23,7 @@
  		}
  	}
  
-@@ -1014,7 +1011,7 @@ int hostapd_setup_interface_complete(str
+@@ -1009,7 +1006,7 @@ int hostapd_setup_interface_complete(str
  			hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
  				       HOSTAPD_LEVEL_WARNING,
  				       "Failed to prepare rates table.");
@@ -32,7 +32,7 @@
  		}
  	}
  
-@@ -1022,14 +1019,14 @@ int hostapd_setup_interface_complete(str
+@@ -1017,14 +1014,14 @@ int hostapd_setup_interface_complete(str
  	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
  		wpa_printf(MSG_ERROR, "Could not set RTS threshold for "
  			   "kernel driver");
@@ -49,7 +49,7 @@
  	}
  
  	prev_addr = hapd->own_addr;
-@@ -1039,7 +1036,7 @@ int hostapd_setup_interface_complete(str
+@@ -1034,7 +1031,7 @@ int hostapd_setup_interface_complete(str
  		if (j)
  			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
  		if (hostapd_setup_bss(hapd, j == 0))
@@ -58,7 +58,7 @@
  		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
  			prev_addr = hapd->own_addr;
  	}
-@@ -1053,7 +1050,7 @@ int hostapd_setup_interface_complete(str
+@@ -1048,7 +1045,7 @@ int hostapd_setup_interface_complete(str
  	if (hostapd_driver_commit(hapd) < 0) {
  		wpa_printf(MSG_ERROR, "%s: Failed to commit driver "
  			   "configuration", __func__);
@@ -67,7 +67,7 @@
  	}
  
  	/*
-@@ -1074,6 +1071,11 @@ int hostapd_setup_interface_complete(str
+@@ -1069,6 +1066,11 @@ int hostapd_setup_interface_complete(str
  		   iface->bss[0]->conf->iface);
  
  	return 0;
