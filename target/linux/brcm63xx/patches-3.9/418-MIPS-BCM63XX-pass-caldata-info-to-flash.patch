@@ -11,7 +11,7 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -966,7 +966,7 @@ int __init board_register_devices(void)
+@@ -1009,7 +1009,7 @@ int __init board_register_devices(void)
  	if (board.num_spis)
  		spi_register_board_info(board.spis, board.num_spis);
  
@@ -46,7 +46,7 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  };
  
  static struct spi_board_info bcm63xx_spi_flash_info[] = {
-@@ -137,10 +141,13 @@ static int __init bcm63xx_detect_flash_t
+@@ -138,10 +142,13 @@ static int __init bcm63xx_detect_flash_t
  	return 0;
  }
  

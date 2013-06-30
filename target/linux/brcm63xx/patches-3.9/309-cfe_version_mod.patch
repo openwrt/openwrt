@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -798,6 +798,8 @@ void __init board_prom_init(void)
+@@ -837,6 +837,8 @@ void __init board_prom_init(void)
  	if (!memcmp(cfe, "cfe-v", 5))
  		snprintf(cfe_version, sizeof(cfe_version), "%u.%u.%u-%u.%u",
  			 cfe[5], cfe[6], cfe[7], cfe[8], cfe[9]);

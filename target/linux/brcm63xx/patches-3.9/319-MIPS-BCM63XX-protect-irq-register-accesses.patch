@@ -1,16 +1,11 @@
-From 7b8e7bc9806b61be2f07bf2bbb5e3ee6e0f333e9 Mon Sep 17 00:00:00 2001
+From 05e32e9dc84ee96728596c0b8b86de7eae8de229 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Sun, 21 Apr 2013 15:38:56 +0200
-Subject: [PATCH 10/13] MIPS: BCM63XX: protect irq register accesses with a
- spinlock
+Subject: [PATCH 11/14] MIPS: BCM63XX: protect irq register accesses
 
-Since IRQs can be handled on both CPUs, we need to ensure that we
-don't try to modify the IRQ registers at the same time.
-
-Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- arch/mips/bcm63xx/irq.c |   47 ++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 42 insertions(+), 5 deletions(-)
+ arch/mips/bcm63xx/irq.c |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
 --- a/arch/mips/bcm63xx/irq.c
 +++ b/arch/mips/bcm63xx/irq.c
@@ -30,19 +25,20 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +static DEFINE_SPINLOCK(epic_lock);
 +
  #ifndef BCMCPU_RUNTIME_DETECT
- #ifdef CONFIG_BCM63XX_CPU_6328
- #define irq_stat_reg0		PERF_IRQSTAT_6328_REG(0)
-@@ -290,7 +294,9 @@ void __dispatch_internal_##width(int cpu
- 	static int i;							\
+ #ifdef CONFIG_BCM63XX_CPU_3368
+ #define irq_stat_reg0		PERF_IRQSTAT_3368_REG
+@@ -324,8 +328,10 @@ void __dispatch_internal_##width(int cpu
  	u32 irq_stat_addr = get_irq_stat_addr(cpu);			\
  	u32 irq_mask_addr = get_irq_mask_addr(cpu);			\
+ 	int *next = &i[cpu];						\
 +	unsigned long flags;						\
  									\
-+	spin_lock_irqsave(&ipic_lock, flags);				\
  	/* read registers in reverse order */				\
++	spin_lock_irqsave(&ipic_lock, flags);				\
  	for (src = 0, tgt = (width / 32); src < (width / 32); src++) {	\
  		u32 val;						\
-@@ -302,6 +308,7 @@ void __dispatch_internal_##width(int cpu
+ 									\
+@@ -336,6 +342,7 @@ void __dispatch_internal_##width(int cpu
  		if (val)						\
  			irqs_pending = true;				\
  	}								\
@@ -50,92 +46,85 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  									\
  	if (!irqs_pending)						\
  		return;							\
-@@ -381,12 +388,20 @@ asmlinkage void plat_irq_dispatch(void)
-  */
- static void bcm63xx_internal_irq_mask(struct irq_data *d)
- {
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&ipic_lock, flags);
- 	internal_irq_mask(d->irq - IRQ_INTERNAL_BASE);
-+	spin_unlock_irqrestore(&ipic_lock, flags);
+@@ -357,10 +364,13 @@ static void __internal_irq_mask_##width(
+ 	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
+ 	unsigned bit = irq & 0x1f;					\
+ 	u32 irq_mask_addr = get_irq_mask_addr(0);			\
++	unsigned long flags;						\
+ 									\
++	spin_lock_irqsave(&ipic_lock, flags);				\
+ 	val = bcm_readl(irq_mask_addr + reg * sizeof(u32));		\
+ 	val &= ~(1 << bit);						\
+ 	bcm_writel(val, irq_mask_addr + reg * sizeof(u32));		\
++	spin_unlock_irqrestore(&ipic_lock, flags);			\
+ }									\
+ 									\
+ static void __internal_irq_unmask_##width(unsigned int irq)		\
+@@ -369,10 +379,13 @@ static void __internal_irq_unmask_##widt
+ 	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
+ 	unsigned bit = irq & 0x1f; 					\
+ 	u32 irq_mask_addr = get_irq_mask_addr(0);			\
++	unsigned long flags;						\
+ 									\
++	spin_lock_irqsave(&ipic_lock, flags);				\
+ 	val = bcm_readl(irq_mask_addr + reg * sizeof(u32));		\
+ 	val |= (1 << bit); 						\
+ 	bcm_writel(val, irq_mask_addr + reg * sizeof(u32));		\
++	spin_unlock_irqrestore(&ipic_lock, flags);			\
  }
  
- static void bcm63xx_internal_irq_unmask(struct irq_data *d)
- {
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&ipic_lock, flags);
- 	internal_irq_unmask(d->irq - IRQ_INTERNAL_BASE);
-+	spin_unlock_irqrestore(&ipic_lock, flags);
- }
- 
- /*
-@@ -397,8 +412,11 @@ static void bcm63xx_external_irq_mask(st
+ BUILD_IPIC_INTERNAL(32);
+@@ -431,8 +444,10 @@ static void bcm63xx_external_irq_mask(st
  {
  	unsigned int irq = d->irq - IRQ_EXTERNAL_BASE;
  	u32 reg, regaddr;
 +	unsigned long flags;
  
  	regaddr = get_ext_irq_perf_reg(irq);
-+
 +	spin_lock_irqsave(&epic_lock, flags);
  	reg = bcm_perf_readl(regaddr);
  
  	if (BCMCPU_IS_6348())
-@@ -407,16 +425,24 @@ static void bcm63xx_external_irq_mask(st
+@@ -441,6 +456,8 @@ static void bcm63xx_external_irq_mask(st
  		reg &= ~EXTIRQ_CFG_MASK(irq % 4);
  
  	bcm_perf_writel(reg, regaddr);
--	if (is_ext_irq_cascaded)
--		internal_irq_mask(irq + ext_irq_start);
 +	spin_unlock_irqrestore(&epic_lock, flags);
 +
-+	if (is_ext_irq_cascaded) {
-+		struct irq_data *cd = irq_get_irq_data(irq + ext_irq_start);
-+
-+		bcm63xx_internal_irq_mask(cd);
-+	}
+ 	if (is_ext_irq_cascaded)
+ 		internal_irq_mask(irq + ext_irq_start);
  }
- 
- static void bcm63xx_external_irq_unmask(struct irq_data *d)
+@@ -449,8 +466,10 @@ static void bcm63xx_external_irq_unmask(
  {
  	unsigned int irq = d->irq - IRQ_EXTERNAL_BASE;
  	u32 reg, regaddr;
 +	unsigned long flags;
  
  	regaddr = get_ext_irq_perf_reg(irq);
-+
 +	spin_lock_irqsave(&epic_lock, flags);
  	reg = bcm_perf_readl(regaddr);
  
  	if (BCMCPU_IS_6348())
-@@ -425,16 +451,22 @@ static void bcm63xx_external_irq_unmask(
+@@ -459,6 +478,7 @@ static void bcm63xx_external_irq_unmask(
  		reg |= EXTIRQ_CFG_MASK(irq % 4);
  
  	bcm_perf_writel(reg, regaddr);
 +	spin_unlock_irqrestore(&epic_lock, flags);
-+
-+	if (is_ext_irq_cascaded) {
-+		struct irq_data *cd = irq_get_irq_data(irq + ext_irq_start);
  
--	if (is_ext_irq_cascaded)
--		internal_irq_unmask(irq + ext_irq_start);
-+		bcm63xx_internal_irq_unmask(cd);
-+	}
- }
- 
- static void bcm63xx_external_irq_clear(struct irq_data *d)
+ 	if (is_ext_irq_cascaded)
+ 		internal_irq_unmask(irq + ext_irq_start);
+@@ -468,8 +488,10 @@ static void bcm63xx_external_irq_clear(s
  {
  	unsigned int irq = d->irq - IRQ_EXTERNAL_BASE;
  	u32 reg, regaddr;
 +	unsigned long flags;
  
-+	spin_lock_irqsave(&epic_lock, flags);
  	regaddr = get_ext_irq_perf_reg(irq);
++	spin_lock_irqsave(&epic_lock, flags);
  	reg = bcm_perf_readl(regaddr);
  
-@@ -444,6 +476,7 @@ static void bcm63xx_external_irq_clear(s
+ 	if (BCMCPU_IS_6348())
+@@ -478,6 +500,7 @@ static void bcm63xx_external_irq_clear(s
  		reg |= EXTIRQ_CFG_CLEAR(irq % 4);
  
  	bcm_perf_writel(reg, regaddr);
@@ -143,7 +132,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  }
  
  static int bcm63xx_external_irq_set_type(struct irq_data *d,
-@@ -452,6 +485,7 @@ static int bcm63xx_external_irq_set_type
+@@ -486,6 +509,7 @@ static int bcm63xx_external_irq_set_type
  	unsigned int irq = d->irq - IRQ_EXTERNAL_BASE;
  	u32 reg, regaddr;
  	int levelsense, sense, bothedge;
@@ -151,20 +140,15 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	flow_type &= IRQ_TYPE_SENSE_MASK;
  
-@@ -486,9 +520,11 @@ static int bcm63xx_external_irq_set_type
+@@ -520,6 +544,7 @@ static int bcm63xx_external_irq_set_type
  	}
  
  	regaddr = get_ext_irq_perf_reg(irq);
--	reg = bcm_perf_readl(regaddr);
++	spin_lock_irqsave(&epic_lock, flags);
+ 	reg = bcm_perf_readl(regaddr);
  	irq %= 4;
  
-+	spin_lock_irqsave(&epic_lock, flags);
-+	reg = bcm_perf_readl(regaddr);
-+
- 	switch (bcm63xx_get_cpu_id()) {
- 	case BCM6348_CPU_ID:
- 		if (levelsense)
-@@ -529,6 +565,7 @@ static int bcm63xx_external_irq_set_type
+@@ -564,6 +589,7 @@ static int bcm63xx_external_irq_set_type
  	}
  
  	bcm_perf_writel(reg, regaddr);

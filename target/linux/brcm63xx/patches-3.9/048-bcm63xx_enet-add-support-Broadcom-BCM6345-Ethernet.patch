@@ -1,16 +1,43 @@
-From 1b0b5d325d0cc50cade62afd6a9416fb3cd1e658 Mon Sep 17 00:00:00 2001
-From: Jonas Gorski <jogo@openwrt.org>
-Date: Mon, 7 Jan 2013 17:42:45 +0100
-Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
+From fb7e08ec47f7168b8f4f72d8e3b5bcf625e1089e Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Wed, 12 Jun 2013 18:53:05 +0000
+Subject: [PATCH] bcm63xx_enet: add support Broadcom BCM6345 Ethernet
 
+This patch adds support for the Broadcom BCM6345 SoC Ethernet. BCM6345
+has a slightly different and older DMA engine which requires the
+following modifications:
+
+- the width of the DMA channels on BCM6345 is 64 bytes vs 16 bytes,
+  which means that the helpers enet_dma{c,s} need to account for this
+  channel width and we can no longer use macros
+
+- BCM6345 DMA engine does not have any internal SRAM for transfering
+  buffers
+
+- BCM6345 buffer allocation and flow control is not per-channel but
+  global (done in RSET_ENETDMA)
+
+- the DMA engine bits are right-shifted by 3 compared to other DMA
+  generations
+
+- the DMA enable/interrupt masks are a little different (we need to
+  enabled more bits for 6345)
+
+- some register have the same meaning but are offsetted in the ENET_DMAC
+  space so a lookup table is required to return the proper offset
+
+The MAC itself is identical and requires no modifications to work.
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+Acked-by: Ralf Baechle <ralf@linux-mips.org>
 ---
- arch/mips/bcm63xx/dev-enet.c                       |   63 ++++++-
+ arch/mips/bcm63xx/dev-enet.c                       |   65 ++++++-
  arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h   |    3 +-
- .../include/asm/mach-bcm63xx/bcm63xx_dev_enet.h    |   88 +++++++++
+ .../include/asm/mach-bcm63xx/bcm63xx_dev_enet.h    |   94 +++++++++
  arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h  |   43 ++++-
- drivers/net/ethernet/broadcom/bcm63xx_enet.c       |  199 ++++++++++++--------
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c       |  200 ++++++++++++--------
  drivers/net/ethernet/broadcom/bcm63xx_enet.h       |   15 ++
- 6 files changed, 320 insertions(+), 91 deletions(-)
+ 6 files changed, 329 insertions(+), 91 deletions(-)
 
 --- a/arch/mips/bcm63xx/dev-enet.c
 +++ b/arch/mips/bcm63xx/dev-enet.c
@@ -24,7 +51,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  #include <bcm63xx_regs.h>
  
 +#ifdef BCMCPU_RUNTIME_DETECT
-+static const unsigned long bcm6xxx_regs_enetdmac[] = {
++static const unsigned long bcm6348_regs_enetdmac[] = {
 +	[ENETDMAC_CHANCFG]	= ENETDMAC_CHANCFG_REG,
 +	[ENETDMAC_IR]		= ENETDMAC_IR_REG,
 +	[ENETDMAC_IRMASK]	= ENETDMAC_IRMASK_REG,
@@ -50,7 +77,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 +	if (BCMCPU_IS_6345())
 +		bcm63xx_regs_enetdmac = bcm6345_regs_enetdmac;
 +	else
-+		bcm63xx_regs_enetdmac = bcm6xxx_regs_enetdmac;
++		bcm63xx_regs_enetdmac = bcm6348_regs_enetdmac;
 +}
 +#else
 +static __init void bcm63xx_enetdmac_regs_init(void) { }
@@ -59,7 +86,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  static struct resource shared_res[] = {
  	{
  		.start		= -1, /* filled at runtime */
-@@ -137,9 +171,14 @@ static int __init register_shared(void)
+@@ -137,12 +171,19 @@ static int __init register_shared(void)
  	if (shared_device_registered)
  		return 0;
  
@@ -75,7 +102,12 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
  		chan_count = 32;
-@@ -172,7 +211,7 @@ int __init bcm63xx_enet_register(int uni
++	else if (BCMCPU_IS_6345())
++		chan_count = 8;
+ 	else
+ 		chan_count = 16;
+ 
+@@ -172,7 +213,7 @@ int __init bcm63xx_enet_register(int uni
  	if (unit > 1)
  		return -ENODEV;
  
@@ -84,7 +116,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  		return -ENODEV;
  
  	ret = register_shared();
-@@ -213,6 +252,20 @@ int __init bcm63xx_enet_register(int uni
+@@ -213,6 +254,21 @@ int __init bcm63xx_enet_register(int uni
  		dpd->phy_interrupt = bcm63xx_get_irq_number(IRQ_ENET_PHY);
  	}
  
@@ -97,18 +129,20 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 +		dpd->dma_chan_int_mask |= ENETDMA_IR_BUFDONE_MASK;
 +		dpd->dma_chan_int_mask |= ENETDMA_IR_NOTOWNER_MASK;
 +		dpd->dma_chan_width = ENETDMA_6345_CHAN_WIDTH;
-+		dpd->dma_no_sram = 1;
 +		dpd->dma_desc_shift = ENETDMA_6345_DESC_SHIFT;
-+	} else
++	} else {
++		dpd->dma_has_sram = true;
 +		dpd->dma_chan_width = ENETDMA_CHAN_WIDTH;
++	}
 +
  	ret = platform_device_register(pdev);
  	if (ret)
  		return ret;
-@@ -246,6 +299,10 @@ bcm63xx_enetsw_register(const struct bcm
+@@ -246,6 +302,11 @@ bcm63xx_enetsw_register(const struct bcm
  	else if (BCMCPU_IS_6362() || BCMCPU_IS_6368())
  		enetsw_pd.num_ports = ENETSW_PORTS_6368;
  
++	enetsw_pd.dma_has_sram = true;
 +	enetsw_pd.dma_chan_width = ENETDMA_CHAN_WIDTH;
 +	enetsw_pd.dma_chan_en_mask = ENETDMAC_CHANCFG_EN_MASK;
 +	enetsw_pd.dma_chan_int_mask = ENETDMAC_IR_PKTDONE_MASK;
@@ -118,7 +152,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  		return ret;
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
-@@ -175,6 +175,7 @@ enum bcm63xx_regs_set {
+@@ -188,6 +188,7 @@ enum bcm63xx_regs_set {
  #define BCM_6368_RSET_SPI_SIZE		1804
  #define RSET_ENET_SIZE			2048
  #define RSET_ENETDMA_SIZE		256
@@ -126,7 +160,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  #define RSET_ENETDMAC_SIZE(chans)	(16 * (chans))
  #define RSET_ENETDMAS_SIZE(chans)	(16 * (chans))
  #define RSET_ENETSW_SIZE		65536
-@@ -305,7 +306,7 @@ enum bcm63xx_regs_set {
+@@ -363,7 +364,7 @@ enum bcm63xx_regs_set {
  #define BCM_6345_USBDMA_BASE		(0xfffe2800)
  #define BCM_6345_ENET0_BASE		(0xfffe1800)
  #define BCM_6345_ENETDMA_BASE		(0xfffe2800)
@@ -157,8 +191,8 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 +	/* DMA channel interrupt mask */
 +	u32 dma_chan_int_mask;
 +
-+	/* Set to one if DMA engine has *no* SRAM */
-+	unsigned int dma_no_sram;
++	/* DMA engine has internal SRAM */
++	bool dma_has_sram;
 +
 +	/* DMA channel register width */
 +	unsigned int dma_chan_width;
@@ -168,7 +202,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  };
  
  /*
-@@ -63,6 +80,15 @@ struct bcm63xx_enetsw_platform_data {
+@@ -63,6 +80,18 @@ struct bcm63xx_enetsw_platform_data {
  	char mac_addr[ETH_ALEN];
  	int num_ports;
  	struct bcm63xx_enetsw_port used_ports[ENETSW_MAX_PORT];
@@ -181,10 +215,13 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 +
 +	/* DMA channel register width */
 +	unsigned int dma_chan_width;
++
++	/* DMA engine has internal SRAM */
++	bool dma_has_sram;
  };
  
  int __init bcm63xx_enet_register(int unit,
-@@ -70,4 +96,69 @@ int __init bcm63xx_enet_register(int uni
+@@ -70,4 +99,69 @@ int __init bcm63xx_enet_register(int uni
  
  int bcm63xx_enetsw_register(const struct bcm63xx_enetsw_platform_data *pd);
  
@@ -256,7 +293,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  #endif /* ! BCM63XX_DEV_ENET_H_ */
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -730,6 +730,8 @@
+@@ -770,6 +770,8 @@
  /*************************************************************************
   * _REG relative to RSET_ENETDMA
   *************************************************************************/
@@ -265,7 +302,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  /* Controller Configuration Register */
  #define ENETDMA_CFG_REG			(0x0)
-@@ -785,31 +787,56 @@
+@@ -825,31 +827,56 @@
  /* State Ram Word 4 */
  #define ENETDMA_SRAM4_REG(x)		(0x20c + (x) * 0x10)
  
@@ -326,7 +363,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  
  /*************************************************************************
-@@ -817,16 +844,16 @@
+@@ -857,16 +884,16 @@
   *************************************************************************/
  
  /* Ring Start Address register */
@@ -349,7 +386,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  /*************************************************************************
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -115,26 +115,28 @@ static inline void enet_dma_writel(struc
+@@ -107,26 +107,28 @@ static inline void enet_dma_writel(struc
  	bcm_writel(val, bcm_enet_shared_base[0] + off);
  }
  
@@ -358,7 +395,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  {
 -	return bcm_readl(bcm_enet_shared_base[1] + off);
 +	return bcm_readl(bcm_enet_shared_base[1] +
-+		(bcm63xx_enetdmacreg(off) + (chan * priv->dma_chan_width)));
++		bcm63xx_enetdmacreg(off) + chan * priv->dma_chan_width);
  }
  
  static inline void enet_dmac_writel(struct bcm_enet_priv *priv,
@@ -367,14 +404,14 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  {
 -	bcm_writel(val, bcm_enet_shared_base[1] + off);
 +	bcm_writel(val, bcm_enet_shared_base[1] +
-+		(bcm63xx_enetdmacreg(off) + (chan * priv->dma_chan_width)));
++		bcm63xx_enetdmacreg(off) + chan * priv->dma_chan_width);
  }
  
 -static inline u32 enet_dmas_readl(struct bcm_enet_priv *priv, u32 off)
 +static inline u32 enet_dmas_readl(struct bcm_enet_priv *priv, u32 off, int chan)
  {
 -	return bcm_readl(bcm_enet_shared_base[2] + off);
-+	return bcm_readl(bcm_enet_shared_base[2] + (off + (chan * priv->dma_chan_width)));
++	return bcm_readl(bcm_enet_shared_base[2] + off + chan * priv->dma_chan_width);
  }
  
  static inline void enet_dmas_writel(struct bcm_enet_priv *priv,
@@ -382,11 +419,11 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 +				       u32 val, u32 off, int chan)
  {
 -	bcm_writel(val, bcm_enet_shared_base[2] + off);
-+	bcm_writel(val, bcm_enet_shared_base[2] + (off + (chan * priv->dma_chan_width)));
++	bcm_writel(val, bcm_enet_shared_base[2] + off + chan * priv->dma_chan_width);
  }
  
  /*
-@@ -270,7 +272,7 @@ static int bcm_enet_refill_rx(struct net
+@@ -262,7 +264,7 @@ static int bcm_enet_refill_rx(struct net
  		len_stat = priv->rx_skb_size << DMADESC_LENGTH_SHIFT;
  		len_stat |= DMADESC_OWNER_MASK;
  		if (priv->rx_dirty_desc == priv->rx_ring_size - 1) {
@@ -395,19 +432,19 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  			priv->rx_dirty_desc = 0;
  		} else {
  			priv->rx_dirty_desc++;
-@@ -281,7 +283,10 @@ static int bcm_enet_refill_rx(struct net
+@@ -273,7 +275,10 @@ static int bcm_enet_refill_rx(struct net
  		priv->rx_desc_count++;
  
  		/* tell dma engine we allocated one buffer */
 -		enet_dma_writel(priv, 1, ENETDMA_BUFALLOC_REG(priv->rx_chan));
-+		if (!priv->dma_no_sram)
++		if (priv->dma_has_sram)
 +			enet_dma_writel(priv, 1, ENETDMA_BUFALLOC_REG(priv->rx_chan));
 +		else
 +			enet_dmac_writel(priv, 1, ENETDMAC_BUFALLOC, priv->rx_chan);
  	}
  
  	/* If rx ring is still empty, set a timer to try allocating
-@@ -357,7 +362,8 @@ static int bcm_enet_receive_queue(struct
+@@ -349,7 +354,8 @@ static int bcm_enet_receive_queue(struct
  
  		/* if the packet does not have start of packet _and_
  		 * end of packet flag set, then just recycle it */
@@ -417,7 +454,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  			dev->stats.rx_dropped++;
  			continue;
  		}
-@@ -418,8 +424,8 @@ static int bcm_enet_receive_queue(struct
+@@ -410,8 +416,8 @@ static int bcm_enet_receive_queue(struct
  		bcm_enet_refill_rx(dev);
  
  		/* kick rx dma */
@@ -428,7 +465,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  	}
  
  	return processed;
-@@ -494,10 +500,10 @@ static int bcm_enet_poll(struct napi_str
+@@ -486,10 +492,10 @@ static int bcm_enet_poll(struct napi_str
  	dev = priv->net_dev;
  
  	/* ack interrupts */
@@ -443,7 +480,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	/* reclaim sent skb */
  	tx_work_done = bcm_enet_tx_reclaim(dev, 0);
-@@ -516,10 +522,10 @@ static int bcm_enet_poll(struct napi_str
+@@ -508,10 +514,10 @@ static int bcm_enet_poll(struct napi_str
  	napi_complete(napi);
  
  	/* restore rx/tx interrupt */
@@ -458,7 +495,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	return rx_work_done;
  }
-@@ -562,8 +568,8 @@ static irqreturn_t bcm_enet_isr_dma(int
+@@ -554,8 +560,8 @@ static irqreturn_t bcm_enet_isr_dma(int
  	priv = netdev_priv(dev);
  
  	/* mask rx/tx interrupts */
@@ -469,7 +506,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	napi_schedule(&priv->napi);
  
-@@ -624,14 +630,14 @@ static int bcm_enet_start_xmit(struct sk
+@@ -616,14 +622,14 @@ static int bcm_enet_start_xmit(struct sk
  				       DMA_TO_DEVICE);
  
  	len_stat = (skb->len << DMADESC_LENGTH_SHIFT) & DMADESC_LENGTH_MASK;
@@ -486,7 +523,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  	}
  	priv->tx_desc_count--;
  
-@@ -642,8 +648,8 @@ static int bcm_enet_start_xmit(struct sk
+@@ -634,8 +640,8 @@ static int bcm_enet_start_xmit(struct sk
  	wmb();
  
  	/* kick tx dma */
@@ -497,17 +534,17 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	/* stop queue if no more desc available */
  	if (!priv->tx_desc_count)
-@@ -771,6 +777,9 @@ static void bcm_enet_set_flow(struct bcm
+@@ -763,6 +769,9 @@ static void bcm_enet_set_flow(struct bcm
  		val &= ~ENET_RXCFG_ENFLOW_MASK;
  	enet_writel(priv, val, ENET_RXCFG_REG);
  
-+	if (priv->dma_no_sram)
++	if (!priv->dma_has_sram)
 +		return;
 +
  	/* tx flow control (pause frame generation) */
  	val = enet_dma_readl(priv, ENETDMA_CFG_REG);
  	if (tx_en)
-@@ -886,8 +895,8 @@ static int bcm_enet_open(struct net_devi
+@@ -910,8 +919,8 @@ static int bcm_enet_open(struct net_devi
  
  	/* mask all interrupts and request them */
  	enet_writel(priv, 0, ENET_IRMASK_REG);
@@ -518,13 +555,13 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	ret = request_irq(dev->irq, bcm_enet_isr_mac, 0, dev->name, dev);
  	if (ret)
-@@ -964,8 +973,12 @@ static int bcm_enet_open(struct net_devi
+@@ -988,8 +997,12 @@ static int bcm_enet_open(struct net_devi
  	priv->rx_curr_desc = 0;
  
  	/* initialize flow control buffer allocation */
 -	enet_dma_writel(priv, ENETDMA_BUFALLOC_FORCE_MASK | 0,
 -			ENETDMA_BUFALLOC_REG(priv->rx_chan));
-+	if (!priv->dma_no_sram)
++	if (priv->dma_has_sram)
 +		enet_dma_writel(priv, ENETDMA_BUFALLOC_FORCE_MASK | 0,
 +				ENETDMA_BUFALLOC_REG(priv->rx_chan));
 +	else
@@ -533,7 +570,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	if (bcm_enet_refill_rx(dev)) {
  		dev_err(kdev, "cannot allocate rx skb queue\n");
-@@ -974,18 +987,30 @@ static int bcm_enet_open(struct net_devi
+@@ -998,18 +1011,30 @@ static int bcm_enet_open(struct net_devi
  	}
  
  	/* write rx & tx ring addresses */
@@ -541,7 +578,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 -			 ENETDMAS_RSTART_REG(priv->rx_chan));
 -	enet_dmas_writel(priv, priv->tx_desc_dma,
 -			 ENETDMAS_RSTART_REG(priv->tx_chan));
-+	if (!priv->dma_no_sram) {
++	if (priv->dma_has_sram) {
 +		enet_dmas_writel(priv, priv->rx_desc_dma,
 +				 ENETDMAS_RSTART_REG, priv->rx_chan);
 +		enet_dmas_writel(priv, priv->tx_desc_dma,
@@ -560,7 +597,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 -	enet_dmas_writel(priv, 0, ENETDMAS_SRAM3_REG(priv->tx_chan));
 -	enet_dmas_writel(priv, 0, ENETDMAS_SRAM4_REG(priv->rx_chan));
 -	enet_dmas_writel(priv, 0, ENETDMAS_SRAM4_REG(priv->tx_chan));
-+	if (!priv->dma_no_sram) {
++	if (priv->dma_has_sram) {
 +		enet_dmas_writel(priv, 0, ENETDMAS_SRAM2_REG, priv->rx_chan);
 +		enet_dmas_writel(priv, 0, ENETDMAS_SRAM2_REG, priv->tx_chan);
 +		enet_dmas_writel(priv, 0, ENETDMAS_SRAM3_REG, priv->rx_chan);
@@ -574,7 +611,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	/* set max rx/tx length */
  	enet_writel(priv, priv->hw_mtu, ENET_RXMAXLEN_REG);
-@@ -993,18 +1018,24 @@ static int bcm_enet_open(struct net_devi
+@@ -1017,18 +1042,24 @@ static int bcm_enet_open(struct net_devi
  
  	/* set dma maximum burst len */
  	enet_dmac_writel(priv, priv->dma_maxburst,
@@ -592,7 +629,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 -	enet_dma_writel(priv, val, ENETDMA_FLOWCL_REG(priv->rx_chan));
 -	val = (priv->rx_ring_size * 2) / 3;
 -	enet_dma_writel(priv, val, ENETDMA_FLOWCH_REG(priv->rx_chan));
-+	if (!priv->dma_no_sram) {
++	if (priv->dma_has_sram) {
 +		val = priv->rx_ring_size / 3;
 +		enet_dma_writel(priv, val, ENETDMA_FLOWCL_REG(priv->rx_chan));
 +		val = (priv->rx_ring_size * 2) / 3;
@@ -605,7 +642,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	/* all set, enable mac and interrupts, start dma engine and
  	 * kick rx dma channel */
-@@ -1013,26 +1044,26 @@ static int bcm_enet_open(struct net_devi
+@@ -1037,26 +1068,26 @@ static int bcm_enet_open(struct net_devi
  	val |= ENET_CTL_ENABLE_MASK;
  	enet_writel(priv, val, ENET_CTL_REG);
  	enet_dma_writel(priv, ENETDMA_CFG_EN_MASK, ENETDMA_CFG_REG);
@@ -642,7 +679,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	if (priv->has_phy)
  		phy_start(priv->phydev);
-@@ -1109,13 +1140,13 @@ static void bcm_enet_disable_dma(struct
+@@ -1136,13 +1167,13 @@ static void bcm_enet_disable_dma(struct
  {
  	int limit;
  
@@ -658,7 +695,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  		if (!(val & ENETDMAC_CHANCFG_EN_MASK))
  			break;
  		udelay(1);
-@@ -1142,8 +1173,8 @@ static int bcm_enet_stop(struct net_devi
+@@ -1169,8 +1200,8 @@ static int bcm_enet_stop(struct net_devi
  
  	/* mask all interrupts */
  	enet_writel(priv, 0, ENET_IRMASK_REG);
@@ -669,19 +706,19 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	/* make sure no mib update is scheduled */
  	cancel_work_sync(&priv->mib_update_task);
-@@ -1751,6 +1782,11 @@ static int bcm_enet_probe(struct platfor
+@@ -1784,6 +1815,11 @@ static int bcm_enet_probe(struct platfor
  		priv->pause_tx = pd->pause_tx;
  		priv->force_duplex_full = pd->force_duplex_full;
  		priv->force_speed_100 = pd->force_speed_100;
 +		priv->dma_chan_en_mask = pd->dma_chan_en_mask;
 +		priv->dma_chan_int_mask = pd->dma_chan_int_mask;
 +		priv->dma_chan_width = pd->dma_chan_width;
-+		priv->dma_no_sram = pd->dma_no_sram;
++		priv->dma_has_sram = pd->dma_has_sram;
 +		priv->dma_desc_shift = pd->dma_desc_shift;
  	}
  
  	if (priv->mac_id == 0 && priv->has_phy && !priv->use_external_mii) {
-@@ -2122,8 +2158,8 @@ static int bcm_enetsw_open(struct net_de
+@@ -2121,8 +2157,8 @@ static int bcm_enetsw_open(struct net_de
  	kdev = &priv->pdev->dev;
  
  	/* mask all interrupts and request them */
@@ -692,7 +729,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	ret = request_irq(priv->irq_rx, bcm_enet_isr_dma,
  			  IRQF_DISABLED, dev->name, dev);
-@@ -2247,23 +2283,23 @@ static int bcm_enetsw_open(struct net_de
+@@ -2234,23 +2270,23 @@ static int bcm_enetsw_open(struct net_de
  
  	/* write rx & tx ring addresses */
  	enet_dmas_writel(priv, priv->rx_desc_dma,
@@ -726,7 +763,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	/* set flow control low/high threshold to 1/3 / 2/3 */
  	val = priv->rx_ring_size / 3;
-@@ -2276,21 +2312,21 @@ static int bcm_enetsw_open(struct net_de
+@@ -2264,21 +2300,21 @@ static int bcm_enetsw_open(struct net_de
  	wmb();
  	enet_dma_writel(priv, ENETDMA_CFG_EN_MASK, ENETDMA_CFG_REG);
  	enet_dmac_writel(priv, ENETDMAC_CHANCFG_EN_MASK,
@@ -753,7 +790,7 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	netif_carrier_on(dev);
  	netif_start_queue(dev);
-@@ -2396,8 +2432,8 @@ static int bcm_enetsw_stop(struct net_de
+@@ -2380,8 +2416,8 @@ static int bcm_enetsw_stop(struct net_de
  	del_timer_sync(&priv->rx_timeout);
  
  	/* mask all interrupts */
@@ -764,10 +801,11 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
  
  	/* disable dma & mac */
  	bcm_enet_disable_dma(priv, priv->tx_chan);
-@@ -2735,6 +2771,9 @@ static int bcm_enetsw_probe(struct platf
+@@ -2715,6 +2751,10 @@ static int bcm_enetsw_probe(struct platf
  		memcpy(priv->used_ports, pd->used_ports,
- 		       sizeof (pd->used_ports));
+ 		       sizeof(pd->used_ports));
  		priv->num_ports = pd->num_ports;
++		priv->dma_has_sram = pd->dma_has_sram;
 +		priv->dma_chan_en_mask = pd->dma_chan_en_mask;
 +		priv->dma_chan_int_mask = pd->dma_chan_int_mask;
 +		priv->dma_chan_width = pd->dma_chan_width;
@@ -787,8 +825,8 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 +	/* dma channel interrupt mask */
 +	u32 dma_chan_int_mask;
 +
-+	/* dma engine has *no* internal SRAM */
-+	unsigned int dma_no_sram;
++	/* DMA engine has internal SRAM */
++	bool dma_has_sram;
 +
 +	/* dma channel width */
 +	unsigned int dma_chan_width;
@@ -797,4 +835,4 @@ Subject: [PATCH 69/72] 443-MIPS-BCM63XX-enable-enet-for-BCM6345.patch
 +	unsigned int dma_desc_shift;
  };
  
- static inline int bcm_enet_port_is_rgmii(int portid)
+ 

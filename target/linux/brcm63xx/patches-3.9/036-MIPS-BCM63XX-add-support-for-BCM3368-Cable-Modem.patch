@@ -1,8 +1,54 @@
+From 31c761c9c1fa91bf4ed83d75dcbc4e426ea2b670 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Tue, 18 Jun 2013 16:55:40 +0000
+Subject: [PATCH 2/6] MIPS: BCM63XX: add support for BCM3368 Cable Modem
+
+The Broadcom BCM3368 Cable Modem SoC is extremely similar to the
+existing BCM63xx DSL SoCs, in particular BCM6358, therefore little effort
+in the existing code base is required to get it supported. This patch adds
+support for the following on-chip peripherals:
+
+- two UARTS
+- GPIO
+- Ethernet
+- SPI
+- PCI
+- NOR Flash
+
+The most noticeable difference with 3368 is that it has its peripheral
+register at 0xfff8_0000 we check that separately in ioremap.h. Since
+3368 is identical to 6358 for its clock and reset bits, we use them
+verbatim.
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: cernekee@gmail.com
+Cc: jogo@openwrt.org
+Patchwork: https://patchwork.linux-mips.org/patch/5499/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/bcm63xx/Kconfig                         |    4 +
+ arch/mips/bcm63xx/clk.c                           |   18 ++--
+ arch/mips/bcm63xx/cpu.c                           |   28 +++++-
+ arch/mips/bcm63xx/dev-flash.c                     |    1 +
+ arch/mips/bcm63xx/dev-spi.c                       |    6 +-
+ arch/mips/bcm63xx/dev-uart.c                      |    3 +-
+ arch/mips/bcm63xx/irq.c                           |   19 ++++
+ arch/mips/bcm63xx/prom.c                          |    4 +-
+ arch/mips/bcm63xx/reset.c                         |   29 +++++-
+ arch/mips/bcm63xx/setup.c                         |    3 +
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h  |  110 +++++++++++++++++++++
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h |    1 +
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h |   45 ++++++++-
+ arch/mips/include/asm/mach-bcm63xx/ioremap.h      |    4 +
+ arch/mips/pci/pci-bcm63xx.c                       |    3 +-
+ 15 files changed, 259 insertions(+), 19 deletions(-)
+
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
-@@ -13,6 +13,10 @@ config BCM63XX_EHCI
- 	select USB_EHCI_BIG_ENDIAN_DESC if USB_EHCI_HCD
- 	select USB_EHCI_BIG_ENDIAN_MMIO if USB_EHCI_HCD
+@@ -1,6 +1,10 @@
+ menu "CPU support"
+ 	depends on BCM63XX
  
 +config BCM63XX_CPU_3368
 +	bool "support 3368 CPU"
@@ -11,6 +57,61 @@
  config BCM63XX_CPU_6328
  	bool "support 6328 CPU"
  	select HW_HAS_PCI
+--- a/arch/mips/bcm63xx/clk.c
++++ b/arch/mips/bcm63xx/clk.c
+@@ -84,7 +84,7 @@ static void enetx_set(struct clk *clk, i
+ 	else
+ 		clk_disable_unlocked(&clk_enet_misc);
+ 
+-	if (BCMCPU_IS_6358()) {
++	if (BCMCPU_IS_3368() || BCMCPU_IS_6358()) {
+ 		u32 mask;
+ 
+ 		if (clk->id == 0)
+@@ -110,9 +110,8 @@ static struct clk clk_enet1 = {
+  */
+ static void ephy_set(struct clk *clk, int enable)
+ {
+-	if (!BCMCPU_IS_6358())
+-		return;
+-	bcm_hwclock_set(CKCTL_6358_EPHY_EN, enable);
++	if (BCMCPU_IS_3368() || BCMCPU_IS_6358())
++		bcm_hwclock_set(CKCTL_6358_EPHY_EN, enable);
+ }
+ 
+ 
+@@ -155,9 +154,10 @@ static struct clk clk_enetsw = {
+  */
+ static void pcm_set(struct clk *clk, int enable)
+ {
+-	if (!BCMCPU_IS_6358())
+-		return;
+-	bcm_hwclock_set(CKCTL_6358_PCM_EN, enable);
++	if (BCMCPU_IS_3368())
++		bcm_hwclock_set(CKCTL_3368_PCM_EN, enable);
++	if (BCMCPU_IS_6358())
++		bcm_hwclock_set(CKCTL_6358_PCM_EN, enable);
+ }
+ 
+ static struct clk clk_pcm = {
+@@ -211,7 +211,7 @@ static void spi_set(struct clk *clk, int
+ 		mask = CKCTL_6338_SPI_EN;
+ 	else if (BCMCPU_IS_6348())
+ 		mask = CKCTL_6348_SPI_EN;
+-	else if (BCMCPU_IS_6358())
++	else if (BCMCPU_IS_3368() || BCMCPU_IS_6358())
+ 		mask = CKCTL_6358_SPI_EN;
+ 	else if (BCMCPU_IS_6362())
+ 		mask = CKCTL_6362_SPI_EN;
+@@ -338,7 +338,7 @@ struct clk *clk_get(struct device *dev,
+ 		return &clk_xtm;
+ 	if (!strcmp(id, "periph"))
+ 		return &clk_periph;
+-	if (BCMCPU_IS_6358() && !strcmp(id, "pcm"))
++	if ((BCMCPU_IS_3368() || BCMCPU_IS_6358()) && !strcmp(id, "pcm"))
+ 		return &clk_pcm;
+ 	if ((BCMCPU_IS_6362() || BCMCPU_IS_6368()) && !strcmp(id, "ipsec"))
+ 		return &clk_ipsec;
 --- a/arch/mips/bcm63xx/cpu.c
 +++ b/arch/mips/bcm63xx/cpu.c
 @@ -29,6 +29,14 @@ static u8 bcm63xx_cpu_rev;
@@ -78,22 +179,95 @@
  	case BCM6328_CPU_ID:
  		bcm63xx_regs_base = bcm6328_regs_base;
  		bcm63xx_irqs = bcm6328_irqs;
+--- a/arch/mips/bcm63xx/dev-flash.c
++++ b/arch/mips/bcm63xx/dev-flash.c
+@@ -71,6 +71,7 @@ static int __init bcm63xx_detect_flash_t
+ 	case BCM6348_CPU_ID:
+ 		/* no way to auto detect so assume parallel */
+ 		return BCM63XX_FLASH_TYPE_PARALLEL;
++	case BCM3368_CPU_ID:
+ 	case BCM6358_CPU_ID:
+ 		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
+ 		if (val & STRAPBUS_6358_BOOT_SEL_PARALLEL)
+--- a/arch/mips/bcm63xx/dev-spi.c
++++ b/arch/mips/bcm63xx/dev-spi.c
+@@ -37,7 +37,8 @@ static __init void bcm63xx_spi_regs_init
+ {
+ 	if (BCMCPU_IS_6338() || BCMCPU_IS_6348())
+ 		bcm63xx_regs_spi = bcm6348_regs_spi;
+-	if (BCMCPU_IS_6358() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
++	if (BCMCPU_IS_3368() || BCMCPU_IS_6358() ||
++		BCMCPU_IS_6362() || BCMCPU_IS_6368())
+ 		bcm63xx_regs_spi = bcm6358_regs_spi;
+ }
+ #else
+@@ -87,7 +88,8 @@ int __init bcm63xx_spi_register(void)
+ 		spi_pdata.msg_ctl_width = SPI_6348_MSG_CTL_WIDTH;
+ 	}
+ 
+-	if (BCMCPU_IS_6358() || BCMCPU_IS_6362() || BCMCPU_IS_6368()) {
++	if (BCMCPU_IS_3368() || BCMCPU_IS_6358() || BCMCPU_IS_6362() ||
++		BCMCPU_IS_6368()) {
+ 		spi_resources[0].end += BCM_6358_RSET_SPI_SIZE - 1;
+ 		spi_pdata.fifo_size = SPI_6358_MSG_DATA_SIZE;
+ 		spi_pdata.msg_type_shift = SPI_6358_MSG_TYPE_SHIFT;
 --- a/arch/mips/bcm63xx/dev-uart.c
 +++ b/arch/mips/bcm63xx/dev-uart.c
-@@ -54,8 +54,8 @@ int __init bcm63xx_uart_register(unsigne
+@@ -54,7 +54,8 @@ int __init bcm63xx_uart_register(unsigne
  	if (id >= ARRAY_SIZE(bcm63xx_uart_devices))
  		return -ENODEV;
  
--	if (id == 1 && !BCMCPU_IS_6328() && !BCMCPU_IS_6358() &&
--	    !BCMCPU_IS_6368())
-+	if (id == 1 && !BCMCPU_IS_3368() && !BCMCPU_IS_6328() &&
-+			!BCMCPU_IS_6358() && !BCMCPU_IS_6368())
+-	if (id == 1 && (!BCMCPU_IS_6358() && !BCMCPU_IS_6368()))
++	if (id == 1 && (!BCMCPU_IS_3368() && !BCMCPU_IS_6358() &&
++		!BCMCPU_IS_6368()))
  		return -ENODEV;
  
  	if (id == 0) {
+--- a/arch/mips/bcm63xx/irq.c
++++ b/arch/mips/bcm63xx/irq.c
+@@ -27,6 +27,17 @@ static void __internal_irq_unmask_32(uns
+ static void __internal_irq_unmask_64(unsigned int irq) __maybe_unused;
+ 
+ #ifndef BCMCPU_RUNTIME_DETECT
++#ifdef CONFIG_BCM63XX_CPU_3368
++#define irq_stat_reg		PERF_IRQSTAT_3368_REG
++#define irq_mask_reg		PERF_IRQMASK_3368_REG
++#define irq_bits		32
++#define is_ext_irq_cascaded	0
++#define ext_irq_start		0
++#define ext_irq_end		0
++#define ext_irq_count		4
++#define ext_irq_cfg_reg1	PERF_EXTIRQ_CFG_REG_3368
++#define ext_irq_cfg_reg2	0
++#endif
+ #ifdef CONFIG_BCM63XX_CPU_6328
+ #define irq_stat_reg		PERF_IRQSTAT_6328_REG
+ #define irq_mask_reg		PERF_IRQMASK_6328_REG
+@@ -140,6 +151,13 @@ static void bcm63xx_init_irq(void)
+ 	irq_mask_addr = bcm63xx_regset_address(RSET_PERF);
+ 
+ 	switch (bcm63xx_get_cpu_id()) {
++	case BCM3368_CPU_ID:
++		irq_stat_addr += PERF_IRQSTAT_3368_REG;
++		irq_mask_addr += PERF_IRQMASK_3368_REG;
++		irq_bits = 32;
++		ext_irq_count = 4;
++		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_3368;
++		break;
+ 	case BCM6328_CPU_ID:
+ 		irq_stat_addr += PERF_IRQSTAT_6328_REG;
+ 		irq_mask_addr += PERF_IRQMASK_6328_REG;
+@@ -479,6 +497,7 @@ static int bcm63xx_external_irq_set_type
+ 			reg &= ~EXTIRQ_CFG_BOTHEDGE_6348(irq);
+ 		break;
+ 
++	case BCM3368_CPU_ID:
+ 	case BCM6328_CPU_ID:
+ 	case BCM6338_CPU_ID:
+ 	case BCM6345_CPU_ID:
 --- a/arch/mips/bcm63xx/prom.c
 +++ b/arch/mips/bcm63xx/prom.c
-@@ -30,7 +30,9 @@ void __init prom_init(void)
+@@ -26,7 +26,9 @@ void __init prom_init(void)
  	bcm_wdt_writel(WDT_STOP_2, WDT_CTL_REG);
  
  	/* disable all hardware blocks clock for now */
@@ -104,6 +278,65 @@
  		mask = CKCTL_6328_ALL_SAFE_EN;
  	else if (BCMCPU_IS_6338())
  		mask = CKCTL_6338_ALL_SAFE_EN;
+--- a/arch/mips/bcm63xx/reset.c
++++ b/arch/mips/bcm63xx/reset.c
+@@ -30,6 +30,19 @@
+ 	[BCM63XX_RESET_PCIE]		= BCM## __cpu ##_RESET_PCIE,	\
+ 	[BCM63XX_RESET_PCIE_EXT]	= BCM## __cpu ##_RESET_PCIE_EXT,
+ 
++#define BCM3368_RESET_SPI	SOFTRESET_3368_SPI_MASK
++#define BCM3368_RESET_ENET	SOFTRESET_3368_ENET_MASK
++#define BCM3368_RESET_USBH	0
++#define BCM3368_RESET_USBD	SOFTRESET_3368_USBS_MASK
++#define BCM3368_RESET_DSL	0
++#define BCM3368_RESET_SAR	0
++#define BCM3368_RESET_EPHY	SOFTRESET_3368_EPHY_MASK
++#define BCM3368_RESET_ENETSW	0
++#define BCM3368_RESET_PCM	SOFTRESET_3368_PCM_MASK
++#define BCM3368_RESET_MPI	SOFTRESET_3368_MPI_MASK
++#define BCM3368_RESET_PCIE	0
++#define BCM3368_RESET_PCIE_EXT	0
++
+ #define BCM6328_RESET_SPI	SOFTRESET_6328_SPI_MASK
+ #define BCM6328_RESET_ENET	0
+ #define BCM6328_RESET_USBH	SOFTRESET_6328_USBH_MASK
+@@ -117,6 +130,10 @@
+ /*
+  * core reset bits
+  */
++static const u32 bcm3368_reset_bits[] = {
++	__GEN_RESET_BITS_TABLE(3368)
++};
++
+ static const u32 bcm6328_reset_bits[] = {
+ 	__GEN_RESET_BITS_TABLE(6328)
+ };
+@@ -146,7 +163,10 @@ static int reset_reg;
+ 
+ static int __init bcm63xx_reset_bits_init(void)
+ {
+-	if (BCMCPU_IS_6328()) {
++	if (BCMCPU_IS_3368()) {
++		reset_reg = PERF_SOFTRESET_6358_REG;
++		bcm63xx_reset_bits = bcm3368_reset_bits;
++	} else if (BCMCPU_IS_6328()) {
+ 		reset_reg = PERF_SOFTRESET_6328_REG;
+ 		bcm63xx_reset_bits = bcm6328_reset_bits;
+ 	} else if (BCMCPU_IS_6338()) {
+@@ -170,6 +190,13 @@ static int __init bcm63xx_reset_bits_ini
+ }
+ #else
+ 
++#ifdef CONFIG_BCM63XX_CPU_3368
++static const u32 bcm63xx_reset_bits[] = {
++	__GEN_RESET_BITS_TABLE(3368)
++};
++#define reset_reg PERF_SOFTRESET_6358_REG
++#endif
++
+ #ifdef CONFIG_BCM63XX_CPU_6328
+ static const u32 bcm63xx_reset_bits[] = {
+ 	__GEN_RESET_BITS_TABLE(6328)
 --- a/arch/mips/bcm63xx/setup.c
 +++ b/arch/mips/bcm63xx/setup.c
 @@ -68,6 +68,9 @@ void bcm63xx_machine_reboot(void)
@@ -146,7 +379,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6328
  # ifdef bcm63xx_get_cpu_id
  #  undef bcm63xx_get_cpu_id
-@@ -196,6 +210,53 @@ enum bcm63xx_regs_set {
+@@ -191,6 +205,53 @@ enum bcm63xx_regs_set {
  #define RSET_RNG_SIZE			20
  
  /*
@@ -200,7 +433,7 @@
   * 6328 register sets base address
   */
  #define BCM_6328_DSL_LMEM_BASE		(0xdeadbeef)
-@@ -633,6 +694,9 @@ static inline unsigned long bcm63xx_regs
+@@ -620,6 +681,9 @@ static inline unsigned long bcm63xx_regs
  #ifdef BCMCPU_RUNTIME_DETECT
  	return bcm63xx_regs_base[set];
  #else
@@ -210,7 +443,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6328
  	__GEN_RSET(6328)
  #endif
-@@ -701,6 +765,52 @@ enum bcm63xx_irq {
+@@ -687,6 +751,52 @@ enum bcm63xx_irq {
  };
  
  /*
@@ -320,26 +553,40 @@
  
  /* Interrupt Mask register */
 +#define PERF_IRQMASK_3368_REG		0xc
- #define PERF_IRQMASK_6328_REG(x)	(0x20 + (x) * 0x10)
+ #define PERF_IRQMASK_6328_REG		0x20
  #define PERF_IRQMASK_6338_REG		0xc
  #define PERF_IRQMASK_6345_REG		0xc
 @@ -190,6 +224,7 @@
- #define PERF_IRQMASK_6368_REG(x)	(0x20 + (x) * 0x10)
+ #define PERF_IRQMASK_6368_REG		0x20
  
  /* Interrupt Status register */
 +#define PERF_IRQSTAT_3368_REG		0x10
- #define PERF_IRQSTAT_6328_REG(x)	(0x28 + (x) * 0x10)
+ #define PERF_IRQSTAT_6328_REG		0x28
  #define PERF_IRQSTAT_6338_REG		0x10
  #define PERF_IRQSTAT_6345_REG		0x10
 @@ -199,6 +234,7 @@
- #define PERF_IRQSTAT_6368_REG(x)	(0x28 + (x) * 0x10)
+ #define PERF_IRQSTAT_6368_REG		0x28
  
  /* External Interrupt Configuration register */
 +#define PERF_EXTIRQ_CFG_REG_3368	0x14
  #define PERF_EXTIRQ_CFG_REG_6328	0x18
  #define PERF_EXTIRQ_CFG_REG_6338	0x14
  #define PERF_EXTIRQ_CFG_REG_6345	0x14
-@@ -1386,7 +1422,7 @@
+@@ -236,6 +272,13 @@
+ #define PERF_SOFTRESET_6362_REG		0x10
+ #define PERF_SOFTRESET_6368_REG		0x10
+ 
++#define SOFTRESET_3368_SPI_MASK		(1 << 0)
++#define SOFTRESET_3368_ENET_MASK	(1 << 2)
++#define SOFTRESET_3368_MPI_MASK		(1 << 3)
++#define SOFTRESET_3368_EPHY_MASK	(1 << 6)
++#define SOFTRESET_3368_USBS_MASK	(1 << 11)
++#define SOFTRESET_3368_PCM_MASK		(1 << 13)
++
+ #define SOFTRESET_6328_SPI_MASK		(1 << 0)
+ #define SOFTRESET_6328_EPHY_MASK	(1 << 1)
+ #define SOFTRESET_6328_SAR_MASK		(1 << 2)
+@@ -1293,7 +1336,7 @@
  #define SPI_6348_RX_DATA		0x80
  #define SPI_6348_RX_DATA_SIZE		0x3f
  
@@ -361,128 +608,6 @@
  	case BCM6338_CPU_ID:
  	case BCM6345_CPU_ID:
  	case BCM6348_CPU_ID:
---- a/arch/mips/bcm63xx/irq.c
-+++ b/arch/mips/bcm63xx/irq.c
-@@ -33,6 +33,19 @@ static DEFINE_SPINLOCK(ipic_lock);
- static DEFINE_SPINLOCK(epic_lock);
- 
- #ifndef BCMCPU_RUNTIME_DETECT
-+#ifdef CONFIG_BCM63XX_CPU_3368
-+#define irq_stat_reg0		PERF_IRQSTAT_3368_REG
-+#define irq_mask_reg0		PERF_IRQMASK_3368_REG
-+#define irq_stat_reg1		0
-+#define irq_mask_reg1		0
-+#define irq_bits		32
-+#define is_ext_irq_cascaded	0
-+#define ext_irq_start		0
-+#define ext_irq_end		0
-+#define ext_irq_count		4
-+#define ext_irq_cfg_reg1	PERF_EXTIRQ_CFG_REG_3368
-+#define ext_irq_cfg_reg2	0
-+#endif
- #ifdef CONFIG_BCM63XX_CPU_6328
- #define irq_stat_reg0		PERF_IRQSTAT_6328_REG(0)
- #define irq_mask_reg0		PERF_IRQMASK_6328_REG(0)
-@@ -165,6 +178,13 @@ static void bcm63xx_init_irq(void)
- 	irq_mask_addr1 = bcm63xx_regset_address(RSET_PERF);
- 
- 	switch (bcm63xx_get_cpu_id()) {
-+	case BCM3368_CPU_ID:
-+		irq_stat_addr0 += PERF_IRQSTAT_3368_REG;
-+		irq_mask_addr0 += PERF_IRQMASK_3368_REG;
-+		irq_bits = 32;
-+		ext_irq_count = 4;
-+		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_3368;
-+		break;
- 	case BCM6328_CPU_ID:
- 		irq_stat_addr0 += PERF_IRQSTAT_6328_REG(0);
- 		irq_mask_addr0 += PERF_IRQMASK_6328_REG(0);
---- a/arch/mips/bcm63xx/dev-spi.c
-+++ b/arch/mips/bcm63xx/dev-spi.c
-@@ -37,7 +37,7 @@ static __init void bcm63xx_spi_regs_init
- {
- 	if (BCMCPU_IS_6338() || BCMCPU_IS_6348())
- 		bcm63xx_regs_spi = bcm6348_regs_spi;
--	if (BCMCPU_IS_6358() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
-+	if (BCMCPU_IS_3368() || BCMCPU_IS_6358() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
- 		bcm63xx_regs_spi = bcm6358_regs_spi;
- }
- #else
-@@ -87,7 +87,8 @@ int __init bcm63xx_spi_register(void)
- 		spi_pdata.msg_ctl_width = SPI_6348_MSG_CTL_WIDTH;
- 	}
- 
--	if (BCMCPU_IS_6358() || BCMCPU_IS_6362() || BCMCPU_IS_6368()) {
-+	if (BCMCPU_IS_3368() || BCMCPU_IS_6358() || BCMCPU_IS_6362() ||
-+		BCMCPU_IS_6368()) {
- 		spi_resources[0].end += BCM_6358_RSET_SPI_SIZE - 1;
- 		spi_pdata.fifo_size = SPI_6358_MSG_DATA_SIZE;
- 		spi_pdata.msg_type_shift = SPI_6358_MSG_TYPE_SHIFT;
---- a/arch/mips/bcm63xx/clk.c
-+++ b/arch/mips/bcm63xx/clk.c
-@@ -84,7 +84,7 @@ static void enetx_set(struct clk *clk, i
- 	else
- 		clk_disable_unlocked(&clk_enet_misc);
- 
--	if (BCMCPU_IS_6358()) {
-+	if (BCMCPU_IS_3368() || BCMCPU_IS_6358()) {
- 		u32 mask;
- 
- 		if (clk->id == 0)
-@@ -110,9 +110,8 @@ static struct clk clk_enet1 = {
-  */
- static void ephy_set(struct clk *clk, int enable)
- {
--	if (!BCMCPU_IS_6358())
--		return;
--	bcm_hwclock_set(CKCTL_6358_EPHY_EN, enable);
-+	if (BCMCPU_IS_3368() || BCMCPU_IS_6358())
-+		bcm_hwclock_set(CKCTL_6358_EPHY_EN, enable);
- }
- 
- 
-@@ -155,9 +154,10 @@ static struct clk clk_enetsw = {
-  */
- static void pcm_set(struct clk *clk, int enable)
- {
--	if (!BCMCPU_IS_6358())
--		return;
--	bcm_hwclock_set(CKCTL_6358_PCM_EN, enable);
-+	if (BCMCPU_IS_3368())
-+		bcm_hwclock_set(CKCTL_3368_PCM_EN, enable);
-+	if (BCMCPU_IS_6358())
-+		bcm_hwclock_set(CKCTL_6358_PCM_EN, enable);
- }
- 
- static struct clk clk_pcm = {
-@@ -221,7 +221,7 @@ static void spi_set(struct clk *clk, int
- 		mask = CKCTL_6338_SPI_EN;
- 	else if (BCMCPU_IS_6348())
- 		mask = CKCTL_6348_SPI_EN;
--	else if (BCMCPU_IS_6358())
-+	else if (BCMCPU_IS_3368() || BCMCPU_IS_6358())
- 		mask = CKCTL_6358_SPI_EN;
- 	else if (BCMCPU_IS_6362())
- 		mask = CKCTL_6362_SPI_EN;
-@@ -370,7 +370,7 @@ struct clk *clk_get(struct device *dev,
- 		return &clk_xtm;
- 	if (!strcmp(id, "periph"))
- 		return &clk_periph;
--	if (BCMCPU_IS_6358() && !strcmp(id, "pcm"))
-+	if ((BCMCPU_IS_3368() || BCMCPU_IS_6358()) && !strcmp(id, "pcm"))
- 		return &clk_pcm;
- 	if ((BCMCPU_IS_6362() || BCMCPU_IS_6368()) && !strcmp(id, "ipsec"))
- 		return &clk_ipsec;
---- a/arch/mips/bcm63xx/dev-flash.c
-+++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -102,6 +102,7 @@ static int __init bcm63xx_detect_flash_t
- 		/* no way to auto detect so assume parallel */
- 		bcm63xx_attached_flash = BCM63XX_FLASH_TYPE_PARALLEL;
- 		break;
-+	case BCM3368_CPU_ID:
- 	case BCM6358_CPU_ID:
- 		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
- 		if (val & STRAPBUS_6358_BOOT_SEL_PARALLEL)
 --- a/arch/mips/pci/pci-bcm63xx.c
 +++ b/arch/mips/pci/pci-bcm63xx.c
 @@ -266,7 +266,7 @@ static int __init bcm63xx_register_pci(v

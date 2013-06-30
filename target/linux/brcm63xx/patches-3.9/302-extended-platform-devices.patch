@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -912,6 +912,9 @@ int __init board_register_devices(void)
+@@ -961,6 +961,9 @@ int __init board_register_devices(void)
  
  	bcm63xx_spi_register();
  
@@ -12,10 +12,10 @@
  	/* count number of LEDs defined by this device */
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -49,6 +49,10 @@ struct board_info {
+@@ -57,6 +57,10 @@ struct board_info {
  
- 	/* Buttons */
- 	struct gpio_keys_button buttons[4];
+ 	/* External PHY reset GPIO flags from gpio.h */
+ 	unsigned long ephy_reset_gpio_flags;
 +
 +	/* Additional platform devices */
 +	struct platform_device **devs;

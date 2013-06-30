@@ -58,7 +58,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -85,6 +108,9 @@ static int __init bcm63xx_detect_flash_t
+@@ -86,6 +109,9 @@ static int __init bcm63xx_detect_flash_t
  			return BCM63XX_FLASH_TYPE_NAND;
  	case BCM6368_CPU_ID:
  		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
@@ -68,7 +68,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
  		case STRAPBUS_6368_BOOT_SEL_NAND:
  			return BCM63XX_FLASH_TYPE_NAND;
-@@ -116,8 +142,13 @@ int __init bcm63xx_flash_register(void)
+@@ -117,8 +143,13 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:
@@ -86,7 +86,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		return -ENODEV;
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -629,6 +629,7 @@
+@@ -672,6 +672,7 @@
  #define GPIO_STRAPBUS_REG		0x40
  #define STRAPBUS_6358_BOOT_SEL_PARALLEL (1 << 1)
  #define STRAPBUS_6358_BOOT_SEL_SERIAL	(0 << 1)
@@ -94,7 +94,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define STRAPBUS_6368_BOOT_SEL_MASK	0x3
  #define STRAPBUS_6368_BOOT_SEL_NAND	0
  #define STRAPBUS_6368_BOOT_SEL_SERIAL	1
-@@ -1443,6 +1444,7 @@
+@@ -1513,6 +1514,7 @@
  #define STRAPBUS_6362_BOOT_SEL_NAND	(0 << 15)
  
  #define MISC_STRAPBUS_6328_REG		0x240

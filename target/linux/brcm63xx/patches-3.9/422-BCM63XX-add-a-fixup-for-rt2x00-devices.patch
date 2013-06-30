@@ -34,9 +34,9 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  #include <pci_ath9k_fixup.h>
 +#include <pci_rt2x00_fixup.h>
  
+ #include <uapi/linux/bcm933xx_hcs.h>
  #include <uapi/linux/bcm963xx_tag.h>
- 
-@@ -991,9 +992,19 @@ int __init board_register_devices(void)
+@@ -1038,9 +1039,19 @@ int __init board_register_devices(void)
  	}
  
  	/* register any fixups */
@@ -61,7 +61,7 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  }
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -141,7 +141,7 @@ static int __init bcm63xx_detect_flash_t
+@@ -142,7 +142,7 @@ static int __init bcm63xx_detect_flash_t
  	return 0;
  }
  
