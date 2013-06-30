@@ -1,23 +1,26 @@
 --- a/wpa_supplicant/wpa_supplicant_i.h
 +++ b/wpa_supplicant/wpa_supplicant_i.h
-@@ -96,6 +96,8 @@ struct wpa_interface {
- 	 * receiving of EAPOL frames from an additional interface.
- 	 */
- 	const char *bridge_ifname;
-+
-+	const char *hostapd_ctrl;
- };
+@@ -96,6 +96,11 @@ struct wpa_interface {
+ 	const char *ifname;
  
- /**
-@@ -306,6 +308,8 @@ struct wpa_supplicant {
+ 	/**
++	 * hostapd_ctrl - path to hostapd control socket for notification
++	 */
++	const char *hostapd_ctrl;
++
++	/**
+ 	 * bridge_ifname - Optional bridge interface name
+ 	 *
+ 	 * If the driver interface (ifname) is included in a Linux bridge
+@@ -328,6 +333,8 @@ struct wpa_supplicant {
  #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
  	char bridge_ifname[16];
  
 +	struct wpa_ctrl *hostapd;
 +
  	char *confname;
+ 	char *confanother;
  	struct wpa_config *conf;
- 	int countermeasures;
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
 @@ -13,6 +13,10 @@ PKG_CONFIG ?= pkg-config
@@ -44,7 +47,7 @@
  CONFIG_OS=win32
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -107,6 +107,55 @@ extern int wpa_debug_show_keys;
+@@ -109,6 +109,55 @@ extern int wpa_debug_show_keys;
  extern int wpa_debug_timestamp;
  extern struct wpa_driver_ops *wpa_drivers[];
  
@@ -100,7 +103,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -667,8 +716,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -675,8 +724,16 @@ void wpa_supplicant_set_state(struct wpa
  #endif /* CONFIG_P2P */
  
  		sme_sched_obss_scan(wpa_s, 1);
@@ -117,7 +120,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2853,6 +2910,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2866,6 +2923,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
@@ -174,16 +177,16 @@
  
 --- a/wpa_supplicant/main.c
 +++ b/wpa_supplicant/main.c
-@@ -25,7 +25,7 @@ static void usage(void)
- 	       "usage:\n"
+@@ -27,7 +27,7 @@ static void usage(void)
  	       "  wpa_supplicant [-BddhKLqqstuvW] [-P<pid file>] "
  	       "[-g<global ctrl>] \\\n"
+ 	       "        [-G<group>] \\\n"
 -	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] "
-+	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] [-H<hostapd path>]"
++	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] [-H<hostapd path>] "
  	       "[-p<driver_param>] \\\n"
  	       "        [-b<br_ifname>] [-f<debug file>] [-e<entropy file>] "
  	       "\\\n"
-@@ -67,6 +67,7 @@ static void usage(void)
+@@ -72,6 +72,7 @@ static void usage(void)
  #endif /* CONFIG_DEBUG_LINUX_TRACING */
  	printf("  -t = include timestamp in debug messages\n"
  	       "  -h = show this help text\n"
@@ -191,16 +194,16 @@
  	       "  -L = show license (BSD)\n"
  	       "  -o = override driver parameter for new interfaces\n"
  	       "  -O = override ctrl_interface parameter for new interfaces\n"
-@@ -155,7 +156,7 @@ int main(int argc, char *argv[])
+@@ -160,7 +161,7 @@ int main(int argc, char *argv[])
  
  	for (;;) {
  		c = getopt(argc, argv,
--			   "b:Bc:C:D:de:f:g:hi:KLNo:O:p:P:qsTtuvW");
-+			   "b:Bc:C:D:de:f:g:hH:i:KLNo:O:p:P:qsTtuvW");
+-			   "b:Bc:C:D:de:f:g:G:hi:I:KLNo:O:p:P:qsTtuvW");
++			   "b:Bc:C:D:de:f:g:G:hH:i:I:KLNo:O:p:P:qsTtuvW");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -199,6 +200,9 @@ int main(int argc, char *argv[])
+@@ -207,6 +208,9 @@ int main(int argc, char *argv[])
  			usage();
  			exitcode = 0;
  			goto out;
