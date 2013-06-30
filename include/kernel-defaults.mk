@@ -128,7 +128,7 @@ define Kernel/CopyImage
 	$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).elf
 ifneq ($(subst ",,$(KERNELNAME)),)
 	#")
-	$(foreach k,$(subst ",,$(KERNELNAME)),$(CP) $(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/$(IMAGES_DIR)/$(k) $(KERNEL_BUILD_DIR)/$(k)$(1);)
+	$(foreach k,$(filter-out dtbs,$(subst ",,$(KERNELNAME))),$(CP) $(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/$(IMAGES_DIR)/$(k) $(KERNEL_BUILD_DIR)/$(k)$(1);)
 	#")
 endif
 endef
