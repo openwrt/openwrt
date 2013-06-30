@@ -226,11 +226,7 @@
  	} else if (rt2x00_rt(rt2x00dev, RT2860) ||
  		   rt2x00_rt(rt2x00dev, RT2872)) {
  		/*
-@@ -5746,9 +5855,12 @@ static int rt2800_init_eeprom(struct rt2
- 	 */
- 	if (rt2x00_rt(rt2x00dev, RT3290) ||
- 	    rt2x00_rt(rt2x00dev, RT3352) ||
-+	    rt2x00_rt(rt2x00dev, RT5350) ||
+@@ -5749,6 +5858,8 @@ static int rt2800_init_eeprom(struct rt2
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2x00_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
@@ -239,7 +235,7 @@
  	else
  		rf = rt2x00_get_field16(eeprom, EEPROM_NIC_CONF0_RF_TYPE);
  
-@@ -5765,6 +5877,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -5765,6 +5876,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF3290:
  	case RF3320:
  	case RF3322:
@@ -247,7 +243,7 @@
  	case RF5360:
  	case RF5370:
  	case RF5372:
-@@ -6263,7 +6376,8 @@ static int rt2800_probe_hw_mode(struct r
+@@ -6263,7 +6375,8 @@ static int rt2800_probe_hw_mode(struct r
  		   rt2x00_rf(rt2x00dev, RF5392)) {
  		spec->num_channels = 14;
  		spec->channels = rf_vals_3x;
@@ -257,7 +253,7 @@
  		spec->num_channels = 14;
  		if (spec->clk_is_20mhz)
  			spec->channels = rf_vals_xtal20mhz_3x;
-@@ -6364,6 +6478,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -6364,6 +6477,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3320:
  	case RF3052:
  	case RF3290:
@@ -265,7 +261,7 @@
  	case RF5360:
  	case RF5370:
  	case RF5372:
-@@ -6401,6 +6516,7 @@ static int rt2800_probe_rt(struct rt2x00
+@@ -6401,6 +6515,7 @@ static int rt2800_probe_rt(struct rt2x00
  	case RT3352:
  	case RT3390:
  	case RT3572:
