@@ -12,8 +12,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/5171/
  arch/mips/ralink/rt305x.c |    2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/ralink/common.h b/arch/mips/ralink/common.h
-index 3009903..f4b19c6 100644
 --- a/arch/mips/ralink/common.h
 +++ b/arch/mips/ralink/common.h
 @@ -24,7 +24,7 @@ struct ralink_pinmux {
@@ -25,8 +23,6 @@ index 3009903..f4b19c6 100644
  
  struct ralink_soc_info {
  	unsigned char sys_type[RAMIPS_SYS_TYPE_LEN];
-diff --git a/arch/mips/ralink/rt305x.c b/arch/mips/ralink/rt305x.c
-index 5d49a54..f1a6c33 100644
 --- a/arch/mips/ralink/rt305x.c
 +++ b/arch/mips/ralink/rt305x.c
 @@ -114,7 +114,7 @@ void rt305x_wdt_reset(void)
@@ -38,6 +34,3 @@ index 5d49a54..f1a6c33 100644
  	.mode = mode_mux,
  	.uart = uart_mux,
  	.uart_shift = RT305X_GPIO_MODE_UART0_SHIFT,
--- 
-1.7.10.4
-

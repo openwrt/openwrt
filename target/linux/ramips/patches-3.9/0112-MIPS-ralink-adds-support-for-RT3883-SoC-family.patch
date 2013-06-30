@@ -20,9 +20,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/5185/
  create mode 100644 arch/mips/include/asm/mach-ralink/rt3883.h
  create mode 100644 arch/mips/ralink/rt3883.c
 
-diff --git a/arch/mips/include/asm/mach-ralink/rt3883.h b/arch/mips/include/asm/mach-ralink/rt3883.h
-new file mode 100644
-index 0000000..b91c6c1
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/rt3883.h
 @@ -0,0 +1,247 @@
@@ -273,8 +270,6 @@ index 0000000..b91c6c1
 +#define RT3883_FLASH_CFG_WIDTH_32BIT	0x2
 +
 +#endif /* _RT3883_REGS_H_ */
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index 6723b94..ce57d3e 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -15,6 +15,11 @@ choice
@@ -289,8 +284,6 @@ index 6723b94..ce57d3e 100644
  endchoice
  
  choice
-diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
-index 6d826f2..ba9669c 100644
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
 @@ -10,6 +10,7 @@ obj-y := prom.o of.o reset.o clk.o irq.o
@@ -301,11 +294,9 @@ index 6d826f2..ba9669c 100644
  
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
-diff --git a/arch/mips/ralink/Platform b/arch/mips/ralink/Platform
-index 3f49e51..f67c08d 100644
 --- a/arch/mips/ralink/Platform
 +++ b/arch/mips/ralink/Platform
-@@ -13,3 +13,8 @@ load-$(CONFIG_SOC_RT288X)	+= 0xffffffff88000000
+@@ -13,3 +13,8 @@ load-$(CONFIG_SOC_RT288X)	+= 0xffffffff8
  # Ralink RT305x
  #
  load-$(CONFIG_SOC_RT305X)	+= 0xffffffff80000000
@@ -314,9 +305,6 @@ index 3f49e51..f67c08d 100644
 +# Ralink RT3883
 +#
 +load-$(CONFIG_SOC_RT3883)	+= 0xffffffff80000000
-diff --git a/arch/mips/ralink/rt3883.c b/arch/mips/ralink/rt3883.c
-new file mode 100644
-index 0000000..2d90aa9
 --- /dev/null
 +++ b/arch/mips/ralink/rt3883.c
 @@ -0,0 +1,242 @@
@@ -562,6 +550,3 @@ index 0000000..2d90aa9
 +		(id >> RT3883_REVID_VER_ID_SHIFT) & RT3883_REVID_VER_ID_MASK,
 +		(id & RT3883_REVID_ECO_ID_MASK));
 +}
--- 
-1.7.10.4
-

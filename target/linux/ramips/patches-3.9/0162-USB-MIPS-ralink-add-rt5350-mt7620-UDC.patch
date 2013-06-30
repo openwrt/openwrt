@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/usb/gadget/rt_udc.h
  create mode 100644 drivers/usb/gadget/rt_udc_pdma.c
 
-diff --git a/drivers/usb/gadget/Kconfig b/drivers/usb/gadget/Kconfig
-index c7525b1..6f0e293 100644
 --- a/drivers/usb/gadget/Kconfig
 +++ b/drivers/usb/gadget/Kconfig
 @@ -336,6 +336,14 @@ config USB_MV_U3D
@@ -32,8 +30,6 @@ index c7525b1..6f0e293 100644
  #
  # Controllers available in both integrated and discrete versions
  #
-diff --git a/drivers/usb/gadget/Makefile b/drivers/usb/gadget/Makefile
-index 82fb225..f78a3b2 100644
 --- a/drivers/usb/gadget/Makefile
 +++ b/drivers/usb/gadget/Makefile
 @@ -34,6 +34,7 @@ obj-$(CONFIG_USB_MV_UDC)	+= mv_udc.o
@@ -44,9 +40,6 @@ index 82fb225..f78a3b2 100644
  
  # USB Functions
  obj-$(CONFIG_USB_F_ACM)		+= f_acm.o
-diff --git a/drivers/usb/gadget/rt_udc.h b/drivers/usb/gadget/rt_udc.h
-new file mode 100644
-index 0000000..088e0d9
 --- /dev/null
 +++ b/drivers/usb/gadget/rt_udc.h
 @@ -0,0 +1,417 @@
@@ -467,9 +460,6 @@ index 0000000..088e0d9
 +#endif /* DEBUG */
 +
 +#endif /* __LINUX_USB_GADGET_RT_UDC_H */
-diff --git a/drivers/usb/gadget/rt_udc_pdma.c b/drivers/usb/gadget/rt_udc_pdma.c
-new file mode 100644
-index 0000000..d5b89a2
 --- /dev/null
 +++ b/drivers/usb/gadget/rt_udc_pdma.c
 @@ -0,0 +1,2547 @@
@@ -3020,6 +3010,3 @@ index 0000000..d5b89a2
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:rt_udc");
 +
--- 
-1.7.10.4
-

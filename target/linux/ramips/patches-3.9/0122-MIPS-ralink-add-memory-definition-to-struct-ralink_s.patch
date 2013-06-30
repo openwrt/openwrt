@@ -13,11 +13,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/5179/
  arch/mips/ralink/common.h |    5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/arch/mips/ralink/common.h b/arch/mips/ralink/common.h
-index 299119b..83144c3 100644
 --- a/arch/mips/ralink/common.h
 +++ b/arch/mips/ralink/common.h
-@@ -33,6 +33,11 @@ extern struct ralink_pinmux rt_gpio_pinmux;
+@@ -33,6 +33,11 @@ extern struct ralink_pinmux rt_gpio_pinm
  struct ralink_soc_info {
  	unsigned char sys_type[RAMIPS_SYS_TYPE_LEN];
  	unsigned char *compatible;
@@ -29,6 +27,3 @@ index 299119b..83144c3 100644
  };
  extern struct ralink_soc_info soc_info;
  
--- 
-1.7.10.4
-

@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
-@@ -1188,7 +1188,7 @@ MODULE_LICENSE ("GPL");
+@@ -1192,7 +1192,7 @@ MODULE_LICENSE ("GPL");
  
  #ifdef CONFIG_USB_OHCI_HCD_PLATFORM
  #include "ohci-platform.c"
@@ -9,7 +9,7 @@
  #endif
  
  #if	!defined(PCI_DRIVER) &&		\
-@@ -1199,7 +1199,8 @@ MODULE_LICENSE ("GPL");
+@@ -1203,7 +1203,8 @@ MODULE_LICENSE ("GPL");
  	!defined(SA1111_DRIVER) &&	\
  	!defined(PS3_SYSTEM_BUS_DRIVER) && \
  	!defined(SM501_OHCI_DRIVER) && \
@@ -19,7 +19,7 @@
  #error "missing bus glue for ohci-hcd"
  #endif
  
-@@ -1277,9 +1278,19 @@ static int __init ohci_hcd_mod_init(void
+@@ -1281,9 +1282,19 @@ static int __init ohci_hcd_mod_init(void
  		goto error_tmio;
  #endif
  
@@ -39,7 +39,7 @@
  #ifdef TMIO_OHCI_DRIVER
  	platform_driver_unregister(&TMIO_OHCI_DRIVER);
   error_tmio:
-@@ -1329,6 +1340,9 @@ module_init(ohci_hcd_mod_init);
+@@ -1333,6 +1344,9 @@ module_init(ohci_hcd_mod_init);
  
  static void __exit ohci_hcd_mod_exit(void)
  {

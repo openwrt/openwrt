@@ -1,6 +1,6 @@
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -1939,7 +1939,7 @@ static int __xipram do_erase_chip(struct
+@@ -1957,7 +1957,7 @@ static int __xipram do_erase_chip(struct
  			chip->erase_suspended = 0;
  		}
  
@@ -9,7 +9,7 @@
  			break;
  
  		if (time_after(jiffies, timeo)) {
-@@ -2028,7 +2028,7 @@ static int __xipram do_erase_oneblock(st
+@@ -2046,7 +2046,7 @@ static int __xipram do_erase_oneblock(st
  			chip->erase_suspended = 0;
  		}
  

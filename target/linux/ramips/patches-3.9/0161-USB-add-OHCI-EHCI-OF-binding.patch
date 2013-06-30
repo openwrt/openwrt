@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/usb/host/ohci-platform.c |   37 +++++++++++++++++++++++++++-----
  4 files changed, 74 insertions(+), 12 deletions(-)
 
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index c8d5b6c..7cd1188 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -27,6 +27,8 @@ choice
@@ -26,8 +24,6 @@ index c8d5b6c..7cd1188 100644
  
  endchoice
  
-diff --git a/drivers/usb/Makefile b/drivers/usb/Makefile
-index 8f5ebce..b766256 100644
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
 @@ -12,6 +12,8 @@ obj-$(CONFIG_USB_DWC3)		+= dwc3/
@@ -47,8 +43,6 @@ index 8f5ebce..b766256 100644
  obj-$(CONFIG_EARLY_PRINTK_DBGP)	+= early/
  
  obj-$(CONFIG_USB_ATM)		+= atm/
-diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
-index ca75063..ae32410 100644
 --- a/drivers/usb/host/ehci-platform.c
 +++ b/drivers/usb/host/ehci-platform.c
 @@ -18,14 +18,18 @@
@@ -70,7 +64,7 @@ index ca75063..ae32410 100644
  #include <linux/usb/ehci_pdriver.h>
  
  #include "ehci.h"
-@@ -62,22 +66,32 @@ static const struct ehci_driver_overrides platform_overrides __initdata = {
+@@ -63,22 +67,32 @@ static const struct ehci_driver_override
  	.reset =	ehci_platform_reset,
  };
  
@@ -109,7 +103,7 @@ index ca75063..ae32410 100644
  	irq = platform_get_irq(dev, 0);
  	if (irq < 0) {
  		dev_err(&dev->dev, "no irq provided");
-@@ -105,6 +119,15 @@ static int ehci_platform_probe(struct platform_device *dev)
+@@ -106,6 +120,15 @@ static int ehci_platform_probe(struct pl
  	hcd->rsrc_start = res_mem->start;
  	hcd->rsrc_len = resource_size(res_mem);
  
@@ -125,7 +119,7 @@ index ca75063..ae32410 100644
  	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
  	if (IS_ERR(hcd->regs)) {
  		err = PTR_ERR(hcd->regs);
-@@ -139,6 +162,9 @@ static int ehci_platform_remove(struct platform_device *dev)
+@@ -140,6 +163,9 @@ static int ehci_platform_remove(struct p
  	if (pdata->power_off)
  		pdata->power_off(dev);
  
@@ -135,7 +129,7 @@ index ca75063..ae32410 100644
  	return 0;
  }
  
-@@ -183,6 +209,11 @@ static int ehci_platform_resume(struct device *dev)
+@@ -184,6 +210,11 @@ static int ehci_platform_resume(struct d
  #define ehci_platform_resume	NULL
  #endif /* CONFIG_PM */
  
@@ -147,7 +141,7 @@ index ca75063..ae32410 100644
  static const struct platform_device_id ehci_platform_table[] = {
  	{ "ehci-platform", 0 },
  	{ }
-@@ -203,6 +234,7 @@ static struct platform_driver ehci_platform_driver = {
+@@ -204,6 +235,7 @@ static struct platform_driver ehci_platf
  		.owner	= THIS_MODULE,
  		.name	= "ehci-platform",
  		.pm	= &ehci_platform_pm_ops,
@@ -155,8 +149,6 @@ index ca75063..ae32410 100644
  	}
  };
  
-diff --git a/drivers/usb/host/ohci-platform.c b/drivers/usb/host/ohci-platform.c
-index c3e7287..dd9bac6 100644
 --- a/drivers/usb/host/ohci-platform.c
 +++ b/drivers/usb/host/ohci-platform.c
 @@ -16,6 +16,10 @@
@@ -170,7 +162,7 @@ index c3e7287..dd9bac6 100644
  
  static int ohci_platform_reset(struct usb_hcd *hcd)
  {
-@@ -88,14 +92,22 @@ static int ohci_platform_probe(struct platform_device *dev)
+@@ -88,14 +92,22 @@ static int ohci_platform_probe(struct pl
  {
  	struct usb_hcd *hcd;
  	struct resource *res_mem;
@@ -198,7 +190,7 @@ index c3e7287..dd9bac6 100644
  
  	if (usb_disabled())
  		return -ENODEV;
-@@ -128,6 +140,12 @@ static int ohci_platform_probe(struct platform_device *dev)
+@@ -128,6 +140,12 @@ static int ohci_platform_probe(struct pl
  	hcd->rsrc_start = res_mem->start;
  	hcd->rsrc_len = resource_size(res_mem);
  
@@ -211,7 +203,7 @@ index c3e7287..dd9bac6 100644
  	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
  	if (IS_ERR(hcd->regs)) {
  		err = PTR_ERR(hcd->regs);
-@@ -162,6 +180,9 @@ static int ohci_platform_remove(struct platform_device *dev)
+@@ -162,6 +180,9 @@ static int ohci_platform_remove(struct p
  	if (pdata->power_off)
  		pdata->power_off(dev);
  
@@ -221,7 +213,7 @@ index c3e7287..dd9bac6 100644
  	return 0;
  }
  
-@@ -201,6 +222,11 @@ static int ohci_platform_resume(struct device *dev)
+@@ -201,6 +222,11 @@ static int ohci_platform_resume(struct d
  #define ohci_platform_resume	NULL
  #endif /* CONFIG_PM */
  
@@ -233,13 +225,10 @@ index c3e7287..dd9bac6 100644
  static const struct platform_device_id ohci_platform_table[] = {
  	{ "ohci-platform", 0 },
  	{ }
-@@ -221,5 +247,6 @@ static struct platform_driver ohci_platform_driver = {
+@@ -221,5 +247,6 @@ static struct platform_driver ohci_platf
  		.owner	= THIS_MODULE,
  		.name	= "ohci-platform",
  		.pm	= &ohci_platform_pm_ops,
 +		.of_match_table = of_match_ptr(ralink_ohci_ids),
  	}
  };
--- 
-1.7.10.4
-

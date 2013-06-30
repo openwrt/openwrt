@@ -15,8 +15,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  6 files changed, 173 insertions(+)
  create mode 100644 drivers/clocksource/cevt-rt3352.c
 
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index 38540a4..3fe032c 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -14,6 +14,7 @@ choice
@@ -35,8 +33,6 @@ index 38540a4..3fe032c 100644
  
  endchoice
  
-diff --git a/arch/mips/ralink/clk.c b/arch/mips/ralink/clk.c
-index 8dfa22f..bba0cdf 100644
 --- a/arch/mips/ralink/clk.c
 +++ b/arch/mips/ralink/clk.c
 @@ -69,4 +69,5 @@ void __init plat_time_init(void)
@@ -45,8 +41,6 @@ index 8dfa22f..bba0cdf 100644
  	clk_put(clk);
 +	clocksource_of_init();
  }
-diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
-index e507ab7..1216c16 100644
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
 @@ -7,6 +7,12 @@ config CLKSRC_I8253
@@ -62,8 +56,6 @@ index e507ab7..1216c16 100644
  config I8253_LOCK
  	bool
  
-diff --git a/drivers/clocksource/Makefile b/drivers/clocksource/Makefile
-index 4d8283a..db47a4e 100644
 --- a/drivers/clocksource/Makefile
 +++ b/drivers/clocksource/Makefile
 @@ -10,6 +10,7 @@ obj-$(CONFIG_SH_TIMER_TMU)	+= sh_tmu.o
@@ -74,9 +66,6 @@ index 4d8283a..db47a4e 100644
  obj-$(CONFIG_DW_APB_TIMER)	+= dw_apb_timer.o
  obj-$(CONFIG_DW_APB_TIMER_OF)	+= dw_apb_timer_of.o
  obj-$(CONFIG_CLKSRC_NOMADIK_MTU)	+= nomadik-mtu.o
-diff --git a/drivers/clocksource/cevt-rt3352.c b/drivers/clocksource/cevt-rt3352.c
-new file mode 100644
-index 0000000..bd50edd
 --- /dev/null
 +++ b/drivers/clocksource/cevt-rt3352.c
 @@ -0,0 +1,162 @@
@@ -242,8 +231,6 @@ index 0000000..bd50edd
 +}
 +
 +CLOCKSOURCE_OF_DECLARE(systick, "ralink,cevt-systick", ralink_systick_init);
-diff --git a/include/linux/clocksource.h b/include/linux/clocksource.h
-index 27cfda4..08ed5e1 100644
 --- a/include/linux/clocksource.h
 +++ b/include/linux/clocksource.h
 @@ -340,6 +340,7 @@ extern void clocksource_of_init(void);
@@ -254,6 +241,3 @@ index 27cfda4..08ed5e1 100644
  #define CLOCKSOURCE_OF_DECLARE(name, compat, fn)
  #endif
  
--- 
-1.7.10.4
-

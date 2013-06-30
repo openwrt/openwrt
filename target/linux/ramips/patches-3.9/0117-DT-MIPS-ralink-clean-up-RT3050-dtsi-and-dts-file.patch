@@ -15,8 +15,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/5186/
  arch/mips/ralink/dts/rt3052_eval.dts |   10 ++-----
  2 files changed, 4 insertions(+), 58 deletions(-)
 
-diff --git a/arch/mips/ralink/dts/rt3050.dtsi b/arch/mips/ralink/dts/rt3050.dtsi
-index 069d066..ef7da1e 100644
 --- a/arch/mips/ralink/dts/rt3050.dtsi
 +++ b/arch/mips/ralink/dts/rt3050.dtsi
 @@ -1,7 +1,7 @@
@@ -106,8 +104,6 @@ index 069d066..ef7da1e 100644
  		uartlite@c00 {
  			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
  			reg = <0xc00 0x100>;
-diff --git a/arch/mips/ralink/dts/rt3052_eval.dts b/arch/mips/ralink/dts/rt3052_eval.dts
-index 148a590..df17f5f 100644
 --- a/arch/mips/ralink/dts/rt3052_eval.dts
 +++ b/arch/mips/ralink/dts/rt3052_eval.dts
 @@ -3,8 +3,6 @@
@@ -134,6 +130,3 @@ index 148a590..df17f5f 100644
  	};
  
  	cfi@1f000000 {
--- 
-1.7.10.4
-

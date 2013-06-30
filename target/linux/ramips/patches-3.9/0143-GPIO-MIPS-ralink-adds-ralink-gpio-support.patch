@@ -17,8 +17,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/include/asm/mach-ralink/gpio.h
  create mode 100644 drivers/gpio/gpio-ralink.c
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index e4da4f8..b237c50 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -443,6 +443,7 @@ config RALINK
@@ -29,9 +27,6 @@ index e4da4f8..b237c50 100644
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-diff --git a/arch/mips/include/asm/mach-ralink/gpio.h b/arch/mips/include/asm/mach-ralink/gpio.h
-new file mode 100644
-index 0000000..f68ee16
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/gpio.h
 @@ -0,0 +1,24 @@
@@ -59,8 +54,6 @@ index 0000000..f68ee16
 +#define gpio_to_irq	__gpio_to_irq
 +
 +#endif /* __ASM_MACH_RALINK_GPIO_H */
-diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
-index 93aaadf..29add97 100644
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -204,6 +204,12 @@ config GPIO_PXA
@@ -76,11 +69,9 @@ index 93aaadf..29add97 100644
  config GPIO_SPEAR_SPICS
  	bool "ST SPEAr13xx SPI Chip Select as GPIO support"
  	depends on PLAT_SPEAR
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index 22e07bc..f7b6603 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -55,6 +55,7 @@ obj-$(CONFIG_GPIO_PCF857X)	+= gpio-pcf857x.o
+@@ -55,6 +55,7 @@ obj-$(CONFIG_GPIO_PCF857X)	+= gpio-pcf85
  obj-$(CONFIG_GPIO_PCH)		+= gpio-pch.o
  obj-$(CONFIG_GPIO_PL061)	+= gpio-pl061.o
  obj-$(CONFIG_GPIO_PXA)		+= gpio-pxa.o
@@ -88,9 +79,6 @@ index 22e07bc..f7b6603 100644
  obj-$(CONFIG_GPIO_RC5T583)	+= gpio-rc5t583.o
  obj-$(CONFIG_GPIO_RDC321X)	+= gpio-rdc321x.o
  obj-$(CONFIG_PLAT_SAMSUNG)	+= gpio-samsung.o
-diff --git a/drivers/gpio/gpio-ralink.c b/drivers/gpio/gpio-ralink.c
-new file mode 100644
-index 0000000..12984f1
 --- /dev/null
 +++ b/drivers/gpio/gpio-ralink.c
 @@ -0,0 +1,326 @@
@@ -420,6 +408,3 @@ index 0000000..12984f1
 +}
 +
 +subsys_initcall(ralink_gpio_init);
--- 
-1.7.10.4
-

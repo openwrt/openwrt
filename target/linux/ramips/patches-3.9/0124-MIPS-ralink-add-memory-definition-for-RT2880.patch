@@ -12,8 +12,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/5181/
  arch/mips/ralink/rt288x.c                  |    4 ++++
  2 files changed, 8 insertions(+)
 
-diff --git a/arch/mips/include/asm/mach-ralink/rt288x.h b/arch/mips/include/asm/mach-ralink/rt288x.h
-index ad8b42d..03ad716 100644
 --- a/arch/mips/include/asm/mach-ralink/rt288x.h
 +++ b/arch/mips/include/asm/mach-ralink/rt288x.h
 @@ -46,4 +46,8 @@
@@ -25,11 +23,9 @@ index ad8b42d..03ad716 100644
 +#define RT2880_MEM_SIZE_MAX		128
 +
  #endif
-diff --git a/arch/mips/ralink/rt288x.c b/arch/mips/ralink/rt288x.c
-index 1e0788e..f87de1a 100644
 --- a/arch/mips/ralink/rt288x.c
 +++ b/arch/mips/ralink/rt288x.c
-@@ -136,4 +136,8 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -136,4 +136,8 @@ void prom_soc_init(struct ralink_soc_inf
  		name,
  		(id >> CHIP_ID_ID_SHIFT) & CHIP_ID_ID_MASK,
  		(id & CHIP_ID_REV_MASK));
@@ -38,6 +34,3 @@ index 1e0788e..f87de1a 100644
 +	soc_info->mem_size_min = RT2880_MEM_SIZE_MIN;
 +	soc_info->mem_size_max = RT2880_MEM_SIZE_MAX;
  }
--- 
-1.7.10.4
-

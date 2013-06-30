@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 482 insertions(+)
  create mode 100644 drivers/spi/spi-ralink.c
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 2be0de9..a7de751 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -327,6 +327,12 @@ config SPI_RSPI
+@@ -336,6 +336,12 @@ config SPI_RSPI
  	help
  	  SPI driver for Renesas RSPI blocks.
  
@@ -30,11 +28,9 @@ index 2be0de9..a7de751 100644
  config SPI_S3C24XX
  	tristate "Samsung S3C24XX series SPI"
  	depends on ARCH_S3C24XX
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index e53c309..a4b3c5b 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -53,6 +53,7 @@ spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_DMA)	+= spi-pxa2xx-dma.o
+@@ -54,6 +54,7 @@ spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_
  obj-$(CONFIG_SPI_PXA2XX)		+= spi-pxa2xx-platform.o
  obj-$(CONFIG_SPI_PXA2XX_PCI)		+= spi-pxa2xx-pci.o
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
@@ -42,9 +38,6 @@ index e53c309..a4b3c5b 100644
  obj-$(CONFIG_SPI_S3C24XX)		+= spi-s3c24xx-hw.o
  spi-s3c24xx-hw-y			:= spi-s3c24xx.o
  spi-s3c24xx-hw-$(CONFIG_SPI_S3C24XX_FIQ) += spi-s3c24xx-fiq.o
-diff --git a/drivers/spi/spi-ralink.c b/drivers/spi/spi-ralink.c
-new file mode 100644
-index 0000000..b07cbaa
 --- /dev/null
 +++ b/drivers/spi/spi-ralink.c
 @@ -0,0 +1,475 @@
@@ -523,6 +516,3 @@ index 0000000..b07cbaa
 +MODULE_AUTHOR("Sergiy <piratfm@gmail.com>");
 +MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 +MODULE_LICENSE("GPL");
--- 
-1.7.10.4
-

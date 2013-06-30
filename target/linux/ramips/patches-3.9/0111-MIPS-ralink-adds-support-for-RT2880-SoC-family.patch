@@ -21,11 +21,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/5176/
  create mode 100644 arch/mips/include/asm/mach-ralink/rt288x.h
  create mode 100644 arch/mips/ralink/rt288x.c
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 51244bf..e4da4f8 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1152,7 +1152,7 @@ config BOOT_ELF32
+@@ -1164,7 +1164,7 @@ config BOOT_ELF32
  
  config MIPS_L1_CACHE_SHIFT
  	int
@@ -34,9 +32,6 @@ index 51244bf..e4da4f8 100644
  	default "6" if MIPS_CPU_SCACHE
  	default "7" if SGI_IP22 || SGI_IP27 || SGI_IP28 || SNI_RM || CPU_CAVIUM_OCTEON
  	default "5"
-diff --git a/arch/mips/include/asm/mach-ralink/rt288x.h b/arch/mips/include/asm/mach-ralink/rt288x.h
-new file mode 100644
-index 0000000..ad8b42d
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/rt288x.h
 @@ -0,0 +1,49 @@
@@ -89,8 +84,6 @@ index 0000000..ad8b42d
 +#define CLKCFG_SRAM_CS_N_WDT		BIT(9)
 +
 +#endif
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index a0b0197..6723b94 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -6,6 +6,9 @@ choice
@@ -103,8 +96,6 @@ index a0b0197..6723b94 100644
  	config SOC_RT305X
  		bool "RT305x"
  		select USB_ARCH_HAS_HCD
-diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
-index 939757f..6d826f2 100644
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
 @@ -8,6 +8,7 @@
@@ -115,11 +106,9 @@ index 939757f..6d826f2 100644
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
  
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
-diff --git a/arch/mips/ralink/Platform b/arch/mips/ralink/Platform
-index 6babd65..3f49e51 100644
 --- a/arch/mips/ralink/Platform
 +++ b/arch/mips/ralink/Platform
-@@ -5,6 +5,11 @@ core-$(CONFIG_RALINK)		+= arch/mips/ralink/
+@@ -5,6 +5,11 @@ core-$(CONFIG_RALINK)		+= arch/mips/rali
  cflags-$(CONFIG_RALINK)		+= -I$(srctree)/arch/mips/include/asm/mach-ralink
  
  #
@@ -131,9 +120,6 @@ index 6babd65..3f49e51 100644
  # Ralink RT305x
  #
  load-$(CONFIG_SOC_RT305X)	+= 0xffffffff80000000
-diff --git a/arch/mips/ralink/rt288x.c b/arch/mips/ralink/rt288x.c
-new file mode 100644
-index 0000000..1e0788e
 --- /dev/null
 +++ b/arch/mips/ralink/rt288x.c
 @@ -0,0 +1,139 @@
@@ -276,6 +262,3 @@ index 0000000..1e0788e
 +		(id >> CHIP_ID_ID_SHIFT) & CHIP_ID_ID_MASK,
 +		(id & CHIP_ID_REV_MASK));
 +}
--- 
-1.7.10.4
-
