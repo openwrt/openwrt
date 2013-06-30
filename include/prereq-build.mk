@@ -183,3 +183,7 @@ endef
 $(eval $(call Require,getopt-extended, \
 	Please install an extended getopt version that supports --long \
 ))
+
+$(eval $(call RequireCommand,bc, \
+	Please install bc. \
+))
