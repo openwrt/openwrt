@@ -12,8 +12,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/5182/
  arch/mips/ralink/rt3883.c                  |    4 ++++
  2 files changed, 9 insertions(+)
 
-diff --git a/arch/mips/include/asm/mach-ralink/rt3883.h b/arch/mips/include/asm/mach-ralink/rt3883.h
-index b91c6c1..058382f 100644
 --- a/arch/mips/include/asm/mach-ralink/rt3883.h
 +++ b/arch/mips/include/asm/mach-ralink/rt3883.h
 @@ -152,6 +152,7 @@
@@ -33,11 +31,9 @@ index b91c6c1..058382f 100644
 +#define RT3883_MEM_SIZE_MAX		256
 +
  #endif /* _RT3883_REGS_H_ */
-diff --git a/arch/mips/ralink/rt3883.c b/arch/mips/ralink/rt3883.c
-index 2d90aa9..afbf2ce 100644
 --- a/arch/mips/ralink/rt3883.c
 +++ b/arch/mips/ralink/rt3883.c
-@@ -239,4 +239,8 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -239,4 +239,8 @@ void prom_soc_init(struct ralink_soc_inf
  		name,
  		(id >> RT3883_REVID_VER_ID_SHIFT) & RT3883_REVID_VER_ID_MASK,
  		(id & RT3883_REVID_ECO_ID_MASK));
@@ -46,6 +42,3 @@ index 2d90aa9..afbf2ce 100644
 +	soc_info->mem_size_min = RT3883_MEM_SIZE_MIN;
 +	soc_info->mem_size_max = RT3883_MEM_SIZE_MAX;
  }
--- 
-1.7.10.4
-

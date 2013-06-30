@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/dma/ralink_gdma.c
  create mode 100644 drivers/dma/ralink_gdma.h
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index aeaea32..751cdc4 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -322,6 +322,13 @@ config MMP_PDMA
@@ -31,8 +29,6 @@ index aeaea32..751cdc4 100644
  config DMA_ENGINE
  	bool
  
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index 488e3ff..f69e07e 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -37,3 +37,4 @@ obj-$(CONFIG_DMA_SA11X0) += sa11x0-dma.o
@@ -40,9 +36,6 @@ index 488e3ff..f69e07e 100644
  obj-$(CONFIG_DMA_OMAP) += omap-dma.o
  obj-$(CONFIG_MMP_PDMA) += mmp_pdma.o
 +obj-$(CONFIG_RALINK_GDMA) += ralink_gdma.o
-diff --git a/drivers/dma/ralink_gdma.c b/drivers/dma/ralink_gdma.c
-new file mode 100644
-index 0000000..be7c317
 --- /dev/null
 +++ b/drivers/dma/ralink_gdma.c
 @@ -0,0 +1,229 @@
@@ -275,9 +268,6 @@ index 0000000..be7c317
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("DMA engine driver for Ralink DMA engine");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/dma/ralink_gdma.h b/drivers/dma/ralink_gdma.h
-new file mode 100644
-index 0000000..73e1948
 --- /dev/null
 +++ b/drivers/dma/ralink_gdma.h
 @@ -0,0 +1,55 @@
@@ -336,6 +326,3 @@ index 0000000..73e1948
 +#define RT_DMA_DONEINT			  (RALINK_GDMA_BASE + 0x204)
 +
 +#endif
--- 
-1.7.10.4
-

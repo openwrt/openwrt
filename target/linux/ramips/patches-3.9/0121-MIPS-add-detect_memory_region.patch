@@ -13,8 +13,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/5178/
  arch/mips/kernel/setup.c         |   20 ++++++++++++++++++++
  2 files changed, 21 insertions(+)
 
-diff --git a/arch/mips/include/asm/bootinfo.h b/arch/mips/include/asm/bootinfo.h
-index b71dd5b..4d2cdea 100644
 --- a/arch/mips/include/asm/bootinfo.h
 +++ b/arch/mips/include/asm/bootinfo.h
 @@ -104,6 +104,7 @@ struct boot_mem_map {
@@ -25,8 +23,6 @@ index b71dd5b..4d2cdea 100644
  
  extern void prom_init(void);
  extern void prom_free_prom_memory(void);
-diff --git a/arch/mips/kernel/setup.c b/arch/mips/kernel/setup.c
-index 4c774d5..7325793 100644
 --- a/arch/mips/kernel/setup.c
 +++ b/arch/mips/kernel/setup.c
 @@ -23,6 +23,7 @@
@@ -37,7 +33,7 @@ index 4c774d5..7325793 100644
  
  #include <asm/addrspace.h>
  #include <asm/bootinfo.h>
-@@ -122,6 +123,25 @@ void __init add_memory_region(phys_t start, phys_t size, long type)
+@@ -122,6 +123,25 @@ void __init add_memory_region(phys_t sta
  	boot_mem_map.nr_map++;
  }
  
@@ -63,6 +59,3 @@ index 4c774d5..7325793 100644
  static void __init print_memory_map(void)
  {
  	int i;
--- 
-1.7.10.4
-

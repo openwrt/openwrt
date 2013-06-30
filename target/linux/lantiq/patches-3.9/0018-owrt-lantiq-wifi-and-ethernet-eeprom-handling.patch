@@ -19,9 +19,6 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
  create mode 100644 arch/mips/lantiq/xway/pci-ath-fixup.c
  create mode 100644 arch/mips/lantiq/xway/rt_eep.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h b/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
-new file mode 100644
-index 0000000..095d261
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
 @@ -0,0 +1,6 @@
@@ -31,11 +28,9 @@ index 0000000..095d261
 +void ltq_pci_ath_fixup(unsigned slot, u16 *cal_data) __init;
 +
 +#endif /* _PCI_ATH_FIXUP */
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 133336b..779715c 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-@@ -90,5 +90,8 @@ int xrx200_gphy_boot(struct device *dev, unsigned int id, dma_addr_t dev_addr);
+@@ -90,5 +90,8 @@ int xrx200_gphy_boot(struct device *dev,
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
  
@@ -44,8 +39,6 @@ index 133336b..779715c 100644
 +
  #endif /* CONFIG_SOC_TYPE_XWAY */
  #endif /* _LTQ_XWAY_H__ */
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index 087497d..51f0eba 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,3 +1,6 @@
@@ -55,9 +48,6 @@ index 087497d..51f0eba 100644
 +obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
 +
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
-diff --git a/arch/mips/lantiq/xway/ath_eep.c b/arch/mips/lantiq/xway/ath_eep.c
-new file mode 100644
-index 0000000..ed55124
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
 @@ -0,0 +1,248 @@
@@ -309,9 +299,6 @@ index 0000000..ed55124
 +	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
 +}
 +late_initcall(of_ath5k_eeprom_init);
-diff --git a/arch/mips/lantiq/xway/eth_mac.c b/arch/mips/lantiq/xway/eth_mac.c
-new file mode 100644
-index 0000000..d288a0e
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/eth_mac.c
 @@ -0,0 +1,76 @@
@@ -391,9 +378,6 @@ index 0000000..d288a0e
 +	return platform_driver_probe(&eth_mac_driver, of_eth_mac_probe);
 +}
 +device_initcall(of_eth_mac_init);
-diff --git a/arch/mips/lantiq/xway/pci-ath-fixup.c b/arch/mips/lantiq/xway/pci-ath-fixup.c
-new file mode 100644
-index 0000000..c87ffb2
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/pci-ath-fixup.c
 @@ -0,0 +1,109 @@
@@ -506,9 +490,6 @@ index 0000000..c87ffb2
 +	ath_fixups[ath_num_fixups].cal_data = cal_data;
 +	ath_num_fixups++;
 +}
-diff --git a/arch/mips/lantiq/xway/rt_eep.c b/arch/mips/lantiq/xway/rt_eep.c
-new file mode 100644
-index 0000000..00f2d4c
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/rt_eep.c
 @@ -0,0 +1,60 @@
@@ -572,8 +553,6 @@ index 0000000..00f2d4c
 +	return platform_driver_probe(&ralink_eeprom_driver, of_ralink_eeprom_probe);
 +}
 +device_initcall(of_ralink_eeprom_init);
-diff --git a/arch/mips/pci/pci-lantiq.c b/arch/mips/pci/pci-lantiq.c
-index 879077b..ad22c82 100644
 --- a/arch/mips/pci/pci-lantiq.c
 +++ b/arch/mips/pci/pci-lantiq.c
 @@ -260,4 +260,4 @@ int __init pcibios_init(void)
@@ -582,6 +561,3 @@ index 879077b..ad22c82 100644
  
 -arch_initcall(pcibios_init);
 +late_initcall(pcibios_init);
--- 
-1.7.10.4
-

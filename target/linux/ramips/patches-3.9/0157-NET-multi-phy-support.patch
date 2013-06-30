@@ -9,11 +9,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  include/linux/phy.h   |    2 +-
  2 files changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/phy/phy.c b/drivers/net/phy/phy.c
-index ef9ea92..27f9b45 100644
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -800,7 +800,8 @@ void phy_state_machine(struct work_struct *work)
+@@ -847,7 +847,8 @@ void phy_state_machine(struct work_struc
  			 * negotiation for now */
  			if (!phydev->link) {
  				phydev->state = PHY_NOLINK;
@@ -23,7 +21,7 @@ index ef9ea92..27f9b45 100644
  				phydev->adjust_link(phydev->attached_dev);
  				break;
  			}
-@@ -891,7 +892,8 @@ void phy_state_machine(struct work_struct *work)
+@@ -938,7 +939,8 @@ void phy_state_machine(struct work_struc
  				netif_carrier_on(phydev->attached_dev);
  			} else {
  				phydev->state = PHY_NOLINK;
@@ -33,7 +31,7 @@ index ef9ea92..27f9b45 100644
  			}
  
  			phydev->adjust_link(phydev->attached_dev);
-@@ -903,7 +905,8 @@ void phy_state_machine(struct work_struct *work)
+@@ -950,7 +952,8 @@ void phy_state_machine(struct work_struc
  		case PHY_HALTED:
  			if (phydev->link) {
  				phydev->link = 0;
@@ -43,8 +41,6 @@ index ef9ea92..27f9b45 100644
  				phydev->adjust_link(phydev->attached_dev);
  			}
  			break;
-diff --git a/include/linux/phy.h b/include/linux/phy.h
-index 33999ad..9c54bc9 100644
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
 @@ -298,7 +298,7 @@ struct phy_device {
@@ -56,6 +52,3 @@ index 33999ad..9c54bc9 100644
  	enum phy_state state;
  
  	u32 dev_flags;
--- 
-1.7.10.4
-

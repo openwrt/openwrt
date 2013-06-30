@@ -16,8 +16,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 82 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/ralink/pinmux.c
 
-diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
-index 38cf1a8..341b4de 100644
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
 @@ -6,7 +6,7 @@
@@ -29,19 +27,15 @@ index 38cf1a8..341b4de 100644
  
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
-diff --git a/arch/mips/ralink/common.h b/arch/mips/ralink/common.h
-index 83144c3..f113fd6 100644
 --- a/arch/mips/ralink/common.h
 +++ b/arch/mips/ralink/common.h
-@@ -50,4 +50,6 @@ extern void prom_soc_init(struct ralink_soc_info *soc_info);
+@@ -50,4 +50,6 @@ extern void prom_soc_init(struct ralink_
  
  __iomem void *plat_of_remap_node(const char *node);
  
 +void ralink_pinmux(void);
 +
  #endif /* _RALINK_COMMON_H__ */
-diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
-index fb15695..f916774 100644
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
 @@ -110,6 +110,8 @@ static int __init plat_of_setup(void)
@@ -53,9 +47,6 @@ index fb15695..f916774 100644
  	return 0;
  }
  
-diff --git a/arch/mips/ralink/pinmux.c b/arch/mips/ralink/pinmux.c
-new file mode 100644
-index 0000000..1720216
 --- /dev/null
 +++ b/arch/mips/ralink/pinmux.c
 @@ -0,0 +1,77 @@
@@ -136,6 +127,3 @@ index 0000000..1720216
 +
 +	rt_sysc_w32(mode, SYSC_REG_GPIO_MODE);
 +}
--- 
-1.7.10.4
-

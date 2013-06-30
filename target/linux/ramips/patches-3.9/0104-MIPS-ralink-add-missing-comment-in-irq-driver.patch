@@ -12,11 +12,9 @@ Patchwork: http://patchwork.linux-mips.org/patch/5168/
  arch/mips/ralink/irq.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/mips/ralink/irq.c b/arch/mips/ralink/irq.c
-index d9807d0..320b1f1 100644
 --- a/arch/mips/ralink/irq.c
 +++ b/arch/mips/ralink/irq.c
-@@ -166,6 +166,7 @@ static int __init intc_of_init(struct device_node *node,
+@@ -166,6 +166,7 @@ static int __init intc_of_init(struct de
  	irq_set_chained_handler(irq, ralink_intc_irq_handler);
  	irq_set_handler_data(irq, domain);
  
@@ -24,6 +22,3 @@ index d9807d0..320b1f1 100644
  	cp0_perfcount_irq = irq_create_mapping(domain, 9);
  
  	return 0;
--- 
-1.7.10.4
-

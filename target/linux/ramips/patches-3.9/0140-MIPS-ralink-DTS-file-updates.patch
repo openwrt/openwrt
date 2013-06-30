@@ -21,8 +21,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/dts/rt5350.dtsi
  create mode 100644 arch/mips/ralink/dts/rt5350_eval.dts
 
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index 026e823..38540a4 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -42,6 +42,10 @@ choice
@@ -47,8 +45,6 @@ index 026e823..38540a4 100644
  endchoice
  
  endif
-diff --git a/arch/mips/ralink/dts/Makefile b/arch/mips/ralink/dts/Makefile
-index 18194fa..0bd12b5 100644
 --- a/arch/mips/ralink/dts/Makefile
 +++ b/arch/mips/ralink/dts/Makefile
 @@ -1,4 +1,6 @@
@@ -58,8 +54,6 @@ index 18194fa..0bd12b5 100644
  obj-$(CONFIG_DTB_RT3883_EVAL) := rt3883_eval.dtb.o
  obj-$(CONFIG_DTB_MT7620A_EVAL) := mt7620a_eval.dtb.o
 +obj-$(CONFIG_DTB_MT7620A_MT7610E_EVAL) := mt7620a_mt7610e_eval.dtb.o
-diff --git a/arch/mips/ralink/dts/mt7620a.dtsi b/arch/mips/ralink/dts/mt7620a.dtsi
-index 08bf24f..104abfb 100644
 --- a/arch/mips/ralink/dts/mt7620a.dtsi
 +++ b/arch/mips/ralink/dts/mt7620a.dtsi
 @@ -25,14 +25,36 @@
@@ -331,8 +325,6 @@ index 08bf24f..104abfb 100644
 +		status = "disabled";
  	};
  };
-diff --git a/arch/mips/ralink/dts/mt7620a_eval.dts b/arch/mips/ralink/dts/mt7620a_eval.dts
-index 35eb874..b56f449 100644
 --- a/arch/mips/ralink/dts/mt7620a_eval.dts
 +++ b/arch/mips/ralink/dts/mt7620a_eval.dts
 @@ -13,4 +13,115 @@
@@ -451,9 +443,6 @@ index 35eb874..b56f449 100644
 +		};
 +	};
  };
-diff --git a/arch/mips/ralink/dts/mt7620a_mt7610e_eval.dts b/arch/mips/ralink/dts/mt7620a_mt7610e_eval.dts
-new file mode 100644
-index 0000000..0d7755b
 --- /dev/null
 +++ b/arch/mips/ralink/dts/mt7620a_mt7610e_eval.dts
 @@ -0,0 +1,99 @@
@@ -556,8 +545,6 @@ index 0000000..0d7755b
 +		};
 +	};
 +};
-diff --git a/arch/mips/ralink/dts/rt2880.dtsi b/arch/mips/ralink/dts/rt2880.dtsi
-index 182afde..2a34b8d 100644
 --- a/arch/mips/ralink/dts/rt2880.dtsi
 +++ b/arch/mips/ralink/dts/rt2880.dtsi
 @@ -55,4 +55,21 @@
@@ -582,8 +569,6 @@ index 182afde..2a34b8d 100644
 +		};
 +	};
  };
-diff --git a/arch/mips/ralink/dts/rt2880_eval.dts b/arch/mips/ralink/dts/rt2880_eval.dts
-index 322d700..58a1edf 100644
 --- a/arch/mips/ralink/dts/rt2880_eval.dts
 +++ b/arch/mips/ralink/dts/rt2880_eval.dts
 @@ -43,4 +43,10 @@
@@ -597,8 +582,6 @@ index 322d700..58a1edf 100644
 +		ralink,fixed-link = <1000 1 1 1>;
 +	};
  };
-diff --git a/arch/mips/ralink/dts/rt3050.dtsi b/arch/mips/ralink/dts/rt3050.dtsi
-index ef7da1e..b1ac940 100644
 --- a/arch/mips/ralink/dts/rt3050.dtsi
 +++ b/arch/mips/ralink/dts/rt3050.dtsi
 @@ -1,7 +1,7 @@
@@ -651,8 +634,6 @@ index ef7da1e..b1ac940 100644
 +		status = "disabled";
 +	};
  };
-diff --git a/arch/mips/ralink/dts/rt3052_eval.dts b/arch/mips/ralink/dts/rt3052_eval.dts
-index df17f5f..df02957 100644
 --- a/arch/mips/ralink/dts/rt3052_eval.dts
 +++ b/arch/mips/ralink/dts/rt3052_eval.dts
 @@ -3,7 +3,7 @@
@@ -693,9 +674,6 @@ index df17f5f..df02957 100644
 +		ralink,portmap = <0x2f>;
 +	};
  };
-diff --git a/arch/mips/ralink/dts/rt5350.dtsi b/arch/mips/ralink/dts/rt5350.dtsi
-new file mode 100644
-index 0000000..3d6b3bc
 --- /dev/null
 +++ b/arch/mips/ralink/dts/rt5350.dtsi
 @@ -0,0 +1,227 @@
@@ -926,9 +904,6 @@ index 0000000..3d6b3bc
 +		interrupts = <18>;
 +	};
 +};
-diff --git a/arch/mips/ralink/dts/rt5350_eval.dts b/arch/mips/ralink/dts/rt5350_eval.dts
-new file mode 100644
-index 0000000..ab92043
 --- /dev/null
 +++ b/arch/mips/ralink/dts/rt5350_eval.dts
 @@ -0,0 +1,69 @@
@@ -1001,6 +976,3 @@ index 0000000..ab92043
 +		ralink,portmap = <0x2f>;
 +	};
 +};
--- 
-1.7.10.4
-

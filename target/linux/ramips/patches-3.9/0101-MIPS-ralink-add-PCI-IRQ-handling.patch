@@ -13,8 +13,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/5165/
  arch/mips/ralink/irq.c |    4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/arch/mips/ralink/irq.c b/arch/mips/ralink/irq.c
-index 6d054c5..d9807d0 100644
 --- a/arch/mips/ralink/irq.c
 +++ b/arch/mips/ralink/irq.c
 @@ -31,6 +31,7 @@
@@ -35,6 +33,3 @@ index 6d054c5..d9807d0 100644
  	else if (pending & STATUSF_IP2)
  		do_IRQ(RALINK_CPU_IRQ_INTC);
  
--- 
-1.7.10.4
-

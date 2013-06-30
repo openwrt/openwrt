@@ -20,11 +20,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  scripts/Makefile.lib |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
-index 07125e6..e13fff1 100644
 --- a/scripts/Makefile.lib
 +++ b/scripts/Makefile.lib
-@@ -251,7 +251,7 @@ cmd_gzip = (cat $(filter-out FORCE,$^) | gzip -n -f -9 > $@) || \
+@@ -251,7 +251,7 @@ cmd_gzip = (cat $(filter-out FORCE,$^) |
  # ---------------------------------------------------------------------------
  
  # Generate an assembly file to wrap the output of the device tree compiler
@@ -33,6 +31,3 @@ index 07125e6..e13fff1 100644
  cmd_dt_S_dtb=						\
  (							\
  	echo '\#include <asm-generic/vmlinux.lds.h>'; 	\
--- 
-1.7.10.4
-

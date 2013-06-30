@@ -10,11 +10,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/mt7620.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
-index 98ddb93..28350d0 100644
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
-@@ -214,16 +214,19 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -214,16 +214,19 @@ void prom_soc_init(struct ralink_soc_inf
  
  	switch (dram_type) {
  	case SYSCFG0_DRAM_TYPE_SDRAM:
@@ -34,6 +32,3 @@ index 98ddb93..28350d0 100644
  		soc_info->mem_size_min = MT7620_DDR2_SIZE_MIN;
  		soc_info->mem_size_max = MT7620_DDR2_SIZE_MAX;
  		break;
--- 
-1.7.10.4
-

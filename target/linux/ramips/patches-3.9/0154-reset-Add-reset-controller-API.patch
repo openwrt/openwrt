@@ -34,9 +34,6 @@ Reviewed-by: Pavel Machek <pavel@ucw.cz>
  create mode 100644 include/linux/reset-controller.h
  create mode 100644 include/linux/reset.h
 
-diff --git a/Documentation/devicetree/bindings/reset/reset.txt b/Documentation/devicetree/bindings/reset/reset.txt
-new file mode 100644
-index 0000000..31db6ff
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/reset/reset.txt
 @@ -0,0 +1,75 @@
@@ -115,22 +112,18 @@ index 0000000..31db6ff
 +This represents a bus that controls the reset signal of each of four sub-
 +ordinate devices. Consider for example a bus that fails to operate unless no
 +child device has reset asserted.
-diff --git a/drivers/Kconfig b/drivers/Kconfig
-index 202fa6d..847f8e3 100644
 --- a/drivers/Kconfig
 +++ b/drivers/Kconfig
-@@ -162,4 +162,6 @@ source "drivers/irqchip/Kconfig"
+@@ -164,4 +164,6 @@ source "drivers/irqchip/Kconfig"
  
  source "drivers/ipack/Kconfig"
  
 +source "drivers/reset/Kconfig"
 +
  endmenu
-diff --git a/drivers/Makefile b/drivers/Makefile
-index dce39a9..1a64c4c 100644
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
-@@ -37,6 +37,9 @@ obj-$(CONFIG_XEN)		+= xen/
+@@ -38,6 +38,9 @@ obj-$(CONFIG_XEN)		+= xen/
  # regulators early, since some subsystems rely on them to initialize
  obj-$(CONFIG_REGULATOR)		+= regulator/
  
@@ -140,9 +133,6 @@ index dce39a9..1a64c4c 100644
  # tty/ comes before char/ so that the VT console is the boot-time
  # default.
  obj-y				+= tty/
-diff --git a/drivers/reset/Kconfig b/drivers/reset/Kconfig
-new file mode 100644
-index 0000000..c9d04f7
 --- /dev/null
 +++ b/drivers/reset/Kconfig
 @@ -0,0 +1,13 @@
@@ -159,16 +149,10 @@ index 0000000..c9d04f7
 +	  via GPIOs or SoC-internal reset controller modules.
 +
 +	  If unsure, say no.
-diff --git a/drivers/reset/Makefile b/drivers/reset/Makefile
-new file mode 100644
-index 0000000..1e2d83f
 --- /dev/null
 +++ b/drivers/reset/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_RESET_CONTROLLER) += core.o
-diff --git a/drivers/reset/core.c b/drivers/reset/core.c
-new file mode 100644
-index 0000000..d1b6089
 --- /dev/null
 +++ b/drivers/reset/core.c
 @@ -0,0 +1,297 @@
@@ -469,9 +453,6 @@ index 0000000..d1b6089
 +	return ret;
 +}
 +EXPORT_SYMBOL_GPL(device_reset);
-diff --git a/include/linux/reset-controller.h b/include/linux/reset-controller.h
-new file mode 100644
-index 0000000..2f61311
 --- /dev/null
 +++ b/include/linux/reset-controller.h
 @@ -0,0 +1,51 @@
@@ -526,9 +507,6 @@ index 0000000..2f61311
 +void reset_controller_unregister(struct reset_controller_dev *rcdev);
 +
 +#endif
-diff --git a/include/linux/reset.h b/include/linux/reset.h
-new file mode 100644
-index 0000000..6082247
 --- /dev/null
 +++ b/include/linux/reset.h
 @@ -0,0 +1,17 @@
@@ -549,6 +527,3 @@ index 0000000..6082247
 +int device_reset(struct device *dev);
 +
 +#endif
--- 
-1.7.10.4
-

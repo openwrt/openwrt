@@ -12,8 +12,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/5744/
  arch/mips/ralink/rt305x.c |    5 +++--
  2 files changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/ralink/common.h b/arch/mips/ralink/common.h
-index bebd149..299119b 100644
 --- a/arch/mips/ralink/common.h
 +++ b/arch/mips/ralink/common.h
 @@ -22,6 +22,7 @@ struct ralink_pinmux {
@@ -24,11 +22,9 @@ index bebd149..299119b 100644
  	void (*wdt_reset)(void);
  	struct ralink_pinmux_grp *pci;
  	int pci_shift;
-diff --git a/arch/mips/ralink/rt305x.c b/arch/mips/ralink/rt305x.c
-index 5b42078..6aa3cb1 100644
 --- a/arch/mips/ralink/rt305x.c
 +++ b/arch/mips/ralink/rt305x.c
-@@ -91,12 +91,12 @@ static struct ralink_pinmux_grp uart_mux[] = {
+@@ -91,12 +91,12 @@ static struct ralink_pinmux_grp uart_mux
  		.name = "gpio uartf",
  		.mask = RT305X_GPIO_MODE_GPIO_UARTF,
  		.gpio_first = RT305X_GPIO_7,
@@ -51,6 +47,3 @@ index 5b42078..6aa3cb1 100644
  	.wdt_reset = rt305x_wdt_reset,
  };
  
--- 
-1.7.10.4
-

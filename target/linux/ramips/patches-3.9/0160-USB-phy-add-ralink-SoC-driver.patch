@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 200 insertions(+)
  create mode 100644 drivers/usb/phy/ralink-phy.c
 
-Index: linux-3.9.6/drivers/usb/phy/Kconfig
-===================================================================
---- linux-3.9.6.orig/drivers/usb/phy/Kconfig	2013-06-13 19:52:08.000000000 +0200
-+++ linux-3.9.6/drivers/usb/phy/Kconfig	2013-06-23 16:37:57.544772712 +0200
-@@ -74,3 +74,11 @@
+--- a/drivers/usb/phy/Kconfig
++++ b/drivers/usb/phy/Kconfig
+@@ -74,3 +74,11 @@ config SAMSUNG_USBPHY
  	help
  	  Enable this to support Samsung USB phy controller for samsung
  	  SoCs.
@@ -27,19 +25,15 @@ Index: linux-3.9.6/drivers/usb/phy/Kconfig
 +	help
 +	  Enable this to support ralink USB phy controller for ralink
 +	  SoCs.
-Index: linux-3.9.6/drivers/usb/phy/Makefile
-===================================================================
---- linux-3.9.6.orig/drivers/usb/phy/Makefile	2013-06-13 19:52:08.000000000 +0200
-+++ linux-3.9.6/drivers/usb/phy/Makefile	2013-06-23 16:37:57.544772712 +0200
-@@ -12,3 +12,4 @@
+--- a/drivers/usb/phy/Makefile
++++ b/drivers/usb/phy/Makefile
+@@ -12,3 +12,4 @@ obj-$(CONFIG_MV_U3D_PHY)		+= mv_u3d_phy.
  obj-$(CONFIG_USB_EHCI_TEGRA)	+= tegra_usb_phy.o
  obj-$(CONFIG_USB_RCAR_PHY)		+= rcar-phy.o
  obj-$(CONFIG_SAMSUNG_USBPHY)		+= samsung-usbphy.o
 +obj-$(CONFIG_RALINK_USBPHY)		+= ralink-phy.o
-Index: linux-3.9.6/drivers/usb/phy/ralink-phy.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.9.6/drivers/usb/phy/ralink-phy.c	2013-06-24 13:55:19.932135036 +0200
+--- /dev/null
++++ b/drivers/usb/phy/ralink-phy.c
 @@ -0,0 +1,191 @@
 +/*
 + * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
