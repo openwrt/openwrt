@@ -47,7 +47,7 @@
  CONFIG_OS=win32
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -109,6 +109,55 @@ extern int wpa_debug_show_keys;
+@@ -109,6 +109,48 @@ extern int wpa_debug_show_keys;
  extern int wpa_debug_timestamp;
  extern struct wpa_driver_ops *wpa_drivers[];
  
@@ -70,24 +70,17 @@
 +	char *cmd = NULL;
 +	char buf[256];
 +	int len = sizeof(buf);
-+	int channel, hw_mode;
++	enum hostapd_hw_mode hw_mode;
++	u8 channel;
 +	int ret;
 +
 +	if (!bss)
 +		return;
 +
-+	if (bss->freq < 4000) {
-+		hw_mode = HOSTAPD_MODE_IEEE80211G;
-+		channel = (bss->freq - 2407) / 5;
-+	} else {
-+		hw_mode = HOSTAPD_MODE_IEEE80211A;
-+		channel = (bss->freq - 5000) / 5;
-+	}
-+
++	hw_mode = ieee80211_freq_to_chan(bss->freq, &channel);
 +	if (asprintf(&cmd, "UPDATE channel=%d sec_chan=0 hw_mode=%d ieee80211n=%d",
-+		     channel, hw_mode, !!bss->ht_capab) < 0) {
++		     channel, hw_mode, !!bss->ht_capab) < 0)
 +		return -1;
-+	}
 +
 +	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
 +	free(cmd);
@@ -103,7 +96,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -675,8 +724,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -675,8 +717,16 @@ void wpa_supplicant_set_state(struct wpa
  #endif /* CONFIG_P2P */
  
  		sme_sched_obss_scan(wpa_s, 1);
@@ -120,7 +113,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2866,6 +2923,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2866,6 +2916,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
