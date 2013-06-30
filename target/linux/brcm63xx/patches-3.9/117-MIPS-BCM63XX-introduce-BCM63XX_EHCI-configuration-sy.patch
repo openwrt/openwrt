@@ -19,7 +19,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
-@@ -11,10 +11,17 @@ config BCM63XX_OHCI
+@@ -12,11 +12,18 @@ config BCM63XX_OHCI
  	select USB_OHCI_BIG_ENDIAN_DESC if USB_OHCI_HCD
  	select USB_OHCI_BIG_ENDIAN_MMIO if USB_OHCI_HCD
  
@@ -31,26 +31,29 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +
  config BCM63XX_CPU_6328
  	bool "support 6328 CPU"
+ 	select SYS_HAS_CPU_BMIPS4350
  	select HW_HAS_PCI
  	select BCM63XX_OHCI
 +	select BCM63XX_EHCI
  
  config BCM63XX_CPU_6338
  	bool "support 6338 CPU"
-@@ -32,16 +39,19 @@ config BCM63XX_CPU_6358
- 	bool "support 6358 CPU"
+@@ -38,18 +45,21 @@ config BCM63XX_CPU_6358
+ 	select SYS_HAS_CPU_BMIPS4350
  	select HW_HAS_PCI
  	select BCM63XX_OHCI
 +	select BCM63XX_EHCI
  
  config BCM63XX_CPU_6362
  	bool "support 6362 CPU"
+ 	select SYS_HAS_CPU_BMIPS4350
  	select HW_HAS_PCI
  	select BCM63XX_OHCI
 +	select BCM63XX_EHCI
  
  config BCM63XX_CPU_6368
  	bool "support 6368 CPU"
+ 	select SYS_HAS_CPU_BMIPS4350
  	select HW_HAS_PCI
  	select BCM63XX_OHCI
 +	select BCM63XX_EHCI

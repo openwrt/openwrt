@@ -16,8 +16,8 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
-@@ -5,9 +5,16 @@ config BCM63XX_CPU_3368
- 	bool "support 3368 CPU"
+@@ -6,10 +6,17 @@ config BCM63XX_CPU_3368
+ 	select SYS_HAS_CPU_BMIPS4350
  	select HW_HAS_PCI
  
 +config BCM63XX_OHCI
@@ -28,29 +28,33 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +
  config BCM63XX_CPU_6328
  	bool "support 6328 CPU"
+ 	select SYS_HAS_CPU_BMIPS4350
  	select HW_HAS_PCI
 +	select BCM63XX_OHCI
  
  config BCM63XX_CPU_6338
  	bool "support 6338 CPU"
-@@ -19,18 +26,22 @@ config BCM63XX_CPU_6345
- config BCM63XX_CPU_6348
+@@ -24,21 +31,25 @@ config BCM63XX_CPU_6348
  	bool "support 6348 CPU"
+ 	select SYS_HAS_CPU_BMIPS3300
  	select HW_HAS_PCI
 +	select BCM63XX_OHCI
  
  config BCM63XX_CPU_6358
  	bool "support 6358 CPU"
+ 	select SYS_HAS_CPU_BMIPS4350
  	select HW_HAS_PCI
 +	select BCM63XX_OHCI
  
  config BCM63XX_CPU_6362
  	bool "support 6362 CPU"
+ 	select SYS_HAS_CPU_BMIPS4350
  	select HW_HAS_PCI
 +	select BCM63XX_OHCI
  
  config BCM63XX_CPU_6368
  	bool "support 6368 CPU"
+ 	select SYS_HAS_CPU_BMIPS4350
  	select HW_HAS_PCI
 +	select BCM63XX_OHCI
  endmenu
