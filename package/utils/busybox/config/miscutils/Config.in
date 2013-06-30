@@ -753,7 +753,7 @@ config BUSYBOX_CONFIG_WALL
 
 config BUSYBOX_CONFIG_WATCHDOG
 	bool "watchdog"
-	default y
+	default n
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The watchdog utility is used with hardware or software watchdog
