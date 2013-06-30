@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -2891,6 +2891,374 @@ static struct board_info __initdata boar
+@@ -2891,6 +2891,488 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -122,12 +122,12 @@
 +
 +	.leds = {
 +		{
-+			.name			= "HW556:red:message",
++			.name			= "HW556:green:lan1",
 +			.gpio			= 0,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "HW556:red:hspa",
++			.name			= "HW556:green:lan2",
 +			.gpio			= 1,
 +			.active_low		= 1,
 +		},
@@ -143,10 +143,44 @@
 +			.default_trigger	= "default-on",
 +		},
 +		{
-+			.name			= "HW556:red:all",
-+			.gpio			= 6,
++			.name			= "HW556:red:message",
++			.gpio			= 12,
 +			.active_low		= 1,
-+			.default_trigger	= "default-on",
++		},
++		{
++			.name			= "HW556:red:lan1",
++			.gpio			= 13,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:hspa",
++			.gpio			= 15,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan2",
++			.gpio			= 22,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan3",
++			.gpio			= 23,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan3",
++			.gpio			= 26,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan4",
++			.gpio			= 27,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan4",
++			.gpio			= 28,
++			.active_low		= 1,
 +		},
 +	},
 +
@@ -241,6 +275,46 @@
 +			.active_low		= 1,
 +			.default_trigger	= "default-on",
 +		},
++		{
++			.name			= "HW556:green:lan1",
++			.gpio			= 12,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan1",
++			.gpio			= 13,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan2",
++			.gpio			= 15,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan2",
++			.gpio			= 22,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan3",
++			.gpio			= 23,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan3",
++			.gpio			= 26,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan4",
++			.gpio			= 27,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan4",
++			.gpio			= 28,
++			.active_low		= 1,
++		},
 +	},
 +
 +	.buttons = {
@@ -334,6 +408,46 @@
 +			.active_low		= 1,
 +			.default_trigger	= "default-on",
 +		},
++		{
++			.name			= "HW556:green:lan1",
++			.gpio			= 12,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan1",
++			.gpio			= 13,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan2",
++			.gpio			= 15,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan2",
++			.gpio			= 22,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan3",
++			.gpio			= 23,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan3",
++			.gpio			= 26,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan4",
++			.gpio			= 27,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan4",
++			.gpio			= 28,
++			.active_low		= 1,
++		},
 +	},
 +
 +	.buttons = {
@@ -375,7 +489,7 @@
   /* T-Home Speedport W 303V Typ B */
  static struct board_info __initdata board_spw303v = {
  	.name			= "96358-502V",
-@@ -3322,6 +3690,10 @@ static const struct board_info __initcon
+@@ -3322,6 +3804,10 @@ static const struct board_info __initcon
  	&board_nb4_fxc_r2,
  	&board_ct6373_1,
  	&board_HW553,
@@ -386,7 +500,7 @@
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif
-@@ -3387,13 +3759,37 @@ static void __init boardid_fixup(u8 *boo
+@@ -3387,13 +3873,37 @@ static void __init boardid_fixup(u8 *boo
  	struct bcm_tag *tag = (struct bcm_tag *)(boot_addr + CFE_OFFSET_64K);
  	char *board_name = (char *)bcm63xx_nvram_get_name();
  
