@@ -22,7 +22,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "common/defs.h"
  
  #define HOSTAPD_CHAN_DISABLED 0x00000001
-@@ -363,6 +364,11 @@ struct wpa_driver_associate_params {
+@@ -369,6 +370,11 @@ struct wpa_driver_associate_params {
  	 */
  	int freq;
  
@@ -44,7 +44,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "config.h"
  
  
-@@ -1376,6 +1377,97 @@ static char * wpa_config_write_p2p_clien
+@@ -1374,6 +1375,97 @@ static char * wpa_config_write_p2p_clien
  
  #endif /* CONFIG_P2P */
  
@@ -142,7 +142,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  /* Helper macros for network block parser */
  
  #ifdef OFFSET
-@@ -1574,6 +1666,9 @@ static const struct parse_data ssid_fiel
+@@ -1573,6 +1665,9 @@ static const struct parse_data ssid_fiel
  	{ INT(ap_max_inactivity) },
  	{ INT(dtim_period) },
  	{ INT(beacon_int) },
@@ -175,7 +175,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #endif /* CONFIG_SSID_H */
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1597,15 +1597,24 @@ void wpa_supplicant_associate(struct wpa
+@@ -1606,15 +1606,24 @@ void wpa_supplicant_associate(struct wpa
  		params.ssid_len = ssid->ssid_len;
  	}
  

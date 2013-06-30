@@ -1,6 +1,22 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -3290,6 +3290,7 @@ static void * wpa_driver_nl80211_init(vo
+@@ -751,7 +751,6 @@ nla_put_failure:
+ }
+ 
+ 
+-#ifndef HOSTAPD
+ static int nl80211_get_macaddr(struct i802_bss *bss)
+ {
+ 	struct nl_msg *msg;
+@@ -773,7 +772,6 @@ nla_put_failure:
+ 	nlmsg_free(msg);
+ 	return NL80211_IFTYPE_UNSPECIFIED;
+ }
+-#endif /* HOSTAPD */
+ 
+ 
+ static int nl80211_register_beacons(struct wpa_driver_nl80211_data *drv,
+@@ -3592,6 +3590,7 @@ static void * wpa_driver_nl80211_init(vo
  	drv->monitor_sock = -1;
  	drv->eapol_tx_sock = -1;
  	drv->ap_scan_as_station = NL80211_IFTYPE_UNSPECIFIED;
@@ -8,27 +24,41 @@
  
  	if (wpa_driver_nl80211_init_nl(drv)) {
  		os_free(drv);
-@@ -3607,17 +3608,12 @@ static void wpa_driver_nl80211_send_rfki
- 	wpa_supplicant_event(timeout_ctx, EVENT_INTERFACE_DISABLED, NULL);
- }
+@@ -3982,31 +3981,16 @@ static int i802_set_iface_flags(struct i
  
--
+ 
  static int
 -wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv)
 +wpa_driver_nl80211_finish_drv_init_sta(struct wpa_driver_nl80211_data *drv,
 +				       int *send_rfkill_event)
  {
+-#ifndef HOSTAPD
+ 	enum nl80211_iftype nlmode = NL80211_IFTYPE_STATION;
+-#endif /* HOSTAPD */
  	struct i802_bss *bss = &drv->first_bss;
 -	int send_rfkill_event = 0;
+ 	int dynamic_if;
  
 -	drv->ifindex = if_nametoindex(bss->ifname);
--	drv->first_bss.ifindex = drv->ifindex;
+-	bss->ifindex = drv->ifindex;
+-	bss->wdev_id = drv->global->if_add_wdevid;
+-	bss->wdev_id_set = drv->global->if_add_wdevid_set;
+-
+ 	dynamic_if = drv->ifindex == drv->global->if_add_ifindex;
+ 	dynamic_if = dynamic_if || drv->global->if_add_wdevid_set;
+-	drv->global->if_add_wdevid_set = 0;
+ 
+-	if (wpa_driver_nl80211_capa(drv))
+-		return -1;
+-
+-	wpa_printf(MSG_DEBUG, "nl80211: interface %s in phy %s",
+-		   bss->ifname, drv->phyname);
 -
 -#ifndef HOSTAPD
- 	/*
- 	 * Make sure the interface starts up in station mode unless this is a
- 	 * dynamically added interface (e.g., P2P) that was already configured
-@@ -3636,7 +3632,7 @@ wpa_driver_nl80211_finish_drv_init(struc
+ 	if (dynamic_if)
+ 		nlmode = nl80211_get_ifmode(bss);
+ 
+@@ -4035,7 +4019,7 @@ wpa_driver_nl80211_finish_drv_init(struc
  				   "interface '%s' due to rfkill",
  				   bss->ifname);
  			drv->if_disabled = 1;
@@ -37,11 +67,12 @@
  		} else {
  			wpa_printf(MSG_ERROR, "nl80211: Could not set "
  				   "interface '%s' UP", bss->ifname);
-@@ -3646,7 +3642,19 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -4045,7 +4029,30 @@ wpa_driver_nl80211_finish_drv_init(struc
  
  	netlink_send_oper_ifla(drv->global->netlink, drv->ifindex,
  			       1, IF_OPER_DORMANT);
 -#endif /* HOSTAPD */
++	return 0;
 +}
 +
 +static int
@@ -51,10 +82,20 @@
 +	int send_rfkill_event = 0;
 +
 +	drv->ifindex = if_nametoindex(bss->ifname);
-+	drv->first_bss.ifindex = drv->ifindex;
++	bss->ifindex = drv->ifindex;
++	bss->wdev_id = drv->global->if_add_wdevid;
++	bss->wdev_id_set = drv->global->if_add_wdevid_set;
++	drv->global->if_add_wdevid_set = 0;
 +
-+	if (drv->nlmode == NL80211_IFTYPE_STATION)
-+		wpa_driver_nl80211_finish_drv_init_sta(drv, &send_rfkill_event);
++	if (wpa_driver_nl80211_capa(drv))
++		return -1;
++
++	wpa_printf(MSG_DEBUG, "nl80211: interface %s in phy %s",
++		   bss->ifname, drv->phyname);
++
++	if (drv->nlmode == NL80211_IFTYPE_STATION &&
++	    wpa_driver_nl80211_finish_drv_init_sta(drv, &send_rfkill_event))
++		return -1;
  
- 	if (wpa_driver_nl80211_capa(drv))
- 		return -1;
+ 	if (linux_get_ifhwaddr(drv->global->ioctl_sock, bss->ifname,
+ 			       bss->addr))

@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2474,6 +2474,10 @@ static int hostapd_config_fill(struct ho
+@@ -2488,6 +2488,10 @@ static int hostapd_config_fill(struct ho
  					   "ht_capab", line);
  				errors++;
  			}
@@ -13,7 +13,7 @@
  #endif /* CONFIG_IEEE80211N */
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -515,6 +515,7 @@ struct hostapd_config {
+@@ -519,6 +519,7 @@ struct hostapd_config {
  	int ieee80211n;
  	int secondary_channel;
  	int require_ht;
@@ -41,7 +41,7 @@
  	os_free(iface->current_rates);
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -269,6 +269,9 @@ struct hostapd_iface {
+@@ -274,6 +274,9 @@ struct hostapd_iface {
  	/* Overlapping BSS information */
  	int olbc_ht;
  
@@ -53,7 +53,7 @@
  };
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -1484,6 +1484,9 @@ static void handle_beacon(struct hostapd
+@@ -1513,6 +1513,9 @@ static void handle_beacon(struct hostapd
  					     sizeof(mgmt->u.beacon)), &elems,
  				      0);
  

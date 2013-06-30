@@ -26,7 +26,7 @@
  LIBS += $(DRV_AP_LIBS)
  
  ifdef CONFIG_L2_PACKET
-@@ -860,6 +865,12 @@ install: all
+@@ -864,6 +869,12 @@ install: all
  
  BCHECK=../src/drivers/build.hostapd
  
@@ -39,7 +39,7 @@
  hostapd: $(BCHECK) $(OBJS)
  	$(Q)$(CC) $(LDFLAGS) -o hostapd $(OBJS) $(LIBS)
  	@$(E) "  LD " $@
-@@ -898,6 +909,12 @@ HOBJS += ../src/crypto/aes-internal.o
+@@ -902,6 +913,12 @@ HOBJS += ../src/crypto/aes-internal.o
  HOBJS += ../src/crypto/aes-internal-enc.o
  endif
  
@@ -62,7 +62,7 @@
  
  BINALL=wpa_supplicant wpa_cli
  
-@@ -708,6 +709,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
+@@ -704,6 +705,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
  CFLAGS += -DCONFIG_DYNAMIC_EAP_METHODS
  LIBS += -ldl -rdynamic
  endif
@@ -73,7 +73,7 @@
  endif
  
  ifdef CONFIG_AP
-@@ -716,9 +721,11 @@ NEED_EAP_COMMON=y
+@@ -712,9 +717,11 @@ NEED_EAP_COMMON=y
  NEED_RSN_AUTHENTICATOR=y
  CFLAGS += -DCONFIG_AP
  OBJS += ap.o
@@ -85,7 +85,7 @@
  OBJS += ../src/ap/hostapd.o
  OBJS += ../src/ap/wpa_auth_glue.o
  OBJS += ../src/ap/utils.o
-@@ -773,10 +780,18 @@ endif
+@@ -769,10 +776,18 @@ endif
  ifdef CONFIG_HS20
  OBJS += ../src/ap/hs20.o
  endif
@@ -104,7 +104,7 @@
  NEED_AES_WRAP=y
  OBJS += ../src/ap/wpa_auth.o
  OBJS += ../src/ap/wpa_auth_ie.o
-@@ -1525,6 +1540,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
+@@ -1521,6 +1536,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
  
  $(OBJS_c) $(OBJS_t) $(OBJS_t2) $(OBJS) $(BCHECK) $(EXTRA_progs): .config
  
@@ -117,7 +117,7 @@
  wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)
  	$(Q)$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
  	@$(E) "  LD " $@
-@@ -1595,6 +1616,12 @@ eap_ikev2.so: ../src/eap_peer/eap_ikev2.
+@@ -1591,6 +1612,12 @@ eap_ikev2.so: ../src/eap_peer/eap_ikev2.
  %@.service: %.service.arg.in
  	sed -e 's|\@BINDIR\@|$(BINDIR)|g' $< >$@
  
@@ -132,7 +132,7 @@
  wpa_cli.exe: wpa_cli
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -3750,8 +3750,8 @@ union wpa_event_data {
+@@ -3861,8 +3861,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -145,7 +145,7 @@
  /*
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -714,8 +714,8 @@ static void hostapd_event_eapol_rx(struc
+@@ -715,8 +715,8 @@ static void hostapd_event_eapol_rx(struc
  }
  
  
@@ -158,7 +158,7 @@
  #ifndef CONFIG_NO_STDOUT_DEBUG
 --- a/wpa_supplicant/wpa_priv.c
 +++ b/wpa_supplicant/wpa_priv.c
-@@ -819,8 +819,8 @@ static void wpa_priv_send_ft_response(st
+@@ -817,8 +817,8 @@ static void wpa_priv_send_ft_response(st
  }
  
  
@@ -169,7 +169,7 @@
  {
  	struct wpa_priv_interface *iface = ctx;
  
-@@ -962,6 +962,7 @@ int main(int argc, char *argv[])
+@@ -960,6 +960,7 @@ int main(int argc, char *argv[])
  	if (os_program_init())
  		return -1;
  
@@ -179,7 +179,7 @@
  	for (;;) {
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -2354,8 +2354,8 @@ static void wpa_supplicant_event_unprot_
+@@ -2383,8 +2383,8 @@ static void wpa_supplicant_event_unprot_
  }
  
  
@@ -192,8 +192,8 @@
  	u16 reason_code = 0;
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -3050,6 +3050,9 @@ static void wpa_supplicant_deinit_iface(
- 	}
+@@ -3090,6 +3090,9 @@ static void wpa_supplicant_deinit_iface(
+ 	os_free(wpa_s);
  }
  
 +extern void supplicant_event(void *ctx, enum wpa_event_type event,
@@ -202,7 +202,7 @@
  
  /**
   * wpa_supplicant_add_iface - Add a new network interface
-@@ -3244,6 +3247,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -3281,6 +3284,7 @@ struct wpa_global * wpa_supplicant_init(
  	wpa_msg_register_ifname_cb(wpa_supplicant_msg_ifname_cb);
  #endif /* CONFIG_NO_WPA_MSG */
  
@@ -212,7 +212,7 @@
  		wpa_debug_open_syslog();
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -554,6 +554,9 @@ static int hostapd_get_ctrl_iface_group(
+@@ -562,6 +562,9 @@ static int hostapd_get_ctrl_iface_group(
  	return 0;
  }
  
@@ -222,7 +222,7 @@
  
  int main(int argc, char *argv[])
  {
-@@ -579,6 +582,7 @@ int main(int argc, char *argv[])
+@@ -587,6 +590,7 @@ int main(int argc, char *argv[])
  	interfaces.global_iface_name = NULL;
  	interfaces.global_ctrl_sock = -1;
  

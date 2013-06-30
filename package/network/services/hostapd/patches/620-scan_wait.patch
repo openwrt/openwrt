@@ -32,7 +32,7 @@
  	}
  
  	return hapd_iface;
-@@ -429,8 +440,6 @@ static void hostapd_global_deinit(const 
+@@ -437,8 +448,6 @@ static void hostapd_global_deinit(const 
  #endif /* CONFIG_NATIVE_WINDOWS */
  
  	eap_server_unregister_methods();
@@ -41,7 +41,7 @@
  }
  
  
-@@ -456,11 +465,6 @@ static int hostapd_global_run(struct hap
+@@ -464,11 +473,6 @@ static int hostapd_global_run(struct hap
  	}
  #endif /* EAP_SERVER_TNC */
  
@@ -53,7 +53,7 @@
  	eloop_run();
  
  	return 0;
-@@ -564,8 +568,7 @@ int main(int argc, char *argv[])
+@@ -572,8 +576,7 @@ int main(int argc, char *argv[])
  	struct hapd_interfaces interfaces;
  	int ret = 1;
  	size_t i;

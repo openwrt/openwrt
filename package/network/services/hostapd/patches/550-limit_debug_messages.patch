@@ -182,7 +182,7 @@
  
  /*
   * wpa_dbg() behaves like wpa_msg(), but it can be removed from build to reduce
-@@ -172,7 +213,12 @@ void wpa_hexdump_ascii_key(int level, co
+@@ -174,7 +215,12 @@ void wpa_hexdump_ascii_key(int level, co
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -196,7 +196,7 @@
  
  /**
   * wpa_msg_ctrl - Conditional printf for ctrl_iface monitors
-@@ -186,8 +232,13 @@ void wpa_msg(void *ctx, int level, const
+@@ -188,8 +234,13 @@ void wpa_msg(void *ctx, int level, const
   * attached ctrl_iface monitors. In other words, it can be used for frequent
   * events that do not need to be sent to syslog.
   */
@@ -209,5 +209,5 @@
 +			_wpa_msg_ctrl(ctx, level, __VA_ARGS__);		\
 +	} while(0)
  
- typedef void (*wpa_msg_cb_func)(void *ctx, int level, const char *txt,
- 				size_t len);
+ /**
+  * wpa_msg_global - Global printf for ctrl_iface monitors
