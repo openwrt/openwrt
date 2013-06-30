@@ -1,7 +1,7 @@
-From 7c9d3fe01034adbb890aab7c44534658f89c211b Mon Sep 17 00:00:00 2001
+From 353f07637d82cf485a9319d203a6ed9b38590526 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Thu, 25 Apr 2013 15:35:12 +0200
-Subject: [PATCH 08/13] MIPS: BCM63XX: use a helper for getting the right
+Subject: [PATCH 09/14] MIPS: BCM63XX: use a helper for getting the right
  register address
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
@@ -11,20 +11,20 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/irq.c
 +++ b/arch/mips/bcm63xx/irq.c
-@@ -251,6 +251,20 @@ static inline u32 get_ext_irq_perf_reg(i
+@@ -284,6 +284,20 @@ static inline u32 get_ext_irq_perf_reg(i
  	return ext_irq_cfg_reg2;
  }
  
-+static inline u32 get_irq_stat_addr(int cpu)
++static inline u32 get_irq_stat_addr(int pin)
 +{
-+	if (cpu == 0)
++	if (pin == 0)
 +		return irq_stat_addr0;
 +	return irq_stat_addr1;
 +}
 +
-+static inline u32 get_irq_mask_addr(int cpu)
++static inline u32 get_irq_mask_addr(int pin)
 +{
-+	if (cpu == 0)
++	if (pin == 0)
 +		return irq_mask_addr0;
 +	return irq_mask_addr1;
 +}
@@ -32,7 +32,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static inline void handle_internal(int intbit)
  {
  	if (is_ext_irq_cascaded &&
-@@ -274,13 +288,15 @@ void __dispatch_internal_##width(void)
+@@ -307,13 +321,15 @@ void __dispatch_internal_##width(void)
  	unsigned int src, tgt;						\
  	bool irqs_pending = false;					\
  	static int i;							\
@@ -50,7 +50,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		pending[--tgt] = val;					\
  									\
  		if (val)						\
-@@ -306,10 +322,11 @@ static void __internal_irq_mask_##width(
+@@ -339,10 +355,11 @@ static void __internal_irq_mask_##width(
  	u32 val;							\
  	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
  	unsigned bit = irq & 0x1f;					\
@@ -64,7 +64,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  }									\
  									\
  static void __internal_irq_unmask_##width(unsigned int irq)		\
-@@ -317,10 +334,11 @@ static void __internal_irq_unmask_##widt
+@@ -350,10 +367,11 @@ static void __internal_irq_unmask_##widt
  	u32 val;							\
  	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
  	unsigned bit = irq & 0x1f; 					\

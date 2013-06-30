@@ -1,7 +1,7 @@
-From bb2774da9598f3ea38099d3dcf753b585824a011 Mon Sep 17 00:00:00 2001
+From 3bc62bd6e8c8a37d64cb797d24955711e98de15c Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Thu, 21 Mar 2013 17:05:15 +0100
-Subject: [PATCH 04/13] MIPS: BCM63XX: rename __dispatch_internal to
+Subject: [PATCH 05/14] MIPS: BCM63XX: rename __dispatch_internal to
  __dispatch_internal_32
 
 Make it follow the same naming convention as the other functions.
@@ -22,7 +22,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static void __dispatch_internal_64(void) __maybe_unused;
  static void __internal_irq_mask_32(unsigned int irq) __maybe_unused;
  static void __internal_irq_mask_64(unsigned int irq) __maybe_unused;
-@@ -106,7 +106,7 @@ static void __internal_irq_unmask_64(uns
+@@ -117,7 +117,7 @@ static void __internal_irq_unmask_64(uns
  #endif
  
  #if irq_bits == 32
@@ -31,7 +31,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #define internal_irq_mask			__internal_irq_mask_32
  #define internal_irq_unmask			__internal_irq_unmask_32
  #else
-@@ -207,7 +207,7 @@ static void bcm63xx_init_irq(void)
+@@ -225,7 +225,7 @@ static void bcm63xx_init_irq(void)
  	}
  
  	if (irq_bits == 32) {
@@ -40,7 +40,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		internal_irq_mask = __internal_irq_mask_32;
  		internal_irq_unmask = __internal_irq_unmask_32;
  	} else {
-@@ -240,7 +240,7 @@ static inline void handle_internal(int i
+@@ -258,7 +258,7 @@ static inline void handle_internal(int i
   * will resume the loop where it ended the last time we left this
   * function.
   */

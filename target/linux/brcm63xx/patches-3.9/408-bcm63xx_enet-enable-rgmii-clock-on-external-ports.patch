@@ -10,7 +10,7 @@ Subject: [PATCH 54/81] bcm63xx_enet: enable rgmii clock on external ports
 
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -861,6 +861,19 @@
+@@ -931,6 +931,19 @@
  #define ENETSW_PORTOV_FDX_MASK		(1 << 1)
  #define ENETSW_PORTOV_LINKUP_MASK	(1 << 0)
  
@@ -32,7 +32,7 @@ Subject: [PATCH 54/81] bcm63xx_enet: enable rgmii clock on external ports
  #define ENETSW_MDIOC_EXT_MASK		(1 << 16)
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -2200,6 +2200,18 @@ static int bcm_enetsw_open(struct net_de
+@@ -2233,6 +2233,18 @@ static int bcm_enetsw_open(struct net_de
  		priv->sw_port_link[i] = 0;
  	}
  

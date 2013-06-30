@@ -1,9 +1,29 @@
-From d16c1a1410f6c35a835baaa445774b4421db6c96 Mon Sep 17 00:00:00 2001
+From 85b2e40acd7b33409a0d889cd3d0b964c9df4b13 Mon Sep 17 00:00:00 2001
 From: Maxime Bizon <mbizon@freebox.fr>
-Date: Sat, 23 Jan 2010 03:01:02 +0100
-Subject: [PATCH 8/8] bcm63xx_enet: add support for bcm6368 internal ethernet
- switch.
+Date: Tue, 4 Jun 2013 20:53:35 +0000
+Subject: [PATCH 3/3] bcm63xx_enet: add support for Broadcom BCM63xx
+ integrated gigabit switch
 
+Newer Broadcom BCM63xx SoCs: 6328, 6362 and 6368 have an integrated switch
+which needs to be driven slightly differently from the traditional
+external switches. This patch introduces changes in arch/mips/bcm63xx in order
+to:
+
+- register a bcm63xx_enetsw driver instead of bcm63xx_enet driver
+- update DMA channels configuration & state RAM base addresses
+- add a new platform data configuration knob to define the number of
+  ports per switch/device and force link on some ports
+- define the required switch registers
+
+On the driver side, the following changes are required:
+
+- the switch ports need to be polled to ensure the link is up and
+  running and RX/TX can properly work
+- basic switch configuration needs to be performed for the switch to
+  forward packets to the CPU
+- update the MIB counters since the integrated
+
+Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
  arch/mips/bcm63xx/boards/board_bcm963xx.c          |    4 +
@@ -11,13 +31,13 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  .../include/asm/mach-bcm63xx/bcm63xx_dev_enet.h    |   28 +
  arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h  |   50 +
  .../mips/include/asm/mach-bcm63xx/board_bcm963xx.h |    2 +
- drivers/net/ethernet/broadcom/bcm63xx_enet.c       | 1018 +++++++++++++++++++-
- drivers/net/ethernet/broadcom/bcm63xx_enet.h       |   75 ++
- 8 files changed, 1239 insertions(+), 66 deletions(-)
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c       |  995 +++++++++++++++++++-
+ drivers/net/ethernet/broadcom/bcm63xx_enet.h       |   71 ++
+ 7 files changed, 1205 insertions(+), 58 deletions(-)
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -924,6 +924,10 @@ int __init board_register_devices(void)
+@@ -890,6 +890,10 @@ int __init board_register_devices(void)
  	    !bcm63xx_nvram_get_mac_address(board.enet1.mac_addr))
  		bcm63xx_enet_register(1, &board.enet1);
  
@@ -74,7 +94,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
 +		chan_count = 32;
 +	else
-+		chan_count = 8;
++		chan_count = 16;
 +
 +	shared_res[1].start = bcm63xx_regset_address(RSET_ENETDMAC);
 +	shared_res[1].end = shared_res[1].start;
@@ -201,7 +221,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #endif /* ! BCM63XX_DEV_ENET_H_ */
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -832,10 +832,60 @@
+@@ -873,10 +873,60 @@
   * _REG relative to RSET_ENETSW
   *************************************************************************/
  
@@ -264,7 +284,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
   * _REG relative to RSET_OHCI_PRIV
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -25,6 +25,7 @@ struct board_info {
+@@ -24,6 +24,7 @@ struct board_info {
  	/* enabled feature/device */
  	unsigned int	has_enet0:1;
  	unsigned int	has_enet1:1;
@@ -272,7 +292,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	unsigned int	has_pci:1;
  	unsigned int	has_pccard:1;
  	unsigned int	has_ohci0:1;
-@@ -37,6 +38,7 @@ struct board_info {
+@@ -36,6 +37,7 @@ struct board_info {
  	/* ethernet config */
  	struct bcm63xx_enet_platform_data enet0;
  	struct bcm63xx_enet_platform_data enet1;
@@ -282,57 +302,52 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	struct bcm63xx_usbd_platform_data usbd;
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -59,6 +59,49 @@ static inline void enet_writel(struct bc
+@@ -59,8 +59,43 @@ static inline void enet_writel(struct bc
  }
  
  /*
+- * io helpers to access shared registers
 + * io helpers to access switch registers
-+ */
+  */
 +static inline u32 enetsw_readl(struct bcm_enet_priv *priv, u32 off)
 +{
-+	/* printk("enetsw_readl at %p\n", priv->base + off); */
 +	return bcm_readl(priv->base + off);
 +}
 +
 +static inline void enetsw_writel(struct bcm_enet_priv *priv,
 +				 u32 val, u32 off)
 +{
-+	/* printk("enetsw_writel %08x at %p\n", val, priv->base + off); */
 +	bcm_writel(val, priv->base + off);
 +}
 +
 +static inline u16 enetsw_readw(struct bcm_enet_priv *priv, u32 off)
 +{
-+	/* printk("enetsw_readw  at %p\n", priv->base + off); */
 +	return bcm_readw(priv->base + off);
 +}
 +
 +static inline void enetsw_writew(struct bcm_enet_priv *priv,
 +				 u16 val, u32 off)
 +{
-+	/* printk("enetsw_writew %04x at %p\n", val, priv->base + off); */
 +	bcm_writew(val, priv->base + off);
 +}
 +
 +static inline u8 enetsw_readb(struct bcm_enet_priv *priv, u32 off)
 +{
-+	/* printk("enetsw_readb  at %p\n", priv->base + off); */
 +	return bcm_readb(priv->base + off);
 +}
 +
 +static inline void enetsw_writeb(struct bcm_enet_priv *priv,
 +				 u8 val, u32 off)
 +{
-+	/* printk("enetsw_writeb %02x at %p\n", val, priv->base + off); */
 +	bcm_writeb(val, priv->base + off);
 +}
 +
 +
-+/*
-  * io helpers to access shared registers
-  */
++/* io helpers to access shared registers */
  static inline u32 enet_dma_readl(struct bcm_enet_priv *priv, u32 off)
-@@ -218,7 +261,6 @@ static int bcm_enet_refill_rx(struct net
+ {
+ 	return bcm_readl(bcm_enet_shared_base[0] + off);
+@@ -218,7 +253,6 @@ static int bcm_enet_refill_rx(struct net
  			if (!skb)
  				break;
  			priv->rx_skb[desc_idx] = skb;
@@ -340,7 +355,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  			p = dma_map_single(&priv->pdev->dev, skb->data,
  					   priv->rx_skb_size,
  					   DMA_FROM_DEVICE);
-@@ -321,7 +363,8 @@ static int bcm_enet_receive_queue(struct
+@@ -321,7 +355,8 @@ static int bcm_enet_receive_queue(struct
  		}
  
  		/* recycle packet if it's marked as bad */
@@ -350,7 +365,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  			dev->stats.rx_errors++;
  
  			if (len_stat & DMADESC_OVSIZE_MASK)
-@@ -552,6 +595,26 @@ static int bcm_enet_start_xmit(struct sk
+@@ -552,6 +587,26 @@ static int bcm_enet_start_xmit(struct sk
  		goto out_unlock;
  	}
  
@@ -377,7 +392,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	/* point to the next available desc */
  	desc = &priv->tx_desc_cpu[priv->tx_curr_desc];
  	priv->tx_skb[priv->tx_curr_desc] = skb;
-@@ -929,9 +992,9 @@ static int bcm_enet_open(struct net_devi
+@@ -961,9 +1016,9 @@ static int bcm_enet_open(struct net_devi
  	enet_writel(priv, priv->hw_mtu, ENET_TXMAXLEN_REG);
  
  	/* set dma maximum burst len */
@@ -389,7 +404,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  			 ENETDMAC_MAXBURST_REG(priv->tx_chan));
  
  	/* set correct transmit fifo watermark */
-@@ -1528,7 +1591,7 @@ static int compute_hw_mtu(struct bcm_ene
+@@ -1569,7 +1624,7 @@ static int compute_hw_mtu(struct bcm_ene
  	 * it's appended
  	 */
  	priv->rx_skb_size = ALIGN(actual_mtu + ETH_FCS_LEN,
@@ -398,7 +413,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	return 0;
  }
  
-@@ -1635,6 +1698,9 @@ static int bcm_enet_probe(struct platfor
+@@ -1676,6 +1731,9 @@ static int bcm_enet_probe(struct platfor
  		return -ENOMEM;
  	priv = netdev_priv(dev);
  
@@ -408,7 +423,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	ret = compute_hw_mtu(priv, dev->mtu);
  	if (ret)
  		goto out;
-@@ -1899,65 +1965,928 @@ struct platform_driver bcm63xx_enet_driv
+@@ -1901,60 +1959,916 @@ struct platform_driver bcm63xx_enet_driv
  };
  
  /*
@@ -431,8 +446,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
 -	for (i = 0; i < 3; i++) {
 -		res = platform_get_resource(pdev, IORESOURCE_MEM, i);
--		if (!res)
--			return -EINVAL;
+-		p[i] = devm_ioremap_resource(&pdev->dev, res);
+-		if (!p[i])
+-			return -ENOMEM;
+-	}
 +	reg = ENETSW_MDIOC_RD_MASK |
 +		(phy_id << ENETSW_MDIOC_PHYID_SHIFT) |
 +		(location << ENETSW_MDIOC_REG_SHIFT);
@@ -447,38 +464,36 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	return ret;
 +}
  
--		p[i] = devm_request_and_ioremap(&pdev->dev, res);
--		if (!p[i])
--			return -ENOMEM;
+-	memcpy(bcm_enet_shared_base, p, sizeof(bcm_enet_shared_base));
 +static void bcmenet_sw_mdio_write(struct bcm_enet_priv *priv,
 +				 int ext, int phy_id, int location,
 +				 uint16_t data)
 +{
 +	u32 reg;
  
--		bcm_enet_shared_base[i] = p;
--	}
+-	return 0;
 +	spin_lock_bh(&priv->enetsw_mdio_lock);
 +	enetsw_writel(priv, 0, ENETSW_MDIOC_REG);
- 
--	memcpy(bcm_enet_shared_base, p, sizeof(bcm_enet_shared_base));
++
 +	reg = ENETSW_MDIOC_WR_MASK |
 +		(phy_id << ENETSW_MDIOC_PHYID_SHIFT) |
 +		(location << ENETSW_MDIOC_REG_SHIFT);
- 
--	return 0;
--}
++
 +	if (ext)
 +		reg |= ENETSW_MDIOC_EXT_MASK;
- 
--static int bcm_enet_shared_remove(struct platform_device *pdev)
--{
--	return 0;
++
 +	reg |= data;
 +
 +	enetsw_writel(priv, reg, ENETSW_MDIOC_REG);
 +	udelay(50);
 +	spin_unlock_bh(&priv->enetsw_mdio_lock);
+ }
+ 
+-static int bcm_enet_shared_remove(struct platform_device *pdev)
++static inline int bcm_enet_port_is_rgmii(int portid)
+ {
+-	return 0;
++	return portid >= ENETSW_RGMII_PORT0;
  }
  
  /*
@@ -746,7 +761,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	enet_dma_writel(priv, val, ENETDMA_FLOWCH_REG(priv->rx_chan));
 +
 +	/* all set, enable mac and interrupts, start dma engine and
-+	 * kick rx dma channel */
++	 * kick rx dma channel
++	 */
 +	wmb();
 +	enet_dma_writel(priv, ENETDMA_CFG_EN_MASK, ENETDMA_CFG_REG);
 +	enet_dmac_writel(priv, ENETDMAC_CHANCFG_EN_MASK,
@@ -769,9 +785,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	netif_carrier_on(dev);
 +	netif_start_queue(dev);
 +
-+	/*
-+	 * apply override config for bypass_link ports here.
-+	 */
++	/* apply override config for bypass_link ports here. */
 +	for (i = 0; i < priv->num_ports; i++) {
 +		struct bcm63xx_enetsw_port *port;
 +		u8 override;
@@ -795,7 +809,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		case 10:
 +			break;
 +		default:
-+			printk(KERN_WARNING "invalid forced speed on port %s: assume 10\n",
++			pr_warn("invalid forced speed on port %s: assume 10\n",
 +			       port->name);
 +			break;
 +		}
@@ -852,9 +866,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	return ret;
 +}
 +
-+/*
-+ * stop callback
-+ */
++/* stop callback */
 +static int bcm_enetsw_stop(struct net_device *dev)
 +{
 +	struct bcm_enet_priv *priv;
@@ -907,8 +919,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	return 0;
 +}
 +
-+/*
-+ * try to sort out phy external status by walking the used_port field
++/* try to sort out phy external status by walking the used_port field
 + * in the bcm_enet_priv structure. in case the phy address is not
 + * assigned to any physical port on the switch, assume it is external
 + * (and yell at the user).
@@ -929,8 +940,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	return 1;
 +}
 +
-+/*
-+ * can't use bcmenet_sw_mdio_read directly as we need to sort out
++/* can't use bcmenet_sw_mdio_read directly as we need to sort out
 + * external/internal status of the given phy_id first.
 + */
 +static int bcm_enetsw_mii_mdio_read(struct net_device *dev, int phy_id,
@@ -944,8 +954,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +				    phy_id, location);
 +}
 +
-+/*
-+ * can't use bcmenet_sw_mdio_write directly as we need to sort out
++/* can't use bcmenet_sw_mdio_write directly as we need to sort out
 + * external/internal status of the given phy_id first.
 + */
 +static void bcm_enetsw_mii_mdio_write(struct net_device *dev, int phy_id,
@@ -1166,9 +1175,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	.set_ringparam		= bcm_enetsw_set_ringparam,
 +};
 +
-+/*
-+ * allocate netdevice, request register memory and register device.
-+ */
++/* allocate netdevice, request register memory and register device. */
 +static int bcm_enetsw_probe(struct platform_device *pdev)
 +{
 +	struct bcm_enet_priv *priv;
@@ -1178,7 +1185,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	int ret, irq_rx, irq_tx;
 +
 +	/* stop if shared driver failed, assume driver->probe will be
-+	 * called in the same order we register devices (correct ?) */
++	 * called in the same order we register devices (correct ?)
++	 */
 +	if (!bcm_enet_shared_base[0])
 +		return -ENODEV;
 +
@@ -1207,7 +1215,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	if (pd) {
 +		memcpy(dev->dev_addr, pd->mac_addr, ETH_ALEN);
 +		memcpy(priv->used_ports, pd->used_ports,
-+		       sizeof (pd->used_ports));
++		       sizeof(pd->used_ports));
 +		priv->num_ports = pd->num_ports;
 +	}
 +
@@ -1276,9 +1284,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +}
 +
 +
-+/*
-+ * exit func, stops hardware and unregisters netdevice
-+ */
++/* exit func, stops hardware and unregisters netdevice */
 +static int bcm_enetsw_remove(struct platform_device *pdev)
 +{
 +	struct bcm_enet_priv *priv;
@@ -1309,9 +1315,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	},
 +};
 +
-+/*
-+ * reserve & remap memory space shared between all macs
-+ */
++/* reserve & remap memory space shared between all macs */
 +static int bcm_enet_shared_probe(struct platform_device *pdev)
 +{
 +	struct resource *res;
@@ -1322,10 +1326,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +
 +	for (i = 0; i < 3; i++) {
 +		res = platform_get_resource(pdev, IORESOURCE_MEM, i);
-+		if (!res)
-+			return -EINVAL;
-+
-+		p[i] = devm_request_and_ioremap(&pdev->dev, res);
++		p[i] = devm_ioremap_resource(&pdev->dev, res);
 +		if (!p[i])
 +			return -ENOMEM;
 +	}
@@ -1340,8 +1341,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	return 0;
 +}
 +
-+/*
-+ * this "shared" driver is needed because both macs share a single
++/* this "shared" driver is needed because both macs share a single
 + * address space
 + */
 +struct platform_driver bcm63xx_enet_shared_driver = {
@@ -1353,9 +1353,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	},
 +};
 +
-+/*
-+ * entry point
-+ */
++/* entry point */
 +static int __init bcm_enet_init(void)
 +{
 +	int ret;
@@ -1376,7 +1374,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	return ret;
  }
-@@ -1965,6 +2894,7 @@ static int __init bcm_enet_init(void)
+@@ -1962,6 +2876,7 @@ static int __init bcm_enet_init(void)
  static void __exit bcm_enet_exit(void)
  {
  	platform_driver_unregister(&bcm63xx_enet_driver);
@@ -1486,7 +1484,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	/* cpu view of rx dma ring */
  	struct bcm_enet_desc *tx_desc_cpu;
  
-@@ -269,6 +328,22 @@ struct bcm_enet_priv {
+@@ -269,6 +328,18 @@ struct bcm_enet_priv {
  
  	/* maximum hardware transmit/receive size */
  	unsigned int hw_mtu;
@@ -1503,9 +1501,5 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	spinlock_t enetsw_mdio_lock;
  };
  
-+static inline int bcm_enet_port_is_rgmii(int portid)
-+{
-+	return portid >= ENETSW_RGMII_PORT0;
-+}
 +
  #endif /* ! BCM63XX_ENET_H_ */

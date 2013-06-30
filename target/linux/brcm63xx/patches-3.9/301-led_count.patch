@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -866,6 +866,7 @@ static struct platform_device bcm63xx_gp
+@@ -911,6 +911,7 @@ static struct platform_device bcm63xx_gp
  int __init board_register_devices(void)
  {
  	int button_count = 0;
@@ -8,7 +8,7 @@
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -913,10 +914,16 @@ int __init board_register_devices(void)
+@@ -962,10 +963,16 @@ int __init board_register_devices(void)
  
  	bcm63xx_flash_register();
  
@@ -26,11 +26,11 @@
 +		platform_device_register(&bcm63xx_gpio_leds);
 +	}
  
- 	/* count number of BUTTONs defined by this device */
- 	while (button_count < ARRAY_SIZE(board.buttons) && board.buttons[button_count].desc)
+ 	if (board.ephy_reset_gpio && board.ephy_reset_gpio_flags)
+ 		gpio_request_one(board.ephy_reset_gpio,
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -45,7 +45,7 @@ struct board_info {
+@@ -47,7 +47,7 @@ struct board_info {
  	struct bcm63xx_dsp_platform_data dsp;
  
  	/* GPIO LEDs */

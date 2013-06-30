@@ -1,13 +1,27 @@
-From 2e5b0197443fcb454ca88619e36bb33d7a79e3ea Mon Sep 17 00:00:00 2001
+From 33cab1696444a8e333cf0490bfe04c32d583fd51 Mon Sep 17 00:00:00 2001
 From: Maxime Bizon <mbizon@freebox.fr>
-Date: Thu, 21 Jan 2010 17:50:54 +0100
-Subject: [PATCH] bcm63xx_enet: split dma registers access.
+Date: Tue, 4 Jun 2013 20:53:34 +0000
+Subject: [PATCH 2/3] bcm63xx_enet: split DMA channel register accesses
 
+The current bcm63xx_enet driver always uses bcmenet_shared_base whenever
+it needs to access DMA channel configuration space or access the DMA
+channel state RAM. Split these register in 3 parts to be more accurate:
+
+- global DMA configuration
+- per DMA channel configuration space
+- per DMA channel state RAM space
+
+This is preliminary to support new chips where the global DMA
+configuration remains the same, but there is a varying number of DMA
+channels located at a different memory offset.
+
+Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
  arch/mips/bcm63xx/dev-enet.c                     |   23 +++-
  arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h |    4 +-
- drivers/net/ethernet/broadcom/bcm63xx_enet.c     |  144 +++++++++++++---------
- 3 files changed, 111 insertions(+), 62 deletions(-)
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c     |  139 +++++++++++++---------
+ 3 files changed, 105 insertions(+), 61 deletions(-)
 
 --- a/arch/mips/bcm63xx/dev-enet.c
 +++ b/arch/mips/bcm63xx/dev-enet.c
@@ -50,7 +64,7 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
  		if (ret)
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
-@@ -174,7 +174,9 @@ enum bcm63xx_regs_set {
+@@ -187,7 +187,9 @@ enum bcm63xx_regs_set {
  #define BCM_6358_RSET_SPI_SIZE		1804
  #define BCM_6368_RSET_SPI_SIZE		1804
  #define RSET_ENET_SIZE			2048
@@ -60,7 +74,7 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
 +#define RSET_ENETDMAS_SIZE(chans)	(16 * (chans))
  #define RSET_ENETSW_SIZE		65536
  #define RSET_UART_SIZE			24
- #define RSET_HSSPI_SIZE			1536
+ #define RSET_UDC_SIZE			256
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 @@ -41,8 +41,8 @@ static int copybreak __read_mostly = 128
@@ -175,7 +189,7 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
  
  	/* stop queue if no more desc available */
  	if (!priv->tx_desc_count)
-@@ -801,8 +823,8 @@ static int bcm_enet_open(struct net_devi
+@@ -833,8 +855,8 @@ static int bcm_enet_open(struct net_devi
  
  	/* mask all interrupts and request them */
  	enet_writel(priv, 0, ENET_IRMASK_REG);
@@ -186,7 +200,7 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
  
  	ret = request_irq(dev->irq, bcm_enet_isr_mac, 0, dev->name, dev);
  	if (ret)
-@@ -889,28 +911,28 @@ static int bcm_enet_open(struct net_devi
+@@ -921,28 +943,28 @@ static int bcm_enet_open(struct net_devi
  	}
  
  	/* write rx & tx ring addresses */
@@ -229,7 +243,7 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
  
  	/* set correct transmit fifo watermark */
  	enet_writel(priv, BCMENET_TX_FIFO_TRESH, ENET_TXWMARK_REG);
-@@ -928,26 +950,26 @@ static int bcm_enet_open(struct net_devi
+@@ -960,26 +982,26 @@ static int bcm_enet_open(struct net_devi
  	val |= ENET_CTL_ENABLE_MASK;
  	enet_writel(priv, val, ENET_CTL_REG);
  	enet_dma_writel(priv, ENETDMA_CFG_EN_MASK, ENETDMA_CFG_REG);
@@ -266,7 +280,7 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
  
  	if (priv->has_phy)
  		phy_start(priv->phydev);
-@@ -1024,14 +1046,14 @@ static void bcm_enet_disable_dma(struct
+@@ -1059,14 +1081,14 @@ static void bcm_enet_disable_dma(struct
  {
  	int limit;
  
@@ -284,7 +298,7 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
  			break;
  		udelay(1);
  	} while (limit--);
-@@ -1057,8 +1079,8 @@ static int bcm_enet_stop(struct net_devi
+@@ -1092,8 +1114,8 @@ static int bcm_enet_stop(struct net_devi
  
  	/* mask all interrupts */
  	enet_writel(priv, 0, ENET_IRMASK_REG);
@@ -295,7 +309,7 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
  
  	/* make sure no mib update is scheduled */
  	cancel_work_sync(&priv->mib_update_task);
-@@ -1597,7 +1619,7 @@ static int bcm_enet_probe(struct platfor
+@@ -1638,7 +1660,7 @@ static int bcm_enet_probe(struct platfor
  
  	/* stop if shared driver failed, assume driver->probe will be
  	 * called in the same order we register devices (correct ?) */
@@ -304,7 +318,7 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
  		return -ENODEV;
  
  	res_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-@@ -1882,14 +1904,24 @@ struct platform_driver bcm63xx_enet_driv
+@@ -1884,14 +1906,19 @@ struct platform_driver bcm63xx_enet_driv
  static int bcm_enet_shared_probe(struct platform_device *pdev)
  {
  	struct resource *res;
@@ -321,14 +335,9 @@ Subject: [PATCH] bcm63xx_enet: split dma registers access.
 -		return -ENOMEM;
 +	for (i = 0; i < 3; i++) {
 +		res = platform_get_resource(pdev, IORESOURCE_MEM, i);
-+		if (!res)
-+			return -EINVAL;
-+
-+		p[i] = devm_request_and_ioremap(&pdev->dev, res);
++		p[i] = devm_ioremap_resource(&pdev->dev, res);
 +		if (!p[i])
 +			return -ENOMEM;
-+
-+		bcm_enet_shared_base[i] = p;
 +	}
 +
 +	memcpy(bcm_enet_shared_base, p, sizeof(bcm_enet_shared_base));

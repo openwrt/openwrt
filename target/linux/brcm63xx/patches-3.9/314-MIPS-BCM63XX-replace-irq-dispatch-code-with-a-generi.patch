@@ -1,7 +1,7 @@
-From 661e02b8e2b9a4b48a809bc82dfe8f7b20ca750f Mon Sep 17 00:00:00 2001
+From 7447daa9a0768db157bbb64585f5411389712d59 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Thu, 18 Apr 2013 21:14:49 +0200
-Subject: [PATCH 05/13] MIPS: BCM63XX: replace irq dispatch code with a
+Subject: [PATCH 06/14] MIPS: BCM63XX: replace irq dispatch code with a
  generic version
 
 The generic version uses a variable length of u32 registers of u32/u64.
@@ -18,7 +18,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/irq.c
 +++ b/arch/mips/bcm63xx/irq.c
-@@ -240,47 +240,65 @@ static inline void handle_internal(int i
+@@ -258,47 +258,65 @@ static inline void handle_internal(int i
   * will resume the loop where it ended the last time we left this
   * function.
   */
@@ -122,7 +122,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  asmlinkage void plat_irq_dispatch(void)
  {
-@@ -317,42 +335,6 @@ asmlinkage void plat_irq_dispatch(void)
+@@ -335,42 +353,6 @@ asmlinkage void plat_irq_dispatch(void)
   * internal IRQs operations: only mask/unmask on PERF irq mask
   * register.
   */

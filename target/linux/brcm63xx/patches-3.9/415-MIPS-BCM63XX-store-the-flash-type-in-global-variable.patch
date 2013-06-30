@@ -19,7 +19,7 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
  static struct mtd_partition mtd_partitions[] = {
  	{
  		.name		= "cfe",
-@@ -86,26 +88,30 @@ static int __init bcm63xx_detect_flash_t
+@@ -86,27 +88,31 @@ static int __init bcm63xx_detect_flash_t
  			bcm63xx_spi_flash_info[0].max_speed_hz = 16666667;
  
  		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
@@ -36,6 +36,7 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
 -		return BCM63XX_FLASH_TYPE_PARALLEL;
 +		bcm63xx_attached_flash = BCM63XX_FLASH_TYPE_PARALLEL;
 +		break;
+ 	case BCM3368_CPU_ID:
  	case BCM6358_CPU_ID:
  		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
  		if (val & STRAPBUS_6358_BOOT_SEL_PARALLEL)
@@ -57,7 +58,7 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
  	case BCM6368_CPU_ID:
  		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
  		if (val & STRAPBUS_6368_SPI_CLK_FAST)
-@@ -113,25 +119,32 @@ static int __init bcm63xx_detect_flash_t
+@@ -114,25 +120,32 @@ static int __init bcm63xx_detect_flash_t
  
  		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
  		case STRAPBUS_6368_BOOT_SEL_NAND:
@@ -96,7 +97,7 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
  	case BCM63XX_FLASH_TYPE_PARALLEL:
  		/* read base address of boot chip select (0) */
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
-@@ -154,7 +167,7 @@ int __init bcm63xx_flash_register(void)
+@@ -155,7 +168,7 @@ int __init bcm63xx_flash_register(void)
  		return -ENODEV;
  	default:
  		pr_err("flash detection failed for BCM%x: %d\n",
