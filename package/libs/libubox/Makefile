@@ -33,13 +33,13 @@ define Package/libblobmsg-json
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=blobmsg <-> json conversion library
-  DEPENDS:=+libjson +libubox
+  DEPENDS:=+libjson-c +libubox
 endef
 
 define Package/jshn
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+libjson
+  DEPENDS:=+libjson-c
   TITLE:=JSON SHell Notation
 endef
 
