@@ -220,7 +220,9 @@ hostapd_set_bss_options() {
 	if [ -z "$macfile" ]
 	then
 		# if no macfile has been specified, fallback to the default name
+		# and truncate file to avoid aggregating entries over time
 		macfile="/var/run/hostapd-$ifname.maclist"
+		echo "" > "$macfile"
 	else
 		if [ -n "$maclist" ]
 		then
