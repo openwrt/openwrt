@@ -243,7 +243,7 @@
          will be called when part or all of the page is to be removed
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -6009,6 +6009,13 @@ F:	drivers/scsi/osd/
+@@ -6019,6 +6019,13 @@ F:	drivers/scsi/osd/
  F:	include/scsi/osd_*
  F:	fs/exofs/
  
@@ -287,7 +287,7 @@
 +
 +	rc = -EINVAL;
 +	if (s->s_stack_depth > FILESYSTEM_MAX_STACK_DEPTH) {
-+		printk(KERN_ERR "eCryptfs: maximum fs stacking depth exceeded\n");
++		pr_err("eCryptfs: maximum fs stacking depth exceeded\n");
 +		goto out_free;
 +	}
  
@@ -307,6 +307,19 @@
   * namespace.c
   */
  extern int copy_mount_options(const void __user *, unsigned long *);
+@@ -132,12 +127,6 @@ extern struct dentry *__d_alloc(struct s
+ extern ssize_t __kernel_write(struct file *, const char *, size_t, loff_t *);
+ 
+ /*
+- * splice.c
+- */
+-extern long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
+-		loff_t *opos, size_t len, unsigned int flags);
+-
+-/*
+  * pipe.c
+  */
+ extern const struct file_operations pipefifo_fops;
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -402,6 +402,7 @@ int __inode_permission(struct inode *ino
@@ -335,10 +348,19 @@
  		goto out;
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1442,6 +1442,24 @@ void drop_collected_mounts(struct vfsmou
+@@ -1442,6 +1442,33 @@ void drop_collected_mounts(struct vfsmou
  	namespace_unlock();
  }
  
++/**
++ * clone_private_mount - create a private clone of a path
++ *
++ * This creates a new vfsmount, which will be the clone of @path.  The new will
++ * not be attached anywhere in the namespace and will be private (i.e. changes
++ * to the originating mount won't be propagated into this).
++ *
++ * Release with mntput().
++ */
 +struct vfsmount *clone_private_mount(struct path *path)
 +{
 +	struct mount *old_mnt = real_mount(path->mnt);
@@ -350,8 +372,8 @@
 +	down_read(&namespace_sem);
 +	new_mnt = clone_mnt(old_mnt, path->dentry, CL_PRIVATE);
 +	up_read(&namespace_sem);
-+	if (!new_mnt)
-+		return ERR_PTR(-ENOMEM);
++	if (IS_ERR(new_mnt))
++		return ERR_CAST(new_mnt);
 +
 +	return &new_mnt->mnt;
 +}
@@ -401,11 +423,17 @@
  	int lookup_flags = 0;
 --- /dev/null
 +++ b/fs/overlayfs/Kconfig
-@@ -0,0 +1,4 @@
+@@ -0,0 +1,10 @@
 +config OVERLAYFS_FS
 +	tristate "Overlay filesystem support"
 +	help
-+	  Add support for overlay filesystem.
++	  An overlay filesystem combines two filesystems - an 'upper' filesystem
++	  and a 'lower' filesystem.  When a name exists in both filesystems, the
++	  object in the 'upper' filesystem is visible while the object in the
++	  'lower' filesystem is either hidden or, in the case of directories,
++	  merged with the 'upper' object.
++
++	  For more information see Documentation/filesystems/overlayfs.txt
 --- /dev/null
 +++ b/fs/overlayfs/Makefile
 @@ -0,0 +1,7 @@
@@ -418,7 +446,7 @@
 +overlayfs-objs := super.o inode.o dir.o readdir.o copy_up.o
 --- /dev/null
 +++ b/fs/overlayfs/copy_up.c
-@@ -0,0 +1,385 @@
+@@ -0,0 +1,387 @@
 +/*
 + *
 + * Copyright (C) 2011 Novell Inc.
@@ -494,6 +522,8 @@
 +{
 +	struct file *old_file;
 +	struct file *new_file;
++	loff_t old_pos = 0;
++	loff_t new_pos = 0;
 +	int error = 0;
 +
 +	if (len == 0)
@@ -511,7 +541,6 @@
 +
 +	/* FIXME: copy up sparse files efficiently */
 +	while (len) {
-+		loff_t offset = new_file->f_pos;
 +		size_t this_len = OVL_COPY_UP_CHUNK_SIZE;
 +		long bytes;
 +
@@ -523,8 +552,9 @@
 +			break;
 +		}
 +
-+		bytes = do_splice_direct(old_file, &offset, new_file, this_len,
-+				 SPLICE_F_MOVE);
++		bytes = do_splice_direct(old_file, &old_pos,
++					 new_file, &new_pos,
++					 this_len, SPLICE_F_MOVE);
 +		if (bytes <= 0) {
 +			error = bytes;
 +			break;
@@ -806,7 +836,7 @@
 +}
 --- /dev/null
 +++ b/fs/overlayfs/dir.c
-@@ -0,0 +1,604 @@
+@@ -0,0 +1,605 @@
 +/*
 + *
 + * Copyright (C) 2011 Novell Inc.
@@ -881,7 +911,7 @@
 +		 * There's no way to recover from failure to whiteout.
 +		 * What should we do?  Log a big fat error and... ?
 +		 */
-+		printk(KERN_ERR "overlayfs: ERROR - failed to whiteout '%s'\n",
++		pr_err("overlayfs: ERROR - failed to whiteout '%s'\n",
 +		       dentry->d_name.name);
 +	}
 +
@@ -1254,8 +1284,10 @@
 +		}
 +		newinode = ovl_new_inode(old->d_sb, newdentry->d_inode->i_mode,
 +				new->d_fsdata);
-+		if (!newinode)
++		if (!newinode) {
++			err = -ENOMEM;
 +			goto link_fail;
++		}
 +		ovl_copyattr(upperdir->d_inode, newinode);
 +
 +		ovl_dentry_version_inc(new->d_parent);
@@ -1272,7 +1304,6 @@
 +	mutex_unlock(&upperdir->d_inode->i_mutex);
 +out:
 +	return err;
-+
 +}
 +
 +static int ovl_rename(struct inode *olddir, struct dentry *old,
@@ -2218,7 +2249,7 @@
 +	loff_t res;
 +	struct ovl_dir_file *od = file->private_data;
 +
-+	mutex_lock(&file->f_dentry->d_inode->i_mutex);
++	mutex_lock(&file_inode(file)->i_mutex);
 +	if (!file->f_pos)
 +		ovl_dir_reset(file);
 +
@@ -2248,7 +2279,7 @@
 +		res = offset;
 +	}
 +out_unlock:
-+	mutex_unlock(&file->f_dentry->d_inode->i_mutex);
++	mutex_unlock(&file_inode(file)->i_mutex);
 +
 +	return res;
 +}
@@ -2394,7 +2425,7 @@
 +
 +		dentry = lookup_one_len(p->name, upperdir, p->len);
 +		if (IS_ERR(dentry)) {
-+			printk(KERN_WARNING
++			pr_warn(
 +			    "overlayfs: failed to lookup whiteout %.*s: %li\n",
 +			    p->len, p->name, PTR_ERR(dentry));
 +			continue;
@@ -2402,7 +2433,7 @@
 +		ret = vfs_unlink(upperdir->d_inode, dentry);
 +		dput(dentry);
 +		if (ret)
-+			printk(KERN_WARNING
++			pr_warn(
 +			    "overlayfs: failed to unlink whiteout %.*s: %i\n",
 +			    p->len, p->name, ret);
 +	}
@@ -2818,7 +2849,6 @@
 +
 +struct file *ovl_path_open(struct path *path, int flags)
 +{
-+	path_get(path);
 +	return dentry_open(path, flags, current_cred());
 +}
 +
@@ -2906,15 +2936,15 @@
 +};
 +
 +enum {
-+	Opt_lowerdir,
-+	Opt_upperdir,
-+	Opt_err,
++	OPT_LOWERDIR,
++	OPT_UPPERDIR,
++	OPT_ERR,
 +};
 +
 +static const match_table_t ovl_tokens = {
-+	{Opt_lowerdir,			"lowerdir=%s"},
-+	{Opt_upperdir,			"upperdir=%s"},
-+	{Opt_err,			NULL}
++	{OPT_LOWERDIR,			"lowerdir=%s"},
++	{OPT_UPPERDIR,			"upperdir=%s"},
++	{OPT_ERR,			NULL}
 +};
 +
 +static int ovl_parse_opt(char *opt, struct ovl_config *config)
@@ -2933,14 +2963,14 @@
 +
 +		token = match_token(p, ovl_tokens, args);
 +		switch (token) {
-+		case Opt_upperdir:
++		case OPT_UPPERDIR:
 +			kfree(config->upperdir);
 +			config->upperdir = match_strdup(&args[0]);
 +			if (!config->upperdir)
 +				return -ENOMEM;
 +			break;
 +
-+		case Opt_lowerdir:
++		case OPT_LOWERDIR:
 +			kfree(config->lowerdir);
 +			config->lowerdir = match_strdup(&args[0]);
 +			if (!config->lowerdir)
@@ -2976,7 +3006,7 @@
 +
 +	err = -EINVAL;
 +	if (!ufs->config.upperdir || !ufs->config.lowerdir) {
-+		printk(KERN_ERR "overlayfs: missing upperdir or lowerdir\n");
++		pr_err("overlayfs: missing upperdir or lowerdir\n");
 +		goto out_free_config;
 +	}
 +
@@ -2999,7 +3029,7 @@
 +
 +	err = vfs_statfs(&lowerpath, &statfs);
 +	if (err) {
-+		printk(KERN_ERR "overlayfs: statfs failed on lowerpath\n");
++		pr_err("overlayfs: statfs failed on lowerpath\n");
 +		goto out_put_lowerpath;
 +	}
 +	ufs->lower_namelen = statfs.f_namelen;
@@ -3009,7 +3039,7 @@
 +
 +	err = -EINVAL;
 +	if (sb->s_stack_depth > FILESYSTEM_MAX_STACK_DEPTH) {
-+		printk(KERN_ERR "overlayfs: maximum fs stacking depth exceeded\n");
++		pr_err("overlayfs: maximum fs stacking depth exceeded\n");
 +		goto out_put_lowerpath;
 +	}
 +
@@ -3017,14 +3047,14 @@
 +	ufs->upper_mnt = clone_private_mount(&upperpath);
 +	err = PTR_ERR(ufs->upper_mnt);
 +	if (IS_ERR(ufs->upper_mnt)) {
-+		printk(KERN_ERR "overlayfs: failed to clone upperpath\n");
++		pr_err("overlayfs: failed to clone upperpath\n");
 +		goto out_put_lowerpath;
 +	}
 +
 +	ufs->lower_mnt = clone_private_mount(&lowerpath);
 +	err = PTR_ERR(ufs->lower_mnt);
 +	if (IS_ERR(ufs->lower_mnt)) {
-+		printk(KERN_ERR "overlayfs: failed to clone lowerpath\n");
++		pr_err("overlayfs: failed to clone lowerpath\n");
 +		goto out_put_upper_mnt;
 +	}
 +
@@ -3103,6 +3133,7 @@
 +	.mount		= ovl_mount,
 +	.kill_sb	= kill_anon_super,
 +};
++MODULE_ALIAS_FS("overlayfs");
 +
 +static int __init ovl_init(void)
 +{
@@ -3118,7 +3149,7 @@
 +module_exit(ovl_exit);
 --- a/fs/splice.c
 +++ b/fs/splice.c
-@@ -1311,6 +1311,7 @@ long do_splice_direct(struct file *in, l
+@@ -1313,6 +1313,7 @@ long do_splice_direct(struct file *in, l
  
  	return ret;
  }
@@ -3177,6 +3208,16 @@
  extern int generic_permission(struct inode *, int);
  
  static inline bool execute_ok(struct inode *inode)
+@@ -2414,6 +2428,9 @@ extern ssize_t generic_file_splice_write
+ 		struct file *, loff_t *, size_t, unsigned int);
+ extern ssize_t generic_splice_sendpage(struct pipe_inode_info *pipe,
+ 		struct file *out, loff_t *, size_t len, unsigned int flags);
++extern long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
++		loff_t *opos, size_t len, unsigned int flags);
++
+ 
+ extern void
+ file_ra_state_init(struct file_ra_state *ra, struct address_space *mapping);
 --- a/include/linux/mount.h
 +++ b/include/linux/mount.h
 @@ -68,6 +68,9 @@ extern void mnt_pin(struct vfsmount *mnt
