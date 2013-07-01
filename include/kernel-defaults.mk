@@ -144,6 +144,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 define Kernel/CompileImage/Initramfs
 	$(call Kernel/Configure/Initramfs)
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
+	rm -rf $(KERNEL_BUILD_DIR)/usr/initramfs_data.cpio*
 	+$(MAKE) $(KERNEL_MAKEOPTS) $(subst ",,$(KERNELNAME))
 	#")
 	#")
