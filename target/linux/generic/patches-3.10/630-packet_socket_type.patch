@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	if (sock->type == SOCK_PACKET)
  		po->prot_hook.func = packet_rcv_spkt;
-@@ -3227,6 +3230,16 @@ packet_setsockopt(struct socket *sock, i
+@@ -3226,6 +3229,16 @@ packet_setsockopt(struct socket *sock, i
  		po->tp_tx_has_off = !!val;
  		return 0;
  	}
@@ -108,7 +108,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	default:
  		return -ENOPROTOOPT;
  	}
-@@ -3276,6 +3289,13 @@ static int packet_getsockopt(struct sock
+@@ -3275,6 +3288,13 @@ static int packet_getsockopt(struct sock
  	case PACKET_VNET_HDR:
  		val = po->has_vnet_hdr;
  		break;

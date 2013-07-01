@@ -58,7 +58,7 @@
  	default:
 --- a/net/bridge/br_multicast.c
 +++ b/net/bridge/br_multicast.c
-@@ -782,7 +782,7 @@ static void __br_multicast_send_query(st
+@@ -783,7 +783,7 @@ static void __br_multicast_send_query(st
  	if (port) {
  		__skb_push(skb, sizeof(struct ethhdr));
  		skb->dev = port->dev;
