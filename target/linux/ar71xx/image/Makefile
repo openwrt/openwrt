@@ -199,9 +199,9 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call MkuImage,gzip,,$(KDIR)/vmlinux-initramfs.bin.gz,$(UIMAGE)-initramfs-gzip.bin)
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux-initramfs.bin.lzma,$(UIMAGE)-initramfs-lzma.bin)
 	cp $(KDIR)/loader-generic.elf $(VMLINUX)-initramfs-lzma.elf
+	$(call Image/Build/Initramfs)
 endif
 	-mkdir -p $(KDIR_TMP)
-	$(call Image/Build/Initramfs)
 endef
 
 define Image/Build/WRT400N
