@@ -904,7 +904,7 @@ Subject: [PATCH 07/22] NET: MIPS: lantiq: adds xrx200-net
 +	}
 +
 +	phydev = phy_connect(dev, dev_name(&phydev->dev), &xrx200_mdio_link,
-+				0, port->phy_if);
++				port->phy_if);
 +
 +	if (IS_ERR(phydev)) {
 +		netdev_err(dev, "Could not attach to PHY\n");
