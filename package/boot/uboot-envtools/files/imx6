@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Copyright (C) 2013 OpenWrt.org
+#
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(cat /proc/device-tree/model)
+
+case "$board" in
+"Wandboard i.MX6 Dual Lite Board")
+	ubootenv_add_uci_config "/dev/mmcblk0" "0x60000" "0x2000" "0x2000"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0
