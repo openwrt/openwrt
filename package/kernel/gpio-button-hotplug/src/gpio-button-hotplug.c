@@ -49,6 +49,7 @@ struct bh_priv {
 
 struct bh_event {
 	const char		*name;
+	unsigned int		type;
 	char			*action;
 	unsigned long		seen;
 
@@ -91,9 +92,7 @@ static struct bh_map button_map[] = {
 	BH_MAP(BTN_9,		"BTN_9"),
 	BH_MAP(KEY_RESTART,	"reset"),
 	BH_MAP(KEY_RFKILL,	"rfkill"),
-#ifdef KEY_WPS_BUTTON
 	BH_MAP(KEY_WPS_BUTTON,	"wps"),
-#endif /* KEY_WPS_BUTTON */
 };
 
 /* -------------------------------------------------------------------------*/
@@ -140,7 +139,20 @@ static int button_hotplug_fill_event(struct bh_event *event)
 	if (ret)
 		return ret;
 
-	ret = bh_event_add_var(event, 0, "SUBSYSTEM=%s", "button");
+	char *s;
+	switch (event->type) {
+		case EV_KEY:
+			s = "button";
+			break;
+		case EV_SW:
+			s = "switch";
+			break;
+		default:
+			s = "button";
+			break;
+	}
+
+	ret = bh_event_add_var(event, 0, "SUBSYSTEM=%s", s);
 	if (ret)
 		return ret;
 
@@ -190,8 +202,8 @@ static void button_hotplug_work(struct work_struct *work)
 	kfree(event);
 }
 
-static int button_hotplug_create_event(const char *name, unsigned long seen,
-		int pressed)
+static int button_hotplug_create_event(const char *name, unsigned int type,
+		unsigned long seen, int pressed)
 {
 	struct bh_event *event;
 
@@ -203,6 +215,7 @@ static int button_hotplug_create_event(const char *name, unsigned long seen,
 		return -ENOMEM;
 
 	event->name = name;
+	event->type = type;
 	event->seen = seen;
 	event->action = pressed ? "pressed" : "released";
 
@@ -225,6 +238,7 @@ static int button_get_index(unsigned int code)
 
 	return -1;
 }
+
 static void button_hotplug_event(struct gpio_keys_button_data *data,
 			   unsigned int type, unsigned int code, int value)
 {
@@ -234,14 +248,14 @@ static void button_hotplug_event(struct gpio_keys_button_data *data,
 
 	BH_DBG("event type=%u, code=%u, value=%d\n", type, code, value);
 
-	if (type != EV_KEY)
+	if ((type != EV_KEY) && (type != EV_SW))
 		return;
 
 	btn = button_get_index(code);
 	if (btn < 0)
 		return;
 
-	button_hotplug_create_event(button_map[btn].name,
+	button_hotplug_create_event(button_map[btn].name, type,
 			(seen - priv->seen) / HZ, value);
 	priv->seen = seen;
 }
