@@ -61,6 +61,10 @@ ifneq ($(CONFIG_TARGET_cns3xxx),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/cns3xxx $(1)/etc/uci-defaults/30_uboot-envtools
 endif
+ifneq ($(CONFIG_TARGET_imx6),)
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/imx6 $(1)/etc/uci-defaults/30_uboot-envtools
+endif
 ifneq ($(CONFIG_TARGET_kirkwood),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/kirkwood $(1)/etc/uci-defaults/30_uboot-envtools
