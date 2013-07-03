@@ -11,17 +11,19 @@
  #define IRQ_LINES	4
  
  /* PCI controller GPIO to IRQ pin mappings */
-@@ -55,9 +55,7 @@ static int __init avila_map_irq(const st
+@@ -55,10 +55,8 @@ static int __init avila_map_irq(const st
  		IXP4XX_GPIO_IRQ(INTD)
  	};
  
 -	if (slot >= 1 &&
 -	    slot <= (machine_is_loft() ? LOFT_MAX_DEV : AVILA_MAX_DEV) &&
 -	    pin >= 1 && pin <= IRQ_LINES)
+-		return pci_irq_table[(slot + pin - 2) % 4];
 +	if (slot >= 1 && slot <= AVILA_MAX_DEV && pin >= 1 && pin <= IRQ_LINES)
- 		return pci_irq_table[(slot + pin - 2) % 4];
++		return pci_irq_table[(slot + pin - 2) % IRQ_LINES];
  
  	return -1;
+ }
 --- a/arch/arm/mach-ixp4xx/avila-setup.c
 +++ b/arch/arm/mach-ixp4xx/avila-setup.c
 @@ -14,9 +14,16 @@
