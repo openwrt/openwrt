@@ -37,7 +37,7 @@ MAKE_FLAGS += \
 PLUGINS_DIR := $(PKG_INSTALL_DIR)/usr/lib/trace-cmd/plugins
 PLUGINS_MAIN := function hrtimer mac80211 sched_switch
 
-TARGET_CFLAGS += --std=gnu99
+TARGET_CFLAGS += --std=gnu99 -D_GNU_SOURCE
 
 define Package/trace-cmd/install
 	$(INSTALL_DIR) $(1)/usr/bin $(1)/usr/lib/trace-cmd/plugins
