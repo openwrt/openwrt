@@ -27,14 +27,14 @@ endef
 
 
 define CompressLzma
-  $(STAGING_DIR_HOST)/bin/lzma e $(1) $(2)
+	$(STAGING_DIR_HOST)/bin/lzma e $(1) $(2)
 endef
 
 define PatchKernelLzma
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
+	cp $(KDIR)/vmlinux$(2) $(KDIR)/vmlinux$(2)-$(1)
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(KDIR)/$(1).dtb ../dts/$(1).dts
-	$(STAGING_DIR_HOST)/bin/patch-dtb $(KDIR)/vmlinux-$(1) $(KDIR)/$(1).dtb
-	$(call CompressLzma,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).lzma)
+	$(STAGING_DIR_HOST)/bin/patch-dtb $(KDIR)/vmlinux$(2)-$(1) $(KDIR)/$(1).dtb
+	$(call CompressLzma,$(KDIR)/vmlinux$(2)-$(1),$(KDIR)/vmlinux$(2)-$(1).lzma)
 endef
 
 define MkBrnImage
@@ -46,7 +46,7 @@ endef
 define MkImageLzma
 	mkimage -A mips -O linux -T kernel -a 0x80002000 -C lzma \
 		-e 0x80002000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux-$(1).lzma $(KDIR)/uImage-$(1)
+		-d $(KDIR)/vmlinux$(2)-$(1).lzma $(KDIR)/uImage-$(1)$(2)
 endef
 
 define MkImageEVA
@@ -56,19 +56,19 @@ define MkImageEVA
 endef
 
 define CompressGzip
-  gzip -c $(1) > $(2)
+	gzip -c $(1) > $(2)
 endef
 
 define PatchKernelGzip
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) '$(strip $(2))'
-	$(call CompressGzip,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).gzip)
+	cp $(KDIR)/vmlinux$(3) $(KDIR)/vmlinux$(3)-$(1)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux$(3)-$(1) '$(strip $(2))'
+	$(call CompressGzip,$(KDIR)/vmlinux$(3)-$(1),$(KDIR)/vmlinux$(3)-$(1).gzip)
 endef
 
 define MkImageGzip
 	mkimage -A mips -O linux -T kernel -a 0x80002000 -C gzip \
 		-e 0x80002000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux-$(1).gzip $(KDIR)/uImage-$(1)
+		-d $(KDIR)/vmlinux$(2)-$(1).gzip $(KDIR)/uImage-$(1)$(2)
 endef
 
 define Image/Build/squashfs
@@ -108,9 +108,14 @@ define Image/Build/jffs2-256k
 endef
 
 define Image/BuildKernel/Template
-	$(call PatchKernelLzma,$(1),$(if $(2),$(2) machtype=$(1),))
+	$(call PatchKernelLzma,$(1))
 	$(call MkImageLzma,$(1))
 	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call PatchKernelLzma,$(1),-initramfs)
+	$(call MkImageLzma,$(1),-initramfs)
+	$(CP) $(KDIR)/uImage-$(1)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage-initramfs
+endif
 endef
 
 define Image/BuildKernelLoader/Template
@@ -121,7 +126,7 @@ define Image/BuildKernelLoader/Template
 endef
 
 define Image/BuildKernelEVA/Template
-	$(call PatchKernelLzma,$(1),$(if $(2),$(2) machtype=$(1),))
+	$(call PatchKernelLzma,$(1))
 	$(call MkImageEVA,$(1))
 	$(CP) $(KDIR)/$(1).eva $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva
 endef
@@ -130,6 +135,11 @@ define Image/BuildKernelGzip/Template
 	$(call PatchKernelGzip,$(1),$(if $(2),$(2) machtype=$(1),))
 	$(call MkImageGzip,$(1))
 	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call PatchKernelGzip,$(1),$(if $(2),$(2) machtype=$(1),),-initramfs)
+	$(call MkImageGzip,$(1),-initramfs)
+	$(CP) $(KDIR)/uImage-$(1)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage-initramfs
+endif
 endef
 
 
