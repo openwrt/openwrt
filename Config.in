@@ -230,6 +230,11 @@ menu "Global build settings"
 		bool "Compile the kernel with tracing support"
 		default n
 
+	config KERNEL_FTRACE_SYSCALLS
+		bool "Trace system calls"
+		depends on KERNEL_FTRACE
+		default n
+
 	config KERNEL_ENABLE_DEFAULT_TRACERS
 		bool "Trace process context switches and events"
 		depends on KERNEL_FTRACE
