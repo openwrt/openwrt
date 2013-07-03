@@ -12,6 +12,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string "noslaaconly"
 	proto_config_add_string "norelease"
 	proto_config_add_string "ip6prefix"
+	proto_config_add_string "iface_dslite"
 	proto_config_add_string "ifaceid"
 }
 
