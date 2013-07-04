@@ -216,7 +216,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -68,6 +148,488 @@ config ATH79_MACH_PB44
+@@ -68,6 +148,489 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -257,6 +257,7 @@
 +config ATH79_MACH_WZR_HP_AG300H
 +	bool "Buffalo WZR-HP-AG300H board support"
 +	select SOC_AR71XX
++	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
@@ -705,7 +706,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
  	select SOC_AR724X
-@@ -83,6 +645,24 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +646,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -730,7 +731,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -118,10 +698,6 @@ config SOC_QCA955X
+@@ -118,10 +699,6 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -741,7 +742,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -132,7 +708,14 @@ config ATH79_DEV_DSA
+@@ -132,7 +709,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -757,7 +758,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -164,4 +747,7 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -164,4 +748,7 @@ config ATH79_PCI_ATH9K_FIXUP
  config ATH79_ROUTERBOOT
  	def_bool n
  
