@@ -256,7 +256,7 @@ endef
 
 define KernelPackage/rt2x00-soc
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @TARGET_ramips @!TARGET_ramips_mt7620a +kmod-rt2x00-mmio +kmod-rt2x00-lib
+  DEPENDS+= @TARGET_ramips @!TARGET_ramips_mt7620a @!TARGET_ramips_rt3883 +kmod-rt2x00-mmio +kmod-rt2x00-lib
   TITLE+= (SoC)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00soc.ko
   AUTOLOAD:=$(call AutoLoad,26,rt2x00soc)
