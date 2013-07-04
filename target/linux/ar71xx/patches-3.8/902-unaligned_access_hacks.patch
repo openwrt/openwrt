@@ -242,7 +242,7 @@
  		     np->rxopt.bits.osrcrt)) ||
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -995,7 +995,7 @@ void ip6_route_input(struct sk_buff *skb
+@@ -1013,7 +1013,7 @@ void ip6_route_input(struct sk_buff *skb
  		.flowi6_iif = skb->dev->ifindex,
  		.daddr = iph->daddr,
  		.saddr = iph->saddr,
@@ -251,7 +251,7 @@
  		.flowi6_mark = skb->mark,
  		.flowi6_proto = iph->nexthdr,
  	};
-@@ -1159,7 +1159,7 @@ void ip6_update_pmtu(struct sk_buff *skb
+@@ -1177,7 +1177,7 @@ void ip6_update_pmtu(struct sk_buff *skb
  	fl6.flowi6_flags = 0;
  	fl6.daddr = iph->daddr;
  	fl6.saddr = iph->saddr;
@@ -260,7 +260,7 @@
  
  	dst = ip6_route_output(net, NULL, &fl6);
  	if (!dst->error)
-@@ -1187,7 +1187,7 @@ void ip6_redirect(struct sk_buff *skb, s
+@@ -1205,7 +1205,7 @@ void ip6_redirect(struct sk_buff *skb, s
  	fl6.flowi6_flags = 0;
  	fl6.daddr = iph->daddr;
  	fl6.saddr = iph->saddr;

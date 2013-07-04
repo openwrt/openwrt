@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,22 +16,112 @@
+@@ -16,22 +16,124 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -12,12 +12,14 @@
 +	ATH79_MACH_AP113,		/* Atheros AP113 reference board */
  	ATH79_MACH_AP121,		/* Atheros AP121 reference board */
  	ATH79_MACH_AP121_MINI,		/* Atheros AP121-MINI reference board */
++	ATH79_MACH_AP132,		/* Atheros AP132 reference board */
  	ATH79_MACH_AP135_020,		/* Atheros AP135-020 reference board */
  	ATH79_MACH_AP136_010,		/* Atheros AP136-010 reference board */
  	ATH79_MACH_AP136_020,		/* Atheros AP136-020 reference board */
  	ATH79_MACH_AP81,		/* Atheros AP81 reference board */
 +	ATH79_MACH_AP83,		/* Atheros AP83 */
 +	ATH79_MACH_AP96,		/* Atheros AP96 */
++	ATH79_MACH_ARCHER_C7,		/* TP-LINK Archer C7 board */
 +	ATH79_MACH_AW_NR580,		/* AzureWave AW-NR580 */
 +	ATH79_MACH_CAP4200AG,		/* Senao CAP4200AG */
  	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
@@ -26,6 +28,8 @@
 +	ATH79_MACH_DIR_615_C1,		/* D-Link DIR-615 rev. C1 */
 +	ATH79_MACH_DIR_615_E4,		/* D-Link DIR-615 rev. E4 */
 +	ATH79_MACH_DIR_825_B1,		/* D-Link DIR-825 rev. B1 */
++	ATH79_MACH_DIR_825_C1,		/* D-Link DIR-825 rev. C1 */
++	ATH79_MACH_DIR_835_A1,		/* D-Link DIR-835 rev. A1 */
 +	ATH79_MACH_EW_DORIN,		/* embedded wireless Dorin Platform */
 +	ATH79_MACH_EW_DORIN_ROUTER,	/* embedded wireless Dorin Router Platform */
 +	ATH79_MACH_EAP7660D,		/* Senao EAP7660D */
@@ -33,6 +37,7 @@
 +	ATH79_MACH_JA76PF2,		/* jjPlus JA76PF2 */
 +	ATH79_MACH_JWAP003,		/* jjPlus JWAP003 */
 +	ATH79_MACH_HORNET_UB,		/* ALFA Networks Hornet-UB */
++	ATH79_MACH_MR600V2,		/* OpenMesh MR600v2 */
 +	ATH79_MACH_MR600,		/* OpenMesh MR600 */
 +	ATH79_MACH_MZK_W04NU,		/* Planex MZK-W04NU */
 +	ATH79_MACH_MZK_W300NH,		/* Planex MZK-W300NH */
@@ -55,8 +60,10 @@
 +	ATH79_MACH_RB_750G_R3,		/* MikroTik RouterBOARD 750GL */
 +	ATH79_MACH_RB_751,		/* MikroTik RouterBOARD 751 */
 +	ATH79_MACH_RB_751G,		/* Mikrotik RouterBOARD 751G */
++	ATH79_MACH_RB_951G,		/* Mikrotik RouterBOARD 951G */
 +	ATH79_MACH_RB_2011G,		/* Mikrotik RouterBOARD 2011UAS-2HnD */
 +	ATH79_MACH_RB_2011L,		/* Mikrotik RouterBOARD 2011L */
++	ATH79_MACH_RB_2011US,		/* Mikrotik RouterBOARD 2011UAS */
 +	ATH79_MACH_RW2458N,		/* Redwave RW2458N */
 +	ATH79_MACH_TEW_632BRP,		/* TRENDnet TEW-632BRP */
 +	ATH79_MACH_TEW_673GRU,		/* TRENDnet TEW-673GRU */
@@ -67,14 +74,17 @@
 +	ATH79_MACH_TL_MR3220,		/* TP-LINK TL-MR3220 */
 +	ATH79_MACH_TL_MR3220_V2,	/* TP-LINK TL-MR3220 v2 */
 +	ATH79_MACH_TL_MR3420,		/* TP-LINK TL-MR3420 */
++	ATH79_MACH_TL_MR3420_V2,	/* TP-LINK TL-MR3420 v2 */
 +	ATH79_MACH_TL_WA7510N_V1,	/* TP-LINK TL-WA7510N v1*/
 +	ATH79_MACH_TL_WA901ND,		/* TP-LINK TL-WA901ND */
 +	ATH79_MACH_TL_WA901ND_V2,	/* TP-LINK TL-WA901ND v2 */
++	ATH79_MACH_TL_WDR3500,		/* TP-LINK TL-WDR3500 */
 +	ATH79_MACH_TL_WDR4300,		/* TP-LINK TL-WDR4300 */
 +	ATH79_MACH_TL_WR1041N_V2,	/* TP-LINK TL-WR1041N v2 */
 +	ATH79_MACH_TL_WR1043ND,		/* TP-LINK TL-WR1043ND */
 +	ATH79_MACH_TL_WR2543N,		/* TP-LINK TL-WR2543N/ND */
 +	ATH79_MACH_TL_WR703N,		/* TP-LINK TL-WR703N */
++	ATH79_MACH_TL_WR720N_V3,	/* TP-LINK TL-WR720N v3 */
 +	ATH79_MACH_TL_WR741ND,		/* TP-LINK TL-WR741ND */
 +	ATH79_MACH_TL_WR741ND_V4,	/* TP-LINK TL-WR741ND  v4*/
 +	ATH79_MACH_TL_WR841N_V1,	/* TP-LINK TL-WR841N v1 */
@@ -97,9 +107,11 @@
 +	ATH79_MACH_WHR_HP_G300N,	/* Buffalo WHR-HP-G300N */
 +	ATH79_MACH_WHR_HP_GN,		/* Buffalo WHR-HP-GN */
 +	ATH79_MACH_WLAE_AG300N,		/* Buffalo WLAE-AG300N */
++	ATH79_MACH_WNDAP360,		/* NETGEAR WNDAP360 */
 +	ATH79_MACH_WNDR3700,		/* NETGEAR WNDR3700/WNDR3800/WNDRMAC */
 +	ATH79_MACH_WNDR4300,		/* NETGEAR WNDR4300 */
 +	ATH79_MACH_WNR2000,		/* NETGEAR WNR2000 */
++	ATH79_MACH_WNR2000_V3,		/* NETGEAR WNR2000 v3 */
 +	ATH79_MACH_WP543,		/* Compex WP543 */
 +	ATH79_MACH_WPE72,		/* Compex WPE72 */
 +	ATH79_MACH_WRT160NL,		/* Linksys WRT160NL */
@@ -177,7 +189,26 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -41,6 +96,24 @@ config ATH79_MACH_AP81
+@@ -15,6 +70,18 @@ config ATH79_MACH_AP121
+ 	  Say 'Y' here if you want your kernel to support the
+ 	  Atheros AP121 reference board.
+ 
++config ATH79_MACH_AP132
++	bool "Atheros AP132 reference board"
++	select SOC_QCA955X
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_SPI
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  Atheros AP132 reference boards.
++
+ config ATH79_MACH_AP136
+ 	bool "Atheros AP136/AP135 reference board"
+ 	select SOC_QCA955X
+@@ -41,6 +108,24 @@ config ATH79_MACH_AP81
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros AP81 reference board.
  
@@ -192,8 +223,8 @@
 +config ATH79_MACH_AP96
 +	bool "Atheros AP96 board support"
 +	select SOC_AR71XX
-+	select ATH79_DEV_ETH
 +	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
@@ -202,7 +233,7 @@
  config ATH79_MACH_DB120
  	bool "Atheros DB120 reference board"
  	select SOC_AR934X
-@@ -56,6 +129,13 @@ config ATH79_MACH_DB120
+@@ -56,6 +141,13 @@ config ATH79_MACH_DB120
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros DB120 reference board.
  
@@ -216,7 +247,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -68,6 +148,489 @@ config ATH79_MACH_PB44
+@@ -68,6 +160,561 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -240,8 +271,8 @@
 +config ATH79_MACH_WHR_HP_G300N
 +	bool "Buffalo WHR-HP-G300N board support"
 +	select SOC_AR724X
-+	select ATH79_DEV_ETH
 +	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
@@ -337,12 +368,23 @@
 +config ATH79_MACH_DIR_825_B1
 +	bool "D-Link DIR-825 rev. B1 board support"
 +	select SOC_AR71XX
-+	select ATH79_DEV_ETH
 +	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
++
++config ATH79_MACH_DIR_825_C1
++	bool "D-Link DIR-825 rev. C1/DIR-835 rev. A1 board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_EW_DORIN
 +	bool "embedded wireless Dorin Platform support"
@@ -387,8 +429,8 @@
 +config ATH79_MACH_WRT400N
 +	bool "Linksys WRT400N board support"
 +	select SOC_AR71XX
-+	select ATH79_DEV_ETH
 +	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
@@ -404,11 +446,21 @@
 +config ATH79_MACH_RB750
 +	bool "MikroTik RouterBOARD 750 support"
 +	select SOC_AR724X
-+	select ATH79_DEV_ETH
 +	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
 +	select ATH79_DEV_USB
 +	select ATH79_ROUTERBOOT
 +	select RLE_DECOMPRESS
++
++config ATH79_MACH_RB95X
++       bool "MikroTik RouterBOARD 95X support"
++       select SOC_AR934x
++       select ATH79_DEV_ETH
++       select ATH79_DEV_NFC
++       select ATH79_DEV_WMAC
++       select ATH79_DEV_USB
++       select ATH79_ROUTERBOOT
++       select RLE_DECOMPRESS
 +
 +config ATH79_MACH_RB2011
 +	bool "MikroTik RouterBOARD 2011 support"
@@ -417,6 +469,16 @@
 +	select ATH79_DEV_NFC
 +	select ATH79_DEV_WMAC
 +	select ATH79_ROUTERBOOT
++
++config ATH79_MACH_WNDAP360
++	bool "NETGEAR WNDAP360 board support"
++	select SOC_AR71XX
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
 +
 +config ATH79_MACH_WNDR3700
 +	bool "NETGEAR WNDR3700 board support"
@@ -447,6 +509,15 @@
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_WMAC
++
++config ATH79_MACH_WNR2000_V3
++	bool "NETGEAR WNR2000 V3 board support"
++	select SOC_AR724X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
 +
 +config ATH79_MACH_OM2P
 +	bool "OpenMesh OM2P board support"
@@ -491,8 +562,8 @@
 +config ATH79_MACH_RW2458N
 +	bool "Redwave RW2458N board support"
 +	select SOC_AR724X
-+	select ATH79_DEV_ETH
 +	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
@@ -515,6 +586,16 @@
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
++
++config ATH79_MACH_ARCHER_C7
++	bool "TP-LINK Archer C7 board support"
++	select SOC_QCA955X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_SPI
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_TL_MR11U
 +	bool "TP-LINK TL-MR11U/TL-MR3040 support"
@@ -564,6 +645,17 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_WMAC
 +
++config ATH79_MACH_TL_WDR3500
++	bool "TP-LINK TL-WDR3500 board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
 +config ATH79_MACH_TL_WDR4300
 +	bool "TP-LINK TL-WDR3600/4300/4310 board support"
 +	select SOC_AR934X
@@ -577,6 +669,16 @@
 +
 +config ATH79_MACH_TL_WR703N
 +	bool "TP-LINK TL-WR703N support"
++	select SOC_AR933X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_TL_WR720N_V3
++	bool "TP-LINK TL-WR720N v3 support"
 +	select SOC_AR933X
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
@@ -614,12 +716,13 @@
 +	select ATH79_DEV_M25P80
 +
 +config ATH79_MACH_TL_WR841N_V8
-+	bool "TP-LINK TL-WR841N/ND v8 support"
++	bool "TP-LINK TL-WR841N/ND v8/TL-MR3420 v2 support"
 +	select SOC_AR934X
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_TL_WR941ND
@@ -706,7 +809,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
  	select SOC_AR724X
-@@ -83,6 +646,24 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +730,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -731,26 +834,11 @@
  endmenu
  
  config SOC_AR71XX
-@@ -118,10 +699,6 @@ config SOC_QCA955X
- 	select PCI_AR724X if PCI
- 	def_bool n
- 
--config ATH79_DEV_M25P80
--	select ATH79_DEV_SPI
--	def_bool n
--
- config ATH79_DEV_AP9X_PCI
- 	select ATH79_PCI_ATH9K_FIXUP
- 	def_bool n
-@@ -132,7 +709,14 @@ config ATH79_DEV_DSA
+@@ -132,7 +797,10 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
 -config PCI_AR724X
-+config ATH79_DEV_M25P80
-+	select ATH79_DEV_SPI
-+	def_bool n
-+
 +config ATH79_DEV_DSA
 +	def_bool n
 +
@@ -758,7 +846,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -164,4 +748,7 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -164,4 +832,7 @@ config ATH79_PCI_ATH9K_FIXUP
  config ATH79_ROUTERBOOT
  	def_bool n
  
@@ -768,7 +856,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,71 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,78 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -778,16 +866,19 @@
 +obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o
 +obj-$(CONFIG_ATH79_MACH_AP113)		+= mach-ap113.o
  obj-$(CONFIG_ATH79_MACH_AP121)		+= mach-ap121.o
++obj-$(CONFIG_ATH79_MACH_AP132)		+= mach-ap132.o
  obj-$(CONFIG_ATH79_MACH_AP136)		+= mach-ap136.o
  obj-$(CONFIG_ATH79_MACH_AP81)		+= mach-ap81.o
 +obj-$(CONFIG_ATH79_MACH_AP83)		+= mach-ap83.o
 +obj-$(CONFIG_ATH79_MACH_AP96)		+= mach-ap96.o
++obj-$(CONFIG_ATH79_MACH_ARCHER_C7)	+= mach-archer-c7.o
 +obj-$(CONFIG_ATH79_MACH_AW_NR580)	+= mach-aw-nr580.o
 +obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
  obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
 +obj-$(CONFIG_ATH79_MACH_DIR_600_A1)	+= mach-dir-600-a1.o
 +obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
 +obj-$(CONFIG_ATH79_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
++obj-$(CONFIG_ATH79_MACH_DIR_825_C1)	+= mach-dir-825-c1.o
 +obj-$(CONFIG_ATH79_MACH_EW_DORIN)	+= mach-ew-dorin.o
 +obj-$(CONFIG_ATH79_MACH_EAP7660D)	+= mach-eap7660d.o
 +obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o
@@ -803,6 +894,7 @@
 +obj-$(CONFIG_ATH79_MACH_PB92)		+= mach-pb92.o
 +obj-$(CONFIG_ATH79_MACH_RB4XX)		+= mach-rb4xx.o
 +obj-$(CONFIG_ATH79_MACH_RB750)		+= mach-rb750.o
++obj-$(CONFIG_ATH79_MACH_RB95X)		+= mach-rb95x.o
 +obj-$(CONFIG_ATH79_MACH_RB2011)		+= mach-rb2011.o
 +obj-$(CONFIG_ATH79_MACH_RW2458N)	+= mach-rw2458n.o
 +obj-$(CONFIG_ATH79_MACH_TEW_632BRP)	+= mach-tew-632brp.o
@@ -813,6 +905,7 @@
 +obj-$(CONFIG_ATH79_MACH_TL_MR3X20)	+= mach-tl-mr3x20.o
 +obj-$(CONFIG_ATH79_MACH_TL_WA901ND)	+= mach-tl-wa901nd.o
 +obj-$(CONFIG_ATH79_MACH_TL_WA901ND_V2)	+= mach-tl-wa901nd-v2.o
++obj-$(CONFIG_ATH79_MACH_TL_WDR3500)     += mach-tl-wdr3500.o
 +obj-$(CONFIG_ATH79_MACH_TL_WDR4300)     += mach-tl-wdr4300.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR741ND)	+= mach-tl-wr741nd.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR741ND_V4)	+= mach-tl-wr741nd-v4.o
@@ -823,13 +916,16 @@
 +obj-$(CONFIG_ATH79_MACH_TL_WR1043ND)	+= mach-tl-wr1043nd.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR2543N)	+= mach-tl-wr2543n.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR703N)	+= mach-tl-wr703n.o
++obj-$(CONFIG_ATH79_MACH_TL_WR720N_V3)	+= mach-tl-wr720n-v3.o
 +obj-$(CONFIG_ATH79_MACH_UBNT)		+= mach-ubnt.o
  obj-$(CONFIG_ATH79_MACH_UBNT_XM)	+= mach-ubnt-xm.o
 +obj-$(CONFIG_ATH79_MACH_WHR_HP_G300N)	+= mach-whr-hp-g300n.o
 +obj-$(CONFIG_ATH79_MACH_WLAE_AG300N)	+= mach-wlae-ag300n.o
++obj-$(CONFIG_ATH79_MACH_WNDAP360)	+= mach-wndap360.o
 +obj-$(CONFIG_ATH79_MACH_WNDR3700)	+= mach-wndr3700.o
 +obj-$(CONFIG_ATH79_MACH_WNDR4300)	+= mach-wndr4300.o
 +obj-$(CONFIG_ATH79_MACH_WNR2000)	+= mach-wnr2000.o
++obj-$(CONFIG_ATH79_MACH_WNR2000_V3)	+= mach-wnr2000-v3.o
 +obj-$(CONFIG_ATH79_MACH_WP543)		+= mach-wp543.o
 +obj-$(CONFIG_ATH79_MACH_WPE72)		+= mach-wpe72.o
 +obj-$(CONFIG_ATH79_MACH_WRT160NL)	+= mach-wrt160nl.o
@@ -839,15 +935,15 @@
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_AG300H)	+= mach-wzr-hp-ag300h.o
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
 +obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
-+
 --- a/arch/mips/ath79/prom.c
 +++ b/arch/mips/ath79/prom.c
-@@ -180,6 +180,10 @@ void __init prom_init(void)
+@@ -180,6 +180,11 @@ void __init prom_init(void)
  			ath79_prom_append_cmdline("board", env);
  		}
  	}
 +
 +	if (strstr(arcs_cmdline, "board=750Gr3") ||
++	    strstr(arcs_cmdline, "board=951G") ||
 +	    strstr(arcs_cmdline, "board=2011L"))
 +		ath79_prom_append_cmdline("console", "ttyS0,115200");
  }
