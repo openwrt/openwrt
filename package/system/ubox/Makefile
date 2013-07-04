@@ -39,11 +39,11 @@ endef
 define Package/ubox/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/usr/sbin
 
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{mount_root,kmodloader,lsbloader,board} $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{mount_root,kmodloader} $(1)/sbin/
 	ln -s /sbin/mount_root $(1)/sbin/switch2jffs
 	ln -s /sbin/mount_root $(1)/sbin/jffs2reset
 	ln -s /sbin/mount_root $(1)/sbin/jffs2mark
-	ln -s /sbin/kmodloader $(1)/usr/sbin/lsmod
+#	ln -s /sbin/kmodloader $(1)/usr/sbin/lsmod
 	ln -s /sbin/kmodloader $(1)/usr/sbin/modinfo
 endef
 
