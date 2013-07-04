@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 #include "polarssl/havege.h"
 #include "polarssl/bignum.h"
 #include "polarssl/x509.h"
@@ -157,6 +158,8 @@ int selfsigned(char **arg) {
 	from = (from < 1000000000) ? 1000000000 : from;
 	strftime(fstr, sizeof(fstr), "%F %H:%M:%S", gmtime(&from));
 	to = from + 60 * 60 * 24 * days;
+	if (to < from)
+		to = INT_MAX;
 	strftime(tstr, sizeof(tstr), "%F %H:%M:%S", gmtime(&to));
 
 	x509_raw cert;
