@@ -191,6 +191,7 @@ define Image/BuildKernel
 	$(call MkuImage,gzip,,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
 	cp $(KDIR)/loader-generic.elf $(VMLINUX)-lzma.elf
+	-mkdir -p $(KDIR_TMP)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	cp $(KDIR)/vmlinux-initramfs.elf $(VMLINUX)-initramfs.elf
 	cp $(KDIR)/vmlinux-initramfs $(VMLINUX)-initramfs.bin
@@ -201,7 +202,6 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	cp $(KDIR)/loader-generic.elf $(VMLINUX)-initramfs-lzma.elf
 	$(call Image/Build/Initramfs)
 endif
-	-mkdir -p $(KDIR_TMP)
 endef
 
 define Image/Build/WRT400N
