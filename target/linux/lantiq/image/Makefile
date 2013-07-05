@@ -6,7 +6,7 @@
 #
 
 # boards missing since devicetree update
-#EASY50712 ARV3527P GIGASX76X ARV4519PW BTHOMEHUBV2B BTHOMEHUBV2BOPENRG
+#EASY50712 ARV3527P GIGASX76X BTHOMEHUBV2B BTHOMEHUBV2BOPENRG
 #WBMR P2601HNFX H201L
 
 include $(TOPDIR)/rules.mk
@@ -187,6 +187,9 @@ Image/Build/Profile/ARV4518PWR01=$(call Image/Build/$(1),$(1),ARV4518PWR01)
 
 Image/BuildKernel/Profile/ARV4518PWR01A=$(call Image/BuildKernel/Template,ARV4518PWR01A)
 Image/Build/Profile/ARV4518PWR01A=$(call Image/Build/$(1),$(1),ARV4518PWR01A)
+
+Image/BuildKernel/Profile/ARV4519PW=$(call Image/BuildKernel/Template,ARV4519PW)
+Image/Build/Profile/ARV4519PW=$(call Image/Build/$(1),$(1),ARV4519PW)
 
 Image/BuildKernel/Profile/ARV4520PW=$(call Image/BuildKernel/Template,ARV4520PW)
 Image/Build/Profile/ARV4520PW=$(call Image/Build/$(1),$(1),ARV4520PW)
