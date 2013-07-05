@@ -54,6 +54,17 @@ endef
 
 $(eval $(call Profile,ARV4510PW))
 
+define Profile/ARV4519PW
+  NAME:=Vodafone, Pirelli - ARV4519PW
+  PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+	ltq-adsl-app ppp-mod-pppoa \
+	swconfig
+endef
+
+$(eval $(call Profile,ARV4519PW))
+
 define Profile/ARV7518PW
   NAME:=Astoria - ARV7518PW
   PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
