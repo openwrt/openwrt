@@ -44,7 +44,8 @@ endef
 
 CONFIGURE_ARGS += \
 	--enable-gettext=no \
-	--enable-lib64=no
+	--enable-lib64=no \
+	--enable-blkid=no
 
 TARGET_CFLAGS += \
 	-I$(STAGING_DIR)/usr/include \
