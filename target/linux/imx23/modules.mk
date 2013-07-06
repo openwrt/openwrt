@@ -7,7 +7,7 @@
 define KernelPackage/rtc-stmp3xxx
     SUBMENU:=$(OTHER_MENU)
     TITLE:=STMP3xxx SoC built-in RTC support
-    DEPENDS:=@(TARGET_imx23)
+    DEPENDS:=@TARGET_imx23
     $(call AddDepends/rtc)
     KCONFIG:=\
 	CONFIG_RTC_CLASS=y \
@@ -35,6 +35,7 @@ $(eval $(call KernelPackage,wdt-stmp3xxx))
 
 define KernelPackage/usb-chipidea
     TITLE:=Support for ChipIdea controllers
+    DEPENDS:=@TARGET_imx23
     KCONFIG:= \
 	CONFIG_USB_CHIPIDEA \
 	CONFIG_USB_CHIPIDEA_HOST=y \
@@ -70,6 +71,7 @@ $(eval $(call KernelPackage,usb-mxs-phy,1))
 
 define KernelPackage/usb-net-smsc95xx
     TITLE:=SMSC95xx USB/2.0 Ethernet driver
+    DEPENDS:=@TARGET_imx23
     KCONFIG:=CONFIG_USB_NET_SMSC95XX
     FILES:=$(LINUX_DIR)/drivers/net/usb/smsc95xx.ko
     AUTOLOAD:=$(call AutoLoad,64,smsc95xx)
