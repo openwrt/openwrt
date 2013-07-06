@@ -1,8 +1,8 @@
 --- a/gettext-runtime/Makefile.in
 +++ b/gettext-runtime/Makefile.in
-@@ -208,7 +208,7 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGE
- ETAGS = etags
+@@ -251,7 +251,7 @@ ETAGS = etags
  CTAGS = ctags
+ CSCOPE = cscope
  DIST_SUBDIRS = doc intl intl-java intl-csharp gnulib-lib libasprintf \
 -	src po man m4 tests
 +	src po man m4
@@ -11,7 +11,7 @@
  top_distdir = $(distdir)
 --- a/gettext-tools/Makefile.in
 +++ b/gettext-tools/Makefile.in
-@@ -1248,7 +1248,7 @@ top_builddir = @top_builddir@
+@@ -1503,7 +1503,7 @@ top_builddir = @top_builddir@
  top_srcdir = @top_srcdir@
  AUTOMAKE_OPTIONS = 1.5 gnu no-dependencies
  ACLOCAL_AMFLAGS = -I m4 -I ../gettext-runtime/m4 -I ../m4 -I gnulib-m4 -I libgrep/gnulib-m4 -I libgettextpo/gnulib-m4
