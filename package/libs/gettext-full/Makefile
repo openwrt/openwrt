@@ -35,6 +35,9 @@ define Package/libintl-full
 endef
 
 TARGET_CFLAGS += $(FPIC)
+ifneq ($(HOST_OS),Linux)
+  TARGET_CFLAGS += -I$(STAGING_DIR_HOST)/include
+endif
 
 CONFIGURE_ARGS += \
 	--enable-shared \
