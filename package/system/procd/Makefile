@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=procd
-PKG_VERSION:=2013-07-04
+PKG_VERSION:=2013-07-08
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/luci2/procd.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=3283d681f9da65b500ad0cb3d4550cb840ed481a
+PKG_SOURCE_VERSION:=725e6bbbe403a950c0ddcd23cb521ffefa705c7d
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -29,9 +29,10 @@ define Package/procd
 endef
 
 define Package/procd/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/lib/functions $(1)/etc
+	$(INSTALL_DIR) $(1)/sbin $(1)/lib/functions $(1)/etc/init.d
 
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/{procd,askfirst,udevtrigger,logread} $(1)/sbin/
+	$(INSTALL_BIN) ./files/log.init $(1)/etc/init.d/log
 	$(INSTALL_DATA) ./files/hotplug*.json $(1)/etc/
 	$(INSTALL_DATA) ./files/procd.sh $(1)/lib/functions/
 	ln -s /sbin/procd $(1)/sbin/init
