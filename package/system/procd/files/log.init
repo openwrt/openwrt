@@ -1,0 +1,53 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 OpenWrt.org
+
+# start after and stop before networking
+START=21
+STOP=89
+
+USE_PROCD=1
+NAME=logread
+PROG=/sbin/logread
+PIDCOUNT=1
+
+start_service_file()
+{
+	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
+	local log_file log_size
+
+	config_get log_file $1 log_file
+        config_get log_size $1 log_size
+
+	[ -z "${log_file}" ] && return
+
+	procd_open_instance
+	procd_set_param command "$PROG" -f -F "$log_file" -p "$pid_file"
+        [ -n "${log_size}" ] && procd_append_param command -S "$log_size"
+	procd_close_instance
+
+	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
+}
+
+start_service_remote()
+{
+	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
+	local log_ip log_port
+
+	config_get log_ip $1 log_ip
+	config_get log_port $1 log_port
+
+	[ -z "${log_port}" -o -z "${log_ip}" ] && return
+
+	procd_open_instance
+	procd_set_param command "$PROG" -f -r "$log_ip" "$log_port" -p "$pid_file"
+	procd_close_instance
+
+	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
+}
+
+start_service()
+{
+	config_load system
+	config_foreach start_service_file system
+	config_foreach start_service_remote system
+}
