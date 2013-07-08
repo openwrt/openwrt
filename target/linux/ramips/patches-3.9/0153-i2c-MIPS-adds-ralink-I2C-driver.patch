@@ -13,8 +13,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 Documentation/devicetree/bindings/i2c/i2c-ralink.txt
  create mode 100644 drivers/i2c/busses/i2c-ralink.c
 
---- /dev/null
-+++ b/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
+Index: linux-3.9.8/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.9.8/Documentation/devicetree/bindings/i2c/i2c-ralink.txt	2013-07-02 11:36:42.944155612 +0200
 @@ -0,0 +1,27 @@
 +I2C for Ralink platforms
 +
@@ -43,9 +45,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		};
 +	};
 +};
---- a/drivers/i2c/busses/Kconfig
-+++ b/drivers/i2c/busses/Kconfig
-@@ -628,6 +628,10 @@ config I2C_PXA_SLAVE
+Index: linux-3.9.8/drivers/i2c/busses/Kconfig
+===================================================================
+--- linux-3.9.8.orig/drivers/i2c/busses/Kconfig	2013-06-27 19:41:32.000000000 +0200
++++ linux-3.9.8/drivers/i2c/busses/Kconfig	2013-07-02 11:36:42.944155612 +0200
+@@ -628,6 +628,10 @@
  	  is necessary for systems where the PXA may be a target on the
  	  I2C bus.
  
@@ -56,9 +60,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  config HAVE_S3C2410_I2C
  	bool
  	help
---- a/drivers/i2c/busses/Makefile
-+++ b/drivers/i2c/busses/Makefile
-@@ -62,6 +62,7 @@ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
+Index: linux-3.9.8/drivers/i2c/busses/Makefile
+===================================================================
+--- linux-3.9.8.orig/drivers/i2c/busses/Makefile	2013-06-27 19:41:32.000000000 +0200
++++ linux-3.9.8/drivers/i2c/busses/Makefile	2013-07-02 11:36:42.944155612 +0200
+@@ -62,6 +62,7 @@
  obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
  obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
  obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
@@ -66,8 +72,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_S3C2410)	+= i2c-s3c2410.o
  obj-$(CONFIG_I2C_S6000)		+= i2c-s6000.o
  obj-$(CONFIG_I2C_SH7760)	+= i2c-sh7760.o
---- /dev/null
-+++ b/drivers/i2c/busses/i2c-ralink.c
+Index: linux-3.9.8/drivers/i2c/busses/i2c-ralink.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.9.8/drivers/i2c/busses/i2c-ralink.c	2013-07-08 10:56:00.068287905 +0200
 @@ -0,0 +1,274 @@
 +/*
 + * drivers/i2c/busses/i2c-ralink.c
@@ -122,7 +130,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#define I2C_RETRY		0x400
 +
-+#define CLKDIV_VALUE		600
++#define CLKDIV_VALUE		200 // clock rate is 40M, 40M / (200*2) = 100k (standard i2c bus rate).
++//#define CLKDIV_VALUE		50 // clock rate is 40M, 40M / (50*2) = 400k (fast i2c bus rate).
 +
 +#define READ_CMD		0x01
 +#define WRITE_CMD		0x00
@@ -211,16 +220,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	} else {
 +		rt_i2c_wait_idle();
 +		rt_i2c_w32(msg->len - 1, REG_BYTECNT_REG);
-+		rt_i2c_w32(msg->buf[0], REG_DATAOUT_REG);
-+		rt_i2c_w32(WRITE_CMD, REG_STARTXFR_REG);
-+		for (i = 1; i < msg->len; i++) {
++		for (i = 0; i < msg->len; i++) {
 +			rt_i2c_w32(msg->buf[i], REG_DATAOUT_REG);
++			rt_i2c_w32(WRITE_CMD, REG_STARTXFR_REG);
 +			if (rt_i2c_wait_tx_done())
 +				return -1;
 +		}
 +	}
 +
-+	return msg->len;
++	return 0;
 +}
 +
 +static int rt_i2c_master_xfer(struct i2c_adapter *a, struct i2c_msg *m, int n)
