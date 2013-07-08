@@ -132,6 +132,9 @@ static void __init tl_ap123_setup(void)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
+	/* Disable JTAG, enabling GPIOs 0-4 */
+	ath79_gpio_function_enable(AR934X_GPIO_FUNC_JTAG_DISABLE);
+
 	ath79_register_m25p80(&tl_wr841n_v8_flash_data);
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_SW_PHY_SWAP);
