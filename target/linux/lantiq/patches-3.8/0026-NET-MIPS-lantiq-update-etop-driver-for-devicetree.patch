@@ -220,7 +220,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  		int desc;
  		for (desc = 0; desc < LTQ_DESC_NUM; desc++)
  			dev_kfree_skb_any(ch->skb[ch->dma.desc]);
-@@ -236,23 +301,59 @@ static void
+@@ -236,23 +301,62 @@ static void
  ltq_etop_hw_exit(struct net_device *dev)
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
@@ -251,8 +251,11 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
 +
 +	clk_enable(priv->clk_switch);
 +
++	/* enable gbit port0 on the SoC */
++	ltq_gbit_w32_mask((1 << 17), (1 << 18), LTQ_GBIT_P0_CTL);
++
 +	ltq_gbit_w32_mask(0, GCTL0_SE, LTQ_GBIT_GCTL0);
-+	/** Disable MDIO auto polling mode */
++	/* disable MDIO auto polling mode */
 +	ltq_gbit_w32_mask(0, PX_CTL_DMDIO, LTQ_GBIT_P0_CTL);
 +	/* set 1522 packet size */
 +	ltq_gbit_w32_mask(0x300, 0, LTQ_GBIT_GCTL0);
@@ -288,7 +291,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  	case PHY_INTERFACE_MODE_RMII:
  		ltq_etop_w32_mask(ETOP_MII_MASK,
  			ETOP_MII_REVERSE, LTQ_ETOP_CFG);
-@@ -264,39 +365,68 @@ ltq_etop_hw_init(struct net_device *dev)
+@@ -264,39 +368,68 @@ ltq_etop_hw_init(struct net_device *dev)
  		break;
  
  	default:
@@ -379,7 +382,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  }
  
  static void
-@@ -312,7 +442,10 @@ ltq_etop_get_settings(struct net_device
+@@ -312,7 +445,10 @@ ltq_etop_get_settings(struct net_device
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  
@@ -391,7 +394,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  }
  
  static int
-@@ -320,7 +453,10 @@ ltq_etop_set_settings(struct net_device
+@@ -320,7 +456,10 @@ ltq_etop_set_settings(struct net_device
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  
@@ -403,7 +406,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  }
  
  static int
-@@ -328,7 +464,10 @@ ltq_etop_nway_reset(struct net_device *d
+@@ -328,7 +467,10 @@ ltq_etop_nway_reset(struct net_device *d
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  
@@ -415,7 +418,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  }
  
  static const struct ethtool_ops ltq_etop_ethtool_ops = {
-@@ -339,6 +478,39 @@ static const struct ethtool_ops ltq_etop
+@@ -339,6 +481,39 @@ static const struct ethtool_ops ltq_etop
  };
  
  static int
@@ -455,7 +458,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  ltq_etop_mdio_wr(struct mii_bus *bus, int phy_addr, int phy_reg, u16 phy_data)
  {
  	u32 val = MDIO_REQUEST |
-@@ -379,14 +551,18 @@ ltq_etop_mdio_probe(struct net_device *d
+@@ -379,14 +554,18 @@ ltq_etop_mdio_probe(struct net_device *d
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  	struct phy_device *phydev = NULL;
@@ -481,7 +484,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  
  	if (!phydev) {
  		netdev_err(dev, "no PHY found\n");
-@@ -394,21 +570,18 @@ ltq_etop_mdio_probe(struct net_device *d
+@@ -394,21 +573,18 @@ ltq_etop_mdio_probe(struct net_device *d
  	}
  
  	phydev = phy_connect(dev, dev_name(&phydev->dev), &ltq_etop_mdio_link,
@@ -508,7 +511,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  	phydev->advertising = phydev->supported;
  	priv->phydev = phydev;
  	pr_info("%s: attached PHY [%s] (phy_addr=%s, irq=%d)\n",
-@@ -433,8 +606,13 @@ ltq_etop_mdio_init(struct net_device *de
+@@ -433,8 +609,13 @@ ltq_etop_mdio_init(struct net_device *de
  	}
  
  	priv->mii_bus->priv = dev;
@@ -524,7 +527,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  	priv->mii_bus->name = "ltq_mii";
  	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
  		priv->pdev->name, priv->pdev->id);
-@@ -483,17 +661,19 @@ static int
+@@ -483,17 +664,19 @@ static int
  ltq_etop_open(struct net_device *dev)
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
@@ -553,7 +556,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  	netif_tx_start_all_queues(dev);
  	return 0;
  }
-@@ -502,18 +682,19 @@ static int
+@@ -502,18 +685,19 @@ static int
  ltq_etop_stop(struct net_device *dev)
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
@@ -583,7 +586,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  	return 0;
  }
  
-@@ -523,16 +704,16 @@ ltq_etop_tx(struct sk_buff *skb, struct
+@@ -523,16 +707,16 @@ ltq_etop_tx(struct sk_buff *skb, struct
  	int queue = skb_get_queue_mapping(skb);
  	struct netdev_queue *txq = netdev_get_tx_queue(dev, queue);
  	struct ltq_etop_priv *priv = netdev_priv(dev);
@@ -605,7 +608,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  		netdev_err(dev, "tx ring full\n");
  		netif_tx_stop_queue(txq);
  		return NETDEV_TX_BUSY;
-@@ -540,7 +721,7 @@ ltq_etop_tx(struct sk_buff *skb, struct
+@@ -540,7 +724,7 @@ ltq_etop_tx(struct sk_buff *skb, struct
  
  	/* dma needs to start on a 16 byte aligned address */
  	byte_offset = CPHYSADDR(skb->data) % 16;
@@ -614,7 +617,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  
  	dev->trans_start = jiffies;
  
-@@ -550,11 +731,11 @@ ltq_etop_tx(struct sk_buff *skb, struct
+@@ -550,11 +734,11 @@ ltq_etop_tx(struct sk_buff *skb, struct
  	wmb();
  	desc->ctl = LTQ_DMA_OWN | LTQ_DMA_SOP | LTQ_DMA_EOP |
  		LTQ_DMA_TX_OFFSET(byte_offset) | (len & LTQ_DMA_SIZE_MASK);
@@ -629,7 +632,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  		netif_tx_stop_queue(txq);
  
  	return NETDEV_TX_OK;
-@@ -633,34 +814,32 @@ ltq_etop_init(struct net_device *dev)
+@@ -633,34 +817,32 @@ ltq_etop_init(struct net_device *dev)
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  	struct sockaddr mac;
  	int err;
@@ -674,7 +677,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  	return 0;
  
  err_netdev:
-@@ -680,6 +859,9 @@ ltq_etop_tx_timeout(struct net_device *d
+@@ -680,6 +862,9 @@ ltq_etop_tx_timeout(struct net_device *d
  	err = ltq_etop_hw_init(dev);
  	if (err)
  		goto err_hw;
@@ -684,7 +687,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  	dev->trans_start = jiffies;
  	netif_wake_queue(dev);
  	return;
-@@ -703,14 +885,19 @@ static const struct net_device_ops ltq_e
+@@ -703,14 +888,19 @@ static const struct net_device_ops ltq_e
  	.ndo_tx_timeout = ltq_etop_tx_timeout,
  };
  
@@ -707,7 +710,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!res) {
-@@ -736,30 +923,58 @@ ltq_etop_probe(struct platform_device *p
+@@ -736,30 +926,58 @@ ltq_etop_probe(struct platform_device *p
  		goto err_out;
  	}
  
@@ -781,7 +784,7 @@ Subject: [PATCH 26/40] NET: MIPS: lantiq: update etop driver for devicetree
  
  	err = register_netdev(dev);
  	if (err)
-@@ -788,32 +1003,23 @@ ltq_etop_remove(struct platform_device *
+@@ -788,32 +1006,23 @@ ltq_etop_remove(struct platform_device *
  	return 0;
  }
  
