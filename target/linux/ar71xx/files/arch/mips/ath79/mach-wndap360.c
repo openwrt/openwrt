@@ -76,7 +76,9 @@ static void __init wndap360_setup(void)
 
 	ath79_register_mdio(0, ~(WNDAP360_LAN_PHYMASK));
 
-	ath79_init_mac(ath79_eth0_data.mac_addr, art, 0);
+	/* Reusing wifi MAC with offset of 1 as eth0 MAC */
+	ath79_init_mac(ath79_eth0_data.mac_addr,
+		       art + WNDAP360_WMAC0_MAC_OFFSET, 1);
 	ath79_eth0_pll_data.pll_1000 = 0x11110000;
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ath79_eth0_data.phy_mask = WNDAP360_LAN_PHYMASK;
