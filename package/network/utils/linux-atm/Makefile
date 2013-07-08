@@ -41,7 +41,7 @@ endef
 define Package/linux-atm/Default
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=linux-atm
+  DEPENDS:=+linux-atm
   URL:=http://linux-atm.sourceforge.net/
   SUBMENU:=Linux ATM tools
 endef
