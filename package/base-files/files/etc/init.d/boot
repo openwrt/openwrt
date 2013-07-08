@@ -7,7 +7,7 @@ STOP=98
 system_config() {
 	local cfg="$1"
 
-	local hostname conloglevel timezone
+	local hostname conloglevel buffersize timezone zonename
 
 	config_get hostname "$cfg" hostname 'OpenWrt'
 	echo "$hostname" > /proc/sys/kernel/hostname
