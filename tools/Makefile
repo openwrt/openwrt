@@ -138,7 +138,7 @@ $(eval $(call PrepareCommand,grep,ggrep grep))
 $(eval $(call PrepareCommand,tar,gtar tar))
 $(eval $(call PrepareCommand,diff,gdiff diff))
 
-$(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,find md5sum cp stat seq python awk getopt grep tar diff)
+$(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,md5sum cp stat seq python awk getopt grep tar diff)
 $(curdir)//prepare = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(curdir)/cmddeps)
 $(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(curdir)/cmddeps)
 
