@@ -1,0 +1,12 @@
+diff -urN linux-3.10/drivers/tty/serial/amba-pl011.c linux-rpi-3.10.y/drivers/tty/serial/amba-pl011.c
+--- linux-3.10/drivers/tty/serial/amba-pl011.c	2013-06-30 23:13:29.000000000 +0100
++++ linux-rpi-3.10.y/drivers/tty/serial/amba-pl011.c	2013-07-06 15:25:50.000000000 +0100
+@@ -84,7 +84,7 @@
+ 
+ static unsigned int get_fifosize_arm(unsigned int periphid)
+ {
+-	unsigned int rev = (periphid >> 20) & 0xf;
++	unsigned int rev = 0; //(periphid >> 20) & 0xf;
+ 	return rev < 3 ? 16 : 32;
+ }
+ 
