@@ -17,6 +17,7 @@ tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-image patch quilt yaffs2 flock padjffs2
 tools-y += mm-macros xorg-macros xfce-macros missing-macros xz cmake scons bc
+tools-y += findutils
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_powerpc) += upx
 tools-$(CONFIG_TARGET_x86) += qemu
@@ -127,7 +128,6 @@ $(STAGING_DIR_HOST)/bin/stat: $(STAGING_DIR)/.prepared
 		false; \
 	fi
 
-$(eval $(call PrepareCommand,find,gfind find))
 $(eval $(call PrepareCommand,md5sum,gmd5sum md5sum $(SCRIPT_DIR)/md5sum))
 $(eval $(call PrepareCommand,cp,gcp cp))
 $(eval $(call PrepareCommand,seq,gseq seq))
