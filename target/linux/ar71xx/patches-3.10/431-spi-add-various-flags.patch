@@ -1,0 +1,19 @@
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -519,6 +519,8 @@ struct spi_transfer {
+ 	dma_addr_t	rx_dma;
+ 
+ 	unsigned	cs_change:1;
++	unsigned	verify:1;
++	unsigned	fast_write:1;
+ 	u8		bits_per_word;
+ 	u16		delay_usecs;
+ 	u32		speed_hz;
+@@ -560,6 +562,7 @@ struct spi_message {
+ 	struct spi_device	*spi;
+ 
+ 	unsigned		is_dma_mapped:1;
++	unsigned		fast_read:1;
+ 
+ 	/* REVISIT:  we might want a flag affecting the behavior of the
+ 	 * last transfer ... allowing things like "read 16 bit length L"

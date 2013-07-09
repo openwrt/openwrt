@@ -131,7 +131,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 	}
 
 	ag->phy_dev = phy_connect(dev, dev_name(&phydev->dev),
-				  &ag71xx_phy_link_adjust, 0,
+				  &ag71xx_phy_link_adjust,
 				  pdata->phy_if_mode);
 
 	if (IS_ERR(ag->phy_dev)) {
