@@ -33,7 +33,6 @@ define Package/block-mount
   CATEGORY:=Base system
   TITLE:=Block device mounting and checking
   DEPENDS:=+ubox +libubox +libuci
-  MENU:=1
 endef
 
 define Package/ubox/install
