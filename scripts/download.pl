@@ -152,7 +152,7 @@ foreach my $mirror (@ARGV) {
 			push @mirrors, "http://downloads.sourceforge.net/$1";
 		}
 	} elsif ($mirror =~ /^\@GNU\/(.+)$/) {
-		push @mirrors, "ftp://ftp.gnu.org/gnu/$1";
+		push @mirrors, "http://ftp.gnu.org/pub/gnu/$1";
 		push @mirrors, "http://ftpmirror.gnu.org/$1";
 		push @mirrors, "ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/$1";
 		push @mirrors, "ftp://ftp.mirror.nl/pub/mirror/gnu/$1";
