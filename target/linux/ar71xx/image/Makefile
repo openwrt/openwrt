@@ -551,7 +551,7 @@ define Image/Build/TPLINKOLD/initramfs
 	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000,-initramfs)
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
-		-k $(KDIR)/loader-initramfs-$(2).gz \
+		-k $(KDIR)/loader-$(2)-initramfs.gz \
 		-o $(call imgname,$(1),$(2))-initramfs-uImage.bin
 endef
 
@@ -584,8 +584,8 @@ define Image/Build/TPLINK/initramfs
 	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000,-initramfs)
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
-		-k $(KDIR)/loader-initramfs-$(2).gz \
-		-o $(call imgname,$(1),$(2))-initramfs-uImage.bin
+		-k $(KDIR)/loader-$(2)-initramfs.gz \
+		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
 define Image/Build/TPLINK-LZMA
