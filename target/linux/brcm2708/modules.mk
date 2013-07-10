@@ -57,3 +57,21 @@ define KernelPackage/spi-bcm2708/description
 endef
 
 $(eval $(call KernelPackage,spi-bcm2708))
+
+
+I2C_BCM2708_MODULES:=\
+  CONFIG_I2C_BCM2708:drivers/i2c/busses/i2c-bcm2708
+
+define KernelPackage/i2c-bcm2708
+  $(call i2c_defaults,$(I2C_BCM2708_MODULES),59)
+  KCONFIG+= \
+	   CONFIG_I2C_BCM2708_BAUDRATE=100000
+  TITLE:=Broadcom BCM2708 I2C master controller driver
+  DEPENDS:=@TARGET_brcm2708 +kmod-i2c-core
+endef
+
+define KernelPackage/i2c-bcm2708/description
+  This package contains the Broadcom 2708 I2C master controller driver
+endef
+
+$(eval $(call KernelPackage,i2c-bcm2708))
