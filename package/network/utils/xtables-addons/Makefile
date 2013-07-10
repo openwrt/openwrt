@@ -10,9 +10,9 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=xtables-addons
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.7.0)),1)
-PKG_VERSION:=2.1
+PKG_VERSION:=2.3
 PKG_RELEASE:=1
-PKG_MD5SUM:=b624fc57bbda9e15c33a6471e4ec75e1
+PKG_MD5SUM:=7d942729c365a549513511061f74c3e3
 else
 PKG_VERSION:=1.45
 PKG_RELEASE:=3
