@@ -82,8 +82,8 @@ define MkuImage
 endef
 
 define MkuImageLzma
-	$(call PatchKernelLzma,$(1),$(2),$(3))
-	$(call MkuImage,lzma,,$(KDIR_TMP)/vmlinux-$(1).bin.lzma,$(KDIR_TMP)/vmlinux-$(1).uImage)
+	$(call PatchKernelLzma,$(1),$(2),$(3),$(4))
+	$(call MkuImage,lzma,,$(KDIR_TMP)/vmlinux$(4)-$(1).bin.lzma,$(KDIR_TMP)/vmlinux$(4)-$(1).uImage)
 endef
 
 define MkuImageLzma/initramfs
@@ -701,7 +701,7 @@ define Image/Build/Netgear
 endef
 
 define Image/Build/Netgear/initramfs
-	$(call MkuImageLzma,$(2),$(3) $(4))
+	$(call MkuImageLzma,$(2),$(3) $(4),,-initramfs)
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
 		$(KDIR_TMP)/vmlinux-initramfs-$(2).uImage \
 		$(call imgname,$(1),$(2))-initramfs-uImage.bin \
