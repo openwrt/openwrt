@@ -54,11 +54,6 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		else \
 			echo "FIND_L=$$FIND \$$(1) -follow" >> $@; \
 		fi; \
-		if xargs --help 2>&1 | grep 'gnu.org' >/dev/null; then \
-			echo 'XARGS:=xargs -r' >> $@; \
-		else \
-			echo 'XARGS:=xargs' >> $@; \
-		fi; \
 		PATCH=`which gpatch 2>/dev/null`; \
 		[ -n "$$PATCH" -a -x "$$PATCH" ] || PATCH=`which patch 2>/dev/null`; \
 		echo "PATCH:=$$PATCH" >> $@; \

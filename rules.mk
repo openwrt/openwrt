@@ -207,6 +207,7 @@ KPATCH:=$(SCRIPT_DIR)/patch-kernel.sh
 SED:=$(STAGING_DIR_HOST)/bin/sed -i -e
 CP:=cp -fpR
 LN:=ln -sf
+XARGS:=xargs -r
 
 INSTALL_BIN:=install -m0755
 INSTALL_DIR:=install -d -m0755
