@@ -131,8 +131,9 @@ define Image/BuildLoader
 	-rm -rf $(KDIR)/lzma-loader
 	$(LOADER_MAKE) LOADER=loader-$(1).$(2) KERNEL_CMDLINE="$(3)"\
 		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
-		LOADER_DATA="$(KDIR)/vmlinux.bin.lzma" BOARD="$(1)" \
+		LOADER_DATA="$(KDIR)/vmlinux$(5).bin.lzma" BOARD="$(1)" \
 		compile loader.$(2)
+	-$(CP) $(KDIR)/loader-$(1).$(2) $(KDIR)/loader-$(1)$(5).$(2)
 endef
 
 define Image/BuildLoaderAlone
@@ -199,7 +200,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	dd if=$(KDIR)/vmlinux-initramfs.bin.gz of=$(VMLINUX)-initramfs.gz bs=65536 conv=sync
 	$(call MkuImage,gzip,,$(KDIR)/vmlinux-initramfs.bin.gz,$(UIMAGE)-initramfs-gzip.bin)
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux-initramfs.bin.lzma,$(UIMAGE)-initramfs-lzma.bin)
-	cp $(KDIR)/loader-generic.elf $(VMLINUX)-initramfs-lzma.elf
+	cp $(KDIR)/loader-generic-initramfs.elf $(VMLINUX)-initramfs-lzma.elf
 	$(call Image/Build/Initramfs)
 endif
 endef
@@ -547,11 +548,11 @@ define Image/Build/TPLINKOLD
 endef
 
 define Image/Build/TPLINKOLD/initramfs
-	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000)
+	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000,-initramfs)
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
-		-k $(KDIR)/loader-$(2).gz \
-		-o $(call imgname,$(1),$(2))-uImage.bin
+		-k $(KDIR)/loader-initramfs-$(2).gz \
+		-o $(call imgname,$(1),$(2))-initramfs-uImage.bin
 endef
 
 define Image/Build/TPLINK/loader
@@ -580,11 +581,11 @@ define Image/Build/TPLINK
 endef
 
 define Image/Build/TPLINK/initramfs
-	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000)
+	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000,-initramfs)
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
-		-k $(KDIR)/loader-$(2).gz \
-		-o $(call imgname,$(1),$(2))-uImage.bin
+		-k $(KDIR)/loader-initramfs-$(2).gz \
+		-o $(call imgname,$(1),$(2))-initramfs-uImage.bin
 endef
 
 define Image/Build/TPLINK-LZMA
@@ -604,10 +605,10 @@ define Image/Build/TPLINK-LZMA
 endef
 
 define Image/Build/TPLINK-LZMA/initramfs
-	$(call PatchKernelLzma,$(2),$(3))
+	$(call PatchKernelLzma,$(2),$(3),,-initramfs)
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) $(7) -s \
-		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma \
+		-k $(KDIR_TMP)/vmlinux-initramfs-$(2).bin.lzma \
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
@@ -702,8 +703,8 @@ endef
 define Image/Build/Netgear/initramfs
 	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
-		$(KDIR_TMP)/vmlinux-$(2).uImage \
-		$(call imgname,$(1),$(2))-uImage.bin \
+		$(KDIR_TMP)/vmlinux-initramfs-$(2).uImage \
+		$(call imgname,$(1),$(2))-initramfs-uImage.bin \
 		$(5)
 endef
 
@@ -1045,6 +1046,7 @@ define Image/Prepare
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	gzip -9 -c $(KDIR)/vmlinux-initramfs > $(KDIR)/vmlinux-initramfs.bin.gz
 	$(call CompressLzma,$(KDIR)/vmlinux-initramfs,$(KDIR)/vmlinux-initramfs.bin.lzma)
+	$(call Image/BuildLoader,generic,elf,,,-initramfs)
 endif
 	$(call Image/BuildLoader,generic,elf)
 	$(call Image/Build/Profile/$(if $(CONFIG_IB),Default,$(PROFILE)),loader)
