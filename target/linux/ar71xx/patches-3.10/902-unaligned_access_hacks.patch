@@ -902,3 +902,13 @@
  		return true;
  	}
  	return false;
+--- a/include/uapi/linux/if_pppox.h
++++ b/include/uapi/linux/if_pppox.h
+@@ -47,6 +47,7 @@ struct pppoe_addr {
+  */
+ struct pptp_addr {
+ 	__be16		call_id;
++	__u16		pad;
+ 	struct in_addr	sin_addr;
+ };
+ 

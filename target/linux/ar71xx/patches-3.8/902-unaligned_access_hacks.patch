@@ -279,7 +279,7 @@
  #include <asm/uaccess.h>
  
  #include <linux/proc_fs.h>
-@@ -764,10 +765,10 @@ static void tcp_v6_send_response(struct
+@@ -764,10 +765,10 @@ static void tcp_v6_send_response(struct 
  	topt = (__be32 *)(t1 + 1);
  
  	if (ts) {
@@ -415,7 +415,7 @@
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
  		fl6.flowi6_mark = skb->mark;
  
-@@ -1240,7 +1240,7 @@ static int ip6gre_header(struct sk_buff
+@@ -1240,7 +1240,7 @@ static int ip6gre_header(struct sk_buff 
  	struct ipv6hdr *ipv6h = (struct ipv6hdr *)skb_push(skb, t->hlen);
  	__be16 *p = (__be16 *)(ipv6h+1);
  
@@ -831,7 +831,7 @@
  #include <linux/netdevice.h>
 --- a/include/net/inet_ecn.h
 +++ b/include/net/inet_ecn.h
-@@ -115,13 +115,13 @@ static inline int IP6_ECN_set_ce(struct
+@@ -115,13 +115,13 @@ static inline int IP6_ECN_set_ce(struct 
  {
  	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
  		return 0;
@@ -994,7 +994,7 @@
  	ptr = ip6hoff + sizeof(struct ipv6hdr);
 --- a/net/xfrm/xfrm_input.c
 +++ b/net/xfrm/xfrm_input.c
-@@ -77,8 +77,8 @@ int xfrm_parse_spi(struct sk_buff *skb,
+@@ -77,8 +77,8 @@ int xfrm_parse_spi(struct sk_buff *skb, 
  	if (!pskb_may_pull(skb, hlen))
  		return -EINVAL;
  
@@ -1004,4 +1004,14 @@
 +	*seq = net_hdr_word(skb_transport_header(skb) + offset_seq);
  	return 0;
  }
+ 
+--- a/include/uapi/linux/if_pppox.h
++++ b/include/uapi/linux/if_pppox.h
+@@ -47,6 +47,7 @@ struct pppoe_addr {
+  */
+ struct pptp_addr {
+ 	__be16		call_id;
++	__u16		pad;
+ 	struct in_addr	sin_addr;
+ };
  
