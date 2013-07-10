@@ -81,7 +81,7 @@ ifdef CONFIG_HAS_SPE_FPU
 endif
 ifdef CONFIG_MIPS64_ABI
   ifneq ($(CONFIG_MIPS64_ABI_O32),y)
-     ARCH_SUFFIX:=$(ARCH_SUFFIX)_$(subst ",,$(CONFIG_MIPS64_ABI))
+     ARCH_SUFFIX:=$(ARCH_SUFFIX)_$(call qstrip,$(CONFIG_MIPS64_ABI))
   endif
 endif
 
