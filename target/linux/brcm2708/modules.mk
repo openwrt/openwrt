@@ -38,3 +38,22 @@ define KernelPackage/random-bcm2708/description
 endef
 
 $(eval $(call KernelPackage,random-bcm2708))
+
+
+define KernelPackage/spi-bcm2708
+  SUBMENU:=$(SPI_MENU)
+  TITLE:=BCM2708 SPI controller driver (SPI0)
+  KCONFIG:=CONFIG_SPI_BCM2708 \
+	   CONFIG_SPI=y \
+	   CONFIG_SPI_MASTER=y \
+	   CONFIG_BCM2708_SPIDEV=y
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-bcm2708.ko
+  AUTOLOAD:=$(call AutoLoad,89,spi-bcm2708)
+  DEPENDS:=@TARGET_brcm2708
+endef
+
+define KernelPackage/spi-bcm2708/description
+  This package contains the Broadcom 2708 SPI master controller driver
+endef
+
+$(eval $(call KernelPackage,spi-bcm2708))
