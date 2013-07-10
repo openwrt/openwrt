@@ -24,3 +24,17 @@ endef
 
 $(eval $(call KernelPackage,sound-arm-bcm2835))
 
+define KernelPackage/random-bcm2708
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BCM2708 H/W Random Number Generator
+  KCONFIG:=CONFIG_HW_RANDOM_BCM2708
+  FILES:=$(LINUX_DIR)/drivers/char/hw_random/bcm2708-rng.ko
+  AUTOLOAD:=$(call AutoLoad,11,bcm2708-rng)
+  DEPENDS:=@TARGET_brcm2708 +kmod-random-core
+endef
+
+define KernelPackage/random-bcm2708/description
+  This package contains the Broadcom 2708 HW random number generator driver
+endef
+
+$(eval $(call KernelPackage,random-bcm2708))
