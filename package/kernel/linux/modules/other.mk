@@ -684,3 +684,17 @@ define KernelPacakge/ptp-gianfar/description
 endef
 
 $(eval $(call KernelPackage,ptp-gianfar))
+
+define KernelPackage/random-core
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Hardware Random Number Generator Core support
+  KCONFIG:=CONFIG_HW_RANDOM
+  FILES:=$(LINUX_DIR)/drivers/char/hw_random/rng-core.ko
+  AUTOLOAD:=$(call AutoLoad,10,rng-core)
+endef
+
+define KernelPackage/random-core/description
+   Kernel module for the HW random number generator core infrastructure
+endef
+
+$(eval $(call KernelPackage,random-core))
