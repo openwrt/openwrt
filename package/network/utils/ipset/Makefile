@@ -40,7 +40,8 @@ CONFIGURE_ARGS += \
 	--with-kbuild="$(LINUX_DIR)"
 
 MAKE_FLAGS += \
-	ARCH="$(LINUX_KARCH)"
+	ARCH="$(LINUX_KARCH)" \
+	SHELL="$(BASH)"
 
 IPSET_MODULES:= \
 	ipset/ip_set \
