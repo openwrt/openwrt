@@ -121,6 +121,11 @@ start_service()
 	config_foreach dropbear_instance dropbear
 }
 
+service_triggers()
+{
+	procd_add_config_trigger "dropbear" "/etc/init.d/dropbear" "restart"
+}
+
 killclients()
 {
 	local ignore=''
