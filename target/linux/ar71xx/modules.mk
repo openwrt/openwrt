@@ -75,7 +75,7 @@ define KernelPackage/wdt-ath79
   DEPENDS:=@TARGET_ar71xx
   KCONFIG:=CONFIG_ATH79_WDT
   FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/ath79_wdt.ko
-  AUTOLOAD:=$(call AutoLoad,50,ath79_wdt)
+  AUTOLOAD:=$(call AutoLoad,50,ath79_wdt,1)
 endef
 
 define KernelPackage/wdt-ath79/description
