@@ -3,16 +3,18 @@
 
 START=50
 
-SERVICE_USE_PID=1
+USE_PROCD=1
+PROG=/usr/sbin/crond
+NAME=crond
 
-start () {
+start_service () {
+	[ -z "$(ls /etc/crontabs/)" ] && return 1
+
 	loglevel=$(uci_get "system.@system[0].cronloglevel")
-	[ -z "$(ls /etc/crontabs/)" ] && exit 1
 	mkdir -p /var/spool/cron
 	ln -s /etc/crontabs /var/spool/cron/ 2>/dev/null
-	service_start /usr/sbin/crond -c /etc/crontabs -l ${loglevel:-5}
-}
 
-stop() {
-	service_stop /usr/sbin/crond
+	procd_open_instance
+	procd_set_param command "$PROG" -f -c /etc/crontabs -l ${loglevel:-5}
+	procd_close_instance
 }
