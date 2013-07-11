@@ -491,6 +491,7 @@ $(eval $(call KernelPackage,ide-it821x))
 
 define KernelPackage/libsas
   SUBMENU:=$(BLOCK_MENU)
+  DEPENDS:=@TARGET_x86
   TITLE:=SAS Domain Transport Attributes
   KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
 	CONFIG_SCSI_SAS_ATTRS \
