@@ -67,6 +67,9 @@ _procd_open_service() {
 
 _procd_close_service() {
 	json_close_object
+	_procd_open_trigger
+	service_triggers
+	_procd_close_trigger
 	_procd_ubus_call set
 }
 

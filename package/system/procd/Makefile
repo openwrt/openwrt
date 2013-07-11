@@ -32,6 +32,7 @@ define Package/procd/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/lib/functions $(1)/etc/init.d
 
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/{procd,askfirst,udevtrigger,logread} $(1)/sbin/
+	$(INSTALL_BIN) ./files/reload_config $(1)/sbin/
 	$(INSTALL_BIN) ./files/log.init $(1)/etc/init.d/log
 	$(INSTALL_DATA) ./files/hotplug*.json $(1)/etc/
 	$(INSTALL_DATA) ./files/procd.sh $(1)/lib/functions/

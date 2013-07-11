@@ -60,6 +60,10 @@ start() {
 	rm -f /tmp/wireless.tmp
 
 	apply_uci_config
+	
+	# temporary hack until configd exists
+	/sbin/reload_config
+	
 	config_load system
 	config_foreach system_config system
 
