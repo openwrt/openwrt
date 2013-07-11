@@ -1,6 +1,8 @@
---- a/arch/mips/ath79/machtypes.h
-+++ b/arch/mips/ath79/machtypes.h
-@@ -16,22 +16,124 @@
+Index: linux-3.8.13/arch/mips/ath79/machtypes.h
+===================================================================
+--- linux-3.8.13.orig/arch/mips/ath79/machtypes.h	2013-07-11 21:39:45.340919744 +0200
++++ linux-3.8.13/arch/mips/ath79/machtypes.h	2013-07-11 22:02:50.208951883 +0200
+@@ -16,22 +16,125 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -22,6 +24,7 @@
 +	ATH79_MACH_ARCHER_C7,		/* TP-LINK Archer C7 board */
 +	ATH79_MACH_AW_NR580,		/* AzureWave AW-NR580 */
 +	ATH79_MACH_CAP4200AG,		/* Senao CAP4200AG */
++	ATH79_MACH_CARAMBOLA2,		/* 8devices Carambola2 */
  	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
  	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
 +	ATH79_MACH_DIR_600_A1,		/* D-Link DIR-600 rev. A1 */
@@ -93,14 +96,16 @@
 +	ATH79_MACH_TL_WR941ND,		/* TP-LINK TL-WR941ND */
  	ATH79_MACH_UBNT_AIRROUTER,	/* Ubiquiti AirRouter */
  	ATH79_MACH_UBNT_BULLET_M,	/* Ubiquiti Bullet M */
+-	ATH79_MACH_UBNT_NANO_M, 	/* Ubiquiti NanoStation M */
 +	ATH79_MACH_UBNT_LSSR71,		/* Ubiquiti LS-SR71 */
 +	ATH79_MACH_UBNT_LSX,		/* Ubiquiti LSX */
- 	ATH79_MACH_UBNT_NANO_M, 	/* Ubiquiti NanoStation M */
++	ATH79_MACH_UBNT_NANO_M,		/* Ubiquiti NanoStation M */
  	ATH79_MACH_UBNT_ROCKET_M,	/* Ubiquiti Rocket M */
 +	ATH79_MACH_UBNT_RSPRO,		/* Ubiquiti RouterStation Pro */
 +	ATH79_MACH_UBNT_RS,		/* Ubiquiti RouterStation */
  	ATH79_MACH_UBNT_UAP_PRO,	/* Ubiquiti UniFi AP Pro */
- 	ATH79_MACH_UBNT_UNIFI, 		/* Ubiquiti Unifi */
+-	ATH79_MACH_UBNT_UNIFI, 		/* Ubiquiti Unifi */
++	ATH79_MACH_UBNT_UNIFI,		/* Ubiquiti Unifi */
  	ATH79_MACH_UBNT_UNIFI_OUTDOOR,	/* Ubiquiti UnifiAP Outdoor */
  	ATH79_MACH_UBNT_XM,		/* Ubiquiti Networks XM board rev 1.0 */
 +	ATH79_MACH_WHR_G301N,		/* Buffalo WHR-G301N */
@@ -125,9 +130,11 @@
  };
  
  #endif /* _ATH79_MACHTYPE_H */
---- a/arch/mips/ath79/Kconfig
-+++ b/arch/mips/ath79/Kconfig
-@@ -2,6 +2,61 @@ if ATH79
+Index: linux-3.8.13/arch/mips/ath79/Kconfig
+===================================================================
+--- linux-3.8.13.orig/arch/mips/ath79/Kconfig	2013-07-11 21:39:45.340919744 +0200
++++ linux-3.8.13/arch/mips/ath79/Kconfig	2013-07-11 21:57:12.076944035 +0200
+@@ -2,6 +2,61 @@
  
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
  
@@ -189,10 +196,17 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -15,6 +70,18 @@ config ATH79_MACH_AP121
- 	  Say 'Y' here if you want your kernel to support the
- 	  Atheros AP121 reference board.
- 
+@@ -11,62 +66,654 @@
+ 	select ATH79_DEV_M25P80
+ 	select ATH79_DEV_USB
+ 	select ATH79_DEV_WMAC
+-	help
+-	  Say 'Y' here if you want your kernel to support the
+-	  Atheros AP121 reference board.
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  Atheros AP121 reference board.
++
 +config ATH79_MACH_AP132
 +	bool "Atheros AP132 reference board"
 +	select SOC_QCA955X
@@ -205,13 +219,32 @@
 +	  Say 'Y' here if you want your kernel to support the
 +	  Atheros AP132 reference boards.
 +
- config ATH79_MACH_AP136
- 	bool "Atheros AP136/AP135 reference board"
- 	select SOC_QCA955X
-@@ -41,6 +108,24 @@ config ATH79_MACH_AP81
- 	  Say 'Y' here if you want your kernel to support the
- 	  Atheros AP81 reference board.
- 
++config ATH79_MACH_AP136
++	bool "Atheros AP136/AP135 reference board"
++	select SOC_QCA955X
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_NFC
++	select ATH79_DEV_SPI
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  Atheros AP136 or AP135 reference boards.
++
++config ATH79_MACH_AP81
++	bool "Atheros AP81 reference board"
++	select SOC_AR913X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  Atheros AP81 reference board.
++
 +config ATH79_MACH_AP83
 +	bool "Atheros AP83 board support"
 +	select SOC_AR913X
@@ -230,13 +263,21 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +
- config ATH79_MACH_DB120
- 	bool "Atheros DB120 reference board"
- 	select SOC_AR934X
-@@ -56,6 +141,13 @@ config ATH79_MACH_DB120
- 	  Say 'Y' here if you want your kernel to support the
- 	  Atheros DB120 reference board.
- 
++config ATH79_MACH_DB120
++	bool "Atheros DB120 reference board"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_NFC
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  Atheros DB120 reference board.
++
 +config ATH79_MACH_PB42
 +	bool "Atheros PB42 board support"
 +	select SOC_AR71XX
@@ -244,13 +285,18 @@
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_M25P80
 +
- config ATH79_MACH_PB44
- 	bool "Atheros PB44 reference board"
- 	select SOC_AR71XX
-@@ -68,6 +160,561 @@ config ATH79_MACH_PB44
- 	  Say 'Y' here if you want your kernel to support the
- 	  Atheros PB44 reference board.
- 
++config ATH79_MACH_PB44
++	bool "Atheros PB44 reference board"
++	select SOC_AR71XX
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_SPI
++	select ATH79_DEV_USB
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  Atheros PB44 reference board.
++
 +config ATH79_MACH_PB92
 +	bool "Atheros PB92 board support"
 +	select SOC_AR724X
@@ -549,7 +595,9 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
-+
+ 
+-config ATH79_MACH_AP136
+-	bool "Atheros AP136/AP135 reference board"
 +config ATH79_MACH_MZK_W300NH
 +	bool "Planex MZK-W300NH board support"
 +	select SOC_AR913X
@@ -589,14 +637,20 @@
 +
 +config ATH79_MACH_ARCHER_C7
 +	bool "TP-LINK Archer C7 board support"
-+	select SOC_QCA955X
+ 	select SOC_QCA955X
 +	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_SPI
-+	select ATH79_DEV_USB
-+	select ATH79_DEV_WMAC
-+
+ 	select ATH79_DEV_GPIO_BUTTONS
+ 	select ATH79_DEV_LEDS_GPIO
+-	select ATH79_DEV_NFC
+ 	select ATH79_DEV_SPI
+ 	select ATH79_DEV_USB
+ 	select ATH79_DEV_WMAC
+-	help
+-	  Say 'Y' here if you want your kernel to support the
+-	  Atheros AP136 or AP135 reference boards.
+ 
+-config ATH79_MACH_AP81
+-	bool "Atheros AP81 reference board"
 +config ATH79_MACH_TL_MR11U
 +	bool "TP-LINK TL-MR11U/TL-MR3040 support"
 +	select SOC_AR933X
@@ -638,11 +692,11 @@
 +
 +config ATH79_MACH_TL_WA901ND_V2
 +	bool "TP-LINK TL-WA901ND v2 support"
-+	select SOC_AR913X
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_M25P80
+ 	select SOC_AR913X
+ 	select ATH79_DEV_ETH
+ 	select ATH79_DEV_GPIO_BUTTONS
+ 	select ATH79_DEV_LEDS_GPIO
+ 	select ATH79_DEV_M25P80
 +	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_TL_WDR3500
@@ -653,20 +707,31 @@
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
-+	select ATH79_DEV_USB
-+	select ATH79_DEV_WMAC
-+
+ 	select ATH79_DEV_USB
+ 	select ATH79_DEV_WMAC
+-	help
+-	  Say 'Y' here if you want your kernel to support the
+-	  Atheros AP81 reference board.
+ 
+-config ATH79_MACH_DB120
+-	bool "Atheros DB120 reference board"
 +config ATH79_MACH_TL_WDR4300
 +	bool "TP-LINK TL-WDR3600/4300/4310 board support"
-+	select SOC_AR934X
-+	select ATH79_DEV_AP9X_PCI if PCI
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_M25P80
-+	select ATH79_DEV_USB
-+	select ATH79_DEV_WMAC
-+
+ 	select SOC_AR934X
+ 	select ATH79_DEV_AP9X_PCI if PCI
+ 	select ATH79_DEV_ETH
+ 	select ATH79_DEV_GPIO_BUTTONS
+ 	select ATH79_DEV_LEDS_GPIO
+ 	select ATH79_DEV_M25P80
+-	select ATH79_DEV_NFC
+ 	select ATH79_DEV_USB
+ 	select ATH79_DEV_WMAC
+-	help
+-	  Say 'Y' here if you want your kernel to support the
+-	  Atheros DB120 reference board.
+ 
+-config ATH79_MACH_PB44
+-	bool "Atheros PB44 reference board"
 +config ATH79_MACH_TL_WR703N
 +	bool "TP-LINK TL-WR703N support"
 +	select SOC_AR933X
@@ -708,11 +773,12 @@
 +
 +config ATH79_MACH_TL_WR841N_V1
 +	bool "TP-LINK TL-WR841N v1 support"
-+	select SOC_AR71XX
+ 	select SOC_AR71XX
 +	select ATH79_DEV_DSA
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
+ 	select ATH79_DEV_ETH
+ 	select ATH79_DEV_GPIO_BUTTONS
+ 	select ATH79_DEV_LEDS_GPIO
+-	select ATH79_DEV_SPI
 +	select ATH79_DEV_M25P80
 +
 +config ATH79_MACH_TL_WR841N_V8
@@ -804,12 +870,14 @@
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
-+	select ATH79_DEV_USB
-+
+ 	select ATH79_DEV_USB
+-	help
+-	  Say 'Y' here if you want your kernel to support the
+-	  Atheros PB44 reference board.
+ 
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
- 	select SOC_AR724X
-@@ -83,6 +730,24 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +730,34 @@
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -831,10 +899,20 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_WMAC
 +
++config ATH79_MACH_CARAMBOLA2
++	bool "8devices Carambola2 board"
++	select SOC_AR933X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
  endmenu
  
  config SOC_AR71XX
-@@ -132,7 +797,10 @@ config ATH79_DEV_DSA
+@@ -132,7 +807,10 @@
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -846,7 +924,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -164,4 +832,7 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -164,4 +842,7 @@
  config ATH79_ROUTERBOOT
  	def_bool n
  
@@ -854,9 +932,11 @@
 +	def_bool n
 +
  endif
---- a/arch/mips/ath79/Makefile
-+++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,78 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+Index: linux-3.8.13/arch/mips/ath79/Makefile
+===================================================================
+--- linux-3.8.13.orig/arch/mips/ath79/Makefile	2013-07-11 21:39:45.288919744 +0200
++++ linux-3.8.13/arch/mips/ath79/Makefile	2013-07-11 22:02:13.884951040 +0200
+@@ -38,9 +38,79 @@
  #
  # Machines
  #
@@ -935,9 +1015,12 @@
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_AG300H)	+= mach-wzr-hp-ag300h.o
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
 +obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
---- a/arch/mips/ath79/prom.c
-+++ b/arch/mips/ath79/prom.c
-@@ -180,6 +180,11 @@ void __init prom_init(void)
++obj-$(CONFIG_ATH79_MACH_CARAMBOLA2)	+= mach-carambola2.o
+Index: linux-3.8.13/arch/mips/ath79/prom.c
+===================================================================
+--- linux-3.8.13.orig/arch/mips/ath79/prom.c	2013-07-11 21:39:45.212919741 +0200
++++ linux-3.8.13/arch/mips/ath79/prom.c	2013-07-11 21:39:45.344919744 +0200
+@@ -180,6 +180,11 @@
  			ath79_prom_append_cmdline("board", env);
  		}
  	}
