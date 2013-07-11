@@ -90,9 +90,9 @@ ${INIT_TRACE:+set -x}
 
 [ -n "$USE_PROCD" ] && {
 	. $IPKG_INSTROOT/lib/functions/procd.sh
-
+	basescript=$(readlink "$initscript")
 	rc_procd() {
-		procd_open_service "$(basename "$initscript")" "$initscript"
+		procd_open_service "$(basename ${basescript:-$initscript})" "$initscript"
 		"$@"
 		procd_close_service
 	}
@@ -102,7 +102,7 @@ ${INIT_TRACE:+set -x}
 	}
 
 	stop() {
-		procd_kill "$(basename "$initscript")" "$1"
+		procd_kill "$(basename ${basescript:-$initscript})" "$1"
 	}
 
 	reload() {
