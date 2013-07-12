@@ -1346,11 +1346,11 @@ define Build/Configure
 	cmp $(PKG_BUILD_DIR)/include/linux/ath9k_platform.h $(LINUX_DIR)/include/linux/ath9k_platform.h
 	cmp $(PKG_BUILD_DIR)/include/linux/ath5k_platform.h $(LINUX_DIR)/include/linux/ath5k_platform.h
 	cmp $(PKG_BUILD_DIR)/include/linux/rt2x00_platform.h $(LINUX_DIR)/include/linux/rt2x00_platform.h
-	$(SH_FUNC) var2file "$(call shvar,mac80211_config)" $(PKG_BUILD_DIR)/.config
-	$(MAKE) $(MAKE_OPTS) allnoconfig
 endef
 
 define Build/Compile
+	$(SH_FUNC) var2file "$(call shvar,mac80211_config)" $(PKG_BUILD_DIR)/.config
+	$(MAKE) $(MAKE_OPTS) allnoconfig
 	$(call Build/Compile/kmod)
 endef
 
