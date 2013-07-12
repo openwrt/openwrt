@@ -1,0 +1,24 @@
+From 5b9be5e1e3c368466e482c7dbb2cf6b890614b39 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 4 Jul 2013 22:37:13 +0200
+Subject: [PATCH 12/17] bcm53xx: register bcma bus
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/arm/boot/dts/bcm5301.dtsi |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm5301.dtsi
++++ b/arch/arm/boot/dts/bcm5301.dtsi
+@@ -67,6 +67,11 @@
+ 		      <0x19020100 0x100>;
+ 	};
+ 
++	bus@18000000 {
++		compatible = "brcm,bus-aix";
++		reg = <0x18000000 0x1000>;
++	};
++
+ 	timer@19020200 {
+ 		compatible = "arm,cortex-a9-global-timer";
+ 		reg = <0x19020200 0x100>;
