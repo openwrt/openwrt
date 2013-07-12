@@ -1,0 +1,21 @@
+From e2e1b185afd86a047e1f2db405c61ae4e43c0f29 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 4 Jul 2013 22:49:14 +0200
+Subject: [PATCH 14/17] bcma: return correct error code when bus can failed
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/main.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -218,7 +218,7 @@ int bcma_bus_register(struct bcma_bus *b
+ 	err = bcma_bus_scan(bus);
+ 	if (err) {
+ 		bcma_err(bus, "Failed to scan: %d\n", err);
+-		return -1;
++		return err;
+ 	}
+ 
+ 	/* Early init CC core */

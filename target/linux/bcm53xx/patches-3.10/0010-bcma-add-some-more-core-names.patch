@@ -1,0 +1,57 @@
+From 6fe4f63b017c3c0a7caa73d01fab23874ca0ed97 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 4 Jul 2013 22:29:48 +0200
+Subject: [PATCH 10/17] bcma: add some more core names
+
+These cores were found on a BCM4708 (chipid 53010), this is a ARM SoC
+with two Cortex A9 cores.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/scan.c       |   12 ++++++++++++
+ include/linux/bcma/bcma.h |   12 ++++++++++++
+ 2 files changed, 24 insertions(+)
+
+--- a/drivers/bcma/scan.c
++++ b/drivers/bcma/scan.c
+@@ -32,6 +32,18 @@ static const struct bcma_device_id_name
+ 	{ BCMA_CORE_4706_CHIPCOMMON, "BCM4706 ChipCommon" },
+ 	{ BCMA_CORE_4706_SOC_RAM, "BCM4706 SOC RAM" },
+ 	{ BCMA_CORE_4706_MAC_GBIT, "BCM4706 GBit MAC" },
++	{ BCMA_CORE_PCIEG2, "PCIe Gen 2" },
++	{ BCMA_CORE_DMA, "DMA" },
++	{ BCMA_CORE_SDIO3, "SDIO3" },
++	{ BCMA_CORE_USB20, "USB 2.0" },
++	{ BCMA_CORE_USB30, "USB 3.0" },
++	{ BCMA_CORE_A9JTAG, "ARM Cortex A9 JTAG" },
++	{ BCMA_CORE_DDR23, "Denali DDR2/DDR3 memory controller" },
++	{ BCMA_CORE_ROM, "ROM" },
++	{ BCMA_CORE_NAND, "NAND flash controller" },
++	{ BCMA_CORE_QSPI, "SPI flash controller" },
++	{ BCMA_CORE_CHIPCOMMON_B, "Chipcommon B" },
++	{ BCMA_CORE_ARMCA9, "ARM Cortex A9 core (ihost)" },
+ 	{ BCMA_CORE_AMEMC, "AMEMC (DDR)" },
+ 	{ BCMA_CORE_ALTA, "ALTA (I2S)" },
+ 	{ BCMA_CORE_INVALID, "Invalid" },
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -72,7 +72,19 @@ struct bcma_host_ops {
+ /* Core-ID values. */
+ #define BCMA_CORE_OOB_ROUTER		0x367	/* Out of band */
+ #define BCMA_CORE_4706_CHIPCOMMON	0x500
++#define BCMA_CORE_PCIEG2		0x501
++#define BCMA_CORE_DMA			0x502
++#define BCMA_CORE_SDIO3			0x503
++#define BCMA_CORE_USB20			0x504
++#define BCMA_CORE_USB30			0x505
++#define BCMA_CORE_A9JTAG		0x506
++#define BCMA_CORE_DDR23			0x507
++#define BCMA_CORE_ROM			0x508
++#define BCMA_CORE_NAND			0x509
++#define BCMA_CORE_QSPI			0x50A
++#define BCMA_CORE_CHIPCOMMON_B		0x50B		/* ChipcommonB core */
+ #define BCMA_CORE_4706_SOC_RAM		0x50E
++#define BCMA_CORE_ARMCA9		0x510
+ #define BCMA_CORE_4706_MAC_GBIT		0x52D
+ #define BCMA_CORE_AMEMC			0x52E	/* DDR1/2 memory controller core */
+ #define BCMA_CORE_ALTA			0x534	/* I2S core */

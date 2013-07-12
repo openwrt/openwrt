@@ -1,0 +1,99 @@
+From d16de2a4ffeaf62fb3d838365a29b80f330bffe0 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 4 Jul 2013 22:26:58 +0200
+Subject: [PATCH 09/17] bcma: register bcma as device tree driver
+
+This driver is used by the bcm53xx ARM SoC code.Now it is possible to
+give the address of the chipcommon core in device tree.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/host_soc.c |   73 +++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
+
+--- a/drivers/bcma/host_soc.c
++++ b/drivers/bcma/host_soc.c
+@@ -7,6 +7,9 @@
+ 
+ #include "bcma_private.h"
+ #include "scan.h"
++#include <linux/slab.h>
++#include <linux/module.h>
++#include <linux/of_address.h>
+ #include <linux/bcma/bcma.h>
+ #include <linux/bcma/bcma_soc.h>
+ 
+@@ -181,3 +184,73 @@ int __init bcma_host_soc_register(struct
+ 
+ 	return err;
+ }
++
++#ifdef CONFIG_OF
++static int bcma_host_soc_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct bcma_bus *bus;
++	int err;
++
++	/* Alloc */
++	bus = kzalloc(sizeof(*bus), GFP_KERNEL);
++	if (!bus)
++		return -ENOMEM;
++
++	/* Map MMIO */
++	err = -ENOMEM;
++	bus->mmio = of_iomap(np, 0);
++	if (!bus->mmio)
++		goto err_kfree_bus;
++
++	/* Host specific */
++	bus->hosttype = BCMA_HOSTTYPE_SOC;
++	bus->ops = &bcma_host_soc_ops;
++
++
++	/* Register */
++	err = bcma_bus_register(bus);
++	if (err)
++		goto err_unmap_mmio;
++
++	platform_set_drvdata(pdev, bus);
++
++	return err;
++
++err_unmap_mmio:
++	iounmap(bus->mmio);
++err_kfree_bus:
++	kfree(bus);
++	return err;
++}
++
++static int bcma_host_soc_remove(struct platform_device *pdev)
++{
++	struct bcma_bus *bus = platform_get_drvdata(pdev);
++
++	bcma_bus_unregister(bus);
++	iounmap(bus->mmio);
++	kfree(bus);
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++static const struct of_device_id bcma_host_soc_of_match[] = {
++	{ .compatible = "brcm,bus-aix", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, bcma_host_soc_of_match);
++
++static struct platform_driver bcma_host_soc_driver = {
++	.driver = {
++		.name = "bcma-host-soc",
++		.owner = THIS_MODULE,
++		.of_match_table = bcma_host_soc_of_match,
++	},
++	.probe		= bcma_host_soc_probe,
++	.remove		= bcma_host_soc_remove,
++};
++module_platform_driver(bcma_host_soc_driver);
++#endif /* CONFIG_OF */
