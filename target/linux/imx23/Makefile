@@ -12,7 +12,7 @@ BOARDNAME:=Freescale i.MX23 series
 FEATURES:=ext4 rtc usb gpio
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -fno-caller-saves
 MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
-LINUX_VERSION:=3.10
+LINUX_VERSION:=3.10.1
 KERNELNAME:="zImage dtbs"
 #DEPENDS:=+imx-bootlets
 
