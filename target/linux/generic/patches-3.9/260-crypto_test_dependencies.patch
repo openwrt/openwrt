@@ -17,7 +17,7 @@
  	tristate "Userspace cryptographic algorithm configuration"
 --- a/crypto/algboss.c
 +++ b/crypto/algboss.c
-@@ -247,6 +247,9 @@ static int cryptomgr_schedule_test(struc
+@@ -248,6 +248,9 @@ static int cryptomgr_schedule_test(struc
  	type = alg->cra_flags;
  
  	/* This piece of crap needs to disappear into per-type test hooks. */
@@ -27,7 +27,7 @@
  	if ((!((type ^ CRYPTO_ALG_TYPE_BLKCIPHER) &
  	       CRYPTO_ALG_TYPE_BLKCIPHER_MASK) && !(type & CRYPTO_ALG_GENIV) &&
  	     ((alg->cra_flags & CRYPTO_ALG_TYPE_MASK) ==
-@@ -255,6 +258,7 @@ static int cryptomgr_schedule_test(struc
+@@ -256,6 +259,7 @@ static int cryptomgr_schedule_test(struc
  	    (!((type ^ CRYPTO_ALG_TYPE_AEAD) & CRYPTO_ALG_TYPE_MASK) &&
  	     alg->cra_type == &crypto_nivaead_type && alg->cra_aead.ivsize))
  		type |= CRYPTO_ALG_TESTED;
