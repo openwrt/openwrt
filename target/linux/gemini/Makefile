@@ -13,7 +13,7 @@ FEATURES:=squashfs pci
 CFLAGS:=-Os -pipe -march=armv4 -mtune=fa526 -fno-caller-saves
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.9.8
+LINUX_VERSION:=3.9.10
 
 KERNELNAME:="zImage"
 
