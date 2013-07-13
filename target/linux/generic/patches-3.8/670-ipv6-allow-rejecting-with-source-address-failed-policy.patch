@@ -1,8 +1,6 @@
-Index: linux-3.8.13/include/net/netns/ipv6.h
-===================================================================
---- linux-3.8.13.orig/include/net/netns/ipv6.h	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/include/net/netns/ipv6.h	2013-06-10 14:14:20.898911309 +0200
-@@ -54,6 +54,7 @@
+--- a/include/net/netns/ipv6.h
++++ b/include/net/netns/ipv6.h
+@@ -54,6 +54,7 @@ struct netns_ipv6 {
  	unsigned long		 ip6_rt_last_gc;
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
  	struct rt6_info         *ip6_prohibit_entry;
@@ -10,11 +8,9 @@ Index: linux-3.8.13/include/net/netns/ipv6.h
  	struct rt6_info         *ip6_blk_hole_entry;
  	struct fib6_table       *fib6_local_tbl;
  	struct fib_rules_ops    *fib6_rules_ops;
-Index: linux-3.8.13/include/uapi/linux/fib_rules.h
-===================================================================
---- linux-3.8.13.orig/include/uapi/linux/fib_rules.h	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/include/uapi/linux/fib_rules.h	2013-06-10 14:14:20.898911309 +0200
-@@ -64,6 +64,10 @@
+--- a/include/uapi/linux/fib_rules.h
++++ b/include/uapi/linux/fib_rules.h
+@@ -64,6 +64,10 @@ enum {
  	FR_ACT_BLACKHOLE,	/* Drop without notification */
  	FR_ACT_UNREACHABLE,	/* Drop with ENETUNREACH */
  	FR_ACT_PROHIBIT,	/* Drop with EACCES */
@@ -25,11 +21,9 @@ Index: linux-3.8.13/include/uapi/linux/fib_rules.h
  	__FR_ACT_MAX,
  };
  
-Index: linux-3.8.13/include/uapi/linux/icmpv6.h
-===================================================================
---- linux-3.8.13.orig/include/uapi/linux/icmpv6.h	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/include/uapi/linux/icmpv6.h	2013-06-10 14:14:20.898911309 +0200
-@@ -115,6 +115,7 @@
+--- a/include/uapi/linux/icmpv6.h
++++ b/include/uapi/linux/icmpv6.h
+@@ -115,6 +115,7 @@ struct icmp6hdr {
  #define ICMPV6_NOT_NEIGHBOUR		2
  #define ICMPV6_ADDR_UNREACH		3
  #define ICMPV6_PORT_UNREACH		4
@@ -37,11 +31,9 @@ Index: linux-3.8.13/include/uapi/linux/icmpv6.h
  
  /*
   *	Codes for Time Exceeded
-Index: linux-3.8.13/include/uapi/linux/rtnetlink.h
-===================================================================
---- linux-3.8.13.orig/include/uapi/linux/rtnetlink.h	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/include/uapi/linux/rtnetlink.h	2013-06-10 14:14:20.898911309 +0200
-@@ -203,6 +203,7 @@
+--- a/include/uapi/linux/rtnetlink.h
++++ b/include/uapi/linux/rtnetlink.h
+@@ -203,6 +203,7 @@ enum {
  	RTN_THROW,		/* Not in this table		*/
  	RTN_NAT,		/* Translate this address	*/
  	RTN_XRESOLVE,		/* Use external resolver	*/
@@ -49,11 +41,9 @@ Index: linux-3.8.13/include/uapi/linux/rtnetlink.h
  	__RTN_MAX
  };
  
-Index: linux-3.8.13/net/ipv4/fib_rules.c
-===================================================================
---- linux-3.8.13.orig/net/ipv4/fib_rules.c	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/net/ipv4/fib_rules.c	2013-06-10 14:14:20.898911309 +0200
-@@ -84,6 +84,10 @@
+--- a/net/ipv4/fib_rules.c
++++ b/net/ipv4/fib_rules.c
+@@ -84,6 +84,10 @@ static int fib4_rule_action(struct fib_r
  		err = -EACCES;
  		goto errout;
  
@@ -64,11 +54,9 @@ Index: linux-3.8.13/net/ipv4/fib_rules.c
  	case FR_ACT_BLACKHOLE:
  	default:
  		err = -EINVAL;
-Index: linux-3.8.13/net/ipv4/fib_semantics.c
-===================================================================
---- linux-3.8.13.orig/net/ipv4/fib_semantics.c	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/net/ipv4/fib_semantics.c	2013-06-10 14:14:20.898911309 +0200
-@@ -138,6 +138,10 @@
+--- a/net/ipv4/fib_semantics.c
++++ b/net/ipv4/fib_semantics.c
+@@ -138,6 +138,10 @@ const struct fib_prop fib_props[RTN_MAX
  		.error	= -EINVAL,
  		.scope	= RT_SCOPE_NOWHERE,
  	},
@@ -79,11 +67,9 @@ Index: linux-3.8.13/net/ipv4/fib_semantics.c
  };
  
  static void rt_fibinfo_free(struct rtable __rcu **rtp)
-Index: linux-3.8.13/net/ipv4/fib_trie.c
-===================================================================
---- linux-3.8.13.orig/net/ipv4/fib_trie.c	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/net/ipv4/fib_trie.c	2013-06-10 14:14:20.902911309 +0200
-@@ -2350,6 +2350,7 @@
+--- a/net/ipv4/fib_trie.c
++++ b/net/ipv4/fib_trie.c
+@@ -2350,6 +2350,7 @@ static const char *const rtn_type_names[
  	[RTN_THROW] = "THROW",
  	[RTN_NAT] = "NAT",
  	[RTN_XRESOLVE] = "XRESOLVE",
@@ -91,11 +77,9 @@ Index: linux-3.8.13/net/ipv4/fib_trie.c
  };
  
  static inline const char *rtn_type(char *buf, size_t len, unsigned int t)
-Index: linux-3.8.13/net/ipv4/ipmr.c
-===================================================================
---- linux-3.8.13.orig/net/ipv4/ipmr.c	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/net/ipv4/ipmr.c	2013-06-10 14:14:20.902911309 +0200
-@@ -181,6 +181,7 @@
+--- a/net/ipv4/ipmr.c
++++ b/net/ipv4/ipmr.c
+@@ -181,6 +181,7 @@ static int ipmr_rule_action(struct fib_r
  	case FR_ACT_UNREACHABLE:
  		return -ENETUNREACH;
  	case FR_ACT_PROHIBIT:
@@ -103,11 +87,9 @@ Index: linux-3.8.13/net/ipv4/ipmr.c
  		return -EACCES;
  	case FR_ACT_BLACKHOLE:
  	default:
-Index: linux-3.8.13/net/ipv6/fib6_rules.c
-===================================================================
---- linux-3.8.13.orig/net/ipv6/fib6_rules.c	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/net/ipv6/fib6_rules.c	2013-06-10 14:14:20.902911309 +0200
-@@ -69,6 +69,9 @@
+--- a/net/ipv6/fib6_rules.c
++++ b/net/ipv6/fib6_rules.c
+@@ -69,6 +69,9 @@ static int fib6_rule_action(struct fib_r
  	case FR_ACT_PROHIBIT:
  		rt = net->ipv6.ip6_prohibit_entry;
  		goto discard_pkt;
@@ -117,11 +99,9 @@ Index: linux-3.8.13/net/ipv6/fib6_rules.c
  	}
  
  	table = fib6_get_table(net, rule->table);
-Index: linux-3.8.13/net/ipv6/ip6mr.c
-===================================================================
---- linux-3.8.13.orig/net/ipv6/ip6mr.c	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/net/ipv6/ip6mr.c	2013-06-10 14:14:20.902911309 +0200
-@@ -166,6 +166,8 @@
+--- a/net/ipv6/ip6mr.c
++++ b/net/ipv6/ip6mr.c
+@@ -166,6 +166,8 @@ static int ip6mr_rule_action(struct fib_
  		return -ENETUNREACH;
  	case FR_ACT_PROHIBIT:
  		return -EACCES;
@@ -130,11 +110,9 @@ Index: linux-3.8.13/net/ipv6/ip6mr.c
  	case FR_ACT_BLACKHOLE:
  	default:
  		return -EINVAL;
-Index: linux-3.8.13/net/ipv6/route.c
-===================================================================
---- linux-3.8.13.orig/net/ipv6/route.c	2013-06-10 14:14:20.910911309 +0200
-+++ linux-3.8.13/net/ipv6/route.c	2013-06-10 14:14:20.906911309 +0200
-@@ -258,6 +258,24 @@
+--- a/net/ipv6/route.c
++++ b/net/ipv6/route.c
+@@ -258,6 +258,24 @@ static const struct rt6_info ip6_prohibi
  	.rt6i_ref	= ATOMIC_INIT(1),
  };
  
@@ -159,7 +137,7 @@ Index: linux-3.8.13/net/ipv6/route.c
  static const struct rt6_info ip6_blk_hole_entry_template = {
  	.dst = {
  		.__refcnt	= ATOMIC_INIT(1),
-@@ -1516,6 +1534,9 @@
+@@ -1516,6 +1534,9 @@ int ip6_route_add(struct fib6_config *cf
  		case RTN_THROW:
  			rt->dst.error = -EAGAIN;
  			break;
@@ -169,7 +147,7 @@ Index: linux-3.8.13/net/ipv6/route.c
  		default:
  			rt->dst.error = -ENETUNREACH;
  			break;
-@@ -2110,6 +2131,17 @@
+@@ -2110,6 +2131,17 @@ static int ip6_pkt_prohibit_out(struct s
  	return ip6_pkt_drop(skb, ICMPV6_ADM_PROHIBITED, IPSTATS_MIB_OUTNOROUTES);
  }
  
@@ -187,7 +165,7 @@ Index: linux-3.8.13/net/ipv6/route.c
  #endif
  
  /*
-@@ -2321,7 +2353,8 @@
+@@ -2321,7 +2353,8 @@ static int rtm_to_fib6_config(struct sk_
  	if (rtm->rtm_type == RTN_UNREACHABLE ||
  	    rtm->rtm_type == RTN_BLACKHOLE ||
  	    rtm->rtm_type == RTN_PROHIBIT ||
@@ -197,7 +175,7 @@ Index: linux-3.8.13/net/ipv6/route.c
  		cfg->fc_flags |= RTF_REJECT;
  
  	if (rtm->rtm_type == RTN_LOCAL)
-@@ -2524,6 +2557,9 @@
+@@ -2524,6 +2557,9 @@ static int rt6_fill_node(struct net *net
  		case -EACCES:
  			rtm->rtm_type = RTN_PROHIBIT;
  			break;
@@ -207,7 +185,7 @@ Index: linux-3.8.13/net/ipv6/route.c
  		case -EAGAIN:
  			rtm->rtm_type = RTN_THROW;
  			break;
-@@ -2775,6 +2811,8 @@
+@@ -2775,6 +2811,8 @@ static int ip6_route_dev_notify(struct n
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
  		net->ipv6.ip6_prohibit_entry->dst.dev = dev;
  		net->ipv6.ip6_prohibit_entry->rt6i_idev = in6_dev_get(dev);
@@ -216,7 +194,7 @@ Index: linux-3.8.13/net/ipv6/route.c
  		net->ipv6.ip6_blk_hole_entry->dst.dev = dev;
  		net->ipv6.ip6_blk_hole_entry->rt6i_idev = in6_dev_get(dev);
  #endif
-@@ -3037,6 +3075,17 @@
+@@ -3037,6 +3075,17 @@ static int __net_init ip6_route_net_init
  	net->ipv6.ip6_blk_hole_entry->dst.ops = &net->ipv6.ip6_dst_ops;
  	dst_init_metrics(&net->ipv6.ip6_blk_hole_entry->dst,
  			 ip6_template_metrics, true);
@@ -234,7 +212,7 @@ Index: linux-3.8.13/net/ipv6/route.c
  #endif
  
  	net->ipv6.sysctl.flush_delay = 0;
-@@ -3055,6 +3104,8 @@
+@@ -3055,6 +3104,8 @@ out:
  	return ret;
  
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
@@ -243,7 +221,7 @@ Index: linux-3.8.13/net/ipv6/route.c
  out_ip6_prohibit_entry:
  	kfree(net->ipv6.ip6_prohibit_entry);
  out_ip6_null_entry:
-@@ -3072,6 +3123,7 @@
+@@ -3072,6 +3123,7 @@ static void __net_exit ip6_route_net_exi
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
  	kfree(net->ipv6.ip6_prohibit_entry);
  	kfree(net->ipv6.ip6_blk_hole_entry);
@@ -251,7 +229,7 @@ Index: linux-3.8.13/net/ipv6/route.c
  #endif
  	dst_entries_destroy(&net->ipv6.ip6_dst_ops);
  }
-@@ -3168,6 +3220,9 @@
+@@ -3168,6 +3220,9 @@ int __init ip6_route_init(void)
  	init_net.ipv6.ip6_prohibit_entry->rt6i_idev = in6_dev_get(init_net.loopback_dev);
  	init_net.ipv6.ip6_blk_hole_entry->dst.dev = init_net.loopback_dev;
  	init_net.ipv6.ip6_blk_hole_entry->rt6i_idev = in6_dev_get(init_net.loopback_dev);

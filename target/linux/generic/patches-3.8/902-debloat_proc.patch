@@ -227,7 +227,7 @@
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -2607,10 +2607,12 @@ static const struct file_operations fib_
+@@ -2608,10 +2608,12 @@ static const struct file_operations fib_
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -242,7 +242,7 @@
  				  &fib_triestat_fops))
  		goto out2;
  
-@@ -2629,8 +2631,10 @@ out1:
+@@ -2630,8 +2632,10 @@ out1:
  
  void __net_exit fib_proc_exit(struct net *net)
  {
