@@ -10,19 +10,23 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 88 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/ralink/ill_acc.c
 
---- a/arch/mips/ralink/Makefile
-+++ b/arch/mips/ralink/Makefile
-@@ -6,7 +6,7 @@
- # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
- # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
+Index: linux-3.9.10/arch/mips/ralink/Makefile
+===================================================================
+--- linux-3.9.10.orig/arch/mips/ralink/Makefile	2013-07-14 10:54:04.242545881 +0200
++++ linux-3.9.10/arch/mips/ralink/Makefile	2013-07-14 11:42:58.726615805 +0200
+@@ -8,6 +8,8 @@
  
--obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o timer.o
-+obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o timer.o ill_acc.o
+ obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o timer.o
  
++obj-$(CONFIG_RALINK_ILL_ACC) += ill_acc.o
++
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
---- /dev/null
-+++ b/arch/mips/ralink/ill_acc.c
+ obj-$(CONFIG_SOC_RT3883) += rt3883.o
+Index: linux-3.9.10/arch/mips/ralink/ill_acc.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.9.10/arch/mips/ralink/ill_acc.c	2013-07-14 10:54:04.318545882 +0200
 @@ -0,0 +1,87 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
