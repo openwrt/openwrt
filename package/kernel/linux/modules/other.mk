@@ -640,7 +640,7 @@ define KernelPackage/pps
   TITLE:=PPS support
   KCONFIG:=CONFIG_PPS
   FILES:=$(LINUX_DIR)/drivers/pps/pps_core.ko
-  AUTOLOAD:=$(call AutoLoad,20,pps_core)
+  AUTOLOAD:=$(call AutoLoad,17,pps_core,1)
 endef
 
 define KernelPacakge/pps/description
@@ -658,7 +658,7 @@ define KernelPackage/ptp
   DEPENDS:=+kmod-pps
   KCONFIG:=CONFIG_PTP_1588_CLOCK
   FILES:=$(LINUX_DIR)/drivers/ptp/ptp.ko
-  AUTOLOAD:=$(call AutoLoad,25,ptp)
+  AUTOLOAD:=$(call AutoLoad,18,ptp,1)
 endef
 
 define KernelPacakge/ptp/description

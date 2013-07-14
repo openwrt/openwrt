@@ -18,6 +18,11 @@ define KernelPackage/diag
   DEPENDS:=@TARGET_brcm47xx
   TITLE:=Driver for router LEDs and Buttons
   FILES:=$(PKG_BUILD_DIR)/diag.ko
+  AUTOLOAD:=$(call AutoLoad,5,diag,1)
+endef
+
+define KernelPackage/diag/description
+ Kernel modules for Broadcom LED and Button driver
 endef
 
 define Build/Prepare

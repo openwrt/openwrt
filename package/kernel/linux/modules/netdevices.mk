@@ -422,7 +422,7 @@ define KernelPackage/b44
   DEPENDS:=@PCI_SUPPORT +!TARGET_brcm47xx:kmod-ssb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/b44.ko
-  AUTOLOAD:=$(call AutoLoad,50,b44)
+  AUTOLOAD:=$(call AutoLoad,19,b44,1)
 endef
 
 define KernelPackage/b44/description
@@ -476,7 +476,7 @@ define KernelPackage/tg3
   DEPENDS:=+!TARGET_brcm47xx:kmod-libphy +!LINUX_3_3:kmod-hwmon-core +(LINUX_3_8||LINUX_3_9||LINUX_3_10):kmod-ptp
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/tg3.ko
-  AUTOLOAD:=$(call AutoLoad,50,tg3)
+  AUTOLOAD:=$(call AutoLoad,19,tg3,1)
 endef
 
 define KernelPackage/tg3/description
