@@ -1109,7 +1109,7 @@ static struct platform_t __initdata platforms[] = {
 
 static struct platform_t __init *platform_detect_legacy(void)
 {
-	char *boardnum, *boardtype, *buf;
+	char *boardnum, *boardtype;
 
 	if (strcmp(getvar("nvram_type"), "cfe") == 0)
 		return &platforms[WGT634U];
@@ -1232,7 +1232,7 @@ static struct platform_t __init *platform_detect_legacy(void)
 		}
 	}
 
-	if (buf || !strcmp(boardnum, "00")) {/* probably buffalo */
+	if (boardnum || !strcmp(boardnum, "00")) {/* probably buffalo */
 		if (startswith(boardtype, "bcm94710ap"))
 			return &platforms[BUFFALO_UNKNOWN_4710];
 		else
