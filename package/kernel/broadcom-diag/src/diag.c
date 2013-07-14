@@ -44,6 +44,21 @@ static int fill_event(struct event_t *);
 static unsigned int gpiomask = 0;
 module_param(gpiomask, int, 0644);
 
+extern char *nvram_get(char *str);
+
+static void register_leds(struct led_t *l);
+static void unregister_leds(struct led_t *l);
+static void led_flash(unsigned long dummy);
+
+static struct platform_t platform;
+
+static struct timer_list led_timer = TIMER_INITIALIZER(&led_flash, 0, 0);
+
+static struct proc_dir_entry *diag, *leds;
+
+static struct prochandler_t proc_model = { .type = PROC_MODEL };
+static struct prochandler_t proc_gpiomask = { .type = PROC_GPIOMASK };
+
 enum {
 	/* Linksys */
 	WAP54GV1,
@@ -1381,6 +1396,55 @@ static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 	}
 }
 
+static void hotplug_button(struct work_struct *work)
+{
+	struct event_t *event = container_of(work, struct event_t, wq);
+	char *s;
+
+	event->skb = alloc_skb(2048, GFP_KERNEL);
+
+	s = skb_put(event->skb, strlen(event->action) + 2);
+	sprintf(s, "%s@", event->action);
+	fill_event(event);
+
+	NETLINK_CB(event->skb).dst_group = 1;
+	broadcast_uevent(event->skb, 0, 1, GFP_KERNEL);
+
+	kfree(event);
+}
+
+static irqreturn_t button_handler(int irq, void *dev_id)
+{
+	struct button_t *b;
+	u32 in, changed;
+
+	in = bcm47xx_gpio_in(~0) & platform.button_mask;
+	bcm47xx_gpio_polarity(platform.button_mask, in);
+	changed = platform.button_polarity ^ in;
+	platform.button_polarity = in;
+
+	changed &= ~bcm47xx_gpio_outen(0, 0);
+
+	for (b = platform.buttons; b->name; b++) {
+		struct event_t *event;
+
+		if (!(b->gpio & changed)) continue;
+
+		b->pressed ^= 1;
+
+		if ((event = (struct event_t *)kzalloc (sizeof(struct event_t), GFP_ATOMIC))) {
+			event->seen = (jiffies - b->seen)/HZ;
+			event->name = b->name;
+			event->action = b->pressed ? "pressed" : "released";
+			INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
+			schedule_work(&event->wq);
+		}
+
+		b->seen = jiffies;
+	}
+	return IRQ_HANDLED;
+}
+
 static void register_buttons(struct button_t *b)
 {
 	for (; b->name; b++)
@@ -1416,24 +1480,6 @@ static void add_msg(struct event_t *event, char *msg, int argv)
 	strcpy(s, msg);
 }
 
-static void hotplug_button(struct work_struct *work)
-{
-	struct event_t *event = container_of(work, struct event_t, wq);
-	char *s;
-
-	event->skb = alloc_skb(2048, GFP_KERNEL);
-
-	s = skb_put(event->skb, strlen(event->action) + 2);
-	sprintf(s, "%s@", event->action);
-	fill_event(event);
-
-	NETLINK_CB(event->skb).dst_group = 1;
-	broadcast_uevent(event->skb, 0, 1, GFP_KERNEL);
-
-	kfree(event);
-}
-
-
 static int fill_event (struct event_t *event)
 {
 	static char buf[128];
@@ -1451,106 +1497,6 @@ static int fill_event (struct event_t *event)
 	add_msg(event, buf, 0);
 
 	return 0;
-}
-
-
-static irqreturn_t button_handler(int irq, void *dev_id)
-{
-	struct button_t *b;
-	u32 in, changed;
-
-	in = bcm47xx_gpio_in(~0) & platform.button_mask;
-	bcm47xx_gpio_polarity(platform.button_mask, in);
-	changed = platform.button_polarity ^ in;
-	platform.button_polarity = in;
-
-	changed &= ~bcm47xx_gpio_outen(0, 0);
-
-	for (b = platform.buttons; b->name; b++) {
-		struct event_t *event;
-
-		if (!(b->gpio & changed)) continue;
-
-		b->pressed ^= 1;
-
-		if ((event = (struct event_t *)kzalloc (sizeof(struct event_t), GFP_ATOMIC))) {
-			event->seen = (jiffies - b->seen)/HZ;
-			event->name = b->name;
-			event->action = b->pressed ? "pressed" : "released";
-			INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
-			schedule_work(&event->wq);
-		}
-
-		b->seen = jiffies;
-	}
-	return IRQ_HANDLED;
-}
-
-static void register_leds(struct led_t *l)
-{
-	struct proc_dir_entry *p;
-	u32 mask = 0;
-	u32 oe_mask = 0;
-	u32 val = 0;
-
-	leds = proc_mkdir("led", diag);
-	if (!leds)
-		return;
-
-	for(; l->name; l++) {
-		if (l->gpio & gpiomask)
-			continue;
-
-		switch (l->gpio & GPIO_TYPE_MASK) {
-		case GPIO_TYPE_EXTIF:
-			l->state = 0;
-			set_led_extif(l);
-			break;
-		case GPIO_TYPE_SHIFT:
-			mask |= (SHIFTREG_DATA | SHIFTREG_CLK);
-			oe_mask |= (SHIFTREG_DATA | SHIFTREG_CLK);
-			l->state = (l->polarity != NORMAL);
-			set_led_shift(l);
-			break;
-		case GPIO_TYPE_NORMAL:
-		default:
-			if (l->polarity != INPUT) oe_mask |= l->gpio;
-			mask |= l->gpio;
-			val |= (l->polarity == NORMAL)?0:l->gpio;
-			break;
-		}
-
-		if (l->polarity == INPUT) continue;
-
-		if ((p = create_proc_entry(l->name, S_IRUSR, leds))) {
-			l->proc.type = PROC_LED;
-			l->proc.ptr = l;
-			p->data = (void *) &l->proc;
-			p->proc_fops = &diag_proc_fops;
-		}
-	}
-
-	bcm47xx_gpio_outen(mask, oe_mask);
-	bcm47xx_gpio_control(mask, 0);
-	bcm47xx_gpio_out(mask, val);
-	bcm47xx_gpio_intmask(mask, 0);
-}
-
-static void unregister_leds(struct led_t *l)
-{
-	for(; l->name; l++)
-		remove_proc_entry(l->name, leds);
-
-	remove_proc_entry("led", diag);
-}
-
-static void set_led_extif(struct led_t *led)
-{
-	volatile u8 *addr = (volatile u8 *) KSEG1ADDR(EXTIF_UART) + (led->gpio & ~GPIO_TYPE_MASK);
-	if (led->state)
-		*addr = 0xFF;
-	else
-		*addr;
 }
 
 /*
@@ -1590,6 +1536,15 @@ static void set_led_shift(struct led_t *led)
 	if (shiftreg != old) {
 		shiftreg_output(shiftreg);
 	}
+}
+
+static void set_led_extif(struct led_t *led)
+{
+	volatile u8 *addr = (volatile u8 *) KSEG1ADDR(EXTIF_UART) + (led->gpio & ~GPIO_TYPE_MASK);
+	if (led->state)
+		*addr = 0xFF;
+	else
+		*addr;
 }
 
 
@@ -1742,6 +1697,69 @@ static ssize_t diag_proc_write(struct file *file, const char *buf, size_t count,
 
 	kfree(page);
 	return ret;
+}
+
+static struct file_operations diag_proc_fops = {
+	read: diag_proc_read,
+	write: diag_proc_write
+};
+
+static void register_leds(struct led_t *l)
+{
+	struct proc_dir_entry *p;
+	u32 mask = 0;
+	u32 oe_mask = 0;
+	u32 val = 0;
+
+	leds = proc_mkdir("led", diag);
+	if (!leds)
+		return;
+
+	for(; l->name; l++) {
+		if (l->gpio & gpiomask)
+			continue;
+
+		switch (l->gpio & GPIO_TYPE_MASK) {
+		case GPIO_TYPE_EXTIF:
+			l->state = 0;
+			set_led_extif(l);
+			break;
+		case GPIO_TYPE_SHIFT:
+			mask |= (SHIFTREG_DATA | SHIFTREG_CLK);
+			oe_mask |= (SHIFTREG_DATA | SHIFTREG_CLK);
+			l->state = (l->polarity != NORMAL);
+			set_led_shift(l);
+			break;
+		case GPIO_TYPE_NORMAL:
+		default:
+			if (l->polarity != INPUT) oe_mask |= l->gpio;
+			mask |= l->gpio;
+			val |= (l->polarity == NORMAL)?0:l->gpio;
+			break;
+		}
+
+		if (l->polarity == INPUT) continue;
+
+		if ((p = create_proc_entry(l->name, S_IRUSR, leds))) {
+			l->proc.type = PROC_LED;
+			l->proc.ptr = l;
+			p->data = (void *) &l->proc;
+			p->proc_fops = &diag_proc_fops;
+		}
+	}
+
+	bcm47xx_gpio_outen(mask, oe_mask);
+	bcm47xx_gpio_control(mask, 0);
+	bcm47xx_gpio_out(mask, val);
+	bcm47xx_gpio_intmask(mask, 0);
+}
+
+static void unregister_leds(struct led_t *l)
+{
+	for(; l->name; l++)
+		remove_proc_entry(l->name, leds);
+
+	remove_proc_entry("led", diag);
 }
 
 static int __init diag_init(void)
