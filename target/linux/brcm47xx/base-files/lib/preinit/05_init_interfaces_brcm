@@ -11,7 +11,17 @@ set_preinit_iface() {
 		"ASUS (unknown, BCM4702)") ifname=eth1;;
 		"Sitecom WL-105b") ifname=eth1;;
 	esac
+
+	# The interface has to be up to configure the switch
 	ifconfig $ifname 0.0.0.0 up
+	[ -f /lib/modules/`uname -r`/switch-robo.ko ] && {
+		rmmod switch-robo
+		insmod switch-robo
+	}
+	[ -f /lib/modules/`uname -r`/switch-adm.ko ] && {
+		rmmod switch-adm
+		insmod switch-adm
+	}
 }
 
 init_iface() {
