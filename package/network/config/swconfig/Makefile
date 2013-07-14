@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/kernel.mk
 define Package/swconfig
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@!TARGET_brcm47xx +libuci +libnl-tiny
+  DEPENDS:=!@LINUX_3_10:TARGET_brcm47xx +libuci +libnl-tiny
   TITLE:=Switch configuration utility
 endef
 
