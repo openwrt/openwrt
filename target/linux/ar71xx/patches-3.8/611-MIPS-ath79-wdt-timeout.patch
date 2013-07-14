@@ -1,0 +1,27 @@
+MIPS: ath79: fix maximum timeout
+
+If the userland tries to set a timeout higher than the max_timeout, then we should fallback to max_timeout.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+
+Index: linux-3.8.13/drivers/watchdog/ath79_wdt.c
+===================================================================
+--- linux-3.8.13.orig/drivers/watchdog/ath79_wdt.c	2013-07-14 14:10:19.198826462 +0200
++++ linux-3.8.13/drivers/watchdog/ath79_wdt.c	2013-07-14 14:25:40.810848422 +0200
+@@ -103,10 +103,14 @@
+ 
+ static int ath79_wdt_set_timeout(int val)
+ {
+-	if (val < 1 || val > max_timeout)
++	if (val < 1)
+ 		return -EINVAL;
+ 
+-	timeout = val;
++	if (val > max_timeout)
++		timeout = max_timeout;
++	else
++		timeout = val;
++
+ 	ath79_wdt_keepalive();
+ 
+ 	return 0;
