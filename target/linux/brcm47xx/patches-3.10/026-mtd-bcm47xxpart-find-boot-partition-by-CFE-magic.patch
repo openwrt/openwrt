@@ -1,0 +1,26 @@
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -23,9 +23,10 @@
+  * Amount of bytes we read when analyzing each block of flash memory.
+  * Set it big enough to allow detecting partition and reading important data.
+  */
+-#define BCM47XXPART_BYTES_TO_READ	0x404
++#define BCM47XXPART_BYTES_TO_READ	0x4e8
+ 
+ /* Magics */
++#define CFE_MAGIC			0x43464531	/* 1EFC */
+ #define BOARD_DATA_MAGIC		0x5246504D	/* MPFR */
+ #define POT_MAGIC1			0x54544f50	/* POTT */
+ #define POT_MAGIC2			0x504f		/* OP */
+@@ -93,8 +94,9 @@ static int bcm47xxpart_parse(struct mtd_
+ 			continue;
+ 		}
+ 
+-		/* CFE has small NVRAM at 0x400 */
+-		if (buf[0x400 / 4] == NVRAM_HEADER) {
++		/* Magic or small NVRAM at 0x400 */
++		if (buf[0x4e0 / 4] == CFE_MAGIC ||
++		    buf[0x400 / 4] == NVRAM_HEADER) {
+ 			bcm47xxpart_add_part(&parts[curr_part++], "boot",
+ 					     offset, MTD_WRITEABLE);
+ 			continue;
