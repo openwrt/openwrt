@@ -161,10 +161,10 @@ carambola2_mtdlayout_16M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,15936k
 ap132_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1408k(kernel),6400k(rootfs),64k(art),7808k@0x50000(firmware)
 ap135_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14528k(rootfs),1472k(kernel),64k(art)ro,16000k@0x50000(firmware)
 ap136_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(mib0),64k(art)ro,7744k@0x50000(firmware)
-cameo7240_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,1024k(kernel),2688k(rootfs),64k(mac)ro,64k(art)ro,3712k@0x40000(firmware)
-cameo913x_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,1024k(kernel),2752k(rootfs),64k(art)ro,3840k@0x30000(firmware)
-cameo933x_mtdlayout=mtdparts=spi0.0:64k(u-boot)ro,64k(art)ro,64k(mac)ro,64k(nvram)ro,192k(language)ro,1024k(kernel),2624k(rootfs),3648k@0x70000(firmware)
-cameo934x_mtdlayout=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,1280k(kernel),14656k(rootfs),192k(lang)ro,64k(mac)ro,64k(art)ro,15936k@0x20000(firmware)
+cameo7240_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,3712k(firmware),64k(mac)ro,64k(art)ro
+cameo913x_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,3840k(firmware),64k(art)ro
+cameo933x_mtdlayout=mtdparts=spi0.0:64k(u-boot)ro,64k(art)ro,64k(mac)ro,64k(nvram)ro,192k(language)ro,3648k(firmware)
+cameo934x_mtdlayout=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,15936k(firmware),192k(lang)ro,64k(mac)ro,64k(art)ro
 cap4200ag_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe),64k(art),13632k@0xa0000(firmware)
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,6208k(firmware),64k(caldata)ro,1600k(unknown)ro,64k@0x7f0000(caldata_copy)
@@ -356,7 +356,7 @@ define Image/Build/CameoHornet
 			[ -n "$$$$r" ] && dashr="-$$$$r" || dashr=; \
 			[ -z "$$$$r" ] && r="DEF"; \
 			mkcameofw -M HORNET -R "$$$$r" -S $(7) -V $(8) -c \
-				-K 0xe0000 -I $$$$(($(5)+$(6))) \
+				-K 0xe0000 -I $(10) \
 				-k "$(call sysupname,$(1),$(2))" \
 				-o $(call imgname,$(1),$(2))-factory$$$$dashr.bin; \
 		done; \
@@ -364,7 +364,7 @@ define Image/Build/CameoHornet
 endef
 
 define Image/Build/Cameo913x
-	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo913x_mtdlayout),1048576,2883584,$(4))
+	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo913x_mtdlayout),65536,2883584,$(4))
 endef
 
 define Image/Build/Cameo913x/initramfs
@@ -372,7 +372,7 @@ define Image/Build/Cameo913x/initramfs
 endef
 
 define Image/Build/Cameo7240
-	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo7240_mtdlayout),1048576,2752512,$(4))
+	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo7240_mtdlayout),65536,2752512,$(4))
 endef
 
 define Image/Build/Cameo7240/initramfs
@@ -380,7 +380,7 @@ define Image/Build/Cameo7240/initramfs
 endef
 
 define Image/Build/Cameo933x
-	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),1048576,2686976,$(4),$(5),$(6))
+	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),65536,2686976,$(4),$(5),$(6),3735552)
 endef
 
 define Image/Build/Cameo933x/initramfs
@@ -388,7 +388,7 @@ define Image/Build/Cameo933x/initramfs
 endef
 
 define Image/Build/Cameo934x
-	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo934x_mtdlayout),1310720,15007718,$(4))
+	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo934x_mtdlayout),65536,15007718,$(4))
 endef
 
 define Image/Build/Cameo934x/initramfs
