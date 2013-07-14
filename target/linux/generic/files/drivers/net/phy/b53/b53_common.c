@@ -1155,8 +1155,13 @@ int b53_switch_init(struct b53_device *dev)
 			dev->enabled_ports &= ~BIT(4);
 			break;
 		default:
+/* On the BCM47XX SoCs this is the supported internal switch.*/
+#ifndef CONFIG_BCM47XX
 			/* BCM5325M */
 			return -EINVAL;
+#else
+			break;
+#endif
 		}
 	} else if (dev->chip_id == BCM53115_DEVICE_ID) {
 		u64 strap_value;

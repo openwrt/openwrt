@@ -140,7 +140,7 @@ start() {
 		if (model == "Dell TrueMobile 2300") {
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
-			c["vlan1ports"] = "0 1 2 3 4 5u"
+			c["vlan1ports"] = "0 1 2 3 4 5"
 			c["vlan2ports"] = ""
 		}
 		if (nvram["boardtype"] == "bcm94710r4") {
@@ -159,7 +159,7 @@ start() {
 				c["vlan2ports"] = "0 5t"
 			} else {
 				# Generic BCM94704
-				c["vlan1ports"] = "0 1 2 3 4 5u"
+				c["vlan1ports"] = "0 1 2 3 4 5"
 				c["vlan2ports"] = ""
 				c["lan_ifname"] = "eth0"
 				c["wan_ifname"] = "eth1"
@@ -173,7 +173,7 @@ start() {
 		}
 		# Buffalo WBR-B11 and Buffalo WBR-G54
 		if (nvram["boardtype"] == "bcm94710ap") {
-			c["vlan1ports"] = "0 1 2 3 4 5u"
+			c["vlan1ports"] = "0 1 2 3 4 5"
 			c["vlan2ports"] = ""
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
@@ -210,7 +210,7 @@ start() {
 		if (model == "ASUS WL-500W") {
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
-			c["vlan1ports"] = "0 1 2 3 4 5u"
+			c["vlan1ports"] = "0 1 2 3 4 5"
 			c["vlan2ports"] = ""
 		}
 		if (model == "OvisLink WL-1600GL") {
