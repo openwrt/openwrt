@@ -35,7 +35,7 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -613,6 +615,144 @@ int mtd_del_partition(struct mtd_info *m
+@@ -613,6 +615,92 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -123,64 +123,12 @@
 +
 +	return 0;
 +}
-+
-+static int refresh_rootfs_split(struct mtd_info *mtd)
-+{
-+	struct mtd_partition tpart;
-+	struct mtd_part *part;
-+	char *name;
-+	//int index = 0;
-+	int offset, size;
-+	int ret;
-+
-+	part = PART(mtd);
-+
-+	/* check for the new squashfs offset first */
-+	ret = split_squashfs(part->master, part->offset, &offset);
-+	if (ret)
-+		return ret;
-+
-+	if ((offset > 0) && !mtd->split) {
-+		printk(KERN_INFO "%s: creating new split partition for \"%s\"\n", __func__, mtd->name);
-+		/* if we don't have a rootfs split partition, create a new one */
-+		tpart.name = (char *) mtd->name;
-+		tpart.size = mtd->size;
-+		tpart.offset = part->offset;
-+
-+		return split_rootfs_data(part->master, &part->mtd, &tpart);
-+	} else if ((offset > 0) && mtd->split) {
-+		/* update the offsets of the existing partition */
-+		size = mtd->size + part->offset - offset;
-+
-+		part = PART(mtd->split);
-+		part->offset = offset;
-+		part->mtd.size = size;
-+		printk(KERN_INFO "%s: %s partition \"" ROOTFS_SPLIT_NAME "\", offset: 0x%06x (0x%06x)\n",
-+			__func__, (!strcmp(part->mtd.name, ROOTFS_SPLIT_NAME) ? "updating" : "creating"),
-+			(u32) part->offset, (u32) part->mtd.size);
-+		name = kmalloc(sizeof(ROOTFS_SPLIT_NAME) + 1, GFP_KERNEL);
-+		strcpy(name, ROOTFS_SPLIT_NAME);
-+		part->mtd.name = name;
-+	} else if ((offset <= 0) && mtd->split) {
-+		printk(KERN_INFO "%s: removing partition \"%s\"\n", __func__, mtd->split->name);
-+
-+		/* mark existing partition as removed */
-+		part = PART(mtd->split);
-+		name = kmalloc(sizeof(ROOTFS_SPLIT_NAME) + 1, GFP_KERNEL);
-+		strcpy(name, ROOTFS_REMOVED_NAME);
-+		part->mtd.name = name;
-+		part->offset = 0;
-+		part->mtd.size = 0;
-+	}
-+
-+	return 0;
-+}
 +#endif /* CONFIG_MTD_ROOTFS_SPLIT */
 +
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -629,6 +769,9 @@ int add_mtd_partitions(struct mtd_info *
+@@ -629,6 +717,9 @@ int add_mtd_partitions(struct mtd_info *
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
  	int i;
@@ -190,7 +138,7 @@
  
  	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
  
-@@ -643,12 +786,53 @@ int add_mtd_partitions(struct mtd_info *
+@@ -643,6 +734,21 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
@@ -212,53 +160,6 @@
  		cur_offset = slave->offset + slave->mtd.size;
  	}
  
- 	return 0;
- }
- 
-+int mtd_device_refresh(struct mtd_info *mtd)
-+{
-+	int ret = 0;
-+
-+	if (IS_PART(mtd)) {
-+		struct mtd_part *part;
-+		struct mtd_info *master;
-+
-+		part = PART(mtd);
-+		master = part->master;
-+		if (master->refresh_device)
-+			ret = master->refresh_device(master);
-+	}
-+
-+	if (!ret && mtd->refresh_device)
-+		ret = mtd->refresh_device(mtd);
-+
-+#ifdef CONFIG_MTD_ROOTFS_SPLIT
-+	if (!ret && IS_PART(mtd) && !strcmp(mtd->name, "rootfs"))
-+		refresh_rootfs_split(mtd);
-+#endif
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(mtd_device_refresh);
-+
- static DEFINE_SPINLOCK(part_parser_lock);
- static LIST_HEAD(part_parsers);
- 
---- a/drivers/mtd/mtdchar.c
-+++ b/drivers/mtd/mtdchar.c
-@@ -1010,6 +1010,12 @@ static int mtdchar_ioctl(struct file *fi
- 		break;
- 	}
- 
-+	case MTDREFRESH:
-+	{
-+		ret = mtd_device_refresh(mtd);
-+		break;
-+	}
-+
- 	default:
- 		ret = -ENOTTY;
- 	}
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
 @@ -114,6 +114,7 @@ struct nand_ecclayout {
@@ -269,48 +170,12 @@
  struct mtd_info {
  	u_char type;
  	uint32_t flags;
-@@ -226,6 +227,9 @@ struct mtd_info {
+@@ -226,6 +227,8 @@ struct mtd_info {
  	int (*_block_markbad) (struct mtd_info *mtd, loff_t ofs);
  	int (*_suspend) (struct mtd_info *mtd);
  	void (*_resume) (struct mtd_info *mtd);
-+	int (*refresh_device)(struct mtd_info *mtd);
 +	struct mtd_info *split;
 +
  	/*
  	 * If the driver is something smart, like UBI, it may need to maintain
  	 * its own reference counting. The below functions are only for driver.
-@@ -368,6 +372,7 @@ extern int mtd_device_parse_register(str
- 				     int defnr_parts);
- #define mtd_device_register(master, parts, nr_parts)	\
- 	mtd_device_parse_register(master, NULL, NULL, parts, nr_parts)
-+extern int mtd_device_refresh(struct mtd_info *master);
- extern int mtd_device_unregister(struct mtd_info *master);
- extern struct mtd_info *get_mtd_device(struct mtd_info *mtd, int num);
- extern int __get_mtd_device(struct mtd_info *mtd);
---- a/include/linux/mtd/partitions.h
-+++ b/include/linux/mtd/partitions.h
-@@ -36,12 +36,14 @@
-  * erasesize aligned (e.g. use MTDPART_OFS_NEXTBLK).
-  */
- 
-+struct mtd_partition;
- struct mtd_partition {
- 	char *name;			/* identifier string */
- 	uint64_t size;			/* partition size */
- 	uint64_t offset;		/* offset within the master MTD space */
- 	uint32_t mask_flags;		/* master MTD flags to mask out for this partition */
- 	struct nand_ecclayout *ecclayout;	/* out of band layout for this partition (NAND only) */
-+	int (*refresh_partition)(struct mtd_info *);
- };
- 
- #define MTDPART_OFS_RETAIN	(-3)
---- a/include/uapi/mtd/mtd-abi.h
-+++ b/include/uapi/mtd/mtd-abi.h
-@@ -202,6 +202,7 @@ struct otp_info {
-  * without OOB, e.g., NOR flash.
-  */
- #define MEMWRITE		_IOWR('M', 24, struct mtd_write_req)
-+#define MTDREFRESH		_IO('M', 50)
- 
- /*
-  * Obsolete legacy interface. Keep it in order not to break userspace

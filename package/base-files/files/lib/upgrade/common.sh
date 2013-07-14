@@ -175,10 +175,6 @@ get_magic_long() {
 	get_image "$@" | dd bs=4 count=1 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
-refresh_mtd_partitions() {
-	mtd refresh rootfs
-}
-
 jffs2_copy_config() {
 	if grep rootfs_data /proc/mtd >/dev/null; then
 		# squashfs+jffs2
@@ -191,7 +187,7 @@ jffs2_copy_config() {
 
 default_do_upgrade() {
 	sync
-	if [ "$SAVE_CONFIG" -eq 1 -a -z "$USE_REFRESH" ]; then
+	if [ "$SAVE_CONFIG" -eq 1 ]; then
 		get_image "$1" | mtd -j "$CONF_TAR" write - "${PART_NAME:-image}"
 	else
 		get_image "$1" | mtd write - "${PART_NAME:-image}"
@@ -206,19 +202,10 @@ do_upgrade() {
 		default_do_upgrade "$ARGV"
 	fi
 
-	[ "$SAVE_CONFIG" -eq 1 -a -n "$USE_REFRESH" ] && {
-		v "Refreshing partitions"
-		if type 'platform_refresh_partitions' >/dev/null 2>/dev/null; then
-			platform_refresh_partitions
-		else
-			refresh_mtd_partitions
-		fi
-		if type 'platform_copy_config' >/dev/null 2>/dev/null; then
-			platform_copy_config
-		else
-			jffs2_copy_config
-		fi
-	}
+	if [ "$SAVE_CONFIG" -eq 1 ] && type 'platform_copy_config' >/dev/null 2>/dev/null; then
+		platform_copy_config
+	fi
+
 	v "Upgrade completed"
 	[ -n "$DELAY" ] && sleep "$DELAY"
 	ask_bool 1 "Reboot" && {

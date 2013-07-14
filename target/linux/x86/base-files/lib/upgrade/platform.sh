@@ -1,5 +1,3 @@
-USE_REFRESH=1
-
 x86_get_rootfs() {
 	local rootfsdev
 	local rootfstype
@@ -25,10 +23,6 @@ platform_check_image() {
 			return 1
 		;;
 	esac
-}
-
-platform_refresh_partitions() {
-	return 0
 }
 
 platform_copy_config() {
