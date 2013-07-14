@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -23,6 +23,14 @@ config MTD_TESTS
+@@ -23,6 +23,23 @@ config MTD_TESTS
  	  WARNING: some of the tests will ERASE entire MTD device which they
  	  test. Do not use these tests unless you really know what you do.
  
@@ -11,6 +11,15 @@
 +config MTD_ROOTFS_SPLIT
 +	bool "Automatically split 'rootfs' partition for squashfs"
 +	default y
++
++config MTD_UIMAGE_SPLIT
++	bool "Automatically split off rootfs from a kernel partition containing a uImage"
++	default y
++
++config MTD_UIMAGE_SPLIT_NAME
++	string "uImage partition name"
++	depends on MTD_UIMAGE_SPLIT
++	default "firmware"
 +
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
@@ -26,7 +35,14 @@
  #include <linux/err.h>
  
  #include "mtdcore.h"
-@@ -50,7 +52,7 @@ struct mtd_part {
+@@ -45,12 +47,14 @@ struct mtd_part {
+ 	struct list_head list;
+ };
+ 
++static void mtd_partition_split(struct mtd_info *master, struct mtd_part *part);
++
+ /*
+  * Given a pointer to the MTD object in the mtd_part structure, we can retrieve
   * the pointer to that structure with this macro.
   */
  #define PART(x)  ((struct mtd_part *)(x))
@@ -35,10 +51,82 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -613,6 +615,92 @@ int mtd_del_partition(struct mtd_info *m
+@@ -533,8 +537,10 @@ out_register:
+ 	return slave;
+ }
+ 
+-int mtd_add_partition(struct mtd_info *master, char *name,
+-		      long long offset, long long length)
++
++static int
++__mtd_add_partition(struct mtd_info *master, char *name,
++		    long long offset, long long length, bool dup_check)
+ {
+ 	struct mtd_partition part;
+ 	struct mtd_part *p, *new;
+@@ -566,21 +572,24 @@ int mtd_add_partition(struct mtd_info *m
+ 	end = offset + length;
+ 
+ 	mutex_lock(&mtd_partitions_mutex);
+-	list_for_each_entry(p, &mtd_partitions, list)
+-		if (p->master == master) {
+-			if ((start >= p->offset) &&
+-			    (start < (p->offset + p->mtd.size)))
+-				goto err_inv;
+-
+-			if ((end >= p->offset) &&
+-			    (end < (p->offset + p->mtd.size)))
+-				goto err_inv;
+-		}
++	if (dup_check) {
++		list_for_each_entry(p, &mtd_partitions, list)
++			if (p->master == master) {
++				if ((start >= p->offset) &&
++				    (start < (p->offset + p->mtd.size)))
++					goto err_inv;
++
++				if ((end >= p->offset) &&
++				    (end < (p->offset + p->mtd.size)))
++					goto err_inv;
++			}
++	}
+ 
+ 	list_add(&new->list, &mtd_partitions);
+ 	mutex_unlock(&mtd_partitions_mutex);
+ 
+ 	add_mtd_device(&new->mtd);
++	mtd_partition_split(master, new);
+ 
+ 	return ret;
+ err_inv:
+@@ -590,6 +599,12 @@ err_inv:
+ }
+ EXPORT_SYMBOL_GPL(mtd_add_partition);
+ 
++int mtd_add_partition(struct mtd_info *master, char *name,
++		      long long offset, long long length)
++{
++	return __mtd_add_partition(master, name, offset, length, true);
++}
++
+ int mtd_del_partition(struct mtd_info *master, int partno)
+ {
+ 	struct mtd_part *slave, *next;
+@@ -613,6 +628,149 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
++static inline unsigned long
++mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
++{
++	unsigned long mask = mtd->erasesize - 1;
++
++	len += offset & mask;
++	len = (len + mask) & ~mask;
++	len -= offset & mask;
++	return len;
++}
++
 +#ifdef CONFIG_MTD_ROOTFS_SPLIT
 +#define ROOTFS_SPLIT_NAME "rootfs_data"
 +#define ROOTFS_REMOVED_NAME "<removed>"
@@ -77,105 +165,118 @@
 +	}
 +
 +	len = (u32) le64_to_cpu(sb.bytes_used);
-+	len += (offset & 0x000fffff);
-+	len +=  (master->erasesize - 1);
-+	len &= ~(master->erasesize - 1);
-+	len -= (offset & 0x000fffff);
++	len = mtd_pad_erasesize(master, offset, len);
 +	*split_offset = offset + len;
 +
 +	return 0;
 +}
 +
-+static int split_rootfs_data(struct mtd_info *master, struct mtd_info *rpart, const struct mtd_partition *part)
++static void split_rootfs_data(struct mtd_info *master, struct mtd_part *part)
 +{
-+	struct mtd_partition dpart;
-+	struct mtd_part *slave = NULL;
-+	struct mtd_part *spart;
-+	int ret, split_offset = 0;
++	unsigned int split_offset = 0;
++	unsigned int split_size;
++	int ret;
 +
-+	spart = PART(rpart);
-+	ret = split_squashfs(master, spart->offset, &split_offset);
++	ret = split_squashfs(master, part->offset, &split_offset);
 +	if (ret)
-+		return ret;
++		return;
 +
 +	if (split_offset <= 0)
-+		return 0;
++		return;
 +
-+	memcpy(&dpart, part, sizeof(dpart));
-+	dpart.name = ROOTFS_SPLIT_NAME;
++	split_size = part->mtd.size - (split_offset - part->offset);
++	printk(KERN_INFO "mtd: partition \"%s\" created automatically, ofs=0x%x, len=0x%x\n",
++		ROOTFS_SPLIT_NAME, split_offset, split_size);
 +
-+	dpart.size = rpart->size - (split_offset - spart->offset);
-+	dpart.offset = split_offset;
-+
-+	printk(KERN_INFO "mtd: partition \"%s\" created automatically, ofs=%llX, len=%llX \n",
-+		ROOTFS_SPLIT_NAME, dpart.offset, dpart.size);
-+
-+	slave = allocate_partition(master, &dpart, 0, split_offset);
-+	if (IS_ERR(slave))
-+		return PTR_ERR(slave);
-+	mutex_lock(&mtd_partitions_mutex);
-+	list_add(&slave->list, &mtd_partitions);
-+	mutex_unlock(&mtd_partitions_mutex);
-+
-+	add_mtd_device(&slave->mtd);
-+
-+	rpart->split = &slave->mtd;
-+
-+	return 0;
++	__mtd_add_partition(master, ROOTFS_SPLIT_NAME, split_offset,
++			    split_size, false);
 +}
 +#endif /* CONFIG_MTD_ROOTFS_SPLIT */
 +
++#ifdef CONFIG_MTD_UIMAGE_SPLIT
++#define UBOOT_MAGIC	0x27051956
++
++static void split_uimage(struct mtd_info *master, struct mtd_part *part)
++{
++	struct {
++		__be32 magic;
++		__be32 pad[2];
++		__be32 size;
++	} hdr;
++	size_t len;
++
++	if (strcmp(part->mtd.name, CONFIG_MTD_UIMAGE_SPLIT_NAME) != 0)
++		return;
++
++	if (mtd_read(master, part->offset, sizeof(hdr), &len, (void *) &hdr))
++		return;
++
++	if (len != sizeof(hdr) || hdr.magic != cpu_to_be32(UBOOT_MAGIC))
++		return;
++
++	len = be32_to_cpu(hdr.size) + 0x40;
++	len = mtd_pad_erasesize(master, part->offset, len);
++	if (len + master->erasesize > part->mtd.size)
++		return;
++
++	__mtd_add_partition(master, "rootfs", part->offset + len,
++			    part->mtd.size - len, false);
++}
++#endif
++
++void __weak arch_split_mtd_part(struct mtd_info *master, const char *name,
++                                int offset, int size)
++{
++}
++
++
++static void mtd_partition_split(struct mtd_info *master, struct mtd_part *part)
++{
++	static int rootfs_found = 0;
++
++	if (rootfs_found)
++		return;
++
++	if (!strcmp(part->mtd.name, "rootfs")) {
++		rootfs_found = 1;
++
++#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
++		if (ROOT_DEV == 0) {
++			printk(KERN_NOTICE "mtd: partition \"rootfs\" "
++				"set to be root filesystem\n");
++			ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, part->mtd.index);
++		}
++#endif
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
++		split_rootfs_data(master, part);
++#endif
++	}
++
++#ifdef CONFIG_MTD_UIMAGE_SPLIT
++	split_uimage(master, part);
++#endif
++
++	arch_split_mtd_part(master, part->mtd.name, part->offset,
++			    part->mtd.size);
++}
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -629,6 +717,9 @@ int add_mtd_partitions(struct mtd_info *
- 	struct mtd_part *slave;
- 	uint64_t cur_offset = 0;
- 	int i;
-+#ifdef CONFIG_MTD_ROOTFS_SPLIT
-+	int ret;
-+#endif
- 
- 	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
- 
-@@ -643,6 +734,21 @@ int add_mtd_partitions(struct mtd_info *
+@@ -642,6 +800,7 @@ int add_mtd_partitions(struct mtd_info *
+ 		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);
++		mtd_partition_split(master, slave);
  
-+		if (!strcmp(parts[i].name, "rootfs")) {
-+#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
-+			if (ROOT_DEV == 0) {
-+				printk(KERN_NOTICE "mtd: partition \"rootfs\" "
-+					"set to be root filesystem\n");
-+				ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, slave->mtd.index);
-+			}
-+#endif
-+#ifdef CONFIG_MTD_ROOTFS_SPLIT
-+			ret = split_rootfs_data(master, &slave->mtd, &parts[i]);
-+			/* if (ret == 0)
-+			 * 	j++; */
-+#endif
-+		}
-+
  		cur_offset = slave->offset + slave->mtd.size;
  	}
+--- a/include/linux/mtd/partitions.h
++++ b/include/linux/mtd/partitions.h
+@@ -84,5 +84,7 @@ int mtd_add_partition(struct mtd_info *m
+ 		      long long offset, long long length);
+ int mtd_del_partition(struct mtd_info *master, int partno);
+ uint64_t mtd_get_device_size(const struct mtd_info *mtd);
++extern void __weak arch_split_mtd_part(struct mtd_info *master,
++				       const char *name, int offset, int size);
  
---- a/include/linux/mtd/mtd.h
-+++ b/include/linux/mtd/mtd.h
-@@ -114,6 +114,7 @@ struct nand_ecclayout {
- 
- struct module;	/* only needed for owner field in mtd_info */
- 
-+struct mtd_info;
- struct mtd_info {
- 	u_char type;
- 	uint32_t flags;
-@@ -226,6 +227,8 @@ struct mtd_info {
- 	int (*_block_markbad) (struct mtd_info *mtd, loff_t ofs);
- 	int (*_suspend) (struct mtd_info *mtd);
- 	void (*_resume) (struct mtd_info *mtd);
-+	struct mtd_info *split;
-+
- 	/*
- 	 * If the driver is something smart, like UBI, it may need to maintain
- 	 * its own reference counting. The below functions are only for driver.
+ #endif
