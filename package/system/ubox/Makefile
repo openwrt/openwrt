@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ubox
-PKG_VERSION:=2013-07-11
+PKG_VERSION:=2013-07-14
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/luci2/ubox.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=c897416adf05299d57e9ba25a8ea2bc628675c5f
+PKG_SOURCE_VERSION:=c105f22064d6f2d5cb55282d0439d924e827e5ac
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -42,7 +42,7 @@ define Package/ubox/install
 	ln -s /sbin/mount_root $(1)/sbin/switch2jffs
 	ln -s /sbin/mount_root $(1)/sbin/jffs2reset
 	ln -s /sbin/mount_root $(1)/sbin/jffs2mark
-#	ln -s /sbin/kmodloader $(1)/usr/sbin/lsmod
+	ln -s /sbin/kmodloader $(1)/usr/sbin/lsmod
 	ln -s /sbin/kmodloader $(1)/usr/sbin/modinfo
 endef
 
