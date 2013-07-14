@@ -1221,9 +1221,8 @@ endif
 config-$(call config_package,carl9170) += CARL9170
 
 config-$(call config_package,b43) += B43
-config-y += B43_SSB B43_BCMA B43_BCMA_EXTRA
+config-y += B43_SSB B43_BCMA B43_BCMA_EXTRA B43_PHY_LP
 config-$(CONFIG_PACKAGE_B43_PHY_N) += B43_PHY_N
-config-$(CONFIG_PACKAGE_B43_PHY_LP) += B43_PHY_LP
 config-$(CONFIG_PACKAGE_B43_PHY_HT) += B43_PHY_HT
 config-$(CONFIG_PACKAGE_B43_PIO) += B43_PIO
 config-$(CONFIG_PACKAGE_B43_DEBUG) += B43_DEBUG
