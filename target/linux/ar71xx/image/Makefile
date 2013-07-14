@@ -170,8 +170,8 @@ db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1
 dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,6208k(firmware),64k(caldata)ro,1600k(unknown)ro,64k@0x7f0000(caldata_copy)
 dir825b1_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,7808k(firmware),64k(caldata)ro,64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
 ew-dorin_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),3712k(kernel),64k(art)
-dlrtdev_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,640k(certs),960k(unknown)ro,6208k@0x50000(firmware),64k@0x7f0000(caldata_copy)
-dlrtdev_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),6544k(rootfs),640k(certs),64k(caldata)ro,7168k@0x50000(firmware),64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
+dlrtdev_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,6208k(firmware),64k(caldata)ro,640k(certs),960k(unknown)ro,64k@0x7f0000(caldata_copy)
+dlrtdev_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,7168k(firmware),640k(certs),64k(caldata)ro,64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
 pb92_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
 planex_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6656k(rootfs),128k(art)ro,7744k@0x50000(firmware)
 ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
@@ -244,7 +244,7 @@ endef
 
 define Image/Build/DLRTDEV
 	$(call MkuImageLzma,$(2),$(3) $(dlrtdev_mtdlayout))
-	$(call Sysupgrade/KRuImage,$(1),$(2),1048576,5308416)
+	$(call Sysupgrade/KRuImage,$(1),$(2),65536,5308416)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			dd if=$(call sysupname,$(1),$(2)); \
@@ -260,7 +260,7 @@ define Image/Build/DLRTDEV
 		fi; \
 	fi
 	$(call MkuImageLzma,$(2)-fat,$(3) $(dlrtdev_mtdlayout_fat))
-	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,1048576,$(KDIR)/root.$(1),6946816,$(KDIR_TMP)/$(2)-fat.bin)
+	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,65536,$(KDIR)/root.$(1),6946816,$(KDIR_TMP)/$(2)-fat.bin)
 	if [ -e "$(KDIR_TMP)/$(2)-fat.bin" ]; then \
 		echo -n "" > $(KDIR_TMP)/$(2)-fat.dummy; \
 		sh $(TOPDIR)/scripts/combined-image.sh \
