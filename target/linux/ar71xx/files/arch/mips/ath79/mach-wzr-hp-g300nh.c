@@ -64,13 +64,9 @@ static struct mtd_partition wzrhpg300nh_flash_partitions[] = {
 		.size		= 0x0020000,
 		.mask_flags	= MTD_WRITEABLE,
 	}, {
-		.name		= "kernel",
+		.name		= "firmware",
 		.offset		= 0x0060000,
-		.size		= 0x0100000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x0160000,
-		.size		= 0x1e60000,
+		.size		= 0x1f60000,
 	}, {
 		.name		= "user_property",
 		.offset		= 0x1fc0000,
@@ -81,10 +77,6 @@ static struct mtd_partition wzrhpg300nh_flash_partitions[] = {
 		.offset		= 0x1fe0000,
 		.size		= 0x0020000,
 		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x0060000,
-		.size		= 0x1f60000,
 	}
 };
 
