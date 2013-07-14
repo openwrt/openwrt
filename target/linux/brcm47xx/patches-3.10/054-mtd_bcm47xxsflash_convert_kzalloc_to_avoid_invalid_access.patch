@@ -1,0 +1,62 @@
+Date: Thu, 30 May 2013 10:22:12 +0800
+From: Libo Chen <clbchenlibo.chen@huawei.com>
+Subject: [PATCH RESEND 1/2] mtd: bcm47: convert kzalloc to avoid invalid access
+
+
+mtd is just member of bcm47xxsflash, so we should free bcm47xxsflash not its member.
+So I use devm_kazlloc instead of kazlloc to avoid it.
+
+* Changelog:
+   convert to devm_kzalloc
+
+Signed-off-by: Libo chen <libo.chen@huawei.com>
+Suggested-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+---
+ drivers/mtd/devices/bcm47xxsflash.c |   16 ++++------------
+ 1 files changed, 4 insertions(+), 12 deletions(-)
+
+--- a/drivers/mtd/devices/bcm47xxsflash.c
++++ b/drivers/mtd/devices/bcm47xxsflash.c
+@@ -278,11 +278,9 @@ static int bcm47xxsflash_bcma_probe(stru
+ 	struct bcm47xxsflash *b47s;
+ 	int err;
+ 
+-	b47s = kzalloc(sizeof(*b47s), GFP_KERNEL);
+-	if (!b47s) {
+-		err = -ENOMEM;
+-		goto out;
+-	}
++	b47s = devm_kzalloc(&pdev->dev, sizeof(*b47s), GFP_KERNEL);
++	if (!b47s)
++		return -ENOMEM;
+ 	sflash->priv = b47s;
+ 
+ 	b47s->bcma_cc = container_of(sflash, struct bcma_drv_cc, sflash);
+@@ -307,18 +305,13 @@ static int bcm47xxsflash_bcma_probe(stru
+ 	err = mtd_device_parse_register(&b47s->mtd, probes, NULL, NULL, 0);
+ 	if (err) {
+ 		pr_err("Failed to register MTD device: %d\n", err);
+-		goto err_dev_reg;
++		return err;
+ 	}
+ 
+ 	if (bcm47xxsflash_poll(b47s, HZ / 10))
+ 		pr_warn("Serial flash busy\n");
+ 
+ 	return 0;
+-
+-err_dev_reg:
+-	kfree(&b47s->mtd);
+-out:
+-	return err;
+ }
+ 
+ static int bcm47xxsflash_bcma_remove(struct platform_device *pdev)
+@@ -327,7 +320,6 @@ static int bcm47xxsflash_bcma_remove(str
+ 	struct bcm47xxsflash *b47s = sflash->priv;
+ 
+ 	mtd_device_unregister(&b47s->mtd);
+-	kfree(b47s);
+ 
+ 	return 0;
+ }
