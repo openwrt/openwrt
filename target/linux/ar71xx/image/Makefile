@@ -292,6 +292,28 @@ define Image/Build/WZRHP64K/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 endef
 
+define Image/Build/WZRHP128K
+	$(call MkuImageLzma,$(2),$(3))
+	$(call Sysupgrade/KRuImage,$(1),$(2),131072,31850496)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		( \
+			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
+			dd if=$(call sysupname,$(1),$(2)); \
+		) > $(call imgname,$(1),$(2))-tftp.bin; \
+		buffalo-enc -p $(4) -v 1.99 \
+			-i $(call sysupname,$(1),$(2)) \
+			-o $(KDIR_TMP)/$(2).enc; \
+		buffalo-tag -b $(4) -p $(4) -a ath -v 1.99 -m 1.01 -l mlang8 \
+			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
+			-i $(KDIR_TMP)/$(2).enc \
+			-o $(call factoryname,$(1),$(2)); \
+	fi
+endef
+
+define Image/Build/WZRHP128K/initramfs
+	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
+endef
+
 define Image/Build/WZRHPG30XNH
 	$(call MkuImageLzma,$(2),$(3))
 	$(call Sysupgrade/KRuImage,$(1),$(2),1048576,31850496)
@@ -1013,7 +1035,7 @@ $(eval $(call SingleProfile,WHRHPG300N,$(fs_64k),WLAEAG300N,wlae-ag300n,WLAE-AG3
 
 $(eval $(call SingleProfile,WRT400N,$(fs_64k),WRT400N,wrt400n,WRT400N,ttyS0,115200))
 
-$(eval $(call SingleProfile,WZRHPG30XNH,$(fs_128k),WZRHPG300NH,wzr-hp-g300nh,WZR-HP-G300NH,ttyS0,115200,WZR-HP-G300NH))
+$(eval $(call SingleProfile,WZRHP128K,$(fs_128k),WZRHPG300NH,wzr-hp-g300nh,WZR-HP-G300NH,ttyS0,115200,WZR-HP-G300NH))
 $(eval $(call SingleProfile,WZRHPG30XNH,$(fs_64k),WZRHPG300NH2,wzr-hp-g300nh2,WZR-HP-G300NH2,ttyS0,115200,WZR-HP-G300NH2))
 $(eval $(call SingleProfile,WZRHPG30XNH,$(fs_64k),WZRHPAG300H,wzr-hp-ag300h,WZR-HP-AG300H,ttyS0,115200,WZR-HP-AG300H))
 $(eval $(call SingleProfile,WZRHP64K,$(fs_64k),WZRHPG450H,wzr-hp-g450h,WZR-HP-G450H,ttyS0,115200,WZR-HP-AG450H))
