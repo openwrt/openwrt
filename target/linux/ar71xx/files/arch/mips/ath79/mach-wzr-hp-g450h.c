@@ -43,21 +43,13 @@ static struct mtd_partition wzrhpg450h_partitions[] = {
 		.size		= 0x0010000,
 		.mask_flags	= MTD_WRITEABLE,
 	}, {
-		.name		= "uImage",
+		.name		= "firmware",
 		.offset		= 0x0060000,
-		.size		= 0x0100000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x0160000,
-		.size		= 0x1e80000,
+		.size		= 0x1f80000,
 	}, {
 		.name		= "user_property",
 		.offset		= 0x1fe0000,
 		.size		= 0x0020000,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x0060000,
-		.size		= 0x1f80000,
 	}
 };
 
