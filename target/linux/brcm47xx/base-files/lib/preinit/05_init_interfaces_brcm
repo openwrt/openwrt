@@ -3,14 +3,6 @@
 set_preinit_iface() {
 	ifname=eth0
 
-	insmod diag
-	insmod hwmon
-	insmod pps_core
-	insmod ptp
-	insmod tg3
-	insmod b44
-	insmod bgmac
-
 	# hardware specific overrides
 	case "$(cat /proc/diag/model)" in
 		"Linksys WAP54G V1") ifname=eth1;;

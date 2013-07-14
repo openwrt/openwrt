@@ -15,7 +15,7 @@ define KernelPackage/hwmon-core
 	CONFIG_HWMON_DEBUG_CHIP=n
   FILES:= \
 	$(LINUX_DIR)/drivers/hwmon/hwmon.ko
-  AUTOLOAD:=$(call AutoLoad,40,hwmon)
+  AUTOLOAD:=$(call AutoLoad,17,hwmon,1)
 endef
 
 define KernelPackage/hwmon-core/description
