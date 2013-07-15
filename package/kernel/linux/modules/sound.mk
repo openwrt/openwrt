@@ -201,6 +201,22 @@ endef
 $(eval $(call KernelPackage,sound-soc-imx))
 
 
+define KernelPackage/sound-soc-imx-sgtl5000
+  TITLE:=IMX SoC support for SGTL5000
+  KCONFIG:=CONFIG_SND_SOC_IMX_SGTL5000
+  FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-sgtl5000.ko
+  AUTOLOAD:=$(call AutoLoad,57,snd-soc-sgtl5000)
+  DEPENDS:=@TARGET_imx6 +kmod-sound-soc-imx
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-imx-sgtl5000/description
+ support for i.MX6 Platform sound SGTL5000 codec
+endef
+
+$(eval $(call KernelPackage,sound-soc-imx-sgtl5000))
+
+
 define KernelPackage/sound-soc-gw_avila
   TITLE:=Gateworks Avila SoC sound support
   KCONFIG:= \
