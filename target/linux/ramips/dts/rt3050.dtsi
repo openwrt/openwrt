@@ -218,6 +218,9 @@
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
 
+		resets = <&rstctrl 22>;
+		reset-names = "otg";
+
 		status = "disabled";
 	};
 };
