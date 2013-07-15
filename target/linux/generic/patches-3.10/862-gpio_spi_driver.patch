@@ -351,7 +351,7 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
  
 +config SPI_GPIO_OLD
 +	tristate "Old GPIO API based bitbanging SPI controller (DEPRECATED)"
-+	depends on SPI_MASTER && GENERIC_GPIO
++	depends on SPI_MASTER && GPIOLIB
 +	select SPI_BITBANG
 +	help
 +	  This code is deprecated. Please use the new mainline SPI-GPIO driver.
