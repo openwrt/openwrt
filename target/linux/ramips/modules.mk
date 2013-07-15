@@ -7,7 +7,7 @@
 
 define KernelPackage/usb-rt305x-dwc_otg
   TITLE:=RT305X USB controller driver
-  DEPENDS:=@TARGET_ramips_rt305x
+  DEPENDS:=@TARGET_ramips_rt305x @LINUX_3_9
   KCONFIG:= \
 	CONFIG_DWC_OTG \
 	CONFIG_DWC_OTG_HOST_ONLY=y \
