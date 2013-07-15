@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -178,6 +178,27 @@ define KernelPackage/sound-soc-ac97
 endef
 
 $(eval $(call KernelPackage,sound-soc-ac97))
+
+
+define KernelPackage/sound-soc-imx
+  TITLE:=IMX SoC support
+  KCONFIG:=\
+		CONFIG_SND_IMX_SOC \
+		CONFIG_SND_SOC_IMX_AUDMUX \
+		CONFIG_SND_SOC_IMX_PCM
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/fsl/snd-soc-imx-audmux.ko \
+	$(LINUX_DIR)/sound/soc/fsl/snd-soc-imx-pcm.ko
+  AUTOLOAD:=$(call AutoLoad,56,snd-soc-imx)
+  DEPENDS:=@TARGET_imx6 +kmod-sound-soc-core
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-imx/description
+ support for i.MX6 Platform sound (ssi/audmux/pcm)
+endef
+
+$(eval $(call KernelPackage,sound-soc-imx))
 
 
 define KernelPackage/sound-soc-gw_avila
