@@ -1,0 +1,15 @@
+Index: linux-3.10.1/drivers/mtd/mtdpart.c
+===================================================================
+--- linux-3.10.1.orig/drivers/mtd/mtdpart.c	2013-07-15 11:39:25.376669514 +0200
++++ linux-3.10.1/drivers/mtd/mtdpart.c	2013-07-15 11:49:53.040684471 +0200
+@@ -807,10 +807,6 @@
+ 		return;
+ 
+ 	len = be32_to_cpu(hdr.size) + 0x40;
+-	len = mtd_pad_erasesize(master, part->offset, len);
+-	if (len + master->erasesize > part->mtd.size)
+-		return;
+-
+ 	__mtd_add_partition(master, "rootfs", part->offset + len,
+ 			    part->mtd.size - len, false);
+ }
