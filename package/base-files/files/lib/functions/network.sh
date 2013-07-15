@@ -25,6 +25,10 @@ __network_parse_ifstatus()
 	local __list
 	local __old_ns
 
+	case "$__iface" in
+		*[^a-zA-Z0-9_]*) return 1 ;;
+	esac
+
 	__network_export __tmp "${__key}__parsed" && return 0
 	__tmp="$(ubus call network.interface."$__iface" status 2>/dev/null)"
 	[ -n "$__tmp" ] || return 1
