@@ -8,7 +8,8 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 BOARDS := \
-	imx6dl-wandboard
+	imx6dl-wandboard \
+	imx6q-gw5400-a
 
 # board-specific Flattened Image Tree
 define mkfit
