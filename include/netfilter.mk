@@ -48,13 +48,11 @@ $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_LOG, $(P_V4)ipt_LOG, lt 3.4.0)
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_TCPMSS, $(P_XT)xt_TCPMSS))
 $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_REJECT, $(P_V4)ipt_REJECT))
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MATCH_TIME, $(P_XT)xt_time))
-$(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MATCH_MARK, $(P_XT)xt_mark))
+$(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MARK, $(P_XT)xt_mark))
 
 # kernel has xt_MARK.ko merged into xt_mark.ko, userspace is still separate
-# kernel: xt_mark.ko
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_MARK, $(P_XT)xt_mark)))
 # userland: xt_MARK.so
-$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_MARK, $(P_XT)xt_MARK)))
+$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MARK, $(P_XT)xt_MARK)))
 
 
 # conntrack
@@ -74,13 +72,11 @@ $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_CONNTRACK, $(P_XT)x
 # conntrack-extra
 
 $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_MATCH_CONNBYTES, $(P_XT)xt_connbytes))
-$(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_MATCH_CONNMARK, $(P_XT)xt_connmark))
+$(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_CONNMARK, $(P_XT)xt_connmark))
 $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_MATCH_HELPER, $(P_XT)xt_helper))
 $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_MATCH_RECENT, $(P_XT)xt_recent))
 
-$(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_IP_NF_TARGET_CONNMARK, $(P_V4)ipt_CONNMARK))
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_TARGET_CONNMARK, $(P_XT)xt_connmark)))
-$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_TARGET_CONNMARK, $(P_XT)xt_CONNMARK)))
+$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_CONNMARK, $(P_XT)xt_CONNMARK)))
 
 # extra
 
