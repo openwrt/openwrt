@@ -38,8 +38,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  forward:
  	switch (p->state) {
 +	case BR_STATE_DISABLED:
-+		if (!ether_addr_equal(p->br->dev->dev_addr, dest))
-+			goto drop;
++		if (ether_addr_equal(p->br->dev->dev_addr, dest))
++			skb->pkt_type = PACKET_HOST;
 +
 +		if (NF_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING, skb, skb->dev, NULL,
 +			br_handle_local_finish))
