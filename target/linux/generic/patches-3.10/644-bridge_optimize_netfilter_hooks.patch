@@ -48,8 +48,8 @@
  			return RX_HANDLER_CONSUMED; /* consumed by filter */
  		} else {
 @@ -224,7 +224,7 @@ forward:
- 		if (!ether_addr_equal(p->br->dev->dev_addr, dest))
- 			goto drop;
+ 		if (ether_addr_equal(p->br->dev->dev_addr, dest))
+ 			skb->pkt_type = PACKET_HOST;
  
 -		if (NF_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING, skb, skb->dev, NULL,
 +		if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING, skb, skb->dev, NULL,

@@ -216,7 +216,7 @@
  	result = yaffs_rd_chunk_tags_nand(dev,nand_chunk,buffer,&tempTags);
  	if(memcmp(buffer,data,dev->data_bytes_per_chunk) ||
  		tempTags.obj_id != tags->obj_id ||
-@@ -424,7 +424,7 @@ static int yaffs_write_new_chunk(struct
+@@ -424,7 +424,7 @@ static int yaffs_write_new_chunk(struct 
  		 * lot of checks that are most likely not needed.
  		 *
  		 * Mods to the above
@@ -225,7 +225,7 @@
  		 * rest of the block.
  		 */
  
-@@ -486,7 +486,7 @@ static int yaffs_write_new_chunk(struct
+@@ -486,7 +486,7 @@ static int yaffs_write_new_chunk(struct 
  }
  
  
@@ -279,7 +279,7 @@
  					/* Free chunks already includes softdeleted chunks.
  					 * How ever this chunk is going to soon be really deleted
  					 * which will increment free chunks.
-@@ -2752,7 +2752,7 @@ int yaffs_put_chunk_in_file(yaffs_obj_t
+@@ -2752,7 +2752,7 @@ int yaffs_put_chunk_in_file(yaffs_obj_t 
  					NULL);
  	if (!tn)
  		return YAFFS_FAIL;
@@ -455,7 +455,7 @@
  #ifdef CONFIG_YAFFS_SHORT_NAMES_IN_RAM
  	else if (obj->short_name[0]) {
  		yaffs_strcpy(name, obj->short_name);
-@@ -4861,9 +4861,9 @@ int yaffs_set_attribs(yaffs_obj_t *obj,
+@@ -4861,9 +4861,9 @@ int yaffs_set_attribs(yaffs_obj_t *obj, 
  	if (valid & ATTR_MODE)
  		obj->yst_mode = attr->ia_mode;
  	if (valid & ATTR_UID)
@@ -467,7 +467,7 @@
  
  	if (valid & ATTR_ATIME)
  		obj->yst_atime = Y_TIME_CONVERT(attr->ia_atime);
-@@ -4886,9 +4886,9 @@ int yaffs_get_attribs(yaffs_obj_t *obj,
+@@ -4886,9 +4886,9 @@ int yaffs_get_attribs(yaffs_obj_t *obj, 
  
  	attr->ia_mode = obj->yst_mode;
  	valid |= ATTR_MODE;
