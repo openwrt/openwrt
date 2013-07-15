@@ -172,6 +172,29 @@ endef
 $(eval $(call KernelPackage,usb2-pci))
 
 
+define KernelPackage/usb-dwc2
+  TITLE:=DWC2 USB controller driver
+  DEPENDS:=@LINUX_3_10
+  KCONFIG:= \
+	CONFIG_USB_DWC2 \
+	CONFIG_USB_DWC2_DEBUG=n \
+	CONFIG_USB_DWC2_VERBOSE=n \
+	CONFIG_USB_DWC2_TRACK_MISSED_SOFS=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/staging/dwc2/dwc2.ko \
+	$(LINUX_DIR)/drivers/staging/dwc2/dwc2_platform.ko
+  AUTOLOAD:=$(call AutoLoad,54,dwc2 dwc2_platform,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-dwc2/description
+  This driver provides USB Device Controller support for the
+  Synopsys DesignWare USB OTG Core.
+endef
+
+$(eval $(call KernelPackage,usb-dwc2))
+
+
 define KernelPackage/usb-acm
   TITLE:=Support for modems/isdn controllers
   KCONFIG:=CONFIG_USB_ACM
