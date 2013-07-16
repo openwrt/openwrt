@@ -616,7 +616,7 @@ EOF
 	}
 	print_package_features();
 	print_package_config_category 'Base system';
-	foreach my $cat (keys %category) {
+	foreach my $cat (sort {uc($a) cmp uc($b)} keys %category) {
 		print_package_config_category $cat;
 	}
 }
