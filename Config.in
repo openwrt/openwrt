@@ -141,14 +141,14 @@ menu "Target Images"
 
 	config TARGET_ROOTFS_INCLUDE_KERNEL
 		bool "include kernel in rootfs"
-		depends TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
+		depends on TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
 		default n if USES_UBIFS
 		help
 		  Include the kernel image in the rootfs
 
 	config TARGET_ROOTFS_INCLUDE_DTB
 		bool "include dtb in rootfs"
-		depends TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
+		depends on TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
 		default n if USES_UBIFS
 		help
 		  Include the device tree blob file in the rootfs
