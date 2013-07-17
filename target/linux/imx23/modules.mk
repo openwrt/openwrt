@@ -33,32 +33,27 @@ endef
 
 $(eval $(call KernelPackage,wdt-stmp3xxx))
 
-define KernelPackage/usb-chipidea
-    TITLE:=Support for ChipIdea controllers
-    DEPENDS:=@TARGET_imx23
-    KCONFIG:= \
-	CONFIG_USB_CHIPIDEA \
-	CONFIG_USB_CHIPIDEA_HOST=y \
-	CONFIG_USB_CHIPIDEA_DEBUG=y
+define KernelPackage/usb-chipidea-imx
+    TITLE:=Support for ChipIdea controllers on i.MX
+    DEPENDS:=+kmod-usb-chipidea
     FILES:=\
-	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci13xxx_imx.ko
-    AUTOLOAD:=$(call AutoLoad,51,ci_hdrc ci13xxx_imx,1)
+    AUTOLOAD:=$(call AutoLoad,52,ci13xxx_imx,1)
     $(call AddDepends/usb)
 endef
 
-define KernelPackage/usb-chipidea/description
-    Kernel support for USB ChipIdea controllers
+define KernelPackage/usb-chipidea-imx/description
+    Kernel support for USB ChipIdea controllers on i.MX
 endef
 
-$(eval $(call KernelPackage,usb-chipidea,1))
+$(eval $(call KernelPackage,usb-chipidea-imx,1))
 
 define KernelPackage/usb-mxs-phy
     TITLE:=Support for Freescale MXS USB PHY controllers
-    DEPENDS:=+kmod-usb-chipidea
+    DEPENDS:=+kmod-usb-chipidea-imx
     KCONFIG:= \
 	CONFIG_USB_MXS_PHY
-	FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-mxs-usb.ko
+    FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-mxs-usb.ko
     AUTOLOAD:=$(call AutoLoad,50,phy-mxs-usb,1)
     $(call AddDepends/usb)
 endef
