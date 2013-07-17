@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.19.4
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -37,6 +37,7 @@ endif
 
 init-y :=
 init-$(CONFIG_BUSYBOX_CONFIG_CROND) += cron
+init-$(CONFIG_BUSYBOX_CONFIG_NTPD) += ntp
 init-$(CONFIG_BUSYBOX_CONFIG_TELNETD) += telnet
 
 define Package/busybox
