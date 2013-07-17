@@ -63,6 +63,7 @@ platform_check_image() {
 	v22rw-2x2 | \
 	wl341v3 | \
 	wl-330n | \
+	wl-330n3g | \
 	wl-351 | \
 	wnce2001 | \
 	wli-tx4-ag300n | \
