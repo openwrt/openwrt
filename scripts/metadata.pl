@@ -548,8 +548,13 @@ sub print_package_config_category($) {
 			$pkg->{hidden} and $title = "";
 			print "\t\t".($pkg->{tristate} ? 'tristate' : 'bool')." $title\n";
 			print "\t\tdefault y if DEFAULT_".$pkg->{name}."\n";
-			foreach my $default (split /\s*,\s*/, $pkg->{default}) {
-				print "\t\tdefault $default\n";
+			unless ($pkg->{hidden}) {
+				$pkg->{default} ||= "m if ALL";
+			}
+			if ($pkg->{default}) {
+				foreach my $default (split /\s*,\s*/, $pkg->{default}) {
+					print "\t\tdefault $default\n";
+				}
 			}
 			print mconf_depends($pkg->{name}, $pkg->{depends}, 0);
 			print mconf_depends($pkg->{name}, $pkg->{mdepends}, 0);

@@ -64,7 +64,6 @@ sub parse_package_metadata($) {
 			$pkg->{makefile} = $makefile;
 			$pkg->{name} = $1;
 			$pkg->{title} = "";
-			$pkg->{default} = "m if ALL";
 			$pkg->{depends} = [];
 			$pkg->{mdepends} = [];
 			$pkg->{builddepends} = [];
