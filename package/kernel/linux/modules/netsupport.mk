@@ -186,6 +186,7 @@ $(eval $(call KernelPackage,misdn))
 define KernelPackage/isdn4linux
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Old ISDN4Linux (deprecated)
+  DEPENDS:=+kmod-ppp
   KCONFIG:= \
 	CONFIG_ISDN=y \
     CONFIG_ISDN_I4L \
@@ -217,7 +218,7 @@ $(eval $(call KernelPackage,isdn4linux))
 define KernelPackage/ipip
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP-in-IP encapsulation
-  DEPENDS:=+kmod-iptunnel4
+  DEPENDS:=+kmod-iptunnel +kmod-iptunnel4
   KCONFIG:=CONFIG_NET_IPIP
   FILES:=$(LINUX_DIR)/net/ipv4/ipip.ko
   AUTOLOAD:=$(call AutoLoad,32,ipip)
@@ -340,12 +341,28 @@ endef
 $(eval $(call KernelPackage,ipsec6))
 
 
-# NOTE: tunnel4 is not selectable by itself, so enable ipip for that
+define KernelPackage/iptunnel
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IP tunnel support
+  HIDDEN:=1
+  KCONFIG:= \
+	CONFIG_NET_IP_TUNNEL
+  FILES:=$(LINUX_DIR)/net/ipv4/ip_tunnel.ko
+  AUTOLOAD:=$(call AutoLoad,31,ip_tunnel)
+endef
+
+define KernelPackage/iptunnel/description
+ Kernel module for generic IP tunnel support
+endef
+
+$(eval $(call KernelPackage,iptunnel))
+
+
 define KernelPackage/iptunnel4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv4 tunneling
+  HIDDEN:=1
   KCONFIG:= \
-	CONFIG_NET_IPIP \
 	CONFIG_INET_TUNNEL
   FILES:=$(LINUX_DIR)/net/ipv4/tunnel4.ko
   AUTOLOAD:=$(call AutoLoad,31,tunnel4)
@@ -398,7 +415,7 @@ $(eval $(call KernelPackage,ipv6))
 
 define KernelPackage/sit
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  DEPENDS:=+kmod-ipv6 +kmod-iptunnel4
+  DEPENDS:=+kmod-ipv6 +kmod-iptunnel +kmod-iptunnel4
   TITLE:=IPv6-in-IPv4 tunnel
   KCONFIG:=CONFIG_IPV6_SIT \
 	CONFIG_IPV6_SIT_6RD=y
@@ -432,7 +449,7 @@ $(eval $(call KernelPackage,ip6-tunnel))
 define KernelPackage/gre
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=GRE support
-  DEPENDS:=+PACKAGE_kmod-ipv6:kmod-ipv6
+  DEPENDS:=+PACKAGE_kmod-ipv6:kmod-ipv6 +kmod-iptunnel
   KCONFIG:=CONFIG_NET_IPGRE CONFIG_NET_IPGRE_DEMUX
   FILES:=$(LINUX_DIR)/net/ipv4/ip_gre.ko $(LINUX_DIR)/net/ipv4/gre.ko
   AUTOLOAD:=$(call AutoLoad,39,gre ip_gre)
@@ -448,7 +465,7 @@ $(eval $(call KernelPackage,gre))
 define KernelPackage/gre6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=GRE support over IPV6
-  DEPENDS:=+kmod-ipv6 +kmod-ip6-tunnel @!LINUX_3_3 @!LINUX_3_6
+  DEPENDS:=+kmod-ipv6 +kmod-iptunnel +kmod-ip6-tunnel @!LINUX_3_3 @!LINUX_3_6
   KCONFIG:=CONFIG_IPV6_GRE
   FILES:=$(LINUX_DIR)/net/ipv6/ip6_gre.ko
   AUTOLOAD:=$(call AutoLoad,39,ip6_gre)
@@ -691,7 +708,7 @@ $(eval $(call KernelPackage,sched-connmark))
 define KernelPackage/sched-esfq
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic shaper ESFQ support
-  DEPENDS:=+kmod-sched-core +kmod-ipt-core
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack
   KCONFIG:= \
 	CONFIG_NET_SCH_ESFQ \
 	CONFIG_NET_SCH_ESFQ_NFCT=y
@@ -798,6 +815,7 @@ $(eval $(call KernelPackage,pktgen))
 define KernelPackage/l2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Layer Two Tunneling Protocol (L2TP)
+  DEPENDS:=+IPV6:kmod-ipv6
   KCONFIG:=CONFIG_L2TP \
 	CONFIG_L2TP_V3=y \
 	CONFIG_L2TP_DEBUGFS=n
