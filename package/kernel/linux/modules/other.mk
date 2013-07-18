@@ -247,7 +247,7 @@ define KernelPackage/rfkill
   FILES:= \
     $(LINUX_DIR)/net/rfkill/rfkill.ko
   AUTOLOAD:=$(call AutoLoad,20,rfkill)
-  $(call SetDepends/rfkill)
+  $(call SetDepends/rfkill,+kmod-input-core)
 endef
 
 define KernelPackage/rfkill/description
