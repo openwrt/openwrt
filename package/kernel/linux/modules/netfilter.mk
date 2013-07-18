@@ -390,7 +390,7 @@ $(eval $(call KernelPackage,ipt-extra))
 define KernelPackage/ip6tables
   SUBMENU:=$(NF_MENU)
   TITLE:=IPv6 modules
-  DEPENDS:=+kmod-ipv6
+  DEPENDS:=+kmod-ipv6 +kmod-ipt-core +kmod-ipt-conntrack
   KCONFIG:=$(KCONFIG_IPT_IPV6)
   FILES:=$(foreach mod,$(IPT_IPV6-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,49,$(notdir $(IPT_IPV6-m)))
