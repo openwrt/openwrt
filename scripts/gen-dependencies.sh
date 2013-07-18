@@ -31,4 +31,4 @@ for kmod in `find $TARGETS -type f -name \*.ko`; do
 		egrep -a '^depends=' | \
 		sed -e 's,^depends=,,' -e 's/,/\n/g' | \
 		awk '{ print $1 ".ko" }'
-done
+done | sort -u
