@@ -117,6 +117,22 @@ endef
 $(eval $(call KernelPackage,lib-lzo))
 
 
+define KernelPackage/lib-raid6
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=RAID6 algorithm support
+  HIDDEN:=1
+  KCONFIG:=CONFIG_RAID6_PQ
+  FILES:=$(LINUX_DIR)/lib/raid6/raid6_pq.ko
+  AUTOLOAD:=$(call AutoLoad,20,raid6_pq,1)
+endef
+
+define KernelPackage/lib-raid6/description
+ Kernel module for RAID6 algorithms.
+endef
+
+$(eval $(call KernelPackage,lib-raid6))
+
+
 define KernelPackage/lib-textsearch
 SUBMENU:=$(LIB_MENU)
   TITLE:=Textsearch support
