@@ -865,7 +865,6 @@ $(eval $(call KernelPackage,l2tp-ip))
 define KernelPackage/sctp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=SCTP protocol kernel support
-  DEPENDS:=+IPV6:kmod-ipv6
   KCONFIG:=\
      CONFIG_IP_SCTP \
      CONFIG_SCTP_DBG_MSG=n \
@@ -880,7 +879,7 @@ define KernelPackage/sctp
      CONFIG_SCTP_DEFAULT_COOKIE_HMAC_MD5=y
   FILES:= $(LINUX_DIR)/net/sctp/sctp.ko
   AUTOLOAD:= $(call AutoLoad,32,sctp)
-  DEPENDS:=+kmod-lib-crc32c +kmod-crypto-md5 +kmod-crypto-hmac
+  DEPENDS:=+kmod-lib-crc32c +kmod-crypto-md5 +kmod-crypto-hmac +IPV6:kmod-ipv6
 endef
 
 define KernelPackage/sctp/description
