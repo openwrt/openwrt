@@ -35,7 +35,7 @@ $(eval $(call KernelPackage,wdt-stmp3xxx))
 
 define KernelPackage/usb-chipidea-imx
     TITLE:=Support for ChipIdea controllers on i.MX
-    DEPENDS:=+kmod-usb-chipidea
+    DEPENDS:=+kmod-usb-chipidea @TARGET_imx23
     FILES:=\
 	$(LINUX_DIR)/drivers/usb/chipidea/ci13xxx_imx.ko
     AUTOLOAD:=$(call AutoLoad,52,ci13xxx_imx,1)
