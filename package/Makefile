@@ -16,7 +16,12 @@ else
   $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
 endif
 ifneq ($(IGNORE_ERRORS),)
-  $(curdir)/builddirs-ignore-compile:= $(if $(filter n m y, $(IGNORE_ERRORS)),$(foreach m,$(IGNORE_ERRORS),$(package-$(subst n,,$(m)))),$(package-m) $(package-))
+  package-y-filter := $(package-y)
+  package-m-filter := $(filter-out $(package-y),$(package-m))
+  package-n-filter := $(filter-out $(package-y) $(package-m),$(package-))
+  package-ignore-errors := $(filter n m y,$(IGNORE_ERRORS))
+  package-ignore-errors := $(if $(package-ignore-errors),$(package-ignore-errors),n m)
+  $(curdir)/builddirs-ignore-compile := $(foreach m,$(package-ignore-errors),$(package-$(m)-filter))
 endif
 
 ifdef CONFIG_USE_MKLIBS
