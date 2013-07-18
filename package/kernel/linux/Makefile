@@ -46,6 +46,10 @@ define Package/kernel/install
   # nothing to do
 endef
 
+define Package/kernel/extra_provides
+	sed -e 's,.*/,,' $(LINUX_DIR)/modules.builtin;
+endef
+
 $(eval $(if $(DUMP),,$(call BuildPackage,kernel)))
 
 include $(sort $(wildcard ./modules/*.mk))
