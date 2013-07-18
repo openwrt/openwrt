@@ -82,7 +82,7 @@ $(eval $(call KernelPackage,fb-cfb-imgblt))
 define KernelPackage/video-core
   SUBMENU:=$(VIDEO_MENU)
   TITLE=Video4Linux support
-  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT
+  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT +PACKAGE_kmod-i2c-core:kmod-i2c-core
   KCONFIG:= \
 	CONFIG_MEDIA_SUPPORT=m \
 	CONFIG_MEDIA_CAMERA_SUPPORT=y \
