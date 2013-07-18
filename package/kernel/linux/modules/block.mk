@@ -306,10 +306,9 @@ $(eval $(call KernelPackage,md-raid10))
 
 
 define KernelPackage/md-raid456
-$(call KernelPackage/md/Depends,+kmod-lib-raid6)
+$(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor)
   TITLE:=RAID Level 456 Driver
   KCONFIG:= \
-       CONFIG_XOR_BLOCKS \
        CONFIG_ASYNC_CORE \
        CONFIG_ASYNC_MEMCPY \
        CONFIG_ASYNC_XOR \
@@ -319,14 +318,13 @@ $(call KernelPackage/md/Depends,+kmod-lib-raid6)
        CONFIG_MD_RAID456 \
        CONFIG_MULTICORE_RAID456=n
   FILES:= \
-	$(LINUX_DIR)/crypto/xor.ko \
 	$(LINUX_DIR)/crypto/async_tx/async_tx.ko \
 	$(LINUX_DIR)/crypto/async_tx/async_memcpy.ko \
 	$(LINUX_DIR)/crypto/async_tx/async_xor.ko \
 	$(LINUX_DIR)/crypto/async_tx/async_pq.ko \
 	$(LINUX_DIR)/crypto/async_tx/async_raid6_recov.ko \
-	$(LINUX_DIR)/drivers/md/raid456.ko \
-  AUTOLOAD:=$(call AutoLoad,28, xor async_tx async_memcpy async_xor async_pq async_raid6_recov raid456)
+	$(LINUX_DIR)/drivers/md/raid456.ko
+  AUTOLOAD:=$(call AutoLoad,28, async_tx async_memcpy async_xor async_pq async_raid6_recov raid456)
 endef
 
 define KernelPackage/md-raid456/description
