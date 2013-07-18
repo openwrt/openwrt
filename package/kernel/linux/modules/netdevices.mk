@@ -403,7 +403,7 @@ $(eval $(call KernelPackage,e1000))
 define KernelPackage/e1000e
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) PRO/1000 PCIe cards kernel support
-  DEPENDS:=@PCIE_SUPPORT
+  DEPENDS:=@PCIE_SUPPORT +(!LINUX_3_3&&!LINUX_3_6&&!LINUX_3_7):kmod-ptp
   KCONFIG:=CONFIG_E1000E
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000e/e1000e.ko
   AUTOLOAD:=$(call AutoLoad,50,e1000e)
