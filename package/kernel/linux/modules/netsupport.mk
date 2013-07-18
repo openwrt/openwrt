@@ -720,7 +720,7 @@ $(eval $(call KernelPackage,sched-esfq))
 define KernelPackage/sched
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Extra traffic schedulers
-  DEPENDS:=+kmod-sched-core
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core
   KCONFIG:= \
 	CONFIG_NET_SCH_CODEL \
 	CONFIG_NET_SCH_DSMARK \
