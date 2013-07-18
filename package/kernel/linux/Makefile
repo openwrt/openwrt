@@ -18,6 +18,9 @@ PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
 include $(INCLUDE_DIR)/package.mk
+
+STAMP_BUILT:=$(STAMP_BUILT)_$(firstword $(shell $(SCRIPT_DIR)/kconfig.pl $(LINUX_DIR)/.config | md5sum))
+
 ifeq ($(DUMP),)
   -include $(LINUX_DIR)/.config
 endif
@@ -30,6 +33,9 @@ define Build/Configure
 endef
 
 define Build/Compile
+endef
+
+define KernelPackage/depends
 endef
 
 CONFIG_PACKAGE_kernel=y
