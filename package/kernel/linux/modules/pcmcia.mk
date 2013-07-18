@@ -65,7 +65,7 @@ $(eval $(call KernelPackage,pcmcia-yenta))
 define KernelPackage/pcmcia-serial
   SUBMENU:=$(PCMCIA_MENU)
   TITLE:=Serial devices support
-  DEPENDS:=kmod-pcmcia-core
+  DEPENDS:=kmod-pcmcia-core +kmod-serial-8250
   KCONFIG:= \
 	CONFIG_PCMCIA_SERIAL_CS \
 	CONFIG_SERIAL_8250_CS
