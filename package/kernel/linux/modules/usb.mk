@@ -530,7 +530,9 @@ define KernelPackage/usb-serial-keyspan
 	CONFIG_USB_SERIAL_KEYSPAN_MPR \
 	CONFIG_USB_SERIAL_KEYSPAN_USA49W \
 	CONFIG_USB_SERIAL_KEYSPAN_USA49WLC
-  FILES:=$(LINUX_DIR)/drivers/usb/serial/keyspan.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/serial/keyspan.ko \
+	$(wildcard $(LINUX_DIR)/drivers/usb/misc/ezusb.ko)
   AUTOLOAD:=$(call AutoLoad,65,keyspan)
   $(call AddDepends/usb-serial)
 endef
