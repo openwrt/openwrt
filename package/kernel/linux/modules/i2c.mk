@@ -158,7 +158,7 @@ I2C_TINY_USB_MODULES:= \
 define KernelPackage/i2c-tiny-usb
   $(call i2c_defaults,$(I2C_TINY_USB_MODULES),59)
   TITLE:=I2C Tiny USB adaptor
-  DEPENDS:=@USB_SUPPORT kmod-i2c-core
+  DEPENDS:=@USB_SUPPORT kmod-i2c-core +kmod-usb-core
 endef
 
 define KernelPackage/i2c-tiny-usb/description
