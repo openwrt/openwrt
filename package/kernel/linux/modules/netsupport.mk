@@ -510,19 +510,30 @@ endef
 $(eval $(call KernelPackage,veth))
 
 
+define KernelPackage/slhc
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  HIDDEN:=1
+  TITLE:=Serial Line Header Compression
+  DEPENDS:=+kmod-lib-crc-ccitt
+  KCONFIG:=CONFIG_SLHC
+  FILES:=$(LINUX_DIR)/drivers/net/slip/slhc.ko
+  AUTOLOAD:=$(call AutoLoad,29,slhc)
+endef
+
+$(eval $(call KernelPackage,slhc))
+
+
 define KernelPackage/ppp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPP modules
-  DEPENDS:=+kmod-lib-crc-ccitt
+  DEPENDS:=+kmod-lib-crc-ccitt +kmod-slhc
   KCONFIG:= \
 	CONFIG_PPP \
-	CONFIG_PPP_ASYNC \
-	CONFIG_SLHC
+	CONFIG_PPP_ASYNC
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ppp/ppp_async.ko \
-	$(LINUX_DIR)/drivers/net/ppp/ppp_generic.ko \
-	$(LINUX_DIR)/drivers/net/slip/slhc.ko
-  AUTOLOAD:=$(call AutoLoad,30,slhc ppp_generic ppp_async)
+	$(LINUX_DIR)/drivers/net/ppp/ppp_generic.ko
+  AUTOLOAD:=$(call AutoLoad,30,ppp_generic ppp_async)
 endef
 
 define KernelPackage/ppp/description
@@ -906,6 +917,7 @@ $(eval $(call KernelPackage,netem))
 
 define KernelPackage/slip
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  DEPENDS:=+kmod-slhc
   TITLE:=SLIP modules
   KCONFIG:= \
        CONFIG_SLIP \
