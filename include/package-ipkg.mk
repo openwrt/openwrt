@@ -128,12 +128,12 @@ ifeq ($(DUMP),)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' -o -name '*~'| $(XARGS) rm -rf
 	@( \
-		find $$(IDIR_$(1)) -name lib\*.so\* | awk -F/ '{ print $$$$NF }'; \
+		find $$(IDIR_$(1)) -name lib\*.so\* -or -name \*.ko | awk -F/ '{ print $$$$NF }'; \
 		for file in $$(patsubst %,$(PKG_INFO_DIR)/%.provides,$$(IDEPEND_$(1))); do \
 			if [ -f "$$$$file" ]; then \
 				cat $$$$file; \
 			fi; \
-		done; \
+		done; $(Package/$(1)/extra_provides) \
 	) | sort -u > $(PKG_INFO_DIR)/$(1).provides
 	$(if $(PROVIDES),@for pkg in $(PROVIDES); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
 	$(CheckDependencies)
