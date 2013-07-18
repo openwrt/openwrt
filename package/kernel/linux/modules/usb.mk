@@ -355,7 +355,7 @@ define KernelPackage/usb-serial-ipw
   KCONFIG:=CONFIG_USB_SERIAL_IPW
   FILES:=$(LINUX_DIR)/drivers/usb/serial/ipw.ko
   AUTOLOAD:=$(call AutoLoad,65,ipw)
-  $(call AddDepends/usb-serial)
+  $(call AddDepends/usb-serial,+kmod-usb-serial-wwan)
 endef
 
 $(eval $(call KernelPackage,usb-serial-ipw))
