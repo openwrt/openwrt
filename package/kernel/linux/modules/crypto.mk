@@ -164,7 +164,7 @@ $(eval $(call KernelPackage,crypto-hw-geode))
 
 define KernelPackage/crypto-hw-hifn-795x
   TITLE:=HIFN 795x crypto accelerator
-  DEPENDS:=+kmod-random-core
+  DEPENDS:=+kmod-random-core +kmod-crypto-manager
   KCONFIG:= \
 	CONFIG_CRYPTO_DEV_HIFN_795X \
 	CONFIG_CRYPTO_DEV_HIFN_795X_RNG=y
@@ -386,6 +386,7 @@ define KernelPackage/crypto-misc
   FILES:= \
 	$(LINUX_DIR)/crypto/anubis.ko \
 	$(LINUX_DIR)/crypto/camellia$(camellia_mod_suffix).ko \
+	$((if $(call kernel_patchver_ge,3.7),$(LINUX_DIR)/crypto/cast_common.ko) \
 	$(LINUX_DIR)/crypto/cast5$(cast56_mod_suffix).ko \
 	$(LINUX_DIR)/crypto/cast6$(cast56_mod_suffix).ko \
 	$(LINUX_DIR)/crypto/fcrypt.ko \
@@ -464,7 +465,7 @@ define KernelPackage/crypto-null
   KCONFIG:=CONFIG_CRYPTO_NULL
   FILES:=$(LINUX_DIR)/crypto/crypto_null.ko
   AUTOLOAD:=$(call AutoLoad,09,crypto_null)
-  $(call AddDepends/crypto)
+  $(call AddDepends/crypto,+kmod-crypto-manager)
 endef
 
 $(eval $(call KernelPackage,crypto-null))
@@ -474,7 +475,7 @@ define KernelPackage/crypto-test
   TITLE:=Test CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_TEST
   FILES:=$(LINUX_DIR)/crypto/tcrypt.ko
-  $(call AddDepends/crypto)
+  $(call AddDepends/crypto,+kmod-crypto-manager)
 endef
 
 $(eval $(call KernelPackage,crypto-test))
