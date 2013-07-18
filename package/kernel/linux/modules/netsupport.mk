@@ -865,6 +865,7 @@ $(eval $(call KernelPackage,l2tp-ip))
 define KernelPackage/sctp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=SCTP protocol kernel support
+  DEPENDS:=+IPV6:kmod-ipv6
   KCONFIG:=\
      CONFIG_IP_SCTP \
      CONFIG_SCTP_DBG_MSG=n \
