@@ -133,6 +133,22 @@ endef
 $(eval $(call KernelPackage,lib-raid6))
 
 
+define KernelPackage/lib-xor
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=XOR blocks algorithm support
+  HIDDEN:=1
+  KCONFIG:=CONFIG_XOR_BLOCKS
+  FILES:=$(LINUX_DIR)/crypto/xor.ko
+  AUTOLOAD:=$(call AutoLoad,20,xor,1)
+endef
+
+define KernelPackage/lib-xor/description
+ Kernel module for XOR blocks algorithms.
+endef
+
+$(eval $(call KernelPackage,lib-xor))
+
+
 define KernelPackage/lib-textsearch
 SUBMENU:=$(LIB_MENU)
   TITLE:=Textsearch support
