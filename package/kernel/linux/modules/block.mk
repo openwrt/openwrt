@@ -191,6 +191,7 @@ $(eval $(call KernelPackage,block2mtd))
 define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper
+  DEPENDS:=+kmod-crypto-manager
   # All the "=n" are unnecessary, they're only there
   # to stop the config from asking the question.
   # MIRROR is M because I've needed it for pvmove.
