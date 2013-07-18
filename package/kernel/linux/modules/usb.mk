@@ -580,7 +580,7 @@ define KernelPackage/usb-serial-qualcomm
   KCONFIG:=CONFIG_USB_SERIAL_QUALCOMM
   FILES:=$(LINUX_DIR)/drivers/usb/serial/qcserial.ko
   AUTOLOAD:=$(call AutoLoad,65,qcserial)
-  $(call AddDepends/usb-serial)
+  $(call AddDepends/usb-serial,+kmod-usb-serial-wwan)
 endef
 
 define KernelPackage/usb-serial-qualcomm/description
