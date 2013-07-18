@@ -54,7 +54,10 @@ ifneq ($(PKG_NAME),toolchain)
 	@( \
 		rm -f $(PKG_INFO_DIR)/$(1).missing; \
 		( \
-			export READELF=$(TARGET_CROSS)readelf XARGS="$(XARGS)"; \
+			export \
+				READELF=$(TARGET_CROSS)readelf \
+				OBJCOPY=$(TARGET_CROSS)objcopy \
+				XARGS="$(XARGS)"; \
 			$(SCRIPT_DIR)/gen-dependencies.sh "$$(IDIR_$(1))"; \
 		) | while read FILE; do \
 			grep -q "$$$$FILE" $(PKG_INFO_DIR)/$(1).provides || \

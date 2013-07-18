@@ -14,7 +14,7 @@ endif
 include $(TOPDIR)/include/debug.mk
 include $(TOPDIR)/include/verbose.mk
 
-TMP_DIR:=$(TOPDIR)/tmp
+export TMP_DIR:=$(TOPDIR)/tmp
 
 GREP_OPTIONS=
 export GREP_OPTIONS
