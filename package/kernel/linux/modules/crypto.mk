@@ -152,6 +152,7 @@ $(eval $(call KernelPackage,crypto-hw-padlock))
 
 define KernelPackage/crypto-hw-geode
   TITLE:=AMD Geode hardware crypto module
+  DEPENDS:=+kmod-crypto-manager
   KCONFIG:= \
 	CONFIG_CRYPTO_DEV_GEODE
   FILES:=$(LINUX_DIR)/drivers/crypto/geode-aes.ko
