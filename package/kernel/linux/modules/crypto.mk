@@ -397,11 +397,10 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/tgr192.ko \
 	$(LINUX_DIR)/crypto/twofish_common.ko \
 	$(LINUX_DIR)/crypto/wp512.ko \
-    $(LINUX_DIR)/crypto/twofish_generic.ko
-  FILES += \
+	$(LINUX_DIR)/crypto/twofish_generic.ko \
 	$(LINUX_DIR)/crypto/blowfish_common.ko \
 	$(LINUX_DIR)/crypto/blowfish_generic.ko \
-    $(LINUX_DIR)/crypto/serpent_generic.ko
+	$(LINUX_DIR)/crypto/serpent_generic.ko
   $(call AddDepends/crypto)
 endef
 
