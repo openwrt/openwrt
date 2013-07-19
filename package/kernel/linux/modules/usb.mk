@@ -1032,6 +1032,7 @@ define KernelPackage/usb-chipidea
 	CONFIG_USB_CHIPIDEA \
 	CONFIG_USB_CHIPIDEA_HOST=y \
 	CONFIG_USB_CHIPIDEA_DEBUG=y
+    DEPENDS:= "+kmod-usb2"
     FILES:=\
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko
     AUTOLOAD:=$(call AutoLoad,51,ci_hdrc,1)
