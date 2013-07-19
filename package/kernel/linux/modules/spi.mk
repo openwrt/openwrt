@@ -14,8 +14,10 @@ define KernelPackage/mmc-spi
   KCONFIG:=CONFIG_MMC_SPI \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/mmc/host/mmc_spi.ko
-  AUTOLOAD:=$(call AutoLoad,90,mmc_spi)
+  FILES:=\
+	$(if $(CONFIG_OF),$(LINUX_DIR)/drivers/mmc/host/of_mmc_spi.ko) \
+	$(LINUX_DIR)/drivers/mmc/host/mmc_spi.ko
+  AUTOLOAD:=$(call AutoLoad,90,$(if $(CONFIG_OF),of_mmc_spi) mmc_spi)
 endef
 
 define KernelPackage/mmc-spi/description
