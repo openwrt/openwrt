@@ -30,6 +30,11 @@ define KernelPackage/fb/description
   Kernel support for framebuffers
 endef
 
+define KernelPackage/fb/x86
+  FILES+=$(LINUX_DIR)/arch/x86/video/fbdev.ko
+  AUTOLOAD:=$(call AutoLoad,06,fbdev fb)
+endef
+
 $(eval $(call KernelPackage,fb))
 
 define KernelPackage/fb-cfb-fillrect
