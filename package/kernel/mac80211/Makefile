@@ -264,7 +264,7 @@ endef
 
 define KernelPackage/rt2800-lib
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +TARGET_ramips:kmod-rt2x00-soc +@DRIVER_11N_SUPPORT
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-lib-crc-ccitt +TARGET_ramips:kmod-rt2x00-soc +@DRIVER_11N_SUPPORT
   TITLE+= (rt2800 LIB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800lib.ko
   AUTOLOAD:=$(call AutoLoad,27,rt2800lib)
@@ -479,6 +479,7 @@ endef
 define KernelPackage/lib80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=802.11 Networking stack
+  DEPENDS:=+kmod-cfg80211
   FILES:= \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211.ko \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_wep.ko \
