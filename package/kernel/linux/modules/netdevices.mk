@@ -97,7 +97,7 @@ define KernelPackage/et131x
   KCONFIG:= \
 	CONFIG_ET131X \
 	CONFIG_ET131X_DEBUG=n
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-libphy
   AUTOLOAD:=$(call AutoLoad,70,et131x)
 endef
 
