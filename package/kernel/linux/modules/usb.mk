@@ -112,7 +112,7 @@ $(eval $(call KernelPackage,usb-ohci,1))
 
 define KernelPackage/usb2-fsl
   TITLE:=Support for Freescale USB2 controllers
-  DEPENDS:=TARGET_mpc85xx
+  DEPENDS:=@TARGET_mpc85xx
   KCONFIG:=\
 	CONFIG_USB_FSL_MPH_DR_OF \
   	CONFIG_USB_EHCI_FSL=y
