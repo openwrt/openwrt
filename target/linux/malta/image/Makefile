@@ -27,9 +27,6 @@ endef
 
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	cp $(KDIR)/vmlinux-initramfs.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs.elf
-endif
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(BIN_DIR)/$(IMG_PREFIX)-uImage-lzma)
 	$(call CompressGzip,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.gz)
