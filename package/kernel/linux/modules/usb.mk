@@ -1046,3 +1046,16 @@ endef
 
 $(eval $(call KernelPackage,usb-chipidea,1))
 
+define KernelPackage/usbmon
+  TITLE:=USB traffic monitor
+  KCONFIG:=CONFIG_USB_MON
+  $(call AddDepends/usb)
+  FILES:=$(LINUX_DIR)/drivers/usb/mon/usbmon.ko
+  AUTOLOAD:=$(call AutoLoad,60,usbmon)
+endef
+
+define KernelPackage/usbmon/description
+ Kernel support for USB traffic monitoring.
+endef
+
+$(eval $(call KernelPackage,usbmon))
