@@ -130,7 +130,7 @@ endef
 
 #$(eval $(call BuildTemplate,SUFFIX,DESCRIPTION,EXTENSION,MODULE,PRIORITY,DEPENDS))
 
-$(eval $(call BuildTemplate,compat-xtables,API compatibilty layer,,compat_xtables,45,,CONFIG_NF_CONNTRACK_MARK=y))
+$(eval $(call BuildTemplate,compat-xtables,API compatibilty layer,,compat_xtables,45,+IPV6:kmod-ip6tables,CONFIG_NF_CONNTRACK_MARK=y))
 $(eval $(call BuildTemplate,rawpost,RAWPOST,,iptable_rawpost $(if $(CONFIG_IPV6),ip6table_rawpost),50,+kmod-ipt-compat-xtables +IPV6:kmod-ip6tables))
 $(eval $(call BuildTemplate,nathelper-rtsp,RTSP Conntrack and NAT,,rtsp/nf_conntrack_rtsp rtsp/nf_nat_rtsp,46,+kmod-ipt-conntrack-extra +kmod-ipt-nat))
 
@@ -146,7 +146,7 @@ $(eval $(call BuildTemplate,iface,iface,xt_iface,xt_iface,46,))
 $(eval $(call BuildTemplate,ipmark,IPMARK,xt_IPMARK,xt_IPMARK,46,+kmod-ipt-compat-xtables))
 $(eval $(call BuildTemplate,ipp2p,IPP2P,xt_ipp2p,xt_ipp2p,46,+kmod-ipt-compat-xtables))
 $(eval $(call BuildTemplate,ipv4options,ipv4options,xt_ipv4options,xt_ipv4options,46,))
-$(eval $(call BuildTemplate,length2,length2,xt_length2,xt_length2,46,))
+$(eval $(call BuildTemplate,length2,length2,xt_length2,xt_length2,46,+kmod-ipt-compat-xtables))
 $(eval $(call BuildTemplate,logmark,LOGMARK,xt_LOGMARK,xt_LOGMARK,46,+kmod-ipt-compat-xtables))
 $(eval $(call BuildTemplate,lscan,lscan,xt_lscan,xt_lscan,46,))
 $(eval $(call BuildTemplate,lua,Lua PacketScript,xt_LUA,LUA/xt_LUA,46,+kmod-ipt-conntrack-extra))
