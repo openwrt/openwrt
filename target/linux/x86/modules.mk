@@ -122,7 +122,7 @@ $(eval $(call KernelPackage,gpio-nsc))
 define KernelPackage/gpio-pc8736x
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PC8736x GPIO support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@TARGET_x86 +kmod-gpio-nsc
   KCONFIG:=CONFIG_PC8736x_GPIO
   FILES:=$(LINUX_DIR)/drivers/char/pc8736x_gpio.ko
   AUTOLOAD:=$(call AutoLoad,40,pc8736x_gpio)
