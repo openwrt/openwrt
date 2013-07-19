@@ -68,24 +68,6 @@ endef
 $(eval $(call KernelPackage,input-evdev))
 
 
-define KernelPackage/input-gpio-buttons
-  SUBMENU:=$(INPUT_MODULES_MENU)
-  TITLE:=Polled GPIO buttons input device
-  DEPENDS:=@GPIO_SUPPORT +kmod-input-polldev
-  KCONFIG:= \
-	CONFIG_INPUT_GPIO_BUTTONS \
-	CONFIG_INPUT_MISC=y
-  FILES:=$(LINUX_DIR)/drivers/input/misc/gpio_buttons.ko
-  AUTOLOAD:=$(call AutoLoad,62,gpio_buttons,1)
-endef
-
-define KernelPackage/input-gpio-buttons/description
- Kernel module for support polled GPIO buttons input device
-endef
-
-$(eval $(call KernelPackage,input-gpio-buttons))
-
-
 define KernelPackage/input-gpio-keys
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=GPIO key support
