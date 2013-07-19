@@ -1,3 +1,14 @@
+--- a/drivers/ssb/Kconfig
++++ b/drivers/ssb/Kconfig
+@@ -144,7 +144,7 @@ config SSB_SFLASH
+ # Assumption: We are on embedded, if we compile the MIPS core.
+ config SSB_EMBEDDED
+ 	bool
+-	depends on SSB_DRIVER_MIPS
++	depends on SSB_DRIVER_MIPS && SSB_PCICORE_HOSTMODE
+ 	default y
+ 
+ config SSB_DRIVER_EXTIF
 --- a/drivers/ssb/driver_chipcommon.c
 +++ b/drivers/ssb/driver_chipcommon.c
 @@ -354,7 +354,7 @@ void ssb_chipcommon_init(struct ssb_chip
@@ -148,6 +159,87 @@
  	default:
  		ssb_printk(KERN_ERR PFX
  			   "Unknown spuravoidance settings for chip 0x%04X, not changing PLL\n",
+--- a/drivers/ssb/driver_chipcommon_sflash.c
++++ b/drivers/ssb/driver_chipcommon_sflash.c
+@@ -9,6 +9,19 @@
+ 
+ #include "ssb_private.h"
+ 
++static struct resource ssb_sflash_resource = {
++	.name	= "ssb_sflash",
++	.start	= SSB_FLASH2,
++	.end	= 0,
++	.flags  = IORESOURCE_MEM | IORESOURCE_READONLY,
++};
++
++struct platform_device ssb_sflash_dev = {
++	.name		= "ssb_sflash",
++	.resource	= &ssb_sflash_resource,
++	.num_resources	= 1,
++};
++
+ struct ssb_sflash_tbl_e {
+ 	char *name;
+ 	u32 id;
+@@ -16,7 +29,7 @@ struct ssb_sflash_tbl_e {
+ 	u16 numblocks;
+ };
+ 
+-static struct ssb_sflash_tbl_e ssb_sflash_st_tbl[] = {
++static const struct ssb_sflash_tbl_e ssb_sflash_st_tbl[] = {
+ 	{ "M25P20", 0x11, 0x10000, 4, },
+ 	{ "M25P40", 0x12, 0x10000, 8, },
+ 
+@@ -27,7 +40,7 @@ static struct ssb_sflash_tbl_e ssb_sflas
+ 	{ 0 },
+ };
+ 
+-static struct ssb_sflash_tbl_e ssb_sflash_sst_tbl[] = {
++static const struct ssb_sflash_tbl_e ssb_sflash_sst_tbl[] = {
+ 	{ "SST25WF512", 1, 0x1000, 16, },
+ 	{ "SST25VF512", 0x48, 0x1000, 16, },
+ 	{ "SST25WF010", 2, 0x1000, 32, },
+@@ -45,7 +58,7 @@ static struct ssb_sflash_tbl_e ssb_sflas
+ 	{ 0 },
+ };
+ 
+-static struct ssb_sflash_tbl_e ssb_sflash_at_tbl[] = {
++static const struct ssb_sflash_tbl_e ssb_sflash_at_tbl[] = {
+ 	{ "AT45DB011", 0xc, 256, 512, },
+ 	{ "AT45DB021", 0x14, 256, 1024, },
+ 	{ "AT45DB041", 0x1c, 256, 2048, },
+@@ -73,7 +86,8 @@ static void ssb_sflash_cmd(struct ssb_ch
+ /* Initialize serial flash access */
+ int ssb_sflash_init(struct ssb_chipcommon *cc)
+ {
+-	struct ssb_sflash_tbl_e *e;
++	struct ssb_sflash *sflash = &cc->dev->bus->mipscore.sflash;
++	const struct ssb_sflash_tbl_e *e;
+ 	u32 id, id2;
+ 
+ 	switch (cc->capabilities & SSB_CHIPCO_CAP_FLASHT) {
+@@ -131,9 +145,21 @@ int ssb_sflash_init(struct ssb_chipcommo
+ 		return -ENOTSUPP;
+ 	}
+ 
++	sflash->window = SSB_FLASH2;
++	sflash->blocksize = e->blocksize;
++	sflash->numblocks = e->numblocks;
++	sflash->size = sflash->blocksize * sflash->numblocks;
++	sflash->present = true;
++
+ 	pr_info("Found %s serial flash (blocksize: 0x%X, blocks: %d)\n",
+ 		e->name, e->blocksize, e->numblocks);
+ 
++	/* Prepare platform device, but don't register it yet. It's too early,
++	 * malloc (required by device_private_init) is not available yet. */
++	ssb_sflash_dev.resource[0].end = ssb_sflash_dev.resource[0].start +
++					 sflash->size;
++	ssb_sflash_dev.dev.platform_data = sflash;
++
+ 	pr_err("Serial flash support is not implemented yet!\n");
+ 
+ 	return -ENOTSUPP;
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
 @@ -167,21 +167,22 @@ static void set_irq(struct ssb_device *d
@@ -318,7 +410,22 @@
  			/* Set dev to NULL to not unregister
  			 * dev on error unwinding. */
  			sdev->dev = NULL;
-@@ -825,10 +821,9 @@ static int ssb_bus_register(struct ssb_b
+@@ -557,6 +553,14 @@ static int ssb_devices_register(struct s
+ 	}
+ #endif
+ 
++#ifdef CONFIG_SSB_SFLASH
++	if (bus->mipscore.sflash.present) {
++		err = platform_device_register(&ssb_sflash_dev);
++		if (err)
++			pr_err("Error registering serial flash\n");
++	}
++#endif
++
+ 	return 0;
+ error:
+ 	/* Unwind the already registered devices. */
+@@ -825,10 +829,9 @@ static int ssb_bus_register(struct ssb_b
  	ssb_mipscore_init(&bus->mipscore);
  	err = ssb_gpio_init(bus);
  	if (err == -ENOTSUPP)
@@ -331,7 +438,7 @@
  	err = ssb_fetch_invariants(bus, get_invariants);
  	if (err) {
  		ssb_bus_may_powerdown(bus);
-@@ -878,11 +873,11 @@ int ssb_bus_pcibus_register(struct ssb_b
+@@ -878,11 +881,11 @@ int ssb_bus_pcibus_register(struct ssb_b
  
  	err = ssb_bus_register(bus, ssb_pci_get_invariants, 0);
  	if (!err) {
@@ -347,7 +454,7 @@
  	}
  
  	return err;
-@@ -903,8 +898,8 @@ int ssb_bus_pcmciabus_register(struct ss
+@@ -903,8 +906,8 @@ int ssb_bus_pcmciabus_register(struct ss
  
  	err = ssb_bus_register(bus, ssb_pcmcia_get_invariants, baseaddr);
  	if (!err) {
@@ -358,7 +465,7 @@
  	}
  
  	return err;
-@@ -925,8 +920,8 @@ int ssb_bus_sdiobus_register(struct ssb_
+@@ -925,8 +928,8 @@ int ssb_bus_sdiobus_register(struct ssb_
  
  	err = ssb_bus_register(bus, ssb_sdio_get_invariants, ~0);
  	if (!err) {
@@ -369,7 +476,7 @@
  	}
  
  	return err;
-@@ -944,8 +939,8 @@ int ssb_bus_ssbbus_register(struct ssb_b
+@@ -944,8 +947,8 @@ int ssb_bus_ssbbus_register(struct ssb_b
  
  	err = ssb_bus_register(bus, get_invariants, baseaddr);
  	if (!err) {
@@ -380,7 +487,7 @@
  	}
  
  	return err;
-@@ -1339,7 +1334,7 @@ out:
+@@ -1339,7 +1342,7 @@ out:
  #endif
  	return err;
  error:
@@ -389,7 +496,7 @@
  	goto out;
  }
  EXPORT_SYMBOL(ssb_bus_may_powerdown);
-@@ -1362,7 +1357,7 @@ int ssb_bus_powerup(struct ssb_bus *bus,
+@@ -1362,7 +1365,7 @@ int ssb_bus_powerup(struct ssb_bus *bus,
  
  	return 0;
  error:
@@ -398,7 +505,7 @@
  	return err;
  }
  EXPORT_SYMBOL(ssb_bus_powerup);
-@@ -1470,15 +1465,13 @@ static int __init ssb_modinit(void)
+@@ -1470,15 +1473,13 @@ static int __init ssb_modinit(void)
  
  	err = b43_pci_ssb_bridge_init();
  	if (err) {
@@ -705,6 +812,17 @@
  		}
  	}
  	err = sprom_extract(bus, sprom, buf, bus->sprom_size);
+--- a/drivers/ssb/pcihost_wrapper.c
++++ b/drivers/ssb/pcihost_wrapper.c
+@@ -38,7 +38,7 @@ static int ssb_pcihost_resume(struct pci
+ 	struct ssb_bus *ssb = pci_get_drvdata(dev);
+ 	int err;
+ 
+-	pci_set_power_state(dev, 0);
++	pci_set_power_state(dev, PCI_D0);
+ 	err = pci_enable_device(dev);
+ 	if (err)
+ 		return err;
 --- a/drivers/ssb/pcmcia.c
 +++ b/drivers/ssb/pcmcia.c
 @@ -143,7 +143,7 @@ int ssb_pcmcia_switch_coreidx(struct ssb
@@ -924,6 +1042,15 @@
  			bus->pcicore.dev = dev;
 --- a/drivers/ssb/sprom.c
 +++ b/drivers/ssb/sprom.c
+@@ -54,7 +54,7 @@ static int hex2sprom(u16 *sprom, const c
+ 	while (cnt < sprom_size_words) {
+ 		memcpy(tmp, dump, 4);
+ 		dump += 4;
+-		err = strict_strtoul(tmp, 16, &parsed);
++		err = kstrtoul(tmp, 16, &parsed);
+ 		if (err)
+ 			return err;
+ 		sprom[cnt++] = swab16((u16)parsed);
 @@ -127,13 +127,13 @@ ssize_t ssb_attr_sprom_store(struct ssb_
  		goto out_kfree;
  	err = ssb_devices_freeze(bus, &freeze);
@@ -974,6 +1101,17 @@
  #endif
  
  #ifdef CONFIG_SSB_DEBUG
+@@ -232,6 +243,10 @@ static inline int ssb_sflash_init(struct
+ extern struct platform_device ssb_pflash_dev;
+ #endif
+ 
++#ifdef CONFIG_SSB_SFLASH
++extern struct platform_device ssb_sflash_dev;
++#endif
++
+ #ifdef CONFIG_SSB_DRIVER_EXTIF
+ extern u32 ssb_extif_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt, u32 ticks);
+ extern u32 ssb_extif_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms);
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
 @@ -26,9 +26,9 @@ struct ssb_sprom_core_pwr_info {
@@ -1054,9 +1192,48 @@
  /* chip_package */
  #define SSB_CHIPPACK_BCM4712S	1	/* Small 200pin 4712 */
  #define SSB_CHIPPACK_BCM4712M	2	/* Medium 225pin 4712 */
+--- a/include/linux/ssb/ssb_driver_mips.h
++++ b/include/linux/ssb/ssb_driver_mips.h
+@@ -20,6 +20,18 @@ struct ssb_pflash {
+ 	u32 window_size;
+ };
+ 
++#ifdef CONFIG_SSB_SFLASH
++struct ssb_sflash {
++	bool present;
++	u32 window;
++	u32 blocksize;
++	u16 numblocks;
++	u32 size;
++
++	void *priv;
++};
++#endif
++
+ struct ssb_mipscore {
+ 	struct ssb_device *dev;
+ 
+@@ -27,6 +39,9 @@ struct ssb_mipscore {
+ 	struct ssb_serial_port serial_ports[4];
+ 
+ 	struct ssb_pflash pflash;
++#ifdef CONFIG_SSB_SFLASH
++	struct ssb_sflash sflash;
++#endif
+ };
+ 
+ extern void ssb_mipscore_init(struct ssb_mipscore *mcore);
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
-@@ -289,11 +289,11 @@
+@@ -172,6 +172,7 @@
+ #define SSB_SPROMSIZE_WORDS_R4		220
+ #define SSB_SPROMSIZE_BYTES_R123	(SSB_SPROMSIZE_WORDS_R123 * sizeof(u16))
+ #define SSB_SPROMSIZE_BYTES_R4		(SSB_SPROMSIZE_WORDS_R4 * sizeof(u16))
++#define SSB_SPROMSIZE_WORDS_R10		230
+ #define SSB_SPROM_BASE1			0x1000
+ #define SSB_SPROM_BASE31		0x0800
+ #define SSB_SPROM_REVISION		0x007E
+@@ -289,11 +290,11 @@
  #define  SSB_SPROM4_ETHPHY_ET1A_SHIFT	5
  #define  SSB_SPROM4_ETHPHY_ET0M		(1<<14)	/* MDIO for enet0 */
  #define  SSB_SPROM4_ETHPHY_ET1M		(1<<15)	/* MDIO for enet1 */
