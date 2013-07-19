@@ -69,7 +69,7 @@ endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   define Image/BuildKernel/Initramfs
-	cp $(KDIR)/vmlinux-initramfs.elf $(BIN_DIR)/$(IMG_PREFIX)-initramfs-vmlinux.elf
+	cp $(KDIR)/vmlinux-initramfs.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs.elf
 	$(call Image/Build/Initramfs)
   endef
 else
