@@ -1,0 +1,49 @@
+From 13ebb50d2789de7bd47cebe57e3f6eba58fdcc7e Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 19 Jul 2013 08:43:35 +0200
+Subject: [PATCH 1/2] early: keep stdio files open
+
+At the end of the 'early_console' function, the
+file descriptor is closed unconditionally. This
+'close' call closes the stdio files if the fd
+returned by the 'open(dev/console)' call equals
+with any of the STD{IN,OUT,ERR}_FILENO values.
+When this happens, all subsequent accesses to
+the stdio files will fail and early console
+access won't work.
+
+To avoid this, don't close the file descriptor if
+that equals with any of the STD*_FILENO values.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+Note:
+
+The issue happens if Linux is unable to open the
+initial console before calling init. In this case,
+the 'open(dev/console)' call in the 'early_console'
+function returns with zero.
+---
+ early.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/early.c b/early.c
+index 27d0929..204623b 100644
+--- a/early.c
++++ b/early.c
+@@ -65,7 +65,11 @@ static void early_console(const char *dev)
+ 	dup2(dd, STDIN_FILENO);
+ 	dup2(dd, STDOUT_FILENO);
+ 	dup2(dd, STDERR_FILENO);
+-	close(dd);
++
++	if (dd != STDIN_FILENO &&
++	    dd != STDOUT_FILENO &&
++	    dd != STDERR_FILENO)
++		close(dd);
+ }
+ 
+ static void early_env(void)
+-- 
+1.7.10
+
