@@ -135,7 +135,7 @@ $(eval $(call KernelPackage,crypto-hw-talitos))
 
 define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
-  DEPENDS:=+kmod-crypto-aes
+  DEPENDS:=+kmod-crypto-aes +kmod-crypto-manager
   KCONFIG:= \
 	CONFIG_CRYPTO_DEV_PADLOCK \
 	CONFIG_CRYPTO_DEV_PADLOCK_AES \
