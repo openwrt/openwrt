@@ -21,7 +21,7 @@ define KernelPackage/ltq-deu-template
   TITLE:=deu driver for $(1)
   URL:=http://www.lantiq.com/
   VARIANT:=$(1)
-  DEPENDS:=@TARGET_lantiq_xway
+  DEPENDS:=@TARGET_lantiq_xway +kmod-crypto-manager
   FILES:=$(PKG_BUILD_DIR)/ltq_deu_$(1).ko $(PKG_BUILD_DIR)/ltq_deu_testmgr.ko
   AUTOLOAD:=$(call AutoLoad,52,ltq_deu_$(1))
 endef
