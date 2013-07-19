@@ -439,7 +439,7 @@ $(eval $(call KernelPackage,rtc-marvell))
 define KernelPackage/rtc-pcf8563
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support
-  $(call AddDepends/rtc)
+  $(call AddDepends/rtc,+kmod-i2c-core)
   KCONFIG:=CONFIG_RTC_DRV_PCF8563
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf8563.ko
   AUTOLOAD:=$(call AutoLoad,60,rtc-pcf8563)

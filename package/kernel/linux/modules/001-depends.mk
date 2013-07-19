@@ -33,5 +33,5 @@ endef
 
 
 define AddDepends/rtc
-  DEPENDS+= @RTC_SUPPORT
+  DEPENDS+= @RTC_SUPPORT $(1)
 endef
