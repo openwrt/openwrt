@@ -38,7 +38,7 @@ $(eval $(call KernelPackage,ipt-core))
 
 define AddDepends/ipt
   SUBMENU:=$(NF_MENU)
-  DEPENDS+= kmod-ipt-core $(1)
+  DEPENDS+= +kmod-ipt-core $(1)
 endef
 
 
