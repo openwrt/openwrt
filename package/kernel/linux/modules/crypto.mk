@@ -386,7 +386,7 @@ define KernelPackage/crypto-misc
   FILES:= \
 	$(LINUX_DIR)/crypto/anubis.ko \
 	$(LINUX_DIR)/crypto/camellia$(camellia_mod_suffix).ko \
-	$((if $(call kernel_patchver_ge,3.7),$(LINUX_DIR)/crypto/cast_common.ko) \
+	$(if $(call kernel_patchver_ge,3.7),$(LINUX_DIR)/crypto/cast_common.ko) \
 	$(LINUX_DIR)/crypto/cast5$(cast56_mod_suffix).ko \
 	$(LINUX_DIR)/crypto/cast6$(cast56_mod_suffix).ko \
 	$(LINUX_DIR)/crypto/fcrypt.ko \
