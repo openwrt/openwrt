@@ -31,34 +31,7 @@
  	.resource	= &bcma_sflash_resource,
  	.num_resources	= 1,
  };
-@@ -30,7 +37,7 @@ struct bcma_sflash_tbl_e {
- 	u16 numblocks;
- };
- 
--static struct bcma_sflash_tbl_e bcma_sflash_st_tbl[] = {
-+static const struct bcma_sflash_tbl_e bcma_sflash_st_tbl[] = {
- 	{ "M25P20", 0x11, 0x10000, 4, },
- 	{ "M25P40", 0x12, 0x10000, 8, },
- 
-@@ -41,7 +48,7 @@ static struct bcma_sflash_tbl_e bcma_sfl
- 	{ 0 },
- };
- 
--static struct bcma_sflash_tbl_e bcma_sflash_sst_tbl[] = {
-+static const struct bcma_sflash_tbl_e bcma_sflash_sst_tbl[] = {
- 	{ "SST25WF512", 1, 0x1000, 16, },
- 	{ "SST25VF512", 0x48, 0x1000, 16, },
- 	{ "SST25WF010", 2, 0x1000, 32, },
-@@ -59,7 +66,7 @@ static struct bcma_sflash_tbl_e bcma_sfl
- 	{ 0 },
- };
- 
--static struct bcma_sflash_tbl_e bcma_sflash_at_tbl[] = {
-+static const struct bcma_sflash_tbl_e bcma_sflash_at_tbl[] = {
- 	{ "AT45DB011", 0xc, 256, 512, },
- 	{ "AT45DB021", 0x14, 256, 1024, },
- 	{ "AT45DB041", 0x1c, 256, 2048, },
-@@ -84,12 +91,186 @@ static void bcma_sflash_cmd(struct bcma_
+@@ -84,11 +91,185 @@ static void bcma_sflash_cmd(struct bcma_
  	bcma_err(cc->core->bus, "SFLASH control command failed (timeout)!\n");
  }
  
@@ -241,12 +214,10 @@
  {
  	struct bcma_bus *bus = cc->core->bus;
 -	struct bcma_sflash *sflash = &cc->sflash;
--	struct bcma_sflash_tbl_e *e;
 +	struct bcm47xxsflash *sflash = &cc->sflash;
-+	const struct bcma_sflash_tbl_e *e;
+ 	const struct bcma_sflash_tbl_e *e;
  	u32 id, id2;
  
- 	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
 @@ -150,6 +331,11 @@ int bcma_sflash_init(struct bcma_drv_cc
  	sflash->numblocks = e->numblocks;
  	sflash->size = sflash->blocksize * sflash->numblocks;
@@ -269,7 +240,7 @@
  
  /** ChipCommon core registers. **/
  #define BCMA_CC_ID			0x0000
-@@ -523,19 +524,6 @@ struct bcma_pflash {
+@@ -578,19 +579,6 @@ struct bcma_pflash {
  	u32 window_size;
  };
  
@@ -289,7 +260,7 @@
  #ifdef CONFIG_BCMA_NFLASH
  struct mtd_info;
  
-@@ -569,7 +557,7 @@ struct bcma_drv_cc {
+@@ -624,7 +612,7 @@ struct bcma_drv_cc {
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  	struct bcma_pflash pflash;
  #ifdef CONFIG_BCMA_SFLASH
