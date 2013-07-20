@@ -1,0 +1,384 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -672,7 +672,7 @@ static void ath_tx_process_buffer(struct
+ 	} else
+ 		ath_tx_complete_aggr(sc, txq, bf, bf_head, ts, txok);
+ 
+-	if ((sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT) && !flush)
++	if (!flush)
+ 		ath_txq_schedule(sc, txq);
+ }
+ 
+@@ -848,6 +848,7 @@ static struct ath_buf *
+ ath_tx_get_tid_subframe(struct ath_softc *sc, struct ath_txq *txq,
+ 			struct ath_atx_tid *tid, struct sk_buff_head **q)
+ {
++	struct ieee80211_tx_info *tx_info;
+ 	struct ath_frame_info *fi;
+ 	struct sk_buff *skb;
+ 	struct ath_buf *bf;
+@@ -874,6 +875,16 @@ ath_tx_get_tid_subframe(struct ath_softc
+ 			continue;
+ 		}
+ 
++		bf->bf_next = NULL;
++		bf->bf_lastbf = bf;
++
++		tx_info = IEEE80211_SKB_CB(skb);
++		tx_info->flags &= ~IEEE80211_TX_CTL_CLEAR_PS_FILT;
++		if (!(tx_info->flags & IEEE80211_TX_CTL_AMPDU)) {
++			bf->bf_state.bf_type = 0;
++			return bf;
++		}
++
+ 		bf->bf_state.bf_type = BUF_AMPDU | BUF_AGGR;
+ 		seqno = bf->bf_state.seqno;
+ 
+@@ -893,58 +904,45 @@ ath_tx_get_tid_subframe(struct ath_softc
+ 			continue;
+ 		}
+ 
+-		bf->bf_next = NULL;
+-		bf->bf_lastbf = bf;
+ 		return bf;
+ 	}
+ 
+ 	return NULL;
+ }
+ 
+-static enum ATH_AGGR_STATUS ath_tx_form_aggr(struct ath_softc *sc,
+-					     struct ath_txq *txq,
+-					     struct ath_atx_tid *tid,
+-					     struct list_head *bf_q,
+-					     int *aggr_len)
++static bool
++ath_tx_form_aggr(struct ath_softc *sc, struct ath_txq *txq,
++		 struct ath_atx_tid *tid, struct list_head *bf_q,
++		 struct ath_buf *bf_first, struct sk_buff_head *tid_q,
++		 int *aggr_len)
+ {
+ #define PADBYTES(_len) ((4 - ((_len) % 4)) % 4)
+-	struct ath_buf *bf, *bf_first = NULL, *bf_prev = NULL;
++	struct ath_buf *bf = bf_first, *bf_prev = NULL;
+ 	int nframes = 0, ndelim;
+ 	u16 aggr_limit = 0, al = 0, bpad = 0,
+ 	    al_delta, h_baw = tid->baw_size / 2;
+-	enum ATH_AGGR_STATUS status = ATH_AGGR_DONE;
+ 	struct ieee80211_tx_info *tx_info;
+ 	struct ath_frame_info *fi;
+ 	struct sk_buff *skb;
+-	struct sk_buff_head *tid_q;
++	bool closed = false;
+ 
+-	do {
+-		bf = ath_tx_get_tid_subframe(sc, txq, tid, &tid_q);
+-		if (!bf) {
+-			status = ATH_AGGR_BAW_CLOSED;
+-			break;
+-		}
++	bf = bf_first;
++	aggr_limit = ath_lookup_rate(sc, bf, tid);
+ 
++	do {
+ 		skb = bf->bf_mpdu;
+ 		fi = get_frame_info(skb);
+ 
+-		if (!bf_first) {
+-			bf_first = bf;
+-			ath_set_rates(tid->an->vif, tid->an->sta, bf);
+-			aggr_limit = ath_lookup_rate(sc, bf, tid);
+-		}
+-
+ 		/* do not exceed aggregation limit */
+ 		al_delta = ATH_AGGR_DELIM_SZ + fi->framelen;
+ 		if (nframes) {
+ 			if (aggr_limit < al + bpad + al_delta ||
+-			    ath_lookup_legacy(bf) || nframes >= h_baw) {
+-				status = ATH_AGGR_LIMITED;
++			    ath_lookup_legacy(bf) || nframes >= h_baw)
+ 				break;
+-			}
+ 
+ 			tx_info = IEEE80211_SKB_CB(bf->bf_mpdu);
+-			if (tx_info->flags & IEEE80211_TX_CTL_RATE_CTRL_PROBE)
++			if ((tx_info->flags & IEEE80211_TX_CTL_RATE_CTRL_PROBE) ||
++			    !(tx_info->flags & IEEE80211_TX_CTL_AMPDU))
+ 				break;
+ 		}
+ 
+@@ -974,11 +972,26 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+ 
+ 		bf_prev = bf;
+ 
++		bf = ath_tx_get_tid_subframe(sc, txq, tid, &tid_q);
++		if (!bf) {
++			closed = true;
++			break;
++		}
+ 	} while (ath_tid_has_buffered(tid));
+ 
++	bf = bf_first;
++	bf->bf_lastbf = bf_prev;
++
++	if (bf == bf_prev) {
++		al = get_frame_info(bf->bf_mpdu)->framelen;
++		bf->bf_state.bf_type = BUF_AMPDU;
++	} else {
++		TX_STAT_INC(txq->axq_qnum, a_aggr);
++	}
++
+ 	*aggr_len = al;
+ 
+-	return status;
++	return closed;
+ #undef PADBYTES
+ }
+ 
+@@ -1239,14 +1252,45 @@ static void ath_tx_fill_desc(struct ath_
+ 	}
+ }
+ 
++static void
++ath_tx_form_burst(struct ath_softc *sc, struct ath_txq *txq,
++		  struct ath_atx_tid *tid, struct list_head *bf_q,
++		  struct ath_buf *bf_first, struct sk_buff_head *tid_q)
++{
++	struct ath_buf *bf = bf_first, *bf_prev = NULL;
++	struct sk_buff *skb;
++	int nframes = 0;
++
++	do {
++		skb = bf->bf_mpdu;
++
++		nframes++;
++		__skb_unlink(skb, tid_q);
++		list_add_tail(&bf->list, bf_q);
++		if (bf_prev)
++			bf_prev->bf_next = bf;
++		bf_prev = bf;
++
++		if (nframes >= 2)
++			break;
++
++		bf = ath_tx_get_tid_subframe(sc, txq, tid, &tid_q);
++		if (!bf)
++			break;
++
++		ath_set_rates(tid->an->vif, tid->an->sta, bf);
++	} while (1);
++}
++
+ static void ath_tx_sched_aggr(struct ath_softc *sc, struct ath_txq *txq,
+ 			      struct ath_atx_tid *tid)
+ {
+ 	struct ath_buf *bf;
+-	enum ATH_AGGR_STATUS status;
+ 	struct ieee80211_tx_info *tx_info;
++	struct sk_buff_head *tid_q;
+ 	struct list_head bf_q;
+-	int aggr_len;
++	int aggr_len = 0;
++	bool aggr, last = true;
+ 
+ 	do {
+ 		if (!ath_tid_has_buffered(tid))
+@@ -1254,38 +1298,31 @@ static void ath_tx_sched_aggr(struct ath
+ 
+ 		INIT_LIST_HEAD(&bf_q);
+ 
+-		status = ath_tx_form_aggr(sc, txq, tid, &bf_q, &aggr_len);
+-
+-		/*
+-		 * no frames picked up to be aggregated;
+-		 * block-ack window is not open.
+-		 */
+-		if (list_empty(&bf_q))
++		bf = ath_tx_get_tid_subframe(sc, txq, tid, &tid_q);
++		if (!bf)
+ 			break;
+ 
+-		bf = list_first_entry(&bf_q, struct ath_buf, list);
+-		bf->bf_lastbf = list_entry(bf_q.prev, struct ath_buf, list);
+ 		tx_info = IEEE80211_SKB_CB(bf->bf_mpdu);
++		aggr = !!(tx_info->flags & IEEE80211_TX_CTL_AMPDU);
++		if ((aggr && txq->axq_ampdu_depth >= ATH_AGGR_MIN_QDEPTH) ||
++		    (!aggr && txq->axq_depth >= ATH_NON_AGGR_MIN_QDEPTH))
++			break;
++
++		ath_set_rates(tid->an->vif, tid->an->sta, bf);
++		if (aggr)
++			last = ath_tx_form_aggr(sc, txq, tid, &bf_q, bf,
++						tid_q, &aggr_len);
++		else
++			ath_tx_form_burst(sc, txq, tid, &bf_q, bf, tid_q);
+ 
+ 		if (tid->ac->clear_ps_filter) {
+ 			tid->ac->clear_ps_filter = false;
+ 			tx_info->flags |= IEEE80211_TX_CTL_CLEAR_PS_FILT;
+-		} else {
+-			tx_info->flags &= ~IEEE80211_TX_CTL_CLEAR_PS_FILT;
+-		}
+-
+-		/* if only one frame, send as non-aggregate */
+-		if (bf == bf->bf_lastbf) {
+-			aggr_len = get_frame_info(bf->bf_mpdu)->framelen;
+-			bf->bf_state.bf_type = BUF_AMPDU;
+-		} else {
+-			TX_STAT_INC(txq->axq_qnum, a_aggr);
+ 		}
+ 
+ 		ath_tx_fill_desc(sc, bf, txq, aggr_len);
+ 		ath_tx_txqaddbuf(sc, txq, &bf_q, false);
+-	} while (txq->axq_ampdu_depth < ATH_AGGR_MIN_QDEPTH &&
+-		 status != ATH_AGGR_BAW_CLOSED);
++	} while (!last);
+ }
+ 
+ int ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
+@@ -1844,58 +1881,6 @@ static void ath_tx_txqaddbuf(struct ath_
+ 	}
+ }
+ 
+-static void ath_tx_send_ampdu(struct ath_softc *sc, struct ath_txq *txq,
+-			      struct ath_atx_tid *tid, struct sk_buff *skb,
+-			      struct ath_tx_control *txctl)
+-{
+-	struct ath_frame_info *fi = get_frame_info(skb);
+-	struct list_head bf_head;
+-	struct ath_buf *bf;
+-
+-	/*
+-	 * Do not queue to h/w when any of the following conditions is true:
+-	 * - there are pending frames in software queue
+-	 * - the TID is currently paused for ADDBA/BAR request
+-	 * - seqno is not within block-ack window
+-	 * - h/w queue depth exceeds low water mark
+-	 */
+-	if ((ath_tid_has_buffered(tid) || tid->paused ||
+-	     !BAW_WITHIN(tid->seq_start, tid->baw_size, tid->seq_next) ||
+-	     txq->axq_ampdu_depth >= ATH_AGGR_MIN_QDEPTH) &&
+-	    txq != sc->tx.uapsdq) {
+-		/*
+-		 * Add this frame to software queue for scheduling later
+-		 * for aggregation.
+-		 */
+-		TX_STAT_INC(txq->axq_qnum, a_queued_sw);
+-		__skb_queue_tail(&tid->buf_q, skb);
+-		if (!txctl->an || !txctl->an->sleeping)
+-			ath_tx_queue_tid(txq, tid);
+-		return;
+-	}
+-
+-	bf = ath_tx_setup_buffer(sc, txq, tid, skb);
+-	if (!bf) {
+-		ath_txq_skb_done(sc, txq, skb);
+-		ieee80211_free_txskb(sc->hw, skb);
+-		return;
+-	}
+-
+-	ath_set_rates(tid->an->vif, tid->an->sta, bf);
+-	bf->bf_state.bf_type = BUF_AMPDU;
+-	INIT_LIST_HEAD(&bf_head);
+-	list_add(&bf->list, &bf_head);
+-
+-	/* Add sub-frame to BAW */
+-	ath_tx_addto_baw(sc, tid, bf);
+-
+-	/* Queue to h/w without aggregation */
+-	TX_STAT_INC(txq->axq_qnum, a_queued_hw);
+-	bf->bf_lastbf = bf;
+-	ath_tx_fill_desc(sc, bf, txq, fi->framelen);
+-	ath_tx_txqaddbuf(sc, txq, &bf_head, false);
+-}
+-
+ static void ath_tx_send_normal(struct ath_softc *sc, struct ath_txq *txq,
+ 			       struct ath_atx_tid *tid, struct sk_buff *skb)
+ {
+@@ -2121,20 +2106,25 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 		ath_txq_unlock(sc, txq);
+ 		txq = sc->tx.uapsdq;
+ 		ath_txq_lock(sc, txq);
+-	}
+-
+-	if (txctl->an && ieee80211_is_data_qos(hdr->frame_control)) {
++	} else if (txctl->an &&
++		   ieee80211_is_data_present(hdr->frame_control)) {
+ 		tid = ath_get_skb_tid(sc, txctl->an, skb);
+ 
+ 		WARN_ON(tid->ac->txq != txctl->txq);
+-	}
+ 
+-	if ((info->flags & IEEE80211_TX_CTL_AMPDU) && tid) {
++		if (info->flags & IEEE80211_TX_CTL_CLEAR_PS_FILT)
++			tid->ac->clear_ps_filter = true;
++
+ 		/*
+-		 * Try aggregation if it's a unicast data frame
+-		 * and the destination is HT capable.
++		 * Add this frame to software queue for scheduling later
++		 * for aggregation.
+ 		 */
+-		ath_tx_send_ampdu(sc, txq, tid, skb, txctl);
++		TX_STAT_INC(txq->axq_qnum, a_queued_sw);
++		__skb_queue_tail(&tid->buf_q, skb);
++		if (!txctl->an->sleeping)
++			ath_tx_queue_tid(txq, tid);
++
++		ath_txq_schedule(sc, txq);
+ 		goto out;
+ 	}
+ 
+@@ -2397,8 +2387,7 @@ static void ath_tx_processq(struct ath_s
+ 
+ 		if (list_empty(&txq->axq_q)) {
+ 			txq->axq_link = NULL;
+-			if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT)
+-				ath_txq_schedule(sc, txq);
++			ath_txq_schedule(sc, txq);
+ 			break;
+ 		}
+ 		bf = list_first_entry(&txq->axq_q, struct ath_buf, list);
+@@ -2628,6 +2617,7 @@ void ath_tx_node_init(struct ath_softc *
+ 	for (acno = 0, ac = &an->ac[acno];
+ 	     acno < IEEE80211_NUM_ACS; acno++, ac++) {
+ 		ac->sched    = false;
++		ac->clear_ps_filter = true;
+ 		ac->txq = sc->tx.txq_map[acno];
+ 		INIT_LIST_HEAD(&ac->tid_q);
+ 	}
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -137,6 +137,8 @@ int ath_descdma_setup(struct ath_softc *
+ #define ATH_AGGR_ENCRYPTDELIM      10
+ /* minimum h/w qdepth to be sustained to maximize aggregation */
+ #define ATH_AGGR_MIN_QDEPTH        2
++/* minimum h/w qdepth for non-aggregated traffic */
++#define ATH_NON_AGGR_MIN_QDEPTH    8
+ 
+ #define IEEE80211_SEQ_SEQ_SHIFT    4
+ #define IEEE80211_SEQ_MAX          4096
+@@ -173,12 +175,6 @@ int ath_descdma_setup(struct ath_softc *
+ 
+ #define ATH_TX_COMPLETE_POLL_INT	1000
+ 
+-enum ATH_AGGR_STATUS {
+-	ATH_AGGR_DONE,
+-	ATH_AGGR_BAW_CLOSED,
+-	ATH_AGGR_LIMITED,
+-};
+-
+ #define ATH_TXFIFO_DEPTH 8
+ struct ath_txq {
+ 	int mac80211_qnum; /* mac80211 queue number, -1 means not mac80211 Q */
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1403,9 +1403,6 @@ static void ath9k_sta_notify(struct ieee
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_node *an = (struct ath_node *) sta->drv_priv;
+ 
+-	if (!sta->ht_cap.ht_supported)
+-		return;
+-
+ 	switch (cmd) {
+ 	case STA_NOTIFY_SLEEP:
+ 		an->sleeping = true;
