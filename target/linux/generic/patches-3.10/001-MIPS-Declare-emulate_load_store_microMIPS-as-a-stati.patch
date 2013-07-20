@@ -1,0 +1,32 @@
+From 2b76d9221a02fa69bbb8c1045616afb923fc6bad Mon Sep 17 00:00:00 2001
+From: David Daney <david.daney@cavium.com>
+Date: Fri, 24 May 2013 20:54:08 +0000
+Subject: [PATCH] MIPS: Declare emulate_load_store_microMIPS as a static
+ function.
+
+commit 74338805ec6869594d583535f941cb478c94dd73 upstream.
+
+It is only used from within a single file, it should not be globally
+visible.
+
+Signed-off-by: David Daney <david.daney@cavium.com>
+Acked-by: Steven J. Hill <Steven.Hill@imgtec.com>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/5325/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/kernel/unaligned.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/mips/kernel/unaligned.c
++++ b/arch/mips/kernel/unaligned.c
+@@ -684,7 +684,8 @@ const int reg16to32[] = { 16, 17, 2, 3,
+ /* Recode table from 16-bit STORE register notation to 32-bit GPR. */
+ const int reg16to32st[] = { 0, 17, 2, 3, 4, 5, 6, 7 };
+ 
+-void emulate_load_store_microMIPS(struct pt_regs *regs, void __user * addr)
++static void emulate_load_store_microMIPS(struct pt_regs *regs,
++					 void __user *addr)
+ {
+ 	unsigned long value;
+ 	unsigned int res;
