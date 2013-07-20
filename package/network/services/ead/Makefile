@@ -33,7 +33,6 @@ endef
 CONFIGURE_PATH = tinysrp
 
 TARGET_CFLAGS += \
-	-I$(LINUX_DIR)/include \
 	-I$(PKG_BUILD_DIR) \
 	-I$(PKG_BUILD_DIR)/tinysrp \
 	$(TARGET_CPPFLAGS)
