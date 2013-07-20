@@ -121,7 +121,7 @@ $(eval $(call KernelPackage,crypto-iv))
 
 define KernelPackage/crypto-hw-talitos
   TITLE:=Freescale integrated security engine (SEC) driver
-  DEPENDS:=+kmod-crypto-aes
+  DEPENDS:=+kmod-crypto-aes +kmod-crypto-manager +kmod-crypto-hash +kmod-random-core
   KCONFIG:= \
 	CONFIG_CRYPTO_DEV_TALITOS
   FILES:= \
