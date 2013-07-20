@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -1328,7 +1328,7 @@ void ath_tx_aggr_stop(struct ath_softc *
+ 
+ 	ath_txq_lock(sc, txq);
+ 	txtid->active = false;
+-	txtid->paused = true;
++	txtid->paused = false;
+ 	ath_tx_flush_tid(sc, txtid);
+ 	ath_txq_unlock_complete(sc, txq);
+ }

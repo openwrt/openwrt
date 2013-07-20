@@ -1,0 +1,68 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -906,9 +906,9 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+ {
+ #define PADBYTES(_len) ((4 - ((_len) % 4)) % 4)
+ 	struct ath_buf *bf, *bf_first = NULL, *bf_prev = NULL;
+-	int rl = 0, nframes = 0, ndelim, prev_al = 0;
++	int nframes = 0, ndelim;
+ 	u16 aggr_limit = 0, al = 0, bpad = 0,
+-		al_delta, h_baw = tid->baw_size / 2;
++	    al_delta, h_baw = tid->baw_size / 2;
+ 	enum ATH_AGGR_STATUS status = ATH_AGGR_DONE;
+ 	struct ieee80211_tx_info *tx_info;
+ 	struct ath_frame_info *fi;
+@@ -925,33 +925,24 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+ 		skb = bf->bf_mpdu;
+ 		fi = get_frame_info(skb);
+ 
+-		if (!bf_first)
++		if (!bf_first) {
+ 			bf_first = bf;
+-
+-		if (!rl) {
+ 			ath_set_rates(tid->an->vif, tid->an->sta, bf);
+ 			aggr_limit = ath_lookup_rate(sc, bf, tid);
+-			rl = 1;
+ 		}
+ 
+ 		/* do not exceed aggregation limit */
+ 		al_delta = ATH_AGGR_DELIM_SZ + fi->framelen;
++		if (nframes) {
++			if (aggr_limit < al + bpad + al_delta ||
++			    ath_lookup_legacy(bf) || nframes >= h_baw) {
++				status = ATH_AGGR_LIMITED;
++				break;
++			}
+ 
+-		if (nframes &&
+-		    ((aggr_limit < (al + bpad + al_delta + prev_al)) ||
+-		     ath_lookup_legacy(bf))) {
+-			status = ATH_AGGR_LIMITED;
+-			break;
+-		}
+-
+-		tx_info = IEEE80211_SKB_CB(bf->bf_mpdu);
+-		if (nframes && (tx_info->flags & IEEE80211_TX_CTL_RATE_CTRL_PROBE))
+-			break;
+-
+-		/* do not exceed subframe limit */
+-		if (nframes >= min((int)h_baw, ATH_AMPDU_SUBFRAME_DEFAULT)) {
+-			status = ATH_AGGR_LIMITED;
+-			break;
++			tx_info = IEEE80211_SKB_CB(bf->bf_mpdu);
++			if (tx_info->flags & IEEE80211_TX_CTL_RATE_CTRL_PROBE)
++				break;
+ 		}
+ 
+ 		/* add padding for previous frame to aggregation length */
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -137,7 +137,6 @@ int ath_descdma_setup(struct ath_softc *
+ #define ATH_AGGR_ENCRYPTDELIM      10
+ /* minimum h/w qdepth to be sustained to maximize aggregation */
+ #define ATH_AGGR_MIN_QDEPTH        2
+-#define ATH_AMPDU_SUBFRAME_DEFAULT 32
+ 
+ #define IEEE80211_SEQ_SEQ_SHIFT    4
+ #define IEEE80211_SEQ_MAX          4096
