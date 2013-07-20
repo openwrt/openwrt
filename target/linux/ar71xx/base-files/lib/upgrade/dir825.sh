@@ -6,18 +6,6 @@
 . /lib/functions.sh
 . /lib/ar71xx.sh
 
-get_mtd_part_size() {
-	local part_name=$1
-	local first dev size erasesize name
-	while read dev size erasesize name; do
-		name=${name#'"'}; name=${name%'"'}
-		if [ "$name" = "$part_name" ]; then
-			echo $((0x$size))
-			break
-		fi
-	done < /proc/mtd
-}
-
 get_magic_at() {
 	local mtddev=$1
 	local pos=$2
@@ -106,7 +94,7 @@ dir825b_check_image() {
 		local md5_img=$(dd if="$1" bs=2 skip=9 count=16 2>/dev/null)
 		local md5_chk=$(dd if="$1" bs=64k skip=1 2>/dev/null | md5sum -); md5_chk="${md5_chk%% *}"
 		local fw_len=$(dd if="$1" bs=2 skip=1 count=4 2>/dev/null)
-		local fw_part_len=$(get_mtd_part_size "firmware")
+		local fw_part_len=$(mtd_get_part_size "firmware")
 
 		if [ -z "$fw_mtd" ]; then
 			ask_bool 0 "Do you have a backup of the caldata partition?" || {
