@@ -275,6 +275,18 @@ mtd_get_mac_binary() {
 	dd bs=1 skip=$offset count=6 if=$part 2>/dev/null | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"'
 }
 
+mtd_get_part_size() {
+	local part_name=$1
+	local first dev size erasesize name
+	while read dev size erasesize name; do
+		name=${name#'"'}; name=${name%'"'}
+		if [ "$name" = "$part_name" ]; then
+			echo $((0x$size))
+			break
+		fi
+	done < /proc/mtd
+}
+
 macaddr_add() {
 	local mac=$1
 	local val=$2
