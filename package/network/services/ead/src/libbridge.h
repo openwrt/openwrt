@@ -21,6 +21,7 @@
 
 #include <sys/socket.h>
 #include <linux/if.h>
+#include <linux/in6.h>
 #include <linux/if_bridge.h>
 
 /* defined in net/if.h but that conflicts with linux/if.h... */
