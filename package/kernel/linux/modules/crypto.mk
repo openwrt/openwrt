@@ -184,7 +184,7 @@ define KernelPackage/crypto-hw-ppc4xx
 	CONFIG_CRYPTO_DEV_PPC4XX
   FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.ko
   AUTOLOAD:=$(call AutoLoad,90,crypto4xx)
-  $(call AddDepends/crypto)
+  $(call AddDepends/crypto,+kmod-crypto-manager +kmod-crypto-hash)
 endef
 
 define KernelPackage/crypto-hw-ppc4xx/description
