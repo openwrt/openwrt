@@ -578,14 +578,12 @@ define KernelPackage/tulip
     CONFIG_TULIP_MMIO=y \
     CONFIG_TULIP_NAPI=y \
     CONFIG_TULIP_NAPI_HW_MITIGATION=y \
-    CONFIG_DE4X5 \
     CONFIG_WINBOND_840 \
     CONFIG_DM9102 \
     CONFIG_ULI526X
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ethernet/dec/tulip/tulip.ko \
 	$(LINUX_DIR)/drivers/net/ethernet/dec/tulip/de2104x.ko \
-	$(LINUX_DIR)/drivers/net/ethernet/dec/tulip/de4x5.ko \
 	$(LINUX_DIR)/drivers/net/ethernet/dec/tulip/dmfe.ko \
 	$(LINUX_DIR)/drivers/net/ethernet/dec/tulip/uli526x.ko \
 	$(LINUX_DIR)/drivers/net/ethernet/dec/tulip/winbond-840.ko
