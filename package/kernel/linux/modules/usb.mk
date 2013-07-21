@@ -1033,6 +1033,7 @@ define KernelPackage/usb-chipidea
     KCONFIG:= \
 	CONFIG_USB_CHIPIDEA \
 	CONFIG_USB_CHIPIDEA_HOST=y \
+	CONFIG_USB_CHIPIDEA_UDC=n \
 	CONFIG_USB_CHIPIDEA_DEBUG=y
     FILES:=\
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko
