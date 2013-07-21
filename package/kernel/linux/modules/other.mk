@@ -239,6 +239,7 @@ $(eval $(call KernelPackage,oprofile))
 define KernelPackage/rfkill
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RF switch subsystem support
+  DEPENDS:=@USE_RFKILL +kmod-input-core
   KCONFIG:= \
     CONFIG_RFKILL \
     CONFIG_RFKILL_INPUT=y \
@@ -247,7 +248,6 @@ define KernelPackage/rfkill
   FILES:= \
     $(LINUX_DIR)/net/rfkill/rfkill.ko
   AUTOLOAD:=$(call AutoLoad,20,rfkill)
-  $(call SetDepends/rfkill,+kmod-input-core)
 endef
 
 define KernelPackage/rfkill/description

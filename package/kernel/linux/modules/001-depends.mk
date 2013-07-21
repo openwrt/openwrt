@@ -22,13 +22,8 @@ define AddDepends/nls
   DEPENDS+= +kmod-nls-base $(foreach cp,$(1),+kmod-nls-$(cp))
 endef
 
-
-define SetDepends/rfkill
-  DEPENDS:= @(TARGET_ar71xx||TARGET_brcm47xx||TARGET_s3c24xx||TARGET_x86||TARGET_gemini||TARGET_cns3xxx||TARGET_ixp4xx) $(1)
-endef
-
 define AddDepends/rfkill
-  DEPENDS+= +(TARGET_ar71xx||TARGET_brcm47xx||TARGET_s3c24xx||TARGET_x86||TARGET_cns3xxx||TARGET_ixp4xx):kmod-rfkill $(1)
+  DEPENDS+= +USE_RFKILL:kmod-rfkill $(1)
 endef
 
 

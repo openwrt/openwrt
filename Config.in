@@ -325,6 +325,10 @@ menu "Global build settings"
 	config KERNEL_KEXEC
 		bool "Enable kexec support"
 
+	config USE_RFKILL
+		bool "Enable rfkill support"
+		default RFKILL_SUPPORT
+
 	#
 	# CGROUP support symbols
 	#
