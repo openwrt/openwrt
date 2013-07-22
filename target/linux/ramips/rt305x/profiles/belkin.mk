@@ -9,7 +9,7 @@ define Profile/F5D8235V2
 	NAME:=Belkin F5D8235 v2
 	PACKAGES:=\
 		kmod-switch-rtl8366rb kmod-swconfig swconfig \
-		kmod-usb-core kmod-usb-rt305x-dwc_otg \
+		kmod-usb-core kmod-usb-dwc2 \
 		kmod-ledtrig-usbdev
 endef
 
@@ -20,7 +20,7 @@ endef
 define Profile/F7C027
 	NAME:=Belkin F7C027
         PACKAGES:=\
-                -kmod-usb-core -kmod-usb-rt305x-dwc_otg \
+                -kmod-usb-core -kmod-usb-dwc2 \
                 -kmod-ledtrig-usbdev
 endef
 

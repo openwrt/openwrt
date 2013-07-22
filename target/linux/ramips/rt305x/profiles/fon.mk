@@ -8,7 +8,7 @@
 define Profile/FONERA20N
 	NAME:=Fonera 2.0N
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-rt305x-dwc_otg \
+		kmod-usb-core kmod-usb-dwc2 \
 		kmod-ledtrig-usbdev
 endef
 

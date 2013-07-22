@@ -8,7 +8,7 @@
 define Profile/UR-336UN
 	NAME:=UPVEL UR-336UN
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-rt305x-dwc_otg \
+		kmod-usb-core kmod-usb-dwc2 \
 		kmod-ledtrig-usbdev
 endef
 
@@ -20,7 +20,7 @@ $(eval $(call Profile,UR-336UN))
 define Profile/UR-326N4G
 	NAME:=UPVEL UR-326N4G
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-rt305x-dwc_otg \
+		kmod-usb-core kmod-usb-dwc2 \
 		kmod-ledtrig-usbdev
 endef
 

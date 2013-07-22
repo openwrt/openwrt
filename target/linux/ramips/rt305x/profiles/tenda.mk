@@ -8,7 +8,7 @@
 define Profile/3G300M
 	NAME:=Tenda 3G300M
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-rt305x-dwc_otg \
+		kmod-usb-core kmod-usb-dwc2 \
 		kmod-ledtrig-usbdev
 endef
 
