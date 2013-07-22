@@ -1,6 +1,5 @@
-diff -urN linux-3.10/drivers/char/broadcom/Kconfig linux-rpi-3.10.y/drivers/char/broadcom/Kconfig
---- linux-3.10/drivers/char/broadcom/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/char/broadcom/Kconfig	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/char/broadcom/Kconfig
 @@ -0,0 +1,17 @@
 +#
 +# Broadcom char driver config
@@ -19,15 +18,13 @@ diff -urN linux-3.10/drivers/char/broadcom/Kconfig linux-rpi-3.10.y/drivers/char
 +        help
 +          Helper for videocore CMA access.
 +
-diff -urN linux-3.10/drivers/char/broadcom/Makefile linux-rpi-3.10.y/drivers/char/broadcom/Makefile
---- linux-3.10/drivers/char/broadcom/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/char/broadcom/Makefile	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/char/broadcom/Makefile
 @@ -0,0 +1,2 @@
 +obj-$(CONFIG_BCM_VC_CMA)	+= vc_cma/
 +
-diff -urN linux-3.10/drivers/char/broadcom/vc_cma/Makefile linux-rpi-3.10.y/drivers/char/broadcom/vc_cma/Makefile
---- linux-3.10/drivers/char/broadcom/vc_cma/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/char/broadcom/vc_cma/Makefile	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/char/broadcom/vc_cma/Makefile
 @@ -0,0 +1,15 @@
 +EXTRA_CFLAGS  += -Wall -Wstrict-prototypes -Wno-trigraphs
 +EXTRA_CFLAGS  += -Werror
@@ -44,9 +41,8 @@ diff -urN linux-3.10/drivers/char/broadcom/vc_cma/Makefile linux-rpi-3.10.y/driv
 +
 +vc-cma-objs := vc_cma.o
 +
-diff -urN linux-3.10/drivers/char/broadcom/vc_cma/vc_cma.c linux-rpi-3.10.y/drivers/char/broadcom/vc_cma/vc_cma.c
---- linux-3.10/drivers/char/broadcom/vc_cma/vc_cma.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/char/broadcom/vc_cma/vc_cma.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/char/broadcom/vc_cma/vc_cma.c
 @@ -0,0 +1,1145 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -1193,18 +1189,18 @@ diff -urN linux-3.10/drivers/char/broadcom/vc_cma/vc_cma.c linux-rpi-3.10.y/driv
 +module_exit(vc_cma_exit);
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Broadcom Corporation");
---- linux-3.10/drivers/char/Makefile	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/char/Makefile	2013-07-06 15:25:50.000000000 +0100
-@@ -62,3 +62,6 @@
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
+@@ -62,3 +62,6 @@ obj-$(CONFIG_JS_RTC)		+= js-rtc.o
  js-rtc-y = rtc.o
  
  obj-$(CONFIG_TILE_SROM)		+= tile-srom.o
 +
 +obj-$(CONFIG_BRCM_CHAR_DRIVERS) += broadcom/
 +
---- linux-3.10/drivers/char/Kconfig	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/char/Kconfig	2013-07-06 15:25:50.000000000 +0100
-@@ -586,6 +586,8 @@
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
+@@ -586,6 +586,8 @@ config DEVPORT
  
  source "drivers/s390/char/Kconfig"
  
@@ -1213,27 +1209,24 @@ diff -urN linux-3.10/drivers/char/broadcom/vc_cma/vc_cma.c linux-rpi-3.10.y/driv
  config MSM_SMD_PKT
  	bool "Enable device interface for some SMD packet ports"
  	default n
-diff -urN linux-3.10/drivers/misc/Kconfig linux-rpi-3.10.y/drivers/misc/Kconfig
---- linux-3.10/drivers/misc/Kconfig	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/Kconfig	2013-07-06 15:25:50.000000000 +0100
-@@ -536,4 +536,6 @@
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -536,4 +536,6 @@ source "drivers/misc/carma/Kconfig"
  source "drivers/misc/altera-stapl/Kconfig"
  source "drivers/misc/mei/Kconfig"
  source "drivers/misc/vmw_vmci/Kconfig"
 +source "drivers/misc/vc04_services/Kconfig"
  endmenu
 +
-diff -urN linux-3.10/drivers/misc/Makefile linux-rpi-3.10.y/drivers/misc/Makefile
---- linux-3.10/drivers/misc/Makefile	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/Makefile	2013-07-06 15:25:50.000000000 +0100
-@@ -53,3 +53,4 @@
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -53,3 +53,4 @@ obj-$(CONFIG_INTEL_MEI)		+= mei/
  obj-$(CONFIG_VMWARE_VMCI)	+= vmw_vmci/
  obj-$(CONFIG_LATTICE_ECP3_CONFIG)	+= lattice-ecp3-config.o
  obj-$(CONFIG_SRAM)		+= sram.o
 +obj-$(CONFIG_BCM2708_VCHIQ)	+= vc04_services/
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/connections/connection.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/connections/connection.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchi/connections/connection.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/connections/connection.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchi/connections/connection.h
 @@ -0,0 +1,328 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -1563,9 +1556,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/connections/conne
 +#endif /* CONNECTION_H_ */
 +
 +/****************************** End of file **********************************/
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h
 @@ -0,0 +1,204 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -1771,9 +1763,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/message_drivers/m
 +#endif // _VCHI_MESSAGE_H_
 +
 +/****************************** End of file ***********************************/
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h
 @@ -0,0 +1,224 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -1999,9 +1990,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h linux-
 +#endif /* VCHI_CFG_H_ */
 +
 +/****************************** End of file **********************************/
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h
 @@ -0,0 +1,71 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -2074,9 +2064,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal
 +//#define VCHI_RX_NANOLOCKS
 +
 +#endif /*VCHI_CFG_INTERNAL_H_*/
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_common.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi_common.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_common.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi_common.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchi/vchi_common.h
 @@ -0,0 +1,163 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -2241,9 +2230,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_common.h lin
 +
 +
 +#endif // VCHI_COMMON_H_
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchi/vchi.h
 @@ -0,0 +1,373 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -2618,9 +2606,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi.h linux-rpi-
 +#endif /* VCHI_H_ */
 +
 +/****************************** End of file **********************************/
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_mh.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi_mh.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_mh.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchi/vchi_mh.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchi/vchi_mh.h
 @@ -0,0 +1,42 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -2664,9 +2651,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchi/vchi_mh.h linux-r
 +#define VCHI_MEM_HANDLE_INVALID 0
 +
 +#endif
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
 @@ -0,0 +1,538 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -3206,9 +3192,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_a
 +
 +	kfree(pagelist);
 +}
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h
 @@ -0,0 +1,42 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -3252,9 +3237,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h
 +#define VCHIQ_PLATFORM_FRAGMENTS_COUNT_IDX  1
 +
 +#endif /* VCHIQ_2835_H */
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
 @@ -0,0 +1,2806 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -6062,9 +6046,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c 
 +module_exit(vchiq_exit);
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Broadcom Corporation");
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h
 @@ -0,0 +1,212 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -6278,9 +6261,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h 
 +
 +
 +#endif /* VCHIQ_ARM_H */
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h
 @@ -0,0 +1,37 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -6319,9 +6301,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_
 +const char *vchiq_get_build_version(void);
 +const char *vchiq_get_build_time(void);
 +const char *vchiq_get_build_date(void);
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h
 @@ -0,0 +1,60 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -6383,9 +6364,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h 
 +#endif
 +
 +#endif /* VCHIQ_CFG_H */
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c
 @@ -0,0 +1,119 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -6506,9 +6486,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connec
 +	mutex_unlock(&g_connected_mutex);
 +}
 +EXPORT_SYMBOL(vchiq_add_connected_callback);
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h
 @@ -0,0 +1,51 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -6561,9 +6540,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connec
 +
 +#endif /* VCHIQ_CONNECTED_H */
 +
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
 @@ -0,0 +1,3818 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -10383,9 +10361,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
 +			numBytes = 0;
 +	}
 +}
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h
 @@ -0,0 +1,703 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -11090,9 +11067,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h
 +	size_t numBytes);
 +
 +#endif
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion
 @@ -0,0 +1,89 @@
 +#!/usr/bin/perl -w
 +
@@ -11183,9 +11159,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genver
 +EOF
 +
 +
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h
 @@ -0,0 +1,41 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -11228,9 +11203,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h linu
 +
 +#endif
 +
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h
 @@ -0,0 +1,188 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -11420,9 +11394,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h l
 +      short *peer_version);
 +
 +#endif /* VCHIQ_IF_H */
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h
 @@ -0,0 +1,129 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -11553,9 +11526,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.
 +#define VCHIQ_IOC_MAX                  15
 +
 +#endif
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
 @@ -0,0 +1,454 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -12011,9 +11983,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_l
 +
 +	return status;
 +}
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h
 @@ -0,0 +1,71 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -12086,9 +12057,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv
 +	const VCHIQ_PLATFORM_DATA_T * platform_data);
 +
 +#endif
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h
 @@ -0,0 +1,58 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -12148,9 +12118,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pageli
 +} FRAGMENTS_T;
 +
 +#endif /* VCHIQ_PAGELIST_H */
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_proc.c linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_proc.c
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_proc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_proc.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_proc.c
 @@ -0,0 +1,243 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -12395,9 +12364,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_proc.c
 +	return proc_info.clients;
 +}
 +
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
 @@ -0,0 +1,815 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -13214,9 +13182,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
 +	return ret;
 +}
 +EXPORT_SYMBOL(vchi_service_release);
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
 @@ -0,0 +1,120 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -13338,9 +13305,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
 +
 +	return header;
 +}
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
 @@ -0,0 +1,82 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -13424,9 +13390,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
 +
 +#endif
 +
-diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
---- linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
 @@ -0,0 +1,59 @@
 +/**
 + * Copyright (c) 2010-2012 Broadcom. All rights reserved.
@@ -13487,9 +13452,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_versio
 +{
 +   return vchiq_build_time;
 +}
-diff -urN linux-3.10/drivers/misc/vc04_services/Kconfig linux-rpi-3.10.y/drivers/misc/vc04_services/Kconfig
---- linux-3.10/drivers/misc/vc04_services/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/Kconfig	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/Kconfig
 @@ -0,0 +1,10 @@
 +config BCM2708_VCHIQ
 +	tristate "Videocore VCHIQ"
@@ -13501,9 +13465,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/Kconfig linux-rpi-3.10.y/drivers
 +		Defaults to Y when the Broadcom Videocore services
 +		are included in the build, N otherwise.
 +
-diff -urN linux-3.10/drivers/misc/vc04_services/Makefile linux-rpi-3.10.y/drivers/misc/vc04_services/Makefile
---- linux-3.10/drivers/misc/vc04_services/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/misc/vc04_services/Makefile	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/misc/vc04_services/Makefile
 @@ -0,0 +1,18 @@
 +ifeq ($(CONFIG_MACH_BCM2708),y)
 +
@@ -13523,9 +13486,8 @@ diff -urN linux-3.10/drivers/misc/vc04_services/Makefile linux-rpi-3.10.y/driver
 +
 +endif
 +
-diff -urN linux-3.10/include/linux/broadcom/vc_cma.h linux-rpi-3.10.y/include/linux/broadcom/vc_cma.h
---- linux-3.10/include/linux/broadcom/vc_cma.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/include/linux/broadcom/vc_cma.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/include/linux/broadcom/vc_cma.h
 @@ -0,0 +1,30 @@
 +/*****************************************************************************
 +* Copyright 2012 Broadcom Corporation.  All rights reserved.

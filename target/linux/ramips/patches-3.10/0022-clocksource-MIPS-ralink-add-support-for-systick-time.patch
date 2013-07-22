@@ -14,8 +14,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  5 files changed, 172 insertions(+)
  create mode 100644 drivers/clocksource/cevt-rt3352.c
 
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index 8f49ed7..f5d97b8 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -15,6 +15,7 @@ choice
@@ -34,8 +32,6 @@ index 8f49ed7..f5d97b8 100644
  
  endchoice
  
-diff --git a/arch/mips/ralink/clk.c b/arch/mips/ralink/clk.c
-index 8dfa22f..bba0cdf 100644
 --- a/arch/mips/ralink/clk.c
 +++ b/arch/mips/ralink/clk.c
 @@ -69,4 +69,5 @@ void __init plat_time_init(void)
@@ -44,8 +40,6 @@ index 8dfa22f..bba0cdf 100644
  	clk_put(clk);
 +	clocksource_of_init();
  }
-diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
-index f151c6c..0e58a49 100644
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
 @@ -7,6 +7,12 @@ config CLKSRC_I8253
@@ -61,8 +55,6 @@ index f151c6c..0e58a49 100644
  config I8253_LOCK
  	bool
  
-diff --git a/drivers/clocksource/Makefile b/drivers/clocksource/Makefile
-index 8d979c7..423a2ef 100644
 --- a/drivers/clocksource/Makefile
 +++ b/drivers/clocksource/Makefile
 @@ -10,6 +10,7 @@ obj-$(CONFIG_SH_TIMER_TMU)	+= sh_tmu.o
@@ -73,9 +65,6 @@ index 8d979c7..423a2ef 100644
  obj-$(CONFIG_DW_APB_TIMER)	+= dw_apb_timer.o
  obj-$(CONFIG_DW_APB_TIMER_OF)	+= dw_apb_timer_of.o
  obj-$(CONFIG_CLKSRC_NOMADIK_MTU)	+= nomadik-mtu.o
-diff --git a/drivers/clocksource/cevt-rt3352.c b/drivers/clocksource/cevt-rt3352.c
-new file mode 100644
-index 0000000..bd50edd
 --- /dev/null
 +++ b/drivers/clocksource/cevt-rt3352.c
 @@ -0,0 +1,162 @@
@@ -241,6 +230,3 @@ index 0000000..bd50edd
 +}
 +
 +CLOCKSOURCE_OF_DECLARE(systick, "ralink,cevt-systick", ralink_systick_init);
--- 
-1.7.10.4
-

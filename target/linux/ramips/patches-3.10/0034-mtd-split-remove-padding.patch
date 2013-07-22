@@ -1,8 +1,6 @@
-Index: linux-3.10.1/drivers/mtd/mtdpart.c
-===================================================================
---- linux-3.10.1.orig/drivers/mtd/mtdpart.c	2013-07-15 11:39:25.376669514 +0200
-+++ linux-3.10.1/drivers/mtd/mtdpart.c	2013-07-15 11:49:53.040684471 +0200
-@@ -807,10 +807,6 @@
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -807,10 +807,6 @@ static void split_uimage(struct mtd_info
  		return;
  
  	len = be32_to_cpu(hdr.size) + 0x40;

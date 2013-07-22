@@ -1,5 +1,3 @@
-diff --git a/drivers/bcma/Kconfig b/drivers/bcma/Kconfig
-index 8b4221c..380a200 100644
 --- a/drivers/bcma/Kconfig
 +++ b/drivers/bcma/Kconfig
 @@ -26,6 +26,7 @@ config BCMA_HOST_PCI_POSSIBLE
@@ -10,8 +8,6 @@ index 8b4221c..380a200 100644
  
  config BCMA_DRIVER_PCI_HOSTMODE
  	bool "Driver for PCI core working in hostmode"
-diff --git a/drivers/bcma/bcma_private.h b/drivers/bcma/bcma_private.h
-index 79595a0..0215f9a 100644
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
 @@ -22,6 +22,8 @@
@@ -23,8 +19,6 @@ index 79595a0..0215f9a 100644
  int bcma_bus_register(struct bcma_bus *bus);
  void bcma_bus_unregister(struct bcma_bus *bus);
  int __init bcma_bus_early_register(struct bcma_bus *bus,
-diff --git a/drivers/bcma/core.c b/drivers/bcma/core.c
-index 17b26ce..37a5ffe 100644
 --- a/drivers/bcma/core.c
 +++ b/drivers/bcma/core.c
 @@ -9,6 +9,25 @@
@@ -53,7 +47,7 @@ index 17b26ce..37a5ffe 100644
  bool bcma_core_is_enabled(struct bcma_device *core)
  {
  	if ((bcma_aread32(core, BCMA_IOCTL) & (BCMA_IOCTL_CLK | BCMA_IOCTL_FGC))
-@@ -25,13 +44,15 @@ void bcma_core_disable(struct bcma_device *core, u32 flags)
+@@ -25,13 +44,15 @@ void bcma_core_disable(struct bcma_devic
  	if (bcma_aread32(core, BCMA_RESET_CTL) & BCMA_RESET_CTL_RESET)
  		return;
  
@@ -72,7 +66,7 @@ index 17b26ce..37a5ffe 100644
  }
  EXPORT_SYMBOL_GPL(bcma_core_disable);
  
-@@ -43,6 +64,7 @@ int bcma_core_enable(struct bcma_device *core, u32 flags)
+@@ -43,6 +64,7 @@ int bcma_core_enable(struct bcma_device
  	bcma_aread32(core, BCMA_IOCTL);
  
  	bcma_awrite32(core, BCMA_RESET_CTL, 0);
@@ -80,11 +74,9 @@ index 17b26ce..37a5ffe 100644
  	udelay(1);
  
  	bcma_awrite32(core, BCMA_IOCTL, (BCMA_IOCTL_CLK | flags));
-diff --git a/drivers/bcma/driver_chipcommon.c b/drivers/bcma/driver_chipcommon.c
-index 036c674..b068f98 100644
 --- a/drivers/bcma/driver_chipcommon.c
 +++ b/drivers/bcma/driver_chipcommon.c
-@@ -140,8 +140,15 @@ void bcma_core_chipcommon_init(struct bcma_drv_cc *cc)
+@@ -140,8 +140,15 @@ void bcma_core_chipcommon_init(struct bc
  	bcma_core_chipcommon_early_init(cc);
  
  	if (cc->core->id.rev >= 20) {
@@ -102,11 +94,9 @@ index 036c674..b068f98 100644
  	}
  
  	if (cc->capabilities & BCMA_CC_CAP_PMU)
-diff --git a/drivers/bcma/driver_chipcommon_pmu.c b/drivers/bcma/driver_chipcommon_pmu.c
-index edca73a..5081a8c 100644
 --- a/drivers/bcma/driver_chipcommon_pmu.c
 +++ b/drivers/bcma/driver_chipcommon_pmu.c
-@@ -56,6 +56,109 @@ void bcma_chipco_regctl_maskset(struct bcma_drv_cc *cc, u32 offset, u32 mask,
+@@ -56,6 +56,109 @@ void bcma_chipco_regctl_maskset(struct b
  }
  EXPORT_SYMBOL_GPL(bcma_chipco_regctl_maskset);
  
@@ -216,7 +206,7 @@ index edca73a..5081a8c 100644
  static void bcma_pmu_resources_init(struct bcma_drv_cc *cc)
  {
  	struct bcma_bus *bus = cc->core->bus;
-@@ -66,6 +169,25 @@ static void bcma_pmu_resources_init(struct bcma_drv_cc *cc)
+@@ -66,6 +169,25 @@ static void bcma_pmu_resources_init(stru
  		min_msk = 0x200D;
  		max_msk = 0xFFFF;
  		break;
@@ -242,7 +232,7 @@ index edca73a..5081a8c 100644
  	default:
  		bcma_debug(bus, "PMU resource config unknown or not needed for device 0x%04X\n",
  			   bus->chipinfo.id);
-@@ -165,6 +287,7 @@ void bcma_pmu_init(struct bcma_drv_cc *cc)
+@@ -165,6 +287,7 @@ void bcma_pmu_init(struct bcma_drv_cc *c
  		bcma_cc_set32(cc, BCMA_CC_PMU_CTL,
  			     BCMA_CC_PMU_CTL_NOILPONW);
  
@@ -250,8 +240,6 @@ index edca73a..5081a8c 100644
  	bcma_pmu_resources_init(cc);
  	bcma_pmu_workarounds(cc);
  }
-diff --git a/drivers/bcma/driver_chipcommon_sflash.c b/drivers/bcma/driver_chipcommon_sflash.c
-index e6ed4fe..4d07cce 100644
 --- a/drivers/bcma/driver_chipcommon_sflash.c
 +++ b/drivers/bcma/driver_chipcommon_sflash.c
 @@ -30,7 +30,7 @@ struct bcma_sflash_tbl_e {
@@ -263,7 +251,7 @@ index e6ed4fe..4d07cce 100644
  	{ "M25P20", 0x11, 0x10000, 4, },
  	{ "M25P40", 0x12, 0x10000, 8, },
  
-@@ -41,7 +41,7 @@ static struct bcma_sflash_tbl_e bcma_sflash_st_tbl[] = {
+@@ -41,7 +41,7 @@ static struct bcma_sflash_tbl_e bcma_sfl
  	{ 0 },
  };
  
@@ -272,7 +260,7 @@ index e6ed4fe..4d07cce 100644
  	{ "SST25WF512", 1, 0x1000, 16, },
  	{ "SST25VF512", 0x48, 0x1000, 16, },
  	{ "SST25WF010", 2, 0x1000, 32, },
-@@ -59,7 +59,7 @@ static struct bcma_sflash_tbl_e bcma_sflash_sst_tbl[] = {
+@@ -59,7 +59,7 @@ static struct bcma_sflash_tbl_e bcma_sfl
  	{ 0 },
  };
  
@@ -281,7 +269,7 @@ index e6ed4fe..4d07cce 100644
  	{ "AT45DB011", 0xc, 256, 512, },
  	{ "AT45DB021", 0x14, 256, 1024, },
  	{ "AT45DB041", 0x1c, 256, 2048, },
-@@ -89,7 +89,7 @@ int bcma_sflash_init(struct bcma_drv_cc *cc)
+@@ -89,7 +89,7 @@ int bcma_sflash_init(struct bcma_drv_cc
  {
  	struct bcma_bus *bus = cc->core->bus;
  	struct bcma_sflash *sflash = &cc->sflash;
@@ -290,11 +278,9 @@ index e6ed4fe..4d07cce 100644
  	u32 id, id2;
  
  	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
-diff --git a/drivers/bcma/host_pci.c b/drivers/bcma/host_pci.c
-index fbf2759..a355e63 100644
 --- a/drivers/bcma/host_pci.c
 +++ b/drivers/bcma/host_pci.c
-@@ -275,6 +275,7 @@ static DEFINE_PCI_DEVICE_TABLE(bcma_pci_bridge_tbl) = {
+@@ -275,6 +275,7 @@ static DEFINE_PCI_DEVICE_TABLE(bcma_pci_
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4357) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4358) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4359) },
@@ -302,11 +288,9 @@ index fbf2759..a355e63 100644
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
  	{ 0, },
  };
-diff --git a/drivers/bcma/main.c b/drivers/bcma/main.c
-index f72f52b..0067422 100644
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -93,6 +93,25 @@ struct bcma_device *bcma_find_core_unit(struct bcma_bus *bus, u16 coreid,
+@@ -93,6 +93,25 @@ struct bcma_device *bcma_find_core_unit(
  	return NULL;
  }
  
@@ -332,8 +316,6 @@ index f72f52b..0067422 100644
  static void bcma_release_core_dev(struct device *dev)
  {
  	struct bcma_device *core = container_of(dev, struct bcma_device, dev);
-diff --git a/drivers/bcma/sprom.c b/drivers/bcma/sprom.c
-index 8934298..72bf454 100644
 --- a/drivers/bcma/sprom.c
 +++ b/drivers/bcma/sprom.c
 @@ -72,12 +72,12 @@ fail:
@@ -353,7 +335,7 @@ index 8934298..72bf454 100644
  }
  
  /**************************************************
-@@ -124,29 +124,29 @@ static inline u8 bcma_crc8(u8 crc, u8 data)
+@@ -124,29 +124,29 @@ static inline u8 bcma_crc8(u8 crc, u8 da
  	return t[crc ^ data];
  }
  
@@ -389,7 +371,7 @@ index 8934298..72bf454 100644
  	expected_crc = tmp >> SSB_SPROM_REVISION_CRC_SHIFT;
  	if (crc != expected_crc)
  		return -EPROTO;
-@@ -154,21 +154,25 @@ static int bcma_sprom_check_crc(const u16 *sprom)
+@@ -154,21 +154,25 @@ static int bcma_sprom_check_crc(const u1
  	return 0;
  }
  
@@ -419,7 +401,7 @@ index 8934298..72bf454 100644
  	return 0;
  }
  
-@@ -208,9 +212,6 @@ static void bcma_sprom_extract_r8(struct bcma_bus *bus, const u16 *sprom)
+@@ -208,9 +212,6 @@ static void bcma_sprom_extract_r8(struct
  	BUILD_BUG_ON(ARRAY_SIZE(pwr_info_offset) !=
  			ARRAY_SIZE(bus->sprom.core_pwr_info));
  
@@ -429,7 +411,7 @@ index 8934298..72bf454 100644
  	for (i = 0; i < 3; i++) {
  		v = sprom[SPOFF(SSB_SPROM8_IL0MAC) + i];
  		*(((__be16 *)bus->sprom.il0mac) + i) = cpu_to_be16(v);
-@@ -502,7 +503,7 @@ static bool bcma_sprom_onchip_available(struct bcma_bus *bus)
+@@ -502,7 +503,7 @@ static bool bcma_sprom_onchip_available(
  	case BCMA_CHIP_ID_BCM4331:
  		present = chip_status & BCMA_CC_CHIPST_4331_OTP_PRESENT;
  		break;
@@ -500,8 +482,6 @@ index 8934298..72bf454 100644
 -	kfree(sprom);
  	return err;
  }
-diff --git a/include/linux/bcma/bcma.h b/include/linux/bcma/bcma.h
-index 2e34db8..622fc50 100644
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
 @@ -144,6 +144,7 @@ struct bcma_host_ops {
@@ -512,8 +492,6 @@ index 2e34db8..622fc50 100644
  #define BCMA_CHIP_ID_BCM43224	43224
  #define  BCMA_PKG_ID_BCM43224_FAB_CSM	0x8
  #define  BCMA_PKG_ID_BCM43224_FAB_SMIC	0xa
-diff --git a/include/linux/bcma/bcma_driver_chipcommon.h b/include/linux/bcma/bcma_driver_chipcommon.h
-index b8b09ea..c49e1a1 100644
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
 @@ -330,6 +330,8 @@

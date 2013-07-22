@@ -1,7 +1,6 @@
-diff -urN linux-3.10/drivers/staging/media/lirc/Kconfig linux-rpi-3.10.y/drivers/staging/media/lirc/Kconfig
---- linux-3.10/drivers/staging/media/lirc/Kconfig	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/staging/media/lirc/Kconfig	2013-07-06 15:25:50.000000000 +0100
-@@ -38,6 +38,12 @@
+--- a/drivers/staging/media/lirc/Kconfig
++++ b/drivers/staging/media/lirc/Kconfig
+@@ -38,6 +38,12 @@ config LIRC_PARALLEL
  	help
  	  Driver for Homebrew Parallel Port Receivers
  
@@ -14,9 +13,8 @@ diff -urN linux-3.10/drivers/staging/media/lirc/Kconfig linux-rpi-3.10.y/drivers
  config LIRC_SASEM
  	tristate "Sasem USB IR Remote"
  	depends on LIRC && USB
-diff -urN linux-3.10/drivers/staging/media/lirc/lirc_rpi.c linux-rpi-3.10.y/drivers/staging/media/lirc/lirc_rpi.c
---- linux-3.10/drivers/staging/media/lirc/lirc_rpi.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/staging/media/lirc/lirc_rpi.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/staging/media/lirc/lirc_rpi.c
 @@ -0,0 +1,692 @@
 +/*
 + * lirc_rpi.c
@@ -710,10 +708,9 @@ diff -urN linux-3.10/drivers/staging/media/lirc/lirc_rpi.c linux-rpi-3.10.y/driv
 +
 +module_param(debug, bool, S_IRUGO | S_IWUSR);
 +MODULE_PARM_DESC(debug, "Enable debugging messages");
-diff -urN linux-3.10/drivers/staging/media/lirc/Makefile linux-rpi-3.10.y/drivers/staging/media/lirc/Makefile
---- linux-3.10/drivers/staging/media/lirc/Makefile	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/staging/media/lirc/Makefile	2013-07-06 15:25:50.000000000 +0100
-@@ -7,6 +7,7 @@
+--- a/drivers/staging/media/lirc/Makefile
++++ b/drivers/staging/media/lirc/Makefile
+@@ -7,6 +7,7 @@ obj-$(CONFIG_LIRC_BT829)	+= lirc_bt829.o
  obj-$(CONFIG_LIRC_IGORPLUGUSB)	+= lirc_igorplugusb.o
  obj-$(CONFIG_LIRC_IMON)		+= lirc_imon.o
  obj-$(CONFIG_LIRC_PARALLEL)	+= lirc_parallel.o

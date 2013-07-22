@@ -1,6 +1,5 @@
-diff -urN linux-3.10/drivers/video/bcm2708_fb.c linux-rpi-3.10.y/drivers/video/bcm2708_fb.c
---- linux-3.10/drivers/video/bcm2708_fb.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/video/bcm2708_fb.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/video/bcm2708_fb.c
 @@ -0,0 +1,647 @@
 +/*
 + *  linux/drivers/video/bcm2708_fb.c
@@ -649,9 +648,8 @@ diff -urN linux-3.10/drivers/video/bcm2708_fb.c linux-rpi-3.10.y/drivers/video/b
 +MODULE_PARM_DESC(fbwidth, "Width of ARM Framebuffer");
 +MODULE_PARM_DESC(fbheight, "Height of ARM Framebuffer");
 +MODULE_PARM_DESC(fbdepth, "Bit depth of ARM Framebuffer");
-diff -urN linux-3.10/drivers/video/cfbimgblt.c linux-rpi-3.10.y/drivers/video/cfbimgblt.c
---- linux-3.10/drivers/video/cfbimgblt.c	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/video/cfbimgblt.c	2013-07-06 15:25:50.000000000 +0100
+--- a/drivers/video/cfbimgblt.c
++++ b/drivers/video/cfbimgblt.c
 @@ -28,6 +28,11 @@
   *
   *  Also need to add code to deal with cards endians that are different than
@@ -664,7 +662,7 @@ diff -urN linux-3.10/drivers/video/cfbimgblt.c linux-rpi-3.10.y/drivers/video/cf
   */
  #include <linux/module.h>
  #include <linux/string.h>
-@@ -262,6 +267,133 @@
+@@ -262,6 +267,133 @@ static inline void fast_imageblit(const
  	}
  }	
  	
@@ -798,7 +796,7 @@ diff -urN linux-3.10/drivers/video/cfbimgblt.c linux-rpi-3.10.y/drivers/video/cf
  void cfb_imageblit(struct fb_info *p, const struct fb_image *image)
  {
  	u32 fgcolor, bgcolor, start_index, bitstart, pitch_index = 0;
-@@ -294,11 +426,21 @@
+@@ -294,11 +426,21 @@ void cfb_imageblit(struct fb_info *p, co
  			bgcolor = image->bg_color;
  		}	
  		
@@ -825,10 +823,9 @@ diff -urN linux-3.10/drivers/video/cfbimgblt.c linux-rpi-3.10.y/drivers/video/cf
  			slow_imageblit(image, p, dst1, fgcolor, bgcolor,
  					start_index, pitch_index);
  	} else
-diff -urN linux-3.10/drivers/video/fbmem.c linux-rpi-3.10.y/drivers/video/fbmem.c
---- linux-3.10/drivers/video/fbmem.c	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/video/fbmem.c	2013-07-06 15:25:50.000000000 +0100
-@@ -1074,6 +1074,25 @@
+--- a/drivers/video/fbmem.c
++++ b/drivers/video/fbmem.c
+@@ -1074,6 +1074,25 @@ fb_blank(struct fb_info *info, int blank
   	return ret;
  }
  
@@ -854,7 +851,7 @@ diff -urN linux-3.10/drivers/video/fbmem.c linux-rpi-3.10.y/drivers/video/fbmem.
  static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
  			unsigned long arg)
  {
-@@ -1084,6 +1103,7 @@
+@@ -1084,6 +1103,7 @@ static long do_fb_ioctl(struct fb_info *
  	struct fb_cmap cmap_from;
  	struct fb_cmap_user cmap;
  	struct fb_event event;
@@ -862,7 +859,7 @@ diff -urN linux-3.10/drivers/video/fbmem.c linux-rpi-3.10.y/drivers/video/fbmem.
  	void __user *argp = (void __user *)arg;
  	long ret = 0;
  
-@@ -1193,6 +1213,15 @@
+@@ -1193,6 +1213,15 @@ static long do_fb_ioctl(struct fb_info *
  		console_unlock();
  		unlock_fb_info(info);
  		break;
@@ -878,7 +875,7 @@ diff -urN linux-3.10/drivers/video/fbmem.c linux-rpi-3.10.y/drivers/video/fbmem.
  	default:
  		if (!lock_fb_info(info))
  			return -ENODEV;
-@@ -1345,6 +1374,7 @@
+@@ -1345,6 +1374,7 @@ static long fb_compat_ioctl(struct file
  	case FBIOPAN_DISPLAY:
  	case FBIOGET_CON2FBMAP:
  	case FBIOPUT_CON2FBMAP:
@@ -886,10 +883,9 @@ diff -urN linux-3.10/drivers/video/fbmem.c linux-rpi-3.10.y/drivers/video/fbmem.
  		arg = (unsigned long) compat_ptr(arg);
  	case FBIOBLANK:
  		ret = do_fb_ioctl(info, cmd, arg);
-diff -urN linux-3.10/drivers/video/Kconfig linux-rpi-3.10.y/drivers/video/Kconfig
---- linux-3.10/drivers/video/Kconfig	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/video/Kconfig	2013-07-06 15:25:50.000000000 +0100
-@@ -310,6 +310,20 @@
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -310,6 +310,20 @@ config FB_PM2_FIFO_DISCONNECT
  	help
  	  Support the Permedia2 FIFO disconnect feature.
  
@@ -910,9 +906,8 @@ diff -urN linux-3.10/drivers/video/Kconfig linux-rpi-3.10.y/drivers/video/Kconfi
  config FB_ARMCLCD
  	tristate "ARM PrimeCell PL110 support"
  	depends on FB && ARM && ARM_AMBA
-diff -urN linux-3.10/drivers/video/logo/logo_linux_clut224.ppm linux-rpi-3.10.y/drivers/video/logo/logo_linux_clut224.ppm
---- linux-3.10/drivers/video/logo/logo_linux_clut224.ppm	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/video/logo/logo_linux_clut224.ppm	2013-07-06 15:25:50.000000000 +0100
+--- a/drivers/video/logo/logo_linux_clut224.ppm
++++ b/drivers/video/logo/logo_linux_clut224.ppm
 @@ -1,1604 +1,883 @@
  P3
 -# Standard 224-color Linux logo
@@ -3399,10 +3394,9 @@ diff -urN linux-3.10/drivers/video/logo/logo_linux_clut224.ppm linux-rpi-3.10.y/
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0
-diff -urN linux-3.10/drivers/video/Makefile linux-rpi-3.10.y/drivers/video/Makefile
---- linux-3.10/drivers/video/Makefile	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/video/Makefile	2013-07-06 15:25:50.000000000 +0100
-@@ -100,6 +100,7 @@
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -100,6 +100,7 @@ obj-$(CONFIG_FB_PVR2)             += pvr
  obj-$(CONFIG_FB_VOODOO1)          += sstfb.o
  obj-$(CONFIG_FB_ARMCLCD)	  += amba-clcd.o
  obj-$(CONFIG_FB_GOLDFISH)         += goldfishfb.o
@@ -3410,9 +3404,8 @@ diff -urN linux-3.10/drivers/video/Makefile linux-rpi-3.10.y/drivers/video/Makef
  obj-$(CONFIG_FB_68328)            += 68328fb.o
  obj-$(CONFIG_FB_GBE)              += gbefb.o
  obj-$(CONFIG_FB_CIRRUS)		  += cirrusfb.o
-diff -urN linux-3.10/include/uapi/linux/fb.h linux-rpi-3.10.y/include/uapi/linux/fb.h
---- linux-3.10/include/uapi/linux/fb.h	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/include/uapi/linux/fb.h	2013-07-06 15:25:50.000000000 +0100
+--- a/include/uapi/linux/fb.h
++++ b/include/uapi/linux/fb.h
 @@ -34,6 +34,11 @@
  #define FBIOPUT_MODEINFO        0x4617
  #define FBIOGET_DISPINFO        0x4618

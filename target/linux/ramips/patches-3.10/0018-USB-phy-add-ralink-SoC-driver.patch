@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 200 insertions(+)
  create mode 100644 drivers/usb/phy/ralink-phy.c
 
-diff --git a/drivers/usb/phy/Kconfig b/drivers/usb/phy/Kconfig
-index 2311b1e..2944b8c 100644
 --- a/drivers/usb/phy/Kconfig
 +++ b/drivers/usb/phy/Kconfig
 @@ -210,4 +210,12 @@ config USB_ULPI_VIEWPORT
@@ -28,18 +26,13 @@ index 2311b1e..2944b8c 100644
 +	  SoCs.
 +
  endif # USB_PHY
-diff --git a/drivers/usb/phy/Makefile b/drivers/usb/phy/Makefile
-index a9169cb..f7da66b 100644
 --- a/drivers/usb/phy/Makefile
 +++ b/drivers/usb/phy/Makefile
-@@ -31,3 +31,4 @@ obj-$(CONFIG_USB_MXS_PHY)		+= phy-mxs-usb.o
+@@ -31,3 +31,4 @@ obj-$(CONFIG_USB_MXS_PHY)		+= phy-mxs-us
  obj-$(CONFIG_USB_RCAR_PHY)		+= phy-rcar-usb.o
  obj-$(CONFIG_USB_ULPI)			+= phy-ulpi.o
  obj-$(CONFIG_USB_ULPI_VIEWPORT)		+= phy-ulpi-viewport.o
 +obj-$(CONFIG_RALINK_USBPHY)		+= ralink-phy.o
-diff --git a/drivers/usb/phy/ralink-phy.c b/drivers/usb/phy/ralink-phy.c
-new file mode 100644
-index 0000000..269cff4
 --- /dev/null
 +++ b/drivers/usb/phy/ralink-phy.c
 @@ -0,0 +1,191 @@
@@ -234,6 +227,3 @@ index 0000000..269cff4
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("Ralink USB phy");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
--- 
-1.7.10.4
-

@@ -1,5 +1,3 @@
-diff --git a/drivers/ssb/Kconfig b/drivers/ssb/Kconfig
-index 5ff3a4f..36171fd 100644
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
 @@ -144,7 +144,7 @@ config SSB_SFLASH
@@ -11,8 +9,6 @@ index 5ff3a4f..36171fd 100644
  	default y
  
  config SSB_DRIVER_EXTIF
-diff --git a/drivers/ssb/driver_chipcommon_sflash.c b/drivers/ssb/driver_chipcommon_sflash.c
-index 720665c..e84cf04 100644
 --- a/drivers/ssb/driver_chipcommon_sflash.c
 +++ b/drivers/ssb/driver_chipcommon_sflash.c
 @@ -9,6 +9,19 @@
@@ -44,7 +40,7 @@ index 720665c..e84cf04 100644
  	{ "M25P20", 0x11, 0x10000, 4, },
  	{ "M25P40", 0x12, 0x10000, 8, },
  
-@@ -27,7 +40,7 @@ static struct ssb_sflash_tbl_e ssb_sflash_st_tbl[] = {
+@@ -27,7 +40,7 @@ static struct ssb_sflash_tbl_e ssb_sflas
  	{ 0 },
  };
  
@@ -53,7 +49,7 @@ index 720665c..e84cf04 100644
  	{ "SST25WF512", 1, 0x1000, 16, },
  	{ "SST25VF512", 0x48, 0x1000, 16, },
  	{ "SST25WF010", 2, 0x1000, 32, },
-@@ -45,7 +58,7 @@ static struct ssb_sflash_tbl_e ssb_sflash_sst_tbl[] = {
+@@ -45,7 +58,7 @@ static struct ssb_sflash_tbl_e ssb_sflas
  	{ 0 },
  };
  
@@ -62,7 +58,7 @@ index 720665c..e84cf04 100644
  	{ "AT45DB011", 0xc, 256, 512, },
  	{ "AT45DB021", 0x14, 256, 1024, },
  	{ "AT45DB041", 0x1c, 256, 2048, },
-@@ -73,7 +86,8 @@ static void ssb_sflash_cmd(struct ssb_chipcommon *cc, u32 opcode)
+@@ -73,7 +86,8 @@ static void ssb_sflash_cmd(struct ssb_ch
  /* Initialize serial flash access */
  int ssb_sflash_init(struct ssb_chipcommon *cc)
  {
@@ -72,7 +68,7 @@ index 720665c..e84cf04 100644
  	u32 id, id2;
  
  	switch (cc->capabilities & SSB_CHIPCO_CAP_FLASHT) {
-@@ -131,9 +145,21 @@ int ssb_sflash_init(struct ssb_chipcommon *cc)
+@@ -131,9 +145,21 @@ int ssb_sflash_init(struct ssb_chipcommo
  		return -ENOTSUPP;
  	}
  
@@ -94,11 +90,9 @@ index 720665c..e84cf04 100644
  	pr_err("Serial flash support is not implemented yet!\n");
  
  	return -ENOTSUPP;
-diff --git a/drivers/ssb/main.c b/drivers/ssb/main.c
-index 812775a..e55ddf7 100644
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -553,6 +553,14 @@ static int ssb_devices_register(struct ssb_bus *bus)
+@@ -553,6 +553,14 @@ static int ssb_devices_register(struct s
  	}
  #endif
  
@@ -113,11 +107,9 @@ index 812775a..e55ddf7 100644
  	return 0;
  error:
  	/* Unwind the already registered devices. */
-diff --git a/drivers/ssb/pcihost_wrapper.c b/drivers/ssb/pcihost_wrapper.c
-index 32ed1fa..69161bb 100644
 --- a/drivers/ssb/pcihost_wrapper.c
 +++ b/drivers/ssb/pcihost_wrapper.c
-@@ -38,7 +38,7 @@ static int ssb_pcihost_resume(struct pci_dev *dev)
+@@ -38,7 +38,7 @@ static int ssb_pcihost_resume(struct pci
  	struct ssb_bus *ssb = pci_get_drvdata(dev);
  	int err;
  
@@ -126,11 +118,9 @@ index 32ed1fa..69161bb 100644
  	err = pci_enable_device(dev);
  	if (err)
  		return err;
-diff --git a/drivers/ssb/sprom.c b/drivers/ssb/sprom.c
-index a3b2364..e753fbe 100644
 --- a/drivers/ssb/sprom.c
 +++ b/drivers/ssb/sprom.c
-@@ -54,7 +54,7 @@ static int hex2sprom(u16 *sprom, const char *dump, size_t len,
+@@ -54,7 +54,7 @@ static int hex2sprom(u16 *sprom, const c
  	while (cnt < sprom_size_words) {
  		memcpy(tmp, dump, 4);
  		dump += 4;
@@ -139,11 +129,9 @@ index a3b2364..e753fbe 100644
  		if (err)
  			return err;
  		sprom[cnt++] = swab16((u16)parsed);
-diff --git a/drivers/ssb/ssb_private.h b/drivers/ssb/ssb_private.h
-index 4671f17..eb507a5 100644
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
-@@ -243,6 +243,10 @@ static inline int ssb_sflash_init(struct ssb_chipcommon *cc)
+@@ -243,6 +243,10 @@ static inline int ssb_sflash_init(struct
  extern struct platform_device ssb_pflash_dev;
  #endif
  
@@ -154,8 +142,6 @@ index 4671f17..eb507a5 100644
  #ifdef CONFIG_SSB_DRIVER_EXTIF
  extern u32 ssb_extif_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt, u32 ticks);
  extern u32 ssb_extif_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms);
-diff --git a/include/linux/ssb/ssb_driver_mips.h b/include/linux/ssb/ssb_driver_mips.h
-index afe79d4..6535e47 100644
 --- a/include/linux/ssb/ssb_driver_mips.h
 +++ b/include/linux/ssb/ssb_driver_mips.h
 @@ -20,6 +20,18 @@ struct ssb_pflash {
@@ -187,8 +173,6 @@ index afe79d4..6535e47 100644
  };
  
  extern void ssb_mipscore_init(struct ssb_mipscore *mcore);
-diff --git a/include/linux/ssb/ssb_regs.h b/include/linux/ssb/ssb_regs.h
-index 3a72569..f9f931c 100644
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
 @@ -172,6 +172,7 @@

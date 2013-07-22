@@ -1,7 +1,6 @@
-diff -urN linux-3.10/drivers/usb/core/generic.c linux-rpi-3.10.y/drivers/usb/core/generic.c
---- linux-3.10/drivers/usb/core/generic.c	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/core/generic.c	2013-07-06 15:25:50.000000000 +0100
-@@ -152,6 +152,7 @@
+--- a/drivers/usb/core/generic.c
++++ b/drivers/usb/core/generic.c
+@@ -152,6 +152,7 @@ int usb_choose_configuration(struct usb_
  		dev_warn(&udev->dev,
  			"no configuration chosen from %d choice%s\n",
  			num_configs, plural(num_configs));
@@ -9,10 +8,9 @@ diff -urN linux-3.10/drivers/usb/core/generic.c linux-rpi-3.10.y/drivers/usb/cor
  	}
  	return i;
  }
-diff -urN linux-3.10/drivers/usb/core/message.c linux-rpi-3.10.y/drivers/usb/core/message.c
---- linux-3.10/drivers/usb/core/message.c	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/core/message.c	2013-07-06 15:25:50.000000000 +0100
-@@ -1875,6 +1875,85 @@
+--- a/drivers/usb/core/message.c
++++ b/drivers/usb/core/message.c
+@@ -1875,6 +1875,85 @@ free_interfaces:
  	if (cp->string == NULL &&
  			!(dev->quirks & USB_QUIRK_CONFIG_INTF_STRINGS))
  		cp->string = usb_cache_string(dev, cp->desc.iConfiguration);
@@ -98,9 +96,8 @@ diff -urN linux-3.10/drivers/usb/core/message.c linux-rpi-3.10.y/drivers/usb/cor
  
  	/* Now that the interfaces are installed, re-enable LPM. */
  	usb_unlocked_enable_lpm(dev);
-diff -urN linux-3.10/drivers/usb/core/otg_whitelist.h linux-rpi-3.10.y/drivers/usb/core/otg_whitelist.h
---- linux-3.10/drivers/usb/core/otg_whitelist.h	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/core/otg_whitelist.h	2013-07-06 15:25:50.000000000 +0100
+--- a/drivers/usb/core/otg_whitelist.h
++++ b/drivers/usb/core/otg_whitelist.h
 @@ -19,33 +19,82 @@
  static struct usb_device_id whitelist_table [] = {
  
@@ -190,7 +187,7 @@ diff -urN linux-3.10/drivers/usb/core/otg_whitelist.h linux-rpi-3.10.y/drivers/u
  static int is_targeted(struct usb_device *dev)
  {
  	struct usb_device_id	*id = whitelist_table;
-@@ -55,58 +104,83 @@
+@@ -55,58 +104,83 @@ static int is_targeted(struct usb_device
  		return 1;
  
  	/* HNP test device is _never_ targeted (see OTG spec 6.6.6) */
@@ -316,9 +313,8 @@ diff -urN linux-3.10/drivers/usb/core/otg_whitelist.h linux-rpi-3.10.y/drivers/u
  #endif
  }
  
-diff -urN linux-3.10/drivers/usb/gadget/file_storage.c linux-rpi-3.10.y/drivers/usb/gadget/file_storage.c
---- linux-3.10/drivers/usb/gadget/file_storage.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/gadget/file_storage.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/gadget/file_storage.c
 @@ -0,0 +1,3676 @@
 +/*
 + * file_storage.c -- File-backed USB Storage Gadget, for USB development
@@ -3996,9 +3992,8 @@ diff -urN linux-3.10/drivers/usb/gadget/file_storage.c linux-rpi-3.10.y/drivers/
 +	kref_put(&fsg->ref, fsg_release);
 +}
 +module_exit(fsg_cleanup);
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/changes.txt linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/changes.txt
---- linux-3.10/drivers/usb/host/dwc_common_port/changes.txt	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/changes.txt	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/changes.txt
 @@ -0,0 +1,174 @@
 +
 +dwc_read_reg32() and friends now take an additional parameter, a pointer to an
@@ -4174,9 +4169,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/changes.txt linux-rpi-3.10
 +A DWC_LIBMODULE #define has also been added. If this is not defined, then the
 +module code in dwc_common_linux.c is not compiled in. This allows linking the
 +library code directly into a driver module, instead of as a standalone module.
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/doc/doxygen.cfg linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/doc/doxygen.cfg
---- linux-3.10/drivers/usb/host/dwc_common_port/doc/doxygen.cfg	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/doc/doxygen.cfg	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/doc/doxygen.cfg
 @@ -0,0 +1,270 @@
 +# Doxyfile 1.4.5
 +
@@ -4448,9 +4442,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/doc/doxygen.cfg linux-rpi-
 +# Configuration::additions related to the search engine   
 +#---------------------------------------------------------------------------
 +SEARCHENGINE           = NO
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_cc.c linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_cc.c
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_cc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_cc.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_cc.c
 @@ -0,0 +1,532 @@
 +/* =========================================================================
 + * $File: //dwh/usb_iip/dev/software/dwc_common_port_2/dwc_cc.c $
@@ -4984,9 +4977,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_cc.c linux-rpi-3.10.y/
 +}
 +
 +#endif	/* DWC_CCLIB */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_cc.h linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_cc.h
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_cc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_cc.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_cc.h
 @@ -0,0 +1,225 @@
 +/* =========================================================================
 + * $File: //dwh/usb_iip/dev/software/dwc_common_port_2/dwc_cc.h $
@@ -5213,9 +5205,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_cc.h linux-rpi-3.10.y/
 +
 +#endif /* _DWC_CC_H_ */
 +
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c
 @@ -0,0 +1,1308 @@
 +#include "dwc_os.h"
 +#include "dwc_list.h"
@@ -6525,9 +6516,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c linux-rp
 +{
 +	return wq->pending;
 +}
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_common_linux.c linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_common_linux.c
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_common_linux.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_common_linux.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
 @@ -0,0 +1,1426 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
@@ -7955,9 +7945,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_common_linux.c linux-r
 +MODULE_LICENSE ("GPL");
 +
 +#endif	/* DWC_LIBMODULE */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c
 @@ -0,0 +1,1275 @@
 +#include "dwc_os.h"
 +#include "dwc_list.h"
@@ -9234,9 +9223,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c linux-rp
 +{
 +	return wq->pending;
 +}
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_crypto.c linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_crypto.c
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_crypto.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_crypto.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_crypto.c
 @@ -0,0 +1,308 @@
 +/* =========================================================================
 + * $File: //dwh/usb_iip/dev/software/dwc_common_port_2/dwc_crypto.c $
@@ -9546,9 +9534,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_crypto.c linux-rpi-3.1
 +}
 +
 +#endif	/* DWC_CRYPTOLIB */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_crypto.h linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_crypto.h
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_crypto.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_crypto.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_crypto.h
 @@ -0,0 +1,111 @@
 +/* =========================================================================
 + * $File: //dwh/usb_iip/dev/software/dwc_common_port_2/dwc_crypto.h $
@@ -9661,9 +9648,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_crypto.h linux-rpi-3.1
 +#endif
 +
 +#endif /* _DWC_CRYPTO_H_ */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_dh.c linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_dh.c
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_dh.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_dh.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_dh.c
 @@ -0,0 +1,291 @@
 +/* =========================================================================
 + * $File: //dwh/usb_iip/dev/software/dwc_common_port_2/dwc_dh.c $
@@ -9956,9 +9942,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_dh.c linux-rpi-3.10.y/
 +#endif /* !CONFIG_MACH_IPMATE */
 +
 +#endif /* DWC_CRYPTOLIB */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_dh.h linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_dh.h
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_dh.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_dh.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_dh.h
 @@ -0,0 +1,106 @@
 +/* =========================================================================
 + * $File: //dwh/usb_iip/dev/software/dwc_common_port_2/dwc_dh.h $
@@ -10066,9 +10051,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_dh.h linux-rpi-3.10.y/
 +#endif
 +
 +#endif /* _DWC_DH_H_ */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_list.h linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_list.h
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_list.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_list.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_list.h
 @@ -0,0 +1,594 @@
 +/*	$OpenBSD: queue.h,v 1.26 2004/05/04 16:59:32 grange Exp $	*/
 +/*	$NetBSD: queue.h,v 1.11 1996/05/16 05:17:14 mycroft Exp $	*/
@@ -10664,9 +10648,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_list.h linux-rpi-3.10.
 +#endif
 +
 +#endif /* _DWC_LIST_H_ */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_mem.c linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_mem.c
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_mem.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_mem.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_mem.c
 @@ -0,0 +1,245 @@
 +/* Memory Debugging */
 +#ifdef DWC_DEBUG_MEMORY
@@ -10913,9 +10896,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_mem.c linux-rpi-3.10.y
 +}
 +
 +#endif /* DWC_DEBUG_MEMORY */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_modpow.c linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_modpow.c
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_modpow.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_modpow.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_modpow.c
 @@ -0,0 +1,636 @@
 +/* Bignum routines adapted from PUTTY sources.  PuTTY copyright notice follows.
 + *
@@ -11553,9 +11535,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_modpow.c linux-rpi-3.1
 +#endif /* CONFIG_MACH_IPMATE */
 +
 +#endif /*DWC_CRYPTOLIB */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_modpow.h linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_modpow.h
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_modpow.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_modpow.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_modpow.h
 @@ -0,0 +1,34 @@
 +/*
 + * dwc_modpow.h
@@ -11591,9 +11572,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_modpow.h linux-rpi-3.1
 +#endif
 +
 +#endif /* _LINUX_BIGNUM_H */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_notifier.c linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_notifier.c
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_notifier.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_notifier.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_notifier.c
 @@ -0,0 +1,319 @@
 +#ifdef DWC_NOTIFYLIB
 +
@@ -11914,9 +11894,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_notifier.c linux-rpi-3
 +}
 +
 +#endif	/* DWC_NOTIFYLIB */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_notifier.h linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_notifier.h
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_notifier.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_notifier.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_notifier.h
 @@ -0,0 +1,122 @@
 +
 +#ifndef __DWC_NOTIFIER_H__
@@ -12040,9 +12019,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_notifier.h linux-rpi-3
 +#endif
 +
 +#endif /* __DWC_NOTIFIER_H__ */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_os.h linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_os.h
---- linux-3.10/drivers/usb/host/dwc_common_port/dwc_os.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/dwc_os.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/dwc_os.h
 @@ -0,0 +1,1262 @@
 +/* =========================================================================
 + * $File: //dwh/usb_iip/dev/software/dwc_common_port_2/dwc_os.h $
@@ -13306,9 +13284,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/dwc_os.h linux-rpi-3.10.y/
 +#endif
 +
 +#endif /* _DWC_OS_H_ */
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/Makefile linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/Makefile
---- linux-3.10/drivers/usb/host/dwc_common_port/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/Makefile	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/Makefile
 @@ -0,0 +1,58 @@
 +#
 +# Makefile for DWC_common library
@@ -13368,9 +13345,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/Makefile linux-rpi-3.10.y/
 +
 +clean:
 +	rm -rf *.o *.ko .*.cmd *.mod.c .*.o.d .*.o.tmp modules.order Module.markers Module.symvers .tmp_versions/
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/Makefile.fbsd linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/Makefile.fbsd
---- linux-3.10/drivers/usb/host/dwc_common_port/Makefile.fbsd	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/Makefile.fbsd	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/Makefile.fbsd
 @@ -0,0 +1,17 @@
 +CFLAGS	+= -I/sys/i386/compile/GENERIC -I/sys/i386/include -I/usr/include
 +CFLAGS	+= -DDWC_FREEBSD
@@ -13389,9 +13365,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/Makefile.fbsd linux-rpi-3.
 +       dwc_common_fbsd.c dwc_mem.c
 +
 +.include <bsd.kmod.mk>
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/Makefile.linux linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/Makefile.linux
---- linux-3.10/drivers/usb/host/dwc_common_port/Makefile.linux	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/Makefile.linux	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/Makefile.linux
 @@ -0,0 +1,49 @@
 +#
 +# Makefile for DWC_common library
@@ -13442,9 +13417,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/Makefile.linux linux-rpi-3
 +
 +clean:
 +	rm -rf *.o *.ko .*.cmd *.mod.c .*.o.d .*.o.tmp modules.order Module.markers Module.symvers .tmp_versions/
-diff -urN linux-3.10/drivers/usb/host/dwc_common_port/usb.h linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/usb.h
---- linux-3.10/drivers/usb/host/dwc_common_port/usb.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_common_port/usb.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_common_port/usb.h
 @@ -0,0 +1,946 @@
 +/*
 + * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -14392,9 +14366,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_common_port/usb.h linux-rpi-3.10.y/dri
 +#endif
 +
 +#endif /* _USB_H_ */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/doc/doxygen.cfg linux-rpi-3.10.y/drivers/usb/host/dwc_otg/doc/doxygen.cfg
---- linux-3.10/drivers/usb/host/dwc_otg/doc/doxygen.cfg	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/doc/doxygen.cfg	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/doc/doxygen.cfg
 @@ -0,0 +1,224 @@
 +# Doxyfile 1.3.9.1
 +
@@ -14620,9 +14593,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/doc/doxygen.cfg linux-rpi-3.10.y/d
 +# Configuration::additions related to the search engine   
 +#---------------------------------------------------------------------------
 +SEARCHENGINE           = NO
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dummy_audio.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dummy_audio.c
---- linux-3.10/drivers/usb/host/dwc_otg/dummy_audio.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dummy_audio.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dummy_audio.c
 @@ -0,0 +1,1575 @@
 +/*
 + * zero.c -- Gadget Zero, for USB development
@@ -16199,9 +16171,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dummy_audio.c linux-rpi-3.10.y/dri
 +	remove_proc_entry("isoc_test", NULL);
 +}
 +module_exit (cleanup);
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_cfi_common.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_cfi_common.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_cfi_common.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_cfi_common.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_cfi_common.h
 @@ -0,0 +1,142 @@
 +/* ==========================================================================
 + * Synopsys HS OTG Linux Software Driver and documentation (hereinafter,
@@ -16345,9 +16316,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_cfi_common.h linux-rpi-3.10.y/
 +typedef struct cfi_string cfi_string_t;
 +
 +#endif
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_adp.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_adp.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_adp.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_adp.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_adp.c
 @@ -0,0 +1,854 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_adp.c $
@@ -17203,9 +17173,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_adp.c linux-rpi-3.10.y/dri
 +#endif
 +	return 1;
 +}
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_adp.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_adp.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_adp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_adp.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_adp.h
 @@ -0,0 +1,80 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_adp.h $
@@ -17287,9 +17256,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_adp.h linux-rpi-3.10.y/dri
 +extern int32_t dwc_otg_adp_handle_srp_intr(dwc_otg_core_if_t * core_if);
 +
 +#endif //__DWC_OTG_ADP_H__
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_attr.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_attr.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_attr.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_attr.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
 @@ -0,0 +1,1210 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_attr.c $
@@ -18501,9 +18469,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_attr.c linux-rpi-3.10.y/dr
 +	device_remove_file(&dev->dev, &dev_attr_sleep_status);
 +#endif
 +}
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_attr.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_attr.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_attr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_attr.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_attr.h
 @@ -0,0 +1,89 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_attr.h $
@@ -18594,9 +18561,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_attr.h linux-rpi-3.10.y/dr
 +#endif
 +    );
 +#endif
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cfi.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cfi.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cfi.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cfi.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_cfi.c
 @@ -0,0 +1,1876 @@
 +/* ==========================================================================
 + * Synopsys HS OTG Linux Software Driver and documentation (hereinafter,
@@ -20474,9 +20440,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cfi.c linux-rpi-3.10.y/dri
 +}
 +
 +#endif //DWC_UTE_CFI
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cfi.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cfi.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cfi.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cfi.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_cfi.h
 @@ -0,0 +1,320 @@
 +/* ==========================================================================
 + * Synopsys HS OTG Linux Software Driver and documentation (hereinafter,
@@ -20798,9 +20763,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cfi.h linux-rpi-3.10.y/dri
 +int cfi_setup(struct dwc_otg_pcd *pcd, struct cfi_usb_ctrlrequest *ctrl);
 +
 +#endif /* (__DWC_OTG_CFI_H__) */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cil.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cil.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cil.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cil.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_cil.c
 @@ -0,0 +1,7151 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_cil.c $
@@ -27953,9 +27917,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cil.c linux-rpi-3.10.y/dri
 +	dwc_otg_pcd_start_srp_timer(core_if);
 +	return;
 +}
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cil.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cil.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cil.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cil.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_cil.h
 @@ -0,0 +1,1464 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_cil.h $
@@ -29421,9 +29384,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cil.h linux-rpi-3.10.y/dri
 +//////////////////////////////////////////////////////////////////////
 +
 +#endif
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 @@ -0,0 +1,1571 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_cil_intr.c $
@@ -30996,9 +30958,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c linux-rpi-3.10.
 +
 +	return retval;
 +}
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_core_if.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_core_if.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_core_if.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_core_if.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_core_if.h
 @@ -0,0 +1,705 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_core_if.h $
@@ -31705,9 +31666,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_core_if.h linux-rpi-3.10.y
 +/** @} */
 +
 +#endif				/* __DWC_CORE_IF_H__ */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_dbg.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_dbg.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_dbg.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
 @@ -0,0 +1,117 @@
 +/* ==========================================================================
 + *
@@ -31826,9 +31786,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_dbg.h linux-rpi-3.10.y/dri
 +
 +#endif /*DEBUG*/
 +#endif
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_driver.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_driver.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_driver.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_driver.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 @@ -0,0 +1,1732 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_driver.c $
@@ -33562,9 +33521,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_driver.c linux-rpi-3.10.y/
 + </td></tr>
 +
 +*/
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_driver.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_driver.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_driver.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_driver.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.h
 @@ -0,0 +1,86 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_driver.h $
@@ -33652,9 +33610,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_driver.h linux-rpi-3.10.y/
 +#endif
 +
 +#endif
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 @@ -0,0 +1,3533 @@
 +
 +/* ==========================================================================
@@ -37189,9 +37146,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd.c linux-rpi-3.10.y/dri
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c
 @@ -0,0 +1,1132 @@
 +/*==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd_ddma.c $
@@ -38325,9 +38281,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c linux-rpi-3.10.
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 @@ -0,0 +1,839 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd.h $
@@ -39168,9 +39123,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd.h linux-rpi-3.10.y/dri
 +#endif
 +#endif
 +#endif /* DWC_DEVICE_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
 @@ -0,0 +1,417 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd_if.h $
@@ -39589,9 +39543,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h linux-rpi-3.10.y/
 +
 +#endif /* __DWC_HCD_IF_H__ */
 +#endif /* DWC_DEVICE_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 @@ -0,0 +1,2258 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd_intr.c $
@@ -41851,9 +41804,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c linux-rpi-3.10.
 +	return retval;
 +}
 +#endif /* DWC_DEVICE_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 @@ -0,0 +1,955 @@
 +
 +/* ==========================================================================
@@ -42810,9 +42762,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c linux-rpi-3.10
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 @@ -0,0 +1,958 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd_queue.c $
@@ -43772,9 +43723,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c linux-rpi-3.10
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
 @@ -0,0 +1,113 @@
 +#include "dwc_otg_regs.h"
 +#include "dwc_otg_dbg.h"
@@ -43889,9 +43839,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c linux-rpi-3.10.
 +
 +	return;
 +}
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
 @@ -0,0 +1,36 @@
 +#ifndef __DWC_OTG_MPHI_FIX_H__
 +#define __DWC_OTG_MPHI_FIX_H__
@@ -43929,9 +43878,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h linux-rpi-3.10.
 +#endif
 +
 +#endif
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
 @@ -0,0 +1,188 @@
 +#ifndef _DWC_OS_DEP_H_
 +#define _DWC_OS_DEP_H_
@@ -44121,9 +44069,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h linux-rpi-3.10.y/
 +
 +
 +#endif /* _DWC_OS_DEP_H_ */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd.c
 @@ -0,0 +1,2708 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_pcd.c $
@@ -46833,9 +46780,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd.c linux-rpi-3.10.y/dri
 +}
 +
 +#endif /* DWC_HOST_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd.h
 @@ -0,0 +1,266 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_pcd.h $
@@ -47103,9 +47049,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd.h linux-rpi-3.10.y/dri
 +extern void do_test_mode(void *data);
 +#endif
 +#endif /* DWC_HOST_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h
 @@ -0,0 +1,360 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_pcd_if.h $
@@ -47467,9 +47412,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h linux-rpi-3.10.y/
 +#endif				/* __DWC_PCD_IF_H__ */
 +
 +#endif				/* DWC_HOST_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
 @@ -0,0 +1,5147 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_pcd_intr.c $
@@ -52618,9 +52562,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c linux-rpi-3.10.
 +}
 +
 +#endif /* DWC_HOST_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c
 @@ -0,0 +1,1358 @@
 + /* ==========================================================================
 +  * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_pcd_linux.c $
@@ -53980,9 +53923,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c linux-rpi-3.10
 +EXPORT_SYMBOL(usb_gadget_unregister_driver);
 +
 +#endif /* DWC_HOST_ONLY */
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_regs.h linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_regs.h
---- linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_regs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/dwc_otg_regs.h	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_regs.h
 @@ -0,0 +1,2550 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_regs.h $
@@ -56534,9 +56476,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/dwc_otg_regs.h linux-rpi-3.10.y/dr
 +} gpwrdn_data_t;
 +
 +#endif
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/Makefile linux-rpi-3.10.y/drivers/usb/host/dwc_otg/Makefile
---- linux-3.10/drivers/usb/host/dwc_otg/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/Makefile	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/Makefile
 @@ -0,0 +1,81 @@
 +#
 +# Makefile for DWC_otg Highspeed USB controller driver
@@ -56619,9 +56560,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/Makefile linux-rpi-3.10.y/drivers/
 +	rm -rf   *.o *.ko .*cmd *.mod.c .tmp_versions Module.symvers
 +
 +endif
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm linux-rpi-3.10.y/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm
---- linux-3.10/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm
 @@ -0,0 +1,337 @@
 +package dwc_otg_test;
 +
@@ -56960,9 +56900,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm linux-rpi-3.1
 +);
 +
 +1;
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/test/Makefile linux-rpi-3.10.y/drivers/usb/host/dwc_otg/test/Makefile
---- linux-3.10/drivers/usb/host/dwc_otg/test/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/test/Makefile	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/test/Makefile
 @@ -0,0 +1,16 @@
 +
 +PERL=/usr/bin/perl
@@ -56980,9 +56919,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/test/Makefile linux-rpi-3.10.y/dri
 +	  else echo "=======> $$test, FAILED" ; \
 +	  fi \
 +	done
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/test/test_mod_param.pl linux-rpi-3.10.y/drivers/usb/host/dwc_otg/test/test_mod_param.pl
---- linux-3.10/drivers/usb/host/dwc_otg/test/test_mod_param.pl	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/test/test_mod_param.pl	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/test/test_mod_param.pl
 @@ -0,0 +1,133 @@
 +#!/usr/bin/perl -w
 +# 
@@ -57117,9 +57055,8 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/test/test_mod_param.pl linux-rpi-3
 +
 +test_main();
 +0;
-diff -urN linux-3.10/drivers/usb/host/dwc_otg/test/test_sysfs.pl linux-rpi-3.10.y/drivers/usb/host/dwc_otg/test/test_sysfs.pl
---- linux-3.10/drivers/usb/host/dwc_otg/test/test_sysfs.pl	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/dwc_otg/test/test_sysfs.pl	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/test/test_sysfs.pl
 @@ -0,0 +1,193 @@
 +#!/usr/bin/perl -w
 +# 
@@ -57314,10 +57251,9 @@ diff -urN linux-3.10/drivers/usb/host/dwc_otg/test/test_sysfs.pl linux-rpi-3.10.
 +
 +test_main();
 +0;
-diff -urN linux-3.10/drivers/usb/host/Kconfig linux-rpi-3.10.y/drivers/usb/host/Kconfig
---- linux-3.10/drivers/usb/host/Kconfig	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/Kconfig	2013-07-06 15:25:50.000000000 +0100
-@@ -663,6 +663,19 @@
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -663,6 +663,19 @@ config USB_HWA_HCD
  	  To compile this driver a module, choose M here: the module
  	  will be called "hwa-hc".
  
@@ -57337,10 +57273,9 @@ diff -urN linux-3.10/drivers/usb/host/Kconfig linux-rpi-3.10.y/drivers/usb/host/
  config USB_IMX21_HCD
         tristate "i.MX21 HCD support"
         depends on ARM && ARCH_MXC
-diff -urN linux-3.10/drivers/usb/host/Makefile linux-rpi-3.10.y/drivers/usb/host/Makefile
---- linux-3.10/drivers/usb/host/Makefile	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/host/Makefile	2013-07-06 15:25:50.000000000 +0100
-@@ -47,6 +47,8 @@
+--- a/drivers/usb/host/Makefile
++++ b/drivers/usb/host/Makefile
+@@ -47,6 +47,8 @@ obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
  obj-$(CONFIG_USB_R8A66597_HCD)	+= r8a66597-hcd.o
  obj-$(CONFIG_USB_ISP1760_HCD)	+= isp1760.o
  obj-$(CONFIG_USB_HWA_HCD)	+= hwa-hc.o
@@ -57349,10 +57284,9 @@ diff -urN linux-3.10/drivers/usb/host/Makefile linux-rpi-3.10.y/drivers/usb/host
  obj-$(CONFIG_USB_IMX21_HCD)	+= imx21-hcd.o
  obj-$(CONFIG_USB_FSL_MPH_DR_OF)	+= fsl-mph-dr-of.o
  obj-$(CONFIG_USB_OCTEON2_COMMON) += octeon2-common.o
-diff -urN linux-3.10/drivers/usb/Makefile linux-rpi-3.10.y/drivers/usb/Makefile
---- linux-3.10/drivers/usb/Makefile	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/usb/Makefile	2013-07-06 15:25:50.000000000 +0100
-@@ -23,6 +23,7 @@
+--- a/drivers/usb/Makefile
++++ b/drivers/usb/Makefile
+@@ -23,6 +23,7 @@ obj-$(CONFIG_USB_U132_HCD)	+= host/
  obj-$(CONFIG_USB_R8A66597_HCD)	+= host/
  obj-$(CONFIG_USB_HWA_HCD)	+= host/
  obj-$(CONFIG_USB_ISP1760_HCD)	+= host/

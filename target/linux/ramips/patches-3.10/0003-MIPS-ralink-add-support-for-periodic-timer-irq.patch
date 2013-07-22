@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 193 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/ralink/timer.c
 
-diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
-index 341b4de..cae7d88 100644
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
 @@ -6,7 +6,7 @@
@@ -25,9 +23,6 @@ index 341b4de..cae7d88 100644
  
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
-diff --git a/arch/mips/ralink/timer.c b/arch/mips/ralink/timer.c
-new file mode 100644
-index 0000000..0a6856c
 --- /dev/null
 +++ b/arch/mips/ralink/timer.c
 @@ -0,0 +1,192 @@
@@ -223,6 +218,3 @@ index 0000000..0a6856c
 +MODULE_DESCRIPTION("Ralink RT2880 timer");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org");
 +MODULE_LICENSE("GPL");
--- 
-1.7.10.4
-

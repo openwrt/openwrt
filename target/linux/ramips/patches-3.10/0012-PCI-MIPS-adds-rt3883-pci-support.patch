@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 642 insertions(+)
  create mode 100644 arch/mips/pci/pci-rt3883.c
 
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index 77974ba..3cbfd9b 100644
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -42,6 +42,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
+@@ -42,6 +42,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
  obj-$(CONFIG_SOC_RT2880)	+= pci-rt2880.o
@@ -25,9 +23,6 @@ index 77974ba..3cbfd9b 100644
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
  obj-$(CONFIG_TANBAC_TB0287)	+= fixup-tb0287.o
-diff --git a/arch/mips/pci/pci-rt3883.c b/arch/mips/pci/pci-rt3883.c
-new file mode 100644
-index 0000000..212c90b
 --- /dev/null
 +++ b/arch/mips/pci/pci-rt3883.c
 @@ -0,0 +1,640 @@
@@ -671,8 +666,6 @@ index 0000000..212c90b
 +}
 +
 +postcore_initcall(rt3883_pci_init);
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index cd13da8..592e5f9 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -20,6 +20,7 @@ choice
@@ -683,6 +676,3 @@ index cd13da8..592e5f9 100644
  
  	config SOC_MT7620
  		bool "MT7620"
--- 
-1.7.10.4
-
