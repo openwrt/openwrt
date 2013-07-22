@@ -8,7 +8,7 @@
 define Profile/DIR615H1
 	NAME:=Dlink DIR-615 H1
         PACKAGES:=\
-                -kmod-usb-core -kmod-usb-rt305x-dwc_otg \
+                -kmod-usb-core -kmod-usb-dwc2 \
                 -kmod-ledtrig-usbdev
 endef
 
