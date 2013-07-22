@@ -276,17 +276,17 @@ Subject: [PATCH 10/22] NET: MIPS: lantiq: update etop driver for devicetree
  	struct ltq_etop_priv *priv = netdev_priv(dev);
 -	int i;
 +	int mii_mode = priv->mii_mode;
-+
-+	clk_enable(priv->clk_ppe);
  
 -	ltq_pmu_enable(PMU_PPE);
++	clk_enable(priv->clk_ppe);
+ 
+-	switch (priv->pldata->mii_mode) {
 +	if (of_machine_is_compatible("lantiq,ar9")) {
 +		ltq_etop_gbit_init(dev);
 +		/* force the etops link to the gbit to MII */
 +		mii_mode = PHY_INTERFACE_MODE_MII;
 +	}
- 
--	switch (priv->pldata->mii_mode) {
++
 +	switch (mii_mode) {
  	case PHY_INTERFACE_MODE_RMII:
  		ltq_etop_w32_mask(ETOP_MII_MASK,
