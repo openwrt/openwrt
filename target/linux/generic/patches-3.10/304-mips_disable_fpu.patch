@@ -83,7 +83,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  /* Convert Mips rounding mode (0..3) to IEEE library modes. */
  static const unsigned char ieee_rm[4] = {
  	[FPU_CSR_RN] = IEEE754_RN,
-@@ -116,9 +120,13 @@ static const unsigned int fpucondbit[8] 
+@@ -116,9 +120,13 @@ static const unsigned int fpucondbit[8]
  };
  #endif
  

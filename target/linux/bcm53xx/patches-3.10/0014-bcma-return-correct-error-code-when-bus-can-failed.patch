@@ -10,7 +10,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -218,7 +218,7 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -237,7 +237,7 @@ int bcma_bus_register(struct bcma_bus *b
  	err = bcma_bus_scan(bus);
  	if (err) {
  		bcma_err(bus, "Failed to scan: %d\n", err);

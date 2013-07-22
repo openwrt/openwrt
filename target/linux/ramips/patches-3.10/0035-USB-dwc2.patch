@@ -1,7 +1,5 @@
-Index: linux-3.10.1/drivers/staging/dwc2/hcd.c
-===================================================================
---- linux-3.10.1.orig/drivers/staging/dwc2/hcd.c	2013-07-13 20:42:41.000000000 +0200
-+++ linux-3.10.1/drivers/staging/dwc2/hcd.c	2013-07-15 18:23:20.193246998 +0200
+--- a/drivers/staging/dwc2/hcd.c
++++ b/drivers/staging/dwc2/hcd.c
 @@ -47,6 +47,7 @@
  #include <linux/io.h>
  #include <linux/slab.h>
@@ -10,7 +8,7 @@ Index: linux-3.10.1/drivers/staging/dwc2/hcd.c
  
  #include <linux/usb/hcd.h>
  #include <linux/usb/ch11.h>
-@@ -2712,6 +2713,8 @@
+@@ -2712,6 +2713,8 @@ int dwc2_hcd_init(struct dwc2_hsotg *hso
  
  	dev_dbg(hsotg->dev, "DWC OTG HCD INIT\n");
  

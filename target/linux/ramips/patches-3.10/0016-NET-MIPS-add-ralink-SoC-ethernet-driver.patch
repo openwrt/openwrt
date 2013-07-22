@@ -46,9 +46,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/ralink/soc_rt305x.c
  create mode 100644 drivers/net/ethernet/ralink/soc_rt3883.c
 
-diff --git a/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h b/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
-new file mode 100644
-index 0000000..2098c5c
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
 @@ -0,0 +1,27 @@
@@ -79,8 +76,6 @@ index 0000000..2098c5c
 +};
 +
 +#endif /* _RT305X_ESW_PLATFORM_H */
-diff --git a/arch/mips/ralink/rt305x.c b/arch/mips/ralink/rt305x.c
-index ca7ee3a..1a6b458 100644
 --- a/arch/mips/ralink/rt305x.c
 +++ b/arch/mips/ralink/rt305x.c
 @@ -221,6 +221,7 @@ void __init ralink_clk_init(void)
@@ -91,8 +86,6 @@ index ca7ee3a..1a6b458 100644
  	ralink_clk_add("10000b00.spi", sys_rate);
  	ralink_clk_add("10000100.timer", wdt_rate);
  	ralink_clk_add("10000120.watchdog", wdt_rate);
-diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
-index ed956e0..0b3caa1 100644
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
 @@ -135,6 +135,7 @@ config ETHOC
@@ -103,8 +96,6 @@ index ed956e0..0b3caa1 100644
  source "drivers/net/ethernet/realtek/Kconfig"
  source "drivers/net/ethernet/renesas/Kconfig"
  source "drivers/net/ethernet/rdc/Kconfig"
-diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
-index 8268d85..508c494 100644
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
 @@ -53,6 +53,7 @@ obj-$(CONFIG_ETHOC) += ethoc.o
@@ -115,9 +106,6 @@ index 8268d85..508c494 100644
  obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
  obj-$(CONFIG_SH_ETH) += renesas/
  obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
-diff --git a/drivers/net/ethernet/ralink/Kconfig b/drivers/net/ethernet/ralink/Kconfig
-new file mode 100644
-index 0000000..ca2c9ad
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/Kconfig
 @@ -0,0 +1,31 @@
@@ -152,9 +140,6 @@ index 0000000..ca2c9ad
 +	select PHYLIB
 +	select SWCONFIG
 +endif
-diff --git a/drivers/net/ethernet/ralink/Makefile b/drivers/net/ethernet/ralink/Makefile
-new file mode 100644
-index 0000000..a38fa21
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/Makefile
 @@ -0,0 +1,18 @@
@@ -176,9 +161,6 @@ index 0000000..a38fa21
 +ralink-eth-$(CONFIG_SOC_MT7620)			+= soc_mt7620.o
 +
 +obj-$(CONFIG_NET_RALINK)			+= ralink-eth.o
-diff --git a/drivers/net/ethernet/ralink/esw_rt3052.c b/drivers/net/ethernet/ralink/esw_rt3052.c
-new file mode 100644
-index 0000000..b937062
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/esw_rt3052.c
 @@ -0,0 +1,1463 @@
@@ -1645,9 +1627,6 @@ index 0000000..b937062
 +{
 +	platform_driver_unregister(&esw_driver);
 +}
-diff --git a/drivers/net/ethernet/ralink/esw_rt3052.h b/drivers/net/ethernet/ralink/esw_rt3052.h
-new file mode 100644
-index 0000000..2ced3dff
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/esw_rt3052.h
 @@ -0,0 +1,32 @@
@@ -1683,9 +1662,6 @@ index 0000000..2ced3dff
 +
 +#endif
 +#endif
-diff --git a/drivers/net/ethernet/ralink/gsw_mt7620a.c b/drivers/net/ethernet/ralink/gsw_mt7620a.c
-new file mode 100644
-index 0000000..9fa6a54
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/gsw_mt7620a.c
 @@ -0,0 +1,1027 @@
@@ -2716,9 +2692,6 @@ index 0000000..9fa6a54
 +
 +	return 0;
 +}
-diff --git a/drivers/net/ethernet/ralink/gsw_mt7620a.h b/drivers/net/ethernet/ralink/gsw_mt7620a.h
-new file mode 100644
-index 0000000..fd4add5
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/gsw_mt7620a.h
 @@ -0,0 +1,29 @@
@@ -2751,9 +2724,6 @@ index 0000000..fd4add5
 +extern int mt7620a_has_carrier(struct fe_priv *priv);
 +
 +#endif
-diff --git a/drivers/net/ethernet/ralink/mdio.c b/drivers/net/ethernet/ralink/mdio.c
-new file mode 100644
-index 0000000..b265c75
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/mdio.c
 @@ -0,0 +1,245 @@
@@ -3002,9 +2972,6 @@ index 0000000..b265c75
 +	of_node_put(priv->mii_bus->dev.of_node);
 +	kfree(priv->mii_bus);
 +}
-diff --git a/drivers/net/ethernet/ralink/mdio.h b/drivers/net/ethernet/ralink/mdio.h
-new file mode 100644
-index 0000000..c3910a0
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/mdio.h
 @@ -0,0 +1,29 @@
@@ -3037,9 +3004,6 @@ index 0000000..c3910a0
 +static inline void fe_mdio_cleanup(struct fe_priv *priv) {}
 +#endif
 +#endif
-diff --git a/drivers/net/ethernet/ralink/mdio_rt2880.c b/drivers/net/ethernet/ralink/mdio_rt2880.c
-new file mode 100644
-index 0000000..701c7b6
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/mdio_rt2880.c
 @@ -0,0 +1,232 @@
@@ -3275,9 +3239,6 @@ index 0000000..701c7b6
 +
 +	return;
 +}
-diff --git a/drivers/net/ethernet/ralink/mdio_rt2880.h b/drivers/net/ethernet/ralink/mdio_rt2880.h
-new file mode 100644
-index 0000000..51e3633
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/mdio_rt2880.h
 @@ -0,0 +1,26 @@
@@ -3307,9 +3268,6 @@ index 0000000..51e3633
 +void rt2880_port_init(struct fe_priv *priv, struct device_node *np);
 +
 +#endif
-diff --git a/drivers/net/ethernet/ralink/ralink_soc_eth.c b/drivers/net/ethernet/ralink/ralink_soc_eth.c
-new file mode 100644
-index 0000000..8c36dba
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/ralink_soc_eth.c
 @@ -0,0 +1,735 @@
@@ -4048,9 +4006,6 @@ index 0000000..8c36dba
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Ethernet driver for Ralink SoC");
-diff --git a/drivers/net/ethernet/ralink/ralink_soc_eth.h b/drivers/net/ethernet/ralink/ralink_soc_eth.h
-new file mode 100644
-index 0000000..85bc881
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/ralink_soc_eth.h
 @@ -0,0 +1,374 @@
@@ -4428,9 +4383,6 @@ index 0000000..85bc881
 +u32 fe_r32(unsigned reg);
 +
 +#endif /* FE_ETH_H */
-diff --git a/drivers/net/ethernet/ralink/soc_mt7620.c b/drivers/net/ethernet/ralink/soc_mt7620.c
-new file mode 100644
-index 0000000..55e303f
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/soc_mt7620.c
 @@ -0,0 +1,111 @@
@@ -4545,9 +4497,6 @@ index 0000000..55e303f
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
-diff --git a/drivers/net/ethernet/ralink/soc_rt2880.c b/drivers/net/ethernet/ralink/soc_rt2880.c
-new file mode 100644
-index 0000000..1110947
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/soc_rt2880.c
 @@ -0,0 +1,51 @@
@@ -4602,9 +4551,6 @@ index 0000000..1110947
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
-diff --git a/drivers/net/ethernet/ralink/soc_rt305x.c b/drivers/net/ethernet/ralink/soc_rt305x.c
-new file mode 100644
-index 0000000..482ca1f
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/soc_rt305x.c
 @@ -0,0 +1,113 @@
@@ -4721,9 +4667,6 @@ index 0000000..482ca1f
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
-diff --git a/drivers/net/ethernet/ralink/soc_rt3883.c b/drivers/net/ethernet/ralink/soc_rt3883.c
-new file mode 100644
-index 0000000..c660529
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/soc_rt3883.c
 @@ -0,0 +1,60 @@
@@ -4787,6 +4730,3 @@ index 0000000..c660529
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
 +
--- 
-1.7.10.4
-

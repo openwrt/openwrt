@@ -1,7 +1,6 @@
-diff -urwN linux-3.10/drivers/mmc/card/block.c linux-rpi-3.10.y/drivers/mmc/card/block.c
---- linux-3.10/drivers/mmc/card/block.c	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/mmc/card/block.c	2013-07-06 15:25:50.000000000 +0100
-@@ -1294,7 +1294,7 @@
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -1294,7 +1294,7 @@ static void mmc_blk_rw_rq_prep(struct mm
  			brq->data.blocks = 1;
  	}
  
@@ -10,9 +9,8 @@ diff -urwN linux-3.10/drivers/mmc/card/block.c linux-rpi-3.10.y/drivers/mmc/card
  		/* SPI multiblock writes terminate using a special
  		 * token, not a STOP_TRANSMISSION request.
  		 */
-diff -urwN linux-3.10/drivers/mmc/core/sd.c linux-rpi-3.10.y/drivers/mmc/core/sd.c
---- linux-3.10/drivers/mmc/core/sd.c	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/mmc/core/sd.c	2013-07-06 15:25:50.000000000 +0100
+--- a/drivers/mmc/core/sd.c
++++ b/drivers/mmc/core/sd.c
 @@ -13,6 +13,8 @@
  #include <linux/err.h>
  #include <linux/slab.h>
@@ -22,7 +20,7 @@ diff -urwN linux-3.10/drivers/mmc/core/sd.c linux-rpi-3.10.y/drivers/mmc/core/sd
  
  #include <linux/mmc/host.h>
  #include <linux/mmc/card.h>
-@@ -58,6 +60,15 @@
+@@ -58,6 +60,15 @@ static const unsigned int tacc_mant[] =
  		__res & __mask;						\
  	})
  
@@ -38,7 +36,7 @@ diff -urwN linux-3.10/drivers/mmc/core/sd.c linux-rpi-3.10.y/drivers/mmc/core/sd
  /*
   * Given the decoded CSD structure, decode the raw CID to our CID structure.
   */
-@@ -210,12 +221,62 @@
+@@ -210,12 +221,62 @@ static int mmc_decode_scr(struct mmc_car
  }
  
  /*
@@ -103,7 +101,7 @@ diff -urwN linux-3.10/drivers/mmc/core/sd.c linux-rpi-3.10.y/drivers/mmc/core/sd
  	u32 *ssr;
  
  	if (!(card->csd.cmdclass & CCC_APP_SPEC)) {
-@@ -228,14 +289,40 @@
+@@ -228,14 +289,40 @@ static int mmc_read_ssr(struct mmc_card
  	if (!ssr)
  		return -ENOMEM;
  
@@ -148,7 +146,7 @@ diff -urwN linux-3.10/drivers/mmc/core/sd.c linux-rpi-3.10.y/drivers/mmc/core/sd
  	for (i = 0; i < 16; i++)
  		ssr[i] = be32_to_cpu(ssr[i]);
  
-@@ -808,13 +895,9 @@
+@@ -808,13 +895,9 @@ int mmc_sd_setup_card(struct mmc_host *h
  
  	if (!reinit) {
  		/*
@@ -164,10 +162,9 @@ diff -urwN linux-3.10/drivers/mmc/core/sd.c linux-rpi-3.10.y/drivers/mmc/core/sd
  		if (err)
  			return err;
  
-diff -urwN linux-3.10/drivers/mmc/host/Kconfig linux-rpi-3.10.y/drivers/mmc/host/Kconfig
---- linux-3.10/drivers/mmc/host/Kconfig	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/mmc/host/Kconfig	2013-07-06 15:25:50.000000000 +0100
-@@ -249,6 +249,27 @@
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -249,6 +249,27 @@ config MMC_SDHCI_S3C_DMA
  
  	  YMMV.
  
@@ -195,10 +192,9 @@ diff -urwN linux-3.10/drivers/mmc/host/Kconfig linux-rpi-3.10.y/drivers/mmc/host
  config MMC_SDHCI_BCM2835
  	tristate "SDHCI platform support for the BCM2835 SD/MMC Controller"
  	depends on ARCH_BCM2835
-diff -urwN linux-3.10/drivers/mmc/host/Makefile linux-rpi-3.10.y/drivers/mmc/host/Makefile
---- linux-3.10/drivers/mmc/host/Makefile	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/mmc/host/Makefile	2013-07-06 15:25:50.000000000 +0100
-@@ -15,6 +15,7 @@
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
+@@ -15,6 +15,7 @@ obj-$(CONFIG_MMC_SDHCI_PXAV2)	+= sdhci-p
  obj-$(CONFIG_MMC_SDHCI_S3C)	+= sdhci-s3c.o
  obj-$(CONFIG_MMC_SDHCI_SIRF)   	+= sdhci-sirf.o
  obj-$(CONFIG_MMC_SDHCI_SPEAR)	+= sdhci-spear.o
@@ -206,9 +202,8 @@ diff -urwN linux-3.10/drivers/mmc/host/Makefile linux-rpi-3.10.y/drivers/mmc/hos
  obj-$(CONFIG_MMC_WBSD)		+= wbsd.o
  obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
  obj-$(CONFIG_MMC_OMAP)		+= omap.o
-diff -urwN linux-3.10/drivers/mmc/host/sdhci-bcm2708.c linux-rpi-3.10.y/drivers/mmc/host/sdhci-bcm2708.c
---- linux-3.10/drivers/mmc/host/sdhci-bcm2708.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/mmc/host/sdhci-bcm2708.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/mmc/host/sdhci-bcm2708.c
 @@ -0,0 +1,1420 @@
 +/*
 + * sdhci-bcm2708.c Support for SDHCI device on BCM2708
@@ -1630,9 +1625,8 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci-bcm2708.c linux-rpi-3.10.y/drivers/
 +MODULE_PARM_DESC(extra_messages, "Enable more sdcard warning messages");
 +
 +
-diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host/sdhci.c
---- linux-3.10/drivers/mmc/host/sdhci.c	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/mmc/host/sdhci.c	2013-07-06 15:25:50.000000000 +0100
+--- a/drivers/mmc/host/sdhci.c
++++ b/drivers/mmc/host/sdhci.c
 @@ -28,6 +28,7 @@
  #include <linux/mmc/mmc.h>
  #include <linux/mmc/host.h>
@@ -1641,7 +1635,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  #include <linux/mmc/slot-gpio.h>
  
  #include "sdhci.h"
-@@ -123,6 +124,91 @@
+@@ -123,6 +124,91 @@ static void sdhci_dumpregs(struct sdhci_
   * Low level functions                                                       *
   *                                                                           *
  \*****************************************************************************/
@@ -1733,7 +1727,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  static void sdhci_clear_set_irqs(struct sdhci_host *host, u32 clear, u32 set)
  {
-@@ -288,7 +374,7 @@
+@@ -288,7 +374,7 @@ static void sdhci_led_control(struct led
  	struct sdhci_host *host = container_of(led, struct sdhci_host, led);
  	unsigned long flags;
  
@@ -1742,7 +1736,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	if (host->runtime_suspended)
  		goto out;
-@@ -298,7 +384,7 @@
+@@ -298,7 +384,7 @@ static void sdhci_led_control(struct led
  	else
  		sdhci_activate_led(host);
  out:
@@ -1751,7 +1745,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  }
  #endif
  
-@@ -315,7 +401,7 @@
+@@ -315,7 +401,7 @@ static void sdhci_read_block_pio(struct
  	u32 uninitialized_var(scratch);
  	u8 *buf;
  
@@ -1760,7 +1754,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	blksize = host->data->blksz;
  	chunk = 0;
-@@ -360,7 +446,7 @@
+@@ -360,7 +446,7 @@ static void sdhci_write_block_pio(struct
  	u32 scratch;
  	u8 *buf;
  
@@ -1769,7 +1763,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	blksize = host->data->blksz;
  	chunk = 0;
-@@ -399,19 +485,28 @@
+@@ -399,19 +485,28 @@ static void sdhci_write_block_pio(struct
  	local_irq_restore(flags);
  }
  
@@ -1801,7 +1795,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	/*
  	 * Some controllers (JMicron JMB38x) mess up the buffer bits
-@@ -422,7 +517,7 @@
+@@ -422,7 +517,7 @@ static void sdhci_transfer_pio(struct sd
  		(host->data->blocks == 1))
  		mask = ~0;
  
@@ -1810,7 +1804,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		if (host->quirks & SDHCI_QUIRK_PIO_NEEDS_DELAY)
  			udelay(100);
  
-@@ -434,9 +529,11 @@
+@@ -434,9 +529,11 @@ static void sdhci_transfer_pio(struct sd
  		host->blocks--;
  		if (host->blocks == 0)
  			break;
@@ -1823,7 +1817,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  }
  
  static char *sdhci_kmap_atomic(struct scatterlist *sg, unsigned long *flags)
-@@ -709,7 +806,9 @@
+@@ -709,7 +806,9 @@ static void sdhci_set_transfer_irqs(stru
  	u32 pio_irqs = SDHCI_INT_DATA_AVAIL | SDHCI_INT_SPACE_AVAIL;
  	u32 dma_irqs = SDHCI_INT_DMA_END | SDHCI_INT_ADMA_ERROR;
  
@@ -1834,7 +1828,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		sdhci_clear_set_irqs(host, pio_irqs, dma_irqs);
  	else
  		sdhci_clear_set_irqs(host, dma_irqs, pio_irqs);
-@@ -741,44 +840,25 @@
+@@ -741,44 +840,25 @@ static void sdhci_prepare_data(struct sd
  	host->data_early = 0;
  	host->data->bytes_xfered = 0;
  
@@ -1887,7 +1881,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		int broken, i;
  		struct scatterlist *sg;
  
-@@ -837,7 +917,8 @@
+@@ -837,7 +917,8 @@ static void sdhci_prepare_data(struct sd
  				 */
  				WARN_ON(1);
  				host->flags &= ~SDHCI_REQ_USE_DMA;
@@ -1897,7 +1891,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  				WARN_ON(sg_cnt != 1);
  				sdhci_writel(host, sg_dma_address(data->sg),
  					SDHCI_DMA_ADDRESS);
-@@ -853,11 +934,13 @@
+@@ -853,11 +934,13 @@ static void sdhci_prepare_data(struct sd
  	if (host->version >= SDHCI_SPEC_200) {
  		ctrl = sdhci_readb(host, SDHCI_HOST_CONTROL);
  		ctrl &= ~SDHCI_CTRL_DMA_MASK;
@@ -1911,7 +1905,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		sdhci_writeb(host, ctrl, SDHCI_HOST_CONTROL);
  	}
  
-@@ -909,7 +992,8 @@
+@@ -909,7 +992,8 @@ static void sdhci_set_transfer_mode(stru
  
  	if (data->flags & MMC_DATA_READ)
  		mode |= SDHCI_TRNS_READ;
@@ -1921,7 +1915,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		mode |= SDHCI_TRNS_DMA;
  
  	sdhci_writew(host, mode, SDHCI_TRANSFER_MODE);
-@@ -925,13 +1009,16 @@
+@@ -925,13 +1009,16 @@ static void sdhci_finish_data(struct sdh
  	host->data = NULL;
  
  	if (host->flags & SDHCI_REQ_USE_DMA) {
@@ -1942,7 +1936,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  	}
  
  	/*
-@@ -984,6 +1071,12 @@
+@@ -984,6 +1071,12 @@ static void sdhci_send_command(struct sd
  	if ((cmd->data != NULL) || (cmd->flags & MMC_RSP_BUSY))
  		mask |= SDHCI_DATA_INHIBIT;
  
@@ -1955,7 +1949,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  	/* We shouldn't wait for data inihibit for stop commands, even
  	   though they might use busy signaling */
  	if (host->mrq->data && (cmd == host->mrq->data->stop))
-@@ -999,12 +1092,20 @@
+@@ -999,12 +1092,20 @@ static void sdhci_send_command(struct sd
  			return;
  		}
  		timeout--;
@@ -1976,7 +1970,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	sdhci_prepare_data(host, cmd);
  
-@@ -1220,7 +1321,9 @@
+@@ -1220,7 +1321,9 @@ clock_set:
  			return;
  		}
  		timeout--;
@@ -1986,7 +1980,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  	}
  
  	clk |= SDHCI_CLOCK_CARD_EN;
-@@ -1316,7 +1419,7 @@
+@@ -1316,7 +1419,7 @@ static void sdhci_request(struct mmc_hos
  
  	sdhci_runtime_pm_get(host);
  
@@ -1995,7 +1989,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	WARN_ON(host->mrq != NULL);
  
-@@ -1374,9 +1477,9 @@
+@@ -1374,9 +1477,9 @@ static void sdhci_request(struct mmc_hos
  					mmc->card->type == MMC_TYPE_MMC ?
  					MMC_SEND_TUNING_BLOCK_HS200 :
  					MMC_SEND_TUNING_BLOCK;
@@ -2007,7 +2001,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  				/* Restore original mmc_request structure */
  				host->mrq = mrq;
-@@ -1390,7 +1493,7 @@
+@@ -1390,7 +1493,7 @@ static void sdhci_request(struct mmc_hos
  	}
  
  	mmiowb();
@@ -2016,7 +2010,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  }
  
  static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
-@@ -1399,10 +1502,10 @@
+@@ -1399,10 +1502,10 @@ static void sdhci_do_set_ios(struct sdhc
  	int vdd_bit = -1;
  	u8 ctrl;
  
@@ -2029,7 +2023,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		if (host->vmmc && ios->power_mode == MMC_POWER_OFF)
  			mmc_regulator_set_ocr(host->mmc, host->vmmc, 0);
  		return;
-@@ -1429,9 +1532,9 @@
+@@ -1429,9 +1532,9 @@ static void sdhci_do_set_ios(struct sdhc
  		vdd_bit = sdhci_set_power(host, ios->vdd);
  
  	if (host->vmmc && vdd_bit != -1) {
@@ -2041,7 +2035,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  	}
  
  	if (host->ops->platform_send_init_74_clocks)
-@@ -1470,7 +1573,7 @@
+@@ -1470,7 +1573,7 @@ static void sdhci_do_set_ios(struct sdhc
  	else
  		ctrl &= ~SDHCI_CTRL_HISPD;
  
@@ -2050,7 +2044,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		u16 clk, ctrl_2;
  
  		/* In case of UHS-I modes, set High Speed Enable */
-@@ -1569,7 +1672,7 @@
+@@ -1569,7 +1672,7 @@ static void sdhci_do_set_ios(struct sdhc
  		sdhci_reset(host, SDHCI_RESET_CMD | SDHCI_RESET_DATA);
  
  	mmiowb();
@@ -2059,7 +2053,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  }
  
  static void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
-@@ -1617,7 +1720,7 @@
+@@ -1617,7 +1720,7 @@ static int sdhci_check_ro(struct sdhci_h
  	unsigned long flags;
  	int is_readonly;
  
@@ -2068,7 +2062,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	if (host->flags & SDHCI_DEVICE_DEAD)
  		is_readonly = 0;
-@@ -1627,7 +1730,7 @@
+@@ -1627,7 +1730,7 @@ static int sdhci_check_ro(struct sdhci_h
  		is_readonly = !(sdhci_readl(host, SDHCI_PRESENT_STATE)
  				& SDHCI_WRITE_PROTECT);
  
@@ -2077,7 +2071,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	/* This quirk needs to be replaced by a callback-function later */
  	return host->quirks & SDHCI_QUIRK_INVERTED_WRITE_PROTECT ?
-@@ -1700,9 +1803,9 @@
+@@ -1700,9 +1803,9 @@ static void sdhci_enable_sdio_irq(struct
  	struct sdhci_host *host = mmc_priv(mmc);
  	unsigned long flags;
  
@@ -2089,7 +2083,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  }
  
  static int sdhci_do_start_signal_voltage_switch(struct sdhci_host *host,
-@@ -2046,7 +2149,7 @@
+@@ -2046,7 +2149,7 @@ static void sdhci_card_event(struct mmc_
  	struct sdhci_host *host = mmc_priv(mmc);
  	unsigned long flags;
  
@@ -2098,7 +2092,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	/* Check host->mrq first in case we are runtime suspended */
  	if (host->mrq &&
-@@ -2063,7 +2166,7 @@
+@@ -2063,7 +2166,7 @@ static void sdhci_card_event(struct mmc_
  		tasklet_schedule(&host->finish_tasklet);
  	}
  
@@ -2107,7 +2101,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  }
  
  static const struct mmc_host_ops sdhci_ops = {
-@@ -2102,14 +2205,14 @@
+@@ -2102,14 +2205,14 @@ static void sdhci_tasklet_finish(unsigne
  
  	host = (struct sdhci_host*)param;
  
@@ -2124,7 +2118,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		return;
  	}
  
-@@ -2147,7 +2250,7 @@
+@@ -2147,7 +2250,7 @@ static void sdhci_tasklet_finish(unsigne
  #endif
  
  	mmiowb();
@@ -2133,7 +2127,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	mmc_request_done(host->mmc, mrq);
  	sdhci_runtime_pm_put(host);
-@@ -2160,11 +2263,11 @@
+@@ -2160,11 +2263,11 @@ static void sdhci_timeout_timer(unsigned
  
  	host = (struct sdhci_host*)data;
  
@@ -2147,7 +2141,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		sdhci_dumpregs(host);
  
  		if (host->data) {
-@@ -2181,7 +2284,7 @@
+@@ -2181,7 +2284,7 @@ static void sdhci_timeout_timer(unsigned
  	}
  
  	mmiowb();
@@ -2156,7 +2150,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  }
  
  static void sdhci_tuning_timer(unsigned long data)
-@@ -2191,11 +2294,11 @@
+@@ -2191,11 +2294,11 @@ static void sdhci_tuning_timer(unsigned
  
  	host = (struct sdhci_host *)data;
  
@@ -2170,7 +2164,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  }
  
  /*****************************************************************************\
-@@ -2209,10 +2312,13 @@
+@@ -2209,10 +2312,13 @@ static void sdhci_cmd_irq(struct sdhci_h
  	BUG_ON(intmask == 0);
  
  	if (!host->cmd) {
@@ -2184,7 +2178,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		return;
  	}
  
-@@ -2282,6 +2388,19 @@
+@@ -2282,6 +2388,19 @@ static void sdhci_show_adma_error(struct
  static void sdhci_show_adma_error(struct sdhci_host *host) { }
  #endif
  
@@ -2204,7 +2198,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  static void sdhci_data_irq(struct sdhci_host *host, u32 intmask)
  {
  	u32 command;
-@@ -2311,23 +2430,39 @@
+@@ -2311,23 +2430,39 @@ static void sdhci_data_irq(struct sdhci_
  			}
  		}
  
@@ -2248,7 +2242,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		pr_err("%s: ADMA error\n", mmc_hostname(host->mmc));
  		sdhci_show_adma_error(host);
  		host->data->error = -EIO;
-@@ -2335,11 +2470,18 @@
+@@ -2335,11 +2470,18 @@ static void sdhci_data_irq(struct sdhci_
  			host->ops->adma_workaround(host, intmask);
  	}
  
@@ -2271,7 +2265,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  		/*
  		 * We currently don't do anything fancy with DMA
-@@ -2368,18 +2510,8 @@
+@@ -2368,18 +2510,8 @@ static void sdhci_data_irq(struct sdhci_
  			sdhci_writel(host, dmanow, SDHCI_DMA_ADDRESS);
  		}
  
@@ -2292,7 +2286,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  	}
  }
  
-@@ -2390,10 +2522,10 @@
+@@ -2390,10 +2522,10 @@ static irqreturn_t sdhci_irq(int irq, vo
  	u32 intmask, unexpected = 0;
  	int cardint = 0, max_loops = 16;
  
@@ -2305,7 +2299,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		pr_warning("%s: got irq while runtime suspended\n",
  		       mmc_hostname(host->mmc));
  		return IRQ_HANDLED;
-@@ -2435,6 +2567,22 @@
+@@ -2435,6 +2567,22 @@ again:
  		tasklet_schedule(&host->card_tasklet);
  	}
  
@@ -2328,7 +2322,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  	if (intmask & SDHCI_INT_CMD_MASK) {
  		sdhci_writel(host, intmask & SDHCI_INT_CMD_MASK,
  			SDHCI_INT_STATUS);
-@@ -2449,7 +2597,13 @@
+@@ -2449,7 +2597,13 @@ again:
  
  	intmask &= ~(SDHCI_INT_CMD_MASK | SDHCI_INT_DATA_MASK);
  
@@ -2343,7 +2337,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	if (intmask & SDHCI_INT_BUS_POWER) {
  		pr_err("%s: Card is consuming too much power!\n",
-@@ -2475,7 +2629,7 @@
+@@ -2475,7 +2629,7 @@ again:
  	if (intmask && --max_loops)
  		goto again;
  out:
@@ -2352,7 +2346,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	if (unexpected) {
  		pr_err("%s: Unexpected interrupt 0x%08x.\n",
-@@ -2569,7 +2723,8 @@
+@@ -2569,7 +2723,8 @@ int sdhci_resume_host(struct sdhci_host
  {
  	int ret;
  
@@ -2362,7 +2356,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		if (host->ops->enable_dma)
  			host->ops->enable_dma(host);
  	}
-@@ -2636,15 +2791,15 @@
+@@ -2636,15 +2791,15 @@ int sdhci_runtime_suspend_host(struct sd
  		host->flags &= ~SDHCI_NEEDS_RETUNING;
  	}
  
@@ -2382,7 +2376,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	return ret;
  }
-@@ -2670,16 +2825,16 @@
+@@ -2670,16 +2825,16 @@ int sdhci_runtime_resume_host(struct sdh
  	sdhci_do_start_signal_voltage_switch(host, &host->mmc->ios);
  	if ((host_flags & SDHCI_PV_ENABLED) &&
  		!(host->quirks2 & SDHCI_QUIRK2_PRESET_VALUE_BROKEN)) {
@@ -2402,7 +2396,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	host->runtime_suspended = false;
  
-@@ -2690,7 +2845,7 @@
+@@ -2690,7 +2845,7 @@ int sdhci_runtime_resume_host(struct sdh
  	/* Enable Card Detection */
  	sdhci_enable_card_detection(host);
  
@@ -2411,7 +2405,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  	return ret;
  }
-@@ -2785,14 +2940,16 @@
+@@ -2785,14 +2940,16 @@ int sdhci_add_host(struct sdhci_host *ho
  		host->flags &= ~SDHCI_USE_ADMA;
  	}
  
@@ -2430,7 +2424,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  			}
  		}
  	}
-@@ -3080,6 +3237,12 @@
+@@ -3080,6 +3237,12 @@ int sdhci_add_host(struct sdhci_host *ho
  				   SDHCI_MAX_CURRENT_MULTIPLIER;
  	}
  
@@ -2443,7 +2437,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  	mmc->ocr_avail = ocr_avail;
  	mmc->ocr_avail_sdio = ocr_avail;
  	if (host->ocr_avail_sdio)
-@@ -3174,7 +3337,7 @@
+@@ -3174,7 +3337,7 @@ int sdhci_add_host(struct sdhci_host *ho
  		host->tuning_timer.function = sdhci_tuning_timer;
  	}
  
@@ -2452,7 +2446,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		mmc_hostname(mmc), host);
  	if (ret) {
  		pr_err("%s: Failed to request IRQ %d: %d\n",
-@@ -3210,6 +3373,7 @@
+@@ -3210,6 +3373,7 @@ int sdhci_add_host(struct sdhci_host *ho
  
  	pr_info("%s: SDHCI controller on %s [%s] using %s\n",
  		mmc_hostname(mmc), host->hw_name, dev_name(mmc_dev(mmc)),
@@ -2460,7 +2454,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  		(host->flags & SDHCI_USE_ADMA) ? "ADMA" :
  		(host->flags & SDHCI_USE_SDMA) ? "DMA" : "PIO");
  
-@@ -3237,7 +3401,7 @@
+@@ -3237,7 +3401,7 @@ void sdhci_remove_host(struct sdhci_host
  	unsigned long flags;
  
  	if (dead) {
@@ -2469,7 +2463,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  
  		host->flags |= SDHCI_DEVICE_DEAD;
  
-@@ -3249,7 +3413,7 @@
+@@ -3249,7 +3413,7 @@ void sdhci_remove_host(struct sdhci_host
  			tasklet_schedule(&host->finish_tasklet);
  		}
  
@@ -2478,10 +2472,9 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.c linux-rpi-3.10.y/drivers/mmc/host
  	}
  
  	sdhci_disable_card_detection(host);
-diff -urwN linux-3.10/drivers/mmc/host/sdhci.h linux-rpi-3.10.y/drivers/mmc/host/sdhci.h
---- linux-3.10/drivers/mmc/host/sdhci.h	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/mmc/host/sdhci.h	2013-07-06 15:25:50.000000000 +0100
-@@ -289,6 +289,20 @@
+--- a/drivers/mmc/host/sdhci.h
++++ b/drivers/mmc/host/sdhci.h
+@@ -289,6 +289,20 @@ struct sdhci_ops {
  	void	(*platform_reset_enter)(struct sdhci_host *host, u8 mask);
  	void	(*platform_reset_exit)(struct sdhci_host *host, u8 mask);
  	int	(*set_uhs_signaling)(struct sdhci_host *host, unsigned int uhs);
@@ -2502,7 +2495,7 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.h linux-rpi-3.10.y/drivers/mmc/host
  	void	(*hw_reset)(struct sdhci_host *host);
  	void	(*platform_suspend)(struct sdhci_host *host);
  	void	(*platform_resume)(struct sdhci_host *host);
-@@ -399,9 +413,38 @@
+@@ -399,9 +413,38 @@ extern int sdhci_resume_host(struct sdhc
  extern void sdhci_enable_irq_wakeups(struct sdhci_host *host);
  #endif
  
@@ -2541,10 +2534,9 @@ diff -urwN linux-3.10/drivers/mmc/host/sdhci.h linux-rpi-3.10.y/drivers/mmc/host
 +
 +
  #endif /* __SDHCI_HW_H */
-diff -urN linux-3.10/include/linux/mmc/host.h linux-rpi-3.10.y/include/linux/mmc/host.h
---- linux-3.10/include/linux/mmc/host.h	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/include/linux/mmc/host.h	2013-07-06 15:25:50.000000000 +0100
-@@ -281,6 +281,7 @@
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -281,6 +281,7 @@ struct mmc_host {
  #define MMC_CAP2_PACKED_CMD	(MMC_CAP2_PACKED_RD | \
  				 MMC_CAP2_PACKED_WR)
  #define MMC_CAP2_NO_PRESCAN_POWERUP (1 << 14)	/* Don't power up before scan */
@@ -2552,10 +2544,9 @@ diff -urN linux-3.10/include/linux/mmc/host.h linux-rpi-3.10.y/include/linux/mmc
  
  	mmc_pm_flag_t		pm_caps;	/* supported pm features */
  
-diff -urN linux-3.10/include/linux/mmc/sdhci.h linux-rpi-3.10.y/include/linux/mmc/sdhci.h
---- linux-3.10/include/linux/mmc/sdhci.h	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/include/linux/mmc/sdhci.h	2013-07-06 15:25:50.000000000 +0100
-@@ -97,6 +97,7 @@
+--- a/include/linux/mmc/sdhci.h
++++ b/include/linux/mmc/sdhci.h
+@@ -97,6 +97,7 @@ struct sdhci_host {
  #define SDHCI_QUIRK2_PRESET_VALUE_BROKEN		(1<<3)
  
  	int irq;		/* Device IRQ */
@@ -2563,7 +2554,7 @@ diff -urN linux-3.10/include/linux/mmc/sdhci.h linux-rpi-3.10.y/include/linux/mm
  	void __iomem *ioaddr;	/* Mapped address */
  
  	const struct sdhci_ops *ops;	/* Low level hw interface */
-@@ -128,6 +129,7 @@
+@@ -128,6 +129,7 @@ struct sdhci_host {
  #define SDHCI_SDIO_IRQ_ENABLED	(1<<9)	/* SDIO irq enabled */
  #define SDHCI_HS200_NEEDS_TUNING (1<<10)	/* HS200 needs tuning */
  #define SDHCI_USING_RETUNING_TIMER (1<<11)	/* Host is using a retuning timer for the card */
@@ -2571,7 +2562,7 @@ diff -urN linux-3.10/include/linux/mmc/sdhci.h linux-rpi-3.10.y/include/linux/mm
  
  	unsigned int version;	/* SDHCI spec. version */
  
-@@ -142,6 +144,7 @@
+@@ -142,6 +144,7 @@ struct sdhci_host {
  
  	struct mmc_request *mrq;	/* Current request */
  	struct mmc_command *cmd;	/* Current command */

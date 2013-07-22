@@ -1,7 +1,6 @@
-diff -urN linux-3.10/drivers/spi/Kconfig linux-rpi-3.10.y/drivers/spi/Kconfig
---- linux-3.10/drivers/spi/Kconfig	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/spi/Kconfig	2013-07-06 15:25:50.000000000 +0100
-@@ -86,6 +86,14 @@
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -86,6 +86,14 @@ config SPI_BCM2835
  	  is for the regular SPI controller. Slave mode operation is not also
  	  not supported.
  
@@ -16,10 +15,9 @@ diff -urN linux-3.10/drivers/spi/Kconfig linux-rpi-3.10.y/drivers/spi/Kconfig
  config SPI_BFIN5XX
  	tristate "SPI controller driver for ADI Blackfin5xx"
  	depends on BLACKFIN
-diff -urN linux-3.10/drivers/spi/Makefile linux-rpi-3.10.y/drivers/spi/Makefile
---- linux-3.10/drivers/spi/Makefile	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/spi/Makefile	2013-07-06 15:25:50.000000000 +0100
-@@ -17,6 +17,7 @@
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -17,6 +17,7 @@ obj-$(CONFIG_SPI_AU1550)		+= spi-au1550.
  obj-$(CONFIG_SPI_BCM2835)		+= spi-bcm2835.o
  obj-$(CONFIG_SPI_BCM63XX)		+= spi-bcm63xx.o
  obj-$(CONFIG_SPI_BFIN5XX)		+= spi-bfin5xx.o
@@ -27,9 +25,8 @@ diff -urN linux-3.10/drivers/spi/Makefile linux-rpi-3.10.y/drivers/spi/Makefile
  obj-$(CONFIG_SPI_BFIN_SPORT)		+= spi-bfin-sport.o
  obj-$(CONFIG_SPI_BITBANG)		+= spi-bitbang.o
  obj-$(CONFIG_SPI_BUTTERFLY)		+= spi-butterfly.o
-diff -urN linux-3.10/drivers/spi/spi-bcm2708.c linux-rpi-3.10.y/drivers/spi/spi-bcm2708.c
---- linux-3.10/drivers/spi/spi-bcm2708.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/spi/spi-bcm2708.c	2013-07-06 15:25:50.000000000 +0100
+--- /dev/null
++++ b/drivers/spi/spi-bcm2708.c
 @@ -0,0 +1,626 @@
 +/*
 + * Driver for Broadcom BCM2708 SPI Controllers

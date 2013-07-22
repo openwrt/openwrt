@@ -1,6 +1,5 @@
-diff -urN linux-3.10/drivers/net/usb/smsc95xx.c linux-rpi-3.10.y/drivers/net/usb/smsc95xx.c
---- linux-3.10/drivers/net/usb/smsc95xx.c	2013-06-30 23:13:29.000000000 +0100
-+++ linux-rpi-3.10.y/drivers/net/usb/smsc95xx.c	2013-07-06 15:25:50.000000000 +0100
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
 @@ -61,6 +61,7 @@
  #define SUSPEND_SUSPEND3		(0x08)
  #define SUSPEND_ALLMODES		(SUSPEND_SUSPEND0 | SUSPEND_SUSPEND1 | \
@@ -9,7 +8,7 @@ diff -urN linux-3.10/drivers/net/usb/smsc95xx.c linux-rpi-3.10.y/drivers/net/usb
  
  struct smsc95xx_priv {
  	u32 mac_cr;
-@@ -76,6 +77,10 @@
+@@ -76,6 +77,10 @@ static bool turbo_mode = true;
  module_param(turbo_mode, bool, 0644);
  MODULE_PARM_DESC(turbo_mode, "Enable multiple frames per Rx transaction");
  
@@ -20,7 +19,7 @@ diff -urN linux-3.10/drivers/net/usb/smsc95xx.c linux-rpi-3.10.y/drivers/net/usb
  static int __must_check __smsc95xx_read_reg(struct usbnet *dev, u32 index,
  					    u32 *data, int in_pm)
  {
-@@ -765,8 +770,59 @@
+@@ -765,8 +770,59 @@ static int smsc95xx_ioctl(struct net_dev
  	return generic_mii_ioctl(&dev->mii, if_mii(rq), cmd, NULL);
  }
  

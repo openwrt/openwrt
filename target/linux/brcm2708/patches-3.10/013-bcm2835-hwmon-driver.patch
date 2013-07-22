@@ -1,7 +1,5 @@
-Index: linux-3.10/drivers/hwmon/bcm2835-hwmon.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10/drivers/hwmon/bcm2835-hwmon.c	2013-07-09 20:25:51.309324091 +0100
+--- /dev/null
++++ b/drivers/hwmon/bcm2835-hwmon.c
 @@ -0,0 +1,219 @@
 +/*****************************************************************************
 +* Copyright 2011 Broadcom Corporation.  All rights reserved.
@@ -222,11 +220,9 @@ Index: linux-3.10/drivers/hwmon/bcm2835-hwmon.c
 +MODULE_DESCRIPTION("HW Monitor driver for bcm2835 chip");
 +
 +module_platform_driver(bcm2835_hwmon_driver);
-Index: linux-3.10/drivers/hwmon/Kconfig
-===================================================================
---- linux-3.10.orig/drivers/hwmon/Kconfig	2013-07-09 20:25:51.321324159 +0100
-+++ linux-3.10/drivers/hwmon/Kconfig	2013-07-09 20:25:51.313324108 +0100
-@@ -1537,6 +1537,16 @@
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -1537,6 +1537,16 @@ config SENSORS_MC13783_ADC
          help
            Support for the A/D converter on MC13783 and MC13892 PMIC.
  
@@ -243,11 +239,9 @@ Index: linux-3.10/drivers/hwmon/Kconfig
  if ACPI
  
  comment "ACPI drivers"
-Index: linux-3.10/drivers/hwmon/Makefile
-===================================================================
---- linux-3.10.orig/drivers/hwmon/Makefile	2013-07-09 20:25:51.321324159 +0100
-+++ linux-3.10/drivers/hwmon/Makefile	2013-07-09 20:26:07.361403698 +0100
-@@ -141,6 +141,7 @@
+--- a/drivers/hwmon/Makefile
++++ b/drivers/hwmon/Makefile
+@@ -141,6 +141,7 @@ obj-$(CONFIG_SENSORS_W83L786NG)	+= w83l7
  obj-$(CONFIG_SENSORS_WM831X)	+= wm831x-hwmon.o
  obj-$(CONFIG_SENSORS_WM8350)	+= wm8350-hwmon.o
  obj-$(CONFIG_SENSORS_GSC)	+= gsc.o
