@@ -1,0 +1,28 @@
+From 590ceec7028084ebd9d643b4929ceae9fd806fbe Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Wed, 13 Oct 2010 01:17:24 +0200
+Subject: [PATCH 10/16] qi_lb60: Don't use 3-wire spi mode for the display for
+ now
+
+The spi_gpio driver does not support 3-wire mode.
+
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+---
+ arch/mips/jz4740/board-qi_lb60.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/mips/jz4740/board-qi_lb60.c b/arch/mips/jz4740/board-qi_lb60.c
+index be2b3de..bc454e6 100644
+--- a/arch/mips/jz4740/board-qi_lb60.c
++++ b/arch/mips/jz4740/board-qi_lb60.c
+@@ -311,7 +311,6 @@ static struct spi_board_info qi_lb60_spi_board_info[] = {
+ 		.chip_select = 0,
+ 		.bus_num = 1,
+ 		.max_speed_hz = 30 * 1000,
+-		.mode = SPI_3WIRE,
+ 	},
+ };
+ 
+-- 
+1.7.10.4
+
