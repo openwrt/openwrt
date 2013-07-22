@@ -1,0 +1,61 @@
+From aff616f4a33bd3a9ab1506fdbe97fcfe285cb7b0 Mon Sep 17 00:00:00 2001
+From: Paul Cercueil <paul@crapouillou.net>
+Date: Thu, 13 Sep 2012 00:09:20 +0200
+Subject: [PATCH 07/16] RTC: JZ4740: Init the "regulator" register on startup.
+
+This register controls the accuracy of the RTC. uC/OS-II use
+the RTC as a 100Hz clock, and writes a completely wrong value
+on that register, that we have to overwrite if we want a working
+real-time clock.
+
+Signed-off-by: Paul Cercueil <paul@crapouillou.net>
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+---
+ drivers/rtc/rtc-jz4740.c |   17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/drivers/rtc/rtc-jz4740.c b/drivers/rtc/rtc-jz4740.c
+index 1e48686..722fb0c 100644
+--- a/drivers/rtc/rtc-jz4740.c
++++ b/drivers/rtc/rtc-jz4740.c
+@@ -14,6 +14,7 @@
+  *
+  */
+ 
++#include <linux/clk.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/platform_device.h>
+@@ -215,6 +216,7 @@ static int jz4740_rtc_probe(struct platform_device *pdev)
+ 	int ret;
+ 	struct jz4740_rtc *rtc;
+ 	uint32_t scratchpad;
++	struct clk *rtc_clk;
+ 
+ 	rtc = kzalloc(sizeof(*rtc), GFP_KERNEL);
+ 	if (!rtc)
+@@ -280,6 +282,21 @@ static int jz4740_rtc_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
++	rtc_clk = clk_get(&pdev->dev, "rtc");
++	if (IS_ERR(rtc_clk)) {
++		dev_err(&pdev->dev, "Failed to get RTC clock\n");
++		goto err_free_irq;
++	}
++
++	/* TODO: initialize the ADJC bits (25:16) to fine-tune
++	 * the accuracy of the RTC */
++	ret = jz4740_rtc_reg_write(rtc, JZ_REG_RTC_REGULATOR,
++				(clk_get_rate(rtc_clk) - 1) & 0xffff);
++	clk_put(rtc_clk);
++
++	if (ret)
++		dev_warn(&pdev->dev, "Could not update RTC regulator register\n");
++
+ 	return 0;
+ 
+ err_free_irq:
+-- 
+1.7.10.4
+
