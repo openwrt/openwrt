@@ -41,7 +41,7 @@ start_service_remote()
 
 	procd_open_instance
 	procd_set_param command "$PROG" -f -r "$log_ip" "${log_port:-514}" -p "$pid_file"
-        [ "${log_proto}" = "udp" ] && procd_append_param command -u
+        [ "${log_proto}" != "udp" ] || procd_append_param command -u
 	procd_close_instance
 
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
