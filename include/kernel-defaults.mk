@@ -134,7 +134,7 @@ endif
 endef
 
 define Kernel/CompileImage/Default
-	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
+	rm -f $(TARGET_DIR)/init
 	+$(MAKE) $(KERNEL_MAKEOPTS) $(subst ",,$(KERNELNAME))
 	#")
 	$(call Kernel/CopyImage)
@@ -143,7 +143,7 @@ endef
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 define Kernel/CompileImage/Initramfs
 	$(call Kernel/Configure/Initramfs)
-	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
+	$(CP) $(GENERIC_PLATFORM_DIR)/base-files/init $(TARGET_DIR)/init
 	rm -rf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
 	+$(MAKE) $(KERNEL_MAKEOPTS) $(subst ",,$(KERNELNAME))
 	#")
