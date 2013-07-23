@@ -86,7 +86,7 @@ endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2),)
     define Image/mkfs/jffs2
-		$(foreach SZ,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/sub,$(SZ),$(SZ),$(JFFS2OPS)))
+		$(foreach SZ,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/sub,$(SZ),$(SZ),$(JFFS2OPTS)))
     endef
 endif
 
