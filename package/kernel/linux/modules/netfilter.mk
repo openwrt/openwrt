@@ -425,7 +425,7 @@ $(eval $(call KernelPackage,arptables))
 define KernelPackage/ebtables
   SUBMENU:=$(NF_MENU)
   TITLE:=Bridge firewalling modules
-  DEPENDS:=+kmod-ipt-core
+  DEPENDS:=+kmod-ipt-core +kmod-bridge
   FILES:=$(foreach mod,$(EBTABLES-m),$(LINUX_DIR)/net/$(mod).ko)
   KCONFIG:=CONFIG_BRIDGE_NETFILTER=y \
 	$(KCONFIG_EBTABLES)
