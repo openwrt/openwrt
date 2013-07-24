@@ -1,0 +1,18 @@
+/dts-v1/;
+
+/include/ "AWM002.dtsi"
+
+/ {
+	compatible = "AWM002", "ralink,rt5350-soc";
+	model = "AsiaRF AWM002";
+
+	palmbus@10000000 {
+
+		spi@b00 {
+			m25p80@0 {
+				compatible = "mx25l3205d";
+				linux,modalias = "m25p80", "mx25l3205d";
+			};
+		};
+	};
+};
