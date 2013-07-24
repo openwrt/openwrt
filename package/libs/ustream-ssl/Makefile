@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ustream-ssl
-PKG_VERSION:=2013-06-18
+PKG_VERSION:=2013-07-24
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/ustream-ssl.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=1b7e93768eb85930788894363a1b0580b03b269b
+PKG_SOURCE_VERSION:=daa954de38f2bf4e2fbc41ac7917f8447d37a2a0
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -42,9 +42,19 @@ define Package/libustream-cyassl
   VARIANT:=cyassl
 endef
 
+define Package/libustream-polarssl
+  $(Package/libustream/default)
+  TITLE += (polarssl)
+  DEPENDS += +libpolarssl
+  VARIANT:=polarssl
+endef
+
 ifeq ($(BUILD_VARIANT),cyassl)
   TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include/cyassl
   CMAKE_OPTIONS += -DCYASSL=on
+endif
+ifeq ($(BUILD_VARIANT),polarssl)
+  CMAKE_OPTIONS += -DPOLARSSL=on
 endif
 
 define Package/libustream/default/install
@@ -54,6 +64,8 @@ endef
 
 Package/libustream-openssl/install = $(Package/libustream/default/install)
 Package/libustream-cyassl/install = $(Package/libustream/default/install)
+Package/libustream-polarssl/install = $(Package/libustream/default/install)
 
+$(eval $(call BuildPackage,libustream-polarssl))
 $(eval $(call BuildPackage,libustream-cyassl))
 $(eval $(call BuildPackage,libustream-openssl))
