@@ -1,6 +1,6 @@
 --- a/include/polarssl/config.h
 +++ b/include/polarssl/config.h
-@@ -177,8 +177,8 @@
+@@ -206,8 +206,8 @@
   * Requires: POLARSSL_BIGNUM_C, POLARSSL_RSA_C
   *
   * Enable the RSA prime-number generation code.
@@ -10,7 +10,7 @@
  
  /**
   * \def POLARSSL_FS_IO
-@@ -235,8 +235,8 @@
+@@ -264,8 +264,8 @@
   * \def POLARSSL_SELF_TEST
   *
   * Enable the checkup functions (*_self_test).
@@ -20,7 +20,7 @@
  
  /**
   * \def POLARSSL_SSL_ALL_ALERT_MESSAGES
-@@ -425,8 +425,8 @@
+@@ -466,8 +466,8 @@
   *      TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256
   *      TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256
   *      TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256
@@ -30,7 +30,7 @@
  
  /**
   * \def POLARSSL_CERTS_C
-@@ -437,8 +437,8 @@
+@@ -478,8 +478,8 @@
   * Caller:
   *
   * This module is used for testing (ssl_client/server).
@@ -40,7 +40,7 @@
  
  /**
   * \def POLARSSL_CIPHER_C
-@@ -477,8 +477,8 @@
+@@ -518,8 +518,8 @@
   *          library/ssl_tls.c
   *
   * This module provides debugging functions.
@@ -50,7 +50,7 @@
  
  /**
   * \def POLARSSL_DES_C
-@@ -560,8 +560,8 @@
+@@ -604,8 +604,8 @@
   * enabled as well):
   *      TLS_RSA_WITH_AES_128_GCM_SHA256
   *      TLS_RSA_WITH_AES_256_GCM_SHA384
@@ -60,17 +60,7 @@
  
  /**
   * \def POLARSSL_HAVEGE_C
-@@ -574,8 +574,8 @@
-  * Requires: POLARSSL_TIMING_C
-  *
-  * This module enables the HAVEGE random number generator.
-- */
- #define POLARSSL_HAVEGE_C
-+ */
- 
- /**
-  * \def POLARSSL_MD_C
-@@ -649,8 +649,8 @@
+@@ -704,8 +704,8 @@
   * Caller:  library/aes.c
   *
   * This modules adds support for the VIA PadLock on x86.
@@ -80,7 +70,7 @@
  
  /**
   * \def POLARSSL_PBKDF2_C
-@@ -763,8 +763,8 @@
+@@ -848,8 +848,8 @@
   * Caller:
   *
   * Requires: POLARSSL_SSL_CACHE_C
@@ -90,7 +80,7 @@
  
  /**
   * \def POLARSSL_SSL_CLI_C
-@@ -818,8 +818,8 @@
+@@ -903,8 +903,8 @@
   * Caller:  library/havege.c
   *
   * This module is used by the HAVEGE random number generator.
@@ -100,7 +90,7 @@
  
  /**
   * \def POLARSSL_VERSION_C
-@@ -868,8 +868,8 @@
+@@ -953,8 +953,8 @@
   *
   * Module:  library/xtea.c
   * Caller:
@@ -109,4 +99,4 @@
 + */
  /* \} name */
  
- #endif /* config.h */
+ /**
