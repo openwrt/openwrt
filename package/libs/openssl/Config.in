@@ -1,6 +1,15 @@
 menu "Configuration"
 	depends on PACKAGE_libopenssl
 
+config OPENSSL_WITH_EC
+	bool
+	prompt "Enable elliptic curve support"
+
+config OPENSSL_WITH_EC2M
+        bool
+        depends on OPENSSL_WITH_EC
+        prompt "Enable ec2m support"
+
 config OPENSSL_ENGINE_CRYPTO
 	bool
 	prompt "Crypto acceleration support"

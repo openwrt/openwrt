@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_VERSION:=1.0.1e
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
@@ -20,7 +20,8 @@ PKG_MD5SUM:=66bf6f10f060d561929de96f9dfe5b8c
 PKG_LICENSE:=SSLEAY OPENSSL
 PKG_LICENSE_FILES:=LICENSE
 PKG_BUILD_DEPENDS:=ocf-crypto-headers
-PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE_CRYPTO CONFIG_OPENSSL_ENGINE_DIGEST
+PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE_CRYPTO CONFIG_OPENSSL_ENGINE_DIGEST \
+	OPENSSL_WITH_EC OPENSSL_WITH_EC2M
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -75,7 +76,7 @@ endef
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
 	no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
-OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic no-sse2
+OPENSSL_OPTIONS:= shared no-err no-hw no-threads zlib-dynamic no-sse2
 
 ifdef CONFIG_OPENSSL_ENGINE_CRYPTO
   OPENSSL_OPTIONS += -DHAVE_CRYPTODEV
@@ -84,6 +85,14 @@ ifdef CONFIG_OPENSSL_ENGINE_CRYPTO
   endif
 else
   OPENSSL_OPTIONS += no-engines
+endif
+
+ifndef CONFIG_OPENSSL_WITH_EC
+  OPENSSL_OPTIONS += no-ec
+endif
+
+ifndef CONFIG_OPENSSL_WITH_EC2M
+  OPENSSL_OPTIONS += no-ec2m
 endif
 
 ifeq ($(CONFIG_x86_64),y)
