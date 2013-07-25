@@ -18,11 +18,11 @@ LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 
 define Image/BuildLoader/Template
 	-rm -rf $(KDIR)/lzma-loader
-	$(LOADER_MAKE) LOADER=loader-$(1).$(2)\
+	$(LOADER_MAKE) LOADER=loader$(2)-$(1).bin\
 		LZMA_TEXT_START=0x80a00000 \
 		LOADADDR=0x80002000 \
-		LOADER_DATA="$(KDIR)/vmlinux-$(1).lzma" BOARD="$(1)" \
-		compile loader.$(2)
+		LOADER_DATA="$(KDIR)/vmlinux$(2)-$(1).lzma" BOARD="$(1)" \
+		compile loader.bin
 endef
 
 
@@ -120,9 +120,15 @@ endef
 
 define Image/BuildKernelLoader/Template
 	$(call PatchKernelLzma,$(1))
-	$(call Image/BuildLoader/Template,$(1),bin)
+	$(call Image/BuildLoader/Template,$(1))
 	$(CP) $(KDIR)/loader-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-loader
 	$(CP) $(KDIR)/vmlinux-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call PatchKernelLzma,$(1),-initramfs)
+	$(call Image/BuildLoader/Template,$(1),-initramfs)
+	$(CP) $(KDIR)/loader-initramfs-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs-loader
+	$(CP) $(KDIR)/vmlinux-initramfs-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs
+endif
 endef
 
 define Image/BuildKernelEVA/Template
