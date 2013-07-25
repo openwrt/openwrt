@@ -243,6 +243,9 @@ Image/Build/Profile/FRITZ3370=$(call Image/BuildNANDEVA/$(1),$(1),FRITZ3370)
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
+Image/BuildKernel/Profile/TDW8970=$(call Image/BuildKernelLoader/Template,TDW8970,$(1))
+Image/Build/Profile/TDW8970=$(call Image/BuildLoader/$(1),$(1),TDW8970)
+
 endif
 
 
