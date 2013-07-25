@@ -1,0 +1,36 @@
+Index: compat-wireless-2013-06-27/drivers/net/wireless/ath/ath9k/hw.c
+===================================================================
+--- compat-wireless-2013-06-27.orig/drivers/net/wireless/ath/ath9k/hw.c	2013-07-25 20:17:32.375285640 +0200
++++ compat-wireless-2013-06-27/drivers/net/wireless/ath/ath9k/hw.c	2013-07-25 20:19:20.131288207 +0200
+@@ -729,6 +729,7 @@
+ 	case AR9300_DEVID_AR9462:
+ 	case AR9485_DEVID_AR1111:
+ 	case AR9300_DEVID_AR9565:
++	case AR9300_DEVID_AR9381:
+ 		break;
+ 	default:
+ 		if (common->bus_ops->ath_bus_type == ATH_USB)
+Index: compat-wireless-2013-06-27/drivers/net/wireless/ath/ath9k/hw.h
+===================================================================
+--- compat-wireless-2013-06-27.orig/drivers/net/wireless/ath/ath9k/hw.h	2013-07-25 20:17:32.375285640 +0200
++++ compat-wireless-2013-06-27/drivers/net/wireless/ath/ath9k/hw.h	2013-07-25 20:19:01.095287753 +0200
+@@ -52,6 +52,7 @@
+ #define AR9300_DEVID_QCA955X	0x0038
+ #define AR9485_DEVID_AR1111	0x0037
+ #define AR9300_DEVID_AR9565     0x0036
++#define AR9300_DEVID_AR9381     0xabcd
+ 
+ #define AR5416_AR9100_DEVID	0x000b
+ 
+Index: compat-wireless-2013-06-27/drivers/net/wireless/ath/ath9k/pci.c
+===================================================================
+--- compat-wireless-2013-06-27.orig/drivers/net/wireless/ath/ath9k/pci.c	2013-06-30 16:34:53.000000000 +0200
++++ compat-wireless-2013-06-27/drivers/net/wireless/ath/ath9k/pci.c	2013-07-25 20:19:41.815288724 +0200
+@@ -139,6 +139,7 @@
+ 	{ PCI_VDEVICE(ATHEROS, 0x0034) }, /* PCI-E  AR9462 */
+ 	{ PCI_VDEVICE(ATHEROS, 0x0037) }, /* PCI-E  AR1111/AR9485 */
+ 	{ PCI_VDEVICE(ATHEROS, 0x0036) }, /* PCI-E  AR9565 */
++	{ PCI_VDEVICE(ATHEROS, 0xabcd) }, /* PCI-E  AR9381 */
+ 	{ 0 }
+ };
+ 
