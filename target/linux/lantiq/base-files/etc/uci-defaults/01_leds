@@ -9,7 +9,8 @@
 
 [ -e "/sys/class/leds/wifi" ] && ucidef_set_led_wlan "wifi" "wifi" "wifi" "phy0tpt"
 [ -e "/sys/class/leds/usb" ] && ucidef_set_led_usbdev "usb" "usb" "usb" "1-1"
-[ -e "/sys/class/leds/internet" ] &&	ucidef_set_led_netdev "internet" "internet" "internet" "pppoe-wan"
+[ -e "/sys/class/leds/usb2" ] && ucidef_set_led_usbdev "usb2" "usb2" "usb2" "2-1"
+[ -e "/sys/class/leds/internet" ] && ucidef_set_led_netdev "internet" "internet" "internet" "pppoe-wan"
 
 for a in `ls /sys/class/leds/`; do
 	grep -q "\[none\]" /sys/class/leds/$a/trigger
