@@ -1,0 +1,42 @@
+
+# Copyright (C) 2007-2013 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=authsae
+PKG_VERSION:=2013-07-24
+PKG_RELEASE=$(PKG_SOURCE_VERSION)
+
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=git://github.com/cozybit/authsae.git
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=f5693a3ee8dcc4e11d25acc4e75f5d154c0b302b
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
+
+PKG_BUILD_PARALLEL:=1
+CMAKE_INSTALL:=1
+
+CMAKE_OPTIONS += -DSYSCONF_INSTALL_DIR=/etc
+
+include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
+
+define Package/authsae
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=80211s mesh security
+  DEPENDS=+libopenssl +libconfig +libnl-tiny +@OPENSSL_WITH_EC
+endef
+
+TARGET_CFLAGS += -D_GNU_SOURCE
+
+define Package/authsae/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/* $(1)/usr/bin
+endef
+
+$(eval $(call BuildPackage,authsae))
