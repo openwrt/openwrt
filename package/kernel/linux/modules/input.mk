@@ -32,7 +32,7 @@ define KernelPackage/hid-generic
 endef
 
 define KernelPackage/hid/description
-  Kernel modules for generic HID device (e.g. keyboards and mice) support
+ Kernel modules for generic HID device (e.g. keyboards and mice) support
 endef
 
 $(eval $(call KernelPackage,hid-generic))
@@ -133,7 +133,7 @@ define KernelPackage/input-joydev
 endef
 
 define KernelPackage/input-joydev/description
-  Kernel module for joystick support
+ Kernel module for joystick support
 endef
 
 $(eval $(call KernelPackage,input-joydev))
@@ -156,17 +156,17 @@ $(eval $(call KernelPackage,input-polldev))
 
 
 define KernelPackage/input-matrixkmap
-   SUBMENU:=$(INPUT_MODULES_MENU)
-   TITLE:=Input matrix devices support
-   KCONFIG:=CONFIG_INPUT_MATRIXKMAP
-   DEPENDS:=@!LINUX_3_3
-   FILES:=$(LINUX_DIR)/drivers/input/matrix-keymap.ko
-   AUTOLOAD:=$(call AutoLoad,20,matrix-keymap)
-   $(call AddDepends/input)
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=Input matrix devices support
+  KCONFIG:=CONFIG_INPUT_MATRIXKMAP
+  DEPENDS:=@!LINUX_3_3
+  FILES:=$(LINUX_DIR)/drivers/input/matrix-keymap.ko
+  AUTOLOAD:=$(call AutoLoad,20,matrix-keymap)
+  $(call AddDepends/input)
 endef
 
 define KernelPackage/input-matrix/description
-  Kernel module support for input matrix devices
+ Kernel module support for input matrix devices
 endef
 
 $(eval $(call KernelPackage,input-matrixkmap))

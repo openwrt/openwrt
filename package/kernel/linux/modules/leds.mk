@@ -7,7 +7,6 @@
 
 LEDS_MENU:=LED modules
 
-
 define KernelPackage/leds-gpio
   SUBMENU:=$(LEDS_MENU)
   TITLE:=GPIO LED support
@@ -48,7 +47,7 @@ define KernelPackage/ledtrig-gpio
 endef
 
 define KernelPackage/ledtrig-gpio/description
- Kernel module that allows LEDs to be controlled by gpio events.
+ Kernel module that allows LEDs to be controlled by gpio events
 endef
 
 $(eval $(call KernelPackage,ledtrig-gpio))
@@ -63,7 +62,7 @@ define KernelPackage/ledtrig-morse
 endef
 
 define KernelPackage/ledtrig-morse/description
- Kernel module to show morse coded messages on LEDs.
+ Kernel module to show morse coded messages on LEDs
 endef
 
 $(eval $(call KernelPackage,ledtrig-morse))
@@ -78,7 +77,7 @@ define KernelPackage/ledtrig-netdev
 endef
 
 define KernelPackage/ledtrig-netdev/description
- Kernel module to drive LEDs based on network activity.
+ Kernel module to drive LEDs based on network activity
 endef
 
 $(eval $(call KernelPackage,ledtrig-netdev))
@@ -115,7 +114,7 @@ define KernelPackage/ledtrig-usbdev
 endef
 
 define KernelPackage/ledtrig-usbdev/description
- Kernel module to drive LEDs based on USB device presence/activity.
+ Kernel module to drive LEDs based on USB device presence/activity
 endef
 
 $(eval $(call KernelPackage,ledtrig-usbdev))
@@ -130,7 +129,7 @@ define KernelPackage/ledtrig-default-on
 endef
 
 define KernelPackage/ledtrig-default-on/description
- Kernel module that allows LEDs to be initialised in the ON state.
+ Kernel module that allows LEDs to be initialised in the ON state
 endef
 
 $(eval $(call KernelPackage,ledtrig-default-on))
@@ -146,7 +145,7 @@ endef
 
 define KernelPackage/ledtrig-timer/description
  Kernel module that allows LEDs to be controlled by a programmable timer
- via sysfs.
+ via sysfs
 endef
 
 $(eval $(call KernelPackage,ledtrig-timer))
@@ -163,7 +162,7 @@ endef
 
 define KernelPackage/ledtrig-oneshot/description
  Kernel module that allows LEDs to be triggered by sporadic events in
- one-shot pulses.
+ one-shot pulses
 endef
 
 $(eval $(call KernelPackage,ledtrig-oneshot))

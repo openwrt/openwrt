@@ -7,7 +7,6 @@
 
 VIRTUAL_MENU:=Virtualization Support
 
-
 define KernelPackage/virtio-balloon
   SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=VirtIO balloon driver
@@ -18,7 +17,7 @@ define KernelPackage/virtio-balloon
 endef
 
 define KernelPackage/virtio-balloon/description
-  Kernel module for VirtIO memory ballooning support
+ Kernel module for VirtIO memory ballooning support
 endef
 
 $(eval $(call KernelPackage,virtio-balloon))
@@ -50,7 +49,7 @@ define KernelPackage/virtio-random
 endef
 
 define KernelPackage/virtio-random/description
-  Kernel module for the VirtIO Random Number Generator
+ Kernel module for the VirtIO Random Number Generator
 endef
 
 $(eval $(call KernelPackage,virtio-random))
@@ -67,7 +66,7 @@ define KernelPackage/xen-fs
 endef
 
 define KernelPackage/xen-fs/description
-  Kernel module for the Xen filesystem
+ Kernel module for the Xen filesystem
 endef
 
 $(eval $(call KernelPackage,xen-fs))
@@ -83,7 +82,7 @@ define KernelPackage/xen-evtchn
 endef
 
 define KernelPackage/xen-evtchn/description
-  Kernel module for the /dev/xen/evtchn device
+ Kernel module for the /dev/xen/evtchn device
 endef
 
 $(eval $(call KernelPackage,xen-evtchn))
@@ -117,7 +116,7 @@ define KernelPackage/xen-fbdev
 endef
 
 define KernelPackage/xen-fbdev/description
-  Kernel module for the Xen virtual frame buffer
+ Kernel module for the Xen virtual frame buffer
 endef
 
 $(eval $(call KernelPackage,xen-fbdev))
@@ -133,7 +132,7 @@ define KernelPackage/xen-kbddev
 endef
 
 define KernelPackage/xen-kbddev/description
-  Kernel module for the Xen virtual keyboard and mouse
+ Kernel module for the Xen virtual keyboard and mouse
 endef
 
 $(eval $(call KernelPackage,xen-kbddev))
@@ -149,7 +148,7 @@ define KernelPackage/xen-netdev
 endef
 
 define KernelPackage/xen-netdev/description
-  Kernel module for the Xen network device frontend
+ Kernel module for the Xen network device frontend
 endef
 
 $(eval $(call KernelPackage,xen-netdev))
@@ -165,7 +164,7 @@ define KernelPackage/xen-pcidev
 endef
 
 define KernelPackage/xen-pcidev/description
-  Kernel module for the Xen network device frontend
+ Kernel module for the Xen network device frontend
 endef
 
 $(eval $(call KernelPackage,xen-pcidev))

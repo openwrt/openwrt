@@ -127,7 +127,7 @@ define KernelPackage/lib-raid6
 endef
 
 define KernelPackage/lib-raid6/description
- Kernel module for RAID6 algorithms.
+ Kernel module for RAID6 algorithms
 endef
 
 $(eval $(call KernelPackage,lib-raid6))
@@ -143,7 +143,7 @@ define KernelPackage/lib-xor
 endef
 
 define KernelPackage/lib-xor/description
- Kernel module for XOR blocks algorithms.
+ Kernel module for XOR blocks algorithms
 endef
 
 $(eval $(call KernelPackage,lib-xor))

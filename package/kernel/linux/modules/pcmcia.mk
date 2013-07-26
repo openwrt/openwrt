@@ -44,7 +44,7 @@ endif
 endef
 
 define KernelPackage/pcmcia-rsrc/description
-  Kernel support for PCMCIA resource allocation
+ Kernel support for PCMCIA resource allocation
 endef
 
 $(eval $(call KernelPackage,pcmcia-rsrc))

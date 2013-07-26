@@ -50,7 +50,7 @@ define KernelPackage/i2c-algo-bit
 endef
 
 define KernelPackage/i2c-algo-bit/description
- Kernel modules for I2C bit-banging interfaces.
+ Kernel modules for I2C bit-banging interfaces
 endef
 
 $(eval $(call KernelPackage,i2c-algo-bit))
@@ -66,7 +66,7 @@ define KernelPackage/i2c-algo-pca
 endef
 
 define KernelPackage/i2c-algo-pca/description
- Kernel modules for I2C PCA 9564 interfaces.
+ Kernel modules for I2C PCA 9564 interfaces
 endef
 
 $(eval $(call KernelPackage,i2c-algo-pca))
@@ -110,12 +110,11 @@ I2C_MPC_MODULES:=\
 define KernelPackage/i2c-mpc
   $(call i2c_defaults,$(I2C_MPC_MODULES),59)
   TITLE:=MPC I2C accessors
-  DEPENDS:=@TARGET_mpc52xx||TARGET_mpc83xx||TARGET_mpc85xx \
-          +kmod-i2c-core
+  DEPENDS:=@TARGET_mpc52xx||TARGET_mpc83xx||TARGET_mpc85xx +kmod-i2c-core
 endef
 
 define KernelPackage/i2c-mpc/description
- Kernel module for Freescale MPC52xx MPC83xx MPC85xx I2C accessors.
+ Kernel module for Freescale MPC52xx MPC83xx MPC85xx I2C accessors
 endef
 
 $(eval $(call KernelPackage,i2c-mpc))
@@ -130,7 +129,7 @@ define KernelPackage/i2c-ibm-iic
 endef
 
 define KernelPackage/i2c-ibm-iic/description
- Kernel module for IIC peripheral found on embedded IBM PPC4xx based systems.
+ Kernel module for IIC peripheral found on embedded IBM PPC4xx based systems
 endef
 
 $(eval $(call KernelPackage,i2c-ibm-iic))
@@ -146,7 +145,7 @@ endef
 
 define KernelPackage/i2c-mv64xxx/description
  Kernel module for I2C interface on the Kirkwood, Orion and Armada XP/370
- family processors.
+ family processors
 endef
 
 $(eval $(call KernelPackage,i2c-mv64xxx))
@@ -163,7 +162,7 @@ endef
 
 define KernelPackage/i2c-tiny-usb/description
  Kernel module for the I2C Tiny USB adaptor developed
- by Till Harbaum (http://www.harbaum.org/till/i2c_tiny_usb).
+ by Till Harbaum (http://www.harbaum.org/till/i2c_tiny_usb)
 endef
 
 $(eval $(call KernelPackage,i2c-tiny-usb))
@@ -178,7 +177,7 @@ define KernelPackage/i2c-mux
 endef
 
 define KernelPackage/i2c-mux/description
- Kernel modules for I2C bus multiplexing support.
+ Kernel modules for I2C bus multiplexing support
 endef
 
 $(eval $(call KernelPackage,i2c-mux))
@@ -198,7 +197,7 @@ define KernelPackage/i2c-mux-gpio
 endef
 
 define KernelPackage/i2c-mux-gpio/description
- Kernel modules for GENERIC_GPIO I2C bus mux/switching devices.
+ Kernel modules for GENERIC_GPIO I2C bus mux/switching devices
 endef
 
 $(eval $(call KernelPackage,i2c-mux-gpio))
@@ -217,11 +216,11 @@ define KernelPackage/i2c-mux-pca954x
 endef
 
 define KernelPackage/i2c-mux-pca954x/description
- Kernel modules for PCA954x I2C bus mux/switching devices.
+ Kernel modules for PCA954x I2C bus mux/switching devices
 endef
 
 $(eval $(call KernelPackage,i2c-mux-pca954x))
-## Support for pca954x seems to be in kernel since 2.6.36
+
 
 I2C_MUX_PCA9541_MODULES:= \
   CONFIG_I2C_MUX_PCA9541:drivers/i2c/muxes/$(I2C_MUX_PREFIX)pca9541
@@ -233,7 +232,7 @@ define KernelPackage/i2c-mux-pca9541
 endef
 
 define KernelPackage/i2c-mux-pca9541/description
- Kernel modules for PCA9541 I2C bus mux/switching devices.
+ Kernel modules for PCA9541 I2C bus mux/switching devices
 endef
 
 $(eval $(call KernelPackage,i2c-mux-pca9541))
@@ -248,10 +247,11 @@ define KernelPackage/pca953x
 endef
 
 define KernelPackage/pca953x/description
- Kernel modules for PCA953x I2C GPIO extenders.
+ Kernel modules for PCA953x I2C GPIO extenders
 endef
 
 $(eval $(call KernelPackage,pca953x))
+
 
 GPIO_PCF857X_MODULES:= \
   CONFIG_GPIO_PCF857X:drivers/gpio/gpio-pcf857x
@@ -263,7 +263,7 @@ define KernelPackage/pcf857x
 endef
 
 define KernelPackage/pcf857x/description
- Kernel modules for PCF857x I2C GPIO extenders.
+ Kernel modules for PCF857x I2C GPIO extenders
 endef
 
 $(eval $(call KernelPackage,pcf857x))

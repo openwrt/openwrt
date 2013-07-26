@@ -18,6 +18,7 @@ endef
 
 $(eval $(call KernelPackage,sis190))
 
+
 define KernelPackage/skge
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SysKonnect Yukon support
@@ -31,6 +32,7 @@ endef
 
 $(eval $(call KernelPackage,skge))
 
+
 define KernelPackage/atl2
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros L2 Fast Ethernet support
@@ -41,6 +43,7 @@ define KernelPackage/atl2
 endef
 
 $(eval $(call KernelPackage,atl2))
+
 
 define KernelPackage/atl1
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -53,6 +56,7 @@ endef
 
 $(eval $(call KernelPackage,atl1))
 
+
 define KernelPackage/atl1c
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros L1C
@@ -63,6 +67,7 @@ define KernelPackage/atl1c
 endef
 
 $(eval $(call KernelPackage,atl1c))
+
 
 define KernelPackage/atl1e
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -75,6 +80,7 @@ endef
 
 $(eval $(call KernelPackage,atl1e))
 
+
 define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
@@ -84,10 +90,11 @@ define KernelPackage/libphy
 endef
 
 define KernelPackage/libphy/description
-  PHY library
+ PHY library
 endef
 
 $(eval $(call KernelPackage,libphy))
+
 
 define KernelPackage/et131x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -102,10 +109,11 @@ define KernelPackage/et131x
 endef
 
 define KernelPackage/et131x/description
-  This package contains the et131x kernel module.
+ This package contains the et131x kernel module
 endef
 
 $(eval $(call KernelPackage,et131x))
+
 
 define KernelPackage/swconfig
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -117,10 +125,11 @@ define KernelPackage/swconfig
 endef
 
 define KernelPackage/swconfig/description
-  Switch configuration API module
+ Switch configuration API module
 endef
 
 $(eval $(call KernelPackage,swconfig))
+
 
 define KernelPackage/switch-ip17xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -132,10 +141,11 @@ define KernelPackage/switch-ip17xx
 endef
 
 define KernelPackage/switch-ip17xx/description
-  IC+ IP175C/IP178C switch support
+ IC+ IP175C/IP178C switch support
 endef
 
 $(eval $(call KernelPackage,switch-ip17xx))
+
 
 define KernelPackage/switch-rtl8366-smi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -152,6 +162,7 @@ endef
 
 $(eval $(call KernelPackage,switch-rtl8366-smi))
 
+
 define KernelPackage/switch-rtl8366rb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Realtek RTL8366RB switch support
@@ -162,10 +173,11 @@ define KernelPackage/switch-rtl8366rb
 endef
 
 define KernelPackage/switch-rtl8366rb/description
-  Realtek RTL8366RB switch support
+ Realtek RTL8366RB switch support
 endef
 
 $(eval $(call KernelPackage,switch-rtl8366rb))
+
 
 define KernelPackage/switch-rtl8366s
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -177,10 +189,11 @@ define KernelPackage/switch-rtl8366s
 endef
 
 define KernelPackage/switch-rtl8366s/description
-  Realtek RTL8366S switch support
+ Realtek RTL8366S switch support
 endef
 
 $(eval $(call KernelPackage,switch-rtl8366s))
+
 
 define KernelPackage/natsemi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -265,7 +278,7 @@ define KernelPackage/via-rhine
 endef
 
 define KernelPackage/via-rhine/description
- Kernel modules for Via Rhine Ethernet chipsets.
+ Kernel modules for Via Rhine Ethernet chipsets
 endef
 
 $(eval $(call KernelPackage,via-rhine))
@@ -281,7 +294,7 @@ define KernelPackage/via-velocity
 endef
 
 define KernelPackage/via-velocity/description
- Kernel modules for VIA Velocity Gigabit Ethernet chipsets.
+ Kernel modules for VIA Velocity Gigabit Ethernet chipsets
 endef
 
 $(eval $(call KernelPackage,via-velocity))
@@ -301,7 +314,7 @@ define KernelPackage/8139too
 endef
 
 define KernelPackage/8139too/description
- Kernel modules for RealTek RTL-8139 PCI Fast Ethernet adapters.
+ Kernel modules for RealTek RTL-8139 PCI Fast Ethernet adapters
 endef
 
 $(eval $(call KernelPackage,8139too))
@@ -317,7 +330,7 @@ define KernelPackage/8139cp
 endef
 
 define KernelPackage/8139cp/description
- Kernel module for RealTek RTL-8139C+ PCI Fast Ethernet adapters.
+ Kernel module for RealTek RTL-8139C+ PCI Fast Ethernet adapters
 endef
 
 $(eval $(call KernelPackage,8139cp))
@@ -335,7 +348,7 @@ define KernelPackage/r8169
 endef
 
 define KernelPackage/r8169/description
- Kernel modules for RealTek RTL-8169 PCI Gigabit Ethernet adapters.
+ Kernel modules for RealTek RTL-8169 PCI Gigabit Ethernet adapters
 endef
 
 $(eval $(call KernelPackage,r8169))
@@ -353,7 +366,7 @@ define KernelPackage/ne2k-pci
 endef
 
 define KernelPackage/ne2k-pci/description
- Kernel modules for NE2000 PCI Ethernet Adapter kernel.
+ Kernel modules for NE2000 PCI Ethernet Adapter kernel
 endef
 
 $(eval $(call KernelPackage,ne2k-pci))
@@ -369,7 +382,7 @@ define KernelPackage/e100
 endef
 
 define KernelPackage/e100/description
- Kernel modules for Intel(R) PRO/100+ Ethernet adapters.
+ Kernel modules for Intel(R) PRO/100+ Ethernet adapters
 endef
 
 define KernelPackage/e100/install
@@ -464,7 +477,7 @@ define KernelPackage/pcnet32
 endef
 
 define KernelPackage/pcnet32/description
- Kernel modules for AMD PCnet32 Ethernet adapters.
+ Kernel modules for AMD PCnet32 Ethernet adapters
 endef
 
 $(eval $(call KernelPackage,pcnet32))
@@ -480,7 +493,7 @@ define KernelPackage/tg3
 endef
 
 define KernelPackage/tg3/description
- Kernel modules for Broadcom Tigon3 Gigabit Ethernet adapters.
+ Kernel modules for Broadcom Tigon3 Gigabit Ethernet adapters
 endef
 
 $(eval $(call KernelPackage,tg3))
@@ -497,7 +510,7 @@ endef
 
 define KernelPackage/hfcpci/description
  Kernel modules for Cologne AG's HFC pci cards (single port)
- using the mISDN V2 stack.
+ using the mISDN V2 stack
 endef
 
 $(eval $(call KernelPackage,hfcpci))
@@ -514,7 +527,7 @@ endef
 
 define KernelPackage/hfcmulti/description
  Kernel modules for Cologne AG's HFC multiport cards (HFC-4S/8S/E1)
- using the mISDN V2 stack.
+ using the mISDN V2 stack
 endef
 
 $(eval $(call KernelPackage,hfcmulti))
@@ -560,10 +573,11 @@ endef
 
 define KernelPackage/macvlan/description
  A kernel module which allows one to create virtual interfaces that
- map packets to or from specific MAC addresses to a particular interface.
+ map packets to or from specific MAC addresses to a particular interface
 endef
 
 $(eval $(call KernelPackage,macvlan))
+
 
 define KernelPackage/tulip
   TITLE:=Tulip family network device support
@@ -611,10 +625,11 @@ endef
 
 define KernelPackage/solos-pci/description
  Kernel module for Traverse Technologies' Solos PCI cards
- and Geos ADSL2+ x86 motherboard.
+ and Geos ADSL2+ x86 motherboard
 endef
 
 $(eval $(call KernelPackage,solos-pci))
+
 
 define KernelPackage/dummy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -625,10 +640,11 @@ define KernelPackage/dummy
 endef
 
 define KernelPackage/dummy/description
-  The dummy network device
+ The dummy network device
 endef
 
 $(eval $(call KernelPackage,dummy))
+
 
 define KernelPackage/ifb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -646,6 +662,7 @@ endef
 
 $(eval $(call KernelPackage,ifb))
 
+
 define KernelPackage/dm9000
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Davicom 9000 Ethernet support
@@ -662,6 +679,7 @@ define KernelPackage/dm9000/description
 endef
 
 $(eval $(call KernelPackage,dm9000))
+
 
 define KernelPackage/forcedeth
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -692,6 +710,7 @@ define KernelPackage/of-mdio/description
 endef
 
 $(eval $(call KernelPackage,of-mdio))
+
 
 define KernelPackage/fsl-pq-mdio
   SUBMENU:=$(NETWORK_DEVICES_MENU)

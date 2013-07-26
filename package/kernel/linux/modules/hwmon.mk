@@ -39,7 +39,7 @@ define KernelPackage/hwmon-vid
 endef
 
 define KernelPackage/hwmon-vid/description
-  VID/VRM/VRD voltage conversion module for hardware monitoring.
+ VID/VRM/VRD voltage conversion module for hardware monitoring
 endef
 
 $(eval $(call KernelPackage,hwmon-vid))
@@ -54,7 +54,7 @@ define KernelPackage/hwmon-adt7475
 endef
 
 define KernelPackage/hwmon-adt7475/description
-  Kernel module for ADT7473/7475/7476/7490 thermal monitor chip.
+ Kernel module for ADT7473/7475/7476/7490 thermal monitor chip
 endef
 
 $(eval $(call KernelPackage,hwmon-adt7475))

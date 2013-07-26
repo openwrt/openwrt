@@ -18,7 +18,7 @@ define KernelPackage/w1
 endef
 
 define KernelPackage/w1/description
-  Kernel module for Dallas's 1-wire support
+ Kernel module for Dallas's 1-wire support
 endef
 
 $(eval $(call KernelPackage,w1))
@@ -43,7 +43,7 @@ define KernelPackage/w1-master-gpio
 endef
 
 define KernelPackage/w1-master-gpio/description
-  Kernel module for the GPIO 1-wire bus master driver
+ Kernel module for the GPIO 1-wire bus master driver
 endef
 
 $(eval $(call KernelPackage,w1-master-gpio))
@@ -57,9 +57,9 @@ define KernelPackage/w1-master-ds2482
 endef
 
 define KernelPackage/w1-master-ds2482/description
-  Kernel module for the DS2482 i2c 1-wire bus master driver
-  NOTE: Init with: echo ds2482 0x18 > /sys/bus/i2c/devices/i2c-0/new_device
-  or use owfs
+ Kernel module for the DS2482 i2c 1-wire bus master driver
+ NOTE: Init with: echo ds2482 0x18 > /sys/bus/i2c/devices/i2c-0/new_device
+ or use owfs
 endef
 
 $(eval $(call KernelPackage,w1-master-ds2482))
@@ -75,7 +75,7 @@ define KernelPackage/w1-master-ds2490
 endef
 
 define KernelPackage/w1-master-ds2490/description
-  Kernel module for the DS2490 usb 1-wire bus master driver
+ Kernel module for the DS2490 usb 1-wire bus master driver
 endef
 
 $(eval $(call KernelPackage,w1-master-ds2490))
@@ -92,7 +92,7 @@ define KernelPackage/w1-slave-therm
 endef
 
 define KernelPackage/w1-slave-therm/description
-  Kernel module for 1-wire thermal sensors
+ Kernel module for 1-wire thermal sensors
 endef
 
 $(eval $(call KernelPackage,w1-slave-therm))
@@ -107,7 +107,7 @@ define KernelPackage/w1-slave-smem
 endef
 
 define KernelPackage/w1-slave-smem/description
-  Kernel module for 1-wire simple 64bit memory rom(ds2401/ds2411/ds1990*)
+ Kernel module for 1-wire simple 64bit memory rom(ds2401/ds2411/ds1990*)
 endef
 
 $(eval $(call KernelPackage,w1-slave-smem))
@@ -121,7 +121,7 @@ define KernelPackage/w1-slave-ds2431
 endef
 
 define KernelPackage/w1-slave-ds2431/description
-  Kernel module for 1-wire 1kb EEPROM (DS2431)
+ Kernel module for 1-wire 1kb EEPROM (DS2431)
 endef
 
 $(eval $(call KernelPackage,w1-slave-ds2431))
@@ -137,7 +137,7 @@ define KernelPackage/w1-slave-ds2433
 endef
 
 define KernelPackage/w1-slave-ds2433/description
-  Kernel module for 1-wire 4kb EEPROM (DS2433)
+ Kernel module for 1-wire 4kb EEPROM (DS2433)
 endef
 
 $(eval $(call KernelPackage,w1-slave-ds2433))
@@ -154,7 +154,7 @@ define KernelPackage/w1-slave-ds2760
 endef
 
 define KernelPackage/w1-slave-ds2760/description
-  Kernel module for 1-wire DS2760 battery monitor chip support
+ Kernel module for 1-wire DS2760 battery monitor chip support
 endef
 
 $(eval $(call KernelPackage,w1-slave-ds2760))

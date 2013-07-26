@@ -147,7 +147,7 @@ define KernelPackage/sound-cs5535audio
 endef
 
 define KernelPackage/sound-cs5535audio/description
- support for the integrated AC97 sound device on olpc
+ Support for the integrated AC97 sound device on olpc
 endef
 
 $(eval $(call KernelPackage,sound-cs5535audio))
@@ -195,7 +195,7 @@ define KernelPackage/sound-soc-imx
 endef
 
 define KernelPackage/sound-soc-imx/description
- support for i.MX6 Platform sound (ssi/audmux/pcm)
+ Support for i.MX6 Platform sound (ssi/audmux/pcm)
 endef
 
 $(eval $(call KernelPackage,sound-soc-imx))
@@ -211,7 +211,7 @@ define KernelPackage/sound-soc-imx-sgtl5000
 endef
 
 define KernelPackage/sound-soc-imx-sgtl5000/description
- support for i.MX6 Platform sound SGTL5000 codec
+ Support for i.MX6 Platform sound SGTL5000 codec
 endef
 
 $(eval $(call KernelPackage,sound-soc-imx-sgtl5000))

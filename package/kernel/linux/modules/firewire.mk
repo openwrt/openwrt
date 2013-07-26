@@ -7,7 +7,6 @@
 
 FIREWIRE_MENU:=FireWire support
 
-
 define KernelPackage/firewire
   SUBMENU:=$(FIREWIRE_MENU)
   TITLE:=Support for FireWire (new stack)
@@ -18,7 +17,7 @@ define KernelPackage/firewire
 endef
 
 define KernelPackage/firewire/description
-  Kernel support for FireWire (new stack)
+ Kernel support for FireWire (new stack)
 endef
 
 $(eval $(call KernelPackage,firewire))
@@ -74,4 +73,3 @@ define KernelPackage/firewire-net/description
 endef
 
 $(eval $(call KernelPackage,firewire-net))
-

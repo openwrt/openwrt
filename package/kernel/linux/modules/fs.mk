@@ -16,7 +16,7 @@ define KernelPackage/fs-autofs4
 endef
 
 define KernelPackage/fs-autofs4/description
-  Kernel module for AutoFS4 support
+ Kernel module for AutoFS4 support
 endef
 
 $(eval $(call KernelPackage,fs-autofs4))
@@ -36,7 +36,7 @@ define KernelPackage/fs-btrfs
 endef
 
 define KernelPackage/fs-btrfs/description
-  Kernel module for BTRFS support
+ Kernel module for BTRFS support
 endef
 
 $(eval $(call KernelPackage,fs-btrfs))

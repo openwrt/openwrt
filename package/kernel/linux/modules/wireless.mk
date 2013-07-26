@@ -106,4 +106,3 @@ endef
 
 $(eval $(call Download,net-prism54))
 $(eval $(call KernelPackage,net-prism54))
-
