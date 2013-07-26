@@ -22,6 +22,8 @@ CMAKE_INSTALL:=1
 
 CMAKE_OPTIONS += -DSYSCONF_INSTALL_DIR=/etc
 
+PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
