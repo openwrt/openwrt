@@ -1,5 +1,5 @@
 /*
- *  TP-LINK TL-WR703N board support
+ *  TP-LINK TL-WR703N/TL-MR10U board support
  *
  *  Copyright (C) 2011 dongyuqi <729650915@qq.com>
  *  Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
@@ -25,6 +25,8 @@
 #define TL_WR703N_GPIO_BTN_RESET	11
 
 #define TL_WR703N_GPIO_USB_POWER	8
+
+#define TL_MR10U_GPIO_USB_POWER		18
 
 #define TL_WR703N_KEYS_POLL_INTERVAL	20	/* msecs */
 #define TL_WR703N_KEYS_DEBOUNCE_INTERVAL	(3 * TL_WR703N_KEYS_POLL_INTERVAL)
@@ -57,7 +59,7 @@ static struct gpio_keys_button tl_wr703n_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init tl_wr703n_setup(void)
+static void __init common_setup(unsigned usb_power_gpio)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
@@ -72,7 +74,7 @@ static void __init tl_wr703n_setup(void)
 					ARRAY_SIZE(tl_wr703n_gpio_keys),
 					tl_wr703n_gpio_keys);
 
-	gpio_request_one(TL_WR703N_GPIO_USB_POWER,
+	gpio_request_one(usb_power_gpio,
 			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
 			 "USB power");
 	ath79_register_usb();
@@ -83,6 +85,19 @@ static void __init tl_wr703n_setup(void)
 	ath79_register_eth(0);
 
 	ath79_register_wmac(ee, mac);
+}
+
+static void __init tl_mr10u_setup(void)
+{
+	common_setup(TL_MR10U_GPIO_USB_POWER);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_MR10U, "TL-MR10U", "TP-LINK TL-MR10U",
+	     tl_mr10u_setup);
+
+static void __init tl_wr703n_setup(void)
+{
+	common_setup(TL_WR703N_GPIO_USB_POWER);
 }
 
 MIPS_MACHINE(ATH79_MACH_TL_WR703N, "TL-WR703N", "TP-LINK TL-WR703N v1",
