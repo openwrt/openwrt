@@ -251,7 +251,7 @@ disable_mac80211() (
 	include /lib/network
 	for wdev in $(list_phy_interfaces "$phy"); do
 		[ -f "/var/run/$wdev.pid" ] && kill $(cat /var/run/$wdev.pid) >&/dev/null 2>&1
-		for pid in `pidof wpa_supplicant`; do
+		for pid in `pidof wpa_supplicant meshd-nl80211`; do
 			grep "$wdev" /proc/$pid/cmdline >/dev/null && \
 				kill $pid
 		done
@@ -370,8 +370,13 @@ enable_mac80211() {
 				[ "$apidx" -gt 1 ] || iw phy "$phy" interface add "$ifname" type managed
 			;;
 			mesh)
-				config_get mesh_id "$vif" mesh_id
-				iw phy "$phy" interface add "$ifname" type mp mesh_id "$mesh_id"
+				config_get key "$vif" key ""
+				if [ -n "$key" ]; then
+					iw phy "$phy" interface add "$ifname" type mp
+				else
+					config_get mesh_id "$vif" mesh_id
+					iw phy "$phy" interface add "$ifname" type mp mesh_id "$mesh_id"
+				fi
 			;;
 			monitor)
 				iw phy "$phy" interface add "$ifname" type monitor
@@ -426,9 +431,16 @@ enable_mac80211() {
 	rm -f /var/run/hostapd-$phy.conf
 	for vif in $vifs; do
 		config_get mode "$vif" mode
-		[ "$mode" = "ap" ] || continue
-		mac80211_hostapd_setup_bss "$phy" "$vif"
-		start_hostapd=1
+		case "$mode" in
+			ap)
+				mac80211_hostapd_setup_bss "$phy" "$vif"
+				start_hostapd=1
+			;;
+			mesh)
+				config_get key "$vif" key ""
+				[ -n "$key" ] && authsae_start_interface "$device" "$vif"
+			;;
+		esac
 	done
 
 	[ -n "$start_hostapd" ] && {
