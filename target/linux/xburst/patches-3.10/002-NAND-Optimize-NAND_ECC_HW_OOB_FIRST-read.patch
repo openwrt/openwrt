@@ -10,11 +10,9 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  drivers/mtd/nand/nand_base.c |   17 +++++++++++++----
  1 file changed, 13 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index dfcd0a5..287c433 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1278,9 +1278,16 @@ static int nand_read_page_hwecc_oob_first(struct mtd_info *mtd,
+@@ -1278,9 +1278,16 @@ static int nand_read_page_hwecc_oob_firs
  	unsigned int max_bitflips = 0;
  
  	/* Read the OOB area first */
@@ -34,7 +32,7 @@ index dfcd0a5..287c433 100644
  
  	for (i = 0; i < chip->ecc.total; i++)
  		ecc_code[i] = chip->oob_poi[eccpos[i]];
-@@ -1455,7 +1462,9 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
+@@ -1455,7 +1462,9 @@ static int nand_do_read_ops(struct mtd_i
  		if (realpage != chip->pagebuf || oob) {
  			bufpoi = aligned ? buf : chip->buffers->databuf;
  
@@ -45,6 +43,3 @@ index dfcd0a5..287c433 100644
  
  			/*
  			 * Now read the page into the buffer.  Absent an error,
--- 
-1.7.10.4
-

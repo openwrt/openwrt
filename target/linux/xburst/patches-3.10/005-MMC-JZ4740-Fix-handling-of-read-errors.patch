@@ -11,11 +11,9 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  drivers/mmc/host/jz4740_mmc.c |    8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/mmc/host/jz4740_mmc.c b/drivers/mmc/host/jz4740_mmc.c
-index 5a6ac99..ffe1181 100644
 --- a/drivers/mmc/host/jz4740_mmc.c
 +++ b/drivers/mmc/host/jz4740_mmc.c
-@@ -231,6 +231,14 @@ static void jz4740_mmc_transfer_check_state(struct jz4740_mmc_host *host,
+@@ -231,6 +231,14 @@ static void jz4740_mmc_transfer_check_st
  			host->req->cmd->error = -EIO;
  			data->error = -EIO;
  		}
@@ -30,6 +28,3 @@ index 5a6ac99..ffe1181 100644
  	}
  }
  
--- 
-1.7.10.4
-

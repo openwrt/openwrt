@@ -18,8 +18,6 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  3 files changed, 440 insertions(+)
  create mode 100644 drivers/dma/dma-jz4740.c
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index e992489..b3e8952 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -312,6 +312,12 @@ config MMP_PDMA
@@ -35,8 +33,6 @@ index e992489..b3e8952 100644
  config DMA_ENGINE
  	bool
  
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index a2b0df5..6127a61 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -38,3 +38,4 @@ obj-$(CONFIG_DMA_SA11X0) += sa11x0-dma.o
@@ -44,9 +40,6 @@ index a2b0df5..6127a61 100644
  obj-$(CONFIG_DMA_OMAP) += omap-dma.o
  obj-$(CONFIG_MMP_PDMA) += mmp_pdma.o
 +obj-$(CONFIG_DMA_JZ4740) += dma-jz4740.o
-diff --git a/drivers/dma/dma-jz4740.c b/drivers/dma/dma-jz4740.c
-new file mode 100644
-index 0000000..3d42434
 --- /dev/null
 +++ b/drivers/dma/dma-jz4740.c
 @@ -0,0 +1,433 @@
@@ -483,6 +476,3 @@ index 0000000..3d42434
 +MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
 +MODULE_DESCRIPTION("JZ4740 DMA driver");
 +MODULE_LICENSE("GPLv2");
--- 
-1.7.10.4
-

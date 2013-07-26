@@ -12,11 +12,9 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  sound/soc/codecs/jz4740.c |    9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/sound/soc/codecs/jz4740.c b/sound/soc/codecs/jz4740.c
-index 5f607b3..76ff580 100644
 --- a/sound/soc/codecs/jz4740.c
 +++ b/sound/soc/codecs/jz4740.c
-@@ -249,12 +249,15 @@ static int jz4740_codec_set_bias_level(struct snd_soc_codec *codec,
+@@ -249,12 +249,15 @@ static int jz4740_codec_set_bias_level(s
  	case SND_SOC_BIAS_ON:
  		break;
  	case SND_SOC_BIAS_PREPARE:
@@ -35,6 +33,3 @@ index 5f607b3..76ff580 100644
  		break;
  	case SND_SOC_BIAS_STANDBY:
  		/* The only way to clear the suspend flag is to reset the codec */
--- 
-1.7.10.4
-

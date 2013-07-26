@@ -14,8 +14,6 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  create mode 100644 drivers/usb/gadget/jz4740_udc.c
  create mode 100644 drivers/usb/gadget/jz4740_udc.h
 
-diff --git a/drivers/usb/gadget/Kconfig b/drivers/usb/gadget/Kconfig
-index f41aa0d..c96b7ef 100644
 --- a/drivers/usb/gadget/Kconfig
 +++ b/drivers/usb/gadget/Kconfig
 @@ -192,6 +192,14 @@ config USB_FUSB300
@@ -33,8 +31,6 @@ index f41aa0d..c96b7ef 100644
  config USB_OMAP
  	tristate "OMAP USB Device Controller"
  	depends on ARCH_OMAP1
-diff --git a/drivers/usb/gadget/Makefile b/drivers/usb/gadget/Makefile
-index 6afd166..f18db69 100644
 --- a/drivers/usb/gadget/Makefile
 +++ b/drivers/usb/gadget/Makefile
 @@ -34,6 +34,7 @@ obj-$(CONFIG_USB_MV_UDC)	+= mv_udc.o
@@ -45,8 +41,6 @@ index 6afd166..f18db69 100644
  
  # USB Functions
  usb_f_acm-y			:= f_acm.o
-diff --git a/drivers/usb/gadget/gadget_chips.h b/drivers/usb/gadget/gadget_chips.h
-index bcd04bc..a3b069f 100644
 --- a/drivers/usb/gadget/gadget_chips.h
 +++ b/drivers/usb/gadget/gadget_chips.h
 @@ -29,6 +29,7 @@
@@ -57,9 +51,6 @@ index bcd04bc..a3b069f 100644
  #define gadget_is_musbhdrc(g)		(!strcmp("musb-hdrc", (g)->name))
  #define gadget_is_net2280(g)		(!strcmp("net2280", (g)->name))
  #define gadget_is_pxa(g)		(!strcmp("pxa25x_udc", (g)->name))
-diff --git a/drivers/usb/gadget/jz4740_udc.c b/drivers/usb/gadget/jz4740_udc.c
-new file mode 100644
-index 0000000..72e9a6c
 --- /dev/null
 +++ b/drivers/usb/gadget/jz4740_udc.c
 @@ -0,0 +1,2155 @@
@@ -2218,9 +2209,6 @@ index 0000000..72e9a6c
 +MODULE_DESCRIPTION("JZ4740 USB Device Controller");
 +MODULE_AUTHOR("Wei Jianli <jlwei@ingenic.cn>");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/usb/gadget/jz4740_udc.h b/drivers/usb/gadget/jz4740_udc.h
-new file mode 100644
-index 0000000..53fd1da
 --- /dev/null
 +++ b/drivers/usb/gadget/jz4740_udc.h
 @@ -0,0 +1,101 @@
@@ -2325,6 +2313,3 @@ index 0000000..53fd1da
 +}
 +
 +#endif /* __USB_GADGET_JZ4740_H__ */
--- 
-1.7.10.4
-

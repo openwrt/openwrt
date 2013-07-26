@@ -8,11 +8,9 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  drivers/mmc/host/jz4740_mmc.c |    5 -----
  1 file changed, 5 deletions(-)
 
-diff --git a/drivers/mmc/host/jz4740_mmc.c b/drivers/mmc/host/jz4740_mmc.c
-index 2391c6b..5a6ac99 100644
 --- a/drivers/mmc/host/jz4740_mmc.c
 +++ b/drivers/mmc/host/jz4740_mmc.c
-@@ -560,11 +560,6 @@ static irqreturn_t jz_mmc_irq(int irq, void *devid)
+@@ -560,11 +560,6 @@ static irqreturn_t jz_mmc_irq(int irq, v
  					if (cmd->data)
  							cmd->data->error = -EIO;
  					cmd->error = -EIO;
@@ -24,6 +22,3 @@ index 2391c6b..5a6ac99 100644
  			}
  
  			jz4740_mmc_set_irq_enabled(host, irq_reg, false);
--- 
-1.7.10.4
-

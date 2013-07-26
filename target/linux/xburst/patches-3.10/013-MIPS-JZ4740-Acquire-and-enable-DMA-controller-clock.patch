@@ -13,8 +13,6 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  arch/mips/jz4740/dma.c   |   24 ++++++++++++++++++++++--
  2 files changed, 23 insertions(+), 3 deletions(-)
 
-diff --git a/arch/mips/jz4740/clock.c b/arch/mips/jz4740/clock.c
-index 1b5f554..b3eba60 100644
 --- a/arch/mips/jz4740/clock.c
 +++ b/arch/mips/jz4740/clock.c
 @@ -921,4 +921,4 @@ static int jz4740_clock_init(void)
@@ -23,8 +21,6 @@ index 1b5f554..b3eba60 100644
  }
 -arch_initcall(jz4740_clock_init);
 +postcore_initcall(jz4740_clock_init);
-diff --git a/arch/mips/jz4740/dma.c b/arch/mips/jz4740/dma.c
-index 317ec6f..fb5266c 100644
 --- a/arch/mips/jz4740/dma.c
 +++ b/arch/mips/jz4740/dma.c
 @@ -16,6 +16,7 @@
@@ -35,7 +31,7 @@ index 317ec6f..fb5266c 100644
  #include <linux/interrupt.h>
  
  #include <linux/dma-mapping.h>
-@@ -268,6 +269,7 @@ static irqreturn_t jz4740_dma_irq(int irq, void *dev_id)
+@@ -268,6 +269,7 @@ static irqreturn_t jz4740_dma_irq(int ir
  
  static int jz4740_dma_init(void)
  {
@@ -75,6 +71,3 @@ index 317ec6f..fb5266c 100644
  	return ret;
  }
  arch_initcall(jz4740_dma_init);
--- 
-1.7.10.4
-

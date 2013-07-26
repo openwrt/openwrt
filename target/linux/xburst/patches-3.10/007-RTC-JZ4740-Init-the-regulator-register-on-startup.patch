@@ -14,8 +14,6 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  drivers/rtc/rtc-jz4740.c |   17 +++++++++++++++++
  1 file changed, 17 insertions(+)
 
-diff --git a/drivers/rtc/rtc-jz4740.c b/drivers/rtc/rtc-jz4740.c
-index 1e48686..722fb0c 100644
 --- a/drivers/rtc/rtc-jz4740.c
 +++ b/drivers/rtc/rtc-jz4740.c
 @@ -14,6 +14,7 @@
@@ -26,7 +24,7 @@ index 1e48686..722fb0c 100644
  #include <linux/kernel.h>
  #include <linux/module.h>
  #include <linux/platform_device.h>
-@@ -215,6 +216,7 @@ static int jz4740_rtc_probe(struct platform_device *pdev)
+@@ -215,6 +216,7 @@ static int jz4740_rtc_probe(struct platf
  	int ret;
  	struct jz4740_rtc *rtc;
  	uint32_t scratchpad;
@@ -34,7 +32,7 @@ index 1e48686..722fb0c 100644
  
  	rtc = kzalloc(sizeof(*rtc), GFP_KERNEL);
  	if (!rtc)
-@@ -280,6 +282,21 @@ static int jz4740_rtc_probe(struct platform_device *pdev)
+@@ -280,6 +282,21 @@ static int jz4740_rtc_probe(struct platf
  		}
  	}
  
@@ -56,6 +54,3 @@ index 1e48686..722fb0c 100644
  	return 0;
  
  err_free_irq:
--- 
-1.7.10.4
-

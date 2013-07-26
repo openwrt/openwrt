@@ -15,11 +15,9 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  arch/mips/jz4740/platform.c                  |   21 +++++++++++++++++++++
  3 files changed, 23 insertions(+)
 
-diff --git a/arch/mips/include/asm/mach-jz4740/platform.h b/arch/mips/include/asm/mach-jz4740/platform.h
-index 72cfebd..05988c2 100644
 --- a/arch/mips/include/asm/mach-jz4740/platform.h
 +++ b/arch/mips/include/asm/mach-jz4740/platform.h
-@@ -32,6 +32,7 @@ extern struct platform_device jz4740_codec_device;
+@@ -32,6 +32,7 @@ extern struct platform_device jz4740_cod
  extern struct platform_device jz4740_adc_device;
  extern struct platform_device jz4740_wdt_device;
  extern struct platform_device jz4740_pwm_device;
@@ -27,11 +25,9 @@ index 72cfebd..05988c2 100644
  
  void jz4740_serial_device_register(void);
  
-diff --git a/arch/mips/jz4740/board-qi_lb60.c b/arch/mips/jz4740/board-qi_lb60.c
-index bc454e6..b857521 100644
 --- a/arch/mips/jz4740/board-qi_lb60.c
 +++ b/arch/mips/jz4740/board-qi_lb60.c
-@@ -437,6 +437,7 @@ static struct platform_device *jz_platform_devices[] __initdata = {
+@@ -437,6 +437,7 @@ static struct platform_device *jz_platfo
  	&jz4740_rtc_device,
  	&jz4740_adc_device,
  	&jz4740_pwm_device,
@@ -39,11 +35,9 @@ index bc454e6..b857521 100644
  	&qi_lb60_gpio_keys,
  	&qi_lb60_pwm_beeper,
  	&qi_lb60_charger_device,
-diff --git a/arch/mips/jz4740/platform.c b/arch/mips/jz4740/platform.c
-index e9348fd..df65677 100644
 --- a/arch/mips/jz4740/platform.c
 +++ b/arch/mips/jz4740/platform.c
-@@ -329,3 +329,24 @@ struct platform_device jz4740_pwm_device = {
+@@ -329,3 +329,24 @@ struct platform_device jz4740_pwm_device
  	.name = "jz4740-pwm",
  	.id   = -1,
  };
@@ -68,6 +62,3 @@ index e9348fd..df65677 100644
 +	.num_resources	= ARRAY_SIZE(jz4740_dma_resources),
 +	.resource	= jz4740_dma_resources,
 +};
--- 
-1.7.10.4
-
