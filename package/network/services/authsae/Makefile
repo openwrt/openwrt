@@ -37,6 +37,8 @@ TARGET_CFLAGS += -D_GNU_SOURCE
 define Package/authsae/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/* $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/lib/wifi
+	$(INSTALL_DATA) ./files/lib/wifi/authsae.sh $(1)/lib/wifi/
 endef
 
 $(eval $(call BuildPackage,authsae))
