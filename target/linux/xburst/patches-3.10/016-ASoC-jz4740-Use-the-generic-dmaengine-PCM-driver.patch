@@ -16,8 +16,6 @@ Acked-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
  4 files changed, 27 insertions(+), 352 deletions(-)
  delete mode 100644 sound/soc/jz4740/jz4740-pcm.h
 
-diff --git a/sound/soc/jz4740/Kconfig b/sound/soc/jz4740/Kconfig
-index 5351cba..29f76af 100644
 --- a/sound/soc/jz4740/Kconfig
 +++ b/sound/soc/jz4740/Kconfig
 @@ -1,6 +1,7 @@
@@ -28,8 +26,6 @@ index 5351cba..29f76af 100644
  	help
  	  Say Y or M if you want to add support for codecs attached to
  	  the JZ4740 I2S interface. You will also need to select the audio
-diff --git a/sound/soc/jz4740/jz4740-i2s.c b/sound/soc/jz4740/jz4740-i2s.c
-index 9a12644..5d04134 100644
 --- a/sound/soc/jz4740/jz4740-i2s.c
 +++ b/sound/soc/jz4740/jz4740-i2s.c
 @@ -29,9 +29,12 @@
@@ -57,7 +53,7 @@ index 9a12644..5d04134 100644
  };
  
  static inline uint32_t jz4740_i2s_read(const struct jz4740_i2s *i2s,
-@@ -233,8 +236,6 @@ static int jz4740_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -233,8 +236,6 @@ static int jz4740_i2s_hw_params(struct s
  	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
  {
  	struct jz4740_i2s *i2s = snd_soc_dai_get_drvdata(dai);
@@ -66,7 +62,7 @@ index 9a12644..5d04134 100644
  	unsigned int sample_size;
  	uint32_t ctrl;
  
-@@ -243,11 +244,9 @@ static int jz4740_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -243,11 +244,9 @@ static int jz4740_i2s_hw_params(struct s
  	switch (params_format(params)) {
  	case SNDRV_PCM_FORMAT_S8:
  		sample_size = 0;
@@ -78,7 +74,7 @@ index 9a12644..5d04134 100644
  		break;
  	default:
  		return -EINVAL;
-@@ -260,22 +259,13 @@ static int jz4740_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -260,22 +259,13 @@ static int jz4740_i2s_hw_params(struct s
  			ctrl |= JZ_AIC_CTRL_MONO_TO_STEREO;
  		else
  			ctrl &= ~JZ_AIC_CTRL_MONO_TO_STEREO;
@@ -101,7 +97,7 @@ index 9a12644..5d04134 100644
  	return 0;
  }
  
-@@ -342,25 +332,19 @@ static int jz4740_i2s_resume(struct snd_soc_dai *dai)
+@@ -342,25 +332,19 @@ static int jz4740_i2s_resume(struct snd_
  
  static void jz4740_i2c_init_pcm_config(struct jz4740_i2s *i2s)
  {
@@ -136,7 +132,7 @@ index 9a12644..5d04134 100644
  }
  
  static int jz4740_i2s_dai_probe(struct snd_soc_dai *dai)
-@@ -371,6 +355,8 @@ static int jz4740_i2s_dai_probe(struct snd_soc_dai *dai)
+@@ -371,6 +355,8 @@ static int jz4740_i2s_dai_probe(struct s
  	clk_enable(i2s->clk_aic);
  
  	jz4740_i2c_init_pcm_config(i2s);
@@ -145,8 +141,6 @@ index 9a12644..5d04134 100644
  
  	conf = (7 << JZ_AIC_CONF_FIFO_RX_THRESHOLD_OFFSET) |
  		(8 << JZ_AIC_CONF_FIFO_TX_THRESHOLD_OFFSET) |
-diff --git a/sound/soc/jz4740/jz4740-pcm.c b/sound/soc/jz4740/jz4740-pcm.c
-index 7100592..79fcade 100644
 --- a/sound/soc/jz4740/jz4740-pcm.c
 +++ b/sound/soc/jz4740/jz4740-pcm.c
 @@ -19,38 +19,14 @@
@@ -189,7 +183,7 @@ index 7100592..79fcade 100644
  	.period_bytes_min	= 16,
  	.period_bytes_max	= 2 * PAGE_SIZE,
  	.periods_min		= 2,
-@@ -59,290 +35,22 @@ static const struct snd_pcm_hardware jz4740_pcm_hardware = {
+@@ -59,290 +35,22 @@ static const struct snd_pcm_hardware jz4
  	.fifo_size		= 32,
  };
  
@@ -488,9 +482,6 @@ index 7100592..79fcade 100644
  	return 0;
  }
  
-diff --git a/sound/soc/jz4740/jz4740-pcm.h b/sound/soc/jz4740/jz4740-pcm.h
-deleted file mode 100644
-index 1220cbb..0000000
 --- a/sound/soc/jz4740/jz4740-pcm.h
 +++ /dev/null
 @@ -1,20 +0,0 @@
@@ -514,6 +505,3 @@ index 1220cbb..0000000
 -};
 -
 -#endif
--- 
-1.7.10.4
-

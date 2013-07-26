@@ -10,11 +10,9 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  include/linux/mtd/nand.h     |    2 +-
  2 files changed, 78 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 287c433..0fd6f2e 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1118,7 +1118,7 @@ static int nand_read_page_swecc(struct mtd_info *mtd, struct nand_chip *chip,
+@@ -1118,7 +1118,7 @@ static int nand_read_page_swecc(struct m
   * @bufpoi: buffer to store read data
   */
  static int nand_read_subpage(struct mtd_info *mtd, struct nand_chip *chip,
@@ -23,7 +21,7 @@ index 287c433..0fd6f2e 100644
  {
  	int start_step, end_step, num_steps;
  	uint32_t *eccpos = chip->ecc.layout->eccpos;
-@@ -1311,6 +1311,75 @@ static int nand_read_page_hwecc_oob_first(struct mtd_info *mtd,
+@@ -1311,6 +1311,75 @@ static int nand_read_page_hwecc_oob_firs
  }
  
  /**
@@ -99,7 +97,7 @@ index 287c433..0fd6f2e 100644
   * nand_read_page_syndrome - [REPLACEABLE] hardware ECC syndrome based page read
   * @mtd: mtd info structure
   * @chip: nand chip info structure
-@@ -1477,7 +1546,7 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
+@@ -1477,7 +1546,7 @@ static int nand_do_read_ops(struct mtd_i
  			else if (!aligned && NAND_HAS_SUBPAGE_READ(chip) &&
  				 !oob)
  				ret = chip->ecc.read_subpage(mtd, chip,
@@ -123,8 +121,6 @@ index 287c433..0fd6f2e 100644
  
  	case NAND_ECC_HW:
  		/* Use standard hwecc read page function? */
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index ab63634..ff5b62e 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
 @@ -349,7 +349,7 @@ struct nand_ecc_ctrl {
@@ -136,6 +132,3 @@ index ab63634..ff5b62e 100644
  	int (*write_subpage)(struct mtd_info *mtd, struct nand_chip *chip,
  			uint32_t offset, uint32_t data_len,
  			const uint8_t *data_buf, int oob_required);
--- 
-1.7.10.4
-

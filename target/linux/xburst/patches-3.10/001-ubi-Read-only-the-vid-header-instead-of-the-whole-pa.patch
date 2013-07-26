@@ -9,11 +9,9 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  drivers/mtd/ubi/io.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/ubi/io.c b/drivers/mtd/ubi/io.c
-index bf79def..bc82962 100644
 --- a/drivers/mtd/ubi/io.c
 +++ b/drivers/mtd/ubi/io.c
-@@ -1019,7 +1019,7 @@ int ubi_io_read_vid_hdr(struct ubi_device *ubi, int pnum,
+@@ -1019,7 +1019,7 @@ int ubi_io_read_vid_hdr(struct ubi_devic
  
  	p = (char *)vid_hdr - ubi->vid_hdr_shift;
  	read_err = ubi_io_read(ubi, p, pnum, ubi->vid_hdr_aloffset,
@@ -22,6 +20,3 @@ index bf79def..bc82962 100644
  	if (read_err && read_err != UBI_IO_BITFLIPS && !mtd_is_eccerr(read_err))
  		return read_err;
  
--- 
-1.7.10.4
-

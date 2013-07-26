@@ -18,8 +18,6 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  4 files changed, 222 insertions(+), 401 deletions(-)
  delete mode 100644 arch/mips/jz4740/dma.c
 
-diff --git a/arch/mips/include/asm/mach-jz4740/dma.h b/arch/mips/include/asm/mach-jz4740/dma.h
-index 98b4e7c..509cd58 100644
 --- a/arch/mips/include/asm/mach-jz4740/dma.h
 +++ b/arch/mips/include/asm/mach-jz4740/dma.h
 @@ -16,8 +16,6 @@
@@ -90,8 +88,6 @@ index 98b4e7c..509cd58 100644
 -	jz4740_dma_complete_callback_t cb);
 -
  #endif	/* __ASM_JZ4740_DMA_H__ */
-diff --git a/arch/mips/jz4740/Makefile b/arch/mips/jz4740/Makefile
-index 63bad0e..28e5535 100644
 --- a/arch/mips/jz4740/Makefile
 +++ b/arch/mips/jz4740/Makefile
 @@ -4,7 +4,7 @@
@@ -103,9 +99,6 @@ index 63bad0e..28e5535 100644
  	gpio.o clock.o platform.o timer.o serial.o
  
  obj-$(CONFIG_DEBUG_FS) += clock-debugfs.o
-diff --git a/arch/mips/jz4740/dma.c b/arch/mips/jz4740/dma.c
-deleted file mode 100644
-index fb5266c..0000000
 --- a/arch/mips/jz4740/dma.c
 +++ /dev/null
 @@ -1,307 +0,0 @@
@@ -416,8 +409,6 @@ index fb5266c..0000000
 -	return ret;
 -}
 -arch_initcall(jz4740_dma_init);
-diff --git a/drivers/dma/dma-jz4740.c b/drivers/dma/dma-jz4740.c
-index 3d42434..b0c0c82 100644
 --- a/drivers/dma/dma-jz4740.c
 +++ b/drivers/dma/dma-jz4740.c
 @@ -22,6 +22,8 @@
@@ -538,7 +529,7 @@ index 3d42434..b0c0c82 100644
  static struct jz4740_dmaengine_chan *to_jz4740_dma_chan(struct dma_chan *c)
  {
  	return container_of(c, struct jz4740_dmaengine_chan, vchan.chan);
-@@ -70,6 +152,29 @@ static struct jz4740_dma_desc *to_jz4740_dma_desc(struct virt_dma_desc *vdesc)
+@@ -70,6 +152,29 @@ static struct jz4740_dma_desc *to_jz4740
  	return container_of(vdesc, struct jz4740_dma_desc, vdesc);
  }
  
@@ -568,7 +559,7 @@ index 3d42434..b0c0c82 100644
  static struct jz4740_dma_desc *jz4740_dma_alloc_desc(unsigned int num_sgs)
  {
  	return kzalloc(sizeof(struct jz4740_dma_desc) +
-@@ -108,30 +213,60 @@ static int jz4740_dma_slave_config(struct dma_chan *c,
+@@ -108,30 +213,60 @@ static int jz4740_dma_slave_config(struc
  	const struct dma_slave_config *config)
  {
  	struct jz4740_dmaengine_chan *chan = to_jz4740_dma_chan(c);
@@ -601,7 +592,11 @@ index 3d42434..b0c0c82 100644
  
 +	src_width = jz4740_dma_width(config->src_addr_width);
 +	dst_width = jz4740_dma_width(config->dst_addr_width);
-+
+ 
+-	jzcfg.src_width = jz4740_dma_width(config->src_addr_width);
+-	jzcfg.dst_width = jz4740_dma_width(config->dst_addr_width);
+-	jzcfg.mode = JZ4740_DMA_MODE_SINGLE;
+-	jzcfg.request_type = config->slave_id;
 +	switch (transfer_size) {
 +	case JZ4740_DMA_TRANSFER_SIZE_2BYTE:
 +		chan->transfer_shift = 1;
@@ -620,18 +615,14 @@ index 3d42434..b0c0c82 100644
 +		break;
 +	}
  
--	jzcfg.src_width = jz4740_dma_width(config->src_addr_width);
--	jzcfg.dst_width = jz4740_dma_width(config->dst_addr_width);
--	jzcfg.mode = JZ4740_DMA_MODE_SINGLE;
--	jzcfg.request_type = config->slave_id;
+-	jz4740_dma_configure(chan->jz_chan, &jzcfg);
 +	cmd = flags << JZ_DMA_CMD_FLAGS_OFFSET;
 +	cmd |= src_width << JZ_DMA_CMD_SRC_WIDTH_OFFSET;
 +	cmd |= dst_width << JZ_DMA_CMD_DST_WIDTH_OFFSET;
 +	cmd |= transfer_size << JZ_DMA_CMD_TRANSFER_SIZE_OFFSET;
 +	cmd |= JZ4740_DMA_MODE_SINGLE << JZ_DMA_CMD_MODE_OFFSET;
 +	cmd |= JZ_DMA_CMD_TRANSFER_IRQ_ENABLE;
- 
--	jz4740_dma_configure(chan->jz_chan, &jzcfg);
++
 +	jz4740_dma_write(dmadev, JZ_REG_DMA_CMD(chan->id), cmd);
 +	jz4740_dma_write(dmadev, JZ_REG_DMA_STATUS_CTRL(chan->id), 0);
 +	jz4740_dma_write(dmadev, JZ_REG_DMA_REQ_TYPE(chan->id),
@@ -639,7 +630,7 @@ index 3d42434..b0c0c82 100644
  
  	return 0;
  }
-@@ -139,11 +274,13 @@ static int jz4740_dma_slave_config(struct dma_chan *c,
+@@ -139,11 +274,13 @@ static int jz4740_dma_slave_config(struc
  static int jz4740_dma_terminate_all(struct dma_chan *c)
  {
  	struct jz4740_dmaengine_chan *chan = to_jz4740_dma_chan(c);
@@ -654,7 +645,7 @@ index 3d42434..b0c0c82 100644
  	chan->desc = NULL;
  	vchan_get_all_descriptors(&chan->vchan, &head);
  	spin_unlock_irqrestore(&chan->vchan.lock, flags);
-@@ -170,11 +307,13 @@ static int jz4740_dma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+@@ -170,11 +307,13 @@ static int jz4740_dma_control(struct dma
  
  static int jz4740_dma_start_transfer(struct jz4740_dmaengine_chan *chan)
  {
@@ -669,7 +660,7 @@ index 3d42434..b0c0c82 100644
  
  	if (!chan->desc) {
  		vdesc = vchan_next_desc(&chan->vchan);
-@@ -196,22 +335,27 @@ static int jz4740_dma_start_transfer(struct jz4740_dmaengine_chan *chan)
+@@ -196,22 +335,27 @@ static int jz4740_dma_start_transfer(str
  		src_addr = chan->fifo_addr;
  		dst_addr = sg->addr;
  	}
@@ -705,7 +696,7 @@ index 3d42434..b0c0c82 100644
  	spin_lock(&chan->vchan.lock);
  	if (chan->desc) {
  		if (chan->desc && chan->desc->cyclic) {
-@@ -227,6 +371,28 @@ static void jz4740_dma_complete_cb(struct jz4740_dma_chan *jz_chan, int error,
+@@ -227,6 +371,28 @@ static void jz4740_dma_complete_cb(struc
  	spin_unlock(&chan->vchan.lock);
  }
  
@@ -734,7 +725,7 @@ index 3d42434..b0c0c82 100644
  static void jz4740_dma_issue_pending(struct dma_chan *c)
  {
  	struct jz4740_dmaengine_chan *chan = to_jz4740_dma_chan(c);
-@@ -298,7 +464,8 @@ static struct dma_async_tx_descriptor *jz4740_dma_prep_dma_cyclic(
+@@ -298,7 +464,8 @@ static struct dma_async_tx_descriptor *j
  static size_t jz4740_dma_desc_residue(struct jz4740_dmaengine_chan *chan,
  	struct jz4740_dma_desc *desc, unsigned int next_sg)
  {
@@ -744,7 +735,7 @@ index 3d42434..b0c0c82 100644
  	unsigned int i;
  
  	residue = 0;
-@@ -306,8 +473,11 @@ static size_t jz4740_dma_desc_residue(struct jz4740_dmaengine_chan *chan,
+@@ -306,8 +473,11 @@ static size_t jz4740_dma_desc_residue(st
  	for (i = next_sg; i < desc->num_sgs; i++)
  		residue += desc->sg[i].len;
  
@@ -758,7 +749,7 @@ index 3d42434..b0c0c82 100644
  
  	return residue;
  }
-@@ -342,24 +512,12 @@ static enum dma_status jz4740_dma_tx_status(struct dma_chan *c,
+@@ -342,24 +512,12 @@ static enum dma_status jz4740_dma_tx_sta
  
  static int jz4740_dma_alloc_chan_resources(struct dma_chan *c)
  {
@@ -784,7 +775,7 @@ index 3d42434..b0c0c82 100644
  }
  
  static void jz4740_dma_desc_free(struct virt_dma_desc *vdesc)
-@@ -373,7 +531,9 @@ static int jz4740_dma_probe(struct platform_device *pdev)
+@@ -373,7 +531,9 @@ static int jz4740_dma_probe(struct platf
  	struct jz4740_dma_dev *dmadev;
  	struct dma_device *dd;
  	unsigned int i;
@@ -794,7 +785,7 @@ index 3d42434..b0c0c82 100644
  
  	dmadev = devm_kzalloc(&pdev->dev, sizeof(*dmadev), GFP_KERNEL);
  	if (!dmadev)
-@@ -381,6 +541,17 @@ static int jz4740_dma_probe(struct platform_device *pdev)
+@@ -381,6 +541,17 @@ static int jz4740_dma_probe(struct platf
  
  	dd = &dmadev->ddev;
  
@@ -812,7 +803,7 @@ index 3d42434..b0c0c82 100644
  	dma_cap_set(DMA_SLAVE, dd->cap_mask);
  	dma_cap_set(DMA_CYCLIC, dd->cap_mask);
  	dd->device_alloc_chan_resources = jz4740_dma_alloc_chan_resources;
-@@ -396,6 +567,7 @@ static int jz4740_dma_probe(struct platform_device *pdev)
+@@ -396,6 +567,7 @@ static int jz4740_dma_probe(struct platf
  
  	for (i = 0; i < dd->chancnt; i++) {
  		chan = &dmadev->chan[i];
@@ -820,7 +811,7 @@ index 3d42434..b0c0c82 100644
  		chan->vchan.desc_free = jz4740_dma_desc_free;
  		vchan_init(&chan->vchan, dd);
  	}
-@@ -404,16 +576,28 @@ static int jz4740_dma_probe(struct platform_device *pdev)
+@@ -404,16 +576,28 @@ static int jz4740_dma_probe(struct platf
  	if (ret)
  		return ret;
  
@@ -849,6 +840,3 @@ index 3d42434..b0c0c82 100644
  
  	return 0;
  }
--- 
-1.7.10.4
-

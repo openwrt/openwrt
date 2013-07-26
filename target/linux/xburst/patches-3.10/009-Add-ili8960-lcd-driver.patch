@@ -11,8 +11,6 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  3 files changed, 270 insertions(+)
  create mode 100644 drivers/video/backlight/ili8960.c
 
-diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
-index d5ab658..7cd68d0 100644
 --- a/drivers/video/backlight/Kconfig
 +++ b/drivers/video/backlight/Kconfig
 @@ -59,6 +59,13 @@ config LCD_LTV350QV
@@ -29,8 +27,6 @@ index d5ab658..7cd68d0 100644
  config LCD_ILI922X
  	tristate "ILI Technology ILI9221/ILI9222 support"
  	depends on SPI
-diff --git a/drivers/video/backlight/Makefile b/drivers/video/backlight/Makefile
-index 92711fe..81d3e93 100644
 --- a/drivers/video/backlight/Makefile
 +++ b/drivers/video/backlight/Makefile
 @@ -5,6 +5,7 @@ obj-$(CONFIG_LCD_CLASS_DEVICE)		+= lcd.o
@@ -41,9 +37,6 @@ index 92711fe..81d3e93 100644
  obj-$(CONFIG_LCD_ILI922X)		+= ili922x.o
  obj-$(CONFIG_LCD_ILI9320)		+= ili9320.o
  obj-$(CONFIG_LCD_L4F00242T03)		+= l4f00242t03.o
-diff --git a/drivers/video/backlight/ili8960.c b/drivers/video/backlight/ili8960.c
-new file mode 100644
-index 0000000..61eb815
 --- /dev/null
 +++ b/drivers/video/backlight/ili8960.c
 @@ -0,0 +1,262 @@
@@ -309,6 +302,3 @@ index 0000000..61eb815
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("LCD driver for Ilitek ili8960");
 +MODULE_ALIAS("spi:ili8960");
--- 
-1.7.10.4
-
