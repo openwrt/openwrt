@@ -970,7 +970,7 @@ $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR941NV4,tl-wr941nd-v4,TL-WR74
 $(eval $(call SingleProfile,TPLINK,$(fs_64kraw),TLWR1043,tl-wr1043nd-v1,TL-WR1043ND,ttyS0,115200,0x10430001,1,8M))
 
 $(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),ARCHERC7,archer-c7-v1,ARCHER-C7,ttyS0,115200,0x75000001,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR10UV1,tl-mr10u-v1,TL-MR3040,ttyATH0,115200,0x00100101,1,4Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR10U,tl-mr10u-v1,TL-MR10U,ttyATH0,115200,0x00100101,1,4Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR11UV1,tl-mr11u-v1,TL-MR11U,ttyATH0,115200,0x00110101,1,4Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR11UV2,tl-mr11u-v2,TL-MR11U,ttyATH0,115200,0x00110102,1,4Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,$(fs_64kraw),TLMR3020,tl-mr3020-v1,TL-MR3020,ttyATH0,115200,0x30200001,1,4Mlzma))
