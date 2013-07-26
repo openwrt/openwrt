@@ -59,6 +59,7 @@ endef
 
 $(eval $(call KernelPackage,spi-gpio-old))
 
+
 define KernelPackage/spi-gpio
   SUBMENU:=$(SPI_MENU)
   TITLE:=GPIO-based bitbanging SPI Master
@@ -89,4 +90,3 @@ define KernelPackage/spi-dev/description
 endef
 
 $(eval $(call KernelPackage,spi-dev))
-

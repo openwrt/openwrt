@@ -64,7 +64,7 @@ define KernelPackage/bluetooth-hci-h4p
 endef
 
 define KernelPackage/bluetooth-hci-h4p/description
-  HCI driver with H4 Nokia extensions
+ HCI driver with H4 Nokia extensions
 endef
 
 $(eval $(call KernelPackage,bluetooth-hci-h4p))
@@ -126,7 +126,7 @@ define KernelPackage/gpio-dev
 endef
 
 define KernelPackage/gpio-dev/description
-  Kernel module to allows control of GPIO pins using a character device.
+ Kernel module to allows control of GPIO pins using a character device.
 endef
 
 $(eval $(call KernelPackage,gpio-dev))
@@ -142,7 +142,7 @@ define KernelPackage/gpio-mcp23s08
 endef
 
 define KernelPackage/gpio-mcp23s08/description
-  Kernel module for Microchip MCP23xxx SPI/I2C I/O expander
+ Kernel module for Microchip MCP23xxx SPI/I2C I/O expander
 endef
 
 $(eval $(call KernelPackage,gpio-mcp23s08))
@@ -157,7 +157,7 @@ define KernelPackage/gpio-nxp-74hc164
 endef
 
 define KernelPackage/gpio-nxp-74hc164/description
-  Kernel module for NXP 74HC164 GPIO expander
+ Kernel module for NXP 74HC164 GPIO expander
 endef
 
 $(eval $(call KernelPackage,gpio-nxp-74hc164))
@@ -172,7 +172,7 @@ define KernelPackage/gpio-pcf857x
 endef
 
 define KernelPackage/gpio-pcf857x/description
-  Kernel module for PCF857x, PCA{85,96}7x, and MAX732[89] I2C GPIO expanders
+ Kernel module for PCF857x, PCA{85,96}7x, and MAX732[89] I2C GPIO expanders
 endef
 
 $(eval $(call KernelPackage,gpio-pcf857x))
@@ -230,7 +230,7 @@ define KernelPackage/oprofile
 endef
 
 define KernelPackage/oprofile/description
-  Kernel module for support for oprofile system profiling.
+ Kernel module for support for oprofile system profiling
 endef
 
 $(eval $(call KernelPackage,oprofile))
@@ -251,8 +251,8 @@ define KernelPackage/rfkill
 endef
 
 define KernelPackage/rfkill/description
-  Say Y here if you want to have control over RF switches
-  found on many WiFi and Bluetooth cards.
+ Say Y here if you want to have control over RF switches
+ found on many WiFi and Bluetooth cards
 endef
 
 $(eval $(call KernelPackage,rfkill))
@@ -293,7 +293,7 @@ define KernelPackage/ssb
 endef
 
 define KernelPackage/ssb/description
-  Silicon Sonics Backplane glue code.
+ Silicon Sonics Backplane glue code.
 endef
 
 $(eval $(call KernelPackage,ssb))
@@ -318,7 +318,7 @@ define KernelPackage/bcma
 endef
 
 define KernelPackage/bcma/description
-   Bus driver for Broadcom specific Advanced Microcontroller Bus Architecture.
+ Bus driver for Broadcom specific Advanced Microcontroller Bus Architecture
 endef
 
 $(eval $(call KernelPackage,bcma))
@@ -334,7 +334,7 @@ define KernelPackage/wdt-omap
 endef
 
 define KernelPackage/wdt-omap/description
-  Kernel module for TI omap watchdog timer.
+ Kernel module for TI omap watchdog timer
 endef
 
 $(eval $(call KernelPackage,wdt-omap))
@@ -350,7 +350,7 @@ define KernelPackage/wdt-orion
 endef
 
 define KernelPackage/wdt-orion/description
-  Kernel module for Marvell Orion, Kirkwood and Armada XP/370 watchdog timer.
+ Kernel module for Marvell Orion, Kirkwood and Armada XP/370 watchdog timer
 endef
 
 $(eval $(call KernelPackage,wdt-orion))
@@ -366,7 +366,7 @@ define KernelPackage/booke-wdt
 endef
 
 define KernelPackage/booke-wdt/description
-  Kernel module for PowerPC Book-E Watchdog Timer.
+ Kernel module for PowerPC Book-E Watchdog Timer
 endef
 
 $(eval $(call KernelPackage,booke-wdt))
@@ -463,7 +463,7 @@ define KernelPackage/rtc-pcf2123
 endef
 
 define KernelPackage/rtc-pcf2123/description
- Kernel module for Philips PCF2123 RTC chip.
+ Kernel module for Philips PCF2123 RTC chip
 endef
 
 $(eval $(call KernelPackage,rtc-pcf2123))
@@ -478,7 +478,7 @@ define KernelPackage/rtc-pt7c4338
 endef
 
 define KernelPackage/rtc-pt7c4338/description
- Kernel module for Pericom PT7C4338 i2c RTC chip.
+ Kernel module for Pericom PT7C4338 i2c RTC chip
 endef
 
 $(eval $(call KernelPackage,rtc-pt7c4338))
@@ -501,7 +501,7 @@ define KernelPackage/mtdtests
 endef
 
 define KernelPackage/mtdtests/description
- Kernel modules for MTD subsystem/driver testing.
+ Kernel modules for MTD subsystem/driver testing
 endef
 
 $(eval $(call KernelPackage,mtdtests))
@@ -521,7 +521,7 @@ define KernelPackage/nand
 endef
 
 define KernelPackage/nand/description
- Kernel module for NAND support.
+ Kernel module for NAND support
 endef
 
 $(eval $(call KernelPackage,nand))
@@ -556,7 +556,7 @@ define KernelPackage/serial-8250
 endef
 
 define KernelPackage/serial-8250/description
- Kernel module for 8250 UART based serial ports.
+ Kernel module for 8250 UART based serial ports
 endef
 
 $(eval $(call KernelPackage,serial-8250))
@@ -578,7 +578,7 @@ define KernelPackage/regmap
 endef
 
 define KernelPackage/regmap/description
-  Generic register map support
+ Generic register map support
 endef
 
 $(eval $(call KernelPackage,regmap))
@@ -593,7 +593,7 @@ define KernelPackage/ikconfig
 endef
 
 define KernelPackage/ikconfig/description
-	Kernel configuration via /proc/config.gz
+ Kernel configuration via /proc/config.gz
 endef
 
 $(eval $(call KernelPackage,ikconfig))
@@ -630,7 +630,7 @@ define KernelPackage/mvsdio
 endef
 
 define KernelPacakge/mvsdio/description
-  Kernel support for the Marvell SDIO controller
+ Kernel support for the Marvell SDIO controller
 endef
 
 $(eval $(call KernelPackage,mvsdio))
@@ -645,9 +645,9 @@ define KernelPackage/pps
 endef
 
 define KernelPacakge/pps/description
-  PPS (Pulse Per Second) is a special pulse provided by some GPS
-  antennae. Userland can use it to get a high-precision time
-  reference.
+ PPS (Pulse Per Second) is a special pulse provided by some GPS
+ antennae. Userland can use it to get a high-precision time
+ reference.
 endef
 
 $(eval $(call KernelPackage,pps))
@@ -663,8 +663,8 @@ define KernelPackage/ptp
 endef
 
 define KernelPacakge/ptp/description
-  The IEEE 1588 standard defines a method to precisely
-  synchronize distributed clocks over Ethernet networks.
+ The IEEE 1588 standard defines a method to precisely
+ synchronize distributed clocks over Ethernet networks.
 endef
 
 $(eval $(call KernelPackage,ptp))
@@ -680,11 +680,12 @@ define KernelPackage/ptp-gianfar
 endef
 
 define KernelPacakge/ptp-gianfar/description
-  Kernel module for IEEE 1588 support for Freescale
-  Gianfar Ethernet drivers.
+ Kernel module for IEEE 1588 support for Freescale
+ Gianfar Ethernet drivers
 endef
 
 $(eval $(call KernelPackage,ptp-gianfar))
+
 
 define KernelPackage/random-core
   SUBMENU:=$(OTHER_MENU)
@@ -695,7 +696,7 @@ define KernelPackage/random-core
 endef
 
 define KernelPackage/random-core/description
-   Kernel module for the HW random number generator core infrastructure
+ Kernel module for the HW random number generator core infrastructure
 endef
 
 $(eval $(call KernelPackage,random-core))

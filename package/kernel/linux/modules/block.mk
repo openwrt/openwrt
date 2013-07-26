@@ -16,7 +16,7 @@ define KernelPackage/aoe
 endef
 
 define KernelPackage/aoe/description
-  Kernel support for ATA over Ethernet
+ Kernel support for ATA over Ethernet
 endef
 
 $(eval $(call KernelPackage,aoe))
@@ -51,7 +51,7 @@ define KernelPackage/ata-ahci
 endef
 
 define KernelPackage/ata-ahci/description
- Support for AHCI Serial ATA controllers.
+ Support for AHCI Serial ATA controllers
 endef
 
 $(eval $(call KernelPackage,ata-ahci))
@@ -66,7 +66,7 @@ define KernelPackage/ata-artop
 endef
 
 define KernelPackage/ata-artop/description
- PATA support for ARTOP 6210/6260 host controllers.
+ PATA support for ARTOP 6210/6260 host controllers
 endef
 
 $(eval $(call KernelPackage,ata-artop))
@@ -111,7 +111,7 @@ endef
 
 define KernelPackage/ata-pdc202xx-old/description
  This option enables support for the Promise 20246, 20262, 20263,
- 20265 and 20267 adapters.
+ 20265 and 20267 adapters
 endef
 
 $(eval $(call KernelPackage,ata-pdc202xx-old))
@@ -127,7 +127,7 @@ endef
 
 define KernelPackage/ata-piix/description
  SATA support for Intel ICH5/6/7/8 series host controllers and
- PATA support for Intel ESB/ICH/PIIX3/PIIX4 series host controllers.
+ PATA support for Intel ESB/ICH/PIIX3/PIIX4 series host controllers
 endef
 
 $(eval $(call KernelPackage,ata-piix))
@@ -142,7 +142,7 @@ define KernelPackage/ata-sil
 endef
 
 define KernelPackage/ata-sil/description
- Support for Silicon Image Serial ATA controllers.
+ Support for Silicon Image Serial ATA controllers
 endef
 
 $(eval $(call KernelPackage,ata-sil))
@@ -157,7 +157,7 @@ define KernelPackage/ata-sil24
 endef
 
 define KernelPackage/ata-sil24/description
- Support for Silicon Image 3124/3132 Serial ATA controllers.
+ Support for Silicon Image 3124/3132 Serial ATA controllers
 endef
 
 $(eval $(call KernelPackage,ata-sil24))
@@ -172,7 +172,7 @@ define KernelPackage/ata-via-sata
 endef
 
 define KernelPackage/ata-via-sata/description
- This option enables support for VIA Serial ATA.
+ This option enables support for VIA Serial ATA
 endef
 
 $(eval $(call KernelPackage,ata-via-sata))
@@ -432,7 +432,7 @@ define KernelPackage/ide-aec62xx
 endef
 
 define KernelPackage/ide-aec62xx/description
- Support for Acard AEC62xx (Artop ATP8xx) IDE controllers.
+ Support for Acard AEC62xx (Artop ATP8xx) IDE controllers
 endef
 
 $(eval $(call KernelPackage,ide-aec62xx,1))
@@ -465,7 +465,7 @@ define KernelPackage/ide-it821x
 endef
 
 define KernelPackage/ide-it821x/description
-  Kernel module for the ITE IDE821x IDE controllers.
+ Kernel module for the ITE IDE821x IDE controllers
 endef
 
 $(eval $(call KernelPackage,ide-it821x))
@@ -487,7 +487,7 @@ define KernelPackage/libsas
 endef
 
 define KernelPackage/libsas/description
-  SAS Domain Transport Attributes support.
+ SAS Domain Transport Attributes support
 endef
 
 $(eval $(call KernelPackage,libsas,1))
@@ -522,7 +522,7 @@ define KernelPackage/mvsas
 endef
 
 define KernelPackage/mvsas/description
-  Kernel support for the Marvell SAS SCSI adapters
+ Kernel support for the Marvell SAS SCSI adapters
 endef
 
 $(eval $(call KernelPackage,mvsas))
@@ -586,4 +586,3 @@ define KernelPackage/scsi-cdrom
 endef
 
 $(eval $(call KernelPackage,scsi-cdrom))
-
