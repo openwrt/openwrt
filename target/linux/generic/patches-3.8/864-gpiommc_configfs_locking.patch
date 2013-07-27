@@ -37,7 +37,7 @@ does not lock access between files.
 +	mutex_lock(&dev->mutex);
 +
  	if (attr == &gpiommc_attr_register) {
- 		err = strict_strtoul(page, 10, &data);
+ 		err = kstrtoul(page, 10, &data);
  		if (err)
 @@ -478,6 +486,8 @@ static ssize_t gpiommc_config_attr_store
  	WARN_ON(1);
