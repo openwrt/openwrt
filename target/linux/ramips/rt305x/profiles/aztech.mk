@@ -8,7 +8,7 @@
 define Profile/HW5503G
 	NAME:=Aztech HW550-3G
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-dwc2 \
+		kmod-usb-core kmod-usb-rt305x-dwc_otg \
 		kmod-ledtrig-usbdev
 endef
 

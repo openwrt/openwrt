@@ -8,7 +8,7 @@
 define Profile/BROADWAY
 	NAME:=Hauppauge Broadway
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-dwc2 \
+		kmod-usb-core kmod-usb-rt305x-dwc_otg \
 		kmod-ledtrig-usbdev restorefactory
 endef
 
