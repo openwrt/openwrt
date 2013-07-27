@@ -45,6 +45,7 @@ platform_check_image() {
 	hw550-3g | \
 	hg255d | \
 	mofi3500-3gn | \
+	mpr-a1 | \
 	mpr-a2 | \
 	mzk-w300nh2 | \
 	nbg-419n | \
