@@ -17,9 +17,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/include/asm/mach-ralink/gpio.h
  create mode 100644 drivers/gpio/gpio-ralink.c
 
---- a/arch/mips/Kconfig
-+++ b/arch/mips/Kconfig
-@@ -443,6 +443,7 @@ config RALINK
+Index: linux-3.10.3/arch/mips/Kconfig
+===================================================================
+--- linux-3.10.3.orig/arch/mips/Kconfig	2013-07-27 10:24:36.376236698 +0200
++++ linux-3.10.3/arch/mips/Kconfig	2013-07-27 11:11:09.804861224 +0200
+@@ -443,6 +443,7 @@
  	select SYS_HAS_EARLY_PRINTK
  	select HAVE_MACH_CLKDEV
  	select CLKDEV_LOOKUP
@@ -27,8 +29,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
---- /dev/null
-+++ b/arch/mips/include/asm/mach-ralink/gpio.h
+Index: linux-3.10.3/arch/mips/include/asm/mach-ralink/gpio.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.3/arch/mips/include/asm/mach-ralink/gpio.h	2013-07-27 10:24:40.532236797 +0200
 @@ -0,0 +1,24 @@
 +/*
 + *  Ralink SoC GPIO API support
@@ -54,9 +58,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define gpio_to_irq	__gpio_to_irq
 +
 +#endif /* __ASM_MACH_RALINK_GPIO_H */
---- a/drivers/gpio/Kconfig
-+++ b/drivers/gpio/Kconfig
-@@ -209,6 +209,12 @@ config GPIO_RCAR
+Index: linux-3.10.3/drivers/gpio/Kconfig
+===================================================================
+--- linux-3.10.3.orig/drivers/gpio/Kconfig	2013-07-26 00:16:45.000000000 +0200
++++ linux-3.10.3/drivers/gpio/Kconfig	2013-07-27 10:24:40.532236797 +0200
+@@ -209,6 +209,12 @@
  	help
  	  Say yes here to support GPIO on Renesas R-Car SoCs.
  
@@ -69,9 +75,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  config GPIO_SPEAR_SPICS
  	bool "ST SPEAr13xx SPI Chip Select as GPIO support"
  	depends on PLAT_SPEAR
---- a/drivers/gpio/Makefile
-+++ b/drivers/gpio/Makefile
-@@ -56,6 +56,7 @@ obj-$(CONFIG_GPIO_PCF857X)	+= gpio-pcf85
+Index: linux-3.10.3/drivers/gpio/Makefile
+===================================================================
+--- linux-3.10.3.orig/drivers/gpio/Makefile	2013-07-26 00:16:45.000000000 +0200
++++ linux-3.10.3/drivers/gpio/Makefile	2013-07-27 10:24:40.536236797 +0200
+@@ -56,6 +56,7 @@
  obj-$(CONFIG_GPIO_PCH)		+= gpio-pch.o
  obj-$(CONFIG_GPIO_PL061)	+= gpio-pl061.o
  obj-$(CONFIG_GPIO_PXA)		+= gpio-pxa.o
@@ -79,9 +87,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_GPIO_RC5T583)	+= gpio-rc5t583.o
  obj-$(CONFIG_GPIO_RDC321X)	+= gpio-rdc321x.o
  obj-$(CONFIG_GPIO_RCAR)		+= gpio-rcar.o
---- /dev/null
-+++ b/drivers/gpio/gpio-ralink.c
-@@ -0,0 +1,326 @@
+Index: linux-3.10.3/drivers/gpio/gpio-ralink.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.3/drivers/gpio/gpio-ralink.c	2013-07-27 11:04:07.668851107 +0200
+@@ -0,0 +1,324 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -203,8 +213,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	if (rg->irq < 1)
 +		return -1;
-+
-+	ralink_gpio_direction_input(chip, pin);
 +
 +	return irq_create_mapping(rg->domain, pin);
 +}
