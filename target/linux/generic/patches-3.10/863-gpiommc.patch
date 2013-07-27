@@ -357,7 +357,7 @@
 +	unsigned long data;
 +
 +	if (attr == &gpiommc_attr_register) {
-+		err = strict_strtoul(page, 10, &data);
++		err = kstrtoul(page, 10, &data);
 +		if (err)
 +			goto out;
 +		err = -EINVAL;
@@ -378,7 +378,7 @@
 +	}
 +
 +	if (attr == &gpiommc_attr_DI) {
-+		err = strict_strtoul(page, 10, &data);
++		err = kstrtoul(page, 10, &data);
 +		if (err)
 +			goto out;
 +		err = -EINVAL;
@@ -389,7 +389,7 @@
 +		goto out;
 +	}
 +	if (attr == &gpiommc_attr_DO) {
-+		err = strict_strtoul(page, 10, &data);
++		err = kstrtoul(page, 10, &data);
 +		if (err)
 +			goto out;
 +		err = -EINVAL;
@@ -400,7 +400,7 @@
 +		goto out;
 +	}
 +	if (attr == &gpiommc_attr_CLK) {
-+		err = strict_strtoul(page, 10, &data);
++		err = kstrtoul(page, 10, &data);
 +		if (err)
 +			goto out;
 +		err = -EINVAL;
@@ -411,7 +411,7 @@
 +		goto out;
 +	}
 +	if (attr == &gpiommc_attr_CS) {
-+		err = strict_strtoul(page, 10, &data);
++		err = kstrtoul(page, 10, &data);
 +		if (err)
 +			goto out;
 +		err = -EINVAL;
@@ -422,7 +422,7 @@
 +		goto out;
 +	}
 +	if (attr == &gpiommc_attr_CS_activelow) {
-+		err = strict_strtoul(page, 10, &data);
++		err = kstrtoul(page, 10, &data);
 +		if (err)
 +			goto out;
 +		err = -EINVAL;
@@ -433,7 +433,7 @@
 +		goto out;
 +	}
 +	if (attr == &gpiommc_attr_spimode) {
-+		err = strict_strtoul(page, 10, &data);
++		err = kstrtoul(page, 10, &data);
 +		if (err)
 +			goto out;
 +		err = -EINVAL;
@@ -457,7 +457,7 @@
 +		goto out;
 +	}
 +	if (attr == &gpiommc_attr_spidelay) {
-+		err = strict_strtoul(page, 10, &data);
++		err = kstrtoul(page, 10, &data);
 +		if (err)
 +			goto out;
 +		err = -EINVAL;
@@ -468,7 +468,7 @@
 +		goto out;
 +	}
 +	if (attr == &gpiommc_attr_max_bus_speed) {
-+		err = strict_strtoul(page, 10, &data);
++		err = kstrtoul(page, 10, &data);
 +		if (err)
 +			goto out;
 +		err = -EINVAL;

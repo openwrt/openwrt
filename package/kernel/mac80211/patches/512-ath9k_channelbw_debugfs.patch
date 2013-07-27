@@ -47,7 +47,7 @@
 +		return -EFAULT;
 +
 +	buf[len] = '\0';
-+	if (strict_strtoul(buf, 0, &chan_bw))
++	if (kstrtoul(buf, 0, &chan_bw))
 +		return -EINVAL;
 +
 +	sc->chan_bw = chan_bw;

@@ -30,7 +30,7 @@
 +		return -EFAULT;
 +
 +	buf[len] = '\0';
-+	if (strict_strtoul(buf, 0, &diag))
++	if (kstrtoul(buf, 0, &diag))
 +		return -EINVAL;
 +
 +	ah->diag = diag;
