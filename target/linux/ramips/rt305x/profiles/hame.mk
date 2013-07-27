@@ -5,6 +5,18 @@
 # See /LICENSE for more information.
 #
 
+define Profile/MPRA1
+	NAME:=HAME MPR-A1
+	PACKAGES:=\
+		kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-net
+endef
+
+define Profile/MPRA1/Description
+	Package set for HAME MPR-A1 board
+endef
+
+$(eval $(call Profile,MPRA1))
+
 define Profile/MPRA2
 	NAME:=HAME MPR-A2
 	PACKAGES:=\

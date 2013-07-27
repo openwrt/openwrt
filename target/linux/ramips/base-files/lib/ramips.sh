@@ -118,6 +118,9 @@ ramips_board_detect() {
 	*"MoFi Network MOFI3500-3GN")
 		name="mofi3500-3gn"
 		;;
+	*"HAME MPR-A1")
+ 		name="mpr-a1"
+ 		;;
 	*"HAME MPR-A2")
  		name="mpr-a2"
  		;;
