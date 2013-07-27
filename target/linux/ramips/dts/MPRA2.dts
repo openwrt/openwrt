@@ -6,10 +6,6 @@
 	compatible = "MPRA2", "ralink,rt5350-soc";
 	model = "HAME MPR-A2";
 
-	memory@0 {
-		reg = <0x0 0x2000000>;
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "i2c", "spi", "uartlite", "mdio", "sdram", "rgmii";
