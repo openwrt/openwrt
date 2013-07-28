@@ -29,6 +29,8 @@
 #define WNR2000V3_GPIO_LED_PWR_GREEN	14
 #define WNR2000V3_GPIO_BTN_WPS		11
 
+#define WNR612V2_GPIO_LED_PWR_GREEN	11
+
 #define WNR2000V3_KEYS_POLL_INTERVAL	20	/* msecs */
 #define WNR2000V3_KEYS_DEBOUNCE_INTERVAL	(3 * WNR2000V3_KEYS_POLL_INTERVAL)
 
@@ -48,6 +50,14 @@ static struct gpio_led wnr2000v3_leds_gpio[] __initdata = {
 	}
 };
 
+static struct gpio_led wnr612v2_leds_gpio[] __initdata = {
+	{
+		.name		= "wnr612v2:green:power",
+		.gpio		= WNR612V2_GPIO_LED_PWR_GREEN,
+		.active_low	= 1,
+	}
+};
+
 static struct gpio_keys_button wnr2000v3_gpio_keys[] __initdata = {
 	{
 		.desc		= "wps",
@@ -58,7 +68,7 @@ static struct gpio_keys_button wnr2000v3_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init wnr2000v3_setup(void)
+static void __init wnr_common_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 
@@ -77,6 +87,12 @@ static void __init wnr2000v3_setup(void)
 	ath79_register_eth(1);
 
 	ath79_register_m25p80(NULL);
+	ap91_pci_init(art + WNR2000V3_PCIE_CALDATA_OFFSET, NULL);
+}
+
+static void __init wnr2000v3_setup(void)
+{
+	wnr_common_setup();
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr2000v3_leds_gpio),
 				 wnr2000v3_leds_gpio);
@@ -84,8 +100,16 @@ static void __init wnr2000v3_setup(void)
 	ath79_register_gpio_keys_polled(-1, WNR2000V3_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(wnr2000v3_gpio_keys),
 					wnr2000v3_gpio_keys);
-
-	ap91_pci_init(art + WNR2000V3_PCIE_CALDATA_OFFSET, NULL);
 }
 
 MIPS_MACHINE(ATH79_MACH_WNR2000_V3, "WNR2000V3", "NETGEAR WNR2000 V3", wnr2000v3_setup);
+
+static void __init wnr612v2_setup(void)
+{
+	wnr_common_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr612v2_leds_gpio),
+				 wnr612v2_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_WNR612_V2, "WNR612V2", "NETGEAR WNR612 V2", wnr612v2_setup);
