@@ -130,10 +130,15 @@ $(eval $(call KernelPackage,usb2-fsl))
 
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
-  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx +TARGET_mpc85xx:kmod-usb2-fsl
-  KCONFIG:=CONFIG_USB_EHCI_HCD \
+  DEPENDS:=\
+	+TARGET_brcm47xx:kmod-usb-brcm47xx \
+	+TARGET_mpc85xx:kmod-usb2-fsl
+  KCONFIG:=\
+	CONFIG_USB_EHCI_HCD \
 	CONFIG_USB_EHCI_ATH79=y \
 	CONFIG_USB_EHCI_BCM63XX=y \
+	CONFIG_USB_IMX21_HCD=y \
+	CONFIG_USB_EHCI_MXC=y \
 	CONFIG_USB_OCTEON_EHCI=y \
 	CONFIG_USB_EHCI_HCD_ORION=y \
 	CONFIG_USB_EHCI_HCD_PLATFORM=y
