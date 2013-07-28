@@ -59,7 +59,7 @@ static struct gpio_keys_button tl_wr703n_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init common_setup(unsigned usb_power_gpio)
+static void __init common_setup(unsigned usb_power_gpio, bool sec_ethernet)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
@@ -84,12 +84,18 @@ static void __init common_setup(unsigned usb_power_gpio)
 	ath79_register_mdio(0, 0x0);
 	ath79_register_eth(0);
 
+	if (sec_ethernet)
+	{
+		ath79_init_mac(ath79_eth0_data.mac_addr, mac, -1);
+		ath79_register_eth(1);
+	}
+
 	ath79_register_wmac(ee, mac);
 }
 
 static void __init tl_mr10u_setup(void)
 {
-	common_setup(TL_MR10U_GPIO_USB_POWER);
+	common_setup(TL_MR10U_GPIO_USB_POWER, false);
 }
 
 MIPS_MACHINE(ATH79_MACH_TL_MR10U, "TL-MR10U", "TP-LINK TL-MR10U",
@@ -97,8 +103,16 @@ MIPS_MACHINE(ATH79_MACH_TL_MR10U, "TL-MR10U", "TP-LINK TL-MR10U",
 
 static void __init tl_wr703n_setup(void)
 {
-	common_setup(TL_WR703N_GPIO_USB_POWER);
+	common_setup(TL_WR703N_GPIO_USB_POWER, false);
 }
 
 MIPS_MACHINE(ATH79_MACH_TL_WR703N, "TL-WR703N", "TP-LINK TL-WR703N v1",
 	     tl_wr703n_setup);
+
+static void __init tl_wr710n_setup(void)
+{
+	common_setup(TL_WR703N_GPIO_USB_POWER, true);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WR710N, "TL-WR710N", "TP-LINK TL-WR710N v1",
+	     tl_wr710n_setup);
