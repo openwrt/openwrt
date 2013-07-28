@@ -85,6 +85,9 @@ tplink_board_detect() {
 	"070300"*)
 		model="TP-Link TL-WR703N"
 		;;
+	"071000"*)
+		model="TP-Link TL-WR710N"
+		;;
 	"072001"*)
 		model="TP-Link TL-WR720N"
 		;;
