@@ -9,8 +9,6 @@ Subject: [PATCH] add support for dropping with FAILED_POLICY
  ip/rtm_map.c              |    4 ++++
  3 files changed, 9 insertions(+)
 
-diff --git a/include/linux/fib_rules.h b/include/linux/fib_rules.h
-index 51da65b..3420838 100644
 --- a/include/linux/fib_rules.h
 +++ b/include/linux/fib_rules.h
 @@ -64,6 +64,10 @@ enum {
@@ -24,8 +22,6 @@ index 51da65b..3420838 100644
  	__FR_ACT_MAX,
  };
  
-diff --git a/include/linux/rtnetlink.h b/include/linux/rtnetlink.h
-index 93370bd..cfec9ff 100644
 --- a/include/linux/rtnetlink.h
 +++ b/include/linux/rtnetlink.h
 @@ -203,6 +203,7 @@ enum {
@@ -36,11 +32,9 @@ index 93370bd..cfec9ff 100644
  	__RTN_MAX
  };
  
-diff --git a/ip/rtm_map.c b/ip/rtm_map.c
-index 21e818b..8ad2d07 100644
 --- a/ip/rtm_map.c
 +++ b/ip/rtm_map.c
-@@ -49,6 +49,8 @@ char *rtnl_rtntype_n2a(int id, char *buf, int len)
+@@ -49,6 +49,8 @@ char *rtnl_rtntype_n2a(int id, char *buf
  		return "nat";
  	case RTN_XRESOLVE:
  		return "xresolve";
@@ -58,6 +52,3 @@ index 21e818b..8ad2d07 100644
  	else {
  		res = strtoul(arg, &end, 0);
  		if (!end || end == arg || *end || res > 255)
--- 
-1.7.10.4
-
