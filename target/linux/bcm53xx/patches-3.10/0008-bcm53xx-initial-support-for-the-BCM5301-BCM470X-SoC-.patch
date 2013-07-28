@@ -213,7 +213,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <asm/hardware/debug-8250.S>
 --- /dev/null
 +++ b/arch/arm/mach-bcm53xx/Kconfig
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,16 @@
 +config ARCH_BCM53XX
 +	bool "Broadcom BCM47XX / BCM53XX ARM SoC"
 +	select CPU_V7
@@ -227,6 +227,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	select GENERIC_CLOCKEVENTS_BUILD
 +	select GENERIC_CLOCKEVENTS
 +	select ARM_GLOBAL_TIMER
++	select MIGHT_HAVE_PCI
 +	help
 +	  Support for Broadcom BCM47XX and BCM53XX SoCs with ARM CPU cores.
 --- /dev/null
