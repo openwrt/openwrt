@@ -1,0 +1,31 @@
+From f4087fcf07cce987f5ce3c42d6aee87b7b4f82b8 Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Sun, 28 Jul 2013 20:33:01 +0200
+Subject: [PATCH] usb: chipidea: enable to build host support as module
+
+USB_CHIPIDEA_HOST does not need to depend on USB=y, USB_CHIPIDEA_HOST will work
+just fine even if USB=m is used. The depends line can be safely removed since
+USB_CHIPIDEA already depends on USB.
+
+Tested on Gateworks imx6 Ventana board (gw-5400-a).
+
+Signed-off-by: Luka Perkov <luka@openwrt.org>
+---
+ drivers/usb/chipidea/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/usb/chipidea/Kconfig b/drivers/usb/chipidea/Kconfig
+index eb2aa2e..c9477e3 100644
+--- a/drivers/usb/chipidea/Kconfig
++++ b/drivers/usb/chipidea/Kconfig
+@@ -19,7 +19,6 @@ config USB_CHIPIDEA_UDC
+ 
+ config USB_CHIPIDEA_HOST
+ 	bool "ChipIdea host controller"
+-	depends on USB=y
+ 	depends on USB_EHCI_HCD=y || USB_CHIPIDEA=m
+ 	select USB_EHCI_ROOT_HUB_TT
+ 	help
+-- 
+1.8.3.3
+
