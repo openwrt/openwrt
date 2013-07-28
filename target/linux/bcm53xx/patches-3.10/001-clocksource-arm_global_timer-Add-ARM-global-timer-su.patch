@@ -1,8 +1,8 @@
-From 403eb25e5ae7a2169d8c1eae9df4162815e7c3ba Mon Sep 17 00:00:00 2001
-From: Stuart Menefy <stuart.menefy at>
-Date: Wed, 26 Jun 2013 11:48:38 +0000
-Subject: [PATCH 01/17] clocksource:arm_global_timer: Add ARM global timer
- support.
+From 5afd20a1eeef4db1d694d58931519f65e2003503 Mon Sep 17 00:00:00 2001
+From: Stuart Menefy <stuart.menefy@st.com>
+Date: Wed, 26 Jun 2013 12:48:38 +0100
+Subject: [PATCH 01/18] clocksource: arm_global_timer: Add ARM global timer
+ support
 
 This is a simple driver for the global timer module found in the Cortex
 A9-MP cores from revision r1p0 onwards. This should be able to perform
@@ -28,18 +28,19 @@ CC: Rob Herring <robherring2@gmail.com>
 CC: Linus Walleij <linus.walleij@linaro.org>
 CC: Will Deacon <will.deacon@arm.com>
 CC: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
 ---
- .../devicetree/bindings/arm/global_timer.txt       |   21 ++
+ .../devicetree/bindings/arm/global_timer.txt       |   24 ++
  drivers/clocksource/Kconfig                        |   13 +
  drivers/clocksource/Makefile                       |    1 +
- drivers/clocksource/arm_global_timer.c             |  325 ++++++++++++++++++++
- 4 files changed, 360 insertions(+)
+ drivers/clocksource/arm_global_timer.c             |  321 ++++++++++++++++++++
+ 4 files changed, 359 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/arm/global_timer.txt
  create mode 100644 drivers/clocksource/arm_global_timer.c
 
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/arm/global_timer.txt
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,24 @@
 +
 +* ARM Global Timer
 +	Cortex-A9 are often associated with a per-core Global timer.
@@ -54,12 +55,15 @@ CC: Thomas Gleixner <tglx@linutronix.de>
 +- reg : Specify the base address and the size of the GT timer
 +	register window.
 +
++- clocks : Should be phandle to a clock.
++
 +Example:
 +
 +	timer@2c000600 {
 +		compatible = "arm,cortex-a9-global-timer";
 +		reg = <0x2c000600 0x20>;
 +		interrupts = <1 13 0xf01>;
++		clocks = <&arm_periph_clk>;
 +	};
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
@@ -93,7 +97,7 @@ CC: Thomas Gleixner <tglx@linutronix.de>
  obj-$(CONFIG_CLKSRC_METAG_GENERIC)	+= metag_generic.o
 --- /dev/null
 +++ b/drivers/clocksource/arm_global_timer.c
-@@ -0,0 +1,325 @@
+@@ -0,0 +1,321 @@
 +/*
 + * drivers/clocksource/arm_global_timer.c
 + *
@@ -117,8 +121,8 @@ CC: Thomas Gleixner <tglx@linutronix.de>
 +#include <linux/of.h>
 +#include <linux/of_irq.h>
 +#include <linux/of_address.h>
-+
 +#include <asm/sched_clock.h>
++
 +#include <asm/cputype.h>
 +
 +#define GT_COUNTER0	0x00
@@ -186,11 +190,10 @@ CC: Thomas Gleixner <tglx@linutronix.de>
 +static void gt_compare_set(unsigned long delta, int periodic)
 +{
 +	u64 counter = gt_counter_read();
-+	unsigned long ctrl = readl(gt_base + GT_CONTROL);
++	unsigned long ctrl;
 +
 +	counter += delta;
-+	ctrl &=  ~(GT_CONTROL_COMP_ENABLE | GT_CONTROL_IRQ_ENABLE);
-+
++	ctrl = GT_CONTROL_TIMER_ENABLE;
 +	writel(ctrl, gt_base + GT_CONTROL);
 +	writel(lower_32_bits(counter), gt_base + GT_COMP0);
 +	writel(upper_32_bits(counter), gt_base + GT_COMP1);
@@ -237,31 +240,28 @@ CC: Thomas Gleixner <tglx@linutronix.de>
 +{
 +	struct clock_event_device *evt = dev_id;
 +
-+	if (readl_relaxed(gt_base + GT_INT_STATUS) &
-+				GT_INT_STATUS_EVENT_FLAG) {
-+		/**
-+		 * ERRATA 740657( Global Timer can send 2 interrupts for
-+		 * the same event in single-shot mode)
-+		 * Workaround:
-+		 *	Either disable single-shot mode.
-+		 *	Or
-+		 *	Modify the Interrupt Handler to avoid the
-+		 *	offending sequence. This is achieved by clearing
-+		 *	the Global Timer flag _after_ having incremented
-+		 *	the Comparator register	value to a higher value.
-+		 */
-+		if (!(readl_relaxed(gt_base + GT_CONTROL) &
-+						GT_CONTROL_AUTO_INC))
-+			gt_compare_set(ULONG_MAX, 0);
++	if (!(readl_relaxed(gt_base + GT_INT_STATUS) &
++				GT_INT_STATUS_EVENT_FLAG))
++		return IRQ_NONE;
 +
-+		writel_relaxed(GT_INT_STATUS_EVENT_FLAG,
-+					gt_base + GT_INT_STATUS);
++	/**
++	 * ERRATA 740657( Global Timer can send 2 interrupts for
++	 * the same event in single-shot mode)
++	 * Workaround:
++	 *	Either disable single-shot mode.
++	 *	Or
++	 *	Modify the Interrupt Handler to avoid the
++	 *	offending sequence. This is achieved by clearing
++	 *	the Global Timer flag _after_ having incremented
++	 *	the Comparator register	value to a higher value.
++	 */
++	if (evt->mode == CLOCK_EVT_MODE_ONESHOT)
++		gt_compare_set(ULONG_MAX, 0);
 +
-+		evt->event_handler(evt);
-+		return IRQ_HANDLED;
-+	}
++	writel_relaxed(GT_INT_STATUS_EVENT_FLAG, gt_base + GT_INT_STATUS);
++	evt->event_handler(evt);
 +
-+	return IRQ_NONE;
++	return IRQ_HANDLED;
 +}
 +
 +static int __cpuinit gt_clockevents_init(struct clock_event_device *clk)
