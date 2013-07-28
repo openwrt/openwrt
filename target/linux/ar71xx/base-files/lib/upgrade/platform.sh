@@ -215,7 +215,8 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	wndr3700)
+	wndr3700 | \
+	wnr612-v2)
 		local hw_magic
 
 		hw_magic="$(ar71xx_get_mtd_part_magic firmware)"
