@@ -1,7 +1,6 @@
-From e2e1b185afd86a047e1f2db405c61ae4e43c0f29 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Thu, 4 Jul 2013 22:49:14 +0200
-Subject: [PATCH 14/17] bcma: return correct error code when bus can failed
+bcma: return correct error code when bus scan failed
+
+It is better to return the actual error code than just -1.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---

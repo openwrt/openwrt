@@ -1,10 +1,8 @@
-From 8204277ed0f4aeb7bb38d0d5f39d9ebcced92576 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Fri, 5 Jul 2013 00:24:38 +0200
-Subject: [PATCH 15/17] bcma: fix handling of big addrl
+bcma: fix handling of big addrl
 
 The return value of bcma_erom_get_addr_desc() is a unsigned value and it
-could wrap around in the two complement writing.
+could wrap around in the two complement writing. This happens for one
+core in the BCM4708 SoC.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
