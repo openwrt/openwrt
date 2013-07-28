@@ -922,6 +922,7 @@ $(eval $(call SingleProfile,MyLoader,$(fs_64k),WPE72_16M,wpe72,,ttyS0,115200,0x1
 # This is used with AthGzip profile for now
 $(eval $(call SingleProfile,AthGzip,$(fs_64k),WNDAP360,wndap360,WNDAP360,ttyS0,9600,$$(wndap360_mtdlayout),1769472,6160384,KRuImage))
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNR2000V3,wnr2000v3,WNR2000V3,ttyS0,115200,$$(wnr2000v3_mtdlayout),2003,WNR2000V3,"" NA,))
+$(eval $(call SingleProfile,Netgear,$(fs_64k),WNR612V2,wnr612v2,WNR612V2,ttyS0,115200,$$(wnr2000v3_mtdlayout),2061,WNR612V2,"",))
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3700V1,wndr3700,WNDR3700,ttyS0,115200,$$(wndr3700_mtdlayout),3700,WNDR3700,"" NA,))
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3700V2,wndr3700v2,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDR3700v2,"",-H 29763654+16+64))
 $(eval $(call SingleProfile,Netgear,$(fs_64k),WNDR3800,wndr3800,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),3701,WNDR3800,"",-H 29763654+16+128))
