@@ -1062,6 +1062,23 @@ endef
 $(eval $(call KernelPackage,usb-chipidea,1))
 
 
+define KernelPackage/usb-mxs-phy
+  TITLE:=Support for Freescale MXS USB PHY
+  DEPENDS:=@TARGET_imx6
+  KCONFIG:=CONFIG_USB_MXS_PHY
+  FILES:=\
+	$(LINUX_DIR)/drivers/usb/phy/phy-mxs-usb.ko
+  AUTOLOAD:=$(call AutoLoad,52,phy-mxs-usb,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-mxs-phy/description
+ Kernel support for Freescale MXS USB PHY
+endef
+
+$(eval $(call KernelPackage,usb-mxs-phy,1))
+
+
 define KernelPackage/usbmon
   TITLE:=USB traffic monitor
   KCONFIG:=CONFIG_USB_MON
