@@ -174,6 +174,9 @@ get_status_led() {
 	wnr2000)
 		status_led="wnr2000:green:power"
 		;;
+	wnr612-v2)
+		status_led="wnr612v2:green:power"
+		;;
 	wp543)
 		status_led="wp543:green:diag"
 		;;

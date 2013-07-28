@@ -501,6 +501,9 @@ ar71xx_board_detect() {
 	*WNR2000)
 		name="wnr2000"
 		;;
+	*"WNR612 V2")
+		name="wnr612-v2"
+		;;
 	*WRT160NL)
 		name="wrt160nl"
 		;;
