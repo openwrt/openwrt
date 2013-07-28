@@ -1041,15 +1041,17 @@ $(eval $(call KernelPackage,usbip-server))
 
 define KernelPackage/usb-chipidea
   TITLE:=Support for ChipIdea controllers
-  DEPENDS:= +kmod-usb2
-  KCONFIG:= \
+  DEPENDS:=+kmod-usb2
+  KCONFIG:=\
 	CONFIG_USB_CHIPIDEA \
 	CONFIG_USB_CHIPIDEA_HOST=y \
 	CONFIG_USB_CHIPIDEA_UDC=n \
 	CONFIG_USB_CHIPIDEA_DEBUG=y
   FILES:=\
-	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko
-  AUTOLOAD:=$(call AutoLoad,51,ci_hdrc,1)
+	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
+	$(if $(CONFIG_OF_DEVICE),$(LINUX_DIR)/drivers/usb/chipidea/ci13xxx_imx.ko) \
+	$(if $(CONFIG_OF_DEVICE),$(LINUX_DIR)/drivers/usb/chipidea/usbmisc_imx.ko)
+  AUTOLOAD:=$(call AutoLoad,51,ci_hdrc $(if $(CONFIG_OF_DEVICE),ci13xxx_imx usbmisc_imx),1)
   $(call AddDepends/usb)
 endef
 
