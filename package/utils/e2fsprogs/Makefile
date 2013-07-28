@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.42.4
-PKG_MD5SUM:=b6e296f210d642361b7394437ff0f318
+PKG_VERSION:=1.42.8
+PKG_MD5SUM:=8ef664b6eb698aa6b733df59b17b9ed4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -53,6 +53,12 @@ endef
 define Package/tune2fs
 $(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem tune utility
+  DEPENDS:= +e2fsprogs
+endef
+
+define Package/e4defrag
+$(call Package/e2fsprogs)
+  TITLE:=Ext4 Filesystem defrag utility
   DEPENDS:= +e2fsprogs
 endef
 
@@ -139,6 +145,11 @@ define Package/tune2fs/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/tune2fs $(1)/usr/sbin/
 endef
 
+define Package/e4defrag/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e4defrag $(1)/usr/sbin/
+endef
+
 define Package/resize2fs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/resize2fs $(1)/usr/sbin/
@@ -152,5 +163,6 @@ endef
 $(eval $(call BuildPackage,e2fsprogs))
 $(eval $(call BuildPackage,libext2fs))
 $(eval $(call BuildPackage,tune2fs))
+$(eval $(call BuildPackage,e4defrag))
 $(eval $(call BuildPackage,resize2fs))
 $(eval $(call BuildPackage,badblocks))
