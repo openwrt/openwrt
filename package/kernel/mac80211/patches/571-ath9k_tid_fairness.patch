@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -1282,8 +1282,8 @@ ath_tx_form_burst(struct ath_softc *sc, 
+@@ -1317,8 +1317,8 @@ ath_tx_form_burst(struct ath_softc *sc, 
  	} while (1);
  }
  
@@ -11,7 +11,7 @@
  {
  	struct ath_buf *bf;
  	struct ieee80211_tx_info *tx_info;
-@@ -1292,37 +1292,36 @@ static void ath_tx_sched_aggr(struct ath
+@@ -1327,40 +1327,39 @@ static void ath_tx_sched_aggr(struct ath
  	int aggr_len = 0;
  	bool aggr, last = true;
  
@@ -20,13 +20,13 @@
 -			return;
 -
 -		INIT_LIST_HEAD(&bf_q);
-+	if (!ath_tid_has_buffered(tid))
-+		return false;
- 
+-
 -		bf = ath_tx_get_tid_subframe(sc, txq, tid, &tid_q);
 -		if (!bf)
 -			break;
--
++	if (!ath_tid_has_buffered(tid))
++		return false;
+ 
 -		tx_info = IEEE80211_SKB_CB(bf->bf_mpdu);
 -		aggr = !!(tx_info->flags & IEEE80211_TX_CTL_AMPDU);
 -		if ((aggr && txq->axq_ampdu_depth >= ATH_AGGR_MIN_QDEPTH) ||
@@ -57,6 +57,11 @@
 +	else
 +		ath_tx_form_burst(sc, txq, tid, &bf_q, bf, tid_q);
  
+-		if (list_empty(&bf_q))
+-			return;
++	if (list_empty(&bf_q))
++		return false;
+ 
 -		if (tid->ac->clear_ps_filter) {
 -			tid->ac->clear_ps_filter = false;
 -			tx_info->flags |= IEEE80211_TX_CTL_CLEAR_PS_FILT;
@@ -75,7 +80,7 @@
  }
  
  int ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
-@@ -1754,8 +1753,9 @@ void ath_tx_cleanupq(struct ath_softc *s
+@@ -1796,8 +1795,9 @@ void ath_tx_cleanupq(struct ath_softc *s
   */
  void ath_txq_schedule(struct ath_softc *sc, struct ath_txq *txq)
  {
@@ -86,7 +91,7 @@
  
  	if (test_bit(SC_OP_HW_RESET, &sc->sc_flags) ||
  	    list_empty(&txq->axq_acq) ||
-@@ -1764,15 +1764,17 @@ void ath_txq_schedule(struct ath_softc *
+@@ -1806,15 +1806,17 @@ void ath_txq_schedule(struct ath_softc *
  
  	rcu_read_lock();
  
@@ -106,7 +111,7 @@
  			tid = list_first_entry(&ac->tid_q, struct ath_atx_tid,
  					       list);
  			list_del(&tid->list);
-@@ -1781,7 +1783,8 @@ void ath_txq_schedule(struct ath_softc *
+@@ -1823,7 +1825,8 @@ void ath_txq_schedule(struct ath_softc *
  			if (tid->paused)
  				continue;
  
@@ -116,7 +121,7 @@
  
  			/*
  			 * add tid to round-robin queue if more frames
-@@ -1790,8 +1793,7 @@ void ath_txq_schedule(struct ath_softc *
+@@ -1832,8 +1835,7 @@ void ath_txq_schedule(struct ath_softc *
  			if (ath_tid_has_buffered(tid))
  				ath_tx_queue_tid(txq, tid);
  
@@ -126,7 +131,7 @@
  				break;
  		}
  
-@@ -1800,9 +1802,17 @@ void ath_txq_schedule(struct ath_softc *
+@@ -1842,9 +1844,17 @@ void ath_txq_schedule(struct ath_softc *
  			list_add_tail(&ac->list, &txq->axq_acq);
  		}
  
