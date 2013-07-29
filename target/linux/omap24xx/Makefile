@@ -18,7 +18,7 @@ define Target/Description
 	TI OMAP-24xx
 endef
 
-CFLAGS:=-Os -pipe -march=armv6 -mtune=arm1136j-s -fno-caller-saves
+CFLAGS:=-Os -pipe -march=armv6 -mtune=arm1136j-s
 
 KERNELNAME:="zImage"
 

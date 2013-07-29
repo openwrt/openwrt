@@ -191,17 +191,17 @@ ifeq ($(DUMP),1)
     # remove duplicates
     FEATURES:=$(sort $(FEATURES))
   endif
-  DEFAULT_CFLAGS_i386=-O2 -pipe -march=i486 -fno-caller-saves
-  DEFAULT_CFLAGS_x86_64=-O2 -pipe -march=athlon64 -fno-caller-saves
-  DEFAULT_CFLAGS_m68k=-Os -pipe -mcfv4e -fno-caller-saves
-  DEFAULT_CFLAGS_mips=-Os -pipe -mips32 -mtune=mips32 -fno-caller-saves -mno-branch-likely
+  DEFAULT_CFLAGS_i386=-O2 -pipe -march=i486
+  DEFAULT_CFLAGS_x86_64=-O2 -pipe -march=athlon64
+  DEFAULT_CFLAGS_m68k=-Os -pipe -mcfv4e
+  DEFAULT_CFLAGS_mips=-Os -pipe -mips32 -mtune=mips32 -mno-branch-likely
   DEFAULT_CFLAGS_mipsel=$(DEFAULT_CFLAGS_mips)
-  DEFAULT_CFLAGS_mips64=-Os -pipe -mips64 -mtune=mips64 -mabi=64 -fno-caller-saves
+  DEFAULT_CFLAGS_mips64=-Os -pipe -mips64 -mtune=mips64 -mabi=64
   DEFAULT_CFLAGS_mips64el=$(DEFAULT_CFLAGS_mips64)
-  DEFAULT_CFLAGS_sparc=-Os -pipe -mcpu=ultrasparc -fno-caller-saves
-  DEFAULT_CFLAGS_arm=-Os -pipe -march=armv5te -mtune=xscale -fno-caller-saves
+  DEFAULT_CFLAGS_sparc=-Os -pipe -mcpu=ultrasparc
+  DEFAULT_CFLAGS_arm=-Os -pipe -march=armv5te -mtune=xscale
   DEFAULT_CFLAGS_armeb=$(DEFAULT_CFLAGS_arm)
-  DEFAULT_CFLAGS=$(if $(DEFAULT_CFLAGS_$(ARCH)),$(DEFAULT_CFLAGS_$(ARCH)),-Os -pipe -fno-caller-saves)
+  DEFAULT_CFLAGS=$(if $(DEFAULT_CFLAGS_$(ARCH)),$(DEFAULT_CFLAGS_$(ARCH)),-Os -pipe)
 endif
 
 define BuildTargets/DumpCurrent

@@ -10,7 +10,7 @@ ARCH:=mipsel
 BOARD:=ramips
 BOARDNAME:=Ralink RT288x/RT3xxx
 SUBTARGETS:=rt288x rt305x rt3883 mt7620a
-CFLAGS:=-Os -pipe -fno-caller-saves -mno-branch-likely
+CFLAGS:=-Os -pipe -mno-branch-likely
 FEATURES:=squashfs gpio
 
 LINUX_VERSION:=3.10.3

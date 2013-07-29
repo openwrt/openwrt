@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=sibyte
 BOARDNAME:=Broadcom/SiByte SB-1
 FEATURES:=fpu ramdisk broken
-CFLAGS:=-Os -pipe -march=sb1 -fno-caller-saves
+CFLAGS:=-Os -pipe -march=sb1
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=3.3.8
