@@ -66,7 +66,7 @@
  }
  EXPORT_SYMBOL_GPL(bcma_core_disable);
  
-@@ -43,6 +64,7 @@ int bcma_core_enable(struct bcma_device
+@@ -43,6 +64,7 @@ int bcma_core_enable(struct bcma_device 
  	bcma_aread32(core, BCMA_IOCTL);
  
  	bcma_awrite32(core, BCMA_RESET_CTL, 0);
@@ -269,7 +269,7 @@
  	{ "AT45DB011", 0xc, 256, 512, },
  	{ "AT45DB021", 0x14, 256, 1024, },
  	{ "AT45DB041", 0x1c, 256, 2048, },
-@@ -89,7 +89,7 @@ int bcma_sflash_init(struct bcma_drv_cc
+@@ -89,7 +89,7 @@ int bcma_sflash_init(struct bcma_drv_cc 
  {
  	struct bcma_bus *bus = cc->core->bus;
  	struct bcma_sflash *sflash = &cc->sflash;
