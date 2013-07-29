@@ -11,9 +11,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 226 insertions(+)
  create mode 100644 drivers/net/phy/lantiq.c
 
---- a/drivers/net/phy/Kconfig
-+++ b/drivers/net/phy/Kconfig
-@@ -150,6 +150,11 @@ config MICREL_PHY
+Index: linux-3.8.13/drivers/net/phy/Kconfig
+===================================================================
+--- linux-3.8.13.orig/drivers/net/phy/Kconfig	2013-07-29 14:53:02.281688583 +0200
++++ linux-3.8.13/drivers/net/phy/Kconfig	2013-07-29 14:53:04.033688626 +0200
+@@ -150,6 +150,11 @@
  	---help---
  	  Currently has a driver for the KSZ8041
  
@@ -25,9 +27,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  config FIXED_PHY
  	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
  	depends on PHYLIB=y
---- a/drivers/net/phy/Makefile
-+++ b/drivers/net/phy/Makefile
-@@ -39,6 +39,7 @@ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
+Index: linux-3.8.13/drivers/net/phy/Makefile
+===================================================================
+--- linux-3.8.13.orig/drivers/net/phy/Makefile	2013-07-29 14:53:02.281688583 +0200
++++ linux-3.8.13/drivers/net/phy/Makefile	2013-07-29 14:53:04.033688626 +0200
+@@ -39,6 +39,7 @@
  obj-$(CONFIG_DP83640_PHY)	+= dp83640.o
  obj-$(CONFIG_STE10XP)		+= ste10Xp.o
  obj-$(CONFIG_MICREL_PHY)	+= micrel.o
@@ -35,9 +39,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_MDIO_OCTEON)	+= mdio-octeon.o
  obj-$(CONFIG_MICREL_KS8995MA)	+= spi_ks8995.o
  obj-$(CONFIG_AT803X_PHY)	+= at803x.o
---- /dev/null
-+++ b/drivers/net/phy/lantiq.c
-@@ -0,0 +1,220 @@
+Index: linux-3.8.13/drivers/net/phy/lantiq.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.8.13/drivers/net/phy/lantiq.c	2013-07-29 14:53:30.029689243 +0200
+@@ -0,0 +1,231 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -117,6 +123,17 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	/* Clear all pending interrupts */
 +	phy_read(phydev, MII_VR9_11G_ISTAT);
++
++	vr9_gphy_mmd_write(phydev, 0x1e0, 0xc5);
++	vr9_gphy_mmd_write(phydev, 0x1e1, 0x67);
++	vr9_gphy_mmd_write(phydev, 0x1e2, 0x42);
++	vr9_gphy_mmd_write(phydev, 0x1e3, 0x10);
++	vr9_gphy_mmd_write(phydev, 0x1e4, 0x70);
++	vr9_gphy_mmd_write(phydev, 0x1e5, 0x03);
++	vr9_gphy_mmd_write(phydev, 0x1e6, 0x20);
++	vr9_gphy_mmd_write(phydev, 0x1e7, 0x00);
++	vr9_gphy_mmd_write(phydev, 0x1e8, 0x40);
++	vr9_gphy_mmd_write(phydev, 0x1e9, 0x20);
 +
 +	return 0;
 +}
