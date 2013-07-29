@@ -23,6 +23,13 @@
 					lantiq,groups = "mdio";
 					lantiq,function = "mdio";
 				};
+				gphy-leds {
+					lantiq,groups = "gphy0 led1", "gphy1 led1";
+					lantiq,function = "gphy";
+					lantiq,pull = <2>;
+					lantiq,open-drain = <0>;
+					lantiq,output = <1>;
+				};
 				phy-rst {
 					lantiq,pins = "io42";
 					lantiq,pull = <0>;
@@ -220,10 +227,6 @@
 			label = "internet";
 			gpios = <&gpio 5 0>;
 		};
-		lan3 {
-			label = "lan3";
-			gpios = <&gpio 7 0>;
-		};
 		usb0 {
 			label = "usb";
 			gpios = <&gpio 19 0>;
@@ -235,10 +238,6 @@
 		wps {
 			label = "wps";
 			gpios = <&gpio 37 0>;
-		};
-		lan4 {
-			label = "lan4";
-			gpios = <&gpio 45 0>;
 		};
 	};
 };
