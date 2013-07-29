@@ -847,6 +847,12 @@ menuconfig DEVEL
 		  in the package directory, pointing to the .git tree that you want
 		  to pull the source code from
 
+	config EXTRA_OPTIMIZATION
+		string "Additional compiler options" if DEVEL
+		default "-fno-caller-saves"
+		help
+		  Extra Target-independent optimizations to use when building for the target.
+
 menuconfig TARGET_OPTIONS
 	bool "Target Options"  if DEVEL
 

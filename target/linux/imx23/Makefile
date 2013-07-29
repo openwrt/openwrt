@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=imx23
 BOARDNAME:=Freescale i.MX23 series
 FEATURES:=ext4 rtc usb gpio
-CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -fno-caller-saves
+CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s
 MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 LINUX_VERSION:=3.10.3
 KERNELNAME:="zImage dtbs"

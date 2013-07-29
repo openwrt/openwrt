@@ -5,10 +5,10 @@
  
  ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 -KBUILD_CFLAGS	+= -Os
-+KBUILD_CFLAGS	+= -Os -fno-caller-saves
++KBUILD_CFLAGS	+= -Os $(EXTRA_OPTIMIZATION)
  else
 -KBUILD_CFLAGS	+= -O2
-+KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
++KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch $(EXTRA_OPTIMIZATION)
  endif
  
  include $(srctree)/arch/$(SRCARCH)/Makefile
