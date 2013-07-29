@@ -1,0 +1,16 @@
+--- a/gcc/haifa-sched.c
++++ b/gcc/haifa-sched.c
+@@ -4654,10 +4654,12 @@ schedule_block (basic_block *target_bb)
+ 
+ 	  if (recog_memoized (insn) >= 0)
+ 	    {
++	      memcpy (temp_state, curr_state, dfa_state_size);
+ 	      cost = state_transition (curr_state, insn);
+ 	      if (sched_pressure != SCHED_PRESSURE_WEIGHTED)
+ 		gcc_assert (cost < 0);
+-	      cycle_issued_insns++;
++	      if (memcmp (temp_state, curr_state, dfa_state_size) != 0)
++		cycle_issued_insns++;
+ 	      asm_p = false;
+ 	    }
+ 	  else
