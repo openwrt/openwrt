@@ -1299,6 +1299,10 @@ MAKE_OPTS:= -C "$(PKG_BUILD_DIR)" \
 	KERNEL_SUBLEVEL=$(lastword $(subst ., ,$(KERNEL_PATCHVER))) \
 	KBUILD_LDFLAGS_MODULE_PREREQ=
 
+ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
+  MAKE_OPTS += V=1
+endif
+
 define ConfigVars
 $(subst $(space),,$(foreach opt,$(config-$(1)),CPTCFG_$(opt)=$(1)
 ))
