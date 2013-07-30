@@ -15,6 +15,7 @@ export CONF_RESTORE=
 export NEED_IMAGE=
 export HELP=0
 export FORCE=0
+export TEST=0
 
 # parse options
 while [ -n "$1" ]; do 
@@ -29,6 +30,7 @@ while [ -n "$1" ]; do
 		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
 		-f) export CONF_IMAGE="$2"; shift;;
 		-F|--force) export FORCE=1;;
+		-T|--test) export TEST=1;;
 		-h|--help) export HELP=1; break;;
 		-*)
 			echo "Invalid option: $1"
@@ -56,6 +58,8 @@ upgrade-option:
 	-i           interactive mode
 	-c           attempt to preserve all changed files in /etc/
 	-n           do not save configuration over reflash
+	-T | --test
+	             Verify image and config .tar.gz but do not actually flash.
 	-F | --force
 	             Flash image even if image checks fail, this is dangerous!
 	-q           less verbose
@@ -171,10 +175,14 @@ if [ -n "$CONF_IMAGE" ]; then
 	get_image "$CONF_IMAGE" "cat" > "$CONF_TAR"
 	export SAVE_CONFIG=1
 elif ask_bool $SAVE_CONFIG "Keep config files over reflash"; then
-	do_save_conffiles
+	[ $TEST -eq 1 ] || do_save_conffiles
 	export SAVE_CONFIG=1
 else
 	export SAVE_CONFIG=0
+fi
+
+if [ $TEST -eq 1 ]; then
+	exit 0
 fi
 
 run_hooks "" $sysupgrade_pre_upgrade
