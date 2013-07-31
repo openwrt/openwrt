@@ -10,6 +10,7 @@ export SAVE_CONFIG=1
 export SAVE_OVERLAY=0
 export DELAY=
 export CONF_IMAGE=
+export CONF_BACKUP_LIST=0
 export CONF_BACKUP=
 export CONF_RESTORE=
 export NEED_IMAGE=
@@ -28,6 +29,7 @@ while [ -n "$1" ]; do
 		-c) export SAVE_OVERLAY=1;;
 		-b|--create-backup) export CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
 		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
+		-l|--list-backup) export CONF_BACKUP_LIST=1; break;;
 		-f) export CONF_IMAGE="$2"; shift;;
 		-F|--force) export FORCE=1;;
 		-T|--test) export TEST=1;;
@@ -75,6 +77,9 @@ backup-command:
 	             restore a .tar.gz created with sysupgrade -b
 	             then exit. Does not flash an image. If file is '-',
 	             the archive is read from stdin.
+	-l | --list-backup
+	             list the files that would be backed up when calling
+	             sysupgrade -b. Does not create a backup file.
 
 EOF
 	exit 1
@@ -133,7 +138,16 @@ do_save_conffiles() {
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	tar c${TAR_V}zf "$conf_tar" -T "$CONFFILES" 2>/dev/null
+
+	rm -f "$CONFFILES"
 }
+
+if [ $CONF_BACKUP_LIST -eq 1 ]; then
+	add_uci_conffiles "$CONFFILES"
+	cat "$CONFFILES"
+	rm -f "$CONFFILES"
+	exit 0
+fi
 
 if [ -n "$CONF_BACKUP" ]; then
 	do_save_conffiles "$CONF_BACKUP"
