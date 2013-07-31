@@ -79,3 +79,24 @@ endef
 
 $(eval $(call KernelPackage,usb-net-smsc95xx))
 
+define KernelPackage/sound-soc-imx23
+    TITLE:=Freescale i.MX233 built-in SoC sound support
+    KCONFIG:= \
+	CONFIG_SND_SOC_MXS_BUILTIN_CODEC \
+	CONFIG_SND_MXS_SOC_BUILTIN
+    FILES:= \
+	$(LINUX_DIR)/sound/soc/mxs/snd-soc-mxs-builtin-audio.ko \
+	$(LINUX_DIR)/sound/soc/mxs/snd-soc-mxs-builtin-dai.ko \
+	$(LINUX_DIR)/sound/soc/mxs/snd-soc-mxs-builtin-pcm.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-mxs-builtin-codec.ko
+    AUTOLOAD:=$(call AutoLoad,65,snd-soc-mxs-builtin-pcm snd-soc-mxs-builtin-dai snd-soc-mxs-builtin-codec snd-soc-mxs-builtin-audio)
+    DEPENDS:=@TARGET_imx23 +kmod-sound-soc-core
+    $(call AddDepends/sound)
+endef
+  
+define KernelPackage/sound-soc-imx23/description
+    Kernel support for i.MX233 built-in SoC audio
+endef
+
+$(eval $(call KernelPackage,sound-soc-imx23))
+
