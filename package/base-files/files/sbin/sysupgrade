@@ -140,7 +140,12 @@ if [ -n "$CONF_BACKUP" ]; then
 	exit $?
 fi
 
-if [ -f "$CONF_RESTORE" ] || [ "$CONF_RESTORE" = "-" ]; then
+if [ -n "$CONF_RESTORE" ]; then
+	if [ "$CONF_RESTORE" != "-" ] && [ ! -f "$CONF_RESTORE" ]; then
+		echo "Backup archive '$CONF_RESTORE' not found."
+		exit 1
+	fi
+
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	tar -C / -x${TAR_V}zf "$CONF_RESTORE"
 	exit $?
