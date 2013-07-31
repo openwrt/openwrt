@@ -4,11 +4,4 @@
 #
 #
 
-do_fixcrc() {
-	mtd fixtrx linux
-}
-
-case `uname -r` in
-	3.8* | 3.9* ) do_fixcrc;;
-esac
-
+mtd fixtrx linux
