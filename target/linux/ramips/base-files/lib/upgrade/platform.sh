@@ -44,6 +44,7 @@ platform_check_image() {
 	freestation5 | \
 	hw550-3g | \
 	hg255d | \
+	m3 | \
 	mofi3500-3gn | \
 	mpr-a1 | \
 	mpr-a2 | \

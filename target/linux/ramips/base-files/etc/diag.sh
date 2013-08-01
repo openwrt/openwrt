@@ -52,6 +52,9 @@ get_status_led() {
 	hw550-3g)
 		status_led="hw550-3g:green:status"
 		;;
+	m3)
+		status_led="m3:blue:status"
+		;;
 	mofi3500-3gn)
 		status_led="mofi3500-3gn:green:status"
 		;;
