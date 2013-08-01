@@ -1145,9 +1145,6 @@ static struct platform_t __init *platform_detect_legacy(void)
 			if (!strcmp(boardtype, "0x0101") && !strcmp(getvar("boot_ver"), "v3.6"))
 				return &platforms[WRT54G3G];
 
-			if (!strcmp(getvar("et1phyaddr"),"5") && !strcmp(getvar("et1mdcport"), "1"))
-				return &platforms[WRTSL54GS];
-
 			/* default to WRT54G */
 			return &platforms[WRT54G];
 		}
@@ -1347,6 +1344,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[WRT610N];
 	case BCM47XX_BOARD_LINKSYS_WRT610NV2:
 		return &platforms[WRT610NV2];
+	case BCM47XX_BOARD_LINKSYS_WRTSL54GS:
+		return &platforms[WRTSL54GS];
 	case BCM47XX_BOARD_MOTOROLA_WE800G:
 		return &platforms[WE800G];
 	case BCM47XX_BOARD_MOTOROLA_WR850GP:
