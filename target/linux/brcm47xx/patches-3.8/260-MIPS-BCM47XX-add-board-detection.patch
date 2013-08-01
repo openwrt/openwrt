@@ -8,7 +8,7 @@
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/board.c
-@@ -0,0 +1,223 @@
+@@ -0,0 +1,235 @@
 +#include <linux/export.h>
 +#include <linux/string.h>
 +#include <bcm47xx_board.h>
@@ -35,6 +35,11 @@
 +
 +static const struct bcm47xx_board_type_list bcm47xx_board_list_model_no[] = {
 +	{{BCM47XX_BOARD_ASUS_WL700GE, "Asus WL700"}, "WL700",},
++	{ {0}, 0},
++};
++
++static const struct bcm47xx_board_type_list bcm47xx_board_list_machine_name[] = {
++	{{BCM47XX_BOARD_LINKSYS_WRTSL54GS, "Linksys WRTSL54GS"}, "WRTSL54GS",},
 +	{ {0}, 0},
 +};
 +
@@ -156,6 +161,13 @@
 +		}
 +	}
 +
++	if (bcm47xx_nvram_getenv("machine_name", buf1, sizeof(buf1)) >= 0) {
++		for (e = bcm47xx_board_list_machine_name; e->value1; e++) {
++			if (strstarts(buf1, e->value1))
++				return &e->board;
++		}
++	}
++
 +	if (bcm47xx_nvram_getenv("hardware_version", buf1, sizeof(buf1)) >= 0) {
 +		for (e = bcm47xx_board_list_hardware_version; e->value1; e++) {
 +			if (strstarts(buf1, e->value1))
@@ -234,7 +246,7 @@
 +EXPORT_SYMBOL(bcm47xx_board_get_name);
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,92 @@
 +#ifndef __BCM47XX_BOARD_H
 +#define __BCM47XX_BOARD_H
 +
@@ -293,6 +305,7 @@
 +	BCM47XX_BOARD_LINKSYS_WRT54G3GV2,
 +	BCM47XX_BOARD_LINKSYS_WRT610NV1,
 +	BCM47XX_BOARD_LINKSYS_WRT610NV2,
++	BCM47XX_BOARD_LINKSYS_WRTSL54GS,
 +
 +	BCM47XX_BOARD_MOTOROLA_WE800G,
 +	BCM47XX_BOARD_MOTOROLA_WR850GP,
