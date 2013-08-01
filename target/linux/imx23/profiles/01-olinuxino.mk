@@ -9,7 +9,7 @@ define Profile/olinuxino
   NAME:=Olimex Olinuxino boards
   PACKAGES += imx-bootlets kmod-usb-mxs-phy kmod-usb-net kmod-usb-net-smsc95xx \
           kmod-gpio-mcp23s08 kmod-leds-gpio kmod-ledtrig-heartbeat kmod-rtc-stmp3xxx \
-	  kmod-sound-core kmod-sound-soc-imx23
+	  kmod-sound-core kmod-sound-soc-imx23 kmod-iio-mxs-lradc
 endef
 
 define Profile/olinuxino/Description
