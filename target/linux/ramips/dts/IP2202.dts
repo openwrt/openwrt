@@ -1,0 +1,97 @@
+/dts-v1/;
+
+/include/ "rt3050.dtsi"
+
+/ {
+	compatible = "IP2202", "ralink,rt3052-soc";
+	model = "Poray IP2202";
+
+	palmbus@10000000 {
+		sysc@0 {
+			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "sdram", "rgmii";
+			ralink,gpiomux = "mdio";
+			ralink,uartmux = "gpio";
+			ralink,wdtmux = <1>;
+		};
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+	};
+
+	cfi@1f000000 {
+		compatible = "cfi-flash";
+		reg = <0x1f000000 0x800000>;
+
+		bank-width = <2>;
+		device-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		factory: partition@40000 {
+			label = "factory";
+			reg = <0x40000 0x10000>;
+			read-only;
+		};
+
+		partition@50000 {
+			label = "firmware";
+			reg = <0x50000 0x7b0000>;
+		};
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+	};
+
+	esw@10110000 {
+		status = "okay";
+		ralink,portmap = <0x2f>;
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		run {
+			label = "ip2202:green:run";
+			gpios = <&gpio0 9 1>;
+		};
+		net {
+			label = "ip2202:amber:net";
+			gpios = <&gpio0 13 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	wmac@10180000 {
+		status = "okay";
+		ralink,led-polarity = <0>;
+	};
+
+	otg@101c0000 {
+		status = "okay";
+	};
+};
