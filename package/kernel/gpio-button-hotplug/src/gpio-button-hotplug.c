@@ -274,6 +274,15 @@ struct gpio_keys_polled_dev {
 	struct gpio_keys_button_data data[0];
 };
 
+static inline int gpio_button_get_value(struct gpio_keys_button *button,
+			  struct gpio_keys_button_data *bdata)
+{
+	if (bdata->can_sleep)
+		return !!gpio_get_value_cansleep(button->gpio);
+	else
+		return !!gpio_get_value(button->gpio);
+}
+
 static void gpio_keys_polled_check_state(struct gpio_keys_button *button,
 					 struct gpio_keys_button_data *bdata)
 {
