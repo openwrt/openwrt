@@ -70,7 +70,8 @@ WBMR)
 	;;
 
 VG3503J)
-	ucidef_set_interface_lan 'eth0 eth1'
+	ucidef_set_interface_lan 'eth0'
+	uci set network.lan.type='none'
 	;;
 DGN3500*)
 	ucidef_set_interface_lan "eth0.1"

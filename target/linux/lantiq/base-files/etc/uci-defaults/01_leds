@@ -21,10 +21,6 @@ board=$(lantiq_board_id)
 
 case "$board" in
 VG3503J)
-	ucidef_set_led_netdev "lan1" "lan1" "bt:green:lan1" "eth0"
-	ucidef_set_led_netdev "lan2" "lan2" "bt:green:lan2" "eth1"
-	ucidef_set_led_netdev "port1" "port1" "bt:green:port1" "eth0"
-	ucidef_set_led_netdev "port2" "port2" "bt:green:port2" "eth1"
 	ucidef_set_led_netdev "vdsl" "vdsl" "bt:green:dsl" "ptm0"
 	;;
 *)
