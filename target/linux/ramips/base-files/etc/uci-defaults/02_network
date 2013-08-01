@@ -227,7 +227,8 @@ ramips_setup_macs()
 		;;
 
 	m3 |\
-	m4)
+	m4 |\
+	x5)
 		lan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(macaddr_add "$lan_mac" -1)
 		;;
