@@ -141,6 +141,9 @@ get_status_led() {
 	x5)
 		status_led="x5:green:power"
 		;;
+	x8)
+		status_led="x8:green:power"
+		;;
 	xdxrn502j)
 		status_led="xdxrn502j:green:power"
 		;;

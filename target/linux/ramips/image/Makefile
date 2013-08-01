@@ -479,6 +479,8 @@ Image/Build/Profile/WR6202=$(call BuildFirmware/Default8M/$(1),$(1),wr6202,WR620
 
 Image/Build/Profile/X5=$(call BuildFirmware/Poray8M/$(1),$(1),x5,X5)
 
+Image/Build/Profile/X8=$(call BuildFirmware/Poray8M/$(1),$(1),x8,X8)
+
 Image/Build/Profile/XDXRN502J=$(call BuildFirmware/Default4M/$(1),$(1),xdxrn502j,XDXRN502J)
 
 ifeq ($(SUBTARGET),rt305x)
@@ -543,6 +545,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WR512-3GN,$(1))
 	$(call Image/Build/Profile/WR6202,$(1))
 	$(call Image/Build/Profile/X5,$(1))
+	$(call Image/Build/Profile/X8,$(1))
 	$(call Image/Build/Profile/XDXRN502J,$(1))
 endef
 endif

@@ -76,7 +76,8 @@ platform_check_image() {
 	ur-326n4g |\
 	ur-336un |\
 	wr512-3gn |\
-	x5)
+	x5 |\
+	x8)
 		[ "$magic" != "27051956" ] && {
 			echo "Invalid image type."
 			return 1
