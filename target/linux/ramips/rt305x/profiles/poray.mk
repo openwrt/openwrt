@@ -15,3 +15,13 @@ define Profile/M3/Description
 endef
 
 $(eval $(call Profile,M3))
+
+define Profile/M4
+	NAME:=Poray M4
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+endef
+define Profile/M4/Description
+	Package set for Poray M4 board
+endef
+
+$(eval $(call Profile,M4))

@@ -376,6 +376,8 @@ Image/Build/Profile/FREESTATION5=$(call BuildFirmware/Default8M/$(1),$(1),freest
 
 Image/Build/Profile/M3=$(call BuildFirmware/Poray4M/$(1),$(1),m3,M3)
 
+Image/Build/Profile/M4=$(call BuildFirmware/PorayDualSize/$(1),$(1),m4,M4)
+
 Image/Build/Profile/MOFI3500-3GN=$(call BuildFirmware/Default8M/$(1),$(1),mofi3500-3gn,MOFI3500-3GN)
 
 # Kernel name should be "Linux Kernel Image" to make the OpenWrt image installable from factory Web UI
@@ -511,6 +513,7 @@ define Image/Build/Profile/Default
 #	$(call Image/Build/Profile/HG255D,$(1))
 	$(call Image/Build/Profile/HW550-3G,$(1))
 	$(call Image/Build/Profile/M3,$(1))
+	$(call Image/Build/Profile/M4,$(1))
 	$(call Image/Build/Profile/MOFI3500-3GN,$(1))
 	$(call Image/Build/Profile/MPRA2,$(1))
 	$(call Image/Build/Profile/MZKW300NH2,$(1))

@@ -45,6 +45,7 @@ platform_check_image() {
 	hw550-3g | \
 	hg255d | \
 	m3 | \
+	m4 | \
 	mofi3500-3gn | \
 	mpr-a1 | \
 	mpr-a2 | \
