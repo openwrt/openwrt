@@ -44,6 +44,7 @@ platform_check_image() {
 	freestation5 | \
 	hw550-3g | \
 	hg255d | \
+	ip2202 | \
 	m3 | \
 	m4 | \
 	mofi3500-3gn | \
