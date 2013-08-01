@@ -459,8 +459,9 @@ void b53_switch_reset_gpio(struct b53_device *dev)
 	if (gpio < 0)
 		return;
 
-	gpio_set_value(gpio, 0);
-	gpio_direction_output(gpio, 1);
+	/*
+	 * Reset sequence: RESET low(50ms)->high(20ms)
+	 */
 	gpio_set_value(gpio, 0);
 	mdelay(50);
 
@@ -1216,7 +1217,7 @@ int b53_switch_init(struct b53_device *dev)
 
 	dev->reset_gpio = b53_switch_get_reset_gpio(dev);
 	if (dev->reset_gpio >= 0) {
-		ret = devm_gpio_request(dev->dev, dev->reset_gpio, "robo_reset");
+		ret = devm_gpio_request_one(dev->dev, dev->reset_gpio, GPIOF_OUT_INIT_HIGH, "robo_reset");
 		if (ret)
 			return ret;
 	}
