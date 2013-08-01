@@ -151,6 +151,9 @@ ramips_board_detect() {
 	*"Poray M3")
 		name="m3"
 		;;
+	*"Poray M4")
+		name="m4"
+		;;
 	*"PWH2004")
 		name="pwh2004"
 		;;
