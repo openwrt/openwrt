@@ -1,9 +1,9 @@
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -190,3 +190,30 @@ int bcm47xx_nvram_getenv(char *name, cha
+@@ -210,3 +210,30 @@ int bcm47xx_nvram_gpio_pin(const char *n
  	return -ENOENT;
  }
- EXPORT_SYMBOL(bcm47xx_nvram_getenv);
+ EXPORT_SYMBOL(bcm47xx_nvram_gpio_pin);
 +
 +char *nvram_get(const char *name)
 +{

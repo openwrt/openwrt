@@ -294,7 +294,7 @@ out the configuration than the in kernel cfe config reader.
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
  	end = nvram_buf + sizeof(nvram_buf) - 2;
-@@ -201,6 +230,9 @@ char *nvram_get(const char *name)
+@@ -221,6 +250,9 @@ char *nvram_get(const char *name)
  	if (!nvram_buf[0])
  		nvram_init();
  
