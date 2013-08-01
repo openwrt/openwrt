@@ -157,6 +157,9 @@ ramips_board_detect() {
 	*"Poray X5")
 		name="x5"
 		;;
+	*"Poray X8")
+		name="x8"
+		;;
 	*"PWH2004")
 		name="pwh2004"
 		;;

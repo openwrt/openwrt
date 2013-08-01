@@ -77,7 +77,8 @@ preinit_set_mac_address() {
 		;;
 	m3 |\
 	m4 |\
-	x5)
+	x5 |\
+	x8)
 		mac=$(mtd_get_mac_binary factory 4)
 		mac=$(macaddr_add "$mac" -1)
 		ifconfig eth0 hw ether $mac 2>/dev/null

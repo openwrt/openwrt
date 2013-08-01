@@ -35,3 +35,13 @@ define Profile/X5/Description
 endef
 
 $(eval $(call Profile,X5))
+
+define Profile/X8
+	NAME:=Poray X8
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+endef
+define Profile/X8/Description
+	Package set for Poray X8 board
+endef
+
+$(eval $(call Profile,X8))
