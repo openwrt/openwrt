@@ -509,7 +509,7 @@ static int gpio_keys_polled_probe(struct platform_device *pdev)
 		}
 
 		bdata->can_sleep = gpio_cansleep(gpio);
-		bdata->last_state = 0;
+		bdata->last_state = gpio_button_get_value(button, bdata);
 		bdata->threshold = DIV_ROUND_UP(button->debounce_interval,
 						pdata->poll_interval);
 	}
