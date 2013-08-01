@@ -75,6 +75,11 @@ preinit_set_mac_address() {
 		mac=$(mtd_get_mac_binary factory 40)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
+	m3)
+		mac=$(mtd_get_mac_binary factory 4)
+		mac=$(macaddr_add "$mac" -1)
+		ifconfig eth0 hw ether $mac 2>/dev/null
+		;;
 	wl341v3)
 		mac=$(mtd_get_mac_binary board-nvram 65440)
 		ifconfig eth0 hw ether $mac 2>/dev/null

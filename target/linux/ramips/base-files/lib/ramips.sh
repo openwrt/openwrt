@@ -148,6 +148,9 @@ ramips_board_detect() {
 	*"Planex MZK-W300NH2"*)
 		name="mzk-w300nh2"
 		;;
+	*"Poray M3")
+		name="m3"
+		;;
 	*"PWH2004")
 		name="pwh2004"
 		;;
