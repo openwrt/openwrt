@@ -27,6 +27,9 @@ config OCF_CRYPTODEV
 config OCF_CRYPTOSOFT
 	tristate "cryptosoft (software crypto engine)"
 	depends on OCF_OCF
+	select CRYPTO
+	select CRYPTO_HASH
+	select CRYPTO_BLKCIPHER
 	help
 	  A software driver for the OCF framework that uses
 	  the kernel CryptoAPI.
