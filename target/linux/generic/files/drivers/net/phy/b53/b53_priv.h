@@ -75,6 +75,7 @@ struct b53_device {
 	u8 duplex_reg;
 	u8 jumbo_pm_reg;
 	u8 jumbo_size_reg;
+	int reset_gpio;
 
 	/* used ports mask */
 	u16 enabled_ports;
@@ -275,4 +276,17 @@ static inline int b53_write64(struct b53_device *dev, u8 page, u8 reg,
 	return ret;
 }
 
+#ifdef CONFIG_BCM47XX
+
+#include <bcm47xx_nvram.h>
+static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
+{
+       return bcm47xx_nvram_gpio_pin("robo_reset");
+}
+#else
+static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
+{
+       return -ENOENT;
+}
+#endif
 #endif

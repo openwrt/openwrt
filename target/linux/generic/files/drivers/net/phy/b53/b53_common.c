@@ -20,6 +20,7 @@
 
 #include <linux/delay.h>
 #include <linux/export.h>
+#include <linux/gpio.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/switch.h>
@@ -451,9 +452,29 @@ static int b53_apply(struct b53_device *dev)
 	return 0;
 }
 
+void b53_switch_reset_gpio(struct b53_device *dev)
+{
+	int gpio = dev->reset_gpio;
+
+	if (gpio < 0)
+		return;
+
+	gpio_set_value(gpio, 0);
+	gpio_direction_output(gpio, 1);
+	gpio_set_value(gpio, 0);
+	mdelay(50);
+
+	gpio_set_value(gpio, 1);
+	mdelay(20);
+
+	dev->current_page = 0xff;
+}
+
 static int b53_switch_reset(struct b53_device *dev)
 {
 	u8 mgmt;
+
+	b53_switch_reset_gpio(dev);
 
 	b53_read8(dev, B53_CTRL_PAGE, B53_SWITCH_MODE, &mgmt);
 
@@ -1114,6 +1135,7 @@ int b53_switch_init(struct b53_device *dev)
 {
 	struct switch_dev *sw_dev = &dev->sw_dev;
 	unsigned i;
+	int ret;
 
 	for (i = 0; i < ARRAY_SIZE(b53_switch_chips); i++) {
 		const struct b53_chip_data *chip = &b53_switch_chips[i];
@@ -1191,6 +1213,13 @@ int b53_switch_init(struct b53_device *dev)
 	dev->buf = devm_kzalloc(dev->dev, B53_BUF_SIZE, GFP_KERNEL);
 	if (!dev->buf)
 		return -ENOMEM;
+
+	dev->reset_gpio = b53_switch_get_reset_gpio(dev);
+	if (dev->reset_gpio >= 0) {
+		ret = devm_gpio_request(dev->dev, dev->reset_gpio, "robo_reset");
+		if (ret)
+			return ret;
+	}
 
 	return b53_switch_reset(dev);
 }
