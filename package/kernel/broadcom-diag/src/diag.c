@@ -106,6 +106,7 @@ enum {
 	WL520GU,
 	ASUS_4702,
 	WL700GE,
+	RTN12,
 	RTN16,
 
 	/* Buffalo */
@@ -633,6 +634,23 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "diag",	.gpio = 1 << 1, .polarity = REVERSE }, // actual name ready
 		},
 		.platform_init = bcm4780_init,
+	},
+	[RTN12] = {
+		.name		= "ASUS RT-N12",
+		.buttons	= {
+			{ .name = "wps",	.gpio = 1 << 0 },
+			{ .name = "reset",	.gpio = 1 << 1 },
+			// this is the router/repeater/ap switch
+			{ .name = "sw1",	.gpio = 1 << 4 },
+			{ .name = "sw2",	.gpio = 1 << 5 },
+			{ .name = "sw3",	.gpio = 1 << 6 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 2, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 7, .polarity = NORMAL },
+			// gpio3 forces WAN and LAN1-4 all on
+			//{ .name = "eth",	.gpio = 1 << 3, .polarity = REVERSE },
+		},
 	},
 	[RTN16] = {
 		.name		= "ASUS RT-N16",
@@ -1282,6 +1300,8 @@ static struct platform_t __init *platform_detect(void)
 		printk(MODULE_NAME ": kernel found a \"%s\"\n", board_name);
 
 	switch(board) {
+	case BCM47XX_BOARD_ASUS_RTN12:
+		return &platforms[RTN12];
 	case BCM47XX_BOARD_ASUS_RTN16:
 		return &platforms[RTN16];
 	case BCM47XX_BOARD_ASUS_WL330GE:
