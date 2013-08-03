@@ -106,10 +106,10 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.6.0)),1)
   AUTOLOAD:=$(call AutoLoad,60, videodev v4l2-common)
 else
   FILES:= \
-	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-compat-ioctl32.ko \
+	$(if $(CONFIG_COMPAT),$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-compat-ioctl32.ko) \
 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-common.ko \
 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videodev.ko
-  AUTOLOAD:=$(call AutoLoad,60, v4l2-compat-ioctl32 videodev v4l2-common)
+  AUTOLOAD:=$(call AutoLoad,60, $(if $(CONFIG_COMPAT),v4l2-compat-ioctl32) videodev v4l2-common)
 endif
 endef
 
