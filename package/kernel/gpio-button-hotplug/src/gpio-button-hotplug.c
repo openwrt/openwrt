@@ -128,6 +128,7 @@ static int bh_event_add_var(struct bh_event *event, int argv,
 
 static int button_hotplug_fill_event(struct bh_event *event)
 {
+	char *s;
 	int ret;
 
 	ret = bh_event_add_var(event, 0, "HOME=%s", "/");
@@ -139,14 +140,11 @@ static int button_hotplug_fill_event(struct bh_event *event)
 	if (ret)
 		return ret;
 
-	char *s;
 	switch (event->type) {
-		case EV_KEY:
-			s = "button";
-			break;
 		case EV_SW:
 			s = "switch";
 			break;
+		case EV_KEY:
 		default:
 			s = "button";
 			break;
