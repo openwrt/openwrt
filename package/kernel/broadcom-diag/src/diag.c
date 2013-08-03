@@ -91,6 +91,7 @@ enum {
 	E1000V1,
 	E3000V1,
 	E3200V1,
+	E4200V1,
 
 	/* ASUS */
 	WLHDD,
@@ -494,6 +495,16 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds	= {
 			{ .name = "power",	.gpio = 1 << 3, .polarity = REVERSE },	/* Power LED */
+		},
+	},
+	[E4200V1] = {
+		.name		= "Linksys E4200 V1",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "wps",	.gpio = 1 << 4 },
+		},
+		.leds	= {
+			{ .name = "power",	.gpio = 1 << 5, .polarity = REVERSE },
 		},
 	},
 	/* Asus */
@@ -1348,6 +1359,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[E3000V1];
 	case BCM47XX_BOARD_LINKSYS_E3200V1:
 		return &platforms[E3200V1];
+	case BCM47XX_BOARD_LINKSYS_E4200V1:
+		return &platforms[E4200V1];
 	case BCM47XX_BOARD_LINKSYS_WRT150NV1:
 		return &platforms[WRT150NV1];
 	case BCM47XX_BOARD_LINKSYS_WRT150NV11:
