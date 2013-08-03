@@ -274,23 +274,24 @@ struct gpio_keys_polled_dev {
 	struct gpio_keys_button_data data[0];
 };
 
-static inline int gpio_button_get_value(struct gpio_keys_button *button,
-			  struct gpio_keys_button_data *bdata)
+static int gpio_button_get_value(struct gpio_keys_button *button,
+				 struct gpio_keys_button_data *bdata)
 {
+	int val;
+
 	if (bdata->can_sleep)
-		return !!gpio_get_value_cansleep(button->gpio);
+		val = !!gpio_get_value_cansleep(button->gpio);
 	else
-		return !!gpio_get_value(button->gpio);
+		val = !!gpio_get_value(button->gpio);
+
+	return val ^ button->active_low;
 }
 
 static void gpio_keys_polled_check_state(struct gpio_keys_button *button,
 					 struct gpio_keys_button_data *bdata)
 {
-	int state;
+	int state = gpio_button_get_value(button, bdata);
 
-	state = gpio_button_get_value(button, bdata);
-
-	state = !!(state ^ button->active_low);
 	if (state != bdata->last_state) {
 		unsigned int type = button->type ?: EV_KEY;
 
