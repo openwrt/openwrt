@@ -109,6 +109,7 @@ enum {
 	WL700GE,
 	RTN12,
 	RTN16,
+	RTN66U,
 
 	/* Buffalo */
 	WBR2_G54,
@@ -672,6 +673,17 @@ static struct platform_t __initdata platforms[] = {
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 1, .polarity = REVERSE },
 			{ .name = "wlan",	.gpio = 1 << 7, .polarity = NORMAL },
+		},
+	},
+	[RTN66U] = {
+		.name		= "ASUS RT-N66U",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 9 },
+			{ .name = "wps",	.gpio = 1 << 4 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 12, .polarity = REVERSE },
+			{ .name = "usb",	.gpio = 1 << 15, .polarity = REVERSE },
 		},
 	},
 	/* Buffalo */
@@ -1315,6 +1327,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[RTN12];
 	case BCM47XX_BOARD_ASUS_RTN16:
 		return &platforms[RTN16];
+	case BCM47XX_BOARD_ASUS_RTN66U:
+		return &platforms[RTN66U];
 	case BCM47XX_BOARD_ASUS_WL330GE:
 		return &platforms[WL330GE];
 	case BCM47XX_BOARD_ASUS_WL500GPV1:
