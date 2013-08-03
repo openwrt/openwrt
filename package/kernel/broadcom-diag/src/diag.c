@@ -1424,13 +1424,20 @@ static inline void ssb_maskset32(struct ssb_device *dev,
 static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 {
 	int irq;
+	int err;
 
 	irq = gpio_to_irq(0);
-	if (irq == -EINVAL) return;
+	if (irq < 0) {
+		pr_err("no irq for gpio available\n");
+		return;
+	}
 	
 	if (enabled) {
-		if (request_irq(irq, handler, IRQF_SHARED, "gpio", handler))
+		err = request_irq(irq, handler, IRQF_SHARED, "gpio", handler);
+		if (err) {
+			pr_err("can not reqeust irq\n");
 			return;
+		}
 	} else {
 		free_irq(irq, handler);
 	}
