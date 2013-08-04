@@ -37,7 +37,7 @@ endif
 
 init-y :=
 init-$(CONFIG_BUSYBOX_CONFIG_CROND) += cron
-init-$(CONFIG_BUSYBOX_CONFIG_NTPD) += ntp
+init-$(CONFIG_BUSYBOX_CONFIG_NTPD) += sysntpd
 init-$(CONFIG_BUSYBOX_CONFIG_TELNETD) += telnet
 
 define Package/busybox
