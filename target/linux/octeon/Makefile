@@ -1,0 +1,25 @@
+#
+# Copyright (C) 2013 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+
+ARCH:=mips
+BOARD:=octeon
+BOARDNAME:=Cavium Networks Octeon
+FEATURES:=squashfs jffs2 pci usb
+CFLAGS:=-Os -pipe -march=octeon -fno-caller-saves
+MAINTAINER:=John Crispin <blogic@openwrt.org>
+
+LINUX_VERSION:=3.10
+
+include $(INCLUDE_DIR)/target.mk
+
+
+define Target/Description
+	Build firmware images for Cavium Networks Octeon-based boards.
+endef
+
+$(eval $(call BuildTarget))
