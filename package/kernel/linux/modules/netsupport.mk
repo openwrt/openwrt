@@ -45,6 +45,7 @@ $(eval $(call KernelPackage,atmtcp))
 define KernelPackage/appletalk
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Appletalk protocol support
+  DEPENDS:=+PACKAGE_kmod-llc:kmod-llc
   KCONFIG:= \
 	CONFIG_ATALK \
 	CONFIG_DEV_APPLETALK \
@@ -100,8 +101,11 @@ define KernelPackage/llc
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=ANSI/IEEE 802.2 LLC support
   KCONFIG:=CONFIG_LLC
-  FILES:=$(LINUX_DIR)/net/llc/llc.ko
-  AUTOLOAD:=$(call AutoLoad,09,llc)
+  FILES:= \
+	$(LINUX_DIR)/net/llc/llc.ko \
+	$(LINUX_DIR)/net/802/p8022.ko \
+	$(LINUX_DIR)/net/802/psnap.ko
+  AUTOLOAD:=$(call AutoLoad,09,llc p8022 psnap)
 endef
 
 define KernelPackage/llc/description
