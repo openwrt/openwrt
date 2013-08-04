@@ -8,7 +8,7 @@
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/board.c
-@@ -0,0 +1,235 @@
+@@ -0,0 +1,240 @@
 +#include <linux/export.h>
 +#include <linux/string.h>
 +#include <bcm47xx_board.h>
@@ -45,9 +45,12 @@
 +
 +static const struct bcm47xx_board_type_list bcm47xx_board_list_hardware_version[] = {
 +	{{BCM47XX_BOARD_ASUS_RTN16, "Asus RT-N16"}, "RT-N16-",},
++	{{BCM47XX_BOARD_ASUS_WL320GE, "Asus WL320GE"}, "WL320G-",},
 +	{{BCM47XX_BOARD_ASUS_WL330GE, "Asus WL330GE"}, "WL330GE-",},
++	{{BCM47XX_BOARD_ASUS_WL500GD, "Asus WL500GD"}, "WL500gd-",},
 +	{{BCM47XX_BOARD_ASUS_WL500GPV1, "Asus WL500GP V1"}, "WL500gp-",},
 +	{{BCM47XX_BOARD_ASUS_WL500GPV2, "Asus WL500GP V2"}, "WL500GPV2-",},
++	{{BCM47XX_BOARD_ASUS_WL500W, "Asus WL500W"}, "WL500gW-",},
 +	{{BCM47XX_BOARD_ASUS_WL520GC, "Asus WL520GC"}, "WL520GC-",},
 +	{{BCM47XX_BOARD_ASUS_WL520GU, "Asus WL520GU"}, "WL520GU-",},
 +	{{BCM47XX_BOARD_BELKIN_F7D4301, "Belkin F7D4301"}, "F7D4301",},
@@ -67,6 +70,8 @@
 +	{{BCM47XX_BOARD_ASUS_RTN16, "Asus RT-N16"}, "RT-N16",},
 +	{{BCM47XX_BOARD_ASUS_RTN53, "Asus RT-N53"}, "RT-N53",},
 +	{{BCM47XX_BOARD_ASUS_RTN66U, "Asus RT-N66U"}, "RT-N66U",},
++	{{BCM47XX_BOARD_ASUS_WL300G, "Asus WL300G"}, "WL300g",},
++	{{BCM47XX_BOARD_ASUS_WLHDD, "Asus WLHDD"}, "WLHDD",},
 +	{ {0}, 0},
 +};
 +
@@ -246,7 +251,7 @@
 +EXPORT_SYMBOL(bcm47xx_board_get_name);
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,97 @@
 +#ifndef __BCM47XX_BOARD_H
 +#define __BCM47XX_BOARD_H
 +
@@ -263,12 +268,17 @@
 +	BCM47XX_BOARD_ASUS_RTN16,
 +	BCM47XX_BOARD_ASUS_RTN53,
 +	BCM47XX_BOARD_ASUS_RTN66U,
++	BCM47XX_BOARD_ASUS_WL300G,
++	BCM47XX_BOARD_ASUS_WL320GE,
 +	BCM47XX_BOARD_ASUS_WL330GE,
++	BCM47XX_BOARD_ASUS_WL500GD,
 +	BCM47XX_BOARD_ASUS_WL500GPV1,
 +	BCM47XX_BOARD_ASUS_WL500GPV2,
++	BCM47XX_BOARD_ASUS_WL500W,
 +	BCM47XX_BOARD_ASUS_WL520GC,
 +	BCM47XX_BOARD_ASUS_WL520GU,
 +	BCM47XX_BOARD_ASUS_WL700GE,
++	BCM47XX_BOARD_ASUS_WLHDD,
 +
 +	BCM47XX_BOARD_BELKIN_F7D4301,
 +

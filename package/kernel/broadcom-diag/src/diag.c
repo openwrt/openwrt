@@ -1201,15 +1201,6 @@ static struct platform_t __init *platform_detect_legacy(void)
 				return &platforms[TM2300V2]; /* Dell TrueMobile 2300 v2 */
 		}
 
-		if (!strcmp(boardnum, "45")) { /* ASUS */
-			if (!strcmp(boardtype,"0x0472"))
-				return &platforms[WL500W];
-			else if (!strcmp(boardtype,"0x467"))
-				return &platforms[WL320GE];
-			else
-				return &platforms[WL500GD];
-		}
-
 		if (!strcmp(boardnum, "10496"))
 			return &platforms[USR5461];
 
@@ -1248,15 +1239,6 @@ static struct platform_t __init *platform_detect_legacy(void)
 				return &platforms[MN700];
 			else
 				return &platforms[WL500G];
-		}
-		if (startswith(getvar("hardware_version"), "WL300-")) {
-			/* Either WL-300g or WL-HDD, do more extensive checks */
-			if ((simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 0) &&
-				(simple_strtoul(getvar("et1phyaddr"), NULL, 0) == 1))
-				return &platforms[WLHDD];
-			if ((simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 0) &&
-				(simple_strtoul(getvar("et1phyaddr"), NULL, 0) == 10))
-				return &platforms[WL300G];
 		}
 		/* Sitecom WL-105b */
 		if (startswith(boardnum, "2") && simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 1)
@@ -1329,18 +1311,28 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[RTN16];
 	case BCM47XX_BOARD_ASUS_RTN66U:
 		return &platforms[RTN66U];
+	case BCM47XX_BOARD_ASUS_WL300G:
+		return &platforms[WL300G];
+	case BCM47XX_BOARD_ASUS_WL320GE:
+		return &platforms[WL320GE];
 	case BCM47XX_BOARD_ASUS_WL330GE:
 		return &platforms[WL330GE];
+	case BCM47XX_BOARD_ASUS_WL500GD:
+		return &platforms[WL500GD];
 	case BCM47XX_BOARD_ASUS_WL500GPV1:
 		return &platforms[WL500GP];
 	case BCM47XX_BOARD_ASUS_WL500GPV2:
 		return &platforms[WL500GPV2];
+	case BCM47XX_BOARD_ASUS_WL500W:
+		return &platforms[WL500W];
 	case BCM47XX_BOARD_ASUS_WL520GC:
 		return &platforms[WL520GC];
 	case BCM47XX_BOARD_ASUS_WL520GU:
 		return &platforms[WL520GU];
 	case BCM47XX_BOARD_ASUS_WL700GE:
 		return &platforms[WL700GE];
+	case BCM47XX_BOARD_ASUS_WLHDD:
+		return &platforms[WLHDD];
 	case BCM47XX_BOARD_BELKIN_F7D4301:
 		return &platforms[BELKIN_F7D4301];
 	case BCM47XX_BOARD_BUFFALO_WBR2_G54:
