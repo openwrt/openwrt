@@ -7,7 +7,7 @@
 
 define Profile/DIR505A1
 	NAME:=D-Link DIR-505 rev. A1
-	PACKAGES:=
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/DIR505A1/Description
