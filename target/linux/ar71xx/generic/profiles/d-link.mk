@@ -5,6 +5,17 @@
 # See /LICENSE for more information.
 #
 
+define Profile/DIR505A1
+	NAME:=D-Link DIR-505 rev. A1
+	PACKAGES:=
+endef
+
+define Profile/DIR505A1/Description
+	Package set optimized for the D-Link DIR-505 rev. A1.
+endef
+
+$(eval $(call Profile,DIR505A1))
+
 define Profile/DIR600A1
 	NAME:=D-Link DIR-600 rev. A1
 	PACKAGES:=
