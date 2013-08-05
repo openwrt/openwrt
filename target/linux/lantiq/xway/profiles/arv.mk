@@ -116,7 +116,7 @@ $(eval $(call Profile,ARV752DPW))
 
 define Profile/ARV752DPW22
   NAME:=Easybox 803 - ARV752DPW22
-  PACKAGES:=kmod-usb2 kmod-usb-uhci kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  PACKAGES:=kmod-usb2-pci kmod-usb-uhci kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
