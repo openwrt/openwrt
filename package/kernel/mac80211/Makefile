@@ -1356,10 +1356,12 @@ config-$(call config_package,rt61-pci) += RT61PCI
 config-$(call config_package,rt73-usb) += RT73USB
 
 config-$(call config_package,rt2800-lib) += RT2800_LIB
-config-y += RT2800PCI_RT33XX RT2800PCI_RT35XX RT2800PCI_RT53XX RT2800PCI_RT3290
 
 config-$(call config_package,rt2800-pci) += RT2800PCI
+config-y += RT2800PCI_RT33XX RT2800PCI_RT35XX RT2800PCI_RT53XX RT2800PCI_RT3290
+
 config-$(call config_package,rt2800-usb) += RT2800USB
+config-y += RT2800USB_RT33XX RT2800USB_RT35XX RT2800USB_RT53XX RT2800USB_RT55XX
 
 config-$(call config_package,iwl-legacy) += IWLEGACY
 config-$(call config_package,iwl3945) += IWL3945
