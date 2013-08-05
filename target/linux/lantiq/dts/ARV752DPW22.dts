@@ -31,19 +31,19 @@
 
 				partition@0 {
 					label = "uboot";
-					reg = <0x00000 0x10000>;
+					reg = <0x00000 0x30000>;
 					read-only;
 				};
 
 				partition@10000 {
 					label = "uboot_env";
-					reg = <0x10000 0x10000>;
+					reg = <0x30000 0x10000>;
 					read-only;
 				};
 
 				partition@20000 {
 					label = "linux";
-					reg = <0x20000 0x7d0000>;
+					reg = <0x40000 0x7b0000>;
 				};
 
 				partition@7f0000 {
@@ -86,25 +86,31 @@
 					lantiq,output = <0>;
 				};
 				pci_in {
-					lantiq,groups = "req1", "req2";
+					lantiq,groups = "req1";
 					lantiq,function = "pci";
-					lantiq,open-drain = <1>;
 					lantiq,pull = <2>;
 					lantiq,output = <0>;
 				};
 				pci_out {
 					lantiq,groups = "gnt1";
 					lantiq,function = "pci";
+					lantiq,open-drain = <1>;
 					lantiq,output = <1>;
 				};
 				pci_rst {
 					lantiq,pins = "io21";
-					lantiq,pull = <2>;
+					lantiq,open-drain = <1>;
 					lantiq,output = <1>;
 				};
 				leds {
 					lantiq,pins = "io3", "io5", "io6", "io8";
+					lantiq,open-drain = <1>;
 					lantiq,output = <1>;
+				};
+				buttons {
+					lantiq,pins = "io11", "io12", "io13", "io28";
+					lantiq,pull = <2>;
+					lantiq,output = <0>;
 				};
 			};
 		};
@@ -115,7 +121,7 @@
 		};
 
 		etop@E180000 {
-			phy-mode = "rmii";
+			phy-mode = "mii";
 		};
 
 		pci@E105400 {
