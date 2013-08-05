@@ -57,6 +57,10 @@ rb-750)
 	ucidef_set_led_switch "port5" "port5" "rb750:green:port5" "switch0" "0x02"
 	;;
 
+dir-505-a1)
+	ucidef_set_led_netdev "lan" "LAN" "d-link:green:power" "eth1"
+	;;
+
 dir-600-a1|\
 dir-615-e4)
 	ucidef_set_led_netdev "wan" "WAN" "d-link:green:wan" "eth1"

@@ -243,6 +243,9 @@ ar71xx_board_detect() {
 	*"DB120 reference board")
 		name="db120"
 		;;
+	*"DIR-505 rev. A1")
+		name="dir-505-a1"
+		;;
 	*"DIR-600 rev. A1")
 		name="dir-600-a1"
 		;;
@@ -395,6 +398,9 @@ ar71xx_board_detect() {
 		;;
 	*TL-WR2543N*)
 		name="tl-wr2543n"
+		;;
+	*DIR-505-A1)
+		name="dir-505-a1"
 		;;
 	*"DIR-615 rev. C1")
 		name="dir-615-c1"
