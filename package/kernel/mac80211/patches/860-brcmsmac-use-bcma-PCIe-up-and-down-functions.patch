@@ -1,0 +1,84 @@
+brcmsmac: use bcma PCIe up and down functions
+
+replace the calls to bcma_core_pci_extend_L1timer() by calls to the
+newly introduced bcma_core_pci_ip() and bcma_core_pci_down()
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+
+--- a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
+@@ -679,27 +679,6 @@ bool ai_clkctl_cc(struct si_pub *sih, en
+ 	return mode == BCMA_CLKMODE_FAST;
+ }
+ 
+-void ai_pci_up(struct si_pub *sih)
+-{
+-	struct si_info *sii;
+-
+-	sii = container_of(sih, struct si_info, pub);
+-
+-	if (sii->icbus->hosttype == BCMA_HOSTTYPE_PCI)
+-		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci[0], true);
+-}
+-
+-/* Unconfigure and/or apply various WARs when going down */
+-void ai_pci_down(struct si_pub *sih)
+-{
+-	struct si_info *sii;
+-
+-	sii = container_of(sih, struct si_info, pub);
+-
+-	if (sii->icbus->hosttype == BCMA_HOSTTYPE_PCI)
+-		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci[0], false);
+-}
+-
+ /* Enable BT-COEX & Ex-PA for 4313 */
+ void ai_epa_4313war(struct si_pub *sih)
+ {
+--- a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.h
++++ b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.h
+@@ -183,9 +183,6 @@ extern u16 ai_clkctl_fast_pwrup_delay(st
+ extern bool ai_clkctl_cc(struct si_pub *sih, enum bcma_clkmode mode);
+ extern bool ai_deviceremoved(struct si_pub *sih);
+ 
+-extern void ai_pci_down(struct si_pub *sih);
+-extern void ai_pci_up(struct si_pub *sih);
+-
+ /* Enable Ex-PA for 4313 */
+ extern void ai_epa_4313war(struct si_pub *sih);
+ 
+--- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
+@@ -4667,7 +4667,7 @@ static int brcms_b_attach(struct brcms_c
+ 	brcms_c_coredisable(wlc_hw);
+ 
+ 	/* Match driver "down" state */
+-	ai_pci_down(wlc_hw->sih);
++	bcma_core_pci_down(wlc_hw->d11core->bus);
+ 
+ 	/* turn off pll and xtal to match driver "down" state */
+ 	brcms_b_xtal(wlc_hw, OFF);
+@@ -5010,12 +5010,12 @@ static int brcms_b_up_prep(struct brcms_
+ 	 */
+ 	if (brcms_b_radio_read_hwdisabled(wlc_hw)) {
+ 		/* put SB PCI in down state again */
+-		ai_pci_down(wlc_hw->sih);
++		bcma_core_pci_down(wlc_hw->d11core->bus);
+ 		brcms_b_xtal(wlc_hw, OFF);
+ 		return -ENOMEDIUM;
+ 	}
+ 
+-	ai_pci_up(wlc_hw->sih);
++	bcma_core_pci_up(wlc_hw->d11core->bus);
+ 
+ 	/* reset the d11 core */
+ 	brcms_b_corereset(wlc_hw, BRCMS_USE_COREFLAGS);
+@@ -5212,7 +5212,7 @@ static int brcms_b_down_finish(struct br
+ 
+ 		/* turn off primary xtal and pll */
+ 		if (!wlc_hw->noreset) {
+-			ai_pci_down(wlc_hw->sih);
++			bcma_core_pci_down(wlc_hw->d11core->bus);
+ 			brcms_b_xtal(wlc_hw, OFF);
+ 		}
+ 	}
