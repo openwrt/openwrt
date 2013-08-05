@@ -49,7 +49,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 --- /dev/null
 +++ b/arch/mips/ralink/pinmux.c
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,92 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -83,7 +83,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	const __be32 *wdt;
 +	struct device_node *np;
 +	struct property *prop;
-+	const char *uart, *pin;
++	const char *uart, *pci, *pin;
 +	u32 mode = 0;
 +	int m;
 +
@@ -124,6 +124,21 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	wdt = of_get_property(np, "ralink,wdtmux", NULL);
 +	if (wdt && *wdt && rt_gpio_pinmux.wdt_reset)
 +		rt_gpio_pinmux.wdt_reset();
++
++	pci = NULL;
++	if (rt_gpio_pinmux.pci)
++		of_property_read_string(np, "ralink,pcimux", &pci);
++
++	if (pci) {
++		mode &= ~(rt_gpio_pinmux.pci_mask << rt_gpio_pinmux.pci_shift);
++		if (ralink_mux_mask(pci, rt_gpio_pinmux.pci, &m)) {
++			mode |= rt_gpio_pinmux.pci_mask << rt_gpio_pinmux.pci_shift;
++			pr_debug("pinmux: failed to load pcimux \"%s\"\n", pci);
++		} else {
++			mode |= m << rt_gpio_pinmux.pci_shift;
++			pr_debug("pinmux: registered pcimux \"%s\"\n", pci);
++		}
++	}
 +
 +	rt_sysc_w32(mode, SYSC_REG_GPIO_MODE);
 +}
