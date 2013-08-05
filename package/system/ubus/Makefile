@@ -21,33 +21,29 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 define Package/ubus
-  SECTION:=luci2
-  CATEGORY:=LuCI2
-  SUBMENU:=System
+  SECTION:=base
+  CATEGORY:=Base System
   DEPENDS:=+libubus +libblobmsg-json +ubusd
   TITLE:=OpenWrt RPC client utility
 endef
 
 define Package/ubusd
-  SECTION:=luci2
-  CATEGORY:=LuCI2
-  SUBMENU:=System
+  SECTION:=base
+  CATEGORY:=Base System
   TITLE:=OpenWrt RPC daemon
   DEPENDS:=+libubox
 endef
 
 define Package/libubus
-  SECTION:=luci2
-  CATEGORY:=LuCI2
-  SUBMENU:=Libraries
+  SECTION:=libs
+  CATEGORY:=Libraries
   DEPENDS:=+libubox
   TITLE:=OpenWrt RPC client library
 endef
 
 define Package/libubus-lua
-  SECTION:=luci2
-  CATEGORY:=LuCI2
-  SUBMENU:=Libraries
+  SECTION:=libs
+  CATEGORY:=Libraries
   DEPENDS:=+libubus +liblua
   TITLE:=Lua binding for the OpenWrt RPC client
 endef
