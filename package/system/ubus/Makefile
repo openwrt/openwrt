@@ -22,14 +22,14 @@ include $(INCLUDE_DIR)/cmake.mk
 
 define Package/ubus
   SECTION:=base
-  CATEGORY:=Base System
+  CATEGORY:=Base system
   DEPENDS:=+libubus +libblobmsg-json +ubusd
   TITLE:=OpenWrt RPC client utility
 endef
 
 define Package/ubusd
   SECTION:=base
-  CATEGORY:=Base System
+  CATEGORY:=Base system
   TITLE:=OpenWrt RPC daemon
   DEPENDS:=+libubox
 endef
