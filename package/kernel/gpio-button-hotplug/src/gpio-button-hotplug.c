@@ -298,7 +298,9 @@ static void gpio_keys_polled_check_state(struct gpio_keys_button *button,
 			return;
 		}
 
-		button_hotplug_event(bdata, type, button->code, state);
+		if (bdata->last_state != -1)
+			button_hotplug_event(bdata, type, button->code, state);
+
 		bdata->last_state = state;
 	}
 
@@ -508,7 +510,7 @@ static int gpio_keys_polled_probe(struct platform_device *pdev)
 		}
 
 		bdata->can_sleep = gpio_cansleep(gpio);
-		bdata->last_state = gpio_button_get_value(button, bdata);
+		bdata->last_state = -1;
 		bdata->threshold = DIV_ROUND_UP(button->debounce_interval,
 						pdata->poll_interval);
 	}
