@@ -61,14 +61,14 @@ static struct gpio_keys_button tl_wa901nd_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.debounce_interval = TL_WA901ND_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= TL_WA901ND_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "qss",
 		.type		= EV_KEY,
-		.code		= BTN_1,
+		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = TL_WA901ND_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= TL_WA901ND_GPIO_BTN_QSS,
 		.active_low	= 1,
