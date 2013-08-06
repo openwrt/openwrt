@@ -10,9 +10,11 @@ Subject: [PATCH 19/25] owrt mtd split
  drivers/mtd/mtdpart.c                              |  173 +++++++++++++++++++-
  4 files changed, 184 insertions(+), 1 deletions(-)
 
---- a/drivers/mtd/Kconfig
-+++ b/drivers/mtd/Kconfig
-@@ -31,6 +31,10 @@ config MTD_ROOTFS_SPLIT
+Index: linux-3.8.13/drivers/mtd/Kconfig
+===================================================================
+--- linux-3.8.13.orig/drivers/mtd/Kconfig	2013-08-04 19:55:18.499988719 +0200
++++ linux-3.8.13/drivers/mtd/Kconfig	2013-08-04 19:55:22.599988819 +0200
+@@ -31,6 +31,10 @@
  	bool "Automatically split 'rootfs' partition for squashfs"
  	default y
  
@@ -23,9 +25,11 @@ Subject: [PATCH 19/25] owrt mtd split
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	---help---
---- a/drivers/mtd/mtdpart.c
-+++ b/drivers/mtd/mtdpart.c
-@@ -833,6 +833,168 @@ static int refresh_rootfs_split(struct m
+Index: linux-3.8.13/drivers/mtd/mtdpart.c
+===================================================================
+--- linux-3.8.13.orig/drivers/mtd/mtdpart.c	2013-08-04 19:55:18.791988726 +0200
++++ linux-3.8.13/drivers/mtd/mtdpart.c	2013-08-06 13:39:13.212319144 +0200
+@@ -833,6 +833,191 @@
  }
  #endif /* CONFIG_MTD_ROOTFS_SPLIT */
  
@@ -51,6 +55,29 @@ Subject: [PATCH 19/25] owrt mtd split
 +		return 0;
 +
 +	return temp + 0x40;
++}
++
++static unsigned long find_tplink_size(struct mtd_info *mtd,
++				      unsigned long offset)
++{
++#define TPLINK_MAGIC	0x00000002
++	unsigned long magic = 0;
++	unsigned long temp;
++	size_t len;
++	int ret;
++
++	ret = mtd_read(mtd, offset, 4, &len, (void *)&magic);
++	if (ret || len != sizeof(magic))
++		return 0;
++
++	if (le32_to_cpu(magic) != TPLINK_MAGIC)
++		return 0;
++
++	ret = mtd_read(mtd, offset + 0x78, 4, &len, (void *)&temp);
++	if (ret || len != sizeof(temp))
++		return 0;
++
++	return temp + 0x200;
 +}
 +
 +static unsigned long find_eva_size(struct mtd_info *mtd,
@@ -156,15 +183,15 @@ Subject: [PATCH 19/25] owrt mtd split
 +	};
 +
 +	split_partitions[0].size = find_uimage_size(mtd, part->offset);
-+	if (!split_partitions[0].size) {
++	if (!split_partitions[0].size)
 +		split_partitions[0].size = find_eva_size(mtd, part->offset);
-+		if (!split_partitions[0].size) {
-+			split_partitions[0].size = find_brnimage_size(mtd, part->offset);
-+			if (!split_partitions[0].size) {
-+				printk(KERN_NOTICE "no uImage or brnImage or eva found in linux partition\n");
-+				return -1;
-+			}
-+		}
++	if (!split_partitions[0].size)
++		split_partitions[0].size = find_brnimage_size(mtd, part->offset);
++	if (!split_partitions[0].size)
++		split_partitions[0].size = find_tplink_size(mtd, part->offset);
++	if (!split_partitions[0].size) {
++		printk(KERN_NOTICE "no uImage or brnImage or eva found in linux partition\n");
++		return -1;
 +	}
 +
 +	if (detect_eva_squashfs_partition(mtd,
@@ -194,7 +221,7 @@ Subject: [PATCH 19/25] owrt mtd split
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -849,7 +1011,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -849,7 +1034,7 @@
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
  	int i;
@@ -203,7 +230,7 @@ Subject: [PATCH 19/25] owrt mtd split
  	int ret;
  #endif
  
-@@ -866,6 +1028,15 @@ int add_mtd_partitions(struct mtd_info *
+@@ -866,6 +1051,15 @@
  
  		add_mtd_device(&slave->mtd);
  
