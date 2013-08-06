@@ -50,7 +50,7 @@ define MkImageLzma
 endef
 
 define TPLinkImageLzma
-	mktplinkfw -c -B $(2) -W 2 -F 8Mltq -s \
+	mktplinkfw2 -c -B $(2) -s \
 		-k $(KDIR)/vmlinux$(3)-$(1).lzma -o $(KDIR)/uImage-$(1)$(3)
 endef
 
@@ -80,6 +80,12 @@ define Image/Build/squashfs
 	cat $(KDIR)/uImage-$(2) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
 	$(if $(3),$(call MkBrnImage,$(3),$(4),$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-brnImage,$(2),$(1),$(5)))
+endef
+
+define Image/BuildTPLink/squashfs
+	mktplinkfw2 -B $(3) -s -a 0x4 -j \
+		-k $(KDIR)/vmlinux-$(2).lzma -r $(KDIR)/root.$(1) \
+		-o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-sysupgrade.image
 endef
 
 define Image/BuildEVA/squashfs
@@ -264,7 +270,7 @@ Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
 Image/BuildKernel/Profile/TDW8970=$(call Image/BuildKernelTPLink/Template,TDW8970,TD-W8970v1,$(1))
-Image/Build/Profile/TDW8970=$(call Image/Build/$(1),$(1),TDW8970)
+Image/Build/Profile/TDW8970=$(call Image/BuildTPLink/$(1),$(1),TDW8970,TD-W8970v1)
 
 endif
 
