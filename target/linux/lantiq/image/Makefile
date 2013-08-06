@@ -49,6 +49,11 @@ define MkImageLzma
 		-d $(KDIR)/vmlinux$(2)-$(1).lzma $(KDIR)/uImage-$(1)$(2)
 endef
 
+define TPLinkImageLzma
+	mktplinkfw -c -B $(2) -W 2 -F 8Mltq -s \
+		-k $(KDIR)/vmlinux$(3)-$(1).lzma -o $(KDIR)/uImage-$(1)$(3)
+endef
+
 define MkImageEVA
 	lzma2eva 0x80002000 0x80002000 $(KDIR)/vmlinux-$(1).lzma $(KDIR)/$(1).eva.prealign
 	dd if=$(KDIR)/$(1).eva.prealign of=$(KDIR)/$(1).eva bs=64k conv=sync
@@ -123,6 +128,18 @@ define Image/BuildKernelLoader/Template
 	$(call Image/BuildLoader/Template,$(1))
 	$(CP) $(KDIR)/loader-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-loader
 	$(CP) $(KDIR)/vmlinux-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call PatchKernelLzma,$(1),-initramfs)
+	$(call Image/BuildLoader/Template,$(1),-initramfs)
+	$(CP) $(KDIR)/loader-initramfs-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs-loader
+	$(CP) $(KDIR)/vmlinux-initramfs-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs
+endif
+endef
+
+define Image/BuildKernelTPLink/Template
+	$(call PatchKernelLzma,$(1))
+	$(call TPLinkImageLzma,$(1),$(2))
+	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call PatchKernelLzma,$(1),-initramfs)
 	$(call Image/BuildLoader/Template,$(1),-initramfs)
@@ -246,8 +263,8 @@ Image/Build/Profile/FRITZ3370=$(call Image/BuildNANDEVA/$(1),$(1),FRITZ3370)
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
-Image/BuildKernel/Profile/TDW8970=$(call Image/BuildKernelLoader/Template,TDW8970,$(1))
-Image/Build/Profile/TDW8970=$(call Image/BuildLoader/$(1),$(1),TDW8970)
+Image/BuildKernel/Profile/TDW8970=$(call Image/BuildKernelTPLink/Template,TDW8970,TD-W8970v1,$(1))
+Image/Build/Profile/TDW8970=$(call Image/Build/$(1),$(1),TDW8970)
 
 endif
 
