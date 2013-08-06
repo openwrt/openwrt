@@ -4,8 +4,10 @@ platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$(get_magic_word "$1")" in
-		# .trx files
+		# uImage
 		2705) return 0;;
+		# tplink
+		0200) return 0;;
 		*)
 			echo "Invalid image type"
 			return 1
