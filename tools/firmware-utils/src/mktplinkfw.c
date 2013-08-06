@@ -30,6 +30,7 @@
 #define ALIGN(x,a) ({ typeof(a) __a = (a); (((x) + __a - 1) & ~(__a - 1)); })
 
 #define HEADER_VERSION_V1	0x01000000
+#define HEADER_VERSION_V2	0x02000000
 #define HWID_TL_MR10U_V1	0x00100101
 #define HWID_TL_MR3020_V1	0x30200001
 #define HWID_TL_MR3220_V1	0x32200001
@@ -95,6 +96,31 @@ struct fw_header {
 	uint8_t		pad[354];
 } __attribute__ ((packed));
 
+struct fw_header_v2 {
+	uint32_t	version;	/* header version */
+	char		fw_version[48];
+	uint32_t	hw_id;		/* hardware id */
+	uint32_t	hw_rev;		/* hardware revision */
+	uint32_t	unk1;
+	uint8_t		md5sum1[MD5SUM_LEN];
+	uint32_t	unk2;
+	uint8_t		md5sum2[MD5SUM_LEN];
+	uint32_t	unk3;
+	uint32_t	kernel_la;	/* kernel load address */
+	uint32_t	kernel_ep;	/* kernel entry point */
+	uint32_t	fw_length;	/* total length of the firmware */
+	uint32_t	kernel_ofs;	/* kernel data offset */
+	uint32_t	kernel_len;	/* kernel data length */
+	uint32_t	rootfs_ofs;	/* rootfs data offset */
+	uint32_t	rootfs_len;	/* rootfs data length */
+	uint32_t	boot_ofs;	/* bootloader data offset */
+	uint32_t	boot_len;	/* bootloader data length */
+	uint16_t	ver_hi;
+	uint16_t	ver_mid;
+	uint16_t	ver_lo;
+	uint8_t		pad[366];
+} __attribute__ ((packed));
+
 struct flash_layout {
 	char		*id;
 	uint32_t	fw_max_len;
@@ -108,6 +134,7 @@ struct board_info {
 	uint32_t	hw_id;
 	uint32_t	hw_rev;
 	char		*layout_id;
+	uint32_t	hdr_version
 };
 
 /*
@@ -663,6 +690,40 @@ static void fill_header(char *buf, int len)
 	get_md5(buf, len, hdr->md5sum1);
 }
 
+static void fill_header_v2(char *buf, int len)
+{
+	struct fw_header_v2 *hdr = (struct fw_header_v2 *)buf;
+
+	memset(hdr, 0, sizeof(struct fw_header_v2));
+
+	hdr->version = htonl(HEADER_VERSION_V2);
+	memset(hdr->fw_version, 0xff, sizeof(hdr->fw_version));
+	strncpy(hdr->fw_version, version, strlen(version));
+	hdr->hw_id = htonl(hw_id);
+	hdr->hw_rev = htonl(hw_rev);
+
+	if (boot_info.file_size == 0)
+		memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
+	else
+		memcpy(hdr->md5sum1, md5salt_boot, sizeof(hdr->md5sum1));
+
+	hdr->kernel_la = htonl(kernel_la);
+	hdr->kernel_ep = htonl(kernel_ep);
+	hdr->fw_length = htonl(layout->fw_max_len);
+	hdr->kernel_ofs = htonl(sizeof(struct fw_header_v2));
+	hdr->kernel_len = htonl(kernel_len);
+	if (!combined) {
+		hdr->rootfs_ofs = htonl(rootfs_ofs);
+		hdr->rootfs_len = htonl(rootfs_info.file_size);
+	}
+
+	hdr->ver_hi = htons(fw_ver_hi);
+	hdr->ver_mid = htons(fw_ver_mid);
+	hdr->ver_lo = htons(fw_ver_lo);
+
+	get_md5(buf, len, hdr->md5sum1);
+}
+
 static int pad_jffs2(char *buf, int currlen)
 {
 	int len;
@@ -736,6 +797,11 @@ static int build_fw(void)
 	char *p;
 	int ret = EXIT_FAILURE;
 	int writelen = 0;
+	int hdr_len;
+	if (board->hdr_version == HEADER_VERSION_V2)
+		hdr_len = sizeof(struct fw_header_v2);
+	else
+		hdr_len = sizeof(struct fw_header);
 
 	buflen = layout->fw_max_len;
 
@@ -746,12 +812,12 @@ static int build_fw(void)
 	}
 
 	memset(buf, 0xff, buflen);
-	p = buf + sizeof(struct fw_header);
+	p = buf + hdr_len;
 	ret = read_to_buf(&kernel_info, p);
 	if (ret)
 		goto out_free_buf;
 
-	writelen = sizeof(struct fw_header) + kernel_len;
+	writelen = hdr_len + kernel_len;
 
 	if (!combined) {
 		if (rootfs_align)
@@ -775,7 +841,10 @@ static int build_fw(void)
 	if (!strip_padding)
 		writelen = buflen;
 
-	fill_header(buf, writelen);
+	if (board->hdr_version == HEADER_VERSION_V2)
+		fill_header_v2(buf, writelen);
+	else
+		fill_header(buf, writelen);
 	ret = write_fw(buf, writelen);
 	if (ret)
 		goto out_free_buf;
