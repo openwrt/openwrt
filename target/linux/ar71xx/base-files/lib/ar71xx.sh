@@ -399,9 +399,6 @@ ar71xx_board_detect() {
 	*TL-WR2543N*)
 		name="tl-wr2543n"
 		;;
-	*DIR-505-A1)
-		name="dir-505-a1"
-		;;
 	*"DIR-615 rev. C1")
 		name="dir-615-c1"
 		;;
