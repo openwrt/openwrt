@@ -62,6 +62,7 @@
 #define HWID_TL_WR1043ND_V1	0x10430001
 #define HWID_TL_WR1041N_V2	0x10410002
 #define HWID_TL_WR2543N_V1	0x25430001
+#define HWID_TD_W8970_V1	0x89700001
 
 #define MD5SUM_LEN	16
 
@@ -208,6 +209,12 @@ static struct flash_layout layouts[] = {
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0x100000,
+	}, {
+		.id		= "8Mltq",
+		.fw_max_len	= 0x7a0000,
+		.kernel_la	= 0x80002000,
+		.kernel_ep	= 0x80002000,
+		.rootfs_ofs	= 0x140000,
 	}, {
 		.id		= "16Mppc",
 		.fw_max_len	= 0xf80000,
@@ -375,6 +382,12 @@ static struct board_info boards[] = {
 		.hw_id		= HWID_TL_WR720N_V3,
 		.hw_rev		= 1,
 		.layout_id	= "4Mlzma",
+	}, {
+		.id		= "TD-W8970v1",
+		.hw_id		= HWID_TD_W8970_V1,
+		.hw_rev		= 1,
+		.layout_id	= "8Mltq",
+		.hdr_version	= HEADER_VERSION_V2
 	}, {
 		/* terminating entry */
 	}
