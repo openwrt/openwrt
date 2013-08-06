@@ -811,7 +811,7 @@ static int build_fw(void)
 	int ret = EXIT_FAILURE;
 	int writelen = 0;
 	int hdr_len;
-	if (board->hdr_version == HEADER_VERSION_V2)
+	if (board && board->hdr_version == HEADER_VERSION_V2)
 		hdr_len = sizeof(struct fw_header_v2);
 	else
 		hdr_len = sizeof(struct fw_header);
@@ -854,7 +854,7 @@ static int build_fw(void)
 	if (!strip_padding)
 		writelen = buflen;
 
-	if (board->hdr_version == HEADER_VERSION_V2)
+	if (board && board->hdr_version == HEADER_VERSION_V2)
 		fill_header_v2(buf, writelen);
 	else
 		fill_header(buf, writelen);
