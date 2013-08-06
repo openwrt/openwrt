@@ -6,7 +6,7 @@
 	model = "TDW8970 - TP-LINK TD-W8970";
 
 	chosen {
-		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit rootfstype=jffs2";
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 	};
 
 	memory@0 {
@@ -168,7 +168,7 @@
 
 			partition@20000 {
 				reg = <0x20000 0x7a0000>;
-				label = "firmware";
+				label = "linux";
 			};
 
 			partition@7c0000 {
