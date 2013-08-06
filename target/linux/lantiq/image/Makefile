@@ -229,6 +229,9 @@ Image/Build/Profile/WBMRB=$(call Image/Build/$(1),$(1),WBMR)
 Image/BuildKernel/Profile/FRITZ7320=$(call Image/BuildKernelEVA/Template,FRITZ7320)
 Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
 
+Image/BuildKernel/Profile/GR7000=$(call Image/BuildKernel/Template,GR7000)
+Image/Build/Profile/GR7000=$(call Image/Build/$(1),$(1),GR7000)
+
 
 # VR9
 Image/BuildKernel/Profile/EASY80920NAND=$(call Image/BuildKernel/Template,EASY80920NAND)
