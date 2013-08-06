@@ -110,6 +110,7 @@ EOF
 mac80211_hostapd_setup_bss() {
 	local phy="$1"
 	local vif="$2"
+	local staidx="$3"
 
 	hostapd_cfg=
 	cfgfile="/var/run/hostapd-$phy.conf"
@@ -131,6 +132,8 @@ mac80211_hostapd_setup_bss() {
 
 	config_get_bool wds "$vif" wds 0
 	[ "$wds" -gt 0 ] && append hostapd_cfg "wds_sta=1" "$N"
+
+	[ "$staidx" -gt 0 ] && append hostapd_cfg "start_disabled=1" "$N"
 
 	local macaddr hidden maxassoc wmm
 	config_get macaddr "$vif" macaddr
@@ -318,6 +321,7 @@ enable_mac80211() {
 	local i=0
 	local macidx=0
 	local apidx=0
+	local staidx=0
 	fixed=""
 	local hostapd_ctrl=""
 
@@ -383,6 +387,7 @@ enable_mac80211() {
 			;;
 			sta)
 				local wdsflag
+				staidx="$(($staidx + 1))"
 				config_get_bool wds "$vif" wds 0
 				[ "$wds" -gt 0 ] && wdsflag="4addr on"
 				iw phy "$phy" interface add "$ifname" type managed $wdsflag
@@ -433,7 +438,7 @@ enable_mac80211() {
 		config_get mode "$vif" mode
 		case "$mode" in
 			ap)
-				mac80211_hostapd_setup_bss "$phy" "$vif"
+				mac80211_hostapd_setup_bss "$phy" "$vif" "$staidx"
 				start_hostapd=1
 			;;
 			mesh)
