@@ -166,7 +166,7 @@
  			TX_STAT_INC(txq->axq_qnum, a_queued_hw);
  
 -			if (skb_queue_empty(&tid->buf_q))
-+			if (ath_tid_has_buffered(tid))
++			if (!ath_tid_has_buffered(tid))
  				ieee80211_sta_set_buffered(an->sta, i, false);
  		}
  		ath_txq_unlock_complete(sc, tid->ac->txq);
