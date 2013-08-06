@@ -47,13 +47,13 @@
  	dynamic_if = drv->ifindex == drv->global->if_add_ifindex;
  	dynamic_if = dynamic_if || drv->global->if_add_wdevid_set;
 -	drv->global->if_add_wdevid_set = 0;
- 
+-
 -	if (wpa_driver_nl80211_capa(drv))
 -		return -1;
 -
 -	wpa_printf(MSG_DEBUG, "nl80211: interface %s in phy %s",
 -		   bss->ifname, drv->phyname);
--
+ 
 -#ifndef HOSTAPD
  	if (dynamic_if)
  		nlmode = nl80211_get_ifmode(bss);

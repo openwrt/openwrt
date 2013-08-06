@@ -488,7 +488,7 @@
  	iapp_deinit(hapd->iapp);
  	hapd->iapp = NULL;
  	accounting_deinit(hapd);
-@@ -829,6 +830,8 @@ static int hostapd_setup_bss(struct host
+@@ -830,6 +831,8 @@ static int hostapd_setup_bss(struct host
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -497,7 +497,7 @@
  	return 0;
  }
  
-@@ -979,6 +982,7 @@ int hostapd_setup_interface_complete(str
+@@ -980,6 +983,7 @@ int hostapd_setup_interface_complete(str
  	if (err)
  		goto error;
  
@@ -505,7 +505,7 @@
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (hapd->iconf->channel) {
  		iface->freq = hostapd_hw_get_freq(hapd, hapd->iconf->channel);
-@@ -1071,6 +1075,7 @@ int hostapd_setup_interface_complete(str
+@@ -1072,6 +1076,7 @@ int hostapd_setup_interface_complete(str
  
  error:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -513,7 +513,7 @@
  	eloop_terminate();
  	return -1;
  }
-@@ -1169,6 +1174,8 @@ void hostapd_interface_deinit_free(struc
+@@ -1170,6 +1175,8 @@ void hostapd_interface_deinit_free(struc
  	void *drv_priv;
  	if (iface == NULL)
  		return;
