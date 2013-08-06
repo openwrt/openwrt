@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2488,6 +2488,10 @@ static int hostapd_config_fill(struct ho
+@@ -2490,6 +2490,10 @@ static int hostapd_config_fill(struct ho
  					   "ht_capab", line);
  				errors++;
  			}
@@ -13,7 +13,7 @@
  #endif /* CONFIG_IEEE80211N */
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -519,6 +519,7 @@ struct hostapd_config {
+@@ -520,6 +520,7 @@ struct hostapd_config {
  	int ieee80211n;
  	int secondary_channel;
  	int require_ht;
