@@ -73,10 +73,16 @@ VG3503J)
 	ucidef_set_interface_lan 'eth0'
 	uci set network.lan.type='none'
 	;;
+
 DGN3500*)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "3 2 1 0 5t"
+	;;
+
+GR7000)
+	ucidef_set_interface_wan "eth0"
+	uci set network.lan.ifname=''
 	;;
 esac
 
