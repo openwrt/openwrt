@@ -40,6 +40,7 @@ define Host/Compile
 	$(call cc,nand_ecc)
 	$(call cc,mkplanexfw sha1)
 	$(call cc,mktplinkfw md5)
+	$(call cc,mktplinkfw2 md5)
 	$(call cc,pc1crypt)
 	$(call cc,osbridge-crc)
 	$(call cc,wrt400n cyg_crc32)
