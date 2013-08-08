@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2490,6 +2490,10 @@ static int hostapd_config_fill(struct ho
+@@ -2487,6 +2487,10 @@ static int hostapd_config_fill(struct ho
  					   "ht_capab", line);
  				errors++;
  			}
@@ -13,7 +13,7 @@
  #endif /* CONFIG_IEEE80211N */
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -520,6 +520,7 @@ struct hostapd_config {
+@@ -519,6 +519,7 @@ struct hostapd_config {
  	int ieee80211n;
  	int secondary_channel;
  	int require_ht;
@@ -31,7 +31,7 @@
  #include "ieee802_11_auth.h"
  #include "vlan_init.h"
  #include "wpa_auth.h"
-@@ -343,6 +344,7 @@ static void hostapd_cleanup_iface_pre(st
+@@ -319,6 +320,7 @@ static void hostapd_cleanup_iface_pre(st
  
  static void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
  {

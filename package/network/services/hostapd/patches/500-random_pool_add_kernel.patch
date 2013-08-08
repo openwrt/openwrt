@@ -117,7 +117,7 @@
 +}
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -1222,9 +1222,8 @@ endif
+@@ -1238,9 +1238,8 @@ endif
  
  ifdef CONFIG_NO_RANDOM_POOL
  CFLAGS += -DCONFIG_NO_RANDOM_POOL
@@ -130,7 +130,7 @@
  ifeq ($(CONFIG_CTRL_IFACE), y)
 --- a/wpa_supplicant/Android.mk
 +++ b/wpa_supplicant/Android.mk
-@@ -1192,9 +1192,8 @@ endif
+@@ -1208,9 +1208,8 @@ endif
  
  ifdef CONFIG_NO_RANDOM_POOL
  L_CFLAGS += -DCONFIG_NO_RANDOM_POOL
@@ -143,7 +143,7 @@
  ifeq ($(CONFIG_CTRL_IFACE), y)
 --- a/hostapd/Android.mk
 +++ b/hostapd/Android.mk
-@@ -778,12 +778,12 @@ endif
+@@ -785,12 +785,12 @@ endif
  ifdef CONFIG_NO_RANDOM_POOL
  L_CFLAGS += -DCONFIG_NO_RANDOM_POOL
  else
@@ -160,7 +160,7 @@
  L_CFLAGS += -DRADIUS_SERVER
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -748,12 +748,12 @@ endif
+@@ -755,12 +755,12 @@ endif
  ifdef CONFIG_NO_RANDOM_POOL
  CFLAGS += -DCONFIG_NO_RANDOM_POOL
  else

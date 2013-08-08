@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -751,7 +751,6 @@ nla_put_failure:
+@@ -754,7 +754,6 @@ nla_put_failure:
  }
  
  
@@ -8,7 +8,7 @@
  static int nl80211_get_macaddr(struct i802_bss *bss)
  {
  	struct nl_msg *msg;
-@@ -773,7 +772,6 @@ nla_put_failure:
+@@ -776,7 +775,6 @@ nla_put_failure:
  	nlmsg_free(msg);
  	return NL80211_IFTYPE_UNSPECIFIED;
  }
@@ -16,7 +16,7 @@
  
  
  static int nl80211_register_beacons(struct wpa_driver_nl80211_data *drv,
-@@ -3592,6 +3590,7 @@ static void * wpa_driver_nl80211_init(vo
+@@ -3613,6 +3611,7 @@ static void * wpa_driver_nl80211_init(vo
  	drv->monitor_sock = -1;
  	drv->eapol_tx_sock = -1;
  	drv->ap_scan_as_station = NL80211_IFTYPE_UNSPECIFIED;
@@ -24,7 +24,7 @@
  
  	if (wpa_driver_nl80211_init_nl(drv)) {
  		os_free(drv);
-@@ -3982,31 +3981,16 @@ static int i802_set_iface_flags(struct i
+@@ -4003,31 +4002,16 @@ static int i802_set_iface_flags(struct i
  
  
  static int
@@ -47,18 +47,18 @@
  	dynamic_if = drv->ifindex == drv->global->if_add_ifindex;
  	dynamic_if = dynamic_if || drv->global->if_add_wdevid_set;
 -	drv->global->if_add_wdevid_set = 0;
--
+ 
 -	if (wpa_driver_nl80211_capa(drv))
 -		return -1;
 -
 -	wpa_printf(MSG_DEBUG, "nl80211: interface %s in phy %s",
 -		   bss->ifname, drv->phyname);
- 
+-
 -#ifndef HOSTAPD
  	if (dynamic_if)
  		nlmode = nl80211_get_ifmode(bss);
  
-@@ -4035,7 +4019,7 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -4056,7 +4040,7 @@ wpa_driver_nl80211_finish_drv_init(struc
  				   "interface '%s' due to rfkill",
  				   bss->ifname);
  			drv->if_disabled = 1;
@@ -67,7 +67,7 @@
  		} else {
  			wpa_printf(MSG_ERROR, "nl80211: Could not set "
  				   "interface '%s' UP", bss->ifname);
-@@ -4045,7 +4029,30 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -4066,7 +4050,30 @@ wpa_driver_nl80211_finish_drv_init(struc
  
  	netlink_send_oper_ifla(drv->global->netlink, drv->ifindex,
  			       1, IF_OPER_DORMANT);
