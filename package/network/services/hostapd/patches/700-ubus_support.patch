@@ -40,7 +40,7 @@
  	struct hostapd_data **bss;
 --- /dev/null
 +++ b/src/ap/ubus.c
-@@ -0,0 +1,356 @@
+@@ -0,0 +1,373 @@
 +/*
 + * hostapd / ubus support
 + * Copyright (c) 2013, Felix Fietkau <nbd@openwrt.org>
@@ -72,6 +72,22 @@
 +	ubus_handle_event(ctx);
 +}
 +
++static void ubus_reconnect_timeout(void *eloop_data, void *user_ctx)
++{
++	if (ubus_reconnect(ctx, NULL)) {
++		eloop_register_timeout(1, 0, ubus_reconnect_timeout, ctx, NULL);
++		return;
++	}
++
++	eloop_register_read_sock(ctx->sock.fd, ubus_receive, ctx, NULL);
++}
++
++static void hostapd_ubus_connection_lost(struct ubus_context *ctx)
++{
++	eloop_unregister_read_sock(ctx->sock.fd);
++	eloop_register_timeout(1, 0, ubus_reconnect_timeout, ctx, NULL);
++}
++
 +static bool hostapd_ubus_init(void)
 +{
 +	if (ctx)
@@ -81,6 +97,7 @@
 +	if (!ctx)
 +		return false;
 +
++	ctx->connection_lost = hostapd_ubus_connection_lost;
 +	eloop_register_read_sock(ctx->sock.fd, ubus_receive, ctx, NULL);
 +	return true;
 +}
