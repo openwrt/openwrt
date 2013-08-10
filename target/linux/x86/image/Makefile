@@ -28,8 +28,10 @@ ifneq ($(CONFIG_X86_GRUB_CONSOLE),)
   GRUB_TERMINALS += console
 endif
 
-ifneq ($(CONFIG_X86_GRUB_SERIAL),)
-  GRUB_CONSOLE_CMDLINE += console=$(call qstrip,$(CONFIG_X86_GRUB_SERIAL)),$(CONFIG_X86_GRUB_BAUDRATE)n8
+GRUB_SERIAL:=$(call qstrip,$(CONFIG_X86_GRUB_SERIAL))
+
+ifneq ($(GRUB_SERIAL),)
+  GRUB_CONSOLE_CMDLINE += console=$(GRUB_SERIAL),$(CONFIG_X86_GRUB_BAUDRATE)n8
   GRUB_SERIAL_CONFIG := serial --unit=0 --speed=$(CONFIG_X86_GRUB_BAUDRATE) --word=8 --parity=no --stop=1
   GRUB_TERMINALS += serial
 endif
