@@ -1042,13 +1042,22 @@ static void ag71xx_netpoll(struct net_device *dev)
 }
 #endif
 
+static int ag71xx_change_mtu(struct net_device *dev, int new_mtu)
+{
+	if (new_mtu < 68 ||
+	    new_mtu > AG71XX_TX_MTU_LEN - ETH_HLEN - ETH_FCS_LEN)
+		return -EINVAL;
+
+	dev->mtu = new_mtu;
+}
+
 static const struct net_device_ops ag71xx_netdev_ops = {
 	.ndo_open		= ag71xx_open,
 	.ndo_stop		= ag71xx_stop,
 	.ndo_start_xmit		= ag71xx_hard_start_xmit,
 	.ndo_do_ioctl		= ag71xx_do_ioctl,
 	.ndo_tx_timeout		= ag71xx_tx_timeout,
-	.ndo_change_mtu		= eth_change_mtu,
+	.ndo_change_mtu		= ag71xx_change_mtu,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
 #ifdef CONFIG_NET_POLL_CONTROLLER
