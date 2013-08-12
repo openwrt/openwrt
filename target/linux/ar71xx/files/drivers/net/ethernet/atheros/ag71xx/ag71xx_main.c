@@ -1049,6 +1049,7 @@ static int ag71xx_change_mtu(struct net_device *dev, int new_mtu)
 		return -EINVAL;
 
 	dev->mtu = new_mtu;
+	return 0;
 }
 
 static const struct net_device_ops ag71xx_netdev_ops = {
