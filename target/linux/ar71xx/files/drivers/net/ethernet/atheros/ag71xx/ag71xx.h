@@ -91,8 +91,11 @@ struct ag71xx_buf {
 		void		*rx_buf;
 	};
 	struct ag71xx_desc	*desc;
-	dma_addr_t		dma_addr;
-	unsigned long		timestamp;
+	union {
+		dma_addr_t	dma_addr;
+		unsigned long	timestamp;
+	};
+	unsigned int		len;
 };
 
 struct ag71xx_ring {

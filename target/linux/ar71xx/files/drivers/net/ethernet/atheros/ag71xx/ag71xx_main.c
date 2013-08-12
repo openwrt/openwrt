@@ -145,7 +145,7 @@ static void ag71xx_ring_tx_clean(struct ag71xx *ag)
 		}
 
 		if (ring->buf[i].skb) {
-			bytes_compl += ring->buf[i].skb->len;
+			bytes_compl += ring->buf[i].len;
 			pkts_compl++;
 			dev_kfree_skb_any(ring->buf[i].skb);
 		}
@@ -684,6 +684,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 				  DMA_TO_DEVICE);
 
 	netdev_sent_queue(dev, skb->len);
+	ring->buf[i].len = skb->len;
 	ring->buf[i].skb = skb;
 	ring->buf[i].timestamp = jiffies;
 
@@ -824,6 +825,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 		unsigned int i = ring->dirty % ring->size;
 		struct ag71xx_desc *desc = ring->buf[i].desc;
 		struct sk_buff *skb = ring->buf[i].skb;
+		int len = ring->buf[i].len;
 
 		if (!ag71xx_desc_empty(desc)) {
 			if (pdata->is_ar7240 &&
@@ -834,8 +836,8 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 
 		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
 
-		bytes_compl += skb->len;
-		ag->dev->stats.tx_bytes += skb->len;
+		bytes_compl += len;
+		ag->dev->stats.tx_bytes += len;
 		ag->dev->stats.tx_packets++;
 
 		dev_kfree_skb_any(skb);
