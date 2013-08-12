@@ -848,7 +848,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 	DBG("%s: %d packets sent out\n", ag->dev->name, sent);
 
 	if (!sent)
-		return;
+		return 0;
 
 	netdev_completed_queue(ag->dev, sent, bytes_compl);
 	if ((ring->curr - ring->dirty) < (ring->size * 3) / 4)
