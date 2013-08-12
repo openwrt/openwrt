@@ -1592,6 +1592,13 @@ static struct switch_attr rtl8367_vlan[] = {
 		.max = 1,
 		.set = NULL,
 		.get = rtl8366_sw_get_vlan_info,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "fid",
+		.description = "Get/Set vlan FID",
+		.max = RTL8367_FIDMAX,
+		.set = rtl8366_sw_set_vlan_fid,
+		.get = rtl8366_sw_get_vlan_fid,
 	},
 };
 
