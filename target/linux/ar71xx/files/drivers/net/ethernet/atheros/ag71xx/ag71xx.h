@@ -58,8 +58,8 @@
 #define AG71XX_TX_RING_SIZE_DEFAULT	64
 #define AG71XX_RX_RING_SIZE_DEFAULT	128
 
-#define AG71XX_TX_RING_SIZE_MAX		256
-#define AG71XX_RX_RING_SIZE_MAX		256
+#define AG71XX_TX_RING_SIZE_MAX		128
+#define AG71XX_RX_RING_SIZE_MAX		128
 
 #ifdef CONFIG_AG71XX_DEBUG
 #define DBG(fmt, args...)	pr_debug(fmt, ## args)
