@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -700,6 +700,7 @@ struct ath_softc {
+@@ -697,6 +697,7 @@ struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
  
@@ -8,7 +8,7 @@
  	struct survey_info *cur_survey;
  	struct survey_info survey[ATH9K_NUM_CHANNELS];
  
-@@ -904,6 +905,7 @@ struct fft_sample_ht20 {
+@@ -901,6 +902,7 @@ struct fft_sample_ht20 {
  	u8 data[SPECTRAL_HT20_NUM_BINS];
  } __packed;
  
