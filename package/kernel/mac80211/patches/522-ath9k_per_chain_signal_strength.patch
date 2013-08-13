@@ -17,7 +17,7 @@
  	u8 rs_num_delims;
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -939,6 +939,7 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -948,6 +948,7 @@ static int ath9k_rx_skb_preprocess(struc
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	bool discard_current = sc->rx.discard_next;
@@ -25,7 +25,7 @@
  
  	sc->rx.discard_next = rx_stats->rs_more;
  	if (discard_current)
-@@ -968,6 +969,21 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -977,6 +978,21 @@ static int ath9k_rx_skb_preprocess(struc
  	if (rx_stats->rs_moreaggr)
  		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
  
@@ -47,7 +47,7 @@
  	sc->rx.discard_next = false;
  	return 0;
  }
-@@ -1077,7 +1093,7 @@ static int ath_process_fft(struct ath_so
+@@ -1086,7 +1102,7 @@ static int ath_process_fft(struct ath_so
  	fft_sample.tlv.length = __cpu_to_be16(length);
  
  	fft_sample.freq = __cpu_to_be16(ah->curchan->chan->center_freq);
