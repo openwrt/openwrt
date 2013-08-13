@@ -2354,3 +2354,23 @@
  	if (len > size)
  		len = size;
  
+--- a/net/mac80211/ibss.c
++++ b/net/mac80211/ibss.c
+@@ -792,6 +792,17 @@ static void ieee80211_sta_find_ibss(stru
+ 		return;
+ 	}
+ 
++	/* if a fixed bssid and a fixed freq have been provided create the IBSS
++	 * directly and do not waste time scanning
++	 */
++	if (ifibss->fixed_bssid && ifibss->fixed_channel) {
++		sdata_info(sdata, "Created IBSS using preconfigured BSSID %pM\n",
++			   bssid);
++		ieee80211_sta_create_ibss(sdata);
++		return;
++	}
++
++
+ 	ibss_dbg(sdata, "sta_find_ibss: did not try to join ibss\n");
+ 
+ 	/* Selected IBSS not found in current scan results - try to scan */
