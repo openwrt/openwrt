@@ -10,6 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=openssl
 PKG_VERSION:=1.0.1e
 PKG_RELEASE:=2
+PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
@@ -120,7 +121,7 @@ define Build/Configure
 	)
 endef
 
-TARGET_CFLAGS := $(filter-out -mips16 -minterlink-mips16,$(TARGET_CFLAGS)) $(FPIC)
+TARGET_CFLAGS += $(FPIC)
 
 define Build/Compile
 	# XXX: OpenSSL "make depend" will look for installed headers before its own,
