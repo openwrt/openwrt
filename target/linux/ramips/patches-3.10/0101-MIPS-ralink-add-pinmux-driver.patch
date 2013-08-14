@@ -22,14 +22,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
  
--obj-y := prom.o of.o reset.o clk.o irq.o
-+obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o
+-obj-y := prom.o of.o reset.o clk.o irq.o timer.o
++obj-y := prom.o of.o reset.o clk.o irq.o timer.o pinmux.o
  
- obj-$(CONFIG_SOC_RT288X) += rt288x.o
- obj-$(CONFIG_SOC_RT305X) += rt305x.o
+ obj-$(CONFIG_CLKEVT_RT3352) += cevt-rt3352.o
+ 
 --- a/arch/mips/ralink/common.h
 +++ b/arch/mips/ralink/common.h
-@@ -50,4 +50,6 @@ extern void prom_soc_init(struct ralink_
+@@ -52,4 +52,6 @@ extern void prom_soc_init(struct ralink_
  
  __iomem void *plat_of_remap_node(const char *node);
  
@@ -38,9 +38,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #endif /* _RALINK_COMMON_H__ */
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
-@@ -110,6 +110,8 @@ static int __init plat_of_setup(void)
- 	if (of_platform_populate(NULL, of_ids, NULL, NULL))
- 		panic("failed to populate DT\n");
+@@ -113,6 +113,8 @@ static int __init plat_of_setup(void)
+ 	/* make sure ithat the reset controller is setup early */
+ 	ralink_rst_init();
  
 +	ralink_pinmux();
 +

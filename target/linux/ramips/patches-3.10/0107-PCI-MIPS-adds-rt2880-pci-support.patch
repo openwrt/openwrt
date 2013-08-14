@@ -20,9 +20,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
 +obj-$(CONFIG_SOC_RT2880)	+= pci-rt2880.o
+ obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
- obj-$(CONFIG_TANBAC_TB0287)	+= fixup-tb0287.o
 --- /dev/null
 +++ b/arch/mips/pci/pci-rt2880.c
 @@ -0,0 +1,281 @@
@@ -309,7 +309,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +arch_initcall(pcibios_init);
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
-@@ -8,6 +8,7 @@ choice
+@@ -15,6 +15,7 @@ choice
  
  	config SOC_RT288X
  		bool "RT288x"
