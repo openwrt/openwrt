@@ -27,7 +27,7 @@ else
 PKG_JOBS?=$(if $(PKG_BUILD_PARALLEL)$(CONFIG_PKG_DEFAULT_PARALLEL),\
 	$(if $(CONFIG_PKG_BUILD_PARALLEL),$(MAKE_J),-j1),-j1)
 endif
-ifdef CONFIG_HAS_MIPS16
+ifdef CONFIG_USE_MIPS16
   ifeq ($(strip $(PKG_USE_MIPS16)),1)
     TARGET_ASFLAGS_DEFAULT = $(filter-out -mips16 -minterlink-mips16,$(TARGET_CFLAGS))
     TARGET_CFLAGS += -mips16 -minterlink-mips16
