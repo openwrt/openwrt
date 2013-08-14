@@ -74,6 +74,9 @@ case $board in
 	dir-620-d1)
 		set_wifi_led "d-link:green:wifi"
 		;;
+	dir-810l)
+		ucidef_set_led_default "power" "POWER" "dlink:green:power" "1"
+		;;
 	esr-9753)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
@@ -134,6 +137,10 @@ case $board in
 		;;
 	wnce2001)
 		set_wifi_led "netgear:green:wlan"
+		;;
+	rp-n53)
+		ucidef_set_led_netdev "eth" "Network" "asus:white:back" "eth0"
+		set_wifi_led "asus:blue:wifi"
 		;;
 esac
 
