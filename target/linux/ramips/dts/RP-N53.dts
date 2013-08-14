@@ -6,10 +6,6 @@
 	compatible = "asus,rp-n53", "ralink,mt7620a-soc";
 	model = "Asus RP-N53";
 
-	chosen {
-		bootargs = "console=ttyS0,57600";
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "spi", "uartlite", "wled", "ephy", "i2c";

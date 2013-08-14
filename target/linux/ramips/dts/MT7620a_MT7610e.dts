@@ -6,13 +6,6 @@
 	compatible = "ralink,mt7620a-eval-board", "ralink,mt7620a-soc";
 	model = "Ralink MT7620A evaluation board";
 
-	memory@0 {
-		reg = <0x0 0x2000000>;
-	};
-
-	chosen {
-		bootargs = "console=ttyS0,57600";
-	};
 
 	palmbus@10000000 {
 		sysc@0 {

@@ -6,10 +6,6 @@
 	compatible = "ralink,mt7620a-eval-board", "ralink,mt7620a-soc";
 	model = "Ralink MT7620a + MT7610e evaluation board";
 
-	memory@0 {
-		reg = <0x0 0x2000000>;
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "spi", "uartlite", "mdio", "wled", "ephy", "rgmii1", "rgmii2";
@@ -63,14 +59,14 @@
 		status = "okay";
 		
 		port@4 {
-			compatible = "lantiq,mt7620a-gsw-port", "ralink,eth-port";
+			compatible = "ralink,mt7620a-gsw-port", "ralink,eth-port";
 			reg = <4>;
 			phy-mode = "rgmii";
 			phy-handle = <&phy4>;
 		};
 
 		port@5 {
-			compatible = "lantiq,mt7620a-gsw-port", "ralink,eth-port";
+			compatible = "ralink,mt7620a-gsw-port", "ralink,eth-port";
 			reg = <5>;
 			phy-mode = "rgmii";
 			phy-handle = <&phy5>;
