@@ -1,7 +1,7 @@
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
-	compatible = "ralink,rt3050-soc", "ralink,rt3052-soc", "ralink,rt3350-soc";
+	compatible = "ralink,rt3050-soc", "ralink,rt3050-soc", "ralink,rt3350-soc";
 
 	cpus {
 		cpu@0 {
@@ -29,12 +29,12 @@
 		#size-cells = <1>;
 
 		sysc@0 {
-			compatible = "ralink,rt3052-sysc", "ralink,rt3050-sysc";
+			compatible = "ralink,rt3050-sysc";
 			reg = <0x0 0x100>;
 		};
 
 		timer@100 {
-			compatible = "ralink,rt3052-timer", "ralink,rt2880-timer";
+			compatible = "ralink,rt3050-timer", "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
 			interrupt-parent = <&intc>;
@@ -42,7 +42,7 @@
 		};
 
 		watchdog@120 {
-			compatible = "ralink,rt3052-wdt", "ralink,rt2880-wdt";
+			compatible = "ralink,rt3050-wdt", "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
 			resets = <&rstctrl 8>;
@@ -53,7 +53,7 @@
 		};
 
 		intc: intc@200 {
-			compatible = "ralink,rt3052-intc", "ralink,rt2880-intc";
+			compatible = "ralink,rt3050-intc", "ralink,rt2880-intc";
 			reg = <0x200 0x100>;
 
 			resets = <&rstctrl 19>;
@@ -67,7 +67,7 @@
 		};
 
 		memc@300 {
-			compatible = "ralink,rt3052-memc", "ralink,rt3050-memc";
+			compatible = "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
 
 			resets = <&rstctrl 20>;
@@ -78,7 +78,7 @@
 		};
 
 		uart@500 {
-			compatible = "ralink,rt5350-uart", "ralink,rt2880-uart", "ns16550a";
+			compatible = "ralink,rt3050-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0x500 0x100>;
 
 			resets = <&rstctrl 12>;
@@ -93,7 +93,7 @@
 		};
 
 		gpio0: gpio@600 {
-			compatible = "ralink,rt3052-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt3050-gpio", "ralink,rt2880-gpio";
 			reg = <0x600 0x34>;
 
 			gpio-controller;
@@ -115,7 +115,7 @@
 		};
 
 		gpio1: gpio@638 {
-			compatible = "ralink,rt3052-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt3050-gpio", "ralink,rt2880-gpio";
 			reg = <0x638 0x24>;
 
 			gpio-controller;
@@ -131,7 +131,7 @@
 		};
 
 		gpio2: gpio@660 {
-			compatible = "ralink,rt3052-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt3050-gpio", "ralink,rt2880-gpio";
 			reg = <0x660 0x24>;
 
 			gpio-controller;
@@ -160,7 +160,7 @@
 		};
 
 		uartlite@c00 {
-			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
+			compatible = "ralink,rt3050-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
  
 			resets = <&rstctrl 19>;
