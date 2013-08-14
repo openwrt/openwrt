@@ -39,7 +39,8 @@ preinit_set_mac_address() {
 	asl26555 |\
 	dir-300-b1 |\
 	dir-300-b2 |\
-	dir-600-b1)
+	dir-600-b1 |\
+	dir-610-a1)
                 mac=$(mtd_get_mac_binary devdata 16388)
                 ifconfig eth0 hw ether $mac 2>/dev/null
                 ;;
