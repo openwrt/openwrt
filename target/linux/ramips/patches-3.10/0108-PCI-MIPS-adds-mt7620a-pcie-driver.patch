@@ -11,16 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 365 insertions(+)
  create mode 100644 arch/mips/pci/pci-mt7620a.c
 
---- a/arch/mips/pci/Makefile
-+++ b/arch/mips/pci/Makefile
-@@ -43,6 +43,7 @@ obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
- obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
- obj-$(CONFIG_SOC_RT2880)	+= pci-rt2880.o
- obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
-+obj-$(CONFIG_SOC_MT7620)	+= pci-mt7620a.o
- obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
- obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
- obj-$(CONFIG_TANBAC_TB0287)	+= fixup-tb0287.o
 --- /dev/null
 +++ b/arch/mips/pci/pci-mt7620a.c
 @@ -0,0 +1,363 @@
@@ -389,11 +379,21 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +arch_initcall(mt7620a_pci_init);
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
-@@ -24,6 +24,7 @@ choice
- 
- 	config SOC_MT7620
+@@ -33,6 +33,7 @@ choice
  		bool "MT7620"
+ 		select USB_ARCH_HAS_OHCI
+ 		select USB_ARCH_HAS_EHCI
 +		select HW_HAS_PCI
  
  endchoice
  
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
+@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1
+ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
+ obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
+ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
++obj-$(CONFIG_SOC_MT7620)	+= pci-mt7620a.o
+ obj-$(CONFIG_SOC_RT2880)	+= pci-rt2880.o
+ obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
+ obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o

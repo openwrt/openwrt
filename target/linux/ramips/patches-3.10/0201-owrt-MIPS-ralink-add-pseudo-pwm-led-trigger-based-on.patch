@@ -248,9 +248,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	struct clk *clk;
 +	int ret;
  
- 	if (!res) {
- 		dev_err(&pdev->dev, "no memory resource found\n");
-@@ -147,12 +310,29 @@ static int rt_timer_probe(struct platfor
+ 	rt = devm_kzalloc(&pdev->dev, sizeof(*rt), GFP_KERNEL);
+ 	if (!rt) {
+@@ -140,12 +303,29 @@ static int rt_timer_probe(struct platfor
  	if (!rt->timer_freq)
  		return -EINVAL;
  
@@ -283,7 +283,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	dev_info(&pdev->dev, "maximum frequncy is %luHz\n", rt->timer_freq);
  
-@@ -163,6 +343,7 @@ static int rt_timer_remove(struct platfo
+@@ -156,6 +336,7 @@ static int rt_timer_remove(struct platfo
  {
  	struct rt_timer *rt = platform_get_drvdata(pdev);
  
@@ -291,7 +291,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	rt_timer_disable(rt);
  	rt_timer_free(rt);
  
-@@ -187,6 +368,6 @@ static struct platform_driver rt_timer_d
+@@ -180,6 +361,6 @@ static struct platform_driver rt_timer_d
  
  module_platform_driver(rt_timer_driver);
  

@@ -13,17 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/usb/host/ohci-platform.c |   37 ++++++++++++++++++++++++++++++++-----
  4 files changed, 51 insertions(+), 10 deletions(-)
 
---- a/arch/mips/ralink/Kconfig
-+++ b/arch/mips/ralink/Kconfig
-@@ -24,6 +24,8 @@ choice
- 
- 	config SOC_MT7620
- 		bool "MT7620"
-+		select USB_ARCH_HAS_OHCI
-+		select USB_ARCH_HAS_EHCI
- 		select HW_HAS_PCI
- 
- endchoice
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
 @@ -10,6 +10,8 @@ obj-$(CONFIG_USB_DWC3)		+= dwc3/

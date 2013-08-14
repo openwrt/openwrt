@@ -12,9 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
-@@ -8,6 +8,8 @@
+@@ -10,6 +10,8 @@ obj-y := prom.o of.o reset.o clk.o irq.o
  
- obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o timer.o
+ obj-$(CONFIG_CLKEVT_RT3352) += cevt-rt3352.o
  
 +obj-$(CONFIG_RALINK_ILL_ACC) += ill_acc.o
 +

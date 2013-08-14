@@ -1,7 +1,9 @@
-From 5340673ba16e3c8c9c1406d5ab84aca82e83e2ce Mon Sep 17 00:00:00 2001
+From d0da9f08ef37e9f639e3b7995d722684da2410a2 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Thu, 23 May 2013 18:46:25 +0200
-Subject: [PATCH 10/33] MIPS: ralink: add spi clock definition to mt7620a
+Subject: [PATCH 14/25] MIPS: ralink: mt7620: add spi clock definition
+
+The definition of the spi clock is missing.
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
@@ -10,7 +12,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
-@@ -183,6 +183,7 @@ void __init ralink_clk_init(void)
+@@ -167,6 +167,7 @@ void __init ralink_clk_init(void)
  	ralink_clk_add("cpu", cpu_rate);
  	ralink_clk_add("10000100.timer", 40000000);
  	ralink_clk_add("10000500.uart", 40000000);

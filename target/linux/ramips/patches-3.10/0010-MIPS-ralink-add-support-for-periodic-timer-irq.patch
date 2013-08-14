@@ -1,15 +1,15 @@
-From 298e990777004a6a72b1c95af5a2cd984c56135d Mon Sep 17 00:00:00 2001
+From 1cd8a1dc8e942bd130dc40ff801f37ad296495e3 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
-Date: Sat, 23 Mar 2013 19:44:41 +0100
-Subject: [PATCH 03/33] MIPS: ralink: add support for periodic timer irq
+Date: Sun, 28 Jul 2013 13:41:04 +0200
+Subject: [PATCH 10/25] MIPS: ralink: add support for periodic timer irq
 
 Adds a driver for the periodic timer found on Ralink SoC.
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/ralink/Makefile |    2 +-
- arch/mips/ralink/timer.c  |  192 +++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 193 insertions(+), 1 deletion(-)
+ arch/mips/ralink/timer.c  |  185 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 186 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/ralink/timer.c
 
 --- a/arch/mips/ralink/Makefile
@@ -18,14 +18,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
  
--obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o
-+obj-y := prom.o of.o reset.o clk.o irq.o pinmux.o timer.o
+-obj-y := prom.o of.o reset.o clk.o irq.o
++obj-y := prom.o of.o reset.o clk.o irq.o timer.o
  
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
 --- /dev/null
 +++ b/arch/mips/ralink/timer.c
-@@ -0,0 +1,192 @@
+@@ -0,0 +1,185 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -142,11 +142,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct rt_timer *rt;
 +	struct clk *clk;
 +
-+	if (!res) {
-+		dev_err(&pdev->dev, "no memory resource found\n");
-+		return -EINVAL;
-+	}
-+
 +	rt = devm_kzalloc(&pdev->dev, sizeof(*rt), GFP_KERNEL);
 +	if (!rt) {
 +		dev_err(&pdev->dev, "failed to allocate memory\n");
@@ -160,10 +155,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	rt->membase = devm_request_and_ioremap(&pdev->dev, res);
-+	if (!rt->membase) {
-+		dev_err(&pdev->dev, "failed to ioremap\n");
-+		return -ENOMEM;
-+	}
++	if (IS_ERR(rt->membase))
++		return PTR_ERR(rt->membase);
 +
 +	clk = devm_clk_get(&pdev->dev, NULL);
 +	if (IS_ERR(clk)) {

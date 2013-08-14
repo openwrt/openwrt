@@ -1,31 +1,221 @@
-From b43e77699154356a39796d95ef316699dafe409d Mon Sep 17 00:00:00 2001
-From: John Crispin <blogic@openwrt.org>
-Date: Thu, 21 Mar 2013 17:34:08 +0100
-Subject: [PATCH 12/33] PCI: MIPS: adds rt3883 pci support
+From patchwork Fri Aug  9 16:03:32 2013
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: MIPS: add driver for the built-in PCI controller of the RT3883 SoC
+From: Gabor Juhos <juhosg@openwrt.org>
+X-Patchwork-Id: 5687
+Message-Id: <1376064212-28415-1-git-send-email-juhosg@openwrt.org>
+To: Ralf Baechle <ralf@linux-mips.org>
+Cc: linux-mips@linux-mips.org, John Crispin <blogic@openwrt.org>,
+ Gabor Juhos <juhosg@openwrt.org>, devicetree@vger.kernel.org
+Date: Fri,  9 Aug 2013 18:03:32 +0200
 
-Add support for the pcie found on the rt3883 SoC.
+The Ralink RT3883 SoCs have a built-in PCI Host Controller
+device. The patch adds a platform driver and device tree
+binding documentation for that.
 
-Signed-off-by: John Crispin <blogic@openwrt.org>
+The patch also enables the HW_HAS_PCI config option. This
+is required in order to be able to enable the PCI support.
+
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: John Crispin <blogic@openwrt.org>
+
 ---
- arch/mips/pci/Makefile     |    1 +
- arch/mips/pci/pci-rt3883.c |  640 ++++++++++++++++++++++++++++++++++++++++++++
- arch/mips/ralink/Kconfig   |    1 +
- 3 files changed, 642 insertions(+)
+.../devicetree/bindings/pci/ralink,rt3883-pci.txt  |  169 ++++++
+ arch/mips/pci/Makefile                             |    1 +
+ arch/mips/pci/pci-rt3883.c                         |  636 ++++++++++++++++++++
+ arch/mips/ralink/Kconfig                           |    1 +
+ 4 files changed, 807 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pci/ralink,rt3883-pci.txt
  create mode 100644 arch/mips/pci/pci-rt3883.c
 
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/ralink,rt3883-pci.txt
+@@ -0,0 +1,169 @@
++* Mediatek/Ralink RT3883 PCI controller
++
++1) Main node
++
++   Required properties:
++
++   - compatible: must be "ralink,rt3883-pci"
++
++   - reg: specifies the physical base address of the controller and
++     the length of the memory mapped region.
++
++   - #address-cells: specifies the number of cells needed to encode an
++     address. The value must be 1.
++
++   - #size-cells: specifies the number of cells used to represent the size
++     of an address. The value must be 1.
++
++   - ranges: specifies the translation between child address space and parent
++     address space
++
++   - status: either "disabled" or "okay"
++
++2) Child nodes
++
++   The main node must have two child nodes which describes the built-in
++   interrupt controller and the PCI host bridge.
++
++   a) Interrupt controller:
++
++   Required properties:
++
++   - interrupt-controller: identifies the node as an interrupt controller
++
++   - #address-cells: specifies the number of cells needed to encode an
++     address. The value must be 0. As such, 'interrupt-map' nodes do not
++     have to specify a parent unit address.
++
++   - #interrupt-cells: specifies the number of cells needed to encode an
++     interrupt source. The value must be 1.
++
++   - interrupt-parent: the phandle for the interrupt controller that
++     services interrupts for this device.
++
++   - interrupts: specifies the interrupt source of the parent interrupt
++     controller. The format of the interrupt specifier depends on the
++     parent interrupt controller.
++
++   b) PCI host bridge:
++
++   Required properties:
++
++   - #address-cells: specifies the number of cells needed to encode an
++     address. The value must be 0.
++
++   - #size-cells: specifies the number of cells used to represent the size
++     of an address. The value must be 2.
++
++   - #interrupt-cells: specifies the number of cells needed to encode an
++     interrupt source. The value must be 1.
++
++   - device_type: must be "pci"
++
++   - bus-range: PCI bus numbers covered
++
++   - ranges: specifies the ranges for the PCI memory and I/O regions
++
++   - interrupt-map-mask,
++   - interrupt-map: standard PCI properties to define the mapping of the
++     PCI interface to interrupt numbers.
++
++   The PCI host bridge node migh have additional sub-nodes representing
++   the onboard PCI devices/PCI slots. Each such sub-node must have the
++   following mandatory properties:
++
++     - reg: used only for interrupt mapping, so only the first four bytes
++       are used to refer to the correct bus number and device number.
++
++     - device_type: must be "pci"
++
++     - status: either "disabled" or "okay"
++
++   If a given sub-node represents a PCI bridge it must have following
++   mandatory properties as well:
++
++     - #address-cells: must be set to <3>
++
++     - #size-cells: must set to <2>
++
++     - #interrupt-cells: must be set to <1>
++
++     - interrupt-map-mask,
++     - interrupt-map: standard PCI properties to define the mapping of the
++       PCI interface to interrupt numbers.
++
++3) Example:
++
++	pci@10140000 {
++		compatible = "ralink,rt3883-pci";
++		reg = <0x10140000 0x20000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges; /* direct mapping */
++
++		status = "disabled";
++
++		pciintc: interrupt-controller {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <1>;
++
++			interrupt-parent = <&cpuintc>;
++			interrupts = <4>;
++		};
++
++		host-bridge {
++			#address-cells = <3>;
++			#size-cells = <2>;
++			#interrupt-cells = <1>;
++
++			device_type = "pci";
++
++			bus-range = <0 255>;
++			ranges = <
++				0x02000000 0 0x00000000 0x20000000 0 0x10000000 /* pci memory */
++				0x01000000 0 0x00000000 0x10160000 0 0x00010000 /* io space */
++			>;
++
++			interrupt-map-mask = <0xf800 0 0 7>;
++			interrupt-map = <
++				/* IDSEL 17 */
++				0x8800 0 0 1 &pciintc 18
++				0x8800 0 0 2 &pciintc 18
++				0x8800 0 0 3 &pciintc 18
++				0x8800 0 0 4 &pciintc 18
++				/* IDSEL 18 */
++				0x9000 0 0 1 &pciintc 19
++				0x9000 0 0 2 &pciintc 19
++				0x9000 0 0 3 &pciintc 19
++				0x9000 0 0 4 &pciintc 19
++			>;
++
++			pci-bridge@1 {
++				reg = <0x0800 0 0 0 0>;
++				device_type = "pci";
++				#interrupt-cells = <1>;
++				#address-cells = <3>;
++				#size-cells = <2>;
++
++				interrupt-map-mask = <0x0 0 0 0>;
++				interrupt-map = <0x0 0 0 0 &pciintc 20>;
++
++				status = "disabled";
++			};
++
++			pci-slot@17 {
++				reg = <0x8800 0 0 0 0>;
++				device_type = "pci";
++
++				status = "disabled";
++			};
++
++			pci-slot@18 {
++				reg = <0x9000 0 0 0 0>;
++				device_type = "pci";
++
++				status = "disabled";
++			};
++		};
++	};
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -42,6 +42,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops
+@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1
+ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
- obj-$(CONFIG_SOC_RT2880)	+= pci-rt2880.o
 +obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
  obj-$(CONFIG_TANBAC_TB0287)	+= fixup-tb0287.o
 --- /dev/null
 +++ b/arch/mips/pci/pci-rt3883.c
-@@ -0,0 +1,640 @@
+@@ -0,0 +1,636 @@
 +/*
 + *  Ralink RT3662/RT3883 SoC PCI support
 + *
@@ -91,6 +281,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	void __iomem *base;
 +	spinlock_t lock;
 +
++	struct device_node *intc_of_node;
 +	struct irq_domain *irq_domain;
 +
 +	struct pci_controller pci_controller;
@@ -98,7 +289,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct resource mem_res;
 +
 +	bool pcie_ready;
-+	unsigned char p2p_devnum;
 +};
 +
 +static inline struct rt3883_pci_controller *
@@ -125,8 +315,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static inline u32 rt3883_pci_get_cfgaddr(unsigned int bus, unsigned int slot,
 +					 unsigned int func, unsigned int where)
 +{
-+	return ((bus << 16) | (slot << 11) | (func << 8) | (where & 0xfc) |
-+		0x80000000);
++	return (bus << 16) | (slot << 11) | (func << 8) | (where & 0xfc) |
++	       0x80000000;
 +}
 +
 +static u32 rt3883_pci_read_cfg32(struct rt3883_pci_controller *rpc,
@@ -237,45 +427,31 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static int rt3883_pci_irq_init(struct device *dev,
 +			       struct rt3883_pci_controller *rpc)
 +{
-+	struct device_node *np = dev->of_node;
-+	struct device_node *intc_np;
 +	int irq;
-+	int err;
 +
-+	intc_np = of_get_child_by_name(np, "interrupt-controller");
-+	if (!intc_np) {
-+		dev_err(dev, "no %s child node found", "interrupt-controller");
-+		return -ENODEV;
-+	}
-+
-+	irq = irq_of_parse_and_map(intc_np, 0);
++	irq = irq_of_parse_and_map(rpc->intc_of_node, 0);
 +	if (irq == 0) {
-+		dev_err(dev, "%s has no IRQ", of_node_full_name(intc_np));
-+		err = -EINVAL;
-+		goto err_put_intc;
++		dev_err(dev, "%s has no IRQ",
++			of_node_full_name(rpc->intc_of_node));
++		return -EINVAL;
 +	}
 +
 +	/* disable all interrupts */
 +	rt3883_pci_w32(rpc, 0, RT3883_PCI_REG_PCIENA);
 +
 +	rpc->irq_domain =
-+		irq_domain_add_linear(intc_np, RT3883_PCI_IRQ_COUNT,
++		irq_domain_add_linear(rpc->intc_of_node, RT3883_PCI_IRQ_COUNT,
 +				      &rt3883_pci_irq_domain_ops,
 +				      rpc);
 +	if (!rpc->irq_domain) {
 +		dev_err(dev, "unable to add IRQ domain\n");
-+		err = -ENODEV;
-+		goto err_put_intc;
++		return -ENODEV;
 +	}
 +
 +	irq_set_handler_data(irq, rpc);
 +	irq_set_chained_handler(irq, rt3883_pci_irq_handler);
 +
 +	return 0;
-+
-+err_put_intc:
-+	of_node_put(intc_np);
-+	return err;
 +}
 +
 +static int rt3883_pci_config_read(struct pci_bus *bus, unsigned int devfn,
@@ -462,21 +638,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	rt3883_pci_w32(rpc, 0x79, RT3883_PCI_REG_ARBCTL);
 +}
 +
-+static inline void
-+rt3883_dump_pci_config(struct rt3883_pci_controller *rpc,
-+		       int bus, int slot)
-+{
-+	int i;
-+
-+	for (i = 0; i < 16; i++) {
-+		u32 val;
-+
-+		val = rt3883_pci_read_cfg32(rpc, bus, slot, 0, i << 2);
-+		pr_info("pci %02x:%02x.0 0x%02x = %08x\n",
-+		        bus, slot, i << 2, val);
-+	}
-+}
-+
 +static int rt3883_pci_probe(struct platform_device *pdev)
 +{
 +	struct rt3883_pci_controller *rpc;
@@ -500,28 +661,53 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (IS_ERR(rpc->base))
 +		return PTR_ERR(rpc->base);
 +
-+	rpc->pci_controller.of_node = of_get_child_by_name(np, "host-bridge");
++	/* find the interrupt controller child node */
++	for_each_child_of_node(np, child) {
++		if (of_get_property(child, "interrupt-controller", NULL) &&
++		    of_node_get(child)) {
++			rpc->intc_of_node = child;
++			break;
++		}
++	}
++
++	if (!rpc->intc_of_node) {
++		dev_err(dev, "% has no %s child node",
++			of_node_full_name(rpc->intc_of_node),
++			"interrupt controller");
++		return -EINVAL;
++	}
++
++	/* find the PCI host bridge child node */
++	for_each_child_of_node(np, child) {
++		if (child->type &&
++		    of_node_cmp(child->type, "pci") == 0 &&
++		    of_node_get(child)) {
++			rpc->pci_controller.of_node = child;
++			break;
++		}
++	}
++
 +	if (!rpc->pci_controller.of_node) {
-+		dev_err(dev, "no %s child node found", "host-bridge");
-+		return -ENODEV;
++		dev_err(dev, "%s has no %s child node",
++			of_node_full_name(rpc->intc_of_node),
++			"PCI host bridge");
++		err = -EINVAL;
++		goto err_put_intc_node;
 +	}
 +
 +	mode = RT3883_PCI_MODE_NONE;
-+	for_each_child_of_node(rpc->pci_controller.of_node, child) {
-+		u32 slot;
++	for_each_available_child_of_node(rpc->pci_controller.of_node, child) {
++		int devfn;
 +
-+		if (!of_device_is_available(child))
++		if (!child->type ||
++		    of_node_cmp(child->type, "pci") != 0)
 +			continue;
 +
-+		if (of_property_read_u32(child, "ralink,pci-slot",
-+					 &slot)) {
-+			dev_err(dev, "no '%s' property found for %s\n",
-+				"ralink,pci-slot",
-+				of_node_full_name(child));
++		devfn = of_pci_get_devfn(child);
++		if (devfn < 0)
 +			continue;
-+		}
 +
-+		switch (slot) {
++		switch (PCI_SLOT(devfn)) {
 +		case 1:
 +			mode |= RT3883_PCI_MODE_PCIE;
 +			break;
@@ -608,17 +794,17 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +err_put_hb_node:
 +	of_node_put(rpc->pci_controller.of_node);
++err_put_intc_node:
++	of_node_put(rpc->intc_of_node);
 +	return err;
 +}
 +
 +int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 +{
-+	struct rt3883_pci_controller *rpc;
 +	struct of_irq dev_irq;
 +	int err;
 +	int irq;
 +
-+	rpc = pci_bus_to_rt3883_controller(dev->bus);
 +	err = of_irq_map_pci(dev, &dev_irq);
 +	if (err) {
 +		pr_err("pci %s: unable to get irq map, err=%d\n",
@@ -668,7 +854,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +postcore_initcall(rt3883_pci_init);
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
-@@ -20,6 +20,7 @@ choice
+@@ -26,6 +26,7 @@ choice
  		bool "RT3883"
  		select USB_ARCH_HAS_OHCI
  		select USB_ARCH_HAS_EHCI
