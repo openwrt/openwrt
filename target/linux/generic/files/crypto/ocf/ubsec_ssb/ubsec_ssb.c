@@ -2214,7 +2214,7 @@ module_exit(mod_exit);
 
 // Meta information
 MODULE_AUTHOR("Daniel Mueller <daniel@danm.de>");
-MODULE_LICENSE("BSD");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_DESCRIPTION("OCF driver for BCM5365P IPSec Core");
 MODULE_VERSION(DRV_MODULE_VERSION);
 

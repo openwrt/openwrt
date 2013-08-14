@@ -1761,6 +1761,6 @@ EXPORT_SYMBOL(crypto_find_device_byhid);
 module_init(crypto_init);
 module_exit(crypto_exit);
 
-MODULE_LICENSE("BSD");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("David McCullough <david_mccullough@mcafee.com>");
 MODULE_DESCRIPTION("OCF (OpenBSD Cryptographic Framework)");
