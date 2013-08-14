@@ -36,6 +36,7 @@ platform_check_image() {
 	dir-615-d | \
 	dir-620-a1 | \
 	dir-620-d1 | \
+	dir-810l | \
 	dap-1350 | \
 	esr-9753 | \
 	f7c027 | \
@@ -56,6 +57,7 @@ platform_check_image() {
 	omni-emb | \
 	omni-emb-hpm | \
 	psr-680w | \
+	rp-n53 | \
 	rt-g32-b1 | \
 	rt-n10-plus | \
 	rt-n15 | \
