@@ -1064,6 +1064,6 @@ cryptodev_exit(void)
 module_init(cryptodev_init);
 module_exit(cryptodev_exit);
 
-MODULE_LICENSE("BSD");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("David McCullough <david_mccullough@mcafee.com>");
 MODULE_DESCRIPTION("Cryptodev (user interface to OCF)");

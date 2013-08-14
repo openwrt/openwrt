@@ -509,6 +509,6 @@ static void __exit ocfbench_exit(void)
 module_init(ocfbench_init);
 module_exit(ocfbench_exit);
 
-MODULE_LICENSE("BSD");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("David McCullough <david_mccullough@mcafee.com>");
 MODULE_DESCRIPTION("Benchmark various in-kernel crypto speeds");

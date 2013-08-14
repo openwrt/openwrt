@@ -2949,6 +2949,6 @@ static void __exit hifn_exit (void)
 module_init(hifn_init);
 module_exit(hifn_exit);
 
-MODULE_LICENSE("BSD");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("David McCullough <david_mccullough@mcafee.com>");
 MODULE_DESCRIPTION("OCF driver for hifn PCI crypto devices");

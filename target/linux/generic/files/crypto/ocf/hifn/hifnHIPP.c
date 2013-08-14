@@ -416,6 +416,6 @@ static void __exit hipp_exit (void)
 module_init(hipp_init);
 module_exit(hipp_exit);
 
-MODULE_LICENSE("BSD");
+MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Michael Richardson <mcr@xelerance.com>");
 MODULE_DESCRIPTION("OCF driver for hifn HIPP-I/II PCI crypto devices");
