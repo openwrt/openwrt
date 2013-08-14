@@ -197,7 +197,7 @@ ramips_setup_macs()
 
 	rt-n13u | \
 	hg255d	| \
-	fonera20n |
+	fonera20n | \
 	dir-810l)
 		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
