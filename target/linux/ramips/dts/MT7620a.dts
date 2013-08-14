@@ -10,10 +10,6 @@
 		reg = <0x0 0x2000000>;
 	};
 
-	chosen {
-		bootargs = "console=ttyS0,57600";
-	};
-
 	palmbus@10000000 {
 		sysc@0 {
 			ralink,pinmux = "spi", "uartlite", "mdio", "wled", "ephy", "rgmii1", "rgmii2";
