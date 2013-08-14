@@ -1,19 +1,22 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=cloog-ppl
-PKG_VERSION:=0.15.11
+PKG_NAME:=cloog
+PKG_VERSION:=0.18.0
 
-PKG_SOURCE_URL:=ftp://gcc.gnu.org/pub/gcc/infrastructure
+PKG_SOURCE_URL:=http://www.bastoul.net/cloog/pages/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=060ae4df6fb8176e021b4d033a6c0b9e
+PKG_MD5SUM:=be78a47bd82523250eb3e91646db5b3d
 
 HOST_FIXUP:=autoreconf
+
+HOST_BUILD_PARALLEL:=1
+HOST_CONFIGURE_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -34,6 +37,5 @@ define Host/Configure
 		$(HOST_CONFIGURE_ARGS); \
 	)
 endef
-
 
 $(eval $(call HostBuild))
