@@ -9,6 +9,10 @@
 		};
 	};
 
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
 	cpuintc: cpuintc@0 {
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
@@ -161,6 +165,19 @@
 			status = "disabled";
 		};
 
+		i2s@a00 {
+			compatible = "ralink,mt7620a-i2s";
+			reg = <0xa00 0x100>;
+
+			resets = <&rstctrl 17>;
+			reset-names = "i2s";
+
+			interrupt-parent = <&intc>;
+			interrupts = <10>;
+
+			status = "disabled";
+		};
+
 		spi@b00 {
 			compatible = "ralink,mt7620a-spi", "ralink,rt2880-spi";
 			reg = <0xb00 0x100>;
@@ -198,6 +215,19 @@
 			interrupts = <7>;
 		};
 
+		pcm@2000 {
+			compatible = "ralink,mt7620a-pcm";
+			reg = <0x2000 0x800>;
+
+			resets = <&rstctrl 11>;
+			reset-names = "pcm";
+
+			interrupt-parent = <&intc>;
+			interrupts = <4>;
+
+			status = "disabled";
+		};
+
 		gdma@2800 {
 			compatible = "ralink,mt7620a-gdma", "ralink,rt2880-gdma";
 			reg = <0x2800 0x800>;
@@ -207,6 +237,8 @@
 
 			interrupt-parent = <&intc>;
 			interrupts = <7>;
+
+			status = "disabled";
 		};
 	};
 
@@ -268,6 +300,8 @@
 
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
+
+		status = "disabled";
 	};
 
 	ohci@101c1000 {
@@ -276,6 +310,8 @@
 
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
+
+		status = "disabled";
 	};
 
 	pcie@10140000 {
