@@ -113,6 +113,7 @@ platform_check_image() {
 	dir-835-a1 | \
 	ew-dorin | \
 	ew-dorin-router | \
+	hornet-ub-x2 | \
 	mzk-w04nu | \
 	mzk-w300nh | \
 	tew-632brp | \
