@@ -1,5 +1,7 @@
+From 2c58080407554e1bac8fd50d23cb02420524caed Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@openwrt.org>
-Subject: [PATCH 2/2] MIPS: partially inline dma ops
+Date: Mon, 12 Aug 2013 12:50:22 +0200
+Subject: [PATCH] MIPS: partially inline dma ops
 
 Several DMA ops are no-op on many platforms, and the indirection through
 the mips_dma_map_ops function table is causing the compiler to emit
@@ -10,9 +12,14 @@ based system), and also slightly reduces code size of a few drivers.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
+ arch/mips/Kconfig                   |   4 +
+ arch/mips/include/asm/dma-mapping.h | 360 +++++++++++++++++++++++++++++++++++-
+ arch/mips/mm/dma-default.c          | 163 ++--------------
+ 3 files changed, 373 insertions(+), 154 deletions(-)
+
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1426,6 +1426,7 @@ config CPU_CAVIUM_OCTEON
+@@ -1430,6 +1430,7 @@ config CPU_CAVIUM_OCTEON
  	select LIBFDT
  	select USE_OF
  	select USB_EHCI_BIG_ENDIAN_MMIO
@@ -20,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	help
  	  The Cavium Octeon processor is a highly integrated chip containing
  	  many ethernet hardware widgets for networking tasks. The processor
-@@ -1646,6 +1647,9 @@ config SYS_HAS_CPU_XLR
+@@ -1650,6 +1651,9 @@ config SYS_HAS_CPU_XLR
  config SYS_HAS_CPU_XLP
  	bool
  
@@ -444,9 +451,18 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
 --- a/arch/mips/mm/dma-default.c
 +++ b/arch/mips/mm/dma-default.c
-@@ -42,26 +42,6 @@ static int __init setnocoherentio(char *
- }
+@@ -24,7 +24,7 @@
+ 
+ #ifdef CONFIG_DMA_MAYBE_COHERENT
+ int coherentio = 0;	/* User defined DMA coherency from command line. */
+-EXPORT_SYMBOL_GPL(coherentio);
++EXPORT_SYMBOL(coherentio);
+ int hw_coherentio = 0;	/* Actual hardware supported DMA coherency setting. */
+ 
+ static int __init setcoherentio(char *str)
+@@ -44,26 +44,6 @@ static int __init setnocoherentio(char *
  early_param("nocoherentio", setnocoherentio);
+ #endif
  
 -static inline struct page *dma_addr_to_page(struct device *dev,
 -	dma_addr_t dma_addr)
@@ -471,7 +487,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static gfp_t massage_gfp_flags(const struct device *dev, gfp_t gfp)
  {
  	gfp_t dma_flag;
-@@ -117,8 +97,9 @@ void *dma_alloc_noncoherent(struct devic
+@@ -119,8 +99,9 @@ void *dma_alloc_noncoherent(struct devic
  }
  EXPORT_SYMBOL(dma_alloc_noncoherent);
  
@@ -483,7 +499,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  {
  	void *ret;
  
-@@ -142,6 +123,7 @@ static void *mips_dma_alloc_coherent(str
+@@ -144,6 +125,7 @@ static void *mips_dma_alloc_coherent(str
  
  	return ret;
  }
@@ -491,7 +507,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  
  void dma_free_noncoherent(struct device *dev, size_t size, void *vaddr,
-@@ -152,8 +134,8 @@ void dma_free_noncoherent(struct device 
+@@ -154,8 +136,8 @@ void dma_free_noncoherent(struct device 
  }
  EXPORT_SYMBOL(dma_free_noncoherent);
  
@@ -502,7 +518,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  {
  	unsigned long addr = (unsigned long) vaddr;
  	int order = get_order(size);
-@@ -168,6 +150,7 @@ static void mips_dma_free_coherent(struc
+@@ -170,6 +152,7 @@ static void mips_dma_free_coherent(struc
  
  	free_pages(addr, get_order(size));
  }
@@ -510,7 +526,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  static inline void __dma_sync_virtual(void *addr, size_t size,
  	enum dma_data_direction direction)
-@@ -196,8 +179,8 @@ static inline void __dma_sync_virtual(vo
+@@ -198,8 +181,8 @@ static inline void __dma_sync_virtual(vo
   * If highmem is not configured then the bulk of this loop gets
   * optimized out.
   */
@@ -521,7 +537,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  {
  	size_t left = size;
  
-@@ -226,109 +209,7 @@ static inline void __dma_sync(struct pag
+@@ -228,109 +211,7 @@ static inline void __dma_sync(struct pag
  		left -= len;
  	} while (left);
  }
@@ -632,7 +648,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
  			 enum dma_data_direction direction)
-@@ -341,23 +222,10 @@ void dma_cache_sync(struct device *dev, 
+@@ -343,23 +224,10 @@ void dma_cache_sync(struct device *dev, 
  
  EXPORT_SYMBOL(dma_cache_sync);
  
