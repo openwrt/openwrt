@@ -280,7 +280,16 @@ ar71xx_board_detect() {
 		name="jwap003"
 		;;
 	*"Hornet-UB")
-		name="hornet-ub"
+		local size
+		size=$(awk '/firmware/ { print $2 }' /proc/mtd)
+
+		if [ "x$size" = "x00790000" ]; then
+			name="hornet-ub"
+		fi
+
+		if [ "x$size" = "x00f90000" ]; then
+			name="hornet-ub-x2"
+		fi
 		;;
 	*LS-SR71)
 		name="ls-sr71"
