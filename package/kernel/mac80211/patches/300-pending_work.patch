@@ -1537,6 +1537,18 @@
  		state->filter_wiphy = -1;
  		ret = nl80211_dump_wiphy_parse(skb, cb, state);
  		if (ret) {
+@@ -4770,9 +4774,9 @@ do {									    \
+ 	FILL_IN_MESH_PARAM_IF_SET(tb, cfg, dot11MeshForwarding, 0, 1,
+ 				  mask, NL80211_MESHCONF_FORWARDING,
+ 				  nla_get_u8);
+-	FILL_IN_MESH_PARAM_IF_SET(tb, cfg, rssi_threshold, 1, 255,
++	FILL_IN_MESH_PARAM_IF_SET(tb, cfg, rssi_threshold, -255, 0,
+ 				  mask, NL80211_MESHCONF_RSSI_THRESHOLD,
+-				  nla_get_u32);
++				  nla_get_s32);
+ 	FILL_IN_MESH_PARAM_IF_SET(tb, cfg, ht_opmode, 0, 16,
+ 				  mask, NL80211_MESHCONF_HT_OPMODE,
+ 				  nla_get_u16);
 @@ -6615,12 +6619,14 @@ EXPORT_SYMBOL(cfg80211_testmode_alloc_ev
  
  void cfg80211_testmode_event(struct sk_buff *skb, gfp_t gfp)
