@@ -40,19 +40,21 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 --- a/arch/mips/include/asm/dma-coherence.h
 +++ b/arch/mips/include/asm/dma-coherence.h
-@@ -9,7 +9,14 @@
+@@ -9,7 +9,16 @@
  #ifndef __ASM_DMA_COHERENCE_H
  #define __ASM_DMA_COHERENCE_H
  
 +#ifdef CONFIG_DMA_MAYBE_COHERENT
  extern int coherentio;
  extern int hw_coherentio;
-+#elif defined(CONFIG_DMA_COHERENT)
++#else
++#ifdef CONFIG_DMA_COHERENT
 +#define coherentio	1
 +#else
 +#define coherentio	0
 +#endif
 +#define hw_coherentio	0
++#endif /* CONFIG_DMA_MAYBE_COHERENT */
  
  #endif
 --- a/arch/mips/include/asm/mach-generic/dma-coherence.h
