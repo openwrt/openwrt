@@ -1,35 +1,20 @@
+From 151c4e4a06b0b8d16c2fd392bb0e33868b12357f Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@openwrt.org>
-Subject: [PATCH 1/2] MIPS: remove unnecessary platform dma helper functions
+Date: Mon, 12 Aug 2013 12:45:52 +0200
+Subject: [PATCH] MIPS: remove unnecessary platform dma helper functions
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
---- a/arch/mips/mm/dma-default.c
-+++ b/arch/mips/mm/dma-default.c
-@@ -289,7 +289,6 @@ static void mips_dma_sync_single_for_cpu
- static void mips_dma_sync_single_for_device(struct device *dev,
- 	dma_addr_t dma_handle, size_t size, enum dma_data_direction direction)
- {
--	plat_extra_sync_for_device(dev);
- 	if (!plat_device_is_coherent(dev))
- 		__dma_sync(dma_addr_to_page(dev, dma_handle),
- 			   dma_handle & ~PAGE_MASK, size, direction);
-@@ -323,7 +322,7 @@ static void mips_dma_sync_sg_for_device(
- 
- int mips_dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
- {
--	return plat_dma_mapping_error(dev, dma_addr);
-+	return 0;
- }
- 
- int mips_dma_supported(struct device *dev, u64 mask)
-@@ -336,7 +335,6 @@ void dma_cache_sync(struct device *dev, 
- {
- 	BUG_ON(direction == DMA_NONE);
- 
--	plat_extra_sync_for_device(dev);
- 	if (!plat_device_is_coherent(dev))
- 		__dma_sync_virtual(vaddr, size, direction);
- }
+ arch/mips/include/asm/mach-cavium-octeon/dma-coherence.h | 12 ------------
+ arch/mips/include/asm/mach-generic/dma-coherence.h       | 10 ----------
+ arch/mips/include/asm/mach-ip27/dma-coherence.h          | 10 ----------
+ arch/mips/include/asm/mach-ip32/dma-coherence.h          | 11 -----------
+ arch/mips/include/asm/mach-jazz/dma-coherence.h          | 10 ----------
+ arch/mips/include/asm/mach-loongson/dma-coherence.h      | 10 ----------
+ arch/mips/include/asm/mach-powertv/dma-coherence.h       | 10 ----------
+ arch/mips/mm/dma-default.c                               |  4 +---
+ 8 files changed, 1 insertion(+), 76 deletions(-)
+
 --- a/arch/mips/include/asm/mach-cavium-octeon/dma-coherence.h
 +++ b/arch/mips/include/asm/mach-cavium-octeon/dma-coherence.h
 @@ -46,22 +46,11 @@ static inline int plat_dma_supported(str
@@ -170,3 +155,30 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static inline int plat_device_is_coherent(struct device *dev)
  {
  	return 0;
+--- a/arch/mips/mm/dma-default.c
++++ b/arch/mips/mm/dma-default.c
+@@ -289,7 +289,6 @@ static void mips_dma_sync_single_for_cpu
+ static void mips_dma_sync_single_for_device(struct device *dev,
+ 	dma_addr_t dma_handle, size_t size, enum dma_data_direction direction)
+ {
+-	plat_extra_sync_for_device(dev);
+ 	if (!plat_device_is_coherent(dev))
+ 		__dma_sync(dma_addr_to_page(dev, dma_handle),
+ 			   dma_handle & ~PAGE_MASK, size, direction);
+@@ -323,7 +322,7 @@ static void mips_dma_sync_sg_for_device(
+ 
+ int mips_dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
+-	return plat_dma_mapping_error(dev, dma_addr);
++	return 0;
+ }
+ 
+ int mips_dma_supported(struct device *dev, u64 mask)
+@@ -336,7 +335,6 @@ void dma_cache_sync(struct device *dev, 
+ {
+ 	BUG_ON(direction == DMA_NONE);
+ 
+-	plat_extra_sync_for_device(dev);
+ 	if (!plat_device_is_coherent(dev))
+ 		__dma_sync_virtual(vaddr, size, direction);
+ }
