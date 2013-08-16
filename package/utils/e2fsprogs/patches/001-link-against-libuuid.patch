@@ -1,6 +1,6 @@
 --- a/configure
 +++ b/configure
-@@ -5111,7 +5111,7 @@ if ${ac_cv_lib_blkid_blkid_get_cache+:}
+@@ -5038,7 +5038,7 @@ if test "${ac_cv_lib_blkid_blkid_get_cac
    $as_echo_n "(cached) " >&6
  else
    ac_check_lib_save_LIBS=$LIBS
@@ -11,7 +11,7 @@
  
 --- a/misc/Makefile.in
 +++ b/misc/Makefile.in
-@@ -147,10 +147,10 @@ partinfo: partinfo.o
+@@ -146,10 +146,10 @@ partinfo: partinfo.o
  	$(E) "	LD $@"
  	$(Q) $(CC) $(ALL_LDFLAGS) -o partinfo partinfo.o
  
@@ -24,7 +24,7 @@
  
  tune2fs: $(TUNE2FS_OBJS) $(DEPLIBS) $(DEPLIBS_E2P) $(DEPLIBBLKID) \
  		$(DEPLIBUUID) $(DEPLIBQUOTA) $(LIBEXT2FS)
-@@ -290,9 +290,9 @@ dumpe2fs.profiled: $(DUMPE2FS_OBJS) $(PR
+@@ -289,9 +289,9 @@ dumpe2fs.profiled: $(PROFILED_DUMPE2FS_O
  		$(PROFILED_DUMPE2FS_OBJS) $(PROFILED_LIBS) \
  		$(PROFILED_LIBE2P) $(PROFILED_LIBUUID) $(LIBINTL)
  
@@ -34,5 +34,5 @@
 -	$(Q) $(CC) $(ALL_LDFLAGS) -o fsck $(FSCK_OBJS) $(LIBBLKID) $(LIBINTL)
 +	$(Q) $(CC) $(ALL_LDFLAGS) -o fsck $(FSCK_OBJS) $(LIBBLKID) $(LIBUUID) $(LIBINTL)
  
- fsck.profiled: $(FSCK_OBJS) $(PROFILED_DEPLIBBLKID)
+ fsck.profiled: $(PROFILED_FSCK_OBJS) $(PROFILED_DEPLIBBLKID)
  	$(E) "	LD $@"
