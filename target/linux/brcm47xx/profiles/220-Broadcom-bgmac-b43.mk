@@ -6,7 +6,7 @@
 #
 
 define Profile/Broadcom-bgmac-b43
-  NAME:=Broadcom SoC, bgmac Ethernet, BCM43xx WiFi (bgmac)
+  NAME:=Broadcom SoC, bgmac Ethernet, BCM43xx WiFi (b43)
   PACKAGES:=kmod-bgmac kmod-b43
 endef
 
