@@ -499,8 +499,8 @@ static int wlc_pmk(wlc_param param, void *data, void *value)
 	/* driver doesn't support GET */
 
 	if ((param & PARAM_MODE) == SET) {
-		strncpy(pmk.key, value, WSEC_MAX_PSK_LEN);
-		pmk.key_len = strlen(value);
+		strncpy(pmk.key, str, WSEC_MAX_PSK_LEN);
+		pmk.key_len = strlen(str);
 
 		if (pmk.key_len > WSEC_MAX_PSK_LEN)
 			pmk.key_len = WSEC_MAX_PSK_LEN;
@@ -912,6 +912,41 @@ static const struct wlc_call wlc_calls[] = {
 		.handler = wlc_ioctl,
 		.desc = "G Mode"
 	},
+	{
+		.name = "phytype",
+		.param = INT,
+		.data.num = (WLC_GET_PHYTYPE << 16),
+		.handler = wlc_ioctl,
+		.desc = "PHY Type"
+	},
+	{
+		.name = "nmode",
+		.param = INT,
+		.handler = wlc_iovar,
+		.data.str = "nmode",
+		.desc = "N Mode"
+	},
+	{
+		.name = "nreqd",
+		.param = INT,
+		.handler = wlc_iovar,
+		.data.str = "nreqd",
+		.desc = "N Mode required"
+	},
+	{
+		.name = "chanspec",
+		.param = INT,
+		.handler = wlc_iovar,
+		.data.str = "chanspec",
+		.desc = "Channel Spec (See bcmwifi.h)"
+	},
+	{
+		.name = "band",
+		.param = INT,
+		.data.num = ((WLC_GET_BAND << 16) | WLC_SET_BAND),
+		.handler = wlc_ioctl,
+		.desc = "Band"
+	},
 };
 #define wlc_calls_size (sizeof(wlc_calls) / sizeof(struct wlc_call))
 
@@ -971,7 +1006,7 @@ static int do_command(const struct wlc_call *cmd, char *arg)
 		set = 1;
 		switch(cmd->param & PARAM_TYPE) {
 			case INT:
-				intval = strtoul(arg, &end, 10);
+				intval = strtoul(arg, &end, 0);
 				if (end && !(*end)) {
 					memcpy(buf, &intval, sizeof(intval));
 				} else {

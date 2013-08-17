@@ -131,6 +131,7 @@ enable_broadcom() {
 	config_get frag "$device" frag
 	config_get rts "$device" rts
 	config_get hwmode "$device" hwmode
+	config_get htmode "$device" htmode
 	local vif_pre_up vif_post_up vif_do_up vif_txpower
 	local doth=0
 	local wmm=1
@@ -161,14 +162,39 @@ enable_broadcom() {
 		;;
 	esac
 
+	[ ${channel:-0} -ge 1 -a ${channel:-0} -le 14 ] && band=2
+	[ ${channel:-0} -ge 36 ] && band=1
+
 	case "$hwmode" in
-		*b)   hwmode=0;;
-		*bg)  hwmode=1;;
-		*g)   hwmode=2;;
-		*gst) hwmode=4;;
-		*lrs) hwmode=5;;
-		*)    hwmode=1;;
+		*na)	nmode=1; nreqd=0;;
+		*a)	nmode=0;;
+		*ng)	gmode=1; nmode=1; nreqd=0;;
+		*n)	nmode=1; nreqd=1;;
+		*b)	gmode=0; nmode=0;;
+		*bg)	gmode=1; nmode=0;;
+		*g)	gmode=2; nmode=0;;
+		*gst)	gmode=4; nmode=0;;
+		*lrs)	gmode=5; nmode=0;;
+		*)      case "$band" in
+				2) gmode=1; nmode=1; nreqd=0;;
+				1) nmode=1; nreqd=0;;
+				*) gmode=1; nmode=1; nreqd=0;;
+			esac
+			;;
 	esac
+
+        # Use 'nmode' for N-Phy only
+	[ "$(wlc ifname $device phytype)" = 4 ] || nmode=
+
+	# Use 'chanspec' instead of 'channel' for 'N' modes (See bcmwifi.h)
+	[ ${nmode:-0} -ne 0 -a -n "$band" ] && {
+		case "$htmode" in
+			HT40-)	chanspec=$(printf 0x%x%x%02x $band 0xe $(($channel - 2))); channel=;;
+			HT40+)	chanspec=$(printf 0x%x%x%02x $band 0xd $(($channel + 2))); channel=;;
+			HT20)	chanspec=$(printf 0x%x%x%02x $band 0xb $channel); channel=;;
+			*) ;;
+		esac
+	}
 
 	for vif in $vifs; do
 		config_get vif_txpower "$vif" txpower
@@ -322,7 +348,10 @@ enable_broadcom() {
 	wlc ifname "$device" stdin <<EOF
 $ifdown
 
-gmode ${hwmode:-1}
+${nmode:+band ${band:-0}}
+${nmode:+nmode $nmode}
+${nmode:+${nreqd:+nreqd $nreqd}}
+${gmode:+gmode $gmode}
 apsta $apsta
 ap $ap
 ${mssid:+mssid $mssid}
@@ -344,6 +373,7 @@ wds none
 ${wds:+wds $wds}
 country ${country:-US}
 ${channel:+channel $channel}
+${chanspec:+chanspec $chanspec}
 maxassoc ${maxassoc:-128}
 slottime ${slottime:--1}
 ${frameburst:+frameburst $frameburst}
