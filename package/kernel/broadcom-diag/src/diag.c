@@ -121,7 +121,6 @@ enum {
 	WZR_G300N,
 	WZR_RS_G54,
 	WZR_RS_G54HP,
-	BUFFALO_UNKNOWN,
 	BUFFALO_UNKNOWN_4710,
 
 	/* Siemens */
@@ -796,15 +795,6 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "vpn",	.gpio = 1 << 1, .polarity = REVERSE },
 		},
 	},
-	[BUFFALO_UNKNOWN] = {
-		.name		= "Buffalo (unknown)",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 7 },
-		},
-		.leds		= {
-			{ .name = "diag",	.gpio = 1 << 1, .polarity = REVERSE },
-		},
-	},
 	[BUFFALO_UNKNOWN_4710] = {
 		.name		= "Buffalo (unknown, BCM4710)",
 		.buttons	= {
@@ -1264,8 +1254,6 @@ static struct platform_t __init *platform_detect_legacy(void)
 	if (boardnum || !strcmp(boardnum, "00")) {/* probably buffalo */
 		if (startswith(boardtype, "bcm94710ap"))
 			return &platforms[BUFFALO_UNKNOWN_4710];
-		else
-			return &platforms[BUFFALO_UNKNOWN];
 	}
 
 	if (startswith(getvar("CFEver"), "MotoWRv2") ||
