@@ -166,7 +166,7 @@
 +		return;
 +
 +	va_start(args, fmt);
-+	crashlog_buf->len += vsnprintf(
++	crashlog_buf->len += vscnprintf(
 +		&crashlog_buf->data[crashlog_buf->len],
 +		len, fmt, args);
 +	va_end(args);
