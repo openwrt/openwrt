@@ -17,12 +17,23 @@ define Image/BuildKernel/olinuxino-bootlet
 	)
 endef
 
+define Image/BuildKernel/olinuxino-uboot
+	mkimage -A arm -O linux -T kernel -C none \
+		-a 0x42000000 -e 0x42000000 \
+		-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(KDIR)/vmlinux $(KDIR)/uImage
+	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
+endef
+
 define Image/BuildKernel
 
   ifeq ($(CONFIG_PACKAGE_imx-bootlets),y)
 	$(call Image/BuildKernel/olinuxino-bootlet)
   endif
 
+  ifeq ($(CONFIG_PACKAGE_uboot-imx23-mx23_olinuxino),y)
+	$(call Image/BuildKernel/olinuxino-uboot)
+  endif
 endef
 
 define Image/Build
