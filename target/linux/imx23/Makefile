@@ -12,9 +12,8 @@ BOARDNAME:=Freescale i.MX23 series
 FEATURES:=ext4 rtc usb gpio
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s
 MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
-LINUX_VERSION:=3.10.4
+LINUX_VERSION:=3.10.9
 KERNELNAME:="zImage dtbs"
-#DEPENDS:=+imx-bootlets
 
 define Target/Description
 	Support for Freescale i.MX233-based boards
