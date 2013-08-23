@@ -13,7 +13,7 @@ SUBTARGETS:=rt288x rt305x rt3883 mt7620a
 CFLAGS:=-Os -pipe -mno-branch-likely
 FEATURES:=squashfs gpio
 
-LINUX_VERSION:=3.10.4
+LINUX_VERSION:=3.10.9
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=\

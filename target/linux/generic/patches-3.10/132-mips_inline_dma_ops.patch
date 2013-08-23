@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1430,6 +1430,7 @@ config CPU_CAVIUM_OCTEON
+@@ -1431,6 +1431,7 @@ config CPU_CAVIUM_OCTEON
  	select LIBFDT
  	select USE_OF
  	select USB_EHCI_BIG_ENDIAN_MMIO
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	help
  	  The Cavium Octeon processor is a highly integrated chip containing
  	  many ethernet hardware widgets for networking tasks. The processor
-@@ -1650,6 +1651,9 @@ config SYS_HAS_CPU_XLR
+@@ -1651,6 +1652,9 @@ config SYS_HAS_CPU_XLR
  config SYS_HAS_CPU_XLP
  	bool
  
@@ -506,7 +506,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  
  void dma_free_noncoherent(struct device *dev, size_t size, void *vaddr,
-@@ -154,8 +136,8 @@ void dma_free_noncoherent(struct device 
+@@ -154,8 +136,8 @@ void dma_free_noncoherent(struct device
  }
  EXPORT_SYMBOL(dma_free_noncoherent);
  
@@ -647,7 +647,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
  			 enum dma_data_direction direction)
-@@ -343,23 +224,10 @@ void dma_cache_sync(struct device *dev, 
+@@ -343,23 +224,10 @@ void dma_cache_sync(struct device *dev,
  
  EXPORT_SYMBOL(dma_cache_sync);
  

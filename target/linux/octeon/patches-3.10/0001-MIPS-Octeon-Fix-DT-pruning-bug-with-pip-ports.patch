@@ -24,11 +24,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/cavium-octeon/octeon-platform.c |    5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/cavium-octeon/octeon-platform.c b/arch/mips/cavium-octeon/octeon-platform.c
-index 7b746e7..1830874 100644
 --- a/arch/mips/cavium-octeon/octeon-platform.c
 +++ b/arch/mips/cavium-octeon/octeon-platform.c
-@@ -334,9 +334,10 @@ static void __init octeon_fdt_pip_iface(int pip, int idx, u64 *pmac)
+@@ -334,9 +334,10 @@ static void __init octeon_fdt_pip_iface(
  	char name_buffer[20];
  	int iface;
  	int p;
@@ -41,6 +39,3 @@ index 7b746e7..1830874 100644
  
  	snprintf(name_buffer, sizeof(name_buffer), "interface@%d", idx);
  	iface = fdt_subnode_offset(initial_boot_params, pip, name_buffer);
--- 
-1.7.10.4
-

@@ -83,7 +83,7 @@
  			for (; info->mtd[i] == NULL && *probe_type != NULL; probe_type++)
 --- a/include/linux/mtd/physmap.h
 +++ b/include/linux/mtd/physmap.h
-@@ -26,6 +26,8 @@ struct physmap_flash_data {
+@@ -25,6 +25,8 @@ struct physmap_flash_data {
  	unsigned int		width;
  	int			(*init)(struct platform_device *);
  	void			(*exit)(struct platform_device *);

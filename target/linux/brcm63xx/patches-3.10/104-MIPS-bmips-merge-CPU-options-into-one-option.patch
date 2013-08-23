@@ -17,7 +17,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -129,6 +129,7 @@ config BCM63XX
+@@ -130,6 +130,7 @@ config BCM63XX
  	select DMA_NONCOHERENT
  	select IRQ_CPU
  	select SYS_HAS_CPU_MIPS32_R1
@@ -25,7 +25,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	select SYS_HAS_CPU_BMIPS4350 if !BCM63XX_CPU_6338 && !BCM63XX_CPU_6345 && !BCM63XX_CPU_6348
  	select NR_CPUS_DEFAULT_2
  	select SYS_SUPPORTS_32BIT_KERNEL
-@@ -1447,41 +1448,21 @@ config CPU_CAVIUM_OCTEON
+@@ -1453,41 +1454,21 @@ config CPU_CAVIUM_OCTEON
  	  can have up to 16 Mips64v2 cores and 8 integrated gigabit ethernets.
  	  Full details can be found at http://www.caviumnetworks.com.
  
@@ -81,7 +81,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  config CPU_XLR
  	bool "Netlogic XLR SoC"
-@@ -1562,14 +1543,25 @@ config CPU_LOONGSON1
+@@ -1568,14 +1549,25 @@ config CPU_LOONGSON1
  	select CPU_SUPPORTS_32BIT_KERNEL
  	select CPU_SUPPORTS_HIGHMEM
  
@@ -114,7 +114,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  config SYS_HAS_CPU_LOONGSON2E
  	bool
-@@ -1643,6 +1635,9 @@ config SYS_HAS_CPU_SB1
+@@ -1649,6 +1641,9 @@ config SYS_HAS_CPU_SB1
  config SYS_HAS_CPU_CAVIUM_OCTEON
  	bool
  

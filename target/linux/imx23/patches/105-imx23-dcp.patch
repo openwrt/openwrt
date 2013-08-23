@@ -1,10 +1,8 @@
-diff --git a/drivers/crypto/Kconfig b/drivers/crypto/Kconfig
-index dffb855..3e11215 100644
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -286,6 +286,16 @@ config CRYPTO_DEV_SAHARA
-          This option enables support for the SAHARA HW crypto accelerator
-          found in some Freescale i.MX chips.
+@@ -287,6 +287,16 @@ config CRYPTO_DEV_SAHARA
+ 	  This option enables support for the SAHARA HW crypto accelerator
+ 	  found in some Freescale i.MX chips.
  
 +config CRYPTO_DEV_DCP
 +       tristate "Support for the DCP engine"
@@ -17,13 +15,11 @@ index dffb855..3e11215 100644
 +         capabilities of the DCP co-processor
 +
  config CRYPTO_DEV_S5P
-        tristate "Support for Samsung S5PV210 crypto accelerator"
-        depends on ARCH_S5PV210
-diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile
-index 38ce13d..b4946dd 100644
+ 	tristate "Support for Samsung S5PV210 crypto accelerator"
+ 	depends on ARCH_S5PV210
 --- a/drivers/crypto/Makefile
 +++ b/drivers/crypto/Makefile
-@@ -13,6 +13,7 @@ obj-$(CONFIG_CRYPTO_DEV_OMAP_SHAM) += omap-sham.o
+@@ -13,6 +13,7 @@ obj-$(CONFIG_CRYPTO_DEV_OMAP_SHAM) += om
  obj-$(CONFIG_CRYPTO_DEV_OMAP_AES) += omap-aes.o
  obj-$(CONFIG_CRYPTO_DEV_PICOXCELL) += picoxcell_crypto.o
  obj-$(CONFIG_CRYPTO_DEV_SAHARA) += sahara.o
@@ -31,9 +27,6 @@ index 38ce13d..b4946dd 100644
  obj-$(CONFIG_CRYPTO_DEV_S5P) += s5p-sss.o
  obj-$(CONFIG_CRYPTO_DEV_TEGRA_AES) += tegra-aes.o
  obj-$(CONFIG_CRYPTO_DEV_UX500) += ux500/
-diff --git a/drivers/crypto/dcp.c b/drivers/crypto/dcp.c
-new file mode 100644
-index 0000000..eea194c
 --- /dev/null
 +++ b/drivers/crypto/dcp.c
 @@ -0,0 +1,925 @@
@@ -962,5 +955,3 @@ index 0000000..eea194c
 +MODULE_AUTHOR("Tobias Rauter <tobias.rau...@gmail.com>");
 +MODULE_DESCRIPTION("Freescale DCP Crypto Driver");
 +MODULE_LICENSE("GPL");
-
-
