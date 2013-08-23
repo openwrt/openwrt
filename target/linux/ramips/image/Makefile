@@ -156,9 +156,9 @@ BuildFirmware/Edimax/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
 
 # build Seama header images
 define BuildFirmware/Seama/squashfs
-	$(call BuildFirmware/OF,$(1),$(2),$(3),$(4))
+	$(call BuildFirmware/OF,$(1),$(2),$(3),$(5))
 	cat $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/root.$(1) > $(KDIR)/img_$(2).$(1).tmp
-	if [ `stat -c%s "$(KDIR)/img_$(2).$(1).tmp"` -gt $$$$(($(4) - 64)) ]; then \
+	if [ `stat -c%s "$(KDIR)/img_$(2).$(1).tmp"` -gt $$$$(($(5) - 64)) ]; then \
 		echo "Warning: $(KDIR)/img_$(2).$(1).tmp is too big" >&2; \
 	else \
 		dd if=$(KDIR)/vmlinux-$(2).bin.lzma of=$(KDIR)/vmlinux-$(2).bin.lzma.padded bs=64k conv=sync; \
