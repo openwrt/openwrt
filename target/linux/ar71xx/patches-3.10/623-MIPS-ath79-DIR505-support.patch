@@ -1,8 +1,6 @@
-Index: linux-3.10.4/arch/mips/ath79/Kconfig
-===================================================================
---- linux-3.10.4.orig/arch/mips/ath79/Kconfig	2013-08-04 19:08:12.739921385 +0200
-+++ linux-3.10.4/arch/mips/ath79/Kconfig	2013-08-04 19:09:15.379922883 +0200
-@@ -254,6 +254,16 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -254,6 +254,16 @@ config ATH79_MACH_WPE72
  	select ATH79_DEV_USB
  	select MYLOADER
  
@@ -19,11 +17,9 @@ Index: linux-3.10.4/arch/mips/ath79/Kconfig
  config ATH79_MACH_DIR_600_A1
  	bool "D-Link DIR-600 A1/DIR-615 E4 support"
  	select SOC_AR724X
-Index: linux-3.10.4/arch/mips/ath79/Makefile
-===================================================================
---- linux-3.10.4.orig/arch/mips/ath79/Makefile	2013-08-04 19:07:36.299920522 +0200
-+++ linux-3.10.4/arch/mips/ath79/Makefile	2013-08-04 19:09:42.363923523 +0200
-@@ -53,6 +53,7 @@
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -53,6 +53,7 @@ obj-$(CONFIG_ATH79_MACH_ARCHER_C7)	+= ma
  obj-$(CONFIG_ATH79_MACH_AW_NR580)	+= mach-aw-nr580.o
  obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
  obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
@@ -31,11 +27,9 @@ Index: linux-3.10.4/arch/mips/ath79/Makefile
  obj-$(CONFIG_ATH79_MACH_DIR_600_A1)	+= mach-dir-600-a1.o
  obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
  obj-$(CONFIG_ATH79_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
-Index: linux-3.10.4/arch/mips/ath79/machtypes.h
-===================================================================
---- linux-3.10.4.orig/arch/mips/ath79/machtypes.h	2013-08-04 19:08:12.739921385 +0200
-+++ linux-3.10.4/arch/mips/ath79/machtypes.h	2013-08-04 19:09:29.715923222 +0200
-@@ -37,6 +37,7 @@
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -37,6 +37,7 @@ enum ath79_mach_type {
  	ATH79_MACH_CARAMBOLA2,		/* 8devices Carambola2 */
  	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
  	ATH79_MACH_PB44,		/* Atheros PB44 reference board */

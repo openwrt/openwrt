@@ -1,8 +1,6 @@
-Index: linux-3.10/drivers/staging/octeon-usb/octeon-hcd.c
-===================================================================
---- linux-3.10.orig/drivers/staging/octeon-usb/octeon-hcd.c	2013-08-03 16:11:44.269610286 +0200
-+++ linux-3.10/drivers/staging/octeon-usb/octeon-hcd.c	2013-08-04 13:18:54.011421971 +0200
-@@ -673,8 +673,9 @@
+--- a/drivers/staging/octeon-usb/octeon-hcd.c
++++ b/drivers/staging/octeon-usb/octeon-hcd.c
+@@ -673,8 +673,9 @@ static const struct hc_driver octeon_hc_
  };
  
  
@@ -13,7 +11,7 @@ Index: linux-3.10/drivers/staging/octeon-usb/octeon-hcd.c
  	int status;
  	int usb_num = to_platform_device(dev)->id;
  	int irq = platform_get_irq(to_platform_device(dev), 0);
-@@ -728,8 +729,9 @@
+@@ -728,8 +729,9 @@ static int octeon_usb_driver_probe(struc
  	return 0;
  }
  
@@ -24,7 +22,7 @@ Index: linux-3.10/drivers/staging/octeon-usb/octeon-hcd.c
  	int status;
  	struct usb_hcd *hcd = dev_get_drvdata(dev);
  	struct octeon_hcd *priv = hcd_to_octeon(hcd);
-@@ -748,30 +750,35 @@
+@@ -748,30 +750,35 @@ static int octeon_usb_driver_remove(stru
  	return 0;
  }
  
@@ -72,7 +70,7 @@ Index: linux-3.10/drivers/staging/octeon-usb/octeon-hcd.c
  	/*
  	 * Only cn52XX and cn56XX have DWC_OTG USB hardware and the
  	 * IOB priority registers.  Under heavy network load USB
-@@ -792,37 +799,14 @@
+@@ -792,37 +799,14 @@ static int __init octeon_usb_module_init
  		cvmx_write_csr(CVMX_IOB_N2C_L2C_PRI_CNT, pri_cnt.u64);
  	}
  

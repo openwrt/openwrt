@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -296,7 +296,7 @@ config MIPS_MALTA
+@@ -297,7 +297,7 @@ config MIPS_MALTA
  	select CEVT_R4K
  	select CSRC_R4K
  	select CSRC_GIC
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	select GENERIC_ISA_DMA
  	select HAVE_PCSPKR_PLATFORM
  	select IRQ_CPU
-@@ -947,6 +947,10 @@ config FW_CFE
+@@ -948,6 +948,10 @@ config FW_CFE
  config ARCH_DMA_ADDR_T_64BIT
  	def_bool (HIGHMEM && 64BIT_PHYS_ADDR) || 64BIT
  
