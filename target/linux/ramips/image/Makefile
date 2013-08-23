@@ -280,7 +280,7 @@ endif
 # RT305X Profiles
 #
 
-Image/Build/Profile/DIR610A1=$(call BuildFirmware/Seama/$(1),$(1),dir-610-a1,DIR-610-A1,wrgn59_dlob.hans_dir610,ralink_default_fw_size_4M)
+Image/Build/Profile/DIR610A1=$(call BuildFirmware/Seama/$(1),$(1),dir-610-a1,DIR-610-A1,wrgn59_dlob.hans_dir610,$(ralink_default_fw_size_4M))
 
 edimax_3g6200n_mtd_size=3735552
 Image/Build/Profile/3G6200N=$(call BuildFirmware/Edimax/$(1),$(1),3g-6200n,3G-6200N,$(edimax_3g6200n_mtd_size),CSYS,3G62,0x50000,0xc0000)
