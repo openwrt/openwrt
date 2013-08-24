@@ -358,7 +358,7 @@ define Image/Build/CameoHornet
 			[ -n "$$$$r" ] && dashr="-$$$$r" || dashr=; \
 			[ -z "$$$$r" ] && r="DEF"; \
 			mkcameofw -M HORNET -R "$$$$r" -S $(7) -V $(8) -c \
-				-K 0xe0000 -I $(10) \
+				-K $(10) -I $(11) \
 				-k "$(call sysupname,$(1),$(2))" \
 				-o $(call imgname,$(1),$(2))-factory$$$$dashr.bin; \
 		done; \
@@ -382,7 +382,7 @@ define Image/Build/Cameo7240/initramfs
 endef
 
 define Image/Build/Cameo933x
-	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),65536,2686976,$(4),$(5),$(6),3735552)
+	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),65536,2686976,$(4),$(5),$(6),0xe0000,3735552)
 endef
 
 define Image/Build/Cameo933x/initramfs
