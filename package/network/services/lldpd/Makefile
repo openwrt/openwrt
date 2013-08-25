@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2012 OpenWrt.org
+# Copyright (C) 2008-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lldpd
 PKG_VERSION:=0.7.5
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://media.luffy.cx/files/lldpd
@@ -30,7 +30,7 @@ define Package/lldpd
   SUBMENU:=Routing and Redirection
   TITLE:=Link Layer Discovery Protocol daemon
   URL:=https://github.com/vincentbernat/lldpd/wiki
-  DEPENDS:=+libevent2
+  DEPENDS:=+libevent2 +USE_EGLIBC:libbsd
 endef
 
 define Package/lldpd/description
