@@ -53,8 +53,9 @@
  
  		page = page_read(dev->blkdev->bd_inode->i_mapping, index);
 -		if (IS_ERR(page))
+-			return PTR_ERR(page);
 +		if (IS_ERR(page)) {
- 			return PTR_ERR(page);
++			err = PTR_ERR(page);
 +			goto done;
 +		}
  
