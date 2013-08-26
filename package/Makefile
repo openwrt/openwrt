@@ -34,20 +34,18 @@ ifdef CONFIG_USE_MKLIBS
 	# find all loadable objects that are not regular libraries and add them to the list as well
 	find $(STAGING_DIR_ROOT) -type f -name \*.so\* -exec \
 		file -r -N -F '' {} + | \
-		awk ' /shared object/ { print $$1 }' >> $(TMP_DIR)/mklibs-progs
+		awk ' /shared object/ { print $$1 }' > $(TMP_DIR)/mklibs-libs
 	mkdir -p $(TMP_DIR)/mklibs-out
 	$(STAGING_DIR_HOST)/bin/mklibs -D \
 		-d $(TMP_DIR)/mklibs-out \
 		--sysroot $(STAGING_DIR_ROOT) \
-		-L /lib \
-		-L /usr/lib \
-		-L /usr/lib/ebtables \
+		`cat $(TMP_DIR)/mklibs-libs | sed 's:/*[^/]\+/*$$::' | uniq | sed 's:^$(STAGING_DIR_ROOT):-L :'` \
 		--ldlib $(patsubst $(STAGING_DIR_ROOT)/%,/%,$(firstword $(wildcard \
 			$(foreach name,ld-uClibc.so.* ld-linux.so.* ld-*.so, \
 			  $(STAGING_DIR_ROOT)/lib/$(name) \
 			)))) \
 		--target $(REAL_GNU_TARGET_NAME) \
-		`cat $(TMP_DIR)/mklibs-progs` 2>&1
+		`cat $(TMP_DIR)/mklibs-progs $(TMP_DIR)/mklibs-libs` 2>&1
 	$(RSTRIP) $(TMP_DIR)/mklibs-out
 	for lib in `ls $(TMP_DIR)/mklibs-out/*.so.* 2>/dev/null`; do \
 		LIB="$${lib##*/}"; \
