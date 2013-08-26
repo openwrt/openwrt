@@ -194,6 +194,16 @@
  }
  
  static void
+@@ -820,6 +828,9 @@ minstrel_ht_update_cck(struct minstrel_p
+ 	if (sband->band != IEEE80211_BAND_2GHZ)
+ 		return;
+ 
++	if (!(mp->hw->flags & IEEE80211_HW_SUPPORTS_HT_CCK_RATES))
++		return;
++
+ 	mi->cck_supported = 0;
+ 	mi->cck_supported_short = 0;
+ 	for (i = 0; i < 4; i++) {
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
 @@ -936,8 +936,14 @@ ieee80211_rx_h_check(struct ieee80211_rx
@@ -2637,3 +2647,49 @@
  			ath9k_hw_rxena(ah);
  		}
  	} while (1);
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -802,7 +802,8 @@ void ath9k_set_hw_capab(struct ath_softc
+ 		IEEE80211_HW_PS_NULLFUNC_STACK |
+ 		IEEE80211_HW_SPECTRUM_MGMT |
+ 		IEEE80211_HW_REPORTS_TX_ACK_STATUS |
+-		IEEE80211_HW_SUPPORTS_RC_TABLE;
++		IEEE80211_HW_SUPPORTS_RC_TABLE |
++		IEEE80211_HW_SUPPORTS_HT_CCK_RATES;
+ 
+ 	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT) {
+ 		hw->flags |= IEEE80211_HW_AMPDU_AGGREGATION;
+--- a/drivers/net/wireless/ath/carl9170/main.c
++++ b/drivers/net/wireless/ath/carl9170/main.c
+@@ -1878,7 +1878,8 @@ void *carl9170_alloc(size_t priv_size)
+ 		     IEEE80211_HW_PS_NULLFUNC_STACK |
+ 		     IEEE80211_HW_NEED_DTIM_BEFORE_ASSOC |
+ 		     IEEE80211_HW_SUPPORTS_RC_TABLE |
+-		     IEEE80211_HW_SIGNAL_DBM;
++		     IEEE80211_HW_SIGNAL_DBM |
++		     IEEE80211_HW_SUPPORTS_HT_CCK_RATES;
+ 
+ 	if (!modparam_noht) {
+ 		/*
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -6133,7 +6133,8 @@ static int rt2800_probe_hw_mode(struct r
+ 	    IEEE80211_HW_SUPPORTS_PS |
+ 	    IEEE80211_HW_PS_NULLFUNC_STACK |
+ 	    IEEE80211_HW_AMPDU_AGGREGATION |
+-	    IEEE80211_HW_REPORTS_TX_ACK_STATUS;
++	    IEEE80211_HW_REPORTS_TX_ACK_STATUS |
++	    IEEE80211_HW_SUPPORTS_HT_CCK_RATES;
+ 
+ 	/*
+ 	 * Don't set IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING for USB devices
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1499,6 +1499,7 @@ enum ieee80211_hw_flags {
+ 	IEEE80211_HW_SUPPORTS_RC_TABLE			= 1<<24,
+ 	IEEE80211_HW_P2P_DEV_ADDR_FOR_INTF		= 1<<25,
+ 	IEEE80211_HW_TIMING_BEACON_ONLY			= 1<<26,
++	IEEE80211_HW_SUPPORTS_HT_CCK_RATES		= 1<<27,
+ };
+ 
+ /**
