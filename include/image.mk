@@ -17,6 +17,8 @@ KDIR=$(KERNEL_BUILD_DIR)
 
 IMG_PREFIX:=openwrt-$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
 
+MKFS_DEVTABLE_OPT := -D $(INCLUDE_DIR)/device_table.txt
+
 ifneq ($(CONFIG_BIG_ENDIAN),)
   JFFS2OPTS     :=  --pad --big-endian --squash-uids -v
 else
@@ -26,7 +28,7 @@ endif
 ifeq ($(CONFIG_JFFS2_RTIME),y)
   JFFS2OPTS += -X rtime
 endif
-ifeq ($(CONFIG_JFFS2_ZLIB),y) 
+ifeq ($(CONFIG_JFFS2_ZLIB),y)
   JFFS2OPTS += -X zlib
 endif
 ifeq ($(CONFIG_JFFS2_LZMA),y)
@@ -42,8 +44,11 @@ ifneq ($(CONFIG_JFFS2_LZMA),y)
   JFFS2OPTS += -x lzma
 endif
 
+JFFS2OPTS += $(MKFS_DEVTABLE_OPT)
+
 SQUASHFS_BLOCKSIZE := 256k
 SQUASHFSOPT := -b $(SQUASHFS_BLOCKSIZE)
+SQUASHFSOPT += -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1'
 SQUASHFSCOMP := gzip
 LZMA_XZ_OPTIONS := -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2
 ifeq ($(CONFIG_SQUASHFS_LZMA),y)
@@ -110,7 +115,7 @@ endif
 ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
     define Image/mkfs/ubifs
 		$(CP) ./ubinize.cfg $(KDIR)
-		$(STAGING_DIR_HOST)/bin/mkfs.ubifs $(UBIFS_OPTS) -o $(KDIR)/root.ubifs -d $(TARGET_DIR)
+		$(STAGING_DIR_HOST)/bin/mkfs.ubifs $(UBIFS_OPTS) $(MKFS_DEVTABLE_OPT) -o $(KDIR)/root.ubifs -d $(TARGET_DIR)
 		$(call Image/Build,ubifs)
 		(cd $(KDIR); \
 		$(STAGING_DIR_HOST)/bin/ubinize $(UBINIZE_OPTS) -o $(KDIR)/root.ubi ubinize.cfg)
@@ -136,7 +141,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_EXT4FS),)
 
   define Image/mkfs/ext4
 # generate an ext2 fs
-	$(STAGING_DIR_HOST)/bin/genext2fs -U -b $(E2SIZE) -N $(CONFIG_TARGET_ROOTFS_MAXINODE) -d $(TARGET_DIR)/ $(KDIR)/root.ext4 -m $(CONFIG_TARGET_ROOTFS_RESERVED_PCT)
+	$(STAGING_DIR_HOST)/bin/genext2fs -U -b $(E2SIZE) -N $(CONFIG_TARGET_ROOTFS_MAXINODE) -d $(TARGET_DIR)/ $(KDIR)/root.ext4 -m $(CONFIG_TARGET_ROOTFS_RESERVED_PCT) $(MKFS_DEVTABLE_OPT)
 # convert it to ext4
 	$(STAGING_DIR_HOST)/bin/tune2fs -O extents,uninit_bg,dir_index $(KDIR)/root.ext4
 # fix it up
