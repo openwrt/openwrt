@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -2631,15 +2631,18 @@ static void rt2800_config_channel(struct
+@@ -3186,11 +3186,17 @@ static void rt2800_config_channel(struct
  	/*
  	 * Change BBP settings
  	 */
@@ -15,6 +15,17 @@
  		rt2800_bbp_write(rt2x00dev, 66, 0x26 + rt2x00dev->lna_gain);
 +		rt2800_bbp_write(rt2x00dev, 86, 0x38);
 +		rt2800_bbp_write(rt2x00dev, 83, 0x6a);
+ 	} else if (rt2x00_rt(rt2x00dev, RT3593)) {
+ 		if (rf->channel > 14) {
+ 			/* Disable CCK Packet detection on 5GHz */
+@@ -3204,14 +3210,8 @@ static void rt2800_config_channel(struct
+ 		else
+ 			rt2800_bbp_write(rt2x00dev, 105, 0x34);
+ 
+-		rt2800_bbp_write(rt2x00dev, 62, 0x37 - rt2x00dev->lna_gain);
+-		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
+-		rt2800_bbp_write(rt2x00dev, 64, 0x37 - rt2x00dev->lna_gain);
+ 		rt2800_bbp_write(rt2x00dev, 77, 0x98);
  	} else {
 -		rt2800_bbp_write(rt2x00dev, 62, 0x37 - rt2x00dev->lna_gain);
 -		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
@@ -22,7 +33,7 @@
  		rt2800_bbp_write(rt2x00dev, 86, 0);
  	}
  
-@@ -4971,6 +4974,12 @@ static void rt2800_init_rfcsr_3290(struc
+@@ -6086,6 +6086,12 @@ static void rt2800_init_rfcsr_3290(struc
  
  static void rt2800_init_rfcsr_3352(struct rt2x00_dev *rt2x00dev)
  {
@@ -35,7 +46,7 @@
  	rt2800_rf_init_calibration(rt2x00dev, 30);
  
  	rt2800_rfcsr_write(rt2x00dev, 0, 0xf0);
-@@ -5006,15 +5015,30 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -6121,15 +6127,30 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 31, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 32, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 33, 0x00);
@@ -69,7 +80,7 @@
  	rt2800_rfcsr_write(rt2x00dev, 43, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 44, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 45, 0xdb);
-@@ -5022,15 +5046,20 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -6137,15 +6158,20 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 47, 0x0d);
  	rt2800_rfcsr_write(rt2x00dev, 48, 0x14);
  	rt2800_rfcsr_write(rt2x00dev, 49, 0x00);
@@ -99,15 +110,15 @@
  	rt2800_rfcsr_write(rt2x00dev, 59, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 60, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 61, 0x00);
-@@ -5715,6 +5744,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -6996,6 +7022,7 @@ static int rt2800_init_eeprom(struct rt2
  	 * RT53xx: defined in "EEPROM_CHIP_ID" field
  	 */
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
 +	    rt2x00_rt(rt2x00dev, RT3352) ||
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
- 		rt2x00_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
-@@ -5804,7 +5834,8 @@ static int rt2800_init_eeprom(struct rt2
+ 		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
+@@ -7086,7 +7113,8 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Detect if this device has Bluetooth co-existence.
  	 */
@@ -117,14 +128,14 @@
  		__set_bit(CAPABILITY_BT_COEXIST, &rt2x00dev->cap_flags);
  
  	/*
-@@ -5833,6 +5864,22 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7115,6 +7143,22 @@ static int rt2800_init_eeprom(struct rt2
  					EIRP_MAX_TX_POWER_LIMIT)
  		__set_bit(CAPABILITY_POWER_LIMIT, &rt2x00dev->cap_flags);
  
 +	/*
 +	 * Detect if device uses internal or external PA
 +	 */
-+	rt2x00_eeprom_read(rt2x00dev, EEPROM_NIC_CONF1, &eeprom);
++	rt2800_eeprom_read(rt2x00dev, EEPROM_NIC_CONF1, &eeprom);
 +
 +	if (rt2x00_rt(rt2x00dev, RT3352)) {
 +		if (!rt2x00_get_field16(eeprom,
@@ -142,8 +153,8 @@
  
 --- a/drivers/net/wireless/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/rt2x00/rt2800.h
-@@ -2153,6 +2153,12 @@ struct mac_iveiv_entry {
- #define RFCSR31_RX_CALIB		FIELD8(0x7f)
+@@ -2299,6 +2299,12 @@ struct mac_iveiv_entry {
+ #define RFCSR36_RF_BS			FIELD8(0x80)
  
  /*
 + * RFCSR 34:
@@ -155,7 +166,7 @@
   * RFCSR 38:
   */
  #define RFCSR38_RX_LO1_EN		FIELD8(0x20)
-@@ -2163,6 +2169,18 @@ struct mac_iveiv_entry {
+@@ -2310,6 +2316,18 @@ struct mac_iveiv_entry {
  #define RFCSR39_RX_LO2_EN		FIELD8(0x80)
  
  /*
@@ -174,25 +185,25 @@
   * RFCSR 49:
   */
  #define RFCSR49_TX			FIELD8(0x3f)
-@@ -2172,6 +2190,8 @@ struct mac_iveiv_entry {
+@@ -2322,6 +2340,8 @@ struct mac_iveiv_entry {
   * RFCSR 50:
   */
  #define RFCSR50_TX			FIELD8(0x3f)
 +#define RFCSR50_TX0_EXT_PA		FIELD8(0x02)
 +#define RFCSR50_TX1_EXT_PA		FIELD8(0x10)
  #define RFCSR50_EP			FIELD8(0xc0)
- 
- /*
-@@ -2260,6 +2280,8 @@ struct mac_iveiv_entry {
+ /* bits for RT3593 */
+ #define RFCSR50_TX_LO1_EN		FIELD8(0x20)
+@@ -2469,6 +2489,8 @@ enum rt2800_eeprom_word {
   * INTERNAL_TX_ALC: 0: disable, 1: enable
   * BT_COEXIST: 0: disable, 1: enable
   * DAC_TEST: 0: disable, 1: enable
 + * EXTERNAL_TX0_PA: 0: disable, 1: enable (only on RT3352)
 + * EXTERNAL_TX1_PA: 0: disable, 1: enable (only on RT3352)
   */
- #define	EEPROM_NIC_CONF1		0x001b
  #define EEPROM_NIC_CONF1_HW_RADIO		FIELD16(0x0001)
-@@ -2277,6 +2299,8 @@ struct mac_iveiv_entry {
+ #define EEPROM_NIC_CONF1_EXTERNAL_TX_ALC		FIELD16(0x0002)
+@@ -2485,6 +2507,8 @@ enum rt2800_eeprom_word {
  #define EEPROM_NIC_CONF1_INTERNAL_TX_ALC		FIELD16(0x2000)
  #define EEPROM_NIC_CONF1_BT_COEXIST		FIELD16(0x4000)
  #define EEPROM_NIC_CONF1_DAC_TEST		FIELD16(0x8000)
@@ -203,7 +214,7 @@
   * EEPROM frequency
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -726,6 +726,8 @@ enum rt2x00_capability_flags {
+@@ -727,6 +727,8 @@ enum rt2x00_capability_flags {
  	CAPABILITY_DOUBLE_ANTENNA,
  	CAPABILITY_BT_COEXIST,
  	CAPABILITY_VCO_RECALIBRATION,

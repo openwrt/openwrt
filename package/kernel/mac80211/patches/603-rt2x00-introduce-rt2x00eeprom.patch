@@ -101,7 +101,7 @@
 +}
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -549,6 +549,7 @@ struct rt2x00lib_ops {
+@@ -550,6 +550,7 @@ struct rt2x00lib_ops {
  			       const u8 *data, const size_t len);
  	int (*load_firmware) (struct rt2x00_dev *rt2x00dev,
  			      const u8 *data, const size_t len);
@@ -109,7 +109,7 @@
  
  	/*
  	 * Device initialization/deinitialization handlers.
-@@ -705,6 +706,7 @@ enum rt2x00_capability_flags {
+@@ -706,6 +707,7 @@ enum rt2x00_capability_flags {
  	REQUIRE_SW_SEQNO,
  	REQUIRE_HT_TX_DESC,
  	REQUIRE_PS_AUTOWAKE,
@@ -117,7 +117,7 @@
  
  	/*
  	 * Capabilities
-@@ -974,6 +976,11 @@ struct rt2x00_dev {
+@@ -975,6 +977,11 @@ struct rt2x00_dev {
  	const struct firmware *fw;
  
  	/*
@@ -164,7 +164,7 @@
  	select RT2X00_LIB_CRYPTO
  	depends on CRC_CCITT
  	depends on EEPROM_93CX6
-@@ -238,6 +239,9 @@ config RT2X00_LIB_FIRMWARE
+@@ -244,6 +245,9 @@ config RT2X00_LIB_FIRMWARE
  config RT2X00_LIB_CRYPTO
  	boolean
  
@@ -186,7 +186,7 @@
  obj-$(CPTCFG_RT2X00_LIB_MMIO)		+= rt2x00mmio.o
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -90,25 +90,11 @@ static void rt2800pci_mcu_status(struct 
+@@ -90,25 +90,11 @@ static void rt2800pci_mcu_status(struct
  	rt2x00mmio_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
  }
  
@@ -234,7 +234,7 @@
   * Initialization functions.
   */
  static bool rt2800pci_get_entry_state(struct queue_entry *entry)
-@@ -1156,6 +1156,7 @@ static const struct rt2x00lib_ops rt2800
+@@ -1160,6 +1160,7 @@ static const struct rt2x00lib_ops rt2800
  	.get_firmware_name	= rt2800pci_get_firmware_name,
  	.check_firmware		= rt2800_check_firmware,
  	.load_firmware		= rt2800_load_firmware,

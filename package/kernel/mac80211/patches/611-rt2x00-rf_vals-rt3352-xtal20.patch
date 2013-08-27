@@ -1,7 +1,7 @@
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -6156,6 +6156,27 @@ static const struct rf_channel rf_vals_5
- 	{196, 83, 0, 12, 1},
+@@ -7501,6 +7501,27 @@ static const struct rf_channel rf_vals_3
+ 	{173, 0x61, 0, 9},
  };
  
 +/*
@@ -28,7 +28,7 @@
  static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  {
  	struct hw_mode_spec *spec = &rt2x00dev->spec;
-@@ -6235,7 +6256,6 @@ static int rt2800_probe_hw_mode(struct r
+@@ -7581,7 +7602,6 @@ static int rt2800_probe_hw_mode(struct r
  		   rt2x00_rf(rt2x00dev, RF3022) ||
  		   rt2x00_rf(rt2x00dev, RF3290) ||
  		   rt2x00_rf(rt2x00dev, RF3320) ||
@@ -36,7 +36,7 @@
  		   rt2x00_rf(rt2x00dev, RF5360) ||
  		   rt2x00_rf(rt2x00dev, RF5370) ||
  		   rt2x00_rf(rt2x00dev, RF5372) ||
-@@ -6243,6 +6263,12 @@ static int rt2800_probe_hw_mode(struct r
+@@ -7589,6 +7609,12 @@ static int rt2800_probe_hw_mode(struct r
  		   rt2x00_rf(rt2x00dev, RF5392)) {
  		spec->num_channels = 14;
  		spec->channels = rf_vals_3x;
@@ -49,7 +49,7 @@
  	} else if (rt2x00_rf(rt2x00dev, RF3052)) {
  		spec->supported_bands |= SUPPORT_BAND_5GHZ;
  		spec->num_channels = ARRAY_SIZE(rf_vals_3x);
-@@ -6390,6 +6416,19 @@ static int rt2800_probe_rt(struct rt2x00
+@@ -7761,6 +7787,19 @@ static int rt2800_probe_rt(struct rt2x00
  	return 0;
  }
  
@@ -69,7 +69,7 @@
  int rt2800_probe_hw(struct rt2x00_dev *rt2x00dev)
  {
  	int retval;
-@@ -6419,6 +6458,15 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -7790,6 +7829,15 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	rt2800_register_write(rt2x00dev, GPIO_CTRL, reg);
  
  	/*
@@ -87,7 +87,7 @@
  	retval = rt2800_probe_hw_mode(rt2x00dev);
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -409,6 +409,7 @@ static inline struct rt2x00_intf* vif_to
+@@ -410,6 +410,7 @@ static inline struct rt2x00_intf* vif_to
   * @channels: Device/chipset specific channel values (See &struct rf_channel).
   * @channels_info: Additional information for channels (See &struct channel_info).
   * @ht: Driver HT Capabilities (See &ieee80211_sta_ht_cap).
@@ -95,7 +95,7 @@
   */
  struct hw_mode_spec {
  	unsigned int supported_bands;
-@@ -425,6 +426,7 @@ struct hw_mode_spec {
+@@ -426,6 +427,7 @@ struct hw_mode_spec {
  	const struct channel_info *channels_info;
  
  	struct ieee80211_sta_ht_cap ht;

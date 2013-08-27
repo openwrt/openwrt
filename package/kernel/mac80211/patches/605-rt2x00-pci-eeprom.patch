@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -90,7 +90,7 @@ static void rt2800pci_mcu_status(struct 
+@@ -90,7 +90,7 @@ static void rt2800pci_mcu_status(struct
  	rt2x00mmio_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
  }
  
@@ -9,7 +9,7 @@
  {
  	memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data, EEPROM_SIZE);
  	return 0;
-@@ -1093,8 +1093,9 @@ static int rt2800pci_read_eeprom(struct 
+@@ -1097,8 +1097,9 @@ static int rt2800pci_read_eeprom(struct
  {
  	int retval;
  
