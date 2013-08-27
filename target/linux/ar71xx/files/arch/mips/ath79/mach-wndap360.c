@@ -22,7 +22,6 @@
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-m25p80.h"
-#include "dev-usb.h"
 #include "machtypes.h"
 
 #define WNDAP360_GPIO_LED_POWER_ORANGE		0
@@ -86,8 +85,6 @@ static void __init wndap360_setup(void)
 	ath79_eth0_data.duplex = DUPLEX_FULL;
 
 	ath79_register_eth(0);
-
-	ath79_register_usb();
 
 	ath79_register_m25p80(NULL);
 
