@@ -1,3 +1,15 @@
+From: Felix Fietkau <nbd@openwrt.org>
+
+use -ffunction-sections, -fdata-sections and --gc-sections
+
+In combination with kernel symbol export stripping this significantly reduces
+the kernel image size. Used on both ARM and MIPS architectures.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
 @@ -89,10 +89,14 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
@@ -475,6 +487,23 @@
  		__stop_unwind_tab = .;
  	}
  #endif
+@@ -158,14 +158,14 @@ SECTIONS
+ 	 */
+ 	__vectors_start = .;
+ 	.vectors 0 : AT(__vectors_start) {
+-		*(.vectors)
++		KEEP(*(.vectors))
+ 	}
+ 	. = __vectors_start + SIZEOF(.vectors);
+ 	__vectors_end = .;
+ 
+ 	__stubs_start = .;
+ 	.stubs 0x1000 : AT(__stubs_start) {
+-		*(.stubs)
++		KEEP(*(.stubs))
+ 	}
+ 	. = __stubs_start + SIZEOF(.stubs);
+ 	__stubs_end = .;
 @@ -179,24 +179,24 @@ SECTIONS
  	}
  	.init.arch.info : {
