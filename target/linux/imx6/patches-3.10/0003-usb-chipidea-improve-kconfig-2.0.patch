@@ -1,0 +1,53 @@
+From a0cfdc6bc73bc47b63b05b850cf66cf67f2487bf Mon Sep 17 00:00:00 2001
+From: Lothar Waßmann <LW@KARO-electronics.de>
+Date: Wed, 14 Aug 2013 12:43:58 +0300
+Subject: [PATCH] usb: chipidea: improve kconfig 2.0
+
+This patch provides a cleaner solution to the problem described in
+commit 20a677fd ("usb: chipidea: improve kconfig").
+
+The goal to be achieved is to force USB_CHIPIDEA=m if either
+USB_EHCI_HCD=m or USB_GADGET=m.
+If both are 'y' USB_CHIPIDEA may be selected to be 'm' or 'y'.
+
+The old patch had the drawback, that USB_CHIPIDEA could be chosen as
+'y' though USB_EHCI_HCD or USB_GADGET (or both) were 'm' leading to a
+situation where USB_CHIPIDEA_HOST or USB_CHIPIDEA_UDC vanished from
+the config options producing a compilable but dysfunctional driver.
+
+Signed-off-by: Lothar Waßmann <LW@KARO-electronics.de>
+Reviewed-by: Peter Chen <peter.chen@freescale.com>
+Signed-off-by: Alexander Shishkin <alexander.shishkin@linux.intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/chipidea/Kconfig | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/drivers/usb/chipidea/Kconfig
++++ b/drivers/usb/chipidea/Kconfig
+@@ -1,6 +1,6 @@
+ config USB_CHIPIDEA
+ 	tristate "ChipIdea Highspeed Dual Role Controller"
+-	depends on USB || USB_GADGET
++	depends on (USB_EHCI_HCD && USB_GADGET) || (USB_EHCI_HCD && !USB_GADGET) || (!USB_EHCI_HCD && USB_GADGET)
+ 	help
+ 	  Say Y here if your system has a dual role high speed USB
+ 	  controller based on ChipIdea silicon IP. Currently, only the
+@@ -12,15 +12,14 @@ if USB_CHIPIDEA
+ 
+ config USB_CHIPIDEA_UDC
+ 	bool "ChipIdea device controller"
+-	depends on USB_GADGET=y || (USB_CHIPIDEA=m && USB_GADGET=m)
++	depends on USB_GADGET
+ 	help
+ 	  Say Y here to enable device controller functionality of the
+ 	  ChipIdea driver.
+ 
+ config USB_CHIPIDEA_HOST
+ 	bool "ChipIdea host controller"
+-	depends on USB=y
+-	depends on USB_EHCI_HCD=y || (USB_CHIPIDEA=m && USB_EHCI_HCD=m)
++	depends on USB_EHCI_HCD
+ 	select USB_EHCI_ROOT_HUB_TT
+ 	help
+ 	  Say Y here to enable host controller functionality of the
