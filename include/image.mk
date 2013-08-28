@@ -197,6 +197,7 @@ define BuildImage
 		$(call Image/mkfs/prepare)
 		$(call Image/BuildKernel)
 		$(call Image/BuildKernel/Initramfs)
+		$(call Image/InstallKernel)
 		$(call Image/mkfs/cpiogz)
 		$(call Image/mkfs/targz)
 		$(call Image/mkfs/ext4)
@@ -210,6 +211,7 @@ define BuildImage
     install: compile install-targets
 		$(call Image/BuildKernel)
 		$(call Image/BuildKernel/Initramfs)
+		$(call Image/InstallKernel)
 		$(call Image/mkfs/cpiogz)
 		$(call Image/mkfs/targz)
 		$(call Image/mkfs/ext4)
