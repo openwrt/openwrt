@@ -11,7 +11,6 @@ BOARD:=mvebu
 BOARDNAME:=Marvell Armada XP/370
 FEATURES:=targz usb pci pcie gpio
 CFLAGS:=-Os -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp
-MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 LINUX_VERSION:=3.8.13
 
