@@ -140,18 +140,20 @@ menu "Target Images"
 		  Allows you to change the percentage of reserved blocks in the root filesystem
 
 	config TARGET_ROOTFS_INCLUDE_KERNEL
-		bool "include kernel in rootfs"
+		bool "Include kernel in root filesystem"
 		depends on TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
 		default n if USES_UBIFS
 		help
-		  Include the kernel image in the rootfs
+		  Include the kernel image in the rootfs. Typically the image is placed
+		  below /boot.
 
 	config TARGET_ROOTFS_INCLUDE_DTB
-		bool "include dtb in rootfs"
+		bool "Include DTB in root filesystem"
 		depends on TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
 		default n if USES_UBIFS
 		help
-		  Include the device tree blob file in the rootfs
+		  Include the device tree blob file(s) in the rootfs. Typically the DTBs
+		  are placed below /boot.
 
 endmenu
 
