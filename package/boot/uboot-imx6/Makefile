@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2013.04
+PKG_VERSION:=2013.07
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=21bf962d69938ed4ed783b792b2b074e
+PKG_MD5SUM:=8445162690052e6afd4b8f87af2bb557
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -32,9 +32,14 @@ define uboot/wandboard_dl
   TITLE:=U-Boot for the Wandboard Dual Lite
 endef
 
+define uboot/wandboard_quad
+  TITLE:=U-Boot for the Wandboard Quad
+endef
+
 UBOOTS := \
 	wandboard_solo \
-	wandboard_dl
+	wandboard_dl \
+	wandboard_quad
 
 define Package/uboot/template
 define Package/uboot-imx6-$(1)

@@ -1,19 +1,22 @@
 --- a/include/configs/wandboard.h
 +++ b/include/configs/wandboard.h
-@@ -47,7 +47,7 @@
- 
- #undef CONFIG_CMD_IMLS
+@@ -51,7 +51,7 @@
+ #define CONFIG_CMD_BMODE
+ #define CONFIG_CMD_SETEXPR
  
 -#define CONFIG_BOOTDELAY		5
 +#define CONFIG_BOOTDELAY		3
  
  #define CONFIG_SYS_MEMTEST_START	0x10000000
  #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 500 * SZ_1M)
-@@ -83,13 +83,15 @@
+@@ -103,15 +103,18 @@
  
  #if defined(CONFIG_MX6DL)
  #define CONFIG_DEFAULT_FDT_FILE		"imx6dl-wandboard.dtb"
 +#define CONFIG_OWRT_NAME		"openwrt-imx6dl-wandboard-uImage.itb"
+ #elif defined(CONFIG_MX6Q)
+ #define CONFIG_DEFAULT_FDT_FILE		"imx6q-wandboard.dtb"
++#define CONFIG_OWRT_NAME		"openwrt-imx6q-wandboard-uImage.itb"
  #elif defined(CONFIG_MX6S)
  #define CONFIG_DEFAULT_FDT_FILE		"imx6s-wandboard.dtb"
 +#define CONFIG_OWRT_NAME		"openwrt-imx6s-wandboard-uImage.itb"
@@ -26,7 +29,7 @@
  	"console=ttymxc0\0" \
  	"fdt_high=0xffffffff\0" \
  	"initrd_high=0xffffffff\0" \
-@@ -103,11 +105,11 @@
+@@ -139,11 +142,11 @@
  	"mmcargs=setenv bootargs console=${console},${baudrate} " \
  		"root=${mmcroot}\0" \
  	"loadbootscript=" \
@@ -41,7 +44,7 @@
  	"mmcboot=echo Booting from mmc ...; " \
  		"run mmcargs; " \
  		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-@@ -122,30 +124,6 @@
+@@ -158,30 +161,6 @@
  			"fi; " \
  		"else " \
  			"bootm; " \
@@ -72,7 +75,7 @@
  		"fi;\0"
  
  #define CONFIG_BOOTCOMMAND \
-@@ -155,10 +133,10 @@
+@@ -191,10 +170,10 @@
  		   "else " \
  			   "if run loaduimage; then " \
  				   "run mmcboot; " \
