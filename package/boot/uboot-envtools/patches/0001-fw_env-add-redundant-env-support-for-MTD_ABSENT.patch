@@ -1,13 +1,22 @@
-tools/fw_env: add redundant env support for MTD_ABSENT
+From: Oliver Metz <oliver@freetz.org>
+Subject: [PATCH v2 1/2] fw_env: add redundant env support for MTD_ABSENT
 
 Signed-off-by: Oliver Metz <oliver@freetz.org>
+Tested-by: Luka Perkov <luka@openwrt.org>
 ---
+
+v1 -> v2:
+ * correct spelling of redundant
+
+http://lists.denx.de/pipermail/u-boot/2013-August/161694.html
+http://patchwork.ozlabs.org/patch/270993/
+
  tools/env/fw_env.c | 3 +++
  1 file changed, 3 insertions(+)
 
 --- a/tools/env/fw_env.c
 +++ b/tools/env/fw_env.c
-@@ -1164,6 +1164,9 @@ int fw_env_open(void)
+@@ -1152,6 +1152,9 @@ int fw_env_open(void)
  		} else if (DEVTYPE(dev_current) == MTD_UBIVOLUME &&
  			   DEVTYPE(!dev_current) == MTD_UBIVOLUME) {
  			environment.flag_scheme = FLAG_INCREMENTAL;
