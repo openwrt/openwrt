@@ -1,9 +1,18 @@
-tools/fw_env: fix writing environment for mtd devices
+From: Oliver Metz <oliver@freetz.org>
+Subject: [PATCH v2 2/2] fw_env: fix writing environment for mtd devices
 
 Signed-off-by: Oliver Metz <oliver@freetz.org>
+Tested-by: Luka Perkov <luka@openwrt.org>
 ---
- tools/env/fw_env.c | 71 ++++++++++++++++++++++++++++++++----------------------
- 1 file changed, 42 insertions(+), 29 deletions(-)
+
+v1 -> v2:
+ * fix checkpatch.pl warnings
+
+http://lists.denx.de/pipermail/u-boot/2013-August/161695.html
+http://patchwork.ozlabs.org/patch/270994/
+
+ tools/env/fw_env.c | 70 ++++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 42 insertions(+), 28 deletions(-)
 
 --- a/tools/env/fw_env.c
 +++ b/tools/env/fw_env.c
@@ -23,12 +32,12 @@ Signed-off-by: Oliver Metz <oliver@freetz.org>
 +		block_seek = 0;
 +		write_total = blocklen;
 +	} else {
-+		blocklen = DEVESIZE (dev);
++		blocklen = DEVESIZE(dev);
  
 -	top_of_range = ((DEVOFFSET(dev) / blocklen) +
 -					ENVSECTORS (dev)) * blocklen;
 +		top_of_range = ((DEVOFFSET(dev) / blocklen) +
-+						ENVSECTORS (dev)) * blocklen;
++					ENVSECTORS(dev)) * blocklen;
  
 -	erase_offset = (offset / blocklen) * blocklen;
 +		erase_offset = (offset / blocklen) * blocklen;
@@ -54,8 +63,8 @@ Signed-off-by: Oliver Metz <oliver@freetz.org>
 -						blocklen) * blocklen;
 +		/*
 +		 * Data size we actually write: from the start of the block
-+		 * to the start of the data, then count bytes of data, and to the
-+		 * end of the block
++		 * to the start of the data, then count bytes of data, and
++		 * to the end of the block
 +		 */
 +		write_total = ((block_seek + count + blocklen - 1) /
 +							blocklen) * blocklen;
@@ -80,27 +89,26 @@ Signed-off-by: Oliver Metz <oliver@freetz.org>
 -			}
 +		if (mtd_type != MTD_ABSENT) {
 +			erase.start = blockstart;
-+			ioctl (fd, MEMUNLOCK, &erase);
++			ioctl(fd, MEMUNLOCK, &erase);
 +			/* These do not need an explicit erase cycle */
 +			if (mtd_type != MTD_DATAFLASH)
-+				if (ioctl (fd, MEMERASE, &erase) != 0) {
-+					fprintf (stderr, "MTD erase error on %s: %s\n",
-+						 DEVNAME (dev),
-+						 strerror (errno));
++				if (ioctl(fd, MEMERASE, &erase) != 0) {
++					fprintf(stderr,
++						"MTD erase error on %s: %s\n",
++						DEVNAME(dev), strerror(errno));
 +					return -1;
 +				}
 +		}
  
  		if (lseek (fd, blockstart, SEEK_SET) == -1) {
  			fprintf (stderr,
-@@ -862,8 +875,8 @@ static int flash_write_buf (int dev, int
- 				 DEVNAME (dev), strerror (errno));
+@@ -863,7 +876,8 @@ static int flash_write_buf (int dev, int
  			return -1;
  		}
--
+ 
 -		ioctl (fd, MEMLOCK, &erase);
 +		if (mtd_type != MTD_ABSENT)
-+			ioctl (fd, MEMLOCK, &erase);
++			ioctl(fd, MEMLOCK, &erase);
  
  		processed  += blocklen;
  		block_seek = 0;
