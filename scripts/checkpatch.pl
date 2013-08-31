@@ -2311,11 +2311,11 @@ sub process {
 		}
 
 # # no BUG() or BUG_ON()
-# 		if ($line =~ /\b(BUG|BUG_ON)\b/) {
-# 			print "Try to use WARN_ON & Recovery code rather than BUG() or BUG_ON()\n";
-# 			print "$herecurr";
-# 			$clean = 0;
-# 		}
+#		if ($line =~ /\b(BUG|BUG_ON)\b/) {
+#			print "Try to use WARN_ON & Recovery code rather than BUG() or BUG_ON()\n";
+#			print "$herecurr";
+#			$clean = 0;
+#		}
 
 		if ($line =~ /\bLINUX_VERSION_CODE\b/) {
 			WARN("LINUX_VERSION_CODE",
@@ -2582,13 +2582,13 @@ sub process {
 					    ($op eq '>' &&
 					     $ca =~ /<\S+\@\S+$/))
 					{
-					    	$ok = 1;
+						$ok = 1;
 					}
 
 					# Ignore ?:
 					if (($opv eq ':O' && $ca =~ /\?$/) ||
 					    ($op eq '?' && $cc =~ /^:/)) {
-					    	$ok = 1;
+						$ok = 1;
 					}
 
 					if ($ok == 0) {
@@ -2608,19 +2608,19 @@ sub process {
 
 ## # check for multiple declarations, allowing for a function declaration
 ## # continuation.
-## 		if ($line =~ /^.\s*$Type\s+$Ident(?:\s*=[^,{]*)?\s*,\s*$Ident.*/ &&
-## 		    $line !~ /^.\s*$Type\s+$Ident(?:\s*=[^,{]*)?\s*,\s*$Type\s*$Ident.*/) {
+##		if ($line =~ /^.\s*$Type\s+$Ident(?:\s*=[^,{]*)?\s*,\s*$Ident.*/ &&
+##		    $line !~ /^.\s*$Type\s+$Ident(?:\s*=[^,{]*)?\s*,\s*$Type\s*$Ident.*/) {
 ##
-## 			# Remove any bracketed sections to ensure we do not
-## 			# falsly report the parameters of functions.
-## 			my $ln = $line;
-## 			while ($ln =~ s/\([^\(\)]*\)//g) {
-## 			}
-## 			if ($ln =~ /,/) {
-## 				WARN("MULTIPLE_DECLARATION",
+##			# Remove any bracketed sections to ensure we do not
+##			# falsly report the parameters of functions.
+##			my $ln = $line;
+##			while ($ln =~ s/\([^\(\)]*\)//g) {
+##			}
+##			if ($ln =~ /,/) {
+##				WARN("MULTIPLE_DECLARATION",
 ##				     "declaring multiple variables together should be avoided\n" . $herecurr);
-## 			}
-## 		}
+##			}
+##		}
 
 #need space before brace following if, while, etc
 		if (($line =~ /\(.*\){/ && $line !~ /\($Type\){/) ||
@@ -2740,7 +2740,7 @@ sub process {
 			# conditional.
 			substr($s, 0, length($c), '');
 			$s =~ s/\n.*//g;
-			$s =~ s/$;//g; 	# Remove any comments
+			$s =~ s/$;//g;	# Remove any comments
 			if (length($c) && $s !~ /^\s*{?\s*\\*\s*$/ &&
 			    $c !~ /}\s*while\s*/)
 			{
@@ -2779,7 +2779,7 @@ sub process {
 # if and else should not have general statements after it
 		if ($line =~ /^.\s*(?:}\s*)?else\b(.*)/) {
 			my $s = $1;
-			$s =~ s/$;//g; 	# Remove any comments
+			$s =~ s/$;//g;	# Remove any comments
 			if ($s !~ /^\s*(?:\sif|(?:{|)\s*\\?\s*$)/) {
 				ERROR("TRAILING_STATEMENTS",
 				      "trailing statements should be on next line\n" . $herecurr);
