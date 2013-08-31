@@ -1391,24 +1391,12 @@ sub process {
 	my $suppress_statement = 0;
 
 	# Pre-scan the patch sanitizing the lines.
-	# Pre-scan the patch looking for any __setup documentation.
-	#
-	my @setup_docs = ();
-	my $setup_docs = 0;
-
 	sanitise_line_reset();
 	my $line;
 	foreach my $rawline (@rawlines) {
 		$linenr++;
 		$line = $rawline;
 
-		if ($rawline=~/^\+\+\+\s+(\S+)/) {
-			$setup_docs = 0;
-			if ($1 =~ m@Documentation/kernel-parameters.txt$@) {
-				$setup_docs = 1;
-			}
-			#next;
-		}
 		if ($rawline=~/^\@\@ -\d+(?:,\d+)? \+(\d+)(,(\d+))? \@\@/) {
 			$realline=$1-1;
 			if (defined $2) {
@@ -1467,10 +1455,6 @@ sub process {
 
 		#print "==>$rawline\n";
 		#print "-->$line\n";
-
-		if ($setup_docs && $line =~ /^\+/) {
-			push(@setup_docs, $line);
-		}
 	}
 
 	$prefix = '';
@@ -3287,16 +3271,6 @@ sub process {
 		{
 			WARN("AVOID_EXTERNS",
 			     "externs should be avoided in .c files\n" .  $herecurr);
-		}
-
-# checks for new __setup's
-		if ($rawline =~ /\b__setup\("([^"]*)"/) {
-			my $name = $1;
-
-			if (!grep(/$name/, @setup_docs)) {
-				CHK("UNDOCUMENTED_SETUP",
-				    "__setup appears un-documented -- check Documentation/kernel-parameters.txt\n" . $herecurr);
-			}
 		}
 
 # check for pointless casting of kmalloc return
