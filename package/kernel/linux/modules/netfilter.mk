@@ -165,6 +165,23 @@ endef
 $(eval $(call KernelPackage,ipt-nat))
 
 
+define KernelPackage/ipt-nat6
+  TITLE:=IPv6 NAT targets
+  KCONFIG:=$(KCONFIG_IPT_NAT6)
+  FILES:=$(foreach mod,$(IPT_NAT6-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoLoad,43,$(notdir $(IPT_NAT6-m)))
+  $(call AddDepends/ipt,+kmod-ipt-conntrack)
+  $(call AddDepends/ipt,+kmod-ipt-nat)
+  $(call AddDepends/ipt,+kmod-ip6tables)
+endef
+
+define KernelPackage/ipt-nat6/description
+ Netfilter (IPv6) kernel modules for NAT targets
+endef
+
+$(eval $(call KernelPackage,ipt-nat6))
+
+
 define KernelPackage/ipt-nat-extra
   TITLE:=Extra NAT targets
   KCONFIG:=$(KCONFIG_IPT_NAT_EXTRA)
@@ -394,7 +411,7 @@ define KernelPackage/ip6tables
   DEPENDS:=+kmod-ipv6 +kmod-ipt-core +kmod-ipt-conntrack
   KCONFIG:=$(KCONFIG_IPT_IPV6)
   FILES:=$(foreach mod,$(IPT_IPV6-m),$(LINUX_DIR)/net/$(mod).ko)
-  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(IPT_IPV6-m)))
+  AUTOLOAD:=$(call AutoLoad,42,$(notdir $(IPT_IPV6-m)))
 endef
 
 define KernelPackage/ip6tables/description
