@@ -77,10 +77,10 @@ Index: iptables-1.4.18/iptables/ip6tables-restore.c
  				DEBUGP("argv[%u]: %s\n", a, newargv[a]);
  
 -			ret = do_command6(newargc, newargv,
--					 &newargv[2], &handle);
+-					 &newargv[2], &handle, true);
 +			if (!setjmp(jmp))
 +				ret = do_command6(newargc, newargv,
-+						 &newargv[2], &handle);
++						 &newargv[2], &handle, true);
 +			else
 +				ret = 1;
  
@@ -165,10 +165,10 @@ Index: iptables-1.4.18/iptables/iptables-restore.c
  				DEBUGP("argv[%u]: %s\n", a, newargv[a]);
  
 -			ret = do_command4(newargc, newargv,
--					 &newargv[2], &handle);
+-					 &newargv[2], &handle, true);
 +			if (!setjmp(jmp))
 +				ret = do_command4(newargc, newargv,
-+						 &newargv[2], &handle);
++						 &newargv[2], &handle, true);
 +			else
 +				ret = 1;
  
