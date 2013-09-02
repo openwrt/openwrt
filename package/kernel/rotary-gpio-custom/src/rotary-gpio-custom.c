@@ -81,7 +81,8 @@ static void rotary_gpio_custom_cleanup(void)
 			platform_device_put(devices[i]);
 }
 
-static int __init rotary_gpio_custom_add_one(unsigned int id, unsigned int *params)
+static int __init rotary_gpio_custom_add_one(unsigned int id,
+					     unsigned int *params)
 {
 	struct platform_device *pdev;
 	struct rotary_encoder_platform_data pdata;
@@ -108,7 +109,7 @@ static int __init rotary_gpio_custom_add_one(unsigned int id, unsigned int *para
 	pdata.rollover = false;
 	pdata.gpio_a = params[3];
 	pdata.gpio_b = params[4];
-	
+
 	if (params[5] == 1) {
 		pdata.inverted_a = 1;
 		pdata.inverted_b = 1;
@@ -141,16 +142,20 @@ static int __init rotary_gpio_custom_probe(void)
 	printk(KERN_INFO DRV_DESC " version " DRV_VERSION "\n");
 
 	err = rotary_gpio_custom_add_one(0, bus0);
-	if (err) goto err;
+	if (err)
+		goto err;
 
 	err = rotary_gpio_custom_add_one(1, bus1);
-	if (err) goto err;
+	if (err)
+		goto err;
 
 	err = rotary_gpio_custom_add_one(2, bus2);
-	if (err) goto err;
+	if (err)
+		goto err;
 
 	err = rotary_gpio_custom_add_one(3, bus3);
-	if (err) goto err;
+	if (err)
+		goto err;
 
 	if (!nr_devices) {
 		printk(KERN_ERR PFX "no bus parameter(s) specified\n");
