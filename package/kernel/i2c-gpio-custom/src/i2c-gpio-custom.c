@@ -152,16 +152,20 @@ static int __init i2c_gpio_custom_probe(void)
 	printk(KERN_INFO DRV_DESC " version " DRV_VERSION "\n");
 
 	err = i2c_gpio_custom_add_one(0, bus0);
-	if (err) goto err;
+	if (err)
+		goto err;
 
 	err = i2c_gpio_custom_add_one(1, bus1);
-	if (err) goto err;
+	if (err)
+		goto err;
 
 	err = i2c_gpio_custom_add_one(2, bus2);
-	if (err) goto err;
+	if (err)
+		goto err;
 
 	err = i2c_gpio_custom_add_one(3, bus3);
-	if (err) goto err;
+	if (err)
+		goto err;
 
 	if (!nr_devices) {
 		printk(KERN_ERR PFX "no bus parameter(s) specified\n");
