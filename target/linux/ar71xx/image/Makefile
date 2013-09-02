@@ -344,8 +344,6 @@ define Image/Build/WHRHPG300N/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 endef
 
-Image/Build/Cameo/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
-
 define Image/Build/Cameo
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
@@ -356,8 +354,6 @@ define Image/Build/Cameo
 		) > $(call factoryname,$(1),$(2)); \
 	fi
 endef
-
-Image/Build/CameoHornet/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
 
 define Image/Build/CameoHornet
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
@@ -373,9 +369,7 @@ define Image/Build/CameoHornet
 	fi
 endef
 
-define Image/Build/Cameo913x/buildkernel
-	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo913x_mtdlayout),65536,2883584,$(4))
-endef
+Image/Build/Cameo913x/buildkernel=$(call MkuImageLzma,$(2),$(3) $(cameo913x_mtdlayout))
 
 define Image/Build/Cameo913x
 	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo913x_mtdlayout),65536,2883584,$(4))
@@ -385,9 +379,7 @@ define Image/Build/Cameo913x/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo913x_mtdlayout))
 endef
 
-define Image/Build/Cameo7240/buildkernel
-	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo7240_mtdlayout),65536,2752512,$(4))
-endef
+Image/Build/Cameo7240/buildkernel=$(call MkuImageLzma,$(2),$(3) $(cameo7240_mtdlayout))
 
 define Image/Build/Cameo7240
 	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo7240_mtdlayout),65536,2752512,$(4))
@@ -397,9 +389,7 @@ define Image/Build/Cameo7240/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo7240_mtdlayout))
 endef
 
-define Image/Build/Cameo933x/buildkernel
-	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo933x_mtdlayout),65536,2686976,$(4),$(5),$(6),0xe0000,3735552)
-endef
+Image/Build/Cameo933x/buildkernel=$(call MkuImageLzma,$(2),$(3) $(cameo933x_mtdlayout))
 
 define Image/Build/Cameo933x
 	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),65536,2686976,$(4),$(5),$(6),0xe0000,3735552)
@@ -409,9 +399,7 @@ define Image/Build/Cameo933x/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo933x_mtdlayout))
 endef
 
-define Image/Build/Cameo933x_8M/buildkernel
-	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo933x_mtdlayout_8M),65536,6422528,$(4),$(5),$(6),0x100000,7864320)
-endef
+Image/Build/Cameo933x_8M/buildkernel=$(call MkuImageLzma,$(2),$(3) $(cameo933x_mtdlayout_8M))
 
 define Image/Build/Cameo933x_8M
 	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout_8M),65536,6422528,$(4),$(5),$(6),0x100000,7864320)
@@ -421,9 +409,7 @@ define Image/Build/Cameo933x_8M/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo933x_mtdlayout_8M))
 endef
 
-define Image/Build/Cameo934x/buildkernel
-	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo934x_mtdlayout),65536,15007718,$(4))
-endef
+Image/Build/Cameo934x/buildkernel=$(call MkuImageLzma,$(2),$(3) $(cameo934x_mtdlayout))
 
 define Image/Build/Cameo934x
 	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo934x_mtdlayout),65536,15007718,$(4))
@@ -535,9 +521,7 @@ define Image/Build/UBDEV
 		-o $(call factoryname,$(1),$(2))
 endef
 
-define Image/Build/UBNT/buildkernel
-	$(call PatchKernelLzma,$(2),$(3))
-endef
+Image/Build/UBNT/buildkernel=$(call PatchKernelLzma,$(2),$(3))
 
 define Image/Build/UBNT
 	dd if=$(KDIR_TMP)/vmlinux-$(2).bin.lzma of=$(KDIR_TMP)/vmlinux-$(2).lzma bs=64k conv=sync
