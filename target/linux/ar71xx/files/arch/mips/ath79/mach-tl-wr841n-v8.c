@@ -132,8 +132,14 @@ static void __init tl_ap123_setup(void)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	/* Disable JTAG, enabling GPIOs 0-4 */
-	ath79_gpio_function_enable(AR934X_GPIO_FUNC_JTAG_DISABLE);
+	/* Disable JTAG, enabling GPIOs 0-3 */
+	/* Configure OBS4 line, for GPIO 4*/
+	ath79_gpio_function_setup(AR934X_GPIO_FUNC_JTAG_DISABLE,
+				 AR934X_GPIO_FUNC_CLK_OBS4_EN);
+
+	/* config gpio4 as normal gpio function */
+	ath79_gpio_output_select(TL_MR3420V2_GPIO_USB_POWER,
+				 AR934X_GPIO_OUT_GPIO);
 
 	ath79_register_m25p80(&tl_wr841n_v8_flash_data);
 
