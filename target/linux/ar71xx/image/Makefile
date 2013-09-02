@@ -514,9 +514,7 @@ define Image/Build/UBNT
   $(call sysupname,$(1),$(2))
 endef
 
-define Image/Build/Planex/loader
-	$(call Image/BuildLoaderAlone,$(1),gz,$(2) $(planex_mtdlayout),0x52000,0)
-endef
+Image/Build/Planex/loader=$(call Image/BuildLoaderAlone,$(1),gz,$(2) $(planex_mtdlayout),0x52000,0)
 
 define Image/Build/Planex
 	[ -e "$(KDIR)/loader-$(2).gz" ]
@@ -556,9 +554,7 @@ endef
 
 Image/Build/ALFA/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 
-define Image/Build/TPLINKOLD/loader
-	$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
-endef
+Image/Build/TPLINKOLD/loader=$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
 
 define Image/Build/TPLINKOLD
 	[ -e "$(KDIR)/loader-$(2).gz" ]
@@ -587,9 +583,7 @@ define Image/Build/TPLINKOLD/initramfs
 		-o $(call imgname,$(1),$(2))-initramfs-uImage.bin
 endef
 
-define Image/Build/TPLINK/loader
-	$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
-endef
+Image/Build/TPLINK/loader=$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
 
 define Image/Build/TPLINK
 	[ -e "$(KDIR)/loader-$(2).gz" ]
