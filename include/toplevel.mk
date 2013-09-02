@@ -89,6 +89,7 @@ config-clean: FORCE
 
 defconfig: scripts/config/conf prepare-tmpinfo FORCE
 	touch .config
+	@if [ -e $(HOME)/.openwrt/defconfig ]; then cp $(HOME)/.openwrt/defconfig .config; fi
 	$< --defconfig=.config Config.in
 
 confdefault-y=allyes
@@ -152,7 +153,7 @@ prereq:: prepare-tmpinfo .config
 	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
 	@( \
 		cp .config tmp/.config; \
-		./scripts/config/conf --defconfig tmp/.config -w tmp/.config Config.in > /dev/null 2>&1; \
+		./scripts/config/conf --defconfig=tmp/.config -w tmp/.config Config.in > /dev/null 2>&1; \
 		if ./scripts/kconfig.pl '>' .config tmp/.config | grep -q CONFIG; then \
 			printf "$(_R)WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!$(_N)\n" >&2; \
 		fi \
