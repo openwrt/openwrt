@@ -191,6 +191,7 @@ define Image/BuildKernel
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
 	cp $(KDIR)/loader-generic.elf $(VMLINUX)-lzma.elf
 	-mkdir -p $(KDIR_TMP)
+	$(call Image/Build/Profile/$(PROFILE),buildkernel)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	cp $(KDIR)/vmlinux-initramfs.elf $(VMLINUX)-initramfs.elf
 	cp $(KDIR)/vmlinux-initramfs $(VMLINUX)-initramfs.bin
@@ -203,16 +204,21 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endef
 
+Image/Build/WRT400N/buildkernel=$(call MkuImageLzma,$(2),$(3))
+
 define Image/Build/WRT400N
-	$(call MkuImageLzma,$(2),$(3))
 	$(call Sysupgrade/KRuImage,$(1),$(2),1310720,6488064)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		wrt400n $(KDIR_TMP)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call factoryname,$(1),$(2)); \
 	fi
 endef
 
-define Image/Build/DIR825B1
+define Image/Build/DIR825B1/buildkernel
 	$(call MkuImageLzma,$(2),$(3) $(dir825b1_mtdlayout))
+	$(call MkuImageLzma,$(2)-fat,$(3) $(dir825b1_mtdlayout_fat))
+endef
+
+define Image/Build/DIR825B1
 	$(call Sysupgrade/KRuImage,$(1),$(2),65536,5308416)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
@@ -228,7 +234,6 @@ define Image/Build/DIR825B1
 			) > $(call factoryname,$(1),$(2)); \
 		fi; \
 	fi
-	$(call MkuImageLzma,$(2)-fat,$(3) $(dir825b1_mtdlayout_fat))
 	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,65536,$(KDIR)/root.$(1),6946816,$(KDIR_TMP)/$(2)-fat.bin)
 	if [ -e "$(KDIR_TMP)/$(2)-fat.bin" ]; then \
 		echo -n "" > $(KDIR_TMP)/$(2)-fat.dummy; \
@@ -237,10 +242,14 @@ define Image/Build/DIR825B1
 			"$(KDIR_TMP)/$(2)-fat.dummy" \
 			$(call sysupname,$(1),$(2)-fat); \
 	fi
+endef
+
+define Image/Build/DLRTDEV/buildkernel
+	$(call MkuImageLzma,$(2),$(3) $(dlrtdev_mtdlayout))
+	$(call MkuImageLzma,$(2)-fat,$(3) $(dlrtdev_mtdlayout_fat))
 endef
 
 define Image/Build/DLRTDEV
-	$(call MkuImageLzma,$(2),$(3) $(dlrtdev_mtdlayout))
 	$(call Sysupgrade/KRuImage,$(1),$(2),65536,5308416)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
@@ -256,7 +265,6 @@ define Image/Build/DLRTDEV
 			) > $(call factoryname,$(1),$(2)); \
 		fi; \
 	fi
-	$(call MkuImageLzma,$(2)-fat,$(3) $(dlrtdev_mtdlayout_fat))
 	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,65536,$(KDIR)/root.$(1),6946816,$(KDIR_TMP)/$(2)-fat.bin)
 	if [ -e "$(KDIR_TMP)/$(2)-fat.bin" ]; then \
 		echo -n "" > $(KDIR_TMP)/$(2)-fat.dummy; \
@@ -267,8 +275,9 @@ define Image/Build/DLRTDEV
 	fi
 endef
 
+Image/Build/WZRHP64K/buildkernel=$(call MkuImageLzma,$(2),$(3))
+
 define Image/Build/WZRHP64K
-	$(call MkuImageLzma,$(2),$(3))
 	$(call Sysupgrade/KRuImage,$(1),$(2),65536,31850496)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
@@ -289,8 +298,9 @@ define Image/Build/WZRHP64K/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 endef
 
+Image/Build/WZRHP128K/buildkernel=$(call MkuImageLzma,$(2),$(3))
+
 define Image/Build/WZRHP128K
-	$(call MkuImageLzma,$(2),$(3))
 	$(call Sysupgrade/KRuImage,$(1),$(2),131072,31850496)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
@@ -311,8 +321,9 @@ define Image/Build/WZRHP128K/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 endef
 
+Image/Build/WHRHPG300N/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
+
 define Image/Build/WHRHPG300N
-	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/KRuImage,$(1),$(2),65536,2818048)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
@@ -333,8 +344,9 @@ define Image/Build/WHRHPG300N/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 endef
 
+Image/Build/Cameo/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
+
 define Image/Build/Cameo
-	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
@@ -345,8 +357,9 @@ define Image/Build/Cameo
 	fi
 endef
 
+Image/Build/CameoHornet/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
+
 define Image/Build/CameoHornet
-	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		for r in $(9); do \
@@ -360,12 +373,20 @@ define Image/Build/CameoHornet
 	fi
 endef
 
+define Image/Build/Cameo913x/buildkernel
+	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo913x_mtdlayout),65536,2883584,$(4))
+endef
+
 define Image/Build/Cameo913x
 	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo913x_mtdlayout),65536,2883584,$(4))
 endef
 
 define Image/Build/Cameo913x/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo913x_mtdlayout))
+endef
+
+define Image/Build/Cameo7240/buildkernel
+	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo7240_mtdlayout),65536,2752512,$(4))
 endef
 
 define Image/Build/Cameo7240
@@ -376,6 +397,10 @@ define Image/Build/Cameo7240/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo7240_mtdlayout))
 endef
 
+define Image/Build/Cameo933x/buildkernel
+	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo933x_mtdlayout),65536,2686976,$(4),$(5),$(6),0xe0000,3735552)
+endef
+
 define Image/Build/Cameo933x
 	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout),65536,2686976,$(4),$(5),$(6),0xe0000,3735552)
 endef
@@ -384,12 +409,20 @@ define Image/Build/Cameo933x/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo933x_mtdlayout))
 endef
 
+define Image/Build/Cameo933x_8M/buildkernel
+	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo933x_mtdlayout_8M),65536,6422528,$(4),$(5),$(6),0x100000,7864320)
+endef
+
 define Image/Build/Cameo933x_8M
 	$(call Image/Build/CameoHornet,$(1),$(2),$(3),$(cameo933x_mtdlayout_8M),65536,6422528,$(4),$(5),$(6),0x100000,7864320)
 endef
 
 define Image/Build/Cameo933x_8M/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo933x_mtdlayout_8M))
+endef
+
+define Image/Build/Cameo934x/buildkernel
+	$(call Image/Build/Cameo/buildkernel,$(1),$(2),$(3),$(cameo934x_mtdlayout),65536,15007718,$(4))
 endef
 
 define Image/Build/Cameo934x
@@ -410,8 +443,9 @@ define Image/Build/Ath
 	fi
 endef
 
+Image/Build/AthGzip/buildkernel=$(call MkuImageGzip,$(2),$(3) $(4))
+
 define Image/Build/AthGzip
-	$(call MkuImageGzip,$(2),$(3) $(4))
 	$(call Image/Build/Ath,$(1),$(2),$(3),$(4),$(5),$(6),$(7))
 endef
 
@@ -419,8 +453,9 @@ define Image/Build/AthGzip/initramfs
 	$(call MkuImageGzip/initramfs,$(2),$(3) $(4))
 endef
 
+Image/Build/AthLzma/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
+
 define Image/Build/AthLzma
-	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Image/Build/Ath,$(1),$(2),$(3),$(4),$(5),$(6),$(7))
 endef
 
@@ -428,8 +463,9 @@ define Image/Build/AthLzma/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 endef
 
+Image/Build/PB4X/buildkernel=$(call PatchKernelLzma,$(2),$(3))
+
 define Image/Build/PB4X
-	$(call PatchKernelLzma,$(2),$(3))
 	dd if=$(KDIR_TMP)/vmlinux-$(2).bin.lzma \
 	   of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync
 	dd if=$(KDIR)/root.$(1) \
@@ -440,16 +476,16 @@ define Image/Build/PB4X
 		$(call sysupname,$(1),$(2))
 endef
 
+Image/Build/MyLoader/buildkernel=$(call PatchKernelLzma,$(2),$(3))
 
 define Image/Build/MyLoader
-	$(call PatchKernelLzma,$(2),$(3))
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(4) \
 		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR_TMP)/vmlinux-$(2).bin.lzma \
 		-p0x110000:0:::rootfs:$(KDIR)/root.$(1) \
 		$(call imgname,$(1),$(2))-$(5)-factory.img
 endef
 
-define Image/Build/UAPPRO
+define Image/Build/UAPPRO/buildkernel
 	$(call MkuImageLzma,$(2),$(3) $(uap_pro_mtdlayout))
 	-rm -rf $(KDIR_TMP)/$(2)
 	mkdir -p $(KDIR_TMP)/$(2)/image
@@ -461,20 +497,23 @@ define Image/Build/UAPPRO
 		2>&1 1>/dev/null | awk '/^.+$$$$/'
 	-rm -rf $(KDIR_TMP)/$(2)
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR_TMP)/$(2)-kernel.jffs2 64
+endef
+
+define Image/Build/UAPPRO
 	$(call CatFiles,$(KDIR_TMP)/$(2)-kernel.jffs2,1572864,$(KDIR)/root.$(1),14548992,$(call sysupname,$(1),$(2)))
 	-$(STAGING_DIR_HOST)/bin/mkfwimage2 -f 0x9f000000 \
 		-v $(5).$(6).v6.0.0-OpenWrt-$(REVISION) \
 		-p jffs2:0x50000:0xf60000:0:0:$(call sysupname,$(1),$(2)) \
 		-o $(call factoryname,$(1),$(2))
-	-rm -f $(KDIR_TMP)/$(2)-kernel.jffs2
 endef
 
 define Image/Build/UAPPRO/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(uap_pro_mtdlayout))
 endef
 
+Image/Build/UBNTXM/buildkernel=$(call MkuImageLzma,$(2),$(3) $(ubntxm_mtdlayout))
+
 define Image/Build/UBNTXM
-	$(call MkuImageLzma,$(2),$(3) $(ubntxm_mtdlayout))
 	$(call Sysupgrade/KRuImage,$(1),$(2),65536,6684672)
 	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(KDIR_TMP)/vmlinux-$(2).uImage.bin bs=64k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
@@ -484,8 +523,9 @@ define Image/Build/UBNTXM
 		-o $(call factoryname,$(1),$(2))
 endef
 
+Image/Build/UBDEV/buildkernel=$(call MkuImageLzma,$(2),$(3) $(ubdev_mtdlayout))
+
 define Image/Build/UBDEV
-	$(call MkuImageLzma,$(2),$(3) $(ubdev_mtdlayout))
 	$(call Sysupgrade/KRuImage,$(1),$(2),65536,6684672)
 	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(KDIR_TMP)/vmlinux-$(2).uImage.bin bs=64k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
@@ -493,10 +533,13 @@ define Image/Build/UBDEV
 		-k $(KDIR_TMP)/vmlinux-$(2).uImage.bin \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call factoryname,$(1),$(2))
+endef
+
+define Image/Build/UBNT/buildkernel
+	$(call PatchKernelLzma,$(2),$(3))
 endef
 
 define Image/Build/UBNT
-	$(call PatchKernelLzma,$(2),$(3))
 	dd if=$(KDIR_TMP)/vmlinux-$(2).bin.lzma of=$(KDIR_TMP)/vmlinux-$(2).lzma bs=64k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
@@ -531,8 +574,9 @@ define Image/Build/Planex
 	fi
 endef
 
+Image/Build/ALFA/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
+
 define Image/Build/ALFA
-	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/RKuImage,$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		rm -rf $(KDIR)/$(1); \
@@ -616,8 +660,9 @@ define Image/Build/TPLINK/initramfs
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
+Image/Build/TPLINK-LZMA/buildkernel=$(call PatchKernelLzma,$(2),$(3))
+
 define Image/Build/TPLINK-LZMA
-	$(call PatchKernelLzma,$(2),$(3))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) $(7) \
 		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma \
@@ -640,8 +685,9 @@ define Image/Build/TPLINK-LZMA/initramfs
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
+Image/Build/CyberTAN/buildkernel=$(call MkuImageGzip,$(2),$(3))
+
 define Image/Build/CyberTAN
-	$(call MkuImageGzip,$(2),$(3))
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR_TMP)/vmlinux-$(2).uImage \
 		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) \
@@ -741,8 +787,9 @@ define Image/Build/NetgearNAND/initramfs
 endef
 
 ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
+  Image/Build/ZyXEL/buildkernel=$(call MkuImageLzma,$(2),$(3))
+
   define Image/Build/ZyXEL
-	$(call MkuImageLzma,$(2),$(3))
 	$(call Sysupgrade/KRuImage,$(1),$(2),917504,2752512)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		if [ ! -f $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin ]; then \
@@ -757,8 +804,9 @@ ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
   endef
 endif
 
+Image/Build/OpenMesh/buildkernel=$(call MkuImageLzma,$(2))
+
 define Image/Build/OpenMesh
-	$(call MkuImageLzma,$(2))
 	-sh $(TOPDIR)/scripts/om-fwupgradecfg-gen.sh \
 		"$(4)" \
 		"$(BUILD_DIR)/fwupgrade.cfg-$(4)" \
@@ -771,8 +819,9 @@ define Image/Build/OpenMesh
 		"$(KDIR)/root.$(1)" "rootfs"
 endef
 
+Image/Build/Zcomax/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
+
 define Image/Build/Zcomax
-	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/RKuImage,$(1),$(2),1507328,6356992)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkzcfw \
@@ -799,6 +848,9 @@ define BuildTemplate
   endef
   define Image/Build/Template/$(1)/loader
     $$(call Image/Build/$$(1)/loader,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+  endef
+  define Image/Build/Template/$(1)/buildkernel
+    $$(call Image/Build/$$(1)/buildkernel,,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
   endef
   define Image/Build/Template/$(1)/squashfs
     $$(call Image/Build/$$(1),squashfs$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
