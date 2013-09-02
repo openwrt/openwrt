@@ -386,7 +386,7 @@ define Image/Build/Cameo933x
 endef
 
 define Image/Build/Cameo933x/initramfs
-	$(call MkuImageLzma/initramfs,$(2),$(3),$(cameo933x_mtdlayout))
+	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo933x_mtdlayout))
 endef
 
 define Image/Build/Cameo933x_8M
@@ -814,6 +814,10 @@ endef
 
 define Image/Build/Template/squashfs-only/squashfs
 	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+endef
+
+define Image/Build/Template/squashfs-only/initramfs
+	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/64k/loader
