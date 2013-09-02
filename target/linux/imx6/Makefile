@@ -13,7 +13,7 @@ FEATURES:=audio display gpio pcie usb usbgadget squashfs targz
 CFLAGS:=-Os -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp
 MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
-LINUX_VERSION:=3.10.9
+LINUX_VERSION:=3.10.10
 
 include $(INCLUDE_DIR)/target.mk
 

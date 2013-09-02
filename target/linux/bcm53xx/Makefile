@@ -12,7 +12,7 @@ BOARDNAME:=Broadcom BCM47xx/53xx with ARM CPU
 FEATURES:=squashfs usb pci pcie gpio
 MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 
-LINUX_VERSION:=3.10.9
+LINUX_VERSION:=3.10.10
 
 include $(INCLUDE_DIR)/target.mk
 
