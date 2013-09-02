@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+
+START=12
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
+start() {
+	service_start /sbin/rpcd
+}
+
+stop() {
+	service_stop /sbin/rpcd
+}
