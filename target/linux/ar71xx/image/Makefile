@@ -787,89 +787,31 @@ define Image/Build/Zcomax/initramfs
 	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 endef
 
-define Image/Build/Template/all/squashfs
-	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+define Jffs2Template
+  define Image/Build/Template/$(1)/jffs2-$(2)
+    $$(call Image/Build/$$(1),jffs2-$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+  endef
 endef
 
-define Image/Build/Template/all/jffs2-64k
-	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+define BuildTemplate
+  define Image/Build/Template/$(1)/initramfs
+    $$(call Image/Build/$$(1)/initramfs,initramfs,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+  endef
+  define Image/Build/Template/$(1)/loader
+    $$(call Image/Build/$$(1)/loader,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+  endef
+  define Image/Build/Template/$(1)/squashfs
+    $$(call Image/Build/$$(1),squashfs$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+  endef
+  $(if $(3),$(foreach bs,$(3),$(eval $(call Jffs2Template,$(1),$(bs)))))
 endef
 
-define Image/Build/Template/all/jffs2-128k
-	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/all/jffs2-256k
-	$(call Image/Build/$(1),jffs2-256k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/squashfs-only/loader
-	$(call Image/Build/$(1)/loader,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/squashfs-only/squashfs
-	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/squashfs-only/initramfs
-	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/64k/loader
-	$(call Image/Build/$(1)/loader,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/64k/squashfs
-	$(call Image/Build/$(1),squashfs-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/64k/jffs2-64k
-	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/64kraw/loader
-	$(call Image/Build/$(1)/loader,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/64kraw/squashfs
-	$(call Image/Build/$(1),squashfs-raw,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/64kraw/jffs2-64k
-	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/128k/squashfs
-	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/128k/jffs2-128k
-	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/256k/squashfs
-	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/256k/jffs2-256k
-	$(call Image/Build/$(1),jffs2-256k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/64k/initramfs
-	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/64kraw/initramfs
-	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/128k/initramfs
-	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
-define Image/Build/Template/256k/initramfs
-	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
+$(eval $(call BuildTemplate,squashfs-only))
+$(eval $(call BuildTemplate,64k,-64k,64k))
+$(eval $(call BuildTemplate,64kraw,-raw,64k))
+$(eval $(call BuildTemplate,128k,,128k))
+$(eval $(call BuildTemplate,256k,,256k))
+$(eval $(call BuildTemplate,all,,64k 128k 256k))
 
 $(eval $(call SingleProfile,ALFA,64k,ALFANX,alfa-nx,ALFA-NX,ttyS0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,vmlinux.gz.uImage,pb9x-2.6.31-jffs2))
 $(eval $(call SingleProfile,ALFA,64k,HORNETUB,hornet-ub,HORNET-UB,ttyATH0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,kernel_image,rootfs_image))
