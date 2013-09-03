@@ -1,0 +1,76 @@
+From: Paul B. Henson <henson@acm.org>
+
+Newer kernel headers renamed mtd mode defines and no longer support
+MEMSETOOBSEL. Allow code to work with both older and newer kernel
+versions.
+
+Signed-off-by: Paul B. Henson <henson@acm.org>
+---
+
+http://git.buildroot.net/buildroot/plain/package/kobs-ng/kobs-ng-fix-mtd-defines.patch
+
+--- a/src/mtd.c
++++ b/src/mtd.c
+@@ -852,8 +852,11 @@ void mtd_close(struct mtd_data *md)
+ 		mp = &md->part[i];
+ 
+ 		if (mp->fd != -1) {
++/* Newer kernels dropped MEMSETOOBSEL */
++#ifdef MEMSETOOBSEL
+ 			(void)ioctl(mp->fd, MEMSETOOBSEL,
+ 					&mp->old_oobinfo);
++#endif
+ 			close(mp->fd);
+ 		}
+ 
+@@ -896,6 +899,8 @@ int mtd_set_ecc_mode(struct mtd_data *md
+ 				continue;
+ 			}
+ 
++/* Newer kernels dropped MEMSETOOBSEL */
++#ifdef MEMSETOOBSEL
+ 			if (r == -ENOTTY) {
+ 				r = ioctl(mp->fd, MEMSETOOBSEL, &mp->old_oobinfo);
+ 				if (r != 0) {
+@@ -904,6 +909,7 @@ int mtd_set_ecc_mode(struct mtd_data *md
+ 				}
+ 				mp->oobinfochanged = 0;
+ 			}
++#endif
+ 		} else {
+ 			r = ioctl(mp->fd, MTDFILEMODE, (void *)MTD_MODE_RAW);
+ 			if (r != 0 && r != -ENOTTY) {
+@@ -911,6 +917,8 @@ int mtd_set_ecc_mode(struct mtd_data *md
+ 				continue;
+ 			}
+ 
++/* Newer kernels dropped MEMSETOOBSEL */
++#ifdef MEMSETOOBSEL
+ 			if (r == -ENOTTY) {
+ 				r = ioctl(mp->fd, MEMSETOOBSEL, &none_oobinfo);
+ 				if (r != 0) {
+@@ -920,6 +928,7 @@ int mtd_set_ecc_mode(struct mtd_data *md
+ 				mp->oobinfochanged = 1;
+ 			} else
+ 				mp->oobinfochanged = 2;
++#endif
+ 		}
+ 
+ 		mp->ecc = ecc;
+--- a/src/mtd.h
++++ b/src/mtd.h
+@@ -31,6 +31,14 @@
+ #include "BootControlBlocks.h"
+ #include "rom_nand_hamming_code_ecc.h"
+ 
++// Newer kernel headers renamed define
++#ifndef MTD_MODE_NORMAL
++#define MTD_MODE_NORMAL MTD_FILE_MODE_NORMAL
++#endif
++#ifndef MTD_MODE_RAW
++#define MTD_MODE_RAW MTD_FILE_MODE_RAW
++#endif
++
+ //------------------------------------------------------------------------------
+ // Re-definitions of true and false, because the standard ones aren't good
+ // enough?
