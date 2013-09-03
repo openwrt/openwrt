@@ -170,14 +170,12 @@ $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_TARGET_NPT, ip6t_DN
 $(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_MASQUERADE, $(P_V4)ipt_MASQUERADE))
 $(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_REDIRECT, $(P_XT)xt_REDIRECT, ge 3.7.0))
 $(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_REDIRECT, $(P_V4)ipt_REDIRECT, lt 3.7.0))
-$(eval $(call nf_add,IPT_NAT6,CONFIG_IP_NF_TARGET_REDIRECT, $(P_V4)ip6t_REDIRECT, lt 3.8.0))
 
 
 # nat-extra
 
 $(eval $(call nf_add,IPT_NAT_EXTRA,CONFIG_IP_NF_TARGET_NETMAP, $(P_XT)xt_NETMAP, ge 3.7.0))
 $(eval $(call nf_add,IPT_NAT_EXTRA,CONFIG_IP_NF_TARGET_NETMAP, $(P_V4)ipt_NETMAP, lt 3.7.0))
-$(eval $(call nf_add,IPT_NAT6,CONFIG_IP_NF_TARGET_NETMAP, $(P_V6)ip6t_NETMAP, lt 3.8.0))
 
 
 # nathelper
