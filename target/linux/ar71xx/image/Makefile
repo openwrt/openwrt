@@ -712,7 +712,7 @@ define Image/Build/Netgear/initramfs
 	$(call MkuImageLzma,$(2),$(3) $(4),,-initramfs)
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
 		$(KDIR_TMP)/vmlinux-initramfs-$(2).uImage \
-		$(call imgname,$(1),$(2))-initramfs-uImage.bin \
+		$(call imgname,$(1),$(2))-uImage.bin \
 		$(5)
 endef
 
