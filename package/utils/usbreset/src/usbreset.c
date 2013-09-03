@@ -42,7 +42,11 @@ Alan Stern
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
+#include <limits.h>
+#include <dirent.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 
 #include <linux/usbdevice_fs.h>
 
@@ -59,86 +63,70 @@ struct usbentry {
 };
 
 
-static bool find_usbfs(void)
+static char *sysfs_attr(const char *dev, const char *attr)
 {
-	FILE *mtab;
+	int fd, len;
+	char path[PATH_MAX];
+	static char buf[129];
 
-	char buf[1024], type[32];
-	static char path[1024];
+	memset(buf, 0, sizeof(buf));
+	snprintf(path, sizeof(path) - 1, "/sys/bus/usb/devices/%s/%s", dev, attr);
 
-	if ((mtab = fopen("/proc/mounts", "r")) != NULL)
+	if ((fd = open(path, O_RDONLY)) >= 0)
 	{
-		while (fgets(buf, sizeof(buf), mtab))
-		{
-			if (sscanf(buf, "%*s %1023s %31s ", path, type) == 2 &&
-				!strncmp(type, "usbfs", 5))
-			{
-				usbfs = path;
-				break;
-			}
-		}
-
-		fclose(mtab);
+		len = read(fd, buf, sizeof(buf) - 1);
+		close(fd);
 	}
 
-	return !!usbfs;
+	while (--len > 0 && isspace(buf[len]))
+		buf[len] = 0;
+
+	return (len >= 0) ? buf : NULL;
 }
 
-static FILE * open_devlist(void)
+static struct usbentry * parse_devlist(DIR *d)
 {
-	char buf[1024];
-	snprintf(buf, sizeof(buf), "%s/devices", usbfs);
-	return fopen(buf, "r");
-}
-
-static void close_devlist(FILE *devs)
-{
-	fclose(devs);
-}
-
-static struct usbentry * parse_devlist(FILE *devs)
-{
-	char buf[1024];
+	char *attr;
+	struct dirent *e;
 	static struct usbentry dev;
+
+	do {
+		e = readdir(d);
+
+		if (!e)
+			return NULL;
+	}
+	while(!isdigit(e->d_name[0]) || strchr(e->d_name, ':'));
 
 	memset(&dev, 0, sizeof(dev));
 
-	while (fgets(buf, sizeof(buf), devs))
-	{
-		buf[strlen(buf)-1] = 0;
+	if ((attr = sysfs_attr(e->d_name, "busnum")) != NULL)
+		dev.bus_num = strtoul(attr, NULL, 10);
 
-		switch (buf[0])
-		{
-		case 'T':
-			sscanf(buf, "T: Bus=%d Lev=%*d Prnt=%*d Port=%*d Cnt=%*d Dev#=%d",
-				   &dev.bus_num, &dev.dev_num);
-			break;
+	if ((attr = sysfs_attr(e->d_name, "devnum")) != NULL)
+		dev.dev_num = strtoul(attr, NULL, 10);
 
-		case 'P':
-			sscanf(buf, "P: Vendor=%x ProdID=%x",
-				   &dev.vendor_id, &dev.product_id);
-			break;
+	if ((attr = sysfs_attr(e->d_name, "idVendor")) != NULL)
+		dev.vendor_id = strtoul(attr, NULL, 16);
 
-		case 'S':
-			if (!strncmp(buf, "S:  Manufacturer=", 17))
-				snprintf(dev.vendor_name, sizeof(dev.vendor_name),
-				         "%s", buf+17);
-			else if (!strncmp(buf, "S:  Product=", 12))
-				snprintf(dev.product_name, sizeof(dev.product_name),
-				         "%s", buf+12);
-			break;
-		}
+	if ((attr = sysfs_attr(e->d_name, "idProduct")) != NULL)
+		dev.product_id = strtoul(attr, NULL, 16);
 
-		if (dev.product_name[0])
-			return &dev;
-	}
+	if ((attr = sysfs_attr(e->d_name, "manufacturer")) != NULL)
+		strcpy(dev.vendor_name, attr);
+
+	if ((attr = sysfs_attr(e->d_name, "product")) != NULL)
+		strcpy(dev.product_name, attr);
+
+	if (dev.bus_num && dev.dev_num && dev.vendor_id && dev.product_id)
+		return &dev;
 
 	return NULL;
 }
 
 static void list_devices(void)
 {
-	FILE *devs = open_devlist();
+	DIR *devs = opendir("/sys/bus/usb/devices");
 	struct usbentry *dev;
 
 	if (!devs)
@@ -152,14 +140,14 @@ static void list_devices(void)
 			   dev->product_name);
 	}
 
-	close_devlist(devs);
+	closedir(devs);
 }
 
 struct usbentry * find_device(int *bus, int *dev,
                               int *vid, int *pid,
                               const char *product)
 {
-	FILE *devs = open_devlist();
+	DIR *devs = opendir("/sys/bus/usb/devices");
 
 	struct usbentry *e, *match = NULL;
 
@@ -177,7 +165,7 @@ struct usbentry * find_device(int *bus, int *dev,
 		}
 	}
 
-	close_devlist(devs);
+	closedir(devs);
 
 	return match;
 }
@@ -185,10 +173,10 @@ struct usbentry * find_device(int *bus, int *dev,
 static void reset_device(struct usbentry *dev)
 {
 	int fd;
-	char path[1024];
+	char path[PATH_MAX];
 
-	snprintf(path, sizeof(path), "%s/%03d/%03d",
-			 usbfs, dev->bus_num, dev->dev_num);
+	snprintf(path, sizeof(path) - 1, "/dev/bus/usb/%03d/%03d",
+	         dev->bus_num, dev->dev_num);
 
 	printf("Resetting %s ... ", dev->product_name);
 
@@ -212,12 +200,6 @@ int main(int argc, char **argv)
 {
 	int id1, id2;
 	struct usbentry *dev;
-
-	if (!find_usbfs())
-	{
-		fprintf(stderr, "Unable to find usbfs, is it mounted?\n");
-		return 1;
-	}
 
 	if ((argc == 2) && (sscanf(argv[1], "%3d/%3d", &id1, &id2) == 2))
 	{
