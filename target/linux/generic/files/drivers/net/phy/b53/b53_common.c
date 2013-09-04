@@ -970,7 +970,7 @@ static const struct switch_dev_ops b53_switch_ops_65 = {
 		.n_attr = ARRAY_SIZE(b53_global_ops_65),
 	},
 	.attr_port = {
-		.attr = b53_no_ops,
+		.attr = b53_port_ops,
 		.n_attr = ARRAY_SIZE(b53_port_ops),
 	},
 	.attr_vlan = {
