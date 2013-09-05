@@ -45,8 +45,6 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_RTLWIFI_DEBUG \
 	CONFIG_ATH_USER_REGD \
 
-CARL9170_FW_VERSION:=1.9.6
-
 include $(INCLUDE_DIR)/package.mk
 
 WMENU:=Wireless Drivers
@@ -147,7 +145,6 @@ $(eval $(call Download,ath10k-firmware))
 P54PCIFW:=2.13.12.0.arm
 P54USBFW:=2.13.24.0.lm87.arm
 P54SPIFW:=2.13.0.0.a.13.14.arm
-CARL9170_FW:=carl9170-1.fw
 
 define Download/p54usb
   FILE:=$(P54USBFW)
@@ -169,13 +166,6 @@ define Download/p54spi
   MD5SUM:=42661f8ecbadd88012807493f596081d
 endef
 $(eval $(call Download,p54spi))
-
-define Download/carl9170
-  FILE:=$(CARL9170_FW)-$(CARL9170_FW_VERSION)
-  URL:=http://downloads.openwrt.org/sources/
-  MD5SUM:=2fa6ed98d53d0b5fbcc136d1cf5e9609
-endef
-$(eval $(call Download,carl9170))
 
 define KernelPackage/p54/Default
   $(call KernelPackage/mac80211/Default)
@@ -607,11 +597,6 @@ define KernelPackage/carl9170
   DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core +kmod-input-core +@DRIVER_11N_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/carl9170/carl9170.ko
   AUTOLOAD:=$(call AutoLoad,60,carl9170)
-endef
-
-define KernelPackage/carl9170/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(CARL9170_FW)-$(CARL9170_FW_VERSION) $(1)/lib/firmware/$(CARL9170_FW)
 endef
 
 define KernelPackage/lib80211
@@ -1604,6 +1589,11 @@ endef
 define KernelPackage/zd1211rw/install
 	$(INSTALL_DIR) $(1)/lib/firmware/zd1211
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
+endef
+
+define KernelPackage/carl9170/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/carl9170-1.fw $(1)/lib/firmware
 endef
 
 define KernelPackage/ath9k-htc/install
