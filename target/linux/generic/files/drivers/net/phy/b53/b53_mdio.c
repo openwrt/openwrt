@@ -373,6 +373,22 @@ static struct phy_driver b53_phy_driver_id2 = {
 	},
 };
 
+/* BCM5365 */
+static struct phy_driver b53_phy_driver_id3 = {
+	.phy_id		= 0x00406000,
+	.name		= "Broadcom B53 (3)",
+	.phy_id_mask	= 0x1ffffc00,
+	.features	= 0,
+	.probe		= b53_phy_probe,
+	.remove		= b53_phy_remove,
+	.config_aneg	= b53_phy_config_aneg,
+	.config_init	= b53_phy_config_init,
+	.read_status	= b53_phy_read_status,
+	.driver = {
+		.owner = THIS_MODULE,
+	},
+};
+
 int __init b53_phy_driver_register(void)
 {
 	int ret;
@@ -383,13 +399,21 @@ int __init b53_phy_driver_register(void)
 
 	ret = phy_driver_register(&b53_phy_driver_id2);
 	if (ret)
-		phy_driver_unregister(&b53_phy_driver_id1);
+		goto err1;
 
+	ret = phy_driver_register(&b53_phy_driver_id3);
+	if (!ret)
+		return 0;
+
+	phy_driver_unregister(&b53_phy_driver_id2);
+err1:
+	phy_driver_unregister(&b53_phy_driver_id1);
 	return ret;
 }
 
 void __exit b53_phy_driver_unregister(void)
 {
+	phy_driver_unregister(&b53_phy_driver_id3);
 	phy_driver_unregister(&b53_phy_driver_id2);
 	phy_driver_unregister(&b53_phy_driver_id1);
 }
