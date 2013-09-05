@@ -90,7 +90,7 @@ define KernelPackage/fs-exportfs
   TITLE:=exportfs kernel server support
   KCONFIG:=CONFIG_EXPORTFS
   FILES=$(LINUX_DIR)/fs/exportfs/exportfs.ko
-  AUTOLOAD:=$(call AutoLoad,20,exportfs)
+  AUTOLOAD:=$(call AutoLoad,20,exportfs,1)
 endef
 
 define KernelPackage/fs-exportfs/description
