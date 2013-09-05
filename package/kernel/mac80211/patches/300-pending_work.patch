@@ -2110,17 +2110,17 @@
  	If you choose to build it as a module, it will be called rtl8192cu
  
 +config RTLWIFI
-+	tristate "Realtek common driver part"
++	tristate
 +	depends on m
 +	select BACKPORT_FW_LOADER
 +
 +config RTLWIFI_PCI
-+	depends on m
 +	tristate
++	depends on m
 +
 +config RTLWIFI_USB
-+	depends on m
 +	tristate
++	depends on m
 +
 +config RTLWIFI_DEBUG
 +	bool "Debugging output for rtlwifi driver family"
@@ -2135,7 +2135,8 @@
  	tristate
  	depends on m
  	depends on RTL8192CE || RTL8192CU
- 	default m
+-	default m
++	default y
 +
 +endif
 --- a/drivers/net/wireless/rtlwifi/Makefile
@@ -2158,6 +2159,15 @@
  
  obj-$(CPTCFG_RTL8192C_COMMON)	+= rtl8192c/
  obj-$(CPTCFG_RTL8192CE)		+= rtl8192ce/
+--- a/drivers/net/wireless/rtlwifi/ps.h
++++ b/drivers/net/wireless/rtlwifi/ps.h
+@@ -49,5 +49,6 @@ void rtl_swlps_rf_awake(struct ieee80211
+ void rtl_swlps_rf_sleep(struct ieee80211_hw *hw);
+ void rtl_p2p_ps_cmd(struct ieee80211_hw *hw, u8 p2p_ps_state);
+ void rtl_p2p_info(struct ieee80211_hw *hw, void *data, unsigned int len);
++void rtl_lps_change_work_callback(struct work_struct *work);
+ 
+ #endif
 --- a/drivers/net/wireless/rtlwifi/base.c
 +++ b/drivers/net/wireless/rtlwifi/base.c
 @@ -173,6 +173,7 @@ u8 rtl_tid_to_ac(u8 tid)
@@ -2325,7 +2335,27 @@
  
  static const u16 pcibridge_vendors[PCI_BRIDGE_VENDOR_MAX] = {
  	PCI_VENDOR_ID_INTEL,
-@@ -1899,7 +1906,7 @@ int rtl_pci_probe(struct pci_dev *pdev,
+@@ -1008,19 +1015,6 @@ static void _rtl_pci_prepare_bcn_tasklet
+ 	return;
+ }
+ 
+-static void rtl_lps_change_work_callback(struct work_struct *work)
+-{
+-	struct rtl_works *rtlworks =
+-	    container_of(work, struct rtl_works, lps_change_work);
+-	struct ieee80211_hw *hw = rtlworks->hw;
+-	struct rtl_priv *rtlpriv = rtl_priv(hw);
+-
+-	if (rtlpriv->enter_ps)
+-		rtl_lps_enter(hw);
+-	else
+-		rtl_lps_leave(hw);
+-}
+-
+ static void _rtl_pci_init_trx_var(struct ieee80211_hw *hw)
+ {
+ 	struct rtl_pci *rtlpci = rtl_pcidev(rtl_pcipriv(hw));
+@@ -1899,7 +1893,7 @@ int rtl_pci_probe(struct pci_dev *pdev,
  	rtlpriv->rtlhal.interface = INTF_PCI;
  	rtlpriv->cfg = (struct rtl_hal_cfg *)(id->driver_data);
  	rtlpriv->intf_ops = &rtl_pci_ops;
@@ -2336,7 +2366,7 @@
  	 *init dbgp flags before all
 --- a/drivers/net/wireless/rtlwifi/ps.c
 +++ b/drivers/net/wireless/rtlwifi/ps.c
-@@ -269,6 +269,7 @@ void rtl_ips_nic_on(struct ieee80211_hw 
+@@ -269,6 +269,7 @@ void rtl_ips_nic_on(struct ieee80211_hw
  
  	spin_unlock_irqrestore(&rtlpriv->locks.ips_lock, flags);
  }
@@ -2352,7 +2382,27 @@
  
  void rtl_swlps_rf_awake(struct ieee80211_hw *hw)
  {
-@@ -922,3 +924,4 @@ void rtl_p2p_info(struct ieee80211_hw *h
+@@ -611,6 +613,19 @@ void rtl_swlps_rf_sleep(struct ieee80211
+ 			MSECS(sleep_intv * mac->vif->bss_conf.beacon_int - 40));
+ }
+ 
++void rtl_lps_change_work_callback(struct work_struct *work)
++{
++	struct rtl_works *rtlworks =
++	    container_of(work, struct rtl_works, lps_change_work);
++	struct ieee80211_hw *hw = rtlworks->hw;
++	struct rtl_priv *rtlpriv = rtl_priv(hw);
++
++	if (rtlpriv->enter_ps)
++		rtl_lps_enter(hw);
++	else
++		rtl_lps_leave(hw);
++}
++EXPORT_SYMBOL_GPL(rtl_lps_change_work_callback);
+ 
+ void rtl_swlps_wq_callback(void *data)
+ {
+@@ -922,3 +937,4 @@ void rtl_p2p_info(struct ieee80211_hw *h
  	else
  		rtl_p2p_noa_ie(hw, data, len - FCS_LEN);
  }
@@ -2373,6 +2423,15 @@
  
  #define	REALTEK_USB_VENQT_READ			0xC0
  #define	REALTEK_USB_VENQT_WRITE			0x40
+@@ -1070,6 +1077,8 @@ int rtl_usb_probe(struct usb_interface *
+ 	spin_lock_init(&rtlpriv->locks.usb_lock);
+ 	INIT_WORK(&rtlpriv->works.fill_h2c_cmd,
+ 		  rtl_fill_h2c_cmd_work_callback);
++	INIT_WORK(&rtlpriv->works.lps_change_work,
++		  rtl_lps_change_work_callback);
+ 
+ 	rtlpriv->usb_data_index = 0;
+ 	init_completion(&rtlpriv->firmware_loading_complete);
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
 @@ -72,17 +72,12 @@ struct ath_config {
