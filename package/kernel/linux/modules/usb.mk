@@ -538,7 +538,7 @@ define KernelPackage/usb-serial-keyspan
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/serial/keyspan.ko \
 	$(wildcard $(LINUX_DIR)/drivers/usb/misc/ezusb.ko)
-  AUTOLOAD:=$(call AutoLoad,65,keyspan)
+  AUTOLOAD:=$(call AutoLoad,65,ezusb keyspan)
   $(call AddDepends/usb-serial)
 endef
 
