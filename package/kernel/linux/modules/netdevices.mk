@@ -86,7 +86,7 @@ define KernelPackage/libphy
   TITLE:=PHY library
   KCONFIG:=CONFIG_PHYLIB
   FILES:=$(LINUX_DIR)/drivers/net/phy/libphy.ko
-  AUTOLOAD:=$(call AutoLoad,15,libphy)
+  AUTOLOAD:=$(call AutoLoad,15,libphy,1)
 endef
 
 define KernelPackage/libphy/description
