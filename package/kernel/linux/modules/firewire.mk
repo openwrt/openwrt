@@ -13,7 +13,7 @@ define KernelPackage/firewire
   DEPENDS:=@PCI_SUPPORT +kmod-lib-crc-itu-t
   KCONFIG:=CONFIG_FIREWIRE
   FILES:=$(LINUX_DIR)/drivers/firewire/firewire-core.ko
-  AUTOLOAD:=$(call AutoLoad,20,firewire-core)
+  AUTOLOAD:=$(call AutoLoad,25,firewire-core)
 endef
 
 define KernelPackage/firewire/description
