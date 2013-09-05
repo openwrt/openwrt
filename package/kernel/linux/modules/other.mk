@@ -289,7 +289,7 @@ define KernelPackage/ssb
 	CONFIG_SSB_SPROM=y \
 	CONFIG_SSB_SILENT=y
   FILES:=$(LINUX_DIR)/drivers/ssb/ssb.ko
-  AUTOLOAD:=$(call AutoLoad,29,ssb)
+  AUTOLOAD:=$(call AutoLoad,18,ssb,1)
 endef
 
 define KernelPackage/ssb/description
