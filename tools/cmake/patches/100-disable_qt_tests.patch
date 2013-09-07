@@ -1,0 +1,28 @@
+--- a/Tests/RunCMake/CMakeLists.txt
++++ b/Tests/RunCMake/CMakeLists.txt
+@@ -76,12 +76,6 @@ add_RunCMake_test(include_directories)
+ add_RunCMake_test(list)
+ add_RunCMake_test(CMP0004)
+ 
+-find_package(Qt4 QUIET)
+-find_package(Qt5Core QUIET)
+-if (QT4_FOUND AND Qt5Core_FOUND AND NOT Qt5Core_VERSION VERSION_LESS 5.1.0)
+-  add_RunCMake_test(IncompatibleQt)
+-endif()
+-
+ if("${CMAKE_TEST_GENERATOR}" MATCHES "Visual Studio [^6]")
+   add_RunCMake_test(include_external_msproject)
+   add_RunCMake_test(SolutionGlobalSections)
+--- a/Tests/CMakeLists.txt
++++ b/Tests/CMakeLists.txt
+@@ -259,10 +259,6 @@ if(BUILD_TESTING)
+ 
+   list(APPEND TEST_BUILD_DIRS ${CMake_TEST_INSTALL_PREFIX})
+ 
+-  if(NOT QT4_FOUND)
+-    find_package(Qt4)
+-  endif()
+-
+   if(QT4_FOUND)
+     # test whether the Qt4 which has been found works, on some machines
+     # which run nightly builds there were errors like "wrong file format"
