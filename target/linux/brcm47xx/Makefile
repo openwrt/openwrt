@@ -10,6 +10,7 @@ ARCH:=mipsel
 BOARD:=brcm47xx
 BOARDNAME:=Broadcom BCM947xx/953xx
 FEATURES:=squashfs usb pcmcia
+MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 
 LINUX_VERSION:=3.10.10
 
