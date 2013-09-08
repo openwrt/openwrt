@@ -21,7 +21,7 @@
  	if (ant_gain > max_gain)
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1297,7 +1297,10 @@ int ath9k_config(struct ieee80211_hw *hw
+@@ -1299,7 +1299,10 @@ static int ath9k_config(struct ieee80211
  	}
  
  	if (changed & IEEE80211_CONF_CHANGE_POWER) {

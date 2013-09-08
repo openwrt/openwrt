@@ -1,15 +1,20 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1263,6 +1263,8 @@ int ath9k_config(struct ieee80211_hw *hw
- 			return -EINVAL;
- 		}
+@@ -286,8 +286,12 @@ static int ath_reset_internal(struct ath
+ 	    (sc->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL))
+ 		ath9k_mci_set_txpower(sc, true, false);
  
-+		hw->cur_power_level = sc->curtxpow / 2;
+-	if (!ath_complete_reset(sc, true))
++	if (!ath_complete_reset(sc, true)) {
+ 		r = -EIO;
++		goto out;
++	}
 +
- 		/*
- 		 * The most recent snapshot of channel->noisefloor for the old
- 		 * channel is only available after the hardware reset. Copy it to
-@@ -1299,6 +1301,7 @@ int ath9k_config(struct ieee80211_hw *hw
++	sc->hw->cur_power_level = sc->curtxpow / 2;
+ 
+ out:
+ 	spin_unlock_bh(&sc->sc_pcu_lock);
+@@ -1299,6 +1303,7 @@ static int ath9k_config(struct ieee80211
  		sc->config.txpowlimit = 2 * conf->power_level;
  		ath9k_cmn_update_txpow(ah, sc->curtxpow,
  				       sc->config.txpowlimit, &sc->curtxpow);
