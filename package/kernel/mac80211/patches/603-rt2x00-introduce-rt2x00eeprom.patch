@@ -186,7 +186,7 @@
  obj-$(CPTCFG_RT2X00_LIB_MMIO)		+= rt2x00mmio.o
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -90,25 +90,11 @@ static void rt2800pci_mcu_status(struct
+@@ -90,25 +90,11 @@ static void rt2800pci_mcu_status(struct 
  	rt2x00mmio_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
  }
  

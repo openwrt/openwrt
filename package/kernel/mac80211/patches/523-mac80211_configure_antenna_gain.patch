@@ -1,6 +1,6 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -999,6 +999,7 @@ enum ieee80211_smps_mode {
+@@ -1002,6 +1002,7 @@ enum ieee80211_smps_mode {
   *
   * @power_level: requested transmit power (in dBm), backward compatibility
   *	value only that is set to the minimum of all interfaces
@@ -8,7 +8,7 @@
   *
   * @chandef: the channel definition to tune to
   * @radar_enabled: whether radar detection is enabled
-@@ -1020,6 +1021,7 @@ struct ieee80211_conf {
+@@ -1023,6 +1024,7 @@ struct ieee80211_conf {
  	u32 flags;
  	int power_level, dynamic_ps_timeout;
  	int max_sleep_period;
@@ -18,7 +18,7 @@
  	u8 ps_dtim_period;
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1126,6 +1126,7 @@ struct ieee80211_local {
+@@ -1130,6 +1130,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */
@@ -28,9 +28,9 @@
  
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -1736,6 +1736,8 @@ enum nl80211_attrs {
- 
- 	NL80211_ATTR_PEER_AID,
+@@ -1766,6 +1766,8 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_CSA_C_OFF_BEACON,
+ 	NL80211_ATTR_CSA_C_OFF_PRESP,
  
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
 +
@@ -39,15 +39,15 @@
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -349,6 +349,7 @@ static const struct nla_policy nl80211_p
- 	[NL80211_ATTR_IE_RIC] = { .type = NLA_BINARY,
- 				  .len = IEEE80211_MAX_DATA_LEN },
- 	[NL80211_ATTR_PEER_AID] = { .type = NLA_U16 },
+@@ -354,6 +354,7 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_CSA_IES] = { .type = NLA_NESTED },
+ 	[NL80211_ATTR_CSA_C_OFF_BEACON] = { .type = NLA_U16 },
+ 	[NL80211_ATTR_CSA_C_OFF_PRESP] = { .type = NLA_U16 },
 +	[NL80211_ATTR_WIPHY_ANTENNA_GAIN] = { .type = NLA_U32 },
  };
  
  /* policy for the key attributes */
-@@ -1993,6 +1994,22 @@ static int nl80211_set_wiphy(struct sk_b
+@@ -2000,6 +2001,22 @@ static int nl80211_set_wiphy(struct sk_b
  			goto bad_res;
  	}
  
@@ -72,7 +72,7 @@
  		u32 tx_ant, rx_ant;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2283,6 +2283,19 @@ static int ieee80211_get_tx_power(struct
+@@ -2293,6 +2293,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -92,7 +92,7 @@
  static int ieee80211_set_wds_peer(struct wiphy *wiphy, struct net_device *dev,
  				  const u8 *addr)
  {
-@@ -3474,6 +3487,7 @@ struct cfg80211_ops mac80211_config_ops 
+@@ -3656,6 +3669,7 @@ struct cfg80211_ops mac80211_config_ops 
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
@@ -102,7 +102,7 @@
  	CFG80211_TESTMODE_CMD(ieee80211_testmode_cmd)
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1970,6 +1970,7 @@ struct cfg80211_update_ft_ies_params {
+@@ -1994,6 +1994,7 @@ struct cfg80211_update_ft_ies_params {
   *	(as advertised by the nl80211 feature flag.)
   * @get_tx_power: store the current TX power into the dbm variable;
   *	return 0 if successful
@@ -110,7 +110,7 @@
   *
   * @set_wds_peer: set the WDS peer for a WDS interface
   *
-@@ -2189,6 +2190,7 @@ struct cfg80211_ops {
+@@ -2215,6 +2216,7 @@ struct cfg80211_ops {
  				enum nl80211_tx_power_setting type, int mbm);
  	int	(*get_tx_power)(struct wiphy *wiphy, struct wireless_dev *wdev,
  				int *dbm);

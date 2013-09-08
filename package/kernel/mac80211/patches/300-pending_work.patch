@@ -45,9 +45,38 @@
  			    TEST(MFP), TEST(BLOCK_BA), TEST(PSPOLL),
  			    TEST(UAPSD), TEST(SP), TEST(TDLS_PEER),
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
+@@ -455,6 +455,15 @@ void ieee80211_sta_debugfs_add(struct st
+ 	DEBUGFS_ADD_COUNTER(tx_retry_count, tx_retry_count);
+ 	DEBUGFS_ADD_COUNTER(wep_weak_iv_count, wep_weak_iv_count);
+ 
++	if (sizeof(sta->driver_buffered_tids) == sizeof(u32))
++		debugfs_create_x32("driver_buffered_tids", 0400,
++				   sta->debugfs.dir,
++				   (u32 *)&sta->driver_buffered_tids);
++	else
++		debugfs_create_x64("driver_buffered_tids", 0400,
++				   sta->debugfs.dir,
++				   (u64 *)&sta->driver_buffered_tids);
++
+ 	drv_sta_add_debugfs(local, sdata, &sta->sta, sta->debugfs.dir);
+ }
+ 
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -463,7 +463,6 @@ int ieee80211_do_open(struct wireless_de
+@@ -274,6 +274,12 @@ static int ieee80211_check_concurrent_if
+ 			if (iftype == NL80211_IFTYPE_ADHOC &&
+ 			    nsdata->vif.type == NL80211_IFTYPE_ADHOC)
+ 				return -EBUSY;
++			/*
++			 * will not add another interface while any channel
++			 * switch is active.
++			 */
++			if (nsdata->vif.csa_active)
++				return -EBUSY;
+ 
+ 			/*
+ 			 * The remaining checks are only performed for interfaces
+@@ -463,7 +469,6 @@ int ieee80211_do_open(struct wireless_de
  	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
  	struct net_device *dev = wdev->netdev;
  	struct ieee80211_local *local = sdata->local;
@@ -55,7 +84,7 @@
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -629,30 +628,8 @@ int ieee80211_do_open(struct wireless_de
+@@ -629,30 +634,8 @@ int ieee80211_do_open(struct wireless_de
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -87,7 +116,16 @@
  
  	/*
  	 * set_multicast_list will be invoked by the networking core
-@@ -1116,6 +1093,74 @@ static void ieee80211_if_setup(struct ne
+@@ -809,6 +792,8 @@ static void ieee80211_do_stop(struct iee
+ 	cancel_work_sync(&local->dynamic_ps_enable_work);
+ 
+ 	cancel_work_sync(&sdata->recalc_smps);
++	sdata->vif.csa_active = false;
++	cancel_work_sync(&sdata->csa_finalize_work);
+ 
+ 	cancel_delayed_work_sync(&sdata->dfs_cac_timer_work);
+ 
+@@ -1116,6 +1101,74 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -162,7 +200,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1220,6 +1265,9 @@ static void ieee80211_iface_work(struct 
+@@ -1220,6 +1273,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -172,9 +210,61 @@
  		default:
  			WARN(1, "frame for unexpected interface type");
  			break;
+@@ -1282,6 +1338,7 @@ static void ieee80211_setup_sdata(struct
+ 	skb_queue_head_init(&sdata->skb_queue);
+ 	INIT_WORK(&sdata->work, ieee80211_iface_work);
+ 	INIT_WORK(&sdata->recalc_smps, ieee80211_recalc_smps_work);
++	INIT_WORK(&sdata->csa_finalize_work, ieee80211_csa_finalize_work);
+ 
+ 	switch (type) {
+ 	case NL80211_IFTYPE_P2P_GO:
 --- a/net/mac80211/rc80211_minstrel_ht.c
 +++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -804,10 +804,18 @@ minstrel_ht_get_rate(void *priv, struct 
+@@ -365,6 +365,14 @@ minstrel_ht_update_stats(struct minstrel
+ 		}
+ 	}
+ 
++#ifdef CPTCFG_MAC80211_DEBUGFS
++	/* use fixed index if set */
++	if (mp->fixed_rate_idx != -1) {
++		mi->max_tp_rate = mp->fixed_rate_idx;
++		mi->max_tp_rate2 = mp->fixed_rate_idx;
++		mi->max_prob_rate = mp->fixed_rate_idx;
++	}
++#endif
+ 
+ 	mi->stats_update = jiffies;
+ }
+@@ -774,6 +782,11 @@ minstrel_ht_get_rate(void *priv, struct 
+ 	info->flags |= mi->tx_flags;
+ 	minstrel_ht_check_cck_shortpreamble(mp, mi, txrc->short_preamble);
+ 
++#ifdef CPTCFG_MAC80211_DEBUGFS
++	if (mp->fixed_rate_idx != -1)
++		return;
++#endif
++
+ 	/* Don't use EAPOL frames for sampling on non-mrr hw */
+ 	if (mp->hw->max_rates == 1 &&
+ 	    txrc->skb->protocol == cpu_to_be16(ETH_P_PAE))
+@@ -781,16 +794,6 @@ minstrel_ht_get_rate(void *priv, struct 
+ 	else
+ 		sample_idx = minstrel_get_sample_rate(mp, mi);
+ 
+-#ifdef CPTCFG_MAC80211_DEBUGFS
+-	/* use fixed index if set */
+-	if (mp->fixed_rate_idx != -1) {
+-		mi->max_tp_rate = mp->fixed_rate_idx;
+-		mi->max_tp_rate2 = mp->fixed_rate_idx;
+-		mi->max_prob_rate = mp->fixed_rate_idx;
+-		sample_idx = -1;
+-	}
+-#endif
+-
+ 	mi->total_packets++;
+ 
+ 	/* wraparound */
+@@ -804,10 +807,18 @@ minstrel_ht_get_rate(void *priv, struct 
  
  	sample_group = &minstrel_mcs_groups[sample_idx / MCS_GROUP_RATES];
  	info->flags |= IEEE80211_TX_CTL_RATE_CTRL_PROBE;
@@ -194,7 +284,7 @@
  }
  
  static void
-@@ -820,6 +828,9 @@ minstrel_ht_update_cck(struct minstrel_p
+@@ -820,6 +831,9 @@ minstrel_ht_update_cck(struct minstrel_p
  	if (sband->band != IEEE80211_BAND_2GHZ)
  		return;
  
@@ -754,7 +844,76 @@
  #undef PADBYTES
  }
  
-@@ -1188,53 +1275,86 @@ static void ath_tx_fill_desc(struct ath_
+@@ -999,7 +1086,7 @@ void ath_update_max_aggr_framelen(struct
+ }
+ 
+ static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf,
+-			     struct ath_tx_info *info, int len)
++			     struct ath_tx_info *info, int len, bool rts)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct sk_buff *skb;
+@@ -1008,6 +1095,7 @@ static void ath_buf_set_rate(struct ath_
+ 	const struct ieee80211_rate *rate;
+ 	struct ieee80211_hdr *hdr;
+ 	struct ath_frame_info *fi = get_frame_info(bf->bf_mpdu);
++	u32 rts_thresh = sc->hw->wiphy->rts_threshold;
+ 	int i;
+ 	u8 rix = 0;
+ 
+@@ -1030,7 +1118,17 @@ static void ath_buf_set_rate(struct ath_
+ 		rix = rates[i].idx;
+ 		info->rates[i].Tries = rates[i].count;
+ 
+-		    if (rates[i].flags & IEEE80211_TX_RC_USE_RTS_CTS) {
++		/*
++		 * Handle RTS threshold for unaggregated HT frames.
++		 */
++		if (bf_isampdu(bf) && !bf_isaggr(bf) &&
++		    (rates[i].flags & IEEE80211_TX_RC_MCS) &&
++		    unlikely(rts_thresh != (u32) -1)) {
++			if (!rts_thresh || (len > rts_thresh))
++				rts = true;
++		}
++
++		if (rts || rates[i].flags & IEEE80211_TX_RC_USE_RTS_CTS) {
+ 			info->rates[i].RateFlags |= ATH9K_RATESERIES_RTS_CTS;
+ 			info->flags |= ATH9K_TXDESC_RTSENA;
+ 		} else if (rates[i].flags & IEEE80211_TX_RC_USE_CTS_PROTECT) {
+@@ -1123,6 +1221,8 @@ static void ath_tx_fill_desc(struct ath_
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_buf *bf_first = NULL;
+ 	struct ath_tx_info info;
++	u32 rts_thresh = sc->hw->wiphy->rts_threshold;
++	bool rts = false;
+ 
+ 	memset(&info, 0, sizeof(info));
+ 	info.is_first = true;
+@@ -1159,7 +1259,22 @@ static void ath_tx_fill_desc(struct ath_
+ 				info.flags |= (u32) bf->bf_state.bfs_paprd <<
+ 					      ATH9K_TXDESC_PAPRD_S;
+ 
+-			ath_buf_set_rate(sc, bf, &info, len);
++			/*
++			 * mac80211 doesn't handle RTS threshold for HT because
++			 * the decision has to be taken based on AMPDU length
++			 * and aggregation is done entirely inside ath9k.
++			 * Set the RTS/CTS flag for the first subframe based
++			 * on the threshold.
++			 */
++			if (aggr && (bf == bf_first) &&
++			    unlikely(rts_thresh != (u32) -1)) {
++				/*
++				 * "len" is the size of the entire AMPDU.
++				 */
++				if (!rts_thresh || (len > rts_thresh))
++					rts = true;
++			}
++			ath_buf_set_rate(sc, bf, &info, len, rts);
+ 		}
+ 
+ 		info.buf_addr[0] = bf->bf_buf_addr;
+@@ -1188,53 +1303,86 @@ static void ath_tx_fill_desc(struct ath_
  	}
  }
  
@@ -850,18 +1009,18 @@
 +		*stop = true;
 +		return false;
 +	}
-+
+ 
+-		ath_tx_fill_desc(sc, bf, txq, aggr_len);
+-		ath_tx_txqaddbuf(sc, txq, &bf_q, false);
+-	} while (txq->axq_ampdu_depth < ATH_AGGR_MIN_QDEPTH &&
+-		 status != ATH_AGGR_BAW_CLOSED);
 +	ath_set_rates(tid->an->vif, tid->an->sta, bf);
 +	if (aggr)
 +		last = ath_tx_form_aggr(sc, txq, tid, &bf_q, bf,
 +					tid_q, &aggr_len);
 +	else
 +		ath_tx_form_burst(sc, txq, tid, &bf_q, bf, tid_q);
- 
--		ath_tx_fill_desc(sc, bf, txq, aggr_len);
--		ath_tx_txqaddbuf(sc, txq, &bf_q, false);
--	} while (txq->axq_ampdu_depth < ATH_AGGR_MIN_QDEPTH &&
--		 status != ATH_AGGR_BAW_CLOSED);
++
 +	if (list_empty(&bf_q))
 +		return false;
 +
@@ -876,7 +1035,7 @@
  }
  
  int ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
-@@ -1258,6 +1378,9 @@ int ath_tx_aggr_start(struct ath_softc *
+@@ -1258,6 +1406,9 @@ int ath_tx_aggr_start(struct ath_softc *
  		an->mpdudensity = density;
  	}
  
@@ -886,7 +1045,7 @@
  	txtid->active = true;
  	txtid->paused = true;
  	*ssn = txtid->seq_start = txtid->seq_next;
-@@ -1277,8 +1400,9 @@ void ath_tx_aggr_stop(struct ath_softc *
+@@ -1277,8 +1428,9 @@ void ath_tx_aggr_stop(struct ath_softc *
  
  	ath_txq_lock(sc, txq);
  	txtid->active = false;
@@ -897,7 +1056,7 @@
  	ath_txq_unlock_complete(sc, txq);
  }
  
-@@ -1302,7 +1426,7 @@ void ath_tx_aggr_sleep(struct ieee80211_
+@@ -1302,7 +1454,7 @@ void ath_tx_aggr_sleep(struct ieee80211_
  
  		ath_txq_lock(sc, txq);
  
@@ -906,7 +1065,7 @@
  
  		tid->sched = false;
  		list_del(&tid->list);
-@@ -1334,7 +1458,7 @@ void ath_tx_aggr_wakeup(struct ath_softc
+@@ -1334,7 +1486,7 @@ void ath_tx_aggr_wakeup(struct ath_softc
  		ath_txq_lock(sc, txq);
  		ac->clear_ps_filter = true;
  
@@ -915,7 +1074,7 @@
  			ath_tx_queue_tid(txq, tid);
  			ath_txq_schedule(sc, txq);
  		}
-@@ -1359,7 +1483,7 @@ void ath_tx_aggr_resume(struct ath_softc
+@@ -1359,7 +1511,7 @@ void ath_tx_aggr_resume(struct ath_softc
  	tid->baw_size = IEEE80211_MIN_AMPDU_BUF << sta->ht_cap.ampdu_factor;
  	tid->paused = false;
  
@@ -924,7 +1083,7 @@
  		ath_tx_queue_tid(txq, tid);
  		ath_txq_schedule(sc, txq);
  	}
-@@ -1379,6 +1503,7 @@ void ath9k_release_buffered_frames(struc
+@@ -1379,6 +1531,7 @@ void ath9k_release_buffered_frames(struc
  	struct ieee80211_tx_info *info;
  	struct list_head bf_q;
  	struct ath_buf *bf_tail = NULL, *bf;
@@ -932,7 +1091,7 @@
  	int sent = 0;
  	int i;
  
-@@ -1394,15 +1519,15 @@ void ath9k_release_buffered_frames(struc
+@@ -1394,15 +1547,15 @@ void ath9k_release_buffered_frames(struc
  			continue;
  
  		ath_txq_lock(sc, tid->ac->txq);
@@ -952,7 +1111,7 @@
  			bf->bf_state.bf_type &= ~BUF_AGGR;
  			if (bf_tail)
  				bf_tail->bf_next = bf;
-@@ -1412,7 +1537,7 @@ void ath9k_release_buffered_frames(struc
+@@ -1412,7 +1565,7 @@ void ath9k_release_buffered_frames(struc
  			sent++;
  			TX_STAT_INC(txq->axq_qnum, a_queued_hw);
  
@@ -961,7 +1120,7 @@
  				ieee80211_sta_set_buffered(an->sta, i, false);
  		}
  		ath_txq_unlock_complete(sc, tid->ac->txq);
-@@ -1571,7 +1696,7 @@ static void ath_drain_txq_list(struct at
+@@ -1571,7 +1724,7 @@ static void ath_drain_txq_list(struct at
  	while (!list_empty(list)) {
  		bf = list_first_entry(list, struct ath_buf, list);
  
@@ -970,7 +1129,7 @@
  			list_del(&bf->list);
  
  			ath_tx_return_buffer(sc, bf);
-@@ -1665,25 +1790,27 @@ void ath_tx_cleanupq(struct ath_softc *s
+@@ -1665,25 +1818,27 @@ void ath_tx_cleanupq(struct ath_softc *s
   */
  void ath_txq_schedule(struct ath_softc *sc, struct ath_txq *txq)
  {
@@ -1003,7 +1162,7 @@
  			tid = list_first_entry(&ac->tid_q, struct ath_atx_tid,
  					       list);
  			list_del(&tid->list);
-@@ -1692,17 +1819,17 @@ void ath_txq_schedule(struct ath_softc *
+@@ -1692,17 +1847,17 @@ void ath_txq_schedule(struct ath_softc *
  			if (tid->paused)
  				continue;
  
@@ -1025,7 +1184,7 @@
  				break;
  		}
  
-@@ -1711,9 +1838,17 @@ void ath_txq_schedule(struct ath_softc *
+@@ -1711,9 +1866,17 @@ void ath_txq_schedule(struct ath_softc *
  			list_add_tail(&ac->list, &txq->axq_acq);
  		}
  
@@ -1045,7 +1204,7 @@
  	}
  
  	rcu_read_unlock();
-@@ -1792,57 +1927,6 @@ static void ath_tx_txqaddbuf(struct ath_
+@@ -1792,57 +1955,6 @@ static void ath_tx_txqaddbuf(struct ath_
  	}
  }
  
@@ -1103,7 +1262,7 @@
  static void ath_tx_send_normal(struct ath_softc *sc, struct ath_txq *txq,
  			       struct ath_atx_tid *tid, struct sk_buff *skb)
  {
-@@ -1985,6 +2069,7 @@ static int ath_tx_prepare(struct ieee802
+@@ -1985,6 +2097,7 @@ static int ath_tx_prepare(struct ieee802
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_sta *sta = txctl->sta;
  	struct ieee80211_vif *vif = info->control.vif;
@@ -1111,7 +1270,7 @@
  	struct ath_softc *sc = hw->priv;
  	int frmlen = skb->len + FCS_LEN;
  	int padpos, padsize;
-@@ -1992,6 +2077,10 @@ static int ath_tx_prepare(struct ieee802
+@@ -1992,6 +2105,10 @@ static int ath_tx_prepare(struct ieee802
  	/* NOTE:  sta can be NULL according to net/mac80211.h */
  	if (sta)
  		txctl->an = (struct ath_node *)sta->drv_priv;
@@ -1122,7 +1281,7 @@
  
  	if (info->control.hw_key)
  		frmlen += info->control.hw_key->icv_len;
-@@ -2041,7 +2130,6 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2041,7 +2158,6 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ath_txq *txq = txctl->txq;
  	struct ath_atx_tid *tid = NULL;
  	struct ath_buf *bf;
@@ -1130,7 +1289,7 @@
  	int q;
  	int ret;
  
-@@ -2069,27 +2157,31 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2069,27 +2185,31 @@ int ath_tx_start(struct ieee80211_hw *hw
  		ath_txq_unlock(sc, txq);
  		txq = sc->tx.uapsdq;
  		ath_txq_lock(sc, txq);
@@ -1173,7 +1332,16 @@
  		if (txctl->paprd)
  			dev_kfree_skb_any(skb);
  		else
-@@ -2189,7 +2281,7 @@ static void ath_tx_complete(struct ath_s
+@@ -2142,7 +2262,7 @@ void ath_tx_cabq(struct ieee80211_hw *hw
+ 
+ 		bf->bf_lastbf = bf;
+ 		ath_set_rates(vif, NULL, bf);
+-		ath_buf_set_rate(sc, bf, &info, fi->framelen);
++		ath_buf_set_rate(sc, bf, &info, fi->framelen, false);
+ 		duration += info.rates[0].PktDuration;
+ 		if (bf_tail)
+ 			bf_tail->bf_next = bf;
+@@ -2189,7 +2309,7 @@ static void ath_tx_complete(struct ath_s
  	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
  	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
  	struct ieee80211_hdr * hdr = (struct ieee80211_hdr *)skb->data;
@@ -1182,7 +1350,7 @@
  	unsigned long flags;
  
  	ath_dbg(common, XMIT, "TX complete: skb: %p\n", skb);
-@@ -2225,21 +2317,7 @@ static void ath_tx_complete(struct ath_s
+@@ -2225,21 +2345,7 @@ static void ath_tx_complete(struct ath_s
  	spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
  
  	__skb_queue_tail(&txq->complete_q, skb);
@@ -1205,7 +1373,7 @@
  }
  
  static void ath_tx_complete_buf(struct ath_softc *sc, struct ath_buf *bf,
-@@ -2360,8 +2438,7 @@ static void ath_tx_processq(struct ath_s
+@@ -2360,8 +2466,7 @@ static void ath_tx_processq(struct ath_s
  
  		if (list_empty(&txq->axq_q)) {
  			txq->axq_link = NULL;
@@ -1215,7 +1383,7 @@
  			break;
  		}
  		bf = list_first_entry(&txq->axq_q, struct ath_buf, list);
-@@ -2375,7 +2452,7 @@ static void ath_tx_processq(struct ath_s
+@@ -2375,7 +2480,7 @@ static void ath_tx_processq(struct ath_s
  		 * it with the STALE flag.
  		 */
  		bf_held = NULL;
@@ -1224,7 +1392,7 @@
  			bf_held = bf;
  			if (list_is_last(&bf_held->list, &txq->axq_q))
  				break;
-@@ -2399,7 +2476,7 @@ static void ath_tx_processq(struct ath_s
+@@ -2399,7 +2504,7 @@ static void ath_tx_processq(struct ath_s
  		 * however leave the last descriptor back as the holding
  		 * descriptor for hw.
  		 */
@@ -1233,7 +1401,7 @@
  		INIT_LIST_HEAD(&bf_head);
  		if (!list_is_singular(&lastbf->list))
  			list_cut_position(&bf_head,
-@@ -2470,7 +2547,7 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2470,7 +2575,7 @@ void ath_tx_edma_tasklet(struct ath_soft
  		}
  
  		bf = list_first_entry(fifo_list, struct ath_buf, list);
@@ -1242,7 +1410,7 @@
  			list_del(&bf->list);
  			ath_tx_return_buffer(sc, bf);
  			bf = list_first_entry(fifo_list, struct ath_buf, list);
-@@ -2492,7 +2569,7 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2492,7 +2597,7 @@ void ath_tx_edma_tasklet(struct ath_soft
  				ath_tx_txqaddbuf(sc, txq, &bf_q, true);
  			}
  		} else {
@@ -1251,7 +1419,7 @@
  			if (bf != lastbf)
  				list_cut_position(&bf_head, fifo_list,
  						  lastbf->list.prev);
-@@ -2583,6 +2660,7 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2583,6 +2688,7 @@ void ath_tx_node_init(struct ath_softc *
  		tid->paused    = false;
  		tid->active	   = false;
  		__skb_queue_head_init(&tid->buf_q);
@@ -1259,7 +1427,7 @@
  		acno = TID_TO_WME_AC(tidno);
  		tid->ac = &an->ac[acno];
  	}
-@@ -2590,6 +2668,7 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2590,6 +2696,7 @@ void ath_tx_node_init(struct ath_softc *
  	for (acno = 0, ac = &an->ac[acno];
  	     acno < IEEE80211_NUM_ACS; acno++, ac++) {
  		ac->sched    = false;
@@ -1269,7 +1437,27 @@
  	}
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -966,6 +966,8 @@ static int ath9k_add_interface(struct ie
+@@ -173,8 +173,7 @@ static void ath_restart_work(struct ath_
+ {
+ 	ieee80211_queue_delayed_work(sc->hw, &sc->tx_complete_work, 0);
+ 
+-	if (AR_SREV_9340(sc->sc_ah) || AR_SREV_9485(sc->sc_ah) ||
+-	    AR_SREV_9550(sc->sc_ah))
++	if (AR_SREV_9340(sc->sc_ah) || AR_SREV_9330(sc->sc_ah))
+ 		ieee80211_queue_delayed_work(sc->hw, &sc->hw_pll_work,
+ 				     msecs_to_jiffies(ATH_PLL_WORK_INTERVAL));
+ 
+@@ -238,9 +237,6 @@ static bool ath_complete_reset(struct at
+ 		ath_restart_work(sc);
+ 	}
+ 
+-	if ((ah->caps.hw_caps & ATH9K_HW_CAP_ANT_DIV_COMB) && sc->ant_rx != 3)
+-		ath_ant_comb_update(sc);
+-
+ 	ieee80211_wake_queues(sc->hw);
+ 
+ 	return true;
+@@ -966,6 +962,8 @@ static int ath9k_add_interface(struct ie
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
@@ -1278,7 +1466,7 @@
  
  	mutex_lock(&sc->mutex);
  
-@@ -979,6 +981,12 @@ static int ath9k_add_interface(struct ie
+@@ -979,6 +977,12 @@ static int ath9k_add_interface(struct ie
  	if (ath9k_uses_beacons(vif->type))
  		ath9k_beacon_assign_slot(sc, vif);
  
@@ -1291,7 +1479,7 @@
  	mutex_unlock(&sc->mutex);
  	return 0;
  }
-@@ -1016,6 +1024,7 @@ static void ath9k_remove_interface(struc
+@@ -1016,6 +1020,7 @@ static void ath9k_remove_interface(struc
  {
  	struct ath_softc *sc = hw->priv;
  	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
@@ -1299,7 +1487,7 @@
  
  	ath_dbg(common, CONFIG, "Detach Interface\n");
  
-@@ -1030,6 +1039,8 @@ static void ath9k_remove_interface(struc
+@@ -1030,6 +1035,8 @@ static void ath9k_remove_interface(struc
  	ath9k_calculate_summary_state(hw, NULL);
  	ath9k_ps_restore(sc);
  
@@ -1308,7 +1496,36 @@
  	mutex_unlock(&sc->mutex);
  }
  
-@@ -1374,9 +1385,6 @@ static void ath9k_sta_notify(struct ieee
+@@ -1193,8 +1200,6 @@ static int ath9k_config(struct ieee80211
+ 
+ 	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || reset_channel) {
+ 		struct ieee80211_channel *curchan = hw->conf.chandef.chan;
+-		enum nl80211_channel_type channel_type =
+-			cfg80211_get_chandef_type(&conf->chandef);
+ 		int pos = curchan->hw_value;
+ 		int old_pos = -1;
+ 		unsigned long flags;
+@@ -1202,8 +1207,8 @@ static int ath9k_config(struct ieee80211
+ 		if (ah->curchan)
+ 			old_pos = ah->curchan - &ah->channels[0];
+ 
+-		ath_dbg(common, CONFIG, "Set channel: %d MHz type: %d\n",
+-			curchan->center_freq, channel_type);
++		ath_dbg(common, CONFIG, "Set channel: %d MHz width: %d\n",
++			curchan->center_freq, hw->conf.chandef.width);
+ 
+ 		/* update survey stats for the old channel before switching */
+ 		spin_lock_irqsave(&common->cc_lock, flags);
+@@ -1211,7 +1216,7 @@ static int ath9k_config(struct ieee80211
+ 		spin_unlock_irqrestore(&common->cc_lock, flags);
+ 
+ 		ath9k_cmn_update_ichannel(&sc->sc_ah->channels[pos],
+-					  curchan, channel_type);
++					  &conf->chandef);
+ 
+ 		/*
+ 		 * If the operating channel changes, change the survey in-use flags
+@@ -1374,9 +1379,6 @@ static void ath9k_sta_notify(struct ieee
  	struct ath_softc *sc = hw->priv;
  	struct ath_node *an = (struct ath_node *) sta->drv_priv;
  
@@ -1318,7 +1535,7 @@
  	switch (cmd) {
  	case STA_NOTIFY_SLEEP:
  		an->sleeping = true;
-@@ -2094,7 +2102,7 @@ static void ath9k_wow_add_pattern(struct
+@@ -2094,7 +2096,7 @@ static void ath9k_wow_add_pattern(struct
  {
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath9k_wow_pattern *wow_pattern = NULL;
@@ -1374,7 +1591,38 @@
  		p = &wow->patterns[i];
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1698,7 +1698,7 @@ struct cfg80211_pmksa {
+@@ -639,6 +639,30 @@ struct cfg80211_ap_settings {
+ };
+ 
+ /**
++ * struct cfg80211_csa_settings - channel switch settings
++ *
++ * Used for channel switch
++ *
++ * @chandef: defines the channel to use after the switch
++ * @beacon_csa: beacon data while performing the switch
++ * @counter_offset_beacon: offset for the counter within the beacon (tail)
++ * @counter_offset_presp: offset for the counter within the probe response
++ * @beacon_after: beacon data to be used on the new channel
++ * @radar_required: whether radar detection is required on the new channel
++ * @block_tx: whether transmissions should be blocked while changing
++ * @count: number of beacons until switch
++ */
++struct cfg80211_csa_settings {
++	struct cfg80211_chan_def chandef;
++	struct cfg80211_beacon_data beacon_csa;
++	u16 counter_offset_beacon, counter_offset_presp;
++	struct cfg80211_beacon_data beacon_after;
++	bool radar_required;
++	bool block_tx;
++	u8 count;
++};
++
++/**
+  * enum station_parameters_apply_mask - station parameter values to apply
+  * @STATION_PARAM_APPLY_UAPSD: apply new uAPSD parameters (uapsd_queues, max_sp)
+  * @STATION_PARAM_APPLY_CAPABILITY: apply new capability
+@@ -1698,7 +1722,7 @@ struct cfg80211_pmksa {
  };
  
  /**
@@ -1383,7 +1631,7 @@
   * @mask: bitmask where to match pattern and where to ignore bytes,
   *	one bit per byte, in same format as nl80211
   * @pattern: bytes to match where bitmask is 1
-@@ -1708,7 +1708,7 @@ struct cfg80211_pmksa {
+@@ -1708,7 +1732,7 @@ struct cfg80211_pmksa {
   * Internal note: @mask and @pattern are allocated in one chunk of
   * memory, free @mask only!
   */
@@ -1392,7 +1640,7 @@
  	u8 *mask, *pattern;
  	int pattern_len;
  	int pkt_offset;
-@@ -1770,7 +1770,7 @@ struct cfg80211_wowlan {
+@@ -1770,7 +1794,7 @@ struct cfg80211_wowlan {
  	bool any, disconnect, magic_pkt, gtk_rekey_failure,
  	     eap_identity_req, four_way_handshake,
  	     rfkill_release;
@@ -1401,9 +1649,104 @@
  	struct cfg80211_wowlan_tcp *tcp;
  	int n_patterns;
  };
+@@ -2071,6 +2095,8 @@ struct cfg80211_update_ft_ies_params {
+  *	driver can take the most appropriate actions.
+  * @crit_proto_stop: Indicates critical protocol no longer needs increased link
+  *	reliability. This operation can not fail.
++ *
++ * @channel_switch: initiate channel-switch procedure (with CSA)
+  */
+ struct cfg80211_ops {
+ 	int	(*suspend)(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
+@@ -2306,6 +2332,10 @@ struct cfg80211_ops {
+ 				    u16 duration);
+ 	void	(*crit_proto_stop)(struct wiphy *wiphy,
+ 				   struct wireless_dev *wdev);
++
++	int	(*channel_switch)(struct wiphy *wiphy,
++				  struct net_device *dev,
++				  struct cfg80211_csa_settings *params);
+ };
+ 
+ /*
+@@ -2371,6 +2401,8 @@ struct cfg80211_ops {
+  * @WIPHY_FLAG_OFFCHAN_TX: Device supports direct off-channel TX.
+  * @WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL: Device supports remain-on-channel call.
+  * @WIPHY_FLAG_SUPPORTS_5_10_MHZ: Device supports 5 MHz and 10 MHz channels.
++ * @WIPHY_FLAG_HAS_CHANNEL_SWITCH: Device supports channel switch in
++ *	beaconing mode (AP, IBSS, Mesh, ...).
+  */
+ enum wiphy_flags {
+ 	WIPHY_FLAG_CUSTOM_REGULATORY		= BIT(0),
+@@ -2395,6 +2427,7 @@ enum wiphy_flags {
+ 	WIPHY_FLAG_OFFCHAN_TX			= BIT(20),
+ 	WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL	= BIT(21),
+ 	WIPHY_FLAG_SUPPORTS_5_10_MHZ		= BIT(22),
++	WIPHY_FLAG_HAS_CHANNEL_SWITCH		= BIT(23),
+ };
+ 
+ /**
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -3060,11 +3060,11 @@ enum nl80211_tx_power_setting {
+@@ -648,6 +648,16 @@
+  * @NL80211_CMD_CRIT_PROTOCOL_STOP: Indicates the connection reliability can
+  *	return back to normal.
+  *
++ * @NL80211_CMD_CHANNEL_SWITCH: Perform a channel switch by announcing the
++ *	the new channel information (Channel Switch Announcement - CSA)
++ *	in the beacon for some time (as defined in the
++ *	%NL80211_ATTR_CH_SWITCH_COUNT parameter) and then change to the
++ *	new channel. Userspace provides the new channel information (using
++ *	%NL80211_ATTR_WIPHY_FREQ and the attributes determining channel
++ *	width). %NL80211_ATTR_CH_SWITCH_BLOCK_TX may be supplied to inform
++ *	other station that transmission must be blocked until the channel
++ *	switch is complete.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -810,6 +820,8 @@ enum nl80211_commands {
+ 	NL80211_CMD_CRIT_PROTOCOL_START,
+ 	NL80211_CMD_CRIT_PROTOCOL_STOP,
+ 
++	NL80211_CMD_CHANNEL_SWITCH,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -1436,6 +1448,18 @@ enum nl80211_commands {
+  *	allowed to be used with the first @NL80211_CMD_SET_STATION command to
+  *	update a TDLS peer STA entry.
+  *
++ * @NL80211_ATTR_CH_SWITCH_COUNT: u32 attribute specifying the number of TBTT's
++ *	until the channel switch event.
++ * @NL80211_ATTR_CH_SWITCH_BLOCK_TX: flag attribute specifying that transmission
++ *	must be blocked on the current channel (before the channel switch
++ *	operation).
++ * @NL80211_ATTR_CSA_IES: Nested set of attributes containing the IE information
++ *	for the time while performing a channel switch.
++ * @NL80211_ATTR_CSA_C_OFF_BEACON: Offset of the channel switch counter
++ *	field in the beacons tail (%NL80211_ATTR_BEACON_TAIL).
++ * @NL80211_ATTR_CSA_C_OFF_PRESP: Offset of the channel switch counter
++ *	field in the probe response (%NL80211_ATTR_PROBE_RESP).
++ *
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+  */
+@@ -1736,6 +1760,12 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_PEER_AID,
+ 
++	NL80211_ATTR_CH_SWITCH_COUNT,
++	NL80211_ATTR_CH_SWITCH_BLOCK_TX,
++	NL80211_ATTR_CSA_IES,
++	NL80211_ATTR_CSA_C_OFF_BEACON,
++	NL80211_ATTR_CSA_C_OFF_PRESP,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -3060,11 +3090,11 @@ enum nl80211_tx_power_setting {
  };
  
  /**
@@ -1419,7 +1762,7 @@
   *	a bit for each byte in the pattern. The lowest-order bit corresponds
   *	to the first byte of the pattern, but the bytes of the pattern are
   *	in a little-endian-like format, i.e. the 9th byte of the pattern
-@@ -3075,23 +3075,23 @@ enum nl80211_tx_power_setting {
+@@ -3075,23 +3105,23 @@ enum nl80211_tx_power_setting {
   *	Note that the pattern matching is done as though frames were not
   *	802.11 frames but 802.3 frames, i.e. the frame is fully unpacked
   *	first (including SNAP header unpacking) and then matched.
@@ -1454,7 +1797,7 @@
   * @max_patterns: maximum number of patterns supported
   * @min_pattern_len: minimum length of each pattern
   * @max_pattern_len: maximum length of each pattern
-@@ -3101,13 +3101,22 @@ enum nl80211_wowlan_packet_pattern_attr 
+@@ -3101,13 +3131,22 @@ enum nl80211_wowlan_packet_pattern_attr 
   * that is part of %NL80211_ATTR_WOWLAN_TRIGGERS_SUPPORTED in the
   * capability information given by the kernel to userspace.
   */
@@ -1478,7 +1821,7 @@
  /**
   * enum nl80211_wowlan_triggers - WoWLAN trigger definitions
   * @__NL80211_WOWLAN_TRIG_INVALID: invalid number for nested attributes
-@@ -3127,7 +3136,7 @@ struct nl80211_wowlan_pattern_support {
+@@ -3127,7 +3166,7 @@ struct nl80211_wowlan_pattern_support {
   *	pattern matching is done after the packet is converted to the MSDU.
   *
   *	In %NL80211_ATTR_WOWLAN_TRIGGERS_SUPPORTED, it is a binary attribute
@@ -1487,7 +1830,7 @@
   *
   *	When reporting wakeup. it is a u32 attribute containing the 0-based
   *	index of the pattern that caused the wakeup, in the patterns passed
-@@ -3284,7 +3293,7 @@ struct nl80211_wowlan_tcp_data_token_fea
+@@ -3284,7 +3323,7 @@ struct nl80211_wowlan_tcp_data_token_fea
   * @NL80211_WOWLAN_TCP_WAKE_PAYLOAD: wake packet payload, for advertising a
   *	u32 attribute holding the maximum length
   * @NL80211_WOWLAN_TCP_WAKE_MASK: Wake packet payload mask, not used for
@@ -1511,7 +1854,19 @@
  	 * peer's power mode is known
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -441,10 +441,12 @@ static int nl80211_prepare_wdev_dump(str
+@@ -349,6 +349,11 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_IE_RIC] = { .type = NLA_BINARY,
+ 				  .len = IEEE80211_MAX_DATA_LEN },
+ 	[NL80211_ATTR_PEER_AID] = { .type = NLA_U16 },
++	[NL80211_ATTR_CH_SWITCH_COUNT] = { .type = NLA_U32 },
++	[NL80211_ATTR_CH_SWITCH_BLOCK_TX] = { .type = NLA_FLAG },
++	[NL80211_ATTR_CSA_IES] = { .type = NLA_NESTED },
++	[NL80211_ATTR_CSA_C_OFF_BEACON] = { .type = NLA_U16 },
++	[NL80211_ATTR_CSA_C_OFF_PRESP] = { .type = NLA_U16 },
+ };
+ 
+ /* policy for the key attributes */
+@@ -441,10 +446,12 @@ static int nl80211_prepare_wdev_dump(str
  			goto out_unlock;
  		}
  		*rdev = wiphy_to_dev((*wdev)->wiphy);
@@ -1526,7 +1881,7 @@
  		struct wireless_dev *tmp;
  
  		if (!wiphy) {
-@@ -974,7 +976,7 @@ static int nl80211_send_wowlan(struct sk
+@@ -974,7 +981,7 @@ static int nl80211_send_wowlan(struct sk
  		return -ENOBUFS;
  
  	if (dev->wiphy.wowlan->n_patterns) {
@@ -1535,7 +1890,16 @@
  			.max_patterns = dev->wiphy.wowlan->n_patterns,
  			.min_pattern_len = dev->wiphy.wowlan->pattern_min_len,
  			.max_pattern_len = dev->wiphy.wowlan->pattern_max_len,
-@@ -1568,8 +1570,10 @@ static int nl80211_dump_wiphy(struct sk_
+@@ -1393,6 +1400,8 @@ static int nl80211_send_wiphy(struct cfg
+ 		if (state->split) {
+ 			CMD(crit_proto_start, CRIT_PROTOCOL_START);
+ 			CMD(crit_proto_stop, CRIT_PROTOCOL_STOP);
++			if (dev->wiphy.flags & WIPHY_FLAG_HAS_CHANNEL_SWITCH)
++				CMD(channel_switch, CHANNEL_SWITCH);
+ 		}
+ 
+ #ifdef CPTCFG_NL80211_TESTMODE
+@@ -1568,8 +1577,10 @@ static int nl80211_dump_wiphy(struct sk_
  	rtnl_lock();
  	if (!state) {
  		state = kzalloc(sizeof(*state), GFP_KERNEL);
@@ -1547,7 +1911,18 @@
  		state->filter_wiphy = -1;
  		ret = nl80211_dump_wiphy_parse(skb, cb, state);
  		if (ret) {
-@@ -4770,9 +4774,9 @@ do {									    \
+@@ -2620,8 +2631,8 @@ static int nl80211_get_key(struct sk_buf
+ 
+ 	hdr = nl80211hdr_put(msg, genl_info_snd_portid(info), info->snd_seq, 0,
+ 			     NL80211_CMD_NEW_KEY);
+-	if (IS_ERR(hdr))
+-		return PTR_ERR(hdr);
++	if (!hdr)
++		return -ENOBUFS;
+ 
+ 	cookie.msg = msg;
+ 	cookie.idx = key_idx;
+@@ -4770,9 +4781,9 @@ do {									    \
  	FILL_IN_MESH_PARAM_IF_SET(tb, cfg, dot11MeshForwarding, 0, 1,
  				  mask, NL80211_MESHCONF_FORWARDING,
  				  nla_get_u8);
@@ -1559,7 +1934,129 @@
  	FILL_IN_MESH_PARAM_IF_SET(tb, cfg, ht_opmode, 0, 16,
  				  mask, NL80211_MESHCONF_HT_OPMODE,
  				  nla_get_u16);
-@@ -6615,12 +6619,14 @@ EXPORT_SYMBOL(cfg80211_testmode_alloc_ev
+@@ -5578,6 +5589,111 @@ static int nl80211_start_radar_detection
+ 	return err;
+ }
+ 
++static int nl80211_channel_switch(struct sk_buff *skb, struct genl_info *info)
++{
++	struct cfg80211_registered_device *rdev = info->user_ptr[0];
++	struct net_device *dev = info->user_ptr[1];
++	struct wireless_dev *wdev = dev->ieee80211_ptr;
++	struct cfg80211_csa_settings params;
++	/* csa_attrs is defined static to avoid waste of stack size - this
++	 * function is called under RTNL lock, so this should not be a problem.
++	 */
++	static struct nlattr *csa_attrs[NL80211_ATTR_MAX+1];
++	u8 radar_detect_width = 0;
++	int err;
++
++	if (!rdev->ops->channel_switch ||
++	    !(rdev->wiphy.flags & WIPHY_FLAG_HAS_CHANNEL_SWITCH))
++		return -EOPNOTSUPP;
++
++	/* may add IBSS support later */
++	if (dev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP &&
++	    dev->ieee80211_ptr->iftype != NL80211_IFTYPE_P2P_GO)
++		return -EOPNOTSUPP;
++
++	memset(&params, 0, sizeof(params));
++
++	if (!info->attrs[NL80211_ATTR_WIPHY_FREQ] ||
++	    !info->attrs[NL80211_ATTR_CH_SWITCH_COUNT])
++		return -EINVAL;
++
++	/* only important for AP, IBSS and mesh create IEs internally */
++	if (!info->attrs[NL80211_ATTR_CSA_IES])
++		return -EINVAL;
++
++	/* useless if AP is not running */
++	if (!wdev->beacon_interval)
++		return -EINVAL;
++
++	params.count = nla_get_u32(info->attrs[NL80211_ATTR_CH_SWITCH_COUNT]);
++
++	err = nl80211_parse_beacon(info->attrs, &params.beacon_after);
++	if (err)
++		return err;
++
++	err = nla_parse_nested(csa_attrs, NL80211_ATTR_MAX,
++			       info->attrs[NL80211_ATTR_CSA_IES],
++			       nl80211_policy);
++	if (err)
++		return err;
++
++	err = nl80211_parse_beacon(csa_attrs, &params.beacon_csa);
++	if (err)
++		return err;
++
++	if (!csa_attrs[NL80211_ATTR_CSA_C_OFF_BEACON])
++		return -EINVAL;
++
++	params.counter_offset_beacon =
++		nla_get_u16(csa_attrs[NL80211_ATTR_CSA_C_OFF_BEACON]);
++	if (params.counter_offset_beacon >= params.beacon_csa.tail_len)
++		return -EINVAL;
++
++	/* sanity check - counters should be the same */
++	if (params.beacon_csa.tail[params.counter_offset_beacon] !=
++	    params.count)
++		return -EINVAL;
++
++	if (csa_attrs[NL80211_ATTR_CSA_C_OFF_PRESP]) {
++		params.counter_offset_presp =
++			nla_get_u16(csa_attrs[NL80211_ATTR_CSA_C_OFF_PRESP]);
++		if (params.counter_offset_presp >=
++		    params.beacon_csa.probe_resp_len)
++			return -EINVAL;
++
++		if (params.beacon_csa.probe_resp[params.counter_offset_presp] !=
++		    params.count)
++			return -EINVAL;
++	}
++
++	err = nl80211_parse_chandef(rdev, info, &params.chandef);
++	if (err)
++		return err;
++
++	if (!cfg80211_reg_can_beacon(&rdev->wiphy, &params.chandef))
++		return -EINVAL;
++
++	err = cfg80211_chandef_dfs_required(wdev->wiphy, &params.chandef);
++	if (err < 0) {
++		return err;
++	} else if (err) {
++		radar_detect_width = BIT(params.chandef.width);
++		params.radar_required = true;
++	}
++
++	err = cfg80211_can_use_iftype_chan(rdev, wdev, wdev->iftype,
++					   params.chandef.chan,
++					   CHAN_MODE_SHARED,
++					   radar_detect_width);
++	if (err)
++		return err;
++
++	if (info->attrs[NL80211_ATTR_CH_SWITCH_BLOCK_TX])
++		params.block_tx = true;
++
++	return rdev_channel_switch(rdev, dev, &params);
++}
++
+ static int nl80211_send_bss(struct sk_buff *msg, struct netlink_callback *cb,
+ 			    u32 seq, int flags,
+ 			    struct cfg80211_registered_device *rdev,
+@@ -6507,6 +6623,9 @@ static int nl80211_testmode_dump(struct 
+ 					   NL80211_CMD_TESTMODE);
+ 		struct nlattr *tmdata;
+ 
++		if (!hdr)
++			break;
++
+ 		if (nla_put_u32(skb, NL80211_ATTR_WIPHY, phy_idx)) {
+ 			genlmsg_cancel(skb, hdr);
+ 			break;
+@@ -6615,12 +6734,14 @@ EXPORT_SYMBOL(cfg80211_testmode_alloc_ev
  
  void cfg80211_testmode_event(struct sk_buff *skb, gfp_t gfp)
  {
@@ -1575,7 +2072,31 @@
  }
  EXPORT_SYMBOL(cfg80211_testmode_event);
  #endif
-@@ -7593,12 +7599,11 @@ static int nl80211_send_wowlan_patterns(
+@@ -6949,9 +7070,8 @@ static int nl80211_remain_on_channel(str
+ 
+ 	hdr = nl80211hdr_put(msg, genl_info_snd_portid(info), info->snd_seq, 0,
+ 			     NL80211_CMD_REMAIN_ON_CHANNEL);
+-
+-	if (IS_ERR(hdr)) {
+-		err = PTR_ERR(hdr);
++	if (!hdr) {
++		err = -ENOBUFS;
+ 		goto free_msg;
+ 	}
+ 
+@@ -7249,9 +7369,8 @@ static int nl80211_tx_mgmt(struct sk_buf
+ 
+ 		hdr = nl80211hdr_put(msg, genl_info_snd_portid(info), info->snd_seq, 0,
+ 				     NL80211_CMD_FRAME);
+-
+-		if (IS_ERR(hdr)) {
+-			err = PTR_ERR(hdr);
++		if (!hdr) {
++			err = -ENOBUFS;
+ 			goto free_msg;
+ 		}
+ 	}
+@@ -7593,12 +7712,11 @@ static int nl80211_send_wowlan_patterns(
  		if (!nl_pat)
  			return -ENOBUFS;
  		pat_len = wowlan->patterns[i].pattern_len;
@@ -1592,7 +2113,7 @@
  				wowlan->patterns[i].pkt_offset))
  			return -ENOBUFS;
  		nla_nest_end(msg, nl_pat);
-@@ -7939,7 +7944,7 @@ static int nl80211_set_wowlan(struct sk_
+@@ -7939,7 +8057,7 @@ static int nl80211_set_wowlan(struct sk_
  		struct nlattr *pat;
  		int n_patterns = 0;
  		int rem, pat_len, mask_len, pkt_offset;
@@ -1601,7 +2122,7 @@
  
  		nla_for_each_nested(pat, tb[NL80211_WOWLAN_TRIG_PKT_PATTERN],
  				    rem)
-@@ -7958,26 +7963,25 @@ static int nl80211_set_wowlan(struct sk_
+@@ -7958,26 +8076,25 @@ static int nl80211_set_wowlan(struct sk_
  
  		nla_for_each_nested(pat, tb[NL80211_WOWLAN_TRIG_PKT_PATTERN],
  				    rem) {
@@ -1636,7 +2157,7 @@
  			if (pkt_offset > wowlan->max_pkt_offset)
  				goto error;
  			new_triggers.patterns[i].pkt_offset = pkt_offset;
-@@ -7991,11 +7995,11 @@ static int nl80211_set_wowlan(struct sk_
+@@ -7991,11 +8108,11 @@ static int nl80211_set_wowlan(struct sk_
  			new_triggers.patterns[i].pattern =
  				new_triggers.patterns[i].mask + mask_len;
  			memcpy(new_triggers.patterns[i].mask,
@@ -1650,7 +2171,36 @@
  			       pat_len);
  			i++;
  		}
-@@ -10066,7 +10070,8 @@ void cfg80211_mgmt_tx_status(struct wire
+@@ -8130,9 +8247,8 @@ static int nl80211_probe_client(struct s
+ 
+ 	hdr = nl80211hdr_put(msg, genl_info_snd_portid(info), info->snd_seq, 0,
+ 			     NL80211_CMD_PROBE_CLIENT);
+-
+-	if (IS_ERR(hdr)) {
+-		err = PTR_ERR(hdr);
++	if (!hdr) {
++		err = -ENOBUFS;
+ 		goto free_msg;
+ 	}
+ 
+@@ -9041,7 +9157,15 @@ static struct genl_ops nl80211_ops[] = {
+ 		.flags = GENL_ADMIN_PERM,
+ 		.internal_flags = NL80211_FLAG_NEED_WDEV_UP |
+ 				  NL80211_FLAG_NEED_RTNL,
+-	}
++	},
++	{
++		.cmd = NL80211_CMD_CHANNEL_SWITCH,
++		.doit = nl80211_channel_switch,
++		.policy = nl80211_policy,
++		.flags = GENL_ADMIN_PERM,
++		.internal_flags = NL80211_FLAG_NEED_NETDEV_UP |
++				  NL80211_FLAG_NEED_RTNL,
++	},
+ };
+ 
+ static struct genl_multicast_group nl80211_mlme_mcgrp = {
+@@ -10066,7 +10190,8 @@ void cfg80211_mgmt_tx_status(struct wire
  
  	genlmsg_end(msg, hdr);
  
@@ -1766,9 +2316,51 @@
  }
  
  static int cfg80211_sme_connect(struct wireless_dev *wdev,
+@@ -953,21 +976,19 @@ int cfg80211_disconnect(struct cfg80211_
+ 			struct net_device *dev, u16 reason, bool wextev)
+ {
+ 	struct wireless_dev *wdev = dev->ieee80211_ptr;
+-	int err;
++	int err = 0;
+ 
+ 	ASSERT_WDEV_LOCK(wdev);
+ 
+ 	kfree(wdev->connect_keys);
+ 	wdev->connect_keys = NULL;
+ 
+-	if (wdev->conn) {
++	if (wdev->conn)
+ 		err = cfg80211_sme_disconnect(wdev, reason);
+-	} else if (!rdev->ops->disconnect) {
++	else if (!rdev->ops->disconnect)
+ 		cfg80211_mlme_down(rdev, dev);
+-		err = 0;
+-	} else {
++	else if (wdev->current_bss)
+ 		err = rdev_disconnect(rdev, dev, reason);
+-	}
+ 
+ 	return err;
+ }
 --- a/net/mac80211/rc80211_minstrel.c
 +++ b/net/mac80211/rc80211_minstrel.c
-@@ -290,7 +290,7 @@ minstrel_get_rate(void *priv, struct iee
+@@ -203,6 +203,15 @@ minstrel_update_stats(struct minstrel_pr
+ 	memcpy(mi->max_tp_rate, tmp_tp_rate, sizeof(mi->max_tp_rate));
+ 	mi->max_prob_rate = tmp_prob_rate;
+ 
++#ifdef CPTCFG_MAC80211_DEBUGFS
++	/* use fixed index if set */
++	if (mp->fixed_rate_idx != -1) {
++		mi->max_tp_rate[0] = mp->fixed_rate_idx;
++		mi->max_tp_rate[1] = mp->fixed_rate_idx;
++		mi->max_prob_rate = mp->fixed_rate_idx;
++	}
++#endif
++
+ 	/* Reset update timer */
+ 	mi->stats_update = jiffies;
+ 
+@@ -290,7 +299,7 @@ minstrel_get_rate(void *priv, struct iee
  	struct minstrel_rate *msr, *mr;
  	unsigned int ndx;
  	bool mrr_capable;
@@ -1777,7 +2369,16 @@
  	int delta;
  	int sampling_ratio;
  
-@@ -314,6 +314,7 @@ minstrel_get_rate(void *priv, struct iee
+@@ -310,10 +319,16 @@ minstrel_get_rate(void *priv, struct iee
+ 	/* increase sum packet counter */
+ 	mi->packet_count++;
+ 
++#ifdef CPTCFG_MAC80211_DEBUGFS
++	if (mp->fixed_rate_idx != -1)
++		return;
++#endif
++
+ 	delta = (mi->packet_count * sampling_ratio / 100) -
  			(mi->sample_count + mi->sample_deferred / 2);
  
  	/* delta < 0: no sampling required */
@@ -1959,7 +2560,23 @@
  			sdata_info(sdata,
  				   "cannot understand ECSA IE operating class %d, disconnecting\n",
  				   elems->ext_chansw_ie->new_operating_class);
-@@ -3394,10 +3412,13 @@ static int ieee80211_probe_auth(struct i
+@@ -1110,6 +1128,15 @@ ieee80211_sta_process_chanswitch(struct 
+ 	case -1:
+ 		cfg80211_chandef_create(&new_chandef, new_chan,
+ 					NL80211_CHAN_NO_HT);
++		/* keep width for 5/10 MHz channels */
++		switch (sdata->vif.bss_conf.chandef.width) {
++		case NL80211_CHAN_WIDTH_5:
++		case NL80211_CHAN_WIDTH_10:
++			new_chandef.width = sdata->vif.bss_conf.chandef.width;
++			break;
++		default:
++			break;
++		}
+ 		break;
+ 	}
+ 
+@@ -3394,10 +3421,13 @@ static int ieee80211_probe_auth(struct i
  
  	if (tx_flags == 0) {
  		auth_data->timeout = jiffies + IEEE80211_AUTH_TIMEOUT;
@@ -1975,7 +2592,7 @@
  	}
  
  	return 0;
-@@ -3434,7 +3455,11 @@ static int ieee80211_do_assoc(struct iee
+@@ -3434,7 +3464,11 @@ static int ieee80211_do_assoc(struct iee
  		assoc_data->timeout_started = true;
  		run_again(sdata, assoc_data->timeout);
  	} else {
@@ -1988,7 +2605,7 @@
  	}
  
  	return 0;
-@@ -3829,7 +3854,7 @@ static int ieee80211_prep_channel(struct
+@@ -3829,7 +3863,7 @@ static int ieee80211_prep_channel(struct
  	ifmgd->flags |= ieee80211_determine_chantype(sdata, sband,
  						     cbss->channel,
  						     ht_oper, vht_oper,
@@ -2565,9 +3182,268 @@
  	int av_bslot;
  	bool primary_sta_vif;
  	__le64 tsf_adjust; /* TSF adjustment for staggered beacons */
+@@ -585,19 +581,14 @@ static inline void ath_fill_led_pin(stru
+ #define ATH_ANT_DIV_COMB_MAX_COUNT 100
+ #define ATH_ANT_DIV_COMB_ALT_ANT_RATIO 30
+ #define ATH_ANT_DIV_COMB_ALT_ANT_RATIO2 20
++#define ATH_ANT_DIV_COMB_ALT_ANT_RATIO_LOW_RSSI 50
++#define ATH_ANT_DIV_COMB_ALT_ANT_RATIO2_LOW_RSSI 50
+ 
+ #define ATH_ANT_DIV_COMB_LNA1_LNA2_SWITCH_DELTA -1
+ #define ATH_ANT_DIV_COMB_LNA1_DELTA_HI -4
+ #define ATH_ANT_DIV_COMB_LNA1_DELTA_MID -2
+ #define ATH_ANT_DIV_COMB_LNA1_DELTA_LOW 2
+ 
+-enum ath9k_ant_div_comb_lna_conf {
+-	ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2,
+-	ATH_ANT_DIV_COMB_LNA2,
+-	ATH_ANT_DIV_COMB_LNA1,
+-	ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2,
+-};
+-
+ struct ath_ant_comb {
+ 	u16 count;
+ 	u16 total_pkt_count;
+@@ -614,27 +605,36 @@ struct ath_ant_comb {
+ 	int rssi_first;
+ 	int rssi_second;
+ 	int rssi_third;
++	int ant_ratio;
++	int ant_ratio2;
+ 	bool alt_good;
+ 	int quick_scan_cnt;
+-	int main_conf;
++	enum ath9k_ant_div_comb_lna_conf main_conf;
+ 	enum ath9k_ant_div_comb_lna_conf first_quick_scan_conf;
+ 	enum ath9k_ant_div_comb_lna_conf second_quick_scan_conf;
+ 	bool first_ratio;
+ 	bool second_ratio;
+ 	unsigned long scan_start_time;
++
++	/*
++	 * Card-specific config values.
++	 */
++	int low_rssi_thresh;
++	int fast_div_bias;
+ };
+ 
+ void ath_ant_comb_scan(struct ath_softc *sc, struct ath_rx_status *rs);
+-void ath_ant_comb_update(struct ath_softc *sc);
+ 
+ /********************/
+ /* Main driver core */
+ /********************/
+ 
+-#define ATH9K_PCI_CUS198 0x0001
+-#define ATH9K_PCI_CUS230 0x0002
+-#define ATH9K_PCI_CUS217 0x0004
+-#define ATH9K_PCI_WOW    0x0008
++#define ATH9K_PCI_CUS198     0x0001
++#define ATH9K_PCI_CUS230     0x0002
++#define ATH9K_PCI_CUS217     0x0004
++#define ATH9K_PCI_WOW        0x0008
++#define ATH9K_PCI_BT_ANT_DIV 0x0010
++#define ATH9K_PCI_D3_L1_WAR  0x0020
+ 
+ /*
+  * Default cache line size, in bytes.
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -607,6 +607,28 @@ static ssize_t read_file_xmit(struct fil
+@@ -270,25 +270,29 @@ static const struct file_operations fops
+ 	.llseek = default_llseek,
+ };
+ 
+-static ssize_t read_file_ant_diversity(struct file *file, char __user *user_buf,
+-				       size_t count, loff_t *ppos)
++#ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
++
++static ssize_t read_file_bt_ant_diversity(struct file *file,
++					  char __user *user_buf,
++					  size_t count, loff_t *ppos)
+ {
+ 	struct ath_softc *sc = file->private_data;
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	char buf[32];
+ 	unsigned int len;
+ 
+-	len = sprintf(buf, "%d\n", common->antenna_diversity);
++	len = sprintf(buf, "%d\n", common->bt_ant_diversity);
+ 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+ }
+ 
+-static ssize_t write_file_ant_diversity(struct file *file,
+-					const char __user *user_buf,
+-					size_t count, loff_t *ppos)
++static ssize_t write_file_bt_ant_diversity(struct file *file,
++					   const char __user *user_buf,
++					   size_t count, loff_t *ppos)
+ {
+ 	struct ath_softc *sc = file->private_data;
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+-	unsigned long antenna_diversity;
++	struct ath9k_hw_capabilities *pCap = &sc->sc_ah->caps;
++	unsigned long bt_ant_diversity;
+ 	char buf[32];
+ 	ssize_t len;
+ 
+@@ -296,26 +300,147 @@ static ssize_t write_file_ant_diversity(
+ 	if (copy_from_user(buf, user_buf, len))
+ 		return -EFAULT;
+ 
+-	if (!AR_SREV_9565(sc->sc_ah))
++	if (!(pCap->hw_caps & ATH9K_HW_CAP_BT_ANT_DIV))
+ 		goto exit;
+ 
+ 	buf[len] = '\0';
+-	if (strict_strtoul(buf, 0, &antenna_diversity))
++	if (kstrtoul(buf, 0, &bt_ant_diversity))
+ 		return -EINVAL;
+ 
+-	common->antenna_diversity = !!antenna_diversity;
++	common->bt_ant_diversity = !!bt_ant_diversity;
+ 	ath9k_ps_wakeup(sc);
+-	ath_ant_comb_update(sc);
+-	ath_dbg(common, CONFIG, "Antenna diversity: %d\n",
+-		common->antenna_diversity);
++	ath9k_hw_set_bt_ant_diversity(sc->sc_ah, common->bt_ant_diversity);
++	ath_dbg(common, CONFIG, "Enable WLAN/BT RX Antenna diversity: %d\n",
++		common->bt_ant_diversity);
+ 	ath9k_ps_restore(sc);
+ exit:
+ 	return count;
+ }
+ 
+-static const struct file_operations fops_ant_diversity = {
+-	.read = read_file_ant_diversity,
+-	.write = write_file_ant_diversity,
++static const struct file_operations fops_bt_ant_diversity = {
++	.read = read_file_bt_ant_diversity,
++	.write = write_file_bt_ant_diversity,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++#endif
++
++void ath9k_debug_stat_ant(struct ath_softc *sc,
++			  struct ath_hw_antcomb_conf *div_ant_conf,
++			  int main_rssi_avg, int alt_rssi_avg)
++{
++	struct ath_antenna_stats *as_main = &sc->debug.stats.ant_stats[ANT_MAIN];
++	struct ath_antenna_stats *as_alt = &sc->debug.stats.ant_stats[ANT_ALT];
++
++	as_main->lna_attempt_cnt[div_ant_conf->main_lna_conf]++;
++	as_alt->lna_attempt_cnt[div_ant_conf->alt_lna_conf]++;
++
++	as_main->rssi_avg = main_rssi_avg;
++	as_alt->rssi_avg = alt_rssi_avg;
++}
++
++static ssize_t read_file_antenna_diversity(struct file *file,
++					   char __user *user_buf,
++					   size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	struct ath_hw *ah = sc->sc_ah;
++	struct ath9k_hw_capabilities *pCap = &ah->caps;
++	struct ath_antenna_stats *as_main = &sc->debug.stats.ant_stats[ANT_MAIN];
++	struct ath_antenna_stats *as_alt = &sc->debug.stats.ant_stats[ANT_ALT];
++	struct ath_hw_antcomb_conf div_ant_conf;
++	unsigned int len = 0, size = 1024;
++	ssize_t retval = 0;
++	char *buf;
++	char *lna_conf_str[4] = {"LNA1_MINUS_LNA2",
++				 "LNA2",
++				 "LNA1",
++				 "LNA1_PLUS_LNA2"};
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (buf == NULL)
++		return -ENOMEM;
++
++	if (!(pCap->hw_caps & ATH9K_HW_CAP_ANT_DIV_COMB)) {
++		len += snprintf(buf + len, size - len, "%s\n",
++				"Antenna Diversity Combining is disabled");
++		goto exit;
++	}
++
++	ath9k_ps_wakeup(sc);
++	ath9k_hw_antdiv_comb_conf_get(ah, &div_ant_conf);
++	len += snprintf(buf + len, size - len, "Current MAIN config : %s\n",
++			lna_conf_str[div_ant_conf.main_lna_conf]);
++	len += snprintf(buf + len, size - len, "Current ALT config  : %s\n",
++			lna_conf_str[div_ant_conf.alt_lna_conf]);
++	len += snprintf(buf + len, size - len, "Average MAIN RSSI   : %d\n",
++			as_main->rssi_avg);
++	len += snprintf(buf + len, size - len, "Average ALT RSSI    : %d\n\n",
++			as_alt->rssi_avg);
++	ath9k_ps_restore(sc);
++
++	len += snprintf(buf + len, size - len, "Packet Receive Cnt:\n");
++	len += snprintf(buf + len, size - len, "-------------------\n");
++
++	len += snprintf(buf + len, size - len, "%30s%15s\n",
++			"MAIN", "ALT");
++	len += snprintf(buf + len, size - len, "%-14s:%15d%15d\n",
++			"TOTAL COUNT",
++			as_main->recv_cnt,
++			as_alt->recv_cnt);
++	len += snprintf(buf + len, size - len, "%-14s:%15d%15d\n",
++			"LNA1",
++			as_main->lna_recv_cnt[ATH_ANT_DIV_COMB_LNA1],
++			as_alt->lna_recv_cnt[ATH_ANT_DIV_COMB_LNA1]);
++	len += snprintf(buf + len, size - len, "%-14s:%15d%15d\n",
++			"LNA2",
++			as_main->lna_recv_cnt[ATH_ANT_DIV_COMB_LNA2],
++			as_alt->lna_recv_cnt[ATH_ANT_DIV_COMB_LNA2]);
++	len += snprintf(buf + len, size - len, "%-14s:%15d%15d\n",
++			"LNA1 + LNA2",
++			as_main->lna_recv_cnt[ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2],
++			as_alt->lna_recv_cnt[ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2]);
++	len += snprintf(buf + len, size - len, "%-14s:%15d%15d\n",
++			"LNA1 - LNA2",
++			as_main->lna_recv_cnt[ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2],
++			as_alt->lna_recv_cnt[ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2]);
++
++	len += snprintf(buf + len, size - len, "\nLNA Config Attempts:\n");
++	len += snprintf(buf + len, size - len, "--------------------\n");
++
++	len += snprintf(buf + len, size - len, "%30s%15s\n",
++			"MAIN", "ALT");
++	len += snprintf(buf + len, size - len, "%-14s:%15d%15d\n",
++			"LNA1",
++			as_main->lna_attempt_cnt[ATH_ANT_DIV_COMB_LNA1],
++			as_alt->lna_attempt_cnt[ATH_ANT_DIV_COMB_LNA1]);
++	len += snprintf(buf + len, size - len, "%-14s:%15d%15d\n",
++			"LNA2",
++			as_main->lna_attempt_cnt[ATH_ANT_DIV_COMB_LNA2],
++			as_alt->lna_attempt_cnt[ATH_ANT_DIV_COMB_LNA2]);
++	len += snprintf(buf + len, size - len, "%-14s:%15d%15d\n",
++			"LNA1 + LNA2",
++			as_main->lna_attempt_cnt[ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2],
++			as_alt->lna_attempt_cnt[ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2]);
++	len += snprintf(buf + len, size - len, "%-14s:%15d%15d\n",
++			"LNA1 - LNA2",
++			as_main->lna_attempt_cnt[ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2],
++			as_alt->lna_attempt_cnt[ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2]);
++
++exit:
++	if (len > size)
++		len = size;
++
++	retval = simple_read_from_buffer(user_buf, count, ppos, buf, len);
++	kfree(buf);
++
++	return retval;
++}
++
++static const struct file_operations fops_antenna_diversity = {
++	.read = read_file_antenna_diversity,
+ 	.open = simple_open,
+ 	.owner = THIS_MODULE,
+ 	.llseek = default_llseek,
+@@ -607,6 +732,28 @@ static ssize_t read_file_xmit(struct fil
  	return retval;
  }
  
@@ -2596,7 +3472,7 @@
  static ssize_t read_file_queues(struct file *file, char __user *user_buf,
  				size_t count, loff_t *ppos)
  {
-@@ -624,24 +646,13 @@ static ssize_t read_file_queues(struct f
+@@ -624,24 +771,13 @@ static ssize_t read_file_queues(struct f
  
  	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
  		txq = sc->tx.txq_map[i];
@@ -2626,9 +3502,30 @@
  	if (len > size)
  		len = size;
  
+@@ -1818,9 +1954,11 @@ int ath9k_init_debug(struct ath_hw *ah)
+ 			   sc->debug.debugfs_phy, &sc->sc_ah->gpio_mask);
+ 	debugfs_create_u32("gpio_val", S_IRUSR | S_IWUSR,
+ 			   sc->debug.debugfs_phy, &sc->sc_ah->gpio_val);
+-	debugfs_create_file("diversity", S_IRUSR | S_IWUSR,
+-			    sc->debug.debugfs_phy, sc, &fops_ant_diversity);
++	debugfs_create_file("antenna_diversity", S_IRUSR,
++			    sc->debug.debugfs_phy, sc, &fops_antenna_diversity);
+ #ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
++	debugfs_create_file("bt_ant_diversity", S_IRUSR | S_IWUSR,
++			    sc->debug.debugfs_phy, sc, &fops_bt_ant_diversity);
+ 	debugfs_create_file("btcoex", S_IRUSR, sc->debug.debugfs_phy, sc,
+ 			    &fops_btcoex);
+ #endif
 --- a/net/mac80211/ibss.c
 +++ b/net/mac80211/ibss.c
-@@ -36,7 +36,7 @@
+@@ -30,13 +30,14 @@
+ 
+ #define IEEE80211_IBSS_MERGE_INTERVAL (30 * HZ)
+ #define IEEE80211_IBSS_INACTIVITY_LIMIT (60 * HZ)
++#define IEEE80211_IBSS_RSN_INACTIVITY_LIMIT (10 * HZ)
+ 
+ #define IEEE80211_IBSS_MAX_STA_ENTRIES 128
+ 
  
  static void __ieee80211_sta_join_ibss(struct ieee80211_sub_if_data *sdata,
  				      const u8 *bssid, const int beacon_int,
@@ -2637,7 +3534,7 @@
  				      const u32 basic_rates,
  				      const u16 capability, u64 tsf,
  				      bool creator)
-@@ -51,6 +51,7 @@ static void __ieee80211_sta_join_ibss(st
+@@ -51,6 +52,7 @@ static void __ieee80211_sta_join_ibss(st
  	u32 bss_change;
  	u8 supp_rates[IEEE80211_MAX_SUPP_RATES];
  	struct cfg80211_chan_def chandef;
@@ -2645,7 +3542,7 @@
  	struct beacon_data *presp;
  	int frame_len;
  
-@@ -81,7 +82,9 @@ static void __ieee80211_sta_join_ibss(st
+@@ -81,7 +83,9 @@ static void __ieee80211_sta_join_ibss(st
  
  	sdata->drop_unencrypted = capability & WLAN_CAPABILITY_PRIVACY ? 1 : 0;
  
@@ -2656,7 +3553,7 @@
  	if (!cfg80211_reg_can_beacon(local->hw.wiphy, &chandef)) {
  		chandef.width = NL80211_CHAN_WIDTH_20;
  		chandef.center_freq1 = chan->center_freq;
-@@ -259,10 +262,12 @@ static void ieee80211_sta_join_ibss(stru
+@@ -259,10 +263,12 @@ static void ieee80211_sta_join_ibss(stru
  	struct cfg80211_bss *cbss =
  		container_of((void *)bss, struct cfg80211_bss, priv);
  	struct ieee80211_supported_band *sband;
@@ -2669,7 +3566,7 @@
  	u64 tsf;
  
  	sdata_assert_lock(sdata);
-@@ -270,6 +275,26 @@ static void ieee80211_sta_join_ibss(stru
+@@ -270,6 +276,26 @@ static void ieee80211_sta_join_ibss(stru
  	if (beacon_int < 10)
  		beacon_int = 10;
  
@@ -2696,7 +3593,7 @@
  	sband = sdata->local->hw.wiphy->bands[cbss->channel->band];
  
  	basic_rates = 0;
-@@ -294,7 +319,7 @@ static void ieee80211_sta_join_ibss(stru
+@@ -294,7 +320,7 @@ static void ieee80211_sta_join_ibss(stru
  
  	__ieee80211_sta_join_ibss(sdata, cbss->bssid,
  				  beacon_int,
@@ -2705,7 +3602,50 @@
  				  basic_rates,
  				  cbss->capability,
  				  tsf, false);
-@@ -736,7 +761,7 @@ static void ieee80211_sta_create_ibss(st
+@@ -672,6 +698,33 @@ static int ieee80211_sta_active_ibss(str
+ 	return active;
+ }
+ 
++static void ieee80211_ibss_sta_expire(struct ieee80211_sub_if_data *sdata)
++{
++	struct ieee80211_local *local = sdata->local;
++	struct sta_info *sta, *tmp;
++	unsigned long exp_time = IEEE80211_IBSS_INACTIVITY_LIMIT;
++	unsigned long exp_rsn_time = IEEE80211_IBSS_RSN_INACTIVITY_LIMIT;
++
++	mutex_lock(&local->sta_mtx);
++
++	list_for_each_entry_safe(sta, tmp, &local->sta_list, list) {
++		if (sdata != sta->sdata)
++			continue;
++
++		if (time_after(jiffies, sta->last_rx + exp_time) ||
++		    (time_after(jiffies, sta->last_rx + exp_rsn_time) &&
++		     sta->sta_state != IEEE80211_STA_AUTHORIZED)) {
++			sta_dbg(sta->sdata, "expiring inactive %sSTA %pM\n",
++				sta->sta_state != IEEE80211_STA_AUTHORIZED ?
++				"not authorized " : "", sta->sta.addr);
++
++			WARN_ON(__sta_info_destroy(sta));
++		}
++	}
++
++	mutex_unlock(&local->sta_mtx);
++}
++
+ /*
+  * This function is called with state == IEEE80211_IBSS_MLME_JOINED
+  */
+@@ -685,7 +738,7 @@ static void ieee80211_sta_merge_ibss(str
+ 	mod_timer(&ifibss->timer,
+ 		  round_jiffies(jiffies + IEEE80211_IBSS_MERGE_INTERVAL));
+ 
+-	ieee80211_sta_expire(sdata, IEEE80211_IBSS_INACTIVITY_LIMIT);
++	ieee80211_ibss_sta_expire(sdata);
+ 
+ 	if (time_before(jiffies, ifibss->last_scan_completed +
+ 		       IEEE80211_IBSS_MERGE_INTERVAL))
+@@ -736,7 +789,7 @@ static void ieee80211_sta_create_ibss(st
  		sdata->drop_unencrypted = 0;
  
  	__ieee80211_sta_join_ibss(sdata, bssid, sdata->vif.bss_conf.beacon_int,
@@ -2714,7 +3654,7 @@
  				  capability, 0, true);
  }
  
-@@ -792,6 +817,17 @@ static void ieee80211_sta_find_ibss(stru
+@@ -792,6 +845,17 @@ static void ieee80211_sta_find_ibss(stru
  		return;
  	}
  
@@ -2732,7 +3672,7 @@
  	ibss_dbg(sdata, "sta_find_ibss: did not try to join ibss\n");
  
  	/* Selected IBSS not found in current scan results - try to scan */
-@@ -1138,6 +1174,7 @@ int ieee80211_ibss_leave(struct ieee8021
+@@ -1138,6 +1202,7 @@ int ieee80211_ibss_leave(struct ieee8021
  	clear_bit(SDATA_STATE_OFFCHANNEL_BEACON_STOPPED, &sdata->state);
  	ieee80211_bss_info_change_notify(sdata, BSS_CHANGED_BEACON_ENABLED |
  						BSS_CHANGED_IBSS);
@@ -2742,7 +3682,60 @@
  
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -1173,6 +1173,10 @@ skip_ws_det:
+@@ -632,6 +632,22 @@ static void ar9003_hw_override_ini(struc
+ 
+ 	REG_SET_BIT(ah, AR_PHY_CCK_DETECT,
+ 		    AR_PHY_CCK_DETECT_BB_ENABLE_ANT_FAST_DIV);
++
++	if (AR_SREV_9462(ah) || AR_SREV_9565(ah)) {
++		REG_WRITE(ah, AR_GLB_SWREG_DISCONT_MODE,
++			  AR_GLB_SWREG_DISCONT_EN_BT_WLAN);
++
++		if (REG_READ_FIELD(ah, AR_PHY_TX_IQCAL_CONTROL_0,
++				   AR_PHY_TX_IQCAL_CONTROL_0_ENABLE_TXIQ_CAL))
++			ah->enabled_cals |= TX_IQ_CAL;
++		else
++			ah->enabled_cals &= ~TX_IQ_CAL;
++
++		if (REG_READ(ah, AR_PHY_CL_CAL_CTL) & AR_PHY_CL_CAL_ENABLE)
++			ah->enabled_cals |= TX_CL_CAL;
++		else
++			ah->enabled_cals &= ~TX_CL_CAL;
++	}
+ }
+ 
+ static void ar9003_hw_prog_ini(struct ath_hw *ah,
+@@ -814,29 +830,12 @@ static int ar9003_hw_process_ini(struct 
+ 	if (chan->channel == 2484)
+ 		ar9003_hw_prog_ini(ah, &ah->iniCckfirJapan2484, 1);
+ 
+-	if (AR_SREV_9462(ah) || AR_SREV_9565(ah))
+-		REG_WRITE(ah, AR_GLB_SWREG_DISCONT_MODE,
+-			  AR_GLB_SWREG_DISCONT_EN_BT_WLAN);
+-
+ 	ah->modes_index = modesIndex;
+ 	ar9003_hw_override_ini(ah);
+ 	ar9003_hw_set_channel_regs(ah, chan);
+ 	ar9003_hw_set_chain_masks(ah, ah->rxchainmask, ah->txchainmask);
+ 	ath9k_hw_apply_txpower(ah, chan, false);
+ 
+-	if (AR_SREV_9462(ah) || AR_SREV_9565(ah)) {
+-		if (REG_READ_FIELD(ah, AR_PHY_TX_IQCAL_CONTROL_0,
+-				   AR_PHY_TX_IQCAL_CONTROL_0_ENABLE_TXIQ_CAL))
+-			ah->enabled_cals |= TX_IQ_CAL;
+-		else
+-			ah->enabled_cals &= ~TX_IQ_CAL;
+-
+-		if (REG_READ(ah, AR_PHY_CL_CAL_CTL) & AR_PHY_CL_CAL_ENABLE)
+-			ah->enabled_cals |= TX_CL_CAL;
+-		else
+-			ah->enabled_cals &= ~TX_CL_CAL;
+-	}
+-
+ 	return 0;
+ }
+ 
+@@ -1173,6 +1172,10 @@ skip_ws_det:
  		 * is_on == 0 means MRC CCK is OFF (more noise imm)
  		 */
  		bool is_on = param ? 1 : 0;
@@ -2753,6 +3746,207 @@
  		REG_RMW_FIELD(ah, AR_PHY_MRC_CCK_CTRL,
  			      AR_PHY_MRC_CCK_ENABLE, is_on);
  		REG_RMW_FIELD(ah, AR_PHY_MRC_CCK_CTRL,
+@@ -1413,65 +1416,111 @@ static void ar9003_hw_antdiv_comb_conf_s
+ 	REG_WRITE(ah, AR_PHY_MC_GAIN_CTRL, regval);
+ }
+ 
+-static void ar9003_hw_antctrl_shared_chain_lnadiv(struct ath_hw *ah,
+-						  bool enable)
++#ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
++
++static void ar9003_hw_set_bt_ant_diversity(struct ath_hw *ah, bool enable)
+ {
++	struct ath9k_hw_capabilities *pCap = &ah->caps;
+ 	u8 ant_div_ctl1;
+ 	u32 regval;
+ 
+-	if (!AR_SREV_9565(ah))
++	if (!AR_SREV_9485(ah) && !AR_SREV_9565(ah))
+ 		return;
+ 
+-	ah->shared_chain_lnadiv = enable;
++	if (AR_SREV_9485(ah)) {
++		regval = ar9003_hw_ant_ctrl_common_2_get(ah,
++						 IS_CHAN_2GHZ(ah->curchan));
++		if (enable) {
++			regval &= ~AR_SWITCH_TABLE_COM2_ALL;
++			regval |= ah->config.ant_ctrl_comm2g_switch_enable;
++		}
++		REG_RMW_FIELD(ah, AR_PHY_SWITCH_COM_2,
++			      AR_SWITCH_TABLE_COM2_ALL, regval);
++	}
++
+ 	ant_div_ctl1 = ah->eep_ops->get_eeprom(ah, EEP_ANT_DIV_CTL1);
+ 
++	/*
++	 * Set MAIN/ALT LNA conf.
++	 * Set MAIN/ALT gain_tb.
++	 */
+ 	regval = REG_READ(ah, AR_PHY_MC_GAIN_CTRL);
+ 	regval &= (~AR_ANT_DIV_CTRL_ALL);
+ 	regval |= (ant_div_ctl1 & 0x3f) << AR_ANT_DIV_CTRL_ALL_S;
+-	regval &= ~AR_PHY_ANT_DIV_LNADIV;
+-	regval |= ((ant_div_ctl1 >> 6) & 0x1) << AR_PHY_ANT_DIV_LNADIV_S;
+-
+-	if (enable)
+-		regval |= AR_ANT_DIV_ENABLE;
+-
+ 	REG_WRITE(ah, AR_PHY_MC_GAIN_CTRL, regval);
+ 
+-	regval = REG_READ(ah, AR_PHY_CCK_DETECT);
+-	regval &= ~AR_FAST_DIV_ENABLE;
+-	regval |= ((ant_div_ctl1 >> 7) & 0x1) << AR_FAST_DIV_ENABLE_S;
+-
+-	if (enable)
+-		regval |= AR_FAST_DIV_ENABLE;
+-
+-	REG_WRITE(ah, AR_PHY_CCK_DETECT, regval);
+-
+-	if (enable) {
+-		REG_SET_BIT(ah, AR_PHY_MC_GAIN_CTRL,
+-			    (1 << AR_PHY_ANT_SW_RX_PROT_S));
+-		if (ah->curchan && IS_CHAN_2GHZ(ah->curchan))
+-			REG_SET_BIT(ah, AR_PHY_RESTART,
+-				    AR_PHY_RESTART_ENABLE_DIV_M2FLAG);
+-		REG_SET_BIT(ah, AR_BTCOEX_WL_LNADIV,
+-			    AR_BTCOEX_WL_LNADIV_FORCE_ON);
+-	} else {
+-		REG_CLR_BIT(ah, AR_PHY_MC_GAIN_CTRL, AR_ANT_DIV_ENABLE);
+-		REG_CLR_BIT(ah, AR_PHY_MC_GAIN_CTRL,
+-			    (1 << AR_PHY_ANT_SW_RX_PROT_S));
+-		REG_CLR_BIT(ah, AR_PHY_CCK_DETECT, AR_FAST_DIV_ENABLE);
+-		REG_CLR_BIT(ah, AR_BTCOEX_WL_LNADIV,
+-			    AR_BTCOEX_WL_LNADIV_FORCE_ON);
+-
++	if (AR_SREV_9485_11_OR_LATER(ah)) {
++		/*
++		 * Enable LNA diversity.
++		 */
+ 		regval = REG_READ(ah, AR_PHY_MC_GAIN_CTRL);
+-		regval &= ~(AR_PHY_ANT_DIV_MAIN_LNACONF |
+-			AR_PHY_ANT_DIV_ALT_LNACONF |
+-			AR_PHY_ANT_DIV_MAIN_GAINTB |
+-			AR_PHY_ANT_DIV_ALT_GAINTB);
+-		regval |= (AR_PHY_ANT_DIV_LNA1 << AR_PHY_ANT_DIV_MAIN_LNACONF_S);
+-		regval |= (AR_PHY_ANT_DIV_LNA2 << AR_PHY_ANT_DIV_ALT_LNACONF_S);
++		regval &= ~AR_PHY_ANT_DIV_LNADIV;
++		regval |= ((ant_div_ctl1 >> 6) & 0x1) << AR_PHY_ANT_DIV_LNADIV_S;
++		if (enable)
++			regval |= AR_ANT_DIV_ENABLE;
++
+ 		REG_WRITE(ah, AR_PHY_MC_GAIN_CTRL, regval);
++
++		/*
++		 * Enable fast antenna diversity.
++		 */
++		regval = REG_READ(ah, AR_PHY_CCK_DETECT);
++		regval &= ~AR_FAST_DIV_ENABLE;
++		regval |= ((ant_div_ctl1 >> 7) & 0x1) << AR_FAST_DIV_ENABLE_S;
++		if (enable)
++			regval |= AR_FAST_DIV_ENABLE;
++
++		REG_WRITE(ah, AR_PHY_CCK_DETECT, regval);
++
++		if (pCap->hw_caps & ATH9K_HW_CAP_ANT_DIV_COMB) {
++			regval = REG_READ(ah, AR_PHY_MC_GAIN_CTRL);
++			regval &= (~(AR_PHY_ANT_DIV_MAIN_LNACONF |
++				     AR_PHY_ANT_DIV_ALT_LNACONF |
++				     AR_PHY_ANT_DIV_ALT_GAINTB |
++				     AR_PHY_ANT_DIV_MAIN_GAINTB));
++			/*
++			 * Set MAIN to LNA1 and ALT to LNA2 at the
++			 * beginning.
++			 */
++			regval |= (ATH_ANT_DIV_COMB_LNA1 <<
++				   AR_PHY_ANT_DIV_MAIN_LNACONF_S);
++			regval |= (ATH_ANT_DIV_COMB_LNA2 <<
++				   AR_PHY_ANT_DIV_ALT_LNACONF_S);
++			REG_WRITE(ah, AR_PHY_MC_GAIN_CTRL, regval);
++		}
++	} else if (AR_SREV_9565(ah)) {
++		if (enable) {
++			REG_SET_BIT(ah, AR_PHY_MC_GAIN_CTRL,
++				    (1 << AR_PHY_ANT_SW_RX_PROT_S));
++			if (ah->curchan && IS_CHAN_2GHZ(ah->curchan))
++				REG_SET_BIT(ah, AR_PHY_RESTART,
++					    AR_PHY_RESTART_ENABLE_DIV_M2FLAG);
++			REG_SET_BIT(ah, AR_BTCOEX_WL_LNADIV,
++				    AR_BTCOEX_WL_LNADIV_FORCE_ON);
++		} else {
++			REG_CLR_BIT(ah, AR_PHY_MC_GAIN_CTRL, AR_ANT_DIV_ENABLE);
++			REG_CLR_BIT(ah, AR_PHY_MC_GAIN_CTRL,
++				    (1 << AR_PHY_ANT_SW_RX_PROT_S));
++			REG_CLR_BIT(ah, AR_PHY_CCK_DETECT, AR_FAST_DIV_ENABLE);
++			REG_CLR_BIT(ah, AR_BTCOEX_WL_LNADIV,
++				    AR_BTCOEX_WL_LNADIV_FORCE_ON);
++
++			regval = REG_READ(ah, AR_PHY_MC_GAIN_CTRL);
++			regval &= ~(AR_PHY_ANT_DIV_MAIN_LNACONF |
++				    AR_PHY_ANT_DIV_ALT_LNACONF |
++				    AR_PHY_ANT_DIV_MAIN_GAINTB |
++				    AR_PHY_ANT_DIV_ALT_GAINTB);
++			regval |= (ATH_ANT_DIV_COMB_LNA1 <<
++				   AR_PHY_ANT_DIV_MAIN_LNACONF_S);
++			regval |= (ATH_ANT_DIV_COMB_LNA2 <<
++				   AR_PHY_ANT_DIV_ALT_LNACONF_S);
++			REG_WRITE(ah, AR_PHY_MC_GAIN_CTRL, regval);
++		}
+ 	}
+ }
+ 
++#endif
++
+ static int ar9003_hw_fast_chan_change(struct ath_hw *ah,
+ 				      struct ath9k_channel *chan,
+ 				      u8 *ini_reloaded)
+@@ -1518,6 +1567,18 @@ static int ar9003_hw_fast_chan_change(st
+ 
+ 	REG_WRITE_ARRAY(&ah->iniModesTxGain, modesIndex, regWrites);
+ 
++	if (AR_SREV_9462_20_OR_LATER(ah)) {
++		/*
++		 * CUS217 mix LNA mode.
++		 */
++		if (ar9003_hw_get_rx_gain_idx(ah) == 2) {
++			REG_WRITE_ARRAY(&ah->ini_modes_rxgain_bb_core,
++					1, regWrites);
++			REG_WRITE_ARRAY(&ah->ini_modes_rxgain_bb_postamble,
++					modesIndex, regWrites);
++		}
++	}
++
+ 	/*
+ 	 * For 5GHz channels requiring Fast Clock, apply
+ 	 * different modal values.
+@@ -1528,7 +1589,11 @@ static int ar9003_hw_fast_chan_change(st
+ 	if (AR_SREV_9565(ah))
+ 		REG_WRITE_ARRAY(&ah->iniModesFastClock, 1, regWrites);
+ 
+-	REG_WRITE_ARRAY(&ah->iniAdditional, 1, regWrites);
++	/*
++	 * JAPAN regulatory.
++	 */
++	if (chan->channel == 2484)
++		ar9003_hw_prog_ini(ah, &ah->iniCckfirJapan2484, 1);
+ 
+ 	ah->modes_index = modesIndex;
+ 	*ini_reloaded = true;
+@@ -1631,11 +1696,14 @@ void ar9003_hw_attach_phy_ops(struct ath
+ 
+ 	ops->antdiv_comb_conf_get = ar9003_hw_antdiv_comb_conf_get;
+ 	ops->antdiv_comb_conf_set = ar9003_hw_antdiv_comb_conf_set;
+-	ops->antctrl_shared_chain_lnadiv = ar9003_hw_antctrl_shared_chain_lnadiv;
+ 	ops->spectral_scan_config = ar9003_hw_spectral_scan_config;
+ 	ops->spectral_scan_trigger = ar9003_hw_spectral_scan_trigger;
+ 	ops->spectral_scan_wait = ar9003_hw_spectral_scan_wait;
+ 
++#ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
++	ops->set_bt_ant_diversity = ar9003_hw_set_bt_ant_diversity;
++#endif
++
+ 	ar9003_hw_set_nf_limits(ah);
+ 	ar9003_hw_set_radar_conf(ah);
+ 	memcpy(ah->nf_regs, ar9300_cca_regs, sizeof(ah->nf_regs));
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
 @@ -42,8 +42,6 @@ static void ath_rx_buf_link(struct ath_s
@@ -2787,6 +3981,15 @@
  	memset(skb->data, 0, ah->caps.rx_status_len);
  	dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
  				ah->caps.rx_status_len, DMA_TO_DEVICE);
+@@ -185,7 +190,7 @@ static void ath_rx_edma_cleanup(struct a
+ 
+ static void ath_rx_edma_init_queue(struct ath_rx_edma *rx_edma, int size)
+ {
+-	skb_queue_head_init(&rx_edma->rx_fifo);
++	__skb_queue_head_init(&rx_edma->rx_fifo);
+ 	rx_edma->rx_fifo_hwsize = size;
+ }
+ 
 @@ -432,6 +437,7 @@ int ath_startrecv(struct ath_softc *sc)
  	if (list_empty(&sc->rx.rxbuf))
  		goto start_recv;
@@ -2805,7 +4008,579 @@
  	ds = bf->bf_desc;
  
  	/*
-@@ -1375,7 +1384,7 @@ requeue:
+@@ -755,7 +764,6 @@ static bool ath9k_rx_accept(struct ath_c
+ 	bool is_mc, is_valid_tkip, strip_mic, mic_error;
+ 	struct ath_hw *ah = common->ah;
+ 	__le16 fc;
+-	u8 rx_status_len = ah->caps.rx_status_len;
+ 
+ 	fc = hdr->frame_control;
+ 
+@@ -777,25 +785,6 @@ static bool ath9k_rx_accept(struct ath_c
+ 	    !test_bit(rx_stats->rs_keyix, common->ccmp_keymap))
+ 		rx_stats->rs_status &= ~ATH9K_RXERR_KEYMISS;
+ 
+-	if (!rx_stats->rs_datalen) {
+-		RX_STAT_INC(rx_len_err);
+-		return false;
+-	}
+-
+-        /*
+-         * rs_status follows rs_datalen so if rs_datalen is too large
+-         * we can take a hint that hardware corrupted it, so ignore
+-         * those frames.
+-         */
+-	if (rx_stats->rs_datalen > (common->rx_bufsize - rx_status_len)) {
+-		RX_STAT_INC(rx_len_err);
+-		return false;
+-	}
+-
+-	/* Only use error bits from the last fragment */
+-	if (rx_stats->rs_more)
+-		return true;
+-
+ 	mic_error = is_valid_tkip && !ieee80211_is_ctl(fc) &&
+ 		!ieee80211_has_morefrags(fc) &&
+ 		!(le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_FRAG) &&
+@@ -814,8 +803,6 @@ static bool ath9k_rx_accept(struct ath_c
+ 			rxs->flag |= RX_FLAG_FAILED_FCS_CRC;
+ 			mic_error = false;
+ 		}
+-		if (rx_stats->rs_status & ATH9K_RXERR_PHY)
+-			return false;
+ 
+ 		if ((rx_stats->rs_status & ATH9K_RXERR_DECRYPT) ||
+ 		    (!is_mc && (rx_stats->rs_status & ATH9K_RXERR_KEYMISS))) {
+@@ -898,129 +885,65 @@ static int ath9k_process_rate(struct ath
+ 
+ static void ath9k_process_rssi(struct ath_common *common,
+ 			       struct ieee80211_hw *hw,
+-			       struct ieee80211_hdr *hdr,
+-			       struct ath_rx_status *rx_stats)
++			       struct ath_rx_status *rx_stats,
++			       struct ieee80211_rx_status *rxs)
+ {
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_hw *ah = common->ah;
+ 	int last_rssi;
+ 	int rssi = rx_stats->rs_rssi;
+ 
+-	if (!rx_stats->is_mybeacon ||
+-	    ((ah->opmode != NL80211_IFTYPE_STATION) &&
+-	     (ah->opmode != NL80211_IFTYPE_ADHOC)))
++	/*
++	 * RSSI is not available for subframes in an A-MPDU.
++	 */
++	if (rx_stats->rs_moreaggr) {
++		rxs->flag |= RX_FLAG_NO_SIGNAL_VAL;
+ 		return;
+-
+-	if (rx_stats->rs_rssi != ATH9K_RSSI_BAD && !rx_stats->rs_moreaggr)
+-		ATH_RSSI_LPF(sc->last_rssi, rx_stats->rs_rssi);
+-
+-	last_rssi = sc->last_rssi;
+-	if (likely(last_rssi != ATH_RSSI_DUMMY_MARKER))
+-		rssi = ATH_EP_RND(last_rssi, ATH_RSSI_EP_MULTIPLIER);
+-	if (rssi < 0)
+-		rssi = 0;
+-
+-	/* Update Beacon RSSI, this is used by ANI. */
+-	ah->stats.avgbrssi = rssi;
+-}
+-
+-/*
+- * For Decrypt or Demic errors, we only mark packet status here and always push
+- * up the frame up to let mac80211 handle the actual error case, be it no
+- * decryption key or real decryption error. This let us keep statistics there.
+- */
+-static int ath9k_rx_skb_preprocess(struct ath_softc *sc,
+-				   struct ieee80211_hdr *hdr,
+-				   struct ath_rx_status *rx_stats,
+-				   struct ieee80211_rx_status *rx_status,
+-				   bool *decrypt_error)
+-{
+-	struct ieee80211_hw *hw = sc->hw;
+-	struct ath_hw *ah = sc->sc_ah;
+-	struct ath_common *common = ath9k_hw_common(ah);
+-	bool discard_current = sc->rx.discard_next;
+-
+-	sc->rx.discard_next = rx_stats->rs_more;
+-	if (discard_current)
+-		return -EINVAL;
++	}
+ 
+ 	/*
+-	 * everything but the rate is checked here, the rate check is done
+-	 * separately to avoid doing two lookups for a rate for each frame.
++	 * Check if the RSSI for the last subframe in an A-MPDU
++	 * or an unaggregated frame is valid.
+ 	 */
+-	if (!ath9k_rx_accept(common, hdr, rx_status, rx_stats, decrypt_error))
+-		return -EINVAL;
+-
+-	/* Only use status info from the last fragment */
+-	if (rx_stats->rs_more)
+-		return 0;
++	if (rx_stats->rs_rssi == ATH9K_RSSI_BAD) {
++		rxs->flag |= RX_FLAG_NO_SIGNAL_VAL;
++		return;
++	}
+ 
+-	if (ath9k_process_rate(common, hw, rx_stats, rx_status))
+-		return -EINVAL;
++	/*
++	 * Update Beacon RSSI, this is used by ANI.
++	 */
++	if (rx_stats->is_mybeacon &&
++	    ((ah->opmode == NL80211_IFTYPE_STATION) ||
++	     (ah->opmode == NL80211_IFTYPE_ADHOC))) {
++		ATH_RSSI_LPF(sc->last_rssi, rx_stats->rs_rssi);
++		last_rssi = sc->last_rssi;
+ 
+-	ath9k_process_rssi(common, hw, hdr, rx_stats);
++		if (likely(last_rssi != ATH_RSSI_DUMMY_MARKER))
++			rssi = ATH_EP_RND(last_rssi, ATH_RSSI_EP_MULTIPLIER);
++		if (rssi < 0)
++			rssi = 0;
+ 
+-	rx_status->band = hw->conf.chandef.chan->band;
+-	rx_status->freq = hw->conf.chandef.chan->center_freq;
+-	rx_status->signal = ah->noise + rx_stats->rs_rssi;
+-	rx_status->antenna = rx_stats->rs_antenna;
+-	rx_status->flag |= RX_FLAG_MACTIME_END;
+-	if (rx_stats->rs_moreaggr)
+-		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
++		ah->stats.avgbrssi = rssi;
++	}
+ 
+-	sc->rx.discard_next = false;
+-	return 0;
++	rxs->signal = ah->noise + rx_stats->rs_rssi;
+ }
+ 
+-static void ath9k_rx_skb_postprocess(struct ath_common *common,
+-				     struct sk_buff *skb,
+-				     struct ath_rx_status *rx_stats,
+-				     struct ieee80211_rx_status *rxs,
+-				     bool decrypt_error)
++static void ath9k_process_tsf(struct ath_rx_status *rs,
++			      struct ieee80211_rx_status *rxs,
++			      u64 tsf)
+ {
+-	struct ath_hw *ah = common->ah;
+-	struct ieee80211_hdr *hdr;
+-	int hdrlen, padpos, padsize;
+-	u8 keyix;
+-	__le16 fc;
++	u32 tsf_lower = tsf & 0xffffffff;
+ 
+-	/* see if any padding is done by the hw and remove it */
+-	hdr = (struct ieee80211_hdr *) skb->data;
+-	hdrlen = ieee80211_get_hdrlen_from_skb(skb);
+-	fc = hdr->frame_control;
+-	padpos = ieee80211_hdrlen(fc);
++	rxs->mactime = (tsf & ~0xffffffffULL) | rs->rs_tstamp;
++	if (rs->rs_tstamp > tsf_lower &&
++	    unlikely(rs->rs_tstamp - tsf_lower > 0x10000000))
++		rxs->mactime -= 0x100000000ULL;
+ 
+-	/* The MAC header is padded to have 32-bit boundary if the
+-	 * packet payload is non-zero. The general calculation for
+-	 * padsize would take into account odd header lengths:
+-	 * padsize = (4 - padpos % 4) % 4; However, since only
+-	 * even-length headers are used, padding can only be 0 or 2
+-	 * bytes and we can optimize this a bit. In addition, we must
+-	 * not try to remove padding from short control frames that do
+-	 * not have payload. */
+-	padsize = padpos & 3;
+-	if (padsize && skb->len>=padpos+padsize+FCS_LEN) {
+-		memmove(skb->data + padsize, skb->data, padpos);
+-		skb_pull(skb, padsize);
+-	}
+-
+-	keyix = rx_stats->rs_keyix;
+-
+-	if (!(keyix == ATH9K_RXKEYIX_INVALID) && !decrypt_error &&
+-	    ieee80211_has_protected(fc)) {
+-		rxs->flag |= RX_FLAG_DECRYPTED;
+-	} else if (ieee80211_has_protected(fc)
+-		   && !decrypt_error && skb->len >= hdrlen + 4) {
+-		keyix = skb->data[hdrlen + 3] >> 6;
+-
+-		if (test_bit(keyix, common->keymap))
+-			rxs->flag |= RX_FLAG_DECRYPTED;
+-	}
+-	if (ah->sw_mgmt_crypto &&
+-	    (rxs->flag & RX_FLAG_DECRYPTED) &&
+-	    ieee80211_is_mgmt(fc))
+-		/* Use software decrypt for management frames. */
+-		rxs->flag &= ~RX_FLAG_DECRYPTED;
++	if (rs->rs_tstamp < tsf_lower &&
++	    unlikely(tsf_lower - rs->rs_tstamp > 0x10000000))
++		rxs->mactime += 0x100000000ULL;
+ }
+ 
+ #ifdef CPTCFG_ATH9K_DEBUGFS
+@@ -1133,6 +1056,234 @@ static int ath_process_fft(struct ath_so
+ #endif
+ }
+ 
++static bool ath9k_is_mybeacon(struct ath_softc *sc, struct ieee80211_hdr *hdr)
++{
++	struct ath_hw *ah = sc->sc_ah;
++	struct ath_common *common = ath9k_hw_common(ah);
++
++	if (ieee80211_is_beacon(hdr->frame_control)) {
++		RX_STAT_INC(rx_beacons);
++		if (!is_zero_ether_addr(common->curbssid) &&
++		    ether_addr_equal(hdr->addr3, common->curbssid))
++			return true;
++	}
++
++	return false;
++}
++
++/*
++ * For Decrypt or Demic errors, we only mark packet status here and always push
++ * up the frame up to let mac80211 handle the actual error case, be it no
++ * decryption key or real decryption error. This let us keep statistics there.
++ */
++static int ath9k_rx_skb_preprocess(struct ath_softc *sc,
++				   struct sk_buff *skb,
++				   struct ath_rx_status *rx_stats,
++				   struct ieee80211_rx_status *rx_status,
++				   bool *decrypt_error, u64 tsf)
++{
++	struct ieee80211_hw *hw = sc->hw;
++	struct ath_hw *ah = sc->sc_ah;
++	struct ath_common *common = ath9k_hw_common(ah);
++	struct ieee80211_hdr *hdr;
++	bool discard_current = sc->rx.discard_next;
++	int ret = 0;
++
++	/*
++	 * Discard corrupt descriptors which are marked in
++	 * ath_get_next_rx_buf().
++	 */
++	sc->rx.discard_next = rx_stats->rs_more;
++	if (discard_current)
++		return -EINVAL;
++
++	/*
++	 * Discard zero-length packets.
++	 */
++	if (!rx_stats->rs_datalen) {
++		RX_STAT_INC(rx_len_err);
++		return -EINVAL;
++	}
++
++        /*
++         * rs_status follows rs_datalen so if rs_datalen is too large
++         * we can take a hint that hardware corrupted it, so ignore
++         * those frames.
++         */
++	if (rx_stats->rs_datalen > (common->rx_bufsize - ah->caps.rx_status_len)) {
++		RX_STAT_INC(rx_len_err);
++		return -EINVAL;
++	}
++
++	/* Only use status info from the last fragment */
++	if (rx_stats->rs_more)
++		return 0;
++
++	/*
++	 * Return immediately if the RX descriptor has been marked
++	 * as corrupt based on the various error bits.
++	 *
++	 * This is different from the other corrupt descriptor
++	 * condition handled above.
++	 */
++	if (rx_stats->rs_status & ATH9K_RXERR_CORRUPT_DESC) {
++		ret = -EINVAL;
++		goto exit;
++	}
++
++	hdr = (struct ieee80211_hdr *) (skb->data + ah->caps.rx_status_len);
++
++	ath9k_process_tsf(rx_stats, rx_status, tsf);
++	ath_debug_stat_rx(sc, rx_stats);
++
++	/*
++	 * Process PHY errors and return so that the packet
++	 * can be dropped.
++	 */
++	if (rx_stats->rs_status & ATH9K_RXERR_PHY) {
++		ath9k_dfs_process_phyerr(sc, hdr, rx_stats, rx_status->mactime);
++		if (ath_process_fft(sc, hdr, rx_stats, rx_status->mactime))
++			RX_STAT_INC(rx_spectral);
++
++		ret = -EINVAL;
++		goto exit;
++	}
++
++	/*
++	 * everything but the rate is checked here, the rate check is done
++	 * separately to avoid doing two lookups for a rate for each frame.
++	 */
++	if (!ath9k_rx_accept(common, hdr, rx_status, rx_stats, decrypt_error)) {
++		ret = -EINVAL;
++		goto exit;
++	}
++
++	rx_stats->is_mybeacon = ath9k_is_mybeacon(sc, hdr);
++	if (rx_stats->is_mybeacon) {
++		sc->hw_busy_count = 0;
++		ath_start_rx_poll(sc, 3);
++	}
++
++	if (ath9k_process_rate(common, hw, rx_stats, rx_status)) {
++		ret =-EINVAL;
++		goto exit;
++	}
++
++	ath9k_process_rssi(common, hw, rx_stats, rx_status);
++
++	rx_status->band = hw->conf.chandef.chan->band;
++	rx_status->freq = hw->conf.chandef.chan->center_freq;
++	rx_status->antenna = rx_stats->rs_antenna;
++	rx_status->flag |= RX_FLAG_MACTIME_END;
++
++#ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
++	if (ieee80211_is_data_present(hdr->frame_control) &&
++	    !ieee80211_is_qos_nullfunc(hdr->frame_control))
++		sc->rx.num_pkts++;
++#endif
++
++exit:
++	sc->rx.discard_next = false;
++	return ret;
++}
++
++static void ath9k_rx_skb_postprocess(struct ath_common *common,
++				     struct sk_buff *skb,
++				     struct ath_rx_status *rx_stats,
++				     struct ieee80211_rx_status *rxs,
++				     bool decrypt_error)
++{
++	struct ath_hw *ah = common->ah;
++	struct ieee80211_hdr *hdr;
++	int hdrlen, padpos, padsize;
++	u8 keyix;
++	__le16 fc;
++
++	/* see if any padding is done by the hw and remove it */
++	hdr = (struct ieee80211_hdr *) skb->data;
++	hdrlen = ieee80211_get_hdrlen_from_skb(skb);
++	fc = hdr->frame_control;
++	padpos = ieee80211_hdrlen(fc);
++
++	/* The MAC header is padded to have 32-bit boundary if the
++	 * packet payload is non-zero. The general calculation for
++	 * padsize would take into account odd header lengths:
++	 * padsize = (4 - padpos % 4) % 4; However, since only
++	 * even-length headers are used, padding can only be 0 or 2
++	 * bytes and we can optimize this a bit. In addition, we must
++	 * not try to remove padding from short control frames that do
++	 * not have payload. */
++	padsize = padpos & 3;
++	if (padsize && skb->len>=padpos+padsize+FCS_LEN) {
++		memmove(skb->data + padsize, skb->data, padpos);
++		skb_pull(skb, padsize);
++	}
++
++	keyix = rx_stats->rs_keyix;
++
++	if (!(keyix == ATH9K_RXKEYIX_INVALID) && !decrypt_error &&
++	    ieee80211_has_protected(fc)) {
++		rxs->flag |= RX_FLAG_DECRYPTED;
++	} else if (ieee80211_has_protected(fc)
++		   && !decrypt_error && skb->len >= hdrlen + 4) {
++		keyix = skb->data[hdrlen + 3] >> 6;
++
++		if (test_bit(keyix, common->keymap))
++			rxs->flag |= RX_FLAG_DECRYPTED;
++	}
++	if (ah->sw_mgmt_crypto &&
++	    (rxs->flag & RX_FLAG_DECRYPTED) &&
++	    ieee80211_is_mgmt(fc))
++		/* Use software decrypt for management frames. */
++		rxs->flag &= ~RX_FLAG_DECRYPTED;
++}
++
++/*
++ * Run the LNA combining algorithm only in these cases:
++ *
++ * Standalone WLAN cards with both LNA/Antenna diversity
++ * enabled in the EEPROM.
++ *
++ * WLAN+BT cards which are in the supported card list
++ * in ath_pci_id_table and the user has loaded the
++ * driver with "bt_ant_diversity" set to true.
++ */
++static void ath9k_antenna_check(struct ath_softc *sc,
++				struct ath_rx_status *rs)
++{
++	struct ath_hw *ah = sc->sc_ah;
++	struct ath9k_hw_capabilities *pCap = &ah->caps;
++	struct ath_common *common = ath9k_hw_common(ah);
++
++	if (!(ah->caps.hw_caps & ATH9K_HW_CAP_ANT_DIV_COMB))
++		return;
++
++	/*
++	 * All MPDUs in an aggregate will use the same LNA
++	 * as the first MPDU.
++	 */
++	if (rs->rs_isaggr && !rs->rs_firstaggr)
++		return;
++
++	/*
++	 * Change the default rx antenna if rx diversity
++	 * chooses the other antenna 3 times in a row.
++	 */
++	if (sc->rx.defant != rs->rs_antenna) {
++		if (++sc->rx.rxotherant >= 3)
++			ath_setdefantenna(sc, rs->rs_antenna);
++	} else {
++		sc->rx.rxotherant = 0;
++	}
++
++	if (pCap->hw_caps & ATH9K_HW_CAP_BT_ANT_DIV) {
++		if (common->bt_ant_diversity)
++			ath_ant_comb_scan(sc, rs);
++	} else {
++		ath_ant_comb_scan(sc, rs);
++	}
++}
++
+ static void ath9k_apply_ampdu_details(struct ath_softc *sc,
+ 	struct ath_rx_status *rs, struct ieee80211_rx_status *rxs)
+ {
+@@ -1159,15 +1310,12 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ieee80211_hw *hw = sc->hw;
+-	struct ieee80211_hdr *hdr;
+ 	int retval;
+ 	struct ath_rx_status rs;
+ 	enum ath9k_rx_qtype qtype;
+ 	bool edma = !!(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA);
+ 	int dma_type;
+-	u8 rx_status_len = ah->caps.rx_status_len;
+ 	u64 tsf = 0;
+-	u32 tsf_lower = 0;
+ 	unsigned long flags;
+ 	dma_addr_t new_buf_addr;
+ 
+@@ -1179,7 +1327,6 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 	qtype = hp ? ATH9K_RX_QUEUE_HP : ATH9K_RX_QUEUE_LP;
+ 
+ 	tsf = ath9k_hw_gettsf64(ah);
+-	tsf_lower = tsf & 0xffffffff;
+ 
+ 	do {
+ 		bool decrypt_error = false;
+@@ -1206,55 +1353,14 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 		else
+ 			hdr_skb = skb;
+ 
+-		hdr = (struct ieee80211_hdr *) (hdr_skb->data + rx_status_len);
+ 		rxs = IEEE80211_SKB_RXCB(hdr_skb);
+-		if (ieee80211_is_beacon(hdr->frame_control)) {
+-			RX_STAT_INC(rx_beacons);
+-			if (!is_zero_ether_addr(common->curbssid) &&
+-			    ether_addr_equal(hdr->addr3, common->curbssid))
+-				rs.is_mybeacon = true;
+-			else
+-				rs.is_mybeacon = false;
+-		}
+-		else
+-			rs.is_mybeacon = false;
+-
+-		if (ieee80211_is_data_present(hdr->frame_control) &&
+-		    !ieee80211_is_qos_nullfunc(hdr->frame_control))
+-			sc->rx.num_pkts++;
+-
+-		ath_debug_stat_rx(sc, &rs);
+-
+ 		memset(rxs, 0, sizeof(struct ieee80211_rx_status));
+ 
+-		rxs->mactime = (tsf & ~0xffffffffULL) | rs.rs_tstamp;
+-		if (rs.rs_tstamp > tsf_lower &&
+-		    unlikely(rs.rs_tstamp - tsf_lower > 0x10000000))
+-			rxs->mactime -= 0x100000000ULL;
+-
+-		if (rs.rs_tstamp < tsf_lower &&
+-		    unlikely(tsf_lower - rs.rs_tstamp > 0x10000000))
+-			rxs->mactime += 0x100000000ULL;
+-
+-		if (rs.rs_phyerr == ATH9K_PHYERR_RADAR)
+-			ath9k_dfs_process_phyerr(sc, hdr, &rs, rxs->mactime);
+-
+-		if (rs.rs_status & ATH9K_RXERR_PHY) {
+-			if (ath_process_fft(sc, hdr, &rs, rxs->mactime)) {
+-				RX_STAT_INC(rx_spectral);
+-				goto requeue_drop_frag;
+-			}
+-		}
+-
+-		retval = ath9k_rx_skb_preprocess(sc, hdr, &rs, rxs,
+-						 &decrypt_error);
++		retval = ath9k_rx_skb_preprocess(sc, hdr_skb, &rs, rxs,
++						 &decrypt_error, tsf);
+ 		if (retval)
+ 			goto requeue_drop_frag;
+ 
+-		if (rs.is_mybeacon) {
+-			sc->hw_busy_count = 0;
+-			ath_start_rx_poll(sc, 3);
+-		}
+ 		/* Ensure we always have an skb to requeue once we are done
+ 		 * processing the current buffer's skb */
+ 		requeue_skb = ath_rxbuf_alloc(common, common->rx_bufsize, GFP_ATOMIC);
+@@ -1308,8 +1414,6 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 			sc->rx.frag = skb;
+ 			goto requeue;
+ 		}
+-		if (rs.rs_status & ATH9K_RXERR_CORRUPT_DESC)
+-			goto requeue_drop_frag;
+ 
+ 		if (sc->rx.frag) {
+ 			int space = skb->len - skb_tailroom(hdr_skb);
+@@ -1328,22 +1432,6 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 			skb = hdr_skb;
+ 		}
+ 
+-
+-		if (ah->caps.hw_caps & ATH9K_HW_CAP_ANT_DIV_COMB) {
+-
+-			/*
+-			 * change the default rx antenna if rx diversity
+-			 * chooses the other antenna 3 times in a row.
+-			 */
+-			if (sc->rx.defant != rs.rs_antenna) {
+-				if (++sc->rx.rxotherant >= 3)
+-					ath_setdefantenna(sc, rs.rs_antenna);
+-			} else {
+-				sc->rx.rxotherant = 0;
+-			}
+-
+-		}
+-
+ 		if (rxs->flag & RX_FLAG_MMIC_STRIPPED)
+ 			skb_trim(skb, skb->len - 8);
+ 
+@@ -1355,8 +1443,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 			ath_rx_ps(sc, skb, rs.is_mybeacon);
+ 		spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
+ 
+-		if ((ah->caps.hw_caps & ATH9K_HW_CAP_ANT_DIV_COMB) && sc->ant_rx == 3)
+-			ath_ant_comb_scan(sc, &rs);
++		ath9k_antenna_check(sc, &rs);
+ 
+ 		ath9k_apply_ampdu_details(sc, &rs, rxs);
+ 
+@@ -1375,7 +1462,7 @@ requeue:
  		if (edma) {
  			ath_rx_edma_buf_link(sc, qtype);
  		} else {
@@ -2816,7 +4591,110 @@
  	} while (1);
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -802,7 +802,8 @@ void ath9k_set_hw_capab(struct ath_softc
+@@ -53,9 +53,9 @@ static int ath9k_btcoex_enable;
+ module_param_named(btcoex_enable, ath9k_btcoex_enable, int, 0444);
+ MODULE_PARM_DESC(btcoex_enable, "Enable wifi-BT coexistence");
+ 
+-static int ath9k_enable_diversity;
+-module_param_named(enable_diversity, ath9k_enable_diversity, int, 0444);
+-MODULE_PARM_DESC(enable_diversity, "Enable Antenna diversity for AR9565");
++static int ath9k_bt_ant_diversity;
++module_param_named(bt_ant_diversity, ath9k_bt_ant_diversity, int, 0444);
++MODULE_PARM_DESC(bt_ant_diversity, "Enable WLAN/BT RX antenna diversity");
+ 
+ bool is_ath9k_unloaded;
+ /* We use the hw_value as an index into our private channel structure */
+@@ -516,6 +516,7 @@ static void ath9k_init_misc(struct ath_s
+ static void ath9k_init_platform(struct ath_softc *sc)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
++	struct ath9k_hw_capabilities *pCap = &ah->caps;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 
+ 	if (common->bus_ops->ath_bus_type != ATH_PCI)
+@@ -525,12 +526,27 @@ static void ath9k_init_platform(struct a
+ 			       ATH9K_PCI_CUS230)) {
+ 		ah->config.xlna_gpio = 9;
+ 		ah->config.xatten_margin_cfg = true;
++		ah->config.alt_mingainidx = true;
++		ah->config.ant_ctrl_comm2g_switch_enable = 0x000BBB88;
++		sc->ant_comb.low_rssi_thresh = 20;
++		sc->ant_comb.fast_div_bias = 3;
+ 
+ 		ath_info(common, "Set parameters for %s\n",
+ 			 (sc->driver_data & ATH9K_PCI_CUS198) ?
+ 			 "CUS198" : "CUS230");
+-	} else if (sc->driver_data & ATH9K_PCI_CUS217) {
++	}
++
++	if (sc->driver_data & ATH9K_PCI_CUS217)
+ 		ath_info(common, "CUS217 card detected\n");
++
++	if (sc->driver_data & ATH9K_PCI_BT_ANT_DIV) {
++		pCap->hw_caps |= ATH9K_HW_CAP_BT_ANT_DIV;
++		ath_info(common, "Set BT/WLAN RX diversity capability\n");
++	}
++
++	if (sc->driver_data & ATH9K_PCI_D3_L1_WAR) {
++		ah->config.pcie_waen = 0x0040473b;
++		ath_info(common, "Enable WAR for ASPM D3/L1\n");
+ 	}
+ }
+ 
+@@ -584,6 +600,7 @@ static int ath9k_init_softc(u16 devid, s
+ {
+ 	struct ath9k_platform_data *pdata = sc->dev->platform_data;
+ 	struct ath_hw *ah = NULL;
++	struct ath9k_hw_capabilities *pCap;
+ 	struct ath_common *common;
+ 	int ret = 0, i;
+ 	int csz = 0;
+@@ -600,6 +617,7 @@ static int ath9k_init_softc(u16 devid, s
+ 	ah->reg_ops.rmw = ath9k_reg_rmw;
+ 	atomic_set(&ah->intr_ref_cnt, -1);
+ 	sc->sc_ah = ah;
++	pCap = &ah->caps;
+ 
+ 	sc->dfs_detector = dfs_pattern_detector_init(ah, NL80211_DFS_UNSET);
+ 
+@@ -631,11 +649,15 @@ static int ath9k_init_softc(u16 devid, s
+ 	ath9k_init_platform(sc);
+ 
+ 	/*
+-	 * Enable Antenna diversity only when BTCOEX is disabled
+-	 * and the user manually requests the feature.
++	 * Enable WLAN/BT RX Antenna diversity only when:
++	 *
++	 * - BTCOEX is disabled.
++	 * - the user manually requests the feature.
++	 * - the HW cap is set using the platform data.
+ 	 */
+-	if (!common->btcoex_enabled && ath9k_enable_diversity)
+-		common->antenna_diversity = 1;
++	if (!common->btcoex_enabled && ath9k_bt_ant_diversity &&
++	    (pCap->hw_caps & ATH9K_HW_CAP_BT_ANT_DIV))
++		common->bt_ant_diversity = 1;
+ 
+ 	spin_lock_init(&common->cc_lock);
+ 
+@@ -710,13 +732,15 @@ static void ath9k_init_band_txpower(stru
+ 	struct ieee80211_supported_band *sband;
+ 	struct ieee80211_channel *chan;
+ 	struct ath_hw *ah = sc->sc_ah;
++	struct cfg80211_chan_def chandef;
+ 	int i;
+ 
+ 	sband = &sc->sbands[band];
+ 	for (i = 0; i < sband->n_channels; i++) {
+ 		chan = &sband->channels[i];
+ 		ah->curchan = &ah->channels[chan->hw_value];
+-		ath9k_cmn_update_ichannel(ah->curchan, chan, NL80211_CHAN_HT20);
++		cfg80211_chandef_create(&chandef, chan, NL80211_CHAN_HT20);
++		ath9k_cmn_update_ichannel(ah->curchan, &chandef);
+ 		ath9k_hw_set_txpowerlimit(ah, MAX_RATE_POWER, true);
+ 	}
+ }
+@@ -802,7 +826,8 @@ void ath9k_set_hw_capab(struct ath_softc
  		IEEE80211_HW_PS_NULLFUNC_STACK |
  		IEEE80211_HW_SPECTRUM_MGMT |
  		IEEE80211_HW_REPORTS_TX_ACK_STATUS |
@@ -2852,7 +4730,38 @@
  	 * Don't set IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING for USB devices
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1499,6 +1499,7 @@ enum ieee80211_hw_flags {
+@@ -152,11 +152,14 @@ struct ieee80211_low_level_stats {
+  * @IEEE80211_CHANCTX_CHANGE_WIDTH: The channel width changed
+  * @IEEE80211_CHANCTX_CHANGE_RX_CHAINS: The number of RX chains changed
+  * @IEEE80211_CHANCTX_CHANGE_RADAR: radar detection flag changed
++ * @IEEE80211_CHANCTX_CHANGE_CHANNEL: switched to another operating channel,
++ *	this is used only with channel switching with CSA
+  */
+ enum ieee80211_chanctx_change {
+ 	IEEE80211_CHANCTX_CHANGE_WIDTH		= BIT(0),
+ 	IEEE80211_CHANCTX_CHANGE_RX_CHAINS	= BIT(1),
+ 	IEEE80211_CHANCTX_CHANGE_RADAR		= BIT(2),
++	IEEE80211_CHANCTX_CHANGE_CHANNEL	= BIT(3),
+ };
+ 
+ /**
+@@ -1080,6 +1083,7 @@ enum ieee80211_vif_flags {
+  * @addr: address of this interface
+  * @p2p: indicates whether this AP or STA interface is a p2p
+  *	interface, i.e. a GO or p2p-sta respectively
++ * @csa_active: marks whether a channel switch is going on
+  * @driver_flags: flags/capabilities the driver has for this interface,
+  *	these need to be set (or cleared) when the interface is added
+  *	or, if supported by the driver, the interface type is changed
+@@ -1102,6 +1106,7 @@ struct ieee80211_vif {
+ 	struct ieee80211_bss_conf bss_conf;
+ 	u8 addr[ETH_ALEN];
+ 	bool p2p;
++	bool csa_active;
+ 
+ 	u8 cab_queue;
+ 	u8 hw_queue[IEEE80211_NUM_ACS];
+@@ -1499,6 +1504,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_SUPPORTS_RC_TABLE			= 1<<24,
  	IEEE80211_HW_P2P_DEV_ADDR_FOR_INTF		= 1<<25,
  	IEEE80211_HW_TIMING_BEACON_ONLY			= 1<<26,
@@ -2860,3 +4769,2984 @@
  };
  
  /**
+@@ -2633,6 +2639,16 @@ enum ieee80211_roc_type {
+  * @ipv6_addr_change: IPv6 address assignment on the given interface changed.
+  *	Currently, this is only called for managed or P2P client interfaces.
+  *	This callback is optional; it must not sleep.
++ *
++ * @channel_switch_beacon: Starts a channel switch to a new channel.
++ *	Beacons are modified to include CSA or ECSA IEs before calling this
++ *	function. The corresponding count fields in these IEs must be
++ *	decremented, and when they reach zero the driver must call
++ *	ieee80211_csa_finish(). Drivers which use ieee80211_beacon_get()
++ *	get the csa counter decremented by mac80211, but must check if it is
++ *	zero using ieee80211_csa_is_complete() after the beacon has been
++ *	transmitted and then call ieee80211_csa_finish().
++ *
+  */
+ struct ieee80211_ops {
+ 	void (*tx)(struct ieee80211_hw *hw,
+@@ -2830,6 +2846,9 @@ struct ieee80211_ops {
+ 				 struct ieee80211_vif *vif,
+ 				 struct inet6_dev *idev);
+ #endif
++	void (*channel_switch_beacon)(struct ieee80211_hw *hw,
++				      struct ieee80211_vif *vif,
++				      struct cfg80211_chan_def *chandef);
+ };
+ 
+ /**
+@@ -3325,6 +3344,25 @@ static inline struct sk_buff *ieee80211_
+ }
+ 
+ /**
++ * ieee80211_csa_finish - notify mac80211 about channel switch
++ * @vif: &struct ieee80211_vif pointer from the add_interface callback.
++ *
++ * After a channel switch announcement was scheduled and the counter in this
++ * announcement hit zero, this function must be called by the driver to
++ * notify mac80211 that the channel can be changed.
++ */
++void ieee80211_csa_finish(struct ieee80211_vif *vif);
++
++/**
++ * ieee80211_csa_is_complete - find out if counters reached zero
++ * @vif: &struct ieee80211_vif pointer from the add_interface callback.
++ *
++ * This function returns whether the channel switch counters reached zero.
++ */
++bool ieee80211_csa_is_complete(struct ieee80211_vif *vif);
++
++
++/**
+  * ieee80211_proberesp_get - retrieve a Probe Response template
+  * @hw: pointer obtained from ieee80211_alloc_hw().
+  * @vif: &struct ieee80211_vif pointer from the add_interface callback.
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -854,8 +854,8 @@ static int ieee80211_set_probe_resp(stru
+ 	return 0;
+ }
+ 
+-static int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
+-				   struct cfg80211_beacon_data *params)
++int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
++			    struct cfg80211_beacon_data *params)
+ {
+ 	struct beacon_data *new, *old;
+ 	int new_head_len, new_tail_len;
+@@ -1018,6 +1018,12 @@ static int ieee80211_change_beacon(struc
+ 
+ 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+ 
++	/* don't allow changing the beacon while CSA is in place - offset
++	 * of channel switch counter may change
++	 */
++	if (sdata->vif.csa_active)
++		return -EBUSY;
++
+ 	old = rtnl_dereference(sdata->u.ap.beacon);
+ 	if (!old)
+ 		return -ENOENT;
+@@ -1042,6 +1048,10 @@ static int ieee80211_stop_ap(struct wiph
+ 		return -ENOENT;
+ 	old_probe_resp = rtnl_dereference(sdata->u.ap.probe_resp);
+ 
++	/* abort any running channel switch */
++	sdata->vif.csa_active = false;
++	cancel_work_sync(&sdata->csa_finalize_work);
++
+ 	/* turn off carrier for this interface and dependent VLANs */
+ 	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list)
+ 		netif_carrier_off(vlan->dev);
+@@ -2784,6 +2794,178 @@ static int ieee80211_start_radar_detecti
+ 	return 0;
+ }
+ 
++static struct cfg80211_beacon_data *
++cfg80211_beacon_dup(struct cfg80211_beacon_data *beacon)
++{
++	struct cfg80211_beacon_data *new_beacon;
++	u8 *pos;
++	int len;
++
++	len = beacon->head_len + beacon->tail_len + beacon->beacon_ies_len +
++	      beacon->proberesp_ies_len + beacon->assocresp_ies_len +
++	      beacon->probe_resp_len;
++
++	new_beacon = kzalloc(sizeof(*new_beacon) + len, GFP_KERNEL);
++	if (!new_beacon)
++		return NULL;
++
++	pos = (u8 *)(new_beacon + 1);
++	if (beacon->head_len) {
++		new_beacon->head_len = beacon->head_len;
++		new_beacon->head = pos;
++		memcpy(pos, beacon->head, beacon->head_len);
++		pos += beacon->head_len;
++	}
++	if (beacon->tail_len) {
++		new_beacon->tail_len = beacon->tail_len;
++		new_beacon->tail = pos;
++		memcpy(pos, beacon->tail, beacon->tail_len);
++		pos += beacon->tail_len;
++	}
++	if (beacon->beacon_ies_len) {
++		new_beacon->beacon_ies_len = beacon->beacon_ies_len;
++		new_beacon->beacon_ies = pos;
++		memcpy(pos, beacon->beacon_ies, beacon->beacon_ies_len);
++		pos += beacon->beacon_ies_len;
++	}
++	if (beacon->proberesp_ies_len) {
++		new_beacon->proberesp_ies_len = beacon->proberesp_ies_len;
++		new_beacon->proberesp_ies = pos;
++		memcpy(pos, beacon->proberesp_ies, beacon->proberesp_ies_len);
++		pos += beacon->proberesp_ies_len;
++	}
++	if (beacon->assocresp_ies_len) {
++		new_beacon->assocresp_ies_len = beacon->assocresp_ies_len;
++		new_beacon->assocresp_ies = pos;
++		memcpy(pos, beacon->assocresp_ies, beacon->assocresp_ies_len);
++		pos += beacon->assocresp_ies_len;
++	}
++	if (beacon->probe_resp_len) {
++		new_beacon->probe_resp_len = beacon->probe_resp_len;
++		beacon->probe_resp = pos;
++		memcpy(pos, beacon->probe_resp, beacon->probe_resp_len);
++		pos += beacon->probe_resp_len;
++	}
++
++	return new_beacon;
++}
++
++void ieee80211_csa_finalize_work(struct work_struct *work)
++{
++	struct ieee80211_sub_if_data *sdata =
++		container_of(work, struct ieee80211_sub_if_data,
++			     csa_finalize_work);
++	struct ieee80211_local *local = sdata->local;
++	int err, changed;
++
++	if (!ieee80211_sdata_running(sdata))
++		return;
++
++	if (WARN_ON(sdata->vif.type != NL80211_IFTYPE_AP))
++		return;
++
++	sdata->radar_required = sdata->csa_radar_required;
++	err = ieee80211_vif_change_channel(sdata, &local->csa_chandef,
++					   &changed);
++	if (WARN_ON(err < 0))
++		return;
++
++	err = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon);
++	if (err < 0)
++		return;
++
++	changed |= err;
++	kfree(sdata->u.ap.next_beacon);
++	sdata->u.ap.next_beacon = NULL;
++	sdata->vif.csa_active = false;
++
++	ieee80211_wake_queues_by_reason(&sdata->local->hw,
++					IEEE80211_MAX_QUEUE_MAP,
++					IEEE80211_QUEUE_STOP_REASON_CSA);
++
++	ieee80211_bss_info_change_notify(sdata, changed);
++
++	cfg80211_ch_switch_notify(sdata->dev, &local->csa_chandef);
++}
++
++static int ieee80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
++				    struct cfg80211_csa_settings *params)
++{
++	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_chanctx_conf *chanctx_conf;
++	struct ieee80211_chanctx *chanctx;
++	int err, num_chanctx;
++
++	if (!list_empty(&local->roc_list) || local->scanning)
++		return -EBUSY;
++
++	if (sdata->wdev.cac_started)
++		return -EBUSY;
++
++	if (cfg80211_chandef_identical(&params->chandef,
++				       &sdata->vif.bss_conf.chandef))
++		return -EINVAL;
++
++	rcu_read_lock();
++	chanctx_conf = rcu_dereference(sdata->vif.chanctx_conf);
++	if (!chanctx_conf) {
++		rcu_read_unlock();
++		return -EBUSY;
++	}
++
++	/* don't handle for multi-VIF cases */
++	chanctx = container_of(chanctx_conf, struct ieee80211_chanctx, conf);
++	if (chanctx->refcount > 1) {
++		rcu_read_unlock();
++		return -EBUSY;
++	}
++	num_chanctx = 0;
++	list_for_each_entry_rcu(chanctx, &local->chanctx_list, list)
++		num_chanctx++;
++	rcu_read_unlock();
++
++	if (num_chanctx > 1)
++		return -EBUSY;
++
++	/* don't allow another channel switch if one is already active. */
++	if (sdata->vif.csa_active)
++		return -EBUSY;
++
++	/* only handle AP for now. */
++	switch (sdata->vif.type) {
++	case NL80211_IFTYPE_AP:
++		break;
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	sdata->u.ap.next_beacon = cfg80211_beacon_dup(&params->beacon_after);
++	if (!sdata->u.ap.next_beacon)
++		return -ENOMEM;
++
++	sdata->csa_counter_offset_beacon = params->counter_offset_beacon;
++	sdata->csa_counter_offset_presp = params->counter_offset_presp;
++	sdata->csa_radar_required = params->radar_required;
++
++	if (params->block_tx)
++		ieee80211_stop_queues_by_reason(&local->hw,
++				IEEE80211_MAX_QUEUE_MAP,
++				IEEE80211_QUEUE_STOP_REASON_CSA);
++
++	err = ieee80211_assign_beacon(sdata, &params->beacon_csa);
++	if (err < 0)
++		return err;
++
++	local->csa_chandef = params->chandef;
++	sdata->vif.csa_active = true;
++
++	ieee80211_bss_info_change_notify(sdata, err);
++	drv_channel_switch_beacon(sdata, &params->chandef);
++
++	return 0;
++}
++
+ static int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
+ 			     struct ieee80211_channel *chan, bool offchan,
+ 			     unsigned int wait, const u8 *buf, size_t len,
+@@ -3501,4 +3683,5 @@ struct cfg80211_ops mac80211_config_ops 
+ 	.get_et_strings = ieee80211_get_et_strings,
+ 	.get_channel = ieee80211_cfg_get_channel,
+ 	.start_radar_detection = ieee80211_start_radar_detection,
++	.channel_switch = ieee80211_channel_switch,
+ };
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -410,6 +410,64 @@ int ieee80211_vif_use_channel(struct iee
+ 	return ret;
+ }
+ 
++int ieee80211_vif_change_channel(struct ieee80211_sub_if_data *sdata,
++				 const struct cfg80211_chan_def *chandef,
++				 u32 *changed)
++{
++	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_chanctx_conf *conf;
++	struct ieee80211_chanctx *ctx;
++	int ret;
++	u32 chanctx_changed = 0;
++
++	/* should never be called if not performing a channel switch. */
++	if (WARN_ON(!sdata->vif.csa_active))
++		return -EINVAL;
++
++	if (!cfg80211_chandef_usable(sdata->local->hw.wiphy, chandef,
++				     IEEE80211_CHAN_DISABLED))
++		return -EINVAL;
++
++	mutex_lock(&local->chanctx_mtx);
++	conf = rcu_dereference_protected(sdata->vif.chanctx_conf,
++					 lockdep_is_held(&local->chanctx_mtx));
++	if (!conf) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	ctx = container_of(conf, struct ieee80211_chanctx, conf);
++	if (ctx->refcount != 1) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (sdata->vif.bss_conf.chandef.width != chandef->width) {
++		chanctx_changed = IEEE80211_CHANCTX_CHANGE_WIDTH;
++		*changed |= BSS_CHANGED_BANDWIDTH;
++	}
++
++	sdata->vif.bss_conf.chandef = *chandef;
++	ctx->conf.def = *chandef;
++
++	chanctx_changed |= IEEE80211_CHANCTX_CHANGE_CHANNEL;
++	drv_change_chanctx(local, ctx, chanctx_changed);
++
++	if (!local->use_chanctx) {
++		local->_oper_chandef = *chandef;
++		ieee80211_hw_config(local, 0);
++	}
++
++	ieee80211_recalc_chanctx_chantype(local, ctx);
++	ieee80211_recalc_smps_chanctx(local, ctx);
++	ieee80211_recalc_radar_chanctx(local, ctx);
++
++	ret = 0;
++ out:
++	mutex_unlock(&local->chanctx_mtx);
++	return ret;
++}
++
+ int ieee80211_vif_change_bandwidth(struct ieee80211_sub_if_data *sdata,
+ 				   const struct cfg80211_chan_def *chandef,
+ 				   u32 *changed)
+--- a/net/mac80211/driver-ops.h
++++ b/net/mac80211/driver-ops.h
+@@ -1104,4 +1104,17 @@ static inline void drv_ipv6_addr_change(
+ }
+ #endif
+ 
++static inline void
++drv_channel_switch_beacon(struct ieee80211_sub_if_data *sdata,
++			  struct cfg80211_chan_def *chandef)
++{
++	struct ieee80211_local *local = sdata->local;
++
++	if (local->ops->channel_switch_beacon) {
++		trace_drv_channel_switch_beacon(local, sdata, chandef);
++		local->ops->channel_switch_beacon(&local->hw, &sdata->vif,
++						  chandef);
++	}
++}
++
+ #endif /* __MAC80211_DRIVER_OPS */
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -53,9 +53,6 @@ struct ieee80211_local;
+  * increased memory use (about 2 kB of RAM per entry). */
+ #define IEEE80211_FRAGMENT_MAX 4
+ 
+-#define TU_TO_JIFFIES(x)	(usecs_to_jiffies((x) * 1024))
+-#define TU_TO_EXP_TIME(x)	(jiffies + TU_TO_JIFFIES(x))
+-
+ /* power level hasn't been configured (or set to automatic) */
+ #define IEEE80211_UNSET_POWER_LEVEL	INT_MIN
+ 
+@@ -259,6 +256,8 @@ struct ieee80211_if_ap {
+ 	struct beacon_data __rcu *beacon;
+ 	struct probe_resp __rcu *probe_resp;
+ 
++	/* to be used after channel switch. */
++	struct cfg80211_beacon_data *next_beacon;
+ 	struct list_head vlans;
+ 
+ 	struct ps_data ps;
+@@ -713,6 +712,11 @@ struct ieee80211_sub_if_data {
+ 
+ 	struct ieee80211_tx_queue_params tx_conf[IEEE80211_NUM_ACS];
+ 
++	struct work_struct csa_finalize_work;
++	int csa_counter_offset_beacon;
++	int csa_counter_offset_presp;
++	bool csa_radar_required;
++
+ 	/* used to reconfigure hardware SM PS */
+ 	struct work_struct recalc_smps;
+ 
+@@ -1346,6 +1350,9 @@ void ieee80211_roc_notify_destroy(struct
+ void ieee80211_sw_roc_work(struct work_struct *work);
+ void ieee80211_handle_roc_started(struct ieee80211_roc_work *roc);
+ 
++/* channel switch handling */
++void ieee80211_csa_finalize_work(struct work_struct *work);
++
+ /* interface handling */
+ int ieee80211_iface_init(void);
+ void ieee80211_iface_exit(void);
+@@ -1367,6 +1374,8 @@ void ieee80211_del_virtual_monitor(struc
+ 
+ bool __ieee80211_recalc_txpower(struct ieee80211_sub_if_data *sdata);
+ void ieee80211_recalc_txpower(struct ieee80211_sub_if_data *sdata);
++int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
++			    struct cfg80211_beacon_data *params);
+ 
+ static inline bool ieee80211_sdata_running(struct ieee80211_sub_if_data *sdata)
+ {
+@@ -1627,6 +1636,11 @@ int __must_check
+ ieee80211_vif_change_bandwidth(struct ieee80211_sub_if_data *sdata,
+ 			       const struct cfg80211_chan_def *chandef,
+ 			       u32 *changed);
++/* NOTE: only use ieee80211_vif_change_channel() for channel switch */
++int __must_check
++ieee80211_vif_change_channel(struct ieee80211_sub_if_data *sdata,
++			     const struct cfg80211_chan_def *chandef,
++			     u32 *changed);
+ void ieee80211_vif_release_channel(struct ieee80211_sub_if_data *sdata);
+ void ieee80211_vif_vlan_copy_chanctx(struct ieee80211_sub_if_data *sdata);
+ void ieee80211_vif_copy_chanctx_to_vlans(struct ieee80211_sub_if_data *sdata,
+--- a/net/mac80211/trace.h
++++ b/net/mac80211/trace.h
+@@ -1906,6 +1906,32 @@ TRACE_EVENT(api_radar_detected,
+ 	)
+ );
+ 
++TRACE_EVENT(drv_channel_switch_beacon,
++	TP_PROTO(struct ieee80211_local *local,
++		 struct ieee80211_sub_if_data *sdata,
++		 struct cfg80211_chan_def *chandef),
++
++	TP_ARGS(local, sdata, chandef),
++
++	TP_STRUCT__entry(
++		LOCAL_ENTRY
++		VIF_ENTRY
++		CHANDEF_ENTRY
++	),
++
++	TP_fast_assign(
++		LOCAL_ASSIGN;
++		VIF_ASSIGN;
++		CHANDEF_ASSIGN(chandef);
++	),
++
++	TP_printk(
++		LOCAL_PR_FMT VIF_PR_FMT " channel switch to " CHANDEF_PR_FMT,
++		LOCAL_PR_ARG, VIF_PR_ARG, CHANDEF_PR_ARG
++	)
++);
++
++
+ #ifdef CPTCFG_MAC80211_MESSAGE_TRACING
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM mac80211_msg
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2326,6 +2326,81 @@ static int ieee80211_beacon_add_tim(stru
+ 	return 0;
+ }
+ 
++void ieee80211_csa_finish(struct ieee80211_vif *vif)
++{
++	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
++
++	ieee80211_queue_work(&sdata->local->hw,
++			     &sdata->csa_finalize_work);
++}
++EXPORT_SYMBOL(ieee80211_csa_finish);
++
++static void ieee80211_update_csa(struct ieee80211_sub_if_data *sdata,
++				 struct beacon_data *beacon)
++{
++	struct probe_resp *resp;
++	int counter_offset_beacon = sdata->csa_counter_offset_beacon;
++	int counter_offset_presp = sdata->csa_counter_offset_presp;
++
++	/* warn if the driver did not check for/react to csa completeness */
++	if (WARN_ON(((u8 *)beacon->tail)[counter_offset_beacon] == 0))
++		return;
++
++	((u8 *)beacon->tail)[counter_offset_beacon]--;
++
++	if (sdata->vif.type == NL80211_IFTYPE_AP &&
++	    counter_offset_presp) {
++		rcu_read_lock();
++		resp = rcu_dereference(sdata->u.ap.probe_resp);
++
++		/* if nl80211 accepted the offset, this should not happen. */
++		if (WARN_ON(!resp)) {
++			rcu_read_unlock();
++			return;
++		}
++		resp->data[counter_offset_presp]--;
++		rcu_read_unlock();
++	}
++}
++
++bool ieee80211_csa_is_complete(struct ieee80211_vif *vif)
++{
++	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
++	struct beacon_data *beacon = NULL;
++	u8 *beacon_data;
++	size_t beacon_data_len;
++	int counter_beacon = sdata->csa_counter_offset_beacon;
++	int ret = false;
++
++	if (!ieee80211_sdata_running(sdata))
++		return false;
++
++	rcu_read_lock();
++	if (vif->type == NL80211_IFTYPE_AP) {
++		struct ieee80211_if_ap *ap = &sdata->u.ap;
++
++		beacon = rcu_dereference(ap->beacon);
++		if (WARN_ON(!beacon || !beacon->tail))
++			goto out;
++		beacon_data = beacon->tail;
++		beacon_data_len = beacon->tail_len;
++	} else {
++		WARN_ON(1);
++		goto out;
++	}
++
++	if (WARN_ON(counter_beacon > beacon_data_len))
++		goto out;
++
++	if (beacon_data[counter_beacon] == 0)
++		ret = true;
++ out:
++	rcu_read_unlock();
++
++	return ret;
++}
++EXPORT_SYMBOL(ieee80211_csa_is_complete);
++
+ struct sk_buff *ieee80211_beacon_get_tim(struct ieee80211_hw *hw,
+ 					 struct ieee80211_vif *vif,
+ 					 u16 *tim_offset, u16 *tim_length)
+@@ -2356,6 +2431,9 @@ struct sk_buff *ieee80211_beacon_get_tim
+ 		struct beacon_data *beacon = rcu_dereference(ap->beacon);
+ 
+ 		if (beacon) {
++			if (sdata->vif.csa_active)
++				ieee80211_update_csa(sdata, beacon);
++
+ 			/*
+ 			 * headroom, head length,
+ 			 * tail length and maximum TIM length
+--- a/net/wireless/rdev-ops.h
++++ b/net/wireless/rdev-ops.h
+@@ -923,4 +923,16 @@ static inline void rdev_crit_proto_stop(
+ 	trace_rdev_return_void(&rdev->wiphy);
+ }
+ 
++static inline int rdev_channel_switch(struct cfg80211_registered_device *rdev,
++				      struct net_device *dev,
++				      struct cfg80211_csa_settings *params)
++{
++	int ret;
++
++	trace_rdev_channel_switch(&rdev->wiphy, dev, params);
++	ret = rdev->ops->channel_switch(&rdev->wiphy, dev, params);
++	trace_rdev_return_int(&rdev->wiphy, ret);
++	return ret;
++}
++
+ #endif /* __CFG80211_RDEV_OPS */
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -1841,6 +1841,39 @@ TRACE_EVENT(rdev_crit_proto_stop,
+ 		  WIPHY_PR_ARG, WDEV_PR_ARG)
+ );
+ 
++TRACE_EVENT(rdev_channel_switch,
++	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev,
++		 struct cfg80211_csa_settings *params),
++	TP_ARGS(wiphy, netdev, params),
++	TP_STRUCT__entry(
++		WIPHY_ENTRY
++		NETDEV_ENTRY
++		CHAN_DEF_ENTRY
++		__field(u16, counter_offset_beacon)
++		__field(u16, counter_offset_presp)
++		__field(bool, radar_required)
++		__field(bool, block_tx)
++		__field(u8, count)
++	),
++	TP_fast_assign(
++		WIPHY_ASSIGN;
++		NETDEV_ASSIGN;
++		CHAN_DEF_ASSIGN(&params->chandef);
++		__entry->counter_offset_beacon = params->counter_offset_beacon;
++		__entry->counter_offset_presp = params->counter_offset_presp;
++		__entry->radar_required = params->radar_required;
++		__entry->block_tx = params->block_tx;
++		__entry->count = params->count;
++	),
++	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT ", " CHAN_DEF_PR_FMT
++		  ", block_tx: %d, count: %u, radar_required: %d"
++		  ", counter offsets (beacon/presp): %u/%u",
++		  WIPHY_PR_ARG, NETDEV_PR_ARG, CHAN_DEF_PR_ARG,
++		  __entry->block_tx, __entry->count, __entry->radar_required,
++		  __entry->counter_offset_beacon,
++		  __entry->counter_offset_presp)
++);
++
+ /*************************************************************
+  *	     cfg80211 exported functions traces		     *
+  *************************************************************/
+--- a/drivers/net/wireless/ath/ath.h
++++ b/drivers/net/wireless/ath/ath.h
+@@ -159,7 +159,7 @@ struct ath_common {
+ 
+ 	bool btcoex_enabled;
+ 	bool disable_ani;
+-	bool antenna_diversity;
++	bool bt_ant_diversity;
+ };
+ 
+ struct sk_buff *ath_rxbuf_alloc(struct ath_common *common,
+--- a/drivers/net/wireless/ath/ath9k/antenna.c
++++ b/drivers/net/wireless/ath/ath9k/antenna.c
+@@ -16,37 +16,119 @@
+ 
+ #include "ath9k.h"
+ 
+-static inline bool ath_is_alt_ant_ratio_better(int alt_ratio, int maxdelta,
++/*
++ * AR9285
++ * ======
++ *
++ * EEPROM has 2 4-bit fields containing the card configuration.
++ *
++ * antdiv_ctl1:
++ * ------------
++ * bb_enable_ant_div_lnadiv : 1
++ * bb_ant_div_alt_gaintb    : 1
++ * bb_ant_div_main_gaintb   : 1
++ * bb_enable_ant_fast_div   : 1
++ *
++ * antdiv_ctl2:
++ * -----------
++ * bb_ant_div_alt_lnaconf  : 2
++ * bb_ant_div_main_lnaconf : 2
++ *
++ * The EEPROM bits are used as follows:
++ * ------------------------------------
++ *
++ * bb_enable_ant_div_lnadiv      - Enable LNA path rx antenna diversity/combining.
++ *                                 Set in AR_PHY_MULTICHAIN_GAIN_CTL.
++ *
++ * bb_ant_div_[alt/main]_gaintb  - 0 -> Antenna config Alt/Main uses gaintable 0
++ *                                 1 -> Antenna config Alt/Main uses gaintable 1
++ *                                 Set in AR_PHY_MULTICHAIN_GAIN_CTL.
++ *
++ * bb_enable_ant_fast_div        - Enable fast antenna diversity.
++ *                                 Set in AR_PHY_CCK_DETECT.
++ *
++ * bb_ant_div_[alt/main]_lnaconf - Alt/Main LNA diversity/combining input config.
++ *                                 Set in AR_PHY_MULTICHAIN_GAIN_CTL.
++ *                                 10=LNA1
++ *                                 01=LNA2
++ *                                 11=LNA1+LNA2
++ *                                 00=LNA1-LNA2
++ *
++ * AR9485 / AR9565 / AR9331
++ * ========================
++ *
++ * The same bits are present in the EEPROM, but the location in the
++ * EEPROM is different (ant_div_control in ar9300_BaseExtension_1).
++ *
++ * ant_div_alt_lnaconf      ==> bit 0~1
++ * ant_div_main_lnaconf     ==> bit 2~3
++ * ant_div_alt_gaintb       ==> bit 4
++ * ant_div_main_gaintb      ==> bit 5
++ * enable_ant_div_lnadiv    ==> bit 6
++ * enable_ant_fast_div      ==> bit 7
++ */
++
++static inline bool ath_is_alt_ant_ratio_better(struct ath_ant_comb *antcomb,
++					       int alt_ratio, int maxdelta,
+ 					       int mindelta, int main_rssi_avg,
+ 					       int alt_rssi_avg, int pkt_count)
+ {
+-	return (((alt_ratio >= ATH_ANT_DIV_COMB_ALT_ANT_RATIO2) &&
+-		 (alt_rssi_avg > main_rssi_avg + maxdelta)) ||
+-		(alt_rssi_avg > main_rssi_avg + mindelta)) && (pkt_count > 50);
++	if (pkt_count <= 50)
++		return false;
++
++	if (alt_rssi_avg > main_rssi_avg + mindelta)
++		return true;
++
++	if (alt_ratio >= antcomb->ant_ratio2 &&
++	    alt_rssi_avg >= antcomb->low_rssi_thresh &&
++	    (alt_rssi_avg > main_rssi_avg + maxdelta))
++		return true;
++
++	return false;
+ }
+ 
+-static inline bool ath_ant_div_comb_alt_check(u8 div_group, int alt_ratio,
+-					      int curr_main_set, int curr_alt_set,
+-					      int alt_rssi_avg, int main_rssi_avg)
++static inline bool ath_ant_div_comb_alt_check(struct ath_hw_antcomb_conf *conf,
++					      struct ath_ant_comb *antcomb,
++					      int alt_ratio, int alt_rssi_avg,
++					      int main_rssi_avg)
+ {
+-	bool result = false;
+-	switch (div_group) {
++	bool result, set1, set2;
++
++	result = set1 = set2 = false;
++
++	if (conf->main_lna_conf == ATH_ANT_DIV_COMB_LNA2 &&
++	    conf->alt_lna_conf == ATH_ANT_DIV_COMB_LNA1)
++		set1 = true;
++
++	if (conf->main_lna_conf == ATH_ANT_DIV_COMB_LNA1 &&
++	    conf->alt_lna_conf == ATH_ANT_DIV_COMB_LNA2)
++		set2 = true;
++
++	switch (conf->div_group) {
+ 	case 0:
+ 		if (alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO)
+ 			result = true;
+ 		break;
+ 	case 1:
+ 	case 2:
+-		if ((((curr_main_set == ATH_ANT_DIV_COMB_LNA2) &&
+-		      (curr_alt_set == ATH_ANT_DIV_COMB_LNA1) &&
+-		      (alt_rssi_avg >= (main_rssi_avg - 5))) ||
+-		     ((curr_main_set == ATH_ANT_DIV_COMB_LNA1) &&
+-		      (curr_alt_set == ATH_ANT_DIV_COMB_LNA2) &&
+-		      (alt_rssi_avg >= (main_rssi_avg - 2)))) &&
+-		    (alt_rssi_avg >= 4))
++		if (alt_rssi_avg < 4 || alt_rssi_avg < antcomb->low_rssi_thresh)
++			break;
++
++		if ((set1 && (alt_rssi_avg >= (main_rssi_avg - 5))) ||
++		    (set2 && (alt_rssi_avg >= (main_rssi_avg - 2))) ||
++		    (alt_ratio > antcomb->ant_ratio))
+ 			result = true;
+-		else
+-			result = false;
++
++		break;
++	case 3:
++		if (alt_rssi_avg < 4 || alt_rssi_avg < antcomb->low_rssi_thresh)
++			break;
++
++		if ((set1 && (alt_rssi_avg >= (main_rssi_avg - 3))) ||
++		    (set2 && (alt_rssi_avg >= (main_rssi_avg + 3))) ||
++		    (alt_ratio > antcomb->ant_ratio))
++			result = true;
++
+ 		break;
+ 	}
+ 
+@@ -108,6 +190,74 @@ static void ath_lnaconf_alt_good_scan(st
+ 	}
+ }
+ 
++static void ath_ant_set_alt_ratio(struct ath_ant_comb *antcomb,
++				  struct ath_hw_antcomb_conf *conf)
++{
++	/* set alt to the conf with maximun ratio */
++	if (antcomb->first_ratio && antcomb->second_ratio) {
++		if (antcomb->rssi_second > antcomb->rssi_third) {
++			/* first alt*/
++			if ((antcomb->first_quick_scan_conf == ATH_ANT_DIV_COMB_LNA1) ||
++			    (antcomb->first_quick_scan_conf == ATH_ANT_DIV_COMB_LNA2))
++				/* Set alt LNA1 or LNA2*/
++				if (conf->main_lna_conf == ATH_ANT_DIV_COMB_LNA2)
++					conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++				else
++					conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++			else
++				/* Set alt to A+B or A-B */
++				conf->alt_lna_conf =
++					antcomb->first_quick_scan_conf;
++		} else if ((antcomb->second_quick_scan_conf == ATH_ANT_DIV_COMB_LNA1) ||
++			   (antcomb->second_quick_scan_conf == ATH_ANT_DIV_COMB_LNA2)) {
++			/* Set alt LNA1 or LNA2 */
++			if (conf->main_lna_conf == ATH_ANT_DIV_COMB_LNA2)
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++			else
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++		} else {
++			/* Set alt to A+B or A-B */
++			conf->alt_lna_conf = antcomb->second_quick_scan_conf;
++		}
++	} else if (antcomb->first_ratio) {
++		/* first alt */
++		if ((antcomb->first_quick_scan_conf == ATH_ANT_DIV_COMB_LNA1) ||
++		    (antcomb->first_quick_scan_conf == ATH_ANT_DIV_COMB_LNA2))
++			/* Set alt LNA1 or LNA2 */
++			if (conf->main_lna_conf == ATH_ANT_DIV_COMB_LNA2)
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++			else
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++		else
++			/* Set alt to A+B or A-B */
++			conf->alt_lna_conf = antcomb->first_quick_scan_conf;
++	} else if (antcomb->second_ratio) {
++		/* second alt */
++		if ((antcomb->second_quick_scan_conf == ATH_ANT_DIV_COMB_LNA1) ||
++		    (antcomb->second_quick_scan_conf == ATH_ANT_DIV_COMB_LNA2))
++			/* Set alt LNA1 or LNA2 */
++			if (conf->main_lna_conf == ATH_ANT_DIV_COMB_LNA2)
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++			else
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++		else
++			/* Set alt to A+B or A-B */
++			conf->alt_lna_conf = antcomb->second_quick_scan_conf;
++	} else {
++		/* main is largest */
++		if ((antcomb->main_conf == ATH_ANT_DIV_COMB_LNA1) ||
++		    (antcomb->main_conf == ATH_ANT_DIV_COMB_LNA2))
++			/* Set alt LNA1 or LNA2 */
++			if (conf->main_lna_conf == ATH_ANT_DIV_COMB_LNA2)
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++			else
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++		else
++			/* Set alt to A+B or A-B */
++			conf->alt_lna_conf = antcomb->main_conf;
++	}
++}
++
+ static void ath_select_ant_div_from_quick_scan(struct ath_ant_comb *antcomb,
+ 				       struct ath_hw_antcomb_conf *div_ant_conf,
+ 				       int main_rssi_avg, int alt_rssi_avg,
+@@ -129,7 +279,7 @@ static void ath_select_ant_div_from_quic
+ 
+ 		if (antcomb->main_conf == ATH_ANT_DIV_COMB_LNA1) {
+ 			/* main is LNA1 */
+-			if (ath_is_alt_ant_ratio_better(alt_ratio,
++			if (ath_is_alt_ant_ratio_better(antcomb, alt_ratio,
+ 						ATH_ANT_DIV_COMB_LNA1_DELTA_HI,
+ 						ATH_ANT_DIV_COMB_LNA1_DELTA_LOW,
+ 						main_rssi_avg, alt_rssi_avg,
+@@ -138,7 +288,7 @@ static void ath_select_ant_div_from_quic
+ 			else
+ 				antcomb->first_ratio = false;
+ 		} else if (antcomb->main_conf == ATH_ANT_DIV_COMB_LNA2) {
+-			if (ath_is_alt_ant_ratio_better(alt_ratio,
++			if (ath_is_alt_ant_ratio_better(antcomb, alt_ratio,
+ 						ATH_ANT_DIV_COMB_LNA1_DELTA_MID,
+ 						ATH_ANT_DIV_COMB_LNA1_DELTA_LOW,
+ 						main_rssi_avg, alt_rssi_avg,
+@@ -147,11 +297,11 @@ static void ath_select_ant_div_from_quic
+ 			else
+ 				antcomb->first_ratio = false;
+ 		} else {
+-			if ((((alt_ratio >= ATH_ANT_DIV_COMB_ALT_ANT_RATIO2) &&
+-			      (alt_rssi_avg > main_rssi_avg +
+-			       ATH_ANT_DIV_COMB_LNA1_DELTA_HI)) ||
+-			     (alt_rssi_avg > main_rssi_avg)) &&
+-			    (antcomb->total_pkt_count > 50))
++			if (ath_is_alt_ant_ratio_better(antcomb, alt_ratio,
++						ATH_ANT_DIV_COMB_LNA1_DELTA_HI,
++						0,
++						main_rssi_avg, alt_rssi_avg,
++						antcomb->total_pkt_count))
+ 				antcomb->first_ratio = true;
+ 			else
+ 				antcomb->first_ratio = false;
+@@ -164,17 +314,21 @@ static void ath_select_ant_div_from_quic
+ 		antcomb->rssi_first = main_rssi_avg;
+ 		antcomb->rssi_third = alt_rssi_avg;
+ 
+-		if (antcomb->second_quick_scan_conf == ATH_ANT_DIV_COMB_LNA1)
++		switch(antcomb->second_quick_scan_conf) {
++		case ATH_ANT_DIV_COMB_LNA1:
+ 			antcomb->rssi_lna1 = alt_rssi_avg;
+-		else if (antcomb->second_quick_scan_conf ==
+-			 ATH_ANT_DIV_COMB_LNA2)
++			break;
++		case ATH_ANT_DIV_COMB_LNA2:
+ 			antcomb->rssi_lna2 = alt_rssi_avg;
+-		else if (antcomb->second_quick_scan_conf ==
+-			 ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2) {
++			break;
++		case ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2:
+ 			if (antcomb->main_conf == ATH_ANT_DIV_COMB_LNA2)
+ 				antcomb->rssi_lna2 = main_rssi_avg;
+ 			else if (antcomb->main_conf == ATH_ANT_DIV_COMB_LNA1)
+ 				antcomb->rssi_lna1 = main_rssi_avg;
++			break;
++		default:
++			break;
+ 		}
+ 
+ 		if (antcomb->rssi_lna2 > antcomb->rssi_lna1 +
+@@ -184,7 +338,7 @@ static void ath_select_ant_div_from_quic
+ 			div_ant_conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA1;
+ 
+ 		if (antcomb->main_conf == ATH_ANT_DIV_COMB_LNA1) {
+-			if (ath_is_alt_ant_ratio_better(alt_ratio,
++			if (ath_is_alt_ant_ratio_better(antcomb, alt_ratio,
+ 						ATH_ANT_DIV_COMB_LNA1_DELTA_HI,
+ 						ATH_ANT_DIV_COMB_LNA1_DELTA_LOW,
+ 						main_rssi_avg, alt_rssi_avg,
+@@ -193,7 +347,7 @@ static void ath_select_ant_div_from_quic
+ 			else
+ 				antcomb->second_ratio = false;
+ 		} else if (antcomb->main_conf == ATH_ANT_DIV_COMB_LNA2) {
+-			if (ath_is_alt_ant_ratio_better(alt_ratio,
++			if (ath_is_alt_ant_ratio_better(antcomb, alt_ratio,
+ 						ATH_ANT_DIV_COMB_LNA1_DELTA_MID,
+ 						ATH_ANT_DIV_COMB_LNA1_DELTA_LOW,
+ 						main_rssi_avg, alt_rssi_avg,
+@@ -202,105 +356,18 @@ static void ath_select_ant_div_from_quic
+ 			else
+ 				antcomb->second_ratio = false;
+ 		} else {
+-			if ((((alt_ratio >= ATH_ANT_DIV_COMB_ALT_ANT_RATIO2) &&
+-			      (alt_rssi_avg > main_rssi_avg +
+-			       ATH_ANT_DIV_COMB_LNA1_DELTA_HI)) ||
+-			     (alt_rssi_avg > main_rssi_avg)) &&
+-			    (antcomb->total_pkt_count > 50))
++			if (ath_is_alt_ant_ratio_better(antcomb, alt_ratio,
++						ATH_ANT_DIV_COMB_LNA1_DELTA_HI,
++						0,
++						main_rssi_avg, alt_rssi_avg,
++						antcomb->total_pkt_count))
+ 				antcomb->second_ratio = true;
+ 			else
+ 				antcomb->second_ratio = false;
+ 		}
+ 
+-		/* set alt to the conf with maximun ratio */
+-		if (antcomb->first_ratio && antcomb->second_ratio) {
+-			if (antcomb->rssi_second > antcomb->rssi_third) {
+-				/* first alt*/
+-				if ((antcomb->first_quick_scan_conf ==
+-				    ATH_ANT_DIV_COMB_LNA1) ||
+-				    (antcomb->first_quick_scan_conf ==
+-				    ATH_ANT_DIV_COMB_LNA2))
+-					/* Set alt LNA1 or LNA2*/
+-					if (div_ant_conf->main_lna_conf ==
+-					    ATH_ANT_DIV_COMB_LNA2)
+-						div_ant_conf->alt_lna_conf =
+-							ATH_ANT_DIV_COMB_LNA1;
+-					else
+-						div_ant_conf->alt_lna_conf =
+-							ATH_ANT_DIV_COMB_LNA2;
+-				else
+-					/* Set alt to A+B or A-B */
+-					div_ant_conf->alt_lna_conf =
+-						antcomb->first_quick_scan_conf;
+-			} else if ((antcomb->second_quick_scan_conf ==
+-				   ATH_ANT_DIV_COMB_LNA1) ||
+-				   (antcomb->second_quick_scan_conf ==
+-				   ATH_ANT_DIV_COMB_LNA2)) {
+-				/* Set alt LNA1 or LNA2 */
+-				if (div_ant_conf->main_lna_conf ==
+-				    ATH_ANT_DIV_COMB_LNA2)
+-					div_ant_conf->alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
+-				else
+-					div_ant_conf->alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
+-			} else {
+-				/* Set alt to A+B or A-B */
+-				div_ant_conf->alt_lna_conf =
+-					antcomb->second_quick_scan_conf;
+-			}
+-		} else if (antcomb->first_ratio) {
+-			/* first alt */
+-			if ((antcomb->first_quick_scan_conf ==
+-			    ATH_ANT_DIV_COMB_LNA1) ||
+-			    (antcomb->first_quick_scan_conf ==
+-			    ATH_ANT_DIV_COMB_LNA2))
+-					/* Set alt LNA1 or LNA2 */
+-				if (div_ant_conf->main_lna_conf ==
+-				    ATH_ANT_DIV_COMB_LNA2)
+-					div_ant_conf->alt_lna_conf =
+-							ATH_ANT_DIV_COMB_LNA1;
+-				else
+-					div_ant_conf->alt_lna_conf =
+-							ATH_ANT_DIV_COMB_LNA2;
+-			else
+-				/* Set alt to A+B or A-B */
+-				div_ant_conf->alt_lna_conf =
+-						antcomb->first_quick_scan_conf;
+-		} else if (antcomb->second_ratio) {
+-				/* second alt */
+-			if ((antcomb->second_quick_scan_conf ==
+-			    ATH_ANT_DIV_COMB_LNA1) ||
+-			    (antcomb->second_quick_scan_conf ==
+-			    ATH_ANT_DIV_COMB_LNA2))
+-				/* Set alt LNA1 or LNA2 */
+-				if (div_ant_conf->main_lna_conf ==
+-				    ATH_ANT_DIV_COMB_LNA2)
+-					div_ant_conf->alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
+-				else
+-					div_ant_conf->alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
+-			else
+-				/* Set alt to A+B or A-B */
+-				div_ant_conf->alt_lna_conf =
+-						antcomb->second_quick_scan_conf;
+-		} else {
+-			/* main is largest */
+-			if ((antcomb->main_conf == ATH_ANT_DIV_COMB_LNA1) ||
+-			    (antcomb->main_conf == ATH_ANT_DIV_COMB_LNA2))
+-				/* Set alt LNA1 or LNA2 */
+-				if (div_ant_conf->main_lna_conf ==
+-				    ATH_ANT_DIV_COMB_LNA2)
+-					div_ant_conf->alt_lna_conf =
+-							ATH_ANT_DIV_COMB_LNA1;
+-				else
+-					div_ant_conf->alt_lna_conf =
+-							ATH_ANT_DIV_COMB_LNA2;
+-			else
+-				/* Set alt to A+B or A-B */
+-				div_ant_conf->alt_lna_conf = antcomb->main_conf;
+-		}
++		ath_ant_set_alt_ratio(antcomb, div_ant_conf);
++
+ 		break;
+ 	default:
+ 		break;
+@@ -430,8 +497,7 @@ static void ath_ant_div_conf_fast_divbia
+ 			ant_conf->fast_div_bias = 0x1;
+ 			break;
+ 		case 0x10: /* LNA2 A-B */
+-			if (!(antcomb->scan) &&
+-				(alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO))
++			if (!antcomb->scan && (alt_ratio > antcomb->ant_ratio))
+ 				ant_conf->fast_div_bias = 0x1;
+ 			else
+ 				ant_conf->fast_div_bias = 0x2;
+@@ -440,15 +506,13 @@ static void ath_ant_div_conf_fast_divbia
+ 			ant_conf->fast_div_bias = 0x1;
+ 			break;
+ 		case 0x13: /* LNA2 A+B */
+-			if (!(antcomb->scan) &&
+-				(alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO))
++			if (!antcomb->scan && (alt_ratio > antcomb->ant_ratio))
+ 				ant_conf->fast_div_bias = 0x1;
+ 			else
+ 				ant_conf->fast_div_bias = 0x2;
+ 			break;
+ 		case 0x20: /* LNA1 A-B */
+-			if (!(antcomb->scan) &&
+-				(alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO))
++			if (!antcomb->scan && (alt_ratio > antcomb->ant_ratio))
+ 				ant_conf->fast_div_bias = 0x1;
+ 			else
+ 				ant_conf->fast_div_bias = 0x2;
+@@ -457,8 +521,7 @@ static void ath_ant_div_conf_fast_divbia
+ 			ant_conf->fast_div_bias = 0x1;
+ 			break;
+ 		case 0x23: /* LNA1 A+B */
+-			if (!(antcomb->scan) &&
+-				(alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO))
++			if (!antcomb->scan && (alt_ratio > antcomb->ant_ratio))
+ 				ant_conf->fast_div_bias = 0x1;
+ 			else
+ 				ant_conf->fast_div_bias = 0x2;
+@@ -475,6 +538,9 @@ static void ath_ant_div_conf_fast_divbia
+ 		default:
+ 			break;
+ 		}
++
++		if (antcomb->fast_div_bias)
++			ant_conf->fast_div_bias = antcomb->fast_div_bias;
+ 	} else if (ant_conf->div_group == 3) {
+ 		switch ((ant_conf->main_lna_conf << 4) |
+ 			ant_conf->alt_lna_conf) {
+@@ -540,6 +606,138 @@ static void ath_ant_div_conf_fast_divbia
+ 	}
+ }
+ 
++static void ath_ant_try_scan(struct ath_ant_comb *antcomb,
++			     struct ath_hw_antcomb_conf *conf,
++			     int curr_alt_set, int alt_rssi_avg,
++			     int main_rssi_avg)
++{
++	switch (curr_alt_set) {
++	case ATH_ANT_DIV_COMB_LNA2:
++		antcomb->rssi_lna2 = alt_rssi_avg;
++		antcomb->rssi_lna1 = main_rssi_avg;
++		antcomb->scan = true;
++		/* set to A+B */
++		conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++		conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2;
++		break;
++	case ATH_ANT_DIV_COMB_LNA1:
++		antcomb->rssi_lna1 = alt_rssi_avg;
++		antcomb->rssi_lna2 = main_rssi_avg;
++		antcomb->scan = true;
++		/* set to A+B */
++		conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++		conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2;
++		break;
++	case ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2:
++		antcomb->rssi_add = alt_rssi_avg;
++		antcomb->scan = true;
++		/* set to A-B */
++		conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2;
++		break;
++	case ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2:
++		antcomb->rssi_sub = alt_rssi_avg;
++		antcomb->scan = false;
++		if (antcomb->rssi_lna2 >
++		    (antcomb->rssi_lna1 + ATH_ANT_DIV_COMB_LNA1_LNA2_SWITCH_DELTA)) {
++			/* use LNA2 as main LNA */
++			if ((antcomb->rssi_add > antcomb->rssi_lna1) &&
++			    (antcomb->rssi_add > antcomb->rssi_sub)) {
++				/* set to A+B */
++				conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2;
++			} else if (antcomb->rssi_sub >
++				   antcomb->rssi_lna1) {
++				/* set to A-B */
++				conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2;
++			} else {
++				/* set to LNA1 */
++				conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++			}
++		} else {
++			/* use LNA1 as main LNA */
++			if ((antcomb->rssi_add > antcomb->rssi_lna2) &&
++			    (antcomb->rssi_add > antcomb->rssi_sub)) {
++				/* set to A+B */
++				conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2;
++			} else if (antcomb->rssi_sub >
++				   antcomb->rssi_lna1) {
++				/* set to A-B */
++				conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2;
++			} else {
++				/* set to LNA2 */
++				conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++				conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++			}
++		}
++		break;
++	default:
++		break;
++	}
++}
++
++static bool ath_ant_try_switch(struct ath_hw_antcomb_conf *div_ant_conf,
++			       struct ath_ant_comb *antcomb,
++			       int alt_ratio, int alt_rssi_avg,
++			       int main_rssi_avg, int curr_main_set,
++			       int curr_alt_set)
++{
++	bool ret = false;
++
++	if (ath_ant_div_comb_alt_check(div_ant_conf, antcomb, alt_ratio,
++				       alt_rssi_avg, main_rssi_avg)) {
++		if (curr_alt_set == ATH_ANT_DIV_COMB_LNA2) {
++			/*
++			 * Switch main and alt LNA.
++			 */
++			div_ant_conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++			div_ant_conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++		} else if (curr_alt_set == ATH_ANT_DIV_COMB_LNA1) {
++			div_ant_conf->main_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++			div_ant_conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++		}
++
++		ret = true;
++	} else if ((curr_alt_set != ATH_ANT_DIV_COMB_LNA1) &&
++		   (curr_alt_set != ATH_ANT_DIV_COMB_LNA2)) {
++		/*
++		  Set alt to another LNA.
++		*/
++		if (curr_main_set == ATH_ANT_DIV_COMB_LNA2)
++			div_ant_conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA1;
++		else if (curr_main_set == ATH_ANT_DIV_COMB_LNA1)
++			div_ant_conf->alt_lna_conf = ATH_ANT_DIV_COMB_LNA2;
++
++		ret = true;
++	}
++
++	return ret;
++}
++
++static bool ath_ant_short_scan_check(struct ath_ant_comb *antcomb)
++{
++	int alt_ratio;
++
++	if (!antcomb->scan || !antcomb->alt_good)
++		return false;
++
++	if (time_after(jiffies, antcomb->scan_start_time +
++		       msecs_to_jiffies(ATH_ANT_DIV_COMB_SHORT_SCAN_INTR)))
++		return true;
++
++	if (antcomb->total_pkt_count == ATH_ANT_DIV_COMB_SHORT_SCAN_PKTCOUNT) {
++		alt_ratio = ((antcomb->alt_recv_cnt * 100) /
++			     antcomb->total_pkt_count);
++		if (alt_ratio < antcomb->ant_ratio)
++			return true;
++	}
++
++	return false;
++}
++
+ void ath_ant_comb_scan(struct ath_softc *sc, struct ath_rx_status *rs)
+ {
+ 	struct ath_hw_antcomb_conf div_ant_conf;
+@@ -549,41 +747,46 @@ void ath_ant_comb_scan(struct ath_softc 
+ 	int main_rssi = rs->rs_rssi_ctl0;
+ 	int alt_rssi = rs->rs_rssi_ctl1;
+ 	int rx_ant_conf,  main_ant_conf;
+-	bool short_scan = false;
++	bool short_scan = false, ret;
+ 
+ 	rx_ant_conf = (rs->rs_rssi_ctl2 >> ATH_ANT_RX_CURRENT_SHIFT) &
+ 		       ATH_ANT_RX_MASK;
+ 	main_ant_conf = (rs->rs_rssi_ctl2 >> ATH_ANT_RX_MAIN_SHIFT) &
+ 			 ATH_ANT_RX_MASK;
+ 
++	if (alt_rssi >= antcomb->low_rssi_thresh) {
++		antcomb->ant_ratio = ATH_ANT_DIV_COMB_ALT_ANT_RATIO;
++		antcomb->ant_ratio2 = ATH_ANT_DIV_COMB_ALT_ANT_RATIO2;
++	} else {
++		antcomb->ant_ratio = ATH_ANT_DIV_COMB_ALT_ANT_RATIO_LOW_RSSI;
++		antcomb->ant_ratio2 = ATH_ANT_DIV_COMB_ALT_ANT_RATIO2_LOW_RSSI;
++	}
++
+ 	/* Record packet only when both main_rssi and  alt_rssi is positive */
+ 	if (main_rssi > 0 && alt_rssi > 0) {
+ 		antcomb->total_pkt_count++;
+ 		antcomb->main_total_rssi += main_rssi;
+ 		antcomb->alt_total_rssi  += alt_rssi;
++
+ 		if (main_ant_conf == rx_ant_conf)
+ 			antcomb->main_recv_cnt++;
+ 		else
+ 			antcomb->alt_recv_cnt++;
+ 	}
+ 
+-	/* Short scan check */
+-	if (antcomb->scan && antcomb->alt_good) {
+-		if (time_after(jiffies, antcomb->scan_start_time +
+-		    msecs_to_jiffies(ATH_ANT_DIV_COMB_SHORT_SCAN_INTR)))
+-			short_scan = true;
+-		else
+-			if (antcomb->total_pkt_count ==
+-			    ATH_ANT_DIV_COMB_SHORT_SCAN_PKTCOUNT) {
+-				alt_ratio = ((antcomb->alt_recv_cnt * 100) /
+-					    antcomb->total_pkt_count);
+-				if (alt_ratio < ATH_ANT_DIV_COMB_ALT_ANT_RATIO)
+-					short_scan = true;
+-			}
++	if (main_ant_conf == rx_ant_conf) {
++		ANT_STAT_INC(ANT_MAIN, recv_cnt);
++		ANT_LNA_INC(ANT_MAIN, rx_ant_conf);
++	} else {
++		ANT_STAT_INC(ANT_ALT, recv_cnt);
++		ANT_LNA_INC(ANT_ALT, rx_ant_conf);
+ 	}
+ 
++	/* Short scan check */
++	short_scan = ath_ant_short_scan_check(antcomb);
++
+ 	if (((antcomb->total_pkt_count < ATH_ANT_DIV_COMB_MAX_PKTCOUNT) ||
+-	    rs->rs_moreaggr) && !short_scan)
++	     rs->rs_moreaggr) && !short_scan)
+ 		return;
+ 
+ 	if (antcomb->total_pkt_count) {
+@@ -595,15 +798,13 @@ void ath_ant_comb_scan(struct ath_softc 
+ 				 antcomb->total_pkt_count);
+ 	}
+ 
+-
+ 	ath9k_hw_antdiv_comb_conf_get(sc->sc_ah, &div_ant_conf);
+ 	curr_alt_set = div_ant_conf.alt_lna_conf;
+ 	curr_main_set = div_ant_conf.main_lna_conf;
+-
+ 	antcomb->count++;
+ 
+ 	if (antcomb->count == ATH_ANT_DIV_COMB_MAX_COUNT) {
+-		if (alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO) {
++		if (alt_ratio > antcomb->ant_ratio) {
+ 			ath_lnaconf_alt_good_scan(antcomb, div_ant_conf,
+ 						  main_rssi_avg);
+ 			antcomb->alt_good = true;
+@@ -617,153 +818,47 @@ void ath_ant_comb_scan(struct ath_softc 
+ 	}
+ 
+ 	if (!antcomb->scan) {
+-		if (ath_ant_div_comb_alt_check(div_ant_conf.div_group,
+-					alt_ratio, curr_main_set, curr_alt_set,
+-					alt_rssi_avg, main_rssi_avg)) {
+-			if (curr_alt_set == ATH_ANT_DIV_COMB_LNA2) {
+-				/* Switch main and alt LNA */
+-				div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
+-				div_ant_conf.alt_lna_conf  =
+-						ATH_ANT_DIV_COMB_LNA1;
+-			} else if (curr_alt_set == ATH_ANT_DIV_COMB_LNA1) {
+-				div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
+-				div_ant_conf.alt_lna_conf  =
+-						ATH_ANT_DIV_COMB_LNA2;
+-			}
+-
+-			goto div_comb_done;
+-		} else if ((curr_alt_set != ATH_ANT_DIV_COMB_LNA1) &&
+-			   (curr_alt_set != ATH_ANT_DIV_COMB_LNA2)) {
+-			/* Set alt to another LNA */
+-			if (curr_main_set == ATH_ANT_DIV_COMB_LNA2)
+-				div_ant_conf.alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
+-			else if (curr_main_set == ATH_ANT_DIV_COMB_LNA1)
+-				div_ant_conf.alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
+-
+-			goto div_comb_done;
+-		}
+-
+-		if ((alt_rssi_avg < (main_rssi_avg +
+-				     div_ant_conf.lna1_lna2_delta)))
++		ret = ath_ant_try_switch(&div_ant_conf, antcomb, alt_ratio,
++					 alt_rssi_avg, main_rssi_avg,
++					 curr_main_set, curr_alt_set);
++		if (ret)
+ 			goto div_comb_done;
+ 	}
+ 
++	if (!antcomb->scan &&
++	    (alt_rssi_avg < (main_rssi_avg + div_ant_conf.lna1_lna2_delta)))
++		goto div_comb_done;
++
+ 	if (!antcomb->scan_not_start) {
+-		switch (curr_alt_set) {
+-		case ATH_ANT_DIV_COMB_LNA2:
+-			antcomb->rssi_lna2 = alt_rssi_avg;
+-			antcomb->rssi_lna1 = main_rssi_avg;
+-			antcomb->scan = true;
+-			/* set to A+B */
+-			div_ant_conf.main_lna_conf =
+-				ATH_ANT_DIV_COMB_LNA1;
+-			div_ant_conf.alt_lna_conf  =
+-				ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2;
+-			break;
+-		case ATH_ANT_DIV_COMB_LNA1:
+-			antcomb->rssi_lna1 = alt_rssi_avg;
+-			antcomb->rssi_lna2 = main_rssi_avg;
+-			antcomb->scan = true;
+-			/* set to A+B */
+-			div_ant_conf.main_lna_conf = ATH_ANT_DIV_COMB_LNA2;
+-			div_ant_conf.alt_lna_conf  =
+-				ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2;
+-			break;
+-		case ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2:
+-			antcomb->rssi_add = alt_rssi_avg;
+-			antcomb->scan = true;
+-			/* set to A-B */
+-			div_ant_conf.alt_lna_conf =
+-				ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2;
+-			break;
+-		case ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2:
+-			antcomb->rssi_sub = alt_rssi_avg;
+-			antcomb->scan = false;
+-			if (antcomb->rssi_lna2 >
+-			    (antcomb->rssi_lna1 +
+-			    ATH_ANT_DIV_COMB_LNA1_LNA2_SWITCH_DELTA)) {
+-				/* use LNA2 as main LNA */
+-				if ((antcomb->rssi_add > antcomb->rssi_lna1) &&
+-				    (antcomb->rssi_add > antcomb->rssi_sub)) {
+-					/* set to A+B */
+-					div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
+-					div_ant_conf.alt_lna_conf  =
+-						ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2;
+-				} else if (antcomb->rssi_sub >
+-					   antcomb->rssi_lna1) {
+-					/* set to A-B */
+-					div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
+-					div_ant_conf.alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2;
+-				} else {
+-					/* set to LNA1 */
+-					div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
+-					div_ant_conf.alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
+-				}
+-			} else {
+-				/* use LNA1 as main LNA */
+-				if ((antcomb->rssi_add > antcomb->rssi_lna2) &&
+-				    (antcomb->rssi_add > antcomb->rssi_sub)) {
+-					/* set to A+B */
+-					div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
+-					div_ant_conf.alt_lna_conf  =
+-						ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2;
+-				} else if (antcomb->rssi_sub >
+-					   antcomb->rssi_lna1) {
+-					/* set to A-B */
+-					div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
+-					div_ant_conf.alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2;
+-				} else {
+-					/* set to LNA2 */
+-					div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
+-					div_ant_conf.alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
+-				}
+-			}
+-			break;
+-		default:
+-			break;
+-		}
++		ath_ant_try_scan(antcomb, &div_ant_conf, curr_alt_set,
++				 alt_rssi_avg, main_rssi_avg);
+ 	} else {
+ 		if (!antcomb->alt_good) {
+ 			antcomb->scan_not_start = false;
+ 			/* Set alt to another LNA */
+ 			if (curr_main_set == ATH_ANT_DIV_COMB_LNA2) {
+ 				div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
++					ATH_ANT_DIV_COMB_LNA2;
+ 				div_ant_conf.alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
++					ATH_ANT_DIV_COMB_LNA1;
+ 			} else if (curr_main_set == ATH_ANT_DIV_COMB_LNA1) {
+ 				div_ant_conf.main_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA1;
++					ATH_ANT_DIV_COMB_LNA1;
+ 				div_ant_conf.alt_lna_conf =
+-						ATH_ANT_DIV_COMB_LNA2;
++					ATH_ANT_DIV_COMB_LNA2;
+ 			}
+ 			goto div_comb_done;
+ 		}
++		ath_select_ant_div_from_quick_scan(antcomb, &div_ant_conf,
++						   main_rssi_avg, alt_rssi_avg,
++						   alt_ratio);
++		antcomb->quick_scan_cnt++;
+ 	}
+ 
+-	ath_select_ant_div_from_quick_scan(antcomb, &div_ant_conf,
+-					   main_rssi_avg, alt_rssi_avg,
+-					   alt_ratio);
+-
+-	antcomb->quick_scan_cnt++;
+-
+ div_comb_done:
+ 	ath_ant_div_conf_fast_divbias(&div_ant_conf, antcomb, alt_ratio);
+ 	ath9k_hw_antdiv_comb_conf_set(sc->sc_ah, &div_ant_conf);
++	ath9k_debug_stat_ant(sc, &div_ant_conf, main_rssi_avg, alt_rssi_avg);
+ 
+ 	antcomb->scan_start_time = jiffies;
+ 	antcomb->total_pkt_count = 0;
+@@ -772,26 +867,3 @@ div_comb_done:
+ 	antcomb->main_recv_cnt = 0;
+ 	antcomb->alt_recv_cnt = 0;
+ }
+-
+-void ath_ant_comb_update(struct ath_softc *sc)
+-{
+-	struct ath_hw *ah = sc->sc_ah;
+-	struct ath_common *common = ath9k_hw_common(ah);
+-	struct ath_hw_antcomb_conf div_ant_conf;
+-	u8 lna_conf;
+-
+-	ath9k_hw_antdiv_comb_conf_get(ah, &div_ant_conf);
+-
+-	if (sc->ant_rx == 1)
+-		lna_conf = ATH_ANT_DIV_COMB_LNA1;
+-	else
+-		lna_conf = ATH_ANT_DIV_COMB_LNA2;
+-
+-	div_ant_conf.main_lna_conf = lna_conf;
+-	div_ant_conf.alt_lna_conf = lna_conf;
+-
+-	ath9k_hw_antdiv_comb_conf_set(ah, &div_ant_conf);
+-
+-	if (common->antenna_diversity)
+-		ath9k_hw_antctrl_shared_chain_lnadiv(ah, true);
+-}
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -610,7 +610,15 @@ static void ar5008_hw_override_ini(struc
+ 	REG_SET_BIT(ah, AR_DIAG_SW, (AR_DIAG_RX_DIS | AR_DIAG_RX_ABORT));
+ 
+ 	if (AR_SREV_9280_20_OR_LATER(ah)) {
+-		val = REG_READ(ah, AR_PCU_MISC_MODE2);
++		/*
++		 * For AR9280 and above, there is a new feature that allows
++		 * Multicast search based on both MAC Address and Key ID.
++		 * By default, this feature is enabled. But since the driver
++		 * is not using this feature, we switch it off; otherwise
++		 * multicast search based on MAC addr only will fail.
++		 */
++		val = REG_READ(ah, AR_PCU_MISC_MODE2) &
++			(~AR_ADHOC_MCAST_KEYID_ENABLE);
+ 
+ 		if (!AR_SREV_9271(ah))
+ 			val &= ~AR_PCU_MISC_MODE2_HWWAR1;
+--- a/drivers/net/wireless/ath/ath9k/ar9002_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_phy.c
+@@ -555,6 +555,69 @@ static void ar9002_hw_antdiv_comb_conf_s
+ 	REG_WRITE(ah, AR_PHY_MULTICHAIN_GAIN_CTL, regval);
+ }
+ 
++#ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
++
++static void ar9002_hw_set_bt_ant_diversity(struct ath_hw *ah, bool enable)
++{
++	struct ath_btcoex_hw *btcoex = &ah->btcoex_hw;
++	u8 antdiv_ctrl1, antdiv_ctrl2;
++	u32 regval;
++
++	if (enable) {
++		antdiv_ctrl1 = ATH_BT_COEX_ANTDIV_CONTROL1_ENABLE;
++		antdiv_ctrl2 = ATH_BT_COEX_ANTDIV_CONTROL2_ENABLE;
++
++		/*
++		 * Don't disable BT ant to allow BB to control SWCOM.
++		 */
++		btcoex->bt_coex_mode2 &= (~(AR_BT_DISABLE_BT_ANT));
++		REG_WRITE(ah, AR_BT_COEX_MODE2, btcoex->bt_coex_mode2);
++
++		REG_WRITE(ah, AR_PHY_SWITCH_COM, ATH_BT_COEX_ANT_DIV_SWITCH_COM);
++		REG_RMW(ah, AR_PHY_SWITCH_CHAIN_0, 0, 0xf0000000);
++	} else {
++		/*
++		 * Disable antenna diversity, use LNA1 only.
++		 */
++		antdiv_ctrl1 = ATH_BT_COEX_ANTDIV_CONTROL1_FIXED_A;
++		antdiv_ctrl2 = ATH_BT_COEX_ANTDIV_CONTROL2_FIXED_A;
++
++		/*
++		 * Disable BT Ant. to allow concurrent BT and WLAN receive.
++		 */
++		btcoex->bt_coex_mode2 |= AR_BT_DISABLE_BT_ANT;
++		REG_WRITE(ah, AR_BT_COEX_MODE2, btcoex->bt_coex_mode2);
++
++		/*
++		 * Program SWCOM table to make sure RF switch always parks
++		 * at BT side.
++		 */
++		REG_WRITE(ah, AR_PHY_SWITCH_COM, 0);
++		REG_RMW(ah, AR_PHY_SWITCH_CHAIN_0, 0, 0xf0000000);
++	}
++
++	regval = REG_READ(ah, AR_PHY_MULTICHAIN_GAIN_CTL);
++	regval &= (~(AR_PHY_9285_ANT_DIV_CTL_ALL));
++        /*
++	 * Clear ant_fast_div_bias [14:9] since for WB195,
++	 * the main LNA is always LNA1.
++	 */
++	regval &= (~(AR_PHY_9285_FAST_DIV_BIAS));
++	regval |= SM(antdiv_ctrl1, AR_PHY_9285_ANT_DIV_CTL);
++	regval |= SM(antdiv_ctrl2, AR_PHY_9285_ANT_DIV_ALT_LNACONF);
++	regval |= SM((antdiv_ctrl2 >> 2), AR_PHY_9285_ANT_DIV_MAIN_LNACONF);
++	regval |= SM((antdiv_ctrl1 >> 1), AR_PHY_9285_ANT_DIV_ALT_GAINTB);
++	regval |= SM((antdiv_ctrl1 >> 2), AR_PHY_9285_ANT_DIV_MAIN_GAINTB);
++	REG_WRITE(ah, AR_PHY_MULTICHAIN_GAIN_CTL, regval);
++
++	regval = REG_READ(ah, AR_PHY_CCK_DETECT);
++	regval &= (~AR_PHY_CCK_DETECT_BB_ENABLE_ANT_FAST_DIV);
++	regval |= SM((antdiv_ctrl1 >> 3), AR_PHY_CCK_DETECT_BB_ENABLE_ANT_FAST_DIV);
++	REG_WRITE(ah, AR_PHY_CCK_DETECT, regval);
++}
++
++#endif
++
+ static void ar9002_hw_spectral_scan_config(struct ath_hw *ah,
+ 				    struct ath_spec_scan *param)
+ {
+@@ -634,5 +697,9 @@ void ar9002_hw_attach_phy_ops(struct ath
+ 	ops->spectral_scan_trigger = ar9002_hw_spectral_scan_trigger;
+ 	ops->spectral_scan_wait = ar9002_hw_spectral_scan_wait;
+ 
++#ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
++	ops->set_bt_ant_diversity = ar9002_hw_set_bt_ant_diversity;
++#endif
++
+ 	ar9002_hw_set_nf_limits(ah);
+ }
+--- a/drivers/net/wireless/ath/ath9k/ar9002_phy.h
++++ b/drivers/net/wireless/ath/ath9k/ar9002_phy.h
+@@ -317,13 +317,15 @@
+ #define AR_PHY_9285_ANT_DIV_ALT_GAINTB_S    29
+ #define AR_PHY_9285_ANT_DIV_MAIN_GAINTB     0x40000000
+ #define AR_PHY_9285_ANT_DIV_MAIN_GAINTB_S   30
+-#define AR_PHY_9285_ANT_DIV_LNA1            2
+-#define AR_PHY_9285_ANT_DIV_LNA2            1
+-#define AR_PHY_9285_ANT_DIV_LNA1_PLUS_LNA2  3
+-#define AR_PHY_9285_ANT_DIV_LNA1_MINUS_LNA2 0
+ #define AR_PHY_9285_ANT_DIV_GAINTB_0        0
+ #define AR_PHY_9285_ANT_DIV_GAINTB_1        1
+ 
++#define ATH_BT_COEX_ANTDIV_CONTROL1_ENABLE  0x0b
++#define ATH_BT_COEX_ANTDIV_CONTROL2_ENABLE  0x09
++#define ATH_BT_COEX_ANTDIV_CONTROL1_FIXED_A 0x04
++#define ATH_BT_COEX_ANTDIV_CONTROL2_FIXED_A 0x09
++#define ATH_BT_COEX_ANT_DIV_SWITCH_COM      0x66666666
++
+ #define AR_PHY_EXT_CCA0             0x99b8
+ #define AR_PHY_EXT_CCA0_THRESH62    0x000000FF
+ #define AR_PHY_EXT_CCA0_THRESH62_S  0
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -3541,13 +3541,12 @@ static u16 ar9003_switch_com_spdt_get(st
+ 	return le16_to_cpu(ar9003_modal_header(ah, is2ghz)->switchcomspdt);
+ }
+ 
+-
+-static u32 ar9003_hw_ant_ctrl_common_get(struct ath_hw *ah, bool is2ghz)
++u32 ar9003_hw_ant_ctrl_common_get(struct ath_hw *ah, bool is2ghz)
+ {
+ 	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon);
+ }
+ 
+-static u32 ar9003_hw_ant_ctrl_common_2_get(struct ath_hw *ah, bool is2ghz)
++u32 ar9003_hw_ant_ctrl_common_2_get(struct ath_hw *ah, bool is2ghz)
+ {
+ 	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon2);
+ }
+@@ -3561,6 +3560,7 @@ static u16 ar9003_hw_ant_ctrl_chain_get(
+ 
+ static void ar9003_hw_ant_ctrl_apply(struct ath_hw *ah, bool is2ghz)
+ {
++	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ath9k_hw_capabilities *pCap = &ah->caps;
+ 	int chain;
+ 	u32 regval, value, gpio;
+@@ -3614,6 +3614,11 @@ static void ar9003_hw_ant_ctrl_apply(str
+ 	}
+ 
+ 	value = ar9003_hw_ant_ctrl_common_2_get(ah, is2ghz);
++	if (AR_SREV_9485(ah) && common->bt_ant_diversity) {
++		regval &= ~AR_SWITCH_TABLE_COM2_ALL;
++		regval |= ah->config.ant_ctrl_comm2g_switch_enable;
++
++	}
+ 	REG_RMW_FIELD(ah, AR_PHY_SWITCH_COM_2, AR_SWITCH_TABLE_COM2_ALL, value);
+ 
+ 	if ((AR_SREV_9462(ah)) && (ah->rxchainmask == 0x2)) {
+@@ -3645,8 +3650,11 @@ static void ar9003_hw_ant_ctrl_apply(str
+ 		regval &= (~AR_PHY_ANT_DIV_LNADIV);
+ 		regval |= ((value >> 6) & 0x1) << AR_PHY_ANT_DIV_LNADIV_S;
+ 
++		if (AR_SREV_9485(ah) && common->bt_ant_diversity)
++			regval |= AR_ANT_DIV_ENABLE;
++
+ 		if (AR_SREV_9565(ah)) {
+-			if (ah->shared_chain_lnadiv) {
++			if (common->bt_ant_diversity) {
+ 				regval |= (1 << AR_PHY_ANT_SW_RX_PROT_S);
+ 			} else {
+ 				regval &= ~(1 << AR_PHY_ANT_DIV_LNADIV_S);
+@@ -3656,10 +3664,14 @@ static void ar9003_hw_ant_ctrl_apply(str
+ 
+ 		REG_WRITE(ah, AR_PHY_MC_GAIN_CTRL, regval);
+ 
+-		/*enable fast_div */
++		/* enable fast_div */
+ 		regval = REG_READ(ah, AR_PHY_CCK_DETECT);
+ 		regval &= (~AR_FAST_DIV_ENABLE);
+ 		regval |= ((value >> 7) & 0x1) << AR_FAST_DIV_ENABLE_S;
++
++		if (AR_SREV_9485(ah) && common->bt_ant_diversity)
++			regval |= AR_FAST_DIV_ENABLE;
++
+ 		REG_WRITE(ah, AR_PHY_CCK_DETECT, regval);
+ 
+ 		if (pCap->hw_caps & ATH9K_HW_CAP_ANT_DIV_COMB) {
+@@ -3673,9 +3685,9 @@ static void ar9003_hw_ant_ctrl_apply(str
+ 				     AR_PHY_ANT_DIV_ALT_GAINTB |
+ 				     AR_PHY_ANT_DIV_MAIN_GAINTB));
+ 			/* by default use LNA1 for the main antenna */
+-			regval |= (AR_PHY_ANT_DIV_LNA1 <<
++			regval |= (ATH_ANT_DIV_COMB_LNA1 <<
+ 				   AR_PHY_ANT_DIV_MAIN_LNACONF_S);
+-			regval |= (AR_PHY_ANT_DIV_LNA2 <<
++			regval |= (ATH_ANT_DIV_COMB_LNA2 <<
+ 				   AR_PHY_ANT_DIV_ALT_LNACONF_S);
+ 			REG_WRITE(ah, AR_PHY_MC_GAIN_CTRL, regval);
+ 		}
+@@ -3813,6 +3825,11 @@ static void ar9003_hw_atten_apply(struct
+ 			else
+ 				value = ar9003_hw_atten_chain_get_margin(ah, i, chan);
+ 
++			if (ah->config.alt_mingainidx)
++				REG_RMW_FIELD(ah, AR_PHY_EXT_ATTEN_CTL_0,
++					      AR_PHY_EXT_ATTEN_CTL_XATTEN1_MARGIN,
++					      value);
++
+ 			REG_RMW_FIELD(ah, ext_atten_reg[i],
+ 				      AR_PHY_EXT_ATTEN_CTL_XATTEN1_MARGIN,
+ 				      value);
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
+@@ -334,6 +334,8 @@ struct ar9300_eeprom {
+ 
+ s32 ar9003_hw_get_tx_gain_idx(struct ath_hw *ah);
+ s32 ar9003_hw_get_rx_gain_idx(struct ath_hw *ah);
++u32 ar9003_hw_ant_ctrl_common_get(struct ath_hw *ah, bool is2ghz);
++u32 ar9003_hw_ant_ctrl_common_2_get(struct ath_hw *ah, bool is2ghz);
+ 
+ u8 *ar9003_get_spur_chan_ptr(struct ath_hw *ah, bool is_2ghz);
+ 
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
+@@ -148,6 +148,8 @@
+ #define AR_PHY_SFCORR_SPUR_SUBCHNL_SD_S   28
+ #define AR_PHY_EXT_CCA_THRESH62 0x007F0000
+ #define AR_PHY_EXT_CCA_THRESH62_S       16
++#define AR_PHY_EXTCHN_PWRTHR1_ANT_DIV_ALT_ANT_MINGAINIDX    0x0000FF00
++#define AR_PHY_EXTCHN_PWRTHR1_ANT_DIV_ALT_ANT_MINGAINIDX_S  8
+ #define AR_PHY_EXT_MINCCA_PWR   0x01FF0000
+ #define AR_PHY_EXT_MINCCA_PWR_S 16
+ #define AR_PHY_EXT_CYCPWR_THR1 0x0000FE00L
+@@ -296,11 +298,6 @@
+ #define AR_PHY_ANT_DIV_MAIN_GAINTB              0x40000000
+ #define AR_PHY_ANT_DIV_MAIN_GAINTB_S            30
+ 
+-#define AR_PHY_ANT_DIV_LNA1_MINUS_LNA2          0x0
+-#define AR_PHY_ANT_DIV_LNA2                     0x1
+-#define AR_PHY_ANT_DIV_LNA1                     0x2
+-#define AR_PHY_ANT_DIV_LNA1_PLUS_LNA2           0x3
+-
+ #define AR_PHY_EXTCHN_PWRTHR1   (AR_AGC_BASE + 0x2c)
+ #define AR_PHY_EXT_CHN_WIN      (AR_AGC_BASE + 0x30)
+ #define AR_PHY_20_40_DET_THR    (AR_AGC_BASE + 0x34)
+--- a/drivers/net/wireless/ath/ath9k/debug.h
++++ b/drivers/net/wireless/ath/ath9k/debug.h
+@@ -28,9 +28,13 @@ struct fft_sample_tlv;
+ #ifdef CPTCFG_ATH9K_DEBUGFS
+ #define TX_STAT_INC(q, c) sc->debug.stats.txstats[q].c++
+ #define RESET_STAT_INC(sc, type) sc->debug.stats.reset[type]++
++#define ANT_STAT_INC(i, c) sc->debug.stats.ant_stats[i].c++
++#define ANT_LNA_INC(i, c) sc->debug.stats.ant_stats[i].lna_recv_cnt[c]++;
+ #else
+ #define TX_STAT_INC(q, c) do { } while (0)
+ #define RESET_STAT_INC(sc, type) do { } while (0)
++#define ANT_STAT_INC(i, c) do { } while (0)
++#define ANT_LNA_INC(i, c) do { } while (0)
+ #endif
+ 
+ enum ath_reset_type {
+@@ -243,11 +247,22 @@ struct ath_rx_stats {
+ 	u32 rx_spectral;
+ };
+ 
++#define ANT_MAIN 0
++#define ANT_ALT  1
++
++struct ath_antenna_stats {
++	u32 recv_cnt;
++	u32 rssi_avg;
++	u32 lna_recv_cnt[4];
++	u32 lna_attempt_cnt[4];
++};
++
+ struct ath_stats {
+ 	struct ath_interrupt_stats istats;
+ 	struct ath_tx_stats txstats[ATH9K_NUM_TX_QUEUES];
+ 	struct ath_rx_stats rxstats;
+ 	struct ath_dfs_stats dfs_stats;
++	struct ath_antenna_stats ant_stats[2];
+ 	u32 reset[__RESET_TYPE_MAX];
+ };
+ 
+@@ -281,10 +296,11 @@ void ath9k_sta_remove_debugfs(struct iee
+ 			      struct ieee80211_vif *vif,
+ 			      struct ieee80211_sta *sta,
+ 			      struct dentry *dir);
+-
+ void ath_debug_send_fft_sample(struct ath_softc *sc,
+ 			       struct fft_sample_tlv *fft_sample);
+-
++void ath9k_debug_stat_ant(struct ath_softc *sc,
++			  struct ath_hw_antcomb_conf *div_ant_conf,
++			  int main_rssi_avg, int alt_rssi_avg);
+ #else
+ 
+ #define RX_STAT_INC(c) /* NOP */
+@@ -297,12 +313,10 @@ static inline int ath9k_init_debug(struc
+ static inline void ath9k_deinit_debug(struct ath_softc *sc)
+ {
+ }
+-
+ static inline void ath_debug_stat_interrupt(struct ath_softc *sc,
+ 					    enum ath9k_int status)
+ {
+ }
+-
+ static inline void ath_debug_stat_tx(struct ath_softc *sc,
+ 				     struct ath_buf *bf,
+ 				     struct ath_tx_status *ts,
+@@ -310,11 +324,16 @@ static inline void ath_debug_stat_tx(str
+ 				     unsigned int flags)
+ {
+ }
+-
+ static inline void ath_debug_stat_rx(struct ath_softc *sc,
+ 				     struct ath_rx_status *rs)
+ {
+ }
++static inline void ath9k_debug_stat_ant(struct ath_softc *sc,
++					struct ath_hw_antcomb_conf *div_ant_conf,
++					int main_rssi_avg, int alt_rssi_avg)
++{
++
++}
+ 
+ #endif /* CPTCFG_ATH9K_DEBUGFS */
+ 
+--- a/drivers/net/wireless/ath/ath9k/eeprom_4k.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_4k.c
+@@ -812,6 +812,7 @@ static void ath9k_hw_4k_set_gain(struct 
+ static void ath9k_hw_4k_set_board_values(struct ath_hw *ah,
+ 					 struct ath9k_channel *chan)
+ {
++	struct ath9k_hw_capabilities *pCap = &ah->caps;
+ 	struct modal_eep_4k_header *pModal;
+ 	struct ar5416_eeprom_4k *eep = &ah->eeprom.map4k;
+ 	struct base_eep_header_4k *pBase = &eep->baseEepHeader;
+@@ -858,6 +859,24 @@ static void ath9k_hw_4k_set_board_values
+ 
+ 		REG_WRITE(ah, AR_PHY_CCK_DETECT, regVal);
+ 		regVal = REG_READ(ah, AR_PHY_CCK_DETECT);
++
++		if (pCap->hw_caps & ATH9K_HW_CAP_ANT_DIV_COMB) {
++			/*
++			 * If diversity combining is enabled,
++			 * set MAIN to LNA1 and ALT to LNA2 initially.
++			 */
++			regVal = REG_READ(ah, AR_PHY_MULTICHAIN_GAIN_CTL);
++			regVal &= (~(AR_PHY_9285_ANT_DIV_MAIN_LNACONF |
++				     AR_PHY_9285_ANT_DIV_ALT_LNACONF));
++
++			regVal |= (ATH_ANT_DIV_COMB_LNA1 <<
++				   AR_PHY_9285_ANT_DIV_MAIN_LNACONF_S);
++			regVal |= (ATH_ANT_DIV_COMB_LNA2 <<
++				   AR_PHY_9285_ANT_DIV_ALT_LNACONF_S);
++			regVal &= (~(AR_PHY_9285_FAST_DIV_BIAS));
++			regVal |= (0 << AR_PHY_9285_FAST_DIV_BIAS_S);
++			REG_WRITE(ah, AR_PHY_MULTICHAIN_GAIN_CTL, regVal);
++		}
+ 	}
+ 
+ 	if (pModal->version >= 2) {
+--- a/drivers/net/wireless/ath/ath9k/hw-ops.h
++++ b/drivers/net/wireless/ath/ath9k/hw-ops.h
+@@ -78,13 +78,16 @@ static inline void ath9k_hw_antdiv_comb_
+ 	ath9k_hw_ops(ah)->antdiv_comb_conf_set(ah, antconf);
+ }
+ 
+-static inline void ath9k_hw_antctrl_shared_chain_lnadiv(struct ath_hw *ah,
+-							bool enable)
++#ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
++
++static inline void ath9k_hw_set_bt_ant_diversity(struct ath_hw *ah, bool enable)
+ {
+-	if (ath9k_hw_ops(ah)->antctrl_shared_chain_lnadiv)
+-		ath9k_hw_ops(ah)->antctrl_shared_chain_lnadiv(ah, enable);
++	if (ath9k_hw_ops(ah)->set_bt_ant_diversity)
++		ath9k_hw_ops(ah)->set_bt_ant_diversity(ah, enable);
+ }
+ 
++#endif
++
+ /* Private hardware call ops */
+ 
+ /* PHY ops */
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -450,7 +450,6 @@ static void ath9k_hw_init_config(struct 
+ 	ah->config.ack_6mb = 0x0;
+ 	ah->config.cwm_ignore_extcca = 0;
+ 	ah->config.pcie_clock_req = 0;
+-	ah->config.pcie_waen = 0;
+ 	ah->config.analog_shiftreg = 1;
+ 
+ 	for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++) {
+@@ -1069,7 +1068,7 @@ void ath9k_hw_init_global_settings(struc
+ 		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
+ 		    tx_lat += 11;
+ 
+-		sifstime *= 2;
++		sifstime = 32;
+ 		ack_offset = 16;
+ 		slottime = 13;
+ 	} else if (IS_CHAN_QUARTER_RATE(chan)) {
+@@ -1079,7 +1078,7 @@ void ath9k_hw_init_global_settings(struc
+ 		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
+ 		    tx_lat += 22;
+ 
+-		sifstime *= 4;
++		sifstime = 64;
+ 		ack_offset = 32;
+ 		slottime = 21;
+ 	} else {
+@@ -1116,7 +1115,6 @@ void ath9k_hw_init_global_settings(struc
+ 		ctstimeout += 48 - sifstime - ah->slottime;
+ 	}
+ 
+-
+ 	ath9k_hw_set_sifs_time(ah, sifstime);
+ 	ath9k_hw_setslottime(ah, slottime);
+ 	ath9k_hw_set_ack_timeout(ah, acktimeout);
+@@ -1496,16 +1494,18 @@ static bool ath9k_hw_channel_change(stru
+ 				    struct ath9k_channel *chan)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	struct ath9k_hw_capabilities *pCap = &ah->caps;
++	bool band_switch = false, mode_diff = false;
++	u8 ini_reloaded = 0;
+ 	u32 qnum;
+ 	int r;
+-	bool edma = !!(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA);
+-	bool band_switch, mode_diff;
+-	u8 ini_reloaded;
+-
+-	band_switch = (chan->channelFlags & (CHANNEL_2GHZ | CHANNEL_5GHZ)) !=
+-		      (ah->curchan->channelFlags & (CHANNEL_2GHZ |
+-						    CHANNEL_5GHZ));
+-	mode_diff = (chan->chanmode != ah->curchan->chanmode);
++
++	if (pCap->hw_caps & ATH9K_HW_CAP_FCC_BAND_SWITCH) {
++		u32 cur = ah->curchan->channelFlags & (CHANNEL_2GHZ | CHANNEL_5GHZ);
++		u32 new = chan->channelFlags & (CHANNEL_2GHZ | CHANNEL_5GHZ);
++		band_switch = (cur != new);
++		mode_diff = (chan->chanmode != ah->curchan->chanmode);
++	}
+ 
+ 	for (qnum = 0; qnum < AR_NUM_QCU; qnum++) {
+ 		if (ath9k_hw_numtxpending(ah, qnum)) {
+@@ -1520,11 +1520,12 @@ static bool ath9k_hw_channel_change(stru
+ 		return false;
+ 	}
+ 
+-	if (edma && (band_switch || mode_diff)) {
++	if (band_switch || mode_diff) {
+ 		ath9k_hw_mark_phy_inactive(ah);
+ 		udelay(5);
+ 
+-		ath9k_hw_init_pll(ah, NULL);
++		if (band_switch)
++			ath9k_hw_init_pll(ah, chan);
+ 
+ 		if (ath9k_hw_fast_chan_change(ah, chan, &ini_reloaded)) {
+ 			ath_err(common, "Failed to do fast channel change\n");
+@@ -1541,22 +1542,21 @@ static bool ath9k_hw_channel_change(stru
+ 	}
+ 	ath9k_hw_set_clockrate(ah);
+ 	ath9k_hw_apply_txpower(ah, chan, false);
+-	ath9k_hw_rfbus_done(ah);
+ 
+ 	if (IS_CHAN_OFDM(chan) || IS_CHAN_HT(chan))
+ 		ath9k_hw_set_delta_slope(ah, chan);
+ 
+ 	ath9k_hw_spur_mitigate_freq(ah, chan);
+ 
+-	if (edma && (band_switch || mode_diff)) {
+-		ah->ah_flags |= AH_FASTCC;
+-		if (band_switch || ini_reloaded)
+-			ah->eep_ops->set_board_values(ah, chan);
++	if (band_switch || ini_reloaded)
++		ah->eep_ops->set_board_values(ah, chan);
+ 
+-		ath9k_hw_init_bb(ah, chan);
++	ath9k_hw_init_bb(ah, chan);
++	ath9k_hw_rfbus_done(ah);
+ 
+-		if (band_switch || ini_reloaded)
+-			ath9k_hw_init_cal(ah, chan);
++	if (band_switch || ini_reloaded) {
++		ah->ah_flags |= AH_FASTCC;
++		ath9k_hw_init_cal(ah, chan);
+ 		ah->ah_flags &= ~AH_FASTCC;
+ 	}
+ 
+@@ -1778,16 +1778,11 @@ static void ath9k_hw_init_desc(struct at
+ /*
+  * Fast channel change:
+  * (Change synthesizer based on channel freq without resetting chip)
+- *
+- * Don't do FCC when
+- *   - Flag is not set
+- *   - Chip is just coming out of full sleep
+- *   - Channel to be set is same as current channel
+- *   - Channel flags are different, (eg.,moving from 2GHz to 5GHz channel)
+  */
+ static int ath9k_hw_do_fastcc(struct ath_hw *ah, struct ath9k_channel *chan)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	struct ath9k_hw_capabilities *pCap = &ah->caps;
+ 	int ret;
+ 
+ 	if (AR_SREV_9280(ah) && common->bus_ops->ath_bus_type == ATH_PCI)
+@@ -1806,9 +1801,21 @@ static int ath9k_hw_do_fastcc(struct ath
+ 	    (CHANNEL_HALF | CHANNEL_QUARTER))
+ 		goto fail;
+ 
+-	if ((chan->channelFlags & CHANNEL_ALL) !=
+-	    (ah->curchan->channelFlags & CHANNEL_ALL))
+-		goto fail;
++	/*
++	 * If cross-band fcc is not supoprted, bail out if
++	 * either channelFlags or chanmode differ.
++	 *
++	 * chanmode will be different if the HT operating mode
++	 * changes because of CSA.
++	 */
++	if (!(pCap->hw_caps & ATH9K_HW_CAP_FCC_BAND_SWITCH)) {
++		if ((chan->channelFlags & CHANNEL_ALL) !=
++		    (ah->curchan->channelFlags & CHANNEL_ALL))
++			goto fail;
++
++		if (chan->chanmode != ah->curchan->chanmode)
++			goto fail;
++	}
+ 
+ 	if (!ath9k_hw_check_alive(ah))
+ 		goto fail;
+@@ -2047,7 +2054,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 
+ 	ath9k_hw_apply_gpio_override(ah);
+ 
+-	if (AR_SREV_9565(ah) && ah->shared_chain_lnadiv)
++	if (AR_SREV_9565(ah) && common->bt_ant_diversity)
+ 		REG_SET_BIT(ah, AR_BTCOEX_WL_LNADIV, AR_BTCOEX_WL_LNADIV_FORCE_ON);
+ 
+ 	return 0;
+@@ -2550,34 +2557,28 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 	if (AR_SREV_9287_11_OR_LATER(ah) || AR_SREV_9271(ah))
+ 		pCap->hw_caps |= ATH9K_HW_CAP_SGI_20;
+ 
+-	if (AR_SREV_9285(ah))
++	if (AR_SREV_9285(ah)) {
+ 		if (ah->eep_ops->get_eeprom(ah, EEP_MODAL_VER) >= 3) {
+ 			ant_div_ctl1 =
+ 				ah->eep_ops->get_eeprom(ah, EEP_ANT_DIV_CTL1);
+-			if ((ant_div_ctl1 & 0x1) && ((ant_div_ctl1 >> 3) & 0x1))
++			if ((ant_div_ctl1 & 0x1) && ((ant_div_ctl1 >> 3) & 0x1)) {
+ 				pCap->hw_caps |= ATH9K_HW_CAP_ANT_DIV_COMB;
++				ath_info(common, "Enable LNA combining\n");
++			}
+ 		}
++	}
++
+ 	if (AR_SREV_9300_20_OR_LATER(ah)) {
+ 		if (ah->eep_ops->get_eeprom(ah, EEP_CHAIN_MASK_REDUCE))
+ 			pCap->hw_caps |= ATH9K_HW_CAP_APM;
+ 	}
+ 
+-
+ 	if (AR_SREV_9330(ah) || AR_SREV_9485(ah) || AR_SREV_9565(ah)) {
+ 		ant_div_ctl1 = ah->eep_ops->get_eeprom(ah, EEP_ANT_DIV_CTL1);
+-		/*
+-		 * enable the diversity-combining algorithm only when
+-		 * both enable_lna_div and enable_fast_div are set
+-		 *		Table for Diversity
+-		 * ant_div_alt_lnaconf		bit 0-1
+-		 * ant_div_main_lnaconf		bit 2-3
+-		 * ant_div_alt_gaintb		bit 4
+-		 * ant_div_main_gaintb		bit 5
+-		 * enable_ant_div_lnadiv	bit 6
+-		 * enable_ant_fast_div		bit 7
+-		 */
+-		if ((ant_div_ctl1 >> 0x6) == 0x3)
++		if ((ant_div_ctl1 >> 0x6) == 0x3) {
+ 			pCap->hw_caps |= ATH9K_HW_CAP_ANT_DIV_COMB;
++			ath_info(common, "Enable LNA combining\n");
++		}
+ 	}
+ 
+ 	if (ath9k_hw_dfs_tested(ah))
+@@ -2610,6 +2611,13 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 	    ah->eep_ops->get_eeprom(ah, EEP_PAPRD))
+ 			pCap->hw_caps |= ATH9K_HW_CAP_PAPRD;
+ 
++	/*
++	 * Fast channel change across bands is available
++	 * only for AR9462 and AR9565.
++	 */
++	if (AR_SREV_9462(ah) || AR_SREV_9565(ah))
++		pCap->hw_caps |= ATH9K_HW_CAP_FCC_BAND_SWITCH;
++
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -247,6 +247,8 @@ enum ath9k_hw_caps {
+ 	ATH9K_HW_CAP_DFS			= BIT(16),
+ 	ATH9K_HW_WOW_DEVICE_CAPABLE		= BIT(17),
+ 	ATH9K_HW_CAP_PAPRD			= BIT(18),
++	ATH9K_HW_CAP_FCC_BAND_SWITCH		= BIT(19),
++	ATH9K_HW_CAP_BT_ANT_DIV			= BIT(20),
+ };
+ 
+ /*
+@@ -309,8 +311,11 @@ struct ath9k_ops_config {
+ 	u16 ani_poll_interval; /* ANI poll interval in ms */
+ 
+ 	/* Platform specific config */
++	u32 aspm_l1_fix;
+ 	u32 xlna_gpio;
++	u32 ant_ctrl_comm2g_switch_enable;
+ 	bool xatten_margin_cfg;
++	bool alt_mingainidx;
+ };
+ 
+ enum ath9k_int {
+@@ -716,11 +721,14 @@ struct ath_hw_ops {
+ 			struct ath_hw_antcomb_conf *antconf);
+ 	void (*antdiv_comb_conf_set)(struct ath_hw *ah,
+ 			struct ath_hw_antcomb_conf *antconf);
+-	void (*antctrl_shared_chain_lnadiv)(struct ath_hw *hw, bool enable);
+ 	void (*spectral_scan_config)(struct ath_hw *ah,
+ 				     struct ath_spec_scan *param);
+ 	void (*spectral_scan_trigger)(struct ath_hw *ah);
+ 	void (*spectral_scan_wait)(struct ath_hw *ah);
++
++#ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
++	void (*set_bt_ant_diversity)(struct ath_hw *hw, bool enable);
++#endif
+ };
+ 
+ struct ath_nf_limits {
+@@ -765,7 +773,6 @@ struct ath_hw {
+ 	bool aspm_enabled;
+ 	bool is_monitoring;
+ 	bool need_an_top2_fixup;
+-	bool shared_chain_lnadiv;
+ 	u16 tx_trig_level;
+ 
+ 	u32 nf_regs[6];
+--- a/drivers/net/wireless/ath/ath9k/pci.c
++++ b/drivers/net/wireless/ath/ath9k/pci.c
+@@ -29,6 +29,60 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
+ 	{ PCI_VDEVICE(ATHEROS, 0x0027) }, /* PCI   */
+ 	{ PCI_VDEVICE(ATHEROS, 0x0029) }, /* PCI   */
+ 	{ PCI_VDEVICE(ATHEROS, 0x002A) }, /* PCI-E */
++
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002A,
++			 PCI_VENDOR_ID_AZWAVE,
++			 0x1C71),
++	  .driver_data = ATH9K_PCI_D3_L1_WAR },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002A,
++			 PCI_VENDOR_ID_FOXCONN,
++			 0xE01F),
++	  .driver_data = ATH9K_PCI_D3_L1_WAR },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002A,
++			 0x11AD, /* LITEON */
++			 0x6632),
++	  .driver_data = ATH9K_PCI_D3_L1_WAR },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002A,
++			 0x11AD, /* LITEON */
++			 0x6642),
++	  .driver_data = ATH9K_PCI_D3_L1_WAR },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002A,
++			 PCI_VENDOR_ID_QMI,
++			 0x0306),
++	  .driver_data = ATH9K_PCI_D3_L1_WAR },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002A,
++			 0x185F, /* WNC */
++			 0x309D),
++	  .driver_data = ATH9K_PCI_D3_L1_WAR },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002A,
++			 0x10CF, /* Fujitsu */
++			 0x147C),
++	  .driver_data = ATH9K_PCI_D3_L1_WAR },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002A,
++			 0x10CF, /* Fujitsu */
++			 0x147D),
++	  .driver_data = ATH9K_PCI_D3_L1_WAR },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002A,
++			 0x10CF, /* Fujitsu */
++			 0x1536),
++	  .driver_data = ATH9K_PCI_D3_L1_WAR },
++
++	/* AR9285 card for Asus */
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x002B,
++			 PCI_VENDOR_ID_AZWAVE,
++			 0x2C37),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++
+ 	{ PCI_VDEVICE(ATHEROS, 0x002B) }, /* PCI-E */
+ 	{ PCI_VDEVICE(ATHEROS, 0x002C) }, /* PCI-E 802.11n bonded out */
+ 	{ PCI_VDEVICE(ATHEROS, 0x002D) }, /* PCI   */
+@@ -40,29 +94,106 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
+ 			 0x0032,
+ 			 PCI_VENDOR_ID_AZWAVE,
+ 			 0x2086),
+-	  .driver_data = ATH9K_PCI_CUS198 },
++	  .driver_data = ATH9K_PCI_CUS198 | ATH9K_PCI_BT_ANT_DIV },
+ 	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
+ 			 0x0032,
+ 			 PCI_VENDOR_ID_AZWAVE,
+ 			 0x1237),
+-	  .driver_data = ATH9K_PCI_CUS198 },
++	  .driver_data = ATH9K_PCI_CUS198 | ATH9K_PCI_BT_ANT_DIV },
+ 	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
+ 			 0x0032,
+ 			 PCI_VENDOR_ID_AZWAVE,
+ 			 0x2126),
+-	  .driver_data = ATH9K_PCI_CUS198 },
++	  .driver_data = ATH9K_PCI_CUS198 | ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_AZWAVE,
++			 0x126A),
++	  .driver_data = ATH9K_PCI_CUS198 | ATH9K_PCI_BT_ANT_DIV },
+ 
+ 	/* PCI-E CUS230 */
+ 	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
+ 			 0x0032,
+ 			 PCI_VENDOR_ID_AZWAVE,
+ 			 0x2152),
+-	  .driver_data = ATH9K_PCI_CUS230 },
++	  .driver_data = ATH9K_PCI_CUS230 | ATH9K_PCI_BT_ANT_DIV },
+ 	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
+ 			 0x0032,
+ 			 PCI_VENDOR_ID_FOXCONN,
+ 			 0xE075),
+-	  .driver_data = ATH9K_PCI_CUS230 },
++	  .driver_data = ATH9K_PCI_CUS230 | ATH9K_PCI_BT_ANT_DIV },
++
++	/* WB225 */
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_ATHEROS,
++			 0x3119),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_ATHEROS,
++			 0x3122),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 0x185F, /* WNC */
++			 0x3119),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 0x185F, /* WNC */
++			 0x3027),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_SAMSUNG,
++			 0x4105),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_SAMSUNG,
++			 0x4106),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_SAMSUNG,
++			 0x410D),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_SAMSUNG,
++			 0x410E),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_SAMSUNG,
++			 0x410F),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_SAMSUNG,
++			 0xC706),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_SAMSUNG,
++			 0xC680),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_SAMSUNG,
++			 0xC708),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_LENOVO,
++			 0x3218),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_ATHEROS,
++			 0x0032,
++			 PCI_VENDOR_ID_LENOVO,
++			 0x3219),
++	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
+ 
+ 	{ PCI_VDEVICE(ATHEROS, 0x0032) }, /* PCI-E  AR9485 */
+ 	{ PCI_VDEVICE(ATHEROS, 0x0033) }, /* PCI-E  AR9580 */
+@@ -229,6 +360,22 @@ static void ath_pci_aspm_init(struct ath
+ 		return;
+ 	}
+ 
++	/*
++	 * 0x70c - Ack Frequency Register.
++	 *
++	 * Bits 27:29 - DEFAULT_L1_ENTRANCE_LATENCY.
++	 *
++	 * 000 : 1 us
++	 * 001 : 2 us
++	 * 010 : 4 us
++	 * 011 : 8 us
++	 * 100 : 16 us
++	 * 101 : 32 us
++	 * 110/111 : 64 us
++	 */
++	if (AR_SREV_9462(ah))
++		pci_read_config_dword(pdev, 0x70c, &ah->config.aspm_l1_fix);
++
+ 	pcie_capability_read_word(parent, PCI_EXP_LNKCTL, &aspm);
+ 	if (aspm & (PCI_EXP_LNKCTL_ASPM_L0S | PCI_EXP_LNKCTL_ASPM_L1)) {
+ 		ah->aspm_enabled = true;
+--- a/drivers/net/wireless/ath/ath9k/phy.h
++++ b/drivers/net/wireless/ath/ath9k/phy.h
+@@ -48,4 +48,11 @@
+ #define AR_PHY_PLL_CONTROL 0x16180
+ #define AR_PHY_PLL_MODE 0x16184
+ 
++enum ath9k_ant_div_comb_lna_conf {
++	ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2,
++	ATH_ANT_DIV_COMB_LNA2,
++	ATH_ANT_DIV_COMB_LNA1,
++	ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2,
++};
++
+ #endif
+--- a/drivers/net/wireless/iwlwifi/mvm/time-event.c
++++ b/drivers/net/wireless/iwlwifi/mvm/time-event.c
+@@ -73,7 +73,6 @@
+ #include "iwl-prph.h"
+ 
+ /* A TimeUnit is 1024 microsecond */
+-#define TU_TO_JIFFIES(_tu)	(usecs_to_jiffies((_tu) * 1024))
+ #define MSEC_TO_TU(_msec)	(_msec*1000/1024)
+ 
+ /*
+@@ -191,8 +190,7 @@ static void iwl_mvm_te_handle_notif(stru
+ 		iwl_mvm_te_clear_data(mvm, te_data);
+ 	} else if (le32_to_cpu(notif->action) & TE_NOTIF_HOST_EVENT_START) {
+ 		te_data->running = true;
+-		te_data->end_jiffies = jiffies +
+-			TU_TO_JIFFIES(te_data->duration);
++		te_data->end_jiffies = TU_TO_EXP_TIME(te_data->duration);
+ 
+ 		if (te_data->vif->type == NL80211_IFTYPE_P2P_DEVICE) {
+ 			set_bit(IWL_MVM_STATUS_ROC_RUNNING, &mvm->status);
+@@ -329,8 +327,7 @@ void iwl_mvm_protect_session(struct iwl_
+ 	lockdep_assert_held(&mvm->mutex);
+ 
+ 	if (te_data->running &&
+-	    time_after(te_data->end_jiffies,
+-		       jiffies + TU_TO_JIFFIES(min_duration))) {
++	    time_after(te_data->end_jiffies, TU_TO_EXP_TIME(min_duration))) {
+ 		IWL_DEBUG_TE(mvm, "We have enough time in the current TE: %u\n",
+ 			     jiffies_to_msecs(te_data->end_jiffies - jiffies));
+ 		return;
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -2279,4 +2279,8 @@ static inline bool ieee80211_check_tim(c
+ 	return !!(tim->virtual_map[index] & mask);
+ }
+ 
++/* convert time units */
++#define TU_TO_JIFFIES(x)	(usecs_to_jiffies((x) * 1024))
++#define TU_TO_EXP_TIME(x)	(jiffies + TU_TO_JIFFIES(x))
++
+ #endif /* LINUX_IEEE80211_H */
+--- a/net/mac80211/rate.c
++++ b/net/mac80211/rate.c
+@@ -210,7 +210,7 @@ static bool rc_no_data_or_no_ack_use_min
+ 		!ieee80211_is_data(fc);
+ }
+ 
+-static void rc_send_low_broadcast(s8 *idx, u32 basic_rates,
++static void rc_send_low_basicrate(s8 *idx, u32 basic_rates,
+ 				  struct ieee80211_supported_band *sband)
+ {
+ 	u8 i;
+@@ -272,28 +272,37 @@ static void __rate_control_send_low(stru
+ }
+ 
+ 
+-bool rate_control_send_low(struct ieee80211_sta *sta,
++bool rate_control_send_low(struct ieee80211_sta *pubsta,
+ 			   void *priv_sta,
+ 			   struct ieee80211_tx_rate_control *txrc)
+ {
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(txrc->skb);
+ 	struct ieee80211_supported_band *sband = txrc->sband;
++	struct sta_info *sta;
+ 	int mcast_rate;
++	bool use_basicrate = false;
+ 
+-	if (!sta || !priv_sta || rc_no_data_or_no_ack_use_min(txrc)) {
+-		__rate_control_send_low(txrc->hw, sband, sta, info);
++	if (!pubsta || !priv_sta || rc_no_data_or_no_ack_use_min(txrc)) {
++		__rate_control_send_low(txrc->hw, sband, pubsta, info);
+ 
+-		if (!sta && txrc->bss) {
++		if (!pubsta && txrc->bss) {
+ 			mcast_rate = txrc->bss_conf->mcast_rate[sband->band];
+ 			if (mcast_rate > 0) {
+ 				info->control.rates[0].idx = mcast_rate - 1;
+ 				return true;
+ 			}
++			use_basicrate = true;
++		} else if (pubsta) {
++			sta = container_of(pubsta, struct sta_info, sta);
++			if (ieee80211_vif_is_mesh(&sta->sdata->vif))
++				use_basicrate = true;
++		}
+ 
+-			rc_send_low_broadcast(&info->control.rates[0].idx,
++		if (use_basicrate)
++			rc_send_low_basicrate(&info->control.rates[0].idx,
+ 					      txrc->bss_conf->basic_rates,
+ 					      sband);
+-		}
++
+ 		return true;
+ 	}
+ 	return false;
+--- a/drivers/net/wireless/ath/ath9k/Kconfig
++++ b/drivers/net/wireless/ath/ath9k/Kconfig
+@@ -60,7 +60,7 @@ config ATH9K_AHB
+ 
+ config ATH9K_DEBUGFS
+ 	bool "Atheros ath9k debugging"
+-	depends on ATH9K
++	depends on ATH9K && DEBUG_FS
+ 	select MAC80211_DEBUGFS
+ 	depends on RELAY
+ 	---help---
+--- a/drivers/net/wireless/ath/ath9k/ar9002_hw.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_hw.c
+@@ -269,13 +269,12 @@ static void ar9002_hw_configpcipowersave
+ 			if (ah->config.pcie_waen & AR_WA_D3_L1_DISABLE)
+ 				val |= AR_WA_D3_L1_DISABLE;
+ 		} else {
+-			if (((AR_SREV_9285(ah) ||
+-			      AR_SREV_9271(ah) ||
+-			      AR_SREV_9287(ah)) &&
+-			     (AR9285_WA_DEFAULT & AR_WA_D3_L1_DISABLE)) ||
+-			    (AR_SREV_9280(ah) &&
+-			     (AR9280_WA_DEFAULT & AR_WA_D3_L1_DISABLE))) {
+-				val |= AR_WA_D3_L1_DISABLE;
++			if (AR_SREV_9285(ah) || AR_SREV_9271(ah) || AR_SREV_9287(ah)) {
++				if (AR9285_WA_DEFAULT & AR_WA_D3_L1_DISABLE)
++					val |= AR_WA_D3_L1_DISABLE;
++			} else if (AR_SREV_9280(ah)) {
++				if (AR9280_WA_DEFAULT & AR_WA_D3_L1_DISABLE)
++					val |= AR_WA_D3_L1_DISABLE;
+ 			}
+ 		}
+ 
+@@ -297,24 +296,18 @@ static void ar9002_hw_configpcipowersave
+ 	} else {
+ 		if (ah->config.pcie_waen) {
+ 			val = ah->config.pcie_waen;
+-			if (!power_off)
+-				val &= (~AR_WA_D3_L1_DISABLE);
++			val &= (~AR_WA_D3_L1_DISABLE);
+ 		} else {
+-			if (AR_SREV_9285(ah) ||
+-			    AR_SREV_9271(ah) ||
+-			    AR_SREV_9287(ah)) {
++			if (AR_SREV_9285(ah) || AR_SREV_9271(ah) || AR_SREV_9287(ah)) {
+ 				val = AR9285_WA_DEFAULT;
+-				if (!power_off)
+-					val &= (~AR_WA_D3_L1_DISABLE);
+-			}
+-			else if (AR_SREV_9280(ah)) {
++				val &= (~AR_WA_D3_L1_DISABLE);
++			} else if (AR_SREV_9280(ah)) {
+ 				/*
+ 				 * For AR9280 chips, bit 22 of 0x4004
+ 				 * needs to be set.
+ 				 */
+ 				val = AR9280_WA_DEFAULT;
+-				if (!power_off)
+-					val &= (~AR_WA_D3_L1_DISABLE);
++				val &= (~AR_WA_D3_L1_DISABLE);
+ 			} else {
+ 				val = AR_WA_DEFAULT;
+ 			}
+--- a/drivers/net/wireless/ath/ath9k/ar9003_hw.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_hw.c
+@@ -153,7 +153,7 @@ static void ar9003_hw_init_mode_regs(str
+ 		if (!ah->is_clk_25mhz)
+ 			INIT_INI_ARRAY(&ah->iniAdditional,
+ 				       ar9340_1p0_radio_core_40M);
+-	} else if (AR_SREV_9485_11(ah)) {
++	} else if (AR_SREV_9485_11_OR_LATER(ah)) {
+ 		/* mac */
+ 		INIT_INI_ARRAY(&ah->iniMac[ATH_INI_CORE],
+ 				ar9485_1_1_mac_core);
+@@ -424,7 +424,7 @@ static void ar9003_tx_gain_table_mode0(s
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9340Modes_lowest_ob_db_tx_gain_table_1p0);
+-	else if (AR_SREV_9485_11(ah))
++	else if (AR_SREV_9485_11_OR_LATER(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9485_modes_lowest_ob_db_tx_gain_1_1);
+ 	else if (AR_SREV_9550(ah))
+@@ -458,7 +458,7 @@ static void ar9003_tx_gain_table_mode1(s
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9340Modes_high_ob_db_tx_gain_table_1p0);
+-	else if (AR_SREV_9485_11(ah))
++	else if (AR_SREV_9485_11_OR_LATER(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9485Modes_high_ob_db_tx_gain_1_1);
+ 	else if (AR_SREV_9580(ah))
+@@ -492,7 +492,7 @@ static void ar9003_tx_gain_table_mode2(s
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9340Modes_low_ob_db_tx_gain_table_1p0);
+-	else if (AR_SREV_9485_11(ah))
++	else if (AR_SREV_9485_11_OR_LATER(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9485Modes_low_ob_db_tx_gain_1_1);
+ 	else if (AR_SREV_9580(ah))
+@@ -517,7 +517,7 @@ static void ar9003_tx_gain_table_mode3(s
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9340Modes_high_power_tx_gain_table_1p0);
+-	else if (AR_SREV_9485_11(ah))
++	else if (AR_SREV_9485_11_OR_LATER(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9485Modes_high_power_tx_gain_1_1);
+ 	else if (AR_SREV_9580(ah))
+@@ -552,7 +552,7 @@ static void ar9003_tx_gain_table_mode4(s
+ 
+ static void ar9003_tx_gain_table_mode5(struct ath_hw *ah)
+ {
+-	if (AR_SREV_9485_11(ah))
++	if (AR_SREV_9485_11_OR_LATER(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9485Modes_green_ob_db_tx_gain_1_1);
+ 	else if (AR_SREV_9340(ah))
+@@ -571,7 +571,7 @@ static void ar9003_tx_gain_table_mode6(s
+ 	if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9340Modes_low_ob_db_and_spur_tx_gain_table_1p0);
+-	else if (AR_SREV_9485_11(ah))
++	else if (AR_SREV_9485_11_OR_LATER(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesTxGain,
+ 			ar9485Modes_green_spur_ob_db_tx_gain_1_1);
+ 	else if (AR_SREV_9580(ah))
+@@ -611,7 +611,7 @@ static void ar9003_rx_gain_table_mode0(s
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+ 				ar9340Common_rx_gain_table_1p0);
+-	else if (AR_SREV_9485_11(ah))
++	else if (AR_SREV_9485_11_OR_LATER(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+ 			       ar9485_common_rx_gain_1_1);
+ 	else if (AR_SREV_9550(ah)) {
+@@ -644,7 +644,7 @@ static void ar9003_rx_gain_table_mode1(s
+ 	else if (AR_SREV_9340(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+ 			ar9340Common_wo_xlna_rx_gain_table_1p0);
+-	else if (AR_SREV_9485_11(ah))
++	else if (AR_SREV_9485_11_OR_LATER(ah))
+ 		INIT_INI_ARRAY(&ah->iniModesRxGain,
+ 			ar9485Common_wo_xlna_rx_gain_1_1);
+ 	else if (AR_SREV_9462_21(ah))
+@@ -745,16 +745,25 @@ static void ar9003_hw_init_mode_gain_reg
+ static void ar9003_hw_configpcipowersave(struct ath_hw *ah,
+ 					 bool power_off)
+ {
++	/*
++	 * Increase L1 Entry Latency. Some WB222 boards don't have
++	 * this change in eeprom/OTP.
++	 *
++	 */
++	if (AR_SREV_9462(ah)) {
++		u32 val = ah->config.aspm_l1_fix;
++		if ((val & 0xff000000) == 0x17000000) {
++			val &= 0x00ffffff;
++			val |= 0x27000000;
++			REG_WRITE(ah, 0x570c, val);
++		}
++	}
++
+ 	/* Nothing to do on restore for 11N */
+ 	if (!power_off /* !restore */) {
+ 		/* set bit 19 to allow forcing of pcie core into L1 state */
+ 		REG_SET_BIT(ah, AR_PCIE_PM_CTRL, AR_PCIE_PM_CTRL_ENA);
+-
+-		/* Several PCIe massages to ensure proper behaviour */
+-		if (ah->config.pcie_waen)
+-			REG_WRITE(ah, AR_WA, ah->config.pcie_waen);
+-		else
+-			REG_WRITE(ah, AR_WA, ah->WARegVal);
++		REG_WRITE(ah, AR_WA, ah->WARegVal);
+ 	}
+ 
+ 	/*
+--- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
+@@ -491,6 +491,7 @@ int ath9k_hw_process_rxdesc_edma(struct 
+ 	rxs->rs_rate = MS(rxsp->status1, AR_RxRate);
+ 	rxs->rs_more = (rxsp->status2 & AR_RxMore) ? 1 : 0;
+ 
++	rxs->rs_firstaggr = (rxsp->status11 & AR_RxFirstAggr) ? 1 : 0;
+ 	rxs->rs_isaggr = (rxsp->status11 & AR_RxAggr) ? 1 : 0;
+ 	rxs->rs_moreaggr = (rxsp->status11 & AR_RxMoreAggr) ? 1 : 0;
+ 	rxs->rs_antenna = (MS(rxsp->status4, AR_RxAntenna) & 0x7);
+--- a/drivers/net/wireless/ath/ath9k/common.c
++++ b/drivers/net/wireless/ath/ath9k/common.c
+@@ -49,37 +49,40 @@ int ath9k_cmn_get_hw_crypto_keytype(stru
+ }
+ EXPORT_SYMBOL(ath9k_cmn_get_hw_crypto_keytype);
+ 
+-static u32 ath9k_get_extchanmode(struct ieee80211_channel *chan,
+-				 enum nl80211_channel_type channel_type)
++static u32 ath9k_get_extchanmode(struct cfg80211_chan_def *chandef)
+ {
+ 	u32 chanmode = 0;
+ 
+-	switch (chan->band) {
++	switch (chandef->chan->band) {
+ 	case IEEE80211_BAND_2GHZ:
+-		switch (channel_type) {
+-		case NL80211_CHAN_NO_HT:
+-		case NL80211_CHAN_HT20:
++		switch (chandef->width) {
++		case NL80211_CHAN_WIDTH_20_NOHT:
++		case NL80211_CHAN_WIDTH_20:
+ 			chanmode = CHANNEL_G_HT20;
+ 			break;
+-		case NL80211_CHAN_HT40PLUS:
+-			chanmode = CHANNEL_G_HT40PLUS;
++		case NL80211_CHAN_WIDTH_40:
++			if (chandef->center_freq1 > chandef->chan->center_freq)
++				chanmode = CHANNEL_G_HT40PLUS;
++			else
++				chanmode = CHANNEL_G_HT40MINUS;
+ 			break;
+-		case NL80211_CHAN_HT40MINUS:
+-			chanmode = CHANNEL_G_HT40MINUS;
++		default:
+ 			break;
+ 		}
+ 		break;
+ 	case IEEE80211_BAND_5GHZ:
+-		switch (channel_type) {
+-		case NL80211_CHAN_NO_HT:
+-		case NL80211_CHAN_HT20:
++		switch (chandef->width) {
++		case NL80211_CHAN_WIDTH_20_NOHT:
++		case NL80211_CHAN_WIDTH_20:
+ 			chanmode = CHANNEL_A_HT20;
+ 			break;
+-		case NL80211_CHAN_HT40PLUS:
+-			chanmode = CHANNEL_A_HT40PLUS;
++		case NL80211_CHAN_WIDTH_40:
++			if (chandef->center_freq1 > chandef->chan->center_freq)
++				chanmode = CHANNEL_A_HT40PLUS;
++			else
++				chanmode = CHANNEL_A_HT40MINUS;
+ 			break;
+-		case NL80211_CHAN_HT40MINUS:
+-			chanmode = CHANNEL_A_HT40MINUS;
++		default:
+ 			break;
+ 		}
+ 		break;
+@@ -94,13 +97,12 @@ static u32 ath9k_get_extchanmode(struct 
+  * Update internal channel flags.
+  */
+ void ath9k_cmn_update_ichannel(struct ath9k_channel *ichan,
+-			       struct ieee80211_channel *chan,
+-			       enum nl80211_channel_type channel_type)
++			       struct cfg80211_chan_def *chandef)
+ {
+-	ichan->channel = chan->center_freq;
+-	ichan->chan = chan;
++	ichan->channel = chandef->chan->center_freq;
++	ichan->chan = chandef->chan;
+ 
+-	if (chan->band == IEEE80211_BAND_2GHZ) {
++	if (chandef->chan->band == IEEE80211_BAND_2GHZ) {
+ 		ichan->chanmode = CHANNEL_G;
+ 		ichan->channelFlags = CHANNEL_2GHZ | CHANNEL_OFDM;
+ 	} else {
+@@ -108,8 +110,22 @@ void ath9k_cmn_update_ichannel(struct at
+ 		ichan->channelFlags = CHANNEL_5GHZ | CHANNEL_OFDM;
+ 	}
+ 
+-	if (channel_type != NL80211_CHAN_NO_HT)
+-		ichan->chanmode = ath9k_get_extchanmode(chan, channel_type);
++	switch (chandef->width) {
++	case NL80211_CHAN_WIDTH_5:
++		ichan->channelFlags |= CHANNEL_QUARTER;
++		break;
++	case NL80211_CHAN_WIDTH_10:
++		ichan->channelFlags |= CHANNEL_HALF;
++		break;
++	case NL80211_CHAN_WIDTH_20_NOHT:
++		break;
++	case NL80211_CHAN_WIDTH_20:
++	case NL80211_CHAN_WIDTH_40:
++		ichan->chanmode = ath9k_get_extchanmode(chandef);
++		break;
++	default:
++		WARN_ON(1);
++	}
+ }
+ EXPORT_SYMBOL(ath9k_cmn_update_ichannel);
+ 
+@@ -125,8 +141,7 @@ struct ath9k_channel *ath9k_cmn_get_curc
+ 
+ 	chan_idx = curchan->hw_value;
+ 	channel = &ah->channels[chan_idx];
+-	ath9k_cmn_update_ichannel(channel, curchan,
+-				  cfg80211_get_chandef_type(&hw->conf.chandef));
++	ath9k_cmn_update_ichannel(channel, &hw->conf.chandef);
+ 
+ 	return channel;
+ }
+--- a/drivers/net/wireless/ath/ath9k/common.h
++++ b/drivers/net/wireless/ath/ath9k/common.h
+@@ -44,8 +44,7 @@
+ 
+ int ath9k_cmn_get_hw_crypto_keytype(struct sk_buff *skb);
+ void ath9k_cmn_update_ichannel(struct ath9k_channel *ichan,
+-			       struct ieee80211_channel *chan,
+-			       enum nl80211_channel_type channel_type);
++			       struct cfg80211_chan_def *chandef);
+ struct ath9k_channel *ath9k_cmn_get_curchannel(struct ieee80211_hw *hw,
+ 					       struct ath_hw *ah);
+ int ath9k_cmn_count_streams(unsigned int chainmask, int max);
+--- a/drivers/net/wireless/ath/ath9k/hif_usb.c
++++ b/drivers/net/wireless/ath/ath9k/hif_usb.c
+@@ -115,10 +115,10 @@ static int hif_usb_send_regout(struct hi
+ 	cmd->skb = skb;
+ 	cmd->hif_dev = hif_dev;
+ 
+-	usb_fill_bulk_urb(urb, hif_dev->udev,
+-			 usb_sndbulkpipe(hif_dev->udev, USB_REG_OUT_PIPE),
++	usb_fill_int_urb(urb, hif_dev->udev,
++			 usb_sndintpipe(hif_dev->udev, USB_REG_OUT_PIPE),
+ 			 skb->data, skb->len,
+-			 hif_usb_regout_cb, cmd);
++			 hif_usb_regout_cb, cmd, 1);
+ 
+ 	usb_anchor_urb(urb, &hif_dev->regout_submitted);
+ 	ret = usb_submit_urb(urb, GFP_KERNEL);
+@@ -723,11 +723,11 @@ static void ath9k_hif_usb_reg_in_cb(stru
+ 			return;
+ 		}
+ 
+-		usb_fill_bulk_urb(urb, hif_dev->udev,
+-				 usb_rcvbulkpipe(hif_dev->udev,
++		usb_fill_int_urb(urb, hif_dev->udev,
++				 usb_rcvintpipe(hif_dev->udev,
+ 						 USB_REG_IN_PIPE),
+ 				 nskb->data, MAX_REG_IN_BUF_SIZE,
+-				 ath9k_hif_usb_reg_in_cb, nskb);
++				 ath9k_hif_usb_reg_in_cb, nskb, 1);
+ 	}
+ 
+ resubmit:
+@@ -909,11 +909,11 @@ static int ath9k_hif_usb_alloc_reg_in_ur
+ 			goto err_skb;
+ 		}
+ 
+-		usb_fill_bulk_urb(urb, hif_dev->udev,
+-				  usb_rcvbulkpipe(hif_dev->udev,
++		usb_fill_int_urb(urb, hif_dev->udev,
++				  usb_rcvintpipe(hif_dev->udev,
+ 						  USB_REG_IN_PIPE),
+ 				  skb->data, MAX_REG_IN_BUF_SIZE,
+-				  ath9k_hif_usb_reg_in_cb, skb);
++				  ath9k_hif_usb_reg_in_cb, skb, 1);
+ 
+ 		/* Anchor URB */
+ 		usb_anchor_urb(urb, &hif_dev->reg_in_submitted);
+@@ -1031,9 +1031,7 @@ static int ath9k_hif_usb_download_fw(str
+ 
+ static int ath9k_hif_usb_dev_init(struct hif_device_usb *hif_dev)
+ {
+-	struct usb_host_interface *alt = &hif_dev->interface->altsetting[0];
+-	struct usb_endpoint_descriptor *endp;
+-	int ret, idx;
++	int ret;
+ 
+ 	ret = ath9k_hif_usb_download_fw(hif_dev);
+ 	if (ret) {
+@@ -1043,20 +1041,6 @@ static int ath9k_hif_usb_dev_init(struct
+ 		return ret;
+ 	}
+ 
+-	/* On downloading the firmware to the target, the USB descriptor of EP4
+-	 * is 'patched' to change the type of the endpoint to Bulk. This will
+-	 * bring down CPU usage during the scan period.
+-	 */
+-	for (idx = 0; idx < alt->desc.bNumEndpoints; idx++) {
+-		endp = &alt->endpoint[idx].desc;
+-		if ((endp->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
+-				== USB_ENDPOINT_XFER_INT) {
+-			endp->bmAttributes &= ~USB_ENDPOINT_XFERTYPE_MASK;
+-			endp->bmAttributes |= USB_ENDPOINT_XFER_BULK;
+-			endp->bInterval = 0;
+-		}
+-	}
+-
+ 	/* Alloc URBs */
+ 	ret = ath9k_hif_usb_alloc_urbs(hif_dev);
+ 	if (ret) {
+@@ -1268,7 +1252,7 @@ static void ath9k_hif_usb_reboot(struct 
+ 	if (!buf)
+ 		return;
+ 
+-	ret = usb_bulk_msg(udev, usb_sndbulkpipe(udev, USB_REG_OUT_PIPE),
++	ret = usb_interrupt_msg(udev, usb_sndintpipe(udev, USB_REG_OUT_PIPE),
+ 			   buf, 4, NULL, HZ);
+ 	if (ret)
+ 		dev_err(&udev->dev, "ath9k_htc: USB reboot failed\n");
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
+@@ -1203,16 +1203,13 @@ static int ath9k_htc_config(struct ieee8
+ 
+ 	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || chip_reset) {
+ 		struct ieee80211_channel *curchan = hw->conf.chandef.chan;
+-		enum nl80211_channel_type channel_type =
+-			cfg80211_get_chandef_type(&hw->conf.chandef);
+ 		int pos = curchan->hw_value;
+ 
+ 		ath_dbg(common, CONFIG, "Set channel: %d MHz\n",
+ 			curchan->center_freq);
+ 
+ 		ath9k_cmn_update_ichannel(&priv->ah->channels[pos],
+-					  hw->conf.chandef.chan,
+-					  channel_type);
++					  &hw->conf.chandef);
+ 
+ 		if (ath9k_htc_set_channel(priv, hw, &priv->ah->channels[pos]) < 0) {
+ 			ath_err(common, "Unable to set channel\n");
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
+@@ -448,6 +448,7 @@ static void ath9k_htc_tx_process(struct 
+ 	struct ieee80211_conf *cur_conf = &priv->hw->conf;
+ 	bool txok;
+ 	int slot;
++	int hdrlen, padsize;
+ 
+ 	slot = strip_drv_header(priv, skb);
+ 	if (slot < 0) {
+@@ -504,6 +505,15 @@ send_mac80211:
+ 
+ 	ath9k_htc_tx_clear_slot(priv, slot);
+ 
++	/* Remove padding before handing frame back to mac80211 */
++	hdrlen = ieee80211_get_hdrlen_from_skb(skb);
++
++	padsize = hdrlen & 3;
++	if (padsize && skb->len > hdrlen + padsize) {
++		memmove(skb->data + padsize, skb->data, hdrlen);
++		skb_pull(skb, padsize);
++	}
++
+ 	/* Send status to mac80211 */
+ 	ieee80211_tx_status(priv->hw, skb);
+ }
+--- a/drivers/net/wireless/ath/ath9k/link.c
++++ b/drivers/net/wireless/ath/ath9k/link.c
+@@ -41,7 +41,7 @@ void ath_tx_complete_poll_work(struct wo
+ 				txq->axq_tx_inprogress = true;
+ 			}
+ 		}
+-		ath_txq_unlock_complete(sc, txq);
++		ath_txq_unlock(sc, txq);
+ 	}
+ 
+ 	if (needreset) {
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -583,9 +583,9 @@ int ath9k_hw_rxprocdesc(struct ath_hw *a
+ 	rs->rs_rate = MS(ads.ds_rxstatus0, AR_RxRate);
+ 	rs->rs_more = (ads.ds_rxstatus1 & AR_RxMore) ? 1 : 0;
+ 
++	rs->rs_firstaggr = (ads.ds_rxstatus8 & AR_RxFirstAggr) ? 1 : 0;
+ 	rs->rs_isaggr = (ads.ds_rxstatus8 & AR_RxAggr) ? 1 : 0;
+-	rs->rs_moreaggr =
+-		(ads.ds_rxstatus8 & AR_RxMoreAggr) ? 1 : 0;
++	rs->rs_moreaggr = (ads.ds_rxstatus8 & AR_RxMoreAggr) ? 1 : 0;
+ 	rs->rs_antenna = MS(ads.ds_rxstatus3, AR_RxAntenna);
+ 
+ 	/* directly mapped flags for ieee80211_rx_status */
+--- a/drivers/net/wireless/ath/ath9k/mac.h
++++ b/drivers/net/wireless/ath/ath9k/mac.h
+@@ -140,6 +140,7 @@ struct ath_rx_status {
+ 	int8_t rs_rssi_ext1;
+ 	int8_t rs_rssi_ext2;
+ 	u8 rs_isaggr;
++	u8 rs_firstaggr;
+ 	u8 rs_moreaggr;
+ 	u8 rs_num_delims;
+ 	u8 rs_flags;
+@@ -569,6 +570,7 @@ struct ar5416_desc {
+ #define AR_RxAggr           0x00020000
+ #define AR_PostDelimCRCErr  0x00040000
+ #define AR_RxStatusRsvd71   0x3ff80000
++#define AR_RxFirstAggr      0x20000000
+ #define AR_DecryptBusyErr   0x40000000
+ #define AR_KeyMiss          0x80000000
+ 
+--- a/drivers/net/wireless/ath/ath9k/rc.c
++++ b/drivers/net/wireless/ath/ath9k/rc.c
+@@ -1324,8 +1324,8 @@ static void ath_rate_update(void *priv, 
+ 		ath_rc_init(sc, priv_sta);
+ 
+ 		ath_dbg(ath9k_hw_common(sc->sc_ah), CONFIG,
+-			"Operating HT Bandwidth changed to: %d\n",
+-			cfg80211_get_chandef_type(&sc->hw->conf.chandef));
++			"Operating Bandwidth changed to: %d\n",
++			sc->hw->conf.chandef.width);
+ 	}
+ }
+ 
+--- a/drivers/net/wireless/ath/ath9k/reg.h
++++ b/drivers/net/wireless/ath/ath9k/reg.h
+@@ -893,9 +893,9 @@
+ 
+ #define AR_SREV_9485(_ah) \
+ 	(((_ah)->hw_version.macVersion == AR_SREV_VERSION_9485))
+-#define AR_SREV_9485_11(_ah) \
+-	(AR_SREV_9485(_ah) && \
+-	 ((_ah)->hw_version.macRev == AR_SREV_REVISION_9485_11))
++#define AR_SREV_9485_11_OR_LATER(_ah) \
++	(((_ah)->hw_version.macVersion == AR_SREV_VERSION_9485) && \
++	 ((_ah)->hw_version.macRev >= AR_SREV_REVISION_9485_11))
+ #define AR_SREV_9485_OR_LATER(_ah) \
+ 	(((_ah)->hw_version.macVersion >= AR_SREV_VERSION_9485))
+ 

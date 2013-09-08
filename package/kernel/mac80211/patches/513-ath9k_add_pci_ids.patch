@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -729,6 +729,7 @@ int ath9k_hw_init(struct ath_hw *ah)
+@@ -728,6 +728,7 @@ int ath9k_hw_init(struct ath_hw *ah)
  	case AR9300_DEVID_AR9462:
  	case AR9485_DEVID_AR1111:
  	case AR9300_DEVID_AR9565:
@@ -20,7 +20,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/pci.c
 +++ b/drivers/net/wireless/ath/ath9k/pci.c
-@@ -139,6 +139,7 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
+@@ -270,6 +270,7 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
  	{ PCI_VDEVICE(ATHEROS, 0x0034) }, /* PCI-E  AR9462 */
  	{ PCI_VDEVICE(ATHEROS, 0x0037) }, /* PCI-E  AR1111/AR9485 */
  	{ PCI_VDEVICE(ATHEROS, 0x0036) }, /* PCI-E  AR9565 */
