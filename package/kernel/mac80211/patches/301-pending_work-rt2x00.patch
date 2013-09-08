@@ -2354,7 +2354,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	case RF3290:
  	case RF5360:
  	case RF5370:
-@@ -3442,17 +4487,25 @@ static int rt2800_init_registers(struct
+@@ -3442,17 +4487,25 @@ static int rt2800_init_registers(struct 
  		return ret;
  
  	rt2800_register_read(rt2x00dev, BCN_OFFSET0, &reg);
@@ -2388,7 +2388,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	rt2800_register_write(rt2x00dev, BCN_OFFSET1, reg);
  
  	rt2800_register_write(rt2x00dev, LEGACY_BASIC_RATE, 0x0000013f);
-@@ -3528,7 +4581,8 @@ static int rt2800_init_registers(struct
+@@ -3528,7 +4581,8 @@ static int rt2800_init_registers(struct 
  		if (rt2x00_rt_rev_lt(rt2x00dev, RT3071, REV_RT3071E) ||
  		    rt2x00_rt_rev_lt(rt2x00dev, RT3090, REV_RT3090E) ||
  		    rt2x00_rt_rev_lt(rt2x00dev, RT3390, REV_RT3390E)) {
@@ -2398,7 +2398,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  			if (rt2x00_get_field16(eeprom, EEPROM_NIC_CONF1_DAC_TEST))
  				rt2800_register_write(rt2x00dev, TX_SW_CFG2,
  						      0x0000002c);
-@@ -3559,6 +4613,23 @@ static int rt2800_init_registers(struct
+@@ -3559,6 +4613,23 @@ static int rt2800_init_registers(struct 
  	} else if (rt2x00_rt(rt2x00dev, RT3572)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000400);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
@@ -2422,7 +2422,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	} else if (rt2x00_rt(rt2x00dev, RT5390) ||
  		   rt2x00_rt(rt2x00dev, RT5392) ||
  		   rt2x00_rt(rt2x00dev, RT5592)) {
-@@ -3786,14 +4857,8 @@ static int rt2800_init_registers(struct
+@@ -3786,14 +4857,8 @@ static int rt2800_init_registers(struct 
  	/*
  	 * Clear all beacons
  	 */
@@ -2448,7 +2448,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	if (rt2x00_get_field16(eeprom, EEPROM_NIC_CONF0_TXPATH) == 1)
  		value |= 0x20;
  	if (rt2x00_get_field16(eeprom, EEPROM_NIC_CONF0_RXPATH) == 1)
-@@ -4332,6 +5397,22 @@ static void rt2800_init_bbp_3572(struct
+@@ -4332,6 +5397,22 @@ static void rt2800_init_bbp_3572(struct 
  	rt2800_disable_unused_dac_adc(rt2x00dev);
  }
  
@@ -2471,7 +2471,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  static void rt2800_init_bbp_53xx(struct rt2x00_dev *rt2x00dev)
  {
  	int ant, div_mode;
-@@ -4402,7 +5483,7 @@ static void rt2800_init_bbp_53xx(struct
+@@ -4402,7 +5483,7 @@ static void rt2800_init_bbp_53xx(struct 
  
  	rt2800_disable_unused_dac_adc(rt2x00dev);
  
@@ -2480,7 +2480,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	div_mode = rt2x00_get_field16(eeprom,
  				      EEPROM_NIC_CONF1_ANT_DIVERSITY);
  	ant = (div_mode == 3) ? 1 : 0;
-@@ -4488,7 +5569,7 @@ static void rt2800_init_bbp_5592(struct
+@@ -4488,7 +5569,7 @@ static void rt2800_init_bbp_5592(struct 
  
  	rt2800_bbp4_mac_if_ctrl(rt2x00dev);
  
@@ -3212,7 +3212,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  		queue->priv_size = sizeof(struct queue_entry_priv_mmio);
  		break;
  
-@@ -1205,7 +1214,7 @@ static void rt2800pci_queue_init(struct
+@@ -1205,7 +1214,7 @@ static void rt2800pci_queue_init(struct 
  		queue->limit = 64;
  		queue->data_size = AGGREGATION_SIZE;
  		queue->desc_size = TXD_DESC_SIZE;
@@ -3221,7 +3221,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  		queue->priv_size = sizeof(struct queue_entry_priv_mmio);
  		break;
  
-@@ -1213,7 +1222,7 @@ static void rt2800pci_queue_init(struct
+@@ -1213,7 +1222,7 @@ static void rt2800pci_queue_init(struct 
  		queue->limit = 8;
  		queue->data_size = 0; /* No DMA required for beacons */
  		queue->desc_size = TXD_DESC_SIZE;
@@ -3232,7 +3232,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -854,13 +854,7 @@ static void rt2800usb_queue_init(struct
+@@ -854,13 +854,7 @@ static void rt2800usb_queue_init(struct 
  	struct rt2x00_dev *rt2x00dev = queue->rt2x00dev;
  	unsigned short txwi_size, rxwi_size;
  

@@ -1,6 +1,6 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1617,6 +1617,7 @@ struct ieee80211_hw {
+@@ -1622,6 +1622,7 @@ struct ieee80211_hw {
  	u8 max_tx_aggregation_subframes;
  	u8 offchannel_tx_hw_queue;
  	u8 radiotap_mcs_details;
@@ -10,7 +10,7 @@
  	u8 uapsd_queues;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2273,7 +2273,9 @@ static int ieee80211_get_tx_power(struct
+@@ -2283,7 +2283,9 @@ static int ieee80211_get_tx_power(struct
  	struct ieee80211_local *local = wiphy_priv(wiphy);
  	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
  

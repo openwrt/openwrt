@@ -13,21 +13,21 @@
 +	int8_t rs_rssi_ctl[3];
 +	int8_t rs_rssi_ext[3];
  	u8 rs_isaggr;
+ 	u8 rs_firstaggr;
  	u8 rs_moreaggr;
- 	u8 rs_num_delims;
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -948,6 +948,7 @@ static int ath9k_rx_skb_preprocess(struc
- 	struct ath_hw *ah = sc->sc_ah;
- 	struct ath_common *common = ath9k_hw_common(ah);
- 	bool discard_current = sc->rx.discard_next;
+@@ -892,6 +892,7 @@ static void ath9k_process_rssi(struct at
+ 	struct ath_hw *ah = common->ah;
+ 	int last_rssi;
+ 	int rssi = rx_stats->rs_rssi;
 +	int i, j;
  
- 	sc->rx.discard_next = rx_stats->rs_more;
- 	if (discard_current)
-@@ -977,6 +978,21 @@ static int ath9k_rx_skb_preprocess(struc
- 	if (rx_stats->rs_moreaggr)
- 		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
+ 	/*
+ 	 * RSSI is not available for subframes in an A-MPDU.
+@@ -910,6 +911,20 @@ static void ath9k_process_rssi(struct at
+ 		return;
+ 	}
  
 +	for (i = 0, j = 0; i < ARRAY_SIZE(rx_stats->rs_rssi_ctl); i++) {
 +		s8 rssi;
@@ -37,17 +37,16 @@
 +
 +		rssi = rx_stats->rs_rssi_ctl[i];
 +		if (rssi != ATH9K_RSSI_BAD) {
-+		    rx_status->chains |= BIT(j);
-+		    rx_status->chain_signal[j] = ah->noise + rssi;
++		    rxs->chains |= BIT(j);
++		    rxs->chain_signal[j] = ah->noise + rssi;
 +		}
 +		j++;
 +	}
 +
-+
- 	sc->rx.discard_next = false;
- 	return 0;
- }
-@@ -1086,7 +1102,7 @@ static int ath_process_fft(struct ath_so
+ 	/*
+ 	 * Update Beacon RSSI, this is used by ANI.
+ 	 */
+@@ -1000,7 +1015,7 @@ static int ath_process_fft(struct ath_so
  	fft_sample.tlv.length = __cpu_to_be16(length);
  
  	fft_sample.freq = __cpu_to_be16(ah->curchan->chan->center_freq);
@@ -132,7 +131,7 @@
  	 * hardware stores this as 8 bit signed value.
 --- a/drivers/net/wireless/ath/ath9k/antenna.c
 +++ b/drivers/net/wireless/ath/ath9k/antenna.c
-@@ -546,14 +546,14 @@ void ath_ant_comb_scan(struct ath_softc 
+@@ -744,14 +744,14 @@ void ath_ant_comb_scan(struct ath_softc 
  	struct ath_ant_comb *antcomb = &sc->ant_comb;
  	int alt_ratio = 0, alt_rssi_avg = 0, main_rssi_avg = 0, curr_alt_set;
  	int curr_main_set;
@@ -141,7 +140,7 @@
 +	int main_rssi = rs->rs_rssi_ctl[0];
 +	int alt_rssi = rs->rs_rssi_ctl[1];
  	int rx_ant_conf,  main_ant_conf;
- 	bool short_scan = false;
+ 	bool short_scan = false, ret;
  
 -	rx_ant_conf = (rs->rs_rssi_ctl2 >> ATH_ANT_RX_CURRENT_SHIFT) &
 +	rx_ant_conf = (rs->rs_rssi_ctl[2] >> ATH_ANT_RX_CURRENT_SHIFT) &
@@ -150,4 +149,4 @@
 +	main_ant_conf = (rs->rs_rssi_ctl[2] >> ATH_ANT_RX_MAIN_SHIFT) &
  			 ATH_ANT_RX_MASK;
  
- 	/* Record packet only when both main_rssi and  alt_rssi is positive */
+ 	if (alt_rssi >= antcomb->low_rssi_thresh) {

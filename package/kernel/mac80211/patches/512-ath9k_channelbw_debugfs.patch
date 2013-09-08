@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -697,6 +697,7 @@ struct ath_softc {
+@@ -701,6 +701,7 @@ struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
  
@@ -8,7 +8,7 @@
  	struct survey_info *cur_survey;
  	struct survey_info survey[ATH9K_NUM_CHANNELS];
  
-@@ -901,6 +902,7 @@ struct fft_sample_ht20 {
+@@ -905,6 +906,7 @@ struct fft_sample_ht20 {
  	u8 data[SPECTRAL_HT20_NUM_BINS];
  } __packed;
  
@@ -18,7 +18,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1793,6 +1793,50 @@ static const struct file_operations fops
+@@ -1918,6 +1918,50 @@ static const struct file_operations fops
  	.owner = THIS_MODULE
  };
  
@@ -69,7 +69,7 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1812,6 +1856,8 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1937,6 +1981,8 @@ int ath9k_init_debug(struct ath_hw *ah)
  
  	debugfs_create_file("eeprom", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_eeprom);
@@ -80,7 +80,7 @@
  	debugfs_create_file("interrupt", S_IRUSR, sc->debug.debugfs_phy, sc,
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1150,7 +1150,7 @@ int ath9k_spectral_scan_config(struct ie
+@@ -1146,7 +1146,7 @@ int ath9k_spectral_scan_config(struct ie
  	return 0;
  }
  
@@ -89,19 +89,18 @@
  {
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
-@@ -1206,9 +1206,11 @@ static int ath9k_config(struct ieee80211
+@@ -1200,8 +1200,10 @@ static int ath9k_config(struct ieee80211
+ 
+ 	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || reset_channel) {
  		struct ieee80211_channel *curchan = hw->conf.chandef.chan;
- 		enum nl80211_channel_type channel_type =
- 			cfg80211_get_chandef_type(&conf->chandef);
 +		struct ath9k_channel *hchan;
  		int pos = curchan->hw_value;
  		int old_pos = -1;
- 		unsigned long flags;
 +		u32 oldflags;
+ 		unsigned long flags;
  
  		if (ah->curchan)
- 			old_pos = ah->curchan - &ah->channels[0];
-@@ -1244,7 +1246,23 @@ static int ath9k_config(struct ieee80211
+@@ -1238,7 +1240,23 @@ static int ath9k_config(struct ieee80211
  			memset(&sc->survey[pos], 0, sizeof(struct survey_info));
  		}
  

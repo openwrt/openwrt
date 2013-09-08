@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -693,6 +696,13 @@ enum spectral_mode {
+@@ -697,6 +700,13 @@ enum spectral_mode {
  	SPECTRAL_CHANSCAN,
  };
  
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -735,9 +745,8 @@ struct ath_softc {
+@@ -739,9 +749,8 @@ struct ath_softc {
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
  #ifdef CPTCFG_MAC80211_LEDS
@@ -162,7 +162,7 @@
  void ath_fill_led_pin(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -919,7 +919,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -943,7 +943,7 @@ int ath9k_init_device(u16 devid, struct 
  
  #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -173,7 +173,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1836,6 +1836,61 @@ static const struct file_operations fops
+@@ -1961,6 +1961,61 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -235,7 +235,7 @@
  
  int ath9k_init_debug(struct ath_hw *ah)
  {
-@@ -1858,6 +1913,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1983,6 +2038,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_eeprom);
  	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
  			    sc, &fops_chanbw);

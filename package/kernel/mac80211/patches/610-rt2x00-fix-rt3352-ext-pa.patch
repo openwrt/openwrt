@@ -33,7 +33,7 @@
  		rt2800_bbp_write(rt2x00dev, 86, 0);
  	}
  
-@@ -6086,6 +6086,12 @@ static void rt2800_init_rfcsr_3290(struc
+@@ -6093,6 +6093,12 @@ static void rt2800_init_rfcsr_3290(struc
  
  static void rt2800_init_rfcsr_3352(struct rt2x00_dev *rt2x00dev)
  {
@@ -46,7 +46,7 @@
  	rt2800_rf_init_calibration(rt2x00dev, 30);
  
  	rt2800_rfcsr_write(rt2x00dev, 0, 0xf0);
-@@ -6121,15 +6127,30 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -6128,15 +6134,30 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 31, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 32, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 33, 0x00);
@@ -80,7 +80,7 @@
  	rt2800_rfcsr_write(rt2x00dev, 43, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 44, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 45, 0xdb);
-@@ -6137,15 +6158,20 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -6144,15 +6165,20 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 47, 0x0d);
  	rt2800_rfcsr_write(rt2x00dev, 48, 0x14);
  	rt2800_rfcsr_write(rt2x00dev, 49, 0x00);
@@ -110,7 +110,7 @@
  	rt2800_rfcsr_write(rt2x00dev, 59, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 60, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 61, 0x00);
-@@ -6996,6 +7022,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7003,6 +7029,7 @@ static int rt2800_init_eeprom(struct rt2
  	 * RT53xx: defined in "EEPROM_CHIP_ID" field
  	 */
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
@@ -118,7 +118,7 @@
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
-@@ -7086,7 +7113,8 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7093,7 +7120,8 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Detect if this device has Bluetooth co-existence.
  	 */
@@ -128,7 +128,7 @@
  		__set_bit(CAPABILITY_BT_COEXIST, &rt2x00dev->cap_flags);
  
  	/*
-@@ -7115,6 +7143,22 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7122,6 +7150,22 @@ static int rt2800_init_eeprom(struct rt2
  					EIRP_MAX_TX_POWER_LIMIT)
  		__set_bit(CAPABILITY_POWER_LIMIT, &rt2x00dev->cap_flags);
  
