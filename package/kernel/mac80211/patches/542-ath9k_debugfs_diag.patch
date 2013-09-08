@@ -125,7 +125,7 @@
  		REG_SET_BIT(ah, AR_BTCOEX_WL_LNADIV, AR_BTCOEX_WL_LNADIV_FORCE_ON);
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -458,6 +458,11 @@ irqreturn_t ath_isr(int irq, void *dev)
+@@ -462,6 +462,11 @@ irqreturn_t ath_isr(int irq, void *dev)
  	ath9k_hw_getisr(ah, &status);	/* NB: clears ISR too */
  	status &= ah->imask;	/* discard unasked-for bits */
  

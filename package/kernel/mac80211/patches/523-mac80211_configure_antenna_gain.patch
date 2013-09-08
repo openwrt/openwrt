@@ -28,7 +28,17 @@
  
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -1766,6 +1766,8 @@ enum nl80211_attrs {
+@@ -1460,6 +1460,9 @@ enum nl80211_commands {
+  * @NL80211_ATTR_CSA_C_OFF_PRESP: Offset of the channel switch counter
+  *	field in the probe response (%NL80211_ATTR_PROBE_RESP).
+  *
++ * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
++ *	transmit power to stay within regulatory limits.
++ *
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+  */
+@@ -1766,6 +1769,8 @@ enum nl80211_attrs {
  	NL80211_ATTR_CSA_C_OFF_BEACON,
  	NL80211_ATTR_CSA_C_OFF_PRESP,
  

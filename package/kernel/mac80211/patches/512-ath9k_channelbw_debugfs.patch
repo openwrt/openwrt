@@ -8,14 +8,6 @@
  	struct survey_info *cur_survey;
  	struct survey_info survey[ATH9K_NUM_CHANNELS];
  
-@@ -905,6 +906,7 @@ struct fft_sample_ht20 {
- 	u8 data[SPECTRAL_HT20_NUM_BINS];
- } __packed;
- 
-+int ath9k_config(struct ieee80211_hw *hw, u32 changed);
- void ath9k_tasklet(unsigned long data);
- int ath_cabq_update(struct ath_softc *);
- 
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
 @@ -1918,6 +1918,50 @@ static const struct file_operations fops
@@ -52,7 +44,7 @@
 +
 +	sc->chan_bw = chan_bw;
 +	if (!test_bit(SC_OP_INVALID, &sc->sc_flags))
-+		ath9k_config(sc->hw, IEEE80211_CONF_CHANGE_CHANNEL);
++		ath9k_ops.config(sc->hw, IEEE80211_CONF_CHANGE_CHANNEL);
 +
 +	return count;
 +}
@@ -80,15 +72,6 @@
  	debugfs_create_file("interrupt", S_IRUSR, sc->debug.debugfs_phy, sc,
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1146,7 +1146,7 @@ int ath9k_spectral_scan_config(struct ie
- 	return 0;
- }
- 
--static int ath9k_config(struct ieee80211_hw *hw, u32 changed)
-+int ath9k_config(struct ieee80211_hw *hw, u32 changed)
- {
- 	struct ath_softc *sc = hw->priv;
- 	struct ath_hw *ah = sc->sc_ah;
 @@ -1200,8 +1200,10 @@ static int ath9k_config(struct ieee80211
  
  	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || reset_channel) {
