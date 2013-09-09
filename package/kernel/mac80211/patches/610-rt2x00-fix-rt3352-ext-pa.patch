@@ -110,7 +110,7 @@
  	rt2800_rfcsr_write(rt2x00dev, 59, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 60, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 61, 0x00);
-@@ -7003,6 +7029,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7004,6 +7030,7 @@ static int rt2800_init_eeprom(struct rt2
  	 * RT53xx: defined in "EEPROM_CHIP_ID" field
  	 */
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
@@ -118,7 +118,7 @@
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
-@@ -7093,7 +7120,8 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7094,7 +7121,8 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Detect if this device has Bluetooth co-existence.
  	 */
@@ -128,7 +128,7 @@
  		__set_bit(CAPABILITY_BT_COEXIST, &rt2x00dev->cap_flags);
  
  	/*
-@@ -7122,6 +7150,22 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7123,6 +7151,22 @@ static int rt2800_init_eeprom(struct rt2
  					EIRP_MAX_TX_POWER_LIMIT)
  		__set_bit(CAPABILITY_POWER_LIMIT, &rt2x00dev->cap_flags);
  
