@@ -2727,7 +2727,33 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	case RT5390:
  		rt2800_init_rfcsr_5390(rt2x00dev);
  		break;
-@@ -5456,15 +6711,15 @@ int rt2800_enable_radio(struct rt2x00_de
+@@ -5404,19 +6659,20 @@ int rt2800_enable_radio(struct rt2x00_de
+ 		     rt2800_init_registers(rt2x00dev)))
+ 		return -EIO;
+ 
++	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev)))
++		return -EIO;
++
+ 	/*
+ 	 * Send signal to firmware during boot time.
+ 	 */
+ 	rt2800_register_write(rt2x00dev, H2M_BBP_AGENT, 0);
+ 	rt2800_register_write(rt2x00dev, H2M_MAILBOX_CSR, 0);
+-	if (rt2x00_is_usb(rt2x00dev)) {
++	if (rt2x00_is_usb(rt2x00dev))
+ 		rt2800_register_write(rt2x00dev, H2M_INT_SRC, 0);
+-		rt2800_mcu_request(rt2x00dev, MCU_BOOT_SIGNAL, 0, 0, 0);
+-	}
++	rt2800_mcu_request(rt2x00dev, MCU_BOOT_SIGNAL, 0, 0, 0);
+ 	msleep(1);
+ 
+-	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev) ||
+-		     rt2800_wait_bbp_ready(rt2x00dev)))
++	if (unlikely(rt2800_wait_bbp_ready(rt2x00dev)))
+ 		return -EIO;
+ 
+ 	rt2800_init_bbp(rt2x00dev);
+@@ -5456,15 +6712,15 @@ int rt2800_enable_radio(struct rt2x00_de
  	/*
  	 * Initialize LED control
  	 */
@@ -2746,7 +2772,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	rt2800_mcu_request(rt2x00dev, MCU_LED_LED_POLARITY, 0xff,
  			   word & 0xff, (word >> 8) & 0xff);
  
-@@ -5560,6 +6815,34 @@ int rt2800_read_eeprom_efuse(struct rt2x
+@@ -5560,6 +6816,34 @@ int rt2800_read_eeprom_efuse(struct rt2x
  }
  EXPORT_SYMBOL_GPL(rt2800_read_eeprom_efuse);
  
@@ -2781,7 +2807,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  static int rt2800_validate_eeprom(struct rt2x00_dev *rt2x00dev)
  {
  	struct rt2800_drv_data *drv_data = rt2x00dev->drv_data;
-@@ -5578,18 +6861,18 @@ static int rt2800_validate_eeprom(struct
+@@ -5578,18 +6862,18 @@ static int rt2800_validate_eeprom(struct
  	/*
  	 * Start validation of the data that has been read.
  	 */
@@ -2803,7 +2829,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  		rt2x00_eeprom_dbg(rt2x00dev, "Antenna: 0x%04x\n", word);
  	} else if (rt2x00_rt(rt2x00dev, RT2860) ||
  		   rt2x00_rt(rt2x00dev, RT2872)) {
-@@ -5598,10 +6881,10 @@ static int rt2800_validate_eeprom(struct
+@@ -5598,10 +6882,10 @@ static int rt2800_validate_eeprom(struct
  		 */
  		if (rt2x00_get_field16(word, EEPROM_NIC_CONF0_RXPATH) > 2)
  			rt2x00_set_field16(&word, EEPROM_NIC_CONF0_RXPATH, 2);
@@ -2816,7 +2842,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	if (word == 0xffff) {
  		rt2x00_set_field16(&word, EEPROM_NIC_CONF1_HW_RADIO, 0);
  		rt2x00_set_field16(&word, EEPROM_NIC_CONF1_EXTERNAL_TX_ALC, 0);
-@@ -5618,24 +6901,24 @@ static int rt2800_validate_eeprom(struct
+@@ -5618,24 +6902,24 @@ static int rt2800_validate_eeprom(struct
  		rt2x00_set_field16(&word, EEPROM_NIC_CONF1_INTERNAL_TX_ALC, 0);
  		rt2x00_set_field16(&word, EEPROM_NIC_CONF1_BT_COEXIST, 0);
  		rt2x00_set_field16(&word, EEPROM_NIC_CONF1_DAC_TEST, 0);
@@ -2848,7 +2874,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  		rt2x00_eeprom_dbg(rt2x00dev, "Led Mode: 0x%04x\n", word);
  	}
  
-@@ -5644,56 +6927,61 @@ static int rt2800_validate_eeprom(struct
+@@ -5644,56 +6928,61 @@ static int rt2800_validate_eeprom(struct
  	 * lna0 as correct value. Note that EEPROM_LNA
  	 * is never validated.
  	 */
@@ -2941,7 +2967,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  
  	return 0;
  }
-@@ -5707,7 +6995,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -5707,7 +6996,7 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Read EEPROM word for configuration.
  	 */
@@ -2950,7 +2976,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  
  	/*
  	 * Identify RF chipset by EEPROM value
-@@ -5717,7 +7005,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -5717,7 +7006,7 @@ static int rt2800_init_eeprom(struct rt2
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
@@ -2959,7 +2985,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	else
  		rf = rt2x00_get_field16(eeprom, EEPROM_NIC_CONF0_RF_TYPE);
  
-@@ -5731,6 +7019,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -5731,6 +7020,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF3021:
  	case RF3022:
  	case RF3052:
@@ -2967,7 +2993,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	case RF3290:
  	case RF3320:
  	case RF3322:
-@@ -5757,7 +7046,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -5757,7 +7047,7 @@ static int rt2800_init_eeprom(struct rt2
  	rt2x00dev->default_ant.rx_chain_num =
  	    rt2x00_get_field16(eeprom, EEPROM_NIC_CONF0_RXPATH);
  
@@ -2976,7 +3002,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  
  	if (rt2x00_rt(rt2x00dev, RT3070) ||
  	    rt2x00_rt(rt2x00dev, RT3090) ||
-@@ -5810,7 +7099,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -5810,7 +7100,7 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Read frequency offset and RF programming sequence.
  	 */
@@ -2985,7 +3011,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	rt2x00dev->freq_offset = rt2x00_get_field16(eeprom, EEPROM_FREQ_OFFSET);
  
  	/*
-@@ -5827,7 +7116,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -5827,7 +7117,7 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Check if support EIRP tx power limit feature.
  	 */
@@ -2994,7 +3020,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  
  	if (rt2x00_get_field16(eeprom, EEPROM_EIRP_MAX_TX_POWER_2GHZ) <
  					EIRP_MAX_TX_POWER_LIMIT)
-@@ -6109,12 +7398,79 @@ static const struct rf_channel rf_vals_5
+@@ -6109,12 +7399,79 @@ static const struct rf_channel rf_vals_5
  	{196, 83, 0, 12, 1},
  };
  
@@ -3074,7 +3100,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	unsigned int i;
  	u16 eeprom;
  	u32 reg;
-@@ -6149,7 +7505,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -6149,7 +7506,7 @@ static int rt2800_probe_hw_mode(struct r
  
  	SET_IEEE80211_DEV(rt2x00dev->hw, rt2x00dev->dev);
  	SET_IEEE80211_PERM_ADDR(rt2x00dev->hw,
@@ -3083,7 +3109,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  						   EEPROM_MAC_ADDR_0));
  
  	/*
-@@ -6165,7 +7521,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -6165,7 +7522,7 @@ static int rt2800_probe_hw_mode(struct r
  	rt2x00dev->hw->max_report_rates = 7;
  	rt2x00dev->hw->max_rate_tries = 1;
  
@@ -3092,7 +3118,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  
  	/*
  	 * Initialize hw_mode information.
-@@ -6200,6 +7556,10 @@ static int rt2800_probe_hw_mode(struct r
+@@ -6200,6 +7557,10 @@ static int rt2800_probe_hw_mode(struct r
  		spec->supported_bands |= SUPPORT_BAND_5GHZ;
  		spec->num_channels = ARRAY_SIZE(rf_vals_3x);
  		spec->channels = rf_vals_3x;
@@ -3103,7 +3129,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	} else if (rt2x00_rf(rt2x00dev, RF5592)) {
  		spec->supported_bands |= SUPPORT_BAND_5GHZ;
  
-@@ -6265,21 +7625,40 @@ static int rt2800_probe_hw_mode(struct r
+@@ -6265,21 +7626,40 @@ static int rt2800_probe_hw_mode(struct r
  
  	spec->channels_info = info;
  
@@ -3148,7 +3174,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  		}
  	}
  
-@@ -6290,6 +7669,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -6290,6 +7670,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3022:
  	case RF3320:
  	case RF3052:
@@ -3156,7 +3182,7 @@ Contains the following changes from wireless-testing/master-2013-08-26:
  	case RF3290:
  	case RF5360:
  	case RF5370:
-@@ -6328,6 +7708,7 @@ static int rt2800_probe_rt(struct rt2x00
+@@ -6328,6 +7709,7 @@ static int rt2800_probe_rt(struct rt2x00
  	case RT3352:
  	case RT3390:
  	case RT3572:
