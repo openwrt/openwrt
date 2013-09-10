@@ -72,6 +72,24 @@ endef
 $(eval $(call KernelPackage,ata-artop))
 
 
+define KernelPackage/ata-imx
+  TITLE:=Freescale i.MX6 AHCI SATA support
+  KCONFIG:=\
+	CONFIG_AHCI_IMX \
+	CONFIG_SATA_AHCI_PLATFORM \
+	CONFIG_PATA_IMX=n
+  FILES:=$(LINUX_DIR)/drivers/ata/ahci_imx.ko
+  AUTOLOAD:=$(call AutoLoad,41,ahci_imx,1)
+  $(call AddDepends/ata)
+endef
+
+define KernelPackage/ata-imx/description
+ SATA support for the Freescale i.MX6 SoC's onboard AHCI SATA
+endef
+
+$(eval $(call KernelPackage,ata-imx))
+
+
 define KernelPackage/ata-marvell-sata
   TITLE:=Marvell Serial ATA support
   KCONFIG:=CONFIG_SATA_MV
