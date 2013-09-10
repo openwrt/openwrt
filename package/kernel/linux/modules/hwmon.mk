@@ -219,3 +219,18 @@ define KernelPacakge/hwmon-w83627hf/description
 endef
 
 $(eval $(call KernelPackage,hwmon-w83627hf))
+
+
+define KernelPackage/hwmon-gsc
+  TITLE:=Gateworks GSC monitoring support
+  KCONFIG:=CONFIG_SENSORS_GSC
+  FILES:=$(LINUX_DIR)/drivers/hwmon/gsc.ko
+  AUTOLOAD:=$(call AutoLoad,50,gsc)
+$(call AddDepends/hwmon)
+endef
+
+define KernelPacakge/hwmon-gsc/description
+  Kernel module for the Gateworks System Controller chips.
+endef
+
+$(eval $(call KernelPackage,hwmon-gsc))
