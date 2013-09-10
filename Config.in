@@ -879,6 +879,8 @@ menuconfig TARGET_OPTIONS
 	config USE_MIPS16
 		bool "Build packages with MIPS16 instructions" if TARGET_OPTIONS
 		depends on HAS_MIPS16
+		depends on !GCC_VERSION_4_6
+		default y
 		help
 		  If your target CPU does support the MIPS16 instruction set
 		  and you want to use it for packages, enable this option.
