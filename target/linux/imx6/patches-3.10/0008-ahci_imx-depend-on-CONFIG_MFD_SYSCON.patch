@@ -1,0 +1,26 @@
+From 867974fc09f93bdd7f98d46ac3733934486bbf4a Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj@kernel.org>
+Date: Fri, 26 Jul 2013 08:57:56 -0400
+Subject: [PATCH] ahci_imx: depend on CONFIG_MFD_SYSCON
+
+ahci_imx makes use of regmap but the dependency wasn't specified in
+Kconfig leading build failures if CONFIG_AHCI_IMX is enabled but
+CONFIG_MFD_SYSCON is not.  Add the Kconfig dependency.
+
+Signed-off-by: Tejun Heo <tj@kernel.org>
+Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
+---
+ drivers/ata/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/ata/Kconfig
++++ b/drivers/ata/Kconfig
+@@ -99,7 +99,7 @@ config SATA_AHCI_PLATFORM
+ 
+ config AHCI_IMX
+ 	tristate "Freescale i.MX AHCI SATA support"
+-	depends on SATA_AHCI_PLATFORM
++	depends on SATA_AHCI_PLATFORM && MFD_SYSCON
+ 	help
+ 	  This option enables support for the Freescale i.MX SoC's
+ 	  onboard AHCI SATA.
