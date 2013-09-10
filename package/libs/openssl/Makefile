@@ -12,6 +12,8 @@ PKG_VERSION:=1.0.1e
 PKG_RELEASE:=2
 PKG_USE_MIPS16:=0
 
+PKG_BUILD_PARALLEL:=1
+
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.funet.fi/pub/crypt/mirrors/ftp.openssl.org/source \
@@ -127,12 +129,12 @@ define Build/Compile
 	# XXX: OpenSSL "make depend" will look for installed headers before its own,
 	# so remove installed stuff first
 	-$(SUBMAKE) -j1 clean-staging
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		MAKEDEPPROG="$(TARGET_CROSS)gcc" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
 		$(OPENSSL_MAKEFLAGS) \
 		depend
-	$(_SINGLE)$(MAKE) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		ASFLAGS="$(TARGET_ASFLAGS) -c" \
 		AR="$(TARGET_CROSS)ar r" \
@@ -140,7 +142,7 @@ define Build/Compile
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
 		$(OPENSSL_MAKEFLAGS) \
 		all
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		ASFLAGS="$(TARGET_ASFLAGS) -c" \
 		AR="$(TARGET_CROSS)ar r" \
@@ -150,7 +152,7 @@ define Build/Compile
 		build-shared
 	# Work around openssl build bug to link libssl.so with libcrypto.so.
 	-rm $(PKG_BUILD_DIR)/libssl.so.*.*.*
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
 		$(OPENSSL_MAKEFLAGS) \
