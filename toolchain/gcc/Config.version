@@ -2,9 +2,6 @@ config GCC_VERSION_4_4_7
 	default y if (!TOOLCHAINOPTS && avr32)
 	bool
 
-config GCC_VERSION_4_6_3
-	bool
-
 config GCC_VERSION_4_6_LINARO
 	default y if (!TOOLCHAINOPTS && !avr32)
 	bool
@@ -30,7 +27,7 @@ config GCC_VERSION_4_4
 
 config GCC_VERSION_4_6
 	bool
-	default y       if (GCC_VERSION_4_6_3 || GCC_VERSION_4_6_LINARO)
+	default y       if GCC_VERSION_4_6_LINARO
 
 config GCC_VERSION_4_8
 	bool
