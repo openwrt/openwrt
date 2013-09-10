@@ -1,0 +1,334 @@
+--- a/Makefile.org
++++ b/Makefile.org
+@@ -273,17 +273,17 @@ build_all: build_libs build_apps build_t
+ build_libs: build_crypto build_ssl build_engines
+ 
+ build_crypto:
+-	@dir=crypto; target=all; $(BUILD_ONE_CMD)
+-build_ssl:
+-	@dir=ssl; target=all; $(BUILD_ONE_CMD)
+-build_engines:
+-	@dir=engines; target=all; $(BUILD_ONE_CMD)
+-build_apps:
+-	@dir=apps; target=all; $(BUILD_ONE_CMD)
+-build_tests:
+-	@dir=test; target=all; $(BUILD_ONE_CMD)
+-build_tools:
+-	@dir=tools; target=all; $(BUILD_ONE_CMD)
++	+@dir=crypto; target=all; $(BUILD_ONE_CMD)
++build_ssl: build_crypto
++	+@dir=ssl; target=all; $(BUILD_ONE_CMD)
++build_engines: build_crypto
++	+@dir=engines; target=all; $(BUILD_ONE_CMD)
++build_apps: build_libs
++	+@dir=apps; target=all; $(BUILD_ONE_CMD)
++build_tests: build_libs
++	+@dir=test; target=all; $(BUILD_ONE_CMD)
++build_tools: build_libs
++	+@dir=tools; target=all; $(BUILD_ONE_CMD)
+ 
+ all_testapps: build_libs build_testapps
+ build_testapps:
+@@ -454,7 +454,7 @@ report:
+ 	@$(PERL) util/selftest.pl
+ 
+ depend:
+-	@set -e; target=depend; $(RECURSIVE_BUILD_CMD)
++	+@set -e; target=depend; $(RECURSIVE_BUILD_CMD)
+ 
+ lint:
+ 	@set -e; target=lint; $(RECURSIVE_BUILD_CMD)
+@@ -532,9 +532,9 @@ dist:   
+ dist_pem_h:
+ 	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
+ 
+-install: all install_sw
++install: install_sw
+ 
+-install_sw:
++install_dirs:
+ 	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
+ 		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR) \
+ 		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/engines \
+@@ -543,12 +543,19 @@ install_sw:
+ 		$(INSTALL_PREFIX)$(OPENSSLDIR)/misc \
+ 		$(INSTALL_PREFIX)$(OPENSSLDIR)/certs \
+ 		$(INSTALL_PREFIX)$(OPENSSLDIR)/private
++	@$(PERL) $(TOP)/util/mkdir-p.pl \
++		$(INSTALL_PREFIX)$(MANDIR)/man1 \
++		$(INSTALL_PREFIX)$(MANDIR)/man3 \
++		$(INSTALL_PREFIX)$(MANDIR)/man5 \
++		$(INSTALL_PREFIX)$(MANDIR)/man7
++
++install_sw: install_dirs
+ 	@set -e; headerlist="$(EXHEADER)"; for i in $$headerlist;\
+ 	do \
+ 	(cp $$i $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i; \
+ 	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i ); \
+ 	done;
+-	@set -e; target=install; $(RECURSIVE_BUILD_CMD)
++	+@set -e; target=install; $(RECURSIVE_BUILD_CMD)
+ 	@set -e; liblist="$(LIBS)"; for i in $$liblist ;\
+ 	do \
+ 		if [ -f "$$i" ]; then \
+@@ -628,12 +635,7 @@ install_html_docs:
+ 		done; \
+ 	done
+ 
+-install_docs:
+-	@$(PERL) $(TOP)/util/mkdir-p.pl \
+-		$(INSTALL_PREFIX)$(MANDIR)/man1 \
+-		$(INSTALL_PREFIX)$(MANDIR)/man3 \
+-		$(INSTALL_PREFIX)$(MANDIR)/man5 \
+-		$(INSTALL_PREFIX)$(MANDIR)/man7
++install_docs: install_dirs
+ 	@pod2man="`cd ./util; ./pod2mantest $(PERL)`"; \
+ 	here="`pwd`"; \
+ 	filecase=; \
+--- a/Makefile.shared
++++ b/Makefile.shared
+@@ -120,6 +120,7 @@ SYMLINK_SO=	\
+ 			done; \
+ 		fi; \
+ 		if [ -n "$$SHLIB_SOVER" ]; then \
++			[ -e "$$SHLIB$$SHLIB_SUFFIX" ] || \
+ 			( $(SET_X); rm -f $$SHLIB$$SHLIB_SUFFIX; \
+ 			  ln -s $$prev $$SHLIB$$SHLIB_SUFFIX ); \
+ 		fi; \
+--- a/crypto/Makefile
++++ b/crypto/Makefile
+@@ -86,11 +86,11 @@ testapps:
+ 	@if [ -z "$(THIS)" ]; then $(MAKE) -f $(TOP)/Makefile reflect THIS=$@; fi
+ 
+ subdirs:
+-	@target=all; $(RECURSIVE_MAKE)
++	+@target=all; $(RECURSIVE_MAKE)
+ 
+ files:
+ 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
+-	@target=files; $(RECURSIVE_MAKE)
++	+@target=files; $(RECURSIVE_MAKE)
+ 
+ links:
+ 	@$(PERL) $(TOP)/util/mklink.pl ../include/openssl $(EXHEADER)
+@@ -101,7 +101,7 @@ links:
+ # lib: $(LIB): are splitted to avoid end-less loop
+ lib:	$(LIB)
+ 	@touch lib
+-$(LIB):	$(LIBOBJ)
++$(LIB):	$(LIBOBJ) | subdirs
+ 	$(AR) $(LIB) $(LIBOBJ)
+ 	[ -z "$(FIPSLIBDIR)" ] || $(AR) $(LIB) $(FIPSLIBDIR)fipscanister.o
+ 	$(RANLIB) $(LIB) || echo Never mind.
+@@ -112,7 +112,7 @@ shared: buildinf.h lib subdirs
+ 	fi
+ 
+ libs:
+-	@target=lib; $(RECURSIVE_MAKE)
++	+@target=lib; $(RECURSIVE_MAKE)
+ 
+ install:
+ 	@[ -n "$(INSTALLTOP)" ] # should be set by top Makefile...
+@@ -121,7 +121,7 @@ install:
+ 	(cp $$i $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i; \
+ 	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i ); \
+ 	done;
+-	@target=install; $(RECURSIVE_MAKE)
++	+@target=install; $(RECURSIVE_MAKE)
+ 
+ lint:
+ 	@target=lint; $(RECURSIVE_MAKE)
+--- a/engines/Makefile
++++ b/engines/Makefile
+@@ -72,7 +72,7 @@ top:
+ 
+ all:	lib subdirs
+ 
+-lib:	$(LIBOBJ)
++lib:	$(LIBOBJ) | subdirs
+ 	@if [ -n "$(SHARED_LIBS)" ]; then \
+ 		set -e; \
+ 		for l in $(LIBNAMES); do \
+@@ -89,7 +89,7 @@ lib:	$(LIBOBJ)
+ 
+ subdirs:
+ 	echo $(EDIRS)
+-	@target=all; $(RECURSIVE_MAKE)
++	+@target=all; $(RECURSIVE_MAKE)
+ 
+ files:
+ 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
+@@ -128,7 +128,7 @@ install:
+ 			  mv -f $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/engines/$$pfx$$l$$sfx.new $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/engines/$$pfx$$l$$sfx ); \
+ 		done; \
+ 	fi
+-	@target=install; $(RECURSIVE_MAKE)
++	+@target=install; $(RECURSIVE_MAKE)
+ 
+ tags:
+ 	ctags $(SRC)
+--- a/test/Makefile
++++ b/test/Makefile
+@@ -124,7 +124,7 @@ install:
+ tags:
+ 	ctags $(SRC)
+ 
+-tests:	exe apps $(TESTS)
++tests:	exe $(TESTS)
+ 
+ apps:
+ 	@(cd ..; $(MAKE) DIRS=apps all)
+@@ -365,109 +365,109 @@ FIPS_BUILD_CMD=shlib_target=; if [ -n "$
+ 		link_app.$${shlib_target}
+ 
+ $(RSATEST)$(EXE_EXT): $(RSATEST).o $(DLIBCRYPTO)
+-	@target=$(RSATEST); $(BUILD_CMD)
++	+@target=$(RSATEST); $(BUILD_CMD)
+ 
+ $(BNTEST)$(EXE_EXT): $(BNTEST).o $(DLIBCRYPTO)
+-	@target=$(BNTEST); $(BUILD_CMD)
++	+@target=$(BNTEST); $(BUILD_CMD)
+ 
+ $(ECTEST)$(EXE_EXT): $(ECTEST).o $(DLIBCRYPTO)
+-	@target=$(ECTEST); $(BUILD_CMD)
++	+@target=$(ECTEST); $(BUILD_CMD)
+ 
+ $(EXPTEST)$(EXE_EXT): $(EXPTEST).o $(DLIBCRYPTO)
+-	@target=$(EXPTEST); $(BUILD_CMD)
++	+@target=$(EXPTEST); $(BUILD_CMD)
+ 
+ $(IDEATEST)$(EXE_EXT): $(IDEATEST).o $(DLIBCRYPTO)
+-	@target=$(IDEATEST); $(BUILD_CMD)
++	+@target=$(IDEATEST); $(BUILD_CMD)
+ 
+ $(MD2TEST)$(EXE_EXT): $(MD2TEST).o $(DLIBCRYPTO)
+-	@target=$(MD2TEST); $(BUILD_CMD)
++	+@target=$(MD2TEST); $(BUILD_CMD)
+ 
+ $(SHATEST)$(EXE_EXT): $(SHATEST).o $(DLIBCRYPTO)
+-	@target=$(SHATEST); $(BUILD_CMD)
++	+@target=$(SHATEST); $(BUILD_CMD)
+ 
+ $(SHA1TEST)$(EXE_EXT): $(SHA1TEST).o $(DLIBCRYPTO)
+-	@target=$(SHA1TEST); $(BUILD_CMD)
++	+@target=$(SHA1TEST); $(BUILD_CMD)
+ 
+ $(SHA256TEST)$(EXE_EXT): $(SHA256TEST).o $(DLIBCRYPTO)
+-	@target=$(SHA256TEST); $(BUILD_CMD)
++	+@target=$(SHA256TEST); $(BUILD_CMD)
+ 
+ $(SHA512TEST)$(EXE_EXT): $(SHA512TEST).o $(DLIBCRYPTO)
+-	@target=$(SHA512TEST); $(BUILD_CMD)
++	+@target=$(SHA512TEST); $(BUILD_CMD)
+ 
+ $(RMDTEST)$(EXE_EXT): $(RMDTEST).o $(DLIBCRYPTO)
+-	@target=$(RMDTEST); $(BUILD_CMD)
++	+@target=$(RMDTEST); $(BUILD_CMD)
+ 
+ $(MDC2TEST)$(EXE_EXT): $(MDC2TEST).o $(DLIBCRYPTO)
+-	@target=$(MDC2TEST); $(BUILD_CMD)
++	+@target=$(MDC2TEST); $(BUILD_CMD)
+ 
+ $(MD4TEST)$(EXE_EXT): $(MD4TEST).o $(DLIBCRYPTO)
+-	@target=$(MD4TEST); $(BUILD_CMD)
++	+@target=$(MD4TEST); $(BUILD_CMD)
+ 
+ $(MD5TEST)$(EXE_EXT): $(MD5TEST).o $(DLIBCRYPTO)
+-	@target=$(MD5TEST); $(BUILD_CMD)
++	+@target=$(MD5TEST); $(BUILD_CMD)
+ 
+ $(HMACTEST)$(EXE_EXT): $(HMACTEST).o $(DLIBCRYPTO)
+-	@target=$(HMACTEST); $(BUILD_CMD)
++	+@target=$(HMACTEST); $(BUILD_CMD)
+ 
+ $(WPTEST)$(EXE_EXT): $(WPTEST).o $(DLIBCRYPTO)
+-	@target=$(WPTEST); $(BUILD_CMD)
++	+@target=$(WPTEST); $(BUILD_CMD)
+ 
+ $(RC2TEST)$(EXE_EXT): $(RC2TEST).o $(DLIBCRYPTO)
+-	@target=$(RC2TEST); $(BUILD_CMD)
++	+@target=$(RC2TEST); $(BUILD_CMD)
+ 
+ $(BFTEST)$(EXE_EXT): $(BFTEST).o $(DLIBCRYPTO)
+-	@target=$(BFTEST); $(BUILD_CMD)
++	+@target=$(BFTEST); $(BUILD_CMD)
+ 
+ $(CASTTEST)$(EXE_EXT): $(CASTTEST).o $(DLIBCRYPTO)
+-	@target=$(CASTTEST); $(BUILD_CMD)
++	+@target=$(CASTTEST); $(BUILD_CMD)
+ 
+ $(RC4TEST)$(EXE_EXT): $(RC4TEST).o $(DLIBCRYPTO)
+-	@target=$(RC4TEST); $(BUILD_CMD)
++	+@target=$(RC4TEST); $(BUILD_CMD)
+ 
+ $(RC5TEST)$(EXE_EXT): $(RC5TEST).o $(DLIBCRYPTO)
+-	@target=$(RC5TEST); $(BUILD_CMD)
++	+@target=$(RC5TEST); $(BUILD_CMD)
+ 
+ $(DESTEST)$(EXE_EXT): $(DESTEST).o $(DLIBCRYPTO)
+-	@target=$(DESTEST); $(BUILD_CMD)
++	+@target=$(DESTEST); $(BUILD_CMD)
+ 
+ $(RANDTEST)$(EXE_EXT): $(RANDTEST).o $(DLIBCRYPTO)
+-	@target=$(RANDTEST); $(BUILD_CMD)
++	+@target=$(RANDTEST); $(BUILD_CMD)
+ 
+ $(DHTEST)$(EXE_EXT): $(DHTEST).o $(DLIBCRYPTO)
+-	@target=$(DHTEST); $(BUILD_CMD)
++	+@target=$(DHTEST); $(BUILD_CMD)
+ 
+ $(DSATEST)$(EXE_EXT): $(DSATEST).o $(DLIBCRYPTO)
+-	@target=$(DSATEST); $(BUILD_CMD)
++	+@target=$(DSATEST); $(BUILD_CMD)
+ 
+ $(METHTEST)$(EXE_EXT): $(METHTEST).o $(DLIBCRYPTO)
+-	@target=$(METHTEST); $(BUILD_CMD)
++	+@target=$(METHTEST); $(BUILD_CMD)
+ 
+ $(SSLTEST)$(EXE_EXT): $(SSLTEST).o $(DLIBSSL) $(DLIBCRYPTO)
+-	@target=$(SSLTEST); $(FIPS_BUILD_CMD)
++	+@target=$(SSLTEST); $(FIPS_BUILD_CMD)
+ 
+ $(ENGINETEST)$(EXE_EXT): $(ENGINETEST).o $(DLIBCRYPTO)
+-	@target=$(ENGINETEST); $(BUILD_CMD)
++	+@target=$(ENGINETEST); $(BUILD_CMD)
+ 
+ $(EVPTEST)$(EXE_EXT): $(EVPTEST).o $(DLIBCRYPTO)
+-	@target=$(EVPTEST); $(BUILD_CMD)
++	+@target=$(EVPTEST); $(BUILD_CMD)
+ 
+ $(ECDSATEST)$(EXE_EXT): $(ECDSATEST).o $(DLIBCRYPTO)
+-	@target=$(ECDSATEST); $(BUILD_CMD)
++	+@target=$(ECDSATEST); $(BUILD_CMD)
+ 
+ $(ECDHTEST)$(EXE_EXT): $(ECDHTEST).o $(DLIBCRYPTO)
+-	@target=$(ECDHTEST); $(BUILD_CMD)
++	+@target=$(ECDHTEST); $(BUILD_CMD)
+ 
+ $(IGETEST)$(EXE_EXT): $(IGETEST).o $(DLIBCRYPTO)
+-	@target=$(IGETEST); $(BUILD_CMD)
++	+@target=$(IGETEST); $(BUILD_CMD)
+ 
+ $(JPAKETEST)$(EXE_EXT): $(JPAKETEST).o $(DLIBCRYPTO)
+-	@target=$(JPAKETEST); $(BUILD_CMD)
++	+@target=$(JPAKETEST); $(BUILD_CMD)
+ 
+ $(ASN1TEST)$(EXE_EXT): $(ASN1TEST).o $(DLIBCRYPTO)
+-	@target=$(ASN1TEST); $(BUILD_CMD)
++	+@target=$(ASN1TEST); $(BUILD_CMD)
+ 
+ $(SRPTEST)$(EXE_EXT): $(SRPTEST).o $(DLIBCRYPTO)
+-	@target=$(SRPTEST); $(BUILD_CMD)
++	+@target=$(SRPTEST); $(BUILD_CMD)
+ 
+ #$(AESTEST).o: $(AESTEST).c
+ #	$(CC) -c $(CFLAGS) -DINTERMEDIATE_VALUE_KAT -DTRACE_KAT_MCT $(AESTEST).c
+@@ -480,7 +480,7 @@ $(SRPTEST)$(EXE_EXT): $(SRPTEST).o $(DLI
+ #	fi
+ 
+ dummytest$(EXE_EXT): dummytest.o $(DLIBCRYPTO)
+-	@target=dummytest; $(BUILD_CMD)
++	+@target=dummytest; $(BUILD_CMD)
+ 
+ # DO NOT DELETE THIS LINE -- make depend depends on it.
+ 
