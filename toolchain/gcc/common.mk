@@ -33,13 +33,13 @@ ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
       PKG_MD5SUM:=6b6c6a4faa026edd1193cf6426309039
     endif
     ifeq ($(CONFIG_GCC_VERSION),"4.8-linaro")
-      PKG_REV:=4.8-2013.04
-      PKG_VERSION:=4.8.1
+      PKG_REV:=4.8-2013.08
+      PKG_VERSION:=4.8.2
       PKG_VERSION_MAJOR:=4.8
-      PKG_MD5SUM:=b6b8195019c7cb93629727ad14eaf7ca
+      PKG_MD5SUM:=668e0f4250e35aff554b66accc9a3105
     endif
     PKG_SOURCE_URL:=http://launchpad.net/gcc-linaro/$(PKG_VERSION_MAJOR)/$(PKG_REV)/+download/
-    PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.bz2
+    PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.xz
     GCC_DIR:=gcc-linaro-$(PKG_REV)
     HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)
 else
