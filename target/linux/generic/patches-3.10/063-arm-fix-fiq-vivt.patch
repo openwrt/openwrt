@@ -1,0 +1,55 @@
+From 2ba85e7af4c639d933c9a87a6d7363f2983d5ada Mon Sep 17 00:00:00 2001
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Thu, 08 Aug 2013 10:51:21 +0000
+Subject: ARM: Fix FIQ code on VIVT CPUs
+
+Aaro Koskinen reports the following oops:
+Installing fiq handler from c001b110, length 0x164
+Unable to handle kernel paging request at virtual address ffff1224
+pgd = c0004000
+[ffff1224] *pgd=00000000, *pte=11fff0cb, *ppte=11fff00a
+...
+[<c0013154>] (set_fiq_handler+0x0/0x6c) from [<c0365d38>] (ams_delta_init_fiq+0xa8/0x160)
+ r6:00000164 r5:c001b110 r4:00000000 r3:fefecb4c
+[<c0365c90>] (ams_delta_init_fiq+0x0/0x160) from [<c0365b14>] (ams_delta_init+0xd4/0x114)
+ r6:00000000 r5:fffece10 r4:c037a9e0
+[<c0365a40>] (ams_delta_init+0x0/0x114) from [<c03613b4>] (customize_machine+0x24/0x30)
+
+This is because the vectors page is now write-protected, and to change
+code in there we must write to its original alias.  Make that change,
+and adjust the cache flushing such that the code will become visible
+to the instruction stream on VIVT CPUs.
+
+Reported-by: Aaro Koskinen <aaro.koskinen@iki.fi>
+Tested-by: Aaro Koskinen <aaro.koskinen@iki.fi>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+(limited to 'arch/arm/kernel/fiq.c')
+
+diff --git a/arch/arm/kernel/fiq.c b/arch/arm/kernel/fiq.c
+index 25442f4..fc79202 100644
+--- a/arch/arm/kernel/fiq.c
++++ b/arch/arm/kernel/fiq.c
+@@ -84,17 +84,13 @@ int show_fiq_list(struct seq_file *p, int prec)
+ 
+ void set_fiq_handler(void *start, unsigned int length)
+ {
+-#if defined(CONFIG_CPU_USE_DOMAINS)
+-	void *base = (void *)0xffff0000;
+-#else
+ 	void *base = vectors_page;
+-#endif
+ 	unsigned offset = FIQ_OFFSET;
+ 
+ 	memcpy(base + offset, start, length);
++	if (!cache_is_vipt_nonaliasing())
++		flush_icache_range(base + offset, offset + length);
+ 	flush_icache_range(0xffff0000 + offset, 0xffff0000 + offset + length);
+-	if (!vectors_high())
+-		flush_icache_range(offset, offset + length);
+ }
+ 
+ int claim_fiq(struct fiq_handler *f)
+--
+cgit v0.9.2
+
