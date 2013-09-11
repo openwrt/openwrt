@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,17 +10,26 @@ PKG_NAME:=binutils
 PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
 BIN_VERSION:=$(PKG_VERSION)
 
-PKG_SOURCE_URL:=@GNU/binutils/
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+ifeq ($(findstring linaro, $(CONFIG_BINUTILS_VERSION)),linaro)
+  PKG_SOURCE_URL:=https://releases.linaro.org/13.06/components/toolchain/binutils-linaro/
+  PKG_REV:=2.23.2-2013.06
+  PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.bz2
+  PKG_MD5SUM:=73ad2a91f17b7e4fd41d49db5a541d2d
+  BINUTILS_DIR:=$(PKG_NAME)-2.23.2
+  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
+else
+  PKG_SOURCE_URL:=@GNU/binutils/
+  PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-ifeq ($(PKG_VERSION),2.20.1)
-  PKG_MD5SUM:=9cdfb9d6ec0578c166d3beae5e15c4e5
-endif
-ifeq ($(PKG_VERSION),2.22)
-  PKG_MD5SUM:=ee0f10756c84979622b992a4a61ea3f5
-endif
-ifeq ($(PKG_VERSION),2.23.1)
-  PKG_MD5SUM:=33adb18c3048d057ac58d07a3f1adb38
+  ifeq ($(PKG_VERSION),2.20.1)
+    PKG_MD5SUM:=9cdfb9d6ec0578c166d3beae5e15c4e5
+  endif
+  ifeq ($(PKG_VERSION),2.22)
+    PKG_MD5SUM:=ee0f10756c84979622b992a4a61ea3f5
+  endif
+  ifeq ($(PKG_VERSION),2.23.1)
+    PKG_MD5SUM:=33adb18c3048d057ac58d07a3f1adb38
+  endif
 endif
 
 HOST_BUILD_PARALLEL:=1
