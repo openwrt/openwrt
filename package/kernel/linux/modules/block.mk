@@ -73,7 +73,8 @@ $(eval $(call KernelPackage,ata-artop))
 
 
 define KernelPackage/ata-imx
-  TITLE:=Freescale i.MX6 AHCI SATA support
+  TITLE:=Freescale i.MX AHCI SATA support
+  DEPENDS:=@TARGET_imx6
   KCONFIG:=\
 	CONFIG_AHCI_IMX \
 	CONFIG_SATA_AHCI_PLATFORM \
