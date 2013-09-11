@@ -27,10 +27,10 @@ GCC_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 
 ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
     ifeq ($(CONFIG_GCC_VERSION),"4.6-linaro")
-      PKG_REV:=4.6-2012.12
+      PKG_REV:=4.6-2013.05
       PKG_VERSION:=4.6.4
       PKG_VERSION_MAJOR:=4.6
-      PKG_MD5SUM:=6b6c6a4faa026edd1193cf6426309039
+      PKG_MD5SUM:=26b48802ae1203cd99415026fbf56ed7
       PKG_COMP:=bz2
     endif
     ifeq ($(CONFIG_GCC_VERSION),"4.8-linaro")
