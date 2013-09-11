@@ -11,8 +11,6 @@ Thanks Eugene Rudoy for reporting it and also providing the patch
 
 Signed-off-by: Khem Raj <raj.khem@gmail.com>
 ---
-diff --git a/libc/sysdeps/linux/common/eventfd.c b/libc/sysdeps/linux/common/eventfd.c
-index cc3f3f0..96597ab 100644
 --- a/libc/sysdeps/linux/common/eventfd.c
 +++ b/libc/sysdeps/linux/common/eventfd.c
 @@ -7,12 +7,24 @@
@@ -42,8 +40,6 @@ index cc3f3f0..96597ab 100644
 +#endif
 +}
  #endif
-diff --git a/libc/sysdeps/linux/common/stubs.c b/libc/sysdeps/linux/common/stubs.c
-index 4d1e26c..7af14c1 100644
 --- a/libc/sysdeps/linux/common/stubs.c
 +++ b/libc/sysdeps/linux/common/stubs.c
 @@ -93,7 +93,7 @@ make_stub(epoll_ctl)
@@ -55,5 +51,3 @@ index 4d1e26c..7af14c1 100644
  make_stub(eventfd)
  #endif
  
---
-cgit v0.9.0.1-2-gef13

@@ -1,7 +1,6 @@
-diff -urN uClibc-0.9.33.2/ldso/libdl/libdl.c uClibc-0.9.33.2.new/ldso/libdl/libdl.c
---- uClibc-0.9.33.2/ldso/libdl/libdl.c	2012-05-15 09:20:09.000000000 +0200
-+++ uClibc-0.9.33.2.new/ldso/libdl/libdl.c	2012-11-10 18:34:56.673501060 +0100
-@@ -671,7 +671,7 @@
+--- a/ldso/libdl/libdl.c
++++ b/ldso/libdl/libdl.c
+@@ -671,7 +671,7 @@ static void *do_dlsym(void *vhandle, con
  {
  	struct elf_resolve *tpnt, *tfrom;
  	struct dyn_elf *handle;
@@ -10,7 +9,7 @@ diff -urN uClibc-0.9.33.2/ldso/libdl/libdl.c uClibc-0.9.33.2.new/ldso/libdl/libd
  	struct dyn_elf *rpnt;
  	void *ret;
  	struct symbol_ref sym_ref = { NULL, NULL };
-@@ -729,7 +729,12 @@
+@@ -729,7 +729,12 @@ static void *do_dlsym(void *vhandle, con
  	tpnt = NULL;
  	if (handle == _dl_symbol_tables)
  		tpnt = handle->dyn; /* Only search RTLD_GLOBAL objs if global object */

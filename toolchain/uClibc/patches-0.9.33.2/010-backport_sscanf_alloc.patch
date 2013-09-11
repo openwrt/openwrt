@@ -28,7 +28,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/extra/Configs/Config.in
 +++ b/extra/Configs/Config.in
-@@ -1597,19 +1597,6 @@ config UCLIBC_PRINTF_SCANF_POSITIONAL_AR
+@@ -1590,19 +1590,6 @@ config UCLIBC_PRINTF_SCANF_POSITIONAL_AR
  
  	  Most people will answer 9.
  
@@ -130,7 +130,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  			for (p = spec_ranges; p_m_spec_chars > *p ; ++p) {}
  			if (((psfs->dataargtype >> 8) | psfs->flags)
-@@ -1265,12 +1258,6 @@ int VFSCANF (FILE *__restrict fp, const 
+@@ -1265,12 +1258,6 @@ int VFSCANF (FILE *__restrict fp, const
  				while (*wf && __isascii(*wf) && (b < buf + sizeof(buf) - 1)) {
  					*b++ = *wf++;
  				}
@@ -143,7 +143,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  				*b = 0;
  				if (b == buf) { /* Bad conversion specifier! */
  					goto DONE;
-@@ -1390,13 +1377,36 @@ int VFSCANF (FILE *__restrict fp, const 
+@@ -1390,13 +1377,36 @@ int VFSCANF (FILE *__restrict fp, const
  				}
  
  				if (psfs.conv_num == CONV_s) {
