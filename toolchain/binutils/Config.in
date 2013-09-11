@@ -19,6 +19,10 @@ choice
 		depends on !avr32 || (avr32 && BROKEN)
 		bool "binutils 2.23.1"
 
+	config BINUTILS_VERSION_LINARO
+		depends on !avr32 || (avr32 && BROKEN)
+		bool "Linaro binutils 2.23.2"
+
 endchoice
 
 config EXTRA_BINUTILS_CONFIG_OPTIONS
@@ -34,5 +38,6 @@ config BINUTILS_VERSION
 	default "2.20.1"          if BINUTILS_VERSION_2_20_1
 	default "2.22"            if BINUTILS_VERSION_2_22
 	default "2.23.1"	  if BINUTILS_VERSION_2_23_1
+	default "linaro"          if BINUTILS_VERSION_LINARO
 	default "2.20.1"          if avr32
 	default "2.22"
