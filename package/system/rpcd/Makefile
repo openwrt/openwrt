@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rpcd
-PKG_VERSION:=2013-09-09
+PKG_VERSION:=2013-09-11
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/luci2/rpcd.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=22fbf13086653cba0c60d60ceb7baba2f33a034d
+PKG_SOURCE_VERSION:=ae63188069e433c20b8add7b0fba636f36551ed0
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
@@ -48,11 +48,19 @@ define Package/rpcd/description
  functionality to frontend programs via JSON-RPC.
 endef
 
+define Package/rpcd/conffiles
+/etc/config/rpcd
+endef
+
 define Package/rpcd/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/rpcd.init $(1)/etc/init.d/rpcd
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rpcd $(1)/sbin/rpcd
+	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/unauthenticated.json $(1)/usr/share/rpcd/acl.d/unauthenticated.json
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) ./files/rpcd.config $(1)/etc/config/rpcd
 endef
 
 
