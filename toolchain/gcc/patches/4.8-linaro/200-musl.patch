@@ -1,6 +1,6 @@
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -549,7 +549,7 @@ case ${target} in
+@@ -550,7 +550,7 @@ case ${target} in
  esac
  
  # Common C libraries.
@@ -9,7 +9,7 @@
  
  # Common parts for widely ported systems.
  case ${target} in
-@@ -652,6 +652,9 @@ case ${target} in
+@@ -653,6 +653,9 @@ case ${target} in
      *-*-*uclibc*)
        tm_defines="$tm_defines DEFAULT_LIBC=LIBC_UCLIBC"
        ;;
@@ -34,7 +34,7 @@
  #undef  LINK_SPEC
 --- a/gcc/config/i386/linux.h
 +++ b/gcc/config/i386/linux.h
-@@ -21,3 +21,4 @@ along with GCC; see the file COPYING3.  
+@@ -21,3 +21,4 @@ along with GCC; see the file COPYING3.
  
  #define GNU_USER_LINK_EMULATION "elf_i386"
  #define GLIBC_DYNAMIC_LINKER "/lib/ld-linux.so.2"
@@ -127,7 +127,7 @@
 +Use musl C library
 --- a/gcc/config/mips/linux.h
 +++ b/gcc/config/mips/linux.h
-@@ -18,3 +18,5 @@ along with GCC; see the file COPYING3.  
+@@ -18,3 +18,5 @@ along with GCC; see the file COPYING3.
  <http://www.gnu.org/licenses/>.  */
  
  #define GLIBC_DYNAMIC_LINKER "/lib/ld.so.1"
@@ -135,7 +135,7 @@
 +#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-mips.so.1"
 --- a/gcc/config/rs6000/linux64.h
 +++ b/gcc/config/rs6000/linux64.h
-@@ -364,17 +364,21 @@ extern int dot_symbols;
+@@ -354,17 +354,21 @@ extern int dot_symbols;
  #define GLIBC_DYNAMIC_LINKER64 "/lib64/ld64.so.1"
  #define UCLIBC_DYNAMIC_LINKER32 "/lib/ld-uClibc.so.0"
  #define UCLIBC_DYNAMIC_LINKER64 "/lib/ld64-uClibc.so.0"
@@ -159,11 +159,11 @@
 -  CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER64, UCLIBC_DYNAMIC_LINKER64)
 +  CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKER64, UCLIBC_DYNAMIC_LINKER64, MUSL_DYNAMIC_LINKER64)
  
- 
- #define LINK_OS_LINUX_SPEC32 "-m elf32ppclinux %{!shared: %{!static: \
+ #undef  DEFAULT_ASM_ENDIAN
+ #if (TARGET_DEFAULT & MASK_LITTLE_ENDIAN)
 --- a/gcc/config/rs6000/sysv4.h
 +++ b/gcc/config/rs6000/sysv4.h
-@@ -789,15 +789,18 @@ extern int fixuplabelno;
+@@ -778,15 +778,18 @@ ENDIAN_SELECT(" -mbig", " -mlittle", DEF
  
  #define GLIBC_DYNAMIC_LINKER "/lib/ld.so.1"
  #define UCLIBC_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
@@ -295,7 +295,7 @@
      ;;
 --- a/gcc/config/mips/linux64.h
 +++ b/gcc/config/mips/linux64.h
-@@ -27,6 +27,9 @@ along with GCC; see the file COPYING3.  
+@@ -27,6 +27,9 @@ along with GCC; see the file COPYING3.
  #define GLIBC_DYNAMIC_LINKERN32 "/lib32/ld.so.1"
  #define UCLIBC_DYNAMIC_LINKERN32 "/lib32/ld-uClibc.so.0"
  #define BIONIC_DYNAMIC_LINKERN32 "/system/bin/linker32"
