@@ -211,7 +211,7 @@ define KernelPackage/hwmon-w83627hf
   KCONFIG:=CONFIG_SENSORS_W83627HF
   FILES:=$(LINUX_DIR)/drivers/hwmon/w83627hf.ko
   AUTOLOAD:=$(call AutoLoad,50,w83627hf)
-$(call AddDepends/hwmon,@TARGET_rdc||TARGET_x86 +kmod-hwmon-vid)
+  $(call AddDepends/hwmon,@TARGET_rdc||TARGET_x86 +kmod-hwmon-vid)
 endef
 
 define KernelPacakge/hwmon-w83627hf/description
@@ -225,8 +225,8 @@ define KernelPackage/hwmon-gsc
   TITLE:=Gateworks GSC monitoring support
   KCONFIG:=CONFIG_SENSORS_GSC
   FILES:=$(LINUX_DIR)/drivers/hwmon/gsc.ko
-  AUTOLOAD:=$(call AutoLoad,50,gsc)
-$(call AddDepends/hwmon)
+  AUTOLOAD:=$(call AutoLoad,60,gsc)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
 define KernelPacakge/hwmon-gsc/description
