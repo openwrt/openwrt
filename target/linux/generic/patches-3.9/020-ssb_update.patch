@@ -1,6 +1,13 @@
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
-@@ -144,7 +144,7 @@ config SSB_SFLASH
+@@ -138,13 +138,13 @@ config SSB_DRIVER_MIPS
+ 
+ config SSB_SFLASH
+ 	bool "SSB serial flash support"
+-	depends on SSB_DRIVER_MIPS && BROKEN
++	depends on SSB_DRIVER_MIPS
+ 	default y
+ 
  # Assumption: We are on embedded, if we compile the MIPS core.
  config SSB_EMBEDDED
  	bool
@@ -218,28 +225,32 @@
  	u32 id, id2;
  
  	switch (cc->capabilities & SSB_CHIPCO_CAP_FLASHT) {
-@@ -131,9 +145,21 @@ int ssb_sflash_init(struct ssb_chipcommo
+@@ -131,10 +145,20 @@ int ssb_sflash_init(struct ssb_chipcommo
  		return -ENOTSUPP;
  	}
  
+-	pr_info("Found %s serial flash (blocksize: 0x%X, blocks: %d)\n",
+-		e->name, e->blocksize, e->numblocks);
+-
+-	pr_err("Serial flash support is not implemented yet!\n");
 +	sflash->window = SSB_FLASH2;
 +	sflash->blocksize = e->blocksize;
 +	sflash->numblocks = e->numblocks;
 +	sflash->size = sflash->blocksize * sflash->numblocks;
 +	sflash->present = true;
 +
- 	pr_info("Found %s serial flash (blocksize: 0x%X, blocks: %d)\n",
- 		e->name, e->blocksize, e->numblocks);
- 
++	pr_info("Found %s serial flash (size: %dKiB, blocksize: 0x%X, blocks: %d)\n",
++		e->name, sflash->size / 1024, e->blocksize, e->numblocks);
++
 +	/* Prepare platform device, but don't register it yet. It's too early,
 +	 * malloc (required by device_private_init) is not available yet. */
 +	ssb_sflash_dev.resource[0].end = ssb_sflash_dev.resource[0].start +
 +					 sflash->size;
 +	ssb_sflash_dev.dev.platform_data = sflash;
-+
- 	pr_err("Serial flash support is not implemented yet!\n");
  
- 	return -ENOTSUPP;
+-	return -ENOTSUPP;
++	return 0;
+ }
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
 @@ -167,21 +167,22 @@ static void set_irq(struct ssb_device *d

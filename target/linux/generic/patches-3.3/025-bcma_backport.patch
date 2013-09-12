@@ -11,7 +11,7 @@
  		p->iotype = UPIO_MEM;
 --- a/drivers/bcma/Kconfig
 +++ b/drivers/bcma/Kconfig
-@@ -26,10 +26,11 @@ config BCMA_HOST_PCI_POSSIBLE
+@@ -26,16 +26,23 @@ config BCMA_HOST_PCI_POSSIBLE
  config BCMA_HOST_PCI
  	bool "Support for BCMA on PCI-host bus"
  	depends on BCMA_HOST_PCI_POSSIBLE
@@ -24,7 +24,21 @@
  	help
  	  PCI core hostmode operation (external PCI bus).
  
-@@ -46,6 +47,33 @@ config BCMA_DRIVER_MIPS
+ config BCMA_HOST_SOC
+-	bool
+-	depends on BCMA_DRIVER_MIPS
++	bool "Support for BCMA in a SoC"
++	depends on BCMA
++	help
++	  Host interface for a Broadcom AIX bus directly mapped into
++	  the memory. This only works with the Broadcom SoCs from the
++	  BCM47XX line.
++
++	  If unsure, say N
+ 
+ config BCMA_DRIVER_MIPS
+ 	bool "BCMA Broadcom MIPS core driver"
+@@ -46,6 +53,33 @@ config BCMA_DRIVER_MIPS
  
  	  If unsure, say N
  
@@ -2047,7 +2061,7 @@
   *
   * Licensed under the GNU/GPL. See COPYING for details.
   */
-@@ -16,120 +17,124 @@
+@@ -16,120 +17,131 @@
   * R/W ops.
   **************************************************/
  
@@ -2074,7 +2088,8 @@
  }
 -#endif
  
- static void bcma_pcie_mdio_set_phy(struct bcma_drv_pci *pc, u8 phy)
+-static void bcma_pcie_mdio_set_phy(struct bcma_drv_pci *pc, u8 phy)
++static void bcma_pcie_mdio_set_phy(struct bcma_drv_pci *pc, u16 phy)
  {
 -	const u16 mdio_control = 0x128;
 -	const u16 mdio_data = 0x12C;
@@ -2108,7 +2123,8 @@
  	}
  }
  
- static u16 bcma_pcie_mdio_read(struct bcma_drv_pci *pc, u8 device, u8 address)
+-static u16 bcma_pcie_mdio_read(struct bcma_drv_pci *pc, u8 device, u8 address)
++static u16 bcma_pcie_mdio_read(struct bcma_drv_pci *pc, u16 device, u8 address)
  {
 -	const u16 mdio_control = 0x128;
 -	const u16 mdio_data = 0x12C;
@@ -2168,7 +2184,8 @@
  	return ret;
  }
  
- static void bcma_pcie_mdio_write(struct bcma_drv_pci *pc, u8 device,
+-static void bcma_pcie_mdio_write(struct bcma_drv_pci *pc, u8 device,
++static void bcma_pcie_mdio_write(struct bcma_drv_pci *pc, u16 device,
  				u8 address, u16 data)
  {
 -	const u16 mdio_control = 0x128;
@@ -2221,10 +2238,17 @@
  	}
 -	pcicore_write32(pc, mdio_control, 0);
 +	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_CONTROL, 0);
++}
++
++static u16 bcma_pcie_mdio_writeread(struct bcma_drv_pci *pc, u16 device,
++				    u8 address, u16 data)
++{
++	bcma_pcie_mdio_write(pc, device, address, data);
++	return bcma_pcie_mdio_read(pc, device, address);
  }
  
  /**************************************************
-@@ -138,88 +143,108 @@ static void bcma_pcie_mdio_write(struct
+@@ -138,88 +150,127 @@ static void bcma_pcie_mdio_write(struct
  
  static u8 bcma_pcicore_polarity_workaround(struct bcma_drv_pci *pc)
  {
@@ -2277,12 +2301,18 @@
 +			(val16 & ~BCMA_CORE_PCI_SPROM_PI_MASK);
 +		pcicore_write16(pc, regoff, val16);
 +	}
-+}
-+
+ }
+ 
+-/**************************************************
+- * Init.
+- **************************************************/
+-
+-static void bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
 +/* Fix MISC config to allow coming out of L2/L3-Ready state w/o PRST */
 +/* Needs to happen when coming out of 'standby'/'hibernate' */
 +static void bcma_core_pci_config_fixup(struct bcma_drv_pci *pc)
-+{
+ {
+-	bcma_pcicore_serdes_workaround(pc);
 +	u16 val16;
 +	uint regoff;
 +
@@ -2296,23 +2326,13 @@
 +	}
  }
  
- /**************************************************
-  * Init.
-  **************************************************/
- 
--static void bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
-+static void __devinit bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
- {
-+	bcma_core_pci_fixcfg(pc);
- 	bcma_pcicore_serdes_workaround(pc);
-+	bcma_core_pci_config_fixup(pc);
- }
- 
 -static bool bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc)
--{
++static void bcma_core_pci_power_save(struct bcma_drv_pci *pc, bool up)
+ {
 -	struct bcma_bus *bus = pc->core->bus;
 -	u16 chipid_top;
--
++	u16 data;
+ 
 -	chipid_top = (bus->chipinfo.id & 0xFF00);
 -	if (chipid_top != 0x4700 &&
 -	    chipid_top != 0x5300)
@@ -2322,17 +2342,39 @@
 -	if (bus->sprom.boardflags_lo & SSB_BFL_NOPCI)
 -		return false;
 -#endif /* CONFIG_SSB_DRIVER_PCICORE */
--
++	if (pc->core->id.rev >= 15 && pc->core->id.rev <= 20) {
++		data = up ? 0x74 : 0x7C;
++		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
++					 BCMA_CORE_PCI_MDIO_BLK1_MGMT1, 0x7F64);
++		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
++					 BCMA_CORE_PCI_MDIO_BLK1_MGMT3, data);
++	} else if (pc->core->id.rev >= 21 && pc->core->id.rev <= 22) {
++		data = up ? 0x75 : 0x7D;
++		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
++					 BCMA_CORE_PCI_MDIO_BLK1_MGMT1, 0x7E65);
++		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
++					 BCMA_CORE_PCI_MDIO_BLK1_MGMT3, data);
++	}
++}
+ 
 -#if 0
 -	/* TODO: on BCMA we use address from EROM instead of magic formula */
 -	u32 tmp;
 -	return !mips_busprobe32(tmp, (bus->mmio +
 -		(pc->core->core_index * BCMA_CORE_SIZE)));
 -#endif
--
++/**************************************************
++ * Init.
++ **************************************************/
+ 
 -	return true;
--}
--
++static void __devinit bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
++{
++	bcma_core_pci_fixcfg(pc);
++	bcma_pcicore_serdes_workaround(pc);
++	bcma_core_pci_config_fixup(pc);
+ }
+ 
 -void bcma_core_pci_init(struct bcma_drv_pci *pc)
 +void __devinit bcma_core_pci_init(struct bcma_drv_pci *pc)
  {
@@ -2377,12 +2419,12 @@
  	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
  	if (err)
  		goto out;
-@@ -236,3 +261,17 @@ out:
+@@ -236,3 +287,46 @@ out:
  	return err;
  }
  EXPORT_SYMBOL_GPL(bcma_core_pci_irq_ctl);
 +
-+void bcma_core_pci_extend_L1timer(struct bcma_drv_pci *pc, bool extend)
++static void bcma_core_pci_extend_L1timer(struct bcma_drv_pci *pc, bool extend)
 +{
 +	u32 w;
 +
@@ -2394,10 +2436,39 @@
 +	bcma_pcie_write(pc, BCMA_CORE_PCI_DLLP_PMTHRESHREG, w);
 +	bcma_pcie_read(pc, BCMA_CORE_PCI_DLLP_PMTHRESHREG);
 +}
-+EXPORT_SYMBOL_GPL(bcma_core_pci_extend_L1timer);
++
++void bcma_core_pci_up(struct bcma_bus *bus)
++{
++	struct bcma_drv_pci *pc;
++
++	if (bus->hosttype != BCMA_HOSTTYPE_PCI)
++		return;
++
++	pc = &bus->drv_pci[0];
++
++	bcma_core_pci_power_save(pc, true);
++
++	bcma_core_pci_extend_L1timer(pc, true);
++}
++EXPORT_SYMBOL_GPL(bcma_core_pci_up);
++
++void bcma_core_pci_down(struct bcma_bus *bus)
++{
++	struct bcma_drv_pci *pc;
++
++	if (bus->hosttype != BCMA_HOSTTYPE_PCI)
++		return;
++
++	pc = &bus->drv_pci[0];
++
++	bcma_core_pci_extend_L1timer(pc, false);
++
++	bcma_core_pci_power_save(pc, false);
++}
++EXPORT_SYMBOL_GPL(bcma_core_pci_down);
 --- a/drivers/bcma/driver_pci_host.c
 +++ b/drivers/bcma/driver_pci_host.c
-@@ -2,13 +2,616 @@
+@@ -2,13 +2,622 @@
   * Broadcom specific AMBA
   * PCI Core in hostmode
   *
@@ -2983,6 +3054,7 @@
 +int bcma_core_pci_plat_dev_init(struct pci_dev *dev)
 +{
 +	struct bcma_drv_pci_host *pc_host;
++	int readrq;
 +
 +	if (dev->bus->ops->read != bcma_core_pci_hostmode_read_config) {
 +		/* This is not a device on the PCI-core bridge. */
@@ -2997,6 +3069,11 @@
 +	dev->irq = bcma_core_irq(pc_host->pdev->core);
 +	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
 +
++	readrq = pcie_get_readrq(dev);
++	if (readrq > 128) {
++		pr_info("change PCIe max read request size from %i to 128\n", readrq);
++		pcie_set_readrq(dev, 128);
++	}
 +	return 0;
 +}
 +EXPORT_SYMBOL(bcma_core_pci_plat_dev_init);
@@ -3335,8 +3412,9 @@
  	err = bcma_bus_scan(bus);
  	if (err) {
 -		pr_err("Failed to scan: %d\n", err);
+-		return -1;
 +		bcma_err(bus, "Failed to scan: %d\n", err);
- 		return -1;
++		return err;
  	}
  
 +	/* Early init CC core */
@@ -3486,7 +3564,7 @@
  	}
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
-@@ -19,15 +19,27 @@ struct bcma_device_id_name {
+@@ -19,15 +19,39 @@ struct bcma_device_id_name {
  	u16 id;
  	const char *name;
  };
@@ -3504,6 +3582,18 @@
 +	{ BCMA_CORE_4706_CHIPCOMMON, "BCM4706 ChipCommon" },
 +	{ BCMA_CORE_4706_SOC_RAM, "BCM4706 SOC RAM" },
 +	{ BCMA_CORE_4706_MAC_GBIT, "BCM4706 GBit MAC" },
++	{ BCMA_CORE_PCIEG2, "PCIe Gen 2" },
++	{ BCMA_CORE_DMA, "DMA" },
++	{ BCMA_CORE_SDIO3, "SDIO3" },
++	{ BCMA_CORE_USB20, "USB 2.0" },
++	{ BCMA_CORE_USB30, "USB 3.0" },
++	{ BCMA_CORE_A9JTAG, "ARM Cortex A9 JTAG" },
++	{ BCMA_CORE_DDR23, "Denali DDR2/DDR3 memory controller" },
++	{ BCMA_CORE_ROM, "ROM" },
++	{ BCMA_CORE_NAND, "NAND flash controller" },
++	{ BCMA_CORE_QSPI, "SPI flash controller" },
++	{ BCMA_CORE_CHIPCOMMON_B, "Chipcommon B" },
++	{ BCMA_CORE_ARMCA9, "ARM Cortex A9 core (ihost)" },
 +	{ BCMA_CORE_AMEMC, "AMEMC (DDR)" },
 +	{ BCMA_CORE_ALTA, "ALTA (I2S)" },
  	{ BCMA_CORE_INVALID, "Invalid" },
@@ -3516,7 +3606,7 @@
  	{ BCMA_CORE_ETHERNET, "Fast Ethernet" },
  	{ BCMA_CORE_V90, "V90" },
  	{ BCMA_CORE_USB11_HOSTDEV, "USB 1.1 Hostdev" },
-@@ -44,7 +56,6 @@ struct bcma_device_id_name bcma_device_n
+@@ -44,7 +68,6 @@ struct bcma_device_id_name bcma_device_n
  	{ BCMA_CORE_PHY_A, "PHY A" },
  	{ BCMA_CORE_PHY_B, "PHY B" },
  	{ BCMA_CORE_PHY_G, "PHY G" },
@@ -3524,7 +3614,7 @@
  	{ BCMA_CORE_USB11_HOST, "USB 1.1 Host" },
  	{ BCMA_CORE_USB11_DEV, "USB 1.1 Device" },
  	{ BCMA_CORE_USB20_HOST, "USB 2.0 Host" },
-@@ -58,15 +69,11 @@ struct bcma_device_id_name bcma_device_n
+@@ -58,15 +81,11 @@ struct bcma_device_id_name bcma_device_n
  	{ BCMA_CORE_PHY_N, "PHY N" },
  	{ BCMA_CORE_SRAM_CTL, "SRAM Controller" },
  	{ BCMA_CORE_MINI_MACPHY, "Mini MACPHY" },
@@ -3540,7 +3630,7 @@
  	{ BCMA_CORE_MAC_GBIT, "GBit MAC" },
  	{ BCMA_CORE_DDR12_MEM_CTL, "DDR1/DDR2 Memory Controller" },
  	{ BCMA_CORE_PCIE_RC, "PCIe Root Complex" },
-@@ -77,18 +84,45 @@ struct bcma_device_id_name bcma_device_n
+@@ -77,18 +96,45 @@ struct bcma_device_id_name bcma_device_n
  	{ BCMA_CORE_I2S, "I2S" },
  	{ BCMA_CORE_SDR_DDR1_MEM_CTL, "SDR/DDR1 Memory Controller" },
  	{ BCMA_CORE_SHIM, "SHIM" },
@@ -3583,17 +3673,17 @@
 +		break;
 +	default:
 +		return "UNKNOWN";
- 	}
++	}
 +
 +	for (i = 0; i < size; i++) {
 +		if (names[i].id == id->id)
 +			return names[i].name;
-+	}
+ 	}
 +
  	return "UNKNOWN";
  }
  
-@@ -105,19 +139,19 @@ static void bcma_scan_switch_core(struct
+@@ -105,19 +151,19 @@ static void bcma_scan_switch_core(struct
  				       addr);
  }
  
@@ -3616,7 +3706,7 @@
  {
  	u32 ent = bcma_erom_get_ent(bus, eromptr);
  	if (!(ent & SCAN_ER_VALID))
-@@ -127,14 +161,14 @@ static s32 bcma_erom_get_ci(struct bcma_
+@@ -127,14 +173,14 @@ static s32 bcma_erom_get_ci(struct bcma_
  	return ent;
  }
  
@@ -3633,7 +3723,7 @@
  {
  	u32 ent = bcma_erom_get_ent(bus, eromptr);
  	bcma_erom_push_ent(eromptr);
-@@ -143,7 +177,7 @@ static bool bcma_erom_is_bridge(struct b
+@@ -143,7 +189,7 @@ static bool bcma_erom_is_bridge(struct b
  		((ent & SCAN_ADDR_TYPE) == SCAN_ADDR_TYPE_BRIDGE));
  }
  
@@ -3642,7 +3732,7 @@
  {
  	u32 ent;
  	while (1) {
-@@ -157,7 +191,7 @@ static void bcma_erom_skip_component(str
+@@ -157,7 +203,7 @@ static void bcma_erom_skip_component(str
  	bcma_erom_push_ent(eromptr);
  }
  
@@ -3651,16 +3741,25 @@
  {
  	u32 ent = bcma_erom_get_ent(bus, eromptr);
  	if (!(ent & SCAN_ER_VALID))
-@@ -167,7 +201,7 @@ static s32 bcma_erom_get_mst_port(struct
+@@ -167,7 +213,7 @@ static s32 bcma_erom_get_mst_port(struct
  	return ent;
  }
  
 -static s32 bcma_erom_get_addr_desc(struct bcma_bus *bus, u32 **eromptr,
-+static s32 bcma_erom_get_addr_desc(struct bcma_bus *bus, u32 __iomem **eromptr,
++static u32 bcma_erom_get_addr_desc(struct bcma_bus *bus, u32 __iomem **eromptr,
  				  u32 type, u8 port)
  {
  	u32 addrl, addrh, sizel, sizeh = 0;
-@@ -212,6 +246,17 @@ static struct bcma_device *bcma_find_cor
+@@ -179,7 +225,7 @@ static s32 bcma_erom_get_addr_desc(struc
+ 	    ((ent & SCAN_ADDR_TYPE) != type) ||
+ 	    (((ent & SCAN_ADDR_PORT) >> SCAN_ADDR_PORT_SHIFT) != port)) {
+ 		bcma_erom_push_ent(eromptr);
+-		return -EINVAL;
++		return (u32)-EINVAL;
+ 	}
+ 
+ 	addrl = ent & SCAN_ADDR_ADDR;
+@@ -212,11 +258,24 @@ static struct bcma_device *bcma_find_cor
  	return NULL;
  }
  
@@ -3675,10 +3774,18 @@
 +	return NULL;
 +}
 +
++#define IS_ERR_VALUE_U32(x) ((x) >= (u32)-MAX_ERRNO)
++
  static int bcma_get_next_core(struct bcma_bus *bus, u32 __iomem **eromptr,
  			      struct bcma_device_id *match, int core_num,
  			      struct bcma_device *core)
-@@ -252,11 +297,15 @@ static int bcma_get_next_core(struct bcm
+ {
+-	s32 tmp;
++	u32 tmp;
+ 	u8 i, j;
+ 	s32 cia, cib;
+ 	u8 ports[2], wrappers[2];
+@@ -252,11 +311,15 @@ static int bcma_get_next_core(struct bcm
  
  	/* check if component is a core at all */
  	if (wrappers[0] + wrappers[1] == 0) {
@@ -3699,7 +3806,7 @@
  	}
  
  	if (bcma_erom_is_bridge(bus, eromptr)) {
-@@ -286,6 +335,23 @@ static int bcma_get_next_core(struct bcm
+@@ -286,19 +349,36 @@ static int bcma_get_next_core(struct bcm
  			return -EILSEQ;
  	}
  
@@ -3707,11 +3814,11 @@
 +	 * the main register space for the core
 +	 */
 +	tmp = bcma_erom_get_addr_desc(bus, eromptr, SCAN_ADDR_TYPE_SLAVE, 0);
-+	if (tmp <= 0) {
++	if (tmp == 0 || IS_ERR_VALUE_U32(tmp)) {
 +		/* Try again to see if it is a bridge */
 +		tmp = bcma_erom_get_addr_desc(bus, eromptr,
 +					      SCAN_ADDR_TYPE_BRIDGE, 0);
-+		if (tmp <= 0) {
++		if (tmp == 0 || IS_ERR_VALUE_U32(tmp)) {
 +			return -EILSEQ;
 +		} else {
 +			bcma_info(bus, "Bridge found\n");
@@ -3723,7 +3830,13 @@
  	/* get & parse slave ports */
  	for (i = 0; i < ports[1]; i++) {
  		for (j = 0; ; j++) {
-@@ -298,7 +364,7 @@ static int bcma_get_next_core(struct bcm
+ 			tmp = bcma_erom_get_addr_desc(bus, eromptr,
+ 				SCAN_ADDR_TYPE_SLAVE, i);
+-			if (tmp < 0) {
++			if (IS_ERR_VALUE_U32(tmp)) {
+ 				/* no more entries for port _i_ */
+ 				/* pr_debug("erom: slave port %d "
+ 				 * "has %d descriptors\n", i, j); */
  				break;
  			} else {
  				if (i == 0 && j == 0)
@@ -3732,7 +3845,25 @@
  			}
  		}
  	}
-@@ -353,6 +419,7 @@ static int bcma_get_next_core(struct bcm
+@@ -308,7 +388,7 @@ static int bcma_get_next_core(struct bcm
+ 		for (j = 0; ; j++) {
+ 			tmp = bcma_erom_get_addr_desc(bus, eromptr,
+ 				SCAN_ADDR_TYPE_MWRAP, i);
+-			if (tmp < 0) {
++			if (IS_ERR_VALUE_U32(tmp)) {
+ 				/* no more entries for port _i_ */
+ 				/* pr_debug("erom: master wrapper %d "
+ 				 * "has %d descriptors\n", i, j); */
+@@ -326,7 +406,7 @@ static int bcma_get_next_core(struct bcm
+ 		for (j = 0; ; j++) {
+ 			tmp = bcma_erom_get_addr_desc(bus, eromptr,
+ 				SCAN_ADDR_TYPE_SWRAP, i + hack);
+-			if (tmp < 0) {
++			if (IS_ERR_VALUE_U32(tmp)) {
+ 				/* no more entries for port _i_ */
+ 				/* pr_debug("erom: master wrapper %d "
+ 				 * has %d descriptors\n", i, j); */
+@@ -353,6 +433,7 @@ static int bcma_get_next_core(struct bcm
  void bcma_init_bus(struct bcma_bus *bus)
  {
  	s32 tmp;
@@ -3740,7 +3871,7 @@
  
  	if (bus->init_done)
  		return;
-@@ -363,9 +430,12 @@ void bcma_init_bus(struct bcma_bus *bus)
+@@ -363,9 +444,12 @@ void bcma_init_bus(struct bcma_bus *bus)
  	bcma_scan_switch_core(bus, BCMA_ADDR_BASE);
  
  	tmp = bcma_scan_read32(bus, 0, BCMA_CC_ID);
@@ -3756,7 +3887,7 @@
  	bus->init_done = true;
  }
  
-@@ -392,9 +462,12 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -392,9 +476,12 @@ int bcma_bus_scan(struct bcma_bus *bus)
  	bcma_scan_switch_core(bus, erombase);
  
  	while (eromptr < eromend) {
@@ -3771,7 +3902,7 @@
  		INIT_LIST_HEAD(&core->list);
  		core->bus = bus;
  
-@@ -409,25 +482,28 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -409,25 +496,28 @@ int bcma_bus_scan(struct bcma_bus *bus)
  			} else if (err == -ESPIPE) {
  				break;
  			}
@@ -3808,7 +3939,7 @@
  }
  
  int __init bcma_bus_scan_early(struct bcma_bus *bus,
-@@ -467,21 +543,21 @@ int __init bcma_bus_scan_early(struct bc
+@@ -467,21 +557,21 @@ int __init bcma_bus_scan_early(struct bc
  		else if (err == -ESPIPE)
  			break;
  		else if (err < 0)
@@ -4557,12 +4688,24 @@
  enum bcma_clkmode {
  	BCMA_CLKMODE_FAST,
  	BCMA_CLKMODE_DYNAMIC,
-@@ -65,6 +71,13 @@ struct bcma_host_ops {
+@@ -65,6 +71,25 @@ struct bcma_host_ops {
  
  /* Core-ID values. */
  #define BCMA_CORE_OOB_ROUTER		0x367	/* Out of band */
 +#define BCMA_CORE_4706_CHIPCOMMON	0x500
++#define BCMA_CORE_PCIEG2		0x501
++#define BCMA_CORE_DMA			0x502
++#define BCMA_CORE_SDIO3			0x503
++#define BCMA_CORE_USB20			0x504
++#define BCMA_CORE_USB30			0x505
++#define BCMA_CORE_A9JTAG		0x506
++#define BCMA_CORE_DDR23			0x507
++#define BCMA_CORE_ROM			0x508
++#define BCMA_CORE_NAND			0x509
++#define BCMA_CORE_QSPI			0x50A
++#define BCMA_CORE_CHIPCOMMON_B		0x50B
 +#define BCMA_CORE_4706_SOC_RAM		0x50E
++#define BCMA_CORE_ARMCA9		0x510
 +#define BCMA_CORE_4706_MAC_GBIT		0x52D
 +#define BCMA_CORE_AMEMC			0x52E	/* DDR1/2 memory controller core */
 +#define BCMA_CORE_ALTA			0x534	/* I2S core */
@@ -4571,7 +4714,7 @@
  #define BCMA_CORE_INVALID		0x700
  #define BCMA_CORE_CHIPCOMMON		0x800
  #define BCMA_CORE_ILINE20		0x801
-@@ -121,10 +134,104 @@ struct bcma_host_ops {
+@@ -121,10 +146,109 @@ struct bcma_host_ops {
  #define BCMA_CORE_I2S			0x834
  #define BCMA_CORE_SDR_DDR1_MEM_CTL	0x835	/* SDR/DDR1 memory controller core */
  #define BCMA_CORE_SHIM			0x837	/* SHIM component in ubus/6362 */
@@ -4618,6 +4761,11 @@
 +#define  BCMA_PKG_ID_BCM5357	11
 +#define BCMA_CHIP_ID_BCM53572	53572
 +#define  BCMA_PKG_ID_BCM47188	9
++#define BCMA_CHIP_ID_BCM4707	53010
++#define  BCMA_PKG_ID_BCM4707	1
++#define  BCMA_PKG_ID_BCM4708	2
++#define  BCMA_PKG_ID_BCM4709	0
++#define BCMA_CHIP_ID_BCM53018	53018
 +
 +/* Board types (on PCI usually equals to the subsystem dev id) */
 +/* BCM4313 */
@@ -4676,7 +4824,7 @@
  struct bcma_device {
  	struct bcma_bus *bus;
  	struct bcma_device_id id;
-@@ -136,8 +243,10 @@ struct bcma_device {
+@@ -136,8 +260,10 @@ struct bcma_device {
  	bool dev_registered;
  
  	u8 core_index;
@@ -4687,7 +4835,7 @@
  	u32 wrap;
  
  	void __iomem *io_addr;
-@@ -175,6 +284,12 @@ int __bcma_driver_register(struct bcma_d
+@@ -175,6 +301,12 @@ int __bcma_driver_register(struct bcma_d
  
  extern void bcma_driver_unregister(struct bcma_driver *drv);
  
@@ -4700,7 +4848,7 @@
  struct bcma_bus {
  	/* The MMIO area. */
  	void __iomem *mmio;
-@@ -191,14 +306,18 @@ struct bcma_bus {
+@@ -191,14 +323,18 @@ struct bcma_bus {
  
  	struct bcma_chipinfo chipinfo;
  
@@ -4720,7 +4868,7 @@
  
  	/* We decided to share SPROM struct with SSB as long as we do not need
  	 * any hacks for BCMA. This simplifies drivers code. */
-@@ -282,6 +401,7 @@ static inline void bcma_maskset16(struct
+@@ -282,6 +418,7 @@ static inline void bcma_maskset16(struct
  	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
  }
  
@@ -4728,7 +4876,7 @@
  extern bool bcma_core_is_enabled(struct bcma_device *core);
  extern void bcma_core_disable(struct bcma_device *core, u32 flags);
  extern int bcma_core_enable(struct bcma_device *core, u32 flags);
-@@ -289,6 +409,7 @@ extern void bcma_core_set_clockmode(stru
+@@ -289,6 +426,7 @@ extern void bcma_core_set_clockmode(stru
  				    enum bcma_clkmode clkmode);
  extern void bcma_core_pll_ctl(struct bcma_device *core, u32 req, u32 status,
  			      bool on);
@@ -5410,7 +5558,7 @@
  
  /* SBtoPCIx */
  #define BCMA_CORE_PCI_SBTOPCI_MEM		0x00000000
-@@ -72,20 +108,120 @@ struct pci_dev;
+@@ -72,20 +108,142 @@ struct pci_dev;
  #define  BCMA_CORE_PCI_SBTOPCI_RC_READL		0x00000010 /* Memory read line */
  #define  BCMA_CORE_PCI_SBTOPCI_RC_READM		0x00000020 /* Memory read multiple */
  
@@ -5487,10 +5635,31 @@
 +
 +#define BCMA_CORE_PCI_CFG_DEVCTRL		0xd8
 +
++#define BCMA_CORE_PCI_
++
++/* MDIO devices (SERDES modules) */
++#define BCMA_CORE_PCI_MDIO_IEEE0		0x000
++#define BCMA_CORE_PCI_MDIO_IEEE1		0x001
++#define BCMA_CORE_PCI_MDIO_BLK0			0x800
++#define BCMA_CORE_PCI_MDIO_BLK1			0x801
++#define  BCMA_CORE_PCI_MDIO_BLK1_MGMT0		0x16
++#define  BCMA_CORE_PCI_MDIO_BLK1_MGMT1		0x17
++#define  BCMA_CORE_PCI_MDIO_BLK1_MGMT2		0x18
++#define  BCMA_CORE_PCI_MDIO_BLK1_MGMT3		0x19
++#define  BCMA_CORE_PCI_MDIO_BLK1_MGMT4		0x1A
++#define BCMA_CORE_PCI_MDIO_BLK2			0x802
++#define BCMA_CORE_PCI_MDIO_BLK3			0x803
++#define BCMA_CORE_PCI_MDIO_BLK4			0x804
++#define BCMA_CORE_PCI_MDIO_TXPLL		0x808	/* TXPLL register block idx */
++#define BCMA_CORE_PCI_MDIO_TXCTRL0		0x820
++#define BCMA_CORE_PCI_MDIO_SERDESID		0x831
++#define BCMA_CORE_PCI_MDIO_RXCTRL0		0x840
++
 +/* PCIE Root Capability Register bits (Host mode only) */
 +#define BCMA_CORE_PCI_RC_CRS_VISIBILITY		0x0001
 +
 +struct bcma_drv_pci;
++struct bcma_bus;
 +
 +#ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
 +struct bcma_drv_pci_host {
@@ -5526,7 +5695,8 @@
 +extern void __devinit bcma_core_pci_init(struct bcma_drv_pci *pc);
  extern int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc,
  				 struct bcma_device *core, bool enable);
-+extern void bcma_core_pci_extend_L1timer(struct bcma_drv_pci *pc, bool extend);
++extern void bcma_core_pci_up(struct bcma_bus *bus);
++extern void bcma_core_pci_down(struct bcma_bus *bus);
 +
 +extern int bcma_core_pci_pcibios_map_irq(const struct pci_dev *dev);
 +extern int bcma_core_pci_plat_dev_init(struct pci_dev *dev);
