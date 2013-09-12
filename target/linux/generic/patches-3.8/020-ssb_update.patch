@@ -6,7 +6,7 @@
  
 +config SSB_SFLASH
 +	bool "SSB serial flash support"
-+	depends on SSB_DRIVER_MIPS && BROKEN
++	depends on SSB_DRIVER_MIPS
 +	default y
 +
  # Assumption: We are on embedded, if we compile the MIPS core.
@@ -179,7 +179,7 @@
  			   "Unknown spuravoidance settings for chip 0x%04X, not changing PLL\n",
 --- /dev/null
 +++ b/drivers/ssb/driver_chipcommon_sflash.c
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,164 @@
 +/*
 + * Sonics Silicon Backplane
 + * ChipCommon serial flash interface
@@ -333,8 +333,8 @@
 +	sflash->size = sflash->blocksize * sflash->numblocks;
 +	sflash->present = true;
 +
-+	pr_info("Found %s serial flash (blocksize: 0x%X, blocks: %d)\n",
-+		e->name, e->blocksize, e->numblocks);
++	pr_info("Found %s serial flash (size: %dKiB, blocksize: 0x%X, blocks: %d)\n",
++		e->name, sflash->size / 1024, e->blocksize, e->numblocks);
 +
 +	/* Prepare platform device, but don't register it yet. It's too early,
 +	 * malloc (required by device_private_init) is not available yet. */
@@ -342,9 +342,7 @@
 +					 sflash->size;
 +	ssb_sflash_dev.dev.platform_data = sflash;
 +
-+	pr_err("Serial flash support is not implemented yet!\n");
-+
-+	return -ENOTSUPP;
++	return 0;
 +}
 --- a/drivers/ssb/driver_gpio.c
 +++ b/drivers/ssb/driver_gpio.c
