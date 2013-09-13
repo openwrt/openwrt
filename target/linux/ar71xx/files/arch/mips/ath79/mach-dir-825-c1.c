@@ -34,6 +34,7 @@
 #define DIR825C1_GPIO_LED_BLUE_WPS		15
 #define DIR825C1_GPIO_LED_ORANGE_PLANET		19
 #define DIR825C1_GPIO_LED_BLUE_PLANET		18
+#define DIR825C1_GPIO_LED_WIFI_BGN		13
 
 #define DIR825C1_GPIO_BTN_RESET			17
 #define DIR825C1_GPIO_BTN_WPS			16
@@ -75,6 +76,10 @@ static struct gpio_led dir825c1_leds_gpio[] __initdata = {
 	{
 		.name		= "d-link:blue:planet",
 		.gpio		= DIR825C1_GPIO_LED_BLUE_PLANET,
+		.active_low	= 1,
+	}, {
+		.name		= "d-link:blue:wifi_bgn",
+		.gpio		= DIR825C1_GPIO_LED_WIFI_BGN,
 		.active_low	= 1,
 	},
 };
