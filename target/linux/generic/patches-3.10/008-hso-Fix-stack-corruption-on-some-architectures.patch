@@ -18,8 +18,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/usb/hso.c |    6 +++++-
  1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/usb/hso.c b/drivers/net/usb/hso.c
-index 5fb36ed..86292e6 100644
 --- a/drivers/net/usb/hso.c
 +++ b/drivers/net/usb/hso.c
 @@ -2816,13 +2816,16 @@ exit:
@@ -40,7 +38,7 @@ index 5fb36ed..86292e6 100644
  		return -EIO;
  	}
  
-@@ -2873,6 +2876,7 @@ static int hso_get_config_data(struct usb_interface *interface)
+@@ -2873,6 +2876,7 @@ static int hso_get_config_data(struct us
  	if (config_data[16] & 0x1)
  		result |= HSO_INFO_CRC_BUG;
  
@@ -48,6 +46,3 @@ index 5fb36ed..86292e6 100644
  	return result;
  }
  
--- 
-1.7.9.5
-
