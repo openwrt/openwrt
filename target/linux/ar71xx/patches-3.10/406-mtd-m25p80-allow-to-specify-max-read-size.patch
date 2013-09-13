@@ -84,7 +84,7 @@
  	mutex_unlock(&flash->lock);
  
  	return 0;
-@@ -1017,6 +1040,12 @@ static int m25p_probe(struct spi_device
+@@ -1020,6 +1043,12 @@ static int m25p_probe(struct spi_device
  		flash->mtd._unlock = m25p80_unlock;
  	}
  
