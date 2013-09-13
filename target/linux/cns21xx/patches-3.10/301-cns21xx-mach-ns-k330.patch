@@ -1,0 +1,234 @@
+--- a/arch/arm/mach-cns21xx/Kconfig
++++ b/arch/arm/mach-cns21xx/Kconfig
+@@ -1,6 +1,16 @@
+ if ARCH_CNS21XX
+ 
+ menu "Cavium Networks CNS21xx based machines"
++
++config MACH_NS_K330
++	bool "NS-K330 NAS"
++	select CNS21XX_DEV_GEC
++	select CNS21XX_DEV_SPI_MASTER
++	select CNS21XX_DEV_USB
++	help
++	  Say Y here if you intend to run this kernel on the
++	  NS-K330 NAS board.
++
+ endmenu
+ 
+ config CNS21XX_DEV_GEC
+--- /dev/null
++++ b/arch/arm/mach-cns21xx/mach-ns-k330.c
+@@ -0,0 +1,204 @@
++/*
++ *  NS-K330 NAS board support
++ *
++ *  Copyright (c) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
++ *
++ *  This file is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License, Version 2, as
++ *  published by the Free Software Foundation.
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/mtd/partitions.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/flash.h>
++#include <linux/platform_device.h>
++#include <linux/gpio.h>
++#include <linux/leds.h>
++#include <linux/gpio_keys.h>
++#include <linux/input.h>
++
++#include <asm/setup.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++#include <asm/mach/time.h>
++#include <mach/hardware.h>
++#include <mach/cns21xx.h>
++#include <mach/cns21xx_misc.h>
++
++#include "common.h"
++#include "dev-gec.h"
++
++#define NS_K330_GPIO_LED_LINK		1
++#define NS_K330_GPIO_LED_USB1		16
++#define NS_K330_GPIO_LED_USB2		17
++#define NS_K330_GPIO_LED_ETH_GREEN	22
++#define NS_K330_GPIO_LED_ETH_ORANGE	23
++
++#define NS_K330_GPIO_BTN_RESET		13
++#define NS_K330_GPIO_BTN_USB1		14
++#define NS_K330_GPIO_BTN_USB2		15
++
++static struct mtd_partition ns_k330_partitions[] =  {
++	{
++		.name		= "boot",
++		.offset		= 0x0,
++		.size		= 0x040000,
++		.mask_flags	= MTD_WRITEABLE,
++	}, {
++		.name		= "config",
++		.offset		= 0x040000,
++		.size		= 0x020000,
++		.mask_flags	= MTD_WRITEABLE,
++	}, {
++		.name		= "kernel",
++		.offset		= 0x060000,
++		.size		= 0x100000,
++	}, {
++		.name		= "rootfs",
++		.offset		= 0x160000,
++		.size		= 0x290000,
++	}, {
++		.name		= "firmware",
++		.offset		= 0x060000,
++		.size		= 0x390000,
++	},
++};
++
++static struct flash_platform_data ns_k330_flash_data = {
++        .parts          = ns_k330_partitions,
++        .nr_parts       = ARRAY_SIZE(ns_k330_partitions),
++};
++
++static struct spi_board_info ns_k330_spi_board_info[] = {
++	{
++		.bus_num	= 0,
++		.chip_select	= 0,
++		.max_speed_hz	= 25000000,
++		.modalias	= "m25p80",
++		.platform_data	= &ns_k330_flash_data,
++	}
++};
++
++static struct gpio_led ns_k330_gpio_leds[] = {
++	{
++		.name		= "ns-k330:red:link",
++		.gpio		= NS_K330_GPIO_LED_LINK,
++		.active_low	= 1,
++	}, {
++		.name		= "ns-k330:green:usb1",
++		.gpio		= NS_K330_GPIO_LED_USB1,
++		.active_low	= 1,
++	}, {
++		.name		= "ns-k330:green:usb2",
++		.gpio		= NS_K330_GPIO_LED_USB2,
++		.active_low	= 1,
++	}, {
++		.name		= "ns-k330:green:eth",
++		.gpio		= NS_K330_GPIO_LED_ETH_GREEN,
++		.active_low	= 1,
++	}, {
++		.name		= "ns-k330:orange:eth",
++		.gpio		= NS_K330_GPIO_LED_ETH_ORANGE,
++		.active_low	= 1,
++	}
++};
++
++static struct gpio_led_platform_data ns_k330_gpio_leds_data = {
++	.num_leds		= ARRAY_SIZE(ns_k330_gpio_leds),
++	.leds			= ns_k330_gpio_leds,
++};
++
++static struct platform_device ns_k330_gpio_leds_device = {
++	.name			= "leds-gpio",
++	.id			= -1,
++	.dev.platform_data	= &ns_k330_gpio_leds_data,
++};
++
++static struct gpio_keys_button ns_k330_gpio_keys[] = {
++	{
++		.code		= KEY_RESTART,
++		.gpio		= NS_K330_GPIO_BTN_RESET,
++		.desc		= "Reset Button",
++		.active_low	= 1,
++	},
++	{
++		.code		= BTN_0,
++		.gpio		= NS_K330_GPIO_BTN_USB1,
++		.desc		= "USB1 Button",
++		.active_low	= 1,
++	},
++	{
++		.code		= BTN_1,
++		.gpio		= NS_K330_GPIO_BTN_USB2,
++		.desc		= "USB2 Button",
++		.active_low	= 0,
++	},
++};
++
++static struct gpio_keys_platform_data ns_k330_gpio_keys_data = {
++	.buttons	= ns_k330_gpio_keys,
++	.nbuttons	= ARRAY_SIZE(ns_k330_gpio_keys),
++};
++
++static struct platform_device ns_k330_gpio_keys_device = {
++	.name		= "gpio-keys",
++	.id		= -1,
++	.num_resources	= 0,
++	.dev		= {
++		.platform_data	= &ns_k330_gpio_keys_data,
++	},
++};
++
++static void __init ns_k330_fixup(struct tag *tags, char **cmdline,
++				 struct meminfo *mi)
++{
++	struct tag *t;
++
++	/* The board has 32MB of RAM mapped at 0. */
++	mi->nr_banks = 1;
++	mi->bank[0].start = 0;
++	mi->bank[0].size = SZ_32M;
++
++	for (t = tags; t->hdr.size; t = tag_next(t)) {
++		switch (t->hdr.tag) {
++		case ATAG_CORE:
++			if (t->u.core.rootdev == 255)
++				t->u.core.rootdev = 0;
++			break;
++		}
++	}
++}
++
++static void __init ns_k330_init(void)
++{
++	cns21xx_gpio_init();
++
++	HAL_MISC_DISABLE_LED012_PINS();
++	HAL_MISC_DISABLE_I2C_PINS();
++	HAL_MISC_DISABLE_I2S_PINS();
++
++	cns21xx_register_uart0();
++	cns21xx_register_wdt();
++	cns21xx_register_usb();
++	cns21xx_register_spi_master(-1, ns_k330_spi_board_info,
++				    ARRAY_SIZE(ns_k330_spi_board_info));
++
++	cns21xx_gec_data.phy_type = CNS21XX_GEC_PHY_TYPE_INTERNAL;
++	cns21xx_register_gec();
++
++	platform_device_register(&ns_k330_gpio_leds_device);
++	platform_device_register(&ns_k330_gpio_keys_device);
++}
++
++MACHINE_START(NS_K330, "NS-K330 NAS")
++	.fixup		= ns_k330_fixup,
++	.map_io		= cns21xx_map_io,
++	.init_irq	= cns21xx_init_irq,
++	.init_time	= cns21xx_timer_init,
++	.init_machine	= ns_k330_init,
++	.restart	= cns21xx_restart,
++MACHINE_END
+--- a/arch/arm/mach-cns21xx/Makefile
++++ b/arch/arm/mach-cns21xx/Makefile
+@@ -12,4 +12,4 @@ obj-$(CONFIG_CNS21XX_DEV_USB)		+= dev-us
+ obj-$(CONFIG_CNS21XX_DEV_SPI_MASTER)	+= dev-spi-master.o
+ 
+ # machine specific files
+-
++obj-$(CONFIG_MACH_NS_K330)		+= mach-ns-k330.o
