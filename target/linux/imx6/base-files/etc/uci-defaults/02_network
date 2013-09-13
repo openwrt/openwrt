@@ -14,10 +14,12 @@ ucidef_set_interface_loopback
 board=$(cat /proc/device-tree/model)
 
 case "$board" in
+"Gateworks Ventana GW5400-A")
+	ucidef_set_interface_lan 'eth0'
+	;;
 "Wandboard i.MX6 Dual Lite Board")
 	ucidef_set_interface_wan 'eth0'
 	;;
-
 esac
 
 uci commit network
