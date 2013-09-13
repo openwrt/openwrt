@@ -8,7 +8,7 @@
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/board.c
-@@ -0,0 +1,241 @@
+@@ -0,0 +1,242 @@
 +#include <linux/export.h>
 +#include <linux/string.h>
 +#include <bcm47xx_board.h>
@@ -101,6 +101,7 @@
 +	{{BCM47XX_BOARD_CISCO_M20V1, "Cisco M20"}, "M20", "1.0"}, /* like WRT310N v2.0 */
 +	{{BCM47XX_BOARD_LINKSYS_E1000V1, "Linksys E1000 V1"}, "E100", "1.0"},  /* like WRT160N v3.0 */
 +	{{BCM47XX_BOARD_LINKSYS_E1000V2, "Linksys E1000 V2"}, "E1000", "2.0"},
++	{{BCM47XX_BOARD_LINKSYS_E1000V21, "Linksys E1000 V2.1"}, "E1000", "2.1"},
 +	{{BCM47XX_BOARD_LINKSYS_E2000V1, "Linksys E2000 V1"}, "Linksys E2000", "1.0"},
 +	{{BCM47XX_BOARD_LINKSYS_E3000V1, "Linksys E3000 V1"}, "E300", "1.0"}, /* like WRT610N v2.0 */
 +	{{BCM47XX_BOARD_LINKSYS_E3200V1, "Linksys E3200 V1"}, "E3200", "1.0"},
@@ -252,7 +253,7 @@
 +EXPORT_SYMBOL(bcm47xx_board_get_name);
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,99 @@
 +#ifndef __BCM47XX_BOARD_H
 +#define __BCM47XX_BOARD_H
 +
@@ -303,6 +304,7 @@
 +
 +	BCM47XX_BOARD_LINKSYS_E1000V1,
 +	BCM47XX_BOARD_LINKSYS_E1000V2,
++	BCM47XX_BOARD_LINKSYS_E1000V21,
 +	BCM47XX_BOARD_LINKSYS_E2000V1,
 +	BCM47XX_BOARD_LINKSYS_E3000V1,
 +	BCM47XX_BOARD_LINKSYS_E3200V1,
