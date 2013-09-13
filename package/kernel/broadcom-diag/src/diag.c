@@ -1176,8 +1176,9 @@ static struct platform_t __init *platform_detect_legacy(void)
 			if (!strcmp(boardtype, "0x0101") && !strcmp(getvar("boot_ver"), "v3.6"))
 				return &platforms[WRT54G3G];
 
-			/* default to WRT54G */
-			return &platforms[WRT54G];
+			/* default to WRT54G if no boot_hw_model is set */
+			if (nvram_get("boot_hw_model") == NULL)
+				return &platforms[WRT54G];
 		}
 		if (!strcmp(boardnum, "1024") && !strcmp(boardtype, "0x0446"))
 			return &platforms[WAP54GV2];
