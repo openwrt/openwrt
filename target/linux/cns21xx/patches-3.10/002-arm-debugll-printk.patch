@@ -1,0 +1,24 @@
+--- a/kernel/printk.c
++++ b/kernel/printk.c
+@@ -65,6 +65,10 @@ int console_printk[4] = {
+ 	DEFAULT_CONSOLE_LOGLEVEL,	/* default_console_loglevel */
+ };
+ 
++#ifdef CONFIG_DEBUG_LL
++extern void printascii(char *);
++#endif /* CONFIG_DEBUG_LL */
++
+ /*
+  * Low level drivers may need that to know if they can schedule in
+  * their unblank() callback or not. So let's export it.
+@@ -521,6 +525,10 @@ static ssize_t devkmsg_read(struct file
+ 	ts_usec = msg->ts_nsec;
+ 	do_div(ts_usec, 1000);
+ 
++#ifdef CONFIG_DEBUG_LL
++	printascii(printk_buf);
++#endif
++
+ 	/*
+ 	 * If we couldn't merge continuation line fragments during the print,
+ 	 * export the stored flags to allow an optional external merge of the

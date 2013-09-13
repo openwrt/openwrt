@@ -1,0 +1,170 @@
+--- /dev/null
++++ b/drivers/usb/host/ehci-cns21xx.c
+@@ -0,0 +1,130 @@
++/*
++ *  Copyright (c) 2008 Cavium Networks
++ *  Copyright (c) 2010-2013 Gabor Juhos <juhosg@openwrt.org>
++ *
++ *  This file is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License, Version 2, as
++ *  published by the Free Software Foundation.
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/io.h>
++#include <linux/platform_device.h>
++#include <linux/irq.h>
++#include <linux/usb.h>
++#include <linux/usb/hcd.h>
++
++#include <mach/cns21xx.h>
++
++#include "ehci.h"
++
++#define DRIVER_NAME	"cns21xx-ehci"
++
++static const char hcd_name[] = "ehci-cns21xx";
++static struct hc_driver __read_mostly ehci_cns21xx_hc_driver;
++
++static void ehci_cns21xx_init_hc(void)
++{
++	void __iomem *base = (void __iomem *) CNS21XX_EHCI_CONFIG_BASE_VIRT;
++
++	__raw_writel(0x106, base + 0x04);
++	__raw_writel((3 << 5) | 0x2000, base + 0x40);
++	msleep(100);
++}
++
++static int ehci_cns21xx_probe(struct platform_device *pdev)
++{
++	struct usb_hcd *hcd;
++	struct ehci_hcd *ehci;
++	struct resource *res;
++	int irq;
++	int ret;
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_dbg(&pdev->dev, "no IRQ specified for %s\n",
++			dev_name(&pdev->dev));
++		return -ENODEV;
++	}
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_dbg(&pdev->dev, "no base address specified for %s\n",
++			dev_name(&pdev->dev));
++		return -EINVAL;
++	}
++
++	hcd = usb_create_hcd(&ehci_cns21xx_hc_driver, &pdev->dev,
++			     dev_name(&pdev->dev));
++	if (!hcd)
++		return -ENOMEM;
++
++	hcd->rsrc_start	= res->start;
++	hcd->rsrc_len	= res->end - res->start + 1;
++
++	hcd->regs = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(hcd->regs)) {
++		ret = PTR_ERR(hcd->regs);
++		goto err_put_hcd;
++	}
++
++	ehci_cns21xx_init_hc();
++
++	ehci = hcd_to_ehci(hcd);
++	ehci->caps = hcd->regs;
++
++	ret = usb_add_hcd(hcd, irq, IRQF_SHARED);
++	if (ret)
++		goto err_put_hcd;
++
++	platform_set_drvdata(pdev, hcd);
++
++	return 0;
++
++err_put_hcd:
++	usb_put_hcd(hcd);
++
++	return ret;
++}
++
++static int ehci_cns21xx_remove(struct platform_device *pdev)
++{
++	struct usb_hcd *hcd = platform_get_drvdata(pdev);
++
++	usb_remove_hcd(hcd);
++	usb_put_hcd(hcd);
++
++	return 0;
++}
++
++static struct platform_driver ehci_cns21xx_driver = {
++	.probe		= ehci_cns21xx_probe,
++	.remove		= ehci_cns21xx_remove,
++	.shutdown       = usb_hcd_platform_shutdown,
++	.driver		= {
++		.owner	= THIS_MODULE,
++		.name	= DRIVER_NAME,
++	},
++};
++
++static int __init ehci_cns21xx_init(void)
++{
++	if (usb_disabled())
++		return -ENODEV;
++
++	ehci_init_driver(&ehci_cns21xx_hc_driver, NULL);
++
++	return platform_driver_register(&ehci_cns21xx_driver);
++}
++module_init(ehci_cns21xx_init);
++
++static void __exit ehci_cns21xx_exit(void)
++{
++	platform_driver_unregister(&ehci_cns21xx_driver);
++}
++module_exit(ehci_cns21xx_exit);
++
++MODULE_DESCRIPTION("Cavium Networks CNS21xx built-in EHCI controller driver");
++MODULE_ALIAS("platform:" DRIVER_NAME);
++MODULE_LICENSE("GPL v2");
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -375,6 +375,7 @@ config ARCH_CNS21XX
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select ARM_L1_CACHE_SHIFT_4
+ 	select USB_ARCH_HAS_OHCI
++	select USB_ARCH_HAS_EHCI
+ 	help
+ 	  Support for Cavium Networks CNS21xx family.
+ 
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -249,6 +249,14 @@ config USB_W90X900_EHCI
+ 	---help---
+ 		Enables support for the W90X900 USB controller
+ 
++config USB_EHCI_CNS21XX
++	tristate "EHCI support for the Cavium CNS21XX SoCs"
++	depends on ARCH_CNS21XX
++	default y
++	help
++	  Enables support for the built-in EHCI controller of the
++	  Cavium CNS21xx SoCs.
++
+ config USB_CNS3XXX_EHCI
+ 	bool "Cavium CNS3XXX EHCI Module (DEPRECATED)"
+ 	depends on ARCH_CNS3XXX
+--- a/drivers/usb/host/Makefile
++++ b/drivers/usb/host/Makefile
+@@ -33,6 +33,7 @@ obj-$(CONFIG_USB_EHCI_HCD_SPEAR)	+= ehci
+ obj-$(CONFIG_USB_EHCI_S5P)	+= ehci-s5p.o
+ obj-$(CONFIG_USB_EHCI_HCD_AT91) += ehci-atmel.o
+ obj-$(CONFIG_USB_EHCI_MSM)	+= ehci-msm.o
++obj-$(CONFIG_USB_EHCI_CNS21XX)	+= ehci-cns21xx.o
+ 
+ obj-$(CONFIG_USB_OXU210HP_HCD)	+= oxu210hp-hcd.o
+ obj-$(CONFIG_USB_ISP116X_HCD)	+= isp116x-hcd.o
