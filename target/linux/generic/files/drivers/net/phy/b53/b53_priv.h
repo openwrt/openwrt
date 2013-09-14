@@ -286,14 +286,22 @@ static inline int b53_write64(struct b53_device *dev, u8 page, u8 reg,
 #ifdef CONFIG_BCM47XX
 
 #include <bcm47xx_nvram.h>
+#include <bcm47xx_board.h>
 static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
 {
-       return bcm47xx_nvram_gpio_pin("robo_reset");
+	enum bcm47xx_board board = bcm47xx_board_get();
+
+	switch (board) {
+	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
+		return 8;
+	default:
+		return bcm47xx_nvram_gpio_pin("robo_reset");
+	}
 }
 #else
 static inline int b53_switch_get_reset_gpio(struct b53_device *dev)
 {
-       return -ENOENT;
+	return -ENOENT;
 }
 #endif
 #endif
