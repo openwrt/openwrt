@@ -35,7 +35,7 @@
  #include <linux/err.h>
  
  #include "mtdcore.h"
-@@ -45,12 +47,14 @@ struct mtd_part {
+@@ -45,13 +47,14 @@ struct mtd_part {
  	struct list_head list;
  };
  
@@ -46,12 +46,12 @@
   * the pointer to that structure with this macro.
   */
  #define PART(x)  ((struct mtd_part *)(x))
--
-+#define IS_PART(mtd) (mtd->_read == part_read)
  
+-
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -533,8 +537,10 @@ out_register:
+  * to the _real_ device.
+@@ -533,8 +536,10 @@ out_register:
  	return slave;
  }
  
@@ -64,7 +64,7 @@
  {
  	struct mtd_partition part;
  	struct mtd_part *p, *new;
-@@ -566,21 +572,24 @@ int mtd_add_partition(struct mtd_info *m
+@@ -566,21 +571,24 @@ int mtd_add_partition(struct mtd_info *m
  	end = offset + length;
  
  	mutex_lock(&mtd_partitions_mutex);
@@ -99,7 +99,7 @@
  
  	return ret;
  err_inv:
-@@ -590,6 +599,12 @@ err_inv:
+@@ -590,6 +598,12 @@ err_inv:
  }
  EXPORT_SYMBOL_GPL(mtd_add_partition);
  
@@ -112,7 +112,7 @@
  int mtd_del_partition(struct mtd_info *master, int partno)
  {
  	struct mtd_part *slave, *next;
-@@ -613,6 +628,149 @@ int mtd_del_partition(struct mtd_info *m
+@@ -613,6 +627,148 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -128,7 +128,6 @@
 +}
 +
 +#define ROOTFS_SPLIT_NAME "rootfs_data"
-+#define ROOTFS_REMOVED_NAME "<removed>"
 +
 +struct squashfs_super_block {
 +	__le32 s_magic;
@@ -262,7 +261,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -642,6 +800,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -642,6 +798,7 @@ int add_mtd_partitions(struct mtd_info *
  		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);
