@@ -2212,22 +2212,70 @@ int nl80211_get_hwmodelist(const char *ifname, int *buf)
 	return *buf ? 0 : -1;
 }
 
-int nl80211_get_mbssid_support(const char *ifname, int *buf)
+static int nl80211_get_ifcomb_cb(struct nl_msg *msg, void *arg)
 {
-	/* Test whether we can create another interface */
-	char *nif = nl80211_ifadd(ifname);
+	struct nlattr **attr = nl80211_parse(msg);
+	struct nlattr *comb;
+	int *ret = arg;
+	int comb_rem, limit_rem, mode_rem;
 
-	if (nif)
+	*ret = 0;
+	if (!attr[NL80211_ATTR_INTERFACE_COMBINATIONS])
+		return NL_SKIP;
+
+	nla_for_each_nested(comb, attr[NL80211_ATTR_INTERFACE_COMBINATIONS], comb_rem)
 	{
-		*buf = (iwinfo_ifmac(nif) && iwinfo_ifup(nif));
+		static struct nla_policy iface_combination_policy[NUM_NL80211_IFACE_COMB] = {
+			[NL80211_IFACE_COMB_LIMITS] = { .type = NLA_NESTED },
+			[NL80211_IFACE_COMB_MAXNUM] = { .type = NLA_U32 },
+		};
+		struct nlattr *tb_comb[NUM_NL80211_IFACE_COMB];
+		static struct nla_policy iface_limit_policy[NUM_NL80211_IFACE_LIMIT] = {
+			[NL80211_IFACE_LIMIT_TYPES] = { .type = NLA_NESTED },
+			[NL80211_IFACE_LIMIT_MAX] = { .type = NLA_U32 },
+		};
+		struct nlattr *tb_limit[NUM_NL80211_IFACE_LIMIT];
+		struct nlattr *limit;
 
-		iwinfo_ifdown(nif);
-		nl80211_ifdel(nif);
+		nla_parse_nested(tb_comb, NL80211_BAND_ATTR_MAX, comb, iface_combination_policy);
 
-		return 0;
+		if (!tb_comb[NL80211_IFACE_COMB_LIMITS])
+			continue;
+
+		nla_for_each_nested(limit, tb_comb[NL80211_IFACE_COMB_LIMITS], limit_rem)
+		{
+			struct nlattr *mode;
+
+			nla_parse_nested(tb_limit, NUM_NL80211_IFACE_LIMIT, limit, iface_limit_policy);
+
+			if (!tb_limit[NL80211_IFACE_LIMIT_TYPES] ||
+			    !tb_limit[NL80211_IFACE_LIMIT_MAX])
+				continue;
+
+			if (nla_get_u32(tb_limit[NL80211_IFACE_LIMIT_MAX]) < 2)
+				continue;
+
+			nla_for_each_nested(mode, tb_limit[NL80211_IFACE_LIMIT_TYPES], mode_rem) {
+				if (nla_type(mode) == NL80211_IFTYPE_AP)
+					*ret = 1;
+			}
+		}
 	}
 
-	return -1;
+	return NL_SKIP;
+}
+
+int nl80211_get_mbssid_support(const char *ifname, int *buf)
+{
+	struct nl80211_msg_conveyor *req;
+
+	req = nl80211_msg(ifname, NL80211_CMD_GET_WIPHY, 0);
+	if (!req)
+		return -1;
+
+	nl80211_send(req, nl80211_get_ifcomb_cb, buf);
+	nl80211_free(req);
+	return 0;
 }
 
 int nl80211_get_hardware_id(const char *ifname, char *buf)
