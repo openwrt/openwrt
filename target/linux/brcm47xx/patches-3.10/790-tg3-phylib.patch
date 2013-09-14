@@ -1,0 +1,227 @@
+--- a/drivers/net/ethernet/broadcom/tg3.c
++++ b/drivers/net/ethernet/broadcom/tg3.c
+@@ -1367,7 +1367,7 @@ static int tg3_mdio_read(struct mii_bus
+ 
+ 	spin_lock_bh(&tp->lock);
+ 
+-	if (tg3_readphy(tp, reg, &val))
++	if (__tg3_readphy(tp, mii_id, reg, &val))
+ 		val = -EIO;
+ 
+ 	spin_unlock_bh(&tp->lock);
+@@ -1382,7 +1382,7 @@ static int tg3_mdio_write(struct mii_bus
+ 
+ 	spin_lock_bh(&tp->lock);
+ 
+-	if (tg3_writephy(tp, reg, val))
++	if (__tg3_writephy(tp, mii_id, reg, val))
+ 		ret = -EIO;
+ 
+ 	spin_unlock_bh(&tp->lock);
+@@ -1400,7 +1400,7 @@ static void tg3_mdio_config_5785(struct
+ 	u32 val;
+ 	struct phy_device *phydev;
+ 
+-	phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++	phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 	switch (phydev->drv->phy_id & phydev->drv->phy_id_mask) {
+ 	case PHY_ID_BCM50610:
+ 	case PHY_ID_BCM50610M:
+@@ -1505,6 +1505,13 @@ static int tg3_mdio_init(struct tg3 *tp)
+ 				    TG3_CPMU_PHY_STRAP_IS_SERDES;
+ 		if (is_serdes)
+ 			tp->phy_addr += 7;
++	} else if (tg3_flag(tp, IS_SSB_CORE)) {
++		int addr;
++
++		addr = ssb_gige_get_phyaddr(tp->pdev);
++		if (addr < 0)
++			return addr;
++		tp->phy_addr = addr;
+ 	} else
+ 		tp->phy_addr = TG3_PHY_MII_ADDR;
+ 
+@@ -1525,7 +1532,7 @@ static int tg3_mdio_init(struct tg3 *tp)
+ 	tp->mdio_bus->read     = &tg3_mdio_read;
+ 	tp->mdio_bus->write    = &tg3_mdio_write;
+ 	tp->mdio_bus->reset    = &tg3_mdio_reset;
+-	tp->mdio_bus->phy_mask = ~(1 << TG3_PHY_MII_ADDR);
++	tp->mdio_bus->phy_mask = ~(1 << tp->phy_addr);
+ 	tp->mdio_bus->irq      = &tp->mdio_irq[0];
+ 
+ 	for (i = 0; i < PHY_MAX_ADDR; i++)
+@@ -1546,7 +1553,7 @@ static int tg3_mdio_init(struct tg3 *tp)
+ 		return i;
+ 	}
+ 
+-	phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++	phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 
+ 	if (!phydev || !phydev->drv) {
+ 		dev_warn(&tp->pdev->dev, "No PHY devices\n");
+@@ -1963,7 +1970,7 @@ static void tg3_setup_flow_control(struc
+ 	u32 old_tx_mode = tp->tx_mode;
+ 
+ 	if (tg3_flag(tp, USE_PHYLIB))
+-		autoneg = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR]->autoneg;
++		autoneg = tp->mdio_bus->phy_map[tp->phy_addr]->autoneg;
+ 	else
+ 		autoneg = tp->link_config.autoneg;
+ 
+@@ -1999,7 +2006,7 @@ static void tg3_adjust_link(struct net_d
+ 	u8 oldflowctrl, linkmesg = 0;
+ 	u32 mac_mode, lcl_adv, rmt_adv;
+ 	struct tg3 *tp = netdev_priv(dev);
+-	struct phy_device *phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++	struct phy_device *phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 
+ 	spin_lock_bh(&tp->lock);
+ 
+@@ -2088,7 +2095,7 @@ static int tg3_phy_init(struct tg3 *tp)
+ 	/* Bring the PHY back to a known state. */
+ 	tg3_bmcr_reset(tp);
+ 
+-	phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++	phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 
+ 	/* Attach the MAC to the PHY. */
+ 	phydev = phy_connect(tp->dev, dev_name(&phydev->dev),
+@@ -2115,7 +2122,7 @@ static int tg3_phy_init(struct tg3 *tp)
+ 				      SUPPORTED_Asym_Pause);
+ 		break;
+ 	default:
+-		phy_disconnect(tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR]);
++		phy_disconnect(tp->mdio_bus->phy_map[tp->phy_addr]);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -2133,7 +2140,7 @@ static void tg3_phy_start(struct tg3 *tp
+ 	if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
+ 		return;
+ 
+-	phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++	phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 
+ 	if (tp->phy_flags & TG3_PHYFLG_IS_LOW_POWER) {
+ 		tp->phy_flags &= ~TG3_PHYFLG_IS_LOW_POWER;
+@@ -2153,13 +2160,13 @@ static void tg3_phy_stop(struct tg3 *tp)
+ 	if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
+ 		return;
+ 
+-	phy_stop(tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR]);
++	phy_stop(tp->mdio_bus->phy_map[tp->phy_addr]);
+ }
+ 
+ static void tg3_phy_fini(struct tg3 *tp)
+ {
+ 	if (tp->phy_flags & TG3_PHYFLG_IS_CONNECTED) {
+-		phy_disconnect(tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR]);
++		phy_disconnect(tp->mdio_bus->phy_map[tp->phy_addr]);
+ 		tp->phy_flags &= ~TG3_PHYFLG_IS_CONNECTED;
+ 	}
+ }
+@@ -3985,7 +3992,7 @@ static int tg3_power_down_prepare(struct
+ 			struct phy_device *phydev;
+ 			u32 phyid, advertising;
+ 
+-			phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++			phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 
+ 			tp->phy_flags |= TG3_PHYFLG_IS_LOW_POWER;
+ 
+@@ -11769,7 +11776,7 @@ static int tg3_get_settings(struct net_d
+ 		struct phy_device *phydev;
+ 		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
+ 			return -EAGAIN;
+-		phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++		phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 		return phy_ethtool_gset(phydev, cmd);
+ 	}
+ 
+@@ -11836,7 +11843,7 @@ static int tg3_set_settings(struct net_d
+ 		struct phy_device *phydev;
+ 		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
+ 			return -EAGAIN;
+-		phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++		phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 		return phy_ethtool_sset(phydev, cmd);
+ 	}
+ 
+@@ -11993,7 +12000,7 @@ static int tg3_nway_reset(struct net_dev
+ 	if (tg3_flag(tp, USE_PHYLIB)) {
+ 		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
+ 			return -EAGAIN;
+-		r = phy_start_aneg(tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR]);
++		r = phy_start_aneg(tp->mdio_bus->phy_map[tp->phy_addr]);
+ 	} else {
+ 		u32 bmcr;
+ 
+@@ -12109,7 +12116,7 @@ static int tg3_set_pauseparam(struct net
+ 		u32 newadv;
+ 		struct phy_device *phydev;
+ 
+-		phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++		phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 
+ 		if (!(phydev->supported & SUPPORTED_Pause) ||
+ 		    (!(phydev->supported & SUPPORTED_Asym_Pause) &&
+@@ -13543,7 +13550,7 @@ static int tg3_ioctl(struct net_device *
+ 		struct phy_device *phydev;
+ 		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
+ 			return -EAGAIN;
+-		phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++		phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 		return phy_mii_ioctl(phydev, ifr, cmd);
+ 	}
+ 
+@@ -17176,8 +17183,10 @@ static int tg3_init_one(struct pci_dev *
+ 			tg3_flag_set(tp, FLUSH_POSTED_WRITES);
+ 		if (ssb_gige_one_dma_at_once(pdev))
+ 			tg3_flag_set(tp, ONE_DMA_AT_ONCE);
+-		if (ssb_gige_have_roboswitch(pdev))
++		if (ssb_gige_have_roboswitch(pdev)) {
++			tg3_flag_set(tp, USE_PHYLIB);
+ 			tg3_flag_set(tp, ROBOSWITCH);
++		}
+ 		if (ssb_gige_is_rgmii(pdev))
+ 			tg3_flag_set(tp, RGMII_MODE);
+ 	}
+@@ -17447,7 +17456,7 @@ static int tg3_init_one(struct pci_dev *
+ 
+ 	if (tp->phy_flags & TG3_PHYFLG_IS_CONNECTED) {
+ 		struct phy_device *phydev;
+-		phydev = tp->mdio_bus->phy_map[TG3_PHY_MII_ADDR];
++		phydev = tp->mdio_bus->phy_map[tp->phy_addr];
+ 		netdev_info(dev,
+ 			    "attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
+ 			    phydev->drv->name, dev_name(&phydev->dev));
+--- a/include/linux/ssb/ssb_driver_gige.h
++++ b/include/linux/ssb/ssb_driver_gige.h
+@@ -108,6 +108,16 @@ static inline int ssb_gige_get_macaddr(s
+ 	return 0;
+ }
+ 
++/* Get the device phy address */
++static inline int ssb_gige_get_phyaddr(struct pci_dev *pdev)
++{
++	struct ssb_gige *dev = pdev_to_ssb_gige(pdev);
++	if (!dev)
++		return -ENODEV;
++
++	return dev->dev->bus->sprom.et0phyaddr;
++}
++
+ extern int ssb_gige_pcibios_plat_dev_init(struct ssb_device *sdev,
+ 					  struct pci_dev *pdev);
+ extern int ssb_gige_map_irq(struct ssb_device *sdev,
+@@ -174,6 +184,10 @@ static inline int ssb_gige_get_macaddr(s
+ {
+ 	return -ENODEV;
+ }
++static inline int ssb_gige_get_phyaddr(struct pci_dev *pdev)
++{
++	return -ENODEV;
++}
+ 
+ #endif /* CONFIG_SSB_DRIVER_GIGE */
+ #endif /* LINUX_SSB_DRIVER_GIGE_H_ */
