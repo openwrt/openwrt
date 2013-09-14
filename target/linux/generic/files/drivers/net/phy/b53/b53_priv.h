@@ -122,6 +122,13 @@ static inline int is5397_98(struct b53_device *dev)
 		dev->chip_id == BCM5398_DEVICE_ID;
 }
 
+static inline int is539x(struct b53_device *dev)
+{
+	return dev->chip_id == BCM5395_DEVICE_ID ||
+		dev->chip_id == BCM5397_DEVICE_ID ||
+		dev->chip_id == BCM5398_DEVICE_ID;
+}
+
 static inline int is531x5(struct b53_device *dev)
 {
 	return dev->chip_id == BCM53115_DEVICE_ID ||

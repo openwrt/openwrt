@@ -477,6 +477,11 @@ static int b53_switch_reset(struct b53_device *dev)
 
 	b53_switch_reset_gpio(dev);
 
+	if (is539x(dev)) {
+		b53_write8(dev, B53_CTRL_PAGE, B53_SOFTRESET, 0x83);
+		b53_write8(dev, B53_CTRL_PAGE, B53_SOFTRESET, 0x00);
+	}
+
 	b53_read8(dev, B53_CTRL_PAGE, B53_SWITCH_MODE, &mgmt);
 
 	if (!(mgmt & SM_SW_FWD_EN)) {
