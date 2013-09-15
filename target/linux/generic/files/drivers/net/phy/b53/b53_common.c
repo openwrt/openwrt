@@ -1305,7 +1305,12 @@ int b53_switch_detect(struct b53_device *dev)
 		}
 	}
 
-	return b53_read8(dev, B53_MGMT_PAGE, B53_REV_ID, &dev->core_rev);
+	if (dev->chip_id == BCM5325_DEVICE_ID)
+		return b53_read8(dev, B53_STAT_PAGE, B53_REV_ID_25,
+				 &dev->core_rev);
+	else
+		return b53_read8(dev, B53_MGMT_PAGE, B53_REV_ID,
+				 &dev->core_rev);
 }
 EXPORT_SYMBOL(b53_switch_detect);
 
