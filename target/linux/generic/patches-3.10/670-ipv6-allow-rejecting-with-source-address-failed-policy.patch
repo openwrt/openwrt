@@ -21,16 +21,6 @@
  	__FR_ACT_MAX,
  };
  
---- a/include/uapi/linux/icmpv6.h
-+++ b/include/uapi/linux/icmpv6.h
-@@ -115,6 +115,7 @@ struct icmp6hdr {
- #define ICMPV6_NOT_NEIGHBOUR		2
- #define ICMPV6_ADDR_UNREACH		3
- #define ICMPV6_PORT_UNREACH		4
-+#define ICMPV6_FAILED_POLICY		5
- 
- /*
-  *	Codes for Time Exceeded
 --- a/include/uapi/linux/rtnetlink.h
 +++ b/include/uapi/linux/rtnetlink.h
 @@ -203,6 +203,7 @@ enum {
@@ -69,7 +59,7 @@
  static void rt_fibinfo_free(struct rtable __rcu **rtp)
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -2334,6 +2334,7 @@ static const char *const rtn_type_names[
+@@ -2331,6 +2331,7 @@ static const char *const rtn_type_names[
  	[RTN_THROW] = "THROW",
  	[RTN_NAT] = "NAT",
  	[RTN_XRESOLVE] = "XRESOLVE",
@@ -153,13 +143,13 @@
  
 +static int ip6_pkt_failed_policy(struct sk_buff *skb)
 +{
-+	return ip6_pkt_drop(skb, ICMPV6_FAILED_POLICY, IPSTATS_MIB_INNOROUTES);
++	return ip6_pkt_drop(skb, ICMPV6_POLICY_FAIL, IPSTATS_MIB_INNOROUTES);
 +}
 +
 +static int ip6_pkt_failed_policy_out(struct sk_buff *skb)
 +{
 +	skb->dev = skb_dst(skb)->dev;
-+	return ip6_pkt_drop(skb, ICMPV6_FAILED_POLICY, IPSTATS_MIB_OUTNOROUTES);
++	return ip6_pkt_drop(skb, ICMPV6_POLICY_FAIL, IPSTATS_MIB_OUTNOROUTES);
 +}
 +
  #endif

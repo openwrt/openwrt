@@ -883,7 +883,7 @@
  		tpi->seq = 0;
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3592,13 +3592,14 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3592,14 +3592,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -897,11 +897,13 @@
 -		tp->rx_opt.rcv_tsval = ntohl(*ptr);
 +		tp->rx_opt.rcv_tsval = get_unaligned_be32(ptr);
  		++ptr;
--		tp->rx_opt.rcv_tsecr = ntohl(*ptr) - tp->tsoffset;
-+		tp->rx_opt.rcv_tsecr = get_unaligned_be32(ptr) - tp->tsoffset;
+ 		if (*ptr)
+-			tp->rx_opt.rcv_tsecr = ntohl(*ptr) - tp->tsoffset;
++			tp->rx_opt.rcv_tsecr = get_unaligned_be32(ptr) -
++					       tp->tsoffset;
+ 		else
+ 			tp->rx_opt.rcv_tsecr = 0;
  		return true;
- 	}
- 	return false;
 --- a/include/uapi/linux/if_pppox.h
 +++ b/include/uapi/linux/if_pppox.h
 @@ -47,6 +47,7 @@ struct pppoe_addr {

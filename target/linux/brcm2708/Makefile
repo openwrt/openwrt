@@ -13,7 +13,7 @@ BOARDNAME:=Broadcom BCM2708/BCM2835
 FEATURES:=ext4 audio usb usbgadget display gpio
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.10.10
+LINUX_VERSION:=3.10.12
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += brcm2708-gpu-fw kmod-usb-hid kmod-sound-core kmod-sound-arm-bcm2835

@@ -111,7 +111,7 @@
  	if (!root_irq_dir)
 --- a/kernel/time/timer_list.c
 +++ b/kernel/time/timer_list.c
-@@ -357,6 +357,8 @@ static int __init init_timer_list_procfs
+@@ -362,6 +362,8 @@ static int __init init_timer_list_procfs
  {
  	struct proc_dir_entry *pe;
  
@@ -184,7 +184,7 @@
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -2590,10 +2590,12 @@ static const struct file_operations fib_
+@@ -2587,10 +2587,12 @@ static const struct file_operations fib_
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -199,7 +199,7 @@
  			 &fib_triestat_fops))
  		goto out2;
  
-@@ -2603,17 +2605,21 @@ int __net_init fib_proc_init(struct net
+@@ -2600,17 +2602,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:

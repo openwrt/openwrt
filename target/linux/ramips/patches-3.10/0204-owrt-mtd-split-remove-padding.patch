@@ -1,6 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -807,10 +807,6 @@ static void split_uimage(struct mtd_info
+@@ -808,10 +808,6 @@ static void split_uimage(struct mtd_info
  		return;
  
  	len = be32_to_cpu(hdr.size) + 0x40;
