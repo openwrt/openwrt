@@ -181,6 +181,9 @@ enum {
 
 	/* Edimax */
 	PS1208MFG,
+
+	/* Huawei */
+	HUAWEI_E970,
 };
 
 static void __init bcm4780_init(void) {
@@ -1159,6 +1162,16 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "wlan",	.gpio = 1 << 0, .polarity = NORMAL },
 		},
 	},
+	/* Huawei */
+	[HUAWEI_E970] = {
+		.name	 	= "Huawei E970",
+		.buttons 	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+		},
+		.leds		= {
+			{ .name = "wlan",	.gpio = 1 << 0, .polarity = NORMAL },
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect_legacy(void)
@@ -1362,6 +1375,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[DIR130];
 	case BCM47XX_BOARD_DLINK_DIR330:
 		return &platforms[DIR330];
+	case BCM47XX_BOARD_HUAWEI_E970:
+		return &platforms[HUAWEI_E970];
 	case BCM47XX_BOARD_LINKSYS_E1000V1:
 		return &platforms[E1000V1];
 	case BCM47XX_BOARD_LINKSYS_E1000V21:
