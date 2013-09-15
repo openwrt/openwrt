@@ -188,8 +188,13 @@ static void b53_set_vlan_entry(struct b53_device *dev, u16 vid, u16 members,
 	if (is5325(dev)) {
 		u32 entry = 0;
 
-		if (members)
-			entry = (untag << VA_UNTAG_S) | members | VA_VALID_25;
+		if (members) {
+			entry = (untag << VA_UNTAG_S) | members;
+			if (dev->core_rev >= 3)
+				entry |= VA_VALID_25_R4 | vid << VA_VID_HIGH_S;
+			else
+				entry |= VA_VALID_25;
+		}
 
 		b53_write32(dev, B53_VLAN_PAGE, B53_VLAN_WRITE_25, entry);
 		b53_write16(dev, B53_VLAN_PAGE, B53_VLAN_TABLE_ACCESS_25, vid |
