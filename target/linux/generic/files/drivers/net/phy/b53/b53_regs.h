@@ -135,6 +135,9 @@
 #define B53_DUPLEX_STAT_GE		0x08
 #define B53_DUPLEX_STAT_63XX		0x0c
 
+/* Revision ID register for BCM5325 */
+#define B53_REV_ID_25			0x50
+
 /* Strap Value (48 bit) */
 #define B53_STRAP_VALUE			0x70
 #define   SV_GMII_CTRL_115		BIT(27)
