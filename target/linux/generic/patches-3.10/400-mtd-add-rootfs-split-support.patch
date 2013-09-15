@@ -1,9 +1,11 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -23,6 +23,23 @@ config MTD_TESTS
- 	  WARNING: some of the tests will ERASE entire MTD device which they
- 	  test. Do not use these tests unless you really know what you do.
+@@ -12,6 +12,27 @@ menuconfig MTD
  
+ if MTD
+ 
++menu "OpenWrt specific MTD options"
++
 +config MTD_ROOTFS_ROOT_DEV
 +	bool "Automatically set 'rootfs' partition to be root filesystem"
 +	default y
@@ -21,9 +23,11 @@
 +	depends on MTD_UIMAGE_SPLIT
 +	default "firmware"
 +
- config MTD_REDBOOT_PARTS
- 	tristate "RedBoot partition table parsing"
- 	---help---
++endmenu
++
+ config MTD_TESTS
+ 	tristate "MTD tests support (DANGEROUS)"
+ 	depends on m
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
 @@ -29,6 +29,8 @@
