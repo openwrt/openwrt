@@ -1,0 +1,40 @@
+mtd: bcm47xxpart: detect block aligned Squashfs partition
+
+Most of the bcm47xx devices use TRX format for storing kernel and some
+partition like Squashfs or JFFS2. This is pretty flexible solution, CFE
+(the bootloader) just writes (and later boots) TRX at some hardcoded
+place and paritions can vary in the size.
+
+However some devices don't use TRX format. Very recently we have
+discovered ZTE H218N that has kernel and rootfs partitions at some
+"random" places.
+
+This patch allows Linux find a rootfs partition after installing custom
+image with a CFE bootloader.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -33,6 +33,7 @@
+ #define ML_MAGIC1			0x39685a42
+ #define ML_MAGIC2			0x26594131
+ #define TRX_MAGIC			0x30524448
++#define SQSH_MAGIC			0x71736873	/* shsq */
+ 
+ struct trx_header {
+ 	uint32_t magic;
+@@ -170,6 +171,13 @@ static int bcm47xxpart_parse(struct mtd_
+ 			offset = rounddown(offset + trx->length, blocksize);
+ 			continue;
+ 		}
++
++		/* Squashfs on devices not using TRX */
++		if (buf[0x000 / 4] == SQSH_MAGIC) {
++			bcm47xxpart_add_part(&parts[curr_part++], "rootfs",
++					     offset, 0);
++			continue;
++		}
+ 	}
+ 
+ 	/* Look for NVRAM at the end of the last block. */
