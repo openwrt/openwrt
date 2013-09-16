@@ -13,6 +13,7 @@ endef
 
 define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	gzip -nc9 $(KDIR)/vmlinux > $(KDIR)/vmlinux.gz
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	cat $(KDIR)/vmlinux-initramfs | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux-initramfs.lzma
 endif
@@ -57,6 +58,12 @@ endef
 
 define Image/Build/Edi
 	$(STAGING_DIR_HOST)/bin/trx2edips $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
+endef
+
+define Image/Build/Huawei
+	dd if=/dev/zero of=$(BIN_DIR)/openwrt-$(2)-$(3)-gz.bin bs=92 count=1
+	echo -ne 'HDR0\x08\x00\x00\x00' >> $(BIN_DIR)/openwrt-$(2)-$(3)-gz.bin
+	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx >> $(BIN_DIR)/openwrt-$(2)-$(3)-gz.bin
 endef
 
 define trxalign/jffs2-128k
@@ -134,9 +141,13 @@ define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx \
 		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(1),$(1))
+	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx \
+		-f $(KDIR)/vmlinux.gz \
+		$(call trxalign/$(1),$(1))
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
 	$(call Image/Build/USR,$(1),usr5461,$(1))
+	$(call Image/Build/Huawei,$(1),e970,$(1))
 	$(call Image/Build/Chk,$(1),wgr614_v8,U12H072T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wgr614_v9,U12H094T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wndr3300_v1,U12H093T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
