@@ -91,6 +91,7 @@ enum {
 	WRT610NV2,
 	E1000V1,
 	E1000V21,
+	E2000V1,
 	E3000V1,
 	E3200V1,
 	E4200V1,
@@ -499,6 +500,19 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "wlan",       .gpio = 1 << 5, .polarity = NORMAL },
 			{ .name = "ses_blue",	.gpio = 1 << 8, .polarity = NORMAL }, /* nvram get gpio8=wps_led */
 			{ .name = "ses_orange",	.gpio = 1 << 7, .polarity = NORMAL }, /* nvram get gpio7=wps_status_led */
+		},
+	},
+	[E2000V1] = {
+		.name		= "Linksys E2000 V1",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 8 },
+			{ .name = "ses",	.gpio = 1 << 5 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 2, .polarity = NORMAL },
+			{ .name = "ses_amber",	.gpio = 1 << 4, .polarity = REVERSE },
+			{ .name = "ses_blue",	.gpio = 1 << 3, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 1, .polarity = NORMAL },
 		},
 	},
 	[E3000V1] = {
@@ -1394,6 +1408,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[E1000V1];
 	case BCM47XX_BOARD_LINKSYS_E1000V21:
 		return &platforms[E1000V21];
+	case BCM47XX_BOARD_LINKSYS_E2000V1:
+		return &platforms[E2000V1];
 	case BCM47XX_BOARD_LINKSYS_E3000V1:
 		return &platforms[E3000V1];
 	case BCM47XX_BOARD_LINKSYS_E3200V1:
