@@ -1,0 +1,31 @@
+mtd: bcm47xxpart: detect "factory" partition
+
+A new type of partition with magic FCTY was found on Huawei E970:
+46 43 54 59 4b 51 37 4e  41 42 31 38 41 32 39 30  |FCTYKQ7NAB18A290|
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -28,6 +28,7 @@
+ /* Magics */
+ #define CFE_MAGIC			0x43464531	/* 1EFC */
+ #define BOARD_DATA_MAGIC		0x5246504D	/* MPFR */
++#define FACTORY_MAGIC			0x59544346	/* FCTY */
+ #define POT_MAGIC1			0x54544f50	/* POTT */
+ #define POT_MAGIC2			0x504f		/* OP */
+ #define ML_MAGIC1			0x39685a42
+@@ -113,6 +114,13 @@ static int bcm47xxpart_parse(struct mtd_
+ 					     offset, MTD_WRITEABLE);
+ 			continue;
+ 		}
++
++		/* Found on Huawei E970 */
++		if (buf[0x000 / 4] == FACTORY_MAGIC) {
++			bcm47xxpart_add_part(&parts[curr_part++], "factory",
++					     offset, MTD_WRITEABLE);
++			continue;
++		}
+ 
+ 		/* POT(TOP) */
+ 		if (buf[0x000 / 4] == POT_MAGIC1 &&
