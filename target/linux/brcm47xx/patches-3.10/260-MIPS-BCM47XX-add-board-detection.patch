@@ -8,7 +8,7 @@
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/board.c
-@@ -0,0 +1,287 @@
+@@ -0,0 +1,288 @@
 +#include <linux/export.h>
 +#include <linux/string.h>
 +#include <bcm47xx_board.h>
@@ -166,6 +166,7 @@
 +static const struct bcm47xx_board_type_list3 bcm47xx_board_list_board[] = {
 +	{{BCM47XX_BOARD_ZTE_H218N, "ZTE H218N"}, "0x053d", "1234", "0x1305"},
 +	{{BCM47XX_BOARD_HUAWEI_E970, "Huawei E970"}, "0x048e", "0x5347", "0x11"},
++	{{BCM47XX_BOARD_PHICOMM_M1, "Phicomm M1"}, "0x0590", "80", "0x1104"},
 +	{ {0}, 0},
 +};
 +
@@ -298,7 +299,7 @@
 +EXPORT_SYMBOL(bcm47xx_board_get_name);
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,107 @@
 +#ifndef __BCM47XX_BOARD_H
 +#define __BCM47XX_BOARD_H
 +
@@ -390,6 +391,8 @@
 +	BCM47XX_BOARD_NETGEAR_WNR3500V2,
 +	BCM47XX_BOARD_NETGEAR_WNR3500V2VC,
 +	BCM47XX_BOARD_NETGEAR_WNR834BV2,
++
++	BCM47XX_BOARD_PHICOMM_M1,
 +
 +	/* TODO */
 +	BCM47XX_BOARD_SIMPLETECH_SIMPLESHARE,
