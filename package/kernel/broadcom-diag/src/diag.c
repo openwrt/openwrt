@@ -83,6 +83,7 @@ enum {
 	WRT160NV1,
 	WRT160NV3,
 	WRT300NV11,
+	WRT310NV1,
 	WRT350N,
 	WRT600N,
 	WRT600NV11,
@@ -381,6 +382,18 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "ses_green", .gpio = 1 << 5, .polarity = REVERSE }, // "Security" Green
 		},
 		.platform_init = bcm57xx_init,
+	},
+	[WRT310NV1] = {
+		.name		= "Linksys WRT310N V1",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 }, // "Reset" on back panel
+			{ .name = "ses",	.gpio = 1 << 8 }, // "Reserved" on top panel
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL }, // Power LED
+			{ .name = "ses_amber",	.gpio = 1 << 3, .polarity = REVERSE }, // "Security" Amber
+			{ .name = "ses_blue",	.gpio = 1 << 9, .polarity = REVERSE }, // "Security" Blue
+		},
 	},
 	[WRT350N] = {
 		.name		= "Linksys WRT350N",
@@ -1397,6 +1410,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[WRT160NV3];
 	case BCM47XX_BOARD_LINKSYS_WRT300NV11:
 		return &platforms[WRT300NV11];
+	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
+		return &platforms[WRT310NV1];
 	case BCM47XX_BOARD_LINKSYS_WRT54G3GV2:
 		return &platforms[WRT54G3GV2_VF];
 	case BCM47XX_BOARD_LINKSYS_WRT610NV1:
