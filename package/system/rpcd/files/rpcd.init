@@ -2,11 +2,14 @@
 
 START=12
 
-SERVICE_DAEMONIZE=1
-SERVICE_WRITE_PID=1
+USE_PROCD=1
+NAME=rpcd
+PROG=/sbin/rpcd
 
-start() {
-	service_start /sbin/rpcd
+start_service() {
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_close_instance
 }
 
 stop() {

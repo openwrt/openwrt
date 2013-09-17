@@ -3,8 +3,7 @@
 
 START=50
 
-SERVICE_DAEMONIZE=1
-SERVICE_WRITE_PID=1
+USE_PROCD=1
 
 UHTTPD_BIN="/usr/sbin/uhttpd"
 PX5G_BIN="/usr/sbin/px5g"
@@ -17,7 +16,7 @@ append_arg() {
 	local val
 
 	config_get val "$cfg" "$var"
-	[ -n "$val" -o -n "$def" ] && append UHTTPD_ARGS "$opt ${val:-$def}"
+	[ -n "$val" -o -n "$def" ] && procd_append_param command "$opt" "${val:-$def}"
 }
 
 append_bool() {
@@ -28,7 +27,7 @@ append_bool() {
 	local val
 
 	config_get_bool val "$cfg" "$var" "$def"
-	[ "$val" = 1 ] && append UHTTPD_ARGS "$opt"
+	[ "$val" = 1 ] && procd_append_param command "$opt"
 }
 
 generate_keys() {
@@ -53,13 +52,15 @@ generate_keys() {
 
 start_instance()
 {
-	UHTTPD_ARGS=""
 	UHTTPD_CERT=""
 	UHTTPD_KEY=""
 
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
 	local listen http https interpreter indexes path
+
+	procd_open_instance
+	procd_set_param command "$UHTTPD_BIN" -f
 
 	append_arg "$cfg" home "-h"
 	append_arg "$cfg" realm "-r" "${realm:-OpenWrt}"
@@ -84,17 +85,17 @@ start_instance()
 
 	config_get http "$cfg" listen_http
 	for listen in $http; do
-		append UHTTPD_ARGS "-p $listen"
+		 procd_append_param command -p "$listen"
 	done
 
 	config_get interpreter "$cfg" interpreter
 	for path in $interpreter; do
-		append UHTTPD_ARGS "-i $path"
+		procd_append_param command -i "$path"
 	done
 
 	config_get indexes "$cfg" index_page
 	for path in $indexes; do
-		append UHTTPD_ARGS "-I $path"
+		procd_append_param command -I "$path"
 	done
 
 	config_get https "$cfg" listen_https
@@ -116,29 +117,20 @@ start_instance()
 		}
 	}
 
-	SERVICE_PID_FILE=/var/run/uhttpd_${cfg}.pid
-	service_start $UHTTPD_BIN -f $UHTTPD_ARGS
+	procd_close_instance
 
 	# Check if daemon is running, if not then
 	# re-execute in foreground to display error.
-	sleep 1 && service_check $UHTTPD_BIN || \
-		$UHTTPD_BIN -f $UHTTPD_ARGS
+#	sleep 1 && service_check $UHTTPD_BIN || \
+#		$UHTTPD_BIN -f $UHTTPD_ARGS
 }
 
-stop_instance()
+service_triggers()
 {
-	local cfg="$1"
-
-	SERVICE_PID_FILE=/var/run/uhttpd_${cfg}.pid
-	service_stop $UHTTPD_BIN
+	procd_add_reload_trigger "uhttpd"
 }
 
-start() {
+start_service() {
 	config_load uhttpd
 	config_foreach start_instance uhttpd
-}
-
-stop() {
-	config_load uhttpd
-	config_foreach stop_instance uhttpd
 }

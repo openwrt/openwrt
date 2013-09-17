@@ -123,7 +123,7 @@ start_service()
 
 service_triggers()
 {
-	procd_add_config_trigger "dropbear" "/etc/init.d/dropbear" "restart"
+	procd_add_reload_trigger "dropbear"
 }
 
 killclients()
