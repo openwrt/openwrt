@@ -6,18 +6,13 @@
 	compatible = "MOFI3500-3GN", "ralink,rt3052-soc";
 	model = "MoFi Network MOFI3500-3GN";
 
-	palmbus@10000000 {
-		sysc@0 {
-			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "sdram", "rgmii";
-			ralink,gpiomux = "mdio";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+				ralink,function = "gpio";
+			};
 		};
-
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-
 	};
 
 	cfi@1f000000 {
@@ -53,12 +48,7 @@
 		};
 	};
 
-	ethernet@10100000 {
-		status = "okay";
-	};
-
 	esw@10110000 {
-		status = "okay";
 		ralink,portmap = <0x2f>;
 	};
 

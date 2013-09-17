@@ -6,10 +6,8 @@
 	compatible = "ralink,mt7620a-eval-board", "ralink,mt7620a-soc";
 	model = "Ralink MT7620A evaluation board";
 
-
 	palmbus@10000000 {
 		sysc@0 {
-			ralink,pinmux = "spi", "uartlite", "mdio", "wled", "ephy", "rgmii1", "rgmii2";
 			ralink,gpiomux = "i2c", "jtag";
 			ralink,uartmux = "gpio";
 			ralink,wdtmux = <1>;
@@ -28,7 +26,7 @@
 				compatible = "en25q64";
 				reg = <0 0>;
 				linux,modalias = "m25p80", "en25q64";
-				spi-max-frequency = <10000000>;
+				spi-max-frequency = <1000000>;
 
 				partition@0 {
 					label = "u-boot";
@@ -58,6 +56,9 @@
 
 	ethernet@10100000 {
 		status = "okay";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ephy_pins>;
 	};
 
 	gsw@10110000 {

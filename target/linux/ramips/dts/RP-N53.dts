@@ -7,17 +7,6 @@
 	model = "Asus RP-N53";
 
 	palmbus@10000000 {
-		sysc@0 {
-			ralink,pinmux = "spi", "uartlite", "wled", "ephy", "i2c";
-			ralink,gpiomux = "jtag", "mdio", "rgmii1", "rgmii1";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-
 		gpio1: gpio@638 {
 			status = "okay";
 		};
@@ -63,17 +52,24 @@
 		};
 	};
 
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "jtag", "mdio", "rgmii1", "rgmii1", "i2c", "uartf";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
 	codec {
 		compatible = "ralink,mt7620-audio";
 	};
 
-	ethernet@10100000 {
-		status = "okay";
-	};
-
 	gsw@10110000 {
-		status = "okay";
 		ralink,port4 = "ephy";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&ephy_pins>;
 	};
 
 	pcie@10140000 {

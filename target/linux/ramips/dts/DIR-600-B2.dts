@@ -6,15 +6,12 @@
 	compatible = "DIR-600-B2", "ralink,rt3050-soc";
 	model = "D-Link DIR-600 B2";
 
-	palmbus@10000000 {
-		sysc@0 {
-			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
-		gpio0: gpio@600 {
-			status = "okay";
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "spi", "jtag", "mdio", "rgmii", "uartf";
+				ralink,function = "gpio";
+			};
 		};
 	};
 
@@ -51,12 +48,7 @@
 		};
 	};
 
-	ethernet@10100000 {
-		status = "okay";
-	};
-
 	esw@10110000 {
-		status = "okay";
 		ralink,portmap = <0x2f>;
 	};
 
@@ -75,10 +67,6 @@
 			gpios = <&gpio0 0 1>;
 			linux,code = <0x211>;
 		};
-	};
-
-	wmac@10180000 {
-		status = "okay";
 	};
 
 	gpio-leds {

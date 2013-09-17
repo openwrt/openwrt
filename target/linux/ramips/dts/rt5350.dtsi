@@ -110,8 +110,6 @@
 			ralink,register-map = [ 00 04 08 0c
 						20 24 28 2c
 						30 34 ];
-
-			status = "disabled";
 		};
 
 		gpio1: gpio@638 {
@@ -162,6 +160,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c_pins>;
+
 			status = "disabled";
 		};
 
@@ -174,6 +175,9 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>;
 
 			status = "disabled";
 		};
@@ -188,6 +192,9 @@
 			interrupt-parent = <&intc>;
 			interrupts = <12>;
 
+			pinctrl-names = "default";
+			pinctrl-0 = <&uartlite_pins>;
+
 			reg-shift = <2>;
 		};
 
@@ -197,6 +204,41 @@
 
 			interrupt-parent = <&cpuintc>;
 			interrupts = <7>;
+		};
+	};
+
+	pinctrl {
+		compatible = "ralink,rt2880-pinmux";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&state_default>;
+
+		state_default: pinctrl0 {
+		};
+
+		spi_pins: spi {
+			spi {
+				ralink,group = "spi";
+				ralink,function = "spi";
+			};
+		};
+		i2c_pins: i2c {
+			i2c {
+				ralink,group = "i2c";
+				ralink,function = "i2c";
+			};
+		};
+		phy_led_pins: phy_led {
+			phy_led {
+				ralink,group = "led";
+				ralink,function = "led";
+			};
+		};
+		uartlite_pins: uartlite {
+			uart {
+				ralink,group = "uartlite";
+				ralink,function = "uartlite";
+			};
 		};
 	};
 
@@ -218,8 +260,6 @@
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
-
-		status = "disabled";
 	};
 
 	esw@10110000 {
@@ -228,8 +268,6 @@
 
 		interrupt-parent = <&intc>;
 		interrupts = <17>;
-
-		status = "disabled";
 	};
 
 	wmac@10180000 {
@@ -240,8 +278,6 @@
 		interrupts = <6>;
 
 		ralink,eeprom = "soc_wmac.eeprom";
-
-		status = "disabled";
 	};
 
 	ehci@101c0000 {

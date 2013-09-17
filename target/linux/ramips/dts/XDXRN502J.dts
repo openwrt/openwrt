@@ -6,16 +6,12 @@
 	compatible = "XDXRN502J", "ralink,rt3052-soc";
 	model = "XDX RN502J";
 
-	palmbus@10000000 {
-		sysc@0 {
-			ralink,pinmux = "i2c", "spi", "uartlite", "jtag", "sdram", "rgmii";
-			ralink,gpiomux = "mdio";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
-		gpio0: gpio@600 {
-			status = "okay";
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+				ralink,function = "gpio";
+			};
 		};
 	};
 
@@ -52,12 +48,7 @@
 		};
 	};
 
-	ethernet@10100000 {
-		status = "okay";
-	};
-
 	esw@10110000 {
-		status = "okay";
 		ralink,portmap = <0x3e>;
 	};
 
@@ -83,10 +74,6 @@
 			gpios = <&gpio0 12 1>;
 			linux,code = <0x198>;
 		};
-	};
-
-	wmac@10180000 {
-		status = "okay";
 	};
 
 	otg@101c0000 {

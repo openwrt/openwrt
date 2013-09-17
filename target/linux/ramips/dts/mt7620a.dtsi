@@ -110,8 +110,6 @@
 			ralink,register-map = [ 00 04 08 0c
 						20 24 28 2c
 						30 34 ];
-
-			status = "disabled";
 		};
 
 		gpio1: gpio@638 {
@@ -163,6 +161,9 @@
 			#size-cells = <0>;
 
 			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c_pins>;
 		};
 
 		i2s@a00 {
@@ -189,6 +190,9 @@
 			#size-cells = <1>;
 
 			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>;
 		};
 
 		uartlite@c00 {
@@ -202,6 +206,9 @@
 			interrupts = <12>;
 
 			reg-shift = <2>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&uartlite_pins>;
 		};
 
 		systick@d00 {
@@ -242,6 +249,62 @@
 		};
 	};
 
+	pinctrl {
+		compatible = "ralink,rt2880-pinmux";
+		pinctrl-names = "default";
+		pinctrl-0 = <&state_default>;
+		state_default: pinctrl0 {
+		};
+		spi_pins: spi {
+			spi {
+				ralink,group = "spi";
+				ralink,function = "spi";
+			};
+		};
+		i2c_pins: i2c {
+			i2c {
+				lantiq,group = "i2c";
+				lantiq,function = "i2c";
+			};
+		};
+		uartlite_pins: uartlite {
+			uart {
+				ralink,group = "uartlite";
+				ralink,function = "uartlite";
+			};
+		};
+		mdio_pins: mdio {
+			mdio {
+				ralink,group = "mdio";
+				ralink,function = "mdio";
+			};
+		};
+		ephy_pins: ephy {
+			ephy {
+				ralink,group = "ephy";
+				ralink,function = "ephy";
+			};
+		};
+		wled_pins: wled {
+			wled {
+				ralink,group = "wled";
+				ralink,function = "wled";
+			};
+		};
+		rgmii1_pins: rgmii1 {
+			mdio {
+				ralink,group = "rgmii1";
+				ralink,function = "rgmii1";
+			};
+		};
+		rgmii2_pins: rgmii2 {
+			mdio {
+				ralink,group = "rgmii2";
+				ralink,function = "rgmii2";
+			};
+		};
+	};
+
 	rstctrl: rstctrl {
 		compatible = "ralink,mt7620a-reset", "ralink,rt2880-reset";
 		#reset-cells = <1>;
@@ -264,13 +327,14 @@
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
 
-		status = "disabled";
-	
 		mdio-bus {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
 			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&mdio_pins>;
 		};
 	};
 
@@ -280,8 +344,6 @@
 
 		interrupt-parent = <&intc>;
 		interrupts = <17>;
-
-		status = "disabled";
 	};
 
 	sdhci@10130000 {

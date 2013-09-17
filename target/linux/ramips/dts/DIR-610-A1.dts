@@ -7,16 +7,6 @@
 	model = "D-Link DIR-610 A1";
 	
 	palmbus@10000000 {
-		sysc@0 {
-			ralink,pinmux = "i2c", "spi", "jtag", "uartlite", "mdio", "sdram", "rgmii";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-
 		spi@b00 {
 			status = "okay";
 			m25p80@0 {
@@ -53,14 +43,21 @@
 		};
 	};
 
-	ethernet@10100000 {
-		status = "okay";
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "jtag", "uartf";
+				ralink,function = "gpio";
+			};
+		};
 	};
 
 	esw@10110000 {
-		status = "okay";
 		ralink,portmap = <0x1f>;
 		ralink,led-polarity = <0>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&phy_led_pins>;
 	};
 
 	gpio-leds {
@@ -93,8 +90,4 @@
 			};
 		};
 	};
-
-	wmac@10180000 {
-		status = "okay";
-    	};
 };
