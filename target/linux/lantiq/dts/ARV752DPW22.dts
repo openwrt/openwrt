@@ -139,6 +139,11 @@
 
 	};
 
+	ralink_eep {
+		compatible = "ralink,eeprom";
+		ralink,eeprom = "RT2860.eeprom";
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
