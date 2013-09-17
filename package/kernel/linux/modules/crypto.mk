@@ -27,7 +27,6 @@ define KernelPackage/crypto-core
 	CONFIG_CRYPTO_ALGAPI \
 	$(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
   FILES:=$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod)))
-  AUTOLOAD:=$(call AutoLoad,01,$(foreach mod,$(CRYPTO_MODULES),$(call crypto_name,$(mod))),1)
 endef
 
 $(eval $(call KernelPackage,crypto-core))
@@ -58,7 +57,6 @@ define KernelPackage/crypto-manager
 	CONFIG_CRYPTO_MANAGER \
 	$(foreach mod,$(CRYPTOMGR_MODULES),$(call crypto_confvar,$(mod)))
   FILES:=$(foreach mod,$(CRYPTOMGR_MODULES),$(call crypto_file,$(mod)))
-  AUTOLOAD:=$(call AutoLoad,03,$(foreach mod,$(CRYPTOMGR_MODULES),$(call crypto_name,$(mod))))
   $(call AddDepends/crypto)
 endef
 
@@ -217,7 +215,7 @@ endef
 
 define KernelPackage/crypto-aes/x86
   FILES+=$(LINUX_DIR)/arch/x86/crypto/aes-i586.ko
-  AUTOLOAD:=$(call AutoLoad,09,aes_generic aes-i586)
+  AUTOLOAD:=$(call AutoLoad,09,aes-i586)
 endef
 
 $(eval $(call KernelPackage,crypto-aes))

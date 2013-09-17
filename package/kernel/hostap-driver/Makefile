@@ -37,7 +37,7 @@ $(call KernelPackage/hostap/Default)
   DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-lib80211 +wireless-tools
   KCONFIG:=CONFIG_HOSTAP CONFIG_HOSTAP_FIRMWARE=y CONFIG_HOSTAP_FIRMWARE_NVRAM=y
   FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap.ko
-  AUTOLOAD:=$(call AutoLoad,60,hostap)
+  AUTOLOAD:=$(call AutoProbe,hostap)
 endef
 
 define KernelPackage/hostap/description
@@ -54,7 +54,7 @@ $(call KernelPackage/hostap/Default)
   DEPENDS:=@PCMCIA_SUPPORT +kmod-hostap +kmod-pcmcia-core
   KCONFIG:=CONFIG_HOSTAP_CS
   FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_cs.ko
-  AUTOLOAD:=$(call AutoLoad,60,hostap_cs)
+  AUTOLOAD:=$(call AutoProbe,hostap_cs)
 endef
 
 define KernelPackage/hostap-cs/description
@@ -69,7 +69,7 @@ $(call KernelPackage/hostap/Default)
   DEPENDS:=@PCI_SUPPORT +kmod-hostap
   KCONFIG:=CONFIG_HOSTAP_PCI
   FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_pci.ko
-  AUTOLOAD:=$(call AutoLoad,60,hostap_pci)
+  AUTOLOAD:=$(call AutoProbe,hostap_pci)
 endef
 
 define KernelPackage/hostap-pci/description
@@ -84,7 +84,7 @@ $(call KernelPackage/hostap/Default)
   DEPENDS:=@PCI_SUPPORT +kmod-hostap
   KCONFIG:=CONFIG_HOSTAP_PLX
   FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_plx.ko
-  AUTOLOAD:=$(call AutoLoad,60,hostap_plx)
+  AUTOLOAD:=$(call AutoProbe,hostap_plx)
 endef
 
 define KernelPackage/hostap-plx/description

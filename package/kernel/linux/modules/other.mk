@@ -44,7 +44,7 @@ define KernelPackage/bluetooth
 	$(LINUX_DIR)/net/bluetooth/hidp/hidp.ko \
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btusb.ko
-  AUTOLOAD:=$(call AutoLoad,90,bluetooth rfcomm bnep hidp hci_uart btusb)
+  AUTOLOAD:=$(call AutoProbe,bluetooth rfcomm bnep hidp hci_uart btusb)
 endef
 
 define KernelPackage/bluetooth/description
@@ -60,7 +60,7 @@ define KernelPackage/bluetooth-hci-h4p
   DEPENDS:=@TARGET_omap24xx +kmod-bluetooth
   KCONFIG:=CONFIG_BT_HCIH4P
   FILES:=$(LINUX_DIR)/drivers/bluetooth/hci_h4p/hci_h4p.ko
-  AUTOLOAD:=$(call AutoLoad,91,hci_h4p)
+  AUTOLOAD:=$(call AutoProbe,hci_h4p)
 endef
 
 define KernelPackage/bluetooth-hci-h4p/description
@@ -91,7 +91,7 @@ define KernelPackage/eeprom-at24
   KCONFIG:=CONFIG_EEPROM_AT24
   DEPENDS:=+kmod-i2c-core
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at24.ko
-  AUTOLOAD:=$(call AutoLoad,60,at24)
+  AUTOLOAD:=$(call AutoProbe,at24)
 endef
 
 define KernelPackage/eeprom-at24/description
@@ -106,7 +106,7 @@ define KernelPackage/eeprom-at25
   TITLE:=EEPROM AT25 support
   KCONFIG:=CONFIG_EEPROM_AT25
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at25.ko
-  AUTOLOAD:=$(call AutoLoad,61,at25)
+  AUTOLOAD:=$(call AutoProbe,at25)
 endef
 
 define KernelPackage/eeprom-at25/description
@@ -153,7 +153,7 @@ define KernelPackage/gpio-nxp-74hc164
   TITLE:=NXP 74HC164 GPIO expander support
   KCONFIG:=CONFIG_GPIO_NXP_74HC164
   FILES:=$(LINUX_DIR)/drivers/gpio/nxp_74hc164.ko
-  AUTOLOAD:=$(call AutoLoad,99,nxp_74hc164)
+  AUTOLOAD:=$(call AutoProbe,nxp_74hc164)
 endef
 
 define KernelPackage/gpio-nxp-74hc164/description
@@ -211,7 +211,7 @@ define KernelPackage/mmc
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/core/mmc_core.ko \
 	$(LINUX_DIR)/drivers/mmc/card/mmc_block.ko
-  AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block,1)
+  AUTOLOAD:=$(call AutoProbe,mmc_core mmc_block,1)
 endef
 
 define KernelPackage/mmc/description
@@ -378,7 +378,6 @@ define KernelPackage/pwm
   TITLE:=PWM generic API
   KCONFIG:=CONFIG_GENERIC_PWM
   FILES:=$(LINUX_DIR)/drivers/pwm/pwm.ko
-  AUTOLOAD:=$(call AutoLoad,50,pwm)
 endef
 
 define KernelPackage/pwm/description
@@ -394,7 +393,7 @@ define KernelPackage/pwm-gpio
   DEPENDS:=+kmod-pwm
   KCONFIG:=CONFIG_GPIO_PWM
   FILES:=$(LINUX_DIR)/drivers/pwm/gpio-pwm.ko
-  AUTOLOAD:=$(call AutoLoad,51,gpio-pwm)
+  AUTOLOAD:=$(call AutoProbe,gpio-pwm)
 endef
 
 define KernelPackage/pwm-gpio/description
@@ -411,7 +410,7 @@ define KernelPackage/rtc-isl1208
   DEPENDS+=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_ISL1208
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-isl1208.ko
-  AUTOLOAD:=$(call AutoLoad,60,rtc-isl1208)
+  AUTOLOAD:=$(call AutoProbe,rtc-isl1208)
 endef
 
 define KernelPackage/rtc-isl1208/description
@@ -428,7 +427,7 @@ define KernelPackage/rtc-marvell
   DEPENDS+=@TARGET_kirkwood||TARGET_orion||TARGET_mvebu
   KCONFIG:=CONFIG_RTC_DRV_MV
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
-  AUTOLOAD:=$(call AutoLoad,60,rtc-mv)
+  AUTOLOAD:=$(call AutoProbe,rtc-mv)
 endef
 
 define KernelPackage/rtc-marvell/description
@@ -443,7 +442,7 @@ define KernelPackage/rtc-pcf8563
   $(call AddDepends/rtc,+kmod-i2c-core)
   KCONFIG:=CONFIG_RTC_DRV_PCF8563
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf8563.ko
-  AUTOLOAD:=$(call AutoLoad,60,rtc-pcf8563)
+  AUTOLOAD:=$(call AutoProbe,rtc-pcf8563)
 endef
 
 define KernelPackage/rtc-pcf8563/description
@@ -460,7 +459,7 @@ define KernelPackage/rtc-pcf2123
   $(call AddDepends/rtc)
   KCONFIG:=CONFIG_RTC_DRV_PCF2123
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2123.ko
-  AUTOLOAD:=$(call AutoLoad,60,rtc-pcf2123)
+  AUTOLOAD:=$(call AutoProbe,rtc-pcf2123)
 endef
 
 define KernelPackage/rtc-pcf2123/description
@@ -475,7 +474,7 @@ define KernelPackage/rtc-pt7c4338
   $(call AddDepends/rtc,+kmod-i2c-core)
   KCONFIG:=CONFIG_RTC_DRV_PT7C4338
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pt7c4338.ko
-  AUTOLOAD:=$(call AutoLoad,60,rtc-pt7c4338)
+  AUTOLOAD:=$(call AutoProbe,rtc-pt7c4338)
 endef
 
 define KernelPackage/rtc-pt7c4338/description
@@ -627,7 +626,7 @@ define KernelPackage/mvsdio
   DEPENDS:=@TARGET_orion||TARGET_kirkwood||TARGET_mvebu +kmod-mmc
   KCONFIG:=CONFIG_MMC_MVSDIO
   FILES:=$(LINUX_DIR)/drivers/mmc/host/mvsdio.ko
-  AUTOLOAD:=$(call AutoLoad,91,mvsdio)
+  AUTOLOAD:=$(call AutoProbe,mvsdio)
 endef
 
 define KernelPacakge/mvsdio/description
@@ -677,7 +676,7 @@ define KernelPackage/ptp-gianfar
   DEPENDS:=@TARGET_mpc85xx +kmod-gianfar +kmod-ptp
   KCONFIG:=CONFIG_PTP_1588_CLOCK_GIANFAR
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/freescale/gianfar_ptp.ko
-  AUTOLOAD:=$(call AutoLoad,51,gianfar_ptp)
+  AUTOLOAD:=$(call AutoProbe,gianfar_ptp)
 endef
 
 define KernelPacakge/ptp-gianfar/description
@@ -693,7 +692,6 @@ define KernelPackage/random-core
   TITLE:=Hardware Random Number Generator Core support
   KCONFIG:=CONFIG_HW_RANDOM
   FILES:=$(LINUX_DIR)/drivers/char/hw_random/rng-core.ko
-  AUTOLOAD:=$(call AutoLoad,10,rng-core)
 endef
 
 define KernelPackage/random-core/description

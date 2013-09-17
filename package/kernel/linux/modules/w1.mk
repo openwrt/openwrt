@@ -14,7 +14,6 @@ define KernelPackage/w1
   TITLE:=Dallas's 1-wire support
   KCONFIG:=CONFIG_W1
   FILES:=$(LINUX_DIR)/drivers/w1/wire.ko
-  AUTOLOAD:=$(call AutoLoad,50,wire)
 endef
 
 define KernelPackage/w1/description
@@ -38,7 +37,7 @@ define KernelPackage/w1-master-gpio
   DEPENDS:=@GPIO_SUPPORT
   KCONFIG:=CONFIG_W1_MASTER_GPIO
   FILES:=$(W1_MASTERS_DIR)/w1-gpio.ko
-  AUTOLOAD:=$(call AutoLoad,60,w1-gpio)
+  AUTOLOAD:=$(call AutoProbe,w1-gpio)
   $(call AddDepends/w1)
 endef
 
@@ -52,7 +51,7 @@ define KernelPackage/w1-master-ds2482
   TITLE:=DS2482 1-wire i2c bus master driver
   KCONFIG:=CONFIG_W1_MASTER_DS2482
   FILES:=$(W1_MASTERS_DIR)/ds2482.ko
-  AUTOLOAD:=$(call AutoLoad,60,ds2482)
+  AUTOLOAD:=$(call AutoProbe,ds2482)
   $(call AddDepends/w1,+kmod-i2c-core)
 endef
 
@@ -70,7 +69,7 @@ define KernelPackage/w1-master-ds2490
   DEPENDS:=@USB_SUPPORT +kmod-usb-core
   KCONFIG:=CONFIG_W1_MASTER_DS2490
   FILES:=$(W1_MASTERS_DIR)/ds2490.ko
-  AUTOLOAD:=$(call AutoLoad,60,ds2490)
+  AUTOLOAD:=$(call AutoProbe,ds2490)
   $(call AddDepends/w1)
 endef
 
@@ -87,7 +86,7 @@ define KernelPackage/w1-slave-therm
   TITLE:=Thermal family implementation
   KCONFIG:=CONFIG_W1_SLAVE_THERM
   FILES:=$(W1_SLAVES_DIR)/w1_therm.ko
-  AUTOLOAD:=$(call AutoLoad,70,w1_therm)
+  AUTOLOAD:=$(call AutoProbe,w1_therm)
   $(call AddDepends/w1)
 endef
 
@@ -102,7 +101,7 @@ define KernelPackage/w1-slave-smem
   TITLE:=Simple 64bit memory family implementation
   KCONFIG:=CONFIG_W1_SLAVE_SMEM
   FILES:=$(W1_SLAVES_DIR)/w1_smem.ko
-  AUTOLOAD:=$(call AutoLoad,70,w1_smem)
+  AUTOLOAD:=$(call AutoProbe,w1_smem)
   $(call AddDepends/w1)
 endef
 
@@ -116,7 +115,7 @@ define KernelPackage/w1-slave-ds2431
   TITLE:=DS2431 1kb EEPROM driver
   KCONFIG:= CONFIG_W1_SLAVE_DS2431
   FILES:=$(W1_SLAVES_DIR)/w1_ds2431.ko
-  AUTOLOAD:=$(call AutoLoad,70,w1_ds2431)
+  AUTOLOAD:=$(call AutoProbe,w1_ds2431)
   $(call AddDepends/w1)
 endef
 
@@ -132,7 +131,7 @@ define KernelPackage/w1-slave-ds2433
 	CONFIG_W1_SLAVE_DS2433 \
 	CONFIG_W1_SLAVE_DS2433_CRC=n
   FILES:=$(W1_SLAVES_DIR)/w1_ds2433.ko
-  AUTOLOAD:=$(call AutoLoad,70,w1_ds2433)
+  AUTOLOAD:=$(call AutoProbe,w1_ds2433)
   $(call AddDepends/w1)
 endef
 
@@ -149,7 +148,7 @@ define KernelPackage/w1-slave-ds2760
 	CONFIG_W1_SLAVE_DS2760 \
 	CONFIG_W1_SLAVE_DS2433_CRC=n
   FILES:=$(W1_SLAVES_DIR)/w1_ds2760.ko
-  AUTOLOAD:=$(call AutoLoad,70,w1_ds2760)
+  AUTOLOAD:=$(call AutoProbe,w1_ds2760)
   $(call AddDepends/w1)
 endef
 
