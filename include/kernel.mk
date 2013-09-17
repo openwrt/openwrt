@@ -79,6 +79,25 @@ endef
 define ModuleAutoLoad
 	$(SH_FUNC) \
 	export modules=; \
+	probe_module() { \
+		mods="$$$$$$$$1"; \
+		boot="$$$$$$$$2"; \
+		shift 2; \
+		for mod in $$$$$$$$mods; do \
+			if [ -e $(2)/$(MODULES_SUBDIR)/$$$$$$$$mod.ko ]; then \
+				mkdir -p $(2)/etc/modules.d; \
+				echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$(1); \
+			fi; \
+		done; \
+		if [ -e $(2)/etc/modules.d/$(1) ]; then \
+			if [ "$$$$$$$$boot" = "1" ]; then \
+				mkdir -p $(2)/etc/modules-boot.d; \
+				ln -s ../modules.d/$(1) $(2)/etc/modules-boot.d/; \
+			fi; \
+			modules="$$$$$$$${modules:+$$$$$$$$modules}"; \
+		fi; \
+		dkl; \
+	}; \
 	add_module() { \
 		priority="$$$$$$$$1"; \
 		mods="$$$$$$$$2"; \
@@ -192,6 +211,10 @@ endef
 
 define AutoLoad
   add_module "$(1)" "$(2)" "$(3)";
+endef
+
+define AutoProbe
+  probe_module "$(1)" "$(2)";
 endef
 
 version_field=$(if $(word $(1),$(2)),$(word $(1),$(2)),0)
