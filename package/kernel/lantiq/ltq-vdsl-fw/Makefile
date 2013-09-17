@@ -17,7 +17,7 @@ define Package/ltq-vdsl-vr9-fw-installer
   TITLE:=Firmware installer
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@TARGET_lantiq_xway +kmod-ltq-vdsl-vr9
+  DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-vdsl-vr9
 endef
 
 define Build/Prepare
