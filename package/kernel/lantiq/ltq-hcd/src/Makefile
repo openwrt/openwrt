@@ -1,4 +1,4 @@
-ltq_hcd_$(BUILD_VARIANT)-objs    := ifxusb_driver.o ifxusb_ctl.o ifxusb_cif.o \
+ltq_hcd_$(BUILD_VARIANT)-objs    := ifxusb_driver.o ifxusb_cif.o \
 			ifxusb_cif_h.o ifxhcd.o ifxhcd_es.o \
 			ifxhcd_intr.o ifxhcd_queue.o
 obj-m = ltq_hcd_$(BUILD_VARIANT).o
