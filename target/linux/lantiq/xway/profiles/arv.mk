@@ -121,6 +121,7 @@ define Profile/ARV752DPW22
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ltq-tapi kmod-ltq-vmmc \
+	kmod-rt2800-pci wpad-mini \
 	swconfig
 endef
 
