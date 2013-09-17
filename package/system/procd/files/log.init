@@ -8,7 +8,6 @@ STOP=89
 USE_PROCD=1
 NAME=logread
 PROG=/sbin/logread
-PIDCOUNT=1
 
 start_service_file()
 {
@@ -24,8 +23,6 @@ start_service_file()
 	procd_set_param command "$PROG" -f -F "$log_file" -p "$pid_file"
         [ -n "${log_size}" ] && procd_append_param command -S "$log_size"
 	procd_close_instance
-
-	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 }
 
 start_service_remote()
@@ -43,8 +40,6 @@ start_service_remote()
 	procd_set_param command "$PROG" -f -r "$log_ip" "${log_port:-514}" -p "$pid_file"
         [ "${log_proto}" != "udp" ] || procd_append_param command -u
 	procd_close_instance
-
-	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 }
 
 service_triggers()
