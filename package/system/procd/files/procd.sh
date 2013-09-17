@@ -12,6 +12,7 @@
 # procd_set_param(type, [value...])
 #   Available types:
 #     command: command line (array).
+#     respawn info: array with 3 values $restart_timeout $fail_hreshold $max_fail
 #     env: environment variable (passed to the process)
 #     data: arbitrary name/value pairs for detecting config changes (table)
 #     file: configuration files (array)
@@ -123,7 +124,7 @@ _procd_set_param() {
 		env|data)
 			_procd_add_table "$type" "$@"
 		;;
-		command|netdev|file)
+		command|netdev|file|respawn)
 			_procd_add_array "$type" "$@"
 		;;
 		nice)
@@ -153,6 +154,20 @@ _procd_add_config_trigger() {
 	json_close_array
 }
 
+_procd_add_reload_trigger() {
+	local script=$(readlink "$initscript")
+	local name=$(basename ${script:-$initscript})
+
+	_procd_add_config_trigger $1 /etc/init.d/$name reload
+}
+
+_procd_add_reload_trigger() {
+	local script=$(readlink "$initscript")
+	local name=$(basename ${script:-$initscript})
+
+	_procd_add_config_trigger $1 /etc/init.d/$name reload
+}
+
 _procd_append_param() {
 	local type="$1"; shift
 
@@ -161,7 +176,7 @@ _procd_append_param() {
 		env|data)
 			_procd_add_table_data "$@"
 		;;
-		command|netdev|file)
+		command|netdev|file|respawn)
 			_procd_add_array_data "$@"
 		;;
 	esac
@@ -197,6 +212,7 @@ _procd_wrapper \
 	procd_close_service \
 	procd_add_instance \
 	procd_add_config_trigger \
+	procd_add_reload_trigger \
 	procd_open_trigger \
 	procd_close_trigger \
 	procd_open_instance \
