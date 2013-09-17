@@ -24,13 +24,13 @@ define KernelPackage/ltq-ptm-template
   VARIANT:=$(1)
   DEPENDS:=@TARGET_lantiq_$(2)
   FILES:=$(PKG_BUILD_DIR)/ltq_ptm_$(1).ko 
-  AUTOLOAD:=$(call AutoLoad,52,ltq_ptm_$(1))
+  AUTOLOAD:=$(call AutoProbe,ltq_ptm_$(1))
 endef
 
 KernelPackage/ltq-ptm-danube=$(call KernelPackage/ltq-ptm-template,danube,xway)
 KernelPackage/ltq-ptm-ar9=$(call KernelPackage/ltq-ptm-template,ar9,xway)
 KernelPackage/ltq-ptm-ase=$(call KernelPackage/ltq-ptm-template,ase,ase)
-KernelPackage/ltq-ptm-vr9=$(call KernelPackage/ltq-ptm-template,vr9,xway)
+KernelPackage/ltq-ptm-vr9=$(call KernelPackage/ltq-ptm-template,vr9,xrx200)
 
 define Build/Prepare
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)
