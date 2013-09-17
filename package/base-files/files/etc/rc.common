@@ -80,7 +80,15 @@ start_service() {
 	return 0
 }
 
+stop_service() {
+	return 0
+}
+
 service_triggers() {
+	return 0
+}
+
+service_running() {
 	return 0
 }
 
@@ -93,6 +101,8 @@ ${INIT_TRACE:+set -x}
 . "$initscript"
 
 [ -n "$USE_PROCD" ] && {
+	EXTRA_COMMANDS="${EXTRA_COMMANDS} running"
+
 	. $IPKG_INSTROOT/lib/functions/procd.sh
 	basescript=$(readlink "$initscript")
 	rc_procd() {
@@ -107,10 +117,19 @@ ${INIT_TRACE:+set -x}
 
 	stop() {
 		procd_kill "$(basename ${basescript:-$initscript})" "$1"
+		stop_service "$@"
 	}
 
 	reload() {
-		start
+		if eval "type reload_service" 2>/dev/null >/dev/null; then
+			reload_service "$@"
+		else
+			restart
+		fi
+	}
+
+	running() {
+		service_running "$@"
 	}
 }
 
