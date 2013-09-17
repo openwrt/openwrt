@@ -288,11 +288,11 @@ static int ifxusb_driver_remove(struct platform_device *_pdev)
 		ifxusb_core_if_remove_d(&ifxusb_pcd.core_if );
 	#endif
 	/* Remove the device attributes */
-	#ifdef __IS_HOST__
+/*	#ifdef __IS_HOST__
 		ifxusb_attr_remove_h(&_pdev->dev);
 	#else
 		ifxusb_attr_remove_d(&_pdev->dev);
-	#endif
+	#endif*/
 	return 0;
 }
 
@@ -462,11 +462,11 @@ static int ifxusb_driver_probe(struct platform_device *_pdev)
 			goto ifxusb_driver_probe_fail;
 	#endif
 
-	#ifdef __IS_HOST__
+/*	#ifdef __IS_HOST__
 		ifxusb_attr_create_h(&_pdev->dev);
 	#else
 		ifxusb_attr_create_d(&_pdev->dev);
-	#endif
+	#endif*/
 
 	gpio_count = of_gpio_count(np);
 	while (gpio_count) {

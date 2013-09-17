@@ -1,7 +1,7 @@
 Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_common.c
 ===================================================================
 --- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_common.c	2011-10-26 00:49:51.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_common.c	2012-11-28 15:14:10.421633418 +0100
++++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_common.c	2013-09-01 21:04:12.197022086 +0200
 @@ -20,7 +20,6 @@
  /* get at first the driver configuration */
  #include "drv_mei_cpe_config.h"
@@ -13,7 +13,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_common.c
 Index: drv_mei_cpe-1.2.0/configure.in
 ===================================================================
 --- drv_mei_cpe-1.2.0.orig/configure.in	2012-01-20 17:41:07.000000000 +0100
-+++ drv_mei_cpe-1.2.0/configure.in	2012-11-28 15:14:10.421633418 +0100
++++ drv_mei_cpe-1.2.0/configure.in	2013-09-01 21:04:12.197022086 +0200
 @@ -140,7 +140,7 @@
  AC_ARG_ENABLE(kernelbuild,
     AC_HELP_STRING([--enable-kernelbuild=x],[Set the target kernel build path]),
@@ -26,7 +26,7 @@ Index: drv_mei_cpe-1.2.0/configure.in
 Index: drv_mei_cpe-1.2.0/configure
 ===================================================================
 --- drv_mei_cpe-1.2.0.orig/configure	2012-01-20 17:50:02.000000000 +0100
-+++ drv_mei_cpe-1.2.0/configure	2012-11-28 15:14:56.637634577 +0100
++++ drv_mei_cpe-1.2.0/configure	2013-09-01 21:04:14.361022179 +0200
 @@ -617,6 +617,7 @@
  am__fastdepCC_FALSE
  am__fastdepCC_TRUE
@@ -88,7 +88,7 @@ Index: drv_mei_cpe-1.2.0/configure
 Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.h
 ===================================================================
 --- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_linux.h	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.h	2012-11-28 15:14:10.429633419 +0100
++++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.h	2013-09-01 21:04:12.197022086 +0200
 @@ -34,8 +34,6 @@
  #include <linux/sched.h>
  #include <linux/interrupt.h>
@@ -110,7 +110,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.h
 Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_vr9.h
 ===================================================================
 --- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_mei_vr9.h	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_vr9.h	2012-11-28 15:14:10.429633419 +0100
++++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_vr9.h	2013-09-01 21:04:12.197022086 +0200
 @@ -40,12 +40,6 @@
  #endif
  #endif
@@ -127,7 +127,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_vr9.h
 Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_api_atm_ptm_intern.c
 ===================================================================
 --- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_api_atm_ptm_intern.c	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_api_atm_ptm_intern.c	2012-11-28 15:14:10.429633419 +0100
++++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_api_atm_ptm_intern.c	2013-09-01 21:04:12.197022086 +0200
 @@ -25,11 +25,7 @@
  #include "ifx_types.h"
  #include "drv_mei_cpe_os.h"
@@ -144,7 +144,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_api_atm_ptm_intern.c
 Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
 ===================================================================
 --- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_linux.c	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c	2012-11-28 15:24:56.269649609 +0100
++++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c	2013-09-01 21:04:12.197022086 +0200
 @@ -32,11 +32,9 @@
  #include <linux/module.h>
  #include <linux/version.h>
@@ -159,7 +159,17 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
  #include <linux/ioport.h>
  #include <linux/irq.h>
  #include <asm/io.h>
-@@ -87,6 +85,8 @@
+@@ -67,6 +65,9 @@
+ 
+ #include "drv_mei_cpe_msg_process.h"
+ 
++#undef MEI_SUPPORT_PROCFS_CONFIG
++#undef CONFIG_PROC_FS
++
+ #if (MEI_SUPPORT_PROCFS_CONFIG == 1)
+ #include "drv_mei_cpe_linux_proc_config.h"
+ #endif /* MEI_SUPPORT_PROCFS_CONFIG */
+@@ -87,6 +88,8 @@
  #include "drv_mei_cpe_device_cntrl.h"
  #endif
  
@@ -168,7 +178,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
  /* ===================================
     extern function declarations
     =================================== */
-@@ -122,7 +122,7 @@
+@@ -122,7 +125,7 @@
                       size_t length,
                       loff_t * ppos);
  
@@ -177,7 +187,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
                          unsigned int nCmd, unsigned long nArgument);
  
  static unsigned int MEI_Poll (struct file *filp, poll_table *table);
-@@ -137,7 +137,7 @@
+@@ -137,7 +140,7 @@
  
  static void MEI_IfxFreeIrq(unsigned int usedIrq, void *pUsedDevId);
  
@@ -186,7 +196,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
  #endif
  
  #if CONFIG_PROC_FS
-@@ -194,7 +194,9 @@
+@@ -194,7 +197,9 @@
  /* =================================== */
  /* Local variables (LINUX)             */
  /* =================================== */
@@ -197,7 +207,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
  #ifdef MODULE
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
  MODULE_PARM(major_number, "b");
-@@ -242,7 +244,7 @@
+@@ -242,7 +247,7 @@
          MEI_Write,
      poll:
          MEI_Poll,
@@ -206,7 +216,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
          MEI_Ioctl,
      open:
          MEI_OpenOS,
-@@ -457,7 +459,7 @@
+@@ -457,7 +462,7 @@
     0 and positive values - success,
     negative value - ioctl failed
  */
@@ -215,7 +225,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
                              unsigned int nCmd, unsigned long nArgument)
  {
     int ret = 0, retSize = sizeof(IOCTL_MEI_ioctl_t);
-@@ -1242,7 +1246,7 @@
+@@ -1242,7 +1247,7 @@
  \remark
     None.
  */
@@ -224,7 +234,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
  {
     IFX_int32_t    meiIntCnt = 0;
     MEIX_CNTRL_T *pMeiXCntrlList = (MEIX_CNTRL_T*)dev_id;
-@@ -1691,6 +1695,7 @@
+@@ -1691,6 +1696,7 @@
  static int __init MEI_module_init (void)
  {
     int result;
@@ -232,7 +242,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
  
     printk(KERN_INFO "%s" MEI_DRV_CRLF, &MEI_WHATVERSION[4]);
     printk(KERN_INFO "(c) Copyright 2009, Infineon Technologies AG" MEI_DRV_CRLF);
-@@ -1730,6 +1735,8 @@
+@@ -1730,6 +1736,8 @@
        return (result);
     }
  
@@ -244,7 +254,7 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
 Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_access_vr9.c
 ===================================================================
 --- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_mei_access_vr9.c	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_access_vr9.c	2012-11-28 15:14:10.433633419 +0100
++++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_access_vr9.c	2013-09-01 21:04:12.197022086 +0200
 @@ -37,6 +37,7 @@
  
  #include "cmv_message_format.h"
@@ -296,3 +306,16 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_access_vr9.c
  
     return IFX_SUCCESS;
  }
+Index: drv_mei_cpe-1.2.0/src/Makefile.am
+===================================================================
+--- drv_mei_cpe-1.2.0.orig/src/Makefile.am	2013-09-01 21:05:24.581025175 +0200
++++ drv_mei_cpe-1.2.0/src/Makefile.am	2013-09-01 21:05:30.765025452 +0200
+@@ -97,8 +97,6 @@
+ 	drv_mei_cpe_dbg_driver.h\
+ 	drv_mei_cpe_linux.c\
+ 	drv_mei_cpe_linux.h\
+-	drv_mei_cpe_linux_proc_config.c\
+-	drv_mei_cpe_linux_proc_config.h\
+ 	drv_mei_cpe_vxworks.c\
+ 	drv_mei_cpe_vxworks.h\
+ 	drv_mei_cpe_vxworks_bsp.c\

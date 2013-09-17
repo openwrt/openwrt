@@ -1,0 +1,30 @@
+From 07cddcb5820db42cadcc4627aad7391816b63b34 Mon Sep 17 00:00:00 2001
+From: Thomas Langer <thomas.langer@lantiq.com>
+Date: Fri, 9 Aug 2013 20:54:30 +0200
+Subject: [PATCH 29/34] serial: MIPS: lantiq: add clk_enable() call to driver
+
+Enable the clock if one is present when setting up the console.
+
+Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
+Acked-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/tty/serial/lantiq.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/tty/serial/lantiq.c b/drivers/tty/serial/lantiq.c
+index 15733da..93ac046 100644
+--- a/drivers/tty/serial/lantiq.c
++++ b/drivers/tty/serial/lantiq.c
+@@ -636,6 +636,9 @@ lqasc_console_setup(struct console *co, char *options)
+ 
+ 	port = &ltq_port->port;
+ 
++	if (!IS_ERR(ltq_port->clk))
++		clk_enable(ltq_port->clk);
++
+ 	port->uartclk = clk_get_rate(ltq_port->fpiclk);
+ 
+ 	if (options)
+-- 
+1.7.10.4
+

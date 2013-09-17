@@ -1,0 +1,84 @@
+From f8b5108547119cd650fe5fcc90f488d250a3305d Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 9 Aug 2013 20:38:15 +0200
+Subject: [PATCH 26/34] pinctrl/lantiq: fix up pinmux
+
+We found out how to set the gphy led pinmuxing.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/pinctrl/pinctrl-xway.c |   28 ++++++++++++++++++++++++++--
+ 1 file changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
+index e92132c..e40b2e6 100644
+--- a/drivers/pinctrl/pinctrl-xway.c
++++ b/drivers/pinctrl/pinctrl-xway.c
+@@ -564,10 +564,9 @@ static struct pinctrl_desc xway_pctrl_desc = {
+ 	.confops	= &xway_pinconf_ops,
+ };
+ 
+-static inline int xway_mux_apply(struct pinctrl_dev *pctrldev,
++static int mux_apply(struct ltq_pinmux_info *info,
+ 				int pin, int mux)
+ {
+-	struct ltq_pinmux_info *info = pinctrl_dev_get_drvdata(pctrldev);
+ 	int port = PORT(pin);
+ 	u32 alt1_reg = GPIO_ALT1(pin);
+ 
+@@ -587,6 +586,14 @@ static inline int xway_mux_apply(struct pinctrl_dev *pctrldev,
+ 	return 0;
+ }
+ 
++static inline int xway_mux_apply(struct pinctrl_dev *pctrldev,
++				int pin, int mux)
++{
++	struct ltq_pinmux_info *info = pinctrl_dev_get_drvdata(pctrldev);
++
++	return mux_apply(info, pin, mux);
++}
++
+ static const struct ltq_cfg_param xway_cfg_params[] = {
+ 	{"lantiq,pull",		LTQ_PINCONF_PARAM_PULL},
+ 	{"lantiq,open-drain",	LTQ_PINCONF_PARAM_OPEN_DRAIN},
+@@ -631,6 +638,10 @@ static int xway_gpio_dir_out(struct gpio_chip *chip, unsigned int pin, int val)
+ {
+ 	struct ltq_pinmux_info *info = dev_get_drvdata(chip->dev);
+ 
++	if (PORT(pin) == PORT3)
++		gpio_setbit(info->membase[0], GPIO3_OD, PORT_PIN(pin));
++	else
++		gpio_setbit(info->membase[0], GPIO_OD(pin), PORT_PIN(pin));
+ 	gpio_setbit(info->membase[0], GPIO_DIR(pin), PORT_PIN(pin));
+ 	xway_gpio_set(chip, pin, val);
+ 
+@@ -651,6 +662,18 @@ static void xway_gpio_free(struct gpio_chip *chip, unsigned offset)
+ 	pinctrl_free_gpio(gpio);
+ }
+ 
++static int xway_gpio_to_irq(struct gpio_chip *chip, unsigned offset)
++{
++	struct ltq_pinmux_info *info = dev_get_drvdata(chip->dev);
++	int i;
++
++	for (i = 0; i < info->num_exin; i++)
++		if (info->exin[i] == offset)
++			return ltq_eiu_get_irq(i);
++
++	return -1;
++}
++
+ static struct gpio_chip xway_chip = {
+ 	.label = "gpio-xway",
+ 	.direction_input = xway_gpio_dir_in,
+@@ -659,6 +682,7 @@ static struct gpio_chip xway_chip = {
+ 	.set = xway_gpio_set,
+ 	.request = xway_gpio_req,
+ 	.free = xway_gpio_free,
++	.to_irq = xway_gpio_to_irq,
+ 	.base = -1,
+ };
+ 
+-- 
+1.7.10.4
+

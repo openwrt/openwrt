@@ -1,0 +1,482 @@
+From 8c19ced548538d964dcfb83bdf9ea9e8fbb7bdb1 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 13 Mar 2013 10:02:58 +0100
+Subject: [PATCH 10/34] MIPS: lantiq: wifi and ethernet eeprom handling
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h  |    6 +
+ .../mips/include/asm/mach-lantiq/xway/lantiq_soc.h |    3 +
+ arch/mips/lantiq/xway/Makefile                     |    2 +
+ arch/mips/lantiq/xway/ath_eep.c                    |  237 ++++++++++++++++++++
+ arch/mips/lantiq/xway/pci-ath-fixup.c              |  109 +++++++++
+ arch/mips/lantiq/xway/rt_eep.c                     |   60 +++++
+ 6 files changed, 417 insertions(+)
+ create mode 100644 arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
+ create mode 100644 arch/mips/lantiq/xway/ath_eep.c
+ create mode 100644 arch/mips/lantiq/xway/pci-ath-fixup.c
+ create mode 100644 arch/mips/lantiq/xway/rt_eep.c
+
+diff --git a/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h b/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
+new file mode 100644
+index 0000000..095d261
+--- /dev/null
++++ b/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
+@@ -0,0 +1,6 @@
++#ifndef _PCI_ATH_FIXUP
++#define _PCI_ATH_FIXUP
++
++void ltq_pci_ath_fixup(unsigned slot, u16 *cal_data) __init;
++
++#endif /* _PCI_ATH_FIXUP */
+diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+index 133336b..779715c 100644
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -90,5 +90,8 @@ int xrx200_gphy_boot(struct device *dev, unsigned int id, dma_addr_t dev_addr);
+ extern void ltq_pmu_enable(unsigned int module);
+ extern void ltq_pmu_disable(unsigned int module);
+ 
++/* allow the ethernet driver to load a flash mapped mac addr */
++const u8* ltq_get_eth_mac(void);
++
+ #endif /* CONFIG_SOC_TYPE_XWAY */
+ #endif /* _LTQ_XWAY_H__ */
+diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
+index da51fe0..0af7a54 100644
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
+@@ -2,4 +2,6 @@ obj-y := prom.o sysctrl.o clk.o reset.o dma.o timer.o dcdc.o
+ 
+ obj-y += vmmc.o
+ 
++obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
++
+ obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
+diff --git a/arch/mips/lantiq/xway/ath_eep.c b/arch/mips/lantiq/xway/ath_eep.c
+new file mode 100644
+index 0000000..1146f01
+--- /dev/null
++++ b/arch/mips/lantiq/xway/ath_eep.c
+@@ -0,0 +1,237 @@
++/*
++ *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
++ *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
++ *  Copyright (C) 2011 Andrej Vlašić <andrej.vlasic0@gmail.com>
++ *  Copyright (C) 2013 Álvaro Fernández Rojas <noltari@gmail.com>
++ *  Copyright (C) 2013 Daniel Gimpelevich <daniel@gimpelevich.san-francisco.ca.us>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/etherdevice.h>
++#include <linux/ath5k_platform.h>
++#include <linux/ath9k_platform.h>
++#include <linux/pci.h>
++#include <linux/err.h>
++#include <linux/mtd/mtd.h>
++#include <pci-ath-fixup.h>
++#include <lantiq_soc.h>
++#include <linux/of_net.h>
++
++extern int (*ltq_pci_plat_dev_init)(struct pci_dev *dev);
++struct ath5k_platform_data ath5k_pdata;
++struct ath9k_platform_data ath9k_pdata = {
++	.led_pin = -1,
++};
++static u8 athxk_eeprom_mac[6];
++
++static int ath9k_pci_plat_dev_init(struct pci_dev *dev)
++{
++	dev->dev.platform_data = &ath9k_pdata;
++	return 0;
++}
++
++int __init of_ath9k_eeprom_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node, *mtd_np;
++	int mac_offset;
++	u32 mac_inc = 0, pci_slot = 0;
++	int i;
++	struct mtd_info *the_mtd;
++	size_t flash_readlen;
++	const __be32 *list;
++	const char *part;
++	phandle phandle;
++
++	list = of_get_property(np, "ath,eep-flash", &i);
++	if (!list || (i !=  (2 * sizeof(*list)))) {
++		dev_err(&pdev->dev, "failed to find ath,eep-flash\n");
++		return -ENODEV;
++	}
++
++	phandle = be32_to_cpup(list++);
++	if (!phandle) {
++		dev_err(&pdev->dev, "failed to find phandle\n");
++		return -ENODEV;
++	}
++
++	mtd_np = of_find_node_by_phandle(phandle);
++	if (!mtd_np) {
++		dev_err(&pdev->dev, "failed to find mtd node\n");
++		return -ENODEV;
++	}
++
++	part = of_get_property(mtd_np, "label", NULL);
++	if (!part)
++		part = mtd_np->name;
++
++	the_mtd = get_mtd_device_nm(part);
++	if (the_mtd == ERR_PTR(-ENODEV)) {
++		dev_err(&pdev->dev, "failed to find mtd device\n");
++		return -ENODEV;
++	}
++
++	i = mtd_read(the_mtd, be32_to_cpup(list),
++			ATH9K_PLAT_EEP_MAX_WORDS << 1, &flash_readlen,
++			(void *) ath9k_pdata.eeprom_data);
++	put_mtd_device(the_mtd);
++	if ((sizeof(ath9k_pdata.eeprom_data) != flash_readlen) || i) {
++		dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
++		return -ENODEV;
++	}
++
++	if (of_find_property(np, "ath,eep-swap", NULL))
++		for (i = 0; i < ATH9K_PLAT_EEP_MAX_WORDS; i++)
++			ath9k_pdata.eeprom_data[i] = swab16(ath9k_pdata.eeprom_data[i]);
++
++	if (of_find_property(np, "ath,eep-endian", NULL)) {
++		ath9k_pdata.endian_check = true;
++
++		dev_info(&pdev->dev, "endian check enabled.\n");
++	}
++
++	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
++		memcpy_fromio(athxk_eeprom_mac, (void*) ath9k_pdata.eeprom_data + mac_offset, 6);
++	} else {
++		random_ether_addr(athxk_eeprom_mac);
++		if (of_get_mac_address_mtd(np, athxk_eeprom_mac))
++			dev_warn(&pdev->dev, "using random mac\n");
++	}
++
++	if (!of_property_read_u32(np, "ath,mac-increment", &mac_inc))
++		athxk_eeprom_mac[5] += mac_inc;
++
++	ath9k_pdata.macaddr = athxk_eeprom_mac;
++	ltq_pci_plat_dev_init = ath9k_pci_plat_dev_init;
++
++	if (!of_property_read_u32(np, "ath,pci-slot", &pci_slot)) {
++		ltq_pci_ath_fixup(pci_slot, ath9k_pdata.eeprom_data);
++		dev_info(&pdev->dev, "pci slot: %u\n", pci_slot);
++	}
++
++	dev_info(&pdev->dev, "loaded ath9k eeprom\n");
++
++	return 0;
++}
++
++static struct of_device_id ath9k_eeprom_ids[] = {
++	{ .compatible = "ath9k,eeprom" },
++	{ }
++};
++
++static struct platform_driver ath9k_eeprom_driver = {
++	.driver		= {
++		.name		= "ath9k,eeprom",
++		.owner	= THIS_MODULE,
++		.of_match_table	= of_match_ptr(ath9k_eeprom_ids),
++	},
++};
++
++static int __init of_ath9k_eeprom_init(void)
++{
++	return platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
++}
++late_initcall(of_ath9k_eeprom_init);
++
++
++static int ath5k_pci_plat_dev_init(struct pci_dev *dev)
++{
++	dev->dev.platform_data = &ath5k_pdata;
++	return 0;
++}
++
++int __init of_ath5k_eeprom_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node, *mtd_np;
++	int mac_offset;
++	u32 mac_inc = 0;
++	int i;
++	struct mtd_info *the_mtd;
++	size_t flash_readlen;
++	const __be32 *list;
++	const char *part;
++	phandle phandle;
++
++	list = of_get_property(np, "ath,eep-flash", &i);
++	if (!list || (i !=  (2 * sizeof(*list)))) {
++		dev_err(&pdev->dev, "failed to find ath,eep-flash\n");
++		return -ENODEV;
++	}
++
++	phandle = be32_to_cpup(list++);
++	if (!phandle) {
++		dev_err(&pdev->dev, "failed to find phandle\n");
++		return -ENODEV;
++	}
++
++	mtd_np = of_find_node_by_phandle(phandle);
++	if (!mtd_np) {
++		dev_err(&pdev->dev, "failed to find mtd node\n");
++		return -ENODEV;
++	}
++
++	part = of_get_property(mtd_np, "label", NULL);
++	if (!part)
++		part = mtd_np->name;
++
++	the_mtd = get_mtd_device_nm(part);
++	if (the_mtd == ERR_PTR(-ENODEV)) {
++		dev_err(&pdev->dev, "failed to find mtd device\n");
++		return -ENODEV;
++	}
++
++	i = mtd_read(the_mtd, be32_to_cpup(list),
++			ATH5K_PLAT_EEP_MAX_WORDS << 1, &flash_readlen,
++			(void *) ath5k_pdata.eeprom_data);
++	put_mtd_device(the_mtd);
++	if ((sizeof(ath5k_pdata.eeprom_data) != flash_readlen) || i) {
++		dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
++		return -ENODEV;
++	}
++
++	if (of_find_property(np, "ath,eep-swap", NULL))
++		for (i = 0; i < ATH5K_PLAT_EEP_MAX_WORDS; i++)
++			ath5k_pdata.eeprom_data[i] = swab16(ath9k_pdata.eeprom_data[i]);
++
++	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
++		memcpy_fromio(athxk_eeprom_mac, (void*) ath5k_pdata.eeprom_data + mac_offset, 6);
++	} else {
++		random_ether_addr(athxk_eeprom_mac);
++		if (of_get_mac_address_mtd(np, athxk_eeprom_mac))
++			dev_warn(&pdev->dev, "using random mac\n");
++	}
++
++	if (!of_property_read_u32(np, "ath,mac-increment", &mac_inc))
++		athxk_eeprom_mac[5] += mac_inc;
++
++	ath5k_pdata.macaddr = athxk_eeprom_mac;
++	ltq_pci_plat_dev_init = ath5k_pci_plat_dev_init;
++
++	dev_info(&pdev->dev, "loaded ath5k eeprom\n");
++
++	return 0;
++}
++
++static struct of_device_id ath5k_eeprom_ids[] = {
++	{ .compatible = "ath5k,eeprom" },
++	{ }
++};
++
++static struct platform_driver ath5k_eeprom_driver = {
++	.driver		= {
++		.name		= "ath5k,eeprom",
++		.owner	= THIS_MODULE,
++		.of_match_table	= of_match_ptr(ath5k_eeprom_ids),
++	},
++};
++
++static int __init of_ath5k_eeprom_init(void)
++{
++	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
++}
++device_initcall(of_ath5k_eeprom_init);
+diff --git a/arch/mips/lantiq/xway/pci-ath-fixup.c b/arch/mips/lantiq/xway/pci-ath-fixup.c
+new file mode 100644
+index 0000000..c87ffb2
+--- /dev/null
++++ b/arch/mips/lantiq/xway/pci-ath-fixup.c
+@@ -0,0 +1,109 @@
++/*
++ *  Atheros AP94 reference board PCI initialization
++ *
++ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#include <linux/pci.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <lantiq_soc.h>
++
++#define LTQ_PCI_MEM_BASE		0x18000000
++
++struct ath_fixup {
++	u16		*cal_data;
++	unsigned	slot;
++};
++
++static int ath_num_fixups;
++static struct ath_fixup ath_fixups[2];
++
++static void ath_pci_fixup(struct pci_dev *dev)
++{
++	void __iomem *mem;
++	u16 *cal_data = NULL;
++	u16 cmd;
++	u32 bar0;
++	u32 val;
++	unsigned i;
++
++	for (i = 0; i < ath_num_fixups; i++) {
++		if (ath_fixups[i].cal_data == NULL)
++			continue;
++
++		if (ath_fixups[i].slot != PCI_SLOT(dev->devfn))
++			continue;
++
++		cal_data = ath_fixups[i].cal_data;
++		break;
++	}
++
++	if (cal_data == NULL)
++		return;
++
++	if (*cal_data != 0xa55a) {
++		pr_err("pci %s: invalid calibration data\n", pci_name(dev));
++		return;
++	}
++
++	pr_info("pci %s: fixup device configuration\n", pci_name(dev));
++
++	mem = ioremap(LTQ_PCI_MEM_BASE, 0x10000);
++	if (!mem) {
++		pr_err("pci %s: ioremap error\n", pci_name(dev));
++		return;
++	}
++
++	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
++	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, LTQ_PCI_MEM_BASE);
++	pci_read_config_word(dev, PCI_COMMAND, &cmd);
++	cmd |= PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
++	pci_write_config_word(dev, PCI_COMMAND, cmd);
++
++	/* set pointer to first reg address */
++	cal_data += 3;
++	while (*cal_data != 0xffff) {
++		u32 reg;
++		reg = *cal_data++;
++		val = *cal_data++;
++		val |= (*cal_data++) << 16;
++
++		ltq_w32(swab32(val), mem + reg);
++		udelay(100);
++	}
++
++	pci_read_config_dword(dev, PCI_VENDOR_ID, &val);
++	dev->vendor = val & 0xffff;
++	dev->device = (val >> 16) & 0xffff;
++
++	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
++	dev->revision = val & 0xff;
++	dev->class = val >> 8; /* upper 3 bytes */
++
++	pr_info("pci %s: fixup info: [%04x:%04x] revision %02x class %#08x\n", 
++		pci_name(dev), dev->vendor, dev->device, dev->revision, dev->class);
++
++	pci_read_config_word(dev, PCI_COMMAND, &cmd);
++	cmd &= ~(PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY);
++	pci_write_config_word(dev, PCI_COMMAND, cmd);
++
++	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, bar0);
++
++	iounmap(mem);
++}
++DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ath_pci_fixup);
++
++void __init ltq_pci_ath_fixup(unsigned slot, u16 *cal_data)
++{
++	if (ath_num_fixups >= ARRAY_SIZE(ath_fixups))
++		return;
++
++	ath_fixups[ath_num_fixups].slot = slot;
++	ath_fixups[ath_num_fixups].cal_data = cal_data;
++	ath_num_fixups++;
++}
+diff --git a/arch/mips/lantiq/xway/rt_eep.c b/arch/mips/lantiq/xway/rt_eep.c
+new file mode 100644
+index 0000000..00f2d4c
+--- /dev/null
++++ b/arch/mips/lantiq/xway/rt_eep.c
+@@ -0,0 +1,60 @@
++/*
++ *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/pci.h>
++#include <linux/platform_device.h>
++#include <linux/rt2x00_platform.h>
++
++extern int (*ltq_pci_plat_dev_init)(struct pci_dev *dev);
++static struct rt2x00_platform_data rt2x00_pdata;
++
++static int rt2x00_pci_plat_dev_init(struct pci_dev *dev)
++{
++	dev->dev.platform_data = &rt2x00_pdata;
++	return 0;
++}
++
++int __init of_ralink_eeprom_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	const char *eeprom;
++
++	if (of_property_read_string(np, "ralink,eeprom", &eeprom)) {
++		dev_err(&pdev->dev, "failed to load eeprom filename\n");
++		return 0;
++	}
++
++	rt2x00_pdata.eeprom_file_name = kstrdup(eeprom, GFP_KERNEL);
++//	rt2x00_pdata.mac_address = mac;
++	ltq_pci_plat_dev_init = rt2x00_pci_plat_dev_init;
++
++	dev_info(&pdev->dev, "using %s as eeprom\n", eeprom);
++
++	return 0;
++}
++
++static struct of_device_id ralink_eeprom_ids[] = {
++	{ .compatible = "ralink,eeprom" },
++	{ }
++};
++
++static struct platform_driver ralink_eeprom_driver = {
++	.driver		= {
++		.name		= "ralink,eeprom",
++		.owner	= THIS_MODULE,
++		.of_match_table	= of_match_ptr(ralink_eeprom_ids),
++	},
++};
++
++static int __init of_ralink_eeprom_init(void)
++{
++	return platform_driver_probe(&ralink_eeprom_driver, of_ralink_eeprom_probe);
++}
++device_initcall(of_ralink_eeprom_init);
+-- 
+1.7.10.4
+

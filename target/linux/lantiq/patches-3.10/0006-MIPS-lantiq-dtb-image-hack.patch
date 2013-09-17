@@ -1,0 +1,49 @@
+From 7d62b24b4d94dabadeed552d84ac2665d53a802f Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 13 Mar 2013 09:36:16 +0100
+Subject: [PATCH 06/34] MIPS: lantiq: dtb image hack
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/lantiq/Makefile |    2 --
+ arch/mips/lantiq/prom.c   |    4 +++-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/mips/lantiq/Makefile b/arch/mips/lantiq/Makefile
+index d6bdc57..690257a 100644
+--- a/arch/mips/lantiq/Makefile
++++ b/arch/mips/lantiq/Makefile
+@@ -6,8 +6,6 @@
+ 
+ obj-y := irq.o clk.o prom.o
+ 
+-obj-y += dts/
+-
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+ obj-$(CONFIG_SOC_TYPE_XWAY) += xway/
+diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
+index 9f9e875..72b183a 100644
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -57,6 +57,8 @@ static void __init prom_init_cmdline(void)
+ 	}
+ }
+ 
++extern struct boot_param_header __image_dtb;
++
+ void __init plat_mem_setup(void)
+ {
+ 	ioport_resource.start = IOPORT_RESOURCE_START;
+@@ -70,7 +72,7 @@ void __init plat_mem_setup(void)
+ 	 * Load the builtin devicetree. This causes the chosen node to be
+ 	 * parsed resulting in our memory appearing
+ 	 */
+-	__dt_setup_arch(&__dtb_start);
++	__dt_setup_arch(&__image_dtb);
+ }
+ 
+ void __init device_tree_init(void)
+-- 
+1.7.10.4
+

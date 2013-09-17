@@ -11,7 +11,7 @@ BOARDNAME:=Lantiq GPON/XWAY/SVIP
 FEATURES:=squashfs
 SUBTARGETS=xway xrx200 ase falcon
 
-LINUX_VERSION:=3.8.13
+LINUX_VERSION:=3.10.12
 
 CFLAGS=-Os -pipe -mips32r2 -mno-branch-likely
 
