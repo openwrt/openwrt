@@ -106,8 +106,6 @@
 
 			interrupt-parent = <&intc>;
 			interrupts = <6>;
-
-			status = "disabled";
 		};
 
 		gpio1: gpio@638 {
@@ -151,6 +149,9 @@
 			resets = <&rstctrl 18>;
 			reset-names = "spi";
 	
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>;
+
 			status = "disabled";
 		};
 
@@ -165,6 +166,32 @@
 			interrupts = <12>;
 
 			reg-shift = <2>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&uartlite_pins>;
+		};
+	};
+
+	pinctrl {
+		compatible = "ralink,rt2880-pinmux";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&state_default>;
+
+		state_default: pinctrl0 {
+		};
+
+		spi_pins: spi {
+			spi {
+				ralink,group = "spi";
+				ralink,function = "spi";
+			};
+		};
+		uartlite_pins: uartlite {
+			uart {
+				ralink,group = "uartlite";
+				ralink,function = "uartlite";
+			};
 		};
 	};
 
@@ -179,8 +206,6 @@
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
-
-		status = "disabled";
 	};
 
 	esw@10110000 {
@@ -189,8 +214,6 @@
 
 		interrupt-parent = <&intc>;
 		interrupts = <17>;
-
-		status = "disabled";
 	};
 
 	wmac@10180000 {
@@ -201,8 +224,6 @@
 		interrupts = <6>;
 
 		ralink,eeprom = "soc_wmac.eeprom";
-
-		status = "disabled";
 	};
 
 	ehci@101c0000 {

@@ -7,17 +7,6 @@
 	model = "D-Link DIR-620 D1";
 
 	palmbus@10000000 {
-		sysc@0 {
-			ralink,pinmux = "i2c", "spi", "uartlite", "mdio", "sdram", "rgmii";
-			ralink,gpiomux = "jtag";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-
 		spi@b00 {
 			status = "okay";
 			m25p80@0 {
@@ -54,12 +43,24 @@
 		};
 	};
 
-	ethernet@10100000 {
-		status = "okay";
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "jtag", "uartf";
+				ralink,function = "gpio";
+			};
+			rgmii {
+				ralink,group = "rgmii";
+				ralink,function = "rgmii";
+			};
+			mdio {
+				ralink,group = "mdio";
+				ralink,function = "mdio";
+			};
+		};
 	};
 
 	esw@10110000 {
-		status = "okay";
 		ralink,portmap = <0x2f>;
 	};
 
@@ -85,10 +86,6 @@
 			gpios = <&gpio0 7 1>;
 			linux,code = <0x198>;
 		};
-	};
-
-	wmac@10180000 {
-		status = "okay";
 	};
 
 	ehci@101c0000 {

@@ -7,17 +7,6 @@
 	model = "Netcore NW718";
 
 	palmbus@10000000 {
-		sysc@0 {
-			ralink,pinmux = "spi", "uartlite", "jtag", "mdio", "sdram", "rgmii";
-			ralink,gpiomux = "i2c";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-
 		spi@b00 {
 			status = "okay";
 			m25p80@0 {
@@ -54,12 +43,16 @@
 		};
 	};
 
-	ethernet@10100000 {
-		status = "okay";
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf";
+				ralink,function = "gpio";
+			};
+		};
 	};
 
 	esw@10110000 {
-		status = "okay";
 		ralink,portmap = <0x2f>;
 	};
 
@@ -94,10 +87,6 @@
 			gpios = <&gpio0 0 1>;
 			linux,code = <0x211>;
 		};
-	};
-
-	wmac@10180000 {
-		status = "okay";
 	};
 
 	otg@101c0000 {

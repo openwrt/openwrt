@@ -6,18 +6,13 @@
 	compatible = "WL-351", "ralink,rt3052-soc";
 	model = "Sitecom WL-351 v1 002";
 
-	palmbus@10000000 {
-		sysc@0 {
-			ralink,pinmux = "uartlite", "jtag", "sdram", "rgmii";
-			ralink,gpiomux = "i2c", "spi", "mdio";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+				ralink,function = "gpio";
+			};
 		};
-
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-
 	};
 
 	cfi@1f000000 {
@@ -53,12 +48,7 @@
 		};
 	};
 
-	ethernet@10100000 {
-		status = "okay";
-	};
-
 	esw@10110000 {
-		status = "okay";
 		ralink,portmap = <0x3f>;
 		ralink,fct2 = <0x0002500c>;
 		/*
@@ -68,10 +58,6 @@
 		 * port6: enabled, gige, full-duplex, rx/tx-flow-control
 		*/
 		ralink,fpa2 = <0x1f003fff>;
-	};
-
-	wmac@10180000 {
-		status = "okay";
 	};
 
 	otg@101c0000 {
