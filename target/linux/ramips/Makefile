@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=ramips
 BOARDNAME:=Ralink RT288x/RT3xxx
-SUBTARGETS:=rt288x rt305x rt3883 mt7620a
+SUBTARGETS:=rt305x rt3883 mt7620a rt288x
 CFLAGS:=-Os -pipe -mno-branch-likely
 FEATURES:=squashfs gpio
 
