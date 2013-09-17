@@ -54,6 +54,13 @@ define Package/libjson-script
   TITLE:=Minimalistic JSON based scripting engine
 endef
 
+define Package/libubox-lua
+  SECTION:=libs
+  CATEGORY:=Libraries
+  DEPENDS:=+libubox +liblua
+  TITLE:=Lua binding for the OpenWrt Basic utility library
+endef
+
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 CMAKE_OPTIONS = \
 	-DLUAPATH=/usr/lib/lua
@@ -79,7 +86,13 @@ define Package/libjson-script/install
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libjson_script.so $(1)/lib/
 endef
 
+define Package/libubox-lua/install
+	$(INSTALL_DIR) $(1)/usr/lib/lua
+	$(CP) $(PKG_BUILD_DIR)/lua/uloop.so $(1)/usr/lib/lua/
+endef
+
 $(eval $(call BuildPackage,libubox))
 $(eval $(call BuildPackage,libblobmsg-json))
 $(eval $(call BuildPackage,jshn))
 $(eval $(call BuildPackage,libjson-script))
+$(eval $(call BuildPackage,libubox-lua))
