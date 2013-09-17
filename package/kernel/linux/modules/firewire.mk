@@ -13,7 +13,6 @@ define KernelPackage/firewire
   DEPENDS:=@PCI_SUPPORT +kmod-lib-crc-itu-t
   KCONFIG:=CONFIG_FIREWIRE
   FILES:=$(LINUX_DIR)/drivers/firewire/firewire-core.ko
-  AUTOLOAD:=$(call AutoLoad,25,firewire-core)
 endef
 
 define KernelPackage/firewire/description
@@ -32,7 +31,7 @@ define KernelPackage/firewire-ohci
 	CONFIG_FIREWIRE_OHCI_DEBUG=n \
 	CONFIG_FIREWIRE_OHCI_REMOTE_DMA=n
   FILES:=$(LINUX_DIR)/drivers/firewire/firewire-ohci.ko
-  AUTOLOAD:=$(call AutoLoad,50,firewire-ohci)
+  AUTOLOAD:=$(call AutoProbe,firewire-ohci)
 endef
 
 
@@ -49,7 +48,7 @@ define KernelPackage/firewire-sbp2
   DEPENDS:=kmod-firewire +kmod-scsi-core
   KCONFIG:=CONFIG_FIREWIRE_SBP2
   FILES:=$(LINUX_DIR)/drivers/firewire/firewire-sbp2.ko
-  AUTOLOAD:=$(call AutoLoad,50,firewire-sbp2)
+  AUTOLOAD:=$(call AutoProbe,firewire-sbp2)
 endef
 
 define KernelPackage/firewire-sbp2/description
@@ -65,7 +64,7 @@ define KernelPackage/firewire-net
   DEPENDS:=kmod-firewire
   KCONFIG:=CONFIG_FIREWIRE_NET
   FILES:=$(LINUX_DIR)/drivers/firewire/firewire-net.ko
-  AUTOLOAD:=$(call AutoLoad,50,firewire-net)
+  AUTOLOAD:=$(call AutoProbe,firewire-net)
 endef
 
 define KernelPackage/firewire-net/description

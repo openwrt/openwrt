@@ -15,7 +15,6 @@ define KernelPackage/hwmon-core
 	CONFIG_HWMON_DEBUG_CHIP=n
   FILES:= \
 	$(LINUX_DIR)/drivers/hwmon/hwmon.ko
-  AUTOLOAD:=$(call AutoLoad,17,hwmon,1)
 endef
 
 define KernelPackage/hwmon-core/description
@@ -49,7 +48,7 @@ define KernelPackage/hwmon-adt7475
   TITLE:=ADT7473/7475/7476/7490 monitoring support
   KCONFIG:=CONFIG_SENSORS_ADT7475
   FILES:=$(LINUX_DIR)/drivers/hwmon/adt7475.ko
-  AUTOLOAD:=$(call AutoLoad,60,adt7475)
+  AUTOLOAD:=$(call AutoProbe,adt7475)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
 endef
 
@@ -64,7 +63,7 @@ define KernelPackage/hwmon-ina2xx
   TITLE:=INA2XX monitoring support
   KCONFIG:=CONFIG_SENSORS_INA2XX
   FILES:=$(LINUX_DIR)/drivers/hwmon/ina2xx.ko
-  AUTOLOAD:=$(call AutoLoad,60,ina2xx)
+  AUTOLOAD:=$(call AutoProbe,ina2xx)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
@@ -79,7 +78,7 @@ define KernelPackage/hwmon-lm63
   TITLE:=LM63/64 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM63
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm63.ko
-  AUTOLOAD:=$(call AutoLoad,60,lm63)
+  AUTOLOAD:=$(call AutoProbe,lm63)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
@@ -94,7 +93,7 @@ define KernelPackage/hwmon-lm75
   TITLE:=LM75 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM75
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm75.ko
-  AUTOLOAD:=$(call AutoLoad,60,lm75)
+  AUTOLOAD:=$(call AutoProbe,lm75)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
@@ -109,7 +108,7 @@ define KernelPackage/hwmon-lm77
   TITLE:=LM77 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM77
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm77.ko
-  AUTOLOAD:=$(call AutoLoad,60,lm77)
+  AUTOLOAD:=$(call AutoProbe,lm77)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
@@ -124,7 +123,7 @@ define KernelPackage/hwmon-lm85
   TITLE:=LM85 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM85
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm85.ko
-  AUTOLOAD:=$(call AutoLoad,60,lm85)
+  AUTOLOAD:=$(call AutoProbe,lm85)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
 endef
 
@@ -139,7 +138,7 @@ define KernelPackage/hwmon-lm90
   TITLE:=LM90 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM90
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm90.ko
-  AUTOLOAD:=$(call AutoLoad,60,lm90)
+  AUTOLOAD:=$(call AutoProbe,lm90)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
@@ -153,7 +152,7 @@ define KernelPackage/hwmon-lm92
   TITLE:=LM92 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM92
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm92.ko
-  AUTOLOAD:=$(call AutoLoad,60,lm92)
+  AUTOLOAD:=$(call AutoProbe,lm92)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
@@ -167,7 +166,7 @@ define KernelPackage/hwmon-lm95241
   TITLE:=LM95241 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM95241
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm95241.ko
-  AUTOLOAD:=$(call AutoLoad,60,lm95241)
+  AUTOLOAD:=$(call AutoProbe,lm95241)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
@@ -181,7 +180,7 @@ define KernelPackage/hwmon-sht21
   TITLE:=Sensiron SHT21 and compat. monitoring support
   KCONFIG:=CONFIG_SENSORS_SHT21
   FILES:=$(LINUX_DIR)/drivers/hwmon/sht21.ko
-  AUTOLOAD:=$(call AutoLoad,60,sht21)
+  AUTOLOAD:=$(call AutoProbe,sht21)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
@@ -195,7 +194,7 @@ define KernelPackage/hwmon-pc87360
   TITLE:=PC87360 monitoring support
   KCONFIG:=CONFIG_SENSORS_PC87360
   FILES:=$(LINUX_DIR)/drivers/hwmon/pc87360.ko
-  AUTOLOAD:=$(call AutoLoad,50,pc87360)
+  AUTOLOAD:=$(call AutoProbe,pc87360)
   $(call AddDepends/hwmon,@TARGET_x86 +kmod-hwmon-vid)
 endef
 

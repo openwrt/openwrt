@@ -10,7 +10,6 @@ define KernelPackage/nls-base
   TITLE:=Native Language Support
   KCONFIG:=CONFIG_NLS
   FILES:=$(LINUX_DIR)/fs/nls/nls_base.ko
-  AUTOLOAD:=$(call AutoLoad,20,nls_base,1)
 endef
 
 define KernelPackage/nls-base/description

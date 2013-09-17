@@ -12,7 +12,6 @@ define KernelPackage/lib-crc-ccitt
   TITLE:=CRC-CCITT support
   KCONFIG:=CONFIG_CRC_CCITT
   FILES:=$(LINUX_DIR)/lib/crc-ccitt.ko
-  AUTOLOAD:=$(call AutoLoad,20,crc-ccitt)
 endef
 
 define KernelPackage/lib-crc-ccitt/description
@@ -27,7 +26,6 @@ define KernelPackage/lib-crc-itu-t
   TITLE:=CRC ITU-T V.41 support
   KCONFIG:=CONFIG_CRC_ITU_T
   FILES:=$(LINUX_DIR)/lib/crc-itu-t.ko
-  AUTOLOAD:=$(call AutoLoad,20,crc-itu-t)
 endef
 
 define KernelPackage/lib-crc-itu-t/description
@@ -42,7 +40,6 @@ define KernelPackage/lib-crc7
   TITLE:=CRC7 support
   KCONFIG:=CONFIG_CRC7
   FILES:=$(LINUX_DIR)/lib/crc7.ko
-  AUTOLOAD:=$(call AutoLoad,20,crc7)
 endef
 
 define KernelPackage/lib-crc7/description
@@ -57,7 +54,6 @@ define KernelPackage/lib-crc8
   TITLE:=CRC8 support
   KCONFIG:=CONFIG_CRC8
   FILES:=$(LINUX_DIR)/lib/crc8.ko
-  AUTOLOAD:=$(call AutoLoad,20,crc8)
 endef
 
 define KernelPackage/lib-crc8/description
@@ -72,7 +68,6 @@ define KernelPackage/lib-crc16
   TITLE:=CRC16 support
   KCONFIG:=CONFIG_CRC16
   FILES:=$(LINUX_DIR)/lib/crc16.ko
-  AUTOLOAD:=$(call AutoLoad,20,crc16,1)
 endef
 
 define KernelPackage/lib-crc16/description
@@ -88,7 +83,6 @@ define KernelPackage/lib-crc32c
   KCONFIG:=CONFIG_LIBCRC32C
   DEPENDS:=+kmod-crypto-crc32c
   FILES:=$(LINUX_DIR)/lib/libcrc32c.ko
-  AUTOLOAD:=$(call AutoLoad,20,libcrc32c,1)
 endef
 
 define KernelPackage/lib-crc32c/description
@@ -107,7 +101,6 @@ define KernelPackage/lib-lzo
   FILES:= \
 	$(LINUX_DIR)/lib/lzo/lzo_compress.ko \
 	$(LINUX_DIR)/lib/lzo/lzo_decompress.ko
-  AUTOLOAD:=$(call AutoLoad,20, lzo_compress lzo_decompress,1)
 endef
 
 define KernelPackage/lib-lzo/description
@@ -123,7 +116,6 @@ define KernelPackage/lib-raid6
   HIDDEN:=1
   KCONFIG:=CONFIG_RAID6_PQ
   FILES:=$(LINUX_DIR)/lib/raid6/raid6_pq.ko
-  AUTOLOAD:=$(call AutoLoad,20,raid6_pq,1)
 endef
 
 define KernelPackage/lib-raid6/description
@@ -139,7 +131,6 @@ define KernelPackage/lib-xor
   HIDDEN:=1
   KCONFIG:=CONFIG_XOR_BLOCKS
   FILES:=$(LINUX_DIR)/crypto/xor.ko
-  AUTOLOAD:=$(call AutoLoad,20,xor,1)
 endef
 
 define KernelPackage/lib-xor/description
@@ -161,7 +152,6 @@ SUBMENU:=$(LIB_MENU)
     $(LINUX_DIR)/lib/ts_kmp.ko \
     $(LINUX_DIR)/lib/ts_bm.ko \
     $(LINUX_DIR)/lib/ts_fsm.ko
-  AUTOLOAD:=$(call AutoLoad,20,ts_kmp ts_bm ts_fsm)
 endef
 
 $(eval $(call KernelPackage,lib-textsearch))
@@ -176,7 +166,6 @@ define KernelPackage/lib-zlib
   FILES:= \
     $(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko \
     $(LINUX_DIR)/lib/zlib_inflate/zlib_inflate.ko
-  AUTOLOAD:=$(call AutoLoad,08,zlib_deflate zlib_inflate,1)
 endef
 
 $(eval $(call KernelPackage,lib-zlib))
@@ -187,7 +176,6 @@ define KernelPackage/lib-cordic
   TITLE:=Cordic function support
   KCONFIG:=CONFIG_CORDIC
   FILES:=$(LINUX_DIR)/lib/cordic.ko
-  AUTOLOAD:=$(call AutoLoad,20,cordic)
 endef
 
 define KernelPackage/lib-cordic/description

@@ -19,7 +19,7 @@ define KernelPackage/mmc-over-gpio
   KCONFIG:=CONFIG_GPIOMMC
   TITLE:=MMC/SD card over GPIO support
   FILES:=$(LINUX_DIR)/drivers/mmc/host/gpiommc.ko
-  AUTOLOAD:=$(call AutoLoad,93,gpiommc)
+  AUTOLOAD:=$(call AutoProbe,gpiommc)
   MENU:=1
 endef
 

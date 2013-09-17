@@ -28,7 +28,6 @@ define KernelPackage/ata-core
   DEPENDS:=@PCI_SUPPORT +kmod-scsi-core
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.ko
-  AUTOLOAD:=$(call AutoLoad,21,libata,1)
 endef
 
 $(eval $(call KernelPackage,ata-core))
@@ -395,9 +394,6 @@ define KernelPackage/ide-core
   FILES:= \
 	$(LINUX_DIR)/drivers/ide/ide-core.ko \
 	$(LINUX_DIR)/drivers/ide/ide-gd_mod.ko
-  AUTOLOAD:= \
-	$(call AutoLoad,20,ide-core,1) \
-	$(call AutoLoad,40,ide-gd_mod,1)
 endef
 
 define KernelPackage/ide-core/description
@@ -571,7 +567,7 @@ define KernelPackage/scsi-core
   FILES:= \
 	$(if $(findstring y,$(CONFIG_SCSI)),,$(LINUX_DIR)/drivers/scsi/scsi_mod.ko) \
 	$(LINUX_DIR)/drivers/scsi/sd_mod.ko
-  AUTOLOAD:=$(call AutoLoad,20,scsi_mod,1) $(call AutoLoad,40,sd_mod,1)
+  AUTOLOAD:=$(call AutoLoad,40,sd_mod,1)
 endef
 
 $(eval $(call KernelPackage,scsi-core))
@@ -601,7 +597,7 @@ define KernelPackage/scsi-cdrom
   FILES:= \
     $(LINUX_DIR)/drivers/cdrom/cdrom.ko \
     $(LINUX_DIR)/drivers/scsi/sr_mod.ko
-  AUTOLOAD:=$(call AutoLoad,30,cdrom) $(call AutoLoad,45,sr_mod)
+  AUTOLOAD:=$(call AutoLoad,45,sr_mod)
 endef
 
 $(eval $(call KernelPackage,scsi-cdrom))
