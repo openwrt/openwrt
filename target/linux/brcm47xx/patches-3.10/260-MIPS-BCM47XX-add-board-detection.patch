@@ -8,7 +8,7 @@
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/board.c
-@@ -0,0 +1,288 @@
+@@ -0,0 +1,289 @@
 +#include <linux/export.h>
 +#include <linux/string.h>
 +#include <bcm47xx_board.h>
@@ -120,6 +120,7 @@
 +static const struct bcm47xx_board_type_list2 bcm47xx_board_list_boot_hw[] = {
 +	{{BCM47XX_BOARD_CISCO_M10V1, "Cisco M10"}, "M10", "1.0"}, /* like WRT160N v3.0 */
 +	{{BCM47XX_BOARD_CISCO_M20V1, "Cisco M20"}, "M20", "1.0"}, /* like WRT310N v2.0 */
++	{{BCM47XX_BOARD_LINKSYS_E900V1, "Linksys E900 V1"}, "E900", "1.0"},
 +	{{BCM47XX_BOARD_LINKSYS_E1000V1, "Linksys E1000 V1"}, "E100", "1.0"},  /* like WRT160N v3.0 */
 +	{{BCM47XX_BOARD_LINKSYS_E1000V2, "Linksys E1000 V2"}, "E1000", "2.0"},
 +	{{BCM47XX_BOARD_LINKSYS_E1000V21, "Linksys E1000 V2.1"}, "E1000", "2.1"},
@@ -299,7 +300,7 @@
 +EXPORT_SYMBOL(bcm47xx_board_get_name);
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,108 @@
 +#ifndef __BCM47XX_BOARD_H
 +#define __BCM47XX_BOARD_H
 +
@@ -351,6 +352,7 @@
 +
 +	BCM47XX_BOARD_HUAWEI_E970,
 +
++	BCM47XX_BOARD_LINKSYS_E900V1,
 +	BCM47XX_BOARD_LINKSYS_E1000V1,
 +	BCM47XX_BOARD_LINKSYS_E1000V2,
 +	BCM47XX_BOARD_LINKSYS_E1000V21,
