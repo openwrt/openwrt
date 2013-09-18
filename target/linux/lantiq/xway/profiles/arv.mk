@@ -22,7 +22,7 @@ define Profile/ARV4518PWR01
   NAME:=ARV4518PWR01
   PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
   	kmod-ath5k wpad-mini \
 	swconfig
@@ -34,7 +34,7 @@ define Profile/ARV4518PWR01A
   NAME:=ARV4518PWR01A
   PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
         kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-        kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+        kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
         ltq-adsl-app ppp-mod-pppoa \
         kmod-ath5k wpad-mini \
         swconfig
@@ -58,7 +58,7 @@ define Profile/ARV4519PW
   NAME:=Vodafone, Pirelli - ARV4519PW
   PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
 	swconfig
 endef
@@ -69,7 +69,7 @@ define Profile/ARV7518PW
   NAME:=Astoria - ARV7518PW
   PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
   	kmod-ath9k wpad-mini \
 	swconfig
