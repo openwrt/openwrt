@@ -1,0 +1,34 @@
+--- a/arch/mips/bcm47xx/time.c
++++ b/arch/mips/bcm47xx/time.c
+@@ -28,6 +28,7 @@
+ #include <asm/time.h>
+ #include <bcm47xx.h>
+ #include <bcm47xx_nvram.h>
++#include <bcm47xx_board.h>
+ 
+ void __init plat_time_init(void)
+ {
+@@ -35,6 +36,7 @@ void __init plat_time_init(void)
+ 	u16 chip_id = 0;
+ 	char buf[10];
+ 	int len;
++	enum bcm47xx_board board = bcm47xx_board_get();
+ 
+ 	/*
+ 	 * Use deterministic values for initial counter interrupt
+@@ -64,6 +66,15 @@ void __init plat_time_init(void)
+ 			hz = 100000000;
+ 	}
+ 
++	switch (board) {
++	case BCM47XX_BOARD_ASUS_WL520GC:
++	case BCM47XX_BOARD_ASUS_WL520GU:
++		hz = 100000000;
++		break;
++	default:
++		break;
++	}
++
+ 	if (!hz)
+ 		hz = 100000000;
+ 
