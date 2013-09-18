@@ -8,7 +8,7 @@
  obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/board.c
-@@ -0,0 +1,289 @@
+@@ -0,0 +1,296 @@
 +#include <linux/export.h>
 +#include <linux/string.h>
 +#include <bcm47xx_board.h>
@@ -36,8 +36,6 @@
 +	const char *value2;
 +	const char *value3;
 +};
-+
-+static const struct bcm47xx_board_type *bcm47xx_board = NULL;
 +
 +/* model_name */
 +static const struct bcm47xx_board_type_list1 bcm47xx_board_list_model_name[] = {
@@ -118,15 +116,19 @@
 +
 +/* boot_hw_model, boot_hw_ver */
 +static const struct bcm47xx_board_type_list2 bcm47xx_board_list_boot_hw[] = {
-+	{{BCM47XX_BOARD_CISCO_M10V1, "Cisco M10"}, "M10", "1.0"}, /* like WRT160N v3.0 */
-+	{{BCM47XX_BOARD_CISCO_M20V1, "Cisco M20"}, "M20", "1.0"}, /* like WRT310N v2.0 */
++	/* like WRT160N v3.0 */
++	{{BCM47XX_BOARD_CISCO_M10V1, "Cisco M10"}, "M10", "1.0"},
++	/* like WRT310N v2.0 */
++	{{BCM47XX_BOARD_CISCO_M20V1, "Cisco M20"}, "M20", "1.0"},
 +	{{BCM47XX_BOARD_LINKSYS_E900V1, "Linksys E900 V1"}, "E900", "1.0"},
-+	{{BCM47XX_BOARD_LINKSYS_E1000V1, "Linksys E1000 V1"}, "E100", "1.0"},  /* like WRT160N v3.0 */
++	/* like WRT160N v3.0 */
++	{{BCM47XX_BOARD_LINKSYS_E1000V1, "Linksys E1000 V1"}, "E100", "1.0"},
 +	{{BCM47XX_BOARD_LINKSYS_E1000V2, "Linksys E1000 V2"}, "E1000", "2.0"},
 +	{{BCM47XX_BOARD_LINKSYS_E1000V21, "Linksys E1000 V2.1"}, "E1000", "2.1"},
 +	{{BCM47XX_BOARD_LINKSYS_E1200V2, "Linksys E1200 V2"}, "E1200", "2.0"},
 +	{{BCM47XX_BOARD_LINKSYS_E2000V1, "Linksys E2000 V1"}, "Linksys E2000", "1.0"},
-+	{{BCM47XX_BOARD_LINKSYS_E3000V1, "Linksys E3000 V1"}, "E300", "1.0"}, /* like WRT610N v2.0 */
++	/* like WRT610N v2.0 */
++	{{BCM47XX_BOARD_LINKSYS_E3000V1, "Linksys E3000 V1"}, "E300", "1.0"},
 +	{{BCM47XX_BOARD_LINKSYS_E3200V1, "Linksys E3200 V1"}, "E3200", "1.0"},
 +	{{BCM47XX_BOARD_LINKSYS_E4200V1, "Linksys E4200 V1"}, "E4200", "1.0"},
 +	{{BCM47XX_BOARD_LINKSYS_WRT150NV11, "Linksys WRT150N V1.1"}, "WRT150N", "1.1"},
@@ -165,9 +167,9 @@
 +
 +/* boardtype, boardnum, boardrev */
 +static const struct bcm47xx_board_type_list3 bcm47xx_board_list_board[] = {
-+	{{BCM47XX_BOARD_ZTE_H218N, "ZTE H218N"}, "0x053d", "1234", "0x1305"},
 +	{{BCM47XX_BOARD_HUAWEI_E970, "Huawei E970"}, "0x048e", "0x5347", "0x11"},
 +	{{BCM47XX_BOARD_PHICOMM_M1, "Phicomm M1"}, "0x0590", "80", "0x1104"},
++	{{BCM47XX_BOARD_ZTE_H218N, "ZTE H218N"}, "0x053d", "1234", "0x1305"},
 +	{ {0}, 0},
 +};
 +
@@ -175,10 +177,11 @@
 +	{BCM47XX_BOARD_UNKNOWN, "Unknown Board"},
 +};
 +
-+static inline int startswith(char *source, char *cmp)
-+{
-+	return !strncmp(source, cmp, strlen(cmp));
-+}
++static const struct bcm47xx_board_type bcm47xx_board_no[] = {
++	{BCM47XX_BOARD_NO, "No Board"},
++};
++
++static const struct bcm47xx_board_type *bcm47xx_board = bcm47xx_board_no;
 +
 +static const struct bcm47xx_board_type *bcm47xx_board_get_nvram(void)
 +{
@@ -271,18 +274,22 @@
 +
 +static void bcm47xx_board_detect(void)
 +{
-+	char buf[15];
++	int err;
++	char buf[10];
 +
-+	if (bcm47xx_board != NULL)
++	if (bcm47xx_board != bcm47xx_board_no)
 +		return;
++
 +	/* check if the nvram is available */
-+	if (bcm47xx_nvram_getenv("boardtype", buf, sizeof(buf)) == -ENXIO) {
-+		bcm47xx_board = bcm47xx_board_unknown;
++	err = bcm47xx_nvram_getenv("boardtype", buf, sizeof(buf));
++
++	/* init of nvram failed, probably too early now */
++	if (err == -ENXIO) {
 +		return;
 +	}
 +
 +	bcm47xx_board = bcm47xx_board_get_nvram();
-+	pr_info("Found board: \"%s\"\n", bcm47xx_board->name);
++	pr_debug("Found board: \"%s\"\n", bcm47xx_board->name);
 +}
 +
 +enum bcm47xx_board bcm47xx_board_get(void)
@@ -300,7 +307,7 @@
 +EXPORT_SYMBOL(bcm47xx_board_get_name);
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,107 @@
 +#ifndef __BCM47XX_BOARD_H
 +#define __BCM47XX_BOARD_H
 +
@@ -396,16 +403,15 @@
 +
 +	BCM47XX_BOARD_PHICOMM_M1,
 +
-+	/* TODO */
 +	BCM47XX_BOARD_SIMPLETECH_SIMPLESHARE,
 +
 +	BCM47XX_BOARD_ZTE_H218N,
 +
 +	BCM47XX_BOARD_UNKNOWN,
-+	BCM47XX_BOARD_NON,
++	BCM47XX_BOARD_NO,
 +};
 +
-+extern enum bcm47xx_board bcm47xx_board_get(void);
-+extern const char *bcm47xx_board_get_name(void);
++enum bcm47xx_board bcm47xx_board_get(void);
++const char *bcm47xx_board_get_name(void);
 +
 +#endif /* __BCM47XX_BOARD_H */

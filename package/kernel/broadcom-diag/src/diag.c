@@ -1344,7 +1344,7 @@ static struct platform_t __init *platform_detect(void)
 
 	board = bcm47xx_board_get();
 	board_name = bcm47xx_board_get_name();
-	if (board != BCM47XX_BOARD_UNKNOWN && board != BCM47XX_BOARD_NON)
+	if (board != BCM47XX_BOARD_UNKNOWN && board != BCM47XX_BOARD_NO)
 		printk(MODULE_NAME ": kernel found a \"%s\"\n", board_name);
 
 	switch(board) {
@@ -1447,7 +1447,7 @@ static struct platform_t __init *platform_detect(void)
 	case BCM47XX_BOARD_NETGEAR_WNDR3700V3:
 		return &platforms[WNDR3700V3];
 	case BCM47XX_BOARD_UNKNOWN:
-	case BCM47XX_BOARD_NON:
+	case BCM47XX_BOARD_NO:
 		printk(MODULE_NAME ": unknown board found, try legacy detect\n");
 		printk(MODULE_NAME ": please open a ticket at https://dev.openwrt.org and attach the complete nvram\n");
 		return platform_detect_legacy();

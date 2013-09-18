@@ -25,7 +25,7 @@
  const char *get_system_type(void)
  {
 -	return "Broadcom BCM47XX";
-+	static char buf[128];
++	static char buf[50];
 +	u16 chip_id = get_chip_id();
 +
 +	snprintf(buf, sizeof(buf),

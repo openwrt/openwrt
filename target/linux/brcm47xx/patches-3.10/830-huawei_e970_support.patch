@@ -14,8 +14,8 @@
  
  union bcm47xx_bus bcm47xx_bus;
  EXPORT_SYMBOL(bcm47xx_bus);
-@@ -254,6 +256,33 @@ void __init plat_mem_setup(void)
- 	pm_power_off = bcm47xx_machine_halt;
+@@ -255,6 +257,33 @@ void __init plat_mem_setup(void)
+ 	bcm47xx_board_detect();
  }
  
 +static struct gpio_wdt_platform_data gpio_wdt_data;
@@ -48,7 +48,7 @@
  static int __init bcm47xx_register_bus_complete(void)
  {
  	switch (bcm47xx_bus_type) {
-@@ -268,6 +297,8 @@ static int __init bcm47xx_register_bus_c
+@@ -269,6 +298,8 @@ static int __init bcm47xx_register_bus_c
  		break;
  #endif
  	}
