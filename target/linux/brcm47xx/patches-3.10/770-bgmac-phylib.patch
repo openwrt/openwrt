@@ -35,8 +35,8 @@
 -	default:
 -		return -EOPNOTSUPP;
 -	}
-+ 	if (!netif_running(net_dev))
-+ 		return -EINVAL;
++	if (!netif_running(net_dev))
++		return -EINVAL;
 +
 +	if (!bgmac->phydev)
 +		return -EINVAL;
@@ -45,7 +45,7 @@
  }
  
  static const struct net_device_ops bgmac_netdev_ops = {
-@@ -1271,61 +1258,18 @@ static int bgmac_get_settings(struct net
+@@ -1271,61 +1258,16 @@ static int bgmac_get_settings(struct net
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
  
@@ -97,7 +97,6 @@
  }
  
 -#if 0
-+
  static int bgmac_set_settings(struct net_device *net_dev,
  			      struct ethtool_cmd *cmd)
  {
@@ -107,11 +106,10 @@
 +	return phy_ethtool_sset(bgmac->phydev, cmd);
  }
 -#endif
-+
  
  static void bgmac_get_drvinfo(struct net_device *net_dev,
  			      struct ethtool_drvinfo *info)
-@@ -1336,6 +1280,7 @@ static void bgmac_get_drvinfo(struct net
+@@ -1336,6 +1278,7 @@ static void bgmac_get_drvinfo(struct net
  
  static const struct ethtool_ops bgmac_ethtool_ops = {
  	.get_settings		= bgmac_get_settings,
@@ -119,7 +117,7 @@
  	.get_drvinfo		= bgmac_get_drvinfo,
  };
  
-@@ -1354,10 +1299,42 @@ static int bgmac_mii_write(struct mii_bu
+@@ -1354,10 +1297,36 @@ static int bgmac_mii_write(struct mii_bu
  	return bgmac_phy_write(bus->priv, mii_id, regnum, value);
  }
  
@@ -127,7 +125,7 @@
 +{
 +	struct bgmac *bgmac = netdev_priv(dev);
 +	struct phy_device *phydev = bgmac->phydev;
-+	int status_changed = 0;
++	bool status_changed = 0;
 +
 +	BUG_ON(!phydev);
 +
@@ -142,14 +140,8 @@
 +		bgmac->old_duplex = phydev->duplex;
 +	}
 +
-+	if (status_changed) {
-+		pr_info("%s: link %s", dev->name, phydev->link ?
-+			"UP" : "DOWN");
-+		if (phydev->link)
-+			pr_cont(" - %d/%s", phydev->speed,
-+			phydev->duplex == DUPLEX_FULL ? "full" : "half");
-+		pr_cont("\n");
-+	}
++	if (status_changed)
++		phy_print_status(phydev);
 +}
 +
  static int bgmac_mii_register(struct bgmac *bgmac)
@@ -162,7 +154,7 @@
  
  	mii_bus = mdiobus_alloc();
  	if (!mii_bus)
-@@ -1388,7 +1365,29 @@ static int bgmac_mii_register(struct bgm
+@@ -1388,7 +1357,28 @@ static int bgmac_mii_register(struct bgm
  
  	bgmac->mii_bus = mii_bus;
  
@@ -175,7 +167,7 @@
 +			     PHY_INTERFACE_MODE_MII);
 +
 +	if (IS_ERR(phydev)) {
-+		netdev_err(net_dev, "could not attach PHY: %s", phy_id);
++		netdev_err(net_dev, "could not attach PHY: %s\n", phy_id);
 +		bgmac->phyaddr = BGMAC_PHY_NOREGS;
 +		return PTR_ERR(phydev);
 +	}
@@ -185,9 +177,8 @@
 +	bgmac->old_duplex = -1;
 +	bgmac->phyaddr = phydev->addr;
 +
-+	netdev_info(net_dev, "attached PHY driver [%s] "
-+		"(mii_bus:phy_addr=%s)\n",
-+		phydev->drv->name, dev_name(&phydev->dev));
++	netdev_info(net_dev, "attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
++		    phydev->drv->name, dev_name(&phydev->dev));
 +
 +	return 0;
  
