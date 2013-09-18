@@ -10,7 +10,7 @@
  	  They can be found on BCM47xx SoCs and provide gigabit ethernet.
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1219,27 +1219,14 @@ static int bgmac_set_mac_address(struct
+@@ -1229,27 +1229,14 @@ static int bgmac_set_mac_address(struct
  static int bgmac_ioctl(struct net_device *net_dev, struct ifreq *ifr, int cmd)
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
@@ -45,7 +45,7 @@
  }
  
  static const struct net_device_ops bgmac_netdev_ops = {
-@@ -1261,61 +1248,18 @@ static int bgmac_get_settings(struct net
+@@ -1271,61 +1258,18 @@ static int bgmac_get_settings(struct net
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
  
@@ -111,7 +111,7 @@
  
  static void bgmac_get_drvinfo(struct net_device *net_dev,
  			      struct ethtool_drvinfo *info)
-@@ -1326,6 +1270,7 @@ static void bgmac_get_drvinfo(struct net
+@@ -1336,6 +1280,7 @@ static void bgmac_get_drvinfo(struct net
  
  static const struct ethtool_ops bgmac_ethtool_ops = {
  	.get_settings		= bgmac_get_settings,
@@ -119,7 +119,7 @@
  	.get_drvinfo		= bgmac_get_drvinfo,
  };
  
-@@ -1344,10 +1289,42 @@ static int bgmac_mii_write(struct mii_bu
+@@ -1354,10 +1299,42 @@ static int bgmac_mii_write(struct mii_bu
  	return bgmac_phy_write(bus->priv, mii_id, regnum, value);
  }
  
@@ -162,7 +162,7 @@
  
  	mii_bus = mdiobus_alloc();
  	if (!mii_bus)
-@@ -1378,7 +1355,29 @@ static int bgmac_mii_register(struct bgm
+@@ -1388,7 +1365,29 @@ static int bgmac_mii_register(struct bgm
  
  	bgmac->mii_bus = mii_bus;
  

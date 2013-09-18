@@ -47,7 +47,7 @@
  }
  
  static int b44_phy_reset(struct b44 *bp)
-@@ -1821,102 +1824,24 @@ static int b44_get_settings(struct net_d
+@@ -1831,102 +1834,24 @@ static int b44_get_settings(struct net_d
  {
  	struct b44 *bp = netdev_priv(dev);
  
@@ -155,7 +155,7 @@
  }
  
  static void b44_get_ringparam(struct net_device *dev,
-@@ -2092,20 +2017,81 @@ static const struct ethtool_ops b44_etht
+@@ -2102,20 +2027,81 @@ static const struct ethtool_ops b44_etht
  
  static int b44_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
  {
@@ -239,7 +239,7 @@
  static int b44_get_invariants(struct b44 *bp)
  {
  	struct ssb_device *sdev = bp->sdev;
-@@ -2225,12 +2211,38 @@ static int b44_init_one(struct ssb_devic
+@@ -2235,12 +2221,38 @@ static int b44_init_one(struct ssb_devic
  		goto err_out_powerdown;
  	}
  
@@ -284,7 +284,7 @@
  
  	/* By default, advertise all speed/duplex settings. */
  	bp->flags |= (B44_FLAG_ADV_10HALF | B44_FLAG_ADV_10FULL |
-@@ -2262,6 +2274,16 @@ static int b44_init_one(struct ssb_devic
+@@ -2272,6 +2284,16 @@ static int b44_init_one(struct ssb_devic
  
  	return 0;
  
@@ -301,7 +301,7 @@
  err_out_powerdown:
  	ssb_bus_may_powerdown(sdev->bus);
  
-@@ -2275,8 +2297,12 @@ out:
+@@ -2285,8 +2307,12 @@ out:
  static void b44_remove_one(struct ssb_device *sdev)
  {
  	struct net_device *dev = ssb_get_drvdata(sdev);
