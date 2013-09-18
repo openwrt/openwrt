@@ -27,7 +27,7 @@ get_status_led() {
 	d105)
 		status_led="d105:red:power"
 		;;
-	dir-300-b1 | dir-600-b1 | dir-600-b2 | dir-610-a1 | dir-615-h1 | dir-615-d | dir-620-a1| dir-620-d1)
+	dir-300-b1 | dir-600-b1 | dir-600-b2 | dir-610-a1 | dir-615-h1 | dir-615-d | dir-620-a1| dir-620-d1| dir-300-b7| dir-320-b1)
 		status_led="d-link:green:status"
 		;;
 	dir-645)
