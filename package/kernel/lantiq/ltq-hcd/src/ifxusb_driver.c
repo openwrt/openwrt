@@ -469,7 +469,7 @@ static int ifxusb_driver_probe(struct platform_device *_pdev)
 	#endif*/
 
 	gpio_count = of_gpio_count(np);
-	while (gpio_count) {
+	while (gpio_count > 0) {
 		enum of_gpio_flags flags;
 		int gpio = of_get_gpio_flags(np, --gpio_count, &flags);
 		if (gpio_request(gpio, "usb"))
