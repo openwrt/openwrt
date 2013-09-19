@@ -90,6 +90,12 @@ H201L)
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4t"
 	;;
+
+P2601HNFX)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
+	;;
 esac
 
 [ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"

@@ -7,7 +7,7 @@
 
 # boards missing since devicetree update
 #EASY50712 ARV3527P GIGASX76X BTHOMEHUBV2B BTHOMEHUBV2BOPENRG
-#WBMR P2601HNFX
+#WBMR
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
@@ -257,6 +257,9 @@ Image/Build/Profile/GR7000=$(call Image/Build/$(1),$(1),GR7000)
 
 Image/BuildKernel/Profile/H201L=$(call Image/BuildKernel/Template,H201L)
 Image/Build/Profile/H201L=$(call Image/Build/$(1),$(1),H201L)
+
+Image/BuildKernel/Profile/P2601HNFX=$(call Image/BuildKernel/Template,P2601HNFX)
+Image/Build/Profile/P2601HNFX=$(call Image/Build/$(1),$(1),P2601HNFX)
 
 endif
 
