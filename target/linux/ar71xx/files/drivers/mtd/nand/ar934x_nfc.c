@@ -1022,24 +1022,22 @@ ar934x_nfc_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	nfc = kzalloc(sizeof(struct ar934x_nfc), GFP_KERNEL);
+	nfc = devm_kzalloc(&pdev->dev, sizeof(struct ar934x_nfc), GFP_KERNEL);
 	if (!nfc) {
 		dev_err(&pdev->dev, "failed to allocate driver data\n");
 		return -ENOMEM;
 	}
 
-	nfc->base = ioremap(res->start, resource_size(res));
-	if (nfc->base == NULL) {
+	nfc->base = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(nfc->base)) {
 		dev_err(&pdev->dev, "failed to remap I/O memory\n");
-		ret = -ENXIO;
-		goto err_free_nand;
+		return PTR_ERR(nfc->base);
 	}
 
 	nfc->irq = platform_get_irq(pdev, 0);
 	if (nfc->irq < 0) {
 		dev_err(&pdev->dev, "no IRQ resource specified\n");
-		ret = -EINVAL;
-		goto err_unmap;
+		return -EINVAL;
 	}
 
 	init_waitqueue_head(&nfc->irq_waitq);
@@ -1047,7 +1045,7 @@ ar934x_nfc_probe(struct platform_device *pdev)
 			  dev_name(&pdev->dev), nfc);
 	if (ret) {
 		dev_err(&pdev->dev, "requast_irq failed, err:%d\n", ret);
-		goto err_unmap;
+		return ret;
 	}
 
 	nfc->parent = &pdev->dev;
@@ -1120,11 +1118,6 @@ err_free_buf:
 	ar934x_nfc_free_buf(nfc);
 err_free_irq:
 	free_irq(nfc->irq, nfc);
-err_unmap:
-	iounmap(nfc->base);
-err_free_nand:
-	kfree(nfc);
-	platform_set_drvdata(pdev, NULL);
 	return ret;
 }
 
@@ -1138,8 +1131,6 @@ ar934x_nfc_remove(struct platform_device *pdev)
 		nand_release(&nfc->mtd);
 		ar934x_nfc_free_buf(nfc);
 		free_irq(nfc->irq, nfc);
-		iounmap(nfc->base);
-		kfree(nfc);
 	}
 
 	return 0;
