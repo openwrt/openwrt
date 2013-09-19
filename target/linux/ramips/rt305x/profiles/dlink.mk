@@ -18,6 +18,18 @@ endef
 
 $(eval $(call Profile,DIR615H1))
 
+define Profile/DCS930
+	NAME:=Dlink DCS-930
+        PACKAGES:=kmod-video-core kmod-video-uvc \
+		kmod-usb-core kmod-usb-rt305x-dwc_otg
+endef
+
+define Profile/DCS930/Description
+	Package set for Dlink DCS-930 board
+endef
+
+$(eval $(call Profile,DCS930))
+
 define Profile/DIR610A1
 	NAME:=Dlink DIR-610 A1
 	PACKAGES:=kmod-ledtrig-netdev kmod-ledtrig-timer
