@@ -69,6 +69,10 @@ tplink_get_image_boot_size() {
 	get_image "$@" | dd bs=4 count=1 skip=37 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
+seama_get_type_magic() {
+	get_image "$@" | dd bs=1 count=4 skip=53 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
 platform_check_image() {
 	local board=$(ar71xx_board_name)
 	local magic="$(get_magic_word "$1")"
@@ -149,6 +153,20 @@ platform_check_image() {
 		dir825b_check_image "$1" && return 0
 		;;
 
+	mynet-n600)
+		[ "$magic_long" != "5ea3a417" ] && {
+			echo "Invalid image, bad magic: $magic_long"
+			return 1
+		}
+
+		local typemagic=$(seama_get_type_magic "$1")
+		[ "$typemagic" != "6669726d" ] && {
+			echo "Invalid image, bad type: $typemagic"
+			return 1
+		}
+
+		return 0;
+		;;
 	mr600 | \
 	mr600v2 | \
 	om2p | \
