@@ -1,12 +1,16 @@
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
-@@ -552,4 +552,8 @@ config MTD_NAND_RB750
+@@ -552,4 +552,12 @@ config MTD_NAND_RB750
  	tristate "NAND flash driver for the RouterBoard 750"
  	depends on MTD_NAND && ATH79_MACH_RB750
  
 +config MTD_NAND_AR934X
 +	tristate "NAND flash driver for the Qualcomm Atheros AR934x/QCA955x SoCs"
 +	depends on (SOC_AR934X || SOC_QCA955X)
++
++config MTD_NAND_AR934X_HW_ECC
++	bool "Hardware ECC support for the AR934X NAND Controller (EXPERIMENTAL)"
++	depends on MTD_NAND_AR934X
 +
  endif # MTD_NAND
 --- a/drivers/mtd/nand/Makefile

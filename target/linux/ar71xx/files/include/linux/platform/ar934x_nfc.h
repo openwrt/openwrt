@@ -17,12 +17,19 @@
 struct mtd_info;
 struct mtd_partition;
 
+enum ar934x_nfc_ecc_mode {
+	AR934X_NFC_ECC_SOFT = 0,
+	AR934X_NFC_ECC_HW,
+};
+
 struct ar934x_nfc_platform_data {
 	const char *name;
 	struct mtd_partition *parts;
 	int nr_parts;
 
 	bool swap_dma;
+	enum ar934x_nfc_ecc_mode ecc_mode;
+
 	void (*hw_reset)(bool active);
 	void (*select_chip)(int chip_no);
 	int (*scan_fixup)(struct mtd_info *mtd);
