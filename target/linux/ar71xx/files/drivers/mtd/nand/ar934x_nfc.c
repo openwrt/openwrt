@@ -1,7 +1,7 @@
 /*
  * Driver for the built-in NAND controller of the Atheros AR934x SoCs
  *
- * Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2011-2013 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -122,6 +122,24 @@
 #define AR934X_NFC_INT_DEV_RDY(_x)		BIT(4 + (_x))
 #define AR934X_NFC_INT_CMD_END			BIT(1)
 
+#define AR934X_NFC_ECC_CTRL_ERR_THRES_S		8
+#define AR934X_NFC_ECC_CTRL_ERR_THRES_M		0x1f
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_S		5
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_M		0x7
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_2		0
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_4		1
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_6		2
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_8		3
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_10		4
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_12		5
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_14		6
+#define AR934X_NFC_ECC_CTRL_ECC_CAP_16		7
+#define AR934X_NFC_ECC_CTRL_ERR_OVER		BIT(2)
+#define AR934X_NFC_ECC_CTRL_ERR_UNCORRECT	BIT(1)
+#define AR934X_NFC_ECC_CTRL_ERR_CORRECT		BIT(0)
+
+#define AR934X_NFC_ECC_OFFS_OFSET_M		0xffff
+
 /* default timing values */
 #define AR934X_NFC_TIME_SEQ_DEFAULT	0x7fff
 #define AR934X_NFC_TIMINGS_ASYN_DEFAULT	0x22
@@ -182,6 +200,11 @@ struct ar934x_nfc {
 	u32 irq_status;
 
 	u32 ctrl_reg;
+	u32 ecc_ctrl_reg;
+	u32 ecc_offset_reg;
+	u32 ecc_thres;
+	u32 ecc_oob_pos;
+
 	bool small_page;
 	unsigned int addr_count0;
 	unsigned int addr_count1;
@@ -204,6 +227,16 @@ struct ar934x_nfc {
 };
 
 static void ar934x_nfc_restart(struct ar934x_nfc *nfc);
+
+static inline bool
+is_all_ff(u8 *buf, int len)
+{
+	while (len--)
+		if (buf[len] != 0xff)
+			return false;
+
+	return true;
+}
 
 static inline void
 ar934x_nfc_wr(struct ar934x_nfc *nfc, unsigned reg, u32 val)
@@ -455,6 +488,8 @@ retry:
 	ar934x_nfc_wr(nfc, AR934X_NFC_REG_DATA_SIZE, len);
 	ar934x_nfc_wr(nfc, AR934X_NFC_REG_CTRL, ctrl_reg);
 	ar934x_nfc_wr(nfc, AR934X_NFC_REG_DMA_CTRL, dma_ctrl);
+	ar934x_nfc_wr(nfc, AR934X_NFC_REG_ECC_CTRL, nfc->ecc_ctrl_reg);
+	ar934x_nfc_wr(nfc, AR934X_NFC_REG_ECC_OFFSET, nfc->ecc_offset_reg);
 
 	if (ar934x_nfc_use_irq(nfc)) {
 		ar934x_nfc_wr(nfc, AR934X_NFC_REG_INT_MASK, AR934X_NFC_IRQ_MASK);
@@ -613,6 +648,7 @@ ar934x_nfc_cmdfunc(struct mtd_info *mtd, unsigned int command, int column,
 		   int page_addr)
 {
 	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
+	struct nand_chip *nand = mtd->priv;
 
 	nfc->read_id = false;
 	if (command != NAND_CMD_PAGEPROG)
@@ -696,6 +732,11 @@ ar934x_nfc_cmdfunc(struct mtd_info *mtd, unsigned int command, int column,
 		break;
 
 	case NAND_CMD_PAGEPROG:
+		if (nand->ecc.mode == NAND_ECC_HW) {
+			/* the data is already written */
+			break;
+		}
+
 		if (nfc->small_page)
 			ar934x_nfc_send_cmd(nfc, nfc->seqin_read_cmd);
 
@@ -792,6 +833,206 @@ ar934x_nfc_read_buf(struct mtd_info *mtd, u8 *buf, int len)
 	}
 
 	nfc->buf_index = buf_index;
+}
+
+static inline void
+ar934x_nfc_enable_hwecc(struct ar934x_nfc *nfc)
+{
+	nfc->ctrl_reg |= AR934X_NFC_CTRL_ECC_EN;
+	nfc->ctrl_reg &= ~AR934X_NFC_CTRL_CUSTOM_SIZE_EN;
+}
+
+static inline void
+ar934x_nfc_disable_hwecc(struct ar934x_nfc *nfc)
+{
+	nfc->ctrl_reg &= ~AR934X_NFC_CTRL_ECC_EN;
+	nfc->ctrl_reg |= AR934X_NFC_CTRL_CUSTOM_SIZE_EN;
+}
+
+static int
+ar934x_nfc_read_oob(struct mtd_info *mtd, struct nand_chip *chip,
+		    int page)
+{
+	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
+	int err;
+
+	nfc_dbg(nfc, "read_oob: page:%d\n", page);
+
+	err = ar934x_nfc_send_read(nfc, NAND_CMD_READ0, mtd->writesize, page,
+				   mtd->oobsize);
+	if (err)
+		return err;
+
+	memcpy(chip->oob_poi, nfc->buf, mtd->oobsize);
+
+	return 0;
+}
+
+static int
+ar934x_nfc_write_oob(struct mtd_info *mtd, struct nand_chip *chip,
+		     int page)
+{
+	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
+
+	nfc_dbg(nfc, "write_oob: page:%d\n", page);
+
+	memcpy(nfc->buf, chip->oob_poi, mtd->oobsize);
+
+	return ar934x_nfc_send_write(nfc, NAND_CMD_PAGEPROG, mtd->writesize,
+				     page, mtd->oobsize);
+}
+
+static int
+ar934x_nfc_read_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
+			 u8 *buf, int oob_required, int page)
+{
+	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
+	int len;
+	int err;
+
+	nfc_dbg(nfc, "read_page_raw: page:%d oob:%d\n", page, oob_required);
+
+	len = mtd->writesize;
+	if (oob_required)
+		len += mtd->oobsize;
+
+	err = ar934x_nfc_send_read(nfc, NAND_CMD_READ0, 0, page, len);
+	if (err)
+		return err;
+
+	memcpy(buf, nfc->buf, mtd->writesize);
+
+	if (oob_required)
+		memcpy(chip->oob_poi, &nfc->buf[mtd->writesize], mtd->oobsize);
+
+	return 0;
+}
+
+static int
+ar934x_nfc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
+		     u8 *buf, int oob_required, int page)
+{
+	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
+	u32 ecc_ctrl;
+	int max_bitflips = 0;
+	bool ecc_failed;
+	bool ecc_corrected;
+	int err;
+
+	nfc_dbg(nfc, "read_page: page:%d oob:%d\n", page, oob_required);
+
+	ar934x_nfc_enable_hwecc(nfc);
+	err = ar934x_nfc_send_read(nfc, NAND_CMD_READ0, 0, page,
+				   mtd->writesize);
+	ar934x_nfc_disable_hwecc(nfc);
+
+	if (err)
+		return err;
+
+	/* TODO: optimize to avoid memcpy */
+	memcpy(buf, nfc->buf, mtd->writesize);
+
+	/* read the ECC status */
+	ecc_ctrl = ar934x_nfc_rr(nfc, AR934X_NFC_REG_ECC_CTRL);
+	ecc_failed = ecc_ctrl & AR934X_NFC_ECC_CTRL_ERR_UNCORRECT;
+	ecc_corrected = ecc_ctrl & AR934X_NFC_ECC_CTRL_ERR_CORRECT;
+
+	if (oob_required || ecc_failed) {
+		err = ar934x_nfc_send_read(nfc, NAND_CMD_READ0, mtd->writesize,
+					   page, mtd->oobsize);
+		if (err)
+			return err;
+
+		if (oob_required)
+			memcpy(chip->oob_poi, nfc->buf, mtd->oobsize);
+	}
+
+	if (ecc_failed) {
+		/*
+		 * The hardware ECC engine reports uncorrectable errors
+		 * on empty pages. Check the ECC bytes and the data. If
+		 * both contains 0xff bytes only, dont report a failure.
+		 *
+		 * TODO: prebuild a buffer with 0xff bytes and use memcmp
+		 * for better performance?
+		 */
+		if (!is_all_ff(&nfc->buf[nfc->ecc_oob_pos], chip->ecc.total) ||
+		    !is_all_ff(buf, mtd->writesize))
+				mtd->ecc_stats.failed++;
+	} else if (ecc_corrected) {
+		/*
+		 * The hardware does not report the exact count of the
+		 * corrected bitflips, use assumptions based on the
+		 * threshold.
+		 */
+		if (ecc_ctrl & AR934X_NFC_ECC_CTRL_ERR_OVER) {
+			/*
+			 * The number of corrected bitflips exceeds the
+			 * threshold. Assume the maximum.
+			 */
+			max_bitflips = chip->ecc.strength * chip->ecc.steps;
+		} else {
+			max_bitflips = nfc->ecc_thres * chip->ecc.steps;
+		}
+
+		mtd->ecc_stats.corrected += max_bitflips;
+	}
+
+	return max_bitflips;
+}
+
+static int
+ar934x_nfc_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
+			  const u8 *buf, int oob_required)
+{
+	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
+	int page;
+	int len;
+
+	page = nfc->seqin_page_addr;
+
+	nfc_dbg(nfc, "write_page_raw: page:%d oob:%d\n", page, oob_required);
+
+	memcpy(nfc->buf, buf, mtd->writesize);
+	len = mtd->writesize;
+
+	if (oob_required) {
+		memcpy(&nfc->buf[mtd->writesize], chip->oob_poi, mtd->oobsize);
+		len += mtd->oobsize;
+	}
+
+	return ar934x_nfc_send_write(nfc, NAND_CMD_PAGEPROG, 0, page, len);
+}
+
+static int
+ar934x_nfc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
+		      const u8 *buf, int oob_required)
+{
+	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
+	int page;
+	int err;
+
+	page = nfc->seqin_page_addr;
+
+	nfc_dbg(nfc, "write_page: page:%d oob:%d\n", page, oob_required);
+
+	/* write OOB first */
+	if (oob_required &&
+	    !is_all_ff(chip->oob_poi, mtd->oobsize)) {
+		err = ar934x_nfc_write_oob(mtd, chip, page);
+		if (err)
+			return err;
+	}
+
+	/* TODO: optimize to avoid memcopy */
+	memcpy(nfc->buf, buf, mtd->writesize);
+
+	ar934x_nfc_enable_hwecc(nfc);
+	err = ar934x_nfc_send_write(nfc, NAND_CMD_PAGEPROG, 0, page,
+				    mtd->writesize);
+	ar934x_nfc_disable_hwecc(nfc);
+
+	return err;
 }
 
 static void
@@ -1006,6 +1247,86 @@ ar934x_nfc_init_tail(struct mtd_info *mtd)
 	return err;
 }
 
+static struct nand_ecclayout ar934x_nfc_oob_64_hwecc = {
+	.eccbytes = 28,
+	.eccpos = {
+		20, 21, 22, 23, 24, 25, 26,
+		27, 28, 29, 30, 31, 32, 33,
+		34, 35, 36, 37, 38, 39, 40,
+		41, 42, 43, 44, 45, 46, 47,
+	},
+	.oobfree = {
+		{
+			.offset = 4,
+			.length = 16,
+		},
+		{
+			.offset = 48,
+			.length = 16,
+		},
+	},
+};
+
+static int
+ar934x_nfc_setup_hwecc(struct ar934x_nfc *nfc)
+{
+	struct nand_chip *nand = &nfc->nand_chip;
+	u32 ecc_cap;
+	u32 ecc_thres;
+
+	if (!config_enabled(CONFIG_MTD_NAND_AR934X_HW_ECC)) {
+		dev_err(nfc->parent, "hardware ECC support is disabled\n");
+		return -EINVAL;
+	}
+
+	switch (nfc->mtd.writesize) {
+	case 2048:
+		nand->ecc.size = 512;
+		nand->ecc.bytes = 7;
+		nand->ecc.strength = 4;
+		nand->ecc.layout = &ar934x_nfc_oob_64_hwecc;
+		break;
+
+	default:
+		dev_err(nfc->parent,
+			"hardware ECC is not available for %d byte pages\n",
+			nfc->mtd.writesize);
+		return -EINVAL;
+	}
+
+	BUG_ON(!nand->ecc.layout);
+
+	switch (nand->ecc.strength) {
+	case 4:
+		ecc_cap = AR934X_NFC_ECC_CTRL_ECC_CAP_4;
+		ecc_thres = 4;
+		break;
+
+	default:
+		dev_err(nfc->parent, "unsupported ECC strength %u\n",
+			nand->ecc.strength);
+		return -EINVAL;
+	}
+
+	nfc->ecc_thres = ecc_thres;
+	nfc->ecc_oob_pos = nand->ecc.layout->eccpos[0];
+
+	nfc->ecc_ctrl_reg = ecc_cap << AR934X_NFC_ECC_CTRL_ECC_CAP_S;
+	nfc->ecc_ctrl_reg |= ecc_thres << AR934X_NFC_ECC_CTRL_ERR_THRES_S;
+
+	nfc->ecc_offset_reg = nfc->mtd.writesize + nfc->ecc_oob_pos;
+
+	nand->ecc.mode = NAND_ECC_HW;
+	nand->ecc.read_page = ar934x_nfc_read_page;
+	nand->ecc.read_page_raw = ar934x_nfc_read_page_raw;
+	nand->ecc.write_page = ar934x_nfc_write_page;
+	nand->ecc.write_page_raw = ar934x_nfc_write_page_raw;
+	nand->ecc.read_oob = ar934x_nfc_read_oob;
+	nand->ecc.write_oob = ar934x_nfc_write_oob;
+
+	return 0;
+}
+
 static int
 ar934x_nfc_probe(struct platform_device *pdev)
 {
@@ -1071,7 +1392,6 @@ ar934x_nfc_probe(struct platform_device *pdev)
 		mtd->name = dev_name(&pdev->dev);
 
 	nand->chip_delay = 25;
-	nand->ecc.mode = NAND_ECC_SOFT;
 
 	nand->dev_ready = ar934x_nfc_dev_ready;
 	nand->cmdfunc = ar934x_nfc_cmdfunc;
@@ -1104,6 +1424,23 @@ ar934x_nfc_probe(struct platform_device *pdev)
 		ret = pdata->scan_fixup(mtd);
 		if (ret)
 			goto err_free_buf;
+	}
+
+	switch (pdata->ecc_mode) {
+	case AR934X_NFC_ECC_SOFT:
+		nand->ecc.mode = NAND_ECC_SOFT;
+		break;
+
+	case AR934X_NFC_ECC_HW:
+		ret = ar934x_nfc_setup_hwecc(nfc);
+		if (ret)
+			goto err_free_buf;
+
+		break;
+
+	default:
+		dev_err(nfc->parent, "unknown ECC mode %d\n", pdata->ecc_mode);
+		return -EINVAL;
 	}
 
 	ret = nand_scan_tail(mtd);
