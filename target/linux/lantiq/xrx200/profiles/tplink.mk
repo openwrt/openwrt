@@ -5,7 +5,7 @@ define Profile/TDW8970
 	kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
 	kmod-ltq-atm-vr9 ltq-vdsl-vr9-fw-installer \
 	ltq-vdsl-app ppp-mod-pppoa \
-	kmod-ledtrig-usbdev 
+	kmod-ledtrig-usbdev
 endef
 
 $(eval $(call Profile,TDW8970))
