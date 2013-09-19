@@ -410,7 +410,7 @@ ar934x_nfc_send_cmd(struct ar934x_nfc *nfc, unsigned command)
 	ar934x_nfc_wait_dev_ready(nfc);
 }
 
-static void
+static int
 ar934x_nfc_do_rw_command(struct ar934x_nfc *nfc, int column, int page_addr,
 			 int len, u32 cmd_reg, u32 ctrl_reg, bool write)
 {
@@ -475,29 +475,35 @@ retry:
 		dev_err(nfc->parent, "%s operation failed on page %d\n",
 			(write) ? "write" : "read", page_addr);
 	}
+
+	return err;
 }
 
-static void
+static int
 ar934x_nfc_send_readid(struct ar934x_nfc *nfc, unsigned command)
 {
 	u32 cmd_reg;
+	int err;
 
 	nfc_dbg(nfc, "readid, cmd:%02x\n", command);
 
 	cmd_reg = AR934X_NFC_CMD_SEQ_1C1AXR;
 	cmd_reg |= (command & AR934X_NFC_CMD_CMD0_M) << AR934X_NFC_CMD_CMD0_S;
 
-	ar934x_nfc_do_rw_command(nfc, -1, -1, AR934X_NFC_ID_BUF_SIZE, cmd_reg,
-				 nfc->ctrl_reg, false);
+	err = ar934x_nfc_do_rw_command(nfc, -1, -1, AR934X_NFC_ID_BUF_SIZE,
+				       cmd_reg, nfc->ctrl_reg, false);
 
 	nfc_debug_data("[id] ", nfc->buf, AR934X_NFC_ID_BUF_SIZE);
+
+	return err;
 }
 
-static void
+static int
 ar934x_nfc_send_read(struct ar934x_nfc *nfc, unsigned command, int column,
 		     int page_addr, int len)
 {
 	u32 cmd_reg;
+	int err;
 
 	nfc_dbg(nfc, "read, column=%d page=%d len=%d\n",
 		column, page_addr, len);
@@ -511,10 +517,12 @@ ar934x_nfc_send_read(struct ar934x_nfc *nfc, unsigned command, int column,
 		cmd_reg |= AR934X_NFC_CMD_SEQ_1C5A1CXR;
 	}
 
-	ar934x_nfc_do_rw_command(nfc, column, page_addr, len,
-				 cmd_reg, nfc->ctrl_reg, false);
+	err = ar934x_nfc_do_rw_command(nfc, column, page_addr, len,
+				       cmd_reg, nfc->ctrl_reg, false);
 
 	nfc_debug_data("[data] ", nfc->buf, len);
+
+	return err;
 }
 
 static void
@@ -555,7 +563,7 @@ ar934x_nfc_send_erase(struct ar934x_nfc *nfc, unsigned command, int column,
 	ar934x_nfc_wait_dev_ready(nfc);
 }
 
-static void
+static int
 ar934x_nfc_send_write(struct ar934x_nfc *nfc, unsigned command, int column,
 		     int page_addr, int len)
 {
@@ -570,8 +578,8 @@ ar934x_nfc_send_write(struct ar934x_nfc *nfc, unsigned command, int column,
 	cmd_reg |= command << AR934X_NFC_CMD_CMD1_S;
 	cmd_reg |= AR934X_NFC_CMD_SEQ_12;
 
-	ar934x_nfc_do_rw_command(nfc, column, page_addr, len,
-				 cmd_reg, nfc->ctrl_reg, true);
+	return ar934x_nfc_do_rw_command(nfc, column, page_addr, len,
+					cmd_reg, nfc->ctrl_reg, true);
 }
 
 static void
