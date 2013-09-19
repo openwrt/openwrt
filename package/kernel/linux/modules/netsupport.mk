@@ -536,6 +536,7 @@ define KernelPackage/ppp
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ppp/ppp_async.ko \
 	$(LINUX_DIR)/drivers/net/ppp/ppp_generic.ko
+  AUTOLOAD:=$(call AutoProbe,ppp_async)
 endef
 
 define KernelPackage/ppp/description
@@ -551,7 +552,7 @@ define KernelPackage/ppp-synctty
   DEPENDS:=kmod-ppp
   KCONFIG:=CONFIG_PPP_SYNC_TTY
   FILES:=$(LINUX_DIR)/drivers/net/ppp/ppp_synctty.ko
-  AUTOLOAD:=$(call AutoLoad,40,ppp_synctty)
+  AUTOLOAD:=$(call AutoProbe,ppp_synctty)
 endef
 
 define KernelPackage/ppp-synctty/description
