@@ -14,6 +14,9 @@
 #include <linux/platform_device.h>
 #include <linux/ath9k_platform.h>
 #include <linux/ar8216_platform.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/nand.h>
+#include <linux/platform/ar934x_nfc.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 
@@ -171,6 +174,7 @@ static void __init wndr4300_setup(void)
 	ath79_eth0_pll_data.pll_1000 = 0x06000000;
 	ath79_register_eth(0);
 
+	ath79_nfc_set_ecc_mode(AR934X_NFC_ECC_HW);
 	ath79_register_nfc();
 	ath79_register_usb();
 
