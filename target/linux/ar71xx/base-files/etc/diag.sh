@@ -77,6 +77,9 @@ get_status_led() {
 	mr600v2)
 		status_led="mr600:blue:power"
 		;;
+	mynet-n600)
+		status_led="wd:blue:power"
+		;;
 	mzk-w04nu | \
 	mzk-w300nh)
 		status_led="planex:green:status"

@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# Copyright (C) 2013 OpenWrt.org
+#
+
+. /lib/ar71xx.sh
+
+fix_seama_header() {
+	local part=$1
+
+	mtd fixseama $part
+}
+
+board=$(ar71xx_board_name)
+
+case "$board" in
+mynet-n600)
+	fix_seama_header kernel
+	;;
+esac
