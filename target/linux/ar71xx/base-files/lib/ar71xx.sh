@@ -141,6 +141,9 @@ tplink_board_detect() {
 	"001101"*)
 		model="TP-Link TL-MR11U"
 		;;
+	"001301"*)
+		model="TP-Link TL-MR13U"
+		;;
 	"302000"*)
 		model="TP-Link TL-MR3020"
 		;;
@@ -476,6 +479,9 @@ ar71xx_board_detect() {
 		;;
 	*"TL-MR11U")
 		name="tl-mr11u"
+		;;
+	*"TL-MR13U")
+		name="tl-mr13u"
 		;;
 	*UniFi)
 		name="unifi"
