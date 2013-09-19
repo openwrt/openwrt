@@ -135,6 +135,7 @@ get_status_led() {
 		;;
 	archer-c7 | \
 	tl-mr10u | \
+	tl-mr13u | \
 	tl-wdr4300 | \
 	tl-wr703n | \
 	tl-wr710n | \
