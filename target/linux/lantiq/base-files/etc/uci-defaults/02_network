@@ -84,6 +84,12 @@ GR7000)
 	ucidef_set_interface_wan "eth0"
 	uci set network.lan.ifname=''
 	;;
+
+H201L)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4t"
+	;;
 esac
 
 [ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"

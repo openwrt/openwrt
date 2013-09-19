@@ -1,0 +1,139 @@
+/dts-v1/;
+
+/include/ "ar9.dtsi"
+
+/ {
+	model = "H201L - ZTE H210L";
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
+
+	memory@0 {
+		reg = <0x0 0x2000000>;
+	};
+
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x2000000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x00000 0x20000>;
+					read-only;
+				};
+
+				partition@20000 {
+					label = "uboot_env";
+					reg = <0x20000 0x10000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "firmware";
+					reg = <0x30000 0x7d0000>;
+				};
+			};
+		};
+
+		gpio: pinmux@E100B10 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			state_default: pinmux {
+			};
+		};
+
+		etop@E180000 {
+			phy-mode = "rgmii";
+		};
+
+		ifxhcd@E101000 {
+			status = "okay";
+			gpios = <&gpio 36 0>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 53 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio 54 1>;
+			linux,code = <0x211>;
+		};
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 55 1>;
+			linux,code = <0xf7>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power {
+			label = "power";
+			gpios = <&gpio 19 1>;
+			default-state = "on";
+		};
+		online {
+			label = "online";
+			gpios = <&gpio 37 1>;
+		};
+		dsl {
+			label = "dsl";
+			gpios = <&gpio 4 1>;
+		};
+		phone {
+			label = "phone";
+			gpios = <&gpio 39 1>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio 22 1>;
+		};
+		wifi {
+			label = "wifi";
+			gpios = <&gpio 6 1>;
+		};
+		usb {
+			label = "usb";
+			gpios = <&gpio 14 1>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		switch {
+			gpio-export,name = "switch";
+			gpio-export,output = <1>;
+			gpios = <&gpio 38 0>;
+		};
+		usb {
+			gpio-export,name = "usb";
+			gpio-export,output = <1>;
+			gpios = <&gpio 28 0>;
+		};
+		wifi {
+			gpio-export,name = "wifi";
+			gpio-export,output = <1>;
+			gpios = <&gpio 7 0>;
+		};
+	};
+};
