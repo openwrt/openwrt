@@ -6,7 +6,7 @@
 #
 
 # boards missing since devicetree update
-#EASY50712 ARV3527P GIGASX76X BTHOMEHUBV2B BTHOMEHUBV2BOPENRG
+#EASY50712 ARV3527P BTHOMEHUBV2B BTHOMEHUBV2BOPENRG
 #WBMR
 
 include $(TOPDIR)/rules.mk
@@ -234,6 +234,9 @@ Image/Build/Profile/ARV752DPW=$(call Image/Build/$(1),$(1),ARV752DPW)
 
 Image/BuildKernel/Profile/ARV752DPW22=$(call Image/BuildKernel/Template,ARV752DPW22)
 Image/Build/Profile/ARV752DPW22=$(call Image/Build/$(1),$(1),ARV752DPW22)
+
+Image/BuildKernel/Profile/GIGASX76X=$(call Image/BuildKernel/Template,GIGASX76X)
+Image/Build/Profile/GIGASX76X=$(call Image/Build/$(1),$(1),GIGASX76X)
 
 
 # AR9
