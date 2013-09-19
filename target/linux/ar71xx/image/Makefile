@@ -174,6 +174,7 @@ wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1152k(kerne
 wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1152k(kernel),14720k(rootfs),64k(art)ro,15872k@0x70000(firmware)
 wndr4300_mtdlayout=mtdparts=ar934x-nfc:256k(u-boot)ro,256k(u-boot-env)ro,256k(caldata),512k(pot),2048k(language),512k(config),3072k(traffic_meter),1152k(kernel),24448k(rootfs),25600k@0x6c0000(firmware),256k(caldata_backup),-(reserved)
 zcn1523h_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6208k(rootfs),1472k(kernel),64k(configure)ro,64k(mfg)ro,64k(art)ro,7680k@0x50000(firmware)
+mynet_n600_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(devdata)ro,64k(devconf)ro,1280k(kernel),14592k(rootfs),64k(radiocfg)ro,15872k@0x70000(firmware)
 
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
@@ -532,6 +533,38 @@ define Image/Build/ALFA
 endef
 
 
+Image/Build/Seama/loader=$(call Image/BuildLoader,$(1),bin,$(2) $(3),0x80060000)
+
+define Image/Build/Seama
+	[ -e "$(KDIR)/loader-$(2).bin" ]
+	$(call CompressLzma,$(KDIR)/loader-$(2).bin,$(KDIR_TMP)/loader-$(2).bin.lzma)
+	-rm -f $(KDIR_TMP)/image-$(2).tmp
+	$(call CatFiles,$(KDIR_TMP)/loader-$(2).bin.lzma,$$$$(($(6) - 64)),$(KDIR)/root.$(1),$(7),$(KDIR_TMP)/image-$(2).tmp)
+	[ -e "$(KDIR_TMP)/image-$(2).tmp" ] && { \
+		$(STAGING_DIR_HOST)/bin/seama \
+		-i $(KDIR_TMP)/image-$(2).tmp \
+		-m "dev=/dev/mtdblock/1" -m "type=firmware"; \
+		$(STAGING_DIR_HOST)/bin/seama \
+			-s $(call imgname,$(1),$(2))-factory.bin \
+			-m "signature=$(5)" \
+			-i $(KDIR_TMP)/image-$(2).tmp.seama; \
+	}
+	cat $(KDIR_TMP)/loader-$(2).bin.lzma > $(KDIR_TMP)/image-$(2)-sysupgrade.tmp
+	$(STAGING_DIR_HOST)/bin/seama \
+		-i $(KDIR_TMP)/image-$(2)-sysupgrade.tmp \
+		-m "dev=/dev/mtdblock/1" -m "type=firmware"
+	$(call CatFiles,$(KDIR_TMP)/image-$(2)-sysupgrade.tmp.seama,$(6),$(KDIR)/root.$(1),$(7),$(call sysupname,$(1),$(2)))
+endef
+
+define Image/Build/Seama/initramfs
+	$(call PatchKernelLzma,$(2),$(3) $(4),,-initramfs)
+	$(STAGING_DIR_HOST)/bin/seama \
+		-i $(KDIR_TMP)/vmlinux-initramfs-$(2).bin.lzma \
+		-m "dev=/dev/mtdblock/1" -m "type=firmware"
+	cat $(KDIR_TMP)/vmlinux-initramfs-$(2).bin.lzma.seama > $(call imgname,initramfs,$(2))-seama.bin
+endef
+
+
 Image/Build/TPLINKOLD/loader=$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
 
 define Image/Build/TPLINKOLD
@@ -883,6 +916,8 @@ $(eval $(call SingleProfile,PB4X,64k,PB44,pb44,PB44,ttyS0,115200))
 
 $(eval $(call SingleProfile,Planex,64k,MZKW04NU,mzk-w04nu,MZK-W04NU,ttyS0,115200))
 $(eval $(call SingleProfile,Planex,64k,MZKW300NH,mzk-w300nh,MZK-W300NH,ttyS0,115200))
+
+$(eval $(call SingleProfile,Seama,64k,MYNETN600,mynet-n600,MYNET-N600,ttyS0,115200,$$(mynet_n600_mtdlayout),wrgnd16_wd_db600,1310720,16187392))
 
 $(eval $(call SingleProfile,TPLINKOLD,squashfs-only,TLWR841NV15,tl-wr841nd-v1.5,TL-WR841N-v1.5,ttyS0,115200,0x08410002,2,4M))
 
