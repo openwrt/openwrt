@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2010-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -7,7 +7,6 @@
 
 # boards missing since devicetree update
 #EASY50712 ARV3527P BTHOMEHUBV2B BTHOMEHUBV2BOPENRG
-#WBMR
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
@@ -183,14 +182,12 @@ Image/Build/Profile/EASY98000SFLASH=$(call Image/Build/$(1),$(1),EASY98000SFLASH
 endif
 
 
-
 ifeq ($(CONFIG_TARGET_lantiq_ase),y)
 
 Image/BuildKernel/Profile/DGN1000B=$(call Image/BuildKernel/Template,DGN1000B)
 Image/Build/Profile/DGN1000B=$(call Image/Build/$(1),$(1),DGN1000B)
 
 endif
-
 
 
 ifeq ($(CONFIG_TARGET_lantiq_xway),y)
@@ -286,7 +283,6 @@ Image/BuildKernel/Profile/TDW8970=$(call Image/BuildKernelTPLink/Template,TDW897
 Image/Build/Profile/TDW8970=$(call Image/BuildTPLink/$(1),$(1),TDW8970,TD-W8970v1)
 
 endif
-
 
 
 ifeq ($(CONFIG_TARGET_lantiq_svip_be),y)
