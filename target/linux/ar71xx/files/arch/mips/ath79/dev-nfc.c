@@ -119,6 +119,11 @@ void __init ath79_nfc_set_swap_dma(bool enable)
 	ath79_nfc_data.swap_dma = enable;
 }
 
+void __init ath79_nfc_set_ecc_mode(enum ar934x_nfc_ecc_mode mode)
+{
+	ath79_nfc_data.ecc_mode = mode;
+}
+
 void __init ath79_nfc_set_parts(struct mtd_partition *parts, int nr_parts)
 {
 	ath79_nfc_data.parts = parts;
