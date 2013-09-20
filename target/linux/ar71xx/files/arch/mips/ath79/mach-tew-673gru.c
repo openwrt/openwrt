@@ -119,18 +119,6 @@ static struct platform_device tew673gru_spi_device = {
 	},
 };
 
-static void tew673gru_read_ascii_mac(u8 *dest, u8 *src)
-{
-	int ret;
-
-	ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
-		     &dest[0], &dest[1], &dest[2],
-		     &dest[3], &dest[4], &dest[5]);
-
-	if (ret != ETH_ALEN)
-		memset(dest, 0, ETH_ALEN);
-}
-
 static bool __init tew673gru_is_caldata_valid(u8 *p)
 {
 	u16 *magic0, *magic1;
@@ -155,8 +143,8 @@ static void __init tew673gru_wlan_init(void)
 		}
 	}
 
-	tew673gru_read_ascii_mac(mac1, caldata + TEW673GRU_MAC0_OFFSET);
-	tew673gru_read_ascii_mac(mac2, caldata + TEW673GRU_MAC1_OFFSET);
+	ath79_parse_ascii_mac(caldata + TEW673GRU_MAC0_OFFSET, mac1);
+	ath79_parse_ascii_mac(caldata + TEW673GRU_MAC1_OFFSET, mac2);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 2);
 	ath79_init_mac(ath79_eth1_data.mac_addr, mac1, 3);
