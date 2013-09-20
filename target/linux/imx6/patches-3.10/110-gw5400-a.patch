@@ -25,7 +25,38 @@
  				};
  
  				ecspi1 {
-@@ -205,6 +213,12 @@
+@@ -187,6 +195,30 @@
+ 							MX6Q_PAD_SD4_DAT0__NAND_DQS      0x00b1
+ 						>;
+ 					};
++
++					/* No strobe */
++					pinctrl_gpmi_nand_2: gpmi-nand-2 {
++						fsl,pins = <
++							MX6Q_PAD_NANDF_CLE__NAND_CLE     0xb0b1
++							MX6Q_PAD_NANDF_ALE__NAND_ALE     0xb0b1
++							MX6Q_PAD_NANDF_WP_B__NAND_WP_B   0xb0b1
++							MX6Q_PAD_NANDF_RB0__NAND_READY_B 0xb000
++							MX6Q_PAD_NANDF_CS0__NAND_CE0_B   0xb0b1
++							MX6Q_PAD_NANDF_CS1__NAND_CE1_B   0xb0b1
++							MX6Q_PAD_NANDF_CS2__NAND_CE2_B   0xb0b1
++							MX6Q_PAD_NANDF_CS3__NAND_CE3_B   0xb0b1
++							MX6Q_PAD_SD4_CMD__NAND_RE_B      0xb0b1
++							MX6Q_PAD_SD4_CLK__NAND_WE_B      0xb0b1
++							MX6Q_PAD_NANDF_D0__NAND_DATA00   0xb0b1
++							MX6Q_PAD_NANDF_D1__NAND_DATA01   0xb0b1
++							MX6Q_PAD_NANDF_D2__NAND_DATA02   0xb0b1
++							MX6Q_PAD_NANDF_D3__NAND_DATA03   0xb0b1
++							MX6Q_PAD_NANDF_D4__NAND_DATA04   0xb0b1
++							MX6Q_PAD_NANDF_D5__NAND_DATA05   0xb0b1
++							MX6Q_PAD_NANDF_D6__NAND_DATA06   0xb0b1
++							MX6Q_PAD_NANDF_D7__NAND_DATA07   0xb0b1
++						>;
++					};
+ 				};
+ 
+ 				i2c1 {
+@@ -205,6 +237,12 @@
  							MX6Q_PAD_EIM_D16__I2C2_SDA 0x4001b8b1
  						>;
  					};
@@ -38,7 +69,7 @@
  				};
  
  				i2c3 {
-@@ -214,6 +228,12 @@
+@@ -214,6 +252,12 @@
  							MX6Q_PAD_EIM_D18__I2C3_SDA 0x4001b8b1
  						>;
  					};
@@ -51,7 +82,7 @@
  				};
  
  				uart1 {
-@@ -223,6 +243,12 @@
+@@ -223,6 +267,12 @@
  							MX6Q_PAD_CSI0_DAT11__UART1_RX_DATA 0x1b0b1
  						>;
  					};
@@ -64,7 +95,7 @@
  				};
  
  				uart2 {
-@@ -232,6 +258,21 @@
+@@ -232,6 +282,21 @@
  							MX6Q_PAD_EIM_D27__UART2_RX_DATA 0x1b0b1
  						>;
  					};
@@ -86,7 +117,7 @@
  				};
  
  				uart4 {
-@@ -242,6 +283,15 @@
+@@ -242,6 +307,15 @@
  						>;
  					};
  				};
@@ -112,7 +143,7 @@
  #include <linux/phy.h>
  #include <linux/regmap.h>
  #include <linux/micrel_phy.h>
-@@ -145,6 +146,65 @@ static void __init imx6q_sabrelite_init(
+@@ -145,6 +146,38 @@ static void __init imx6q_sabrelite_init(
  	imx6q_sabrelite_cko1_setup();
  }
  
@@ -137,48 +168,21 @@
 +	pci_read_config_dword(dev, 0x644, &dw);
 +	dw |= 0xfe;   // GPIO1-7 output high
 +	pci_write_config_dword(dev, 0x644, dw);
++
++	mdelay(1);
 +}
 +DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609,
 +	mx6_ventana_pciesw_early_fixup);
 +
-+/*
-+ * configure PCIe core clock and PCIe ref clock
-+ *
-+ * TODO: disable CLK1 output and use CLK2 input from si52147 as PCIe ref
-+ */
-+static void __init imx6q_ventana_pcie_setup(void)
-+{
-+	struct clk *axi_sel, *axi, *ref;
-+
-+	axi_sel = clk_get_sys(NULL, "pcie_axi_sel");
-+	axi = clk_get_sys(NULL, "axi");
-+	ref = clk_get_sys(NULL, "pcie_ref_125m");
-+	if (IS_ERR(axi_sel) || IS_ERR(axi) || IS_ERR(ref)) {
-+		pr_err("pcie setup failed - can't get clocks\n");
-+		goto put_clk;
-+	}
-+	clk_set_parent(axi_sel, axi);
-+	clk_prepare_enable(ref);
-+
-+put_clk:
-+	if (!IS_ERR(axi_sel))
-+		clk_put(axi_sel);
-+	if (!IS_ERR(axi))
-+		clk_put(axi);
-+	if (!IS_ERR(ref))
-+		clk_put(ref);
-+}
-+
 +static void __init imx6q_ventana_init(void)
 +{
-+	imx6q_ventana_pcie_setup();
 +	imx6q_sabrelite_cko1_setup();
 +}
 +
  static void __init imx6q_1588_init(void)
  {
  	struct regmap *gpr;
-@@ -163,6 +223,9 @@ static void __init imx6q_usb_init(void)
+@@ -163,6 +196,9 @@ static void __init imx6q_usb_init(void)
  
  static void __init imx6q_init_machine(void)
  {

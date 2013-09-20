@@ -10,16 +10,43 @@
  */
 
 /dts-v1/;
-#include "imx6q-ventana.dtsi"
+#include "imx6q.dtsi"
 
 / {
 	model = "Gateworks Ventana GW5400-A";
 	compatible = "gw,imx6q-gw5400-a", "gw,ventana", "fsl,imx6q";
 
+	/* these are used by bootloader for disabling nodes */
 	aliases {
 		ethernet0 = &fec;
 		ethernet1 = &eth1;
 		sky2 = &eth1;
+		ssi0 = &ssi1;
+		ssi1 = &ssi2;
+		ipu0 = &ipu1;
+		ipu1 = &ipu2;
+		usdhc0 = &usdhc1;
+		usdhc1 = &usdhc2;
+		usdhc2 = &usdhc3;
+		usdhc3 = &usdhc4;
+		i2c0 = &i2c1;
+		i2c1 = &i2c2;
+		i2c2 = &i2c3;
+		usb0 = &usbh3;
+		usb1 = &usbotg;
+		spi0 = &ecspi1;
+		spi1 = &ecspi2;
+		spi2 = &ecspi3;
+		spi3 = &ecspi4;
+		spi4 = &ecspi5;
+		pwm0 = &pwm1;
+		pwm1 = &pwm2;
+		pwm2 = &pwm3;
+		pwm3 = &pwm4;
+		can0 = &can1;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
 	};
 
 	/* SDRAM addressing */
@@ -34,20 +61,23 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led0: user0 {
-			label = "user0";
-			gpios = <&gpio4 6 0>; /* 102 -> MX6_PANLEDG# */
+		led0: user1 {
+			label = "user1";
+			gpios = <&gpio4 6 0>; /* 102 -> MX6_PANLEDG */
+			default-state = "on";
 			linux,default-trigger = "heartbeat";
 		};
 
-		led1: user1 {
-			label = "user1";
-			gpios = <&gpio4 10 0>; /* 106 -> MX6_PANLEDR# */
+		led1: user2 {
+			label = "user2";
+			gpios = <&gpio4 10 0>; /* 106 -> MX6_PANLEDR */
+			default-state = "off";
 		};
 
-		led2: user2 {
-			label = "user2";
-			gpios = <&gpio4 15 0>; /* 111 -> MX6_LOCLEDR# */
+		led2: user3 {
+			label = "user3";
+			gpios = <&gpio4 15 1>; /* 111 -> MX6_LOCLED# */
+			default-state = "off";
 		};
 	};
 
@@ -102,34 +132,23 @@
 	hog {
 		pinctrl_hog: hoggrp {
 			fsl,pins = <
-				/* USB OTG Power Enable */
-				MX6Q_PAD_EIM_D22__GPIO3_IO22   0x80000000
-
-				/*  3:19 SPINOR_CS0# */
-				MX6Q_PAD_EIM_D19__GPIO3_IO19   0x80000000
-
-				/*  1:09 MX6_DIO0 (could also be PWM1_PWM0) */
-				MX6Q_PAD_GPIO_9__GPIO1_IO09    0x80000000
-				/*  1:19 MX6_DIO1 (could also be PWM2_PWM0) */
-				MX6Q_PAD_SD1_DAT2__GPIO1_IO19  0x80000000
-				/*  2:09 MX6_DIO2 (could also be PWM3_PWM0) */
-				MX6Q_PAD_SD4_DAT1__GPIO2_IO09  0x80000000
-				/*  2:10 MX6_DIO3 (could also be PWM3_PWM0) */
-				MX6Q_PAD_SD4_DAT2__GPIO2_IO10  0x80000000
-
-				/*  1:16 USBHUB_RST# */
-				MX6Q_PAD_SD1_DAT0__GPIO1_IO16   0x80000000
-
-				/* PCIE IRQ */
-				MX6Q_PAD_ENET_TX_EN__GPIO1_IO28 0x80000000
-				/* PCIE RST */
-				MX6Q_PAD_ENET_TXD1__GPIO1_IO29  0x08000000
-
-				/*  1:12 MIPI_DIO */
-				MX6Q_PAD_SD1_DAT3__GPIO1_IO21   0x80000000
-
-				/*  AUD4_MCK */
-				MX6Q_PAD_GPIO_0__CCM_CLKO1      0x80000000
+				MX6Q_PAD_EIM_D22__GPIO3_IO22    0x80000000 /* OTG_PWR_EN */
+				MX6Q_PAD_EIM_D19__GPIO3_IO19    0x80000000 /* SPINOR_CS0# */
+				MX6Q_PAD_KEY_COL0__GPIO4_IO06   0x80000000 /* user0 led */
+				MX6Q_PAD_KEY_COL2__GPIO4_IO10   0x80000000 /* user1 led */
+				MX6Q_PAD_KEY_ROW4__GPIO4_IO15   0x80000000 /* user2 led */
+/* let bootloader choose these based on hwconfig */
+#if 0
+				MX6Q_PAD_GPIO_9__GPIO1_IO09     0x80000000 /* MX6_DIO0 (or PWM1_PWM0) */
+				MX6Q_PAD_SD1_DAT2__GPIO1_IO19   0x80000000 /* MX6_DIO1 (or PWM2_PWM0) */
+				MX6Q_PAD_SD4_DAT1__GPIO2_IO09   0x80000000 /* MX6_DIO2 (or PWM3_PWM0) */
+				MX6Q_PAD_SD4_DAT2__GPIO2_IO10   0x80000000 /* MX6_DIO3 (or PWM3_PWM0) */
+#endif
+				MX6Q_PAD_SD1_DAT0__GPIO1_IO16   0x80000000 /* USBHUB_RST# */
+				MX6Q_PAD_ENET_TX_EN__GPIO1_IO28 0x80000000 /* PCIE IRQ */
+				MX6Q_PAD_ENET_TXD1__GPIO1_IO29  0x08000000 /* PCIE RST */
+				MX6Q_PAD_SD1_DAT3__GPIO1_IO21   0x80000000 /* MIPI_DIO */
+				MX6Q_PAD_GPIO_0__CCM_CLKO1      0x80000000 /* AUD4_MCK */
 			 >;
 		};
 	};
@@ -262,7 +281,6 @@
 &can1 {
 	reg = <0x02090000 0x4000>;
 	interrupts = <0 110 0x04>;
-	//clock-frequency
 	status = "okay";
 };
 
@@ -271,7 +289,7 @@
 };
 
 &pcie {
-	reset-gpios = <&gpio1 29 0>;
+	reset-gpio = <&gpio1 29 0>;
 	status = "okay";
 
 	eth1: sky2@8 { /* MAC/PHY on bus 8 */
@@ -365,7 +383,7 @@
 
 	pmic: pfuze@08 {
 		compatible = "fsl,pfuze100";
-		reg = <0x0a>;
+		reg = <0x08>;
 	};
 
 	pciswitch: pex8609@3f {
@@ -425,4 +443,8 @@
 	lvds-channel@0 {
 		crtcs = <&ipu1 0>, <&ipu1 1>, <&ipu2 0>, <&ipu2 1>;
 	};
+};
+
+&sata {
+	status = "okay";
 };
