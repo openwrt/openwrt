@@ -167,18 +167,6 @@ static struct mdio_board_info dir825c1_mdio0_info[] = {
 	},
 };
 
-static void dir825c1_read_ascii_mac(u8 *dest, u8 *src)
-{
-	int ret;
-
-	ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
-	             &dest[0], &dest[1], &dest[2],
-	             &dest[3], &dest[4], &dest[5]);
-
-	if (ret != ETH_ALEN)
-		memset(dest, 0, ETH_ALEN);
-}
-
 static void __init dir825c1_generic_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1ffe0000);
@@ -186,8 +174,8 @@ static void __init dir825c1_generic_setup(void)
 	u8 mac0[ETH_ALEN], mac1[ETH_ALEN];
 	u8 wmac0[ETH_ALEN], wmac1[ETH_ALEN];
 
-	dir825c1_read_ascii_mac(mac0, mac + DIR825C1_MAC0_OFFSET);
-	dir825c1_read_ascii_mac(mac1, mac + DIR825C1_MAC1_OFFSET);
+	ath79_parse_ascii_mac(mac + DIR825C1_MAC0_OFFSET, mac0);
+	ath79_parse_ascii_mac(mac + DIR825C1_MAC1_OFFSET, mac1);
 
 	ath79_register_m25p80(NULL);
 
