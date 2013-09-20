@@ -356,7 +356,7 @@ Image/Build/Cameo7240/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo7
 
 Image/Build/Cameo934x/buildkernel=$(call MkuImageLzma,$(2),$(3) $(cameo934x_mtdlayout))
 Image/Build/Cameo934x=$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo934x_mtdlayout),65536,15007718,$(4))
-Image/Build/Cameo934x/initramfs=$(call Image/Build/Cameo,$(1),$(2),$(3) $(cameo934x_mtdlayout))
+Image/Build/Cameo934x/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo934x_mtdlayout))
 
 
 define Image/Build/CameoHornet
