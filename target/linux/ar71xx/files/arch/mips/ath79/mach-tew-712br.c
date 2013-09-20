@@ -42,8 +42,10 @@
 
 #define TEW_712BR_ART_ADDRESS		0x1f010000
 #define TEW_712BR_CALDATA_OFFSET	0x1000
-#define TEW_712BR_LAN_MAC_ADDRESS	0x1f020004
-#define TEW_712BR_WAN_MAC_ADDRESS	0x1f020016
+
+#define TEW_712BR_MAC_PART_ADDRESS	0x1f020000
+#define TEW_712BR_LAN_MAC_OFFSET	0x04
+#define TEW_712BR_WAN_MAC_OFFSET	0x16
 
 static struct gpio_led tew_712br_leds_gpio[] __initdata = {
 	{
@@ -107,22 +109,10 @@ static struct gpio_keys_button tew_712br_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init tew_712br_read_ascii_mac(u8 *dest, unsigned int src_addr)
-{
-	int ret;
-	u8 *src = (u8 *)KSEG1ADDR(src_addr);
-
-	ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
-		     &dest[0], &dest[1], &dest[2],
-		     &dest[3], &dest[4], &dest[5]);
-
-	if (ret != ETH_ALEN)
-		memset(dest, 0, ETH_ALEN);
-}
-
 static void __init tew_712br_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(TEW_712BR_ART_ADDRESS);
+	u8 *mac = (u8 *) KSEG1ADDR(TEW_712BR_MAC_PART_ADDRESS);
 	u8 lan_mac[ETH_ALEN];
 	u8 wan_mac[ETH_ALEN];
 
@@ -146,8 +136,8 @@ static void __init tew_712br_setup(void)
 
 	ath79_register_m25p80(NULL);
 
-	tew_712br_read_ascii_mac(lan_mac, TEW_712BR_LAN_MAC_ADDRESS);
-	tew_712br_read_ascii_mac(wan_mac, TEW_712BR_WAN_MAC_ADDRESS);
+	ath79_parse_ascii_mac(mac + TEW_712BR_LAN_MAC_OFFSET, lan_mac);
+	ath79_parse_ascii_mac(mac + TEW_712BR_WAN_MAC_OFFSET, wan_mac);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, wan_mac, 0);
 	ath79_init_mac(ath79_eth1_data.mac_addr, lan_mac, 0);
