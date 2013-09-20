@@ -271,8 +271,7 @@
 };
 
 &pcie {
-	rst-gpios = <&gpio1 29 0>; /* PCIESWT_RST# */
-	clken-gpios = <&gpio1 20 0>; /* not used */
+	reset-gpios = <&gpio1 29 0>;
 	status = "okay";
 
 	eth1: sky2@8 { /* MAC/PHY on bus 8 */

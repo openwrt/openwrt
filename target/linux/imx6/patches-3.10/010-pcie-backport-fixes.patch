@@ -1,0 +1,17 @@
+--- a/drivers/pci/Kconfig
++++ b/drivers/pci/Kconfig
+@@ -125,3 +125,5 @@ config PCI_IOAPIC
+ config PCI_LABEL
+ 	def_bool y if (DMI || ACPI)
+ 	select NLS
++
++source "drivers/pci/host/Kconfig"
+--- a/drivers/pci/Makefile
++++ b/drivers/pci/Makefile
+@@ -67,3 +67,6 @@ obj-$(CONFIG_XEN_PCIDEV_FRONTEND) += xen
+ obj-$(CONFIG_OF) += of.o
+ 
+ ccflags-$(CONFIG_PCI_DEBUG) := -DDEBUG
++
++# PCI host controller drivers
++obj-y += host/
