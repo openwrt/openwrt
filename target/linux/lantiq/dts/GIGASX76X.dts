@@ -65,10 +65,6 @@
 					lantiq,groups = "stp";
 					lantiq,function = "stp";
 				};
-				pci {
-					lantiq,groups = "gnt1", "req1";
-					lantiq,function = "pci";
-				};
 			};
 		};
 
@@ -89,7 +85,7 @@
 			status = "okay";
 			lantiq,internal-clock;
 			gpio-reset = <&gpio 21 0>;
-			req-mask = <0xf>;
+			req-mask = <0x1>;
 		};
 	};
 
