@@ -1056,35 +1056,42 @@ void __init ath79_set_mac_base(unsigned char *mac)
 	memcpy(ath79_mac_base, mac, ETH_ALEN);
 }
 
-void __init ath79_parse_mac_addr(char *mac_str)
+void __init ath79_parse_ascii_mac(char *mac_str, u8 *mac)
 {
-	u8 tmp[ETH_ALEN];
 	int t;
 
 	t = sscanf(mac_str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
-			&tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]);
+		   &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 
 	if (t != ETH_ALEN)
 		t = sscanf(mac_str, "%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx",
-			&tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]);
+			&mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 
-	if (t == ETH_ALEN)
-		ath79_set_mac_base(tmp);
-	else
-		printk(KERN_DEBUG "ar71xx: failed to parse mac address "
-				"\"%s\"\n", mac_str);
+	if (t != ETH_ALEN || !is_valid_ether_addr(mac)) {
+		memset(mac, 0, ETH_ALEN);
+		printk(KERN_DEBUG "ar71xx: invalid mac address \"%s\"\n",
+		       mac_str);
+	}
+}
+
+static void __init ath79_set_mac_base_ascii(char *str)
+{
+	u8 mac[ETH_ALEN];
+
+	ath79_parse_ascii_mac(str, mac);
+	ath79_set_mac_base(mac);
 }
 
 static int __init ath79_ethaddr_setup(char *str)
 {
-	ath79_parse_mac_addr(str);
+	ath79_set_mac_base_ascii(str);
 	return 1;
 }
 __setup("ethaddr=", ath79_ethaddr_setup);
 
 static int __init ath79_kmac_setup(char *str)
 {
-	ath79_parse_mac_addr(str);
+	ath79_set_mac_base_ascii(str);
 	return 1;
 }
 __setup("kmac=", ath79_kmac_setup);

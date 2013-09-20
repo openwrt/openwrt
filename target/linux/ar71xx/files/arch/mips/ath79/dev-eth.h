@@ -17,7 +17,7 @@
 struct platform_device;
 
 extern unsigned char ath79_mac_base[] __initdata;
-void ath79_parse_mac_addr(char *mac_str);
+void ath79_parse_ascii_mac(char *mac_str, u8 *mac);
 void ath79_init_mac(unsigned char *dst, const unsigned char *src,
 		    int offset);
 void ath79_init_local_mac(unsigned char *dst, const unsigned char *src);
