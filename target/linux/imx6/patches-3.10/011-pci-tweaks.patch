@@ -1,0 +1,35 @@
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -119,7 +119,7 @@
+ 				  0x82000000 0 0x01000000 0x01000000 0 0x00f00000>; /* non-prefetchable memory */
+ 			num-lanes = <1>;
+ 			interrupts = <0 123 0x04>;
+-			clocks = <&clks 189>, <&clks 187>, <&clks 205>, <&clks 144>;
++			clocks = <&clks 189>, <&clks 187>, <&clks 198>, <&clks 144>;
+ 			clock-names = "pcie_ref_125m", "sata_ref_100m", "lvds_gate", "pcie_axi";
+ 			status = "disabled";
+ 		};
+--- a/drivers/pci/host/pci-imx6.c
++++ b/drivers/pci/host/pci-imx6.c
+@@ -200,12 +200,6 @@
+ static int imx6q_pcie_abort_handler(unsigned long addr,
+ 		unsigned int fsr, struct pt_regs *regs)
+ {
+-	/*
+-	 * If it was an imprecise abort, then we need to correct the
+-	 * return address to be _after_ the instruction.
+-	 */
+-	if (fsr & (1 << 10))
+-		regs->ARM_pc += 4;
+ 	return 0;
+ }
+ 
+@@ -322,7 +316,7 @@
+ 			IMX6Q_GPR12_PCIE_CTL_2, 1 << 10);
+ 
+ 	while (!dw_pcie_link_up(pp)) {
+-		usleep_range(100, 1000);
++		usleep_range(2000, 3000);
+ 		count++;
+ 		if (count >= 10) {
+ 			dev_err(pp->dev, "phy link never came up\n");
