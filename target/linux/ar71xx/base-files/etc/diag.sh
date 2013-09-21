@@ -167,21 +167,11 @@ get_status_led() {
 	wzr-hp-g300nh2)
 		status_led="buffalo:red:diag"
 		;;
-	wndap360)
-		status_led="netgear:green:power"
-		;;
-	wndr3700)
-		status_led="netgear:green:power"
-		;;
-	wndr4300)
-		status_led="netgear:green:power"
-		;;
-	wnr2000)
-		status_led="netgear:green:power"
-		;;
-	wnr2200)
-		status_led="netgear:green:power"
-		;;
+	wndap360 | \
+	wndr3700 | \
+	wndr4300 | \
+	wnr2000 | \
+	wnr2200 |\
 	wnr612-v2)
 		status_led="netgear:green:power"
 		;;
