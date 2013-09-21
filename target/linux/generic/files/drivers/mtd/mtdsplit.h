@@ -19,6 +19,14 @@
 int mtd_get_squashfs_len(struct mtd_info *master,
 			 size_t offset,
 			 size_t *squashfs_len);
+
+int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset);
+
+int mtd_find_rootfs_from(struct mtd_info *mtd,
+			 size_t from,
+			 size_t limit,
+			 size_t *ret_offset);
+
 #else
 static inline int mtd_get_squashfs_len(struct mtd_info *master,
 				       size_t offset,
@@ -26,6 +34,19 @@ static inline int mtd_get_squashfs_len(struct mtd_info *master,
 {
 	return -ENODEV;
 }
-#endif
+
+static inline int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset)
+{
+	return -EINVAL;
+}
+
+static inline int mtd_find_rootfs_from(struct mtd_info *mtd,
+				       size_t from,
+				       size_t limit,
+				       size_t *ret_offset)
+{
+	return -ENODEV;
+}
+#endif /* CONFIG_MTD_SPLIT */
 
 #endif /* _MTDSPLIT_H */
