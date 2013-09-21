@@ -36,6 +36,8 @@
 #define DIR825C1_GPIO_LED_BLUE_PLANET		18
 #define DIR825C1_GPIO_LED_WIFI_BGN		13
 
+#define DIR825C1_GPIO_WAN_LED_ENABLE		20
+
 #define DIR825C1_GPIO_BTN_RESET			17
 #define DIR825C1_GPIO_BTN_WPS			16
 
@@ -74,10 +76,6 @@ static struct gpio_led dir825c1_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "d-link:blue:planet",
-		.gpio		= DIR825C1_GPIO_LED_BLUE_PLANET,
-		.active_low	= 1,
-	}, {
 		.name		= "d-link:blue:wifi_bgn",
 		.gpio		= DIR825C1_GPIO_LED_WIFI_BGN,
 		.active_low	= 1,
@@ -212,6 +210,9 @@ static void __init dir825c1_setup(void)
 {
 	ath79_gpio_output_select(DIR825C1_GPIO_LED_BLUE_USB,
 				 AR934X_GPIO_OUT_GPIO);
+
+	gpio_request_one(DIR825C1_GPIO_WAN_LED_ENABLE,
+			 GPIOF_OUT_INIT_LOW, "WAN LED enable");
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(dir825c1_leds_gpio),
 				 dir825c1_leds_gpio);
