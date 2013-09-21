@@ -46,11 +46,11 @@
  */
 static struct gpio_led wndap360_leds_gpio[] __initdata = {
 	{
-		.name		= "wndap360:green:power",
+		.name		= "netgear:green:power",
 		.gpio		= WNDAP360_GPIO_LED_POWER_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wndap360:orange:power",
+		.name		= "netgear:orange:power",
 		.gpio		= WNDAP360_GPIO_LED_POWER_ORANGE,
 		.active_low	= 1,
         }
