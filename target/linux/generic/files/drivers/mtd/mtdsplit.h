@@ -13,6 +13,9 @@
 #ifndef _MTDSPLIT_H
 #define _MTDSPLIT_H
 
+#define KERNEL_PART_NAME	"kernel"
+#define ROOTFS_PART_NAME	"rootfs"
+
 #define ROOTFS_SPLIT_NAME	"rootfs_data"
 
 #ifdef CONFIG_MTD_SPLIT
