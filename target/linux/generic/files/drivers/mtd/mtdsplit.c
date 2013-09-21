@@ -64,3 +64,53 @@ int mtd_get_squashfs_len(struct mtd_info *master,
 	return 0;
 }
 EXPORT_SYMBOL_GPL(mtd_get_squashfs_len);
+
+static ssize_t mtd_next_eb(struct mtd_info *mtd, size_t offset)
+{
+	return mtd_rounddown_to_eb(offset, mtd) + mtd->erasesize;
+}
+
+int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset)
+{
+	u32 magic;
+	size_t retlen;
+	int ret;
+
+	ret = mtd_read(mtd, offset, sizeof(magic), &retlen,
+		       (unsigned char *) &magic);
+	if (ret)
+		return ret;
+
+	if (retlen != sizeof(magic))
+		return -EIO;
+
+	if (le32_to_cpu(magic) != SQUASHFS_MAGIC &&
+	    magic != 0x19852003)
+		return -EINVAL;
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(mtd_check_rootfs_magic);
+
+int mtd_find_rootfs_from(struct mtd_info *mtd,
+			 size_t from,
+			 size_t limit,
+			 size_t *ret_offset)
+{
+	size_t offset;
+	int err;
+
+	for (offset = from; offset < limit;
+	     offset = mtd_next_eb(mtd, offset)) {
+		err = mtd_check_rootfs_magic(mtd, offset);
+		if (err)
+			continue;
+
+		*ret_offset = offset;
+		return 0;
+	}
+
+	return -ENODEV;
+}
+EXPORT_SYMBOL_GPL(mtd_find_rootfs_from);
+
