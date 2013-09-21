@@ -168,7 +168,7 @@ get_status_led() {
 		status_led="buffalo:red:diag"
 		;;
 	wndap360)
-		status_led="wndap360:green:power"
+		status_led="netgear:green:power"
 		;;
 	wndr3700)
 		status_led="netgear:green:power"
