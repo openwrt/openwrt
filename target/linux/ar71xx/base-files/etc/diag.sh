@@ -183,7 +183,7 @@ get_status_led() {
 		status_led="netgear:amber:power"
 		;;
 	wnr612-v2)
-		status_led="wnr612v2:green:power"
+		status_led="netgear:green:power"
 		;;
 	wp543)
 		status_led="wp543:green:diag"

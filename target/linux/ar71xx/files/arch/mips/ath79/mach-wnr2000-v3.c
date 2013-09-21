@@ -52,7 +52,7 @@ static struct gpio_led wnr2000v3_leds_gpio[] __initdata = {
 
 static struct gpio_led wnr612v2_leds_gpio[] __initdata = {
 	{
-		.name		= "wnr612v2:green:power",
+		.name		= "netgear:green:power",
 		.gpio		= WNR612V2_GPIO_LED_PWR_GREEN,
 		.active_low	= 1,
 	}
