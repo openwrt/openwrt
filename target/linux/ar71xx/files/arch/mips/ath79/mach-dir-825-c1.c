@@ -29,12 +29,12 @@
 #include "machtypes.h"
 
 #define DIR825C1_GPIO_LED_BLUE_USB		11
-#define DIR825C1_GPIO_LED_ORANGE_POWER		14
+#define DIR825C1_GPIO_LED_AMBER_POWER		14
 #define DIR825C1_GPIO_LED_BLUE_POWER		22
 #define DIR825C1_GPIO_LED_BLUE_WPS		15
-#define DIR825C1_GPIO_LED_ORANGE_PLANET		19
+#define DIR825C1_GPIO_LED_AMBER_PLANET		19
 #define DIR825C1_GPIO_LED_BLUE_PLANET		18
-#define DIR825C1_GPIO_LED_WIFI_BGN		13
+#define DIR825C1_GPIO_LED_WLAN_2G		13
 
 #define DIR825C1_GPIO_WAN_LED_ENABLE		20
 
@@ -56,8 +56,8 @@ static struct gpio_led dir825c1_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "d-link:orange:power",
-		.gpio		= DIR825C1_GPIO_LED_ORANGE_POWER,
+		.name		= "d-link:amber:power",
+		.gpio		= DIR825C1_GPIO_LED_AMBER_POWER,
 		.active_low	= 1,
 	},
 	{
@@ -71,21 +71,21 @@ static struct gpio_led dir825c1_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "d-link:orange:planet",
-		.gpio		= DIR825C1_GPIO_LED_ORANGE_PLANET,
+		.name		= "d-link:amber:planet",
+		.gpio		= DIR825C1_GPIO_LED_AMBER_PLANET,
 		.active_low	= 1,
 	},
 	{
-		.name		= "d-link:blue:wifi_bgn",
-		.gpio		= DIR825C1_GPIO_LED_WIFI_BGN,
+		.name		= "d-link:blue:wlan2g",
+		.gpio		= DIR825C1_GPIO_LED_WLAN_2G,
 		.active_low	= 1,
 	},
 };
 
 static struct gpio_led dir835a1_leds_gpio[] __initdata = {
 	{
-		.name		= "d-link:orange:power",
-		.gpio		= DIR825C1_GPIO_LED_ORANGE_POWER,
+		.name		= "d-link:amber:power",
+		.gpio		= DIR825C1_GPIO_LED_AMBER_POWER,
 		.active_low	= 1,
 	},
 	{
@@ -99,8 +99,8 @@ static struct gpio_led dir835a1_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "d-link:orange:planet",
-		.gpio		= DIR825C1_GPIO_LED_ORANGE_PLANET,
+		.name		= "d-link:amber:planet",
+		.gpio		= DIR825C1_GPIO_LED_AMBER_PLANET,
 		.active_low	= 1,
 	},
 	{
@@ -112,7 +112,7 @@ static struct gpio_led dir835a1_leds_gpio[] __initdata = {
 
 static struct gpio_keys_button dir825c1_gpio_keys[] __initdata = {
 	{
-		.desc		= "reset",
+		.desc		= "Soft reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
 		.debounce_interval = DIR825C1_KEYS_DEBOUNCE_INTERVAL,
@@ -120,7 +120,7 @@ static struct gpio_keys_button dir825c1_gpio_keys[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.desc		= "wps",
+		.desc		= "WPS button",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = DIR825C1_KEYS_DEBOUNCE_INTERVAL,

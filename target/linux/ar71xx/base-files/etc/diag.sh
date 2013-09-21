@@ -51,12 +51,12 @@ get_status_led() {
 	dir-615-c1)
 		status_led="d-link:green:status"
 		;;
-	dir-825-b1 |\
-	dir-835-a1)
+	dir-825-b1)
 		status_led="d-link:orange:power"
 		;;
-	dir-825-c1)
-		status_led="d-link:orange:power"
+	dir-825-c1 |\
+	dir-835-a1)
+		status_led="d-link:amber:power"
 		;;
 	eap7660d)
 		status_led="eap7660d:green:ds4"
