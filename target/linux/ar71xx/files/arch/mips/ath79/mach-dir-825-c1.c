@@ -140,11 +140,11 @@ static struct ar8327_pad_cfg dir825c1_ar8327_pad0_cfg = {
 };
 
 static struct ar8327_led_cfg dir825c1_ar8327_led_cfg = {
-	.led_ctrl0 = 0xc737c737,
-	.led_ctrl1 = 0x00000000,
+	.led_ctrl0 = 0x00000000,
+	.led_ctrl1 = 0xc737c737,
 	.led_ctrl2 = 0x00000000,
-	.led_ctrl3 = 0x0030c300,
-	.open_drain = false,
+	.led_ctrl3 = 0x00c30c00,
+	.open_drain = true,
 };
 
 static struct ar8327_platform_data dir825c1_ar8327_data = {
