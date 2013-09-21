@@ -46,6 +46,10 @@ migrate_leds()
 board=$(ar71xx_board_name)
 
 case "$board" in
+wndr3700)
+	migrate_leds "wndr3700:=netgear:"
+	;;
+
 *)
 	;;
 esac
