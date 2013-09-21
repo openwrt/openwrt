@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# Copyright (C) 2013 OpenWrt.org
+#
+
+LED_OPTIONS_CHANGED=0
+
+. /lib/functions.sh
+
+do_led_update_sysfs()
+{
+	local cfg=$1; shift
+	local tuples="$@"
+	local sysfs
+	local name
+
+	config_get sysfs $cfg sysfs
+	config_get name $cfg name
+
+	[ -z "$sysfs" ] && return
+
+	for tuple in $tuples; do
+		local old=${tuple%=*}
+		local new=${tuple#*=}
+		local new_sysfs
+
+		new_sysfs=$(echo ${sysfs} | sed "s/${old}/${new}/")
+
+		[ "${new_sysfs}" == "${sysfs}" ] && continue
+
+		uci set system.${cfg}.sysfs="${new_sysfs}"
+		LED_OPTIONS_CHANGED=1
+
+		logger -t led-migration "sysfs option of LED \"${name}\" updated to ${new_sysfs}"
+	done;
+}
+
+migrate_leds()
+{
+	config_load system
+	config_foreach do_led_update_sysfs led "$@"
+}
+
+. /lib/ar71xx.sh
+
+board=$(ar71xx_board_name)
+
+case "$board" in
+*)
+	;;
+esac
+
+[ "$LED_OPTIONS_CHANGED" == "1" ] && uci commit system
+
+exit 0
