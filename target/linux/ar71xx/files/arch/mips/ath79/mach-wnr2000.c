@@ -77,19 +77,19 @@ static struct flash_platform_data wnr2000_flash_data = {
 
 static struct gpio_led wnr2000_leds_gpio[] __initdata = {
 	{
-		.name		= "wnr2000:green:power",
+		.name		= "netgear:green:power",
 		.gpio		= WNR2000_GPIO_LED_PWR_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2000:amber:power",
+		.name		= "netgear:amber:power",
 		.gpio		= WNR2000_GPIO_LED_PWR_AMBER,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2000:green:wps",
+		.name		= "netgear:green:wps",
 		.gpio		= WNR2000_GPIO_LED_WPS,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2000:blue:wlan",
+		.name		= "netgear:blue:wlan",
 		.gpio		= WNR2000_GPIO_LED_WLAN,
 		.active_low	= 1,
 	}
