@@ -369,6 +369,7 @@ define Image/Build/CameoHornet
 				-K $(10) -I $(11) \
 				-k "$(call sysupname,$(1),$(2))" \
 				-o $(call imgname,$(1),$(2))-factory$$$$dashr.bin; \
+			true; \
 		done; \
 	fi
 endef
