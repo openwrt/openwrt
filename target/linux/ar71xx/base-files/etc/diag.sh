@@ -177,7 +177,7 @@ get_status_led() {
 		status_led="netgear:green:power"
 		;;
 	wnr2000)
-		status_led="wnr2000:green:power"
+		status_led="netgear:green:power"
 		;;
 	wnr2200)
 		status_led="wnr2200:amber:power"
