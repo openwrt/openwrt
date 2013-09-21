@@ -51,23 +51,23 @@
 
 static struct gpio_led wndr3700_leds_gpio[] __initdata = {
 	{
-		.name		= "wndr3700:green:power",
+		.name		= "netgear:green:power",
 		.gpio		= WNDR3700_GPIO_LED_POWER_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wndr3700:orange:power",
+		.name		= "netgear:orange:power",
 		.gpio		= WNDR3700_GPIO_LED_POWER_ORANGE,
 		.active_low	= 1,
 	}, {
-		.name		= "wndr3700:green:wps",
+		.name		= "netgear:green:wps",
 		.gpio		= WNDR3700_GPIO_LED_WPS_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wndr3700:orange:wps",
+		.name		= "netgear:orange:wps",
 		.gpio		= WNDR3700_GPIO_LED_WPS_ORANGE,
 		.active_low	= 1,
 	}, {
-		.name		= "wndr3700:green:wan",
+		.name		= "netgear:green:wan",
 		.gpio		= WNDR3700_GPIO_LED_WAN_GREEN,
 		.active_low	= 1,
 	}

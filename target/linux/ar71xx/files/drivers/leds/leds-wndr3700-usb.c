@@ -32,7 +32,7 @@ static enum led_brightness wndr3700_usb_led_get(struct led_classdev *cdev)
 }
 
 static struct led_classdev wndr3700_usb_led = {
-	.name = "wndr3700:green:usb",
+	.name = "netgear:green:usb",
 	.brightness_set = wndr3700_usb_led_set,
 	.brightness_get = wndr3700_usb_led_get,
 };
