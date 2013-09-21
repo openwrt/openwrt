@@ -46,6 +46,11 @@ migrate_leds()
 board=$(ar71xx_board_name)
 
 case "$board" in
+dir-825-c1|\
+dir-835-a1)
+	migrate_leds ":orange:=:amber:" ":wifi_bgn=:wlan2g"
+	;;
+
 wndap360)
 	migrate_leds "wndap360:=netgear:"
 	;;
