@@ -48,55 +48,55 @@
 
 static struct gpio_led wnr2200_leds_gpio[] __initdata = {
 	{
-		.name		= "wnr2200:amber:lan2",
+		.name		= "netgear:amber:lan2",
 		.gpio		= WNR2200_GPIO_LED_LAN2_AMBER,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:amber:lan4",
+		.name		= "netgear:amber:lan4",
 		.gpio		= WNR2200_GPIO_LED_LAN4_AMBER,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:green:wps",
+		.name		= "netgear:green:wps",
 		.gpio		= WNR2200_GPIO_LED_WPS,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:green:wan",
+		.name		= "netgear:green:wan",
 		.gpio		= WNR2200_GPIO_LED_WAN_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:green:usb",
+		.name		= "netgear:green:usb",
 		.gpio		= WNR2200_GPIO_LED_USB,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:amber:lan3",
+		.name		= "netgear:amber:lan3",
 		.gpio		= WNR2200_GPIO_LED_LAN3_AMBER,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:amber:wan",
+		.name		= "netgear:amber:wan",
 		.gpio		= WNR2200_GPIO_LED_WAN_AMBER,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:green:lan1",
+		.name		= "netgear:green:lan1",
 		.gpio		= WNR2200_GPIO_LED_LAN1_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:green:lan2",
+		.name		= "netgear:green:lan2",
 		.gpio		= WNR2200_GPIO_LED_LAN2_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:green:lan3",
+		.name		= "netgear:green:lan3",
 		.gpio		= WNR2200_GPIO_LED_LAN3_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:green:lan4",
+		.name		= "netgear:green:lan4",
 		.gpio		= WNR2200_GPIO_LED_LAN4_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:amber:power",
+		.name		= "netgear:amber:power",
 		.gpio		= WNR2200_GPIO_LED_PWR_AMBER,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2200:green:power",
+		.name		= "netgear:green:power",
 		.gpio		= WNR2200_GPIO_LED_PWR_GREEN,
 		.active_low	= 1,
 	}
