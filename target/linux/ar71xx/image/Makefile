@@ -114,6 +114,13 @@ define CatFiles
 		*) bs=`stat -c%s $(1)`;; \
 		esac; \
 		( dd if=$(1) bs=$$$${bs} conv=sync;  cat $(3) ) > $(5); \
+		if [ -n "$(6)" ]; then \
+			case "$$$${fstype}" in \
+			squashfs*) \
+				padjffs2 $(5) $(6); \
+				;; \
+			esac; \
+		fi; \
 		if [ `stat -c%s $(5)` -gt $(4) ]; then \
 			echo "Warning: $(5) is too big (> $(4) bytes)" >&2; \
 			rm -f $(5); \
@@ -128,7 +135,7 @@ define CatFiles
 endef
 
 Sysupgrade/KR=$(call CatFiles,$(2),$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(5)))
-Sysupgrade/KRuImage=$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)))
+Sysupgrade/KRuImage=$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)),$(5))
 Sysupgrade/RKuImage=$(call CatFiles,$(KDIR)/root.$(1),$(4),$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(call sysupname,$(1),$(2)))
 
 define Image/BuildLoader
@@ -714,13 +721,8 @@ endef
 
 define Image/Build/Netgear
 	$(eval fwsize=$(call mtdpartsize,firmware,$(4)))
-	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage.squashfs,0,$(KDIR)/root.$(1),$(fwsize),$(call sysupname,$(1),$(2)))
+	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage.squashfs,0,$(KDIR)/root.$(1),$(fwsize),$(call sysupname,$(1),$(2)),64)
 	if [ -e $(call sysupname,$(1),$(2)) ]; then \
-		case "$(1)" in \
-		*squashfs*) \
-			padjffs2 $(call sysupname,$(1),$(2)) 64; \
-			;; \
-		esac; \
 		for r in $(7) ; do \
 			[ -n "$$$$r" ] && dashr="-$$$$r" || dashr= ; \
 			$(STAGING_DIR_HOST)/bin/mkdniimg \
