@@ -101,13 +101,25 @@ define MkuImageOKLI
 endef
 
 define CatFiles
-	if [ $(2) -gt 262144 -a `stat -c%s "$(1)"` -gt $(2) ]; then \
+	if [ $(2) -eq 0 ]; then \
+		filename="$(3)"; fstype=$$$${filename##*\.}; \
+		case "$$$${fstype}" in \
+		"jffs2-64k") bs=65536;; \
+		"jffs2-128k") bs=131072;; \
+		"jffs2-256k") bs=262144;; \
+		*) bs=`stat -c%s $(1)`;; \
+		esac; \
+		( dd if=$(1) bs=$$$${bs} conv=sync;  cat $(3) ) > $(5); \
+		if [ `stat -c%s $(5)` -gt $(4) ]; then \
+			echo "Warning: $(1) is too big" >&2; \
+		fi; \
+	else if [ $(2) -gt 262144 -a `stat -c%s "$(1)"` -gt $(2) ]; then \
 		echo "Warning: $(1) is too big" >&2; \
 	else if [ `stat -c%s $(3)` -gt $(4) ]; then \
 		echo "Warning: $(3) is too big" >&2; \
 	else \
 		( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
-	fi; fi
+	fi; fi; fi
 endef
 
 Sysupgrade/KR=$(call CatFiles,$(2),$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(5)))
