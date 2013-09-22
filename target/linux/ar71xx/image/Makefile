@@ -115,7 +115,8 @@ define CatFiles
 		esac; \
 		( dd if=$(1) bs=$$$${bs} conv=sync;  cat $(3) ) > $(5); \
 		if [ `stat -c%s $(5)` -gt $(4) ]; then \
-			echo "Warning: $(1) is too big" >&2; \
+			echo "Warning: $(5) is too big (> $(4) bytes)" >&2; \
+			rm -f $(5); \
 		fi; \
 	else if [ $(2) -gt 262144 -a `stat -c%s "$(1)"` -gt $(2) ]; then \
 		echo "Warning: $(1) is too big" >&2; \
