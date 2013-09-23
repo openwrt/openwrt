@@ -2,9 +2,9 @@
 # Copyright (C) 2006-2011 OpenWrt.org
 
 START=50
+
 USE_PROCD=1
 PROG=/usr/sbin/telnetd
-NAME=telnetd
 
 has_root_pwd() {
 	local pwd=$([ -f "$1" ] && cat "$1")
@@ -31,8 +31,8 @@ start_service() {
 	     ! has_root_pwd /etc/passwd && ! has_root_pwd /etc/shadow ) || \
 	   ( ! /etc/init.d/dropbear enabled 2> /dev/null && ! /etc/init.d/sshd enabled 2> /dev/null );
 	then
-	        procd_open_instance
-        	procd_set_param command "$PROG" -F -l /bin/login.sh
+		procd_open_instance
+		procd_set_param command "$PROG" -F -l /bin/login.sh
 		procd_close_instance
 	fi
 }

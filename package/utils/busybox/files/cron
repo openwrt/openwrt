@@ -5,7 +5,6 @@ START=50
 
 USE_PROCD=1
 PROG=/usr/sbin/crond
-NAME=crond
 
 start_service () {
 	[ -z "$(ls /etc/crontabs/)" ] && return 1
