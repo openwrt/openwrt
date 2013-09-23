@@ -344,7 +344,8 @@ Image/Build/WHRHPG300N/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
 Image/Build/WHRHPG300N/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 
 define Image/Build/WHRHPG300N
-	$(call Sysupgrade/KRuImage,$(1),$(2),65536,2818048)
+	$(eval fwsize=$(call mtdpartsize,firmware,$(4)))
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(fwsize)-4*64*1024)),64)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
@@ -998,10 +999,10 @@ $(eval $(call SingleProfile,UBNTXM,64k,UBNTNANOM,ubnt-nano-m,UBNT-NM,ttyS0,11520
 $(eval $(call SingleProfile,UBNTXM,64k,UBNTUNIFI,ubnt-unifi,UBNT-UF,ttyS0,115200,XM,XM,ar7240))
 $(eval $(call SingleProfile,UBNTXM,64k,UBNTUNIFIOUTDOOR,ubnt-unifi-outdoor,UBNT-U20,ttyS0,115200,XM,XM,ar7240))
 
-$(eval $(call SingleProfile,WHRHPG300N,64k,WHRG301N,whr-g301n,WHR-G301N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-G301N))
-$(eval $(call SingleProfile,WHRHPG300N,64k,WHRHPG300N,whr-hp-g300n,WHR-HP-G300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-G300N))
-$(eval $(call SingleProfile,WHRHPG300N,64k,WHRHPGN,whr-hp-gn,WHR-HP-GN,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-GN))
-$(eval $(call SingleProfile,WHRHPG300N,64k,WLAEAG300N,wlae-ag300n,WLAE-AG300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WLAE-AG300N))
+$(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRG301N,whr-g301n,WHR-G301N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-G301N))
+$(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRHPG300N,whr-hp-g300n,WHR-HP-G300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-G300N))
+$(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRHPGN,whr-hp-gn,WHR-HP-GN,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-GN))
+$(eval $(call SingleProfile,WHRHPG300N,64kraw,WLAEAG300N,wlae-ag300n,WLAE-AG300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WLAE-AG300N))
 
 $(eval $(call SingleProfile,WRT400N,64k,WRT400N,wrt400n,WRT400N,ttyS0,115200))
 
