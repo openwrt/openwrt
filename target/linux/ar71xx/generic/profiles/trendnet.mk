@@ -49,3 +49,14 @@ endef
 
 $(eval $(call Profile,TEW712BR))
 
+
+define Profile/TEW732BR
+	NAME:=TRENDNet TEW-732BR
+	PACKAGES:=
+endef
+
+define Profile/TEW732BR/Description
+	Package set optimized for the TRENDNet TEW-732BR.
+endef
+
+$(eval $(call Profile,TEW732BR))
