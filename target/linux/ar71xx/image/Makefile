@@ -530,7 +530,7 @@ endef
 
 Image/Build/Planex/loader=$(call Image/BuildLoaderAlone,$(1),gz,$(2) $(planex_mtdlayout),0x52000,0)
 
-define Image/Build/Planex
+define Image/Build/Planex/buildkernel
 	[ -e "$(KDIR)/loader-$(2).gz" ]
 	$(call MkuImage,gzip,,$(KDIR)/loader-$(2).gz,$(KDIR_TMP)/vmlinux-$(2).uImage)
 	$(call MkuImageOKLI,$(2))
@@ -538,6 +538,9 @@ define Image/Build/Planex
 		dd if=$(KDIR_TMP)/vmlinux-$(2).uImage bs=8k count=1 conv=sync; \
 		dd if=$(KDIR_TMP)/vmlinux-$(2).okli; \
 	) > $(KDIR_TMP)/kernel-$(2).bin
+endef
+
+define Image/Build/Planex
 	$(call Sysupgrade/KR,$(1),$(KDIR_TMP)/kernel-$(2).bin,1048576,6750208,$(2))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkplanexfw \
