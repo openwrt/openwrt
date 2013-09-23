@@ -5,7 +5,6 @@ START=98
 
 USE_PROCD=1
 PROG=/usr/sbin/ntpd
-SERVICE_PID_FILE=/var/run/sysntpd.pid
 
 start_service() {
 	local peers
@@ -20,7 +19,7 @@ start_service() {
 
 	procd_open_instance
 	procd_set_param command "$PROG" -n
-        [ $enable_server -ne 0 ] && procd_append_param command -l
+	[ $enable_server -ne 0 ] && procd_append_param command -l
 	[ -n "$peers" ] && {
 		local peer
 		for peer in $peers; do
