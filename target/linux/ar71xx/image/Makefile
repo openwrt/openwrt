@@ -528,6 +528,7 @@ define Image/Build/UBNT
 endef
 
 
+Image/Build/Planex/initramfs=$(call MkuImageGzip/initramfs,$(2),$(3) $(planex_mtdlayout))
 Image/Build/Planex/loader=$(call Image/BuildLoaderAlone,$(1),gz,$(2) $(planex_mtdlayout),0x52000,0)
 
 define Image/Build/Planex/buildkernel
