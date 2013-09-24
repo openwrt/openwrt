@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2008-2012 OpenWrt.org
+# Copyright (C) 2008-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=m4
-PKG_VERSION:=1.4.16
+PKG_VERSION:=1.4.17
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
-PKG_MD5SUM:=a5dfb4f2b7370e9d34293d23fd09b280
-PKG_CAT:=zcat
+PKG_MD5SUM:=12a3c829301a4fd6586a57d3fcf196dc
+PKG_CAT:=xzcat
 
 HOST_BUILD_PARALLEL:=1
 
