@@ -1,21 +1,21 @@
 --- a/bin/quilt.in
 +++ b/bin/quilt.in
-@@ -7,9 +7,15 @@
- #  See the COPYING and AUTHORS files for more details.
+@@ -11,9 +11,15 @@
+ unset POSIXLY_CORRECT
  
  export TEXTDOMAIN=quilt
 -export TEXTDOMAINDIR=@LOCALEDIR@
  
--: ${QUILT_DIR=@QUILT_DIR@} ${QUILT_LIB=@QUILT_LIB@}
+-: ${QUILT_DIR=@QUILT_DIR@}
 +if test -n "$STAGING_DIR"; then
 +	export TEXTDOMAINDIR="$STAGING_DIR/../host/share/locale"
 +	: ${QUILT_DIR=$STAGING_DIR/../host/share/quilt} ${QUILT_LIB=$STAGING_DIR/../host/lib/quilt}
 +else
 +	export TEXTDOMAINDIR=@LOCALEDIR@
-+	: ${QUILT_DIR=@QUILT_DIR@} ${QUILT_LIB=@QUILT_LIB@}
++	: ${QUILT_DIR=@QUILT_DIR@}
 +fi
 +
- export QUILT_DIR QUILT_LIB
+ export QUILT_DIR
  
  if [ -z "$QUILTRC" ]
 --- a/quilt/scripts/edmail.in
@@ -44,20 +44,9 @@
  
  if ! [ -r $QUILT_DIR/scripts/patchfns ]
  then
---- a/quilt/scripts/parse-patch.in
-+++ b/quilt/scripts/parse-patch.in
-@@ -34,7 +34,7 @@ BEGIN {
- }
- 
- setlocale(LC_MESSAGES, "");
--bindtextdomain("quilt", "@LOCALEDIR@");
-+bindtextdomain("quilt", $ENV{'STAGING_DIR'} ? $ENV{'STAGING_DIR'} . '/../host/share/locale' : "@LOCALEDIR@");
- textdomain("quilt");
- 
- sub _($) {
 --- a/quilt/scripts/patchfns.in
 +++ b/quilt/scripts/patchfns.in
-@@ -10,7 +10,11 @@
+@@ -8,7 +8,11 @@
  #  See the COPYING and AUTHORS files for more details.
  
  export TEXTDOMAIN=quilt
