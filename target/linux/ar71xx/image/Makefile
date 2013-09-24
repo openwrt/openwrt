@@ -497,6 +497,7 @@ define Image/Build/UBNT2
 		-o $(call factoryname,$(1),$(2))
 endef
 
+Image/Build/UBNTXM/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(ubntxm_mtdlayout))
 Image/Build/UBNTXM/buildkernel=$(call MkuImageLzma,$(2),$(3) $(ubntxm_mtdlayout))
 Image/Build/UBNTXM=$(call Image/Build/UBNT2,$(1),$(2),$(ubntxm_mtdlayout),$(4),$(5),$(6),$(7))
 
