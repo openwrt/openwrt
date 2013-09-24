@@ -268,7 +268,7 @@ define Image/Build/CameoAP94
 endef
 
 define Image/Build/WZRHP
-	$(call Sysupgrade/KRuImage,$(1),$(2),$(3),$(4))
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(3)-4*$(4)*1024)),$(4))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
@@ -286,11 +286,11 @@ endef
 
 Image/Build/WZRHP64K/buildkernel=$(call MkuImageLzma,$(2),$(3))
 Image/Build/WZRHP64K/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
-Image/Build/WZRHP64K=$(call Image/Build/WZRHP,$(1),$(2),65536,31850496,$(4))
+Image/Build/WZRHP64K=$(call Image/Build/WZRHP,$(1),$(2),33095680,64,$(4))
 
 Image/Build/WZRHP128K/buildkernel=$(call MkuImageLzma,$(2),$(3))
 Image/Build/WZRHP128K/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
-Image/Build/WZRHP128K=$(call Image/Build/WZRHP,$(1),$(2),131072,31850496,$(4))
+Image/Build/WZRHP128K=$(call Image/Build/WZRHP,$(1),$(2),33030144,128,$(4))
 
 
 Image/Build/WHRHPG300N/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
@@ -786,6 +786,7 @@ $(eval $(call BuildTemplate,64k,-64k,64k))
 $(eval $(call BuildTemplate,64kraw,-raw,64k))
 $(eval $(call BuildTemplate,64kraw-nojffs,-raw))
 $(eval $(call BuildTemplate,128k,,128k))
+$(eval $(call BuildTemplate,128kraw,-raw,128k))
 $(eval $(call BuildTemplate,256k,,256k))
 $(eval $(call BuildTemplate,all,,64k 128k 256k))
 
@@ -954,11 +955,11 @@ $(eval $(call SingleProfile,WHRHPG300N,64kraw,WLAEAG300N,wlae-ag300n,WLAE-AG300N
 
 $(eval $(call SingleProfile,WRT400N,64k,WRT400N,wrt400n,WRT400N,ttyS0,115200))
 
-$(eval $(call SingleProfile,WZRHP128K,128k,WZRHPG300NH,wzr-hp-g300nh,WZR-HP-G300NH,ttyS0,115200,WZR-HP-G300NH))
-$(eval $(call SingleProfile,WZRHP64K,64k,WZRHPG300NH2,wzr-hp-g300nh2,WZR-HP-G300NH2,ttyS0,115200,WZR-HP-G300NH2))
-$(eval $(call SingleProfile,WZRHP64K,64k,WZRHPAG300H,wzr-hp-ag300h,WZR-HP-AG300H,ttyS0,115200,WZR-HP-AG300H))
-$(eval $(call SingleProfile,WZRHP64K,64k,WZRHPG450H,wzr-hp-g450h,WZR-HP-G450H,ttyS0,115200,WZR-HP-AG450H))
-$(eval $(call SingleProfile,WZRHP64K,64k,WZR600DHP,wzr-600dhp,WZR-HP-AG300H,ttyS0,115200,WZR-600DHP))
+$(eval $(call SingleProfile,WZRHP128K,128kraw,WZRHPG300NH,wzr-hp-g300nh,WZR-HP-G300NH,ttyS0,115200,WZR-HP-G300NH))
+$(eval $(call SingleProfile,WZRHP64K,64kraw,WZRHPG300NH2,wzr-hp-g300nh2,WZR-HP-G300NH2,ttyS0,115200,WZR-HP-G300NH2))
+$(eval $(call SingleProfile,WZRHP64K,64kraw,WZRHPAG300H,wzr-hp-ag300h,WZR-HP-AG300H,ttyS0,115200,WZR-HP-AG300H))
+$(eval $(call SingleProfile,WZRHP64K,64kraw,WZRHPG450H,wzr-hp-g450h,WZR-HP-G450H,ttyS0,115200,WZR-HP-AG450H))
+$(eval $(call SingleProfile,WZRHP64K,64kraw,WZR600DHP,wzr-600dhp,WZR-HP-AG300H,ttyS0,115200,WZR-600DHP))
 
 $(eval $(call SingleProfile,Zcomax,64k,ZCN1523H28,zcn-1523h-2-8,ZCN-1523H-2,ttyS0,115200,$$(zcn1523h_mtdlayout)))
 $(eval $(call SingleProfile,Zcomax,64k,ZCN1523H516,zcn-1523h-5-16,ZCN-1523H-5,ttyS0,115200,$$(zcn1523h_mtdlayout)))
