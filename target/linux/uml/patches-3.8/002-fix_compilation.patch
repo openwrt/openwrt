@@ -1,0 +1,24 @@
+diff --git a/arch/um/os-Linux/signal.c b/arch/um/os-Linux/signal.c 
+index b1469fe..9d9f1b4 100644 
+--- a/arch/um/os-Linux/signal.c 
++++ b/arch/um/os-Linux/signal.c 
+@@ -15,7 +15,7 @@ 
+ #include <sysdep/mcontext.h>
+ #include "internal.h"
+ 
+-void (*sig_info[NSIG])(int, siginfo_t *, struct uml_pt_regs *) = {
++void (*sig_info[NSIG])(int, struct siginfo *, struct uml_pt_regs *) = {
+ 	[SIGTRAP]	= relay_signal,
+ 	[SIGFPE]	= relay_signal,
+ 	[SIGILL]	= relay_signal,
+--- a/arch/um/os-Linux/start_up.c
++++ b/arch/um/os-Linux/start_up.c
+@@ -15,6 +15,8 @@
+ #include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <sys/wait.h>
++#include <sys/time.h>
++#include <sys/resource.h>
+ #include <asm/unistd.h>
+ #include <init.h>
+ #include <os.h>
