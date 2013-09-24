@@ -1,0 +1,11 @@
+--- pristine-linux-3.4.38/init/main.c	2013-03-28 21:12:41.000000000 +0200
++++ build-linux-3.4.38/init/main.c	2013-04-04 12:25:59.987999573 +0300
+@@ -743,7 +743,7 @@
+ 	extern const struct kernel_param __start___param[], __stop___param[];
+ 	initcall_t *fn;
+ 
+-	strcpy(static_command_line, saved_command_line);
++	/* strcpy(static_command_line, saved_command_line); */
+ 	parse_args(initcall_level_names[level],
+ 		   static_command_line, __start___param,
+ 		   __stop___param - __start___param,
