@@ -491,12 +491,12 @@ define Image/Build/UBNT2
 	$(eval fwsize=$(call mtdpartsize,firmware,$(3)))
 	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(fwsize)-4*64*1024)),64)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		dd if=$(call sysupname,$(1),$(2)) of=$(KDIR_TMP)/$(1)-mtdpart-kernel.bin bs=1024k count=1; \
-		dd if=$(call sysupname,$(1),$(2)) of=$(KDIR_TMP)/$(1)-mtdpart-rootfs.bin bs=1024k skip=1; \
+		dd if=$(call sysupname,$(1),$(2)) of=$(KDIR_TMP)/$(2)-mtdpart-kernel.bin bs=1024k count=1; \
+		dd if=$(call sysupname,$(1),$(2)) of=$(KDIR_TMP)/$(2)-mtdpart-rootfs.bin bs=1024k skip=1; \
 		$(STAGING_DIR_HOST)/bin/mkfwimage \
 			-B $(4) -v $(5).$(6).v6.0.0-OpenWrt-$(REVISION) \
-			-k $(KDIR_TMP)/$(1)-mtdpart-kernel.bin \
-			-r $(KDIR_TMP)/$(1)-mtdpart-rootfs.bin \
+			-k $(KDIR_TMP)/$(2)-mtdpart-kernel.bin \
+			-r $(KDIR_TMP)/$(2)-mtdpart-rootfs.bin \
 			-o $(call factoryname,$(1),$(2)); \
 	fi
 endef
