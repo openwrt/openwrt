@@ -267,47 +267,30 @@ define Image/Build/CameoAP94
 	fi
 endef
 
+define Image/Build/WZRHP
+	$(call Sysupgrade/KRuImage,$(1),$(2),$(3),$(4))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		( \
+			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
+			dd if=$(call sysupname,$(1),$(2)); \
+		) > $(call imgname,$(1),$(2))-tftp.bin; \
+		buffalo-enc -p $(5) -v 1.99 \
+			-i $(call sysupname,$(1),$(2)) \
+			-o $(KDIR_TMP)/$(2).enc; \
+		buffalo-tag -b $(5) -p $(5) -a ath -v 1.99 -m 1.01 -l mlang8 \
+			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
+			-i $(KDIR_TMP)/$(2).enc \
+			-o $(call factoryname,$(1),$(2)); \
+	fi
+endef
 
 Image/Build/WZRHP64K/buildkernel=$(call MkuImageLzma,$(2),$(3))
 Image/Build/WZRHP64K/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
-
-define Image/Build/WZRHP64K
-	$(call Sysupgrade/KRuImage,$(1),$(2),65536,31850496)
-	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		( \
-			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
-			dd if=$(call sysupname,$(1),$(2)); \
-		) > $(call imgname,$(1),$(2))-tftp.bin; \
-		buffalo-enc -p $(4) -v 1.99 \
-			-i $(call sysupname,$(1),$(2)) \
-			-o $(KDIR_TMP)/$(2).enc; \
-		buffalo-tag -b $(4) -p $(4) -a ath -v 1.99 -m 1.01 -l mlang8 \
-			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
-			-i $(KDIR_TMP)/$(2).enc \
-			-o $(call factoryname,$(1),$(2)); \
-	fi
-endef
-
+Image/Build/WZRHP64K=$(call Image/Build/WZRHP,$(1),$(2),65536,31850496,$(4))
 
 Image/Build/WZRHP128K/buildkernel=$(call MkuImageLzma,$(2),$(3))
 Image/Build/WZRHP128K/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
-
-define Image/Build/WZRHP128K
-	$(call Sysupgrade/KRuImage,$(1),$(2),131072,31850496)
-	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		( \
-			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
-			dd if=$(call sysupname,$(1),$(2)); \
-		) > $(call imgname,$(1),$(2))-tftp.bin; \
-		buffalo-enc -p $(4) -v 1.99 \
-			-i $(call sysupname,$(1),$(2)) \
-			-o $(KDIR_TMP)/$(2).enc; \
-		buffalo-tag -b $(4) -p $(4) -a ath -v 1.99 -m 1.01 -l mlang8 \
-			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
-			-i $(KDIR_TMP)/$(2).enc \
-			-o $(call factoryname,$(1),$(2)); \
-	fi
-endef
+Image/Build/WZRHP128K=$(call Image/Build/WZRHP,$(1),$(2),131072,31850496,$(4))
 
 
 Image/Build/WHRHPG300N/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
