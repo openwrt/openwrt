@@ -31,10 +31,6 @@ ifneq ($(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_kmod-b43legacy)$(CONFIG_BRCMSM
 tools-y += b43-tools
 endif
 
-ifneq ($(CONFIG_PACKAGE_firmwarehotplug),)
-tools-y += sdcc
-endif
-
 ifdef CONFIG_GCC_USE_GRAPHITE
   ifeq ($(CONFIG_GCC_USE_SYSTEM_PPL_CLOOG),)
 	tools-y += ppl cloog
