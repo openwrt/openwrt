@@ -63,7 +63,7 @@ define Image/Build
 	./gen_image.sh $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).bin 4 $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1)
 endef
 
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   define Image/Prepare
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-initramfs '$(strip $(call Image/cmdline/yaffs2)) '
 	cat $(KDIR)/vmlinux-initramfs | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux-initramfs.lzma
