@@ -1,7 +1,7 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -273,13 +273,10 @@ $(patsubst %.in,%,$(wildcard bin/*.in qu
- lib/backup-files.o :: Makefile
+@@ -266,13 +266,10 @@ $(patsubst %.in,%,$(wildcard bin/*.in qu
+ 	@$(if $(filter $@,$(NON_EXEC_IN)),,chmod +x $@)
  
  configure : configure.ac aclocal.m4
 -	autoconf
