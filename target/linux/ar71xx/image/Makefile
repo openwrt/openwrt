@@ -182,8 +182,8 @@ cameo_db120_mtdlayout=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,15936k(firmware)
 cameo_db120_mtdlayout_8M=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,7872k(firmware),128k(lang)ro,64k(art)ro
 cap4200ag_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe),64k(art),13632k@0xa0000(firmware)
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
-dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,6208k(firmware),64k(caldata)ro,1600k(unknown)ro,64k@0x7f0000(caldata_copy)
-dir825b1_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,7808k(firmware),64k(caldata)ro,64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
+cameo_ap94_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,6208k(firmware),64k(caldata)ro,1600k(unknown)ro,64k@0x7f0000(caldata_copy)
+cameo_ap94_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,7808k(firmware),64k(caldata)ro,64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
 ew-dorin_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),3712k(firmware),64k(art)
 dlrtdev_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,6208k(firmware),64k(caldata)ro,640k(certs),960k(unknown)ro,64k@0x7f0000(caldata_copy)
 dlrtdev_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,7168k(firmware),640k(certs),64k(caldata)ro,64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
@@ -234,56 +234,24 @@ define Image/Build/WRT400N
 endef
 
 
-define Image/Build/DIR825B1/buildkernel
-	$(call MkuImageLzma,$(2),$(3) $(dir825b1_mtdlayout))
-	$(call MkuImageLzma,$(2)-fat,$(3) $(dir825b1_mtdlayout_fat))
+define Image/Build/CameoAP94/buildkernel
+	$(call MkuImageLzma,$(2),$(3) $(4))
+	$(call MkuImageLzma,$(2)-fat,$(3) $(5))
 endef
 
-define Image/Build/DIR825B1
+define Image/Build/CameoAP94
 	$(call Sysupgrade/KRuImage,$(1),$(2),65536,5308416)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			dd if=$(call sysupname,$(1),$(2)); \
-			echo -n "$(4)"; \
+			echo -n "$(6)"; \
 		) > $(call imgname,$(1),$(2))-backup-loader.bin; \
 		if [ `stat -c%s $(call sysupname,$(1),$(2))` -gt 4194304 ]; then \
 			echo "Warning: $(call sysupname,$(1),$(2)) is too big" >&2; \
 		else \
 			( \
 				dd if=$(call sysupname,$(1),$(2)) bs=4096k conv=sync; \
-				echo -n "$(5)"; \
-			) > $(call factoryname,$(1),$(2)); \
-		fi; \
-	fi
-	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,65536,$(KDIR)/root.$(1),6946816,$(KDIR_TMP)/$(2)-fat.bin)
-	if [ -e "$(KDIR_TMP)/$(2)-fat.bin" ]; then \
-		echo -n "" > $(KDIR_TMP)/$(2)-fat.dummy; \
-		sh $(TOPDIR)/scripts/combined-image.sh \
-			"$(KDIR_TMP)/$(2)-fat.bin" \
-			"$(KDIR_TMP)/$(2)-fat.dummy" \
-			$(call sysupname,$(1),$(2)-fat); \
-	fi
-endef
-
-
-define Image/Build/DLRTDEV/buildkernel
-	$(call MkuImageLzma,$(2),$(3) $(dlrtdev_mtdlayout))
-	$(call MkuImageLzma,$(2)-fat,$(3) $(dlrtdev_mtdlayout_fat))
-endef
-
-define Image/Build/DLRTDEV
-	$(call Sysupgrade/KRuImage,$(1),$(2),65536,5308416)
-	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		( \
-			dd if=$(call sysupname,$(1),$(2)); \
-			echo -n "$(4)"; \
-		) > $(call imgname,$(1),$(2))-backup-loader.bin; \
-		if [ `stat -c%s $(call sysupname,$(1),$(2))` -gt 4194304 ]; then \
-			echo "Warning: $(call sysupname,$(1),$(2)) is too big" >&2; \
-		else \
-			( \
-				dd if=$(call sysupname,$(1),$(2)) bs=4096k conv=sync; \
-				echo -n "$(5)"; \
+				echo -n "$(7)"; \
 			) > $(call factoryname,$(1),$(2)); \
 		fi; \
 	fi
@@ -885,10 +853,9 @@ $(eval $(call SingleProfile,CameoDB120_8M,64kraw,TEW732BR,tew-732br,TEW-732BR,tt
 
 $(eval $(call SingleProfile,CyberTAN,64k,WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,1.00.01))
 
-$(eval $(call SingleProfile,DIR825B1,64k,DIR825B1,dir-825-b1,DIR-825-B1,ttyS0,115200,01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
-$(eval $(call SingleProfile,DIR825B1,64k,TEW673GRU,tew-673gru,TEW-673GRU,ttyS0,115200,01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01))
-
-$(eval $(call SingleProfile,DLRTDEV,64k,DLRTDEV01,dlrtdev01,DIR-825-B1,ttyS0,115200,01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
+$(eval $(call SingleProfile,CameoAP94,64k,DIR825B1,dir-825-b1,DIR-825-B1,ttyS0,115200,$$(cameo_ap94_mtdlayout),$$(cameo_ap94_mtdlayout_fat),01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
+$(eval $(call SingleProfile,CameoAP94,64k,TEW673GRU,tew-673gru,TEW-673GRU,ttyS0,115200,$$(cameo_ap94_mtdlayout),$$(cameo_ap94_mtdlayout_fat),01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01))
+$(eval $(call SingleProfile,CameoAP94,64k,DLRTDEV01,dlrtdev01,DIR-825-B1,ttyS0,115200,$$(dlrtdev_mtdlayout),$$(dlrtdev_mtdlayout_fat),01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
 
 $(eval $(call SingleProfile,MyLoader,64k,WP543_2M,wp543,,ttyS0,115200,0x200000,2M))
 $(eval $(call SingleProfile,MyLoader,64k,WP543_4M,wp543,,ttyS0,115200,0x400000,4M))
