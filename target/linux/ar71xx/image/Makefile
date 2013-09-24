@@ -487,9 +487,7 @@ define Image/Build/UAPPRO
 endef
 
 
-Image/Build/UBNTXM/buildkernel=$(call MkuImageLzma,$(2),$(3) $(ubntxm_mtdlayout))
-
-define Image/Build/UBNTXM
+define Image/Build/UBNT2
 	$(call Sysupgrade/KRuImage,$(1),$(2),65536,6684672)
 	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(KDIR_TMP)/vmlinux-$(2).uImage.bin bs=64k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
@@ -499,18 +497,11 @@ define Image/Build/UBNTXM
 		-o $(call factoryname,$(1),$(2))
 endef
 
+Image/Build/UBNTXM/buildkernel=$(call MkuImageLzma,$(2),$(3) $(ubntxm_mtdlayout))
+Image/Build/UBNTXM=$(call Image/Build/UBNT2,$(1),$(2),$(ubntxm_mtdlayout),$(4),$(5),$(6),$(7))
 
 Image/Build/UBDEV/buildkernel=$(call MkuImageLzma,$(2),$(3) $(ubdev_mtdlayout))
-
-define Image/Build/UBDEV
-	$(call Sysupgrade/KRuImage,$(1),$(2),65536,6684672)
-	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(KDIR_TMP)/vmlinux-$(2).uImage.bin bs=64k conv=sync
-	-$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(4) -v $(5).$(6).v6.0.0-OpenWrt-$(REVISION) \
-		-k $(KDIR_TMP)/vmlinux-$(2).uImage.bin \
-		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
-		-o $(call factoryname,$(1),$(2))
-endef
+Image/Build/UBDEV=$(call Image/Build/UBNT2,$(1),$(2),$(ubdev_mtdlayout),$(4),$(5),$(6),$(7))
 
 
 Image/Build/UBNT/buildkernel=$(call PatchKernelLzma,$(2),$(3))
