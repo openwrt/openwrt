@@ -240,7 +240,9 @@ define Image/Build/CameoAP94/buildkernel
 endef
 
 define Image/Build/CameoAP94
-	$(call Sysupgrade/KRuImage,$(1),$(2),65536,5308416)
+	$(eval fwsize=$(call mtdpartsize,firmware,$(4)))
+	$(eval fwsize_fat=$(call mtdpartsize,firmware,$(5)))
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(fwsize)-4*64*1024)),64)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			dd if=$(call sysupname,$(1),$(2)); \
@@ -255,7 +257,7 @@ define Image/Build/CameoAP94
 			) > $(call factoryname,$(1),$(2)); \
 		fi; \
 	fi
-	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,65536,$(KDIR)/root.$(1),6946816,$(KDIR_TMP)/$(2)-fat.bin)
+	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,0,$(KDIR)/root.$(1),$$$$(($(fwsize_fat)-4*64*1024)),$(KDIR_TMP)/$(2)-fat.bin,64)
 	if [ -e "$(KDIR_TMP)/$(2)-fat.bin" ]; then \
 		echo -n "" > $(KDIR_TMP)/$(2)-fat.dummy; \
 		sh $(TOPDIR)/scripts/combined-image.sh \
@@ -853,9 +855,9 @@ $(eval $(call SingleProfile,CameoDB120_8M,64kraw,TEW732BR,tew-732br,TEW-732BR,tt
 
 $(eval $(call SingleProfile,CyberTAN,64k,WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,1.00.01))
 
-$(eval $(call SingleProfile,CameoAP94,64k,DIR825B1,dir-825-b1,DIR-825-B1,ttyS0,115200,$$(cameo_ap94_mtdlayout),$$(cameo_ap94_mtdlayout_fat),01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
-$(eval $(call SingleProfile,CameoAP94,64k,TEW673GRU,tew-673gru,TEW-673GRU,ttyS0,115200,$$(cameo_ap94_mtdlayout),$$(cameo_ap94_mtdlayout_fat),01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01))
-$(eval $(call SingleProfile,CameoAP94,64k,DLRTDEV01,dlrtdev01,DIR-825-B1,ttyS0,115200,$$(dlrtdev_mtdlayout),$$(dlrtdev_mtdlayout_fat),01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
+$(eval $(call SingleProfile,CameoAP94,64kraw,DIR825B1,dir-825-b1,DIR-825-B1,ttyS0,115200,$$(cameo_ap94_mtdlayout),$$(cameo_ap94_mtdlayout_fat),01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
+$(eval $(call SingleProfile,CameoAP94,64kraw,TEW673GRU,tew-673gru,TEW-673GRU,ttyS0,115200,$$(cameo_ap94_mtdlayout),$$(cameo_ap94_mtdlayout_fat),01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01))
+$(eval $(call SingleProfile,CameoAP94,64kraw,DLRTDEV01,dlrtdev01,DIR-825-B1,ttyS0,115200,$$(dlrtdev_mtdlayout),$$(dlrtdev_mtdlayout_fat),01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
 
 $(eval $(call SingleProfile,MyLoader,64k,WP543_2M,wp543,,ttyS0,115200,0x200000,2M))
 $(eval $(call SingleProfile,MyLoader,64k,WP543_4M,wp543,,ttyS0,115200,0x400000,4M))
