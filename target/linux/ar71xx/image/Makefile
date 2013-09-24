@@ -488,13 +488,17 @@ endef
 
 
 define Image/Build/UBNT2
-	$(call Sysupgrade/KRuImage,$(1),$(2),65536,6684672)
-	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(KDIR_TMP)/vmlinux-$(2).uImage.bin bs=64k conv=sync
-	-$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(4) -v $(5).$(6).v6.0.0-OpenWrt-$(REVISION) \
-		-k $(KDIR_TMP)/vmlinux-$(2).uImage.bin \
-		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
-		-o $(call factoryname,$(1),$(2))
+	$(eval fwsize=$(call mtdpartsize,firmware,$(3)))
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(fwsize)-4*64*1024)),64)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		dd if=$(call sysupname,$(1),$(2)) of=$(KDIR_TMP)/$(1)-mtdpart-kernel.bin bs=1024k count=1; \
+		dd if=$(call sysupname,$(1),$(2)) of=$(KDIR_TMP)/$(1)-mtdpart-rootfs.bin bs=1024k skip=1; \
+		$(STAGING_DIR_HOST)/bin/mkfwimage \
+			-B $(4) -v $(5).$(6).v6.0.0-OpenWrt-$(REVISION) \
+			-k $(KDIR_TMP)/$(1)-mtdpart-kernel.bin \
+			-r $(KDIR_TMP)/$(1)-mtdpart-rootfs.bin \
+			-o $(call factoryname,$(1),$(2)); \
+	fi
 endef
 
 Image/Build/UBNTXM/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(ubntxm_mtdlayout))
@@ -977,19 +981,19 @@ $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,MW4530RV1,mw4530r-v1,TL-WDR4300,t
 
 $(eval $(call SingleProfile,UAPPRO,64k,UAPPRO,ubnt-uap-pro,UAP-PRO,ttyS0,115200,BZ,BZ,ar934x))
 
-$(eval $(call SingleProfile,UBDEV,64k,UBDEV01,ubdev01,UBNT-UF,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBDEV,64kraw,UBDEV01,ubdev01,UBNT-UF,ttyS0,115200,XM,XM,ar7240))
 
 $(eval $(call SingleProfile,UBNT,64k,UBNTRS,ubnt-rs,UBNT-RS,ttyS0,115200,RS,RSx,ar7100))
 $(eval $(call SingleProfile,UBNT,64k,UBNTRSPRO,ubnt-rspro,UBNT-RSPRO,ttyS0,115200,RSPRO,RSPRO,ar7100pro))
 $(eval $(call SingleProfile,UBNT,64k,UBNTLSSR71,ubnt-ls-sr71,UBNT-LS-SR71,ttyS0,115200,LS-SR71,LS-SR71,ar7100))
 
-$(eval $(call SingleProfile,UBNTXM,64k,RW2458N,rw2458n,RW2458N,ttyS0,115200,XM,XM,ar7240))
-$(eval $(call SingleProfile,UBNTXM,64k,UBNTAIRROUTER,ubnt-airrouter,UBNT-AR,ttyS0,115200,XM,XM,ar7240))
-$(eval $(call SingleProfile,UBNTXM,64k,UBNTBULLETM,ubnt-bullet-m,UBNT-BM,ttyS0,115200,XM,XM,ar7240))
-$(eval $(call SingleProfile,UBNTXM,64k,UBNTROCKETM,ubnt-rocket-m,UBNT-RM,ttyS0,115200,XM,XM,ar7240))
-$(eval $(call SingleProfile,UBNTXM,64k,UBNTNANOM,ubnt-nano-m,UBNT-NM,ttyS0,115200,XM,XM,ar7240))
-$(eval $(call SingleProfile,UBNTXM,64k,UBNTUNIFI,ubnt-unifi,UBNT-UF,ttyS0,115200,XM,XM,ar7240))
-$(eval $(call SingleProfile,UBNTXM,64k,UBNTUNIFIOUTDOOR,ubnt-unifi-outdoor,UBNT-U20,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,64kraw,RW2458N,rw2458n,RW2458N,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,64kraw,UBNTAIRROUTER,ubnt-airrouter,UBNT-AR,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,64kraw,UBNTBULLETM,ubnt-bullet-m,UBNT-BM,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,64kraw,UBNTROCKETM,ubnt-rocket-m,UBNT-RM,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,64kraw,UBNTNANOM,ubnt-nano-m,UBNT-NM,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,64kraw,UBNTUNIFI,ubnt-unifi,UBNT-UF,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBNTXM,64kraw,UBNTUNIFIOUTDOOR,ubnt-unifi-outdoor,UBNT-U20,ttyS0,115200,XM,XM,ar7240))
 
 $(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRG301N,whr-g301n,WHR-G301N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-G301N))
 $(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRHPG300N,whr-hp-g300n,WHR-HP-G300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-G300N))
