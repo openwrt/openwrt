@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-LOADADDR = 0x81000000		# RAM start + 16M 
+LOADADDR = 0x81000000		# RAM start + 16M
 KERNEL_ENTRY = 0x80101000
 RAMSIZE = 0x00100000		# 1MB
 IMAGE_COPY = 1
@@ -67,7 +67,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   define Image/Prepare
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-initramfs '$(strip $(call Image/cmdline/yaffs2)) '
 	cat $(KDIR)/vmlinux-initramfs | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux-initramfs.lzma
-	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile	
+	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile
 	$(CP) $(KDIR)/loader.elf $(KDIR)/loader-initramfs.elf
   endef
 endif
