@@ -1,7 +1,5 @@
-Index: linux-3.10.12/arch/mips/lantiq/xway/Makefile
-===================================================================
---- linux-3.10.12.orig/arch/mips/lantiq/xway/Makefile	2013-09-17 22:32:50.389021711 +0200
-+++ linux-3.10.12/arch/mips/lantiq/xway/Makefile	2013-09-17 23:04:39.829103336 +0200
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,6 +1,6 @@
  obj-y := prom.o sysctrl.o clk.o reset.o dma.o gptu.o dcdc.o
  
@@ -10,10 +8,8 @@ Index: linux-3.10.12/arch/mips/lantiq/xway/Makefile
  
  obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
  
-Index: linux-3.10.12/arch/mips/lantiq/xway/mtd_split.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.12/arch/mips/lantiq/xway/mtd_split.c	2013-09-17 22:42:28.485046424 +0200
+--- /dev/null
++++ b/arch/mips/lantiq/xway/mtd_split.c
 @@ -0,0 +1,151 @@
 +#include <linux/magic.h>
 +#include <linux/root_dev.h>
@@ -166,11 +162,9 @@ Index: linux-3.10.12/arch/mips/lantiq/xway/mtd_split.c
 +	split_brnimage_kernel(master, name, offset, size);
 +	split_squashfs(master, name, offset, size);
 +}
-Index: linux-3.10.12/include/linux/mtd/partitions.h
-===================================================================
---- linux-3.10.12.orig/include/linux/mtd/partitions.h	2013-09-17 22:32:46.925021563 +0200
-+++ linux-3.10.12/include/linux/mtd/partitions.h	2013-09-17 22:32:51.049021740 +0200
-@@ -82,9 +82,14 @@
+--- a/include/linux/mtd/partitions.h
++++ b/include/linux/mtd/partitions.h
+@@ -89,12 +89,17 @@ extern int deregister_mtd_parser(struct
  int mtd_is_partition(const struct mtd_info *mtd);
  int mtd_add_partition(struct mtd_info *master, char *name,
  		      long long offset, long long length);
@@ -178,19 +172,21 @@ Index: linux-3.10.12/include/linux/mtd/partitions.h
 +		    long long offset, long long length, bool dup_check);
 +
  int mtd_del_partition(struct mtd_info *master, int partno);
+ struct mtd_info *mtdpart_get_master(const struct mtd_info *mtd);
+ uint64_t mtdpart_get_offset(const struct mtd_info *mtd);
  uint64_t mtd_get_device_size(const struct mtd_info *mtd);
 -extern void __weak arch_split_mtd_part(struct mtd_info *master,
+-				       const char *name, int offset, int size);
 +void __weak arch_split_mtd_part(struct mtd_info *master,
- 				       const char *name, int offset, int size);
++ 				       const char *name, int offset, int size);
 +unsigned long
 +mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len);
  
- #endif
-Index: linux-3.10.12/drivers/mtd/mtdpart.c
-===================================================================
---- linux-3.10.12.orig/drivers/mtd/mtdpart.c	2013-09-17 22:32:46.973021565 +0200
-+++ linux-3.10.12/drivers/mtd/mtdpart.c	2013-09-17 22:32:51.049021740 +0200
-@@ -617,7 +617,7 @@
+ int parse_mtd_partitions_by_type(struct mtd_info *master,
+ 				 enum mtd_parser_type type,
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -616,7 +616,7 @@ out_register:
  }
  
  
@@ -199,16 +195,16 @@ Index: linux-3.10.12/drivers/mtd/mtdpart.c
  __mtd_add_partition(struct mtd_info *master, char *name,
  		    long long offset, long long length, bool dup_check)
  {
-@@ -707,7 +707,7 @@
+@@ -737,7 +737,7 @@ run_parsers_by_type(struct mtd_part *sla
+ 	return nr_parts;
  }
- EXPORT_SYMBOL_GPL(mtd_del_partition);
  
 -static inline unsigned long
 +unsigned long
  mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
  {
  	unsigned long mask = mtd->erasesize - 1;
-@@ -799,7 +799,6 @@
+@@ -806,7 +806,6 @@ static void split_uimage(struct mtd_info
  		return;
  
  	len = be32_to_cpu(hdr.size) + 0x40;
