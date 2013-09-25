@@ -14,8 +14,6 @@ Patchwork: http://patchwork.linux-mips.org/patch/5659/
  arch/mips/lantiq/falcon/sysctrl.c |    5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/arch/mips/lantiq/falcon/sysctrl.c b/arch/mips/lantiq/falcon/sysctrl.c
-index ff4894a..8f1866d 100644
 --- a/arch/mips/lantiq/falcon/sysctrl.c
 +++ b/arch/mips/lantiq/falcon/sysctrl.c
 @@ -48,6 +48,7 @@
@@ -26,7 +24,7 @@ index ff4894a..8f1866d 100644
  #define ACTS_ASC1_ACT	0x00000800
  #define ACTS_I2C_ACT	0x00004000
  #define ACTS_P0		0x00010000
-@@ -108,6 +109,7 @@ static void sysctl_deactivate(struct clk *clk)
+@@ -108,6 +109,7 @@ static void sysctl_deactivate(struct clk
  static int sysctl_clken(struct clk *clk)
  {
  	sysctl_w32(clk->module, clk->bits, SYSCTL_CLKEN);
@@ -43,6 +41,3 @@ index ff4894a..8f1866d 100644
 +	clkdev_add_sys("1e100c00.serial", SYSCTL_SYS1, ACTS_ASC0_ACT);
  	clkdev_add_sys("1e200000.i2c", SYSCTL_SYS1, ACTS_I2C_ACT);
  }
--- 
-1.7.10.4
-

@@ -14,8 +14,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  include/linux/gpio.h                            |   26 ++++++++-
  5 files changed, 172 insertions(+), 12 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/gpio/gpio.txt b/Documentation/devicetree/bindings/gpio/gpio.txt
-index d933af3..c264748 100644
 --- a/Documentation/devicetree/bindings/gpio/gpio.txt
 +++ b/Documentation/devicetree/bindings/gpio/gpio.txt
 @@ -112,3 +112,63 @@ where,
@@ -82,8 +80,6 @@ index d933af3..c264748 100644
 +		gpio-export,output = <1>;
 +	};
 +};
-diff --git a/drivers/gpio/gpiolib-of.c b/drivers/gpio/gpiolib-of.c
-index 665f953..15ec5e5 100644
 --- a/drivers/gpio/gpiolib-of.c
 +++ b/drivers/gpio/gpiolib-of.c
 @@ -21,6 +21,8 @@
@@ -95,7 +91,7 @@ index 665f953..15ec5e5 100644
  
  /* Private data structure for of_gpiochip_find_and_xlate */
  struct gg_data {
-@@ -242,3 +244,69 @@ void of_gpiochip_remove(struct gpio_chip *chip)
+@@ -242,3 +244,69 @@ void of_gpiochip_remove(struct gpio_chip
  	if (chip->of_node)
  		of_node_put(chip->of_node);
  }
@@ -165,11 +161,9 @@ index 665f953..15ec5e5 100644
 +	return platform_driver_probe(&gpio_export_driver, of_gpio_export_probe);
 +}
 +device_initcall(of_gpio_export_init);
-diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
-index c2534d6..8697c82 100644
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -96,7 +96,7 @@ static int gpiod_get_value(const struct gpio_desc *desc);
+@@ -96,7 +96,7 @@ static int gpiod_get_value(const struct
  static void gpiod_set_value(struct gpio_desc *desc, int value);
  static int gpiod_cansleep(const struct gpio_desc *desc);
  static int gpiod_to_irq(const struct gpio_desc *desc);
@@ -178,7 +172,7 @@ index c2534d6..8697c82 100644
  static int gpiod_export_link(struct device *dev, const char *name,
  			     struct gpio_desc *desc);
  static int gpiod_sysfs_set_active_low(struct gpio_desc *desc, int value);
-@@ -674,7 +674,7 @@ static ssize_t export_store(struct class *class,
+@@ -674,7 +674,7 @@ static ssize_t export_store(struct class
  			status = -ENODEV;
  		goto done;
  	}
@@ -208,7 +202,7 @@ index c2534d6..8697c82 100644
  {
  	unsigned long		flags;
  	int			status;
-@@ -783,6 +784,8 @@ static int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
+@@ -783,6 +784,8 @@ static int gpiod_export(struct gpio_desc
  		goto fail_unlock;
  	}
  
@@ -232,7 +226,7 @@ index c2534d6..8697c82 100644
  
  static int match_export(struct device *dev, const void *data)
  {
-@@ -1092,7 +1095,7 @@ static inline void gpiochip_unexport(struct gpio_chip *chip)
+@@ -1092,7 +1095,7 @@ static inline void gpiochip_unexport(str
  }
  
  static inline int gpiod_export(struct gpio_desc *desc,
@@ -241,7 +235,7 @@ index c2534d6..8697c82 100644
  {
  	return -ENOSYS;
  }
-@@ -1521,6 +1524,9 @@ int gpio_request_one(unsigned gpio, unsigned long flags, const char *label)
+@@ -1521,6 +1524,9 @@ int gpio_request_one(unsigned gpio, unsi
  	if (flags & GPIOF_OPEN_SOURCE)
  		set_bit(FLAG_OPEN_SOURCE, &desc->flags);
  
@@ -251,7 +245,7 @@ index c2534d6..8697c82 100644
  	if (flags & GPIOF_DIR_IN)
  		err = gpiod_direction_input(desc);
  	else
-@@ -1531,7 +1537,7 @@ int gpio_request_one(unsigned gpio, unsigned long flags, const char *label)
+@@ -1531,7 +1537,7 @@ int gpio_request_one(unsigned gpio, unsi
  		goto free_gpio;
  
  	if (flags & GPIOF_EXPORT) {
@@ -260,11 +254,9 @@ index c2534d6..8697c82 100644
  		if (err)
  			goto free_gpio;
  	}
-diff --git a/include/asm-generic/gpio.h b/include/asm-generic/gpio.h
-index bde6469..3290572 100644
 --- a/include/asm-generic/gpio.h
 +++ b/include/asm-generic/gpio.h
-@@ -202,7 +202,8 @@ extern void gpio_free_array(const struct gpio *array, size_t num);
+@@ -202,7 +202,8 @@ extern void gpio_free_array(const struct
   * A sysfs interface can be exported by individual drivers if they want,
   * but more typically is configured entirely from userspace.
   */
@@ -284,8 +276,6 @@ index bde6469..3290572 100644
  {
  	return -ENOSYS;
  }
-diff --git a/include/linux/gpio.h b/include/linux/gpio.h
-index 552e3f4..07bbbcc7 100644
 --- a/include/linux/gpio.h
 +++ b/include/linux/gpio.h
 @@ -27,6 +27,9 @@
@@ -298,7 +288,7 @@ index 552e3f4..07bbbcc7 100644
  /**
   * struct gpio - a structure describing a GPIO with configuration
   * @gpio:	the GPIO number
-@@ -169,7 +172,8 @@ static inline void gpio_set_value_cansleep(unsigned gpio, int value)
+@@ -169,7 +172,8 @@ static inline void gpio_set_value_cansle
  	WARN_ON(1);
  }
  
@@ -308,7 +298,7 @@ index 552e3f4..07bbbcc7 100644
  {
  	/* GPIO can never have been requested or set as {in,out}put */
  	WARN_ON(1);
-@@ -236,4 +240,24 @@ int devm_gpio_request_one(struct device *dev, unsigned gpio,
+@@ -236,4 +240,24 @@ int devm_gpio_request_one(struct device
  			  unsigned long flags, const char *label);
  void devm_gpio_free(struct device *dev, unsigned int gpio);
  
@@ -333,6 +323,3 @@ index 552e3f4..07bbbcc7 100644
 +}
 +
  #endif /* __LINUX_GPIO_H */
--- 
-1.7.10.4
-

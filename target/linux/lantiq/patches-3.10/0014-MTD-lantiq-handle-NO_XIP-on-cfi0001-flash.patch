@@ -7,11 +7,9 @@ Subject: [PATCH 14/34] MTD: lantiq: handle NO_XIP on cfi0001 flash
  drivers/mtd/maps/lantiq-flash.c |    6 +++++-
  1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/maps/lantiq-flash.c b/drivers/mtd/maps/lantiq-flash.c
-index d7ac65d..95b155a 100644
 --- a/drivers/mtd/maps/lantiq-flash.c
 +++ b/drivers/mtd/maps/lantiq-flash.c
-@@ -134,7 +134,11 @@ ltq_mtd_probe(struct platform_device *pdev)
+@@ -134,7 +134,11 @@ ltq_mtd_probe(struct platform_device *pd
  	}
  
  	ltq_mtd->map = kzalloc(sizeof(struct map_info), GFP_KERNEL);
@@ -24,6 +22,3 @@ index d7ac65d..95b155a 100644
  	ltq_mtd->map->size = resource_size(ltq_mtd->res);
  	ltq_mtd->map->virt = devm_ioremap_resource(&pdev->dev, ltq_mtd->res);
  	if (IS_ERR(ltq_mtd->map->virt)) {
--- 
-1.7.10.4
-

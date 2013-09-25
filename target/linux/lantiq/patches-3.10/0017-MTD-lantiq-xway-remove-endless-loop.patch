@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/mtd/nand/xway_nand.c |   10 ++++++++--
  1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mtd/nand/xway_nand.c b/drivers/mtd/nand/xway_nand.c
-index 7f2bdd1..8d14f1b 100644
 --- a/drivers/mtd/nand/xway_nand.c
 +++ b/drivers/mtd/nand/xway_nand.c
 @@ -59,16 +59,22 @@ static u32 xway_latchcmd;
@@ -41,6 +39,3 @@ index 7f2bdd1..8d14f1b 100644
  	spin_unlock_irqrestore(&ebu_lock, flags);
  }
  
--- 
-1.7.10.4
-

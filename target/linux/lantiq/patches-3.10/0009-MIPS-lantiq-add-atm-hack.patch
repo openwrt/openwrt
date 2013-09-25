@@ -16,9 +16,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/include/asm/mach-lantiq/lantiq_atm.h
  create mode 100644 arch/mips/include/asm/mach-lantiq/lantiq_ptm.h
 
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq_atm.h b/arch/mips/include/asm/mach-lantiq/lantiq_atm.h
-new file mode 100644
-index 0000000..bf045a9
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq_atm.h
 @@ -0,0 +1,196 @@
@@ -218,9 +215,6 @@ index 0000000..bf045a9
 +
 +#endif  //  IFX_ATM_H
 +
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq_ptm.h b/arch/mips/include/asm/mach-lantiq/lantiq_ptm.h
-new file mode 100644
-index 0000000..698e5c3
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq_ptm.h
 @@ -0,0 +1,203 @@
@@ -427,8 +421,6 @@ index 0000000..698e5c3
 +
 +#endif  //  IFX_PTM_H
 +
-diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
-index 5119487..6d2c486 100644
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
 @@ -14,6 +14,7 @@
@@ -439,7 +431,7 @@ index 5119487..6d2c486 100644
  
  #include <asm/bootinfo.h>
  #include <asm/irq_cpu.h>
-@@ -99,6 +100,7 @@ void ltq_mask_and_ack_irq(struct irq_data *d)
+@@ -99,6 +100,7 @@ void ltq_mask_and_ack_irq(struct irq_dat
  	ltq_icu_w32(im, ltq_icu_r32(im, ier) & ~BIT(offset), ier);
  	ltq_icu_w32(im, BIT(offset), isr);
  }
@@ -447,11 +439,9 @@ index 5119487..6d2c486 100644
  
  static void ltq_ack_irq(struct irq_data *d)
  {
-diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
-index 5aeb3eb..11aa4e6 100644
 --- a/arch/mips/mm/cache.c
 +++ b/arch/mips/mm/cache.c
-@@ -58,6 +58,8 @@ void (*_dma_cache_wback)(unsigned long start, unsigned long size);
+@@ -59,6 +59,8 @@ void (*_dma_cache_wback)(unsigned long s
  void (*_dma_cache_inv)(unsigned long start, unsigned long size);
  
  EXPORT_SYMBOL(_dma_cache_wback_inv);
@@ -460,8 +450,6 @@ index 5aeb3eb..11aa4e6 100644
  
  #endif /* CONFIG_DMA_NONCOHERENT */
  
-diff --git a/include/uapi/linux/atm.h b/include/uapi/linux/atm.h
-index 88399db..78c8bbc 100644
 --- a/include/uapi/linux/atm.h
 +++ b/include/uapi/linux/atm.h
 @@ -130,8 +130,14 @@
@@ -479,11 +467,9 @@ index 88399db..78c8bbc 100644
  struct atm_trafprm {
  	unsigned char	traffic_class;	/* traffic class (ATM_UBR, ...) */
  	int		max_pcr;	/* maximum PCR in cells per second */
-diff --git a/net/atm/common.c b/net/atm/common.c
-index 737bef5..959008d 100644
 --- a/net/atm/common.c
 +++ b/net/atm/common.c
-@@ -62,11 +62,17 @@ static void vcc_remove_socket(struct sock *sk)
+@@ -62,11 +62,17 @@ static void vcc_remove_socket(struct soc
  	write_unlock_irq(&vcc_sklist_lock);
  }
  
@@ -501,11 +487,9 @@ index 737bef5..959008d 100644
  	if (sk_wmem_alloc_get(sk) && !atm_may_send(vcc, size)) {
  		pr_debug("Sorry: wmem_alloc = %d, size = %d, sndbuf = %d\n",
  			 sk_wmem_alloc_get(sk), size, sk->sk_sndbuf);
-diff --git a/net/atm/proc.c b/net/atm/proc.c
-index bbb6461..ecb584a 100644
 --- a/net/atm/proc.c
 +++ b/net/atm/proc.c
-@@ -154,7 +154,7 @@ static void *vcc_seq_next(struct seq_file *seq, void *v, loff_t *pos)
+@@ -154,7 +154,7 @@ static void *vcc_seq_next(struct seq_fil
  static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
  {
  	static const char *const class_name[] = {
@@ -514,6 +498,3 @@ index bbb6461..ecb584a 100644
  	static const char *const aal_name[] = {
  		"---",	"1",	"2",	"3/4",	/*  0- 3 */
  		"???",	"5",	"???",	"???",	/*  4- 7 */
--- 
-1.7.10.4
-

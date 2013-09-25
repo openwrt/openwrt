@@ -10,11 +10,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-xway.c |   28 ++++++++++++++++++++++++++--
  1 file changed, 26 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
-index e92132c..e40b2e6 100644
 --- a/drivers/pinctrl/pinctrl-xway.c
 +++ b/drivers/pinctrl/pinctrl-xway.c
-@@ -564,10 +564,9 @@ static struct pinctrl_desc xway_pctrl_desc = {
+@@ -564,10 +564,9 @@ static struct pinctrl_desc xway_pctrl_de
  	.confops	= &xway_pinconf_ops,
  };
  
@@ -26,7 +24,7 @@ index e92132c..e40b2e6 100644
  	int port = PORT(pin);
  	u32 alt1_reg = GPIO_ALT1(pin);
  
-@@ -587,6 +586,14 @@ static inline int xway_mux_apply(struct pinctrl_dev *pctrldev,
+@@ -587,6 +586,14 @@ static inline int xway_mux_apply(struct
  	return 0;
  }
  
@@ -41,7 +39,7 @@ index e92132c..e40b2e6 100644
  static const struct ltq_cfg_param xway_cfg_params[] = {
  	{"lantiq,pull",		LTQ_PINCONF_PARAM_PULL},
  	{"lantiq,open-drain",	LTQ_PINCONF_PARAM_OPEN_DRAIN},
-@@ -631,6 +638,10 @@ static int xway_gpio_dir_out(struct gpio_chip *chip, unsigned int pin, int val)
+@@ -631,6 +638,10 @@ static int xway_gpio_dir_out(struct gpio
  {
  	struct ltq_pinmux_info *info = dev_get_drvdata(chip->dev);
  
@@ -52,7 +50,7 @@ index e92132c..e40b2e6 100644
  	gpio_setbit(info->membase[0], GPIO_DIR(pin), PORT_PIN(pin));
  	xway_gpio_set(chip, pin, val);
  
-@@ -651,6 +662,18 @@ static void xway_gpio_free(struct gpio_chip *chip, unsigned offset)
+@@ -651,6 +662,18 @@ static void xway_gpio_free(struct gpio_c
  	pinctrl_free_gpio(gpio);
  }
  
@@ -79,6 +77,3 @@ index e92132c..e40b2e6 100644
  	.base = -1,
  };
  
--- 
-1.7.10.4
-

@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/xway/reset.c |   61 +++++++++++++++++++++++++++++++++++++++++
  1 file changed, 61 insertions(+)
 
-diff --git a/arch/mips/lantiq/xway/reset.c b/arch/mips/lantiq/xway/reset.c
-index 1fa0f17..a1e06b7 100644
 --- a/arch/mips/lantiq/xway/reset.c
 +++ b/arch/mips/lantiq/xway/reset.c
 @@ -14,6 +14,7 @@
@@ -23,7 +21,7 @@ index 1fa0f17..a1e06b7 100644
  
  #include <asm/reboot.h>
  
-@@ -113,6 +114,66 @@ void ltq_reset_once(unsigned int module, ulong u)
+@@ -113,6 +114,66 @@ void ltq_reset_once(unsigned int module,
  	ltq_rcu_w32(ltq_rcu_r32(RCU_RST_REQ) & ~module, RCU_RST_REQ);
  }
  
@@ -90,6 +88,3 @@ index 1fa0f17..a1e06b7 100644
  static void ltq_machine_restart(char *command)
  {
  	local_irq_disable();
--- 
-1.7.10.4
-

@@ -11,11 +11,9 @@ Acked-by: John Crispin <blogic@openwrt.org>
  drivers/tty/serial/lantiq.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/tty/serial/lantiq.c b/drivers/tty/serial/lantiq.c
-index 15733da..93ac046 100644
 --- a/drivers/tty/serial/lantiq.c
 +++ b/drivers/tty/serial/lantiq.c
-@@ -636,6 +636,9 @@ lqasc_console_setup(struct console *co, char *options)
+@@ -636,6 +636,9 @@ lqasc_console_setup(struct console *co,
  
  	port = &ltq_port->port;
  
@@ -25,6 +23,3 @@ index 15733da..93ac046 100644
  	port->uartclk = clk_get_rate(ltq_port->fpiclk);
  
  	if (options)
--- 
-1.7.10.4
-

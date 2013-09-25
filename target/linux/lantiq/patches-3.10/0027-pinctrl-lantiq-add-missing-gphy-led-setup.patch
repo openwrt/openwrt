@@ -10,8 +10,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/pinctrl/pinctrl-xway.c |   30 ++++++++++++++++++++++++------
  1 file changed, 24 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
-index e40b2e6..b159fd5 100644
 --- a/drivers/pinctrl/pinctrl-xway.c
 +++ b/drivers/pinctrl/pinctrl-xway.c
 @@ -102,6 +102,7 @@ enum xway_mux {
@@ -22,7 +20,7 @@ index e40b2e6..b159fd5 100644
  	XWAY_MUX_NONE = 0xffff,
  };
  
-@@ -109,12 +110,12 @@ static const struct ltq_mfp_pin xway_mfp[] = {
+@@ -109,12 +110,12 @@ static const struct ltq_mfp_pin xway_mfp
  	/*       pin    f0	f1	f2	f3   */
  	MFP_XWAY(GPIO0, GPIO,	EXIN,	NONE,	TDM),
  	MFP_XWAY(GPIO1, GPIO,	EXIN,	NONE,	NONE),
@@ -38,7 +36,7 @@ index e40b2e6..b159fd5 100644
  	MFP_XWAY(GPIO8, GPIO,	CGU,	NMI,	NONE),
  	MFP_XWAY(GPIO9, GPIO,	ASC,	SPI,	EXIN),
  	MFP_XWAY(GPIO10, GPIO,	ASC,	SPI,	NONE),
-@@ -151,10 +152,10 @@ static const struct ltq_mfp_pin xway_mfp[] = {
+@@ -151,10 +152,10 @@ static const struct ltq_mfp_pin xway_mfp
  	MFP_XWAY(GPIO41, GPIO,	NONE,	NONE,	NONE),
  	MFP_XWAY(GPIO42, GPIO,	MDIO,	NONE,	NONE),
  	MFP_XWAY(GPIO43, GPIO,	MDIO,	NONE,	NONE),
@@ -52,7 +50,7 @@ index e40b2e6..b159fd5 100644
  	MFP_XWAY(GPIO48, GPIO,	EBU,	NONE,	NONE),
  	MFP_XWAY(GPIO49, GPIO,	EBU,	NONE,	NONE),
  	MFP_XWAY(GPIO50, GPIO,	NONE,	NONE,	NONE),
-@@ -208,6 +209,13 @@ static const unsigned pins_stp[] = {GPIO4, GPIO5, GPIO6};
+@@ -208,6 +209,13 @@ static const unsigned pins_stp[] = {GPIO
  static const unsigned pins_nmi[] = {GPIO8};
  static const unsigned pins_mdio[] = {GPIO42, GPIO43};
  
@@ -66,7 +64,7 @@ index e40b2e6..b159fd5 100644
  static const unsigned pins_ebu_a24[] = {GPIO13};
  static const unsigned pins_ebu_clk[] = {GPIO21};
  static const unsigned pins_ebu_cs1[] = {GPIO23};
-@@ -322,6 +330,12 @@ static const struct ltq_pin_group xway_grps[] = {
+@@ -322,6 +330,12 @@ static const struct ltq_pin_group xway_g
  	GRP_MUX("gnt4", PCI, pins_pci_gnt4),
  	GRP_MUX("req4", PCI, pins_pci_gnt4),
  	GRP_MUX("mdio", MDIO, pins_mdio),
@@ -79,7 +77,7 @@ index e40b2e6..b159fd5 100644
  };
  
  static const struct ltq_pin_group ase_grps[] = {
-@@ -365,6 +379,9 @@ static const char * const xway_nmi_grps[] = {"nmi"};
+@@ -365,6 +379,9 @@ static const char * const xway_nmi_grps[
  
  /* ar9/vr9/gr9 */
  static const char * const xrx_mdio_grps[] = {"mdio"};
@@ -89,7 +87,7 @@ index e40b2e6..b159fd5 100644
  static const char * const xrx_ebu_grps[] = {"ebu a23", "ebu a24",
  						"ebu a25", "ebu cs1",
  						"ebu wait", "ebu clk",
-@@ -414,6 +431,7 @@ static const struct ltq_pmx_func xrx_funcs[] = {
+@@ -414,6 +431,7 @@ static const struct ltq_pmx_func xrx_fun
  	{"pci",		ARRAY_AND_SIZE(xrx_pci_grps)},
  	{"ebu",		ARRAY_AND_SIZE(xrx_ebu_grps)},
  	{"mdio",	ARRAY_AND_SIZE(xrx_mdio_grps)},
@@ -97,6 +95,3 @@ index e40b2e6..b159fd5 100644
  };
  
  static const struct ltq_pmx_func ase_funcs[] = {
--- 
-1.7.10.4
-
