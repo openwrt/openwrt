@@ -1,0 +1,350 @@
+/*
+ * Copyright 2013 Gateworks Corporation
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+/dts-v1/;
+#include "imx6q.dtsi"
+
+/ {
+	model = "Gateworks Ventana GW54XX";
+	compatible = "gw,imx6q-gw54xx", "gw,ventana", "fsl,imx6q";
+
+	/* these are used by bootloader for disabling nodes */
+	aliases {
+		can0 = &can1;
+		ethernet0 = &fec;
+		ethernet1 = &eth1;
+		i2c0 = &i2c1;
+		i2c1 = &i2c2;
+		i2c2 = &i2c3;
+		ipu0 = &ipu1;
+		ipu1 = &ipu2;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		nand = &gpmi;
+		pwm0 = &pwm1;
+		pwm1 = &pwm2;
+		pwm2 = &pwm3;
+		pwm3 = &pwm4;
+		sky2 = &eth1;
+		spi0 = &ecspi1;
+		spi1 = &ecspi2;
+		spi2 = &ecspi3;
+		spi3 = &ecspi4;
+		spi4 = &ecspi5;
+		ssi0 = &ssi1;
+		ssi1 = &ssi2;
+		usb0 = &usbh3;
+		usb1 = &usbotg;
+		usdhc0 = &usdhc1;
+		usdhc1 = &usdhc2;
+		usdhc2 = &usdhc3;
+		usdhc3 = &usdhc4;
+	};
+
+	memory {
+		reg = <0x10000000 0x40000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: user1 {
+			label = "user1";
+			gpios = <&gpio4 6 0>; /* 102 -> MX6_PANLEDG */
+			default-state = "on";
+			linux,default-trigger = "heartbeat";
+		};
+
+		led1: user2 {
+			label = "user2";
+			gpios = <&gpio4 7 0>; /* 103 -> MX6_PANLEDR */
+			default-state = "off";
+		};
+
+		led2: user3 {
+			label = "user3";
+			gpios = <&gpio4 15 1>; /* 111 -> MX6_LOCLED# */
+			default-state = "off";
+		};
+	};
+
+	regulators {
+		compatible = "simple-bus";
+
+		reg_2p5v: 2p5v {
+			compatible = "regulator-fixed";
+			regulator-name = "2P5V";
+			regulator-min-microvolt = <2500000>;
+			regulator-max-microvolt = <2500000>;
+			regulator-always-on;
+		};
+
+		reg_3p3v: 3p3v {
+			compatible = "regulator-fixed";
+			regulator-name = "3P3V";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
+
+		reg_usb_otg_vbus: usb_otg_vbus {
+			compatible = "regulator-fixed";
+			regulator-name = "usb_otg_vbus";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpio = <&gpio3 22 0>;
+			enable-active-high;
+		};
+	};
+
+	sound {
+		compatible = "fsl,imx6q-sabrelite-sgtl5000",
+			     "fsl,imx-audio-sgtl5000";
+		model = "imx6q-sabrelite-sgtl5000";
+		ssi-controller = <&ssi1>;
+		audio-codec = <&codec>;
+		audio-routing =
+			"MIC_IN", "Mic Jack",
+			"Mic Jack", "Mic Bias",
+			"Headphone Jack", "HP_OUT";
+		mux-int-port = <1>;
+		mux-ext-port = <4>;
+	};
+};
+
+&audmux {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_audmux_3>;
+	status = "okay";
+};
+
+&can1 {
+	status = "okay";
+};
+
+&fec {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_enet_1>;
+	phy-mode = "rgmii";
+	phy-reset-gpios = <&gpio1 30 0>;
+	status = "okay";
+};
+
+&gpmi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpmi_nand_2>;
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c1_1>;
+
+	eeprom: eeprom@50 {
+		compatible = "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <16>;
+	};
+
+	eeprom1: eeprom@50 {
+		compatible = "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <16>;
+	};
+
+	eeprom2: eeprom@51 {
+		compatible = "atmel,24c02";
+		reg = <0x51>;
+		pagesize = <16>;
+	};
+
+	eeprom3: eeprom@52 {
+		compatible = "atmel,24c02";
+		reg = <0x52>;
+		pagesize = <16>;
+	};
+
+	eeprom4: eeprom@53 {
+		compatible = "atmel,24c02";
+		reg = <0x53>;
+		pagesize = <16>;
+	};
+
+	rtc: ds1672@68 {
+		compatible = "dallas,ds1672";
+		reg = <0x68>;
+	};
+
+	gpio: pca9555@23 {
+		compatible = "nxp,pca9555";
+		reg = <0x23>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	hwmon: gsc@29 {
+		compatible = "gw,gsp";
+		reg = <0x29>;
+	};
+};
+
+&i2c2 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c2_2>;
+
+	pmic: pfuze@08 {
+		compatible = "fsl,pfuze100";
+		reg = <0x08>;
+	};
+
+	pciswitch: pex8609@3f {
+		compatible = "plx,pex8609";
+		reg = <0x3f>;
+	};
+
+	pciclkgen: si52147@6b {
+		compatible = "sil,si52147";
+		reg = <0x6b>;
+	};
+};
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c3_2>;
+
+	codec: sgtl5000@0a {
+		compatible = "fsl,sgtl5000";
+		reg = <0x0a>;
+		clocks = <&clks 169>;
+		VDDA-supply = <&reg_2p5v>;
+		VDDIO-supply = <&reg_3p3v>;
+	};
+
+	accelerometer: mma8450@1c {
+		compatible = "fsl,mma8450";
+		reg = <0x1c>;
+	};
+
+	videoout: adv7393@2a {
+		compatible = "adi,adv7393";
+		reg = <0x2a>;
+	};
+
+	videoin: adv7180@20 {
+		compatible = "adi,adv7180";
+		reg = <0x20>;
+	};
+
+	hdmiin: adv7611@4c {
+		compatible = "adi,adv7611";
+		reg = <0x4c>;
+	};
+
+	touchscreen: egalax_ts@04 {
+		compatible = "eeti,egalax_ts";
+		reg = <0x04>;
+		wakeup-gpios = <&gpio1 12 0>;
+	};
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog>;
+
+	hog {
+		pinctrl_hog: hoggrp {
+			fsl,pins = <
+				MX6Q_PAD_EIM_D22__GPIO3_IO22    0x80000000 /* OTG_PWR_EN */
+				MX6Q_PAD_EIM_D19__GPIO3_IO19    0x80000000 /* SPINOR_CS0# */
+				MX6Q_PAD_KEY_COL0__GPIO4_IO06   0x80000000 /* user1 led */
+				MX6Q_PAD_KEY_ROW0__GPIO4_IO07   0x80000000 /* user2 led */
+				MX6Q_PAD_KEY_ROW4__GPIO4_IO15   0x80000000 /* user3 led */
+				MX6Q_PAD_SD1_DAT0__GPIO1_IO16   0x80000000 /* USBHUB_RST# */
+				MX6Q_PAD_ENET_TX_EN__GPIO1_IO28 0x80000000 /* PCIE IRQ */
+				MX6Q_PAD_ENET_TXD1__GPIO1_IO29  0x80000000 /* PCIE RST */
+				MX6Q_PAD_SD1_DAT3__GPIO1_IO21   0x80000000 /* MIPI_DIO */
+				MX6Q_PAD_GPIO_0__CCM_CLKO1      0x000130b0 /* AUD4_MCK */
+				MX6Q_PAD_GPIO_2__GPIO1_IO02     0x80000000 /* CAN_STBY */
+			 >;
+		};
+	};
+};
+
+&pcie {
+	reset-gpio = <&gpio1 29 0>;
+	status = "okay";
+
+	eth1: sky2@8 { /* MAC/PHY on bus 8 */
+		compatible = "marvell,sky2";
+		/* Filled in by U-Boot */
+		mac-address = [ 00 00 00 00 00 00 ];
+	};
+};
+
+&sata {
+	status = "okay";
+};
+
+&ssi1 {
+	fsl,mode = "i2s-slave";
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1_2>;
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart2_2>;
+	status = "okay";
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3_1>;
+	status = "okay";
+};
+
+&uart5 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart5_1>;
+};
+
+&usbotg {
+	vbus-supply = <&reg_usb_otg_vbus>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usbotg_1>;
+	disable-over-current;
+	status = "okay";
+};
+
+&usbh1 {
+	status = "okay";
+};
+
+&usdhc3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usdhc3_2>;
+	cd-gpios = <&gpio7 0 0>;
+	vmmc-supply = <&reg_3p3v>;
+	status = "okay";
+};
