@@ -119,6 +119,7 @@ my %update_method = (
 	'src-git' => {
 		'init'          => "git clone --depth 1 '%s' '%s'",
 		'init_branch'   => "git clone --depth 1 --branch '%s' '%s' '%s'",
+		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
 		'update'	=> "git pull --ff",
 		'controldir'	=> ".git",
 		'revision'	=> "git show --abbrev-commit HEAD | head -n 1 | cut -d ' ' -f 2 | tr -d '\n'"},
@@ -154,15 +155,20 @@ sub update_feed_via($$$$) {
 	my $localpath = "./feeds/$name";
 	my $safepath = $localpath;
 	$safepath =~ s/'/'\\''/;
-	my ($base, $branch) = split(/;/, $src, 2);
+	my ($base_branch, $branch) = split(/;/, $src, 2);
+	my ($base_commit, $commit) = split(/\^/, $src, 2);
 
 	if( $relocate || !$m->{'update'} || !-d "$localpath/$m->{'controldir'}" ) {
 		system("rm -rf '$safepath'");
 		if ($m->{'init_branch'} and $branch) {
-			system(sprintf($m->{'init_branch'}, $branch, $base, $safepath)) == 0 or return 1;
+			system(sprintf($m->{'init_branch'}, $branch, $base_branch, $safepath)) == 0 or return 1;
+		} elsif ($m->{'init_commit'} and $commit) {
+			system(sprintf($m->{'init_commit'}, $base_commit, $safepath, $safepath, $commit, $commit)) == 0 or return 1;
 		} else {
 			system(sprintf($m->{'init'}, $src, $safepath)) == 0 or return 1;
 		}
+	} elsif ($m->{'init_commit'} and $commit) {
+		# in case git hash has been provided don't update the feed
 	} else {
 		system("cd '$safepath'; $m->{'update'}") == 0 or return 1;
 	}
