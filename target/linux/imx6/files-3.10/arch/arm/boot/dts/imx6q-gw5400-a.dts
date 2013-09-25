@@ -20,42 +20,36 @@
 	aliases {
 		ethernet0 = &fec;
 		ethernet1 = &eth1;
-		sky2 = &eth1;
-		ssi0 = &ssi1;
-		ssi1 = &ssi2;
-		ipu0 = &ipu1;
-		ipu1 = &ipu2;
-		usdhc0 = &usdhc1;
-		usdhc1 = &usdhc2;
-		usdhc2 = &usdhc3;
-		usdhc3 = &usdhc4;
 		i2c0 = &i2c1;
 		i2c1 = &i2c2;
 		i2c2 = &i2c3;
-		usb0 = &usbh3;
-		usb1 = &usbotg;
+		ipu0 = &ipu1;
+		ipu1 = &ipu2;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		pwm0 = &pwm1;
+		pwm1 = &pwm2;
+		pwm2 = &pwm3;
+		pwm3 = &pwm4;
+		sky2 = &eth1;
+		ssi0 = &ssi1;
+		ssi1 = &ssi2;
 		spi0 = &ecspi1;
 		spi1 = &ecspi2;
 		spi2 = &ecspi3;
 		spi3 = &ecspi4;
 		spi4 = &ecspi5;
-		pwm0 = &pwm1;
-		pwm1 = &pwm2;
-		pwm2 = &pwm3;
-		pwm3 = &pwm4;
-		can0 = &can1;
-		led0 = &led0;
-		led1 = &led1;
-		led2 = &led2;
+		usb0 = &usbh3;
+		usb1 = &usbotg;
+		usdhc0 = &usdhc1;
+		usdhc1 = &usdhc2;
+		usdhc2 = &usdhc3;
+		usdhc3 = &usdhc4;
 	};
 
-	/* SDRAM addressing */
 	memory {
 		reg = <0x10000000 0x40000000>;
-	};
-
-	chosen {
-		bootargs = "console=ttymxc1,115200";
 	};
 
 	leds {
@@ -125,109 +119,10 @@
 	};
 };
 
-&iomuxc {
+&audmux {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_hog>;
-
-	hog {
-		pinctrl_hog: hoggrp {
-			fsl,pins = <
-				MX6Q_PAD_EIM_D22__GPIO3_IO22    0x80000000 /* OTG_PWR_EN */
-				MX6Q_PAD_EIM_D19__GPIO3_IO19    0x80000000 /* SPINOR_CS0# */
-				MX6Q_PAD_KEY_COL0__GPIO4_IO06   0x80000000 /* user0 led */
-				MX6Q_PAD_KEY_COL2__GPIO4_IO10   0x80000000 /* user1 led */
-				MX6Q_PAD_KEY_ROW4__GPIO4_IO15   0x80000000 /* user2 led */
-/* let bootloader choose these based on hwconfig */
-#if 0
-				MX6Q_PAD_GPIO_9__GPIO1_IO09     0x80000000 /* MX6_DIO0 (or PWM1_PWM0) */
-				MX6Q_PAD_SD1_DAT2__GPIO1_IO19   0x80000000 /* MX6_DIO1 (or PWM2_PWM0) */
-				MX6Q_PAD_SD4_DAT1__GPIO2_IO09   0x80000000 /* MX6_DIO2 (or PWM3_PWM0) */
-				MX6Q_PAD_SD4_DAT2__GPIO2_IO10   0x80000000 /* MX6_DIO3 (or PWM3_PWM0) */
-#endif
-				MX6Q_PAD_SD1_DAT0__GPIO1_IO16   0x80000000 /* USBHUB_RST# */
-				MX6Q_PAD_ENET_TX_EN__GPIO1_IO28 0x80000000 /* PCIE IRQ */
-				MX6Q_PAD_ENET_TXD1__GPIO1_IO29  0x08000000 /* PCIE RST */
-				MX6Q_PAD_SD1_DAT3__GPIO1_IO21   0x80000000 /* MIPI_DIO */
-				MX6Q_PAD_GPIO_0__CCM_CLKO1      0x80000000 /* AUD4_MCK */
-			 >;
-		};
-	};
-
-#if 0
-	/* ipu1: IPU1_CSI0: HDMI reciver (Digital Video In) */
-	ipu1 {
-		pinctrl_ipu1_1: ipu1grp-5 {
-			fsl,pins = <
-				MX6Q_PAD_CSI0_MCLK__IPU1_CSI0_HSYNC
-				MX6Q_PAD_CSI0_DATA_EN__IPU1_CSI0_DATA_EN
-				MX6Q_PAD_CSI0_PIXCLK__IPU1_CSI0_PIXCLK
-				MX6Q_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC
-				MX6Q_PAD_CSI0_DAT4__IPU1_CSI0_DATA04
-				MX6Q_PAD_CSI0_DAT5__IPU1_CSI0_DATA05
-				MX6Q_PAD_CSI0_DAT6__IPU1_CSI0_DATA06
-				MX6Q_PAD_CSI0_DAT7__IPU1_CSI0_DATA07
-				MX6Q_PAD_CSI0_DAT8__IPU1_CSI0_DATA08
-				MX6Q_PAD_CSI0_DAT9__IPU1_CSI0_DATA09
-				MX6Q_PAD_CSI0_DAT10__IPU1_CSI0_DATA10
-				MX6Q_PAD_CSI0_DAT11__IPU1_CSI0_DATA11
-				MX6Q_PAD_CSI0_DAT12__IPU1_CSI0_DATA12
-				MX6Q_PAD_CSI0_DAT13__IPU1_CSI0_DATA13
-				MX6Q_PAD_CSI0_DAT14__IPU1_CSI0_DATA14
-				MX6Q_PAD_CSI0_DAT15__IPU1_CSI0_DATA15
-				MX6Q_PAD_CSI0_DAT16__IPU1_CSI0_DATA16
-				MX6Q_PAD_CSI0_DAT17__IPU1_CSI0_DATA17
-				MX6Q_PAD_CSI0_DAT18__IPU1_CSI0_DATA18
-				MX6Q_PAD_CSI0_DAT19__IPU1_CSI0_DATA19
-			>;
-		};
-	};
-
-	/* ipu2: IPU1_CSI1: Analog Video Decoder (Analog Video In) */
-	/* IPU2_CSI1: Analog Video Decoder (Analog Video In) */
-	ipu2 {
-		pinctrl_ipu2_1: ipu2grp-1 {
-			fsl,pins = <
-				MX6Q_PAD_EIM_A17__IPU2_CSI1_DATA12
-				MX6Q_PAD_EIM_D27__IPU2_CSI1_DATA13
-				MX6Q_PAD_EIM_D26__IPU2_CSI1_DATA14
-				MX6Q_PAD_EIM_D20__IPU2_CSI1_DATA15
-				MX6Q_PAD_EIM_D19__IPU2_CSI1_DATA16
-				MX6Q_PAD_EIM_D18__IPU2_CSI1_DATA17
-				MX6Q_PAD_EIM_D16__IPU2_CSI1_DATA18
-				MX6Q_PAD_EIM_EB2__IPU2_CSI1_DATA19
-
-				MX6Q_PAD_EIM_D29__IPU2_CSI1_VSYNC
-				MX6Q_PAD_EIM_EB3__IPU2_CSI1_HSYNC
-// not sure why this causes kernel to crash in early init
-//			MX6Q_PAD_EIM_A16__IPU2_CSI1_PIXCLK
-			>;
-		};
-	};
-
-	/* ipu3: IPU2_DISP0: Analog Video Encoder (Analog Video Out) */
-	ipu3 {
-		pinctrl_ipu3_1: ipu3grp-5 {
-			fsl,pins = <
-				MX6Q_PAD_DISP0_DAT0__IPU2_DISP0_DATA00
-				MX6Q_PAD_DISP0_DAT1__IPU2_DISP0_DATA01
-				MX6Q_PAD_DISP0_DAT2__IPU2_DISP0_DATA02
-				MX6Q_PAD_DISP0_DAT3__IPU2_DISP0_DATA03
-				MX6Q_PAD_DISP0_DAT4__IPU2_DISP0_DATA04
-				MX6Q_PAD_DISP0_DAT5__IPU2_DISP0_DATA05
-				MX6Q_PAD_DISP0_DAT6__IPU2_DISP0_DATA06
-				MX6Q_PAD_DISP0_DAT7__IPU2_DISP0_DATA07
-				MX6Q_PAD_DISP0_DAT8__IPU2_DISP0_DATA08
-				MX6Q_PAD_DISP0_DAT9__IPU2_DISP0_DATA09
-				MX6Q_PAD_DISP0_DAT10__IPU2_DISP0_DATA10
-				MX6Q_PAD_DISP0_DAT11__IPU2_DISP0_DATA11
-				MX6Q_PAD_DISP0_DAT12__IPU2_DISP0_DATA12
-				MX6Q_PAD_DISP0_DAT13__IPU2_DISP0_DATA13
-				MX6Q_PAD_DISP0_DAT14__IPU2_DISP0_DATA14
-				MX6Q_PAD_DISP0_DAT15__IPU2_DISP0_DATA15
-			>;
-		};
-	};
-#endif
+	pinctrl-0 = <&pinctrl_audmux_3>;
+	status = "okay";
 };
 
 &ecspi1 {
@@ -244,80 +139,11 @@
 	};
 };
 
-&uart1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart1_2>;
-	status = "okay";
-};
-
-&uart2 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart2_2>;
-	status = "okay";
-};
-
-&uart3 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart3_1>;
-	status = "okay";
-};
-
-&uart5 {
-	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart5_1>;
-};
-
-&ssi1 {
-	fsl,mode = "i2s-slave";
-	status = "okay";
-};
-
-&ssi2 {
-	fsl,mode = "i2s-slave";
-	status = "okay";
-};
-
-&can1 {
-	reg = <0x02090000 0x4000>;
-	interrupts = <0 110 0x04>;
-	status = "okay";
-};
-
-&usbh1 {
-	status = "okay";
-};
-
-&pcie {
-	reset-gpio = <&gpio1 29 0>;
-	status = "okay";
-
-	eth1: sky2@8 { /* MAC/PHY on bus 8 */
-		compatible = "marvell,sky2";
-		/* Filled in by U-Boot */
-		mac-address = [ 00 00 00 00 00 00 ];
-	};	
-};
-
 &fec {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet_1>;
 	phy-mode = "rgmii";
 	phy-reset-gpios = <&gpio1 30 0>;
-	status = "okay";
-};
-
-&usdhc3 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc3_2>;
-	cd-gpios = <&gpio7 0 0>;
-	vmmc-supply = <&reg_3p3v>;
-	status = "okay";
-};
-
-&audmux {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_audmux_3>;
 	status = "okay";
 };
 
@@ -438,6 +264,28 @@
 	};
 };
 
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog>;
+
+	hog {
+		pinctrl_hog: hoggrp {
+			fsl,pins = <
+				MX6Q_PAD_EIM_D22__GPIO3_IO22    0x80000000 /* OTG_PWR_EN */
+				MX6Q_PAD_EIM_D19__GPIO3_IO19    0x80000000 /* SPINOR_CS0# */
+				MX6Q_PAD_KEY_COL0__GPIO4_IO06   0x80000000 /* user1 led */
+				MX6Q_PAD_KEY_COL2__GPIO4_IO10   0x80000000 /* user2 led */
+				MX6Q_PAD_KEY_ROW4__GPIO4_IO15   0x80000000 /* user3 led */
+				MX6Q_PAD_SD1_DAT0__GPIO1_IO16   0x80000000 /* USBHUB_RST# */
+				MX6Q_PAD_ENET_TX_EN__GPIO1_IO28 0x80000000 /* PCIE IRQ */
+				MX6Q_PAD_ENET_TXD1__GPIO1_IO29  0x80000000 /* PCIE RST */
+				MX6Q_PAD_SD1_DAT3__GPIO1_IO21   0x80000000 /* MIPI_DIO */
+				MX6Q_PAD_GPIO_0__CCM_CLKO1      0x80000000 /* AUD4_MCK */
+			 >;
+		};
+	};
+};
+
 &ldb {
 	status = "okay";
 	lvds-channel@0 {
@@ -445,6 +293,54 @@
 	};
 };
 
-&sata {
+&pcie {
+	reset-gpio = <&gpio1 29 0>;
+	status = "okay";
+
+	eth1: sky2@8 { /* MAC/PHY on bus 8 */
+		compatible = "marvell,sky2";
+		/* Filled in by U-Boot */
+		mac-address = [ 00 00 00 00 00 00 ];
+	};
+};
+
+&ssi1 {
+	fsl,mode = "i2s-slave";
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1_2>;
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart2_2>;
+	status = "okay";
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3_1>;
+	status = "okay";
+};
+
+&uart5 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart5_1>;
+};
+
+&usbh1 {
+	status = "okay";
+};
+
+&usdhc3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usdhc3_2>;
+	cd-gpios = <&gpio7 0 0>;
+	vmmc-supply = <&reg_3p3v>;
 	status = "okay";
 };
