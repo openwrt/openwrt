@@ -193,6 +193,51 @@ endef
 
 $(eval $(call KernelPackage,gpio-pcf857x))
 
+define KernelPackage/iio-core
+  SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=@!LINUX_3_3
+  TITLE:=Industrial IO core
+  KCONFIG:= \
+	CONFIG_IIO \
+	CONFIG_IIO_BUFFER=y \
+	CONFIG_IIO_KFIFO_BUF \
+	CONFIG_IIO_TRIGGER=y \
+	CONFIG_IIO_TRIGGERED_BUFFER
+  FILES:= \
+	$(LINUX_DIR)/drivers/iio/industrialio.ko \
+	$(LINUX_DIR)/drivers/iio/industrialio-triggered-buffer.ko \
+	$(LINUX_DIR)/drivers/iio/kfifo_buf.ko
+  AUTOLOAD:=$(call AutoLoad,55,industrialio kfifo_buf industrialio-triggered-buffer)
+endef
+
+define KernelPackage/iio-core/description
+ The industrial I/O subsystem provides a unified framework for
+ drivers for many different types of embedded sensors using a
+ number of different physical interfaces (i2c, spi, etc)
+endef
+
+$(eval $(call KernelPackage,iio-core))
+
+
+define KernelPackage/iio-ad799x
+  SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=kmod-i2c-core kmod-iio-core
+  TITLE:=Analog Devices AD799x ADC driver
+  KCONFIG:= \
+	CONFIG_AD799X_RING_BUFFER=y \
+	CONFIG_AD799X
+  FILES:=$(LINUX_DIR)/drivers/staging/iio/adc/ad799x.ko
+  AUTOLOAD:=$(call AutoLoad,56,ad799x)
+endef
+
+define KernelPackage/iio-ad799x/description
+ support for Analog Devices:
+ ad7991, ad7995, ad7999, ad7992, ad7993, ad7994, ad7997, ad7998
+ i2c analog to digital converters (ADC). WARNING! This driver is still staging!
+endef
+
+$(eval $(call KernelPackage,iio-ad799x))
+
 define KernelPackage/lp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port and line printer support
