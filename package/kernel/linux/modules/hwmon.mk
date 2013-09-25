@@ -44,6 +44,31 @@ endef
 $(eval $(call KernelPackage,hwmon-vid))
 
 
+define KernelPackage/hwmon-adt7410
+  TITLE:=ADT7410 monitoring support
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.10.0)),1)
+  KCONFIG:= \
+	CONFIG_SENSORS_ADT7X10 \
+	CONFIG_SENSORS_ADT7410
+  FILES:= \
+	$(LINUX_DIR)/drivers/hwmon/adt7x10.ko \
+	$(LINUX_DIR)/drivers/hwmon/adt7410.ko
+  AUTOLOAD:=$(call AutoLoad,60,adt7x10 adt7410)
+else
+  KCONFIG:=CONFIG_SENSORS_ADT7410
+  FILES:=$(LINUX_DIR)/drivers/hwmon/adt7410.ko
+  AUTOLOAD:=$(call AutoLoad,60,adt7410)
+endif
+  $(call AddDepends/hwmon,+kmod-i2c-core @!(LINUX_3_3||LINUX_3_6))
+endef
+
+define KernelPackage/hwmon-adt7410/description
+ Kernel module for ADT7410/7420 I2C thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-adt7410))
+
+
 define KernelPackage/hwmon-adt7475
   TITLE:=ADT7473/7475/7476/7490 monitoring support
   KCONFIG:=CONFIG_SENSORS_ADT7475
