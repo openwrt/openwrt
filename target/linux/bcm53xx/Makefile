@@ -24,6 +24,6 @@ CFLAGS:=-Os -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfp -mfloat-abi=softfp
 
 KERNELNAME:="zImage dtbs"
 
-DEFAULT_PACKAGES +=
+DEFAULT_PACKAGES += swconfig
 
 $(eval $(call BuildTarget))
