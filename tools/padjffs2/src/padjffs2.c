@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 
 static char *progname;
+static unsigned int xtra_offset;
 static unsigned char eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
 
 #define ERR(fmt, ...) do { \
@@ -63,6 +64,8 @@ static int pad_image(char *name, uint32_t pad_mask)
 
 	memset(buf, '\xff', BUF_SIZE);
 
+	in_len += xtra_offset;
+
 	out_len = in_len;
 	while (pad_mask) {
 		uint32_t mask;
@@ -83,7 +86,7 @@ static int pad_image(char *name, uint32_t pad_mask)
 				pad_mask &= ~mask;
 		}
 
-		printf("padding image to %08x\n", (unsigned int) in_len);
+		printf("padding image to %08x\n", (unsigned int) in_len - xtra_offset);
 
 		while (out_len < in_len) {
 			ssize_t len;
@@ -131,14 +134,22 @@ int main(int argc, char* argv[])
 
 	if (argc < 2) {
 		fprintf(stderr,
-			"Usage: %s file [pad0] [pad1] [padN]\n",
+			"Usage: %s file [-x <xtra offset>] [pad0] [pad1] [padN]\n",
 			progname);
 		goto out;
 	}
 
 	pad_mask = 0;
-	for (i = 2; i < argc; i++)
+	for (i = 2; i < argc; i++) {
+		if (i == 2 && strcmp(argv[i], "-x") == 0) {
+			i++;
+			xtra_offset = strtoul(argv[i], NULL, 0);
+			fprintf(stderr, "assuming %u bytes offset\n",
+				xtra_offset);
+			continue;
+		}
 		pad_mask |= strtoul(argv[i], NULL, 0) * 1024;
+	}
 
 	if (pad_mask == 0)
 		pad_mask = (4 * 1024) | (8 * 1024) | (64 * 1024) |
