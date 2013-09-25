@@ -1,11 +1,13 @@
-bgmac: register phy
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/net/ethernet/broadcom/bgmac.c |  137 ++++++++++++++++-----------------
- drivers/net/ethernet/broadcom/bgmac.h |    3 +
- 2 files changed, 71 insertions(+), 69 deletions(-)
-
+--- a/drivers/net/ethernet/broadcom/Kconfig
++++ b/drivers/net/ethernet/broadcom/Kconfig
+@@ -133,6 +133,7 @@ config BNX2X_SRIOV
+ config BGMAC
+ 	tristate "BCMA bus GBit core support"
+ 	depends on BCMA_HOST_SOC && HAS_DMA
++	select PHYLIB
+ 	---help---
+ 	  This driver supports GBit MAC and BCM4706 GBit MAC cores on BCMA bus.
+ 	  They can be found on BCM47xx SoCs and provide gigabit ethernet.
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
 @@ -1205,27 +1205,14 @@ static int bgmac_set_mac_address(struct
@@ -33,8 +35,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 -	default:
 -		return -EOPNOTSUPP;
 -	}
-+ 	if (!netif_running(net_dev))
-+ 		return -EINVAL;
++	if (!netif_running(net_dev))
++		return -EINVAL;
 +
 +	if (!bgmac->phydev)
 +		return -EINVAL;
@@ -43,7 +45,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  }
  
  static const struct net_device_ops bgmac_netdev_ops = {
-@@ -1247,61 +1234,18 @@ static int bgmac_get_settings(struct net
+@@ -1247,61 +1234,16 @@ static int bgmac_get_settings(struct net
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);
  
@@ -95,7 +97,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  }
  
 -#if 0
-+
  static int bgmac_set_settings(struct net_device *net_dev,
  			      struct ethtool_cmd *cmd)
  {
@@ -105,11 +106,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	return phy_ethtool_sset(bgmac->phydev, cmd);
  }
 -#endif
-+
  
  static void bgmac_get_drvinfo(struct net_device *net_dev,
  			      struct ethtool_drvinfo *info)
-@@ -1312,6 +1256,7 @@ static void bgmac_get_drvinfo(struct net
+@@ -1312,6 +1254,7 @@ static void bgmac_get_drvinfo(struct net
  
  static const struct ethtool_ops bgmac_ethtool_ops = {
  	.get_settings		= bgmac_get_settings,
@@ -117,7 +117,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	.get_drvinfo		= bgmac_get_drvinfo,
  };
  
-@@ -1330,10 +1275,42 @@ static int bgmac_mii_write(struct mii_bu
+@@ -1330,10 +1273,36 @@ static int bgmac_mii_write(struct mii_bu
  	return bgmac_phy_write(bus->priv, mii_id, regnum, value);
  }
  
@@ -125,7 +125,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +{
 +	struct bgmac *bgmac = netdev_priv(dev);
 +	struct phy_device *phydev = bgmac->phydev;
-+	int status_changed = 0;
++	bool status_changed = 0;
 +
 +	BUG_ON(!phydev);
 +
@@ -140,14 +140,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		bgmac->old_duplex = phydev->duplex;
 +	}
 +
-+	if (status_changed) {
-+		pr_info("%s: link %s", dev->name, phydev->link ?
-+			"UP" : "DOWN");
-+		if (phydev->link)
-+			pr_cont(" - %d/%s", phydev->speed,
-+			phydev->duplex == DUPLEX_FULL ? "full" : "half");
-+		pr_cont("\n");
-+	}
++	if (status_changed)
++		phy_print_status(phydev);
 +}
 +
  static int bgmac_mii_register(struct bgmac *bgmac)
@@ -160,7 +154,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	mii_bus = mdiobus_alloc();
  	if (!mii_bus)
-@@ -1364,7 +1341,29 @@ static int bgmac_mii_register(struct bgm
+@@ -1364,7 +1333,28 @@ static int bgmac_mii_register(struct bgm
  
  	bgmac->mii_bus = mii_bus;
  
@@ -173,7 +167,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			     PHY_INTERFACE_MODE_MII);
 +
 +	if (IS_ERR(phydev)) {
-+		netdev_err(net_dev, "could not attach PHY: %s", phy_id);
++		netdev_err(net_dev, "could not attach PHY: %s\n", phy_id);
 +		bgmac->phyaddr = BGMAC_PHY_NOREGS;
 +		return PTR_ERR(phydev);
 +	}
@@ -183,9 +177,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	bgmac->old_duplex = -1;
 +	bgmac->phyaddr = phydev->addr;
 +
-+	netdev_info(net_dev, "attached PHY driver [%s] "
-+		"(mii_bus:phy_addr=%s)\n",
-+		phydev->drv->name, dev_name(&phydev->dev));
++	netdev_info(net_dev, "attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
++		    phydev->drv->name, dev_name(&phydev->dev));
 +
 +	return 0;
  
