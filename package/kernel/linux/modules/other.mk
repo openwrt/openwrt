@@ -162,6 +162,22 @@ endef
 
 $(eval $(call KernelPackage,gpio-nxp-74hc164))
 
+define KernelPackage/gpio-pca953x
+  SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
+  TITLE:=PCA95xx, TCA64xx, and MAX7310 I/O ports
+  KCONFIG:=CONFIG_GPIO_PCA953X
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-pca953x.ko
+  AUTOLOAD:=$(call AutoLoad,55,gpio-pca953x)
+endef
+
+define KernelPackage/gpio-pca953x/description
+ Kernel module for MAX731{0,2,3,5}, PCA6107, PCA953{4-9}, PCA955{4-7},
+ PCA957{4,5} and TCA64{08,16} I2C GPIO expanders
+endef
+
+$(eval $(call KernelPackage,gpio-pca953x))
+
 define KernelPackage/gpio-pcf857x
   SUBMENU:=$(OTHER_MENU)
   DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
