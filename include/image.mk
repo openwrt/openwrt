@@ -20,9 +20,9 @@ IMG_PREFIX:=openwrt-$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
 MKFS_DEVTABLE_OPT := -D $(INCLUDE_DIR)/device_table.txt
 
 ifneq ($(CONFIG_BIG_ENDIAN),)
-  JFFS2OPTS     :=  --pad --big-endian --squash-uids -v
+  JFFS2OPTS     :=  --big-endian --squash-uids -v
 else
-  JFFS2OPTS     :=  --pad --little-endian --squash-uids -v
+  JFFS2OPTS     :=  --little-endian --squash-uids -v
 endif
 
 ifeq ($(CONFIG_JFFS2_RTIME),y)
@@ -84,7 +84,8 @@ endif
 
 define Image/mkfs/jffs2/sub
 		# FIXME: removing this line will cause strange behaviour in the foreach loop below
-		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
+		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) --pad -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
+		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2)-raw -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(2))
 		$(call Image/Build,jffs2-$(2))
 endef
