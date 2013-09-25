@@ -26,5 +26,12 @@ config B53_MMAP_DRIVER
 	  Select to enable support for memory-mapped switches like the BCM63XX
 	  integrated switches.
 
+config B53_SRAB_DRIVER
+	tristate "B53 SRAB connected switch driver"
+	depends on B53
+	help
+	  Select to enable support for memory-mapped Switch Register Access
+	  Bridge Registers (SRAB) like it is found on the BCM53010
+
 config B53_PHY_FIXUP
 	bool
