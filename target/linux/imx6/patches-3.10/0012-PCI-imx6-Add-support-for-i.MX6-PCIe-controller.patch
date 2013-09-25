@@ -17,12 +17,10 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
  7 files changed, 611 insertions(+), 1 deletion(-)
  create mode 100644 drivers/pci/host/pci-imx6.c
 
-diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
-index ccd55c2..125202e 100644
 --- a/arch/arm/boot/dts/imx6qdl.dtsi
 +++ b/arch/arm/boot/dts/imx6qdl.dtsi
-@@ -116,6 +116,22 @@
- 			arm,data-latency = <4 2 3>;
+@@ -108,6 +108,22 @@
+ 			cache-level = <2>;
  		};
  
 +		pcie: pcie@0x01000000 {
@@ -44,11 +42,9 @@ index ccd55c2..125202e 100644
  		pmu {
  			compatible = "arm,cortex-a9-pmu";
  			interrupts = <0 94 0x04>;
-diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
-index 29a8af6..e6ac281 100644
 --- a/arch/arm/mach-imx/Kconfig
 +++ b/arch/arm/mach-imx/Kconfig
-@@ -801,6 +801,8 @@ config SOC_IMX6Q
+@@ -806,6 +806,8 @@ config SOC_IMX6Q
  	select HAVE_IMX_SRC
  	select HAVE_SMP
  	select MFD_SYSCON
@@ -57,13 +53,11 @@ index 29a8af6..e6ac281 100644
  	select PINCTRL
  	select PINCTRL_IMX6Q
  	select PL310_ERRATA_588369 if CACHE_PL310
-diff --git a/arch/arm/mach-imx/clk-imx6q.c b/arch/arm/mach-imx/clk-imx6q.c
-index d94be84..6956995 100644
 --- a/arch/arm/mach-imx/clk-imx6q.c
 +++ b/arch/arm/mach-imx/clk-imx6q.c
-@@ -621,6 +621,10 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
- 	if (ret)
- 		pr_warn("failed to set up CLKO: %d\n", ret);
+@@ -586,6 +586,10 @@ int __init mx6q_clocks_init(void)
+ 		clk_prepare_enable(clk[usbphy2_gate]);
+ 	}
  
 +	/* All existing boards with PCIe use LVDS1 */
 +	if (IS_ENABLED(CONFIG_PCI_IMX6))

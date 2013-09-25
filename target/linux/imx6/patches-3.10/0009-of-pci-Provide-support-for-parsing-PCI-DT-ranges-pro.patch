@@ -45,11 +45,9 @@ Signed-off-by: Jason Cooper <jason@lakedaemon.net>
  include/linux/of_address.h | 48 +++++++++++++++++++++++++++++++++
  2 files changed, 115 insertions(+)
 
-diff --git a/drivers/of/address.c b/drivers/of/address.c
-index 04da786..fdd0636 100644
 --- a/drivers/of/address.c
 +++ b/drivers/of/address.c
-@@ -227,6 +227,73 @@ int of_pci_address_to_resource(struct device_node *dev, int bar,
+@@ -231,6 +231,73 @@ int of_pci_address_to_resource(struct de
  	return __of_address_to_resource(dev, addrp, size, flags, NULL, r);
  }
  EXPORT_SYMBOL_GPL(of_pci_address_to_resource);
@@ -123,8 +121,6 @@ index 04da786..fdd0636 100644
  #endif /* CONFIG_PCI */
  
  /*
-diff --git a/include/linux/of_address.h b/include/linux/of_address.h
-index 0506eb5..4c2e6f2 100644
 --- a/include/linux/of_address.h
 +++ b/include/linux/of_address.h
 @@ -4,6 +4,36 @@
@@ -164,7 +160,7 @@ index 0506eb5..4c2e6f2 100644
  #ifdef CONFIG_OF_ADDRESS
  extern u64 of_translate_address(struct device_node *np, const __be32 *addr);
  extern bool of_can_translate_address(struct device_node *dev);
-@@ -27,6 +57,11 @@ static inline unsigned long pci_address_to_pio(phys_addr_t addr) { return -1; }
+@@ -27,6 +57,11 @@ static inline unsigned long pci_address_
  #define pci_address_to_pio pci_address_to_pio
  #endif
  
@@ -176,7 +172,7 @@ index 0506eb5..4c2e6f2 100644
  #else /* CONFIG_OF_ADDRESS */
  #ifndef of_address_to_resource
  static inline int of_address_to_resource(struct device_node *dev, int index,
-@@ -53,6 +88,19 @@ static inline const __be32 *of_get_address(struct device_node *dev, int index,
+@@ -53,6 +88,19 @@ static inline const __be32 *of_get_addre
  {
  	return NULL;
  }
@@ -196,6 +192,3 @@ index 0506eb5..4c2e6f2 100644
  #endif /* CONFIG_OF_ADDRESS */
  
  
--- 
-1.8.4
-

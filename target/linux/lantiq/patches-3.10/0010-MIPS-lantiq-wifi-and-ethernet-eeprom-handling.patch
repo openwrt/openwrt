@@ -17,10 +17,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/lantiq/xway/pci-ath-fixup.c
  create mode 100644 arch/mips/lantiq/xway/rt_eep.c
 
-Index: linux-3.10.12/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.12/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h	2013-09-17 22:32:50.385021711 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
 @@ -0,0 +1,6 @@
 +#ifndef _PCI_ATH_FIXUP
 +#define _PCI_ATH_FIXUP
@@ -28,11 +26,9 @@ Index: linux-3.10.12/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
 +void ltq_pci_ath_fixup(unsigned slot, u16 *cal_data) __init;
 +
 +#endif /* _PCI_ATH_FIXUP */
-Index: linux-3.10.12/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-===================================================================
---- linux-3.10.12.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2013-09-14 15:55:12.000000000 +0200
-+++ linux-3.10.12/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2013-09-17 22:32:50.389021711 +0200
-@@ -90,5 +90,8 @@
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -90,5 +90,8 @@ int xrx200_gphy_boot(struct device *dev,
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
  
@@ -41,21 +37,17 @@ Index: linux-3.10.12/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +
  #endif /* CONFIG_SOC_TYPE_XWAY */
  #endif /* _LTQ_XWAY_H__ */
-Index: linux-3.10.12/arch/mips/lantiq/xway/Makefile
-===================================================================
---- linux-3.10.12.orig/arch/mips/lantiq/xway/Makefile	2013-09-17 22:32:50.305021707 +0200
-+++ linux-3.10.12/arch/mips/lantiq/xway/Makefile	2013-09-18 02:41:31.613659574 +0200
-@@ -2,4 +2,6 @@
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
+@@ -2,4 +2,6 @@ obj-y := prom.o sysctrl.o clk.o reset.o
  
  obj-y += vmmc.o
  
 +obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
 +
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
-Index: linux-3.10.12/arch/mips/lantiq/xway/ath_eep.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.12/arch/mips/lantiq/xway/ath_eep.c	2013-09-18 02:41:28.525659442 +0200
+--- /dev/null
++++ b/arch/mips/lantiq/xway/ath_eep.c
 @@ -0,0 +1,250 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
@@ -307,10 +299,8 @@ Index: linux-3.10.12/arch/mips/lantiq/xway/ath_eep.c
 +	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
 +}
 +device_initcall(of_ath5k_eeprom_init);
-Index: linux-3.10.12/arch/mips/lantiq/xway/pci-ath-fixup.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.12/arch/mips/lantiq/xway/pci-ath-fixup.c	2013-09-17 22:32:50.389021711 +0200
+--- /dev/null
++++ b/arch/mips/lantiq/xway/pci-ath-fixup.c
 @@ -0,0 +1,109 @@
 +/*
 + *  Atheros AP94 reference board PCI initialization
@@ -421,10 +411,8 @@ Index: linux-3.10.12/arch/mips/lantiq/xway/pci-ath-fixup.c
 +	ath_fixups[ath_num_fixups].cal_data = cal_data;
 +	ath_num_fixups++;
 +}
-Index: linux-3.10.12/arch/mips/lantiq/xway/rt_eep.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.12/arch/mips/lantiq/xway/rt_eep.c	2013-09-17 22:32:50.389021711 +0200
+--- /dev/null
++++ b/arch/mips/lantiq/xway/rt_eep.c
 @@ -0,0 +1,60 @@
 +/*
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>

@@ -17,8 +17,6 @@ Cc: linux-gpio@vger.kernel.org
  3 files changed, 354 insertions(+)
  create mode 100644 drivers/gpio/gpio-falcon.c
 
-diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
-index 573c449..59b8764 100644
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -135,6 +135,11 @@ config GPIO_EP93XX
@@ -33,11 +31,9 @@ index 573c449..59b8764 100644
  config GPIO_MM_LANTIQ
  	bool "Lantiq Memory mapped GPIOs"
  	depends on LANTIQ && SOC_XWAY
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index 0cb2d65..542960d 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -24,6 +24,7 @@ obj-$(CONFIG_GPIO_DA9055)	+= gpio-da9055.o
+@@ -24,6 +24,7 @@ obj-$(CONFIG_GPIO_DA9055)	+= gpio-da9055
  obj-$(CONFIG_ARCH_DAVINCI)	+= gpio-davinci.o
  obj-$(CONFIG_GPIO_EM)		+= gpio-em.o
  obj-$(CONFIG_GPIO_EP93XX)	+= gpio-ep93xx.o
@@ -45,9 +41,6 @@ index 0cb2d65..542960d 100644
  obj-$(CONFIG_GPIO_GE_FPGA)	+= gpio-ge.o
  obj-$(CONFIG_GPIO_GRGPIO)	+= gpio-grgpio.o
  obj-$(CONFIG_GPIO_ICH)		+= gpio-ich.o
-diff --git a/drivers/gpio/gpio-falcon.c b/drivers/gpio/gpio-falcon.c
-new file mode 100644
-index 0000000..ae3bdfb
 --- /dev/null
 +++ b/drivers/gpio/gpio-falcon.c
 @@ -0,0 +1,348 @@
@@ -399,6 +392,3 @@ index 0000000..ae3bdfb
 +}
 +
 +subsys_initcall(falcon_gpio_init);
--- 
-1.7.10.4
-

@@ -49,9 +49,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/usb/Kconfig
 +++ b/drivers/usb/Kconfig
-@@ -126,6 +126,8 @@ source "drivers/usb/core/Kconfig"
+@@ -126,6 +126,8 @@ if USB
  
- source "drivers/usb/dwc3/Kconfig"
+ source "drivers/usb/core/Kconfig"
  
 +source "drivers/usb/dwc_otg/Kconfig"
 +
@@ -60,8 +60,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  source "drivers/usb/wusbcore/Kconfig"
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
-@@ -9,6 +9,7 @@ obj-$(CONFIG_USB)		+= core/
- obj-$(CONFIG_USB_OTG_UTILS)	+= otg/
+@@ -7,6 +7,7 @@
+ obj-$(CONFIG_USB)		+= core/
  
  obj-$(CONFIG_USB_DWC3)		+= dwc3/
 +obj-$(CONFIG_DWC_OTG)		+= dwc_otg/

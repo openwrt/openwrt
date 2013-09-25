@@ -11,7 +11,7 @@
  		};
 --- a/drivers/pci/host/pci-imx6.c
 +++ b/drivers/pci/host/pci-imx6.c
-@@ -200,12 +200,6 @@
+@@ -200,12 +200,6 @@ static int pcie_phy_write(void __iomem *
  static int imx6q_pcie_abort_handler(unsigned long addr,
  		unsigned int fsr, struct pt_regs *regs)
  {
@@ -24,7 +24,7 @@
  	return 0;
  }
  
-@@ -322,7 +316,7 @@
+@@ -322,7 +316,7 @@ static void imx6_pcie_host_init(struct p
  			IMX6Q_GPR12_PCIE_CTL_2, 1 << 10);
  
  	while (!dw_pcie_link_up(pp)) {

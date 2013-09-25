@@ -202,7 +202,7 @@
 +module_exit(exit_ar2315_wdt);
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1104,6 +1104,12 @@ config LANTIQ_WDT
+@@ -1113,6 +1113,12 @@ config LANTIQ_WDT
  	help
  	  Hardware driver for the Lantiq SoC Watchdog Timer.
  
@@ -217,7 +217,7 @@
  # POWERPC Architecture
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -130,6 +130,7 @@ obj-$(CONFIG_WDT_MTX1) += mtx-1_wdt.o
+@@ -131,6 +131,7 @@ obj-$(CONFIG_GPIO_WDT) += gpio_wdt.o
  obj-$(CONFIG_PNX833X_WDT) += pnx833x_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o

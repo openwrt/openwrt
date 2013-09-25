@@ -10,8 +10,6 @@ Signed-off-by: Sean Cross <xobs@kosagi.com>
  arch/arm/mach-imx/clk-imx6q.c                      |   20 +++++++++++++++++++-
  2 files changed, 23 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-imx/clk-imx6q.c b/arch/arm/mach-imx/clk-imx6q.c
-index 9181a24..d94be84 100644
 --- a/arch/arm/mach-imx/clk-imx6q.c
 +++ b/arch/arm/mach-imx/clk-imx6q.c
 @@ -205,6 +205,11 @@ static const char *vpu_axi_sels[]	= { "a
@@ -36,7 +34,7 @@ index 9181a24..d94be84 100644
  };
  
  static struct clk *clk[clk_max];
-@@ -340,6 +347,18 @@ int __init mx6q_clocks_init(void)
+@@ -340,6 +346,18 @@ int __init mx6q_clocks_init(void)
  			base + 0xe0, 0, 2, 0, clk_enet_ref_table,
  			&imx_ccm_lock);
  

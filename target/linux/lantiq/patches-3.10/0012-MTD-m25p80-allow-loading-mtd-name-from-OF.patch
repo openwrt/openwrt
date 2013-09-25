@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/mtd/devices/m25p80.c |    5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
-index 2f3d2a5..1828704 100644
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -909,10 +909,13 @@ static int m25p_probe(struct spi_device *spi)
+@@ -925,10 +925,13 @@ static int m25p_probe(struct spi_device
  	unsigned			i;
  	struct mtd_part_parser_data	ppdata;
  	struct device_node __maybe_unused *np = spi->dev.of_node;
@@ -30,7 +28,7 @@ index 2f3d2a5..1828704 100644
  #endif
  
  	/* Platform data helps sort out which chip type we have, as
-@@ -988,6 +991,8 @@ static int m25p_probe(struct spi_device *spi)
+@@ -1004,6 +1007,8 @@ static int m25p_probe(struct spi_device
  
  	if (data && data->name)
  		flash->mtd.name = data->name;
@@ -39,6 +37,3 @@ index 2f3d2a5..1828704 100644
  	else
  		flash->mtd.name = dev_name(&spi->dev);
  
--- 
-1.7.10.4
-

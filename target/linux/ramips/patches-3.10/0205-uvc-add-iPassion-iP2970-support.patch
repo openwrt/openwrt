@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/media/usb/uvc/uvcvideo.h   |    3 +++
  5 files changed, 61 insertions(+), 7 deletions(-)
 
-Index: linux-3.10.12/drivers/media/usb/uvc/uvc_driver.c
-===================================================================
---- linux-3.10.12.orig/drivers/media/usb/uvc/uvc_driver.c	2013-09-14 15:55:12.000000000 +0200
-+++ linux-3.10.12/drivers/media/usb/uvc/uvc_driver.c	2013-09-19 04:30:11.825592123 +0200
-@@ -2420,6 +2420,20 @@
+--- a/drivers/media/usb/uvc/uvc_driver.c
++++ b/drivers/media/usb/uvc/uvc_driver.c
+@@ -2420,6 +2420,20 @@ static struct usb_device_id uvc_ids[] =
  	  .bInterfaceProtocol	= 0,
  	  .driver_info		= UVC_QUIRK_PROBE_MINMAX
  				| UVC_QUIRK_IGNORE_SELECTOR_UNIT },
@@ -37,11 +35,9 @@ Index: linux-3.10.12/drivers/media/usb/uvc/uvc_driver.c
  	/* Generic USB Video Class */
  	{ USB_INTERFACE_INFO(USB_CLASS_VIDEO, 1, 0) },
  	{}
-Index: linux-3.10.12/drivers/media/usb/uvc/uvc_status.c
-===================================================================
---- linux-3.10.12.orig/drivers/media/usb/uvc/uvc_status.c	2013-09-14 15:55:12.000000000 +0200
-+++ linux-3.10.12/drivers/media/usb/uvc/uvc_status.c	2013-09-19 01:52:55.721188742 +0200
-@@ -139,6 +139,7 @@
+--- a/drivers/media/usb/uvc/uvc_status.c
++++ b/drivers/media/usb/uvc/uvc_status.c
+@@ -139,6 +139,7 @@ static void uvc_status_complete(struct u
  		switch (dev->status[0] & 0x0f) {
  		case UVC_STATUS_TYPE_CONTROL:
  			uvc_event_control(dev, dev->status, len);
@@ -49,7 +45,7 @@ Index: linux-3.10.12/drivers/media/usb/uvc/uvc_status.c
  			break;
  
  		case UVC_STATUS_TYPE_STREAMING:
-@@ -182,6 +183,7 @@
+@@ -182,6 +183,7 @@ int uvc_status_init(struct uvc_device *d
  	}
  
  	pipe = usb_rcvintpipe(dev->udev, ep->desc.bEndpointAddress);
@@ -57,10 +53,8 @@ Index: linux-3.10.12/drivers/media/usb/uvc/uvc_status.c
  
  	/* For high-speed interrupt endpoints, the bInterval value is used as
  	 * an exponent of two. Some developers forgot about it.
-Index: linux-3.10.12/drivers/media/usb/uvc/uvc_video.c
-===================================================================
---- linux-3.10.12.orig/drivers/media/usb/uvc/uvc_video.c	2013-09-14 15:55:12.000000000 +0200
-+++ linux-3.10.12/drivers/media/usb/uvc/uvc_video.c	2013-09-19 07:31:28.642057093 +0200
+--- a/drivers/media/usb/uvc/uvc_video.c
++++ b/drivers/media/usb/uvc/uvc_video.c
 @@ -21,6 +21,11 @@
  #include <linux/wait.h>
  #include <linux/atomic.h>
@@ -73,7 +67,7 @@ Index: linux-3.10.12/drivers/media/usb/uvc/uvc_video.c
  
  #include <media/v4l2-common.h>
  
-@@ -1074,9 +1079,149 @@
+@@ -1074,9 +1079,149 @@ static void uvc_video_decode_data(struct
  	}
  }
  
@@ -223,7 +217,7 @@ Index: linux-3.10.12/drivers/media/usb/uvc/uvc_video.c
  	/* Mark the buffer as done if the EOF marker is set. */
  	if (data[1] & UVC_STREAM_EOF && buf->bytesused != 0) {
  		uvc_trace(UVC_TRACE_FRAME, "Frame complete (EOF found).\n");
-@@ -1477,6 +1622,8 @@
+@@ -1477,6 +1622,8 @@ static int uvc_init_video_isoc(struct uv
  	if (npackets == 0)
  		return -ENOMEM;
  
@@ -232,10 +226,8 @@ Index: linux-3.10.12/drivers/media/usb/uvc/uvc_video.c
  	size = npackets * psize;
  
  	for (i = 0; i < UVC_URBS; ++i) {
-Index: linux-3.10.12/drivers/media/usb/uvc/uvcvideo.h
-===================================================================
---- linux-3.10.12.orig/drivers/media/usb/uvc/uvcvideo.h	2013-09-14 15:55:12.000000000 +0200
-+++ linux-3.10.12/drivers/media/usb/uvc/uvcvideo.h	2013-09-19 04:36:51.801609222 +0200
+--- a/drivers/media/usb/uvc/uvcvideo.h
++++ b/drivers/media/usb/uvc/uvcvideo.h
 @@ -137,6 +137,8 @@
  #define UVC_QUIRK_FIX_BANDWIDTH		0x00000080
  #define UVC_QUIRK_PROBE_DEF		0x00000100
@@ -245,7 +237,7 @@ Index: linux-3.10.12/drivers/media/usb/uvc/uvcvideo.h
  
  /* Format flags */
  #define UVC_FMT_FLAG_COMPRESSED		0x00000001
-@@ -538,6 +540,7 @@
+@@ -538,6 +540,7 @@ struct uvc_device {
  	__u8 *status;
  	struct input_dev *input;
  	char input_phys[64];
