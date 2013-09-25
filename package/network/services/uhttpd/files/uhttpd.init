@@ -112,7 +112,7 @@ start_instance()
 			append_arg "$cfg" key  "-K"
 
 			for listen in $https; do
-				append UHTTPD_ARGS "-s $listen"
+				procd_append_param command -s "$listen"
 			done
 		}
 	}
