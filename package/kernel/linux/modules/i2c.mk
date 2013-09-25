@@ -237,34 +237,3 @@ define KernelPackage/i2c-mux-pca9541/description
 endef
 
 $(eval $(call KernelPackage,i2c-mux-pca9541))
-
-GPIO_PCA953X_MODULES:= \
-  CONFIG_GPIO_PCA953X:drivers/gpio/gpio-pca953x
-
-define KernelPackage/pca953x
-  $(call i2c_defaults,$(GPIO_PCA953X_MODULES),51)
-  TITLE:=Philips PCA953x I2C GPIO extenders
-  DEPENDS:=kmod-i2c-core
-endef
-
-define KernelPackage/pca953x/description
- Kernel modules for PCA953x I2C GPIO extenders
-endef
-
-$(eval $(call KernelPackage,pca953x))
-
-
-GPIO_PCF857X_MODULES:= \
-  CONFIG_GPIO_PCF857X:drivers/gpio/gpio-pcf857x
-
-define KernelPackage/pcf857x
-  $(call i2c_defaults,$(GPIO_PCF857X_MODULES),51)
-  TITLE:=Philips PCF857x I2C GPIO extenders
-  DEPENDS:=kmod-i2c-core
-endef
-
-define KernelPackage/pcf857x/description
- Kernel modules for PCF857x I2C GPIO extenders
-endef
-
-$(eval $(call KernelPackage,pcf857x))
