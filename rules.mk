@@ -54,21 +54,14 @@ endif
 
 HOST_FPIC:=-fPIC
 
-ARCH_SUFFIX:=
+ARCH_SUFFIX:=$(call qstrip,$(CONFIG_CPU_TYPE))
 GCC_ARCH:=
 
+ifneq ($(ARCH_SUFFIX),)
+  ARCH_SUFFIX:=_$(ARCH_SUFFIX)
+endif
 ifneq ($(filter -march=armv%,$(TARGET_OPTIMIZATION)),)
-  ARCH_SUFFIX:=_$(patsubst -march=arm%,%,$(filter -march=armv%,$(TARGET_OPTIMIZATION)))
   GCC_ARCH:=$(patsubst -march=%,%,$(filter -march=armv%,$(TARGET_OPTIMIZATION)))
-endif
-ifneq ($(filter -mips%r2,$(TARGET_OPTIMIZATION)),)
-  ARCH_SUFFIX:=_r2
-endif
-ifneq ($(filter -mdsp,$(TARGET_OPTIMIZATION)),)
-  ARCH_SUFFIX:=$(ARCH_SUFFIX)_dsp
-endif
-ifneq ($(filter -mdspr2,$(TARGET_OPTIMIZATION)),)
-  ARCH_SUFFIX:=$(ARCH_SUFFIX)_dspr2
 endif
 ifdef CONFIG_HAS_SPE_FPU
   TARGET_SUFFIX:=$(TARGET_SUFFIX)spe
