@@ -2,7 +2,8 @@ ARCH:=mips
 SUBTARGET:=xway
 BOARDNAME:=XWAY
 FEATURES:=squashfs atm mips16
-CFLAGS+= -mtune=34kc -mdsp
+CPU_TYPE:=34kc
+CPU_SUBTYPE:=dsp
 
 DEFAULT_PACKAGES+=kmod-leds-gpio kmod-gpio-button-hotplug
 

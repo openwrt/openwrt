@@ -13,7 +13,7 @@ SUBTARGETS=xway xrx200 ase falcon
 
 LINUX_VERSION:=3.10.12
 
-CFLAGS=-Os -pipe -mips32r2 -mno-branch-likely
+CPU_TYPE:=mips32r2
 
 define Target/Description
 	Build firmware images for Lantiq SoC
