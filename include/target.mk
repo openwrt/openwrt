@@ -195,17 +195,30 @@ ifeq ($(DUMP),1)
     # remove duplicates
     FEATURES:=$(sort $(FEATURES))
   endif
-  DEFAULT_CFLAGS_i386=-O2 -pipe -march=i486
-  DEFAULT_CFLAGS_x86_64=-O2 -pipe -march=athlon64
-  DEFAULT_CFLAGS_m68k=-Os -pipe -mcfv4e
-  DEFAULT_CFLAGS_mips=-Os -pipe -mips32 -mtune=mips32 -mno-branch-likely
-  DEFAULT_CFLAGS_mipsel=$(DEFAULT_CFLAGS_mips)
-  DEFAULT_CFLAGS_mips64=-Os -pipe -mips64 -mtune=mips64 -mabi=64
-  DEFAULT_CFLAGS_mips64el=$(DEFAULT_CFLAGS_mips64)
-  DEFAULT_CFLAGS_sparc=-Os -pipe -mcpu=ultrasparc
-  DEFAULT_CFLAGS_arm=-Os -pipe -march=armv5te -mtune=xscale
-  DEFAULT_CFLAGS_armeb=$(DEFAULT_CFLAGS_arm)
-  DEFAULT_CFLAGS=$(if $(DEFAULT_CFLAGS_$(ARCH)),$(DEFAULT_CFLAGS_$(ARCH)),-Os -pipe)
+  CPU_CFLAGS = -Os -pipe
+  ifneq ($(findstring mips,$(ARCH)),)
+    ifneq ($(findstring mips64,$(ARCH)),)
+      CPU_TYPE ?= mips64
+    else
+      CPU_TYPE ?= mips32
+    endif
+    CPU_CFLAGS += -mno-branch-likely
+    CPU_CFLAGS_mips32 = -mips32 -mtune=mips32
+    CPU_CFLAGS_mips64 = -mips64 -mtune=mips64 -mabi=64
+  endif
+  ifeq ($(ARCH),i386)
+    CPU_TYPE ?= i486
+    CPU_CFLAGS_i486 = -march=i486
+  endif
+  ifneq ($(findstring arm,$(ARCH)),)
+    CPU_TYPE ?= xscale
+    CPU_CFLAGS_xscale = march=armv5te -mtune=xscale
+  endif
+  ifeq ($(ARCH),sparc)
+    CPU_TYPE = sparc
+    CPU_CFLAGS_ultrasparc = -mcpu=ultrasparc
+  endif
+  DEFAULT_CFLAGS=$(CPU_CFLAGS) $(CPU_CFLAGS_$(CPU_TYPE))
 endif
 
 define BuildTargets/DumpCurrent
