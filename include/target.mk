@@ -214,6 +214,7 @@ ifeq ($(DUMP),1)
   ifeq ($(ARCH),i386)
     CPU_TYPE ?= i486
     CPU_CFLAGS_i486 = -march=i486
+    CPU_CFLAGS_geode = -march=geode -mmmx -m3dnow
   endif
   ifneq ($(findstring arm,$(ARCH)),)
     CPU_TYPE ?= xscale

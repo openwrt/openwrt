@@ -1,6 +1,5 @@
 BOARDNAME:=RDC R-321x
 FEATURES:=squashfs pci usb gpio pcmcia
-CFLAGS:=-Os -pipe -march=i486 -mtune=i486
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 DEFAULT_PACKAGES += kmod-llc kmod-stp kmod-bridge kmod-8021q \
