@@ -53,6 +53,7 @@ sub parse_target_metadata() {
 		/^Target-Depends:\s*(.+)\s*$/ and $target->{depends} = [ split(/\s+/, $1) ];
 		/^Target-Description:/ and $target->{desc} = get_multiline(*FILE);
 		/^Target-Optimization:\s*(.+)\s*$/ and $target->{cflags} = $1;
+		/^CPU-Type:\s*(.+)\s*$/ and $target->{cputype} = $1;
 		/^Linux-Version:\s*(.+)\s*$/ and $target->{version} = $1;
 		/^Linux-Release:\s*(.+)\s*$/ and $target->{release} = $1;
 		/^Linux-Kernel-Arch:\s*(.+)\s*$/ and $target->{karch} = $1;
@@ -372,6 +373,16 @@ EOF
 		print "\tdefault \"".$target->{cflags}."\" if TARGET_".$target->{conf}."\n";
 	}
 	print "\tdefault \"-Os -pipe -funit-at-a-time\"\n";
+	print <<EOF;
+
+config CPU_TYPE
+	string
+EOF
+	foreach my $target (@target) {
+		next if @{$target->{subtargets}} > 0;
+		print "\tdefault \"".$target->{cputype}."\" if TARGET_".$target->{conf}."\n";
+	}
+	print "\tdefault \"\"\n";
 
 	my %kver;
 	foreach my $target (@target) {
