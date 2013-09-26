@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=cns21xx
 BOARDNAME:=Cavium Networks Econa CNS21xx
 FEATURES:=squashfs
-CFLAGS:=-Os -pipe -march=armv4 -mtune=fa526
+CPU_TYPE:=fa526
 
 LINUX_VERSION:=3.10.12
 
