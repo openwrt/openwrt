@@ -227,7 +227,7 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_mpcore = -march=armv6k -mtune=mpcore
     CPU_CFLAGS_xscale = march=armv5te -mtune=xscale
     CPU_CFLAGS_vfp = -mfpu=vfp -mfloat-abi=softfp
-    CPU_CFLAGS_vfp3 = -mfpu=vfp3-d16 -mfloat-abi=softfp
+    CPU_CFLAGS_vfpv3 = -mfpu=vfpv3-d16 -mfloat-abi=softfp
   endif
   ifeq ($(ARCH),powerpc)
     CPU_CFLAGS_603e:=-mcpu=603e
