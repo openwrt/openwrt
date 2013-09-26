@@ -218,7 +218,7 @@ ifeq ($(DUMP),1)
   endif
   ifneq ($(findstring arm,$(ARCH)),)
     CPU_TYPE ?= xscale
-	CPU_CFLAGS_arm920t = -march=armv4t -mtune=arm920t
+    CPU_CFLAGS_arm920t = -march=armv4t -mtune=arm920t
     CPU_CFLAGS_arm926ej-s = -march=armv5te -mtune=arm926ej-s
     CPU_CFLAGS_arm1136j-s = -march=armv6 -mtune=arm1136j-s
     CPU_CFLAGS_arm1176jzf-s = -march=armv6 -mtune=arm1176jzf-s
