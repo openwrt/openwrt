@@ -24,10 +24,6 @@ define uboot/Default
   IMAGE:=
 endef
 
-define uboot/wandboard_solo
-  TITLE:=U-Boot for the Wandboard Solo
-endef
-
 define uboot/wandboard_dl
   TITLE:=U-Boot for the Wandboard Dual Lite
 endef
@@ -36,10 +32,14 @@ define uboot/wandboard_quad
   TITLE:=U-Boot for the Wandboard Quad
 endef
 
+define uboot/wandboard_solo
+  TITLE:=U-Boot for the Wandboard Solo
+endef
+
 UBOOTS := \
-	wandboard_solo \
 	wandboard_dl \
-	wandboard_quad
+	wandboard_quad \
+	wandboard_solo
 
 define Package/uboot/template
 define Package/uboot-imx6-$(1)
