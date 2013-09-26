@@ -11,7 +11,7 @@ BOARD:=omap4
 BOARDNAME:=TI OMAP4
 FEATURES:=usb targz audio display
 CPU_TYPE:=cortex-a9
-CPU_SUBTYPE:=vfp3
+CPU_SUBTYPE:=vfpv3
 
 LINUX_VERSION:=3.3.8
 
