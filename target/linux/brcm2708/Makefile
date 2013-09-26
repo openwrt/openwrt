@@ -12,6 +12,8 @@ BOARD:=brcm2708
 BOARDNAME:=Broadcom BCM2708/BCM2835
 FEATURES:=ext4 audio usb usbgadget display gpio
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
+CPU_TYPE:=arm1176jzf-s
+CPU_SUBTYPE:=vfp
 
 LINUX_VERSION:=3.10.12
 
@@ -22,7 +24,5 @@ define Target/Description
 	Build firmware image for Broadcom BCM2708/BCM2835 SoC devices.
 	Currently produces SD Card image for Raspberry Pi.
 endef
-
-CFLAGS:=-pipe -march=armv6 -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=softfp -marm
 
 $(eval $(call BuildTarget))

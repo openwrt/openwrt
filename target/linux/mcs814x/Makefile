@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=mcs814x
 BOARDNAME:=Moschip MCS814x
 FEATURES:=usb squashfs
-CFLAGS=-Os -pipe -march=armv5te -mtune=arm926ej-s
+CPU_TYPE:=arm926ej-s
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 LINUX_VERSION:=3.3.8

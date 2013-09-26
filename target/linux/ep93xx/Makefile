@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=ep93xx
 BOARDNAME:=Cirrus Logic EP93xx
 FEATURES:=squashfs ext4 targz usb display sound
-CFLAGS:=-Os -pipe -march=armv4t
+CPU_TYPE:=arm920t
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 LINUX_VERSION:=3.8.13

@@ -10,7 +10,6 @@ ARCH:=arm
 BOARD:=orion
 BOARDNAME:=Marvell Orion
 SUBTARGETS:=generic harddisk
-CFLAGS=-Os -pipe -march=armv5te -mtune=xscale
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=3.3.8

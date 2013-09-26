@@ -10,7 +10,8 @@ ARCH:=arm
 BOARD:=mvebu
 BOARDNAME:=Marvell Armada XP/370
 FEATURES:=targz usb pci pcie gpio
-CFLAGS:=-Os -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp
+CPU_TYPE:=cortex-a9
+CPU_SUBTYPE:=vfp3
 
 LINUX_VERSION:=3.8.13
 

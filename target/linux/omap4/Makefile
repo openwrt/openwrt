@@ -10,10 +10,11 @@ ARCH:=arm
 BOARD:=omap4
 BOARDNAME:=TI OMAP4
 FEATURES:=usb targz audio display
+CPU_TYPE:=cortex-a9
+CPU_SUBTYPE:=vfp3
 
 LINUX_VERSION:=3.3.8
 
-CFLAGS:=-Os -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 KERNELNAME:="uImage"

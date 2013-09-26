@@ -11,14 +11,13 @@ BOARD:=omap24xx
 BOARDNAME:=TI OMAP24xx
 MAINTAINER:=Michael Buesch <m@bues.ch>
 FEATURES:=targz squashfs jffs2_nand usb usbgadget display gpio audio broken
+CPU_TYPE:=arm1136j-s
 
 LINUX_VERSION:=3.3.8
 
 define Target/Description
 	TI OMAP-24xx
 endef
-
-CFLAGS:=-Os -pipe -march=armv6 -mtune=arm1136j-s
 
 KERNELNAME:="zImage"
 
