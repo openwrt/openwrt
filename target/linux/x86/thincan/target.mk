@@ -1,7 +1,7 @@
 DEVICE_TYPE:=terminal
 BOARDNAME:=Artec ThinCan
 
-CFLAGS := -O2 -pipe -march=geode -mtune=geode -funit-at-a-time
+CPU_TYPE := geode
 
 DEFAULT_PACKAGES:=\
 	base-files \

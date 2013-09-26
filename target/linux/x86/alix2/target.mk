@@ -22,8 +22,7 @@ DEFAULT_PACKAGES += \
 LINUX_VERSION:=3.10.12
 CS5535_MASK:=0x0b000042
 
-CFLAGS += -march=geode -Os -mmmx -m3dnow -fno-align-jumps -fno-align-functions \
-	-fno-align-labels -fno-align-loops -pipe -fomit-frame-pointer
+CPU_TYPE := geode
 
 define Target/Description
 	Build firmware images for PCEngines alix2 board
