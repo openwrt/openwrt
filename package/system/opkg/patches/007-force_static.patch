@@ -1,6 +1,6 @@
 --- a/libopkg/Makefile.am
 +++ b/libopkg/Makefile.am
-@@ -38,16 +38,10 @@ if HAVE_SHA256
+@@ -38,16 +38,10 @@
  opkg_util_sources += sha256.c sha256.h
  endif
  
@@ -19,10 +19,10 @@
 -
 -
 -
-+libopkg_a_LIBADD = $(top_builddir)/libbb/libbb.a $(CURL_LIBS) $(GPGME_LIBS) $(OPENSSL_LIBS) $(PATHFINDER_LIBS)
++libopkg_a_LIBADD = $(top_builddir)/libbb/libbb.a
 --- a/libbb/Makefile.am
 +++ b/libbb/Makefile.am
-@@ -2,9 +2,9 @@ HOST_CPU=@host_cpu@
+@@ -2,9 +2,9 @@
  BUILD_CPU=@build_cpu@
  ALL_CFLAGS=-g -O -Wall -DHOST_CPU_STR=\"$(HOST_CPU)\" -DBUILD_CPU=@build_cpu@
  
@@ -36,7 +36,7 @@
  	wfopen.c \
 --- a/tests/Makefile.am
 +++ b/tests/Makefile.am
-@@ -4,11 +4,11 @@ AM_CFLAGS = $(ALL_CFLAGS) -Wall -g -O3 -
+@@ -4,11 +4,11 @@
  #noinst_PROGRAMS = libopkg_test opkg_active_list_test
  noinst_PROGRAMS = libopkg_test
  
@@ -50,22 +50,22 @@
  #opkg_extract_test_SOURCES = opkg_extract_test.c
  #opkg_extract_test_CFLAGS = $(ALL_CFLAGS) -I$(top_srcdir)
  
-@@ -16,7 +16,7 @@ noinst_PROGRAMS = libopkg_test
+@@ -16,7 +16,7 @@
  #opkg_active_list_test_SOURCES = opkg_active_list_test.c
  #opkg_active_list_test_CFLAGS = $(ALL_CFLAGS) -I$(top_srcdir)
  
 -libopkg_test_LDADD = $(top_builddir)/libopkg/libopkg.la
-+libopkg_test_LDADD = $(top_builddir)/libopkg/libopkg.a $(top_builddir)/libbb/libbb.a
++libopkg_test_LDADD = $(top_builddir)/libopkg/libopkg.a $(top_builddir)/libbb/libbb.a $(CURL_LIBS) $(GPGME_LIBS) $(OPENSSL_LIBS) $(PATHFINDER_LIBS)
  libopkg_test_SOURCE = libopkg_test.c
  libopkg_test_LDFLAGS = -static
  
 --- a/src/Makefile.am
 +++ b/src/Makefile.am
-@@ -2,5 +2,5 @@ AM_CFLAGS = -I${top_srcdir}/libopkg ${AL
+@@ -2,5 +2,5 @@
  bin_PROGRAMS = opkg-cl
  
  opkg_cl_SOURCES = opkg-cl.c
 -opkg_cl_LDADD = $(top_builddir)/libopkg/libopkg.la \
 -                $(top_builddir)/libbb/libbb.la 
 +opkg_cl_LDADD = $(top_builddir)/libopkg/libopkg.a \
-+                $(top_builddir)/libbb/libbb.a
++                $(top_builddir)/libbb/libbb.a $(CURL_LIBS) $(GPGME_LIBS) $(OPENSSL_LIBS) $(PATHFINDER_LIBS)

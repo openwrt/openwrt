@@ -11,13 +11,14 @@ include $(INCLUDE_DIR)/version.mk
 PKG_NAME:=opkg
 PKG_REV:=618
 PKG_VERSION:=$(PKG_REV)
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_SUBDIR:=opkg-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://opkg.googlecode.com/svn/trunk/
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_FIXUP:=autoreconf
 PKG_REMOVE_FILES = autogen.sh aclocal.m4
 
@@ -31,15 +32,15 @@ PKG_INSTALL:=1
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 
-define Package/opkg
+define Package/opkg/Default
   SECTION:=base
   CATEGORY:=Base system
-  TITLE:=opkg package management system
+  TITLE:=opkg package manager
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
   URL:=http://wiki.openmoko.org/wiki/Opkg
 endef
 
-define Package/opkg/description
+define Package/opkg/Default/description
   Lightweight package management system
   opkg is the opkg Package Management System, for handling
   installation and removal of packages on a system. It can
@@ -49,9 +50,34 @@ define Package/opkg/description
   opkg knows how to install both .ipk and .deb packages.
 endef
 
+define Package/opkg
+  $(call Package/opkg/Default)
+  VARIANT:=unsigned
+endef
+
+define Package/opkg/description
+  $(call Package/opkg/Default/description)
+endef
+
 define Package/opkg/conffiles
 /etc/opkg.conf
 endef
+
+
+define Package/opkg-smime
+  $(call Package/opkg/Default)
+  TITLE+= (with S/MIME signature support)
+  DEPENDS+=+libopenssl
+  VARIANT:=smime
+endef
+
+define Package/opkg-smime/description
+  $(call Package/opkg/Default/description)
+
+  This package allows the Package index to be verified with S/MIME.
+endef
+
+Package/opkg-smime/conffiles = $(Package/opkg/conffiles)
 
 TARGET_CFLAGS += $(if $(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),-Wno-array-bounds)
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
@@ -63,20 +89,28 @@ CONFIGURE_ARGS += \
 	--with-opkgetcdir=/etc \
 	--with-opkglockfile=/var/lock/opkg.lock
 
+ifeq ($(BUILD_VARIANT),smime)
+	CONFIGURE_ARGS += --enable-openssl
+endif
+
 MAKE_FLAGS = \
 		CC="$(TARGET_CC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		HOST_CPU="$(PKGARCH)" \
 		LDFLAGS="-Wl,--gc-sections" \
 
-define Package/opkg/install
+define Package/opkg/Default/install
 	$(INSTALL_DIR) $(1)/usr/lib/opkg
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_DIR) $(1)/etc
-	$(INSTALL_DATA) ./files/opkg.conf $(1)/etc/
+	$(INSTALL_DATA) ./files/opkg$(2).conf $(1)/etc/opkg.conf
 	$(VERSION_SED) $(1)/etc/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
 endef
+
+Package/opkg/install = $(call Package/opkg/Default/install,$(1),)
+Package/opkg-smime/install = $(call Package/opkg/Default/install,$(1),-smime)
+
 
 define Build/InstallDev
 	mkdir -p $(1)/usr/include
@@ -99,4 +133,5 @@ define Host/Install
 endef
 
 $(eval $(call BuildPackage,opkg))
+$(eval $(call BuildPackage,opkg-smime))
 $(eval $(call HostBuild))
