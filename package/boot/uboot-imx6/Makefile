@@ -62,7 +62,7 @@ endef
 
 UBOOTS := \
 	nitrogen6dl \
-	nitrogen6dl1g \
+	nitrogen6dl2g \
 	nitrogen6q \
 	nitrogen6q2g \
 	nitrogen6s \
