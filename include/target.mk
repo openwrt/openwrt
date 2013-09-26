@@ -229,6 +229,12 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_vfp = -mfpu=vfp -mfloat-abi=softfp
     CPU_CFLAGS_vfp3 = -mfpu=vfp3-d16 -mfloat-abi=softfp
   endif
+  ifeq ($(ARCH),powerpc)
+    CPU_CFLAGS_603e:=-mcpu=603e
+    CPU_CFLAGS_8540:=-mcpu=8540
+    CPU_CFLAGS_405:=-mcpu=405
+    CPU_CFLAGS_440:=-mcpu=440
+  endif
   ifeq ($(ARCH),sparc)
     CPU_TYPE = sparc
     CPU_CFLAGS_ultrasparc = -mcpu=ultrasparc
