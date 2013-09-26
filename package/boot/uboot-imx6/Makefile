@@ -24,6 +24,30 @@ define uboot/Default
   IMAGE:=
 endef
 
+define uboot/nitrogen6dl
+  TITLE:=U-Boot for Nitrogen6x i.MX6Dual-Lite 1GB board
+endef
+
+define uboot/nitrogen6dl2g
+  TITLE:=U-Boot for Nitrogen6x i.MX6Dual-Lite 2GB board
+endef
+
+define uboot/nitrogen6q
+  TITLE:=U-Boot for Nitrogen6x/SABRE Lite (MX6Q/1GB)
+endef
+
+define uboot/nitrogen6q2g
+  TITLE:=U-Boot for Nitrogen6x i.MX6Quad 2GB board
+endef
+
+define uboot/nitrogen6s
+  TITLE:=U-Boot for Nitrogen6x i.MX6Solo 512MB board
+endef
+
+define uboot/nitrogen6s1g
+  TITLE:=U-Boot for Nitrogen6x i.MX6Solo 1GB board
+endef
+
 define uboot/wandboard_dl
   TITLE:=U-Boot for the Wandboard Dual Lite
 endef
@@ -37,6 +61,12 @@ define uboot/wandboard_solo
 endef
 
 UBOOTS := \
+	nitrogen6dl \
+	nitrogen6dl1g \
+	nitrogen6q \
+	nitrogen6q2g \
+	nitrogen6s \
+	nitrogen6s1g \
 	wandboard_dl \
 	wandboard_quad \
 	wandboard_solo
