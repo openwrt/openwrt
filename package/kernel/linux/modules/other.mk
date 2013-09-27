@@ -634,7 +634,7 @@ define KernelPackage/regmap
   FILES:= \
 	$(LINUX_DIR)/drivers/base/regmap/regmap-core.ko \
 	$(LINUX_DIR)/drivers/base/regmap/regmap-i2c.ko \
-	$(LINUX_DIR)/drivers/base/regmap/regmap-spi.ko
+	$(if $(CONFIG_SPI),$(LINUX_DIR)/drivers/base/regmap/regmap-spi.ko)
   AUTOLOAD:=$(call AutoLoad,21,regmap-core regmap-i2c regmap-spi)
 endef
 
