@@ -33,14 +33,8 @@ define KernelPackage/pcmcia-rsrc
   TITLE:=PCMCIA resource support
   DEPENDS:=kmod-pcmcia-core
   KCONFIG:=CONFIG_PCCARD_NONSTATIC=y
-# For Linux 2.6.35+
-ifneq ($(wildcard $(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.ko),)
   FILES:=$(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.ko
   AUTOLOAD:=$(call AutoLoad,26,pcmcia_rsrc)
-else
-  FILES:=$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.ko
-  AUTOLOAD:=$(call AutoLoad,26,rsrc_nonstatic)
-endif
 endef
 
 define KernelPackage/pcmcia-rsrc/description
