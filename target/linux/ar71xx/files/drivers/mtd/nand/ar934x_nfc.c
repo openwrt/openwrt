@@ -1281,6 +1281,12 @@ ar934x_nfc_setup_hwecc(struct ar934x_nfc *nfc)
 
 	switch (nfc->mtd.writesize) {
 	case 2048:
+		/*
+		 * Writing a subpage separately is not supported, because
+		 * the controller only does ECC on full-page accesses.
+		 */
+		nand->options = NAND_NO_SUBPAGE_WRITE;
+
 		nand->ecc.size = 512;
 		nand->ecc.bytes = 7;
 		nand->ecc.strength = 4;
