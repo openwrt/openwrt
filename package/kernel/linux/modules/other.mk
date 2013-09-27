@@ -765,6 +765,7 @@ $(eval $(call KernelPackage,random-core))
 define KernelPackage/thermal
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Generic Thermal sysfs driver
+  HIDDEN:=1
   KCONFIG:= \
 	CONFIG_THERMAL \
 	CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y \
