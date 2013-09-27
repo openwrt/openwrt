@@ -13,7 +13,7 @@ FEATURES:=targz usb pci pcie gpio
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=vfpv3
 
-LINUX_VERSION:=3.8.13
+LINUX_VERSION:=3.10.12
 
 include $(INCLUDE_DIR)/target.mk
 
