@@ -156,7 +156,7 @@
  void generate_random_uuid(unsigned char uuid_out[16]);
 --- a/kernel/pid.c
 +++ b/kernel/pid.c
-@@ -422,6 +422,7 @@ void transfer_pid(struct task_struct *ol
+@@ -423,6 +423,7 @@ void transfer_pid(struct task_struct *ol
  	new->pids[type].pid = old->pids[type].pid;
  	hlist_replace_rcu(&old->pids[type].node, &new->pids[type].node);
  }

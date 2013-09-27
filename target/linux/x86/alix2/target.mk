@@ -19,7 +19,7 @@ DEFAULT_PACKAGES += \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
 			kmod-ledtrig-netdev \
 			kmod-cpu-msr hwclock wpad
-LINUX_VERSION:=3.10.12
+LINUX_VERSION:=3.10.13
 CS5535_MASK:=0x0b000042
 
 CPU_TYPE := geode
