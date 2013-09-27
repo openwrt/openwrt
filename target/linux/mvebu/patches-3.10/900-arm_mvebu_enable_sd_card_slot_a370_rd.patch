@@ -1,0 +1,27 @@
+From 883b6ab543ea3f893447307c0e757668ca1b5396 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Wed, 9 Jan 2013 20:50:04 +0100
+Subject: [PATCH] arm: mvebu: add SDIO support to Armada 370 Reference Design
+
+This patch enables the use of the SDIO controller on the Armada 370
+Reference Design board.
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+---
+ arch/arm/boot/dts/armada-370-rd.dts |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/arm/boot/dts/armada-370-rd.dts
++++ b/arch/arm/boot/dts/armada-370-rd.dts
+@@ -85,5 +85,11 @@
+ 				};
+ 			};
+ 		};
++
++		mvsdio@d00d4000 {
++			pinctrl-0 = <&sdio_pins1>;
++			pinctrl-names = "default";
++			status = "okay";
++		};
+ 	};
+  };
