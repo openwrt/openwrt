@@ -7822,3 +7822,34 @@
  #define AR_SREV_9485_OR_LATER(_ah) \
  	(((_ah)->hw_version.macVersion >= AR_SREV_VERSION_9485))
  
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -101,7 +101,7 @@ static u32 ieee80211_hw_conf_chan(struct
+ 	struct ieee80211_sub_if_data *sdata;
+ 	struct cfg80211_chan_def chandef = {};
+ 	u32 changed = 0;
+-	int power;
++	int power = 0;
+ 	u32 offchannel_flag;
+ 
+ 	offchannel_flag = local->hw.conf.flags & IEEE80211_CONF_OFFCHANNEL;
+@@ -155,16 +155,16 @@ static u32 ieee80211_hw_conf_chan(struct
+ 		changed |= IEEE80211_CONF_CHANGE_SMPS;
+ 	}
+ 
+-	power = chandef.chan->max_power;
+-
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(sdata, &local->interfaces, list) {
+ 		if (!rcu_access_pointer(sdata->vif.chanctx_conf))
+ 			continue;
+-		power = min(power, sdata->vif.bss_conf.txpower);
++		power = max(power, sdata->vif.bss_conf.txpower);
+ 	}
+ 	rcu_read_unlock();
+ 
++	power = min(power, chandef.chan->max_power);
++
+ 	if (local->hw.conf.power_level != power) {
+ 		changed |= IEEE80211_CONF_CHANGE_POWER;
+ 		local->hw.conf.power_level = power;
