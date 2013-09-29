@@ -130,18 +130,17 @@
  				const u8 *addr);
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -101,7 +101,7 @@ static u32 ieee80211_hw_conf_chan(struct
- 	struct ieee80211_sub_if_data *sdata;
+@@ -102,6 +102,7 @@ static u32 ieee80211_hw_conf_chan(struct
  	struct cfg80211_chan_def chandef = {};
  	u32 changed = 0;
--	int power;
-+	int power, ant_gain, max_power;
+ 	int power = 0;
++	int ant_gain, max_power;
  	u32 offchannel_flag;
  
  	offchannel_flag = local->hw.conf.flags & IEEE80211_CONF_OFFCHANNEL;
-@@ -165,8 +165,21 @@ static u32 ieee80211_hw_conf_chan(struct
- 	}
- 	rcu_read_unlock();
+@@ -165,8 +166,21 @@ static u32 ieee80211_hw_conf_chan(struct
+ 
+ 	power = min(power, chandef.chan->max_power);
  
 -	if (local->hw.conf.power_level != power) {
 +	max_power = chandef.chan->max_reg_power;
@@ -162,7 +161,7 @@
  		local->hw.cur_power_level = power;
  		local->hw.conf.power_level = power;
  	}
-@@ -597,6 +610,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+@@ -597,6 +611,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
  					 IEEE80211_RADIOTAP_MCS_HAVE_BW;
  	local->hw.radiotap_vht_details = IEEE80211_RADIOTAP_VHT_KNOWN_GI |
  					 IEEE80211_RADIOTAP_VHT_KNOWN_BANDWIDTH;
