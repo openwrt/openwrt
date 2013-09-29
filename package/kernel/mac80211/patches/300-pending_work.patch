@@ -1027,7 +1027,11 @@
 +		*stop = true;
 +		return false;
 +	}
-+
+ 
+-		ath_tx_fill_desc(sc, bf, txq, aggr_len);
+-		ath_tx_txqaddbuf(sc, txq, &bf_q, false);
+-	} while (txq->axq_ampdu_depth < ATH_AGGR_MIN_QDEPTH &&
+-		 status != ATH_AGGR_BAW_CLOSED);
 +	ath_set_rates(tid->an->vif, tid->an->sta, bf);
 +	if (aggr)
 +		last = ath_tx_form_aggr(sc, txq, tid, &bf_q, bf,
@@ -1042,11 +1046,7 @@
 +		tid->ac->clear_ps_filter = false;
 +		tx_info->flags |= IEEE80211_TX_CTL_CLEAR_PS_FILT;
 +	}
- 
--		ath_tx_fill_desc(sc, bf, txq, aggr_len);
--		ath_tx_txqaddbuf(sc, txq, &bf_q, false);
--	} while (txq->axq_ampdu_depth < ATH_AGGR_MIN_QDEPTH &&
--		 status != ATH_AGGR_BAW_CLOSED);
++
 +	ath_tx_fill_desc(sc, bf, txq, aggr_len);
 +	ath_tx_txqaddbuf(sc, txq, &bf_q, false);
 +	return true;
@@ -1250,7 +1250,7 @@
  	}
  
  	rcu_read_unlock();
-@@ -1787,62 +1959,13 @@ static void ath_tx_txqaddbuf(struct ath_
+@@ -1787,74 +1959,28 @@ static void ath_tx_txqaddbuf(struct ath_
  			if (bf_is_ampdu_not_probing(bf))
  				txq->axq_ampdu_depth++;
  
@@ -1316,7 +1316,25 @@
  static void ath_tx_send_normal(struct ath_softc *sc, struct ath_txq *txq,
  			       struct ath_atx_tid *tid, struct sk_buff *skb)
  {
-@@ -1985,6 +2108,7 @@ static int ath_tx_prepare(struct ieee802
++	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
+ 	struct ath_frame_info *fi = get_frame_info(skb);
+ 	struct list_head bf_head;
+-	struct ath_buf *bf;
+-
+-	bf = fi->bf;
++	struct ath_buf *bf = fi->bf;
+ 
+ 	INIT_LIST_HEAD(&bf_head);
+ 	list_add_tail(&bf->list, &bf_head);
+ 	bf->bf_state.bf_type = 0;
++	if (tid && (tx_info->flags & IEEE80211_TX_CTL_AMPDU)) {
++		bf->bf_state.bf_type = BUF_AMPDU;
++		ath_tx_addto_baw(sc, tid, bf);
++	}
+ 
+ 	bf->bf_next = NULL;
+ 	bf->bf_lastbf = bf;
+@@ -1985,6 +2111,7 @@ static int ath_tx_prepare(struct ieee802
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_sta *sta = txctl->sta;
  	struct ieee80211_vif *vif = info->control.vif;
@@ -1324,7 +1342,7 @@
  	struct ath_softc *sc = hw->priv;
  	int frmlen = skb->len + FCS_LEN;
  	int padpos, padsize;
-@@ -1992,6 +2116,10 @@ static int ath_tx_prepare(struct ieee802
+@@ -1992,6 +2119,10 @@ static int ath_tx_prepare(struct ieee802
  	/* NOTE:  sta can be NULL according to net/mac80211.h */
  	if (sta)
  		txctl->an = (struct ath_node *)sta->drv_priv;
@@ -1335,7 +1353,7 @@
  
  	if (info->control.hw_key)
  		frmlen += info->control.hw_key->icv_len;
-@@ -2041,7 +2169,6 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2041,7 +2172,6 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ath_txq *txq = txctl->txq;
  	struct ath_atx_tid *tid = NULL;
  	struct ath_buf *bf;
@@ -1343,7 +1361,7 @@
  	int q;
  	int ret;
  
-@@ -2069,27 +2196,31 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2069,27 +2199,31 @@ int ath_tx_start(struct ieee80211_hw *hw
  		ath_txq_unlock(sc, txq);
  		txq = sc->tx.uapsdq;
  		ath_txq_lock(sc, txq);
@@ -1386,7 +1404,7 @@
  		if (txctl->paprd)
  			dev_kfree_skb_any(skb);
  		else
-@@ -2142,7 +2273,7 @@ void ath_tx_cabq(struct ieee80211_hw *hw
+@@ -2142,7 +2276,7 @@ void ath_tx_cabq(struct ieee80211_hw *hw
  
  		bf->bf_lastbf = bf;
  		ath_set_rates(vif, NULL, bf);
@@ -1395,7 +1413,7 @@
  		duration += info.rates[0].PktDuration;
  		if (bf_tail)
  			bf_tail->bf_next = bf;
-@@ -2189,7 +2320,7 @@ static void ath_tx_complete(struct ath_s
+@@ -2189,7 +2323,7 @@ static void ath_tx_complete(struct ath_s
  	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
  	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
  	struct ieee80211_hdr * hdr = (struct ieee80211_hdr *)skb->data;
@@ -1404,7 +1422,7 @@
  	unsigned long flags;
  
  	ath_dbg(common, XMIT, "TX complete: skb: %p\n", skb);
-@@ -2225,21 +2356,7 @@ static void ath_tx_complete(struct ath_s
+@@ -2225,21 +2359,7 @@ static void ath_tx_complete(struct ath_s
  	spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
  
  	__skb_queue_tail(&txq->complete_q, skb);
@@ -1427,7 +1445,7 @@
  }
  
  static void ath_tx_complete_buf(struct ath_softc *sc, struct ath_buf *bf,
-@@ -2360,8 +2477,7 @@ static void ath_tx_processq(struct ath_s
+@@ -2360,8 +2480,7 @@ static void ath_tx_processq(struct ath_s
  
  		if (list_empty(&txq->axq_q)) {
  			txq->axq_link = NULL;
@@ -1437,7 +1455,7 @@
  			break;
  		}
  		bf = list_first_entry(&txq->axq_q, struct ath_buf, list);
-@@ -2375,7 +2491,7 @@ static void ath_tx_processq(struct ath_s
+@@ -2375,7 +2494,7 @@ static void ath_tx_processq(struct ath_s
  		 * it with the STALE flag.
  		 */
  		bf_held = NULL;
@@ -1446,7 +1464,7 @@
  			bf_held = bf;
  			if (list_is_last(&bf_held->list, &txq->axq_q))
  				break;
-@@ -2399,7 +2515,7 @@ static void ath_tx_processq(struct ath_s
+@@ -2399,7 +2518,7 @@ static void ath_tx_processq(struct ath_s
  		 * however leave the last descriptor back as the holding
  		 * descriptor for hw.
  		 */
@@ -1455,7 +1473,7 @@
  		INIT_LIST_HEAD(&bf_head);
  		if (!list_is_singular(&lastbf->list))
  			list_cut_position(&bf_head,
-@@ -2470,7 +2586,7 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2470,7 +2589,7 @@ void ath_tx_edma_tasklet(struct ath_soft
  		}
  
  		bf = list_first_entry(fifo_list, struct ath_buf, list);
@@ -1464,7 +1482,7 @@
  			list_del(&bf->list);
  			ath_tx_return_buffer(sc, bf);
  			bf = list_first_entry(fifo_list, struct ath_buf, list);
-@@ -2492,7 +2608,7 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2492,7 +2611,7 @@ void ath_tx_edma_tasklet(struct ath_soft
  				ath_tx_txqaddbuf(sc, txq, &bf_q, true);
  			}
  		} else {
@@ -1473,7 +1491,7 @@
  			if (bf != lastbf)
  				list_cut_position(&bf_head, fifo_list,
  						  lastbf->list.prev);
-@@ -2583,6 +2699,7 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2583,6 +2702,7 @@ void ath_tx_node_init(struct ath_softc *
  		tid->paused    = false;
  		tid->active	   = false;
  		__skb_queue_head_init(&tid->buf_q);
@@ -1481,7 +1499,7 @@
  		acno = TID_TO_WME_AC(tidno);
  		tid->ac = &an->ac[acno];
  	}
-@@ -2590,6 +2707,7 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2590,6 +2710,7 @@ void ath_tx_node_init(struct ath_softc *
  	for (acno = 0, ac = &an->ac[acno];
  	     acno < IEEE80211_NUM_ACS; acno++, ac++) {
  		ac->sched    = false;
