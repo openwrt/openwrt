@@ -5110,6 +5110,15 @@
  static int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
  			     struct ieee80211_channel *chan, bool offchan,
  			     unsigned int wait, const u8 *buf, size_t len,
+@@ -3332,7 +3514,7 @@ static int ieee80211_probe_client(struct
+ 		return -EINVAL;
+ 	}
+ 	band = chanctx_conf->def.chan->band;
+-	sta = sta_info_get(sdata, peer);
++	sta = sta_info_get_bss(sdata, peer);
+ 	if (sta) {
+ 		qos = test_sta_flag(sta, WLAN_STA_WME);
+ 	} else {
 @@ -3501,4 +3683,5 @@ struct cfg80211_ops mac80211_config_ops 
  	.get_et_strings = ieee80211_get_et_strings,
  	.get_channel = ieee80211_cfg_get_channel,
@@ -5304,7 +5313,17 @@
  #define TRACE_SYSTEM mac80211_msg
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -2326,6 +2326,81 @@ static int ieee80211_beacon_add_tim(stru
+@@ -1101,7 +1101,8 @@ ieee80211_tx_prepare(struct ieee80211_su
+ 		tx->sta = rcu_dereference(sdata->u.vlan.sta);
+ 		if (!tx->sta && sdata->dev->ieee80211_ptr->use_4addr)
+ 			return TX_DROP;
+-	} else if (info->flags & IEEE80211_TX_CTL_INJECTED ||
++	} else if (info->flags & (IEEE80211_TX_CTL_INJECTED |
++				  IEEE80211_TX_INTFL_NL80211_FRAME_TX) ||
+ 		   tx->sdata->control_port_protocol == tx->skb->protocol) {
+ 		tx->sta = sta_info_get_bss(sdata, hdr->addr1);
+ 	}
+@@ -2326,6 +2327,81 @@ static int ieee80211_beacon_add_tim(stru
  	return 0;
  }
  
@@ -5386,7 +5405,7 @@
  struct sk_buff *ieee80211_beacon_get_tim(struct ieee80211_hw *hw,
  					 struct ieee80211_vif *vif,
  					 u16 *tim_offset, u16 *tim_length)
-@@ -2356,6 +2431,9 @@ struct sk_buff *ieee80211_beacon_get_tim
+@@ -2356,6 +2432,9 @@ struct sk_buff *ieee80211_beacon_get_tim
  		struct beacon_data *beacon = rcu_dereference(ap->beacon);
  
  		if (beacon) {
@@ -7853,3 +7872,15 @@
  	if (local->hw.conf.power_level != power) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;
  		local->hw.conf.power_level = power;
+--- a/net/mac80211/status.c
++++ b/net/mac80211/status.c
+@@ -180,6 +180,9 @@ static void ieee80211_frame_acked(struct
+ 	struct ieee80211_local *local = sta->local;
+ 	struct ieee80211_sub_if_data *sdata = sta->sdata;
+ 
++	if (local->hw.flags & IEEE80211_HW_REPORTS_TX_ACK_STATUS)
++		sta->last_rx = jiffies;
++
+ 	if (ieee80211_is_data_qos(mgmt->frame_control)) {
+ 		struct ieee80211_hdr *hdr = (void *) skb->data;
+ 		u8 *qc = ieee80211_get_qos_ctl(hdr);
