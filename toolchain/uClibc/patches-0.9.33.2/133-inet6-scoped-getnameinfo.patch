@@ -1,0 +1,26 @@
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -317,6 +317,7 @@
+ #include <sys/utsname.h>
+ #include <sys/un.h>
+ #include <sys/stat.h>
++#include <net/if.h>
+ #include <bits/uClibc_mutex.h>
+ #include "internal/parse_config.h"
+ 
+@@ -1861,7 +1862,6 @@
+ 					c = inet_ntop(AF_INET6,
+ 						(const void *) &sin6p->sin6_addr,
+ 						host, hostlen);
+-#if 0
+ 					/* Does scope id need to be supported? */
+ 					uint32_t scopeid;
+ 					scopeid = sin6p->sin6_scope_id;
+@@ -1898,7 +1898,6 @@
+ 							return EAI_SYSTEM;
+ 						memcpy(host + real_hostlen, scopebuf, scopelen + 1);
+ 					}
+-#endif
+ 				}
+ #endif /* __UCLIBC_HAS_IPV6__ */
+ #if defined __UCLIBC_HAS_IPV4__
