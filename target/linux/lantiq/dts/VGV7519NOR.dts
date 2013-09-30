@@ -1,0 +1,36 @@
+/dts-v1/;
+
+
+/include/ "VGV7519.dtsi"
+
+/ {
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x800000>, <1 0x800000 0x800000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x00000 0x40000>;
+				};
+
+				partition@60000 {
+					label = "uboot_env";
+					reg = <0x60000 0x10000>;
+				};
+
+				partition@80000 {
+					label = "linux";
+					reg = <0x80000 0xf80000>;
+					// 0x080000 - 0x01b0000 : kernel
+					// 0x1b0000 - 0x1000000 : rootfs (squashfs)
+					// 0x390000 - 0x1000000 : rootfs_data
+				};
+			};
+		};
+	};
+};
