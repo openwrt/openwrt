@@ -152,6 +152,7 @@ SUBMENU:=$(LIB_MENU)
     $(LINUX_DIR)/lib/ts_kmp.ko \
     $(LINUX_DIR)/lib/ts_bm.ko \
     $(LINUX_DIR)/lib/ts_fsm.ko
+  AUTOLOAD:=$(call AutoProbe,ts_kmp ts_bm ts_fsm)
 endef
 
 $(eval $(call KernelPackage,lib-textsearch))
