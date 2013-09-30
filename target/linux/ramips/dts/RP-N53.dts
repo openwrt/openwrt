@@ -15,6 +15,13 @@
 			status = "okay";
 		};
 
+		i2s@a00 {
+			status = "okay";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pcm_i2s_pins>;
+		};
+
 		spi@b00 {
 			status = "okay";
 		
@@ -50,19 +57,23 @@
 				};
 			};
 		};
+
+		pcm@2000 {
+			status = "okay";
+		};
+
+		gdma@2800 {
+			status = "okay";
+		};
 	};
 
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "jtag", "mdio", "rgmii1", "rgmii1", "i2c", "uartf";
+				ralink,group = "mdio", "rgmii1";
 				ralink,function = "gpio";
 			};
 		};
-	};
-
-	codec {
-		compatible = "ralink,mt7620-audio";
 	};
 
 	gsw@10110000 {
