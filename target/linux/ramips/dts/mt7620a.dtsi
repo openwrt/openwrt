@@ -255,6 +255,12 @@
 		pinctrl-0 = <&state_default>;
 		state_default: pinctrl0 {
 		};
+		pcm_i2s_pins: pcm_i2s {
+			pcm_i2s {
+				ralink,group = "uartf";
+				ralink,function = "pcm i2s";
+			};
+		};
 		spi_pins: spi {
 			spi {
 				ralink,group = "spi";
