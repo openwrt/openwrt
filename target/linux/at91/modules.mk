@@ -38,10 +38,10 @@ $(eval $(call KernelPackage,pwm-atmel))
 define KernelPackage/at91-adc
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ADC on atmel SoC
-  DEPENDS:=@TARGET_at91
+  DEPENDS:=@TARGET_at91 +kmod-iio-core
   KCONFIG:=CONFIG_AT91_ADC
-  FILES:=$(LINUX_DIR)/drivers/iio/adc/at91-adc.ko
-  AUTOLOAD:=$(call AutoLoad,40,at91-adc)
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/at91_adc.ko
+  AUTOLOAD:=$(call AutoLoad,40,at91_adc)
 endef
 
 define KernelPackage/at91-adc/description
