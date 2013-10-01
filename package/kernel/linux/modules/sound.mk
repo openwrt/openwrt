@@ -173,7 +173,7 @@ define KernelPackage/sound-soc-ac97
   KCONFIG:=CONFIG_SND_SOC_AC97_CODEC
   FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-ac97.ko
   AUTOLOAD:=$(call AutoLoad,57,snd-soc-ac97)
-  DEPENDS:=+kmod-ac97 +kmod-sound-soc-core
+  DEPENDS:=+kmod-ac97 +kmod-sound-soc-core +TARGET_ep93xx:kmod-sound-soc-ep93xx-ac97
   $(call AddDepends/sound)
 endef
 
