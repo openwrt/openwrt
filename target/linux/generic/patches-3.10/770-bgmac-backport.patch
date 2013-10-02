@@ -1,17 +1,29 @@
-bgmac: implement unaligned addressing for DMA rings that support it
+patches for bgmac backported from net-next/master
 
-This is important patch for new devices that support unaligned
-addressing. That devices suffer from the backward-compatibility bug in
-DMA engine. In theory we should be able to use old mechanism, but in
-practice DMA address seems to be randomly copied into status register
-when hardware reaches end of a ring. This breaks reading slot number
-from status register and we can't use DMA anymore.
-
-Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
-
+--- a/drivers/net/ethernet/broadcom/Kconfig
++++ b/drivers/net/ethernet/broadcom/Kconfig
+@@ -132,7 +132,8 @@ config BNX2X_SRIOV
+ 
+ config BGMAC
+ 	tristate "BCMA bus GBit core support"
+-	depends on BCMA_HOST_SOC && HAS_DMA
++	depends on BCMA_HOST_SOC && HAS_DMA && BCM47XX
++	select PHYLIB
+ 	---help---
+ 	  This driver supports GBit MAC and BCM4706 GBit MAC cores on BCMA bus.
+ 	  They can be found on BCM47xx SoCs and provide gigabit ethernet.
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -162,6 +162,7 @@ static netdev_tx_t bgmac_dma_tx_add(stru
+@@ -149,6 +149,8 @@ static netdev_tx_t bgmac_dma_tx_add(stru
+ 	dma_desc->ctl0 = cpu_to_le32(ctl0);
+ 	dma_desc->ctl1 = cpu_to_le32(ctl1);
+ 
++	netdev_sent_queue(net_dev, skb->len);
++
+ 	wmb();
+ 
+ 	/* Increase ring->end to point empty slot. We tell hardware the first
+@@ -157,6 +159,7 @@ static netdev_tx_t bgmac_dma_tx_add(stru
  	if (++ring->end >= BGMAC_TX_RING_SLOTS)
  		ring->end = 0;
  	bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_TX_INDEX,
@@ -19,7 +31,12 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		    ring->end * sizeof(struct bgmac_dma_desc));
  
  	/* Always keep one slot free to allow detecting bugged calls. */
-@@ -186,6 +187,8 @@ static void bgmac_dma_tx_free(struct bgm
+@@ -177,10 +180,13 @@ static void bgmac_dma_tx_free(struct bgm
+ 	struct device *dma_dev = bgmac->core->dma_dev;
+ 	int empty_slot;
+ 	bool freed = false;
++	unsigned bytes_compl = 0, pkts_compl = 0;
+ 
  	/* The last slot that hardware didn't consume yet */
  	empty_slot = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_TX_STATUS);
  	empty_slot &= BGMAC_DMA_TX_STATDPTR;
@@ -28,7 +45,26 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	empty_slot /= sizeof(struct bgmac_dma_desc);
  
  	while (ring->start != empty_slot) {
-@@ -279,6 +282,8 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -192,6 +198,9 @@ static void bgmac_dma_tx_free(struct bgm
+ 					 slot->skb->len, DMA_TO_DEVICE);
+ 			slot->dma_addr = 0;
+ 
++			bytes_compl += slot->skb->len;
++			pkts_compl++;
++
+ 			/* Free memory! :) */
+ 			dev_kfree_skb(slot->skb);
+ 			slot->skb = NULL;
+@@ -205,6 +214,8 @@ static void bgmac_dma_tx_free(struct bgm
+ 		freed = true;
+ 	}
+ 
++	netdev_completed_queue(bgmac->net_dev, pkts_compl, bytes_compl);
++
+ 	if (freed && netif_queue_stopped(bgmac->net_dev))
+ 		netif_wake_queue(bgmac->net_dev);
+ }
+@@ -274,6 +285,8 @@ static int bgmac_dma_rx_read(struct bgma
  
  	end_slot = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_RX_STATUS);
  	end_slot &= BGMAC_DMA_RX_STATDPTR;
@@ -37,7 +73,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	end_slot /= sizeof(struct bgmac_dma_desc);
  
  	ring->end = end_slot;
-@@ -423,9 +428,6 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -418,9 +431,6 @@ static int bgmac_dma_alloc(struct bgmac
  		ring = &bgmac->tx_ring[i];
  		ring->num_slots = BGMAC_TX_RING_SLOTS;
  		ring->mmio_base = ring_base[i];
@@ -47,7 +83,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  		/* Alloc ring of descriptors */
  		size = ring->num_slots * sizeof(struct bgmac_dma_desc);
-@@ -440,6 +442,13 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -435,6 +445,13 @@ static int bgmac_dma_alloc(struct bgmac
  		if (ring->dma_base & 0xC0000000)
  			bgmac_warn(bgmac, "DMA address using 0xC0000000 bit(s), it may need translation trick\n");
  
@@ -61,7 +97,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		/* No need to alloc TX slots yet */
  	}
  
-@@ -449,9 +458,6 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -444,9 +461,6 @@ static int bgmac_dma_alloc(struct bgmac
  		ring = &bgmac->rx_ring[i];
  		ring->num_slots = BGMAC_RX_RING_SLOTS;
  		ring->mmio_base = ring_base[i];
@@ -71,7 +107,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  		/* Alloc ring of descriptors */
  		size = ring->num_slots * sizeof(struct bgmac_dma_desc);
-@@ -467,6 +473,13 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -462,6 +476,13 @@ static int bgmac_dma_alloc(struct bgmac
  		if (ring->dma_base & 0xC0000000)
  			bgmac_warn(bgmac, "DMA address using 0xC0000000 bit(s), it may need translation trick\n");
  
@@ -85,7 +121,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		/* Alloc RX slots */
  		for (j = 0; j < ring->num_slots; j++) {
  			err = bgmac_dma_rx_skb_for_slot(bgmac, &ring->slots[j]);
-@@ -494,12 +507,14 @@ static void bgmac_dma_init(struct bgmac
+@@ -489,12 +510,14 @@ static void bgmac_dma_init(struct bgmac
  	for (i = 0; i < BGMAC_MAX_TX_RINGS; i++) {
  		ring = &bgmac->tx_ring[i];
  
@@ -102,7 +138,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  		ring->start = 0;
  		ring->end = 0;	/* Points the slot that should *not* be read */
-@@ -510,12 +525,14 @@ static void bgmac_dma_init(struct bgmac
+@@ -505,12 +528,14 @@ static void bgmac_dma_init(struct bgmac
  
  		ring = &bgmac->rx_ring[i];
  
@@ -119,7 +155,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  		for (j = 0, dma_desc = ring->cpu_base; j < ring->num_slots;
  		     j++, dma_desc++) {
-@@ -536,6 +553,7 @@ static void bgmac_dma_init(struct bgmac
+@@ -531,6 +556,7 @@ static void bgmac_dma_init(struct bgmac
  		}
  
  		bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_INDEX,
@@ -127,9 +163,41 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  			    ring->num_slots * sizeof(struct bgmac_dma_desc));
  
  		ring->start = 0;
+@@ -908,10 +934,10 @@ static void bgmac_chip_reset(struct bgma
+ 		struct bcma_drv_cc *cc = &bgmac->core->bus->drv_cc;
+ 		u8 et_swtype = 0;
+ 		u8 sw_type = BGMAC_CHIPCTL_1_SW_TYPE_EPHY |
+-			     BGMAC_CHIPCTL_1_IF_TYPE_RMII;
+-		char buf[2];
++			     BGMAC_CHIPCTL_1_IF_TYPE_MII;
++		char buf[4];
+ 
+-		if (bcm47xx_nvram_getenv("et_swtype", buf, 1) > 0) {
++		if (bcm47xx_nvram_getenv("et_swtype", buf, sizeof(buf)) > 0) {
+ 			if (kstrtou8(buf, 0, &et_swtype))
+ 				bgmac_err(bgmac, "Failed to parse et_swtype (%s)\n",
+ 					  buf);
+@@ -970,6 +996,8 @@ static void bgmac_chip_reset(struct bgma
+ 	bgmac_miiconfig(bgmac);
+ 	bgmac_phy_init(bgmac);
+ 
++	netdev_reset_queue(bgmac->net_dev);
++
+ 	bgmac->int_status = 0;
+ }
+ 
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
-@@ -386,6 +386,8 @@ struct bgmac_dma_ring {
+@@ -333,7 +333,7 @@
+ 
+ #define BGMAC_CHIPCTL_1_IF_TYPE_MASK		0x00000030
+ #define BGMAC_CHIPCTL_1_IF_TYPE_RMII		0x00000000
+-#define BGMAC_CHIPCTL_1_IF_TYPE_MI		0x00000010
++#define BGMAC_CHIPCTL_1_IF_TYPE_MII		0x00000010
+ #define BGMAC_CHIPCTL_1_IF_TYPE_RGMII		0x00000020
+ #define BGMAC_CHIPCTL_1_SW_TYPE_MASK		0x000000C0
+ #define BGMAC_CHIPCTL_1_SW_TYPE_EPHY		0x00000000
+@@ -384,6 +384,8 @@ struct bgmac_dma_ring {
  	u16 mmio_base;
  	struct bgmac_dma_desc *cpu_base;
  	dma_addr_t dma_base;
