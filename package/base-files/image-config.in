@@ -183,3 +183,41 @@ menuconfig VERSIONOPT
 			 %d .. Distribution name or "openwrt", lowercase
 			 %T .. Target name
 			 %S .. Target/Subtarget name
+
+menuconfig SMIMEOPT
+	bool "Package signing options" if IMAGEOPT
+        default n
+	help
+		These options configure the signing key and certificate to
+		be used for signing and verifying packages.
+
+	config OPKGSMIME_CERT
+		string
+		prompt "Path to certificate (PEM certificate format)" if SMIMEOPT
+		help
+		  Path to the certificate to use for signature verification
+
+	config OPKGSMIME_KEY
+		string
+		prompt "Path to signing key (PEM private key format)" if SMIMEOPT
+		help
+		  Path to the key to use for signing packages
+
+	config OPKGSMIME_PASSPHRASE
+		bool
+		default y
+		prompt "Wait for a passphrase when signing packages?" if SMIMEOPT
+		help
+		  If this value is set, then the build will pause and request a passphrase
+                  from the command line when signing packages. This SHOULD NOT be used with
+                  automatic builds. If this value is not set, a file can be specified from
+                  which the passphrase will be read.
+
+	config OPKGSMIME_PASSFILE
+		string
+		prompt "Path to a file containing the passphrase" if SMIMEOPT
+                depends on !OPKGSMIME_PASSPHRASE
+		help
+		  Path to a file containing the passphrase for the signing key.
+                  If the signing key is not encrypted and does not require a passphrase,
+                  this option may be left blank.

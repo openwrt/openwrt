@@ -120,10 +120,35 @@ $(curdir)/install: $(TMP_DIR)/.build
 	$(if $(CONFIG_CLEAN_IPKG),rm -rf $(TARGET_DIR)/usr/lib/opkg)
 	$(call mklibs)
 
+PASSOPT=""
+PASSARG=""
+ifndef CONFIG_OPKGSMIME_PASSPHRASE
+  ifneq ($(call qstrip,$(CONFIG_OPKGSMIME_PASSFILE)),)
+    PASSOPT="-passin"
+    PASSARG="file:$(call qstrip,$(CONFIG_OPKGSMIME_PASSFILE))"
+  endif
+endif
+
 $(curdir)/index: FORCE
-	@(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages && \
-		gzip -9c Packages > Packages.gz \
-	)
+ifeq ($(call qstrip,$(CONFIG_OPKGSMIME_KEY)),)
+	@echo Signing key has not been configured
+else
+ifeq ($(call qstrip,$(CONFIG_OPKGSMIME_CERT)),)
+	@echo Certificate has not been configured
+else
+	@echo Generating package index...
+	@(cd $(PACKAGE_DIR); \
+		$(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages && \
+		gzip -9c Packages > Packages.gz )
+	@echo Signing package index...
+	@(cd $(PACKAGE_DIR); \
+		openssl smime -binary -in Packages.gz \
+			-out Packages.sig -outform PEM -sign \
+			-signer $(CONFIG_OPKGSMIME_CERT) \
+			-inkey $(CONFIG_OPKGSMIME_KEY) \
+			$(PASSOPT) $(PASSARG) )
+endif
+endif
 
 $(curdir)/preconfig:
 
