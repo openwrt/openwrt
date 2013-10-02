@@ -26,8 +26,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct bcma_device *core = bgmac->core;
 +	struct bcma_chipinfo *ci = &core->bus->chipinfo;
 +
-+	if (ci->id != BCMA_CHIP_ID_BCM4707 &&
-+	    ci->id != BCMA_CHIP_ID_BCM53018) {
++	if (ci->id == BCMA_CHIP_ID_BCM4707 ||
++	    ci->id == BCMA_CHIP_ID_BCM53018) {
 +		if (bgmac->autoneg) {
 +			bcma_awrite32(core, BCMA_IOCTL,
 +				      bcma_aread32(core, BCMA_IOCTL) | 0x44);
