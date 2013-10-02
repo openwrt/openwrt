@@ -43,28 +43,17 @@ start() {
 
 	mkdir -p /etc/config
 
-	(
+	local cpuport=5
+	[ -e /sbin/swconfig ] && cpuport=$(swconfig dev switch0 help 2>/dev/null | sed -ne "s|.*cpu @ \([0-9]*\).*|\1|p")
+
+	local network_defs=`(
 		if grep -E 'mtd0: 000(6|a)0000' /proc/mtd 2>&- >&-; then
 			# WGT634u
 			echo boardtype=wgt634u
 		else
 			strings "$(find_mtd_part nvram)"
 		fi
-	) | awk '
-	function p(cfgname, name) {
-		if (c[name] != "") print "	option " cfgname "	\"" c[name] "\""
-	}
-
-	function vlan(id, name) {
-		if (c[name] != "") {
-			print "config switch_vlan eth0_" id
-			print "	option device   \"eth0\""
-			print "	option vlan     " id
-			print "	option ports    \"" c[name] "\""
-			print ""
-		}
-	}
-
+	) | awk -v cpuport="$cpuport" '
 	function macinc(mac, maca, i, result) {
 		split(mac, maca, ":")
 		for (i = 1; i <= 6; i++) maca[i] = "0x" maca[i]
@@ -90,12 +79,6 @@ start() {
 		for (i = 0; i < 6; i++) {
 			if (mac_check != "") mac_check = mac_check ":"
 			mac_check = mac_check "[0-9a-fA-F][0-9a-fA-F]"
-		}
-		if (system("[ -d /proc/switch/eth0 ] ") == 0) {
-			getline cpuport < "/proc/switch/eth0/cpuport"
-		}
-		if (system("command -v swconfig > /dev/null") == 0) {
-			"swconfig dev switch0 help \| sed -ne \"s\|.*cpu @ \\([0-9]*\\).*\|\\1\|p\"" | getline cpuport
 		}
 		if (cpuport == "8") {
 			c["vlan1ports"]="1 2 3 4 8t"
@@ -225,43 +208,42 @@ start() {
 			c["vlan1ports"] = ""
 			c["vlan2ports"] = ""
 		}
+		print "local vlan1ports=\"" c["vlan1ports"] "\";"
+		print "local vlan2ports=\"" c["vlan2ports"] "\";"
+		print "local lan_ifname=\"" c["lan_ifname"] "\";"
+		print "local lan_macaddr=\"" c["lan_macaddr"] "\";"
+		print "local wan_ifname=\"" c["wan_ifname"] "\";"
+		print "local wan_macaddr=\"" c["wan_macaddr"] "\";"
+	}'`
 
-		if (c["vlan1ports"] || c["vlan2ports"]) {
-			print "#### VLAN configuration "
-			print "config switch eth0"
-			print "	option enable   1"
-			print ""
-			vlan(1, "vlan1ports")
-			vlan(2, "vlan2ports")
+	. /lib/functions/uci-defaults.sh
+
+	touch /etc/config/network
+
+	eval "$network_defs"
+
+	[ -n "$vlan1ports" -o -n "$vlan2ports" ] && {
+		local cfg=`ucidef_add_switch "switch0" 1 1`
+		[ -n "$cfg" ] && uci rename network.$cfg=eth0
+		[ -n "$vlan1ports" ] && {
+			cfg=`ucidef_add_switch_vlan "switch0" 1 "$vlan1ports"`
+			[ -n "$cfg" ] && uci rename network.$cfg=eth0_1
 		}
-		print "#### Loopback configuration"
-		print "config interface loopback"
-		print "	option ifname	\"lo\""
-		print "	option proto	static"
-		print "	option ipaddr	127.0.0.1"
-		print "	option netmask	255.0.0.0"
-		print ""
-		print ""
-		print "#### LAN configuration"
-		print "config interface lan"
-		print "	option type 	bridge"
-		p("ifname", "lan_ifname")
-		p("macaddr", "lan_macaddr")
-		print "	option proto	static"
-		print "	option ipaddr	192.168.1.1"
-		print "	option netmask	255.255.255.0"
-		print ""
-		print ""
-		if (c["wan_ifname"]) {
-			print "#### WAN configuration"
-			print "config interface	wan"
-			p("ifname", "wan_ifname")
-			p("macaddr", "wan_macaddr")
-			print "	option proto	dhcp"
-		} else {
-			print "#### WAN configuration (disabled)"
-			print "#config interface wan"
-			print "#	option proto	dhcp"
+		[ -n "$vlan2ports" ] && {
+			cfg=`ucidef_add_switch_vlan "switch0" 2 "$vlan2ports"`
+			[ -n "$cfg" ] && uci rename network.$cfg=eth0_2
 		}
-	}' > /etc/config/network
+	}
+
+	ucidef_set_interface_loopback
+
+	ucidef_set_interface_lan "$lan_ifname"
+	[ -n "$lan_macaddr" ] && ucidef_set_interface_macaddr lan "$lan_macaddr"
+
+	[ -n "$wan_ifname" ] && {
+		ucidef_set_interface_wan "$wan_ifname"
+		[ -n "$wan_macaddr" ] && ucidef_set_interface_macaddr wan "$wan_macaddr"
+	}
+
+	uci commit network
 }
