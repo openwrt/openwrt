@@ -18,7 +18,7 @@ define KernelPackage/diag
   DEPENDS:=@TARGET_brcm47xx
   TITLE:=Driver for router LEDs and Buttons
   FILES:=$(PKG_BUILD_DIR)/diag.ko
-  AUTOLOAD:=$(call AutoLoad,5,diag,1)
+  AUTOLOAD:=$(call AutoLoad,05,diag,1)
 endef
 
 define KernelPackage/diag/description
