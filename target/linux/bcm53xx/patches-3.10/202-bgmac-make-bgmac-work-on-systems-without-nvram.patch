@@ -7,10 +7,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -16,7 +16,11 @@
- #include <linux/phy.h>
+@@ -17,7 +17,11 @@
  #include <linux/interrupt.h>
  #include <linux/dma-mapping.h>
+ #include <linux/platform_data/b53.h>
 +#ifdef CONFIG_BCM47XX
  #include <bcm47xx_nvram.h>
 +#else
