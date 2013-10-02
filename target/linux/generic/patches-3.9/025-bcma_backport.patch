@@ -1092,13 +1092,19 @@
  /**************************************************
   * Workarounds.
   **************************************************/
-@@ -203,6 +210,25 @@ static void bcma_core_pci_config_fixup(s
- 	}
+@@ -229,6 +236,32 @@ void bcma_core_pci_init(struct bcma_drv_
+ 		bcma_core_pci_clientmode_init(pc);
  }
  
-+static void bcma_core_pci_power_save(struct bcma_drv_pci *pc, bool up)
++void bcma_core_pci_power_save(struct bcma_bus *bus, bool up)
 +{
++	struct bcma_drv_pci *pc;
 +	u16 data;
++
++	if (bus->hosttype != BCMA_HOSTTYPE_PCI)
++		return;
++
++	pc = &bus->drv_pci[0];
 +
 +	if (pc->core->id.rev >= 15 && pc->core->id.rev <= 20) {
 +		data = up ? 0x74 : 0x7C;
@@ -1114,11 +1120,12 @@
 +					 BCMA_CORE_PCI_MDIO_BLK1_MGMT3, data);
 +	}
 +}
++EXPORT_SYMBOL_GPL(bcma_core_pci_power_save);
 +
- /**************************************************
-  * Init.
-  **************************************************/
-@@ -262,7 +288,7 @@ out:
+ int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc, struct bcma_device *core,
+ 			  bool enable)
+ {
+@@ -262,7 +295,7 @@ out:
  }
  EXPORT_SYMBOL_GPL(bcma_core_pci_irq_ctl);
  
@@ -1127,7 +1134,7 @@
  {
  	u32 w;
  
-@@ -274,4 +300,33 @@ void bcma_core_pci_extend_L1timer(struct
+@@ -274,4 +307,29 @@ void bcma_core_pci_extend_L1timer(struct
  	bcma_pcie_write(pc, BCMA_CORE_PCI_DLLP_PMTHRESHREG, w);
  	bcma_pcie_read(pc, BCMA_CORE_PCI_DLLP_PMTHRESHREG);
  }
@@ -1141,8 +1148,6 @@
 +		return;
 +
 +	pc = &bus->drv_pci[0];
-+
-+	bcma_core_pci_power_save(pc, true);
 +
 +	bcma_core_pci_extend_L1timer(pc, true);
 +}
@@ -1158,8 +1163,6 @@
 +	pc = &bus->drv_pci[0];
 +
 +	bcma_core_pci_extend_L1timer(pc, false);
-+
-+	bcma_core_pci_power_save(pc, false);
 +}
 +EXPORT_SYMBOL_GPL(bcma_core_pci_down);
 --- a/drivers/bcma/driver_pci_host.c
@@ -1218,13 +1221,14 @@
  
  #ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
  struct bcma_drv_pci_host {
-@@ -219,7 +240,8 @@ struct bcma_drv_pci {
+@@ -219,7 +240,9 @@ struct bcma_drv_pci {
  extern void bcma_core_pci_init(struct bcma_drv_pci *pc);
  extern int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc,
  				 struct bcma_device *core, bool enable);
 -extern void bcma_core_pci_extend_L1timer(struct bcma_drv_pci *pc, bool extend);
 +extern void bcma_core_pci_up(struct bcma_bus *bus);
 +extern void bcma_core_pci_down(struct bcma_bus *bus);
++extern void bcma_core_pci_power_save(struct bcma_bus *bus, bool up);
  
  extern int bcma_core_pci_pcibios_map_irq(const struct pci_dev *dev);
  extern int bcma_core_pci_plat_dev_init(struct pci_dev *dev);
