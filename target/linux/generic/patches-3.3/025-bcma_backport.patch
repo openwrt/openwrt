@@ -2248,7 +2248,7 @@
  }
  
  /**************************************************
-@@ -138,88 +150,127 @@ static void bcma_pcie_mdio_write(struct
+@@ -138,88 +150,134 @@ static void bcma_pcie_mdio_write(struct
  
  static u8 bcma_pcicore_polarity_workaround(struct bcma_drv_pci *pc)
  {
@@ -2301,18 +2301,12 @@
 +			(val16 & ~BCMA_CORE_PCI_SPROM_PI_MASK);
 +		pcicore_write16(pc, regoff, val16);
 +	}
- }
- 
--/**************************************************
-- * Init.
-- **************************************************/
--
--static void bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
++}
++
 +/* Fix MISC config to allow coming out of L2/L3-Ready state w/o PRST */
 +/* Needs to happen when coming out of 'standby'/'hibernate' */
 +static void bcma_core_pci_config_fixup(struct bcma_drv_pci *pc)
- {
--	bcma_pcicore_serdes_workaround(pc);
++{
 +	u16 val16;
 +	uint regoff;
 +
@@ -2326,13 +2320,23 @@
 +	}
  }
  
--static bool bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc)
-+static void bcma_core_pci_power_save(struct bcma_drv_pci *pc, bool up)
+ /**************************************************
+  * Init.
+  **************************************************/
+ 
+-static void bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
++static void __devinit bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
  {
++	bcma_core_pci_fixcfg(pc);
+ 	bcma_pcicore_serdes_workaround(pc);
++	bcma_core_pci_config_fixup(pc);
+ }
+ 
+-static bool bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc)
+-{
 -	struct bcma_bus *bus = pc->core->bus;
 -	u16 chipid_top;
-+	u16 data;
- 
+-
 -	chipid_top = (bus->chipinfo.id & 0xFF00);
 -	if (chipid_top != 0x4700 &&
 -	    chipid_top != 0x5300)
@@ -2342,39 +2346,17 @@
 -	if (bus->sprom.boardflags_lo & SSB_BFL_NOPCI)
 -		return false;
 -#endif /* CONFIG_SSB_DRIVER_PCICORE */
-+	if (pc->core->id.rev >= 15 && pc->core->id.rev <= 20) {
-+		data = up ? 0x74 : 0x7C;
-+		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
-+					 BCMA_CORE_PCI_MDIO_BLK1_MGMT1, 0x7F64);
-+		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
-+					 BCMA_CORE_PCI_MDIO_BLK1_MGMT3, data);
-+	} else if (pc->core->id.rev >= 21 && pc->core->id.rev <= 22) {
-+		data = up ? 0x75 : 0x7D;
-+		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
-+					 BCMA_CORE_PCI_MDIO_BLK1_MGMT1, 0x7E65);
-+		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
-+					 BCMA_CORE_PCI_MDIO_BLK1_MGMT3, data);
-+	}
-+}
- 
+-
 -#if 0
 -	/* TODO: on BCMA we use address from EROM instead of magic formula */
 -	u32 tmp;
 -	return !mips_busprobe32(tmp, (bus->mmio +
 -		(pc->core->core_index * BCMA_CORE_SIZE)));
 -#endif
-+/**************************************************
-+ * Init.
-+ **************************************************/
- 
+-
 -	return true;
-+static void __devinit bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
-+{
-+	bcma_core_pci_fixcfg(pc);
-+	bcma_pcicore_serdes_workaround(pc);
-+	bcma_core_pci_config_fixup(pc);
- }
- 
+-}
+-
 -void bcma_core_pci_init(struct bcma_drv_pci *pc)
 +void __devinit bcma_core_pci_init(struct bcma_drv_pci *pc)
  {
@@ -2390,13 +2372,38 @@
 -		pr_err("Driver compiled without support for hostmode PCI\n");
  #endif /* CONFIG_BCMA_DRIVER_PCI_HOSTMODE */
 -	} else {
--		bcma_core_pci_clientmode_init(pc);
++
++	if (!pc->hostmode)
+ 		bcma_core_pci_clientmode_init(pc);
 -	}
++}
++
++void bcma_core_pci_power_save(struct bcma_bus *bus, bool up)
++{
++	struct bcma_drv_pci *pc;
++	u16 data;
  
 -	pc->setup_done = true;
-+	if (!pc->hostmode)
-+		bcma_core_pci_clientmode_init(pc);
++	if (bus->hosttype != BCMA_HOSTTYPE_PCI)
++		return;
++
++	pc = &bus->drv_pci[0];
++
++	if (pc->core->id.rev >= 15 && pc->core->id.rev <= 20) {
++		data = up ? 0x74 : 0x7C;
++		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
++					 BCMA_CORE_PCI_MDIO_BLK1_MGMT1, 0x7F64);
++		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
++					 BCMA_CORE_PCI_MDIO_BLK1_MGMT3, data);
++	} else if (pc->core->id.rev >= 21 && pc->core->id.rev <= 22) {
++		data = up ? 0x75 : 0x7D;
++		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
++					 BCMA_CORE_PCI_MDIO_BLK1_MGMT1, 0x7E65);
++		bcma_pcie_mdio_writeread(pc, BCMA_CORE_PCI_MDIO_BLK1,
++					 BCMA_CORE_PCI_MDIO_BLK1_MGMT3, data);
++	}
  }
++EXPORT_SYMBOL_GPL(bcma_core_pci_power_save);
  
  int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc, struct bcma_device *core,
  			  bool enable)
@@ -2419,7 +2426,7 @@
  	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
  	if (err)
  		goto out;
-@@ -236,3 +287,46 @@ out:
+@@ -236,3 +294,42 @@ out:
  	return err;
  }
  EXPORT_SYMBOL_GPL(bcma_core_pci_irq_ctl);
@@ -2446,8 +2453,6 @@
 +
 +	pc = &bus->drv_pci[0];
 +
-+	bcma_core_pci_power_save(pc, true);
-+
 +	bcma_core_pci_extend_L1timer(pc, true);
 +}
 +EXPORT_SYMBOL_GPL(bcma_core_pci_up);
@@ -2462,8 +2467,6 @@
 +	pc = &bus->drv_pci[0];
 +
 +	bcma_core_pci_extend_L1timer(pc, false);
-+
-+	bcma_core_pci_power_save(pc, false);
 +}
 +EXPORT_SYMBOL_GPL(bcma_core_pci_down);
 --- a/drivers/bcma/driver_pci_host.c
@@ -5558,7 +5561,7 @@
  
  /* SBtoPCIx */
  #define BCMA_CORE_PCI_SBTOPCI_MEM		0x00000000
-@@ -72,20 +108,142 @@ struct pci_dev;
+@@ -72,20 +108,143 @@ struct pci_dev;
  #define  BCMA_CORE_PCI_SBTOPCI_RC_READL		0x00000010 /* Memory read line */
  #define  BCMA_CORE_PCI_SBTOPCI_RC_READM		0x00000020 /* Memory read multiple */
  
@@ -5697,6 +5700,7 @@
  				 struct bcma_device *core, bool enable);
 +extern void bcma_core_pci_up(struct bcma_bus *bus);
 +extern void bcma_core_pci_down(struct bcma_bus *bus);
++extern void bcma_core_pci_power_save(struct bcma_bus *bus, bool up);
 +
 +extern int bcma_core_pci_pcibios_map_irq(const struct pci_dev *dev);
 +extern int bcma_core_pci_plat_dev_init(struct pci_dev *dev);
