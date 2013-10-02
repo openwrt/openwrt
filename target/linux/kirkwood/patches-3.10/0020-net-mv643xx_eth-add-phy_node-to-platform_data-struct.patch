@@ -1,0 +1,36 @@
+From 76a09d3052c7c1c5d4a3fcdfee3a12cfc998d58f Mon Sep 17 00:00:00 2001
+From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Date: Wed, 29 May 2013 21:32:45 +0200
+Subject: [PATCH 20/29] net: mv643xx_eth: add phy_node to platform_data struct
+
+This adds a struct device_node pointer for a phy passed by phandle
+to mv643xx_eth node.
+
+Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+---
+ include/linux/mv643xx_eth.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/linux/mv643xx_eth.h b/include/linux/mv643xx_eth.h
+index 141d395..6e8215b 100644
+--- a/include/linux/mv643xx_eth.h
++++ b/include/linux/mv643xx_eth.h
+@@ -30,6 +30,7 @@ struct mv643xx_eth_shared_platform_data {
+ #define MV643XX_ETH_PHY_ADDR(x)		(0x80 | (x))
+ #define MV643XX_ETH_PHY_NONE		0xff
+ 
++struct device_node;
+ struct mv643xx_eth_platform_data {
+ 	/*
+ 	 * Pointer back to our parent instance, and our port number.
+@@ -41,6 +42,7 @@ struct mv643xx_eth_platform_data {
+ 	 * Whether a PHY is present, and if yes, at which address.
+ 	 */
+ 	int			phy_addr;
++	struct device_node	*phy_node;
+ 
+ 	/*
+ 	 * Use this MAC address if it is valid, overriding the
+-- 
+1.8.4.rc1
+

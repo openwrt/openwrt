@@ -1,0 +1,50 @@
+From b3e3851d461779cd94a2efe4484f01175fcb460e Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Wed, 10 Apr 2013 23:05:32 +0200
+Subject: [PATCH 13/29] arm: kirkwood: convert MPL CEC4 to use DT for the PCIe
+ interface
+
+Now that the PCIe mvebu driver is usable on Kirkwood, use it instead
+of the legacy PCIe code, since it allows to describe the PCIe
+interfaces in the Device Tree.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+---
+ arch/arm/boot/dts/kirkwood-mplcec4.dts | 8 ++++++++
+ arch/arm/mach-kirkwood/board-mplcec4.c | 1 -
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/kirkwood-mplcec4.dts b/arch/arm/boot/dts/kirkwood-mplcec4.dts
+index 7588241..90501cf 100644
+--- a/arch/arm/boot/dts/kirkwood-mplcec4.dts
++++ b/arch/arm/boot/dts/kirkwood-mplcec4.dts
+@@ -139,6 +139,14 @@
+ 			cd-gpios = <&gpio1 15 0>;
+ 			/* No WP GPIO */
+ 		};
++
++		pcie-controller {
++			status = "okay";
++
++			pcie@1,0 {
++				status = "okay";
++			};
++		};
+ 	};
+ 
+ 	gpio-leds {
+diff --git a/arch/arm/mach-kirkwood/board-mplcec4.c b/arch/arm/mach-kirkwood/board-mplcec4.c
+index 7d6dc66..938712e 100644
+--- a/arch/arm/mach-kirkwood/board-mplcec4.c
++++ b/arch/arm/mach-kirkwood/board-mplcec4.c
+@@ -29,7 +29,6 @@ void __init mplcec4_init(void)
+ 	 */
+ 	kirkwood_ge00_init(&mplcec4_ge00_data);
+ 	kirkwood_ge01_init(&mplcec4_ge01_data);
+-	kirkwood_pcie_init(KW_PCIE0);
+ }
+ 
+ 
+-- 
+1.8.4.rc1
+

@@ -1,0 +1,33 @@
+From 40a635881d8fedff7242598cd3bf892e4733f7dc Mon Sep 17 00:00:00 2001
+From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Date: Wed, 29 May 2013 21:32:43 +0200
+Subject: [PATCH 18/29] net: mv643xx_eth: use phy_disconnect instead of
+ phy_detach
+
+Using a separated mdio bus driver with mvmdio, phy_detach on network device
+removal will not stop the phy and finally lead to NULL pointer dereference
+in mvmdio due to non-existent network device. Use phy_disconnect instead
+to properly stop phy device from accessing network device prior removal of
+the network device.
+
+Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+---
+ drivers/net/ethernet/marvell/mv643xx_eth.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/marvell/mv643xx_eth.c b/drivers/net/ethernet/marvell/mv643xx_eth.c
+index d1cbfb1..748dcd3 100644
+--- a/drivers/net/ethernet/marvell/mv643xx_eth.c
++++ b/drivers/net/ethernet/marvell/mv643xx_eth.c
+@@ -2805,7 +2805,7 @@ static int mv643xx_eth_remove(struct platform_device *pdev)
+ 
+ 	unregister_netdev(mp->dev);
+ 	if (mp->phy != NULL)
+-		phy_detach(mp->phy);
++		phy_disconnect(mp->phy);
+ 	cancel_work_sync(&mp->tx_timeout_task);
+ 
+ 	if (!IS_ERR(mp->clk))
+-- 
+1.8.4.rc1
+
