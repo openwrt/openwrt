@@ -130,16 +130,16 @@ ifndef CONFIG_OPKGSMIME_PASSPHRASE
 endif
 
 $(curdir)/index: FORCE
+	@echo Generating package index...
+	@(cd $(PACKAGE_DIR); \
+		$(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages && \
+		gzip -9c Packages > Packages.gz )
 ifeq ($(call qstrip,$(CONFIG_OPKGSMIME_KEY)),)
 	@echo Signing key has not been configured
 else
 ifeq ($(call qstrip,$(CONFIG_OPKGSMIME_CERT)),)
 	@echo Certificate has not been configured
 else
-	@echo Generating package index...
-	@(cd $(PACKAGE_DIR); \
-		$(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages && \
-		gzip -9c Packages > Packages.gz )
 	@echo Signing package index...
 	@(cd $(PACKAGE_DIR); \
 		openssl smime -binary -in Packages.gz \
