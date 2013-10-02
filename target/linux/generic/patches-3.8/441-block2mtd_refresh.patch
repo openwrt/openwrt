@@ -231,8 +231,7 @@
 -	bdev = blkdev_get_by_path(devname, mode, dev);
 -#ifndef MODULE
 -	if (IS_ERR(bdev)) {
-+	strcpy(dev->devname, devname);
- 
+-
 -		/* We might not have rootfs mounted at this point. Try
 -		   to resolve the device name by other means. */
 -
@@ -247,7 +246,8 @@
 -		goto devinit_err;
 -	}
 -	dev->blkdev = bdev;
--
++	strcpy(dev->devname, devname);
+ 
 -	if (MAJOR(bdev->bd_dev) == MTD_BLOCK_MAJOR) {
 -		ERROR("attempting to use an MTD device as a block device");
 +	if (_open_bdev(dev))
