@@ -20,7 +20,6 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:="zImage dtbs"
 
-DEFAULT_PACKAGES += \
-	kmod-thermal-imx kmod-usb-chipidea kmod-usb-mxs-phy uboot-envtools
+DEFAULT_PACKAGES +=
 
 $(eval $(call BuildTarget))
