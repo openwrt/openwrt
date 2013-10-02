@@ -1,0 +1,107 @@
+From 86310ed36ec224b248b5169371f44250ce8c2275 Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Wed, 10 Apr 2013 23:07:27 +0200
+Subject: [PATCH 14/29] arm: kirkwood: convert ZyXEL NSA310 to use DT for the
+ PCIe interface
+
+Now that the PCIe mvebu driver is usable on Kirkwood, use it instead
+of the legacy PCIe code, since it allows to describe the PCIe
+interfaces in the Device Tree.
+
+Since it was the only device left that prevented this platform to use
+the Device Tree only, we remove the board-nsa310.c file and the
+related Kconfig/Makefile bits.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+---
+ arch/arm/boot/dts/kirkwood-nsa310.dts |  8 ++++++++
+ arch/arm/mach-kirkwood/Kconfig        |  8 --------
+ arch/arm/mach-kirkwood/Makefile       |  1 -
+ arch/arm/mach-kirkwood/board-nsa310.c | 25 -------------------------
+ 4 files changed, 8 insertions(+), 34 deletions(-)
+ delete mode 100644 arch/arm/mach-kirkwood/board-nsa310.c
+
+diff --git a/arch/arm/boot/dts/kirkwood-nsa310.dts b/arch/arm/boot/dts/kirkwood-nsa310.dts
+index a7412b9..9ddf218 100644
+--- a/arch/arm/boot/dts/kirkwood-nsa310.dts
++++ b/arch/arm/boot/dts/kirkwood-nsa310.dts
+@@ -176,6 +176,14 @@
+ 				reg = <0x5040000 0x2fc0000>;
+ 			};
+ 		};
++
++		pcie-controller {
++			status = "okay";
++
++			pcie@1,0 {
++				status = "okay";
++			};
++		};
+ 	};
+ 
+ 	gpio_keys {
+diff --git a/arch/arm/mach-kirkwood/Kconfig b/arch/arm/mach-kirkwood/Kconfig
+index 7509a89..267ca95 100644
+--- a/arch/arm/mach-kirkwood/Kconfig
++++ b/arch/arm/mach-kirkwood/Kconfig
+@@ -272,14 +272,6 @@ config MACH_NETSPACE_V2_DT
+ 	  Say 'Y' here if you want your kernel to support the LaCie
+ 	  Network Space v2 NAS, using Flattened Device Tree.
+ 
+-config MACH_NSA310_DT
+-	bool "ZyXEL NSA-310 (Flattened Device Tree)"
+-	select ARCH_KIRKWOOD_DT
+-	select ARM_ATAG_DTB_COMPAT
+-	help
+-	  Say 'Y' here if you want your kernel to support the
+-	  ZyXEL NSA-310 board (Flattened Device Tree).
+-
+ config MACH_OPENBLOCKS_A6_DT
+ 	bool "Plat'Home OpenBlocks A6 (Flattened Device Tree)"
+ 	select ARCH_KIRKWOOD_DT
+diff --git a/arch/arm/mach-kirkwood/Makefile b/arch/arm/mach-kirkwood/Makefile
+index e1f3735..794366e 100644
+--- a/arch/arm/mach-kirkwood/Makefile
++++ b/arch/arm/mach-kirkwood/Makefile
+@@ -37,7 +37,6 @@ obj-$(CONFIG_MACH_NETSPACE_LITE_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_MAX_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_MINI_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_V2_DT)	+= board-ns2.o
+-obj-$(CONFIG_MACH_NSA310_DT)		+= board-nsa310.o
+ obj-$(CONFIG_MACH_OPENBLOCKS_A6_DT)	+= board-openblocks_a6.o
+ obj-$(CONFIG_MACH_READYNAS_DT)		+= board-readynas.o
+ obj-$(CONFIG_MACH_TOPKICK_DT)		+= board-usi_topkick.o
+diff --git a/arch/arm/mach-kirkwood/board-nsa310.c b/arch/arm/mach-kirkwood/board-nsa310.c
+deleted file mode 100644
+index 55ade93..0000000
+--- a/arch/arm/mach-kirkwood/board-nsa310.c
++++ /dev/null
+@@ -1,25 +0,0 @@
+-/*
+- * arch/arm/mach-kirkwood/nsa-310-setup.c
+- *
+- * ZyXEL NSA-310 Setup
+- *
+- * This file is licensed under the terms of the GNU General Public
+- * License version 2.  This program is licensed "as is" without any
+- * warranty of any kind, whether express or implied.
+- */
+-
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <mach/kirkwood.h>
+-#include <linux/of.h>
+-#include "common.h"
+-
+-static int __init nsa310_pci_init(void)
+-{
+-	if (of_machine_is_compatible("zyxel,nsa310"))
+-		kirkwood_pcie_init(KW_PCIE0);
+-
+-	return 0;
+-}
+-
+-subsys_initcall(nsa310_pci_init);
+-- 
+1.8.4.rc1
+
