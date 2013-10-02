@@ -1,3 +1,7 @@
+Register switch connected to srab
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
 @@ -16,6 +16,7 @@
@@ -5,10 +9,10 @@
  #include <linux/interrupt.h>
  #include <linux/dma-mapping.h>
 +#include <linux/platform_data/b53.h>
- #ifdef CONFIG_BCM47XX
  #include <bcm47xx_nvram.h>
- #else
-@@ -1424,6 +1425,17 @@ static void bgmac_mii_unregister(struct
+ 
+ static const struct bcma_device_id bgmac_bcma_tbl[] = {
+@@ -1420,6 +1421,17 @@ static void bgmac_mii_unregister(struct
  	mdiobus_free(mii_bus);
  }
  
@@ -26,7 +30,7 @@
  /**************************************************
   * BCMA bus ops
   **************************************************/
-@@ -1523,6 +1535,16 @@ static int bgmac_probe(struct bcma_devic
+@@ -1519,6 +1531,16 @@ static int bgmac_probe(struct bcma_devic
  		goto err_dma_free;
  	}
  
@@ -43,7 +47,7 @@
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		bgmac_err(bgmac, "Cannot register net device\n");
-@@ -1552,6 +1574,10 @@ static void bgmac_remove(struct bcma_dev
+@@ -1548,6 +1570,10 @@ static void bgmac_remove(struct bcma_dev
  {
  	struct bgmac *bgmac = bcma_get_drvdata(core);
  

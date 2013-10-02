@@ -1,3 +1,8 @@
+Use phy lib for the phy. This is needed to get the switch connected to 
+the phy and driven by b53 working.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
 @@ -1229,27 +1229,14 @@ static int bgmac_set_mac_address(struct
