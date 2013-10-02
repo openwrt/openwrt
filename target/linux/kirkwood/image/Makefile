@@ -17,12 +17,12 @@ endef
 define Image/Build
 	$(if $(Image/Build/$(1)), \
 		$(call Image/Build/$(1),$(1)), \
-		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-$(1).img \
+		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
 	)
 endef
 
 define Image/Build/jffs2-nand-2048-128k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-$(1).img \
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
 		bs=2048 conv=sync
 endef
 
@@ -31,7 +31,7 @@ define Image/Build/squashfs
 	( \
 		dd if=$(KDIR)/uImage bs=4096k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-$(1).img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1).img
 endef
 
 $(eval $(call BuildImage))
