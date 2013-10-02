@@ -109,8 +109,12 @@ define Package/opkg/Default/install
 endef
 
 Package/opkg/install = $(call Package/opkg/Default/install,$(1),)
-Package/opkg-smime/install = $(call Package/opkg/Default/install,$(1),-smime)
 
+define Package/opkg-smime/install
+	$(call Package/opkg/Default/install,$(1),-smime)
+	$(INSTALL_DIR) $(1)/etc/ssl/certs
+	$(if $(CONFIG_OPKGSMIME_CERT),$(INSTALL_DATA) $(call qstrip,$(CONFIG_OPKGSMIME_CERT)) $(1)/etc/ssl/certs/opkg.pem,)
+endef
 
 define Build/InstallDev
 	mkdir -p $(1)/usr/include
