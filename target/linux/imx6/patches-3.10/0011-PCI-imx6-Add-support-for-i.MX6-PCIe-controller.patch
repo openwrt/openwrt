@@ -1,79 +1,28 @@
-Subject: [v6,3/3] PCI: imx6: Add support for i.MX6 PCIe controller
+Subject: [PATCH 2/2] PCI: imx6: Add support for i.MX6 PCIe controller
 From: Sean Cross <xobs@kosagi.com>
 
 Add support for the PCIe port present on the i.MX6 family of controllers.
 These use the Synopsis Designware core tied to their own PHY.
 
 Signed-off-by: Sean Cross <xobs@kosagi.com>
-Acked-by: Bjorn Helgaas <bhelgaas@google.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 ---
- arch/arm/boot/dts/imx6qdl.dtsi                     |   16 +
- arch/arm/mach-imx/Kconfig                          |    2 +
- arch/arm/mach-imx/clk-imx6q.c                      |    4 +
- drivers/pci/host/Kconfig                           |    6 +
- drivers/pci/host/Makefile                          |    1 +
- drivers/pci/host/pci-imx6.c                        |  576 ++++++++++++++++++++
- 7 files changed, 611 insertions(+), 1 deletion(-)
+ drivers/pci/host/Kconfig                           |   6 +
+ drivers/pci/host/Makefile                          |   1 +
+ drivers/pci/host/pci-imx6.c                        | 575 +++++++++++++++++++++
+ 4 files changed, 588 insertions(+), 1 deletion(-)
  create mode 100644 drivers/pci/host/pci-imx6.c
 
---- a/arch/arm/boot/dts/imx6qdl.dtsi
-+++ b/arch/arm/boot/dts/imx6qdl.dtsi
-@@ -108,6 +108,22 @@
- 			cache-level = <2>;
- 		};
- 
-+		pcie: pcie@0x01000000 {
-+			compatible = "fsl,imx6q-pcie", "snps,dw-pcie";
-+			reg = <0x01ffc000 0x4000>; /* DBI */
-+			#address-cells = <3>;
-+			#size-cells = <2>;
-+			device_type = "pci";
-+			ranges = <0x00000800 0 0x01f00000 0x01f00000 0 0x00080000 /* configuration space */
-+				  0x81000000 0 0          0x01f80000 0 0x00010000 /* downstream I/O */
-+				  0x82000000 0 0x01000000 0x01000000 0 0x00f00000>; /* non-prefetchable memory */
-+			num-lanes = <1>;
-+			interrupts = <0 123 0x04>;
-+			clocks = <&clks 189>, <&clks 187>, <&clks 205>, <&clks 144>;
-+			clock-names = "pcie_ref_125m", "sata_ref_100m", "lvds_gate", "pcie_axi";
-+			status = "disabled";
-+		};
-+
- 		pmu {
- 			compatible = "arm,cortex-a9-pmu";
- 			interrupts = <0 94 0x04>;
---- a/arch/arm/mach-imx/Kconfig
-+++ b/arch/arm/mach-imx/Kconfig
-@@ -806,6 +806,8 @@ config SOC_IMX6Q
- 	select HAVE_IMX_SRC
- 	select HAVE_SMP
- 	select MFD_SYSCON
-+	select MIGHT_HAVE_PCI
-+	select PCI_DOMAINS if PCI
- 	select PINCTRL
- 	select PINCTRL_IMX6Q
- 	select PL310_ERRATA_588369 if CACHE_PL310
---- a/arch/arm/mach-imx/clk-imx6q.c
-+++ b/arch/arm/mach-imx/clk-imx6q.c
-@@ -586,6 +586,10 @@ int __init mx6q_clocks_init(void)
- 		clk_prepare_enable(clk[usbphy2_gate]);
- 	}
- 
-+	/* All existing boards with PCIe use LVDS1 */
-+	if (IS_ENABLED(CONFIG_PCI_IMX6))
-+		clk_set_parent(clk[lvds1_sel], clk[sata_ref]);
-+
- 	/* Set initial power mode */
- 	imx6q_set_lpm(WAIT_CLOCKED);
- 
 --- /dev/null
 +++ b/drivers/pci/host/Kconfig
 @@ -0,0 +1,13 @@
 +menu "PCI host controller drivers"
-+	depends on PCI
++      depends on PCI
 +
 +config PCIE_DW
-+	bool
++      bool
 +
 +config PCI_IMX6
 +	bool "Freescale i.MX6 PCIe controller"
@@ -89,7 +38,7 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +obj-$(CONFIG_PCI_IMX6) += pci-imx6.o
 --- /dev/null
 +++ b/drivers/pci/host/pci-imx6.c
-@@ -0,0 +1,576 @@
+@@ -0,0 +1,575 @@
 +/*
 + * PCIe host controller driver for Freescale i.MX6 SoCs
 + *
@@ -173,7 +122,7 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +			return 0;
 +
 +		udelay(1);
-+	} while ((wait_counter < max_iterations) && (val != exp_val));
++	} while (wait_counter < max_iterations);
 +
 +	return -ETIMEDOUT;
 +}
@@ -260,7 +209,7 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +	var = data << PCIE_PHY_CTRL_DATA_LOC;
 +	writel(var, dbi_base + PCIE_PHY_CTRL);
 +
-+	/* wait for ack de-assetion */
++	/* wait for ack de-assertion */
 +	ret = pcie_phy_poll_ack(dbi_base, 0);
 +	if (ret)
 +		return ret;
@@ -278,7 +227,7 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +	var = data << PCIE_PHY_CTRL_DATA_LOC;
 +	writel(var, dbi_base + PCIE_PHY_CTRL);
 +
-+	/* wait for ack de-assetion */
++	/* wait for ack de-assertion */
 +	ret = pcie_phy_poll_ack(dbi_base, 0);
 +	if (ret)
 +		return ret;
@@ -454,8 +403,7 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +	if (ltssm != 0x0d)
 +		return 0;
 +
-+	dev_err(pp->dev,
-+		"transition to gen2 is stuck, reset PHY!\n");
++	dev_err(pp->dev, "transition to gen2 is stuck, reset PHY!\n");
 +
 +	pcie_phy_read(pp->dbi_base,
 +		PHY_RX_OVRD_IN_LO, &temp);
@@ -589,7 +537,7 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +	}
 +
 +	/* Fetch clocks */
-+	imx6_pcie->lvds_gate = clk_get(&pdev->dev, "lvds_gate");
++	imx6_pcie->lvds_gate = devm_clk_get(&pdev->dev, "lvds_gate");
 +	if (IS_ERR(imx6_pcie->lvds_gate)) {
 +		dev_err(&pdev->dev,
 +			"lvds_gate clock select missing or invalid\n");
@@ -597,7 +545,7 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +		goto err;
 +	}
 +
-+	imx6_pcie->sata_ref_100m = clk_get(&pdev->dev, "sata_ref_100m");
++	imx6_pcie->sata_ref_100m = devm_clk_get(&pdev->dev, "sata_ref_100m");
 +	if (IS_ERR(imx6_pcie->sata_ref_100m)) {
 +		dev_err(&pdev->dev,
 +			"sata_ref_100m clock source missing or invalid\n");
@@ -605,7 +553,7 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +		goto err;
 +	}
 +
-+	imx6_pcie->pcie_ref_125m = clk_get(&pdev->dev, "pcie_ref_125m");
++	imx6_pcie->pcie_ref_125m = devm_clk_get(&pdev->dev, "pcie_ref_125m");
 +	if (IS_ERR(imx6_pcie->pcie_ref_125m)) {
 +		dev_err(&pdev->dev,
 +			"pcie_ref_125m clock source missing or invalid\n");
@@ -613,7 +561,7 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +		goto err;
 +	}
 +
-+	imx6_pcie->pcie_axi = clk_get(&pdev->dev, "pcie_axi");
++	imx6_pcie->pcie_axi = devm_clk_get(&pdev->dev, "pcie_axi");
 +	if (IS_ERR(imx6_pcie->pcie_axi)) {
 +		dev_err(&pdev->dev,
 +			"pcie_axi clock source missing or invalid\n");
@@ -657,11 +605,11 @@ Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
 +
 +/* Freescale PCIe driver does not allow module unload */
 +
-+static int __init imx6_init(void)
++static int __init imx6_pcie_init(void)
 +{
 +	return platform_driver_probe(&imx6_pcie_driver, imx6_pcie_probe);
 +}
-+module_init(imx6_init);
++module_init(imx6_pcie_init);
 +
 +MODULE_AUTHOR("Sean Cross <xobs@kosagi.com>");
 +MODULE_DESCRIPTION("Freescale i.MX6 PCIe host controller driver");

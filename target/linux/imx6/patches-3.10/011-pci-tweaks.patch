@@ -1,14 +1,3 @@
---- a/arch/arm/boot/dts/imx6qdl.dtsi
-+++ b/arch/arm/boot/dts/imx6qdl.dtsi
-@@ -119,7 +119,7 @@
- 				  0x82000000 0 0x01000000 0x01000000 0 0x00f00000>; /* non-prefetchable memory */
- 			num-lanes = <1>;
- 			interrupts = <0 123 0x04>;
--			clocks = <&clks 189>, <&clks 187>, <&clks 205>, <&clks 144>;
-+			clocks = <&clks 189>, <&clks 187>, <&clks 198>, <&clks 144>;
- 			clock-names = "pcie_ref_125m", "sata_ref_100m", "lvds_gate", "pcie_axi";
- 			status = "disabled";
- 		};
 --- a/drivers/pci/host/pci-imx6.c
 +++ b/drivers/pci/host/pci-imx6.c
 @@ -200,12 +200,6 @@ static int pcie_phy_write(void __iomem *
