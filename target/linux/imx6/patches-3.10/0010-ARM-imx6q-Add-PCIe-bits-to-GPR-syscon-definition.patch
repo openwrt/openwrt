@@ -1,11 +1,13 @@
-Subject: [v6,2/3] ARM: imx6q: Add PCIe bits to GPR syscon definition
 From: Sean Cross <xobs@kosagi.com>
+Subject: [PATCH 1/2] ARM: imx6q: Add PCIe bits to GPR syscon definition
 
 PCIe requires additional bits be defined for GPR8 and GPR12.
 
 Signed-off-by: Sean Cross <xobs@kosagi.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 ---
- include/linux/mfd/syscon/imx6q-iomuxc-gpr.h |    8 ++++++++
+ include/linux/mfd/syscon/imx6q-iomuxc-gpr.h | 8 ++++++++
  1 file changed, 8 insertions(+)
 
 --- a/include/linux/mfd/syscon/imx6q-iomuxc-gpr.h

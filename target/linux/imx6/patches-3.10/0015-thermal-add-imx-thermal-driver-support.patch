@@ -25,9 +25,6 @@ Signed-off-by: Eduardo Valentin <eduardo.valentin@ti.com>
  create mode 100644 Documentation/devicetree/bindings/thermal/imx-thermal.txt
  create mode 100644 drivers/thermal/imx_thermal.c
 
-diff --git a/Documentation/devicetree/bindings/thermal/imx-thermal.txt b/Documentation/devicetree/bindings/thermal/imx-thermal.txt
-new file mode 100644
-index 0000000..541c25e
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/thermal/imx-thermal.txt
 @@ -0,0 +1,17 @@
@@ -48,8 +45,6 @@ index 0000000..541c25e
 +	fsl,tempmon = <&anatop>;
 +	fsl,tempmon-data = <&ocotp>;
 +};
-diff --git a/drivers/thermal/Kconfig b/drivers/thermal/Kconfig
-index e988c81..69eed55 100644
 --- a/drivers/thermal/Kconfig
 +++ b/drivers/thermal/Kconfig
 @@ -91,6 +91,17 @@ config THERMAL_EMULATION
@@ -70,21 +65,16 @@ index e988c81..69eed55 100644
  config SPEAR_THERMAL
  	bool "SPEAr thermal sensor driver"
  	depends on PLAT_SPEAR
-diff --git a/drivers/thermal/Makefile b/drivers/thermal/Makefile
-index 67184a2..dff19c6 100644
 --- a/drivers/thermal/Makefile
 +++ b/drivers/thermal/Makefile
-@@ -21,6 +21,7 @@ obj-$(CONFIG_EXYNOS_THERMAL)	+= exynos_thermal.o
+@@ -21,6 +21,7 @@ obj-$(CONFIG_EXYNOS_THERMAL)	+= exynos_t
  obj-$(CONFIG_DOVE_THERMAL)  	+= dove_thermal.o
  obj-$(CONFIG_DB8500_THERMAL)	+= db8500_thermal.o
  obj-$(CONFIG_ARMADA_THERMAL)	+= armada_thermal.o
 +obj-$(CONFIG_IMX_THERMAL)	+= imx_thermal.o
  obj-$(CONFIG_DB8500_CPUFREQ_COOLING)	+= db8500_cpufreq_cooling.o
  obj-$(CONFIG_INTEL_POWERCLAMP)	+= intel_powerclamp.o
- obj-$(CONFIG_X86_PKG_TEMP_THERMAL)	+= x86_pkg_temp_thermal.o
-diff --git a/drivers/thermal/imx_thermal.c b/drivers/thermal/imx_thermal.c
-new file mode 100644
-index 0000000..d16c33c
+ 
 --- /dev/null
 +++ b/drivers/thermal/imx_thermal.c
 @@ -0,0 +1,397 @@
@@ -485,6 +475,3 @@ index 0000000..d16c33c
 +MODULE_DESCRIPTION("Thermal driver for Freescale i.MX SoCs");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:imx-thermal");
--- 
-1.8.4
-
