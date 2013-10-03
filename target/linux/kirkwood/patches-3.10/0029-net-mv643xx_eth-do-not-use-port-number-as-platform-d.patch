@@ -1,7 +1,7 @@
-From eac92acae29cfab34785d61cbb3218e88e487b77 Mon Sep 17 00:00:00 2001
+From dc4eff91629aa5132f9c0737ef6d9ef013d4f8ce Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
-Date: Mon, 8 Jul 2013 00:35:12 +0200
-Subject: [PATCH 27/29] net: mv643xx_eth: do not use port number as platform
+Date: Mon, 8 Jul 2013 00:44:55 +0200
+Subject: [PATCH 29/29] net: mv643xx_eth: do not use port number as platform
  device id
 
 The port number is only local to the ethernet block, not global, so
@@ -12,15 +12,14 @@ Fix this by using the array index offset for the allocated platform
 devices as the id.
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/marvell/mv643xx_eth.c | 13 +++++++++++--
  1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/marvell/mv643xx_eth.c b/drivers/net/ethernet/marvell/mv643xx_eth.c
-index 004a250..e57d292 100644
 --- a/drivers/net/ethernet/marvell/mv643xx_eth.c
 +++ b/drivers/net/ethernet/marvell/mv643xx_eth.c
-@@ -2483,6 +2483,7 @@ static int mv643xx_eth_shared_of_add_port(struct platform_device *pdev,
+@@ -2483,6 +2483,7 @@ static int mv643xx_eth_shared_of_add_por
  	struct resource res;
  	const char *mac_addr;
  	int ret;
@@ -28,7 +27,7 @@ index 004a250..e57d292 100644
  
  	memset(&ppd, 0, sizeof(ppd));
  	ppd.shared = pdev;
-@@ -2503,6 +2504,14 @@ static int mv643xx_eth_shared_of_add_port(struct platform_device *pdev,
+@@ -2503,6 +2504,14 @@ static int mv643xx_eth_shared_of_add_por
  		return -EINVAL;
  	}
  
@@ -43,7 +42,7 @@ index 004a250..e57d292 100644
  	mac_addr = of_get_mac_address(pnp);
  	if (mac_addr)
  		memcpy(ppd.mac_addr, mac_addr, 6);
-@@ -2521,7 +2530,7 @@ static int mv643xx_eth_shared_of_add_port(struct platform_device *pdev,
+@@ -2521,7 +2530,7 @@ static int mv643xx_eth_shared_of_add_por
  		of_property_read_u32(pnp, "duplex", &ppd.duplex);
  	}
  
@@ -52,7 +51,7 @@ index 004a250..e57d292 100644
  	if (!ppdev)
  		return -ENOMEM;
  	ppdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
-@@ -2538,7 +2547,7 @@ static int mv643xx_eth_shared_of_add_port(struct platform_device *pdev,
+@@ -2538,7 +2547,7 @@ static int mv643xx_eth_shared_of_add_por
  	if (ret)
  		goto port_err;
  
@@ -61,6 +60,3 @@ index 004a250..e57d292 100644
  
  	return 0;
  
--- 
-1.8.4.rc1
-

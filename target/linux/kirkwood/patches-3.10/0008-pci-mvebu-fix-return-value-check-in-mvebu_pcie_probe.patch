@@ -1,0 +1,28 @@
+From 3ad3d38d36c51b45668708a42f67b07fc87a53e3 Mon Sep 17 00:00:00 2001
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Date: Mon, 27 May 2013 11:38:41 +0800
+Subject: [PATCH 08/29] pci: mvebu: fix return value check in
+ mvebu_pcie_probe()
+
+In case of error, function of_clk_get_by_name() returns
+ERR_PTR() never returns NULL. The NULL test in the return
+value check should be replaced with IS_ERR().
+
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Acked-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ drivers/pci/host/pci-mvebu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pci/host/pci-mvebu.c
++++ b/drivers/pci/host/pci-mvebu.c
+@@ -828,7 +828,7 @@ static int __init mvebu_pcie_probe(struc
+ 		}
+ 
+ 		port->clk = of_clk_get_by_name(child, NULL);
+-		if (!port->clk) {
++		if (IS_ERR(port->clk)) {
+ 			dev_err(&pdev->dev, "PCIe%d.%d: cannot get clock\n",
+ 			       port->port, port->lane);
+ 			iounmap(port->base);

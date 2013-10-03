@@ -1,6 +1,6 @@
-From 32f9dd19f7c859205440a8734cb6ab1295c78015 Mon Sep 17 00:00:00 2001
+From 8ad6aa146af6af98bd8e308eb7746a5f4cf267d8 Mon Sep 17 00:00:00 2001
 From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Wed, 27 Mar 2013 18:56:40 +0100
+Date: Wed, 15 May 2013 15:37:01 +0200
 Subject: [PATCH 16/29] arm: kirkwood: convert db-88f6281/db-88f6282 to the
  Device Tree
 
@@ -19,6 +19,7 @@ done for the QNAP TS219 Kirkwood platform.
 We have kept one single Kconfig option, just like it was before.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  arch/arm/boot/dts/Makefile                  |   2 +
  arch/arm/boot/dts/kirkwood-db-88f6281.dts   |  30 ++++++++
@@ -37,11 +38,9 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  create mode 100644 arch/arm/mach-kirkwood/board-db88f628x-bp.c
  delete mode 100644 arch/arm/mach-kirkwood/db88f6281-bp-setup.c
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index f0895c5..3844ef2 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -64,6 +64,8 @@ dtb-$(CONFIG_ARCH_INTEGRATOR) += integratorap.dtb \
+@@ -64,6 +64,8 @@ dtb-$(CONFIG_ARCH_INTEGRATOR) += integra
  	integratorcp.dtb
  dtb-$(CONFIG_ARCH_LPC32XX) += ea3250.dtb phy3250.dtb
  dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-cloudbox.dtb \
@@ -50,9 +49,6 @@ index f0895c5..3844ef2 100644
  	kirkwood-dns320.dtb \
  	kirkwood-dns325.dtb \
  	kirkwood-dockstar.dtb \
-diff --git a/arch/arm/boot/dts/kirkwood-db-88f6281.dts b/arch/arm/boot/dts/kirkwood-db-88f6281.dts
-new file mode 100644
-index 0000000..9d777ed
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-db-88f6281.dts
 @@ -0,0 +1,30 @@
@@ -86,9 +82,6 @@ index 0000000..9d777ed
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-db-88f6282.dts b/arch/arm/boot/dts/kirkwood-db-88f6282.dts
-new file mode 100644
-index 0000000..f4c8528
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-db-88f6282.dts
 @@ -0,0 +1,34 @@
@@ -126,9 +119,6 @@ index 0000000..f4c8528
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-db.dtsi b/arch/arm/boot/dts/kirkwood-db.dtsi
-new file mode 100644
-index 0000000..c87cfb8
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-db.dtsi
 @@ -0,0 +1,89 @@
@@ -221,8 +211,6 @@ index 0000000..c87cfb8
 +		};
 +	};
 +};
-diff --git a/arch/arm/mach-kirkwood/Kconfig b/arch/arm/mach-kirkwood/Kconfig
-index 267ca95..b56bd3d 100644
 --- a/arch/arm/mach-kirkwood/Kconfig
 +++ b/arch/arm/mach-kirkwood/Kconfig
 @@ -8,12 +8,6 @@ config MACH_D2NET_V2
@@ -252,8 +240,6 @@ index 267ca95..b56bd3d 100644
  config MACH_DLINK_KIRKWOOD_DT
  	bool "D-Link Kirkwood-based NAS (Flattened Device Tree)"
  	select ARCH_KIRKWOOD_DT
-diff --git a/arch/arm/mach-kirkwood/Makefile b/arch/arm/mach-kirkwood/Makefile
-index 794366e..2fdc3a7 100644
 --- a/arch/arm/mach-kirkwood/Makefile
 +++ b/arch/arm/mach-kirkwood/Makefile
 @@ -1,7 +1,6 @@
@@ -264,7 +250,7 @@ index 794366e..2fdc3a7 100644
  obj-$(CONFIG_MACH_DOCKSTAR)		+= dockstar-setup.o
  obj-$(CONFIG_MACH_ESATA_SHEEVAPLUG)	+= sheevaplug-setup.o
  obj-$(CONFIG_MACH_GURUPLUG)		+= guruplug-setup.o
-@@ -21,6 +20,7 @@ obj-$(CONFIG_MACH_TS41X)		+= ts41x-setup.o tsx1x-common.o
+@@ -21,6 +20,7 @@ obj-$(CONFIG_MACH_TS41X)		+= ts41x-setup
  
  obj-$(CONFIG_ARCH_KIRKWOOD_DT)		+= board-dt.o
  obj-$(CONFIG_MACH_CLOUDBOX_DT)		+= board-ns2.o
@@ -272,9 +258,6 @@ index 794366e..2fdc3a7 100644
  obj-$(CONFIG_MACH_DLINK_KIRKWOOD_DT)	+= board-dnskw.o
  obj-$(CONFIG_MACH_DOCKSTAR_DT)		+= board-dockstar.o
  obj-$(CONFIG_MACH_DREAMPLUG_DT)		+= board-dreamplug.o
-diff --git a/arch/arm/mach-kirkwood/board-db88f628x-bp.c b/arch/arm/mach-kirkwood/board-db88f628x-bp.c
-new file mode 100644
-index 0000000..2f574bc
 --- /dev/null
 +++ b/arch/arm/mach-kirkwood/board-db88f628x-bp.c
 @@ -0,0 +1,24 @@
@@ -302,11 +285,9 @@ index 0000000..2f574bc
 +{
 +	kirkwood_ge00_init(&db88f628x_ge00_data);
 +}
-diff --git a/arch/arm/mach-kirkwood/board-dt.c b/arch/arm/mach-kirkwood/board-dt.c
-index e9647b8..f5aed1f 100644
 --- a/arch/arm/mach-kirkwood/board-dt.c
 +++ b/arch/arm/mach-kirkwood/board-dt.c
-@@ -147,6 +147,10 @@ static void __init kirkwood_dt_init(void)
+@@ -147,6 +147,10 @@ static void __init kirkwood_dt_init(void
  	    of_machine_is_compatible("lacie,netspace_v2"))
  		ns2_init();
  
@@ -317,7 +298,7 @@ index e9647b8..f5aed1f 100644
  	if (of_machine_is_compatible("mpl,cec4"))
  		mplcec4_init();
  
-@@ -181,6 +185,8 @@ static const char * const kirkwood_dt_board_compat[] = {
+@@ -181,6 +185,8 @@ static const char * const kirkwood_dt_bo
  	"lacie,netspace_max_v2",
  	"lacie,netspace_mini_v2",
  	"lacie,netspace_v2",
@@ -326,8 +307,6 @@ index e9647b8..f5aed1f 100644
  	"mpl,cec4",
  	"netgear,readynas-duo-v2",
  	"plathome,openblocks-a6",
-diff --git a/arch/arm/mach-kirkwood/common.h b/arch/arm/mach-kirkwood/common.h
-index 21da3b1..cbbc0b8 100644
 --- a/arch/arm/mach-kirkwood/common.h
 +++ b/arch/arm/mach-kirkwood/common.h
 @@ -119,6 +119,12 @@ void km_kirkwood_init(void);
@@ -343,9 +322,6 @@ index 21da3b1..cbbc0b8 100644
  #ifdef CONFIG_MACH_MPLCEC4_DT
  void mplcec4_init(void);
  #else
-diff --git a/arch/arm/mach-kirkwood/db88f6281-bp-setup.c b/arch/arm/mach-kirkwood/db88f6281-bp-setup.c
-deleted file mode 100644
-index 5a369fe..0000000
 --- a/arch/arm/mach-kirkwood/db88f6281-bp-setup.c
 +++ /dev/null
 @@ -1,108 +0,0 @@
@@ -457,6 +433,3 @@ index 5a369fe..0000000
 -	.init_time	= kirkwood_timer_init,
 -	.restart	= kirkwood_restart,
 -MACHINE_END
--- 
-1.8.4.rc1
-

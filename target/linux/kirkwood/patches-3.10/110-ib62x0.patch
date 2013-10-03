@@ -1,0 +1,84 @@
+--- a/arch/arm/boot/dts/kirkwood-ib62x0.dts
++++ b/arch/arm/boot/dts/kirkwood-ib62x0.dts
+@@ -5,7 +5,7 @@
+ 
+ / {
+ 	model = "RaidSonic ICY BOX IB-NAS62x0 (Rev B)";
+-	compatible = "raidsonic,ib-nas6210-b", "raidsonic,ib-nas6220-b", "raidsonic,ib-nas6210", "raidsonic,ib-nas6220", "raidsonic,ib-nas62x0",  "marvell,kirkwood-88f6281", "marvell,kirkwood";
++	compatible = "raidsonic,ib-nas6210-b", "raidsonic,ib-nas6220-b", "raidsonic,ib-nas6210", "raidsonic,ib-nas6220", "raidsonic,ib-nas62x0", "marvell,kirkwood-88f6281", "marvell,kirkwood";
+ 
+ 	memory {
+ 		device_type = "memory";
+@@ -50,6 +50,7 @@
+ 				marvell,function = "gpio";
+ 			};
+ 		};
++
+ 		serial@12000 {
+ 			status = "okay";
+ 		};
+@@ -64,19 +65,18 @@
+ 
+ 			partition@0 {
+ 				label = "u-boot";
+-				reg = <0x0000000 0x100000>;
++				reg = <0x0000000 0xe0000>;
+ 			};
+ 
+-			partition@100000 {
+-				label = "uImage";
+-				reg = <0x0100000 0x600000>;
++			partition@e0000 {
++				label = "u-boot environment";
++				reg = <0xe0000 0x100000>;
+ 			};
+ 
+-			partition@700000 {
+-				label = "root";
+-				reg = <0x0700000 0xf900000>;
++			partition@100000 {
++				label = "rootfs";
++				reg = <0x100000 0xff00000>;
+ 			};
+-
+ 		};
+ 	};
+ 
+@@ -84,6 +84,7 @@
+ 		compatible = "gpio-keys";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++
+ 		button@1 {
+ 			label = "USB Copy";
+ 			linux,code = <133>;
+@@ -95,6 +96,7 @@
+ 			gpios = <&gpio0 28 1>;
+ 		};
+ 	};
++
+ 	gpio-leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -112,12 +114,11 @@
+ 			gpios = <&gpio0 27 0>;
+ 		};
+ 	};
++
+ 	gpio_poweroff {
+ 		compatible = "gpio-poweroff";
+ 		gpios = <&gpio0 24 0>;
+ 	};
+-
+-
+ };
+ 
+ &mdio {
+@@ -131,6 +132,7 @@
+ 
+ &eth0 {
+ 	status = "okay";
++
+ 	ethernet0-port@0 {
+ 		phy-handle = <&ethphy0>;
+ 	};

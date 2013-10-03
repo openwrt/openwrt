@@ -1,21 +1,20 @@
-From dcfe8d8652de29fae2e247137d0e776fdda60b14 Mon Sep 17 00:00:00 2001
+From 57bad8fd425fd4fd2ae6e4ae1e7e19c9281d2d3d Mon Sep 17 00:00:00 2001
 From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
 Date: Tue, 2 Jul 2013 13:00:23 +0200
-Subject: [PATCH 26/29] ARM: kirkwood: remove legacy clk alias for mv643xx_eth
+Subject: [PATCH 28/29] ARM: kirkwood: remove legacy clk alias for mv643xx_eth
 
 With all boards converted to DT enabled mv643xx_eth we can now
 remove the clock alias for gbe clocks.
 
 Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  arch/arm/mach-kirkwood/board-dt.c | 2 --
  1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-kirkwood/board-dt.c b/arch/arm/mach-kirkwood/board-dt.c
-index 15e61c8..a6ff0a8 100644
 --- a/arch/arm/mach-kirkwood/board-dt.c
 +++ b/arch/arm/mach-kirkwood/board-dt.c
-@@ -66,12 +66,10 @@ static void __init kirkwood_legacy_clk_init(void)
+@@ -66,12 +66,10 @@ static void __init kirkwood_legacy_clk_i
  	 */
  	clkspec.args[0] = CGC_BIT_GE0;
  	clk = of_clk_get_from_provider(&clkspec);
@@ -28,6 +27,3 @@ index 15e61c8..a6ff0a8 100644
  	clk_prepare_enable(clk);
  }
  
--- 
-1.8.4.rc1
-
