@@ -17,6 +17,12 @@ endif
 endef
 
 define Image/Build
+	$(foreach board,$(BOARDS),
+		$(LINUX_DIR)/scripts/dtc/dtc \
+			-O dtb -o $(BIN_DIR)/$(IMG_PREFIX)-$(board).dtb \
+			-I dts $(LINUX_DIR)/arch/arm/boot/dts/kirkwood-$(board).dts ;
+	)
+
 	$(if $(Image/Build/$(1)), \
 		$(call Image/Build/$(1),$(1)), \
 		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
