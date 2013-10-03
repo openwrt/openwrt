@@ -1,6 +1,6 @@
-From b3e3851d461779cd94a2efe4484f01175fcb460e Mon Sep 17 00:00:00 2001
+From b12363b0a393e2751395af002bf9ab192c1140c1 Mon Sep 17 00:00:00 2001
 From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Wed, 10 Apr 2013 23:05:32 +0200
+Date: Wed, 15 May 2013 15:36:58 +0200
 Subject: [PATCH 13/29] arm: kirkwood: convert MPL CEC4 to use DT for the PCIe
  interface
 
@@ -9,13 +9,12 @@ of the legacy PCIe code, since it allows to describe the PCIe
 interfaces in the Device Tree.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  arch/arm/boot/dts/kirkwood-mplcec4.dts | 8 ++++++++
  arch/arm/mach-kirkwood/board-mplcec4.c | 1 -
  2 files changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/kirkwood-mplcec4.dts b/arch/arm/boot/dts/kirkwood-mplcec4.dts
-index 7588241..90501cf 100644
 --- a/arch/arm/boot/dts/kirkwood-mplcec4.dts
 +++ b/arch/arm/boot/dts/kirkwood-mplcec4.dts
 @@ -139,6 +139,14 @@
@@ -33,8 +32,6 @@ index 7588241..90501cf 100644
  	};
  
  	gpio-leds {
-diff --git a/arch/arm/mach-kirkwood/board-mplcec4.c b/arch/arm/mach-kirkwood/board-mplcec4.c
-index 7d6dc66..938712e 100644
 --- a/arch/arm/mach-kirkwood/board-mplcec4.c
 +++ b/arch/arm/mach-kirkwood/board-mplcec4.c
 @@ -29,7 +29,6 @@ void __init mplcec4_init(void)
@@ -45,6 +42,3 @@ index 7d6dc66..938712e 100644
  }
  
  
--- 
-1.8.4.rc1
-

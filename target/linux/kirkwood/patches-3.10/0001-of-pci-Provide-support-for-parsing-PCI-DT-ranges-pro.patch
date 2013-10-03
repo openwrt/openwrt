@@ -1,6 +1,6 @@
-From 6b5917890ada1dc078ee64af2500cd6289fcf9bc Mon Sep 17 00:00:00 2001
+From 3c72277cf2c10e3b7065541b3588f21138efeba2 Mon Sep 17 00:00:00 2001
 From: Andrew Murray <Andrew.Murray@arm.com>
-Date: Tue, 7 May 2013 16:31:12 +0100
+Date: Thu, 16 May 2013 17:55:17 +0200
 Subject: [PATCH 01/29] of/pci: Provide support for parsing PCI DT ranges
  property
 
@@ -42,16 +42,15 @@ Tested-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 Tested-by: Linus Walleij <linus.walleij@linaro.org>
 Tested-by: Jingoo Han <jg1.han@samsung.com>
 Acked-by: Grant Likely <grant.likely@secretlab.ca>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  drivers/of/address.c       | 67 ++++++++++++++++++++++++++++++++++++++++++++++
  include/linux/of_address.h | 48 +++++++++++++++++++++++++++++++++
  2 files changed, 115 insertions(+)
 
-diff --git a/drivers/of/address.c b/drivers/of/address.c
-index 7c8221d..b55c218 100644
 --- a/drivers/of/address.c
 +++ b/drivers/of/address.c
-@@ -231,6 +231,73 @@ int of_pci_address_to_resource(struct device_node *dev, int bar,
+@@ -231,6 +231,73 @@ int of_pci_address_to_resource(struct de
  	return __of_address_to_resource(dev, addrp, size, flags, NULL, r);
  }
  EXPORT_SYMBOL_GPL(of_pci_address_to_resource);
@@ -125,8 +124,6 @@ index 7c8221d..b55c218 100644
  #endif /* CONFIG_PCI */
  
  /*
-diff --git a/include/linux/of_address.h b/include/linux/of_address.h
-index 0506eb5..4c2e6f2 100644
 --- a/include/linux/of_address.h
 +++ b/include/linux/of_address.h
 @@ -4,6 +4,36 @@
@@ -166,7 +163,7 @@ index 0506eb5..4c2e6f2 100644
  #ifdef CONFIG_OF_ADDRESS
  extern u64 of_translate_address(struct device_node *np, const __be32 *addr);
  extern bool of_can_translate_address(struct device_node *dev);
-@@ -27,6 +57,11 @@ static inline unsigned long pci_address_to_pio(phys_addr_t addr) { return -1; }
+@@ -27,6 +57,11 @@ static inline unsigned long pci_address_
  #define pci_address_to_pio pci_address_to_pio
  #endif
  
@@ -178,7 +175,7 @@ index 0506eb5..4c2e6f2 100644
  #else /* CONFIG_OF_ADDRESS */
  #ifndef of_address_to_resource
  static inline int of_address_to_resource(struct device_node *dev, int index,
-@@ -53,6 +88,19 @@ static inline const __be32 *of_get_address(struct device_node *dev, int index,
+@@ -53,6 +88,19 @@ static inline const __be32 *of_get_addre
  {
  	return NULL;
  }
@@ -198,6 +195,3 @@ index 0506eb5..4c2e6f2 100644
  #endif /* CONFIG_OF_ADDRESS */
  
  
--- 
-1.8.4.rc1
-

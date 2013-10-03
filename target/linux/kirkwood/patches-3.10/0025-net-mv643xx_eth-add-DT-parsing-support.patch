@@ -1,7 +1,7 @@
-From dd6cae3b60ee88b301f9325db144e70b5e12482e Mon Sep 17 00:00:00 2001
+From 0e701e28611fc08558406accadae40be36fe5289 Mon Sep 17 00:00:00 2001
 From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
-Date: Wed, 29 May 2013 21:32:48 +0200
-Subject: [PATCH 23/29] net: mv643xx_eth: add DT parsing support
+Date: Wed, 29 May 2013 09:32:48 +0000
+Subject: [PATCH 25/29] net: mv643xx_eth: add DT parsing support
 
 This adds device tree parsing support for the shared driver of mv643xx_eth.
 As the bindings are slightly different from current PPC bindings new binding
@@ -9,15 +9,13 @@ documentation is also added. Following PPC-style device setup, the shared
 driver now also adds port platform_devices and sets up port platform_data.
 
 Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  .../devicetree/bindings/net/marvell-orion-net.txt  |  85 ++++++++++++
  drivers/net/ethernet/marvell/mv643xx_eth.c         | 153 ++++++++++++++++++++-
  2 files changed, 234 insertions(+), 4 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/net/marvell-orion-net.txt
 
-diff --git a/Documentation/devicetree/bindings/net/marvell-orion-net.txt b/Documentation/devicetree/bindings/net/marvell-orion-net.txt
-new file mode 100644
-index 0000000..a73b79f
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/net/marvell-orion-net.txt
 @@ -0,0 +1,85 @@
@@ -106,8 +104,6 @@ index 0000000..a73b79f
 +		local-mac-address = [00 00 00 00 00 00];
 +	};
 +};
-diff --git a/drivers/net/ethernet/marvell/mv643xx_eth.c b/drivers/net/ethernet/marvell/mv643xx_eth.c
-index af6bdcc..004a250 100644
 --- a/drivers/net/ethernet/marvell/mv643xx_eth.c
 +++ b/drivers/net/ethernet/marvell/mv643xx_eth.c
 @@ -60,6 +60,9 @@
@@ -120,7 +116,7 @@ index af6bdcc..004a250 100644
  #include <linux/of_mdio.h>
  
  static char mv643xx_eth_driver_name[] = "mv643xx_eth";
-@@ -2453,13 +2456,148 @@ static void infer_hw_params(struct mv643xx_eth_shared_private *msp)
+@@ -2453,13 +2456,148 @@ static void infer_hw_params(struct mv643
  	}
  }
  
@@ -270,7 +266,7 @@ index af6bdcc..004a250 100644
  
  	if (!mv643xx_eth_version_printed++)
  		pr_notice("MV-643xx 10/100/1000 ethernet driver version %s\n",
-@@ -2472,6 +2610,7 @@ static int mv643xx_eth_shared_probe(struct platform_device *pdev)
+@@ -2472,6 +2610,7 @@ static int mv643xx_eth_shared_probe(stru
  	msp = devm_kzalloc(&pdev->dev, sizeof(*msp), GFP_KERNEL);
  	if (msp == NULL)
  		return -ENOMEM;
@@ -278,7 +274,7 @@ index af6bdcc..004a250 100644
  
  	msp->base = devm_ioremap(&pdev->dev, res->start, resource_size(res));
  	if (msp->base == NULL)
-@@ -2488,12 +2627,15 @@ static int mv643xx_eth_shared_probe(struct platform_device *pdev)
+@@ -2488,12 +2627,15 @@ static int mv643xx_eth_shared_probe(stru
  	if (dram)
  		mv643xx_eth_conf_mbus_windows(msp, dram);
  
@@ -296,7 +292,7 @@ index af6bdcc..004a250 100644
  	return 0;
  }
  
-@@ -2501,9 +2643,9 @@ static int mv643xx_eth_shared_remove(struct platform_device *pdev)
+@@ -2501,9 +2643,9 @@ static int mv643xx_eth_shared_remove(str
  {
  	struct mv643xx_eth_shared_private *msp = platform_get_drvdata(pdev);
  
@@ -307,7 +303,7 @@ index af6bdcc..004a250 100644
  	return 0;
  }
  
-@@ -2513,6 +2655,7 @@ static struct platform_driver mv643xx_eth_shared_driver = {
+@@ -2513,6 +2655,7 @@ static struct platform_driver mv643xx_et
  	.driver = {
  		.name	= MV643XX_ETH_SHARED_NAME,
  		.owner	= THIS_MODULE,
@@ -315,7 +311,7 @@ index af6bdcc..004a250 100644
  	},
  };
  
-@@ -2721,6 +2864,8 @@ static int mv643xx_eth_probe(struct platform_device *pdev)
+@@ -2721,6 +2864,8 @@ static int mv643xx_eth_probe(struct plat
  	if (!IS_ERR(mp->clk)) {
  		clk_prepare_enable(mp->clk);
  		mp->t_clk = clk_get_rate(mp->clk);
@@ -324,6 +320,3 @@ index af6bdcc..004a250 100644
  	}
  
  	set_params(mp, pd);
--- 
-1.8.4.rc1
-

@@ -1,6 +1,6 @@
-From 7bda5e7704872a2f01a6c980bb7616d689520ea5 Mon Sep 17 00:00:00 2001
+From 52a1c4e3aa9027040c1adc69303aaffc3c2cbaab Mon Sep 17 00:00:00 2001
 From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Fri, 18 Jan 2013 16:42:01 +0100
+Date: Thu, 16 May 2013 17:55:21 +0200
 Subject: [PATCH 05/29] clk: mvebu: add more PCIe clocks for Armada XP
 
 The current revision of the datasheet only mentions the gatable clocks
@@ -14,15 +14,14 @@ clocks, in order to match the naming using the datasheets.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 Cc: Mike Turquette <mturquette@linaro.org>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  drivers/clk/mvebu/clk-gating-ctrl.c | 14 ++++++++++----
  1 file changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/clk/mvebu/clk-gating-ctrl.c b/drivers/clk/mvebu/clk-gating-ctrl.c
-index b35785a..2f03723 100644
 --- a/drivers/clk/mvebu/clk-gating-ctrl.c
 +++ b/drivers/clk/mvebu/clk-gating-ctrl.c
-@@ -137,10 +137,14 @@ static const struct mvebu_soc_descr __initconst armada_xp_gating_descr[] = {
+@@ -137,10 +137,14 @@ static const struct mvebu_soc_descr __in
  	{ "ge2", NULL,  2 },
  	{ "ge1", NULL, 3 },
  	{ "ge0", NULL, 4 },
@@ -41,7 +40,7 @@ index b35785a..2f03723 100644
  	{ "bp", NULL, 13 },
  	{ "sata0lnk", NULL, 14 },
  	{ "sata0", "sata0lnk", 15 },
-@@ -152,6 +156,8 @@ static const struct mvebu_soc_descr __initconst armada_xp_gating_descr[] = {
+@@ -152,6 +156,8 @@ static const struct mvebu_soc_descr __in
  	{ "xor0", NULL, 22 },
  	{ "crypto", NULL, 23 },
  	{ "tdm", NULL, 25 },
@@ -50,6 +49,3 @@ index b35785a..2f03723 100644
  	{ "xor1", NULL, 28 },
  	{ "sata1lnk", NULL, 29 },
  	{ "sata1", "sata1lnk", 30 },
--- 
-1.8.4.rc1
-

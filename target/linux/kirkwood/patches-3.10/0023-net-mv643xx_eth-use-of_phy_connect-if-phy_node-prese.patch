@@ -1,19 +1,18 @@
-From 04417da7ac6d1a2a38d4406d899ab92bf6e488e1 Mon Sep 17 00:00:00 2001
+From db22a1196162f981444d241f92d02e2e50d12ed7 Mon Sep 17 00:00:00 2001
 From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
-Date: Wed, 29 May 2013 21:32:46 +0200
-Subject: [PATCH 21/29] net: mv643xx_eth: use of_phy_connect if phy_node
+Date: Wed, 29 May 2013 09:32:46 +0000
+Subject: [PATCH 23/29] net: mv643xx_eth: use of_phy_connect if phy_node
  present
 
 This connects to a phy node passed to the port device instead of probing
 the phy by phy_addr.
 
 Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/marvell/mv643xx_eth.c | 25 ++++++++++++++++++-------
  1 file changed, 18 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/net/ethernet/marvell/mv643xx_eth.c b/drivers/net/ethernet/marvell/mv643xx_eth.c
-index 0a8c064..946033b 100644
 --- a/drivers/net/ethernet/marvell/mv643xx_eth.c
 +++ b/drivers/net/ethernet/marvell/mv643xx_eth.c
 @@ -60,6 +60,7 @@
@@ -24,7 +23,7 @@ index 0a8c064..946033b 100644
  
  static char mv643xx_eth_driver_name[] = "mv643xx_eth";
  static char mv643xx_eth_driver_version[] = "1.4";
-@@ -2715,17 +2716,27 @@ static int mv643xx_eth_probe(struct platform_device *pdev)
+@@ -2715,17 +2716,27 @@ static int mv643xx_eth_probe(struct plat
  	netif_set_real_num_tx_queues(dev, mp->txq_count);
  	netif_set_real_num_rx_queues(dev, mp->rxq_count);
  
@@ -59,6 +58,3 @@ index 0a8c064..946033b 100644
  
  	SET_ETHTOOL_OPS(dev, &mv643xx_eth_ethtool_ops);
  
--- 
-1.8.4.rc1
-

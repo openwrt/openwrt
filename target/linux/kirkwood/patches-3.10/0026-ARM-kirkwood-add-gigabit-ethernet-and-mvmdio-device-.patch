@@ -1,7 +1,7 @@
-From 81547b563bd8340d98cdf2c020449ef2e7e8821d Mon Sep 17 00:00:00 2001
+From 678cc6aa6f66182cddfc0c8fc34d4ef196669b83 Mon Sep 17 00:00:00 2001
 From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
-Date: Tue, 2 Jul 2013 13:00:19 +0200
-Subject: [PATCH 24/29] ARM: kirkwood: add gigabit ethernet and mvmdio device
+Date: Sun, 7 Jul 2013 22:34:56 +0200
+Subject: [PATCH 26/29] ARM: kirkwood: add gigabit ethernet and mvmdio device
  tree nodes
 
 This patch adds mv643xx_eth and mvmdio device tree nodes for DT enabled
@@ -9,6 +9,7 @@ Kirkwood boards. Phy nodes are also added with reg property set on a
 per-board basis.
 
 Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  arch/arm/boot/dts/kirkwood-cloudbox.dts            | 16 +++++++
  arch/arm/boot/dts/kirkwood-db.dtsi                 | 16 +++++++
@@ -38,8 +39,6 @@ Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
  arch/arm/boot/dts/kirkwood.dtsi                    | 52 ++++++++++++++++++++++
  26 files changed, 414 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/kirkwood-cloudbox.dts b/arch/arm/boot/dts/kirkwood-cloudbox.dts
-index 5f21d4e..03e1b68 100644
 --- a/arch/arm/boot/dts/kirkwood-cloudbox.dts
 +++ b/arch/arm/boot/dts/kirkwood-cloudbox.dts
 @@ -87,3 +87,19 @@
@@ -62,8 +61,6 @@ index 5f21d4e..03e1b68 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-db.dtsi b/arch/arm/boot/dts/kirkwood-db.dtsi
-index c87cfb8..ca8bf36 100644
 --- a/arch/arm/boot/dts/kirkwood-db.dtsi
 +++ b/arch/arm/boot/dts/kirkwood-db.dtsi
 @@ -87,3 +87,19 @@
@@ -86,8 +83,6 @@ index c87cfb8..ca8bf36 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-dnskw.dtsi b/arch/arm/boot/dts/kirkwood-dnskw.dtsi
-index 6875ac0..7c8bc17 100644
 --- a/arch/arm/boot/dts/kirkwood-dnskw.dtsi
 +++ b/arch/arm/boot/dts/kirkwood-dnskw.dtsi
 @@ -217,3 +217,19 @@
@@ -110,8 +105,6 @@ index 6875ac0..7c8bc17 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-dockstar.dts b/arch/arm/boot/dts/kirkwood-dockstar.dts
-index 0196cf6..b5aebbc 100644
 --- a/arch/arm/boot/dts/kirkwood-dockstar.dts
 +++ b/arch/arm/boot/dts/kirkwood-dockstar.dts
 @@ -91,3 +91,20 @@
@@ -135,8 +128,6 @@ index 0196cf6..b5aebbc 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-dreamplug.dts b/arch/arm/boot/dts/kirkwood-dreamplug.dts
-index 289e51d..e0c93d4 100644
 --- a/arch/arm/boot/dts/kirkwood-dreamplug.dts
 +++ b/arch/arm/boot/dts/kirkwood-dreamplug.dts
 @@ -99,3 +99,31 @@
@@ -171,8 +162,6 @@ index 289e51d..e0c93d4 100644
 +		phy-handle = <&ethphy1>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-goflexnet.dts b/arch/arm/boot/dts/kirkwood-goflexnet.dts
-index c3573be..aba5849 100644
 --- a/arch/arm/boot/dts/kirkwood-goflexnet.dts
 +++ b/arch/arm/boot/dts/kirkwood-goflexnet.dts
 @@ -170,3 +170,19 @@
@@ -195,8 +184,6 @@ index c3573be..aba5849 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-guruplug-server-plus.dts b/arch/arm/boot/dts/kirkwood-guruplug-server-plus.dts
-index 44fd97d..210dfb9 100644
 --- a/arch/arm/boot/dts/kirkwood-guruplug-server-plus.dts
 +++ b/arch/arm/boot/dts/kirkwood-guruplug-server-plus.dts
 @@ -96,3 +96,33 @@
@@ -233,8 +220,6 @@ index 44fd97d..210dfb9 100644
 +		phy-handle = <&ethphy1>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-ib62x0.dts b/arch/arm/boot/dts/kirkwood-ib62x0.dts
-index 5335b1a..fff3e65 100644
 --- a/arch/arm/boot/dts/kirkwood-ib62x0.dts
 +++ b/arch/arm/boot/dts/kirkwood-ib62x0.dts
 @@ -119,3 +119,19 @@
@@ -257,8 +242,6 @@ index 5335b1a..fff3e65 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-iconnect.dts b/arch/arm/boot/dts/kirkwood-iconnect.dts
-index e591d5d..9fe8ba2 100644
 --- a/arch/arm/boot/dts/kirkwood-iconnect.dts
 +++ b/arch/arm/boot/dts/kirkwood-iconnect.dts
 @@ -176,3 +176,19 @@
@@ -281,8 +264,6 @@ index e591d5d..9fe8ba2 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-iomega_ix2_200.dts b/arch/arm/boot/dts/kirkwood-iomega_ix2_200.dts
-index 3694e94..315f095 100644
 --- a/arch/arm/boot/dts/kirkwood-iomega_ix2_200.dts
 +++ b/arch/arm/boot/dts/kirkwood-iomega_ix2_200.dts
 @@ -191,3 +191,27 @@
@@ -313,8 +294,6 @@ index 3694e94..315f095 100644
 +		phy-handle = <&ethphy1>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-is2.dts b/arch/arm/boot/dts/kirkwood-is2.dts
-index 0bdce0a..2e5fe72 100644
 --- a/arch/arm/boot/dts/kirkwood-is2.dts
 +++ b/arch/arm/boot/dts/kirkwood-is2.dts
 @@ -28,3 +28,5 @@
@@ -323,8 +302,6 @@ index 0bdce0a..2e5fe72 100644
  };
 +
 +&ethphy0 { reg = <8>; };
-diff --git a/arch/arm/boot/dts/kirkwood-km_kirkwood.dts b/arch/arm/boot/dts/kirkwood-km_kirkwood.dts
-index 5bbd054..f9194b1 100644
 --- a/arch/arm/boot/dts/kirkwood-km_kirkwood.dts
 +++ b/arch/arm/boot/dts/kirkwood-km_kirkwood.dts
 @@ -43,3 +43,19 @@
@@ -347,8 +324,6 @@ index 5bbd054..f9194b1 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-lsxl.dtsi b/arch/arm/boot/dts/kirkwood-lsxl.dtsi
-index 37d45c4..dcc6470 100644
 --- a/arch/arm/boot/dts/kirkwood-lsxl.dtsi
 +++ b/arch/arm/boot/dts/kirkwood-lsxl.dtsi
 @@ -201,3 +201,31 @@
@@ -383,8 +358,6 @@ index 37d45c4..dcc6470 100644
 +		phy-handle = <&ethphy1>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-mplcec4.dts b/arch/arm/boot/dts/kirkwood-mplcec4.dts
-index 90501cf..32a0133 100644
 --- a/arch/arm/boot/dts/kirkwood-mplcec4.dts
 +++ b/arch/arm/boot/dts/kirkwood-mplcec4.dts
 @@ -190,3 +190,30 @@
@@ -418,8 +391,6 @@ index 90501cf..32a0133 100644
 +		phy-handle = <&ethphy1>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-netgear_readynas_duo_v2.dts b/arch/arm/boot/dts/kirkwood-netgear_readynas_duo_v2.dts
-index 1ca66ab..b66b2cd 100644
 --- a/arch/arm/boot/dts/kirkwood-netgear_readynas_duo_v2.dts
 +++ b/arch/arm/boot/dts/kirkwood-netgear_readynas_duo_v2.dts
 @@ -178,3 +178,19 @@
@@ -442,8 +413,6 @@ index 1ca66ab..b66b2cd 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-ns2-common.dtsi b/arch/arm/boot/dts/kirkwood-ns2-common.dtsi
-index 6affd92..6a48bfd 100644
 --- a/arch/arm/boot/dts/kirkwood-ns2-common.dtsi
 +++ b/arch/arm/boot/dts/kirkwood-ns2-common.dtsi
 @@ -82,3 +82,19 @@
@@ -466,8 +435,6 @@ index 6affd92..6a48bfd 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-ns2.dts b/arch/arm/boot/dts/kirkwood-ns2.dts
-index f2d36ecf..8ffd552 100644
 --- a/arch/arm/boot/dts/kirkwood-ns2.dts
 +++ b/arch/arm/boot/dts/kirkwood-ns2.dts
 @@ -28,3 +28,5 @@
@@ -476,8 +443,6 @@ index f2d36ecf..8ffd552 100644
  };
 +
 +&ethphy0 { reg = <8>; };
-diff --git a/arch/arm/boot/dts/kirkwood-ns2lite.dts b/arch/arm/boot/dts/kirkwood-ns2lite.dts
-index b02eb4e..16332f8 100644
 --- a/arch/arm/boot/dts/kirkwood-ns2lite.dts
 +++ b/arch/arm/boot/dts/kirkwood-ns2lite.dts
 @@ -28,3 +28,5 @@
@@ -486,8 +451,6 @@ index b02eb4e..16332f8 100644
  };
 +
 +&ethphy0 { reg = <0>; };
-diff --git a/arch/arm/boot/dts/kirkwood-ns2max.dts b/arch/arm/boot/dts/kirkwood-ns2max.dts
-index bcec4d6..68d767d 100644
 --- a/arch/arm/boot/dts/kirkwood-ns2max.dts
 +++ b/arch/arm/boot/dts/kirkwood-ns2max.dts
 @@ -47,3 +47,5 @@
@@ -496,8 +459,6 @@ index bcec4d6..68d767d 100644
  };
 +
 +&ethphy0 { reg = <8>; };
-diff --git a/arch/arm/boot/dts/kirkwood-ns2mini.dts b/arch/arm/boot/dts/kirkwood-ns2mini.dts
-index adab1ab..5b1b17b 100644
 --- a/arch/arm/boot/dts/kirkwood-ns2mini.dts
 +++ b/arch/arm/boot/dts/kirkwood-ns2mini.dts
 @@ -48,3 +48,5 @@
@@ -506,8 +467,6 @@ index adab1ab..5b1b17b 100644
  };
 +
 +&ethphy0 { reg = <0>; };
-diff --git a/arch/arm/boot/dts/kirkwood-openblocks_a6.dts b/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
-index d27f724..f8be3e3 100644
 --- a/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
 +++ b/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
 @@ -210,3 +210,19 @@
@@ -530,8 +489,6 @@ index d27f724..f8be3e3 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-topkick.dts b/arch/arm/boot/dts/kirkwood-topkick.dts
-index 66eb45b..34eacf2 100644
 --- a/arch/arm/boot/dts/kirkwood-topkick.dts
 +++ b/arch/arm/boot/dts/kirkwood-topkick.dts
 @@ -201,3 +201,19 @@
@@ -554,8 +511,6 @@ index 66eb45b..34eacf2 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood-ts219-6281.dts b/arch/arm/boot/dts/kirkwood-ts219-6281.dts
-index 42648ab..fff3a3e 100644
 --- a/arch/arm/boot/dts/kirkwood-ts219-6281.dts
 +++ b/arch/arm/boot/dts/kirkwood-ts219-6281.dts
 @@ -50,4 +50,6 @@
@@ -567,8 +522,6 @@ index 42648ab..fff3a3e 100644
 +};
 +
 +&ethphy0 { reg = <8>; };
-diff --git a/arch/arm/boot/dts/kirkwood-ts219-6282.dts b/arch/arm/boot/dts/kirkwood-ts219-6282.dts
-index 95ceeb9..ed0441a 100644
 --- a/arch/arm/boot/dts/kirkwood-ts219-6282.dts
 +++ b/arch/arm/boot/dts/kirkwood-ts219-6282.dts
 @@ -50,4 +50,6 @@
@@ -580,8 +533,6 @@ index 95ceeb9..ed0441a 100644
 +};
 +
 +&ethphy0 { reg = <0>; };
-diff --git a/arch/arm/boot/dts/kirkwood-ts219.dtsi b/arch/arm/boot/dts/kirkwood-ts219.dtsi
-index 7c022fd..6b063eb 100644
 --- a/arch/arm/boot/dts/kirkwood-ts219.dtsi
 +++ b/arch/arm/boot/dts/kirkwood-ts219.dtsi
 @@ -81,3 +81,19 @@
@@ -604,8 +555,6 @@ index 7c022fd..6b063eb 100644
 +		phy-handle = <&ethphy0>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/kirkwood.dtsi b/arch/arm/boot/dts/kirkwood.dtsi
-index 7eef88f..ebc6dc4 100644
 --- a/arch/arm/boot/dts/kirkwood.dtsi
 +++ b/arch/arm/boot/dts/kirkwood.dtsi
 @@ -203,5 +203,57 @@
@@ -666,6 +615,3 @@ index 7eef88f..ebc6dc4 100644
 +		};
  	};
  };
--- 
-1.8.4.rc1
-

@@ -1,7 +1,7 @@
-From 3b0f26629fef1b55a71031b4ef4db27d0a66a0be Mon Sep 17 00:00:00 2001
+From 4c1ae9f272bf34388d0fbdc99aa18af2b6c9eda1 Mon Sep 17 00:00:00 2001
 From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
-Date: Wed, 29 May 2013 21:32:47 +0200
-Subject: [PATCH 22/29] net: mv643xx_eth: proper initialization for Kirkwood
+Date: Wed, 29 May 2013 09:32:47 +0000
+Subject: [PATCH 24/29] net: mv643xx_eth: proper initialization for Kirkwood
  SoCs
 
 Ethernet controllers found on Kirkwood SoCs not only suffer from loosing
@@ -16,15 +16,14 @@ Moreover, system controllers on PPC using this driver should also be
 protected from clearing that bit.
 
 Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/marvell/mv643xx_eth.c | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
-diff --git a/drivers/net/ethernet/marvell/mv643xx_eth.c b/drivers/net/ethernet/marvell/mv643xx_eth.c
-index 946033b..af6bdcc 100644
 --- a/drivers/net/ethernet/marvell/mv643xx_eth.c
 +++ b/drivers/net/ethernet/marvell/mv643xx_eth.c
-@@ -116,6 +116,8 @@ static char mv643xx_eth_driver_version[] = "1.4";
+@@ -116,6 +116,8 @@ static char mv643xx_eth_driver_version[]
  #define  LINK_UP			0x00000002
  #define TXQ_COMMAND			0x0048
  #define TXQ_FIX_PRIO_CONF		0x004c
@@ -33,7 +32,7 @@ index 946033b..af6bdcc 100644
  #define TX_BW_RATE			0x0050
  #define TX_BW_MTU			0x0058
  #define TX_BW_BURST			0x005c
-@@ -2701,6 +2703,15 @@ static int mv643xx_eth_probe(struct platform_device *pdev)
+@@ -2701,6 +2703,15 @@ static int mv643xx_eth_probe(struct plat
  
  	mp->dev = dev;
  
@@ -49,6 +48,3 @@ index 946033b..af6bdcc 100644
  	/*
  	 * Start with a default rate, and if there is a clock, allow
  	 * it to override the default.
--- 
-1.8.4.rc1
-

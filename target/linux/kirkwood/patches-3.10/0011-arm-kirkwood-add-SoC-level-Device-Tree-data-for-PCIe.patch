@@ -1,6 +1,6 @@
-From 8725a4f93dcb242466990261dc2bd78599b0306a Mon Sep 17 00:00:00 2001
+From b2198f4cd8cffdfd5030a176a9ee4d4367526cac Mon Sep 17 00:00:00 2001
 From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Wed, 27 Mar 2013 18:55:20 +0100
+Date: Wed, 15 May 2013 15:36:56 +0200
 Subject: [PATCH 11/29] arm: kirkwood: add SoC-level Device Tree data for PCIe
  interfaces
 
@@ -10,14 +10,13 @@ interfaces.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 Tested-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  arch/arm/boot/dts/kirkwood-6281.dtsi | 31 +++++++++++++++++++++++
  arch/arm/boot/dts/kirkwood-6282.dtsi | 48 ++++++++++++++++++++++++++++++++++++
  arch/arm/boot/dts/kirkwood.dtsi      |  1 +
  3 files changed, 80 insertions(+)
 
-diff --git a/arch/arm/boot/dts/kirkwood-6281.dtsi b/arch/arm/boot/dts/kirkwood-6281.dtsi
-index d6c9d65..5137668 100644
 --- a/arch/arm/boot/dts/kirkwood-6281.dtsi
 +++ b/arch/arm/boot/dts/kirkwood-6281.dtsi
 @@ -40,5 +40,36 @@
@@ -57,8 +56,6 @@ index d6c9d65..5137668 100644
 +		};
  	};
  };
-diff --git a/arch/arm/boot/dts/kirkwood-6282.dtsi b/arch/arm/boot/dts/kirkwood-6282.dtsi
-index 23991e4..66a751a 100644
 --- a/arch/arm/boot/dts/kirkwood-6282.dtsi
 +++ b/arch/arm/boot/dts/kirkwood-6282.dtsi
 @@ -65,5 +65,53 @@
@@ -115,8 +112,6 @@ index 23991e4..66a751a 100644
 +		};
  	};
  };
-diff --git a/arch/arm/boot/dts/kirkwood.dtsi b/arch/arm/boot/dts/kirkwood.dtsi
-index fada7e6..7eef88f 100644
 --- a/arch/arm/boot/dts/kirkwood.dtsi
 +++ b/arch/arm/boot/dts/kirkwood.dtsi
 @@ -19,6 +19,7 @@
@@ -127,6 +122,3 @@ index fada7e6..7eef88f 100644
  		          0xf5000000 0xf5000000 0x0000400>;
  		#address-cells = <1>;
  		#size-cells = <1>;
--- 
-1.8.4.rc1
-

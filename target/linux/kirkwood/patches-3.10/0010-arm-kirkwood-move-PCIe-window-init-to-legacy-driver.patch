@@ -1,6 +1,6 @@
-From 080dc44291ff143d84b63e5ff9fda963d46a7dce Mon Sep 17 00:00:00 2001
+From 722ffe56a78344821877496f5bb28ca95b4cb67c Mon Sep 17 00:00:00 2001
 From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Wed, 27 Mar 2013 18:51:25 +0100
+Date: Wed, 15 May 2013 15:36:55 +0200
 Subject: [PATCH 10/29] arm: kirkwood: move PCIe window init to legacy driver
 
 Since we are going to enable the usage of the mvebu PCIe driver on
@@ -17,13 +17,12 @@ dynamically allocated directly by the driver.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 Tested-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  arch/arm/mach-kirkwood/common.c | 24 ------------------------
  arch/arm/mach-kirkwood/pcie.c   | 22 ++++++++++++++++++++++
  2 files changed, 22 insertions(+), 24 deletions(-)
 
-diff --git a/arch/arm/mach-kirkwood/common.c b/arch/arm/mach-kirkwood/common.c
-index f389228..41ea98d 100644
 --- a/arch/arm/mach-kirkwood/common.c
 +++ b/arch/arm/mach-kirkwood/common.c
 @@ -648,30 +648,6 @@ char * __init kirkwood_id(void)
@@ -57,8 +56,6 @@ index f389228..41ea98d 100644
  	mvebu_mbus_add_window("nand", KIRKWOOD_NAND_MEM_PHYS_BASE,
  			      KIRKWOOD_NAND_MEM_SIZE);
  	mvebu_mbus_add_window("sram", KIRKWOOD_SRAM_PHYS_BASE,
-diff --git a/arch/arm/mach-kirkwood/pcie.c b/arch/arm/mach-kirkwood/pcie.c
-index 7f43e6c..ddcb09f 100644
 --- a/arch/arm/mach-kirkwood/pcie.c
 +++ b/arch/arm/mach-kirkwood/pcie.c
 @@ -12,6 +12,7 @@
@@ -69,7 +66,7 @@ index 7f43e6c..ddcb09f 100644
  #include <video/vga.h>
  #include <asm/irq.h>
  #include <asm/mach/pci.h>
-@@ -253,6 +254,27 @@ static void __init add_pcie_port(int index, void __iomem *base)
+@@ -253,6 +254,27 @@ static void __init add_pcie_port(int ind
  
  void __init kirkwood_pcie_init(unsigned int portmask)
  {
@@ -97,6 +94,3 @@ index 7f43e6c..ddcb09f 100644
  	vga_base = KIRKWOOD_PCIE_MEM_PHYS_BASE;
  
  	if (portmask & KW_PCIE0)
--- 
-1.8.4.rc1
-

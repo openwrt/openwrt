@@ -1,6 +1,6 @@
-From adebeab033de18cabf880f98d2167095520243f2 Mon Sep 17 00:00:00 2001
+From 72fb19fc4ff89878273799eb38e8d95b0add3c05 Mon Sep 17 00:00:00 2001
 From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Fri, 7 Dec 2012 20:35:20 +0100
+Date: Thu, 16 May 2013 17:55:20 +0200
 Subject: [PATCH 04/29] clk: mvebu: create parent-child relation for PCIe
  clocks on Armada 370
 
@@ -11,15 +11,14 @@ clocks on Armada XP.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 Cc: Mike Turquette <mturquette@linaro.org>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  drivers/clk/mvebu/clk-gating-ctrl.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/mvebu/clk-gating-ctrl.c b/drivers/clk/mvebu/clk-gating-ctrl.c
-index ebf141d..b35785a 100644
 --- a/drivers/clk/mvebu/clk-gating-ctrl.c
 +++ b/drivers/clk/mvebu/clk-gating-ctrl.c
-@@ -119,8 +119,8 @@ static const struct mvebu_soc_descr __initconst armada_370_gating_descr[] = {
+@@ -119,8 +119,8 @@ static const struct mvebu_soc_descr __in
  	{ "pex1_en", NULL,  2 },
  	{ "ge1", NULL, 3 },
  	{ "ge0", NULL, 4 },
@@ -30,6 +29,3 @@ index ebf141d..b35785a 100644
  	{ "sata0", NULL, 15 },
  	{ "sdio", NULL, 17 },
  	{ "tdm", NULL, 25 },
--- 
-1.8.4.rc1
-

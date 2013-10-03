@@ -1,6 +1,6 @@
-From 86310ed36ec224b248b5169371f44250ce8c2275 Mon Sep 17 00:00:00 2001
+From f56884bb322085c735b027b64fff4d7294a464ee Mon Sep 17 00:00:00 2001
 From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Wed, 10 Apr 2013 23:07:27 +0200
+Date: Wed, 15 May 2013 15:36:59 +0200
 Subject: [PATCH 14/29] arm: kirkwood: convert ZyXEL NSA310 to use DT for the
  PCIe interface
 
@@ -13,6 +13,7 @@ the Device Tree only, we remove the board-nsa310.c file and the
 related Kconfig/Makefile bits.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  arch/arm/boot/dts/kirkwood-nsa310.dts |  8 ++++++++
  arch/arm/mach-kirkwood/Kconfig        |  8 --------
@@ -21,8 +22,6 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  4 files changed, 8 insertions(+), 34 deletions(-)
  delete mode 100644 arch/arm/mach-kirkwood/board-nsa310.c
 
-diff --git a/arch/arm/boot/dts/kirkwood-nsa310.dts b/arch/arm/boot/dts/kirkwood-nsa310.dts
-index a7412b9..9ddf218 100644
 --- a/arch/arm/boot/dts/kirkwood-nsa310.dts
 +++ b/arch/arm/boot/dts/kirkwood-nsa310.dts
 @@ -176,6 +176,14 @@
@@ -40,8 +39,6 @@ index a7412b9..9ddf218 100644
  	};
  
  	gpio_keys {
-diff --git a/arch/arm/mach-kirkwood/Kconfig b/arch/arm/mach-kirkwood/Kconfig
-index 7509a89..267ca95 100644
 --- a/arch/arm/mach-kirkwood/Kconfig
 +++ b/arch/arm/mach-kirkwood/Kconfig
 @@ -272,14 +272,6 @@ config MACH_NETSPACE_V2_DT
@@ -59,11 +56,9 @@ index 7509a89..267ca95 100644
  config MACH_OPENBLOCKS_A6_DT
  	bool "Plat'Home OpenBlocks A6 (Flattened Device Tree)"
  	select ARCH_KIRKWOOD_DT
-diff --git a/arch/arm/mach-kirkwood/Makefile b/arch/arm/mach-kirkwood/Makefile
-index e1f3735..794366e 100644
 --- a/arch/arm/mach-kirkwood/Makefile
 +++ b/arch/arm/mach-kirkwood/Makefile
-@@ -37,7 +37,6 @@ obj-$(CONFIG_MACH_NETSPACE_LITE_V2_DT)	+= board-ns2.o
+@@ -37,7 +37,6 @@ obj-$(CONFIG_MACH_NETSPACE_LITE_V2_DT)	+
  obj-$(CONFIG_MACH_NETSPACE_MAX_V2_DT)	+= board-ns2.o
  obj-$(CONFIG_MACH_NETSPACE_MINI_V2_DT)	+= board-ns2.o
  obj-$(CONFIG_MACH_NETSPACE_V2_DT)	+= board-ns2.o
@@ -71,9 +66,6 @@ index e1f3735..794366e 100644
  obj-$(CONFIG_MACH_OPENBLOCKS_A6_DT)	+= board-openblocks_a6.o
  obj-$(CONFIG_MACH_READYNAS_DT)		+= board-readynas.o
  obj-$(CONFIG_MACH_TOPKICK_DT)		+= board-usi_topkick.o
-diff --git a/arch/arm/mach-kirkwood/board-nsa310.c b/arch/arm/mach-kirkwood/board-nsa310.c
-deleted file mode 100644
-index 55ade93..0000000
 --- a/arch/arm/mach-kirkwood/board-nsa310.c
 +++ /dev/null
 @@ -1,25 +0,0 @@
@@ -102,6 +94,3 @@ index 55ade93..0000000
 -}
 -
 -subsys_initcall(nsa310_pci_init);
--- 
-1.8.4.rc1
-

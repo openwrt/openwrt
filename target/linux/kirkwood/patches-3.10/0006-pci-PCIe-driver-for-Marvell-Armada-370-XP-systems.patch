@@ -1,6 +1,6 @@
-From b18ed8465d6c2e3b7057d5bb2fc3da5cb15e3fb1 Mon Sep 17 00:00:00 2001
+From 8a0a335ed5d4f6c8455090f77ac57c0c25800070 Mon Sep 17 00:00:00 2001
 From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Date: Fri, 18 Jan 2013 17:42:58 +0100
+Date: Thu, 16 May 2013 17:55:22 +0200
 Subject: [PATCH 06/29] pci: PCIe driver for Marvell Armada 370/XP systems
 
 This driver implements the support for the PCIe interfaces on the
@@ -24,22 +24,20 @@ decoding windows, using the mvebu-mbus driver.
 
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 Acked-by: Bjorn Helgaas <bhelgaas@google.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 ---
  .../devicetree/bindings/pci/mvebu-pci.txt          | 220 ++++++
  drivers/pci/Kconfig                                |   2 +
  drivers/pci/Makefile                               |   3 +
  drivers/pci/host/Kconfig                           |   8 +
  drivers/pci/host/Makefile                          |   1 +
- drivers/pci/host/pci-mvebu.c                       | 879 +++++++++++++++++++++
- 6 files changed, 1113 insertions(+)
+ drivers/pci/host/pci-mvebu.c                       | 880 +++++++++++++++++++++
+ 6 files changed, 1114 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/pci/mvebu-pci.txt
  create mode 100644 drivers/pci/host/Kconfig
  create mode 100644 drivers/pci/host/Makefile
  create mode 100644 drivers/pci/host/pci-mvebu.c
 
-diff --git a/Documentation/devicetree/bindings/pci/mvebu-pci.txt b/Documentation/devicetree/bindings/pci/mvebu-pci.txt
-new file mode 100644
-index 0000000..eb69d92
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/pci/mvebu-pci.txt
 @@ -0,0 +1,220 @@
@@ -263,30 +261,23 @@ index 0000000..eb69d92
 +		status = "disabled";
 +	};
 +};
-diff --git a/drivers/pci/Kconfig b/drivers/pci/Kconfig
-index 6d51aa6..ac45398 100644
 --- a/drivers/pci/Kconfig
 +++ b/drivers/pci/Kconfig
-@@ -119,3 +119,5 @@ config PCI_IOAPIC
+@@ -125,3 +125,5 @@ config PCI_IOAPIC
  config PCI_LABEL
  	def_bool y if (DMI || ACPI)
  	select NLS
 +
 +source "drivers/pci/host/Kconfig"
-diff --git a/drivers/pci/Makefile b/drivers/pci/Makefile
-index 0c3efcf..6ebf5bf 100644
 --- a/drivers/pci/Makefile
 +++ b/drivers/pci/Makefile
-@@ -67,3 +67,6 @@ obj-$(CONFIG_XEN_PCIDEV_FRONTEND) += xen-pcifront.o
+@@ -67,3 +67,6 @@ obj-$(CONFIG_XEN_PCIDEV_FRONTEND) += xen
  obj-$(CONFIG_OF) += of.o
  
  ccflags-$(CONFIG_PCI_DEBUG) := -DDEBUG
 +
 +# PCI host controller drivers
 +obj-y += host/
-diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
-new file mode 100644
-index 0000000..6918fbc
 --- /dev/null
 +++ b/drivers/pci/host/Kconfig
 @@ -0,0 +1,8 @@
@@ -298,19 +289,13 @@ index 0000000..6918fbc
 +	depends on ARCH_MVEBU
 +
 +endmenu
-diff --git a/drivers/pci/host/Makefile b/drivers/pci/host/Makefile
-new file mode 100644
-index 0000000..5ea2d8b
 --- /dev/null
 +++ b/drivers/pci/host/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_PCI_MVEBU) += pci-mvebu.o
-diff --git a/drivers/pci/host/pci-mvebu.c b/drivers/pci/host/pci-mvebu.c
-new file mode 100644
-index 0000000..b0ee63b
 --- /dev/null
 +++ b/drivers/pci/host/pci-mvebu.c
-@@ -0,0 +1,879 @@
+@@ -0,0 +1,880 @@
 +/*
 + * PCIe driver for Marvell Armada 370 and Armada XP SoCs
 + *
@@ -1000,7 +985,7 @@ index 0000000..b0ee63b
 +		return start;
 +}
 +
-+static void mvebu_pcie_enable(struct mvebu_pcie *pcie)
++static void __init mvebu_pcie_enable(struct mvebu_pcie *pcie)
 +{
 +	struct hw_pci hw;
 +
@@ -1022,9 +1007,10 @@ index 0000000..b0ee63b
 + * <...> property for one that matches the given port/lane. Once
 + * found, maps it.
 + */
-+static void __iomem *mvebu_pcie_map_registers(struct platform_device *pdev,
-+					      struct device_node *np,
-+					      struct mvebu_pcie_port *port)
++static void __iomem * __init
++mvebu_pcie_map_registers(struct platform_device *pdev,
++			 struct device_node *np,
++			 struct mvebu_pcie_port *port)
 +{
 +	struct resource regs;
 +	int ret = 0;
@@ -1179,7 +1165,7 @@ index 0000000..b0ee63b
 +	},
 +};
 +
-+static int mvebu_pcie_init(void)
++static int __init mvebu_pcie_init(void)
 +{
 +	return platform_driver_probe(&mvebu_pcie_driver,
 +				     mvebu_pcie_probe);
@@ -1190,6 +1176,3 @@ index 0000000..b0ee63b
 +MODULE_AUTHOR("Thomas Petazzoni <thomas.petazzoni@free-electrons.com>");
 +MODULE_DESCRIPTION("Marvell EBU PCIe driver");
 +MODULE_LICENSE("GPLv2");
--- 
-1.8.4.rc1
-
