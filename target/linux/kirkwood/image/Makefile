@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2009-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,8 +10,10 @@ include $(INCLUDE_DIR)/image.mk
 NAND_BLOCKSIZE := 2048:128k
 
 define Image/BuildKernel
-# do mach-id fixup here, if needed
 	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(CP) $(KDIR)/uImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs
+endif
 endef
 
 define Image/Build
