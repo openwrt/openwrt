@@ -107,12 +107,46 @@ menu "Target Images"
 		help
 		  Build a squashfs-lzma root filesystem
 
-	config TARGET_ROOTFS_UBIFS
+	menuconfig TARGET_ROOTFS_UBIFS
 		bool "ubifs"
 		default y if USES_UBIFS
 		depends on USES_UBIFS
 		help
 		  Build a ubifs root filesystem
+
+		choice
+			prompt "compression"
+			default TARGET_UBIFS_COMPRESSION_NONE
+			depends on TARGET_ROOTFS_UBIFS
+			help
+			  Select compression type
+
+			config TARGET_UBIFS_COMPRESSION_NONE
+				bool "none"
+
+			config TARGET_UBIFS_COMPRESSION_LZO
+				bool "lzo"
+
+			config TARGET_UBIFS_COMPRESSION_ZLIB
+				bool "zlib"
+		endchoice
+
+		config TARGET_UBIFS_FREE_SPACE_FIXUP
+			bool "free space fixup" if TARGET_ROOTFS_UBIFS
+			default y
+			help
+			  The file-system free space has to be fixed up on first mount
+
+		config TARGET_UBIFS_JOURNAL_SIZE
+			string
+			prompt "journal size" if TARGET_ROOTFS_UBIFS
+			default "512KiB"
+
+		config TARGET_UBIFS_SQUASH_UIDS
+			bool "squash uids" if TARGET_ROOTFS_UBIFS
+			default n
+			help
+			  Squash owners making all files owned by root
 
 	comment "Image Options"
 

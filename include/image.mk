@@ -116,7 +116,15 @@ endif
 ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
     define Image/mkfs/ubifs
 		$(CP) ./ubinize.cfg $(KDIR)
-		$(STAGING_DIR_HOST)/bin/mkfs.ubifs $(UBIFS_OPTS) $(MKFS_DEVTABLE_OPT) -o $(KDIR)/root.ubifs -d $(TARGET_DIR)
+		$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
+			$(UBIFS_OPTS) \
+			$(if $(CONFIG_TARGET_UBIFS_FREE_SPACE_FIXUP),--space-fixup) \
+			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_NONE),--force-compr=none) \
+			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--force-compr=lzo) \
+			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--force-compr=zlib) \
+			--jrn-size=$(CONFIG_TARGET_UBIFS_JOURNAL_SIZE) \
+			-o $(KDIR)/root.ubifs \
+			-d $(TARGET_DIR)
 		$(call Image/Build,ubifs)
 		(cd $(KDIR); \
 		$(STAGING_DIR_HOST)/bin/ubinize $(UBINIZE_OPTS) -o $(KDIR)/root.ubi ubinize.cfg)
