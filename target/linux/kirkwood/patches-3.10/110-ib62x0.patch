@@ -34,10 +34,9 @@
  			};
  
 -			partition@700000 {
--				label = "root";
--				reg = <0x0700000 0xf900000>;
 +			partition@100000 {
-+				label = "rootfs";
+ 				label = "root";
+-				reg = <0x0700000 0xf900000>;
 +				reg = <0x100000 0xff00000>;
  			};
 -
