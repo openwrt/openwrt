@@ -72,7 +72,7 @@
  	debugfs_create_file("interrupt", S_IRUSR, sc->debug.debugfs_phy, sc,
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1200,8 +1200,10 @@ static int ath9k_config(struct ieee80211
+@@ -1199,8 +1199,10 @@ static int ath9k_config(struct ieee80211
  
  	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || reset_channel) {
  		struct ieee80211_channel *curchan = hw->conf.chandef.chan;
@@ -83,7 +83,7 @@
  		unsigned long flags;
  
  		if (ah->curchan)
-@@ -1238,7 +1240,23 @@ static int ath9k_config(struct ieee80211
+@@ -1237,7 +1239,23 @@ static int ath9k_config(struct ieee80211
  			memset(&sc->survey[pos], 0, sizeof(struct survey_info));
  		}
  

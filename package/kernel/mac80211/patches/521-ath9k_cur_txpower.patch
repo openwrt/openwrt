@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -286,8 +286,12 @@ static int ath_reset_internal(struct ath
+@@ -296,8 +296,12 @@ static int ath_reset_internal(struct ath
  	    (sc->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL))
  		ath9k_mci_set_txpower(sc, true, false);
  
@@ -14,7 +14,7 @@
  
  out:
  	spin_unlock_bh(&sc->sc_pcu_lock);
-@@ -1299,6 +1303,7 @@ static int ath9k_config(struct ieee80211
+@@ -1298,6 +1302,7 @@ static int ath9k_config(struct ieee80211
  		sc->config.txpowlimit = 2 * conf->power_level;
  		ath9k_cmn_update_txpow(ah, sc->curtxpow,
  				       sc->config.txpowlimit, &sc->curtxpow);
