@@ -22,9 +22,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <linux/serial.h>
 +#include <linux/serial_8250.h>
  #include <asm/bootinfo.h>
+ #include <asm/prom.h>
  #include <asm/reboot.h>
- #include <asm/time.h>
-@@ -121,6 +123,31 @@ static int bcm47xx_get_invariants(struct
+@@ -123,6 +125,31 @@ static int bcm47xx_get_invariants(struct
  	return 0;
  }
  
@@ -56,7 +56,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static void __init bcm47xx_register_ssb(void)
  {
  	int err;
-@@ -150,6 +177,10 @@ static void __init bcm47xx_register_ssb(
+@@ -152,6 +179,10 @@ static void __init bcm47xx_register_ssb(
  			memcpy(&mcore->serial_ports[1], &port, sizeof(port));
  		}
  	}
