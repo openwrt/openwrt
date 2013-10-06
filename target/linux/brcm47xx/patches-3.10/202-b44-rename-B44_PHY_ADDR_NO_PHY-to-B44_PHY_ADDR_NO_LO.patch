@@ -1,0 +1,87 @@
+From 991b6722fb727b6e2a98e7e8b57176ac68626110 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 3 Oct 2013 20:41:29 +0200
+Subject: [PATCH 2/5] b44: rename B44_PHY_ADDR_NO_PHY to
+ B44_PHY_ADDR_NO_LOCAL_PHY
+
+The PHY address 30 means there is no local PHY, but there could be an
+external PHY like a switch connected via MII. This is the case on most
+embedded home routers where this driver is used.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/net/ethernet/broadcom/b44.c |   12 ++++++------
+ drivers/net/ethernet/broadcom/b44.h |    6 +++---
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/b44.c
++++ b/drivers/net/ethernet/broadcom/b44.c
+@@ -284,7 +284,7 @@ static int __b44_writephy(struct b44 *bp
+ 
+ static inline int b44_readphy(struct b44 *bp, int reg, u32 *val)
+ {
+-	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
++	if (bp->phy_addr == B44_PHY_ADDR_NO_LOACL_PHY)
+ 		return 0;
+ 
+ 	return __b44_readphy(bp, bp->phy_addr, reg, val);
+@@ -292,7 +292,7 @@ static inline int b44_readphy(struct b44
+ 
+ static inline int b44_writephy(struct b44 *bp, int reg, u32 val)
+ {
+-	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
++	if (bp->phy_addr == B44_PHY_ADDR_NO_LOACL_PHY)
+ 		return 0;
+ 
+ 	return __b44_writephy(bp, bp->phy_addr, reg, val);
+@@ -321,7 +321,7 @@ static int b44_phy_reset(struct b44 *bp)
+ 	u32 val;
+ 	int err;
+ 
+-	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
++	if (bp->phy_addr == B44_PHY_ADDR_NO_LOACL_PHY)
+ 		return 0;
+ 	err = b44_writephy(bp, MII_BMCR, BMCR_RESET);
+ 	if (err)
+@@ -423,7 +423,7 @@ static int b44_setup_phy(struct b44 *bp)
+ 
+ 	b44_wap54g10_workaround(bp);
+ 
+-	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
++	if (bp->phy_addr == B44_PHY_ADDR_NO_LOACL_PHY)
+ 		return 0;
+ 	if ((err = b44_readphy(bp, B44_MII_ALEDCTRL, &val)) != 0)
+ 		goto out;
+@@ -521,7 +521,7 @@ static void b44_check_phy(struct b44 *bp
+ {
+ 	u32 bmsr, aux;
+ 
+-	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY) {
++	if (bp->phy_addr == B44_PHY_ADDR_NO_LOACL_PHY) {
+ 		bp->flags |= B44_FLAG_100_BASE_T;
+ 		bp->flags |= B44_FLAG_FULL_DUPLEX;
+ 		if (!netif_carrier_ok(bp->dev)) {
+@@ -2238,7 +2238,7 @@ static int b44_init_one(struct ssb_devic
+ 
+ 	/* do a phy reset to test if there is an active phy */
+ 	if (b44_phy_reset(bp) < 0)
+-		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++		bp->phy_addr = B44_PHY_ADDR_NO_LOACL_PHY;
+ 
+ 	netdev_info(dev, "%s %pM\n", DRV_DESCRIPTION, dev->dev_addr);
+ 
+--- a/drivers/net/ethernet/broadcom/b44.h
++++ b/drivers/net/ethernet/broadcom/b44.h
+@@ -280,9 +280,9 @@ struct ring_info {
+ 	dma_addr_t	mapping;
+ };
+ 
+-#define B44_MCAST_TABLE_SIZE	32
+-#define B44_PHY_ADDR_NO_PHY	30
+-#define B44_MDC_RATIO		5000000
++#define B44_MCAST_TABLE_SIZE		32
++#define B44_PHY_ADDR_NO_LOACL_PHY	30 /* no local phy regs */
++#define B44_MDC_RATIO			5000000
+ 
+ #define	B44_STAT_REG_DECLARE		\
+ 	_B44(tx_good_octets)		\

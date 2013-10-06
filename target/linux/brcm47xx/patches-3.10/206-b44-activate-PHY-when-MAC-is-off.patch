@@ -1,0 +1,28 @@
+From 444044a410d4cf3b6dd462f2c9352d56039d9e07 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 6 Oct 2013 17:58:24 +0200
+Subject: [PATCH 6/6] b44: activate PHY when MAC is off
+
+Without this patch we can not access the PHY when the MAC is switched
+off. This PHY access is needed to configure the switch, which is done
+through PHY registers.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/net/ethernet/broadcom/b44.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/broadcom/b44.c
++++ b/drivers/net/ethernet/broadcom/b44.c
+@@ -1358,7 +1358,10 @@ static void b44_halt(struct b44 *bp)
+ 	bw32(bp, B44_MAC_CTRL, MAC_CTRL_PHY_PDOWN);
+ 	/* now reset the chip, but without enabling the MAC&PHY
+ 	 * part of it. This has to be done _after_ we shut down the PHY */
+-	b44_chip_reset(bp, B44_CHIP_RESET_PARTIAL);
++	if (bp->has_phy)
++		b44_chip_reset(bp, B44_CHIP_RESET_FULL);
++	else
++		b44_chip_reset(bp, B44_CHIP_RESET_PARTIAL);
+ }
+ 
+ /* bp->lock is held. */
