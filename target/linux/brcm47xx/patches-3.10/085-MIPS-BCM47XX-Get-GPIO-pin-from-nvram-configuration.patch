@@ -1,3 +1,22 @@
+commit e49ec29e2da1fd7cdd6d966f389add031a1027a9
+Author: Hauke Mehrtens <hauke@hauke-m.de>
+Date:   Wed Sep 18 13:31:15 2013 +0200
+
+    MIPS: BCM47XX: Get GPIO pin from nvram configuration
+    
+    The nvram contains some gpio configuration for boards. It is stored in
+    a gpio<number>=name format e.g.
+    gpio8=wps_button
+    gpio4=robo_reset
+    
+    This patches adds a function to parse these entries, so other driver
+    can use it.
+    
+    Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+    Cc: linux-mips@linux-mips.org
+    Patchwork: https://patchwork.linux-mips.org/patch/5841/
+    Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -190,3 +190,23 @@ int bcm47xx_nvram_getenv(char *name, cha
