@@ -296,7 +296,7 @@ static int b53_phy_config_init(struct phy_device *phydev)
 
 	ret = b53_switch_register(dev);
 	if (ret) {
-		pr_info("failed to register switch: %i\n", ret);
+		dev_err(dev->dev, "failed to register switch: %i\n", ret);
 		return ret;
 	}
 
