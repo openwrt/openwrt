@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=polarssl
-PKG_VERSION:=1.2.8
+PKG_VERSION:=1.2.9
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
 PKG_SOURCE_URL:=https://polarssl.org/code/releases
-PKG_MD5SUM:=985151639b1ca037293f06da44fbc6bc
+PKG_MD5SUM:=3d8e01537e747d7997993c70f2e108db
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
