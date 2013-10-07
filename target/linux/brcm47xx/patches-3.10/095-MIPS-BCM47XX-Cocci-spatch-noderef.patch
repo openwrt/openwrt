@@ -1,0 +1,23 @@
+commit 8a289346c135c2f014a7cde5b2a9320beb096188
+Author: thomas@m3y3r.de <thomas@m3y3r.de>
+Date:   Thu Sep 19 20:38:21 2013 +0200
+
+    MIPS: BCM47XX: Cocci spatch "noderef"
+    
+    sizeof when applied to a pointer typed expression gives the size of the
+    pointer.
+    Found by coccinelle spatch "misc/noderef.cocci"
+    
+    Signed-off-by: Thomas Meyer <thomas@m3y3r.de>
+
+--- a/arch/mips/bcm47xx/sprom.c
++++ b/arch/mips/bcm47xx/sprom.c
+@@ -162,7 +162,7 @@ static void nvram_read_alpha2(const char
+ 		pr_warn("alpha2 is too long %s\n", buf);
+ 		return;
+ 	}
+-	memcpy(val, buf, sizeof(val));
++	memcpy(val, buf, sizeof(*val));
+ }
+ 
+ static void bcm47xx_fill_sprom_r1234589(struct ssb_sprom *sprom,
