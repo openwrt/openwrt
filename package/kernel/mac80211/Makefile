@@ -1404,7 +1404,8 @@ config-$(call config_package,libertas-usb) += LIBERTAS LIBERTAS_USB
 config-$(call config_package,mwl8k) += MWL8K
 config-$(call config_package,rtl8180) += RTL8180
 config-$(call config_package,rtl8187) += RTL8187
-config-$(call config_package,wl12xx) += WL_TI WLCORE WLCORE_SDIO WL12XX
+config-$(call config_package,wl12xx) += WLCORE WLCORE_SDIO WL12XX
+config-y += WL_TI
 config-$(call config_package,zd1211rw) += ZD1211RW
 
 config-$(call config_package,rtlwifi) += RTL_CARDS RTLWIFI
