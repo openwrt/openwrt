@@ -23,13 +23,8 @@
 				#size-cells = <1>;
 
 				partition@0 {
-					label = "kernel";
-					reg = <0x00000 0x400000>;
-				};
-
-				partition@400000 {
-					label = "rootfs";
-					reg = <0x400000 0x3000000>;
+					label = "firmware";
+					reg = <0x00000 0x3400000>;
 				};
 
 				partition@3400000 {
@@ -51,53 +46,6 @@
 			};
 		};
 
-		spi@E100800 {
-			compatible = "lantiq,spi-xway-broken";
-			reg = <0xE100800 0x100>;
-			interrupt-parent = <&icu0>;
-			interrupts = <22 23 24>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "s25fl129p0";
-				reg = <0 0>;
-				linux,modalias = "m25p80", "mx25l3205d";
-				spi-max-frequency = <1000000>;
-
-				partition@0 {
-					reg = <0x0 0x20000>;
-					label = "SPI (RO) U-Boot Image";
-					read-only;
-				};
-
-				partition@20000 {
-					reg = <0x20000 0x10000>;
-					label = "ENV_MAC";
-					read-only;
-				};
-
-				partition@30000 {
-					reg = <0x30000 0x10000>;
-					label = "DPF";
-					read-only;
-				};
-
-				partition@40000 {
-					reg = <0x40000 0x10000>;
-					label = "NVRAM";
-					read-only;
-				};
-
-				partition@500000 {
-					reg = <0x50000 0x003a0000>;
-					label = "kernel";
-				};
-			};
-		};
-
 		gpio: pinmux@E100B10 {
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
@@ -105,7 +53,7 @@
 			state_default: pinmux {
 				spi {
 					lantiq,groups = "spi", "spi_cs4";
-					lantiq,function = "spi";
+					lantiq,function = "gpio";
 				};
 				nand_out {
 					lantiq,groups = "nand cle", "nand ale",	"nand rd", "ebu a23", "ebu a24";
@@ -214,6 +162,53 @@
 				&gpio 14 0>;
 			lantiq,portmask = <0x3>;
 		};
+	};
+
+	spi {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "spi-gpio";
+
+		gpio-miso = <&gpio 16 0>;
+		gpio-mosi = <&gpio 17 0>;
+		gpio-sck = <&gpio 18 0>;
+		num-chipselects = <1>;
+		cs-gpios = <&gpio 10 1>;
+
+		m25p80@0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "mx25l2005a";
+			reg = <0 0>;
+			linux,modalias = "m25p80", "mx25l2005a";
+			spi-max-frequency = <1000000>;
+
+			ath9k_cal: partition@0 {
+				reg = <0x0 0x20000>;
+				label = "urlader";
+				read-only;
+			};
+
+			partition@20000 {
+				reg = <0x20000 0x10000>;
+				label = "tffs (1)";
+				read-only;
+			};
+
+			partition@30000 {
+				reg = <0x30000 0x10000>;
+				label = "tffs (2)";
+				read-only;
+			};
+		};
+	};
+
+	ath9k_eep {
+		compatible = "ath9k,eeprom-mtd";
+		ath,eep-flash = <&ath9k_cal 0x985>;
+		ath,eep-endian;
+		ath,eep-swap;
 	};
 
 	gphy-xrx200 {
