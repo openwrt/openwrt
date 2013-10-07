@@ -1350,7 +1350,8 @@ config-y += B43LEGACY_DMA_MODE
 
 config-$(call config_package,brcmutil) += BRCMUTIL
 config-$(call config_package,brcmsmac) += BRCMSMAC
-config-$(call config_package,brcmfmac) += BRCMFMAC BRCMFMAC_USB
+config-$(call config_package,brcmfmac) += BRCMFMAC
+config-y += BRCMFMAC_USB
 config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
 
 config-$(call config_package,mac80211-hwsim) += MAC80211_HWSIM
