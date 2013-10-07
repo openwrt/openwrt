@@ -5,7 +5,7 @@
 / {
 	compatible = "DIR-610-A1", "ralink,rt5350-soc";
 	model = "D-Link DIR-610 A1";
-	
+
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
@@ -23,10 +23,10 @@
 					read-only;
 				};
 
-				partition@30000 {
+				devdata: partition@30000 {
 					label = "devdata";
 					reg = <0x30000 0x10000>;
-		            		read-only;
+					read-only;
 				};
 
 				factory: partition@40000 {
@@ -53,11 +53,15 @@
 	};
 
 	esw@10110000 {
-		ralink,portmap = <0x1f>;
-		ralink,led-polarity = <0>;
+		status = "okay";
+		ralink,portmap = <0x2f>;
+		ralink,led_polarity = <0x17>;
+	};
 
-		pinctrl-names = "default";
-		pinctrl-0 = <&phy_led_pins>;
+	wmac@10180000 {
+		status = "okay";
+		ralink,led-polarity = <1>;
+		ralink,mtd-eeprom = <&devdata 16384>;
 	};
 
 	gpio-leds {
@@ -66,13 +70,13 @@
 			label = "d-link:green:status";
 			gpios = <&gpio0 9 1>;
 		};
-	        wps {
+		wps {
 			label = "d-link:green:wps";
 			gpios = <&gpio0 13 1>;
 		};
-        };
+	};
 
-        gpio-keys-polled {
+	gpio-keys-polled {
 		gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;

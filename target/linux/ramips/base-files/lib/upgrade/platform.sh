@@ -90,6 +90,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	dir-610-a1 |\
 	dir-645)
 		[ "$magic" != "5ea3a417" ] && {
 			echo "Invalid image type."
