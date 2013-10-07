@@ -46,8 +46,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/ralink/soc_rt305x.c
  create mode 100644 drivers/net/ethernet/ralink/soc_rt3883.c
 
---- /dev/null
-+++ b/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
+Index: linux-3.10.13/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h	2013-10-02 21:40:50.192369358 +0200
 @@ -0,0 +1,27 @@
 +/*
 + *  Ralink RT305x SoC platform device registration
@@ -76,9 +78,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +#endif /* _RT305X_ESW_PLATFORM_H */
---- a/arch/mips/ralink/rt305x.c
-+++ b/arch/mips/ralink/rt305x.c
-@@ -221,6 +221,7 @@ void __init ralink_clk_init(void)
+Index: linux-3.10.13/arch/mips/ralink/rt305x.c
+===================================================================
+--- linux-3.10.13.orig/arch/mips/ralink/rt305x.c	2013-10-02 21:12:59.896297955 +0200
++++ linux-3.10.13/arch/mips/ralink/rt305x.c	2013-10-06 13:27:24.076279369 +0200
+@@ -221,6 +221,7 @@
  	}
  
  	ralink_clk_add("cpu", cpu_rate);
@@ -86,9 +90,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	ralink_clk_add("10000b00.spi", sys_rate);
  	ralink_clk_add("10000100.timer", wdt_rate);
  	ralink_clk_add("10000120.watchdog", wdt_rate);
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -135,6 +135,7 @@ config ETHOC
+Index: linux-3.10.13/drivers/net/ethernet/Kconfig
+===================================================================
+--- linux-3.10.13.orig/drivers/net/ethernet/Kconfig	2013-10-02 21:12:59.896297955 +0200
++++ linux-3.10.13/drivers/net/ethernet/Kconfig	2013-10-02 21:40:50.192369358 +0200
+@@ -135,6 +135,7 @@
  source "drivers/net/ethernet/packetengines/Kconfig"
  source "drivers/net/ethernet/pasemi/Kconfig"
  source "drivers/net/ethernet/qlogic/Kconfig"
@@ -96,9 +102,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  source "drivers/net/ethernet/realtek/Kconfig"
  source "drivers/net/ethernet/renesas/Kconfig"
  source "drivers/net/ethernet/rdc/Kconfig"
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -53,6 +53,7 @@ obj-$(CONFIG_ETHOC) += ethoc.o
+Index: linux-3.10.13/drivers/net/ethernet/Makefile
+===================================================================
+--- linux-3.10.13.orig/drivers/net/ethernet/Makefile	2013-10-02 21:12:59.896297955 +0200
++++ linux-3.10.13/drivers/net/ethernet/Makefile	2013-10-02 21:40:50.192369358 +0200
+@@ -53,6 +53,7 @@
  obj-$(CONFIG_NET_PACKET_ENGINE) += packetengines/
  obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
  obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
@@ -106,8 +114,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
  obj-$(CONFIG_SH_ETH) += renesas/
  obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/Kconfig
+Index: linux-3.10.13/drivers/net/ethernet/ralink/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/Kconfig	2013-10-02 21:40:50.196369356 +0200
 @@ -0,0 +1,31 @@
 +config NET_RALINK
 +	tristate "Ralink RT288X/RT3X5X/RT3662/RT3883/MT7620 ethernet driver"
@@ -140,8 +150,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	select PHYLIB
 +	select SWCONFIG
 +endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/Makefile
+Index: linux-3.10.13/drivers/net/ethernet/ralink/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/Makefile	2013-10-03 23:14:02.777666985 +0200
 @@ -0,0 +1,18 @@
 +#
 +# Makefile for the Ralink SoCs built-in ethernet macs
@@ -153,7 +165,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +ralink-eth-$(CONFIG_NET_RALINK_MDIO_RT2880)	+= mdio_rt2880.o
 +
 +ralink-eth-$(CONFIG_NET_RALINK_ESW_RT3052)	+= esw_rt3052.o
-+ralink-eth-$(CONFIG_NET_RALINK_GSW_MT7620)	+= gsw_mt7620a.o
++ralink-eth-$(CONFIG_NET_RALINK_GSW_MT7620)	+= gsw_mt7620a.o mt7530.o
 +
 +ralink-eth-$(CONFIG_SOC_RT288X)			+= soc_rt2880.o
 +ralink-eth-$(CONFIG_SOC_RT305X)			+= soc_rt305x.o
@@ -161,8 +173,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +ralink-eth-$(CONFIG_SOC_MT7620)			+= soc_mt7620.o
 +
 +obj-$(CONFIG_NET_RALINK)			+= ralink-eth.o
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/esw_rt3052.c
+Index: linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.c	2013-10-02 21:40:50.196369356 +0200
 @@ -0,0 +1,1463 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -1627,8 +1641,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	platform_driver_unregister(&esw_driver);
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/esw_rt3052.h
+Index: linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.h	2013-10-02 21:40:50.196369356 +0200
 @@ -0,0 +1,32 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -1662,9 +1678,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#endif
 +#endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/gsw_mt7620a.c
-@@ -0,0 +1,1027 @@
+Index: linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.c	2013-10-04 17:31:46.468886115 +0200
+@@ -0,0 +1,566 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -1712,6 +1730,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#include "ralink_soc_eth.h"
 +#include "gsw_mt7620a.h"
++#include "mt7530.h"
 +#include "mdio.h"
 +
 +#define GSW_REG_PHY_TIMEOUT	(5 * HZ)
@@ -1742,29 +1761,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define SYSC_REG_CFG1		0x14
 +
 +#define PORT_IRQ_ST_CHG		0x7f
-+
-+#define GSW_VLAN_VTCR		0x90
-+#define GSW_VLAN_VTCR_VID_M	0xfff
-+#define GSW_VLAN_ID(_x)		(0x100 + (4 * (_x)))
-+#define GSW_VLAN_ID_VID_S	12
-+#define GSW_VLAN_ID_VID_M	0xfff
-+
-+#define GSW_VAWD1		0x94
-+#define GSW_VAWD1_VTAG_EN	BIT(28)
-+#define GSW_VAWD1_PORTM_S	16
-+#define GSW_VAWD1_PORTM_M	0xff
-+
-+#define GSW_VAWD2		0x98
-+#define GSW_VAWD2_PORTT_S	16
-+#define GSW_VAWD2_PORTT_M	0xff
-+
-+#define GSW_VTIM(_x)		(0x100 + (4 * (_x)))
-+#define GSW_VTIM_M		0xfff
-+#define GSW_VTIM_S		12
-+
-+#define GSW_REG_PCR(x)		(0x2004 + (x * 0x100))
-+#define GSW_REG_PCR_EG_TAG_S	28
-+#define GSW_REG_PCR_EG_TAG_M	0x3
 +
 +#define SYSCFG1			0x14
 +
@@ -1799,28 +1795,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	PORT4_EXT,
 +};
 +
-+struct gsw_port {
-+	bool	disable;
-+	bool	untag;
-+	u16	pvid;
-+};
-+
-+struct gsw_vlan {
-+	u8	ports;
-+	u16	vid;
-+};
-+
 +struct mt7620_gsw {
 +	struct device		*dev;
 +	void __iomem		*base;
 +	int			irq;
-+
-+	struct switch_dev	swdev;
-+	bool			global_vlan_enable;
-+	struct gsw_vlan		vlans[GSW_NUM_VLANS];
-+	struct gsw_port		ports[GSW_NUM_PORTS];
-+	long unsigned int	autopoll;
 +	int			port4;
++	long unsigned int	autopoll;
 +};
 +
 +static inline void gsw_w32(struct mt7620_gsw *gsw, u32 val, unsigned reg)
@@ -1868,18 +1848,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
-+int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
++static u32 _mt7620_mii_read(struct mt7620_gsw *gsw, int phy_addr, int phy_reg)
 +{
-+	struct fe_priv *priv = bus->priv;
-+	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
-+
-+	return _mt7620_mii_write(gsw, phy_addr, phy_reg, val);
-+}
-+
-+int mt7620_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
-+{
-+	struct fe_priv *priv = bus->priv;
-+	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
 +	u32 d;
 +
 +	if (mt7620_mii_busy_wait(gsw))
@@ -1896,6 +1866,22 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	d = gsw_r32(gsw, MT7620A_GSW_REG_PIAC) & 0xffff;
 +
 +	return d;
++}
++
++int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
++{
++	struct fe_priv *priv = bus->priv;
++	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
++
++	return _mt7620_mii_write(gsw, phy_addr, phy_reg, val);
++}
++
++int mt7620_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
++{
++	struct fe_priv *priv = bus->priv;
++	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
++
++	return _mt7620_mii_read(gsw, phy_addr, phy_reg);
 +}
 +
 +static unsigned char *fe_speed_str(int speed)
@@ -2041,7 +2027,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		mask = 2;
 +		break;
 +	default:
-+		dev_err(priv->device, "port %d - invalid phy mode\n", priv->phy->speed[id]);
++		dev_err(priv->device, "port %d - invalid phy mode\n", id);
 +		return;
 +	}
 +
@@ -2056,11 +2042,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	if (priv->phy->phy_fixed[id]) {
 +		const __be32 *link = priv->phy->phy_fixed[id];
-+		int tx_fc = be32_to_cpup(link++);
-+		int rx_fc = be32_to_cpup(link++);
++		int tx_fc, rx_fc;
 +		u32 val = 0;
 +
 +		priv->phy->speed[id] = be32_to_cpup(link++);
++		tx_fc = be32_to_cpup(link++);
++		rx_fc = be32_to_cpup(link++);
 +		priv->phy->duplex[id] = be32_to_cpup(link++);
 +		priv->link[id] = 1;
 +
@@ -2171,8 +2158,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* Set Port6 CPU Port */
 +	gsw_w32(gsw, 0x7f7f7fe0, 0x0010);
 +
-+//	GSW_VAWD2
-+
 +	/* setup port 4 */
 +	if (gsw->port4 == PORT4_EPHY) {
 +		u32 val = rt_sysc_r32(SYSCFG1);
@@ -2184,435 +2169,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		pr_info("gsw: setting port4 to ephy mode\n");
 +	}
 +}
-+
-+static int gsw_reset_switch(struct switch_dev *dev)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+
-+	gsw->global_vlan_enable = 0;
-+	memset(gsw->ports, 0, sizeof(gsw->ports));
-+	memset(gsw->vlans, 0, sizeof(gsw->vlans));
-+	gsw_hw_init(gsw);
-+
-+	return 0;
-+}
-+
-+static int gsw_get_vlan_enable(struct switch_dev *dev,
-+			   const struct switch_attr *attr,
-+			   struct switch_val *val)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+
-+	val->value.i = gsw->global_vlan_enable;
-+
-+	return 0;
-+}
-+
-+static int gsw_set_vlan_enable(struct switch_dev *dev,
-+			   const struct switch_attr *attr,
-+			   struct switch_val *val)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+
-+	gsw->global_vlan_enable = val->value.i != 0;
-+
-+	return 0;
-+}
-+
-+static unsigned gsw_get_pvid(struct mt7620_gsw *gsw, unsigned port)
-+{
-+	unsigned s, val;
-+
-+	s = GSW_VTIM_S * (port % 2);
-+	val = gsw_r32(gsw, GSW_VTIM(port / 2));
-+
-+	return (val >> s) & GSW_VTIM_M;
-+}
-+
-+static void gsw_set_pvid(struct mt7620_gsw *gsw, unsigned port, unsigned pvid)
-+{
-+	unsigned s, val;
-+
-+	s = GSW_VTIM_S * (port % 2);
-+	val = gsw_r32(gsw, GSW_VTIM(port / 2));
-+	val &= ~(GSW_VTIM_M << s);
-+	val |= (pvid && GSW_VTIM_M) << s;
-+	gsw_w32(gsw, val, GSW_VTIM(port / 2));
-+}
-+
-+static int gsw_get_port_bool(struct switch_dev *dev,
-+			 const struct switch_attr *attr,
-+			 struct switch_val *val)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+	int idx = val->port_vlan;
-+
-+	if (idx < 0 || idx >= GSW_NUM_PORTS)
-+		return -EINVAL;
-+
-+	switch (attr->id) {
-+	case GSW_ATTR_PORT_UNTAG:
-+		return gsw->ports[idx].untag;
-+	}
-+
-+	return -EINVAL;
-+}
-+
-+static int gsw_get_port_pvid(struct switch_dev *dev, int port, int *val)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+
-+	if (port >= GSW_NUM_PORTS)
-+		return -EINVAL;
-+
-+	*val = gsw_get_pvid(gsw, port);
-+
-+	return 0;
-+}
-+
-+static int gsw_set_port_pvid(struct switch_dev *dev, int port, int val)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+
-+	if (port >= GSW_NUM_PORTS)
-+		return -EINVAL;
-+
-+	gsw->ports[port].pvid = val;
-+
-+	return 0;
-+}
-+
-+static void gsw_set_vtcr(struct switch_dev *dev, u32 vid)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+	int retry = 1000;
-+
-+	gsw_w32(gsw, 0x80000000 | (BIT(vid) & GSW_VLAN_VTCR_VID_M), GSW_VLAN_VTCR);
-+	while (retry-- && (gsw_r32(gsw, GSW_VLAN_VTCR) & 0x80000000))
-+		;
-+}
-+
-+static void gsw_apply_vtcr(struct switch_dev *dev, u32 vid)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+	int retry = 1000;
-+
-+	gsw_w32(gsw, 0x80001000 | (BIT(vid) & GSW_VLAN_VTCR_VID_M), GSW_VLAN_VTCR);
-+	while (retry-- && (gsw_r32(gsw, GSW_VLAN_VTCR) & 0x80000000))
-+		;
-+}
-+
-+static unsigned gsw_get_vlan_id(struct mt7620_gsw *gsw, unsigned vlan)
-+{
-+	unsigned s;
-+	unsigned val;
-+
-+	s = GSW_VLAN_ID_VID_S * (vlan % 2);
-+	val = gsw_r32(gsw, GSW_VLAN_ID(vlan / 2));
-+	val = (val >> s) & GSW_VLAN_ID_VID_M;
-+
-+	return val;
-+}
-+
-+static void gsw_set_vlan_id(struct mt7620_gsw *gsw, unsigned vlan, unsigned vid)
-+{
-+	unsigned s;
-+	unsigned val;
-+
-+	s = GSW_VLAN_ID_VID_S * (vlan % 2);
-+	val = gsw_r32(gsw, GSW_VLAN_ID(vlan / 2));
-+	val &= ~(GSW_VLAN_ID_VID_M << s);
-+	val |= (vid << s);
-+	gsw_w32(gsw, val, GSW_VLAN_ID(vlan / 2));
-+}
-+
-+static void gsw_vlan_tagging_enable(struct mt7620_gsw *gsw, unsigned vlan, unsigned enable)
-+{
-+	unsigned val;
-+
-+	val = gsw_r32(gsw, GSW_VAWD1);
-+	if (enable)
-+		val |= GSW_VAWD1_VTAG_EN;
-+	else
-+		val &= ~GSW_VAWD1_VTAG_EN;
-+	gsw_w32(gsw, val, GSW_VAWD1);
-+}
-+
-+static unsigned gsw_get_port_member(struct mt7620_gsw *gsw, unsigned vlan)
-+{
-+	unsigned val;
-+
-+	gsw_set_vtcr(&gsw->swdev, vlan);
-+
-+	val = gsw_r32(gsw, GSW_VAWD1);
-+	val = (val >> GSW_VAWD1_PORTM_S) & GSW_VAWD1_PORTM_M;
-+
-+	return val;
-+}
-+
-+static void gsw_set_port_member(struct mt7620_gsw *gsw, unsigned vlan, unsigned member)
-+{
-+	unsigned val;
-+
-+	val = gsw_r32(gsw, GSW_VAWD1);
-+	val = ~(GSW_VAWD1_PORTM_M << GSW_VAWD1_PORTM_S);
-+	val |= (member & GSW_VAWD1_PORTM_M) << GSW_VAWD1_PORTM_S;
-+        gsw_w32(gsw, val, GSW_VAWD1);
-+}
-+
-+static unsigned gsw_get_port_tag(struct mt7620_gsw *gsw, unsigned port)
-+{
-+	unsigned val;
-+
-+	val = gsw_r32(gsw, GSW_REG_PCR(port));
-+	val >>= GSW_REG_PCR_EG_TAG_S;
-+	val &= GSW_REG_PCR_EG_TAG_M;
-+
-+	return !!val;
-+}
-+
-+static void gsw_set_port_untag(struct mt7620_gsw *gsw, unsigned port, unsigned untag)
-+{
-+	unsigned val;
-+
-+	val = gsw_r32(gsw, GSW_REG_PCR(port));
-+	if (!untag)
-+		untag = 0x2;
-+	else
-+		untag = 0;
-+	val &= ~(GSW_REG_PCR_EG_TAG_M << GSW_REG_PCR_EG_TAG_S);
-+	val |= (untag & GSW_REG_PCR_EG_TAG_M) << GSW_REG_PCR_EG_TAG_S;
-+	gsw_w32(gsw, val, GSW_REG_PCR(port));
-+}
-+
-+static int gsw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+	int vlan_idx = -1;
-+	u32 member;
-+	int i;
-+
-+	val->len = 0;
-+
-+	if (val->port_vlan < 0 || val->port_vlan >= GSW_NUM_VIDS)
-+		return -EINVAL;
-+
-+	/* valid vlan? */
-+	for (i = 0; i < GSW_NUM_VLANS; i++) {
-+		if (gsw_get_vlan_id(gsw, i) != val->port_vlan)
-+			continue;
-+		member = gsw_get_port_member(gsw, i);
-+		vlan_idx = i;
-+		break;
-+	}
-+
-+	if (vlan_idx == -1)
-+		return -EINVAL;
-+
-+	for (i = 0; i < GSW_NUM_PORTS; i++) {
-+		struct switch_port *p;
-+		int port_mask = 1 << i;
-+
-+		if (!(member & port_mask))
-+			continue;
-+
-+		p = &val->value.ports[val->len++];
-+		p->id = i;
-+		if (gsw_get_port_tag(gsw, i))
-+			p->flags = 1 << SWITCH_PORT_FLAG_TAGGED;
-+		else
-+			p->flags = 0;
-+	}
-+
-+	return 0;
-+}
-+
-+static int gsw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+	int ports;
-+	int vlan_idx = -1;
-+	int i;
-+
-+	if (val->port_vlan < 0 || val->port_vlan >= GSW_NUM_VIDS ||
-+			val->len > GSW_NUM_PORTS)
-+		return -EINVAL;
-+
-+	/* one of the already defined vlans? */
-+	for (i = 0; i < GSW_NUM_VLANS; i++) {
-+		if (gsw->vlans[i].vid == val->port_vlan &&
-+		    gsw->vlans[i].ports) {
-+			vlan_idx = i;
-+			break;
-+		}
-+	}
-+
-+	/* select a free slot */
-+	for (i = 0; vlan_idx == -1 && i < GSW_NUM_VLANS; i++) {
-+		if (!gsw->vlans[i].ports)
-+			vlan_idx = i;
-+	}
-+
-+	/* bail if all slots are in use */
-+	if (vlan_idx == -1)
-+		return -EINVAL;
-+
-+	ports = 0;
-+	for (i = 0; i < val->len; i++) {
-+		struct switch_port *p = &val->value.ports[i];
-+		int port_mask = 1 << p->id;
-+		bool untagged = !(p->flags & (1 << SWITCH_PORT_FLAG_TAGGED));
-+
-+		if (p->id >= GSW_NUM_PORTS)
-+			return -EINVAL;
-+
-+		ports |= port_mask;
-+		gsw->ports[p->id].untag = untagged;
-+	}
-+	gsw->vlans[vlan_idx].ports = ports;
-+	if (!ports)
-+		gsw->vlans[vlan_idx].vid = 0xfff;
-+	else
-+		gsw->vlans[vlan_idx].vid = val->port_vlan;
-+
-+	return 0;
-+}
-+
-+static int gsw_apply_config(struct switch_dev *dev)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+	int i;
-+
-+	for (i = 0; i < GSW_NUM_VLANS; i++) {
-+		gsw_set_vtcr(&gsw->swdev, i);
-+		if (gsw->global_vlan_enable) {
-+			gsw_set_vlan_id(gsw, i, gsw->vlans[i].vid);
-+			gsw_set_port_member(gsw, i, gsw->vlans[i].ports);
-+			gsw_vlan_tagging_enable(gsw, i, 1);
-+		} else {
-+			gsw_set_vlan_id(gsw, i, 0xfff);
-+			gsw_set_port_member(gsw, i, 0);
-+			gsw_vlan_tagging_enable(gsw, i, 0);
-+		}
-+		gsw_apply_vtcr(&gsw->swdev, i);
-+	}
-+
-+	for (i = 0; i < GSW_NUM_PORTS; i++) {
-+		if (gsw->global_vlan_enable) {
-+			gsw_set_port_untag(gsw, i, !gsw->ports[i].untag);
-+			gsw_set_pvid(gsw, i, gsw->ports[i].pvid);
-+		} else {
-+			gsw_set_port_untag(gsw, i, 0);
-+			gsw_set_pvid(gsw, i, 0);
-+		}
-+	}
-+
-+	if (!gsw->global_vlan_enable)
-+		gsw_set_vlan_id(gsw, 0, 0);
-+
-+	return 0;
-+}
-+
-+static int gsw_get_port_link(struct switch_dev *dev,
-+			 int port,
-+			 struct switch_port_link *link)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+	u32 status;
-+
-+	if (port < 0 || port >= GSW_NUM_PORTS)
-+		return -EINVAL;
-+
-+	status = gsw_r32(gsw, GSW_REG_PORT_STATUS(port));
-+	link->link = status & 0x1;
-+	link->duplex = (status >> 1) & 1;
-+
-+	switch ((status >> 2) & 0x3) {
-+	case 0:
-+		link->speed = SWITCH_PORT_SPEED_10;
-+		break;
-+	case 1:
-+		link->speed = SWITCH_PORT_SPEED_100;
-+		break;
-+	case 2:
-+	case 3: // forced gige speed can be 2 or 3
-+		link->speed = SWITCH_PORT_SPEED_1000;
-+		break;
-+	}
-+
-+	return 0;
-+}
-+
-+static int gsw_set_port_bool(struct switch_dev *dev,
-+			 const struct switch_attr *attr,
-+			 struct switch_val *val)
-+{
-+	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-+	int idx = val->port_vlan;
-+
-+	if (idx < 0 || idx >= GSW_NUM_PORTS ||
-+	    val->value.i < 0 || val->value.i > 1)
-+		return -EINVAL;
-+
-+	switch (attr->id) {
-+	case GSW_ATTR_PORT_UNTAG:
-+		gsw->ports[idx].untag = val->value.i;
-+		break;
-+	default:
-+		return -EINVAL;
-+	}
-+
-+	return 0;
-+}
-+
-+static const struct switch_attr gsw_global[] = {
-+	{
-+		.type = SWITCH_TYPE_INT,
-+		.name = "enable_vlan",
-+		.description = "VLAN mode (1:enabled)",
-+		.max = 1,
-+		.id = GSW_ATTR_ENABLE_VLAN,
-+		.get = gsw_get_vlan_enable,
-+		.set = gsw_set_vlan_enable,
-+	},
-+};
-+
-+static const struct switch_attr gsw_port[] = {
-+	{
-+		.type = SWITCH_TYPE_INT,
-+		.name = "untag",
-+		.description = "Untag (1:strip outgoing vlan tag)",
-+		.max = 1,
-+		.id = GSW_ATTR_PORT_UNTAG,
-+		.get = gsw_get_port_bool,
-+		.set = gsw_set_port_bool,
-+	},
-+};
-+
-+static const struct switch_attr gsw_vlan[] = {
-+};
-+
-+static const struct switch_dev_ops gsw_ops = {
-+	.attr_global = {
-+		.attr = gsw_global,
-+		.n_attr = ARRAY_SIZE(gsw_global),
-+	},
-+	.attr_port = {
-+		.attr = gsw_port,
-+		.n_attr = ARRAY_SIZE(gsw_port),
-+	},
-+	.attr_vlan = {
-+		.attr = gsw_vlan,
-+		.n_attr = ARRAY_SIZE(gsw_vlan),
-+	},
-+	.get_vlan_ports = gsw_get_vlan_ports,
-+	.set_vlan_ports = gsw_set_vlan_ports,
-+	.get_port_pvid = gsw_get_port_pvid,
-+	.set_port_pvid = gsw_set_port_pvid,
-+	.get_port_link = gsw_get_port_link,
-+	.apply_config = gsw_apply_config,
-+	.reset_switch = gsw_reset_switch,
-+};
 +
 +void mt7620_set_mac(struct fe_priv *priv, unsigned char *mac)
 +{
@@ -2631,11 +2187,23 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	{}
 +};
 +
++int mt7620_gsw_config(struct fe_priv *priv)
++{
++	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
++
++	/* is the mt7530 internal or external */
++	if ((_mt7620_mii_read(gsw, 0x1f, 2) == 1) && (_mt7620_mii_read(gsw, 0x1f, 3) == 0xbeef))
++		mt7530_probe(priv->device, NULL, priv->mii_bus);
++	else
++		mt7530_probe(priv->device, gsw->base, NULL);
++
++	return 0;
++}
++
 +int mt7620_gsw_probe(struct fe_priv *priv)
 +{
 +	struct mt7620_gsw *gsw;
 +	struct device_node *np;
-+	struct switch_dev *swdev;
 +	const char *port4 = NULL;
 +
 +	np = of_find_matching_node(NULL, gsw_match);
@@ -2660,22 +2228,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	gsw->base = of_iomap(np, 0);
 +	if (!gsw->base) {
 +		dev_err(priv->device, "gsw ioremap failed\n");
++		return -ENOMEM;
 +	}
 +
 +	gsw->dev = priv->device;
 +	priv->soc->swpriv = gsw;
-+
-+	swdev = &gsw->swdev;
-+	swdev->of_node = np;
-+	swdev->name = "mt7620a-gsw";
-+	swdev->alias = "mt7620x";
-+	swdev->cpu_port = GSW_PORT6;
-+	swdev->ports = GSW_NUM_PORTS;
-+	swdev->vlans = GSW_NUM_VLANS;
-+	swdev->ops = &gsw_ops;
-+
-+	if (register_switch(swdev, NULL))
-+		dev_err(priv->device, "register_switch failed\n");
 +
 +	of_property_read_string(np, "ralink,port4", &port4);
 +	if (port4 && !strcmp(port4, "ephy"))
@@ -2692,9 +2249,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	return 0;
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/gsw_mt7620a.h
-@@ -0,0 +1,29 @@
+Index: linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.h	2013-10-04 02:20:43.226145788 +0200
+@@ -0,0 +1,30 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -2715,6 +2274,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#ifndef _RALINK_GSW_MT7620_H__
 +#define _RALINK_GSW_MT7620_H__
 +
++extern int mt7620_gsw_config(struct fe_priv *priv);
 +extern int mt7620_gsw_probe(struct fe_priv *priv);
 +extern void mt7620_set_mac(struct fe_priv *priv, unsigned char *mac);
 +extern int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val);
@@ -2724,9 +2284,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +extern int mt7620a_has_carrier(struct fe_priv *priv);
 +
 +#endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mdio.c
-@@ -0,0 +1,245 @@
+Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/mdio.c	2013-10-04 01:57:11.854085410 +0200
+@@ -0,0 +1,244 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -2802,7 +2364,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +			}
 +		}
 +	}
-+	spin_unlock_irqrestore(&priv->phy->lock, flags);
 +}
 +
 +int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node)
@@ -2813,7 +2374,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	_port = of_get_property(phy_node, "reg", NULL);
 +
-+	if (!_port || (be32_to_cpu(*_port) >= 8)) {
++	if (!_port || (be32_to_cpu(*_port) >= 0x20)) {
 +		pr_err("%s: invalid port id\n", phy_node->name);
 +		return -EINVAL;
 +	}
@@ -2972,8 +2533,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	of_node_put(priv->mii_bus->dev.of_node);
 +	kfree(priv->mii_bus);
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mdio.h
+Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/mdio.h	2013-10-02 21:40:50.200369354 +0200
 @@ -0,0 +1,29 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -3004,8 +2567,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static inline void fe_mdio_cleanup(struct fe_priv *priv) {}
 +#endif
 +#endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mdio_rt2880.c
+Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.c	2013-10-02 21:40:50.200369354 +0200
 @@ -0,0 +1,232 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -3239,8 +2804,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	return;
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mdio_rt2880.h
+Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.h	2013-10-02 21:40:50.204369354 +0200
 @@ -0,0 +1,26 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -3268,9 +2835,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +void rt2880_port_init(struct fe_priv *priv, struct device_node *np);
 +
 +#endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/ralink_soc_eth.c
-@@ -0,0 +1,735 @@
+Index: linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.c	2013-10-04 02:18:27.242139979 +0200
+@@ -0,0 +1,738 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -3844,12 +3413,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	if (priv->soc->port_init)
 +		for_each_child_of_node(priv->device->of_node, port)
-+			if (of_device_is_compatible(port, "ralink,eth-port"))
++			if (of_device_is_compatible(port, "ralink,eth-port") && of_device_is_available(port))
 +				priv->soc->port_init(priv, port);
 +
 +	err = fe_hw_init(dev);
 +	if (err)
 +		goto err_phy_disconnect;
++
++	if (priv->soc->switch_config)
++		priv->soc->switch_config(priv);
 +
 +	return 0;
 +
@@ -4006,9 +3578,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Ethernet driver for Ralink SoC");
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/ralink_soc_eth.h
-@@ -0,0 +1,374 @@
+Index: linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.h	2013-10-04 02:18:45.454140650 +0200
+@@ -0,0 +1,375 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -4333,6 +3907,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	void (*tx_dma)(struct fe_priv *priv, int idx, int len);
 +	void (*rx_dma)(struct fe_priv *priv, int idx, int len);
 +	int (*switch_init)(struct fe_priv *priv);
++	int (*switch_config)(struct fe_priv *priv);
 +	void (*port_init)(struct fe_priv *priv, struct device_node *port);
 +	int (*has_carrier)(struct fe_priv *priv);
 +	int (*mdio_init)(struct fe_priv *priv);
@@ -4383,9 +3958,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +u32 fe_r32(unsigned reg);
 +
 +#endif /* FE_ETH_H */
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/soc_mt7620.c
-@@ -0,0 +1,111 @@
+Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_mt7620.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/soc_mt7620.c	2013-10-04 02:21:02.450146612 +0200
+@@ -0,0 +1,112 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -4478,6 +4055,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.tx_dma = mt7620_tx_dma,
 +	.rx_dma = mt7620_rx_dma,
 +	.switch_init = mt7620_gsw_probe,
++	.switch_config = mt7620_gsw_config,
 +	.port_init = mt7620_port_init,
 +	.min_pkt_len = 0,
 +	.reg_table = rt5350_reg_table,
@@ -4497,8 +4075,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/soc_rt2880.c
+Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_rt2880.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/soc_rt2880.c	2013-10-02 21:40:50.204369354 +0200
 @@ -0,0 +1,51 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4551,8 +4131,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/soc_rt305x.c
+Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_rt305x.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/soc_rt305x.c	2013-10-02 21:40:50.208369356 +0200
 @@ -0,0 +1,113 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4667,8 +4249,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/soc_rt3883.c
+Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_rt3883.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/soc_rt3883.c	2013-10-02 21:40:50.208369356 +0200
 @@ -0,0 +1,60 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4730,3 +4314,470 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
 +
+Index: linux-3.10.13/drivers/net/ethernet/ralink/mt7530.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/drivers/net/ethernet/ralink/mt7530.c	2013-10-04 19:37:31.585208659 +0200
+@@ -0,0 +1,462 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/if.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/list.h>
++#include <linux/if_ether.h>
++#include <linux/skbuff.h>
++#include <linux/netdevice.h>
++#include <linux/netlink.h>
++#include <linux/bitops.h>
++#include <net/genetlink.h>
++#include <linux/switch.h>
++#include <linux/delay.h>
++#include <linux/phy.h>
++#include <linux/netdevice.h>
++#include <linux/etherdevice.h>
++#include <linux/lockdep.h>
++#include <linux/workqueue.h>
++#include <linux/of_device.h>
++
++#include "mt7530.h"
++
++#define MT7530_CPU_PORT		6
++#define MT7530_NUM_PORTS	7
++#define MT7530_NUM_VLANS	16
++#define MT7530_NUM_VIDS		16
++
++#define REG_ESW_VLAN_VTCR	0x90
++#define REG_ESW_VLAN_VAWD1	0x94
++#define REG_ESW_VLAN_VAWD2	0x98
++
++enum {
++	/* Global attributes. */
++	MT7530_ATTR_ENABLE_VLAN,
++};
++
++struct mt7530_port {
++	u16	pvid;
++};
++
++struct mt7530_vlan {
++	u8	ports;
++};
++
++struct mt7530_priv {
++	void __iomem		*base;
++	struct mii_bus		*bus;
++	struct switch_dev	swdev;
++
++	bool			global_vlan_enable;
++	struct mt7530_vlan	vlans[MT7530_NUM_VLANS];
++	struct mt7530_port	ports[MT7530_NUM_PORTS];
++};
++
++struct mt7530_mapping {
++	char	*name;
++	u8	pvids[6];
++	u8	vlans[8];
++} mt7530_defaults[] = {
++	{
++		.name = "llllw",
++		.pvids = { 1, 1, 1, 1, 2, 1 },
++		.vlans = { 0, 0x4f, 0x50 },
++	}, {
++		.name = "wllll",
++		.pvids = { 2, 1, 1, 1, 1, 1 },
++		.vlans = { 0, 0x5e, 0x41 },
++	},
++};
++
++struct mt7530_mapping*
++mt7530_find_mapping(struct device_node *np)
++{
++	const char *map;
++	int i;
++
++	if (of_property_read_string(np, "ralink,port-map", &map))
++		return NULL;
++
++	for (i = 0; i < ARRAY_SIZE(mt7530_defaults); i++)
++		if (!strcmp(map, mt7530_defaults[i].name))
++			return &mt7530_defaults[i];
++
++	return NULL;
++}
++
++static void
++mt7530_apply_mapping(struct mt7530_priv *mt7530, struct mt7530_mapping *map)
++{
++	int i = 0;
++
++	mt7530->global_vlan_enable = 1;
++
++	for (i = 0; i < 6; i++)
++		mt7530->ports[i].pvid = map->pvids[i];
++	for (i = 0; i < 8; i++)
++		mt7530->vlans[i].ports = map->vlans[i];
++}
++
++static int
++mt7530_reset_switch(struct switch_dev *dev)
++{
++	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
++
++	memset(priv->ports, 0, sizeof(priv->ports));
++	memset(priv->vlans, 0, sizeof(priv->vlans));
++
++	return 0;
++}
++
++static int
++mt7530_get_vlan_enable(struct switch_dev *dev,
++			   const struct switch_attr *attr,
++			   struct switch_val *val)
++{
++	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
++
++	val->value.i = priv->global_vlan_enable;
++
++	return 0;
++}
++
++static int
++mt7530_set_vlan_enable(struct switch_dev *dev,
++			   const struct switch_attr *attr,
++			   struct switch_val *val)
++{
++	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
++
++	priv->global_vlan_enable = val->value.i != 0;
++
++	return 0;
++}
++
++static u32
++mt7530_r32(struct mt7530_priv *priv, u32 reg)
++{
++	if (priv->bus) {
++		u16 high, low;
++
++		mdiobus_write(priv->bus, 0x1f, 0x1f, (reg >> 6) & 0x3ff);
++		low = mdiobus_read(priv->bus, 0x1f, (reg >> 2) & 0xf);
++		high = mdiobus_read(priv->bus, 0x1f, 0x10);
++
++		return (high << 16) | (low & 0xffff);
++	}
++
++        return ioread32(priv->base + reg);
++}
++
++static void
++mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
++{
++	if (priv->bus) {
++		mdiobus_write(priv->bus, 0x1f, 0x1f, (reg >> 6) & 0x3ff);
++		mdiobus_write(priv->bus, 0x1f, (reg >> 2) & 0xf,  val & 0xffff);
++		mdiobus_write(priv->bus, 0x1f, 0x10, val >> 16);
++		return;
++	}
++
++	iowrite32(val, priv->base + reg);
++}
++
++static void
++mt7530_vtcr(struct mt7530_priv *priv, u32 cmd, u32 val)
++{
++	int i;
++
++	mt7530_w32(priv, REG_ESW_VLAN_VTCR, BIT(31) | (cmd << 12) | val);
++
++	for (i = 0; i < 20; i++) {
++		u32 val = mt7530_r32(priv, REG_ESW_VLAN_VTCR);
++
++		if ((val & BIT(31)) == 0)
++			break;
++
++		udelay(1000);
++	}
++	if (i == 20)
++		printk("mt7530: vtcr timeout\n");
++}
++
++static int
++mt7530_get_port_pvid(struct switch_dev *dev, int port, int *val)
++{
++	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
++
++	if (port >= MT7530_NUM_PORTS)
++		return -EINVAL;
++
++	*val = mt7530_r32(priv, 0x2014 + (0x100 * port));
++	*val &= 0xff;
++
++	return 0;
++}
++
++static int
++mt7530_set_port_pvid(struct switch_dev *dev, int port, int pvid)
++{
++	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
++
++	if (port >= MT7530_NUM_PORTS)
++		return -1;
++
++	priv->ports[port].pvid = pvid;
++
++	return 0;
++}
++
++static int
++mt7530_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
++{
++	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
++	u32 member;
++	int i;
++
++	val->len = 0;
++
++	if (val->port_vlan < 0 || val->port_vlan >= MT7530_NUM_VIDS)
++		return -EINVAL;
++
++	mt7530_vtcr(priv, 0, val->port_vlan);
++	member = mt7530_r32(priv, REG_ESW_VLAN_VAWD1);
++	member >>= 16;
++	member &= 0xff;
++
++	for (i = 0; i < MT7530_NUM_PORTS; i++) {
++		struct switch_port *p;
++		if (!(member & BIT(i)))
++			continue;
++
++		p = &val->value.ports[val->len++];
++		p->id = i;
++		p->flags = 0;
++	}
++
++	return 0;
++}
++
++static int
++mt7530_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
++{
++	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
++	int ports = 0;
++	int i;
++
++	if (val->port_vlan < 0 || val->port_vlan >= MT7530_NUM_VIDS ||
++			val->len > MT7530_NUM_PORTS)
++		return -EINVAL;
++
++	for (i = 0; i < val->len; i++) {
++		struct switch_port *p = &val->value.ports[i];
++
++		if (p->id >= MT7530_NUM_PORTS)
++			return -EINVAL;
++
++		ports |= BIT(p->id);
++	}
++	priv->vlans[val->port_vlan].ports = ports;
++
++	return 0;
++}
++
++static int
++mt7530_apply_config(struct switch_dev *dev)
++{
++	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
++	int i;
++
++	if (!priv->global_vlan_enable) {
++		mt7530_w32(priv, 0x2004, 0xff000);
++		mt7530_w32(priv, 0x2104, 0xff000);
++		mt7530_w32(priv, 0x2204, 0xff000);
++		mt7530_w32(priv, 0x2304, 0xff000);
++		mt7530_w32(priv, 0x2404, 0xff000);
++		mt7530_w32(priv, 0x2504, 0xff000);
++		mt7530_w32(priv, 0x2604, 0xff000);
++		mt7530_w32(priv, 0x2010, 0x810000c);
++		mt7530_w32(priv, 0x2110, 0x810000c);
++		mt7530_w32(priv, 0x2210, 0x810000c);
++		mt7530_w32(priv, 0x2310, 0x810000c);
++		mt7530_w32(priv, 0x2410, 0x810000c);
++		mt7530_w32(priv, 0x2510, 0x810000c);
++		mt7530_w32(priv, 0x2610, 0x810000c);
++		return 0;
++	}
++
++	// LAN/WAN ports as security mode
++	mt7530_w32(priv, 0x2004, 0xff0003);
++	mt7530_w32(priv, 0x2104, 0xff0003);
++	mt7530_w32(priv, 0x2204, 0xff0003);
++	mt7530_w32(priv, 0x2304, 0xff0003);
++	mt7530_w32(priv, 0x2404, 0xff0003);
++	mt7530_w32(priv, 0x2504, 0xff0003);
++	// LAN/WAN ports as transparent port
++	mt7530_w32(priv, 0x2010, 0x810000c0);
++	mt7530_w32(priv, 0x2110, 0x810000c0);
++	mt7530_w32(priv, 0x2210, 0x810000c0);
++	mt7530_w32(priv, 0x2310, 0x810000c0);
++	mt7530_w32(priv, 0x2410, 0x810000c0);
++	mt7530_w32(priv, 0x2510, 0x810000c0);
++	// set CPU/P7 port as user port
++	mt7530_w32(priv, 0x2610, 0x81000000);
++	mt7530_w32(priv, 0x2710, 0x81000000);
++
++	mt7530_w32(priv, 0x2604, 0x20ff0003);
++	mt7530_w32(priv, 0x2704, 0x20ff0003);
++	mt7530_w32(priv, 0x2610, 0x81000000);
++
++	for (i = 0; i < MT7530_NUM_VLANS; i++) {
++		u8 ports = priv->vlans[i].ports;
++
++		if (ports)
++			mt7530_w32(priv, REG_ESW_VLAN_VAWD1, BIT(30) | (ports << 16) | BIT(0));
++		else
++			mt7530_w32(priv, REG_ESW_VLAN_VAWD1, 0);
++
++		mt7530_vtcr(priv, 1, i);
++	}
++
++	for (i = 0; i < MT7530_NUM_PORTS; i++)
++		mt7530_w32(priv, 0x2014 + (0x100 * i), 0x10000 | priv->ports[i].pvid);
++
++	return 0;
++}
++
++static int
++mt7530_get_port_link(struct switch_dev *dev,  int port,
++			 struct switch_port_link *link)
++{
++	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
++	u32 speed, pmsr;
++
++	if (port < 0 || port >= MT7530_NUM_PORTS)
++		return -EINVAL;
++
++	pmsr = mt7530_r32(priv, 0x3008 + (0x100 * port));
++
++	link->link = pmsr & 1;
++	link->duplex = (pmsr >> 1) & 1;
++	speed = (pmsr >> 2) & 3;
++
++	switch (speed) {
++	case 0:
++		link->speed = SWITCH_PORT_SPEED_10;
++		break;
++	case 1:
++		link->speed = SWITCH_PORT_SPEED_100;
++		break;
++	case 2:
++	case 3: /* forced gige speed can be 2 or 3 */
++		link->speed = SWITCH_PORT_SPEED_1000;
++		break;
++	default:
++		link->speed = SWITCH_PORT_SPEED_UNKNOWN;
++		break;
++	}
++
++	return 0;
++}
++
++static const struct switch_attr mt7530_global[] = {
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "enable_vlan",
++		.description = "VLAN mode (1:enabled)",
++		.max = 1,
++		.id = MT7530_ATTR_ENABLE_VLAN,
++		.get = mt7530_get_vlan_enable,
++		.set = mt7530_set_vlan_enable,
++	},
++};
++
++static const struct switch_attr mt7530_port[] = {
++};
++
++static const struct switch_attr mt7530_vlan[] = {
++};
++
++static const struct switch_dev_ops mt7530_ops = {
++	.attr_global = {
++		.attr = mt7530_global,
++		.n_attr = ARRAY_SIZE(mt7530_global),
++	},
++	.attr_port = {
++		.attr = mt7530_port,
++		.n_attr = ARRAY_SIZE(mt7530_port),
++	},
++	.attr_vlan = {
++		.attr = mt7530_vlan,
++		.n_attr = ARRAY_SIZE(mt7530_vlan),
++	},
++	.get_vlan_ports = mt7530_get_vlan_ports,
++	.set_vlan_ports = mt7530_set_vlan_ports,
++	.get_port_pvid = mt7530_get_port_pvid,
++	.set_port_pvid = mt7530_set_port_pvid,
++	.get_port_link = mt7530_get_port_link,
++	.apply_config = mt7530_apply_config,
++	.reset_switch = mt7530_reset_switch,
++};
++
++int
++mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus)
++{
++	struct switch_dev *swdev;
++	struct mt7530_priv *mt7530;
++	struct mt7530_mapping *map;
++	int ret;
++
++	if (bus && bus->phy_map[0x1f]->phy_id != 0x1beef)
++		return 0;
++
++	mt7530 = devm_kzalloc(dev, sizeof(struct mt7530_priv), GFP_KERNEL);
++	if (!mt7530)
++		return -ENOMEM;
++
++	mt7530->base = base;
++	mt7530->bus = bus;
++	mt7530->global_vlan_enable = 1;
++
++	swdev = &mt7530->swdev;
++	swdev->name = "mt7530";
++	swdev->alias = "mt7530";
++	swdev->cpu_port = MT7530_CPU_PORT;
++	swdev->ports = MT7530_NUM_PORTS;
++	swdev->vlans = MT7530_NUM_VLANS;
++	swdev->ops = &mt7530_ops;
++
++	ret = register_switch(swdev, NULL);
++	if (ret) {
++		dev_err(dev, "failed to register mt7530\n");
++		return ret;
++	}
++
++	dev_info(dev, "loaded mt7530 driver\n");
++
++	map = mt7530_find_mapping(dev->of_node);
++	if (map)
++		mt7530_apply_mapping(mt7530, map);
++	mt7530_apply_config(swdev);
++
++	return 0;
++}
++
++int
++mt7530_probe_mmio(struct device *dev, void __iomem *base)
++{
++	return 0;
++}
