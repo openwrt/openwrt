@@ -65,6 +65,7 @@ define Host/Compile
 	$(call cc,fix-u-media-header cyg_crc32,-Wall)
 	$(call cc,hcsmakeimage bcmalgo)
 	$(call cc,mkporayfw, -Wall)
+	$(call cc,mkdcs932, -Wall)
 endef
 
 define Host/Install
