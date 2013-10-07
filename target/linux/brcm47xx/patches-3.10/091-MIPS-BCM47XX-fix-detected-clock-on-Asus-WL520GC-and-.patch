@@ -1,3 +1,18 @@
+commit 935e93fcc022ff7be7046d2435ce6441e260abfb
+Author: Hauke Mehrtens <hauke@hauke-m.de>
+Date:   Wed Sep 18 13:33:00 2013 +0200
+
+    MIPS: BCM47XX: Fix detected clock on Asus WL520GC and WL520GU
+    
+    The Asus WL520GC and WL520GU are based on the BCM5354 and clocked at
+    200MHz, but they do not have a clkfreq nvram variable set to the
+    correct value. This adds a workaround for these devices.
+    
+    Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+    Cc: linux-mips@linux-mips.org
+    Patchwork: https://patchwork.linux-mips.org/patch/5843/
+    Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+
 --- a/arch/mips/bcm47xx/time.c
 +++ b/arch/mips/bcm47xx/time.c
 @@ -28,6 +28,7 @@

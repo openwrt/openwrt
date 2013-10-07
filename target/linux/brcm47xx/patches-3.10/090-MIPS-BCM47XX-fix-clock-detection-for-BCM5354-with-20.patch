@@ -1,3 +1,19 @@
+commit 0388a0410d590a6c239c1cfaa7d49bffd4ed1101
+Author: Hauke Mehrtens <hauke@hauke-m.de>
+Date:   Wed Sep 18 13:32:59 2013 +0200
+
+    MIPS: BCM47XX: Fix clock detection for BCM5354 with 200MHz clock
+    
+    Some BCM5354 SoCs are running at 200MHz, but it is not possible to read
+    the clock from a register like it is done on some other SoC in ssb and
+    bcma. These devices should have a clkfreq nvram configuration value set
+    to 200, read it and set the clock to the correct value.
+    
+    Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+    Cc: linux-mips@linux-mips.org
+    Patchwork: https://patchwork.linux-mips.org/patch/5842/
+    Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+
 --- a/arch/mips/bcm47xx/time.c
 +++ b/arch/mips/bcm47xx/time.c
 @@ -27,10 +27,14 @@
