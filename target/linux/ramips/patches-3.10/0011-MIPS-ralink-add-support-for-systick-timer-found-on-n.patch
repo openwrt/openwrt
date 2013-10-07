@@ -16,13 +16,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 154 insertions(+)
  create mode 100644 arch/mips/ralink/cevt-rt3352.c
 
---- a/arch/mips/ralink/Kconfig
-+++ b/arch/mips/ralink/Kconfig
+Index: linux-3.10.13/arch/mips/ralink/Kconfig
+===================================================================
+--- linux-3.10.13.orig/arch/mips/ralink/Kconfig	2013-09-27 02:18:49.000000000 +0200
++++ linux-3.10.13/arch/mips/ralink/Kconfig	2013-10-02 21:40:41.252368892 +0200
 @@ -1,5 +1,12 @@
  if RALINK
  
 +config CLKEVT_RT3352
-+	bool
++	bool "Systick Clockevent source"
 +	depends on SOC_RT305X || SOC_MT7620
 +	default y
 +	select CLKSRC_OF
@@ -31,8 +33,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  choice
  	prompt "Ralink SoC selection"
  	default SOC_RT305X
---- a/arch/mips/ralink/Makefile
-+++ b/arch/mips/ralink/Makefile
+Index: linux-3.10.13/arch/mips/ralink/Makefile
+===================================================================
+--- linux-3.10.13.orig/arch/mips/ralink/Makefile	2013-10-02 20:46:43.856230578 +0200
++++ linux-3.10.13/arch/mips/ralink/Makefile	2013-10-02 21:13:11.584298451 +0200
 @@ -8,6 +8,8 @@
  
  obj-y := prom.o of.o reset.o clk.o irq.o timer.o
@@ -42,8 +46,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
  obj-$(CONFIG_SOC_RT3883) += rt3883.o
---- /dev/null
-+++ b/arch/mips/ralink/cevt-rt3352.c
+Index: linux-3.10.13/arch/mips/ralink/cevt-rt3352.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/arch/mips/ralink/cevt-rt3352.c	2013-10-02 21:13:19.396298787 +0200
 @@ -0,0 +1,145 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
