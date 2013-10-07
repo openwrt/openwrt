@@ -1,15 +1,14 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2008-2011 OpenWrt.org
+# Copyright (C) 2008-2013 OpenWrt.org
 # Copyright (C) 2008 Jo-Philipp Wich
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 
-START=95
+START=90
+STOP=10
 
-SERVICE_DAEMONIZE=1
-SERVICE_WRITE_PID=1
-
-EXTRA_COMMANDS="up down"
+USE_PROCD=1
+PROG=/usr/sbin/openvpn
 
 LIST_SEP="
 "
@@ -21,7 +20,7 @@ append_param() {
 		*_*_*)   v=${v%%_*}-${v#*_}; v=${v%%_*}-${v#*_} ;;
 		*_*)     v=${v%%_*}-${v#*_} ;;
 	esac
-	ARGS="$ARGS --$v"
+	procd_append_param command --"$v"
 	return 0
 }
 
@@ -39,7 +38,7 @@ append_params() {
 		config_get v "$s" "$p"
 		IFS="$LIST_SEP"
 		for v in $v; do
-			[ -n "$v" ] && append_param "$p" && ARGS="$ARGS $v"
+			[ -n "$v" ] && append_param "$p" && procd_append_param command "$v"
 		done
 		unset IFS
 	done
@@ -57,6 +56,9 @@ start_instance() {
 	section_enabled "$s" || return 1
 
 	ARGS=""
+
+	procd_open_instance
+	procd_set_param command "$PROG" --syslog "openvpn($s)" --writepid "/var/run/openvpn-$s.pid"
 
 	# append flags
 	append_bools "$s" \
@@ -92,63 +94,10 @@ start_instance() {
 		tun_mtu tun_mtu_extra txqueuelen user verb down push up
 
 
-	SERVICE_PID_FILE="/var/run/openvpn-$s.pid"
-	service_start /usr/sbin/openvpn --syslog "openvpn($s)" --writepid "$SERVICE_PID_FILE" $ARGS
+	procd_close_instance
 }
 
-stop_instance() {
-	local s="$1"
-
-	section_enabled "$s" || return 1
-
-	SERVICE_PID_FILE="/var/run/openvpn-$s.pid"
-	service_stop /usr/sbin/openvpn
-}
-
-reload_instance() {
-	local s="$1"
-
-	section_enabled "$s" || return 1
-
-	SERVICE_PID_FILE="/var/run/openvpn-$s.pid"
-	service_reload /usr/sbin/openvpn
-}
-
-start() {
+start_service() {
 	config_load 'openvpn'
 	config_foreach start_instance 'openvpn'
-}
-
-stop() {
-	config_load 'openvpn'
-	config_foreach stop_instance 'openvpn'
-}
-
-reload() {
-	config_load 'openvpn'
-	config_foreach reload_instance 'openvpn'
-}
-
-up() {
-	local exists
-	local instance
-	config_load 'openvpn'
-	for instance in "$@"; do
-		config_get exists "$instance" 'TYPE'
-		if [ "$exists" == "openvpn" ]; then
-			start_instance "$instance"
-		fi
-	done
-}
-
-down() {
-	local exists
-	local instance
-	config_load 'openvpn'
-	for instance in "$@"; do
-		config_get exists "$instance" 'TYPE'
-		if [ "$exists" == "openvpn" ]; then
-			stop_instance "$instance"
-		fi
-	done
 }
