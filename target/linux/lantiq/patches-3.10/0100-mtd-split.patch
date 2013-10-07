@@ -1,5 +1,7 @@
---- a/arch/mips/lantiq/xway/Makefile
-+++ b/arch/mips/lantiq/xway/Makefile
+Index: linux-3.10.13/arch/mips/lantiq/xway/Makefile
+===================================================================
+--- linux-3.10.13.orig/arch/mips/lantiq/xway/Makefile	2013-10-01 00:07:55.165279437 +0200
++++ linux-3.10.13/arch/mips/lantiq/xway/Makefile	2013-10-01 00:10:24.269285811 +0200
 @@ -1,6 +1,6 @@
  obj-y := prom.o sysctrl.o clk.o reset.o dma.o gptu.o dcdc.o
  
@@ -8,9 +10,11 @@
  
  obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
  
---- /dev/null
-+++ b/arch/mips/lantiq/xway/mtd_split.c
-@@ -0,0 +1,151 @@
+Index: linux-3.10.13/arch/mips/lantiq/xway/mtd_split.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.13/arch/mips/lantiq/xway/mtd_split.c	2013-10-01 00:11:28.745288566 +0200
+@@ -0,0 +1,129 @@
 +#include <linux/magic.h>
 +#include <linux/root_dev.h>
 +#include <linux/mtd/mtd.h>
@@ -64,7 +68,7 @@
 +{
 +#define EVA_MAGIC   0xfeed1281
 +	unsigned long magic = 0;
-+	unsigned long part_size = 0;
++	unsigned long part_size = 0, p;
 +	size_t len;
 +	int ret;
 +
@@ -82,8 +86,19 @@
 +	if (ret || len != sizeof(part_size))
 +		return;
 +
-+	part_size = le32_to_cpu(part_size) + 0x18;
-+	part_size = mtd_pad_erasesize(master, offset, len);
++	p = part_size = le32_to_cpu(part_size) + 0x18;
++	p &= ~0xffff;
++	p += 0x10000;
++
++	ret = mtd_read(master, offset + p, 4, &len, (void *)&magic);
++	if (ret || len != sizeof(magic))
++		return;
++
++	if (magic == SQUASHFS_MAGIC)
++		part_size = p + 0x100;
++	else
++	        part_size = mtd_pad_erasesize(master, offset, len);
++
 +	if (part_size + master->erasesize > size)
 +		return;
 +
@@ -122,49 +137,18 @@
 +			    size - part_size, false);
 +}
 +
-+static void split_squashfs(struct mtd_info *master, const char *name,
-+				int offset, int size)
-+{
-+	struct squashfs_super_block sb;
-+	int len, ret;
-+
-+	offset += 0x100;
-+	size -= 0x100;
-+
-+	ret = mtd_read(master, offset, sizeof(sb), &len, (void *) &sb);
-+	if (ret || (len != sizeof(sb)))
-+		return;
-+
-+	if (SQUASHFS_MAGIC != le32_to_cpu(sb.s_magic) )
-+		return;
-+
-+	if (le64_to_cpu((sb.bytes_used)) <= 0)
-+		printk(KERN_ALERT "split_squashfs: squashfs is empty in \"%s\"\n",
-+			master->name);
-+		return;
-+
-+	len = (u32) le64_to_cpu(sb.bytes_used);
-+	len = mtd_pad_erasesize(master, offset, len);
-+	offset += len;
-+	size -= len ;
-+	printk(KERN_INFO "mtd: partition \"%s\" created automatically, ofs=0x%x, len=0x%x\n",
-+		ROOTFS_SPLIT_NAME, offset, size);
-+
-+	__mtd_add_partition(master, ROOTFS_SPLIT_NAME, offset,
-+			    size, false);
-+}
-+
 +void arch_split_mtd_part(struct mtd_info *master, const char *name,
 +				int offset, int size)
 +{
 +	split_tplink_kernel(master, name, offset, size);
 +	split_eva_kernel(master, name, offset, size);
 +	split_brnimage_kernel(master, name, offset, size);
-+	split_squashfs(master, name, offset, size);
 +}
---- a/include/linux/mtd/partitions.h
-+++ b/include/linux/mtd/partitions.h
-@@ -89,12 +89,17 @@ extern int deregister_mtd_parser(struct
+Index: linux-3.10.13/include/linux/mtd/partitions.h
+===================================================================
+--- linux-3.10.13.orig/include/linux/mtd/partitions.h	2013-10-01 00:07:55.165279437 +0200
++++ linux-3.10.13/include/linux/mtd/partitions.h	2013-10-01 00:08:03.889279810 +0200
+@@ -89,12 +89,17 @@
  int mtd_is_partition(const struct mtd_info *mtd);
  int mtd_add_partition(struct mtd_info *master, char *name,
  		      long long offset, long long length);
@@ -184,9 +168,11 @@
  
  int parse_mtd_partitions_by_type(struct mtd_info *master,
  				 enum mtd_parser_type type,
---- a/drivers/mtd/mtdpart.c
-+++ b/drivers/mtd/mtdpart.c
-@@ -616,7 +616,7 @@ out_register:
+Index: linux-3.10.13/drivers/mtd/mtdpart.c
+===================================================================
+--- linux-3.10.13.orig/drivers/mtd/mtdpart.c	2013-10-01 00:07:55.165279437 +0200
++++ linux-3.10.13/drivers/mtd/mtdpart.c	2013-10-01 00:08:03.893279810 +0200
+@@ -616,7 +616,7 @@
  }
  
  
@@ -195,7 +181,7 @@
  __mtd_add_partition(struct mtd_info *master, char *name,
  		    long long offset, long long length, bool dup_check)
  {
-@@ -737,7 +737,7 @@ run_parsers_by_type(struct mtd_part *sla
+@@ -737,7 +737,7 @@
  	return nr_parts;
  }
  
@@ -204,7 +190,7 @@
  mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
  {
  	unsigned long mask = mtd->erasesize - 1;
-@@ -806,7 +806,6 @@ static void split_uimage(struct mtd_info
+@@ -806,7 +806,6 @@
  		return;
  
  	len = be32_to_cpu(hdr.size) + 0x40;
