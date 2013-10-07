@@ -58,7 +58,7 @@
 
 #define DEBUG_QOS                       1
 
-#define ENABLE_DBG_PROC                 1
+#define ENABLE_DBG_PROC                 0
 
 #define ENABLE_FW_PROC                  1
 
