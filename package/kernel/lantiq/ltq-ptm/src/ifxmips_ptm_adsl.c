@@ -815,6 +815,7 @@ static void skb_swap(struct sk_buff *skb)
 
 static INLINE void proc_file_create(void)
 {
+#if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
     struct proc_dir_entry *res;
 
     g_ptm_dir = proc_mkdir("driver/ifx_ptm", NULL);
@@ -849,7 +850,6 @@ static INLINE void proc_file_create(void)
   #endif
 #endif
 
-#if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
     res = create_proc_entry("dbg",
                             0,
                             g_ptm_dir);
