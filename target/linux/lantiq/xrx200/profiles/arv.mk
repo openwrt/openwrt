@@ -7,7 +7,7 @@ endef
 $(eval $(call Profile,VG3503J))
 
 define Profile/VGV7519NOR
-  NAME:=Lantiq VR9 - VGV7519NOR
+  NAME:=Experiabox 8 VGV7519
   PACKAGES:=kmod-ath9k wpad-mini \
 	kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
 	kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
@@ -18,7 +18,7 @@ endef
 $(eval $(call Profile,VGV7519NOR))
 
 define Profile/VGV7519BRN
-  NAME:=Lantiq VR9 - VGV7519 (BRN)
+  NAME:=Experiabox 8 VGV7519 (BRN)
   PACKAGES:=kmod-ath9k wpad-mini \
 	kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
 	kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
