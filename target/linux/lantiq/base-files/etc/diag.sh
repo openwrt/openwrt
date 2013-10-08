@@ -11,8 +11,6 @@ set_state() {
 		case "$1" in
 		preinit)
 			led_set_attr "power2" "trigger" "heartbeat"
-			;;
-		init)
 			status_led_on
 			;;
 		failsafe)
