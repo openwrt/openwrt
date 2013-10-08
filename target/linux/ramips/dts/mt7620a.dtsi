@@ -298,13 +298,13 @@
 			};
 		};
 		rgmii1_pins: rgmii1 {
-			mdio {
+			rgmii1 {
 				ralink,group = "rgmii1";
 				ralink,function = "rgmii1";
 			};
 		};
 		rgmii2_pins: rgmii2 {
-			mdio {
+			rgmii2 {
 				ralink,group = "rgmii2";
 				ralink,function = "rgmii2";
 			};
@@ -333,14 +333,28 @@
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
 
+		resets = <&rstctrl 21 &rstctrl 23>;
+		reset-names = "fe", "esw";
+
+		port@4 {
+			compatible = "ralink,mt7620a-gsw-port", "ralink,eth-port";
+			reg = <4>;
+
+			status = "disabled";
+		};
+
+		port@5 {
+			compatible = "ralink,mt7620a-gsw-port", "ralink,eth-port";
+			reg = <5>;
+
+			status = "disabled";
+		};
+
 		mdio-bus {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
 			status = "disabled";
-
-			pinctrl-names = "default";
-			pinctrl-0 = <&mdio_pins>;
 		};
 	};
 
