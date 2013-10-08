@@ -96,7 +96,6 @@ define ModuleAutoLoad
 			fi; \
 			modules="$$$$$$$${modules:+$$$$$$$$modules}"; \
 		fi; \
-		dkl; \
 	}; \
 	add_module() { \
 		priority="$$$$$$$$1"; \
