@@ -49,7 +49,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 Index: linux-3.10.13/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h	2013-10-08 17:26:47.060172632 +0200
++++ linux-3.10.13/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,27 @@
 +/*
 + *  Ralink RT305x SoC platform device registration
@@ -80,8 +80,8 @@ Index: linux-3.10.13/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
 +#endif /* _RT305X_ESW_PLATFORM_H */
 Index: linux-3.10.13/arch/mips/ralink/rt305x.c
 ===================================================================
---- linux-3.10.13.orig/arch/mips/ralink/rt305x.c	2013-10-08 17:26:43.276172503 +0200
-+++ linux-3.10.13/arch/mips/ralink/rt305x.c	2013-10-08 17:26:47.060172632 +0200
+--- linux-3.10.13.orig/arch/mips/ralink/rt305x.c	2013-09-27 02:18:49.000000000 +0200
++++ linux-3.10.13/arch/mips/ralink/rt305x.c	2013-10-08 22:40:10.480133783 +0200
 @@ -221,6 +221,7 @@
  	}
  
@@ -92,8 +92,8 @@ Index: linux-3.10.13/arch/mips/ralink/rt305x.c
  	ralink_clk_add("10000120.watchdog", wdt_rate);
 Index: linux-3.10.13/drivers/net/ethernet/Kconfig
 ===================================================================
---- linux-3.10.13.orig/drivers/net/ethernet/Kconfig	2013-10-08 17:26:43.276172503 +0200
-+++ linux-3.10.13/drivers/net/ethernet/Kconfig	2013-10-08 17:26:47.064172635 +0200
+--- linux-3.10.13.orig/drivers/net/ethernet/Kconfig	2013-09-27 02:18:49.000000000 +0200
++++ linux-3.10.13/drivers/net/ethernet/Kconfig	2013-10-08 18:51:20.136389536 +0200
 @@ -135,6 +135,7 @@
  source "drivers/net/ethernet/packetengines/Kconfig"
  source "drivers/net/ethernet/pasemi/Kconfig"
@@ -104,8 +104,8 @@ Index: linux-3.10.13/drivers/net/ethernet/Kconfig
  source "drivers/net/ethernet/rdc/Kconfig"
 Index: linux-3.10.13/drivers/net/ethernet/Makefile
 ===================================================================
---- linux-3.10.13.orig/drivers/net/ethernet/Makefile	2013-10-08 17:26:43.276172503 +0200
-+++ linux-3.10.13/drivers/net/ethernet/Makefile	2013-10-08 17:26:47.064172635 +0200
+--- linux-3.10.13.orig/drivers/net/ethernet/Makefile	2013-09-27 02:18:49.000000000 +0200
++++ linux-3.10.13/drivers/net/ethernet/Makefile	2013-10-08 18:51:20.136389536 +0200
 @@ -53,6 +53,7 @@
  obj-$(CONFIG_NET_PACKET_ENGINE) += packetengines/
  obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
@@ -117,7 +117,7 @@ Index: linux-3.10.13/drivers/net/ethernet/Makefile
 Index: linux-3.10.13/drivers/net/ethernet/ralink/Kconfig
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/Kconfig	2013-10-08 17:26:47.064172635 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/Kconfig	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,31 @@
 +config NET_RALINK
 +	tristate "Ralink RT288X/RT3X5X/RT3662/RT3883/MT7620 ethernet driver"
@@ -153,7 +153,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/Kconfig
 Index: linux-3.10.13/drivers/net/ethernet/ralink/Makefile
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/Makefile	2013-10-08 17:26:47.064172635 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/Makefile	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,18 @@
 +#
 +# Makefile for the Ralink SoCs built-in ethernet macs
@@ -176,7 +176,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/Makefile
 Index: linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.c	2013-10-08 17:26:47.068172664 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.c	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,1463 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -1644,7 +1644,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.h	2013-10-08 17:26:47.068172664 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.h	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,32 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -1681,7 +1681,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/esw_rt3052.h
 Index: linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.c	2013-10-08 17:26:47.068172664 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.c	2013-10-08 22:38:18.884129024 +0200
 @@ -0,0 +1,566 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2252,7 +2252,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.h	2013-10-08 17:26:47.068172664 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.h	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,30 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2287,7 +2287,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/gsw_mt7620a.h
 Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/mdio.c	2013-10-08 17:26:47.068172664 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/mdio.c	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,244 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2536,7 +2536,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/mdio.h	2013-10-08 17:26:47.072172683 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/mdio.h	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,29 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2570,7 +2570,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio.h
 Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.c	2013-10-08 17:26:47.072172683 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.c	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,232 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2807,7 +2807,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.h	2013-10-08 17:26:47.072172683 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.h	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,26 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2838,8 +2838,8 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/mdio_rt2880.h
 Index: linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.c	2013-10-08 17:26:47.072172683 +0200
-@@ -0,0 +1,738 @@
++++ linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.c	2013-10-08 20:19:33.904615836 +0200
+@@ -0,0 +1,741 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -2871,6 +2871,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.c
 +#include <linux/of_net.h>
 +#include <linux/of_mdio.h>
 +#include <linux/if_vlan.h>
++#include <linux/reset.h>
 +
 +#include <asm/mach-ralink/ralink_regs.h>
 +
@@ -3472,6 +3473,8 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.c
 +	struct clk *sysclk;
 +	int err;
 +
++	device_reset(&pdev->dev);
++
 +	match = of_match_device(of_fe_match, &pdev->dev);
 +	soc = (struct fe_soc_data *) match->data;
 +	if (soc->reg_table)
@@ -3581,7 +3584,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.h	2013-10-08 17:26:47.076172688 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.h	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,375 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -3961,7 +3964,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/ralink_soc_eth.h
 Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_mt7620.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/soc_mt7620.c	2013-10-08 17:26:47.076172688 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/soc_mt7620.c	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,112 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4078,7 +4081,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_mt7620.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_rt2880.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/soc_rt2880.c	2013-10-08 17:26:47.076172688 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/soc_rt2880.c	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,51 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4134,7 +4137,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_rt2880.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_rt305x.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/soc_rt305x.c	2013-10-08 17:26:47.076172688 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/soc_rt305x.c	2013-10-08 18:51:20.136389536 +0200
 @@ -0,0 +1,113 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4252,7 +4255,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_rt305x.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_rt3883.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/soc_rt3883.c	2013-10-08 17:26:47.076172688 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/soc_rt3883.c	2013-10-08 18:51:20.140389534 +0200
 @@ -0,0 +1,60 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4317,8 +4320,8 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/soc_rt3883.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/mt7530.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/mt7530.c	2013-10-08 17:29:27.020179572 +0200
-@@ -0,0 +1,456 @@
++++ linux-3.10.13/drivers/net/ethernet/ralink/mt7530.c	2013-10-08 22:36:55.640125451 +0200
+@@ -0,0 +1,467 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -4633,6 +4636,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/mt7530.c
 +	mt7530_w32(priv, 0x2310, 0x810000c0);
 +	mt7530_w32(priv, 0x2410, 0x810000c0);
 +	mt7530_w32(priv, 0x2510, 0x810000c0);
++
 +	// set CPU/P7 port as user port
 +	mt7530_w32(priv, 0x2610, 0x81000000);
 +	mt7530_w32(priv, 0x2710, 0x81000000);
@@ -4643,6 +4647,16 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/mt7530.c
 +
 +	for (i = 0; i < MT7530_NUM_VLANS; i++) {
 +		u8 ports = priv->vlans[i].ports;
++		u32 val = mt7530_r32(priv, 0x100 + 4 * (i / 2));
++
++		if (i % 2 == 0) {
++			val &= 0xfff000;
++			val |= i;
++		} else {
++			val &= 0xfff;
++			val |= (i << 12);
++		}
++		mt7530_w32(priv, 0x100 + 4 * (i / 2), val);
 +
 +		if (ports)
 +			mt7530_w32(priv, REG_ESW_VLAN_VAWD1, BIT(30) | (ports << 16) | BIT(0));
@@ -4778,7 +4792,7 @@ Index: linux-3.10.13/drivers/net/ethernet/ralink/mt7530.c
 Index: linux-3.10.13/drivers/net/ethernet/ralink/mt7530.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/drivers/net/ethernet/ralink/mt7530.h	2013-10-08 17:29:59.596180829 +0200
++++ linux-3.10.13/drivers/net/ethernet/ralink/mt7530.h	2013-10-08 18:51:20.140389534 +0200
 @@ -0,0 +1,20 @@
 +/*
 + * This program is free software; you can redistribute it and/or

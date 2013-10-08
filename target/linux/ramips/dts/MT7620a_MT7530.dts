@@ -4,7 +4,7 @@
 
 / {
 	compatible = "ralink,mt7620a-eval-board", "ralink,mt7620a-soc";
-	model = "Ralink MT7620a + MT7610e evaluation board";
+	model = "Ralink MT7620a + MT7530 evaluation board";
 
 	palmbus@10000000 {
 		spi@b00 {
@@ -13,9 +13,9 @@
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
-				compatible = "en25q64";
+				compatible = "s25fl064k";
 				reg = <0 0>;
-				linux,modalias = "m25p80", "en25q64";
+				linux,modalias = "m25p80", "s25fl064k";
 				spi-max-frequency = <10000000>;
 
 				partition@0 {
@@ -58,31 +58,40 @@
 		
 		pinctrl-names = "default";
 		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-
+		
 		ralink,port-map = "llllw";
-
-		port@4 {
-			status = "okay";
-			phy-mode = "rgmii";
-			phy-handle = <&phy4>;
-		};
 
 		port@5 {
 			status = "okay";
+			ralink,fixed-link = <1000 1 1 1>;
 			phy-mode = "rgmii";
-			phy-handle = <&phy5>;
 		};
 
 		mdio-bus {
 			status = "okay";
 
+			phy0: ethernet-phy@0 {
+				reg = <0>;
+				phy-mode = "rgmii";
+			};
+			phy1: ethernet-phy@1 {
+				reg = <1>;
+				phy-mode = "rgmii";
+			};
+			phy2: ethernet-phy@2 {
+				reg = <2>;
+				phy-mode = "rgmii";
+			};
+			phy3: ethernet-phy@3 {
+				reg = <3>;
+				phy-mode = "rgmii";
+			};
 			phy4: ethernet-phy@4 {
 				reg = <4>;
 				phy-mode = "rgmii";
 			};
-
-			phy5: ethernet-phy@5 {
-				reg = <5>;
+			phy1f: ethernet-phy@1f {
+				reg = <0x1f>;
 				phy-mode = "rgmii";
 			};
 		};
@@ -92,28 +101,7 @@
 		ralink,port4 = "gmac";
 	};
 
-	sdhci@10130000 {
-		status = "okay";
-	};
-
 	pcie@10140000 {
 		status = "okay";
-	};
-
-	gpio-keys-polled {
-		compatible = "gpio-keys";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		poll-interval = <20>;
-		s2 {
-			label = "S2";
-			gpios = <&gpio0 1 1>;
-			linux,code = <0x100>;
-		};
-		s3 {
-			label = "S3";
-			gpios = <&gpio0 2 1>;
-			linux,code = <0x101>;
-		};
 	};
 };
