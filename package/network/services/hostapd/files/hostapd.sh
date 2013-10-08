@@ -106,9 +106,13 @@ hostapd_set_bss_options() {
 			config_get auth_secret "$vif" auth_secret
 			[ -z "$auth_secret" ] && config_get auth_secret "$vif" key
 			append "$var" "auth_server_shared_secret=$auth_secret" "$N"
+			# You don't really want to enable this unless you are doing
+			# some corner case testing or are using OpenWrt as a work around
+			# for some systematic issues.
 			config_get_bool auth_cache "$vif" auth_cache 0
-			[ "$auth_cache" -gt 0 ] || append "$var" "disable_pmksa_caching=1" "$N"
-			[ "$auth_cache" -gt 0 ] || append "$var" "okc=0" "$N"
+			config_get rsn_preauth "$vif" rsn_preauth
+			[ "$auth_cache" -gt 0 ] || [[ "$rsn_preauth" = 1 ]] || append "$var" "disable_pmksa_caching=1" "$N"
+			[ "$auth_cache" -gt 0 ] || [[ "$rsn_preauth" = 1 ]] || append "$var" "okc=0" "$N"
 			config_get acct_server "$vif" acct_server
 			[ -n "$acct_server" ] && append "$var" "acct_server_addr=$acct_server" "$N"
 			config_get acct_port "$vif" acct_port
@@ -209,12 +213,25 @@ hostapd_set_bss_options() {
 
 	if [ "$wpa" -ge "2" ]
 	then
-		# RSN -> allow preauthentication
-		config_get_bool rsn_preauth "$vif" rsn_preauth "$auth_cache"
+		# RSN -> allow preauthentication. You have two
+		# options, rsn_preauth for production or rsn_preauth_testing
+		# for validation / testing.
 		if [ -n "$bridge" -a "$rsn_preauth" = 1 ]
 		then
 			append "$var" "rsn_preauth=1" "$N"
 			append "$var" "rsn_preauth_interfaces=$bridge" "$N"
+			append "$var" "okc=1" "$N"
+		else
+			# RSN preauthentication testings hould disable
+			# Opportunistic Key Caching (okc) as otherwise the PMKSA
+			# entry for a test could come from the Opportunistic Key Caching
+			config_get rsn_preauth_testing "$vif" rsn_preauth_testing
+			if [ -n "$bridge" -a "$rsn_preauth_testing" = 1 ]
+			then
+				append "$var" "rsn_preauth=1" "$N"
+				append "$var" "rsn_preauth_interfaces=$bridge" "$N"
+				append "$var" "okc=0" "$N"
+			fi
 		fi
 
 		# RSN -> allow management frame protection
