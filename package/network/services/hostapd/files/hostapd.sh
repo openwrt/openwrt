@@ -93,7 +93,7 @@ hostapd_set_bss_options() {
 			[ -n "$wpa_pair_rekey"   ] && append "$var" "wpa_ptk_rekey=$wpa_pair_rekey"    "$N"
 			[ -n "$wpa_master_rekey" ] && append "$var" "wpa_gmk_rekey=$wpa_master_rekey"  "$N"
 		;;
-		*wpa*)
+		*wpa*|*8021x*)
 			# required fields? formats?
 			# hostapd is particular, maybe a default configuration for failures
 			config_get auth_server "$vif" auth_server
