@@ -3,7 +3,7 @@ hostapd_set_bss_options() {
 	local vif="$2"
 	local enc wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey wps_possible
 
-	config_get enc "$vif" encryption
+	config_get enc "$vif" encryption "none"
 	config_get wep_rekey        "$vif" wep_rekey        # 300
 	config_get wpa_group_rekey  "$vif" wpa_group_rekey  # 300
 	config_get wpa_pair_rekey   "$vif" wpa_pair_rekey   # 300
@@ -73,6 +73,14 @@ hostapd_set_bss_options() {
 
 	# use crypto/auth settings for building the hostapd config
 	case "$enc" in
+		none)
+			wps_possible=1
+			wpa=0
+			crypto=
+			# Here we make the assumption that if we're in open mode
+			# with WPS enabled, we got to be in unconfigured state.
+			wps_not_configured=1
+		;;
 		*psk*)
 			config_get psk "$vif" key
 			if [ ${#psk} -eq 64 ]; then
@@ -182,10 +190,12 @@ hostapd_set_bss_options() {
 		config_get device_type "$vif" wps_device_type "6-0050F204-1"
 		config_get device_name "$vif" wps_device_name "OpenWrt AP"
 		config_get manufacturer "$vif" wps_manufacturer "openwrt.org"
+		config_get wps_pin "$vif" wps_pin "12345670"
 
 		append "$var" "eap_server=1" "$N"
-		append "$var" "wps_state=2" "$N"
-		append "$var" "ap_setup_locked=1" "$N"
+		append "$var" "ap_pin=$wps_pin" "$N"
+		append "$var" "wps_state=${wps_not_configured:-2}" "$N"
+		append "$var" "ap_setup_locked=0" "$N"
 		append "$var" "device_type=$device_type" "$N"
 		append "$var" "device_name=$device_name" "$N"
 		append "$var" "manufacturer=$manufacturer" "$N"
