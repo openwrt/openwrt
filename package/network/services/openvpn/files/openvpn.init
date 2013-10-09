@@ -14,13 +14,14 @@ LIST_SEP="
 "
 
 append_param() {
-	local v="$1"
+	local s="$1"
+	local v="$2"
 	case "$v" in
 		*_*_*_*) v=${v%%_*}-${v#*_}; v=${v%%_*}-${v#*_}; v=${v%%_*}-${v#*_} ;;
 		*_*_*)   v=${v%%_*}-${v#*_}; v=${v%%_*}-${v#*_} ;;
 		*_*)     v=${v%%_*}-${v#*_} ;;
 	esac
-	procd_append_param command --"$v"
+	echo -n "$v" >> "/var/etc/openvpn-$s.conf"
 	return 0
 }
 
@@ -28,7 +29,7 @@ append_bools() {
 	local p; local v; local s="$1"; shift
 	for p in $*; do
 		config_get_bool v "$s" "$p"
-		[ "$v" == 1 ] && append_param "$p"
+		[ "$v" == 1 ] && append_param "$s" "$p" && echo >> "/var/etc/openvpn-$s.conf"
 	done
 }
 
@@ -38,7 +39,7 @@ append_params() {
 		config_get v "$s" "$p"
 		IFS="$LIST_SEP"
 		for v in $v; do
-			[ -n "$v" ] && append_param "$p" && procd_append_param command "$v"
+			[ -n "$v" ] && append_param "$s" "$p" && echo " $v" >> "/var/etc/openvpn-$s.conf"
 		done
 		unset IFS
 	done
@@ -55,10 +56,24 @@ start_instance() {
 
 	section_enabled "$s" || return 1
 
-	ARGS=""
+	config_get config "$s" config
 
-	procd_open_instance
-	procd_set_param command "$PROG" --syslog "openvpn($s)" --writepid "/var/run/openvpn-$s.pid"
+	[ ! -d "/var/run" ] && mkdir -p "/var/run"
+
+	if [ ! -z "$config" ]; then
+		procd_open_instance
+		procd_set_param command "$PROG"	\
+			--config "$config" \
+			--cd "$(dirname $config)" \
+			--syslog "openvpn($s)" \
+			--writepid "/var/run/openvpn-$s.pid"
+		procd_set_param file "/etc/config/openvpn"
+		procd_close_instance
+		return
+	fi
+
+	[ ! -d "/var/etc" ] && mkdir -p "/var/etc"
+	[ -f "/var/etc/openvpn-$s.conf" ] && rm "/var/etc/openvpn-$s.conf"
 
 	# append flags
 	append_bools "$s" \
@@ -76,7 +91,7 @@ start_instance() {
 	# append params
 	append_params "$s" \
 		cd askpass auth auth_user_pass auth_user_pass_verify bcast_buffers ca cert \
-		chroot cipher client_config_dir client_connect client_disconnect config connect_freq \
+		chroot cipher client_config_dir client_connect client_disconnect connect_freq \
 		connect_retry connect_timeout connect_retry_max crl_verify dev dev_node dev_type dh \
 		echo engine explicit_exit_notify fragment group hand_window hash_size \
 		http_proxy http_proxy_option http_proxy_timeout ifconfig ifconfig_pool \
@@ -94,6 +109,13 @@ start_instance() {
 		tun_mtu tun_mtu_extra txqueuelen user verb down push up
 
 
+	procd_open_instance
+	procd_set_param command "$PROG"	\
+		--config "/var/etc/openvpn-$s.conf" \
+		--cd "/var/etc" \
+		--syslog "openvpn($s)" \
+		--writepid "/var/run/openvpn-$s.pid"
+	procd_set_param file "/etc/config/openvpn"
 	procd_close_instance
 }
 
