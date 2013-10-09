@@ -54,13 +54,17 @@ CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
 	--disable-yydebug \
-	--enable-ipv6 \
 	--with-build-cc="$(HOSTCC)" \
 	--with-pcap=linux \
 	--without-septel \
 	--without-dag \
 	--without-libnl \
 	--disable-can
+
+ifeq ($(CONFIG_IPV6),y)
+CONFIGURE_ARGS += \
+	--enable-ipv6
+endif
 
 MAKE_FLAGS += \
 	CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include"
