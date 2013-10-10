@@ -81,7 +81,7 @@
  	struct ath_ops reg_ops;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -630,6 +630,8 @@ static int ath9k_init_softc(u16 devid, s
+@@ -664,6 +664,8 @@ static int ath9k_init_softc(u16 devid, s
  		ah->is_clk_25mhz = pdata->is_clk_25mhz;
  		ah->get_mac_revision = pdata->get_mac_revision;
  		ah->external_reset = pdata->external_reset;
