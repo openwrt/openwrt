@@ -1015,7 +1015,11 @@
 +		return false;
 +
 +	INIT_LIST_HEAD(&bf_q);
-+
+ 
+-		ath_tx_fill_desc(sc, bf, txq, aggr_len);
+-		ath_tx_txqaddbuf(sc, txq, &bf_q, false);
+-	} while (txq->axq_ampdu_depth < ATH_AGGR_MIN_QDEPTH &&
+-		 status != ATH_AGGR_BAW_CLOSED);
 +	bf = ath_tx_get_tid_subframe(sc, txq, tid, &tid_q);
 +	if (!bf)
 +		return false;
@@ -1027,11 +1031,7 @@
 +		*stop = true;
 +		return false;
 +	}
- 
--		ath_tx_fill_desc(sc, bf, txq, aggr_len);
--		ath_tx_txqaddbuf(sc, txq, &bf_q, false);
--	} while (txq->axq_ampdu_depth < ATH_AGGR_MIN_QDEPTH &&
--		 status != ATH_AGGR_BAW_CLOSED);
++
 +	ath_set_rates(tid->an->vif, tid->an->sta, bf);
 +	if (aggr)
 +		last = ath_tx_form_aggr(sc, txq, tid, &bf_q, bf,
@@ -1166,7 +1166,25 @@
  				ieee80211_sta_set_buffered(an->sta, i, false);
  		}
  		ath_txq_unlock_complete(sc, tid->ac->txq);
-@@ -1571,7 +1733,7 @@ static void ath_drain_txq_list(struct at
+@@ -1542,16 +1704,9 @@ int ath_cabq_update(struct ath_softc *sc
+ 	int qnum = sc->beacon.cabq->axq_qnum;
+ 
+ 	ath9k_hw_get_txq_props(sc->sc_ah, qnum, &qi);
+-	/*
+-	 * Ensure the readytime % is within the bounds.
+-	 */
+-	if (sc->config.cabqReadytime < ATH9K_READY_TIME_LO_BOUND)
+-		sc->config.cabqReadytime = ATH9K_READY_TIME_LO_BOUND;
+-	else if (sc->config.cabqReadytime > ATH9K_READY_TIME_HI_BOUND)
+-		sc->config.cabqReadytime = ATH9K_READY_TIME_HI_BOUND;
+ 
+ 	qi.tqi_readyTime = (cur_conf->beacon_interval *
+-			    sc->config.cabqReadytime) / 100;
++			    ATH_CABQ_READY_TIME) / 100;
+ 	ath_txq_update(sc, qnum, &qi);
+ 
+ 	return 0;
+@@ -1571,7 +1726,7 @@ static void ath_drain_txq_list(struct at
  	while (!list_empty(list)) {
  		bf = list_first_entry(list, struct ath_buf, list);
  
@@ -1175,7 +1193,7 @@
  			list_del(&bf->list);
  
  			ath_tx_return_buffer(sc, bf);
-@@ -1665,25 +1827,27 @@ void ath_tx_cleanupq(struct ath_softc *s
+@@ -1665,25 +1820,27 @@ void ath_tx_cleanupq(struct ath_softc *s
   */
  void ath_txq_schedule(struct ath_softc *sc, struct ath_txq *txq)
  {
@@ -1208,7 +1226,7 @@
  			tid = list_first_entry(&ac->tid_q, struct ath_atx_tid,
  					       list);
  			list_del(&tid->list);
-@@ -1692,17 +1856,17 @@ void ath_txq_schedule(struct ath_softc *
+@@ -1692,17 +1849,17 @@ void ath_txq_schedule(struct ath_softc *
  			if (tid->paused)
  				continue;
  
@@ -1230,7 +1248,7 @@
  				break;
  		}
  
-@@ -1711,9 +1875,17 @@ void ath_txq_schedule(struct ath_softc *
+@@ -1711,9 +1868,17 @@ void ath_txq_schedule(struct ath_softc *
  			list_add_tail(&ac->list, &txq->axq_acq);
  		}
  
@@ -1250,7 +1268,7 @@
  	}
  
  	rcu_read_unlock();
-@@ -1787,74 +1959,28 @@ static void ath_tx_txqaddbuf(struct ath_
+@@ -1787,74 +1952,28 @@ static void ath_tx_txqaddbuf(struct ath_
  			if (bf_is_ampdu_not_probing(bf))
  				txq->axq_ampdu_depth++;
  
@@ -1334,7 +1352,17 @@
  
  	bf->bf_next = NULL;
  	bf->bf_lastbf = bf;
-@@ -1985,6 +2111,7 @@ static int ath_tx_prepare(struct ieee802
+@@ -1911,8 +2030,7 @@ u8 ath_txchainmask_reduction(struct ath_
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath9k_channel *curchan = ah->curchan;
+ 
+-	if ((ah->caps.hw_caps & ATH9K_HW_CAP_APM) &&
+-	    (curchan->channelFlags & CHANNEL_5GHZ) &&
++	if ((ah->caps.hw_caps & ATH9K_HW_CAP_APM) && IS_CHAN_5GHZ(curchan) &&
+ 	    (chainmask == 0x7) && (rate < 0x90))
+ 		return 0x3;
+ 	else if (AR_SREV_9462(ah) && ath9k_hw_btcoex_is_enabled(ah) &&
+@@ -1985,6 +2103,7 @@ static int ath_tx_prepare(struct ieee802
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_sta *sta = txctl->sta;
  	struct ieee80211_vif *vif = info->control.vif;
@@ -1342,7 +1370,7 @@
  	struct ath_softc *sc = hw->priv;
  	int frmlen = skb->len + FCS_LEN;
  	int padpos, padsize;
-@@ -1992,6 +2119,10 @@ static int ath_tx_prepare(struct ieee802
+@@ -1992,6 +2111,10 @@ static int ath_tx_prepare(struct ieee802
  	/* NOTE:  sta can be NULL according to net/mac80211.h */
  	if (sta)
  		txctl->an = (struct ath_node *)sta->drv_priv;
@@ -1353,7 +1381,7 @@
  
  	if (info->control.hw_key)
  		frmlen += info->control.hw_key->icv_len;
-@@ -2041,7 +2172,6 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2041,7 +2164,6 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ath_txq *txq = txctl->txq;
  	struct ath_atx_tid *tid = NULL;
  	struct ath_buf *bf;
@@ -1361,7 +1389,7 @@
  	int q;
  	int ret;
  
-@@ -2069,27 +2199,31 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2069,27 +2191,31 @@ int ath_tx_start(struct ieee80211_hw *hw
  		ath_txq_unlock(sc, txq);
  		txq = sc->tx.uapsdq;
  		ath_txq_lock(sc, txq);
@@ -1404,7 +1432,7 @@
  		if (txctl->paprd)
  			dev_kfree_skb_any(skb);
  		else
-@@ -2142,7 +2276,7 @@ void ath_tx_cabq(struct ieee80211_hw *hw
+@@ -2142,7 +2268,7 @@ void ath_tx_cabq(struct ieee80211_hw *hw
  
  		bf->bf_lastbf = bf;
  		ath_set_rates(vif, NULL, bf);
@@ -1413,7 +1441,7 @@
  		duration += info.rates[0].PktDuration;
  		if (bf_tail)
  			bf_tail->bf_next = bf;
-@@ -2189,7 +2323,7 @@ static void ath_tx_complete(struct ath_s
+@@ -2189,7 +2315,7 @@ static void ath_tx_complete(struct ath_s
  	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
  	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
  	struct ieee80211_hdr * hdr = (struct ieee80211_hdr *)skb->data;
@@ -1422,7 +1450,7 @@
  	unsigned long flags;
  
  	ath_dbg(common, XMIT, "TX complete: skb: %p\n", skb);
-@@ -2225,21 +2359,7 @@ static void ath_tx_complete(struct ath_s
+@@ -2225,21 +2351,7 @@ static void ath_tx_complete(struct ath_s
  	spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
  
  	__skb_queue_tail(&txq->complete_q, skb);
@@ -1445,7 +1473,7 @@
  }
  
  static void ath_tx_complete_buf(struct ath_softc *sc, struct ath_buf *bf,
-@@ -2360,8 +2480,7 @@ static void ath_tx_processq(struct ath_s
+@@ -2360,8 +2472,7 @@ static void ath_tx_processq(struct ath_s
  
  		if (list_empty(&txq->axq_q)) {
  			txq->axq_link = NULL;
@@ -1455,7 +1483,7 @@
  			break;
  		}
  		bf = list_first_entry(&txq->axq_q, struct ath_buf, list);
-@@ -2375,7 +2494,7 @@ static void ath_tx_processq(struct ath_s
+@@ -2375,7 +2486,7 @@ static void ath_tx_processq(struct ath_s
  		 * it with the STALE flag.
  		 */
  		bf_held = NULL;
@@ -1464,7 +1492,7 @@
  			bf_held = bf;
  			if (list_is_last(&bf_held->list, &txq->axq_q))
  				break;
-@@ -2399,7 +2518,7 @@ static void ath_tx_processq(struct ath_s
+@@ -2399,7 +2510,7 @@ static void ath_tx_processq(struct ath_s
  		 * however leave the last descriptor back as the holding
  		 * descriptor for hw.
  		 */
@@ -1473,7 +1501,7 @@
  		INIT_LIST_HEAD(&bf_head);
  		if (!list_is_singular(&lastbf->list))
  			list_cut_position(&bf_head,
-@@ -2470,7 +2589,7 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2470,7 +2581,7 @@ void ath_tx_edma_tasklet(struct ath_soft
  		}
  
  		bf = list_first_entry(fifo_list, struct ath_buf, list);
@@ -1482,7 +1510,7 @@
  			list_del(&bf->list);
  			ath_tx_return_buffer(sc, bf);
  			bf = list_first_entry(fifo_list, struct ath_buf, list);
-@@ -2492,7 +2611,7 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2492,7 +2603,7 @@ void ath_tx_edma_tasklet(struct ath_soft
  				ath_tx_txqaddbuf(sc, txq, &bf_q, true);
  			}
  		} else {
@@ -1491,7 +1519,7 @@
  			if (bf != lastbf)
  				list_cut_position(&bf_head, fifo_list,
  						  lastbf->list.prev);
-@@ -2583,6 +2702,7 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2583,6 +2694,7 @@ void ath_tx_node_init(struct ath_softc *
  		tid->paused    = false;
  		tid->active	   = false;
  		__skb_queue_head_init(&tid->buf_q);
@@ -1499,7 +1527,7 @@
  		acno = TID_TO_WME_AC(tidno);
  		tid->ac = &an->ac[acno];
  	}
-@@ -2590,6 +2710,7 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2590,6 +2702,7 @@ void ath_tx_node_init(struct ath_softc *
  	for (acno = 0, ac = &an->ac[acno];
  	     acno < IEEE80211_NUM_ACS; acno++, ac++) {
  		ac->sched    = false;
@@ -1547,7 +1575,102 @@
  
  	ieee80211_wake_queues(sc->hw);
  
-@@ -543,21 +549,10 @@ chip_reset:
+@@ -306,17 +312,91 @@ out:
+  * by reseting the chip.  To accomplish this we must first cleanup any pending
+  * DMA, then restart stuff.
+ */
+-static int ath_set_channel(struct ath_softc *sc, struct ieee80211_hw *hw,
+-		    struct ath9k_channel *hchan)
++static int ath_set_channel(struct ath_softc *sc, struct cfg80211_chan_def *chandef)
+ {
++	struct ath_hw *ah = sc->sc_ah;
++	struct ath_common *common = ath9k_hw_common(ah);
++	struct ieee80211_hw *hw = sc->hw;
++	struct ath9k_channel *hchan;
++	struct ieee80211_channel *chan = chandef->chan;
++	unsigned long flags;
++	bool offchannel;
++	int pos = chan->hw_value;
++	int old_pos = -1;
+ 	int r;
+ 
+ 	if (test_bit(SC_OP_INVALID, &sc->sc_flags))
+ 		return -EIO;
+ 
++	offchannel = !!(hw->conf.flags & IEEE80211_CONF_OFFCHANNEL);
++
++	if (ah->curchan)
++		old_pos = ah->curchan - &ah->channels[0];
++
++	ath_dbg(common, CONFIG, "Set channel: %d MHz width: %d\n",
++		chan->center_freq, chandef->width);
++
++	/* update survey stats for the old channel before switching */
++	spin_lock_irqsave(&common->cc_lock, flags);
++	ath_update_survey_stats(sc);
++	spin_unlock_irqrestore(&common->cc_lock, flags);
++
++	ath9k_cmn_get_channel(hw, ah, chandef);
++
++	/*
++	 * If the operating channel changes, change the survey in-use flags
++	 * along with it.
++	 * Reset the survey data for the new channel, unless we're switching
++	 * back to the operating channel from an off-channel operation.
++	 */
++	if (!offchannel && sc->cur_survey != &sc->survey[pos]) {
++		if (sc->cur_survey)
++			sc->cur_survey->filled &= ~SURVEY_INFO_IN_USE;
++
++		sc->cur_survey = &sc->survey[pos];
++
++		memset(sc->cur_survey, 0, sizeof(struct survey_info));
++		sc->cur_survey->filled |= SURVEY_INFO_IN_USE;
++	} else if (!(sc->survey[pos].filled & SURVEY_INFO_IN_USE)) {
++		memset(&sc->survey[pos], 0, sizeof(struct survey_info));
++	}
++
++	hchan = &sc->sc_ah->channels[pos];
+ 	r = ath_reset_internal(sc, hchan);
++	if (r)
++		return r;
+ 
+-	return r;
++	/*
++	 * The most recent snapshot of channel->noisefloor for the old
++	 * channel is only available after the hardware reset. Copy it to
++	 * the survey stats now.
++	 */
++	if (old_pos >= 0)
++		ath_update_survey_nf(sc, old_pos);
++
++	/*
++	 * Enable radar pulse detection if on a DFS channel. Spectral
++	 * scanning and radar detection can not be used concurrently.
++	 */
++	if (hw->conf.radar_enabled) {
++		u32 rxfilter;
++
++		/* set HW specific DFS configuration */
++		ath9k_hw_set_radar_params(ah);
++		rxfilter = ath9k_hw_getrxfilter(ah);
++		rxfilter |= ATH9K_RX_FILTER_PHYRADAR |
++				ATH9K_RX_FILTER_PHYERR;
++		ath9k_hw_setrxfilter(ah, rxfilter);
++		ath_dbg(common, DFS, "DFS enabled at freq %d\n",
++			chan->center_freq);
++	} else {
++		/* perform spectral scan if requested. */
++		if (test_bit(SC_OP_SCANNING, &sc->sc_flags) &&
++			sc->spectral_mode == SPECTRAL_CHANSCAN)
++			ath9k_spectral_scan_trigger(hw);
++	}
++
++	return 0;
+ }
+ 
+ static void ath_node_attach(struct ath_softc *sc, struct ieee80211_sta *sta,
+@@ -543,21 +623,10 @@ chip_reset:
  
  static int ath_reset(struct ath_softc *sc)
  {
@@ -1570,7 +1693,34 @@
  	ath9k_ps_restore(sc);
  
  	return r;
-@@ -966,6 +961,8 @@ static int ath9k_add_interface(struct ie
+@@ -599,7 +668,7 @@ static int ath9k_start(struct ieee80211_
+ 	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+-	init_channel = ath9k_cmn_get_curchannel(hw, ah);
++	init_channel = ath9k_cmn_get_channel(hw, ah, &hw->conf.chandef);
+ 
+ 	/* Reset SERDES registers */
+ 	ath9k_hw_configpcipowersave(ah, false);
+@@ -802,7 +871,7 @@ static void ath9k_stop(struct ieee80211_
+ 	}
+ 
+ 	if (!ah->curchan)
+-		ah->curchan = ath9k_cmn_get_curchannel(hw, ah);
++		ah->curchan = ath9k_cmn_get_channel(hw, ah, &hw->conf.chandef);
+ 
+ 	ath9k_hw_reset(ah, ah->curchan, ah->caldata, false);
+ 	ath9k_hw_phy_disable(ah);
+@@ -821,7 +890,7 @@ static void ath9k_stop(struct ieee80211_
+ 	ath_dbg(common, CONFIG, "Driver halt\n");
+ }
+ 
+-bool ath9k_uses_beacons(int type)
++static bool ath9k_uses_beacons(int type)
+ {
+ 	switch (type) {
+ 	case NL80211_IFTYPE_AP:
+@@ -966,6 +1035,8 @@ static int ath9k_add_interface(struct ie
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
@@ -1579,7 +1729,7 @@
  
  	mutex_lock(&sc->mutex);
  
-@@ -979,6 +976,12 @@ static int ath9k_add_interface(struct ie
+@@ -979,6 +1050,12 @@ static int ath9k_add_interface(struct ie
  	if (ath9k_uses_beacons(vif->type))
  		ath9k_beacon_assign_slot(sc, vif);
  
@@ -1592,7 +1742,7 @@
  	mutex_unlock(&sc->mutex);
  	return 0;
  }
-@@ -1016,6 +1019,7 @@ static void ath9k_remove_interface(struc
+@@ -1016,6 +1093,7 @@ static void ath9k_remove_interface(struc
  {
  	struct ath_softc *sc = hw->priv;
  	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
@@ -1600,7 +1750,7 @@
  
  	ath_dbg(common, CONFIG, "Detach Interface\n");
  
-@@ -1030,6 +1034,8 @@ static void ath9k_remove_interface(struc
+@@ -1030,6 +1108,8 @@ static void ath9k_remove_interface(struc
  	ath9k_calculate_summary_state(hw, NULL);
  	ath9k_ps_restore(sc);
  
@@ -1609,36 +1759,92 @@
  	mutex_unlock(&sc->mutex);
  }
  
-@@ -1193,8 +1199,6 @@ static int ath9k_config(struct ieee80211
+@@ -1192,83 +1272,12 @@ static int ath9k_config(struct ieee80211
+ 	}
  
  	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || reset_channel) {
- 		struct ieee80211_channel *curchan = hw->conf.chandef.chan;
+-		struct ieee80211_channel *curchan = hw->conf.chandef.chan;
 -		enum nl80211_channel_type channel_type =
 -			cfg80211_get_chandef_type(&conf->chandef);
- 		int pos = curchan->hw_value;
- 		int old_pos = -1;
- 		unsigned long flags;
-@@ -1202,8 +1206,8 @@ static int ath9k_config(struct ieee80211
- 		if (ah->curchan)
- 			old_pos = ah->curchan - &ah->channels[0];
- 
+-		int pos = curchan->hw_value;
+-		int old_pos = -1;
+-		unsigned long flags;
+-
+-		if (ah->curchan)
+-			old_pos = ah->curchan - &ah->channels[0];
+-
 -		ath_dbg(common, CONFIG, "Set channel: %d MHz type: %d\n",
 -			curchan->center_freq, channel_type);
-+		ath_dbg(common, CONFIG, "Set channel: %d MHz width: %d\n",
-+			curchan->center_freq, hw->conf.chandef.width);
- 
- 		/* update survey stats for the old channel before switching */
- 		spin_lock_irqsave(&common->cc_lock, flags);
-@@ -1211,7 +1215,7 @@ static int ath9k_config(struct ieee80211
- 		spin_unlock_irqrestore(&common->cc_lock, flags);
- 
- 		ath9k_cmn_update_ichannel(&sc->sc_ah->channels[pos],
+-
+-		/* update survey stats for the old channel before switching */
+-		spin_lock_irqsave(&common->cc_lock, flags);
+-		ath_update_survey_stats(sc);
+-		spin_unlock_irqrestore(&common->cc_lock, flags);
+-
+-		ath9k_cmn_update_ichannel(&sc->sc_ah->channels[pos],
 -					  curchan, channel_type);
-+					  &conf->chandef);
+-
+-		/*
+-		 * If the operating channel changes, change the survey in-use flags
+-		 * along with it.
+-		 * Reset the survey data for the new channel, unless we're switching
+-		 * back to the operating channel from an off-channel operation.
+-		 */
+-		if (!(hw->conf.flags & IEEE80211_CONF_OFFCHANNEL) &&
+-		    sc->cur_survey != &sc->survey[pos]) {
+-
+-			if (sc->cur_survey)
+-				sc->cur_survey->filled &= ~SURVEY_INFO_IN_USE;
+-
+-			sc->cur_survey = &sc->survey[pos];
+-
+-			memset(sc->cur_survey, 0, sizeof(struct survey_info));
+-			sc->cur_survey->filled |= SURVEY_INFO_IN_USE;
+-		} else if (!(sc->survey[pos].filled & SURVEY_INFO_IN_USE)) {
+-			memset(&sc->survey[pos], 0, sizeof(struct survey_info));
+-		}
+-
+-		if (ath_set_channel(sc, hw, &sc->sc_ah->channels[pos]) < 0) {
++		if (ath_set_channel(sc, &hw->conf.chandef) < 0) {
+ 			ath_err(common, "Unable to set channel\n");
+ 			mutex_unlock(&sc->mutex);
+ 			ath9k_ps_restore(sc);
+ 			return -EINVAL;
+ 		}
+-
+-		/*
+-		 * The most recent snapshot of channel->noisefloor for the old
+-		 * channel is only available after the hardware reset. Copy it to
+-		 * the survey stats now.
+-		 */
+-		if (old_pos >= 0)
+-			ath_update_survey_nf(sc, old_pos);
+-
+-		/*
+-		 * Enable radar pulse detection if on a DFS channel. Spectral
+-		 * scanning and radar detection can not be used concurrently.
+-		 */
+-		if (hw->conf.radar_enabled) {
+-			u32 rxfilter;
+-
+-			/* set HW specific DFS configuration */
+-			ath9k_hw_set_radar_params(ah);
+-			rxfilter = ath9k_hw_getrxfilter(ah);
+-			rxfilter |= ATH9K_RX_FILTER_PHYRADAR |
+-				    ATH9K_RX_FILTER_PHYERR;
+-			ath9k_hw_setrxfilter(ah, rxfilter);
+-			ath_dbg(common, DFS, "DFS enabled at freq %d\n",
+-				curchan->center_freq);
+-		} else {
+-			/* perform spectral scan if requested. */
+-			if (test_bit(SC_OP_SCANNING, &sc->sc_flags) &&
+-			    sc->spectral_mode == SPECTRAL_CHANSCAN)
+-				ath9k_spectral_scan_trigger(hw);
+-		}
+ 	}
  
- 		/*
- 		 * If the operating channel changes, change the survey in-use flags
-@@ -1374,9 +1378,6 @@ static void ath9k_sta_notify(struct ieee
+ 	if (changed & IEEE80211_CONF_CHANGE_POWER) {
+@@ -1374,9 +1383,6 @@ static void ath9k_sta_notify(struct ieee
  	struct ath_softc *sc = hw->priv;
  	struct ath_node *an = (struct ath_node *) sta->drv_priv;
  
@@ -1648,7 +1854,7 @@
  	switch (cmd) {
  	case STA_NOTIFY_SLEEP:
  		an->sleeping = true;
-@@ -2094,7 +2095,7 @@ static void ath9k_wow_add_pattern(struct
+@@ -2094,7 +2100,7 @@ static void ath9k_wow_add_pattern(struct
  {
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath9k_wow_pattern *wow_pattern = NULL;
@@ -3164,7 +3370,15 @@
  	init_completion(&rtlpriv->firmware_loading_complete);
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -72,17 +72,12 @@ struct ath_config {
+@@ -64,7 +64,6 @@ struct ath_node;
+ 
+ struct ath_config {
+ 	u16 txpowlimit;
+-	u8 cabqReadytime;
+ };
+ 
+ /*************************/
+@@ -72,17 +71,12 @@ struct ath_config {
  /*************************/
  
  #define ATH_TXBUF_RESET(_bf) do {				\
@@ -3182,7 +3396,7 @@
  /**
   * enum buffer_type - Buffer type flags
   *
-@@ -137,7 +132,8 @@ int ath_descdma_setup(struct ath_softc *
+@@ -137,7 +131,8 @@ int ath_descdma_setup(struct ath_softc *
  #define ATH_AGGR_ENCRYPTDELIM      10
  /* minimum h/w qdepth to be sustained to maximize aggregation */
  #define ATH_AGGR_MIN_QDEPTH        2
@@ -3192,7 +3406,7 @@
  
  #define IEEE80211_SEQ_SEQ_SHIFT    4
  #define IEEE80211_SEQ_MAX          4096
-@@ -174,12 +170,6 @@ int ath_descdma_setup(struct ath_softc *
+@@ -174,12 +169,6 @@ int ath_descdma_setup(struct ath_softc *
  
  #define ATH_TX_COMPLETE_POLL_INT	1000
  
@@ -3205,7 +3419,7 @@
  #define ATH_TXFIFO_DEPTH 8
  struct ath_txq {
  	int mac80211_qnum; /* mac80211 queue number, -1 means not mac80211 Q */
-@@ -201,10 +191,10 @@ struct ath_txq {
+@@ -201,10 +190,10 @@ struct ath_txq {
  
  struct ath_atx_ac {
  	struct ath_txq *txq;
@@ -3217,7 +3431,7 @@
  };
  
  struct ath_frame_info {
-@@ -212,14 +202,16 @@ struct ath_frame_info {
+@@ -212,14 +201,24 @@ struct ath_frame_info {
  	int framelen;
  	enum ath9k_key_type keytype;
  	u8 keyix;
@@ -3225,6 +3439,14 @@
  	u8 rtscts_rate;
 +	u8 retries : 7;
 +	u8 baw_tracked : 1;
++};
++
++struct ath_rxbuf {
++	struct list_head list;
++	struct sk_buff *bf_mpdu;
++	void *bf_desc;
++	dma_addr_t bf_daddr;
++	dma_addr_t bf_buf_addr;
  };
  
  struct ath_buf_state {
@@ -3235,7 +3457,7 @@
  	u16 seqno;
  	unsigned long bfs_paprd_timestamp;
  };
-@@ -233,7 +225,6 @@ struct ath_buf {
+@@ -233,7 +232,6 @@ struct ath_buf {
  	void *bf_desc;			/* virtual addr of desc */
  	dma_addr_t bf_daddr;		/* physical addr of desc */
  	dma_addr_t bf_buf_addr;	/* physical addr of data buffer, for DMA */
@@ -3243,7 +3465,7 @@
  	struct ieee80211_tx_rate rates[4];
  	struct ath_buf_state bf_state;
  };
-@@ -241,16 +232,18 @@ struct ath_buf {
+@@ -241,16 +239,18 @@ struct ath_buf {
  struct ath_atx_tid {
  	struct list_head list;
  	struct sk_buff_head buf_q;
@@ -3264,7 +3486,7 @@
  	bool sched;
  	bool paused;
  	bool active;
-@@ -262,12 +255,13 @@ struct ath_node {
+@@ -262,12 +262,13 @@ struct ath_node {
  	struct ieee80211_vif *vif; /* interface with which we're associated */
  	struct ath_atx_tid tid[IEEE80211_NUM_TIDS];
  	struct ath_atx_ac ac[IEEE80211_NUM_ACS];
@@ -3279,15 +3501,15 @@
  
  #if defined(CPTCFG_MAC80211_DEBUGFS) && defined(CPTCFG_ATH9K_DEBUGFS)
  	struct dentry *node_stat;
-@@ -317,6 +311,7 @@ struct ath_rx {
+@@ -317,6 +318,7 @@ struct ath_rx {
  	struct ath_descdma rxdma;
  	struct ath_rx_edma rx_edma[ATH9K_RX_QUEUE_MAX];
  
-+	struct ath_buf *buf_hold;
++	struct ath_rxbuf *buf_hold;
  	struct sk_buff *frag;
  
  	u32 ampdu_ref;
-@@ -367,6 +362,7 @@ void ath9k_release_buffered_frames(struc
+@@ -367,6 +369,7 @@ void ath9k_release_buffered_frames(struc
  /********/
  
  struct ath_vif {
@@ -3295,7 +3517,7 @@
  	int av_bslot;
  	bool primary_sta_vif;
  	__le64 tsf_adjust; /* TSF adjustment for staggered beacons */
-@@ -585,19 +581,14 @@ static inline void ath_fill_led_pin(stru
+@@ -585,19 +588,14 @@ static inline void ath_fill_led_pin(stru
  #define ATH_ANT_DIV_COMB_MAX_COUNT 100
  #define ATH_ANT_DIV_COMB_ALT_ANT_RATIO 30
  #define ATH_ANT_DIV_COMB_ALT_ANT_RATIO2 20
@@ -3317,7 +3539,7 @@
  struct ath_ant_comb {
  	u16 count;
  	u16 total_pkt_count;
-@@ -614,27 +605,36 @@ struct ath_ant_comb {
+@@ -614,27 +612,36 @@ struct ath_ant_comb {
  	int rssi_first;
  	int rssi_second;
  	int rssi_third;
@@ -3360,6 +3582,14 @@
  
  /*
   * Default cache line size, in bytes.
+@@ -926,7 +933,6 @@ void ath9k_deinit_device(struct ath_soft
+ void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw);
+ void ath9k_reload_chainmask_settings(struct ath_softc *sc);
+ 
+-bool ath9k_uses_beacons(int type);
+ void ath9k_spectral_scan_trigger(struct ieee80211_hw *hw);
+ int ath9k_spectral_scan_config(struct ieee80211_hw *hw,
+ 			       enum spectral_mode spectral_mode);
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
 @@ -270,25 +270,29 @@ static const struct file_operations fops
@@ -3795,7 +4025,26 @@
  
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -632,6 +632,22 @@ static void ar9003_hw_override_ini(struc
+@@ -551,8 +551,7 @@ static void ar9003_hw_set_channel_regs(s
+ 	if (IS_CHAN_HT40(chan)) {
+ 		phymode |= AR_PHY_GC_DYN2040_EN;
+ 		/* Configure control (primary) channel at +-10MHz */
+-		if ((chan->chanmode == CHANNEL_A_HT40PLUS) ||
+-		    (chan->chanmode == CHANNEL_G_HT40PLUS))
++		if (IS_CHAN_HT40PLUS(chan))
+ 			phymode |= AR_PHY_GC_DYN2040_PRI_CH;
+ 
+ 	}
+@@ -565,7 +564,7 @@ static void ar9003_hw_set_channel_regs(s
+ 	REG_WRITE(ah, AR_PHY_GEN_CTRL, phymode);
+ 
+ 	/* Configure MAC for 20/40 operation */
+-	ath9k_hw_set11nmac2040(ah);
++	ath9k_hw_set11nmac2040(ah, chan);
+ 
+ 	/* global transmit timeout (25 TUs default)*/
+ 	REG_WRITE(ah, AR_GTXTO, 25 << AR_GTXTO_TIMEOUT_LIMIT_S);
+@@ -632,6 +631,22 @@ static void ar9003_hw_override_ini(struc
  
  	REG_SET_BIT(ah, AR_PHY_CCK_DETECT,
  		    AR_PHY_CCK_DETECT_BB_ENABLE_ANT_FAST_DIV);
@@ -3818,7 +4067,95 @@
  }
  
  static void ar9003_hw_prog_ini(struct ath_hw *ah,
-@@ -814,29 +830,12 @@ static int ar9003_hw_process_ini(struct 
+@@ -667,41 +682,22 @@ static int ar9550_hw_get_modes_txgain_in
+ {
+ 	int ret;
+ 
+-	switch (chan->chanmode) {
+-	case CHANNEL_A:
+-	case CHANNEL_A_HT20:
+-		if (chan->channel <= 5350)
+-			ret = 1;
+-		else if ((chan->channel > 5350) && (chan->channel <= 5600))
+-			ret = 3;
++	if (IS_CHAN_2GHZ(chan)) {
++		if (IS_CHAN_HT40(chan))
++			return 7;
+ 		else
+-			ret = 5;
+-		break;
+-
+-	case CHANNEL_A_HT40PLUS:
+-	case CHANNEL_A_HT40MINUS:
+-		if (chan->channel <= 5350)
+-			ret = 2;
+-		else if ((chan->channel > 5350) && (chan->channel <= 5600))
+-			ret = 4;
+-		else
+-			ret = 6;
+-		break;
++			return 8;
++	}
+ 
+-	case CHANNEL_G:
+-	case CHANNEL_G_HT20:
+-	case CHANNEL_B:
+-		ret = 8;
+-		break;
++	if (chan->channel <= 5350)
++		ret = 1;
++	else if ((chan->channel > 5350) && (chan->channel <= 5600))
++		ret = 3;
++	else
++		ret = 5;
+ 
+-	case CHANNEL_G_HT40PLUS:
+-	case CHANNEL_G_HT40MINUS:
+-		ret = 7;
+-		break;
+-
+-	default:
+-		ret = -EINVAL;
+-	}
++	if (IS_CHAN_HT40(chan))
++		ret++;
+ 
+ 	return ret;
+ }
+@@ -712,28 +708,10 @@ static int ar9003_hw_process_ini(struct 
+ 	unsigned int regWrites = 0, i;
+ 	u32 modesIndex;
+ 
+-	switch (chan->chanmode) {
+-	case CHANNEL_A:
+-	case CHANNEL_A_HT20:
+-		modesIndex = 1;
+-		break;
+-	case CHANNEL_A_HT40PLUS:
+-	case CHANNEL_A_HT40MINUS:
+-		modesIndex = 2;
+-		break;
+-	case CHANNEL_G:
+-	case CHANNEL_G_HT20:
+-	case CHANNEL_B:
+-		modesIndex = 4;
+-		break;
+-	case CHANNEL_G_HT40PLUS:
+-	case CHANNEL_G_HT40MINUS:
+-		modesIndex = 3;
+-		break;
+-
+-	default:
+-		return -EINVAL;
+-	}
++	if (IS_CHAN_5GHZ(chan))
++		modesIndex = IS_CHAN_HT40(chan) ? 2 : 1;
++	else
++		modesIndex = IS_CHAN_HT40(chan) ? 3 : 4;
+ 
+ 	/*
+ 	 * SOC, MAC, BB, RADIO initvals.
+@@ -814,29 +792,12 @@ static int ar9003_hw_process_ini(struct 
  	if (chan->channel == 2484)
  		ar9003_hw_prog_ini(ah, &ah->iniCckfirJapan2484, 1);
  
@@ -3848,7 +4185,20 @@
  	return 0;
  }
  
-@@ -1173,6 +1172,10 @@ skip_ws_det:
+@@ -848,8 +809,10 @@ static void ar9003_hw_set_rfmode(struct 
+ 	if (chan == NULL)
+ 		return;
+ 
+-	rfMode |= (IS_CHAN_B(chan) || IS_CHAN_G(chan))
+-		? AR_PHY_MODE_DYNAMIC : AR_PHY_MODE_OFDM;
++	if (IS_CHAN_2GHZ(chan))
++		rfMode |= AR_PHY_MODE_DYNAMIC;
++	else
++		rfMode |= AR_PHY_MODE_OFDM;
+ 
+ 	if (IS_CHAN_A_FAST_CLOCK(ah, chan))
+ 		rfMode |= (AR_PHY_MODE_DYNAMIC | AR_PHY_MODE_DYN_CCK_DISABLE);
+@@ -1173,6 +1136,10 @@ skip_ws_det:
  		 * is_on == 0 means MRC CCK is OFF (more noise imm)
  		 */
  		bool is_on = param ? 1 : 0;
@@ -3859,7 +4209,22 @@
  		REG_RMW_FIELD(ah, AR_PHY_MRC_CCK_CTRL,
  			      AR_PHY_MRC_CCK_ENABLE, is_on);
  		REG_RMW_FIELD(ah, AR_PHY_MRC_CCK_CTRL,
-@@ -1413,65 +1416,111 @@ static void ar9003_hw_antdiv_comb_conf_s
+@@ -1273,12 +1240,11 @@ static void ar9003_hw_ani_cache_ini_regs
+ 	aniState = &ah->ani;
+ 	iniDef = &aniState->iniDef;
+ 
+-	ath_dbg(common, ANI, "ver %d.%d opmode %u chan %d Mhz/0x%x\n",
++	ath_dbg(common, ANI, "ver %d.%d opmode %u chan %d Mhz\n",
+ 		ah->hw_version.macVersion,
+ 		ah->hw_version.macRev,
+ 		ah->opmode,
+-		chan->channel,
+-		chan->channelFlags);
++		chan->channel);
+ 
+ 	val = REG_READ(ah, AR_PHY_SFCORR);
+ 	iniDef->m1Thresh = MS(val, AR_PHY_SFCORR_M1_THRESH);
+@@ -1413,65 +1379,111 @@ static void ar9003_hw_antdiv_comb_conf_s
  	REG_WRITE(ah, AR_PHY_MC_GAIN_CTRL, regval);
  }
  
@@ -4012,7 +4377,40 @@
  static int ar9003_hw_fast_chan_change(struct ath_hw *ah,
  				      struct ath9k_channel *chan,
  				      u8 *ini_reloaded)
-@@ -1518,6 +1567,18 @@ static int ar9003_hw_fast_chan_change(st
+@@ -1479,28 +1491,10 @@ static int ar9003_hw_fast_chan_change(st
+ 	unsigned int regWrites = 0;
+ 	u32 modesIndex;
+ 
+-	switch (chan->chanmode) {
+-	case CHANNEL_A:
+-	case CHANNEL_A_HT20:
+-		modesIndex = 1;
+-		break;
+-	case CHANNEL_A_HT40PLUS:
+-	case CHANNEL_A_HT40MINUS:
+-		modesIndex = 2;
+-		break;
+-	case CHANNEL_G:
+-	case CHANNEL_G_HT20:
+-	case CHANNEL_B:
+-		modesIndex = 4;
+-		break;
+-	case CHANNEL_G_HT40PLUS:
+-	case CHANNEL_G_HT40MINUS:
+-		modesIndex = 3;
+-		break;
+-
+-	default:
+-		return -EINVAL;
+-	}
++	if (IS_CHAN_5GHZ(chan))
++		modesIndex = IS_CHAN_HT40(chan) ? 2 : 1;
++	else
++		modesIndex = IS_CHAN_HT40(chan) ? 3 : 4;
+ 
+ 	if (modesIndex == ah->modes_index) {
+ 		*ini_reloaded = false;
+@@ -1518,6 +1512,18 @@ static int ar9003_hw_fast_chan_change(st
  
  	REG_WRITE_ARRAY(&ah->iniModesTxGain, modesIndex, regWrites);
  
@@ -4031,7 +4429,7 @@
  	/*
  	 * For 5GHz channels requiring Fast Clock, apply
  	 * different modal values.
-@@ -1528,7 +1589,11 @@ static int ar9003_hw_fast_chan_change(st
+@@ -1528,7 +1534,11 @@ static int ar9003_hw_fast_chan_change(st
  	if (AR_SREV_9565(ah))
  		REG_WRITE_ARRAY(&ah->iniModesFastClock, 1, regWrites);
  
@@ -4044,7 +4442,7 @@
  
  	ah->modes_index = modesIndex;
  	*ini_reloaded = true;
-@@ -1631,11 +1696,14 @@ void ar9003_hw_attach_phy_ops(struct ath
+@@ -1631,11 +1641,14 @@ void ar9003_hw_attach_phy_ops(struct ath
  
  	ops->antdiv_comb_conf_get = ar9003_hw_antdiv_comb_conf_get;
  	ops->antdiv_comb_conf_set = ar9003_hw_antdiv_comb_conf_set;
@@ -4062,7 +4460,24 @@
  	memcpy(ah->nf_regs, ar9300_cca_regs, sizeof(ah->nf_regs));
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -42,8 +42,6 @@ static void ath_rx_buf_link(struct ath_s
+@@ -19,7 +19,7 @@
+ #include "ath9k.h"
+ #include "ar9003_mac.h"
+ 
+-#define SKB_CB_ATHBUF(__skb)	(*((struct ath_buf **)__skb->cb))
++#define SKB_CB_ATHBUF(__skb)	(*((struct ath_rxbuf **)__skb->cb))
+ 
+ static inline bool ath9k_check_auto_sleep(struct ath_softc *sc)
+ {
+@@ -35,15 +35,13 @@ static inline bool ath9k_check_auto_slee
+  * buffer (or rx fifo). This can incorrectly acknowledge packets
+  * to a sender if last desc is self-linked.
+  */
+-static void ath_rx_buf_link(struct ath_softc *sc, struct ath_buf *bf)
++static void ath_rx_buf_link(struct ath_softc *sc, struct ath_rxbuf *bf)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
  	struct ath_desc *ds;
  	struct sk_buff *skb;
  
@@ -4075,7 +4490,7 @@
  	sc->rx.rxlink = &ds->ds_link;
  }
  
-+static void ath_rx_buf_relink(struct ath_softc *sc, struct ath_buf *bf)
++static void ath_rx_buf_relink(struct ath_softc *sc, struct ath_rxbuf *bf)
 +{
 +	if (sc->rx.buf_hold)
 +		ath_rx_buf_link(sc, sc->rx.buf_hold);
@@ -4086,7 +4501,20 @@
  static void ath_setdefantenna(struct ath_softc *sc, u32 antenna)
  {
  	/* XXX block beacon interrupts */
-@@ -117,7 +123,6 @@ static bool ath_rx_edma_buf_link(struct 
+@@ -106,18 +112,17 @@ static bool ath_rx_edma_buf_link(struct 
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_rx_edma *rx_edma;
+ 	struct sk_buff *skb;
+-	struct ath_buf *bf;
++	struct ath_rxbuf *bf;
+ 
+ 	rx_edma = &sc->rx.rx_edma[qtype];
+ 	if (skb_queue_len(&rx_edma->rx_fifo) >= rx_edma->rx_fifo_hwsize)
+ 		return false;
+ 
+-	bf = list_first_entry(&sc->rx.rxbuf, struct ath_buf, list);
++	bf = list_first_entry(&sc->rx.rxbuf, struct ath_rxbuf, list);
+ 	list_del_init(&bf->list);
  
  	skb = bf->bf_mpdu;
  
@@ -4094,6 +4522,33 @@
  	memset(skb->data, 0, ah->caps.rx_status_len);
  	dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
  				ah->caps.rx_status_len, DMA_TO_DEVICE);
+@@ -133,7 +138,7 @@ static void ath_rx_addbuffer_edma(struct
+ 				  enum ath9k_rx_qtype qtype)
+ {
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+-	struct ath_buf *bf, *tbf;
++	struct ath_rxbuf *bf, *tbf;
+ 
+ 	if (list_empty(&sc->rx.rxbuf)) {
+ 		ath_dbg(common, QUEUE, "No free rx buf available\n");
+@@ -149,7 +154,7 @@ static void ath_rx_addbuffer_edma(struct
+ static void ath_rx_remove_buffer(struct ath_softc *sc,
+ 				 enum ath9k_rx_qtype qtype)
+ {
+-	struct ath_buf *bf;
++	struct ath_rxbuf *bf;
+ 	struct ath_rx_edma *rx_edma;
+ 	struct sk_buff *skb;
+ 
+@@ -166,7 +171,7 @@ static void ath_rx_edma_cleanup(struct a
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+-	struct ath_buf *bf;
++	struct ath_rxbuf *bf;
+ 
+ 	ath_rx_remove_buffer(sc, ATH9K_RX_QUEUE_LP);
+ 	ath_rx_remove_buffer(sc, ATH9K_RX_QUEUE_HP);
 @@ -185,7 +190,7 @@ static void ath_rx_edma_cleanup(struct a
  
  static void ath_rx_edma_init_queue(struct ath_rx_edma *rx_edma, int size)
@@ -4103,6 +4558,51 @@
  	rx_edma->rx_fifo_hwsize = size;
  }
  
+@@ -194,7 +199,7 @@ static int ath_rx_edma_init(struct ath_s
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct sk_buff *skb;
+-	struct ath_buf *bf;
++	struct ath_rxbuf *bf;
+ 	int error = 0, i;
+ 	u32 size;
+ 
+@@ -206,7 +211,7 @@ static int ath_rx_edma_init(struct ath_s
+ 	ath_rx_edma_init_queue(&sc->rx.rx_edma[ATH9K_RX_QUEUE_HP],
+ 			       ah->caps.rx_hp_qdepth);
+ 
+-	size = sizeof(struct ath_buf) * nbufs;
++	size = sizeof(struct ath_rxbuf) * nbufs;
+ 	bf = devm_kzalloc(sc->dev, size, GFP_KERNEL);
+ 	if (!bf)
+ 		return -ENOMEM;
+@@ -266,7 +271,7 @@ int ath_rx_init(struct ath_softc *sc, in
+ {
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	struct sk_buff *skb;
+-	struct ath_buf *bf;
++	struct ath_rxbuf *bf;
+ 	int error = 0;
+ 
+ 	spin_lock_init(&sc->sc_pcu_lock);
+@@ -327,7 +332,7 @@ void ath_rx_cleanup(struct ath_softc *sc
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct sk_buff *skb;
+-	struct ath_buf *bf;
++	struct ath_rxbuf *bf;
+ 
+ 	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) {
+ 		ath_rx_edma_cleanup(sc);
+@@ -422,7 +427,7 @@ u32 ath_calcrxfilter(struct ath_softc *s
+ int ath_startrecv(struct ath_softc *sc)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+-	struct ath_buf *bf, *tbf;
++	struct ath_rxbuf *bf, *tbf;
+ 
+ 	if (ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) {
+ 		ath_edma_start_recv(sc);
 @@ -432,6 +437,7 @@ int ath_startrecv(struct ath_softc *sc)
  	if (list_empty(&sc->rx.rxbuf))
  		goto start_recv;
@@ -4111,16 +4611,91 @@
  	sc->rx.rxlink = NULL;
  	list_for_each_entry_safe(bf, tbf, &sc->rx.rxbuf, list) {
  		ath_rx_buf_link(sc, bf);
-@@ -677,6 +683,9 @@ static struct ath_buf *ath_get_next_rx_b
+@@ -441,7 +447,7 @@ int ath_startrecv(struct ath_softc *sc)
+ 	if (list_empty(&sc->rx.rxbuf))
+ 		goto start_recv;
+ 
+-	bf = list_first_entry(&sc->rx.rxbuf, struct ath_buf, list);
++	bf = list_first_entry(&sc->rx.rxbuf, struct ath_rxbuf, list);
+ 	ath9k_hw_putrxbuf(ah, bf->bf_daddr);
+ 	ath9k_hw_rxena(ah);
+ 
+@@ -597,13 +603,13 @@ static void ath_rx_ps(struct ath_softc *
+ static bool ath_edma_get_buffers(struct ath_softc *sc,
+ 				 enum ath9k_rx_qtype qtype,
+ 				 struct ath_rx_status *rs,
+-				 struct ath_buf **dest)
++				 struct ath_rxbuf **dest)
+ {
+ 	struct ath_rx_edma *rx_edma = &sc->rx.rx_edma[qtype];
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct sk_buff *skb;
+-	struct ath_buf *bf;
++	struct ath_rxbuf *bf;
+ 	int ret;
+ 
+ 	skb = skb_peek(&rx_edma->rx_fifo);
+@@ -647,11 +653,11 @@ static bool ath_edma_get_buffers(struct 
+ 	return true;
+ }
+ 
+-static struct ath_buf *ath_edma_get_next_rx_buf(struct ath_softc *sc,
++static struct ath_rxbuf *ath_edma_get_next_rx_buf(struct ath_softc *sc,
+ 						struct ath_rx_status *rs,
+ 						enum ath9k_rx_qtype qtype)
+ {
+-	struct ath_buf *bf = NULL;
++	struct ath_rxbuf *bf = NULL;
+ 
+ 	while (ath_edma_get_buffers(sc, qtype, rs, &bf)) {
+ 		if (!bf)
+@@ -662,13 +668,13 @@ static struct ath_buf *ath_edma_get_next
+ 	return NULL;
+ }
+ 
+-static struct ath_buf *ath_get_next_rx_buf(struct ath_softc *sc,
++static struct ath_rxbuf *ath_get_next_rx_buf(struct ath_softc *sc,
+ 					   struct ath_rx_status *rs)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ath_desc *ds;
+-	struct ath_buf *bf;
++	struct ath_rxbuf *bf;
+ 	int ret;
+ 
+ 	if (list_empty(&sc->rx.rxbuf)) {
+@@ -676,7 +682,10 @@ static struct ath_buf *ath_get_next_rx_b
+ 		return NULL;
  	}
  
- 	bf = list_first_entry(&sc->rx.rxbuf, struct ath_buf, list);
+-	bf = list_first_entry(&sc->rx.rxbuf, struct ath_buf, list);
++	bf = list_first_entry(&sc->rx.rxbuf, struct ath_rxbuf, list);
 +	if (bf == sc->rx.buf_hold)
 +		return NULL;
 +
  	ds = bf->bf_desc;
  
  	/*
+@@ -693,7 +702,7 @@ static struct ath_buf *ath_get_next_rx_b
+ 	ret = ath9k_hw_rxprocdesc(ah, ds, rs);
+ 	if (ret == -EINPROGRESS) {
+ 		struct ath_rx_status trs;
+-		struct ath_buf *tbf;
++		struct ath_rxbuf *tbf;
+ 		struct ath_desc *tds;
+ 
+ 		memset(&trs, 0, sizeof(trs));
+@@ -702,7 +711,7 @@ static struct ath_buf *ath_get_next_rx_b
+ 			return NULL;
+ 		}
+ 
+-		tbf = list_entry(bf->list.next, struct ath_buf, list);
++		tbf = list_entry(bf->list.next, struct ath_rxbuf, list);
+ 
+ 		/*
+ 		 * On some hardware the descriptor status words could
 @@ -755,7 +764,6 @@ static bool ath9k_rx_accept(struct ath_c
  	bool is_mc, is_valid_tkip, strip_mic, mic_error;
  	struct ath_hw *ah = common->ah;
@@ -4569,7 +5144,14 @@
  static void ath9k_apply_ampdu_details(struct ath_softc *sc,
  	struct ath_rx_status *rs, struct ieee80211_rx_status *rxs)
  {
-@@ -1159,15 +1310,12 @@ int ath_rx_tasklet(struct ath_softc *sc,
+@@ -1153,21 +1304,18 @@ static void ath9k_apply_ampdu_details(st
+ 
+ int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp)
+ {
+-	struct ath_buf *bf;
++	struct ath_rxbuf *bf;
+ 	struct sk_buff *skb = NULL, *requeue_skb, *hdr_skb;
+ 	struct ieee80211_rx_status *rxs;
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ieee80211_hw *hw = sc->hw;
@@ -4717,7 +5299,15 @@
  
  bool is_ath9k_unloaded;
  /* We use the hw_value as an index into our private channel structure */
-@@ -516,6 +516,7 @@ static void ath9k_init_misc(struct ath_s
+@@ -429,7 +429,6 @@ static int ath9k_init_queues(struct ath_
+ 	sc->beacon.beaconq = ath9k_hw_beaconq_setup(sc->sc_ah);
+ 	sc->beacon.cabq = ath_txq_setup(sc, ATH9K_TX_QUEUE_CAB, 0);
+ 
+-	sc->config.cabqReadytime = ATH_CABQ_READY_TIME;
+ 	ath_cabq_update(sc);
+ 
+ 	sc->tx.uapsdq = ath_txq_setup(sc, ATH9K_TX_QUEUE_UAPSD, 0);
+@@ -516,6 +515,7 @@ static void ath9k_init_misc(struct ath_s
  static void ath9k_init_platform(struct ath_softc *sc)
  {
  	struct ath_hw *ah = sc->sc_ah;
@@ -4725,7 +5315,7 @@
  	struct ath_common *common = ath9k_hw_common(ah);
  
  	if (common->bus_ops->ath_bus_type != ATH_PCI)
-@@ -525,12 +526,27 @@ static void ath9k_init_platform(struct a
+@@ -525,12 +525,27 @@ static void ath9k_init_platform(struct a
  			       ATH9K_PCI_CUS230)) {
  		ah->config.xlna_gpio = 9;
  		ah->config.xatten_margin_cfg = true;
@@ -4754,7 +5344,7 @@
  	}
  }
  
-@@ -584,6 +600,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -584,6 +599,7 @@ static int ath9k_init_softc(u16 devid, s
  {
  	struct ath9k_platform_data *pdata = sc->dev->platform_data;
  	struct ath_hw *ah = NULL;
@@ -4762,7 +5352,7 @@
  	struct ath_common *common;
  	int ret = 0, i;
  	int csz = 0;
-@@ -600,6 +617,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -600,6 +616,7 @@ static int ath9k_init_softc(u16 devid, s
  	ah->reg_ops.rmw = ath9k_reg_rmw;
  	atomic_set(&ah->intr_ref_cnt, -1);
  	sc->sc_ah = ah;
@@ -4770,7 +5360,7 @@
  
  	sc->dfs_detector = dfs_pattern_detector_init(ah, NL80211_DFS_UNSET);
  
-@@ -631,11 +649,15 @@ static int ath9k_init_softc(u16 devid, s
+@@ -631,11 +648,15 @@ static int ath9k_init_softc(u16 devid, s
  	ath9k_init_platform(sc);
  
  	/*
@@ -4790,7 +5380,7 @@
  
  	spin_lock_init(&common->cc_lock);
  
-@@ -710,13 +732,15 @@ static void ath9k_init_band_txpower(stru
+@@ -710,13 +731,15 @@ static void ath9k_init_band_txpower(stru
  	struct ieee80211_supported_band *sband;
  	struct ieee80211_channel *chan;
  	struct ath_hw *ah = sc->sc_ah;
@@ -4803,11 +5393,11 @@
  		ah->curchan = &ah->channels[chan->hw_value];
 -		ath9k_cmn_update_ichannel(ah->curchan, chan, NL80211_CHAN_HT20);
 +		cfg80211_chandef_create(&chandef, chan, NL80211_CHAN_HT20);
-+		ath9k_cmn_update_ichannel(ah->curchan, &chandef);
++		ath9k_cmn_get_channel(sc->hw, ah, &chandef);
  		ath9k_hw_set_txpowerlimit(ah, MAX_RATE_POWER, true);
  	}
  }
-@@ -802,7 +826,8 @@ void ath9k_set_hw_capab(struct ath_softc
+@@ -802,7 +825,8 @@ void ath9k_set_hw_capab(struct ath_softc
  		IEEE80211_HW_PS_NULLFUNC_STACK |
  		IEEE80211_HW_SPECTRUM_MGMT |
  		IEEE80211_HW_REPORTS_TX_ACK_STATUS |
@@ -6421,6 +7011,87 @@
  
  		if (!AR_SREV_9271(ah))
  			val &= ~AR_PCU_MISC_MODE2_HWWAR1;
+@@ -659,14 +667,13 @@ static void ar5008_hw_set_channel_regs(s
+ 	if (IS_CHAN_HT40(chan)) {
+ 		phymode |= AR_PHY_FC_DYN2040_EN;
+ 
+-		if ((chan->chanmode == CHANNEL_A_HT40PLUS) ||
+-		    (chan->chanmode == CHANNEL_G_HT40PLUS))
++		if (IS_CHAN_HT40PLUS(chan))
+ 			phymode |= AR_PHY_FC_DYN2040_PRI_CH;
+ 
+ 	}
+ 	REG_WRITE(ah, AR_PHY_TURBO, phymode);
+ 
+-	ath9k_hw_set11nmac2040(ah);
++	ath9k_hw_set11nmac2040(ah, chan);
+ 
+ 	ENABLE_REGWRITE_BUFFER(ah);
+ 
+@@ -684,31 +691,12 @@ static int ar5008_hw_process_ini(struct 
+ 	int i, regWrites = 0;
+ 	u32 modesIndex, freqIndex;
+ 
+-	switch (chan->chanmode) {
+-	case CHANNEL_A:
+-	case CHANNEL_A_HT20:
+-		modesIndex = 1;
+-		freqIndex = 1;
+-		break;
+-	case CHANNEL_A_HT40PLUS:
+-	case CHANNEL_A_HT40MINUS:
+-		modesIndex = 2;
++	if (IS_CHAN_5GHZ(chan)) {
+ 		freqIndex = 1;
+-		break;
+-	case CHANNEL_G:
+-	case CHANNEL_G_HT20:
+-	case CHANNEL_B:
+-		modesIndex = 4;
++		modesIndex = IS_CHAN_HT40(chan) ? 2 : 1;
++	} else {
+ 		freqIndex = 2;
+-		break;
+-	case CHANNEL_G_HT40PLUS:
+-	case CHANNEL_G_HT40MINUS:
+-		modesIndex = 3;
+-		freqIndex = 2;
+-		break;
+-
+-	default:
+-		return -EINVAL;
++		modesIndex = IS_CHAN_HT40(chan) ? 3 : 4;
+ 	}
+ 
+ 	/*
+@@ -807,8 +795,10 @@ static void ar5008_hw_set_rfmode(struct 
+ 	if (chan == NULL)
+ 		return;
+ 
+-	rfMode |= (IS_CHAN_B(chan) || IS_CHAN_G(chan))
+-		? AR_PHY_MODE_DYNAMIC : AR_PHY_MODE_OFDM;
++	if (IS_CHAN_2GHZ(chan))
++		rfMode |= AR_PHY_MODE_DYNAMIC;
++	else
++		rfMode |= AR_PHY_MODE_OFDM;
+ 
+ 	if (!AR_SREV_9280_20_OR_LATER(ah))
+ 		rfMode |= (IS_CHAN_5GHZ(chan)) ?
+@@ -1213,12 +1203,11 @@ static void ar5008_hw_ani_cache_ini_regs
+ 
+ 	iniDef = &aniState->iniDef;
+ 
+-	ath_dbg(common, ANI, "ver %d.%d opmode %u chan %d Mhz/0x%x\n",
++	ath_dbg(common, ANI, "ver %d.%d opmode %u chan %d Mhz\n",
+ 		ah->hw_version.macVersion,
+ 		ah->hw_version.macRev,
+ 		ah->opmode,
+-		chan->channel,
+-		chan->channelFlags);
++		chan->channel);
+ 
+ 	val = REG_READ(ah, AR_PHY_SFCORR);
+ 	iniDef->m1Thresh = MS(val, AR_PHY_SFCORR_M1_THRESH);
 --- a/drivers/net/wireless/ath/ath9k/ar9002_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9002_phy.c
 @@ -555,6 +555,69 @@ static void ar9002_hw_antdiv_comb_conf_s
@@ -6794,7 +7465,65 @@
  /* PHY ops */
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -450,7 +450,6 @@ static void ath9k_hw_init_config(struct 
+@@ -130,29 +130,29 @@ void ath9k_debug_sync_cause(struct ath_c
+ 
+ static void ath9k_hw_set_clockrate(struct ath_hw *ah)
+ {
+-	struct ieee80211_conf *conf = &ath9k_hw_common(ah)->hw->conf;
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	struct ath9k_channel *chan = ah->curchan;
+ 	unsigned int clockrate;
+ 
+ 	/* AR9287 v1.3+ uses async FIFO and runs the MAC at 117 MHz */
+ 	if (AR_SREV_9287(ah) && AR_SREV_9287_13_OR_LATER(ah))
+ 		clockrate = 117;
+-	else if (!ah->curchan) /* should really check for CCK instead */
++	else if (!chan) /* should really check for CCK instead */
+ 		clockrate = ATH9K_CLOCK_RATE_CCK;
+-	else if (conf->chandef.chan->band == IEEE80211_BAND_2GHZ)
++	else if (IS_CHAN_2GHZ(chan))
+ 		clockrate = ATH9K_CLOCK_RATE_2GHZ_OFDM;
+ 	else if (ah->caps.hw_caps & ATH9K_HW_CAP_FASTCLOCK)
+ 		clockrate = ATH9K_CLOCK_FAST_RATE_5GHZ_OFDM;
+ 	else
+ 		clockrate = ATH9K_CLOCK_RATE_5GHZ_OFDM;
+ 
+-	if (conf_is_ht40(conf))
++	if (IS_CHAN_HT40(chan))
+ 		clockrate *= 2;
+ 
+ 	if (ah->curchan) {
+-		if (IS_CHAN_HALF_RATE(ah->curchan))
++		if (IS_CHAN_HALF_RATE(chan))
+ 			clockrate /= 2;
+-		if (IS_CHAN_QUARTER_RATE(ah->curchan))
++		if (IS_CHAN_QUARTER_RATE(chan))
+ 			clockrate /= 4;
+ 	}
+ 
+@@ -190,10 +190,7 @@ EXPORT_SYMBOL(ath9k_hw_wait);
+ void ath9k_hw_synth_delay(struct ath_hw *ah, struct ath9k_channel *chan,
+ 			  int hw_delay)
+ {
+-	if (IS_CHAN_B(chan))
+-		hw_delay = (4 * hw_delay) / 22;
+-	else
+-		hw_delay /= 10;
++	hw_delay /= 10;
+ 
+ 	if (IS_CHAN_HALF_RATE(chan))
+ 		hw_delay *= 2;
+@@ -294,8 +291,7 @@ void ath9k_hw_get_channel_centers(struct
+ 		return;
+ 	}
+ 
+-	if ((chan->chanmode == CHANNEL_A_HT40PLUS) ||
+-	    (chan->chanmode == CHANNEL_G_HT40PLUS)) {
++	if (IS_CHAN_HT40PLUS(chan)) {
+ 		centers->synth_center =
+ 			chan->channel + HT40_CHANNEL_CENTER_SHIFT;
+ 		extoff = 1;
+@@ -450,7 +446,6 @@ static void ath9k_hw_init_config(struct 
  	ah->config.ack_6mb = 0x0;
  	ah->config.cwm_ignore_extcca = 0;
  	ah->config.pcie_clock_req = 0;
@@ -6802,7 +7531,15 @@
  	ah->config.analog_shiftreg = 1;
  
  	for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++) {
-@@ -1069,7 +1068,7 @@ void ath9k_hw_init_global_settings(struc
+@@ -1034,7 +1029,6 @@ static bool ath9k_hw_set_global_txtimeou
+ void ath9k_hw_init_global_settings(struct ath_hw *ah)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
+-	struct ieee80211_conf *conf = &common->hw->conf;
+ 	const struct ath9k_channel *chan = ah->curchan;
+ 	int acktimeout, ctstimeout, ack_offset = 0;
+ 	int slottime;
+@@ -1069,7 +1063,7 @@ void ath9k_hw_init_global_settings(struc
  		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
  		    tx_lat += 11;
  
@@ -6811,7 +7548,7 @@
  		ack_offset = 16;
  		slottime = 13;
  	} else if (IS_CHAN_QUARTER_RATE(chan)) {
-@@ -1079,7 +1078,7 @@ void ath9k_hw_init_global_settings(struc
+@@ -1079,7 +1073,7 @@ void ath9k_hw_init_global_settings(struc
  		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
  		    tx_lat += 22;
  
@@ -6820,7 +7557,15 @@
  		ack_offset = 32;
  		slottime = 21;
  	} else {
-@@ -1116,7 +1115,6 @@ void ath9k_hw_init_global_settings(struc
+@@ -1109,14 +1103,12 @@ void ath9k_hw_init_global_settings(struc
+ 	 * BA frames in some implementations, but it has been found to fix ACK
+ 	 * timeout issues in other cases as well.
+ 	 */
+-	if (conf->chandef.chan &&
+-	    conf->chandef.chan->band == IEEE80211_BAND_2GHZ &&
++	if (IS_CHAN_2GHZ(chan) &&
+ 	    !IS_CHAN_HALF_RATE(chan) && !IS_CHAN_QUARTER_RATE(chan)) {
+ 		acktimeout += 64 - sifstime - ah->slottime;
  		ctstimeout += 48 - sifstime - ah->slottime;
  	}
  
@@ -6828,7 +7573,18 @@
  	ath9k_hw_set_sifs_time(ah, sifstime);
  	ath9k_hw_setslottime(ah, slottime);
  	ath9k_hw_set_ack_timeout(ah, acktimeout);
-@@ -1496,16 +1494,18 @@ static bool ath9k_hw_channel_change(stru
+@@ -1153,9 +1145,7 @@ u32 ath9k_regd_get_ctl(struct ath_regula
+ {
+ 	u32 ctl = ath_regd_get_band_ctl(reg, chan->chan->band);
+ 
+-	if (IS_CHAN_B(chan))
+-		ctl |= CTL_11B;
+-	else if (IS_CHAN_G(chan))
++	if (IS_CHAN_2GHZ(chan))
+ 		ctl |= CTL_11G;
+ 	else
+ 		ctl |= CTL_11A;
+@@ -1496,16 +1486,16 @@ static bool ath9k_hw_channel_change(stru
  				    struct ath9k_channel *chan)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
@@ -6847,15 +7603,13 @@
 -	mode_diff = (chan->chanmode != ah->curchan->chanmode);
 +
 +	if (pCap->hw_caps & ATH9K_HW_CAP_FCC_BAND_SWITCH) {
-+		u32 cur = ah->curchan->channelFlags & (CHANNEL_2GHZ | CHANNEL_5GHZ);
-+		u32 new = chan->channelFlags & (CHANNEL_2GHZ | CHANNEL_5GHZ);
-+		band_switch = (cur != new);
-+		mode_diff = (chan->chanmode != ah->curchan->chanmode);
++		band_switch = IS_CHAN_5GHZ(ah->curchan) != IS_CHAN_5GHZ(chan);
++		mode_diff = (chan->channelFlags != ah->curchan->channelFlags);
 +	}
  
  	for (qnum = 0; qnum < AR_NUM_QCU; qnum++) {
  		if (ath9k_hw_numtxpending(ah, qnum)) {
-@@ -1520,11 +1520,12 @@ static bool ath9k_hw_channel_change(stru
+@@ -1520,11 +1510,12 @@ static bool ath9k_hw_channel_change(stru
  		return false;
  	}
  
@@ -6870,15 +7624,16 @@
  
  		if (ath9k_hw_fast_chan_change(ah, chan, &ini_reloaded)) {
  			ath_err(common, "Failed to do fast channel change\n");
-@@ -1541,22 +1542,21 @@ static bool ath9k_hw_channel_change(stru
+@@ -1541,22 +1532,19 @@ static bool ath9k_hw_channel_change(stru
  	}
  	ath9k_hw_set_clockrate(ah);
  	ath9k_hw_apply_txpower(ah, chan, false);
 -	ath9k_hw_rfbus_done(ah);
+-
+-	if (IS_CHAN_OFDM(chan) || IS_CHAN_HT(chan))
+-		ath9k_hw_set_delta_slope(ah, chan);
  
- 	if (IS_CHAN_OFDM(chan) || IS_CHAN_HT(chan))
- 		ath9k_hw_set_delta_slope(ah, chan);
- 
++	ath9k_hw_set_delta_slope(ah, chan);
  	ath9k_hw_spur_mitigate_freq(ah, chan);
  
 -	if (edma && (band_switch || mode_diff)) {
@@ -6900,7 +7655,7 @@
  		ah->ah_flags &= ~AH_FASTCC;
  	}
  
-@@ -1778,16 +1778,11 @@ static void ath9k_hw_init_desc(struct at
+@@ -1778,16 +1766,11 @@ static void ath9k_hw_init_desc(struct at
  /*
   * Fast channel change:
   * (Change synthesizer based on channel freq without resetting chip)
@@ -6918,32 +7673,42 @@
  	int ret;
  
  	if (AR_SREV_9280(ah) && common->bus_ops->ath_bus_type == ATH_PCI)
-@@ -1806,9 +1801,21 @@ static int ath9k_hw_do_fastcc(struct ath
+@@ -1806,8 +1789,11 @@ static int ath9k_hw_do_fastcc(struct ath
  	    (CHANNEL_HALF | CHANNEL_QUARTER))
  		goto fail;
  
 -	if ((chan->channelFlags & CHANNEL_ALL) !=
 -	    (ah->curchan->channelFlags & CHANNEL_ALL))
--		goto fail;
 +	/*
-+	 * If cross-band fcc is not supoprted, bail out if
-+	 * either channelFlags or chanmode differ.
-+	 *
-+	 * chanmode will be different if the HT operating mode
-+	 * changes because of CSA.
++	 * If cross-band fcc is not supoprted, bail out if channelFlags differ.
 +	 */
-+	if (!(pCap->hw_caps & ATH9K_HW_CAP_FCC_BAND_SWITCH)) {
-+		if ((chan->channelFlags & CHANNEL_ALL) !=
-+		    (ah->curchan->channelFlags & CHANNEL_ALL))
-+			goto fail;
-+
-+		if (chan->chanmode != ah->curchan->chanmode)
-+			goto fail;
-+	}
++	if (!(pCap->hw_caps & ATH9K_HW_CAP_FCC_BAND_SWITCH) &&
++	    chan->channelFlags != ah->curchan->channelFlags)
+ 		goto fail;
  
  	if (!ath9k_hw_check_alive(ah))
- 		goto fail;
-@@ -2047,7 +2054,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -1870,8 +1856,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 
+ 	ah->caldata = caldata;
+ 	if (caldata && (chan->channel != caldata->channel ||
+-			chan->channelFlags != caldata->channelFlags ||
+-			chan->chanmode != caldata->chanmode)) {
++			chan->channelFlags != caldata->channelFlags)) {
+ 		/* Operating channel changed, reset channel calibration data */
+ 		memset(caldata, 0, sizeof(*caldata));
+ 		ath9k_init_nfcal_hist_buffer(ah, chan);
+@@ -1960,9 +1945,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 
+ 	ath9k_hw_init_mfp(ah);
+ 
+-	if (IS_CHAN_OFDM(chan) || IS_CHAN_HT(chan))
+-		ath9k_hw_set_delta_slope(ah, chan);
+-
++	ath9k_hw_set_delta_slope(ah, chan);
+ 	ath9k_hw_spur_mitigate_freq(ah, chan);
+ 	ah->eep_ops->set_board_values(ah, chan);
+ 
+@@ -2047,7 +2030,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  
  	ath9k_hw_apply_gpio_override(ah);
  
@@ -6952,7 +7717,7 @@
  		REG_SET_BIT(ah, AR_BTCOEX_WL_LNADIV, AR_BTCOEX_WL_LNADIV_FORCE_ON);
  
  	return 0;
-@@ -2550,34 +2557,28 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+@@ -2550,34 +2533,28 @@ int ath9k_hw_fill_cap_info(struct ath_hw
  	if (AR_SREV_9287_11_OR_LATER(ah) || AR_SREV_9271(ah))
  		pCap->hw_caps |= ATH9K_HW_CAP_SGI_20;
  
@@ -6996,7 +7761,7 @@
  	}
  
  	if (ath9k_hw_dfs_tested(ah))
-@@ -2610,6 +2611,13 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+@@ -2610,6 +2587,13 @@ int ath9k_hw_fill_cap_info(struct ath_hw
  	    ah->eep_ops->get_eeprom(ah, EEP_PAPRD))
  			pCap->hw_caps |= ATH9K_HW_CAP_PAPRD;
  
@@ -7010,6 +7775,21 @@
  	return 0;
  }
  
+@@ -2938,12 +2922,11 @@ void ath9k_hw_set_tsfadjust(struct ath_h
+ }
+ EXPORT_SYMBOL(ath9k_hw_set_tsfadjust);
+ 
+-void ath9k_hw_set11nmac2040(struct ath_hw *ah)
++void ath9k_hw_set11nmac2040(struct ath_hw *ah, struct ath9k_channel *chan)
+ {
+-	struct ieee80211_conf *conf = &ath9k_hw_common(ah)->hw->conf;
+ 	u32 macmode;
+ 
+-	if (conf_is_ht40(conf) && !ah->config.cwm_ignore_extcca)
++	if (IS_CHAN_HT40(chan) && !ah->config.cwm_ignore_extcca)
+ 		macmode = AR_2040_JOINED_RX_CLEAR;
+ 	else
+ 		macmode = 0;
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
 @@ -247,6 +247,8 @@ enum ath9k_hw_caps {
@@ -7033,7 +7813,111 @@
  };
  
  enum ath9k_int {
-@@ -716,11 +721,14 @@ struct ath_hw_ops {
+@@ -364,36 +369,6 @@ enum ath9k_int {
+ 	ATH9K_INT_NOCARD = 0xffffffff
+ };
+ 
+-#define CHANNEL_CCK       0x00020
+-#define CHANNEL_OFDM      0x00040
+-#define CHANNEL_2GHZ      0x00080
+-#define CHANNEL_5GHZ      0x00100
+-#define CHANNEL_PASSIVE   0x00200
+-#define CHANNEL_DYN       0x00400
+-#define CHANNEL_HALF      0x04000
+-#define CHANNEL_QUARTER   0x08000
+-#define CHANNEL_HT20      0x10000
+-#define CHANNEL_HT40PLUS  0x20000
+-#define CHANNEL_HT40MINUS 0x40000
+-
+-#define CHANNEL_A           (CHANNEL_5GHZ|CHANNEL_OFDM)
+-#define CHANNEL_B           (CHANNEL_2GHZ|CHANNEL_CCK)
+-#define CHANNEL_G           (CHANNEL_2GHZ|CHANNEL_OFDM)
+-#define CHANNEL_G_HT20      (CHANNEL_2GHZ|CHANNEL_HT20)
+-#define CHANNEL_A_HT20      (CHANNEL_5GHZ|CHANNEL_HT20)
+-#define CHANNEL_G_HT40PLUS  (CHANNEL_2GHZ|CHANNEL_HT40PLUS)
+-#define CHANNEL_G_HT40MINUS (CHANNEL_2GHZ|CHANNEL_HT40MINUS)
+-#define CHANNEL_A_HT40PLUS  (CHANNEL_5GHZ|CHANNEL_HT40PLUS)
+-#define CHANNEL_A_HT40MINUS (CHANNEL_5GHZ|CHANNEL_HT40MINUS)
+-#define CHANNEL_ALL				\
+-	(CHANNEL_OFDM|				\
+-	 CHANNEL_CCK|				\
+-	 CHANNEL_2GHZ |				\
+-	 CHANNEL_5GHZ |				\
+-	 CHANNEL_HT20 |				\
+-	 CHANNEL_HT40PLUS |			\
+-	 CHANNEL_HT40MINUS)
+-
+ #define MAX_RTT_TABLE_ENTRY     6
+ #define MAX_IQCAL_MEASUREMENT	8
+ #define MAX_CL_TAB_ENTRY	16
+@@ -401,8 +376,7 @@ enum ath9k_int {
+ 
+ struct ath9k_hw_cal_data {
+ 	u16 channel;
+-	u32 channelFlags;
+-	u32 chanmode;
++	u16 channelFlags;
+ 	int32_t CalValid;
+ 	int8_t iCoff;
+ 	int8_t qCoff;
+@@ -425,33 +399,34 @@ struct ath9k_hw_cal_data {
+ struct ath9k_channel {
+ 	struct ieee80211_channel *chan;
+ 	u16 channel;
+-	u32 channelFlags;
+-	u32 chanmode;
++	u16 channelFlags;
+ 	s16 noisefloor;
+ };
+ 
+-#define IS_CHAN_G(_c) ((((_c)->channelFlags & (CHANNEL_G)) == CHANNEL_G) || \
+-       (((_c)->channelFlags & CHANNEL_G_HT20) == CHANNEL_G_HT20) || \
+-       (((_c)->channelFlags & CHANNEL_G_HT40PLUS) == CHANNEL_G_HT40PLUS) || \
+-       (((_c)->channelFlags & CHANNEL_G_HT40MINUS) == CHANNEL_G_HT40MINUS))
+-#define IS_CHAN_OFDM(_c) (((_c)->channelFlags & CHANNEL_OFDM) != 0)
+-#define IS_CHAN_5GHZ(_c) (((_c)->channelFlags & CHANNEL_5GHZ) != 0)
+-#define IS_CHAN_2GHZ(_c) (((_c)->channelFlags & CHANNEL_2GHZ) != 0)
+-#define IS_CHAN_HALF_RATE(_c) (((_c)->channelFlags & CHANNEL_HALF) != 0)
+-#define IS_CHAN_QUARTER_RATE(_c) (((_c)->channelFlags & CHANNEL_QUARTER) != 0)
++#define CHANNEL_5GHZ		BIT(0)
++#define CHANNEL_HALF		BIT(1)
++#define CHANNEL_QUARTER		BIT(2)
++#define CHANNEL_HT		BIT(3)
++#define CHANNEL_HT40PLUS	BIT(4)
++#define CHANNEL_HT40MINUS	BIT(5)
++
++#define IS_CHAN_5GHZ(_c) (!!((_c)->channelFlags & CHANNEL_5GHZ))
++#define IS_CHAN_2GHZ(_c) (!IS_CHAN_5GHZ(_c))
++
++#define IS_CHAN_HALF_RATE(_c) (!!((_c)->channelFlags & CHANNEL_HALF))
++#define IS_CHAN_QUARTER_RATE(_c) (!!((_c)->channelFlags & CHANNEL_QUARTER))
+ #define IS_CHAN_A_FAST_CLOCK(_ah, _c)			\
+-	((((_c)->channelFlags & CHANNEL_5GHZ) != 0) &&	\
+-	 ((_ah)->caps.hw_caps & ATH9K_HW_CAP_FASTCLOCK))
++	(IS_CHAN_5GHZ(_c) && ((_ah)->caps.hw_caps & ATH9K_HW_CAP_FASTCLOCK))
++
++#define IS_CHAN_HT(_c) ((_c)->channelFlags & CHANNEL_HT)
++
++#define IS_CHAN_HT20(_c) (IS_CHAN_HT(_c) && !IS_CHAN_HT40(_c))
+ 
+-/* These macros check chanmode and not channelFlags */
+-#define IS_CHAN_B(_c) ((_c)->chanmode == CHANNEL_B)
+-#define IS_CHAN_HT20(_c) (((_c)->chanmode == CHANNEL_A_HT20) ||	\
+-			  ((_c)->chanmode == CHANNEL_G_HT20))
+-#define IS_CHAN_HT40(_c) (((_c)->chanmode == CHANNEL_A_HT40PLUS) ||	\
+-			  ((_c)->chanmode == CHANNEL_A_HT40MINUS) ||	\
+-			  ((_c)->chanmode == CHANNEL_G_HT40PLUS) ||	\
+-			  ((_c)->chanmode == CHANNEL_G_HT40MINUS))
+-#define IS_CHAN_HT(_c) (IS_CHAN_HT20((_c)) || IS_CHAN_HT40((_c)))
++#define IS_CHAN_HT40(_c) \
++	(!!((_c)->channelFlags & (CHANNEL_HT40PLUS | CHANNEL_HT40MINUS)))
++
++#define IS_CHAN_HT40PLUS(_c) ((_c)->channelFlags & CHANNEL_HT40PLUS)
++#define IS_CHAN_HT40MINUS(_c) ((_c)->channelFlags & CHANNEL_HT40MINUS)
+ 
+ enum ath9k_power_mode {
+ 	ATH9K_PM_AWAKE = 0,
+@@ -716,11 +691,14 @@ struct ath_hw_ops {
  			struct ath_hw_antcomb_conf *antconf);
  	void (*antdiv_comb_conf_set)(struct ath_hw *ah,
  			struct ath_hw_antcomb_conf *antconf);
@@ -7049,7 +7933,7 @@
  };
  
  struct ath_nf_limits {
-@@ -765,7 +773,6 @@ struct ath_hw {
+@@ -765,7 +743,6 @@ struct ath_hw {
  	bool aspm_enabled;
  	bool is_monitoring;
  	bool need_an_top2_fixup;
@@ -7057,6 +7941,15 @@
  	u16 tx_trig_level;
  
  	u32 nf_regs[6];
+@@ -1019,7 +996,7 @@ void ath9k_hw_reset_tsf(struct ath_hw *a
+ void ath9k_hw_set_tsfadjust(struct ath_hw *ah, bool set);
+ void ath9k_hw_init_global_settings(struct ath_hw *ah);
+ u32 ar9003_get_pll_sqsum_dvc(struct ath_hw *ah);
+-void ath9k_hw_set11nmac2040(struct ath_hw *ah);
++void ath9k_hw_set11nmac2040(struct ath_hw *ah, struct ath9k_channel *chan);
+ void ath9k_hw_beaconinit(struct ath_hw *ah, u32 next_beacon, u32 beacon_period);
+ void ath9k_hw_set_sta_beacon_timers(struct ath_hw *ah,
+ 				    const struct ath9k_beacon_state *bs);
 --- a/drivers/net/wireless/ath/ath9k/pci.c
 +++ b/drivers/net/wireless/ath/ath9k/pci.c
 @@ -29,6 +29,60 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
@@ -7428,6 +8321,39 @@
  			} else {
  				val = AR_WA_DEFAULT;
  			}
+@@ -426,28 +419,10 @@ void ar9002_hw_load_ani_reg(struct ath_h
+ 	u32 modesIndex;
+ 	int i;
+ 
+-	switch (chan->chanmode) {
+-	case CHANNEL_A:
+-	case CHANNEL_A_HT20:
+-		modesIndex = 1;
+-		break;
+-	case CHANNEL_A_HT40PLUS:
+-	case CHANNEL_A_HT40MINUS:
+-		modesIndex = 2;
+-		break;
+-	case CHANNEL_G:
+-	case CHANNEL_G_HT20:
+-	case CHANNEL_B:
+-		modesIndex = 4;
+-		break;
+-	case CHANNEL_G_HT40PLUS:
+-	case CHANNEL_G_HT40MINUS:
+-		modesIndex = 3;
+-		break;
+-
+-	default:
+-		return;
+-	}
++	if (IS_CHAN_5GHZ(chan))
++		modesIndex = IS_CHAN_HT40(chan) ? 2 : 1;
++	else
++		modesIndex = IS_CHAN_HT40(chan) ? 3 : 4;
+ 
+ 	ENABLE_REGWRITE_BUFFER(ah);
+ 
 --- a/drivers/net/wireless/ath/ath9k/ar9003_hw.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_hw.c
 @@ -153,7 +153,7 @@ static void ar9003_hw_init_mode_regs(str
@@ -7555,129 +8481,147 @@
  	rxs->rs_antenna = (MS(rxsp->status4, AR_RxAntenna) & 0x7);
 --- a/drivers/net/wireless/ath/ath9k/common.c
 +++ b/drivers/net/wireless/ath/ath9k/common.c
-@@ -49,37 +49,40 @@ int ath9k_cmn_get_hw_crypto_keytype(stru
+@@ -49,88 +49,64 @@ int ath9k_cmn_get_hw_crypto_keytype(stru
  }
  EXPORT_SYMBOL(ath9k_cmn_get_hw_crypto_keytype);
  
 -static u32 ath9k_get_extchanmode(struct ieee80211_channel *chan,
 -				 enum nl80211_channel_type channel_type)
-+static u32 ath9k_get_extchanmode(struct cfg80211_chan_def *chandef)
- {
- 	u32 chanmode = 0;
- 
+-{
+-	u32 chanmode = 0;
+-
 -	switch (chan->band) {
-+	switch (chandef->chan->band) {
- 	case IEEE80211_BAND_2GHZ:
+-	case IEEE80211_BAND_2GHZ:
 -		switch (channel_type) {
 -		case NL80211_CHAN_NO_HT:
 -		case NL80211_CHAN_HT20:
-+		switch (chandef->width) {
-+		case NL80211_CHAN_WIDTH_20_NOHT:
-+		case NL80211_CHAN_WIDTH_20:
- 			chanmode = CHANNEL_G_HT20;
- 			break;
+-			chanmode = CHANNEL_G_HT20;
+-			break;
 -		case NL80211_CHAN_HT40PLUS:
 -			chanmode = CHANNEL_G_HT40PLUS;
-+		case NL80211_CHAN_WIDTH_40:
-+			if (chandef->center_freq1 > chandef->chan->center_freq)
-+				chanmode = CHANNEL_G_HT40PLUS;
-+			else
-+				chanmode = CHANNEL_G_HT40MINUS;
- 			break;
+-			break;
 -		case NL80211_CHAN_HT40MINUS:
 -			chanmode = CHANNEL_G_HT40MINUS;
-+		default:
- 			break;
- 		}
- 		break;
- 	case IEEE80211_BAND_5GHZ:
+-			break;
+-		}
+-		break;
+-	case IEEE80211_BAND_5GHZ:
 -		switch (channel_type) {
 -		case NL80211_CHAN_NO_HT:
 -		case NL80211_CHAN_HT20:
-+		switch (chandef->width) {
-+		case NL80211_CHAN_WIDTH_20_NOHT:
-+		case NL80211_CHAN_WIDTH_20:
- 			chanmode = CHANNEL_A_HT20;
- 			break;
+-			chanmode = CHANNEL_A_HT20;
+-			break;
 -		case NL80211_CHAN_HT40PLUS:
 -			chanmode = CHANNEL_A_HT40PLUS;
-+		case NL80211_CHAN_WIDTH_40:
-+			if (chandef->center_freq1 > chandef->chan->center_freq)
-+				chanmode = CHANNEL_A_HT40PLUS;
-+			else
-+				chanmode = CHANNEL_A_HT40MINUS;
- 			break;
+-			break;
 -		case NL80211_CHAN_HT40MINUS:
 -			chanmode = CHANNEL_A_HT40MINUS;
-+		default:
- 			break;
- 		}
- 		break;
-@@ -94,13 +97,12 @@ static u32 ath9k_get_extchanmode(struct 
+-			break;
+-		}
+-		break;
+-	default:
+-		break;
+-	}
+-
+-	return chanmode;
+-}
+-
+ /*
   * Update internal channel flags.
   */
- void ath9k_cmn_update_ichannel(struct ath9k_channel *ichan,
+-void ath9k_cmn_update_ichannel(struct ath9k_channel *ichan,
 -			       struct ieee80211_channel *chan,
 -			       enum nl80211_channel_type channel_type)
-+			       struct cfg80211_chan_def *chandef)
++static void ath9k_cmn_update_ichannel(struct ath9k_channel *ichan,
++				      struct cfg80211_chan_def *chandef)
  {
--	ichan->channel = chan->center_freq;
--	ichan->chan = chan;
-+	ichan->channel = chandef->chan->center_freq;
-+	ichan->chan = chandef->chan;
++	struct ieee80211_channel *chan = chandef->chan;
++	u16 flags = 0;
++
+ 	ichan->channel = chan->center_freq;
+ 	ichan->chan = chan;
  
 -	if (chan->band == IEEE80211_BAND_2GHZ) {
-+	if (chandef->chan->band == IEEE80211_BAND_2GHZ) {
- 		ichan->chanmode = CHANNEL_G;
- 		ichan->channelFlags = CHANNEL_2GHZ | CHANNEL_OFDM;
- 	} else {
-@@ -108,8 +110,22 @@ void ath9k_cmn_update_ichannel(struct at
- 		ichan->channelFlags = CHANNEL_5GHZ | CHANNEL_OFDM;
- 	}
- 
--	if (channel_type != NL80211_CHAN_NO_HT)
--		ichan->chanmode = ath9k_get_extchanmode(chan, channel_type);
+-		ichan->chanmode = CHANNEL_G;
+-		ichan->channelFlags = CHANNEL_2GHZ | CHANNEL_OFDM;
+-	} else {
+-		ichan->chanmode = CHANNEL_A;
+-		ichan->channelFlags = CHANNEL_5GHZ | CHANNEL_OFDM;
++	if (chan->band == IEEE80211_BAND_5GHZ)
++		flags |= CHANNEL_5GHZ;
++
 +	switch (chandef->width) {
 +	case NL80211_CHAN_WIDTH_5:
-+		ichan->channelFlags |= CHANNEL_QUARTER;
++		flags |= CHANNEL_QUARTER;
 +		break;
 +	case NL80211_CHAN_WIDTH_10:
-+		ichan->channelFlags |= CHANNEL_HALF;
++		flags |= CHANNEL_HALF;
 +		break;
 +	case NL80211_CHAN_WIDTH_20_NOHT:
 +		break;
 +	case NL80211_CHAN_WIDTH_20:
++		flags |= CHANNEL_HT;
++		break;
 +	case NL80211_CHAN_WIDTH_40:
-+		ichan->chanmode = ath9k_get_extchanmode(chandef);
++		if (chandef->center_freq1 > chandef->chan->center_freq)
++			flags |= CHANNEL_HT40PLUS | CHANNEL_HT;
++		else
++			flags |= CHANNEL_HT40MINUS | CHANNEL_HT;
 +		break;
 +	default:
 +		WARN_ON(1);
-+	}
- }
- EXPORT_SYMBOL(ath9k_cmn_update_ichannel);
+ 	}
  
-@@ -125,8 +141,7 @@ struct ath9k_channel *ath9k_cmn_get_curc
+-	if (channel_type != NL80211_CHAN_NO_HT)
+-		ichan->chanmode = ath9k_get_extchanmode(chan, channel_type);
++	ichan->channelFlags = flags;
+ }
+-EXPORT_SYMBOL(ath9k_cmn_update_ichannel);
+ 
+ /*
+  * Get the internal channel reference.
+  */
+-struct ath9k_channel *ath9k_cmn_get_curchannel(struct ieee80211_hw *hw,
+-					       struct ath_hw *ah)
++struct ath9k_channel *ath9k_cmn_get_channel(struct ieee80211_hw *hw,
++					    struct ath_hw *ah,
++					    struct cfg80211_chan_def *chandef)
+ {
+-	struct ieee80211_channel *curchan = hw->conf.chandef.chan;
++	struct ieee80211_channel *curchan = chandef->chan;
+ 	struct ath9k_channel *channel;
+ 	u8 chan_idx;
  
  	chan_idx = curchan->hw_value;
  	channel = &ah->channels[chan_idx];
 -	ath9k_cmn_update_ichannel(channel, curchan,
 -				  cfg80211_get_chandef_type(&hw->conf.chandef));
-+	ath9k_cmn_update_ichannel(channel, &hw->conf.chandef);
++	ath9k_cmn_update_ichannel(channel, chandef);
  
  	return channel;
  }
+-EXPORT_SYMBOL(ath9k_cmn_get_curchannel);
++EXPORT_SYMBOL(ath9k_cmn_get_channel);
+ 
+ int ath9k_cmn_count_streams(unsigned int chainmask, int max)
+ {
 --- a/drivers/net/wireless/ath/ath9k/common.h
 +++ b/drivers/net/wireless/ath/ath9k/common.h
-@@ -44,8 +44,7 @@
+@@ -43,11 +43,9 @@
+ 	(((x) + ((mul)/2)) / (mul))
  
  int ath9k_cmn_get_hw_crypto_keytype(struct sk_buff *skb);
- void ath9k_cmn_update_ichannel(struct ath9k_channel *ichan,
+-void ath9k_cmn_update_ichannel(struct ath9k_channel *ichan,
 -			       struct ieee80211_channel *chan,
 -			       enum nl80211_channel_type channel_type);
-+			       struct cfg80211_chan_def *chandef);
- struct ath9k_channel *ath9k_cmn_get_curchannel(struct ieee80211_hw *hw,
- 					       struct ath_hw *ah);
+-struct ath9k_channel *ath9k_cmn_get_curchannel(struct ieee80211_hw *hw,
+-					       struct ath_hw *ah);
++struct ath9k_channel *ath9k_cmn_get_channel(struct ieee80211_hw *hw,
++					    struct ath_hw *ah,
++					    struct cfg80211_chan_def *chandef);
  int ath9k_cmn_count_streams(unsigned int chainmask, int max);
+ void ath9k_cmn_btcoex_bt_stomp(struct ath_common *common,
+ 				  enum ath_stomp_type stomp_type);
 --- a/drivers/net/wireless/ath/ath9k/hif_usb.c
 +++ b/drivers/net/wireless/ath/ath9k/hif_usb.c
 @@ -115,10 +115,10 @@ static int hif_usb_send_regout(struct hi
@@ -7767,7 +8711,50 @@
  		dev_err(&udev->dev, "ath9k_htc: USB reboot failed\n");
 --- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
 +++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
-@@ -1203,16 +1203,13 @@ static int ath9k_htc_config(struct ieee8
+@@ -24,30 +24,10 @@
+ static enum htc_phymode ath9k_htc_get_curmode(struct ath9k_htc_priv *priv,
+ 					      struct ath9k_channel *ichan)
+ {
+-	enum htc_phymode mode;
+-
+-	mode = -EINVAL;
+-
+-	switch (ichan->chanmode) {
+-	case CHANNEL_G:
+-	case CHANNEL_G_HT20:
+-	case CHANNEL_G_HT40PLUS:
+-	case CHANNEL_G_HT40MINUS:
+-		mode = HTC_MODE_11NG;
+-		break;
+-	case CHANNEL_A:
+-	case CHANNEL_A_HT20:
+-	case CHANNEL_A_HT40PLUS:
+-	case CHANNEL_A_HT40MINUS:
+-		mode = HTC_MODE_11NA;
+-		break;
+-	default:
+-		break;
+-	}
++	if (IS_CHAN_5GHZ(ichan))
++		return HTC_MODE_11NA;
+ 
+-	WARN_ON(mode < 0);
+-
+-	return mode;
++	return HTC_MODE_11NG;
+ }
+ 
+ bool ath9k_htc_setpower(struct ath9k_htc_priv *priv,
+@@ -926,7 +906,7 @@ static int ath9k_htc_start(struct ieee80
+ 	WMI_CMD(WMI_FLUSH_RECV_CMDID);
+ 
+ 	/* setup initial channel */
+-	init_channel = ath9k_cmn_get_curchannel(hw, ah);
++	init_channel = ath9k_cmn_get_channel(hw, ah, &hw->conf.chandef);
+ 
+ 	ret = ath9k_hw_reset(ah, init_channel, ah->caldata, false);
+ 	if (ret) {
+@@ -1203,17 +1183,12 @@ static int ath9k_htc_config(struct ieee8
  
  	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || chip_reset) {
  		struct ieee80211_channel *curchan = hw->conf.chandef.chan;
@@ -7778,13 +8765,14 @@
  		ath_dbg(common, CONFIG, "Set channel: %d MHz\n",
  			curchan->center_freq);
  
- 		ath9k_cmn_update_ichannel(&priv->ah->channels[pos],
+-		ath9k_cmn_update_ichannel(&priv->ah->channels[pos],
 -					  hw->conf.chandef.chan,
 -					  channel_type);
-+					  &hw->conf.chandef);
- 
+-
++		ath9k_cmn_get_channel(hw, priv->ah, &hw->conf.chandef);
  		if (ath9k_htc_set_channel(priv, hw, &priv->ah->channels[pos]) < 0) {
  			ath_err(common, "Unable to set channel\n");
+ 			ret = -EINVAL;
 --- a/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
 +++ b/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
 @@ -448,6 +448,7 @@ static void ath9k_htc_tx_process(struct 
@@ -7824,7 +8812,27 @@
  	if (needreset) {
 --- a/drivers/net/wireless/ath/ath9k/mac.c
 +++ b/drivers/net/wireless/ath/ath9k/mac.c
-@@ -583,9 +583,9 @@ int ath9k_hw_rxprocdesc(struct ath_hw *a
+@@ -374,7 +374,6 @@ EXPORT_SYMBOL(ath9k_hw_releasetxqueue);
+ bool ath9k_hw_resettxqueue(struct ath_hw *ah, u32 q)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
+-	struct ath9k_channel *chan = ah->curchan;
+ 	struct ath9k_tx_queue_info *qi;
+ 	u32 cwMin, chanCwMin, value;
+ 
+@@ -387,10 +386,7 @@ bool ath9k_hw_resettxqueue(struct ath_hw
+ 	ath_dbg(common, QUEUE, "Reset TX queue: %u\n", q);
+ 
+ 	if (qi->tqi_cwmin == ATH9K_TXQ_USEDEFAULT) {
+-		if (chan && IS_CHAN_B(chan))
+-			chanCwMin = INIT_CWMIN_11B;
+-		else
+-			chanCwMin = INIT_CWMIN;
++		chanCwMin = INIT_CWMIN;
+ 
+ 		for (cwMin = 1; cwMin < chanCwMin; cwMin = (cwMin << 1) | 1);
+ 	} else
+@@ -583,9 +579,9 @@ int ath9k_hw_rxprocdesc(struct ath_hw *a
  	rs->rs_rate = MS(ads.ds_rxstatus0, AR_RxRate);
  	rs->rs_more = (ads.ds_rxstatus1 & AR_RxMore) ? 1 : 0;
  
@@ -7854,6 +8862,15 @@
  #define AR_DecryptBusyErr   0x40000000
  #define AR_KeyMiss          0x80000000
  
+@@ -601,8 +603,6 @@ enum ath9k_tx_queue_flags {
+ #define ATH9K_TXQ_USE_LOCKOUT_BKOFF_DIS 0x00000001
+ 
+ #define ATH9K_DECOMP_MASK_SIZE     128
+-#define ATH9K_READY_TIME_LO_BOUND  50
+-#define ATH9K_READY_TIME_HI_BOUND  96
+ 
+ enum ath9k_pkt_type {
+ 	ATH9K_PKT_TYPE_NORMAL = 0,
 --- a/drivers/net/wireless/ath/ath9k/rc.c
 +++ b/drivers/net/wireless/ath/ath9k/rc.c
 @@ -1324,8 +1324,8 @@ static void ath_rate_update(void *priv, 
@@ -7925,3 +8942,130 @@
  	if (ieee80211_is_data_qos(mgmt->frame_control)) {
  		struct ieee80211_hdr *hdr = (void *) skb->data;
  		u8 *qc = ieee80211_get_qos_ctl(hdr);
+--- a/drivers/net/wireless/ath/ath9k/ani.c
++++ b/drivers/net/wireless/ath/ath9k/ani.c
+@@ -341,10 +341,9 @@ void ath9k_ani_reset(struct ath_hw *ah, 
+ 		    aniState->cckNoiseImmunityLevel !=
+ 		    ATH9K_ANI_CCK_DEF_LEVEL) {
+ 			ath_dbg(common, ANI,
+-				"Restore defaults: opmode %u chan %d Mhz/0x%x is_scanning=%d ofdm:%d cck:%d\n",
++				"Restore defaults: opmode %u chan %d Mhz is_scanning=%d ofdm:%d cck:%d\n",
+ 				ah->opmode,
+ 				chan->channel,
+-				chan->channelFlags,
+ 				is_scanning,
+ 				aniState->ofdmNoiseImmunityLevel,
+ 				aniState->cckNoiseImmunityLevel);
+@@ -357,10 +356,9 @@ void ath9k_ani_reset(struct ath_hw *ah, 
+ 		 * restore historical levels for this channel
+ 		 */
+ 		ath_dbg(common, ANI,
+-			"Restore history: opmode %u chan %d Mhz/0x%x is_scanning=%d ofdm:%d cck:%d\n",
++			"Restore history: opmode %u chan %d Mhz is_scanning=%d ofdm:%d cck:%d\n",
+ 			ah->opmode,
+ 			chan->channel,
+-			chan->channelFlags,
+ 			is_scanning,
+ 			aniState->ofdmNoiseImmunityLevel,
+ 			aniState->cckNoiseImmunityLevel);
+--- a/drivers/net/wireless/ath/ath9k/ar9002_calib.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_calib.c
+@@ -33,15 +33,12 @@ static bool ar9002_hw_is_cal_supported(s
+ 	bool supported = false;
+ 	switch (ah->supp_cals & cal_type) {
+ 	case IQ_MISMATCH_CAL:
+-		/* Run IQ Mismatch for non-CCK only */
+-		if (!IS_CHAN_B(chan))
+-			supported = true;
++		supported = true;
+ 		break;
+ 	case ADC_GAIN_CAL:
+ 	case ADC_DC_CAL:
+ 		/* Run ADC Gain Cal for non-CCK & non 2GHz-HT20 only */
+-		if (!IS_CHAN_B(chan) &&
+-		    !((IS_CHAN_2GHZ(chan) || IS_CHAN_A_FAST_CLOCK(ah, chan)) &&
++		if (!((IS_CHAN_2GHZ(chan) || IS_CHAN_A_FAST_CLOCK(ah, chan)) &&
+ 		      IS_CHAN_HT20(chan)))
+ 			supported = true;
+ 		break;
+--- a/drivers/net/wireless/ath/ath9k/calib.c
++++ b/drivers/net/wireless/ath/ath9k/calib.c
+@@ -186,7 +186,6 @@ void ath9k_hw_reset_calibration(struct a
+ bool ath9k_hw_reset_calvalid(struct ath_hw *ah)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
+-	struct ieee80211_conf *conf = &common->hw->conf;
+ 	struct ath9k_cal_list *currCal = ah->cal_list_curr;
+ 
+ 	if (!ah->caldata)
+@@ -208,7 +207,7 @@ bool ath9k_hw_reset_calvalid(struct ath_
+ 		return true;
+ 
+ 	ath_dbg(common, CALIBRATE, "Resetting Cal %d state for channel %u\n",
+-		currCal->calData->calType, conf->chandef.chan->center_freq);
++		currCal->calData->calType, ah->curchan->chan->center_freq);
+ 
+ 	ah->caldata->CalValid &= ~currCal->calData->calType;
+ 	currCal->calState = CAL_WAITING;
+@@ -242,7 +241,6 @@ void ath9k_hw_loadnf(struct ath_hw *ah, 
+ 	int32_t val;
+ 	u8 chainmask = (ah->rxchainmask << 3) | ah->rxchainmask;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+-	struct ieee80211_conf *conf = &common->hw->conf;
+ 	s16 default_nf = ath9k_hw_get_default_nf(ah, chan);
+ 
+ 	if (ah->caldata)
+@@ -252,7 +250,7 @@ void ath9k_hw_loadnf(struct ath_hw *ah, 
+ 		if (chainmask & (1 << i)) {
+ 			s16 nfval;
+ 
+-			if ((i >= AR5416_MAX_CHAINS) && !conf_is_ht40(conf))
++			if ((i >= AR5416_MAX_CHAINS) && !IS_CHAN_HT40(chan))
+ 				continue;
+ 
+ 			if (h)
+@@ -314,7 +312,7 @@ void ath9k_hw_loadnf(struct ath_hw *ah, 
+ 	ENABLE_REGWRITE_BUFFER(ah);
+ 	for (i = 0; i < NUM_NF_READINGS; i++) {
+ 		if (chainmask & (1 << i)) {
+-			if ((i >= AR5416_MAX_CHAINS) && !conf_is_ht40(conf))
++			if ((i >= AR5416_MAX_CHAINS) && !IS_CHAN_HT40(chan))
+ 				continue;
+ 
+ 			val = REG_READ(ah, ah->nf_regs[i]);
+@@ -408,7 +406,6 @@ void ath9k_init_nfcal_hist_buffer(struct
+ 
+ 	ah->caldata->channel = chan->channel;
+ 	ah->caldata->channelFlags = chan->channelFlags;
+-	ah->caldata->chanmode = chan->chanmode;
+ 	h = ah->caldata->nfCalHist;
+ 	default_nf = ath9k_hw_get_default_nf(ah, chan);
+ 	for (i = 0; i < NUM_NF_READINGS; i++) {
+--- a/drivers/net/wireless/ath/ath9k/mci.c
++++ b/drivers/net/wireless/ath/ath9k/mci.c
+@@ -661,9 +661,9 @@ void ath9k_mci_update_wlan_channels(stru
+ 	chan_start = wlan_chan - 10;
+ 	chan_end = wlan_chan + 10;
+ 
+-	if (chan->chanmode == CHANNEL_G_HT40PLUS)
++	if (IS_CHAN_HT40PLUS(chan))
+ 		chan_end += 20;
+-	else if (chan->chanmode == CHANNEL_G_HT40MINUS)
++	else if (IS_CHAN_HT40MINUS(chan))
+ 		chan_start -= 20;
+ 
+ 	/* adjust side band */
+@@ -707,11 +707,11 @@ void ath9k_mci_set_txpower(struct ath_so
+ 
+ 	if (setchannel) {
+ 		struct ath9k_hw_cal_data *caldata = &sc->caldata;
+-		if ((caldata->chanmode == CHANNEL_G_HT40PLUS) &&
++		if (IS_CHAN_HT40PLUS(ah->curchan) &&
+ 		    (ah->curchan->channel > caldata->channel) &&
+ 		    (ah->curchan->channel <= caldata->channel + 20))
+ 			return;
+-		if ((caldata->chanmode == CHANNEL_G_HT40MINUS) &&
++		if (IS_CHAN_HT40MINUS(ah->curchan) &&
+ 		    (ah->curchan->channel < caldata->channel) &&
+ 		    (ah->curchan->channel >= caldata->channel - 20))
+ 			return;
