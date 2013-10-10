@@ -9,7 +9,7 @@
  dbclientobjs=$(COMMONOBJS) $(CLISVROBJS) $(CLIOBJS)
  dropbearkeyobjs=$(COMMONOBJS) $(KEYOBJS)
  dropbearconvertobjs=$(COMMONOBJS) $(CONVERTOBJS)
-@@ -77,7 +77,7 @@ STRIP=@STRIP@
+@@ -78,7 +78,7 @@ STRIP=@STRIP@
  INSTALL=@INSTALL@
  CPPFLAGS=@CPPFLAGS@
  CFLAGS+=-I. -I$(srcdir) $(CPPFLAGS) @CFLAGS@
@@ -18,7 +18,7 @@
  LDFLAGS=@LDFLAGS@
  
  EXEEXT=@EXEEXT@
-@@ -169,7 +169,7 @@ scp: $(SCPOBJS)  $(HEADERS) Makefile
+@@ -168,7 +168,7 @@ scp: $(SCPOBJS)  $(HEADERS) Makefile
  # multi-binary compilation.
  MULTIOBJS=
  ifeq ($(MULTI),1)

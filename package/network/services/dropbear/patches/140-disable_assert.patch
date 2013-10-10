@@ -1,6 +1,6 @@
 --- a/dbutil.h
 +++ b/dbutil.h
-@@ -93,6 +93,10 @@ int m_str_to_uint(const char* str, unsig
+@@ -92,7 +92,11 @@ int m_str_to_uint(const char* str, unsig
  #define DEF_MP_INT(X) mp_int X = {0, 0, 0, NULL}
  
  /* Dropbear assertion */
@@ -11,4 +11,5 @@
 +
 +#define dropbear_assert(X) do { if (DROPBEAR_ASSERT_ENABLED && !(X)) { fail_assert(#X, __FILE__, __LINE__); } } while (0)
  
- #endif /* _DBUTIL_H_ */
+ /* Returns 0 if a and b have the same contents */
+ int constant_time_memcmp(const void* a, const void *b, size_t n);
