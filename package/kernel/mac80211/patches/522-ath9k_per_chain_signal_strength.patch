@@ -78,7 +78,7 @@
  		rxs->rs_keyix = MS(rxsp->status11, AR_KeyIdx);
 --- a/drivers/net/wireless/ath/ath9k/mac.c
 +++ b/drivers/net/wireless/ath/ath9k/mac.c
-@@ -554,25 +554,25 @@ int ath9k_hw_rxprocdesc(struct ath_hw *a
+@@ -550,25 +550,25 @@ int ath9k_hw_rxprocdesc(struct ath_hw *a
  
  	if (ads.ds_rxstatus8 & AR_PostDelimCRCErr) {
  		rs->rs_rssi = ATH9K_RSSI_BAD;

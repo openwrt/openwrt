@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/mac.c
 +++ b/drivers/net/wireless/ath/ath9k/mac.c
-@@ -705,7 +705,7 @@ bool ath9k_hw_stopdmarecv(struct ath_hw 
+@@ -701,7 +701,7 @@ bool ath9k_hw_stopdmarecv(struct ath_hw 
  {
  #define AH_RX_STOP_DMA_TIMEOUT 10000   /* usec */
  	struct ath_common *common = ath9k_hw_common(ah);
@@ -9,7 +9,7 @@
  	int i;
  
  	/* Enable access to the DMA observation bus */
-@@ -735,6 +735,16 @@ bool ath9k_hw_stopdmarecv(struct ath_hw 
+@@ -731,6 +731,16 @@ bool ath9k_hw_stopdmarecv(struct ath_hw 
  	}
  
  	if (i == 0) {
