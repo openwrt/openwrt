@@ -25,9 +25,9 @@
 -#define ENABLE_CLI_NETCAT
 +/*#define ENABLE_CLI_NETCAT*/
  
- /* Encryption - at least one required.
-  * Protocol RFC requires 3DES and recommends AES128 for interoperability.
-@@ -89,8 +89,8 @@ much traffic. */
+ /* Whether to support "-c" and "-m" flags to choose ciphers/MACs at runtime */
+ #define ENABLE_USER_ALGO_LIST
+@@ -92,8 +92,8 @@ much traffic. */
  #define DROPBEAR_AES256
  /* Compiling in Blowfish will add ~6kB to runtime heap memory usage */
  /*#define DROPBEAR_BLOWFISH*/
@@ -38,21 +38,16 @@
  
  /* Enable "Counter Mode" for ciphers. This is more secure than normal
   * CBC mode against certain attacks. This adds around 1kB to binary 
-@@ -110,7 +110,7 @@ much traffic. */
+@@ -119,7 +119,7 @@ much traffic. */
   * If you disable MD5, Dropbear will fall back to SHA1 fingerprints,
   * which are not the standard form. */
  #define DROPBEAR_SHA1_HMAC
 -#define DROPBEAR_SHA1_96_HMAC
 +/*#define DROPBEAR_SHA1_96_HMAC*/
+ /*#define DROPBEAR_SHA2_256_HMAC*/
+ /*#define DROPBEAR_SHA2_512_HMAC*/
  #define DROPBEAR_MD5_HMAC
- 
- /* Hostkey/public key algorithms - at least one required, these are used
-@@ -144,11 +144,11 @@ much traffic. */
- #endif
- 
- /* Whether to do reverse DNS lookups. */
--#define DO_HOST_LOOKUP
-+/*#define DO_HOST_LOOKUP*/
+@@ -157,7 +157,7 @@ much traffic. */
  
  /* Whether to print the message of the day (MOTD). This doesn't add much code
   * size */
@@ -61,7 +56,7 @@
  
  /* The MOTD file path */
  #ifndef MOTD_FILENAME
-@@ -192,7 +192,7 @@ much traffic. */
+@@ -195,7 +195,7 @@ much traffic. */
   * note that it will be provided for all "hidden" client-interactive
   * style prompts - if you want something more sophisticated, use 
   * SSH_ASKPASS instead. Comment out this var to remove this functionality.*/
