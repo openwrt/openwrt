@@ -163,6 +163,8 @@ dnsmasq() {
 
 	dhcp_option_add "$cfg" "" 0
 
+	xappend "--dhcp-broadcast=tag:needs-broadcast"
+
 	echo >> $CONFIGFILE
 }
 
@@ -270,7 +272,10 @@ dhcp_host_add() {
 
 	config_get tag "$cfg" tag
 
-	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${tag:+,set:$tag}${ip:+,$ip}${name:+,$name}"
+	config_get_bool broadcast "$cfg" broadcast 0
+	[ "$broadcast" = "0" ] && broadcast=
+
+	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip}${name:+,$name}"
 }
 
 dhcp_tag_add() {
