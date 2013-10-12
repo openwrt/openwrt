@@ -147,7 +147,7 @@
  #endif
  
  #ifndef TRUE
-@@ -655,9 +795,9 @@
+@@ -655,9 +795,9 @@ static int __init tn7atm_irq_request (st
     * interrupt pacing
     */
    ptr = prom_getenv ("sar_ipacemax");
@@ -159,7 +159,7 @@
    }
  /*  avalanche_request_pacing (priv->sar_irq, ATM_SAR_INT_PACING_BLOCK_NUM,
                              def_sar_inter_pace);*/
-@@ -795,9 +935,18 @@
+@@ -795,9 +935,18 @@ static int __init tn7atm_get_ESI (struct
  {
    int i;
    char esi_addr[ESI_LEN] = { 0x00, 0x00, 0x11, 0x22, 0x33, 0x44 };
@@ -180,7 +180,7 @@
  
    if (!esiaddr_str)
    {
-@@ -1930,15 +2079,15 @@
+@@ -1930,15 +2079,15 @@ static int tn7atm_autoDetectDspBoost (vo
  //UR8_MERGE_END   CQ10450*
  
    cp = prom_getenv ("dsp_noboost");
@@ -200,7 +200,7 @@
      if (dspfreq == 250)
      {
        boostDsp = 1;
-@@ -2187,8 +2336,9 @@
+@@ -2187,8 +2336,9 @@ static int __init tn7atm_init (struct at
    // Inter-Op DSL phy Control
    // Note the setting of _dsl_Feature_0 and _dsl_Feature_1 must before
    // dslhal_api_dslStartup (in tn7dsl_init()).
@@ -211,7 +211,7 @@
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2196,8 +2346,9 @@
+@@ -2196,8 +2346,9 @@ static int __init tn7atm_init (struct at
      _dsl_Feature_0_defined = 1;
    }
  
@@ -222,7 +222,7 @@
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2209,8 +2360,9 @@
+@@ -2209,8 +2360,9 @@ static int __init tn7atm_init (struct at
    // DSL phy Feature Control
    // Note the setting of _dsl_PhyControl_0 and _dsl_PhyControl_1 must before
    // dslhal_api_dslStartup (in tn7dsl_init()).
@@ -233,7 +233,7 @@
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2218,8 +2370,9 @@
+@@ -2218,8 +2370,9 @@ static int __init tn7atm_init (struct at
      _dsl_PhyControl_0_defined = 1;
    }
  
@@ -244,7 +244,7 @@
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2247,9 +2400,9 @@
+@@ -2247,9 +2400,9 @@ static int __init tn7atm_init (struct at
    priv->bTurboDsl = 1;
    // read config for turbo dsl
    ptr = prom_getenv ("TurboDSL");
@@ -256,7 +256,7 @@
    }
  
    // @Added to make Rx buffer number & Service max configurable through
-@@ -2257,30 +2410,30 @@
+@@ -2257,30 +2410,30 @@ static int __init tn7atm_init (struct at
    priv->sarRxBuf = RX_BUFFER_NUM;
    ptr = NULL;
    ptr = prom_getenv ("SarRxBuf");
