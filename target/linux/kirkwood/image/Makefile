@@ -8,8 +8,6 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 NAND_BLOCKSIZE := 2048:128k
-UBIFS_OPTS := -m 2048 -e 126KiB -c 4096 -U
-UBINIZE_OPTS := -m 2048 -p 128KiB -s 512
 
 define Image/BuildKernel
 	$(CP) $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
@@ -58,6 +56,20 @@ define Image/Build/squashfs
 		dd if=$(KDIR)/uImage bs=4096k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1).img
+endef
+
+define Image/Build/ubifs
+
+ ifdef UBIFS_OPTS
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).img
+ endif
+endef
+
+define Image/Build/ubi
+
+ ifdef UBI_OPTS
+	$(call Image/Build/ubifs,$(1))
+ endif
 endef
 
 $(eval $(call BuildImage))
