@@ -64,7 +64,7 @@ ZD1201FW_FILE:=$(ZD1201FW_DIR).tar.gz
 define Download/net-zd1201
   FILE:=$(ZD1201FW_FILE)
   #http://downloads.sourceforge.net/project/linux-lc100020/%28NEW%29%20zd1201%20driver/zd1201.%20Version%200.14/zd1201-0.14-fw.tar.gz
-  URL:=@SF/linux-lc100020/\(NEW\)\ $(ZD1201FW_NAME)\ driver/$(ZD1201FW_NAME).\ Version\ $(ZD1201FW_VERSION)/
+  URL:=@SF/linux-lc100020/%28NEW%29%20$(ZD1201FW_NAME)%20driver/$(ZD1201FW_NAME).%20Version%20$(ZD1201FW_VERSION)/
   MD5SUM:=07a4febc365121f975e2c5e59791d55d
 endef
 
