@@ -824,3 +824,20 @@ define KernelPackage/thermal-imx/description
 endef
 
 $(eval $(call KernelPackage,thermal-imx))
+
+
+define KernelPackage/thermal-kirkwood
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Temperature sensor on Marvell Kirkwood SoCs
+  DEPENDS:=@TARGET_kirkwood +kmod-thermal
+  KCONFIG:=CONFIG_KIRKWOOD_THERMAL
+  FILES:=$(LINUX_DIR)/drivers/thermal/kirkwood_thermal.ko
+  AUTOLOAD:=$(call AutoProbe,kirkwood_thermal)
+endef
+
+define KernelPackage/thermal-kirkwood/description
+ Support for the Kirkwood thermal sensor driver into the Linux thermal
+ framework. Only kirkwood 88F6282 and 88F6283 have this sensor.
+endef
+
+$(eval $(call KernelPackage,thermal-kirkwood))
