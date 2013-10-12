@@ -1,0 +1,36 @@
+From 1daf4bfdb072b08f3b4e412bbfa9645f88dc0a01 Mon Sep 17 00:00:00 2001
+From: Oliver Winker <oliver@oli1170.net>
+Date: Tue, 3 Sep 2013 20:36:36 +0200
+Subject: [PATCH 3/3] Fix 3.10 build
+
+Signed-off-by: Reinhard Karcher <reinhard.karcher@gmx.net>
+Signed-off-by: Oliver Winker <oliver@oli1170.net>
+---
+ main.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/main.c b/main.c
+index 3af6cd0..841592f 100644
+--- a/main.c
++++ b/main.c
+@@ -682,10 +682,17 @@ int acx_op_config(struct ieee80211_hw *hw, u32 changed)
+ 
+ 	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
+ 		logf1(L_DEBUG, "IEEE80211_CONF_CHANGE_CHANNEL,"
++#if CONFIG_ACX_MAC80211_VERSION >= KERNEL_VERSION(3, 10, 0)
++			"channel->hw_value=%i\n", conf->chandef.chan->hw_value);
++
++		acx_set_channel(adev, conf->chandef.chan->hw_value,
++				conf->chandef.chan->center_freq);
++#else
+ 			"channel->hw_value=%i\n", conf->channel->hw_value);
+ 
+ 		acx_set_channel(adev, conf->channel->hw_value,
+ 				conf->channel->center_freq);
++#endif
+ 
+ 		changed_not_done &= ~IEEE80211_CONF_CHANGE_CHANNEL;
+ 	}
+-- 
+1.8.4.rc1
+

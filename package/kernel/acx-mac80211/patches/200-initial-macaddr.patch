@@ -1,15 +1,13 @@
 --- a/cardsetting.c
 +++ b/cardsetting.c
-@@ -710,12 +710,27 @@ static int acx1xx_get_station_id(acx_dev
- 	u8 stationID[4 + acx_ie_descs[ACX1xx_IE_DOT11_STATION_ID].len];
+@@ -710,10 +710,25 @@ static int acx1xx_get_station_id(acx_dev
+ 	u8 *stationID = adev->ie_cmd_buf;;
  	const u8 *paddr;
  	int i, res;
 +	const char *prom_addr;
 +	char *prom_getenv(const char *name);
  
- 
- 
- 	res = acx_interrogate(adev, &stationID, ACX1xx_IE_DOT11_STATION_ID);
+ 	res = acx_interrogate(adev, stationID, ACX1xx_IE_DOT11_STATION_ID);
  	paddr = &stationID[4];
 -	for (i = 0; i < ETH_ALEN; i++) {
 +	prom_addr = NULL;
