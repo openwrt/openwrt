@@ -141,7 +141,7 @@ endif
 ifneq ($(CONFIG_TARGET_ROOTFS_TARGZ),)
   define Image/mkfs/targz
 		# Preserve permissions (-p) when building as non-root user
-		$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+		$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE),-$(PROFILE))-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
   endef
 endif
 
