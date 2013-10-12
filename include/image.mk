@@ -35,7 +35,7 @@ ifeq ($(CONFIG_JFFS2_LZMA),y)
   JFFS2OPTS += -X lzma --compression-mode=size
 endif
 ifneq ($(CONFIG_JFFS2_RTIME),y)
-  JFFS2OPTS +=  -x rtime
+  JFFS2OPTS += -x rtime
 endif
 ifneq ($(CONFIG_JFFS2_ZLIB),y)
   JFFS2OPTS += -x zlib
@@ -115,7 +115,8 @@ endif
 
 ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
     define Image/mkfs/ubifs
-		$(CP) ./ubinize.cfg $(KDIR)
+
+        ifdef UBIFS_OPTS
 		$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 			$(UBIFS_OPTS) \
 			$(if $(CONFIG_TARGET_UBIFS_FREE_SPACE_FIXUP),--space-fixup) \
@@ -125,10 +126,19 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
 			--jrn-size=$(CONFIG_TARGET_UBIFS_JOURNAL_SIZE) \
 			-o $(KDIR)/root.ubifs \
 			-d $(TARGET_DIR)
-		$(call Image/Build,ubifs)
-		(cd $(KDIR); \
-		$(STAGING_DIR_HOST)/bin/ubinize $(UBINIZE_OPTS) -o $(KDIR)/root.ubi ubinize.cfg)
-		$(call Image/Build,ubi)
+        endif
+	$(call Image/Build,ubifs)
+
+        ifdef UBI_OPTS
+		$(CP) ./ubinize.cfg $(KDIR)
+		( cd $(KDIR); \
+		$(STAGING_DIR_HOST)/bin/ubinize \
+			$(UBI_OPTS) \
+			-o $(KDIR)/root.ubi \
+			ubinize.cfg \
+		)
+        endif
+	$(call Image/Build,ubi)
     endef
 endif
 
