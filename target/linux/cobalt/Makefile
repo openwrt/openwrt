@@ -11,7 +11,7 @@ BOARD:=cobalt
 BOARDNAME:=Cobalt Microservers
 FEATURES:=targz pci ext4 display
 CPU_TYPE := 5k
-CPU_CFLAGS_5k := -mtune=r5000
+CPU_CFLAGS_5k := -march=r5000
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 LINUX_VERSION:=3.3.8
