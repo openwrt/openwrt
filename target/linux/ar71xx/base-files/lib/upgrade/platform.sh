@@ -49,7 +49,7 @@ platform_do_upgrade_combined() {
 
 	if [ -n "$partitions" ] && [ -n "$kernelpart" ] && \
 	   [ ${kern_blocks:-0} -gt 0 ] && \
-	   [ ${root_blocks:-0} -gt ${kern_blocks:-0} ] && \
+	   [ ${root_blocks:-0} -gt 0 ] && \
 	   [ ${erase_size:-0} -gt 0 ];
 	then
 		local append=""
