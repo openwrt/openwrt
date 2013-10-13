@@ -121,10 +121,6 @@ define Package/iputils-traceroute6/description
   Traces path to a network host (IPv6).
 endef
 
-ifeq ($(BOARD),brcm47xx)
-  TARGET_CFLAGS += -O2 
-endif
-
 MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)" \
 	CONFIG_IPV6="$(CONFIG_IPV6)" \
