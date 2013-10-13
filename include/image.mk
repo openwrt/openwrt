@@ -82,6 +82,11 @@ else
   endef
 endif
 
+define Image/BuildKernel/MkuImageARM
+	mkimage -A arm -O linux -T kernel -a $(1) -C none -e $(1) \
+		-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' -d $(2) $(3)
+endef
+
 define Image/mkfs/jffs2/sub
 		# FIXME: removing this line will cause strange behaviour in the foreach loop below
 		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) --pad -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
