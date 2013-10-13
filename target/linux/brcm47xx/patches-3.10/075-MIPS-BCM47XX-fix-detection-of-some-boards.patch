@@ -1,0 +1,20 @@
+From 2beb91164802b1cbfda369564d3371b3ff649eec Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 13 Oct 2013 16:05:49 +0200
+Subject: [PATCH 6/6] MIPS: BCM47XX: fix detection of some boards
+
+This adds some more boards
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+--- a/arch/mips/bcm47xx/board.c
++++ b/arch/mips/bcm47xx/board.c
+@@ -56,6 +56,9 @@ struct bcm47xx_board_type_list1 bcm47xx_
+ /* hardware_version */
+ static const
+ struct bcm47xx_board_type_list1 bcm47xx_board_list_hardware_version[] __initconst = {
++	{{BCM47XX_BOARD_ASUS_RTN10U, "Asus RT-N10U"}, "RTN10U"},
++	{{BCM47XX_BOARD_ASUS_RTN12, "Asus RT-N12"}, "RT-N12"},
++	{{BCM47XX_BOARD_ASUS_RTN12D1, "Asus RT-N12D1"}, "RTN12D1"},
+ 	{{BCM47XX_BOARD_ASUS_RTN16, "Asus RT-N16"}, "RT-N16-"},
+ 	{{BCM47XX_BOARD_ASUS_WL320GE, "Asus WL320GE"}, "WL320G-"},
+ 	{{BCM47XX_BOARD_ASUS_WL330GE, "Asus WL330GE"}, "WL330GE-"},
