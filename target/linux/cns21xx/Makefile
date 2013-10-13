@@ -12,7 +12,7 @@ BOARDNAME:=Cavium Networks Econa CNS21xx
 FEATURES:=squashfs
 CPU_TYPE:=fa526
 
-LINUX_VERSION:=3.10.13
+LINUX_VERSION:=3.10.15
 
 include $(INCLUDE_DIR)/target.mk
 
