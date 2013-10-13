@@ -163,13 +163,11 @@ patches for bgmac backported from net-next/master
  			    ring->num_slots * sizeof(struct bgmac_dma_desc));
  
  		ring->start = 0;
-@@ -908,10 +934,10 @@ static void bgmac_chip_reset(struct bgma
- 		struct bcma_drv_cc *cc = &bgmac->core->bus->drv_cc;
+@@ -909,9 +935,9 @@ static void bgmac_chip_reset(struct bgma
  		u8 et_swtype = 0;
  		u8 sw_type = BGMAC_CHIPCTL_1_SW_TYPE_EPHY |
--			     BGMAC_CHIPCTL_1_IF_TYPE_RMII;
+ 			     BGMAC_CHIPCTL_1_IF_TYPE_MII;
 -		char buf[2];
-+			     BGMAC_CHIPCTL_1_IF_TYPE_MII;
 +		char buf[4];
  
 -		if (bcm47xx_nvram_getenv("et_swtype", buf, 1) > 0) {
@@ -188,15 +186,6 @@ patches for bgmac backported from net-next/master
  
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
-@@ -333,7 +333,7 @@
- 
- #define BGMAC_CHIPCTL_1_IF_TYPE_MASK		0x00000030
- #define BGMAC_CHIPCTL_1_IF_TYPE_RMII		0x00000000
--#define BGMAC_CHIPCTL_1_IF_TYPE_MI		0x00000010
-+#define BGMAC_CHIPCTL_1_IF_TYPE_MII		0x00000010
- #define BGMAC_CHIPCTL_1_IF_TYPE_RGMII		0x00000020
- #define BGMAC_CHIPCTL_1_SW_TYPE_MASK		0x000000C0
- #define BGMAC_CHIPCTL_1_SW_TYPE_EPHY		0x00000000
 @@ -384,6 +384,8 @@ struct bgmac_dma_ring {
  	u16 mmio_base;
  	struct bgmac_dma_desc *cpu_base;
