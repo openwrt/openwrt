@@ -5,7 +5,7 @@
  b43-y				+= wa.o
  b43-y				+= dma.o
 -b43-y				+= pio.o
-+b43-$(CONFIG_B43_PIO)		+= pio.o
++b43-$(CPTCFG_B43_PIO)		+= pio.o
  b43-y				+= rfkill.o
  b43-$(CPTCFG_B43_LEDS)		+= leds.o
  b43-$(CPTCFG_B43_PCMCIA)	+= pcmcia.o
@@ -15,7 +15,7 @@
  			dma_reason[0], dma_reason[1],
  			dma_reason[2], dma_reason[3],
  			dma_reason[4], dma_reason[5]);
-+#ifdef CONFIG_B43_PIO
++#ifdef CPTCFG_B43_PIO
  		b43err(dev->wl, "This device does not support DMA "
  			       "on your system. It will now be switched to PIO.\n");
  		/* Fall back to PIO transfers if we get fatal DMA errors! */
@@ -31,7 +31,7 @@
  }
  
 -
-+#ifdef CONFIG_B43_PIO
++#ifdef CPTCFG_B43_PIO
  int b43_pio_init(struct b43_wldev *dev);
  void b43_pio_free(struct b43_wldev *dev);
  
@@ -70,7 +70,7 @@
 +static inline void b43_pio_tx_resume(struct b43_wldev *dev)
 +{
 +}
-+#endif /* CONFIG_B43_PIO */
++#endif /* CPTCFG_B43_PIO */
  
  #endif /* B43_PIO_H_ */
 --- a/drivers/net/wireless/b43/Kconfig
