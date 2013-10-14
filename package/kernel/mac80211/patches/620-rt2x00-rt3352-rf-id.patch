@@ -1,0 +1,15 @@
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -7142,10 +7142,11 @@ static int rt2800_init_eeprom(struct rt2
+ 	 * RT53xx: defined in "EEPROM_CHIP_ID" field
+ 	 */
+ 	if (rt2x00_rt(rt2x00dev, RT3290) ||
+-	    rt2x00_rt(rt2x00dev, RT3352) ||
+ 	    rt2x00_rt(rt2x00dev, RT5390) ||
+ 	    rt2x00_rt(rt2x00dev, RT5392))
+ 		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
++	else if (rt2x00_rt(rt2x00dev, RT3352))
++		rf = RF3322;
+ 	else if (rt2x00_rt(rt2x00dev, RT5350))
+ 		rf = RF5350;
+ 	else
