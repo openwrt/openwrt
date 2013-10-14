@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
 PKG_VERSION:=2013.07
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
@@ -55,27 +55,27 @@ define Package/uboot-envtools/install
 	$(INSTALL_DATA) ./files/uboot-envtools.sh $(1)/lib
 ifneq ($(CONFIG_TARGET_ar71xx),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/ar71xx $(1)/etc/uci-defaults/30_uboot-envtools
+	$(INSTALL_DATA) ./files/ar71xx $(1)/etc/uci-defaults/30_uboot-envtools
 endif
 ifneq ($(CONFIG_TARGET_cns3xxx),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/cns3xxx $(1)/etc/uci-defaults/30_uboot-envtools
+	$(INSTALL_DATA) ./files/cns3xxx $(1)/etc/uci-defaults/30_uboot-envtools
 endif
 ifneq ($(CONFIG_TARGET_imx6),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/imx6 $(1)/etc/uci-defaults/30_uboot-envtools
+	$(INSTALL_DATA) ./files/imx6 $(1)/etc/uci-defaults/30_uboot-envtools
 endif
 ifneq ($(CONFIG_TARGET_kirkwood),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/kirkwood $(1)/etc/uci-defaults/30_uboot-envtools
+	$(INSTALL_DATA) ./files/kirkwood $(1)/etc/uci-defaults/30_uboot-envtools
 endif
 ifneq ($(CONFIG_TARGET_lantiq),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/lantiq $(1)/etc/uci-defaults/30_uboot-envtools
+	$(INSTALL_DATA) ./files/lantiq $(1)/etc/uci-defaults/30_uboot-envtools
 endif
 ifneq ($(CONFIG_TARGET_ramips),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/ramips $(1)/etc/uci-defaults/30_uboot-envtools
+	$(INSTALL_DATA) ./files/ramips $(1)/etc/uci-defaults/30_uboot-envtools
 endif
 endef
 
