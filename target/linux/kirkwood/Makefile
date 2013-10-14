@@ -9,16 +9,14 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=kirkwood
 BOARDNAME:=Marvell Kirkwood
-FEATURES:=targz usb jffs2_nand
+FEATURES:=targz usb jffs2_nand ubifs
 CPU_TYPE:=xscale
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.3.8
+LINUX_VERSION:=3.10.15
 
 include $(INCLUDE_DIR)/target.mk
 
-KERNELNAME:="uImage"
-
-DEFAULT_PACKAGES +=
+KERNELNAME:="zImage dtbs"
 
 $(eval $(call BuildTarget))
