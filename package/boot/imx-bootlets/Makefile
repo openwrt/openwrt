@@ -18,12 +18,12 @@ include $(INCLUDE_DIR)/package.mk
 define Package/imx-bootlets
 	SECTION:=boot
 	CATEGORY:=Boot Loaders
-	TITLE:=i.MX23 bootlets
-	DEPENDS:=@TARGET_imx23
+	TITLE:=i.MX23/i.MX28 bootlets
+	DEPENDS:=@TARGET_mxs
 endef
 
 define Package/imx-bootlets/description
- i.MX23 bootlets (for oLinuxino)
+ i.MX23/i.MX28 bootlets (for oLinuxino)
 endef
 
 define Build/Compile

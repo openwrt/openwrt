@@ -7,9 +7,9 @@
 define KernelPackage/rtc-stmp3xxx
     SUBMENU:=$(OTHER_MENU)
     TITLE:=STMP3xxx SoC built-in RTC support
-    DEPENDS:=@TARGET_imx23
+    DEPENDS:=@TARGET_mxs
     $(call AddDepends/rtc)
-    KCONFIG:=\
+    KCONFIG:= \
 	CONFIG_RTC_CLASS=y \
 	CONFIG_RTC_DRV_STMP=m
     FILES:=$(LINUX_DIR)/drivers/rtc/rtc-stmp3xxx.ko
@@ -34,16 +34,16 @@ endef
 $(eval $(call KernelPackage,wdt-stmp3xxx))
 
 define KernelPackage/usb-chipidea-imx
-    TITLE:=Support for ChipIdea controllers on i.MX
-    DEPENDS:=+kmod-usb-chipidea @TARGET_imx23
-    FILES:=\
+    TITLE:=Support for ChipIdea controllers on Freescale i.MX SoCs
+    DEPENDS:=+kmod-usb-chipidea @TARGET_mxs
+    FILES:= \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci13xxx_imx.ko
     AUTOLOAD:=$(call AutoLoad,52,ci13xxx_imx,1)
     $(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-chipidea-imx/description
-    Kernel support for USB ChipIdea controllers on i.MX
+    Kernel support for USB ChipIdea controllers on Freescale i.MX SoCs
 endef
 
 $(eval $(call KernelPackage,usb-chipidea-imx,1))
@@ -66,7 +66,7 @@ $(eval $(call KernelPackage,usb-mxs-phy,1))
 
 define KernelPackage/usb-net-smsc95xx
     TITLE:=SMSC95xx USB/2.0 Ethernet driver
-    DEPENDS:=@TARGET_imx23
+    DEPENDS:=@TARGET_mxs
     KCONFIG:=CONFIG_USB_NET_SMSC95XX
     FILES:=$(LINUX_DIR)/drivers/net/usb/smsc95xx.ko
     AUTOLOAD:=$(call AutoLoad,64,smsc95xx)
@@ -79,8 +79,8 @@ endef
 
 $(eval $(call KernelPackage,usb-net-smsc95xx))
 
-define KernelPackage/sound-soc-imx23
-    TITLE:=Freescale i.MX233 built-in SoC sound support
+define KernelPackage/sound-soc-mxs
+    TITLE:=Freescale i.MX23/i.MX28 built-in SoC sound support
     KCONFIG:= \
 	CONFIG_SND_SOC_MXS_BUILTIN_CODEC \
 	CONFIG_SND_MXS_SOC_BUILTIN
@@ -90,20 +90,20 @@ define KernelPackage/sound-soc-imx23
 	$(LINUX_DIR)/sound/soc/mxs/snd-soc-mxs-builtin-pcm.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-mxs-builtin-codec.ko
     AUTOLOAD:=$(call AutoLoad,65,snd-soc-mxs-builtin-pcm snd-soc-mxs-builtin-dai snd-soc-mxs-builtin-codec snd-soc-mxs-builtin-audio)
-    DEPENDS:=@TARGET_imx23 +kmod-sound-soc-core
+    DEPENDS:=@TARGET_mxs +kmod-sound-soc-core
     $(call AddDepends/sound)
 endef
   
-define KernelPackage/sound-soc-imx23/description
-    Kernel support for i.MX233 built-in SoC audio
+define KernelPackage/sound-soc-mxs/description
+    Kernel support for Freescale i.MX23/i.MX28 built-in SoC audio
 endef
 
-$(eval $(call KernelPackage,sound-soc-imx23))
+$(eval $(call KernelPackage,sound-soc-mxs))
 
 define KernelPackage/iio-mxs-lradc
     SUBMENU:=$(OTHER_MENU)
     TITLE:=LRADC driver for i.MX23/28
-    DEPENDS:=@TARGET_imx23
+    DEPENDS:=@TARGET_mxs
     KCONFIG:=CONFIG_MXS_LRADC
     FILES:=$(LINUX_DIR)/drivers/staging/iio/adc/mxs-lradc.ko \
 	$(LINUX_DIR)/drivers/iio/industrialio-triggered-buffer.ko
@@ -118,7 +118,7 @@ $(eval $(call KernelPackage,iio-mxs-lradc))
 
 define KernelPackage/crypto-hw-dcp
     TITLE:=i.MX23/28 DCP hardware crypto module
-    DEPENDS:=@TARGET_imx23
+    DEPENDS:=@TARGET_mxs
     KCONFIG:=CONFIG_CRYPTO_DEV_DCP
     FILES:=$(LINUX_DIR)/drivers/crypto/dcp.ko
     AUTOLOAD:=$(call AutoLoad,90,dcp)
