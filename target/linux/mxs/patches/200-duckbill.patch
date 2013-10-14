@@ -1,0 +1,57 @@
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index f0895c5..3ec78a1 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -131,6 +131,7 @@ dtb-$(CONFIG_ARCH_MXS) += imx23-evk.dtb \
+ 	imx28-cfa10037.dtb \
+ 	imx28-cfa10049.dtb \
+ 	imx28-evk.dtb \
++	imx28-duckbill.dtb \
+ 	imx28-m28evk.dtb \
+ 	imx28-sps1.dtb \
+ 	imx28-tx28.dtb
+diff --git a/arch/arm/mach-mxs/mach-mxs.c b/arch/arm/mach-mxs/mach-mxs.c
+index 5b62b64..63916c5 100644
+--- a/arch/arm/mach-mxs/mach-mxs.c
++++ b/arch/arm/mach-mxs/mach-mxs.c
+@@ -175,6 +175,7 @@ enum mac_oui {
+ 	OUI_FSL,
+ 	OUI_DENX,
+ 	OUI_CRYSTALFONTZ,
++	OUI_I2SE,
+ };
+ 
+ static void __init update_fec_mac_prop(enum mac_oui oui)
+@@ -229,6 +230,11 @@ static void __init update_fec_mac_prop(enum mac_oui oui)
+ 			macaddr[1] = 0xb9;
+ 			macaddr[2] = 0xe1;
+ 			break;
++		case OUI_I2SE:
++			macaddr[0] = 0x00;
++			macaddr[1] = 0x01;
++			macaddr[2] = 0x87;
++			break;
+ 		}
+ 		val = ocotp[i];
+ 		macaddr[3] = (val >> 16) & 0xff;
+@@ -362,6 +368,11 @@ static void __init cfa10037_init(void)
+ 	update_fec_mac_prop(OUI_CRYSTALFONTZ);
+ }
+ 
++static void __init duckbill_init(void)
++{
++	update_fec_mac_prop(OUI_I2SE);
++}
++
+ static void __init mxs_machine_init(void)
+ {
+ 	if (of_machine_is_compatible("fsl,imx28-evk"))
+@@ -372,6 +383,8 @@ static void __init mxs_machine_init(void)
+ 		cfa10037_init();
+ 	else if (of_machine_is_compatible("crystalfontz,cfa10049"))
+ 		cfa10049_init();
++	else if (of_machine_is_compatible("i2se,duckbill"))
++		duckbill_init();
+ 
+ 	of_platform_populate(NULL, of_default_bus_match_table,
+ 			     mxs_auxdata_lookup, NULL);
