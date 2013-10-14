@@ -1,9 +1,11 @@
 #!/bin/sh
 #
-# Copyright (C) 2012 OpenWrt.org
+# Copyright (C) 2012-2013 OpenWrt.org
 #
 
 [ -e /etc/config/network ] && exit 0
+
+touch /etc/config/network
 
 set_lan_dhcp() {
 	local ifname=$1
@@ -19,23 +21,17 @@ EOF
 }
 
 . /lib/functions/uci-defaults.sh
-. /lib/kirkwood.sh
-
-touch /etc/config/network
 
 ucidef_set_interface_loopback
 
-hardware=$(kirkwood_hardware_name)
-
-case "$hardware" in
-"Seagate FreeAgent DockStar")
+case "`cat /proc/device-tree/model`" in
+"Seagate FreeAgent Dockstar")
 	set_lan_dhcp "eth0"
 	;;
 
-"RaidSonic ICY BOX IB-NAS6210")
+"RaidSonic ICY BOX IB-NAS62x0 (Rev B)")
 	set_lan_dhcp "eth0"
 	;;
-
 *)
 	ucidef_set_interface_lan "eth0"
 	;;
