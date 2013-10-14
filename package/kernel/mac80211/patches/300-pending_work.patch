@@ -5368,7 +5368,7 @@
 -				ds += (desc_len * ndesc);
 -				bf->bf_desc = ds;
 -				bf->bf_daddr = DS2PHYS(dd, ds);
-+		bsize = sizeof(struct ath_buf) * nbuf;
++		bsize = sizeof(struct ath_rxbuf) * nbuf;
 +		bf = devm_kzalloc(sc->dev, bsize, GFP_KERNEL);
 +		if (!bf)
 +			return -ENOMEM;
