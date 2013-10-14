@@ -9,7 +9,8 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 BOARDS:= \
-	imx23-olinuxino
+	imx23-olinuxino \
+	imx28-duckbill
 
 define Image/BuildKernel/olinuxino-bootlet
 	cat $(LINUX_DIR)/arch/arm/boot/zImage $(LINUX_DIR)/arch/arm/boot/dts/imx23-olinuxino.dtb > $(STAGING_DIR)/zImage_dtb
