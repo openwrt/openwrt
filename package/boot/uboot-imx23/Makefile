@@ -35,7 +35,7 @@ define Package/uboot/template
 define Package/uboot-imx23-$(1)
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_imx23
+  DEPENDS:=@TARGET_mxs
   TITLE:=$(2)
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)

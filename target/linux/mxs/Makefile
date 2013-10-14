@@ -7,8 +7,8 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=arm
-BOARD:=imx23
-BOARDNAME:=Freescale i.MX23 series
+BOARD:=mxs
+BOARDNAME:=Freescale i.MX23/i.MX28 series
 FEATURES:=ext4 rtc usb gpio
 CPU_TYPE:=arm926ej-s
 
@@ -17,7 +17,7 @@ LINUX_VERSION:=3.10.15
 KERNELNAME:="zImage dtbs"
 
 define Target/Description
-	Support for Freescale i.MX233-based boards
+	Support for Freescale i.MX23/i.MX28 boards
 endef
 
 include $(INCLUDE_DIR)/target.mk
