@@ -8,6 +8,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+BOARDS:= \
+	imx23-olinuxino
+
 define Image/BuildKernel/olinuxino-bootlet
 	cat $(LINUX_DIR)/arch/arm/boot/zImage $(LINUX_DIR)/arch/arm/boot/dts/imx23-olinuxino.dtb > $(STAGING_DIR)/zImage_dtb
 	(cd $(STAGING_DIR); \
@@ -34,6 +37,27 @@ define Image/BuildKernel
   ifeq ($(CONFIG_PACKAGE_uboot-imx23-mx23_olinuxino),y)
 	$(call Image/BuildKernel/olinuxino-uboot)
   endif
+  
+	$(CP) $(LINUX_DIR)/arch/arm/boot/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
+	$(foreach board,$(BOARDS),
+		$(CP) $(LINUX_DIR)/arch/arm/boot/dts/$(board).dtb $(BIN_DIR)/
+	)
+endef
+
+define Image/InstallKernel
+
+  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
+	mkdir -p $(TARGET_DIR)/boot
+	$(CP) $(LINUX_DIR)/arch/arm/boot/zImage $(TARGET_DIR)/boot/
+  endif
+  
+  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
+	mkdir -p $(TARGET_DIR)/boot
+	$(foreach board,$(BOARDS),
+		$(CP) $(LINUX_DIR)/arch/arm/boot/dts/$(board).dtb $(TARGET_DIR)/boot/
+	)
+  endif
+
 endef
 
 define Image/Build
@@ -42,4 +66,3 @@ define Image/Build
 endef
 
 $(eval $(call BuildImage))
-
