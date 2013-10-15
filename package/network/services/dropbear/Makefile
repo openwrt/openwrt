@@ -13,7 +13,8 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
-	http://matt.ucc.asn.au/dropbear/releases/
+	http://matt.ucc.asn.au/dropbear/releases/ \
+	https://dropbear.nl/mirror/releases/
 PKG_MD5SUM:=6c1e6c2c297f4034488ffc95e8b7e6e9
 
 PKG_LICENSE:=MIT
