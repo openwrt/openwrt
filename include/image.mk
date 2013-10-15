@@ -125,7 +125,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
 		$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 			$(if $($(PROFILE)_UBIFS_OPTS), \
 				$(shell echo $($(PROFILE)_UBIFS_OPTS)), \
-				$(shell echo $(UBIFS_OPTS)), \
+				$(shell echo $(UBIFS_OPTS)) \
 			) \
 			$(if $(CONFIG_TARGET_UBIFS_FREE_SPACE_FIXUP),--space-fixup) \
 			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_NONE),--force-compr=none) \
@@ -143,7 +143,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
 		$(STAGING_DIR_HOST)/bin/ubinize \
 			$(if $($(PROFILE)_UBI_OPTS), \
 				$(shell echo $($(PROFILE)_UBI_OPTS)), \
-				$(shell echo $(UBI_OPTS)), \
+				$(shell echo $(UBI_OPTS)) \
 			) \
 			-o $(KDIR)/root.ubi \
 			ubinize.cfg \
