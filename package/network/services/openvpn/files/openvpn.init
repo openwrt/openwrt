@@ -78,7 +78,7 @@ start_instance() {
 	# append flags
 	append_bools "$s" \
 		auth_nocache auth_retry auth_user_pass_optional bind ccd_exclusive client client_cert_not_required \
-		client_to_client comp_lzo comp_noadapt disable \
+		client_to_client comp_noadapt disable \
 		disable_occ down_pre duplicate_cn fast_io float http_proxy_retry \
 		ifconfig_noexec ifconfig_nowarn ifconfig_pool_linear management_forget_disconnect management_hold \
 		management_query_passwords management_signal mktun mlock mtu_test multihome mute_replay_warnings \
@@ -91,7 +91,7 @@ start_instance() {
 	# append params
 	append_params "$s" \
 		cd askpass auth auth_user_pass auth_user_pass_verify bcast_buffers ca cert \
-		chroot cipher client_config_dir client_connect client_disconnect connect_freq \
+		chroot cipher client_config_dir client_connect client_disconnect comp_lzo connect_freq \
 		connect_retry connect_timeout connect_retry_max crl_verify dev dev_node dev_type dh \
 		echo engine explicit_exit_notify fragment group hand_window hash_size \
 		http_proxy http_proxy_option http_proxy_timeout ifconfig ifconfig_pool \
