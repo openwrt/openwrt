@@ -1,0 +1,57 @@
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -120,6 +120,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
+ 	imx6q-gw5400-a.dtb \
+ 	imx6q-gw54xx.dtb \
+ 	imx6dl-gw51xx.dtb \
++	imx6dl-gw52xx.dtb \
+ 	imx6q-sabreauto.dtb \
+ 	imx6q-sabrelite.dtb \
+ 	imx6q-sabresd.dtb \
+--- a/arch/arm/boot/dts/imx6dl.dtsi
++++ b/arch/arm/boot/dts/imx6dl.dtsi
+@@ -37,6 +37,18 @@
+ 				compatible = "fsl,imx6dl-iomuxc";
+ 				reg = <0x020e0000 0x4000>;
+ 
++				/* shared pinctrl settings */
++				audmux {
++					pinctrl_audmux_1: audmux-1 {
++						fsl,pins = <
++							MX6DL_PAD_SD2_DAT0__AUD4_RXD  0x80000000
++							MX6DL_PAD_SD2_DAT1__AUD4_TXFS 0x80000000
++							MX6DL_PAD_SD2_DAT2__AUD4_TXD  0x80000000
++							MX6DL_PAD_SD2_DAT3__AUD4_TXC  0x80000000
++						>;
++					};
++				};
++
+ 				enet {
+ 					pinctrl_enet_1: enetgrp-1 {
+ 						fsl,pins = <
+@@ -197,6 +209,12 @@
+ 							MX6DL_PAD_SD4_DAT4__UART2_TX_DATA 0x1b0b1
+ 						>;
+ 					};
++					pinctrl_uart2_3: uart2grp-3 {
++						fsl,pins = <
++							MX6DL_PAD_SD4_DAT7__UART2_TX_DATA 0x1b0b1
++							MX6DL_PAD_SD4_DAT4__UART2_RX_DATA 0x1b0b1
++						>;
++					};
+ 				};
+ 
+ 				uart3 {
+@@ -227,6 +245,12 @@
+ 				};
+ 
+ 				usbotg {
++					pinctrl_usbotg_1: usbotggrp-1 {
++						fsl,pins = <
++							MX6DL_PAD_GPIO_1__USB_OTG_ID 0x17059
++						>;
++					};
++
+ 					pinctrl_usbotg_2: usbotggrp-2 {
+ 						fsl,pins = <
+ 							MX6DL_PAD_ENET_RX_ER__USB_OTG_ID 0x17059
