@@ -23,29 +23,15 @@
 		i2c0 = &i2c1;
 		i2c1 = &i2c2;
 		i2c2 = &i2c3;
-		ipu0 = &ipu1;
-		ipu1 = &ipu2;
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
-		pwm0 = &pwm1;
-		pwm1 = &pwm2;
-		pwm2 = &pwm3;
-		pwm3 = &pwm4;
 		sky2 = &eth1;
 		ssi0 = &ssi1;
-		ssi1 = &ssi2;
 		spi0 = &ecspi1;
-		spi1 = &ecspi2;
-		spi2 = &ecspi3;
-		spi3 = &ecspi4;
-		spi4 = &ecspi5;
-		usb0 = &usbh3;
+		usb0 = &usbh1;
 		usb1 = &usbotg;
-		usdhc0 = &usdhc1;
-		usdhc1 = &usdhc2;
 		usdhc2 = &usdhc3;
-		usdhc3 = &usdhc4;
 	};
 
 	chosen {
@@ -82,11 +68,11 @@
 	regulators {
 		compatible = "simple-bus";
 
-		reg_2p5v: 2p5v {
+		reg_1p0v: 1p0v {
 			compatible = "regulator-fixed";
-			regulator-name = "2P5V";
-			regulator-min-microvolt = <2500000>;
-			regulator-max-microvolt = <2500000>;
+			regulator-name = "1P0V";
+			regulator-min-microvolt = <1000000>;
+			regulator-max-microvolt = <1000000>;
 			regulator-always-on;
 		};
 
@@ -95,6 +81,14 @@
 			regulator-name = "3P3V";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
+
+		reg_usb_h1_vbus: usb_h1_vbus {
+			compatible = "regulator-fixed";
+			regulator-name = "usb_h1_vbus";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
 			regulator-always-on;
 		};
 
@@ -125,7 +119,7 @@
 
 &audmux {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_audmux_3>;
+	pinctrl-0 = <&pinctrl_audmux_1>;
 	status = "okay";
 };
 
@@ -152,16 +146,10 @@
 };
 
 &i2c1 {
-	status = "okay";
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c1_1>;
-
-	eeprom: eeprom@50 {
-		compatible = "atmel,24c02";
-		reg = <0x50>;
-		pagesize = <16>;
-	};
+	status = "okay";
 
 	eeprom1: eeprom@50 {
 		compatible = "atmel,24c02";
@@ -187,11 +175,6 @@
 		pagesize = <16>;
 	};
 
-	rtc: ds1672@68 {
-		compatible = "dallas,ds1672";
-		reg = <0x68>;
-	};
-
 	gpio: pca9555@23 {
 		compatible = "nxp,pca9555";
 		reg = <0x23>;
@@ -203,17 +186,116 @@
 		compatible = "gw,gsp";
 		reg = <0x29>;
 	};
+
+	rtc: ds1672@68 {
+		compatible = "dallas,ds1672";
+		reg = <0x68>;
+	};
 };
 
 &i2c2 {
-	status = "okay";
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c2_2>;
+	status = "okay";
 
-	pmic: pfuze@08 {
+	pmic: pfuze100@08 {
 		compatible = "fsl,pfuze100";
 		reg = <0x08>;
+
+		regulators {
+			sw1a_reg: sw1ab {
+				regulator-min-microvolt = <300000>;
+				regulator-max-microvolt = <1875000>;
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-ramp-delay = <6250>;
+			};
+
+			sw1c_reg: sw1c {
+				regulator-min-microvolt = <300000>;
+				regulator-max-microvolt = <1875000>;
+				regulator-boot-on;
+				regulator-always-on;
+				regulator-ramp-delay = <6250>;
+			};
+
+			sw2_reg: sw2 {
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <3950000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			sw3a_reg: sw3a {
+				regulator-min-microvolt = <400000>;
+				regulator-max-microvolt = <1975000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			sw3b_reg: sw3b {
+				regulator-min-microvolt = <400000>;
+				regulator-max-microvolt = <1975000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			sw4_reg: sw4 {
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <3300000>;
+			};
+
+			swbst_reg: swbst {
+				regulator-min-microvolt = <5000000>;
+				regulator-max-microvolt = <5150000>;
+			};
+
+			snvs_reg: vsnvs {
+				regulator-min-microvolt = <1000000>;
+				regulator-max-microvolt = <3000000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			vref_reg: vrefddr {
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			vgen1_reg: vgen1 {
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <1550000>;
+			};
+
+			vgen2_reg: vgen2 {
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <1550000>;
+			};
+
+			vgen3_reg: vgen3 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+			};
+
+			vgen4_reg: vgen4 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+			};
+
+			vgen5_reg: vgen5 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+			};
+
+			vgen6_reg: vgen6 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+			};
+		};
 	};
 
 	pciswitch: pex8609@3f {
@@ -228,32 +310,22 @@
 };
 
 &i2c3 {
-	status = "okay";
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c3_2>;
-
-	codec: sgtl5000@0a {
-		compatible = "fsl,sgtl5000";
-		reg = <0x0a>;
-		clocks = <&clks 169>;
-		VDDA-supply = <&reg_2p5v>;
-		VDDIO-supply = <&reg_3p3v>;
-	};
+	status = "okay";
 
 	accelerometer: mma8450@1c {
 		compatible = "fsl,mma8450";
 		reg = <0x1c>;
 	};
 
-	videoout: adv7393@2a {
-		compatible = "adi,adv7393";
-		reg = <0x2a>;
-	};
-
-	videoin: adv7180@20 {
-		compatible = "adi,adv7180";
-		reg = <0x20>;
+	codec: sgtl5000@0a {
+		compatible = "fsl,sgtl5000";
+		reg = <0x0a>;
+		clocks = <&clks 169>;
+		VDDA-supply = <&sw4_reg>;
+		VDDIO-supply = <&reg_3p3v>;
 	};
 
 	hdmiin: adv7611@4c {
@@ -264,7 +336,19 @@
 	touchscreen: egalax_ts@04 {
 		compatible = "eeti,egalax_ts";
 		reg = <0x04>;
-		wakeup-gpios = <&gpio1 12 0>;
+		interrupt-parent = <&gpio7>;
+		interrupts = <12 2>; /* gpio7_12 active low */
+		wakeup-gpios = <&gpio7 12 0>;
+	};
+
+	videoout: adv7393@2a {
+		compatible = "adi,adv7393";
+		reg = <0x2a>;
+	};
+
+	videoin: adv7180@20 {
+		compatible = "adi,adv7180";
+		reg = <0x20>;
 	};
 };
 
@@ -277,14 +361,15 @@
 			fsl,pins = <
 				MX6Q_PAD_EIM_D22__GPIO3_IO22    0x80000000 /* OTG_PWR_EN */
 				MX6Q_PAD_EIM_D19__GPIO3_IO19    0x80000000 /* SPINOR_CS0# */
+				MX6Q_PAD_ENET_TX_EN__GPIO1_IO28 0x80000000 /* PCIE IRQ */
+				MX6Q_PAD_ENET_TXD1__GPIO1_IO29  0x80000000 /* PCIE RST */
+				MX6Q_PAD_GPIO_0__CCM_CLKO1      0x000130b0 /* AUD4_MCK */
+				MX6Q_PAD_GPIO_17__GPIO7_IO12    0x80000000 /* TOUCH_IRQ# */
 				MX6Q_PAD_KEY_COL0__GPIO4_IO06   0x80000000 /* user1 led */
 				MX6Q_PAD_KEY_COL2__GPIO4_IO10   0x80000000 /* user2 led */
 				MX6Q_PAD_KEY_ROW4__GPIO4_IO15   0x80000000 /* user3 led */
 				MX6Q_PAD_SD1_DAT0__GPIO1_IO16   0x80000000 /* USBHUB_RST# */
-				MX6Q_PAD_ENET_TX_EN__GPIO1_IO28 0x80000000 /* PCIE IRQ */
-				MX6Q_PAD_ENET_TXD1__GPIO1_IO29  0x80000000 /* PCIE RST */
 				MX6Q_PAD_SD1_DAT3__GPIO1_IO21   0x80000000 /* MIPI_DIO */
-				MX6Q_PAD_GPIO_0__CCM_CLKO1      0x80000000 /* AUD4_MCK */
 			 >;
 		};
 	};
@@ -332,12 +417,21 @@
 };
 
 &uart5 {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart5_1>;
+	status = "okay";
+};
+
+&usbotg {
+	vbus-supply = <&reg_usb_otg_vbus>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usbotg_1>;
+	disable-over-current;
+	status = "okay";
 };
 
 &usbh1 {
+	vbus-supply = <&reg_usb_h1_vbus>;
 	status = "okay";
 };
 
