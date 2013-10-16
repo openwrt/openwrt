@@ -16,24 +16,26 @@
 
 usage() {
 	echo "Usage: `basename $0` -A arch -C comp -a addr -e entry" \
-		"-v version -k kernel [-d dtb] -o its_file"
+		"-v version -k kernel [-D name -d dtb] -o its_file"
 	echo -e "\t-A ==> set architecture to 'arch'"
 	echo -e "\t-C ==> set compression type 'comp'"
 	echo -e "\t-a ==> set load address to 'addr' (hex)"
 	echo -e "\t-e ==> set entry point to 'entry' (hex)"
 	echo -e "\t-v ==> set kernel version to 'version'"
 	echo -e "\t-k ==> include kernel image 'kernel'"
+	echo -e "\t-D ==> human friendly Device Tree Blob 'name'"
 	echo -e "\t-d ==> include Device Tree Blob 'dtb'"
 	echo -e "\t-o ==> create output file 'its_file'"
 	exit 1
 }
 
-while getopts ":A:C:a:d:e:k:o:v:" OPTION
+while getopts ":A:a:C:D:d:e:k:o:v:" OPTION
 do
 	case $OPTION in
 		A ) ARCH=$OPTARG;;
-		C ) COMPRESS=$OPTARG;;
 		a ) LOAD_ADDR=$OPTARG;;
+		C ) COMPRESS=$OPTARG;;
+		D ) DEVICE=$OPTARG;;
 		d ) DTB=$OPTARG;;
 		e ) ENTRY_ADDR=$OPTARG;;
 		k ) KERNEL=$OPTARG;;
@@ -51,16 +53,18 @@ if [ -z "${ARCH}" ] || [ -z "${COMPRESS}" ] || [ -z "${LOAD_ADDR}" ] || \
 	usage
 fi
 
+ARCH_UPPER=`echo $ARCH | tr '[:lower:]' '[:upper:]'`
+
 # Create a default, fully populated DTS file
 DATA="/dts-v1/;
 
 / {
-	description = \"Linux kernel ${VERSION}\";
+	description = \"${ARCH_UPPER} OpenWrt FIT (Flattened Image Tree)\";
 	#address-cells = <1>;
 
 	images {
 		kernel@1 {
-			description = \"Linux Kernel ${VERSION}\";
+			description = \"${ARCH_UPPER} OpenWrt Linux-${VERSION}\";
 			data = /incbin/(\"${KERNEL}\");
 			type = \"kernel\";
 			arch = \"${ARCH}\";
@@ -76,8 +80,8 @@ DATA="/dts-v1/;
 			};
 		};
 
-		fdt@1 { /* start fdt */
-			description = \"Flattened Device Tree blob\";
+		fdt@1 {
+			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} device tree blob\";
 			data = /incbin/(\"${DTB}\");
 			type = \"flat_dt\";
 			arch = \"${ARCH}\";
@@ -88,13 +92,13 @@ DATA="/dts-v1/;
 			hash@2 {
 				algo = \"sha1\";
 			};
-		}; /* end fdt */
+		};
 	};
 
 	configurations {
 		default = \"config@1\";
 		config@1 {
-			description = \"Default Linux kernel\";
+			description = \"OpenWrt\";
 			kernel = \"kernel@1\";
 			fdt = \"fdt@1\";
 		};

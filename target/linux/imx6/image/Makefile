@@ -11,22 +11,25 @@ BOARDS := \
 	imx6dl-wandboard \
 	imx6q-gw5400-a
 
-# board-specific Flattened Image Tree
-define mkfit
-	/bin/sh $(LINUX_DIR)/scripts/mkits.sh -A arm -C none -a $(2) -e $(2) \
-		-v 'OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(LINUX_DIR)/arch/arm/boot/dts/$(1).dtb -k $(LINUX_DIR)/arch/arm/boot/zImage \
-		-o $(KDIR)/$(1)-uImage.its
-	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/$(1)-uImage.its $(BIN_DIR)/openwrt-$(1)-uImage.itb
-endef
-
 # emit FIT images, DTB's and generic zImage
 define Image/BuildKernel
 	$(foreach board,$(BOARDS),
-		$(call mkfit,$(board),0x10008000)
-		cp $(LINUX_DIR)/arch/arm/boot/dts/$(board).dtb $(BIN_DIR)
+		cp $(LINUX_DIR)/arch/arm/boot/dts/$(board).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(board).dtb
+
+		$(call Image/BuildKernel/MkFIT,$(board),$(KDIR)/zImage,$(BIN_DIR)/$(IMG_PREFIX)-$(board).dtb,none,0x10008000,0x10008000)
+		cp $(KDIR)/fit-$(board).itb $(BIN_DIR)/$(IMG_PREFIX)-$(board)-uImage.itb
+
+ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+		$(call Image/BuildKernel/MkFIT,$(board),$(KDIR)/zImage-initramfs,$(BIN_DIR)/$(IMG_PREFIX)-$(board).dtb,none,0x10008000,0x10008000,-initramfs)
+		cp $(KDIR)/fit-$(board)-initramfs.itb $(BIN_DIR)/$(IMG_PREFIX)-$(board)-uImage-initramfs.itb
+ endif
 	)
-	cp $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
+
+	cp $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
+
+ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	cp $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
+ endif
 endef
 
 # board-specific sysupgrade image
