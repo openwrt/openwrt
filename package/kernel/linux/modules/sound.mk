@@ -183,13 +183,15 @@ $(eval $(call KernelPackage,sound-soc-ac97))
 define KernelPackage/sound-soc-imx
   TITLE:=IMX SoC support
   KCONFIG:=\
-		CONFIG_SND_IMX_SOC \
-		CONFIG_SND_SOC_IMX_AUDMUX \
-		CONFIG_SND_SOC_IMX_PCM
+	CONFIG_SND_IMX_SOC \
+	CONFIG_SND_SOC_IMX_AUDMUX \
+	CONFIG_SND_SOC_FSL_SSI \
+	CONFIG_SND_SOC_IMX_PCM
   FILES:= \
 	$(LINUX_DIR)/sound/soc/fsl/snd-soc-imx-audmux.ko \
+	$(LINUX_DIR)/sound/soc/fsl/snd-soc-fsl-ssi.ko \
 	$(LINUX_DIR)/sound/soc/fsl/snd-soc-imx-pcm.ko
-  AUTOLOAD:=$(call AutoLoad,56,snd-soc-imx)
+  AUTOLOAD:=$(call AutoLoad,56,snd-soc-imx-audmux snd-soc-fsl-ssi snd-soc-imx-pcm)
   DEPENDS:=@TARGET_imx6 +kmod-sound-soc-core
   $(call AddDepends/sound)
 endef
@@ -204,8 +206,10 @@ $(eval $(call KernelPackage,sound-soc-imx))
 define KernelPackage/sound-soc-imx-sgtl5000
   TITLE:=IMX SoC support for SGTL5000
   KCONFIG:=CONFIG_SND_SOC_IMX_SGTL5000
-  FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-sgtl5000.ko
-  AUTOLOAD:=$(call AutoLoad,57,snd-soc-sgtl5000)
+  FILES:=\
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-sgtl5000.ko \
+	$(LINUX_DIR)/sound/soc/fsl/snd-soc-imx-sgtl5000.ko
+  AUTOLOAD:=$(call AutoLoad,57,snd-soc-sgtl5000 snd-soc-imx-sgtl5000)
   DEPENDS:=@TARGET_imx6 +kmod-sound-soc-imx
   $(call AddDepends/sound)
 endef
