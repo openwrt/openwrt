@@ -5,15 +5,13 @@
 
 [ -e /etc/config/network ] && exit 0
 
-. /lib/functions/uci-defaults.sh
-
 touch /etc/config/network
+
+. /lib/functions/uci-defaults.sh
 
 ucidef_set_interface_loopback
 
-board=$(cat /proc/device-tree/model)
-
-case "$board" in
+case "`cat /proc/device-tree/model`" in
 "Gateworks Ventana GW51XX" |\
 "Gateworks Ventana GW52XX")
 	ucidef_set_interface_lan 'eth0'
