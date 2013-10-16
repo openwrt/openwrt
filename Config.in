@@ -189,6 +189,15 @@ menu "Target Images"
 		  Include the device tree blob file(s) in the rootfs. Typically the DTBs
 		  are placed below /boot.
 
+	comment "Image Type"
+
+	config TARGET_IMAGE_FIT
+		bool "FIT image with kernel and DTB"
+		default y if USES_FIT
+		depends on USES_FIT
+		help
+		   Create a u-boot FIT image containing kernel and DTB
+
 endmenu
 
 menu "Global build settings"
