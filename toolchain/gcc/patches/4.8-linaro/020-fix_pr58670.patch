@@ -1,0 +1,167 @@
+--- a/gcc/cfgrtl.c
++++ b/gcc/cfgrtl.c
+@@ -1784,10 +1784,18 @@ commit_one_edge_insertion (edge e)
+     }
+ 
+   /* If the source has one successor and the edge is not abnormal,
+-     insert there.  Except for the entry block.  */
++     insert there.  Except for the entry block.
++     Don't do this if the predecessor ends in a jump other than
++     unconditional simple jump.  E.g. for asm goto that points all
++     its labels at the fallthru basic block, we can't insert instructions
++     before the asm goto, as the asm goto can have various of side effects,
++     and can't emit instructions after the asm goto, as it must end
++     the basic block.  */
+   else if ((e->flags & EDGE_ABNORMAL) == 0
+ 	   && single_succ_p (e->src)
+-	   && e->src != ENTRY_BLOCK_PTR)
++	   && e->src != ENTRY_BLOCK_PTR
++	   && (!JUMP_P (BB_END (e->src))
++	       || simplejump_p (BB_END (e->src))))
+     {
+       bb = e->src;
+ 
+--- a/gcc/stmt.c
++++ b/gcc/stmt.c
+@@ -613,6 +613,9 @@ tree_conflicts_with_clobbers_p (tree t, 
+    CLOBBERS is a list of STRING_CST nodes each naming a hard register
+    that is clobbered by this insn.
+ 
++   LABELS is a list of labels, and if LABELS is non-NULL, FALLTHRU_BB
++   should be the fallthru basic block of the asm goto.
++
+    Not all kinds of lvalue that may appear in OUTPUTS can be stored directly.
+    Some elements of OUTPUTS may be replaced with trees representing temporary
+    values.  The caller should copy those temporary values to the originally
+@@ -622,7 +625,8 @@ tree_conflicts_with_clobbers_p (tree t, 
+ 
+ static void
+ expand_asm_operands (tree string, tree outputs, tree inputs,
+-		     tree clobbers, tree labels, int vol, location_t locus)
++		     tree clobbers, tree labels, basic_block fallthru_bb,
++		     int vol, location_t locus)
+ {
+   rtvec argvec, constraintvec, labelvec;
+   rtx body;
+@@ -643,6 +647,7 @@ expand_asm_operands (tree string, tree o
+   enum machine_mode *inout_mode = XALLOCAVEC (enum machine_mode, noutputs);
+   const char **constraints = XALLOCAVEC (const char *, noutputs + ninputs);
+   int old_generating_concat_p = generating_concat_p;
++  rtx fallthru_label = NULL_RTX;
+ 
+   /* An ASM with no outputs needs to be treated as volatile, for now.  */
+   if (noutputs == 0)
+@@ -942,8 +947,24 @@ expand_asm_operands (tree string, tree o
+ 
+   /* Copy labels to the vector.  */
+   for (i = 0, tail = labels; i < nlabels; ++i, tail = TREE_CHAIN (tail))
+-    ASM_OPERANDS_LABEL (body, i)
+-      = gen_rtx_LABEL_REF (Pmode, label_rtx (TREE_VALUE (tail)));
++    {
++      rtx r;
++      /* If asm goto has any labels in the fallthru basic block, use
++	 a label that we emit immediately after the asm goto.  Expansion
++	 may insert further instructions into the same basic block after
++	 asm goto and if we don't do this, insertion of instructions on
++	 the fallthru edge might misbehave.  See PR58670.  */
++      if (fallthru_bb
++	  && label_to_block_fn (cfun, TREE_VALUE (tail)) == fallthru_bb)
++	{
++	  if (fallthru_label == NULL_RTX)
++	    fallthru_label = gen_label_rtx ();
++	  r = fallthru_label;
++	}
++      else
++	r = label_rtx (TREE_VALUE (tail));
++      ASM_OPERANDS_LABEL (body, i) = gen_rtx_LABEL_REF (Pmode, r);
++    }
+ 
+   generating_concat_p = old_generating_concat_p;
+ 
+@@ -1067,6 +1088,9 @@ expand_asm_operands (tree string, tree o
+ 	emit_insn (body);
+     }
+ 
++  if (fallthru_label)
++    emit_label (fallthru_label);
++
+   /* For any outputs that needed reloading into registers, spill them
+      back to where they belong.  */
+   for (i = 0; i < noutputs; ++i)
+@@ -1087,6 +1111,7 @@ expand_asm_stmt (gimple stmt)
+   const char *s;
+   tree str, out, in, cl, labels;
+   location_t locus = gimple_location (stmt);
++  basic_block fallthru_bb = NULL;
+ 
+   /* Meh... convert the gimple asm operands into real tree lists.
+      Eventually we should make all routines work on the vectors instead
+@@ -1122,6 +1147,9 @@ expand_asm_stmt (gimple stmt)
+   n = gimple_asm_nlabels (stmt);
+   if (n > 0)
+     {
++      edge fallthru = find_fallthru_edge (gimple_bb (stmt)->succs);
++      if (fallthru)
++	fallthru_bb = fallthru->dest;
+       t = labels = gimple_asm_label_op (stmt, 0);
+       for (i = 1; i < n; i++)
+ 	t = TREE_CHAIN (t) = gimple_asm_label_op (stmt, i);
+@@ -1147,7 +1175,7 @@ expand_asm_stmt (gimple stmt)
+ 
+   /* Generate the ASM_OPERANDS insn; store into the TREE_VALUEs of
+      OUTPUTS some trees for where the values were actually stored.  */
+-  expand_asm_operands (str, outputs, in, cl, labels,
++  expand_asm_operands (str, outputs, in, cl, labels, fallthru_bb,
+ 		       gimple_asm_volatile_p (stmt), locus);
+ 
+   /* Copy all the intermediate outputs into the specified outputs.  */
+--- /dev/null
++++ b/gcc/testsuite/gcc.dg/torture/pr58670.c
+@@ -0,0 +1,47 @@
++/* PR middle-end/58670 */
++/* { dg-do run { target i?86-*-* x86_64-*-* } } */
++
++#if defined (__i386__) || defined (__x86_64__)
++#define ASM_STR "bts $1, %0; jc %l[lab]"
++#endif
++
++__attribute__((noinline, noclone)) int
++foo (int a, int b)
++{
++  if (a)
++    return -3;
++#ifdef ASM_STR
++  asm volatile goto (ASM_STR : : "m" (b) : "memory" : lab);
++  return 0;
++lab:
++#endif
++  return 0;
++}
++
++int
++bar (int a, int b)
++{
++  if (a)
++    return -3;
++#ifdef ASM_STR
++  asm volatile goto (ASM_STR : : "m" (b) : "memory" : lab);
++  return 0;
++lab:
++#endif
++  return 0;
++}
++
++int
++main ()
++{
++  if (foo (1, 0) != -3
++      || foo (0, 3) != 0
++      || foo (1, 0) != -3
++      || foo (0, 0) != 0
++      || bar (1, 0) != -3
++      || bar (0, 3) != 0
++      || bar (1, 0) != -3
++      || bar (0, 0) != 0)
++    __builtin_abort ();
++  return 0;
++}
