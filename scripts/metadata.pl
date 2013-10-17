@@ -172,7 +172,6 @@ sub target_config_features(@) {
 		/targz/ and $ret .= "\tselect USES_TARGZ\n";
 		/cpiogz/ and $ret .= "\tselect USES_CPIOGZ\n";
 		/ubifs/ and $ret .= "\tselect USES_UBIFS\n";
-		/fit/ and $ret .= "\tselect USES_FIT\n";
 		/fpu/ and $ret .= "\tselect HAS_FPU\n";
 		/spe_fpu/ and $ret .= "\tselect HAS_SPE_FPU\n";
 		/ramdisk/ and $ret .= "\tselect USES_INITRAMFS\n";
