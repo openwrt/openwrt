@@ -13,22 +13,22 @@ proto_dhcp_init_config() {
 	proto_config_add_boolean "broadcast"
 	proto_config_add_string "reqopts"
 	proto_config_add_string "iface6rd"
-	proto_config_add_string "customopts"
+	proto_config_add_string "sendopts"
 }
 
 proto_dhcp_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local ipaddr hostname clientid vendorid broadcast reqopts iface6rd customopts
-	json_get_vars ipaddr hostname clientid vendorid broadcast reqopts iface6rd customopts
+	local ipaddr hostname clientid vendorid broadcast reqopts iface6rd sendopts
+	json_get_vars ipaddr hostname clientid vendorid broadcast reqopts iface6rd sendopts
 
 	local opt dhcpopts
 	for opt in $reqopts; do
 		append dhcpopts "-O $opt"
 	done
 
-	for opt in $customopts; do
+	for opt in $sendopts; do
 		append dhcpopts "-x $opt"
 	done
 
