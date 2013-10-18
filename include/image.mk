@@ -139,6 +139,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
 			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--force-compr=lzo) \
 			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--force-compr=zlib) \
 			--jrn-size=$(CONFIG_TARGET_UBIFS_JOURNAL_SIZE) \
+			--squash-uids \
 			-o $(KDIR)/root.ubifs \
 			-d $(TARGET_DIR)
         endif
