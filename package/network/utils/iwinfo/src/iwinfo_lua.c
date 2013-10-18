@@ -862,6 +862,7 @@ LUALIB_API int luaopen_iwinfo(lua_State *L) {
 
 #ifdef USE_WL
 	luaL_newmetatable(L, IWINFO_WL_META);
+	luaL_register(L, NULL, R_common);
 	luaL_register(L, NULL, R_wl);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
@@ -870,6 +871,7 @@ LUALIB_API int luaopen_iwinfo(lua_State *L) {
 
 #ifdef USE_MADWIFI
 	luaL_newmetatable(L, IWINFO_MADWIFI_META);
+	luaL_register(L, NULL, R_common);
 	luaL_register(L, NULL, R_madwifi);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
@@ -878,6 +880,7 @@ LUALIB_API int luaopen_iwinfo(lua_State *L) {
 
 #ifdef USE_NL80211
 	luaL_newmetatable(L, IWINFO_NL80211_META);
+	luaL_register(L, NULL, R_common);
 	luaL_register(L, NULL, R_nl80211);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
@@ -885,6 +888,7 @@ LUALIB_API int luaopen_iwinfo(lua_State *L) {
 #endif
 
 	luaL_newmetatable(L, IWINFO_WEXT_META);
+	luaL_register(L, NULL, R_common);
 	luaL_register(L, NULL, R_wext);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
