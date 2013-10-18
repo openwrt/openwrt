@@ -119,13 +119,13 @@ wpa_supplicant_setup_vif() {
 		;;
 	esac
 
-	local fixed_freq bssid1 beacon_interval brates mrate
+	local fixed_freq bssid1 beacon_int brates mrate
 	config_get ifname "$vif" ifname
 	config_get bridge "$vif" bridge
 	config_get ssid "$vif" ssid
 	config_get bssid "$vif" bssid
 	bssid1=${bssid:+"bssid=$bssid"}
-	beacon_interval=${beacon_int:+"beacon_interval=$beacon_int"}
+	beacon_int=${beacon_int:+"beacon_int=$beacon_int"}
 
 	local br brval brsub brstr
 	[ -n "$basic_rate_list" ] && {
@@ -163,7 +163,7 @@ network={
 	$proto
 	$freq
 	${fixed:+"fixed_freq=1"}
-	$beacon_interval
+	$beacon_int
 	$brates
 	$mrate
 	$ht_str
