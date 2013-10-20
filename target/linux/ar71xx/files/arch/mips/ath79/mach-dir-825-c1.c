@@ -217,8 +217,7 @@ static void __init dir825c1_setup(void)
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(dir825c1_leds_gpio),
 				 dir825c1_leds_gpio);
 
-	ap9x_pci_setup_wmac_led_pin(0, 13);
-	ap9x_pci_setup_wmac_led_pin(1, 32);
+	ap9x_pci_setup_wmac_led_pin(0, 0);
 
 	dir825c1_generic_setup();
 }
