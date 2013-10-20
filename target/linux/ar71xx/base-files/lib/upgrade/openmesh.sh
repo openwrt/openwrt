@@ -27,10 +27,12 @@ cfg_value_get()
 }
 
 # make sure we got uboot-envtools and fw_env.config copied over to the ramfs
+# create /var/lock for the lock "fw_setenv.lock" of fw_setenv
 platform_add_ramfs_ubootenv()
 {
 	[ -e /usr/sbin/fw_printenv ] && install_bin /usr/sbin/fw_printenv /usr/sbin/fw_setenv
 	[ -e /etc/fw_env.config ] && install_file /etc/fw_env.config
+	mkdir -p $RAM_ROOT/var/lock
 }
 append sysupgrade_pre_upgrade platform_add_ramfs_ubootenv
 
