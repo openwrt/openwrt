@@ -1,6 +1,6 @@
 #!/bin/sh
 /etc/init.d/6relayd enabled || exit 0
-[ -n "$INTERFACE" ] || exit 0
+[ -n "$INTERFACE" -a "$ACTION" != "ifupdate" ] || exit 0
 
 . /etc/init.d/6relayd
 restart_affected "$INTERFACE"
