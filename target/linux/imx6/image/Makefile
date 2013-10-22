@@ -41,6 +41,7 @@ define Image/InstallKernel/Template
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
   ifneq ($(1),)
 	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb $(TARGET_DIR)/boot/
+	ln -sf $(IMG_PREFIX)-$(1).dtb $(TARGET_DIR)/boot/$(1)
   endif
  endif
 endef
