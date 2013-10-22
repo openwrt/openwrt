@@ -1,7 +1,7 @@
-From 46e5460f446109565b3f4a0cb728171d74bce33b Mon Sep 17 00:00:00 2001
+From 31963d998d2984079dc4f4b36b7df170d85f6d66 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Thu, 3 Oct 2013 22:07:11 +0200
-Subject: [PATCH 5/6] b44: add phylib support
+Subject: [PATCH 6/9] b44: add phylib support
 
 Most of the older home routers based on the Broadcom BCM47XX SoC series
 are using a MAC that is supported by b44. On most of these routers not
@@ -21,9 +21,9 @@ This was tested with a BCM4704, BCM4712 and BCM5354.
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/net/ethernet/broadcom/Kconfig |    1 +
- drivers/net/ethernet/broadcom/b44.c   |  183 ++++++++++++++++++++++++++++++++-
- drivers/net/ethernet/broadcom/b44.h   |    5 +
- 3 files changed, 186 insertions(+), 3 deletions(-)
+ drivers/net/ethernet/broadcom/b44.c   |  181 ++++++++++++++++++++++++++++++++-
+ drivers/net/ethernet/broadcom/b44.h   |    4 +
+ 3 files changed, 183 insertions(+), 3 deletions(-)
 
 --- a/drivers/net/ethernet/broadcom/Kconfig
 +++ b/drivers/net/ethernet/broadcom/Kconfig
@@ -81,7 +81,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  {
  	struct b44 *bp = netdev_priv(dev);
  
-+	if (bp->has_phy) {
++	if (bp->flags & B44_FLAG_EXTERNAL_PHY) {
 +		BUG_ON(!bp->phydev);
 +		return phy_ethtool_gset(bp->phydev, cmd);
 +	}
@@ -97,7 +97,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	u32 speed;
 +	int ret;
 +
-+	if (bp->has_phy) {
++	if (bp->flags & B44_FLAG_EXTERNAL_PHY) {
 +		BUG_ON(!bp->phydev);
 +		spin_lock_irq(&bp->lock);
 +		if (netif_running(dev))
@@ -127,7 +127,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	spin_lock_irq(&bp->lock);
 -	err = generic_mii_ioctl(&bp->mii_if, data, cmd, NULL);
-+	if (bp->has_phy) {
++	if (bp->flags & B44_FLAG_EXTERNAL_PHY) {
 +		BUG_ON(bp->phydev);
 +		err = phy_mii_ioctl(bp->phydev, ifr, cmd);
 +	} else {
@@ -261,13 +261,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static int b44_init_one(struct ssb_device *sdev,
  			const struct ssb_device_id *ent)
  {
-@@ -2246,10 +2408,22 @@ static int b44_init_one(struct ssb_devic
+@@ -2246,10 +2408,20 @@ static int b44_init_one(struct ssb_devic
  	if (b44_phy_reset(bp) < 0)
  		bp->phy_addr = B44_PHY_ADDR_NO_LOACL_PHY;
  
-+	bp->has_phy = bp->phy_addr == B44_PHY_ADDR_NO_LOACL_PHY;
-+
-+	if (bp->has_phy) {
++	if (bp->flags & B44_FLAG_EXTERNAL_PHY) {
 +		err = b44_register_phy_one(bp);
 +		if (err) {
 +			dev_err(sdev->dev, "Cannot register PHY, aborting\n");
@@ -284,25 +282,24 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  err_out_powerdown:
  	ssb_bus_may_powerdown(sdev->bus);
  
-@@ -2263,8 +2437,11 @@ out:
+@@ -2263,8 +2435,11 @@ out:
  static void b44_remove_one(struct ssb_device *sdev)
  {
  	struct net_device *dev = ssb_get_drvdata(sdev);
 +	struct b44 *bp = netdev_priv(dev);
  
  	unregister_netdev(dev);
-+	if (bp->has_phy)
++	if (bp->flags & B44_FLAG_EXTERNAL_PHY)
 +		b44_unregister_phy_one(bp);
  	ssb_device_disable(sdev, 0);
  	ssb_bus_may_powerdown(sdev->bus);
  	free_netdev(dev);
 --- a/drivers/net/ethernet/broadcom/b44.h
 +++ b/drivers/net/ethernet/broadcom/b44.h
-@@ -397,6 +397,11 @@ struct b44 {
+@@ -397,6 +397,10 @@ struct b44 {
  	u32			tx_pending;
  	u8			phy_addr;
  	u8			force_copybreak;
-+	bool			has_phy;
 +	struct phy_device	*phydev;
 +	struct mii_bus		*mii_bus;
 +	int			old_link;

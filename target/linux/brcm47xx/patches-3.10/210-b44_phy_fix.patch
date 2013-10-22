@@ -41,7 +41,7 @@
  	b44_wap54g10_workaround(bp);
 +	b44_bcm47xx_workarounds(bp);
  
- 	if (bp->phy_addr == B44_PHY_ADDR_NO_LOACL_PHY)
+ 	if (bp->flags & B44_FLAG_EXTERNAL_PHY)
  		return 0;
 @@ -2158,6 +2183,8 @@ static int b44_get_invariants(struct b44
  	 * valid PHY address. */
