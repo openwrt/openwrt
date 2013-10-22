@@ -1,7 +1,7 @@
-From 444044a410d4cf3b6dd462f2c9352d56039d9e07 Mon Sep 17 00:00:00 2001
+From f6a8d917c3efcfb974097ef4b345e8cda5283bab Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 6 Oct 2013 17:58:24 +0200
-Subject: [PATCH 6/6] b44: activate PHY when MAC is off
+Subject: [PATCH 7/9] b44: activate PHY when MAC is off
 
 Without this patch we can not access the PHY when the MAC is switched
 off. This PHY access is needed to configure the switch, which is done
@@ -19,7 +19,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	/* now reset the chip, but without enabling the MAC&PHY
  	 * part of it. This has to be done _after_ we shut down the PHY */
 -	b44_chip_reset(bp, B44_CHIP_RESET_PARTIAL);
-+	if (bp->has_phy)
++	if (bp->flags & B44_FLAG_EXTERNAL_PHY)
 +		b44_chip_reset(bp, B44_CHIP_RESET_FULL);
 +	else
 +		b44_chip_reset(bp, B44_CHIP_RESET_PARTIAL);
