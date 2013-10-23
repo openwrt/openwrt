@@ -17,10 +17,10 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  
 -	return pp->irq;
 +	switch (pin) {
-+	case 1: return pp->irq;
-+	case 2: return pp->irq - 1;
-+	case 3: return pp->irq - 2;
-+	case 4: return pp->irq - 3;
++	case 1: return pp->irq - 3;
++	case 2: return pp->irq - 2;
++	case 3: return pp->irq - 1;
++	case 4: return pp->irq;
 +	default: return -1;
 +	}
  }
