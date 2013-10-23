@@ -13,7 +13,7 @@ FEATURES:=squashfs targz mips16
 CPU_TYPE=34kc
 SUBTARGETS:=generic nand
 
-LINUX_VERSION:=3.10.15
+LINUX_VERSION:=3.10.17
 
 include $(INCLUDE_DIR)/target.mk
 

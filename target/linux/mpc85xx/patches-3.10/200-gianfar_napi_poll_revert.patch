@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/freescale/gianfar.c
 +++ b/drivers/net/ethernet/freescale/gianfar.c
-@@ -132,7 +132,7 @@ static int gfar_poll(struct napi_struct 
+@@ -132,7 +132,7 @@ static int gfar_poll(struct napi_struct
  static void gfar_netpoll(struct net_device *dev);
  #endif
  int gfar_clean_rx_ring(struct gfar_priv_rx_q *rx_queue, int rx_work_limit);
@@ -27,7 +27,7 @@
  }
  
  static void gfar_schedule_cleanup(struct gfar_priv_grp *gfargrp)
-@@ -2833,82 +2835,62 @@ static int gfar_poll(struct napi_struct 
+@@ -2833,82 +2835,62 @@ static int gfar_poll(struct napi_struct
  	struct gfar __iomem *regs = gfargrp->regs;
  	struct gfar_priv_tx_q *tx_queue = NULL;
  	struct gfar_priv_rx_q *rx_queue = NULL;

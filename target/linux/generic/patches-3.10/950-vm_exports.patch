@@ -1,7 +1,7 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2889,6 +2889,15 @@ static struct dentry_operations anon_ops
- 	.d_dname = shmem_dname
+@@ -2883,6 +2883,15 @@ static struct dentry_operations anon_ops
+ 	.d_dname = simple_dname
  };
  
 +void shmem_set_file(struct vm_area_struct *vma, struct file *file)
@@ -16,7 +16,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2962,11 +2971,8 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -2956,11 +2965,8 @@ int shmem_zero_setup(struct vm_area_stru
  	file = shmem_file_setup("dev/zero", size, vma->vm_flags);
  	if (IS_ERR(file))
  		return PTR_ERR(file);

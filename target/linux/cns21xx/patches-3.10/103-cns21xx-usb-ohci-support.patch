@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
-@@ -695,6 +695,9 @@ retry:
+@@ -697,6 +697,9 @@ retry:
  
  	periodic_reinit (ohci);
  
@@ -10,7 +10,7 @@
  	/* some OHCI implementations are finicky about how they init.
  	 * bogus values here mean not even enumeration could work.
  	 */
-@@ -1189,6 +1192,11 @@ MODULE_LICENSE ("GPL");
+@@ -1191,6 +1194,11 @@ MODULE_LICENSE ("GPL");
  #define PLATFORM_DRIVER		ohci_hcd_tilegx_driver
  #endif
  
@@ -22,7 +22,7 @@
  #ifdef CONFIG_USB_OHCI_HCD_PLATFORM
  #include "ohci-platform.c"
  #define PLATFORM_DRIVER		ohci_platform_driver
-@@ -1209,7 +1217,8 @@ MODULE_LICENSE ("GPL");
+@@ -1211,7 +1219,8 @@ MODULE_LICENSE ("GPL");
  	!defined(AT91_PLATFORM_DRIVER) && \
  	!defined(NXP_PLATFORM_DRIVER) && \
  	!defined(DAVINCI_PLATFORM_DRIVER) && \
@@ -32,7 +32,7 @@
  #error "missing bus glue for ohci-hcd"
  #endif
  
-@@ -1329,9 +1338,19 @@ static int __init ohci_hcd_mod_init(void
+@@ -1331,9 +1340,19 @@ static int __init ohci_hcd_mod_init(void
  		goto error_spear;
  #endif
  
@@ -52,7 +52,7 @@
  #ifdef SPEAR_PLATFORM_DRIVER
  	platform_driver_unregister(&SPEAR_PLATFORM_DRIVER);
   error_spear:
-@@ -1409,6 +1428,9 @@ module_init(ohci_hcd_mod_init);
+@@ -1411,6 +1430,9 @@ module_init(ohci_hcd_mod_init);
  
  static void __exit ohci_hcd_mod_exit(void)
  {

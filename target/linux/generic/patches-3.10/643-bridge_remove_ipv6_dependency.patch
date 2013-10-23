@@ -1,6 +1,6 @@
 --- a/include/net/addrconf.h
 +++ b/include/net/addrconf.h
-@@ -99,6 +99,12 @@ extern void			addrconf_join_solict(struc
+@@ -103,6 +103,12 @@ extern void			addrconf_join_solict(struc
  extern void			addrconf_leave_solict(struct inet6_dev *idev,
  					const struct in6_addr *addr);
  
@@ -49,7 +49,7 @@
  
  int __ipv6_get_lladdr(struct inet6_dev *idev, struct in6_addr *addr,
  		      unsigned char banned_flags)
-@@ -5143,6 +5142,9 @@ int __init addrconf_init(void)
+@@ -5170,6 +5169,9 @@ int __init addrconf_init(void)
  
  	ipv6_addr_label_rtnl_register();
  
@@ -59,7 +59,7 @@
  	return 0;
  errout:
  	rtnl_af_unregister(&inet6_ops);
-@@ -5161,6 +5163,9 @@ void addrconf_cleanup(void)
+@@ -5188,6 +5190,9 @@ void addrconf_cleanup(void)
  	struct net_device *dev;
  	int i;
  

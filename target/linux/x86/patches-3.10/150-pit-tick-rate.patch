@@ -1,7 +1,7 @@
 --- a/include/linux/timex.h
 +++ b/include/linux/timex.h
-@@ -143,6 +143,10 @@ extern void hardpps(const struct timespe
- int read_current_timer(unsigned long *timer_val);
+@@ -144,6 +144,10 @@ int read_current_timer(unsigned long *ti
+ void ntp_notify_cmos_timer(void);
  
  /* The clock frequency of the i8253/i8254 PIT */
 +#ifdef CONFIG_X86_RDC321X

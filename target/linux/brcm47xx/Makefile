@@ -12,7 +12,7 @@ BOARDNAME:=Broadcom BCM947xx/953xx
 FEATURES:=squashfs usb pcmcia
 MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 
-LINUX_VERSION:=3.10.15
+LINUX_VERSION:=3.10.17
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += swconfig kmod-diag wpad-mini nvram
