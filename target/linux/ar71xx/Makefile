@@ -22,8 +22,4 @@ DEFAULT_PACKAGES += \
 	kmod-ledtrig-default-on kmod-ledtrig-timer kmod-ledtrig-netdev \
 	kmod-ath9k wpad-mini uboot-envtools
 
-define Target/Description
-	Build firmware images for Atheros AR7xxx/AR9xxx based boards.
-endef
-
 $(eval $(call BuildTarget))
