@@ -13,8 +13,8 @@ define Image/BuildKernel/Template
 
 	$(CP) $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
 	echo -ne '\x00\x00\x00\x00' >> $(BIN_DIR)/$(IMG_PREFIX)-zImage
-	$(call Image/BuildKernel/MkuImageARM, \
-		0x00008000, \
+	$(call Image/BuildKernel/MkuImage, \
+		none, 0x00008000, 0x00008000, \
 		$(BIN_DIR)/$(IMG_PREFIX)-zImage, \
 		$(BIN_DIR)/$(IMG_PREFIX)-uImage \
 	)
@@ -22,8 +22,8 @@ define Image/BuildKernel/Template
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(CP) $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
 	echo -ne '\x00\x00\x00\x00' >> $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
-	$(call Image/BuildKernel/MkuImageARM, \
-		0x00008000, \
+	$(call Image/BuildKernel/MkuImage, \
+		none, 0x00008000, 0x00008000, \
 		$(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs, \
 		$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs \
 	)
@@ -34,8 +34,8 @@ define Image/BuildKernel/Template
 
 	$(CP) $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-zImage
 	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb >> $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-zImage
-	$(call Image/BuildKernel/MkuImageARM, \
-		0x00008000, \
+	$(call Image/BuildKernel/MkuImage, \
+		none, 0x00008000, 0x00008000, \
 		$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-zImage, \
 		$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-uImage \
 	)
@@ -43,8 +43,8 @@ define Image/BuildKernel/Template
   ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(CP) $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-zImage-initramfs
 	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb >> $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-zImage-initramfs
-	$(call Image/BuildKernel/MkuImageARM, \
-		0x00008000, \
+	$(call Image/BuildKernel/MkuImage, \
+		none, 0x00008000, 0x00008000,
 		$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-zImage-initramfs, \
 		$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-uImage-initramfs \
 	)

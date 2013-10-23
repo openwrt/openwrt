@@ -67,6 +67,10 @@ define add_jffs2_mark
 	echo -ne '\xde\xad\xc0\xde' >> $(1)
 endef
 
+define toupper
+	$(shell echo $(1) | tr '[:lower:]' '[:upper:]')
+endef
+
 # pad to 4k, 8k, 64k, 128k 256k and add jffs2 end-of-filesystem mark
 define prepare_generic_squashfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(1) 4 8 64 128 256
@@ -82,9 +86,9 @@ else
   endef
 endif
 
-define Image/BuildKernel/MkuImageARM
-	mkimage -A arm -O linux -T kernel -a $(1) -C none -e $(1) \
-		-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' -d $(2) $(3)
+define Image/BuildKernel/MkuImage
+	mkimage -A $(ARCH) -O linux -T kernel -C $(1) -a $(2) -e $(3) \
+		-n '$(call toupper,$(ARCH)) OpenWrt Linux-$(LINUX_VERSION)' -d $(4) $(5)
 endef
 
 define Image/BuildKernel/MkFIT
