@@ -1,6 +1,6 @@
 #!/bin/sh
 
-[ "$ACTION" = ifup ] || exit 0
+[ "$ACTION" = ifup -o "$ACTION" = ifupdate ] || exit 0
 
 /etc/init.d/firewall enabled || exit 0
 
