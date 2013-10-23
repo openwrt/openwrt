@@ -83,14 +83,14 @@ endef
 define Image/Build/ubifs
 
  ifneq ($($(PROFILE)_UBIFS_OPTS),)
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(call get_human_name)-ubifs.img
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(call get_human_name)-rootfs.ubifs
  endif
 endef
 
 define Image/Build/ubi
 
  ifneq ($($(PROFILE)_UBI_OPTS),)
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(call get_human_name)-ubi.img
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(call get_human_name)-rootfs.ubi
  endif
 endef
 
