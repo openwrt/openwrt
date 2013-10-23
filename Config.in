@@ -173,13 +173,37 @@ menu "Target Images"
 		help
 		  Allows you to change the percentage of reserved blocks in the root filesystem
 
-	config TARGET_ROOTFS_INCLUDE_KERNEL
+	menuconfig TARGET_ROOTFS_INCLUDE_KERNEL
 		bool "Include kernel in root filesystem"
 		depends on TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
 		default n if USES_UBIFS
 		help
 		  Include the kernel image in the rootfs. Typically the image is placed
 		  below /boot.
+
+		config TARGET_ROOTFS_INCLUDE_UIMAGE
+			bool "include uImage" if TARGET_ROOTFS_INCLUDE_KERNEL
+			default y
+			help
+			  This option might not apply to all targets. Make sure
+			  to check target/linux/<your_target>/image/Makefile to
+			  see if this option will have any effect.
+
+		config TARGET_ROOTFS_INCLUDE_ZIMAGE
+			bool "include zImage" if TARGET_ROOTFS_INCLUDE_KERNEL
+			default y
+			help
+			  This option might not apply to all targets. Make sure
+			  to check target/linux/<your_target>/image/Makefile to
+			  see if this option will have any effect.
+
+		config TARGET_ROOTFS_INCLUDE_FIT
+			bool "include FIT" if TARGET_ROOTFS_INCLUDE_KERNEL
+			default y
+			help
+			  This option might not apply to all targets. Make sure
+			  to check target/linux/<your_target>/image/Makefile to
+			  see if this option will have any effect.
 
 	config TARGET_ROOTFS_INCLUDE_DTB
 		bool "Include DTB in root filesystem"
