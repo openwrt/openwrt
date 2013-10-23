@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define get_human_name
+define sanitize_profile_name
 $(shell echo $(PROFILE) | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
 endef
 
@@ -70,27 +70,27 @@ define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).bin bs=128k conv=sync
 	( \
-		dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(call get_human_name)-fit-uImage.itb bs=2048k conv=sync; \
+		dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-fit-uImage.itb bs=2048k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/$(IMG_PREFIX)-$(call get_human_name)-fit-$(1).bin
+	) > $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-fit-$(1).bin
 endef
 
 define Image/mkfs/targz
 
-	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-$(call get_human_name)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
 endef
 
 define Image/Build/ubifs
 
  ifneq ($($(PROFILE)_UBIFS_OPTS),)
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(call get_human_name)-rootfs.ubifs
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs.ubifs
  endif
 endef
 
 define Image/Build/ubi
 
  ifneq ($($(PROFILE)_UBI_OPTS),)
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(call get_human_name)-rootfs.ubi
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs.ubi
  endif
 endef
 
