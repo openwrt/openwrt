@@ -12,20 +12,30 @@ $(shell echo $(PROFILE) | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
 endef
 
 define Image/BuildKernel/Template
-	cp $(LINUX_DIR)/arch/arm/boot/dts/$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
+	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
 
 	$(call Image/BuildKernel/MkFIT,$(1),$(KDIR)/zImage,$(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb,none,0x10008000,0x10008000)
-	cp $(KDIR)/fit-$(1).itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage.itb
+	$(CP) $(KDIR)/fit-$(1).itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage.itb
 
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/BuildKernel/MkFIT,$(1),$(KDIR)/zImage-initramfs,$(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb,none,0x10008000,0x10008000,-initramfs)
-	cp $(KDIR)/fit-$(1)-initramfs.itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage-initramfs.itb
+	$(CP) $(KDIR)/fit-$(1)-initramfs.itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage-initramfs.itb
  endif
 
-	cp $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
+	$(CP) $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
+	$(call Image/BuildKernel/MkuImage, \
+		none, 0x10008000, 0x10008000, \
+		$(BIN_DIR)/$(IMG_PREFIX)-zImage, \
+		$(BIN_DIR)/$(IMG_PREFIX)-uImage \
+	)
 
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	cp $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
+	$(CP) $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
+	$(call Image/BuildKernel/MkuImage, \
+		none, 0x10008000, 0x10008000, \
+		$(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs, \
+		$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs \
+	)
  endif
 endef
 
@@ -33,8 +43,18 @@ define Image/InstallKernel/Template
 
  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
+   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/
+	ln -sf $(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/uImage
+   endif
+   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE),)
 	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-zImage $(TARGET_DIR)/boot/
 	ln -sf $(IMG_PREFIX)-zImage $(TARGET_DIR)/boot/zImage
+   endif
+   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_FIT),)
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage.itb $(TARGET_DIR)/boot/
+	ln -sf $(IMG_PREFIX)-$(1)-fit-uImage.itb $(TARGET_DIR)/boot/uImage.itb
+   endif
  endif
  
  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
