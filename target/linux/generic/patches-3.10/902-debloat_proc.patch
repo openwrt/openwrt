@@ -251,7 +251,7 @@
  
 --- a/ipc/msg.c
 +++ b/ipc/msg.c
-@@ -136,6 +136,9 @@ void __init msg_init(void)
+@@ -134,6 +134,9 @@ void __init msg_init(void)
  	printk(KERN_INFO "msgmni has been set to %d\n",
  		init_ipc_ns.msg_ctlmni);
  
@@ -263,7 +263,7 @@
  				IPC_MSG_IDS, sysvipc_msg_proc_show);
 --- a/ipc/sem.c
 +++ b/ipc/sem.c
-@@ -184,6 +184,8 @@ void sem_exit_ns(struct ipc_namespace *n
+@@ -191,6 +191,8 @@ void sem_exit_ns(struct ipc_namespace *n
  void __init sem_init (void)
  {
  	sem_init_ns(&init_ipc_ns);
@@ -274,7 +274,7 @@
  				IPC_SEM_IDS, sysvipc_sem_proc_show);
 --- a/ipc/shm.c
 +++ b/ipc/shm.c
-@@ -115,6 +115,8 @@ pure_initcall(ipc_ns_init);
+@@ -118,6 +118,8 @@ pure_initcall(ipc_ns_init);
  
  void __init shm_init (void)
  {
@@ -285,7 +285,7 @@
  				"       key      shmid perms       size  cpid  lpid nattch   uid   gid  cuid  cgid      atime      dtime      ctime        rss       swap\n",
 --- a/ipc/util.c
 +++ b/ipc/util.c
-@@ -150,6 +150,9 @@ void __init ipc_init_proc_interface(cons
+@@ -158,6 +158,9 @@ void __init ipc_init_proc_interface(cons
  	struct proc_dir_entry *pde;
  	struct ipc_proc_iface *iface;
  

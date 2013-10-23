@@ -342,7 +342,7 @@
  
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -579,7 +579,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -573,7 +573,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  
@@ -367,7 +367,7 @@
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1383,8 +1383,8 @@ static struct sk_buff **inet_gro_receive
+@@ -1381,8 +1381,8 @@ static struct sk_buff **inet_gro_receive
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out_unlock;
  
@@ -558,8 +558,8 @@
 --- a/net/core/flow_dissector.c
 +++ b/net/core/flow_dissector.c
 @@ -152,7 +152,7 @@ ipv6:
- 		nhoff += poff;
- 		ports = skb_header_pointer(skb, nhoff, sizeof(_ports), &_ports);
+ 		ports = skb_header_pointer(skb, nhoff + poff,
+ 					   sizeof(_ports), &_ports);
  		if (ports)
 -			flow->ports = *ports;
 +			flow->ports = net_hdr_word(ports);
@@ -760,8 +760,8 @@
  #include <linux/types.h>
 +#include <linux/in6.h>
  
- extern void net_secret_init(void);
  extern __u32 secure_ip_id(__be32 daddr);
+ extern __u32 secure_ipv6_id(const __be32 daddr[4]);
 --- a/include/uapi/linux/in.h
 +++ b/include/uapi/linux/in.h
 @@ -55,7 +55,7 @@ enum {
@@ -775,12 +775,13 @@
  #define IP_TTL		2
 --- a/net/core/secure_seq.c
 +++ b/net/core/secure_seq.c
-@@ -41,10 +41,11 @@ __u32 secure_tcpv6_sequence_number(const
+@@ -54,11 +54,12 @@ __u32 secure_tcpv6_sequence_number(const
  	u32 secret[MD5_MESSAGE_BYTES / 4];
  	u32 hash[MD5_DIGEST_WORDS];
  	u32 i;
 +	const struct in6_addr *daddr6 = (struct in6_addr *) daddr;
  
+ 	net_secret_init();
  	memcpy(hash, saddr, 16);
  	for (i = 0; i < 4; i++)
 -		secret[i] = net_secret[i] + (__force u32)daddr[i];
@@ -788,12 +789,13 @@
  	secret[4] = net_secret[4] +
  		(((__force u16)sport << 16) + (__force u16)dport);
  	for (i = 5; i < MD5_MESSAGE_BYTES / 4; i++)
-@@ -62,10 +63,11 @@ u32 secure_ipv6_port_ephemeral(const __b
+@@ -76,11 +77,12 @@ u32 secure_ipv6_port_ephemeral(const __b
  	u32 secret[MD5_MESSAGE_BYTES / 4];
  	u32 hash[MD5_DIGEST_WORDS];
  	u32 i;
 +	const struct in6_addr *daddr6 = (struct in6_addr *) daddr;
  
+ 	net_secret_init();
  	memcpy(hash, saddr, 16);
  	for (i = 0; i < 4; i++)
 -		secret[i] = net_secret[i] + (__force u32) daddr[i];
@@ -801,12 +803,13 @@
  	secret[4] = net_secret[4] + (__force u32)dport;
  	for (i = 5; i < MD5_MESSAGE_BYTES / 4; i++)
  		secret[i] = net_secret[i];
-@@ -163,10 +165,11 @@ u64 secure_dccpv6_sequence_number(__be32
+@@ -183,11 +185,12 @@ u64 secure_dccpv6_sequence_number(__be32
  	u32 hash[MD5_DIGEST_WORDS];
  	u64 seq;
  	u32 i;
 +	const struct in6_addr *daddr6 = (struct in6_addr *) daddr;
  
+ 	net_secret_init();
  	memcpy(hash, saddr, 16);
  	for (i = 0; i < 4; i++)
 -		secret[i] = net_secret[i] + daddr[i];
