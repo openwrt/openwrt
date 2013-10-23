@@ -27,8 +27,8 @@ url=$1
         exit 1
 }
 
-url_kernel=$url/openwrt-ar71xx-nand-vmlinux-lzma.elf
-url_rootfs=$url/openwrt-ar71xx-nand-rootfs.tar.gz
+url_kernel=$url/openwrt-ar71xx-mikrotik-vmlinux-lzma.elf
+url_rootfs=$url/openwrt-ar71xx-mikrotik-rootfs.tar.gz
 
 mtd_kernel="$(find_mtd_part 'kernel')"
 mtd_rootfs="$(find_mtd_part 'rootfs')"

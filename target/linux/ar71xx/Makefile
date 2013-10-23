@@ -11,7 +11,7 @@ BOARD:=ar71xx
 BOARDNAME:=Atheros AR7xxx/AR9xxx
 FEATURES:=squashfs targz mips16
 CPU_TYPE=34kc
-SUBTARGETS:=generic nand
+SUBTARGETS:=generic mikrotik
 
 LINUX_VERSION:=3.10.17
 
