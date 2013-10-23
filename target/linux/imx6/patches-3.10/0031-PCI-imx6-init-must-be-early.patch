@@ -1,0 +1,24 @@
+From 8c8c877d8490c9d51210ee9e90d5f4d740f115c9 Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Thu, 17 Oct 2013 15:55:47 -0700
+Subject: [PATCH 3/5] PCI: imx6: init must be early
+
+If driver init is not early the pcie port driver gets initalized
+first and interrupts are not configured for the imx6 pcie driver.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ drivers/pci/host/pci-imx6.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pci/host/pci-imx6.c
++++ b/drivers/pci/host/pci-imx6.c
+@@ -568,7 +568,7 @@ static int __init imx6_pcie_init(void)
+ {
+ 	return platform_driver_probe(&imx6_pcie_driver, imx6_pcie_probe);
+ }
+-module_init(imx6_pcie_init);
++fs_initcall(imx6_pcie_init);
+ 
+ MODULE_AUTHOR("Sean Cross <xobs@kosagi.com>");
+ MODULE_DESCRIPTION("Freescale i.MX6 PCIe host controller driver");
