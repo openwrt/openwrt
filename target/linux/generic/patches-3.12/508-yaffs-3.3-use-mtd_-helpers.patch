@@ -1,0 +1,160 @@
+--- a/fs/yaffs2/yaffs_mtdif1.c
++++ b/fs/yaffs2/yaffs_mtdif1.c
+@@ -133,7 +133,7 @@ int nandmtd1_WriteChunkWithTagsToNAND(ya
+ 	ops.datbuf = (__u8 *)data;
+ 	ops.oobbuf = (__u8 *)&pt1;
+ 
+-	retval = mtd->write_oob(mtd, addr, &ops);
++	retval = mtd_write_oob(mtd, addr, &ops);
+ 	if (retval) {
+ 		T(YAFFS_TRACE_MTD,
+ 			(TSTR("write_oob failed, chunk %d, mtd error %d"TENDSTR),
+@@ -194,7 +194,7 @@ int nandmtd1_ReadChunkWithTagsFromNAND(y
+ 	/* Read page and oob using MTD.
+ 	 * Check status and determine ECC result.
+ 	 */
+-	retval = mtd->read_oob(mtd, addr, &ops);
++	retval = mtd_read_oob(mtd, addr, &ops);
+ 	if (retval) {
+ 		T(YAFFS_TRACE_MTD,
+ 			(TSTR("read_oob failed, chunk %d, mtd error %d"TENDSTR),
+@@ -218,7 +218,7 @@ int nandmtd1_ReadChunkWithTagsFromNAND(y
+ 		/* fall into... */
+ 	default:
+ 		rettags(etags, YAFFS_ECC_RESULT_UNFIXED, 0);
+-		etags->block_bad = (mtd->block_isbad)(mtd, addr);
++		etags->block_bad = mtd_block_isbad(mtd, addr);
+ 		return YAFFS_FAIL;
+ 	}
+ 
+@@ -286,7 +286,7 @@ int nandmtd1_MarkNANDBlockBad(struct yaf
+ 
+ 	T(YAFFS_TRACE_BAD_BLOCKS,(TSTR("marking block %d bad"TENDSTR), block_no));
+ 
+-	retval = mtd->block_markbad(mtd, (loff_t)blocksize * block_no);
++	retval = mtd_block_markbad(mtd, (loff_t)blocksize * block_no);
+ 	return (retval) ? YAFFS_FAIL : YAFFS_OK;
+ }
+ 
+@@ -336,7 +336,7 @@ int nandmtd1_QueryNANDBlock(struct yaffs
+ 		return YAFFS_FAIL;
+ 
+ 	retval = nandmtd1_ReadChunkWithTagsFromNAND(dev, chunkNo, NULL, &etags);
+-	etags.block_bad = (mtd->block_isbad)(mtd, addr);
++	etags.block_bad = mtd_block_isbad(mtd, addr);
+ 	if (etags.block_bad) {
+ 		T(YAFFS_TRACE_BAD_BLOCKS,
+ 			(TSTR("block %d is marked bad"TENDSTR), block_no));
+--- a/fs/yaffs2/yaffs_vfs_glue.c
++++ b/fs/yaffs2/yaffs_vfs_glue.c
+@@ -2607,8 +2607,8 @@ static void yaffs_MTDPutSuper(struct sup
+ {
+ 	struct mtd_info *mtd = yaffs_dev_to_mtd(yaffs_SuperToDevice(sb));
+ 
+-	if (mtd->sync)
+-		mtd->sync(mtd);
++	if (mtd)
++		mtd_sync(mtd);
+ 
+ 	put_mtd_device(mtd);
+ }
+--- a/fs/yaffs2/yaffs_mtdif2.c
++++ b/fs/yaffs2/yaffs_mtdif2.c
+@@ -77,7 +77,7 @@ int nandmtd2_WriteChunkWithTagsToNAND(ya
+ 	ops.ooboffs = 0;
+ 	ops.datbuf = (__u8 *)data;
+ 	ops.oobbuf = (dev->param.inband_tags) ? NULL : packed_tags_ptr;
+-	retval = mtd->write_oob(mtd, addr, &ops);
++	retval = mtd_write_oob(mtd, addr, &ops);
+ 
+ #else
+ 	if (!dev->param.inband_tags) {
+@@ -133,7 +133,7 @@ int nandmtd2_ReadChunkWithTagsFromNAND(y
+ 
+ #if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
+ 	if (dev->param.inband_tags || (data && !tags))
+-		retval = mtd->read(mtd, addr, dev->param.total_bytes_per_chunk,
++		retval = mtd_read(mtd, addr, dev->param.total_bytes_per_chunk,
+ 				&dummy, data);
+ 	else if (tags) {
+ 		ops.mode = MTD_OPS_AUTO_OOB;
+@@ -142,7 +142,7 @@ int nandmtd2_ReadChunkWithTagsFromNAND(y
+ 		ops.ooboffs = 0;
+ 		ops.datbuf = data;
+ 		ops.oobbuf = yaffs_dev_to_lc(dev)->spareBuffer;
+-		retval = mtd->read_oob(mtd, addr, &ops);
++		retval = mtd_read_oob(mtd, addr, &ops);
+ 	}
+ #else
+ 	if (!dev->param.inband_tags && data && tags) {
+@@ -201,7 +201,7 @@ int nandmtd2_MarkNANDBlockBad(struct yaf
+ 	  (TSTR("nandmtd2_MarkNANDBlockBad %d" TENDSTR), block_no));
+ 
+ 	retval =
+-	    mtd->block_markbad(mtd,
++	    mtd_block_markbad(mtd,
+ 			       block_no * dev->param.chunks_per_block *
+ 			       dev->param.total_bytes_per_chunk);
+ 
+@@ -221,7 +221,7 @@ int nandmtd2_QueryNANDBlock(struct yaffs
+ 	T(YAFFS_TRACE_MTD,
+ 	  (TSTR("nandmtd2_QueryNANDBlock %d" TENDSTR), block_no));
+ 	retval =
+-	    mtd->block_isbad(mtd,
++	    mtd_block_isbad(mtd,
+ 			     block_no * dev->param.chunks_per_block *
+ 			     dev->param.total_bytes_per_chunk);
+ 
+--- a/fs/yaffs2/yaffs_mtdif.h
++++ b/fs/yaffs2/yaffs_mtdif.h
+@@ -31,4 +31,39 @@ int nandmtd_InitialiseNAND(yaffs_dev_t *
+ #define MTD_OPS_AUTO_OOB 	MTD_OOB_AUTO
+ #endif
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0))
++static inline int mtd_erase(struct mdt_info *mtd, struct erase_info *ei)
++{
++	return mtd->erase(mtd, ei);
++}
++
++static inline int mtd_block_markbad(struct mtd_info *mtd, loff_t ofs)
++{
++	return mtd->block_mark_bad(mtd, ofs);
++}
++
++static inline int mtd_block_isbad(struct mtd_info *mtd, loff_t ofs)
++{
++	return mtd->block_is_bad(mtd, ofs);
++}
++
++static inline int mtd_read_oob(struct mtd_info *mtd, loff_t from,
++			       struct mtd_oob_ops *ops)
++{
++	return mtd->read_oob(mtd, from, ops);
++}
++
++static inline int mtd_write_oob(struct mtd_info *mtd, loff_t to,
++				struct mtd_oob_ops *ops)
++{
++	return mtd->write_oob(mtd, to, ops);
++}
++
++static inline void mtd_sync(struct mtd_info *mtd)
++{
++	if (mtd->sync)
++		mtd->sync(mtd);
++}
++#endif
++
+ #endif
+--- a/fs/yaffs2/yaffs_mtdif.c
++++ b/fs/yaffs2/yaffs_mtdif.c
+@@ -41,7 +41,7 @@ int nandmtd_EraseBlockInNAND(yaffs_dev_t
+ 	ei.callback = NULL;
+ 	ei.priv = (u_long) dev;
+ 
+-	retval = mtd->erase(mtd, &ei);
++	retval = mtd_erase(mtd, &ei);
+ 
+ 	if (retval == 0)
+ 		return YAFFS_OK;

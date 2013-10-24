@@ -1,0 +1,185 @@
+From 151c4e4a06b0b8d16c2fd392bb0e33868b12357f Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Mon, 12 Aug 2013 12:45:52 +0200
+Subject: [PATCH] MIPS: remove unnecessary platform dma helper functions
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+ arch/mips/include/asm/mach-cavium-octeon/dma-coherence.h | 12 ------------
+ arch/mips/include/asm/mach-generic/dma-coherence.h       | 10 ----------
+ arch/mips/include/asm/mach-ip27/dma-coherence.h          | 10 ----------
+ arch/mips/include/asm/mach-ip32/dma-coherence.h          | 11 -----------
+ arch/mips/include/asm/mach-jazz/dma-coherence.h          | 10 ----------
+ arch/mips/include/asm/mach-loongson/dma-coherence.h      | 10 ----------
+ arch/mips/include/asm/mach-powertv/dma-coherence.h       | 10 ----------
+ arch/mips/mm/dma-default.c                               |  4 +---
+ 8 files changed, 1 insertion(+), 76 deletions(-)
+
+--- a/arch/mips/include/asm/mach-cavium-octeon/dma-coherence.h
++++ b/arch/mips/include/asm/mach-cavium-octeon/dma-coherence.h
+@@ -52,23 +52,11 @@ static inline int plat_dma_supported(str
+ 	return 0;
+ }
+ 
+-static inline void plat_extra_sync_for_device(struct device *dev)
+-{
+-	BUG();
+-}
+-
+ static inline int plat_device_is_coherent(struct device *dev)
+ {
+ 	return 1;
+ }
+ 
+-static inline int plat_dma_mapping_error(struct device *dev,
+-					 dma_addr_t dma_addr)
+-{
+-	BUG();
+-	return 0;
+-}
+-
+ dma_addr_t phys_to_dma(struct device *dev, phys_addr_t paddr);
+ phys_addr_t dma_to_phys(struct device *dev, dma_addr_t daddr);
+ 
+--- a/arch/mips/include/asm/mach-generic/dma-coherence.h
++++ b/arch/mips/include/asm/mach-generic/dma-coherence.h
+@@ -47,16 +47,6 @@ static inline int plat_dma_supported(str
+ 	return 1;
+ }
+ 
+-static inline void plat_extra_sync_for_device(struct device *dev)
+-{
+-}
+-
+-static inline int plat_dma_mapping_error(struct device *dev,
+-					 dma_addr_t dma_addr)
+-{
+-	return 0;
+-}
+-
+ static inline int plat_device_is_coherent(struct device *dev)
+ {
+ #ifdef CONFIG_DMA_COHERENT
+--- a/arch/mips/include/asm/mach-ip27/dma-coherence.h
++++ b/arch/mips/include/asm/mach-ip27/dma-coherence.h
+@@ -58,16 +58,6 @@ static inline int plat_dma_supported(str
+ 	return 1;
+ }
+ 
+-static inline void plat_extra_sync_for_device(struct device *dev)
+-{
+-}
+-
+-static inline int plat_dma_mapping_error(struct device *dev,
+-					 dma_addr_t dma_addr)
+-{
+-	return 0;
+-}
+-
+ static inline int plat_device_is_coherent(struct device *dev)
+ {
+ 	return 1;		/* IP27 non-cohernet mode is unsupported */
+--- a/arch/mips/include/asm/mach-ip32/dma-coherence.h
++++ b/arch/mips/include/asm/mach-ip32/dma-coherence.h
+@@ -80,17 +80,6 @@ static inline int plat_dma_supported(str
+ 	return 1;
+ }
+ 
+-static inline void plat_extra_sync_for_device(struct device *dev)
+-{
+-	return;
+-}
+-
+-static inline int plat_dma_mapping_error(struct device *dev,
+-					 dma_addr_t dma_addr)
+-{
+-	return 0;
+-}
+-
+ static inline int plat_device_is_coherent(struct device *dev)
+ {
+ 	return 0;		/* IP32 is non-cohernet */
+--- a/arch/mips/include/asm/mach-jazz/dma-coherence.h
++++ b/arch/mips/include/asm/mach-jazz/dma-coherence.h
+@@ -48,16 +48,6 @@ static inline int plat_dma_supported(str
+ 	return 1;
+ }
+ 
+-static inline void plat_extra_sync_for_device(struct device *dev)
+-{
+-}
+-
+-static inline int plat_dma_mapping_error(struct device *dev,
+-					 dma_addr_t dma_addr)
+-{
+-	return 0;
+-}
+-
+ static inline int plat_device_is_coherent(struct device *dev)
+ {
+ 	return 0;
+--- a/arch/mips/include/asm/mach-loongson/dma-coherence.h
++++ b/arch/mips/include/asm/mach-loongson/dma-coherence.h
+@@ -53,16 +53,6 @@ static inline int plat_dma_supported(str
+ 	return 1;
+ }
+ 
+-static inline void plat_extra_sync_for_device(struct device *dev)
+-{
+-}
+-
+-static inline int plat_dma_mapping_error(struct device *dev,
+-					 dma_addr_t dma_addr)
+-{
+-	return 0;
+-}
+-
+ static inline int plat_device_is_coherent(struct device *dev)
+ {
+ 	return 0;
+--- a/arch/mips/include/asm/mach-powertv/dma-coherence.h
++++ b/arch/mips/include/asm/mach-powertv/dma-coherence.h
+@@ -99,16 +99,6 @@ static inline int plat_dma_supported(str
+ 	return 1;
+ }
+ 
+-static inline void plat_extra_sync_for_device(struct device *dev)
+-{
+-}
+-
+-static inline int plat_dma_mapping_error(struct device *dev,
+-					 dma_addr_t dma_addr)
+-{
+-	return 0;
+-}
+-
+ static inline int plat_device_is_coherent(struct device *dev)
+ {
+ 	return 0;
+--- a/arch/mips/mm/dma-default.c
++++ b/arch/mips/mm/dma-default.c
+@@ -297,7 +297,6 @@ static void mips_dma_sync_single_for_cpu
+ static void mips_dma_sync_single_for_device(struct device *dev,
+ 	dma_addr_t dma_handle, size_t size, enum dma_data_direction direction)
+ {
+-	plat_extra_sync_for_device(dev);
+ 	if (!plat_device_is_coherent(dev))
+ 		__dma_sync(dma_addr_to_page(dev, dma_handle),
+ 			   dma_handle & ~PAGE_MASK, size, direction);
+@@ -327,7 +326,7 @@ static void mips_dma_sync_sg_for_device(
+ 
+ int mips_dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
+-	return plat_dma_mapping_error(dev, dma_addr);
++	return 0;
+ }
+ 
+ int mips_dma_supported(struct device *dev, u64 mask)
+@@ -340,7 +339,6 @@ void dma_cache_sync(struct device *dev,
+ {
+ 	BUG_ON(direction == DMA_NONE);
+ 
+-	plat_extra_sync_for_device(dev);
+ 	if (!plat_device_is_coherent(dev))
+ 		__dma_sync_virtual(vaddr, size, direction);
+ }

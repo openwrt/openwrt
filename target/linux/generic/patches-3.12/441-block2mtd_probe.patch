@@ -1,0 +1,10 @@
+--- a/drivers/mtd/devices/block2mtd.c
++++ b/drivers/mtd/devices/block2mtd.c
+@@ -233,6 +233,7 @@ static struct block2mtd_dev *add_device(
+ 		/* We might not have rootfs mounted at this point. Try
+ 		   to resolve the device name by other means. */
+ 
++		wait_for_device_probe();
+ 		dev_t devt = name_to_dev_t(devname);
+ 		if (devt)
+ 			bdev = blkdev_get_by_dev(devt, mode, dev);

@@ -1,0 +1,45 @@
+--- a/fs/yaffs2/yaffs_vfs_glue.c
++++ b/fs/yaffs2/yaffs_vfs_glue.c
+@@ -3385,6 +3385,7 @@ static DECLARE_FSTYPE(yaffs2_fs_type, "y
+ 
+ #endif				/* CONFIG_YAFFS_YAFFS2 */
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0))
+ static struct proc_dir_entry *my_proc_entry;
+ static struct proc_dir_entry *debug_proc_entry;
+ 
+@@ -3668,6 +3669,7 @@ static int yaffs_proc_write(struct file
+ {
+         return yaffs_proc_write_trace_options(file, buf, count, data);
+ }
++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)) */
+ 
+ /* Stuff to handle installation of file systems */
+ struct file_system_to_install {
+@@ -3699,6 +3701,7 @@ static int __init init_yaffs_fs(void)
+ 
+ 	mutex_init(&yaffs_context_lock);
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0))
+ 	/* Install the proc_fs entries */
+ 	my_proc_entry = create_proc_entry("yaffs",
+ 					       S_IRUGO | S_IFREG,
+@@ -3721,6 +3724,7 @@ static int __init init_yaffs_fs(void)
+ 		debug_proc_entry->data = NULL;
+ 	} else
+ 		return -ENOMEM;
++#endif
+ 
+ 	/* Now add the file system entries */
+ 
+@@ -3757,8 +3761,10 @@ static void __exit exit_yaffs_fs(void)
+ 	T(YAFFS_TRACE_ALWAYS,
+ 		(TSTR("yaffs built " __DATE__ " " __TIME__ " removing. \n")));
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0))
+ 	remove_proc_entry("yaffs", YPROC_ROOT);
+ 	remove_proc_entry("yaffs_stats", YPROC_ROOT);
++#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)) */
+ 
+ 	fsinst = fs_to_install;
+ 
