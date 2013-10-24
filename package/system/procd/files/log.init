@@ -32,12 +32,14 @@ start_service_remote()
 	config_get log_ip $1 log_ip
 	config_get log_port $1 log_port
 	config_get log_proto $1 log_proto udp
+	config_get log_prefix $1 log_prefix
 
 	[ -z "${log_ip}" ] && return
 
 	procd_open_instance
 	procd_set_param command "$PROG" -f -r "$log_ip" "${log_port:-514}" -p "$pid_file"
 	[ "${log_proto}" != "udp" ] || procd_append_param command -u
+	[ -z "${log_prefix}" ] || procd_append_param command -P ${log_prefix}
 	procd_close_instance
 }
 
