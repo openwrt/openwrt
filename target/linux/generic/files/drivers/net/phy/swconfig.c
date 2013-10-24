@@ -25,13 +25,6 @@
 #include <linux/switch.h>
 #include <linux/of.h>
 
-//#define DEBUG 1
-#ifdef DEBUG
-#define DPRINTF(format, ...) printk("%s: " format, __func__, ##__VA_ARGS__)
-#else
-#define DPRINTF(...) do {} while(0)
-#endif
-
 #define SWCONFIG_DEVNAME	"switch%d"
 
 #include "swconfig_leds.c"
@@ -39,13 +32,12 @@
 MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
 MODULE_LICENSE("GPL");
 
-static int swdev_id = 0;
+static int swdev_id;
 static struct list_head swdevs;
 static DEFINE_SPINLOCK(swdevs_lock);
 struct swconfig_callback;
 
-struct swconfig_callback
-{
+struct swconfig_callback {
 	struct sk_buff *msg;
 	struct genlmsghdr *hdr;
 	struct genl_info *info;
@@ -64,7 +56,8 @@ struct swconfig_callback
 /* defaults */
 
 static int
-swconfig_get_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+swconfig_get_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	int ret;
 	if (val->port_vlan >= dev->vlans)
@@ -78,7 +71,8 @@ swconfig_get_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, 
 }
 
 static int
-swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	struct switch_port *ports = val->value.ports;
 	const struct switch_dev_ops *ops = dev->ops;
@@ -107,7 +101,8 @@ swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, 
 }
 
 static int
-swconfig_set_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+swconfig_set_pvid(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	if (val->port_vlan >= dev->ports)
 		return -EINVAL;
@@ -119,7 +114,8 @@ swconfig_set_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct
 }
 
 static int
-swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	if (val->port_vlan >= dev->ports)
 		return -EINVAL;
@@ -148,7 +144,8 @@ swconfig_speed_str(enum switch_port_speed speed)
 }
 
 static int
-swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	struct switch_port_link link;
 	int len;
@@ -173,7 +170,7 @@ swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr, struct
 			       val->port_vlan,
 			       swconfig_speed_str(link.speed),
 			       link.duplex ? "full" : "half",
-			       link.tx_flow ? "txflow ": "",
+			       link.tx_flow ? "txflow " : "",
 			       link.rx_flow ?	"rxflow " : "",
 			       link.aneg ? "auto" : "");
 	else
@@ -187,7 +184,8 @@ swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr, struct
 }
 
 static int
-swconfig_apply_config(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+swconfig_apply_config(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	/* don't complain if not supported by the switch driver */
 	if (!dev->ops->apply_config)
@@ -197,7 +195,8 @@ swconfig_apply_config(struct switch_dev *dev, const struct switch_attr *attr, st
 }
 
 static int
-swconfig_reset_switch(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+swconfig_reset_switch(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	/* don't complain if not supported by the switch driver */
 	if (!dev->ops->reset_switch)
@@ -263,7 +262,8 @@ static struct switch_attr default_vlan[] = {
 };
 
 static const struct switch_attr *
-swconfig_find_attr_by_name(const struct switch_attrlist *alist, const char *name)
+swconfig_find_attr_by_name(const struct switch_attrlist *alist,
+				const char *name)
 {
 	int i;
 
@@ -356,7 +356,7 @@ swconfig_get_dev(struct genl_info *info)
 	if (dev)
 		mutex_lock(&dev->sw_mutex);
 	else
-		DPRINTF("device %d not found\n", id);
+		pr_debug("device %d not found\n", id);
 	swconfig_unlock();
 done:
 	return dev;
@@ -461,7 +461,7 @@ swconfig_list_attrs(struct sk_buff *skb, struct genl_info *info)
 	if (!dev)
 		return -EINVAL;
 
-	switch(hdr->cmd) {
+	switch (hdr->cmd) {
 	case SWITCH_CMD_LIST_GLOBAL:
 		alist = &dev->ops->attr_global;
 		def_list = default_global;
@@ -538,7 +538,7 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 	if (!info->attrs[SWITCH_ATTR_OP_ID])
 		goto done;
 
-	switch(hdr->cmd) {
+	switch (hdr->cmd) {
 	case SWITCH_CMD_SET_GLOBAL:
 	case SWITCH_CMD_GET_GLOBAL:
 		alist = &dev->ops->attr_global;
@@ -597,7 +597,7 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 
 done:
 	if (!attr)
-		DPRINTF("attribute lookup failed\n");
+		pr_debug("attribute lookup failed\n");
 	val->attr = attr;
 	return attr;
 }
@@ -651,7 +651,7 @@ swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
 		goto error;
 
 	val.attr = attr;
-	switch(attr->type) {
+	switch (attr->type) {
 	case SWITCH_TYPE_NOVAL:
 		break;
 	case SWITCH_TYPE_INT:
@@ -674,7 +674,8 @@ swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
 		/* TODO: implement multipart? */
 		if (info->attrs[SWITCH_ATTR_OP_VALUE_PORTS]) {
 			err = swconfig_parse_ports(skb,
-				info->attrs[SWITCH_ATTR_OP_VALUE_PORTS], &val, dev->ports);
+				info->attrs[SWITCH_ATTR_OP_VALUE_PORTS],
+				&val, dev->ports);
 			if (err < 0)
 				goto error;
 		} else {
@@ -804,7 +805,7 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 	if (IS_ERR(hdr))
 		goto nla_put_failure;
 
-	switch(attr->type) {
+	switch (attr->type) {
 	case SWITCH_TYPE_INT:
 		if (nla_put_u32(msg, SWITCH_ATTR_OP_VALUE_INT, val.value.i))
 			goto nla_put_failure;
@@ -820,7 +821,7 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 			goto nla_put_failure;
 		break;
 	default:
-		DPRINTF("invalid type in attribute\n");
+		pr_debug("invalid type in attribute\n");
 		err = -EINVAL;
 		goto error;
 	}
@@ -877,9 +878,11 @@ swconfig_send_switch(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 		if (!p)
 			continue;
 		if (dev->portmap[i].s) {
-			if (nla_put_string(msg, SWITCH_PORTMAP_SEGMENT, dev->portmap[i].s))
+			if (nla_put_string(msg, SWITCH_PORTMAP_SEGMENT,
+						dev->portmap[i].s))
 				goto nla_put_failure;
-			if (nla_put_u32(msg, SWITCH_PORTMAP_VIRT, dev->portmap[i].virt))
+			if (nla_put_u32(msg, SWITCH_PORTMAP_VIRT,
+						dev->portmap[i].virt))
 				goto nla_put_failure;
 		}
 		nla_nest_end(msg, p);
@@ -998,13 +1001,15 @@ of_switch_load_portmap(struct switch_dev *dev)
 			continue;
 
 		if (size != (2 * sizeof(*prop))) {
-			pr_err("%s: failed to parse port mapping\n", port->name);
+			pr_err("%s: failed to parse port mapping\n",
+					port->name);
 			continue;
 		}
 
 		phys = be32_to_cpup(prop++);
 		if ((phys < 0) | (phys >= dev->ports)) {
-			pr_err("%s: physical port index out of range\n", port->name);
+			pr_err("%s: physical port index out of range\n",
+					port->name);
 			continue;
 		}
 
@@ -1034,12 +1039,12 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 	BUG_ON(!dev->alias);
 
 	if (dev->ports > 0) {
-		dev->portbuf = kzalloc(sizeof(struct switch_port) * dev->ports,
-				GFP_KERNEL);
+		dev->portbuf = kzalloc(sizeof(struct switch_port) *
+				dev->ports, GFP_KERNEL);
 		if (!dev->portbuf)
 			return -ENOMEM;
-		dev->portmap = kzalloc(sizeof(struct switch_portmap) * dev->ports,
-				GFP_KERNEL);
+		dev->portmap = kzalloc(sizeof(struct switch_portmap) *
+				dev->ports, GFP_KERNEL);
 		if (!dev->portmap) {
 			kfree(dev->portbuf);
 			return -ENOMEM;
