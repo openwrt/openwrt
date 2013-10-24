@@ -1,0 +1,25 @@
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -48,6 +48,12 @@ config MTD_SPLIT_SQUASHFS_ROOT
+ 	  offset and size of the unused portion of a rootfs partition
+ 	  containing a squashfs.
+ 
++comment "Firmware partition parsers"
++
++config MTD_SPLIT_UIMAGE_FW
++	bool "uImage based firmware partition parser"
++	select MTD_SPLIT
++
+ config MTD_SPLIT
+ 	def_bool n
+ 	help 
+--- a/drivers/mtd/Makefile
++++ b/drivers/mtd/Makefile
+@@ -8,6 +8,7 @@ mtd-y				:= mtdcore.o mtdsuper.o mtdconc
+ 
+ mtd-$(CONFIG_MTD_SPLIT)		+= mtdsplit.o
+ mtd-$(CONFIG_MTD_SPLIT_SQUASHFS_ROOT) += mtdsplit_squashfs.o
++mtd-$(CONFIG_MTD_SPLIT_UIMAGE_FW) += mtdsplit_uimage.o
+ 
+ obj-$(CONFIG_MTD_OF_PARTS)	+= ofpart.o
+ obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
