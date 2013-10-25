@@ -95,6 +95,20 @@ endef
 
 $(eval $(call KernelPackage,libphy))
 
+define KernelPackage/mii
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MII library
+  KCONFIG:=CONFIG_MII
+  FILES:=$(LINUX_DIR)/drivers/net/mii.ko
+  AUTOLOAD:=$(call AutoLoad,15,mii,1)
+endef
+
+define KernelPackage/mii/description
+  MII library
+endef
+
+$(eval $(call KernelPackage,mii))
+
 
 define KernelPackage/et131x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
