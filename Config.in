@@ -48,6 +48,9 @@ menu "Target Images"
 			config TARGET_INITRAMFS_COMPRESSION_LZO
 				bool "lzo"
 
+			config TARGET_INITRAMFS_COMPRESSION_LZ4
+				bool "lz4"
+
 			config TARGET_INITRAMFS_COMPRESSION_XZ
 				bool "xz"
 		endchoice
