@@ -1,0 +1,64 @@
+From 1a900b17b34ddca0336c739a2836bcb7f8aad5a8 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 25 Oct 2013 00:03:33 +0200
+Subject: [PATCH 9/9] b44: add dummy phy device if we do not find any
+
+---
+ drivers/net/ethernet/broadcom/b44.c |   25 +++++++++++++++++++++----
+ 1 file changed, 21 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/b44.c
++++ b/drivers/net/ethernet/broadcom/b44.c
+@@ -2222,6 +2222,8 @@ static int b44_register_phy_one(struct b
+ 	struct ssb_device *sdev = bp->sdev;
+ 	struct phy_device *phydev;
+ 	int err;
++	bool dummy_phy = false;
++	struct phy_c45_device_ids c45_ids = {0};
+ 
+ 	mii_bus = mdiobus_alloc();
+ 	if (!mii_bus) {
+@@ -2256,9 +2258,21 @@ static int b44_register_phy_one(struct b
+ 
+ 	phydev = bp->mii_bus->phy_map[bp->phy_addr];
+ 	if (!phydev) {
+-		dev_err(sdev->dev, "could not find PHY at %i\n", bp->phy_addr);
+-		err = -ENODEV;
+-		goto err_out_mdiobus_unregister;
++		dummy_phy = true;
++		dev_info(sdev->dev, "could not find PHY at %i, create dummy one\n",
++			 bp->phy_addr);
++
++		phydev = phy_device_create(bp->mii_bus, bp->phy_addr, 0x0, false, &c45_ids);
++		if (IS_ERR(phydev)) {
++			err = PTR_ERR(phydev);
++			dev_err(sdev->dev, "Can not create dummy PHY\n");
++			goto err_out_mdiobus_unregister;
++		}
++		err = phy_device_register(phydev);
++		if (err) {
++			dev_err(sdev->dev, "failed to register MII bus\n");
++			goto err_out_phy_free;
++		}
+ 	}
+ 
+ 	err = phy_connect_direct(bp->dev, phydev, &b44_adjust_link,
+@@ -2266,7 +2280,7 @@ static int b44_register_phy_one(struct b
+ 	if (err < 0) {
+ 		dev_err(sdev->dev, "could not attach PHY at %i\n",
+ 			bp->phy_addr);
+-		goto err_out_mdiobus_unregister;
++		goto err_out_phy_free;
+ 	}
+ 
+ 	/* mask with MAC supported features */
+@@ -2288,6 +2302,9 @@ static int b44_register_phy_one(struct b
+ 
+ 	return 0;
+ 
++err_out_phy_free:
++	if (phydev && dummy_phy)
++		phy_device_free(phydev);
+ err_out_mdiobus_unregister:
+ 	mdiobus_unregister(mii_bus);
+ 
