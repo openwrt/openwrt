@@ -159,7 +159,7 @@ define KernelPackage/input-matrixkmap
   KCONFIG:=CONFIG_INPUT_MATRIXKMAP
   DEPENDS:=@!LINUX_3_3
   FILES:=$(LINUX_DIR)/drivers/input/matrix-keymap.ko
-  AUTOLOAD:=$(call AutoLoad,20,matrix-keymap)
+  AUTOLOAD:=$(call AutoProbe,matrix-keymap)
   $(call AddDepends/input)
 endef
 
@@ -184,3 +184,21 @@ define KernelPackage/acpi-button/description
 endef
 
 $(eval $(call KernelPackage,acpi-button))
+
+
+define KernelPackage/keyboard-imx
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=IMX keypad support
+  DEPENDS:=@(TARGET_mxs||TARGET_imx6) +kmod-input-matrixkmap
+  KCONFIG:= \
+	CONFIG_KEYBOARD_IMX \
+	CONFIG_INPUT_KEYBOARD=y
+  FILES:=$(LINUX_DIR)/drivers/input/keyboard/imx_keypad.ko
+  AUTOLOAD:=$(call AutoProbe,imx_keypad)
+endef
+
+define KernelPackage/keyboard-imx/description
+ Enable support for IMX keypad port.
+endef
+
+$(eval $(call KernelPackage,keyboard-imx))
