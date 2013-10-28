@@ -19,21 +19,24 @@
  	/* Now scan the directory tree, increasing nlink according to every dirent found. */
 --- a/fs/jffs2/scan.c
 +++ b/fs/jffs2/scan.c
-@@ -148,8 +148,11 @@ int jffs2_scan_medium(struct jffs2_sb_in
+@@ -148,8 +148,14 @@ int jffs2_scan_medium(struct jffs2_sb_in
  		/* reset summary info for next eraseblock scan */
  		jffs2_sum_reset_collected(s);
  
 -		ret = jffs2_scan_eraseblock(c, jeb, buf_size?flashbuf:(flashbuf+jeb->offset),
 -						buf_size, s);
-+		if (c->flags & (1 << 7))
-+			ret = BLK_STATE_ALLFF;
-+		else
++		if (c->flags & (1 << 7)) {
++			if (mtd_block_isbad(c->mtd, jeb->offset))
++				ret = BLK_STATE_BADBLOCK;
++			else
++				ret = BLK_STATE_ALLFF;
++		} else
 +			ret = jffs2_scan_eraseblock(c, jeb, buf_size?flashbuf:(flashbuf+jeb->offset),
 +							buf_size, s);
  
  		if (ret < 0)
  			goto out;
-@@ -556,6 +559,17 @@ static int jffs2_scan_eraseblock (struct
+@@ -556,6 +562,17 @@ static int jffs2_scan_eraseblock (struct
  			return err;
  	}
  
