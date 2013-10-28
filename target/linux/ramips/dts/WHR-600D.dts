@@ -1,0 +1,134 @@
+/dts-v1/;
+
+/include/ "mt7620a.dtsi"
+
+/ {
+	compatible = "ralink,mt7620a-soc";
+	model = "Buffalo WHR-600D";
+
+	palmbus@10000000 {
+		gpio2: gpio@660 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+		
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "en25q64";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "mx25l6405d";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x6b0000>;
+				};
+
+				partition@700000 {
+					label = "usercfg";
+					reg = <0x700000 0x100000>;
+				};
+			};
+		};
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&ephy_pins>;
+
+		ralink,port-map = "llllw";
+	};
+
+	gsw@10110000 {
+		ralink,port4 = "ephy";
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		power {
+			label = "buffalo:red:power";
+			gpios = <&gpio0 7 1>;
+		};
+		status {
+			label = "buffalo:green:status";
+			gpios = <&gpio0 8 1>;
+		};
+		power2 {
+			label = "buffalo:green:power";
+			gpios = <&gpio0 9 1>;
+		};
+		status2 {
+			label = "buffalo:orange:status";
+			gpios = <&gpio0 10 1>;
+		};
+		internet {
+			label = "buffalo:green:internet";
+			gpios = <&gpio2 17 1>;
+		};
+		router {
+			label = "buffalo:green:router";
+			gpios = <&gpio2 18 1>;
+		};
+		router2 {
+			label = "buffalo:orange:router";
+			gpios = <&gpio2 19 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		s1 {
+			label = "reset";
+			gpios = <&gpio2 12 1>;
+			linux,code = <0x100>;
+		};
+		s2 {
+			label = "aoss";
+			gpios = <&gpio2 13 1>;
+			linux,code = <0x101>;
+		};
+		s3 {
+			label = "ap";
+			gpios = <&gpio2 14 1>;
+			linux,code = <0x102>;
+		};
+		s4 {
+			label = "bridge";
+			gpios = <&gpio2 15 1>;
+			linux,code = <0x103>;
+		};
+	};
+};

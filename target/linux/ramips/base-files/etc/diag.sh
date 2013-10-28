@@ -120,6 +120,12 @@ get_status_led() {
 	whr-g300n)
 		status_led="whr-g300n:green:router"
 		;;
+	whr-300hp2)
+		status_led="buffalo:green:status"
+		;;
+	whr-600d)
+		status_led="buffalo:green:status"
+		;;
 	wli-tx4-ag300n)
 		status_led="buffalo:blue:power"
 		;;

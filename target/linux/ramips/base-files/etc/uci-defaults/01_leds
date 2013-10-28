@@ -145,6 +145,11 @@ case $board in
 		ucidef_set_led_netdev "eth" "Network" "asus:white:back" "eth0"
 		set_wifi_led "asus:blue:wifi"
 		;;
+	whr-300hp2 |\
+	whr-600d)
+		ucidef_set_led_default "power" "power" "buffalo:green:power" "1"
+		ucidef_set_led_default "router" "router" "buffalo:green:router" "1"
+		;;
 esac
 
 ucidef_commit_leds
