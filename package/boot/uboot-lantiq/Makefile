@@ -13,7 +13,9 @@ PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
+PKG_SOURCE_URL:= \
+	http://mirror2.openwrt.org/sources \
+	ftp://ftp.denx.de/pub/u-boot
 PKG_MD5SUM:=e58a8a7f78972248190d83de0dc362ce
 PKG_TARGETS:=bin
 

@@ -13,7 +13,10 @@ PKG_VERSION:=2013.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
+PKG_SOURCE_URL:= \
+	http://mirror2.openwrt.org/sources \
+	ftp://ftp.denx.de/pub/u-boot
+
 PKG_MD5SUM:=a076a044b64371edc52f7e562b13f6b2
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/u-boot-$(PKG_VERSION)
