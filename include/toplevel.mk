@@ -43,6 +43,13 @@ unexport LPATH
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 
+ifneq ($(shell $(HOSTCC) 2>&1 | grep clang),)
+  export HOSTCC_REAL?=$(HOSTCC)
+  export HOSTCC_WRAPPER:=$(TOPDIR)/scripts/clang-gcc-wrapper
+else
+  export HOSTCC_WRAPPER:=$(HOSTCC)
+endif
+
 ifeq ($(FORCE),)
   .config scripts/config/conf scripts/config/mconf: tmp/.prereq-build
 endif
@@ -74,12 +81,12 @@ prepare-tmpinfo: FORCE
 	fi
 
 scripts/config/mconf:
-	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config all CC="$(HOSTCC)"
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config all CC="$(HOSTCC_WRAPPER)"
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
 
 scripts/config/conf:
-	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config conf CC="$(HOSTCC)"
+	@$(_SINGLE)$(SUBMAKE) -s -C scripts/config conf CC="$(HOSTCC_WRAPPER)"
 
 config: scripts/config/conf prepare-tmpinfo FORCE
 	$< Config.in
