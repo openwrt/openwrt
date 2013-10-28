@@ -7,17 +7,20 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pkg-config
-PKG_VERSION:=0.25
+PKG_VERSION:=0.28
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://pkgconfig.freedesktop.org/releases/
-PKG_MD5SUM:=a3270bab3f4b69b7dc6dbdacbcae9745
+PKG_MD5SUM:=aa3c86e67551adc3ac865160e34a2a0d
 
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_LDFLAGS += $(HOST_STATIC_LINKING)
+unexport PKG_CONFIG
+
+HOST_CONFIGURE_ARGS += --with-internal-glib
 
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) install \
