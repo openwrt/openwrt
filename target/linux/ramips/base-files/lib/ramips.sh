@@ -208,6 +208,12 @@ ramips_board_detect() {
 	*"W502U")
 		name="w502u"
 		;;
+	*"WHR-300HP2")
+		name="whr-300hp2"
+		;;
+	*"WHR-600D")
+		name="whr-600d"
+		;;
 	*"WHR-G300N")
 		name="whr-g300n"
 		;;
