@@ -265,7 +265,6 @@ define KernelPackage/mmc
 	CONFIG_MMC_DEBUG=n \
 	CONFIG_MMC_UNSAFE_RESUME=n \
 	CONFIG_MMC_BLOCK_BOUNCE=y \
-	CONFIG_MMC_SDHCI=n \
 	CONFIG_MMC_TIFM_SD=n \
 	CONFIG_MMC_WBSD=n \
 	CONFIG_SDIO_UART=n
@@ -280,6 +279,28 @@ define KernelPackage/mmc/description
 endef
 
 $(eval $(call KernelPackage,mmc))
+
+
+define KernelPackage/sdhci
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Secure Digital Host Controller Interface support
+  DEPENDS:=+kmod-mmc
+  KCONFIG:= \
+	CONFIG_MMC_SDHCI \
+	CONFIG_MMC_SDHCI_PLTFM \
+	CONFIG_MMC_SDHCI_PCI=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/mmc/host/sdhci.ko \
+	$(LINUX_DIR)/drivers/mmc/host/sdhci-pltfm.ko
+
+  AUTOLOAD:=$(call AutoProbe,sdhci sdhci-pltfm,1)
+endef
+
+define KernelPackage/sdhci/description
+ Kernel support for SDHCI Hosts
+endef
+
+$(eval $(call KernelPackage,sdhci))
 
 
 define KernelPackage/oprofile
