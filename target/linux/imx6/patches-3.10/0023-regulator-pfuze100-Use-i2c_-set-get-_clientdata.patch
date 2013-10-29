@@ -1,0 +1,32 @@
+From: Axel Lin <axel.lin@ingics.com>
+Subject: [PATCH] regulator: pfuze100: Use i2c_[set|get]_clientdata
+
+Since this is a i2c driver, use i2c_[set|get]_clientdata instead of
+dev_[set|get]_drvdata.
+
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/regulator/pfuze100-regulator.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/regulator/pfuze100-regulator.c
++++ b/drivers/regulator/pfuze100-regulator.c
+@@ -360,7 +360,7 @@ static int pfuze100_regulator_probe(stru
+ 	if (!pfuze_chip)
+ 		return -ENOMEM;
+ 
+-	dev_set_drvdata(&client->dev, pfuze_chip);
++	i2c_set_clientdata(client, pfuze_chip);
+ 
+ 	memcpy(pfuze_chip->regulator_descs, pfuze100_regulators,
+ 		sizeof(pfuze_chip->regulator_descs));
+@@ -429,7 +429,7 @@ static int pfuze100_regulator_probe(stru
+ static int pfuze100_regulator_remove(struct i2c_client *client)
+ {
+ 	int i;
+-	struct pfuze_chip *pfuze_chip = dev_get_drvdata(&client->dev);
++	struct pfuze_chip *pfuze_chip = i2c_get_clientdata(client);
+ 
+ 	for (i = 0; i < PFUZE100_MAX_REGULATOR; i++)
+ 		regulator_unregister(pfuze_chip->regulators[i]);

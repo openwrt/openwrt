@@ -1,0 +1,23 @@
+From: Axel Lin <axel.lin@ingics.com>
+Subject: [PATCH] regulator: pfuze100: Fix off-by-one for max_register setting
+
+max_register should be register count - 1.
+
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
+Reviewed-by: Robin Gong <b38343@freescale.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/regulator/pfuze100-regulator.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/regulator/pfuze100-regulator.c
++++ b/drivers/regulator/pfuze100-regulator.c
+@@ -332,7 +332,7 @@ static int pfuze_identify(struct pfuze_c
+ static const struct regmap_config pfuze_regmap_config = {
+ 	.reg_bits = 8,
+ 	.val_bits = 8,
+-	.max_register = PFUZE_NUMREGS,
++	.max_register = PFUZE_NUMREGS - 1,
+ 	.cache_type = REGCACHE_RBTREE,
+ };
+ 

@@ -1,6 +1,4 @@
-From 73a0e49b562da9b06e487fb8e051075543495be5 Mon Sep 17 00:00:00 2001
 From: Tim Harvey <tharvey@gateworks.com>
-Date: Thu, 17 Oct 2013 15:50:48 -0700
 Subject: [PATCH 1/5] PCI: imx6: swizzle interrupts
 
 
@@ -11,7 +9,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
 
 --- a/drivers/pci/host/pcie-designware.c
 +++ b/drivers/pci/host/pcie-designware.c
-@@ -676,7 +676,13 @@ int dw_pcie_map_irq(const struct pci_dev
+@@ -447,7 +447,13 @@ int dw_pcie_map_irq(const struct pci_dev
  {
  	struct pcie_port *pp = sys_to_pcie(dev->bus->sysdata);
  
@@ -25,4 +23,4 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
 +	}
  }
  
- static void dw_pcie_add_bus(struct pci_bus *bus)
+ static struct hw_pci dw_pci = {

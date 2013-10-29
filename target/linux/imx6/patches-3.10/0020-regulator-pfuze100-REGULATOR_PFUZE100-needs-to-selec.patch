@@ -1,0 +1,44 @@
+From: Axel Lin <axel.lin@ingics.com>
+Subject: [PATCH] regulator: pfuze100: REGULATOR_PFUZE100 needs to select
+ REGMAP_I2C
+
+This fixes below build errors:
+
+  CC [M]  drivers/regulator/pfuze100-regulator.o
+drivers/regulator/pfuze100-regulator.c:342:21: error: variable 'pfuze_regmap_config' has initializer but incomplete type
+drivers/regulator/pfuze100-regulator.c:343:2: error: unknown field 'reg_bits' specified in initializer
+drivers/regulator/pfuze100-regulator.c:343:2: warning: excess elements in struct initializer [enabled by default]
+drivers/regulator/pfuze100-regulator.c:343:2: warning: (near initialization for 'pfuze_regmap_config') [enabled by default]
+drivers/regulator/pfuze100-regulator.c:344:2: error: unknown field 'val_bits' specified in initializer
+drivers/regulator/pfuze100-regulator.c:344:2: warning: excess elements in struct initializer [enabled by default]
+drivers/regulator/pfuze100-regulator.c:344:2: warning: (near initialization for 'pfuze_regmap_config') [enabled by default]
+drivers/regulator/pfuze100-regulator.c:345:2: error: unknown field 'max_register' specified in initializer
+drivers/regulator/pfuze100-regulator.c:345:2: warning: excess elements in struct initializer [enabled by default]
+drivers/regulator/pfuze100-regulator.c:345:2: warning: (near initialization for 'pfuze_regmap_config') [enabled by default]
+drivers/regulator/pfuze100-regulator.c:346:2: error: unknown field 'cache_type' specified in initializer
+drivers/regulator/pfuze100-regulator.c:346:2: warning: excess elements in struct initializer [enabled by default]
+drivers/regulator/pfuze100-regulator.c:346:2: warning: (near initialization for 'pfuze_regmap_config') [enabled by default]
+drivers/regulator/pfuze100-regulator.c: In function 'pfuze100_regulator_probe':
+drivers/regulator/pfuze100-regulator.c:370:2: error: implicit declaration of function 'devm_regmap_init_i2c' [-Werror=implicit-function-declaration]
+drivers/regulator/pfuze100-regulator.c:370:21: warning: assignment makes pointer from integer without a cast [enabled by default]
+cc1: some warnings being treated as errors
+make[2]: *** [drivers/regulator/pfuze100-regulator.o] Error 1
+make[1]: *** [drivers/regulator] Error 2
+make: *** [drivers] Error 2
+
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/regulator/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/regulator/Kconfig
++++ b/drivers/regulator/Kconfig
+@@ -303,6 +303,7 @@ config REGULATOR_PCF50633
+ config REGULATOR_PFUZE100
+ 	tristate "Support regulators on Freescale PFUZE100 PMIC"
+ 	depends on I2C
++	select REGMAP_I2C
+ 	help
+ 	  Say y here to support the regulators found on the Freescale PFUZE100
+ 	  PMIC.
