@@ -1,0 +1,35 @@
+From: Robin Gong <b38343@freescale.com>
+Subject: [PATCH] regulator:pfuze100: fix build warning and correct the binding
+ doc
+
+fix building warning and correct the binding doc
+
+Signed-off-by: Robin Gong <b38343@freescale.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ Documentation/devicetree/bindings/regulator/pfuze100.txt | 2 ++
+ drivers/regulator/pfuze100-regulator.c                   | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/regulator/pfuze100.txt
++++ b/Documentation/devicetree/bindings/regulator/pfuze100.txt
+@@ -3,6 +3,8 @@ PFUZE100 family of regulators
+ Required properties:
+ - compatible: "fsl,pfuze100"
+ - reg: I2C slave address
++
++Required child node:
+ - regulators: This is the list of child nodes that specify the regulator
+   initialization data for defined regulators. Please refer to below doc
+   Documentation/devicetree/bindings/regulator/regulator.txt.
+--- a/drivers/regulator/pfuze100-regulator.c
++++ b/drivers/regulator/pfuze100-regulator.c
+@@ -295,7 +295,7 @@ static inline struct device_node *match_
+ #else
+ static int pfuze_parse_regulators_dt(struct pfuze_chip *chip)
+ {
+-	return NULL;
++	return 0;
+ }
+ 
+ static inline struct regulator_init_data *match_init_data(int index)

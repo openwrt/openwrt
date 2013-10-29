@@ -1,0 +1,19 @@
+From: Axel Lin <axel.lin@ingics.com>
+Subject: [PATCH] regulator: pfuze100: Fix module alias prefix
+
+i2c drivers use "i2c:" prefix for module alias.
+
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/regulator/pfuze100-regulator.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/regulator/pfuze100-regulator.c
++++ b/drivers/regulator/pfuze100-regulator.c
+@@ -452,4 +452,4 @@ module_i2c_driver(pfuze_driver);
+ MODULE_AUTHOR("Robin Gong <b38343@freescale.com>");
+ MODULE_DESCRIPTION("Regulator Driver for Freescale PFUZE100 PMIC");
+ MODULE_LICENSE("GPL v2");
+-MODULE_ALIAS("pfuze100-regulator");
++MODULE_ALIAS("i2c:pfuze100-regulator");
