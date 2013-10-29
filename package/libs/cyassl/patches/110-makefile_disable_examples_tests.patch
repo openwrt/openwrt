@@ -1,0 +1,46 @@
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1,4 +1,4 @@
+-SUBDIRS = src ctaocrypt examples testsuite sslSniffer
++SUBDIRS = src ctaocrypt
+ EXTRA_DIST = cyassl.dsp cyassl.dsw certs/*.pem certs/*.der certs/*.txt \
+     lib/dummy cyassl.sln cyassl.vcproj cyassl-iphone.xcodeproj/project.pbxproj \
+     doc/*.pdf swig/README swig/*.i swig/cyassl_adds.c swig/*.sh swig/runme.* \
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -193,7 +193,7 @@ target_os = @target_os@
+ target_vendor = @target_vendor@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+-SUBDIRS = src ctaocrypt examples testsuite sslSniffer
++SUBDIRS = src ctaocrypt
+ EXTRA_DIST = cyassl.dsp cyassl.dsw certs/*.pem certs/*.der certs/*.txt \
+     lib/dummy cyassl.sln cyassl.vcproj cyassl-iphone.xcodeproj/project.pbxproj \
+     doc/*.pdf swig/README swig/*.i swig/cyassl_adds.c swig/*.sh swig/runme.* \
+@@ -643,7 +643,7 @@ uninstall-am:
+ 
+ # !!!! first line of rule has to start with a hard (real) tab, not spaces
+ basic:
+-	cd src; $(MAKE); cd ../testsuite; $(MAKE); cd ../
++	cd src; $(MAKE); cd ../
+ 
+ openssl-links:
+ 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \
+--- a/ctaocrypt/Makefile.am
++++ b/ctaocrypt/Makefile.am
+@@ -1,3 +1,3 @@
+-SUBDIRS = src test benchmark
++SUBDIRS = src
+ EXTRA_DIST = ctaocrypt.dsw ctaocrypt.dsp ctaocrypt.sln ctaocrypt.vcproj
+ 
+--- a/ctaocrypt/Makefile.in
++++ b/ctaocrypt/Makefile.in
+@@ -177,7 +177,7 @@ target_os = @target_os@
+ target_vendor = @target_vendor@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+-SUBDIRS = src test benchmark
++SUBDIRS = src
+ EXTRA_DIST = ctaocrypt.dsw ctaocrypt.dsp ctaocrypt.sln ctaocrypt.vcproj
+ all: all-recursive
+ 
