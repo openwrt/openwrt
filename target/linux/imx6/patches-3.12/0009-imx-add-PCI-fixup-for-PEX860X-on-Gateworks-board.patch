@@ -1,0 +1,60 @@
+From 079441036b20d9f3d23d1e96f0681b99349de05a Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Tue, 22 Oct 2013 21:51:28 -0700
+Subject: [PATCH] imx: add PCI fixup for PEX860X on Gateworks board
+
+The PEX860X has GPIO's which are used for PCI Reset lines on the
+Gateworks Ventana boards.  The GPIO's need to be set as output
+level high so as to allow the PCIe devices to come out of reset.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/mach-imx/mach-imx6q.c | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+--- a/arch/arm/mach-imx/mach-imx6q.c
++++ b/arch/arm/mach-imx/mach-imx6q.c
+@@ -23,6 +24,7 @@
+ #include <linux/of_irq.h>
+ #include <linux/of_platform.h>
+ #include <linux/opp.h>
++#include <linux/pci.h>
+ #include <linux/phy.h>
+ #include <linux/reboot.h>
+ #include <linux/regmap.h>
+@@ -78,6 +80,34 @@ static int ksz9031rn_phy_fixup(struct phy_device *dev)
+ 	return 0;
+ }
+ 
++/*
++ * fixup for PLX PEX8909 bridge to configure GPIO1-7 as output High
++ * as they are used for slots1-7 PERST#
++ */
++static void ventana_pciesw_early_fixup(struct pci_dev *dev)
++{
++	u32 dw;
++
++	if (!of_machine_is_compatible("gw,ventana"))
++		return;
++
++	if (dev->devfn != 0)
++		return;
++
++	pci_read_config_dword(dev, 0x62c, &dw);
++	dw |= 0xaaa8; // GPIO1-7 outputs
++	pci_write_config_dword(dev, 0x62c, dw);
++
++	pci_read_config_dword(dev, 0x644, &dw);
++	dw |= 0xfe;   // GPIO1-7 output high
++	pci_write_config_dword(dev, 0x644, dw);
++
++	msleep(100);
++}
++DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609, ventana_pciesw_early_fixup);
++DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8606, ventana_pciesw_early_fixup);
++DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8604, ventana_pciesw_early_fixup);
++
+ static int ar8031_phy_fixup(struct phy_device *dev)
+ {
+ 	u16 val;

@@ -1,0 +1,44 @@
+From 8d6a35fb13406f87d926fffeee0d70360ce3077d Mon Sep 17 00:00:00 2001
+From: Sean Cross <xobs@kosagi.com>
+Date: Thu, 26 Sep 2013 11:24:46 +0800
+Subject: [PATCH] ARM: imx6q: Add PCIe bits to GPR syscon definition
+
+PCIe requires additional bits be defined for GPR8 and GPR12.
+
+Signed-off-by: Sean Cross <xobs@kosagi.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+---
+ include/linux/mfd/syscon/imx6q-iomuxc-gpr.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/include/linux/mfd/syscon/imx6q-iomuxc-gpr.h b/include/linux/mfd/syscon/imx6q-iomuxc-gpr.h
+index b6bdcd6..e00e9f3 100644
+--- a/include/linux/mfd/syscon/imx6q-iomuxc-gpr.h
++++ b/include/linux/mfd/syscon/imx6q-iomuxc-gpr.h
+@@ -241,6 +241,12 @@
+ 
+ #define IMX6Q_GPR5_L2_CLK_STOP			BIT(8)
+ 
++#define IMX6Q_GPR8_TX_SWING_LOW			(0x7f << 25)
++#define IMX6Q_GPR8_TX_SWING_FULL		(0x7f << 18)
++#define IMX6Q_GPR8_TX_DEEMPH_GEN2_6DB		(0x3f << 12)
++#define IMX6Q_GPR8_TX_DEEMPH_GEN2_3P5DB		(0x3f << 6)
++#define IMX6Q_GPR8_TX_DEEMPH_GEN1		(0x3f << 0)
++
+ #define IMX6Q_GPR9_TZASC2_BYP			BIT(1)
+ #define IMX6Q_GPR9_TZASC1_BYP			BIT(0)
+ 
+@@ -273,7 +279,9 @@
+ #define IMX6Q_GPR12_ARMP_AHB_CLK_EN		BIT(26)
+ #define IMX6Q_GPR12_ARMP_ATB_CLK_EN		BIT(25)
+ #define IMX6Q_GPR12_ARMP_APB_CLK_EN		BIT(24)
++#define IMX6Q_GPR12_DEVICE_TYPE			(0xf << 12)
+ #define IMX6Q_GPR12_PCIE_CTL_2			BIT(10)
++#define IMX6Q_GPR12_LOS_LEVEL			(0x1f << 4)
+ 
+ #define IMX6Q_GPR13_SDMA_STOP_REQ		BIT(30)
+ #define IMX6Q_GPR13_CAN2_STOP_REQ		BIT(29)
+-- 
+1.8.4.1
+
