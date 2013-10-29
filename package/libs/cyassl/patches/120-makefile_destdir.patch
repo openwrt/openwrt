@@ -1,0 +1,71 @@
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -10,19 +10,19 @@ basic:
+ 
+ openssl-links:
+ 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \
+-    ln -s ../src/.libs/libcyassl.a libssl.a; \
+-    ln -s ../src/.libs/libcyassl.a libcyassl.a; cd ../
++	ln -s ../src/.libs/libcyassl.a libssl.a; \
++	ln -s ../src/.libs/libcyassl.a libcyassl.a; cd ../
+ 
+ #  !!! test -e with a .name like .libs then a * like *dylib fails so just
+ #      look for the .dylib on OS X, and .so otherwise but copy all parts
+ install:
+-	$(mkinstalldirs) $(DESTDIR)$(includedir) $(DESTDIR)$(libdir); \
+-    cp -fpR include/* $(DESTDIR)$(includedir); \
+-    cp -fpR ctaocrypt/include/* $(DESTDIR)$(includedir); \
+-    cp -fpR src/libcyassl.la $(DESTDIR)$(libdir); \
+-    if test -e src/.libs/libcyassl.a; then \
+-    cp -fp src/.libs/libcyassl.a $(DESTDIR)$(libdir); fi; \
+-    if test -e src/.libs/libcyassl.so; then \
+-    cp -fpR src/.libs/libcyassl.so* $(DESTDIR)$(libdir); fi; \
+-    if test -e src/.libs/libcyassl.dylib; then \
+-    cp -fpR src/.libs/libcyassl.*dylib $(DESTDIR)$(libdir); fi;
++	$(mkinstalldirs) $(DESTDIR)$(includedir)/cyassl $(DESTDIR)$(libdir); \
++	cp -fpR include/* $(DESTDIR)$(includedir)/cyassl; \
++	cp -fpR ctaocrypt/include/* $(DESTDIR)$(includedir)/cyassl; \
++	cp -fpR src/libcyassl.la $(DESTDIR)$(libdir); \
++	if test -e src/.libs/libcyassl.a; then \
++		cp -fp src/.libs/libcyassl.a $(DESTDIR)$(libdir); fi; \
++	if test -e src/.libs/libcyassl.so; then \
++		cp -fpR src/.libs/libcyassl.so* $(DESTDIR)$(libdir); fi; \
++	if test -e src/.libs/libcyassl.dylib; then \
++		cp -fpR src/.libs/libcyassl.*dylib $(DESTDIR)$(libdir); fi;
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -647,22 +647,22 @@ basic:
+ 
+ openssl-links:
+ 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \
+-    ln -s ../src/.libs/libcyassl.a libssl.a; \
+-    ln -s ../src/.libs/libcyassl.a libcyassl.a; cd ../
++	ln -s ../src/.libs/libcyassl.a libssl.a; \
++	ln -s ../src/.libs/libcyassl.a libcyassl.a; cd ../
+ 
+ #  !!! test -e with a .name like .libs then a * like *dylib fails so just
+ #      look for the .dylib on OS X, and .so otherwise but copy all parts
+ install:
+-	$(mkinstalldirs) $(DESTDIR)$(includedir) $(DESTDIR)$(libdir); \
+-    cp -fpR include/* $(DESTDIR)$(includedir); \
+-    cp -fpR ctaocrypt/include/* $(DESTDIR)$(includedir); \
+-    cp -fpR src/libcyassl.la $(DESTDIR)$(libdir); \
+-    if test -e src/.libs/libcyassl.a; then \
+-    cp -fp src/.libs/libcyassl.a $(DESTDIR)$(libdir); fi; \
+-    if test -e src/.libs/libcyassl.so; then \
+-    cp -fpR src/.libs/libcyassl.so* $(DESTDIR)$(libdir); fi; \
+-    if test -e src/.libs/libcyassl.dylib; then \
+-    cp -fpR src/.libs/libcyassl.*dylib $(DESTDIR)$(libdir); fi;
++	$(mkinstalldirs) $(DESTDIR)$(includedir)/cyassl $(DESTDIR)$(libdir); \
++	cp -fpR include/* $(DESTDIR)$(includedir)/cyassl; \
++	cp -fpR ctaocrypt/include/* $(DESTDIR)$(includedir)/cyassl; \
++	cp -fpR src/libcyassl.la $(DESTDIR)$(libdir); \
++	if test -e src/.libs/libcyassl.a; then \
++		cp -fp src/.libs/libcyassl.a $(DESTDIR)$(libdir); fi; \
++	if test -e src/.libs/libcyassl.so; then \
++		cp -fpR src/.libs/libcyassl.so* $(DESTDIR)$(libdir); fi; \
++	if test -e src/.libs/libcyassl.dylib; then \
++		cp -fpR src/.libs/libcyassl.*dylib $(DESTDIR)$(libdir); fi;
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+ .NOEXPORT:
