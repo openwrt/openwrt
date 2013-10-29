@@ -1,0 +1,45 @@
+From 74b8031307c5d33d36742c26dd0921991bd5a255 Mon Sep 17 00:00:00 2001
+From: Sean Cross <xobs@kosagi.com>
+Date: Thu, 26 Sep 2013 10:45:35 +0800
+Subject: [PATCH] ARM: imx6q: clock and Kconfig update for PCIe support
+
+Update imx6q clock initialization and Kconfig for PCIe support.
+
+Signed-off-by: Sean Cross <xobs@kosagi.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/mach-imx/Kconfig     | 2 ++
+ arch/arm/mach-imx/clk-imx6q.c | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+index e017915..270f786 100644
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -802,6 +802,8 @@ config SOC_IMX6Q
+ 	select HAVE_IMX_SRC
+ 	select HAVE_SMP
+ 	select MFD_SYSCON
++	select MIGHT_HAVE_PCI
++	select PCI_DOMAINS if PCI
+ 	select PINCTRL
+ 	select PINCTRL_IMX6Q
+ 	select PL310_ERRATA_588369 if CACHE_PL310
+diff --git a/arch/arm/mach-imx/clk-imx6q.c b/arch/arm/mach-imx/clk-imx6q.c
+index e8e5bad..07bc0d8 100644
+--- a/arch/arm/mach-imx/clk-imx6q.c
++++ b/arch/arm/mach-imx/clk-imx6q.c
+@@ -623,6 +623,10 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+ 	if (ret)
+ 		pr_warn("failed to set up CLKO: %d\n", ret);
+ 
++	/* All existing boards with PCIe use LVDS1 */
++	if (IS_ENABLED(CONFIG_PCI_IMX6))
++		clk_set_parent(clk[lvds1_sel], clk[sata_ref]);
++
+ 	/* Set initial power mode */
+ 	imx6q_set_lpm(WAIT_CLOCKED);
+ 
+-- 
+1.8.4.1
+
