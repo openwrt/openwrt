@@ -67,7 +67,7 @@
  	default:
 --- a/net/bridge/br_multicast.c
 +++ b/net/bridge/br_multicast.c
-@@ -799,7 +799,7 @@ static void __br_multicast_send_query(st
+@@ -802,7 +802,7 @@ static void __br_multicast_send_query(st
  	if (port) {
  		__skb_push(skb, sizeof(struct ethhdr));
  		skb->dev = port->dev;
@@ -96,7 +96,7 @@
  	if (vlan_tx_tag_present(skb))
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -728,15 +728,29 @@ static inline u16 br_get_pvid(const stru
+@@ -725,15 +725,29 @@ static inline u16 br_get_pvid(const stru
  
  /* br_netfilter.c */
  #ifdef CONFIG_BRIDGE_NETFILTER
