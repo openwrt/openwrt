@@ -576,6 +576,9 @@ ar71xx_board_detect() {
 	*"Sitecom WLR-8100")
 		name="wlr8100"
 		;;
+	*"BHU BXU2000n-2 rev. A1")
+		name="bxu2000n-2-a1"
+		;;
 	esac
 
 	case "$machine" in
