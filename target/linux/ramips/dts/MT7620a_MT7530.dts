@@ -9,7 +9,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
-		
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -55,10 +55,10 @@
 
 	ethernet@10100000 {
 		status = "okay";
-		
+
 		pinctrl-names = "default";
 		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-		
+
 		ralink,port-map = "llllw";
 
 		port@5 {
