@@ -8,7 +8,8 @@
 define Profile/IMX6Q_GW5400_A
   NAME:=Gateworks Ventana GW5400-A
   PACKAGES:= \
-	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea kmod-usb-mxs-phy
+	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea kmod-usb-mxs-phy \
+	kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000
 endef
 
 define Profile/IMX6Q_GW5400_A/Description
@@ -30,9 +31,11 @@ endef
 $(eval $(call Profile,IMX6Q_GW5400_A))
 
 define Profile/IMX6Q_GW54XX
-  NAME:=Gateworks Ventana GW54XX
+  NAME:=Gateworks Ventana i.MX6 Quad GW54XX
   PACKAGES:= \
-	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea kmod-usb-mxs-phy
+	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea kmod-usb-mxs-phy \
+	kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
+	kobs-ng
 endef
 
 define Profile/IMX6Q_GW54XX/Description
