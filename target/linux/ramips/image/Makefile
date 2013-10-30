@@ -594,7 +594,7 @@ Image/Build/Profile/RTN56U=$(call BuildFirmware/Default8M/$(1),$(1),rt-n56u,RTN5
 
 Image/Build/Profile/TEW691GR=$(call BuildFirmware/UMedia/$(1),$(1),tew-691gr,TEW-691GR,0x026910)
 
-#Image/Build/Profile/TEW692GR=$(call BuildFirmware/UMedia/$(1),$(1),tew-692gr,TEW-692GR,0x026920)
+Image/Build/Profile/TEW692GR=$(call BuildFirmware/UMedia/$(1),$(1),tew-692gr,TEW-692GR,0x026920)
 
 ifeq ($(SUBTARGET),rt3883)
 define Image/Build/Profile/Default
