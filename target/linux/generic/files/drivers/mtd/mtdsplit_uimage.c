@@ -230,6 +230,7 @@ static struct mtd_part_parser uimage_generic_parser = {
 };
 
 #define FW_MAGIC_WNR2000V3	0x32303033
+#define FW_MAGIC_WNR2200	0x32323030
 #define FW_MAGIC_WNR612V2	0x32303631
 #define FW_MAGIC_WNDR3700	0x33373030
 #define FW_MAGIC_WNDR3700V2	0x33373031
@@ -239,6 +240,7 @@ static bool uimage_verify_wndr3700(struct uimage_header *header)
 	switch be32_to_cpu(header->ih_magic) {
 	case FW_MAGIC_WNR612V2:
 	case FW_MAGIC_WNR2000V3:
+	case FW_MAGIC_WNR2200:
 	case FW_MAGIC_WNDR3700:
 	case FW_MAGIC_WNDR3700V2:
 		break;
