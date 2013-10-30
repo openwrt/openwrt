@@ -37,6 +37,9 @@ get_status_led() {
 	bullet-m | rocket-m | nano-m | nanostation-m)
 		status_led="ubnt:green:link4"
 		;;
+	bxu2000n-2-a1)
+		status_led="bhu:green:status"
+		;;
 	cap4200ag)
 		status_led="senao:green:pwr"
 		;;
