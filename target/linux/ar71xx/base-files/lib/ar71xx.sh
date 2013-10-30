@@ -573,6 +573,9 @@ ar71xx_board_detect() {
 	"8devices Carambola2"*)
 		name="carambola2"
 		;;
+	*"Sitecom WLR-8100")
+		name="wlr8100"
+		;;
 	esac
 
 	case "$machine" in

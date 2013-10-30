@@ -188,6 +188,9 @@ get_status_led() {
 	zcn-1523h-2 | zcn-1523h-5)
 		status_led="zcn-1523h:amber:init"
 		;;
+	wlr8100)
+		status_led="sitecom:amber:status"
+		;;
 	esac
 }
 
