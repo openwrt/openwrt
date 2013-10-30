@@ -1,4 +1,5 @@
 BOARDNAME:=Mikrotik devices with NAND flash
+FEATURES += targz
 
 define Target/Description
 	Build firmware images for Atheros AR71xx/AR913x based Mikrotik boards.

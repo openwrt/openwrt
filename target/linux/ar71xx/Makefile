@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=ar71xx
 BOARDNAME:=Atheros AR7xxx/AR9xxx
-FEATURES:=squashfs targz mips16
+FEATURES:=mips16
 CPU_TYPE=34kc
 SUBTARGETS:=generic mikrotik
 
