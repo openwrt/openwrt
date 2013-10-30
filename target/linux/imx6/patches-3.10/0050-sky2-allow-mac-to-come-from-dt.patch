@@ -1,3 +1,15 @@
+From: Tim Harvey <tharvey@gateworks.com>
+Subject: [PATCH] sky2: allow mac to come from dt
+
+The driver reads the mac address from the device registers which would
+need to have been programmed by the bootloader.  This patch adds
+the ability to pull the mac from devicetree via the aliases/sky2 node.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ drivers/net/ethernet/marvell/sky2.c | 33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
+
 --- a/drivers/net/ethernet/marvell/sky2.c
 +++ b/drivers/net/ethernet/marvell/sky2.c
 @@ -44,6 +44,8 @@
@@ -17,12 +29,12 @@
  
  	if (!dev)
  		return NULL;
-@@ -4802,8 +4805,36 @@
+@@ -4802,8 +4805,36 @@ static struct net_device *sky2_init_netd
  
  	dev->features |= dev->hw_features;
  
 +	/*
-+	 * Try to get mac address in the following order:
++	 * try to get mac address in the following order:
 +	 * 1) from device tree data
 +	 * 2) from internal registers set by bootloader
 +	 */

@@ -12,11 +12,9 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  arch/arm/mach-imx/clk-imx6q.c | 4 ++++
  2 files changed, 6 insertions(+)
 
-diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
-index e017915..270f786 100644
 --- a/arch/arm/mach-imx/Kconfig
 +++ b/arch/arm/mach-imx/Kconfig
-@@ -802,6 +802,8 @@ config SOC_IMX6Q
+@@ -801,6 +801,8 @@ config SOC_IMX6Q
  	select HAVE_IMX_SRC
  	select HAVE_SMP
  	select MFD_SYSCON
@@ -25,11 +23,9 @@ index e017915..270f786 100644
  	select PINCTRL
  	select PINCTRL_IMX6Q
  	select PL310_ERRATA_588369 if CACHE_PL310
-diff --git a/arch/arm/mach-imx/clk-imx6q.c b/arch/arm/mach-imx/clk-imx6q.c
-index e8e5bad..07bc0d8 100644
 --- a/arch/arm/mach-imx/clk-imx6q.c
 +++ b/arch/arm/mach-imx/clk-imx6q.c
-@@ -623,6 +623,10 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+@@ -623,6 +623,10 @@ static void __init imx6q_clocks_init(str
  	if (ret)
  		pr_warn("failed to set up CLKO: %d\n", ret);
  
@@ -40,6 +36,3 @@ index e8e5bad..07bc0d8 100644
  	/* Set initial power mode */
  	imx6q_set_lpm(WAIT_CLOCKED);
  
--- 
-1.8.4.1
-

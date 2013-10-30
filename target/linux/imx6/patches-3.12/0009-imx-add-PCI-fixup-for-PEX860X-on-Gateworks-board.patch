@@ -15,7 +15,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 
 --- a/arch/arm/mach-imx/mach-imx6q.c
 +++ b/arch/arm/mach-imx/mach-imx6q.c
-@@ -23,6 +24,7 @@
+@@ -26,6 +26,7 @@
  #include <linux/of_irq.h>
  #include <linux/of_platform.h>
  #include <linux/opp.h>
@@ -23,7 +23,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  #include <linux/phy.h>
  #include <linux/reboot.h>
  #include <linux/regmap.h>
-@@ -78,6 +80,34 @@ static int ksz9031rn_phy_fixup(struct phy_device *dev)
+@@ -134,6 +135,34 @@ static int ksz9031rn_phy_fixup(struct ph
  	return 0;
  }
  

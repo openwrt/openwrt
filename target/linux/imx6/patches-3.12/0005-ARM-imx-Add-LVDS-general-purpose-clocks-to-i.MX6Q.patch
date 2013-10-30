@@ -37,7 +37,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  };
  
  static struct clk *clk[clk_max];
-@@ -342,6 +348,18 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+@@ -342,6 +348,18 @@ static void __init imx6q_clocks_init(str
  			base + 0xe0, 0, 2, 0, clk_enet_ref_table,
  			&imx_ccm_lock);
  
