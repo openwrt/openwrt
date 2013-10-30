@@ -11,7 +11,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 
 --- a/arch/arm/boot/dts/imx6qdl.dtsi
 +++ b/arch/arm/boot/dts/imx6qdl.dtsi
-@@ -639,6 +639,14 @@
+@@ -622,6 +622,14 @@
  							MX6QDL_PAD_DISP0_DAT19__AUD5_RXD  0x80000000
  						>;
  					};
@@ -26,7 +26,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  				};
  
  				ecspi1 {
-@@ -811,6 +819,28 @@
+@@ -794,6 +802,28 @@
  							MX6QDL_PAD_SD4_DAT0__NAND_DQS      0x00b1
  						>;
  					};
@@ -55,7 +55,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  				};
  
  				hdmi_hdcp {
-@@ -1058,6 +1088,13 @@
+@@ -1035,6 +1065,13 @@
  							MX6QDL_PAD_CSI0_DAT11__UART1_RX_DATA 0x1b0b1
  						>;
  					};
@@ -69,7 +69,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  				};
  
  				uart2 {
-@@ -1076,6 +1113,13 @@
+@@ -1053,6 +1090,13 @@
  							MX6QDL_PAD_EIM_D29__UART2_DTE_RTS_B 0x1b0b1
  						>;
  					};
@@ -83,7 +83,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  				};
  
  				uart3 {
-@@ -1096,6 +1140,13 @@
+@@ -1073,6 +1117,13 @@
  							MX6QDL_PAD_EIM_EB3__UART3_RTS_B	  0x1b0b1
  						>;
  					};
@@ -97,10 +97,11 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  				};
  
  				uart4 {
-@@ -1107,6 +1158,15 @@
+@@ -1083,6 +1134,15 @@
+ 						>;
  					};
  				};
- 
++
 +				uart5 {
 +					pinctrl_uart5_1: uart5grp-1 {
 +						fsl,pins = <
@@ -109,7 +110,6 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +						>;
 +					};
 +				};
-+
+ 
  				usbotg {
  					pinctrl_usbotg_1: usbotggrp-1 {
- 						fsl,pins = <

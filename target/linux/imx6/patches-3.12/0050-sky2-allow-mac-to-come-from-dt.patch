@@ -1,3 +1,15 @@
+From: Tim Harvey <tharvey@gateworks.com>
+Subject: [PATCH] sky2: allow mac to come from dt
+
+The driver reads the mac address from the device registers which would
+need to have been programmed by the bootloader.  This patch adds
+the ability to pull the mac from devicetree via the aliases/sky2 node.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ drivers/net/ethernet/marvell/sky2.c | 33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
+
 --- a/drivers/net/ethernet/marvell/sky2.c
 +++ b/drivers/net/ethernet/marvell/sky2.c
 @@ -44,6 +44,8 @@
@@ -27,19 +39,19 @@
 +	 * 2) from internal registers set by bootloader
 +	 */
 +	iap = NULL;
-+#ifdef CONFIG_OF
-+	struct device_node *np;
-+	np = of_find_node_by_path("/aliases");
-+	if (np) {
-+		const char *path = of_get_property(np, "sky2", NULL);
-+	if (path)
-+		np = of_find_node_by_path(path);
-+	if (np)
-+		path = of_get_mac_address(np);
-+	if (path)
-+		iap = (unsigned char *) path;
++	if (IS_ENABLED(CONFIG_OF)) {
++		struct device_node *np;
++		np = of_find_node_by_path("/aliases");
++		if (np) {
++			const char *path = of_get_property(np, "sky2", NULL);
++			if (path)
++				np = of_find_node_by_path(path);
++			if (np)
++				path = of_get_mac_address(np);
++			if (path)
++				iap = (unsigned char *) path;
++		}
 +	}
-+#endif
 +
 +	/*
 +	 * 2) mac registers set by bootloader

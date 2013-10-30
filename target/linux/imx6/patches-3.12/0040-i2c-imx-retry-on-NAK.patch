@@ -17,22 +17,22 @@ Tested-by: Luka Perkov <luka@openwrt.org>
  #define IMX_I2C_BIT_RATE	100000	/* 100kHz */
 +#define IMX_I2C_MAX_RETRIES	3	/* number of retries to attempt */
  
- /* IMX I2C registers */
- #define IMX_I2C_IADR	0x00	/* i2c slave address */
-@@ -198,7 +199,7 @@ static int i2c_imx_acked(struct imx_i2c_
+ /* IMX I2C registers:
+  * the I2C register offset is different between SoCs,
+@@ -298,7 +299,7 @@ static int i2c_imx_acked(struct imx_i2c_
  {
- 	if (readb(i2c_imx->base + IMX_I2C_I2SR) & I2SR_RXAK) {
+ 	if (imx_i2c_read_reg(i2c_imx, IMX_I2C_I2SR) & I2SR_RXAK) {
  		dev_dbg(&i2c_imx->adapter.dev, "<%s> No ACK\n", __func__);
 -		return -EIO;  /* No ACK */
 +		return -EAGAIN; /* try again */
  	}
  
  	dev_dbg(&i2c_imx->adapter.dev, "<%s> ACK received\n", __func__);
-@@ -533,6 +534,7 @@ static int __init i2c_imx_probe(struct p
+@@ -633,6 +634,7 @@ static int i2c_imx_probe(struct platform
  	i2c_imx->adapter.dev.parent	= &pdev->dev;
  	i2c_imx->adapter.nr 		= pdev->id;
  	i2c_imx->adapter.dev.of_node	= pdev->dev.of_node;
 +	i2c_imx->adapter.retries	= IMX_I2C_MAX_RETRIES;
  	i2c_imx->base			= base;
  
- 	pinctrl = devm_pinctrl_get_select_default(&pdev->dev);
+ 	/* Get I2C clock */

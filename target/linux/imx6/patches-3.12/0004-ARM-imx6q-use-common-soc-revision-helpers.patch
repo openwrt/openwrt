@@ -16,7 +16,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 
 --- a/arch/arm/mach-imx/clk-imx6q.c
 +++ b/arch/arm/mach-imx/clk-imx6q.c
-@@ -300,7 +300,7 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+@@ -300,7 +300,7 @@ static void __init imx6q_clocks_init(str
  	WARN_ON(!base);
  
  	/* Audio/video PLL post dividers do not work on i.MX6q revision 1.0 */
@@ -25,7 +25,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  		post_div_table[1].div = 1;
  		post_div_table[2].div = 1;
  		video_div_table[1].div = 1;
-@@ -574,7 +574,8 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+@@ -574,7 +574,8 @@ static void __init imx6q_clocks_init(str
  	clk_register_clkdev(clk[pll4_post_div], "pll4_post_div", NULL);
  	clk_register_clkdev(clk[pll4_audio], "pll4_audio", NULL);
  
@@ -37,7 +37,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  	}
 --- a/arch/arm/mach-imx/common.h
 +++ b/arch/arm/mach-imx/common.h
-@@ -73,7 +73,6 @@ extern void mxc_restart(enum reboot_mode, const char *);
+@@ -77,7 +77,6 @@ extern void mxc_restart(enum reboot_mode
  extern void mxc_arch_reset_init(void __iomem *);
  extern void mxc_arch_reset_init_dt(void);
  extern int mx53_revision(void);
@@ -47,7 +47,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  extern int mxc_device_init(void);
 --- a/arch/arm/mach-imx/mach-imx6q.c
 +++ b/arch/arm/mach-imx/mach-imx6q.c
-@@ -38,16 +38,10 @@
+@@ -40,16 +40,10 @@
  #include "cpuidle.h"
  #include "hardware.h"
  
@@ -65,7 +65,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  
  	switch (rev & 0xff) {
  	case 0:
-@@ -64,6 +58,7 @@ static void __init imx6q_init_revision(void)
+@@ -66,6 +60,7 @@ static void __init imx6q_init_revision(v
  	}
  
  	mxc_set_cpu_type(rev >> 16 & 0xff);
@@ -73,7 +73,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  }
  
  static void imx6q_restart(enum reboot_mode mode, const char *cmd)
-@@ -269,7 +264,7 @@
+@@ -269,7 +264,7 @@ static void __init imx6q_init_late(void)
  	 * WAIT mode is broken on TO 1.0 and 1.1, so there is no point
  	 * to run cpuidle on them.
  	 */
@@ -82,7 +82,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  		imx6q_cpuidle_init();
  
  	if (IS_ENABLED(CONFIG_ARM_IMX6Q_CPUFREQ)) {
-@@ -298,7 +293,7 @@
+@@ -298,7 +293,7 @@ static void __init imx6q_timer_init(void
  	of_clk_init(NULL);
  	clocksource_of_init();
  	imx_print_silicon_rev(cpu_is_imx6dl() ? "i.MX6DL" : "i.MX6Q",
