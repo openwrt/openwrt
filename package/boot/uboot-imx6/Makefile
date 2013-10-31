@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2013.07
+PKG_VERSION:=2013.10
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=8445162690052e6afd4b8f87af2bb557
+PKG_MD5SUM:=a076a044b64371edc52f7e562b13f6b2
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -98,13 +98,11 @@ UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin
 endif
 
 define Build/Configure
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(UBOOT_CONFIG)_config
+	$(MAKE) -C $(PKG_BUILD_DIR) $(UBOOT_CONFIG)_config
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CROSS_COMPILE=$(TARGET_CROSS)
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) CROSS_COMPILE=$(TARGET_CROSS)
 endef
 
 define Package/uboot/install/default
