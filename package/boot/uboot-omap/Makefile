@@ -6,18 +6,17 @@
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2011.12
+PKG_VERSION:=2013.10
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=7f29b9f6da44d6e46e988e7561fd1d5f
+PKG_MD5SUM:=a076a044b64371edc52f7e562b13f6b2
 PKG_TARGETS:=bin
 
 include $(INCLUDE_DIR)/package.mk
@@ -32,7 +31,19 @@ define uboot/omap4_panda
   TITLE:=U-Boot for the Pandaboard
 endef
 
-UBOOTS:=omap4_panda
+define uboot/am335x_evm
+  TITLE:=U-Boot for the AM335x EVM
+endef
+
+define uboot/omap3_overo
+  TITLE:=U-Boot for the Gumstix Overo
+endef
+
+define uboot/omap3_beagle
+  TITLE:=U-Boot for the BeagleBoard
+endef
+
+UBOOTS:=omap4_panda am335x_evm omap3_overo omap3_beagle
 
 define Package/uboot/template
 define Package/uboot-omap4-$(1)
@@ -45,24 +56,17 @@ define Package/uboot-omap4-$(1)
 endef
 endef
 
-define BuildUbootPackage
+define BuildUBootPackage
 	$(eval $(uboot/Default))
 	$(eval $(uboot/$(1)))
 	$(call Package/uboot/template,$(1),$(TITLE))
 endef
 
-
 ifdef BUILD_VARIANT
 $(eval $(call uboot/$(BUILD_VARIANT)))
 UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
-UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
+UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.img)
 endif
-
-define Build/Prepare
-	$(call Build/Prepare/Default)
-#	$(CP) ./files/* $(PKG_BUILD_DIR)
-	find $(PKG_BUILD_DIR) -name .svn | $(XARGS) rm -rf
-endef
 
 define Build/Configure
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -74,19 +78,23 @@ define Build/Compile
 		CROSS_COMPILE=$(TARGET_CROSS)
 endef
 
+define Package/uboot/install/default
+	$(INSTALL_DIR) $(BIN_DIR)/uboot-$(BOARD)-$(1)
+	$(CP) $(PKG_BUILD_DIR)/u-boot.img $(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.img
+	$(CP) $(PKG_BUILD_DIR)/MLO $(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-MLO
+endef
+
 define Package/uboot/install/template
 define Package/uboot-omap4-$(1)/install
-	$(INSTALL_DIR) $$(1)
-	$(CP) $(PKG_BUILD_DIR)/MLO $(BIN_DIR)/MLO-$(BOARD)
-	$(CP) $(PKG_BUILD_DIR)/u-boot.img $(BIN_DIR)/$(2)
+	$(call Package/uboot/install/default,$(2))
 endef
 endef
 
 $(foreach u,$(UBOOTS), \
-	$(eval $(call Package/uboot/install/template,$(u),openwrt-$(BOARD)-$(u)-u-boot.img)) \
+	$(eval $(call Package/uboot/install/template,$(u),$(u))) \
 )
 
 $(foreach u,$(UBOOTS), \
-	$(eval $(call BuildUbootPackage,$(u))) \
+	$(eval $(call BuildUBootPackage,$(u))) \
 	$(eval $(call BuildPackage,uboot-omap4-$(u))) \
 )
