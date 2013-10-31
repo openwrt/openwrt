@@ -56,7 +56,7 @@ define Image/InstallKernel/Template
 	ln -sf $(IMG_PREFIX)-$(1)-fit-uImage.itb $(TARGET_DIR)/boot/uImage.itb
    endif
  endif
- 
+
  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
   ifneq ($(1),)
@@ -119,7 +119,7 @@ endef
 define Image/Build
 	$(if $(Image/Build/$(1)), \
 		$(call Image/Build/$(1),$(1)), \
-		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-$(1).img \
+		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-$(1).img \
 	)
 endef
 
