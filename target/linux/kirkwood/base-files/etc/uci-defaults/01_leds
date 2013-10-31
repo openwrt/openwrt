@@ -10,6 +10,10 @@ case "`cat /proc/device-tree/model`" in
 	ucidef_set_led_netdev "eth0" "dockstar:orange:misc" "eth0"
 	ucidef_set_led_default "health" "dockstar:green:health" "1"
 	;;
+"Cloud Engines Pogoplug E02")
+	ucidef_set_led_default "health" "status:green:health" "1"
+	ucidef_set_led_default "fault" "status:orange:fault" "1"
+	;;
 *)
 	;;
 esac
