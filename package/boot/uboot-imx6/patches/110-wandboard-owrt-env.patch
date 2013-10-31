@@ -1,6 +1,6 @@
 --- a/include/configs/wandboard.h
 +++ b/include/configs/wandboard.h
-@@ -51,7 +51,7 @@
+@@ -48,7 +48,7 @@
  #define CONFIG_CMD_BMODE
  #define CONFIG_CMD_SETEXPR
  
@@ -9,17 +9,14 @@
  
  #define CONFIG_SYS_MEMTEST_START	0x10000000
  #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 500 * SZ_1M)
-@@ -103,15 +103,18 @@
+@@ -101,13 +101,15 @@
  
- #if defined(CONFIG_MX6DL)
+ #if defined(CONFIG_MX6DL) || defined(CONFIG_MX6S)
  #define CONFIG_DEFAULT_FDT_FILE		"imx6dl-wandboard.dtb"
-+#define CONFIG_OWRT_NAME		"openwrt-imx6dl-wandboard-uImage.itb"
++#define CONFIG_OWRT_NAME		"openwrt-imx6-imx6dl-wandboard-fit-uImage.itb"
  #elif defined(CONFIG_MX6Q)
  #define CONFIG_DEFAULT_FDT_FILE		"imx6q-wandboard.dtb"
-+#define CONFIG_OWRT_NAME		"openwrt-imx6q-wandboard-uImage.itb"
- #elif defined(CONFIG_MX6S)
- #define CONFIG_DEFAULT_FDT_FILE		"imx6s-wandboard.dtb"
-+#define CONFIG_OWRT_NAME		"openwrt-imx6s-wandboard-uImage.itb"
++#define CONFIG_OWRT_NAME		"openwrt-imx6-imx6q-wandboard-fit-uImage.itb"
  #endif
  
  #define CONFIG_EXTRA_ENV_SETTINGS \
@@ -27,9 +24,9 @@
 -	"uimage=uImage\0" \
 +	"uimage=" CONFIG_OWRT_NAME "\0" \
  	"console=ttymxc0\0" \
+ 	"splashpos=m,m\0" \
  	"fdt_high=0xffffffff\0" \
- 	"initrd_high=0xffffffff\0" \
-@@ -139,11 +142,11 @@
+@@ -136,11 +138,11 @@
  	"mmcargs=setenv bootargs console=${console},${baudrate} " \
  		"root=${mmcroot}\0" \
  	"loadbootscript=" \
@@ -44,7 +41,7 @@
  	"mmcboot=echo Booting from mmc ...; " \
  		"run mmcargs; " \
  		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-@@ -158,30 +161,6 @@
+@@ -155,30 +157,6 @@
  			"fi; " \
  		"else " \
  			"bootm; " \
@@ -75,7 +72,7 @@
  		"fi;\0"
  
  #define CONFIG_BOOTCOMMAND \
-@@ -191,10 +170,10 @@
+@@ -188,10 +166,10 @@
  		   "else " \
  			   "if run loaduimage; then " \
  				   "run mmcboot; " \
