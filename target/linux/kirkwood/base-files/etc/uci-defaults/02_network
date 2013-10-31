@@ -32,6 +32,9 @@ case "`cat /proc/device-tree/model`" in
 "RaidSonic ICY BOX IB-NAS62x0 (Rev B)")
 	set_lan_dhcp "eth0"
 	;;
+"Cloud Engines Pogoplug E02")
+	set_lan_dhcp "eth0"
+	;;
 *)
 	ucidef_set_interface_lan "eth0"
 	;;

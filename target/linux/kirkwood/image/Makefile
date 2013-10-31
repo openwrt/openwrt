@@ -117,6 +117,9 @@ Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
 Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
 Image/InstallKernel/Template/IB62X0=$(call Image/InstallKernel/Template,ib62x0)
 
+Image/BuildKernel/Template/POGOE02=$(call Image/BuildKernel/Template,pogo_e02)
+Image/InstallKernel/Template/POGOE02=$(call Image/InstallKernel/Template,pogo_e02)
+
 define Image/BuildKernel
 	$(call Image/BuildKernel/Template/$(PROFILE))
 endef
