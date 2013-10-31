@@ -1,0 +1,130 @@
+--- /dev/null
++++ b/arch/arm/boot/dts/kirkwood-pogo_e02.dts
+@@ -0,0 +1,117 @@
++/dts-v1/;
++
++/include/ "kirkwood.dtsi"
++/include/ "kirkwood-6281.dtsi"
++
++/ {
++	model = "Cloud Engines Pogoplug E02";
++	compatible = "cloudengines,pogoe02", "marvell,kirkwood-88f6281", "marvell,kirkwood";
++
++	memory {
++		device_type = "memory";
++		reg = <0x00000000 0x10000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200n8 earlyprintk";
++	};
++
++	ocp@f1000000 {
++		pinctrl: pinctrl@10000 {
++
++			pinctrl-0 = < &pmx_usb_power_enable &pmx_led_orange
++				      &pmx_led_green >;
++			pinctrl-names = "default";
++
++			pmx_usb_power_enable: pmx-usb-power-enable {
++				marvell,pins = "mpp29";
++				marvell,function = "gpio";
++			};
++			pmx_led_green: pmx-led_green {
++				marvell,pins = "mpp48";
++				marvell,function = "gpio";
++			};
++			pmx_led_orange: pmx-led_orange {
++				marvell,pins = "mpp49";
++				marvell,function = "gpio";
++			};
++		};
++
++		serial@12000 {
++			status = "okay";
++		};
++
++		nand@3000000 {
++			status = "okay";
++
++			partition@0 {
++				label = "u-boot";
++				reg = <0x0000000 0x100000>;
++			};
++
++			partition@100000 {
++				label = "uImage";
++				reg = <0x0100000 0x400000>;
++			};
++
++			partition@500000 {
++				label = "rootfs";
++				reg = <0x0500000 0x2000000>;
++			};
++
++			partition@2500000 {
++				label = "data";
++				reg = <0x2500000 0x5b00000>;
++			};
++		};
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++
++		health {
++			label = "status:green:health";
++			gpios = <&gpio1 16 1>;
++			linux,default-trigger = "default-on";
++		};
++		fault {
++			label = "status:orange:fault";
++			gpios = <&gpio1 17 1>;
++		};
++	};
++
++	regulators {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		usb_power: regulator@1 {
++			compatible = "regulator-fixed";
++			reg = <1>;
++			regulator-name = "USB Power";
++			regulator-min-microvolt = <5000000>;
++			regulator-max-microvolt = <5000000>;
++			enable-active-high;
++			regulator-always-on;
++			regulator-boot-on;
++			gpio = <&gpio0 29 0>;
++		};
++	};
++};
++
++&mdio {
++	status = "okay";
++
++	ethphy0: ethernet-phy@0 {
++		device_type = "ethernet-phy";
++		reg = <0>;
++	};
++};
++
++&eth0 {
++	status = "okay";
++
++	ethernet0-port@0 {
++		phy-handle = <&ethphy0>;
++	};
++};
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -86,6 +86,7 @@ dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-
+ 	kirkwood-ns2max.dtb \
+ 	kirkwood-ns2mini.dtb \
+ 	kirkwood-nsa310.dtb \
++	kirkwood-pogo_e02.dtb \
+ 	kirkwood-topkick.dtb \
+ 	kirkwood-ts219-6281.dtb \
+ 	kirkwood-ts219-6282.dtb \
