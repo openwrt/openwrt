@@ -40,7 +40,9 @@ $(eval $(call KernelPackage,leds-wndr3700-usb))
 define KernelPackage/nand-ar934x
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Atheros AR934x NAND flash controller driver
-  KCONFIG:=CONFIG_MTD_NAND_AR934X
+  KCONFIG:=\
+    CONFIG_MTD_NAND_AR934X \
+    CONFIG_MTD_NAND_AR934X_HW_ECC=y
   DEPENDS:=@TARGET_ar71xx +kmod-nand
   FILES:=$(LINUX_DIR)/drivers/mtd/nand/ar934x_nfc.ko
   AUTOLOAD:=$(call AutoLoad,25,ar934x_nfc)
