@@ -7,6 +7,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+IMAGE_PROFILE:=$(if $(PROFILE),$(PROFILE),Default)
+
 JFFS2_BLOCKSIZE = 64k 128k 256k
 
 define imgname
@@ -1010,7 +1012,7 @@ define Image/Build/squashfs
 endef
 
 define Image/Build/Initramfs
-	$(call Image/Build/Profile/$(PROFILE),initramfs)
+	$(call Image/Build/Profile/$(IMAGE_PROFILE),initramfs)
 endef
 
 define Image/Prepare
@@ -1022,13 +1024,13 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/BuildLoader,generic,elf,,,-initramfs)
 endif
 	$(call Image/BuildLoader,generic,elf)
-	$(call Image/Build/Profile/$(if $(CONFIG_IB),Default,$(PROFILE)),loader)
+	$(call Image/Build/Profile/$(if $(CONFIG_IB),Default,$(IMAGE_PROFILE)),loader)
 endef
 
 define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
-	$(call Image/Build/Profile/$(PROFILE),$(1))
+	$(call Image/Build/Profile/$(IMAGE_PROFILE),$(1))
 endef
 
 $(eval $(call BuildImage))
