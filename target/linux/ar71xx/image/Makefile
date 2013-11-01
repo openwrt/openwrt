@@ -796,6 +796,7 @@ $(eval $(call BuildTemplate,128kraw,-raw,128k))
 $(eval $(call BuildTemplate,256k,,256k))
 $(eval $(call BuildTemplate,all,,64k 128k 256k))
 
+ifeq ($(SUBTARGET),generic)
 $(eval $(call SingleProfile,ALFA,64k,ALFANX,alfa-nx,ALFA-NX,ttyS0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,vmlinux.gz.uImage,pb9x-2.6.31-jffs2))
 $(eval $(call SingleProfile,ALFA,64k,HORNETUB,hornet-ub,HORNET-UB,ttyATH0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,kernel_image,rootfs_image))
 
@@ -999,9 +1000,11 @@ $(eval $(call MultiProfile,WNDR3700,WNDR3700V1 WNDR3700V2 WNDR3800 WNDRMAC WNDRM
 $(eval $(call MultiProfile,WP543,WP543_2M WP543_4M WP543_8M WP543_16M))
 $(eval $(call MultiProfile,WPE72,WPE72_4M WPE72_8M WPE72_16M))
 
-$(eval $(call MultiProfile,Default,$(SINGLE_PROFILES)))
 $(eval $(call MultiProfile,Minimal,$(SINGLE_PROFILES)))
 $(eval $(call MultiProfile,Madwifi,EAP7660D UBNTRS UBNTRSPRO UBNTLSSR71 WP543))
+endif # ifeq ($(SUBTARGET),generic)
+
+$(eval $(call MultiProfile,Default,$(SINGLE_PROFILES)))
 
 define Image/Build/squashfs
 	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-raw
