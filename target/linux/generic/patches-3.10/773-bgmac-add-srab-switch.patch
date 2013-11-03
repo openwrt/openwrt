@@ -12,7 +12,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <bcm47xx_nvram.h>
  
  static const struct bcma_device_id bgmac_bcma_tbl[] = {
-@@ -1420,6 +1421,17 @@ static void bgmac_mii_unregister(struct
+@@ -1443,6 +1444,17 @@ static void bgmac_mii_unregister(struct
  	mdiobus_free(mii_bus);
  }
  
@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * BCMA bus ops
   **************************************************/
-@@ -1519,6 +1531,16 @@ static int bgmac_probe(struct bcma_devic
+@@ -1542,6 +1554,16 @@ static int bgmac_probe(struct bcma_devic
  		goto err_dma_free;
  	}
  
@@ -47,7 +47,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		bgmac_err(bgmac, "Cannot register net device\n");
-@@ -1548,6 +1570,10 @@ static void bgmac_remove(struct bcma_dev
+@@ -1571,6 +1593,10 @@ static void bgmac_remove(struct bcma_dev
  {
  	struct bgmac *bgmac = bcma_get_drvdata(core);
  
