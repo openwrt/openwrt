@@ -4,7 +4,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -856,6 +856,8 @@ static void bgmac_speed(struct bgmac *bg
+@@ -887,6 +887,8 @@ static void bgmac_speed(struct bgmac *bg
  		set |= BGMAC_CMDCFG_ES_100;
  	if (speed & BGMAC_SPEED_1000)
  		set |= BGMAC_CMDCFG_ES_1000;
@@ -13,7 +13,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	if (!bgmac->full_duplex)
  		set |= BGMAC_CMDCFG_HD;
  	bgmac_cmdcfg_maskset(bgmac, mask, set, true);
-@@ -863,13 +865,28 @@ static void bgmac_speed(struct bgmac *bg
+@@ -894,13 +896,28 @@ static void bgmac_speed(struct bgmac *bg
  
  static void bgmac_miiconfig(struct bgmac *bgmac)
  {
@@ -48,7 +48,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	}
  }
  
-@@ -915,7 +932,8 @@ static void bgmac_chip_reset(struct bgma
+@@ -946,7 +963,8 @@ static void bgmac_chip_reset(struct bgma
  
  	bcma_core_enable(core, flags);
  
@@ -58,7 +58,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		bgmac_set(bgmac, BCMA_CLKCTLST, 1 << 8);
  		bgmac_wait_value(bgmac->core, BCMA_CLKCTLST, 1 << 24, 1 << 24,
  				 1000);
-@@ -936,10 +954,13 @@ static void bgmac_chip_reset(struct bgma
+@@ -967,10 +985,13 @@ static void bgmac_chip_reset(struct bgma
  			et_swtype &= 0x0f;
  			et_swtype <<= 4;
  			sw_type = et_swtype;
@@ -75,7 +75,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  			sw_type = BGMAC_CHIPCTL_1_IF_TYPE_RGMII |
  				  BGMAC_CHIPCTL_1_SW_TYPE_RGMII;
  		}
-@@ -1044,12 +1065,15 @@ static void bgmac_enable(struct bgmac *b
+@@ -1077,12 +1098,15 @@ static void bgmac_enable(struct bgmac *b
  		break;
  	}
  
