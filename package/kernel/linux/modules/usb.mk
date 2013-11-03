@@ -39,8 +39,8 @@ endef
 define KernelPackage/usb-gadget
   TITLE:=USB Gadget support
   KCONFIG:=CONFIG_USB_GADGET
-  FILES:=
-  AUTOLOAD:=
+  FILES:=$(LINUX_DIR)/drivers/usb/gadget/udc-core.ko
+  AUTOLOAD:=$(call AutoLoad,45,udc-core)
   DEPENDS:=@USB_GADGET_SUPPORT
   $(call AddDepends/usb)
 endef
@@ -51,6 +51,21 @@ endef
 
 $(eval $(call KernelPackage,usb-gadget))
 
+define KernelPackage/usb-lib-composite
+  TITLE:=USB lib composite
+  KCONFIG:=CONFIG_USB_LIBCOMPOSITE
+  DEPENDS:=+kmod-usb-gadget +kmod-fs-configfs @!LINUX_3_3 @!LINUX_3_6
+  FILES:=$(LINUX_DIR)/drivers/usb/gadget/libcomposite.ko
+  AUTOLOAD:=$(call AutoLoad,50,libcomposite)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-lib-composite/description
+ Lib Composite
+endef
+
+$(eval $(call KernelPackage,usb-lib-composite))
+
 
 define KernelPackage/usb-eth-gadget
   TITLE:=USB Ethernet Gadget support
@@ -58,7 +73,7 @@ define KernelPackage/usb-eth-gadget
 	CONFIG_USB_ETH \
 	CONFIG_USB_ETH_RNDIS=y \
 	CONFIG_USB_ETH_EEM=y
-  DEPENDS:=+kmod-usb-gadget
+  DEPENDS:=+kmod-usb-gadget +(!LINUX_3_3&&!LINUX_3_6):kmod-usb-lib-composite
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/g_ether.ko
   AUTOLOAD:=$(call AutoLoad,52,g_ether)
   $(call AddDepends/usb)
