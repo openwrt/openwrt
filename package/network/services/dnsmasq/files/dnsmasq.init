@@ -408,6 +408,9 @@ dhcp_domain_add() {
 	[ -n "$ip" ] || return 0
 
 	for name in $names; do
+		[ "${name%.*}" == "$name" ] && \
+			name="$name${DOMAIN:+.$DOMAIN}"
+
 		record="${record:+$record/}$name"
 	done
 
@@ -531,7 +534,7 @@ start_service() {
 	# add own hostname
 	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && [ -n "$lanaddr" ] && {
 		local hostname="$(uci_get system @system[0] hostname OpenWrt)"
-		dhcp_hostrecord_add "" "$hostname${DOMAIN:+.$DOMAIN $hostname}" "$lanaddr"
+		dhcp_hostrecord_add "" "${hostname%.$DOMAIN}${DOMAIN:+.$DOMAIN ${hostname%.$DOMAIN}}" "$lanaddr"
 	}
 
 	echo >> $CONFIGFILE
