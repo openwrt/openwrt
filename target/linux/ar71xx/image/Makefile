@@ -11,8 +11,10 @@ IMAGE_PROFILE:=$(if $(PROFILE),$(PROFILE),Default)
 
 JFFS2_BLOCKSIZE = 64k 128k 256k
 
+rootfs_type=$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
+
 define imgname
-$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
+$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(call rootfs_type,$(1))
 endef
 
 define rootfs_align
@@ -1012,6 +1014,11 @@ define Image/Build/squashfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs-64k 64
 	cp $(KDIR)/root.squashfs-64k $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+endef
+
+define Image/Build/jffs2
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
 
 define Image/Build/Initramfs
@@ -1031,8 +1038,7 @@ endif
 endef
 
 define Image/Build
-	$(call Image/Build/$(1))
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+	$(call Image/Build/$(call rootfs_type,$(1)),$(1))
 	$(call Image/Build/Profile/$(IMAGE_PROFILE),$(1))
 endef
 
