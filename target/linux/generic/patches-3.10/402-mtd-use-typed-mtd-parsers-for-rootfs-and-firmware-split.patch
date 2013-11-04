@@ -1,6 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -627,6 +627,37 @@ int mtd_del_partition(struct mtd_info *m
+@@ -626,6 +626,37 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -38,7 +38,7 @@
  static inline unsigned long
  mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
  {
-@@ -686,6 +717,10 @@ static void split_rootfs_data(struct mtd
+@@ -685,6 +716,10 @@ static void split_rootfs_data(struct mtd
  	unsigned int split_size;
  	int ret;
  
@@ -49,7 +49,7 @@
  	ret = split_squashfs(master, part->offset, &split_offset);
  	if (ret)
  		return;
-@@ -735,6 +770,12 @@ static void split_uimage(struct mtd_info
+@@ -734,6 +769,12 @@ static void split_uimage(struct mtd_info
  
  static void split_firmware(struct mtd_info *master, struct mtd_part *part)
  {

@@ -35,16 +35,15 @@
  	depends on m
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -29,6 +29,8 @@
+@@ -29,6 +29,7 @@
  #include <linux/kmod.h>
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
-+#include <linux/root_dev.h>
 +#include <linux/magic.h>
  #include <linux/err.h>
  
  #include "mtdcore.h"
-@@ -45,13 +47,14 @@ struct mtd_part {
+@@ -45,13 +46,14 @@ struct mtd_part {
  	struct list_head list;
  };
  
@@ -60,7 +59,7 @@
  /*
   * MTD methods which simply translate the effective address and pass through
   * to the _real_ device.
-@@ -533,8 +536,10 @@ out_register:
+@@ -533,8 +535,10 @@ out_register:
  	return slave;
  }
  
@@ -73,7 +72,7 @@
  {
  	struct mtd_partition part;
  	struct mtd_part *p, *new;
-@@ -566,21 +571,24 @@ int mtd_add_partition(struct mtd_info *m
+@@ -566,21 +570,24 @@ int mtd_add_partition(struct mtd_info *m
  	end = offset + length;
  
  	mutex_lock(&mtd_partitions_mutex);
@@ -108,7 +107,7 @@
  
  	return ret;
  err_inv:
-@@ -590,6 +598,12 @@ err_inv:
+@@ -590,6 +597,12 @@ err_inv:
  }
  EXPORT_SYMBOL_GPL(mtd_add_partition);
  
@@ -121,7 +120,7 @@
  int mtd_del_partition(struct mtd_info *master, int partno)
  {
  	struct mtd_part *slave, *next;
-@@ -613,6 +627,151 @@ int mtd_del_partition(struct mtd_info *m
+@@ -613,6 +626,144 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -252,13 +251,6 @@
 +	if (!strcmp(part->mtd.name, "rootfs")) {
 +		rootfs_found = 1;
 +
-+		if (config_enabled(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
-+		    ROOT_DEV == 0) {
-+			printk(KERN_NOTICE "mtd: partition \"rootfs\" "
-+				"set to be root filesystem\n");
-+			ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, part->mtd.index);
-+		}
-+
 +		if (config_enabled(CONFIG_MTD_ROOTFS_SPLIT))
 +			split_rootfs_data(master, part);
 +	}
@@ -273,7 +265,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -642,6 +801,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -642,6 +793,7 @@ int add_mtd_partitions(struct mtd_info *
  		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);
