@@ -144,6 +144,17 @@ Sysupgrade/KR=$(call CatFiles,$(2),$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,
 Sysupgrade/KRuImage=$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)),$(5))
 Sysupgrade/RKuImage=$(call CatFiles,$(KDIR)/root.$(1),$(4),$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(call sysupname,$(1),$(2)))
 
+# $(1): ubinize ini file
+# $(2): working directory
+# $(3): output file
+# $(4): physical erase block size
+# $(5): minimum I/O unit size
+# $(6): custom options
+define ubinize
+	$(CP) $(1) $(2)
+	( cd $(2); $(STAGING_DIR_HOST)/bin/ubinize -o $(3) -p $(4) -m $(5) $(6) $(1))
+endef
+
 define Image/BuildLoader
 	-rm -rf $(KDIR)/lzma-loader
 	$(LOADER_MAKE) LOADER=loader-$(1).$(2) KERNEL_CMDLINE="$(3)"\
@@ -206,7 +217,7 @@ wnr2200_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,7680k(firmwa
 wnr2000v3_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,3712k(firmware),64k(art)ro
 wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,7680k(firmware),64k(art)ro
 wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,15872k(firmware),64k(art)ro
-wndr4300_mtdlayout=mtdparts=ar934x-nfc:256k(u-boot)ro,256k(u-boot-env)ro,256k(caldata),512k(pot),2048k(language),512k(config),3072k(traffic_meter),1152k(kernel),24448k(rootfs),25600k@0x6c0000(firmware),256k(caldata_backup),-(reserved)
+wndr4300_mtdlayout=mtdparts=ar934x-nfc:256k(u-boot)ro,256k(u-boot-env)ro,256k(caldata),512k(pot),2048k(language),512k(config),3072k(traffic_meter),2048k(kernel),23552k(ubiroot),25600k@0x6c0000(firmware),256k(caldata_backup),-(reserved) ubi.mtd=ubiroot
 zcn1523h_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6208k(rootfs),1472k(kernel),64k(configure)ro,64k(mfg)ro,64k(art)ro,7680k@0x50000(firmware)
 mynet_n600_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(devdata)ro,64k(devconf)ro,15872k(firmware),64k(radiocfg)ro
 
@@ -717,6 +728,63 @@ endef
 
 Image/Build/NetgearNAND/initramfs=$(call Image/Build/Netgear/initramfs,$(1),$(2),$(3),$(4),$(5))
 
+# $(1): (empty)
+# $(2): Board name (small caps)
+# $(3): Kernel board specific cmdline
+# $(4): Kernel mtdparts definition
+# $(5): U-Boot magic
+define Image/Build/NetgearNAND/buildkernel
+	$(eval kernelsize=$(call mtdpartsize,kernel,$(4)))
+	$(call PatchKernelLzma,$(2),$(3) $(4),-d20)
+	dd if=$(KDIR_TMP)/vmlinux-$(2).bin.lzma \
+		of=$(KDIR_TMP)/vmlinux-$(2).bin.tmp \
+		bs=$$$$(($(kernelsize)-131072-2*64-1)) \
+		count=1 conv=sync
+	$(call MkuImage,lzma,-M $(5),$(KDIR_TMP)/vmlinux-$(2).bin.tmp,$(KDIR_TMP)/vmlinux-$(2).uImage)
+	echo -ne '\xff' >> $(KDIR_TMP)/vmlinux-$(2).uImage
+	# create a fake rootfs image
+	dd if=/dev/zero of=$(KDIR_TMP)/fakeroot-$(2) bs=131072 count=1
+	mkimage -A mips -O linux -T filesystem -C none \
+		-a 0xbf070000 -e 0xbf070000 \
+		-n 'MIPS OpenWrt fakeroot' \
+		-d $(KDIR_TMP)/fakeroot-$(2) \
+		-M $(5) \
+		$(KDIR_TMP)/fakeroot-$(2).uImage
+	# append the fake rootfs image to the kernel, it will reside in the last
+	# erase block of the kernel partition
+	cat $(KDIR_TMP)/fakeroot-$(2).uImage >> $(KDIR_TMP)/vmlinux-$(2).uImage
+endef
+
+
+# $(1): rootfs image suffix
+# $(2): Board name (small caps)
+# $(3): Kernel board specific cmdline
+# $(4): Kernel mtdparts definition
+# $(5): U-Boot magic
+# $(6): Board name (upper caps)
+# $(7): firmware region code (not used yet)
+# $(8): DNI Hardware version
+define Image/Build/NetgearNAND
+	$(eval firmwaresize=$(call mtdpartsize,firmware,$(4)))
+	$(eval kernelsize=$(call mtdpartsize,kernel,$(4)))
+	$(eval imageraw=$(KDIR_TMP)/$(2)-raw.img)
+	$(CP) $(KDIR)/root.squashfs-raw $(KDIR_TMP)/root.squashfs
+	echo -ne '\xde\xad\xc0\xde' > $(KDIR_TMP)/jffs2.eof
+	$(call ubinize,ubinize-$(2).ini,$(KDIR_TMP),$(KDIR_TMP)/$(2)-root.ubi,128KiB,2048)
+	# Create firmware image full of 0xff to use the UBIFS auto-resize function
+	firmwareblocks=$$$$(($(firmwaresize) / 131072)); \
+	dd if=/dev/zero bs=128k count=$$$${firmwareblocks} conv=sync | tr '\000' '\377' > $(imageraw)
+	# Insert Kernel and UBI image to rootfs and generate DNI image
+	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(imageraw) conv=notrunc
+	kernelblocks=$$$$(($(kernelsize) / 131072)); \
+	dd if=$(KDIR_TMP)/$(2)-root.ubi of=$(imageraw) bs=128k seek=$$$${kernelblocks} conv=notrunc
+	$(STAGING_DIR_HOST)/bin/mkdniimg \
+		-B $(6) -v OpenWrt.$(REVISION) -r "$$$$r" $(8) \
+		-i $(imageraw) \
+		-o $(call imgname,ubi,$(2))-recovery.img
+endef
+
+
 ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
   Image/Build/ZyXEL/buildkernel=$(call MkuImageLzma,$(2),$(3))
 
@@ -1005,7 +1073,7 @@ $(eval $(call MultiProfile,Madwifi,EAP7660D UBNTRS UBNTRSPRO UBNTLSSR71 WP543))
 endif # ifeq ($(SUBTARGET),generic)
 
 ifeq ($(SUBTARGET),nand)
-$(eval $(call SingleProfile,NetgearNAND,64k,WNDR4300,wndr4300,WNDR4300,ttyS0,115200,$$(wndr4300_mtdlayout),3703,WNDR4300,"",-H 29763948+0+128+128+2x2+3x3))
+$(eval $(call SingleProfile,NetgearNAND,64k,WNDR4300,wndr4300,WNDR4300,ttyS0,115200,$$(wndr4300_mtdlayout),0x33373033,WNDR4300,"",-H 29763948+0+128+128+2x2+3x3))
 endif # ifeq ($(SUBTARGET),nand)
 
 
