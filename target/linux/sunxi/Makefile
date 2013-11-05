@@ -13,7 +13,7 @@ FEATURES:=targz
 SUBTARGETS=cortex-a7 cortex-a8
 MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
-LINUX_VERSION:=3.10.17
+LINUX_VERSION:=3.10.18
 
 include $(INCLUDE_DIR)/target.mk
 

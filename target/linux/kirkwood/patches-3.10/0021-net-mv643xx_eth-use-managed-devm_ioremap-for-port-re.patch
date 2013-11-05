@@ -14,7 +14,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/marvell/mv643xx_eth.c
 +++ b/drivers/net/ethernet/marvell/mv643xx_eth.c
-@@ -2470,7 +2470,7 @@ static int mv643xx_eth_shared_probe(stru
+@@ -2469,7 +2469,7 @@ static int mv643xx_eth_shared_probe(stru
  	if (msp == NULL)
  		return -ENOMEM;
  
@@ -23,7 +23,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (msp->base == NULL)
  		return -ENOMEM;
  
-@@ -2498,7 +2498,6 @@ static int mv643xx_eth_shared_remove(str
+@@ -2497,7 +2497,6 @@ static int mv643xx_eth_shared_remove(str
  {
  	struct mv643xx_eth_shared_private *msp = platform_get_drvdata(pdev);
  

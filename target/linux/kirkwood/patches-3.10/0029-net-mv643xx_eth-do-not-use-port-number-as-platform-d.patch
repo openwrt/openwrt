@@ -19,7 +19,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/marvell/mv643xx_eth.c
 +++ b/drivers/net/ethernet/marvell/mv643xx_eth.c
-@@ -2483,6 +2483,7 @@ static int mv643xx_eth_shared_of_add_por
+@@ -2482,6 +2482,7 @@ static int mv643xx_eth_shared_of_add_por
  	struct resource res;
  	const char *mac_addr;
  	int ret;
@@ -27,7 +27,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	memset(&ppd, 0, sizeof(ppd));
  	ppd.shared = pdev;
-@@ -2503,6 +2504,14 @@ static int mv643xx_eth_shared_of_add_por
+@@ -2502,6 +2503,14 @@ static int mv643xx_eth_shared_of_add_por
  		return -EINVAL;
  	}
  
@@ -42,7 +42,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	mac_addr = of_get_mac_address(pnp);
  	if (mac_addr)
  		memcpy(ppd.mac_addr, mac_addr, 6);
-@@ -2521,7 +2530,7 @@ static int mv643xx_eth_shared_of_add_por
+@@ -2520,7 +2529,7 @@ static int mv643xx_eth_shared_of_add_por
  		of_property_read_u32(pnp, "duplex", &ppd.duplex);
  	}
  
@@ -51,7 +51,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (!ppdev)
  		return -ENOMEM;
  	ppdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
-@@ -2538,7 +2547,7 @@ static int mv643xx_eth_shared_of_add_por
+@@ -2537,7 +2546,7 @@ static int mv643xx_eth_shared_of_add_por
  	if (ret)
  		goto port_err;
  

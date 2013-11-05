@@ -775,7 +775,7 @@
  #define IP_TTL		2
 --- a/net/core/secure_seq.c
 +++ b/net/core/secure_seq.c
-@@ -54,11 +54,12 @@ __u32 secure_tcpv6_sequence_number(const
+@@ -56,11 +56,12 @@ __u32 secure_tcpv6_sequence_number(const
  	u32 secret[MD5_MESSAGE_BYTES / 4];
  	u32 hash[MD5_DIGEST_WORDS];
  	u32 i;
@@ -789,7 +789,7 @@
  	secret[4] = net_secret[4] +
  		(((__force u16)sport << 16) + (__force u16)dport);
  	for (i = 5; i < MD5_MESSAGE_BYTES / 4; i++)
-@@ -76,11 +77,12 @@ u32 secure_ipv6_port_ephemeral(const __b
+@@ -78,11 +79,12 @@ u32 secure_ipv6_port_ephemeral(const __b
  	u32 secret[MD5_MESSAGE_BYTES / 4];
  	u32 hash[MD5_DIGEST_WORDS];
  	u32 i;
@@ -803,7 +803,7 @@
  	secret[4] = net_secret[4] + (__force u32)dport;
  	for (i = 5; i < MD5_MESSAGE_BYTES / 4; i++)
  		secret[i] = net_secret[i];
-@@ -183,11 +185,12 @@ u64 secure_dccpv6_sequence_number(__be32
+@@ -185,11 +187,12 @@ u64 secure_dccpv6_sequence_number(__be32
  	u32 hash[MD5_DIGEST_WORDS];
  	u64 seq;
  	u32 i;
@@ -886,7 +886,7 @@
  		tpi->seq = 0;
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3592,14 +3592,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3625,14 +3625,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
