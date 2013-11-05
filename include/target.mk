@@ -222,6 +222,8 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_arm926ej-s = -march=armv5te -mtune=arm926ej-s
     CPU_CFLAGS_arm1136j-s = -march=armv6 -mtune=arm1136j-s
     CPU_CFLAGS_arm1176jzf-s = -march=armv6 -mtune=arm1176jzf-s
+    CPU_CFLAGS_cortex-a7 = -march=armv7-a -mtune=cortex-a7
+    CPU_CFLAGS_cortex-a8 = -march=armv7-a -mtune=cortex-a8
     CPU_CFLAGS_cortex-a9 = -march=armv7-a -mtune=cortex-a9
     CPU_CFLAGS_fa526 = -march=armv4 -mtune=fa526
     CPU_CFLAGS_mpcore = -march=armv6k -mtune=mpcore
