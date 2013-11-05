@@ -726,7 +726,7 @@ define Image/Build/Netgear/initramfs
 		$(5)
 endef
 
-Image/Build/NetgearNAND/initramfs=$(call Image/Build/Netgear/initramfs,$(1),$(2),$(3),$(4),$(5))
+Image/Build/NetgearNAND/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4),,-M $(5))
 
 # $(1): (empty)
 # $(2): Board name (small caps)
