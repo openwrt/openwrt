@@ -18,7 +18,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/marvell/mv643xx_eth.c
 +++ b/drivers/net/ethernet/marvell/mv643xx_eth.c
-@@ -2805,7 +2805,7 @@ static int mv643xx_eth_remove(struct pla
+@@ -2803,7 +2803,7 @@ static int mv643xx_eth_remove(struct pla
  
  	unregister_netdev(mp->dev);
  	if (mp->phy != NULL)

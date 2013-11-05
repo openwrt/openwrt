@@ -116,7 +116,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #include <linux/of_mdio.h>
  
  static char mv643xx_eth_driver_name[] = "mv643xx_eth";
-@@ -2453,13 +2456,148 @@ static void infer_hw_params(struct mv643
+@@ -2452,13 +2455,148 @@ static void infer_hw_params(struct mv643
  	}
  }
  
@@ -266,7 +266,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (!mv643xx_eth_version_printed++)
  		pr_notice("MV-643xx 10/100/1000 ethernet driver version %s\n",
-@@ -2472,6 +2610,7 @@ static int mv643xx_eth_shared_probe(stru
+@@ -2471,6 +2609,7 @@ static int mv643xx_eth_shared_probe(stru
  	msp = devm_kzalloc(&pdev->dev, sizeof(*msp), GFP_KERNEL);
  	if (msp == NULL)
  		return -ENOMEM;
@@ -274,7 +274,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	msp->base = devm_ioremap(&pdev->dev, res->start, resource_size(res));
  	if (msp->base == NULL)
-@@ -2488,12 +2627,15 @@ static int mv643xx_eth_shared_probe(stru
+@@ -2487,12 +2626,15 @@ static int mv643xx_eth_shared_probe(stru
  	if (dram)
  		mv643xx_eth_conf_mbus_windows(msp, dram);
  
@@ -292,7 +292,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return 0;
  }
  
-@@ -2501,9 +2643,9 @@ static int mv643xx_eth_shared_remove(str
+@@ -2500,9 +2642,9 @@ static int mv643xx_eth_shared_remove(str
  {
  	struct mv643xx_eth_shared_private *msp = platform_get_drvdata(pdev);
  
@@ -303,7 +303,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return 0;
  }
  
-@@ -2513,6 +2655,7 @@ static struct platform_driver mv643xx_et
+@@ -2512,6 +2654,7 @@ static struct platform_driver mv643xx_et
  	.driver = {
  		.name	= MV643XX_ETH_SHARED_NAME,
  		.owner	= THIS_MODULE,
@@ -311,7 +311,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -2721,6 +2864,8 @@ static int mv643xx_eth_probe(struct plat
+@@ -2720,6 +2863,8 @@ static int mv643xx_eth_probe(struct plat
  	if (!IS_ERR(mp->clk)) {
  		clk_prepare_enable(mp->clk);
  		mp->t_clk = clk_get_rate(mp->clk);
