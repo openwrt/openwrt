@@ -6,9 +6,9 @@
  static int all_symbols = 0;
 +static int uncompressed = 0;
  static char symbol_prefix_char = '\0';
+ static unsigned long long kernel_start_addr = 0;
  
- int token_profit[0x10000];
-@@ -360,6 +361,9 @@ static void write_src(void)
+@@ -367,6 +368,9 @@ static void write_src(void)
  
  	free(markers);
  
@@ -18,7 +18,7 @@
  	output_label("kallsyms_token_table");
  	off = 0;
  	for (i = 0; i < 256; i++) {
-@@ -418,6 +422,9 @@ static void *find_token(unsigned char *s
+@@ -425,6 +429,9 @@ static void *find_token(unsigned char *s
  {
  	int i;
  
@@ -28,7 +28,7 @@
  	for (i = 0; i < len - 1; i++) {
  		if (str[i] == token[0] && str[i+1] == token[1])
  			return &str[i];
-@@ -490,6 +497,9 @@ static void optimize_result(void)
+@@ -497,6 +504,9 @@ static void optimize_result(void)
  {
  	int i, best;
  
@@ -38,10 +38,10 @@
  	/* using the '\0' symbol last allows compress_symbols to use standard
  	 * fast string functions */
  	for (i = 255; i >= 0; i--) {
-@@ -646,7 +656,9 @@ int main(int argc, char **argv)
- 				if ((*p == '"' && *(p+2) == '"') || (*p == '\'' && *(p+2) == '\''))
- 					p++;
- 				symbol_prefix_char = *p;
+@@ -656,7 +666,9 @@ int main(int argc, char **argv)
+ 			} else if (strncmp(argv[i], "--page-offset=", 14) == 0) {
+ 				const char *p = &argv[i][14];
+ 				kernel_start_addr = strtoull(p, NULL, 16);
 -			} else
 +			} else if (strcmp(argv[i], "--uncompressed") == 0)
 +				uncompressed = 1;
@@ -71,9 +71,9 @@
  
 --- a/scripts/link-vmlinux.sh
 +++ b/scripts/link-vmlinux.sh
-@@ -82,6 +82,10 @@ kallsyms()
- 		kallsymopt="${kallsymopt} --all-symbols"
- 	fi
+@@ -84,6 +84,10 @@ kallsyms()
+ 
+ 	kallsymopt="${kallsymopt} --page-offset=$CONFIG_PAGE_OFFSET"
  
 +	if [ -n "${CONFIG_KALLSYMS_UNCOMPRESSED}" ]; then
 +		kallsymopt="${kallsymopt} --uncompressed"
