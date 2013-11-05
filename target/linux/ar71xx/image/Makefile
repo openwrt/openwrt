@@ -91,8 +91,8 @@ define MkuImageLzma
 endef
 
 define MkuImageLzma/initramfs
-	$(call PatchKernelLzma,$(1),$(2),,-initramfs)
-	$(call MkuImage,lzma,,$(KDIR_TMP)/vmlinux-initramfs-$(1).bin.lzma,$(call imgname,initramfs,$(1))-uImage.bin)
+	$(call PatchKernelLzma,$(1),$(2),$(3),-initramfs)
+	$(call MkuImage,lzma,$(4),$(KDIR_TMP)/vmlinux-initramfs-$(1).bin.lzma,$(call imgname,initramfs,$(1))-uImage.bin)
 endef
 
 define MkuImageGzip
