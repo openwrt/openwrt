@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ubox
 PKG_VERSION:=2013-10-27
-PKG_RELEASE=$(PKG_SOURCE_VERSION)
+PKG_RELEASE=$(PKG_SOURCE_VERSION)-1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/luci2/ubox.git
