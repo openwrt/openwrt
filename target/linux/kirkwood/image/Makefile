@@ -114,6 +114,9 @@ endef
 Image/BuildKernel/Template/Generic=$(call Image/BuildKernel/Template)
 Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
 
+Image/BuildKernel/Template/DOCKSTAR=$(call Image/BuildKernel/Template,dockstar)
+Image/InstallKernel/Template/DOCKSTAR=$(call Image/InstallKernel/Template,dockstar)
+
 Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
 Image/InstallKernel/Template/IB62X0=$(call Image/InstallKernel/Template,ib62x0)
 
