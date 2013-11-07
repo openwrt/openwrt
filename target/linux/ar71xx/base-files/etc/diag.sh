@@ -83,6 +83,9 @@ get_status_led() {
 	mynet-n600)
 		status_led="wd:blue:power"
 		;;
+	mynet-rext)
+		status_led="wd:blue:power"
+		;;
 	mzk-w04nu | \
 	mzk-w300nh)
 		status_led="planex:green:status"

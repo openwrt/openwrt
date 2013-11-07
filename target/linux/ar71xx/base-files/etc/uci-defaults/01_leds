@@ -102,6 +102,15 @@ mynet-n600)
 	ucidef_set_led_switch "lan4" "LAN4" "wd:green:lan4" "switch0" "0x04"
 	;;
 
+mynet-rext)
+	ucidef_set_led_netdev "lan" "LAN" "wd:blue:ethernet" "eth0"
+	ucidef_set_rssimon "wlan0" "40000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "wd:blue:quality1" "wlan0" "1" "40" "0" "6"
+	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "wd:blue:quality2" "wlan0" "30" "80" "-29" "5"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "wd:blue:quality3" "wlan0" "70" "100" "-69" "8"
+	ucidef_set_led_wlan "wlan" "WLAN" "wd:blue:wireless" "phy0tpt"
+	;;
+
 mzk-w04u)
 	ucidef_set_led_usbdev "usb" "USB" "planex:green:usb" "1-1"
 	;;

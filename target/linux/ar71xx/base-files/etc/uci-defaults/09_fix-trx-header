@@ -7,10 +7,13 @@
 
 board=$(ar71xx_board_name)
 
-wrt160nl_fixtrx() {
+fixtrx() {
 	mtd -o 32 fixtrx firmware
 }
 
-if [ "${board}" == "wrt160nl" ]; then
-	wrt160nl_fixtrx
-fi
+case "$board" in
+mynet-rext |\
+wrt160nl)
+	fixtrx
+	;;
+esac
