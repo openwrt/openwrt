@@ -77,10 +77,11 @@
 /* (from 3.00.24 firmware cyutils.h) */
 #define SUPPORT_4704_CHIP      0x0008
 #define SUPPORT_5352E_CHIP     0x0010
+/* (from WD My Net Wi-Fi Range Extender's cyutils.s) */
+#define SUPPORT_4703_CHIP      0x0020
 
 struct code_header {			/* from cyutils.h */
-	char magic[4];
-	char res1[4];				/* for extra magic */
+	char magic[8];
 	char fwdate[3];
 	char fwvern[3];
 	char id[4];					/* U2ND */
@@ -109,6 +110,13 @@ struct board_info boards[] = {
 		.pattern	= "NL16",
 		.hw_ver		= 0x00,
 		.sn		= 0x0f,
+		.flags		= {0x3f, 0x00},
+	},
+	{
+		.id		= "mynet-rext",
+		.pattern	= "WDHNSTFH",
+		.hw_ver		= 0x00,
+		.sn		= 0x00,
 		.flags		= {0x3f, 0x00},
 	}, {
 		/* Terminating entry */
@@ -243,8 +251,8 @@ int main(int argc, char **argv)
 		hdr->flags[1] = board->flags[1];
 	}
 
-	if (strlen(pattern) != 4) {
-		fprintf(stderr, "illegal pattern \"%s\": length != 4\n", pattern);
+	if (strlen(pattern) > 8) {
+		fprintf(stderr, "illegal pattern \"%s\"\n", pattern);
 		usage();
 	}
 
@@ -270,16 +278,16 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	memcpy(&hdr->magic, pattern, 4);
+	memcpy(hdr->magic, pattern, strlen(pattern));
 	if (pbotflag)
-		memcpy(&hdr->res1, pbotpat, 4);
+		memcpy(&hdr->magic[4], pbotpat, 4);
 	hdr->fwdate[0] = ptm->tm_year % 100;
 	hdr->fwdate[1] = ptm->tm_mon + 1;
 	hdr->fwdate[2] = ptm->tm_mday;
 	hdr->fwvern[0] = v0;
 	hdr->fwvern[1] = v1;
 	hdr->fwvern[2] = v2;
-	memcpy(&hdr->id, CODE_ID, strlen(CODE_ID));
+	memcpy(hdr->id, CODE_ID, strlen(CODE_ID));
 
 	off = sizeof(struct code_header);
 
