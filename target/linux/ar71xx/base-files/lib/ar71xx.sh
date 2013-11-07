@@ -306,6 +306,9 @@ ar71xx_board_detect() {
 	*"My Net N600")
 		name="mynet-n600"
 		;;
+	*"WD My Net Wi-Fi Range Extender")
+		name="mynet-rext"
+		;;
 	*MZK-W04NU)
 		name="mzk-w04nu"
 		;;
