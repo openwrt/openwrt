@@ -13,5 +13,14 @@ endef
 define Profile/MYNETN600/Description
   Package set optimized for the WD My Net N600 device.
 endef
-
 $(eval $(call Profile,MYNETN600))
+
+
+define Profile/MYNETREXT
+	NAME:=WD My Net Wi-Fi Range Extender
+endef
+
+define Profile/MYNETREXT/Description
+  Package set optimized for the WD My Net Wi-Fi Range Extender device.
+endef
+$(eval $(call Profile,MYNETREXT))
