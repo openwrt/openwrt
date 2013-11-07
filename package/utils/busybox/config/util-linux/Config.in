@@ -652,7 +652,7 @@ config BUSYBOX_CONFIG_SETARCH
 
 config BUSYBOX_CONFIG_SWAPONOFF
 	bool "swaponoff"
-	default y
+	default n
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This option enables both the 'swapon' and the 'swapoff' utilities.
