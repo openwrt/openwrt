@@ -65,8 +65,9 @@ ARV4519PW|ARV7518PW|ARV752DPW22)
 	;;
 
 WBMR)
-	ucidef_add_switch "eth0" "1" "0"
-	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4 5"
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
 	;;
 
 VG3503J)
