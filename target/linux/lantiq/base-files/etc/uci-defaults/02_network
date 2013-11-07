@@ -40,6 +40,8 @@ vpi=1
 vci=32
 encaps="llc"
 payload="bridged"
+lan_mac=""
+wan_mac=""
 
 board=$(lantiq_board_id)
 
@@ -97,10 +99,16 @@ P2601HNFX)
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
 	;;
+
+TDW8970)
+	lan_mac=$(mtd_get_mac_binary boardconfig 61696)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	;;
 esac
 
 [ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"
-
+[ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan $lan_mac
+[ -n "$wan_mac" ] && ucidef_set_interface_macaddr wan $wan_mac
 
 uci commit network
 
