@@ -62,7 +62,7 @@ define Image/Build
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).fs
 	$(CP) $(KDIR)/kernel.flash.srec $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-flash.srec
 	$(CP) $(KDIR)/kernel.ram.srec $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-ram.srec
-	tar -C $(BIN_DIR) -cvzf $(BIN_DIR)/$(IMG_PREFIX)-sysupgrade.bin $(IMG_PREFIX)-vmlinux.bin $(IMG_PREFIX)-$(1).fs
+	tar -C $(BIN_DIR) -cvzf $(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade.bin $(IMG_PREFIX)-vmlinux.bin $(IMG_PREFIX)-$(1).fs
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
 endif
