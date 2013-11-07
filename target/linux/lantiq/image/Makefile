@@ -148,9 +148,8 @@ define Image/BuildKernelTPLink/Template
 	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call PatchKernelLzma,$(1),-initramfs)
-	$(call Image/BuildLoader/Template,$(1),-initramfs)
-	$(CP) $(KDIR)/loader-initramfs-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs-loader
-	$(CP) $(KDIR)/vmlinux-initramfs-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs
+	$(call TPLinkImageLzma,$(1),$(2),-initramfs)
+	$(CP) $(KDIR)/uImage-$(1)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage-initramfs
 endif
 endef
 
