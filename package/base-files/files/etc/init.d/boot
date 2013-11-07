@@ -31,6 +31,11 @@ apply_uci_config() {
 }
 
 start() {
+	config_load system
+	config_foreach system_config system
+}
+
+boot() {
 	[ -f /proc/mounts ] || /sbin/mount_root
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 	[ -f /proc/net/vlan/config ] && vconfig set_name_type DEV_PLUS_VID_NO_PAD
@@ -63,9 +68,8 @@ start() {
 	
 	# temporary hack until configd exists
 	/sbin/reload_config
-	
-	config_load system
-	config_foreach system_config system
+
+	start
 
 	# create /dev/root if it doesn't exist
 	[ -e /dev/root -o -h /dev/root ] || {
