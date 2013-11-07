@@ -756,18 +756,15 @@ define Image/Build/NetgearNAND
 	$(eval imageraw=$(KDIR_TMP)/$(2)-raw.img)
 	$(CP) $(KDIR)/root.squashfs-raw $(KDIR_TMP)/root.squashfs
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR_TMP)/jffs2.eof
-	$(call ubinize,ubinize-$(2).ini,$(KDIR_TMP),$(KDIR_TMP)/$(2)-root.ubi,128KiB,2048)
-	# Create firmware image full of 0xff to use the UBIFS auto-resize function
-	firmwareblocks=$$$$(($(firmwaresize) / 131072)); \
-	dd if=/dev/zero bs=128k count=$$$${firmwareblocks} conv=sync | tr '\000' '\377' > $(imageraw)
-	# Insert Kernel and UBI image to rootfs and generate DNI image
-	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(imageraw) conv=notrunc
-	kernelblocks=$$$$(($(kernelsize) / 131072)); \
-	dd if=$(KDIR_TMP)/$(2)-root.ubi of=$(imageraw) bs=128k seek=$$$${kernelblocks} conv=notrunc
+	$(call ubinize,ubinize-$(2).ini,$(KDIR_TMP),$(KDIR_TMP)/$(2)-root.ubi,128KiB,2048,-E 5)
+	( \
+		dd if=$(KDIR_TMP)/vmlinux-$(2).uImage; \
+		dd if=$(KDIR_TMP)/$(2)-root.ubi \
+	) > $(imageraw)
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
 		-B $(6) -v OpenWrt.$(REVISION) -r "$$$$r" $(8) \
 		-i $(imageraw) \
-		-o $(call imgname,ubi,$(2))-recovery.img
+		-o $(call imgname,ubi,$(2))-factory.img
 endef
 
 
