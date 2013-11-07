@@ -1,5 +1,5 @@
 KERNEL_IMG="openwrt-au1000-au1500-vmlinux.bin"
-ROOTFS_IMG="openwrt-au1000-au1500-jffs2-128k.fs"
+ROOTFS_IMG="openwrt-au1000-au1500-root.fs"
 
 platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
