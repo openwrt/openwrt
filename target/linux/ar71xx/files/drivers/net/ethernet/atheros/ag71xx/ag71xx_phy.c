@@ -76,7 +76,7 @@ void ag71xx_phy_stop(struct ag71xx *ag)
 
 static int ag71xx_phy_connect_fixed(struct ag71xx *ag)
 {
-	struct net_device *dev = ag->dev;
+	struct device *dev = &ag->pdev->dev;
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	int ret = 0;
 
@@ -87,12 +87,12 @@ static int ag71xx_phy_connect_fixed(struct ag71xx *ag)
 	case SPEED_1000:
 		break;
 	default:
-		netdev_err(dev, "invalid speed specified\n");
+		dev_err(dev, "invalid speed specified\n");
 		ret = -EINVAL;
 		break;
 	}
 
-	netdev_dbg(dev, "using fixed link parameters\n");
+	dev_dbg(dev, "using fixed link parameters\n");
 
 	ag->duplex = pdata->duplex;
 	ag->speed = pdata->speed;
@@ -102,7 +102,7 @@ static int ag71xx_phy_connect_fixed(struct ag71xx *ag)
 
 static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 {
-	struct net_device *dev = ag->dev;
+	struct device *dev = &ag->pdev->dev;
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct phy_device *phydev = NULL;
 	int phy_addr;
@@ -116,7 +116,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 			continue;
 
 		DBG("%s: PHY found at %s, uid=%08x\n",
-			dev->name,
+			dev_name(dev),
 			dev_name(&ag->mii_bus->phy_map[phy_addr]->dev),
 			ag->mii_bus->phy_map[phy_addr]->phy_id);
 
@@ -125,17 +125,17 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 	}
 
 	if (!phydev) {
-		netdev_err(dev, "no PHY found with phy_mask=%08x\n",
+		dev_err(dev, "no PHY found with phy_mask=%08x\n",
 			   pdata->phy_mask);
 		return -ENODEV;
 	}
 
-	ag->phy_dev = phy_connect(dev, dev_name(&phydev->dev),
+	ag->phy_dev = phy_connect(ag->dev, dev_name(&phydev->dev),
 				  &ag71xx_phy_link_adjust,
 				  pdata->phy_if_mode);
 
 	if (IS_ERR(ag->phy_dev)) {
-		netdev_err(dev, "could not connect to PHY at %s\n",
+		dev_err(dev, "could not connect to PHY at %s\n",
 			   dev_name(&phydev->dev));
 		return PTR_ERR(ag->phy_dev);
 	}
@@ -148,7 +148,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 
 	phydev->advertising = phydev->supported;
 
-	netdev_info(dev, "connected to PHY at %s [uid=%08x, driver=%s]\n",
+	dev_info(dev, "connected to PHY at %s [uid=%08x, driver=%s]\n",
 		    dev_name(&phydev->dev), phydev->phy_id, phydev->drv->name);
 
 	ag->link = 0;
@@ -203,7 +203,7 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 
 	ag->mii_bus = dev_to_mii_bus(pdata->mii_bus_dev);
 	if (ag->mii_bus == NULL) {
-		netdev_err(ag->dev, "unable to find MII bus on device '%s'\n",
+		dev_err(&ag->pdev->dev, "unable to find MII bus on device '%s'\n",
 			   dev_name(pdata->mii_bus_dev));
 		return -ENODEV;
 	}

@@ -1178,16 +1178,6 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
 
-	err = register_netdev(dev);
-	if (err) {
-		dev_err(&pdev->dev, "unable to register net device\n");
-		goto err_free_desc;
-	}
-
-	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d, mode:%s\n",
-		dev->name, dev->base_addr, dev->irq,
-		ag71xx_get_phy_if_mode_name(pdata->phy_if_mode));
-
 	ag71xx_dump_regs(ag);
 
 	ag71xx_hw_init(ag);
@@ -1196,7 +1186,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	err = ag71xx_phy_connect(ag);
 	if (err)
-		goto err_unregister_netdev;
+		goto err_free_desc;
 
 	err = ag71xx_debugfs_init(ag);
 	if (err)
@@ -1204,12 +1194,20 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, dev);
 
+	err = register_netdev(dev);
+	if (err) {
+		dev_err(&pdev->dev, "unable to register net device\n");
+		goto err_phy_disconnect;
+	}
+
+	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d, mode:%s\n",
+		dev->name, dev->base_addr, dev->irq,
+		ag71xx_get_phy_if_mode_name(pdata->phy_if_mode));
+
 	return 0;
 
 err_phy_disconnect:
 	ag71xx_phy_disconnect(ag);
-err_unregister_netdev:
-	unregister_netdev(dev);
 err_free_desc:
 	dma_free_coherent(NULL, sizeof(struct ag71xx_desc), ag->stop_desc,
 			  ag->stop_desc_dma);
