@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012 OpenWrt.org
+# Copyright (C) 2012-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,11 @@ include $(INCLUDE_DIR)/image.mk
 
 define Image/BuildKernel
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n 'Boot Image' -d boot.script $(BIN_DIR)/boot.scr
-	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
+	cp $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
+	-mkdir $(BIN_DIR)/dtbs
+	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/am335x*.dtb $(BIN_DIR)/dtbs/
+	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap3*.dtb $(BIN_DIR)/dtbs/
+	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap4*.dtb $(BIN_DIR)/dtbs/
 endef
 
 define Image/Build

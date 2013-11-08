@@ -13,11 +13,11 @@ FEATURES:=usb targz audio display
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=vfpv3
 
-LINUX_VERSION:=3.3.8
+LINUX_VERSION:=3.12
 
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-KERNELNAME:="uImage"
+KERNELNAME:="zImage dtbs"
 
 DEFAULT_PACKAGES += uboot-omap-am335x_evm uboot-omap-omap3_beagle uboot-omap-omap3_overo uboot-omap-omap4_panda
 
