@@ -248,17 +248,16 @@ mtd_get_mac_ascii()
 	local part
 	local mac_dirty
 
-	. /lib/functions.sh
-
 	part=$(find_mtd_part "$mtdname")
 	if [ -z "$part" ]; then
 		echo "mtd_get_mac_ascii: partition $mtdname not found!" >&2
 		return
 	fi
 
-	mac_dirty=$(strings "$part" | sed -n 's/'"$key"'=//p')
+	mac_dirty=$(strings "$part" | sed -n 's/^'"$key"'=//p')
+
 	# "canonicalize" mac
-	printf "%02x:%02x:%02x:%02x:%02x:%02x" 0x${mac_dirty//:/ 0x}
+	[ -n "$mac_dirty" ] && echo ${mac_dirty} | tr [A-F] [a-f]
 }
 
 mtd_get_mac_binary() {
