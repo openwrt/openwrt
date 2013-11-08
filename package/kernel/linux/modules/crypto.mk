@@ -205,6 +205,28 @@ endef
 $(eval $(call KernelPackage,crypto-hw-ppc4xx))
 
 
+define KernelPackage/crypto-hw-omap
+  TITLE:=TI OMAP hardware crypto modules
+  DEPENDS:=@TARGET_omap4
+  KCONFIG:= \
+	CONFIG_CRYPTO_DEV_OMAP_AES \
+	CONFIG_CRYPTO_DEV_OMAP_DES \
+	CONFIG_CRYPTO_DEV_OMAP_SHAM
+  FILES:= \
+	$(LINUX_DIR)/drivers/crypto/omap-aes.ko \
+	$(LINUX_DIR)/drivers/crypto/omap-des.ko \
+	$(LINUX_DIR)/drivers/crypto/omap-sham.ko
+  AUTOLOAD:=$(call AutoLoad,90,omap-aes omap-des omap-sham)
+  $(call AddDepends/crypto,+kmod-crypto-manager +kmod-crypto-hash)
+endef
+
+define KernelPackage/crypto-hw-omap/description
+  Kernel support for the TI OMAP HW crypto engine.
+endef
+
+$(eval $(call KernelPackage,crypto-hw-omap))
+
+
 define KernelPackage/crypto-aes
   TITLE:=AES cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_AES CONFIG_CRYPTO_AES_586
