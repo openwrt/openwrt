@@ -5,11 +5,14 @@
  *
  * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
  * VLAN support Copyright (c) 2010, 2011 Peter Lebbing <peter@digitalbrains.com>
+ * Copyright (c) 2013 Hauke Mehrtens <hauke@hauke-m.de>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of the GNU General Public License v2 as published by the
  * Free Software Foundation
  */
+
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 /*#define DEBUG 1*/
 #include <linux/kernel.h>
@@ -20,6 +23,7 @@
 #include <linux/interrupt.h>
 #include <linux/init.h>
 #include <linux/delay.h>
+#include <linux/gpio.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
@@ -27,6 +31,8 @@
 #include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/mii.h>
+#include <linux/platform_device.h>
+#include <linux/platform_data/adm6996-gpio.h>
 #include <linux/ethtool.h>
 #include <linux/phy.h>
 #include <linux/switch.h>
@@ -40,20 +46,22 @@ MODULE_DESCRIPTION("Infineon ADM6996 Switch");
 MODULE_AUTHOR("Felix Fietkau, Peter Lebbing <peter@digitalbrains.com>");
 MODULE_LICENSE("GPL");
 
-enum adm6996_model {
-	ADM6996FC,
-	ADM6996M
-};
-
 static const char * const adm6996_model_name[] =
 {
+	NULL,
 	"ADM6996FC",
-	"ADM6996M"
+	"ADM6996M",
+	"ADM6996L"
 };
 
 struct adm6996_priv {
 	struct switch_dev dev;
-	struct phy_device *phydev;
+	void *priv;
+
+	u8 eecs;
+	u8 eesk;
+	u8 eedi;
+	u8 eerc;
 
 	enum adm6996_model model;
 
@@ -65,6 +73,7 @@ struct adm6996_priv {
 #endif
 
 	u16 pvid[ADM_NUM_PORTS];	/* Primary VLAN ID */
+	u8 tagged_ports;
 
 	u16 vlan_id[ADM_NUM_VLANS];
 	u8 vlan_table[ADM_NUM_VLANS];	/* bitmap, 1 = port is member */
@@ -73,36 +82,199 @@ struct adm6996_priv {
 	struct mutex reg_mutex;
 
 	/* use abstraction for regops, we want to add gpio support in the future */
-	u16 (*read)(struct phy_device *phydev, enum admreg reg);
-	void (*write)(struct phy_device *phydev, enum admreg reg, u16 val);
+	u16 (*read)(struct adm6996_priv *priv, enum admreg reg);
+	void (*write)(struct adm6996_priv *priv, enum admreg reg, u16 val);
 };
 
 #define to_adm(_dev) container_of(_dev, struct adm6996_priv, dev)
 #define phy_to_adm(_phy) ((struct adm6996_priv *) (_phy)->priv)
 
 static inline u16
-r16(struct phy_device *pdev, enum admreg reg)
+r16(struct adm6996_priv *priv, enum admreg reg)
 {
-	return phy_to_adm(pdev)->read(pdev, reg);
+	return priv->read(priv, reg);
 }
 
 static inline void
-w16(struct phy_device *pdev, enum admreg reg, u16 val)
+w16(struct adm6996_priv *priv, enum admreg reg, u16 val)
 {
-	phy_to_adm(pdev)->write(pdev, reg, val);
+	priv->write(priv, reg, val);
 }
 
+/* Minimum timing constants */
+#define EECK_EDGE_TIME  3   /* 3us - max(adm 2.5us, 93c 1us) */
+#define EEDI_SETUP_TIME 1   /* 1us - max(adm 10ns, 93c 400ns) */
+#define EECS_SETUP_TIME 1   /* 1us - max(adm no, 93c 200ns) */
+
+static void adm6996_gpio_write(struct adm6996_priv *priv, int cs, char *buf, unsigned int bits)
+{
+	int i, len = (bits + 7) / 8;
+	u8 mask;
+
+	gpio_set_value(priv->eecs, cs);
+	udelay(EECK_EDGE_TIME);
+
+	/* Byte assemble from MSB to LSB */
+	for (i = 0; i < len; i++) {
+		/* Bit bang from MSB to LSB */
+		for (mask = 0x80; mask && bits > 0; mask >>= 1, bits --) {
+			/* Clock low */
+			gpio_set_value(priv->eesk, 0);
+			udelay(EECK_EDGE_TIME);
+
+			/* Output on rising edge */
+			gpio_set_value(priv->eedi, (mask & buf[i]));
+			udelay(EEDI_SETUP_TIME);
+
+			/* Clock high */
+			gpio_set_value(priv->eesk, 1);
+			udelay(EECK_EDGE_TIME);
+		}
+	}
+
+	/* Clock low */
+	gpio_set_value(priv->eesk, 0);
+	udelay(EECK_EDGE_TIME);
+
+	if (cs)
+		gpio_set_value(priv->eecs, 0);
+}
+
+static void adm6996_gpio_read(struct adm6996_priv *priv, int cs, char *buf, unsigned int bits)
+{
+	int i, len = (bits + 7) / 8;
+	u8 mask;
+
+	gpio_set_value(priv->eecs, cs);
+	udelay(EECK_EDGE_TIME);
+
+	/* Byte assemble from MSB to LSB */
+	for (i = 0; i < len; i++) {
+		u8 byte;
+
+		/* Bit bang from MSB to LSB */
+		for (mask = 0x80, byte = 0; mask && bits > 0; mask >>= 1, bits --) {
+			u8 gp;
+
+			/* Clock low */
+			gpio_set_value(priv->eesk, 0);
+			udelay(EECK_EDGE_TIME);
+
+			/* Input on rising edge */
+			gp = gpio_get_value(priv->eedi);
+			if (gp)
+				byte |= mask;
+
+			/* Clock high */
+			gpio_set_value(priv->eesk, 1);
+			udelay(EECK_EDGE_TIME);
+		}
+
+		*buf++ = byte;
+	}
+
+	/* Clock low */
+	gpio_set_value(priv->eesk, 0);
+	udelay(EECK_EDGE_TIME);
+
+	if (cs)
+		gpio_set_value(priv->eecs, 0);
+}
+
+/* Advance clock(s) */
+static void adm6996_gpio_adclk(struct adm6996_priv *priv, int clocks)
+{
+	int i;
+	for (i = 0; i < clocks; i++) {
+		/* Clock high */
+		gpio_set_value(priv->eesk, 1);
+		udelay(EECK_EDGE_TIME);
+
+		/* Clock low */
+		gpio_set_value(priv->eesk, 0);
+		udelay(EECK_EDGE_TIME);
+	}
+}
 
 static u16
-adm6996_read_mii_reg(struct phy_device *phydev, enum admreg reg)
+adm6996_read_gpio_reg(struct adm6996_priv *priv, enum admreg reg)
 {
-	return phydev->bus->read(phydev->bus, PHYADDR(reg));
+	/* cmd: 01 10 T DD R RRRRRR */
+	u8 bits[6] = {
+		0xFF, 0xFF, 0xFF, 0xFF,
+		(0x06 << 4) | ((0 & 0x01) << 3 | (reg&64)>>6),
+		((reg&63)<<2)
+	};
+
+	u8 rbits[4];
+
+	/* Enable GPIO outputs with all pins to 0 */
+	gpio_direction_output(priv->eecs, 0);
+	gpio_direction_output(priv->eesk, 0);
+	gpio_direction_output(priv->eedi, 0);
+
+	adm6996_gpio_write(priv, 0, bits, 46);
+	gpio_direction_input(priv->eedi);
+	adm6996_gpio_adclk(priv, 2);
+	adm6996_gpio_read(priv, 0, rbits, 32);
+
+	/* Extra clock(s) required per datasheet */
+	adm6996_gpio_adclk(priv, 2);
+
+	/* Disable GPIO outputs */
+	gpio_direction_input(priv->eecs);
+	gpio_direction_input(priv->eesk);
+
+	 /* EEPROM has 16-bit registers, but pumps out two registers in one request */
+	return (reg & 0x01 ?  (rbits[0]<<8) | rbits[1] : (rbits[2]<<8) | (rbits[3]));
+}
+
+/* Write chip configuration register */
+/* Follow 93c66 timing and chip's min EEPROM timing requirement */
+static void
+adm6996_write_gpio_reg(struct adm6996_priv *priv, enum admreg reg, u16 val)
+{
+	/* cmd(27bits): sb(1) + opc(01) + addr(bbbbbbbb) + data(bbbbbbbbbbbbbbbb) */
+	u8 bits[4] = {
+		(0x05 << 5) | (reg >> 3),
+		(reg << 5) | (u8)(val >> 11),
+		(u8)(val >> 3),
+		(u8)(val << 5)
+	};
+
+	/* Enable GPIO outputs with all pins to 0 */
+	gpio_direction_output(priv->eecs, 0);
+	gpio_direction_output(priv->eesk, 0);
+	gpio_direction_output(priv->eedi, 0);
+
+	/* Write cmd. Total 27 bits */
+	adm6996_gpio_write(priv, 1, bits, 27);
+
+	/* Extra clock(s) required per datasheet */
+	adm6996_gpio_adclk(priv, 2);
+
+	/* Disable GPIO outputs */
+	gpio_direction_input(priv->eecs);
+	gpio_direction_input(priv->eesk);
+	gpio_direction_input(priv->eedi);
+}
+
+static u16
+adm6996_read_mii_reg(struct adm6996_priv *priv, enum admreg reg)
+{
+	struct phy_device *phydev = priv->priv;
+	struct mii_bus *bus = phydev->bus;
+
+	return bus->read(bus, PHYADDR(reg));
 }
 
 static void
-adm6996_write_mii_reg(struct phy_device *phydev, enum admreg reg, u16 val)
+adm6996_write_mii_reg(struct adm6996_priv *priv, enum admreg reg, u16 val)
 {
-	phydev->bus->write(phydev->bus, PHYADDR(reg), val);
+	struct phy_device *phydev = priv->priv;
+	struct mii_bus *bus = phydev->bus;
+
+	bus->write(bus, PHYADDR(reg), val);
 }
 
 static int
@@ -166,7 +338,7 @@ adm6996_set_data(struct switch_dev *dev, const struct switch_attr *attr,
 	if (val->value.i > 65535)
 		return -EINVAL;
 
-	w16(priv->phydev, priv->addr, val->value.i);
+	w16(priv, priv->addr, val->value.i);
 
 	return 0;
 };
@@ -177,7 +349,7 @@ adm6996_get_data(struct switch_dev *dev, const struct switch_attr *attr,
 {
 	struct adm6996_priv *priv = to_adm(dev);
 
-	val->value.i = r16(priv->phydev, priv->addr);
+	val->value.i = r16(priv, priv->addr);
 
 	return 0;
 };
@@ -189,8 +361,7 @@ adm6996_set_pvid(struct switch_dev *dev, int port, int vlan)
 {
 	struct adm6996_priv *priv = to_adm(dev);
 
-	dev_dbg (&priv->phydev->dev, "set_pvid port %d vlan %d\n", port
-			, vlan);
+	pr_devel("set_pvid port %d vlan %d\n", port, vlan);
 
 	if (vlan > ADM_VLAN_MAX_ID)
 		return -EINVAL;
@@ -205,7 +376,7 @@ adm6996_get_pvid(struct switch_dev *dev, int port, int *vlan)
 {
 	struct adm6996_priv *priv = to_adm(dev);
 
-	dev_dbg (&priv->phydev->dev, "get_pvid port %d\n", port);
+	pr_devel("get_pvid port %d\n", port);
 	*vlan = priv->pvid[port];
 
 	return 0;
@@ -217,8 +388,7 @@ adm6996_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 {
 	struct adm6996_priv *priv = to_adm(dev);
 
-	dev_dbg (&priv->phydev->dev, "set_vid port %d vid %d\n", val->port_vlan,
-			val->value.i);
+	pr_devel("set_vid port %d vid %d\n", val->port_vlan, val->value.i);
 
 	if (val->value.i > ADM_VLAN_MAX_ID)
 		return -EINVAL;
@@ -234,7 +404,7 @@ adm6996_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 {
 	struct adm6996_priv *priv = to_adm(dev);
 
-	dev_dbg (&priv->phydev->dev, "get_vid port %d\n", val->port_vlan);
+	pr_devel("get_vid port %d\n", val->port_vlan);
 
 	val->value.i = priv->vlan_id[val->port_vlan];
 
@@ -249,8 +419,7 @@ adm6996_get_ports(struct switch_dev *dev, struct switch_val *val)
 	u8 tagged = priv->vlan_tagged[val->port_vlan];
 	int i;
 
-	dev_dbg (&priv->phydev->dev, "get_ports port_vlan %d\n",
-			val->port_vlan);
+	pr_devel("get_ports port_vlan %d\n", val->port_vlan);
 
 	val->len = 0;
 
@@ -279,8 +448,7 @@ adm6996_set_ports(struct switch_dev *dev, struct switch_val *val)
 	u8 *tagged = &priv->vlan_tagged[val->port_vlan];
 	int i;
 
-	dev_dbg (&priv->phydev->dev, "set_ports port_vlan %d ports",
-			val->port_vlan);
+	pr_devel("set_ports port_vlan %d ports", val->port_vlan);
 
 	*ports = 0;
 	*tagged = 0;
@@ -294,8 +462,10 @@ adm6996_set_ports(struct switch_dev *dev, struct switch_val *val)
 			""));
 #endif
 
-		if (p->flags & (1 << SWITCH_PORT_FLAG_TAGGED))
+		if (p->flags & (1 << SWITCH_PORT_FLAG_TAGGED)) {
 			*tagged |= (1 << p->id);
+			priv->tagged_ports |= (1 << p->id);
+		}
 
 		*ports |= (1 << p->id);
 	}
@@ -315,24 +485,34 @@ adm6996_enable_vlan(struct adm6996_priv *priv)
 {
 	u16 reg;
 
-	reg = r16(priv->phydev, ADM_OTBE_P2_PVID);
+	reg = r16(priv, ADM_OTBE_P2_PVID);
 	reg &= ~(ADM_OTBE_MASK);
-	w16(priv->phydev, ADM_OTBE_P2_PVID, reg);
-	reg = r16(priv->phydev, ADM_IFNTE);
+	w16(priv, ADM_OTBE_P2_PVID, reg);
+	reg = r16(priv, ADM_IFNTE);
 	reg &= ~(ADM_IFNTE_MASK);
-	w16(priv->phydev, ADM_IFNTE, reg);
-	reg = r16(priv->phydev, ADM_VID_CHECK);
+	w16(priv, ADM_IFNTE, reg);
+	reg = r16(priv, ADM_VID_CHECK);
 	reg |= ADM_VID_CHECK_MASK;
-	w16(priv->phydev, ADM_VID_CHECK, reg);
-	reg = r16(priv->phydev, ADM_SYSC0);
+	w16(priv, ADM_VID_CHECK, reg);
+	reg = r16(priv, ADM_SYSC0);
 	reg |= ADM_NTTE;
 	reg &= ~(ADM_RVID1);
-	w16(priv->phydev, ADM_SYSC0, reg);
-	reg = r16(priv->phydev, ADM_SYSC3);
+	w16(priv, ADM_SYSC0, reg);
+	reg = r16(priv, ADM_SYSC3);
 	reg |= ADM_TBV;
-	w16(priv->phydev, ADM_SYSC3, reg);
+	w16(priv, ADM_SYSC3, reg);
+}
 
-};
+static void
+adm6996_enable_vlan_6996l(struct adm6996_priv *priv)
+{
+	u16 reg;
+
+	reg = r16(priv, ADM_SYSC3);
+	reg |= ADM_TBV;
+	reg |= ADM_MAC_CLONE;
+	w16(priv, ADM_SYSC3, reg);
+}
 
 /*
  * Disable VLANs
@@ -348,29 +528,53 @@ adm6996_disable_vlan(struct adm6996_priv *priv)
 	u16 reg;
 	int i;
 
-	for (i = 0; i < ADM_NUM_PORTS; i++) {
+	for (i = 0; i < ADM_NUM_VLANS; i++) {
 		reg = ADM_VLAN_FILT_MEMBER_MASK;
-		w16(priv->phydev, ADM_VLAN_FILT_L(i), reg);
+		w16(priv, ADM_VLAN_FILT_L(i), reg);
 		reg = ADM_VLAN_FILT_VALID | ADM_VLAN_FILT_VID(1);
-		w16(priv->phydev, ADM_VLAN_FILT_H(i), reg);
+		w16(priv, ADM_VLAN_FILT_H(i), reg);
 	}
 
-	reg = r16(priv->phydev, ADM_OTBE_P2_PVID);
+	reg = r16(priv, ADM_OTBE_P2_PVID);
 	reg |= ADM_OTBE_MASK;
-	w16(priv->phydev, ADM_OTBE_P2_PVID, reg);
-	reg = r16(priv->phydev, ADM_IFNTE);
+	w16(priv, ADM_OTBE_P2_PVID, reg);
+	reg = r16(priv, ADM_IFNTE);
 	reg |= ADM_IFNTE_MASK;
-	w16(priv->phydev, ADM_IFNTE, reg);
-	reg = r16(priv->phydev, ADM_VID_CHECK);
+	w16(priv, ADM_IFNTE, reg);
+	reg = r16(priv, ADM_VID_CHECK);
 	reg &= ~(ADM_VID_CHECK_MASK);
-	w16(priv->phydev, ADM_VID_CHECK, reg);
-	reg = r16(priv->phydev, ADM_SYSC0);
+	w16(priv, ADM_VID_CHECK, reg);
+	reg = r16(priv, ADM_SYSC0);
 	reg &= ~(ADM_NTTE);
 	reg |= ADM_RVID1;
-	w16(priv->phydev, ADM_SYSC0, reg);
-	reg = r16(priv->phydev, ADM_SYSC3);
+	w16(priv, ADM_SYSC0, reg);
+	reg = r16(priv, ADM_SYSC3);
 	reg &= ~(ADM_TBV);
-	w16(priv->phydev, ADM_SYSC3, reg);
+	w16(priv, ADM_SYSC3, reg);
+}
+
+/*
+ * Disable VLANs
+ *
+ * Sets VLAN mapping for port-based VLAN with all ports connected to
+ * eachother (this is also the power-on default).
+ *
+ * Precondition: reg_mutex must be held
+ */
+static void
+adm6996_disable_vlan_6996l(struct adm6996_priv *priv)
+{
+	u16 reg;
+	int i;
+
+	for (i = 0; i < ADM_NUM_VLANS; i++) {
+		w16(priv, ADM_VLAN_MAP(i), 0);
+	}
+
+	reg = r16(priv, ADM_SYSC3);
+	reg &= ~(ADM_TBV);
+	reg &= ~(ADM_MAC_CLONE);
+	w16(priv, ADM_SYSC3, reg);
 }
 
 /*
@@ -383,22 +587,31 @@ adm6996_apply_port_pvids(struct adm6996_priv *priv)
 	int i;
 
 	for (i = 0; i < ADM_NUM_PORTS; i++) {
-		reg = r16(priv->phydev, adm_portcfg[i]);
+		reg = r16(priv, adm_portcfg[i]);
 		reg &= ~(ADM_PORTCFG_PVID_MASK);
 		reg |= ADM_PORTCFG_PVID(priv->pvid[i]);
-		w16(priv->phydev, adm_portcfg[i], reg);
+		if (priv->model == ADM6996L) {
+			if (priv->tagged_ports & (1 << i))
+				reg |= (1 << 4);
+			else
+				reg &= ~(1 << 4);
+		}
+		w16(priv, adm_portcfg[i], reg);
 	}
 
-	w16(priv->phydev, ADM_P0_PVID, ADM_P0_PVID_VAL(priv->pvid[0]));
-	w16(priv->phydev, ADM_P1_PVID, ADM_P1_PVID_VAL(priv->pvid[1]));
-	reg = r16(priv->phydev, ADM_OTBE_P2_PVID);
+	w16(priv, ADM_P0_PVID, ADM_P0_PVID_VAL(priv->pvid[0]));
+	w16(priv, ADM_P1_PVID, ADM_P1_PVID_VAL(priv->pvid[1]));
+	reg = r16(priv, ADM_OTBE_P2_PVID);
 	reg &= ~(ADM_P2_PVID_MASK);
 	reg |= ADM_P2_PVID_VAL(priv->pvid[2]);
-	w16(priv->phydev, ADM_OTBE_P2_PVID, reg);
+	w16(priv, ADM_OTBE_P2_PVID, reg);
 	reg = ADM_P3_PVID_VAL(priv->pvid[3]);
 	reg |= ADM_P4_PVID_VAL(priv->pvid[4]);
-	w16(priv->phydev, ADM_P3_P4_PVID, reg);
-	w16(priv->phydev, ADM_P5_PVID, ADM_P5_PVID_VAL(priv->pvid[5]));
+	w16(priv, ADM_P3_P4_PVID, reg);
+	reg = r16(priv, ADM_P5_PVID);
+	reg &= ~(ADM_P2_PVID_MASK);
+	reg |= ADM_P5_PVID_VAL(priv->pvid[5]);
+	w16(priv, ADM_P5_PVID, reg);
 }
 
 /*
@@ -418,16 +631,37 @@ adm6996_apply_vlan_filters(struct adm6996_priv *priv)
 
 		if (ports == 0) {
 			/* Disable VLAN entry */
-			w16(priv->phydev, ADM_VLAN_FILT_H(i), 0);
-			w16(priv->phydev, ADM_VLAN_FILT_L(i), 0);
+			w16(priv, ADM_VLAN_FILT_H(i), 0);
+			w16(priv, ADM_VLAN_FILT_L(i), 0);
 			continue;
 		}
 
 		reg = ADM_VLAN_FILT_MEMBER(ports);
 		reg |= ADM_VLAN_FILT_TAGGED(tagged);
-		w16(priv->phydev, ADM_VLAN_FILT_L(i), reg);
+		w16(priv, ADM_VLAN_FILT_L(i), reg);
 		reg = ADM_VLAN_FILT_VALID | ADM_VLAN_FILT_VID(vid);
-		w16(priv->phydev, ADM_VLAN_FILT_H(i), reg);
+		w16(priv, ADM_VLAN_FILT_H(i), reg);
+	}
+}
+
+static void
+adm6996_apply_vlan_filters_6996l(struct adm6996_priv *priv)
+{
+	u8 ports;
+	u16 reg;
+	int i;
+
+	for (i = 0; i < ADM_NUM_VLANS; i++) {
+		ports = priv->vlan_table[i];
+
+		if (ports == 0) {
+			/* Disable VLAN entry */
+			w16(priv, ADM_VLAN_MAP(i), 0);
+			continue;
+		} else {
+			reg = ADM_VLAN_FILT(ports);
+			w16(priv, ADM_VLAN_MAP(i), reg);
+		}
 	}
 }
 
@@ -436,25 +670,34 @@ adm6996_hw_apply(struct switch_dev *dev)
 {
 	struct adm6996_priv *priv = to_adm(dev);
 
-	dev_dbg(&priv->phydev->dev, "hw_apply\n");
+	pr_devel("hw_apply\n");
 
 	mutex_lock(&priv->reg_mutex);
 
 	if (!priv->enable_vlan) {
 		if (priv->vlan_enabled) {
-			adm6996_disable_vlan(priv);
+			if (priv->model == ADM6996L)
+				adm6996_disable_vlan_6996l(priv);
+			else
+				adm6996_disable_vlan(priv);
 			priv->vlan_enabled = 0;
 		}
 		goto out;
 	}
 
 	if (!priv->vlan_enabled) {
-		adm6996_enable_vlan(priv);
+		if (priv->model == ADM6996L)
+			adm6996_enable_vlan_6996l(priv);
+		else
+			adm6996_enable_vlan(priv);
 		priv->vlan_enabled = 1;
 	}
 
 	adm6996_apply_port_pvids(priv);
-	adm6996_apply_vlan_filters(priv);
+	if (priv->model == ADM6996L)
+		adm6996_apply_vlan_filters_6996l(priv);
+	else
+		adm6996_apply_vlan_filters(priv);
 
 out:
 	mutex_unlock(&priv->reg_mutex);
@@ -477,14 +720,16 @@ adm6996_perform_reset (struct adm6996_priv *priv)
 
 	/* initialize port and vlan settings */
 	for (i = 0; i < ADM_NUM_PORTS - 1; i++) {
-		w16(priv->phydev, adm_portcfg[i], ADM_PORTCFG_INIT |
+		w16(priv, adm_portcfg[i], ADM_PORTCFG_INIT |
 			ADM_PORTCFG_PVID(0));
 	}
-	w16(priv->phydev, adm_portcfg[5], ADM_PORTCFG_CPU);
+	w16(priv, adm_portcfg[5], ADM_PORTCFG_CPU);
 
-	/* reset all PHY ports */
-	for (i = 0; i < ADM_PHY_PORTS; i++) {
-		w16(priv->phydev, ADM_PHY_PORT(i), ADM_PHYCFG_INIT);
+	if (priv->model == ADM6996M || priv->model == ADM6996FC) {
+		/* reset all PHY ports */
+		for (i = 0; i < ADM_PHY_PORTS; i++) {
+			w16(priv, ADM_PHY_PORT(i), ADM_PHYCFG_INIT);
+		}
 	}
 
 	priv->enable_vlan = 0;
@@ -502,9 +747,15 @@ adm6996_perform_reset (struct adm6996_priv *priv)
 
 	if (priv->model == ADM6996M) {
 		/* Clear VLAN priority map so prio's are unused */
-		w16 (priv->phydev, ADM_VLAN_PRIOMAP, 0);
+		w16 (priv, ADM_VLAN_PRIOMAP, 0);
 
 		adm6996_disable_vlan(priv);
+		adm6996_apply_port_pvids(priv);
+	} else if (priv->model == ADM6996L) {
+		/* Clear VLAN priority map so prio's are unused */
+		w16 (priv, ADM_VLAN_PRIOMAP, 0);
+
+		adm6996_disable_vlan_6996l(priv);
 		adm6996_apply_port_pvids(priv);
 	}
 }
@@ -514,7 +765,8 @@ adm6996_reset_switch(struct switch_dev *dev)
 {
 	struct adm6996_priv *priv = to_adm(dev);
 
-	dev_dbg (&priv->phydev->dev, "reset\n");
+	pr_devel("reset\n");
+
 	mutex_lock(&priv->reg_mutex);
 	adm6996_perform_reset (priv);
 	mutex_unlock(&priv->reg_mutex);
@@ -583,13 +835,55 @@ static const struct switch_dev_ops adm6996_ops = {
 	.reset_switch = adm6996_reset_switch,
 };
 
+static int adm6996_switch_init(struct adm6996_priv *priv, const char *alias, struct net_device *netdev)
+{
+	struct switch_dev *swdev;
+	u16 test, old;
+
+	if (!priv->model) {
+		/* Detect type of chip */
+		old = r16(priv, ADM_VID_CHECK);
+		test = old ^ (1 << 12);
+		w16(priv, ADM_VID_CHECK, test);
+		test ^= r16(priv, ADM_VID_CHECK);
+		if (test & (1 << 12)) {
+			/* 
+			 * Bit 12 of this register is read-only. 
+			 * This is the FC model. 
+			 */
+			priv->model = ADM6996FC;
+		} else {
+			/* Bit 12 is read-write. This is the M model. */
+			priv->model = ADM6996M;
+			w16(priv, ADM_VID_CHECK, old);
+		}
+	}
+
+	swdev = &priv->dev;
+	swdev->name = (adm6996_model_name[priv->model]);
+	swdev->cpu_port = ADM_CPU_PORT;
+	swdev->ports = ADM_NUM_PORTS;
+	swdev->vlans = ADM_NUM_VLANS;
+	swdev->ops = &adm6996_ops;
+	swdev->alias = alias;
+
+	pr_info ("%s: %s model PHY found.\n", alias, swdev->name);
+
+	mutex_lock(&priv->reg_mutex);
+	adm6996_perform_reset (priv);
+	mutex_unlock(&priv->reg_mutex);
+
+	if (priv->model == ADM6996M || priv->model == ADM6996L) {
+		return register_switch(swdev, netdev);
+	}
+
+	return -ENODEV;
+}
+
 static int adm6996_config_init(struct phy_device *pdev)
 {
 	struct adm6996_priv *priv;
-	struct switch_dev *swdev;
-
 	int ret;
-	u16 test, old;
 
 	pdev->supported = ADVERTISED_100baseT_Full;
 	pdev->advertising = ADVERTISED_100baseT_Full;
@@ -600,53 +894,20 @@ static int adm6996_config_init(struct phy_device *pdev)
 		return 0;
 	}
 
-	priv = kzalloc(sizeof(struct adm6996_priv), GFP_KERNEL);
-	if (priv == NULL)
+	priv = devm_kzalloc(&pdev->dev, sizeof(struct adm6996_priv), GFP_KERNEL);
+	if (!priv)
 		return -ENOMEM;
 
 	mutex_init(&priv->reg_mutex);
-	priv->phydev = pdev;
+	priv->priv = pdev;
 	priv->read = adm6996_read_mii_reg;
 	priv->write = adm6996_write_mii_reg;
+
+	ret = adm6996_switch_init(priv, pdev->attached_dev->name, pdev->attached_dev);
+	if (ret < 0)
+		return ret;
+
 	pdev->priv = priv;
-
-	/* Detect type of chip */
-	old = r16(pdev, ADM_VID_CHECK);
-	test = old ^ (1 << 12);
-	w16(pdev, ADM_VID_CHECK, test);
-	test ^= r16(pdev, ADM_VID_CHECK);
-	if (test & (1 << 12)) {
-		/* 
-		 * Bit 12 of this register is read-only. 
-		 * This is the FC model. 
-		 */
-		priv->model = ADM6996FC;
-	} else {
-		/* Bit 12 is read-write. This is the M model. */
-		priv->model = ADM6996M;
-		w16(pdev, ADM_VID_CHECK, old);
-	}
-
-	swdev = &priv->dev;
-	swdev->name = (adm6996_model_name[priv->model]);
-	swdev->cpu_port = ADM_CPU_PORT;
-	swdev->ports = ADM_NUM_PORTS;
-	swdev->vlans = ADM_NUM_VLANS;
-	swdev->ops = &adm6996_ops;
-
-	pr_info ("%s: %s model PHY found.\n", pdev->attached_dev->name,
-			swdev->name);
-
-	mutex_lock(&priv->reg_mutex);
-	adm6996_perform_reset (priv);
-	mutex_unlock(&priv->reg_mutex);
-
-	if (priv->model == ADM6996M) {
-		if ((ret = register_switch(swdev, pdev->attached_dev)) < 0) {
-			kfree(priv);
-			return ret;
-		}
-	}
 
 	return 0;
 }
@@ -702,14 +963,12 @@ static void adm6996_remove(struct phy_device *pdev)
 {
 	struct adm6996_priv *priv = phy_to_adm(pdev);
 
-	if (priv != NULL && priv->model == ADM6996M)
+	if (priv && (priv->model == ADM6996M || priv->model == ADM6996L))
 		unregister_switch(&priv->dev);
-
-	kfree(priv);
 }
 
 
-static struct phy_driver adm6996_driver = {
+static struct phy_driver adm6996_phy_driver = {
 	.name		= "Infineon ADM6996",
 	.phy_id		= (ADM_SIG0_VAL << 16) | ADM_SIG1_VAL,
 	.phy_id_mask	= 0xffffffff,
@@ -722,15 +981,90 @@ static struct phy_driver adm6996_driver = {
 	.driver		= { .owner = THIS_MODULE,},
 };
 
+static int adm6996_gpio_probe(struct platform_device *pdev)
+{
+	struct adm6996_gpio_platform_data *pdata = pdev->dev.platform_data;
+	struct adm6996_priv *priv;
+	int ret;
+
+	if (!pdata)
+		return -EINVAL;
+				  
+	priv = devm_kzalloc(&pdev->dev, sizeof(struct adm6996_priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	mutex_init(&priv->reg_mutex);
+
+	priv->eecs = pdata->eecs;
+	priv->eedi = pdata->eedi;
+	priv->eerc = pdata->eerc;
+	priv->eesk = pdata->eesk;
+
+	priv->model = pdata->model;
+	priv->read = adm6996_read_gpio_reg;
+	priv->write = adm6996_write_gpio_reg;
+
+	ret = devm_gpio_request(&pdev->dev, priv->eecs, "adm_eecs");
+	if (ret)
+		return ret;
+	ret = devm_gpio_request(&pdev->dev, priv->eedi, "adm_eedi");
+	if (ret)
+		return ret;
+	ret = devm_gpio_request(&pdev->dev, priv->eerc, "adm_eerc");
+	if (ret)
+		return ret;
+	ret = devm_gpio_request(&pdev->dev, priv->eesk, "adm_eesk");
+	if (ret)
+		return ret;
+
+	ret = adm6996_switch_init(priv, dev_name(&pdev->dev), NULL);
+	if (ret < 0)
+		return ret;
+
+	platform_set_drvdata(pdev, priv);
+
+	return 0;
+}
+
+static int adm6996_gpio_remove(struct platform_device *pdev)
+{
+	struct adm6996_priv *priv = platform_get_drvdata(pdev);
+
+	if (priv && (priv->model == ADM6996M || priv->model == ADM6996L))
+		unregister_switch(&priv->dev);
+
+	return 0;
+}
+
+static struct platform_driver adm6996_gpio_driver = {
+	.probe = adm6996_gpio_probe,
+	.remove = adm6996_gpio_remove,
+	.driver = {
+		.name = "adm6996_gpio",
+	},
+};
+
 static int __init adm6996_init(void)
 {
+	int err;
+
 	phy_register_fixup_for_id(PHY_ANY_ID, adm6996_fixup);
-	return phy_driver_register(&adm6996_driver);
+	err =  phy_driver_register(&adm6996_phy_driver);
+	if (err)
+		return err;
+
+	err = platform_driver_register(&adm6996_gpio_driver);
+	if (err)
+		phy_driver_unregister(&adm6996_phy_driver);
+
+	return err;
 }
 
 static void __exit adm6996_exit(void)
 {
-	phy_driver_unregister(&adm6996_driver);
+	platform_driver_unregister(&adm6996_gpio_driver);
+	phy_driver_unregister(&adm6996_phy_driver);
 }
 
 module_init(adm6996_init);
