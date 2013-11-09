@@ -711,7 +711,7 @@ static struct platform_t __initdata platforms[] = {
 		.name		= "ASUS RT-N16",
 		.buttons	= {
 			{ .name = "reset",	.gpio = 1 << 8 },
-			{ .name = "ses",	.gpio = 1 << 5 },
+			{ .name = "ses",	.gpio = 1 << 6 },
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 1, .polarity = REVERSE },
