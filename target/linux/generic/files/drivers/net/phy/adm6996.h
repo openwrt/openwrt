@@ -46,6 +46,7 @@ enum admreg {
 	ADM_EEPROM_EXT_BASE	= 0x40,
 #define ADM_VLAN_FILT_L(n) (ADM_EEPROM_EXT_BASE + 2 * (n))
 #define ADM_VLAN_FILT_H(n) (ADM_EEPROM_EXT_BASE + 1 + 2 * (n))
+#define ADM_VLAN_MAP(n) (ADM_EEPROM_BASE + 0x13 + n)
 	ADM_COUNTER_BASE	= 0xa0,
 		ADM_SIG0		= ADM_COUNTER_BASE + 0,
 		ADM_SIG1		= ADM_COUNTER_BASE + 1,
@@ -132,7 +133,8 @@ enum {
 };
 
 /* Tag Based VLAN in ADM_SYSC3 */
-#define ADM_TBV (1 << 5)
+#define ADM_MAC_CLONE	BIT(4)
+#define ADM_TBV		BIT(5)
 
 static const u8 adm_portcfg[] = {
 	[0] = ADM_P0_CFG,
@@ -152,6 +154,10 @@ static const u8 adm_portcfg[] = {
 #define ADM_VLAN_FILT_VALID (1 << 15)
 #define ADM_VLAN_FILT_VID(n) (((n) & 0xfff) << 0)
 
+/* Convert ports to a form for ADM6996L VLAN map */
+#define ADM_VLAN_FILT(ports) ((ports & 0x01) | ((ports & 0x02) << 1) | \
+			((ports & 0x04) << 2) | ((ports & 0x08) << 3) | \
+			((ports & 0x10) << 3) | ((ports & 0x20) << 3))
 
 /*
  * Split the register address in phy id and register
