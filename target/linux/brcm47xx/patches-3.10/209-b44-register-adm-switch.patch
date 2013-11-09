@@ -1,0 +1,123 @@
+From b52546f8af54b78050f84ab031ad1aaf6507ed95 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 9 Nov 2013 17:03:59 +0100
+Subject: [PATCH 10/10] b44: register adm switch
+
+---
+ drivers/net/ethernet/broadcom/b44.c |   64 ++++++++++++++++++++++++++++++++++-
+ drivers/net/ethernet/broadcom/b44.h |    3 ++
+ 2 files changed, 66 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/broadcom/b44.c
++++ b/drivers/net/ethernet/broadcom/b44.c
+@@ -31,6 +31,8 @@
+ #include <linux/ssb/ssb.h>
+ #include <linux/slab.h>
+ #include <linux/phy.h>
++#include <linux/platform_device.h>
++#include <linux/platform_data/adm6996-gpio.h>
+ 
+ #include <asm/uaccess.h>
+ #include <asm/io.h>
+@@ -2216,6 +2218,58 @@ static void b44_adjust_link(struct net_d
+ 		phy_print_status(phydev);
+ }
+ 
++#ifdef CONFIG_BCM47XX
++static struct adm6996_gpio_platform_data b44_adm_data = {
++	.eecs	= 2,
++	.eesk	= 3,
++	.eedi	= 4,
++	.eerc	= 5,
++	.model	= ADM6996L,
++};
++
++static struct platform_device b44_adm_dev = {
++	.name		= "adm6996_gpio",
++	.id		= -1,
++	.dev		= {
++		.platform_data = &b44_adm_data,
++	},
++};
++
++static int b44_register_adm_switch(struct b44 *bp)
++{
++	int gpio;
++	int err;
++
++	gpio = bcm47xx_nvram_gpio_pin("adm_eecs");
++	if (gpio >= 0)
++		b44_adm_data.eecs = gpio;
++
++	gpio = bcm47xx_nvram_gpio_pin("adm_eesk");
++	if (gpio >= 0)
++		b44_adm_data.eesk = gpio;
++
++	gpio = bcm47xx_nvram_gpio_pin("adm_eedi");
++	if (gpio >= 0)
++		b44_adm_data.eedi = gpio;
++
++	gpio = bcm47xx_nvram_gpio_pin("adm_rc");
++	if (gpio >= 0)
++		b44_adm_data.eerc = gpio;
++
++	if (!bp->adm_switch) {
++		err = platform_device_register(&b44_adm_dev);
++		if (!err)
++			bp->adm_switch = &b44_adm_dev;
++	}
++	return err;
++}
++#else
++static int b44_register_adm_switch(struct b44 *bp)
++{
++	return 0;
++}
++#endif /* CONFIG_BCM47XX */
++
+ static int b44_register_phy_one(struct b44 *bp)
+ {
+ 	struct mii_bus *mii_bus;
+@@ -2223,6 +2277,7 @@ static int b44_register_phy_one(struct b
+ 	struct phy_device *phydev;
+ 	int err;
+ 	struct phy_c45_device_ids c45_ids = {0};
++	struct ssb_sprom *sprom = &sdev->bus->sprom;
+ 
+ 	mii_bus = mdiobus_alloc();
+ 	if (!mii_bus) {
+@@ -2256,7 +2311,11 @@ static int b44_register_phy_one(struct b
+ 	}
+ 
+ 	phydev = bp->mii_bus->phy_map[bp->phy_addr];
+-	if (!phydev) {
++	if (!phydev &&
++	    (sprom->boardflags_lo & (B44_BOARDFLAG_ROBO | B44_BOARDFLAG_ADM))) {
++		if (sprom->boardflags_lo & B44_BOARDFLAG_ADM)
++			b44_register_adm_switch(bp);
++
+ 		dev_info(sdev->dev, "could not find PHY at %i, create dummy one\n",
+ 			 bp->phy_addr);
+ 
+--- a/drivers/net/ethernet/broadcom/b44.h
++++ b/drivers/net/ethernet/broadcom/b44.h
+@@ -345,6 +345,9 @@ B44_STAT_REG_DECLARE
+ 	struct u64_stats_sync	syncp;
+ };
+ 
++#define	B44_BOARDFLAG_ROBO		0x0010  /* Board has robo switch or core */
++#define	B44_BOARDFLAG_ADM		0x0080  /* Board has ADMtek switch */
++
+ struct ssb_device;
+ 
+ struct b44 {
+@@ -402,6 +405,9 @@ struct b44 {
+ 	int			old_link;
+ 	int			old_duplex;
+ 	struct mii_if_info	mii_if;
++
++	/* platform device for associated switch */
++	struct platform_device *adm_switch;
+ };
+ 
+ #endif /* _B44_H */
