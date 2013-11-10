@@ -723,6 +723,7 @@ static struct gpio laguna_gpio_gw2383[] = {
 	{   8, GPIOF_IN           , "GPIO1" },
 	{ 100, GPIOF_IN           , "DIO0" },
 	{ 101, GPIOF_IN           , "DIO1" },
+	{ 108, GPIOF_IN           , "*USER_PB#" },
 };
 
 static struct gpio laguna_gpio_gw2382[] = {
@@ -735,6 +736,7 @@ static struct gpio laguna_gpio_gw2382[] = {
 	{  10, GPIOF_OUT_INIT_HIGH, "*USB_PCI_SEL#" },
 	{ 100, GPIOF_IN           , "DIO0" },
 	{ 101, GPIOF_IN           , "DIO1" },
+	{ 108, GPIOF_IN           , "*USER_PB#" },
 };
 
 static struct gpio laguna_gpio_gw2380[] = {
@@ -746,6 +748,7 @@ static struct gpio laguna_gpio_gw2380[] = {
 	{ 101, GPIOF_IN           , "DIO1" },
 	{ 102, GPIOF_IN           , "DIO2" },
 	{ 103, GPIOF_IN           , "DIO3" },
+	{ 108, GPIOF_IN           , "*USER_PB#" },
 };
 
 /*
