@@ -205,14 +205,14 @@
 		wifi {
 			label = "wifi";
 			gpios = <&gpio 9 0>;
-			linux,code = <0x101>;
+			linux,code = <0xf7>;
 			linux,input-type = <5>; /* EV_SW */
 		};
 
 		wps {
 			label = "wps";
 			gpios = <&gpio 39 1>;
-			linux,code = <0x102>;
+			linux,code = <0x211>;
 		};
 	};
 
