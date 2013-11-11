@@ -141,17 +141,7 @@ static int button_hotplug_fill_event(struct bh_event *event)
 	if (ret)
 		return ret;
 
-	switch (event->type) {
-		case EV_SW:
-			s = "switch";
-			break;
-		case EV_KEY:
-		default:
-			s = "button";
-			break;
-	}
-
-	ret = bh_event_add_var(event, 0, "SUBSYSTEM=%s", s);
+	ret = bh_event_add_var(event, 0, "SUBSYSTEM=%s", "button");
 	if (ret)
 		return ret;
 
@@ -162,6 +152,12 @@ static int button_hotplug_fill_event(struct bh_event *event)
 	ret = bh_event_add_var(event, 0, "BUTTON=%s", event->name);
 	if (ret)
 		return ret;
+
+	if (event->type == EV_SW) {
+		ret = bh_event_add_var(event, 0, "TYPE=%s", "switch");
+		if (ret)
+			return ret;
+	}
 
 	ret = bh_event_add_var(event, 0, "SEEN=%ld", event->seen);
 	if (ret)
@@ -299,7 +295,7 @@ static void gpio_keys_polled_check_state(struct gpio_keys_button *button,
 			return;
 		}
 
-		if (bdata->last_state != -1)
+		if ((bdata->last_state != -1) || (type == EV_SW))
 			button_hotplug_event(bdata, type, button->code, state);
 
 		bdata->last_state = state;
