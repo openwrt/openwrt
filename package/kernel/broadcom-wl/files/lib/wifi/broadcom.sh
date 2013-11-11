@@ -50,12 +50,6 @@ scan_broadcom() {
 	done
 	config_set "$device" vifs "${adhoc_if:-$sta_if $ap_if $mon_if}"
 
-	ifdown="down"
-	for vif in 0 1 2 3; do
-		append ifdown "vif $vif" "$N"
-		append ifdown "enabled 0" "$N"
-	done
-
 	ap=1
 	infra=1
 	if [ "$_c" -gt 1 ]; then
@@ -96,7 +90,6 @@ scan_broadcom() {
 disable_broadcom() {
 	local device="$1"
 	set_wifi_down "$device"
-	wlc ifname "$device" down
 	(
 		include /lib/network
 
@@ -104,12 +97,28 @@ disable_broadcom() {
 		[ -e $pid_file ] && start-stop-daemon -K -q -s SIGKILL -p $pid_file && rm $pid_file
 
 		# make sure the interfaces are down and removed from all bridges
-		local dev
-		for dev in $device ${device}-1 ${device}-2 ${device}-3; do
-			ifconfig "$dev" down 2>/dev/null >/dev/null && {
-				unbridge "$dev"
-			}
+		local dev ifname
+		for dev in /sys/class/net/wds${device##wl}-* /sys/class/net/${device}-* /sys/class/net/${device}; do
+			if [ -e "$dev" ]; then
+				ifname=${dev##/sys/class/net/}
+				ifconfig "$ifname" down
+				unbridge "$ifname"
+			fi
 		done
+
+		# make sure all of the devices are disabled in the driver
+		local ifdown=
+		local vif
+		append ifdown "down" "$N"
+		append ifdown "wds none" "$N"
+		for vif in 3 2 1 0; do
+			append ifdown "vif $vif" "$N"
+			append ifdown "enabled 0" "$N"
+		done
+
+		wlc ifname "$device" stdin <<EOF
+$ifdown
+EOF
 	)
 	true
 }
@@ -362,8 +371,6 @@ enable_broadcom() {
 		_c=$(($_c + 1))
 	done
 	wlc ifname "$device" stdin <<EOF
-$ifdown
-
 ${macaddr:+bssid $macaddr}
 ${macaddr:+cur_etheraddr $macaddr}
 band ${band:-0}
@@ -387,7 +394,6 @@ monitor ${monitor:-0}
 radio ${radio:-1}
 macfilter ${macfilter:-0}
 maclist ${maclist:-none}
-wds none
 ${wds:+wds $wds}
 country ${country:-US}
 ${channel:+channel $channel}
