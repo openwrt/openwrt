@@ -97,7 +97,6 @@ disable_broadcom() {
 	local device="$1"
 	set_wifi_down "$device"
 	wlc ifname "$device" down
-	wlc ifname "$device" bssid `wlc ifname "$device" default_bssid`
 	(
 		include /lib/network
 
@@ -131,7 +130,7 @@ enable_broadcom() {
 	config_get_bool frameburst "$device" frameburst
 	config_get macfilter "$device" macfilter
 	config_get maclist "$device" maclist
-	config_get macaddr "$device" macaddr
+	config_get macaddr "$device" macaddr $(wlc ifname "$device" default_bssid)
 	config_get txpower "$device" txpower
 	config_get frag "$device" frag
 	config_get rts "$device" rts
@@ -199,7 +198,7 @@ enable_broadcom() {
 
 	local _c=0
 	local nas="$(which nas)"
-	local if_up nas_cmd
+	local if_pre_up if_up nas_cmd
 	local vif vif_pre_up vif_post_up vif_do_up vif_txpower
 
 	for vif in $vifs; do
@@ -340,7 +339,10 @@ enable_broadcom() {
 
 		local ifname
 		config_get ifname "$vif" ifname
-		#append if_up "ifconfig $ifname up" ";$N"
+		local if_cmd="if_pre_up"
+		[ "$ifname" != "${ifname##${device}-}" ] && if_cmd="if_up"
+		append $if_cmd "macaddr=\$(wlc ifname '$ifname' cur_etheraddr)" ";$N"
+		append $if_cmd "ifconfig '$ifname' \${macaddr:+hw ether \$macaddr}" ";$N"
 
 		local net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
@@ -362,6 +364,8 @@ enable_broadcom() {
 	wlc ifname "$device" stdin <<EOF
 $ifdown
 
+${macaddr:+bssid $macaddr}
+${macaddr:+cur_etheraddr $macaddr}
 band ${band:-0}
 ${nmode:+nmode $nmode}
 ${nmode:+${nreqd:+nreqd $nreqd}}
@@ -393,6 +397,9 @@ slottime ${slottime:--1}
 ${frameburst:+frameburst $frameburst}
 
 $vif_pre_up
+EOF
+	eval "$if_pre_up"
+	wlc ifname "$device" stdin <<EOF
 up
 $vif_post_up
 EOF
