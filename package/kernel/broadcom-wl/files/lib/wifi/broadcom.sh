@@ -45,7 +45,7 @@ scan_broadcom() {
 
 	local _c=
 	for vif in ${adhoc_if:-$sta_if $ap_if $mon_if}; do
-		config_set "$vif" ifname "${device}${_c:+.$_c}"
+		config_set "$vif" ifname "${device}${_c:+-$_c}"
 		_c=$((${_c:-0} + 1))
 	done
 	config_set "$device" vifs "${adhoc_if:-$sta_if $ap_if $mon_if}"
@@ -102,7 +102,7 @@ disable_broadcom() {
 		include /lib/network
 
 		# make sure the interfaces are down and removed from all bridges
-		for dev in $device ${device}.1 ${device}.2 ${device}.3; do
+		for dev in $device ${device}-1 ${device}-2 ${device}-3; do
 			ifconfig "$dev" down 2>/dev/null >/dev/null && {
 				unbridge "$dev"
 			}
