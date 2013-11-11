@@ -319,8 +319,7 @@ enable_broadcom() {
 		local ssid
 		config_get ssid "$vif" ssid
 		append vif_post_up "vlan_mode 0" "$N"
-		append vif_post_up "ssid $ssid" "$N"
-		append vif_do_up "ssid $ssid" "$N"
+		append vif_pre_up "ssid $ssid" "$N"
 
 		[ "$mode" = "monitor" ] && {
 			append vif_post_up "monitor $monitor" "$N"
