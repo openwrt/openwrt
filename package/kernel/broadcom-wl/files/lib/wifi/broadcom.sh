@@ -108,12 +108,14 @@ disable_broadcom() {
 
 		# make sure all of the devices are disabled in the driver
 		local ifdown=
-		local vif
+		local bssmax=$(wlc ifname "$device" bssmax)
+		local vif=$((${bssmax:-4} - 1))
 		append ifdown "down" "$N"
 		append ifdown "wds none" "$N"
-		for vif in 3 2 1 0; do
+		while [ $vif -ge 0 ]; do
 			append ifdown "vif $vif" "$N"
 			append ifdown "enabled 0" "$N"
+			vif=$(($vif - 1))
 		done
 
 		wlc ifname "$device" stdin <<EOF
@@ -209,8 +211,12 @@ enable_broadcom() {
 	local nas="$(which nas)"
 	local if_pre_up if_up nas_cmd
 	local vif vif_pre_up vif_post_up vif_do_up vif_txpower
+	local bssmax=$(wlc ifname "$device" bssmax)
+	bssmax=${bssmax:-4}
 
 	for vif in $vifs; do
+		[ $_c -ge $bssmax ] && break
+
 		config_get vif_txpower "$vif" txpower
 
 		local mode
