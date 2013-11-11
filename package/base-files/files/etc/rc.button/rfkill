@@ -1,6 +1,6 @@
 #!/bin/sh
 
-[ "${ACTION}" = "released" ] || exit 0
+[ "${ACTION}" = "released" -o -n "{TYPE}" ] || exit 0
 
 . /lib/functions.sh
 
@@ -17,7 +17,14 @@ wifi_rfkill_check() {
 }
 
 config_load wireless
-config_foreach wifi_rfkill_check wifi-device
+case "${TYPE}" in
+"switch")
+	[ "${ACTION}" = "released" ] && rfkill_state=1
+	;;
+*)
+	config_foreach wifi_rfkill_check wifi-device
+	;;
+esac
 config_foreach wifi_rfkill_set wifi-device
 uci commit wireless
 wifi up
