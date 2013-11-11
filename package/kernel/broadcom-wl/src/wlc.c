@@ -917,7 +917,7 @@ static const struct wlc_call wlc_calls[] = {
 		.param = INT,
 		.data.num = (WLC_GET_PHYTYPE << 16),
 		.handler = wlc_ioctl,
-		.desc = "PHY Type"
+		.desc = "PHY Type (read-only)"
 	},
 	{
 		.name = "nmode",
@@ -945,7 +945,7 @@ static const struct wlc_call wlc_calls[] = {
 		.param = INT,
 		.data.num = ((WLC_GET_BAND << 16) | WLC_SET_BAND),
 		.handler = wlc_ioctl,
-		.desc = "Band"
+		.desc = "Band (0=auto, 1=5Ghz, 2=2.4GHz)"
 	},
 };
 #define wlc_calls_size (sizeof(wlc_calls) / sizeof(struct wlc_call))
