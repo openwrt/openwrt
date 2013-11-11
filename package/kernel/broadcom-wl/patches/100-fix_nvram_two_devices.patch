@@ -25,7 +25,7 @@
  
 +	nvram_init_done--;
 +	if (nvram_init_done != 0)
-+		return 0;
++		return;
 +
  	sih = (si_t *)si;
  	this = vars;
