@@ -2,18 +2,17 @@ append DRIVERS "broadcom"
 
 scan_broadcom() {
 	local device="$1"
-	local wds
+	local vif vifs wds
 	local adhoc sta apmode mon disabled
 	local adhoc_if sta_if ap_if mon_if
-	local _c=0
 
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
 		config_get_bool disabled "$vif" disabled 0
 		[ $disabled -eq 0 ] || continue
 
+		local mode
 		config_get mode "$vif" mode
-		_c=$(($_c + 1))
 		case "$mode" in
 			adhoc)
 				adhoc=1
@@ -28,6 +27,7 @@ scan_broadcom() {
 				ap_if="${ap_if:+$ap_if }$vif"
 			;;
 			wds)
+				local addr
 				config_get addr "$vif" bssid
 				[ -z "$addr" ] || {
 					addr=$(echo "$addr" | tr 'A-F' 'a-f')
@@ -105,6 +105,7 @@ disable_broadcom() {
 		[ -e $pid_file ] && start-stop-daemon -K -q -s SIGKILL -p $pid_file && rm $pid_file
 
 		# make sure the interfaces are down and removed from all bridges
+		local dev
 		for dev in $device ${device}-1 ${device}-2 ${device}-3; do
 			ifconfig "$dev" down 2>/dev/null >/dev/null && {
 				unbridge "$dev"
@@ -116,7 +117,8 @@ disable_broadcom() {
 
 enable_broadcom() {
 	local device="$1"
-	local _c
+	local channel country maxassoc wds vifs distance slottime rxantenna txantenna
+	local frameburst macfilter maclist macaddr txpower frag rts hwmode htmode
 	config_get channel "$device" channel
 	config_get country "$device" country
 	config_get maxassoc "$device" maxassoc
@@ -135,14 +137,8 @@ enable_broadcom() {
 	config_get rts "$device" rts
 	config_get hwmode "$device" hwmode
 	config_get htmode "$device" htmode
-	local vif_pre_up vif_post_up vif_do_up vif_txpower
 	local doth=0
 	local wmm=1
-
-	_c=0
-	nas="$(which nas)"
-	nas_cmd=
-	if_up=
 
 	[ -z "$slottime" ] && {
 		[ -n "$distance" ] && {
@@ -201,9 +197,15 @@ enable_broadcom() {
 		esac
 	}
 
+	local _c=0
+	local nas="$(which nas)"
+	local if_up nas_cmd
+	local vif vif_pre_up vif_post_up vif_do_up vif_txpower
+
 	for vif in $vifs; do
 		config_get vif_txpower "$vif" txpower
 
+		local mode
 		config_get mode "$vif" mode
 		append vif_pre_up "vif $_c" "$N"
 		append vif_post_up "vif $_c" "$N"
@@ -213,20 +215,24 @@ enable_broadcom() {
 		config_get_bool doth "$vif" doth "$doth"
 
 		[ "$mode" = "sta" ] || {
+			local hidden isolate
 			config_get_bool hidden "$vif" hidden 0
 			append vif_pre_up "closed $hidden" "$N"
 			config_get_bool isolate "$vif" isolate 0
 			append vif_pre_up "ap_isolate $isolate" "$N"
 		}
 
-		wsec_r=0
-		eap_r=0
-		wsec=0
-		auth=0
-		nasopts=
+		local wsec_r=0
+		local eap_r=0
+		local wsec=0
+		local auth=0
+		local nasopts=
+		local enc key rekey
+
 		config_get enc "$vif" encryption
 		case "$enc" in
 			*wep*)
+				local def defkey k knr
 				wsec_r=1
 				wsec=1
 				defkey=1
@@ -274,6 +280,7 @@ enable_broadcom() {
 				nasopts="-k \"\$${vif}_key\"${rekey:+ -g $rekey}"
 			;;
 			*wpa*)
+				local auth_port auth_secret auth_server
 				wsec_r=1
 				eap_r=1
 				config_get auth_server "$vif" auth_server
@@ -309,6 +316,7 @@ enable_broadcom() {
 		append vif_do_up "wsec_restrict $wsec_r" "$N"
 		append vif_do_up "eap_restrict $eap_r" "$N"
 
+		local ssid
 		config_get ssid "$vif" ssid
 		append vif_post_up "vlan_mode 0" "$N"
 		append vif_post_up "ssid $ssid" "$N"
@@ -319,6 +327,7 @@ enable_broadcom() {
 		}
 
 		[ "$mode" = "adhoc" ] && {
+			local bssid
 			config_get bssid "$vif" bssid
 			[ -n "$bssid" ] && {
 				append vif_pre_up "bssid $bssid" "$N"
@@ -330,18 +339,18 @@ enable_broadcom() {
 
 		append vif_post_up "enabled 1" "$N"
 
+		local ifname
 		config_get ifname "$vif" ifname
 		#append if_up "ifconfig $ifname up" ";$N"
 
-		local net_cfg
-		net_cfg="$(find_net_config "$vif")"
+		local net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
 			append if_up "set_wifi_up '$vif' '$ifname'" ";$N"
 			append if_up "start_net '$ifname' '$net_cfg'" ";$N"
 		}
 		[ -z "$nas" -o -z "$nasopts" ] || {
 			eval "${vif}_ssid=\"\$ssid\""
-			nas_mode="-A"
+			local nas_mode="-A"
 			[ "$mode" = "sta" ] && nas_mode="-S"
 			[ -z "$nas_cmd" ] && {
 				local pid_file=/var/run/nas.$device.pid
@@ -406,7 +415,7 @@ detect_broadcom() {
 	local i=-1
 
 	while grep -qs "^ *wl$((++i)):" /proc/net/dev; do
-		local channel
+		local channel type
 
 		config_get type wl${i} type
 		[ "$type" = broadcom ] && continue
