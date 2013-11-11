@@ -126,6 +126,12 @@ get_status_led() {
 	tl-mr3020)
 		status_led="tp-link:green:wps"
 		;;
+	tl-wa750re)
+		status_led="tp-link:orange:re"
+		;;
+	tl-wa850re)
+		status_led="tp-link:blue:re"
+		;;
 	tl-mr3220 | \
 	tl-mr3220-v2 | \
 	tl-mr3420 | \

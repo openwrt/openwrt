@@ -103,6 +103,9 @@ tplink_board_detect() {
 	"074300"*)
 		model="TP-Link TL-WR743N/ND"
 		;;
+	"075000"*)
+		model="TP-Link TL-WA750RE"
+		;;
 	"080100"*)
 		model="TP-Link TL-WA801N/ND"
 		;;
@@ -114,6 +117,9 @@ tplink_board_detect() {
 		;;
 	"084200"*)
 		model="TP-Link TL-WR842N/ND"
+		;;
+	"085000"*)
+		model="TP-Link TL-WA850RE"
 		;;
 	"090100"*)
 		model="TP-Link TL-WA901N/ND"
@@ -444,8 +450,14 @@ ar71xx_board_detect() {
 	*"TL-MR3420 v2")
 		name="tl-mr3420-v2"
 		;;
+	*TL-WA750RE)
+		name="tl-wa750re"
+		;;
 	*TL-WA7510N)
 		name="tl-wa7510n"
+		;;
+	*TL-WA850RE)
+		name="tl-wa850re"
 		;;
 	*TL-WA901ND)
 		name="tl-wa901nd"

@@ -177,6 +177,16 @@ tl-mr3420-v2)
 	ucidef_set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
 	;;
 
+tl-wa750re)
+	ucidef_set_led_netdev "lan" "LAN" "tp-link:orange:lan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:orange:wlan" "phy0tpt"
+	;;
+
+tl-wa850re)
+	ucidef_set_led_netdev "lan" "LAN" "tp-link:blue:lan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:blue:wlan" "phy0tpt"
+	;;
+
 tl-wa901nd)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
 	;;
