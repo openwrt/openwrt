@@ -128,7 +128,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	spin_lock_irq(&bp->lock);
 -	err = generic_mii_ioctl(&bp->mii_if, data, cmd, NULL);
 +	if (bp->flags & B44_FLAG_EXTERNAL_PHY) {
-+		BUG_ON(bp->phydev);
++		BUG_ON(!bp->phydev);
 +		err = phy_mii_ioctl(bp->phydev, ifr, cmd);
 +	} else {
 +		err = generic_mii_ioctl(&bp->mii_if, if_mii(ifr), cmd, NULL);
