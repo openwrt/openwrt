@@ -583,7 +583,46 @@ int wl_get_countrylist(const char *ifname, char *buf, int *len)
 
 int wl_get_hwmodelist(const char *ifname, int *buf)
 {
-	return wext_get_hwmodelist(ifname, buf);
+	int phytype;
+	uint i, band[WLC_BAND_ALL], bands;
+
+	if (!wl_ioctl(ifname, WLC_GET_PHYTYPE, &phytype, sizeof(phytype)) &&
+		!wl_ioctl(ifname, WLC_GET_BANDLIST, band, sizeof(band)))
+	{
+		switch (phytype)
+		{
+			case WLC_PHY_TYPE_A:
+				*buf = IWINFO_80211_A;
+				break;
+			case WLC_PHY_TYPE_B:
+				*buf = IWINFO_80211_B;
+				break;
+			case WLC_PHY_TYPE_LP:
+			case WLC_PHY_TYPE_G:
+			case WLC_PHY_TYPE_N:
+				bands = 0;
+				for (i = 1; i <= band[0]; i++)
+				{
+					bands |= band[i];
+				}
+				*buf = 0;
+				if (bands & WLC_BAND_5G)
+					*buf |= IWINFO_80211_A;
+				if (bands & WLC_BAND_2G)
+				{
+					*buf |= IWINFO_80211_B;
+					*buf |= IWINFO_80211_G;
+				}
+				if (phytype == WLC_PHY_TYPE_N)
+					*buf |= IWINFO_80211_N;
+				break;
+			default:
+				return -1;
+				break;
+		}
+			return 0;
+	}
+	return -1;
 }
 
 int wl_get_mbssid_support(const char *ifname, int *buf)
