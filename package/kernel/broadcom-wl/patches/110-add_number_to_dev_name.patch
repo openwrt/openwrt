@@ -1,6 +1,6 @@
 --- a/driver/wl_linux.c
 +++ b/driver/wl_linux.c
-@@ -1412,7 +1412,7 @@ wl_alloc_if(wl_info_t *wl, int iftype, u
+@@ -1416,7 +1416,7 @@ wl_alloc_if(wl_info_t *wl, int iftype, u
  	dev = alloc_etherdev(sizeof(wl_if_t));
  	wlif = netdev_priv(dev);
  	bzero(wlif, sizeof(wl_if_t));
