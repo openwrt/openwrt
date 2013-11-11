@@ -22,7 +22,7 @@ define KernelPackage/ltq-deu-template
   URL:=http://www.lantiq.com/
   VARIANT:=$(1)
   DEPENDS:=@TARGET_lantiq_$(2) +kmod-crypto-manager
-  FILES:=$(PKG_BUILD_DIR)/ltq_deu_$(1).ko $(PKG_BUILD_DIR)/ltq_deu_testmgr.ko
+  FILES:=$(PKG_BUILD_DIR)/ltq_deu_$(1).ko
   AUTOLOAD:=$(call AutoProbe,ltq_deu_$(1))
 endef
 
