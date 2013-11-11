@@ -892,6 +892,13 @@ static const struct wlc_call wlc_calls[] = {
 		.desc = "BSSID"
 	},
 	{
+		.name = "cur_etheraddr",
+		.param = MAC,
+		.handler = wlc_iovar,
+		.data.str = "cur_etheraddr",
+		.desc = "Current MAC Address"
+	},
+	{
 		.name = "default_bssid",
 		.param = MAC,
 		.handler = wlc_iovar,
