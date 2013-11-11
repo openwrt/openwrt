@@ -8,7 +8,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -155,6 +155,7 @@ static int bcma_register_cores(struct bc
+@@ -144,6 +144,7 @@ static int bcma_register_cores(struct bc
  			core->irq = bus->host_pci->irq;
  			break;
  		case BCMA_HOSTTYPE_SOC:
