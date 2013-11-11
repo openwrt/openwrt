@@ -165,32 +165,34 @@ enable_broadcom() {
 		;;
 	esac
 
-	[ ${channel:-0} -ge 1 -a ${channel:-0} -le 14 ] && band=2
-	[ ${channel:-0} -ge 36 ] && band=1
+	local gmode=2 nmode=0 nreqd=
+	case "$hwmode" in
+		*a)	gmode=;;
+		*b)	gmode=0;;
+		*bg)	gmode=1;;
+		*g)	gmode=2;;
+		*gst)	gmode=4;;
+		*lrs)	gmode=5;;
+		*)	nmode=1; nreqd=0;;
+	esac
 
 	case "$hwmode" in
-		*na)	nmode=1; nreqd=0;;
-		*a)	nmode=0;;
-		*ng)	gmode=1; nmode=1; nreqd=0;;
-		*n)	nmode=1; nreqd=1;;
-		*b)	gmode=0; nmode=0;;
-		*bg)	gmode=1; nmode=0;;
-		*g)	gmode=2; nmode=0;;
-		*gst)	gmode=4; nmode=0;;
-		*lrs)	gmode=5; nmode=0;;
-		*)      case "$band" in
-				2) gmode=1; nmode=1; nreqd=0;;
-				1) nmode=1; nreqd=0;;
-				*) gmode=1; nmode=1; nreqd=0;;
-			esac
-			;;
+		n|11n)	nmode=1; nreqd=1;;
+		*n*)	nmode=1; nreqd=0;;
 	esac
 
         # Use 'nmode' for N-Phy only
-	[ "$(wlc ifname $device phytype)" = 4 ] || nmode=
+	[ "$(wlc ifname "$device" phytype)" = 4 ] || nmode=
+
+	local band chanspec
+	[ ${channel:-0} -ge 1 -a ${channel:-0} -le 14 ] && band=2
+	[ ${channel:-0} -ge 36 ] && {
+		band=1
+		gmode=
+	}
 
 	# Use 'chanspec' instead of 'channel' for 'N' modes (See bcmwifi.h)
-	[ ${nmode:-0} -ne 0 -a -n "$band" ] && {
+	[ ${nmode:-0} -ne 0 -a -n "$band" -a -n "$channel" ] && {
 		case "$htmode" in
 			HT40-)	chanspec=$(printf 0x%x%x%02x $band 0xe $(($channel - 2))); channel=;;
 			HT40+)	chanspec=$(printf 0x%x%x%02x $band 0xd $(($channel + 2))); channel=;;
@@ -352,7 +354,7 @@ enable_broadcom() {
 	wlc ifname "$device" stdin <<EOF
 $ifdown
 
-${nmode:+band ${band:-0}}
+band ${band:-0}
 ${nmode:+nmode $nmode}
 ${nmode:+${nreqd:+nreqd $nreqd}}
 ${gmode:+gmode $gmode}
