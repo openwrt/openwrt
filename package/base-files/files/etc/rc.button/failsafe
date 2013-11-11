@@ -1,2 +1,3 @@
 #!/bin/sh
-echo ${BUTTON} > /tmp/failsafe_button
+
+[ "${TYPE}" = "switch" ] || echo ${BUTTON} > /tmp/failsafe_button
