@@ -77,7 +77,8 @@
 		switch {
 			label = "switch";
 			gpios = <&gpio0 13 1>;
-			linux,code = <0x101>;
+			linux,code = <0xf7>;
+			linux,input-type = <5>; /* EV_SW */
 		};
 	};
 
