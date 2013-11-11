@@ -391,6 +391,37 @@ static int wlc_wsec_key(wlc_param param, void *null, void *value)
 	return wl_bssiovar_set(interface, "wsec_key", vif, &wsec_key, sizeof(wsec_key));
 }
 
+static int wlc_cap(wlc_param param, void *data, void *value)
+{
+	char *iov = *((char **) data);
+
+	if (param & GET)
+		return wl_iovar_get(interface, iov, value, BUFSIZE);
+
+	return -1;
+}
+
+static int wlc_bssmax(wlc_param param, void *data, void *value)
+{
+	int *val = (int *) value;
+	char *iov = *((char **) data);
+	int ret = -1;
+
+	if (param & GET) {
+		ret = wl_iovar_get(interface, iov, wlbuf, BUFSIZE);
+		if (!ret) {
+			if (strstr(wlbuf, "mbss4"))
+				*val = 4;
+			else if (strstr(wlbuf, "mbss16"))
+				*val = 16;
+			else
+				*val = 1;
+		}
+	}
+
+	return ret;
+}
+
 static inline int cw2ecw(int cw)
 {
 	int i;	
@@ -953,6 +984,20 @@ static const struct wlc_call wlc_calls[] = {
 		.data.num = ((WLC_GET_BAND << 16) | WLC_SET_BAND),
 		.handler = wlc_ioctl,
 		.desc = "Band (0=auto, 1=5Ghz, 2=2.4GHz)"
+	},
+	{
+		.name = "cap",
+		.param = STRING|NOARG,
+		.handler = wlc_cap,
+		.data.str = "cap",
+		.desc = "Capabilities"
+	},
+	{
+		.name = "bssmax",
+		.param = INT|NOARG,
+		.handler = wlc_bssmax,
+		.data.str = "cap",
+		.desc = "Number of VIF's supported"
 	},
 };
 #define wlc_calls_size (sizeof(wlc_calls) / sizeof(struct wlc_call))
