@@ -1,0 +1,33 @@
+--- a/arch/mips/bcm47xx/board.c
++++ b/arch/mips/bcm47xx/board.c
+@@ -180,6 +180,7 @@ struct bcm47xx_board_type_list3 bcm47xx_
+ 	{{BCM47XX_BOARD_ZTE_H218N, "ZTE H218N"}, "0x053d", "1234", "0x1305"},
+ 	{{BCM47XX_BOARD_NETGEAR_WNR3500L, "Netgear WNR3500L"}, "0x04CF", "3500", "02"},
+ 	{{BCM47XX_BOARD_LINKSYS_WRT54GSV1, "Linksys WRT54GS V1"}, "0x0101", "42", "0x10"},
++	{{BCM47XX_BOARD_BELKIN_F7D330X, "Belkin F7D330X"}, "0xa4cf", NULL, "0x1102" },
+ 	{ {0}, 0},
+ };
+ 
+@@ -270,9 +271,9 @@ static __init const struct bcm47xx_board
+ 	    bcm47xx_nvram_getenv("boardnum", buf2, sizeof(buf2)) >= 0 &&
+ 	    bcm47xx_nvram_getenv("boardrev", buf3, sizeof(buf3)) >= 0) {
+ 		for (e3 = bcm47xx_board_list_board; e3->value1; e3++) {
+-			if (!strcmp(buf1, e3->value1) &&
+-			    !strcmp(buf2, e3->value2) &&
+-			    !strcmp(buf3, e3->value3))
++			if ((!e3->value1 || !strcmp(buf1, e3->value1)) &&
++			    (!e3->value2 || !strcmp(buf2, e3->value2)) &&
++			    (!e3->value3 || !strcmp(buf3, e3->value3)))
+ 				return &e3->board;
+ 		}
+ 	}
+--- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
++++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
+@@ -28,6 +28,7 @@ enum bcm47xx_board {
+ 	BCM47XX_BOARD_ASUS_WLHDD,
+ 
+ 	BCM47XX_BOARD_BELKIN_F7D4301,
++	BCM47XX_BOARD_BELKIN_F7D330X,
+ 
+ 	BCM47XX_BOARD_BUFFALO_WBR2_G54,
+ 	BCM47XX_BOARD_BUFFALO_WHR2_A54G54,
