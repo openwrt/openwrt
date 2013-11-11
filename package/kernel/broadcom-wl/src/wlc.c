@@ -1104,14 +1104,14 @@ int main(int argc, char **argv)
 		if (!*s)
 			continue;
 	
-		if ((s2 = strchr(buf, ' ')) != NULL)
+		if ((s2 = strchr(s, ' ')) != NULL)
 			*(s2++) = 0;
 		
 		while (s2 && isspace(*s2))
 			s2++;
 		
-		if ((call = find_cmd(buf)) == NULL) {
-			fprintf(stderr, "Invalid command: %s\n", buf);
+		if ((call = find_cmd(s)) == NULL) {
+			fprintf(stderr, "Invalid command: %s\n", s);
 			ret = -1;
 		} else
 			ret = do_command(call, ((call->param & NOARG) ? NULL : s2));
