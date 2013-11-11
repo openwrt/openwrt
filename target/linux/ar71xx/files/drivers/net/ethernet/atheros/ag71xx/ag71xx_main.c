@@ -1197,7 +1197,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	err = register_netdev(dev);
 	if (err) {
 		dev_err(&pdev->dev, "unable to register net device\n");
-		goto err_phy_disconnect;
+		goto err_debugfs_exit;
 	}
 
 	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d, mode:%s\n",
@@ -1206,6 +1206,8 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	return 0;
 
+err_debugfs_exit:
+	ag71xx_debugfs_exit(ag);
 err_phy_disconnect:
 	ag71xx_phy_disconnect(ag);
 err_free_desc:
