@@ -55,6 +55,9 @@ static struct wl_maclist * wl_read_assoclist(const char *ifname)
 	struct wl_maclist *macs;
 	int maclen = 4 + WL_MAX_STA_COUNT * 6;
 
+	if (strstr(ifname, "wds"))
+		return NULL;
+
 	if ((macs = (struct wl_maclist *) malloc(maclen)) != NULL)
 	{
 		memset(macs, 0, maclen);
