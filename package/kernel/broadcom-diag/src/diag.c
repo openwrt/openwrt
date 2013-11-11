@@ -145,6 +145,7 @@ enum {
 
 	/* Belkin */
 	BELKIN_UNKNOWN,
+	BELKIN_F7D330X, /* covers F7D7302,F7D3302,F7D3301, and F7D7301 */
 	BELKIN_F7D4301,
 
 	/* Netgear */
@@ -966,6 +967,26 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "connected",	.gpio = 1 << 0, .polarity = NORMAL },
 		},
 	},
+	[BELKIN_F7D330X] = {
+		.name		= "Belkin F7D330X",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "wps",	.gpio = 1 << 8 },
+		},
+		.leds		= {
+			/* green */
+			{ .name = "power",	.gpio = 1 << 10, .polarity = REVERSE },
+			/* orange power */
+			{ .name = "warn",	.gpio = 1 << 11, .polarity = REVERSE },
+			/* green */
+			{ .name = "wps",	.gpio = 1 << 12, .polarity = REVERSE },
+			/* orange wps */
+			{ .name = "wlan",	.gpio = 1 << 13, .polarity = REVERSE },
+			{ .name = "usb0",	.gpio = 1 << 14, .polarity = REVERSE },
+			/* shipped unconnected in the F7D3302 */
+			{ .name = "usb1",	.gpio = 1 << 15, .polarity = REVERSE },
+		},
+	},
 	[BELKIN_F7D4301] = {
 		.name		= "Belkin PlayMax F7D4301",
 		.buttons	= {
@@ -973,10 +994,12 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "wps",	.gpio = 1 << 8 },
 		},
 		.leds		= {
-			{ .name = "power",	.gpio = 1 << 11, .polarity = REVERSE },
+			{ .name = "power",	.gpio = 1 << 10, .polarity = REVERSE },
+			{ .name = "warn",	.gpio = 1 << 11, .polarity = REVERSE },
+			{ .name = "wps",	.gpio = 1 << 12, .polarity = REVERSE },
 			{ .name = "wlan",	.gpio = 1 << 13, .polarity = REVERSE },
-			{ .name = "led0",	.gpio = 1 << 14, .polarity = REVERSE },
-			{ .name = "led1",	.gpio = 1 << 15, .polarity = REVERSE },
+			{ .name = "usb0",	.gpio = 1 << 14, .polarity = REVERSE },
+			{ .name = "usb1",	.gpio = 1 << 15, .polarity = REVERSE },
 		},
 	},
 	/* Netgear */
@@ -1378,6 +1401,8 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[WLHDD];
 	case BCM47XX_BOARD_BELKIN_F7D4301:
 		return &platforms[BELKIN_F7D4301];
+	case BCM47XX_BOARD_BELKIN_F7D330X:
+		return &platforms[BELKIN_F7D330X];
 	case BCM47XX_BOARD_BUFFALO_WBR2_G54:
 		return &platforms[WBR2_G54];
 	case BCM47XX_BOARD_BUFFALO_WHR2_A54G54:
