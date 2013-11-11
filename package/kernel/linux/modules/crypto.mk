@@ -207,7 +207,7 @@ $(eval $(call KernelPackage,crypto-hw-ppc4xx))
 
 define KernelPackage/crypto-hw-omap
   TITLE:=TI OMAP hardware crypto modules
-  DEPENDS:=@TARGET_omap4
+  DEPENDS:=@TARGET_omap
   KCONFIG:= \
 	CONFIG_CRYPTO_DEV_OMAP_AES \
 	CONFIG_CRYPTO_DEV_OMAP_DES \
