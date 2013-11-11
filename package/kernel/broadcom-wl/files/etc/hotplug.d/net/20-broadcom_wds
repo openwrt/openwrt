@@ -56,6 +56,6 @@ setup_broadcom_wds() {
 
 case "$ACTION" in
 	add|register)
-		[ "${INTERFACE%%0-*}" = wds ] && setup_broadcom_wds "$INTERFACE"
+		[ "${INTERFACE%%[0-1]-*}" = wds ] && setup_broadcom_wds "$INTERFACE"
 	;;
 esac
