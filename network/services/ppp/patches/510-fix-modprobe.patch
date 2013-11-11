@@ -1,0 +1,11 @@
+--- a/pppd/plugins/pppoatm/pppoatm.c.orig	2013-11-09 18:34:12.380820631 +0100
++++ b/pppd/plugins/pppoatm/pppoatm.c	2013-11-09 18:34:20.140820952 +0100
+@@ -133,7 +133,7 @@
+ 	int fd;
+ 	struct atm_qos qos;
+ 
+-	system ("/sbin/modprobe -q pppoatm");
++	system ("/usr/sbin/modprobe pppoatm");
+ 
+ 	if (!device_got_set)
+ 		no_device_given_pppoatm();
