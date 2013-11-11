@@ -108,18 +108,20 @@
  
  #ifdef CONFIG_PCI
  	error = pci_register_driver(&wl_pci_driver);
-@@ -1082,7 +1053,9 @@ wl_module_init(void)
+@@ -1082,7 +1053,11 @@ wl_module_init(void)
  	return 0;
  
  error_pci:
 -	ssb_driver_unregister(&wl_ssb_driver);
 +#if defined(CONFIG_SSB) || defined(CONFIG_BCMA)
 +	wl_glue_unregister();
++	wl_glue_set_attach_callback(NULL);
++	wl_glue_set_remove_callback(NULL);
 +#endif /* defined(CONFIG_SSB) || defined(CONFIG_BCMA) */
  	return error;
  }
  
-@@ -1099,9 +1072,9 @@ wl_module_exit(void)
+@@ -1099,9 +1074,11 @@ wl_module_exit(void)
  #ifdef CONFIG_PCI
  	pci_unregister_driver(&wl_pci_driver);
  #endif	/* CONFIG_PCI */
@@ -128,6 +130,8 @@
 -#endif	/* CONFIG_SSB */
 +#if defined(CONFIG_SSB) || defined(CONFIG_BCMA)
 +	wl_glue_unregister();
++	wl_glue_set_attach_callback(NULL);
++	wl_glue_set_remove_callback(NULL);
 +#endif /* defined(CONFIG_SSB) || defined(CONFIG_BCMA) */
  }
  
