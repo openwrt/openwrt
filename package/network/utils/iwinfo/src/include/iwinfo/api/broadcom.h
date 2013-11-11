@@ -26,7 +26,7 @@
 #define WLC_IOCTL_MAGIC				0x14e46c77
 #define	WLC_IOCTL_MAXLEN			8192
 
-#define WLC_CNTRY_BUF_SZ        	4
+#define WLC_CNTRY_BUF_SZ        		4
 
 #define WLC_GET_MAGIC				0
 #define WLC_GET_RATE				12
@@ -35,18 +35,30 @@
 #define WLC_GET_BSSID				23
 #define WLC_GET_SSID				25
 #define WLC_GET_CHANNEL				29
+#define WLC_GET_PHYTYPE             		39
 #define WLC_GET_PASSIVE 			48
 #define WLC_GET_COUNTRY				83
 #define WLC_GET_REVINFO				98
-#define WLC_GET_AP					117
+#define WLC_GET_AP				117
 #define WLC_GET_RSSI				127
 #define WLC_GET_WSEC				133
 #define WLC_GET_PHY_NOISE			135
 #define WLC_GET_BSS_INFO			136
+#define WLC_GET_BANDLIST			140
 #define WLC_GET_ASSOCLIST			159
 #define WLC_GET_WPA_AUTH			164
-#define WLC_GET_COUNTRY_LIST		261
-#define WLC_GET_VAR					262
+#define WLC_GET_COUNTRY_LIST			261
+#define WLC_GET_VAR				262
+
+#define WLC_PHY_TYPE_A				0
+#define WLC_PHY_TYPE_B				1
+#define WLC_PHY_TYPE_G				2
+#define WLC_PHY_TYPE_N				4
+#define WLC_PHY_TYPE_LP				5
+
+#define WLC_BAND_5G				1
+#define WLC_BAND_2G				2
+#define WLC_BAND_ALL				3
 
 
 struct wl_ether_addr {
@@ -117,6 +129,9 @@ typedef struct wlc_rev_info {
 	uint		ucoderev;	/* microcode version */
 	uint		bus;		/* bus type */
 	uint		chipnum;	/* chip number */
+	uint		phytype;	/* phy type */
+	uint		phyrev;		/* phy revision */
+	uint		anarev;		/* anacore rev */
 } wlc_rev_info_t;
 
 typedef struct wl_country_list {
