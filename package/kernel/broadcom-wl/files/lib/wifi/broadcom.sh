@@ -101,6 +101,9 @@ disable_broadcom() {
 	(
 		include /lib/network
 
+		local pid_file=/var/run/nas.$device.pid
+		[ -e $pid_file ] && start-stop-daemon -K -q -s SIGKILL -p $pid_file && rm $pid_file
+
 		# make sure the interfaces are down and removed from all bridges
 		for dev in $device ${device}-1 ${device}-2 ${device}-3; do
 			ifconfig "$dev" down 2>/dev/null >/dev/null && {
@@ -346,7 +349,6 @@ enable_broadcom() {
 		}
 		_c=$(($_c + 1))
 	done
-	killall -KILL nas >&- 2>&-
 	wlc ifname "$device" stdin <<EOF
 $ifdown
 
