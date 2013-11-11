@@ -93,12 +93,14 @@ start() {
 
 	END {
 		if (((nvram["vlan0ports"] ~ /^0 1 2 3 8/ ) && (nvram["vlan1ports"] ~ /^4 8/ && (cpuport == "8"))) || \
-		    ((nvram["vlan1ports"] ~ /^0 1 2 3 8/ ) && (nvram["vlan2ports"] ~ /^4 8/ && (cpuport == "8")))) {
+		    ((nvram["vlan1ports"] ~ /^0 1 2 3 8/ ) && (nvram["vlan2ports"] ~ /^4 8/ && (cpuport == "8"))) || \
+		    ((nvram["vlan2ports"] ~ /^0 1 2 3 8/ ) && (nvram["vlan1ports"] ~ /^4 8/ && (cpuport == "8")))) {
 			c["vlan1ports"] = "0 1 2 3 8t"
 			c["vlan2ports"] = "4 8t"
 		}
 		if (((nvram["vlan0ports"] ~ /^0 1 2 3 5/ ) && (nvram["vlan1ports"] ~ /^4 5/ && (cpuport == "5"))) || \
-		    ((nvram["vlan1ports"] ~ /^0 1 2 3 5/ ) && (nvram["vlan2ports"] ~ /^4 5/ && (cpuport == "5")))) {
+		    ((nvram["vlan1ports"] ~ /^0 1 2 3 5/ ) && (nvram["vlan2ports"] ~ /^4 5/ && (cpuport == "5"))) || \
+		    ((nvram["vlan2ports"] ~ /^0 1 2 3 5/ ) && (nvram["vlan1ports"] ~ /^4 5/ && (cpuport == "5")))) {
 			c["vlan1ports"] = "0 1 2 3 5t"
 			c["vlan2ports"] = "4 5t"
 		}
