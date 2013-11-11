@@ -334,13 +334,15 @@ enable_broadcom() {
 			append if_up "set_wifi_up '$vif' '$ifname'" ";$N"
 			append if_up "start_net '$ifname' '$net_cfg'" ";$N"
 		}
-		[ -z "$nasopts" ] || {
+		[ -z "$nas" -o -z "$nasopts" ] || {
 			eval "${vif}_ssid=\"\$ssid\""
 			nas_mode="-A"
 			[ "$mode" = "sta" ] && nas_mode="-S"
-			[ -z "$nas" ] || {
-				nas_cmd="${nas_cmd:+$nas_cmd$N}start-stop-daemon -S -b -p /var/run/nas.$ifname.pid -x $nas -- -P /var/run/nas.$ifname.pid -H 34954 -i $ifname $nas_mode -m $auth -w $wsec -s \"\$${vif}_ssid\" -g 3600 -F $nasopts"
+			[ -z "$nas_cmd" ] && {
+				local pid_file=/var/run/nas.$device.pid
+				nas_cmd="start-stop-daemon -S -b -p $pid_file -x $nas -- -P $pid_file -H 34954"
 			}
+			append nas_cmd "-i $ifname $nas_mode -m $auth -w $wsec -s \"\$${vif}_ssid\" -g 3600 -F $nasopts"
 		}
 		_c=$(($_c + 1))
 	done
