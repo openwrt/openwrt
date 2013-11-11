@@ -125,7 +125,7 @@
 +subsys_initcall(cambria_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/cambria-setup.c
-@@ -0,0 +1,993 @@
+@@ -0,0 +1,1003 @@
 +/*
 + * arch/arm/mach-ixp4xx/cambria-setup.c
 + *
@@ -163,6 +163,7 @@
 +#include <linux/types.h>
 +#include <linux/tty.h>
 +#include <linux/irq.h>
++#include <linux/usb/ehci_pdriver.h>
 +
 +#include <mach/hardware.h>
 +#include <asm/irq.h>
@@ -634,25 +635,34 @@
 +
 +static u64 ehci_dma_mask = ~(u32)0;
 +
++static struct usb_ehci_pdata cambria_usb_pdata = {
++	.big_endian_desc = 1,
++	.big_endian_mmio = 1,
++	.has_tt = 1,
++	.caps_offset = 0x100,
++};
++
 +static struct platform_device cambria_usb0_device =  {
-+	.name		= "ixp4xx-ehci",
++	.name		= "ehci-platform",
 +	.id		= 0,
 +	.resource	= cambria_usb0_resources,
 +	.num_resources	= ARRAY_SIZE(cambria_usb0_resources),
 +	.dev = {
 +		.dma_mask		= &ehci_dma_mask,
 +		.coherent_dma_mask	= 0xffffffff,
++		.platform_data = &cambria_usb_pdata,
 +	},
 +};
 +
 +static struct platform_device cambria_usb1_device = {
-+	.name		= "ixp4xx-ehci",
++	.name		= "ehci-platform",
 +	.id		= 1,
 +	.resource	= cambria_usb1_resources,
 +	.num_resources	= ARRAY_SIZE(cambria_usb1_resources),
 +	.dev = {
 +		.dma_mask		= &ehci_dma_mask,
 +		.coherent_dma_mask	= 0xffffffff,
++		.platform_data = &cambria_usb_pdata,
 +	},
 +};
 +
