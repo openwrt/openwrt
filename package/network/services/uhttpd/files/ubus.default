@@ -1,2 +1,6 @@
-uci set uhttpd.main.ubus_prefix=/ubus
-uci commit uhttpd
+#!/bin/sh
+
+if [ -z "$(uci -q get uhttpd.main.ubus_prefix)" ]; then
+	uci set uhttpd.main.ubus_prefix=/ubus
+	uci commit uhttpd
+fi
