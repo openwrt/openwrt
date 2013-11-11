@@ -100,7 +100,7 @@ static struct gpio_keys_button mynet_n600_gpio_keys[] __initdata = {
 	{
 		.desc		= "Reset button",
 		.type		= EV_KEY,
-		.code		= KEY_WPS_BUTTON,
+		.code		= KEY_RESTART,
 		.debounce_interval = MYNET_N600_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= MYNET_N600_GPIO_BTN_RESET,
 		.active_low	= 1,
