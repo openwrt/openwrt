@@ -97,6 +97,32 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  }
  
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipinit */
+@@ -1488,6 +1512,25 @@ static int bgmac_probe(struct bcma_devic
+ 		goto err_netdev_free;
+ 	}
+ 
++	/* Northstar, take all GMAC cores out of reset */
++	if (core->id.id == BCMA_CHIP_ID_BCM4707 ||
++	    core->id.id == BCMA_CHIP_ID_BCM53018) {
++		struct bcma_device *ns_core;
++		int ns_gmac;
++
++		for (ns_gmac = 0; ns_gmac < 4; ns_gmac++) {
++			/* As northstar requirement, we have to reset all GAMCs before
++			 * accessing them. et_probe() call pci_enable_device() for etx
++			 * and do si_core_reset for GAMCx only.	 Then the other three
++			 * GAMCs didn't reset.  We do it here.
++			 */
++			ns_core = bcma_find_core_unit(core->bus, BCMA_CORE_MAC_GBIT, ns_gmac);
++			if (!bcma_core_is_enabled(ns_core)) {
++				bcma_core_enable(ns_core, 0);
++			}
++		}
++	}
++
+ 	bgmac_chip_reset(bgmac);
+ 
+ 	err = bgmac_dma_alloc(bgmac);
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
 @@ -185,6 +185,7 @@
