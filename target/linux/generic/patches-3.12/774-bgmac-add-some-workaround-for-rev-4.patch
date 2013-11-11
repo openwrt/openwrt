@@ -1,0 +1,163 @@
+From ec12b94d22fa8715561bdffe6da0781dac08423e Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 10 Nov 2013 21:23:57 +0100
+Subject: [PATCH] bgmac: add some workaround for rev 4
+
+---
+ drivers/net/ethernet/broadcom/bgmac.c |    8 ++++----
+ drivers/net/ethernet/broadcom/bgmac.h |    4 +++-
+ 2 files changed, 7 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -97,6 +97,16 @@ static void bgmac_dma_tx_enable(struct b
+ 	u32 ctl;
+ 
+ 	ctl = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_TX_CTL);
++	if (bgmac->core->id.rev == 4) {
++		ctl &= ~BGMAC_DMA_TX_BL_MASK;
++		ctl |= BGMAC_DMA_TX_BL_128 << BGMAC_DMA_TX_BL_SHIFT;
++		ctl &= ~BGMAC_DMA_TX_MR_MASK;
++		ctl |= BGMAC_DMA_TX_MR_2 << BGMAC_DMA_TX_MR_SHIFT;
++		ctl &= ~BGMAC_DMA_TX_PC_MASK;
++		ctl |= BGMAC_DMA_TX_PC_16 << BGMAC_DMA_TX_PC_SHIFT;
++		ctl &= ~BGMAC_DMA_TX_PT_MASK;
++		ctl |= BGMAC_DMA_TX_PT_8 << BGMAC_DMA_TX_PT_SHIFT;
++	}
+ 	ctl |= BGMAC_DMA_TX_ENABLE;
+ 	ctl |= BGMAC_DMA_TX_PARITY_DISABLE;
+ 	bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_TX_CTL, ctl);
+@@ -246,6 +256,17 @@ static void bgmac_dma_rx_enable(struct b
+ 	ctl |= BGMAC_DMA_RX_PARITY_DISABLE;
+ 	ctl |= BGMAC_DMA_RX_OVERFLOW_CONT;
+ 	ctl |= BGMAC_RX_FRAME_OFFSET << BGMAC_DMA_RX_FRAME_OFFSET_SHIFT;
++
++	if (bgmac->core->id.rev == 4) {
++		ctl &= ~BGMAC_DMA_RX_BL_MASK;
++		ctl |= BGMAC_DMA_RX_BL_128 << BGMAC_DMA_RX_BL_SHIFT;
++
++		ctl &= ~BGMAC_DMA_RX_PC_MASK;
++		ctl |= BGMAC_DMA_RX_PC_8 << BGMAC_DMA_RX_PC_SHIFT;
++
++		ctl &= ~BGMAC_DMA_RX_PT_MASK;
++		ctl |= BGMAC_DMA_RX_PT_1 << BGMAC_DMA_RX_PT_SHIFT;
++	}
+ 	bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_CTL, ctl);
+ }
+ 
+@@ -812,13 +833,13 @@ static void bgmac_cmdcfg_maskset(struct
+ 	u32 cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
+ 	u32 new_val = (cmdcfg & mask) | set;
+ 
+-	bgmac_set(bgmac, BGMAC_CMDCFG, BGMAC_CMDCFG_SR);
++	bgmac_set(bgmac, BGMAC_CMDCFG, BGMAC_CMDCFG_SR(bgmac->core->id.rev));
+ 	udelay(2);
+ 
+ 	if (new_val != cmdcfg || force)
+ 		bgmac_write(bgmac, BGMAC_CMDCFG, new_val);
+ 
+-	bgmac_mask(bgmac, BGMAC_CMDCFG, ~BGMAC_CMDCFG_SR);
++	bgmac_mask(bgmac, BGMAC_CMDCFG, ~BGMAC_CMDCFG_SR(bgmac->core->id.rev));
+ 	udelay(2);
+ }
+ 
+@@ -1029,7 +1050,7 @@ static void bgmac_chip_reset(struct bgma
+ 			     BGMAC_CMDCFG_PROM |
+ 			     BGMAC_CMDCFG_NLC |
+ 			     BGMAC_CMDCFG_CFE |
+-			     BGMAC_CMDCFG_SR,
++			     BGMAC_CMDCFG_SR(core->id.rev),
+ 			     false);
+ 
+ 	bgmac_clear_mib(bgmac);
+@@ -1070,7 +1091,7 @@ static void bgmac_enable(struct bgmac *b
+ 
+ 	cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
+ 	bgmac_cmdcfg_maskset(bgmac, ~(BGMAC_CMDCFG_TE | BGMAC_CMDCFG_RE),
+-			     BGMAC_CMDCFG_SR, true);
++			     BGMAC_CMDCFG_SR(bgmac->core->id.rev), true);
+ 	udelay(2);
+ 	cmdcfg |= BGMAC_CMDCFG_TE | BGMAC_CMDCFG_RE;
+ 	bgmac_write(bgmac, BGMAC_CMDCFG, cmdcfg);
+--- a/drivers/net/ethernet/broadcom/bgmac.h
++++ b/drivers/net/ethernet/broadcom/bgmac.h
+@@ -194,7 +194,9 @@
+ #define  BGMAC_CMDCFG_TAI			0x00000200
+ #define  BGMAC_CMDCFG_HD			0x00000400	/* Set if in half duplex mode */
+ #define  BGMAC_CMDCFG_HD_SHIFT			10
+-#define  BGMAC_CMDCFG_SR			0x00000800	/* Set to reset mode */
++#define  BGMAC_CMDCFG_SR_REVO			0x00000800	/* Set to reset mode, for other revs */
++#define  BGMAC_CMDCFG_SR_REV4			0x00002000	/* Set to reset mode, only for core rev 4 */
++#define  BGMAC_CMDCFG_SR(rev)  ((rev == 4) ? BGMAC_CMDCFG_SR_REV4 : BGMAC_CMDCFG_SR_REVO)
+ #define  BGMAC_CMDCFG_ML			0x00008000	/* Set to activate mac loopback mode */
+ #define  BGMAC_CMDCFG_AE			0x00400000
+ #define  BGMAC_CMDCFG_CFE			0x00800000
+@@ -255,9 +257,34 @@
+ #define  BGMAC_DMA_TX_SUSPEND			0x00000002
+ #define  BGMAC_DMA_TX_LOOPBACK			0x00000004
+ #define  BGMAC_DMA_TX_FLUSH			0x00000010
++#define  BGMAC_DMA_TX_MR_MASK			0x000000C0	/* Multiple outstanding reads */
++#define  BGMAC_DMA_TX_MR_SHIFT			6
++#define   BGMAC_DMA_TX_MR_1			0
++#define   BGMAC_DMA_TX_MR_2			1
+ #define  BGMAC_DMA_TX_PARITY_DISABLE		0x00000800
+ #define  BGMAC_DMA_TX_ADDREXT_MASK		0x00030000
+ #define  BGMAC_DMA_TX_ADDREXT_SHIFT		16
++#define  BGMAC_DMA_TX_BL_MASK			0x001C0000	/* BurstLen bits */
++#define  BGMAC_DMA_TX_BL_SHIFT			18
++#define   BGMAC_DMA_TX_BL_16			0
++#define   BGMAC_DMA_TX_BL_32			1
++#define   BGMAC_DMA_TX_BL_64			2
++#define   BGMAC_DMA_TX_BL_128			3
++#define   BGMAC_DMA_TX_BL_256			4
++#define   BGMAC_DMA_TX_BL_512			5
++#define   BGMAC_DMA_TX_BL_1024			6
++#define  BGMAC_DMA_TX_PC_MASK			0x00E00000	/* Prefetch control */
++#define  BGMAC_DMA_TX_PC_SHIFT			21
++#define   BGMAC_DMA_TX_PC_0			0
++#define   BGMAC_DMA_TX_PC_4			1
++#define   BGMAC_DMA_TX_PC_8			2
++#define   BGMAC_DMA_TX_PC_16			3
++#define  BGMAC_DMA_TX_PT_MASK			0x03000000	/* Prefetch threshold */
++#define  BGMAC_DMA_TX_PT_SHIFT			24
++#define   BGMAC_DMA_TX_PT_1			0
++#define   BGMAC_DMA_TX_PT_2			1
++#define   BGMAC_DMA_TX_PT_4			2
++#define   BGMAC_DMA_TX_PT_8			3
+ #define BGMAC_DMA_TX_INDEX			0x04
+ #define BGMAC_DMA_TX_RINGLO			0x08
+ #define BGMAC_DMA_TX_RINGHI			0x0C
+@@ -285,8 +312,33 @@
+ #define  BGMAC_DMA_RX_DIRECT_FIFO		0x00000100
+ #define  BGMAC_DMA_RX_OVERFLOW_CONT		0x00000400
+ #define  BGMAC_DMA_RX_PARITY_DISABLE		0x00000800
++#define  BGMAC_DMA_RX_MR_MASK			0x000000C0	/* Multiple outstanding reads */
++#define  BGMAC_DMA_RX_MR_SHIFT			6
++#define   BGMAC_DMA_TX_MR_1			0
++#define   BGMAC_DMA_TX_MR_2			1
+ #define  BGMAC_DMA_RX_ADDREXT_MASK		0x00030000
+ #define  BGMAC_DMA_RX_ADDREXT_SHIFT		16
++#define  BGMAC_DMA_RX_BL_MASK			0x001C0000	/* BurstLen bits */
++#define  BGMAC_DMA_RX_BL_SHIFT			18
++#define   BGMAC_DMA_RX_BL_16			0
++#define   BGMAC_DMA_RX_BL_32			1
++#define   BGMAC_DMA_RX_BL_64			2
++#define   BGMAC_DMA_RX_BL_128			3
++#define   BGMAC_DMA_RX_BL_256			4
++#define   BGMAC_DMA_RX_BL_512			5
++#define   BGMAC_DMA_RX_BL_1024			6
++#define  BGMAC_DMA_RX_PC_MASK			0x00E00000	/* Prefetch control */
++#define  BGMAC_DMA_RX_PC_SHIFT			21
++#define   BGMAC_DMA_RX_PC_0			0
++#define   BGMAC_DMA_RX_PC_4			1
++#define   BGMAC_DMA_RX_PC_8			2
++#define   BGMAC_DMA_RX_PC_16			3
++#define  BGMAC_DMA_RX_PT_MASK			0x03000000	/* Prefetch threshold */
++#define  BGMAC_DMA_RX_PT_SHIFT			24
++#define   BGMAC_DMA_RX_PT_1			0
++#define   BGMAC_DMA_RX_PT_2			1
++#define   BGMAC_DMA_RX_PT_4			2
++#define   BGMAC_DMA_RX_PT_8			3
+ #define BGMAC_DMA_RX_INDEX			0x24
+ #define BGMAC_DMA_RX_RINGLO			0x28
+ #define BGMAC_DMA_RX_RINGHI			0x2C

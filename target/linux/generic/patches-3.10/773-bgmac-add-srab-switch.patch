@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * BCMA bus ops
   **************************************************/
-@@ -1542,6 +1554,16 @@ static int bgmac_probe(struct bcma_devic
+@@ -1561,6 +1573,16 @@ static int bgmac_probe(struct bcma_devic
  		goto err_dma_free;
  	}
  
@@ -47,7 +47,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		bgmac_err(bgmac, "Cannot register net device\n");
-@@ -1571,6 +1593,10 @@ static void bgmac_remove(struct bcma_dev
+@@ -1590,6 +1612,10 @@ static void bgmac_remove(struct bcma_dev
  {
  	struct bgmac *bgmac = bcma_get_drvdata(core);
  
