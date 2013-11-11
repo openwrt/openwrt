@@ -60,6 +60,7 @@ start_instance()
 	local listen http https interpreter indexes path
 
 	procd_open_instance
+	procd_set_param respawn
 	procd_set_param command "$UHTTPD_BIN" -f
 
 	append_arg "$cfg" home "-h"
