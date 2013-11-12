@@ -40,6 +40,14 @@ SOUNDCORE_FILES += \
 	$(LINUX_DIR)/sound/core/snd-compress.ko
 endif
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.12.0)),1)
+SOUNDCORE_LOAD += \
+	snd-pcm-dmaengine
+
+SOUNDCORE_FILES += \
+	$(LINUX_DIR)/sound/core/snd-pcm-dmaengine.ko
+endif
+
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
