@@ -34,7 +34,7 @@ UBOOTS := \
 	mx23_olinuxino
 
 define Package/uboot/template
-define Package/uboot-imx23-$(1)
+define Package/uboot-mxs-$(1)
   SECTION:=boot
   CATEGORY:=Boot Loaders
   DEPENDS:=@TARGET_mxs
@@ -74,7 +74,7 @@ define Package/uboot/install/default
 endef
 
 define Package/uboot/install/template
-define Package/uboot-imx23-$(1)/install
+define Package/uboot-mxs-$(1)/install
 	$(call Package/uboot/install/default,$(2))
 endef
 endef
@@ -85,5 +85,5 @@ $(foreach u,$(UBOOTS), \
 
 $(foreach u,$(UBOOTS), \
 	$(eval $(call BuildUBootPackage,$(u))) \
-	$(eval $(call BuildPackage,uboot-imx23-$(u))) \
+	$(eval $(call BuildPackage,uboot-mxs-$(u))) \
 )

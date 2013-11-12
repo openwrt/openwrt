@@ -35,7 +35,7 @@ define Image/BuildKernel
 	$(call Image/BuildKernel/olinuxino-bootlet)
   endif
 
-  ifeq ($(CONFIG_PACKAGE_uboot-imx23-mx23_olinuxino),y)
+  ifeq ($(CONFIG_PACKAGE_uboot-mxs-mx23_olinuxino),y)
 	$(call Image/BuildKernel/olinuxino-uboot)
   endif
   
