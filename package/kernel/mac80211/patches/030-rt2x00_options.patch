@@ -1,12 +1,19 @@
 --- a/drivers/net/wireless/rt2x00/Kconfig
 +++ b/drivers/net/wireless/rt2x00/Kconfig
-@@ -202,25 +202,28 @@ config RT2800USB_UNKNOWN
- endif
+@@ -225,36 +225,37 @@ config RT2800SOC
+ 
  
  config RT2800_LIB
 -	tristate
 +	tristate "RT2800 USB/PCI support"
  	depends on m
+ 
+ config RT2800_LIB_MMIO
+-	tristate
++	tristate "RT2800 MMIO support"
+ 	depends on m
+ 	select RT2X00_LIB_MMIO
+ 	select RT2800_LIB
  
  config RT2X00_LIB_MMIO
 -	tristate
@@ -16,7 +23,6 @@
  config RT2X00_LIB_PCI
 -	tristate
 +	tristate "RT2x00 PCI support"
-+	depends on PCI
  	depends on m
  	select RT2X00_LIB
  
@@ -30,7 +36,12 @@
  config RT2X00_LIB_USB
 -	tristate
 +	tristate "RT2x00 USB support"
-+	depends on USB
  	depends on m
  	select RT2X00_LIB
+ 
+ config RT2X00_LIB
+-	tristate
++	tristate "RT2x00 support"
+ 	depends on m
+ 	select BACKPORT_AVERAGE
  

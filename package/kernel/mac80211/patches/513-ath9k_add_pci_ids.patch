@@ -1,10 +1,10 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -724,6 +724,7 @@ int ath9k_hw_init(struct ath_hw *ah)
+@@ -732,6 +732,7 @@ int ath9k_hw_init(struct ath_hw *ah)
  	case AR9300_DEVID_AR9462:
  	case AR9485_DEVID_AR1111:
  	case AR9300_DEVID_AR9565:
-+	case AR9300_DEVID_AR9381:
++	case AR9300_DEVID_INVALID:
  		break;
  	default:
  		if (common->bus_ops->ath_bus_type == ATH_USB)
@@ -14,17 +14,17 @@
  #define AR9300_DEVID_QCA955X	0x0038
  #define AR9485_DEVID_AR1111	0x0037
  #define AR9300_DEVID_AR9565     0x0036
-+#define AR9300_DEVID_AR9381     0xabcd
++#define AR9300_DEVID_INVALID    0xabcd
  
  #define AR5416_AR9100_DEVID	0x000b
  
 --- a/drivers/net/wireless/ath/ath9k/pci.c
 +++ b/drivers/net/wireless/ath/ath9k/pci.c
-@@ -270,6 +270,7 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
- 	{ PCI_VDEVICE(ATHEROS, 0x0034) }, /* PCI-E  AR9462 */
- 	{ PCI_VDEVICE(ATHEROS, 0x0037) }, /* PCI-E  AR1111/AR9485 */
- 	{ PCI_VDEVICE(ATHEROS, 0x0036) }, /* PCI-E  AR9565 */
-+	{ PCI_VDEVICE(ATHEROS, 0xabcd) }, /* PCI-E  AR9381 */
+@@ -463,6 +463,7 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
+ 	{ PCI_VDEVICE(ATHEROS, 0x0036),
+ 	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
+ 
++	{ PCI_VDEVICE(ATHEROS, 0xabcd) }, /* PCI-E  internal chip default ID */
  	{ 0 }
  };
  

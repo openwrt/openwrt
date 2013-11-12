@@ -10,11 +10,11 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2013-06-27
+PKG_VERSION:=2013-11-05
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_BACKPORT_VERSION:=.1
-PKG_MD5SUM:=73bd220c64c5c6fdc22b3bb7f180644f
+PKG_BACKPORT_VERSION:=
+PKG_MD5SUM:=5ef839d02d19c341629555a529beebee
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION)$(PKG_BACKPORT_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -24,8 +24,8 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 PKG_DRIVERS = \
 	adm8211 ath5k libertas-usb libertas-sd p54-common p54-pci p54-usb p54-spi \
-	rt2x00-lib rt2x00-pci rt2x00-usb rt2x00-soc rt2800-lib rt2400-pci \
-	rt2500-pci rt2500-usb rt61-pci rt73-usb rt2800-pci rt2800-usb \
+	rt2x00-lib rt2x00-pci rt2x00-usb rt2800-lib rt2400-pci rt2500-pci \
+	rt2500-usb rt61-pci rt73-usb rt2800-mmio rt2800-pci rt2800-usb rt2800-soc \
 	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
 	ath9k-common ath9k ath9k-htc ath10k ath net-libipw net-ipw2100 net-ipw2200 \
 	mwl8k net-hermes net-hermes-pci net-hermes-plx net-hermes-pcmcia \
@@ -263,15 +263,6 @@ $(call KernelPackage/rt2x00/Default)
   AUTOLOAD:=$(call AutoProbe,rt2x00usb)
 endef
 
-define KernelPackage/rt2x00-soc
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+=@TARGET_ramips_rt305x +kmod-rt2x00-mmio +kmod-rt2x00-lib
-  HIDDEN:=1
-  TITLE+= (SoC)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00soc.ko
-  AUTOLOAD:=$(call AutoProbe,rt2x00soc)
-endef
-
 define KernelPackage/rt2800-lib
 $(call KernelPackage/rt2x00/Default)
   DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-lib-crc-ccitt +@DRIVER_11N_SUPPORT
@@ -320,9 +311,27 @@ define KernelPackage/rt73-usb
   AUTOLOAD:=$(call AutoProbe,rt73usb)
 endef
 
+define KernelPackage/rt2800-mmio
+$(call KernelPackage/rt2x00/Default)
+  TITLE += (RT28xx/RT3xxx MMIO)
+  DEPENDS += +kmod-rt2800-lib +kmod-rt2x00-mmio
+  HIDDEN:=1
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800mmio.ko
+endef
+
+define KernelPackage/rt2800-soc
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS += @TARGET_ramips_rt305x +kmod-rt2800-mmio +kmod-rt2800-lib
+  TITLE += (RT28xx/RT3xxx SoC)
+  FILES := \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00soc.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800soc.ko
+  AUTOLOAD:=$(call AutoProbe,rt2800soc)
+endef
+
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||TARGET_ramips_rt305x) +PCI_SUPPORT:kmod-rt2x00-pci +kmod-rt2800-lib +kmod-lib-crc-ccitt +TARGET_ramips_rt305x:kmod-rt2x00-soc
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +kmod-rt2800-lib +kmod-rt2800-mmio
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.ko
   AUTOLOAD:=$(call AutoProbe,rt2800pci)
@@ -1365,7 +1374,6 @@ config-$(call config_package,rt2x00-lib) += RT2X00 RT2X00_LIB
 config-$(call config_package,rt2x00-pci) += RT2X00_LIB_PCI
 config-$(call config_package,rt2x00-mmio) += RT2X00_LIB_MMIO
 config-$(call config_package,rt2x00-usb) += RT2X00_LIB_USB
-config-$(call config_package,rt2x00-soc) += RT2X00_LIB_SOC
 config-$(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS) += RT2X00_LIB_DEBUGFS
 config-$(CONFIG_PACKAGE_RT2X00_DEBUG) += RT2X00_DEBUG
 
@@ -1377,6 +1385,7 @@ config-$(call config_package,rt73-usb) += RT73USB
 
 config-$(call config_package,rt2800-lib) += RT2800_LIB
 
+config-$(call config_package,rt2800-soc) += RT2800SOC
 config-$(call config_package,rt2800-pci) += RT2800PCI
 config-y += RT2800PCI_RT33XX RT2800PCI_RT35XX RT2800PCI_RT53XX RT2800PCI_RT3290
 
@@ -1748,13 +1757,14 @@ $(eval $(call KernelPackage,rt2x00-lib))
 $(eval $(call KernelPackage,rt2x00-mmio))
 $(eval $(call KernelPackage,rt2x00-pci))
 $(eval $(call KernelPackage,rt2x00-usb))
-$(eval $(call KernelPackage,rt2x00-soc))
 $(eval $(call KernelPackage,rt2800-lib))
 $(eval $(call KernelPackage,rt2400-pci))
 $(eval $(call KernelPackage,rt2500-pci))
 $(eval $(call KernelPackage,rt2500-usb))
 $(eval $(call KernelPackage,rt61-pci))
 $(eval $(call KernelPackage,rt73-usb))
+$(eval $(call KernelPackage,rt2800-mmio))
+$(eval $(call KernelPackage,rt2800-soc))
 $(eval $(call KernelPackage,rt2800-pci))
 $(eval $(call KernelPackage,rt2800-usb))
 $(eval $(call KernelPackage,rtl8180))
