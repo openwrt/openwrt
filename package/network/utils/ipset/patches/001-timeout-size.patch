@@ -1,0 +1,28 @@
+diff --git a/lib/parse.c b/lib/parse.c
+index 8ea8542..440ef8f 100644
+--- a/lib/parse.c
++++ b/lib/parse.c
+@@ -1292,15 +1292,20 @@ ipset_parse_timeout(struct ipset_session *session,
+ 		    enum ipset_opt opt, const char *str)
+ {
+ 	int err;
+-	unsigned long long num = 0;
++	unsigned long long llnum = 0;
++	uint32_t num = 0;
+ 
+ 	assert(session);
+ 	assert(opt == IPSET_OPT_TIMEOUT);
+ 	assert(str);
+ 
+-	err = string_to_number_ll(session, str, 0, UINT_MAX/1000, &num);
+-	if (err == 0)
++	err = string_to_number_ll(session, str, 0, UINT_MAX/1000, &llnum);
++	if (err == 0) {
++		/* Timeout is expected to be 32bits wide, so we have
++		   to convert it here */
++		num = llnum;
+ 		return ipset_session_data_set(session, opt, &num);
++	}
+ 
+ 	return err;
+ }
