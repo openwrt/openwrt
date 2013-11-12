@@ -37,8 +37,9 @@ define KernelPackage/usb-chipidea-imx
     TITLE:=Support for ChipIdea controllers on Freescale i.MX SoCs
     DEPENDS:=+kmod-usb-chipidea @TARGET_mxs
     FILES:= \
-	$(LINUX_DIR)/drivers/usb/chipidea/ci13xxx_imx.ko
-    AUTOLOAD:=$(call AutoLoad,52,ci13xxx_imx,1)
+	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc_imx.ko \
+	$(LINUX_DIR)/drivers/usb/chipidea/usbmisc_imx.ko
+    AUTOLOAD:=$(call AutoLoad,52,usbmisc_imx ci_hdrc_imx,1)
     $(call AddDepends/usb)
 endef
 
