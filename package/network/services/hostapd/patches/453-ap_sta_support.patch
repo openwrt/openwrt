@@ -34,24 +34,21 @@
  -include .config
  -include $(if $(MULTICALL),../hostapd/.config)
  
-@@ -76,6 +80,10 @@ OBJS_c = wpa_cli.o ../src/common/wpa_ctr
+@@ -76,6 +80,8 @@ OBJS_c = wpa_cli.o ../src/common/wpa_ctr
  OBJS_c += ../src/utils/wpa_debug.o
  OBJS_c += ../src/utils/common.o
  
-+ifdef MULTICALL
 +OBJS += ../src/common/wpa_ctrl.o
-+endif
 +
  ifndef CONFIG_OS
  ifdef CONFIG_NATIVE_WINDOWS
  CONFIG_OS=win32
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -109,6 +109,48 @@ extern int wpa_debug_show_keys;
+@@ -109,6 +109,46 @@ extern int wpa_debug_show_keys;
  extern int wpa_debug_timestamp;
  extern struct wpa_driver_ops *wpa_drivers[];
  
-+#ifdef MULTICALL
 +static int hostapd_stop(struct wpa_supplicant *wpa_s)
 +{
 +	const char *cmd = "DOWN";
@@ -91,33 +88,27 @@
 +	}
 +	return 0;
 +}
-+#endif
 +
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -676,8 +718,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -676,8 +716,12 @@ void wpa_supplicant_set_state(struct wpa
  #endif /* CONFIG_P2P */
  
  		sme_sched_obss_scan(wpa_s, 1);
-+#ifdef MULTICALL
 +		if (wpa_s->hostapd)
 +			hostapd_reload(wpa_s, wpa_s->current_bss);
-+#endif
  	} else if (state == WPA_DISCONNECTED || state == WPA_ASSOCIATING ||
  		   state == WPA_ASSOCIATED) {
-+#ifdef MULTICALL
 +		if (wpa_s->hostapd)
 +			hostapd_stop(wpa_s);
-+#endif
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2874,6 +2924,21 @@ static int wpa_supplicant_init_iface(str
- 		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
+@@ -2875,6 +2919,20 @@ static int wpa_supplicant_init_iface(str
  			   sizeof(wpa_s->bridge_ifname));
  	}
-+#ifdef MULTICALL
+ 
 +	if (iface->hostapd_ctrl) {
 +		char *cmd = "DOWN";
 +		char buf[256];
@@ -131,10 +122,10 @@
 +		if (hostapd_stop(wpa_s) < 0)
 +			return -1;
 +	}
-+#endif
- 
++
  	/* RSNA Supplicant Key Management - INITIALIZE */
  	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
+ 	eapol_sm_notify_portValid(wpa_s->eapol, FALSE);
 --- a/wpa_supplicant/bss.c
 +++ b/wpa_supplicant/bss.c
 @@ -11,6 +11,7 @@
