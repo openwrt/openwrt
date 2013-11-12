@@ -49,8 +49,8 @@
 				led_pins_a: led_gpio@0 {
 					reg = <0>;
 					fsl,pinmux-ids = <
-						0x3003 /* MX28_PAD_AUART0_RX__GPIO_3_0 */
-						0x3013 /* MX28_PAD_AUART0_TX__GPIO_3_1 */
+						0x3043 /* MX28_PAD_AUART1_RX__GPIO_3_4 */
+						0x3053 /* MX28_PAD_AUART1_TX__GPIO_3_5 */
 					>;
 					fsl,drive-strength = <0>;
 					fsl,voltage = <1>;
@@ -107,12 +107,12 @@
 
 		status {
 			label = "duckbill:green:status";
-			gpios = <&gpio3 0 0>;
+			gpios = <&gpio3 5 0>;
 		};
 
 		failure {
 			label = "duckbill:red:status";
-			gpios = <&gpio3 1 0>;
+			gpios = <&gpio3 4 0>;
 		};
 	};
 };
