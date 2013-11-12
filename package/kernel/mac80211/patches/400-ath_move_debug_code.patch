@@ -1,12 +1,12 @@
 --- a/drivers/net/wireless/ath/Makefile
 +++ b/drivers/net/wireless/ath/Makefile
-@@ -11,7 +11,7 @@ obj-$(CPTCFG_ATH_COMMON)	+= ath.o
- ath-objs :=	main.o \
+@@ -13,8 +13,8 @@ ath-objs :=	main.o \
  		regd.o \
  		hw.o \
--		key.o
-+		key.o \
-+		debug.o
+ 		key.o \
++		debug.o \
+ 		dfs_pattern_detector.o \
+ 		dfs_pri_detector.o
  
 -ath-$(CPTCFG_ATH_DEBUG) += debug.o
  ccflags-y += -D__CHECK_ENDIAN__

@@ -128,7 +128,7 @@
 +	@$(MAKE) Kconfig.versions
  	@$(MAKE) -f Makefile.real "$@"
  
- else
+ .PHONY: defconfig-help
 --- a/Makefile.real
 +++ b/Makefile.real
 @@ -54,7 +54,7 @@ defconfig-%::

@@ -11,10 +11,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/wireless/rt2x00/rt2800pci.c |    7 +++++++
  1 file changed, 7 insertions(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800pci.c
-+++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -1318,11 +1318,18 @@ static int rt2800soc_probe(struct platfo
- 	return rt2x00soc_probe(pdev, &rt2800pci_ops);
+--- a/drivers/net/wireless/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/rt2x00/rt2800soc.c
+@@ -229,11 +229,18 @@ static int rt2800soc_probe(struct platfo
+ 	return rt2x00soc_probe(pdev, &rt2800soc_ops);
  }
  
 +static const struct of_device_id rt2880_wmac_match[] = {

@@ -12,32 +12,35 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/Kconfig
 +++ b/drivers/net/wireless/rt2x00/Kconfig
-@@ -71,6 +71,7 @@ config RT2800PCI
- 	select RT2X00_LIB_FIRMWARE
+@@ -219,6 +219,7 @@ config RT2800SOC
  	select RT2X00_LIB_EEPROM
- 	select RT2X00_LIB_CRYPTO
+ 	select RT2800_LIB
+ 	select RT2800_LIB_MMIO
 +	select MTD if SOC_RT288X || SOC_RT305X
- 	depends on CRC_CCITT
- 	depends on EEPROM_93CX6
  	---help---
+ 	  This adds support for Ralink WiSoC devices.
+ 	  Supported chips: RT2880, RT3050, RT3052, RT3350, RT3352.
 --- a/drivers/net/wireless/rt2x00/rt2x00eeprom.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00eeprom.c
-@@ -30,12 +30,77 @@
+@@ -26,17 +26,72 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
+ #include <linux/of.h>
+ 
  #include "rt2x00.h"
  #include "rt2x00lib.h"
  
-+#ifdef CONFIG_OF
-+#include <linux/of.h>
-+#include <linux/mtd/mtd.h>
-+#include <linux/mtd/partitions.h>
-+
-+static struct firmware mtd_fw;
-+
-+static int rt2800pci_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
++static int rt2800lib_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
 +{
++	int ret = -EINVAL;
++#ifdef CONFIG_OF
++	static struct firmware mtd_fw;
 +	struct device_node *np = rt2x00dev->dev->of_node, *mtd_np = NULL;
 +	size_t retlen, len = rt2x00dev->ops->eeprom_size;
-+	int ret, size, offset = 0;
++	int size, offset = 0;
 +	struct mtd_info *mtd;
 +	const char *part;
 +	const __be32 *list;
@@ -78,25 +81,32 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		mtd_fw.size = len;
 +		mtd_fw.data = rt2x00dev->eeprom;
 +	}
++#endif
 +
 +	return ret;
 +}
-+#else
-+static inline int rt2800pci_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
-+{
-+	return -EINVAL;
-+}
-+#endif
 +
+ static const char *
+ rt2x00lib_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
+ {
+ 	struct rt2x00_platform_data *pdata = rt2x00dev->dev->platform_data;
+ 	struct device_node *np;
+-	char *eep;
++	const char *eep;
+ 
+ 	if (pdata && pdata->eeprom_file_name)
+ 		return pdata->eeprom_file_name;
+@@ -53,9 +108,12 @@ rt2x00lib_get_eeprom_file_name(struct rt
  static int rt2x00lib_request_eeprom_file(struct rt2x00_dev *rt2x00dev)
  {
  	const struct firmware *ee;
- 	char *ee_name;
+-	char *ee_name;
++	const char *ee_name;
  	int retval;
  
-+	if (!rt2800pci_read_eeprom_mtd(rt2x00dev))
++	if (!rt2800lib_read_eeprom_mtd(rt2x00dev))
 +		return 0;
 +
- 	ee_name = rt2x00dev->ops->lib->get_eeprom_file_name(rt2x00dev);
+ 	ee_name = rt2x00lib_get_eeprom_file_name(rt2x00dev);
  	if (!ee_name) {
  		rt2x00_err(rt2x00dev,

@@ -1,10 +1,10 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -814,6 +814,7 @@ static const struct ieee80211_iface_limi
+@@ -844,6 +844,7 @@ static const struct ieee80211_iface_limi
  #endif
  				 BIT(NL80211_IFTYPE_AP) |
  				 BIT(NL80211_IFTYPE_P2P_GO) },
 +	{ .max = 1,	.types = BIT(NL80211_IFTYPE_ADHOC) },
  };
  
- 
+ static const struct ieee80211_iface_limit if_dfs_limits[] = {

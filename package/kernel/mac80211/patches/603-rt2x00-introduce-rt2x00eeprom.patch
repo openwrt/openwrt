@@ -1,6 +1,158 @@
+--- a/.local-symbols
++++ b/.local-symbols
+@@ -283,6 +283,7 @@ RT2X00_LIB_FIRMWARE=
+ RT2X00_LIB_CRYPTO=
+ RT2X00_LIB_LEDS=
+ RT2X00_LIB_DEBUGFS=
++RT2X00_LIB_EEPROM=
+ RT2X00_DEBUG=
+ RTL_CARDS=
+ RTL8192CE=
+--- a/drivers/net/wireless/rt2x00/Kconfig
++++ b/drivers/net/wireless/rt2x00/Kconfig
+@@ -69,6 +69,7 @@ config RT2800PCI
+ 	select RT2X00_LIB_MMIO
+ 	select RT2X00_LIB_PCI
+ 	select RT2X00_LIB_FIRMWARE
++	select RT2X00_LIB_EEPROM
+ 	select RT2X00_LIB_CRYPTO
+ 	depends on CRC_CCITT
+ 	depends on EEPROM_93CX6
+@@ -215,6 +216,7 @@ config RT2800SOC
+ 	select RT2X00_LIB_MMIO
+ 	select RT2X00_LIB_CRYPTO
+ 	select RT2X00_LIB_FIRMWARE
++	select RT2X00_LIB_EEPROM
+ 	select RT2800_LIB
+ 	select RT2800_LIB_MMIO
+ 	---help---
+@@ -266,6 +268,9 @@ config RT2X00_LIB_FIRMWARE
+ config RT2X00_LIB_CRYPTO
+ 	boolean
+ 
++config RT2X00_LIB_EEPROM
++	boolean
++
+ config RT2X00_LIB_LEDS
+ 	boolean
+ 	default y if (RT2X00_LIB=y && LEDS_CLASS=y) || (RT2X00_LIB=m && LEDS_CLASS!=n)
+--- a/drivers/net/wireless/rt2x00/Makefile
++++ b/drivers/net/wireless/rt2x00/Makefile
+@@ -7,6 +7,7 @@ rt2x00lib-$(CPTCFG_RT2X00_LIB_DEBUGFS)	+
+ rt2x00lib-$(CPTCFG_RT2X00_LIB_CRYPTO)	+= rt2x00crypto.o
+ rt2x00lib-$(CPTCFG_RT2X00_LIB_FIRMWARE)	+= rt2x00firmware.o
+ rt2x00lib-$(CPTCFG_RT2X00_LIB_LEDS)	+= rt2x00leds.o
++rt2x00lib-$(CPTCFG_RT2X00_LIB_EEPROM)	+= rt2x00eeprom.o
+ 
+ obj-$(CPTCFG_RT2X00_LIB)		+= rt2x00lib.o
+ obj-$(CPTCFG_RT2X00_LIB_MMIO)		+= rt2x00mmio.o
+--- a/drivers/net/wireless/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/rt2x00/rt2800lib.h
+@@ -22,6 +22,8 @@
+ #ifndef RT2800LIB_H
+ #define RT2800LIB_H
+ 
++#include "rt2800.h"
++
+ struct rt2800_ops {
+ 	void (*register_read)(struct rt2x00_dev *rt2x00dev,
+ 			      const unsigned int offset, u32 *value);
+@@ -121,6 +123,15 @@ static inline int rt2800_read_eeprom(str
+ {
+ 	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
+ 
++	if (rt2x00dev->eeprom_file) {
++		memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data,
++		       EEPROM_SIZE);
++		return 0;
++	}
++
++	if (!rt2800ops->read_eeprom)
++		return -EINVAL;
++
+ 	return rt2800ops->read_eeprom(rt2x00dev);
+ }
+ 
+--- a/drivers/net/wireless/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/rt2x00/rt2800soc.c
+@@ -97,19 +97,6 @@ static int rt2800soc_set_device_state(st
+ 	return retval;
+ }
+ 
+-static int rt2800soc_read_eeprom(struct rt2x00_dev *rt2x00dev)
+-{
+-	void __iomem *base_addr = ioremap(0x1F040000, EEPROM_SIZE);
+-
+-	if (!base_addr)
+-		return -ENOMEM;
+-
+-	memcpy_fromio(rt2x00dev->eeprom, base_addr, EEPROM_SIZE);
+-
+-	iounmap(base_addr);
+-	return 0;
+-}
+-
+ /* Firmware functions */
+ static char *rt2800soc_get_firmware_name(struct rt2x00_dev *rt2x00dev)
+ {
+@@ -173,7 +160,6 @@ static const struct rt2800_ops rt2800soc
+ 	.register_multiread	= rt2x00mmio_register_multiread,
+ 	.register_multiwrite	= rt2x00mmio_register_multiwrite,
+ 	.regbusy_read		= rt2x00mmio_regbusy_read,
+-	.read_eeprom		= rt2800soc_read_eeprom,
+ 	.hwcrypt_disabled	= rt2800soc_hwcrypt_disabled,
+ 	.drv_write_firmware	= rt2800soc_write_firmware,
+ 	.drv_init_registers	= rt2800mmio_init_registers,
+--- a/drivers/net/wireless/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/rt2x00/rt2x00.h
+@@ -696,6 +696,7 @@ enum rt2x00_capability_flags {
+ 	REQUIRE_SW_SEQNO,
+ 	REQUIRE_HT_TX_DESC,
+ 	REQUIRE_PS_AUTOWAKE,
++	REQUIRE_EEPROM_FILE,
+ 
+ 	/*
+ 	 * Capabilities
+@@ -965,6 +966,11 @@ struct rt2x00_dev {
+ 	const struct firmware *fw;
+ 
+ 	/*
++	 * EEPROM image.
++	 */
++	const struct firmware *eeprom_file;
++
++	/*
+ 	 * FIFO for storing tx status reports between isr and tasklet.
+ 	 */
+ 	DECLARE_KFIFO_PTR(txstatus_fifo, u32);
+--- a/drivers/net/wireless/rt2x00/rt2x00dev.c
++++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
+@@ -1325,6 +1325,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
+ 	INIT_DELAYED_WORK(&rt2x00dev->autowakeup_work, rt2x00lib_autowakeup);
+ 	INIT_WORK(&rt2x00dev->sleep_work, rt2x00lib_sleep);
+ 
++	retval = rt2x00lib_load_eeprom_file(rt2x00dev);
++	if (retval)
++		goto exit;
++
+ 	/*
+ 	 * Let the driver probe the device to detect the capabilities.
+ 	 */
+@@ -1455,6 +1459,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
+ 	 */
+ 	if (rt2x00dev->drv_data)
+ 		kfree(rt2x00dev->drv_data);
++
++	/*
++	 * Free EEPROM image.
++	 */
++	rt2x00lib_free_eeprom_file(rt2x00dev);
+ }
+ EXPORT_SYMBOL_GPL(rt2x00lib_remove_dev);
+ 
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2x00eeprom.c
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,111 @@
 +/*
 +	Copyright (C) 2004 - 2009 Ivo van Doorn <IvDoorn@gmail.com>
 +	Copyright (C) 2004 - 2009 Gertjan van Wingerde <gwingerde@gmail.com>
@@ -33,13 +185,24 @@
 +#include "rt2x00.h"
 +#include "rt2x00lib.h"
 +
++static const char *
++rt2x00lib_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
++{
++	struct rt2x00_platform_data *pdata = rt2x00dev->dev->platform_data;
++
++	if (pdata && pdata->eeprom_file_name)
++		return pdata->eeprom_file_name;
++
++	return NULL
++}
++
 +static int rt2x00lib_request_eeprom_file(struct rt2x00_dev *rt2x00dev)
 +{
 +	const struct firmware *ee;
 +	char *ee_name;
 +	int retval;
 +
-+	ee_name = rt2x00dev->ops->lib->get_eeprom_file_name(rt2x00dev);
++	ee_name = rt2x00lib_get_eeprom_file_name(rt2x00dev);
 +	if (!ee_name) {
 +		rt2x00_err(rt2x00dev,
 +			   "Invalid EEPROM filename.\n"
@@ -82,8 +245,10 @@
 +{
 +	int retval;
 +
-+	if (!test_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags))
++	if (!rt2x00lib_get_eeprom_file_name(rt2x00dev))
 +		return 0;
++
++	set_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags);
 +
 +	if (!rt2x00dev->eeprom_file) {
 +		retval = rt2x00lib_request_eeprom_file(rt2x00dev);
@@ -99,36 +264,6 @@
 +	release_firmware(rt2x00dev->eeprom_file);
 +	rt2x00dev->eeprom_file = NULL;
 +}
---- a/drivers/net/wireless/rt2x00/rt2x00.h
-+++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -550,6 +550,7 @@ struct rt2x00lib_ops {
- 			       const u8 *data, const size_t len);
- 	int (*load_firmware) (struct rt2x00_dev *rt2x00dev,
- 			      const u8 *data, const size_t len);
-+	char *(*get_eeprom_file_name) (struct rt2x00_dev *rt2x00dev);
- 
- 	/*
- 	 * Device initialization/deinitialization handlers.
-@@ -706,6 +707,7 @@ enum rt2x00_capability_flags {
- 	REQUIRE_SW_SEQNO,
- 	REQUIRE_HT_TX_DESC,
- 	REQUIRE_PS_AUTOWAKE,
-+	REQUIRE_EEPROM_FILE,
- 
- 	/*
- 	 * Capabilities
-@@ -975,6 +977,11 @@ struct rt2x00_dev {
- 	const struct firmware *fw;
- 
- 	/*
-+	 * EEPROM image.
-+	 */
-+	const struct firmware *eeprom_file;
-+
-+	/*
- 	 * FIFO for storing tx status reports between isr and tasklet.
- 	 */
- 	DECLARE_KFIFO_PTR(txstatus_fifo, u32);
 --- a/drivers/net/wireless/rt2x00/rt2x00lib.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00lib.h
 @@ -322,6 +322,22 @@ static inline void rt2x00lib_free_firmwa
@@ -154,119 +289,6 @@
   * Debugfs handlers.
   */
  #ifdef CPTCFG_RT2X00_LIB_DEBUGFS
---- a/drivers/net/wireless/rt2x00/Kconfig
-+++ b/drivers/net/wireless/rt2x00/Kconfig
-@@ -69,6 +69,7 @@ config RT2800PCI
- 	select RT2X00_LIB_PCI if PCI
- 	select RT2X00_LIB_SOC if SOC_RT288X || SOC_RT305X
- 	select RT2X00_LIB_FIRMWARE
-+	select RT2X00_LIB_EEPROM
- 	select RT2X00_LIB_CRYPTO
- 	depends on CRC_CCITT
- 	depends on EEPROM_93CX6
-@@ -244,6 +245,9 @@ config RT2X00_LIB_FIRMWARE
- config RT2X00_LIB_CRYPTO
- 	boolean
- 
-+config RT2X00_LIB_EEPROM
-+	boolean
-+
- config RT2X00_LIB_LEDS
- 	depends on !BACKPORT_KERNEL_2_6_25
- 	boolean
---- a/drivers/net/wireless/rt2x00/Makefile
-+++ b/drivers/net/wireless/rt2x00/Makefile
-@@ -7,6 +7,7 @@ rt2x00lib-$(CPTCFG_RT2X00_LIB_DEBUGFS)	+
- rt2x00lib-$(CPTCFG_RT2X00_LIB_CRYPTO)	+= rt2x00crypto.o
- rt2x00lib-$(CPTCFG_RT2X00_LIB_FIRMWARE)	+= rt2x00firmware.o
- rt2x00lib-$(CPTCFG_RT2X00_LIB_LEDS)	+= rt2x00leds.o
-+rt2x00lib-$(CPTCFG_RT2X00_LIB_EEPROM)	+= rt2x00eeprom.o
- 
- obj-$(CPTCFG_RT2X00_LIB)		+= rt2x00lib.o
- obj-$(CPTCFG_RT2X00_LIB_MMIO)		+= rt2x00mmio.o
---- a/drivers/net/wireless/rt2x00/rt2800pci.c
-+++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -90,25 +90,11 @@ static void rt2800pci_mcu_status(struct 
- 	rt2x00mmio_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
- }
- 
--#if defined(CONFIG_SOC_RT288X) || defined(CONFIG_SOC_RT305X)
- static int rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
- {
--	void __iomem *base_addr = ioremap(0x1F040000, EEPROM_SIZE);
--
--	if (!base_addr)
--		return -ENOMEM;
--
--	memcpy_fromio(rt2x00dev->eeprom, base_addr, EEPROM_SIZE);
--
--	iounmap(base_addr);
-+	memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data, EEPROM_SIZE);
- 	return 0;
- }
--#else
--static inline int rt2800pci_read_eeprom_soc(struct rt2x00_dev *rt2x00dev)
--{
--	return -ENOMEM;
--}
--#endif /* CONFIG_SOC_RT288X || CONFIG_SOC_RT305X */
- 
- #ifdef CONFIG_PCI
- static void rt2800pci_eepromregister_read(struct eeprom_93cx6 *eeprom)
-@@ -332,6 +318,20 @@ static int rt2800pci_write_firmware(stru
- }
- 
- /*
-+ * EEPROM file functions.
-+ */
-+static char *rt2800pci_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
-+{
-+	struct rt2x00_platform_data *pdata;
-+
-+	pdata = rt2x00dev->dev->platform_data;
-+	if (pdata)
-+		return pdata->eeprom_file_name;
-+
-+	return NULL;
-+}
-+
-+/*
-  * Initialization functions.
-  */
- static bool rt2800pci_get_entry_state(struct queue_entry *entry)
-@@ -1160,6 +1160,7 @@ static const struct rt2x00lib_ops rt2800
- 	.get_firmware_name	= rt2800pci_get_firmware_name,
- 	.check_firmware		= rt2800_check_firmware,
- 	.load_firmware		= rt2800_load_firmware,
-+	.get_eeprom_file_name	= rt2800pci_get_eeprom_file_name,
- 	.initialize		= rt2x00mmio_initialize,
- 	.uninitialize		= rt2x00mmio_uninitialize,
- 	.get_entry_state	= rt2800pci_get_entry_state,
---- a/drivers/net/wireless/rt2x00/rt2x00dev.c
-+++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -1325,6 +1325,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
- 	INIT_DELAYED_WORK(&rt2x00dev->autowakeup_work, rt2x00lib_autowakeup);
- 	INIT_WORK(&rt2x00dev->sleep_work, rt2x00lib_sleep);
- 
-+	retval = rt2x00lib_load_eeprom_file(rt2x00dev);
-+	if (retval)
-+		goto exit;
-+
- 	/*
- 	 * Let the driver probe the device to detect the capabilities.
- 	 */
-@@ -1455,6 +1459,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
- 	 */
- 	if (rt2x00dev->drv_data)
- 		kfree(rt2x00dev->drv_data);
-+
-+	/*
-+	 * Free EEPROM image.
-+	 */
-+	rt2x00lib_free_eeprom_file(rt2x00dev);
- }
- EXPORT_SYMBOL_GPL(rt2x00lib_remove_dev);
- 
 --- a/drivers/net/wireless/rt2x00/rt2x00soc.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00soc.c
 @@ -94,6 +94,7 @@ int rt2x00soc_probe(struct platform_devi
@@ -277,13 +299,3 @@
  
  	rt2x00_set_chip_intf(rt2x00dev, RT2X00_CHIP_INTF_SOC);
  
---- a/.local-symbols
-+++ b/.local-symbols
-@@ -272,6 +272,7 @@ RT2X00_LIB_FIRMWARE=
- RT2X00_LIB_CRYPTO=
- RT2X00_LIB_LEDS=
- RT2X00_LIB_DEBUGFS=
-+RT2X00_LIB_EEPROM=
- RT2X00_DEBUG=
- RTLWIFI=
- RTLWIFI_DEBUG=
