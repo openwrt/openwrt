@@ -68,9 +68,7 @@ _procd_open_service() {
 
 _procd_close_service() {
 	json_close_object
-	_procd_open_trigger
 	service_triggers
-	_procd_close_trigger
 	_procd_ubus_call set
 }
 
@@ -117,6 +115,10 @@ _procd_open_trigger() {
 	json_add_array "triggers"
 }
 
+_procd_open_validate() {
+	json_add_array "validate"
+}
+
 _procd_set_param() {
 	local type="$1"; shift
 
@@ -135,7 +137,8 @@ _procd_set_param() {
 
 _procd_add_config_trigger() {
 	json_add_array
-	_procd_add_array_data "config.change"
+	_procd_add_array_data "$1"
+	shift
 
 	json_add_array
 	_procd_add_array_data "if"
@@ -158,14 +161,15 @@ _procd_add_reload_trigger() {
 	local script=$(readlink "$initscript")
 	local name=$(basename ${script:-$initscript})
 
-	_procd_add_config_trigger $1 /etc/init.d/$name reload
+	_procd_open_trigger
+	_procd_add_config_trigger "config.change" $1 /etc/init.d/$name reload
+	_procd_close_trigger
 }
 
-_procd_add_reload_trigger() {
-	local script=$(readlink "$initscript")
-	local name=$(basename ${script:-$initscript})
-
-	_procd_add_config_trigger $1 /etc/init.d/$name reload
+_procd_add_validation() {
+	_procd_open_validate
+	$@
+	_procd_close_validate
 }
 
 _procd_append_param() {
@@ -191,6 +195,10 @@ _procd_close_trigger() {
 	json_close_array
 }
 
+_procd_close_validate() {
+	json_close_array
+}
+
 _procd_add_instance() {
 	_procd_open_instance
 	_procd_set_param command "$@"
@@ -207,6 +215,63 @@ _procd_kill() {
 	_procd_ubus_call delete
 }
 
+uci_validate_section()
+{
+	local error=0
+
+	[ "$4" = "" ] && return 1
+	[ "$3" = "" ] && {
+		json_add_object
+		json_add_string "package" "$1"
+		json_add_string "type" "$2"
+		json_add_object "data"
+
+		shift; shift; shift
+
+		while [ -n "$1" ]; do
+			json_add_string "${1%:*}" "${1#*:}"
+			shift
+		done
+
+		json_close_object
+		json_close_object
+		return 0
+	}
+
+	local section="${3}"
+	config_load "${1}"
+	shift; shift; shift
+
+	while [ -n "$1" ]; do
+		local name=${1%%:*}
+		local tmp=${1#*:}
+		local type=${tmp%%:*}
+		local default=""
+
+		[ "$tmp" = "$type" ] || default=${tmp#*:}
+
+		shift
+		config_get "${name}" "${section}" "${name}"
+		eval val=\$$name
+
+		[ "$type" = "bool" ] && {
+			case "$val" in
+			1|on|true|enabled) val=1;;
+			0|off|false|disabled) val=0;;
+			*) val="";;
+			esac
+		}
+		[ -z "$val" ] && val=${default}
+		eval $name=\"$val\"
+		[ -z "$val" ] || {
+			/sbin/validate_data "${type}" "${val}"
+			[ $? -eq 0 ] || error="$((error + 1))"
+		}
+	done
+
+	return $error
+}
+
 _procd_wrapper \
 	procd_open_service \
 	procd_close_service \
@@ -219,4 +284,5 @@ _procd_wrapper \
 	procd_close_instance \
 	procd_set_param \
 	procd_append_param \
+	procd_add_validation \
 	procd_kill
