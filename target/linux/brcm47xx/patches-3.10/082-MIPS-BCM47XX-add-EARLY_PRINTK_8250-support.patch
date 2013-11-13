@@ -51,3 +51,50 @@ Date:   Thu Sep 19 22:48:35 2013 +0200
  }
  
  void __init prom_free_prom_memory(void)
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -123,6 +123,28 @@ static int bcm47xx_get_invariants(struct
+ 	return 0;
+ }
+ 
++/*
++ * This is the second serial on the chip common core, it is at this position
++ * for sb (ssb) and ai (bcma) bus.
++ */
++#define BCM47XX_SERIAL1_ADDR (SSB_ENUM_BASE + SSB_CHIPCO_UART1_DATA)
++
++static void __init bcm47xx_swap_serial_ssb(struct ssb_mipscore *mcore)
++{
++	struct ssb_serial_port port;
++
++	printk(KERN_INFO "Swapping serial ports\n");
++
++	setup_8250_early_printk_port(CKSEG1ADDR(BCM47XX_SERIAL1_ADDR), 0, 0);
++
++	/* swap serial ports */
++	memcpy(&port, &mcore->serial_ports[0], sizeof(port));
++	memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1], sizeof(port));
++	memcpy(&mcore->serial_ports[1], &port, sizeof(port));
++
++	printk(KERN_INFO "Serial port were Swapped\n");
++}
++
+ static void __init bcm47xx_register_ssb(void)
+ {
+ 	int err;
+@@ -142,14 +164,7 @@ static void __init bcm47xx_register_ssb(
+ 	mcore = &bcm47xx_bus.ssb.mipscore;
+ 	if (bcm47xx_nvram_getenv("kernel_args", buf, sizeof(buf)) >= 0) {
+ 		if (strstr(buf, "console=ttyS1")) {
+-			struct ssb_serial_port port;
+-
+-			printk(KERN_DEBUG "Swapping serial ports!\n");
+-			/* swap serial ports */
+-			memcpy(&port, &mcore->serial_ports[0], sizeof(port));
+-			memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1],
+-			       sizeof(port));
+-			memcpy(&mcore->serial_ports[1], &port, sizeof(port));
++			bcm47xx_swap_serial_ssb(mcore);
+ 		}
+ 	}
+ }
