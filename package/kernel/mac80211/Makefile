@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2012 OpenWrt.org
+# Copyright (C) 2007-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=2013-11-05
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_BACKPORT_VERSION:=
 PKG_MD5SUM:=5ef839d02d19c341629555a529beebee
@@ -103,12 +103,12 @@ Generic IEEE 802.11 Networking Stack (mac80211)
 endef
 
 PKG_LINUX_FIRMWARE_NAME:=linux-firmware
-PKG_LINUX_FIRMWARE_VERSION:=6942dba419d2ebf8c15514972e89734fd7a8cebc
+PKG_LINUX_FIRMWARE_VERSION:=7d0c7a8cfd78388d90cc784a185b19dcbdbce824
 PKG_LINUX_FIRMWARE_SOURCE:=$(PKG_LINUX_FIRMWARE_NAME)-$(PKG_LINUX_FIRMWARE_VERSION).tar.bz2
 PKG_LINUX_FIRMWARE_PROTO:=git
 PKG_LINUX_FIRMWARE_SOURCE_URL:=git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
 PKG_LINUX_FIRMWARE_SUBDIR:=$(PKG_LINUX_FIRMWARE_NAME)-$(PKG_LINUX_FIRMWARE_VERSION)
-PKG_LINUX_FIRMWARE_MIRROR_MD5SUM:=a5f8c27af9e43f0ad24d7f821c5a781e
+PKG_LINUX_FIRMWARE_MIRROR_MD5SUM:=837a1a9456c1ec8b428cc0b2b08a331b
 
 define Download/linux-firmware
   FILE:=$(PKG_LINUX_FIRMWARE_SOURCE)
