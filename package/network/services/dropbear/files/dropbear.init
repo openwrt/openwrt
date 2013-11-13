@@ -12,76 +12,68 @@ PIDCOUNT=0
 EXTRA_COMMANDS="killclients"
 EXTRA_HELP="	killclients Kill ${NAME} processes except servers and yourself"
 
-dropbear_instance()
+append_ports()
 {
-	append_ports()
-	{
-		local ifname="$1"
-		local port="$2"
+	local ifname="$1"
+	local port="$2"
 
-		grep -qs "^ *$ifname:" /proc/net/dev || {
-			procd_append_param command -p "$port"
-			return
-		}
-
-		for addr in $(
-			ifconfig "$ifname" | sed -ne '
-				/addr: *fe[89ab][0-9a-f]:/d
-				s/.* addr: *\([0-9a-f:\.]*\).*/\1/p
-			'
-		); do
-			procd_append_param command -p "$addr:$port"
-		done
+	grep -qs "^ *$ifname:" /proc/net/dev || {
+		procd_append_param command -p "$port"
+		return
 	}
 
+	for addr in $(
+		ifconfig "$ifname" | sed -ne '
+			/addr: *fe[89ab][0-9a-f]:/d
+			s/.* addr: *\([0-9a-f:\.]*\).*/\1/p
+		'
+	); do
+		procd_append_param command -p "$addr:$port"
+	done
+}
 
-	local section="$1"
+validate_section_dropbear()
+{
+	uci_validate_section dropbear dropbear "${1}" \
+		'PasswordAuth:bool:1' \
+		'enable:bool:1' \
+		'Interface:string' \
+		'GatewayPorts:integer:0' \
+		'RootPasswordAuth:bool:1' \
+		'RootLogin:bool:1' \
+		'rsakeyfile:file' \
+		'dsskeyfile:file' \
+		'BannerFile:file' \
+		'Port:list(port):22'
+	return $?
+}
 
-	# check if section is enabled (default)
-	local enabled
-	config_get_bool enabled "${section}" enable 1
-	[ "${enabled}" -eq 0 ] && return 1
+dropbear_instance()
+{
+	local PasswordAuth enable Interface GatewayPorts \
+		RootPasswordAuth RootLogin rsakeyfile \
+		dsskeyfile BannerFile Port
 
-	# increase pid file count to handle multiple instances correctly
+	validate_section_dropbear "${1}" || {
+		echo "validation failed"
+		return 1
+	}
+
+	[ "${enable}" = "0" ] && return 1
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
-
 	local pid_file="/var/run/${NAME}.${PIDCOUNT}.pid"
 
 	procd_open_instance
 	procd_set_param command "$PROG" -F -P "$pid_file"
-
-	# prepare parameters (initialise with pid file)
-	local val
-
-	# A) password authentication
-	config_get_bool val "${section}" PasswordAuth 1
-	[ "${val}" -eq 0 ] && procd_append_param command -s
-
-	# B) listen interface and port
-	local port
-	local interface
-	config_get interface "${section}" Interface
-	[ -n "$interface" ] && network_get_device interface "$interface"
-	config_get port "${section}" Port 22
-	append_ports "$interface" "$port"
-	# C) banner file
-	config_get val "${section}" BannerFile
-	[ -f "${val}" ] && procd_append_param command -b "${val}"
-	# D) gatewayports
-	config_get_bool val "${section}" GatewayPorts 0
-	[ "${val}" -eq 1 ] && procd_append_param command -a
-	# E) root password authentication
-	config_get_bool val "${section}" RootPasswordAuth 1
-	[ "${val}" -eq 0 ] && procd_append_param command -g
-	# F) root login
-	config_get_bool val "${section}" RootLogin 1
-	[ "${val}" -eq 0 ] && procd_append_param command -w
-	# G) host keys
-	config_get val "${section}" rsakeyfile
-	[ -f "${val}" ] && procd_append_param command -r "${val}"
-	config_get val "${section}" dsskeyfile
-	[ -f "${val}" ] && procd_append_param command -d "${val}"
-
+	[ "${PasswordAuth}" -eq 0 ] && procd_append_param command -s
+	[ "${GatewayPorts}" -eq 1 ] && procd_append_param command -a
+	[ "${RootPasswordAuth}" -eq 0 ] && procd_append_param command -g
+	[ "${RootLogin}" -eq 0 ] && procd_append_param command -w
+	[ -n "${rsakeyfile}" ] && procd_append_param command -r "${rsakeyfile}"
+	[ -n "${dsskeyfile}" ] && procd_append_param command -d "${dsskeyfile}"
+	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
+	[ -n "${interface}" ] && network_get_device interface "${interface}"
+	append_ports "${interface}" "${Port}"
 	procd_close_instance
 }
 
@@ -123,6 +115,7 @@ start_service()
 service_triggers()
 {
 	procd_add_reload_trigger "dropbear"
+	procd_add_validation validate_section_dropbear
 }
 
 killclients()
