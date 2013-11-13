@@ -37,7 +37,7 @@ define Package/procd/install
 	$(INSTALL_BIN) ./files/reload_config $(1)/sbin/
 	$(INSTALL_BIN) ./files/log.init $(1)/etc/init.d/log
 	$(INSTALL_DATA) ./files/hotplug*.json $(1)/etc/
-	$(INSTALL_DATA) ./files/procd.sh ./files/procd-validate.sh $(1)/lib/functions/
+	$(INSTALL_DATA) ./files/procd.sh $(1)/lib/functions/
 	ln -s /sbin/procd $(1)/sbin/init
 endef
 
