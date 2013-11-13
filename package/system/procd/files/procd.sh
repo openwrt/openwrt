@@ -229,7 +229,8 @@ uci_validate_section()
 		shift; shift; shift
 
 		while [ -n "$1" ]; do
-			json_add_string "${1%:*}" "${1#*:}"
+			local tmp=${1#*:}
+			json_add_string "${1%%:*}" "${tmp%%:*}"
 			shift
 		done
 
