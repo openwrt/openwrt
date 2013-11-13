@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/zram-swap
   SECTION:=utils
   CATEGORY:=Base system
-  DEPENDS:=+kmod-zram +!(BUSYBOX_CONFIG_MKSWAP&&BUSYBOX_CONFIG_SWAPONOFF):swap-utils
+  DEPENDS:=+kmod-zram +!BUSYBOX_CONFIG_MKSWAP:swap-utils +!BUSYBOX_CONFIG_SWAPONOFF:block-mount
   TITLE:=ZRAM swap scripts
   PKGARCH:=all
 endef
