@@ -536,7 +536,17 @@
  	INIT_WORK(&sc->hw_reset_work, ath_reset_work);
  	INIT_WORK(&sc->hw_check_work, ath_hw_check);
  	INIT_WORK(&sc->paprd_work, ath_paprd_calibrate);
-@@ -862,20 +864,11 @@ static const struct ieee80211_iface_comb
+@@ -845,7 +847,8 @@ static const struct ieee80211_iface_limi
+ };
+ 
+ static const struct ieee80211_iface_limit if_dfs_limits[] = {
+-	{ .max = 1,	.types = BIT(NL80211_IFTYPE_AP) },
++	{ .max = 1,	.types = BIT(NL80211_IFTYPE_AP) |
++				 BIT(NL80211_IFTYPE_ADHOC) },
+ };
+ 
+ static const struct ieee80211_iface_combination if_comb[] = {
+@@ -862,20 +865,11 @@ static const struct ieee80211_iface_comb
  		.max_interfaces = 1,
  		.num_different_channels = 1,
  		.beacon_int_infra_match = true,
@@ -559,7 +569,7 @@
  void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
  {
  	struct ath_hw *ah = sc->sc_ah;
-@@ -925,16 +918,6 @@ void ath9k_set_hw_capab(struct ath_softc
+@@ -925,16 +919,6 @@ void ath9k_set_hw_capab(struct ath_softc
  	hw->wiphy->flags |= WIPHY_FLAG_SUPPORTS_5_10_MHZ;
  	hw->wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
  
@@ -576,7 +586,7 @@
  	hw->queues = 4;
  	hw->max_rates = 4;
  	hw->channel_change_time = 5000;
-@@ -960,6 +943,7 @@ void ath9k_set_hw_capab(struct ath_softc
+@@ -960,6 +944,7 @@ void ath9k_set_hw_capab(struct ath_softc
  		hw->wiphy->bands[IEEE80211_BAND_5GHZ] =
  			&sc->sbands[IEEE80211_BAND_5GHZ];
  
@@ -584,7 +594,7 @@
  	ath9k_reload_chainmask_settings(sc);
  
  	SET_IEEE80211_PERM_ADDR(hw, common->macaddr);
-@@ -1058,6 +1042,7 @@ static void ath9k_deinit_softc(struct at
+@@ -1058,6 +1043,7 @@ static void ath9k_deinit_softc(struct at
  		if (ATH_TXQ_SETUP(sc, i))
  			ath_tx_cleanupq(sc, &sc->tx.txq[i]);
  
@@ -4371,3 +4381,37 @@
 +			    sc->debug.debugfs_phy, sc,
 +			    &fops_tx99_power);
 +}
+--- a/drivers/net/wireless/ath/ath9k/dfs_debug.c
++++ b/drivers/net/wireless/ath/ath9k/dfs_debug.c
+@@ -44,14 +44,20 @@ static ssize_t read_file_dfs(struct file
+ 	if (buf == NULL)
+ 		return -ENOMEM;
+ 
+-	if (sc->dfs_detector)
+-		dfs_pool_stats = sc->dfs_detector->get_stats(sc->dfs_detector);
+-
+ 	len += scnprintf(buf + len, size - len, "DFS support for "
+ 			 "macVersion = 0x%x, macRev = 0x%x: %s\n",
+ 			 hw_ver->macVersion, hw_ver->macRev,
+ 			 (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_DFS) ?
+ 					"enabled" : "disabled");
++
++	if (!sc->dfs_detector) {
++		len += scnprintf(buf + len, size - len,
++				"DFS detector not enabled\n");
++		goto exit;
++	}
++
++	dfs_pool_stats = sc->dfs_detector->get_stats(sc->dfs_detector);
++
+ 	len += scnprintf(buf + len, size - len, "Pulse detector statistics:\n");
+ 	ATH9K_DFS_STAT("pulse events reported   ", pulses_total);
+ 	ATH9K_DFS_STAT("invalid pulse events    ", pulses_no_dfs);
+@@ -76,6 +82,7 @@ static ssize_t read_file_dfs(struct file
+ 	ATH9K_DFS_POOL_STAT("Seqs. alloc error       ", pseq_alloc_error);
+ 	ATH9K_DFS_POOL_STAT("Seqs. in use            ", pseq_used);
+ 
++exit:
+ 	if (len > size)
+ 		len = size;
+ 
