@@ -1,0 +1,220 @@
+From 337d479970b0c8493ee3e8b8d89fb80ee39333a6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Sun, 5 May 2013 21:26:23 -0300
+Subject: [PATCH] clk: sunxi: register factors clocks behind composite
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This commit reworks factors clock registration to be done behind a
+composite clock. This allows us to additionally add a gate, mux or
+divisors, as it will be needed by some future PLLs.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+---
+ drivers/clk/sunxi/clk-factors.c | 63 +--------------------------------------
+ drivers/clk/sunxi/clk-factors.h | 16 +++++-----
+ drivers/clk/sunxi/clk-sunxi.c   | 66 ++++++++++++++++++++++++++++++++++++++---
+ 3 files changed, 72 insertions(+), 73 deletions(-)
+
+diff --git a/drivers/clk/sunxi/clk-factors.c b/drivers/clk/sunxi/clk-factors.c
+index 88523f9..6e3926c 100644
+--- a/drivers/clk/sunxi/clk-factors.c
++++ b/drivers/clk/sunxi/clk-factors.c
+@@ -30,14 +30,6 @@
+  * parent - fixed parent.  No clk_set_parent support
+  */
+ 
+-struct clk_factors {
+-	struct clk_hw hw;
+-	void __iomem *reg;
+-	struct clk_factors_config *config;
+-	void (*get_factors) (u32 *rate, u32 parent, u8 *n, u8 *k, u8 *m, u8 *p);
+-	spinlock_t *lock;
+-};
+-
+ #define to_clk_factors(_hw) container_of(_hw, struct clk_factors, hw)
+ 
+ #define SETMASK(len, pos)		(((-1U) >> (31-len))  << (pos))
+@@ -120,61 +112,8 @@ static int clk_factors_set_rate(struct clk_hw *hw, unsigned long rate,
+ 	return 0;
+ }
+ 
+-static const struct clk_ops clk_factors_ops = {
++const struct clk_ops clk_factors_ops = {
+ 	.recalc_rate = clk_factors_recalc_rate,
+ 	.round_rate = clk_factors_round_rate,
+ 	.set_rate = clk_factors_set_rate,
+ };
+-
+-/**
+- * clk_register_factors - register a factors clock with
+- * the clock framework
+- * @dev: device registering this clock
+- * @name: name of this clock
+- * @parent_name: name of clock's parent
+- * @flags: framework-specific flags
+- * @reg: register address to adjust factors
+- * @config: shift and width of factors n, k, m and p
+- * @get_factors: function to calculate the factors for a given frequency
+- * @lock: shared register lock for this clock
+- */
+-struct clk *clk_register_factors(struct device *dev, const char *name,
+-				 const char *parent_name,
+-				 unsigned long flags, void __iomem *reg,
+-				 struct clk_factors_config *config,
+-				 void (*get_factors)(u32 *rate, u32 parent,
+-						     u8 *n, u8 *k, u8 *m, u8 *p),
+-				 spinlock_t *lock)
+-{
+-	struct clk_factors *factors;
+-	struct clk *clk;
+-	struct clk_init_data init;
+-
+-	/* allocate the factors */
+-	factors = kzalloc(sizeof(struct clk_factors), GFP_KERNEL);
+-	if (!factors) {
+-		pr_err("%s: could not allocate factors clk\n", __func__);
+-		return ERR_PTR(-ENOMEM);
+-	}
+-
+-	init.name = name;
+-	init.ops = &clk_factors_ops;
+-	init.flags = flags;
+-	init.parent_names = (parent_name ? &parent_name : NULL);
+-	init.num_parents = (parent_name ? 1 : 0);
+-
+-	/* struct clk_factors assignments */
+-	factors->reg = reg;
+-	factors->config = config;
+-	factors->lock = lock;
+-	factors->hw.init = &init;
+-	factors->get_factors = get_factors;
+-
+-	/* register the clock */
+-	clk = clk_register(dev, &factors->hw);
+-
+-	if (IS_ERR(clk))
+-		kfree(factors);
+-
+-	return clk;
+-}
+diff --git a/drivers/clk/sunxi/clk-factors.h b/drivers/clk/sunxi/clk-factors.h
+index f49851c..02e1a43 100644
+--- a/drivers/clk/sunxi/clk-factors.h
++++ b/drivers/clk/sunxi/clk-factors.h
+@@ -17,11 +17,13 @@ struct clk_factors_config {
+ 	u8 pwidth;
+ };
+ 
+-struct clk *clk_register_factors(struct device *dev, const char *name,
+-				 const char *parent_name,
+-				 unsigned long flags, void __iomem *reg,
+-				 struct clk_factors_config *config,
+-				 void (*get_factors) (u32 *rate, u32 parent_rate,
+-						      u8 *n, u8 *k, u8 *m, u8 *p),
+-				 spinlock_t *lock);
++struct clk_factors {
++	struct clk_hw hw;
++	void __iomem *reg;
++	struct clk_factors_config *config;
++	void (*get_factors) (u32 *rate, u32 parent, u8 *n, u8 *k, u8 *m, u8 *p);
++	spinlock_t *lock;
++};
++
++extern const struct clk_ops clk_factors_ops;
+ #endif
+diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
+index 34ee69f..6aed57f 100644
+--- a/drivers/clk/sunxi/clk-sunxi.c
++++ b/drivers/clk/sunxi/clk-sunxi.c
+@@ -256,7 +256,11 @@ static void sun4i_get_apb1_factors(u32 *freq, u32 parent_rate,
+  * sunxi_factors_clk_setup() - Setup function for factor clocks
+  */
+ 
++#define SUNXI_FACTORS_MUX_MASK 0x3
++
+ struct factors_data {
++	int enable;
++	int mux;
+ 	struct clk_factors_config *table;
+ 	void (*getter) (u32 *rate, u32 parent_rate, u8 *n, u8 *k, u8 *m, u8 *p);
+ };
+@@ -307,16 +311,70 @@ static void __init sunxi_factors_clk_setup(struct device_node *node,
+ 					   struct factors_data *data)
+ {
+ 	struct clk *clk;
++	struct clk_factors *factors;
++	struct clk_gate *gate;
++	struct clk_mux *mux;
++	struct clk_hw *gate_hw = NULL;
++	struct clk_hw *mux_hw = NULL;
+ 	const char *clk_name = node->name;
+-	const char *parent;
++	const char *parents[5];
+ 	void *reg;
++	int i = 0;
+ 
+ 	reg = of_iomap(node, 0);
+ 
+-	parent = of_clk_get_parent_name(node, 0);
++	/* if we have a mux, we will have >1 parents */
++	while (i < 5 && (parents[i] = of_clk_get_parent_name(node, i)) != NULL)
++		i++;
++
++	factors = kzalloc(sizeof(struct clk_factors), GFP_KERNEL);
++	if (!factors)
++		return;
++
++	/* Add a gate if this factor clock can be gated */
++	if (data->enable) {
++		gate = kzalloc(sizeof(struct clk_gate), GFP_KERNEL);
++		if (!gate) {
++			kfree(factors);
++			return;
++		}
++
++		/* set up gate properties */
++		gate->reg = reg;
++		gate->bit_idx = data->enable;
++		gate->lock = &clk_lock;
++		gate_hw = &gate->hw;
++	}
+ 
+-	clk = clk_register_factors(NULL, clk_name, parent, 0, reg,
+-				   data->table, data->getter, &clk_lock);
++	/* Add a mux if this factor clock can be muxed */
++	if (data->mux) {
++		mux = kzalloc(sizeof(struct clk_mux), GFP_KERNEL);
++		if (!mux) {
++			kfree(factors);
++			kfree(gate);
++			return;
++		}
++
++		/* set up gate properties */
++		mux->reg = reg;
++		mux->shift = data->mux;
++		mux->mask = SUNXI_FACTORS_MUX_MASK;
++		mux->lock = &clk_lock;
++		mux_hw = &mux->hw;
++	}
++
++	/* set up factors properties */
++	factors->reg = reg;
++	factors->config = data->table;
++	factors->get_factors = data->getter;
++	factors->lock = &clk_lock;
++
++	clk = clk_register_composite(NULL, clk_name,
++			parents, i,
++			mux_hw, &clk_mux_ops,
++			&factors->hw, &clk_factors_ops,
++			gate_hw, &clk_gate_ops,
++			i ? 0 : CLK_IS_ROOT);
+ 
+ 	if (!IS_ERR(clk)) {
+ 		of_clk_add_provider(node, of_clk_src_simple_get, clk);
+-- 
+1.8.4
+

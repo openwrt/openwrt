@@ -1,0 +1,85 @@
+From bf96cf461ca2d36e962a4acf83f6f779a05c7df3 Mon Sep 17 00:00:00 2001
+From: arokux <arokux@gmail.com>
+Date: Wed, 18 Sep 2013 22:45:06 +0200
+Subject: [PATCH] ARM: sun4i: dt: Add EHCI bindings to Cubieboard-A10
+
+---
+ arch/arm/boot/dts/sun4i-a10-cubieboard.dts | 50 ++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
+index 425a7db..eb6c3c1 100644
+--- a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
++++ b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
+@@ -49,6 +49,20 @@
+ 				allwinner,drive = <1>;
+ 				allwinner,pull = <0>;
+ 			};
++
++			usb1_vbus_pin: usb1_vbus_pin@0 {
++					allwinner,pins = "PH6";
++					allwinner,function = "gpio_out";
++					allwinner,drive = <0>;
++					allwinner,pull = <2>;
++			};
++
++			usb2_vbus_pin: usb2_vbus_pin@0 {
++					allwinner,pins = "PH3";
++					allwinner,function = "gpio_out";
++					allwinner,drive = <0>;
++					allwinner,pull = <2>;
++			};
+ 		};
+ 
+ 		uart0: serial@01c28000 {
+@@ -68,6 +82,16 @@
+ 			pinctrl-0 = <&i2c1_pins_a>;
+ 			status = "okay";
+ 		};
++
++		ehci0: ehci0@0x01c14000 {
++				vbus-supply = <&reg_usb1_vbus>;
++				status = "okay";
++		};
++
++		ehci1: ehci1@0x01c1c000 {
++				vbus-supply = <&reg_usb2_vbus>;
++				status = "okay";
++		};
+ 	};
+ 
+ 	leds {
+@@ -86,4 +110,30 @@
+ 			linux,default-trigger = "heartbeat";
+ 		};
+ 	};
++
++	regulators {
++		compatible = "simple-bus";
++
++		reg_usb1_vbus: usb1-vbus {
++			compatible = "regulator-fixed";
++			pinctrl-names = "default";
++			pinctrl-0 = <&usb1_vbus_pin>;
++			regulator-name = "usb1-vbus";
++			regulator-min-microvolt = <3300000>;
++			regulator-max-microvolt = <3300000>;
++			enable-active-high;
++			gpio = <&pio 7 6 0>;
++		};
++
++		reg_usb2_vbus: usb2-vbus {
++			compatible = "regulator-fixed";
++			pinctrl-names = "default";
++			pinctrl-0 = <&usb2_vbus_pin>;
++			regulator-name = "usb2-vbus";
++			regulator-min-microvolt = <3300000>;
++			regulator-max-microvolt = <3300000>;
++			enable-active-high;
++			gpio = <&pio 7 3 0>;
++		};
++	};
+ };
+-- 
+1.8.4
+

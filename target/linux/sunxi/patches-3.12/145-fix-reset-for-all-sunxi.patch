@@ -1,0 +1,20 @@
+From ab2f1e0056db0e5a0717981546a69d5b81439661 Mon Sep 17 00:00:00 2001
+From: arokux <arokux@gmail.com>
+Date: Sun, 20 Oct 2013 22:59:01 +0200
+Subject: [PATCH] reset: Fix mpripard's reset patch
+
+---
+ drivers/reset/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/reset/Makefile b/drivers/reset/Makefile
+index f216b74..cc29832 100644
+--- a/drivers/reset/Makefile
++++ b/drivers/reset/Makefile
+@@ -1,2 +1,2 @@
+ obj-$(CONFIG_RESET_CONTROLLER) += core.o
+-obj-$(CONFIG_ARCH_SUNXI) += reset-sun6i.o
++obj-$(CONFIG_ARCH_SUNXI) += reset-sunxi.o
+-- 
+1.8.4
+
