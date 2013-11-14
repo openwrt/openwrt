@@ -145,12 +145,6 @@ menu "Target Images"
 			prompt "journal size" if TARGET_ROOTFS_UBIFS
 			default ""
 
-		config TARGET_UBIFS_SQUASH_UIDS
-			bool "squash uids" if TARGET_ROOTFS_UBIFS
-			default n
-			help
-			  Squash owners making all files owned by root
-
 	comment "Image Options"
 
 	source "target/linux/*/image/Config.in"
