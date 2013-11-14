@@ -1,0 +1,35 @@
+From aaf8700dfa1b19bbb994e2996bd293190c0cefbd Mon Sep 17 00:00:00 2001
+From: arokux <arokux@gmail.com>
+Date: Sun, 6 Oct 2013 14:04:50 +0200
+Subject: [PATCH] clk: sun5i: Add support for USB clocks
+
+---
+ drivers/clk/sunxi/clk-sunxi.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
+index cbe1516..f9b8b18 100644
+--- a/drivers/clk/sunxi/clk-sunxi.c
++++ b/drivers/clk/sunxi/clk-sunxi.c
+@@ -623,6 +623,10 @@ struct gates_data {
+ 	.mask = {0x1C0},
+ };
+ 
++static const struct gates_data sun5i_usb_gates_data __initconst = {
++       .mask = {0x140},
++};
++
+ static const struct gates_data sun5i_a10s_ahb_gates_data __initconst = {
+ 	.mask = {0x147667e7, 0x185915},
+ };
+@@ -874,6 +878,7 @@ static void __init sunxi_divs_clk_setup(struct device_node *node,
+ 	{.compatible = "allwinner,sun47i-usb-gates-clk", .data = &sun47i_usb_gates_data,},
+ 	{.compatible = "allwinner,sun5i-a10s-ahb-gates-clk", .data = &sun5i_a10s_ahb_gates_data,},
+ 	{.compatible = "allwinner,sun5i-a13-ahb-gates-clk", .data = &sun5i_a13_ahb_gates_data,},
++	{.compatible = "allwinner,sun5i-usb-gates-clk", .data = &sun5i_usb_gates_data,},
+ 	{.compatible = "allwinner,sun6i-a31-ahb1-gates-clk", .data = &sun6i_a31_ahb1_gates_data,},
+ 	{.compatible = "allwinner,sun7i-a20-ahb-gates-clk", .data = &sun7i_a20_ahb_gates_data,},
+ 	{.compatible = "allwinner,sun4i-apb0-gates-clk", .data = &sun4i_apb0_gates_data,},
+-- 
+1.8.4
+

@@ -4,19 +4,26 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
 include $(TOPDIR)/rules.mk
 
 ARCH:=arm
 BOARD:=sunxi
-BOARDNAME:=Allwinner SoC
-FEATURES:=targz
-SUBTARGETS=cortex-a7 cortex-a8
-MAINTAINER:=Luka Perkov <luka@openwrt.org>
+BOARDNAME:=Allwinner A1x/A20/A3x
+FEATURES:=fpu usb ext4 display
+CPU_TYPE:=cortex-a8
+CPU_SUBTYPE:=vfpv3
+MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
-LINUX_VERSION:=3.10.18
+LINUX_VERSION:=3.12
+KERNELNAME:="zImage dtbs"
+DEFAULT_PACKAGES += uboot-envtools uboot-sunxi
+
+# A10: Cortex-A8
+# A13: Cortex-A8
+# A20: dual Cortex-A7
+# A31: quad Cortex-A7
 
 include $(INCLUDE_DIR)/target.mk
-
-KERNELNAME:="zImage dtbs"
 
 $(eval $(call BuildTarget))
