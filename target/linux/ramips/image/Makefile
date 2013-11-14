@@ -368,7 +368,7 @@ define BuildFirmware/DCS930/squashfs
 	else \
 		dd if=$(KDIR)/image.$(2) of=$(KDIR)/dcs.tmp bs=64K count=5 conv=sync ;\
 		cat $(KDIR)/image.$(2) >> $(KDIR)/dcs.tmp ; \
-		dd if=$(KDIR)/dcs.tmp of=$(call imgname,$(1),$(2))-factory.bin bs=4M count=1 conv=sync ;\
+		dd if=$(KDIR)/dcs.tmp of=$(call imgname,$(1),$(2))-factory.bin bs=4096k count=1 conv=sync ;\
 		$(STAGING_DIR_HOST)/bin/mkdcs932 $(call imgname,$(1),$(2))-factory.bin ; \
 	fi
 endef
