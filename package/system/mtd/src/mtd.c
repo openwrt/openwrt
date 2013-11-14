@@ -55,6 +55,7 @@ int quiet;
 int no_erase;
 int mtdsize = 0;
 int erasesize = 0;
+int jffs2_skip_bytes=0;
 
 int mtd_open(const char *mtd, bool block)
 {
@@ -339,7 +340,6 @@ resume:
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
 	}
-
 	if (part_offset > 0) {
 		fprintf(stderr, "Seeking on mtd device '%s' to: %u\n", mtd, part_offset);
 		lseek(fd, part_offset, SEEK_SET);
@@ -379,7 +379,7 @@ resume:
 			continue;
 		}
 
-		if (jffs2file) {
+		if (jffs2file && w >= jffs2_skip_bytes) {
 			if (memcmp(buf, JFFS2_EOF, sizeof(JFFS2_EOF) - 1) == 0) {
 				if (!quiet)
 					fprintf(stderr, "\b\b\b   ");
@@ -503,6 +503,7 @@ static void usage(void)
 	"        -e <device>             erase <device> before executing the command\n"
 	"        -d <name>               directory for jffs2write, defaults to \"tmp\"\n"
 	"        -j <name>               integrate <file> into jffs2 data when writing an image\n"
+	"        -s <number>             skip the first n bytes when appending data to the jffs2 partiton, defaults to \"0\"\n"
 	"        -p                      write beginning at partition offset\n");
 	if (mtd_fixtrx) {
 	    fprintf(stderr,
@@ -560,7 +561,7 @@ int main (int argc, char **argv)
 #ifdef FIS_SUPPORT
 			"F:"
 #endif
-			"frnqe:d:j:p:o:")) != -1)
+			"frnqe:d:s:j:p:o:")) != -1)
 		switch (ch) {
 			case 'f':
 				force = 1;
@@ -573,6 +574,14 @@ int main (int argc, char **argv)
 				break;
 			case 'j':
 				jffs2file = optarg;
+				break;
+			case 's':
+				errno = 0;
+				jffs2_skip_bytes = strtoul(optarg, 0, 0);
+				if (errno) {
+						fprintf(stderr, "-s: illegal numeric string\n");
+						usage();
+				}
 				break;
 			case 'q':
 				quiet++;

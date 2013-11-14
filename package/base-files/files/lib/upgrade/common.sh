@@ -188,7 +188,7 @@ jffs2_copy_config() {
 default_do_upgrade() {
 	sync
 	if [ "$SAVE_CONFIG" -eq 1 ]; then
-		get_image "$1" | mtd -j "$CONF_TAR" write - "${PART_NAME:-image}"
+		get_image "$1" | mtd $MTD_CONFIG_ARGS -j "$CONF_TAR" write - "${PART_NAME:-image}"
 	else
 		get_image "$1" | mtd write - "${PART_NAME:-image}"
 	fi
