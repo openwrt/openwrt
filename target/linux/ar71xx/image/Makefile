@@ -448,7 +448,7 @@ define Image/Build/UAPPRO/buildkernel
 		-d $(KDIR_TMP)/$(2)/image \
 		2>&1 1>/dev/null | awk '/^.+$$$$/'
 	-rm -rf $(KDIR_TMP)/$(2)
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR_TMP)/$(2)-kernel.jffs2 64
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR_TMP)/$(2)-kernel.jffs2 -J 64
 endef
 
 define Image/Build/UAPPRO
