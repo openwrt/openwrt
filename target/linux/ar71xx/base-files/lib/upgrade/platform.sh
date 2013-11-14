@@ -327,6 +327,10 @@ platform_do_upgrade() {
 	om2p-lc)
 		platform_do_upgrade_openmesh "$ARGV"
 		;;
+	uap-pro)
+		MTD_CONFIG_ARGS="-s 0x180000"
+		default_do_upgrade "$ARGV"
+		;;
 	*)
 		default_do_upgrade "$ARGV"
 		;;
