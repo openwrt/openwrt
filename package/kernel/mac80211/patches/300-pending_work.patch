@@ -4415,3 +4415,96 @@
  	if (len > size)
  		len = size;
  
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -701,6 +701,54 @@ static int ar9550_hw_get_modes_txgain_in
+ 	return ret;
+ }
+ 
++static void ar9003_doubler_fix(struct ath_hw *ah)
++{
++	if (AR_SREV_9300(ah) || AR_SREV_9580(ah) || AR_SREV_9550(ah)) {
++		REG_RMW(ah, AR_PHY_65NM_CH0_RXTX2,
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK_S |
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHOVR_MASK_S, 0);
++		REG_RMW(ah, AR_PHY_65NM_CH1_RXTX2,
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK_S |
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHOVR_MASK_S, 0);
++		REG_RMW(ah, AR_PHY_65NM_CH2_RXTX2,
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK_S |
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHOVR_MASK_S, 0);
++
++		udelay(200);
++
++		REG_CLR_BIT(ah, AR_PHY_65NM_CH0_RXTX2,
++			    AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK);
++		REG_CLR_BIT(ah, AR_PHY_65NM_CH1_RXTX2,
++			    AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK);
++		REG_CLR_BIT(ah, AR_PHY_65NM_CH2_RXTX2,
++			    AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK);
++
++		udelay(1);
++
++		REG_RMW_FIELD(ah, AR_PHY_65NM_CH0_RXTX2,
++			      AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK, 1);
++		REG_RMW_FIELD(ah, AR_PHY_65NM_CH1_RXTX2,
++			      AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK, 1);
++		REG_RMW_FIELD(ah, AR_PHY_65NM_CH2_RXTX2,
++			      AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK, 1);
++
++		udelay(200);
++
++		REG_RMW_FIELD(ah, AR_PHY_65NM_CH0_SYNTH12,
++			      AR_PHY_65NM_CH0_SYNTH12_VREFMUL3, 0xf);
++
++		REG_RMW(ah, AR_PHY_65NM_CH0_RXTX2, 0,
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK_S |
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHOVR_MASK_S);
++		REG_RMW(ah, AR_PHY_65NM_CH1_RXTX2, 0,
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK_S |
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHOVR_MASK_S);
++		REG_RMW(ah, AR_PHY_65NM_CH2_RXTX2, 0,
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK_S |
++			1 << AR_PHY_65NM_CH0_RXTX2_SYNTHOVR_MASK_S);
++	}
++}
++
+ static int ar9003_hw_process_ini(struct ath_hw *ah,
+ 				 struct ath9k_channel *chan)
+ {
+@@ -726,6 +774,8 @@ static int ar9003_hw_process_ini(struct 
+ 					   modesIndex);
+ 	}
+ 
++	ar9003_doubler_fix(ah);
++
+ 	/*
+ 	 * RXGAIN initvals.
+ 	 */
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
+@@ -656,13 +656,24 @@
+ #define AR_PHY_SYNTH4_LONG_SHIFT_SELECT   ((AR_SREV_9462(ah) || AR_SREV_9565(ah)) ? 0x00000001 : 0x00000002)
+ #define AR_PHY_SYNTH4_LONG_SHIFT_SELECT_S ((AR_SREV_9462(ah) || AR_SREV_9565(ah)) ? 0 : 1)
+ #define AR_PHY_65NM_CH0_SYNTH7      0x16098
++#define AR_PHY_65NM_CH0_SYNTH12     0x160ac
+ #define AR_PHY_65NM_CH0_BIAS1       0x160c0
+ #define AR_PHY_65NM_CH0_BIAS2       0x160c4
+ #define AR_PHY_65NM_CH0_BIAS4       0x160cc
++#define AR_PHY_65NM_CH0_RXTX2       0x16104
++#define AR_PHY_65NM_CH1_RXTX2       0x16504
++#define AR_PHY_65NM_CH2_RXTX2       0x16904
+ #define AR_PHY_65NM_CH0_RXTX4       0x1610c
+ #define AR_PHY_65NM_CH1_RXTX4       0x1650c
+ #define AR_PHY_65NM_CH2_RXTX4       0x1690c
+ 
++#define AR_PHY_65NM_CH0_SYNTH12_VREFMUL3           0x00780000
++#define AR_PHY_65NM_CH0_SYNTH12_VREFMUL3_S         19
++#define AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK         0x00000004
++#define AR_PHY_65NM_CH0_RXTX2_SYNTHON_MASK_S       2
++#define AR_PHY_65NM_CH0_RXTX2_SYNTHOVR_MASK        0x00000008
++#define AR_PHY_65NM_CH0_RXTX2_SYNTHOVR_MASK_S      3
++
+ #define AR_CH0_TOP	(AR_SREV_9300(ah) ? 0x16288 : \
+ 			 (((AR_SREV_9462(ah) || AR_SREV_9565(ah)) ? 0x1628c : 0x16280)))
+ #define AR_CH0_TOP_XPABIASLVL (AR_SREV_9550(ah) ? 0x3c0 : 0x300)
