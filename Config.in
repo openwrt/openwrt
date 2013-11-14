@@ -143,7 +143,7 @@ menu "Target Images"
 		config TARGET_UBIFS_JOURNAL_SIZE
 			string
 			prompt "journal size" if TARGET_ROOTFS_UBIFS
-			default "512KiB"
+			default ""
 
 		config TARGET_UBIFS_SQUASH_UIDS
 			bool "squash uids" if TARGET_ROOTFS_UBIFS
