@@ -127,7 +127,7 @@
  	DECLARE_KFIFO_PTR(txstatus_fifo, u32);
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -1325,6 +1325,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
+@@ -1326,6 +1326,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
  	INIT_DELAYED_WORK(&rt2x00dev->autowakeup_work, rt2x00lib_autowakeup);
  	INIT_WORK(&rt2x00dev->sleep_work, rt2x00lib_sleep);
  
@@ -138,7 +138,7 @@
  	/*
  	 * Let the driver probe the device to detect the capabilities.
  	 */
-@@ -1455,6 +1459,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
+@@ -1456,6 +1460,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
  	 */
  	if (rt2x00dev->drv_data)
  		kfree(rt2x00dev->drv_data);
