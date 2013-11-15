@@ -11,8 +11,6 @@ ath9k_eeprom_extract() {
 	local count=$3
 	local mtd
 
-	. /lib/functions.sh
-
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || \
 		ath9k_eeprom_die "no mtd device found for partition $part"
@@ -21,9 +19,18 @@ ath9k_eeprom_extract() {
 		ath9k_eeprom_die "failed to extract from $mtd"
 }
 
+ath9k_patch_firmware_mac() {
+	local mac=$1
+
+	[ -z "$mac" ] && return
+
+	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=2 count=6
+}
+
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
 . /lib/ar71xx.sh
+. /lib/functions.sh
 
 board=$(ar71xx_board_name)
 
@@ -32,6 +39,7 @@ case "$FIRMWARE" in
 	case $board in
 	wndr4300)
 		ath9k_eeprom_extract "caldata" 4096 2048
+		ath9k_patch_firmware_mac $(mtd_get_mac_binary caldata 0)
 		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"
@@ -43,6 +51,7 @@ case "$FIRMWARE" in
 	case $board in
 	wndr4300)
 		ath9k_eeprom_extract "caldata" 20480 2048
+		ath9k_patch_firmware_mac $(mtd_get_mac_binary caldata 12)
 		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"
