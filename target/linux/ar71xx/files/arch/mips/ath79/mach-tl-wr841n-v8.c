@@ -180,6 +180,28 @@ static void __init tl_wr841n_v8_setup(void)
 MIPS_MACHINE(ATH79_MACH_TL_WR841N_V8, "TL-WR841N-v8", "TP-LINK TL-WR841N/ND v8",
 	     tl_wr841n_v8_setup);
 
+
+static void __init tl_wr842n_v2_setup(void)
+{
+	tl_ap123_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr841n_v8_leds_gpio) - 1,
+				 tl_wr841n_v8_leds_gpio);
+
+	ath79_register_gpio_keys_polled(1, TL_WR841NV8_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wr841n_v8_gpio_keys),
+					tl_wr841n_v8_gpio_keys);
+
+	gpio_request_one(TL_MR3420V2_GPIO_USB_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
+
+	ath79_register_usb();
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WR842N_V2, "TL-WR842N-v2", "TP-LINK TL-WR842N/ND v2",
+	     tl_wr842n_v2_setup);
+
 static void __init tl_mr3420v2_setup(void)
 {
 	tl_ap123_setup();
