@@ -1,0 +1,43 @@
+From c99bd415829ef29adf71bb1e1b577650f10e93f5 Mon Sep 17 00:00:00 2001
+From: Darren Etheridge <detheridge@ti.com>
+Date: Mon, 4 Nov 2013 12:27:40 -0600
+Subject: [PATCH 752/752] video/da8xx-fb fix defect with vsync callback
+ invocation
+
+Fix defect where SGX is running at half of the expected framerate.
+The original patch (@ commit ID 9a1a810516ae9cb3259b898b6879901c5b44fa90)
+seems to have a mistake where it only calls the callback
+for the even or the odd frames depending on the revision of the LCD controller
+This patch corrects this and invokes the callback for both odd and even frame
+for just the Rev02 version of the LCDC (won't find an SGX GPU on a Rev01).
+
+Signed-off-by: Darren Etheridge <detheridge@ti.com>
+---
+ drivers/video/da8xx-fb.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/da8xx-fb.c b/drivers/video/da8xx-fb.c
+index 212d2ac..d6825e4 100644
+--- a/drivers/video/da8xx-fb.c
++++ b/drivers/video/da8xx-fb.c
+@@ -993,6 +993,8 @@ static irqreturn_t lcdc_irq_handler_rev02(int irq, void *arg)
+ 				   LCD_DMA_FRM_BUF_CEILING_ADDR_1_REG);
+ 			par->vsync_flag = 1;
+ 			wake_up_interruptible(&par->vsync_wait);
++			if (vsync_cb_handler)
++				vsync_cb_handler(vsync_cb_arg);
+ 		}
+ 
+ 		/* Set only when controller is disabled and at the end of
+@@ -1058,8 +1060,6 @@ static irqreturn_t lcdc_irq_handler_rev01(int irq, void *arg)
+ 				   LCD_DMA_FRM_BUF_CEILING_ADDR_1_REG);
+ 			par->vsync_flag = 1;
+ 			wake_up_interruptible(&par->vsync_wait);
+-			if (vsync_cb_handler)
+-				vsync_cb_handler(vsync_cb_arg);
+ 		}
+ 	}
+ 
+-- 
+1.7.10.4
+

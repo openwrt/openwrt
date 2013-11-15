@@ -1,0 +1,37 @@
+From 588b7a5db74c02bcf0b3ac57b6391debffbff74c Mon Sep 17 00:00:00 2001
+From: Felipe Balbi <balbi@ti.com>
+Date: Mon, 21 Oct 2013 15:06:54 -0500
+Subject: [PATCH 582/752] arm: dts: am335x sk: add touchscreen support
+
+Add missing nodes for the touchscreen available
+on AM335x EVM SK.
+
+Signed-off-by: Felipe Balbi <balbi@ti.com>
+---
+ arch/arm/boot/dts/am335x-evmsk.dts |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/boot/dts/am335x-evmsk.dts b/arch/arm/boot/dts/am335x-evmsk.dts
+index 7fae4e0..ddbf6ca 100644
+--- a/arch/arm/boot/dts/am335x-evmsk.dts
++++ b/arch/arm/boot/dts/am335x-evmsk.dts
+@@ -454,6 +454,16 @@
+ 	phy-mode = "rgmii-txid";
+ };
+ 
++&tscadc {
++	status = "okay";
++	tsc {
++		ti,wires = <4>;
++		ti,x-plate-resistance = <200>;
++		ti,coordinate-readouts = <5>;
++		ti,wire-config = <0x00 0x11 0x22 0x33>;
++	};
++};
++
+ &gpio0 {
+ 	ti,no-reset;
+ };
+-- 
+1.7.10.4
+

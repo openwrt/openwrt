@@ -1,0 +1,40 @@
+From df3fbecdac2b46b7716c16c185cba357cc55d00a Mon Sep 17 00:00:00 2001
+From: Peter Ujfalusi <peter.ujfalusi@ti.com>
+Date: Mon, 23 Sep 2013 10:34:07 +0300
+Subject: [PATCH 223/752] ARM/dts: am335x-evm: Clarify the audio codec node
+
+The board have tlv320aic3106 codec. Use this name in the dts file instead
+of the generic ltv320aic3x.
+
+Signed-off-by: Peter Ujfalusi <peter.ujfalusi@ti.com>
+---
+ arch/arm/boot/dts/am335x-evm.dts |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/am335x-evm.dts b/arch/arm/boot/dts/am335x-evm.dts
+index baeb805..e52d09c 100644
+--- a/arch/arm/boot/dts/am335x-evm.dts
++++ b/arch/arm/boot/dts/am335x-evm.dts
+@@ -255,8 +255,8 @@
+ 				reg = <0x48>;
+ 			};
+ 
+-			tlv320aic3x: tlv320aic3x@1b {
+-				compatible = "ti,tlv320aic3x";
++			tlv320aic3106: tlv320aic3106@1b {
++				compatible = "ti,tlv320aic3106";
+ 				reg = <0x1b>;
+ 				status = "okay";
+ 
+@@ -366,7 +366,7 @@
+ 		sound {
+ 			compatible = "ti,da830-evm-audio";
+ 			ti,model = "DA830 EVM";
+-			ti,audio-codec = <&tlv320aic3x>;
++			ti,audio-codec = <&tlv320aic3106>;
+ 			ti,mcasp-controller = <&mcasp1>;
+ 			ti,codec-clock-rate = <12000000>;
+ 			ti,audio-routing =
+-- 
+1.7.10.4
+

@@ -1,0 +1,100 @@
+From d4c71e652f457077eac1ad83a9e32d3f11fc99b2 Mon Sep 17 00:00:00 2001
+From: Peter Ujfalusi <peter.ujfalusi@ti.com>
+Date: Mon, 23 Sep 2013 10:34:09 +0300
+Subject: [PATCH 225/752] ARM/dts: am335x-evmsk: Audio support
+
+AM335x EVM-SK have only support for audio playback (stereo jack on the
+board) via tlv320aic3106 codec connected to McASP1.
+Enable the support for audio playback on the board:
+- McASP1 configuration
+- tlv320aic3106 configuration
+- Machine driver.
+
+Signed-off-by: Peter Ujfalusi <peter.ujfalusi@ti.com>
+---
+ arch/arm/boot/dts/am335x-evmsk.dts |   51 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
+
+diff --git a/arch/arm/boot/dts/am335x-evmsk.dts b/arch/arm/boot/dts/am335x-evmsk.dts
+index 879981d..b87ce7f 100644
+--- a/arch/arm/boot/dts/am335x-evmsk.dts
++++ b/arch/arm/boot/dts/am335x-evmsk.dts
+@@ -158,6 +158,15 @@
+ 				0x14c (PIN_INPUT_PULLDOWN | MUX_MODE7)
+ 			>;
+ 		};
++
++		mcasp1_pins: mcasp1_pins {
++			pinctrl-single,pins = <
++				0x10c (PIN_INPUT_PULLDOWN | MUX_MODE4) /* mii1_crs.mcasp1_aclkx */
++				0x110 (PIN_INPUT_PULLDOWN | MUX_MODE4) /* mii1_rxerr.mcasp1_fsx */
++				0x108 (PIN_OUTPUT_PULLDOWN | MUX_MODE4) /* mii1_col.mcasp1_axr2 */
++				0x144 (PIN_INPUT_PULLDOWN | MUX_MODE4) /* rmii1_ref_clk.mcasp1_axr3 */
++			>;
++		};
+ 	};
+ 
+ 	ocp {
+@@ -206,6 +215,18 @@
+ 				st,max-limit-y = <550>;
+ 				st,max-limit-z = <750>;
+ 			};
++
++			tlv320aic3106: tlv320aic3106@1b {
++				compatible = "ti,tlv320aic3106";
++				reg = <0x1b>;
++				status = "okay";
++
++				/* Regulators */
++				AVDD-supply = <&vaux2_reg>;
++				IOVDD-supply = <&vaux2_reg>;
++				DRVDD-supply = <&vaux2_reg>;
++				DVDD-supply = <&vbat>;
++			};
+ 		};
+ 
+ 		musb: usb@47400000 {
+@@ -233,6 +254,17 @@
+ 				pinctrl-0 = <&ecap2_pins>;
+ 			};
+ 		};
++
++		sound {
++			compatible = "ti,da830-evm-audio";
++			ti,model = "AM335x-EVMSK";
++			ti,audio-codec = <&tlv320aic3106>;
++			ti,mcasp-controller = <&mcasp1>;
++			ti,codec-clock-rate = <24576000>;
++			ti,audio-routing =
++				"Headphone Jack",       "HPLOUT",
++				"Headphone Jack",       "HPROUT";
++		};
+ 	};
+ 
+ 	vbat: fixedregulator@0 {
+@@ -430,3 +462,22 @@
+ 	status = "okay";
+ 	vmmc-supply = <&vmmc_reg>;
+ };
++
++&mcasp1 {
++		pinctrl-names = "default";
++		pinctrl-0 = <&mcasp1_pins>;
++
++		status = "okay";
++
++		op-mode = <0>;          /* MCASP_IIS_MODE */
++		tdm-slots = <2>;
++		num-serializer = <16>;
++		serial-dir = <  /* 0: INACTIVE, 1: TX, 2: RX */
++			0 0 1 2
++			0 0 0 0
++			0 0 0 0
++			0 0 0 0
++		>;
++		tx-num-evt = <1>;
++		rx-num-evt = <1>;
++};
+-- 
+1.7.10.4
+
