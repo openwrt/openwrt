@@ -1,0 +1,40 @@
+From 92d51856d7405fa55bcf3d6f20d7e97e0bf2656c Mon Sep 17 00:00:00 2001
+From: Nishanth Menon <nm@ti.com>
+Date: Wed, 16 Oct 2013 15:39:01 +0000
+Subject: ARM: OMAP3+: do not register non-dt OPP tables for device tree boot
+
+OMAP3+ supports both device tree and non-device tree boot.
+Device tree bindings for OMAP3+ is supposed to be added via dts following:
+Documentation/devicetree/bindings/power/opp.txt
+
+Since we now have device tree entries for OMAP3+ cpu OPPs,
+The current code wrongly adds duplicate OPPs. So, dont register OPPs
+when booting using device tree.
+
+Signed-off-by: Nishanth Menon <nm@ti.com>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+diff --git a/arch/arm/mach-omap2/opp.c b/arch/arm/mach-omap2/opp.c
+index bd41d59..82fd8c7 100644
+--- a/arch/arm/mach-omap2/opp.c
++++ b/arch/arm/mach-omap2/opp.c
+@@ -17,6 +17,7 @@
+  * GNU General Public License for more details.
+  */
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/opp.h>
+ #include <linux/cpu.h>
+ 
+@@ -40,6 +41,9 @@ int __init omap_init_opp_table(struct omap_opp_def *opp_def,
+ {
+ 	int i, r;
+ 
++	if (of_have_populated_dt())
++		return -EINVAL;
++
+ 	if (!opp_def || !opp_def_size) {
+ 		pr_err("%s: invalid params!\n", __func__);
+ 		return -EINVAL;
+--
+cgit v0.9.2

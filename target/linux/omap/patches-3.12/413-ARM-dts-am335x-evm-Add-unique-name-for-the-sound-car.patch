@@ -1,0 +1,32 @@
+From d4b7ebbadccb4632ad16f07a19cee57aa7b73cdb Mon Sep 17 00:00:00 2001
+From: Peter Ujfalusi <peter.ujfalusi@ti.com>
+Date: Mon, 23 Sep 2013 10:34:08 +0300
+Subject: [PATCH 224/752] ARM/dts: am335x-evm: Add unique name for the sound
+ card
+
+Change the name of the sound card to 'AM335x-EVM' from 'DA830 EVM'.
+User space might need to differentiate between the boards when it comes to
+audio setup (mixer config, PCM lookup, etc).
+It is better to use unique name for different boards.
+
+Signed-off-by: Peter Ujfalusi <peter.ujfalusi@ti.com>
+---
+ arch/arm/boot/dts/am335x-evm.dts |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/am335x-evm.dts b/arch/arm/boot/dts/am335x-evm.dts
+index e52d09c..47613fd 100644
+--- a/arch/arm/boot/dts/am335x-evm.dts
++++ b/arch/arm/boot/dts/am335x-evm.dts
+@@ -365,7 +365,7 @@
+ 
+ 		sound {
+ 			compatible = "ti,da830-evm-audio";
+-			ti,model = "DA830 EVM";
++			ti,model = "AM335x-EVM";
+ 			ti,audio-codec = <&tlv320aic3106>;
+ 			ti,mcasp-controller = <&mcasp1>;
+ 			ti,codec-clock-rate = <12000000>;
+-- 
+1.7.10.4
+

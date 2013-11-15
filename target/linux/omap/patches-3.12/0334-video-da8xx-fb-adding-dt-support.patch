@@ -1,0 +1,211 @@
+From 884d3962ef4787c8cf0b8a7a673531c623d1dff8 Mon Sep 17 00:00:00 2001
+From: Darren Etheridge <detheridge@ti.com>
+Date: Fri, 2 Aug 2013 15:35:36 -0500
+Subject: [PATCH 334/752] video: da8xx-fb: adding dt support
+
+Enhancing driver to enable probe triggered by a corresponding dt entry.
+
+Add da8xx-fb.txt documentation to devicetree section.
+
+Obtain fb_videomode details for the connected lcd panel using the
+display timing details present in DT.
+
+Ensure that platform data is present before checking whether platform
+callback is present (the one used to control backlight). So far this
+was not an issue as driver was purely non-DT triggered, but now DT
+support has been added this check must be performed.
+
+v2: squashing multiple commits from Afzal Mohammed (afzal@ti.com)
+v3: remove superfluous cast
+v4: expose both ti,am3352-lcdc and ti,da830-lcdc for .compatible
+	as driver can use enhanced features of all version of the
+	silicon block.
+v5: addressed review comments from Prabhakar Lad
+v6: Changed the .compatible naming to match the existing drm bindings
+	for am33xx devices
+v7: clarify which compatible to use in the documentation for DA850
+
+Acked-by: Lad, Prabhakar <prabhakar.csengg@gmail.com>
+Signed-off-by: Darren Etheridge <detheridge@ti.com>
+---
+ .../devicetree/bindings/video/da8xx-fb.txt         |   42 +++++++++++++
+ drivers/video/da8xx-fb.c                           |   66 +++++++++++++++++++-
+ 2 files changed, 105 insertions(+), 3 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/video/da8xx-fb.txt
+
+diff --git a/Documentation/devicetree/bindings/video/da8xx-fb.txt b/Documentation/devicetree/bindings/video/da8xx-fb.txt
+new file mode 100644
+index 0000000..d86afe7
+--- /dev/null
++++ b/Documentation/devicetree/bindings/video/da8xx-fb.txt
+@@ -0,0 +1,42 @@
++TI LCD Controller on DA830/DA850/AM335x SoC's
++
++Required properties:
++- compatible:
++	DA830, DA850 - "ti,da8xx-tilcdc"
++	AM335x SoC's - "ti,am33xx-tilcdc"
++- reg: Address range of lcdc register set
++- interrupts: lcdc interrupt
++- display-timings: typical videomode of lcd panel, represented as child.
++  Refer Documentation/devicetree/bindings/video/display-timing.txt for
++  display timing binding details. If multiple videomodes are mentioned
++  in display timings node, typical videomode has to be mentioned as the
++  native mode or it has to be first child (driver cares only for native
++  videomode).
++
++Recommended properties:
++- ti,hwmods: Name of the hwmod associated to the LCDC
++
++Example for am335x SoC's:
++
++lcdc@4830e000 {
++	compatible = "ti,am33xx-tilcdc";
++	reg =  <0x4830e000 0x1000>;
++	interrupts = <36>;
++	ti,hwmods = "lcdc";
++	status = "okay";
++	display-timings {
++		800x480p62 {
++			clock-frequency = <30000000>;
++			hactive = <800>;
++			vactive = <480>;
++			hfront-porch = <39>;
++			hback-porch = <39>;
++			hsync-len = <47>;
++			vback-porch = <29>;
++			vfront-porch = <13>;
++			vsync-len = <2>;
++			hsync-active = <1>;
++			vsync-active = <1>;
++		};
++	};
++};
+diff --git a/drivers/video/da8xx-fb.c b/drivers/video/da8xx-fb.c
+index e030e17..74cc2dc 100644
+--- a/drivers/video/da8xx-fb.c
++++ b/drivers/video/da8xx-fb.c
+@@ -36,6 +36,7 @@
+ #include <linux/slab.h>
+ #include <linux/delay.h>
+ #include <linux/lcm.h>
++#include <video/of_display_timing.h>
+ #include <video/da8xx-fb.h>
+ #include <asm/div64.h>
+ 
+@@ -1312,12 +1313,54 @@ static struct fb_ops da8xx_fb_ops = {
+ 	.fb_blank = cfb_blank,
+ };
+ 
++static struct lcd_ctrl_config *da8xx_fb_create_cfg(struct platform_device *dev)
++{
++	struct lcd_ctrl_config *cfg;
++
++	cfg = devm_kzalloc(&dev->dev, sizeof(struct fb_videomode), GFP_KERNEL);
++	if (!cfg)
++		return NULL;
++
++	/* default values */
++
++	if (lcd_revision == LCD_VERSION_1)
++		cfg->bpp = 16;
++	else
++		cfg->bpp = 32;
++
++	/*
++	 * For panels so far used with this LCDC, below statement is sufficient.
++	 * For new panels, if required, struct lcd_ctrl_cfg fields to be updated
++	 * with additional/modified values. Those values would have to be then
++	 * obtained from dt(requiring new dt bindings).
++	 */
++
++	cfg->panel_shade = COLOR_ACTIVE;
++
++	return cfg;
++}
++
+ static struct fb_videomode *da8xx_fb_get_videomode(struct platform_device *dev)
+ {
+ 	struct da8xx_lcdc_platform_data *fb_pdata = dev->dev.platform_data;
+ 	struct fb_videomode *lcdc_info;
++	struct device_node *np = dev->dev.of_node;
+ 	int i;
+ 
++	if (np) {
++		lcdc_info = devm_kzalloc(&dev->dev,
++					 sizeof(struct fb_videomode),
++					 GFP_KERNEL);
++		if (!lcdc_info)
++			return NULL;
++
++		if (of_get_fb_videomode(np, lcdc_info, OF_USE_NATIVE_MODE)) {
++			dev_err(&dev->dev, "timings not available in DT\n");
++			return NULL;
++		}
++		return lcdc_info;
++	}
++
+ 	for (i = 0, lcdc_info = known_lcd_panels;
+ 		i < ARRAY_SIZE(known_lcd_panels); i++, lcdc_info++) {
+ 		if (strcmp(fb_pdata->type, lcdc_info->name) == 0)
+@@ -1346,7 +1389,7 @@ static int fb_probe(struct platform_device *device)
+ 	int ret;
+ 	unsigned long ulcm;
+ 
+-	if (fb_pdata == NULL) {
++	if (fb_pdata == NULL && !device->dev.of_node) {
+ 		dev_err(&device->dev, "Can not get platform data\n");
+ 		return -ENOENT;
+ 	}
+@@ -1386,7 +1429,10 @@ static int fb_probe(struct platform_device *device)
+ 		break;
+ 	}
+ 
+-	lcd_cfg = (struct lcd_ctrl_config *)fb_pdata->controller_data;
++	if (device->dev.of_node)
++		lcd_cfg = da8xx_fb_create_cfg(device);
++	else
++		lcd_cfg = fb_pdata->controller_data;
+ 
+ 	if (!lcd_cfg) {
+ 		ret = -EINVAL;
+@@ -1405,7 +1451,7 @@ static int fb_probe(struct platform_device *device)
+ 	par->dev = &device->dev;
+ 	par->lcdc_clk = tmp_lcdc_clk;
+ 	par->lcdc_clk_rate = clk_get_rate(par->lcdc_clk);
+-	if (fb_pdata->panel_power_ctrl) {
++	if (fb_pdata && fb_pdata->panel_power_ctrl) {
+ 		par->panel_power_ctrl = fb_pdata->panel_power_ctrl;
+ 		par->panel_power_ctrl(1);
+ 	}
+@@ -1653,6 +1699,19 @@ static int fb_resume(struct platform_device *dev)
+ #define fb_resume NULL
+ #endif
+ 
++#if IS_ENABLED(CONFIG_OF)
++static const struct of_device_id da8xx_fb_of_match[] = {
++	/*
++	 * this driver supports version 1 and version 2 of the
++	 * Texas Instruments lcd controller (lcdc) hardware block
++	 */
++	{.compatible = "ti,da8xx-tilcdc", },
++	{.compatible = "ti,am33xx-tilcdc", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, da8xx_fb_of_match);
++#endif
++
+ static struct platform_driver da8xx_fb_driver = {
+ 	.probe = fb_probe,
+ 	.remove = fb_remove,
+@@ -1661,6 +1720,7 @@ static struct platform_driver da8xx_fb_driver = {
+ 	.driver = {
+ 		   .name = DRIVER_NAME,
+ 		   .owner = THIS_MODULE,
++		   .of_match_table = of_match_ptr(da8xx_fb_of_match),
+ 		   },
+ };
+ 
+-- 
+1.7.10.4
+

@@ -1,0 +1,29 @@
+From 7fd70076a17c2a5b1b4bac0175a25e5d04075e43 Mon Sep 17 00:00:00 2001
+From: Peter Ujfalusi <peter.ujfalusi@ti.com>
+Date: Mon, 23 Sep 2013 11:25:03 +0300
+Subject: [PATCH 227/752] ARM/dts: am335x-evm: Remove num-serializer property
+ for mcasp node
+
+The num-serializer property is redundant and the driver no longer needs it.
+
+Signed-off-by: Peter Ujfalusi <peter.ujfalusi@ti.com>
+---
+ arch/arm/boot/dts/am335x-evm.dts |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/am335x-evm.dts b/arch/arm/boot/dts/am335x-evm.dts
+index 47613fd..c4494a2 100644
+--- a/arch/arm/boot/dts/am335x-evm.dts
++++ b/arch/arm/boot/dts/am335x-evm.dts
+@@ -450,7 +450,7 @@
+ 
+ 		op-mode = <0>;          /* MCASP_IIS_MODE */
+ 		tdm-slots = <2>;
+-		num-serializer = <16>;
++		/* 16 serializer */
+ 		serial-dir = <  /* 0: INACTIVE, 1: TX, 2: RX */
+ 			0 0 1 2
+ 			0 0 0 0
+-- 
+1.7.10.4
+

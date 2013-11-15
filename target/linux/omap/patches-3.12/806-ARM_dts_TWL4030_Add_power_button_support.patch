@@ -1,0 +1,26 @@
+From a3317d4f2fcd064071bc188cbbc2769dda73e487 Mon Sep 17 00:00:00 2001
+From: Sebastian Reichel <sre@debian.org>
+Date: Tue, 22 Oct 2013 22:49:43 +0000
+Subject: ARM: dts: TWL4030: Add power button support
+
+Enable support for the power button.
+
+Signed-off-by: Sebastian Reichel <sre@debian.org>
+Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+---
+diff --git a/arch/arm/boot/dts/twl4030.dtsi b/arch/arm/boot/dts/twl4030.dtsi
+index cb5afcd..af7fa40 100644
+--- a/arch/arm/boot/dts/twl4030.dtsi
++++ b/arch/arm/boot/dts/twl4030.dtsi
+@@ -133,4 +133,9 @@
+ 		compatible = "ti,twl4030-pwmled";
+ 		#pwm-cells = <2>;
+ 	};
++
++	twl_pwrbutton: pwrbutton {
++		compatible = "ti,twl4030-pwrbutton";
++		interrupts = <8>;
++	};
+ };
+--
+cgit v0.9.2

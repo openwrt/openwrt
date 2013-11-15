@@ -1,0 +1,44 @@
+From e7243b7673a20ac28cfdc78c8862587ea8173a39 Mon Sep 17 00:00:00 2001
+From: Markus Pargmann <mpa@pengutronix.de>
+Date: Mon, 14 Oct 2013 12:49:21 +0000
+Subject: ARM: dts: am33xx, change usb ctrl module label
+
+Control module is not usb specific.
+Changes the label to usb_ctrl_mod.
+
+Signed-off-by: Markus Pargmann <mpa@pengutronix.de>
+Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+---
+diff --git a/arch/arm/boot/dts/am33xx.dtsi b/arch/arm/boot/dts/am33xx.dtsi
+index 97f5019..0ca13ad 100644
+--- a/arch/arm/boot/dts/am33xx.dtsi
++++ b/arch/arm/boot/dts/am33xx.dtsi
+@@ -416,7 +416,7 @@
+ 			ti,hwmods = "usb_otg_hs";
+ 			status = "disabled";
+ 
+-			ctrl_mod: control@44e10000 {
++			usb_ctrl_mod: control@44e10000 {
+ 				compatible = "ti,am335x-usb-ctrl-module";
+ 				reg = <0x44e10620 0x10
+ 					0x44e10648 0x4>;
+@@ -429,7 +429,7 @@
+ 				reg = <0x47401300 0x100>;
+ 				reg-names = "phy";
+ 				status = "disabled";
+-				ti,ctrl_mod = <&ctrl_mod>;
++				ti,ctrl_mod = <&usb_ctrl_mod>;
+ 			};
+ 
+ 			usb0: usb@47401000 {
+@@ -477,7 +477,7 @@
+ 				reg = <0x47401b00 0x100>;
+ 				reg-names = "phy";
+ 				status = "disabled";
+-				ti,ctrl_mod = <&ctrl_mod>;
++				ti,ctrl_mod = <&usb_ctrl_mod>;
+ 			};
+ 
+ 			usb1: usb@47401800 {
+--
+cgit v0.9.2

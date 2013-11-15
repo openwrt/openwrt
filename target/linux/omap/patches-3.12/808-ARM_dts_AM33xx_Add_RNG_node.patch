@@ -1,0 +1,60 @@
+From ed845d6b78bf32b396f7f1278eed0b87446934b1 Mon Sep 17 00:00:00 2001
+From: Lokesh Vutla <lokeshvutla@ti.com>
+Date: Thu, 29 Aug 2013 12:52:09 +0000
+Subject: ARM: dts: AM33xx: Add RNG node
+
+Add the AM33xx RNG module's device tree data.
+Also add Documentation file describing the data
+for the RNG module.
+
+Signed-off-by: Lokesh Vutla <lokeshvutla@ti.com>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+diff --git a/Documentation/devicetree/bindings/hwrng/omap_rng.txt b/Documentation/devicetree/bindings/hwrng/omap_rng.txt
+new file mode 100644
+index 0000000..6a62acd
+--- /dev/null
++++ b/Documentation/devicetree/bindings/hwrng/omap_rng.txt
+@@ -0,0 +1,22 @@
++OMAP SoC HWRNG Module
++
++Required properties:
++
++- compatible : Should contain entries for this and backward compatible
++  RNG versions:
++  - "ti,omap2-rng" for OMAP2.
++  - "ti,omap4-rng" for OMAP4, OMAP5 and AM33XX.
++  Note that these two versions are incompatible.
++- ti,hwmods: Name of the hwmod associated with the RNG module
++- reg : Offset and length of the register set for the module
++- interrupts : the interrupt number for the RNG module.
++		Only used for "ti,omap4-rng".
++
++Example:
++/* AM335x */
++rng: rng@48310000 {
++	compatible = "ti,omap4-rng";
++	ti,hwmods = "rng";
++	reg = <0x48310000 0x2000>;
++	interrupts = <111>;
++};
+diff --git a/arch/arm/boot/dts/am33xx.dtsi b/arch/arm/boot/dts/am33xx.dtsi
+index 9ae258e..fcb9c8e 100644
+--- a/arch/arm/boot/dts/am33xx.dtsi
++++ b/arch/arm/boot/dts/am33xx.dtsi
+@@ -750,5 +750,12 @@
+ 				<&edma 11>;
+ 			dma-names = "tx", "rx";
+ 		};
++
++		rng: rng@48310000 {
++			compatible = "ti,omap4-rng";
++			ti,hwmods = "rng";
++			reg = <0x48310000 0x2000>;
++			interrupts = <111>;
++		};
+ 
+ 	};
+ };
+--
+cgit v0.9.2

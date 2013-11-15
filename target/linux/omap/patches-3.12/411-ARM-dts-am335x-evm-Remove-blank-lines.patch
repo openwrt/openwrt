@@ -1,0 +1,35 @@
+From 76b54fecdd214b32f568b2f97102fc1ab5745fa1 Mon Sep 17 00:00:00 2001
+From: Peter Ujfalusi <peter.ujfalusi@ti.com>
+Date: Mon, 23 Sep 2013 10:34:06 +0300
+Subject: [PATCH 222/752] ARM/dts: am335x-evm: Remove blank lines
+
+Clean up the blank lines where they are not needed.
+
+Signed-off-by: Peter Ujfalusi <peter.ujfalusi@ti.com>
+---
+ arch/arm/boot/dts/am335x-evm.dts |    2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/am335x-evm.dts b/arch/arm/boot/dts/am335x-evm.dts
+index 664fa2a..baeb805 100644
+--- a/arch/arm/boot/dts/am335x-evm.dts
++++ b/arch/arm/boot/dts/am335x-evm.dts
+@@ -266,7 +266,6 @@
+ 				DRVDD-supply = <&vaux2_reg>;
+ 				DVDD-supply = <&vbat>;
+ 			};
+-
+ 		};
+ 
+ 		elm: elm@48080000 {
+@@ -376,7 +375,6 @@
+ 				"LINE1L",               "Line In",
+ 				"LINE1R",               "Line In";
+ 		};
+-
+ 	};
+ 
+ 	vbat: fixedregulator@0 {
+-- 
+1.7.10.4
+

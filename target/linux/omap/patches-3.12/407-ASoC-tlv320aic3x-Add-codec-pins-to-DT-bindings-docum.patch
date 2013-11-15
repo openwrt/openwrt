@@ -1,0 +1,46 @@
+From 6afd5cb1f92a1965ffa3c0f304f95ab19b49fa84 Mon Sep 17 00:00:00 2001
+From: Jyri Sarha <jsarha@ti.com>
+Date: Thu, 12 Sep 2013 14:37:08 +0300
+Subject: [PATCH 218/752] ASoC: tlv320aic3x: Add codec pins to DT bindings
+ document
+
+Add list of codec pins to tlv320aic3x DT bindings document.
+
+Signed-off-by: Jyri Sarha <jsarha@ti.com>
+---
+ .../devicetree/bindings/sound/tlv320aic3x.txt       |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/sound/tlv320aic3x.txt b/Documentation/devicetree/bindings/sound/tlv320aic3x.txt
+index ba26477..5e6040c 100644
+--- a/Documentation/devicetree/bindings/sound/tlv320aic3x.txt
++++ b/Documentation/devicetree/bindings/sound/tlv320aic3x.txt
+@@ -27,6 +27,25 @@ Optional properties:
+ - AVDD-supply, IOVDD-supply, DRVDD-supply, DVDD-supply : power supplies for the
+   device as covered in Documentation/devicetree/bindings/regulator/regulator.txt
+ 
++CODEC output pins:
++  * LLOUT
++  * RLOUT
++  * MONO_LOUT
++  * HPLOUT
++  * HPROUT
++  * HPLCOM
++  * HPRCOM
++
++CODEC input pins:
++  * MIC3L
++  * MIC3R
++  * LINE1L
++  * LINE2L
++  * LINE1R
++  * LINE2R
++
++The pins can be used in referring sound node's audio-routing property.
++
+ Example:
+ 
+ tlv320aic3x: tlv320aic3x@1b {
+-- 
+1.7.10.4
+
