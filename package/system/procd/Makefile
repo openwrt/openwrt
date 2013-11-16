@@ -1,14 +1,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=procd
-PKG_VERSION:=2013-11-13
+PKG_VERSION:=2013-11-15
 
 PKG_RELEASE=$(PKG_SOURCE_VERSION)-1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/luci2/procd.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=f9d31edb8938341b9217ee4c14eb58111414eb97
+PKG_SOURCE_VERSION:=93d71ca996eb50b951169414cf541bf0fe4f647e
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -30,15 +30,12 @@ define Package/procd
 endef
 
 define Package/procd/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/lib/functions $(1)/etc/init.d $(1)/lib
+	$(INSTALL_DIR) $(1)/sbin  $(1)/etc $(1)/lib/functions
 
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/{procd,askfirst,udevtrigger,logread,validate_data} $(1)/sbin/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libvalidate.so $(1)/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/{init,procd,askfirst,udevtrigger} $(1)/sbin/
 	$(INSTALL_BIN) ./files/reload_config $(1)/sbin/
-	$(INSTALL_BIN) ./files/log.init $(1)/etc/init.d/log
 	$(INSTALL_DATA) ./files/hotplug*.json $(1)/etc/
 	$(INSTALL_DATA) ./files/procd.sh $(1)/lib/functions/
-	ln -s /sbin/procd $(1)/sbin/init
 endef
 
 $(eval $(call BuildPackage,procd))
