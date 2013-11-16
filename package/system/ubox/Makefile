@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ubox
-PKG_VERSION:=2013-11-07.1
-PKG_RELEASE=$(PKG_SOURCE_VERSION)-1
+PKG_VERSION:=2013-11-16
+PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/luci2/ubox.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=0588218d4bc58b0e099272338decbe4734f5678b
+PKG_SOURCE_VERSION:=b5dc53828bc69611cb474c95c9b23e70a2288391
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -36,9 +36,11 @@ define Package/block-mount
 endef
 
 define Package/ubox/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/sbin $(1)/usr/sbin $(1)/lib/ $(1)/etc/init.d/
 
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{mount_root,kmodloader} $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{mount_root,kmodloader,logd,logread,validate_data} $(1)/sbin/
+	$(INSTALL_BIN) ./files/log.init $(1)/etc/init.d/log
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libvalidate.so $(1)/lib
 	ln -s /sbin/mount_root $(1)/sbin/switch2jffs
 	ln -s /sbin/mount_root $(1)/sbin/jffs2reset
 	ln -s /sbin/mount_root $(1)/sbin/jffs2mark
