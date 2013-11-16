@@ -110,7 +110,7 @@ int main(int argc, const char **argv)
 
 	/* Clear remaining bits. */
 	while (v6it < 128) {
-		byte6 = (unsigned char *)(&v6.s6_addr) + (v6it >> 2);
+		byte6 = (unsigned char *)(&v6.s6_addr) + (v6it >> 3);
 		bit6 = 128 >> (v6it & 0x07);
 
 		*byte6 &= ~bit6;
