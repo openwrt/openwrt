@@ -120,9 +120,8 @@ get_status_led() {
 	whr-g300n)
 		status_led="whr-g300n:green:router"
 		;;
-	whr-300hp2)
-		status_led="buffalo:green:status"
-		;;
+	wmr300 | \
+	whr-300hp2 | \
 	whr-600d)
 		status_led="buffalo:green:status"
 		;;

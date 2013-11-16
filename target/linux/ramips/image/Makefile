@@ -634,6 +634,19 @@ endif
 
 
 #
+# MT7620N Profiles
+#
+
+Image/Build/Profile/WMR300=$(call BuildFirmware/Default8M/$(1),$(1),wmr-300,WMR300)
+
+ifeq ($(SUBTARGET),mt7620n)
+define Image/Build/Profile/Default
+	$(call Image/Build/Profile/WMR300,$(1))
+endef
+endif
+
+
+#
 # Generic Targets
 #
 define Image/BuildKernel
