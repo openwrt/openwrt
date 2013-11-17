@@ -1,0 +1,96 @@
+/dts-v1/;
+
+/include/ "mt7620n.dtsi"
+
+/ {
+	compatible = "buffalo,wmr-300", "ralink,mt7620n-soc";
+	model = "Buffalo WMR-300";
+
+	palmbus@10000000 {
+		gpio2: gpio@660 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l6405d";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "en25q64";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x7b0000>;
+				};
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		ralink,port-map = "wllll";
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			default {
+				ralink,group = "i2c", "ephy";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		aoss1 {
+			label = "buffalo:red:aoss";
+			gpios = <&gpio2 1 1>;
+		};
+		aoss2 {
+			label = "buffalo:green:aoss";
+			gpios = <&gpio2 2 1>;
+		};
+		power {
+			label = "buffalo:green:status";
+			gpios = <&gpio2 4 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		reset {
+			label = "reset";
+			gpios = <&gpio0 1 1>;
+			linux,code = <0x198>;
+		};
+		aoss {
+			label = "aoss";
+			gpios = <&gpio0 2 1>;
+			linux,code = <0x211>;
+		};
+	};
+};
