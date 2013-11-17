@@ -1,0 +1,12 @@
+diff -ruN old/drivers/mtd/devices/block2mtd.c new/drivers/mtd/devices/block2mtd.c
+--- old/drivers/mtd/devices/block2mtd.c	2013-11-16 13:04:16.000000000 +0100
++++ new/drivers/mtd/devices/block2mtd.c	2013-11-17 12:00:10.820195738 +0100
+@@ -397,7 +397,7 @@
+ 		}
+ 	}
+ 	if (token[2] && (strlen(token[2]) + 1 > 80))
+-		parse_err("mtd device name too long");
++		pr_err("mtd device name too long\n");
+ 
+ 	add_device(name, erase_size, token[2]);
+ 
