@@ -23,6 +23,7 @@ include $(INCLUDE_DIR)/nls.mk
 define Package/xfsprogs/default
   SECTION:=utils
   CATEGORY:=Utilities
+  SUBMENU:=Filesystem
   DEPENDS:=+libuuid +libpthread +librt
   URL:=http://oss.sgi.com/projects/xfs
 endef
