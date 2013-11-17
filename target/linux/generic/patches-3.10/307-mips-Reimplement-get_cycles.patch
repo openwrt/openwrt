@@ -1,0 +1,69 @@
+From 9c9b415c50bc298ac61412dff856eae2f54889ee Mon Sep 17 00:00:00 2001
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Thu, 12 Sep 2013 13:47:32 +0200
+Subject: [PATCH] MIPS: Reimplement get_cycles().
+
+This essentially reverts commit efb9ca08b5a2374b29938cdcab417ce4feb14b54
+(kernel.org) / 58020a106879a8b372068741c81f0015c9b0b96dbv [[MIPS] Change
+get_cycles to always return 0.]
+
+Most users of get_cycles() invoke it as a timing interface.  That's why
+in modern kernels it was never very much missed for.  /dev/random however
+uses get_cycles() in the how the jitter in the interrupt timing contains
+some useful entropy.
+
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/include/asm/timex.h |   33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
+
+--- a/arch/mips/include/asm/timex.h
++++ b/arch/mips/include/asm/timex.h
+@@ -10,6 +10,7 @@
+ 
+ #ifdef __KERNEL__
+ 
++#include <asm/cpu-features.h>
+ #include <asm/mipsregs.h>
+ 
+ /*
+@@ -33,9 +34,38 @@
+ 
+ typedef unsigned int cycles_t;
+ 
++/*
++ * On R4000/R4400 before version 5.0 an erratum exists such that if the
++ * cycle counter is read in the exact moment that it is matching the
++ * compare register, no interrupt will be generated.
++ *
++ * There is a suggested workaround and also the erratum can't strike if
++ * the compare interrupt isn't being used as the clock source device.
++ * However for now the implementaton of this function doesn't get these
++ * fine details right.
++ */
+ static inline cycles_t get_cycles(void)
+ {
+-	return 0;
++	switch (cpu_data[0].cputype) {
++	case CPU_R4400PC:
++	case CPU_R4400SC:
++	case CPU_R4400MC:
++		if ((read_c0_prid() & 0xff) >= 0x0050)
++			return read_c0_count();
++		break;
++
++        case CPU_R4000PC:
++        case CPU_R4000SC:
++        case CPU_R4000MC:
++		break;
++
++	default:
++		if (cpu_has_counter)
++			return read_c0_count();
++		break;
++	}
++
++	return 0;	/* no usable counter */
+ }
+ 
+ #endif /* __KERNEL__ */
