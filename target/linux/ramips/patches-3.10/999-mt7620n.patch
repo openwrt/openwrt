@@ -1,0 +1,57 @@
+Index: linux-3.10.18/arch/mips/include/asm/mach-ralink/mt7620.h
+===================================================================
+--- linux-3.10.18.orig/arch/mips/include/asm/mach-ralink/mt7620.h	2013-11-17 17:50:01.773020032 +0100
++++ linux-3.10.18/arch/mips/include/asm/mach-ralink/mt7620.h	2013-11-17 17:52:24.373025950 +0100
+@@ -24,11 +24,8 @@
+ #define SYSC_REG_CPLL_CONFIG0		0x54
+ #define SYSC_REG_CPLL_CONFIG1		0x58
+ 
+-#define MT7620N_CHIP_NAME0		0x33365452
+-#define MT7620N_CHIP_NAME1		0x20203235
+-
+-#define MT7620A_CHIP_NAME0		0x3637544d
+-#define MT7620A_CHIP_NAME1		0x20203032
++#define MT7620_CHIP_NAME0		0x3637544d
++#define MT7620_CHIP_NAME1		0x20203032
+ 
+ #define CHIP_REV_PKG_MASK		0x1
+ #define CHIP_REV_PKG_SHIFT		16
+Index: linux-3.10.18/arch/mips/ralink/mt7620.c
+===================================================================
+--- linux-3.10.18.orig/arch/mips/ralink/mt7620.c	2013-11-17 17:50:01.773020032 +0100
++++ linux-3.10.18/arch/mips/ralink/mt7620.c	2013-11-17 17:52:24.373025950 +0100
+@@ -167,22 +167,27 @@
+ 	u32 cfg0;
+ 	u32 pmu0;
+ 	u32 pmu1;
++	u32 bga;
+ 
+ 	n0 = __raw_readl(sysc + SYSC_REG_CHIP_NAME0);
+ 	n1 = __raw_readl(sysc + SYSC_REG_CHIP_NAME1);
++	rev = __raw_readl(sysc + SYSC_REG_CHIP_REV);
++	bga = (rev >> CHIP_REV_PKG_SHIFT) & CHIP_REV_PKG_MASK;
+ 
+-	if (n0 == MT7620N_CHIP_NAME0 && n1 == MT7620N_CHIP_NAME1) {
+-		name = "MT7620N";
+-		soc_info->compatible = "ralink,mt7620n-soc";
+-	} else if (n0 == MT7620A_CHIP_NAME0 && n1 == MT7620A_CHIP_NAME1) {
++	if (n0 != MT7620_CHIP_NAME0 || n1 != MT7620_CHIP_NAME1)
++		panic("mt7620: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
++
++	if (bga) {
+ 		name = "MT7620A";
+ 		soc_info->compatible = "ralink,mt7620a-soc";
+ 	} else {
+-		panic("mt7620: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
++		name = "MT7620N";
++		soc_info->compatible = "ralink,mt7620n-soc";
++#ifdef CONFIG_PCI
++		panic("mt7620n is only supported for non pci kernels");
++#endif
+ 	}
+ 
+-	rev = __raw_readl(sysc + SYSC_REG_CHIP_REV);
+-
+ 	snprintf(soc_info->sys_type, RAMIPS_SYS_TYPE_LEN,
+ 		"Ralink %s ver:%u eco:%u",
+ 		name,
