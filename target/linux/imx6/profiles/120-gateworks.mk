@@ -5,53 +5,36 @@
 # See /LICENSE for more information.
 #
 
-define Profile/IMX6Q_GW5400_A
-  NAME:=Gateworks Ventana GW5400-A
-  PACKAGES:= \
-	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea kmod-usb-mxs-phy \
-	kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000
-endef
-
-define Profile/IMX6Q_GW5400_A/Description
- The Gateworks GW5400-A family of products is based on the Freescale i.MX6Q SoC
- and offers a large variety of peripherals such as:
-
-  * DDR3
-  * SPI FLASH
-  * 6x PCIe (3x with USB)
-  * Optional expansion for additional USB/PCI based periperhals
-  * 1x USB EHCI
-  * 1x USB OTG
-  * HDMI Audio/Video in/out
-  * Analog Video in/out
-  * Analog Audio in/out
-  * Gateworks System Controller
-endef
-
-$(eval $(call Profile,IMX6Q_GW5400_A))
-
-define Profile/IMX6Q_GW54XX
-  NAME:=Gateworks Ventana i.MX6 Quad GW54XX
+define Profile/VENTANA
+  NAME:=Gateworks Ventana family
   PACKAGES:= \
 	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea kmod-usb-mxs-phy \
 	kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
 	kobs-ng
 endef
 
-define Profile/IMX6Q_GW54XX/Description
- The Gateworks GW54xx family of products is based on the Freescale i.MX6Q SoC
+define Profile/VENTANA/Description
+ The Gateworks Ventana family of products is based on the Freescale i.MX6Q SoC
  and offers a large variety of peripherals such as:
 
   * DDR3
-  * NAND FLASH
-  * 6x PCIe (3x with USB)
+  * NAND or SPI flash
+  * multiple PCIe (with USB for Cellular modems)
   * Optional expansion for additional USB/PCI based periperhals
-  * 1x USB EHCI
-  * 1x USB OTG
+  * USB EHCI
+  * USB OTG
   * HDMI Audio/Video in/out
   * Analog Video in/out
   * Analog Audio in/out
   * Gateworks System Controller
+  * Optional GPS with PPS
+  * Canbus
+  * User GPIO
+  * mSATA
 endef
 
-$(eval $(call Profile,IMX6Q_GW54XX))
+VENTANA_DTS:= \
+	imx6q-gw5400-a \
+	imx6q-gw54xx
+
+$(eval $(call Profile,VENTANA))
