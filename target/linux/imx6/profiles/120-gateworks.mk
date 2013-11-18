@@ -54,7 +54,4 @@ define Profile/IMX6Q_GW54XX/Description
   * Gateworks System Controller
 endef
 
-IMX6Q_GW54XX_UBIFS_OPTS:="-m 2048 -e 124KiB -c 1912"
-IMX6Q_GW54XX_UBI_OPTS:="-m 2048 -p 128KiB -s 2048"
-
 $(eval $(call Profile,IMX6Q_GW54XX))
