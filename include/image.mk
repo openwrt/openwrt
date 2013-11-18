@@ -68,7 +68,7 @@ define add_jffs2_mark
 endef
 
 define toupper
-	$(shell echo $(1) | tr '[:lower:]' '[:upper:]')
+$(shell echo $(1) | tr '[:lower:]' '[:upper:]')
 endef
 
 # pad to 4k, 8k, 64k, 128k 256k and add jffs2 end-of-filesystem mark
