@@ -34,6 +34,8 @@ define Profile/VENTANA/Description
 endef
 
 VENTANA_DTS:= \
+	imx6dl-gw51xx \
+	imx6dl-gw52xx \
 	imx6q-gw5400-a \
 	imx6q-gw54xx
 
