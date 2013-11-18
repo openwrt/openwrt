@@ -80,18 +80,28 @@ define Image/mkfs/targz
 	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
 endef
 
-define Image/Build/ubifs
+define ubifs_imx_gateworks_ventana
+	# Micron MT29F1G08ABAD/MT29F2G08ABAE/MT29F4G08ABAD/MT29F8G08ADAD NAND
+	$(eval IMX6Q_GW54XX_UBIFS_OPTS:="-m 2048 -e 124KiB -c 8124")
+	$(eval IMX6Q_GW54XX_UBI_OPTS:="-m 2048 -p 128KiB -s 2048")
+	$(call Image/mkfs/ubifs)
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs_normal.ubifs
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs_normal.ubi
 
- ifneq ($($(PROFILE)_UBIFS_OPTS),)
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs.ubifs
- endif
+	# Micron MT29F8G08ABAC/MT29F16G08ADAC 1GB/2GB NAND
+	$(eval IMX6Q_GW54XX_UBIFS_OPTS:="-m 4096 -e 248KiB -c 8124")
+	$(eval IMX6Q_GW54XX_UBI_OPTS:="-m 4096 -p 256KiB -s 4096")
+	$(call Image/mkfs/ubifs)
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs_large.ubifs
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs_large.ubi
+endef
+
+define Image/Build/ubifs
+	true
 endef
 
 define Image/Build/ubi
-
- ifneq ($($(PROFILE)_UBI_OPTS),)
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs.ubi
- endif
+	true
 endef
 
 
@@ -106,6 +116,7 @@ Image/InstallKernel/Template/IMX6Q_GW5400_A=$(call Image/InstallKernel/Template,
 
 Image/BuildKernel/Template/IMX6Q_GW54XX=$(call Image/BuildKernel/Template,imx6q-gw54xx)
 Image/InstallKernel/Template/IMX6Q_GW54XX=$(call Image/InstallKernel/Template,imx6q-gw54xx)
+Image/ubifs/IMX6Q_GW54XX=$(call ubifs_imx_gateworks_ventana)
 
 
 define Image/BuildKernel
@@ -114,6 +125,9 @@ endef
 
 define Image/InstallKernel
 	$(call Image/InstallKernel/Template/$(PROFILE))
+	$(if $(Image/ubifs/$(PROFILE)), \
+		$(call Image/ubifs/$(PROFILE))
+	)
 endef
 
 define Image/Build
