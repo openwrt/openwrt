@@ -19,6 +19,8 @@ MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 KERNELNAME:="zImage dtbs"
 
+include $(INCLUDE_DIR)/target.mk
+
 DEFAULT_PACKAGES += uboot-omap-am335x_evm uboot-omap-omap3_beagle uboot-omap-omap3_overo uboot-omap-omap4_panda
 
 DEVICE_TYPE=developerboard
@@ -26,7 +28,5 @@ DEVICE_TYPE=developerboard
 define Target/Description
 	TI OMAP boards
 endef
-
-include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))
