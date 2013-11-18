@@ -268,6 +268,9 @@ ramips_board_detect() {
 	*"HG255D")
 		name="hg255d"
 		;;
+	*"V22SG")
+		name="v22sg"
+		;;
 	*)
 		name="generic"
 		;;
