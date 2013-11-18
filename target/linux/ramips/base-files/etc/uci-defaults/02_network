@@ -145,17 +145,12 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "eth0"
 		;;
 
-	whr-300hp2 |\
-	whr-600d)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		;;
-	
 	*)
 		RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350)"`
 		if [ -n "${RT3X5X}" ]; then
 			ramips_setup_rt3x5x_vlans
 		else
-			ucidef_set_interfaces_lan_wan "eth0" "eth1"
+			ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		fi
 		;;
 	esac
