@@ -188,6 +188,7 @@ ramips_setup_macs()
 	psr-680w | \
 	rt-n15 | \
 	sl-r7205 | \
+	wmr300 | \
 	wl-351)
 		lan_mac=$(mtd_get_mac_binary factory 4)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
