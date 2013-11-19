@@ -69,15 +69,18 @@
 		[ "exec", "/etc/rc.button/%BUTTON%" ]
 	],
 	[ "if",
-		[ "or",
-			[ "eq", "SUBSYSTEM",
-				[ "net", "input", "usb", "ieee1394", "block", "atm", "zaptel", "button" ],
-			],
-			[ "and",
-				[ "eq", "SUBSYSTEM", "tty" ],
-				[ "regex", "DEVNAME", "^ttyUSB" ],
-			]
+		[ "eq", "SUBSYSTEM",
+			[ "net", "input", "usb", "ieee1394", "block", "atm", "zaptel", "tty", "button" ]
 		],
 		[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
+	],
+	[ "if",
+		[ "and",
+			[ "eq", "SUBSYSTEM",
+				[ "tty", "usb-serial" ]
+			],
+			[ "regex", "DEVNAME", "^ttyUSB" ],
+		],
+		[ "exec", "/sbin/hotplug-call", "tty" ]
 	],
 ]
