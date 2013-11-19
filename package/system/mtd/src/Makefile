@@ -1,7 +1,8 @@
 CC = gcc
 CFLAGS += -Wall
+LDFLAGS += -lubox
 
-obj = mtd.o jffs2.o crc32.o
+obj = mtd.o jffs2.o crc32.o md5.o
 obj.seama = seama.o md5.o
 obj.ar71xx = trx.o $(obj.seama)
 obj.brcm = trx.o
