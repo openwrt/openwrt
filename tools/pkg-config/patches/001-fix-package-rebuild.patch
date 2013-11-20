@@ -1,0 +1,22 @@
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -39,7 +39,7 @@
+ if HOST_TOOL
+ host_tool = $(host)-pkg-config$(EXEEXT)
+ install-exec-hook:
+-	cd $(DESTDIR)$(bindir) && $(LN) pkg-config$(EXEEXT) $(host_tool)
++	cd $(DESTDIR)$(bindir) && $(LN) -f pkg-config$(EXEEXT) $(host_tool)
+ uninstall-hook:
+ 	cd $(DESTDIR)$(bindir) && rm -f $(host_tool)
+ endif
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -1093,7 +1093,7 @@
+ 	uninstall-man1
+ 
+ @HOST_TOOL_TRUE@install-exec-hook:
+-@HOST_TOOL_TRUE@	cd $(DESTDIR)$(bindir) && $(LN) pkg-config$(EXEEXT) $(host_tool)
++@HOST_TOOL_TRUE@	cd $(DESTDIR)$(bindir) && $(LN) -f pkg-config$(EXEEXT) $(host_tool)
+ @HOST_TOOL_TRUE@uninstall-hook:
+ @HOST_TOOL_TRUE@	cd $(DESTDIR)$(bindir) && rm -f $(host_tool)
+ 
