@@ -54,7 +54,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		(void*)CPHYSADDR(dma_alloc_coherent(NULL, CP1_SIZE, &dma, GFP_ATOMIC));
 +
 +	gpio_count = of_gpio_count(pdev->dev.of_node);
-+	while (gpio_count) {
++	while (gpio_count > 0) {
 +		enum of_gpio_flags flags;
 +		int gpio = of_get_gpio_flags(pdev->dev.of_node, --gpio_count, &flags);
 +		if (gpio_request(gpio, "vmmc-relay"))
