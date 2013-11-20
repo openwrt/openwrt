@@ -21,11 +21,11 @@ define Image/BuildKernel/olinuxino-bootlet
 	)
 endef
 
-define Image/BuildKernel/olinuxino-uboot
+define Image/BuildKernel/mxs-uboot
 	mkimage -A arm -O linux -T kernel -C none \
 		-a 0x40008000 -e 0x40008000 \
 		-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux $(KDIR)/uImage
+		-d $(KDIR)/zImage $(KDIR)/uImage
 	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
 endef
 
@@ -36,7 +36,7 @@ define Image/BuildKernel
   endif
 
   ifeq ($(CONFIG_PACKAGE_uboot-mxs-mx23_olinuxino),y)
-	$(call Image/BuildKernel/olinuxino-uboot)
+	$(call Image/BuildKernel/mxs-uboot)
   endif
   
 	$(CP) $(LINUX_DIR)/arch/arm/boot/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
