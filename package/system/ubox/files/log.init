@@ -8,14 +8,27 @@ STOP=89
 USE_PROCD=1
 PROG=/sbin/logread
 
+validate_log_section()
+{
+	uci_validate_section system system "${1}" \
+		'Password:string' \
+		'log_size:uinteger' \
+		'log_ip:ipaddr' \
+		'log_port:port:514' \
+		'log_proto:or("tcp", "udp"):udp' \
+		'log_prefix:string'
+	return $?
+}
+
 start_service_file()
 {
 	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
 	local log_file log_size
 
-	config_get log_file $1 log_file
-	config_get log_size $1 log_size
-
+	validate_log_section "${1}" || {
+		echo "validation failed"
+		return 1
+	}
 	[ -z "${log_file}" ] && return
 
 	procd_open_instance
@@ -27,17 +40,16 @@ start_service_file()
 start_service_remote()
 {
 	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
-	local log_ip log_port log_proto
+	local log_ip log_port log_proto log_prefix
 
-	config_get log_ip $1 log_ip
-	config_get log_port $1 log_port
-	config_get log_proto $1 log_proto udp
-	config_get log_prefix $1 log_prefix
-
+	validate_log_section "${1}" || {
+		echo "validation failed"
+		return 1
+	}
 	[ -z "${log_ip}" ] && return
 
 	procd_open_instance
-	procd_set_param command "$PROG" -f -r "$log_ip" "${log_port:-514}" -p "$pid_file"
+	procd_set_param command "$PROG" -f -r "$log_ip" "${log_port}" -p "$pid_file"
 	[ "${log_proto}" != "udp" ] || procd_append_param command -u
 	[ -z "${log_prefix}" ] || procd_append_param command -P ${log_prefix}
 	procd_close_instance
@@ -46,6 +58,7 @@ start_service_remote()
 service_triggers()
 {
 	procd_add_config_trigger "system" "/etc/init.d/log" "start"
+	procd_add_validation validate_log_section
 }
 
 start_service()
