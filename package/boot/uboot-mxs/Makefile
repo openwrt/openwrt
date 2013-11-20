@@ -27,7 +27,7 @@ define uboot/Default
 endef
 
 define uboot/mx23_olinuxino
-  TITLE:=U-Boot 2013.07 for the Olinuxino i.MX233
+  TITLE:=U-Boot 2013.10 for the Olinuxino i.MX233
 endef
 
 UBOOTS := \
