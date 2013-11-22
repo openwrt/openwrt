@@ -421,6 +421,10 @@ menuconfig DEVEL
 		bool "Show broken platforms / packages" if DEVEL
 		default n
 
+	config BINARY_FOLDER
+		string "Binary folder" if DEVEL
+		default ""
+
 	config DOWNLOAD_FOLDER
 		string "Download folder" if DEVEL
 		default ""
