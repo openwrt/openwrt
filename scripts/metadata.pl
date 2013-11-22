@@ -158,6 +158,7 @@ sub target_config_features(@) {
 		/broken/ and $ret .= "\tdepends on BROKEN\n";
 		/audio/ and $ret .= "\tselect AUDIO_SUPPORT\n";
 		/display/ and $ret .= "\tselect DISPLAY_SUPPORT\n";
+		/dt/ and $ret .= "\tselect USES_DEVICETREE\n";
 		/gpio/ and $ret .= "\tselect GPIO_SUPPORT\n";
 		/pci/ and $ret .= "\tselect PCI_SUPPORT\n";
 		/pcie/ and $ret .= "\tselect PCIE_SUPPORT\n";
