@@ -1,0 +1,201 @@
+# Copyright (C) 2006-2013 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+menu "Target Images"
+
+	menuconfig TARGET_ROOTFS_INITRAMFS
+		bool "ramdisk"
+		default y if USES_INITRAMFS
+		help
+		  Embed the rootfs into the kernel (initramfs)
+
+		choice
+			prompt "Compression"
+			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ar71xx
+			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
+			default TARGET_INITRAMFS_COMPRESSION_NONE
+			depends on TARGET_ROOTFS_INITRAMFS
+			help
+			  Select ramdisk compression.
+
+			config TARGET_INITRAMFS_COMPRESSION_NONE
+				bool "none"
+
+			config TARGET_INITRAMFS_COMPRESSION_GZIP
+				bool "gzip"
+
+			config TARGET_INITRAMFS_COMPRESSION_BZIP2
+				bool "bzip2"
+
+			config TARGET_INITRAMFS_COMPRESSION_LZMA
+				bool "lzma"
+
+			config TARGET_INITRAMFS_COMPRESSION_LZO
+				bool "lzo"
+
+			config TARGET_INITRAMFS_COMPRESSION_LZ4
+				bool "lz4"
+
+			config TARGET_INITRAMFS_COMPRESSION_XZ
+				bool "xz"
+		endchoice
+
+		config EXTERNAL_CPIO
+			string
+			prompt "Use external cpio" if TARGET_ROOTFS_INITRAMFS
+			default ""
+			help
+			  Kernel uses specified external cpio as INITRAMFS_SOURCE
+
+	comment "Root filesystem archives"
+
+	config TARGET_ROOTFS_CPIOGZ
+		bool "cpio.gz"
+		default y if USES_CPIOGZ
+		help
+		  Build a compressed cpio archive of the the root filesystem
+
+	config TARGET_ROOTFS_TARGZ
+		bool "tar.gz"
+		default y if USES_TARGZ
+		help
+		  Build a compressed tar archive of the the root filesystem
+
+	comment "Root filesystem images"
+
+	config TARGET_ROOTFS_EXT4FS
+		bool "ext4"
+		default y if USES_EXT4
+		help
+		  Ext4 file system with some free space for uml images
+
+	config TARGET_ROOTFS_ISO
+		bool "iso"
+		default n
+		depends on TARGET_x86_generic
+		help
+		  Create some bootable ISO image
+
+	config TARGET_ROOTFS_JFFS2
+		bool "jffs2"
+		default y if USES_JFFS2
+		help
+		  Build a jffs2 root filesystem
+
+	config TARGET_ROOTFS_JFFS2_NAND
+		bool "jffs2 for NAND"
+		default y if USES_JFFS2_NAND
+		depends on USES_JFFS2_NAND
+		help
+		  Build a jffs2 root filesystem for NAND flash
+
+	config TARGET_ROOTFS_SQUASHFS
+		bool "squashfs"
+		default y if USES_SQUASHFS
+		help
+		  Build a squashfs-lzma root filesystem
+
+	menuconfig TARGET_ROOTFS_UBIFS
+		bool "ubifs"
+		default y if USES_UBIFS
+		depends on USES_UBIFS
+		help
+		  Build a ubifs root filesystem
+
+		choice
+			prompt "compression"
+			default TARGET_UBIFS_COMPRESSION_NONE
+			depends on TARGET_ROOTFS_UBIFS
+			help
+			  Select compression type
+
+			config TARGET_UBIFS_COMPRESSION_NONE
+				bool "none"
+
+			config TARGET_UBIFS_COMPRESSION_LZO
+				bool "lzo"
+
+			config TARGET_UBIFS_COMPRESSION_ZLIB
+				bool "zlib"
+		endchoice
+
+		config TARGET_UBIFS_FREE_SPACE_FIXUP
+			bool "free space fixup" if TARGET_ROOTFS_UBIFS
+			default y
+			help
+			  The file-system free space has to be fixed up on first mount
+
+		config TARGET_UBIFS_JOURNAL_SIZE
+			string
+			prompt "journal size" if TARGET_ROOTFS_UBIFS
+			default ""
+
+	comment "Image Options"
+
+	source "target/linux/*/image/Config.in"
+
+	config TARGET_ROOTFS_PARTSIZE
+		int "Root filesystem partition size (in MB)"
+		depends on X86_GRUB_IMAGES || TARGET_ROOTFS_EXT4FS || TARGET_rb532
+		default 48
+		help
+		  Allows you to change the root filesystem partition size
+
+	config TARGET_ROOTFS_MAXINODE
+		int "Maximum number of inodes in root filesystem"
+		depends on TARGET_ROOTFS_EXT4FS
+		default 6000
+		help
+		  Allows you to change the maximum number of inodes in the root filesystem
+
+	config TARGET_ROOTFS_RESERVED_PCT
+		int "Percentage of reserved blocks in root filesystem"
+		depends on TARGET_ROOTFS_EXT4FS
+		default 0
+		help
+		  Allows you to change the percentage of reserved blocks in the root filesystem
+
+	menuconfig TARGET_ROOTFS_INCLUDE_KERNEL
+		bool "Include kernel in root filesystem"
+		depends on TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
+		default n
+		help
+		  Include the kernel image in the rootfs. Typically the image is placed
+		  below /boot.
+
+		config TARGET_ROOTFS_INCLUDE_UIMAGE
+			bool "include uImage" if TARGET_ROOTFS_INCLUDE_KERNEL
+			default y
+			help
+			  This option might not apply to all targets. Make sure
+			  to check target/linux/<your_target>/image/Makefile to
+			  see if this option will have any effect.
+
+		config TARGET_ROOTFS_INCLUDE_ZIMAGE
+			bool "include zImage" if TARGET_ROOTFS_INCLUDE_KERNEL
+			default y
+			help
+			  This option might not apply to all targets. Make sure
+			  to check target/linux/<your_target>/image/Makefile to
+			  see if this option will have any effect.
+
+		config TARGET_ROOTFS_INCLUDE_FIT
+			bool "include FIT" if TARGET_ROOTFS_INCLUDE_KERNEL
+			default y
+			help
+			  This option might not apply to all targets. Make sure
+			  to check target/linux/<your_target>/image/Makefile to
+			  see if this option will have any effect.
+
+	config TARGET_ROOTFS_INCLUDE_DTB
+		bool "Include DTB in root filesystem"
+		depends on USES_DEVICETREE && (TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS)
+		default n
+		help
+		  Include the device tree blob file(s) in the rootfs. Typically the DTBs
+		  are placed below /boot.
+
+endmenu

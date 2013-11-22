@@ -1,0 +1,206 @@
+# Copyright (C) 2006-2013 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+menu "Global build settings"
+
+	config ALL
+		bool "Select all packages by default"
+		default n
+
+	comment "General build options"
+
+	config DISPLAY_SUPPORT
+		bool "Show packages that require graphics support (local or remote)"
+		default n
+
+	config BUILD_PATENTED
+		default y
+		bool "Compile with support for patented functionality"
+		help
+		  When this option is disabled, software which provides patented functionality will not be built.
+		  In case software provides optional support for patented functionality,
+		  this optional support will get disabled for this package.
+
+	config BUILD_NLS
+		default n
+		bool "Compile with full language support"
+		help
+		  When this option is enabled, packages are built with the full versions of iconv and GNU gettext
+		  instead of the default OpenWrt stubs. If uClibc is used, it is also built with locale support.
+
+	config BUILD_STATIC_TOOLS
+		default n
+		bool "Attempt to link host utilities statically"
+		help
+		  Linking host utilities like sed or firmware-utils statically increases the portability of the
+		  generated ImageBuilder and SDK tarballs, however it may fail on some Linux distributions.
+
+	config SHADOW_PASSWORDS
+		bool
+		prompt "Enable shadow password support"
+		default y
+		help
+		  Enable shadow password support.
+
+	config CLEAN_IPKG
+		bool
+		prompt "Remove ipkg/opkg status data files in final images"
+		default n
+		help
+		  This removes all ipkg/opkg status data files from the target directory before building the root fs
+
+	config COLLECT_KERNEL_DEBUG
+		bool
+		prompt "Collect kernel debug information"
+		select KERNEL_DEBUG_INFO
+		default n
+		help
+		  This collects debugging symbols from the kernel and all compiled modules.
+		  Useful for release builds, so that kernel issues can be debugged offline later.
+
+	comment "Kernel build options"
+
+	source "config/Config-kernel.in"
+
+	comment "Package build options"
+
+	config DEBUG
+		bool
+		prompt "Compile packages with debugging info"
+		default n
+		help
+		  Adds -g3 to the CFLAGS
+
+	config IPV6
+		bool
+		prompt "Enable IPv6 support in packages"
+		default y
+		help
+		  Enable IPV6 support in packages (passes --enable-ipv6 to configure scripts).
+
+	config PKG_BUILD_PARALLEL
+		bool
+		prompt "Compile certain packages parallelized"
+		default y
+		help
+		  This adds a -jX option to certain packages that are known to
+		  behave well for parallel build. By default the package make processes
+		  use the main jobserver, in which case this option only takes effect
+		  when you add -jX to the make command.
+
+		  If you are unsure, select N.
+
+	config PKG_BUILD_USE_JOBSERVER
+		bool
+		prompt "Use top-level make jobserver for packages"
+		depends on PKG_BUILD_PARALLEL
+		default y
+		help
+		  This passes the main make process jobserver fds to package builds,
+		  enabling full parallelization across different packages
+
+		  Note that disabling this may overcommit CPU resources depending on the
+		  -j level of the main make process, the number of package
+		  submake jobs selected below and the number of actual CPUs present.
+		  Example: If the main make is passed a -j4 and the submake -j
+		  is also set to 4, we may end up with 16 parallel make processes
+		  in the worst case.
+
+
+	config PKG_BUILD_JOBS
+		int
+		prompt "Number of package submake jobs (2-512)"
+		range 2 512
+		default 2
+		depends on PKG_BUILD_PARALLEL && !PKG_BUILD_USE_JOBSERVER
+		help
+		  The number of jobs (-jX) to pass to packages submake.
+
+	config PKG_DEFAULT_PARALLEL
+		bool
+		prompt "Parallelize the default package build rule (May break build)"
+		depends on PKG_BUILD_PARALLEL
+		depends on BROKEN
+		default n
+		help
+		  Always set the default package build rules to parallel build.
+
+		  WARNING: This may break build or kill your cat, as it builds
+		  packages with multiple jobs that are probably not tested in
+		  a parallel build environment.
+
+		  Only say Y, if you don't mind fixing broken packages.
+		  Before reporting build bugs, set this to N and re-run the build.
+
+	comment "Stripping options"
+
+	choice
+		prompt "Binary stripping method"
+		default USE_STRIP   if EXTERNAL_TOOLCHAIN
+		default USE_STRIP   if USE_GLIBC || USE_EGLIBC || USE_MUSL
+		default USE_SSTRIP
+		help
+		  Select the binary stripping method you wish to use.
+
+		config NO_STRIP
+			bool "none"
+			help
+			  This will install unstripped binaries (useful for native compiling/debugging)
+
+		config USE_STRIP
+			bool "strip"
+			help
+			  This will install binaries stripped using strip from binutils
+
+
+		config USE_SSTRIP
+			bool "sstrip"
+			depends on !DEBUG
+			depends on !USE_GLIBC
+			depends on !USE_EGLIBC
+			help
+			  This will install binaries stripped using sstrip
+	endchoice
+
+	config STRIP_ARGS
+		string
+		prompt "Strip arguments"
+		depends on USE_STRIP
+		default "--strip-unneeded --remove-section=.comment --remove-section=.note" if DEBUG
+		default "--strip-all"
+		help
+		  Specifies arguments passed to the strip command when stripping binaries
+
+	config STRIP_KERNEL_EXPORTS
+		bool "Strip unnecessary exports from the kernel image"
+		help
+		  Reduces kernel size by stripping unused kernel exports from the kernel image
+		  Note that this might make the kernel incompatible with any kernel modules that
+		  were not selected at the time the kernel image was created
+
+	config USE_MKLIBS
+		bool "Strip unnecessary functions from libraries"
+		help
+		  Reduces libraries to only those functions that are necessary for using all
+		  selected packages (including those selected as <M>)
+		  Note that this will make the system libraries incompatible with most of the packages
+		  that are not selected during the build process
+
+	choice
+		prompt "Preferred standard C++ library"
+		default USE_LIBSTDCXX if USE_EGLIBC
+		default USE_UCLIBCXX
+		help
+		  Select the preferred standard C++ library for all packages that support this.
+
+		config USE_UCLIBCXX
+			bool "uClibc++"
+
+		config USE_LIBSTDCXX
+			bool "libstdc++"
+	endchoice
+
+endmenu
