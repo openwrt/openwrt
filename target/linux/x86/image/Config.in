@@ -56,14 +56,14 @@ config X86_GRUB_TIMEOUT
 
 config X86_VDI_IMAGES
 	bool "Build VirtualBox image files (VDI)"
-	depends on X86_GRUB_IMAGES
-	depends on TARGET_ROOTFS_EXT4FS
+	select X86_GRUB_IMAGES
+	select TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-pcnet32
 
 config X86_VMDK_IMAGES
 	bool "Build VMware image files (VMDK)"
-	depends on X86_GRUB_IMAGES
-	depends on TARGET_ROOTFS_EXT4FS
+	select X86_GRUB_IMAGES
+	select TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-e1000
 
 
