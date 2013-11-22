@@ -1,4 +1,43 @@
+# Copyright (C) 2006-2013 OpenWrt.org
 #
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+menuconfig TARGET_OPTIONS
+	bool "Target Options"  if DEVEL
+
+	config TARGET_OPTIMIZATION
+		string "Target Optimizations" if TARGET_OPTIONS
+		default DEFAULT_TARGET_OPTIMIZATION
+		help
+		  Optimizations to use when building for the target host.
+
+	config SOFT_FLOAT
+		bool "Use software floating point by default" if TARGET_OPTIONS
+		default y
+		depends on (arm || armeb || powerpc || mipsel || mips || mips64el || mips64) && !HAS_FPU
+		help
+		  If your target CPU does not have a Floating Point Unit (FPU) or a
+		  kernel FPU emulator, but you still wish to support floating point
+		  functions, then everything will need to be compiled with soft floating
+		  point support (-msoft-float).
+
+		  Most people will answer N.
+
+	config USE_MIPS16
+		bool "Build packages with MIPS16 instructions" if TARGET_OPTIONS
+		depends on HAS_MIPS16
+		depends on !GCC_VERSION_4_6
+		default y
+		help
+		  If your target CPU does support the MIPS16 instruction set
+		  and you want to use it for packages, enable this option.
+		  MIPS16 produces smaller binaries thus reducing pressure on
+		  caches and TLB.
+
+		  Most people will answer N.
+
 
 menuconfig EXTERNAL_TOOLCHAIN
 	bool
