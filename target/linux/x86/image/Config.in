@@ -1,6 +1,6 @@
 config X86_ETHERBOOT_IMAGES
 	bool "Build Etherboot image"
-	depends on TARGET_x86 && TARGET_x86_thincan_DBE61
+	depends on TARGET_x86_thincan_DBE61
 	default y
 	help
 	  Builds network bootable image for ThinCan DBE61 (Etherboot BIOS)
@@ -57,14 +57,12 @@ config X86_GRUB_TIMEOUT
 config X86_VDI_IMAGES
 	bool "Build VirtualBox image files (VDI)"
 	depends on X86_GRUB_IMAGES
-	depends on TARGET_x86
 	depends on TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-pcnet32
 
 config X86_VMDK_IMAGES
 	bool "Build VMware image files (VMDK)"
 	depends on X86_GRUB_IMAGES
-	depends on TARGET_x86
 	depends on TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-e1000
 
