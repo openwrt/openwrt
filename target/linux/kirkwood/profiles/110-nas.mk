@@ -17,7 +17,7 @@ define Profile/DOCKSTAR/Description
  Package set compatible with Seagate FreeAgent Dockstar board.
 endef
 
-DOCKSTAR_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096 -U"
+DOCKSTAR_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
 DOCKSTAR_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,DOCKSTAR))
@@ -49,7 +49,7 @@ define Profile/IB62X0/Description
  Package set compatible with RaidSonic ICY BOX IB-NAS62x0 board.
 endef
 
-IB62X0_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096 -U"
+IB62X0_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
 IB62X0_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,IB62X0))
