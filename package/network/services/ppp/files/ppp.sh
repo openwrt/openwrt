@@ -55,7 +55,7 @@ ppp_generic_setup() {
 		ip-down-script /lib/netifd/ppp-down \
 		ipv6-down-script /lib/netifd/ppp-down \
 		${mtu:+mtu $mtu mru $mtu} \
-		$pppd_options "$@"
+		"$@" $pppd_options
 }
 
 ppp_generic_teardown() {
