@@ -73,6 +73,10 @@
 		};
 	};
 
+	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x28>;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 		power-green {

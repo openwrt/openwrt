@@ -24,7 +24,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		partition@0 {
+		uboot: partition@0 {
 			label = "u-boot";
 			reg = <0x0 0x50000>;
 			read-only;
@@ -44,6 +44,10 @@
 			label = "factory";
 			reg = <0x7f0000 0x10000>;
 		};
+	};
+
+	ethernet@10100000 {
+		mtd-mac-address = <&uboot 0x40004>;
 	};
 
 	esw@10110000 {

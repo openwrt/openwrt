@@ -60,6 +60,7 @@
 	ethernet@10100000 {
 		phy-handle = <&phy0>;
 		phy-mode = "rgmii";
+		mtd-mac-address = <&factory 0x28>;
 
 		mdio-bus {
 			status = "okay";

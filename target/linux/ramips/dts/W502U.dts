@@ -1,3 +1,7 @@
+	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x28>;
+	};
+
 /dts-v1/;
 
 /include/ "rt3050.dtsi"
@@ -50,6 +54,10 @@
 			label = "firmware";
 			reg = <0x50000 0x7b0000>;
 		};
+	};
+
+	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x28>;
 	};
 
 	esw@10110000 {

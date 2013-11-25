@@ -22,6 +22,7 @@
 	};
 
 	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x28>;
 		port@0 {
 			phy-handle = <&phy0>;
 			phy-mode = "rgmii";
