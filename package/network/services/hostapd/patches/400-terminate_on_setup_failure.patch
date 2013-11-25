@@ -1,20 +1,22 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -951,11 +951,8 @@ int hostapd_setup_interface_complete(str
+@@ -1100,13 +1100,8 @@ int hostapd_setup_interface_complete(str
  	size_t j;
  	u8 *prev_addr;
  
 -	if (err) {
 -		wpa_printf(MSG_ERROR, "Interface initialization failed");
--		eloop_terminate();
+-		hostapd_set_state(iface, HAPD_IFACE_DISABLED);
+-		if (iface->interfaces && iface->interfaces->terminate_on_error)
+-			eloop_terminate();
 -		return -1;
 -	}
 +	if (err)
 +		goto error;
  
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
- 	if (hapd->iconf->channel) {
-@@ -975,7 +972,7 @@ int hostapd_setup_interface_complete(str
+ 	if (iface->conf->channel) {
+@@ -1137,7 +1132,7 @@ int hostapd_setup_interface_complete(str
  				     hapd->iconf->vht_oper_centr_freq_seg1_idx)) {
  			wpa_printf(MSG_ERROR, "Could not set channel for "
  				   "kernel driver");
@@ -23,7 +25,7 @@
  		}
  	}
  
-@@ -986,7 +983,7 @@ int hostapd_setup_interface_complete(str
+@@ -1148,7 +1143,7 @@ int hostapd_setup_interface_complete(str
  			hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
  				       HOSTAPD_LEVEL_WARNING,
  				       "Failed to prepare rates table.");
@@ -32,7 +34,7 @@
  		}
  	}
  
-@@ -994,14 +991,14 @@ int hostapd_setup_interface_complete(str
+@@ -1156,14 +1151,14 @@ int hostapd_setup_interface_complete(str
  	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
  		wpa_printf(MSG_ERROR, "Could not set RTS threshold for "
  			   "kernel driver");
@@ -49,7 +51,7 @@
  	}
  
  	prev_addr = hapd->own_addr;
-@@ -1011,7 +1008,7 @@ int hostapd_setup_interface_complete(str
+@@ -1173,7 +1168,7 @@ int hostapd_setup_interface_complete(str
  		if (j)
  			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
  		if (hostapd_setup_bss(hapd, j == 0))
@@ -58,7 +60,7 @@
  		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
  			prev_addr = hapd->own_addr;
  	}
-@@ -1025,7 +1022,7 @@ int hostapd_setup_interface_complete(str
+@@ -1188,7 +1183,7 @@ int hostapd_setup_interface_complete(str
  	if (hostapd_driver_commit(hapd) < 0) {
  		wpa_printf(MSG_ERROR, "%s: Failed to commit driver "
  			   "configuration", __func__);
@@ -67,14 +69,16 @@
  	}
  
  	/*
-@@ -1046,6 +1043,11 @@ int hostapd_setup_interface_complete(str
- 		   iface->bss[0]->conf->iface);
+@@ -1213,6 +1208,13 @@ int hostapd_setup_interface_complete(str
+ 		iface->interfaces->terminate_on_error--;
  
  	return 0;
 +
 +error:
 +	wpa_printf(MSG_ERROR, "Interface initialization failed");
-+	eloop_terminate();
++	hostapd_set_state(iface, HAPD_IFACE_DISABLED);
++	if (iface->interfaces && iface->interfaces->terminate_on_error)
++		eloop_terminate();
 +	return -1;
  }
  

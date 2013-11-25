@@ -8,15 +8,15 @@
  "   wps_pin <uuid> <pin> [timeout] [addr]  add WPS Enrollee PIN\n"
  "   wps_check_pin <PIN>  verify PIN checksum\n"
  "   wps_pbc              indicate button pushed to initiate PBC\n"
-@@ -79,7 +78,6 @@ static const char *commands_help =
- #endif /* CONFIG_WPS_NFC */
+@@ -80,7 +79,6 @@ static const char *commands_help =
  "   wps_ap_pin <cmd> [params..]  enable/disable AP PIN\n"
  "   wps_config <SSID> <auth> <encr> <key>  configure AP\n"
+ "   wps_get_status       show current WPS status\n"
 -#endif /* CONFIG_WPS */
  "   get_config           show current configuration\n"
  "   help                 show this usage help\n"
  "   interface [ifname]   show interfaces/select interface\n"
-@@ -340,7 +338,6 @@ static int hostapd_cli_cmd_sa_query(stru
+@@ -352,7 +350,6 @@ static int hostapd_cli_cmd_sa_query(stru
  #endif /* CONFIG_IEEE80211W */
  
  
@@ -24,7 +24,7 @@
  static int hostapd_cli_cmd_wps_pin(struct wpa_ctrl *ctrl, int argc,
  				   char *argv[])
  {
-@@ -559,7 +556,6 @@ static int hostapd_cli_cmd_wps_config(st
+@@ -578,7 +575,6 @@ static int hostapd_cli_cmd_wps_config(st
  			 ssid_hex, argv[1]);
  	return wpa_ctrl_command(ctrl, buf);
  }
@@ -32,7 +32,7 @@
  
  
  static int hostapd_cli_cmd_disassoc_imminent(struct wpa_ctrl *ctrl, int argc,
-@@ -805,7 +801,6 @@ static struct hostapd_cli_cmd hostapd_cl
+@@ -903,7 +899,6 @@ static struct hostapd_cli_cmd hostapd_cl
  #ifdef CONFIG_IEEE80211W
  	{ "sa_query", hostapd_cli_cmd_sa_query },
  #endif /* CONFIG_IEEE80211W */
@@ -40,10 +40,10 @@
  	{ "wps_pin", hostapd_cli_cmd_wps_pin },
  	{ "wps_check_pin", hostapd_cli_cmd_wps_check_pin },
  	{ "wps_pbc", hostapd_cli_cmd_wps_pbc },
-@@ -818,7 +813,6 @@ static struct hostapd_cli_cmd hostapd_cl
- #endif /* CONFIG_WPS_NFC */
+@@ -917,7 +912,6 @@ static struct hostapd_cli_cmd hostapd_cl
  	{ "wps_ap_pin", hostapd_cli_cmd_wps_ap_pin },
  	{ "wps_config", hostapd_cli_cmd_wps_config },
+ 	{ "wps_get_status", hostapd_cli_cmd_wps_get_status },
 -#endif /* CONFIG_WPS */
  	{ "disassoc_imminent", hostapd_cli_cmd_disassoc_imminent },
  	{ "ess_disassoc", hostapd_cli_cmd_ess_disassoc },

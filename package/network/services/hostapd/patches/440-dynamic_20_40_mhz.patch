@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2487,6 +2487,10 @@ static int hostapd_config_fill(struct ho
+@@ -2422,6 +2422,10 @@ static int hostapd_config_fill(struct ho
  					   "ht_capab", line);
  				errors++;
  			}
@@ -10,20 +10,20 @@
 +				conf->dynamic_ht40 = 1500;
  		} else if (os_strcmp(buf, "require_ht") == 0) {
  			conf->require_ht = atoi(pos);
- #endif /* CONFIG_IEEE80211N */
+ 		} else if (os_strcmp(buf, "obss_interval") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -519,6 +519,7 @@ struct hostapd_config {
+@@ -531,6 +531,7 @@ struct hostapd_config {
  	int ieee80211n;
  	int secondary_channel;
  	int require_ht;
 +	int dynamic_ht40;
+ 	int obss_interval;
  	u32 vht_capab;
  	int ieee80211ac;
- 	int require_vht;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -22,6 +22,7 @@
+@@ -23,6 +23,7 @@
  #include "beacon.h"
  #include "iapp.h"
  #include "ieee802_1x.h"
@@ -31,17 +31,17 @@
  #include "ieee802_11_auth.h"
  #include "vlan_init.h"
  #include "wpa_auth.h"
-@@ -319,6 +320,7 @@ static void hostapd_cleanup_iface_pre(st
- 
+@@ -329,6 +330,7 @@ static void hostapd_cleanup(struct hosta
  static void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
  {
+ 	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
 +	hostapd_deinit_ht(iface);
  	hostapd_free_hw_features(iface->hw_features, iface->num_hw_features);
  	iface->hw_features = NULL;
  	os_free(iface->current_rates);
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -274,6 +274,9 @@ struct hostapd_iface {
+@@ -326,6 +326,9 @@ struct hostapd_iface {
  	/* Overlapping BSS information */
  	int olbc_ht;
  
@@ -49,11 +49,11 @@
 +	struct os_time last_20mhz_trigger;
 +
  	u16 ht_op_mode;
- 	void (*scan_cb)(struct hostapd_iface *iface);
- };
+ 
+ 	/* surveying helpers */
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -1513,6 +1513,9 @@ static void handle_beacon(struct hostapd
+@@ -1538,6 +1538,9 @@ static void handle_beacon(struct hostapd
  					     sizeof(mgmt->u.beacon)), &elems,
  				      0);
  
@@ -65,7 +65,7 @@
  
 --- a/src/ap/ieee802_11.h
 +++ b/src/ap/ieee802_11.h
-@@ -81,4 +81,17 @@ int hostapd_update_time_adv(struct hosta
+@@ -82,4 +82,17 @@ int hostapd_update_time_adv(struct hosta
  void hostapd_client_poll_ok(struct hostapd_data *hapd, const u8 *addr);
  u8 * hostapd_eid_bss_max_idle_period(struct hostapd_data *hapd, u8 *eid);
  
@@ -97,7 +97,7 @@
  
  
  u8 * hostapd_eid_ht_capabilities(struct hostapd_data *hapd, u8 *eid)
-@@ -70,12 +72,15 @@ u8 * hostapd_eid_ht_operation(struct hos
+@@ -86,12 +88,15 @@ u8 * hostapd_eid_ht_operation(struct hos
  
  	oper->control_chan = hapd->iconf->channel;
  	oper->operation_mode = host_to_le16(hapd->iface->ht_op_mode);
@@ -119,7 +119,7 @@
  
  	pos += sizeof(*oper);
  
-@@ -270,3 +275,84 @@ void hostapd_get_ht_capab(struct hostapd
+@@ -286,3 +291,84 @@ void hostapd_get_ht_capab(struct hostapd
  
  	neg_ht_cap->ht_capabilities_info = host_to_le16(cap);
  }

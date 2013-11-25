@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2477,6 +2477,8 @@ static int hostapd_config_fill(struct ho
+@@ -2412,6 +2412,8 @@ static int hostapd_config_fill(struct ho
  			}
  #endif /* CONFIG_IEEE80211W */
  #ifdef CONFIG_IEEE80211N
@@ -11,7 +11,7 @@
  		} else if (os_strcmp(buf, "ht_capab") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -515,6 +515,7 @@ struct hostapd_config {
+@@ -527,6 +527,7 @@ struct hostapd_config {
  
  	int ht_op_mode_fixed;
  	u16 ht_capab;
@@ -21,7 +21,7 @@
  	int require_ht;
 --- a/src/ap/hw_features.c
 +++ b/src/ap/hw_features.c
-@@ -494,7 +494,7 @@ static int ieee80211n_check_40mhz(struct
+@@ -577,7 +577,7 @@ static int ieee80211n_check_40mhz(struct
  {
  	struct wpa_driver_scan_params params;
  
@@ -29,4 +29,4 @@
 +	if (!iface->conf->secondary_channel || iface->conf->noscan)
  		return 0; /* HT40 not used */
  
- 	wpa_printf(MSG_DEBUG, "Scan for neighboring BSSes prior to enabling "
+ 	hostapd_set_state(iface, HAPD_IFACE_HT_SCAN);
