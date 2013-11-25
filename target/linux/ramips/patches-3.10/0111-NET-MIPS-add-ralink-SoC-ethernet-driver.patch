@@ -46,8 +46,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/ralink/soc_rt305x.c
  create mode 100644 drivers/net/ethernet/ralink/soc_rt3883.c
 
---- /dev/null
-+++ b/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
+Index: linux-3.10.18/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/arch/mips/include/asm/mach-ralink/rt305x_esw_platform.h	2013-11-19 11:15:38.964470794 +0100
 @@ -0,0 +1,27 @@
 +/*
 + *  Ralink RT305x SoC platform device registration
@@ -76,9 +78,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +#endif /* _RT305X_ESW_PLATFORM_H */
---- a/arch/mips/ralink/rt305x.c
-+++ b/arch/mips/ralink/rt305x.c
-@@ -221,6 +221,7 @@ void __init ralink_clk_init(void)
+Index: linux-3.10.18/arch/mips/ralink/rt305x.c
+===================================================================
+--- linux-3.10.18.orig/arch/mips/ralink/rt305x.c	2013-11-04 13:31:29.000000000 +0100
++++ linux-3.10.18/arch/mips/ralink/rt305x.c	2013-11-21 12:04:47.524164571 +0100
+@@ -221,6 +221,7 @@
  	}
  
  	ralink_clk_add("cpu", cpu_rate);
@@ -86,9 +90,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	ralink_clk_add("10000b00.spi", sys_rate);
  	ralink_clk_add("10000100.timer", wdt_rate);
  	ralink_clk_add("10000120.watchdog", wdt_rate);
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -135,6 +135,7 @@ config ETHOC
+Index: linux-3.10.18/drivers/net/ethernet/Kconfig
+===================================================================
+--- linux-3.10.18.orig/drivers/net/ethernet/Kconfig	2013-11-04 13:31:29.000000000 +0100
++++ linux-3.10.18/drivers/net/ethernet/Kconfig	2013-11-19 11:15:38.964470794 +0100
+@@ -135,6 +135,7 @@
  source "drivers/net/ethernet/packetengines/Kconfig"
  source "drivers/net/ethernet/pasemi/Kconfig"
  source "drivers/net/ethernet/qlogic/Kconfig"
@@ -96,9 +102,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  source "drivers/net/ethernet/realtek/Kconfig"
  source "drivers/net/ethernet/renesas/Kconfig"
  source "drivers/net/ethernet/rdc/Kconfig"
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -53,6 +53,7 @@ obj-$(CONFIG_ETHOC) += ethoc.o
+Index: linux-3.10.18/drivers/net/ethernet/Makefile
+===================================================================
+--- linux-3.10.18.orig/drivers/net/ethernet/Makefile	2013-11-04 13:31:29.000000000 +0100
++++ linux-3.10.18/drivers/net/ethernet/Makefile	2013-11-19 11:15:38.964470794 +0100
+@@ -53,6 +53,7 @@
  obj-$(CONFIG_NET_PACKET_ENGINE) += packetengines/
  obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
  obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
@@ -106,8 +114,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
  obj-$(CONFIG_SH_ETH) += renesas/
  obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/Kconfig
+Index: linux-3.10.18/drivers/net/ethernet/ralink/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/Kconfig	2013-11-19 11:15:38.964470794 +0100
 @@ -0,0 +1,31 @@
 +config NET_RALINK
 +	tristate "Ralink RT288X/RT3X5X/RT3662/RT3883/MT7620 ethernet driver"
@@ -140,8 +150,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	select PHYLIB
 +	select SWCONFIG
 +endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/Makefile
+Index: linux-3.10.18/drivers/net/ethernet/ralink/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/Makefile	2013-11-19 11:15:38.964470794 +0100
 @@ -0,0 +1,18 @@
 +#
 +# Makefile for the Ralink SoCs built-in ethernet macs
@@ -161,8 +173,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +ralink-eth-$(CONFIG_SOC_MT7620)			+= soc_mt7620.o
 +
 +obj-$(CONFIG_NET_RALINK)			+= ralink-eth.o
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/esw_rt3052.c
+Index: linux-3.10.18/drivers/net/ethernet/ralink/esw_rt3052.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/esw_rt3052.c	2013-11-19 11:15:38.968470792 +0100
 @@ -0,0 +1,1463 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -1627,8 +1641,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	platform_driver_unregister(&esw_driver);
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/esw_rt3052.h
+Index: linux-3.10.18/drivers/net/ethernet/ralink/esw_rt3052.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/esw_rt3052.h	2013-11-19 11:15:38.968470792 +0100
 @@ -0,0 +1,32 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -1662,8 +1678,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#endif
 +#endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/gsw_mt7620a.c
+Index: linux-3.10.18/drivers/net/ethernet/ralink/gsw_mt7620a.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/gsw_mt7620a.c	2013-11-19 11:15:38.968470792 +0100
 @@ -0,0 +1,566 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2231,8 +2249,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	return 0;
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/gsw_mt7620a.h
+Index: linux-3.10.18/drivers/net/ethernet/ralink/gsw_mt7620a.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/gsw_mt7620a.h	2013-11-19 11:15:38.968470792 +0100
 @@ -0,0 +1,30 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2264,8 +2284,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +extern int mt7620a_has_carrier(struct fe_priv *priv);
 +
 +#endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mdio.c
+Index: linux-3.10.18/drivers/net/ethernet/ralink/mdio.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/mdio.c	2013-11-19 11:15:38.968470792 +0100
 @@ -0,0 +1,244 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2511,8 +2533,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	of_node_put(priv->mii_bus->dev.of_node);
 +	kfree(priv->mii_bus);
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mdio.h
+Index: linux-3.10.18/drivers/net/ethernet/ralink/mdio.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/mdio.h	2013-11-19 11:15:38.968470792 +0100
 @@ -0,0 +1,29 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2543,8 +2567,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static inline void fe_mdio_cleanup(struct fe_priv *priv) {}
 +#endif
 +#endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mdio_rt2880.c
+Index: linux-3.10.18/drivers/net/ethernet/ralink/mdio_rt2880.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/mdio_rt2880.c	2013-11-19 11:15:38.972470791 +0100
 @@ -0,0 +1,232 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2778,8 +2804,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	return;
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mdio_rt2880.h
+Index: linux-3.10.18/drivers/net/ethernet/ralink/mdio_rt2880.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/mdio_rt2880.h	2013-11-19 11:15:38.972470791 +0100
 @@ -0,0 +1,26 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -2807,9 +2835,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +void rt2880_port_init(struct fe_priv *priv, struct device_node *np);
 +
 +#endif
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/ralink_soc_eth.c
-@@ -0,0 +1,741 @@
+Index: linux-3.10.18/drivers/net/ethernet/ralink/ralink_soc_eth.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/ralink_soc_eth.c	2013-11-21 11:29:22.000113924 +0100
+@@ -0,0 +1,744 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -3002,7 +3032,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	for (i = 0; i < NUM_DMA_DESC; i++) {
 +		if (priv->soc->tx_dma) {
-+			priv->soc->tx_dma(priv, i, 0);
++			priv->soc->tx_dma(priv, i, NULL);
 +			continue;
 +		}
 +
@@ -3093,8 +3123,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	priv->tx_skb[tx] = skb;
 +	priv->tx_dma[tx].txd1 = (unsigned int) mapped_addr;
 +	wmb();
++
++	priv->tx_dma[tx].txd4 &= ~0x80;
 +	if (priv->soc->tx_dma)
-+		priv->soc->tx_dma(priv, tx, skb->len);
++		priv->soc->tx_dma(priv, tx, skb);
 +	else
 +		priv->tx_dma[tx].txd2 = TX_DMA_LSO | TX_DMA_PLEN0(skb->len);
 +
@@ -3102,8 +3134,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		priv->tx_dma[tx].txd4 |= TX_DMA_CHKSUM;
 +	else
 +		priv->tx_dma[tx].txd4 &= ~TX_DMA_CHKSUM;
-+
-+	priv->tx_dma[tx].txd4 &= ~0x80;
 +
 +	dev->stats.tx_packets++;
 +	dev->stats.tx_bytes += skb->len;
@@ -3466,6 +3496,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	netdev->watchdog_timeo = TX_TIMEOUT;
 +	netdev->features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM;
 +
++	if (fe_reg_table[FE_REG_FE_DMA_VID_BASE])
++		netdev->features |= NETIF_F_HW_VLAN_CTAG_TX;
++
 +	netdev->irq = platform_get_irq(pdev, 0);
 +	if (netdev->irq < 0) {
 +		dev_err(&pdev->dev, "no IRQ resource found\n");
@@ -3551,8 +3584,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Ethernet driver for Ralink SoC");
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/ralink_soc_eth.h
+Index: linux-3.10.18/drivers/net/ethernet/ralink/ralink_soc_eth.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/ralink_soc_eth.h	2013-11-21 11:11:54.160088954 +0100
 @@ -0,0 +1,375 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -3875,7 +3910,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	void (*reset_fe)(void);
 +	void (*set_mac)(struct fe_priv *priv, unsigned char *mac);
 +	void (*fwd_config)(struct fe_priv *priv);
-+	void (*tx_dma)(struct fe_priv *priv, int idx, int len);
++	void (*tx_dma)(struct fe_priv *priv, int idx, struct sk_buff *skb);
 +	void (*rx_dma)(struct fe_priv *priv, int idx, int len);
 +	int (*switch_init)(struct fe_priv *priv);
 +	int (*switch_config)(struct fe_priv *priv);
@@ -3929,9 +3964,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +u32 fe_r32(unsigned reg);
 +
 +#endif /* FE_ETH_H */
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/soc_mt7620.c
-@@ -0,0 +1,112 @@
+Index: linux-3.10.18/drivers/net/ethernet/ralink/soc_mt7620.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/soc_mt7620.c	2013-11-21 11:42:23.264132543 +0100
+@@ -0,0 +1,124 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -3951,6 +3988,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#include <linux/module.h>
 +#include <linux/platform_device.h>
++#include <linux/if_vlan.h>
 +
 +#include <asm/mach-ralink/ralink_regs.h>
 +
@@ -3998,17 +4036,28 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static void mt7620_fwd_config(struct fe_priv *priv)
 +{
++	int i;
++
++	/* frame engine will push VLAN tag regarding to VIDX feild in Tx desc. */
++	for (i = 0; i < 16; i += 2)
++		fe_w32(((i + 1) << 16) + i, MT7620_DMA_VID + (i * 2));
++
 +	fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~7, MT7620A_GDMA1_FWD_CFG);
 +	fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) | (GDMA_ICS_EN | GDMA_TCS_EN | GDMA_UCS_EN), MT7620A_GDMA1_FWD_CFG);
 +	fe_w32(fe_r32(MT7620A_CDMA_CSG_CFG) | (CDMA_ICS_EN | CDMA_UCS_EN | CDMA_TCS_EN), MT7620A_CDMA_CSG_CFG);
 +}
 +
-+static void mt7620_tx_dma(struct fe_priv *priv, int idx, int len)
++static void mt7620_tx_dma(struct fe_priv *priv, int idx, struct sk_buff *skb)
 +{
-+	if (len)
-+		priv->tx_dma[idx].txd2 = TX_DMA_LSO | TX_DMA_PLEN0(len);
++	if (skb)
++		priv->tx_dma[idx].txd2 = TX_DMA_LSO | TX_DMA_PLEN0(skb->len);
 +	else
 +		priv->tx_dma[idx].txd2 = TX_DMA_LSO | TX_DMA_DONE;
++
++	if(skb && vlan_tx_tag_present(skb))
++		priv->tx_dma[idx].txd4 = 0x80 | (vlan_tx_tag_get(skb) >> 13) << 4 | (vlan_tx_tag_get(skb) & 0xF);
++	else
++		priv->tx_dma[idx].txd4 = 0;
 +}
 +
 +static void mt7620_rx_dma(struct fe_priv *priv, int idx, int len)
@@ -4044,8 +4093,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/soc_rt2880.c
+Index: linux-3.10.18/drivers/net/ethernet/ralink/soc_rt2880.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/soc_rt2880.c	2013-11-19 11:15:38.972470791 +0100
 @@ -0,0 +1,51 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4098,8 +4149,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/soc_rt305x.c
+Index: linux-3.10.18/drivers/net/ethernet/ralink/soc_rt305x.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/soc_rt305x.c	2013-11-19 11:15:38.972470791 +0100
 @@ -0,0 +1,113 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4214,8 +4267,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/soc_rt3883.c
+Index: linux-3.10.18/drivers/net/ethernet/ralink/soc_rt3883.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/soc_rt3883.c	2013-11-19 11:15:38.972470791 +0100
 @@ -0,0 +1,60 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
@@ -4277,8 +4332,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
 +
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mt7530.c
+Index: linux-3.10.18/drivers/net/ethernet/ralink/mt7530.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/mt7530.c	2013-11-19 11:15:38.976470791 +0100
 @@ -0,0 +1,467 @@
 +/*
 + * This program is free software; you can redistribute it and/or
@@ -4747,8 +4804,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	return 0;
 +}
---- /dev/null
-+++ b/drivers/net/ethernet/ralink/mt7530.h
+Index: linux-3.10.18/drivers/net/ethernet/ralink/mt7530.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.18/drivers/net/ethernet/ralink/mt7530.h	2013-11-19 11:15:38.976470791 +0100
 @@ -0,0 +1,20 @@
 +/*
 + * This program is free software; you can redistribute it and/or
