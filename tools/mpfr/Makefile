@@ -9,7 +9,8 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=mpfr
 PKG_VERSION:=3.1.2
 
-PKG_SOURCE_URL:=http://www.mpfr.org/mpfr-$(PKG_VERSION)
+PKG_SOURCE_URL:=http://www.mpfr.org/mpfr-$(PKG_VERSION) \
+		@GNU/mpfr
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=ee2c3ac63bf0c2359bf08fc3ee094c19
 
