@@ -217,59 +217,15 @@ _procd_kill() {
 
 uci_validate_section()
 {
-	local error=0
-
-	[ "$4" = "" ] && return 1
-	[ "$3" = "" ] && {
-		json_add_object
-		json_add_string "package" "$1"
-		json_add_string "type" "$2"
-		json_add_object "data"
-
-		shift; shift; shift
-
-		while [ -n "$1" ]; do
-			local tmp=${1#*:}
-			json_add_string "${1%%:*}" "${tmp%%:*}"
-			shift
-		done
-
-		json_close_object
-		json_close_object
-		return 0
-	}
-
-	local section="${3}"
-	config_load "${1}"
+	local package="$1"
+	local type="$2"
+	local name="$3"
+	local error
 	shift; shift; shift
-
-	while [ -n "$1" ]; do
-		local name=${1%%:*}
-		local tmp=${1#*:}
-		local type=${tmp%%:*}
-		local default=""
-
-		[ "$tmp" = "$type" ] || default=${tmp#*:}
-
-		shift
-		config_get "${name}" "${section}" "${name}"
-		eval val=\$$name
-
-		[ "$type" = "bool" ] && {
-			case "$val" in
-			1|on|true|enabled) val=1;;
-			0|off|false|disabled) val=0;;
-			*) val="";;
-			esac
-		}
-		[ -z "$val" ] && val=${default}
-		eval $name=\"$val\"
-		[ -z "$val" ] || {
-			/sbin/validate_data "${type}" "${val}"
-			[ $? -eq 0 ] || error="$((error + 1))"
-		}
-	done
-
+	local result=`/sbin/validate_data "$package" "$type" "$name" $@ 2> /dev/null`
+	error=$?
+	eval "$result"
+	[ "$error" = "0" ] || `/sbin/validate_data "$package" "$type" "$name" $@ 1> /dev/null`
 	return $error
 }
 
