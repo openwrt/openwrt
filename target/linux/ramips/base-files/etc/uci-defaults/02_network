@@ -163,64 +163,30 @@ ramips_setup_macs()
 	local wan_mac=""
 
 	case $board in
-	all0256n | \
-	all5002 | \
-	dir-615-h1)
-		lan_mac=$(mtd_get_mac_binary factory 40)
-		;;
-	3g-6200n | \
-	3g300m | \
-	w150m | \
-	air3gii | \
-	argus-atp52b | \
-	bc2 | \
-	br6425 | \
-	broadway | \
-	dir-620-d1 | \
-	f5d8235-v1 | \
-	ip2202 | \
-	mpr-a1 | \
-	mpr-a2 | \
-	dir-300-b7 | \
-	dir-320-b1 | \
-	mzk-w300nh2 | \
-	nw718 | \
-	psr-680w | \
-	rt-n15 | \
-	sl-r7205 | \
-	wmr300 | \
-	wl-351)
-		lan_mac=$(mtd_get_mac_binary factory 4)
+	*)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-
-	asl26555)
-		lan_mac=$(mtd_get_mac_binary devdata 16388)
 		;;
 
 	w306r-v20)
-		lan_mac=$(mtd_get_mac_binary factory 4)
 		wan_mac=$(macaddr_add "$lan_mac" 5)
 		;;
 
-	rt-n13u | \
-	hg255d	| \
-	fonera20n | \
-	dir-810l)
-		lan_mac=$(mtd_get_mac_binary factory 40)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
+	tew-691gr)
+		wan_mac=$(macaddr_add "$lan_mac" 3)
 		;;
 
-	dir-300-b1 |\
-	dir-300-b2 |\
-	dir-600-b1 |\
-	dir-610-a1)
-		lan_mac=$(mtd_get_mac_binary devdata 16388)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
+	tew-692gr)
+		wan_mac=$(macaddr_add "$lan_mac" 4)
+		;;
+
+	m3 |\
+	m4 |\
+	x5 |\
+	x8)
+		lan_mac=$(macaddr_add "$lan_mac" -1)
 		;;
 
 	dir-620-a1)
-		lan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
@@ -230,49 +196,13 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
 		;;
 
-	esr-9753 | \
-	ur-326n4g | \
-	ur-336un)
-		lan_mac=$(mtd_get_mac_binary devdata 16388)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-
-	m3 |\
-	m4 |\
-	x5 |\
-	x8)
-		lan_mac=$(mtd_get_mac_binary factory 4)
-		lan_mac=$(macaddr_add "$lan_mac" -1)
-		;;
-
 	nbg-419n | \
 	wcr-150gn)
-                lan_mac=$(mtd_get_mac_binary factory 4)
                 wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 
-	omni-emb-hpm)
-		lan_mac=$(mtd_get_mac_binary factory 40)
-		;;
-
-	f5d8235-v2)
-		lan_mac=$(mtd_get_mac_binary "u-boot" 262148)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-
 	rt-n56u)
-		lan_mac=$(mtd_get_mac_binary factory 4)
 		wan_mac=$(mtd_get_mac_binary factory 32772)
-		;;
-
-	tew-691gr)
-		lan_mac=$(mtd_get_mac_binary factory 40)
-		wan_mac=$(macaddr_add "$lan_mac" 3)
-		;;
-
-	tew-692gr)
-		lan_mac=$(mtd_get_mac_binary factory 40)
-		wan_mac=$(macaddr_add "$lan_mac" 4)
 		;;
 
 	all0239-3g | \
@@ -280,18 +210,12 @@ ramips_setup_macs()
 	freestation5 | \
 	w502u | \
 	wnce2001)
-		lan_mac=$(mtd_get_mac_binary factory 40)
 		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
 
 	wl341v3)
 		lan_mac=$(mtd_get_mac_binary board-nvram 65440)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-
-	d105 | \
-	wli-tx4-ag300n)
-		lan_mac=$(mtd_get_mac_binary factory 4)
 		;;
 
 	esac

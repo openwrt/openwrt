@@ -22,7 +22,8 @@
 	};
 
 	ethernet@10100000 {
-                port@0 {
+       		mtd-mac-address = <&factory 0x4>;
+		port@0 {
 			ralink,fixed-link = <1000 1 1 1>;
 		};
 	};

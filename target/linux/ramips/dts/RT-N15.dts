@@ -53,6 +53,7 @@
 
 	ethernet@400000 {
 		status = "okay";
+		mtd-mac-address = <&factory 0x4>;
 
                 port@0 {
 			ralink,fixed-link = <1000 1 1 1>;
