@@ -19,11 +19,8 @@ mac80211_hostapd_setup_base() {
 
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
 
-	[ "$channel" = auto ] && {
-		channel=$(iw phy "$phy" info | \
-			sed -ne '/MHz/ { /disabled\|passive\|radar/d; s/.*\[//; s/\].*//; p; q }')
-		config_set "$device" channel "$channel"
-	}
+	hostapd_channel=$channel
+	[ "$channel" = auto -o "$channel" = 0 ] && hostapd_channel=acs_survey
 
 	[ -n "$hwmode" ] && {
 		config_get hwmode_11n "$device" hwmode_11n
@@ -97,7 +94,7 @@ tx_queue_data0_cwmin=3
 tx_queue_data0_cwmax=7
 tx_queue_data0_burst=1.5
 ${hwmode:+hw_mode=$hwmode}
-${channel:+channel=$channel}
+${hostapd_channel:+channel=$hostapd_channel}
 ${beacon_int:+beacon_int=$beacon_int}
 ${country:+country_code=$country}
 ${noscan:+noscan=$noscan}
