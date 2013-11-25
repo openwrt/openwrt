@@ -29,7 +29,7 @@
 					read-only;
 				};
 
-				partition@40000 {
+				factory: partition@40000 {
 					label = "devconf";
 					reg = <0x40000 0x10000>;
 					read-only;
@@ -50,6 +50,10 @@
 				ralink,function = "gpio";
 			};
 		};
+	};
+
+	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x4>;
 	};
 
 	esw@10110000 {
