@@ -21,7 +21,8 @@ rt2x00_eeprom_extract() {
 		rt2x00_eeprom_die "failed to extract from $mtd"
 }
 
-[ -e /lib/firmware/$FIRMWARE ] && exit 0
+FW="/lib/firmware/$FIRMWARE"
+[ -e "$FW" ] && exit 0
 
 . /lib/ramips.sh
 

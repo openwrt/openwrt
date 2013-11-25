@@ -260,6 +260,26 @@ mtd_get_mac_ascii()
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
 }
 
+mtd_get_blob()
+{
+	local mtdname="$1"
+	local offset="$2"
+	local count="$3"
+	local firmware="$4"
+	local part
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_get_blob: partition $mtdname not found!" >&2
+		return 1
+	fi
+
+	dd if=$part of=$firmware bs=1 skip=$offset count=$count 2>/dev/null || {
+		echo "mtd_get_blob: failed to extract $firmware from $part" >&2
+		return 1
+	}
+}
+
 mtd_get_mac_binary() {
 	local mtdname="$1"
 	local offset="$2"
