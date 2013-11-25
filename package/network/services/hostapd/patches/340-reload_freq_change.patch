@@ -1,0 +1,19 @@
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -72,6 +72,16 @@ static void hostapd_reload_bss(struct ho
+ #endif /* CONFIG_NO_RADIUS */
+ 
+ 	ssid = &hapd->conf->ssid;
++
++	hostapd_set_freq(hapd, hapd->iconf->hw_mode, hapd->iface->freq,
++			 hapd->iconf->channel,
++			 hapd->iconf->ieee80211n,
++			 hapd->iconf->ieee80211ac,
++			 hapd->iconf->secondary_channel,
++			 hapd->iconf->vht_oper_chwidth,
++			 hapd->iconf->vht_oper_centr_freq_seg0_idx,
++			 hapd->iconf->vht_oper_centr_freq_seg1_idx);
++
+ 	if (!ssid->wpa_psk_set && ssid->wpa_psk && !ssid->wpa_psk->next &&
+ 	    ssid->wpa_passphrase_set && ssid->wpa_passphrase) {
+ 		/*

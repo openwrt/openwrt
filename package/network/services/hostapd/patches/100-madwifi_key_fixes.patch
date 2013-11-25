@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_madwifi.c
 +++ b/src/drivers/driver_madwifi.c
-@@ -453,7 +453,9 @@ wpa_driver_madwifi_set_key(const char *i
+@@ -450,7 +450,9 @@ wpa_driver_madwifi_set_key(const char *i
  
  	memset(&wk, 0, sizeof(wk));
  	wk.ik_type = cipher;
@@ -11,7 +11,7 @@
  	if (addr == NULL || is_broadcast_ether_addr(addr)) {
  		memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
  		wk.ik_keyix = key_idx;
-@@ -465,6 +467,20 @@ wpa_driver_madwifi_set_key(const char *i
+@@ -462,6 +464,20 @@ wpa_driver_madwifi_set_key(const char *i
  	wk.ik_keylen = key_len;
  	memcpy(wk.ik_keydata, key, key_len);
  

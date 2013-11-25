@@ -8,18 +8,18 @@
  #include "crypto/random.h"
  #include "crypto/tls.h"
  #include "common/version.h"
-@@ -592,7 +593,7 @@ int main(int argc, char *argv[])
+@@ -546,7 +547,7 @@ int main(int argc, char *argv[])
  
  	wpa_supplicant_event = hostapd_wpa_event;
  	for (;;) {
--		c = getopt(argc, argv, "Bde:f:hKP:tvg:G:");
-+		c = getopt(argc, argv, "Bde:f:hKP:tg:G:v::");
+-		c = getopt(argc, argv, "b:Bde:f:hKP:Ttvg:G:");
++		c = getopt(argc, argv, "b:Bde:f:hKP:Ttg:G:v::");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -624,6 +625,8 @@ int main(int argc, char *argv[])
- 			wpa_debug_timestamp++;
+@@ -583,6 +584,8 @@ int main(int argc, char *argv[])
  			break;
+ #endif /* CONFIG_DEBUG_LINUX_TRACING */
  		case 'v':
 +			if (optarg)
 +				exit(!has_feature(optarg));

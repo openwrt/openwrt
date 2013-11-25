@@ -23,16 +23,17 @@
 +}
  
  /**
-  * hostapd_init - Allocate and initialize per-interface data
-@@ -190,6 +200,7 @@ static struct hostapd_iface * hostapd_in
- 		if (hapd == NULL)
- 			goto fail;
- 		hapd->msg_ctx = hapd;
-+		hapd->setup_complete_cb = hostapd_setup_complete_cb;
+  * hostapd_driver_init - Preparate driver interface
+@@ -165,6 +175,8 @@ static int hostapd_driver_init(struct ho
+ 		return -1;
  	}
  
- 	return hapd_iface;
-@@ -437,8 +448,6 @@ static void hostapd_global_deinit(const 
++	hapd->setup_complete_cb = hostapd_setup_complete_cb;
++
+ 	/* Initialize the driver interface */
+ 	if (!(b[0] | b[1] | b[2] | b[3] | b[4] | b[5]))
+ 		b = NULL;
+@@ -381,8 +393,6 @@ static void hostapd_global_deinit(const 
  #endif /* CONFIG_NATIVE_WINDOWS */
  
  	eap_server_unregister_methods();
@@ -41,7 +42,7 @@
  }
  
  
-@@ -464,11 +473,6 @@ static int hostapd_global_run(struct hap
+@@ -408,11 +418,6 @@ static int hostapd_global_run(struct hap
  	}
  #endif /* EAP_SERVER_TNC */
  
@@ -53,13 +54,13 @@
  	eloop_run();
  
  	return 0;
-@@ -572,8 +576,7 @@ int main(int argc, char *argv[])
+@@ -521,8 +526,7 @@ int main(int argc, char *argv[])
  	struct hapd_interfaces interfaces;
  	int ret = 1;
- 	size_t i;
+ 	size_t i, j;
 -	int c, debug = 0, daemonize = 0;
 -	char *pid_file = NULL;
 +	int c, debug = 0;
  	const char *log_file = NULL;
  	const char *entropy_file = NULL;
- 
+ 	char **bss_config = NULL, **tmp_bss;
