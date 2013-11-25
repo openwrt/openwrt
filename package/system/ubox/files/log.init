@@ -11,7 +11,7 @@ PROG=/sbin/logread
 validate_log_section()
 {
 	uci_validate_section system system "${1}" \
-		'Password:string' \
+		'log_file:string' \
 		'log_size:uinteger' \
 		'log_ip:ipaddr' \
 		'log_port:port:514' \
