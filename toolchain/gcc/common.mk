@@ -34,10 +34,10 @@ ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
       PKG_COMP:=bz2
     endif
     ifeq ($(CONFIG_GCC_VERSION),"4.8-linaro")
-      PKG_REV:=4.8-2013.08
-      PKG_VERSION:=4.8.2
+      PKG_REV:=4.8-2013.11
+      PKG_VERSION:=4.8.3
       PKG_VERSION_MAJOR:=4.8
-      PKG_MD5SUM:=668e0f4250e35aff554b66accc9a3105
+      PKG_MD5SUM:=729f4ac34ad404892ecafb991bea2da5
       PKG_COMP:=xz
     endif
     PKG_SOURCE_URL:=http://launchpad.net/gcc-linaro/$(PKG_VERSION_MAJOR)/$(PKG_REV)/+download/

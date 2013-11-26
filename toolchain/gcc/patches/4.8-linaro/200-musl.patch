@@ -1,6 +1,6 @@
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -550,7 +550,7 @@ case ${target} in
+@@ -551,7 +551,7 @@ case ${target} in
  esac
  
  # Common C libraries.
@@ -9,7 +9,7 @@
  
  # Common parts for widely ported systems.
  case ${target} in
-@@ -653,6 +653,9 @@ case ${target} in
+@@ -654,6 +654,9 @@ case ${target} in
      *-*-*uclibc*)
        tm_defines="$tm_defines DEFAULT_LIBC=LIBC_UCLIBC"
        ;;
@@ -306,9 +306,9 @@
    CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKERN32, UCLIBC_DYNAMIC_LINKERN32, \
 -			 BIONIC_DYNAMIC_LINKERN32)
 +			 BIONIC_DYNAMIC_LINKERN32, MUSL_DYNAMIC_LINKERN32)
---- a/gcc/config/sparc/linux64.h       2013-09-10 10:02:45.663973856 +0100
-+++ b/gcc/config/sparc/linux64.h       2013-09-10 10:03:17.871972435 +0100
-@@ -104,6 +104,9 @@
+--- a/gcc/config/sparc/linux64.h
++++ b/gcc/config/sparc/linux64.h
+@@ -95,6 +95,9 @@ along with GCC; see the file COPYING3.
  #define GLIBC_DYNAMIC_LINKER32 "/lib/ld-linux.so.2"
  #define GLIBC_DYNAMIC_LINKER64 "/lib64/ld-linux.so.2"
  
@@ -318,4 +318,3 @@
  #ifdef SPARC_BI_ARCH
  
  #undef SUBTARGET_EXTRA_SPECS
-
