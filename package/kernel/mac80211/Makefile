@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=2013-11-05
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_BACKPORT_VERSION:=
 PKG_MD5SUM:=5ef839d02d19c341629555a529beebee
@@ -1590,6 +1590,10 @@ define KernelPackage/wl12xx/install
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-plt.bin \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-sr.bin \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl1271-nvs.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl1278-fw-5-mr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl1278-fw-5-plt.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl1278-fw-5-sr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-nvs.bin \
 		$(1)/lib/firmware/ti-connectivity
 endef
 
