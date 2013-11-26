@@ -2967,28 +2967,42 @@
  			enum nl80211_radar_event event, gfp_t gfp);
  
  
+@@ -4282,7 +4283,8 @@ bool cfg80211_reg_can_beacon(struct wiph
+  * @dev: the device which switched channels
+  * @chandef: the new channel definition
+  *
+- * Acquires wdev_lock, so must only be called from sleepable driver context!
++ * Caller must acquire wdev_lock, therefore must only be called from sleepable
++ * driver context!
+  */
+ void cfg80211_ch_switch_notify(struct net_device *dev,
+ 			       struct cfg80211_chan_def *chandef);
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -1508,6 +1508,9 @@ enum nl80211_commands {
+@@ -1508,6 +1508,12 @@ enum nl80211_commands {
   *	to react to radar events, e.g. initiate a channel switch or leave the
   *	IBSS network.
   *
-+ * @NL80211_ATTR_SUPPORT_5_10_MHZ: A flag indicating that the device supports
-+ *	5 MHz and 10 MHz channel bandwidth.
++ * @NL80211_ATTR_SUPPORT_5_MHZ: A flag indicating that the device supports
++ *	5 MHz channel bandwidth.
++ *
++ * @NL80211_ATTR_SUPPORT_10_MHZ: A flag indicating that the device supports
++ *	10 MHz channel bandwidth.
 + *
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
   */
-@@ -1824,6 +1827,8 @@ enum nl80211_attrs {
+@@ -1824,6 +1830,9 @@ enum nl80211_attrs {
  
  	NL80211_ATTR_HANDLE_DFS,
  
-+	NL80211_ATTR_SUPPORT_5_10_MHZ,
++	NL80211_ATTR_SUPPORT_5_MHZ,
++	NL80211_ATTR_SUPPORT_10_MHZ,
 +
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -2224,10 +2229,9 @@ enum nl80211_band_attr {
+@@ -2224,10 +2233,9 @@ enum nl80211_band_attr {
   * @NL80211_FREQUENCY_ATTR_FREQ: Frequency in MHz
   * @NL80211_FREQUENCY_ATTR_DISABLED: Channel is disabled in current
   *	regulatory domain.
@@ -3002,7 +3016,7 @@
   * @NL80211_FREQUENCY_ATTR_RADAR: Radar detection is mandatory
   *	on this channel in current regulatory domain.
   * @NL80211_FREQUENCY_ATTR_MAX_TX_POWER: Maximum transmission power in mBm
-@@ -2254,8 +2258,8 @@ enum nl80211_frequency_attr {
+@@ -2254,8 +2262,8 @@ enum nl80211_frequency_attr {
  	__NL80211_FREQUENCY_ATTR_INVALID,
  	NL80211_FREQUENCY_ATTR_FREQ,
  	NL80211_FREQUENCY_ATTR_DISABLED,
@@ -3013,7 +3027,7 @@
  	NL80211_FREQUENCY_ATTR_RADAR,
  	NL80211_FREQUENCY_ATTR_MAX_TX_POWER,
  	NL80211_FREQUENCY_ATTR_DFS_STATE,
-@@ -2271,6 +2275,9 @@ enum nl80211_frequency_attr {
+@@ -2271,6 +2279,9 @@ enum nl80211_frequency_attr {
  };
  
  #define NL80211_FREQUENCY_ATTR_MAX_TX_POWER NL80211_FREQUENCY_ATTR_MAX_TX_POWER
@@ -3023,7 +3037,7 @@
  
  /**
   * enum nl80211_bitrate_attr - bitrate attributes
-@@ -2413,8 +2420,9 @@ enum nl80211_sched_scan_match_attr {
+@@ -2413,8 +2424,9 @@ enum nl80211_sched_scan_match_attr {
   * @NL80211_RRF_DFS: DFS support is required to be used
   * @NL80211_RRF_PTP_ONLY: this is only for Point To Point links
   * @NL80211_RRF_PTMP_ONLY: this is only for Point To Multi Point links
@@ -3035,7 +3049,7 @@
   */
  enum nl80211_reg_rule_flags {
  	NL80211_RRF_NO_OFDM		= 1<<0,
-@@ -2424,10 +2432,17 @@ enum nl80211_reg_rule_flags {
+@@ -2424,10 +2436,17 @@ enum nl80211_reg_rule_flags {
  	NL80211_RRF_DFS			= 1<<4,
  	NL80211_RRF_PTP_ONLY		= 1<<5,
  	NL80211_RRF_PTMP_ONLY		= 1<<6,
@@ -3057,15 +3071,76 @@
   *
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1050,6 +1050,7 @@ static int ieee80211_stop_ap(struct wiph
+@@ -846,7 +846,7 @@ static int ieee80211_set_probe_resp(stru
+ 	if (!resp || !resp_len)
+ 		return 1;
+ 
+-	old = rtnl_dereference(sdata->u.ap.probe_resp);
++	old = sdata_dereference(sdata->u.ap.probe_resp, sdata);
+ 
+ 	new = kzalloc(sizeof(struct probe_resp) + resp_len, GFP_KERNEL);
+ 	if (!new)
+@@ -870,7 +870,8 @@ int ieee80211_assign_beacon(struct ieee8
+ 	int size, err;
+ 	u32 changed = BSS_CHANGED_BEACON;
+ 
+-	old = rtnl_dereference(sdata->u.ap.beacon);
++	old = sdata_dereference(sdata->u.ap.beacon, sdata);
++
+ 
+ 	/* Need to have a beacon head if we don't have one yet */
+ 	if (!params->head && !old)
+@@ -947,7 +948,7 @@ static int ieee80211_start_ap(struct wip
+ 		      BSS_CHANGED_P2P_PS;
+ 	int err;
+ 
+-	old = rtnl_dereference(sdata->u.ap.beacon);
++	old = sdata_dereference(sdata->u.ap.beacon, sdata);
+ 	if (old)
+ 		return -EALREADY;
+ 
+@@ -1001,7 +1002,8 @@ static int ieee80211_start_ap(struct wip
+ 
+ 	err = drv_start_ap(sdata->local, sdata);
+ 	if (err) {
+-		old = rtnl_dereference(sdata->u.ap.beacon);
++		old = sdata_dereference(sdata->u.ap.beacon, sdata);
++
+ 		if (old)
+ 			kfree_rcu(old, rcu_head);
+ 		RCU_INIT_POINTER(sdata->u.ap.beacon, NULL);
+@@ -1032,7 +1034,7 @@ static int ieee80211_change_beacon(struc
+ 	if (sdata->vif.csa_active)
+ 		return -EBUSY;
+ 
+-	old = rtnl_dereference(sdata->u.ap.beacon);
++	old = sdata_dereference(sdata->u.ap.beacon, sdata);
+ 	if (!old)
+ 		return -ENOENT;
+ 
+@@ -1050,15 +1052,18 @@ static int ieee80211_stop_ap(struct wiph
  	struct ieee80211_local *local = sdata->local;
  	struct beacon_data *old_beacon;
  	struct probe_resp *old_probe_resp;
 +	struct cfg80211_chan_def chandef;
  
- 	old_beacon = rtnl_dereference(sdata->u.ap.beacon);
+-	old_beacon = rtnl_dereference(sdata->u.ap.beacon);
++	old_beacon = sdata_dereference(sdata->u.ap.beacon, sdata);
  	if (!old_beacon)
-@@ -1091,8 +1092,10 @@ static int ieee80211_stop_ap(struct wiph
+ 		return -ENOENT;
+-	old_probe_resp = rtnl_dereference(sdata->u.ap.probe_resp);
++	old_probe_resp = sdata_dereference(sdata->u.ap.probe_resp, sdata);
+ 
+ 	/* abort any running channel switch */
+ 	sdata->vif.csa_active = false;
+-	cancel_work_sync(&sdata->csa_finalize_work);
++	kfree(sdata->u.ap.next_beacon);
++	sdata->u.ap.next_beacon = NULL;
++
+ 	cancel_work_sync(&sdata->u.ap.request_smps_work);
+ 
+ 	/* turn off carrier for this interface and dependent VLANs */
+@@ -1091,8 +1096,10 @@ static int ieee80211_stop_ap(struct wiph
  	ieee80211_bss_info_change_notify(sdata, BSS_CHANGED_BEACON_ENABLED);
  
  	if (sdata->wdev.cac_started) {
@@ -3077,6 +3152,128 @@
  				   GFP_KERNEL);
  	}
  
+@@ -1368,7 +1375,7 @@ static int sta_apply_parameters(struct i
+ 			changed |=
+ 			      ieee80211_mps_set_sta_local_pm(sta,
+ 							     params->local_pm);
+-		ieee80211_bss_info_change_notify(sdata, changed);
++		ieee80211_mbss_info_change_notify(sdata, changed);
+ #endif
+ 	}
+ 
+@@ -1953,7 +1960,7 @@ static int ieee80211_change_bss(struct w
+ 	enum ieee80211_band band;
+ 	u32 changed = 0;
+ 
+-	if (!rtnl_dereference(sdata->u.ap.beacon))
++	if (!sdata_dereference(sdata->u.ap.beacon, sdata))
+ 		return -ENOENT;
+ 
+ 	band = ieee80211_get_sdata_band(sdata);
+@@ -2964,27 +2971,33 @@ void ieee80211_csa_finalize_work(struct 
+ 	struct ieee80211_local *local = sdata->local;
+ 	int err, changed = 0;
+ 
++	sdata_lock(sdata);
++	/* AP might have been stopped while waiting for the lock. */
++	if (!sdata->vif.csa_active)
++		goto unlock;
++
+ 	if (!ieee80211_sdata_running(sdata))
+-		return;
++		goto unlock;
+ 
+ 	sdata->radar_required = sdata->csa_radar_required;
+-	err = ieee80211_vif_change_channel(sdata, &local->csa_chandef,
+-					   &changed);
++	err = ieee80211_vif_change_channel(sdata, &changed);
+ 	if (WARN_ON(err < 0))
+-		return;
++		goto unlock;
+ 
+ 	if (!local->use_chanctx) {
+-		local->_oper_chandef = local->csa_chandef;
++		local->_oper_chandef = sdata->csa_chandef;
+ 		ieee80211_hw_config(local, 0);
+ 	}
+ 
+ 	ieee80211_bss_info_change_notify(sdata, changed);
+ 
++	sdata->vif.csa_active = false;
+ 	switch (sdata->vif.type) {
+ 	case NL80211_IFTYPE_AP:
+ 		err = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon);
+ 		if (err < 0)
+-			return;
++			goto unlock;
++
+ 		changed |= err;
+ 		kfree(sdata->u.ap.next_beacon);
+ 		sdata->u.ap.next_beacon = NULL;
+@@ -2998,20 +3011,22 @@ void ieee80211_csa_finalize_work(struct 
+ 	case NL80211_IFTYPE_MESH_POINT:
+ 		err = ieee80211_mesh_finish_csa(sdata);
+ 		if (err < 0)
+-			return;
++			goto unlock;
+ 		break;
+ #endif
+ 	default:
+ 		WARN_ON(1);
+-		return;
++		goto unlock;
+ 	}
+-	sdata->vif.csa_active = false;
+ 
+ 	ieee80211_wake_queues_by_reason(&sdata->local->hw,
+ 					IEEE80211_MAX_QUEUE_MAP,
+ 					IEEE80211_QUEUE_STOP_REASON_CSA);
+ 
+-	cfg80211_ch_switch_notify(sdata->dev, &local->csa_chandef);
++	cfg80211_ch_switch_notify(sdata->dev, &sdata->csa_chandef);
++
++unlock:
++	sdata_unlock(sdata);
+ }
+ 
+ static int ieee80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
+@@ -3024,6 +3039,8 @@ static int ieee80211_channel_switch(stru
+ 	struct ieee80211_if_mesh __maybe_unused *ifmsh;
+ 	int err, num_chanctx;
+ 
++	lockdep_assert_held(&sdata->wdev.mtx);
++
+ 	if (!list_empty(&local->roc_list) || local->scanning)
+ 		return -EBUSY;
+ 
+@@ -3120,9 +3137,17 @@ static int ieee80211_channel_switch(stru
+ 		    params->chandef.chan->band)
+ 			return -EINVAL;
+ 
++		ifmsh->chsw_init = true;
++		if (!ifmsh->pre_value)
++			ifmsh->pre_value = 1;
++		else
++			ifmsh->pre_value++;
++
+ 		err = ieee80211_mesh_csa_beacon(sdata, params, true);
+-		if (err < 0)
++		if (err < 0) {
++			ifmsh->chsw_init = false;
+ 			return err;
++		}
+ 		break;
+ #endif
+ 	default:
+@@ -3136,7 +3161,7 @@ static int ieee80211_channel_switch(stru
+ 				IEEE80211_MAX_QUEUE_MAP,
+ 				IEEE80211_QUEUE_STOP_REASON_CSA);
+ 
+-	local->csa_chandef = params->chandef;
++	sdata->csa_chandef = params->chandef;
+ 	sdata->vif.csa_active = true;
+ 
+ 	ieee80211_bss_info_change_notify(sdata, err);
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
 @@ -749,6 +749,7 @@ static void ieee80211_do_stop(struct iee
@@ -3112,7 +3309,44 @@
  		break;
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -1398,10 +1398,12 @@ void ieee80211_dfs_cac_timer_work(struct
+@@ -886,8 +886,7 @@ static void ieee80211_chswitch_work(stru
+ 	if (!ifmgd->associated)
+ 		goto out;
+ 
+-	ret = ieee80211_vif_change_channel(sdata, &local->csa_chandef,
+-					   &changed);
++	ret = ieee80211_vif_change_channel(sdata, &changed);
+ 	if (ret) {
+ 		sdata_info(sdata,
+ 			   "vif channel switch failed, disconnecting\n");
+@@ -897,7 +896,7 @@ static void ieee80211_chswitch_work(stru
+ 	}
+ 
+ 	if (!local->use_chanctx) {
+-		local->_oper_chandef = local->csa_chandef;
++		local->_oper_chandef = sdata->csa_chandef;
+ 		/* Call "hw_config" only if doing sw channel switch.
+ 		 * Otherwise update the channel directly
+ 		 */
+@@ -908,7 +907,7 @@ static void ieee80211_chswitch_work(stru
+ 	}
+ 
+ 	/* XXX: shouldn't really modify cfg80211-owned data! */
+-	ifmgd->associated->channel = local->csa_chandef.chan;
++	ifmgd->associated->channel = sdata->csa_chandef.chan;
+ 
+ 	/* XXX: wait for a beacon first? */
+ 	ieee80211_wake_queues_by_reason(&local->hw,
+@@ -1035,7 +1034,7 @@ ieee80211_sta_process_chanswitch(struct 
+ 	}
+ 	mutex_unlock(&local->chanctx_mtx);
+ 
+-	local->csa_chandef = csa_ie.chandef;
++	sdata->csa_chandef = csa_ie.chandef;
+ 
+ 	if (csa_ie.mode)
+ 		ieee80211_stop_queues_by_reason(&local->hw,
+@@ -1398,10 +1397,12 @@ void ieee80211_dfs_cac_timer_work(struct
  	struct ieee80211_sub_if_data *sdata =
  		container_of(delayed_work, struct ieee80211_sub_if_data,
  			     dfs_cac_timer_work);
@@ -3267,6 +3501,21 @@
  					   NL80211_RADAR_CAC_ABORTED,
  					   GFP_KERNEL);
  		}
+@@ -2459,14 +2462,9 @@ int ieee80211_send_action_csa(struct iee
+ 			  WLAN_EID_CHAN_SWITCH_PARAM_TX_RESTRICT : 0x00;
+ 		put_unaligned_le16(WLAN_REASON_MESH_CHAN, pos); /* Reason Cd */
+ 		pos += 2;
+-		if (!ifmsh->pre_value)
+-			ifmsh->pre_value = 1;
+-		else
+-			ifmsh->pre_value++;
+ 		pre_value = cpu_to_le16(ifmsh->pre_value);
+ 		memcpy(pos, &pre_value, 2);		/* Precedence Value */
+ 		pos += 2;
+-		ifmsh->chsw_init = true;
+ 	}
+ 
+ 	ieee80211_tx_skb(sdata, skb);
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
 @@ -277,6 +277,32 @@ void cfg80211_set_dfs_state(struct wiphy
@@ -3649,16 +3898,17 @@
  	if (chan->flags & IEEE80211_CHAN_RADAR) {
  		if (nla_put_flag(msg, NL80211_FREQUENCY_ATTR_RADAR))
  			goto nla_put_failure;
-@@ -1229,7 +1229,7 @@ static int nl80211_send_wiphy(struct cfg
+@@ -1229,7 +1229,8 @@ static int nl80211_send_wiphy(struct cfg
  		    nla_put_flag(msg, NL80211_ATTR_TDLS_EXTERNAL_SETUP))
  			goto nla_put_failure;
  		if ((dev->wiphy.flags & WIPHY_FLAG_SUPPORTS_5_10_MHZ) &&
 -		    nla_put_flag(msg, WIPHY_FLAG_SUPPORTS_5_10_MHZ))
-+		    nla_put_flag(msg, NL80211_ATTR_SUPPORT_5_10_MHZ))
++		    (nla_put_flag(msg, NL80211_ATTR_SUPPORT_5_MHZ) ||
++		     nla_put_flag(msg, NL80211_ATTR_SUPPORT_10_MHZ)))
  			goto nla_put_failure;
  
  		state->split_start++;
-@@ -2170,7 +2170,7 @@ static inline u64 wdev_id(struct wireles
+@@ -2170,7 +2171,7 @@ static inline u64 wdev_id(struct wireles
  }
  
  static int nl80211_send_chandef(struct sk_buff *msg,
@@ -3667,7 +3917,59 @@
  {
  	WARN_ON(!cfg80211_chandef_valid(chandef));
  
-@@ -5653,7 +5653,7 @@ static int nl80211_start_radar_detection
+@@ -3219,6 +3220,7 @@ static int nl80211_start_ap(struct sk_bu
+ 			return PTR_ERR(params.acl);
+ 	}
+ 
++	wdev_lock(wdev);
+ 	err = rdev_start_ap(rdev, dev, &params);
+ 	if (!err) {
+ 		wdev->preset_chandef = params.chandef;
+@@ -3227,6 +3229,7 @@ static int nl80211_start_ap(struct sk_bu
+ 		wdev->ssid_len = params.ssid_len;
+ 		memcpy(wdev->ssid, params.ssid, wdev->ssid_len);
+ 	}
++	wdev_unlock(wdev);
+ 
+ 	kfree(params.acl);
+ 
+@@ -3255,7 +3258,11 @@ static int nl80211_set_beacon(struct sk_
+ 	if (err)
+ 		return err;
+ 
+-	return rdev_change_beacon(rdev, dev, &params);
++	wdev_lock(wdev);
++	err = rdev_change_beacon(rdev, dev, &params);
++	wdev_unlock(wdev);
++
++	return err;
+ }
+ 
+ static int nl80211_stop_ap(struct sk_buff *skb, struct genl_info *info)
+@@ -4461,7 +4468,9 @@ static int nl80211_set_bss(struct sk_buf
+ {
+ 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
+ 	struct net_device *dev = info->user_ptr[1];
++	struct wireless_dev *wdev = dev->ieee80211_ptr;
+ 	struct bss_parameters params;
++	int err;
+ 
+ 	memset(&params, 0, sizeof(params));
+ 	/* default to not changing parameters */
+@@ -4527,7 +4536,11 @@ static int nl80211_set_bss(struct sk_buf
+ 	    dev->ieee80211_ptr->iftype != NL80211_IFTYPE_P2P_GO)
+ 		return -EOPNOTSUPP;
+ 
+-	return rdev_change_bss(rdev, dev, &params);
++	wdev_lock(wdev);
++	err = rdev_change_bss(rdev, dev, &params);
++	wdev_unlock(wdev);
++
++	return err;
+ }
+ 
+ static const struct nla_policy reg_rule_policy[NL80211_REG_RULE_ATTR_MAX + 1] = {
+@@ -5653,7 +5666,7 @@ static int nl80211_start_radar_detection
  	if (err == 0)
  		return -EINVAL;
  
@@ -3676,7 +3978,45 @@
  		return -EINVAL;
  
  	if (!rdev->ops->start_radar_detection)
-@@ -10882,7 +10882,7 @@ EXPORT_SYMBOL(cfg80211_cqm_txe_notify);
+@@ -5793,7 +5806,11 @@ skip_beacons:
+ 	if (info->attrs[NL80211_ATTR_CH_SWITCH_BLOCK_TX])
+ 		params.block_tx = true;
+ 
+-	return rdev_channel_switch(rdev, dev, &params);
++	wdev_lock(wdev);
++	err = rdev_channel_switch(rdev, dev, &params);
++	wdev_unlock(wdev);
++
++	return err;
+ }
+ 
+ static int nl80211_send_bss(struct sk_buff *msg, struct netlink_callback *cb,
+@@ -10809,21 +10826,18 @@ void cfg80211_ch_switch_notify(struct ne
+ 	struct wiphy *wiphy = wdev->wiphy;
+ 	struct cfg80211_registered_device *rdev = wiphy_to_dev(wiphy);
+ 
+-	trace_cfg80211_ch_switch_notify(dev, chandef);
++	ASSERT_WDEV_LOCK(wdev);
+ 
+-	wdev_lock(wdev);
++	trace_cfg80211_ch_switch_notify(dev, chandef);
+ 
+ 	if (WARN_ON(wdev->iftype != NL80211_IFTYPE_AP &&
+ 		    wdev->iftype != NL80211_IFTYPE_P2P_GO &&
+ 		    wdev->iftype != NL80211_IFTYPE_ADHOC &&
+ 		    wdev->iftype != NL80211_IFTYPE_MESH_POINT))
+-		goto out;
++		return;
+ 
+ 	wdev->channel = chandef->chan;
+ 	nl80211_ch_switch_notify(rdev, dev, chandef, GFP_KERNEL);
+-out:
+-	wdev_unlock(wdev);
+-	return;
+ }
+ EXPORT_SYMBOL(cfg80211_ch_switch_notify);
+ 
+@@ -10882,7 +10896,7 @@ EXPORT_SYMBOL(cfg80211_cqm_txe_notify);
  
  void
  nl80211_radar_notify(struct cfg80211_registered_device *rdev,
@@ -4772,3 +5112,216 @@
  
  	mr->cur_tp = MINSTREL_TRUNC(tp);
  }
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -3984,18 +3984,20 @@ static void ar9003_hw_quick_drop_apply(s
+ 	int quick_drop;
+ 	s32 t[3], f[3] = {5180, 5500, 5785};
+ 
+-	if (!(pBase->miscConfiguration & BIT(1)))
++	if (!(pBase->miscConfiguration & BIT(4)))
+ 		return;
+ 
+-	if (freq < 4000)
+-		quick_drop = eep->modalHeader2G.quick_drop;
+-	else {
+-		t[0] = eep->base_ext1.quick_drop_low;
+-		t[1] = eep->modalHeader5G.quick_drop;
+-		t[2] = eep->base_ext1.quick_drop_high;
+-		quick_drop = ar9003_hw_power_interpolate(freq, f, t, 3);
++	if (AR_SREV_9300(ah) || AR_SREV_9580(ah) || AR_SREV_9340(ah)) {
++		if (freq < 4000) {
++			quick_drop = eep->modalHeader2G.quick_drop;
++		} else {
++			t[0] = eep->base_ext1.quick_drop_low;
++			t[1] = eep->modalHeader5G.quick_drop;
++			t[2] = eep->base_ext1.quick_drop_high;
++			quick_drop = ar9003_hw_power_interpolate(freq, f, t, 3);
++		}
++		REG_RMW_FIELD(ah, AR_PHY_AGC, AR_PHY_AGC_QUICK_DROP, quick_drop);
+ 	}
+-	REG_RMW_FIELD(ah, AR_PHY_AGC, AR_PHY_AGC_QUICK_DROP, quick_drop);
+ }
+ 
+ static void ar9003_hw_txend_to_xpa_off_apply(struct ath_hw *ah, bool is2ghz)
+@@ -4035,7 +4037,7 @@ static void ar9003_hw_xlna_bias_strength
+ 	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+ 	u8 bias;
+ 
+-	if (!(eep->baseEepHeader.featureEnable & 0x40))
++	if (!(eep->baseEepHeader.miscConfiguration & 0x40))
+ 		return;
+ 
+ 	if (!AR_SREV_9300(ah))
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -735,6 +735,7 @@ struct ieee80211_sub_if_data {
+ 	int csa_counter_offset_beacon;
+ 	int csa_counter_offset_presp;
+ 	bool csa_radar_required;
++	struct cfg80211_chan_def csa_chandef;
+ 
+ 	/* used to reconfigure hardware SM PS */
+ 	struct work_struct recalc_smps;
+@@ -811,6 +812,9 @@ static inline void sdata_unlock(struct i
+ 	__release(&sdata->wdev.mtx);
+ }
+ 
++#define sdata_dereference(p, sdata) \
++	rcu_dereference_protected(p, lockdep_is_held(&sdata->wdev.mtx))
++
+ static inline void
+ sdata_assert_lock(struct ieee80211_sub_if_data *sdata)
+ {
+@@ -1098,7 +1102,6 @@ struct ieee80211_local {
+ 	enum mac80211_scan_state next_scan_state;
+ 	struct delayed_work scan_work;
+ 	struct ieee80211_sub_if_data __rcu *scan_sdata;
+-	struct cfg80211_chan_def csa_chandef;
+ 	/* For backward compatibility only -- do not use */
+ 	struct cfg80211_chan_def _oper_chandef;
+ 
+@@ -1236,6 +1239,7 @@ struct ieee80211_csa_ie {
+ 	u8 mode;
+ 	u8 count;
+ 	u8 ttl;
++	u16 pre_value;
+ };
+ 
+ /* Parsed Information Elements */
+@@ -1738,7 +1742,6 @@ ieee80211_vif_change_bandwidth(struct ie
+ /* NOTE: only use ieee80211_vif_change_channel() for channel switch */
+ int __must_check
+ ieee80211_vif_change_channel(struct ieee80211_sub_if_data *sdata,
+-			     const struct cfg80211_chan_def *chandef,
+ 			     u32 *changed);
+ void ieee80211_vif_release_channel(struct ieee80211_sub_if_data *sdata);
+ void ieee80211_vif_vlan_copy_chanctx(struct ieee80211_sub_if_data *sdata);
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -411,12 +411,12 @@ int ieee80211_vif_use_channel(struct iee
+ }
+ 
+ int ieee80211_vif_change_channel(struct ieee80211_sub_if_data *sdata,
+-				 const struct cfg80211_chan_def *chandef,
+ 				 u32 *changed)
+ {
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct ieee80211_chanctx_conf *conf;
+ 	struct ieee80211_chanctx *ctx;
++	const struct cfg80211_chan_def *chandef = &sdata->csa_chandef;
+ 	int ret;
+ 	u32 chanctx_changed = 0;
+ 
+--- a/net/mac80211/ibss.c
++++ b/net/mac80211/ibss.c
+@@ -550,12 +550,12 @@ int ieee80211_ibss_finish_csa(struct iee
+ 					capability);
+ 		/* XXX: should not really modify cfg80211 data */
+ 		if (cbss) {
+-			cbss->channel = sdata->local->csa_chandef.chan;
++			cbss->channel = sdata->csa_chandef.chan;
+ 			cfg80211_put_bss(sdata->local->hw.wiphy, cbss);
+ 		}
+ 	}
+ 
+-	ifibss->chandef = sdata->local->csa_chandef;
++	ifibss->chandef = sdata->csa_chandef;
+ 
+ 	/* generate the beacon */
+ 	err = ieee80211_ibss_csa_beacon(sdata, NULL);
+@@ -922,7 +922,7 @@ ieee80211_ibss_process_chanswitch(struct
+ 				IEEE80211_MAX_QUEUE_MAP,
+ 				IEEE80211_QUEUE_STOP_REASON_CSA);
+ 
+-	sdata->local->csa_chandef = params.chandef;
++	sdata->csa_chandef = params.chandef;
+ 	sdata->vif.csa_active = true;
+ 
+ 	ieee80211_bss_info_change_notify(sdata, err);
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -943,14 +943,19 @@ ieee80211_mesh_process_chnswitch(struct 
+ 		 params.chandef.chan->center_freq);
+ 
+ 	params.block_tx = csa_ie.mode & WLAN_EID_CHAN_SWITCH_PARAM_TX_RESTRICT;
+-	if (beacon)
++	if (beacon) {
+ 		ifmsh->chsw_ttl = csa_ie.ttl - 1;
+-	else
+-		ifmsh->chsw_ttl = 0;
++		if (ifmsh->pre_value >= csa_ie.pre_value)
++			return false;
++		ifmsh->pre_value = csa_ie.pre_value;
++	}
+ 
+-	if (ifmsh->chsw_ttl > 0)
++	if (ifmsh->chsw_ttl < ifmsh->mshcfg.dot11MeshTTL) {
+ 		if (ieee80211_mesh_csa_beacon(sdata, &params, false) < 0)
+ 			return false;
++	} else {
++		return false;
++	}
+ 
+ 	sdata->csa_radar_required = params.radar_required;
+ 
+@@ -959,7 +964,7 @@ ieee80211_mesh_process_chnswitch(struct 
+ 				IEEE80211_MAX_QUEUE_MAP,
+ 				IEEE80211_QUEUE_STOP_REASON_CSA);
+ 
+-	sdata->local->csa_chandef = params.chandef;
++	sdata->csa_chandef = params.chandef;
+ 	sdata->vif.csa_active = true;
+ 
+ 	ieee80211_bss_info_change_notify(sdata, err);
+@@ -1163,7 +1168,6 @@ static int mesh_fwd_csa_frame(struct iee
+ 	offset_ttl = (len < 42) ? 7 : 10;
+ 	*(pos + offset_ttl) -= 1;
+ 	*(pos + offset_ttl + 1) &= ~WLAN_EID_CHAN_SWITCH_PARAM_INITIATOR;
+-	sdata->u.mesh.chsw_ttl = *(pos + offset_ttl);
+ 
+ 	memcpy(mgmt_fwd, mgmt, len);
+ 	eth_broadcast_addr(mgmt_fwd->da);
+@@ -1182,7 +1186,7 @@ static void mesh_rx_csa_frame(struct iee
+ 	u16 pre_value;
+ 	bool fwd_csa = true;
+ 	size_t baselen;
+-	u8 *pos, ttl;
++	u8 *pos;
+ 
+ 	if (mgmt->u.action.u.measurement.action_code !=
+ 	    WLAN_ACTION_SPCT_CHL_SWITCH)
+@@ -1193,8 +1197,8 @@ static void mesh_rx_csa_frame(struct iee
+ 			   u.action.u.chan_switch.variable);
+ 	ieee802_11_parse_elems(pos, len - baselen, false, &elems);
+ 
+-	ttl = elems.mesh_chansw_params_ie->mesh_ttl;
+-	if (!--ttl)
++	ifmsh->chsw_ttl = elems.mesh_chansw_params_ie->mesh_ttl;
++	if (!--ifmsh->chsw_ttl)
+ 		fwd_csa = false;
+ 
+ 	pre_value = le16_to_cpu(elems.mesh_chansw_params_ie->mesh_pre_value);
+--- a/net/mac80211/spectmgmt.c
++++ b/net/mac80211/spectmgmt.c
+@@ -78,6 +78,8 @@ int ieee80211_parse_ch_switch_ie(struct 
+ 	if (elems->mesh_chansw_params_ie) {
+ 		csa_ie->ttl = elems->mesh_chansw_params_ie->mesh_ttl;
+ 		csa_ie->mode = elems->mesh_chansw_params_ie->mesh_flags;
++		csa_ie->pre_value = le16_to_cpu(
++				elems->mesh_chansw_params_ie->mesh_pre_value);
+ 	}
+ 
+ 	new_freq = ieee80211_channel_to_frequency(new_chan_no, new_band);
+--- a/drivers/net/wireless/ath/ath6kl/cfg80211.c
++++ b/drivers/net/wireless/ath/ath6kl/cfg80211.c
+@@ -1109,7 +1109,9 @@ void ath6kl_cfg80211_ch_switch_notify(st
+ 				(mode == WMI_11G_HT20) ?
+ 					NL80211_CHAN_HT20 : NL80211_CHAN_NO_HT);
+ 
++	mutex_lock(vif->wdev->mtx);
+ 	cfg80211_ch_switch_notify(vif->ndev, &chandef);
++	mutex_unlock(vif->wdev->mtx);
+ }
+ 
+ static int ath6kl_cfg80211_add_key(struct wiphy *wiphy, struct net_device *ndev,
