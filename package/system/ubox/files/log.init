@@ -15,7 +15,7 @@ validate_log_section()
 		'log_size:uinteger' \
 		'log_ip:ipaddr' \
 		'log_port:port:514' \
-		'log_proto:or("tcp", "udp"):udp' \
+		'log_proto:string:udp' \
 		'log_prefix:string'
 	return $?
 }
