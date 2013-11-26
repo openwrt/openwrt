@@ -53,6 +53,7 @@ define Package/uboot-omap-$(1)
   TITLE:=$(2)
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)
+  HIDDEN:=1
 endef
 endef
 
