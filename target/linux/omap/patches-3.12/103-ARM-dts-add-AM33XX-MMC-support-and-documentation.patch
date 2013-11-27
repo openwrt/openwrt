@@ -19,11 +19,9 @@ Signed-off-by: Joel Fernandes <joelf@ti.com>
  arch/arm/boot/dts/am33xx.dtsi                      | 38 ++++++++++++++++++++++
  5 files changed, 88 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/mmc/ti-omap-hsmmc.txt b/Documentation/devicetree/bindings/mmc/ti-omap-hsmmc.txt
-index ed271fc..8c8908a 100644
 --- a/Documentation/devicetree/bindings/mmc/ti-omap-hsmmc.txt
 +++ b/Documentation/devicetree/bindings/mmc/ti-omap-hsmmc.txt
-@@ -20,8 +20,29 @@ ti,dual-volt: boolean, supports dual voltage cards
+@@ -20,8 +20,29 @@ ti,dual-volt: boolean, supports dual vol
  ti,non-removable: non-removable slot (like eMMC)
  ti,needs-special-reset: Requires a special softreset sequence
  ti,needs-special-hs-handling: HSMMC IP needs special setting for handling High Speed
@@ -62,8 +60,6 @@ index ed271fc..8c8908a 100644
 +			&edma 25>;
 +		dma-names = "tx", "rx";
  	};
-diff --git a/arch/arm/boot/dts/am335x-bone.dts b/arch/arm/boot/dts/am335x-bone.dts
-index 7993c48..d5f43fe 100644
 --- a/arch/arm/boot/dts/am335x-bone.dts
 +++ b/arch/arm/boot/dts/am335x-bone.dts
 @@ -9,3 +9,14 @@
@@ -81,8 +77,6 @@ index 7993c48..d5f43fe 100644
 +	status = "okay";
 +	vmmc-supply = <&ldo3_reg>;
 +};
-diff --git a/arch/arm/boot/dts/am335x-evm.dts b/arch/arm/boot/dts/am335x-evm.dts
-index e8ec875..bc4a69d 100644
 --- a/arch/arm/boot/dts/am335x-evm.dts
 +++ b/arch/arm/boot/dts/am335x-evm.dts
 @@ -477,6 +477,8 @@
@@ -103,8 +97,6 @@ index e8ec875..bc4a69d 100644
 +	status = "okay";
 +	vmmc-supply = <&vmmc_reg>;
 +};
-diff --git a/arch/arm/boot/dts/am335x-evmsk.dts b/arch/arm/boot/dts/am335x-evmsk.dts
-index 4f339fa..55fd194 100644
 --- a/arch/arm/boot/dts/am335x-evmsk.dts
 +++ b/arch/arm/boot/dts/am335x-evmsk.dts
 @@ -393,6 +393,8 @@
@@ -125,8 +117,6 @@ index 4f339fa..55fd194 100644
 +	status = "okay";
 +	vmmc-supply = <&vmmc_reg>;
 +};
-diff --git a/arch/arm/boot/dts/am33xx.dtsi b/arch/arm/boot/dts/am33xx.dtsi
-index 9ce85e5..0a82fca 100644
 --- a/arch/arm/boot/dts/am33xx.dtsi
 +++ b/arch/arm/boot/dts/am33xx.dtsi
 @@ -240,6 +240,44 @@

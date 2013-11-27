@@ -14,11 +14,9 @@ Cc: Tony Lindgren <tony@atomide.com>
 Signed-off-by: Nishanth Menon <nm@ti.com>
 Signed-off-by: Tony Lindgren <tony@atomide.com>
 ---
-diff --git a/arch/arm/mach-omap2/pm.c b/arch/arm/mach-omap2/pm.c
-index e742118..360b2da 100644
 --- a/arch/arm/mach-omap2/pm.c
 +++ b/arch/arm/mach-omap2/pm.c
-@@ -266,7 +266,12 @@ static void __init omap4_init_voltages(void)
+@@ -266,7 +266,12 @@ static void __init omap4_init_voltages(v
  
  static inline void omap_init_cpufreq(void)
  {
@@ -32,7 +30,7 @@ index e742118..360b2da 100644
  	platform_device_register_full(&devinfo);
  }
  
-@@ -300,10 +305,11 @@ int __init omap2_common_pm_late_init(void)
+@@ -300,10 +305,11 @@ int __init omap2_common_pm_late_init(voi
  		/* Smartreflex device init */
  		omap_devinit_smartreflex();
  
@@ -46,5 +44,3 @@ index e742118..360b2da 100644
  #ifdef CONFIG_SUSPEND
  	suspend_set_ops(&omap_pm_ops);
  #endif
---
-cgit v0.9.2

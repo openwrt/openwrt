@@ -21,9 +21,6 @@ Signed-off-by: Jyri Sarha <jsarha@ti.com>
  2 files changed, 176 insertions(+), 2 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/sound/davinci-evm-audio.txt
 
-diff --git a/Documentation/devicetree/bindings/sound/davinci-evm-audio.txt b/Documentation/devicetree/bindings/sound/davinci-evm-audio.txt
-new file mode 100644
-index 0000000..e6b61ff
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/sound/davinci-evm-audio.txt
 @@ -0,0 +1,58 @@
@@ -85,8 +82,6 @@ index 0000000..e6b61ff
 +		"LINE1R",               "Line In",
 +		"LINE2R",               "Line In";
 +};
-diff --git a/sound/soc/davinci/davinci-evm.c b/sound/soc/davinci/davinci-evm.c
-index 2f8161c..340a68d 100644
 --- a/sound/soc/davinci/davinci-evm.c
 +++ b/sound/soc/davinci/davinci-evm.c
 @@ -16,6 +16,7 @@
@@ -106,7 +101,7 @@ index 2f8161c..340a68d 100644
  #include "davinci-pcm.h"
  #include "davinci-i2s.h"
  #include "davinci-mcasp.h"
-@@ -121,13 +124,22 @@ static int evm_aic3x_init(struct snd_soc_pcm_runtime *rtd)
+@@ -121,13 +124,22 @@ static int evm_aic3x_init(struct snd_soc
  {
  	struct snd_soc_codec *codec = rtd->codec;
  	struct snd_soc_dapm_context *dapm = &codec->dapm;
@@ -131,7 +126,7 @@ index 2f8161c..340a68d 100644
  
  	/* not connected */
  	snd_soc_dapm_disable_pin(dapm, "MONO_LOUT");
-@@ -312,6 +324,98 @@ static struct snd_soc_card da850_snd_soc_card = {
+@@ -312,6 +324,98 @@ static struct snd_soc_card da850_snd_soc
  	.drvdata = &da850_snd_soc_card_drvdata,
  };
  
@@ -256,6 +251,3 @@ index 2f8161c..340a68d 100644
  	platform_device_unregister(evm_snd_device);
  }
  
--- 
-1.7.10.4
-

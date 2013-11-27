@@ -12,8 +12,6 @@ Signed-off-by: Jyri Sarha <jsarha@ti.com>
  sound/soc/davinci/davinci-evm.c |   64 +++++++++++++++++++++++++++------------
  1 file changed, 44 insertions(+), 20 deletions(-)
 
-diff --git a/sound/soc/davinci/davinci-evm.c b/sound/soc/davinci/davinci-evm.c
-index fd7c45b..2f8161c 100644
 --- a/sound/soc/davinci/davinci-evm.c
 +++ b/sound/soc/davinci/davinci-evm.c
 @@ -27,6 +27,10 @@
@@ -27,7 +25,7 @@ index fd7c45b..2f8161c 100644
  #define AUDIO_FORMAT (SND_SOC_DAIFMT_DSP_B | \
  		SND_SOC_DAIFMT_CBM_CFM | SND_SOC_DAIFMT_IB_NF)
  static int evm_hw_params(struct snd_pcm_substream *substream,
-@@ -35,27 +39,11 @@ static int evm_hw_params(struct snd_pcm_substream *substream,
+@@ -35,27 +39,11 @@ static int evm_hw_params(struct snd_pcm_
  	struct snd_soc_pcm_runtime *rtd = substream->private_data;
  	struct snd_soc_dai *codec_dai = rtd->codec_dai;
  	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
@@ -59,7 +57,7 @@ index fd7c45b..2f8161c 100644
  
  	/* set codec DAI configuration */
  	ret = snd_soc_dai_set_fmt(codec_dai, AUDIO_FORMAT);
-@@ -243,35 +231,65 @@ static struct snd_soc_dai_link da850_evm_dai = {
+@@ -243,35 +231,65 @@ static struct snd_soc_dai_link da850_evm
  };
  
  /* davinci dm6446 evm audio machine driver */
@@ -125,7 +123,7 @@ index fd7c45b..2f8161c 100644
  };
  
  static struct snd_soc_card da830_snd_soc_card = {
-@@ -279,6 +297,11 @@ static struct snd_soc_card da830_snd_soc_card = {
+@@ -279,6 +297,11 @@ static struct snd_soc_card da830_snd_soc
  	.owner = THIS_MODULE,
  	.dai_link = &da830_evm_dai,
  	.num_links = 1,
@@ -137,7 +135,7 @@ index fd7c45b..2f8161c 100644
  };
  
  static struct snd_soc_card da850_snd_soc_card = {
-@@ -286,6 +309,7 @@ static struct snd_soc_card da850_snd_soc_card = {
+@@ -286,6 +309,7 @@ static struct snd_soc_card da850_snd_soc
  	.owner = THIS_MODULE,
  	.dai_link = &da850_evm_dai,
  	.num_links = 1,
@@ -145,6 +143,3 @@ index fd7c45b..2f8161c 100644
  };
  
  static struct platform_device *evm_snd_device;
--- 
-1.7.10.4
-

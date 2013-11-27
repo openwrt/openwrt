@@ -14,11 +14,9 @@ Signed-off-by: Prathap M S <msprathap@ti.com>
  include/video/da8xx-fb.h |    4 ++++
  2 files changed, 37 insertions(+)
 
-diff --git a/drivers/video/da8xx-fb.c b/drivers/video/da8xx-fb.c
-index c534d45..77dc477 100644
 --- a/drivers/video/da8xx-fb.c
 +++ b/drivers/video/da8xx-fb.c
-@@ -235,6 +235,9 @@ static struct fb_fix_screeninfo da8xx_fb_fix = {
+@@ -198,6 +198,9 @@ static struct fb_fix_screeninfo da8xx_fb
  	.accel = FB_ACCEL_NONE
  };
  
@@ -28,7 +26,7 @@ index c534d45..77dc477 100644
  static struct fb_videomode known_lcd_panels[] = {
  	/* Sharp LCD035Q3DG01 */
  	[0] = {
-@@ -916,6 +919,32 @@ static int lcd_init(struct da8xx_fb_par *par, const struct lcd_ctrl_config *cfg,
+@@ -826,6 +829,32 @@ static int lcd_init(struct da8xx_fb_par
  	return 0;
  }
  
@@ -61,7 +59,7 @@ index c534d45..77dc477 100644
  /* IRQ handler for version 2 of LCDC */
  static irqreturn_t lcdc_irq_handler_rev02(int irq, void *arg)
  {
-@@ -953,6 +982,8 @@ static irqreturn_t lcdc_irq_handler_rev02(int irq, void *arg)
+@@ -863,6 +892,8 @@ static irqreturn_t lcdc_irq_handler_rev0
  				   LCD_DMA_FRM_BUF_CEILING_ADDR_0_REG);
  			par->vsync_flag = 1;
  			wake_up_interruptible(&par->vsync_wait);
@@ -70,7 +68,7 @@ index c534d45..77dc477 100644
  		}
  
  		if (stat & LCD_END_OF_FRAME1) {
-@@ -1028,6 +1059,8 @@ static irqreturn_t lcdc_irq_handler_rev01(int irq, void *arg)
+@@ -938,6 +969,8 @@ static irqreturn_t lcdc_irq_handler_rev0
  				   LCD_DMA_FRM_BUF_CEILING_ADDR_1_REG);
  			par->vsync_flag = 1;
  			wake_up_interruptible(&par->vsync_wait);
@@ -79,13 +77,11 @@ index c534d45..77dc477 100644
  		}
  	}
  
-diff --git a/include/video/da8xx-fb.h b/include/video/da8xx-fb.h
-index 74c986a..2a0c739 100644
 --- a/include/video/da8xx-fb.h
 +++ b/include/video/da8xx-fb.h
-@@ -106,5 +106,9 @@ void da8xx_register_encoder(struct da8xx_encoder *encoder);
- void da8xx_unregister_encoder(struct da8xx_encoder *encoder);
- 
+@@ -91,5 +91,9 @@ struct lcd_sync_arg {
+ /* Proprietary FB_SYNC_ flags */
+ #define FB_SYNC_CLK_INVERT 0x40000000
  
 +typedef void (*vsync_callback_t)(void *arg);
 +int register_vsync_cb(vsync_callback_t handler, void *arg, int idx);
@@ -93,6 +89,3 @@ index 74c986a..2a0c739 100644
 +
  #endif  /* ifndef DA8XX_FB_H */
  
--- 
-1.7.10.4
-

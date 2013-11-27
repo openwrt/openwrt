@@ -25,8 +25,6 @@ Signed-off-by: Joel Fernandes <joelf@ti.com>
 drivers/crypto/omap-des.c | 53 ++++++++++++++++++++++++++++++++++++++++++++---
  1 file changed, 50 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/crypto/omap-des.c b/drivers/crypto/omap-des.c
-index 6a9a25f..0df60cb 100644
 --- a/drivers/crypto/omap-des.c
 +++ b/drivers/crypto/omap-des.c
 @@ -83,7 +83,7 @@ struct omap_des_ctx {
@@ -38,7 +36,7 @@ index 6a9a25f..0df60cb 100644
  	unsigned long	flags;
  };
  
-@@ -265,8 +265,10 @@ static int omap_des_write_ctrl(struct omap_des_dev *dd)
+@@ -265,8 +265,10 @@ static int omap_des_write_ctrl(struct om
  		val |= DES_REG_CTRL_CBC;
  	if (dd->flags & FLAGS_ENCRYPT)
  		val |= DES_REG_CTRL_DIRECTION;
@@ -50,7 +48,7 @@ index 6a9a25f..0df60cb 100644
  
  	omap_des_write_mask(dd, DES_REG_CTRL(dd), val, mask);
  
-@@ -725,7 +727,7 @@ static int omap_des_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
+@@ -725,7 +727,7 @@ static int omap_des_setkey(struct crypto
  {
  	struct omap_des_ctx *ctx = crypto_ablkcipher_ctx(tfm);
  
@@ -59,10 +57,12 @@ index 6a9a25f..0df60cb 100644
  		return -EINVAL;
  
  	pr_debug("enter, keylen: %d\n", keylen);
-@@ -817,6 +819,51 @@ static struct crypto_alg algs_ecb_cbc[] = {
+@@ -815,6 +817,51 @@ static struct crypto_alg algs_ecb_cbc[]
+ 		.ivsize		= DES_BLOCK_SIZE,
+ 		.setkey		= omap_des_setkey,
  		.encrypt	= omap_des_cbc_encrypt,
- 		.decrypt	= omap_des_cbc_decrypt,
- 	}
++		.decrypt	= omap_des_cbc_decrypt,
++	}
 +},
 +{
 +	.cra_name		= "ecb(des3_ede)",
@@ -106,8 +106,6 @@ index 6a9a25f..0df60cb 100644
 +		.ivsize		= DES_BLOCK_SIZE,
 +		.setkey		= omap_des_setkey,
 +		.encrypt	= omap_des_cbc_encrypt,
-+		.decrypt	= omap_des_cbc_decrypt,
-+	}
+ 		.decrypt	= omap_des_cbc_decrypt,
+ 	}
  }
- };
- 

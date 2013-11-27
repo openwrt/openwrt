@@ -14,8 +14,6 @@ Signed-off-by: Jyri Sarha <jsarha@ti.com>
  sound/soc/davinci/Makefile |    1 +
  2 files changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/sound/soc/davinci/Kconfig b/sound/soc/davinci/Kconfig
-index c82f89c..95970f5 100644
 --- a/sound/soc/davinci/Kconfig
 +++ b/sound/soc/davinci/Kconfig
 @@ -1,9 +1,10 @@
@@ -50,11 +48,9 @@ index c82f89c..95970f5 100644
  config SND_DAVINCI_SOC_EVM
  	tristate "SoC Audio support for DaVinci DM6446, DM355 or DM365 EVM"
  	depends on SND_DAVINCI_SOC
-diff --git a/sound/soc/davinci/Makefile b/sound/soc/davinci/Makefile
-index a396ab6..bc81e79 100644
 --- a/sound/soc/davinci/Makefile
 +++ b/sound/soc/davinci/Makefile
-@@ -13,6 +13,7 @@ obj-$(CONFIG_SND_DAVINCI_SOC_VCIF) += snd-soc-davinci-vcif.o
+@@ -13,6 +13,7 @@ obj-$(CONFIG_SND_DAVINCI_SOC_VCIF) += sn
  snd-soc-evm-objs := davinci-evm.o
  
  obj-$(CONFIG_SND_DAVINCI_SOC_EVM) += snd-soc-evm.o
@@ -62,6 +58,3 @@ index a396ab6..bc81e79 100644
  obj-$(CONFIG_SND_DM6467_SOC_EVM) += snd-soc-evm.o
  obj-$(CONFIG_SND_DA830_SOC_EVM) += snd-soc-evm.o
  obj-$(CONFIG_SND_DA850_SOC_EVM) += snd-soc-evm.o
--- 
-1.7.10.4
-

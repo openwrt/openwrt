@@ -8,11 +8,9 @@ Signed-off-by: Rajendra Nayak <rnayak@ti.com>
 arch/arm/mach-omap2/omap_hwmod.c |   23 ++++++++++++++++-------
  1 file changed, 16 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-omap2/omap_hwmod.c b/arch/arm/mach-omap2/omap_hwmod.c
-index d9ee0ff..b55923a 100644
 --- a/arch/arm/mach-omap2/omap_hwmod.c
 +++ b/arch/arm/mach-omap2/omap_hwmod.c
-@@ -2363,11 +2363,11 @@ static struct device_node *of_dev_hwmod_lookup(struct device_node *np,
+@@ -2363,11 +2363,11 @@ static struct device_node *of_dev_hwmod_
   * are part of the device's address space can be ioremapped properly.
   * No return value.
   */
@@ -26,7 +24,7 @@ index d9ee0ff..b55923a 100644
  
  	if (!oh)
  		return;
-@@ -2383,12 +2383,10 @@ static void __init _init_mpu_rt_base(struct omap_hwmod *oh, void *data)
+@@ -2383,12 +2383,10 @@ static void __init _init_mpu_rt_base(str
  			 oh->name);
  
  		/* Extract the IO space from device tree blob */
@@ -41,7 +39,7 @@ index d9ee0ff..b55923a 100644
  	} else {
  		va_start = ioremap(mem->pa_start, mem->pa_end - mem->pa_start);
  	}
-@@ -2420,12 +2418,16 @@ static void __init _init_mpu_rt_base(struct omap_hwmod *oh, void *data)
+@@ -2420,12 +2418,16 @@ static void __init _init_mpu_rt_base(str
  static int __init _init(struct omap_hwmod *oh, void *data)
  {
  	int r;
@@ -59,7 +57,7 @@ index d9ee0ff..b55923a 100644
  
  	r = _init_clocks(oh, NULL);
  	if (r < 0) {
-@@ -2433,6 +2435,13 @@ static int __init _init(struct omap_hwmod *oh, void *data)
+@@ -2433,6 +2435,13 @@ static int __init _init(struct omap_hwmo
  		return -EINVAL;
  	}
  

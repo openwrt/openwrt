@@ -8,11 +8,9 @@ Signed-off-by: Lokesh Vutla <lokeshvutla@ti.com>
  arch/arm/mach-omap2/omap_hwmod_33xx_data.c |   36 ++++++++++++++++++++++++++++
  1 file changed, 36 insertions(+)
 
-diff --git a/arch/arm/mach-omap2/omap_hwmod_33xx_data.c b/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
-index 215894f..3e32f45 100644
 --- a/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
 +++ b/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
-@@ -2480,6 +2480,41 @@ static struct omap_hwmod_ocp_if am33xx_l3_main__aes0 = {
+@@ -2480,6 +2480,41 @@ static struct omap_hwmod_ocp_if am33xx_l
  	.user		= OCP_USER_MPU | OCP_USER_SDMA,
  };
  
@@ -54,7 +52,7 @@ index 215894f..3e32f45 100644
  static struct omap_hwmod_ocp_if *am33xx_hwmod_ocp_ifs[] __initdata = {
  	&am33xx_l3_main__emif,
  	&am33xx_mpu__l3_main,
-@@ -2559,6 +2594,7 @@ static struct omap_hwmod_ocp_if *am33xx_hwmod_ocp_ifs[] __initdata = {
+@@ -2559,6 +2594,7 @@ static struct omap_hwmod_ocp_if *am33xx_
  	&am33xx_cpgmac0__mdio,
  	&am33xx_l3_main__sha0,
  	&am33xx_l3_main__aes0,
