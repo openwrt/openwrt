@@ -71,7 +71,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -727,6 +727,7 @@ enum ath_cal_list {
+@@ -728,6 +728,7 @@ enum ath_cal_list {
  #define AH_USE_EEPROM   0x1
  #define AH_UNPLUGGED    0x2 /* The card has been physically removed. */
  #define AH_FASTCC       0x4
@@ -81,7 +81,7 @@
  	struct ath_ops reg_ops;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -695,6 +695,8 @@ static int ath9k_init_softc(u16 devid, s
+@@ -700,6 +700,8 @@ static int ath9k_init_softc(u16 devid, s
  		ah->is_clk_25mhz = pdata->is_clk_25mhz;
  		ah->get_mac_revision = pdata->get_mac_revision;
  		ah->external_reset = pdata->external_reset;
