@@ -1,7 +1,6 @@
-diff -ruN old/drivers/mtd/devices/block2mtd.c new/drivers/mtd/devices/block2mtd.c
---- old/drivers/mtd/devices/block2mtd.c	2013-11-16 13:04:16.000000000 +0100
-+++ new/drivers/mtd/devices/block2mtd.c	2013-11-17 12:00:10.820195738 +0100
-@@ -397,7 +397,7 @@
+--- a/drivers/mtd/devices/block2mtd.c
++++ b/drivers/mtd/devices/block2mtd.c
+@@ -397,7 +397,7 @@ static int block2mtd_setup2(const char *
  		}
  	}
  	if (token[2] && (strlen(token[2]) + 1 > 80))
