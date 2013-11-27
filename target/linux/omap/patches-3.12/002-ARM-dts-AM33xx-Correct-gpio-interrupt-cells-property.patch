@@ -1,0 +1,57 @@
+From 29f3723bf62d46c238dcc5436787a8ad6b25a385 Mon Sep 17 00:00:00 2001
+From: Lars Poeschel <poeschel@lemonage.de>
+Date: Wed, 7 Aug 2013 13:06:32 +0200
+Subject: [PATCH 02/14] ARM: dts: AM33xx: Correct gpio #interrupt-cells
+ property
+
+Following commit ff5c9059 and therefore other omap platforms using
+the gpio-omap driver correct the #interrupt-cells property on am33xx
+too. The omap gpio binding documentaion also states that
+the #interrupt-cells property should be 2.
+
+Signed-off-by: Lars Poeschel <poeschel@lemonage.de>
+Reviewed-by: Javier Martinez Canillas <javier@dowhile0.org>
+Acked-by: Mark Rutland <mark.rutland@arm.com>
+Signed-off-by: Benoit Cousson <bcousson@baylibre.com>
+---
+ arch/arm/boot/dts/am33xx.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/am33xx.dtsi
++++ b/arch/arm/boot/dts/am33xx.dtsi
+@@ -106,7 +106,7 @@
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 			interrupt-controller;
+-			#interrupt-cells = <1>;
++			#interrupt-cells = <2>;
+ 			reg = <0x44e07000 0x1000>;
+ 			interrupts = <96>;
+ 		};
+@@ -117,7 +117,7 @@
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 			interrupt-controller;
+-			#interrupt-cells = <1>;
++			#interrupt-cells = <2>;
+ 			reg = <0x4804c000 0x1000>;
+ 			interrupts = <98>;
+ 		};
+@@ -128,7 +128,7 @@
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 			interrupt-controller;
+-			#interrupt-cells = <1>;
++			#interrupt-cells = <2>;
+ 			reg = <0x481ac000 0x1000>;
+ 			interrupts = <32>;
+ 		};
+@@ -139,7 +139,7 @@
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 			interrupt-controller;
+-			#interrupt-cells = <1>;
++			#interrupt-cells = <2>;
+ 			reg = <0x481ae000 0x1000>;
+ 			interrupts = <62>;
+ 		};
