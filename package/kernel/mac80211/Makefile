@@ -925,7 +925,7 @@ define KernelPackage/wl12xx
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for TI WL12xx
   URL:=http://wireless.kernel.org/en/users/Drivers/wl12xx
-  DEPENDS+= @TARGET_omap +kmod-mac80211
+  DEPENDS+= @TARGET_omap +kmod-mac80211 +@DRIVER_11N_SUPPORT
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl12xx/wl12xx.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore.ko \
