@@ -15,8 +15,6 @@ Signed-off-by: Peter Ujfalusi <peter.ujfalusi@ti.com>
  arch/arm/boot/dts/am335x-evmsk.dts |   51 ++++++++++++++++++++++++++++++++++++
  1 file changed, 51 insertions(+)
 
-diff --git a/arch/arm/boot/dts/am335x-evmsk.dts b/arch/arm/boot/dts/am335x-evmsk.dts
-index 879981d..b87ce7f 100644
 --- a/arch/arm/boot/dts/am335x-evmsk.dts
 +++ b/arch/arm/boot/dts/am335x-evmsk.dts
 @@ -158,6 +158,15 @@
@@ -72,9 +70,9 @@ index 879981d..b87ce7f 100644
  	};
  
  	vbat: fixedregulator@0 {
-@@ -430,3 +462,22 @@
+@@ -438,3 +470,22 @@
+ &aes {
  	status = "okay";
- 	vmmc-supply = <&vmmc_reg>;
  };
 +
 +&mcasp1 {
@@ -95,6 +93,3 @@ index 879981d..b87ce7f 100644
 +		tx-num-evt = <1>;
 +		rx-num-evt = <1>;
 +};
--- 
-1.7.10.4
-

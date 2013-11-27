@@ -10,13 +10,11 @@ Signed-off-by: Rajendra Nayak <rnayak@ti.com>
 arch/arm/boot/dts/am335x-evmsk.dts |    4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/am335x-evmsk.dts b/arch/arm/boot/dts/am335x-evmsk.dts
-index 4f339fa..0e44d29 100644
 --- a/arch/arm/boot/dts/am335x-evmsk.dts
 +++ b/arch/arm/boot/dts/am335x-evmsk.dts
-@@ -419,3 +419,7 @@
- 	phy_id = <&davinci_mdio>, <1>;
- 	phy-mode = "rgmii-txid";
+@@ -426,3 +426,7 @@
+ 	status = "okay";
+ 	vmmc-supply = <&vmmc_reg>;
  };
 +
 +&gpio0 {

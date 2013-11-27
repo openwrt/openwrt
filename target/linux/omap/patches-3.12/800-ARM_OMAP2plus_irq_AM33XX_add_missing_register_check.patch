@@ -11,11 +11,9 @@ Cc: stable@vger.kernel.org
 Signed-off-by: Markus Pargmann <mpa@pengutronix.de>
 Signed-off-by: Tony Lindgren <tony@atomide.com>
 ---
-diff --git a/arch/arm/mach-omap2/irq.c b/arch/arm/mach-omap2/irq.c
-index 3926f37..e022a86 100644
 --- a/arch/arm/mach-omap2/irq.c
 +++ b/arch/arm/mach-omap2/irq.c
-@@ -233,7 +233,7 @@ static inline void omap_intc_handle_irq(void __iomem *base_addr, struct pt_regs
+@@ -233,7 +233,7 @@ static inline void omap_intc_handle_irq(
  			goto out;
  
  		irqnr = readl_relaxed(base_addr + 0xd8);
@@ -24,5 +22,3 @@ index 3926f37..e022a86 100644
  		if (irqnr)
  			goto out;
  		irqnr = readl_relaxed(base_addr + 0xf8);
---
-cgit v0.9.2

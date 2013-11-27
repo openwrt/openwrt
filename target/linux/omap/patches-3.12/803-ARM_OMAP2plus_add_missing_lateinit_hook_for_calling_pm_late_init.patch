@@ -19,11 +19,9 @@ Cc: Tony Lindgren <tony@atomide.com>
 Signed-off-by: Nishanth Menon <nm@ti.com>
 Signed-off-by: Tony Lindgren <tony@atomide.com>
 ---
-diff --git a/arch/arm/mach-omap2/board-generic.c b/arch/arm/mach-omap2/board-generic.c
-index 3896b12..19f1652 100644
 --- a/arch/arm/mach-omap2/board-generic.c
 +++ b/arch/arm/mach-omap2/board-generic.c
-@@ -146,6 +146,7 @@ DT_MACHINE_START(AM33XX_DT, "Generic AM33XX (Flattened Device Tree)")
+@@ -180,6 +180,7 @@ DT_MACHINE_START(AM33XX_DT, "Generic AM3
  	.init_irq	= omap_intc_of_init,
  	.handle_irq	= omap3_intc_handle_irq,
  	.init_machine	= omap_generic_init,
@@ -31,7 +29,7 @@ index 3896b12..19f1652 100644
  	.init_time	= omap3_gptimer_timer_init,
  	.dt_compat	= am33xx_boards_compat,
  	.restart	= am33xx_restart,
-@@ -185,6 +186,7 @@ DT_MACHINE_START(OMAP5_DT, "Generic OMAP5 (Flattened Device Tree)")
+@@ -219,6 +220,7 @@ DT_MACHINE_START(OMAP5_DT, "Generic OMAP
  	.init_early	= omap5_init_early,
  	.init_irq	= omap_gic_of_init,
  	.init_machine	= omap_generic_init,
@@ -39,7 +37,7 @@ index 3896b12..19f1652 100644
  	.init_time	= omap5_realtime_timer_init,
  	.dt_compat	= omap5_boards_compat,
  	.restart	= omap44xx_restart,
-@@ -200,6 +202,7 @@ static const char *am43_boards_compat[] __initdata = {
+@@ -234,6 +236,7 @@ static const char *am43_boards_compat[]
  DT_MACHINE_START(AM43_DT, "Generic AM43 (Flattened Device Tree)")
  	.map_io		= am33xx_map_io,
  	.init_early	= am43xx_init_early,
@@ -47,7 +45,7 @@ index 3896b12..19f1652 100644
  	.init_irq	= omap_gic_of_init,
  	.init_machine	= omap_generic_init,
  	.init_time	= omap3_sync32k_timer_init,
-@@ -218,6 +221,7 @@ DT_MACHINE_START(DRA7XX_DT, "Generic DRA7XX (Flattened Device Tree)")
+@@ -252,6 +255,7 @@ DT_MACHINE_START(DRA7XX_DT, "Generic DRA
  	.smp		= smp_ops(omap4_smp_ops),
  	.map_io		= omap5_map_io,
  	.init_early	= dra7xx_init_early,
@@ -55,8 +53,6 @@ index 3896b12..19f1652 100644
  	.init_irq	= omap_gic_of_init,
  	.init_machine	= omap_generic_init,
  	.init_time	= omap5_realtime_timer_init,
-diff --git a/arch/arm/mach-omap2/common.h b/arch/arm/mach-omap2/common.h
-index c6aebf0..f7644fe 100644
 --- a/arch/arm/mach-omap2/common.h
 +++ b/arch/arm/mach-omap2/common.h
 @@ -98,6 +98,7 @@ void am35xx_init_early(void);
@@ -79,8 +75,6 @@ index c6aebf0..f7644fe 100644
  
  #ifdef CONFIG_SOC_BUS
  void omap_soc_device_init(void);
-diff --git a/arch/arm/mach-omap2/io.c b/arch/arm/mach-omap2/io.c
-index ff2113c..a2cbb44 100644
 --- a/arch/arm/mach-omap2/io.c
 +++ b/arch/arm/mach-omap2/io.c
 @@ -583,6 +583,11 @@ void __init am33xx_init_early(void)
@@ -131,5 +125,3 @@ index ff2113c..a2cbb44 100644
  #endif
  
  
---
-cgit v0.9.2

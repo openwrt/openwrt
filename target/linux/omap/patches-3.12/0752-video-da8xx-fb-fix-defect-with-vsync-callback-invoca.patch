@@ -16,11 +16,9 @@ Signed-off-by: Darren Etheridge <detheridge@ti.com>
  drivers/video/da8xx-fb.c |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/video/da8xx-fb.c b/drivers/video/da8xx-fb.c
-index 212d2ac..d6825e4 100644
 --- a/drivers/video/da8xx-fb.c
 +++ b/drivers/video/da8xx-fb.c
-@@ -993,6 +993,8 @@ static irqreturn_t lcdc_irq_handler_rev02(int irq, void *arg)
+@@ -904,6 +904,8 @@ static irqreturn_t lcdc_irq_handler_rev0
  				   LCD_DMA_FRM_BUF_CEILING_ADDR_1_REG);
  			par->vsync_flag = 1;
  			wake_up_interruptible(&par->vsync_wait);
@@ -29,7 +27,7 @@ index 212d2ac..d6825e4 100644
  		}
  
  		/* Set only when controller is disabled and at the end of
-@@ -1058,8 +1060,6 @@ static irqreturn_t lcdc_irq_handler_rev01(int irq, void *arg)
+@@ -969,8 +971,6 @@ static irqreturn_t lcdc_irq_handler_rev0
  				   LCD_DMA_FRM_BUF_CEILING_ADDR_1_REG);
  			par->vsync_flag = 1;
  			wake_up_interruptible(&par->vsync_wait);
@@ -38,6 +36,3 @@ index 212d2ac..d6825e4 100644
  		}
  	}
  
--- 
-1.7.10.4
-

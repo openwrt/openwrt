@@ -10,9 +10,6 @@ for the RNG module.
 Signed-off-by: Lokesh Vutla <lokeshvutla@ti.com>
 Signed-off-by: Tony Lindgren <tony@atomide.com>
 ---
-diff --git a/Documentation/devicetree/bindings/hwrng/omap_rng.txt b/Documentation/devicetree/bindings/hwrng/omap_rng.txt
-new file mode 100644
-index 0000000..6a62acd
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/hwrng/omap_rng.txt
 @@ -0,0 +1,22 @@
@@ -38,23 +35,18 @@ index 0000000..6a62acd
 +	reg = <0x48310000 0x2000>;
 +	interrupts = <111>;
 +};
-diff --git a/arch/arm/boot/dts/am33xx.dtsi b/arch/arm/boot/dts/am33xx.dtsi
-index 9ae258e..fcb9c8e 100644
 --- a/arch/arm/boot/dts/am33xx.dtsi
 +++ b/arch/arm/boot/dts/am33xx.dtsi
-@@ -750,5 +750,12 @@
- 				<&edma 11>;
+@@ -770,5 +770,12 @@
  			dma-names = "tx", "rx";
  		};
-+
+ 
 +		rng: rng@48310000 {
 +			compatible = "ti,omap4-rng";
 +			ti,hwmods = "rng";
 +			reg = <0x48310000 0x2000>;
 +			interrupts = <111>;
 +		};
- 
++
  	};
  };
---
-cgit v0.9.2

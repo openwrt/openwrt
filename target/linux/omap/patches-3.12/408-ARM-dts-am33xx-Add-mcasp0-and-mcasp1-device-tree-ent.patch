@@ -13,13 +13,11 @@ Signed-off-by: Jyri Sarha <jsarha@ti.com>
  arch/arm/boot/dts/am33xx.dtsi |   19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
-diff --git a/arch/arm/boot/dts/am33xx.dtsi b/arch/arm/boot/dts/am33xx.dtsi
-index 6eb809c..4fb3521 100644
 --- a/arch/arm/boot/dts/am33xx.dtsi
 +++ b/arch/arm/boot/dts/am33xx.dtsi
-@@ -839,6 +839,25 @@
- 			clocks = <&rng_fck>;
- 			clock-names = "fck";
+@@ -726,5 +726,24 @@
+ 			       <&edma 5>;
+ 			dma-names = "tx", "rx";
  		};
 +
 +		mcasp0: mcasp@48038000 {
@@ -41,8 +39,4 @@ index 6eb809c..4fb3521 100644
 +		};
 +
  	};
- 
- 	clocks {
--- 
-1.7.10.4
-
+ };

@@ -15,8 +15,6 @@ Signed-off-by: Jyri Sarha <jsarha@ti.com>
  sound/soc/davinci/davinci-mcasp.c                  |   47 +++++++++++++-------
  3 files changed, 39 insertions(+), 15 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/sound/davinci-mcasp-audio.txt b/Documentation/devicetree/bindings/sound/davinci-mcasp-audio.txt
-index 63b67ae..68e0f47 100644
 --- a/Documentation/devicetree/bindings/sound/davinci-mcasp-audio.txt
 +++ b/Documentation/devicetree/bindings/sound/davinci-mcasp-audio.txt
 @@ -18,6 +18,11 @@ Required properties:
@@ -31,8 +29,6 @@ index 63b67ae..68e0f47 100644
  
  Optional properties:
  
-diff --git a/include/linux/platform_data/davinci_asp.h b/include/linux/platform_data/davinci_asp.h
-index 8db5ae0..689a856 100644
 --- a/include/linux/platform_data/davinci_asp.h
 +++ b/include/linux/platform_data/davinci_asp.h
 @@ -84,6 +84,8 @@ struct snd_platform_data {
@@ -44,11 +40,9 @@ index 8db5ae0..689a856 100644
  };
  
  enum {
-diff --git a/sound/soc/davinci/davinci-mcasp.c b/sound/soc/davinci/davinci-mcasp.c
-index a056fc5..acbf5f8 100644
 --- a/sound/soc/davinci/davinci-mcasp.c
 +++ b/sound/soc/davinci/davinci-mcasp.c
-@@ -1047,6 +1047,7 @@ static struct snd_platform_data *davinci_mcasp_set_pdata_from_of(
+@@ -1047,6 +1047,7 @@ static struct snd_platform_data *davinci
  	struct snd_platform_data *pdata = NULL;
  	const struct of_device_id *match =
  			of_match_device(mcasp_dt_ids, &pdev->dev);
@@ -56,7 +50,7 @@ index a056fc5..acbf5f8 100644
  
  	const u32 *of_serial_dir32;
  	u8 *of_serial_dir;
-@@ -1109,6 +1110,28 @@ static struct snd_platform_data *davinci_mcasp_set_pdata_from_of(
+@@ -1109,6 +1110,28 @@ static struct snd_platform_data *davinci
  		pdata->serial_dir = of_serial_dir;
  	}
  
@@ -94,7 +88,7 @@ index a056fc5..acbf5f8 100644
  	struct snd_platform_data *pdata;
  	struct davinci_audio_dev *dev;
  	int ret;
-@@ -1213,15 +1236,11 @@ static int davinci_mcasp_probe(struct platform_device *pdev)
+@@ -1213,15 +1236,11 @@ static int davinci_mcasp_probe(struct pl
  	dma_data->sram_size = pdata->sram_size_playback;
  	dma_data->dma_addr = dma->start + pdata->tx_dma_offset;
  
@@ -114,7 +108,7 @@ index a056fc5..acbf5f8 100644
  
  	dma_data = &dev->dma_params[SNDRV_PCM_STREAM_CAPTURE];
  	dma_data->asp_chan_q = pdata->asp_chan_q;
-@@ -1231,13 +1250,11 @@ static int davinci_mcasp_probe(struct platform_device *pdev)
+@@ -1231,13 +1250,11 @@ static int davinci_mcasp_probe(struct pl
  	dma_data->dma_addr = dma->start + pdata->rx_dma_offset;
  
  	res = platform_get_resource(pdev, IORESOURCE_DMA, 1);
@@ -132,6 +126,3 @@ index a056fc5..acbf5f8 100644
  	dev_set_drvdata(&pdev->dev, dev);
  	ret = snd_soc_register_component(&pdev->dev, &davinci_mcasp_component,
  					 &davinci_mcasp_dai[pdata->op_mode], 1);
--- 
-1.7.10.4
-

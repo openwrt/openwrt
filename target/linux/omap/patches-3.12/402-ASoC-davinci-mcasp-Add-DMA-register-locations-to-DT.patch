@@ -17,8 +17,6 @@ Signed-off-by: Jyri Sarha <jsarha@ti.com>
  sound/soc/davinci/davinci-mcasp.c                  |   59 +++++++++++++-------
  2 files changed, 46 insertions(+), 21 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/sound/davinci-mcasp-audio.txt b/Documentation/devicetree/bindings/sound/davinci-mcasp-audio.txt
-index 374e145..63b67ae 100644
 --- a/Documentation/devicetree/bindings/sound/davinci-mcasp-audio.txt
 +++ b/Documentation/devicetree/bindings/sound/davinci-mcasp-audio.txt
 @@ -6,7 +6,11 @@ Required properties:
@@ -50,11 +48,9 @@ index 374e145..63b67ae 100644
  	interrupts = <82 83>;
  	op-mode = <0>;		/* MCASP_IIS_MODE */
  	tdm-slots = <2>;
-diff --git a/sound/soc/davinci/davinci-mcasp.c b/sound/soc/davinci/davinci-mcasp.c
-index 32ddb7f..a056fc5 100644
 --- a/sound/soc/davinci/davinci-mcasp.c
 +++ b/sound/soc/davinci/davinci-mcasp.c
-@@ -1001,18 +1001,40 @@ static const struct snd_soc_component_driver davinci_mcasp_component = {
+@@ -1001,18 +1001,40 @@ static const struct snd_soc_component_dr
  	.name		= "davinci-mcasp",
  };
  
@@ -98,7 +94,7 @@ index 32ddb7f..a056fc5 100644
  	},
  	{ /* sentinel */ }
  };
-@@ -1035,20 +1057,13 @@ static struct snd_platform_data *davinci_mcasp_set_pdata_from_of(
+@@ -1035,20 +1057,13 @@ static struct snd_platform_data *davinci
  		pdata = pdev->dev.platform_data;
  		return pdata;
  	} else if (match) {
@@ -120,7 +116,7 @@ index 32ddb7f..a056fc5 100644
  	ret = of_property_read_u32(np, "op-mode", &val);
  	if (ret >= 0)
  		pdata->op_mode = val;
-@@ -1145,10 +1160,15 @@ static int davinci_mcasp_probe(struct platform_device *pdev)
+@@ -1145,10 +1160,15 @@ static int davinci_mcasp_probe(struct pl
  		return -EINVAL;
  	}
  
@@ -139,7 +135,7 @@ index 32ddb7f..a056fc5 100644
  	}
  
  	ioarea = devm_request_mem_region(&pdev->dev, mem->start,
-@@ -1182,13 +1202,16 @@ static int davinci_mcasp_probe(struct platform_device *pdev)
+@@ -1182,13 +1202,16 @@ static int davinci_mcasp_probe(struct pl
  	dev->rxnumevt = pdata->rxnumevt;
  	dev->dev = &pdev->dev;
  
@@ -158,7 +154,7 @@ index 32ddb7f..a056fc5 100644
  
  	/* first TX, then RX */
  	res = platform_get_resource(pdev, IORESOURCE_DMA, 0);
-@@ -1205,8 +1228,7 @@ static int davinci_mcasp_probe(struct platform_device *pdev)
+@@ -1205,8 +1228,7 @@ static int davinci_mcasp_probe(struct pl
  	dma_data->ram_chan_q = pdata->ram_chan_q;
  	dma_data->sram_pool = pdata->sram_pool;
  	dma_data->sram_size = pdata->sram_size_capture;
@@ -168,11 +164,8 @@ index 32ddb7f..a056fc5 100644
  
  	res = platform_get_resource(pdev, IORESOURCE_DMA, 1);
  	if (!res) {
-@@ -1266,4 +1288,3 @@ module_platform_driver(davinci_mcasp_driver);
+@@ -1266,4 +1288,3 @@ module_platform_driver(davinci_mcasp_dri
  MODULE_AUTHOR("Steve Chen");
  MODULE_DESCRIPTION("TI DAVINCI McASP SoC Interface");
  MODULE_LICENSE("GPL");
 -
--- 
-1.7.10.4
-

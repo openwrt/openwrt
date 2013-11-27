@@ -25,11 +25,9 @@ drivers/crypto/Kconfig  | 11 +++++++++++
  drivers/crypto/Makefile |  1 +
  2 files changed, 12 insertions(+)
 
-diff --git a/drivers/crypto/Kconfig b/drivers/crypto/Kconfig
-index e289afa..119a8e5 100644
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -259,6 +259,17 @@ config CRYPTO_DEV_OMAP_AES
+@@ -263,6 +263,17 @@ config CRYPTO_DEV_OMAP_AES
  	  OMAP processors have AES module accelerator. Select this if you
  	  want to use the OMAP module for AES algorithms.
  
@@ -47,15 +45,13 @@ index e289afa..119a8e5 100644
  config CRYPTO_DEV_PICOXCELL
  	tristate "Support for picoXcell IPSEC and Layer2 crypto engines"
  	depends on ARCH_PICOXCELL && HAVE_CLK
-diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile
-index 38ce13d..ada440f 100644
 --- a/drivers/crypto/Makefile
 +++ b/drivers/crypto/Makefile
-@@ -11,6 +11,7 @@ obj-$(CONFIG_CRYPTO_DEV_IXP4XX) += ixp4xx_crypto.o
+@@ -11,6 +11,7 @@ obj-$(CONFIG_CRYPTO_DEV_IXP4XX) += ixp4x
  obj-$(CONFIG_CRYPTO_DEV_PPC4XX) += amcc/
  obj-$(CONFIG_CRYPTO_DEV_OMAP_SHAM) += omap-sham.o
  obj-$(CONFIG_CRYPTO_DEV_OMAP_AES) += omap-aes.o
 +obj-$(CONFIG_CRYPTO_DEV_OMAP_DES) += omap-des.o
  obj-$(CONFIG_CRYPTO_DEV_PICOXCELL) += picoxcell_crypto.o
  obj-$(CONFIG_CRYPTO_DEV_SAHARA) += sahara.o
- obj-$(CONFIG_CRYPTO_DEV_S5P) += s5p-sss.o
+ obj-$(CONFIG_CRYPTO_DEV_DCP) += dcp.o

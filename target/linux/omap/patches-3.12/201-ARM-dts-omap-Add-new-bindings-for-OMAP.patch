@@ -21,8 +21,6 @@ Signed-off-by: Rajendra Nayak <rnayak@ti.com>
  arch/arm/boot/dts/omap5.dtsi                       |    2 ++
  4 files changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/arm/omap/omap.txt b/Documentation/devicetree/bindings/arm/omap/omap.txt
-index 91b7049..808c154 100644
 --- a/Documentation/devicetree/bindings/arm/omap/omap.txt
 +++ b/Documentation/devicetree/bindings/arm/omap/omap.txt
 @@ -21,7 +21,8 @@ Required properties:
@@ -35,11 +33,9 @@ index 91b7049..808c154 100644
  
  Example:
  
-diff --git a/arch/arm/boot/dts/am33xx.dtsi b/arch/arm/boot/dts/am33xx.dtsi
-index f9c5da9..ec33ea0 100644
 --- a/arch/arm/boot/dts/am33xx.dtsi
 +++ b/arch/arm/boot/dts/am33xx.dtsi
-@@ -607,6 +607,7 @@
+@@ -667,6 +667,7 @@
  			reg = <0x44d00000 0x4000	/* M3 UMEM */
  			       0x44d80000 0x2000>;	/* M3 DMEM */
  			ti,hwmods = "wkup_m3";
@@ -47,7 +43,7 @@ index f9c5da9..ec33ea0 100644
  		};
  
  		elm: elm@48080000 {
-@@ -637,6 +638,7 @@
+@@ -697,6 +698,7 @@
  		gpmc: gpmc@50000000 {
  			compatible = "ti,am3352-gpmc";
  			ti,hwmods = "gpmc";
@@ -55,8 +51,6 @@ index f9c5da9..ec33ea0 100644
  			reg = <0x50000000 0x2000>;
  			interrupts = <100>;
  			gpmc,num-cs = <7>;
-diff --git a/arch/arm/boot/dts/omap4.dtsi b/arch/arm/boot/dts/omap4.dtsi
-index 22d9f2b..e8fe797 100644
 --- a/arch/arm/boot/dts/omap4.dtsi
 +++ b/arch/arm/boot/dts/omap4.dtsi
 @@ -214,6 +214,7 @@
@@ -83,8 +77,6 @@ index 22d9f2b..e8fe797 100644
  			phy-type = <1>;
  			hw-caps-read-idle-ctrl;
  			hw-caps-ll-interface;
-diff --git a/arch/arm/boot/dts/omap5.dtsi b/arch/arm/boot/dts/omap5.dtsi
-index 7cdea1b..a9d49df 100644
 --- a/arch/arm/boot/dts/omap5.dtsi
 +++ b/arch/arm/boot/dts/omap5.dtsi
 @@ -607,6 +607,7 @@

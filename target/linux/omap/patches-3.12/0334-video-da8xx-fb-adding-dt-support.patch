@@ -33,9 +33,6 @@ Signed-off-by: Darren Etheridge <detheridge@ti.com>
  2 files changed, 105 insertions(+), 3 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/video/da8xx-fb.txt
 
-diff --git a/Documentation/devicetree/bindings/video/da8xx-fb.txt b/Documentation/devicetree/bindings/video/da8xx-fb.txt
-new file mode 100644
-index 0000000..d86afe7
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/video/da8xx-fb.txt
 @@ -0,0 +1,42 @@
@@ -81,8 +78,6 @@ index 0000000..d86afe7
 +		};
 +	};
 +};
-diff --git a/drivers/video/da8xx-fb.c b/drivers/video/da8xx-fb.c
-index e030e17..74cc2dc 100644
 --- a/drivers/video/da8xx-fb.c
 +++ b/drivers/video/da8xx-fb.c
 @@ -36,6 +36,7 @@
@@ -148,7 +143,7 @@ index e030e17..74cc2dc 100644
  	for (i = 0, lcdc_info = known_lcd_panels;
  		i < ARRAY_SIZE(known_lcd_panels); i++, lcdc_info++) {
  		if (strcmp(fb_pdata->type, lcdc_info->name) == 0)
-@@ -1346,7 +1389,7 @@ static int fb_probe(struct platform_device *device)
+@@ -1346,7 +1389,7 @@ static int fb_probe(struct platform_devi
  	int ret;
  	unsigned long ulcm;
  
@@ -157,7 +152,7 @@ index e030e17..74cc2dc 100644
  		dev_err(&device->dev, "Can not get platform data\n");
  		return -ENOENT;
  	}
-@@ -1386,7 +1429,10 @@ static int fb_probe(struct platform_device *device)
+@@ -1386,7 +1429,10 @@ static int fb_probe(struct platform_devi
  		break;
  	}
  
@@ -169,7 +164,7 @@ index e030e17..74cc2dc 100644
  
  	if (!lcd_cfg) {
  		ret = -EINVAL;
-@@ -1405,7 +1451,7 @@ static int fb_probe(struct platform_device *device)
+@@ -1405,7 +1451,7 @@ static int fb_probe(struct platform_devi
  	par->dev = &device->dev;
  	par->lcdc_clk = tmp_lcdc_clk;
  	par->lcdc_clk_rate = clk_get_rate(par->lcdc_clk);
@@ -178,7 +173,7 @@ index e030e17..74cc2dc 100644
  		par->panel_power_ctrl = fb_pdata->panel_power_ctrl;
  		par->panel_power_ctrl(1);
  	}
-@@ -1653,6 +1699,19 @@ static int fb_resume(struct platform_device *dev)
+@@ -1653,6 +1699,19 @@ static int fb_resume(struct platform_dev
  #define fb_resume NULL
  #endif
  
@@ -198,7 +193,7 @@ index e030e17..74cc2dc 100644
  static struct platform_driver da8xx_fb_driver = {
  	.probe = fb_probe,
  	.remove = fb_remove,
-@@ -1661,6 +1720,7 @@ static struct platform_driver da8xx_fb_driver = {
+@@ -1661,6 +1720,7 @@ static struct platform_driver da8xx_fb_d
  	.driver = {
  		   .name = DRIVER_NAME,
  		   .owner = THIS_MODULE,
@@ -206,6 +201,3 @@ index e030e17..74cc2dc 100644
  		   },
  };
  
--- 
-1.7.10.4
-

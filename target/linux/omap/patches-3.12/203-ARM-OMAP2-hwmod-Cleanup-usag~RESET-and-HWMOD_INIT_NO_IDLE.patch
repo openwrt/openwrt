@@ -19,11 +19,9 @@ arch/arm/mach-omap2/omap_hwmod_33xx_data.c |    4 ++--
  arch/arm/mach-omap2/omap_hwmod_54xx_data.c |    2 --
  3 files changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-omap2/omap_hwmod_33xx_data.c b/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
-index 2815a91..e8dc72d 100644
 --- a/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
 +++ b/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
-@@ -198,7 +198,7 @@ static struct omap_hwmod am33xx_wkup_m3_hwmod = {
+@@ -198,7 +198,7 @@ static struct omap_hwmod am33xx_wkup_m3_
  	.class		= &am33xx_wkup_m3_hwmod_class,
  	.clkdm_name	= "l4_wkup_aon_clkdm",
  	/* Keep hardreset asserted */
@@ -32,7 +30,7 @@ index 2815a91..e8dc72d 100644
  	.main_clk	= "dpll_core_m4_div2_ck",
  	.prcm		= {
  		.omap4	= {
-@@ -932,7 +932,7 @@ static struct omap_hwmod am33xx_gpmc_hwmod = {
+@@ -932,7 +932,7 @@ static struct omap_hwmod am33xx_gpmc_hwm
  	.name		= "gpmc",
  	.class		= &am33xx_gpmc_hwmod_class,
  	.clkdm_name	= "l3s_clkdm",
@@ -41,11 +39,9 @@ index 2815a91..e8dc72d 100644
  	.main_clk	= "l3s_gclk",
  	.prcm		= {
  		.omap4	= {
-diff --git a/arch/arm/mach-omap2/omap_hwmod_44xx_data.c b/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
-index 1e5b12c..a507a70 100644
 --- a/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
 +++ b/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
-@@ -914,7 +914,6 @@ static struct omap_hwmod omap44xx_emif1_hwmod = {
+@@ -914,7 +914,6 @@ static struct omap_hwmod omap44xx_emif1_
  	.name		= "emif1",
  	.class		= &omap44xx_emif_hwmod_class,
  	.clkdm_name	= "l3_emif_clkdm",
@@ -53,7 +49,7 @@ index 1e5b12c..a507a70 100644
  	.main_clk	= "ddrphy_ck",
  	.prcm = {
  		.omap4 = {
-@@ -930,7 +929,6 @@ static struct omap_hwmod omap44xx_emif2_hwmod = {
+@@ -930,7 +929,6 @@ static struct omap_hwmod omap44xx_emif2_
  	.name		= "emif2",
  	.class		= &omap44xx_emif_hwmod_class,
  	.clkdm_name	= "l3_emif_clkdm",
@@ -61,7 +57,7 @@ index 1e5b12c..a507a70 100644
  	.main_clk	= "ddrphy_ck",
  	.prcm = {
  		.omap4 = {
-@@ -1184,7 +1182,7 @@ static struct omap_hwmod omap44xx_gpmc_hwmod = {
+@@ -1184,7 +1182,7 @@ static struct omap_hwmod omap44xx_gpmc_h
  	 * the kernel from the board file or DT data.
  	 * HWMOD_INIT_NO_RESET should be removed ASAP.
  	 */
@@ -70,11 +66,9 @@ index 1e5b12c..a507a70 100644
  	.prcm = {
  		.omap4 = {
  			.clkctrl_offs = OMAP4_CM_L3_2_GPMC_CLKCTRL_OFFSET,
-diff --git a/arch/arm/mach-omap2/omap_hwmod_54xx_data.c b/arch/arm/mach-omap2/omap_hwmod_54xx_data.c
-index e3caee1..e47f24d 100644
 --- a/arch/arm/mach-omap2/omap_hwmod_54xx_data.c
 +++ b/arch/arm/mach-omap2/omap_hwmod_54xx_data.c
-@@ -352,7 +352,6 @@ static struct omap_hwmod omap54xx_emif1_hwmod = {
+@@ -352,7 +352,6 @@ static struct omap_hwmod omap54xx_emif1_
  	.name		= "emif1",
  	.class		= &omap54xx_emif_hwmod_class,
  	.clkdm_name	= "emif_clkdm",
@@ -82,7 +76,7 @@ index e3caee1..e47f24d 100644
  	.main_clk	= "dpll_core_h11x2_ck",
  	.prcm = {
  		.omap4 = {
-@@ -368,7 +367,6 @@ static struct omap_hwmod omap54xx_emif2_hwmod = {
+@@ -368,7 +367,6 @@ static struct omap_hwmod omap54xx_emif2_
  	.name		= "emif2",
  	.class		= &omap54xx_emif_hwmod_class,
  	.clkdm_name	= "emif_clkdm",

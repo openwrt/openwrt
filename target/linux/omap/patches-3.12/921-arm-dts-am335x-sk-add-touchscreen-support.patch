@@ -11,12 +11,10 @@ Signed-off-by: Felipe Balbi <balbi@ti.com>
  arch/arm/boot/dts/am335x-evmsk.dts |   10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/arch/arm/boot/dts/am335x-evmsk.dts b/arch/arm/boot/dts/am335x-evmsk.dts
-index 7fae4e0..ddbf6ca 100644
 --- a/arch/arm/boot/dts/am335x-evmsk.dts
 +++ b/arch/arm/boot/dts/am335x-evmsk.dts
-@@ -454,6 +454,16 @@
- 	phy-mode = "rgmii-txid";
+@@ -513,6 +513,16 @@
+ 	vmmc-supply = <&vmmc_reg>;
  };
  
 +&tscadc {
@@ -30,8 +28,5 @@ index 7fae4e0..ddbf6ca 100644
 +};
 +
  &gpio0 {
- 	ti,no-reset;
+ 	ti,no-reset-on-init;
  };
--- 
-1.7.10.4
-
