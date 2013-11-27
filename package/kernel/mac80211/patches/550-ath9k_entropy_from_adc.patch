@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -682,6 +682,7 @@ struct ath_spec_scan {
+@@ -683,6 +683,7 @@ struct ath_spec_scan {
   * @config_pci_powersave:
   * @calibrate: periodic calibration for NF, ANI, IQ, ADC gain, ADC-DC
   *
@@ -8,7 +8,7 @@
   * @spectral_scan_config: set parameters for spectral scan and enable/disable it
   * @spectral_scan_trigger: trigger a spectral scan run
   * @spectral_scan_wait: wait for a spectral scan run to finish
-@@ -704,6 +705,7 @@ struct ath_hw_ops {
+@@ -705,6 +706,7 @@ struct ath_hw_ops {
  			struct ath_hw_antcomb_conf *antconf);
  	void (*antdiv_comb_conf_set)(struct ath_hw *ah,
  			struct ath_hw_antcomb_conf *antconf);
@@ -55,7 +55,7 @@
  	ops->spectral_scan_config = ar9003_hw_spectral_scan_config;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -824,7 +824,8 @@ static void ath9k_init_txpower_limits(st
+@@ -829,7 +829,8 @@ static void ath9k_init_txpower_limits(st
  	if (ah->caps.hw_caps & ATH9K_HW_CAP_5GHZ)
  		ath9k_init_band_txpower(sc, IEEE80211_BAND_5GHZ);
  
@@ -65,7 +65,7 @@
  }
  
  void ath9k_reload_chainmask_settings(struct ath_softc *sc)
-@@ -955,6 +956,18 @@ void ath9k_set_hw_capab(struct ath_softc
+@@ -960,6 +961,18 @@ void ath9k_set_hw_capab(struct ath_softc
  	SET_IEEE80211_PERM_ADDR(hw, common->macaddr);
  }
  
@@ -84,7 +84,7 @@
  int ath9k_init_device(u16 devid, struct ath_softc *sc,
  		    const struct ath_bus_ops *bus_ops)
  {
-@@ -1000,6 +1013,8 @@ int ath9k_init_device(u16 devid, struct 
+@@ -1005,6 +1018,8 @@ int ath9k_init_device(u16 devid, struct 
  		ARRAY_SIZE(ath9k_tpt_blink));
  #endif
  
