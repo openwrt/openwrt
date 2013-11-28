@@ -19,7 +19,7 @@ start_service() {
 		return 1
 	}
 
-	[ $enable_server -eq 0 -a -z "$server" ] && return
+	[ -z "$server" ] && return
 
 	procd_open_instance
 	procd_set_param command "$PROG" -n
