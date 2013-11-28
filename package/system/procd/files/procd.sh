@@ -222,10 +222,10 @@ uci_validate_section()
 	local name="$3"
 	local error
 	shift; shift; shift
-	local result=`/sbin/validate_data "$package" "$type" "$name" $@ 2> /dev/null`
+	local result=`/sbin/validate_data "$package" "$type" "$name" "$@" 2> /dev/null`
 	error=$?
 	eval "$result"
-	[ "$error" = "0" ] || `/sbin/validate_data "$package" "$type" "$name" $@ 1> /dev/null`
+	[ "$error" = "0" ] || `/sbin/validate_data "$package" "$type" "$name" "$@" 1> /dev/null`
 	return $error
 }
 
