@@ -452,6 +452,8 @@
 
 #define AR8327_REG_PORT_STATS_BASE(_i)		(0x1000 + (_i) * 0x100)
 
+#define AR8337_PAD_MAC06_EXCHANGE_EN		BIT(31)
+
 /* port speed */
 enum {
         AR8216_PORT_SPEED_10M = 0,
