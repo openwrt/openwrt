@@ -1501,7 +1501,7 @@ static void
 ar8327_set_mirror_regs(struct ar8xxx_priv *priv)
 {
 	int port;
- 
+
 	/* reset all mirror registers */
 	ar8xxx_rmw(priv, AR8327_REG_FWD_CTRL0,
 		   AR8327_FWD_CTRL0_MIRROR_PORT,
@@ -1652,9 +1652,9 @@ ar8xxx_sw_hw_apply(struct switch_dev *dev)
 		priv->chip->setup_port(priv, i, egress, ingress, portmask[i],
 				       pvid);
 	}
-	
+
 	ar8xxx_set_mirror_regs(priv);
-	
+
 	mutex_unlock(&priv->reg_mutex);
 	return 0;
 }
@@ -1680,7 +1680,7 @@ ar8xxx_sw_reset_switch(struct switch_dev *dev)
 	priv->mirror_tx = false;
 	priv->source_port = 0;
 	priv->monitor_port = 0;
-	
+
 	priv->chip->init_globals(priv);
 
 	mutex_unlock(&priv->reg_mutex);
@@ -1722,7 +1722,7 @@ ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
 			       struct switch_val *val)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
-	
+
 	mutex_lock(&priv->reg_mutex);
 	priv->mirror_rx = !!val->value.i;
 	ar8xxx_set_mirror_regs(priv);
@@ -1772,7 +1772,7 @@ ar8xxx_sw_set_mirror_monitor_port(struct switch_dev *dev,
 				  struct switch_val *val)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
-	
+
 	mutex_lock(&priv->reg_mutex);
 	priv->monitor_port = val->value.i;
 	ar8xxx_set_mirror_regs(priv);
@@ -1797,7 +1797,7 @@ ar8xxx_sw_set_mirror_source_port(struct switch_dev *dev,
 				 struct switch_val *val)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
-	
+
 	mutex_lock(&priv->reg_mutex);
 	priv->source_port = val->value.i;
 	ar8xxx_set_mirror_regs(priv);
@@ -1931,7 +1931,7 @@ static struct switch_attr ar8xxx_sw_attr_globals[] = {
 		.description = "Mirror monitor port",
 		.set = ar8xxx_sw_set_mirror_monitor_port,
 		.get = ar8xxx_sw_get_mirror_monitor_port,
-		.max = AR8216_NUM_PORTS - 1 
+		.max = AR8216_NUM_PORTS - 1
 	},
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1980,7 +1980,7 @@ static struct switch_attr ar8327_sw_attr_globals[] = {
 		.description = "Mirror monitor port",
 		.set = ar8xxx_sw_set_mirror_monitor_port,
 		.get = ar8xxx_sw_get_mirror_monitor_port,
-		.max = AR8327_NUM_PORTS - 1 
+		.max = AR8327_NUM_PORTS - 1
 	},
 	{
 		.type = SWITCH_TYPE_INT,
