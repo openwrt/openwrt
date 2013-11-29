@@ -18,6 +18,7 @@ $(eval $(call Profile,MYNETN600))
 
 define Profile/MYNETREXT
 	NAME:=WD My Net Wi-Fi Range Extender
+	PACKAGES:=rssileds
 endef
 
 define Profile/MYNETREXT/Description
