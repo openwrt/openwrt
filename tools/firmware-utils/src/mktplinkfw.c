@@ -60,6 +60,7 @@
 #define HWID_TL_WR941ND_V2	0x09410002
 #define HWID_TL_WR941ND_V4	0x09410004
 #define HWID_TL_WR1043ND_V1	0x10430001
+#define HWID_TL_WR1043ND_V2	0x10430002
 #define HWID_TL_WR1041N_V2	0x10410002
 #define HWID_TL_WR2543N_V1	0x25430001
 
@@ -339,6 +340,11 @@ static struct board_info boards[] = {
 		.hw_id		= HWID_TL_WR1043ND_V1,
 		.hw_rev		= 1,
 		.layout_id	= "8M",
+	}, {
+		.id		= "TL-WR1043NDv2",
+		.hw_id		= HWID_TL_WR1043ND_V2,
+		.hw_rev		= 1,
+		.layout_id	= "8Mlzma",
 	}, {
 		.id		= "TL-WR2543Nv1",
 		.hw_id		= HWID_TL_WR2543N_V1,
