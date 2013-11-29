@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=omap
 BOARDNAME:=TI OMAP3/4/AM33xx
-FEATURES:=usb targz audio display
+FEATURES:=usb usbgadget ext4 targz fpu audio display
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=vfpv3
 
