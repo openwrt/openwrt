@@ -185,7 +185,7 @@ static void __init tl_wr842n_v2_setup(void)
 {
 	tl_ap123_setup();
 
-	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr841n_v8_leds_gpio) - 1,
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr841n_v8_leds_gpio),
 				 tl_wr841n_v8_leds_gpio);
 
 	ath79_register_gpio_keys_polled(1, TL_WR841NV8_KEYS_POLL_INTERVAL,
