@@ -15,8 +15,8 @@ menuconfig TARGET_OPTIONS
 
 	config SOFT_FLOAT
 		bool "Use software floating point by default" if TARGET_OPTIONS
-		default y
-		depends on (arm || armeb || powerpc || mipsel || mips || mips64el || mips64) && !HAS_FPU
+		default y if !HAS_FPU
+		depends on arm || armeb || powerpc || mipsel || mips || mips64el || mips64
 		help
 		  If your target CPU does not have a Floating Point Unit (FPU) or a
 		  kernel FPU emulator, but you still wish to support floating point
