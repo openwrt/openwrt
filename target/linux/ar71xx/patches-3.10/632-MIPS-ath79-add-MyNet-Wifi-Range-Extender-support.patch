@@ -20,13 +20,14 @@
  obj-$(CONFIG_ATH79_MACH_NBG460N)	+= mach-nbg460n.o
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -801,6 +801,16 @@ config ATH79_MACH_MYNET_N600
+@@ -801,6 +801,17 @@ config ATH79_MACH_MYNET_N600
  	select ATH79_DEV_WMAC
  	select ATH79_NVRAM
  
 +config ATH79_MACH_MYNET_REXT
 +	bool "WD My Net Wi-Fi Range Extender board support"
 +	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO

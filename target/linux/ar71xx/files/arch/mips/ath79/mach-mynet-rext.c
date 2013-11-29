@@ -153,10 +153,9 @@ static void __init mynet_rext_setup(void)
 					ARRAY_SIZE(mynet_rext_gpio_keys),
 					mynet_rext_gpio_keys);
 
-	mynet_rext_get_mac("wl0_hwaddr=", tmpmac);
-	ath79_register_wmac(art + MYNET_REXT_WMAC_CALDATA_OFFSET, tmpmac);
-
-	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
+				   AR934X_ETH_CFG_RXD_DELAY |
+				   AR934X_ETH_CFG_RDV_DELAY);
 
 	ath79_register_mdio(0, 0x0);
 
@@ -169,6 +168,10 @@ static void __init mynet_rext_setup(void)
 	ath79_eth0_pll_data.pll_1000 = 0x0e000000; /* athrs_mac.c */
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
 	ath79_register_eth(0);
+
+	/* WLAN */
+	mynet_rext_get_mac("wl0_hwaddr=", tmpmac);
+	ap91_pci_init(art + MYNET_REXT_WMAC_CALDATA_OFFSET, tmpmac);
 }
 
 MIPS_MACHINE(ATH79_MACH_MYNET_REXT, "MYNET-REXT",
