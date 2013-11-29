@@ -71,7 +71,7 @@ endif
 
 define Build/Configure
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(UBOOT_CONFIG)_config
+		USE_PRIVATE_LIBGCC=yes $(UBOOT_CONFIG)_config
 endef
 
 define Build/Compile

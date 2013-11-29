@@ -168,9 +168,16 @@ TARGET_PATH_PKG:=$(STAGING_DIR)/host/bin:$(TARGET_PATH)
 
 ifeq ($(CONFIG_SOFT_FLOAT),y)
   SOFT_FLOAT_CONFIG_OPTION:=--with-float=soft
-  TARGET_CFLAGS+= -msoft-float
+  ifeq ($(CONFIG_arm),y)
+    TARGET_CFLAGS+= -mfloat-abi=soft
+  else
+    TARGET_CFLAGS+= -msoft-float
+  endif
 else
   SOFT_FLOAT_CONFIG_OPTION:=
+  ifeq ($(CONFIG_arm),y)
+    TARGET_CFLAGS+= -mfloat-abi=hard
+  endif
 endif
 
 export PATH:=$(TARGET_PATH)
