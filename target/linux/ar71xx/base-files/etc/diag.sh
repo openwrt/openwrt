@@ -141,6 +141,7 @@ get_status_led() {
 	tl-wdr3500 | \
 	tl-wr1041n-v2 | \
 	tl-wr1043nd | \
+	tl-wr1043nd-v2 | \
 	tl-wr741nd | \
 	tl-wr741nd-v4 | \
 	tl-wr841n-v1 | \
