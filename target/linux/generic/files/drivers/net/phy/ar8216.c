@@ -54,6 +54,7 @@ enum {
 	AR8XXX_VER_AR8236 = 0x03,
 	AR8XXX_VER_AR8316 = 0x10,
 	AR8XXX_VER_AR8327 = 0x12,
+	AR8XXX_VER_AR8337 = 0x13,
 };
 
 struct ar8xxx_mib_desc {
@@ -260,6 +261,11 @@ static inline bool chip_is_ar8327(struct ar8xxx_priv *priv)
 	return priv->chip_ver == AR8XXX_VER_AR8327;
 }
 
+static inline bool chip_is_ar8337(struct ar8xxx_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8337;
+}
+
 static inline void
 split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
 {
@@ -397,7 +403,7 @@ ar8xxx_mib_op(struct ar8xxx_priv *priv, u32 op)
 
 	lockdep_assert_held(&priv->mib_lock);
 
-	if (chip_is_ar8327(priv))
+	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
 		mib_func = AR8327_REG_MIB_FUNC;
 	else
 		mib_func = AR8216_REG_MIB_FUNC;
@@ -441,7 +447,7 @@ ar8xxx_mib_fetch_port_stat(struct ar8xxx_priv *priv, int port, bool flush)
 
 	lockdep_assert_held(&priv->mib_lock);
 
-	if (chip_is_ar8327(priv))
+	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
 		base = AR8327_REG_PORT_STATS_BASE(port);
 	else if (chip_is_ar8236(priv) ||
 		 chip_is_ar8316(priv))
@@ -1079,6 +1085,9 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
 
 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
+	if (chip_is_ar8337(priv))
+		t |= AR8337_PAD_MAC06_EXCHANGE_EN;
+
 	priv->write(priv, AR8327_REG_PAD0_MODE, t);
 	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
 	priv->write(priv, AR8327_REG_PAD5_MODE, t);
@@ -1582,7 +1591,7 @@ ar8216_set_mirror_regs(struct ar8xxx_priv *priv)
 static void
 ar8xxx_set_mirror_regs(struct ar8xxx_priv *priv)
 {
-	if (chip_is_ar8327(priv)) {
+	if (chip_is_ar8327(priv) || chip_is_ar8337(priv)) {
 		ar8327_set_mirror_regs(priv);
 	} else {
 		ar8216_set_mirror_regs(priv);
@@ -2104,6 +2113,10 @@ ar8xxx_id_chip(struct ar8xxx_priv *priv)
 		priv->mii_lo_first = true;
 		priv->chip = &ar8327_chip;
 		break;
+	case AR8XXX_VER_AR8337:
+		priv->mii_lo_first = true;
+		priv->chip = &ar8327_chip;
+		break;
 	default:
 		pr_err("ar8216: Unknown Atheros device [ver=%d, rev=%d]\n",
 		       priv->chip_ver, priv->chip_rev);
@@ -2244,6 +2257,11 @@ ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 		swdev->vlans = AR8X16_MAX_VLANS;
 		swdev->ports = AR8327_NUM_PORTS;
 		swdev->ops = &ar8327_sw_ops;
+	} else if (chip_is_ar8337(priv)) {
+		swdev->name = "Atheros AR8337";
+		swdev->vlans = AR8X16_MAX_VLANS;
+		swdev->ports = AR8327_NUM_PORTS;
+		swdev->ops = &ar8327_sw_ops;
 	} else {
 		swdev->name = "Atheros AR8216";
 		swdev->vlans = AR8216_NUM_VLANS;
@@ -2289,7 +2307,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	if (WARN_ON(!priv))
 		return -ENODEV;
 
-	if (chip_is_ar8327(priv))
+	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
 		return 0;
 
 	priv->phy = phydev;
@@ -2375,7 +2393,8 @@ ar8xxx_phy_config_aneg(struct phy_device *phydev)
 
 static const u32 ar8xxx_phy_ids[] = {
 	0x004dd033,
-	0x004dd034,
+	0x004dd034, /* AR8327 */
+	0x004dd036, /* AR8337 */
 	0x004dd041,
 	0x004dd042,
 };
@@ -2463,7 +2482,7 @@ found:
 			phydev->advertising = ADVERTISED_100baseT_Full;
 		}
 
-		if (chip_is_ar8327(priv)) {
+		if (chip_is_ar8327(priv) || chip_is_ar8337(priv)) {
 			priv->phy = phydev;
 
 			ret = ar8xxx_start(priv);
