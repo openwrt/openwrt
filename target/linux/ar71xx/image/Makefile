@@ -668,11 +668,15 @@ Image/Build/CyberTAN/loader=$(call Image/BuildLoader,$(1),gz,$(2),0x80060000)
 Image/Build/CyberTAN/buildkernel=$(call MkuImage,gzip,,$(KDIR)/loader-$(2).gz,$(KDIR_TMP)/vmlinux-$(2).uImage)
 
 define Image/Build/CyberTAN
-	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR_TMP)/vmlinux-$(2).uImage \
+	echo -n '' > $(KDIR_TMP)/empty.bin
+	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp \
+		-f $(KDIR_TMP)/vmlinux-$(2).uImage -F $(KDIR_TMP)/empty.bin \
 		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) \
 		-i $(KDIR)/image.tmp \
 		-o $(call sysupname,$(1),$(2))
+	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR_TMP)/vmlinux-$(2).uImage \
+		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) -g \
 		-i $(KDIR)/image.tmp \
 		-o $(call factoryname,$(1),$(2))
