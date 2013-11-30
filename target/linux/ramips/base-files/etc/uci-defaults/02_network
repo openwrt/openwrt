@@ -56,7 +56,6 @@ ramips_setup_interfaces()
 		;;
 
 	3g-6200n | \
-	argus-atp52b | \
 	b2c | \
 	nw718 | \
 	psr-680w | \
@@ -72,13 +71,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 6t"
 		;;
 
-	dir-645)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 6t"
-		ucidef_add_switch_vlan "switch0" "2" "0 6t"
-		;;
-
 	dir-610-a1 | \
 	dir-300-b7 | \
 	dir-320-b1 | \
@@ -90,6 +82,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "2" "4 6t"
 		;;
 
+	argus-atp52b | \
+	dir-645 | \
 	f5d8235-v1 | \
 	f5d8235-v2 | \
 	hg255d | \
@@ -136,7 +130,10 @@ ramips_setup_interfaces()
 		;;
 
 	wcr-150gn)
-		ucidef_set_interfaces_lan_wan "eth0.2" "eth0.1"
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 6t"
+		ucidef_add_switch_vlan "switch0" "2" "6t"
 		;;
 
 	d105 | \
