@@ -664,28 +664,15 @@ define Image/Build/TPLINK-LZMA/initramfs
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
-Image/Build/CyberTAN/loader=$(call Image/BuildLoader,$(1),gz,$(2),0x80060000)
-Image/Build/CyberTAN/buildkernel=$(call MkuImage,gzip,,$(KDIR)/loader-$(2).gz,$(KDIR_TMP)/vmlinux-$(2).uImage)
 
 define Image/Build/CyberTAN
 	echo -n '' > $(KDIR_TMP)/empty.bin
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp \
 		-f $(KDIR_TMP)/vmlinux-$(2).uImage -F $(KDIR_TMP)/empty.bin \
 		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
-	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) \
+	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(5) \
 		-i $(KDIR)/image.tmp \
 		-o $(call sysupname,$(1),$(2))
-	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR_TMP)/vmlinux-$(2).uImage \
-		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
-	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) -g \
-		-i $(KDIR)/image.tmp \
-		-o $(call factoryname,$(1),$(2))
-	rm $(KDIR)/image.tmp
-endef
-
-Image/Build/CyberTANLZMA/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
-
-define Image/Build/CyberTANLZMA
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR_TMP)/vmlinux-$(2).uImage \
 		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(5) -g \
@@ -693,6 +680,14 @@ define Image/Build/CyberTANLZMA
 		-o $(call factoryname,$(1),$(2))
 	rm $(KDIR)/image.tmp
 endef
+
+Image/Build/CyberTANGZIP/loader=$(call Image/BuildLoader,$(1),gz,$(2),0x80060000)
+Image/Build/CyberTANGZIP/buildkernel=$(call MkuImage,gzip,,$(KDIR)/loader-$(2).gz,$(KDIR_TMP)/vmlinux-$(2).uImage)
+Image/Build/CyberTANGZIP=$(call Image/Build/CyberTAN,$(1),$(2),$(3),$(4),$(5))
+
+Image/Build/CyberTANLZMA/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
+Image/Build/CyberTANLZMA=$(call Image/Build/CyberTAN,$(1),$(2),$(3),$(4),$(5))
+
 
 Image/Build/Netgear/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4),,-M $(5))
 
@@ -917,7 +912,7 @@ $(eval $(call SingleProfile,CameoDB120,64kraw,DIR835A1,dir-835-a1,DIR-835-A1,tty
 
 $(eval $(call SingleProfile,CameoDB120_8M,64kraw,TEW732BR,tew-732br,TEW-732BR,ttyS0,115200,"00DB120AR9341-RT-120906-NA"))
 
-$(eval $(call SingleProfile,CyberTAN,64k,WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,1.00.01))
+$(eval $(call SingleProfile,CyberTANGZIP,64k,WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,,1.00.01))
 
 $(eval $(call SingleProfile,CyberTANLZMA,64k,MYNETREXT,mynet-rext,MYNET-REXT,ttyS0,115200,$$(mynet_rext_mtdlayout) root=31:4,1.00.01))
 
