@@ -142,7 +142,7 @@ $(eval $(call Profile,TLWA701))
 
 define Profile/TLWA750
 	NAME:=TP-LINK TL-WA750RE
-	PACKAGES:=
+	PACKAGES:=rssileds
 endef
 
 define Profile/TLWA750/Description
@@ -184,7 +184,7 @@ $(eval $(call Profile,TLWA830))
 
 define Profile/TLWA850
 	NAME:=TP-LINK TL-WA850RE
-	PACKAGES:=
+	PACKAGES:=rssileds
 endef
 
 define Profile/TLWA850/Description
