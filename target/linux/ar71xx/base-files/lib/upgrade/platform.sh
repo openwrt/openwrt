@@ -73,6 +73,22 @@ seama_get_type_magic() {
 	get_image "$@" | dd bs=1 count=4 skip=53 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
+cybertan_get_image_magic() {
+	get_image "$@" | dd bs=8 count=1 skip=0  2>/dev/null | hexdump -v -n 8 -e '1/1 "%02x"'
+}
+
+cybertan_check_image() {
+	local magic="$(cybertan_get_image_magic "$1")"
+	local fw_magic="$(cybertan_get_hw_magic)"
+
+	[ "$fw_magic" != "$magic" ] && {
+		echo "Invalid image, ID mismatch, got:$magic, but need:$fw_magic"
+		return 1
+	}
+
+	return 0
+}
+
 platform_check_image() {
 	local board=$(ar71xx_board_name)
 	local magic="$(get_magic_word "$1")"
@@ -153,6 +169,11 @@ platform_check_image() {
 	dir-825-b1 | \
 	tew-673gru)
 		dir825b_check_image "$1" && return 0
+		;;
+
+	mynet-rext)
+		cybertan_check_image "$1" && return 0
+		return 1
 		;;
 
 	mynet-n600)
