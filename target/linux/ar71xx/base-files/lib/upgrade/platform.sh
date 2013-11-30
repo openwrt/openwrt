@@ -171,7 +171,8 @@ platform_check_image() {
 		dir825b_check_image "$1" && return 0
 		;;
 
-	mynet-rext)
+	mynet-rext|\
+	wrt160nl)
 		cybertan_check_image "$1" && return 0
 		return 1
 		;;
@@ -271,13 +272,6 @@ platform_check_image() {
 		hw_magic="$(ar71xx_get_mtd_part_magic firmware)"
 		[ "$magic_long" != "$hw_magic" ] && {
 			echo "Invalid image, hardware ID mismatch, hw:$hw_magic image:$magic_long."
-			return 1
-		}
-		return 0
-		;;
-	wrt160nl)
-		[ "$magic" != "4e4c" ] && {
-			echo "Invalid image type."
 			return 1
 		}
 		return 0
