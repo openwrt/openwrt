@@ -68,7 +68,7 @@ uint32_t crc32buf(char *buf, size_t len);
 
 #define TRX_MAGIC	0x30524448	/* "HDR0" */
 #define TRX_MAX_LEN	0x720000
-#define TRX_NO_HEADER	1		/* Do not write TRX header */	
+#define TRX_NO_HEADER	1		/* Do not write TRX header */
 
 struct trx_header {
 	uint32_t magic;			/* "HDR0" */
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
 		cur_len += ROUND - n;
 	}
 
-	/* for TRXv2 set bin-header Flags to 0xFF for CRC calculation like CFE does */ 
+	/* for TRXv2 set bin-header Flags to 0xFF for CRC calculation like CFE does */
 	if (trx_version == 2) {
 		if(cur_len - LOAD32_LE(p->offsets[3]) < sizeof(binheader)) {
 			fprintf(stderr, "TRXv2 binheader too small!\n");
@@ -289,7 +289,7 @@ int main(int argc, char **argv)
 	}
 
 	fclose(out);
-	
+
 	return EXIT_SUCCESS;
 }
 
