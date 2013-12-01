@@ -47,11 +47,9 @@ Subject: [PATCH 18/18] bcm47xx: add cpu_has_vint
  void __init arch_init_irq(void)
  {
  #ifdef CONFIG_BCM47XX_BCMA
-@@ -63,5 +76,16 @@ void __init arch_init_irq(void)
- 		cp0_compare_irq = 7;
+@@ -64,4 +77,14 @@ void __init arch_init_irq(void)
  	}
  #endif
-+
  	mips_cpu_irq_init();
 +
 +	if (cpu_has_vint) {
