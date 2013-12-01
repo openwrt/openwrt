@@ -1,0 +1,13 @@
+--- a/backport-include/linux/mod_devicetable.h
++++ b/backport-include/linux/mod_devicetable.h
+@@ -2,10 +2,6 @@
+ #define __BACKPORT_MOD_DEVICETABLE_H
+ #include_next <linux/mod_devicetable.h>
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
+-#define DMI_EXACT_MATCH(a, b)  DMI_MATCH(DMI_PRODUCT_NAME, "BACKPORT_IGNORE")
+-#endif
+-
+ #ifndef HID_BUS_ANY
+ #define HID_BUS_ANY                            0xffff
+ #endif
