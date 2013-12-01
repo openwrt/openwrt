@@ -8,7 +8,7 @@
  #include <asm/bootinfo.h>
  #include <asm/prom.h>
  #include <asm/reboot.h>
-@@ -244,6 +245,33 @@ void __init plat_mem_setup(void)
+@@ -254,6 +255,33 @@ void __init plat_mem_setup(void)
  	mips_set_machine_name(bcm47xx_board_get_name());
  }
  
@@ -42,7 +42,7 @@
  static int __init bcm47xx_register_bus_complete(void)
  {
  	switch (bcm47xx_bus_type) {
-@@ -258,6 +286,8 @@ static int __init bcm47xx_register_bus_c
+@@ -268,6 +296,8 @@ static int __init bcm47xx_register_bus_c
  		break;
  #endif
  	}
