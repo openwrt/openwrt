@@ -31,7 +31,7 @@
  				    TG3_CPMU_PHY_STRAP_IS_SERDES;
  		if (is_serdes)
  			tp->phy_addr += 7;
-+	} else if (tg3_flag(tp, IS_SSB_CORE)) {
++	} else if (tg3_flag(tp, IS_SSB_CORE) && tg3_flag(tp, ROBOSWITCH)) {
 +		int addr;
 +
 +		addr = ssb_gige_get_phyaddr(tp->pdev);
