@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/freescale/gianfar.c
 +++ b/drivers/net/ethernet/freescale/gianfar.c
-@@ -2835,7 +2835,7 @@ static int gfar_poll(struct napi_struct 
+@@ -2835,7 +2835,7 @@ static int gfar_poll(struct napi_struct
  	struct gfar_priv_rx_q *rx_queue = NULL;
  	int work_done = 0, work_done_per_q = 0;
  	int i, budget_per_q = 0;
@@ -9,7 +9,7 @@
  	unsigned long rstat_rxf;
  	int num_act_queues;
  
-@@ -2850,62 +2850,48 @@ static int gfar_poll(struct napi_struct 
+@@ -2850,62 +2850,48 @@ static int gfar_poll(struct napi_struct
  	if (num_act_queues)
  		budget_per_q = budget/num_act_queues;
  

@@ -14,7 +14,7 @@ FEATURES:=spe_fpu squashfs
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 SUBTARGETS=generic p1020
 
-LINUX_VERSION:=3.10.18
+LINUX_VERSION:=3.10.21
 
 include $(INCLUDE_DIR)/target.mk
 
