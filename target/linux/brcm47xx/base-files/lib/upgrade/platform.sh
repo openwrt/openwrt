@@ -1,4 +1,4 @@
-PART_NAME=linux
+PART_NAME=firmware
 
 platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
