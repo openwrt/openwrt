@@ -10,22 +10,15 @@
  
  /*
   * I-Cache snoops remote store.	 This only matters on SMP.  Some multiprocessors
---- /dev/null
+--- a/arch/mips/include/asm/mach-bcm47xx/cpu-feature-overrides.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/cpu-feature-overrides.h
-@@ -0,0 +1,13 @@
-+/*
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ *
-+ * Copyright (C) 2005 Ralf Baechle (ralf@linux-mips.org)
-+ */
-+#ifndef __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H
-+#define __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H
+@@ -79,4 +79,6 @@
+ #define cpu_scache_line_size()		0
+ #define cpu_has_vz			0
+ 
++#define cpu_use_kmap_coherent		0
 +
-+#define cpu_use_kmap_coherent	0
-+
-+#endif /* __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H */
+ #endif /* __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H */
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
 @@ -509,7 +509,7 @@ static inline void local_r4k_flush_cache
