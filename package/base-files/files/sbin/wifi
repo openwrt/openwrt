@@ -2,13 +2,23 @@
 # Copyright (C) 2006 OpenWrt.org
 
 . /lib/functions.sh
+. /usr/share/libubox/jshn.sh
 
 usage() {
 	cat <<EOF
-Usage: $0 [down|detect]
+Usage: $0 [down|detect|reload|status]
 enables (default), disables or detects a wifi configuration.
 EOF
 	exit 1
+}
+
+ubus_wifi_cmd() {
+	local cmd="$1"
+	local dev="$2"
+
+	json_init
+	[ -n "$2" ] && json_add_string device "$2"
+	ubus call network.wireless "$1" "$(json_dump)"
 }
 
 find_net_config() {(
@@ -95,11 +105,7 @@ wifi_fixup_hwmode() {
 	config_set "$device" hwmode "$hwmode"
 }
 
-wifi_updown() {
-	[ enable = "$1" ] && {
-		wifi_updown disable "$2"
-		scan_wifi
-	}
+_wifi_updown() {
 	for device in ${2:-$DEVICES}; do (
 		config_get disabled "$device" disabled
 		[ 1 == "$disabled" ] && {
@@ -110,10 +116,27 @@ wifi_updown() {
 		if eval "type ${1}_$iftype" 2>/dev/null >/dev/null; then
 			eval "scan_$iftype '$device'"
 			eval "${1}_$iftype '$device'" || echo "$device($iftype): ${1} failed"
-		else
+		elif [ ! -f /lib/netifd/wireless/$iftype.sh ]; then
 			echo "$device($iftype): Interface type not supported"
 		fi
 	); done
+}
+
+wifi_updown() {
+	cmd=down
+	[ enable = "$1" ] && {
+		_wifi_updown disable "$2"
+		scan_wifi
+		cmd=up
+	}
+	ubus_wifi_cmd "$cmd" "$2"
+	_wifi_updown "$@"
+}
+
+wifi_reload() {
+	_wifi_updown "disable" "$1"
+	scan_wifi
+	_wifi_updown "enable" "$1"
 }
 
 wifi_detect() {
@@ -199,6 +222,8 @@ scan_wifi
 case "$1" in
 	down) wifi_updown "disable" "$2";;
 	detect) wifi_detect "$2";;
+	status) ubus_wifi_cmd "status" "$2";;
+	reload) wifi_reload "$2";;
 	--help|help) usage;;
 	*) wifi_updown "enable" "$2";;
 esac
