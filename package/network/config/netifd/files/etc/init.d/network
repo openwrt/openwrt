@@ -18,7 +18,7 @@ start_service() {
 
 reload_service() {
 	ubus call network reload
-	/sbin/wifi reload
+	/sbin/wifi reload_legacy
 }
 
 stop_service() {
