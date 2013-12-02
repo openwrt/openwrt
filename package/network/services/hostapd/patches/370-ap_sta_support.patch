@@ -126,6 +126,18 @@
  	/* RSNA Supplicant Key Management - INITIALIZE */
  	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
  	eapol_sm_notify_portValid(wpa_s->eapol, FALSE);
+@@ -3125,6 +3183,11 @@ static void wpa_supplicant_deinit_iface(
+ 	if (terminate)
+ 		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_TERMINATING);
+ 
++	if (wpa_s->hostapd) {
++		wpa_ctrl_close(wpa_s->hostapd);
++		wpa_s->hostapd = NULL;
++	}
++
+ 	if (wpa_s->ctrl_iface) {
+ 		wpa_supplicant_ctrl_iface_deinit(wpa_s->ctrl_iface);
+ 		wpa_s->ctrl_iface = NULL;
 --- a/wpa_supplicant/bss.c
 +++ b/wpa_supplicant/bss.c
 @@ -11,6 +11,7 @@
