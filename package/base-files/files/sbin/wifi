@@ -126,6 +126,7 @@ wifi_updown() {
 	cmd=down
 	[ enable = "$1" ] && {
 		_wifi_updown disable "$2"
+		ubus_wifi_cmd "$cmd" "$2"
 		scan_wifi
 		cmd=up
 	}
