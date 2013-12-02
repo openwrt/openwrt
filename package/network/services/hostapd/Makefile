@@ -208,6 +208,11 @@ define Package/wpa-cli/Description
   WPA Supplicant control utility
 endef
 
+define Package/hostapd-common
+  TITLE:=hostapd/wpa_supplicant common support files
+  SECTION:=net
+  CATEGORY:=Network
+endef
 
 ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   define Build/Configure/rebuild
@@ -309,6 +314,11 @@ define Install/supplicant
 	$(INSTALL_DIR) $(1)/usr/sbin
 endef
 
+define Package/hostapd-common/install
+	$(INSTALL_DIR) $(1)/lib/netifd
+	$(INSTALL_DATA) ./files/netifd.sh $(1)/lib/netifd/hostapd.sh
+endef
+
 define Package/hostapd/install
 	$(call Install/hostapd,$(1))
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd $(1)/usr/sbin/
@@ -355,3 +365,4 @@ $(eval $(call BuildPackage,wpa-supplicant-mini))
 $(eval $(call BuildPackage,wpa-supplicant-p2p))
 $(eval $(call BuildPackage,wpa-cli))
 $(eval $(call BuildPackage,hostapd-utils))
+$(eval $(call BuildPackage,hostapd-common))
