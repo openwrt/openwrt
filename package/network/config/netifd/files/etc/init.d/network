@@ -18,7 +18,6 @@ start_service() {
 
 reload_service() {
 	ubus call network reload
-	/sbin/wifi down
 	/sbin/wifi up
 }
 
@@ -34,7 +33,6 @@ service_running() {
 
 	sleep 5
 
-	/sbin/wifi down
 	/sbin/wifi up
 }
 
