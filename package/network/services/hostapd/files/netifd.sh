@@ -308,7 +308,7 @@ hostapd_set_bss_options() {
 		esac
 	fi
 
-	_macfile="/var/run/hostapd-$phy-$ifname.maclist"
+	_macfile="/var/run/hostapd-$ifname.maclist"
 	case "$macfilter" in
 		allow)
 			append bss_conf "macaddr_acl=1" "$N"
@@ -324,7 +324,8 @@ hostapd_set_bss_options() {
 	esac
 
 	[ -n "$_macfile" ] && {
-		json_get_vars macfile maclist
+		json_get_vars macfile
+		json_get_values maclist maclist
 
 		rm -f "$_macfile"
 		(
