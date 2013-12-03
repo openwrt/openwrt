@@ -271,8 +271,7 @@ mac80211_setup_adhoc() {
 	mcval=
 	[ -n "$mcast_rate" ] && hostapd_add_rate mcval "$mcast_rate"
 
-	iw dev "$ifname" ibss join "$ssid" $freq $htmode \
-		${fixed:+fixed-freq} $bssid \
+	iw dev "$ifname" ibss join "$ssid" $freq $htmode fixed-freq $bssid \
 		${beacon_int:+beacon-interval $beacon_int} \
 		${brstr:+basic-rates $brstr} \
 		${mcval:+mcast-rate $mcval} \
@@ -309,7 +308,7 @@ mac80211_setup_vif() {
 		;;
 		adhoc)
 			wireless_vif_parse_encryption
-			if [ "$wpa" -gt 0 ]; then
+			if [ "$wpa" -gt 0 -o "$auto_channel" -gt 0 ]; then
 				mac80211_setup_supplicant || failed=1
 			else
 				mac80211_setup_adhoc
