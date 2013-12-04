@@ -2272,7 +2272,18 @@
 -EXPORT_SYMBOL(ath9k_hw_wow_enable);
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -1786,6 +1786,9 @@ bool ath_drain_all_txq(struct ath_softc 
+@@ -1276,6 +1276,10 @@ static void ath_tx_fill_desc(struct ath_
+ 				if (!rts_thresh || (len > rts_thresh))
+ 					rts = true;
+ 			}
++
++			if (!aggr)
++				len = fi->framelen;
++
+ 			ath_buf_set_rate(sc, bf, &info, len, rts);
+ 		}
+ 
+@@ -1786,6 +1790,9 @@ bool ath_drain_all_txq(struct ath_softc 
  		if (!ATH_TXQ_SETUP(sc, i))
  			continue;
  
@@ -2282,7 +2293,7 @@
  		if (ath9k_hw_numtxpending(ah, sc->tx.txq[i].axq_qnum))
  			npend |= BIT(i);
  	}
-@@ -2749,6 +2752,8 @@ void ath_tx_node_cleanup(struct ath_soft
+@@ -2749,6 +2756,8 @@ void ath_tx_node_cleanup(struct ath_soft
  	}
  }
  
@@ -2291,7 +2302,7 @@
  int ath9k_tx99_send(struct ath_softc *sc, struct sk_buff *skb,
  		    struct ath_tx_control *txctl)
  {
-@@ -2791,3 +2796,5 @@ int ath9k_tx99_send(struct ath_softc *sc
+@@ -2791,3 +2800,5 @@ int ath9k_tx99_send(struct ath_softc *sc
  
  	return 0;
  }
