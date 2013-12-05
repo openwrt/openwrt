@@ -22,11 +22,22 @@ PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
+ifneq ($(CONFIG_PACKAGE_odhcpd_ext_prefix_class),0)
+  CMAKE_OPTIONS += -DEXT_PREFIX_CLASS=$(CONFIG_PACKAGE_odhcpd_ext_prefix_class)
+endif
+
 define Package/odhcpd
   SECTION:=net
   CATEGORY:=Network
   TITLE:=OpenWrt DHCP/DHCPv6(-PD)/RA Server & Relay
   DEPENDS:=+libubox +libuci +libubus
+endef
+
+define Package/odhcpd/config
+  config PACKAGE_odhcpd_ext_prefix_class
+    int "Prefix Class Extension ID (0 = disabled)"
+    depends on PACKAGE_odhcpd
+    default 0
 endef
 
 define Package/odhcpd/description
