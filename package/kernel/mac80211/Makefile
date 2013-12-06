@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=2013-11-05
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_BACKPORT_VERSION:=
 PKG_MD5SUM:=5ef839d02d19c341629555a529beebee
@@ -29,7 +29,7 @@ PKG_DRIVERS = \
 	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
 	ath9k-common ath9k ath9k-htc ath10k ath net-libipw net-ipw2100 net-ipw2200 \
 	mwl8k net-hermes net-hermes-pci net-hermes-plx net-hermes-pcmcia \
-	iwl-legacy iwl3945 iwl4965 iwlagn wl12xx lib80211 \
+	iwl-legacy iwl3945 iwl4965 iwlagn wlcore wl12xx wl18xx lib80211 \
 	rtlwifi rtlwifi-pci rtlwifi-usb rtl8192c-common rtl8192ce rtl8192se \
 	rtl8192de rtl8192cu
 
@@ -921,21 +921,46 @@ define KernelPackage/mwl8k/description
 endef
 
 
+define KernelPackage/wlcore
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=TI common driver part
+  DEPENDS+= @TARGET_omap +kmod-mac80211 +@DRIVER_11N_SUPPORT
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore_sdio.ko
+  AUTOLOAD:=$(call AutoProbe,wlcore wlcore_sdio)
+endef
+
+define KernelPackage/wlcore/description
+ This module contains some common parts needed by TI Wireless drivers.
+endef
+
 define KernelPackage/wl12xx
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for TI WL12xx
   URL:=http://wireless.kernel.org/en/users/Drivers/wl12xx
-  DEPENDS+= @TARGET_omap +kmod-mac80211 +@DRIVER_11N_SUPPORT
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl12xx/wl12xx.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore_sdio.ko
-  AUTOLOAD:=$(call AutoProbe,wlcore wlcore_sdio wl12xx)
+  DEPENDS+= +kmod-wlcore
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl12xx/wl12xx.ko
+  AUTOLOAD:=$(call AutoProbe,wl12xx)
 endef
 
 define KernelPackage/wl12xx/description
  Kernel modules for TI WL12xx
 endef
+
+define KernelPackage/wl18xx
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Driver for TI WL18xx
+  URL:=http://wireless.kernel.org/en/users/Drivers/wl18xx
+  DEPENDS+= +kmod-wlcore
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl18xx/wl18xx.ko
+  AUTOLOAD:=$(call AutoProbe,wl18xx)
+endef
+
+define KernelPackage/wl18xx/description
+ Kernel modules for TI WL18xx
+endef
+
 
 #Broadcom firmware
 ifneq ($(CONFIG_B43_FW_5_10),)
@@ -1418,7 +1443,9 @@ config-$(call config_package,libertas-usb) += LIBERTAS LIBERTAS_USB
 config-$(call config_package,mwl8k) += MWL8K
 config-$(call config_package,rtl8180) += RTL8180
 config-$(call config_package,rtl8187) += RTL8187
-config-$(call config_package,wl12xx) += WLCORE WLCORE_SDIO WL12XX
+config-$(call config_package,wlcore) += WLCORE WLCORE_SDIO
+config-$(call config_package,wl12xx) += WL12XX
+config-$(call config_package,wl18xx) += WL18XX
 config-y += WL_TI WILINK_PLATFORM_DATA
 config-$(call config_package,zd1211rw) += ZD1211RW
 
@@ -1598,6 +1625,14 @@ define KernelPackage/wl12xx/install
 		$(1)/lib/firmware/ti-connectivity
 endef
 
+define KernelPackage/wl18xx/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl18xx-conf.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl18xx-fw.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl18xx-fw-2.bin \
+		$(1)/lib/firmware/ti-connectivity
+endef
 
 define KernelPackage/zd1211rw/install
 	$(INSTALL_DIR) $(1)/lib/firmware/zd1211
@@ -1806,4 +1841,6 @@ $(eval $(call KernelPackage,net-hermes))
 $(eval $(call KernelPackage,net-hermes-pci))
 $(eval $(call KernelPackage,net-hermes-plx))
 $(eval $(call KernelPackage,net-hermes-pcmcia))
+$(eval $(call KernelPackage,wlcore))
 $(eval $(call KernelPackage,wl12xx))
+$(eval $(call KernelPackage,wl18xx))
