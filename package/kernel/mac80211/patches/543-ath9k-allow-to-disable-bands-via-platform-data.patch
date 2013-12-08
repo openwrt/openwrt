@@ -1,15 +1,14 @@
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
-@@ -33,6 +33,9 @@ struct ath9k_platform_data {
- 
+@@ -34,6 +34,8 @@ struct ath9k_platform_data {
  	bool endian_check;
  	bool is_clk_25mhz;
+ 	bool tx_gain_buffalo;
 +	bool disable_2ghz;
 +	bool disable_5ghz;
-+
+ 
  	int (*get_mac_revision)(void);
  	int (*external_reset)(void);
- 
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
 @@ -2458,17 +2458,25 @@ int ath9k_hw_fill_cap_info(struct ath_hw
@@ -48,7 +47,7 @@
  	    AR_SREV_9285(ah) ||
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -936,6 +936,8 @@ struct ath_hw {
+@@ -938,6 +938,8 @@ struct ath_hw {
  	bool is_clk_25mhz;
  	int (*get_mac_revision)(void);
  	int (*external_reset)(void);
@@ -59,7 +58,7 @@
  };
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -700,6 +700,8 @@ static int ath9k_init_softc(u16 devid, s
+@@ -721,6 +721,8 @@ static int ath9k_init_softc(u16 devid, s
  		ah->is_clk_25mhz = pdata->is_clk_25mhz;
  		ah->get_mac_revision = pdata->get_mac_revision;
  		ah->external_reset = pdata->external_reset;
