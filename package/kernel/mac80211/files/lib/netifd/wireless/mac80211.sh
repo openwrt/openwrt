@@ -28,7 +28,7 @@ drv_mac80211_init_device_config() {
 drv_mac80211_init_iface_config() {
 	hostapd_common_add_bss_config
 
-	config_add_string macaddr
+	config_add_string macaddr ifname
 
 	config_add_boolean wds powersave
 	config_add_int maxassoc
