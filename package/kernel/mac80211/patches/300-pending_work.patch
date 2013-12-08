@@ -6123,7 +6123,16 @@
  
 --- a/net/mac80211/ibss.c
 +++ b/net/mac80211/ibss.c
-@@ -550,12 +550,12 @@ int ieee80211_ibss_finish_csa(struct iee
+@@ -534,7 +534,7 @@ int ieee80211_ibss_finish_csa(struct iee
+ 	int err;
+ 	u16 capability;
+ 
+-	sdata_lock(sdata);
++	sdata_assert_lock(sdata);
+ 	/* update cfg80211 bss information with the new channel */
+ 	if (!is_zero_ether_addr(ifibss->bssid)) {
+ 		capability = WLAN_CAPABILITY_IBSS;
+@@ -550,16 +550,15 @@ int ieee80211_ibss_finish_csa(struct iee
  					capability);
  		/* XXX: should not really modify cfg80211 data */
  		if (cbss) {
@@ -6138,7 +6147,11 @@
  
  	/* generate the beacon */
  	err = ieee80211_ibss_csa_beacon(sdata, NULL);
-@@ -922,7 +922,7 @@ ieee80211_ibss_process_chanswitch(struct
+-	sdata_unlock(sdata);
+ 	if (err < 0)
+ 		return err;
+ 
+@@ -922,7 +921,7 @@ ieee80211_ibss_process_chanswitch(struct
  				IEEE80211_MAX_QUEUE_MAP,
  				IEEE80211_QUEUE_STOP_REASON_CSA);
  
