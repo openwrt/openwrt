@@ -32,7 +32,7 @@ boot_hook_init initramfs
 boot_hook_init preinit_mount_root
 
 for pi_source_file in /lib/preinit/*; do
-    . $pi_source_file
+	. $pi_source_file
 done
 
 boot_run_hook preinit_essential
@@ -42,4 +42,3 @@ pi_jffs2_mount_success=false
 pi_failsafe_net_message=false
 
 boot_run_hook preinit_main
-
