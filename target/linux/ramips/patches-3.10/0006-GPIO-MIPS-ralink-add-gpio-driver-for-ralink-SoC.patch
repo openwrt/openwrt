@@ -277,12 +277,12 @@ Cc: linux-gpio@vger.kernel.org
 +	if (type & IRQ_TYPE_EDGE_RISING)
 +		rg->rising |= mask;
 +	else
-+		rg->rising &= mask;
++		rg->rising &= ~mask;
 +
 +	if (type & IRQ_TYPE_EDGE_FALLING)
 +		rg->falling |= mask;
 +	else
-+		rg->falling &= mask;
++		rg->falling &= ~mask;
 +
 +	return 0;
 +}
