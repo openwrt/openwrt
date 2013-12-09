@@ -53,3 +53,23 @@ define KernelPackage/i2c-ralink/description
 endef
 
 $(eval $(call KernelPackage,i2c-ralink))
+
+define KernelPackage/sound-mt7620
+  TITLE:=MT7620 PCM/I2S Alsa Driver
+  DEPENDS:=@TARGET_ramips_mt7620a +kmod-sound-soc-core +kmod-regmap
+  KCONFIG:= \
+	CONFIG_SND_MT7620_SOC_I2S \
+	CONFIG_SND_MT7620_SOC_WM8960
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/ralink/snd-soc-mt7620-i2s.ko \
+	$(LINUX_DIR)/sound/soc/ralink/snd-soc-mt7620-wm8960.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8960.ko
+  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-mt7620-i2s snd-soc-mt7620-wm8960)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-mt7620/description
+ Alsa modules for ralink i2s controller.
+endef
+
+$(eval $(call KernelPackage,sound-mt7620))
