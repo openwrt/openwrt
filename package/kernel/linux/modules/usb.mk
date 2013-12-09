@@ -737,7 +737,13 @@ define KernelPackage/usb-net
   TITLE:=Kernel modules for USB-to-Ethernet convertors
   KCONFIG:=CONFIG_USB_USBNET CONFIG_MII=y
   AUTOLOAD:=$(call AutoProbe,usbnet)
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,3.12.0)),1)
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/usbnet.ko
+else
+  FILES:=\
+	$(LINUX_DIR)/drivers/$(USBNET_DIR)/usbnet.ko \
+	$(LINUX_DIR)/drivers/net/mii.ko
+endif
   $(call AddDepends/usb)
 endef
 
@@ -1063,11 +1069,19 @@ define KernelPackage/usb-chipidea
 	CONFIG_USB_CHIPIDEA_HOST=y \
 	CONFIG_USB_CHIPIDEA_UDC=n \
 	CONFIG_USB_CHIPIDEA_DEBUG=y
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,3.11.0)),1)
   FILES:=\
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
 	$(if $(CONFIG_OF_DEVICE),$(LINUX_DIR)/drivers/usb/chipidea/ci13xxx_imx.ko) \
 	$(if $(CONFIG_OF_DEVICE),$(LINUX_DIR)/drivers/usb/chipidea/usbmisc_imx$(if $(call kernel_patchver_le,3.9),6q).ko)
   AUTOLOAD:=$(call AutoLoad,51,ci_hdrc $(if $(CONFIG_OF_DEVICE),ci13xxx_imx usbmisc_imx$(if $(call kernel_patchver_le,3.9),6q)),1)
+else
+  FILES:=\
+	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
+	$(if $(CONFIG_OF),$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc_imx.ko) \
+	$(if $(CONFIG_OF),$(LINUX_DIR)/drivers/usb/chipidea/usbmisc_imx.ko)
+  AUTOLOAD:=$(call AutoLoad,51,ci_hdrc $(if $(CONFIG_OF),ci_hdrc_imx usbmisc_imx),1)
+endif
   $(call AddDepends/usb)
 endef
   
