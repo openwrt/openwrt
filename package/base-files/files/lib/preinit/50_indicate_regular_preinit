@@ -3,9 +3,8 @@
 # Copyright (C) 2010 Vertical Communications
 
 indicate_regular_preinit() {
-    preinit_net_echo "Continuing with Regular Preinit\n"
-    pi_indicate_led
+	preinit_net_echo "Continuing with Regular Preinit\n"
+	pi_indicate_led
 }
 
 boot_hook_add preinit_main indicate_regular_preinit
-

@@ -5,14 +5,13 @@
 # commands for emitting messages to network in failsafe mode
 
 indicate_failsafe_led () {
-    set_state failsafe
+	set_state failsafe
 }
 
 indicate_failsafe() {
-    echo "- failsafe -"
-    preinit_net_echo "Entering Failsafe!\n"
-    indicate_failsafe_led
+	echo "- failsafe -"
+	preinit_net_echo "Entering Failsafe!\n"
+	indicate_failsafe_led
 }
 
 boot_hook_add failsafe indicate_failsafe
-

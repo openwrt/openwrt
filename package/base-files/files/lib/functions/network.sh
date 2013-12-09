@@ -222,7 +222,7 @@ __network_ipaddr()
 # determine first IPv4 address of given logical interface
 # 1: destination variable
 # 2: interface
-network_get_ipaddr()  { __network_ipaddr "$1" "$2" "address4" "%%/*" 0; }
+network_get_ipaddr() { __network_ipaddr "$1" "$2" "address4" "%%/*" 0; }
 
 # determine first IPv6 address of given logical interface
 # 1: destination variable
@@ -232,7 +232,7 @@ network_get_ipaddr6() { __network_ipaddr "$1" "$2" "address6" "%%/*" 0; }
 # determine first IPv4 subnet of given logical interface
 # 1: destination variable
 # 2: interface
-network_get_subnet()  { __network_ipaddr "$1" "$2" "address4" "%% *" 0; }
+network_get_subnet() { __network_ipaddr "$1" "$2" "address4" "%% *" 0; }
 
 # determine first IPv6 subnet of given logical interface
 # 1: destination variable
@@ -247,7 +247,7 @@ network_get_prefix6() { __network_ipaddr "$1" "$2" "prefix6" "%% *" 0; }
 # determine all IPv4 addresses of given logical interface
 # 1: destination variable
 # 2: interface
-network_get_ipaddrs()  { __network_ipaddr "$1" "$2" "address4" "%%/*" 1; }
+network_get_ipaddrs() { __network_ipaddr "$1" "$2" "address4" "%%/*" 1; }
 
 # determine all IPv6 addresses of given logical interface
 # 1: destination variable
@@ -257,7 +257,7 @@ network_get_ipaddrs6() { __network_ipaddr "$1" "$2" "address6" "%%/*" 1; }
 # determine all IPv4 subnets of given logical interface
 # 1: destination variable
 # 2: interface
-network_get_subnets()  { __network_ipaddr "$1" "$2" "address4" "" 1; }
+network_get_subnets() { __network_ipaddr "$1" "$2" "address4" "" 1; }
 
 # determine all IPv6 subnets of given logical interface
 # 1: destination variable
@@ -292,9 +292,9 @@ __network_gateway()
 # 1: destination variable
 # 2: interface
 # 3: consider inactive gateway if "true" (optional)
-network_get_gateway()  { __network_gateway "$1" "$2" 4 "${3:-0}"; }
+network_get_gateway() { __network_gateway "$1" "$2" 4 "${3:-0}"; }
 
-# determine  IPv6 gateway of given logical interface
+# determine IPv6 gateway of given logical interface
 # 1: destination variable
 # 2: interface
 # 3: consider inactive gateway if "true" (optional)
@@ -354,7 +354,7 @@ __network_wan()
 # find the logical interface which holds the current IPv4 default route
 # 1: destination variable
 # 2: consider inactive default routes if "true" (optional)
-network_find_wan()  { __network_wan "$1" 4 "${2:-0}"; }
+network_find_wan() { __network_wan "$1" 4 "${2:-0}"; }
 
 # find the logical interface which holds the current IPv6 default route
 # 1: destination variable
@@ -384,12 +384,12 @@ network_is_up()
 # determine the layer 3 linux network device of the given logical interface
 # 1: destination variable
 # 2: interface
-network_get_device()  { __network_device "$1" "$2" l3_device; }
+network_get_device() { __network_device "$1" "$2" l3_device; }
 
 # determine the layer 2 linux network device of the given logical interface
 # 1: destination variable
 # 2: interface
-network_get_physdev() { __network_device "$1" "$2" device;    }
+network_get_physdev() { __network_device "$1" "$2" device; }
 
 
 __network_defer()

@@ -20,7 +20,7 @@ export FORCE=0
 export TEST=0
 
 # parse options
-while [ -n "$1" ]; do 
+while [ -n "$1" ]; do
 	case "$1" in
 		-i) export INTERACTIVE=1;;
 		-d) export DELAY="$2"; shift;;

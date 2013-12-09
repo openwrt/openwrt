@@ -64,7 +64,7 @@ prepare_key_wep() {
 	[ "${#key}" -eq 10 -a $hex -eq 1 ] || \
 	[ "${#key}" -eq 26 -a $hex -eq 1 ] || {
 		[ "${key:0:2}" = "s:" ] && key="${key#s:}"
-        	key="$(echo -n "$key" | hexdump -ve '1/1 "%02x" ""')"
+		key="$(echo -n "$key" | hexdump -ve '1/1 "%02x" ""')"
 	}
 	echo "$key"
 }
@@ -91,7 +91,7 @@ wifi_fixup_hwmode() {
 		;;
 		*)
 			hwmode=
-			if [ "${channel:-0}" -gt 0 ]; then 
+			if [ "${channel:-0}" -gt 0 ]; then
 				if [ "${channel:-0}" -gt 14 ]; then
 					hwmode=a
 				else
@@ -211,7 +211,7 @@ scan_wifi() {
 		case "$TYPE" in
 			wifi-iface)
 				config_get device "$CONFIG_SECTION" device
-				config_get vifs "$device" vifs 
+				config_get vifs "$device" vifs
 				append vifs "$CONFIG_SECTION"
 				config_set "$device" vifs "$vifs"
 			;;

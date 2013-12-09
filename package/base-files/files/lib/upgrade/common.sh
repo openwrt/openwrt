@@ -38,7 +38,7 @@ supivot() { # <new_root> <old_root>
 	mkdir -p $1$2 $1/proc $1/sys $1/dev $1/tmp $1/overlay && \
 	mount -o noatime,move /proc $1/proc && \
 	pivot_root $1 $1$2 || {
-        umount -l $1 $1
+		umount -l $1 $1
 		return 1
 	}
 
@@ -50,10 +50,10 @@ supivot() { # <new_root> <old_root>
 }
 
 run_ramfs() { # <command> [...]
-	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount        \
-		/sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd   \
-		/bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/[" \
-		/bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump          \
+	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount	\
+		/sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd	\
+		/bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/["	\
+		/bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump		\
 		/bin/sleep /bin/zcat /usr/bin/bzcat /usr/bin/printf /usr/bin/wc
 
 	install_bin /sbin/mtd
@@ -94,7 +94,7 @@ kill_remaining() { # [ <signal> ]
 		local cmdline
 		read cmdline < /proc/$pid/cmdline
 
-		# Skip kernel threads 
+		# Skip kernel threads
 		[ -n "$cmdline" ] || continue
 
 		case "$name" in
