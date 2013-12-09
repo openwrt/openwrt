@@ -1,0 +1,14 @@
+Index: linux-3.10.18/arch/mips/include/asm/mach-ralink/mt7620.h
+===================================================================
+--- linux-3.10.18.orig/arch/mips/include/asm/mach-ralink/mt7620.h	2013-12-06 16:20:27.753388970 +0100
++++ linux-3.10.18/arch/mips/include/asm/mach-ralink/mt7620.h	2013-12-06 16:21:14.021390074 +0100
+@@ -101,4 +101,9 @@
+ #define MT7620_GPIO_MODE_EPHY		15
+ #define MT7620_GPIO_MODE_PA		20
+ 
++static inline int mt7620_get_eco(void)
++{
++	return rt_sysc_r32(SYSC_REG_CHIP_REV) & CHIP_REV_ECO_MASK;
++}
++
+ #endif
