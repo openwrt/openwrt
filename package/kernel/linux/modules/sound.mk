@@ -190,6 +190,7 @@ $(eval $(call KernelPackage,sound-soc-ac97))
 
 define KernelPackage/sound-soc-imx
   TITLE:=IMX SoC support
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,3.12.0)),1)
   KCONFIG:=\
 	CONFIG_SND_IMX_SOC \
 	CONFIG_SND_SOC_IMX_AUDMUX \
@@ -200,6 +201,18 @@ define KernelPackage/sound-soc-imx
 	$(LINUX_DIR)/sound/soc/fsl/snd-soc-fsl-ssi.ko \
 	$(LINUX_DIR)/sound/soc/fsl/snd-soc-imx-pcm.ko
   AUTOLOAD:=$(call AutoLoad,56,snd-soc-imx-audmux snd-soc-fsl-ssi snd-soc-imx-pcm)
+else
+  KCONFIG:=\
+	CONFIG_SND_IMX_SOC \
+	CONFIG_SND_SOC_IMX_AUDMUX \
+	CONFIG_SND_SOC_FSL_SSI \
+	CONFIG_SND_SOC_IMX_PCM_DMA
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/fsl/snd-soc-imx-audmux.ko \
+	$(LINUX_DIR)/sound/soc/fsl/snd-soc-fsl-ssi.ko \
+	$(LINUX_DIR)/sound/soc/fsl/imx-pcm-dma.ko
+  AUTOLOAD:=$(call AutoLoad,56,snd-soc-imx-audmux snd-soc-fsl-ssi snd-soc-imx-pcm)
+endif
   DEPENDS:=@TARGET_imx6 +kmod-sound-soc-core
   $(call AddDepends/sound)
 endef
