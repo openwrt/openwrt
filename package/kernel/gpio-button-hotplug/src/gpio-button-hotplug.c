@@ -23,11 +23,12 @@
 #include <linux/netlink.h>
 #include <linux/kobject.h>
 #include <linux/input.h>
+#include <linux/interrupt.h>
 #include <linux/platform_device.h>
 #include <linux/of_gpio.h>
 #include <linux/gpio_keys.h>
 
-#define DRV_NAME	"gpio-keys-polled"
+#define DRV_NAME	"gpio-keys"
 
 #define BH_SKB_SIZE	2048
 
@@ -69,6 +70,7 @@ struct gpio_keys_button_data {
 	int count;
 	int threshold;
 	int can_sleep;
+	struct gpio_keys_button *b;
 };
 
 extern u64 uevent_next_seqnum(void);
@@ -129,7 +131,6 @@ static int bh_event_add_var(struct bh_event *event, int argv,
 
 static int button_hotplug_fill_event(struct bh_event *event)
 {
-	char *s;
 	int ret;
 
 	ret = bh_event_add_var(event, 0, "HOME=%s", "/");
@@ -235,18 +236,18 @@ static int button_get_index(unsigned int code)
 }
 
 static void button_hotplug_event(struct gpio_keys_button_data *data,
-			   unsigned int type, unsigned int code, int value)
+			   unsigned int type, int value)
 {
 	struct bh_priv *priv = &data->bh;
 	unsigned long seen = jiffies;
 	int btn;
 
-	BH_DBG("event type=%u, code=%u, value=%d\n", type, code, value);
+	BH_DBG("event type=%u, code=%u, value=%d\n", type, data->b->code, value);
 
 	if ((type != EV_KEY) && (type != EV_SW))
 		return;
 
-	btn = button_get_index(code);
+	btn = button_get_index(data->b->code);
 	if (btn < 0)
 		return;
 
@@ -256,12 +257,13 @@ static void button_hotplug_event(struct gpio_keys_button_data *data,
 }
 #else
 static void button_hotplug_event(struct gpio_keys_button_data *data,
-			   unsigned int type, unsigned int code, int value)
+			   unsigned int type, int value)
 {
 }
 #endif	/* CONFIG_HOTPLUG */
 
-struct gpio_keys_polled_dev {
+struct gpio_keys_button_dev {
+	int polled;
 	struct delayed_work work;
 
 	struct device *dev;
@@ -269,26 +271,24 @@ struct gpio_keys_polled_dev {
 	struct gpio_keys_button_data data[0];
 };
 
-static int gpio_button_get_value(struct gpio_keys_button *button,
-				 struct gpio_keys_button_data *bdata)
+static int gpio_button_get_value(struct gpio_keys_button_data *bdata)
 {
 	int val;
 
 	if (bdata->can_sleep)
-		val = !!gpio_get_value_cansleep(button->gpio);
+		val = !!gpio_get_value_cansleep(bdata->b->gpio);
 	else
-		val = !!gpio_get_value(button->gpio);
+		val = !!gpio_get_value(bdata->b->gpio);
 
-	return val ^ button->active_low;
+	return val ^ bdata->b->active_low;
 }
 
-static void gpio_keys_polled_check_state(struct gpio_keys_button *button,
-					 struct gpio_keys_button_data *bdata)
+static void gpio_keys_polled_check_state(struct gpio_keys_button_data *bdata)
 {
-	int state = gpio_button_get_value(button, bdata);
+	int state = gpio_button_get_value(bdata);
 
 	if (state != bdata->last_state) {
-		unsigned int type = button->type ?: EV_KEY;
+		unsigned int type = bdata->b->type ?: EV_KEY;
 
 		if (bdata->count < bdata->threshold) {
 			bdata->count++;
@@ -296,7 +296,7 @@ static void gpio_keys_polled_check_state(struct gpio_keys_button *button,
 		}
 
 		if ((bdata->last_state != -1) || (type == EV_SW))
-			button_hotplug_event(bdata, type, button->code, state);
+			button_hotplug_event(bdata, type, state);
 
 		bdata->last_state = state;
 	}
@@ -304,55 +304,58 @@ static void gpio_keys_polled_check_state(struct gpio_keys_button *button,
 	bdata->count = 0;
 }
 
-static void gpio_keys_polled_queue_work(struct gpio_keys_polled_dev *bdev)
+static void gpio_keys_polled_queue_work(struct gpio_keys_button_dev *bdev)
 {
 	struct gpio_keys_platform_data *pdata = bdev->pdata;
 	unsigned long delay = msecs_to_jiffies(pdata->poll_interval);
 
 	if (delay >= HZ)
-	    delay = round_jiffies_relative(delay);
+		delay = round_jiffies_relative(delay);
 	schedule_delayed_work(&bdev->work, delay);
 }
 
 static void gpio_keys_polled_poll(struct work_struct *work)
 {
-	struct gpio_keys_polled_dev *bdev =
-		container_of(work, struct gpio_keys_polled_dev, work.work);
-	struct gpio_keys_platform_data *pdata = bdev->pdata;
+	struct gpio_keys_button_dev *bdev =
+		container_of(work, struct gpio_keys_button_dev, work.work);
 	int i;
 
 	for (i = 0; i < bdev->pdata->nbuttons; i++) {
 		struct gpio_keys_button_data *bdata = &bdev->data[i];
-		gpio_keys_polled_check_state(&pdata->buttons[i], bdata);
+		gpio_keys_polled_check_state(bdata);
 	}
 	gpio_keys_polled_queue_work(bdev);
 }
 
-static void gpio_keys_polled_open(struct gpio_keys_polled_dev *bdev)
+static void gpio_keys_polled_close(struct gpio_keys_button_dev *bdev)
 {
 	struct gpio_keys_platform_data *pdata = bdev->pdata;
-	int i;
 
-	if (pdata->enable)
-		pdata->enable(bdev->dev);
+	cancel_delayed_work_sync(&bdev->work);
 
-	/* report initial state of the buttons */
-	for (i = 0; i < pdata->nbuttons; i++)
-		gpio_keys_polled_check_state(&pdata->buttons[i], &bdev->data[i]);
+	if (pdata->disable)
+		pdata->disable(bdev->dev);
+}
 
-	gpio_keys_polled_queue_work(bdev);
+static irqreturn_t button_handle_irq(int irq, void *_bdata)
+{
+	struct gpio_keys_button_data *bdata = (struct gpio_keys_button_data *) _bdata;
+
+	button_hotplug_event(bdata, bdata->b->type ?: EV_KEY, gpio_button_get_value(bdata));
+
+	return IRQ_HANDLED;
 }
 
 #ifdef CONFIG_OF
 static struct gpio_keys_platform_data *
-gpio_keys_polled_get_devtree_pdata(struct device *dev)
+gpio_keys_get_devtree_pdata(struct device *dev)
 {
 	struct device_node *node, *pp;
 	struct gpio_keys_platform_data *pdata;
 	struct gpio_keys_button *button;
 	int error;
 	int nbuttons;
-	int i;
+	int i = 0;
 
 	node = dev->of_node;
 	if (!node)
@@ -362,7 +365,7 @@ gpio_keys_polled_get_devtree_pdata(struct device *dev)
 	if (nbuttons == 0)
 		return NULL;
 
-	pdata = kzalloc(sizeof(*pdata) + nbuttons * (sizeof *button),
+	pdata = devm_kzalloc(dev, sizeof(*pdata) + nbuttons * (sizeof *button),
 		GFP_KERNEL);
 	if (!pdata) {
 		error = -ENOMEM;
@@ -375,7 +378,6 @@ gpio_keys_polled_get_devtree_pdata(struct device *dev)
 	pdata->rep = !!of_get_property(node, "autorepeat", NULL);
 	of_property_read_u32(node, "poll-interval", &pdata->poll_interval);
 
-	i = 0;
 	for_each_child_of_node(node, pp) {
 		enum of_gpio_flags flags;
 
@@ -394,7 +396,7 @@ gpio_keys_polled_get_devtree_pdata(struct device *dev)
 			dev_err(dev, "Button without keycode: 0x%x\n",
 				button->gpio);
 			error = -EINVAL;
-			goto err_free_pdata;
+			goto err_out;
 		}
 
 		button->desc = of_get_property(pp, "label", NULL);
@@ -411,16 +413,20 @@ gpio_keys_polled_get_devtree_pdata(struct device *dev)
 
 	if (pdata->nbuttons == 0) {
 		error = -EINVAL;
-		goto err_free_pdata;
+		goto err_out;
 	}
 
 	return pdata;
 
-err_free_pdata:
-	kfree(pdata);
 err_out:
 	return ERR_PTR(error);
 }
+
+static struct of_device_id gpio_keys_of_match[] = {
+	{ .compatible = "gpio-keys", },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, gpio_keys_of_match);
 
 static struct of_device_id gpio_keys_polled_of_match[] = {
 	{ .compatible = "gpio-keys-polled", },
@@ -431,47 +437,47 @@ MODULE_DEVICE_TABLE(of, gpio_keys_polled_of_match);
 #else
 
 static inline struct gpio_keys_platform_data *
-gpio_keys_polled_get_devtree_pdata(struct device *dev)
+gpio_keys_get_devtree_pdata(struct device *dev)
 {
 	return NULL;
 }
 #endif
 
-static void gpio_keys_polled_close(struct gpio_keys_polled_dev *bdev)
-{
-	struct gpio_keys_platform_data *pdata = bdev->pdata;
-
-	cancel_delayed_work_sync(&bdev->work);
-
-	if (pdata->disable)
-		pdata->disable(bdev->dev);
-}
-
-static int gpio_keys_polled_probe(struct platform_device *pdev)
+static int gpio_keys_button_probe(struct platform_device *pdev,
+		struct gpio_keys_button_dev **_bdev, int polled)
 {
 	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
 	struct device *dev = &pdev->dev;
-	struct gpio_keys_polled_dev *bdev;
+	struct gpio_keys_button_dev *bdev;
+	struct gpio_keys_button *buttons;
 	int error;
 	int i;
 
 	if (!pdata) {
-		pdata = gpio_keys_polled_get_devtree_pdata(dev);
+		pdata = gpio_keys_get_devtree_pdata(dev);
 		if (IS_ERR(pdata))
 			return PTR_ERR(pdata);
 		if (!pdata) {
 			dev_err(dev, "missing platform data\n");
 			return -EINVAL;
 		}
+		pdev->dev.platform_data = pdata;
 	}
 
-	if (!pdata->poll_interval) {
+	if (polled && !pdata->poll_interval) {
 		dev_err(dev, "missing poll_interval value\n");
-		error = -EINVAL;
-		goto err_free_pdata;
+		return -EINVAL;
 	}
 
-	bdev = kzalloc(sizeof(struct gpio_keys_polled_dev) +
+	buttons = devm_kzalloc(dev, pdata->nbuttons * sizeof(struct gpio_keys_button),
+		       GFP_KERNEL);
+	if (!buttons) {
+		dev_err(dev, "no memory for button data\n");
+		return -ENOMEM;
+	}
+	memcpy(buttons, pdata->buttons, pdata->nbuttons * sizeof(struct gpio_keys_button));
+
+	bdev = devm_kzalloc(dev, sizeof(struct gpio_keys_button_dev) +
 		       pdata->nbuttons * sizeof(struct gpio_keys_button_data),
 		       GFP_KERNEL);
 	if (!bdev) {
@@ -479,23 +485,24 @@ static int gpio_keys_polled_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
+	bdev->polled = polled;
+
 	for (i = 0; i < pdata->nbuttons; i++) {
-		struct gpio_keys_button *button = &pdata->buttons[i];
+		struct gpio_keys_button *button = &buttons[i];
 		struct gpio_keys_button_data *bdata = &bdev->data[i];
 		unsigned int gpio = button->gpio;
 
 		if (button->wakeup) {
-			dev_err(dev, DRV_NAME " does not support wakeup\n");
-			error = -EINVAL;
-			goto err_free_gpio;
+			dev_err(dev, DRV_NAME "does not support wakeup\n");
+			return -EINVAL;
 		}
 
-		error = gpio_request(gpio,
+		error = devm_gpio_request(dev, gpio,
 				     button->desc ? button->desc : DRV_NAME);
 		if (error) {
 			dev_err(dev, "unable to claim gpio %u, err=%d\n",
 				gpio, error);
-			goto err_free_gpio;
+			return error;
 		}
 
 		error = gpio_direction_input(gpio);
@@ -503,79 +510,154 @@ static int gpio_keys_polled_probe(struct platform_device *pdev)
 			dev_err(dev,
 				"unable to set direction on gpio %u, err=%d\n",
 				gpio, error);
-			goto err_free_gpio;
+			return error;
 		}
 
 		bdata->can_sleep = gpio_cansleep(gpio);
 		bdata->last_state = -1;
-		bdata->threshold = DIV_ROUND_UP(button->debounce_interval,
+
+		if (bdev->polled)
+			bdata->threshold = DIV_ROUND_UP(button->debounce_interval,
 						pdata->poll_interval);
+		else
+			bdata->threshold = 1;
+
+		bdata->b = &pdata->buttons[i];
 	}
 
 	bdev->dev = &pdev->dev;
 	bdev->pdata = pdata;
 	platform_set_drvdata(pdev, bdev);
 
+	*_bdev = bdev;
+
+	return 0;
+}
+
+static int gpio_keys_probe(struct platform_device *pdev)
+{
+	struct gpio_keys_platform_data *pdata;
+	struct gpio_keys_button_dev *bdev;
+	int ret, i;
+
+
+	ret = gpio_keys_button_probe(pdev, &bdev, 0);
+
+	if (ret)
+		return ret;
+
+	pdata = pdev->dev.platform_data;
+	for (i = 0; i < pdata->nbuttons; i++) {
+		struct gpio_keys_button *button = &pdata->buttons[i];
+		struct gpio_keys_button_data *bdata = &bdev->data[i];
+
+		if (bdata->can_sleep) {
+			dev_err(&pdev->dev, "skipping gpio:%d, it can sleep\n", button->gpio);
+			continue;
+		}
+		if (!button->irq)
+			button->irq = gpio_to_irq(button->gpio);
+		if (button->irq < 0) {
+			dev_err(&pdev->dev, "failed to get irq for gpio:%d\n", button->gpio);
+			continue;
+		}
+		ret = devm_request_irq(&pdev->dev, button->irq, button_handle_irq,
+					IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+					dev_name(&pdev->dev), bdata);
+		if (ret)
+			dev_err(&pdev->dev, "failed to request irq:%d for gpio:%d\n", button->irq, button->gpio);
+		else
+			dev_dbg(&pdev->dev, "gpio:%d has irq:%d\n", button->gpio, button->irq);
+
+		if (bdata->b->type == EV_SW)
+			button_hotplug_event(bdata, EV_SW, gpio_button_get_value(bdata));
+	}
+
+	return 0;
+}
+
+static int gpio_keys_polled_probe(struct platform_device *pdev)
+{
+	struct gpio_keys_platform_data *pdata;
+	struct gpio_keys_button_dev *bdev;
+	int ret;
+	int i;
+
+	ret = gpio_keys_button_probe(pdev, &bdev, 1);
+
+	if (ret)
+		return ret;
+
 	INIT_DELAYED_WORK(&bdev->work, gpio_keys_polled_poll);
 
-	gpio_keys_polled_open(bdev);
+	pdata = bdev->pdata;
 
-	return 0;
+	if (pdata->enable)
+		pdata->enable(bdev->dev);
 
-err_free_gpio:
-	while (--i >= 0)
-		gpio_free(pdata->buttons[i].gpio);
+	for (i = 0; i < pdata->nbuttons; i++)
+		gpio_keys_polled_check_state(&bdev->data[i]);
 
-	kfree(bdev);
-	platform_set_drvdata(pdev, NULL);
+	gpio_keys_polled_queue_work(bdev);
 
-err_free_pdata:
-	/* If we have no platform_data, we allocated pdata dynamically.  */
-	if (!dev_get_platdata(&pdev->dev))
-		kfree(pdata);
-
-	return error;
+	return ret;
 }
 
-static int gpio_keys_polled_remove(struct platform_device *pdev)
+static int gpio_keys_remove(struct platform_device *pdev)
 {
-	struct gpio_keys_polled_dev *bdev = platform_get_drvdata(pdev);
-	struct gpio_keys_platform_data *pdata = bdev->pdata;
-	int i = pdata->nbuttons;
+	struct gpio_keys_button_dev *bdev = platform_get_drvdata(pdev);
 
-	gpio_keys_polled_close(bdev);
-
-	while (--i >= 0)
-		gpio_free(pdata->buttons[i].gpio);
-
-	kfree(bdev);
 	platform_set_drvdata(pdev, NULL);
 
-	return 0;
+	if (bdev->polled)
+		gpio_keys_polled_close(bdev);
+
+	return gpio_keys_remove(pdev);
 }
+
+static struct platform_driver gpio_keys_driver = {
+	.probe	= gpio_keys_probe,
+	.remove	= gpio_keys_remove,
+	.driver	= {
+		.name	= "gpio-keys",
+		.owner	= THIS_MODULE,
+		.of_match_table = of_match_ptr(gpio_keys_of_match),
+	},
+};
 
 static struct platform_driver gpio_keys_polled_driver = {
 	.probe	= gpio_keys_polled_probe,
-	.remove	= gpio_keys_polled_remove,
+	.remove	= gpio_keys_remove,
 	.driver	= {
-		.name	= DRV_NAME,
+		.name	= "gpio-keys-polled",
 		.owner	= THIS_MODULE,
 		.of_match_table = of_match_ptr(gpio_keys_polled_of_match),
 	},
 };
 
-static int __init gpio_keys_polled_init(void)
+static int __init gpio_button_init(void)
 {
-	return platform_driver_register(&gpio_keys_polled_driver);
+	int ret;
+
+	ret = platform_driver_register(&gpio_keys_driver);
+	if (ret)
+		return ret;
+
+	ret = platform_driver_register(&gpio_keys_polled_driver);
+	if (ret)
+		platform_driver_unregister(&gpio_keys_driver);
+
+	return ret;
 }
 
-static void __exit gpio_keys_polled_exit(void)
+static void __exit gpio_button_exit(void)
 {
+	platform_driver_unregister(&gpio_keys_driver);
 	platform_driver_unregister(&gpio_keys_polled_driver);
 }
 
-module_init(gpio_keys_polled_init);
-module_exit(gpio_keys_polled_exit);
+module_init(gpio_button_init);
+module_exit(gpio_button_exit);
 
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
