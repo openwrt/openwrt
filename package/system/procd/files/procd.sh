@@ -17,6 +17,7 @@
 #     data: arbitrary name/value pairs for detecting config changes (table)
 #     file: configuration files (array)
 #     netdev: bound network device (detects ifindex changes)
+#     limits: resource limits (passed to the process)
 #
 #   No space separation is done for arrays/tables - use one function argument per command line argument
 #
@@ -123,7 +124,7 @@ _procd_set_param() {
 	local type="$1"; shift
 
 	case "$type" in
-		env|data)
+		env|data|limits)
 			_procd_add_table "$type" "$@"
 		;;
 		command|netdev|file|respawn)
@@ -177,7 +178,7 @@ _procd_append_param() {
 
 	json_select "$type"
 	case "$type" in
-		env|data)
+		env|data|limits)
 			_procd_add_table_data "$@"
 		;;
 		command|netdev|file|respawn)
