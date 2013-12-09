@@ -176,6 +176,10 @@
 			interrupt-parent = <&intc>;
 			interrupts = <10>;
 
+			dmas = <&gdma 4>,
+				<&gdma 5>;
+			dma-names = "tx", "rx";
+
 			status = "disabled";
 		};
 
@@ -235,7 +239,7 @@
 			status = "disabled";
 		};
 
-		gdma@2800 {
+		gdma: gdma@2800 {
 			compatible = "ralink,mt7620a-gdma", "ralink,rt2880-gdma";
 			reg = <0x2800 0x800>;
 
@@ -244,6 +248,10 @@
 
 			interrupt-parent = <&intc>;
 			interrupts = <7>;
+
+			#dma-cells = <1>;
+			#dma-channels = <16>;
+			#dma-requests = <16>;
 
 			status = "disabled";
 		};
