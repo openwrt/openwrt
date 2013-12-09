@@ -4,6 +4,7 @@
 # start after and stop before networking
 START=12
 STOP=89
+PIDCOUNT=0
 
 USE_PROCD=1
 PROG=/sbin/logread
@@ -22,6 +23,7 @@ validate_log_section()
 
 start_service_file()
 {
+	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
 	local log_file log_size
 
@@ -39,6 +41,7 @@ start_service_file()
 
 start_service_remote()
 {
+	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
 	local log_ip log_port log_proto log_prefix
 
