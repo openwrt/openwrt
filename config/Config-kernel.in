@@ -68,6 +68,18 @@ config KERNEL_DEBUG_LL
 	help
 	  ARM low level debugging
 
+config KERNEL_DYNAMIC_DEBUG 
+	bool "Compile the kernel with dynamic printk"
+	select KERNEL_DEBUG_FS
+	default n
+	help
+	  Compiles debug level messages into the kernel, which would not
+	  otherwise be available at runtime. These messages can then be
+	  enabled/disabled based on various levels of scope - per source file,
+	  function, module, format string, and line number. This mechanism
+	  implicitly compiles in all pr_debug() and dev_dbg() calls, which
+	  enlarges the kernel text size by about 2%.
+
 config KERNEL_EARLY_PRINTK
 	bool "Compile the kernel with early printk"
 	default n
