@@ -140,7 +140,7 @@ hostapd_set_bss_options() {
 		maxassoc max_inactivity disassoc_low_ack ap_isolate auth_cache \
 		wps_pushbutton wps_label ext_registrar \
 		wps_device_type wps_device_name wps_manufacturer wps_pin \
-		macfilter ssid wmm hidden
+		macfilter ssid wmm hidden short_preamble
 
 	set_default ap_isolate 0
 	set_default maxassoc 0
