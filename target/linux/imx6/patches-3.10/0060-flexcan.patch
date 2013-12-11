@@ -1,0 +1,92 @@
+--- a/arch/arm/boot/dts/imx6q.dtsi
++++ b/arch/arm/boot/dts/imx6q.dtsi
+@@ -163,6 +163,31 @@
+ 					};
+ 				};
+ 
++				flexcan1 {
++					pinctrl_flexcan1_1: flexcan1grp-1 {
++						fsl,pins = <
++							MX6Q_PAD_KEY_ROW2__FLEXCAN1_RX 0x80000000
++							MX6Q_PAD_KEY_COL2__FLEXCAN1_TX 0x80000000
++						>;
++					};
++
++					pinctrl_flexcan1_2: flexcan1grp-2 {
++						fsl,pins = <
++							MX6Q_PAD_GPIO_7__FLEXCAN1_TX   0x80000000
++							MX6Q_PAD_KEY_ROW2__FLEXCAN1_RX 0x80000000
++						>;
++					};
++				};
++
++				flexcan2 {
++					pinctrl_flexcan2_1: flexcan2grp-1 {
++						fsl,pins = <
++							MX6Q_PAD_KEY_COL4__FLEXCAN2_TX 0x80000000
++							MX6Q_PAD_KEY_ROW4__FLEXCAN2_RX 0x80000000
++						>;
++					};
++				};
++
+ 				gpmi-nand {
+ 					pinctrl_gpmi_nand_1: gpmi-nand-1 {
+ 						fsl,pins = <
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -292,13 +292,21 @@
+ 			};
+ 
+ 			can1: flexcan@02090000 {
++				compatible = "fsl,imx6q-flexcan";
+ 				reg = <0x02090000 0x4000>;
+ 				interrupts = <0 110 0x04>;
++				clocks = <&clks 108>, <&clks 109>;
++				clock-names = "ipg", "per";
++				status = "disabled";
+ 			};
+ 
+ 			can2: flexcan@02094000 {
++				compatible = "fsl,imx6q-flexcan";
+ 				reg = <0x02094000 0x4000>;
+ 				interrupts = <0 111 0x04>;
++				clocks = <&clks 110>, <&clks 111>;
++				clock-names = "ipg", "per";
++				status = "disabled";
+ 			};
+ 
+ 			gpt: gpt@02098000 {
+--- a/arch/arm/boot/dts/imx6dl.dtsi
++++ b/arch/arm/boot/dts/imx6dl.dtsi
+@@ -80,6 +80,31 @@
+ 					};
+ 				};
+ 
++				flexcan1 {
++					pinctrl_flexcan1_1: flexcan1grp-1 {
++						fsl,pins = <
++							MX6DL_PAD_KEY_ROW2__FLEXCAN1_RX 0x80000000
++							MX6DL_PAD_KEY_COL2__FLEXCAN1_TX 0x80000000
++						>;
++					};
++
++					pinctrl_flexcan1_2: flexcan1grp-2 {
++						fsl,pins = <
++							MX6DL_PAD_GPIO_7__FLEXCAN1_TX   0x80000000
++							MX6DL_PAD_KEY_ROW2__FLEXCAN1_RX 0x80000000
++						>;
++					};
++				};
++
++				flexcan2 {
++					pinctrl_flexcan2_1: flexcan2grp-1 {
++						fsl,pins = <
++							MX6DL_PAD_KEY_COL4__FLEXCAN2_TX 0x80000000
++							MX6DL_PAD_KEY_ROW4__FLEXCAN2_RX 0x80000000
++						>;
++					};
++				};
++
+ 				uart1 {
+ 					pinctrl_uart1_1: uart1grp-1 {
+ 						fsl,pins = <
