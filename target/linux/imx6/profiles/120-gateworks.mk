@@ -10,6 +10,7 @@ define Profile/VENTANA
   PACKAGES:= \
 	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea kmod-usb-mxs-phy \
 	kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
+	kmod-can kmod-can-flexcan \
 	kobs-ng
 endef
 
