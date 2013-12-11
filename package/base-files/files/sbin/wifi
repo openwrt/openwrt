@@ -232,5 +232,5 @@ case "$1" in
 	reload) wifi_reload "$2";;
 	reload_legacy) wifi_reload_legacy "$2";;
 	--help|help) usage;;
-	*) wifi_updown "enable" "$2";;
+	*) ubus call network reload; wifi_updown "enable" "$2";;
 esac
