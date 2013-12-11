@@ -18,6 +18,7 @@
 
 	/* these are used by bootloader for disabling nodes */
 	aliases {
+		can0 = &can1;
 		ethernet0 = &fec;
 		i2c0 = &i2c1;
 		i2c1 = &i2c2;
@@ -123,6 +124,12 @@
 &audmux {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_audmux_1>;
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flexcan1_1>;
 	status = "okay";
 };
 
