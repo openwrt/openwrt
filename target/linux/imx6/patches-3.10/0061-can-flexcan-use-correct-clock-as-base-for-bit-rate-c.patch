@@ -1,0 +1,37 @@
+From 1a3e5173f5e72cbf7f0c8927b33082e361c16d72 Mon Sep 17 00:00:00 2001
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Mon, 25 Nov 2013 22:15:20 +0100
+Subject: [PATCH] can: flexcan: use correct clock as base for bit rate
+ calculation
+
+The flexcan IP core uses the peripheral clock ("per") as basic clock for the
+bit timing calculation. However the driver uses the the wrong clock ("ipg").
+This leads to wrong bit rates if the rates on both clock are different.
+
+This patch fixes the problem by using the correct clock for the bit rate
+calculation.
+
+Cc: linux-stable <stable@vger.kernel.org>
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+---
+ drivers/net/can/flexcan.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/can/flexcan.c
++++ b/drivers/net/can/flexcan.c
+@@ -1025,7 +1025,6 @@ static int flexcan_probe(struct platform
+ 			err = PTR_ERR(clk_ipg);
+ 			goto failed_clock;
+ 		}
+-		clock_freq = clk_get_rate(clk_ipg);
+ 
+ 		clk_per = devm_clk_get(&pdev->dev, "per");
+ 		if (IS_ERR(clk_per)) {
+@@ -1033,6 +1032,7 @@ static int flexcan_probe(struct platform
+ 			err = PTR_ERR(clk_per);
+ 			goto failed_clock;
+ 		}
++		clock_freq = clk_get_rate(clk_per);
+ 	}
+ 
+ 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
