@@ -1,0 +1,11 @@
+--- a/libopkg/pkg.c
++++ b/libopkg/pkg.c
+@@ -731,7 +731,7 @@ pkg_formatted_field(FILE *fp, pkg_t *pkg
+ 	  } else if (strcasecmp(field, "Priority") == 0) {
+                fprintf(fp, "Priority: %s\n", pkg->priority);
+ 	  } else if (strcasecmp(field, "Provides") == 0) {
+-	       if (pkg->provides_count) {
++	       if (pkg->provides_count > 1) {
+                   fprintf(fp, "Provides:");
+ 		  for(i = 1; i < pkg->provides_count; i++) {
+                       fprintf(fp, "%s %s", i == 1 ? "" : ",",
