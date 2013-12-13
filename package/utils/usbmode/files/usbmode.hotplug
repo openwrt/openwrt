@@ -1,7 +1,1 @@
-. /lib/functions/procd.sh
-
-procd_open_service "usbmode"
-procd_open_instance
-procd_set_param command "/sbin/usbmode" -s
-procd_close_instance
-procd_close_service
+/etc/init.d/usbmode start

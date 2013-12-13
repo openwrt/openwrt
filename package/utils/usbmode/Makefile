@@ -46,11 +46,12 @@ define Build/Prepare
 endef
 
 define Package/usb-modeswitch/install
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/usb $(1)/sbin
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/usb $(1)/etc/init.d $(1)/sbin
 	perl $(PKG_BUILD_DIR)/convert-modeswitch.pl \
 		$(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/* \
 		> $(1)/etc/usb-mode.json
-	$(CP) ./files/usbmode.hotplug $(1)/etc/hotplug.d/usb/20-usb_mode
+	$(INSTALL_DATA) ./files/usbmode.hotplug $(1)/etc/hotplug.d/usb/20-usb_mode
+	$(INSTALL_BIN) ./files/usbmode.init $(1)/etc/init.d/usbmode
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/usbmode $(1)/sbin/
 endef
 
