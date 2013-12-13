@@ -1,0 +1,683 @@
+From 99342a0481d49b6e1ade90fdb02f597cb75f103f Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 2 Dec 2013 16:11:09 +0100
+Subject: [PATCH 502/507] MIPS: ralink: add MT7621 support
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/mach-ralink/mt7621.h |   39 +++++
+ arch/mips/ralink/Kconfig                   |   18 ++
+ arch/mips/ralink/Makefile                  |    7 +-
+ arch/mips/ralink/Platform                  |    5 +
+ arch/mips/ralink/irq-gic.c                 |  255 ++++++++++++++++++++++++++++
+ arch/mips/ralink/malta-amon.c              |   81 +++++++++
+ arch/mips/ralink/mt7621.c                  |  186 ++++++++++++++++++++
+ 7 files changed, 590 insertions(+), 1 deletion(-)
+ create mode 100644 arch/mips/include/asm/mach-ralink/mt7621.h
+ create mode 100644 arch/mips/ralink/irq-gic.c
+ create mode 100644 arch/mips/ralink/malta-amon.c
+ create mode 100644 arch/mips/ralink/mt7621.c
+
+Index: linux-3.10.21/arch/mips/include/asm/mach-ralink/mt7621.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.21/arch/mips/include/asm/mach-ralink/mt7621.h	2013-12-09 19:52:51.752677298 +0100
+@@ -0,0 +1,39 @@
++/*
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published
++ * by the Free Software Foundation.
++ *
++ * Parts of this file are based on Ralink's 2.6.21 BSP
++ *
++ * Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
++ * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
++ * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
++ */
++
++#ifndef _MT7621_REGS_H_
++#define _MT7621_REGS_H_
++
++#define MT7621_SYSC_BASE		0x1E000000
++
++#define SYSC_REG_CHIP_NAME0		0x00
++#define SYSC_REG_CHIP_NAME1		0x04
++#define SYSC_REG_CHIP_REV		0x0c
++#define SYSC_REG_SYSTEM_CONFIG0		0x10
++#define SYSC_REG_SYSTEM_CONFIG1		0x14
++
++#define CHIP_REV_PKG_MASK		0x1
++#define CHIP_REV_PKG_SHIFT		16
++#define CHIP_REV_VER_MASK		0xf
++#define CHIP_REV_VER_SHIFT		8
++#define CHIP_REV_ECO_MASK		0xf
++
++#define MT7621_DRAM_BASE                0x0
++#define MT7621_DDR2_SIZE_MIN		32
++#define MT7621_DDR2_SIZE_MAX		256
++
++#define MT7621_CHIP_NAME0		0x3637544D
++#define MT7621_CHIP_NAME1		0x20203132
++
++#define MIPS_GIC_IRQ_BASE           (MIPS_CPU_IRQ_BASE + 8)
++
++#endif
+Index: linux-3.10.21/arch/mips/ralink/Kconfig
+===================================================================
+--- linux-3.10.21.orig/arch/mips/ralink/Kconfig	2013-12-09 19:51:55.600675960 +0100
++++ linux-3.10.21/arch/mips/ralink/Kconfig	2013-12-09 19:52:51.756677296 +0100
+@@ -1,5 +1,10 @@
+ if RALINK
+ 
++config IRQ_INTC
++	bool
++	default y
++	depends on !SOC_MT7621
++
+ config CLKEVT_RT3352
+ 	bool "Systick Clockevent source"
+ 	depends on SOC_RT305X || SOC_MT7620
+@@ -35,6 +40,15 @@
+ 		select USB_ARCH_HAS_EHCI
+ 		select HW_HAS_PCI
+ 
++	config SOC_MT7621
++		bool "MT7621"
++		select MIPS_CPU_SCACHE
++		select SYS_SUPPORTS_MULTITHREADING
++		select SYS_SUPPORTS_SMP
++		select SYS_SUPPORTS_MIPS_CMP
++		select IRQ_GIC
++		select HW_HAS_PCI
++
+ endchoice
+ 
+ choice
+@@ -62,6 +76,10 @@
+ 		bool "MT7620A eval kit"
+ 		depends on SOC_MT7620
+ 
++	config DTB_MT7621_EVAL
++		bool "MT7621 eval kit"
++		depends on SOC_MT7621
++
+ endchoice
+ 
+ endif
+Index: linux-3.10.21/arch/mips/ralink/Makefile
+===================================================================
+--- linux-3.10.21.orig/arch/mips/ralink/Makefile	2013-12-09 19:51:55.600675960 +0100
++++ linux-3.10.21/arch/mips/ralink/Makefile	2013-12-09 19:52:51.756677296 +0100
+@@ -6,7 +6,11 @@
+ # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
+ # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
+ 
+-obj-y := prom.o of.o reset.o clk.o irq.o timer.o
++obj-y := prom.o of.o reset.o clk.o timer.o
++
++obj-$(CONFIG_IRQ_INTC) += irq.o
++obj-$(CONFIG_IRQ_GIC) += irq-gic.o
++obj-$(CONFIG_MIPS_MT_SMP) += malta-amon.o
+ 
+ obj-$(CONFIG_CLKEVT_RT3352) += cevt-rt3352.o
+ 
+@@ -16,6 +20,7 @@
+ obj-$(CONFIG_SOC_RT305X) += rt305x.o
+ obj-$(CONFIG_SOC_RT3883) += rt3883.o
+ obj-$(CONFIG_SOC_MT7620) += mt7620.o
++obj-$(CONFIG_SOC_MT7621) += mt7621.o
+ 
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+Index: linux-3.10.21/arch/mips/ralink/Platform
+===================================================================
+--- linux-3.10.21.orig/arch/mips/ralink/Platform	2013-12-09 19:51:55.000000000 +0100
++++ linux-3.10.21/arch/mips/ralink/Platform	2013-12-09 19:53:54.660678800 +0100
+@@ -26,3 +26,10 @@
+ # Ralink MT7620
+ #
+ load-$(CONFIG_SOC_MT7620)	+= 0xffffffff80000000
++cflags-$(CONFIG_SOC_MT7620)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7620
++
++#
++# Ralink MT7621
++#
++load-$(CONFIG_SOC_MT7621)	+= 0xffffffff80001000
++cflags-$(CONFIG_SOC_MT7620)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7621
+Index: linux-3.10.21/arch/mips/ralink/irq-gic.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.21/arch/mips/ralink/irq-gic.c	2013-12-09 19:52:51.756677296 +0100
+@@ -0,0 +1,255 @@
++#include <linux/init.h>
++#include <linux/sched.h>
++#include <linux/slab.h>
++#include <linux/interrupt.h>
++#include <linux/kernel_stat.h>
++#include <linux/hardirq.h>
++#include <linux/preempt.h>
++#include <linux/irqdomain.h>
++#include <linux/of_platform.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++
++#include <asm/irq_cpu.h>
++#include <asm/mipsregs.h>
++
++#include <asm/irq.h>
++#include <asm/setup.h>
++
++#include <asm/gic.h>
++#include <asm/gcmpregs.h>
++
++#include <asm/mach-ralink/mt7621.h>
++
++static unsigned long _gcmp_base;
++static int gic_resched_int_base = 56;
++static int gic_call_int_base = 60;
++static struct irq_chip *irq_gic;
++
++#define GIC_RESCHED_INT(cpu) (gic_resched_int_base+(cpu))
++#define GIC_CALL_INT(cpu) (gic_call_int_base+(cpu))
++
++static struct gic_intr_map gic_intr_map[GIC_NUM_INTRS] = {
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT }, //0
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++	{ GIC_UNUSED },
++        { 0, GIC_CPU_INT3, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT }, //FE
++        { 0, GIC_CPU_INT4, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT }, //PCIE0
++	{ GIC_UNUSED},
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT }, //10
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++	{ GIC_UNUSED },
++	{ GIC_UNUSED },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT }, //20
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++	{ GIC_UNUSED },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT }, //25
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },//30
++        { 0, GIC_CPU_INT0, GIC_POL_POS, GIC_TRIG_LEVEL, GIC_FLAG_TRANSPARENT },
++};
++
++static struct gic_intr_map ipi_intr_map[8] = {
++        { 0, GIC_CPU_INT1, GIC_POL_POS, GIC_TRIG_EDGE, GIC_FLAG_IPI },
++        { 1, GIC_CPU_INT1, GIC_POL_POS, GIC_TRIG_EDGE, GIC_FLAG_IPI },
++        { 2, GIC_CPU_INT1, GIC_POL_POS, GIC_TRIG_EDGE, GIC_FLAG_IPI },
++        { 3, GIC_CPU_INT1, GIC_POL_POS, GIC_TRIG_EDGE, GIC_FLAG_IPI },
++        { 0, GIC_CPU_INT2, GIC_POL_POS, GIC_TRIG_EDGE, GIC_FLAG_IPI },
++        { 1, GIC_CPU_INT2, GIC_POL_POS, GIC_TRIG_EDGE, GIC_FLAG_IPI },
++        { 2, GIC_CPU_INT2, GIC_POL_POS, GIC_TRIG_EDGE, GIC_FLAG_IPI },
++        { 3, GIC_CPU_INT2, GIC_POL_POS, GIC_TRIG_EDGE, GIC_FLAG_IPI },
++};
++
++static irqreturn_t
++ipi_resched_interrupt(int irq, void *dev_id)
++{
++	scheduler_ipi();
++
++	return IRQ_HANDLED;
++}
++
++static irqreturn_t
++ipi_call_interrupt(int irq, void *dev_id)
++{
++	smp_call_function_interrupt();
++
++	return IRQ_HANDLED;
++}
++
++static struct irqaction irq_resched = {
++        .handler        = ipi_resched_interrupt,
++        .flags          = IRQF_DISABLED|IRQF_PERCPU,
++        .name           = "ipi resched"
++};
++
++static struct irqaction irq_call = {
++        .handler        = ipi_call_interrupt,
++        .flags          = IRQF_DISABLED|IRQF_PERCPU,
++        .name           = "ipi call"
++};
++
++void
++gic_irq_ack(struct irq_data *d)
++{
++	int irq = (d->irq - gic_irq_base);
++
++	GIC_CLR_INTR_MASK(irq);
++
++	if (gic_irq_flags[irq] & GIC_TRIG_EDGE)
++		GICWRITE(GIC_REG(SHARED, GIC_SH_WEDGE), irq);
++}
++
++void
++gic_finish_irq(struct irq_data *d)
++{
++	GIC_SET_INTR_MASK(d->irq - gic_irq_base);
++}
++
++void __init
++gic_platform_init(int irqs, struct irq_chip *irq_controller)
++{
++	irq_gic = irq_controller;
++}
++
++static void
++vi_gic_irqdispatch(void)
++{
++	int irq = gic_get_int();
++
++	if (irq >= 0)
++		do_IRQ(MIPS_GIC_IRQ_BASE + irq);
++}
++
++static void
++vi_timer_irqdispatch(void)
++{
++	do_IRQ(cp0_compare_irq);
++}
++
++unsigned int
++plat_ipi_call_int_xlate(unsigned int cpu)
++{
++	return GIC_CALL_INT(cpu);
++}
++
++unsigned int
++plat_ipi_resched_int_xlate(unsigned int cpu)
++{
++	return GIC_RESCHED_INT(cpu);
++}
++
++asmlinkage void
++plat_irq_dispatch(void)
++{
++	unsigned int pending = read_c0_status() & read_c0_cause() & ST0_IM;
++
++	if (pending & CAUSEF_IP7)
++		do_IRQ(cp0_compare_irq);
++	else if (pending & (CAUSEF_IP4 | CAUSEF_IP3))
++		vi_gic_irqdispatch();
++	else
++		spurious_interrupt();
++}
++
++unsigned int __cpuinit
++get_c0_compare_int(void)
++{
++	return CP0_LEGACY_COMPARE_IRQ;
++}
++
++static int
++gic_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
++{
++	irq_set_chip_and_handler(irq, irq_gic, handle_percpu_irq);
++
++	return 0;
++}
++
++static const struct irq_domain_ops irq_domain_ops = {
++	.xlate = irq_domain_xlate_onecell,
++	.map = gic_map,
++};
++
++static int __init
++of_gic_init(struct device_node *node,
++				struct device_node *parent)
++{
++	struct irq_domain *domain;
++	struct resource gcmp = { 0 }, gic = { 0 };
++	unsigned int gic_rev;
++	int i;
++
++	if (of_address_to_resource(node, 0, &gic))
++		panic("Failed to get gic memory range");
++	if (request_mem_region(gic.start, resource_size(&gic),
++				gic.name) < 0)
++		panic("Failed to request gic memory");
++	if (of_address_to_resource(node, 2, &gcmp))
++		panic("Failed to get gic memory range");
++	if (request_mem_region(gcmp.start, resource_size(&gcmp),
++				gcmp.name) < 0)
++		panic("Failed to request gcmp memory");
++
++	_gcmp_base = (unsigned long) ioremap_nocache(gcmp.start, resource_size(&gcmp));
++	if (!_gcmp_base)
++		panic("Failed to remap gcmp memory\n");
++
++	if ((GCMPGCB(GCMPB) & GCMP_GCB_GCMPB_GCMPBASE_MSK) != gcmp.start)
++		panic("Failed to find gcmp core\n");
++
++	/* tell the gcmp where to find the gic */
++	GCMPGCB(GICBA) = gic.start | GCMP_GCB_GICBA_EN_MSK;
++	gic_present = 1;
++	if (cpu_has_vint) {
++		set_vi_handler(3, vi_gic_irqdispatch);
++		set_vi_handler(4, vi_gic_irqdispatch);
++		set_vi_handler(7, vi_timer_irqdispatch);
++	}
++
++	memcpy(&gic_intr_map[gic_resched_int_base], ipi_intr_map, sizeof(ipi_intr_map));
++	gic_init(gic.start, resource_size(&gic), gic_intr_map,
++		ARRAY_SIZE(gic_intr_map), MIPS_GIC_IRQ_BASE);
++
++	GICREAD(GIC_REG(SHARED, GIC_SH_REVISIONID), gic_rev);
++	pr_info("gic: revision %d.%d\n", (gic_rev >> 8) & 0xff, gic_rev & 0xff);
++
++	domain = irq_domain_add_legacy(node, GIC_NUM_INTRS, MIPS_GIC_IRQ_BASE,
++			0, &irq_domain_ops, NULL);
++	if (!domain)
++		panic("Failed to add irqdomain");
++
++	for (i = 0; i < NR_CPUS; i++) {
++		setup_irq(MIPS_GIC_IRQ_BASE + GIC_RESCHED_INT(i), &irq_resched);
++		setup_irq(MIPS_GIC_IRQ_BASE + GIC_CALL_INT(i), &irq_call);
++	}
++
++	change_c0_status(ST0_IM, STATUSF_IP3 | STATUSF_IP4 | STATUSF_IP6 |
++				STATUSF_IP7);
++	return 0;
++}
++
++static struct of_device_id __initdata of_irq_ids[] = {
++	{ .compatible = "mti,cpu-interrupt-controller", .data = mips_cpu_intc_init },
++	{ .compatible = "ralink,mt7621-gic", .data = of_gic_init },
++	{},
++};
++
++void __init
++arch_init_irq(void)
++{
++	of_irq_init(of_irq_ids);
++}
+Index: linux-3.10.21/arch/mips/ralink/malta-amon.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.21/arch/mips/ralink/malta-amon.c	2013-12-09 19:52:51.756677296 +0100
+@@ -0,0 +1,81 @@
++/*
++ * Copyright (C) 2007  MIPS Technologies, Inc.
++ *	All rights reserved.
++
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * Arbitrary Monitor interface
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/smp.h>
++
++#include <asm/addrspace.h>
++#include <asm/mips-boards/launch.h>
++#include <asm/mipsmtregs.h>
++
++int amon_cpu_avail(int cpu)
++{
++	struct cpulaunch *launch = (struct cpulaunch *)CKSEG0ADDR(CPULAUNCH);
++
++	if (cpu < 0 || cpu >= NCPULAUNCH) {
++		pr_debug("avail: cpu%d is out of range\n", cpu);
++		return 0;
++	}
++
++	launch += cpu;
++	if (!(launch->flags & LAUNCH_FREADY)) {
++		pr_debug("avail: cpu%d is not ready\n", cpu);
++		return 0;
++	}
++	if (launch->flags & (LAUNCH_FGO|LAUNCH_FGONE)) {
++		pr_debug("avail: too late.. cpu%d is already gone\n", cpu);
++		return 0;
++	}
++
++	return 1;
++}
++
++void amon_cpu_start(int cpu,
++		    unsigned long pc, unsigned long sp,
++		    unsigned long gp, unsigned long a0)
++{
++	volatile struct cpulaunch *launch =
++		(struct cpulaunch  *)CKSEG0ADDR(CPULAUNCH);
++
++	if (!amon_cpu_avail(cpu))
++		return;
++	if (cpu == smp_processor_id()) {
++		pr_debug("launch: I am cpu%d!\n", cpu);
++		return;
++	}
++	launch += cpu;
++
++	pr_debug("launch: starting cpu%d\n", cpu);
++
++	launch->pc = pc;
++	launch->gp = gp;
++	launch->sp = sp;
++	launch->a0 = a0;
++
++	smp_wmb();		/* Target must see parameters before go */
++	launch->flags |= LAUNCH_FGO;
++	smp_wmb();		/* Target must see go before we poll  */
++
++	while ((launch->flags & LAUNCH_FGONE) == 0)
++		;
++	smp_rmb();	/* Target will be updating flags soon */
++	pr_debug("launch: cpu%d gone!\n", cpu);
++}
+Index: linux-3.10.21/arch/mips/ralink/mt7621.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.21/arch/mips/ralink/mt7621.c	2013-12-09 19:52:51.760677296 +0100
+@@ -0,0 +1,186 @@
++/*
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published
++ * by the Free Software Foundation.
++ *
++ * Parts of this file are based on Ralink's 2.6.21 BSP
++ *
++ * Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
++ * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
++ * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <asm/gcmpregs.h>
++
++#include <asm/mipsregs.h>
++#include <asm/mach-ralink/ralink_regs.h>
++#include <asm/mach-ralink/mt7621.h>
++
++#include <pinmux.h>
++
++#include "common.h"
++
++#define SYSC_REG_SYSCFG		0x10
++#define SYSC_REG_CPLL_CLKCFG0	0x2c
++#define SYSC_REG_CUR_CLK_STS	0x44
++#define CPU_CLK_SEL		(BIT(30) | BIT(31))
++
++#define MT7621_GPIO_MODE_UART1		1
++#define MT7621_GPIO_MODE_I2C		2
++#define MT7621_GPIO_MODE_UART2		3
++#define MT7621_GPIO_MODE_UART3		5
++#define MT7621_GPIO_MODE_JTAG		7
++#define MT7621_GPIO_MODE_WDT_MASK	0x3
++#define MT7621_GPIO_MODE_WDT_SHIFT	8
++#define MT7621_GPIO_MODE_WDT_GPIO	1
++#define MT7621_GPIO_MODE_PCIE_RST	0
++#define MT7621_GPIO_MODE_PCIE_REF	2
++#define MT7621_GPIO_MODE_PCIE_MASK	0x3
++#define MT7621_GPIO_MODE_PCIE_SHIFT	10
++#define MT7621_GPIO_MODE_PCIE_GPIO	1
++#define MT7621_GPIO_MODE_MDIO		12
++#define MT7621_GPIO_MODE_RGMII1		14
++#define MT7621_GPIO_MODE_RGMII2		15
++#define MT7621_GPIO_MODE_SPI_MASK	0x3
++#define MT7621_GPIO_MODE_SPI_SHIFT	16
++#define MT7621_GPIO_MODE_SPI_GPIO	1
++#define MT7621_GPIO_MODE_SDHCI_MASK	0x3
++#define MT7621_GPIO_MODE_SDHCI_SHIFT	18
++#define MT7621_GPIO_MODE_SDHCI_GPIO	1
++
++static struct rt2880_pmx_func uart1_grp[] =  { FUNC("uart1", 0, 1, 2) };
++static struct rt2880_pmx_func i2c_grp[] =  { FUNC("i2c", 0, 3, 2) };
++static struct rt2880_pmx_func uart3_grp[] = { FUNC("uart3", 0, 5, 4) };
++static struct rt2880_pmx_func uart2_grp[] = { FUNC("uart2", 0, 9, 4) };
++static struct rt2880_pmx_func jtag_grp[] = { FUNC("jtag", 0, 13, 5) };
++static struct rt2880_pmx_func wdt_grp[] = {
++	FUNC("wdt rst", 0, 18, 1),
++	FUNC("wdt refclk", 2, 18, 1),
++};
++static struct rt2880_pmx_func pcie_rst_grp[] = {
++	FUNC("pcie rst", MT7621_GPIO_MODE_PCIE_RST, 19, 1),
++	FUNC("pcie refclk", MT7621_GPIO_MODE_PCIE_REF, 19, 1)
++};
++static struct rt2880_pmx_func mdio_grp[] = { FUNC("mdio", 0, 20, 2) };
++static struct rt2880_pmx_func rgmii2_grp[] = { FUNC("rgmii2", 0, 22, 12) };
++static struct rt2880_pmx_func spi_grp[] = {
++	FUNC("spi", 0, 34, 7),
++	FUNC("nand", 2, 34, 8),
++};
++static struct rt2880_pmx_func sdhci_grp[] = {
++	FUNC("sdhci", 0, 41, 8),
++	FUNC("nand", 2, 41, 8),
++};
++static struct rt2880_pmx_func rgmii1_grp[] = { FUNC("rgmii1", 0, 49, 12) };
++
++static struct rt2880_pmx_group mt7621_pinmux_data[] = {
++	GRP("uart1", uart1_grp, 1, MT7621_GPIO_MODE_UART1),
++	GRP("i2c", i2c_grp, 1, MT7621_GPIO_MODE_I2C),
++	GRP("uart3", uart2_grp, 1, MT7621_GPIO_MODE_UART2),
++	GRP("uart2", uart3_grp, 1, MT7621_GPIO_MODE_UART3),
++	GRP("jtag", jtag_grp, 1, MT7621_GPIO_MODE_JTAG),
++	GRP_G("wdt", wdt_grp, MT7621_GPIO_MODE_WDT_MASK,
++		MT7621_GPIO_MODE_WDT_GPIO, MT7621_GPIO_MODE_WDT_SHIFT),
++	GRP_G("pcie", pcie_rst_grp, MT7621_GPIO_MODE_PCIE_MASK,
++		MT7621_GPIO_MODE_PCIE_GPIO, MT7621_GPIO_MODE_PCIE_SHIFT),
++	GRP("mdio", mdio_grp, 1, MT7621_GPIO_MODE_MDIO),
++	GRP("rgmii2", rgmii2_grp, 1, MT7621_GPIO_MODE_RGMII2),
++	GRP_G("spi", spi_grp, MT7621_GPIO_MODE_SPI_MASK,
++		MT7621_GPIO_MODE_SPI_GPIO, MT7621_GPIO_MODE_SPI_SHIFT),
++	GRP_G("sdhci", sdhci_grp, MT7621_GPIO_MODE_SDHCI_MASK,
++		MT7621_GPIO_MODE_SDHCI_GPIO, MT7621_GPIO_MODE_SDHCI_SHIFT),
++	GRP("rgmii1", rgmii1_grp, 1, MT7621_GPIO_MODE_RGMII1),
++	{ 0 }
++};
++
++void __init ralink_clk_init(void)
++{
++	int cpu_fdiv = 0;
++	int cpu_ffrac = 0;
++	int fbdiv = 0;
++	u32 clk_sts, syscfg;
++	u8 clk_sel = 0, xtal_mode;
++	u32 cpu_clk;
++
++	if ((rt_sysc_r32(SYSC_REG_CPLL_CLKCFG0) & CPU_CLK_SEL) != 0)
++		clk_sel = 1;
++
++	switch (clk_sel) {
++	case 0:
++		clk_sts = rt_sysc_r32(SYSC_REG_CUR_CLK_STS);
++		cpu_fdiv = ((clk_sts >> 8) & 0x1F);
++		cpu_ffrac = (clk_sts & 0x1F);
++		cpu_clk = (500 * cpu_ffrac / cpu_fdiv) * 1000 * 1000;
++		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++		break;
++
++	case 1:
++		fbdiv = ((rt_sysc_r32(0x648) >> 4) & 0x7F) + 1;
++		syscfg = rt_sysc_r32(SYSC_REG_SYSCFG);
++		xtal_mode = (syscfg >> 6) & 0x7;
++		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++		if(xtal_mode >= 6) { //25Mhz Xtal
++			printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++			cpu_clk = 25 * fbdiv * 1000 * 1000;
++		} else if(xtal_mode >=3) { //40Mhz Xtal
++			printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++			cpu_clk = 40 * fbdiv * 1000 * 1000;
++		} else { // 20Mhz Xtal
++			printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++			cpu_clk = 20 * fbdiv * 1000 * 1000;
++		}
++		break;
++	}
++	cpu_clk = 880000000;
++	ralink_clk_add("cpu", cpu_clk);
++	ralink_clk_add("1e000b00.spi", 50000000);
++	ralink_clk_add("1e000c00.uartlite", 50000000);
++}
++
++void __init ralink_of_remap(void)
++{
++	rt_sysc_membase = plat_of_remap_node("mtk,mt7621-sysc");
++	rt_memc_membase = plat_of_remap_node("mtk,mt7621-memc");
++
++	if (!rt_sysc_membase || !rt_memc_membase)
++		panic("Failed to remap core resources");
++}
++
++void prom_soc_init(struct ralink_soc_info *soc_info)
++{
++	void __iomem *sysc = (void __iomem *) KSEG1ADDR(MT7621_SYSC_BASE);
++	unsigned char *name = NULL;
++	u32 n0;
++	u32 n1;
++	u32 rev;
++
++	n0 = __raw_readl(sysc + SYSC_REG_CHIP_NAME0);
++	n1 = __raw_readl(sysc + SYSC_REG_CHIP_NAME1);
++
++	if (n0 == MT7621_CHIP_NAME0 && n1 == MT7621_CHIP_NAME1) {
++		name = "MT7621";
++		soc_info->compatible = "mtk,mt7621-soc";
++	} else {
++		panic("mt7621: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
++	}
++
++	rev = __raw_readl(sysc + SYSC_REG_CHIP_REV);
++
++	snprintf(soc_info->sys_type, RAMIPS_SYS_TYPE_LEN,
++		"Mediatek %s ver:%u eco:%u",
++		name,
++		(rev >> CHIP_REV_VER_SHIFT) & CHIP_REV_VER_MASK,
++		(rev & CHIP_REV_ECO_MASK));
++
++	soc_info->mem_size_min = MT7621_DDR2_SIZE_MIN;
++	soc_info->mem_size_max = MT7621_DDR2_SIZE_MAX;
++	soc_info->mem_base = MT7621_DRAM_BASE;
++
++	rt2880_pinmux_data = mt7621_pinmux_data;
++
++	if (register_cmp_smp_ops())
++		panic("failed to register_vsmp_smp_ops()");
++}

@@ -1,0 +1,26 @@
+From e5327a1c6969316370af5cae7cfe6b8163178575 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 2 Dec 2013 16:07:23 +0100
+Subject: [PATCH 500/507] MIPS: increase GIC_INTR_MAX
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/gic.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/include/asm/gic.h b/arch/mips/include/asm/gic.h
+index b2e3e93..2902d93 100644
+--- a/arch/mips/include/asm/gic.h
++++ b/arch/mips/include/asm/gic.h
+@@ -19,7 +19,7 @@
+ #define GIC_TRIG_EDGE			1
+ #define GIC_TRIG_LEVEL			0
+ 
+-#define GIC_NUM_INTRS			(24 + NR_CPUS * 2)
++#define GIC_NUM_INTRS			(56 + NR_CPUS * 2)
+ 
+ #define MSK(n) ((1 << (n)) - 1)
+ #define REG32(addr)		(*(volatile unsigned int *) (addr))
+-- 
+1.7.10.4
+
