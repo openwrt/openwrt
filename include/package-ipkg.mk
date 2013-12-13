@@ -152,8 +152,6 @@ ifeq ($(DUMP),)
 		[ -z "$$$$DEPENDS" ] || echo "Depends: $$$$DEPENDS"; \
 		$(if $(PROVIDES), echo "Provides: $(PROVIDES)"; ) \
 		echo "Source: $(SOURCE)"; \
-		$(if $(PKG_SOURCE), echo "SourceFile: $(PKG_SOURCE)"; ) \
-		$(if $(PKG_SOURCE_URL), echo "SourceURL: $(PKG_SOURCE_URL)"; ) \
 		$(if $(PKG_LICENSE), echo "License: $(PKG_LICENSE)"; ) \
 		$(if $(PKG_LICENSE_FILES), echo "LicenseFiles: $(PKG_LICENSE_FILES)"; ) \
 		echo "Section: $(SECTION)"; \
