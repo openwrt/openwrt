@@ -1,0 +1,162 @@
+From 926ae0ca5017a421709ab0478582683c29988b05 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 27 Nov 2013 20:58:16 +0100
+Subject: [PATCH 10/20] MTD: add chunked read io to m25p80
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/mtd/devices/m25p80.c |  127 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 127 insertions(+)
+
+Index: linux-3.10.21/drivers/mtd/devices/m25p80.c
+===================================================================
+--- linux-3.10.21.orig/drivers/mtd/devices/m25p80.c	2013-12-09 19:34:40.828651303 +0100
++++ linux-3.10.21/drivers/mtd/devices/m25p80.c	2013-12-09 19:40:37.636659793 +0100
+@@ -392,6 +392,57 @@
+ 	return 0;
+ }
+ 
++static int m25p80_read_chunked(struct mtd_info *mtd, loff_t from, size_t len,
++	size_t *retlen, u_char *buf)
++{
++	struct m25p *flash = mtd_to_m25p(mtd);
++	struct spi_transfer t[2];
++	struct spi_message m;
++	uint8_t opcode;
++	int idx = 0;
++
++	pr_debug("%s: %s from 0x%08x, len %zd\n", dev_name(&flash->spi->dev),
++			__func__, (u32)from, len);
++
++	spi_message_init(&m);
++	memset(t, 0, (sizeof t));
++
++	t[0].tx_buf = flash->command;
++	t[0].len = m25p_cmdsz(flash);
++	spi_message_add_tail(&t[0], &m);
++	spi_message_add_tail(&t[1], &m);
++
++	while (idx < len) {
++		int rlen = (len - idx > 4) ? (4) : (len - idx);
++
++		t[1].rx_buf = &buf[idx];
++		t[1].len = rlen;
++
++		mutex_lock(&flash->lock);
++
++		/* Wait till previous write/erase is done. */
++		if (wait_till_ready(flash)) {
++			/* REVISIT status return?? */
++			mutex_unlock(&flash->lock);
++			return 1;
++		}
++
++		/* Set up the write data buffer. */
++		opcode = OPCODE_NORM_READ;
++		flash->command[0] = opcode;
++		m25p_addr2cmd(flash, from + idx, flash->command);
++
++		spi_sync(flash->spi, &m);
++
++		*retlen = m.actual_length - m25p_cmdsz(flash) -
++			(flash->fast_read ? 1 : 0);
++
++		mutex_unlock(&flash->lock);
++		idx += rlen;
++	}
++	return 0;
++}
++
+ /*
+  * Write an address range to the flash chip.  Data must be written in
+  * FLASH_PAGESIZE chunks.  The address range may be any size provided
+@@ -479,6 +530,76 @@
+ 	return 0;
+ }
+ 
++static int m25p80_write_chunked(struct mtd_info *mtd, loff_t to, size_t len,
++	size_t *retlen, const u_char *buf)
++{
++	struct m25p *flash = mtd_to_m25p(mtd);
++	struct spi_transfer t;
++	struct spi_message m;
++	u32 i, page_size;
++	u8 tmp[8];
++
++	pr_debug("%s: %s to 0x%08x, len %zd\n", dev_name(&flash->spi->dev),
++			__func__, (u32)to, len);
++
++	spi_message_init(&m);
++	memset(&t, 0, (sizeof t));
++
++	t.tx_buf = tmp;
++	t.len = 8;
++	spi_message_add_tail(&t, &m);
++
++	mutex_lock(&flash->lock);
++
++	/* Wait until finished previous write command. */
++	if (wait_till_ready(flash)) {
++		mutex_unlock(&flash->lock);
++		return 1;
++	}
++
++	write_enable(flash);
++
++	/* Set up the opcode in the write buffer. */
++	flash->command[0] = OPCODE_PP;
++	m25p_addr2cmd(flash, to, flash->command);
++
++	t.len = 4 + (to & 0x3);
++	if (t.len == 4)
++		t.len = 8;
++	memcpy(tmp, flash->command, 4);
++	memcpy(&tmp[4], buf, t.len - 4);
++	spi_sync(flash->spi, &m);
++	page_size = t.len - 4;
++
++	*retlen = m.actual_length - m25p_cmdsz(flash);
++
++	/* write everything in flash->page_size chunks */
++	for (i = page_size; i < len; i += page_size) {
++		page_size = len - i;
++		if (page_size > 4)
++			page_size = 4;
++
++		/* write the next page to flash */
++		m25p_addr2cmd(flash, to + i, flash->command);
++
++		memcpy(tmp, flash->command, 4);
++		memcpy(&tmp[4], buf + i, page_size);
++		t.len = 4 + page_size;
++
++		wait_till_ready(flash);
++
++		write_enable(flash);
++
++		spi_sync(flash->spi, &m);
++
++		*retlen += m.actual_length - m25p_cmdsz(flash);
++	}
++
++	mutex_unlock(&flash->lock);
++
++	return 0;
++}
++
+ static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
+ 		size_t *retlen, const u_char *buf)
+ {
+@@ -1057,6 +1178,12 @@
+ 		flash->fast_read = true;
+ #endif
+ 
++	if (np && of_property_read_bool(np, "m25p,chunked-io")) {
++		dev_warn(&spi->dev, "using chunked io\n");
++		flash->mtd._read = m25p80_read_chunked;
++		flash->mtd._write = m25p80_write_chunked;
++	}
++
+ #ifdef CONFIG_M25PXX_USE_FAST_READ
+ 	flash->fast_read = true;
+ #endif

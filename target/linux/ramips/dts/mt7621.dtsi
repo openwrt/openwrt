@@ -1,0 +1,245 @@
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "ralink,mtk7620a-soc";
+
+	cpus {
+		cpu@0 {
+			compatible = "mips,mips24KEc";
+		};
+	};
+
+	cpuintc: cpuintc@0 {
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-controller;
+		compatible = "mti,cpu-interrupt-controller";
+	};
+
+	palmbus@1E000000 {
+		compatible = "palmbus";
+		reg = <0x1E000000 0x100000>;
+                ranges = <0x0 0x1E000000 0x0FFFFF>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sysc@0 {
+			compatible = "mtk,mt7621-sysc";
+			reg = <0x0 0x100>;
+		};
+
+		wdt@100 {
+			compatible = "mtk,mt7621-wdt";
+			reg = <0x100 0x100>;
+		};
+
+		gpio@600 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			compatible = "mtk,mt7621-gpio";
+			reg = <0x600 0x100>;
+
+			gpio0: bank@0 {
+				reg = <0>;
+				compatible = "mtk,mt7621-gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpio1: bank@1 {
+				reg = <1>;
+				compatible = "mtk,mt7621-gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpio2: bank@2 {
+				reg = <2>;
+				compatible = "mtk,mt7621-gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
+		memc@5000 {
+			compatible = "mtk,mt7621-memc";
+			reg = <0x300 0x100>;
+		};
+
+		uartlite@c00 {
+			compatible = "ns16550a";
+			reg = <0xc00 0x100>;
+
+/*			interrupt-parent = <&gic>;
+			interrupts = <26>;*/
+
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			no-loopback-test;
+		};
+
+		spi@b00 {
+			status = "okay";
+
+			compatible = "ralink,mt7621-spi";
+			reg = <0xb00 0x100>;
+
+			resets = <&rstctrl 18>;
+			reset-names = "spi";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+/*			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>;*/
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "en25q64";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "en25q64";
+				spi-max-frequency = <10000000>;
+
+				m25p,chunked-io;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x7a0000>;
+				};
+
+				partition@7f0000 {
+					label = "test";
+					reg = <0x7f0000 0x10000>;
+				};
+			};
+		};
+	};
+
+	rstctrl: rstctrl {
+		compatible = "ralink,rt2880-reset";
+		#reset-cells = <1>;
+	};
+
+	sdhci@1E130000 {
+		compatible = "ralink,mt7620a-sdhci";
+		reg = <0x1E130000 4000>;
+
+		interrupt-parent = <&gic>;
+		interrupts = <20>;
+	};
+
+	xhci@1E1C0000 {
+		compatible = "xhci-platform1";
+		reg = <0x1E1C0000 4000>;
+
+		interrupt-parent = <&gic>;
+		interrupts = <22>;
+	};
+
+	gic: gic@1fbc0000 {
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-controller;
+		compatible = "ralink,mt7621-gic";
+		reg = < 0x1fbc0000 0x80 /* gic */
+			0x1fbf0000 0x8000 /* cpc */
+			0x1fbf8000 0x8000 /* gpmc */
+		>;
+	};
+
+	nand@1e003000 {
+		compatible = "mtk,mt7621-nand";
+		bank-width = <2>;
+		reg = <0x1e003000 0x800
+			0x1e003800 0x800>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "uboot";
+			reg = <0x00000 0x80000>; /* 64 KB */
+		};
+		partition@80000 {
+			label = "uboot_env";
+			reg = <0x80000 0x80000>; /* 64 KB */
+		};
+		partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x40000>;
+		};
+		partition@140000 {
+			label = "rootfs";
+			reg = <0x140000 0xec0000>;
+		};
+	};
+
+	ethernet@1e100000 {
+		compatible = "ralink,mt7621-eth";
+		reg = <0x1e100000 10000>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ralink,port-map = "llllw";
+		
+		interrupt-parent = <&gic>;
+		interrupts = <3>;
+
+/*		resets = <&rstctrl 21 &rstctrl 23>;
+		reset-names = "fe", "esw";
+
+		port@4 {
+			compatible = "ralink,mt7620a-gsw-port", "ralink,eth-port";
+			reg = <4>;
+
+			status = "disabled";
+		};
+
+		port@5 {
+			compatible = "ralink,mt7620a-gsw-port", "ralink,eth-port";
+			reg = <5>;
+
+			status = "disabled";
+		};
+*/
+		mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy1f: ethernet-phy@1f {
+				reg = <0x1f>;
+				phy-mode = "rgmii";
+		
+				interrupt-parent = <&gic>;
+				interrupts = <23>;
+			};
+		};
+	};
+
+	gsw@1e110000 {
+		compatible = "ralink,mt7620a-gsw";
+		reg = <0x1e110000 8000>;
+
+	};
+};

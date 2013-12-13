@@ -1,0 +1,16 @@
+/dts-v1/;
+
+/include/ "mt7621.dtsi"
+
+/ {
+	compatible = "ralink,mt7621-eval-board", "ralink,mt7621-soc";
+	model = "Ralink MT7621 evaluation board";
+
+	memory@0 {
+		reg = <0x0 0x2000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+};
