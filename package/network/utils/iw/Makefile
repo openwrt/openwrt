@@ -41,8 +41,8 @@ TARGET_CPPFLAGS:= \
 	-D_GNU_SOURCE
 
 MAKE_FLAGS += \
-	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
-	LDFLAGS="$(TARGET_LDFLAGS)" \
+	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -ffunction-sections -fdata-sections" \
+	LDFLAGS="$(TARGET_LDFLAGS) -Wl,--gc-sections" \
 	NL1FOUND="" NL2FOUND=Y \
 	NLLIBNAME="libnl-tiny" \
 	LIBS="-lm -lnl-tiny" \
