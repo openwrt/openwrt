@@ -1,0 +1,34 @@
+Building boards that have JFFS2 support enabled will fail when using
+U-Boot's builtin GCC library, for example like this:
+
+USE_PRIVATE_LIBGCC=yes ./MAKEALL omap3_evm
+...
+fs/jffs2/libjffs2.o: In function `jffs2_1pass_build_lists':
+fs/jffs2/jffs2_1pass.c:1441: undefined reference to `__aeabi_uldivmod'
+
+This is caused by a u64 / u32 division in jffs2_1pass.c; the problem
+can be avoided by using do_div() instead of plain division.
+
+Signed-off-by: Wolfgang Denk <wd@denx.de>
+Reported-by: Chris Ruehl <chris.ruehl@gtsys.com.hk>
+Cc: Chris Ruehl <chris.ruehl@gtsys.com.hk>
+
+---
+ fs/jffs2/jffs2_1pass.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/jffs2/jffs2_1pass.c b/fs/jffs2/jffs2_1pass.c
+index c856983..a7dbe79 100644
+--- a/fs/jffs2/jffs2_1pass.c
++++ b/fs/jffs2/jffs2_1pass.c
+@@ -1438,7 +1438,7 @@ jffs2_1pass_build_lists(struct part_info * part)
+ {
+ 	struct b_lists *pL;
+ 	struct jffs2_unknown_node *node;
+-	u32 nr_sectors = part->size/part->sector_size;
++	u32 nr_sectors = do_div(part->size, part->sector_size);
+ 	u32 i;
+ 	u32 counter4 = 0;
+ 	u32 counterF = 0;
+--
+1.8.3.1
