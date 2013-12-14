@@ -11,7 +11,7 @@
  	int (*external_reset)(void);
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -2458,17 +2458,25 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+@@ -2441,17 +2441,25 @@ int ath9k_hw_fill_cap_info(struct ath_hw
  	}
  
  	eeval = ah->eep_ops->get_eeprom(ah, EEP_OP_MODE);
@@ -47,7 +47,7 @@
  	    AR_SREV_9285(ah) ||
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -938,6 +938,8 @@ struct ath_hw {
+@@ -914,6 +914,8 @@ struct ath_hw {
  	bool is_clk_25mhz;
  	int (*get_mac_revision)(void);
  	int (*external_reset)(void);
