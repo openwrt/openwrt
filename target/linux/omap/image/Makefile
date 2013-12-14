@@ -8,7 +8,6 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/BuildKernel
-	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n 'Boot Image' -d boot.script $(BIN_DIR)/boot.scr
 	cp $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
 	-mkdir $(BIN_DIR)/dtbs
 	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/am335x*.dtb $(BIN_DIR)/dtbs/
