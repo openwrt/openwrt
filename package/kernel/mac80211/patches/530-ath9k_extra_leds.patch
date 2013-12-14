@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -558,6 +558,9 @@ struct ath9k_wow_pattern {
+@@ -557,6 +557,9 @@ struct ath9k_wow_pattern {
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
  void ath_fill_led_pin(struct ath_softc *sc);
@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -733,6 +736,13 @@ enum spectral_mode {
+@@ -732,6 +735,13 @@ enum spectral_mode {
  	SPECTRAL_CHANSCAN,
  };
  
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -775,9 +785,8 @@ struct ath_softc {
+@@ -774,9 +784,8 @@ struct ath_softc {
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
  #ifdef CPTCFG_MAC80211_LEDS

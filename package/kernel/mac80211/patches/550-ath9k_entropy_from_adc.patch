@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -684,6 +684,7 @@ struct ath_spec_scan {
+@@ -661,6 +661,7 @@ struct ath_spec_scan {
   * @config_pci_powersave:
   * @calibrate: periodic calibration for NF, ANI, IQ, ADC gain, ADC-DC
   *
@@ -8,7 +8,7 @@
   * @spectral_scan_config: set parameters for spectral scan and enable/disable it
   * @spectral_scan_trigger: trigger a spectral scan run
   * @spectral_scan_wait: wait for a spectral scan run to finish
-@@ -706,6 +707,7 @@ struct ath_hw_ops {
+@@ -683,6 +684,7 @@ struct ath_hw_ops {
  			struct ath_hw_antcomb_conf *antconf);
  	void (*antdiv_comb_conf_set)(struct ath_hw *ah,
  			struct ath_hw_antcomb_conf *antconf);

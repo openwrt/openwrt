@@ -1,14 +1,14 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -18,6 +18,7 @@
- #include <linux/slab.h>
+@@ -19,6 +19,7 @@
  #include <linux/module.h>
  #include <linux/time.h>
+ #include <linux/bitops.h>
 +#include <linux/etherdevice.h>
  #include <asm/unaligned.h>
  
  #include "hw.h"
-@@ -513,8 +514,16 @@ static int ath9k_hw_init_macaddr(struct 
+@@ -504,8 +505,16 @@ static int ath9k_hw_init_macaddr(struct 
  		common->macaddr[2 * i] = eeval >> 8;
  		common->macaddr[2 * i + 1] = eeval & 0xff;
  	}
