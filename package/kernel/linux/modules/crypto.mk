@@ -7,12 +7,13 @@
 
 CRYPTO_MENU:=Cryptographic API modules
 
-CRYPTO_MODULES = ALGAPI2=crypto_algapi
+CRYPTO_MODULES = \
+	ALGAPI2=crypto_algapi \
+	BLKCIPHER2=crypto_blkcipher
 
 CRYPTOMGR_MODULES = \
 	AEAD2=aead \
 	MANAGER2=cryptomgr \
-	BLKCIPHER2=crypto_blkcipher
 
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
 crypto_file=$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).ko
@@ -24,6 +25,7 @@ define KernelPackage/crypto-core
   KCONFIG:= \
 	CONFIG_CRYPTO=y \
 	CONFIG_CRYPTO_HW=y \
+	CONFIG_CRYPTO_BLKCIPHER \
 	CONFIG_CRYPTO_ALGAPI \
 	$(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
   FILES:=$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod)))
@@ -53,7 +55,6 @@ define KernelPackage/crypto-manager
   DEPENDS:=+kmod-crypto-hash +kmod-crypto-pcompress
   KCONFIG:= \
 	CONFIG_CRYPTO_AEAD \
-	CONFIG_CRYPTO_BLKCIPHER \
 	CONFIG_CRYPTO_MANAGER \
 	$(foreach mod,$(CRYPTOMGR_MODULES),$(call crypto_confvar,$(mod)))
   FILES:=$(foreach mod,$(CRYPTOMGR_MODULES),$(call crypto_file,$(mod)))
@@ -248,7 +249,7 @@ define KernelPackage/crypto-arc4
   KCONFIG:=CONFIG_CRYPTO_ARC4
   FILES:=$(LINUX_DIR)/crypto/arc4.ko
   AUTOLOAD:=$(call AutoLoad,09,arc4)
-  $(call AddDepends/crypto,+!LINUX_3_3:kmod-crypto-manager)
+  $(call AddDepends/crypto)
 endef
 
 $(eval $(call KernelPackage,crypto-arc4))
