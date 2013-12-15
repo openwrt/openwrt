@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cloog
-PKG_VERSION:=0.18.0
+PKG_VERSION:=0.18.1
 
 PKG_SOURCE_URL:=http://www.bastoul.net/cloog/pages/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=be78a47bd82523250eb3e91646db5b3d
+PKG_MD5SUM:=e34fca0540d840e5d0f6427e98c92252
 
 HOST_FIXUP:=autoreconf
 
