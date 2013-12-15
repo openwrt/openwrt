@@ -471,6 +471,9 @@ ar71xx_board_detect() {
 	*TL-WA850RE)
 		name="tl-wa850re"
 		;;
+	*"TL-WA801ND v2")
+		name="tl-wa801nd-v2"
+		;;
 	*TL-WA901ND)
 		name="tl-wa901nd"
 		;;
