@@ -1230,9 +1230,9 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	    (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_BC_FLOOD_S);
 	priv->write(priv, AR8327_REG_FWD_CTRL1, t);
 
-	/* setup MTU */
+	/* enable jumbo frames */
 	ar8xxx_rmw(priv, AR8327_REG_MAX_FRAME_SIZE,
-		   AR8327_MAX_FRAME_SIZE_MTU, 1518 + 8 + 2);
+		   AR8327_MAX_FRAME_SIZE_MTU, 9018 + 8 + 2);
 
 	/* Enable MIB counters */
 	ar8xxx_reg_set(priv, AR8327_REG_MODULE_EN,
