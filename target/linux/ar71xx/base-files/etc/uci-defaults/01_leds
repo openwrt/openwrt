@@ -260,7 +260,8 @@ tl-wr842n-v2)
 	ucidef_set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
 	;;
 
-tl-wa801nd-v2)
+tl-wa801nd-v2 | \
+tl-wa901nd-v3)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
 	;;
