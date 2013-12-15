@@ -13,7 +13,7 @@ FEATURES:=squashfs atm
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 SUBTARGETS:=generic ac49x
 
-LINUX_VERSION:=3.10.21
+LINUX_VERSION:=3.10.24
 
 include $(INCLUDE_DIR)/target.mk
 
