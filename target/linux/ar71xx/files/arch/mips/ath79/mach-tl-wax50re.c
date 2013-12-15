@@ -156,10 +156,6 @@ static void __init tl_ap123_setup(void)
 	ath79_register_eth(0);
 
 	ath79_register_wmac(ee, mac);
-
-	ath79_register_gpio_keys_polled(-1, TL_WAX50RE_KEYS_POLL_INTERVAL,
-					ARRAY_SIZE(tl_wax50re_gpio_keys),
-					tl_wax50re_gpio_keys);
 }
 
 static void  __init tl_wa750re_setup(void)
@@ -167,6 +163,10 @@ static void  __init tl_wa750re_setup(void)
 	tl_ap123_setup();
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa750re_leds_gpio),
 				 tl_wa750re_leds_gpio);
+
+	ath79_register_gpio_keys_polled(-1, TL_WAX50RE_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wax50re_gpio_keys),
+					tl_wax50re_gpio_keys);
 }
 
 MIPS_MACHINE(ATH79_MACH_TL_WA750RE, "TL-WA750RE", "TP-LINK TL-WA750RE",
@@ -177,6 +177,10 @@ static void  __init tl_wa850re_setup(void)
 	tl_ap123_setup();
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa850re_leds_gpio),
 				 tl_wa850re_leds_gpio);
+
+	ath79_register_gpio_keys_polled(-1, TL_WAX50RE_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wax50re_gpio_keys),
+					tl_wax50re_gpio_keys);
 }
 
 MIPS_MACHINE(ATH79_MACH_TL_WA850RE, "TL-WA850RE", "TP-LINK TL-WA850RE",
