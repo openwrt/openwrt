@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ppl
-PKG_VERSION:=1.0
+PKG_VERSION:=1.1
 
-PKG_SOURCE_URL:=http://bugseng.com/products/ppl/download/ftp/releases/1.0/
+PKG_SOURCE_URL:=http://bugseng.com/products/ppl/download/ftp/releases/$(PKG_VERSION)/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_MD5SUM:=e8caeb84cd858f64b36333c368891c7b
+PKG_MD5SUM:=82617a9c4e08606111ed9d2dc37ececa
 
 HOST_FIXUP:=autoreconf
 
