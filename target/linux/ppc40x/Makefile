@@ -13,7 +13,7 @@ FEATURES:=squashfs
 CPU_TYPE:=405
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.10.21
+LINUX_VERSION:=3.10.24
 
 include $(INCLUDE_DIR)/target.mk
 

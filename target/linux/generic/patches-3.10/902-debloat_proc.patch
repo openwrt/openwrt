@@ -133,7 +133,7 @@
  }
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
-@@ -1241,10 +1241,12 @@ static int __init setup_vmstat(void)
+@@ -1242,10 +1242,12 @@ static int __init setup_vmstat(void)
  		start_cpu_timer(cpu);
  #endif
  #ifdef CONFIG_PROC_FS
@@ -285,7 +285,7 @@
  				"       key      shmid perms       size  cpid  lpid nattch   uid   gid  cuid  cgid      atime      dtime      ctime        rss       swap\n",
 --- a/ipc/util.c
 +++ b/ipc/util.c
-@@ -158,6 +158,9 @@ void __init ipc_init_proc_interface(cons
+@@ -173,6 +173,9 @@ void __init ipc_init_proc_interface(cons
  	struct proc_dir_entry *pde;
  	struct ipc_proc_iface *iface;
  
