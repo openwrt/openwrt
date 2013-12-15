@@ -67,10 +67,14 @@ start_instance()
 	append_arg "$cfg" realm "-r" "${realm:-OpenWrt}"
 	append_arg "$cfg" config "-c"
 	append_arg "$cfg" cgi_prefix "-x"
-	append_arg "$cfg" lua_prefix "-l"
-	append_arg "$cfg" lua_handler "-L"
-	append_arg "$cfg" ubus_prefix "-u"
-	append_arg "$cfg" ubus_socket "-U"
+	[ -f /usr/lib/uhttpd_lua.so ] && {
+		append_arg "$cfg" lua_prefix "-l"
+		append_arg "$cfg" lua_handler "-L"
+	}
+	[ -f /usr/lib/uhttpd_ubus.so ] && {
+		append_arg "$cfg" ubus_prefix "-u"
+		append_arg "$cfg" ubus_socket "-U"
+	}
 	append_arg "$cfg" script_timeout "-t"
 	append_arg "$cfg" network_timeout "-T"
 	append_arg "$cfg" http_keepalive "-k"
