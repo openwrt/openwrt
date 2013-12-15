@@ -78,17 +78,14 @@ setup_interface () {
 	proto_send_update "$INTERFACE"
 
 	if [ -n "$AFTR_IP " -a -n "$IFACE_DSLITE" ]; then
-uci -q batch <<-EOF >/dev/null
-set network.$IFACE_DSLITE.proto=dslite
-set network.$IFACE_DSLITE.auto=0
-set network.$IFACE_DSLITE.peeraddr=$AFTR_IP
-set network.$IFACE_DSLITE.tunlink=$INTERFACE
-commit network
-EOF
-
-		ifdown "$IFACE_DSLITE"
-		/etc/init.d/network reload
-		ifup "$IFACE_DSLITE"
+		json_init
+		json_add_string name "$IFACE_DSLITE"
+		json_add_string ifname "@$INTERFACE"
+		json_add_string proto "dslite"
+		json_add_string peeraddr "$AFTR_IP"
+		json_add_string tunlink "$INTERFACE"
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
 	fi
 
 	# TODO: $SNTP_IP $SIP_IP $SNTP_FQDN $SIP_DOMAIN

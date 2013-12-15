@@ -44,19 +44,18 @@ setup_interface () {
 		ip6rd="${ip6rd#* }"
 		local ip6rdbr="${ip6rd%% *}"
 
-uci -q batch <<-EOF >/dev/null
-set network.$IFACE6RD.proto=6rd
-set network.$IFACE6RD.auto=0
-set network.$IFACE6RD.peeraddr=$ip6rdbr
-set network.$IFACE6RD.ip4prefixlen=$v4mask
-set network.$IFACE6RD.ip6prefix=$ip6rdprefix
-set network.$IFACE6RD.ip6prefixlen=$ip6rdprefixlen
-commit network
-EOF
+		json_init
+		json_add_string name "$IFACE6RD"
+		json_add_string ifname "@$INTERFACE"
+		json_add_string proto "6rd"
+		json_add_string peeraddr "$ip6rdbr"
+		json_add_int ip4prefixlen "$v4mask"
+		json_add_string ip6prefix "$ip6rdprefix"
+		json_add_int ip6prefixlen "$ip6rdprefixlen"
+		json_add_string tunlink "$INTERFACE"
+		json_close_object
 
-		ifdown "$IFACE6RD"
-		/etc/init.d/network reload
-		ifup "$IFACE6RD"
+		ubus call network add_dynamic "$(json_dump)"
 	fi
 
 	# TODO

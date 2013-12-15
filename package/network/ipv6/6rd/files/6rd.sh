@@ -14,8 +14,8 @@ proto_6rd_setup() {
 	local iface="$2"
 	local link="6rd-$cfg"
 
-	local mtu ttl ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen
-	json_get_vars mtu ttl ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen
+	local mtu ttl ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink
+	json_get_vars mtu ttl ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink
 
 	[ -z "$ip6prefix" -o -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -57,6 +57,7 @@ proto_6rd_setup() {
 	json_add_string local "$ipaddr"
 	json_add_string 6rd-prefix "$ip6prefix/$ip6prefixlen"
 	json_add_string 6rd-relay-prefix "$ip4prefix/$ip4prefixlen"
+	[ -n "$tunlink" ] && json_add_string link "$tunlink"
 	proto_close_tunnel
 
 	proto_send_update "$cfg"
@@ -77,6 +78,7 @@ proto_6rd_init_config() {
 	proto_config_add_string "ip6prefix"
 	proto_config_add_string "ip6prefixlen"
 	proto_config_add_string "ip4prefixlen"
+	proto_config_add_string "tunlink"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
