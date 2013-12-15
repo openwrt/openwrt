@@ -1,5 +1,6 @@
 /*
- *  TP-LINK TL-WA750RE v1/TL-WA801ND v2/TL-WA850RE v1 board support
+ *  TP-LINK TL-WA750RE v1/TL-WA801ND v2/TL-WA850RE v1/TL-WA901ND v3
+ *  board support
  *
  *  Copyright (C) 2013 Martijn Zilverschoon <thefriedzombie@gmail.com>
  *  Copyright (C) 2013 Jiri Pirko <jiri@resnulli.us>
@@ -223,3 +224,17 @@ static void  __init tl_wa850re_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_TL_WA850RE, "TL-WA850RE", "TP-LINK TL-WA850RE",
 	     tl_wa850re_setup);
+
+static void __init tl_wa901nd_v3_setup(void)
+{
+	tl_ap123_setup();
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa801nd_v2_leds_gpio),
+			tl_wa801nd_v2_leds_gpio);
+
+	ath79_register_gpio_keys_polled(-1, TL_WAX50RE_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wax50re_gpio_keys) - 1,
+					tl_wax50re_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WA901ND_V3, "TL-WA901ND-v3", "TP-LINK TL-WA901ND v3",
+	     tl_wa901nd_v3_setup);
