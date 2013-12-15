@@ -217,6 +217,7 @@ platform_check_image() {
 	tl-wa801nd-v2 | \
 	tl-wa901nd | \
 	tl-wa901nd-v2 | \
+	tl-wa901nd-v3 | \
 	tl-wdr3500 | \
 	tl-wdr4300 | \
 	tl-wr703n | \
