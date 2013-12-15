@@ -8,7 +8,7 @@
  #include <bcm47xx.h>
  #include <bcm47xx_nvram.h>
  #include <bcm47xx_board.h>
-@@ -214,6 +215,15 @@ static void __init bcm47xx_register_bcma
+@@ -199,6 +200,15 @@ static void __init bcm47xx_register_bcma
  		panic("Failed to initialize BCMA bus (err %d)", err);
  
  	bcm47xx_fill_bcma_boardinfo(&bcm47xx_bus.bcma.bus.boardinfo, NULL);
