@@ -11856,7 +11856,18 @@
  			ah->intr_txqs |= MS(s1_s, AR_ISR_S1_QCU_TXERR);
  			ah->intr_txqs |= MS(s1_s, AR_ISR_S1_QCU_TXEOL);
  		}
-@@ -120,7 +139,12 @@ static bool ar9002_hw_get_isr(struct ath
+@@ -114,13 +133,23 @@ static bool ar9002_hw_get_isr(struct ath
+ 		*masked |= mask2;
+ 	}
+ 
++	if (!(pCap->hw_caps & ATH9K_HW_CAP_RAC_SUPPORTED)) {
++		REG_WRITE(ah, AR_ISR, isr);
++		REG_READ(ah, AR_ISR);
++	}
++
+ 	if (AR_SREV_9100(ah))
+ 		return true;
+ 
  	if (isr & AR_ISR_GENTMR) {
  		u32 s5_s;
  
@@ -11870,7 +11881,7 @@
  		ah->intr_gen_timer_trigger =
  				MS(s5_s, AR_ISR_S5_GENTIMER_TRIG);
  
-@@ -133,6 +157,16 @@ static bool ar9002_hw_get_isr(struct ath
+@@ -133,6 +162,11 @@ static bool ar9002_hw_get_isr(struct ath
  		if ((s5_s & AR_ISR_S5_TIM_TIMER) &&
  		    !(pCap->hw_caps & ATH9K_HW_CAP_AUTOSLEEP))
  			*masked |= ATH9K_INT_TIM_TIMER;
@@ -11879,11 +11890,6 @@
 +			REG_WRITE(ah, AR_ISR_S5, s5_s);
 +			isr &= ~AR_ISR_GENTMR;
 +		}
-+	}
-+
-+	if (!(pCap->hw_caps & ATH9K_HW_CAP_RAC_SUPPORTED)) {
-+		REG_WRITE(ah, AR_ISR, isr);
-+		REG_READ(ah, AR_ISR);
  	}
  
  	if (sync_cause) {
