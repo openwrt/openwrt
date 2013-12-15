@@ -1,7 +1,8 @@
 /*
- *  TP-LINK TL-WR841N/ND v8/TL-MR3420 v2 board support
+ *  TP-LINK TL-WR841N/ND v8/TL-MR3420 v2/TL-WA801ND v2 board support
  *
  *  Copyright (C) 2012 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2013 Jiri Pirko <jiri@resnulli.us>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -91,6 +92,26 @@ static struct gpio_led tl_wr841n_v8_leds_gpio[] __initdata = {
 	},
 };
 
+static struct gpio_led tl_wa801nd_v2_leds_gpio[] __initdata = {
+	{
+		.name		= "tp-link:green:qss",
+		.gpio		= TL_WR841NV8_GPIO_LED_QSS,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:system",
+		.gpio		= TL_WR841NV8_GPIO_LED_SYSTEM,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:lan",
+		.gpio		= TL_WR841NV8_GPIO_LED_WAN, /* LAN for wa801nd_v2 */
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:wlan",
+		.gpio		= TL_WR841NV8_GPIO_LED_WLAN,
+		.active_low	= 1,
+	},
+};
+
 static struct gpio_keys_button tl_wr841n_v8_gpio_keys[] __initdata = {
 	{
 		.desc		= "Reset button",
@@ -127,7 +148,7 @@ static struct gpio_keys_button tl_mr3420v2_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init tl_ap123_setup(void)
+static void __init tl_ap123_setup(bool setup_gmac1)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
@@ -158,16 +179,18 @@ static void __init tl_ap123_setup(void)
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio1_device.dev;
 	ath79_register_eth(0);
 
-	/* GMAC1 is connected to the internal switch */
-	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ath79_register_eth(1);
+	if (setup_gmac1) {
+		/* GMAC1 is connected to the internal switch */
+		ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+		ath79_register_eth(1);
+	}
 
 	ath79_register_wmac(ee, mac);
 }
 
 static void __init tl_wr841n_v8_setup(void)
 {
-	tl_ap123_setup();
+	tl_ap123_setup(true);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr841n_v8_leds_gpio) - 1,
 				 tl_wr841n_v8_leds_gpio);
@@ -183,7 +206,7 @@ MIPS_MACHINE(ATH79_MACH_TL_WR841N_V8, "TL-WR841N-v8", "TP-LINK TL-WR841N/ND v8",
 
 static void __init tl_wr842n_v2_setup(void)
 {
-	tl_ap123_setup();
+	tl_ap123_setup(true);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr841n_v8_leds_gpio),
 				 tl_wr841n_v8_leds_gpio);
@@ -204,7 +227,7 @@ MIPS_MACHINE(ATH79_MACH_TL_WR842N_V2, "TL-WR842N-v2", "TP-LINK TL-WR842N/ND v2",
 
 static void __init tl_mr3420v2_setup(void)
 {
-	tl_ap123_setup();
+	tl_ap123_setup(true);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr841n_v8_leds_gpio),
 				tl_wr841n_v8_leds_gpio);
@@ -223,3 +246,18 @@ static void __init tl_mr3420v2_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_TL_MR3420_V2, "TL-MR3420-v2", "TP-LINK TL-MR3420 v2",
 	     tl_mr3420v2_setup);
+
+static void __init tl_wa801nd_v2_setup(void)
+{
+	tl_ap123_setup(false);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa801nd_v2_leds_gpio),
+				 tl_wa801nd_v2_leds_gpio);
+
+	ath79_register_gpio_keys_polled(1, TL_WR841NV8_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_mr3420v2_gpio_keys),
+					tl_mr3420v2_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WA801ND_V2, "TL-WA801ND-v2", "TP-LINK TL-WA801ND v2",
+	     tl_wa801nd_v2_setup);
