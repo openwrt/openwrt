@@ -1,7 +1,8 @@
 /*
- *  TP-LINK TL-WA750RE V1 / TP-LINK TL-WA850RE V1 board support
+ *  TP-LINK TL-WA750RE v1/TL-WA801ND v2/TL-WA850RE v1 board support
  *
  *  Copyright (C) 2013 Martijn Zilverschoon <thefriedzombie@gmail.com>
+ *  Copyright (C) 2013 Jiri Pirko <jiri@resnulli.us>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -30,6 +31,9 @@
 #define TL_WAX50RE_GPIO_LED_SIGNAL3	2
 #define TL_WAX50RE_GPIO_LED_SIGNAL4	3
 #define TL_WAX50RE_GPIO_LED_SIGNAL5	4
+
+#define TL_WA801ND_V2_GPIO_LED_LAN	18
+#define TL_WA801ND_V2_GPIO_LED_SYSTEM	14
 
 #define TL_WAX50RE_GPIO_BTN_RESET	17
 #define TL_WAX50RE_GPIO_BTN_WPS		16
@@ -137,6 +141,26 @@ static struct gpio_keys_button tl_wax50re_gpio_keys[] __initdata = {
 	},
 };
 
+static struct gpio_led tl_wa801nd_v2_leds_gpio[] __initdata = {
+	{
+		.name		= "tp-link:green:lan",
+		.gpio		= TL_WA801ND_V2_GPIO_LED_LAN,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:wlan",
+		.gpio		= TL_WAX50RE_GPIO_LED_WLAN,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:qss",
+		.gpio		= TL_WAX50RE_GPIO_LED_RE,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:system",
+		.gpio		= TL_WA801ND_V2_GPIO_LED_SYSTEM,
+		.active_low	= 1,
+	},
+};
+
 static void __init tl_ap123_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
@@ -171,6 +195,20 @@ static void  __init tl_wa750re_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_TL_WA750RE, "TL-WA750RE", "TP-LINK TL-WA750RE",
 	     tl_wa750re_setup);
+
+static void __init tl_wa801nd_v2_setup(void)
+{
+	tl_ap123_setup();
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa801nd_v2_leds_gpio),
+			tl_wa801nd_v2_leds_gpio);
+
+	ath79_register_gpio_keys_polled(-1, TL_WAX50RE_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wax50re_gpio_keys),
+					tl_wax50re_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WA801ND_V2, "TL-WA801ND-v2", "TP-LINK TL-WA801ND v2",
+	     tl_wa801nd_v2_setup);
 
 static void  __init tl_wa850re_setup(void)
 {
