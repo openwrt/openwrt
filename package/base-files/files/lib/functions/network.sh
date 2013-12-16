@@ -174,8 +174,8 @@ __network_parse_ifstatus()
 			fi
 		done
 
-		# parse up state, device and physdev
-		for __field in "up" "l3_device" "device"; do
+		# parse up state, proto, device and physdev
+		for __field in "up" "proto" "l3_device" "device"; do
 			if json_get_type __tmp "$__field"; then
 				__network_set_cache "${__key}_${__field}" "$__field"
 			fi
@@ -380,6 +380,11 @@ network_is_up()
 	local __up
 	__network_device __up "$1" up && [ $__up -eq 1 ]
 }
+
+# determine the protocol of the given logical interface
+# 1: destination variable
+# 2: interface
+network_get_protocol() { __network_device "$1" "$2" proto; }
 
 # determine the layer 3 linux network device of the given logical interface
 # 1: destination variable
