@@ -80,7 +80,8 @@ get_status_led() {
 	mr600v2)
 		status_led="mr600:blue:power"
 		;;
-	mynet-n600)
+	mynet-n600 | \
+	mynet-n750)
 		status_led="wd:blue:power"
 		;;
 	mynet-rext)

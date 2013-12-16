@@ -177,7 +177,8 @@ platform_check_image() {
 		return 1
 		;;
 
-	mynet-n600)
+	mynet-n600 | \
+	mynet-n750)
 		[ "$magic_long" != "5ea3a417" ] && {
 			echo "Invalid image, bad magic: $magic_long"
 			return 1

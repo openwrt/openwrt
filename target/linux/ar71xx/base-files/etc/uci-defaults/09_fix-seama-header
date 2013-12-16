@@ -14,7 +14,8 @@ fix_seama_header() {
 board=$(ar71xx_board_name)
 
 case "$board" in
-mynet-n600)
+mynet-n600 | \
+mynet-n750)
 	fix_seama_header kernel
 	;;
 esac
