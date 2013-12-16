@@ -214,6 +214,12 @@ define Package/hostapd-common
   CATEGORY:=Network
 endef
 
+define Package/hostapd-common-old
+  TITLE:=hostapd/wpa_supplicant common support files (legacy drivers)
+  SECTION:=net
+  CATEGORY:=Network
+endef
+
 ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   define Build/Configure/rebuild
 	$(FIND) $(PKG_BUILD_DIR) -name \*.o -or -name \*.a | $(XARGS) rm -f
@@ -303,20 +309,22 @@ define Build/Compile
 endef
 
 define Install/hostapd
-	$(INSTALL_DIR) $(1)/lib/wifi
-	$(INSTALL_DATA) ./files/hostapd.sh $(1)/lib/wifi/hostapd.sh
 	$(INSTALL_DIR) $(1)/usr/sbin
 endef
 
 define Install/supplicant
-	$(INSTALL_DIR) $(1)/lib/wifi
-	$(INSTALL_DATA) ./files/wpa_supplicant.sh $(1)/lib/wifi/wpa_supplicant.sh
 	$(INSTALL_DIR) $(1)/usr/sbin
 endef
 
 define Package/hostapd-common/install
 	$(INSTALL_DIR) $(1)/lib/netifd
 	$(INSTALL_DATA) ./files/netifd.sh $(1)/lib/netifd/hostapd.sh
+endef
+
+define Package/hostapd-common-old/install
+	$(INSTALL_DIR) $(1)/lib/wifi
+	$(INSTALL_DATA) ./files/hostapd.sh $(1)/lib/wifi/hostapd.sh
+	$(INSTALL_DATA) ./files/wpa_supplicant.sh $(1)/lib/wifi/wpa_supplicant.sh
 endef
 
 define Package/hostapd/install
@@ -366,3 +374,4 @@ $(eval $(call BuildPackage,wpa-supplicant-p2p))
 $(eval $(call BuildPackage,wpa-cli))
 $(eval $(call BuildPackage,hostapd-utils))
 $(eval $(call BuildPackage,hostapd-common))
+$(eval $(call BuildPackage,hostapd-common-old))
