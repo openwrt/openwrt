@@ -321,6 +321,9 @@ ar71xx_board_detect() {
 	*"My Net N600")
 		name="mynet-n600"
 		;;
+	*"My Net N750")
+		name="mynet-n750"
+		;;
 	*"WD My Net Wi-Fi Range Extender")
 		name="mynet-rext"
 		;;
