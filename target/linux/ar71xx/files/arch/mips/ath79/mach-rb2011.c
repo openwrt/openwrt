@@ -24,6 +24,7 @@
 #include <linux/routerboot.h>
 #include <linux/gpio.h>
 
+#include <asm/prom.h>
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h>
 
@@ -237,10 +238,15 @@ static void __init rb2011_sfp_init(void)
 static int __init rb2011_setup(u32 flags)
 {
 	const struct rb_info *info;
+	char buf[64];
 
 	info = rb_init_info((void *) KSEG1ADDR(0x1f000000), 0x10000);
 	if (!info)
 		return -ENODEV;
+
+	scnprintf(buf, sizeof(buf), "Mikrotik RouterBOARD %s",
+		  (info->board_name) ? info->board_name : "");
+	mips_set_machine_name(buf);
 
 	rb2011_init_partitions(info);
 
@@ -290,16 +296,14 @@ static void __init rb2011l_setup(void)
 	rb2011_setup(0);
 }
 
-MIPS_MACHINE(ATH79_MACH_RB_2011L, "2011L", "MikroTik RouterBOARD 2011L",
-	     rb2011l_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_2011L, "2011L", rb2011l_setup);
 
 static void __init rb2011us_setup(void)
 {
 	rb2011_setup(RB2011_FLAG_SFP | RB2011_FLAG_USB);
 }
 
-MIPS_MACHINE(ATH79_MACH_RB_2011US, "2011US", "MikroTik RouterBOARD 2011UAS",
-	     rb2011us_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_2011US, "2011US", rb2011us_setup);
 
 static void __init rb2011g_setup(void)
 {
@@ -308,5 +312,4 @@ static void __init rb2011g_setup(void)
 		     RB2011_FLAG_WLAN);
 }
 
-MIPS_MACHINE(ATH79_MACH_RB_2011G, "2011G", "MikroTik RouterBOARD 2011UAS-2HnD",
-	     rb2011g_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_2011G, "2011G", rb2011g_setup);
