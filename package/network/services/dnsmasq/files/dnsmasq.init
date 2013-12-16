@@ -338,22 +338,21 @@ dhcp_add() {
 	config_get networkid "$cfg" networkid
 	[ -n "$networkid" ] || networkid="$net"
 
-	config_get ifname "$net" ifname
-	[ -n "$ifname" ] || return 0
+	network_get_subnet subnet "$net" || return 0
+	network_get_device ifname "$net" || return 0
+	network_get_protocol proto "$net" || return 0
 
-	config_get dnsserver "$net" dns
-	[ "$cachelocal" = "0" -a -n "$dnsserver" ] && {
+	[ "$cachelocal" = "0" ] && network_get_dnsserver dnsserver "$net" && {
 		DNS_SERVERS="$DNS_SERVERS $dnsserver"
 	}
 
 	append_bool "$cfg" ignore "--no-dhcp-interface=$ifname" && return 0
 
-	config_get proto "$net" proto
+	# Do not support non-static interfaces for now
 	[ static = "$proto" ] || return 0
 
-	config_get ipaddr "$net" ipaddr
-	config_get netmask "$cfg" netmask
-	[ -n "$netmask" ] || config_get netmask "$net" netmask
+	# Override interface netmask with dhcp config if applicable
+	config_get netmask "$cfg" netmask "${subnet##*/}"
 
 	#check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
@@ -376,7 +375,7 @@ dhcp_add() {
 	start="$(dhcp_calc "${start:-100}")"
 	limit="${limit:-150}"
 	[ "$limit" -gt 0 ] && limit=$((limit-1))
-	eval "$(ipcalc.sh $ipaddr $netmask $start $limit)"
+	eval "$(ipcalc.sh "${subnet%%/*}" $netmask $start $limit)"
 	if [ "$dynamicdhcp" = "0" ]; then END="static"; fi
 	xappend "--dhcp-range=$networkid,$START,$END,$NETMASK,$leasetime${options:+ $options}"
 
@@ -494,11 +493,7 @@ service_triggers()
 }
 
 start_service() {
-	include /lib/network
-	scan_interfaces
-
-	local lanaddr
-	config_get lanaddr "lan" ipaddr
+	include /lib/functions
 
 	config_load dhcp
 
@@ -532,7 +527,8 @@ start_service() {
 	config_foreach dhcp_hostrecord_add hostrecord
 
 	# add own hostname
-	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && [ -n "$lanaddr" ] && {
+	local lanaddr
+	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && network_get_ipaddr lanaddr "lan" && {
 		local hostname="$(uci_get system @system[0] hostname OpenWrt)"
 		dhcp_hostrecord_add "" "${hostname%.$DOMAIN}${DOMAIN:+.$DOMAIN ${hostname%.$DOMAIN}}" "$lanaddr"
 	}
