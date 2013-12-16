@@ -17,17 +17,13 @@ PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
 PKG_MD5SUM:=9c0cae5a0379228e7b55e5b29528df8e
 
-PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_FEATURE_HAVE_RPC:librpc
+PKG_CONFIG_DEPENDS:=CONFIG_BUSYBOX_ENABLE_NFS_MOUNT
 PKG_BUILD_PARALLEL:=1
 
 PKG_LICENSE:=GPLv2 BSD-4c
 PKG_LICENSE_FILES:=LICENSE archival/libarchive/bz/LICENSE
 
 include $(INCLUDE_DIR)/package.mk
-
-ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell $(SH_FUNC) grep '^CONFIG_BUSYBOX_' $(TOPDIR)/.config | md5s)
-endif
 
 ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
   BB_MAKE_VERBOSE := V=1
@@ -46,7 +42,7 @@ define Package/busybox
   MAINTAINER:=Nicolas Thill <nico@openwrt.org>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
-  DEPENDS:=+BUSYBOX_CONFIG_FEATURE_HAVE_RPC:librpc
+  DEPENDS:=+BUSYBOX_ENABLE_NFS_MOUNT:librpc
   MENU:=1
 endef
 
@@ -59,9 +55,18 @@ define Package/busybox/config
 	source "$(SOURCE)/Config.in"
 endef
 
+CONFIG_TEMPLATE:=./config/default
+
+LDLIBS:=m crypt
+ifdef CONFIG_BUSYBOX_ENABLE_NFS_MOUNT
+  TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
+  export LDFLAGS=$(TARGET_LDFLAGS)
+  LDLIBS += rpc
+  CONFIG_TEMPLATE:=+ $(CONFIG_TEMPLATE) ./config/nfsmount
+endif
+
 define Build/Configure
-	rm -f $(PKG_BUILD_DIR)/.configured*
-	grep 'CONFIG_BUSYBOX_' $(TOPDIR)/.config | sed -e "s,\\(# \)\\?CONFIG_BUSYBOX_\\(.*\\),\\1\\2,g" > $(PKG_BUILD_DIR)/.config
+	$(SCRIPT_DIR)/kconfig.pl $(CONFIG_TEMPLATE) > $(PKG_BUILD_DIR)/.config
 	yes 'n' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -73,13 +78,6 @@ endef
 
 ifdef CONFIG_GCC_VERSION_LLVM
   TARGET_CFLAGS += -fnested-functions
-endif
-
-LDLIBS:=m crypt
-ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_HAVE_RPC
-  TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
-  export LDFLAGS=$(TARGET_LDFLAGS)
-  LDLIBS += rpc
 endif
 
 define Build/Compile

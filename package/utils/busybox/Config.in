@@ -1,6 +1,6 @@
-
 if PACKAGE_busybox
 
-source "package/utils/busybox/config/Config.in"
+config BUSYBOX_ENABLE_NFS_MOUNT
+	bool "Enable NFS mount support
 
 endif
