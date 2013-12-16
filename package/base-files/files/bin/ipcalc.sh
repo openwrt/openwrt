@@ -31,7 +31,11 @@ BEGIN {
 	slpos=index(ARGV[1],"/")
 	if (slpos == 0) {
 		ipaddr=ip2int(ARGV[1])
-		netmask=ip2int(ARGV[2])
+		dotpos=index(ARGV[2],".")
+		if (dotpos == 0)
+			netmask=compl32(2**(32-int(ARGV[2]))-1)
+		else
+			netmask=ip2int(ARGV[2])
 	} else {
 		ipaddr=ip2int(substr(ARGV[1],0,slpos-1))
 		netmask=compl32(2**(32-int(substr(ARGV[1],slpos+1)))-1)
