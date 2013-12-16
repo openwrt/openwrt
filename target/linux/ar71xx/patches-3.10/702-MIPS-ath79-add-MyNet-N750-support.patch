@@ -1,0 +1,39 @@
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -56,6 +56,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_MR600V2,		/* OpenMesh MR600v2 */
+ 	ATH79_MACH_MR600,		/* OpenMesh MR600 */
+ 	ATH79_MACH_MYNET_N600,		/* WD My Net N600 */
++	ATH79_MACH_MYNET_N750,		/* WD My Net N750 */
+ 	ATH79_MACH_MYNET_REXT,		/* WD My Net Wi-Fi Range Extender */
+ 	ATH79_MACH_MZK_W04NU,		/* Planex MZK-W04NU */
+ 	ATH79_MACH_MZK_W300NH,		/* Planex MZK-W300NH */
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -820,6 +820,16 @@ config ATH79_MACH_MYNET_N600
+ 	select ATH79_DEV_WMAC
+ 	select ATH79_NVRAM
+ 
++config ATH79_MACH_MYNET_N750
++	bool "WD My Net N750 board support"
++	select SOC_AR934X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++	select ATH79_NVRAM
++
+ config ATH79_MACH_MYNET_REXT
+ 	bool "WD My Net Wi-Fi Range Extender board support"
+ 	select SOC_AR934X
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -67,6 +67,7 @@ obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach
+ obj-$(CONFIG_ATH79_MACH_HORNET_UB)	+= mach-hornet-ub.o
+ obj-$(CONFIG_ATH79_MACH_MR600)		+= mach-mr600.o
+ obj-$(CONFIG_ATH79_MACH_MYNET_N600)	+= mach-mynet-n600.o
++obj-$(CONFIG_ATH79_MACH_MYNET_N750)	+= mach-mynet-n750.o
+ obj-$(CONFIG_ATH79_MACH_MYNET_REXT)	+= mach-mynet-rext.o
+ obj-$(CONFIG_ATH79_MACH_MZK_W04NU)	+= mach-mzk-w04nu.o
+ obj-$(CONFIG_ATH79_MACH_MZK_W300NH)	+= mach-mzk-w300nh.o
