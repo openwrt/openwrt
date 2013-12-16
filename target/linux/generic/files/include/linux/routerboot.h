@@ -40,6 +40,7 @@
 #define RB_ID_HARD_12		12
 #define RB_ID_MEMORY_SIZE	13
 #define RB_ID_MAC_ADDRESS_COUNT	14
+#define RB_ID_HW_OPTIONS	21
 #define RB_ID_WLAN_DATA		22
 
 /*
