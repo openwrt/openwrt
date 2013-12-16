@@ -1,7 +1,7 @@
 /*
  * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
- * Copyright (C) 2002-2010 Aleph One Ltd.
+ * Copyright (C) 2002-2011 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
  * Created by Charles Manning <charles@aleph1.co.uk>
@@ -17,28 +17,23 @@
 #define __YAFFS_NAND_H__
 #include "yaffs_guts.h"
 
+int yaffs_rd_chunk_tags_nand(struct yaffs_dev *dev, int nand_chunk,
+			     u8 *buffer, struct yaffs_ext_tags *tags);
 
+int yaffs_wr_chunk_tags_nand(struct yaffs_dev *dev,
+			     int nand_chunk,
+			     const u8 *buffer, struct yaffs_ext_tags *tags);
 
-int yaffs_rd_chunk_tags_nand(yaffs_dev_t *dev, int nand_chunk,
-					__u8 *buffer,
-					yaffs_ext_tags *tags);
+int yaffs_mark_bad(struct yaffs_dev *dev, int block_no);
 
-int yaffs_wr_chunk_tags_nand(yaffs_dev_t *dev,
-						int nand_chunk,
-						const __u8 *buffer,
-						yaffs_ext_tags *tags);
+int yaffs_query_init_block_state(struct yaffs_dev *dev,
+				 int block_no,
+				 enum yaffs_block_state *state,
+				 unsigned *seq_number);
 
-int yaffs_mark_bad(yaffs_dev_t *dev, int block_no);
+int yaffs_erase_block(struct yaffs_dev *dev, int flash_block);
 
-int yaffs_query_init_block_state(yaffs_dev_t *dev,
-						int block_no,
-						yaffs_block_state_t *state,
-						unsigned *seq_number);
-
-int yaffs_erase_block(struct yaffs_dev_s *dev,
-				  int flash_block);
-
-int yaffs_init_nand(struct yaffs_dev_s *dev);
+int yaffs_init_nand(struct yaffs_dev *dev);
+int yaffs_deinit_nand(struct yaffs_dev *dev);
 
 #endif
-

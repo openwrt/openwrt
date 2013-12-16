@@ -1,23 +1,23 @@
 #
-# YAFFS file system configurations
+# yaffs file system configurations
 #
 
 config YAFFS_FS
-	tristate "YAFFS2 file system support"
+	tristate "yaffs2 file system support"
 	default n
 	depends on MTD_BLOCK
 	select YAFFS_YAFFS1
 	select YAFFS_YAFFS2
 	help
-	  YAFFS2, or Yet Another Flash Filing System, is a filing system
+	  yaffs2, or Yet Another Flash File System, is a file system
 	  optimised for NAND Flash chips.
 
-	  To compile the YAFFS2 file system support as a module, choose M
+	  To compile the yaffs2 file system support as a module, choose M
 	  here: the module will be called yaffs2.
 
 	  If unsure, say N.
 
-	  Further information on YAFFS2 is available at
+	  Further information on yaffs2 is available at
 	  <http://www.aleph1.co.uk/yaffs/>.
 
 config YAFFS_YAFFS1
@@ -25,7 +25,7 @@ config YAFFS_YAFFS1
 	depends on YAFFS_FS
 	default y
 	help
-	  Enable YAFFS1 support -- yaffs for 512 byte / page devices
+	  Enable yaffs1 support -- yaffs for 512 byte / page devices
 
 	  Not needed for 2K-page devices.
 
@@ -49,11 +49,11 @@ config YAFFS_9BYTE_TAGS
 	  If unsure, say N.
 
 config YAFFS_DOES_ECC
-	bool "Lets Yaffs do its own ECC"
+	bool "Lets yaffs do its own ECC"
 	depends on YAFFS_FS && YAFFS_YAFFS1 && !YAFFS_9BYTE_TAGS
 	default n
 	help
-	  This enables Yaffs to use its own ECC functions instead of using
+	  This enables yaffs to use its own ECC functions instead of using
 	  the ones from the generic MTD-NAND driver.
 
 	  If unsure, say N.
@@ -74,7 +74,7 @@ config YAFFS_YAFFS2
 	depends on YAFFS_FS
 	default y
 	help
-	  Enable YAFFS2 support -- yaffs for >= 2K bytes per page devices
+	  Enable yaffs2 support -- yaffs for >= 2K bytes per page devices
 
 	  If unsure, say Y.
 
@@ -91,30 +91,14 @@ config YAFFS_AUTO_YAFFS2
 	  If unsure, say Y.
 
 config YAFFS_DISABLE_TAGS_ECC
-	bool "Disable YAFFS from doing ECC on tags by default"
+	bool "Disable yaffs from doing ECC on tags by default"
 	depends on YAFFS_FS && YAFFS_YAFFS2
 	default n
 	help
-	  This defaults Yaffs to using its own ECC calculations on tags instead of
+	  This defaults yaffs to using its own ECC calculations on tags instead of
 	  just relying on the MTD.
 	  This behavior can also be overridden with tags_ecc_on and
 	  tags_ecc_off mount options.
-
-	  If unsure, say N.
-
-
-config YAFFS_DISABLE_WIDE_TNODES
-	bool "Turn off wide tnodes"
-	depends on YAFFS_FS
-	default n
-	help
-	  Wide tnodes are only used for NAND arrays >=32MB for 512-byte
-	  page devices and >=128MB for 2k page devices. They use slightly
-	  more RAM but are faster since they eliminate chunk group
-	  searching.
-
-	  Setting this to 'y' will force tnode width to 16 bits and save
-	  memory but make large arrays slower.
 
 	  If unsure, say N.
 
@@ -123,7 +107,7 @@ config YAFFS_ALWAYS_CHECK_CHUNK_ERASED
 	depends on YAFFS_FS
 	default n
 	help
-          Normally YAFFS only checks chunks before writing until an erased
+          Normally yaffs only checks chunks before writing until an erased
 	  chunk is found. This helps to detect any partially written
 	  chunks that might have happened due to power loss.
 
@@ -133,17 +117,6 @@ config YAFFS_ALWAYS_CHECK_CHUNK_ERASED
 
 	  Suggest setting Y during development and ironing out driver
 	  issues etc. Suggest setting to N if you want faster writing.
-
-	  If unsure, say Y.
-
-config YAFFS_SHORT_NAMES_IN_RAM
-	bool "Cache short names in RAM"
-	depends on YAFFS_FS
-	default y
-	help
-	  If this config is set, then short names are stored with the
-	  yaffs_Object.  This costs an extra 16 bytes of RAM per object,
-	  but makes look-ups faster.
 
 	  If unsure, say Y.
 
@@ -177,7 +150,17 @@ config YAFFS_DISABLE_BACKGROUND
 	 If this is set, then background processing is disabled.
 	 Background processing makes many foreground activities faster.
 
-	  If unsure, say N.
+	 If unsure, say N.
+
+config YAFFS_DISABLE_BAD_BLOCK_MARKING
+	bool "Disable yaffs2 bad block marking"
+	depends on YAFFS_FS
+	default n
+	help
+	 Useful during early flash bring up to prevent problems causing
+	 lots of bad block marking.
+
+	 If unsure, say N.
 
 config YAFFS_XATTR
 	bool "Enable yaffs2 xattr support"
@@ -186,5 +169,3 @@ config YAFFS_XATTR
 	help
 	 If this is set then yaffs2 will provide xattr support.
 	 If unsure, say Y.
-
-
