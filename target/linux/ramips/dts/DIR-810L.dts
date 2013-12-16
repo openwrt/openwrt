@@ -71,7 +71,7 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "jtag", "mdio", "rgmii1", "rgmii1", "i2c", "wled", "uartf";
+				ralink,group = "mdio", "rgmii1", "i2c", "wled", "uartf";
 				ralink,function = "gpio";
 			};
 		};
@@ -79,6 +79,7 @@
 
 	ethernet@10100000 {
 		mtd-mac-address = <&factory 0x28>;
+		ralink,port-map = "llllw";
 	};
 
 	gsw@10110000 {
