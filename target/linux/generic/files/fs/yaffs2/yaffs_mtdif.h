@@ -1,7 +1,7 @@
 /*
  * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
- * Copyright (C) 2002-2010 Aleph One Ltd.
+ * Copyright (C) 2002-2011 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
  * Created by Charles Manning <charles@aleph1.co.uk>
@@ -18,10 +18,8 @@
 
 #include "yaffs_guts.h"
 
-#if (MTD_VERSION_CODE < MTD_VERSION(2, 6, 18))
-extern struct nand_oobinfo yaffs_oobinfo;
-extern struct nand_oobinfo yaffs_noeccinfo;
-#endif
-int nandmtd_EraseBlockInNAND(yaffs_dev_t *dev, int blockNumber);
-int nandmtd_InitialiseNAND(yaffs_dev_t *dev);
+void yaffs_mtd_drv_install(struct yaffs_dev *dev);
+struct mtd_info * yaffs_get_mtd_device(dev_t sdev);
+void yaffs_put_mtd_device(struct mtd_info *mtd);
+int yaffs_verify_mtd(struct mtd_info *mtd, int yaffs_version, int inband_tags);
 #endif

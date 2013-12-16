@@ -1,7 +1,7 @@
 /*
  * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
  *
- * Copyright (C) 2002-2010 Aleph One Ltd.
+ * Copyright (C) 2002-2011 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
  * Created by Charles Manning <charles@aleph1.co.uk>
@@ -21,23 +21,27 @@
 #include "yaffs_guts.h"
 #include "yaffs_ecc.h"
 
-typedef struct {
+struct yaffs_packed_tags2_tags_only {
 	unsigned seq_number;
 	unsigned obj_id;
 	unsigned chunk_id;
 	unsigned n_bytes;
-} yaffs_PackedTags2TagsPart;
+};
 
-typedef struct {
-	yaffs_PackedTags2TagsPart t;
-	yaffs_ECCOther ecc;
-} yaffs_PackedTags2;
+struct yaffs_packed_tags2 {
+	struct yaffs_packed_tags2_tags_only t;
+	struct yaffs_ecc_other ecc;
+};
 
 /* Full packed tags with ECC, used for oob tags */
-void yaffs_PackTags2(yaffs_PackedTags2 *pt, const yaffs_ext_tags *t, int tagsECC);
-void yaffs_unpack_tags2(yaffs_ext_tags *t, yaffs_PackedTags2 *pt, int tagsECC);
+void yaffs_pack_tags2(struct yaffs_packed_tags2 *pt,
+		      const struct yaffs_ext_tags *t, int tags_ecc);
+void yaffs_unpack_tags2(struct yaffs_ext_tags *t, struct yaffs_packed_tags2 *pt,
+			int tags_ecc);
 
 /* Only the tags part (no ECC for use with inband tags */
-void yaffs_PackTags2TagsPart(yaffs_PackedTags2TagsPart *pt, const yaffs_ext_tags *t);
-void yaffs_unpack_tags2tags_part(yaffs_ext_tags *t, yaffs_PackedTags2TagsPart *pt);
+void yaffs_pack_tags2_tags_only(struct yaffs_packed_tags2_tags_only *pt,
+				const struct yaffs_ext_tags *t);
+void yaffs_unpack_tags2_tags_only(struct yaffs_ext_tags *t,
+				  struct yaffs_packed_tags2_tags_only *pt);
 #endif

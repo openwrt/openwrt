@@ -1,7 +1,7 @@
 /*
  * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
  *
- * Copyright (C) 2002-2010 Aleph One Ltd.
+ * Copyright (C) 2002-2011 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
  * Created by Charles Manning <charles@aleph1.co.uk>
@@ -17,89 +17,81 @@
  * Chunk bitmap manipulations
  */
 
-static Y_INLINE __u8 *yaffs_BlockBits(yaffs_dev_t *dev, int blk)
+static inline u8 *yaffs_block_bits(struct yaffs_dev *dev, int blk)
 {
 	if (blk < dev->internal_start_block || blk > dev->internal_end_block) {
-		T(YAFFS_TRACE_ERROR,
-			(TSTR("**>> yaffs: BlockBits block %d is not valid" TENDSTR),
-			blk));
-		YBUG();
+		yaffs_trace(YAFFS_TRACE_ERROR,
+			"BlockBits block %d is not valid",
+			blk);
+		BUG();
 	}
 	return dev->chunk_bits +
-		(dev->chunk_bit_stride * (blk - dev->internal_start_block));
+	    (dev->chunk_bit_stride * (blk - dev->internal_start_block));
 }
 
-void yaffs_verify_chunk_bit_id(yaffs_dev_t *dev, int blk, int chunk)
+void yaffs_verify_chunk_bit_id(struct yaffs_dev *dev, int blk, int chunk)
 {
 	if (blk < dev->internal_start_block || blk > dev->internal_end_block ||
-			chunk < 0 || chunk >= dev->param.chunks_per_block) {
-		T(YAFFS_TRACE_ERROR,
-		(TSTR("**>> yaffs: Chunk Id (%d:%d) invalid"TENDSTR),
-			blk, chunk));
-		YBUG();
+	    chunk < 0 || chunk >= dev->param.chunks_per_block) {
+		yaffs_trace(YAFFS_TRACE_ERROR,
+			"Chunk Id (%d:%d) invalid",
+			blk, chunk);
+		BUG();
 	}
 }
 
-void yaffs_clear_chunk_bits(yaffs_dev_t *dev, int blk)
+void yaffs_clear_chunk_bits(struct yaffs_dev *dev, int blk)
 {
-	__u8 *blkBits = yaffs_BlockBits(dev, blk);
+	u8 *blk_bits = yaffs_block_bits(dev, blk);
 
-	memset(blkBits, 0, dev->chunk_bit_stride);
+	memset(blk_bits, 0, dev->chunk_bit_stride);
 }
 
-void yaffs_clear_chunk_bit(yaffs_dev_t *dev, int blk, int chunk)
+void yaffs_clear_chunk_bit(struct yaffs_dev *dev, int blk, int chunk)
 {
-	__u8 *blkBits = yaffs_BlockBits(dev, blk);
+	u8 *blk_bits = yaffs_block_bits(dev, blk);
 
 	yaffs_verify_chunk_bit_id(dev, blk, chunk);
-
-	blkBits[chunk / 8] &= ~(1 << (chunk & 7));
+	blk_bits[chunk / 8] &= ~(1 << (chunk & 7));
 }
 
-void yaffs_set_chunk_bit(yaffs_dev_t *dev, int blk, int chunk)
+void yaffs_set_chunk_bit(struct yaffs_dev *dev, int blk, int chunk)
 {
-	__u8 *blkBits = yaffs_BlockBits(dev, blk);
+	u8 *blk_bits = yaffs_block_bits(dev, blk);
 
 	yaffs_verify_chunk_bit_id(dev, blk, chunk);
-
-	blkBits[chunk / 8] |= (1 << (chunk & 7));
+	blk_bits[chunk / 8] |= (1 << (chunk & 7));
 }
 
-int yaffs_check_chunk_bit(yaffs_dev_t *dev, int blk, int chunk)
+int yaffs_check_chunk_bit(struct yaffs_dev *dev, int blk, int chunk)
 {
-	__u8 *blkBits = yaffs_BlockBits(dev, blk);
+	u8 *blk_bits = yaffs_block_bits(dev, blk);
+
 	yaffs_verify_chunk_bit_id(dev, blk, chunk);
-
-	return (blkBits[chunk / 8] & (1 << (chunk & 7))) ? 1 : 0;
+	return (blk_bits[chunk / 8] & (1 << (chunk & 7))) ? 1 : 0;
 }
 
-int yaffs_still_some_chunks(yaffs_dev_t *dev, int blk)
+int yaffs_still_some_chunks(struct yaffs_dev *dev, int blk)
 {
-	__u8 *blkBits = yaffs_BlockBits(dev, blk);
+	u8 *blk_bits = yaffs_block_bits(dev, blk);
 	int i;
+
 	for (i = 0; i < dev->chunk_bit_stride; i++) {
-		if (*blkBits)
+		if (*blk_bits)
 			return 1;
-		blkBits++;
+		blk_bits++;
 	}
 	return 0;
 }
 
-int yaffs_count_chunk_bits(yaffs_dev_t *dev, int blk)
+int yaffs_count_chunk_bits(struct yaffs_dev *dev, int blk)
 {
-	__u8 *blkBits = yaffs_BlockBits(dev, blk);
+	u8 *blk_bits = yaffs_block_bits(dev, blk);
 	int i;
 	int n = 0;
-	for (i = 0; i < dev->chunk_bit_stride; i++) {
-		__u8 x = *blkBits;
-		while (x) {
-			if (x & 1)
-				n++;
-			x >>= 1;
-		}
 
-		blkBits++;
-	}
+	for (i = 0; i < dev->chunk_bit_stride; i++, blk_bits++)
+		n += hweight8(*blk_bits);
+
 	return n;
 }
-
