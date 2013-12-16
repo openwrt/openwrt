@@ -34,7 +34,7 @@ endef
 define KernelPackage/hostap
 $(call KernelPackage/hostap/Default)
   TITLE:=Host AP support for Prism2/2.5/3
-  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-lib80211 +wireless-tools
+  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-lib80211 +wireless-tools +hostapd-common-old
   KCONFIG:=CONFIG_HOSTAP CONFIG_HOSTAP_FIRMWARE=y CONFIG_HOSTAP_FIRMWARE_NVRAM=y
   FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap.ko
   AUTOLOAD:=$(call AutoProbe,hostap)
