@@ -49,6 +49,10 @@
 
 #define RB_ART_SIZE		0x10000
 
+#define RB2011_FLAG_SFP		BIT(0)
+#define RB2011_FLAG_USB		BIT(1)
+#define RB2011_FLAG_WLAN	BIT(2)
+
 static struct mtd_partition rb2011_spi_partitions[] = {
 	{
 		.name		= "routerboot",
@@ -230,7 +234,7 @@ static void __init rb2011_sfp_init(void)
 	rb2011_ar8327_data.get_port_link = rb2011_get_port_link;
 }
 
-static int __init rb2011_setup(void)
+static int __init rb2011_setup(u32 flags)
 {
 	const struct rb_info *info;
 
@@ -269,26 +273,29 @@ static int __init rb2011_setup(void)
 
 	ath79_register_eth(1);
 
+	if (flags & RB2011_FLAG_SFP)
+		rb2011_sfp_init();
+
+	if (flags & RB2011_FLAG_WLAN)
+		rb2011_wlan_init();
+
+	if (flags & RB2011_FLAG_USB)
+		ath79_register_usb();
+
 	return 0;
 }
 
 static void __init rb2011l_setup(void)
 {
-	rb2011_setup();
+	rb2011_setup(0);
 }
-
 
 MIPS_MACHINE(ATH79_MACH_RB_2011L, "2011L", "MikroTik RouterBOARD 2011L",
 	     rb2011l_setup);
 
 static void __init rb2011us_setup(void)
 {
-	if (rb2011_setup())
-		return;
-
-	rb2011_sfp_init();
-
-	ath79_register_usb();
+	rb2011_setup(RB2011_FLAG_SFP | RB2011_FLAG_USB);
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_2011US, "2011US", "MikroTik RouterBOARD 2011UAS",
@@ -296,13 +303,9 @@ MIPS_MACHINE(ATH79_MACH_RB_2011US, "2011US", "MikroTik RouterBOARD 2011UAS",
 
 static void __init rb2011g_setup(void)
 {
-	if (rb2011_setup())
-		return;
-
-	rb2011_sfp_init();
-	rb2011_wlan_init();
-
-	ath79_register_usb();
+	rb2011_setup(RB2011_FLAG_SFP |
+		     RB2011_FLAG_USB |
+		     RB2011_FLAG_WLAN);
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_2011G, "2011G", "MikroTik RouterBOARD 2011UAS-2HnD",
