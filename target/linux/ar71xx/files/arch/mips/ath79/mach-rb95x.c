@@ -170,6 +170,8 @@ static int rb95x_nand_scan_fixup(struct mtd_info *mtd)
 
 void __init rb95x_nand_init(void)
 {
+	gpio_request_one(RB95X_GPIO_NAND_NCE, GPIOF_OUT_INIT_HIGH, "NAND nCE");
+
 	ath79_nfc_set_scan_fixup(rb95x_nand_scan_fixup);
 	ath79_nfc_set_parts(rb95x_nand_partitions,
 			    ARRAY_SIZE(rb95x_nand_partitions));
@@ -178,14 +180,8 @@ void __init rb95x_nand_init(void)
 	ath79_register_nfc();
 }
 
-void __init rb95x_gpio_init(void)
-{
-	gpio_request_one(RB95X_GPIO_NAND_NCE, GPIOF_OUT_INIT_HIGH, "NAND nCE");
-}
-
 static void __init rb95x_setup(void)
 {
-	rb95x_gpio_init();
 	rb95x_nand_init();
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
