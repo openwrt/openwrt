@@ -65,6 +65,12 @@ ifdef CONFIG_BUSYBOX_ENABLE_NFS_MOUNT
   CONFIG_TEMPLATE:=+ $(CONFIG_TEMPLATE) ./config/nfsmount
 endif
 
+ENV_CONFIG:=$(wildcard $(TOPDIR)/env/busybox-config)
+ifneq ($(ENV_CONFIG),)
+  CONFIG_TEMPLATE:=+ $(CONFIG_TEMPLATE) $(ENV_CONFIG)
+  STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(shell $(SH_FUNC) md5s < $(ENV_CONFIG))
+endif
+
 define Build/Configure
 	$(SCRIPT_DIR)/kconfig.pl $(CONFIG_TEMPLATE) > $(PKG_BUILD_DIR)/.config
 	yes 'n' | $(MAKE) -C $(PKG_BUILD_DIR) \
