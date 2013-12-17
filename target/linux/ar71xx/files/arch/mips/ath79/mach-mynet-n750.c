@@ -107,10 +107,10 @@ static struct ar8327_pad_cfg mynet_n750_ar8327_pad0_cfg = {
 };
 
 static struct ar8327_led_cfg mynet_n750_ar8327_led_cfg = {
-	.led_ctrl0 = 0xc737c737,
-	.led_ctrl1 = 0x00000000,
-	.led_ctrl2 = 0x00000000,
-	.led_ctrl3 = 0x0030c300,
+	.led_ctrl0 = 0xcc35cc35,
+	.led_ctrl1 = 0xca35ca35,
+	.led_ctrl2 = 0xc935c935,
+	.led_ctrl3 = 0x03ffff00,
 	.open_drain = false,
 };
 
