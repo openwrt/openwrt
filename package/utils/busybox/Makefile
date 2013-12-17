@@ -31,11 +31,6 @@ else
   BB_MAKE_VERBOSE :=
 endif
 
-init-y :=
-init-$(CONFIG_BUSYBOX_CONFIG_CROND) += cron
-init-$(CONFIG_BUSYBOX_CONFIG_NTPD) += sysntpd
-init-$(CONFIG_BUSYBOX_CONFIG_TELNETD) += telnet
-
 define Package/busybox
   SECTION:=base
   CATEGORY:=Base system
@@ -113,9 +108,9 @@ endef
 define Package/busybox/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
-	for tmp in $(init-y); do \
-		$(INSTALL_BIN) ./files/$$$$tmp $(1)/etc/init.d/$$$$tmp; \
-	done
+	$(INSTALL_BIN) ./files/cron $(1)/etc/init.d/cron
+	$(INSTALL_BIN) ./files/telnet $(1)/etc/init.d/telnet
+	$(INSTALL_BIN) ./files/sysntpd $(1)/etc/init.d/sysntpd
 	-rm -rf $(1)/lib64
 endef
 
