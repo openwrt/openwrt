@@ -181,6 +181,9 @@ static int ag71xx_mdio_reset(struct mii_bus *bus)
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CFG, t);
 	udelay(100);
 
+	if (am->pdata->reset)
+		am->pdata->reset(bus);
+
 	return 0;
 }
 
