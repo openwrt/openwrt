@@ -609,7 +609,7 @@ static int ag71xx_open(struct net_device *dev)
 	struct ag71xx *ag = netdev_priv(dev);
 	int ret;
 
-	ag->rx_buf_size = AG71XX_RX_PKT_SIZE + NET_SKB_PAD + NET_IP_ALIGN;
+	ag->rx_buf_size = ag->max_frame_len + NET_SKB_PAD + NET_IP_ALIGN;
 
 	ret = ag71xx_rings_init(ag);
 	if (ret)
