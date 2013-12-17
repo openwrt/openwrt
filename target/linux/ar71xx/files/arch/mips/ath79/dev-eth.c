@@ -39,7 +39,7 @@ static struct resource ath79_mdio0_resources[] = {
 	}
 };
 
-static struct ag71xx_mdio_platform_data ath79_mdio0_data;
+struct ag71xx_mdio_platform_data ath79_mdio0_data;
 
 struct platform_device ath79_mdio0_device = {
 	.name		= "ag71xx-mdio",
@@ -60,7 +60,7 @@ static struct resource ath79_mdio1_resources[] = {
 	}
 };
 
-static struct ag71xx_mdio_platform_data ath79_mdio1_data;
+struct ag71xx_mdio_platform_data ath79_mdio1_data;
 
 struct platform_device ath79_mdio1_device = {
 	.name		= "ag71xx-mdio",

@@ -39,6 +39,8 @@ void ath79_register_eth(unsigned int id);
 
 extern struct ag71xx_switch_platform_data ath79_switch_data;
 
+extern struct ag71xx_mdio_platform_data ath79_mdio0_data;
+extern struct ag71xx_mdio_platform_data ath79_mdio1_data;
 extern struct platform_device ath79_mdio0_device;
 extern struct platform_device ath79_mdio1_device;
 void ath79_register_mdio(unsigned int id, u32 phy_mask);
