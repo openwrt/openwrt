@@ -485,6 +485,23 @@ endef
 $(eval $(call KernelPackage,pwm-gpio))
 
 
+define KernelPackage/rtc-ds1672
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Dallas/Maxim DS1672 RTC support
+  $(call AddDepends/rtc)
+  DEPENDS+=+kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_DS1672
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1672.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-ds1672)
+endef
+
+define KernelPackage/rtc-ds1672/description
+ Kernel module for Dallas/Maxim DS1672 RTC.
+endef
+
+$(eval $(call KernelPackage,rtc-ds1672))
+
+
 define KernelPackage/rtc-isl1208
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intersil ISL1208 RTC support
