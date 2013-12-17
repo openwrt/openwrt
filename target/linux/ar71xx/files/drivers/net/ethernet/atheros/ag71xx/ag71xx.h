@@ -53,7 +53,6 @@
 #define AG71XX_TX_MTU_LEN	1540
 #define AG71XX_RX_PKT_SIZE	\
 	(ETH_FRAME_LEN + ETH_FCS_LEN + VLAN_HLEN)
-#define AG71XX_RX_BUF_SIZE (AG71XX_RX_PKT_SIZE + NET_SKB_PAD + NET_IP_ALIGN)
 
 #define AG71XX_TX_RING_SIZE_DEFAULT	32
 #define AG71XX_RX_RING_SIZE_DEFAULT	128
@@ -169,6 +168,7 @@ struct ag71xx {
 	int			duplex;
 
 	unsigned int		max_frame_len;
+	unsigned int		rx_buf_size;
 
 	struct work_struct	restart_work;
 	struct delayed_work	link_work;

@@ -191,7 +191,7 @@ static void ag71xx_ring_rx_clean(struct ag71xx *ag)
 	for (i = 0; i < ring->size; i++)
 		if (ring->buf[i].rx_buf) {
 			dma_unmap_single(&ag->dev->dev, ring->buf[i].dma_addr,
-					 AG71XX_RX_BUF_SIZE, DMA_FROM_DEVICE);
+					 ag->rx_buf_size, DMA_FROM_DEVICE);
 			kfree(ring->buf[i].rx_buf);
 		}
 }
@@ -217,15 +217,15 @@ static bool ag71xx_fill_rx_buf(struct ag71xx *ag, struct ag71xx_buf *buf,
 {
 	void *data;
 
-	data = kmalloc(AG71XX_RX_BUF_SIZE +
+	data = kmalloc(ag->rx_buf_size +
 		       SKB_DATA_ALIGN(sizeof(struct skb_shared_info)),
 		       GFP_ATOMIC);
 	if (!data)
 		return false;
 
 	buf->rx_buf = data;
-	buf->dma_addr = dma_map_single(&ag->dev->dev, data,
-				       AG71XX_RX_BUF_SIZE, DMA_FROM_DEVICE);
+	buf->dma_addr = dma_map_single(&ag->dev->dev, data, ag->rx_buf_size,
+				       DMA_FROM_DEVICE);
 	buf->desc->data = (u32) buf->dma_addr + offset;
 	return true;
 }
@@ -609,6 +609,8 @@ static int ag71xx_open(struct net_device *dev)
 	struct ag71xx *ag = netdev_priv(dev);
 	int ret;
 
+	ag->rx_buf_size = AG71XX_RX_PKT_SIZE + NET_SKB_PAD + NET_IP_ALIGN;
+
 	ret = ag71xx_rings_init(ag);
 	if (ret)
 		goto err;
@@ -890,7 +892,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		pktlen -= ETH_FCS_LEN;
 
 		dma_unmap_single(&dev->dev, ring->buf[i].dma_addr,
-				 AG71XX_RX_BUF_SIZE, DMA_FROM_DEVICE);
+				 ag->rx_buf_size, DMA_FROM_DEVICE);
 
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += pktlen;
