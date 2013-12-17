@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
 PKG_MD5SUM:=9c0cae5a0379228e7b55e5b29528df8e
 
-PKG_CONFIG_DEPENDS:=CONFIG_BUSYBOX_ENABLE_NFS_MOUNT
+PKG_CONFIG_DEPENDS:=CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
 PKG_BUILD_PARALLEL:=1
 
 PKG_LICENSE:=GPLv2 BSD-4c
@@ -53,12 +53,13 @@ endef
 CONFIG_TEMPLATE:=./config/default
 
 LDLIBS:=m crypt
-ifdef CONFIG_BUSYBOX_ENABLE_NFS_MOUNT
+ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
   TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
   export LDFLAGS=$(TARGET_LDFLAGS)
   LDLIBS += rpc
-  CONFIG_TEMPLATE:=+ $(CONFIG_TEMPLATE) ./config/nfsmount
 endif
+
+CONFIG_TEMPLATE:=+ $(CONFIG_TEMPLATE) $(PKG_BUILD_DIR)/.config.build
 
 ENV_CONFIG:=$(wildcard $(TOPDIR)/env/busybox-config)
 ifneq ($(ENV_CONFIG),)
@@ -67,6 +68,8 @@ ifneq ($(ENV_CONFIG),)
 endif
 
 define Build/Configure
+	grep -E '^(# )?CONFIG_BUSYBOX_CONFIG_' $(TOPDIR)/.config | \
+		sed -e 's,CONFIG_BUSYBOX_CONFIG_,CONFIG_,' > $(PKG_BUILD_DIR)/.config.build
 	$(SCRIPT_DIR)/kconfig.pl $(CONFIG_TEMPLATE) > $(PKG_BUILD_DIR)/.config
 	yes 'n' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
