@@ -244,10 +244,14 @@ void ag71xx_debugfs_exit(struct ag71xx *ag)
 
 int ag71xx_debugfs_init(struct ag71xx *ag)
 {
-	ag->debug.debugfs_dir = debugfs_create_dir(ag->dev->name,
+	struct device *dev = &ag->pdev->dev;
+
+	ag->debug.debugfs_dir = debugfs_create_dir(dev_name(dev),
 						   ag71xx_debugfs_root);
-	if (!ag->debug.debugfs_dir)
-		return -ENOMEM;
+	if (!ag->debug.debugfs_dir) {
+		dev_err(dev, "unable to create debugfs directory\n");
+		return -ENOENT;
+	}
 
 	debugfs_create_file("int_stats", S_IRUGO, ag->debug.debugfs_dir,
 			    ag, &ag71xx_fops_int_stats);
