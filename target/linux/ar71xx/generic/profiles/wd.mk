@@ -15,6 +15,15 @@ define Profile/MYNETN600/Description
 endef
 $(eval $(call Profile,MYNETN600))
 
+define Profile/MYNETN750
+	NAME:=WD My Net N750
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+define Profile/MYNETN750/Description
+  Package set optimized for the WD My Net N750 device.
+endef
+
+$(eval $(call Profile,MYNETN750))
 
 define Profile/MYNETREXT
 	NAME:=WD My Net Wi-Fi Range Extender
