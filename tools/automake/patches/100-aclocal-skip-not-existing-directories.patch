@@ -1,6 +1,6 @@
 --- a/aclocal.in
 +++ b/aclocal.in
-@@ -314,6 +314,12 @@ sub scan_m4_dirs ($@)
+@@ -327,6 +327,12 @@
  
    foreach my $m4dir (@dirlist)
      {
@@ -12,4 +12,4 @@
 +
        if (! opendir (DIR, $m4dir))
  	{
- 	  fatal "couldn't open directory `$m4dir': $!";
+ 	  if ($install && $type == FT_USER && $first_user_m4dir)
