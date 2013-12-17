@@ -168,6 +168,8 @@ struct ag71xx {
 	unsigned int		speed;
 	int			duplex;
 
+	unsigned int		max_frame_len;
+
 	struct work_struct	restart_work;
 	struct delayed_work	link_work;
 	struct timer_list	oom_timer;
