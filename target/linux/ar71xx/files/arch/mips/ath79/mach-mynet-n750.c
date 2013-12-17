@@ -12,6 +12,7 @@
 #include <linux/pci.h>
 #include <linux/phy.h>
 #include <linux/gpio.h>
+#include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/ath9k_platform.h>
 #include <linux/ar8216_platform.h>
@@ -144,6 +145,23 @@ static void mynet_n750_get_mac(const char *name, char *mac)
 		pr_err("no MAC address found for %s\n", name);
 }
 
+/*
+ * The bootloader on this board powers down all PHYs on the switch
+ * before booting the kernel. We bring all PHYs back up so that they are
+ * discoverable by the mdio bus scan and the switch is detected
+ * correctly.
+ */
+static void mynet_n750_mdio_fixup(struct mii_bus *bus)
+{
+	int i;
+
+	for (i = 0; i < 5; i++)
+		bus->write(bus, i, MII_BMCR,
+			   (BMCR_RESET | BMCR_ANENABLE | BMCR_SPEED1000));
+
+	mdelay(1000);
+}
+
 static void __init mynet_n750_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
@@ -178,6 +196,7 @@ static void __init mynet_n750_setup(void)
 	mdiobus_register_board_info(mynet_n750_mdio0_info,
 				    ARRAY_SIZE(mynet_n750_mdio0_info));
 
+	ath79_mdio0_data.reset = mynet_n750_mdio_fixup;
 	ath79_register_mdio(0, 0x0);
 
 	mynet_n750_get_mac("lanmac=", ath79_eth0_data.mac_addr);
