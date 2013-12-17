@@ -1,6 +1,6 @@
 --- a/aclocal.in
 +++ b/aclocal.in
-@@ -29,7 +29,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
+@@ -27,7 +27,8 @@
  
  BEGIN
  {
@@ -10,7 +10,7 @@
    unshift @INC, (split '@PATH_SEPARATOR@', $perllibdir);
  }
  
-@@ -61,8 +62,8 @@ $perl_threads = 0;
+@@ -58,8 +59,8 @@
  # ACLOCAL_PATH environment variable, and reset with the `--system-acdir'
  # option.
  my @user_includes = ();
@@ -23,7 +23,7 @@
  my $install = 0;
 --- a/automake.in
 +++ b/automake.in
-@@ -31,7 +31,8 @@ package Language;
+@@ -31,7 +31,8 @@
  
  BEGIN
  {
@@ -35,7 +35,7 @@
    # Override SHELL.  This is required on DJGPP so that system() uses
 --- a/lib/Automake/Config.in
 +++ b/lib/Automake/Config.in
-@@ -31,7 +31,7 @@ our $APIVERSION = '@APIVERSION@';
+@@ -31,7 +31,7 @@
  our $PACKAGE = '@PACKAGE@';
  our $PACKAGE_BUGREPORT = '@PACKAGE_BUGREPORT@';
  our $VERSION = '@VERSION@';
