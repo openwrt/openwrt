@@ -612,7 +612,7 @@ static int gpio_keys_remove(struct platform_device *pdev)
 	if (bdev->polled)
 		gpio_keys_polled_close(bdev);
 
-	return gpio_keys_remove(pdev);
+	return 0;
 }
 
 static struct platform_driver gpio_keys_driver = {
