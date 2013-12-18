@@ -38,7 +38,10 @@ service_running() {
 
 service_triggers()
 {
-	procd_add_reload_trigger "network"
+	procd_open_trigger
+	procd_add_config_trigger "config.change" "network" /etc/init.d/network reload
+	procd_add_config_trigger "config.change" "wireless" /etc/init.d/network reload
+	procd_close_trigger
 }
 
 restart() {
