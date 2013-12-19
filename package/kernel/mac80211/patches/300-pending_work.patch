@@ -43,9 +43,11 @@
  	depends on ATH9K
 --- a/drivers/net/wireless/ath/ath9k/Makefile
 +++ b/drivers/net/wireless/ath/ath9k/Makefile
-@@ -13,9 +13,9 @@ ath9k-$(CPTCFG_ATH9K_PCI) += pci.o
+@@ -11,11 +11,13 @@ ath9k-$(CPTCFG_ATH9K_BTCOEX_SUPPORT) += 
+ ath9k-$(CPTCFG_ATH9K_LEGACY_RATE_CONTROL) += rc.o
+ ath9k-$(CPTCFG_ATH9K_PCI) += pci.o
  ath9k-$(CPTCFG_ATH9K_AHB) += ahb.o
- ath9k-$(CPTCFG_ATH9K_DEBUGFS) += debug.o
+-ath9k-$(CPTCFG_ATH9K_DEBUGFS) += debug.o
  ath9k-$(CPTCFG_ATH9K_DFS_DEBUGFS) += dfs_debug.o
 -ath9k-$(CPTCFG_ATH9K_DFS_CERTIFIED) += \
 -		dfs.o
@@ -53,10 +55,13 @@
 +ath9k-$(CPTCFG_ATH9K_DFS_CERTIFIED) += dfs.o
 +ath9k-$(CPTCFG_ATH9K_TX99) += tx99.o
 +ath9k-$(CPTCFG_ATH9K_WOW) += wow.o
++
++ath9k-$(CPTCFG_ATH9K_DEBUGFS) += debug.o \
++				 spectral.o
  
  obj-$(CPTCFG_ATH9K) += ath9k.o
  
-@@ -41,6 +41,8 @@ ath9k_hw-y:=	\
+@@ -41,6 +43,8 @@ ath9k_hw-y:=	\
  		ar9003_eeprom.o \
  		ar9003_paprd.o
  
@@ -848,7 +853,227 @@
  #endif /* INITVALS_9340_H */
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -459,6 +459,7 @@ void ath_check_ani(struct ath_softc *sc)
+@@ -27,40 +27,15 @@
+ #include "common.h"
+ #include "mci.h"
+ #include "dfs.h"
+-
+-/*
+- * Header for the ath9k.ko driver core *only* -- hw code nor any other driver
+- * should rely on this file or its contents.
+- */
++#include "spectral.h"
+ 
+ struct ath_node;
++struct ath_rate_table;
+ 
+-/* Macro to expand scalars to 64-bit objects */
+-
+-#define	ito64(x) (sizeof(x) == 1) ?			\
+-	(((unsigned long long int)(x)) & (0xff)) :	\
+-	(sizeof(x) == 2) ?				\
+-	(((unsigned long long int)(x)) & 0xffff) :	\
+-	((sizeof(x) == 4) ?				\
+-	 (((unsigned long long int)(x)) & 0xffffffff) : \
+-	 (unsigned long long int)(x))
+-
+-/* increment with wrap-around */
+-#define INCR(_l, _sz)   do {			\
+-		(_l)++;				\
+-		(_l) &= ((_sz) - 1);		\
+-	} while (0)
+-
+-/* decrement with wrap-around */
+-#define DECR(_l,  _sz)  do {			\
+-		(_l)--;				\
+-		(_l) &= ((_sz) - 1);		\
+-	} while (0)
+-
+-#define TSF_TO_TU(_h,_l) \
+-	((((u32)(_h)) << 22) | (((u32)(_l)) >> 10))
+-
+-#define	ATH_TXQ_SETUP(sc, i)        ((sc)->tx.txqsetup & (1<<i))
++extern struct ieee80211_ops ath9k_ops;
++extern int ath9k_modparam_nohwcrypt;
++extern int led_blink;
++extern bool is_ath9k_unloaded;
+ 
+ struct ath_config {
+ 	u16 txpowlimit;
+@@ -70,6 +45,17 @@ struct ath_config {
+ /* Descriptor Management */
+ /*************************/
+ 
++#define ATH_TXSTATUS_RING_SIZE 512
++
++/* Macro to expand scalars to 64-bit objects */
++#define	ito64(x) (sizeof(x) == 1) ?			\
++	(((unsigned long long int)(x)) & (0xff)) :	\
++	(sizeof(x) == 2) ?				\
++	(((unsigned long long int)(x)) & 0xffff) :	\
++	((sizeof(x) == 4) ?				\
++	 (((unsigned long long int)(x)) & 0xffffffff) : \
++	 (unsigned long long int)(x))
++
+ #define ATH_TXBUF_RESET(_bf) do {				\
+ 		(_bf)->bf_lastbf = NULL;			\
+ 		(_bf)->bf_next = NULL;				\
+@@ -77,23 +63,6 @@ struct ath_config {
+ 		       sizeof(struct ath_buf_state));		\
+ 	} while (0)
+ 
+-/**
+- * enum buffer_type - Buffer type flags
+- *
+- * @BUF_AMPDU: This buffer is an ampdu, as part of an aggregate (during TX)
+- * @BUF_AGGR: Indicates whether the buffer can be aggregated
+- *	(used in aggregation scheduling)
+- */
+-enum buffer_type {
+-	BUF_AMPDU		= BIT(0),
+-	BUF_AGGR		= BIT(1),
+-};
+-
+-#define bf_isampdu(bf)		(bf->bf_state.bf_type & BUF_AMPDU)
+-#define bf_isaggr(bf)		(bf->bf_state.bf_type & BUF_AGGR)
+-
+-#define ATH_TXSTATUS_RING_SIZE 512
+-
+ #define	DS2PHYS(_dd, _ds)						\
+ 	((_dd)->dd_desc_paddr + ((caddr_t)(_ds) - (caddr_t)(_dd)->dd_desc))
+ #define ATH_DESC_4KB_BOUND_CHECK(_daddr) ((((_daddr) & 0xFFF) > 0xF7F) ? 1 : 0)
+@@ -113,11 +82,20 @@ int ath_descdma_setup(struct ath_softc *
+ /* RX / TX */
+ /***********/
+ 
++#define	ATH_TXQ_SETUP(sc, i) ((sc)->tx.txqsetup & (1<<i))
++
++/* increment with wrap-around */
++#define INCR(_l, _sz)   do {			\
++		(_l)++;				\
++		(_l) &= ((_sz) - 1);		\
++	} while (0)
++
+ #define ATH_RXBUF               512
+ #define ATH_TXBUF               512
+ #define ATH_TXBUF_RESERVE       5
+ #define ATH_MAX_QDEPTH          (ATH_TXBUF / 4 - ATH_TXBUF_RESERVE)
+ #define ATH_TXMAXTRY            13
++#define ATH_MAX_SW_RETRIES      30
+ 
+ #define TID_TO_WME_AC(_tid)				\
+ 	((((_tid) == 0) || ((_tid) == 3)) ? IEEE80211_AC_BE :	\
+@@ -133,6 +111,9 @@ int ath_descdma_setup(struct ath_softc *
+ #define ATH_AGGR_MIN_QDEPTH        2
+ /* minimum h/w qdepth for non-aggregated traffic */
+ #define ATH_NON_AGGR_MIN_QDEPTH    8
++#define ATH_TX_COMPLETE_POLL_INT   1000
++#define ATH_TXFIFO_DEPTH           8
++#define ATH_TX_ERROR               0x01
+ 
+ #define IEEE80211_SEQ_SEQ_SHIFT    4
+ #define IEEE80211_SEQ_MAX          4096
+@@ -167,9 +148,6 @@ int ath_descdma_setup(struct ath_softc *
+ 
+ #define IS_CCK_RATE(rate) ((rate >= 0x18) && (rate <= 0x1e))
+ 
+-#define ATH_TX_COMPLETE_POLL_INT	1000
+-
+-#define ATH_TXFIFO_DEPTH 8
+ struct ath_txq {
+ 	int mac80211_qnum; /* mac80211 queue number, -1 means not mac80211 Q */
+ 	u32 axq_qnum; /* ath9k hardware queue number */
+@@ -214,6 +192,21 @@ struct ath_rxbuf {
+ 	dma_addr_t bf_buf_addr;
+ };
+ 
++/**
++ * enum buffer_type - Buffer type flags
++ *
++ * @BUF_AMPDU: This buffer is an ampdu, as part of an aggregate (during TX)
++ * @BUF_AGGR: Indicates whether the buffer can be aggregated
++ *	(used in aggregation scheduling)
++ */
++enum buffer_type {
++	BUF_AMPDU		= BIT(0),
++	BUF_AGGR		= BIT(1),
++};
++
++#define bf_isampdu(bf)		(bf->bf_state.bf_type & BUF_AMPDU)
++#define bf_isaggr(bf)		(bf->bf_state.bf_type & BUF_AGGR)
++
+ struct ath_buf_state {
+ 	u8 bf_type;
+ 	u8 bfs_paprd;
+@@ -278,7 +271,6 @@ struct ath_tx_control {
+ 	struct ieee80211_sta *sta;
+ };
+ 
+-#define ATH_TX_ERROR        0x01
+ 
+ /**
+  * @txq_map:  Index is mac80211 queue number.  This is
+@@ -372,6 +364,22 @@ struct ath_vif {
+ 	struct ath_buf *av_bcbuf;
+ };
+ 
++struct ath9k_vif_iter_data {
++	u8 hw_macaddr[ETH_ALEN]; /* address of the first vif */
++	u8 mask[ETH_ALEN]; /* bssid mask */
++	bool has_hw_macaddr;
++
++	int naps;      /* number of AP vifs */
++	int nmeshes;   /* number of mesh vifs */
++	int nstations; /* number of station vifs */
++	int nwds;      /* number of WDS vifs */
++	int nadhocs;   /* number of adhoc vifs */
++};
++
++void ath9k_calculate_iter_data(struct ieee80211_hw *hw,
++			       struct ieee80211_vif *vif,
++			       struct ath9k_vif_iter_data *iter_data);
++
+ /*******************/
+ /* Beacon Handling */
+ /*******************/
+@@ -387,6 +395,9 @@ struct ath_vif {
+ #define ATH_DEFAULT_BMISS_LIMIT 	10
+ #define IEEE80211_MS_TO_TU(x)           (((x) * 1000) / 1024)
+ 
++#define TSF_TO_TU(_h,_l) \
++	((((u32)(_h)) << 22) | (((u32)(_l)) >> 10))
++
+ struct ath_beacon_config {
+ 	int beacon_interval;
+ 	u16 listen_interval;
+@@ -420,12 +431,10 @@ struct ath_beacon {
+ };
+ 
+ void ath9k_beacon_tasklet(unsigned long data);
+-bool ath9k_allow_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif);
+ void ath9k_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif,
+ 			 u32 changed);
+ void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif);
+ void ath9k_beacon_remove_slot(struct ath_softc *sc, struct ieee80211_vif *vif);
+-void ath9k_set_tsfadjust(struct ath_softc *sc, struct ieee80211_vif *vif);
+ void ath9k_set_beacon(struct ath_softc *sc);
+ bool ath9k_csa_is_finished(struct ath_softc *sc);
+ 
+@@ -440,10 +449,9 @@ bool ath9k_csa_is_finished(struct ath_so
+ #define ATH_LONG_CALINTERVAL_INT  1000    /* 1000 ms */
+ #define ATH_LONG_CALINTERVAL      30000   /* 30 seconds */
+ #define ATH_RESTART_CALINTERVAL   1200000 /* 20 minutes */
+-#define ATH_ANI_MAX_SKIP_COUNT  10
+-
+-#define ATH_PAPRD_TIMEOUT	100 /* msecs */
+-#define ATH_PLL_WORK_INTERVAL   100
++#define ATH_ANI_MAX_SKIP_COUNT    10
++#define ATH_PAPRD_TIMEOUT         100 /* msecs */
++#define ATH_PLL_WORK_INTERVAL     100
+ 
+ void ath_tx_complete_poll_work(struct work_struct *work);
+ void ath_reset_work(struct work_struct *work);
+@@ -459,6 +467,7 @@ void ath_check_ani(struct ath_softc *sc)
  int ath_update_survey_stats(struct ath_softc *sc);
  void ath_update_survey_nf(struct ath_softc *sc, int channel);
  void ath9k_queue_reset(struct ath_softc *sc, enum ath_reset_type type);
@@ -856,7 +1081,7 @@
  
  /**********/
  /* BTCOEX */
-@@ -476,20 +477,19 @@ enum bt_op_flags {
+@@ -476,20 +485,19 @@ enum bt_op_flags {
  };
  
  struct ath_btcoex {
@@ -880,7 +1105,20 @@
  	struct ath_mci_profile mci;
  	u8 stomp_audio;
  };
-@@ -570,6 +570,34 @@ static inline void ath_fill_led_pin(stru
+@@ -537,12 +545,6 @@ static inline int ath9k_dump_btcoex(stru
+ }
+ #endif /* CPTCFG_ATH9K_BTCOEX_SUPPORT */
+ 
+-struct ath9k_wow_pattern {
+-	u8 pattern_bytes[MAX_PATTERN_SIZE];
+-	u8 mask_bytes[MAX_PATTERN_SIZE];
+-	u32 pattern_len;
+-};
+-
+ /********************/
+ /*   LED Control    */
+ /********************/
+@@ -570,6 +572,40 @@ static inline void ath_fill_led_pin(stru
  }
  #endif
  
@@ -888,7 +1126,13 @@
 +/* Wake on Wireless LAN */
 +/************************/
 +
-+#ifdef CONFIG_ATH9K_WOW
++struct ath9k_wow_pattern {
++	u8 pattern_bytes[MAX_PATTERN_SIZE];
++	u8 mask_bytes[MAX_PATTERN_SIZE];
++	u32 pattern_len;
++};
++
++#ifdef CPTCFG_ATH9K_WOW
 +void ath9k_init_wow(struct ieee80211_hw *hw);
 +int ath9k_suspend(struct ieee80211_hw *hw,
 +		  struct cfg80211_wowlan *wowlan);
@@ -915,7 +1159,7 @@
  /*******************************/
  /* Antenna diversity/combining */
  /*******************************/
-@@ -632,15 +660,16 @@ void ath_ant_comb_scan(struct ath_softc 
+@@ -632,28 +668,24 @@ void ath_ant_comb_scan(struct ath_softc 
  /* Main driver core */
  /********************/
  
@@ -941,7 +1185,58 @@
  
  /*
   * Default cache line size, in bytes.
-@@ -723,6 +752,7 @@ struct ath_softc {
+  * Used when PCI device not fully initialized by bootrom/BIOS
+ */
+ #define DEFAULT_CACHELINE       32
+-#define ATH_REGCLASSIDS_MAX     10
+ #define ATH_CABQ_READY_TIME     80      /* % of beacon interval */
+-#define ATH_MAX_SW_RETRIES      30
+-#define ATH_CHAN_MAX            255
+-
+ #define ATH_TXPOWER_MAX         100     /* .5 dBm units */
+-#define ATH_RATE_DUMMY_MARKER   0
+ 
+ enum sc_op_flags {
+ 	SC_OP_INVALID,
+@@ -672,37 +704,6 @@ enum sc_op_flags {
+ #define PS_BEACON_SYNC            BIT(4)
+ #define PS_WAIT_FOR_ANI           BIT(5)
+ 
+-struct ath_rate_table;
+-
+-struct ath9k_vif_iter_data {
+-	u8 hw_macaddr[ETH_ALEN]; /* address of the first vif */
+-	u8 mask[ETH_ALEN]; /* bssid mask */
+-	bool has_hw_macaddr;
+-
+-	int naps;      /* number of AP vifs */
+-	int nmeshes;   /* number of mesh vifs */
+-	int nstations; /* number of station vifs */
+-	int nwds;      /* number of WDS vifs */
+-	int nadhocs;   /* number of adhoc vifs */
+-};
+-
+-/* enum spectral_mode:
+- *
+- * @SPECTRAL_DISABLED: spectral mode is disabled
+- * @SPECTRAL_BACKGROUND: hardware sends samples when it is not busy with
+- *	something else.
+- * @SPECTRAL_MANUAL: spectral scan is enabled, triggering for samples
+- *	is performed manually.
+- * @SPECTRAL_CHANSCAN: Like manual, but also triggered when changing channels
+- *	during a channel scan.
+- */
+-enum spectral_mode {
+-	SPECTRAL_DISABLED = 0,
+-	SPECTRAL_BACKGROUND,
+-	SPECTRAL_MANUAL,
+-	SPECTRAL_CHANSCAN,
+-};
+-
+ struct ath_softc {
+ 	struct ieee80211_hw *hw;
+ 	struct device *dev;
+@@ -723,6 +724,7 @@ struct ath_softc {
  	struct work_struct hw_check_work;
  	struct work_struct hw_reset_work;
  	struct completion paprd_complete;
@@ -949,7 +1244,7 @@
  
  	unsigned int hw_busy_count;
  	unsigned long sc_flags;
-@@ -759,6 +789,7 @@ struct ath_softc {
+@@ -759,6 +761,7 @@ struct ath_softc {
  	struct delayed_work tx_complete_work;
  	struct delayed_work hw_pll_work;
  	struct timer_list rx_poll_timer;
@@ -957,7 +1252,7 @@
  
  #ifdef CPTCFG_ATH9K_BTCOEX_SUPPORT
  	struct ath_btcoex btcoex;
-@@ -783,7 +814,7 @@ struct ath_softc {
+@@ -783,199 +786,54 @@ struct ath_softc {
  	bool tx99_state;
  	s16 tx99_power;
  
@@ -966,36 +1261,199 @@
  	atomic_t wow_got_bmiss_intr;
  	atomic_t wow_sleep_proc_intr; /* in the middle of WoW sleep ? */
  	u32 wow_intr_before_sleep;
-@@ -946,10 +977,25 @@ struct fft_sample_ht20_40 {
- 	u8 data[SPECTRAL_HT20_40_NUM_BINS];
- } __packed;
+ #endif
+ };
  
--int ath9k_tx99_init(struct ath_softc *sc);
--void ath9k_tx99_deinit(struct ath_softc *sc);
+-#define SPECTRAL_SCAN_BITMASK		0x10
+-/* Radar info packet format, used for DFS and spectral formats. */
+-struct ath_radar_info {
+-	u8 pulse_length_pri;
+-	u8 pulse_length_ext;
+-	u8 pulse_bw_info;
+-} __packed;
+-
+-/* The HT20 spectral data has 4 bytes of additional information at it's end.
+- *
+- * [7:0]: all bins {max_magnitude[1:0], bitmap_weight[5:0]}
+- * [7:0]: all bins  max_magnitude[9:2]
+- * [7:0]: all bins {max_index[5:0], max_magnitude[11:10]}
+- * [3:0]: max_exp (shift amount to size max bin to 8-bit unsigned)
+- */
+-struct ath_ht20_mag_info {
+-	u8 all_bins[3];
+-	u8 max_exp;
+-} __packed;
+-
+-#define SPECTRAL_HT20_NUM_BINS		56
+-
+-/* WARNING: don't actually use this struct! MAC may vary the amount of
+- * data by -1/+2. This struct is for reference only.
+- */
+-struct ath_ht20_fft_packet {
+-	u8 data[SPECTRAL_HT20_NUM_BINS];
+-	struct ath_ht20_mag_info mag_info;
+-	struct ath_radar_info radar_info;
+-} __packed;
+-
+-#define SPECTRAL_HT20_TOTAL_DATA_LEN	(sizeof(struct ath_ht20_fft_packet))
+-
+-/* Dynamic 20/40 mode:
+- *
+- * [7:0]: lower bins {max_magnitude[1:0], bitmap_weight[5:0]}
+- * [7:0]: lower bins  max_magnitude[9:2]
+- * [7:0]: lower bins {max_index[5:0], max_magnitude[11:10]}
+- * [7:0]: upper bins {max_magnitude[1:0], bitmap_weight[5:0]}
+- * [7:0]: upper bins  max_magnitude[9:2]
+- * [7:0]: upper bins {max_index[5:0], max_magnitude[11:10]}
+- * [3:0]: max_exp (shift amount to size max bin to 8-bit unsigned)
+- */
+-struct ath_ht20_40_mag_info {
+-	u8 lower_bins[3];
+-	u8 upper_bins[3];
+-	u8 max_exp;
+-} __packed;
+-
+-#define SPECTRAL_HT20_40_NUM_BINS		128
+-
+-/* WARNING: don't actually use this struct! MAC may vary the amount of
+- * data. This struct is for reference only.
+- */
+-struct ath_ht20_40_fft_packet {
+-	u8 data[SPECTRAL_HT20_40_NUM_BINS];
+-	struct ath_ht20_40_mag_info mag_info;
+-	struct ath_radar_info radar_info;
+-} __packed;
+-
+-
+-#define SPECTRAL_HT20_40_TOTAL_DATA_LEN	(sizeof(struct ath_ht20_40_fft_packet))
+-
+-/* grabs the max magnitude from the all/upper/lower bins */
+-static inline u16 spectral_max_magnitude(u8 *bins)
+-{
+-	return (bins[0] & 0xc0) >> 6 |
+-	       (bins[1] & 0xff) << 2 |
+-	       (bins[2] & 0x03) << 10;
+-}
 +/********/
 +/* TX99 */
 +/********/
-+
+ 
+-/* return the max magnitude from the all/upper/lower bins */
+-static inline u8 spectral_max_index(u8 *bins)
 +#ifdef CONFIG_ATH9K_TX99
 +void ath9k_tx99_init_debug(struct ath_softc *sc);
- int ath9k_tx99_send(struct ath_softc *sc, struct sk_buff *skb,
- 		    struct ath_tx_control *txctl);
++int ath9k_tx99_send(struct ath_softc *sc, struct sk_buff *skb,
++		    struct ath_tx_control *txctl);
 +#else
 +static inline void ath9k_tx99_init_debug(struct ath_softc *sc)
-+{
-+}
+ {
+-	s8 m = (bins[2] & 0xfc) >> 2;
+-
+-	/* TODO: this still doesn't always report the right values ... */
+-	if (m > 32)
+-		m |= 0xe0;
+-	else
+-		m &= ~0xe0;
+-
+-	return m + 29;
+ }
+-
+-/* return the bitmap weight from the all/upper/lower bins */
+-static inline u8 spectral_bitmap_weight(u8 *bins)
 +static inline int ath9k_tx99_send(struct ath_softc *sc,
 +				  struct sk_buff *skb,
 +				  struct ath_tx_control *txctl)
-+{
+ {
+-	return bins[0] & 0x3f;
 +	return 0;
-+}
+ }
+-
+-/* FFT sample format given to userspace via debugfs.
+- *
+- * Please keep the type/length at the front position and change
+- * other fields after adding another sample type
+- *
+- * TODO: this might need rework when switching to nl80211-based
+- * interface.
+- */
+-enum ath_fft_sample_type {
+-	ATH_FFT_SAMPLE_HT20 = 1,
+-	ATH_FFT_SAMPLE_HT20_40,
+-};
+-
+-struct fft_sample_tlv {
+-	u8 type;	/* see ath_fft_sample */
+-	__be16 length;
+-	/* type dependent data follows */
+-} __packed;
+-
+-struct fft_sample_ht20 {
+-	struct fft_sample_tlv tlv;
+-
+-	u8 max_exp;
+-
+-	__be16 freq;
+-	s8 rssi;
+-	s8 noise;
+-
+-	__be16 max_magnitude;
+-	u8 max_index;
+-	u8 bitmap_weight;
+-
+-	__be64 tsf;
+-
+-	u8 data[SPECTRAL_HT20_NUM_BINS];
+-} __packed;
+-
+-struct fft_sample_ht20_40 {
+-	struct fft_sample_tlv tlv;
+-
+-	u8 channel_type;
+-	__be16 freq;
+-
+-	s8 lower_rssi;
+-	s8 upper_rssi;
+-
+-	__be64 tsf;
+-
+-	s8 lower_noise;
+-	s8 upper_noise;
+-
+-	__be16 lower_max_magnitude;
+-	__be16 upper_max_magnitude;
+-
+-	u8 lower_max_index;
+-	u8 upper_max_index;
+-
+-	u8 lower_bitmap_weight;
+-	u8 upper_bitmap_weight;
+-
+-	u8 max_exp;
+-
+-	u8 data[SPECTRAL_HT20_40_NUM_BINS];
+-} __packed;
+-
+-int ath9k_tx99_init(struct ath_softc *sc);
+-void ath9k_tx99_deinit(struct ath_softc *sc);
+-int ath9k_tx99_send(struct ath_softc *sc, struct sk_buff *skb,
+-		    struct ath_tx_control *txctl);
+-
+-void ath9k_tasklet(unsigned long data);
+-int ath_cabq_update(struct ath_softc *);
 +#endif /* CONFIG_ATH9K_TX99 */
  
- void ath9k_tasklet(unsigned long data);
- int ath_cabq_update(struct ath_softc *);
-@@ -966,6 +1012,9 @@ extern bool is_ath9k_unloaded;
+ static inline void ath_read_cachesize(struct ath_common *common, int *csz)
+ {
+ 	common->bus_ops->read_cachesize(common, csz);
+ }
  
+-extern struct ieee80211_ops ath9k_ops;
+-extern int ath9k_modparam_nohwcrypt;
+-extern int led_blink;
+-extern bool is_ath9k_unloaded;
+-
++void ath9k_tasklet(unsigned long data);
++int ath_cabq_update(struct ath_softc *);
  u8 ath9k_parse_mpdudensity(u8 mpdudensity);
  irqreturn_t ath_isr(int irq, void *dev);
 +int ath_reset(struct ath_softc *sc);
@@ -1004,10 +1462,402 @@
  int ath9k_init_device(u16 devid, struct ath_softc *sc,
  		    const struct ath_bus_ops *bus_ops);
  void ath9k_deinit_device(struct ath_softc *sc);
+-void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw);
+ void ath9k_reload_chainmask_settings(struct ath_softc *sc);
+-
+-void ath9k_spectral_scan_trigger(struct ieee80211_hw *hw);
+-int ath9k_spectral_scan_config(struct ieee80211_hw *hw,
+-			       enum spectral_mode spectral_mode);
+-
++u8 ath_txchainmask_reduction(struct ath_softc *sc, u8 chainmask, u32 rate);
++void ath_start_rfkill_poll(struct ath_softc *sc);
++void ath9k_rfkill_poll_state(struct ieee80211_hw *hw);
++void ath9k_ps_wakeup(struct ath_softc *sc);
++void ath9k_ps_restore(struct ath_softc *sc);
+ 
+ #ifdef CPTCFG_ATH9K_PCI
+ int ath_pci_init(void);
+@@ -993,15 +851,4 @@ static inline int ath_ahb_init(void) { r
+ static inline void ath_ahb_exit(void) {};
+ #endif
+ 
+-void ath9k_ps_wakeup(struct ath_softc *sc);
+-void ath9k_ps_restore(struct ath_softc *sc);
+-
+-u8 ath_txchainmask_reduction(struct ath_softc *sc, u8 chainmask, u32 rate);
+-
+-void ath_start_rfkill_poll(struct ath_softc *sc);
+-extern void ath9k_rfkill_poll_state(struct ieee80211_hw *hw);
+-void ath9k_calculate_iter_data(struct ieee80211_hw *hw,
+-			       struct ieee80211_vif *vif,
+-			       struct ath9k_vif_iter_data *iter_data);
+-
+ #endif /* ATH9K_H */
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1782,111 +1782,6 @@ void ath9k_deinit_debug(struct ath_softc
- 	}
+@@ -17,7 +17,6 @@
+ #include <linux/slab.h>
+ #include <linux/vmalloc.h>
+ #include <linux/export.h>
+-#include <linux/relay.h>
+ #include <asm/unaligned.h>
+ 
+ #include "ath9k.h"
+@@ -27,6 +26,47 @@
+ #define REG_READ_D(_ah, _reg) \
+ 	ath9k_hw_common(_ah)->ops->read((_ah), (_reg))
+ 
++void ath9k_debug_sync_cause(struct ath_softc *sc, u32 sync_cause)
++{
++	if (sync_cause)
++		sc->debug.stats.istats.sync_cause_all++;
++	if (sync_cause & AR_INTR_SYNC_RTC_IRQ)
++		sc->debug.stats.istats.sync_rtc_irq++;
++	if (sync_cause & AR_INTR_SYNC_MAC_IRQ)
++		sc->debug.stats.istats.sync_mac_irq++;
++	if (sync_cause & AR_INTR_SYNC_EEPROM_ILLEGAL_ACCESS)
++		sc->debug.stats.istats.eeprom_illegal_access++;
++	if (sync_cause & AR_INTR_SYNC_APB_TIMEOUT)
++		sc->debug.stats.istats.apb_timeout++;
++	if (sync_cause & AR_INTR_SYNC_PCI_MODE_CONFLICT)
++		sc->debug.stats.istats.pci_mode_conflict++;
++	if (sync_cause & AR_INTR_SYNC_HOST1_FATAL)
++		sc->debug.stats.istats.host1_fatal++;
++	if (sync_cause & AR_INTR_SYNC_HOST1_PERR)
++		sc->debug.stats.istats.host1_perr++;
++	if (sync_cause & AR_INTR_SYNC_TRCV_FIFO_PERR)
++		sc->debug.stats.istats.trcv_fifo_perr++;
++	if (sync_cause & AR_INTR_SYNC_RADM_CPL_EP)
++		sc->debug.stats.istats.radm_cpl_ep++;
++	if (sync_cause & AR_INTR_SYNC_RADM_CPL_DLLP_ABORT)
++		sc->debug.stats.istats.radm_cpl_dllp_abort++;
++	if (sync_cause & AR_INTR_SYNC_RADM_CPL_TLP_ABORT)
++		sc->debug.stats.istats.radm_cpl_tlp_abort++;
++	if (sync_cause & AR_INTR_SYNC_RADM_CPL_ECRC_ERR)
++		sc->debug.stats.istats.radm_cpl_ecrc_err++;
++	if (sync_cause & AR_INTR_SYNC_RADM_CPL_TIMEOUT)
++		sc->debug.stats.istats.radm_cpl_timeout++;
++	if (sync_cause & AR_INTR_SYNC_LOCAL_TIMEOUT)
++		sc->debug.stats.istats.local_timeout++;
++	if (sync_cause & AR_INTR_SYNC_PM_ACCESS)
++		sc->debug.stats.istats.pm_access++;
++	if (sync_cause & AR_INTR_SYNC_MAC_AWAKE)
++		sc->debug.stats.istats.mac_awake++;
++	if (sync_cause & AR_INTR_SYNC_MAC_ASLEEP)
++		sc->debug.stats.istats.mac_asleep++;
++	if (sync_cause & AR_INTR_SYNC_MAC_SLEEP_ACCESS)
++		sc->debug.stats.istats.mac_sleep_access++;
++}
+ 
+ static ssize_t ath9k_debugfs_read_buf(struct file *file, char __user *user_buf,
+ 				      size_t count, loff_t *ppos)
+@@ -1016,297 +1056,6 @@ static const struct file_operations fops
+ 	.llseek = default_llseek,
+ };
+ 
+-static ssize_t read_file_spec_scan_ctl(struct file *file, char __user *user_buf,
+-				       size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	char *mode = "";
+-	unsigned int len;
+-
+-	switch (sc->spectral_mode) {
+-	case SPECTRAL_DISABLED:
+-		mode = "disable";
+-		break;
+-	case SPECTRAL_BACKGROUND:
+-		mode = "background";
+-		break;
+-	case SPECTRAL_CHANSCAN:
+-		mode = "chanscan";
+-		break;
+-	case SPECTRAL_MANUAL:
+-		mode = "manual";
+-		break;
+-	}
+-	len = strlen(mode);
+-	return simple_read_from_buffer(user_buf, count, ppos, mode, len);
+-}
+-
+-static ssize_t write_file_spec_scan_ctl(struct file *file,
+-					const char __user *user_buf,
+-					size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+-	char buf[32];
+-	ssize_t len;
+-
+-	if (config_enabled(CPTCFG_ATH9K_TX99))
+-		return -EOPNOTSUPP;
+-
+-	len = min(count, sizeof(buf) - 1);
+-	if (copy_from_user(buf, user_buf, len))
+-		return -EFAULT;
+-
+-	buf[len] = '\0';
+-
+-	if (strncmp("trigger", buf, 7) == 0) {
+-		ath9k_spectral_scan_trigger(sc->hw);
+-	} else if (strncmp("background", buf, 9) == 0) {
+-		ath9k_spectral_scan_config(sc->hw, SPECTRAL_BACKGROUND);
+-		ath_dbg(common, CONFIG, "spectral scan: background mode enabled\n");
+-	} else if (strncmp("chanscan", buf, 8) == 0) {
+-		ath9k_spectral_scan_config(sc->hw, SPECTRAL_CHANSCAN);
+-		ath_dbg(common, CONFIG, "spectral scan: channel scan mode enabled\n");
+-	} else if (strncmp("manual", buf, 6) == 0) {
+-		ath9k_spectral_scan_config(sc->hw, SPECTRAL_MANUAL);
+-		ath_dbg(common, CONFIG, "spectral scan: manual mode enabled\n");
+-	} else if (strncmp("disable", buf, 7) == 0) {
+-		ath9k_spectral_scan_config(sc->hw, SPECTRAL_DISABLED);
+-		ath_dbg(common, CONFIG, "spectral scan: disabled\n");
+-	} else {
+-		return -EINVAL;
+-	}
+-
+-	return count;
+-}
+-
+-static const struct file_operations fops_spec_scan_ctl = {
+-	.read = read_file_spec_scan_ctl,
+-	.write = write_file_spec_scan_ctl,
+-	.open = simple_open,
+-	.owner = THIS_MODULE,
+-	.llseek = default_llseek,
+-};
+-
+-static ssize_t read_file_spectral_short_repeat(struct file *file,
+-					       char __user *user_buf,
+-					       size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	char buf[32];
+-	unsigned int len;
+-
+-	len = sprintf(buf, "%d\n", sc->spec_config.short_repeat);
+-	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+-}
+-
+-static ssize_t write_file_spectral_short_repeat(struct file *file,
+-						const char __user *user_buf,
+-						size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	unsigned long val;
+-	char buf[32];
+-	ssize_t len;
+-
+-	len = min(count, sizeof(buf) - 1);
+-	if (copy_from_user(buf, user_buf, len))
+-		return -EFAULT;
+-
+-	buf[len] = '\0';
+-	if (kstrtoul(buf, 0, &val))
+-		return -EINVAL;
+-
+-	if (val < 0 || val > 1)
+-		return -EINVAL;
+-
+-	sc->spec_config.short_repeat = val;
+-	return count;
+-}
+-
+-static const struct file_operations fops_spectral_short_repeat = {
+-	.read = read_file_spectral_short_repeat,
+-	.write = write_file_spectral_short_repeat,
+-	.open = simple_open,
+-	.owner = THIS_MODULE,
+-	.llseek = default_llseek,
+-};
+-
+-static ssize_t read_file_spectral_count(struct file *file,
+-					char __user *user_buf,
+-					size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	char buf[32];
+-	unsigned int len;
+-
+-	len = sprintf(buf, "%d\n", sc->spec_config.count);
+-	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+-}
+-
+-static ssize_t write_file_spectral_count(struct file *file,
+-					 const char __user *user_buf,
+-					 size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	unsigned long val;
+-	char buf[32];
+-	ssize_t len;
+-
+-	len = min(count, sizeof(buf) - 1);
+-	if (copy_from_user(buf, user_buf, len))
+-		return -EFAULT;
+-
+-	buf[len] = '\0';
+-	if (kstrtoul(buf, 0, &val))
+-		return -EINVAL;
+-
+-	if (val < 0 || val > 255)
+-		return -EINVAL;
+-
+-	sc->spec_config.count = val;
+-	return count;
+-}
+-
+-static const struct file_operations fops_spectral_count = {
+-	.read = read_file_spectral_count,
+-	.write = write_file_spectral_count,
+-	.open = simple_open,
+-	.owner = THIS_MODULE,
+-	.llseek = default_llseek,
+-};
+-
+-static ssize_t read_file_spectral_period(struct file *file,
+-					 char __user *user_buf,
+-					 size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	char buf[32];
+-	unsigned int len;
+-
+-	len = sprintf(buf, "%d\n", sc->spec_config.period);
+-	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+-}
+-
+-static ssize_t write_file_spectral_period(struct file *file,
+-					  const char __user *user_buf,
+-					  size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	unsigned long val;
+-	char buf[32];
+-	ssize_t len;
+-
+-	len = min(count, sizeof(buf) - 1);
+-	if (copy_from_user(buf, user_buf, len))
+-		return -EFAULT;
+-
+-	buf[len] = '\0';
+-	if (kstrtoul(buf, 0, &val))
+-		return -EINVAL;
+-
+-	if (val < 0 || val > 255)
+-		return -EINVAL;
+-
+-	sc->spec_config.period = val;
+-	return count;
+-}
+-
+-static const struct file_operations fops_spectral_period = {
+-	.read = read_file_spectral_period,
+-	.write = write_file_spectral_period,
+-	.open = simple_open,
+-	.owner = THIS_MODULE,
+-	.llseek = default_llseek,
+-};
+-
+-static ssize_t read_file_spectral_fft_period(struct file *file,
+-					     char __user *user_buf,
+-					     size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	char buf[32];
+-	unsigned int len;
+-
+-	len = sprintf(buf, "%d\n", sc->spec_config.fft_period);
+-	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+-}
+-
+-static ssize_t write_file_spectral_fft_period(struct file *file,
+-					      const char __user *user_buf,
+-					      size_t count, loff_t *ppos)
+-{
+-	struct ath_softc *sc = file->private_data;
+-	unsigned long val;
+-	char buf[32];
+-	ssize_t len;
+-
+-	len = min(count, sizeof(buf) - 1);
+-	if (copy_from_user(buf, user_buf, len))
+-		return -EFAULT;
+-
+-	buf[len] = '\0';
+-	if (kstrtoul(buf, 0, &val))
+-		return -EINVAL;
+-
+-	if (val < 0 || val > 15)
+-		return -EINVAL;
+-
+-	sc->spec_config.fft_period = val;
+-	return count;
+-}
+-
+-static const struct file_operations fops_spectral_fft_period = {
+-	.read = read_file_spectral_fft_period,
+-	.write = write_file_spectral_fft_period,
+-	.open = simple_open,
+-	.owner = THIS_MODULE,
+-	.llseek = default_llseek,
+-};
+-
+-static struct dentry *create_buf_file_handler(const char *filename,
+-					      struct dentry *parent,
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0))
+-					      umode_t mode,
+-#else
+-					      int mode,
+-#endif
+-					      struct rchan_buf *buf,
+-					      int *is_global)
+-{
+-	struct dentry *buf_file;
+-
+-	buf_file = debugfs_create_file(filename, mode, parent, buf,
+-				       &relay_file_operations);
+-	*is_global = 1;
+-	return buf_file;
+-}
+-
+-static int remove_buf_file_handler(struct dentry *dentry)
+-{
+-	debugfs_remove(dentry);
+-
+-	return 0;
+-}
+-
+-void ath_debug_send_fft_sample(struct ath_softc *sc,
+-			       struct fft_sample_tlv *fft_sample_tlv)
+-{
+-	int length;
+-	if (!sc->rfs_chan_spec_scan)
+-		return;
+-
+-	length = __be16_to_cpu(fft_sample_tlv->length) +
+-		 sizeof(*fft_sample_tlv);
+-	relay_write(sc->rfs_chan_spec_scan, fft_sample_tlv, length);
+-}
+-
+-static struct rchan_callbacks rfs_spec_scan_cb = {
+-	.create_buf_file = create_buf_file_handler,
+-	.remove_buf_file = remove_buf_file_handler,
+-};
+-
+-
+ static ssize_t read_file_regidx(struct file *file, char __user *user_buf,
+                                 size_t count, loff_t *ppos)
+ {
+@@ -1776,117 +1525,9 @@ void ath9k_get_et_stats(struct ieee80211
+ 
+ void ath9k_deinit_debug(struct ath_softc *sc)
+ {
+-	if (config_enabled(CPTCFG_ATH9K_DEBUGFS) && sc->rfs_chan_spec_scan) {
+-		relay_close(sc->rfs_chan_spec_scan);
+-		sc->rfs_chan_spec_scan = NULL;
+-	}
++	ath9k_spectral_deinit_debug(sc);
  }
  
 -static ssize_t read_file_tx99(struct file *file, char __user *user_buf,
@@ -1118,15 +1968,40 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1903,6 +1798,7 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1903,6 +1544,8 @@ int ath9k_init_debug(struct ath_hw *ah)
  #endif
  
  	ath9k_dfs_init_debug(sc);
 +	ath9k_tx99_init_debug(sc);
++	ath9k_spectral_init_debug(sc);
  
  	debugfs_create_file("dma", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_dma);
-@@ -1978,15 +1874,6 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1949,23 +1592,6 @@ int ath9k_init_debug(struct ath_hw *ah)
+ 			    &fops_base_eeprom);
+ 	debugfs_create_file("modal_eeprom", S_IRUSR, sc->debug.debugfs_phy, sc,
+ 			    &fops_modal_eeprom);
+-	sc->rfs_chan_spec_scan = relay_open("spectral_scan",
+-					    sc->debug.debugfs_phy,
+-					    1024, 256, &rfs_spec_scan_cb,
+-					    NULL);
+-	debugfs_create_file("spectral_scan_ctl", S_IRUSR | S_IWUSR,
+-			    sc->debug.debugfs_phy, sc,
+-			    &fops_spec_scan_ctl);
+-	debugfs_create_file("spectral_short_repeat", S_IRUSR | S_IWUSR,
+-			    sc->debug.debugfs_phy, sc,
+-			    &fops_spectral_short_repeat);
+-	debugfs_create_file("spectral_count", S_IRUSR | S_IWUSR,
+-			    sc->debug.debugfs_phy, sc, &fops_spectral_count);
+-	debugfs_create_file("spectral_period", S_IRUSR | S_IWUSR,
+-			    sc->debug.debugfs_phy, sc, &fops_spectral_period);
+-	debugfs_create_file("spectral_fft_period", S_IRUSR | S_IWUSR,
+-			    sc->debug.debugfs_phy, sc,
+-			    &fops_spectral_fft_period);
+ 	debugfs_create_u32("gpio_mask", S_IRUSR | S_IWUSR,
+ 			   sc->debug.debugfs_phy, &sc->sc_ah->gpio_mask);
+ 	debugfs_create_u32("gpio_val", S_IRUSR | S_IWUSR,
+@@ -1978,15 +1604,6 @@ int ath9k_init_debug(struct ath_hw *ah)
  	debugfs_create_file("btcoex", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_btcoex);
  #endif
@@ -1153,7 +2028,56 @@
  #include <asm/unaligned.h>
  
  #include "hw.h"
-@@ -438,23 +440,13 @@ static bool ath9k_hw_chip_test(struct at
+@@ -83,48 +85,6 @@ static void ath9k_hw_ani_cache_ini_regs(
+ 
+ #ifdef CPTCFG_ATH9K_DEBUGFS
+ 
+-void ath9k_debug_sync_cause(struct ath_common *common, u32 sync_cause)
+-{
+-	struct ath_softc *sc = common->priv;
+-	if (sync_cause)
+-		sc->debug.stats.istats.sync_cause_all++;
+-	if (sync_cause & AR_INTR_SYNC_RTC_IRQ)
+-		sc->debug.stats.istats.sync_rtc_irq++;
+-	if (sync_cause & AR_INTR_SYNC_MAC_IRQ)
+-		sc->debug.stats.istats.sync_mac_irq++;
+-	if (sync_cause & AR_INTR_SYNC_EEPROM_ILLEGAL_ACCESS)
+-		sc->debug.stats.istats.eeprom_illegal_access++;
+-	if (sync_cause & AR_INTR_SYNC_APB_TIMEOUT)
+-		sc->debug.stats.istats.apb_timeout++;
+-	if (sync_cause & AR_INTR_SYNC_PCI_MODE_CONFLICT)
+-		sc->debug.stats.istats.pci_mode_conflict++;
+-	if (sync_cause & AR_INTR_SYNC_HOST1_FATAL)
+-		sc->debug.stats.istats.host1_fatal++;
+-	if (sync_cause & AR_INTR_SYNC_HOST1_PERR)
+-		sc->debug.stats.istats.host1_perr++;
+-	if (sync_cause & AR_INTR_SYNC_TRCV_FIFO_PERR)
+-		sc->debug.stats.istats.trcv_fifo_perr++;
+-	if (sync_cause & AR_INTR_SYNC_RADM_CPL_EP)
+-		sc->debug.stats.istats.radm_cpl_ep++;
+-	if (sync_cause & AR_INTR_SYNC_RADM_CPL_DLLP_ABORT)
+-		sc->debug.stats.istats.radm_cpl_dllp_abort++;
+-	if (sync_cause & AR_INTR_SYNC_RADM_CPL_TLP_ABORT)
+-		sc->debug.stats.istats.radm_cpl_tlp_abort++;
+-	if (sync_cause & AR_INTR_SYNC_RADM_CPL_ECRC_ERR)
+-		sc->debug.stats.istats.radm_cpl_ecrc_err++;
+-	if (sync_cause & AR_INTR_SYNC_RADM_CPL_TIMEOUT)
+-		sc->debug.stats.istats.radm_cpl_timeout++;
+-	if (sync_cause & AR_INTR_SYNC_LOCAL_TIMEOUT)
+-		sc->debug.stats.istats.local_timeout++;
+-	if (sync_cause & AR_INTR_SYNC_PM_ACCESS)
+-		sc->debug.stats.istats.pm_access++;
+-	if (sync_cause & AR_INTR_SYNC_MAC_AWAKE)
+-		sc->debug.stats.istats.mac_awake++;
+-	if (sync_cause & AR_INTR_SYNC_MAC_ASLEEP)
+-		sc->debug.stats.istats.mac_asleep++;
+-	if (sync_cause & AR_INTR_SYNC_MAC_SLEEP_ACCESS)
+-		sc->debug.stats.istats.mac_sleep_access++;
+-}
+ #endif
+ 
+ 
+@@ -438,23 +398,13 @@ static bool ath9k_hw_chip_test(struct at
  
  static void ath9k_hw_init_config(struct ath_hw *ah)
  {
@@ -1177,7 +2101,7 @@
  
  	/*
  	 * We need this for PCI devices only (Cardbus, PCI, miniPCI)
-@@ -486,7 +478,6 @@ static void ath9k_hw_init_defaults(struc
+@@ -486,7 +436,6 @@ static void ath9k_hw_init_defaults(struc
  	ah->hw_version.magic = AR5416_MAGIC;
  	ah->hw_version.subvendorid = 0;
  
@@ -1185,7 +2109,7 @@
  	ah->sta_id1_defaults =
  		AR_STA_ID1_CRPT_MIC_ENABLE |
  		AR_STA_ID1_MCAST_KSRCH;
-@@ -549,11 +540,11 @@ static int ath9k_hw_post_init(struct ath
+@@ -549,11 +498,11 @@ static int ath9k_hw_post_init(struct ath
  	 * EEPROM needs to be initialized before we do this.
  	 * This is required for regulatory compliance.
  	 */
@@ -1200,7 +2124,115 @@
  		}
  	}
  
-@@ -1502,8 +1493,9 @@ static bool ath9k_hw_channel_change(stru
+@@ -1282,6 +1231,42 @@ void ath9k_hw_get_delta_slope_vals(struc
+ 	*coef_exponent = coef_exp - 16;
+ }
+ 
++/* AR9330 WAR:
++ * call external reset function to reset WMAC if:
++ * - doing a cold reset
++ * - we have pending frames in the TX queues.
++ */
++static bool ath9k_hw_ar9330_reset_war(struct ath_hw *ah, int type)
++{
++	int i, npend = 0;
++
++	for (i = 0; i < AR_NUM_QCU; i++) {
++		npend = ath9k_hw_numtxpending(ah, i);
++		if (npend)
++			break;
++	}
++
++	if (ah->external_reset &&
++	    (npend || type == ATH9K_RESET_COLD)) {
++		int reset_err = 0;
++
++		ath_dbg(ath9k_hw_common(ah), RESET,
++			"reset MAC via external reset\n");
++
++		reset_err = ah->external_reset();
++		if (reset_err) {
++			ath_err(ath9k_hw_common(ah),
++				"External reset failed, err=%d\n",
++				reset_err);
++			return false;
++		}
++
++		REG_WRITE(ah, AR_RTC_RESET, 1);
++	}
++
++	return true;
++}
++
+ static bool ath9k_hw_set_reset(struct ath_hw *ah, int type)
+ {
+ 	u32 rst_flags;
+@@ -1332,38 +1317,8 @@ static bool ath9k_hw_set_reset(struct at
+ 	}
+ 
+ 	if (AR_SREV_9330(ah)) {
+-		int npend = 0;
+-		int i;
+-
+-		/* AR9330 WAR:
+-		 * call external reset function to reset WMAC if:
+-		 * - doing a cold reset
+-		 * - we have pending frames in the TX queues
+-		 */
+-
+-		for (i = 0; i < AR_NUM_QCU; i++) {
+-			npend = ath9k_hw_numtxpending(ah, i);
+-			if (npend)
+-				break;
+-		}
+-
+-		if (ah->external_reset &&
+-		    (npend || type == ATH9K_RESET_COLD)) {
+-			int reset_err = 0;
+-
+-			ath_dbg(ath9k_hw_common(ah), RESET,
+-				"reset MAC via external reset\n");
+-
+-			reset_err = ah->external_reset();
+-			if (reset_err) {
+-				ath_err(ath9k_hw_common(ah),
+-					"External reset failed, err=%d\n",
+-					reset_err);
+-				return false;
+-			}
+-
+-			REG_WRITE(ah, AR_RTC_RESET, 1);
+-		}
++		if (!ath9k_hw_ar9330_reset_war(ah, type))
++			return false;
+ 	}
+ 
+ 	if (ath9k_hw_mci_is_enabled(ah))
+@@ -1373,7 +1328,12 @@ static bool ath9k_hw_set_reset(struct at
+ 
+ 	REGWRITE_BUFFER_FLUSH(ah);
+ 
+-	udelay(50);
++	if (AR_SREV_9300_20_OR_LATER(ah))
++		udelay(50);
++	else if (AR_SREV_9100(ah))
++		udelay(10000);
++	else
++		udelay(100);
+ 
+ 	REG_WRITE(ah, AR_RTC_RC, 0);
+ 	if (!ath9k_hw_wait(ah, AR_RTC_RC, AR_RTC_RC_M, 0, AH_WAIT_TIMEOUT)) {
+@@ -1409,8 +1369,7 @@ static bool ath9k_hw_set_reset_power_on(
+ 
+ 	REGWRITE_BUFFER_FLUSH(ah);
+ 
+-	if (!AR_SREV_9300_20_OR_LATER(ah))
+-		udelay(2);
++	udelay(2);
+ 
+ 	if (!AR_SREV_9100(ah) && !AR_SREV_9300_20_OR_LATER(ah))
+ 		REG_WRITE(ah, AR_RC, 0);
+@@ -1502,8 +1461,9 @@ static bool ath9k_hw_channel_change(stru
  	int r;
  
  	if (pCap->hw_caps & ATH9K_HW_CAP_FCC_BAND_SWITCH) {
@@ -1212,7 +2244,7 @@
  	}
  
  	for (qnum = 0; qnum < AR_NUM_QCU; qnum++) {
-@@ -1815,7 +1807,7 @@ static int ath9k_hw_do_fastcc(struct ath
+@@ -1815,7 +1775,7 @@ static int ath9k_hw_do_fastcc(struct ath
  	 * If cross-band fcc is not supoprted, bail out if channelFlags differ.
  	 */
  	if (!(pCap->hw_caps & ATH9K_HW_CAP_FCC_BAND_SWITCH) &&
@@ -1221,7 +2253,7 @@
  		goto fail;
  
  	if (!ath9k_hw_check_alive(ah))
-@@ -1856,10 +1848,12 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -1856,10 +1816,12 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  		   struct ath9k_hw_cal_data *caldata, bool fastcc)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
@@ -1234,7 +2266,7 @@
  	int r;
  	bool start_mci_reset = false;
  	bool save_fullsleep = ah->chip_fullsleep;
-@@ -1902,10 +1896,10 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -1902,10 +1864,10 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  
  	macStaId1 = REG_READ(ah, AR_STA_ID1) & AR_STA_ID1_BASE_RATE_11B;
  
@@ -1249,7 +2281,7 @@
  
  	saveLedState = REG_READ(ah, AR_CFG_LED) &
  		(AR_CFG_LED_ASSOC_CTL | AR_CFG_LED_MODE_SEL |
-@@ -1938,8 +1932,9 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -1938,8 +1900,9 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  	}
  
  	/* Restore TSF */
@@ -1261,7 +2293,7 @@
  
  	if (AR_SREV_9280_20_OR_LATER(ah))
  		REG_SET_BIT(ah, AR_GPIO_INPUT_EN_VAL, AR_GPIO_JTAG_DISABLE);
-@@ -2261,9 +2256,6 @@ void ath9k_hw_beaconinit(struct ath_hw *
+@@ -2261,9 +2224,6 @@ void ath9k_hw_beaconinit(struct ath_hw *
  	case NL80211_IFTYPE_ADHOC:
  		REG_SET_BIT(ah, AR_TXCFG,
  			    AR_TXCFG_ADHOC_BEACON_ATIM_TX_POLICY);
@@ -1271,7 +2303,7 @@
  	case NL80211_IFTYPE_MESH_POINT:
  	case NL80211_IFTYPE_AP:
  		REG_WRITE(ah, AR_NEXT_TBTT_TIMER, next_beacon);
-@@ -2284,7 +2276,6 @@ void ath9k_hw_beaconinit(struct ath_hw *
+@@ -2284,7 +2244,6 @@ void ath9k_hw_beaconinit(struct ath_hw *
  	REG_WRITE(ah, AR_BEACON_PERIOD, beacon_period);
  	REG_WRITE(ah, AR_DMA_BEACON_PERIOD, beacon_period);
  	REG_WRITE(ah, AR_SWBA_PERIOD, beacon_period);
@@ -1279,7 +2311,7 @@
  
  	REGWRITE_BUFFER_FLUSH(ah);
  
-@@ -2301,12 +2292,9 @@ void ath9k_hw_set_sta_beacon_timers(stru
+@@ -2301,12 +2260,9 @@ void ath9k_hw_set_sta_beacon_timers(stru
  
  	ENABLE_REGWRITE_BUFFER(ah);
  
@@ -1295,7 +2327,7 @@
  
  	REGWRITE_BUFFER_FLUSH(ah);
  
-@@ -2334,9 +2322,8 @@ void ath9k_hw_set_sta_beacon_timers(stru
+@@ -2334,9 +2290,8 @@ void ath9k_hw_set_sta_beacon_timers(stru
  
  	ENABLE_REGWRITE_BUFFER(ah);
  
@@ -1307,7 +2339,7 @@
  
  	REG_WRITE(ah, AR_SLEEP1,
  		  SM((CAB_TIMEOUT_VAL << 3), AR_SLEEP1_CAB_TIMEOUT)
-@@ -2350,8 +2337,8 @@ void ath9k_hw_set_sta_beacon_timers(stru
+@@ -2350,8 +2305,8 @@ void ath9k_hw_set_sta_beacon_timers(stru
  	REG_WRITE(ah, AR_SLEEP2,
  		  SM(beacontimeout, AR_SLEEP2_BEACON_TIMEOUT));
  
@@ -1318,7 +2350,7 @@
  
  	REGWRITE_BUFFER_FLUSH(ah);
  
-@@ -2987,20 +2974,6 @@ static const struct ath_gen_timer_config
+@@ -2987,20 +2942,6 @@ static const struct ath_gen_timer_config
  
  /* HW generic timer primitives */
  
@@ -1339,7 +2371,7 @@
  u32 ath9k_hw_gettsf32(struct ath_hw *ah)
  {
  	return REG_READ(ah, AR_TSF_L32);
-@@ -3016,6 +2989,10 @@ struct ath_gen_timer *ath_gen_timer_allo
+@@ -3016,6 +2957,10 @@ struct ath_gen_timer *ath_gen_timer_allo
  	struct ath_gen_timer_table *timer_table = &ah->hw_gen_timers;
  	struct ath_gen_timer *timer;
  
@@ -1350,7 +2382,7 @@
  	timer = kzalloc(sizeof(struct ath_gen_timer), GFP_KERNEL);
  	if (timer == NULL)
  		return NULL;
-@@ -3033,23 +3010,13 @@ EXPORT_SYMBOL(ath_gen_timer_alloc);
+@@ -3033,23 +2978,13 @@ EXPORT_SYMBOL(ath_gen_timer_alloc);
  
  void ath9k_hw_gen_timer_start(struct ath_hw *ah,
  			      struct ath_gen_timer *timer,
@@ -1364,10 +2396,10 @@
 -	BUG_ON(!timer_period);
 -
 -	set_bit(timer->index, &timer_table->timer_mask.timer_bits);
--
--	tsf = ath9k_hw_gettsf32(ah);
 +	u32 mask = 0;
  
+-	tsf = ath9k_hw_gettsf32(ah);
+-
 -	timer_next = tsf + trig_timeout;
 -
 -	ath_dbg(ath9k_hw_common(ah), BTCOEX,
@@ -1377,7 +2409,7 @@
  
  	/*
  	 * Program generic timer registers
-@@ -3075,10 +3042,19 @@ void ath9k_hw_gen_timer_start(struct ath
+@@ -3075,10 +3010,19 @@ void ath9k_hw_gen_timer_start(struct ath
  				       (1 << timer->index));
  	}
  
@@ -1401,7 +2433,7 @@
  }
  EXPORT_SYMBOL(ath9k_hw_gen_timer_start);
  
-@@ -3086,11 +3062,6 @@ void ath9k_hw_gen_timer_stop(struct ath_
+@@ -3086,11 +3030,6 @@ void ath9k_hw_gen_timer_stop(struct ath_
  {
  	struct ath_gen_timer_table *timer_table = &ah->hw_gen_timers;
  
@@ -1413,7 +2445,7 @@
  	/* Clear generic timer enable bits. */
  	REG_CLR_BIT(ah, gen_tmr_configuration[timer->index].mode_addr,
  			gen_tmr_configuration[timer->index].mode_mask);
-@@ -3110,7 +3081,12 @@ void ath9k_hw_gen_timer_stop(struct ath_
+@@ -3110,7 +3049,12 @@ void ath9k_hw_gen_timer_stop(struct ath_
  		(SM(AR_GENTMR_BIT(timer->index), AR_IMR_S5_GENTIMER_THRESH) |
  		SM(AR_GENTMR_BIT(timer->index), AR_IMR_S5_GENTIMER_TRIG)));
  
@@ -1427,7 +2459,7 @@
  }
  EXPORT_SYMBOL(ath9k_hw_gen_timer_stop);
  
-@@ -3131,32 +3107,32 @@ void ath_gen_timer_isr(struct ath_hw *ah
+@@ -3131,32 +3075,32 @@ void ath_gen_timer_isr(struct ath_hw *ah
  {
  	struct ath_gen_timer_table *timer_table = &ah->hw_gen_timers;
  	struct ath_gen_timer *timer;
@@ -1563,7 +2595,17 @@
  };
  
  struct ath_hw_antcomb_conf {
-@@ -785,7 +763,6 @@ struct ath_hw {
+@@ -689,7 +667,8 @@ struct ath_hw_ops {
+ 			  struct ath9k_channel *chan,
+ 			  u8 rxchainmask,
+ 			  bool longcal);
+-	bool (*get_isr)(struct ath_hw *ah, enum ath9k_int *masked);
++	bool (*get_isr)(struct ath_hw *ah, enum ath9k_int *masked,
++			u32 *sync_cause_p);
+ 	void (*set_txdesc)(struct ath_hw *ah, void *ds,
+ 			   struct ath_tx_info *i);
+ 	int (*proc_txdesc)(struct ath_hw *ah, void *ds,
+@@ -785,7 +764,6 @@ struct ath_hw {
  	u32 txurn_interrupt_mask;
  	atomic_t intr_ref_cnt;
  	bool chip_fullsleep;
@@ -1571,7 +2613,7 @@
  	u32 modes_index;
  
  	/* Calibration */
-@@ -864,6 +841,7 @@ struct ath_hw {
+@@ -864,6 +842,7 @@ struct ath_hw {
  	u32 gpio_mask;
  	u32 gpio_val;
  
@@ -1579,7 +2621,7 @@
  	struct ar5416IniArray iniModes;
  	struct ar5416IniArray iniCommon;
  	struct ar5416IniArray iniBB_RfGain;
-@@ -920,7 +898,7 @@ struct ath_hw {
+@@ -920,7 +899,7 @@ struct ath_hw {
  	/* Enterprise mode cap */
  	u32 ent_mode;
  
@@ -1588,7 +2630,21 @@
  	u32 wow_event_mask;
  #endif
  	bool is_clk_25mhz;
-@@ -1126,7 +1104,7 @@ ath9k_hw_get_btcoex_scheme(struct ath_hw
+@@ -1016,13 +995,6 @@ bool ath9k_hw_check_alive(struct ath_hw 
+ 
+ bool ath9k_hw_setpower(struct ath_hw *ah, enum ath9k_power_mode mode);
+ 
+-#ifdef CPTCFG_ATH9K_DEBUGFS
+-void ath9k_debug_sync_cause(struct ath_common *common, u32 sync_cause);
+-#else
+-static inline void ath9k_debug_sync_cause(struct ath_common *common,
+-					  u32 sync_cause) {}
+-#endif
+-
+ /* Generic hw timer primitives */
+ struct ath_gen_timer *ath_gen_timer_alloc(struct ath_hw *ah,
+ 					  void (*trigger)(void *),
+@@ -1126,7 +1098,7 @@ ath9k_hw_get_btcoex_scheme(struct ath_hw
  #endif /* CPTCFG_ATH9K_BTCOEX_SUPPORT */
  
  
@@ -1599,7 +2655,15 @@
  				u8 *user_mask, int pattern_count,
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -554,7 +554,7 @@ static void ath9k_init_misc(struct ath_s
+@@ -470,7 +470,6 @@ static int ath9k_init_queues(struct ath_
+ 
+ 	sc->beacon.beaconq = ath9k_hw_beaconq_setup(sc->sc_ah);
+ 	sc->beacon.cabq = ath_txq_setup(sc, ATH9K_TX_QUEUE_CAB, 0);
+-
+ 	ath_cabq_update(sc);
+ 
+ 	sc->tx.uapsdq = ath_txq_setup(sc, ATH9K_TX_QUEUE_UAPSD, 0);
+@@ -554,7 +553,7 @@ static void ath9k_init_misc(struct ath_s
  	sc->spec_config.fft_period = 0xF;
  }
  
@@ -1608,7 +2672,7 @@
  {
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath9k_hw_capabilities *pCap = &ah->caps;
-@@ -609,6 +609,11 @@ static void ath9k_init_platform(struct a
+@@ -609,6 +608,11 @@ static void ath9k_init_platform(struct a
  		ah->config.pcie_waen = 0x0040473b;
  		ath_info(common, "Enable WAR for ASPM D3/L1\n");
  	}
@@ -1620,7 +2684,7 @@
  }
  
  static void ath9k_eeprom_request_cb(const struct firmware *eeprom_blob,
-@@ -656,6 +661,27 @@ static void ath9k_eeprom_release(struct 
+@@ -656,6 +660,27 @@ static void ath9k_eeprom_release(struct 
  	release_firmware(sc->sc_ah->eeprom_blob);
  }
  
@@ -1648,7 +2712,14 @@
  static int ath9k_init_softc(u16 devid, struct ath_softc *sc,
  			    const struct ath_bus_ops *bus_ops)
  {
-@@ -683,6 +709,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -676,13 +701,13 @@ static int ath9k_init_softc(u16 devid, s
+ 	ah->reg_ops.read = ath9k_ioread32;
+ 	ah->reg_ops.write = ath9k_iowrite32;
+ 	ah->reg_ops.rmw = ath9k_reg_rmw;
+-	atomic_set(&ah->intr_ref_cnt, -1);
+ 	sc->sc_ah = ah;
+ 	pCap = &ah->caps;
+ 
  	common = ath9k_hw_common(ah);
  	sc->dfs_detector = dfs_pattern_detector_init(common, NL80211_DFS_UNSET);
  	sc->tx99_power = MAX_RATE_POWER + 1;
@@ -1656,7 +2727,7 @@
  
  	if (!pdata) {
  		ah->ah_flags |= AH_USE_EEPROM;
-@@ -708,7 +735,11 @@ static int ath9k_init_softc(u16 devid, s
+@@ -708,7 +733,11 @@ static int ath9k_init_softc(u16 devid, s
  	/*
  	 * Platform quirks.
  	 */
@@ -1669,7 +2740,7 @@
  
  	/*
  	 * Enable WLAN/BT RX Antenna diversity only when:
-@@ -722,7 +753,6 @@ static int ath9k_init_softc(u16 devid, s
+@@ -722,7 +751,6 @@ static int ath9k_init_softc(u16 devid, s
  		common->bt_ant_diversity = 1;
  
  	spin_lock_init(&common->cc_lock);
@@ -1677,7 +2748,7 @@
  	spin_lock_init(&sc->sc_serial_rw);
  	spin_lock_init(&sc->sc_pm_lock);
  	mutex_init(&sc->mutex);
-@@ -730,6 +760,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -730,6 +758,7 @@ static int ath9k_init_softc(u16 devid, s
  	tasklet_init(&sc->bcon_tasklet, ath9k_beacon_tasklet,
  		     (unsigned long)sc);
  
@@ -1685,7 +2756,7 @@
  	INIT_WORK(&sc->hw_reset_work, ath_reset_work);
  	INIT_WORK(&sc->hw_check_work, ath_hw_check);
  	INIT_WORK(&sc->paprd_work, ath_paprd_calibrate);
-@@ -743,12 +774,6 @@ static int ath9k_init_softc(u16 devid, s
+@@ -743,12 +772,6 @@ static int ath9k_init_softc(u16 devid, s
  	ath_read_cachesize(common, &csz);
  	common->cachelsz = csz << 2; /* convert to bytes */
  
@@ -1698,7 +2769,7 @@
  	/* Initializes the hardware for all supported chipsets */
  	ret = ath9k_hw_init(ah);
  	if (ret)
-@@ -845,7 +870,8 @@ static const struct ieee80211_iface_limi
+@@ -845,7 +868,8 @@ static const struct ieee80211_iface_limi
  };
  
  static const struct ieee80211_iface_limit if_dfs_limits[] = {
@@ -1708,7 +2779,7 @@
  };
  
  static const struct ieee80211_iface_combination if_comb[] = {
-@@ -862,20 +888,11 @@ static const struct ieee80211_iface_comb
+@@ -862,21 +886,12 @@ static const struct ieee80211_iface_comb
  		.max_interfaces = 1,
  		.num_different_channels = 1,
  		.beacon_int_infra_match = true,
@@ -1728,10 +2799,12 @@
 -};
 -#endif
 -
- void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
+-void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
++static void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
  {
  	struct ath_hw *ah = sc->sc_ah;
-@@ -925,16 +942,6 @@ void ath9k_set_hw_capab(struct ath_softc
+ 	struct ath_common *common = ath9k_hw_common(ah);
+@@ -925,16 +940,6 @@ void ath9k_set_hw_capab(struct ath_softc
  	hw->wiphy->flags |= WIPHY_FLAG_SUPPORTS_5_10_MHZ;
  	hw->wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
  
@@ -1748,7 +2821,7 @@
  	hw->queues = 4;
  	hw->max_rates = 4;
  	hw->channel_change_time = 5000;
-@@ -960,6 +967,7 @@ void ath9k_set_hw_capab(struct ath_softc
+@@ -960,6 +965,7 @@ void ath9k_set_hw_capab(struct ath_softc
  		hw->wiphy->bands[IEEE80211_BAND_5GHZ] =
  			&sc->sbands[IEEE80211_BAND_5GHZ];
  
@@ -1756,7 +2829,7 @@
  	ath9k_reload_chainmask_settings(sc);
  
  	SET_IEEE80211_PERM_ADDR(hw, common->macaddr);
-@@ -1058,6 +1066,7 @@ static void ath9k_deinit_softc(struct at
+@@ -1058,6 +1064,7 @@ static void ath9k_deinit_softc(struct at
  		if (ATH_TXQ_SETUP(sc, i))
  			ath_tx_cleanupq(sc, &sc->tx.txq[i]);
  
@@ -1850,7 +2923,25 @@
  	ath9k_btcoex_handle_interrupt(sc, status);
  
  	/* re-enable hardware interrupt */
-@@ -579,7 +601,8 @@ irqreturn_t ath_isr(int irq, void *dev)
+@@ -519,6 +541,7 @@ irqreturn_t ath_isr(int irq, void *dev)
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	enum ath9k_int status;
++	u32 sync_cause;
+ 	bool sched = false;
+ 
+ 	/*
+@@ -545,7 +568,8 @@ irqreturn_t ath_isr(int irq, void *dev)
+ 	 * bits we haven't explicitly enabled so we mask the
+ 	 * value to insure we only process bits we requested.
+ 	 */
+-	ath9k_hw_getisr(ah, &status);	/* NB: clears ISR too */
++	ath9k_hw_getisr(ah, &status, &sync_cause); /* NB: clears ISR too */
++	ath9k_debug_sync_cause(sc, sync_cause);
+ 	status &= ah->imask;	/* discard unasked-for bits */
+ 
+ 	/*
+@@ -579,7 +603,8 @@ irqreturn_t ath_isr(int irq, void *dev)
  
  		goto chip_reset;
  	}
@@ -1860,7 +2951,7 @@
  	if (status & ATH9K_INT_BMISS) {
  		if (atomic_read(&sc->wow_sleep_proc_intr) == 0) {
  			ath_dbg(common, ANY, "during WoW we got a BMISS\n");
-@@ -588,6 +611,8 @@ irqreturn_t ath_isr(int irq, void *dev)
+@@ -588,6 +613,8 @@ irqreturn_t ath_isr(int irq, void *dev)
  		}
  	}
  #endif
@@ -1869,7 +2960,7 @@
  	if (status & ATH9K_INT_SWBA)
  		tasklet_schedule(&sc->bcon_tasklet);
  
-@@ -627,7 +652,7 @@ chip_reset:
+@@ -627,7 +654,7 @@ chip_reset:
  #undef SCHED_INTR
  }
  
@@ -1878,7 +2969,7 @@
  {
  	int r;
  
-@@ -735,6 +760,8 @@ static int ath9k_start(struct ieee80211_
+@@ -735,6 +762,8 @@ static int ath9k_start(struct ieee80211_
  	 */
  	ath9k_cmn_init_crypto(sc->sc_ah);
  
@@ -1887,7 +2978,23 @@
  	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	mutex_unlock(&sc->mutex);
-@@ -1817,13 +1844,31 @@ static void ath9k_set_coverage_class(str
+@@ -1635,13 +1664,8 @@ static void ath9k_bss_info_changed(struc
+ 	}
+ 
+ 	if ((changed & BSS_CHANGED_BEACON_ENABLED) ||
+-	    (changed & BSS_CHANGED_BEACON_INT)) {
+-		if (ah->opmode == NL80211_IFTYPE_AP &&
+-		    bss_conf->enable_beacon)
+-			ath9k_set_tsfadjust(sc, vif);
+-		if (ath9k_allow_beacon_config(sc, vif))
+-			ath9k_beacon_config(sc, vif, changed);
+-	}
++	    (changed & BSS_CHANGED_BEACON_INT))
++		ath9k_beacon_config(sc, vif, changed);
+ 
+ 	if (changed & BSS_CHANGED_ERP_SLOT) {
+ 		if (bss_conf->use_short_slot)
+@@ -1817,13 +1841,31 @@ static void ath9k_set_coverage_class(str
  	mutex_unlock(&sc->mutex);
  }
  
@@ -1921,7 +3028,7 @@
  	bool drain_txq;
  
  	mutex_lock(&sc->mutex);
-@@ -1841,25 +1886,9 @@ static void ath9k_flush(struct ieee80211
+@@ -1841,25 +1883,9 @@ static void ath9k_flush(struct ieee80211
  		return;
  	}
  
@@ -1950,7 +3057,7 @@
  
  	if (drop) {
  		ath9k_ps_wakeup(sc);
-@@ -2021,333 +2050,6 @@ static int ath9k_get_antenna(struct ieee
+@@ -2021,333 +2047,6 @@ static int ath9k_get_antenna(struct ieee
  	return 0;
  }
  
@@ -2284,7 +3391,7 @@
  static void ath9k_sw_scan_start(struct ieee80211_hw *hw)
  {
  	struct ath_softc *sc = hw->priv;
-@@ -2373,134 +2075,6 @@ static void ath9k_channel_switch_beacon(
+@@ -2373,134 +2072,6 @@ static void ath9k_channel_switch_beacon(
  	sc->csa_vif = vif;
  }
  
@@ -2419,7 +3526,7 @@
  struct ieee80211_ops ath9k_ops = {
  	.tx 		    = ath9k_tx,
  	.start 		    = ath9k_start,
-@@ -2531,7 +2105,7 @@ struct ieee80211_ops ath9k_ops = {
+@@ -2531,7 +2102,7 @@ struct ieee80211_ops ath9k_ops = {
  	.set_antenna	    = ath9k_set_antenna,
  	.get_antenna	    = ath9k_get_antenna,
  
@@ -3112,7 +4219,23 @@
 -EXPORT_SYMBOL(ath9k_hw_wow_enable);
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -1276,6 +1276,10 @@ static void ath_tx_fill_desc(struct ath_
+@@ -174,14 +174,7 @@ static void ath_txq_skb_done(struct ath_
+ static struct ath_atx_tid *
+ ath_get_skb_tid(struct ath_softc *sc, struct ath_node *an, struct sk_buff *skb)
+ {
+-	struct ieee80211_hdr *hdr;
+-	u8 tidno = 0;
+-
+-	hdr = (struct ieee80211_hdr *) skb->data;
+-	if (ieee80211_is_data_qos(hdr->frame_control))
+-		tidno = ieee80211_get_qos_ctl(hdr)[0];
+-
+-	tidno &= IEEE80211_QOS_CTL_TID_MASK;
++	u8 tidno = skb->priority & IEEE80211_QOS_CTL_TID_MASK;
+ 	return ATH_AN_2_TID(an, tidno);
+ }
+ 
+@@ -1276,6 +1269,10 @@ static void ath_tx_fill_desc(struct ath_
  				if (!rts_thresh || (len > rts_thresh))
  					rts = true;
  			}
@@ -3123,7 +4246,7 @@
  			ath_buf_set_rate(sc, bf, &info, len, rts);
  		}
  
-@@ -1786,6 +1790,9 @@ bool ath_drain_all_txq(struct ath_softc 
+@@ -1786,6 +1783,9 @@ bool ath_drain_all_txq(struct ath_softc 
  		if (!ATH_TXQ_SETUP(sc, i))
  			continue;
  
@@ -3133,7 +4256,7 @@
  		if (ath9k_hw_numtxpending(ah, sc->tx.txq[i].axq_qnum))
  			npend |= BIT(i);
  	}
-@@ -2749,6 +2756,8 @@ void ath_tx_node_cleanup(struct ath_soft
+@@ -2749,6 +2749,8 @@ void ath_tx_node_cleanup(struct ath_soft
  	}
  }
  
@@ -3142,7 +4265,7 @@
  int ath9k_tx99_send(struct ath_softc *sc, struct sk_buff *skb,
  		    struct ath_tx_control *txctl)
  {
-@@ -2791,3 +2800,5 @@ int ath9k_tx99_send(struct ath_softc *sc
+@@ -2791,3 +2793,5 @@ int ath9k_tx99_send(struct ath_softc *sc
  
  	return 0;
  }
@@ -4645,6 +5768,36 @@
  		goto fail_rcu;
  
  	ieee80211_xmit(sdata, skb, chan->band);
+@@ -2530,7 +2531,8 @@ struct sk_buff *ieee80211_beacon_get_tim
+ 			 */
+ 			skb = dev_alloc_skb(local->tx_headroom +
+ 					    beacon->head_len +
+-					    beacon->tail_len + 256);
++					    beacon->tail_len + 256 +
++					    local->hw.extra_beacon_tailroom);
+ 			if (!skb)
+ 				goto out;
+ 
+@@ -2562,7 +2564,8 @@ struct sk_buff *ieee80211_beacon_get_tim
+ 			ieee80211_update_csa(sdata, presp);
+ 
+ 
+-		skb = dev_alloc_skb(local->tx_headroom + presp->head_len);
++		skb = dev_alloc_skb(local->tx_headroom + presp->head_len +
++				    local->hw.extra_beacon_tailroom);
+ 		if (!skb)
+ 			goto out;
+ 		skb_reserve(skb, local->tx_headroom);
+@@ -2589,7 +2592,8 @@ struct sk_buff *ieee80211_beacon_get_tim
+ 		skb = dev_alloc_skb(local->tx_headroom +
+ 				    bcn->head_len +
+ 				    256 + /* TIM IE */
+-				    bcn->tail_len);
++				    bcn->tail_len +
++				    local->hw.extra_beacon_tailroom);
+ 		if (!skb)
+ 			goto out;
+ 		skb_reserve(skb, local->tx_headroom);
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
 @@ -2259,14 +2259,17 @@ u64 ieee80211_calculate_rx_timestamp(str
@@ -4665,7 +5818,7 @@
  					   NL80211_RADAR_CAC_ABORTED,
  					   GFP_KERNEL);
  		}
-@@ -2459,14 +2462,9 @@ int ieee80211_send_action_csa(struct iee
+@@ -2459,16 +2462,146 @@ int ieee80211_send_action_csa(struct iee
  			  WLAN_EID_CHAN_SWITCH_PARAM_TX_RESTRICT : 0x00;
  		put_unaligned_le16(WLAN_REASON_MESH_CHAN, pos); /* Reason Cd */
  		pos += 2;
@@ -4680,6 +5833,143 @@
  	}
  
  	ieee80211_tx_skb(sdata, skb);
+ 	return 0;
+ }
++
++static bool
++ieee80211_extend_noa_desc(struct ieee80211_noa_data *data, u32 tsf, int i)
++{
++	s32 end = data->desc[i].start + data->desc[i].duration - (tsf + 1);
++	int skip;
++
++	if (end > 0)
++		return false;
++
++	/* End time is in the past, check for repetitions */
++	skip = DIV_ROUND_UP(-end, data->desc[i].interval);
++	if (data->count[i] < 255) {
++		if (data->count[i] <= skip) {
++			data->count[i] = 0;
++			return false;
++		}
++
++		data->count[i] -= skip;
++	}
++
++	data->desc[i].start += skip * data->desc[i].interval;
++
++	return true;
++}
++
++static bool
++ieee80211_extend_absent_time(struct ieee80211_noa_data *data, u32 tsf,
++			     s32 *offset)
++{
++	bool ret = false;
++	int i;
++
++	for (i = 0; i < IEEE80211_P2P_NOA_DESC_MAX; i++) {
++		s32 cur;
++
++		if (!data->count[i])
++			continue;
++
++		if (ieee80211_extend_noa_desc(data, tsf + *offset, i))
++			ret = true;
++
++		cur = data->desc[i].start - tsf;
++		if (cur > *offset)
++			continue;
++
++		cur = data->desc[i].start + data->desc[i].duration - tsf;
++		if (cur > *offset)
++			*offset = cur;
++	}
++
++	return ret;
++}
++
++static u32
++ieee80211_get_noa_absent_time(struct ieee80211_noa_data *data, u32 tsf)
++{
++	s32 offset = 0;
++	int tries = 0;
++
++	ieee80211_extend_absent_time(data, tsf, &offset);
++	do {
++		if (!ieee80211_extend_absent_time(data, tsf, &offset))
++			break;
++
++		tries++;
++	} while (tries < 5);
++
++	return offset;
++}
++
++void ieee80211_update_p2p_noa(struct ieee80211_noa_data *data, u32 tsf)
++{
++	u32 next_offset = BIT(31) - 1;
++	int i;
++
++	data->absent = 0;
++	data->has_next_tsf = false;
++	for (i = 0; i < IEEE80211_P2P_NOA_DESC_MAX; i++) {
++		s32 start;
++
++		if (!data->count[i])
++			continue;
++
++		ieee80211_extend_noa_desc(data, tsf, i);
++		start = data->desc[i].start - tsf;
++		if (start <= 0)
++			data->absent |= BIT(i);
++
++		if (next_offset > start)
++			next_offset = start;
++
++		data->has_next_tsf = true;
++	}
++
++	if (data->absent)
++		next_offset = ieee80211_get_noa_absent_time(data, tsf);
++
++	data->next_tsf = tsf + next_offset;
++}
++EXPORT_SYMBOL(ieee80211_update_p2p_noa);
++
++int ieee80211_parse_p2p_noa(const struct ieee80211_p2p_noa_attr *attr,
++			    struct ieee80211_noa_data *data, u32 tsf)
++{
++	int ret = 0;
++	int i;
++
++	memset(data, 0, sizeof(*data));
++
++	for (i = 0; i < IEEE80211_P2P_NOA_DESC_MAX; i++) {
++		const struct ieee80211_p2p_noa_desc *desc = &attr->desc[i];
++
++		if (!desc->count || !desc->duration)
++			continue;
++
++		data->count[i] = desc->count;
++		data->desc[i].start = le32_to_cpu(desc->start_time);
++		data->desc[i].duration = le32_to_cpu(desc->duration);
++		data->desc[i].interval = le32_to_cpu(desc->interval);
++
++		if (data->count[i] > 1 &&
++		    data->desc[i].interval < data->desc[i].duration)
++			continue;
++
++		ieee80211_extend_noa_desc(data, tsf, i);
++		ret++;
++	}
++
++	if (ret)
++		ieee80211_update_p2p_noa(data, tsf);
++
++	return ret;
++}
++EXPORT_SYMBOL(ieee80211_parse_p2p_noa);
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
 @@ -277,6 +277,32 @@ void cfg80211_set_dfs_state(struct wiphy
@@ -6103,6 +7393,15 @@
  static void ar9003_hw_set_radar_conf(struct ath_hw *ah)
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
+@@ -270,7 +270,7 @@
+ #define AR_PHY_AGC              (AR_AGC_BASE + 0x14)
+ #define AR_PHY_EXT_ATTEN_CTL_0  (AR_AGC_BASE + 0x18)
+ #define AR_PHY_CCA_0            (AR_AGC_BASE + 0x1c)
+-#define AR_PHY_EXT_CCA0         (AR_AGC_BASE + 0x20)
++#define AR_PHY_CCA_CTRL_0       (AR_AGC_BASE + 0x20)
+ #define AR_PHY_RESTART          (AR_AGC_BASE + 0x24)
+ 
+ /*
 @@ -341,14 +341,15 @@
  #define AR_PHY_CCA_MAX_GOOD_VAL_9300_2GHZ     -95
  #define AR_PHY_CCA_MAX_GOOD_VAL_9300_5GHZ     -100
@@ -6121,7 +7420,16 @@
  
  #define AR_PHY_CCA_NOM_VAL_9330_2GHZ          -118
  
-@@ -656,13 +657,24 @@
+@@ -397,6 +398,8 @@
+ #define AR9280_PHY_CCA_THRESH62_S   12
+ #define AR_PHY_EXT_CCA0_THRESH62    0x000000FF
+ #define AR_PHY_EXT_CCA0_THRESH62_S  0
++#define AR_PHY_EXT_CCA0_THRESH62_1    0x000001FF
++#define AR_PHY_EXT_CCA0_THRESH62_1_S  0
+ #define AR_PHY_CCK_DETECT_WEAK_SIG_THR_CCK          0x0000003F
+ #define AR_PHY_CCK_DETECT_WEAK_SIG_THR_CCK_S        0
+ #define AR_PHY_CCK_DETECT_ANT_SWITCH_TIME           0x00001FC0
+@@ -656,13 +659,24 @@
  #define AR_PHY_SYNTH4_LONG_SHIFT_SELECT   ((AR_SREV_9462(ah) || AR_SREV_9565(ah)) ? 0x00000001 : 0x00000002)
  #define AR_PHY_SYNTH4_LONG_SHIFT_SELECT_S ((AR_SREV_9462(ah) || AR_SREV_9565(ah)) ? 0 : 1)
  #define AR_PHY_65NM_CH0_SYNTH7      0x16098
@@ -6404,7 +7712,132 @@
  }
 --- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
-@@ -3965,7 +3965,7 @@ static void ar9003_hw_apply_tuning_caps(
+@@ -131,6 +131,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -138,7 +139,7 @@ static const struct ar9300_eeprom ar9300
+ 	 },
+ 	.base_ext1 = {
+ 		.ant_div_control = 0,
+-		.future = {0, 0, 0},
++		.future = {0, 0},
+ 		.tempslopextension = {0, 0, 0, 0, 0, 0, 0, 0}
+ 	},
+ 	.calFreqPier2G = {
+@@ -333,6 +334,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80c080),
+ 		.papdRateMaskHt40 = LE32(0x0080c080),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -707,6 +709,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80c080),
+ 		.papdRateMaskHt40 = LE32(0x0080c080),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -714,7 +717,7 @@ static const struct ar9300_eeprom ar9300
+ 	 },
+ 	 .base_ext1 = {
+ 		.ant_div_control = 0,
+-		.future = {0, 0, 0},
++		.future = {0, 0},
+ 		.tempslopextension = {0, 0, 0, 0, 0, 0, 0, 0}
+ 	 },
+ 	.calFreqPier2G = {
+@@ -909,6 +912,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -1284,6 +1288,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80c080),
+ 		.papdRateMaskHt40 = LE32(0x0080c080),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -1291,7 +1296,7 @@ static const struct ar9300_eeprom ar9300
+ 	},
+ 	.base_ext1 = {
+ 		.ant_div_control = 0,
+-		.future = {0, 0, 0},
++		.future = {0, 0},
+ 		.tempslopextension = {0, 0, 0, 0, 0, 0, 0, 0}
+ 	},
+ 	.calFreqPier2G = {
+@@ -1486,6 +1491,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -1861,6 +1867,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80c080),
+ 		.papdRateMaskHt40 = LE32(0x0080c080),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -1868,7 +1875,7 @@ static const struct ar9300_eeprom ar9300
+ 	},
+ 	.base_ext1 = {
+ 		.ant_div_control = 0,
+-		.future = {0, 0, 0},
++		.future = {0, 0},
+ 		.tempslopextension = {0, 0, 0, 0, 0, 0, 0, 0}
+ 	},
+ 	.calFreqPier2G = {
+@@ -2063,6 +2070,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -2437,6 +2445,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0c80C080),
+ 		.papdRateMaskHt40 = LE32(0x0080C080),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -2444,7 +2453,7 @@ static const struct ar9300_eeprom ar9300
+ 	 },
+ 	 .base_ext1 = {
+ 		.ant_div_control = 0,
+-		.future = {0, 0, 0},
++		.future = {0, 0},
+ 		.tempslopextension = {0, 0, 0, 0, 0, 0, 0, 0}
+ 	 },
+ 	.calFreqPier2G = {
+@@ -2639,6 +2648,7 @@ static const struct ar9300_eeprom ar9300
+ 		.thresh62 = 28,
+ 		.papdRateMaskHt20 = LE32(0x0cf0e0e0),
+ 		.papdRateMaskHt40 = LE32(0x6cf0e0e0),
++		.switchcomspdt = 0,
+ 		.xlna_bias_strength = 0,
+ 		.futureModal = {
+ 			0, 0, 0, 0, 0, 0, 0,
+@@ -3965,7 +3975,7 @@ static void ar9003_hw_apply_tuning_caps(
  	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
  	u8 tuning_caps_param = eep->baseEepHeader.params_for_tuning_caps[0];
  
@@ -6413,7 +7846,7 @@
  		return;
  
  	if (eep->baseEepHeader.featureEnable & 0x40) {
-@@ -3984,18 +3984,20 @@ static void ar9003_hw_quick_drop_apply(s
+@@ -3984,18 +3994,20 @@ static void ar9003_hw_quick_drop_apply(s
  	int quick_drop;
  	s32 t[3], f[3] = {5180, 5500, 5785};
  
@@ -6443,7 +7876,7 @@
  }
  
  static void ar9003_hw_txend_to_xpa_off_apply(struct ath_hw *ah, bool is2ghz)
-@@ -4035,7 +4037,7 @@ static void ar9003_hw_xlna_bias_strength
+@@ -4035,7 +4047,7 @@ static void ar9003_hw_xlna_bias_strength
  	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
  	u8 bias;
  
@@ -6452,7 +7885,45 @@
  		return;
  
  	if (!AR_SREV_9300(ah))
-@@ -4120,7 +4122,7 @@ static void ath9k_hw_ar9300_set_board_va
+@@ -4109,6 +4121,37 @@ static void ar9003_hw_thermo_cal_apply(s
+ 	}
+ }
+ 
++static void ar9003_hw_apply_minccapwr_thresh(struct ath_hw *ah,
++					     bool is2ghz)
++{
++	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++	const u_int32_t cca_ctrl[AR9300_MAX_CHAINS] = {
++		AR_PHY_CCA_CTRL_0,
++		AR_PHY_CCA_CTRL_1,
++		AR_PHY_CCA_CTRL_2,
++	};
++	int chain;
++	u32 val;
++
++	if (is2ghz) {
++		if (!(eep->base_ext1.misc_enable & BIT(2)))
++			return;
++	} else {
++		if (!(eep->base_ext1.misc_enable & BIT(3)))
++			return;
++	}
++
++	for (chain = 0; chain < AR9300_MAX_CHAINS; chain++) {
++		if (!(ah->caps.tx_chainmask & BIT(chain)))
++			continue;
++
++		val = ar9003_modal_header(ah, is2ghz)->noiseFloorThreshCh[chain];
++		REG_RMW_FIELD(ah, cca_ctrl[chain],
++			      AR_PHY_EXT_CCA0_THRESH62_1, val);
++	}
++
++}
++
+ static void ath9k_hw_ar9300_set_board_values(struct ath_hw *ah,
+ 					     struct ath9k_channel *chan)
+ {
+@@ -4120,9 +4163,10 @@ static void ath9k_hw_ar9300_set_board_va
  	ar9003_hw_xlna_bias_strength_apply(ah, is2ghz);
  	ar9003_hw_atten_apply(ah, chan);
  	ar9003_hw_quick_drop_apply(ah, chan->channel);
@@ -6460,7 +7931,10 @@
 +	if (!AR_SREV_9330(ah) && !AR_SREV_9340(ah))
  		ar9003_hw_internal_regulator_apply(ah);
  	ar9003_hw_apply_tuning_caps(ah);
++	ar9003_hw_apply_minccapwr_thresh(ah, chan);
  	ar9003_hw_txend_to_xpa_off_apply(ah, is2ghz);
+ 	ar9003_hw_thermometer_apply(ah);
+ 	ar9003_hw_thermo_cal_apply(ah);
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
 @@ -735,6 +735,7 @@ struct ieee80211_sub_if_data {
@@ -11857,7 +13331,17 @@
 +#endif /* INITVALS_9003_BUFFALO_H */
 --- a/drivers/net/wireless/ath/ath9k/ar9002_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9002_mac.c
-@@ -76,9 +76,16 @@ static bool ar9002_hw_get_isr(struct ath
+@@ -29,7 +29,8 @@ static void ar9002_hw_set_desc_link(void
+ 	((struct ath_desc*) ds)->ds_link = ds_link;
+ }
+ 
+-static bool ar9002_hw_get_isr(struct ath_hw *ah, enum ath9k_int *masked)
++static bool ar9002_hw_get_isr(struct ath_hw *ah, enum ath9k_int *masked,
++			      u32 *sync_cause_p)
+ {
+ 	u32 isr = 0;
+ 	u32 mask2 = 0;
+@@ -76,9 +77,16 @@ static bool ar9002_hw_get_isr(struct ath
  				mask2 |= ATH9K_INT_CST;
  			if (isr2 & AR_ISR_S2_TSFOOR)
  				mask2 |= ATH9K_INT_TSFOOR;
@@ -11875,7 +13359,7 @@
  		if (isr == 0xffffffff) {
  			*masked = 0;
  			return false;
-@@ -97,11 +104,23 @@ static bool ar9002_hw_get_isr(struct ath
+@@ -97,11 +105,23 @@ static bool ar9002_hw_get_isr(struct ath
  
  			*masked |= ATH9K_INT_TX;
  
@@ -11902,7 +13386,7 @@
  			ah->intr_txqs |= MS(s1_s, AR_ISR_S1_QCU_TXERR);
  			ah->intr_txqs |= MS(s1_s, AR_ISR_S1_QCU_TXEOL);
  		}
-@@ -114,13 +133,23 @@ static bool ar9002_hw_get_isr(struct ath
+@@ -114,13 +134,23 @@ static bool ar9002_hw_get_isr(struct ath
  		*masked |= mask2;
  	}
  
@@ -11927,7 +13411,7 @@
  		ah->intr_gen_timer_trigger =
  				MS(s5_s, AR_ISR_S5_GENTIMER_TRIG);
  
-@@ -133,6 +162,11 @@ static bool ar9002_hw_get_isr(struct ath
+@@ -133,10 +163,16 @@ static bool ar9002_hw_get_isr(struct ath
  		if ((s5_s & AR_ISR_S5_TIM_TIMER) &&
  		    !(pCap->hw_caps & ATH9K_HW_CAP_AUTOSLEEP))
  			*masked |= ATH9K_INT_TIM_TIMER;
@@ -11939,6 +13423,12 @@
  	}
  
  	if (sync_cause) {
+-		ath9k_debug_sync_cause(common, sync_cause);
++		if (sync_cause_p)
++			*sync_cause_p = sync_cause;
+ 		fatal_int =
+ 			(sync_cause &
+ 			 (AR_INTR_SYNC_HOST1_FATAL | AR_INTR_SYNC_HOST1_PERR))
 --- a/drivers/net/wireless/ath/ath9k/antenna.c
 +++ b/drivers/net/wireless/ath/ath9k/antenna.c
 @@ -724,14 +724,14 @@ void ath_ant_comb_scan(struct ath_softc 
@@ -11989,7 +13479,27 @@
  
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -476,12 +476,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -175,7 +175,8 @@ static void ar9003_hw_set_desc_link(void
+ 	ads->ctl10 |= ar9003_calc_ptr_chksum(ads);
+ }
+ 
+-static bool ar9003_hw_get_isr(struct ath_hw *ah, enum ath9k_int *masked)
++static bool ar9003_hw_get_isr(struct ath_hw *ah, enum ath9k_int *masked,
++			      u32 *sync_cause_p)
+ {
+ 	u32 isr = 0;
+ 	u32 mask2 = 0;
+@@ -310,7 +311,8 @@ static bool ar9003_hw_get_isr(struct ath
+ 		ar9003_mci_get_isr(ah, masked);
+ 
+ 	if (sync_cause) {
+-		ath9k_debug_sync_cause(common, sync_cause);
++		if (sync_cause_p)
++			*sync_cause_p = sync_cause;
+ 		fatal_int =
+ 			(sync_cause &
+ 			 (AR_INTR_SYNC_HOST1_FATAL | AR_INTR_SYNC_HOST1_PERR))
+@@ -476,12 +478,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
  
  	/* XXX: Keycache */
  	rxs->rs_rssi = MS(rxsp->status5, AR_RxRSSICombined);
@@ -12010,7 +13520,31 @@
  		rxs->rs_keyix = MS(rxsp->status11, AR_KeyIdx);
 --- a/drivers/net/wireless/ath/ath9k/beacon.c
 +++ b/drivers/net/wireless/ath/ath9k/beacon.c
-@@ -431,6 +431,33 @@ static void ath9k_beacon_init(struct ath
+@@ -274,18 +274,19 @@ static int ath9k_beacon_choose_slot(stru
+ 	return slot;
+ }
+ 
+-void ath9k_set_tsfadjust(struct ath_softc *sc, struct ieee80211_vif *vif)
++static void ath9k_set_tsfadjust(struct ath_softc *sc, struct ieee80211_vif *vif)
+ {
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	struct ath_beacon_config *cur_conf = &sc->cur_beacon_conf;
+ 	struct ath_vif *avp = (void *)vif->drv_priv;
+-	u64 tsfadjust;
++	u32 tsfadjust;
+ 
+ 	if (avp->av_bslot == 0)
+ 		return;
+ 
+-	tsfadjust = cur_conf->beacon_interval * avp->av_bslot / ATH_BCBUF;
+-	avp->tsf_adjust = cpu_to_le64(TU_TO_USEC(tsfadjust));
++	tsfadjust = cur_conf->beacon_interval * avp->av_bslot;
++	tsfadjust = TU_TO_USEC(tsfadjust) / ATH_BCBUF;
++	avp->tsf_adjust = cpu_to_le64(tsfadjust);
+ 
+ 	ath_dbg(common, CONFIG, "tsfadjust is: %llu for bslot: %d\n",
+ 		(unsigned long long)tsfadjust, avp->av_bslot);
+@@ -431,6 +432,33 @@ static void ath9k_beacon_init(struct ath
  	ath9k_hw_enable_interrupts(ah);
  }
  
@@ -12044,7 +13578,7 @@
  /*
   * For multi-bss ap support beacons are either staggered evenly over N slots or
   * burst together.  For the former arrange for the SWBA to be delivered for each
-@@ -446,7 +473,8 @@ static void ath9k_beacon_config_ap(struc
+@@ -446,7 +474,8 @@ static void ath9k_beacon_config_ap(struc
  	/* NB: the beacon interval is kept internally in TU's */
  	intval = TU_TO_USEC(conf->beacon_interval);
  	intval /= ATH_BCBUF;
@@ -12054,7 +13588,7 @@
  
  	if (conf->enable_beacon)
  		ah->imask |= ATH9K_INT_SWBA;
-@@ -458,7 +486,7 @@ static void ath9k_beacon_config_ap(struc
+@@ -458,7 +487,7 @@ static void ath9k_beacon_config_ap(struc
  		(conf->enable_beacon) ? "Enable" : "Disable",
  		nexttbtt, intval, conf->beacon_interval);
  
@@ -12063,7 +13597,7 @@
  }
  
  /*
-@@ -475,11 +503,9 @@ static void ath9k_beacon_config_sta(stru
+@@ -475,11 +504,9 @@ static void ath9k_beacon_config_sta(stru
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ath9k_beacon_state bs;
@@ -12077,7 +13611,7 @@
  
  	/* No need to configure beacon if we are not associated */
  	if (!test_bit(SC_OP_PRIM_STA_VIF, &sc->sc_flags)) {
-@@ -492,53 +518,25 @@ static void ath9k_beacon_config_sta(stru
+@@ -492,53 +519,25 @@ static void ath9k_beacon_config_sta(stru
  	intval = conf->beacon_interval;
  
  	/*
@@ -12102,7 +13636,8 @@
  	 */
  	tsf = ath9k_hw_gettsf64(ah);
 -	tsftu = TSF_TO_TU(tsf>>32, tsf) + FUDGE;
--
++	nexttbtt = ath9k_get_next_tbtt(sc, tsf, intval);
+ 
 -	num_beacons = tsftu / intval + 1;
 -	offset = tsftu % intval;
 -	nexttbtt = tsftu - offset;
@@ -12123,8 +13658,7 @@
 -	cfpcount -= cfp_dec_count;
 -	if (cfpcount < 0)
 -		cfpcount += cfpperiod;
-+	nexttbtt = ath9k_get_next_tbtt(sc, tsf, intval);
- 
+-
 -	bs.bs_intval = intval;
 +	bs.bs_intval = TU_TO_USEC(intval);
 +	bs.bs_dtimperiod = conf->dtim_period * bs.bs_intval;
@@ -12140,7 +13674,7 @@
  
  	/*
  	 * Calculate the number of consecutive beacons to miss* before taking
-@@ -566,18 +564,16 @@ static void ath9k_beacon_config_sta(stru
+@@ -566,18 +565,16 @@ static void ath9k_beacon_config_sta(stru
  	 * XXX fixed at 100ms
  	 */
  
@@ -12163,7 +13697,7 @@
  
  	/* Set the computed STA beacon timers */
  
-@@ -600,25 +596,11 @@ static void ath9k_beacon_config_adhoc(st
+@@ -600,25 +597,11 @@ static void ath9k_beacon_config_adhoc(st
  
  	intval = TU_TO_USEC(conf->beacon_interval);
  
@@ -12193,6 +13727,35 @@
  
  	if (conf->enable_beacon)
  		ah->imask |= ATH9K_INT_SWBA;
+@@ -640,7 +623,8 @@ static void ath9k_beacon_config_adhoc(st
+ 		set_bit(SC_OP_BEACONS, &sc->sc_flags);
+ }
+ 
+-bool ath9k_allow_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif)
++static bool ath9k_allow_beacon_config(struct ath_softc *sc,
++				      struct ieee80211_vif *vif)
+ {
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	struct ath_vif *avp = (void *)vif->drv_priv;
+@@ -711,12 +695,17 @@ void ath9k_beacon_config(struct ath_soft
+ 	unsigned long flags;
+ 	bool skip_beacon = false;
+ 
++	if (vif->type == NL80211_IFTYPE_AP)
++		ath9k_set_tsfadjust(sc, vif);
++
++	if (!ath9k_allow_beacon_config(sc, vif))
++		return;
++
+ 	if (sc->sc_ah->opmode == NL80211_IFTYPE_STATION) {
+ 		ath9k_cache_beacon_config(sc, bss_conf);
+ 		ath9k_set_beacon(sc);
+ 		set_bit(SC_OP_BEACONS, &sc->sc_flags);
+ 		return;
+-
+ 	}
+ 
+ 	/*
 --- a/drivers/net/wireless/ath/ath9k/btcoex.c
 +++ b/drivers/net/wireless/ath/ath9k/btcoex.c
 @@ -66,7 +66,6 @@ void ath9k_hw_init_btcoex_hw(struct ath_
@@ -12673,7 +14236,15 @@
  	ath9k_hw_btcoex_enable(sc->sc_ah);
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -906,6 +906,7 @@ static void ath9k_process_rssi(struct at
+@@ -15,7 +15,6 @@
+  */
+ 
+ #include <linux/dma-mapping.h>
+-#include <linux/relay.h>
+ #include "ath9k.h"
+ #include "ar9003_mac.h"
+ 
+@@ -906,6 +905,7 @@ static void ath9k_process_rssi(struct at
  	struct ath_hw *ah = common->ah;
  	int last_rssi;
  	int rssi = rx_stats->rs_rssi;
@@ -12681,7 +14252,7 @@
  
  	/*
  	 * RSSI is not available for subframes in an A-MPDU.
-@@ -924,6 +925,20 @@ static void ath9k_process_rssi(struct at
+@@ -924,6 +924,20 @@ static void ath9k_process_rssi(struct at
  		return;
  	}
  
@@ -12702,31 +14273,1089 @@
  	/*
  	 * Update Beacon RSSI, this is used by ANI.
  	 */
-@@ -1073,14 +1088,14 @@ static int ath_process_fft(struct ath_so
- 		fft_sample_40.channel_type = chan_type;
+@@ -960,186 +974,6 @@ static void ath9k_process_tsf(struct ath
+ 		rxs->mactime += 0x100000000ULL;
+ }
  
- 		if (chan_type == NL80211_CHAN_HT40PLUS) {
+-#ifdef CPTCFG_ATH9K_DEBUGFS
+-static s8 fix_rssi_inv_only(u8 rssi_val)
+-{
+-	if (rssi_val == 128)
+-		rssi_val = 0;
+-	return (s8) rssi_val;
+-}
+-#endif
+-
+-/* returns 1 if this was a spectral frame, even if not handled. */
+-static int ath_process_fft(struct ath_softc *sc, struct ieee80211_hdr *hdr,
+-			   struct ath_rx_status *rs, u64 tsf)
+-{
+-#ifdef CPTCFG_ATH9K_DEBUGFS
+-	struct ath_hw *ah = sc->sc_ah;
+-	u8 num_bins, *bins, *vdata = (u8 *)hdr;
+-	struct fft_sample_ht20 fft_sample_20;
+-	struct fft_sample_ht20_40 fft_sample_40;
+-	struct fft_sample_tlv *tlv;
+-	struct ath_radar_info *radar_info;
+-	int len = rs->rs_datalen;
+-	int dc_pos;
+-	u16 fft_len, length, freq = ah->curchan->chan->center_freq;
+-	enum nl80211_channel_type chan_type;
+-
+-	/* AR9280 and before report via ATH9K_PHYERR_RADAR, AR93xx and newer
+-	 * via ATH9K_PHYERR_SPECTRAL. Haven't seen ATH9K_PHYERR_FALSE_RADAR_EXT
+-	 * yet, but this is supposed to be possible as well.
+-	 */
+-	if (rs->rs_phyerr != ATH9K_PHYERR_RADAR &&
+-	    rs->rs_phyerr != ATH9K_PHYERR_FALSE_RADAR_EXT &&
+-	    rs->rs_phyerr != ATH9K_PHYERR_SPECTRAL)
+-		return 0;
+-
+-	/* check if spectral scan bit is set. This does not have to be checked
+-	 * if received through a SPECTRAL phy error, but shouldn't hurt.
+-	 */
+-	radar_info = ((struct ath_radar_info *)&vdata[len]) - 1;
+-	if (!(radar_info->pulse_bw_info & SPECTRAL_SCAN_BITMASK))
+-		return 0;
+-
+-	chan_type = cfg80211_get_chandef_type(&sc->hw->conf.chandef);
+-	if ((chan_type == NL80211_CHAN_HT40MINUS) ||
+-	    (chan_type == NL80211_CHAN_HT40PLUS)) {
+-		fft_len = SPECTRAL_HT20_40_TOTAL_DATA_LEN;
+-		num_bins = SPECTRAL_HT20_40_NUM_BINS;
+-		bins = (u8 *)fft_sample_40.data;
+-	} else {
+-		fft_len = SPECTRAL_HT20_TOTAL_DATA_LEN;
+-		num_bins = SPECTRAL_HT20_NUM_BINS;
+-		bins = (u8 *)fft_sample_20.data;
+-	}
+-
+-	/* Variation in the data length is possible and will be fixed later */
+-	if ((len > fft_len + 2) || (len < fft_len - 1))
+-		return 1;
+-
+-	switch (len - fft_len) {
+-	case 0:
+-		/* length correct, nothing to do. */
+-		memcpy(bins, vdata, num_bins);
+-		break;
+-	case -1:
+-		/* first byte missing, duplicate it. */
+-		memcpy(&bins[1], vdata, num_bins - 1);
+-		bins[0] = vdata[0];
+-		break;
+-	case 2:
+-		/* MAC added 2 extra bytes at bin 30 and 32, remove them. */
+-		memcpy(bins, vdata, 30);
+-		bins[30] = vdata[31];
+-		memcpy(&bins[31], &vdata[33], num_bins - 31);
+-		break;
+-	case 1:
+-		/* MAC added 2 extra bytes AND first byte is missing. */
+-		bins[0] = vdata[0];
+-		memcpy(&bins[1], vdata, 30);
+-		bins[31] = vdata[31];
+-		memcpy(&bins[32], &vdata[33], num_bins - 32);
+-		break;
+-	default:
+-		return 1;
+-	}
+-
+-	/* DC value (value in the middle) is the blind spot of the spectral
+-	 * sample and invalid, interpolate it.
+-	 */
+-	dc_pos = num_bins / 2;
+-	bins[dc_pos] = (bins[dc_pos + 1] + bins[dc_pos - 1]) / 2;
+-
+-	if ((chan_type == NL80211_CHAN_HT40MINUS) ||
+-	    (chan_type == NL80211_CHAN_HT40PLUS)) {
+-		s8 lower_rssi, upper_rssi;
+-		s16 ext_nf;
+-		u8 lower_max_index, upper_max_index;
+-		u8 lower_bitmap_w, upper_bitmap_w;
+-		u16 lower_mag, upper_mag;
+-		struct ath9k_hw_cal_data *caldata = ah->caldata;
+-		struct ath_ht20_40_mag_info *mag_info;
+-
+-		if (caldata)
+-			ext_nf = ath9k_hw_getchan_noise(ah, ah->curchan,
+-					caldata->nfCalHist[3].privNF);
+-		else
+-			ext_nf = ATH_DEFAULT_NOISE_FLOOR;
+-
+-		length = sizeof(fft_sample_40) - sizeof(struct fft_sample_tlv);
+-		fft_sample_40.tlv.type = ATH_FFT_SAMPLE_HT20_40;
+-		fft_sample_40.tlv.length = __cpu_to_be16(length);
+-		fft_sample_40.freq = __cpu_to_be16(freq);
+-		fft_sample_40.channel_type = chan_type;
+-
+-		if (chan_type == NL80211_CHAN_HT40PLUS) {
 -			lower_rssi = fix_rssi_inv_only(rs->rs_rssi_ctl0);
 -			upper_rssi = fix_rssi_inv_only(rs->rs_rssi_ext0);
-+			lower_rssi = fix_rssi_inv_only(rs->rs_rssi_ctl[0]);
-+			upper_rssi = fix_rssi_inv_only(rs->rs_rssi_ext[0]);
- 
- 			fft_sample_40.lower_noise = ah->noise;
- 			fft_sample_40.upper_noise = ext_nf;
- 		} else {
+-
+-			fft_sample_40.lower_noise = ah->noise;
+-			fft_sample_40.upper_noise = ext_nf;
+-		} else {
 -			lower_rssi = fix_rssi_inv_only(rs->rs_rssi_ext0);
 -			upper_rssi = fix_rssi_inv_only(rs->rs_rssi_ctl0);
+-
+-			fft_sample_40.lower_noise = ext_nf;
+-			fft_sample_40.upper_noise = ah->noise;
+-		}
+-		fft_sample_40.lower_rssi = lower_rssi;
+-		fft_sample_40.upper_rssi = upper_rssi;
+-
+-		mag_info = ((struct ath_ht20_40_mag_info *)radar_info) - 1;
+-		lower_mag = spectral_max_magnitude(mag_info->lower_bins);
+-		upper_mag = spectral_max_magnitude(mag_info->upper_bins);
+-		fft_sample_40.lower_max_magnitude = __cpu_to_be16(lower_mag);
+-		fft_sample_40.upper_max_magnitude = __cpu_to_be16(upper_mag);
+-		lower_max_index = spectral_max_index(mag_info->lower_bins);
+-		upper_max_index = spectral_max_index(mag_info->upper_bins);
+-		fft_sample_40.lower_max_index = lower_max_index;
+-		fft_sample_40.upper_max_index = upper_max_index;
+-		lower_bitmap_w = spectral_bitmap_weight(mag_info->lower_bins);
+-		upper_bitmap_w = spectral_bitmap_weight(mag_info->upper_bins);
+-		fft_sample_40.lower_bitmap_weight = lower_bitmap_w;
+-		fft_sample_40.upper_bitmap_weight = upper_bitmap_w;
+-		fft_sample_40.max_exp = mag_info->max_exp & 0xf;
+-
+-		fft_sample_40.tsf = __cpu_to_be64(tsf);
+-
+-		tlv = (struct fft_sample_tlv *)&fft_sample_40;
+-	} else {
+-		u8 max_index, bitmap_w;
+-		u16 magnitude;
+-		struct ath_ht20_mag_info *mag_info;
+-
+-		length = sizeof(fft_sample_20) - sizeof(struct fft_sample_tlv);
+-		fft_sample_20.tlv.type = ATH_FFT_SAMPLE_HT20;
+-		fft_sample_20.tlv.length = __cpu_to_be16(length);
+-		fft_sample_20.freq = __cpu_to_be16(freq);
+-
+-		fft_sample_20.rssi = fix_rssi_inv_only(rs->rs_rssi_ctl0);
+-		fft_sample_20.noise = ah->noise;
+-
+-		mag_info = ((struct ath_ht20_mag_info *)radar_info) - 1;
+-		magnitude = spectral_max_magnitude(mag_info->all_bins);
+-		fft_sample_20.max_magnitude = __cpu_to_be16(magnitude);
+-		max_index = spectral_max_index(mag_info->all_bins);
+-		fft_sample_20.max_index = max_index;
+-		bitmap_w = spectral_bitmap_weight(mag_info->all_bins);
+-		fft_sample_20.bitmap_weight = bitmap_w;
+-		fft_sample_20.max_exp = mag_info->max_exp & 0xf;
+-
+-		fft_sample_20.tsf = __cpu_to_be64(tsf);
+-
+-		tlv = (struct fft_sample_tlv *)&fft_sample_20;
+-	}
+-
+-	ath_debug_send_fft_sample(sc, tlv);
+-	return 1;
+-#else
+-	return 0;
+-#endif
+-}
+-
+ static bool ath9k_is_mybeacon(struct ath_softc *sc, struct ieee80211_hdr *hdr)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
+@@ -270,10 +270,20 @@ struct cal_ctl_data_5g {
+ 	u8 ctlEdges[AR9300_NUM_BAND_EDGES_5G];
+ } __packed;
+ 
++#define MAX_BASE_EXTENSION_FUTURE 2
++
+ struct ar9300_BaseExtension_1 {
+ 	u8 ant_div_control;
+-	u8 future[3];
+-	u8 tempslopextension[8];
++	u8 future[MAX_BASE_EXTENSION_FUTURE];
++	/*
++	 * misc_enable:
++	 *
++	 * BIT 0   - TX Gain Cap enable.
++	 * BIT 1   - Uncompressed Checksum enable.
++	 * BIT 2/3 - MinCCApwr enable 2g/5g.
++	 */
++	u8 misc_enable;
++	int8_t tempslopextension[8];
+ 	int8_t quick_drop_low;
+ 	int8_t quick_drop_high;
+ } __packed;
+--- a/drivers/net/wireless/ath/ath9k/debug.h
++++ b/drivers/net/wireless/ath/ath9k/debug.h
+@@ -292,11 +292,11 @@ void ath9k_sta_add_debugfs(struct ieee80
+ 			   struct ieee80211_vif *vif,
+ 			   struct ieee80211_sta *sta,
+ 			   struct dentry *dir);
+-void ath_debug_send_fft_sample(struct ath_softc *sc,
+-			       struct fft_sample_tlv *fft_sample);
+ void ath9k_debug_stat_ant(struct ath_softc *sc,
+ 			  struct ath_hw_antcomb_conf *div_ant_conf,
+ 			  int main_rssi_avg, int alt_rssi_avg);
++void ath9k_debug_sync_cause(struct ath_softc *sc, u32 sync_cause);
++
+ #else
+ 
+ #define RX_STAT_INC(c) /* NOP */
+@@ -331,6 +331,11 @@ static inline void ath9k_debug_stat_ant(
+ 
+ }
+ 
++static inline void
++ath9k_debug_sync_cause(struct ath_softc *sc, u32 sync_cause)
++{
++}
++
+ #endif /* CPTCFG_ATH9K_DEBUGFS */
+ 
+ #endif /* DEBUG_H */
+--- /dev/null
++++ b/drivers/net/wireless/ath/ath9k/spectral.c
+@@ -0,0 +1,543 @@
++/*
++ * Copyright (c) 2013 Qualcomm Atheros, Inc.
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#include <linux/relay.h>
++#include "ath9k.h"
++
++static s8 fix_rssi_inv_only(u8 rssi_val)
++{
++	if (rssi_val == 128)
++		rssi_val = 0;
++	return (s8) rssi_val;
++}
++
++static void ath_debug_send_fft_sample(struct ath_softc *sc,
++				      struct fft_sample_tlv *fft_sample_tlv)
++{
++	int length;
++	if (!sc->rfs_chan_spec_scan)
++		return;
++
++	length = __be16_to_cpu(fft_sample_tlv->length) +
++		 sizeof(*fft_sample_tlv);
++	relay_write(sc->rfs_chan_spec_scan, fft_sample_tlv, length);
++}
++
++/* returns 1 if this was a spectral frame, even if not handled. */
++int ath_process_fft(struct ath_softc *sc, struct ieee80211_hdr *hdr,
++		    struct ath_rx_status *rs, u64 tsf)
++{
++	struct ath_hw *ah = sc->sc_ah;
++	u8 num_bins, *bins, *vdata = (u8 *)hdr;
++	struct fft_sample_ht20 fft_sample_20;
++	struct fft_sample_ht20_40 fft_sample_40;
++	struct fft_sample_tlv *tlv;
++	struct ath_radar_info *radar_info;
++	int len = rs->rs_datalen;
++	int dc_pos;
++	u16 fft_len, length, freq = ah->curchan->chan->center_freq;
++	enum nl80211_channel_type chan_type;
++
++	/* AR9280 and before report via ATH9K_PHYERR_RADAR, AR93xx and newer
++	 * via ATH9K_PHYERR_SPECTRAL. Haven't seen ATH9K_PHYERR_FALSE_RADAR_EXT
++	 * yet, but this is supposed to be possible as well.
++	 */
++	if (rs->rs_phyerr != ATH9K_PHYERR_RADAR &&
++	    rs->rs_phyerr != ATH9K_PHYERR_FALSE_RADAR_EXT &&
++	    rs->rs_phyerr != ATH9K_PHYERR_SPECTRAL)
++		return 0;
++
++	/* check if spectral scan bit is set. This does not have to be checked
++	 * if received through a SPECTRAL phy error, but shouldn't hurt.
++	 */
++	radar_info = ((struct ath_radar_info *)&vdata[len]) - 1;
++	if (!(radar_info->pulse_bw_info & SPECTRAL_SCAN_BITMASK))
++		return 0;
++
++	chan_type = cfg80211_get_chandef_type(&sc->hw->conf.chandef);
++	if ((chan_type == NL80211_CHAN_HT40MINUS) ||
++	    (chan_type == NL80211_CHAN_HT40PLUS)) {
++		fft_len = SPECTRAL_HT20_40_TOTAL_DATA_LEN;
++		num_bins = SPECTRAL_HT20_40_NUM_BINS;
++		bins = (u8 *)fft_sample_40.data;
++	} else {
++		fft_len = SPECTRAL_HT20_TOTAL_DATA_LEN;
++		num_bins = SPECTRAL_HT20_NUM_BINS;
++		bins = (u8 *)fft_sample_20.data;
++	}
++
++	/* Variation in the data length is possible and will be fixed later */
++	if ((len > fft_len + 2) || (len < fft_len - 1))
++		return 1;
++
++	switch (len - fft_len) {
++	case 0:
++		/* length correct, nothing to do. */
++		memcpy(bins, vdata, num_bins);
++		break;
++	case -1:
++		/* first byte missing, duplicate it. */
++		memcpy(&bins[1], vdata, num_bins - 1);
++		bins[0] = vdata[0];
++		break;
++	case 2:
++		/* MAC added 2 extra bytes at bin 30 and 32, remove them. */
++		memcpy(bins, vdata, 30);
++		bins[30] = vdata[31];
++		memcpy(&bins[31], &vdata[33], num_bins - 31);
++		break;
++	case 1:
++		/* MAC added 2 extra bytes AND first byte is missing. */
++		bins[0] = vdata[0];
++		memcpy(&bins[1], vdata, 30);
++		bins[31] = vdata[31];
++		memcpy(&bins[32], &vdata[33], num_bins - 32);
++		break;
++	default:
++		return 1;
++	}
++
++	/* DC value (value in the middle) is the blind spot of the spectral
++	 * sample and invalid, interpolate it.
++	 */
++	dc_pos = num_bins / 2;
++	bins[dc_pos] = (bins[dc_pos + 1] + bins[dc_pos - 1]) / 2;
++
++	if ((chan_type == NL80211_CHAN_HT40MINUS) ||
++	    (chan_type == NL80211_CHAN_HT40PLUS)) {
++		s8 lower_rssi, upper_rssi;
++		s16 ext_nf;
++		u8 lower_max_index, upper_max_index;
++		u8 lower_bitmap_w, upper_bitmap_w;
++		u16 lower_mag, upper_mag;
++		struct ath9k_hw_cal_data *caldata = ah->caldata;
++		struct ath_ht20_40_mag_info *mag_info;
++
++		if (caldata)
++			ext_nf = ath9k_hw_getchan_noise(ah, ah->curchan,
++					caldata->nfCalHist[3].privNF);
++		else
++			ext_nf = ATH_DEFAULT_NOISE_FLOOR;
++
++		length = sizeof(fft_sample_40) - sizeof(struct fft_sample_tlv);
++		fft_sample_40.tlv.type = ATH_FFT_SAMPLE_HT20_40;
++		fft_sample_40.tlv.length = __cpu_to_be16(length);
++		fft_sample_40.freq = __cpu_to_be16(freq);
++		fft_sample_40.channel_type = chan_type;
++
++		if (chan_type == NL80211_CHAN_HT40PLUS) {
++			lower_rssi = fix_rssi_inv_only(rs->rs_rssi_ctl[0]);
++			upper_rssi = fix_rssi_inv_only(rs->rs_rssi_ext[0]);
++
++			fft_sample_40.lower_noise = ah->noise;
++			fft_sample_40.upper_noise = ext_nf;
++		} else {
 +			lower_rssi = fix_rssi_inv_only(rs->rs_rssi_ext[0]);
 +			upper_rssi = fix_rssi_inv_only(rs->rs_rssi_ctl[0]);
- 
- 			fft_sample_40.lower_noise = ext_nf;
- 			fft_sample_40.upper_noise = ah->noise;
-@@ -1116,7 +1131,7 @@ static int ath_process_fft(struct ath_so
- 		fft_sample_20.tlv.length = __cpu_to_be16(length);
- 		fft_sample_20.freq = __cpu_to_be16(freq);
- 
--		fft_sample_20.rssi = fix_rssi_inv_only(rs->rs_rssi_ctl0);
++
++			fft_sample_40.lower_noise = ext_nf;
++			fft_sample_40.upper_noise = ah->noise;
++		}
++		fft_sample_40.lower_rssi = lower_rssi;
++		fft_sample_40.upper_rssi = upper_rssi;
++
++		mag_info = ((struct ath_ht20_40_mag_info *)radar_info) - 1;
++		lower_mag = spectral_max_magnitude(mag_info->lower_bins);
++		upper_mag = spectral_max_magnitude(mag_info->upper_bins);
++		fft_sample_40.lower_max_magnitude = __cpu_to_be16(lower_mag);
++		fft_sample_40.upper_max_magnitude = __cpu_to_be16(upper_mag);
++		lower_max_index = spectral_max_index(mag_info->lower_bins);
++		upper_max_index = spectral_max_index(mag_info->upper_bins);
++		fft_sample_40.lower_max_index = lower_max_index;
++		fft_sample_40.upper_max_index = upper_max_index;
++		lower_bitmap_w = spectral_bitmap_weight(mag_info->lower_bins);
++		upper_bitmap_w = spectral_bitmap_weight(mag_info->upper_bins);
++		fft_sample_40.lower_bitmap_weight = lower_bitmap_w;
++		fft_sample_40.upper_bitmap_weight = upper_bitmap_w;
++		fft_sample_40.max_exp = mag_info->max_exp & 0xf;
++
++		fft_sample_40.tsf = __cpu_to_be64(tsf);
++
++		tlv = (struct fft_sample_tlv *)&fft_sample_40;
++	} else {
++		u8 max_index, bitmap_w;
++		u16 magnitude;
++		struct ath_ht20_mag_info *mag_info;
++
++		length = sizeof(fft_sample_20) - sizeof(struct fft_sample_tlv);
++		fft_sample_20.tlv.type = ATH_FFT_SAMPLE_HT20;
++		fft_sample_20.tlv.length = __cpu_to_be16(length);
++		fft_sample_20.freq = __cpu_to_be16(freq);
++
 +		fft_sample_20.rssi = fix_rssi_inv_only(rs->rs_rssi_ctl[0]);
- 		fft_sample_20.noise = ah->noise;
++		fft_sample_20.noise = ah->noise;
++
++		mag_info = ((struct ath_ht20_mag_info *)radar_info) - 1;
++		magnitude = spectral_max_magnitude(mag_info->all_bins);
++		fft_sample_20.max_magnitude = __cpu_to_be16(magnitude);
++		max_index = spectral_max_index(mag_info->all_bins);
++		fft_sample_20.max_index = max_index;
++		bitmap_w = spectral_bitmap_weight(mag_info->all_bins);
++		fft_sample_20.bitmap_weight = bitmap_w;
++		fft_sample_20.max_exp = mag_info->max_exp & 0xf;
++
++		fft_sample_20.tsf = __cpu_to_be64(tsf);
++
++		tlv = (struct fft_sample_tlv *)&fft_sample_20;
++	}
++
++	ath_debug_send_fft_sample(sc, tlv);
++
++	return 1;
++}
++
++/*********************/
++/* spectral_scan_ctl */
++/*********************/
++
++static ssize_t read_file_spec_scan_ctl(struct file *file, char __user *user_buf,
++				       size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	char *mode = "";
++	unsigned int len;
++
++	switch (sc->spectral_mode) {
++	case SPECTRAL_DISABLED:
++		mode = "disable";
++		break;
++	case SPECTRAL_BACKGROUND:
++		mode = "background";
++		break;
++	case SPECTRAL_CHANSCAN:
++		mode = "chanscan";
++		break;
++	case SPECTRAL_MANUAL:
++		mode = "manual";
++		break;
++	}
++	len = strlen(mode);
++	return simple_read_from_buffer(user_buf, count, ppos, mode, len);
++}
++
++static ssize_t write_file_spec_scan_ctl(struct file *file,
++					const char __user *user_buf,
++					size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
++	char buf[32];
++	ssize_t len;
++
++	if (config_enabled(CPTCFG_ATH9K_TX99))
++		return -EOPNOTSUPP;
++
++	len = min(count, sizeof(buf) - 1);
++	if (copy_from_user(buf, user_buf, len))
++		return -EFAULT;
++
++	buf[len] = '\0';
++
++	if (strncmp("trigger", buf, 7) == 0) {
++		ath9k_spectral_scan_trigger(sc->hw);
++	} else if (strncmp("background", buf, 9) == 0) {
++		ath9k_spectral_scan_config(sc->hw, SPECTRAL_BACKGROUND);
++		ath_dbg(common, CONFIG, "spectral scan: background mode enabled\n");
++	} else if (strncmp("chanscan", buf, 8) == 0) {
++		ath9k_spectral_scan_config(sc->hw, SPECTRAL_CHANSCAN);
++		ath_dbg(common, CONFIG, "spectral scan: channel scan mode enabled\n");
++	} else if (strncmp("manual", buf, 6) == 0) {
++		ath9k_spectral_scan_config(sc->hw, SPECTRAL_MANUAL);
++		ath_dbg(common, CONFIG, "spectral scan: manual mode enabled\n");
++	} else if (strncmp("disable", buf, 7) == 0) {
++		ath9k_spectral_scan_config(sc->hw, SPECTRAL_DISABLED);
++		ath_dbg(common, CONFIG, "spectral scan: disabled\n");
++	} else {
++		return -EINVAL;
++	}
++
++	return count;
++}
++
++static const struct file_operations fops_spec_scan_ctl = {
++	.read = read_file_spec_scan_ctl,
++	.write = write_file_spec_scan_ctl,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++/*************************/
++/* spectral_short_repeat */
++/*************************/
++
++static ssize_t read_file_spectral_short_repeat(struct file *file,
++					       char __user *user_buf,
++					       size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	char buf[32];
++	unsigned int len;
++
++	len = sprintf(buf, "%d\n", sc->spec_config.short_repeat);
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t write_file_spectral_short_repeat(struct file *file,
++						const char __user *user_buf,
++						size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	unsigned long val;
++	char buf[32];
++	ssize_t len;
++
++	len = min(count, sizeof(buf) - 1);
++	if (copy_from_user(buf, user_buf, len))
++		return -EFAULT;
++
++	buf[len] = '\0';
++	if (kstrtoul(buf, 0, &val))
++		return -EINVAL;
++
++	if (val < 0 || val > 1)
++		return -EINVAL;
++
++	sc->spec_config.short_repeat = val;
++	return count;
++}
++
++static const struct file_operations fops_spectral_short_repeat = {
++	.read = read_file_spectral_short_repeat,
++	.write = write_file_spectral_short_repeat,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++/******************/
++/* spectral_count */
++/******************/
++
++static ssize_t read_file_spectral_count(struct file *file,
++					char __user *user_buf,
++					size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	char buf[32];
++	unsigned int len;
++
++	len = sprintf(buf, "%d\n", sc->spec_config.count);
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t write_file_spectral_count(struct file *file,
++					 const char __user *user_buf,
++					 size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	unsigned long val;
++	char buf[32];
++	ssize_t len;
++
++	len = min(count, sizeof(buf) - 1);
++	if (copy_from_user(buf, user_buf, len))
++		return -EFAULT;
++
++	buf[len] = '\0';
++	if (kstrtoul(buf, 0, &val))
++		return -EINVAL;
++
++	if (val < 0 || val > 255)
++		return -EINVAL;
++
++	sc->spec_config.count = val;
++	return count;
++}
++
++static const struct file_operations fops_spectral_count = {
++	.read = read_file_spectral_count,
++	.write = write_file_spectral_count,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++/*******************/
++/* spectral_period */
++/*******************/
++
++static ssize_t read_file_spectral_period(struct file *file,
++					 char __user *user_buf,
++					 size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	char buf[32];
++	unsigned int len;
++
++	len = sprintf(buf, "%d\n", sc->spec_config.period);
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t write_file_spectral_period(struct file *file,
++					  const char __user *user_buf,
++					  size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	unsigned long val;
++	char buf[32];
++	ssize_t len;
++
++	len = min(count, sizeof(buf) - 1);
++	if (copy_from_user(buf, user_buf, len))
++		return -EFAULT;
++
++	buf[len] = '\0';
++	if (kstrtoul(buf, 0, &val))
++		return -EINVAL;
++
++	if (val < 0 || val > 255)
++		return -EINVAL;
++
++	sc->spec_config.period = val;
++	return count;
++}
++
++static const struct file_operations fops_spectral_period = {
++	.read = read_file_spectral_period,
++	.write = write_file_spectral_period,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++/***********************/
++/* spectral_fft_period */
++/***********************/
++
++static ssize_t read_file_spectral_fft_period(struct file *file,
++					     char __user *user_buf,
++					     size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	char buf[32];
++	unsigned int len;
++
++	len = sprintf(buf, "%d\n", sc->spec_config.fft_period);
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t write_file_spectral_fft_period(struct file *file,
++					      const char __user *user_buf,
++					      size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	unsigned long val;
++	char buf[32];
++	ssize_t len;
++
++	len = min(count, sizeof(buf) - 1);
++	if (copy_from_user(buf, user_buf, len))
++		return -EFAULT;
++
++	buf[len] = '\0';
++	if (kstrtoul(buf, 0, &val))
++		return -EINVAL;
++
++	if (val < 0 || val > 15)
++		return -EINVAL;
++
++	sc->spec_config.fft_period = val;
++	return count;
++}
++
++static const struct file_operations fops_spectral_fft_period = {
++	.read = read_file_spectral_fft_period,
++	.write = write_file_spectral_fft_period,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++/*******************/
++/* Relay interface */
++/*******************/
++
++static struct dentry *create_buf_file_handler(const char *filename,
++					      struct dentry *parent,
++					      umode_t mode,
++					      struct rchan_buf *buf,
++					      int *is_global)
++{
++	struct dentry *buf_file;
++
++	buf_file = debugfs_create_file(filename, mode, parent, buf,
++				       &relay_file_operations);
++	*is_global = 1;
++	return buf_file;
++}
++
++static int remove_buf_file_handler(struct dentry *dentry)
++{
++	debugfs_remove(dentry);
++
++	return 0;
++}
++
++struct rchan_callbacks rfs_spec_scan_cb = {
++	.create_buf_file = create_buf_file_handler,
++	.remove_buf_file = remove_buf_file_handler,
++};
++
++/*********************/
++/* Debug Init/Deinit */
++/*********************/
++
++void ath9k_spectral_deinit_debug(struct ath_softc *sc)
++{
++	if (config_enabled(CPTCFG_ATH9K_DEBUGFS) && sc->rfs_chan_spec_scan) {
++		relay_close(sc->rfs_chan_spec_scan);
++		sc->rfs_chan_spec_scan = NULL;
++	}
++}
++
++void ath9k_spectral_init_debug(struct ath_softc *sc)
++{
++	sc->rfs_chan_spec_scan = relay_open("spectral_scan",
++					    sc->debug.debugfs_phy,
++					    1024, 256, &rfs_spec_scan_cb,
++					    NULL);
++	debugfs_create_file("spectral_scan_ctl",
++			    S_IRUSR | S_IWUSR,
++			    sc->debug.debugfs_phy, sc,
++			    &fops_spec_scan_ctl);
++	debugfs_create_file("spectral_short_repeat",
++			    S_IRUSR | S_IWUSR,
++			    sc->debug.debugfs_phy, sc,
++			    &fops_spectral_short_repeat);
++	debugfs_create_file("spectral_count",
++			    S_IRUSR | S_IWUSR,
++			    sc->debug.debugfs_phy, sc,
++			    &fops_spectral_count);
++	debugfs_create_file("spectral_period",
++			    S_IRUSR | S_IWUSR,
++			    sc->debug.debugfs_phy, sc,
++			    &fops_spectral_period);
++	debugfs_create_file("spectral_fft_period",
++			    S_IRUSR | S_IWUSR,
++			    sc->debug.debugfs_phy, sc,
++			    &fops_spectral_fft_period);
++}
+--- /dev/null
++++ b/drivers/net/wireless/ath/ath9k/spectral.h
+@@ -0,0 +1,212 @@
++/*
++ * Copyright (c) 2013 Qualcomm Atheros, Inc.
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#ifndef SPECTRAL_H
++#define SPECTRAL_H
++
++/* enum spectral_mode:
++ *
++ * @SPECTRAL_DISABLED: spectral mode is disabled
++ * @SPECTRAL_BACKGROUND: hardware sends samples when it is not busy with
++ *	something else.
++ * @SPECTRAL_MANUAL: spectral scan is enabled, triggering for samples
++ *	is performed manually.
++ * @SPECTRAL_CHANSCAN: Like manual, but also triggered when changing channels
++ *	during a channel scan.
++ */
++enum spectral_mode {
++	SPECTRAL_DISABLED = 0,
++	SPECTRAL_BACKGROUND,
++	SPECTRAL_MANUAL,
++	SPECTRAL_CHANSCAN,
++};
++
++#define SPECTRAL_SCAN_BITMASK		0x10
++/* Radar info packet format, used for DFS and spectral formats. */
++struct ath_radar_info {
++	u8 pulse_length_pri;
++	u8 pulse_length_ext;
++	u8 pulse_bw_info;
++} __packed;
++
++/* The HT20 spectral data has 4 bytes of additional information at it's end.
++ *
++ * [7:0]: all bins {max_magnitude[1:0], bitmap_weight[5:0]}
++ * [7:0]: all bins  max_magnitude[9:2]
++ * [7:0]: all bins {max_index[5:0], max_magnitude[11:10]}
++ * [3:0]: max_exp (shift amount to size max bin to 8-bit unsigned)
++ */
++struct ath_ht20_mag_info {
++	u8 all_bins[3];
++	u8 max_exp;
++} __packed;
++
++#define SPECTRAL_HT20_NUM_BINS		56
++
++/* WARNING: don't actually use this struct! MAC may vary the amount of
++ * data by -1/+2. This struct is for reference only.
++ */
++struct ath_ht20_fft_packet {
++	u8 data[SPECTRAL_HT20_NUM_BINS];
++	struct ath_ht20_mag_info mag_info;
++	struct ath_radar_info radar_info;
++} __packed;
++
++#define SPECTRAL_HT20_TOTAL_DATA_LEN	(sizeof(struct ath_ht20_fft_packet))
++
++/* Dynamic 20/40 mode:
++ *
++ * [7:0]: lower bins {max_magnitude[1:0], bitmap_weight[5:0]}
++ * [7:0]: lower bins  max_magnitude[9:2]
++ * [7:0]: lower bins {max_index[5:0], max_magnitude[11:10]}
++ * [7:0]: upper bins {max_magnitude[1:0], bitmap_weight[5:0]}
++ * [7:0]: upper bins  max_magnitude[9:2]
++ * [7:0]: upper bins {max_index[5:0], max_magnitude[11:10]}
++ * [3:0]: max_exp (shift amount to size max bin to 8-bit unsigned)
++ */
++struct ath_ht20_40_mag_info {
++	u8 lower_bins[3];
++	u8 upper_bins[3];
++	u8 max_exp;
++} __packed;
++
++#define SPECTRAL_HT20_40_NUM_BINS		128
++
++/* WARNING: don't actually use this struct! MAC may vary the amount of
++ * data. This struct is for reference only.
++ */
++struct ath_ht20_40_fft_packet {
++	u8 data[SPECTRAL_HT20_40_NUM_BINS];
++	struct ath_ht20_40_mag_info mag_info;
++	struct ath_radar_info radar_info;
++} __packed;
++
++
++#define SPECTRAL_HT20_40_TOTAL_DATA_LEN	(sizeof(struct ath_ht20_40_fft_packet))
++
++/* grabs the max magnitude from the all/upper/lower bins */
++static inline u16 spectral_max_magnitude(u8 *bins)
++{
++	return (bins[0] & 0xc0) >> 6 |
++	       (bins[1] & 0xff) << 2 |
++	       (bins[2] & 0x03) << 10;
++}
++
++/* return the max magnitude from the all/upper/lower bins */
++static inline u8 spectral_max_index(u8 *bins)
++{
++	s8 m = (bins[2] & 0xfc) >> 2;
++
++	/* TODO: this still doesn't always report the right values ... */
++	if (m > 32)
++		m |= 0xe0;
++	else
++		m &= ~0xe0;
++
++	return m + 29;
++}
++
++/* return the bitmap weight from the all/upper/lower bins */
++static inline u8 spectral_bitmap_weight(u8 *bins)
++{
++	return bins[0] & 0x3f;
++}
++
++/* FFT sample format given to userspace via debugfs.
++ *
++ * Please keep the type/length at the front position and change
++ * other fields after adding another sample type
++ *
++ * TODO: this might need rework when switching to nl80211-based
++ * interface.
++ */
++enum ath_fft_sample_type {
++	ATH_FFT_SAMPLE_HT20 = 1,
++	ATH_FFT_SAMPLE_HT20_40,
++};
++
++struct fft_sample_tlv {
++	u8 type;	/* see ath_fft_sample */
++	__be16 length;
++	/* type dependent data follows */
++} __packed;
++
++struct fft_sample_ht20 {
++	struct fft_sample_tlv tlv;
++
++	u8 max_exp;
++
++	__be16 freq;
++	s8 rssi;
++	s8 noise;
++
++	__be16 max_magnitude;
++	u8 max_index;
++	u8 bitmap_weight;
++
++	__be64 tsf;
++
++	u8 data[SPECTRAL_HT20_NUM_BINS];
++} __packed;
++
++struct fft_sample_ht20_40 {
++	struct fft_sample_tlv tlv;
++
++	u8 channel_type;
++	__be16 freq;
++
++	s8 lower_rssi;
++	s8 upper_rssi;
++
++	__be64 tsf;
++
++	s8 lower_noise;
++	s8 upper_noise;
++
++	__be16 lower_max_magnitude;
++	__be16 upper_max_magnitude;
++
++	u8 lower_max_index;
++	u8 upper_max_index;
++
++	u8 lower_bitmap_weight;
++	u8 upper_bitmap_weight;
++
++	u8 max_exp;
++
++	u8 data[SPECTRAL_HT20_40_NUM_BINS];
++} __packed;
++
++void ath9k_spectral_init_debug(struct ath_softc *sc);
++void ath9k_spectral_deinit_debug(struct ath_softc *sc);
++
++void ath9k_spectral_scan_trigger(struct ieee80211_hw *hw);
++int ath9k_spectral_scan_config(struct ieee80211_hw *hw,
++			       enum spectral_mode spectral_mode);
++
++#ifdef CPTCFG_ATH9K_DEBUGFS
++int ath_process_fft(struct ath_softc *sc, struct ieee80211_hdr *hdr,
++		    struct ath_rx_status *rs, u64 tsf);
++#else
++static inline int ath_process_fft(struct ath_softc *sc,
++				  struct ieee80211_hdr *hdr,
++				  struct ath_rx_status *rs, u64 tsf)
++{
++	return 0;
++}
++#endif /* CPTCFG_ATH9K_DEBUGFS */
++
++#endif /* SPECTRAL_H */
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1566,6 +1566,9 @@ enum ieee80211_hw_flags {
+  * @extra_tx_headroom: headroom to reserve in each transmit skb
+  *	for use by the driver (e.g. for transmit headers.)
+  *
++ * @extra_beacon_tailroom: tailroom to reserve in each beacon tx skb.
++ *	Can be used by drivers to add extra IEs.
++ *
+  * @channel_change_time: time (in microseconds) it takes to change channels.
+  *
+  * @max_signal: Maximum value for signal (rssi) in RX information, used
+@@ -1644,6 +1647,7 @@ struct ieee80211_hw {
+ 	void *priv;
+ 	u32 flags;
+ 	unsigned int extra_tx_headroom;
++	unsigned int extra_beacon_tailroom;
+ 	int channel_change_time;
+ 	int vif_data_size;
+ 	int sta_data_size;
+@@ -4595,4 +4599,49 @@ bool ieee80211_tx_prepare_skb(struct iee
+ 			      struct ieee80211_vif *vif, struct sk_buff *skb,
+ 			      int band, struct ieee80211_sta **sta);
  
- 		mag_info = ((struct ath_ht20_mag_info *)radar_info) - 1;
++/**
++ * struct ieee80211_noa_data - holds temporary data for tracking P2P NoA state
++ *
++ * @next_tsf: TSF timestamp of the next absent state change
++ * @has_next_tsf: next absent state change event pending
++ *
++ * @absent: descriptor bitmask, set if GO is currently absent
++ *
++ * private:
++ *
++ * @count: count fields from the NoA descriptors
++ * @desc: adjusted data from the NoA
++ */
++struct ieee80211_noa_data {
++	u32 next_tsf;
++	bool has_next_tsf;
++
++	u8 absent;
++
++	u8 count[IEEE80211_P2P_NOA_DESC_MAX];
++	struct {
++		u32 start;
++		u32 duration;
++		u32 interval;
++	} desc[IEEE80211_P2P_NOA_DESC_MAX];
++};
++
++/**
++ * ieee80211_parse_p2p_noa - initialize NoA tracking data from P2P IE
++ *
++ * @attr: P2P NoA IE
++ * @data: NoA tracking data
++ * @tsf: current TSF timestamp
++ */
++int ieee80211_parse_p2p_noa(const struct ieee80211_p2p_noa_attr *attr,
++			    struct ieee80211_noa_data *data, u32 tsf);
++
++/**
++ * ieee80211_update_p2p_noa - get next pending P2P GO absent state change
++ *
++ * @data: NoA tracking data
++ * @tsf: current TSF timestamp
++ */
++void ieee80211_update_p2p_noa(struct ieee80211_noa_data *data, u32 tsf);
++
+ #endif /* MAC80211_H */
+--- a/drivers/net/wireless/ath/ath9k/hw-ops.h
++++ b/drivers/net/wireless/ath/ath9k/hw-ops.h
+@@ -49,9 +49,10 @@ static inline bool ath9k_hw_calibrate(st
+ 	return ath9k_hw_ops(ah)->calibrate(ah, chan, rxchainmask, longcal);
+ }
+ 
+-static inline bool ath9k_hw_getisr(struct ath_hw *ah, enum ath9k_int *masked)
++static inline bool ath9k_hw_getisr(struct ath_hw *ah, enum ath9k_int *masked,
++				   u32 *sync_cause_p)
+ {
+-	return ath9k_hw_ops(ah)->get_isr(ah, masked);
++	return ath9k_hw_ops(ah)->get_isr(ah, masked, sync_cause_p);
+ }
+ 
+ static inline void ath9k_hw_set_txdesc(struct ath_hw *ah, void *ds,
