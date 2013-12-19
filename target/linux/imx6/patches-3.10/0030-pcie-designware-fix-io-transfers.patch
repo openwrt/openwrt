@@ -1,0 +1,59 @@
+From: Pratyush Anand <pratyush.anand@st.com>
+
+pp->io_base which is the input of the outbound IO address translation
+unit should be the cpu address, it was programmed wrongly to realio
+address.
+
+We should pass global_io_offset rather than sys->io_offset to
+pci_ioremap_io, so we map the new window into the first available spot
+in the Linux view of the I/O space.
+
+We must also pass cpu address instead  of realio address to
+pci_ioremap_io.
+
+This patch fixes above issue. It has been tested with Lecroy PTC in AIC
+mode and Pericom PI7C9X2G303EL PCIe switch, which does not work
+otherwise.
+
+Signed-off-by: Pratyush Anand <pratyush.anand@st.com>
+Tested-by: Mohit Kumar <mohit.kumar@st.com>
+Tested-by: Tim Harvey <tharvey@gateworks.com>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Marek Vasut <marex@denx.de>
+Cc: Richard Zhu <Hong-Xing.Zhu@freescale.com>
+Cc: linux-pci@vger.kernel.org
+Cc: spear-devel@list.st.com
+---
+ drivers/pci/host/pcie-designware.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+http://thread.gmane.org/gmane.linux.kernel.pci/27204
+
+diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-designware.c
+--- a/drivers/pci/host/pcie-designware.c
++++ b/drivers/pci/host/pcie-designware.c
+@@ -177,6 +177,7 @@ int __init dw_pcie_host_init(struct pcie
+ 					   + global_io_offset);
+ 			pp->config.io_size = resource_size(&pp->io);
+ 			pp->config.io_bus_addr = range.pci_addr;
++			pp->io_base = range.cpu_addr;
+ 		}
+ 		if (restype == IORESOURCE_MEM) {
+ 			of_pci_range_to_resource(&range, np, &pp->mem);
+@@ -202,7 +203,6 @@ int __init dw_pcie_host_init(struct pcie
+ 
+ 	pp->cfg0_base = pp->cfg.start;
+ 	pp->cfg1_base = pp->cfg.start + pp->config.cfg0_size;
+-	pp->io_base = pp->io.start;
+ 	pp->mem_base = pp->mem.start;
+ 
+ 	pp->va_cfg0_base = devm_ioremap(pp->dev, pp->cfg0_base,
+@@ -449,7 +449,7 @@ int dw_pcie_setup(int nr, struct pci_sys
+ 
+ 	if (global_io_offset < SZ_1M && pp->config.io_size > 0) {
+ 		sys->io_offset = global_io_offset - pp->config.io_bus_addr;
+-		pci_ioremap_io(sys->io_offset, pp->io.start);
++		pci_ioremap_io(global_io_offset, pp->io_base);
+ 		global_io_offset += SZ_64K;
+ 		pci_add_resource_offset(&sys->resources, &pp->io,
+ 					sys->io_offset);
