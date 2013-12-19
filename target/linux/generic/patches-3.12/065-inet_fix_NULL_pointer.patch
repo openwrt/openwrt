@@ -1,0 +1,54 @@
+From 673498b8ed4c4d4b7221c5309d891c5eac2b7528 Mon Sep 17 00:00:00 2001
+From: Stefan Tomanek <stefan.tomanek@wertarbyte.de>
+Date: Tue, 10 Dec 2013 23:21:25 +0100
+Subject: [PATCH] inet: fix NULL pointer Oops in fib(6)_rule_suppress
+
+This changes ensures that the routing entry investigated by the suppress
+function actually does point to a device struct before following that pointer,
+fixing a possible kernel oops situation when verifying the interface group
+associated with a routing table entry.
+
+According to Daniel Golle, this Oops can be triggered by a user process trying
+to establish an outgoing IPv6 connection while having no real IPv6 connectivity
+set up (only autoassigned link-local addresses).
+
+Fixes: 6ef94cfafba15 ("fib_rules: add route suppression based on ifgroup")
+
+Reported-by: Daniel Golle <daniel.golle@gmail.com>
+Tested-by: Daniel Golle <daniel.golle@gmail.com>
+Signed-off-by: Stefan Tomanek <stefan.tomanek@wertarbyte.de>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ net/ipv4/fib_rules.c  | 5 ++++-
+ net/ipv6/fib6_rules.c | 6 +++++-
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+--- a/net/ipv4/fib_rules.c
++++ b/net/ipv4/fib_rules.c
+@@ -104,7 +104,10 @@ errout:
+ static bool fib4_rule_suppress(struct fib_rule *rule, struct fib_lookup_arg *arg)
+ {
+ 	struct fib_result *result = (struct fib_result *) arg->result;
+-	struct net_device *dev = result->fi->fib_dev;
++	struct net_device *dev = NULL;
++
++	if (result->fi)
++		dev = result->fi->fib_dev;
+ 
+ 	/* do not accept result if the route does
+ 	 * not meet the required prefix length
+--- a/net/ipv6/fib6_rules.c
++++ b/net/ipv6/fib6_rules.c
+@@ -122,7 +122,11 @@ out:
+ static bool fib6_rule_suppress(struct fib_rule *rule, struct fib_lookup_arg *arg)
+ {
+ 	struct rt6_info *rt = (struct rt6_info *) arg->result;
+-	struct net_device *dev = rt->rt6i_idev->dev;
++	struct net_device *dev = NULL;
++
++	if (rt->rt6i_idev)
++		dev = rt->rt6i_idev->dev;
++
+ 	/* do not accept result if the route does
+ 	 * not meet the required prefix length
+ 	 */
