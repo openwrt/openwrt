@@ -36,7 +36,8 @@
 #define AR7240_FLOOD_MASK_BROAD_TO_CPU	BIT(26)
 
 #define AR7240_REG_GLOBAL_CTRL		0x30
-#define AR7240_GLOBAL_CTRL_MTU_M	BITM(12)
+#define AR7240_GLOBAL_CTRL_MTU_M	BITM(11)
+#define AR9340_GLOBAL_CTRL_MTU_M	BITM(14)
 
 #define AR7240_REG_VTU			0x0040
 #define   AR7240_VTU_OP			BITM(3)
@@ -586,6 +587,11 @@ static void ar7240sw_setup(struct ar7240sw *as)
 				 AR934X_FLOOD_MASK_BC_DP(0) |
 				 AR934X_FLOOD_MASK_MC_DP(0));
 
+		/* setup MTU */
+		ar7240sw_reg_rmw(mii, AR7240_REG_GLOBAL_CTRL,
+				 AR9340_GLOBAL_CTRL_MTU_M,
+				 AR9340_GLOBAL_CTRL_MTU_M);
+
 		/* Enable MIB counters */
 		ar7240sw_reg_set(mii, AR7240_REG_MIB_FUNCTION0,
 				 AR934X_MIB_ENABLE);
@@ -601,11 +607,12 @@ static void ar7240sw_setup(struct ar7240sw *as)
 		/* Enable Broadcast frames transmitted to the CPU */
 		ar7240sw_reg_set(mii, AR7240_REG_FLOOD_MASK,
 				 AR7240_FLOOD_MASK_BROAD_TO_CPU);
-	}
 
-	/* setup MTU */
-	ar7240sw_reg_rmw(mii, AR7240_REG_GLOBAL_CTRL, AR7240_GLOBAL_CTRL_MTU_M,
-			 1536);
+		/* setup MTU */
+		ar7240sw_reg_rmw(mii, AR7240_REG_GLOBAL_CTRL,
+				 AR7240_GLOBAL_CTRL_MTU_M,
+				 AR7240_GLOBAL_CTRL_MTU_M);
+	}
 
 	/* setup Service TAG */
 	ar7240sw_reg_rmw(mii, AR7240_REG_SERVICE_TAG, AR7240_SERVICE_TAG_M, 0);
