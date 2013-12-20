@@ -28,6 +28,11 @@ static int ag71xx_msg_level = -1;
 module_param_named(msg_level, ag71xx_msg_level, int, 0);
 MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
 
+static inline unsigned int ag71xx_max_frame_len(unsigned int mtu)
+{
+	return ETH_HLEN + VLAN_HLEN + mtu + ETH_FCS_LEN;
+}
+
 static void ag71xx_dump_dma_regs(struct ag71xx *ag)
 {
 	DBG("%s: dma_tx_ctrl=%08x, dma_tx_desc=%08x, dma_tx_status=%08x\n",
@@ -1052,9 +1057,10 @@ static void ag71xx_netpoll(struct net_device *dev)
 static int ag71xx_change_mtu(struct net_device *dev, int new_mtu)
 {
 	struct ag71xx *ag = netdev_priv(dev);
+	unsigned int max_frame_len;
 
-	if (new_mtu < 68 ||
-	    new_mtu > ag->max_frame_len - ETH_HLEN - ETH_FCS_LEN)
+	max_frame_len = ag71xx_max_frame_len(new_mtu);
+	if (new_mtu < 68 || max_frame_len > ag->max_frame_len)
 		return -EINVAL;
 
 	dev->mtu = new_mtu;
