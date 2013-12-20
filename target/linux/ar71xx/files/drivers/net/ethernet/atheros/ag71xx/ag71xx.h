@@ -166,6 +166,7 @@ struct ag71xx {
 	int			duplex;
 
 	unsigned int		max_frame_len;
+	unsigned int		desc_pktlen_mask;
 	unsigned int		rx_buf_size;
 
 	struct work_struct	restart_work;
@@ -196,11 +197,6 @@ static inline struct ag71xx_platform_data *ag71xx_get_pdata(struct ag71xx *ag)
 static inline int ag71xx_desc_empty(struct ag71xx_desc *desc)
 {
 	return (desc->ctrl & DESC_EMPTY) != 0;
-}
-
-static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
-{
-	return desc->ctrl & DESC_PKTLEN_M;
 }
 
 /* Register offsets */

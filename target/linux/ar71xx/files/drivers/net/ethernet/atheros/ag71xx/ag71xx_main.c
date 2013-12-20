@@ -692,7 +692,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 
 	/* setup descriptor fields */
 	desc->data = (u32) dma_addr;
-	desc->ctrl = (skb->len & DESC_PKTLEN_M);
+	desc->ctrl = skb->len & ag->desc_pktlen_mask;
 
 	/* flush descriptor */
 	wmb();
@@ -866,6 +866,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 	struct net_device *dev = ag->dev;
 	struct ag71xx_ring *ring = &ag->rx_ring;
 	int offset = ag71xx_buffer_offset(ag);
+	unsigned int pktlen_mask = ag->desc_pktlen_mask;
 	int done = 0;
 
 	DBG("%s: rx packets, limit=%d, curr=%u, dirty=%u\n",
@@ -888,7 +889,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 
 		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
 
-		pktlen = ag71xx_desc_pktlen(desc);
+		pktlen = desc->ctrl & pktlen_mask;
 		pktlen -= ETH_FCS_LEN;
 
 		dma_unmap_single(&dev->dev, ring->buf[i].dma_addr,
@@ -1169,6 +1170,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->rx_ring.size = AG71XX_RX_RING_SIZE_DEFAULT;
 
 	ag->max_frame_len = AG71XX_TX_MTU_LEN;
+	ag->desc_pktlen_mask = DESC_PKTLEN_MASK;
 
 	ag->stop_desc = dma_alloc_coherent(NULL,
 		sizeof(struct ag71xx_desc), &ag->stop_desc_dma, GFP_KERNEL);
