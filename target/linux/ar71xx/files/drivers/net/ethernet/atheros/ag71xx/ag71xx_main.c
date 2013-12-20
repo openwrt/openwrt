@@ -1124,6 +1124,9 @@ static int ag71xx_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
+	if (!pdata->max_frame_len || !pdata->desc_pktlen_mask)
+		return -EINVAL;
+
 	SET_NETDEV_DEV(dev, &pdev->dev);
 
 	ag = netdev_priv(dev);
@@ -1169,8 +1172,8 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->tx_ring.size = AG71XX_TX_RING_SIZE_DEFAULT;
 	ag->rx_ring.size = AG71XX_RX_RING_SIZE_DEFAULT;
 
-	ag->max_frame_len = AG71XX_TX_MTU_LEN;
-	ag->desc_pktlen_mask = DESC_PKTLEN_MASK;
+	ag->max_frame_len = pdata->max_frame_len;
+	ag->desc_pktlen_mask = pdata->desc_pktlen_mask;
 
 	ag->stop_desc = dma_alloc_coherent(NULL,
 		sizeof(struct ag71xx_desc), &ag->stop_desc_dma, GFP_KERNEL);
