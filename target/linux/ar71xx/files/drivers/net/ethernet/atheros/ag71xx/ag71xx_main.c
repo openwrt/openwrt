@@ -438,8 +438,8 @@ static void ag71xx_hw_setup(struct ag71xx *ag)
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
 		  MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK);
 
-	/* setup max frame length */
-	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, ag->max_frame_len);
+	/* setup max frame length to zero */
+	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, 0);
 
 	/* setup FIFO configuration registers */
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
@@ -507,6 +507,10 @@ static void ag71xx_fast_reset(struct ag71xx *ag)
 
 	ag71xx_dma_reset(ag);
 	ag71xx_hw_setup(ag);
+
+	/* setup max frame length */
+	ag71xx_wr(ag, AG71XX_REG_MAC_MFL,
+		  ag71xx_max_frame_len(ag->dev->mtu));
 
 	ag71xx_wr(ag, AG71XX_REG_RX_DESC, rx_ds);
 	ag71xx_wr(ag, AG71XX_REG_TX_DESC, tx_ds);
@@ -612,9 +616,14 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 static int ag71xx_open(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
+	unsigned int max_frame_len;
 	int ret;
 
-	ag->rx_buf_size = ag->max_frame_len + NET_SKB_PAD + NET_IP_ALIGN;
+	max_frame_len = ag71xx_max_frame_len(dev->mtu);
+	ag->rx_buf_size = max_frame_len + NET_SKB_PAD + NET_IP_ALIGN;
+
+	/* setup max frame length */
+	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, max_frame_len);
 
 	ret = ag71xx_rings_init(ag);
 	if (ret)
@@ -1062,6 +1071,9 @@ static int ag71xx_change_mtu(struct net_device *dev, int new_mtu)
 	max_frame_len = ag71xx_max_frame_len(new_mtu);
 	if (new_mtu < 68 || max_frame_len > ag->max_frame_len)
 		return -EINVAL;
+
+	if (netif_running(dev))
+		return -EBUSY;
 
 	dev->mtu = new_mtu;
 	return 0;
