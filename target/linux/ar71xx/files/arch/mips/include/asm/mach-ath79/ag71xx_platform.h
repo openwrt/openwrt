@@ -45,6 +45,9 @@ struct ag71xx_platform_data {
 	u32		fifo_cfg1;
 	u32		fifo_cfg2;
 	u32		fifo_cfg3;
+
+	unsigned int	max_frame_len;
+	unsigned int	desc_pktlen_mask;
 };
 
 struct ag71xx_mdio_platform_data {

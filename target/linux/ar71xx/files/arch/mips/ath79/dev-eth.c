@@ -786,6 +786,9 @@ void __init ath79_register_eth(unsigned int id)
 
 	pdata = pdev->dev.platform_data;
 
+	pdata->max_frame_len = 1540;
+	pdata->desc_pktlen_mask = 0xfff;
+
 	err = ath79_setup_phy_if_mode(id, pdata);
 	if (err) {
 		printk(KERN_ERR
