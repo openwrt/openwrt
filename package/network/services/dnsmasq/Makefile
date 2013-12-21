@@ -83,6 +83,8 @@ define Package/dnsmasq/install
 	$(INSTALL_DATA) ./files/dnsmasq.conf $(1)/etc/dnsmasq.conf
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/dnsmasq.init $(1)/etc/init.d/dnsmasq
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_DATA) ./files/dnsmasq.hotplug $(1)/etc/hotplug.d/iface/25-dnsmasq
 endef
 
 Package/dnsmasq-dhcpv6/install = $(Package/dnsmasq/install)

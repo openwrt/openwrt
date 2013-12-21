@@ -33,6 +33,29 @@ dhcp_calc() {
 	echo "$res"
 }
 
+dhcp_check() {
+	local ifname="$1"
+	local stamp="/var/run/dnsmasq.$ifname.dhcp"
+	local rv=0
+
+	[ -s "$stamp" ] && return $(cat "$stamp")
+
+	udhcpc -n -q -s /bin/true -t 1 -i "$ifname" >&- && rv=1 || rv=0
+
+	[ $rv -eq 1 ] && \
+		logger -t dnsmasq \
+			"found already running DHCP-server on interface '$ifname'" \
+			"refusing to start, use 'option force 1' to override"
+
+	echo $rv > "$stamp"
+	return $rv
+}
+
+log_once() {
+	pidof dnsmasq >/dev/null || \
+		logger -t dnsmasq "$@"
+}
+
 append_bool() {
 	local section="$1"
 	local option="$2"
@@ -141,7 +164,7 @@ dnsmasq() {
 	local rebind
 	config_get_bool rebind "$cfg" rebind_protection 1
 	[ $rebind -gt 0 ] && {
-		logger -t dnsmasq \
+		log_once \
 			"DNS rebinding protection is active," \
 			"will discard upstream RFC1918 responses!"
 		xappend "--stop-dns-rebind"
@@ -149,12 +172,12 @@ dnsmasq() {
 		local rebind_localhost
 		config_get_bool rebind_localhost "$cfg" rebind_localhost 0
 		[ $rebind_localhost -gt 0 ] && {
-			logger -t dnsmasq "Allowing 127.0.0.0/8 responses"
+			log_once "Allowing 127.0.0.0/8 responses"
 			xappend "--rebind-localhost-ok"
 		}
 
 		append_rebind_domain() {
-			logger -t dnsmasq "Allowing RFC1918 responses for domain $1"
+			log_once "Allowing RFC1918 responses for domain $1"
 			xappend "--rebind-domain-ok=$1"
 		}
 
@@ -356,14 +379,7 @@ dhcp_add() {
 
 	#check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
-	[ $force -gt 0 ] || {
-		udhcpc -n -q -s /bin/true -t 1 -i $ifname >&- && {
-			logger -t dnsmasq \
-				"found already running DHCP-server on interface '$ifname'" \
-				"refusing to start, use 'option force 1' to override"
-			return 0
-		}
-	}
+	[ $force -gt 0 ] || dhcp_check "$ifname" || return 0
 
 	config_get start "$cfg" start
 	config_get limit "$cfg" limit
@@ -492,6 +508,11 @@ service_triggers()
 	procd_add_reload_trigger "dhcp"
 }
 
+boot() {
+	# Will be launched through hotplug
+	return 0
+}
+
 start_service() {
 	include /lib/functions
 
@@ -499,6 +520,7 @@ start_service() {
 
 	procd_open_instance
 	procd_set_param command $PROG -C $CONFIGFILE -k
+	procd_set_param file $CONFIGFILE
 	procd_close_instance
 
 	# before we can call xappend
@@ -552,9 +574,15 @@ start_service() {
 	done
 }
 
+reload_service() {
+	rc_procd start_service "$@"
+	return 0
+}
+
 stop_service() {
 	[ -f /tmp/resolv.conf ] && {
 		rm -f /tmp/resolv.conf
 		ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
 	}
+	rm -f /var/run/dnsmasq.*.dhcp
 }
