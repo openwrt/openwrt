@@ -981,6 +981,17 @@ void __init ath79_register_eth(unsigned int id)
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
 
+		/*
+		 * Limit the maximum frame length to 4095 bytes.
+		 * Although the documentation says that the hardware
+		 * limit is 16383 bytes but that does not work in
+		 * practice. It seems that the hardware only updates
+		 * the lowest 12 bits of the packet length field
+		 * in the RX descriptor.
+		 */
+		pdata->max_frame_len = SZ_4K - 1;
+		pdata->desc_pktlen_mask = SZ_16K - 1;
+
 		if (!pdata->fifo_cfg1)
 			pdata->fifo_cfg1 = 0x0010ffff;
 		if (!pdata->fifo_cfg2)
