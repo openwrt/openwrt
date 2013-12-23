@@ -254,13 +254,8 @@ void __init ath79_register_mdio(unsigned int id, u32 phy_mask)
 		mdio_data->is_ar934x = 1;
 		break;
 
-	case ATH79_SOC_QCA9558:
-		if (id == 1)
-			mdio_data->builtin_switch = 1;
-		mdio_data->is_ar934x = 1;
-		break;
-
 	case ATH79_SOC_QCA9556:
+	case ATH79_SOC_QCA9558:
 		mdio_data->is_ar934x = 1;
 		break;
 
