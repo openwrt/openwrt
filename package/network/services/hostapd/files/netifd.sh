@@ -18,12 +18,12 @@ hostapd_append_wep_key() {
 				zidx=$(($idx - 1))
 				json_get_var ckey "key${idx}"
 				[ -n "$ckey" ] && \
-					append network_data "wep_key${zidx}=$(prepare_key_wep "$ckey")" "$N$T"
+					append $var "wep_key${zidx}=$(prepare_key_wep "$ckey")" "$N$T"
 			done
 			wep_keyidx=$((key - 1))
 		;;
 		*)
-			append network_data "wep_key0=$(prepare_key_wep "$key")" "$N$T"
+			append $var "wep_key0=$(prepare_key_wep "$key")" "$N$T"
 		;;
 	esac
 }
@@ -233,8 +233,8 @@ hostapd_set_bss_options() {
 		;;
 		wep)
 			local wep_keyidx=0
-			hostapd_append_wep_key network_data
-			append bss_conf "wep_default_key=$wep_key" "$N"
+			hostapd_append_wep_key bss_conf
+			append bss_conf "wep_default_key=$wep_keyidx" "$N"
 			[ -n "$wep_rekey" ] && append bss_conf "wep_rekey_period=$wep_rekey" "$N"
 		;;
 	esac
