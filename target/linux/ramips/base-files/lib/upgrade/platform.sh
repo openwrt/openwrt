@@ -63,6 +63,7 @@ platform_check_image() {
 	rp-n53 | \
 	rt-g32-b1 | \
 	rt-n10-plus | \
+	rt-n14u | \
 	rt-n15 | \
 	rt-n56u | \
 	sl-r7205 | \
