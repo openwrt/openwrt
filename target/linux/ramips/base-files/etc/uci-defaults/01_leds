@@ -141,6 +141,13 @@ case $board in
 	wnce2001)
 		set_wifi_led "netgear:green:wlan"
 		;;
+	rt-n14u)
+		ucidef_set_led_default "power" "power" "asus:blue:power" "1"
+		ucidef_set_led_netdev "lan" "lan" "asus:blue:lan" "eth0.1"
+		ucidef_set_led_netdev "wan" "wan" "asus:blue:wan" "eth0.2"
+		set_wifi_led "asus:blue:air"
+		set_usb_led "asus:blue:usb"
+		;;
 	rp-n53)
 		ucidef_set_led_netdev "eth" "Network" "asus:white:back" "eth0"
 		set_wifi_led "asus:blue:wifi"
