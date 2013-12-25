@@ -135,6 +135,25 @@
 			status = "disabled";
 		};
 
+		gpio3: gpio@688 {
+			compatible = "ralink,mt7620a-gpio", "ralink,rt2880-gpio";
+			reg = <0x688 0x24>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <6>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ralink,gpio-base = <72>;
+			ralink,num-gpios = <1>;
+			ralink,register-map = [ 00 04 08 0c
+						10 14 18 1c
+						20 24 ];
+
+			status = "disabled";
+		};
+
 		spi@b00 {
 			compatible = "ralink,mt7620a-spi", "ralink,rt2880-spi";
 			reg = <0xb00 0x100>;
