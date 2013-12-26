@@ -14,7 +14,7 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  	u32 ctl;
  
  	ctl = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_TX_CTL);
-+	if (bgmac->core->id.rev == 4) {
++	if (bgmac->core->id.rev >= 4) {
 +		ctl &= ~BGMAC_DMA_TX_BL_MASK;
 +		ctl |= BGMAC_DMA_TX_BL_128 << BGMAC_DMA_TX_BL_SHIFT;
 +		ctl &= ~BGMAC_DMA_TX_MR_MASK;
@@ -32,7 +32,7 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  	ctl |= BGMAC_DMA_RX_OVERFLOW_CONT;
  	ctl |= BGMAC_RX_FRAME_OFFSET << BGMAC_DMA_RX_FRAME_OFFSET_SHIFT;
 +
-+	if (bgmac->core->id.rev == 4) {
++	if (bgmac->core->id.rev >= 4) {
 +		ctl &= ~BGMAC_DMA_RX_BL_MASK;
 +		ctl |= BGMAC_DMA_RX_BL_128 << BGMAC_DMA_RX_BL_SHIFT;
 +
@@ -45,7 +45,7 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  	bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_CTL, ctl);
  }
  
-@@ -812,13 +833,13 @@ static void bgmac_cmdcfg_maskset(struct
+@@ -746,13 +767,13 @@ static void bgmac_cmdcfg_maskset(struct
  	u32 cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
  	u32 new_val = (cmdcfg & mask) | set;
  
@@ -61,16 +61,16 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  	udelay(2);
  }
  
-@@ -1029,7 +1050,7 @@ static void bgmac_chip_reset(struct bgma
+@@ -972,7 +993,7 @@ static void bgmac_chip_reset(struct bgma
  			     BGMAC_CMDCFG_PROM |
  			     BGMAC_CMDCFG_NLC |
  			     BGMAC_CMDCFG_CFE |
 -			     BGMAC_CMDCFG_SR,
 +			     BGMAC_CMDCFG_SR(core->id.rev),
  			     false);
- 
- 	bgmac_clear_mib(bgmac);
-@@ -1070,7 +1091,7 @@ static void bgmac_enable(struct bgmac *b
+ 	bgmac->mac_speed = SPEED_UNKNOWN;
+ 	bgmac->mac_duplex = DUPLEX_UNKNOWN;
+@@ -1015,7 +1036,7 @@ static void bgmac_enable(struct bgmac *b
  
  	cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
  	bgmac_cmdcfg_maskset(bgmac, ~(BGMAC_CMDCFG_TE | BGMAC_CMDCFG_RE),
@@ -81,7 +81,7 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  	bgmac_write(bgmac, BGMAC_CMDCFG, cmdcfg);
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
-@@ -194,7 +194,9 @@
+@@ -198,7 +198,9 @@
  #define  BGMAC_CMDCFG_TAI			0x00000200
  #define  BGMAC_CMDCFG_HD			0x00000400	/* Set if in half duplex mode */
  #define  BGMAC_CMDCFG_HD_SHIFT			10
@@ -92,7 +92,7 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  #define  BGMAC_CMDCFG_ML			0x00008000	/* Set to activate mac loopback mode */
  #define  BGMAC_CMDCFG_AE			0x00400000
  #define  BGMAC_CMDCFG_CFE			0x00800000
-@@ -255,9 +257,34 @@
+@@ -238,9 +240,34 @@
  #define  BGMAC_DMA_TX_SUSPEND			0x00000002
  #define  BGMAC_DMA_TX_LOOPBACK			0x00000004
  #define  BGMAC_DMA_TX_FLUSH			0x00000010
@@ -127,7 +127,7 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  #define BGMAC_DMA_TX_INDEX			0x04
  #define BGMAC_DMA_TX_RINGLO			0x08
  #define BGMAC_DMA_TX_RINGHI			0x0C
-@@ -285,8 +312,33 @@
+@@ -268,8 +295,33 @@
  #define  BGMAC_DMA_RX_DIRECT_FIFO		0x00000100
  #define  BGMAC_DMA_RX_OVERFLOW_CONT		0x00000400
  #define  BGMAC_DMA_RX_PARITY_DISABLE		0x00000800
