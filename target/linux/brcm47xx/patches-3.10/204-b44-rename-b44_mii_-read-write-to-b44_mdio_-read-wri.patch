@@ -1,14 +1,15 @@
-From 16b8dde613e5b59bee13537469f3562081da1a2c Mon Sep 17 00:00:00 2001
+From 348baa6c81cf774811040e4da01438d077a08301 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sun, 6 Oct 2013 15:31:04 +0200
-Subject: [PATCH 5/9] b44: rename b44_mii_{read,write} to
- b44_mdio_{read,write}_mii
+Date: Fri, 20 Dec 2013 02:16:09 +0100
+Subject: [PATCH 204/208] b44: rename b44_mii_{read, write} to b44_mdio_{read,
+ write}_mii
 
 The next patch will add these functions for phylib, and we should
 rename the old ones before. This now indicates that these functions are
 used for the mdio registers and on the mii interface.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/broadcom/b44.c |   10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
