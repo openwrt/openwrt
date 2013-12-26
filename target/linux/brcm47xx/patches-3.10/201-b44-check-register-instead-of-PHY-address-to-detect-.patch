@@ -1,8 +1,27 @@
-From 3fc36ba561bd9a9bdc097d6ace32f1303364268c Mon Sep 17 00:00:00 2001
+From d61941952d5e7d062c3884e6d81bd503a37702b4 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Tue, 22 Oct 2013 21:05:25 +0200
-Subject: [PATCH 2/9] b44: use B44_FLAG_EXTERNAL_PHY
+Date: Fri, 20 Dec 2013 02:16:06 +0100
+Subject: [PATCH 201/208] b44: check register instead of PHY address to detect
+ external PHY
 
+The Ethernet core supported by b44 supports an internal PHY integrated
+into the mac core, which is supported by the b44 driver and an external
+PHY to which the mac core is connected. This external PHY could be a
+switch connected through MII, which is often the case when this core is
+used on home routers. The usage of an external PHY was assumed when the
+PHY address 30 was used and an internal PHY was assumed when the PHY
+address was different. To verify that b44_phy_reset() was called and
+checked if it worked, otherwise PHY address 30 was assumed, an external
+PHY. It is better to check the register which says which PHY is
+connected to the MAC instead of checking the PHY address.
+The interface to an external PHY was only activated when this register
+was set.
+
+This also changes B44_FLAG_INTERNAL_PHY to B44_FLAG_EXTERNAL_PHY, it is
+easier to check.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/broadcom/b44.c |   18 +++++++++---------
  drivers/net/ethernet/broadcom/b44.h |    2 +-

@@ -1,12 +1,12 @@
-From b52546f8af54b78050f84ab031ad1aaf6507ed95 Mon Sep 17 00:00:00 2001
+From b36f694256f41bc71571f467646d015dda128d14 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sat, 9 Nov 2013 17:03:59 +0100
-Subject: [PATCH 10/10] b44: register adm switch
+Subject: [PATCH 210/210] b44: register adm switch
 
 ---
- drivers/net/ethernet/broadcom/b44.c |   64 ++++++++++++++++++++++++++++++++++-
+ drivers/net/ethernet/broadcom/b44.c |   57 +++++++++++++++++++++++++++++++++++
  drivers/net/ethernet/broadcom/b44.h |    3 ++
- 2 files changed, 66 insertions(+), 1 deletion(-)
+ 2 files changed, 60 insertions(+)
 
 --- a/drivers/net/ethernet/broadcom/b44.c
 +++ b/drivers/net/ethernet/broadcom/b44.c
@@ -19,8 +19,8 @@ Subject: [PATCH 10/10] b44: register adm switch
  
  #include <asm/uaccess.h>
  #include <asm/io.h>
-@@ -2216,6 +2218,58 @@ static void b44_adjust_link(struct net_d
- 		phy_print_status(phydev);
+@@ -2227,6 +2229,58 @@ static void b44_adjust_link(struct net_d
+ 	}
  }
  
 +#ifdef CONFIG_BCM47XX
@@ -78,42 +78,21 @@ Subject: [PATCH 10/10] b44: register adm switch
  static int b44_register_phy_one(struct b44 *bp)
  {
  	struct mii_bus *mii_bus;
-@@ -2223,6 +2277,7 @@ static int b44_register_phy_one(struct b
- 	struct phy_device *phydev;
- 	int err;
- 	struct phy_c45_device_ids c45_ids = {0};
-+	struct ssb_sprom *sprom = &sdev->bus->sprom;
+@@ -2270,6 +2324,9 @@ static int b44_register_phy_one(struct b
+ 	if (!bp->mii_bus->phy_map[bp->phy_addr] &&
+ 	    (sprom->boardflags_lo & (B44_BOARDFLAG_ROBO | B44_BOARDFLAG_ADM))) {
  
- 	mii_bus = mdiobus_alloc();
- 	if (!mii_bus) {
-@@ -2256,7 +2311,11 @@ static int b44_register_phy_one(struct b
- 	}
- 
- 	phydev = bp->mii_bus->phy_map[bp->phy_addr];
--	if (!phydev) {
-+	if (!phydev &&
-+	    (sprom->boardflags_lo & (B44_BOARDFLAG_ROBO | B44_BOARDFLAG_ADM))) {
 +		if (sprom->boardflags_lo & B44_BOARDFLAG_ADM)
 +			b44_register_adm_switch(bp);
 +
- 		dev_info(sdev->dev, "could not find PHY at %i, create dummy one\n",
+ 		dev_info(sdev->dev,
+ 			 "could not find PHY at %i, use fixed one\n",
  			 bp->phy_addr);
- 
 --- a/drivers/net/ethernet/broadcom/b44.h
 +++ b/drivers/net/ethernet/broadcom/b44.h
-@@ -345,6 +345,9 @@ B44_STAT_REG_DECLARE
- 	struct u64_stats_sync	syncp;
- };
- 
-+#define	B44_BOARDFLAG_ROBO		0x0010  /* Board has robo switch or core */
-+#define	B44_BOARDFLAG_ADM		0x0080  /* Board has ADMtek switch */
-+
- struct ssb_device;
- 
- struct b44 {
-@@ -402,6 +405,9 @@ struct b44 {
+@@ -404,6 +404,9 @@ struct b44 {
+ 	struct mii_bus		*mii_bus;
  	int			old_link;
- 	int			old_duplex;
  	struct mii_if_info	mii_if;
 +
 +	/* platform device for associated switch */

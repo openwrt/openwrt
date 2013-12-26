@@ -1,7 +1,7 @@
-From 31963d998d2984079dc4f4b36b7df170d85f6d66 Mon Sep 17 00:00:00 2001
+From 86f4ea63e696db996f68d1065b55506e75a7d765 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Thu, 3 Oct 2013 22:07:11 +0200
-Subject: [PATCH 6/9] b44: add phylib support
+Date: Fri, 20 Dec 2013 02:16:10 +0100
+Subject: [PATCH 205/208] b44: add phylib support
 
 Most of the older home routers based on the Broadcom BCM47XX SoC series
 are using a MAC that is supported by b44. On most of these routers not
@@ -13,17 +13,23 @@ Broadcom home networking SoCs which are using different Ethernet MAC
 drivers. This was tested with the b53 switch driver which is currently
 on its way to mainline.
 
+If the internal PHY is not used, b44 will now search on the MDIO bus
+for a phy and use the Linux phylib subsystem to register a driver.
+Support for the internal PHY must stay here, because there are some
+device which are suing the internal phy.
+
 With this patch we scan the mdio bus when the sprom or nvram says that
 the PHY address is 30, if a PHY was found at this address b44 uses it.
 
 This was tested with a BCM4704, BCM4712 and BCM5354.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/broadcom/Kconfig |    1 +
- drivers/net/ethernet/broadcom/b44.c   |  181 ++++++++++++++++++++++++++++++++-
- drivers/net/ethernet/broadcom/b44.h   |    4 +
- 3 files changed, 183 insertions(+), 3 deletions(-)
+ drivers/net/ethernet/broadcom/b44.c   |  190 ++++++++++++++++++++++++++++++++-
+ drivers/net/ethernet/broadcom/b44.h   |    3 +
+ 3 files changed, 189 insertions(+), 5 deletions(-)
 
 --- a/drivers/net/ethernet/broadcom/Kconfig
 +++ b/drivers/net/ethernet/broadcom/Kconfig
@@ -77,7 +83,22 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static int b44_phy_reset(struct b44 *bp)
  {
  	u32 val;
-@@ -1805,6 +1824,11 @@ static int b44_get_settings(struct net_d
+@@ -523,10 +542,12 @@ static void b44_check_phy(struct b44 *bp
+ 
+ 	if (bp->flags & B44_FLAG_EXTERNAL_PHY) {
+ 		bp->flags |= B44_FLAG_100_BASE_T;
+-		bp->flags |= B44_FLAG_FULL_DUPLEX;
+ 		if (!netif_carrier_ok(bp->dev)) {
+ 			u32 val = br32(bp, B44_TX_CTRL);
+-			val |= TX_CTRL_DUPLEX;
++			if (bp->flags & B44_FLAG_FULL_DUPLEX)
++				val |= TX_CTRL_DUPLEX;
++			else
++				val &= ~TX_CTRL_DUPLEX;
+ 			bw32(bp, B44_TX_CTRL, val);
+ 			netif_carrier_on(bp->dev);
+ 			b44_link_report(bp);
+@@ -1805,6 +1826,11 @@ static int b44_get_settings(struct net_d
  {
  	struct b44 *bp = netdev_priv(dev);
  
@@ -89,7 +110,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	cmd->supported = (SUPPORTED_Autoneg);
  	cmd->supported |= (SUPPORTED_100baseT_Half |
  			  SUPPORTED_100baseT_Full |
-@@ -1846,7 +1870,23 @@ static int b44_get_settings(struct net_d
+@@ -1846,7 +1872,23 @@ static int b44_get_settings(struct net_d
  static int b44_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
  {
  	struct b44 *bp = netdev_priv(dev);
@@ -114,7 +135,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	/* We do not support gigabit. */
  	if (cmd->autoneg == AUTONEG_ENABLE) {
-@@ -2076,7 +2116,6 @@ static const struct ethtool_ops b44_etht
+@@ -2076,7 +2118,6 @@ static const struct ethtool_ops b44_etht
  
  static int b44_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
  {
@@ -122,7 +143,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	struct b44 *bp = netdev_priv(dev);
  	int err = -EINVAL;
  
-@@ -2084,7 +2123,12 @@ static int b44_ioctl(struct net_device *
+@@ -2084,7 +2125,12 @@ static int b44_ioctl(struct net_device *
  		goto out;
  
  	spin_lock_irq(&bp->lock);
@@ -136,7 +157,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	spin_unlock_irq(&bp->lock);
  out:
  	return err;
-@@ -2146,6 +2190,124 @@ static const struct net_device_ops b44_n
+@@ -2146,6 +2192,127 @@ static const struct net_device_ops b44_n
  #endif
  };
  
@@ -154,13 +175,22 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	}
 +
 +	/* reflect duplex change */
-+	if (phydev->link && (bp->old_duplex != phydev->duplex)) {
-+		status_changed = 1;
-+		bp->old_duplex = phydev->duplex;
++	if (phydev->link) {
++		if ((phydev->duplex == DUPLEX_HALF) &&
++		    (bp->flags & B44_FLAG_FULL_DUPLEX)) {
++			status_changed = 1;
++			bp->flags &= ~B44_FLAG_FULL_DUPLEX;
++		} else if ((phydev->duplex == DUPLEX_FULL) &&
++			   !(bp->flags & B44_FLAG_FULL_DUPLEX)) {
++			status_changed = 1;
++			bp->flags |= B44_FLAG_FULL_DUPLEX;
++		}
 +	}
 +
-+	if (status_changed)
++	if (status_changed) {
++		b44_check_phy(bp);
 +		phy_print_status(phydev);
++	}
 +}
 +
 +static int b44_register_phy_one(struct b44 *bp)
@@ -168,6 +198,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct mii_bus *mii_bus;
 +	struct ssb_device *sdev = bp->sdev;
 +	struct phy_device *phydev;
++	char bus_id[MII_BUS_ID_SIZE + 3];
 +	int err;
 +
 +	mii_bus = mdiobus_alloc();
@@ -201,25 +232,19 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		goto err_out_mdiobus_irq;
 +	}
 +
-+	phydev = bp->mii_bus->phy_map[bp->phy_addr];
-+	if (!phydev) {
-+		dev_err(sdev->dev, "could not find PHY at %i\n", bp->phy_addr);
-+		err = -ENODEV;
-+		goto err_out_mdiobus_unregister;
-+	}
++	snprintf(bus_id, sizeof(bus_id), PHY_ID_FMT, mii_bus->id, bp->phy_addr);
 +
-+	err = phy_connect_direct(bp->dev, phydev, &b44_adjust_link,
-+				 PHY_INTERFACE_MODE_MII);
-+	if (err < 0) {
++	phydev = phy_connect(bp->dev, bus_id, &b44_adjust_link,
++			     PHY_INTERFACE_MODE_MII);
++	if (IS_ERR(phydev)) {
 +		dev_err(sdev->dev, "could not attach PHY at %i\n",
 +			bp->phy_addr);
++		err = PTR_ERR(phydev);
 +		goto err_out_mdiobus_unregister;
 +	}
 +
 +	/* mask with MAC supported features */
-+	phydev->supported &= (SUPPORTED_10baseT_Half |
-+			      SUPPORTED_10baseT_Full |
-+			      SUPPORTED_100baseT_Half |
++	phydev->supported &= (SUPPORTED_100baseT_Half |
 +			      SUPPORTED_100baseT_Full |
 +			      SUPPORTED_Autoneg |
 +			      SUPPORTED_MII);
@@ -227,7 +252,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	bp->phydev = phydev;
 +	bp->old_link = 0;
-+	bp->old_duplex = -1;
 +	bp->phy_addr = phydev->addr;
 +
 +	dev_info(sdev->dev, "attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
@@ -261,9 +285,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static int b44_init_one(struct ssb_device *sdev,
  			const struct ssb_device_id *ent)
  {
-@@ -2246,10 +2408,20 @@ static int b44_init_one(struct ssb_devic
+@@ -2246,10 +2413,20 @@ static int b44_init_one(struct ssb_devic
  	if (b44_phy_reset(bp) < 0)
- 		bp->phy_addr = B44_PHY_ADDR_NO_LOACL_PHY;
+ 		bp->phy_addr = B44_PHY_ADDR_NO_LOCAL_PHY;
  
 +	if (bp->flags & B44_FLAG_EXTERNAL_PHY) {
 +		err = b44_register_phy_one(bp);
@@ -282,7 +306,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  err_out_powerdown:
  	ssb_bus_may_powerdown(sdev->bus);
  
-@@ -2263,8 +2435,11 @@ out:
+@@ -2263,8 +2440,11 @@ out:
  static void b44_remove_one(struct ssb_device *sdev)
  {
  	struct net_device *dev = ssb_get_drvdata(sdev);
@@ -296,14 +320,13 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	free_netdev(dev);
 --- a/drivers/net/ethernet/broadcom/b44.h
 +++ b/drivers/net/ethernet/broadcom/b44.h
-@@ -397,6 +397,10 @@ struct b44 {
+@@ -397,6 +397,9 @@ struct b44 {
  	u32			tx_pending;
  	u8			phy_addr;
  	u8			force_copybreak;
 +	struct phy_device	*phydev;
 +	struct mii_bus		*mii_bus;
 +	int			old_link;
-+	int			old_duplex;
  	struct mii_if_info	mii_if;
  };
  
