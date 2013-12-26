@@ -1,0 +1,41 @@
+From 2d12a9abf3f81de5b51852e3cfcba8cedac82642 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 6 Dec 2013 01:14:52 +0100
+Subject: [PATCH] bgmac: check length of received frame
+
+---
+ drivers/net/ethernet/broadcom/bgmac.c |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -347,6 +347,7 @@ static int bgmac_dma_rx_read(struct bgma
+ 		struct sk_buff *skb = slot->skb;
+ 		struct bgmac_rx_header *rx;
+ 		u16 len, flags;
++		int count;
+ 
+ 		/* Unmap buffer to make it accessible to the CPU */
+ 		dma_sync_single_for_cpu(dma_dev, slot->dma_addr,
+@@ -355,6 +356,12 @@ static int bgmac_dma_rx_read(struct bgma
+ 		/* Get info from the header */
+ 		rx = (struct bgmac_rx_header *)skb->data;
+ 		len = le16_to_cpu(rx->len);
++		for (count = 0; count < 200; count++) {
++			len = le16_to_cpu(rx->len);
++			if (len)
++				break;
++			udelay(1);
++		}
+ 		flags = le16_to_cpu(rx->flags);
+ 
+ 		do {
+@@ -362,7 +369,7 @@ static int bgmac_dma_rx_read(struct bgma
+ 			int err;
+ 
+ 			/* Check for poison and drop or pass the packet */
+-			if (len == 0xdead && flags == 0xbeef) {
++			if (!len || (len == 0xdead && flags == 0xbeef)) {
+ 				bgmac_err(bgmac, "Found poisoned packet at slot %d, DMA issue!\n",
+ 					  ring->start);
+ 				dma_sync_single_for_device(dma_dev,

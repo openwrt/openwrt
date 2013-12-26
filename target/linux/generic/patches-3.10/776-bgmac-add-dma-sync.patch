@@ -1,0 +1,46 @@
+From 88d0993dbe84a9b88212a4845fca28bf4c919ffb Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Tue, 26 Nov 2013 23:59:32 +0100
+Subject: [PATCH 14/16] bgmac: stuff
+
+---
+ drivers/net/ethernet/broadcom/bgmac.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -120,6 +120,7 @@ static netdev_tx_t bgmac_dma_tx_add(stru
+ 	struct net_device *net_dev = bgmac->net_dev;
+ 	struct bgmac_dma_desc *dma_desc;
+ 	struct bgmac_slot_info *slot;
++	int size = ring->num_slots * sizeof(struct bgmac_dma_desc);
+ 	u32 ctl0, ctl1;
+ 	int free_slots;
+ 
+@@ -160,6 +161,8 @@ static netdev_tx_t bgmac_dma_tx_add(stru
+ 	dma_desc->ctl0 = cpu_to_le32(ctl0);
+ 	dma_desc->ctl1 = cpu_to_le32(ctl1);
+ 
++	dma_sync_single_for_device(dma_dev, ring->dma_base, size, DMA_TO_DEVICE);
++
+ 	netdev_sent_queue(net_dev, skb->len);
+ 
+ 	wmb();
+@@ -311,6 +314,8 @@ static void bgmac_dma_rx_setup_desc(stru
+ 				    struct bgmac_dma_ring *ring, int desc_idx)
+ {
+ 	struct bgmac_dma_desc *dma_desc = ring->cpu_base + desc_idx;
++	struct device *dma_dev = bgmac->core->dma_dev;
++	int size = ring->num_slots * sizeof(struct bgmac_dma_desc);
+ 	u32 ctl0 = 0, ctl1 = 0;
+ 
+ 	if (desc_idx == ring->num_slots - 1)
+@@ -325,6 +330,8 @@ static void bgmac_dma_rx_setup_desc(stru
+ 	dma_desc->addr_high = cpu_to_le32(upper_32_bits(ring->slots[desc_idx].dma_addr));
+ 	dma_desc->ctl0 = cpu_to_le32(ctl0);
+ 	dma_desc->ctl1 = cpu_to_le32(ctl1);
++
++	dma_sync_single_for_device(dma_dev, ring->dma_base, size, DMA_TO_DEVICE);
+ }
+ 
+ static int bgmac_dma_rx_read(struct bgmac *bgmac, struct bgmac_dma_ring *ring,
