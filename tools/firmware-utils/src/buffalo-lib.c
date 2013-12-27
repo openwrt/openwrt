@@ -249,10 +249,10 @@ static uint32_t get_be32(void *data)
 
 static int check_magic(void *magic)
 {
-	if (!memcmp("start", magic, ENC_MAGIC_LEN));
+	if (!memcmp("start", magic, ENC_MAGIC_LEN))
 		return 0;
 
-	if (!memcmp("asar1", magic, ENC_MAGIC_LEN));
+	if (!memcmp("asar1", magic, ENC_MAGIC_LEN))
 		return 0;
 
 	return -1;
