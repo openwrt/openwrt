@@ -34,18 +34,18 @@ install_bin() { # <file> [ <symlink> ... ]
 }
 
 supivot() { # <new_root> <old_root>
-	mount | grep "on $1 type" 2>&- 1>&- || mount -o bind $1 $1
+	/bin/mount | grep "on $1 type" 2>&- 1>&- || /bin/mount -o bind $1 $1
 	mkdir -p $1$2 $1/proc $1/sys $1/dev $1/tmp $1/overlay && \
-	mount -o noatime,move /proc $1/proc && \
+	/bin/mount -o noatime,move /proc $1/proc && \
 	pivot_root $1 $1$2 || {
-		umount -l $1 $1
+		/bin/umount -l $1 $1
 		return 1
 	}
 
-	mount -o noatime,move $2/sys /sys
-	mount -o noatime,move $2/dev /dev
-	mount -o noatime,move $2/tmp /tmp
-	mount -o noatime,move $2/overlay /overlay 2>&-
+	/bin/mount -o noatime,move $2/sys /sys
+	/bin/mount -o noatime,move $2/dev /dev
+	/bin/mount -o noatime,move $2/tmp /tmp
+	/bin/mount -o noatime,move $2/overlay /overlay 2>&-
 	return 0
 }
 
@@ -67,12 +67,12 @@ run_ramfs() { # <command> [...]
 		exit 1
 	}
 
-	mount -o remount,ro /mnt
-	umount -l /mnt
+	/bin/mount -o remount,ro /mnt
+	/bin/umount -l /mnt
 
 	grep /overlay /proc/mounts > /dev/null && {
-		mount -o noatime,remount,ro /overlay
-		umount -l /overlay
+		/bin/mount -o noatime,remount,ro /overlay
+		/bin/umount -l /overlay
 	}
 
 	# spawn a new shell from ramdisk to reduce the probability of cache issues
@@ -144,7 +144,7 @@ v() {
 }
 
 rootfs_type() {
-	mount | awk '($3 ~ /^\/$/) && ($5 !~ /rootfs/) { print $5 }'
+	/bin/mount | awk '($3 ~ /^\/$/) && ($5 !~ /rootfs/) { print $5 }'
 }
 
 get_image() { # <source> [ <command> ]
