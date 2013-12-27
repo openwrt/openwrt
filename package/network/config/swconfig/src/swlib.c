@@ -206,7 +206,6 @@ store_val(struct nl_msg *msg, void *arg)
 {
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct switch_val *val = arg;
-	struct switch_attr *attr = val->attr;
 
 	if (!val)
 		goto error;
@@ -669,11 +668,7 @@ done:
 static int
 list_switch(struct nl_msg *msg, void *arg)
 {
-	struct swlib_scan_arg *sa = arg;
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
-	struct switch_dev *dev;
-	const char *name;
-	const char *alias;
 
 	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
 		goto done;
@@ -729,7 +724,6 @@ struct switch_dev *
 swlib_connect(const char *name)
 {
 	struct swlib_scan_arg arg;
-	int err;
 
 	if (!refcount) {
 		if (swlib_priv_init() < 0)

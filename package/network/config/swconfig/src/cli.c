@@ -178,7 +178,6 @@ swconfig_load_uci(struct switch_dev *dev, const char *name)
 {
 	struct uci_context *ctx;
 	struct uci_package *p = NULL;
-	struct uci_element *e;
 	int ret = -1;
 
 	ctx = uci_alloc_context();
@@ -206,7 +205,6 @@ int main(int argc, char **argv)
 	struct switch_dev *dev;
 	struct switch_attr *a;
 	struct switch_val val;
-	int err;
 	int i;
 
 	int cmd = CMD_NONE;
@@ -289,6 +287,7 @@ int main(int argc, char **argv)
 		if(!a)
 		{
 			fprintf(stderr, "Unknown attribute \"%s\"\n", ckey);
+			retval = -1;
 			goto out;
 		}
 	}
@@ -351,5 +350,5 @@ int main(int argc, char **argv)
 
 out:
 	swlib_free_all(dev);
-	return 0;
+	return retval;
 }

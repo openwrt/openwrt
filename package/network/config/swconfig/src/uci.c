@@ -66,7 +66,6 @@ swlib_map_settings(struct switch_dev *dev, int type, int port_vlan, struct uci_s
 	struct switch_attr *attr;
 	struct uci_element *e;
 	struct uci_option *o;
-	int i;
 
 	uci_foreach_element(&s->options, e) {
 		o = uci_to_option(e);
@@ -109,7 +108,6 @@ skip:
 int swlib_apply_from_uci(struct switch_dev *dev, struct uci_package *p)
 {
 	struct switch_attr *attr;
-	struct uci_context *ctx = p->ctx;
 	struct uci_element *e;
 	struct uci_section *s;
 	struct uci_option *o;
