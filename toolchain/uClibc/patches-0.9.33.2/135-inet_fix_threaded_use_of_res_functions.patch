@@ -1,0 +1,126 @@
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -3536,6 +3536,61 @@
+ 	return 0;
+ }
+ 
++static unsigned int
++res_randomid(void)
++{
++	return 0xffff & getpid();
++}
++
++/* Our res_init never fails (always returns 0) */
++int
++res_init(void)
++{
++	/*
++	 * These three fields used to be statically initialized.  This made
++	 * it hard to use this code in a shared library.  It is necessary,
++	 * now that we're doing dynamic initialization here, that we preserve
++	 * the old semantics: if an application modifies one of these three
++	 * fields of _res before res_init() is called, res_init() will not
++	 * alter them.  Of course, if an application is setting them to
++	 * _zero_ before calling res_init(), hoping to override what used
++	 * to be the static default, we can't detect it and unexpected results
++	 * will follow.  Zero for any of these fields would make no sense,
++	 * so one can safely assume that the applications were already getting
++	 * unexpected results.
++	 *
++	 * _res.options is tricky since some apps were known to diddle the bits
++	 * before res_init() was first called. We can't replicate that semantic
++	 * with dynamic initialization (they may have turned bits off that are
++	 * set in RES_DEFAULT).  Our solution is to declare such applications
++	 * "broken".  They could fool us by setting RES_INIT but none do (yet).
++	 */
++
++	__UCLIBC_MUTEX_LOCK(__resolv_lock);
++
++	if (!_res.retrans)
++		_res.retrans = RES_TIMEOUT;
++	if (!_res.retry)
++		_res.retry = 4;
++	if (!(_res.options & RES_INIT))
++		_res.options = RES_DEFAULT;
++
++	/*
++	 * This one used to initialize implicitly to zero, so unless the app
++	 * has set it to something in particular, we can randomize it now.
++	 */
++	if (!_res.id)
++		_res.id = res_randomid();
++
++	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
++
++	__res_vinit(&_res, 1);
++	__res_sync = res_sync_func;
++
++	return 0;
++}
++libc_hidden_def(res_init)
++
+ static void
+ __res_iclose(void)
+ {
+@@ -3608,61 +3663,6 @@
+ # endif
+ #endif /* !__UCLIBC_HAS_THREADS__ */
+ 
+-static unsigned int
+-res_randomid(void)
+-{
+-	return 0xffff & getpid();
+-}
+-
+-/* Our res_init never fails (always returns 0) */
+-int
+-res_init(void)
+-{
+-	/*
+-	 * These three fields used to be statically initialized.  This made
+-	 * it hard to use this code in a shared library.  It is necessary,
+-	 * now that we're doing dynamic initialization here, that we preserve
+-	 * the old semantics: if an application modifies one of these three
+-	 * fields of _res before res_init() is called, res_init() will not
+-	 * alter them.  Of course, if an application is setting them to
+-	 * _zero_ before calling res_init(), hoping to override what used
+-	 * to be the static default, we can't detect it and unexpected results
+-	 * will follow.  Zero for any of these fields would make no sense,
+-	 * so one can safely assume that the applications were already getting
+-	 * unexpected results.
+-	 *
+-	 * _res.options is tricky since some apps were known to diddle the bits
+-	 * before res_init() was first called. We can't replicate that semantic
+-	 * with dynamic initialization (they may have turned bits off that are
+-	 * set in RES_DEFAULT).  Our solution is to declare such applications
+-	 * "broken".  They could fool us by setting RES_INIT but none do (yet).
+-	 */
+-
+-	__UCLIBC_MUTEX_LOCK(__resolv_lock);
+-
+-	if (!_res.retrans)
+-		_res.retrans = RES_TIMEOUT;
+-	if (!_res.retry)
+-		_res.retry = 4;
+-	if (!(_res.options & RES_INIT))
+-		_res.options = RES_DEFAULT;
+-
+-	/*
+-	 * This one used to initialize implicitly to zero, so unless the app
+-	 * has set it to something in particular, we can randomize it now.
+-	 */
+-	if (!_res.id)
+-		_res.id = res_randomid();
+-
+-	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
+-
+-	__res_vinit(&_res, 1);
+-	__res_sync = res_sync_func;
+-
+-	return 0;
+-}
+-libc_hidden_def(res_init)
+-
+ /*
+  * Set up default settings.  If the configuration file exist, the values
+  * there will have precedence.  Otherwise, the server address is set to
