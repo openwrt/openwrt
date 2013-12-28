@@ -86,7 +86,7 @@ hostapd_common_add_bss_config() {
 	config_add_boolean wds wmm hidden
 
 	config_add_int maxassoc max_inactivity
-	config_add_boolean disassoc_low_ack ap_isolate short_preamble
+	config_add_boolean disassoc_low_ack isolate short_preamble
 
 	config_add_int \
 		wep_rekey eap_reauth_period \
@@ -137,12 +137,12 @@ hostapd_set_bss_options() {
 
 	json_get_vars \
 		wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey \
-		maxassoc max_inactivity disassoc_low_ack ap_isolate auth_cache \
+		maxassoc max_inactivity disassoc_low_ack isolate auth_cache \
 		wps_pushbutton wps_label ext_registrar \
 		wps_device_type wps_device_name wps_manufacturer wps_pin \
 		macfilter ssid wmm hidden short_preamble
 
-	set_default ap_isolate 0
+	set_default isolate 0
 	set_default maxassoc 0
 	set_default max_inactivity 0
 	set_default short_preamble 1
@@ -151,8 +151,8 @@ hostapd_set_bss_options() {
 	set_default wmm 1
 
 	append bss_conf "ctrl_interface=/var/run/hostapd"
-	if [ "$ap_isolate" -gt 0 ]; then
-		append bss_conf "ap_isolate=$ap_isolate" "$N"
+	if [ "$isolate" -gt 0 ]; then
+		append bss_conf "ap_isolate=$isolate" "$N"
 	fi
 	if [ "$maxassoc" -gt 0 ]; then
 		append bss_conf "max_num_sta=$maxassoc" "$N"
