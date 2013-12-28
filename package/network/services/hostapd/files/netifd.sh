@@ -233,6 +233,7 @@ hostapd_set_bss_options() {
 		;;
 		wep)
 			local wep_keyidx=0
+			json_get_vars key
 			hostapd_append_wep_key bss_conf
 			append bss_conf "wep_default_key=$wep_keyidx" "$N"
 			[ -n "$wep_rekey" ] && append bss_conf "wep_rekey_period=$wep_rekey" "$N"
