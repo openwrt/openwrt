@@ -1,0 +1,12 @@
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -3581,6 +3581,7 @@ res_init(void)
+ 	if (!_res.id)
+ 		_res.id = res_randomid();
+ 
++	__res_sync = NULL;
+ 	__res_vinit(&_res, 1);
+ 	__res_sync = res_sync_func;
+ 
+--
+cgit v0.9.1
