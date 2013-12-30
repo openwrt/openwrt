@@ -2,9 +2,6 @@
 
 RAMFS_COPY_DATA="/lib/ixp4xx.sh"
 
-# testing
-RAMFS_COPY_BIN="/usr/bin/less /usr/bin/hexdump"
-
 CI_BLKSZ=65536
 CI_LDADR=0x00800000
 
@@ -64,7 +61,7 @@ platform_do_upgrade_combined() {
 	v "kernel_part_size=$kern_part_size"
 	v "kernel_part_blocks=$kern_part_blocks"
 	v "kern_length=$kern_length"
-	v "erase_size=$erase_size" 
+	v "erase_size=$erase_size"
 	v "kern_blocks=$kern_blocks"
 	v "root_blocks=$root_blocks"
 	v "kern_pad_blocks=$(($kern_part_blocks-$kern_blocks))"
@@ -110,7 +107,7 @@ platform_check_image() {
 		if [ $kern_length_b -gt $kern_part_size_b ]; then
 			echo "Invalid image. Kernel size ($kern_length) exceeds kernel partition ($kern_part_size)"
 			return 1
-		fi 
+		fi
 
 		local md5_img=$(dd if="$1" bs=2 skip=9 count=16 2>/dev/null)
 		local md5_chk=$(dd if="$1" bs=$CI_BLKSZ skip=1 2>/dev/null | md5sum -); md5_chk="${md5_chk%% *}"
