@@ -5,7 +5,16 @@ STOP=90
 
 USE_PROCD=1
 
+init_switch() {
+	setup_switch() { return 0; }
+
+	include /lib/network
+	setup_switch
+}
+
 start_service() {
+	init_switch
+
 	procd_open_instance
 	procd_set_param command /sbin/netifd
 	procd_set_param respawn
@@ -17,6 +26,7 @@ start_service() {
 }
 
 reload_service() {
+	init_switch
 	ubus call network reload
 	/sbin/wifi reload_legacy
 }
@@ -26,13 +36,7 @@ stop_service() {
 }
 
 service_running() {
-	setup_switch() { return 0; }
-
-	include /lib/network
-	setup_switch
-
 	sleep 5
-
 	/sbin/wifi reload_legacy
 }
 
