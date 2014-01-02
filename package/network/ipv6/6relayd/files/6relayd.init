@@ -34,7 +34,7 @@ start_6relayd() {
 	local master masterif
 	config_get masterif "$cfg" master
 	network_get_device master "$masterif"
-	[ -z "$master" ] && master="."
+	[ -z "$master" -o "$master" = "$masterif" ] && master="."
 
 	# Detect slave interfaces
 	local slaves=""
@@ -45,10 +45,10 @@ start_6relayd() {
 		network_get_device slave "$slaveif"
 		# Compatibility with old config format
 		if [ "$mode" = "relay" -a "$master" = "." ]; then
-			[ -z "$slave" ] && return 0
+			[ -z "$slave" -o "$slave" = "$slaveif" ] && return 0
 			master="$slave"
 		else
-			[ -n "$slave" ] && append slaves "$slave"
+			[ -n "$slave" -o "$slave" = "$slaveif" ] && append slaves "$slave"
 		fi
 	done
 
