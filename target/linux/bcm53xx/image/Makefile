@@ -14,7 +14,7 @@ define Image/Prepare
 endef
 
 define Image/Build/Initramfs
-	$(call Image/Build/Initramfs/Chk,bcm5301-netgear-r6250,U12H245T00_NETGEAR,2,initramfs)
+	$(call Image/Build/Initramfs/Chk,bcm4708-netgear-r6250,U12H245T00_NETGEAR,2,initramfs)
 endef
 
 define Image/Build/Initramfs/Chk
@@ -49,7 +49,7 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1),$(1))
-	$(call Image/Build/squashfs/Chk,bcm5301-netgear-r6250,U12H245T00_NETGEAR,2,squashfs)
+	$(call Image/Build/squashfs/Chk,bcm4708-netgear-r6250,U12H245T00_NETGEAR,2,squashfs)
 endef
 
 
