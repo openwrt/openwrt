@@ -1,0 +1,69 @@
+From 051f43def45e53d93b9998728e398a68c4948114 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Sat, 14 Sep 2013 20:44:03 -0300
+Subject: [PATCH] ARM: sunxi: dt: Update AHB clock to be muxable on sun[57]i
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+sun5i and sun7i have a mux to select the parent clock for AHB. This
+commit implements the required changes on the device trees.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+---
+ arch/arm/boot/dts/sun5i-a10s.dtsi | 4 ++--
+ arch/arm/boot/dts/sun5i-a13.dtsi  | 4 ++--
+ arch/arm/boot/dts/sun7i-a20.dtsi  | 4 ++--
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
+index 9cb1b14..83e183c 100644
+--- a/arch/arm/boot/dts/sun5i-a10s.dtsi
++++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
+@@ -115,9 +115,9 @@
+ 
+ 		ahb: ahb@01c20054 {
+ 			#clock-cells = <0>;
+-			compatible = "allwinner,sun4i-ahb-clk";
++			compatible = "allwinner,sun5i-a13-ahb-clk";
+ 			reg = <0x01c20054 0x4>;
+-			clocks = <&axi>;
++			clocks = <&axi>, <&cpu>, <&pll6 1>;
+ 		};
+ 
+ 		ahb_gates: ahb_gates@01c20060 {
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index 6b74dd0..0bb4300 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -115,9 +115,9 @@
+ 
+ 		ahb: ahb@01c20054 {
+ 			#clock-cells = <0>;
+-			compatible = "allwinner,sun4i-ahb-clk";
++			compatible = "allwinner,sun5i-a13-ahb-clk";
+ 			reg = <0x01c20054 0x4>;
+-			clocks = <&axi>;
++			clocks = <&axi>, <&cpu>, <&pll6 1>;
+ 		};
+ 
+ 		ahb_gates: ahb_gates@01c20060 {
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 55d3e14..63757c5 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -105,9 +105,9 @@
+ 
+ 		ahb: ahb@01c20054 {
+ 			#clock-cells = <0>;
+-			compatible = "allwinner,sun4i-ahb-clk";
++			compatible = "allwinner,sun5i-a13-ahb-clk";
+ 			reg = <0x01c20054 0x4>;
+-			clocks = <&axi>;
++			clocks = <&axi>, <&pll6 1>, <&pll6 2>;
+ 		};
+ 
+ 		ahb_gates: ahb_gates@01c20060 {
+-- 
+1.8.5.1
+

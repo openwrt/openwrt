@@ -1,0 +1,118 @@
+From f3443f6d43a69a520ae1e636d69a71c4a6bee21e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Sun, 8 Sep 2013 18:12:28 -0300
+Subject: [PATCH] ARM: sunxi: dt: unify APB1 clock
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+With the new factors infrastructure in place, we can unify apb1 and
+apb1_mux as a single clock now.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi  | 9 +--------
+ arch/arm/boot/dts/sun5i-a10s.dtsi | 9 +--------
+ arch/arm/boot/dts/sun5i-a13.dtsi  | 9 +--------
+ arch/arm/boot/dts/sun7i-a20.dtsi  | 9 +--------
+ 4 files changed, 4 insertions(+), 32 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index 2828427e..4dccdb0 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -158,18 +158,11 @@
+ 				"apb0_ir1", "apb0_keypad";
+ 		};
+ 
+-		apb1_mux: apb1_mux@01c20058 {
+-			#clock-cells = <0>;
+-			compatible = "allwinner,sun4i-apb1-mux-clk";
+-			reg = <0x01c20058 0x4>;
+-			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
+-		};
+-
+ 		apb1: apb1@01c20058 {
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun4i-apb1-clk";
+ 			reg = <0x01c20058 0x4>;
+-			clocks = <&apb1_mux>;
++			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
+ 		};
+ 
+ 		apb1_gates: apb1_gates@01c2006c {
+diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
+index 60bd3f7..9cb1b14 100644
+--- a/arch/arm/boot/dts/sun5i-a10s.dtsi
++++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
+@@ -150,18 +150,11 @@
+ 				"apb0_ir", "apb0_keypad";
+ 		};
+ 
+-		apb1_mux: apb1_mux@01c20058 {
+-			#clock-cells = <0>;
+-			compatible = "allwinner,sun4i-apb1-mux-clk";
+-			reg = <0x01c20058 0x4>;
+-			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
+-		};
+-
+ 		apb1: apb1@01c20058 {
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun4i-apb1-clk";
+ 			reg = <0x01c20058 0x4>;
+-			clocks = <&apb1_mux>;
++			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
+ 		};
+ 
+ 		apb1_gates: apb1_gates@01c2006c {
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index 3e616a0..6b74dd0 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -148,18 +148,11 @@
+ 			clock-output-names = "apb0_codec", "apb0_pio", "apb0_ir";
+ 		};
+ 
+-		apb1_mux: apb1_mux@01c20058 {
+-			#clock-cells = <0>;
+-			compatible = "allwinner,sun4i-apb1-mux-clk";
+-			reg = <0x01c20058 0x4>;
+-			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
+-		};
+-
+ 		apb1: apb1@01c20058 {
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun4i-apb1-clk";
+ 			reg = <0x01c20058 0x4>;
+-			clocks = <&apb1_mux>;
++			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
+ 		};
+ 
+ 		apb1_gates: apb1_gates@01c2006c {
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 0bf5d07..55d3e14 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -148,18 +148,11 @@
+ 				"apb0_iis2", "apb0_keypad";
+ 		};
+ 
+-		apb1_mux: apb1_mux@01c20058 {
+-			#clock-cells = <0>;
+-			compatible = "allwinner,sun4i-apb1-mux-clk";
+-			reg = <0x01c20058 0x4>;
+-			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
+-		};
+-
+ 		apb1: apb1@01c20058 {
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun4i-apb1-clk";
+ 			reg = <0x01c20058 0x4>;
+-			clocks = <&apb1_mux>;
++			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
+ 		};
+ 
+ 		apb1_gates: apb1_gates@01c2006c {
+-- 
+1.8.5.1
+
