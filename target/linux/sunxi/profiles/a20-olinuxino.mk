@@ -8,7 +8,7 @@
 define Profile/A20-OLinuXino_MICRO
 	NAME:=A20 OLinuXino Micro
 	PACKAGES:=\
-		uboot-sunxi-A20-OLinuXino_MICRO
+		uboot-sunxi-A20-OLinuXino_MICRO kmod-ata-sunxi
 endef
 
 define Profile/A20-OLinuXino_MICRO/Description
