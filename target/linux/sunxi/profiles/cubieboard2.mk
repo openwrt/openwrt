@@ -8,7 +8,7 @@
 define Profile/Cubieboard2
 	NAME:=Cubieboard2
 	PACKAGES:=\
-		uboot-sunxi-Cubieboard2 kmod-ata-sunxi
+		uboot-sunxi-Cubieboard2 kmod-ata-sunxi kmod-sun4i-emac
 endef
 
 define Profile/Cubieboard2/Description
