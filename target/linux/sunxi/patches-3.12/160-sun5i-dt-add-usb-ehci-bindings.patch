@@ -23,8 +23,8 @@ index aad270c..a271a2d 100644
  		#address-cells = <1>;
  		#size-cells = <0>;
 @@ -310,5 +314,22 @@
- 			interrupts = <82>, <83>;
- 			clocks = <&ahb_gates 28>;
+			clock-frequency = <100000>;
+			status = "disabled";
  		};
 +
 +		usb_rst: reset@0x01c200cc {

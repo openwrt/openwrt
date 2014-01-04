@@ -1,0 +1,35 @@
+From b788beda4db21ac28ae302f0323cffb75e578cac Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Tue, 24 Sep 2013 11:09:19 +0300
+Subject: [PATCH] ARM: sunxi: Order Kconfig options alphabetically
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/mach-sunxi/Kconfig | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+index 3ab2f65..c9e72c8 100644
+--- a/arch/arm/mach-sunxi/Kconfig
++++ b/arch/arm/mach-sunxi/Kconfig
+@@ -1,14 +1,14 @@
+ config ARCH_SUNXI
+ 	bool "Allwinner A1X SOCs" if ARCH_MULTI_V7
+ 	select ARCH_REQUIRE_GPIOLIB
++	select ARM_GIC
+ 	select CLKSRC_MMIO
+ 	select CLKSRC_OF
+ 	select COMMON_CLK
+ 	select GENERIC_CLOCKEVENTS
+ 	select GENERIC_IRQ_CHIP
++	select HAVE_SMP
+ 	select PINCTRL
++	select PINCTRL_SUNXI
+ 	select SPARSE_IRQ
+ 	select SUN4I_TIMER
+-	select PINCTRL_SUNXI
+-	select ARM_GIC
+-	select HAVE_SMP
+-- 
+1.8.5.1
+
