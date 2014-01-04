@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  static const struct bcma_device_id bgmac_bcma_tbl[] = {
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_4706_MAC_GBIT, BCMA_ANY_REV, BCMA_ANY_CLASS),
-@@ -1441,7 +1445,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1445,7 +1449,7 @@ static int bgmac_probe(struct bcma_devic
  	int err;
  
  	/* We don't support 2nd, 3rd, ... units, SPROM has to be adjusted */
@@ -39,17 +39,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		pr_err("Unsupported core_unit %d\n", core->core_unit);
  		return -ENOTSUPP;
  	}
-@@ -1476,8 +1480,7 @@ static int bgmac_probe(struct bcma_devic
- 	}
- 	bgmac->cmn = core->bus->drv_gmac_cmn.core;
- 
--	bgmac->phyaddr = core->core_unit ? sprom->et1phyaddr :
--			 sprom->et0phyaddr;
-+	bgmac->phyaddr = 30;
- 	bgmac->phyaddr &= BGMAC_PHY_MASK;
- 	if (bgmac->phyaddr == BGMAC_PHY_MASK) {
- 		bgmac_err(bgmac, "No PHY found\n");
-@@ -1527,8 +1530,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1541,8 +1545,7 @@ static int bgmac_probe(struct bcma_devic
  	/* TODO: reset the external phy. Specs are needed */
  	bgmac_phy_reset(bgmac);
  

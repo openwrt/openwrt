@@ -1,37 +1,45 @@
-From ec12b94d22fa8715561bdffe6da0781dac08423e Mon Sep 17 00:00:00 2001
+From adada33c4ee27efdec0b08e43768a68285a5710d Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sun, 10 Nov 2013 21:23:57 +0100
-Subject: [PATCH] bgmac: add some workaround for rev 4
+Date: Thu, 2 Jan 2014 19:49:56 +0100
+Subject: [PATCH 2/5] bgmac: initialize the DMA controller of core rev >= 4
 
----
- drivers/net/ethernet/broadcom/bgmac.c |    8 ++++----
- drivers/net/ethernet/broadcom/bgmac.h |    4 +++-
- 2 files changed, 7 insertions(+), 5 deletions(-)
+The DMA controller used in the device supported by GMAC with core rev
+>= 4 has some new options which are now set to the default values used
+in the Broadcom SDK.
+
+Subject: [PATCH 3/5] bgmac: add support for new BGMAC_CMDCFG_SR position on
+ core rev >= 4
+
+The BGMAC_CMDCFG_SR register is at a different position on core rev >= 4
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -97,6 +97,16 @@ static void bgmac_dma_tx_enable(struct b
+@@ -97,6 +97,19 @@ static void bgmac_dma_tx_enable(struct b
  	u32 ctl;
  
  	ctl = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_TX_CTL);
 +	if (bgmac->core->id.rev >= 4) {
 +		ctl &= ~BGMAC_DMA_TX_BL_MASK;
 +		ctl |= BGMAC_DMA_TX_BL_128 << BGMAC_DMA_TX_BL_SHIFT;
++
 +		ctl &= ~BGMAC_DMA_TX_MR_MASK;
 +		ctl |= BGMAC_DMA_TX_MR_2 << BGMAC_DMA_TX_MR_SHIFT;
++
 +		ctl &= ~BGMAC_DMA_TX_PC_MASK;
 +		ctl |= BGMAC_DMA_TX_PC_16 << BGMAC_DMA_TX_PC_SHIFT;
++
 +		ctl &= ~BGMAC_DMA_TX_PT_MASK;
 +		ctl |= BGMAC_DMA_TX_PT_8 << BGMAC_DMA_TX_PT_SHIFT;
 +	}
  	ctl |= BGMAC_DMA_TX_ENABLE;
  	ctl |= BGMAC_DMA_TX_PARITY_DISABLE;
  	bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_TX_CTL, ctl);
-@@ -246,6 +256,17 @@ static void bgmac_dma_rx_enable(struct b
- 	ctl |= BGMAC_DMA_RX_PARITY_DISABLE;
- 	ctl |= BGMAC_DMA_RX_OVERFLOW_CONT;
- 	ctl |= BGMAC_RX_FRAME_OFFSET << BGMAC_DMA_RX_FRAME_OFFSET_SHIFT;
-+
+@@ -241,6 +254,16 @@ static void bgmac_dma_rx_enable(struct b
+ 	u32 ctl;
+ 
+ 	ctl = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_RX_CTL);
 +	if (bgmac->core->id.rev >= 4) {
 +		ctl &= ~BGMAC_DMA_RX_BL_MASK;
 +		ctl |= BGMAC_DMA_RX_BL_128 << BGMAC_DMA_RX_BL_SHIFT;
@@ -42,10 +50,10 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
 +		ctl &= ~BGMAC_DMA_RX_PT_MASK;
 +		ctl |= BGMAC_DMA_RX_PT_1 << BGMAC_DMA_RX_PT_SHIFT;
 +	}
- 	bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_CTL, ctl);
- }
- 
-@@ -746,13 +767,13 @@ static void bgmac_cmdcfg_maskset(struct
+ 	ctl &= BGMAC_DMA_RX_ADDREXT_MASK;
+ 	ctl |= BGMAC_DMA_RX_ENABLE;
+ 	ctl |= BGMAC_DMA_RX_PARITY_DISABLE;
+@@ -746,13 +769,13 @@ static void bgmac_cmdcfg_maskset(struct
  	u32 cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
  	u32 new_val = (cmdcfg & mask) | set;
  
@@ -61,7 +69,7 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  	udelay(2);
  }
  
-@@ -972,7 +993,7 @@ static void bgmac_chip_reset(struct bgma
+@@ -977,7 +1000,7 @@ static void bgmac_chip_reset(struct bgma
  			     BGMAC_CMDCFG_PROM |
  			     BGMAC_CMDCFG_NLC |
  			     BGMAC_CMDCFG_CFE |
@@ -70,7 +78,7 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  			     false);
  	bgmac->mac_speed = SPEED_UNKNOWN;
  	bgmac->mac_duplex = DUPLEX_UNKNOWN;
-@@ -1015,7 +1036,7 @@ static void bgmac_enable(struct bgmac *b
+@@ -1020,7 +1043,7 @@ static void bgmac_enable(struct bgmac *b
  
  	cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
  	bgmac_cmdcfg_maskset(bgmac, ~(BGMAC_CMDCFG_TE | BGMAC_CMDCFG_RE),
@@ -86,9 +94,9 @@ Subject: [PATCH] bgmac: add some workaround for rev 4
  #define  BGMAC_CMDCFG_HD			0x00000400	/* Set if in half duplex mode */
  #define  BGMAC_CMDCFG_HD_SHIFT			10
 -#define  BGMAC_CMDCFG_SR			0x00000800	/* Set to reset mode */
-+#define  BGMAC_CMDCFG_SR_REVO			0x00000800	/* Set to reset mode, for other revs */
++#define  BGMAC_CMDCFG_SR_REV0			0x00000800	/* Set to reset mode, for other revs */
 +#define  BGMAC_CMDCFG_SR_REV4			0x00002000	/* Set to reset mode, only for core rev 4 */
-+#define  BGMAC_CMDCFG_SR(rev)  ((rev == 4) ? BGMAC_CMDCFG_SR_REV4 : BGMAC_CMDCFG_SR_REVO)
++#define  BGMAC_CMDCFG_SR(rev)  ((rev == 4) ? BGMAC_CMDCFG_SR_REV4 : BGMAC_CMDCFG_SR_REV0)
  #define  BGMAC_CMDCFG_ML			0x00008000	/* Set to activate mac loopback mode */
  #define  BGMAC_CMDCFG_AE			0x00400000
  #define  BGMAC_CMDCFG_CFE			0x00800000
