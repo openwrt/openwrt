@@ -1,0 +1,67 @@
+From d1bcc34ce6cb7601ce27f3090aee0e8a3e8076e3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Sat, 14 Sep 2013 20:54:42 -0300
+Subject: [PATCH] clk: sunxi: protect core clocks from accidental shutdown
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Some important clocks may get disabled as a side effect of another clock
+being disabled, because they have no consumers. This patch implements a
+mechanism so those clocks can be claimed by the driver and therefore
+remain enabled at all times.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+---
+ drivers/clk/sunxi/clk-sunxi.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
+index 9bbd035..8fc1375 100644
+--- a/drivers/clk/sunxi/clk-sunxi.c
++++ b/drivers/clk/sunxi/clk-sunxi.c
+@@ -616,6 +616,31 @@ static void __init of_sunxi_table_clock_setup(const struct of_device_id *clk_mat
+ 	}
+ }
+ 
++/**
++ * System clock protection
++ *
++ * By enabling these critical clocks, we prevent their accidental gating
++ * by the framework
++ */
++static void __init sunxi_clock_protect(void)
++{
++	struct clk *clk;
++
++	/* memory bus clock - sun5i+ */
++	clk = clk_get(NULL, "mbus");
++	if (!IS_ERR(clk)) {
++		clk_prepare_enable(clk);
++		clk_put(clk);
++	}
++
++	/* DDR clock - sun4i+ */
++	clk = clk_get(NULL, "pll5_ddr");
++	if (!IS_ERR(clk)) {
++		clk_prepare_enable(clk);
++		clk_put(clk);
++	}
++}
++
+ static void __init sunxi_init_clocks(struct device_node *np)
+ {
+ 	/* Register factor clocks */
+@@ -629,6 +654,9 @@ static void __init sunxi_init_clocks(struct device_node *np)
+ 
+ 	/* Register gate clocks */
+ 	of_sunxi_table_clock_setup(clk_gates_match, sunxi_gates_clk_setup);
++
++	/* Enable core system clocks */
++	sunxi_clock_protect();
+ }
+ CLK_OF_DECLARE(sun4i_a10_clk_init, "allwinner,sun4i-a10", sunxi_init_clocks);
+ CLK_OF_DECLARE(sun5i_a10s_clk_init, "allwinner,sun5i-a10s", sunxi_init_clocks);
+-- 
+1.8.5.1
+

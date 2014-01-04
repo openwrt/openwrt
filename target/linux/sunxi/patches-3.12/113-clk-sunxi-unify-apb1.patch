@@ -1,0 +1,63 @@
+From 75d3fa72634a4943f0f03146916094b6f4908552 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Sun, 8 Sep 2013 18:14:52 -0300
+Subject: [PATCH] clk: sunxi: unify APB1 clock
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This commit unifies the APB1 mux with the APB1 clock, using the new
+factors infrastructure.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+---
+ Documentation/devicetree/bindings/clock/sunxi.txt | 1 -
+ drivers/clk/sunxi/clk-sunxi.c                     | 6 +-----
+ 2 files changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
+index 46d8433..e840cb2 100644
+--- a/Documentation/devicetree/bindings/clock/sunxi.txt
++++ b/Documentation/devicetree/bindings/clock/sunxi.txt
+@@ -27,7 +27,6 @@ Required properties:
+ 	"allwinner,sun5i-a10s-apb0-gates-clk" - for the APB0 gates on A10s
+ 	"allwinner,sun7i-a20-apb0-gates-clk" - for the APB0 gates on A20
+ 	"allwinner,sun4i-apb1-clk" - for the APB1 clock
+-	"allwinner,sun4i-apb1-mux-clk" - for the APB1 clock muxing
+ 	"allwinner,sun4i-apb1-gates-clk" - for the APB1 gates on A10
+ 	"allwinner,sun5i-a13-apb1-gates-clk" - for the APB1 gates on A13
+ 	"allwinner,sun5i-a10s-apb1-gates-clk" - for the APB1 gates on A10s
+diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
+index 06c4f01..0ecaa18 100644
+--- a/drivers/clk/sunxi/clk-sunxi.c
++++ b/drivers/clk/sunxi/clk-sunxi.c
+@@ -400,6 +400,7 @@ struct factors_data {
+ };
+ 
+ static const struct factors_data sun4i_apb1_data __initconst = {
++	.mux = 24,
+ 	.table = &sun4i_apb1_config,
+ 	.getter = sun4i_get_apb1_factors,
+ };
+@@ -511,10 +512,6 @@ struct mux_data {
+ 	.shift = 12,
+ };
+ 
+-static const struct mux_data sun4i_apb1_mux_data __initconst = {
+-	.shift = 24,
+-};
+-
+ static void __init sunxi_mux_clk_setup(struct device_node *node,
+ 				       struct mux_data *data)
+ {
+@@ -869,7 +866,6 @@ static void __init sunxi_divs_clk_setup(struct device_node *node,
+ /* Matches for mux clocks */
+ static const struct of_device_id clk_mux_match[] __initconst = {
+ 	{.compatible = "allwinner,sun4i-cpu-clk", .data = &sun4i_cpu_mux_data,},
+-	{.compatible = "allwinner,sun4i-apb1-mux-clk", .data = &sun4i_apb1_mux_data,},
+ 	{.compatible = "allwinner,sun6i-a31-ahb1-mux-clk", .data = &sun6i_a31_ahb1_mux_data,},
+ 	{}
+ };
+-- 
+1.8.5.1
+
