@@ -42,9 +42,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		bool "Kernel low-level debugging on BCM2835 PL011 UART"
  		depends on ARCH_BCM2835
  
-+	config DEBUG_BCM53XX
++	config DEBUG_BCM_5301X
 +		bool "Kernel low-level debugging on BCM53XX UART1"
-+		depends on ARCH_BCM53XX
++		depends on ARCH_BCM_5301X
 +
  	config DEBUG_CLPS711X_UART1
  		bool "Kernel low-level debugging messages via UART1"
@@ -53,7 +53,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  config DEBUG_LL_INCLUDE
  	string
  	default "debug/bcm2835.S" if DEBUG_BCM2835
-+	default "debug/bcm53xx.S" if DEBUG_BCM53XX
++	default "debug/bcm53xx.S" if DEBUG_BCM_5301X
  	default "debug/cns3xxx.S" if DEBUG_CNS3XXX
  	default "debug/exynos.S" if DEBUG_EXYNOS_UART
  	default "debug/highbank.S" if DEBUG_HIGHBANK_UART
@@ -63,7 +63,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  machine-$(CONFIG_ARCH_AT91)		+= at91
  machine-$(CONFIG_ARCH_BCM)		+= bcm
  machine-$(CONFIG_ARCH_BCM2835)		+= bcm2835
-+machine-$(CONFIG_ARCH_BCM53XX)		+= bcm53xx
++machine-$(CONFIG_ARCH_BCM_5301X)		+= bcm53xx
  machine-$(CONFIG_ARCH_CLPS711X)		+= clps711x
  machine-$(CONFIG_ARCH_CNS3XXX)		+= cns3xxx
  machine-$(CONFIG_ARCH_DAVINCI)		+= davinci
@@ -73,15 +73,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	wm8650-mid.dtb \
  	wm8850-w70v2.dtb
  dtb-$(CONFIG_ARCH_ZYNQ) += zynq-zc702.dtb
-+dtb-$(CONFIG_ARCH_BCM53XX) += bcm5301-netgear-r6250.dtb
++dtb-$(CONFIG_ARCH_BCM_5301X) += bcm4708-netgear-r6250.dtb
  
  targets += dtbs
  targets += $(dtb-y)
 --- /dev/null
-+++ b/arch/arm/boot/dts/bcm5301-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 @@ -0,0 +1,20 @@
 +/*
-+ * Broadcom BCM47XX / BCM53XX arm platform code.
++ * Broadcom BCM470X / BCM5301X arm platform code.
 + *
 + * Copyright 2013 Hauke Mehrtens <hauke@hauke-m.de>
 + *
@@ -90,36 +90,39 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +/dts-v1/;
 +
-+/include/ "bcm5301.dtsi"
++#include "bcm4708.dtsi"
 +
 +/ {
++	compatible = "netgear,r6250v1", "broadcom,bcm4708";
 +	model = "Netgear R6250 V1 (BCM4708)";
-+	compatible = "netgear,r6250v1", "brcm,bcm5301";
 +
 +	memory {
 +		reg = <0x00000000 0x08000000>;
 +	};
 +};
 --- /dev/null
-+++ b/arch/arm/boot/dts/bcm5301.dtsi
-@@ -0,0 +1,83 @@
++++ b/arch/arm/boot/dts/bcm4708.dtsi
+@@ -0,0 +1,100 @@
 +/*
-+ * Broadcom BCM47XX / BCM53XX ARM platform code.
++ * Broadcom BCM470X / BCM5301X ARM platform code.
 + *
 + * Copyright 2013 Hauke Mehrtens <hauke@hauke-m.de>
 + *
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
 +
-+/include/ "skeleton.dtsi"
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/interrupt-controller/irq.h>
++
++#include "skeleton.dtsi"
 +
 +/ {
-+	compatible = "brcm,bcm5301";
-+	model = "BCM5301/BCM4707/BCM4708/BCM4709 SoC";
++	compatible = "broadcom,bcm4708";
++	model = "Broadcom BCM4708";
 +	interrupt-parent = <&gic>;
 +
 +	chosen {
-+		bootargs = "console=ttyS0,115200 earlyprintk debug vmalloc=64M";
++		bootargs = "console=ttyS0,115200 debug earlyprintk";
 +	};
 +
 +	cpus {
@@ -129,11 +132,13 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		cpu@0 {
 +			device_type = "cpu";
 +			compatible = "arm,cortex-a9";
++			next-level-cache = <&L2>;
 +			reg = <0>;
 +		};
 +		cpu@1 {
 +			device_type = "cpu";
 +			compatible = "arm,cortex-a9";
++			next-level-cache = <&L2>;
 +			reg = <1>;
 +		};
 +	};
@@ -152,14 +157,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	uart@18000300 {
 +		compatible = "ns16550";
 +		reg = <0x18000300 0x100>;
-+		interrupts = <0 85 4>;
++		interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
 +		clock-frequency = <100000000>;
 +	};
 +
 +	uart@18000400 {
 +		compatible = "ns16550";
 +		reg = <0x18000400 0x100>;
-+		interrupts = <0 85 4>;
++		interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
 +		clock-frequency = <100000000>;
 +	};
 +
@@ -175,15 +180,27 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	timer@19020200 {
 +		compatible = "arm,cortex-a9-global-timer";
 +		reg = <0x19020200 0x100>;
-+		interrupts = <1 11 0xf04>;
++		interrupts = <GIC_PPI 11 IRQ_TYPE_LEVEL_HIGH>;
 +		clocks = <&clk_periph>;
-+		#clock-cells = <0>;
 +	};
 +
-+	local-timer@19020200 {
++	local-timer@19020600 {
 +		compatible = "arm,cortex-a9-twd-timer";
 +		reg = <0x19020600 0x100>;
-+		interrupts = <1 13 0xf04>;
++		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&clk_periph>;
++	};
++
++	L2: cache-controller@19022000 {
++		compatible = "arm,pl310-cache";
++		reg = <0x19022000 0x1000>;
++		cache-unified;
++		cache-level = <2>;
++	};
++
++	scu@19020000 {
++		compatible = "arm,cortex-a9-scu";
++		reg = <0x19020000 0x100>;
 +	};
 +};
 --- /dev/null
@@ -210,32 +227,42 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <asm/hardware/debug-8250.S>
 --- /dev/null
 +++ b/arch/arm/mach-bcm53xx/Kconfig
-@@ -0,0 +1,16 @@
-+config ARCH_BCM53XX
-+	bool "Broadcom BCM47XX / BCM53XX ARM SoC"
-+	select CPU_V7
+@@ -0,0 +1,26 @@
++config ARCH_BCM_5301X
++	bool "Broadcom BCM470X / BCM5301X ARM SoC" if ARCH_MULTI_V7
++	depends on MMU
 +	select ARM_GIC
++	select CACHE_L2X0
 +	select HAVE_ARM_SCU if SMP
-+	select HAVE_ARM_TWD if LOCAL_TIMERS
++	select HAVE_ARM_TWD if SMP
 +	select HAVE_SMP
-+	select HAVE_CLK
-+	select LOCAL_TIMERS if SMP
-+	select GENERIC_TIME
-+	select GENERIC_CLOCKEVENTS_BUILD
++	select COMMON_CLK
 +	select GENERIC_CLOCKEVENTS
++	select GENERIC_TIME
 +	select ARM_GLOBAL_TIMER
++	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
 +	select MIGHT_HAVE_PCI
 +	help
-+	  Support for Broadcom BCM47XX and BCM53XX SoCs with ARM CPU cores.
++	  Support for Broadcom BCM470X and BCM5301X SoCs with ARM CPU cores.
++
++	  This is a network SoC line mostly used in home routers and
++	  wifi access points.
++	  This inclused the following SoC: BCM53010, BCM53011, BCM53012,
++	  BCM53014, BCM53015, BCM53016, BCM53017, BCM53018, BCM4707,
++	  BCM4708 and BCM4709.
++
++	  Do not confuse this with the BCM4760 which is a totally
++	  different SoC or with the older BCM47XX and BCM53XX based
++	  network SoC using a MIPS CPU, they are supported by arch/mips/bcm47xx
 --- /dev/null
 +++ b/arch/arm/mach-bcm53xx/Makefile
 @@ -0,0 +1 @@
 +obj-y += bcm53xx.o
 --- /dev/null
 +++ b/arch/arm/mach-bcm53xx/bcm53xx.c
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,60 @@
 +/*
-+ * Broadcom BCM47XX / BCM53XX ARM platform code.
++ * Broadcom BCM470X / BCM5301X ARM platform code.
 + *
 + * Copyright 2013 Hauke Mehrtens <hauke@hauke-m.de>
 + *
@@ -243,21 +270,19 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + */
 +#include <linux/of_address.h>
 +#include <linux/of_platform.h>
-+#include <linux/irqchip.h>
 +#include <linux/clocksource.h>
 +#include <linux/clk-provider.h>
++#include <asm/hardware/cache-l2x0.h>
 +
 +#include <asm/mach/arch.h>
 +#include <asm/mach/map.h>
-+#include <asm/smp_scu.h>
 +#include <asm/signal.h>
 +
-+static int bcm53xx_abort_handler(unsigned long addr, unsigned int fsr,
++static int bcm5301x_abort_handler(unsigned long addr, unsigned int fsr,
 +				 struct pt_regs *regs)
 +{
 +	/*
-+	 * These happen for no good reason
-+	 * possibly left over from CFE
++	 * These happen for no good reason, possibly left over from CFE
 +	 */
 +	pr_warn("External imprecise Data abort at addr=%#lx, fsr=%#x ignored.\n",
 +		addr, fsr);
@@ -266,40 +291,33 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	return 0;
 +}
 +
-+static void bcm53xx_aborts_enable(void)
++static void __init bcm5301x_init_early(void)
 +{
 +	/* Install our hook */
-+	hook_fault_code(16 + 6, bcm53xx_abort_handler, SIGBUS, 0,
++	hook_fault_code(16 + 6, bcm5301x_abort_handler, SIGBUS, 0,
 +			"imprecise external abort");
 +}
 +
-+static void __init bcm53xx_timer_init(void)
++static void __init bcm5301x_timer_init(void)
 +{
 +	of_clk_init(NULL);
 +	clocksource_of_init();
 +}
 +
-+void __init bcm53xx_map_io(void)
++static void __init bcm5301x_dt_init(void)
 +{
-+	debug_ll_io_init();
-+	bcm53xx_aborts_enable();
-+}
-+
-+static void __init bcm53xx_dt_init(void)
-+{
++	l2x0_of_init(0, ~0UL);
 +	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
 +}
 +
-+static const char const *bcm53xx_dt_compat[] = {
-+	"brcm,bcm5301",
-+	"netgear,r6250v1",
++static const char __initconst *bcm5301x_dt_compat[] = {
++	"broadcom,bcm4708",
 +	NULL,
 +};
 +
-+DT_MACHINE_START(BCM53XX, "BCM53XX")
-+	.init_machine = bcm53xx_dt_init,
-+	.map_io = bcm53xx_map_io,
-+	.init_irq = irqchip_init,
-+	.init_time = bcm53xx_timer_init,
-+	.dt_compat = bcm53xx_dt_compat,
++DT_MACHINE_START(BCM5301X, "BCM5301X")
++	.init_early	= bcm5301x_init_early,
++	.init_time	= bcm5301x_timer_init,
++	.init_machine	= bcm5301x_dt_init,
++	.dt_compat	= bcm5301x_dt_compat,
 +MACHINE_END

@@ -31,18 +31,7 @@ The PHY says it is not connected by default, just ignore it.
  
  static const struct bcma_device_id bgmac_bcma_tbl[] = {
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_4706_MAC_GBIT, BCMA_ANY_REV, BCMA_ANY_CLASS),
-@@ -165,6 +169,10 @@ static netdev_tx_t bgmac_dma_tx_add(stru
- 
- 	netdev_sent_queue(net_dev, skb->len);
- 
-+	if (bgmac->core->bus->chipinfo.id == BCMA_CHIP_ID_BCM4707 ||
-+	    bgmac->core->bus->chipinfo.id == BCMA_CHIP_ID_BCM53018)
-+		mdelay(1);
-+
- 	wmb();
- 
- 	/* Increase ring->end to point empty slot. We tell hardware the first
-@@ -1438,7 +1446,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1438,7 +1442,7 @@ static int bgmac_probe(struct bcma_devic
  	int err;
  
  	/* We don't support 2nd, 3rd, ... units, SPROM has to be adjusted */
@@ -51,7 +40,7 @@ The PHY says it is not connected by default, just ignore it.
  		pr_err("Unsupported core_unit %d\n", core->core_unit);
  		return -ENOTSUPP;
  	}
-@@ -1534,8 +1542,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1534,8 +1538,7 @@ static int bgmac_probe(struct bcma_devic
  	/* TODO: reset the external phy. Specs are needed */
  	bgmac_phy_reset(bgmac);
  
