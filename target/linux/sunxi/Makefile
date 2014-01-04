@@ -17,7 +17,7 @@ MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
 LINUX_VERSION:=3.12.5
 KERNELNAME:="zImage dtbs"
-DEFAULT_PACKAGES += uboot-envtools uboot-sunxi
+DEFAULT_PACKAGES += uboot-envtools uboot-sunxi kmod-eeprom-sunxi
 
 # A10: Cortex-A8
 # A13: Cortex-A8

@@ -22,3 +22,19 @@ endef
 
 $(eval $(call KernelPackage,rtc-sunxi))
 
+define KernelPackage/eeprom-sunxi
+    SUBMENU:=$(OTHER_MENU)
+    TITLE:=AllWinner Security ID fuse support
+    DEPENDS:=@TARGET_sunxi
+    KCONFIG:= \
+	CONFIG_EEPROM_SUNXI_SID
+    FILES:=$(LINUX_DIR)/drivers/misc/eeprom/sunxi_sid.ko
+    AUTOLOAD:=$(call AutoLoad,50,sunxi_sid)
+endef
+
+define KernelPackage/eeprom-sunxi/description
+ Support for the AllWinner Security ID fuse support
+endef
+
+$(eval $(call KernelPackage,eeprom-sunxi))
+
