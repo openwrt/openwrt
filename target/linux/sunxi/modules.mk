@@ -54,3 +54,15 @@ define KernelPackage/ata-sunxi/description
 endef
 
 $(eval $(call KernelPackage,ata-sunxi))
+
+define KernelPackage/sun4i-emac
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=AllWinner EMAC Ethernet support
+  DEPENDS:=@TARGET_sunxi
+  KCONFIG:=CONFIG_SUN4I_EMAC
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/allwinner/sun4i-emac.ko
+  AUTOLOAD:=$(call AutoProbe,sun4i-emac)
+endef
+
+$(eval $(call KernelPackage,sun4i-emac))
+

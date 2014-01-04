@@ -8,7 +8,7 @@
 define Profile/pcDuino
 	NAME:=pcDuino
 	PACKAGES:=\
-		uboot-sunxi-pcDuino
+		uboot-sunxi-pcDuino kmod-sun4i-emac
 endef
 
 define Profile/pcDuino/Description
