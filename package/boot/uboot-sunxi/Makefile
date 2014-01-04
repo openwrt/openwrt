@@ -45,7 +45,11 @@ define uboot/A20-OLinuXino_MICRO
   TITLE:=U-Boot 2013.10-rc2 for A20 Olinuxino
 endef
 
-UBOOTS:=A13-OLinuXino Cubieboard Cubieboard2 A20-OLinuXino_MICRO Hackberry
+define uboot/pcDuino
+  TITLE:=U-Boot 2013.10-rc2 for pcDuino
+endef  
+
+UBOOTS:=A13-OLinuXino Cubieboard Cubieboard2 A20-OLinuXino_MICRO Hackberry pcDuino
 
 define Package/uboot/template
 define Package/uboot-sunxi-$(1)
