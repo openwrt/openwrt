@@ -9,7 +9,7 @@ Subject: [PATCH] bgmac: check length of received frame
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -347,6 +347,7 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -349,6 +349,7 @@ static int bgmac_dma_rx_read(struct bgma
  		struct sk_buff *skb = slot->skb;
  		struct bgmac_rx_header *rx;
  		u16 len, flags;
@@ -17,7 +17,7 @@ Subject: [PATCH] bgmac: check length of received frame
  
  		/* Unmap buffer to make it accessible to the CPU */
  		dma_sync_single_for_cpu(dma_dev, slot->dma_addr,
-@@ -355,6 +356,12 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -357,6 +358,12 @@ static int bgmac_dma_rx_read(struct bgma
  		/* Get info from the header */
  		rx = (struct bgmac_rx_header *)skb->data;
  		len = le16_to_cpu(rx->len);
@@ -30,7 +30,7 @@ Subject: [PATCH] bgmac: check length of received frame
  		flags = le16_to_cpu(rx->flags);
  
  		do {
-@@ -362,7 +369,7 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -364,7 +371,7 @@ static int bgmac_dma_rx_read(struct bgma
  			int err;
  
  			/* Check for poison and drop or pass the packet */

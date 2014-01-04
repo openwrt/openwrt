@@ -9,7 +9,7 @@ Subject: [PATCH 14/16] bgmac: stuff
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -120,6 +120,7 @@ static netdev_tx_t bgmac_dma_tx_add(stru
+@@ -123,6 +123,7 @@ static netdev_tx_t bgmac_dma_tx_add(stru
  	struct net_device *net_dev = bgmac->net_dev;
  	struct bgmac_dma_desc *dma_desc;
  	struct bgmac_slot_info *slot;
@@ -17,7 +17,7 @@ Subject: [PATCH 14/16] bgmac: stuff
  	u32 ctl0, ctl1;
  	int free_slots;
  
-@@ -160,6 +161,8 @@ static netdev_tx_t bgmac_dma_tx_add(stru
+@@ -163,6 +164,8 @@ static netdev_tx_t bgmac_dma_tx_add(stru
  	dma_desc->ctl0 = cpu_to_le32(ctl0);
  	dma_desc->ctl1 = cpu_to_le32(ctl1);
  
@@ -26,7 +26,7 @@ Subject: [PATCH 14/16] bgmac: stuff
  	netdev_sent_queue(net_dev, skb->len);
  
  	wmb();
-@@ -311,6 +314,8 @@ static void bgmac_dma_rx_setup_desc(stru
+@@ -313,6 +316,8 @@ static void bgmac_dma_rx_setup_desc(stru
  				    struct bgmac_dma_ring *ring, int desc_idx)
  {
  	struct bgmac_dma_desc *dma_desc = ring->cpu_base + desc_idx;
@@ -35,7 +35,7 @@ Subject: [PATCH 14/16] bgmac: stuff
  	u32 ctl0 = 0, ctl1 = 0;
  
  	if (desc_idx == ring->num_slots - 1)
-@@ -325,6 +330,8 @@ static void bgmac_dma_rx_setup_desc(stru
+@@ -327,6 +332,8 @@ static void bgmac_dma_rx_setup_desc(stru
  	dma_desc->addr_high = cpu_to_le32(upper_32_bits(ring->slots[desc_idx].dma_addr));
  	dma_desc->ctl0 = cpu_to_le32(ctl0);
  	dma_desc->ctl1 = cpu_to_le32(ctl1);
