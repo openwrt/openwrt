@@ -1,0 +1,11 @@
+diff -ruN old/arch/arm/boot/dts/sun4i-a10.dtsi new/arch/arm/boot/dts/sun4i-a10.dtsi
+--- old/arch/arm/boot/dts/sun4i-a10.dtsi	2014-01-04 01:59:34.000000000 +0100
++++ new/arch/arm/boot/dts/sun4i-a10.dtsi	2014-01-04 01:54:00.000000000 +0100
+@@ -323,6 +323,7 @@
+ 			compatible = "allwinner,sun4i-mmc";
+ 			reg = <0x01c0f000 0x1000>;
+ 			clocks = <&ahb_gates 8>, <&mmc0>;
++			clock-names = "ahb", "mod";
+ 			interrupts = <32>;
+ 			bus-width = <4>;
+ 			status = "disabled";
