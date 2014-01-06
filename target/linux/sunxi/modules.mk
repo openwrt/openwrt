@@ -66,3 +66,18 @@ endef
 
 $(eval $(call KernelPackage,sun4i-emac))
 
+
+define KernelPackage/wdt-sunxi
+    SUBMENU:=$(OTHER_MENU)
+    TITLE:=AllWinner sunXi Watchdog timer
+    KCONFIG:=CONFIG_SUNXI_WATCHDOG
+    FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/sunxi_wdt.ko
+    AUTOLOAD:=$(call AutoLoad,51,sunxi_wdt)
+endef
+
+define KernelPackage/wdt-sunxi/description
+    Kernel module for AllWinner sunXi watchdog timer.
+endef
+
+$(eval $(call KernelPackage,wdt-sunxi))
+

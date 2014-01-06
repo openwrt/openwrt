@@ -1,0 +1,70 @@
+From e751cce9b7b106b62c6d2c4f098c28c7feb10ef6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Sat, 16 Nov 2013 15:17:29 -0300
+Subject: [PATCH] ARM: sunxi: dt: add EMAC aliases
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+U-Boot uses the ethernet0 alias to locate the right node to fill in
+the MAC address of the first ethernet interface. This patch adds the
+alias on all the sunxi SoCs with EMAC. In this way, people using
+ethernet in U-Boot (eg, for tftp) can keep a consistent address on both
+U-Boot and Linux with no additional effort.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi  | 4 ++++
+ arch/arm/boot/dts/sun5i-a10s.dtsi | 4 ++++
+ arch/arm/boot/dts/sun7i-a20.dtsi  | 4 ++++
+ 3 files changed, 12 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index f11f292..0bf70ee 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -15,6 +15,10 @@
+ / {
+ 	interrupt-parent = <&intc>;
+ 
++	aliases {
++		ethernet0 = &emac;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
+index 5247674..b4764be 100644
+--- a/arch/arm/boot/dts/sun5i-a10s.dtsi
++++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
+@@ -16,6 +16,10 @@
+ / {
+ 	interrupt-parent = <&intc>;
+ 
++	aliases {
++		ethernet0 = &emac;
++	};
++
+ 	cpus {
+ 		cpu@0 {
+ 			compatible = "arm,cortex-a8";
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 830fcd5..74bf906 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -16,6 +16,10 @@
+ / {
+ 	interrupt-parent = <&gic>;
+ 
++	aliases {
++		ethernet0 = &emac;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-- 
+1.8.5.1
+
