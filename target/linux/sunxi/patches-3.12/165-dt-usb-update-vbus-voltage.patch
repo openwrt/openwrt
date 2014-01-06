@@ -78,32 +78,5 @@ index 4b73e3e..b255d1b 100644
  			enable-active-high;
  			gpio = <&pio 6 11 0>;
  		};
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-index 10ea99d..144b11a 100644
---- a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-+++ b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-@@ -141,8 +141,8 @@
- 			pinctrl-names = "default";
- 			pinctrl-0 = <&usb1_vbus_pin>;
- 			regulator-name = "usb1-vbus";
--			regulator-min-microvolt = <3300000>;
--			regulator-max-microvolt = <3300000>;
-+			regulator-min-microvolt = <5000000>;
-+			regulator-max-microvolt = <5000000>;
- 			enable-active-high;
- 			gpio = <&pio 7 6 0>;
- 		};
-@@ -152,8 +152,8 @@
- 			pinctrl-names = "default";
- 			pinctrl-0 = <&usb2_vbus_pin>;
- 			regulator-name = "usb2-vbus";
--			regulator-min-microvolt = <3300000>;
--			regulator-max-microvolt = <3300000>;
-+			regulator-min-microvolt = <5000000>;
-+			regulator-max-microvolt = <5000000>;
- 			enable-active-high;
- 			gpio = <&pio 7 3 0>;
- 		};
--- 
 1.8.5.1
 
