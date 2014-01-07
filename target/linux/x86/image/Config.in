@@ -13,89 +13,8 @@ config X86_ETHERBOOT_BOOTOPTS
 	help
 	  Kernel arguments to pass to the kernel eg. NFS root location etc.
 
-config X86_GRUB_IMAGES
-	bool "Build GRUB images (Linux x86 or x86_64 host only)"
-	depends on TARGET_x86 && !(TARGET_x86_olpc || TARGET_x86_rdc)
-	depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
-	select PACKAGE_grub2
-	default y
-
-config X86_GRUB_CONSOLE
-	bool "Use Console Terminal (in addition to Serial)"
-	depends on X86_GRUB_IMAGES
-	default n if (TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501 || TARGET_x86_geos || TARGET_x86_alix2)
-	default y
-
-config X86_GRUB_SERIAL
-	string "Serial port device"
-	depends on X86_GRUB_IMAGES
-	default "hvc0" if TARGET_x86_xen_domu
-	default "ttyS0" if ! TARGET_x86_xen_domu
-
-config X86_GRUB_BAUDRATE
-	int "Serial port baud rate"
-	depends on X86_GRUB_IMAGES
-	default 19200 if TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501
-	default 38400 if TARGET_x86_alix2
-	default 115200 if TARGET_x86_geos || TARGET_x86_kvm_guest
-	default 38400
-
-config X86_GRUB_BOOTOPTS
-	string "Extra kernel boot options"
-	depends on X86_GRUB_IMAGES
-	default "xencons=hvc" if TARGET_x86_xen_domu
-	help
-	  If you don't know, just leave it blank.
-
-config X86_GRUB_TIMEOUT
-	string "Seconds to wait before booting the default entry"
-	depends on X86_GRUB_IMAGES
-	default "5"
-	help
-	  If you don't know, 5 seconds is a reasonable default.
-
-config X86_VDI_IMAGES
-	bool "Build VirtualBox image files (VDI)"
-	depends on TARGET_x86
-	select X86_GRUB_IMAGES
-	select TARGET_ROOTFS_EXT4FS
-	select PACKAGE_kmod-pcnet32
-
-config X86_VMDK_IMAGES
-	bool "Build VMware image files (VMDK)"
-	depends on TARGET_x86
-	select X86_GRUB_IMAGES
-	select TARGET_ROOTFS_EXT4FS
-	select PACKAGE_kmod-e1000
-
-
 config OLPC_BOOTSCRIPT_IMAGES
 	bool "Build images with bootscript"
 	depends on TARGET_x86_olpc
 	depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 	default TARGET_x86_olpc
-
-
-config TARGET_IMAGES_PAD
-	bool "Pad images to filesystem size (for JFFS2)"
-	depends on OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
-
-config TARGET_IMAGES_GZIP
-	bool "GZip images"
-	depends on TARGET_IMAGES_PAD || TARGET_ROOTFS_EXT4FS
-	default y
-
-config TARGET_KERNEL_PARTSIZE
-	int "Kernel partition size (in MB)"
-	depends on OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
-	default 4
-
-config TARGET_ROOTFS_PARTNAME
-	string "Root partition on target device"
-	depends on OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
-	default "/dev/vda2" if TARGET_x86_kvm_guest
-	default "/dev/xvda2" if TARGET_x86_xen_domu
-	default "/dev/sda2" if ! (TARGET_x86_kvm_guest || TARGET_x86_xen_domu)
-	help
-	  The root partition on the final device.  If you don't know,
-	  you probably want the default (/dev/sda2).
