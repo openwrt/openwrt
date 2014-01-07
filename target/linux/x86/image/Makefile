@@ -23,16 +23,16 @@ ifneq ($(strip $(foreach subtarget,$(USE_ATKBD),$(CONFIG_TARGET_x86_$(subtarget)
   GRUB2_MODULES_ISO += at_keyboard
 endif
 
-ifneq ($(CONFIG_X86_GRUB_CONSOLE),)
+ifneq ($(CONFIG_GRUB_CONSOLE),)
   GRUB_CONSOLE_CMDLINE += console=tty0
   GRUB_TERMINALS += console
 endif
 
-GRUB_SERIAL:=$(call qstrip,$(CONFIG_X86_GRUB_SERIAL))
+GRUB_SERIAL:=$(call qstrip,$(CONFIG_GRUB_SERIAL))
 
 ifneq ($(GRUB_SERIAL),)
-  GRUB_CONSOLE_CMDLINE += console=$(GRUB_SERIAL),$(CONFIG_X86_GRUB_BAUDRATE)n8
-  GRUB_SERIAL_CONFIG := serial --unit=0 --speed=$(CONFIG_X86_GRUB_BAUDRATE) --word=8 --parity=no --stop=1
+  GRUB_CONSOLE_CMDLINE += console=$(GRUB_SERIAL),$(CONFIG_GRUB_BAUDRATE)n8
+  GRUB_SERIAL_CONFIG := serial --unit=0 --speed=$(CONFIG_GRUB_BAUDRATE) --word=8 --parity=no --stop=1
   GRUB_TERMINALS += serial
 endif
 
@@ -42,11 +42,11 @@ endif
 
 ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
 
-GRUB_TIMEOUT:=$(call qstrip,$(CONFIG_X86_GRUB_TIMEOUT))
+GRUB_TIMEOUT:=$(call qstrip,$(CONFIG_GRUB_TIMEOUT))
 
-ifneq ($(CONFIG_X86_GRUB_IMAGES),)
+ifneq ($(CONFIG_GRUB_IMAGES),)
 
-  BOOTOPTS:=$(call qstrip,$(CONFIG_X86_GRUB_BOOTOPTS))
+  BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 
   define Image/cmdline/ext4
     root=$(ROOTPART) rootfstype=ext4 rootwait
@@ -158,7 +158,7 @@ define Image/Build/iso
 		-o $(KDIR)/root.iso $(KDIR)/root.grub $(TARGET_DIR)
 endef
 
-ifneq ($(CONFIG_X86_VDI_IMAGES),)
+ifneq ($(CONFIG_VDI_IMAGES),)
   define Image/Build/vdi
     # left here because the image builder doesnt need these
     ifeq ($(1),ext4)
@@ -172,7 +172,7 @@ ifneq ($(CONFIG_X86_VDI_IMAGES),)
   endef
 endif
 
-ifneq ($(CONFIG_X86_VMDK_IMAGES),)
+ifneq ($(CONFIG_VMDK_IMAGES),)
   define Image/Build/vmdk
     # left here because the image builder doesnt need these
     ifeq ($(1),ext4)
