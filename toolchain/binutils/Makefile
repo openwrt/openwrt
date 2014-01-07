@@ -11,11 +11,11 @@ PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
 BIN_VERSION:=$(PKG_VERSION)
 
 ifeq ($(findstring linaro, $(CONFIG_BINUTILS_VERSION)),linaro)
-  PKG_SOURCE_URL:=https://releases.linaro.org/13.06/components/toolchain/binutils-linaro/
-  PKG_REV:=2.23.2-2013.06
-  PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.bz2
-  PKG_MD5SUM:=73ad2a91f17b7e4fd41d49db5a541d2d
-  BINUTILS_DIR:=$(PKG_NAME)-2.23.2
+  PKG_SOURCE_URL:=https://releases.linaro.org/13.12/components/toolchain/binutils-linaro/
+  PKG_REV:=2.24-2013.12
+  PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.xz
+  PKG_MD5SUM:=4f0fe947895a260b8386de63b09feb18
+  BINUTILS_DIR:=$(PKG_NAME)-linaro-$(PKG_REV)
   HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
 else
   PKG_SOURCE_URL:=@GNU/binutils/
