@@ -124,6 +124,11 @@ ifeq ($(LINUX_KARCH),avr32)
 IMAGES_DIR:=images
 endif
 
+# AMD64 shares the location with x86
+ifeq ($(LINUX_KARCH),x86_64)
+IMAGES_DIR:=../../x86/boot
+endif
+
 define Kernel/CopyImage
 	$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)$(1)
 	$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).elf

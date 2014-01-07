@@ -135,7 +135,7 @@ menu "Target Images"
 
 	config GRUB_IMAGES
 		bool "Build GRUB images (Linux x86 or x86_64 host only)"
-		depends on TARGET_x86 && !(TARGET_x86_olpc || TARGET_x86_rdc)
+		depends on TARGET_x86_64 || (TARGET_x86 && !(TARGET_x86_olpc || TARGET_x86_rdc))
 		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 		select PACKAGE_grub2
 		default y
@@ -176,14 +176,14 @@ menu "Target Images"
 
 	config VDI_IMAGES
 		bool "Build VirtualBox image files (VDI)"
-		depends on TARGET_x86
+		depends on TARGET_x86 || TARGET_x86_64
 		select GRUB_IMAGES
 		select TARGET_ROOTFS_EXT4FS
 		select PACKAGE_kmod-e1000
 
 	config VMDK_IMAGES
 		bool "Build VMware image files (VMDK)"
-		depends on TARGET_x86
+		depends on TARGET_x86 || TARGET_x86_64
 		select GRUB_IMAGES
 		select TARGET_ROOTFS_EXT4FS
 		select PACKAGE_kmod-e1000
