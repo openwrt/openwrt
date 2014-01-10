@@ -178,12 +178,8 @@ static void __init mynet_n750_setup(void)
 	 * Taken from GPL bootloader source:
 	 *   board/ar7240/db12x/alpha_gpio.c
 	 */
-	gpio_request_one(MYNET_N750_GPIO_EXTERNAL_LNA0,
-			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
-			 "External LNA0");
-	gpio_request_one(MYNET_N750_GPIO_EXTERNAL_LNA1,
-			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
-			 "External LNA1");
+	ath79_wmac_set_ext_lna_gpio(0, MYNET_N750_GPIO_EXTERNAL_LNA0);
+	ath79_wmac_set_ext_lna_gpio(1, MYNET_N750_GPIO_EXTERNAL_LNA1);
 
 	mynet_n750_get_mac("wlan24mac=", tmpmac);
 	ath79_register_wmac(art + MYNET_N750_WMAC_CALDATA_OFFSET, tmpmac);
