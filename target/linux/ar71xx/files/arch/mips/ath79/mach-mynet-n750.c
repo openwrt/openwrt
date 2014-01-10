@@ -179,10 +179,10 @@ static void __init mynet_n750_setup(void)
 	 *   board/ar7240/db12x/alpha_gpio.c
 	 */
 	gpio_request_one(MYNET_N750_GPIO_EXTERNAL_LNA0,
-			 GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
 			 "External LNA0");
 	gpio_request_one(MYNET_N750_GPIO_EXTERNAL_LNA1,
-			 GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
 			 "External LNA1");
 
 	mynet_n750_get_mac("wlan24mac=", tmpmac);
