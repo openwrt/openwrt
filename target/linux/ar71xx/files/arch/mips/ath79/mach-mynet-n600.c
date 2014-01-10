@@ -42,6 +42,9 @@
 #define MYNET_N600_GPIO_BTN_RESET	16
 #define MYNET_N600_GPIO_BTN_WPS		17
 
+#define MYNET_N600_GPIO_EXTERNAL_LNA0	14
+#define MYNET_N600_GPIO_EXTERNAL_LNA1	15
+
 #define MYNET_N600_KEYS_POLL_INTERVAL	20	/* msecs */
 #define MYNET_N600_KEYS_DEBOUNCE_INTERVAL (3 * MYNET_N600_KEYS_POLL_INTERVAL)
 
@@ -151,6 +154,18 @@ static void __init mynet_n600_setup(void)
 	ath79_register_gpio_keys_polled(-1, MYNET_N600_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(mynet_n600_gpio_keys),
 					mynet_n600_gpio_keys);
+
+	/*
+	 * Control signal for external LNAs 0 and 1
+	 * Taken from GPL bootloader source:
+	 *   board/ar7240/db12x/alpha_gpio.c
+	 */
+	gpio_request_one(MYNET_N600_GPIO_EXTERNAL_LNA0,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "External LNA0");
+	gpio_request_one(MYNET_N600_GPIO_EXTERNAL_LNA1,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "External LNA1");
 
 	mynet_n600_get_mac("wlan24mac=", tmpmac);
 	ath79_register_wmac(art + MYNET_N600_WMAC_CALDATA_OFFSET, tmpmac);
