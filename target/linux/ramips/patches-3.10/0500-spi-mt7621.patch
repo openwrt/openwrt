@@ -1,7 +1,5 @@
-Index: linux-3.10.21/drivers/spi/spi-rt2880.c
-===================================================================
---- linux-3.10.21.orig/drivers/spi/spi-rt2880.c	2013-12-09 20:17:54.380713104 +0100
-+++ linux-3.10.21/drivers/spi/spi-rt2880.c	2013-12-09 20:35:08.004737585 +0100
+--- a/drivers/spi/spi-rt2880.c
++++ b/drivers/spi/spi-rt2880.c
 @@ -21,8 +21,11 @@
  #include <linux/io.h>
  #include <linux/reset.h>
@@ -40,7 +38,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  struct rt2880_spi {
  	struct spi_master	*master;
  	void __iomem		*base;
-@@ -70,6 +92,8 @@
+@@ -70,6 +92,8 @@ struct rt2880_spi {
  	unsigned int		speed;
  	struct clk		*clk;
  	spinlock_t		lock;
@@ -49,7 +47,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  };
  
  static inline struct rt2880_spi *spidev_to_rt2880_spi(struct spi_device *spi)
-@@ -149,6 +173,17 @@
+@@ -149,6 +173,17 @@ static int rt2880_spi_baudrate_set(struc
  	return 0;
  }
  
@@ -67,7 +65,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  /*
   * called only when no transfer is active on the bus
   */
-@@ -164,7 +199,7 @@
+@@ -164,7 +199,7 @@ rt2880_spi_setup_transfer(struct spi_dev
  
  	if (rs->speed != speed) {
  		dev_dbg(&spi->dev, "speed_hz:%u\n", speed);
@@ -76,7 +74,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  		if (rc)
  			return rc;
  	}
-@@ -180,6 +215,17 @@
+@@ -180,6 +215,17 @@ static void rt2880_spi_set_cs(struct rt2
  		rt2880_spi_setbits(rs, RAMIPS_SPI_CTL, SPICTL_SPIENA);
  }
  
@@ -94,7 +92,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  static inline int rt2880_spi_wait_till_ready(struct rt2880_spi *rs)
  {
  	int i;
-@@ -198,8 +244,26 @@
+@@ -198,8 +244,26 @@ static inline int rt2880_spi_wait_till_r
  	return -ETIMEDOUT;
  }
  
@@ -122,7 +120,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  {
  	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
  	unsigned count = 0;
-@@ -239,6 +303,100 @@
+@@ -239,6 +303,100 @@ out:
  	return count;
  }
  
@@ -223,7 +221,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  static int rt2880_spi_transfer_one_message(struct spi_master *master,
  					   struct spi_message *m)
  {
-@@ -280,25 +438,25 @@
+@@ -280,25 +438,25 @@ static int rt2880_spi_transfer_one_messa
  		}
  
  		if (!cs_active) {
@@ -253,7 +251,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  
  	m->status = status;
  	spi_finalize_current_message(master);
-@@ -334,8 +492,41 @@
+@@ -334,8 +492,41 @@ static void rt2880_spi_reset(struct rt28
  	rt2880_spi_write(rs, RAMIPS_SPI_CTL, SPICTL_HIZSDO | SPICTL_SPIENA);
  }
  
@@ -295,7 +293,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  	struct spi_master *master;
  	struct rt2880_spi *rs;
  	unsigned long flags;
-@@ -344,6 +535,10 @@
+@@ -344,6 +535,10 @@ static int rt2880_spi_probe(struct platf
  	int status = 0;
  	struct clk *clk;
  
@@ -306,7 +304,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	base = devm_ioremap_resource(&pdev->dev, r);
  	if (IS_ERR(base))
-@@ -382,12 +577,13 @@
+@@ -382,12 +577,13 @@ static int rt2880_spi_probe(struct platf
  	rs->clk = clk;
  	rs->master = master;
  	rs->sys_freq = clk_get_rate(rs->clk);
@@ -321,7 +319,7 @@ Index: linux-3.10.21/drivers/spi/spi-rt2880.c
  
  	return spi_register_master(master);
  }
-@@ -408,12 +604,6 @@
+@@ -408,12 +604,6 @@ static int rt2880_spi_remove(struct plat
  
  MODULE_ALIAS("platform:" DRIVER_NAME);
  

@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 603 insertions(+)
  create mode 100644 drivers/dma/ralink-gdma.c
 
-Index: linux-3.10.18/drivers/dma/Kconfig
-===================================================================
---- linux-3.10.18.orig/drivers/dma/Kconfig	2013-11-04 13:31:29.000000000 +0100
-+++ linux-3.10.18/drivers/dma/Kconfig	2013-12-04 17:52:32.852756567 +0100
-@@ -312,6 +312,12 @@
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -312,6 +312,12 @@ config MMP_PDMA
  	help
  	  Support the MMP PDMA engine for PXA and MMP platfrom.
  
@@ -28,10 +26,8 @@ Index: linux-3.10.18/drivers/dma/Kconfig
  config DMA_ENGINE
  	bool
  
-Index: linux-3.10.18/drivers/dma/ralink-gdma.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.18/drivers/dma/ralink-gdma.c	2013-12-05 21:17:22.245128605 +0100
+--- /dev/null
++++ b/drivers/dma/ralink-gdma.c
 @@ -0,0 +1,577 @@
 +/*
 + *  Copyright (C) 2013, Lars-Peter Clausen <lars@metafoo.de>
@@ -610,11 +606,9 @@ Index: linux-3.10.18/drivers/dma/ralink-gdma.c
 +MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
 +MODULE_DESCRIPTION("GDMA4740 DMA driver");
 +MODULE_LICENSE("GPLv2");
-Index: linux-3.10.18/drivers/dma/dmaengine.c
-===================================================================
---- linux-3.10.18.orig/drivers/dma/dmaengine.c	2013-11-04 13:31:29.000000000 +0100
-+++ linux-3.10.18/drivers/dma/dmaengine.c	2013-12-04 17:52:32.856756568 +0100
-@@ -504,6 +504,32 @@
+--- a/drivers/dma/dmaengine.c
++++ b/drivers/dma/dmaengine.c
+@@ -504,6 +504,32 @@ static struct dma_chan *private_candidat
  }
  
  /**
@@ -647,11 +641,9 @@ Index: linux-3.10.18/drivers/dma/dmaengine.c
   * dma_request_channel - try to allocate an exclusive channel
   * @mask: capabilities that the channel must satisfy
   * @fn: optional callback to disposition available channels
-Index: linux-3.10.18/include/linux/dmaengine.h
-===================================================================
---- linux-3.10.18.orig/include/linux/dmaengine.h	2013-11-04 13:31:29.000000000 +0100
-+++ linux-3.10.18/include/linux/dmaengine.h	2013-12-04 17:52:32.856756568 +0100
-@@ -999,6 +999,7 @@
+--- a/include/linux/dmaengine.h
++++ b/include/linux/dmaengine.h
+@@ -999,6 +999,7 @@ static inline void dma_release_channel(s
  int dma_async_device_register(struct dma_device *device);
  void dma_async_device_unregister(struct dma_device *device);
  void dma_run_dependencies(struct dma_async_tx_descriptor *tx);
@@ -659,11 +651,9 @@ Index: linux-3.10.18/include/linux/dmaengine.h
  struct dma_chan *dma_find_channel(enum dma_transaction_type tx_type);
  struct dma_chan *net_dma_find_channel(void);
  #define dma_request_channel(mask, x, y) __dma_request_channel(&(mask), x, y)
-Index: linux-3.10.18/drivers/dma/Makefile
-===================================================================
---- linux-3.10.18.orig/drivers/dma/Makefile	2013-11-04 13:31:29.000000000 +0100
-+++ linux-3.10.18/drivers/dma/Makefile	2013-12-04 17:52:32.856756568 +0100
-@@ -38,3 +38,4 @@
+--- a/drivers/dma/Makefile
++++ b/drivers/dma/Makefile
+@@ -38,3 +38,4 @@ obj-$(CONFIG_DMA_SA11X0) += sa11x0-dma.o
  obj-$(CONFIG_MMP_TDMA) += mmp_tdma.o
  obj-$(CONFIG_DMA_OMAP) += omap-dma.o
  obj-$(CONFIG_MMP_PDMA) += mmp_pdma.o

@@ -18,10 +18,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/malta-amon.c
  create mode 100644 arch/mips/ralink/mt7621.c
 
-Index: linux-3.10.21/arch/mips/include/asm/mach-ralink/mt7621.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.21/arch/mips/include/asm/mach-ralink/mt7621.h	2013-12-09 19:52:51.752677298 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ralink/mt7621.h
 @@ -0,0 +1,39 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
@@ -62,10 +60,8 @@ Index: linux-3.10.21/arch/mips/include/asm/mach-ralink/mt7621.h
 +#define MIPS_GIC_IRQ_BASE           (MIPS_CPU_IRQ_BASE + 8)
 +
 +#endif
-Index: linux-3.10.21/arch/mips/ralink/Kconfig
-===================================================================
---- linux-3.10.21.orig/arch/mips/ralink/Kconfig	2013-12-09 19:51:55.600675960 +0100
-+++ linux-3.10.21/arch/mips/ralink/Kconfig	2013-12-09 19:52:51.756677296 +0100
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
 @@ -1,5 +1,10 @@
  if RALINK
  
@@ -77,7 +73,7 @@ Index: linux-3.10.21/arch/mips/ralink/Kconfig
  config CLKEVT_RT3352
  	bool "Systick Clockevent source"
  	depends on SOC_RT305X || SOC_MT7620
-@@ -35,6 +40,15 @@
+@@ -35,6 +40,15 @@ choice
  		select USB_ARCH_HAS_EHCI
  		select HW_HAS_PCI
  
@@ -93,7 +89,7 @@ Index: linux-3.10.21/arch/mips/ralink/Kconfig
  endchoice
  
  choice
-@@ -62,6 +76,10 @@
+@@ -62,6 +76,10 @@ choice
  		bool "MT7620A eval kit"
  		depends on SOC_MT7620
  
@@ -104,10 +100,8 @@ Index: linux-3.10.21/arch/mips/ralink/Kconfig
  endchoice
  
  endif
-Index: linux-3.10.21/arch/mips/ralink/Makefile
-===================================================================
---- linux-3.10.21.orig/arch/mips/ralink/Makefile	2013-12-09 19:51:55.600675960 +0100
-+++ linux-3.10.21/arch/mips/ralink/Makefile	2013-12-09 19:52:51.756677296 +0100
+--- a/arch/mips/ralink/Makefile
++++ b/arch/mips/ralink/Makefile
 @@ -6,7 +6,11 @@
  # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
@@ -121,7 +115,7 @@ Index: linux-3.10.21/arch/mips/ralink/Makefile
  
  obj-$(CONFIG_CLKEVT_RT3352) += cevt-rt3352.o
  
-@@ -16,6 +20,7 @@
+@@ -16,6 +20,7 @@ obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
  obj-$(CONFIG_SOC_RT3883) += rt3883.o
  obj-$(CONFIG_SOC_MT7620) += mt7620.o
@@ -129,11 +123,9 @@ Index: linux-3.10.21/arch/mips/ralink/Makefile
  
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
-Index: linux-3.10.21/arch/mips/ralink/Platform
-===================================================================
---- linux-3.10.21.orig/arch/mips/ralink/Platform	2013-12-09 19:51:55.000000000 +0100
-+++ linux-3.10.21/arch/mips/ralink/Platform	2013-12-09 19:53:54.660678800 +0100
-@@ -26,3 +26,10 @@
+--- a/arch/mips/ralink/Platform
++++ b/arch/mips/ralink/Platform
+@@ -26,3 +26,10 @@ cflags-$(CONFIG_SOC_RT3883)	+= -I$(srctr
  # Ralink MT7620
  #
  load-$(CONFIG_SOC_MT7620)	+= 0xffffffff80000000
@@ -144,10 +136,8 @@ Index: linux-3.10.21/arch/mips/ralink/Platform
 +#
 +load-$(CONFIG_SOC_MT7621)	+= 0xffffffff80001000
 +cflags-$(CONFIG_SOC_MT7620)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7621
-Index: linux-3.10.21/arch/mips/ralink/irq-gic.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.21/arch/mips/ralink/irq-gic.c	2013-12-09 19:52:51.756677296 +0100
+--- /dev/null
++++ b/arch/mips/ralink/irq-gic.c
 @@ -0,0 +1,255 @@
 +#include <linux/init.h>
 +#include <linux/sched.h>
@@ -404,10 +394,8 @@ Index: linux-3.10.21/arch/mips/ralink/irq-gic.c
 +{
 +	of_irq_init(of_irq_ids);
 +}
-Index: linux-3.10.21/arch/mips/ralink/malta-amon.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.21/arch/mips/ralink/malta-amon.c	2013-12-09 19:52:51.756677296 +0100
+--- /dev/null
++++ b/arch/mips/ralink/malta-amon.c
 @@ -0,0 +1,81 @@
 +/*
 + * Copyright (C) 2007  MIPS Technologies, Inc.
@@ -490,10 +478,8 @@ Index: linux-3.10.21/arch/mips/ralink/malta-amon.c
 +	smp_rmb();	/* Target will be updating flags soon */
 +	pr_debug("launch: cpu%d gone!\n", cpu);
 +}
-Index: linux-3.10.21/arch/mips/ralink/mt7621.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.21/arch/mips/ralink/mt7621.c	2013-12-09 19:52:51.760677296 +0100
+--- /dev/null
++++ b/arch/mips/ralink/mt7621.c
 @@ -0,0 +1,186 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it

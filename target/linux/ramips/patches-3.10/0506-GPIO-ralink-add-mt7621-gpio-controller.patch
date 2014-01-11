@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 191 insertions(+)
  create mode 100644 drivers/gpio/gpio-mt7621.c
 
-Index: linux-3.10.21/drivers/gpio/Kconfig
-===================================================================
---- linux-3.10.21.orig/drivers/gpio/Kconfig	2013-12-09 19:56:09.376682007 +0100
-+++ linux-3.10.21/drivers/gpio/Kconfig	2013-12-09 19:58:35.372685422 +0100
-@@ -710,6 +710,12 @@
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -710,6 +710,12 @@ config GPIO_MSIC
  	  Enable support for GPIO on intel MSIC controllers found in
  	  intel MID devices
  
@@ -29,19 +27,15 @@ Index: linux-3.10.21/drivers/gpio/Kconfig
  comment "USB GPIO expanders:"
  
  config GPIO_VIPERBOARD
-Index: linux-3.10.21/drivers/gpio/Makefile
-===================================================================
---- linux-3.10.21.orig/drivers/gpio/Makefile	2013-12-09 19:56:09.376682007 +0100
-+++ linux-3.10.21/drivers/gpio/Makefile	2013-12-09 19:56:09.760682017 +0100
-@@ -88,3 +88,4 @@
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -88,3 +88,4 @@ obj-$(CONFIG_GPIO_WM831X)	+= gpio-wm831x
  obj-$(CONFIG_GPIO_WM8350)	+= gpio-wm8350.o
  obj-$(CONFIG_GPIO_WM8994)	+= gpio-wm8994.o
  obj-$(CONFIG_GPIO_XILINX)	+= gpio-xilinx.o
 +obj-$(CONFIG_GPIO_MT7621)	+= gpio-mt7621.o
-Index: linux-3.10.21/drivers/gpio/gpio-mt7621.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.21/drivers/gpio/gpio-mt7621.c	2013-12-09 19:56:09.760682017 +0100
+--- /dev/null
++++ b/drivers/gpio/gpio-mt7621.c
 @@ -0,0 +1,183 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it

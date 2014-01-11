@@ -157,7 +157,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return 0;
 --- a/arch/mips/mm/dma-default.c
 +++ b/arch/mips/mm/dma-default.c
-@@ -289,7 +289,6 @@ static void mips_dma_sync_single_for_cpu
+@@ -293,7 +293,6 @@ static void mips_dma_sync_single_for_cpu
  static void mips_dma_sync_single_for_device(struct device *dev,
  	dma_addr_t dma_handle, size_t size, enum dma_data_direction direction)
  {
@@ -165,7 +165,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (!plat_device_is_coherent(dev))
  		__dma_sync(dma_addr_to_page(dev, dma_handle),
  			   dma_handle & ~PAGE_MASK, size, direction);
-@@ -323,7 +322,7 @@ static void mips_dma_sync_sg_for_device(
+@@ -327,7 +326,7 @@ static void mips_dma_sync_sg_for_device(
  
  int mips_dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
  {
@@ -174,7 +174,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  int mips_dma_supported(struct device *dev, u64 mask)
-@@ -336,7 +335,6 @@ void dma_cache_sync(struct device *dev,
+@@ -340,7 +339,6 @@ void dma_cache_sync(struct device *dev,
  {
  	BUG_ON(direction == DMA_NONE);
  

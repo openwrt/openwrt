@@ -14,7 +14,7 @@ CPU_TYPE:=octeon
 CPU_CFLAGS_octeon:=-march=octeon
 MAINTAINER:=John Crispin <blogic@openwrt.org>
 
-LINUX_VERSION:=3.10.24
+LINUX_VERSION:=3.10.26
 
 include $(INCLUDE_DIR)/target.mk
 
