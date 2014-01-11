@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/mtd/devices/m25p80.c |  127 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 127 insertions(+)
 
-Index: linux-3.10.21/drivers/mtd/devices/m25p80.c
-===================================================================
---- linux-3.10.21.orig/drivers/mtd/devices/m25p80.c	2013-12-09 19:34:40.828651303 +0100
-+++ linux-3.10.21/drivers/mtd/devices/m25p80.c	2013-12-09 19:40:37.636659793 +0100
-@@ -392,6 +392,57 @@
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -392,6 +392,57 @@ static int m25p80_read(struct mtd_info *
  	return 0;
  }
  
@@ -70,7 +68,7 @@ Index: linux-3.10.21/drivers/mtd/devices/m25p80.c
  /*
   * Write an address range to the flash chip.  Data must be written in
   * FLASH_PAGESIZE chunks.  The address range may be any size provided
-@@ -479,6 +530,76 @@
+@@ -479,6 +530,76 @@ static int m25p80_write(struct mtd_info
  	return 0;
  }
  
@@ -147,7 +145,7 @@ Index: linux-3.10.21/drivers/mtd/devices/m25p80.c
  static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
  		size_t *retlen, const u_char *buf)
  {
-@@ -1057,6 +1178,12 @@
+@@ -1058,6 +1179,12 @@ static int m25p_probe(struct spi_device
  		flash->fast_read = true;
  #endif
  

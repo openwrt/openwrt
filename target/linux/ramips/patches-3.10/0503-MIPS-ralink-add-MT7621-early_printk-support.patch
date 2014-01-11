@@ -8,10 +8,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/early_printk.c |   10 +++++++---
  1 file changed, 7 insertions(+), 3 deletions(-)
 
-Index: linux-3.10.21/arch/mips/ralink/early_printk.c
-===================================================================
---- linux-3.10.21.orig/arch/mips/ralink/early_printk.c	2013-11-29 20:12:03.000000000 +0100
-+++ linux-3.10.21/arch/mips/ralink/early_printk.c	2013-12-09 20:11:51.600704498 +0100
+--- a/arch/mips/ralink/early_printk.c
++++ b/arch/mips/ralink/early_printk.c
 @@ -13,6 +13,8 @@
  
  #ifdef CONFIG_SOC_RT288X
@@ -21,7 +19,7 @@ Index: linux-3.10.21/arch/mips/ralink/early_printk.c
  #else
  #define EARLY_UART_BASE         0x10000c00
  #endif
-@@ -40,9 +42,13 @@
+@@ -40,9 +42,13 @@ static inline u32 uart_r32(unsigned reg)
  
  void prom_putchar(unsigned char ch)
  {

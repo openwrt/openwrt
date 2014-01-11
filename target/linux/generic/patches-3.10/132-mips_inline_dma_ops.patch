@@ -459,7 +459,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  int hw_coherentio = 0;	/* Actual hardware supported DMA coherency setting. */
  
  static int __init setcoherentio(char *str)
-@@ -44,26 +44,6 @@ static int __init setnocoherentio(char *
+@@ -44,13 +44,6 @@ static int __init setnocoherentio(char *
  early_param("nocoherentio", setnocoherentio);
  #endif
  
@@ -470,23 +470,10 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -		plat_dma_addr_to_phys(dev, dma_addr) >> PAGE_SHIFT);
 -}
 -
--/*
-- * Warning on the terminology - Linux calls an uncached area coherent;
-- * MIPS terminology calls memory areas with hardware maintained coherency
-- * coherent.
-- */
--
--static inline int cpu_is_noncoherent_r10000(struct device *dev)
--{
--	return !plat_device_is_coherent(dev) &&
--	       (current_cpu_type() == CPU_R10000 ||
--	       current_cpu_type() == CPU_R12000);
--}
--
- static gfp_t massage_gfp_flags(const struct device *dev, gfp_t gfp)
- {
- 	gfp_t dma_flag;
-@@ -119,8 +99,9 @@ void *dma_alloc_noncoherent(struct devic
+ /*
+  * The affected CPUs below in 'cpu_needs_post_dma_flush()' can
+  * speculatively fill random cachelines with stale data at any time,
+@@ -123,8 +116,9 @@ void *dma_alloc_noncoherent(struct devic
  }
  EXPORT_SYMBOL(dma_alloc_noncoherent);
  
@@ -498,7 +485,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  {
  	void *ret;
  
-@@ -144,6 +125,7 @@ static void *mips_dma_alloc_coherent(str
+@@ -148,6 +142,7 @@ static void *mips_dma_alloc_coherent(str
  
  	return ret;
  }
@@ -506,7 +493,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  
  void dma_free_noncoherent(struct device *dev, size_t size, void *vaddr,
-@@ -154,8 +136,8 @@ void dma_free_noncoherent(struct device
+@@ -158,8 +153,8 @@ void dma_free_noncoherent(struct device
  }
  EXPORT_SYMBOL(dma_free_noncoherent);
  
@@ -517,7 +504,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  {
  	unsigned long addr = (unsigned long) vaddr;
  	int order = get_order(size);
-@@ -170,6 +152,7 @@ static void mips_dma_free_coherent(struc
+@@ -174,6 +169,7 @@ static void mips_dma_free_coherent(struc
  
  	free_pages(addr, get_order(size));
  }
@@ -525,7 +512,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  static inline void __dma_sync_virtual(void *addr, size_t size,
  	enum dma_data_direction direction)
-@@ -198,8 +181,8 @@ static inline void __dma_sync_virtual(vo
+@@ -202,8 +198,8 @@ static inline void __dma_sync_virtual(vo
   * If highmem is not configured then the bulk of this loop gets
   * optimized out.
   */
@@ -536,15 +523,14 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  {
  	size_t left = size;
  
-@@ -228,109 +211,7 @@ static inline void __dma_sync(struct pag
- 		left -= len;
+@@ -233,108 +229,7 @@ static inline void __dma_sync(struct pag
  	} while (left);
  }
--
+ 
 -static void mips_dma_unmap_page(struct device *dev, dma_addr_t dma_addr,
 -	size_t size, enum dma_data_direction direction, struct dma_attrs *attrs)
 -{
--	if (cpu_is_noncoherent_r10000(dev))
+-	if (cpu_needs_post_dma_flush(dev))
 -		__dma_sync(dma_addr_to_page(dev, dma_addr),
 -			   dma_addr & ~PAGE_MASK, size, direction);
 -
@@ -595,7 +581,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -static void mips_dma_sync_single_for_cpu(struct device *dev,
 -	dma_addr_t dma_handle, size_t size, enum dma_data_direction direction)
 -{
--	if (cpu_is_noncoherent_r10000(dev))
+-	if (cpu_needs_post_dma_flush(dev))
 -		__dma_sync(dma_addr_to_page(dev, dma_handle),
 -			   dma_handle & ~PAGE_MASK, size, direction);
 -}
@@ -615,7 +601,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -
 -	/* Make sure that gcc doesn't leave the empty loop body.  */
 -	for (i = 0; i < nelems; i++, sg++) {
--		if (cpu_is_noncoherent_r10000(dev))
+-		if (cpu_needs_post_dma_flush(dev))
 -			__dma_sync(sg_page(sg), sg->offset, sg->length,
 -				   direction);
 -	}
@@ -647,7 +633,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
  			 enum dma_data_direction direction)
-@@ -343,23 +224,10 @@ void dma_cache_sync(struct device *dev,
+@@ -347,23 +242,10 @@ void dma_cache_sync(struct device *dev,
  
  EXPORT_SYMBOL(dma_cache_sync);
  

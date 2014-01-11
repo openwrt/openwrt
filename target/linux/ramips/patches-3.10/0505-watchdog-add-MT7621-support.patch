@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 193 insertions(+)
  create mode 100644 drivers/watchdog/mt7621_wdt.c
 
-Index: linux-3.10.21/drivers/watchdog/Kconfig
-===================================================================
---- linux-3.10.21.orig/drivers/watchdog/Kconfig	2013-12-09 19:56:09.360682007 +0100
-+++ linux-3.10.21/drivers/watchdog/Kconfig	2013-12-09 19:59:20.636686594 +0100
-@@ -1116,7 +1116,14 @@
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -1116,7 +1116,14 @@ config LANTIQ_WDT
  config RALINK_WDT
  	tristate "Ralink SoC watchdog"
  	select WATCHDOG_CORE
@@ -31,11 +29,9 @@ Index: linux-3.10.21/drivers/watchdog/Kconfig
  	help
  	  Hardware driver for the Ralink SoC Watchdog Timer.
  
-Index: linux-3.10.21/drivers/watchdog/Makefile
-===================================================================
---- linux-3.10.21.orig/drivers/watchdog/Makefile	2013-12-09 19:56:09.360682007 +0100
-+++ linux-3.10.21/drivers/watchdog/Makefile	2013-12-09 19:56:09.752682016 +0100
-@@ -136,6 +136,7 @@
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -136,6 +136,7 @@ obj-$(CONFIG_OCTEON_WDT) += octeon-wdt.o
  octeon-wdt-y := octeon-wdt-main.o octeon-wdt-nmi.o
  obj-$(CONFIG_LANTIQ_WDT) += lantiq_wdt.o
  obj-$(CONFIG_RALINK_WDT) += rt2880_wdt.o
@@ -43,10 +39,8 @@ Index: linux-3.10.21/drivers/watchdog/Makefile
  
  # PARISC Architecture
  
-Index: linux-3.10.21/drivers/watchdog/mt7621_wdt.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.21/drivers/watchdog/mt7621_wdt.c	2013-12-09 19:56:09.752682016 +0100
+--- /dev/null
++++ b/drivers/watchdog/mt7621_wdt.c
 @@ -0,0 +1,185 @@
 +/*
 + * Ralink RT288x/RT3xxx/MT76xx built-in hardware watchdog timer

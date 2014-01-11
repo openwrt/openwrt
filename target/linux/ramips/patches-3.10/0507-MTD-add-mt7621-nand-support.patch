@@ -29,11 +29,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/mtd/nand/nand_device_list.h
  create mode 100644 drivers/mtd/nand/partition.h
 
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index d885298..51ba744 100644
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
-@@ -538,4 +538,10 @@ config MTD_NAND_XWAY
+@@ -544,4 +544,10 @@ config MTD_NAND_XWAY
  	  Enables support for NAND Flash chips on Lantiq XWAY SoCs. NAND is attached
  	  to the External Bus Unit (EBU).
  
@@ -44,20 +42,15 @@ index d885298..51ba744 100644
 +	select MTD_NAND_ECC
 +
  endif # MTD_NAND
-diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
-index 542b568..c68c96c 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -49,5 +49,6 @@ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740_nand.o
+@@ -50,5 +50,6 @@ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740
  obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
  obj-$(CONFIG_MTD_NAND_XWAY)		+= xway_nand.o
  obj-$(CONFIG_MTD_NAND_BCM47XXNFLASH)	+= bcm47xxnflash/
 +obj-$(CONFIG_MTK_MTD_NAND)                      += mtk_nand.o bmt.o
  
  nand-objs := nand_base.o nand_bbt.o
-diff --git a/drivers/mtd/nand/bmt.c b/drivers/mtd/nand/bmt.c
-new file mode 100644
-index 0000000..0462871
 --- /dev/null
 +++ b/drivers/mtd/nand/bmt.c
 @@ -0,0 +1,750 @@
@@ -811,9 +804,6 @@ index 0000000..0462871
 +MODULE_AUTHOR("MediaTek");
 +MODULE_DESCRIPTION("Bad Block mapping management for MediaTek NAND Flash Driver");
 +#endif
-diff --git a/drivers/mtd/nand/bmt.h b/drivers/mtd/nand/bmt.h
-new file mode 100644
-index 0000000..2d30ea9
 --- /dev/null
 +++ b/drivers/mtd/nand/bmt.h
 @@ -0,0 +1,80 @@
@@ -897,9 +887,6 @@ index 0000000..2d30ea9
 +unsigned short get_mapping_block_index(int index);
 +
 +#endif                          // #ifndef __BMT_H__
-diff --git a/drivers/mtd/nand/dev-nand.c b/drivers/mtd/nand/dev-nand.c
-new file mode 100644
-index 0000000..9fb5235
 --- /dev/null
 +++ b/drivers/mtd/nand/dev-nand.c
 @@ -0,0 +1,63 @@
@@ -966,9 +953,6 @@ index 0000000..9fb5235
 +	return retval;
 +}
 +arch_initcall(mtk_nand_register);
-diff --git a/drivers/mtd/nand/mt6575_typedefs.h b/drivers/mtd/nand/mt6575_typedefs.h
-new file mode 100644
-index 0000000..a7b9647
 --- /dev/null
 +++ b/drivers/mtd/nand/mt6575_typedefs.h
 @@ -0,0 +1,340 @@
@@ -1312,9 +1296,6 @@ index 0000000..a7b9647
 +
 +#endif  // _MT6575_TYPEDEFS_H
 +
-diff --git a/drivers/mtd/nand/mtk_nand.c b/drivers/mtd/nand/mtk_nand.c
-new file mode 100644
-index 0000000..00e150c
 --- /dev/null
 +++ b/drivers/mtd/nand/mtk_nand.c
 @@ -0,0 +1,2304 @@
@@ -3622,9 +3603,6 @@ index 0000000..00e150c
 +module_init(mtk_nand_init);
 +module_exit(mtk_nand_exit);
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/mtd/nand/mtk_nand.h b/drivers/mtd/nand/mtk_nand.h
-new file mode 100644
-index 0000000..6db88c4
 --- /dev/null
 +++ b/drivers/mtd/nand/mtk_nand.h
 @@ -0,0 +1,452 @@
@@ -4080,11 +4058,9 @@ index 0000000..6db88c4
 +extern u32	CFG_BLOCKSIZE;
 +#endif
 +#endif
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index d340b2f..d83655f 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -90,7 +90,7 @@ static struct nand_ecclayout nand_oob_128 = {
+@@ -90,7 +90,7 @@ static struct nand_ecclayout nand_oob_12
  		 .length = 78} }
  };
  
@@ -4093,7 +4069,7 @@ index d340b2f..d83655f 100644
  
  static int nand_do_write_oob(struct mtd_info *mtd, loff_t to,
  			     struct mtd_oob_ops *ops);
-@@ -128,7 +128,7 @@ static int check_offs_len(struct mtd_info *mtd,
+@@ -128,7 +128,7 @@ static int check_offs_len(struct mtd_inf
   *
   * Release chip lock and wake up anyone waiting on the device.
   */
@@ -4102,7 +4078,7 @@ index d340b2f..d83655f 100644
  {
  	struct nand_chip *chip = mtd->priv;
  
-@@ -736,7 +736,7 @@ static void panic_nand_get_device(struct nand_chip *chip,
+@@ -739,7 +739,7 @@ static void panic_nand_get_device(struct
   *
   * Get the device and lock it for exclusive access
   */
@@ -4111,12 +4087,10 @@ index d340b2f..d83655f 100644
  nand_get_device(struct mtd_info *mtd, int new_state)
  {
  	struct nand_chip *chip = mtd->priv;
-diff --git a/drivers/mtd/nand/nand_bbt.c b/drivers/mtd/nand/nand_bbt.c
-index bc06196..da93baf 100644
 --- a/drivers/mtd/nand/nand_bbt.c
 +++ b/drivers/mtd/nand/nand_bbt.c
-@@ -1391,5 +1391,24 @@ int nand_markbad_bbt(struct mtd_info *mtd, loff_t offs)
- 	return ret;
+@@ -1378,6 +1378,25 @@ int nand_isbad_bbt(struct mtd_info *mtd,
+ 	return 1;
  }
  
 +void nand_bbt_set(struct mtd_info *mtd, int page, int flag)
@@ -4140,9 +4114,7 @@ index bc06196..da93baf 100644
 +
  EXPORT_SYMBOL(nand_scan_bbt);
  EXPORT_SYMBOL(nand_default_bbt);
-diff --git a/drivers/mtd/nand/nand_def.h b/drivers/mtd/nand/nand_def.h
-new file mode 100644
-index 0000000..82e957d
+ EXPORT_SYMBOL_GPL(nand_update_bbt);
 --- /dev/null
 +++ b/drivers/mtd/nand/nand_def.h
 @@ -0,0 +1,123 @@
@@ -4269,9 +4241,6 @@ index 0000000..82e957d
 +#include "mt6575_typedefs.h"
 +
 +#endif /* __NAND_DEF_H__ */
-diff --git a/drivers/mtd/nand/nand_device_list.h b/drivers/mtd/nand/nand_device_list.h
-new file mode 100644
-index 0000000..4c36b3a
 --- /dev/null
 +++ b/drivers/mtd/nand/nand_device_list.h
 @@ -0,0 +1,55 @@
@@ -4330,9 +4299,6 @@ index 0000000..4c36b3a
 +
 +
 +#endif
-diff --git a/drivers/mtd/nand/partition.h b/drivers/mtd/nand/partition.h
-new file mode 100644
-index 0000000..034e1af
 --- /dev/null
 +++ b/drivers/mtd/nand/partition.h
 @@ -0,0 +1,115 @@
@@ -4451,6 +4417,3 @@ index 0000000..034e1af
 +//#endif
 +#undef RECONFIG_PARTITION_SIZE
 +
--- 
-1.7.10.4
-

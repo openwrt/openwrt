@@ -1,8 +1,6 @@
-Index: linux-3.10.24/drivers/net/ethernet/ralink/ralink_soc_eth.c
-===================================================================
---- linux-3.10.24.orig/drivers/net/ethernet/ralink/ralink_soc_eth.c	2013-12-27 20:32:59.004068866 +0100
-+++ linux-3.10.24/drivers/net/ethernet/ralink/ralink_soc_eth.c	2013-12-27 21:16:44.892046631 +0100
-@@ -335,7 +335,7 @@
+--- a/drivers/net/ethernet/ralink/ralink_soc_eth.c
++++ b/drivers/net/ethernet/ralink/ralink_soc_eth.c
+@@ -335,7 +335,7 @@ static int fe_start_xmit(struct sk_buff
  	if (priv->soc->tso)
  		fe_start_tso(skb, dev, nr_frags, tx);
  

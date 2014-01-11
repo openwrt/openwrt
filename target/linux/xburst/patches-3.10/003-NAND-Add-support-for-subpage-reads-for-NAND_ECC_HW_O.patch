@@ -106,7 +106,7 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  			else
  				ret = chip->ecc.read_page(mtd, chip, bufpoi,
  							  oob_required, page);
-@@ -3477,8 +3546,13 @@ int nand_scan_tail(struct mtd_info *mtd)
+@@ -3488,8 +3557,13 @@ int nand_scan_tail(struct mtd_info *mtd)
  				   "hardware ECC not possible\n");
  			BUG();
  		}
