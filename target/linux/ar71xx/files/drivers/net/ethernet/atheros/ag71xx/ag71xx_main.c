@@ -28,9 +28,11 @@ static int ag71xx_msg_level = -1;
 module_param_named(msg_level, ag71xx_msg_level, int, 0);
 MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
 
+#define ETH_SWITCH_HEADER_LEN	2
+
 static inline unsigned int ag71xx_max_frame_len(unsigned int mtu)
 {
-	return ETH_HLEN + VLAN_HLEN + mtu + ETH_FCS_LEN;
+	return ETH_SWITCH_HEADER_LEN + ETH_HLEN + VLAN_HLEN + mtu + ETH_FCS_LEN;
 }
 
 static void ag71xx_dump_dma_regs(struct ag71xx *ag)
