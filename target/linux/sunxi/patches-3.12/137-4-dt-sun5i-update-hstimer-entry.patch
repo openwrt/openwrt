@@ -1,0 +1,29 @@
+From cdb1e9d50ad353833902214035a71ce08d86072a Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sun, 12 Jan 2014 16:48:01 +0100
+Subject: [PATCH] ARM: sun5i: dt: update hstimer entry
+
+Rename the hstimer DT entry to make naming consistent with the
+A20 dtsi. Also to avoid confusion when switching clocksources.
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/boot/dts/sun5i-a13.dtsi |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index 21900c6..e0a5cdd 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -427,7 +427,7 @@
+ 			status = "disabled";
+ 		};
+ 
+-		timer@01c60000 {
++		hstimer@01c60000 {
+ 			compatible = "allwinner,sun5i-a13-hstimer";
+ 			reg = <0x01c60000 0x1000>;
+ 			interrupts = <82>, <83>;
+-- 
+1.7.0.4
+
