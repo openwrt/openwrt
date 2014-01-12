@@ -1,0 +1,36 @@
+From 6dac092b12755ccbc00412871cd9535b687d16d7 Mon Sep 17 00:00:00 2001
+From: Rafa? Mi?ecki <zajec5@gmail.com>
+Date: Fri, 3 Jan 2014 09:55:30 +0100
+Subject: [PATCH] MIPS: BCM47XX: Enable buttons support on SSB
+
+This is supported since implementing IRQ domain in ssb.
+
+Signed-off-by: Rafa? Mi?ecki <zajec5@gmail.com>
+---
+ arch/mips/bcm47xx/buttons.c |    8 --------
+ 1 file changed, 8 deletions(-)
+
+--- a/arch/mips/bcm47xx/buttons.c
++++ b/arch/mips/bcm47xx/buttons.c
+@@ -3,7 +3,6 @@
+ #include <linux/input.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/interrupt.h>
+-#include <linux/ssb/ssb_embedded.h>
+ #include <bcm47xx_board.h>
+ #include <bcm47xx.h>
+ 
+@@ -371,13 +370,6 @@ int __init bcm47xx_buttons_register(void
+ 	enum bcm47xx_board board = bcm47xx_board_get();
+ 	int err;
+ 
+-#ifdef CONFIG_BCM47XX_SSB
+-	if (bcm47xx_bus_type == BCM47XX_BUS_TYPE_SSB) {
+-		pr_debug("Buttons on SSB are not supported yet.\n");
+-		return -ENOTSUPP;
+-	}
+-#endif
+-
+ 	switch (board) {
+ 	case BCM47XX_BOARD_ASUS_RTN12:
+ 		err = bcm47xx_copy_bdata(bcm47xx_buttons_asus_rtn12);
