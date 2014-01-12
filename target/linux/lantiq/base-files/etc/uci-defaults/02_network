@@ -47,16 +47,24 @@ board=$(lantiq_board_id)
 
 case "$board" in
 # adm6996
+ARV4510PW)
+	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "3 2 1 0 5t"
+	;;
+
 ARV4520PW)
 	ucidef_set_interface_lan "eth0.1"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "3 2 1 0 5t"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "3 2 1 0 5t"
 	;;
 
 ACMP252|GIGASX76X)
 	ucidef_set_interface_lan "eth0.1"
-	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "4 3 2 1 5t"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "4 3 2 1 5t"
 	;;
 
 # ar8316
