@@ -20,7 +20,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -28,6 +28,9 @@
+@@ -30,6 +30,9 @@
  
  #include <linux/export.h>
  #include <linux/types.h>
@@ -30,7 +30,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #include <linux/ssb/ssb.h>
  #include <linux/ssb/ssb_embedded.h>
  #include <linux/bcma/bcma_soc.h>
-@@ -255,6 +258,12 @@ static int __init bcm47xx_cpu_fixes(void
+@@ -257,6 +260,12 @@ static int __init bcm47xx_cpu_fixes(void
  }
  arch_initcall(bcm47xx_cpu_fixes);
  
@@ -43,14 +43,14 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int __init bcm47xx_register_bus_complete(void)
  {
  	switch (bcm47xx_bus_type) {
-@@ -269,6 +278,7 @@ static int __init bcm47xx_register_bus_c
- 		break;
- #endif
- 	}
+@@ -274,6 +283,7 @@ static int __init bcm47xx_register_bus_c
+ 
+ 	bcm47xx_buttons_register();
+ 	bcm47xx_leds_register();
 +	fixed_phy_add(PHY_POLL, 0, &bcm47xx_fixed_phy_status);
+ 
  	return 0;
  }
- device_initcall(bcm47xx_register_bus_complete);
 --- a/drivers/net/ethernet/broadcom/b44.c
 +++ b/drivers/net/ethernet/broadcom/b44.c
 @@ -2233,6 +2233,7 @@ static int b44_register_phy_one(struct b

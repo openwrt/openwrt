@@ -1,0 +1,160 @@
+From 98e54a60a7346ef31cb851b670a238ad428b58fe Mon Sep 17 00:00:00 2001
+From: Rafa? Mi?ecki <zajec5@gmail.com>
+Date: Thu, 2 Jan 2014 13:27:15 +0100
+Subject: [PATCH 029/110] MIPS: BCM47XX: Prepare support for LEDs
+
+So far this is mostly just a proof of concept, database consists of a
+single device. Creating a nice iterateable array wasn't an option
+because devices have different amount of LEDs. And we don't want to
+waste memory just because of support for a device with dozens on LEDs.
+
+Signed-off-by: Rafa? Mi?ecki <zajec5@gmail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Acked-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/6299/
+---
+ arch/mips/bcm47xx/Kconfig           |    2 +
+ arch/mips/bcm47xx/Makefile          |    2 +-
+ arch/mips/bcm47xx/bcm47xx_private.h |    9 +++++
+ arch/mips/bcm47xx/leds.c            |   73 +++++++++++++++++++++++++++++++++++
+ arch/mips/bcm47xx/setup.c           |    6 +++
+ 5 files changed, 91 insertions(+), 1 deletion(-)
+ create mode 100644 arch/mips/bcm47xx/bcm47xx_private.h
+ create mode 100644 arch/mips/bcm47xx/leds.c
+
+--- a/arch/mips/bcm47xx/Kconfig
++++ b/arch/mips/bcm47xx/Kconfig
+@@ -12,6 +12,7 @@ config BCM47XX_SSB
+ 	select SSB_PCICORE_HOSTMODE if PCI
+ 	select SSB_DRIVER_GPIO
+ 	select GPIOLIB
++	select LEDS_GPIO_REGISTER
+ 	default y
+ 	help
+ 	 Add support for old Broadcom BCM47xx boards with Sonics Silicon Backplane support.
+@@ -29,6 +30,7 @@ config BCM47XX_BCMA
+ 	select BCMA_DRIVER_PCI_HOSTMODE if PCI
+ 	select BCMA_DRIVER_GPIO
+ 	select GPIOLIB
++	select LEDS_GPIO_REGISTER
+ 	default y
+ 	help
+ 	 Add support for new Broadcom BCM47xx boards with Broadcom specific Advanced Microcontroller Bus.
+--- a/arch/mips/bcm47xx/Makefile
++++ b/arch/mips/bcm47xx/Makefile
+@@ -4,5 +4,5 @@
+ #
+ 
+ obj-y				+= irq.o nvram.o prom.o serial.o setup.o time.o sprom.o
+-obj-y				+= board.o
++obj-y				+= board.o leds.o
+ obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
+--- /dev/null
++++ b/arch/mips/bcm47xx/bcm47xx_private.h
+@@ -0,0 +1,9 @@
++#ifndef LINUX_BCM47XX_PRIVATE_H_
++#define LINUX_BCM47XX_PRIVATE_H_
++
++#include <linux/kernel.h>
++
++/* leds.c */
++void __init bcm47xx_leds_register(void);
++
++#endif
+--- /dev/null
++++ b/arch/mips/bcm47xx/leds.c
+@@ -0,0 +1,73 @@
++#include "bcm47xx_private.h"
++
++#include <linux/leds.h>
++#include <bcm47xx_board.h>
++
++static const struct gpio_led
++bcm47xx_leds_netgear_wndr4500_v1_leds[] __initconst = {
++	{
++		.name		= "bcm47xx:green:wps",
++		.gpio		= 1,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
++	},
++	{
++		.name		= "bcm47xx:green:power",
++		.gpio		= 2,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
++	},
++	{
++		.name		= "bcm47xx:orange:power",
++		.gpio		= 3,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
++	},
++	{
++		.name		= "bcm47xx:green:usb1",
++		.gpio		= 8,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
++	},
++	{
++		.name		= "bcm47xx:green:2ghz",
++		.gpio		= 9,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
++	},
++	{
++		.name		= "bcm47xx:blue:5ghz",
++		.gpio		= 11,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
++	},
++	{
++		.name		= "bcm47xx:green:usb2",
++		.gpio		= 14,
++		.active_low	= 1,
++		.default_state	= LEDS_GPIO_DEFSTATE_KEEP,
++	},
++};
++
++static struct gpio_led_platform_data bcm47xx_leds_pdata;
++
++#define bcm47xx_set_pdata(dev_leds) do {				\
++	bcm47xx_leds_pdata.leds = dev_leds;				\
++	bcm47xx_leds_pdata.num_leds = ARRAY_SIZE(dev_leds);		\
++} while (0)
++
++void __init bcm47xx_leds_register(void)
++{
++	enum bcm47xx_board board = bcm47xx_board_get();
++
++	switch (board) {
++	case BCM47XX_BOARD_NETGEAR_WNDR4500V1:
++		bcm47xx_set_pdata(bcm47xx_leds_netgear_wndr4500_v1_leds);
++		break;
++	default:
++		pr_debug("No LEDs configuration found for this device\n");
++		return;
++	}
++
++	gpio_led_register_device(-1, &bcm47xx_leds_pdata);
++}
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -26,6 +26,8 @@
+  *  675 Mass Ave, Cambridge, MA 02139, USA.
+  */
+ 
++#include "bcm47xx_private.h"
++
+ #include <linux/export.h>
+ #include <linux/types.h>
+ #include <linux/ssb/ssb.h>
+@@ -243,6 +245,9 @@ static int __init bcm47xx_register_bus_c
+ 		break;
+ #endif
+ 	}
++
++	bcm47xx_leds_register();
++
+ 	return 0;
+ }
+ device_initcall(bcm47xx_register_bus_complete);
