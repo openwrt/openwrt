@@ -64,6 +64,7 @@ smb_add_share() {
 	local guest_ok
 	local create_mask
 	local dir_mask
+	local browseable
 
 	config_get name $1 name
 	config_get path $1 path
@@ -72,6 +73,7 @@ smb_add_share() {
 	config_get guest_ok $1 guest_ok
 	config_get create_mask $1 create_mask
 	config_get dir_mask $1 dir_mask
+	config_get browseable $1 browseable
 
 	[ -z "$name" -o -z "$path" ] && return
 
@@ -81,6 +83,7 @@ smb_add_share() {
 	[ -n "$guest_ok" ] && echo -e "\tguest ok = $guest_ok" >> /var/etc/smb.conf
 	[ -n "$create_mask" ] && echo -e "\tcreate mask = $create_mask" >> /var/etc/smb.conf
 	[ -n "$dir_mask" ] && echo -e "\tdirectory mask = $dir_mask" >> /var/etc/smb.conf
+	[ -n "$browseable" ] && echo -e "\tbrowseable = $browseable" >> /var/etc/smb.conf
 }
 
 start() {
