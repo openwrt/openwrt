@@ -33,8 +33,8 @@ define uboot/A13-OLinuXino
   TITLE:=U-Boot 2013.10-rc2 for the A13 OlinuXino
 endef
 
-define uboot/Hackberry
-  TITLE:=U-Boot 2013.10-rc2 for the Hackbeery
+define uboot/A20-OLinuXino_MICRO
+  TITLE:=U-Boot 2013.10-rc2 for A20 OLinuXino MICRO
 endef
 
 define uboot/Cubieboard
@@ -45,15 +45,19 @@ define uboot/Cubieboard2
   TITLE:=U-Boot 2013.10-rc2 for Cubieboard2
 endef
 
-define uboot/A20-OLinuXino_MICRO
-  TITLE:=U-Boot 2013.10-rc2 for A20 OLinuXino MICRO
+define uboot/Cubietruck
+  TITLE:=U-Boot 2013.10-rc2 for Cubietruck
+endef
+
+define uboot/Hackberry
+  TITLE:=U-Boot 2013.10-rc2 for the Hackbeery
 endef
 
 define uboot/pcDuino
   TITLE:=U-Boot 2013.10-rc2 for pcDuino
 endef  
 
-UBOOTS:=A10-OLinuXino-Lime A13-OLinuXino Cubieboard Cubieboard2 A20-OLinuXino_MICRO Hackberry pcDuino
+UBOOTS:=A10-OLinuXino-Lime A13-OLinuXino A20-OLinuXino_MICRO Cubieboard Cubieboard2 Cubietruck Hackberry pcDuino
 
 define Package/uboot/template
 define Package/uboot-sunxi-$(1)
