@@ -45,6 +45,7 @@ start() {
 
 	local cpuport=5
 	[ -e /sbin/swconfig ] && cpuport=$(swconfig dev switch0 help 2>/dev/null | sed -ne "s|.*cpu @ \([0-9]*\).*|\1|p")
+	local model=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)
 
 	local network_defs=`(
 		if grep -E 'mtd0: 000(6|a)0000' /proc/mtd 2>&- >&-; then
@@ -53,7 +54,7 @@ start() {
 		else
 			strings "$(find_mtd_part nvram)"
 		fi
-	) | awk -v cpuport="$cpuport" '
+	) | awk -v cpuport="$cpuport" -v model="$model" '
 	function macinc(mac, maca, i, result) {
 		split(mac, maca, ":")
 		for (i = 1; i <= 6; i++) maca[i] = "0x" maca[i]
@@ -74,8 +75,6 @@ start() {
 		c["wan_ifname"]="eth0.2"
 		c["vlan1ports"]="1 2 3 4 5t"
 		c["vlan2ports"]="0 5t"
-		getline < "/proc/diag/model"
-		model=$0
 		for (i = 0; i < 6; i++) {
 			if (mac_check != "") mac_check = mac_check ":"
 			mac_check = mac_check "[0-9a-fA-F][0-9a-fA-F]"
