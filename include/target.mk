@@ -76,7 +76,7 @@ define Profile
 	$(SH_FUNC) getvar "$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \
 	echo;
-  ifeq ($(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(if $(SUBTARGET),$(SUBTARGET)_)$(1))),y)
+  ifeq ($(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(if $(SUBTARGET),$(SUBTARGET)_))$(1)),y)
     PROFILE=$(1)
   endif
 endef
