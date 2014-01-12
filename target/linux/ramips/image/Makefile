@@ -405,7 +405,7 @@ Image/Build/Profile/IP2202=$(call BuildFirmware/Default8M/$(1),$(1),ip2202,IP220
 BuildFirmware/HLKRM04/squashfs=$(call BuildFirmware/Default4M/squashfs,$(1),$(2),$(3),$(4))
 define BuildFirmware/HLKRM04/initramfs
 	$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
-	mkhilinkfw -e -i$(call imgname,$(1),$(2))-uImage.bin -o $(call imgname,$(1),$(2))-factory.bin;
+	#mkhilinkfw -e -i$(call imgname,$(1),$(2))-uImage.bin -o $(call imgname,$(1),$(2))-factory.bin;
 endef
 Image/Build/Profile/HLKRM04=$(call BuildFirmware/HLKRM04/$(1),$(1),hlk-rm04,HLKRM04,HLK-RM02)
 
