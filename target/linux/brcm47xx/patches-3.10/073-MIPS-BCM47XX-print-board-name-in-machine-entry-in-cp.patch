@@ -1,12 +1,17 @@
-commit 86bd812676d1e99968f395ad82ccaa2db7965748
-Author: Hauke Mehrtens <hauke@hauke-m.de>
-Date:   Thu Sep 19 22:04:04 2013 +0200
+From 6d683038f2155bf0d6f486a1f11a10bbc455da8a Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 19 Sep 2013 23:40:10 +0200
+Subject: [PATCH 019/110] MIPS: BCM47XX: print board name in machine entry in
+ cpuinfo
 
-    MIPS: BCM47XX: print board name in machine entry in cpuinfo
-    
-    This will add the board name to the machine entry in /proc/cpuinfo.
-    
-    Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+This will add the board name to the machine entry in /proc/cpuinfo.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Acked-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/5864/
+---
+ arch/mips/bcm47xx/setup.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
