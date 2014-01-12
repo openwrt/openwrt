@@ -51,6 +51,9 @@ get_status_led() {
 	rt-n13u)
 		status_led="rt-n13u:power"
 		;;
+	hlk-rm04)
+		status_led="hlk-rm04:red:power"
+		;;
 	all0239-3g|\
 	hw550-3g)
 		status_led="hw550-3g:green:status"

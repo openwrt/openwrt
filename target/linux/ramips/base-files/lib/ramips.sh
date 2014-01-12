@@ -136,6 +136,9 @@ ramips_board_detect() {
 	*"MoFi Network MOFI3500-3GN")
 		name="mofi3500-3gn"
 		;;
+	*"HILINK HLK-RM04")
+		name="hlk-rm04"
+		;;
 	*"HAME MPR-A1")
  		name="mpr-a1"
  		;;

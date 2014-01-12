@@ -89,6 +89,9 @@
 
 			reg-shift = <2>;
 
+			pinctrl-names = "default";
+			pinctrl-0 = <&uartf_pins>;
+
 			status = "disabled";
 		};
 
@@ -238,6 +241,12 @@
 			uart {
 				ralink,group = "uartlite";
 				ralink,function = "uartlite";
+			};
+		};
+		uartf_pins: uartf {
+			uartf {
+				ralink,group = "uartf";
+				ralink,function = "uartf";
 			};
 		};
 	};
