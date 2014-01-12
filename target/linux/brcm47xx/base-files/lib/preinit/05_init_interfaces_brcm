@@ -1,37 +1,16 @@
 #!/bin/sh
 
-set_preinit_iface() {
+preinit_iface() {
 	ifname=eth0
 
 	# hardware specific overrides
-	case "$(cat /proc/diag/model)" in
-		"Linksys WAP54G V1") ifname=eth1;;
-		"ASUS WL-HDD") ifname=eth1;;
-		"ASUS WL-300g") ifname=eth1;;
-		"ASUS (unknown, BCM4702)") ifname=eth1;;
-		"Sitecom WL-105b") ifname=eth1;;
+	case "$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)" in
+		"Asus WLHDD") ifname=eth1;;
+		"Asus WL300G") ifname=eth1;;
 	esac
 
-	# The interface has to be up to configure the switch
-	ifconfig $ifname 0.0.0.0 up
-	[ -f /lib/modules/`uname -r`/switch-robo.ko ] && {
-		rmmod switch-robo
-		insmod switch-robo
-	}
-	[ -f /lib/modules/`uname -r`/switch-adm.ko ] && {
-		rmmod switch-adm
-		insmod switch-adm
-	}
+	local try=0;
+	while [ $((try++)) -le 5 ] && [ ! -f /sys/class/net/$ifname/operstate ]; do sleep 1; done
 }
 
-init_iface() {
-	[ -d /proc/switch/eth0 ] && [ "$ifname" = "eth0" ] && {
-		case "$(cat /proc/switch/eth0/cpuport)" in
-			"5") cpu_port="5u*";;
-			"8") cpu_port="8u*";;
-		esac
-	}
-}
-
-boot_hook_add preinit_main set_preinit_iface
-boot_hook_add preinit_main init_iface
+boot_hook_add preinit_main preinit_iface
