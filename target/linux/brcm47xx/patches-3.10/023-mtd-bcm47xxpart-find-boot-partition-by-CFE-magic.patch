@@ -1,0 +1,43 @@
+From 4f8aaf72287578c846ed7ac8c6114aacbf416e45 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sat, 21 Dec 2013 19:39:11 +0100
+Subject: [PATCH] mtd: bcm47xxpart: find boot partition by CFE magic
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Some devices have even nicer-to-recognize CFE thanks to the magic.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/bcm47xxpart.c |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -23,10 +23,11 @@
+  * Amount of bytes we read when analyzing each block of flash memory.
+  * Set it big enough to allow detecting partition and reading important data.
+  */
+-#define BCM47XXPART_BYTES_TO_READ	0x404
++#define BCM47XXPART_BYTES_TO_READ	0x4e8
+ 
+ /* Magics */
+ #define BOARD_DATA_MAGIC		0x5246504D	/* MPFR */
++#define CFE_MAGIC			0x43464531	/* 1EFC */
+ #define FACTORY_MAGIC			0x59544346	/* FCTY */
+ #define POT_MAGIC1			0x54544f50	/* POTT */
+ #define POT_MAGIC2			0x504f		/* OP */
+@@ -102,8 +103,9 @@ static int bcm47xxpart_parse(struct mtd_
+ 			continue;
+ 		}
+ 
+-		/* CFE has small NVRAM at 0x400 */
+-		if (buf[0x400 / 4] == NVRAM_HEADER) {
++		/* Magic or small NVRAM at 0x400 */
++		if ((buf[0x4e0 / 4] == CFE_MAGIC && buf[0x4e4 / 4] == CFE_MAGIC) ||
++		    (buf[0x400 / 4] == NVRAM_HEADER)) {
+ 			bcm47xxpart_add_part(&parts[curr_part++], "boot",
+ 					     offset, MTD_WRITEABLE);
+ 			continue;
