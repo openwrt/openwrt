@@ -447,12 +447,14 @@ wpa_supplicant_add_network() {
 
 	local wpa_key_mgmt="WPA-PSK"
 	local scan_ssid="1"
+	local freq
 
 	[[ "$_w_mode" = "adhoc" ]] && {
 		append network_data "mode=1" "$N$T"
-		[ -n "$fixed_frequency" ] || {
+		[ -n "$channel" ] && {
+			freq="$(get_freq "$phy" "$channel")"
 			append network_data "fixed_freq=1" "$N$T"
-			append network_data "frequency=$fixed_frequency" "$N$T"
+			append network_data "frequency=$freq" "$N$T"
 		}
 
 		scan_ssid=0
