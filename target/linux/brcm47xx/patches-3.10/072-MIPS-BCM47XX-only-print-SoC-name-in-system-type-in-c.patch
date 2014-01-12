@@ -1,15 +1,22 @@
-commit 88aaea30099c1562c4b4015d965c22df29034a74
-Author: Hauke Mehrtens <hauke@hauke-m.de>
-Date:   Thu Sep 19 22:01:53 2013 +0200
+From 17e0ca5d6e08a83eed8dada75af4c0107f162051 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 19 Sep 2013 23:40:09 +0200
+Subject: [PATCH 018/110] MIPS: BCM47XX: only print SoC name in system type in
+ cpuinfo
 
-    MIPS: BCM47XX: only print SoC name in system type in cpuinfo
-    
-    Recently the output of "system type" in  /proc/cpuinfo was changed to
-    Broadcom BCM4730 (Some sample board), but it is better to just print
-    the SoC name in the "system type" entry. The board name will be added
-    in the machine entry later.
-    
-    Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Recently the output of "system type" in  /proc/cpuinfo was changed to
+Broadcom BCM4730 (Some sample board), but it is better to just print
+the SoC name in the "system type" entry. The board name will be added
+in the machine entry later.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Acked-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/5865/
+---
+ arch/mips/bcm47xx/prom.c                     |   31 ++++++++------------------
+ arch/mips/bcm47xx/setup.c                    |    2 ++
+ arch/mips/include/asm/mach-bcm47xx/bcm47xx.h |    2 ++
+ 3 files changed, 13 insertions(+), 22 deletions(-)
 
 --- a/arch/mips/bcm47xx/prom.c
 +++ b/arch/mips/bcm47xx/prom.c

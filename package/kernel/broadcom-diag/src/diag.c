@@ -144,8 +144,6 @@ enum {
 	WR850GP,
 
 	/* Belkin */
-	BELKIN_UNKNOWN,
-	BELKIN_F7D330X, /* covers F7D7302,F7D3302,F7D3301, and F7D7301 */
 	BELKIN_F7D4301,
 
 	/* Netgear */
@@ -955,38 +953,6 @@ static struct platform_t __initdata platforms[] = {
 	},
 
 	/* Belkin */
-	[BELKIN_UNKNOWN] = {
-		.name		= "Belkin (unknown)",
-		/* FIXME: verify & add detection */
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 7 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 5, .polarity = NORMAL },
-			{ .name = "wlan",	.gpio = 1 << 3, .polarity = NORMAL },
-			{ .name = "connected",	.gpio = 1 << 0, .polarity = NORMAL },
-		},
-	},
-	[BELKIN_F7D330X] = {
-		.name		= "Belkin F7D330X",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "wps",	.gpio = 1 << 8 },
-		},
-		.leds		= {
-			/* green */
-			{ .name = "power",	.gpio = 1 << 10, .polarity = REVERSE },
-			/* orange power */
-			{ .name = "warn",	.gpio = 1 << 11, .polarity = REVERSE },
-			/* green */
-			{ .name = "wps",	.gpio = 1 << 12, .polarity = REVERSE },
-			/* orange wps */
-			{ .name = "wlan",	.gpio = 1 << 13, .polarity = REVERSE },
-			{ .name = "usb0",	.gpio = 1 << 14, .polarity = REVERSE },
-			/* shipped unconnected in the F7D3302 */
-			{ .name = "usb1",	.gpio = 1 << 15, .polarity = REVERSE },
-		},
-	},
 	[BELKIN_F7D4301] = {
 		.name		= "Belkin PlayMax F7D4301",
 		.buttons	= {
@@ -1401,8 +1367,6 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[WLHDD];
 	case BCM47XX_BOARD_BELKIN_F7D4301:
 		return &platforms[BELKIN_F7D4301];
-	case BCM47XX_BOARD_BELKIN_F7D330X:
-		return &platforms[BELKIN_F7D330X];
 	case BCM47XX_BOARD_BUFFALO_WBR2_G54:
 		return &platforms[WBR2_G54];
 	case BCM47XX_BOARD_BUFFALO_WHR2_A54G54:
