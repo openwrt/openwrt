@@ -1,6 +1,8 @@
---- a/drivers/net/ethernet/ralink/ralink_soc_eth.c
-+++ b/drivers/net/ethernet/ralink/ralink_soc_eth.c
-@@ -335,7 +335,7 @@ static int fe_start_xmit(struct sk_buff
+Index: linux-3.10.26/drivers/net/ethernet/ralink/ralink_soc_eth.c
+===================================================================
+--- linux-3.10.26.orig/drivers/net/ethernet/ralink/ralink_soc_eth.c	2014-01-12 11:49:40.052069844 +0100
++++ linux-3.10.26/drivers/net/ethernet/ralink/ralink_soc_eth.c	2014-01-12 12:49:31.776155429 +0100
+@@ -335,7 +335,7 @@
  	if (priv->soc->tso)
  		fe_start_tso(skb, dev, nr_frags, tx);
  
@@ -9,3 +11,13 @@
  		struct iphdr *iph = NULL;
  		struct tcphdr *th = NULL;
  		struct ipv6hdr *ip6h = NULL;
+@@ -741,8 +741,7 @@
+ 		dev_info(&pdev->dev, "Enabling TSO\n");
+ 		netdev->features |= NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
+ 	}
+-
+-	netdev->hw_features = netdev->vlan_features = netdev->features;
++	netdev->hw_features = netdev->features;
+ 
+ 	netdev->irq = platform_get_irq(pdev, 0);
+ 	if (netdev->irq < 0) {
