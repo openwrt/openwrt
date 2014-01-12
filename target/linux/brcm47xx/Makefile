@@ -15,7 +15,9 @@ MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 LINUX_VERSION:=3.10.26
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += swconfig kmod-diag wpad-mini nvram
+DEFAULT_PACKAGES += swconfig wpad-mini nvram \
+	kmod-leds-gpio kmod-gpio-button-hotplug \
+	kmod-ledtrig-default-on kmod-ledtrig-timer kmod-ledtrig-netdev
 
 define Target/Description
 	Build firmware images for Broadcom based routers
