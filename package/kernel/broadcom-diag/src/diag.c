@@ -75,55 +75,18 @@ enum {
 	WAP54GV3,
 	WRT54GV1,
 	WRT54G,
-	WRTSL54GS,
 	WRT54G3G,
-	WRT54G3GV2_VF,
-	WRT150NV1,
-	WRT150NV11,
-	WRT160NV1,
-	WRT160NV3,
-	WRT300NV11,
-	WRT310NV1,
 	WRT350N,
 	WRT600N,
 	WRT600NV11,
-	WRT610N,
-	WRT610NV2,
-	E1000V1,
-	E1000V21,
-	E2000V1,
-	E3000V1,
-	E3200V1,
-	E4200V1,
 
 	/* ASUS */
-	WLHDD,
-	WL300G,
-	WL320GE,
-	WL330GE,
 	WL500G,
-	WL500GD,
-	WL500GP,
-	WL500GPV2,
-	WL500W,
-	WL520GC,
-	WL520GU,
 	ASUS_4702,
-	WL700GE,
-	RTN12,
-	RTN16,
-	RTN66U,
 
 	/* Buffalo */
 	WBR2_G54,
-	WHR_G54S,
-	WHR_HP_G54,
-	WHR_G125,
-	WHR2_A54G54,
 	WLA2_G54L,
-	WZR_G300N,
-	WZR_RS_G54,
-	WZR_RS_G54HP,
 	BUFFALO_UNKNOWN_4710,
 
 	/* Siemens */
@@ -134,23 +97,14 @@ enum {
 	USR5461,
 
 	/* Dell */
-	TM2300,
 	TM2300V2,
 
 	/* Motorola */
-	WE800G,
 	WR850GV1,
-	WR850GV2V3,
-	WR850GP,
-
-	/* Belkin */
-	BELKIN_F7D4301,
 
 	/* Netgear */
 	WGT634U,
 	WNR834BV1,
-	WNR834BV2,
-	WNDR3400V1,
 	WNDR3700V3,
 
 	/* Trendware */
@@ -160,9 +114,7 @@ enum {
 	STI_NAS,
 
 	/* D-Link */
-	DIR130,
 	DIR320,
-	DIR330,
 	DWL3150,
 
 	/* Sitecom */
@@ -184,7 +136,6 @@ enum {
 	PS1208MFG,
 
 	/* Huawei */
-	HUAWEI_E970,
 };
 
 static void __init bcm4780_init(void) {
@@ -214,15 +165,6 @@ static void __init NetCenter_init(void) {
 		bcm47xx_gpio_out(pin, pin);
 		/* unset pin 3 (+5V) and wait 5 seconds (harddisk spin up) */
 		bcm4780_init();
-}
-
-static void __init bcm57xx_init(void) {
-	int pin = 1 << 2;
-
-	/* FIXME: switch comes up, but port mappings/vlans not right */
-	bcm47xx_gpio_outen(pin, pin);
-	bcm47xx_gpio_control(pin, 0);
-	bcm47xx_gpio_out(pin, pin);
 }
 
 static struct platform_t __initdata platforms[] = {
@@ -283,19 +225,6 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "wlan",	.gpio = 1 << 0, .polarity = REVERSE },
 		},
 	},
-	[WRTSL54GS] = {
-		.name		= "Linksys WRTSL54GS",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "ses",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "dmz",	.gpio = 1 << 0, .polarity = REVERSE },
-			{ .name = "ses_white",	.gpio = 1 << 5, .polarity = REVERSE },
-			{ .name = "ses_orange",	.gpio = 1 << 7, .polarity = REVERSE },
-		},
-	},
 	[WRT54G3G] = {
 		.name		= "Linksys WRT54G3G",
 		.buttons	= {
@@ -308,91 +237,6 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "3g_green",	.gpio = 1 << 2, .polarity = NORMAL },
 			{ .name = "3g_blue",	.gpio = 1 << 3, .polarity = NORMAL },
 			{ .name = "3g_blink",	.gpio = 1 << 5, .polarity = NORMAL },
-		},
-	},
-	[WRT54G3GV2_VF] = {
-		.name		= "Linksys WRT54G3GV2-VF",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "3g",		.gpio = 1 << 5 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "3g_green",	.gpio = 1 << 2, .polarity = NORMAL },
-			{ .name = "3g_blue",	.gpio = 1 << 3, .polarity = NORMAL },
-		},
-	},
-	[WRT150NV1] = {
-		.name		= "Linksys WRT150N V1",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "ses",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "ses_green",	.gpio = 1 << 5, .polarity = REVERSE },
-			{ .name = "ses_amber", .gpio = 1 << 3, .polarity = REVERSE },
-		},
-	},
-	[WRT150NV11] = {
-		.name		= "Linksys WRT150N V1.1",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "ses",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "ses_green",	.gpio = 1 << 5, .polarity = REVERSE },
-			{ .name = "ses_amber", .gpio = 1 << 3, .polarity = REVERSE },
-		},
-	},
-	[WRT160NV1] = {
-		.name		= "Linksys WRT160N v1.x",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "ses",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "ses_blue",	.gpio = 1 << 5, .polarity = REVERSE },
-			{ .name = "ses_orange", .gpio = 1 << 3, .polarity = REVERSE },
-		},
-	},
-	[WRT160NV3] = {
-		.name		= "Linksys WRT160N V3",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "ses",	.gpio = 1 << 5 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "ses_blue",	.gpio = 1 << 4, .polarity = REVERSE },
-			{ .name = "ses_orange", .gpio = 1 << 2, .polarity = REVERSE },
-		},
-	},
-	[WRT300NV11] = {
-		.name           = "Linksys WRT300N V1.1",
-		.buttons        = {
-			{ .name = "reset",     .gpio = 1 << 6 }, // "Reset" on back panel
-			{ .name = "ses",       .gpio = 1 << 4 }, // "Reserved" on top panel
-		},
-		.leds           = {
-			{ .name = "power",     .gpio = 1 << 1, .polarity = NORMAL  }, // "Power"
-			{ .name = "ses_amber", .gpio = 1 << 3, .polarity = REVERSE }, // "Security" Amber
-			{ .name = "ses_green", .gpio = 1 << 5, .polarity = REVERSE }, // "Security" Green
-		},
-		.platform_init = bcm57xx_init,
-	},
-	[WRT310NV1] = {
-		.name		= "Linksys WRT310N V1",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 }, // "Reset" on back panel
-			{ .name = "ses",	.gpio = 1 << 8 }, // "Reserved" on top panel
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL }, // Power LED
-			{ .name = "ses_amber",	.gpio = 1 << 3, .polarity = REVERSE }, // "Security" Amber
-			{ .name = "ses_blue",	.gpio = 1 << 9, .polarity = REVERSE }, // "Security" Blue
 		},
 	},
 	[WRT350N] = {
@@ -408,7 +252,6 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "usb_blink",	.gpio = 1 << 10, .polarity = REVERSE },
 			{ .name = "usb",	.gpio = 1 << 11, .polarity = REVERSE },
 		},
-		.platform_init = bcm57xx_init,
 	},
 	[WRT600N] = {
 		.name           = "Linksys WRT600N",
@@ -424,7 +267,6 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "wl1_ses_amber",      .gpio = 1 << 10, .polarity = REVERSE }, // 5.6Ghz LED Amber
 			{ .name = "wl1_ses_green",      .gpio = 1 << 11, .polarity = REVERSE }, // 5.6Ghz LED Green
 		},
-		.platform_init = bcm57xx_init,
 	},
 	[WRT600NV11] = {
 		.name           = "Linksys WRT600N V1.1",
@@ -440,156 +282,8 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "wl1_ses_amber",      .gpio = 1 << 10, .polarity = REVERSE }, // 5.6Ghz LED Amber
 			{ .name = "wl1_ses_green",      .gpio = 1 << 11, .polarity = REVERSE }, // 5.6Ghz LED Green
 		},
-		.platform_init = bcm57xx_init,
-	},
-	[WRT610N] = {
-		.name           = "Linksys WRT610N",
-		.buttons        = {
-			{ .name = "reset",      .gpio = 1 << 6 },
-			{ .name = "ses",        .gpio = 1 << 8 },
-		},
-		.leds           = {
-			{ .name = "power",      .gpio = 1 << 1,  .polarity = NORMAL }, // Power LED
-			{ .name = "usb",        .gpio = 1 << 0,  .polarity = REVERSE }, // USB LED
-			{ .name = "ses_amber",  .gpio = 1 << 3,  .polarity = REVERSE }, // WiFi protected setup LED amber
-			{ .name = "ses_blue",   .gpio = 1 << 9,  .polarity = REVERSE }, // WiFi protected setup LED blue
-		},
-	},
-	[WRT610NV2] = {
-		.name		= "Linksys WRT610N V2",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "ses",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 5,	.polarity = NORMAL },	// Power LED
-			{ .name = "usb",	.gpio = 1 << 7,	.polarity = NORMAL },	// USB LED
-			{ .name = "ses_amber",	.gpio = 1 << 0,	.polarity = REVERSE },	// WiFi protected setup LED amber
-			{ .name = "ses_blue",	.gpio = 1 << 3,	.polarity = REVERSE },	// WiFi protected setup LED blue
-			{ .name = "wlan",	.gpio = 1 << 1,	.polarity = NORMAL },	// Wireless LED
-		},
-	},
-	/* same hardware as WRT160NV3 and Cisco Valet M10V1, but different board detection, combine? */
-	[E1000V1] = {
-		.name           = "Linksys E1000 V1",
-		.buttons        = {
-			{ .name = "reset",      .gpio = 1 << 6 },
-			{ .name = "wps",        .gpio = 1 << 5 }, /* nvram get gpio5=wps_button */
-		},
-		.leds           = {
-			/** turns on leds for all ethernet ports (wan too)
-			 *  this also disconnects some, or maybe all, ethernet ports 
-			 *  1: leds work normally
-			 *  0: all lit all the time */
-			/* nvram get gpio3=robo_reset */
-			{ .name = "wlan",       .gpio = 1 << 0, .polarity = NORMAL },
-			{ .name = "power",      .gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "ses_blue",   .gpio = 1 << 4, .polarity = REVERSE }, /* nvram get gpio4=wps_led */
-			{ .name = "ses_orange", .gpio = 1 << 2, .polarity = REVERSE }, /* nvram get gpio2=wps_status_led */
-		},
-	},
-	[E1000V21] = {
-		.name		= "Linksys E1000 V2.1",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 10 }, /* nvram get reset_gpio=10 */
-			{ .name = "wps",	.gpio = 1 << 9 }, /* nvram get gpio9=wps_button */
-		},
-		.leds		= {
-			{ .name = "power",      .gpio = 1 << 6, .polarity = REVERSE },
-			{ .name = "wlan",       .gpio = 1 << 5, .polarity = NORMAL },
-			{ .name = "ses_blue",	.gpio = 1 << 8, .polarity = NORMAL }, /* nvram get gpio8=wps_led */
-			{ .name = "ses_orange",	.gpio = 1 << 7, .polarity = NORMAL }, /* nvram get gpio7=wps_status_led */
-		},
-	},
-	[E2000V1] = {
-		.name		= "Linksys E2000 V1",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 8 },
-			{ .name = "ses",	.gpio = 1 << 5 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 2, .polarity = NORMAL },
-			{ .name = "ses_amber",	.gpio = 1 << 4, .polarity = REVERSE },
-			{ .name = "ses_blue",	.gpio = 1 << 3, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 1, .polarity = NORMAL },
-		},
-	},
-	[E3000V1] = {
-		.name		= "Linksys E3000 V1",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "ses",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 5,	.polarity = NORMAL },	// Power LED
-			{ .name = "usb",	.gpio = 1 << 7,	.polarity = NORMAL },	// USB LED
-			{ .name = "ses_amber",	.gpio = 1 << 0,	.polarity = REVERSE },	// WiFi protected setup LED amber
-			{ .name = "ses_blue",	.gpio = 1 << 3,	.polarity = REVERSE },	// WiFi protected setup LED blue
-			{ .name = "wlan",	.gpio = 1 << 1,	.polarity = NORMAL },	// Wireless LED
-		},
-	},
-	[E3200V1] = {
-		.name		= "Linksys E3200 V1",
-		.buttons	= {
-			/* { .name = "switch",	.gpio = 1 << 4 },*/	/* nvram get gpio4=robo_reset */
-			{ .name = "reset",	.gpio = 1 << 5 },	/* nvram get reset_gpio=5 */
-			{ .name = "wps",	.gpio = 1 << 8 },	/* nvram get gpio8=wps_button */
-			/* { .name = "wombo",	.gpio = 1 << 23 },*/	/* nvram get gpio23=wombo_reset - wireless on motherboard */
-		},
-		.leds	= {
-			{ .name = "power",	.gpio = 1 << 3, .polarity = REVERSE },	/* Power LED */
-		},
-	},
-	[E4200V1] = {
-		.name		= "Linksys E4200 V1",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "wps",	.gpio = 1 << 4 },
-		},
-		.leds	= {
-			{ .name = "power",	.gpio = 1 << 5, .polarity = REVERSE },
-		},
 	},
 	/* Asus */
-	[WLHDD] = {
-		.name		= "ASUS WL-HDD",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
-			{ .name = "usb",	.gpio = 1 << 2, .polarity = REVERSE },
-		},
-	},
-	[WL300G] = {
-		.name		= "ASUS WL-300g",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
-		},
-	},
-	[WL320GE] = {
-		.name		= "ASUS WL-320gE/WL-320gP",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-		},
-		.leds		= {
-			{ .name = "wlan",	.gpio = 1 << 0, .polarity = REVERSE },
-			{ .name = "power",	.gpio = 1 << 2, .polarity = REVERSE },
-			{ .name = "link",	.gpio = 1 << 11, .polarity = REVERSE },
-		},
-	},
-	[WL330GE] = {
-		.name		= "ASUS WL-330gE",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 2 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
-		},
-	},
 	[WL500G] = {
 		.name		= "ASUS WL-500g",
 		.buttons	= {
@@ -597,68 +291,6 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
-		},
-	},
-	[WL500GD] = {
-		.name		= "ASUS WL-500g Deluxe",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
-		},
-	},
-	[WL500GP] = {
-		.name		= "ASUS WL-500g Premium",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 0 },
-			{ .name = "ses",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = REVERSE },
-		},
-	},
-	[WL500GPV2] = {
-		.name		= "ASUS WL-500g Premium V2",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 2 },
-			{ .name = "ses",	.gpio = 1 << 3 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 1, .polarity = REVERSE },
-		},
-	},
-	[WL500W] = {
-		.name		= "ASUS WL-500W",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "ses",	.gpio = 1 << 7 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 5, .polarity = REVERSE },
-		},
-	},
-	[WL520GC] = {
-		.name		= "ASUS WL-520GC",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 2 },
-			{ .name = "ses",	.gpio = 1 << 3 },
-		},
-		.leds		= {
-		{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 1, .polarity = REVERSE },
-		},
-	},
-	[WL520GU] = {
-		.name		= "ASUS WL-520gU",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 2 },
-			{ .name = "ses",	.gpio = 1 << 3 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 1, .polarity = REVERSE },
 		},
 	},
 	[ASUS_4702] = {
@@ -670,80 +302,7 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
 		},
 	},
-	[WL700GE] = {
-		.name		= "ASUS WL-700gE",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 7 }, // on back, hardwired, always resets device regardless OS state
-			{ .name = "ses",	.gpio = 1 << 4 }, // on back, actual name ezsetup
-			{ .name = "power",	.gpio = 1 << 0 }, // on front
-			{ .name = "copy",	.gpio = 1 << 6 }, // on front
-		},
-		.leds		= {
-#if 0
-			// GPIO that controls power led also enables/disables some essential functions
-			// - power to HDD
-			// - switch leds
-			{ .name = "power",	.gpio = 1 << 3, .polarity = NORMAL },  // actual name power
-#endif
-			{ .name = "diag",	.gpio = 1 << 1, .polarity = REVERSE }, // actual name ready
-		},
-		.platform_init = bcm4780_init,
-	},
-	[RTN12] = {
-		.name		= "ASUS RT-N12",
-		.buttons	= {
-			{ .name = "wps",	.gpio = 1 << 0 },
-			{ .name = "reset",	.gpio = 1 << 1 },
-			// this is the router/repeater/ap switch
-			{ .name = "sw1",	.gpio = 1 << 4 },
-			{ .name = "sw2",	.gpio = 1 << 5 },
-			{ .name = "sw3",	.gpio = 1 << 6 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 2, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 7, .polarity = NORMAL },
-			// gpio3 forces WAN and LAN1-4 all on
-			//{ .name = "eth",	.gpio = 1 << 3, .polarity = REVERSE },
-		},
-	},
-	[RTN16] = {
-		.name		= "ASUS RT-N16",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 8 },
-			{ .name = "ses",	.gpio = 1 << 6 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 7, .polarity = NORMAL },
-		},
-	},
-	[RTN66U] = {
-		.name		= "ASUS RT-N66U",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 9 },
-			{ .name = "wps",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 12, .polarity = REVERSE },
-			{ .name = "usb",	.gpio = 1 << 15, .polarity = REVERSE },
-		},
-	},
 	/* Buffalo */
-	[WHR_G54S] = {
-		.name		= "Buffalo WHR-G54S",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 4 },
-			{ .name = "bridge",	.gpio = 1 << 5 },
-			{ .name = "ses",	.gpio = 1 << 0 },
-		},
-		.leds		= {
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
-			{ .name = "internal",	.gpio = 1 << 3, .polarity = REVERSE },
-			{ .name = "ses",	.gpio = 1 << 6, .polarity = REVERSE },
-			{ .name = "bridge",	.gpio = 1 << 1, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 2, .polarity = REVERSE },
-		},
-	},
 	[WBR2_G54] = {
 		.name		= "Buffalo WBR2-G54",
 		/* FIXME: verify */
@@ -754,45 +313,6 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "diag",	.gpio = 1 << 1, .polarity = REVERSE },
 		},
 	},
-	[WHR_HP_G54] = {
-		.name		= "Buffalo WHR-HP-G54",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 4 },
-			{ .name = "bridge",	.gpio = 1 << 5 },
-			{ .name = "ses",	.gpio = 1 << 0 },
-		},
-		.leds		= {
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
-			{ .name = "internal",	.gpio = 1 << 3, .polarity = REVERSE },
-			{ .name = "bridge",	.gpio = 1 << 1, .polarity = REVERSE },
-			{ .name = "ses",	.gpio = 1 << 6, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 2, .polarity = REVERSE },
-		},
-	},
-	[WHR_G125] = {
-		.name		= "Buffalo WHR-G125",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 4 },
-			{ .name = "bridge",	.gpio = 1 << 5 },
-			{ .name = "ses",	.gpio = 1 << 0 },
-		},
-		.leds		= {
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
-			{ .name = "internal",	.gpio = 1 << 3, .polarity = REVERSE },
-			{ .name = "bridge",	.gpio = 1 << 1, .polarity = REVERSE },
-			{ .name = "ses",	.gpio = 1 << 6, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 2, .polarity = REVERSE },
-		},
-	},
-	[WHR2_A54G54] = {
-		.name		= "Buffalo WHR2-A54G54",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
-		},
-	},
 	[WLA2_G54L] = {
 		.name		= "Buffalo WLA2-G54L",
 		/* FIXME: verify */
@@ -801,41 +321,6 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "diag",	.gpio = 1 << 1, .polarity = REVERSE },
-		},
-	},
-	[WZR_G300N] = {
-		.name		= "Buffalo WZR-G300N",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
-			{ .name = "bridge",	.gpio = 1 << 1, .polarity = REVERSE },
-			{ .name = "ses",	.gpio = 1 << 6, .polarity = REVERSE },
-		},
-	},
-	[WZR_RS_G54] = {
-		.name		= "Buffalo WZR-RS-G54",
-		.buttons	= {
-			{ .name = "ses",	.gpio = 1 << 0 },
-			{ .name = "reset",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
-			{ .name = "ses",	.gpio = 1 << 6, .polarity = REVERSE },
-			{ .name = "vpn",	.gpio = 1 << 1, .polarity = REVERSE },
-		},
-	},
-	[WZR_RS_G54HP] = {
-		.name		= "Buffalo WZR-RS-G54HP",
-		.buttons	= {
-			{ .name = "ses",	.gpio = 1 << 0 },
-			{ .name = "reset",	.gpio = 1 << 4 },
-		},
-		.leds		= {
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
-			{ .name = "ses",	.gpio = 1 << 6, .polarity = REVERSE },
-			{ .name = "vpn",	.gpio = 1 << 1, .polarity = REVERSE },
 		},
 	},
 	[BUFFALO_UNKNOWN_4710] = {
@@ -882,16 +367,6 @@ static struct platform_t __initdata platforms[] = {
 		},
 	},
 	/* Dell */
-	[TM2300] = {
-		.name		= "Dell TrueMobile 2300",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 0 },
-		},
-		.leds		= {
-			{ .name = "wlan",	.gpio = 1 << 6, .polarity = REVERSE },
-			{ .name = "power",	.gpio = 1 << 7, .polarity = REVERSE },
-		},
-	},
 	[TM2300V2] = {
 		.name		= "Dell TrueMobile 2300 v2",
 		.buttons	= {
@@ -903,17 +378,6 @@ static struct platform_t __initdata platforms[] = {
 		},
 	},
 	/* Motorola */
-	[WE800G] = {
-		.name		= "Motorola WE800G",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 0 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 4, .polarity = NORMAL },
-			{ .name = "diag",	.gpio = 1 << 2, .polarity = REVERSE },
-			{ .name = "wlan_amber",	.gpio = 1 << 1, .polarity = NORMAL },
-		},
-	},
 	[WR850GV1] = {
 		.name		= "Motorola WR850G V1",
 		.buttons	= {
@@ -927,47 +391,7 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "wlan_green",	.gpio = 1 << 7, .polarity = REVERSE },
 		},
 	},
-	[WR850GV2V3] = {
-		.name		= "Motorola WR850G V2/V3",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 5 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "wlan",	.gpio = 1 << 0, .polarity = REVERSE },
-			{ .name = "wan",	.gpio = 1 << 6, .polarity = INPUT },
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
-		},
-	},
-	[WR850GP] = {
-		.name		= "Motorola WR850GP",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 5 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "wlan",	.gpio = 1 << 0, .polarity = REVERSE },
-			{ .name = "dmz",	.gpio = 1 << 6, .polarity = REVERSE },
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
-		},
-	},
 
-	/* Belkin */
-	[BELKIN_F7D4301] = {
-		.name		= "Belkin PlayMax F7D4301",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "wps",	.gpio = 1 << 8 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 10, .polarity = REVERSE },
-			{ .name = "warn",	.gpio = 1 << 11, .polarity = REVERSE },
-			{ .name = "wps",	.gpio = 1 << 12, .polarity = REVERSE },
-			{ .name = "wlan",	.gpio = 1 << 13, .polarity = REVERSE },
-			{ .name = "usb0",	.gpio = 1 << 14, .polarity = REVERSE },
-			{ .name = "usb1",	.gpio = 1 << 15, .polarity = REVERSE },
-		},
-	},
 	/* Netgear */
 	[WGT634U] = {
 		.name		= "Netgear WGT634U",
@@ -989,33 +413,6 @@ static struct platform_t __initdata platforms[] = {
 		},
 	},
 	/* Netgear */
-	[WNR834BV2] = {
-		.name	 	= "Netgear WNR834B V2",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-		},
-		.leds		= {
-			{ .name = "power",	.gpio = 1 << 2, .polarity = NORMAL },
-			{ .name = "diag",	.gpio = 1 << 3, .polarity = NORMAL },
-			{ .name = "connected",	.gpio = 1 << 7, .polarity = NORMAL },
-		},
-	},
-	[WNDR3400V1] = {
-		.name		= "Netgear WNDR3400 V1",
-		.buttons	= {
-			/* nvram get gpio5=robo_reset */
-			{ .name = "reset",	.gpio = 1 << 4 },
-			{ .name = "wps",	.gpio = 1 << 6 },
-			{ .name = "wlan",	.gpio = 1 << 8 },
-		},
-		.leds		= {
-			{ .name = "wlan",	.gpio = 0 << 0, .polarity = NORMAL },
-			{ .name = "connected",	.gpio = 1 << 0, .polarity = NORMAL },
-			{ .name = "power",	.gpio = 1 << 3, .polarity = NORMAL },
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = NORMAL },
-			{ .name = "usb",	.gpio = 1 << 2, .polarity = REVERSE },
-		},
-	},
 	[WNDR3700V3] = {
 		.name		= "Netgear WNDR3700 V3",
 		.buttons	= {
@@ -1062,17 +459,6 @@ static struct platform_t __initdata platforms[] = {
 		.platform_init = bcm4780_init,
 	},
 	/* D-Link */
-	[DIR130] = {
-		.name	  = "D-Link DIR-130",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 3},
-			{ .name = "reserved",	.gpio = 1 << 7},
-		},
-		.leds	   = {
-			{ .name = "diag",	.gpio = 1 << 0},
-			{ .name = "blue",	.gpio = 1 << 6},
-		},
-	},
 	[DIR320] = {
 		.name	  = "D-Link DIR-320",
 		.buttons	= {
@@ -1085,18 +471,6 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "red",	.gpio = 1 << 3, .polarity = REVERSE },
 			{ .name = "blue",	.gpio = 1 << 4, .polarity = REVERSE },
 			{ .name = "usb",	.gpio = 1 << 5, .polarity = NORMAL },
-		},
-	},
-	[DIR330] = {
-		.name	  = "D-Link DIR-330",
-		.buttons	= {
-			{ .name = "reset",	.gpio = 1 << 3},
-			{ .name = "reserved",	.gpio = 1 << 7},
-		},
-		.leds	   = {
-			{ .name = "diag",	.gpio = 1 << 0},
-			{ .name = "usb",	.gpio = 1 << 4},
-			{ .name = "blue",	.gpio = 1 << 6},
 		},
 	},
 	[DWL3150] = {
@@ -1179,15 +553,6 @@ static struct platform_t __initdata platforms[] = {
 		},
 	},
 	/* Huawei */
-	[HUAWEI_E970] = {
-		.name	 	= "Huawei E970",
-		.buttons 	= {
-			{ .name = "reset",	.gpio = 1 << 6 },
-		},
-		.leds		= {
-			{ .name = "wlan",	.gpio = 1 << 0, .polarity = NORMAL },
-		},
-	},
 };
 
 static struct platform_t __init *platform_detect_legacy(void)
@@ -1252,8 +617,6 @@ static struct platform_t __init *platform_detect_legacy(void)
 		if (!strcmp(boardtype,"0x0472") && !strcmp(getvar("cardbus"), "1")) { /* Netgear WNR834B  V1 and V2*/
 			if (!strcmp(boardnum, "08") || !strcmp(boardnum, "8"))
 				return &platforms[WNR834BV1];
-			if (!strcmp(boardnum, "01") || !strcmp(boardnum, "1"))
-				return &platforms[WNR834BV2];
 		}
 
 	} else { /* PMON based - old stuff */
@@ -1300,13 +663,6 @@ static struct platform_t __init *platform_detect_legacy(void)
 			return &platforms[BUFFALO_UNKNOWN_4710];
 	}
 
-	if (startswith(getvar("CFEver"), "MotoWRv2") ||
-		startswith(getvar("CFEver"), "MotoWRv3") ||
-		!strcmp(getvar("MOTO_BOARD_TYPE"), "WR_FEM1")) {
-
-		return &platforms[WR850GV2V3];
-	}
-
 	if (!strcmp(boardnum, "44") && !strcmp(getvar("boardflags"),"0x0388")) {  /* Trendware TEW-411BRP+ */
 		return &platforms[TEW411BRPP];
 	}
@@ -1333,108 +689,14 @@ static struct platform_t __init *platform_detect(void)
 
 	board = bcm47xx_board_get();
 	board_name = bcm47xx_board_get_name();
-	if (board != BCM47XX_BOARD_UNKNOWN && board != BCM47XX_BOARD_NO)
-		printk(MODULE_NAME ": kernel found a \"%s\"\n", board_name);
 
 	switch(board) {
-	case BCM47XX_BOARD_ASUS_RTN12:
-		return &platforms[RTN12];
-	case BCM47XX_BOARD_ASUS_RTN16:
-		return &platforms[RTN16];
-	case BCM47XX_BOARD_ASUS_RTN66U:
-		return &platforms[RTN66U];
-	case BCM47XX_BOARD_ASUS_WL300G:
-		return &platforms[WL300G];
-	case BCM47XX_BOARD_ASUS_WL320GE:
-		return &platforms[WL320GE];
-	case BCM47XX_BOARD_ASUS_WL330GE:
-		return &platforms[WL330GE];
-	case BCM47XX_BOARD_ASUS_WL500GD:
-		return &platforms[WL500GD];
-	case BCM47XX_BOARD_ASUS_WL500GPV1:
-		return &platforms[WL500GP];
-	case BCM47XX_BOARD_ASUS_WL500GPV2:
-		return &platforms[WL500GPV2];
-	case BCM47XX_BOARD_ASUS_WL500W:
-		return &platforms[WL500W];
-	case BCM47XX_BOARD_ASUS_WL520GC:
-		return &platforms[WL520GC];
-	case BCM47XX_BOARD_ASUS_WL520GU:
-		return &platforms[WL520GU];
-	case BCM47XX_BOARD_ASUS_WL700GE:
-		return &platforms[WL700GE];
-	case BCM47XX_BOARD_ASUS_WLHDD:
-		return &platforms[WLHDD];
-	case BCM47XX_BOARD_BELKIN_F7D4301:
-		return &platforms[BELKIN_F7D4301];
 	case BCM47XX_BOARD_BUFFALO_WBR2_G54:
 		return &platforms[WBR2_G54];
-	case BCM47XX_BOARD_BUFFALO_WHR2_A54G54:
-		return &platforms[WHR2_A54G54];
-	case BCM47XX_BOARD_BUFFALO_WHR_G125:
-		return &platforms[WHR_G125];
-	case BCM47XX_BOARD_BUFFALO_WHR_G54S:
-		return &platforms[WHR_G54S];
-	case BCM47XX_BOARD_BUFFALO_WHR_HP_G54:
-		return &platforms[WHR_HP_G54];
 	case BCM47XX_BOARD_BUFFALO_WLA2_G54L:
 		return &platforms[WLA2_G54L];
-	case BCM47XX_BOARD_BUFFALO_WZR_G300N:
-		return &platforms[WZR_G300N];
-	case BCM47XX_BOARD_BUFFALO_WZR_RS_G54:
-		return &platforms[WZR_RS_G54];
-	case BCM47XX_BOARD_BUFFALO_WZR_RS_G54HP:
-		return &platforms[WZR_RS_G54HP];
-	case BCM47XX_BOARD_DELL_TM2300:
-		return &platforms[TM2300];
-	case BCM47XX_BOARD_DLINK_DIR130:
-		return &platforms[DIR130];
-	case BCM47XX_BOARD_DLINK_DIR330:
-		return &platforms[DIR330];
-	case BCM47XX_BOARD_HUAWEI_E970:
-		return &platforms[HUAWEI_E970];
-	case BCM47XX_BOARD_LINKSYS_E1000V1:
-		return &platforms[E1000V1];
-	case BCM47XX_BOARD_LINKSYS_E1000V21:
-		return &platforms[E1000V21];
-	case BCM47XX_BOARD_LINKSYS_E2000V1:
-		return &platforms[E2000V1];
-	case BCM47XX_BOARD_LINKSYS_E3000V1:
-		return &platforms[E3000V1];
-	case BCM47XX_BOARD_LINKSYS_E3200V1:
-		return &platforms[E3200V1];
-	case BCM47XX_BOARD_LINKSYS_E4200V1:
-		return &platforms[E4200V1];
-	case BCM47XX_BOARD_LINKSYS_WRT150NV1:
-		return &platforms[WRT150NV1];
-	case BCM47XX_BOARD_LINKSYS_WRT150NV11:
-		return &platforms[WRT150NV11];
-	case BCM47XX_BOARD_LINKSYS_WRT160NV1:
-		return &platforms[WRT160NV1];
-	case BCM47XX_BOARD_LINKSYS_WRT160NV3:
-		return &platforms[WRT160NV3];
-	case BCM47XX_BOARD_LINKSYS_WRT300NV11:
-		return &platforms[WRT300NV11];
-	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
-		return &platforms[WRT310NV1];
 	case BCM47XX_BOARD_LINKSYS_WRT54GSV1:
 		return &platforms[WRT54G];
-	case BCM47XX_BOARD_LINKSYS_WRT54G3GV2:
-		return &platforms[WRT54G3GV2_VF];
-	case BCM47XX_BOARD_LINKSYS_WRT610NV1:
-		return &platforms[WRT610N];
-	case BCM47XX_BOARD_LINKSYS_WRT610NV2:
-		return &platforms[WRT610NV2];
-	case BCM47XX_BOARD_LINKSYS_WRTSL54GS:
-		return &platforms[WRTSL54GS];
-	case BCM47XX_BOARD_MOTOROLA_WE800G:
-		return &platforms[WE800G];
-	case BCM47XX_BOARD_MOTOROLA_WR850GP:
-		return &platforms[WR850GP];
-	case BCM47XX_BOARD_MOTOROLA_WR850GV2V3:
-		return &platforms[WR850GV2V3];
-	case BCM47XX_BOARD_NETGEAR_WNDR3400V1:
-		return &platforms[WNDR3400V1];
 	case BCM47XX_BOARD_NETGEAR_WNDR3700V3:
 		return &platforms[WNDR3700V3];
 	case BCM47XX_BOARD_UNKNOWN:
@@ -1443,9 +705,8 @@ static struct platform_t __init *platform_detect(void)
 		printk(MODULE_NAME ": please open a ticket at https://dev.openwrt.org and attach the complete nvram\n");
 		return platform_detect_legacy();
 	default:
-		printk(MODULE_NAME ": board was detected as \"%s\", but not gpio configuration available\n", board_name);
-		printk(MODULE_NAME ": now trying legacy detect\n");
-		return platform_detect_legacy();
+		printk(MODULE_NAME ": board was detected as \"%s\", and kernel should handle it\n", board_name);
+		return NULL;
 	}
 }
 
