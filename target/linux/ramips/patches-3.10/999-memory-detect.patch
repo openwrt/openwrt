@@ -1,0 +1,34 @@
+Index: linux-3.10.26/arch/mips/ralink/of.c
+===================================================================
+--- linux-3.10.26.orig/arch/mips/ralink/of.c	2014-01-12 11:49:40.292069849 +0100
++++ linux-3.10.26/arch/mips/ralink/of.c	2014-01-12 12:38:01.236138974 +0100
+@@ -80,6 +80,16 @@
+ }
+ 
+ extern struct boot_param_header __image_dtb;
++static int memory_dtb;
++
++static int __init early_init_dt_find_memory(unsigned long node, const char *uname,
++				     int depth, void *data)
++{
++	if (depth == 1 && !strcmp(uname, "memory@0"))
++		memory_dtb = 1;
++
++	return 0;
++}
+ 
+ void __init plat_mem_setup(void)
+ {
+@@ -90,8 +100,10 @@
+ 	 * parsed resulting in our memory appearing
+ 	 */
+ 	__dt_setup_arch(&__image_dtb);
+-
+-	if (soc_info.mem_size)
++	of_scan_flat_dt(early_init_dt_find_memory, NULL);
++	if (memory_dtb)
++		of_scan_flat_dt(early_init_dt_scan_memory, NULL);
++	else if (soc_info.mem_size)
+ 		add_memory_region(soc_info.mem_base, soc_info.mem_size * SZ_1M,
+ 				  BOOT_MEM_RAM);
+ 	else
