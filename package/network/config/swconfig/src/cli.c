@@ -270,7 +270,7 @@ int main(int argc, char **argv)
 
 	dev = swlib_connect(cdev);
 	if (!dev) {
-		fprintf(stderr, "Failed to connect to the switch\n");
+		fprintf(stderr, "Failed to connect to the switch. Use the \"list\" command to see which switches are available.\n");
 		return 1;
 	}
 
