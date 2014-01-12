@@ -241,7 +241,7 @@ mac80211_setup_supplicant() {
 }
 
 mac80211_setup_adhoc() {
-	json_get_vars bssid ssid basic_rate key
+	json_get_vars bssid ssid basic_rate key mcast_rate
 
 	keyspec=
 	[ "$auth_type" == "wep" ] && {
