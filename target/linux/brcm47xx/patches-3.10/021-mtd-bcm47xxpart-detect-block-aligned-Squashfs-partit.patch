@@ -1,4 +1,10 @@
-mtd: bcm47xxpart: detect block aligned Squashfs partition
+From 020c6bcfbeabee72c18d862769d72cf9241b9004 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 21 Oct 2013 22:34:37 +0200
+Subject: [PATCH] mtd: bcm47xxpart: detect block aligned Squashfs partition
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 Most of the bcm47xx devices use TRX format for storing kernel and some
 partition like Squashfs or JFFS2. This is pretty flexible solution, CFE
@@ -13,10 +19,14 @@ This patch allows Linux find a rootfs partition after installing custom
 image with a CFE bootloader.
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/bcm47xxpart.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -33,6 +33,7 @@
+@@ -32,6 +32,7 @@
  #define ML_MAGIC1			0x39685a42
  #define ML_MAGIC2			0x26594131
  #define TRX_MAGIC			0x30524448
@@ -24,7 +34,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  struct trx_header {
  	uint32_t magic;
-@@ -170,6 +171,13 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -174,6 +175,13 @@ static int bcm47xxpart_parse(struct mtd_
  			offset = rounddown(offset + trx->length, blocksize);
  			continue;
  		}
