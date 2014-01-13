@@ -144,7 +144,7 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
 +
 +	switch (bcm63xx_get_cpu_id()) {
 +	case BCM6328_CPU_ID:
-+		val = BCM_PCIE_MEM_BASE_PA;
++		val = BCM_PCIE_MEM_BASE_PA_6328;
 +		break;
 +	case BCM6348_CPU_ID:
 +	case BCM6358_CPU_ID:
