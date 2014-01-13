@@ -1,19 +1,52 @@
-From 12594762fcbec024cb424c9b77efb28402651667 Mon Sep 17 00:00:00 2001
+From 7d790bd6cab314462a29ba194e243b8b1d529524 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Thu, 27 Jun 2013 21:33:56 +0200
-Subject: [PATCH 04/10] MIPS: bmips: change compile time checks to runtime
+Subject: [PATCH V2 03/13] MIPS: BMIPS: change compile time checks to runtime
  checks
 
 Allow building for all bmips cpus at the same time by changing ifdefs
 to checks for the cpu type, or adding appropriate checks to the
 assembly.
 
+Since BMIPS43XX and BMIPS5000 require different IPI implementations,
+split the SMP ops into one for each, so the runtime overhead is only
+at registration time for them.
+
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- arch/mips/kernel/bmips_vec.S |   55 +++++++---
- arch/mips/kernel/smp-bmips.c |  241 ++++++++++++++++++++++--------------------
- 2 files changed, 172 insertions(+), 124 deletions(-)
+V1 -> V2:
+  * use switch (cpu_type()) instead of if () else if () ...
+  * split the smp ops into bmips43xx and bmips5000
 
+ arch/mips/bcm63xx/prom.c      |   2 +-
+ arch/mips/include/asm/bmips.h |   3 +-
+ arch/mips/kernel/bmips_vec.S  |  55 ++++++--
+ arch/mips/kernel/smp-bmips.c  | 312 +++++++++++++++++++++++++-----------------
+ 4 files changed, 235 insertions(+), 137 deletions(-)
+
+--- a/arch/mips/bcm63xx/prom.c
++++ b/arch/mips/bcm63xx/prom.c
+@@ -61,7 +61,7 @@ void __init prom_init(void)
+ 
+ 	if (IS_ENABLED(CONFIG_CPU_BMIPS4350) && IS_ENABLED(CONFIG_SMP)) {
+ 		/* set up SMP */
+-		register_smp_ops(&bmips_smp_ops);
++		register_smp_ops(&bmips43xx_smp_ops);
+ 
+ 		/*
+ 		 * BCM6328 might not have its second CPU enabled, while BCM3368
+--- a/arch/mips/include/asm/bmips.h
++++ b/arch/mips/include/asm/bmips.h
+@@ -47,7 +47,8 @@
+ #include <linux/cpumask.h>
+ #include <asm/r4kcache.h>
+ 
+-extern struct plat_smp_ops bmips_smp_ops;
++extern struct plat_smp_ops bmips43xx_smp_ops;
++extern struct plat_smp_ops bmips5000_smp_ops;
+ extern char bmips_reset_nmi_vec;
+ extern char bmips_reset_nmi_vec_end;
+ extern char bmips_smp_movevec;
 --- a/arch/mips/kernel/bmips_vec.S
 +++ b/arch/mips/kernel/bmips_vec.S
 @@ -13,6 +13,7 @@
@@ -24,7 +57,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #include <asm/regdef.h>
  #include <asm/mipsregs.h>
  #include <asm/stackframe.h>
-@@ -89,12 +90,18 @@ NESTED(bmips_reset_nmi_vec, PT_SIZE, sp)
+@@ -93,12 +94,18 @@ NESTED(bmips_reset_nmi_vec, PT_SIZE, sp)
  	beqz	k0, bmips_smp_entry
  
  #if defined(CONFIG_CPU_BMIPS5000)
@@ -44,7 +77,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #endif /* CONFIG_SMP */
  
  	/* nope, it's just a regular NMI */
-@@ -137,7 +144,12 @@ bmips_smp_entry:
+@@ -141,7 +148,12 @@ bmips_smp_entry:
  	xori	k0, 0x04
  	mtc0	k0, CP0_CONFIG
  
@@ -57,7 +90,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	/* initialize CPU1's local I-cache */
  	li	k0, 0x80000000
  	li	k1, 0x80010000
-@@ -148,14 +160,21 @@ bmips_smp_entry:
+@@ -152,14 +164,21 @@ bmips_smp_entry:
  1:	cache	Index_Store_Tag_I, 0(k0)
  	addiu	k0, 16
  	bne	k0, k1, 1b
@@ -82,7 +115,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	/* jump back to kseg0 in case we need to remap the kseg1 area */
  	la	k0, 1f
  	jr	k0
-@@ -221,8 +240,18 @@ END(bmips_smp_int_vec)
+@@ -225,8 +244,18 @@ END(bmips_smp_int_vec)
  LEAF(bmips_enable_xks01)
  
  #if defined(CONFIG_XKS01)
@@ -102,7 +135,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	mfc0	t0, $22, 3
  	li	t1, 0x1ff0
  	li	t2, (1 << 12) | (1 << 9)
-@@ -231,7 +260,13 @@ LEAF(bmips_enable_xks01)
+@@ -235,7 +264,13 @@ LEAF(bmips_enable_xks01)
  	or	t0, t2
  	mtc0	t0, $22, 3
  	BARRIER
@@ -117,7 +150,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	mfc0	t0, $22, 5
  	li	t1, 0x01ff
  	li	t2, (1 << 8) | (1 << 5)
-@@ -240,12 +275,8 @@ LEAF(bmips_enable_xks01)
+@@ -244,12 +279,8 @@ LEAF(bmips_enable_xks01)
  	or	t0, t2
  	mtc0	t0, $22, 5
  	BARRIER
@@ -134,24 +167,27 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	jr	ra
 --- a/arch/mips/kernel/smp-bmips.c
 +++ b/arch/mips/kernel/smp-bmips.c
-@@ -49,8 +49,11 @@ cpumask_t bmips_booted_mask;
+@@ -49,8 +49,10 @@ cpumask_t bmips_booted_mask;
  unsigned long bmips_smp_boot_sp;
  unsigned long bmips_smp_boot_gp;
  
+-static void bmips_send_ipi_single(int cpu, unsigned int action);
+-static irqreturn_t bmips_ipi_interrupt(int irq, void *dev_id);
 +static void bmips43xx_send_ipi_single(int cpu, unsigned int action);
 +static void bmips5000_send_ipi_single(int cpu, unsigned int action);
- static void bmips_send_ipi_single(int cpu, unsigned int action);
--static irqreturn_t bmips_ipi_interrupt(int irq, void *dev_id);
 +static irqreturn_t bmips43xx_ipi_interrupt(int irq, void *dev_id);
 +static irqreturn_t bmips5000_ipi_interrupt(int irq, void *dev_id);
  
  /* SW interrupts 0,1 are used for interprocessor signaling */
  #define IPI0_IRQ			(MIPS_CPU_IRQ_BASE + 0)
-@@ -65,48 +68,49 @@ static void __init bmips_smp_setup(void)
+@@ -64,49 +66,58 @@ static irqreturn_t bmips_ipi_interrupt(i
+ static void __init bmips_smp_setup(void)
  {
  	int i, cpu = 1, boot_cpu = 0;
- 
+-
 -#if defined(CONFIG_CPU_BMIPS4350) || defined(CONFIG_CPU_BMIPS4380)
+ 	int cpu_hw_intr;
+ 
 -	/* arbitration priority */
 -	clear_c0_brcm_cmt_ctrl(0x30);
 -
@@ -165,13 +201,28 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -	 * MIPS interrupts 0,1 (SW INT 0,1) cross over to the other thread
 -	 * MIPS interrupt 2 (HW INT 0) is the CPU0 L1 controller output
 -	 * MIPS interrupt 3 (HW INT 1) is the CPU1 L1 controller output
--	 *
--	 * If booting from TP1, leave the existing CMT interrupt routing
--	 * such that TP0 responds to SW1 and TP1 responds to SW0.
 -	 */
 -	if (boot_cpu == 0)
--		change_c0_brcm_cmt_intr(0xf8018000,
-+	if (cpu_is_bmips4350() || cpu_is_bmips4380()) {
+-		cpu_hw_intr = 0x02;
+-	else
+-		cpu_hw_intr = 0x1d;
+-
+-	change_c0_brcm_cmt_intr(0xf8018000, (cpu_hw_intr << 27) | (0x03 << 15));
+-
+-	/* single core, 2 threads (2 pipelines) */
+-	max_cpus = 2;
+-#elif defined(CONFIG_CPU_BMIPS5000)
+-	/* enable raceless SW interrupts */
+-	set_c0_brcm_config(0x03 << 22);
+-
+-	/* route HW interrupt 0 to CPU0, HW interrupt 1 to CPU1 */
+-	change_c0_brcm_mode(0x1f << 27, 0x02 << 27);
+-
+-	/* N cores, 2 threads per core */
+-	max_cpus = (((read_c0_brcm_config() >> 6) & 0x03) + 1) << 1;
++	switch (current_cpu_type()) {
++	case CPU_BMIPS4350:
++	case CPU_BMIPS4380:
 +		/* arbitration priority */
 +		clear_c0_brcm_cmt_ctrl(0x30);
 +
@@ -186,37 +237,20 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		 * thread
 +		 * MIPS interrupt 2 (HW INT 0) is the CPU0 L1 controller output
 +		 * MIPS interrupt 3 (HW INT 1) is the CPU1 L1 controller output
-+		 *
-+		 * If booting from TP1, leave the existing CMT interrupt routing
-+		 * such that TP0 responds to SW1 and TP1 responds to SW0.
 +		 */
 +		if (boot_cpu == 0)
-+			change_c0_brcm_cmt_intr(0xf8018000,
- 					(0x02 << 27) | (0x03 << 15));
--	else
--		change_c0_brcm_cmt_intr(0xf8018000, (0x1d << 27));
--
--	/* single core, 2 threads (2 pipelines) */
--	max_cpus = 2;
--#elif defined(CONFIG_CPU_BMIPS5000)
--	/* enable raceless SW interrupts */
--	set_c0_brcm_config(0x03 << 22);
--
--	/* route HW interrupt 0 to CPU0, HW interrupt 1 to CPU1 */
--	change_c0_brcm_mode(0x1f << 27, 0x02 << 27);
++			cpu_hw_intr = 0x02;
 +		else
-+			change_c0_brcm_cmt_intr(0xf8018000, (0x1d << 27));
- 
--	/* N cores, 2 threads per core */
--	max_cpus = (((read_c0_brcm_config() >> 6) & 0x03) + 1) << 1;
--
--	/* clear any pending SW interrupts */
--	for (i = 0; i < max_cpus; i++) {
--		write_c0_brcm_action(ACTION_CLR_IPI(i, 0));
--		write_c0_brcm_action(ACTION_CLR_IPI(i, 1));
++			cpu_hw_intr = 0x1d;
++
++		change_c0_brcm_cmt_intr(0xf8018000,
++					(cpu_hw_intr << 27) | (0x03 << 15));
++
 +		/* single core, 2 threads (2 pipelines) */
 +		max_cpus = 2;
-+	} else if (cpu_is_bmips5000()) {
++
++		break;
++	case CPU_BMIPS5000:
 +		/* enable raceless SW interrupts */
 +		set_c0_brcm_config(0x03 << 22);
 +
@@ -231,38 +265,61 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +			write_c0_brcm_action(ACTION_CLR_IPI(i, 0));
 +			write_c0_brcm_action(ACTION_CLR_IPI(i, 1));
 +		}
+ 
+-	/* clear any pending SW interrupts */
+-	for (i = 0; i < max_cpus; i++) {
+-		write_c0_brcm_action(ACTION_CLR_IPI(i, 0));
+-		write_c0_brcm_action(ACTION_CLR_IPI(i, 1));
++		break;
++	default:
++		max_cpus = 1;
  	}
 -#endif
  
  	if (!bmips_smp_enabled)
  		max_cpus = 1;
-@@ -134,6 +138,15 @@ static void __init bmips_smp_setup(void)
+@@ -134,6 +145,20 @@ static void __init bmips_smp_setup(void)
   */
  static void bmips_prepare_cpus(unsigned int max_cpus)
  {
 +	irqreturn_t (*bmips_ipi_interrupt)(int irq, void *dev_id);
 +
-+	if (cpu_is_bmips4350() || cpu_is_bmips4380())
++	switch (current_cpu_type()) {
++	case CPU_BMIPS4350:
++	case CPU_BMIPS4380:
 +		bmips_ipi_interrupt = bmips43xx_ipi_interrupt;
-+	else if (cpu_is_bmips5000())
++		break;
++	case CPU_BMIPS5000:
 +		bmips_ipi_interrupt = bmips5000_ipi_interrupt;
-+	else
++		break;
++	default:
 +		return;
++	}
 +
  	if (request_irq(IPI0_IRQ, bmips_ipi_interrupt, IRQF_PERCPU,
  			"smp_ipi0", NULL))
  		panic("Can't request IPI0 interrupt\n");
-@@ -168,26 +181,26 @@ static void bmips_boot_secondary(int cpu
+@@ -168,26 +193,39 @@ static void bmips_boot_secondary(int cpu
  
  	pr_info("SMP: Booting CPU%d...\n", cpu);
  
 -	if (cpumask_test_cpu(cpu, &bmips_booted_mask))
+-		bmips_send_ipi_single(cpu, 0);
 +	if (cpumask_test_cpu(cpu, &bmips_booted_mask)) {
- 		bmips_send_ipi_single(cpu, 0);
--	else {
++		switch (current_cpu_type()) {
++		case CPU_BMIPS4350:
++		case CPU_BMIPS4380:
++			bmips43xx_send_ipi_single(cpu, 0);
++			break;
++		case CPU_BMIPS5000:
++			bmips5000_send_ipi_single(cpu, 0);
++			break;
++		}
++	}
+ 	else {
 -#if defined(CONFIG_CPU_BMIPS4350) || defined(CONFIG_CPU_BMIPS4380)
 -		/* Reset slave TP1 if booting from TP0 */
--		if (cpu_logical_map(cpu) == 0)
+-		if (cpu_logical_map(cpu) == 1)
 -			set_c0_brcm_cmt_ctrl(0x01);
 -#elif defined(CONFIG_CPU_BMIPS5000)
 -		if (cpu & 0x01)
@@ -275,12 +332,14 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -			bmips_write_zscm_reg(0x210, 0xc0000000);
 -			udelay(10);
 -			bmips_write_zscm_reg(0x210, 0x00);
-+	} else {
-+		if (cpu_is_bmips4350() || cpu_is_bmips4380()) {
++		switch (current_cpu_type()) {
++		case CPU_BMIPS4350:
++		case CPU_BMIPS4380:
 +			/* Reset slave TP1 if booting from TP0 */
-+			if (cpu_logical_map(cpu) == 0)
++			if (cpu_logical_map(cpu) == 1)
 +				set_c0_brcm_cmt_ctrl(0x01);
-+		} else if (cpu_is_bmips5000()) {
++			break;
++		case CPU_BMIPS5000:
 +			if (cpu & 0x01)
 +				write_c0_brcm_action(ACTION_BOOT_THREAD(cpu));
 +			else {
@@ -292,47 +351,61 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +				udelay(10);
 +				bmips_write_zscm_reg(0x210, 0x00);
 +			}
++			break;
  		}
 -#endif
  		cpumask_set_cpu(cpu, &bmips_booted_mask);
  	}
  }
-@@ -199,20 +212,21 @@ static void bmips_init_secondary(void)
+@@ -199,26 +237,32 @@ static void bmips_init_secondary(void)
  {
  	/* move NMI vector to kseg0, in case XKS01 is enabled */
  
 -#if defined(CONFIG_CPU_BMIPS4350) || defined(CONFIG_CPU_BMIPS4380)
 -	void __iomem *cbr = BMIPS_GET_CBR();
--	unsigned long old_vec;
++	void __iomem *cbr;
+ 	unsigned long old_vec;
+ 	unsigned long relo_vector;
+ 	int boot_cpu;
+ 
+-	boot_cpu = !!(read_c0_brcm_cmt_local() & (1 << 31));
+-	relo_vector = boot_cpu ? BMIPS_RELO_VECTOR_CONTROL_0 :
+-			  BMIPS_RELO_VECTOR_CONTROL_1;
 -
--	old_vec = __raw_readl(cbr + BMIPS_RELO_VECTOR_CONTROL_1);
--	__raw_writel(old_vec & ~0x20000000, cbr + BMIPS_RELO_VECTOR_CONTROL_1);
+-	old_vec = __raw_readl(cbr + relo_vector);
+-	__raw_writel(old_vec & ~0x20000000, cbr + relo_vector);
 -
 -	clear_c0_cause(smp_processor_id() ? C_SW1 : C_SW0);
 -#elif defined(CONFIG_CPU_BMIPS5000)
 -	write_c0_brcm_bootvec(read_c0_brcm_bootvec() &
 -		(smp_processor_id() & 0x01 ? ~0x20000000 : ~0x2000));
-+	if (cpu_is_bmips4350() || cpu_is_bmips4380()) {
-+		void __iomem *cbr = BMIPS_GET_CBR();
-+		unsigned long old_vec;
++	switch (current_cpu_type()) {
++	case CPU_BMIPS4350:
++	case CPU_BMIPS4380:
++		cbr = BMIPS_GET_CBR();
 +
-+		old_vec = __raw_readl(cbr + BMIPS_RELO_VECTOR_CONTROL_1);
-+		__raw_writel(old_vec & ~0x20000000,
-+			cbr + BMIPS_RELO_VECTOR_CONTROL_1);
++		boot_cpu = !!(read_c0_brcm_cmt_local() & (1 << 31));
++		relo_vector = boot_cpu ? BMIPS_RELO_VECTOR_CONTROL_0 :
++				  BMIPS_RELO_VECTOR_CONTROL_1;
++
++		old_vec = __raw_readl(cbr + relo_vector);
++		__raw_writel(old_vec & ~0x20000000, cbr + relo_vector);
 +
 +		clear_c0_cause(smp_processor_id() ? C_SW1 : C_SW0);
-+	} else if (cpu_is_bmips5000()) {
++		break;
++	case CPU_BMIPS5000:
 +		write_c0_brcm_bootvec(read_c0_brcm_bootvec() &
 +			(smp_processor_id() & 0x01 ? ~0x20000000 : ~0x2000));
  
 -	write_c0_brcm_action(ACTION_CLR_IPI(smp_processor_id(), 0));
 -#endif
 +		write_c0_brcm_action(ACTION_CLR_IPI(smp_processor_id(), 0));
++		break;
 +	}
  }
  
  /*
-@@ -237,8 +251,6 @@ static void bmips_cpus_done(void)
+@@ -243,8 +287,6 @@ static void bmips_cpus_done(void)
  {
  }
  
@@ -341,7 +414,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  /*
   * BMIPS5000 raceless IPIs
   *
-@@ -247,12 +259,12 @@ static void bmips_cpus_done(void)
+@@ -253,12 +295,12 @@ static void bmips_cpus_done(void)
   * IPI1 is used for SMP_CALL_FUNCTION
   */
  
@@ -356,16 +429,23 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  {
  	int action = irq - IPI0_IRQ;
  
-@@ -266,8 +278,6 @@ static irqreturn_t bmips_ipi_interrupt(i
+@@ -272,7 +314,14 @@ static irqreturn_t bmips_ipi_interrupt(i
  	return IRQ_HANDLED;
  }
  
 -#else
--
++static void bmips5000_send_ipi_mask(const struct cpumask *mask,
++	unsigned int action)
++{
++	unsigned int i;
++
++	for_each_cpu(i, mask)
++		bmips5000_send_ipi_single(i, action);
++}
+ 
  /*
   * BMIPS43xx racey IPIs
-  *
-@@ -281,7 +291,7 @@ static irqreturn_t bmips_ipi_interrupt(i
+@@ -287,7 +336,7 @@ static irqreturn_t bmips_ipi_interrupt(i
  static DEFINE_SPINLOCK(ipi_lock);
  static DEFINE_PER_CPU(int, ipi_action_mask);
  
@@ -374,7 +454,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  {
  	unsigned long flags;
  
-@@ -292,7 +302,7 @@ static void bmips_send_ipi_single(int cp
+@@ -298,7 +347,7 @@ static void bmips_send_ipi_single(int cp
  	spin_unlock_irqrestore(&ipi_lock, flags);
  }
  
@@ -383,22 +463,59 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  {
  	unsigned long flags;
  	int action, cpu = irq - IPI0_IRQ;
-@@ -311,7 +321,13 @@ static irqreturn_t bmips_ipi_interrupt(i
+@@ -317,15 +366,13 @@ static irqreturn_t bmips_ipi_interrupt(i
  	return IRQ_HANDLED;
  }
  
 -#endif /* BMIPS type */
-+static void bmips_send_ipi_single(int cpu, unsigned int action)
-+{
-+	if (cpu_is_bmips4350() || cpu_is_bmips4380())
-+		bmips43xx_send_ipi_single(cpu, action);
-+	else if (cpu_is_bmips5000())
-+		bmips5000_send_ipi_single(cpu, action);
-+}
- 
- static void bmips_send_ipi_mask(const struct cpumask *mask,
+-
+-static void bmips_send_ipi_mask(const struct cpumask *mask,
++static void bmips43xx_send_ipi_mask(const struct cpumask *mask,
  	unsigned int action)
-@@ -421,43 +437,44 @@ void __cpuinit bmips_ebase_setup(void)
+ {
+ 	unsigned int i;
+ 
+ 	for_each_cpu(i, mask)
+-		bmips_send_ipi_single(i, action);
++		bmips43xx_send_ipi_single(i, action);
+ }
+ 
+ #ifdef CONFIG_HOTPLUG_CPU
+@@ -381,15 +428,30 @@ void __ref play_dead(void)
+ 
+ #endif /* CONFIG_HOTPLUG_CPU */
+ 
+-struct plat_smp_ops bmips_smp_ops = {
++struct plat_smp_ops bmips43xx_smp_ops = {
++	.smp_setup		= bmips_smp_setup,
++	.prepare_cpus		= bmips_prepare_cpus,
++	.boot_secondary		= bmips_boot_secondary,
++	.smp_finish		= bmips_smp_finish,
++	.init_secondary		= bmips_init_secondary,
++	.cpus_done		= bmips_cpus_done,
++	.send_ipi_single	= bmips43xx_send_ipi_single,
++	.send_ipi_mask		= bmips43xx_send_ipi_mask,
++#ifdef CONFIG_HOTPLUG_CPU
++	.cpu_disable		= bmips_cpu_disable,
++	.cpu_die		= bmips_cpu_die,
++#endif
++};
++
++struct plat_smp_ops bmips5000_smp_ops = {
+ 	.smp_setup		= bmips_smp_setup,
+ 	.prepare_cpus		= bmips_prepare_cpus,
+ 	.boot_secondary		= bmips_boot_secondary,
+ 	.smp_finish		= bmips_smp_finish,
+ 	.init_secondary		= bmips_init_secondary,
+ 	.cpus_done		= bmips_cpus_done,
+-	.send_ipi_single	= bmips_send_ipi_single,
+-	.send_ipi_mask		= bmips_send_ipi_mask,
++	.send_ipi_single	= bmips5000_send_ipi_single,
++	.send_ipi_mask		= bmips5000_send_ipi_mask,
+ #ifdef CONFIG_HOTPLUG_CPU
+ 	.cpu_disable		= bmips_cpu_disable,
+ 	.cpu_die		= bmips_cpu_die,
+@@ -427,43 +489,47 @@ void __cpuinit bmips_ebase_setup(void)
  
  	BUG_ON(ebase != CKSEG0);
  
@@ -439,7 +556,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -#else
 -	return;
 -#endif
-+	if (cpu_is_bmips4350()) {
++	switch (current_cpu_type()) {
++	case CPU_BMIPS4350:
 +		/*
 +		 * BMIPS4350 cannot relocate the normal vectors, but it
 +		 * can relocate the BEV=1 vectors.  So CPU1 starts up at
@@ -454,7 +572,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +			&bmips_smp_int_vec, 0x80);
 +		__sync();
 +		return;
-+	} else if (cpu_is_bmips4380()) {
++	case CPU_BMIPS4380:
 +		/*
 +		 * 0x8000_0000: reset/NMI (initially in kseg1)
 +		 * 0x8000_0400: normal vectors
@@ -463,7 +581,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		cbr = BMIPS_GET_CBR();
 +		__raw_writel(0x80080800, cbr + BMIPS_RELO_VECTOR_CONTROL_0);
 +		__raw_writel(0xa0080800, cbr + BMIPS_RELO_VECTOR_CONTROL_1);
-+	} else if (cpu_is_bmips5000()) {
++		break;
++	case CPU_BMIPS5000:
 +		/*
 +		 * 0x8000_0000: reset/NMI (initially in kseg1)
 +		 * 0x8000_1000: normal vectors
@@ -473,7 +592,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		write_c0_ebase(new_ebase);
 +		if (max_cpus > 2)
 +			bmips_write_zscm_reg(0xa0, 0xa008a008);
-+	} else {
++		break;
++	default:
 +		return;
 +	}
 +

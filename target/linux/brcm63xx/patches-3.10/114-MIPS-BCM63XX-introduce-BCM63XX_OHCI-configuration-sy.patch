@@ -36,7 +36,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  	bool "support 6338 CPU"
 @@ -24,21 +31,25 @@ config BCM63XX_CPU_6348
  	bool "support 6348 CPU"
- 	select SYS_HAS_CPU_BMIPS3300
+ 	select SYS_HAS_CPU_BMIPS32_3300
  	select HW_HAS_PCI
 +	select BCM63XX_OHCI
  

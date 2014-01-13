@@ -1,31 +1,27 @@
-From 1ecac776e6c652e3059d4f4d9dd8369e89ebef81 Mon Sep 17 00:00:00 2001
+From 81d6f5e024884ce904b7bd36fec60291d751df48 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Thu, 27 Jun 2013 23:57:20 +0200
-Subject: [PATCH 05/10] MIPS: bmips: merge CPU options into one option
+Subject: [PATCH V2 04/13] MIPS: BMIPS: merge CPU options into one option
 
 Instead of treating each flavour as an exclusive CPU to select, make
 BMIPS the only option and let SYS_HAS_CPU_BMIPS* decide for which
 flavours to include support.
 
 Run tested on BMIPS3300 and BMIPS4350, only build tested for BMIPS4380
-and BMISP5000.
+and BMIPS5000.
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- arch/mips/Kconfig |   77 +++++++++++++++++++++++++----------------------------
- 1 file changed, 36 insertions(+), 41 deletions(-)
+V1 -> V2:
+ * Let the SYS_HAS_CPU_BMIPS* symbols select SYS_HAS_CPU_BMIPS instead of
+   requiring users to select it
+
+ arch/mips/Kconfig | 80 +++++++++++++++++++++++++++----------------------------
+ 1 file changed, 39 insertions(+), 41 deletions(-)
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -130,6 +130,7 @@ config BCM63XX
- 	select DMA_NONCOHERENT
- 	select IRQ_CPU
- 	select SYS_HAS_CPU_MIPS32_R1
-+	select SYS_HAS_CPU_BMIPS
- 	select SYS_HAS_CPU_BMIPS4350 if !BCM63XX_CPU_6338 && !BCM63XX_CPU_6345 && !BCM63XX_CPU_6348
- 	select NR_CPUS_DEFAULT_2
- 	select SYS_SUPPORTS_32BIT_KERNEL
-@@ -1453,41 +1454,21 @@ config CPU_CAVIUM_OCTEON
+@@ -1453,41 +1453,21 @@ config CPU_CAVIUM_OCTEON
  	  can have up to 16 Mips64v2 cores and 8 integrated gigabit ethernets.
  	  Full details can be found at http://www.caviumnetworks.com.
  
@@ -68,7 +64,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	select CPU_MIPS32
 +	select CPU_BMIPS3300 if SYS_HAS_CPU_BMIPS3300
 +	select CPU_BMIPS4350 if SYS_HAS_CPU_BMIPS4350
-+	select CPU_BMIPS4350 if SYS_HAS_CPU_BMIPS4380
++	select CPU_BMIPS4380 if SYS_HAS_CPU_BMIPS4380
 +	select CPU_BMIPS5000 if SYS_HAS_CPU_BMIPS5000
 +	select CPU_SUPPORTS_32BIT_KERNEL
 +	select DMA_NONCOHERENT
@@ -81,7 +77,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  config CPU_XLR
  	bool "Netlogic XLR SoC"
-@@ -1568,14 +1549,25 @@ config CPU_LOONGSON1
+@@ -1568,14 +1548,25 @@ config CPU_LOONGSON1
  	select CPU_SUPPORTS_32BIT_KERNEL
  	select CPU_SUPPORTS_HIGHMEM
  
@@ -114,7 +110,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  config SYS_HAS_CPU_LOONGSON2E
  	bool
-@@ -1649,6 +1641,9 @@ config SYS_HAS_CPU_SB1
+@@ -1649,17 +1640,24 @@ config SYS_HAS_CPU_SB1
  config SYS_HAS_CPU_CAVIUM_OCTEON
  	bool
  
@@ -123,4 +119,19 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +
  config SYS_HAS_CPU_BMIPS3300
  	bool
++	select SYS_HAS_CPU_BMIPS
  
+ config SYS_HAS_CPU_BMIPS4350
+ 	bool
++	select SYS_HAS_CPU_BMIPS
+ 
+ config SYS_HAS_CPU_BMIPS4380
+ 	bool
++	select SYS_HAS_CPU_BMIPS
+ 
+ config SYS_HAS_CPU_BMIPS5000
+ 	bool
++	select SYS_HAS_CPU_BMIPS
+ 
+ config SYS_HAS_CPU_XLR
+ 	bool
