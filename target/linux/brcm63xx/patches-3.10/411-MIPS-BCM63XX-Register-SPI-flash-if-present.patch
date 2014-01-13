@@ -24,7 +24,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_regs.h>
  #include <bcm63xx_io.h>
  
-@@ -55,6 +58,21 @@ static struct platform_device mtd_dev =
+@@ -57,6 +60,21 @@ static struct platform_device mtd_dev =
  	},
  };
  
@@ -46,7 +46,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static int __init bcm63xx_detect_flash_type(void)
  {
  	u32 val;
-@@ -62,9 +80,15 @@ static int __init bcm63xx_detect_flash_t
+@@ -64,9 +82,15 @@ static int __init bcm63xx_detect_flash_t
  	switch (bcm63xx_get_cpu_id()) {
  	case BCM6318_CPU_ID:
  		/* only support serial flash */
@@ -62,7 +62,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -83,12 +107,20 @@ static int __init bcm63xx_detect_flash_t
+@@ -85,12 +109,20 @@ static int __init bcm63xx_detect_flash_t
  			return BCM63XX_FLASH_TYPE_SERIAL;
  	case BCM6362_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_6362_REG);
@@ -83,7 +83,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
  		case STRAPBUS_6368_BOOT_SEL_NAND:
  			return BCM63XX_FLASH_TYPE_NAND;
-@@ -99,6 +131,11 @@ static int __init bcm63xx_detect_flash_t
+@@ -101,6 +133,11 @@ static int __init bcm63xx_detect_flash_t
  		}
  	case BCM63268_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_63268_REG);
@@ -95,7 +95,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -126,8 +163,15 @@ int __init bcm63xx_flash_register(void)
+@@ -167,8 +204,15 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:
@@ -123,7 +123,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define STRAPBUS_6368_BOOT_SEL_MASK	0x3
  #define STRAPBUS_6368_BOOT_SEL_NAND	0
  #define STRAPBUS_6368_BOOT_SEL_SERIAL	1
-@@ -1667,6 +1668,7 @@
+@@ -1668,6 +1669,7 @@
  #define STRAPBUS_63268_FCVO_MASK	(0xf << STRAPBUS_63268_FCVO_SHIFT)
  
  #define MISC_STRAPBUS_6328_REG		0x240

@@ -46,8 +46,8 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  };
  
  static struct spi_board_info bcm63xx_spi_flash_info[] = {
-@@ -159,10 +163,13 @@ static int __init bcm63xx_detect_flash_t
- 	return 0;
+@@ -189,9 +193,13 @@ void __init bcm63xx_flash_detect(void)
+ 	}
  }
  
 -int __init bcm63xx_flash_register(void)
@@ -55,12 +55,12 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  {
  	u32 val;
 +	unsigned int i;
- 
++
 +	for (i = 0; i < num_caldata; i++)
 +		bcm63xx_parser_data.caldata[i] = caldata[i].caldata_offset;
  
- 	bcm63xx_detect_flash_type();
- 
+ 	switch (flash_type) {
+ 	case BCM63XX_FLASH_TYPE_PARALLEL:
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h
 @@ -1,6 +1,8 @@
@@ -72,11 +72,12 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  enum {
  	BCM63XX_FLASH_TYPE_PARALLEL,
  	BCM63XX_FLASH_TYPE_SERIAL,
-@@ -9,6 +11,6 @@ enum {
+@@ -9,7 +11,7 @@ enum {
  
- extern int bcm63xx_attached_flash;
+ void bcm63xx_flash_detect(void);
  
 -int __init bcm63xx_flash_register(void);
 +int __init bcm63xx_flash_register(int num_caldata, struct ath9k_caldata *caldata);
  
- #endif /* __BCM63XX_FLASH_H */
+ int bcm63xx_flash_get_type(void);
+ 

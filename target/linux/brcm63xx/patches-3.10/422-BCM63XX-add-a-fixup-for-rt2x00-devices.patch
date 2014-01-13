@@ -61,8 +61,8 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  }
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -163,7 +163,7 @@ static int __init bcm63xx_detect_flash_t
- 	return 0;
+@@ -193,7 +193,7 @@ void __init bcm63xx_flash_detect(void)
+ 	}
  }
  
 -int __init bcm63xx_flash_register(int num_caldata, struct ath9k_caldata *caldata)
@@ -147,14 +147,15 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
 +
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h
-@@ -11,6 +11,6 @@ enum {
+@@ -11,7 +11,7 @@ enum {
  
- extern int bcm63xx_attached_flash;
+ void bcm63xx_flash_detect(void);
  
 -int __init bcm63xx_flash_register(int num_caldata, struct ath9k_caldata *caldata);
 +int __init bcm63xx_flash_register(int num_caldata, struct bcm63xx_caldata *caldata);
  
- #endif /* __BCM63XX_FLASH_H */
+ int bcm63xx_flash_get_type(void);
+ 
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 @@ -9,6 +9,7 @@
