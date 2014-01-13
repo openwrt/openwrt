@@ -1,0 +1,41 @@
+From c4091d3fbbed922a3641e5e749655e49cc0d4dee Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Wed, 24 Jul 2013 17:12:10 +0100
+Subject: [PATCH] MIPS: BMIPS: do not change interrupt routing depending on
+ boot CPU
+
+Commit 4df715aa ("MIPS: BMIPS: support booting from physical CPU other
+than 0") changed the interupt routing when we are booting from physical
+CPU 0, but the settings are actually correct if we are booting from
+physical CPU 0 or CPU 1. Revert that specific change.
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: cernekee@gmail.com
+Cc: jogo@openwrt.org
+Cc: blogic@openwrt.org
+Patchwork: https://patchwork.linux-mips.org/patch/5622/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/kernel/smp-bmips.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+--- a/arch/mips/kernel/smp-bmips.c
++++ b/arch/mips/kernel/smp-bmips.c
+@@ -79,15 +79,9 @@ static void __init bmips_smp_setup(void)
+ 	 * MIPS interrupts 0,1 (SW INT 0,1) cross over to the other thread
+ 	 * MIPS interrupt 2 (HW INT 0) is the CPU0 L1 controller output
+ 	 * MIPS interrupt 3 (HW INT 1) is the CPU1 L1 controller output
+-	 *
+-	 * If booting from TP1, leave the existing CMT interrupt routing
+-	 * such that TP0 responds to SW1 and TP1 responds to SW0.
+ 	 */
+-	if (boot_cpu == 0)
+-		change_c0_brcm_cmt_intr(0xf8018000,
++	change_c0_brcm_cmt_intr(0xf8018000,
+ 					(0x02 << 27) | (0x03 << 15));
+-	else
+-		change_c0_brcm_cmt_intr(0xf8018000, (0x1d << 27));
+ 
+ 	/* single core, 2 threads (2 pipelines) */
+ 	max_cpus = 2;

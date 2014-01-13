@@ -1,13 +1,13 @@
-From 520f4bf75026cc60ba47946331966fb670b39cb0 Mon Sep 17 00:00:00 2001
+From 72a1c3ad0392d7b42bf50e6ecade63a775166c73 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Thu, 27 Jun 2013 21:32:41 +0200
-Subject: [PATCH 02/10] MIPS: allow asm/cpu.h to be included from assembly
+Subject: [PATCH V2 02/13] MIPS: allow asm/cpu.h to be included from assembly
 
 Add guards around the enum to allow including cpu.h from assembly.
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- arch/mips/include/asm/cpu.h |    3 +++
+ arch/mips/include/asm/cpu.h | 3 +++
  1 file changed, 3 insertions(+)
 
 --- a/arch/mips/include/asm/cpu.h
