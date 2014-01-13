@@ -1,0 +1,31 @@
+From 4d8fa9d3d1fe1d70fe7d59537acf49797f6010a1 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sun, 1 Dec 2013 16:19:46 +0100
+Subject: [PATCH 2/2] spi/bcm63xx: don't reject reads >= 256 bytes
+
+The rx_tail register is only 8 bit wide, so it will wrap around
+after 256 read bytes. This makes it rather meaningless, so drop any
+usage of it to not treat reads over 256 as failed.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ drivers/spi/spi-bcm63xx.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+--- a/drivers/spi/spi-bcm63xx.c
++++ b/drivers/spi/spi-bcm63xx.c
+@@ -214,13 +214,7 @@ static int bcm63xx_txrx_bufs(struct spi_
+ 	if (!timeout)
+ 		return -ETIMEDOUT;
+ 
+-	/* read out all data */
+-	rx_tail = bcm_spi_readb(bs, SPI_RX_TAIL);
+-
+-	if (do_rx && rx_tail != len)
+-		return -EIO;
+-
+-	if (!rx_tail)
++	if (!do_rx)
+ 		return 0;
+ 
+ 	len = 0;
