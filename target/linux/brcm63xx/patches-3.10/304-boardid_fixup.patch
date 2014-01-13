@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -34,6 +34,7 @@
+@@ -35,6 +35,7 @@
  #include <board_bcm963xx.h>
  
  #include <uapi/linux/bcm933xx_hcs.h>
@@ -8,7 +8,7 @@
  
  #define PFX	"board_bcm963xx: "
  
-@@ -42,6 +43,9 @@
+@@ -43,6 +44,9 @@
  #define BCM963XX_KEYS_POLL_INTERVAL	20
  #define BCM963XX_KEYS_DEBOUNCE_INTERVAL	(BCM963XX_KEYS_POLL_INTERVAL * 3)
  
@@ -18,7 +18,7 @@
  static struct board_info board;
  
  /*
-@@ -781,6 +785,30 @@ const char *board_get_name(void)
+@@ -782,6 +786,30 @@ const char *board_get_name(void)
  	return board.name;
  }
  
@@ -49,7 +49,7 @@
  /*
   * early init callback, read nvram data from flash and checksum it
   */
-@@ -819,6 +847,10 @@ void __init board_prom_init(void)
+@@ -820,6 +848,10 @@ void __init board_prom_init(void)
  		hcs = (struct bcm_hcs *)boot_addr;
  		board_name = hcs->filename;
  	} else {

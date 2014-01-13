@@ -97,7 +97,7 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
  	case BCM63XX_FLASH_TYPE_PARALLEL:
  		/* read base address of boot chip select (0) */
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
-@@ -155,7 +168,7 @@ int __init bcm63xx_flash_register(void)
+@@ -153,7 +166,7 @@ int __init bcm63xx_flash_register(void)
  		return -ENODEV;
  	default:
  		pr_err("flash detection failed for BCM%x: %d\n",
