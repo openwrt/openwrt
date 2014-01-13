@@ -107,7 +107,7 @@
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_dev_flash.h>
  #include <bcm63xx_dev_hsspi.h>
-@@ -179,6 +180,13 @@ int __init bcm63xx_flash_register(int nu
+@@ -207,6 +208,13 @@ int __init bcm63xx_flash_register(int nu
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
  		val &= MPI_CSBASE_BASE_MASK;
  

@@ -88,7 +88,7 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
 +		addr &= MPI_CSBASE_BASE_MASK;
 +	}
 +
-+	switch (bcm63xx_attached_flash) {
++	switch (bcm63xx_flash_get_type()) {
 +	case BCM63XX_FLASH_TYPE_PARALLEL:
 +		memcpy(eeprom, (void *)KSEG1ADDR(addr + offset), ATH9K_PLAT_EEP_MAX_WORDS * sizeof(u16));
 +		return eeprom;
