@@ -46,8 +46,12 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static int __init bcm63xx_detect_flash_type(void)
  {
  	u32 val;
-@@ -62,6 +80,11 @@ static int __init bcm63xx_detect_flash_t
+@@ -62,9 +80,15 @@ static int __init bcm63xx_detect_flash_t
  	switch (bcm63xx_get_cpu_id()) {
+ 	case BCM6318_CPU_ID:
+ 		/* only support serial flash */
++		bcm63xx_spi_flash_info[0].max_speed_hz = 62500000;
+ 		return BCM63XX_FLASH_TYPE_SERIAL;
  	case BCM6328_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_6328_REG);
 +		if (val & STRAPBUS_6328_HSSPI_CLK_FAST)
@@ -58,7 +62,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -80,12 +103,20 @@ static int __init bcm63xx_detect_flash_t
+@@ -83,12 +107,20 @@ static int __init bcm63xx_detect_flash_t
  			return BCM63XX_FLASH_TYPE_SERIAL;
  	case BCM6362_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_6362_REG);
@@ -79,7 +83,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
  		case STRAPBUS_6368_BOOT_SEL_NAND:
  			return BCM63XX_FLASH_TYPE_NAND;
-@@ -96,6 +127,11 @@ static int __init bcm63xx_detect_flash_t
+@@ -99,6 +131,11 @@ static int __init bcm63xx_detect_flash_t
  		}
  	case BCM63268_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_63268_REG);
@@ -91,13 +95,14 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -123,8 +159,14 @@ int __init bcm63xx_flash_register(void)
+@@ -126,8 +163,15 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:
 -		pr_warn("unsupported serial flash detected\n");
 -		return -ENODEV;
-+		if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_63268())
++		if (BCMCPU_IS_6318() || BCMCPU_IS_6328() || BCMCPU_IS_6362() ||
++		    BCMCPU_IS_63268())
 +			bcm63xx_spi_flash_info[0].bus_num = 1;
 +
 +		if (BCMCPU_IS_6358() || BCMCPU_IS_6368())
@@ -110,7 +115,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		return -ENODEV;
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -746,6 +746,7 @@
+@@ -818,6 +818,7 @@
  #define GPIO_STRAPBUS_REG		0x40
  #define STRAPBUS_6358_BOOT_SEL_PARALLEL (1 << 1)
  #define STRAPBUS_6358_BOOT_SEL_SERIAL	(0 << 1)
@@ -118,7 +123,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #define STRAPBUS_6368_BOOT_SEL_MASK	0x3
  #define STRAPBUS_6368_BOOT_SEL_NAND	0
  #define STRAPBUS_6368_BOOT_SEL_SERIAL	1
-@@ -1594,6 +1595,7 @@
+@@ -1667,6 +1668,7 @@
  #define STRAPBUS_63268_FCVO_MASK	(0xf << STRAPBUS_63268_FCVO_SHIFT)
  
  #define MISC_STRAPBUS_6328_REG		0x240
