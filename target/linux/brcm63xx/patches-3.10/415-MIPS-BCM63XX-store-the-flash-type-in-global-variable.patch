@@ -19,7 +19,7 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
  static struct mtd_partition mtd_partitions[] = {
  	{
  		.name		= "cfe",
-@@ -86,27 +88,31 @@ static int __init bcm63xx_detect_flash_t
+@@ -86,21 +88,24 @@ static int __init bcm63xx_detect_flash_t
  			bcm63xx_spi_flash_info[0].max_speed_hz = 16666667;
  
  		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
@@ -48,6 +48,10 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
 +		break;
  	case BCM6362_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_6362_REG);
+ 		if (val & STRAPBUS_6362_HSSPI_CLK_FAST)
+@@ -109,9 +114,10 @@ static int __init bcm63xx_detect_flash_t
+ 			bcm63xx_spi_flash_info[0].max_speed_hz = 20000000;
+ 
  		if (val & STRAPBUS_6362_BOOT_SEL_SERIAL)
 -			return BCM63XX_FLASH_TYPE_SERIAL;
 +			bcm63xx_attached_flash = BCM63XX_FLASH_TYPE_SERIAL;
@@ -58,7 +62,7 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
  	case BCM6368_CPU_ID:
  		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
  		if (val & STRAPBUS_6368_SPI_CLK_FAST)
-@@ -114,25 +120,32 @@ static int __init bcm63xx_detect_flash_t
+@@ -119,11 +125,16 @@ static int __init bcm63xx_detect_flash_t
  
  		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
  		case STRAPBUS_6368_BOOT_SEL_NAND:
@@ -76,6 +80,17 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
 +		default:
 +			return -EINVAL;
  		}
+ 	case BCM63268_CPU_ID:
+ 		val = bcm_misc_readl(MISC_STRAPBUS_63268_REG);
+@@ -133,22 +144,24 @@ static int __init bcm63xx_detect_flash_t
+ 			bcm63xx_spi_flash_info[0].max_speed_hz = 20000000;
+ 
+ 		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
+-			return BCM63XX_FLASH_TYPE_SERIAL;
++			bcm63xx_attached_flash = BCM63XX_FLASH_TYPE_SERIAL;
+ 		else
+-			return BCM63XX_FLASH_TYPE_NAND;
++			bcm63xx_attached_flash = BCM63XX_FLASH_TYPE_NAND;
  	default:
  		return -EINVAL;
  	}
@@ -97,7 +112,7 @@ Subject: [PATCH 38/59] MIPS: BCM63XX: store the flash type in global variable
  	case BCM63XX_FLASH_TYPE_PARALLEL:
  		/* read base address of boot chip select (0) */
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
-@@ -156,7 +169,7 @@ int __init bcm63xx_flash_register(void)
+@@ -172,7 +185,7 @@ int __init bcm63xx_flash_register(void)
  		return -ENODEV;
  	default:
  		pr_err("flash detection failed for BCM%x: %d\n",
