@@ -1,38 +1,25 @@
-From 9e341df1f67c3c64dc5ac668a30bbb6b5ab5f2b4 Mon Sep 17 00:00:00 2001
+From 9249f2f6a309e3f45c35d16decdcc5b2cadcadb8 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Fri, 26 Apr 2013 12:06:03 +0200
-Subject: [PATCH 14/14] MIPS: BCM63XX: allow setting affinity for IPIC
+Subject: [PATCH 38/53] MIPS: BCM63XX: allow setting affinity for IPIC
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- arch/mips/bcm63xx/irq.c |   49 +++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 41 insertions(+), 8 deletions(-)
+ arch/mips/bcm63xx/irq.c | 43 +++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 37 insertions(+), 6 deletions(-)
 
 --- a/arch/mips/bcm63xx/irq.c
 +++ b/arch/mips/bcm63xx/irq.c
-@@ -24,8 +24,10 @@ static void __dispatch_internal_32(int c
- static void __dispatch_internal_64(int cpu) __maybe_unused;
- static void __internal_irq_mask_32(struct irq_data *d) __maybe_unused;
- static void __internal_irq_mask_64(struct irq_data *d) __maybe_unused;
--static void __internal_irq_unmask_32(struct irq_data *d) __maybe_unused;
--static void __internal_irq_unmask_64(struct irq_data *d) __maybe_unused;
-+static void __internal_irq_unmask_32(struct irq_data *d,
-+				     const struct cpumask *mask) __maybe_unused;
-+static void __internal_irq_unmask_64(struct irq_data *d,
-+				     const struct cpumask *mask) __maybe_unused;
- 
- static DEFINE_SPINLOCK(ipic_lock);
- static DEFINE_SPINLOCK(epic_lock);
-@@ -168,7 +170,7 @@ static unsigned int ext_irq_count;
+@@ -32,7 +32,7 @@ static unsigned int ext_irq_count;
  static unsigned int ext_irq_start, ext_irq_end;
  static unsigned int ext_irq_cfg_reg1, ext_irq_cfg_reg2;
  static void (*internal_irq_mask)(struct irq_data *d);
 -static void (*internal_irq_unmask)(struct irq_data *d);
 +static void (*internal_irq_unmask)(struct irq_data *d, const struct cpumask *m);
  
- static void bcm63xx_init_irq(void)
- {
-@@ -311,6 +313,20 @@ static inline void handle_internal(int i
+ 
+ static inline u32 get_ext_irq_perf_reg(int irq)
+@@ -51,6 +51,20 @@ static inline void handle_internal(int i
  		do_IRQ(intbit + IRQ_INTERNAL_BASE);
  }
  
@@ -53,7 +40,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  /*
   * dispatch internal devices IRQ (uart, enet, watchdog, ...). do not
   * prioritize any interrupt relatively to another. the static counter
-@@ -381,7 +397,8 @@ static void __internal_irq_mask_##width(
+@@ -117,7 +131,8 @@ static void __internal_irq_mask_##width(
  	spin_unlock_irqrestore(&ipic_lock, flags);			\
  }									\
  									\
@@ -63,16 +50,16 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  { 									\
  	u32 val;							\
  	unsigned irq = d->irq - IRQ_INTERNAL_BASE;			\
-@@ -398,7 +415,7 @@ static void __internal_irq_unmask_##widt
+@@ -132,7 +147,7 @@ static void __internal_irq_unmask_##widt
  			break;						\
  									\
- 		val = bcm_readl(irq_mask_addr + reg * sizeof(u32));	\
+ 		val = bcm_readl(irq_mask_addr[cpu] + reg * sizeof(u32));\
 -		if (cpu_online(cpu))					\
 +		if (enable_irq_for_cpu(cpu, d, m))			\
  			val |= (1 << bit); 				\
  		else							\
  			val &= ~(1 << bit);				\
-@@ -455,7 +472,7 @@ static void bcm63xx_internal_irq_mask(st
+@@ -189,7 +204,7 @@ static void bcm63xx_internal_irq_mask(st
  
  static void bcm63xx_internal_irq_unmask(struct irq_data *d)
  {
@@ -81,7 +68,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  }
  
  /*
-@@ -503,7 +520,8 @@ static void bcm63xx_external_irq_unmask(
+@@ -237,7 +252,8 @@ static void bcm63xx_external_irq_unmask(
  	spin_unlock_irqrestore(&epic_lock, flags);
  
  	if (is_ext_irq_cascaded)
@@ -91,7 +78,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  }
  
  static void bcm63xx_external_irq_clear(struct irq_data *d)
-@@ -622,6 +640,18 @@ static int bcm63xx_external_irq_set_type
+@@ -356,6 +372,18 @@ static int bcm63xx_external_irq_set_type
  	return IRQ_SET_MASK_OK_NOCOPY;
  }
  
@@ -110,7 +97,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static struct irq_chip bcm63xx_internal_irq_chip = {
  	.name		= "bcm63xx_ipic",
  	.irq_mask	= bcm63xx_internal_irq_mask,
-@@ -679,7 +709,10 @@ void __init arch_init_irq(void)
+@@ -523,7 +551,10 @@ void __init arch_init_irq(void)
  
  	setup_irq(MIPS_CPU_IRQ_BASE + 2, &cpu_ip2_cascade_action);
  #ifdef CONFIG_SMP

@@ -1,0 +1,92 @@
+From 842f213228e6fc9fd6cca01ab5128623112aa7a9 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Thu, 25 Apr 2013 00:31:29 +0200
+Subject: [PATCH 33/53] MIPS: BCM63XX: populate irq_{stat,mask}_addr for second
+ pin
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/bcm63xx/irq.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/arch/mips/bcm63xx/irq.c
++++ b/arch/mips/bcm63xx/irq.c
+@@ -342,11 +342,15 @@ static void bcm63xx_init_irq(void)
+ 
+ 	irq_stat_addr[0] = bcm63xx_regset_address(RSET_PERF);
+ 	irq_mask_addr[0] = bcm63xx_regset_address(RSET_PERF);
++	irq_stat_addr[1] = bcm63xx_regset_address(RSET_PERF);
++	irq_mask_addr[1] = bcm63xx_regset_address(RSET_PERF);
+ 
+ 	switch (bcm63xx_get_cpu_id()) {
+ 	case BCM3368_CPU_ID:
+ 		irq_stat_addr[0] += PERF_IRQSTAT_3368_REG;
+ 		irq_mask_addr[0] += PERF_IRQMASK_3368_REG;
++		irq_stat_addr[1] = 0;
++		irq_stat_addr[1] = 0;
+ 		irq_bits = 32;
+ 		ext_irq_count = 4;
+ 		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_3368;
+@@ -354,6 +358,8 @@ static void bcm63xx_init_irq(void)
+ 	case BCM6328_CPU_ID:
+ 		irq_stat_addr[0] += PERF_IRQSTAT_6328_REG(0);
+ 		irq_mask_addr[0] += PERF_IRQMASK_6328_REG(0);
++		irq_stat_addr[1] += PERF_IRQSTAT_6328_REG(1);
++		irq_stat_addr[1] += PERF_IRQMASK_6328_REG(1);
+ 		irq_bits = 64;
+ 		ext_irq_count = 4;
+ 		is_ext_irq_cascaded = 1;
+@@ -364,6 +370,8 @@ static void bcm63xx_init_irq(void)
+ 	case BCM6338_CPU_ID:
+ 		irq_stat_addr[0] += PERF_IRQSTAT_6338_REG;
+ 		irq_mask_addr[0] += PERF_IRQMASK_6338_REG;
++		irq_stat_addr[1] = 0;
++		irq_mask_addr[1] = 0;
+ 		irq_bits = 32;
+ 		ext_irq_count = 4;
+ 		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6338;
+@@ -371,6 +379,8 @@ static void bcm63xx_init_irq(void)
+ 	case BCM6345_CPU_ID:
+ 		irq_stat_addr[0] += PERF_IRQSTAT_6345_REG;
+ 		irq_mask_addr[0] += PERF_IRQMASK_6345_REG;
++		irq_stat_addr[1] = 0;
++		irq_mask_addr[1] = 0;
+ 		irq_bits = 32;
+ 		ext_irq_count = 4;
+ 		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6345;
+@@ -378,6 +388,8 @@ static void bcm63xx_init_irq(void)
+ 	case BCM6348_CPU_ID:
+ 		irq_stat_addr[0] += PERF_IRQSTAT_6348_REG;
+ 		irq_mask_addr[0] += PERF_IRQMASK_6348_REG;
++		irq_stat_addr[1] = 0;
++		irq_mask_addr[1] = 0;
+ 		irq_bits = 32;
+ 		ext_irq_count = 4;
+ 		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6348;
+@@ -385,6 +397,8 @@ static void bcm63xx_init_irq(void)
+ 	case BCM6358_CPU_ID:
+ 		irq_stat_addr[0] += PERF_IRQSTAT_6358_REG(0);
+ 		irq_mask_addr[0] += PERF_IRQMASK_6358_REG(0);
++		irq_stat_addr[1] += PERF_IRQSTAT_6358_REG(1);
++		irq_mask_addr[1] += PERF_IRQMASK_6358_REG(1);
+ 		irq_bits = 32;
+ 		ext_irq_count = 4;
+ 		is_ext_irq_cascaded = 1;
+@@ -395,6 +409,8 @@ static void bcm63xx_init_irq(void)
+ 	case BCM6362_CPU_ID:
+ 		irq_stat_addr[0] += PERF_IRQSTAT_6362_REG(0);
+ 		irq_mask_addr[0] += PERF_IRQMASK_6362_REG(0);
++		irq_stat_addr[1] += PERF_IRQSTAT_6362_REG(1);
++		irq_mask_addr[1] += PERF_IRQMASK_6362_REG(1);
+ 		irq_bits = 64;
+ 		ext_irq_count = 4;
+ 		is_ext_irq_cascaded = 1;
+@@ -405,6 +421,8 @@ static void bcm63xx_init_irq(void)
+ 	case BCM6368_CPU_ID:
+ 		irq_stat_addr[0] += PERF_IRQSTAT_6368_REG(0);
+ 		irq_mask_addr[0] += PERF_IRQMASK_6368_REG(0);
++		irq_stat_addr[1] += PERF_IRQSTAT_6368_REG(1);
++		irq_mask_addr[1] += PERF_IRQMASK_6368_REG(1);
+ 		irq_bits = 64;
+ 		ext_irq_count = 6;
+ 		is_ext_irq_cascaded = 1;
