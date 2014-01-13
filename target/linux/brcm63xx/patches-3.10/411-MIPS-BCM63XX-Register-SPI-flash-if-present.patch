@@ -68,16 +68,14 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
  		case STRAPBUS_6368_BOOT_SEL_NAND:
  			return BCM63XX_FLASH_TYPE_NAND;
-@@ -117,8 +143,13 @@ int __init bcm63xx_flash_register(void)
+@@ -117,8 +143,11 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:
 -		pr_warn("unsupported serial flash detected\n");
 -		return -ENODEV;
-+		if (BCMCPU_IS_6328() || BCMCPU_IS_6362()) {
++		if (BCMCPU_IS_6328() || BCMCPU_IS_6362())
 +			bcm63xx_spi_flash_info[0].bus_num = 1;
-+			bcm63xx_flash_data.max_transfer_len = HSSPI_BUFFER_LEN;
-+		}
 +
 +		return spi_register_board_info(bcm63xx_spi_flash_info,
 +					ARRAY_SIZE(bcm63xx_spi_flash_info));

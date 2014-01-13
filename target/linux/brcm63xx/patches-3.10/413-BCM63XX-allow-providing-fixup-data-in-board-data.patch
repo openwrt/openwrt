@@ -36,7 +36,7 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  		memcpy(bcm63xx_sprom.et0mac, bcm63xx_sprom.il0mac, ETH_ALEN);
  		memcpy(bcm63xx_sprom.et1mac, bcm63xx_sprom.il0mac, ETH_ALEN);
  		if (ssb_arch_register_fallback_sprom(
-@@ -1042,5 +1045,9 @@ int __init board_register_devices(void)
+@@ -1043,5 +1046,9 @@ int __init board_register_devices(void)
  		platform_device_register(&bcm63xx_gpio_keys_device);
  	}
  
