@@ -537,7 +537,7 @@ wpa_supplicant_add_network() {
 	[ -n "$mcast_rate" ] && {
 		local mc_rate=
 		hostapd_add_rate mc_rate "$mcast_rate"
-		[ -n "$mcast_rate" ] && append network_data "mcast_rate=$mcast_rate" "$N$T"
+		append network_data "mcast_rate=$mc_rate" "$N$T"
 	}
 
 	local ht_str
