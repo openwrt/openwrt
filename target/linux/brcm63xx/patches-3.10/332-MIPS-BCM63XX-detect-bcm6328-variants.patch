@@ -14,7 +14,7 @@ Subject: [PATCH 42/53] MIPS: BCM63XX: detect bcm6328 variants
  	struct cpuinfo_mips *c = &current_cpu_data;
  	unsigned int cpu = smp_processor_id();
  	u32 chipid_reg;
-+	u8 varid;
++	u8 __maybe_unused varid = 0;
  
  	/* soc registers location depends on cpu type */
  	chipid_reg = 0;

@@ -189,7 +189,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	unsigned int cpu = smp_processor_id();
  	u32 chipid_reg;
 +	bool long_chipid = false;
- 	u8 varid;
+ 	u8 __maybe_unused varid = 0;
  
  	/* soc registers location depends on cpu type */
 @@ -325,6 +356,9 @@ void __init bcm63xx_cpu_init(void)
