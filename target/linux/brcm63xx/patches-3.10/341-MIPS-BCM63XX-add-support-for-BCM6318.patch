@@ -343,7 +343,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
 +#define BCM_6318_SPI_BASE		(0xdeadbeef)
 +#define BCM_6318_HSSPI_BASE		(0xb0003000)
 +#define BCM_6318_UDC0_BASE		(0xdeadbeef)
-+#define BCM_6318_USBDMA_BASE		(0xdeadbeef)
++#define BCM_6318_USBDMA_BASE		(0xb0006800)
 +#define BCM_6318_OHCI0_BASE		(0xb0005100)
 +#define BCM_6318_OHCI_PRIV_BASE		(0xdeadbeef)
 +#define BCM_6318_USBH_PRIV_BASE		(0xb0005200)
@@ -601,3 +601,68 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  		return -ENODEV;
  
  	spi_resources[0].start = bcm63xx_regset_address(RSET_HSSPI);
+--- a/arch/mips/bcm63xx/dev-usb-usbd.c
++++ b/arch/mips/bcm63xx/dev-usb-usbd.c
+@@ -41,7 +41,7 @@ int __init bcm63xx_usbd_register(const s
+ 		IRQ_USBD_RXDMA2, IRQ_USBD_TXDMA2 };
+ 	int i;
+ 
+-	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6368())
++	if (!BCMCPU_IS_6318() && !BCMCPU_IS_6328() && !BCMCPU_IS_6368())
+ 		return 0;
+ 
+ 	usbd_resources[0].start = bcm63xx_regset_address(RSET_USBD);
+--- a/arch/mips/bcm63xx/dev-enet.c
++++ b/arch/mips/bcm63xx/dev-enet.c
+@@ -176,7 +176,8 @@ static int __init register_shared(void)
+ 	else
+ 		shared_res[0].end += (RSET_ENETDMA_SIZE)  - 1;
+ 
+-	if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
++	if (BCMCPU_IS_6318() || BCMCPU_IS_6328() || BCMCPU_IS_6362() ||
++		BCMCPU_IS_6368())
+ 		chan_count = 32;
+ 	else if (BCMCPU_IS_6345())
+ 		chan_count = 8;
+@@ -276,7 +277,8 @@ bcm63xx_enetsw_register(const struct bcm
+ {
+ 	int ret;
+ 
+-	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6362() && !BCMCPU_IS_6368())
++	if (!BCMCPU_IS_6318() && !BCMCPU_IS_6328() && !BCMCPU_IS_6362() &&
++		!BCMCPU_IS_6368())
+ 		return -ENODEV;
+ 
+ 	ret = register_shared();
+@@ -293,7 +295,7 @@ bcm63xx_enetsw_register(const struct bcm
+ 
+ 	memcpy(bcm63xx_enetsw_device.dev.platform_data, pd, sizeof(*pd));
+ 
+-	if (BCMCPU_IS_6328())
++	if (BCMCPU_IS_6318() || BCMCPU_IS_6328())
+ 		enetsw_pd.num_ports = ENETSW_PORTS_6328;
+ 	else if (BCMCPU_IS_6362() || BCMCPU_IS_6368())
+ 		enetsw_pd.num_ports = ENETSW_PORTS_6368;
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h
+@@ -9,6 +9,8 @@ int __init bcm63xx_gpio_init(void);
+ static inline unsigned long bcm63xx_gpio_count(void)
+ {
+ 	switch (bcm63xx_get_cpu_id()) {
++	case BCM6318_CPU_ID:
++		return 50;
+ 	case BCM6328_CPU_ID:
+ 		return 32;
+ 	case BCM3368_CPU_ID:
+--- a/arch/mips/bcm63xx/dev-usb-ehci.c
++++ b/arch/mips/bcm63xx/dev-usb-ehci.c
+@@ -81,7 +81,8 @@ static struct platform_device bcm63xx_eh
+ 
+ int __init bcm63xx_ehci_register(void)
+ {
+-	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6358() && !BCMCPU_IS_6362() && !BCMCPU_IS_6368())
++	if (!BCMCPU_IS_6318() && !BCMCPU_IS_6328() && !BCMCPU_IS_6358() &&
++		!BCMCPU_IS_6362() && !BCMCPU_IS_6368())
+ 		return 0;
+ 
+ 	ehci_resources[0].start = bcm63xx_regset_address(RSET_EHCI0);
