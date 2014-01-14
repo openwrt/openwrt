@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=brcm63xx
 BOARDNAME:=Broadcom BCM63xx
 SUBTARGETS:=generic smp
-FEATURES:=squashfs usb atm pci pcmcia
+FEATURES:=squashfs usb atm pci pcmcia usbgadget
 LINUX_VERSION:=3.10.26
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
