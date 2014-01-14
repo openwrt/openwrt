@@ -1,3 +1,44 @@
+From a864a5b3efe9dce1647172d105559a1b850cf4c9 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Tue, 14 Jan 2014 15:29:25 -0800
+Subject: [PATCH] usb: gadget: bcm63xx_udc: fix build failure on DMA channel
+ code
+
+Commit 3dc6475 ("bcm63xx_enet: add support Broadcom BCM6345 Ethernet")
+changed the ENETDMA[CS] macros such that they are no longer macros, but
+actual register offset definitions. The bcm63xx_udc driver was not
+updated, and as a result, causes the following build error to pop up:
+
+ CC      drivers/usb/gadget/u_ether.o
+drivers/usb/gadget/bcm63xx_udc.c: In function 'iudma_write':
+drivers/usb/gadget/bcm63xx_udc.c:642:24: error: called object '0' is not
+a function
+drivers/usb/gadget/bcm63xx_udc.c: In function 'iudma_reset_channel':
+drivers/usb/gadget/bcm63xx_udc.c:698:46: error: called object '0' is not
+a function
+drivers/usb/gadget/bcm63xx_udc.c:700:49: error: called object '0' is not
+a function
+
+Fix this by updating usb_dmac_{read,write}l and usb_dmas_{read,write}l to
+take an extra channel argument, and use the channel width
+(ENETDMA_CHAN_WIDTH) to offset the register we want to access, hence
+doing again what the macro implicitely did for us.
+
+CC: Kevin Cernekee <cernekee@gmail.com>
+CC: Jonas Gorski <jogo@openwrt.org>
+CC: stable@vger.kernel.org
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+---
+Felipe,
+
+This is against your branch as balbi/usb.git, and this fix should be applied to
+stable 3.11 onwards.
+
+Thanks!
+
+ drivers/usb/gadget/bcm63xx_udc.c | 58 ++++++++++++++++++++++------------------
+ 1 file changed, 32 insertions(+), 26 deletions(-)
+
 --- a/drivers/usb/gadget/bcm63xx_udc.c
 +++ b/drivers/usb/gadget/bcm63xx_udc.c
 @@ -362,24 +362,30 @@ static inline void usb_dma_writel(struct
@@ -18,7 +59,7 @@
  {
 -	bcm_writel(val, udc->iudma_regs + IUDMA_DMAC_OFFSET + off);
 +	bcm_writel(val, udc->iudma_regs + IUDMA_DMAC_OFFSET + off +
-+			(ENETDMA_CHAN_WIDTH* chan));
++			(ENETDMA_CHAN_WIDTH * chan));
  }
  
 -static inline u32 usb_dmas_readl(struct bcm63xx_udc *udc, u32 off)
@@ -26,7 +67,7 @@
  {
 -	return bcm_readl(udc->iudma_regs + IUDMA_DMAS_OFFSET + off);
 +	return bcm_readl(udc->iudma_regs + IUDMA_DMAS_OFFSET + off +
-+			(ENETDMA_CHAN_WIDTH* chan));
++			(ENETDMA_CHAN_WIDTH * chan));
  }
  
 -static inline void usb_dmas_writel(struct bcm63xx_udc *udc, u32 val, u32 off)
@@ -107,9 +148,9 @@
 -			   usb_dmac_readl(udc, ENETDMAC_IRMASK_REG(ch_idx)),
 -			   usb_dmac_readl(udc, ENETDMAC_MAXBURST_REG(ch_idx)));
 +			   usb_dmac_readl(udc, ENETDMAC_CHANCFG_REG, ch_idx),
-+			   usb_dmac_readl(udc, ENETDMAC_IR_REG, ch_idx)),
++			   usb_dmac_readl(udc, ENETDMAC_IR_REG, ch_idx),
 +			   usb_dmac_readl(udc, ENETDMAC_IRMASK_REG, ch_idx),
-+			   usb_dmac_readl(udc, ENETDMAC_MAXBURST_REG, ch_idx);
++			   usb_dmac_readl(udc, ENETDMAC_MAXBURST_REG, ch_idx));
  
 -		sram2 = usb_dmas_readl(udc, ENETDMAS_SRAM2_REG(ch_idx));
 -		sram3 = usb_dmas_readl(udc, ENETDMAS_SRAM3_REG(ch_idx));
