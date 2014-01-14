@@ -590,3 +590,14 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  	case BCM6328_CPU_ID:
  	case BCM6362_CPU_ID:
  	case BCM6368_CPU_ID:
+--- a/arch/mips/bcm63xx/dev-hsspi.c
++++ b/arch/mips/bcm63xx/dev-hsspi.c
+@@ -35,7 +35,7 @@ static struct platform_device bcm63xx_hs
+ 
+ int __init bcm63xx_hsspi_register(void)
+ {
+-	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6362())
++	if (!BCMCPU_IS_6318() && !BCMCPU_IS_6328() && !BCMCPU_IS_6362())
+ 		return -ENODEV;
+ 
+ 	spi_resources[0].start = bcm63xx_regset_address(RSET_HSSPI);
