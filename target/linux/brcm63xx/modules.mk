@@ -19,3 +19,19 @@ define KernelPackage/pcmcia-bcm63xx/description
 endef
 
 $(eval $(call KernelPackage,pcmcia-bcm63xx))
+
+define KernelPackage/bcm63xx-udc
+  SUBMENU:=$(USB_MENU)
+  TITLE:=Broadcom BCM63xx UDC support
+  DEPENDS:=@TARGET_brcm63xx +kmod-usb-gadget
+  KCONFIG:=CONFIG_USB_BCM63XX_UDC
+  FILES:=$(LINUX_DIR)/drivers/usb/gadget/bcm63xx_udc.ko
+  AUTOLOAD:=$(call AutoLoad,51,bcm63xx_udc)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/bcm63xx-udc/description
+  Kernel support for the USB gadget (device) controller on the BCM63xx SoC
+endef
+
+$(eval $(call KernelPackage,bcm63xx-udc))
