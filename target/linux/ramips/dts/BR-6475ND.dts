@@ -1,0 +1,171 @@
+/dts-v1/;
+
+/include/ "rt3883.dtsi"
+
+/ {
+	compatible = "BR-6475ND", "ralink,rt3883-soc";
+	model = "Edimax BR-6475nD";
+
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "spi", "jtag", "uartf";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	palmbus@10000000 {
+		timer@100 {
+			status = "okay";
+		};
+
+		gpio1: gpio@638 {
+			status = "okay";
+		};
+
+		uartlite@c00 {
+			status = "okay";
+		};
+	};
+
+	ethernet@10100000 {
+		status = "okay";
+
+		port@0 {
+			ralink,fixed-link = <1000 1 1 1>;
+		};
+	};
+
+	pci@10140000 {
+		status = "okay";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pci_pins>;
+		pci_pins: pci {
+			pci {
+				ralink,group = "pci";
+				ralink,function = "pci-fnc";
+			};
+		};
+
+		host-bridge {
+			pci-bridge@1 {
+				status = "okay";
+				wmac@0,0 {
+					compatible = "ralink,rt2880-pci", "pciclass060400", "pciclass0604";
+					reg = < 0x10000 0 0 0 0 >;
+					ralink,eeprom = "soc_wmac.eeprom";
+				};
+			};
+		};
+	};
+
+	ehci@101c0000 {
+		status = "okay";
+	};
+
+	ohci@101c1000 {
+		status = "okay";
+	};
+
+	nor-flash@1c000000 {
+		compatible = "cfi-flash";
+		reg = <0x1c000000 0x800000>;
+
+		bank-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x00000000 0x00030000>;
+			label = "u-boot";
+			read-only;
+		};
+
+		partition@30000 {
+			reg = <0x00030000 0x00010000>;
+			label = "nvram";
+			read-only;
+		};
+
+		factory: partition@40000 {
+			reg = <0x00040000 0x00010000>;
+			label = "factory";
+			read-only;
+		};
+
+		partition@50000 {
+			reg = <0x00050000 0x00020000>;
+			label = "devdata";
+			read-only;
+		};
+
+		partition@70000 {
+			reg = <0x00070000 0x00790000>;
+			label = "firmware";
+		};
+
+		partition@170000 {
+			reg = <0x00270000 0x00590000>;
+			label = "rootfs";
+		};
+	};
+
+	rtl8367 {
+		compatible = "realtek,rtl8367";
+		gpio-sda = <&gpio0 5 0>;
+		gpio-sck = <&gpio0 4 0>;
+		realtek,extif0 = <1 0 1 1 1 1 1 1 2>;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+		reset {
+			label = "reset";
+			gpios = <&gpio0 7 1>;
+			linux,code = <0x198>;
+		};
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio0 9 1>;
+			linux,input-type = <5>;
+			linux,code = <0xf7>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power {
+			label = "edimax:green:power";
+			gpios = <&gpio0 10 1>;
+		};
+		wlan {
+			label = "edimax:amber:wlan";
+			gpios = <&gpio0 11 1>;
+		};
+		wlan_5ghz {
+			label = "edimax:amber:wlan_5ghz";
+			gpios = <&gpio0 14 1>;
+		};
+	};
+
+	/* Unclear if this is the correct gpio setup; the USB ports are
+	   unpopulated on a stock BR-6475nD, even though the hardware exists
+	   and the headers are there. */
+	/*
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+		usb {
+			gpio-export,name="usb";
+			gpio-export,output=<0>;
+			gpios = <&gpio0 19 0>;
+		};
+	};
+	*/
+};
