@@ -66,6 +66,20 @@ endef
 
 $(eval $(call Profile,ARV4519PW))
 
+define Profile/ARV7510PW22
+  NAME:=Astoria - ARV7510PW22
+  PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-ltq-tapi kmod-ltq-vmmc \
+	kmod-rt2800-pci wpad-mini \
+	kmod-uhci kmod-usb2 kmod-usb2-pci \
+	swconfig
+endef
+
+$(eval $(call Profile,ARV7510PW22))
+
 define Profile/ARV7518PW
   NAME:=Astoria - ARV7518PW
   PACKAGES:=kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
