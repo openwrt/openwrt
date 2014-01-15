@@ -224,6 +224,9 @@ Image/Build/Profile/ARV4520PW=$(call Image/Build/$(1),$(1),ARV4520PW)
 Image/BuildKernel/Profile/ARV452CQW=$(call Image/BuildKernel/Template,ARV452CQW)
 Image/Build/Profile/ARV452CQW=$(call Image/Build/$(1),$(1),ARV452CQW)
 
+Image/BuildKernel/Profile/ARV7510PW22=$(call Image/BuildKernel/Template,ARV7510PW22)
+Image/Build/Profile/ARV7510PW22=$(call Image/Build/$(1),$(1),ARV7510PW22)
+
 Image/BuildKernel/Profile/ARV7518PW=$(call Image/BuildKernel/Template,ARV7518PW)
 Image/Build/Profile/ARV7518PW=$(call Image/Build/$(1),$(1),ARV7518PW)
 
