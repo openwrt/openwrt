@@ -100,6 +100,13 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	br-6475nd)
+		[ "$magic" != "43535953" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
 	esac
 
 	echo "Sysupgrade is not yet supported on $board."

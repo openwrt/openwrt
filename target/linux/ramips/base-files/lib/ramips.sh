@@ -109,6 +109,9 @@ ramips_board_detect() {
 	*"ESR-9753")
 		name="esr-9753"
 		;;
+	*"Edimax BR-6475nD")
+		name="br-6475nd"
+		;;
 	*"F7C027")
 		name="f7c027"
 		;;
