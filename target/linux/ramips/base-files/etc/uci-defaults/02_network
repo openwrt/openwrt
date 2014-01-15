@@ -65,6 +65,13 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
 
+	br-6475nd)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 9t"
+		ucidef_add_switch_vlan "switch0" "2" "0 9t"
+		;;
+
 	asl26555)
 		ucidef_set_interface_lan "eth0.1"
 		ucidef_add_switch "switch0" "1" "1"
@@ -164,6 +171,11 @@ ramips_setup_macs()
 	case $board in
 	*)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
+		;;
+
+	br-6475nd)
+		lan_mac=$(mtd_get_mac_binary devdata 13)
+		wan_mac=$(mtd_get_mac_binary devdata 7)
 		;;
 
 	w306r-v20)
