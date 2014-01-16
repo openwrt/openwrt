@@ -95,15 +95,7 @@
   * _REG relative to RSET_USBD
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -299,6 +299,7 @@ static struct board_info __initdata boar
- 	.has_ohci0			= 1,
- 	.has_pccard			= 1,
- 	.has_ehci0			= 1,
-+	.has_ehci0			= 1,
- 
- 	.has_dsp			= 1,
- 	.dsp = {
-@@ -914,6 +915,15 @@ void __init board_prom_init(void)
+@@ -914,6 +914,15 @@ void __init board_prom_init(void)
  	}
  
  	bcm_gpio_writel(val, GPIO_MODE_REG);
