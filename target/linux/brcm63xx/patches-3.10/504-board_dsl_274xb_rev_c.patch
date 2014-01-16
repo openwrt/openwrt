@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -890,6 +890,61 @@ static struct board_info __initdata boar
+@@ -889,6 +889,61 @@ static struct board_info __initdata boar
  	.has_ohci0			= 1,
  };
  
@@ -62,7 +62,7 @@
  struct spi_gpio_platform_data nb4_spi_gpio_data = {
  	.sck		= NB4_SPI_GPIO_CLK,
  	.mosi		= NB4_SPI_GPIO_MOSI,
-@@ -1517,6 +1572,7 @@ static const struct board_info __initcon
+@@ -1516,6 +1571,7 @@ static const struct board_info __initcon
  	&board_AGPFS0,
  	&board_CPVA642,
  	&board_DWVS0,

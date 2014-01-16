@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -926,6 +926,65 @@ static struct board_info __initdata boar
+@@ -925,6 +925,65 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -66,7 +66,7 @@
  #endif
  
  /*
-@@ -1989,6 +2048,7 @@ static const struct board_info __initcon
+@@ -1988,6 +2047,7 @@ static const struct board_info __initcon
  	&board_96348_D4PW,
  	&board_spw500v,
  	&board_96348sv,
@@ -74,7 +74,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -2110,6 +2170,22 @@ void __init board_prom_init(void)
+@@ -2109,6 +2169,22 @@ void __init board_prom_init(void)
  		val &= MPI_CSBASE_BASE_MASK;
  	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
