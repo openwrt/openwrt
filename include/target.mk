@@ -14,7 +14,7 @@ DEVICE_TYPE?=router
 # Default packages - the really basic set
 DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd
 # For router targets
-DEFAULT_PACKAGES.router:=dnsmasq iptables ip6tables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall 6relayd odhcp6c
+DEFAULT_PACKAGES.router:=dnsmasq iptables ip6tables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall odhcpd odhcp6c
 DEFAULT_PACKAGES.bootloader:=
 
 ifneq ($(DUMP),)
