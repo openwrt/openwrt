@@ -34,8 +34,8 @@ proto_6to4_setup() {
 	local iface="$2"
 	local link="6to4-$cfg"
 
-	local mtu ttl ipaddr
-	json_get_vars mtu ttl ipaddr
+	local mtu ttl ipaddr sourcerouting
+	json_get_vars mtu ttl ipaddr sourcerouting
 
 	( proto_add_host_dependency "$cfg" 0.0.0.0 )
 
@@ -64,7 +64,14 @@ proto_6to4_setup() {
 	proto_init_update "$link" 1
 	proto_add_ipv6_address "$local6" 16
 	proto_add_ipv6_prefix "$prefix6::/48"
-	proto_add_ipv6_route "::" 0 "::192.88.99.1"
+
+	if [ "$sourcerouting" != "0" ]; then
+		proto_add_ipv6_route "::" 0 "::192.88.99.1" "" "" "::/128"
+		proto_add_ipv6_route "::" 0 "::192.88.99.1" "" "" "$local6/16"
+		proto_add_ipv6_route "::" 0 "::192.88.99.1" "" "" "$prefix6::/48"
+	else
+		proto_add_ipv6_route "::" 0 "::192.88.99.1"
+	fi
 
 	proto_add_tunnel
 	json_add_string mode sit
@@ -87,6 +94,7 @@ proto_6to4_init_config() {
 	proto_config_add_string "ipaddr"
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
+	proto_config_add_boolean "sourcerouting"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
