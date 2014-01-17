@@ -49,7 +49,7 @@ proto_dhcpv6_setup() {
 
 	[ -n "$ip6prefix" ] && proto_export "USERPREFIX=$ip6prefix"
 	[ -n "$iface_dslite" ] && proto_export "IFACE_DSLITE=$iface_dslite"
-	[ "$sourcerouting" = "1" ] && proto_export "SOURCE_ROUTING=1"
+	[ "$sourcerouting" != "0" ] && proto_export "SOURCE_ROUTING=1"
 
 	proto_export "INTERFACE=$config"
 	proto_run_command "$config" odhcp6c \

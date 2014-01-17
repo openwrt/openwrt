@@ -68,7 +68,7 @@ setup_interface () {
 			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid"
 		else
 			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid" "::/128"
-			for prefix in $PREFIXES; do
+			for prefix in $PREFIXES $ADDRESSES; do
 				local paddr="${prefix%%,*}"
 				proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid" "$paddr"
 			done
