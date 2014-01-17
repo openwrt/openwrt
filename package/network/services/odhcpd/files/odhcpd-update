@@ -1,3 +1,5 @@
 #!/bin/sh
 # Make dnsmasq reread hostfile
-killall -SIGHUP dnsmasq
+
+pid=$(pidof dnsmasq)
+[ "$(readlink /proc/$pid/exe)" = "/usr/sbin/dnsmasq" ] && kill -SIGHUP $pid
