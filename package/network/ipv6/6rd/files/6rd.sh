@@ -14,8 +14,8 @@ proto_6rd_setup() {
 	local iface="$2"
 	local link="6rd-$cfg"
 
-	local mtu ttl ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink
-	json_get_vars mtu ttl ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink
+	local mtu ttl ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink sourcerouting
+	json_get_vars mtu ttl ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink sourcerouting
 
 	[ -z "$ip6prefix" -o -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -48,7 +48,14 @@ proto_6rd_setup() {
 	proto_init_update "$link" 1
 	proto_add_ipv6_address "$ip6addr" "$ip6prefixlen"
 	proto_add_ipv6_prefix "$ip6lanprefix"
-	proto_add_ipv6_route "::" 0 "::$peeraddr" 4096
+
+	if [ "$sourcerouting" != "0" ]; then
+		proto_add_ipv6_route "::" 0 "::$peeraddr" 4096 "" "::/128"
+		proto_add_ipv6_route "::" 0 "::$peeraddr" 4096 "" "$ip6addr/$ip6prefixlen"
+		proto_add_ipv6_route "::" 0 "::$peeraddr" 4096 "" "$ip6lanprefix"
+	else
+		proto_add_ipv6_route "::" 0 "::$peeraddr" 4096
+	fi
 
 	proto_add_tunnel
 	json_add_string mode sit
@@ -79,6 +86,7 @@ proto_6rd_init_config() {
 	proto_config_add_string "ip6prefixlen"
 	proto_config_add_string "ip4prefixlen"
 	proto_config_add_string "tunlink"
+	proto_config_add_boolean "sourcerouting"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {

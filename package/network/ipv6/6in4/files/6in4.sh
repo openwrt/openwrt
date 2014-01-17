@@ -14,8 +14,8 @@ proto_6in4_setup() {
 	local iface="$2"
 	local link="6in4-$cfg"
 
-	local mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password
-	json_get_vars mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password
+	local mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password sourcerouting
+	json_get_vars mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password sourcerouting
 
 	[ -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -34,16 +34,23 @@ proto_6in4_setup() {
 	}
 
 	proto_init_update "$link" 1
-	proto_add_ipv6_route "::" 0
+
+	local source=""
+	[ "$sourcerouting" != "0" ] && source="::/128"
+	proto_add_ipv6_route "::" 0 "" "" "" "$source"
 
 	[ -n "$ip6addr" ] && {
 		local local6="${ip6addr%%/*}"
 		local mask6="${ip6addr##*/}"
 		[[ "$local6" = "$mask6" ]] && mask6=
 		proto_add_ipv6_address "$local6" "$mask6"
+		[ "$sourcerouting" != "0" ] && proto_add_ipv6_route "::" 0 "" "" "" "$local6/$mask6"
 	}
 
-	[ -n "$ip6prefix" ] && proto_add_ipv6_prefix "$ip6prefix"
+	[ -n "$ip6prefix" ] && {
+		proto_add_ipv6_prefix "$ip6prefix"
+		[ "$sourcerouting" != "0" ] && proto_add_ipv6_route "::" 0 "" "" "" "$ip6prefix"
+	}
 
 	proto_add_tunnel
 	json_add_string mode sit
@@ -90,6 +97,7 @@ proto_6in4_init_config() {
 	proto_config_add_string "password"
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
+	proto_config_add_boolean "soucerouting"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
