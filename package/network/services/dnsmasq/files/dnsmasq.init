@@ -158,8 +158,9 @@ dnsmasq() {
 	config_get hostsfile "$cfg" dhcphostsfile
 	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
 
-	mkdir -p /tmp/hosts
+	mkdir -p /tmp/hosts /tmp/dnsmasq.d
 	xappend "--addn-hosts=/tmp/hosts"
+	xappend "--conf-dir=/tmp/dnsmasq.d"
 
 	local rebind
 	config_get_bool rebind "$cfg" rebind_protection 1
@@ -559,7 +560,12 @@ start_service() {
 	config_foreach dhcp_srv_add srvhost
 	config_foreach dhcp_mx_add mxhost
 	echo >> $CONFIGFILE
-	config_foreach dhcp_add dhcp
+
+	config_get odhcpd_is_active odhcpd maindhcp
+	if [ "$odhcpd_is_active" != "1" ]; then
+		config_foreach dhcp_add dhcp
+	fi
+
 	echo >> $CONFIGFILE
 	config_foreach dhcp_cname_add cname
 	echo >> $CONFIGFILE
