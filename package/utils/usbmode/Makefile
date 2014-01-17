@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=usbmode
-PKG_VERSION:=2013-08-20
+PKG_VERSION:=2014-01-17
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
@@ -16,7 +16,7 @@ PKG_LICENSE_FILES:=
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
-PKG_DATA_VERSION:=20121109
+PKG_DATA_VERSION:=20131113
 PKG_DATA_URL:=http://www.draisberghof.de/usb_modeswitch
 PKG_DATA_PATH:=usb-modeswitch-data-$(PKG_DATA_VERSION)
 PKG_DATA_FILENAME:=$(PKG_DATA_PATH).tar.bz2
@@ -27,7 +27,7 @@ include $(INCLUDE_DIR)/cmake.mk
 define Download/data
   FILE:=$(PKG_DATA_FILENAME)
   URL:=$(PKG_DATA_URL)
-  MD5SUM:=a7d23a03157871013a0d708ab2b1b6df
+  MD5SUM:=7b5ac1226b360ddc366c286e62b3c3a4
 endef
 $(eval $(call Download,data))
 
