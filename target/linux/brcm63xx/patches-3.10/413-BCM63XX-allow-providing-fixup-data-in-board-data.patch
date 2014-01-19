@@ -18,15 +18,15 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  
  #include <uapi/linux/bcm933xx_hcs.h>
  #include <uapi/linux/bcm963xx_tag.h>
-@@ -967,6 +968,7 @@ int __init board_register_devices(void)
- {
+@@ -968,6 +969,7 @@ int __init board_register_devices(void)
  	int button_count = 0;
  	int led_count = 0;
+ 	int usbh_ports = 0;
 +	int i;
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -1005,7 +1007,8 @@ int __init board_register_devices(void)
+@@ -1013,7 +1015,8 @@ int __init board_register_devices(void)
  	 * do this after registering enet devices
  	 */
  #ifdef CONFIG_SSB_PCIHOST
@@ -36,7 +36,7 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  		memcpy(bcm63xx_sprom.et0mac, bcm63xx_sprom.il0mac, ETH_ALEN);
  		memcpy(bcm63xx_sprom.et1mac, bcm63xx_sprom.il0mac, ETH_ALEN);
  		if (ssb_arch_register_fallback_sprom(
-@@ -1052,5 +1055,9 @@ int __init board_register_devices(void)
+@@ -1060,5 +1063,9 @@ int __init board_register_devices(void)
  		platform_device_register(&bcm63xx_gpio_keys_device);
  	}
  
