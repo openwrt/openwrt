@@ -29,7 +29,7 @@ sub load_config($$) {
 	my $mod_plus = shift;
 	my %config;
 
-	open FILE, "$file" or die "can't open file";
+	open FILE, "$file" or die "can't open file '$file'";
 	while (<FILE>) {
 		chomp;
 		/^$PREFIX(.+?)=(.+)/ and do {
