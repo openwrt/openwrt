@@ -1,0 +1,106 @@
+From 43334f8438704001deb258b6e7223699bd336c77 Mon Sep 17 00:00:00 2001
+From: "Steven J. Hill" <Steven.Hill@imgtec.com>
+Date: Wed, 25 Sep 2013 14:58:19 -0500
+Subject: [PATCH 093/105] MIPS: GIC: Send IPIs using the GIC.
+
+If a GIC present, then use it to send IPIs between the cores.
+
+Signed-off-by: Steven J. Hill <Steven.Hill@imgtec.com>
+---
+ arch/mips/kernel/smp-mt.c |   32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/arch/mips/kernel/smp-mt.c b/arch/mips/kernel/smp-mt.c
+index 2f8c468..d057c84 100644
+--- a/arch/mips/kernel/smp-mt.c
++++ b/arch/mips/kernel/smp-mt.c
+@@ -71,6 +71,7 @@ static unsigned int __init smvp_vpe_init(unsigned int tc, unsigned int mvpconf0,
+ 
+ 		/* Record this as available CPU */
+ 		set_cpu_possible(tc, true);
++		set_cpu_present(tc, true);
+ 		__cpu_number_map[tc]	= ++ncpu;
+ 		__cpu_logical_map[ncpu] = tc;
+ 	}
+@@ -112,12 +113,35 @@ static void __init smvp_tc_init(unsigned int tc, unsigned int mvpconf0)
+ 	write_tc_c0_tchalt(TCHALT_H);
+ }
+ 
++static void mp_send_ipi_single(int cpu, unsigned int action)
++{
++	unsigned long flags;
++
++	local_irq_save(flags);
++
++	switch (action) {
++	case SMP_CALL_FUNCTION:
++		gic_send_ipi(plat_ipi_call_int_xlate(cpu));
++		break;
++
++	case SMP_RESCHEDULE_YOURSELF:
++		gic_send_ipi(plat_ipi_resched_int_xlate(cpu));
++		break;
++	}
++
++	local_irq_restore(flags);
++}
++
+ static void vsmp_send_ipi_single(int cpu, unsigned int action)
+ {
+ 	int i;
+ 	unsigned long flags;
+ 	int vpflags;
+ 
++	if (gic_present) {
++		mp_send_ipi_single(cpu, action);
++		return;
++	}
+ 	local_irq_save(flags);
+ 
+ 	vpflags = dvpe();	/* can't access the other CPU's registers whilst MVPE enabled */
+@@ -164,6 +188,8 @@ static void __cpuinit vsmp_init_secondary(void)
+ 
+ static void __cpuinit vsmp_smp_finish(void)
+ {
++	pr_debug("SMPMT: CPU%d: vsmp_smp_finish\n", smp_processor_id());
++
+ 	/* CDFIXME: remove this? */
+ 	write_c0_compare(read_c0_count() + (8* mips_hpt_frequency/HZ));
+ 
+@@ -178,6 +204,7 @@ static void __cpuinit vsmp_smp_finish(void)
+ 
+ static void vsmp_cpus_done(void)
+ {
++	pr_debug("SMPMT: CPU%d: vsmp_cpus_done\n", smp_processor_id());
+ }
+ 
+ /*
+@@ -191,6 +218,8 @@ static void vsmp_cpus_done(void)
+ static void __cpuinit vsmp_boot_secondary(int cpu, struct task_struct *idle)
+ {
+ 	struct thread_info *gp = task_thread_info(idle);
++	pr_debug("SMPMT: CPU%d: vsmp_boot_secondary cpu %d\n",
++		smp_processor_id(), cpu);
+ 	dvpe();
+ 	set_c0_mvpcontrol(MVPCONTROL_VPC);
+ 
+@@ -232,6 +261,7 @@ static void __init vsmp_smp_setup(void)
+ 	unsigned int mvpconf0, ntc, tc, ncpu = 0;
+ 	unsigned int nvpe;
+ 
++	pr_debug("SMPMT: CPU%d: vsmp_smp_setup\n", smp_processor_id());
+ #ifdef CONFIG_MIPS_MT_FPAFF
+ 	/* If we have an FPU, enroll ourselves in the FPU-full mask */
+ 	if (cpu_has_fpu)
+@@ -272,6 +302,8 @@ static void __init vsmp_smp_setup(void)
+ 
+ static void __init vsmp_prepare_cpus(unsigned int max_cpus)
+ {
++	pr_debug("SMPMT: CPU%d: vsmp_prepare_cpus %d\n",
++		smp_processor_id(), max_cpus);
+ 	mips_mt_set_cpuoptions();
+ }
+ 
+-- 
+1.7.10.4
+

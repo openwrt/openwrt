@@ -1,0 +1,57 @@
+From 184edf882ebb7885b49fa231a503205da94e78f0 Mon Sep 17 00:00:00 2001
+From: Markos Chandras <markos.chandras@imgtec.com>
+Date: Wed, 2 Oct 2013 12:40:26 -0500
+Subject: [PATCH 065/105] MIPS: Kconfig: CMP support needs to select SMP as
+ well
+
+The CMP code is only designed to work with SMP configurations.
+Fixes multiple build problems on certain randconfigs:
+
+In file included from arch/mips/kernel/smp-cmp.c:34:0:
+arch/mips/include/asm/smp.h:28:0:
+error: "raw_smp_processor_id" redefined [-Werror]
+
+In file included from include/linux/sched.h:30:0,
+from arch/mips/kernel/smp-cmp.c:22:
+include/linux/smp.h:135:0: note: this is the location of the
+previous definition
+
+In file included from arch/mips/kernel/smp-cmp.c:34:0:
+arch/mips/include/asm/smp.h:57:20:
+error: redefinition of 'smp_send_reschedule'
+
+In file included from include/linux/sched.h:30:0,
+from arch/mips/kernel/smp-cmp.c:22:
+include/linux/smp.h:179:20: note: previous
+definition of 'smp_send_reschedule' was here
+
+In file included from arch/mips/kernel/smp-cmp.c:34:0:
+arch/mips/include/asm/smp.h: In function 'smp_send_reschedule':
+arch/mips/include/asm/smp.h:61:8:
+error: dereferencing pointer to incomplete type
+[...]
+
+Signed-off-by: Markos Chandras <markos.chandras@imgtec.com>
+Cc: linux-mips@linux-mips.org
+Cc: Markos Chandras <markos.chandras@imgtec.com>
+Patchwork: https://patchwork.linux-mips.org/patch/5812/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index e82c066..b537fb1 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -2010,6 +2010,7 @@ config MIPS_VPE_APSP_API
+ config MIPS_CMP
+ 	bool "MIPS CMP framework support"
+ 	depends on SYS_SUPPORTS_MIPS_CMP
++	select SMP
+ 	select SYNC_R4K
+ 	select SYS_SUPPORTS_SMP
+ 	select SYS_SUPPORTS_SCHED_SMT if SMP
+-- 
+1.7.10.4
+
