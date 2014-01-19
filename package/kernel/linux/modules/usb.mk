@@ -1132,3 +1132,21 @@ define KernelPackage/usbmon/description
 endef
 
 $(eval $(call KernelPackage,usbmon))
+
+
+define KernelPackage/usb3
+  TITLE:=Support for USB3 controllers
+  KCONFIG:= \
+	CONFIG_USB_XHCI_HCD \
+	CONFIG_USB_XHCI_HCD_DEBUGGING=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/host/xhci-hcd.ko
+  AUTOLOAD:=$(call AutoLoad,54,xhci-hcd,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb3/description
+ Kernel support for USB3 (XHCI) controllers
+endef
+
+$(eval $(call KernelPackage,usb3))
