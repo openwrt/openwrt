@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1772,6 +1772,82 @@ static struct board_info __initdata boar
+@@ -1777,6 +1777,83 @@ static struct board_info __initdata boar
  	.spis = nb4_spi_devices,
  	.num_spis = ARRAY_SIZE(nb4_spi_devices),
  };
@@ -29,6 +29,7 @@
 +
 +	.has_ohci0 = 1,
 +	.has_ehci0 = 1,
++	.num_usbh_ports			= 2,
 +
 +	.leds = {
 +		{
@@ -83,7 +84,7 @@
  #endif
  
  /*
-@@ -1820,6 +1896,7 @@ static const struct board_info __initcon
+@@ -1825,6 +1902,7 @@ static const struct board_info __initcon
  	&board_nb4_ser_r2,
  	&board_nb4_fxc_r1,
  	&board_nb4_fxc_r2,
