@@ -111,3 +111,14 @@
  }
  
  /*
+--- a/arch/mips/bcm63xx/Kconfig
++++ b/arch/mips/bcm63xx/Kconfig
+@@ -22,6 +22,8 @@ config BCM63XX_CPU_6318
+ 	bool "support 6318 CPU"
+ 	select SYS_HAS_CPU_BMIPS32_3300
+ 	select HW_HAS_PCI
++	select BCM63XX_OHCI
++	select BCM63XX_EHCI
+ 
+ config BCM63XX_CPU_6328
+ 	bool "support 6328 CPU"
