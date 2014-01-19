@@ -1,0 +1,862 @@
+Index: linux-3.10.26/drivers/usb/core/hub.c
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/core/hub.c	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/core/hub.c	2014-01-19 16:29:18.548615960 +0000
+@@ -1259,7 +1259,7 @@
+ 	if (type != HUB_SUSPEND) {
+ 		/* Disconnect all the children */
+ 		for (i = 0; i < hdev->maxchild; ++i) {
+-			if (hub->ports[i]->child)
++			if (hub->ports[i] && hub->ports[i]->child)
+ 				usb_disconnect(&hub->ports[i]->child);
+ 		}
+ 	}
+Index: linux-3.10.26/drivers/usb/core/port.c
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/core/port.c	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/core/port.c	2014-01-19 16:29:18.548615960 +0000
+@@ -193,6 +193,7 @@
+ void usb_hub_remove_port_device(struct usb_hub *hub,
+ 				       int port1)
+ {
+-	device_unregister(&hub->ports[port1 - 1]->dev);
++	if (hub->ports[port1 - 1])
++		device_unregister(&hub->ports[port1 - 1]->dev);
+ }
+ 
+Index: linux-3.10.26/drivers/usb/host/Kconfig
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/host/Kconfig	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/host/Kconfig	2014-01-19 16:29:18.548615960 +0000
+@@ -28,7 +28,11 @@
+ if USB_XHCI_HCD
+ 
+ config USB_XHCI_PLATFORM
+-	tristate
++	bool "xHCI platform"
++
++config USB_MT7621_XHCI_PLATFORM
++	bool "MTK MT7621 xHCI"
++	depends on USB_XHCI_PLATFORM
+ 
+ config USB_XHCI_HCD_DEBUGGING
+ 	bool "Debugging for the xHCI host controller"
+Index: linux-3.10.26/drivers/usb/host/Makefile
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/host/Makefile	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/host/Makefile	2014-01-19 16:30:54.964617843 +0000
+@@ -13,15 +13,23 @@
+ 
+ xhci-hcd-y := xhci.o xhci-mem.o
+ xhci-hcd-y += xhci-ring.o xhci-hub.o xhci-dbg.o
++ifndef CONFIG_USB_MT7621_XHCI_PLATFORM
+ xhci-hcd-$(CONFIG_PCI)	+= xhci-pci.o
++endif
++
++ifdef CONFIG_USB_MT7621_XHCI_PLATFORM
++xhci-hcd-y += mtk-phy.o xhci-mtk-scheduler.o xhci-mtk-power.o xhci-mtk.o mtk-phy-7621.o mtk-phy-ahb.o
++endif
+ 
+ ifneq ($(CONFIG_USB_XHCI_PLATFORM), )
+-	xhci-hcd-y		+= xhci-plat.o
++xhci-hcd-y		+= xhci-plat.o
+ endif
+ 
+ obj-$(CONFIG_USB_WHCI_HCD)	+= whci/
+ 
++ifndef CONFIG_USB_MT7621_XHCI_PLATFORM
+ obj-$(CONFIG_PCI)		+= pci-quirks.o
++endif
+ 
+ obj-$(CONFIG_USB_EHCI_HCD)	+= ehci-hcd.o
+ obj-$(CONFIG_USB_EHCI_PCI)	+= ehci-pci.o
+Index: linux-3.10.26/drivers/usb/host/pci-quirks.h
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/host/pci-quirks.h	2014-01-19 16:29:17.392615927 +0000
++++ linux-3.10.26/drivers/usb/host/pci-quirks.h	2014-01-19 16:29:18.548615960 +0000
+@@ -1,7 +1,7 @@
+ #ifndef __LINUX_USB_PCI_QUIRKS_H
+ #define __LINUX_USB_PCI_QUIRKS_H
+ 
+-#ifdef CONFIG_PCI
++#if defined (CONFIG_PCI) && !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ void uhci_reset_hc(struct pci_dev *pdev, unsigned long base);
+ int uhci_check_and_reset_hc(struct pci_dev *pdev, unsigned long base);
+ bool usb_is_intel_switchable_xhci(struct pci_dev *pdev);
+Index: linux-3.10.26/drivers/usb/host/xhci.c
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/host/xhci.c	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/host/xhci.c	2014-01-19 16:29:18.548615960 +0000
+@@ -30,6 +30,16 @@
+ 
+ #include "xhci.h"
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++#include <asm/uaccess.h>
++#include <linux/dma-mapping.h>
++#include <linux/platform_device.h>
++#include "mtk-phy.h"
++#include "xhci-mtk-scheduler.h"
++#include "xhci-mtk-power.h"
++#include "xhci-mtk.h"
++#endif
++
+ #define DRIVER_AUTHOR "Sarah Sharp"
+ #define DRIVER_DESC "'eXtensible' Host Controller (xHC) Driver"
+ 
+@@ -38,6 +48,18 @@
+ module_param(link_quirk, int, S_IRUGO | S_IWUSR);
+ MODULE_PARM_DESC(link_quirk, "Don't clear the chain bit on a link TRB");
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++long xhci_mtk_test_unlock_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
++static struct file_operations xhci_mtk_test_fops = {
++    .owner =		THIS_MODULE,
++    .read =		xhci_mtk_test_read,
++    .write =		xhci_mtk_test_write,
++    .unlocked_ioctl =	xhci_mtk_test_unlock_ioctl,
++    .open =		xhci_mtk_test_open,
++    .release =		xhci_mtk_test_release,
++};
++#endif
++
+ /* TODO: copied from ehci-hcd.c - can this be refactored? */
+ /*
+  * xhci_handshake - spin reading hc until handshake completes or fails
+@@ -189,7 +211,7 @@
+ 	return ret;
+ }
+ 
+-#ifdef CONFIG_PCI
++#if defined (CONFIG_PCI) && !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ static int xhci_free_msi(struct xhci_hcd *xhci)
+ {
+ 	int i;
+@@ -386,6 +408,7 @@
+ 		return ret;
+ 	}
+ 	hcd->irq = pdev->irq;
++
+ 	return 0;
+ }
+ 
+@@ -427,6 +450,11 @@
+ 			xhci_dbg(xhci, "Attempting compliance mode recovery\n");
+ 			hcd = xhci->shared_hcd;
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++			temp |= (1 << 31);
++			xhci_writel(xhci, temp, xhci->usb3_ports[i]);
++#endif
++
+ 			if (hcd->state == HC_STATE_SUSPENDED)
+ 				usb_hcd_resume_root_hub(hcd);
+ 
+@@ -475,6 +503,9 @@
+ {
+ 	const char *dmi_product_name, *dmi_sys_vendor;
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	return true;
++#endif
+ 	dmi_product_name = dmi_get_system_info(DMI_PRODUCT_NAME);
+ 	dmi_sys_vendor = dmi_get_system_info(DMI_SYS_VENDOR);
+ 	if (!dmi_product_name || !dmi_sys_vendor)
+@@ -518,6 +549,10 @@
+ 	} else {
+ 		xhci_dbg(xhci, "xHCI doesn't need link TRB QUIRK\n");
+ 	}
++
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	mtk_xhci_scheduler_init();
++#endif
+ 	retval = xhci_mem_init(xhci, GFP_KERNEL);
+ 	xhci_dbg(xhci, "Finished xhci_init\n");
+ 
+@@ -661,7 +696,11 @@
+ 	xhci_dbg(xhci, "// Set the interrupt modulation register\n");
+ 	temp = xhci_readl(xhci, &xhci->ir_set->irq_control);
+ 	temp &= ~ER_IRQ_INTERVAL_MASK;
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	temp |= (u32) 16;
++#else
+ 	temp |= (u32) 160;
++#endif
+ 	xhci_writel(xhci, temp, &xhci->ir_set->irq_control);
+ 
+ 	/* Set the HCD state before we enable the irqs */
+@@ -682,6 +721,9 @@
+ 		xhci_queue_vendor_command(xhci, 0, 0, 0,
+ 				TRB_TYPE(TRB_NEC_GET_FW));
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	enableXhciAllPortPower(xhci);
++#endif
+ 	xhci_dbg(xhci, "Finished xhci_run for USB2 roothub\n");
+ 	return 0;
+ }
+@@ -999,7 +1041,6 @@
+ 
+ 	/* If restore operation fails, re-initialize the HC during resume */
+ 	if ((temp & STS_SRE) || hibernated) {
+-
+ 		if ((xhci->quirks & XHCI_COMP_MODE_QUIRK) &&
+ 				!(xhci_all_ports_seen_u0(xhci))) {
+ 			del_timer_sync(&xhci->comp_mode_recovery_timer);
+@@ -1583,6 +1624,13 @@
+ 	u32 drop_flag;
+ 	u32 new_add_flags, new_drop_flags, new_slot_info;
+ 	int ret;
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++#if MTK_SCH_NEW
++	struct sch_ep *sch_ep = NULL;
++	int isTT;
++	int ep_type;
++#endif
++#endif
+ 
+ 	ret = xhci_check_args(hcd, udev, ep, 1, true, __func__);
+ 	if (ret <= 0)
+@@ -1634,6 +1682,40 @@
+ 
+ 	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++#if MTK_SCH_NEW
++	slot_ctx = xhci_get_slot_ctx(xhci, xhci->devs[udev->slot_id]->out_ctx);
++	if ((slot_ctx->tt_info & 0xff) > 0) {
++		isTT = 1;
++	}
++	else {
++		isTT = 0;
++	}
++	if (usb_endpoint_xfer_int(&ep->desc)) {
++		ep_type = USB_EP_INT;
++	}
++	else if (usb_endpoint_xfer_isoc(&ep->desc)) {
++		ep_type = USB_EP_ISOC;
++	}
++	else if (usb_endpoint_xfer_bulk(&ep->desc)) {
++		ep_type = USB_EP_BULK;
++	}
++	else
++		ep_type = USB_EP_CONTROL;
++
++	sch_ep = mtk_xhci_scheduler_remove_ep(udev->speed, usb_endpoint_dir_in(&ep->desc)
++		, isTT, ep_type, (mtk_u32 *)ep);
++	if (sch_ep != NULL) {
++		kfree(sch_ep);
++	}
++	else {
++		xhci_dbg(xhci, "[MTK]Doesn't find ep_sch instance when removing endpoint\n");
++	}
++#else
++	mtk_xhci_scheduler_remove_ep(xhci, udev, ep);
++#endif
++#endif
++
+ 	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x, new slot info = %#x\n",
+ 			(unsigned int) ep->desc.bEndpointAddress,
+ 			udev->slot_id,
+@@ -1669,6 +1751,18 @@
+ 	u32 new_add_flags, new_drop_flags, new_slot_info;
+ 	struct xhci_virt_device *virt_dev;
+ 	int ret = 0;
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	struct xhci_ep_ctx *in_ep_ctx;
++#if MTK_SCH_NEW
++	struct sch_ep *sch_ep;
++	int isTT;
++	int ep_type;
++	int maxp = 0;
++	int burst = 0;
++	int mult = 0;
++	int interval;
++#endif
++#endif
+ 
+ 	ret = xhci_check_args(hcd, udev, ep, 1, true, __func__);
+ 	if (ret <= 0) {
+@@ -1731,6 +1825,56 @@
+ 		return -ENOMEM;
+ 	}
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	in_ep_ctx = xhci_get_ep_ctx(xhci, in_ctx, ep_index);
++#if MTK_SCH_NEW
++	slot_ctx = xhci_get_slot_ctx(xhci, virt_dev->out_ctx);
++	if ((slot_ctx->tt_info & 0xff) > 0) {
++		isTT = 1;
++	}
++	else {
++		isTT = 0;
++	}
++	if (usb_endpoint_xfer_int(&ep->desc)) {
++		ep_type = USB_EP_INT;
++	}
++	else if (usb_endpoint_xfer_isoc(&ep->desc)) {
++		ep_type = USB_EP_ISOC;
++	}
++	else if (usb_endpoint_xfer_bulk(&ep->desc)) {
++		ep_type = USB_EP_BULK;
++	}
++	else
++		ep_type = USB_EP_CONTROL;
++
++	if (udev->speed == USB_SPEED_FULL || udev->speed == USB_SPEED_HIGH 
++		|| udev->speed == USB_SPEED_LOW) {
++		maxp = ep->desc.wMaxPacketSize & 0x7FF;
++		burst = ep->desc.wMaxPacketSize >> 11;
++		mult = 0;
++	}
++	else if (udev->speed == USB_SPEED_SUPER) {
++		maxp = ep->desc.wMaxPacketSize & 0x7FF;
++		burst = ep->ss_ep_comp.bMaxBurst;
++		mult = ep->ss_ep_comp.bmAttributes & 0x3;
++	}
++	interval = (1 << ((in_ep_ctx->ep_info >> 16) & 0xff));
++	sch_ep = kmalloc(sizeof(struct sch_ep), GFP_KERNEL);
++	if (mtk_xhci_scheduler_add_ep(udev->speed, usb_endpoint_dir_in(&ep->desc),
++		isTT, ep_type, maxp, interval, burst, mult, (mtk_u32 *)ep
++		, (mtk_u32 *)in_ep_ctx, sch_ep) != SCH_SUCCESS) {
++		xhci_err(xhci, "[MTK] not enough bandwidth\n");
++
++		return -ENOSPC;
++	}
++#else
++	if (mtk_xhci_scheduler_add_ep(xhci, udev, ep, in_ep_ctx) != SCH_SUCCESS) {
++		xhci_err(xhci, "[MTK] not enough bandwidth\n");
++
++		return -ENOSPC;
++	}
++#endif
++#endif
+ 	ctrl_ctx->add_flags |= cpu_to_le32(added_ctxs);
+ 	new_add_flags = le32_to_cpu(ctrl_ctx->add_flags);
+ 
+@@ -2694,7 +2838,7 @@
+ 	if (ctrl_ctx->add_flags == cpu_to_le32(SLOT_FLAG) &&
+ 			ctrl_ctx->drop_flags == 0)
+ 		return 0;
+-
++	
+ 	xhci_dbg(xhci, "New Input Control Context:\n");
+ 	slot_ctx = xhci_get_slot_ctx(xhci, virt_dev->in_ctx);
+ 	xhci_dbg_ctx(xhci, virt_dev->in_ctx,
+@@ -4230,10 +4374,14 @@
+ 		u16 *timeout)
+ {
+ 	if (state == USB3_LPM_U1) {
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 		if (xhci->quirks & XHCI_INTEL_HOST)
++#endif
+ 			return xhci_calculate_intel_u1_timeout(udev, desc);
+ 	} else {
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 		if (xhci->quirks & XHCI_INTEL_HOST)
++#endif
+ 			return xhci_calculate_intel_u2_timeout(udev, desc);
+ 	}
+ 
+@@ -4659,7 +4807,9 @@
+ 	/* Accept arbitrarily long scatter-gather lists */
+ 	hcd->self.sg_tablesize = ~0;
+ 	/* XHCI controllers don't stop the ep queue on short packets :| */
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 	hcd->self.no_stop_on_short = 1;
++#endif
+ 
+ 	if (usb_hcd_is_primary_hcd(hcd)) {
+ 		xhci = kzalloc(sizeof(struct xhci_hcd), GFP_KERNEL);
+@@ -4728,6 +4878,10 @@
+ 		goto error;
+ 	xhci_dbg(xhci, "Reset complete\n");
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	setInitialReg();
++#endif
++
+ 	temp = xhci_readl(xhci, &xhci->cap_regs->hcc_params);
+ 	if (HCC_64BIT_ADDR(temp)) {
+ 		xhci_dbg(xhci, "Enabling 64-bit DMA addresses.\n");
+@@ -4752,8 +4906,21 @@
+ MODULE_AUTHOR(DRIVER_AUTHOR);
+ MODULE_LICENSE("GPL");
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++static struct platform_device xhci_platform_dev = {
++	.name = "xhci-hcd",
++	.id   = -1,
++	.dev  = { 
++		.coherent_dma_mask = 0xffffffff,
++        },
++};
++#endif
++
+ static int __init xhci_hcd_init(void)
+ {
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	struct platform_device *pPlatformDev;
++#endif
+ 	int retval;
+ 
+ 	retval = xhci_register_pci();
+@@ -4766,6 +4933,33 @@
+ 		printk(KERN_DEBUG "Problem registering platform driver.");
+ 		goto unreg_pci;
+ 	}
++
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	retval = register_chrdev(XHCI_MTK_TEST_MAJOR, DEVICE_NAME, &xhci_mtk_test_fops);
++
++	u3phy_init();
++	if (u3phy_ops->u2_slew_rate_calibration) {
++                u3phy_ops->u2_slew_rate_calibration(u3phy);
++                u3phy_ops->u2_slew_rate_calibration(u3phy_p1);
++        }
++        else{
++                printk(KERN_ERR "WARN: PHY doesn't implement u2 slew rate calibration function\n");
++        }
++        u3phy_ops->init(u3phy);
++	reinitIP();
++
++	pPlatformDev = &xhci_platform_dev;
++	memset(pPlatformDev, 0, sizeof(struct platform_device));
++	pPlatformDev->name = "xhci-hcd";
++	pPlatformDev->id = -1;
++	pPlatformDev->dev.coherent_dma_mask = 0xffffffff;
++	pPlatformDev->dev.dma_mask = &pPlatformDev->dev.coherent_dma_mask;
++
++	retval = platform_device_register(&xhci_platform_dev);
++	if (retval < 0)
++		xhci_unregister_plat();
++#endif
++
+ 	/*
+ 	 * Check the compiler generated sizes of structures that must be laid
+ 	 * out in specific ways for hardware access.
+@@ -4783,6 +4977,7 @@
+ 	BUILD_BUG_ON(sizeof(struct xhci_intr_reg) != 8*32/8);
+ 	/* xhci_run_regs has eight fields and embeds 128 xhci_intr_regs */
+ 	BUILD_BUG_ON(sizeof(struct xhci_run_regs) != (8+8*128)*32/8);
++
+ 	return 0;
+ unreg_pci:
+ 	xhci_unregister_pci();
+Index: linux-3.10.26/drivers/usb/host/xhci-dbg.c
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/host/xhci-dbg.c	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/host/xhci-dbg.c	2014-01-19 16:29:18.548615960 +0000
+@@ -21,6 +21,9 @@
+  */
+ 
+ #include "xhci.h"
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++#include "xhci-mtk.h"
++#endif
+ 
+ #define XHCI_INIT_VALUE 0x0
+ 
+Index: linux-3.10.26/drivers/usb/host/xhci.h
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/host/xhci.h	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/host/xhci.h	2014-01-19 16:29:18.548615960 +0000
+@@ -29,9 +29,24 @@
+ #include <linux/usb/hcd.h>
+ 
+ /* Code sharing between pci-quirks and xhci hcd */
+-#include	"xhci-ext-caps.h"
++#include "xhci-ext-caps.h"
+ #include "pci-quirks.h"
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++#define XHC_IRQ (22 + 8)
++#define XHC_IO_START 0x1E1C0000
++#define XHC_IO_LENGTH 0x10000
++/* mtk scheduler bitmasks */
++#define BPKTS(p)	((p) & 0x3f)
++#define BCSCOUNT(p)	(((p) & 0x7) << 8)
++#define BBM(p)		((p) << 11)
++#define BOFFSET(p)	((p) & 0x3fff)
++#define BREPEAT(p)	(((p) & 0x7fff) << 16)
++#endif
++
++
++
++
+ /* xHCI PCI Configuration Registers */
+ #define XHCI_SBRN_OFFSET	(0x60)
+ 
+@@ -1536,8 +1551,12 @@
+ 	/* Compliance Mode Recovery Data */
+ 	struct timer_list	comp_mode_recovery_timer;
+ 	u32			port_status_u0;
++#ifdef CONFIG_USB_MT7621_XHCI_PLATFORM
++#define COMP_MODE_RCVRY_MSECS 5000
++#else
+ /* Compliance Mode Timer Triggered every 2 seconds */
+ #define COMP_MODE_RCVRY_MSECS 2000
++#endif
+ };
+ 
+ /* convert between an HCD pointer and the corresponding EHCI_HCD */
+@@ -1703,7 +1722,7 @@
+ void xhci_free_command(struct xhci_hcd *xhci,
+ 		struct xhci_command *command);
+ 
+-#ifdef CONFIG_PCI
++#if defined (CONFIG_PCI) && !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ /* xHCI PCI glue */
+ int xhci_register_pci(void);
+ void xhci_unregister_pci(void);
+Index: linux-3.10.26/drivers/usb/host/xhci-mem.c
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/host/xhci-mem.c	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/host/xhci-mem.c	2014-01-19 16:29:18.548615960 +0000
+@@ -65,6 +65,9 @@
+ 
+ static void xhci_segment_free(struct xhci_hcd *xhci, struct xhci_segment *seg)
+ {
++	if (!seg)
++		return;
++
+ 	if (seg->trbs) {
+ 		dma_pool_free(xhci->segment_pool, seg->trbs, seg->dma);
+ 		seg->trbs = NULL;
+@@ -1446,9 +1449,17 @@
+ 			max_burst = (usb_endpoint_maxp(&ep->desc)
+ 				     & 0x1800) >> 11;
+ 		}
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++		if ((max_packet % 4 == 2) && (max_packet % 16 != 14) && (max_burst == 0) && usb_endpoint_dir_in(&ep->desc))
++		max_packet += 2;
++#endif
+ 		break;
+ 	case USB_SPEED_FULL:
+ 	case USB_SPEED_LOW:
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++		if ((max_packet % 4 == 2) && (max_packet % 16 != 14) && (max_burst == 0) && usb_endpoint_dir_in(&ep->desc))
++		max_packet += 2;
++#endif
+ 		break;
+ 	default:
+ 		BUG();
+Index: linux-3.10.26/drivers/usb/host/xhci-plat.c
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/host/xhci-plat.c	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/host/xhci-plat.c	2014-01-19 16:29:18.548615960 +0000
+@@ -25,6 +25,13 @@
+ 	 * dev struct in order to setup MSI
+ 	 */
+ 	xhci->quirks |= XHCI_PLAT;
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	/* MTK host controller gives a spurious successful event after a 
++	 * short transfer. Ignore it.
++	 */
++	xhci->quirks |= XHCI_SPURIOUS_SUCCESS;
++	xhci->quirks |= XHCI_LPM_SUPPORT;
++#endif
+ }
+ 
+ /* called during probe() after chip reset completes */
+@@ -96,20 +103,32 @@
+ 
+ 	driver = &xhci_plat_xhci_driver;
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	irq = XHC_IRQ;
++#else
+ 	irq = platform_get_irq(pdev, 0);
++#endif
++
+ 	if (irq < 0)
+ 		return -ENODEV;
+ 
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res)
+ 		return -ENODEV;
++#endif
+ 
+ 	hcd = usb_create_hcd(driver, &pdev->dev, dev_name(&pdev->dev));
+ 	if (!hcd)
+ 		return -ENOMEM;
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	hcd->rsrc_start = (uint32_t)XHC_IO_START;
++	hcd->rsrc_len = XHC_IO_LENGTH;
++#else
+ 	hcd->rsrc_start = res->start;
+ 	hcd->rsrc_len = resource_size(res);
++#endif
+ 
+ 	if (!request_mem_region(hcd->rsrc_start, hcd->rsrc_len,
+ 				driver->description)) {
+Index: linux-3.10.26/drivers/usb/host/xhci-ring.c
+===================================================================
+--- linux-3.10.26.orig/drivers/usb/host/xhci-ring.c	2014-01-09 20:25:15.000000000 +0000
++++ linux-3.10.26/drivers/usb/host/xhci-ring.c	2014-01-19 16:29:18.548615960 +0000
+@@ -236,7 +236,6 @@
+ 			 */
+ 			if (!chain && !more_trbs_coming)
+ 				break;
+-
+ 			/* If we're not dealing with 0.95 hardware or
+ 			 * isoc rings on AMD 0.96 host,
+ 			 * carry over the chain bit of the previous TRB
+@@ -273,16 +272,20 @@
+ static inline int room_on_ring(struct xhci_hcd *xhci, struct xhci_ring *ring,
+ 		unsigned int num_trbs)
+ {
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 	int num_trbs_in_deq_seg;
++#endif
+ 
+ 	if (ring->num_trbs_free < num_trbs)
+ 		return 0;
+ 
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 	if (ring->type != TYPE_COMMAND && ring->type != TYPE_EVENT) {
+ 		num_trbs_in_deq_seg = ring->dequeue - ring->deq_seg->trbs;
+ 		if (ring->num_trbs_free < num_trbs + num_trbs_in_deq_seg)
+ 			return 0;
+ 	}
++#endif
+ 
+ 	return 1;
+ }
+@@ -2910,6 +2913,7 @@
+ 		next = ring->enqueue;
+ 
+ 		while (last_trb(xhci, ring, ring->enq_seg, next)) {
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 			/* If we're not dealing with 0.95 hardware or isoc rings
+ 			 * on AMD 0.96 host, clear the chain bit.
+ 			 */
+@@ -2919,7 +2923,9 @@
+ 				next->link.control &= cpu_to_le32(~TRB_CHAIN);
+ 			else
+ 				next->link.control |= cpu_to_le32(TRB_CHAIN);
+-
++#else
++			next->link.control &= cpu_to_le32(~TRB_CHAIN);
++#endif
+ 			wmb();
+ 			next->link.control ^= cpu_to_le32(TRB_CYCLE);
+ 
+@@ -3049,6 +3055,9 @@
+ 		start_trb->field[3] |= cpu_to_le32(start_cycle);
+ 	else
+ 		start_trb->field[3] &= cpu_to_le32(~TRB_CYCLE);
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	wmb();
++#endif
+ 	xhci_ring_ep_doorbell(xhci, slot_id, ep_index, stream_id);
+ }
+ 
+@@ -3108,6 +3117,29 @@
+ 		return (remainder >> 10) << 17;
+ }
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++static u32 mtk_xhci_td_remainder(unsigned int td_transfer_size, unsigned int td_running_total, unsigned int maxp, unsigned trb_buffer_length)
++{
++	u32 max = 31;
++	int remainder, td_packet_count, packet_transferred;
++	
++	//0 for the last TRB
++	//FIXME: need to workaround if there is ZLP in this TD
++	if (td_running_total + trb_buffer_length == td_transfer_size)
++		return 0;
++	
++	//FIXME: need to take care of high-bandwidth (MAX_ESIT)
++	packet_transferred = (td_running_total /*+ trb_buffer_length*/) / maxp;
++	td_packet_count = DIV_ROUND_UP(td_transfer_size, maxp);
++	remainder = td_packet_count - packet_transferred;
++		
++	if (remainder > max)
++		return max << 17;
++	else
++		return remainder << 17;
++}
++#endif
++
+ /*
+  * For xHCI 1.0 host controllers, TD size is the number of max packet sized
+  * packets remaining in the TD (*not* including this TRB).
+@@ -3245,6 +3277,7 @@
+ 		}
+ 
+ 		/* Set the TRB length, TD size, and interrupter fields. */
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 		if (xhci->hci_version < 0x100) {
+ 			remainder = xhci_td_remainder(
+ 					urb->transfer_buffer_length -
+@@ -3254,6 +3287,13 @@
+ 					trb_buff_len, total_packet_count, urb,
+ 					num_trbs - 1);
+ 		}
++#else
++		if (num_trbs > 1)
++			remainder = mtk_xhci_td_remainder(urb->transfer_buffer_length, 
++				running_total, urb->ep->desc.wMaxPacketSize, trb_buff_len);
++#endif
++
++	
+ 		length_field = TRB_LEN(trb_buff_len) |
+ 			remainder |
+ 			TRB_INTR_TARGET(0);
+@@ -3316,6 +3356,9 @@
+ 	int running_total, trb_buff_len, ret;
+ 	unsigned int total_packet_count;
+ 	u64 addr;
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	int max_packet;
++#endif
+ 
+ 	if (urb->num_sgs)
+ 		return queue_bulk_sg_tx(xhci, mem_flags, urb, slot_id, ep_index);
+@@ -3341,6 +3384,25 @@
+ 		running_total += TRB_MAX_BUFF_SIZE;
+ 	}
+ 	/* FIXME: this doesn't deal with URB_ZERO_PACKET - need one more */
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	switch(urb->dev->speed){
++		case USB_SPEED_SUPER:
++			max_packet = urb->ep->desc.wMaxPacketSize;
++			break;
++		case USB_SPEED_HIGH:
++		case USB_SPEED_FULL:
++		case USB_SPEED_LOW:
++		case USB_SPEED_WIRELESS:
++		case USB_SPEED_UNKNOWN:
++		default:
++			max_packet = urb->ep->desc.wMaxPacketSize & 0x7ff;
++			break;
++	}
++	if((urb->transfer_flags & URB_ZERO_PACKET) 
++		&& ((urb->transfer_buffer_length % max_packet) == 0)){
++		num_trbs++;
++	}
++#endif
+ 
+ 	ret = prepare_transfer(xhci, xhci->devs[slot_id],
+ 			ep_index, urb->stream_id,
+@@ -3400,6 +3462,7 @@
+ 			field |= TRB_ISP;
+ 
+ 		/* Set the TRB length, TD size, and interrupter fields. */
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 		if (xhci->hci_version < 0x100) {
+ 			remainder = xhci_td_remainder(
+ 					urb->transfer_buffer_length -
+@@ -3409,6 +3472,10 @@
+ 					trb_buff_len, total_packet_count, urb,
+ 					num_trbs - 1);
+ 		}
++#else
++		remainder = mtk_xhci_td_remainder(urb->transfer_buffer_length, running_total, max_packet, trb_buff_len);
++#endif
++
+ 		length_field = TRB_LEN(trb_buff_len) |
+ 			remainder |
+ 			TRB_INTR_TARGET(0);
+@@ -3498,7 +3565,11 @@
+ 		field |= 0x1;
+ 
+ 	/* xHCI 1.0 6.4.1.2.1: Transfer Type field */
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	if (1) {
++#else
+ 	if (xhci->hci_version == 0x100) {
++#endif
+ 		if (urb->transfer_buffer_length > 0) {
+ 			if (setup->bRequestType & USB_DIR_IN)
+ 				field |= TRB_TX_TYPE(TRB_DATA_IN);
+@@ -3522,7 +3593,12 @@
+ 		field = TRB_TYPE(TRB_DATA);
+ 
+ 	length_field = TRB_LEN(urb->transfer_buffer_length) |
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 		xhci_td_remainder(urb->transfer_buffer_length) |
++#else
++		//CC: MTK style, no scatter-gather for control transfer
++		0 |
++#endif
+ 		TRB_INTR_TARGET(0);
+ 	if (urb->transfer_buffer_length > 0) {
+ 		if (setup->bRequestType & USB_DIR_IN)
+@@ -3533,7 +3609,7 @@
+ 				length_field,
+ 				field | ep_ring->cycle_state);
+ 	}
+-
++	
+ 	/* Save the DMA address of the last TRB in the TD */
+ 	td->last_trb = ep_ring->enqueue;
+ 
+@@ -3645,6 +3721,9 @@
+ 	u64 start_addr, addr;
+ 	int i, j;
+ 	bool more_trbs_coming;
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	int max_packet;
++#endif
+ 
+ 	ep_ring = xhci->devs[slot_id]->eps[ep_index].ring;
+ 
+@@ -3658,6 +3737,21 @@
+ 	start_trb = &ep_ring->enqueue->generic;
+ 	start_cycle = ep_ring->cycle_state;
+ 
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++	switch(urb->dev->speed){
++		case USB_SPEED_SUPER:
++			max_packet = urb->ep->desc.wMaxPacketSize;
++			break;
++		case USB_SPEED_HIGH:
++		case USB_SPEED_FULL:
++		case USB_SPEED_LOW:
++		case USB_SPEED_WIRELESS:
++		case USB_SPEED_UNKNOWN:
++			max_packet = urb->ep->desc.wMaxPacketSize & 0x7ff;
++			break;
++	}
++#endif
++
+ 	urb_priv = urb->hcpriv;
+ 	/* Queue the first TRB, even if it's zero-length */
+ 	for (i = 0; i < num_tds; i++) {
+@@ -3729,9 +3823,13 @@
+ 			} else {
+ 				td->last_trb = ep_ring->enqueue;
+ 				field |= TRB_IOC;
++#if defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
++				if (!(xhci->quirks & XHCI_AVOID_BEI)) {
++#else
+ 				if (xhci->hci_version == 0x100 &&
+ 						!(xhci->quirks &
+ 							XHCI_AVOID_BEI)) {
++#endif
+ 					/* Set BEI bit except for the last td */
+ 					if (i < num_tds - 1)
+ 						field |= TRB_BEI;
+@@ -3746,6 +3844,7 @@
+ 				trb_buff_len = td_remain_len;
+ 
+ 			/* Set the TRB length, TD size, & interrupter fields. */
++#if !defined (CONFIG_USB_MT7621_XHCI_PLATFORM)
+ 			if (xhci->hci_version < 0x100) {
+ 				remainder = xhci_td_remainder(
+ 						td_len - running_total);
+@@ -3755,6 +3854,10 @@
+ 						total_packet_count, urb,
+ 						(trbs_per_td - j - 1));
+ 			}
++#else
++			remainder = mtk_xhci_td_remainder(urb->transfer_buffer_length, running_total, max_packet, trb_buff_len);
++#endif
++
+ 			length_field = TRB_LEN(trb_buff_len) |
+ 				remainder |
+ 				TRB_INTR_TARGET(0);
