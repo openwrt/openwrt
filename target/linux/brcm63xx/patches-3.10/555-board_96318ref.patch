@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -102,6 +102,92 @@ static struct board_info __initdata boar
+@@ -102,6 +102,93 @@ static struct board_info __initdata boar
  #endif
  
  /*
@@ -24,6 +24,7 @@
 +	.has_enetsw			= 1,
 +
 +	.has_ehci0			= 1,
++	.num_usbh_ports			= 1,
 +
 +	.enetsw = {
 +		.used_ports = {
@@ -93,7 +94,7 @@
   * known 6328 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_6328
-@@ -4041,6 +4127,9 @@ static const struct board_info __initcon
+@@ -4052,6 +4139,9 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_3368
  	&board_cvg834g,
  #endif
