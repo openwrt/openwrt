@@ -92,6 +92,7 @@ struct ar8xxx_priv {
 
 	u32 (*read)(struct ar8xxx_priv *priv, int reg);
 	void (*write)(struct ar8xxx_priv *priv, int reg, u32 val);
+	u32 (*rmw)(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
 
 	int (*get_port_link)(unsigned port);
 
@@ -326,6 +327,45 @@ ar8xxx_mii_write(struct ar8xxx_priv *priv, int reg, u32 val)
 	mutex_unlock(&bus->mdio_lock);
 }
 
+static u32
+ar8xxx_mii_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
+{
+	struct mii_bus *bus = priv->mii_bus;
+	u16 r1, r2, page;
+	u16 lo, hi;
+	u32 ret;
+
+	split_addr((u32) reg, &r1, &r2, &page);
+
+	mutex_lock(&bus->mdio_lock);
+
+	bus->write(bus, 0x18, 0, page);
+	usleep_range(1000, 2000); /* wait for the page switch to propagate */
+
+	lo = bus->read(bus, 0x10 | r2, r1);
+	hi = bus->read(bus, 0x10 | r2, r1 + 1);
+
+	ret = hi << 16 | lo;
+	ret &= ~mask;
+	ret |= val;
+
+	lo = ret & 0xffff;
+	hi = (u16) (ret >> 16);
+
+	if (priv->mii_lo_first) {
+		bus->write(bus, 0x10 | r2, r1, lo);
+		bus->write(bus, 0x10 | r2, r1 + 1, hi);
+	} else {
+		bus->write(bus, 0x10 | r2, r1 + 1, hi);
+		bus->write(bus, 0x10 | r2, r1, lo);
+	}
+
+	mutex_unlock(&bus->mdio_lock);
+
+	return ret;
+}
+
+
 static void
 ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
 		     u16 dbg_addr, u16 dbg_data)
@@ -349,31 +389,16 @@ ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data)
 	mutex_unlock(&bus->mdio_lock);
 }
 
-static u32
+static inline u32
 ar8xxx_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 {
-	u32 v;
-
-	lockdep_assert_held(&priv->reg_mutex);
-
-	v = priv->read(priv, reg);
-	v &= ~mask;
-	v |= val;
-	priv->write(priv, reg, v);
-
-	return v;
+	return priv->rmw(priv, reg, mask, val);
 }
 
 static inline void
 ar8xxx_reg_set(struct ar8xxx_priv *priv, int reg, u32 val)
 {
-	u32 v;
-
-	lockdep_assert_held(&priv->reg_mutex);
-
-	v = priv->read(priv, reg);
-	v |= val;
-	priv->write(priv, reg, v);
+	priv->rmw(priv, reg, 0, val);
 }
 
 static int
@@ -408,10 +433,8 @@ ar8xxx_mib_op(struct ar8xxx_priv *priv, u32 op)
 	else
 		mib_func = AR8216_REG_MIB_FUNC;
 
-	mutex_lock(&priv->reg_mutex);
 	/* Capture the hardware statistics for all ports */
 	ar8xxx_rmw(priv, mib_func, AR8216_MIB_FUNC, (op << AR8216_MIB_FUNC_S));
-	mutex_unlock(&priv->reg_mutex);
 
 	/* Wait for the capturing to complete. */
 	ret = ar8xxx_reg_wait(priv, mib_func, AR8216_MIB_BUSY, 0, 10);
@@ -2225,6 +2248,7 @@ ar8xxx_create_mii(struct mii_bus *bus)
 		priv->mii_bus = bus;
 		priv->read = ar8xxx_mii_read;
 		priv->write = ar8xxx_mii_write;
+		priv->rmw = ar8xxx_mii_rmw;
 	}
 
 	return priv;
