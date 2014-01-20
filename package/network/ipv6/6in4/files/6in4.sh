@@ -97,7 +97,7 @@ proto_6in4_init_config() {
 	proto_config_add_string "password"
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
-	proto_config_add_boolean "soucerouting"
+	proto_config_add_boolean "sourcerouting"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
