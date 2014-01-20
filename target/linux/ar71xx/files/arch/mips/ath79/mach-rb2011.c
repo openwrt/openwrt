@@ -117,7 +117,7 @@ static struct ar8327_pad_cfg rb2011_ar8327_pad6_cfg;
 static struct ar8327_sgmii_cfg rb2011_ar8327_sgmii_cfg;
 
 static struct ar8327_led_cfg rb2011_ar8327_led_cfg = {
-	.led_ctrl0 = 0x0000c731,
+	.led_ctrl0 = 0xc731c731,
 	.led_ctrl1 = 0x00000000,
 	.led_ctrl2 = 0x00000000,
 	.led_ctrl3 = 0x0030c300,
