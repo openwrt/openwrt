@@ -459,7 +459,7 @@ static int b53_apply(struct b53_device *dev)
 	return 0;
 }
 
-void b53_switch_reset_gpio(struct b53_device *dev)
+static void b53_switch_reset_gpio(struct b53_device *dev)
 {
 	int gpio = dev->reset_gpio;
 
