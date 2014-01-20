@@ -1,0 +1,101 @@
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -2974,6 +2974,15 @@ put_memory:
+ 	return res;
+ }
+ 
++void shmem_set_file(struct vm_area_struct *vma, struct file *file)
++{
++	if (vma->vm_file)
++		fput(vma->vm_file);
++	vma->vm_file = file;
++	vma->vm_ops = &shmem_vm_ops;
++}
++EXPORT_SYMBOL_GPL(shmem_set_file);
++
+ /**
+  * shmem_kernel_file_setup - get an unlinked file living in tmpfs which must be
+  * 	kernel internal.  There will be NO LSM permission checks against the
+@@ -3013,11 +3022,8 @@ int shmem_zero_setup(struct vm_area_stru
+ 	file = shmem_file_setup("dev/zero", size, vma->vm_flags);
+ 	if (IS_ERR(file))
+ 		return PTR_ERR(file);
++	shmem_set_file(vma, file);
+ 
+-	if (vma->vm_file)
+-		fput(vma->vm_file);
+-	vma->vm_file = file;
+-	vma->vm_ops = &shmem_vm_ops;
+ 	return 0;
+ }
+ 
+--- a/fs/file.c
++++ b/fs/file.c
+@@ -218,6 +218,7 @@ static inline void __set_open_fd(int fd,
+ {
+ 	__set_bit(fd, fdt->open_fds);
+ }
++EXPORT_SYMBOL_GPL(expand_files);
+ 
+ static inline void __clear_open_fd(int fd, struct fdtable *fdt)
+ {
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -490,6 +490,8 @@ static void exit_mm(struct task_struct *
+ 	mm_update_next_owner(mm);
+ 	mmput(mm);
+ }
++EXPORT_SYMBOL_GPL(get_files_struct);
++EXPORT_SYMBOL_GPL(put_files_struct);
+ 
+ /*
+  * When we die, we re-parent all our children, and try to:
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -2874,6 +2874,7 @@ int can_nice(const struct task_struct *p
+ 	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
+ 		capable(CAP_SYS_NICE));
+ }
++EXPORT_SYMBOL_GPL(can_nice);
+ 
+ #ifdef __ARCH_WANT_SYS_NICE
+ 
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -1391,6 +1391,7 @@ void zap_page_range(struct vm_area_struc
+ 	mmu_notifier_invalidate_range_end(mm, start, end);
+ 	tlb_finish_mmu(&tlb, start, end);
+ }
++EXPORT_SYMBOL_GPL(zap_page_range);
+ 
+ /**
+  * zap_page_range_single - remove user pages in a given range
+--- a/mm/vmalloc.c
++++ b/mm/vmalloc.c
+@@ -1260,6 +1260,7 @@ void unmap_kernel_range(unsigned long ad
+ 	vunmap_page_range(addr, end);
+ 	flush_tlb_kernel_range(addr, end);
+ }
++EXPORT_SYMBOL_GPL(unmap_kernel_range);
+ 
+ int map_vm_area(struct vm_struct *area, pgprot_t prot, struct page ***pages)
+ {
+@@ -1367,6 +1368,7 @@ struct vm_struct *get_vm_area(unsigned l
+ 				  NUMA_NO_NODE, GFP_KERNEL,
+ 				  __builtin_return_address(0));
+ }
++EXPORT_SYMBOL_GPL(get_vm_area);
+ 
+ struct vm_struct *get_vm_area_caller(unsigned long size, unsigned long flags,
+ 				const void *caller)
+--- a/include/linux/shmem_fs.h
++++ b/include/linux/shmem_fs.h
+@@ -47,6 +47,8 @@ extern int shmem_init(void);
+ extern int shmem_fill_super(struct super_block *sb, void *data, int silent);
+ extern struct file *shmem_file_setup(const char *name,
+ 					loff_t size, unsigned long flags);
++
++extern void shmem_set_file(struct vm_area_struct *vma, struct file *file);
+ extern struct file *shmem_kernel_file_setup(const char *name, loff_t size,
+ 					    unsigned long flags);
+ extern int shmem_zero_setup(struct vm_area_struct *);

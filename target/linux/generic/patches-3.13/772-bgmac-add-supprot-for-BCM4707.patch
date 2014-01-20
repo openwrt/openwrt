@@ -1,0 +1,143 @@
+bgmac: add supprot for BCM4707
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -887,6 +887,8 @@ static void bgmac_speed(struct bgmac *bg
+ 		set |= BGMAC_CMDCFG_ES_100;
+ 	if (speed & BGMAC_SPEED_1000)
+ 		set |= BGMAC_CMDCFG_ES_1000;
++	if (speed & BGMAC_SPEED_2500)
++		set |= BGMAC_CMDCFG_ES_2500;
+ 	if (!bgmac->full_duplex)
+ 		set |= BGMAC_CMDCFG_HD;
+ 	bgmac_cmdcfg_maskset(bgmac, mask, set, true);
+@@ -894,13 +896,28 @@ static void bgmac_speed(struct bgmac *bg
+ 
+ static void bgmac_miiconfig(struct bgmac *bgmac)
+ {
+-	u8 imode = (bgmac_read(bgmac, BGMAC_DEV_STATUS) & BGMAC_DS_MM_MASK) >>
+-			BGMAC_DS_MM_SHIFT;
+-	if (imode == 0 || imode == 1) {
+-		if (bgmac->autoneg)
+-			bgmac_speed(bgmac, BGMAC_SPEED_100);
+-		else
++	struct bcma_device *core = bgmac->core;
++	struct bcma_chipinfo *ci = &core->bus->chipinfo;
++
++	if (ci->id == BCMA_CHIP_ID_BCM4707 ||
++	    ci->id == BCMA_CHIP_ID_BCM53018) {
++		if (bgmac->autoneg) {
++			bcma_awrite32(core, BCMA_IOCTL,
++				      bcma_aread32(core, BCMA_IOCTL) | 0x44);
++
++			bgmac_speed(bgmac, BGMAC_SPEED_2500);
++		} else {
+ 			bgmac_speed(bgmac, bgmac->speed);
++		}
++	} else {
++		u8 imode = (bgmac_read(bgmac, BGMAC_DEV_STATUS) &
++			    BGMAC_DS_MM_MASK) >> BGMAC_DS_MM_SHIFT;
++		if (imode == 0 || imode == 1) {
++			if (bgmac->autoneg)
++				bgmac_speed(bgmac, BGMAC_SPEED_100);
++			else
++				bgmac_speed(bgmac, bgmac->speed);
++		}
+ 	}
+ }
+ 
+@@ -946,7 +963,8 @@ static void bgmac_chip_reset(struct bgma
+ 
+ 	bcma_core_enable(core, flags);
+ 
+-	if (core->id.rev > 2) {
++	if (core->id.rev > 2 && ci->id != BCMA_CHIP_ID_BCM4707 &&
++	    ci->id != BCMA_CHIP_ID_BCM53018) {
+ 		bgmac_set(bgmac, BCMA_CLKCTLST, 1 << 8);
+ 		bgmac_wait_value(bgmac->core, BCMA_CLKCTLST, 1 << 24, 1 << 24,
+ 				 1000);
+@@ -967,10 +985,13 @@ static void bgmac_chip_reset(struct bgma
+ 			et_swtype &= 0x0f;
+ 			et_swtype <<= 4;
+ 			sw_type = et_swtype;
+-		} else if (ci->id == BCMA_CHIP_ID_BCM5357 && ci->pkg == 9) {
++		} else if (ci->id == BCMA_CHIP_ID_BCM5357 &&
++			   ci->pkg == BCMA_PKG_ID_BCM5358) {
+ 			sw_type = BGMAC_CHIPCTL_1_SW_TYPE_EPHYRMII;
+-		} else if ((ci->id != BCMA_CHIP_ID_BCM53572 && ci->pkg == 10) ||
+-			   (ci->id == BCMA_CHIP_ID_BCM53572 && ci->pkg == 9)) {
++		} else if ((ci->id != BCMA_CHIP_ID_BCM53572 &&
++			    ci->pkg == BCMA_PKG_ID_BCM47186) ||
++			   (ci->id == BCMA_CHIP_ID_BCM53572 &&
++			    ci->pkg == BCMA_PKG_ID_BCM47188)) {
+ 			sw_type = BGMAC_CHIPCTL_1_IF_TYPE_RGMII |
+ 				  BGMAC_CHIPCTL_1_SW_TYPE_RGMII;
+ 		}
+@@ -1077,12 +1098,15 @@ static void bgmac_enable(struct bgmac *b
+ 		break;
+ 	}
+ 
+-	rxq_ctl = bgmac_read(bgmac, BGMAC_RXQ_CTL);
+-	rxq_ctl &= ~BGMAC_RXQ_CTL_MDP_MASK;
+-	bp_clk = bcma_pmu_get_bus_clock(&bgmac->core->bus->drv_cc) / 1000000;
+-	mdp = (bp_clk * 128 / 1000) - 3;
+-	rxq_ctl |= (mdp << BGMAC_RXQ_CTL_MDP_SHIFT);
+-	bgmac_write(bgmac, BGMAC_RXQ_CTL, rxq_ctl);
++	if (ci->id != BCMA_CHIP_ID_BCM4707 &&
++	    ci->id != BCMA_CHIP_ID_BCM53018) {
++		rxq_ctl = bgmac_read(bgmac, BGMAC_RXQ_CTL);
++		rxq_ctl &= ~BGMAC_RXQ_CTL_MDP_MASK;
++		bp_clk = bcma_pmu_get_bus_clock(&bgmac->core->bus->drv_cc) / 1000000;
++		mdp = (bp_clk * 128 / 1000) - 3;
++		rxq_ctl |= (mdp << BGMAC_RXQ_CTL_MDP_SHIFT);
++		bgmac_write(bgmac, BGMAC_RXQ_CTL, rxq_ctl);
++	}
+ }
+ 
+ /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipinit */
+@@ -1488,6 +1512,25 @@ static int bgmac_probe(struct bcma_devic
+ 		goto err_netdev_free;
+ 	}
+ 
++	/* Northstar, take all GMAC cores out of reset */
++	if (core->id.id == BCMA_CHIP_ID_BCM4707 ||
++	    core->id.id == BCMA_CHIP_ID_BCM53018) {
++		struct bcma_device *ns_core;
++		int ns_gmac;
++
++		for (ns_gmac = 0; ns_gmac < 4; ns_gmac++) {
++			/* As northstar requirement, we have to reset all GAMCs before
++			 * accessing them. et_probe() call pci_enable_device() for etx
++			 * and do si_core_reset for GAMCx only.	 Then the other three
++			 * GAMCs didn't reset.  We do it here.
++			 */
++			ns_core = bcma_find_core_unit(core->bus, BCMA_CORE_MAC_GBIT, ns_gmac);
++			if (!bcma_core_is_enabled(ns_core)) {
++				bcma_core_enable(ns_core, 0);
++			}
++		}
++	}
++
+ 	bgmac_chip_reset(bgmac);
+ 
+ 	err = bgmac_dma_alloc(bgmac);
+--- a/drivers/net/ethernet/broadcom/bgmac.h
++++ b/drivers/net/ethernet/broadcom/bgmac.h
+@@ -185,6 +185,7 @@
+ #define   BGMAC_CMDCFG_ES_10			0x00000000
+ #define   BGMAC_CMDCFG_ES_100			0x00000004
+ #define   BGMAC_CMDCFG_ES_1000			0x00000008
++#define   BGMAC_CMDCFG_ES_2500			0x0000000C
+ #define  BGMAC_CMDCFG_PROM			0x00000010	/* Set to activate promiscuous mode */
+ #define  BGMAC_CMDCFG_PAD_EN			0x00000020
+ #define  BGMAC_CMDCFG_CF			0x00000040
+@@ -345,6 +346,7 @@
+ #define BGMAC_SPEED_10				0x0001
+ #define BGMAC_SPEED_100				0x0002
+ #define BGMAC_SPEED_1000			0x0004
++#define BGMAC_SPEED_2500			0x0008
+ 
+ #define BGMAC_WEIGHT	64
+ 

@@ -1,0 +1,194 @@
+Use phy lib for the phy. This is needed to get the switch connected to 
+the phy and driven by b53 working.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -1252,27 +1252,14 @@ static int bgmac_set_mac_address(struct
+ static int bgmac_ioctl(struct net_device *net_dev, struct ifreq *ifr, int cmd)
+ {
+ 	struct bgmac *bgmac = netdev_priv(net_dev);
+-	struct mii_ioctl_data *data = if_mii(ifr);
+ 
+-	switch (cmd) {
+-	case SIOCGMIIPHY:
+-		data->phy_id = bgmac->phyaddr;
+-		/* fallthru */
+-	case SIOCGMIIREG:
+-		if (!netif_running(net_dev))
+-			return -EAGAIN;
+-		data->val_out = bgmac_phy_read(bgmac, data->phy_id,
+-					       data->reg_num & 0x1f);
+-		return 0;
+-	case SIOCSMIIREG:
+-		if (!netif_running(net_dev))
+-			return -EAGAIN;
+-		bgmac_phy_write(bgmac, data->phy_id, data->reg_num & 0x1f,
+-				data->val_in);
+-		return 0;
+-	default:
+-		return -EOPNOTSUPP;
+-	}
++	if (!netif_running(net_dev))
++		return -EINVAL;
++
++	if (!bgmac->phydev)
++		return -EINVAL;
++
++	return phy_mii_ioctl(bgmac->phydev, ifr, cmd);
+ }
+ 
+ static const struct net_device_ops bgmac_netdev_ops = {
+@@ -1294,61 +1281,16 @@ static int bgmac_get_settings(struct net
+ {
+ 	struct bgmac *bgmac = netdev_priv(net_dev);
+ 
+-	cmd->supported = SUPPORTED_10baseT_Half |
+-			 SUPPORTED_10baseT_Full |
+-			 SUPPORTED_100baseT_Half |
+-			 SUPPORTED_100baseT_Full |
+-			 SUPPORTED_1000baseT_Half |
+-			 SUPPORTED_1000baseT_Full |
+-			 SUPPORTED_Autoneg;
+-
+-	if (bgmac->autoneg) {
+-		WARN_ON(cmd->advertising);
+-		if (bgmac->full_duplex) {
+-			if (bgmac->speed & BGMAC_SPEED_10)
+-				cmd->advertising |= ADVERTISED_10baseT_Full;
+-			if (bgmac->speed & BGMAC_SPEED_100)
+-				cmd->advertising |= ADVERTISED_100baseT_Full;
+-			if (bgmac->speed & BGMAC_SPEED_1000)
+-				cmd->advertising |= ADVERTISED_1000baseT_Full;
+-		} else {
+-			if (bgmac->speed & BGMAC_SPEED_10)
+-				cmd->advertising |= ADVERTISED_10baseT_Half;
+-			if (bgmac->speed & BGMAC_SPEED_100)
+-				cmd->advertising |= ADVERTISED_100baseT_Half;
+-			if (bgmac->speed & BGMAC_SPEED_1000)
+-				cmd->advertising |= ADVERTISED_1000baseT_Half;
+-		}
+-	} else {
+-		switch (bgmac->speed) {
+-		case BGMAC_SPEED_10:
+-			ethtool_cmd_speed_set(cmd, SPEED_10);
+-			break;
+-		case BGMAC_SPEED_100:
+-			ethtool_cmd_speed_set(cmd, SPEED_100);
+-			break;
+-		case BGMAC_SPEED_1000:
+-			ethtool_cmd_speed_set(cmd, SPEED_1000);
+-			break;
+-		}
+-	}
+-
+-	cmd->duplex = bgmac->full_duplex ? DUPLEX_FULL : DUPLEX_HALF;
+-
+-	cmd->autoneg = bgmac->autoneg;
+-
+-	return 0;
++	return phy_ethtool_gset(bgmac->phydev, cmd);
+ }
+ 
+-#if 0
+ static int bgmac_set_settings(struct net_device *net_dev,
+ 			      struct ethtool_cmd *cmd)
+ {
+ 	struct bgmac *bgmac = netdev_priv(net_dev);
+ 
+-	return -1;
++	return phy_ethtool_sset(bgmac->phydev, cmd);
+ }
+-#endif
+ 
+ static void bgmac_get_drvinfo(struct net_device *net_dev,
+ 			      struct ethtool_drvinfo *info)
+@@ -1359,6 +1301,7 @@ static void bgmac_get_drvinfo(struct net
+ 
+ static const struct ethtool_ops bgmac_ethtool_ops = {
+ 	.get_settings		= bgmac_get_settings,
++	.set_settings		= bgmac_set_settings,
+ 	.get_drvinfo		= bgmac_get_drvinfo,
+ };
+ 
+@@ -1377,10 +1320,36 @@ static int bgmac_mii_write(struct mii_bu
+ 	return bgmac_phy_write(bus->priv, mii_id, regnum, value);
+ }
+ 
++static void bgmac_adjust_link(struct net_device *dev)
++{
++	struct bgmac *bgmac = netdev_priv(dev);
++	struct phy_device *phydev = bgmac->phydev;
++	bool status_changed = 0;
++
++	BUG_ON(!phydev);
++
++	if (bgmac->old_link != phydev->link) {
++		status_changed = 1;
++		bgmac->old_link = phydev->link;
++	}
++
++	/* reflect duplex change */
++	if (phydev->link && (bgmac->old_duplex != phydev->duplex)) {
++		status_changed = 1;
++		bgmac->old_duplex = phydev->duplex;
++	}
++
++	if (status_changed)
++		phy_print_status(phydev);
++}
++
+ static int bgmac_mii_register(struct bgmac *bgmac)
+ {
+ 	struct mii_bus *mii_bus;
+ 	int i, err = 0;
++	struct phy_device *phydev = NULL;
++	char phy_id[MII_BUS_ID_SIZE + 3];
++	struct net_device *net_dev = bgmac->net_dev;
+ 
+ 	mii_bus = mdiobus_alloc();
+ 	if (!mii_bus)
+@@ -1411,7 +1380,28 @@ static int bgmac_mii_register(struct bgm
+ 
+ 	bgmac->mii_bus = mii_bus;
+ 
+-	return err;
++	/* connect to PHY */
++	snprintf(phy_id, sizeof(phy_id), PHY_ID_FMT,
++		 mii_bus->id, bgmac->phyaddr);
++
++	phydev = phy_connect(net_dev, phy_id, &bgmac_adjust_link,
++			     PHY_INTERFACE_MODE_MII);
++
++	if (IS_ERR(phydev)) {
++		netdev_err(net_dev, "could not attach PHY: %s\n", phy_id);
++		bgmac->phyaddr = BGMAC_PHY_NOREGS;
++		return PTR_ERR(phydev);
++	}
++
++	bgmac->phydev = phydev;
++	bgmac->old_link = 0;
++	bgmac->old_duplex = -1;
++	bgmac->phyaddr = phydev->addr;
++
++	netdev_info(net_dev, "attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
++		    phydev->drv->name, dev_name(&phydev->dev));
++
++	return 0;
+ 
+ err_free_irq:
+ 	kfree(mii_bus->irq);
+--- a/drivers/net/ethernet/broadcom/bgmac.h
++++ b/drivers/net/ethernet/broadcom/bgmac.h
+@@ -401,7 +401,10 @@ struct bgmac {
+ 	struct bcma_device *cmn; /* Reference to CMN core for BCM4706 */
+ 	struct net_device *net_dev;
+ 	struct napi_struct napi;
++	struct phy_device *phydev;
+ 	struct mii_bus *mii_bus;
++	int old_link;
++	int old_duplex;
+ 
+ 	/* DMA */
+ 	struct bgmac_dma_ring tx_ring[BGMAC_MAX_TX_RINGS];
