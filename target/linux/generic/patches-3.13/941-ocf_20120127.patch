@@ -44,7 +44,7 @@
 +
 +	credit_entropy_bits(&input_pool, ent_count);
 +
-+	DEBUG_ENT("crediting %d bits => %d\n",
++	pr_notice("crediting %d bits => %d\n",
 +		  ent_count, input_pool.entropy_count);
 +	/*
 +	 * Wake up waiting processes if we have enough
@@ -74,7 +74,7 @@
 +        /* likely we got woken up due to a signal */
 +	if (count <= 0) count = random_read_wakeup_thresh; 
 +
-+	DEBUG_ENT("requesting %d bits from input_wait()er %d<%d\n",
++	pr_notice("requesting %d bits from input_wait()er %d<%d\n",
 +		  count,
 +		  input_pool.entropy_count, random_write_wakeup_thresh);
 +
