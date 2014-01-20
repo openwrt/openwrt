@@ -102,6 +102,11 @@ get_status_led() {
 	pb44)
 		status_led="pb44:amber:jump1"
 		;;
+	rb-2011l|\
+	rb-2011uas|\
+	rb-2011uas-2hnd)
+		status_led="rb:green:usr"
+		;;
 	rb-411 | rb-411u | rb-433 | rb-433u | rb-450 | rb-450g | rb-493)
 		status_led="rb4xx:yellow:user"
 		;;
