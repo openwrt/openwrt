@@ -609,7 +609,7 @@
 +		.ia_mtime = stat->mtime,
 +	};
 +
-+	return notify_change(upperdentry, &attr);
++	return notify_change(upperdentry, &attr, NULL);
 +}
 +
 +static int ovl_set_mode(struct dentry *upperdentry, umode_t mode)
@@ -619,7 +619,7 @@
 +		.ia_mode = mode,
 +	};
 +
-+	return notify_change(upperdentry, &attr);
++	return notify_change(upperdentry, &attr, NULL);
 +}
 +
 +static int ovl_copy_up_locked(struct dentry *upperdir, struct dentry *dentry,
@@ -674,7 +674,7 @@
 +	if (S_ISDIR(stat->mode))
 +		vfs_rmdir(upperdir->d_inode, newpath.dentry);
 +	else
-+		vfs_unlink(upperdir->d_inode, newpath.dentry);
++		vfs_unlink(upperdir->d_inode, newpath.dentry, NULL);
 +
 +	dput(newpath.dentry);
 +
@@ -833,7 +833,7 @@
 +}
 --- /dev/null
 +++ b/fs/overlayfs/dir.c
-@@ -0,0 +1,605 @@
+@@ -0,0 +1,606 @@
 +/*
 + *
 + * Copyright (C) 2011 Novell Inc.
@@ -895,7 +895,7 @@
 +
 +	err = vfs_setxattr(newdentry, ovl_whiteout_xattr, "y", 1, 0);
 +	if (err)
-+		vfs_unlink(upperdir->d_inode, newdentry);
++		vfs_unlink(upperdir->d_inode, newdentry, NULL);
 +
 +out_dput:
 +	dput(newdentry);
@@ -953,7 +953,7 @@
 +
 +		err = -EEXIST;
 +		if (ovl_is_whiteout(newdentry))
-+			err = vfs_unlink(upperdir->d_inode, newdentry);
++			err = vfs_unlink(upperdir->d_inode, newdentry, NULL);
 +
 +		revert_creds(old_cred);
 +		put_cred(override_cred);
@@ -1203,7 +1203,8 @@
 +		if (is_dir)
 +			err = vfs_rmdir(upperdir->d_inode, realpath.dentry);
 +		else
-+			err = vfs_unlink(upperdir->d_inode, realpath.dentry);
++			err = vfs_unlink(upperdir->d_inode, realpath.dentry,
++					 NULL);
 +		if (err)
 +			goto out_d_drop;
 +
@@ -1272,7 +1273,7 @@
 +		goto out_unlock;
 +
 +	olddentry = ovl_dentry_upper(old);
-+	err = vfs_link(olddentry, upperdir->d_inode, newdentry);
++	err = vfs_link(olddentry, upperdir->d_inode, newdentry, NULL);
 +	if (!err) {
 +		if (WARN_ON(!newdentry->d_inode)) {
 +			dput(newdentry);
@@ -1393,7 +1394,7 @@
 +	}
 +
 +	err = vfs_rename(old_upperdir->d_inode, olddentry,
-+			 new_upperdir->d_inode, newdentry);
++			 new_upperdir->d_inode, newdentry, NULL);
 +
 +	if (err) {
 +		if (new_create && ovl_dentry_is_opaque(new))
@@ -1474,7 +1475,7 @@
 +		attr->ia_valid &= ~ATTR_MODE;
 +
 +	mutex_lock(&upperdentry->d_inode->i_mutex);
-+	err = notify_change(upperdentry, attr);
++	err = notify_change(upperdentry, attr, NULL);
 +	if (!err)
 +		ovl_copyattr(upperdentry->d_inode, dentry->d_inode);
 +	mutex_unlock(&upperdentry->d_inode->i_mutex);
@@ -2428,7 +2429,7 @@
 +			    p->len, p->name, PTR_ERR(dentry));
 +			continue;
 +		}
-+		ret = vfs_unlink(upperdir->d_inode, dentry);
++		ret = vfs_unlink(upperdir->d_inode, dentry, NULL);
 +		dput(dentry);
 +		if (ret)
 +			pr_warn(
