@@ -103,6 +103,14 @@ static struct gpio_keys_button tl_wr1043_v2_gpio_keys[] __initdata = {
 	},
 };
 
+static const struct ar8327_led_info tl_wr1043_leds_ar8327[] = {
+	AR8327_LED_INFO(PHY0_0, HW, "tp-link:green:lan4"),
+	AR8327_LED_INFO(PHY1_0, HW, "tp-link:green:lan3"),
+	AR8327_LED_INFO(PHY2_0, HW, "tp-link:green:lan2"),
+	AR8327_LED_INFO(PHY3_0, HW, "tp-link:green:lan1"),
+	AR8327_LED_INFO(PHY4_0, HW, "tp-link:green:wan"),
+};
+
 /* GMAC0 of the AR8327 switch is connected to the QCA9558 SoC via SGMII */
 static struct ar8327_pad_cfg wr1043nd_v2_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_SGMII,
@@ -144,6 +152,8 @@ static struct ar8327_platform_data wr1043nd_v2_ar8327_data = {
 		.rxpause = 1,
 	},
 	.led_cfg = &wr1043nd_v2_ar8327_led_cfg,
+	.num_leds = ARRAY_SIZE(tl_wr1043_leds_ar8327),
+	.leds = tl_wr1043_leds_ar8327,
 };
 
 static struct mdio_board_info wr1043nd_v2_mdio0_info[] = {
