@@ -349,17 +349,16 @@ static int b53_srab_probe(struct platform_device *pdev)
 	if (pdata)
 		dev->pdata = pdata;
 
-	pdev->dev.platform_data = dev;
+	platform_set_drvdata(pdev, dev);
 
 	return b53_switch_register(dev);
 }
 
 static int b53_srab_remove(struct platform_device *pdev)
 {
-	struct b53_device *dev = pdev->dev.platform_data;
+	struct b53_device *dev = platform_get_drvdata(pdev);
 
 	if (dev) {
-		pdev->dev.platform_data = dev->pdata;
 		b53_switch_remove(dev);
 	}
 
