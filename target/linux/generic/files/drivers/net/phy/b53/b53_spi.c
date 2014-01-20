@@ -294,19 +294,17 @@ static int b53_spi_probe(struct spi_device *spi)
 	if (ret)
 		return ret;
 
-	spi->dev.platform_data = dev;
+	spi_set_drvdata(spi, dev);
 
 	return 0;
 }
 
 static int b53_spi_remove(struct spi_device *spi)
 {
-	struct b53_device *dev = spi->dev.platform_data;
+	struct b53_device *dev = spi_get_drvdata(spi);
 
 	if (dev) {
-		struct b53_platform_data *pdata = dev->pdata;
 		b53_switch_remove(dev);
-		spi->dev.platform_data = pdata;
 	}
 
 	return 0;
