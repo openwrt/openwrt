@@ -103,6 +103,14 @@ static struct gpio_keys_button wdr4300_gpio_keys[] __initdata = {
 	},
 };
 
+static const struct ar8327_led_info wdr4300_leds_ar8327[] __initconst = {
+	AR8327_LED_INFO(PHY0_0, HW, "tp-link:blue:wan"),
+	AR8327_LED_INFO(PHY1_0, HW, "tp-link:blue:lan1"),
+	AR8327_LED_INFO(PHY2_0, HW, "tp-link:blue:lan2"),
+	AR8327_LED_INFO(PHY3_0, HW, "tp-link:blue:lan3"),
+	AR8327_LED_INFO(PHY4_0, HW, "tp-link:blue:lan4"),
+};
+
 static struct ar8327_pad_cfg wdr4300_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
@@ -129,6 +137,8 @@ static struct ar8327_platform_data wdr4300_ar8327_data = {
 		.rxpause = 1,
 	},
 	.led_cfg = &wdr4300_ar8327_led_cfg,
+	.num_leds = ARRAY_SIZE(wdr4300_leds_ar8327),
+	.leds = wdr4300_leds_ar8327,
 };
 
 static struct mdio_board_info wdr4300_mdio0_info[] = {
