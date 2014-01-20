@@ -67,6 +67,8 @@ struct ar8xxx_chip {
 	unsigned long caps;
 
 	int (*hw_init)(struct ar8xxx_priv *priv);
+	void (*cleanup)(struct ar8xxx_priv *priv);
+
 	void (*init_globals)(struct ar8xxx_priv *priv);
 	void (*init_port)(struct ar8xxx_priv *priv, int port);
 	void (*setup_port)(struct ar8xxx_priv *priv, int port, u32 egress,
@@ -2234,6 +2236,9 @@ ar8xxx_create(void)
 static void
 ar8xxx_free(struct ar8xxx_priv *priv)
 {
+	if (priv->chip && priv->chip->cleanup)
+		priv->chip->cleanup(priv);
+
 	kfree(priv->mib_stats);
 	kfree(priv);
 }
