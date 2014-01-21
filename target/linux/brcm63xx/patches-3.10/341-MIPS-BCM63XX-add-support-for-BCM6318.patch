@@ -592,12 +592,13 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  	case BCM6368_CPU_ID:
 --- a/arch/mips/bcm63xx/dev-hsspi.c
 +++ b/arch/mips/bcm63xx/dev-hsspi.c
-@@ -35,7 +35,7 @@ static struct platform_device bcm63xx_hs
+@@ -35,7 +35,8 @@ static struct platform_device bcm63xx_hs
  
  int __init bcm63xx_hsspi_register(void)
  {
--	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6362())
-+	if (!BCMCPU_IS_6318() && !BCMCPU_IS_6328() && !BCMCPU_IS_6362())
+-	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6362() && !BCMCPU_IS_63268())
++	if (!BCMCPU_IS_6318() && !BCMCPU_IS_6328() && !BCMCPU_IS_6362() &&
++		!BCMCPU_IS_63268())
  		return -ENODEV;
  
  	spi_resources[0].start = bcm63xx_regset_address(RSET_HSSPI);
@@ -614,27 +615,29 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  	usbd_resources[0].start = bcm63xx_regset_address(RSET_USBD);
 --- a/arch/mips/bcm63xx/dev-enet.c
 +++ b/arch/mips/bcm63xx/dev-enet.c
-@@ -176,7 +176,8 @@ static int __init register_shared(void)
+@@ -176,8 +176,8 @@ static int __init register_shared(void)
  	else
  		shared_res[0].end += (RSET_ENETDMA_SIZE)  - 1;
  
--	if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_6368())
+-	if (BCMCPU_IS_6328() || BCMCPU_IS_6362() || BCMCPU_IS_6368() ||
+-		BCMCPU_IS_63268())
 +	if (BCMCPU_IS_6318() || BCMCPU_IS_6328() || BCMCPU_IS_6362() ||
-+		BCMCPU_IS_6368())
++		BCMCPU_IS_6368() || BCMCPU_IS_63268())
  		chan_count = 32;
  	else if (BCMCPU_IS_6345())
  		chan_count = 8;
-@@ -276,7 +277,8 @@ bcm63xx_enetsw_register(const struct bcm
+@@ -277,8 +277,8 @@ bcm63xx_enetsw_register(const struct bcm
  {
  	int ret;
  
--	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6362() && !BCMCPU_IS_6368())
+-	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6362() && !BCMCPU_IS_6368() &&
+-		!BCMCPU_IS_63268())
 +	if (!BCMCPU_IS_6318() && !BCMCPU_IS_6328() && !BCMCPU_IS_6362() &&
-+		!BCMCPU_IS_6368())
++		!BCMCPU_IS_6368() && !BCMCPU_IS_63268())
  		return -ENODEV;
  
  	ret = register_shared();
-@@ -293,7 +295,7 @@ bcm63xx_enetsw_register(const struct bcm
+@@ -295,7 +295,7 @@ bcm63xx_enetsw_register(const struct bcm
  
  	memcpy(bcm63xx_enetsw_device.dev.platform_data, pd, sizeof(*pd));
  
