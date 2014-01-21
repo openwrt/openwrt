@@ -1121,13 +1121,12 @@ swconfig_init(void)
 		if (err)
 			goto unregister;
 	}
-
-	return 0;
 #else
 	err = genl_register_family_with_ops(&switch_fam, swconfig_ops);
 	if (err)
-		goto unregister;
+		return err;
 #endif
+	return 0;
 
 unregister:
 	genl_unregister_family(&switch_fam);
