@@ -98,6 +98,19 @@ static struct gpio_keys_button mynet_n750_gpio_keys[] __initdata = {
 	},
 };
 
+static const struct ar8327_led_info mynet_n750_leds_ar8327[] __initconst = {
+	AR8327_LED_INFO(PHY0_0, HW, "wd:green:lan1"),
+	AR8327_LED_INFO(PHY1_0, HW, "wd:green:lan2"),
+	AR8327_LED_INFO(PHY2_0, HW, "wd:green:lan3"),
+	AR8327_LED_INFO(PHY3_0, HW, "wd:green:lan4"),
+	AR8327_LED_INFO(PHY4_0, HW, "wd:green:wan"),
+	AR8327_LED_INFO(PHY0_1, HW, "wd:yellow:lan1"),
+	AR8327_LED_INFO(PHY1_1, HW, "wd:yellow:lan2"),
+	AR8327_LED_INFO(PHY2_1, HW, "wd:yellow:lan3"),
+	AR8327_LED_INFO(PHY3_1, HW, "wd:yellow:lan4"),
+	AR8327_LED_INFO(PHY4_1, HW, "wd:yellow:wan"),
+};
+
 static struct ar8327_pad_cfg mynet_n750_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
@@ -124,6 +137,8 @@ static struct ar8327_platform_data mynet_n750_ar8327_data = {
 		.rxpause = 1,
 	},
 	.led_cfg = &mynet_n750_ar8327_led_cfg,
+	.num_leds = ARRAY_SIZE(mynet_n750_leds_ar8327),
+	.leds = mynet_n750_leds_ar8327,
 };
 
 static struct mdio_board_info mynet_n750_mdio0_info[] = {
