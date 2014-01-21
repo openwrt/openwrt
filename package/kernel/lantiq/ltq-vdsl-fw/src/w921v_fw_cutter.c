@@ -43,7 +43,7 @@
 #endif
 
 
-const char* part_type(u_int32_t id)
+const char* part_type(unsigned int id)
 {
 	switch(id) {
 	case MAGIC_ANNEX_B:
@@ -58,8 +58,8 @@ const char* part_type(u_int32_t id)
 int main(int argc, char **argv)
 {
 	struct stat s;
-	u_int8_t *buf_orig;
-	u_int32_t *buf;
+	unsigned char *buf_orig;
+	unsigned int *buf;
 	int buflen;
 	int fd;
 	int i;
@@ -83,7 +83,8 @@ int main(int argc, char **argv)
 	}
 
 	buf_orig = malloc(s.st_size);
-	if (!buf_orig) {
+	buf = malloc(s.st_size);
+	if (!buf_orig || !buf) {
 		printf("Failed to alloc %d bytes\n", s.st_size);
 		return -1;
 	}
@@ -93,6 +94,7 @@ int main(int argc, char **argv)
 		printf("Unable to open %s\n", FW_NAME);
 		return -1;
 	}
+
 
 	buflen = read(fd, buf_orig, s.st_size);
 	close(fd);
@@ -112,22 +114,21 @@ int main(int argc, char **argv)
 	}
 	buflen -= 3;
 	memmove(&buf_orig[MAGIC_SZ], &buf_orig[MAGIC_SZ + 3], buflen - MAGIC_SZ);
+	memcpy(buf, buf_orig, s.st_size);
+
 	/* </magic> */
-
-	buf = (u_int32_t*) buf_orig;
-
 	do {
 		if (buf[end] == MAGIC_PART) {
 			end += 2;
 			printf("Found partition at 0x%08X with size %d\n",
-				start * sizeof(u_int32_t),
-				(end - start) * sizeof(u_int32_t));
+				start * sizeof(unsigned int),
+				(end - start) * sizeof(unsigned int));
 			if (buf[start] == MAGIC_LZMA) {
 				int dest_len = 1024 * 1024;
 				int len = buf[end - 3];
-				u_int32_t id = buf[end - 6];
+				unsigned int id = buf[end - 6];
 				const char *type = part_type(id);
-				u_int8_t *dest;
+				unsigned char *dest;
 
 				dest = malloc(dest_len);
 				if (!dest) {
@@ -135,7 +136,7 @@ int main(int argc, char **argv)
 					return -1;
 				}
 
-				if (lzma_inflate((u_int8_t*)&buf[start], len, dest, &dest_len)) {
+				if (lzma_inflate((unsigned char*)&buf[start], len, dest, &dest_len)) {
 					printf("Failed to decompress data\n");
 					return -1;
 				}
@@ -158,7 +159,7 @@ int main(int argc, char **argv)
 		} else {
 			end++;
 		}
-	} while(end < buflen / sizeof(u_int32_t));
+	} while(end < buflen / sizeof(unsigned int));
 
 	return 0;
 }
