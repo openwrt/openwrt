@@ -21,29 +21,6 @@ validate_log_section()
 	return $?
 }
 
-validate_log_daemon()
-{
-	uci_validate_section system system "${1}" \
-		'log_size:uinteger'
-	return $?
-}
-
-start_service_daemon()
-{
-	local log_size
-
-	validate_log_daemon "${1}" || {
-		echo "validation failed"
-		return 1
-	}
-
-	procd_open_instance
-	procd_set_param command "/sbin/logd"
-	[ -n "${log_size}" ] && procd_append_param command -S "$log_size"
-	procd_set_param respawn
-	procd_close_instance
-}
-
 start_service_file()
 {
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
@@ -89,8 +66,12 @@ service_triggers()
 
 start_service()
 {
+	procd_open_instance
+	procd_set_param command "/sbin/logd"
+	procd_set_param respawn
+	procd_close_instance
+
 	config_load system
-	config_foreach start_service_daemon system
 	config_foreach start_service_file system
 	config_foreach start_service_remote system
 }
