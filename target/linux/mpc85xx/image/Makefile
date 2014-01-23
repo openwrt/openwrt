@@ -19,11 +19,7 @@ define factoryname
 $(call imgname,$(1),$(2))-factory.bin
 endef
 
-ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-  IMAGE_SUFFIX=-initramfs
-endif
-
-zImage:=$(BIN_DIR)/$(IMG_PREFIX)-zImage$(IMAGE_SUFFIX)
+zImage:=$(BIN_DIR)/$(IMG_PREFIX)-zImage
 
 DTS_TARGETS = mpc8548cds_32b p1010rdb tl-wdr4900-v1 p1020rdb
 BOOT_IMAGES:=zImage cuImage.tl-wdr4900-v1
@@ -35,7 +31,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/zImage$(IMAGE_SUFFIX) $(zImage)
+	cp $(KDIR)/zImage $(zImage)
 	$(foreach dts,$(DTS_TARGETS),
 		$(LINUX_DIR)/scripts/dtc/dtc -I dts -O dtb $(LINUX_DIR)/arch/powerpc/boot/dts/$(dts).dts > $(BIN_DIR)/$(IMG_PREFIX)-$(dts).fdt
 	)
