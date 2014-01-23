@@ -65,7 +65,7 @@ static struct gpio_keys_button wp543_gpio_keys[] __initdata = {
 	}, {
 		.desc		= "sw4",
 		.type		= EV_KEY,
-		.code		= BTN_1,
+		.code		= KEY_RESTART,
 		.debounce_interval = WP543_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WP543_GPIO_SW4,
 	}
