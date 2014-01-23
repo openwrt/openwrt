@@ -66,6 +66,16 @@ define CompressLzma
   $(STAGING_DIR_HOST)/bin/lzma e $(1) -lc1 -lp2 -pb2 $(3) $(2)
 endef
 
+define PatchKernel
+	cp $(KDIR)/vmlinux$(3) $(KDIR_TMP)/vmlinux$(3)-$(1)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR_TMP)/vmlinux$(3)-$(1) "$(strip $(2))"
+endef
+
+define PatchKernel/initramfs
+	$(call PatchKernel,$(1),$(2),-initramfs)
+	cp $(KDIR_TMP)/vmlinux-initramfs-$(1) $(call imgname,initramfs,$(1)).bin
+endef
+
 define PatchKernelLzma
 	cp $(KDIR)/vmlinux$(4) $(KDIR_TMP)/vmlinux$(4)-$(1)
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR_TMP)/vmlinux$(4)-$(1) "$(strip $(2))"
@@ -427,6 +437,7 @@ endef
 
 
 Image/Build/MyLoader/buildkernel=$(call PatchKernelLzma,$(2),$(3))
+Image/Build/MyLoader/initramfs=$(call PatchKernel/initramfs,$(2),$(3))
 
 define Image/Build/MyLoader
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(4) \
