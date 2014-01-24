@@ -453,10 +453,16 @@ Image/Build/MyLoader/buildkernel=$(call PatchKernelLzma,$(2),$(3))
 Image/Build/MyLoader/initramfs=$(call PatchKernel/initramfs,$(2),$(3))
 
 define Image/Build/MyLoader
-	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(4) \
-		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR_TMP)/vmlinux-$(2).bin.lzma \
-		-p0x110000:0:::rootfs:$(KDIR)/root.$(1) \
-		$(call imgname,$(1),$(2))-$(5)-factory.img
+	$(eval fwsize=$(shell echo $$(($(4)-0x30000-4*64*1024))))
+	$(eval fwimage=$(KDIR_TMP)/$(2)-$(5)-firmware.bin)
+	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).bin.lzma,65536,$(KDIR)/root.$(1),$(fwsize),$(fwimage))
+	if [ -e "$(fwimage)" ]; then \
+		cp $(fwimage) $(call imgname,$(1),$(2))-$(5)-sysupgrade.bin; \
+		$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(4) -v \
+			-p0x00030000:0:al:0x80060000:firmware:$(fwimage) \
+			$(call imgname,$(1),$(2))-$(5)-factory.img; \
+		true; \
+	fi
 endef
 
 
