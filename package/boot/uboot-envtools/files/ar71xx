@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2011-2013 OpenWrt.org
+# Copyright (C) 2011-2014 OpenWrt.org
 #
 
 [ -e /etc/config/ubootenv ] && exit 0
@@ -19,7 +19,8 @@ cap4200ag | \
 hornet-ub | \
 hornet-ub-x2 | \
 mr600 | \
-mr600v2)
+mr600v2 | \
+wndr3700)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
 alfa-ap96 | \
