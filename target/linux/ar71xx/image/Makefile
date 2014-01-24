@@ -457,11 +457,13 @@ define Image/Build/MyLoader
 	$(eval fwimage=$(KDIR_TMP)/$(2)-$(5)-firmware.bin)
 	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).bin.lzma,65536,$(KDIR)/root.$(1),$(fwsize),$(fwimage))
 	if [ -e "$(fwimage)" ]; then \
-		cp $(fwimage) $(call imgname,$(1),$(2))-$(5)-sysupgrade.bin; \
 		$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(4) -v \
 			-p0x00030000:0:al:0x80060000:firmware:$(fwimage) \
 			$(call imgname,$(1),$(2))-$(5)-factory.img; \
-		true; \
+		echo -n "" > $(KDIR_TMP)/empty.bin; \
+		sh $(TOPDIR)/scripts/combined-image.sh \
+			$(fwimage) $(KDIR_TMP)/empty.bin \
+			$(call imgname,$(1),$(2))-$(5)-sysupgrade.bin; \
 	fi
 endef
 
