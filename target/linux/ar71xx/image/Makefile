@@ -141,13 +141,21 @@ define CatFiles
 			echo "Warning: $(5) is too big (> $(4) bytes)" >&2; \
 			rm -f $(5); \
 		fi; \
-	else if [ $(2) -gt 262144 -a `stat -c%s "$(1)"` -gt $(2) ]; then \
-		echo "Warning: $(1) is too big (> $(2) bytes)" >&2; \
-	else if [ `stat -c%s $(3)` -gt $(4) ]; then \
-		echo "Warning: $(3) is too big (> $(4) bytes)" >&2; \
+	else if [ $(2) -gt 262144 ]; then \
+		if [ `stat -c%s "$(1)"` -gt $(2) ]; then \
+			echo "Warning: $(1) is too big (> $(2) bytes)" >&2; \
+		else if [ `stat -c%s $(3)` -gt $(4) ]; then \
+			echo "Warning: $(3) is too big (> $(4) bytes)" >&2; \
+		else \
+			( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
+		fi; fi; \
 	else \
 		( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
-	fi; fi; fi
+		if [ `stat -c%s $(5)` -gt $(4) ]; then \
+			echo "Warning: $(5) is too big (> $(4) bytes)" >&2; \
+			rm -f $(5); \
+		fi; \
+	fi; fi
 endef
 
 Sysupgrade/KR=$(call CatFiles,$(2),$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(5)))
