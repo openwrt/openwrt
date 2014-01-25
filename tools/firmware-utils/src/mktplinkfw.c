@@ -145,6 +145,8 @@ static int combined;
 static int strip_padding;
 static int add_jffs2_eof;
 static unsigned char jffs2_eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
+static uint32_t fw_max_len;
+static uint32_t reserved_space;
 
 static struct file_info inspect_info;
 static int extract = 0;
@@ -463,6 +465,7 @@ static void usage(int status)
 "  -v <version>    set firmware version to <version>\n"
 "  -i <file>       inspect given firmware file <file>\n"
 "  -x              extract kernel and rootfs while inspecting (requires -i)\n"
+"  -X <size>       reserve <size> bytes in the firmware image (hexval prefixed with 0x)\n"
 "  -h              show this screen\n"
 	);
 
@@ -579,6 +582,13 @@ static int check_options(void)
 	if (!rootfs_ofs)
 		rootfs_ofs = layout->rootfs_ofs;
 
+	if (reserved_space > layout->fw_max_len) {
+		ERR("reserved space is not valid");
+		return -1;
+	}
+
+	fw_max_len = layout->fw_max_len - reserved_space;
+
 	if (kernel_info.file_name == NULL) {
 		ERR("no kernel image specified");
 		return -1;
@@ -592,7 +602,7 @@ static int check_options(void)
 
 	if (combined) {
 		if (kernel_info.file_size >
-		    layout->fw_max_len - sizeof(struct fw_header)) {
+		    fw_max_len - sizeof(struct fw_header)) {
 			ERR("kernel image is too big");
 			return -1;
 		}
@@ -614,7 +624,7 @@ static int check_options(void)
 			DBG("kernel length aligned to %u", kernel_len);
 
 			if (kernel_len + rootfs_info.file_size >
-			    layout->fw_max_len - sizeof(struct fw_header)) {
+			    fw_max_len - sizeof(struct fw_header)) {
 				ERR("images are too big");
 				return -1;
 			}
@@ -626,7 +636,7 @@ static int check_options(void)
 			}
 
 			if (rootfs_info.file_size >
-			    (layout->fw_max_len - rootfs_ofs)) {
+			    (fw_max_len - rootfs_ofs)) {
 				ERR("rootfs image is too big");
 				return -1;
 			}
@@ -1029,7 +1039,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xhsjv:");
+		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xX:hsjv:");
 		if (c == -1)
 			break;
 
@@ -1093,6 +1103,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
+			break;
+		case 'X':
+			sscanf(optarg, "0x%x", &reserved_space);
 			break;
 		default:
 			usage(EXIT_FAILURE);
