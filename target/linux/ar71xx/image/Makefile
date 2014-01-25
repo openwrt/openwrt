@@ -620,11 +620,13 @@ define Image/Build/TPLINKOLD
 	) > $(KDIR_TMP)/kernel-$(2).bin
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION)\
+		-X 0x40000 \
 		-k $(KDIR_TMP)/kernel-$(2).bin \
 		-r $(KDIR)/root.$(1) \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
+		-X 0x40000 \
 		-k $(KDIR_TMP)/kernel-$(2).bin \
 		-r $(KDIR)/root.$(1) \
 		-o $(call sysupname,$(1),$(2))
@@ -650,12 +652,14 @@ define Image/Build/TPLINK
 	) > $(KDIR_TMP)/kernel-$(2).bin
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION)\
+		-X 0x40000 \
 		-k $(KDIR_TMP)/kernel-$(2).bin \
 		-r $(KDIR)/root.$(1) \
 		-a $(call rootfs_align,$(1)) -j \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
+		-X 0x40000 \
 		-k $(KDIR_TMP)/kernel-$(2).bin \
 		-r $(KDIR)/root.$(1) \
 		-a $(call rootfs_align,$(1)) -j \
@@ -676,12 +680,14 @@ Image/Build/TPLINK-LZMA/buildkernel=$(call PatchKernelLzma,$(2),$(3))
 define Image/Build/TPLINK-LZMA
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) $(7) \
+		-X 0x40000 \
 		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma \
 		-r $(KDIR)/root.$(1) \
 		-a $(call rootfs_align,$(1)) -j \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) $(7) -s \
+		-X 0x40000 \
 		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma \
 		-r $(KDIR)/root.$(1) \
 		-a $(call rootfs_align,$(1)) -j \
