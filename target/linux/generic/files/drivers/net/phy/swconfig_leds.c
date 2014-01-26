@@ -209,7 +209,7 @@ swconfig_trig_led_event(struct switch_led_trigger *sw_trig,
 	link = !!(sw_trig->port_link & port_mask);
 	if (!link) {
 		if (link != trig_data->prev_link)
-			led_set_brightness(trig_data->led_cdev, LED_OFF);
+			swconfig_trig_set_brightness(trig_data, LED_OFF);
 	} else {
 		unsigned long traffic;
 		int i;
