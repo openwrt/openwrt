@@ -10,11 +10,9 @@ Signed-off-by: Steven J. Hill <Steven.Hill@imgtec.com>
  arch/mips/kernel/smp-mt.c |   32 ++++++++++++++++++++++++++++++++
  1 file changed, 32 insertions(+)
 
-diff --git a/arch/mips/kernel/smp-mt.c b/arch/mips/kernel/smp-mt.c
-index 2f8c468..d057c84 100644
 --- a/arch/mips/kernel/smp-mt.c
 +++ b/arch/mips/kernel/smp-mt.c
-@@ -71,6 +71,7 @@ static unsigned int __init smvp_vpe_init(unsigned int tc, unsigned int mvpconf0,
+@@ -71,6 +71,7 @@ static unsigned int __init smvp_vpe_init
  
  		/* Record this as available CPU */
  		set_cpu_possible(tc, true);
@@ -22,7 +20,7 @@ index 2f8c468..d057c84 100644
  		__cpu_number_map[tc]	= ++ncpu;
  		__cpu_logical_map[ncpu] = tc;
  	}
-@@ -112,12 +113,35 @@ static void __init smvp_tc_init(unsigned int tc, unsigned int mvpconf0)
+@@ -112,12 +113,35 @@ static void __init smvp_tc_init(unsigned
  	write_tc_c0_tchalt(TCHALT_H);
  }
  
@@ -58,7 +56,7 @@ index 2f8c468..d057c84 100644
  	local_irq_save(flags);
  
  	vpflags = dvpe();	/* can't access the other CPU's registers whilst MVPE enabled */
-@@ -164,6 +188,8 @@ static void __cpuinit vsmp_init_secondary(void)
+@@ -164,6 +188,8 @@ static void __cpuinit vsmp_init_secondar
  
  static void __cpuinit vsmp_smp_finish(void)
  {
@@ -67,7 +65,7 @@ index 2f8c468..d057c84 100644
  	/* CDFIXME: remove this? */
  	write_c0_compare(read_c0_count() + (8* mips_hpt_frequency/HZ));
  
-@@ -178,6 +204,7 @@ static void __cpuinit vsmp_smp_finish(void)
+@@ -178,6 +204,7 @@ static void __cpuinit vsmp_smp_finish(vo
  
  static void vsmp_cpus_done(void)
  {
@@ -101,6 +99,3 @@ index 2f8c468..d057c84 100644
  	mips_mt_set_cpuoptions();
  }
  
--- 
-1.7.10.4
-

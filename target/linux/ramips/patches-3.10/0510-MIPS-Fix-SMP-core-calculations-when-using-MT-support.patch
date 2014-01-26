@@ -19,8 +19,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/kernel/smp-cmp.c |   13 +++++++++++--
  1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/kernel/smp-cmp.c b/arch/mips/kernel/smp-cmp.c
-index c2e5d74..5969f1e 100644
 --- a/arch/mips/kernel/smp-cmp.c
 +++ b/arch/mips/kernel/smp-cmp.c
 @@ -99,7 +99,9 @@ static void cmp_init_secondary(void)
@@ -52,6 +50,3 @@ index c2e5d74..5969f1e 100644
  		smp_num_siblings = nvpe;
  	}
  	pr_info("Detected %i available secondary CPU(s)\n", ncpu);
--- 
-1.7.10.4
-
