@@ -13,7 +13,7 @@ FEATURES:=squashfs usb pci pcie gpio
 MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 CPU_TYPE:=cortex-a9
 
-LINUX_VERSION:=3.10.26
+LINUX_VERSION:=3.10.28
 
 include $(INCLUDE_DIR)/target.mk
 

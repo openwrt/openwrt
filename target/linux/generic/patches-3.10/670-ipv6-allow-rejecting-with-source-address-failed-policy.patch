@@ -102,7 +102,7 @@
  		return -EINVAL;
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -251,6 +251,24 @@ static const struct rt6_info ip6_prohibi
+@@ -250,6 +250,24 @@ static const struct rt6_info ip6_prohibi
  	.rt6i_ref	= ATOMIC_INIT(1),
  };
  
@@ -127,17 +127,19 @@
  static const struct rt6_info ip6_blk_hole_entry_template = {
  	.dst = {
  		.__refcnt	= ATOMIC_INIT(1),
-@@ -1511,6 +1529,9 @@ int ip6_route_add(struct fib6_config *cf
- 		case RTN_THROW:
- 			rt->dst.error = -EAGAIN;
+@@ -1509,6 +1527,11 @@ int ip6_route_add(struct fib6_config *cf
+ 			rt->dst.output = ip6_pkt_prohibit_out;
+ 			rt->dst.input = ip6_pkt_prohibit;
  			break;
 +		case RTN_FAILED_POLICY:
 +			rt->dst.error = -EPERM;
++			rt->dst.output = ip6_pkt_failed_policy_out;
++			rt->dst.input = ip6_pkt_failed_policy;
 +			break;
+ 		case RTN_THROW:
  		default:
- 			rt->dst.error = -ENETUNREACH;
- 			break;
-@@ -2090,6 +2111,17 @@ static int ip6_pkt_prohibit_out(struct s
+ 			rt->dst.error = (cfg->fc_type == RTN_THROW) ? -EAGAIN
+@@ -2088,6 +2111,17 @@ static int ip6_pkt_prohibit_out(struct s
  	return ip6_pkt_drop(skb, ICMPV6_ADM_PROHIBITED, IPSTATS_MIB_OUTNOROUTES);
  }
  
@@ -152,10 +154,10 @@
 +	return ip6_pkt_drop(skb, ICMPV6_POLICY_FAIL, IPSTATS_MIB_OUTNOROUTES);
 +}
 +
- #endif
- 
  /*
-@@ -2296,7 +2328,8 @@ static int rtm_to_fib6_config(struct sk_
+  *	Allocate a dst for local (unicast / anycast) address.
+  */
+@@ -2290,7 +2324,8 @@ static int rtm_to_fib6_config(struct sk_
  	if (rtm->rtm_type == RTN_UNREACHABLE ||
  	    rtm->rtm_type == RTN_BLACKHOLE ||
  	    rtm->rtm_type == RTN_PROHIBIT ||
@@ -165,7 +167,7 @@
  		cfg->fc_flags |= RTF_REJECT;
  
  	if (rtm->rtm_type == RTN_LOCAL)
-@@ -2498,6 +2531,9 @@ static int rt6_fill_node(struct net *net
+@@ -2492,6 +2527,9 @@ static int rt6_fill_node(struct net *net
  		case -EACCES:
  			rtm->rtm_type = RTN_PROHIBIT;
  			break;
@@ -175,7 +177,7 @@
  		case -EAGAIN:
  			rtm->rtm_type = RTN_THROW;
  			break;
-@@ -2748,6 +2784,8 @@ static int ip6_route_dev_notify(struct n
+@@ -2742,6 +2780,8 @@ static int ip6_route_dev_notify(struct n
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
  		net->ipv6.ip6_prohibit_entry->dst.dev = dev;
  		net->ipv6.ip6_prohibit_entry->rt6i_idev = in6_dev_get(dev);
@@ -184,7 +186,7 @@
  		net->ipv6.ip6_blk_hole_entry->dst.dev = dev;
  		net->ipv6.ip6_blk_hole_entry->rt6i_idev = in6_dev_get(dev);
  #endif
-@@ -3008,6 +3046,17 @@ static int __net_init ip6_route_net_init
+@@ -3002,6 +3042,17 @@ static int __net_init ip6_route_net_init
  	net->ipv6.ip6_blk_hole_entry->dst.ops = &net->ipv6.ip6_dst_ops;
  	dst_init_metrics(&net->ipv6.ip6_blk_hole_entry->dst,
  			 ip6_template_metrics, true);
@@ -202,7 +204,7 @@
  #endif
  
  	net->ipv6.sysctl.flush_delay = 0;
-@@ -3026,6 +3075,8 @@ out:
+@@ -3020,6 +3071,8 @@ out:
  	return ret;
  
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
@@ -211,7 +213,7 @@
  out_ip6_prohibit_entry:
  	kfree(net->ipv6.ip6_prohibit_entry);
  out_ip6_null_entry:
-@@ -3043,6 +3094,7 @@ static void __net_exit ip6_route_net_exi
+@@ -3037,6 +3090,7 @@ static void __net_exit ip6_route_net_exi
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
  	kfree(net->ipv6.ip6_prohibit_entry);
  	kfree(net->ipv6.ip6_blk_hole_entry);
@@ -219,7 +221,7 @@
  #endif
  	dst_entries_destroy(&net->ipv6.ip6_dst_ops);
  }
-@@ -3139,6 +3191,9 @@ int __init ip6_route_init(void)
+@@ -3133,6 +3187,9 @@ int __init ip6_route_init(void)
  	init_net.ipv6.ip6_prohibit_entry->rt6i_idev = in6_dev_get(init_net.loopback_dev);
  	init_net.ipv6.ip6_blk_hole_entry->dst.dev = init_net.loopback_dev;
  	init_net.ipv6.ip6_blk_hole_entry->rt6i_idev = in6_dev_get(init_net.loopback_dev);

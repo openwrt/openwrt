@@ -11,7 +11,7 @@ BOARD:=sparc
 BOARDNAME:=Sun UltraSPARC
 FEATURES+=fpu tgz ext4 squashfs broken
 
-LINUX_VERSION:=3.10.26
+LINUX_VERSION:=3.10.28
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 include $(INCLUDE_DIR)/target.mk

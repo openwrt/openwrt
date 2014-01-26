@@ -174,7 +174,7 @@
  		return phy_mii_ioctl(phydev, ifr, cmd);
  	}
  
-@@ -17190,8 +17197,10 @@ static int tg3_init_one(struct pci_dev *
+@@ -17193,8 +17200,10 @@ static int tg3_init_one(struct pci_dev *
  			tg3_flag_set(tp, FLUSH_POSTED_WRITES);
  		if (ssb_gige_one_dma_at_once(pdev))
  			tg3_flag_set(tp, ONE_DMA_AT_ONCE);
@@ -186,7 +186,7 @@
  		if (ssb_gige_is_rgmii(pdev))
  			tg3_flag_set(tp, RGMII_MODE);
  	}
-@@ -17461,7 +17470,7 @@ static int tg3_init_one(struct pci_dev *
+@@ -17464,7 +17473,7 @@ static int tg3_init_one(struct pci_dev *
  
  	if (tp->phy_flags & TG3_PHYFLG_IS_CONNECTED) {
  		struct phy_device *phydev;
