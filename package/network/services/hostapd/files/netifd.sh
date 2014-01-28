@@ -295,7 +295,7 @@ hostapd_set_bss_options() {
 		[ "$auth_cache" = 0 ] && append bss_conf "disable_pmksa_caching=1" "$N"
 
 		# RSN -> allow management frame protection
-		json_get_var ieee80211w
+		json_get_var ieee80211w ieee80211w
 		case "$ieee80211w" in
 			[012])
 				json_get_vars ieee80211w_max_timeout ieee80211w_retry_timeout
