@@ -1,0 +1,115 @@
+Subject: yaffs: add support for tags-9bytes mount option
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+--- a/fs/yaffs2/yaffs_vfs.c
++++ b/fs/yaffs2/yaffs_vfs.c
+@@ -2634,6 +2634,7 @@ static const struct super_operations yaf
+ 
+ struct yaffs_options {
+ 	int inband_tags;
++	int tags_9bytes;
+ 	int skip_checkpoint_read;
+ 	int skip_checkpoint_write;
+ 	int no_cache;
+@@ -2673,6 +2674,8 @@ static int yaffs_parse_options(struct ya
+ 
+ 		if (!strcmp(cur_opt, "inband-tags")) {
+ 			options->inband_tags = 1;
++		} else if (!strcmp(cur_opt, "tags-9bytes")) {
++			options->tags_9bytes = 1;
+ 		} else if (!strcmp(cur_opt, "tags-ecc-off")) {
+ 			options->tags_ecc_on = 0;
+ 			options->tags_ecc_overridden = 1;
+@@ -2746,7 +2749,6 @@ static struct super_block *yaffs_interna
+ 	struct yaffs_param *param;
+ 
+ 	int read_only = 0;
+-	int inband_tags = 0;
+ 
+ 	struct yaffs_options options;
+ 
+@@ -2786,6 +2788,9 @@ static struct super_block *yaffs_interna
+ 
+ 	memset(&options, 0, sizeof(options));
+ 
++	if (IS_ENABLED(CONFIG_YAFFS_9BYTE_TAGS))
++		options.tags_9bytes = 1;
++
+ 	if (yaffs_parse_options(&options, data_str)) {
+ 		/* Option parsing failed */
+ 		return NULL;
+@@ -2819,17 +2824,22 @@ static struct super_block *yaffs_interna
+ 	}
+ 
+ 	/* Added NCB 26/5/2006 for completeness */
+-	if (yaffs_version == 2 && !options.inband_tags
+-	    && WRITE_SIZE(mtd) == 512) {
++	if (yaffs_version == 2 &&
++	    (!options.inband_tags || options.tags_9bytes) &&
++	    WRITE_SIZE(mtd) == 512) {
+ 		yaffs_trace(YAFFS_TRACE_ALWAYS, "auto selecting yaffs1");
+ 		yaffs_version = 1;
+ 	}
+ 
+-	if (mtd->oobavail < sizeof(struct yaffs_packed_tags2) ||
+-	    options.inband_tags)
+-		inband_tags = 1;
++	if (yaffs_version == 2 &&
++	    mtd->oobavail < sizeof(struct yaffs_packed_tags2)) {
++		yaffs_trace(YAFFS_TRACE_ALWAYS, "auto selecting inband tags");
++		options.inband_tags = 1;
++	}
+ 
+-	if(yaffs_verify_mtd(mtd, yaffs_version, inband_tags) < 0)
++	err = yaffs_verify_mtd(mtd, yaffs_version, options.inband_tags,
++			       options.tags_9bytes);
++	if (err < 0)
+ 		return NULL;
+ 
+ 	/* OK, so if we got here, we have an MTD that's NAND and looks
+@@ -2890,7 +2900,8 @@ static struct super_block *yaffs_interna
+ 
+ 	param->n_reserved_blocks = 5;
+ 	param->n_caches = (options.no_cache) ? 0 : 10;
+-	param->inband_tags = inband_tags;
++	param->inband_tags = options.inband_tags;
++	param->tags_9bytes = options.tags_9bytes;
+ 
+ 	param->enable_xattr = 1;
+ 	if (options.lazy_loading_overridden)
+--- a/fs/yaffs2/yaffs_mtdif.c
++++ b/fs/yaffs2/yaffs_mtdif.c
+@@ -276,7 +276,8 @@ struct mtd_info * yaffs_get_mtd_device(d
+ 	return mtd;
+ }
+ 
+-int yaffs_verify_mtd(struct mtd_info *mtd, int yaffs_version, int inband_tags)
++int yaffs_verify_mtd(struct mtd_info *mtd, int yaffs_version, int inband_tags,
++		     int tags_9bytes)
+ {
+ 	if (yaffs_version == 2) {
+ 		if ((WRITE_SIZE(mtd) < YAFFS_MIN_YAFFS2_CHUNK_SIZE ||
+@@ -295,6 +296,12 @@ int yaffs_verify_mtd(struct mtd_info *mt
+ 			);
+ 			return -1;
+ 		}
++
++		if (tags_9bytes && mtd->oobavail < 9) {
++			yaffs_trace(YAFFS_TRACE_ALWAYS,
++				    "MTD device does not support 9-byte tags");
++			return -1;
++		}
+ 	}
+ 
+ 	return 0;
+--- a/fs/yaffs2/yaffs_mtdif.h
++++ b/fs/yaffs2/yaffs_mtdif.h
+@@ -21,5 +21,6 @@
+ void yaffs_mtd_drv_install(struct yaffs_dev *dev);
+ struct mtd_info * yaffs_get_mtd_device(dev_t sdev);
+ void yaffs_put_mtd_device(struct mtd_info *mtd);
+-int yaffs_verify_mtd(struct mtd_info *mtd, int yaffs_version, int inband_tags);
++int yaffs_verify_mtd(struct mtd_info *mtd, int yaffs_version, int inband_tags,
++		     int tags_9bytes);
+ #endif

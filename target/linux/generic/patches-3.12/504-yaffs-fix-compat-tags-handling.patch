@@ -1,0 +1,239 @@
+Subject: yaffs: fix compat tags handling
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+--- a/fs/yaffs2/yaffs_tagscompat.c
++++ b/fs/yaffs2/yaffs_tagscompat.c
+@@ -17,7 +17,9 @@
+ #include "yaffs_getblockinfo.h"
+ #include "yaffs_trace.h"
+ 
++#if 0
+ static void yaffs_handle_rd_data_error(struct yaffs_dev *dev, int nand_chunk);
++#endif
+ 
+ 
+ /********** Tags ECC calculations  *********/
+@@ -71,6 +73,7 @@ int yaffs_check_tags_ecc(struct yaffs_ta
+ 	return 0;
+ }
+ 
++#if 0
+ /********** Tags **********/
+ 
+ static void yaffs_load_tags_to_spare(struct yaffs_spare *spare_ptr,
+@@ -379,3 +382,214 @@ void yaffs_tags_compat_install(struct ya
+ 	if(!dev->tagger.mark_bad_fn)
+ 		dev->tagger.mark_bad_fn = yaffs_tags_compat_mark_bad;
+ }
++#else
++
++#include "yaffs_packedtags1.h"
++
++static int yaffs_tags_compat_write(struct yaffs_dev *dev,
++				   int nand_chunk,
++				   const u8 *data,
++				   const struct yaffs_ext_tags *tags)
++{
++	struct yaffs_packed_tags1 pt1;
++	u8 tag_buf[9];
++	int retval;
++
++	/* we assume that yaffs_packed_tags1 and yaffs_tags are compatible */
++	compile_time_assertion(sizeof(struct yaffs_packed_tags1) == 12);
++	compile_time_assertion(sizeof(struct yaffs_tags) == 8);
++
++	yaffs_pack_tags1(&pt1, tags);
++	yaffs_calc_tags_ecc((struct yaffs_tags *)&pt1);
++
++	/* When deleting a chunk, the upper layer provides only skeletal
++	 * tags, one with is_deleted set.  However, we need to update the
++	 * tags, not erase them completely.  So we use the NAND write property
++	 * that only zeroed-bits stick and set tag bytes to all-ones and
++	 * zero just the (not) deleted bit.
++	 */
++	if (!dev->param.tags_9bytes) {
++		if (tags->is_deleted) {
++			memset(&pt1, 0xff, 8);
++			/* clear delete status bit to indicate deleted */
++			pt1.deleted = 0;
++		}
++		memcpy(tag_buf, &pt1, 8);
++	} else {
++		if (tags->is_deleted) {
++			memset(tag_buf, 0xff, 8);
++			tag_buf[8] = 0;
++		} else {
++			memcpy(tag_buf, &pt1, 8);
++			tag_buf[8] = 0xff;
++		}
++	}
++
++	retval = dev->drv.drv_write_chunk_fn(dev, nand_chunk,
++			data,
++			(data) ? dev->data_bytes_per_chunk : 0,
++			tag_buf,
++			(dev->param.tags_9bytes) ? 9 : 8);
++
++	return retval;
++}
++
++/* Return with empty extended tags but add ecc_result.
++ */
++static int return_empty_tags(struct yaffs_ext_tags *tags,
++			     enum yaffs_ecc_result ecc_result,
++			     int retval)
++{
++	if (tags) {
++		memset(tags, 0, sizeof(*tags));
++		tags->ecc_result = ecc_result;
++	}
++
++	return retval;
++}
++
++static int yaffs_tags_compat_read(struct yaffs_dev *dev,
++				  int nand_chunk,
++				  u8 *data,
++				  struct yaffs_ext_tags *tags)
++{
++	struct yaffs_packed_tags1 pt1;
++	enum yaffs_ecc_result ecc_result;
++	int retval;
++	int deleted;
++	u8 tag_buf[9];
++
++	retval = dev->drv.drv_read_chunk_fn(dev, nand_chunk,
++			data, dev->param.total_bytes_per_chunk,
++			tag_buf,
++			(dev->param.tags_9bytes) ? 9 : 8,
++			&ecc_result);
++
++	switch (ecc_result) {
++	case YAFFS_ECC_RESULT_NO_ERROR:
++	case YAFFS_ECC_RESULT_FIXED:
++		break;
++
++	case YAFFS_ECC_RESULT_UNFIXED:
++	default:
++		return_empty_tags(tags, YAFFS_ECC_RESULT_UNFIXED, 0);
++		tags->block_bad = dev->drv.drv_check_bad_fn(dev, nand_chunk);
++		return YAFFS_FAIL;
++	}
++
++	/* Check for a blank/erased chunk. */
++	if (yaffs_check_ff(tag_buf, 8)) {
++		/* when blank, upper layers want ecc_result to be <= NO_ERROR */
++		return return_empty_tags(tags, YAFFS_ECC_RESULT_NO_ERROR,
++					 YAFFS_OK);
++	}
++
++	memcpy(&pt1, tag_buf, 8);
++
++	if (!dev->param.tags_9bytes) {
++		/* Read deleted status (bit) then return it to it's non-deleted
++		 * state before performing tags mini-ECC check. pt1.deleted is
++		 * inverted.
++		 */
++		deleted = !pt1.deleted;
++		pt1.deleted = 1;
++	} else {
++		deleted = (hweight8(tag_buf[8]) < 7) ? 1 : 0;
++	}
++
++	/* Check the packed tags mini-ECC and correct if necessary/possible. */
++	retval = yaffs_check_tags_ecc((struct yaffs_tags *)&pt1);
++	switch (retval) {
++	case 0:
++		/* no tags error, use MTD result */
++		break;
++	case 1:
++		/* recovered tags-ECC error */
++		dev->n_tags_ecc_fixed++;
++		if (ecc_result == YAFFS_ECC_RESULT_NO_ERROR)
++			ecc_result = YAFFS_ECC_RESULT_FIXED;
++		break;
++	default:
++		/* unrecovered tags-ECC error */
++		dev->n_tags_ecc_unfixed++;
++		return return_empty_tags(tags, YAFFS_ECC_RESULT_UNFIXED,
++					 YAFFS_FAIL);
++	}
++
++	/* Unpack the tags to extended form and set ECC result.
++	 * [set should_be_ff just to keep yaffs_unpack_tags1 happy]
++	 */
++	pt1.should_be_ff = 0xffffffff;
++	yaffs_unpack_tags1(tags, &pt1);
++	tags->ecc_result = ecc_result;
++
++	/* Set deleted state */
++	tags->is_deleted = deleted;
++	return YAFFS_OK;
++}
++
++static int yaffs_tags_compat_mark_bad(struct yaffs_dev *dev, int block_no)
++{
++	return dev->drv.drv_mark_bad_fn(dev, block_no);
++}
++
++static int yaffs_tags_compat_query_block(struct yaffs_dev *dev,
++					 int block_no,
++					 enum yaffs_block_state *state,
++					 u32 *seq_number)
++{
++	struct yaffs_ext_tags tags;
++	int retval;
++
++	yaffs_trace(YAFFS_TRACE_MTD, "%s %d", __func__, block_no);
++
++	*seq_number = 0;
++
++	retval = dev->drv.drv_check_bad_fn(dev, block_no);
++	if (retval == YAFFS_FAIL) {
++		*state = YAFFS_BLOCK_STATE_DEAD;
++		goto out;
++	}
++
++	yaffs_tags_compat_read(dev, block_no * dev->param.chunks_per_block,
++			       NULL, &tags);
++
++	if (tags.ecc_result != YAFFS_ECC_RESULT_NO_ERROR) {
++		yaffs_trace(YAFFS_TRACE_MTD, "block %d is marked bad",
++			    block_no);
++		*state = YAFFS_BLOCK_STATE_NEEDS_SCAN;
++	} else if (tags.chunk_used) {
++		*seq_number = tags.seq_number;
++		*state = YAFFS_BLOCK_STATE_NEEDS_SCAN;
++	} else {
++		*state = YAFFS_BLOCK_STATE_EMPTY;
++	}
++
++	retval = YAFFS_OK;
++
++out:
++	yaffs_trace(YAFFS_TRACE_MTD,
++		    "block query returns seq %u state %d",
++		    *seq_number, *state);
++
++	return retval;
++}
++
++void yaffs_tags_compat_install(struct yaffs_dev *dev)
++{
++	if (dev->param.is_yaffs2)
++		return;
++
++	if (!dev->tagger.write_chunk_tags_fn)
++		dev->tagger.write_chunk_tags_fn = yaffs_tags_compat_write;
++
++	if (!dev->tagger.read_chunk_tags_fn)
++		dev->tagger.read_chunk_tags_fn = yaffs_tags_compat_read;
++
++	if (!dev->tagger.query_block_fn)
++		dev->tagger.query_block_fn = yaffs_tags_compat_query_block;
++
++	if (!dev->tagger.mark_bad_fn)
++		dev->tagger.mark_bad_fn = yaffs_tags_compat_mark_bad;
++}
++#endif
