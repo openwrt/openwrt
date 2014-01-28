@@ -69,6 +69,7 @@ hostapd_prepare_device_config() {
 	[ -n "$hwmode" ] && append base_cfg "hw_mode=$hwmode" "$N"
 
 	local brlist= br
+	json_get_values basic_rate_list basic_rate
 	for br in $basic_rate_list; do
 		hostapd_add_rate brlist "$br"
 	done
