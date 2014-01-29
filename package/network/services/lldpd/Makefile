@@ -46,7 +46,7 @@ define Package/lldpd/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/lldp{ctl,d} $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/lldp{cli,ctl,d} $(1)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblldpctl.so* $(1)/usr/lib/
 	$(INSTALL_BIN) ./files/lldpd.init $(1)/etc/init.d/lldpd
 	$(INSTALL_DATA) ./files/lldpd.config $(1)/etc/config/lldpd
