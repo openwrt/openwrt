@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lldpd
-PKG_VERSION:=0.7.5
-PKG_RELEASE:=2
+PKG_VERSION:=0.7.7
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://media.luffy.cx/files/lldpd
-PKG_MD5SUM:=2b3e91264dd7605b498051af6b749b47
+PKG_MD5SUM:=9031734c69940dd79a0a175123275f83
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
