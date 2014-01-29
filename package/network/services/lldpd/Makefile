@@ -59,6 +59,7 @@ endef
 CONFIGURE_ARGS += \
 	--with-privsep-user=lldp \
 	--with-privsep-group=lldp \
-	--with-privsep-chroot=/var/run/lldp
+	--with-privsep-chroot=/var/run/lldp \
+	--with-readline=no
 
 $(eval $(call BuildPackage,lldpd))
