@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -661,6 +661,7 @@ struct ath_spec_scan {
+@@ -678,6 +678,7 @@ struct ath_spec_scan {
   * @config_pci_powersave:
   * @calibrate: periodic calibration for NF, ANI, IQ, ADC gain, ADC-DC
   *
@@ -8,7 +8,7 @@
   * @spectral_scan_config: set parameters for spectral scan and enable/disable it
   * @spectral_scan_trigger: trigger a spectral scan run
   * @spectral_scan_wait: wait for a spectral scan run to finish
-@@ -684,6 +685,7 @@ struct ath_hw_ops {
+@@ -701,6 +702,7 @@ struct ath_hw_ops {
  			struct ath_hw_antcomb_conf *antconf);
  	void (*antdiv_comb_conf_set)(struct ath_hw *ah,
  			struct ath_hw_antcomb_conf *antconf);
@@ -18,7 +18,7 @@
  	void (*spectral_scan_trigger)(struct ath_hw *ah);
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -1766,6 +1766,26 @@ static void ar9003_hw_tx99_set_txpower(s
+@@ -1768,6 +1768,26 @@ static void ar9003_hw_tx99_set_txpower(s
  		  ATH9K_POW_SM(p_pwr_array[ALL_TARGET_HT40_14],  0));
  }
  
@@ -45,7 +45,7 @@
  void ar9003_hw_attach_phy_ops(struct ath_hw *ah)
  {
  	struct ath_hw_private_ops *priv_ops = ath9k_hw_private_ops(ah);
-@@ -1796,6 +1816,7 @@ void ar9003_hw_attach_phy_ops(struct ath
+@@ -1798,6 +1818,7 @@ void ar9003_hw_attach_phy_ops(struct ath
  	priv_ops->set_radar_params = ar9003_hw_set_radar_params;
  	priv_ops->fast_chan_change = ar9003_hw_fast_chan_change;
  
@@ -55,7 +55,7 @@
  	ops->spectral_scan_config = ar9003_hw_spectral_scan_config;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -845,7 +845,8 @@ static void ath9k_init_txpower_limits(st
+@@ -846,7 +846,8 @@ static void ath9k_init_txpower_limits(st
  	if (ah->caps.hw_caps & ATH9K_HW_CAP_5GHZ)
  		ath9k_init_band_txpower(sc, IEEE80211_BAND_5GHZ);
  
@@ -65,7 +65,7 @@
  }
  
  void ath9k_reload_chainmask_settings(struct ath_softc *sc)
-@@ -976,6 +977,18 @@ static void ath9k_set_hw_capab(struct at
+@@ -979,6 +980,18 @@ static void ath9k_set_hw_capab(struct at
  	SET_IEEE80211_PERM_ADDR(hw, common->macaddr);
  }
  
@@ -84,7 +84,7 @@
  int ath9k_init_device(u16 devid, struct ath_softc *sc,
  		    const struct ath_bus_ops *bus_ops)
  {
-@@ -1021,6 +1034,8 @@ int ath9k_init_device(u16 devid, struct 
+@@ -1024,6 +1037,8 @@ int ath9k_init_device(u16 devid, struct 
  		ARRAY_SIZE(ath9k_tpt_blink));
  #endif
  
@@ -110,7 +110,7 @@
  static inline void ath9k_hw_set_bt_ant_diversity(struct ath_hw *ah, bool enable)
 --- a/drivers/net/wireless/ath/ath9k/link.c
 +++ b/drivers/net/wireless/ath/ath9k/link.c
-@@ -354,6 +354,11 @@ void ath_ani_calibrate(unsigned long dat
+@@ -307,6 +307,11 @@ void ath_ani_calibrate(unsigned long dat
  	unsigned int timestamp = jiffies_to_msecs(jiffies);
  	u32 cal_interval, short_cal_interval, long_cal_interval;
  	unsigned long flags;

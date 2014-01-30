@@ -10,7 +10,7 @@
  	int disable_5ghz;
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -930,6 +930,18 @@ static void rt2x00lib_rate(struct ieee80
+@@ -928,6 +928,18 @@ static void rt2x00lib_rate(struct ieee80
  		entry->flags |= IEEE80211_RATE_SHORT_PREAMBLE;
  }
  
@@ -31,7 +31,7 @@
  {
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -1403,6 +1403,7 @@ static inline void rt2x00debug_dump_fram
+@@ -1401,6 +1401,7 @@ static inline void rt2x00debug_dump_fram
   */
  u32 rt2x00lib_get_bssidx(struct rt2x00_dev *rt2x00dev,
  			 struct ieee80211_vif *vif);
@@ -41,7 +41,7 @@
   * Interrupt context handlers.
 --- a/drivers/net/wireless/rt2x00/rt61pci.c
 +++ b/drivers/net/wireless/rt2x00/rt61pci.c
-@@ -2395,6 +2395,7 @@ static int rt61pci_validate_eeprom(struc
+@@ -2392,6 +2392,7 @@ static int rt61pci_validate_eeprom(struc
  	u32 reg;
  	u16 word;
  	u8 *mac;
@@ -49,7 +49,7 @@
  	s8 value;
  
  	rt2x00mmio_register_read(rt2x00dev, E2PROM_CSR, &reg);
-@@ -2415,7 +2416,11 @@ static int rt61pci_validate_eeprom(struc
+@@ -2412,7 +2413,11 @@ static int rt61pci_validate_eeprom(struc
  	/*
  	 * Start validation of the data that has been read.
  	 */

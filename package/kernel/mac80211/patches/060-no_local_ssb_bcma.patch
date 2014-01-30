@@ -1,6 +1,6 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -382,42 +382,6 @@ USB_CDC_PHONET=
+@@ -381,42 +381,6 @@ USB_CDC_PHONET=
  USB_IPHETH=
  USB_SIERRA_NET=
  USB_VL600=
@@ -40,9 +40,9 @@
 -BCMA_DRIVER_GMAC_CMN=
 -BCMA_DRIVER_GPIO=
 -BCMA_DEBUG=
- DRM=
- DRM_USB=
- DRM_KMS_HELPER=
+ NFC=
+ NFC_DIGITAL=
+ NFC_NCI=
 --- a/Kconfig
 +++ b/Kconfig
 @@ -33,9 +33,6 @@ source drivers/net/wireless/Kconfig
@@ -52,12 +52,12 @@
 -source drivers/ssb/Kconfig
 -source drivers/bcma/Kconfig
 -
- source drivers/gpu/drm/Kconfig
- 
  source net/nfc/Kconfig
+ 
+ source drivers/regulator/Kconfig
 --- a/Makefile.kernel
 +++ b/Makefile.kernel
-@@ -26,8 +26,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
+@@ -25,8 +25,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
  obj-$(CPTCFG_WLAN) += drivers/net/wireless/
  obj-$(CPTCFG_BT) += net/bluetooth/
  obj-$(CPTCFG_BT) += drivers/bluetooth/
@@ -65,10 +65,10 @@
 -obj-$(CPTCFG_BCMA) += drivers/bcma/
  obj-$(CPTCFG_ETHERNET) += drivers/net/ethernet/
  obj-$(CPTCFG_USB_NET_RNDIS_WLAN) += drivers/net/usb/
- obj-$(CPTCFG_DRM) += drivers/gpu/drm/
+ obj-$(CPTCFG_NFC) += net/nfc/
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -2729,7 +2729,7 @@ static struct ssb_device *b43_ssb_gpio_d
+@@ -2734,7 +2734,7 @@ static struct ssb_device *b43_ssb_gpio_d
  {
  	struct ssb_bus *bus = dev->dev->sdev->bus;
  
@@ -77,7 +77,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4736,7 +4736,7 @@ static int b43_wireless_core_init(struct
+@@ -4738,7 +4738,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */

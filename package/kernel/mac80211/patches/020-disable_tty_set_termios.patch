@@ -6,11 +6,11 @@
  
 +#ifdef CONFIG_COMPAT_BLUETOOTH
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27))
+ #ifdef CONFIG_TTY
  /*
-  *		Termios Helper Methods
-@@ -112,4 +113,4 @@ int tty_set_termios(struct tty_struct *t
- }
+@@ -114,4 +115,4 @@ int tty_set_termios(struct tty_struct *t
  EXPORT_SYMBOL_GPL(tty_set_termios);
+ #endif /* CONFIG_TTY */
  #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)) */
 -
 +#endif

@@ -1,16 +1,16 @@
 --- a/drivers/net/wireless/ath/regd.c
 +++ b/drivers/net/wireless/ath/regd.c
-@@ -42,7 +42,8 @@ static int __ath_regd_init(struct ath_re
- 				NL80211_RRF_NO_IR | NL80211_RRF_NO_OFDM)
+@@ -43,7 +43,8 @@ static int __ath_regd_init(struct ath_re
+ 					 NL80211_RRF_NO_OFDM)
  
  /* We allow IBSS on these on a case by case basis by regulatory domain */
 -#define ATH9K_5GHZ_5150_5350	REG_RULE(5150-10, 5350+10, 80, 0, 30,\
 +#define ATH9K_5GHZ_5150_5350	REG_RULE(5150-10, 5240+10, 80, 0, 30, 0),\
 +				REG_RULE(5260-10, 5350+10, 80, 0, 30,\
- 				NL80211_RRF_NO_IR)
+ 					 NL80211_RRF_NO_IR)
  #define ATH9K_5GHZ_5470_5850	REG_RULE(5470-10, 5850+10, 80, 0, 30,\
- 				NL80211_RRF_NO_IR)
-@@ -60,57 +61,56 @@ static int __ath_regd_init(struct ath_re
+ 					 NL80211_RRF_NO_IR)
+@@ -61,57 +62,56 @@ static int __ath_regd_init(struct ath_re
  #define ATH9K_5GHZ_NO_MIDBAND	ATH9K_5GHZ_5150_5350, \
  				ATH9K_5GHZ_5725_5850
  
@@ -81,4 +81,4 @@
 +	)
  };
  
- static inline bool is_wwr_sku(u16 regd)
+ static bool dynamic_country_user_possible(struct ath_regulatory *reg)

@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -39,6 +39,7 @@
+@@ -37,6 +37,7 @@
  #include <linux/module.h>
  #include <linux/slab.h>
  #include <linux/clk.h>
@@ -8,7 +8,7 @@
  
  #include "rt2x00.h"
  #include "rt2800lib.h"
-@@ -7294,6 +7295,17 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7299,6 +7300,17 @@ static int rt2800_init_eeprom(struct rt2
  	rt2800_init_led(rt2x00dev, &rt2x00dev->led_assoc, LED_TYPE_ASSOC);
  	rt2800_init_led(rt2x00dev, &rt2x00dev->led_qual, LED_TYPE_QUALITY);
  
@@ -28,7 +28,7 @@
  
 --- a/drivers/net/wireless/rt2x00/rt2x00leds.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00leds.c
-@@ -111,6 +111,9 @@ static int rt2x00leds_register_led(struc
+@@ -109,6 +109,9 @@ static int rt2x00leds_register_led(struc
  	led->led_dev.name = name;
  	led->led_dev.brightness = LED_OFF;
  

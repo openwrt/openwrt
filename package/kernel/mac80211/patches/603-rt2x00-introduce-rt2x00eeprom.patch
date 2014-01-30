@@ -1,6 +1,6 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -283,6 +283,7 @@ RT2X00_LIB_FIRMWARE=
+@@ -281,6 +281,7 @@ RT2X00_LIB_FIRMWARE=
  RT2X00_LIB_CRYPTO=
  RT2X00_LIB_LEDS=
  RT2X00_LIB_DEBUGFS=
@@ -48,7 +48,7 @@
  obj-$(CPTCFG_RT2X00_LIB_MMIO)		+= rt2x00mmio.o
 --- a/drivers/net/wireless/rt2x00/rt2800lib.h
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.h
-@@ -22,6 +22,8 @@
+@@ -20,6 +20,8 @@
  #ifndef RT2800LIB_H
  #define RT2800LIB_H
  
@@ -57,7 +57,7 @@
  struct rt2800_ops {
  	void (*register_read)(struct rt2x00_dev *rt2x00dev,
  			      const unsigned int offset, u32 *value);
-@@ -121,6 +123,15 @@ static inline int rt2800_read_eeprom(str
+@@ -119,6 +121,15 @@ static inline int rt2800_read_eeprom(str
  {
  	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
  
@@ -75,7 +75,7 @@
  
 --- a/drivers/net/wireless/rt2x00/rt2800soc.c
 +++ b/drivers/net/wireless/rt2x00/rt2800soc.c
-@@ -97,19 +97,6 @@ static int rt2800soc_set_device_state(st
+@@ -95,19 +95,6 @@ static int rt2800soc_set_device_state(st
  	return retval;
  }
  
@@ -95,7 +95,7 @@
  /* Firmware functions */
  static char *rt2800soc_get_firmware_name(struct rt2x00_dev *rt2x00dev)
  {
-@@ -173,7 +160,6 @@ static const struct rt2800_ops rt2800soc
+@@ -171,7 +158,6 @@ static const struct rt2800_ops rt2800soc
  	.register_multiread	= rt2x00mmio_register_multiread,
  	.register_multiwrite	= rt2x00mmio_register_multiwrite,
  	.regbusy_read		= rt2x00mmio_regbusy_read,
@@ -105,7 +105,7 @@
  	.drv_init_registers	= rt2800mmio_init_registers,
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -696,6 +696,7 @@ enum rt2x00_capability_flags {
+@@ -694,6 +694,7 @@ enum rt2x00_capability_flags {
  	REQUIRE_SW_SEQNO,
  	REQUIRE_HT_TX_DESC,
  	REQUIRE_PS_AUTOWAKE,
@@ -113,7 +113,7 @@
  
  	/*
  	 * Capabilities
-@@ -965,6 +966,11 @@ struct rt2x00_dev {
+@@ -963,6 +964,11 @@ struct rt2x00_dev {
  	const struct firmware *fw;
  
  	/*
@@ -127,7 +127,7 @@
  	DECLARE_KFIFO_PTR(txstatus_fifo, u32);
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -1326,6 +1326,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
+@@ -1324,6 +1324,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
  	INIT_DELAYED_WORK(&rt2x00dev->autowakeup_work, rt2x00lib_autowakeup);
  	INIT_WORK(&rt2x00dev->sleep_work, rt2x00lib_sleep);
  
@@ -138,7 +138,7 @@
  	/*
  	 * Let the driver probe the device to detect the capabilities.
  	 */
-@@ -1456,6 +1460,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
+@@ -1454,6 +1458,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
  	 */
  	if (rt2x00dev->drv_data)
  		kfree(rt2x00dev->drv_data);
@@ -199,7 +199,7 @@
 +static int rt2x00lib_request_eeprom_file(struct rt2x00_dev *rt2x00dev)
 +{
 +	const struct firmware *ee;
-+	char *ee_name;
++	const char *ee_name;
 +	int retval;
 +
 +	ee_name = rt2x00lib_get_eeprom_file_name(rt2x00dev);
@@ -266,7 +266,7 @@
 +}
 --- a/drivers/net/wireless/rt2x00/rt2x00lib.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00lib.h
-@@ -322,6 +322,22 @@ static inline void rt2x00lib_free_firmwa
+@@ -320,6 +320,22 @@ static inline void rt2x00lib_free_firmwa
  #endif /* CPTCFG_RT2X00_LIB_FIRMWARE */
  
  /*
@@ -291,7 +291,7 @@
  #ifdef CPTCFG_RT2X00_LIB_DEBUGFS
 --- a/drivers/net/wireless/rt2x00/rt2x00soc.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00soc.c
-@@ -94,6 +94,7 @@ int rt2x00soc_probe(struct platform_devi
+@@ -92,6 +92,7 @@ int rt2x00soc_probe(struct platform_devi
  	rt2x00dev->hw = hw;
  	rt2x00dev->irq = platform_get_irq(pdev, 0);
  	rt2x00dev->name = pdev->dev.driver->name;
