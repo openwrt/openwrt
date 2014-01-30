@@ -17,3 +17,13 @@
  	if (!ssid->wpa_psk_set && ssid->wpa_psk && !ssid->wpa_psk->next &&
  	    ssid->wpa_passphrase_set && ssid->wpa_passphrase) {
  		/*
+@@ -172,6 +182,9 @@ int hostapd_reload_config(struct hostapd
+ 	oldconf = hapd->iconf;
+ 	iface->conf = newconf;
+ 
++	if (iface->conf->channel)
++		iface->freq = hostapd_hw_get_freq(hapd, iface->conf->channel);
++
+ 	for (j = 0; j < iface->num_bss; j++) {
+ 		hapd = iface->bss[j];
+ 		hapd->iconf = newconf;
