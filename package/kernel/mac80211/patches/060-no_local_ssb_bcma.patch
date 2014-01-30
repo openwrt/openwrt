@@ -1,6 +1,6 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -381,42 +381,6 @@ USB_CDC_PHONET=
+@@ -379,42 +379,6 @@ USB_CDC_PHONET=
  USB_IPHETH=
  USB_SIERRA_NET=
  USB_VL600=
@@ -77,7 +77,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4738,7 +4738,7 @@ static int b43_wireless_core_init(struct
+@@ -4751,7 +4751,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */

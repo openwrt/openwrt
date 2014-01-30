@@ -87,7 +87,7 @@
  	CFG80211_TESTMODE_CMD(ieee80211_testmode_cmd)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1216,6 +1216,7 @@ struct ieee80211_local {
+@@ -1221,6 +1221,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */
@@ -97,7 +97,7 @@
  
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -97,7 +97,7 @@ static u32 ieee80211_hw_conf_chan(struct
+@@ -101,7 +101,7 @@ static u32 ieee80211_hw_conf_chan(struct
  	struct ieee80211_sub_if_data *sdata;
  	struct cfg80211_chan_def chandef = {};
  	u32 changed = 0;
@@ -106,7 +106,7 @@
  	u32 offchannel_flag;
  
  	offchannel_flag = local->hw.conf.flags & IEEE80211_CONF_OFFCHANNEL;
-@@ -152,8 +152,21 @@ static u32 ieee80211_hw_conf_chan(struct
+@@ -156,8 +156,21 @@ static u32 ieee80211_hw_conf_chan(struct
  	}
  	rcu_read_unlock();
  
@@ -129,7 +129,7 @@
  		local->hw.cur_power_level = power;
  		local->hw.conf.power_level = power;
  	}
-@@ -580,6 +593,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+@@ -584,6 +597,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
  					 IEEE80211_RADIOTAP_MCS_HAVE_BW;
  	local->hw.radiotap_vht_details = IEEE80211_RADIOTAP_VHT_KNOWN_GI |
  					 IEEE80211_RADIOTAP_VHT_KNOWN_BANDWIDTH;

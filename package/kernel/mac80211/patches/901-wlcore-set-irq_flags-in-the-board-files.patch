@@ -45,7 +45,7 @@ Acked-by: Sekhar Nori <nsekhar@ti.com>
  		loopcount = 1;
  
  	wl1271_debug(DEBUG_IRQ, "IRQ work");
-@@ -5901,7 +5902,6 @@ struct ieee80211_hw *wlcore_alloc_hw(siz
+@@ -5934,7 +5935,6 @@ struct ieee80211_hw *wlcore_alloc_hw(siz
  	wl->ap_ps_map = 0;
  	wl->ap_fw_ps_map = 0;
  	wl->quirks = 0;
@@ -53,7 +53,7 @@ Acked-by: Sekhar Nori <nsekhar@ti.com>
  	wl->system_hlid = WL12XX_SYSTEM_HLID;
  	wl->active_sta_count = 0;
  	wl->active_link_count = 0;
-@@ -6042,7 +6042,7 @@ static void wlcore_nvs_cb(const struct f
+@@ -6075,7 +6075,7 @@ static void wlcore_nvs_cb(const struct f
  	struct platform_device *pdev = wl->pdev;
  	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
  	struct wl12xx_platform_data *pdata = pdev_data->pdata;
@@ -62,35 +62,42 @@ Acked-by: Sekhar Nori <nsekhar@ti.com>
  	int ret;
  	irq_handler_t hardirq_fn = NULL;
  
-@@ -6070,18 +6070,17 @@ static void wlcore_nvs_cb(const struct f
+@@ -6103,29 +6103,19 @@ static void wlcore_nvs_cb(const struct f
  	wlcore_adjust_conf(wl);
  
  	wl->irq = platform_get_irq(pdev, 0);
 -	wl->platform_quirks = pdata->platform_quirks;
  	wl->if_ops = pdev_data->if_ops;
  
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
+-	irqflags = IRQF_TRIGGER_RISING;
++	wl->irq_flags = irq_get_trigger_type(wl->irq) | IRQF_ONESHOT;
+ 	hardirq_fn = wlcore_hardirq;
+-#else
 -	if (wl->platform_quirks & WL12XX_PLATFORM_QUIRK_EDGE_IRQ) {
 -		irqflags = IRQF_TRIGGER_RISING;
 -		hardirq_fn = wlcore_hardirq;
 -	} else {
 -		irqflags = IRQF_TRIGGER_HIGH | IRQF_ONESHOT;
 -	}
-+	wl->irq_flags = irq_get_trigger_type(wl->irq);
-+ 
-+	hardirq_fn = wlcore_hardirq;
-+
-+	/* Since we don't use the primary handler, we must set ONESHOT */
-+	wl->irq_flags |= IRQF_ONESHOT;
+-#endif
  
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)
+ 	ret = compat_request_threaded_irq(&wl->irq_compat, wl->irq,
+ 					  hardirq_fn, wlcore_irq,
+-					  irqflags,
++					  wl->irqflags,
+ 					  pdev->name, wl);
+ #else
  	ret = request_threaded_irq(wl->irq, hardirq_fn, wlcore_irq,
 -				   irqflags, pdev->name, wl);
-+				   wl->irq_flags, pdev->name, wl);
++				   wl->irqflags, pdev->name, wl);
+ #endif
  	if (ret < 0) {
  		wl1271_error("request_irq() failed: %d", ret);
- 		goto out_free_nvs;
 --- a/drivers/net/wireless/ti/wlcore/wlcore.h
 +++ b/drivers/net/wireless/ti/wlcore/wlcore.h
-@@ -186,6 +186,8 @@ struct wl1271 {
+@@ -188,6 +188,8 @@ struct wl1271 {
  
  	int irq;
  
@@ -99,7 +106,7 @@ Acked-by: Sekhar Nori <nsekhar@ti.com>
  	spinlock_t wl_lock;
  
  	enum wlcore_state state;
-@@ -393,9 +395,6 @@ struct wl1271 {
+@@ -395,9 +397,6 @@ struct wl1271 {
  	/* Quirks of specific hardware revisions */
  	unsigned int quirks;
  
