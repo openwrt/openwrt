@@ -23,7 +23,7 @@
  		*dbm = sdata->vif.bss_conf.txpower;
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -154,6 +154,7 @@ static u32 ieee80211_hw_conf_chan(struct
+@@ -158,6 +158,7 @@ static u32 ieee80211_hw_conf_chan(struct
  
  	if (local->hw.conf.power_level != power) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;
