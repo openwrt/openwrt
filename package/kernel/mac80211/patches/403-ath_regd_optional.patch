@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/regd.c
 +++ b/drivers/net/wireless/ath/regd.c
-@@ -196,6 +196,10 @@ ath_reg_apply_beaconing_flags(struct wip
+@@ -341,6 +341,10 @@ ath_reg_apply_beaconing_flags(struct wip
  	struct ieee80211_channel *ch;
  	unsigned int i;
  
@@ -9,11 +9,11 @@
 +#endif
 +
  	for (band = 0; band < IEEE80211_NUM_BANDS; band++) {
- 
  		if (!wiphy->bands[band])
-@@ -249,6 +253,10 @@ ath_reg_apply_active_scan_flags(struct w
- 	struct ieee80211_channel *ch;
- 	const struct ieee80211_reg_rule *reg_rule;
+ 			continue;
+@@ -374,6 +378,10 @@ ath_reg_apply_ir_flags(struct wiphy *wip
+ {
+ 	struct ieee80211_supported_band *sband;
  
 +#ifdef CPTCFG_ATH_USER_REGD
 +	return;
@@ -22,7 +22,7 @@
  	sband = wiphy->bands[IEEE80211_BAND_2GHZ];
  	if (!sband)
  		return;
-@@ -298,6 +306,10 @@ static void ath_reg_apply_radar_flags(st
+@@ -402,6 +410,10 @@ static void ath_reg_apply_radar_flags(st
  	struct ieee80211_channel *ch;
  	unsigned int i;
  
@@ -33,7 +33,7 @@
  	if (!wiphy->bands[IEEE80211_BAND_5GHZ])
  		return;
  
-@@ -606,6 +618,10 @@ ath_regd_init_wiphy(struct ath_regulator
+@@ -631,6 +643,10 @@ ath_regd_init_wiphy(struct ath_regulator
  {
  	const struct ieee80211_regdomain *regd;
  
@@ -42,8 +42,8 @@
 +#endif
 +
  	wiphy->reg_notifier = reg_notifier;
- 	wiphy->flags |= WIPHY_FLAG_STRICT_REGULATORY;
- 
+ 	wiphy->regulatory_flags |= REGULATORY_STRICT_REG |
+ 				   REGULATORY_CUSTOM_REG;
 --- a/drivers/net/wireless/ath/Kconfig
 +++ b/drivers/net/wireless/ath/Kconfig
 @@ -21,6 +21,9 @@ menuconfig ATH_CARDS
@@ -58,7 +58,7 @@
  	---help---
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -126,6 +126,7 @@ RTL8187_LEDS=
+@@ -121,6 +121,7 @@ RTL8187_LEDS=
  ATH_COMMON=
  ATH_CARDS=
  ATH_DEBUG=

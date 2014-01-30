@@ -1,26 +1,26 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -682,6 +682,7 @@ int ath9k_hw_init(struct ath_hw *ah)
- 	case AR9300_DEVID_AR9462:
- 	case AR9485_DEVID_AR1111:
- 	case AR9300_DEVID_AR9565:
+@@ -518,6 +518,7 @@ static int __ath9k_hw_init(struct ath_hw
+ 	ath9k_hw_read_revisions(ah);
+ 
+ 	switch (ah->hw_version.macVersion) {
 +	case AR9300_DEVID_INVALID:
- 		break;
- 	default:
- 		if (common->bus_ops->ath_bus_type == ATH_USB)
+ 	case AR_SREV_VERSION_5416_PCI:
+ 	case AR_SREV_VERSION_5416_PCIE:
+ 	case AR_SREV_VERSION_9160:
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -52,6 +52,7 @@
- #define AR9300_DEVID_QCA955X	0x0038
- #define AR9485_DEVID_AR1111	0x0037
- #define AR9300_DEVID_AR9565     0x0036
-+#define AR9300_DEVID_INVALID    0xabcd
+@@ -34,6 +34,7 @@
  
- #define AR5416_AR9100_DEVID	0x000b
+ #define ATHEROS_VENDOR_ID	0x168c
  
++#define AR9300_DEVID_INVALID	0xabcd
+ #define AR5416_DEVID_PCI	0x0023
+ #define AR5416_DEVID_PCIE	0x0024
+ #define AR9160_DEVID_PCI	0x0027
 --- a/drivers/net/wireless/ath/ath9k/pci.c
 +++ b/drivers/net/wireless/ath/ath9k/pci.c
-@@ -550,6 +550,7 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
+@@ -658,6 +658,7 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
  	{ PCI_VDEVICE(ATHEROS, 0x0036),
  	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
  

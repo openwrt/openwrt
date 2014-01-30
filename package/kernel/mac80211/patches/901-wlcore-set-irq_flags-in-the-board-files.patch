@@ -45,7 +45,7 @@ Acked-by: Sekhar Nori <nsekhar@ti.com>
  		loopcount = 1;
  
  	wl1271_debug(DEBUG_IRQ, "IRQ work");
-@@ -5925,7 +5926,6 @@ struct ieee80211_hw *wlcore_alloc_hw(siz
+@@ -5901,7 +5902,6 @@ struct ieee80211_hw *wlcore_alloc_hw(siz
  	wl->ap_ps_map = 0;
  	wl->ap_fw_ps_map = 0;
  	wl->quirks = 0;
@@ -53,7 +53,7 @@ Acked-by: Sekhar Nori <nsekhar@ti.com>
  	wl->system_hlid = WL12XX_SYSTEM_HLID;
  	wl->active_sta_count = 0;
  	wl->active_link_count = 0;
-@@ -6066,7 +6066,7 @@ static void wlcore_nvs_cb(const struct f
+@@ -6042,7 +6042,7 @@ static void wlcore_nvs_cb(const struct f
  	struct platform_device *pdev = wl->pdev;
  	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
  	struct wl12xx_platform_data *pdata = pdev_data->pdata;
@@ -62,7 +62,7 @@ Acked-by: Sekhar Nori <nsekhar@ti.com>
  	int ret;
  	irq_handler_t hardirq_fn = NULL;
  
-@@ -6094,18 +6094,17 @@ static void wlcore_nvs_cb(const struct f
+@@ -6070,18 +6070,17 @@ static void wlcore_nvs_cb(const struct f
  	wlcore_adjust_conf(wl);
  
  	wl->irq = platform_get_irq(pdev, 0);

@@ -8,7 +8,7 @@ Reviewed-by: Felipe Balbi <balbi@ti.com>
 
 --- a/drivers/net/wireless/ti/wlcore/main.c
 +++ b/drivers/net/wireless/ti/wlcore/main.c
-@@ -6065,7 +6065,6 @@ static void wlcore_nvs_cb(const struct f
+@@ -6041,7 +6041,6 @@ static void wlcore_nvs_cb(const struct f
  	struct wl1271 *wl = context;
  	struct platform_device *pdev = wl->pdev;
  	struct wlcore_platdev_data *pdev_data = dev_get_platdata(&pdev->dev);
@@ -16,7 +16,7 @@ Reviewed-by: Felipe Balbi <balbi@ti.com>
  
  	int ret;
  	irq_handler_t hardirq_fn = NULL;
-@@ -6115,7 +6114,7 @@ static void wlcore_nvs_cb(const struct f
+@@ -6091,7 +6090,7 @@ static void wlcore_nvs_cb(const struct f
  	if (!ret) {
  		wl->irq_wake_enabled = true;
  		device_init_wakeup(wl->dev, 1);

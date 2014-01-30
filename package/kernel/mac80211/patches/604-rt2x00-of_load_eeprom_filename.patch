@@ -8,12 +8,14 @@
  
  #include "rt2x00.h"
  #include "rt2x00lib.h"
-@@ -34,11 +35,19 @@ static const char *
+@@ -34,11 +35,21 @@ static const char *
  rt2x00lib_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
  {
  	struct rt2x00_platform_data *pdata = rt2x00dev->dev->platform_data;
++#ifdef CONFIG_OF
 +	struct device_node *np;
-+	char *eep;
++	const char *eep;
++#endif
  
  	if (pdata && pdata->eeprom_file_name)
  		return pdata->eeprom_file_name;
