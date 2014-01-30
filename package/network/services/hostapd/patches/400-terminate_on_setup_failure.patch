@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1100,13 +1100,8 @@ int hostapd_setup_interface_complete(str
+@@ -1103,13 +1103,8 @@ int hostapd_setup_interface_complete(str
  	size_t j;
  	u8 *prev_addr;
  
@@ -16,7 +16,7 @@
  
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->conf->channel) {
-@@ -1137,7 +1132,7 @@ int hostapd_setup_interface_complete(str
+@@ -1140,7 +1135,7 @@ int hostapd_setup_interface_complete(str
  				     hapd->iconf->vht_oper_centr_freq_seg1_idx)) {
  			wpa_printf(MSG_ERROR, "Could not set channel for "
  				   "kernel driver");
@@ -25,7 +25,7 @@
  		}
  	}
  
-@@ -1148,7 +1143,7 @@ int hostapd_setup_interface_complete(str
+@@ -1151,7 +1146,7 @@ int hostapd_setup_interface_complete(str
  			hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
  				       HOSTAPD_LEVEL_WARNING,
  				       "Failed to prepare rates table.");
@@ -34,7 +34,7 @@
  		}
  	}
  
-@@ -1156,14 +1151,14 @@ int hostapd_setup_interface_complete(str
+@@ -1159,14 +1154,14 @@ int hostapd_setup_interface_complete(str
  	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
  		wpa_printf(MSG_ERROR, "Could not set RTS threshold for "
  			   "kernel driver");
@@ -51,7 +51,7 @@
  	}
  
  	prev_addr = hapd->own_addr;
-@@ -1173,7 +1168,7 @@ int hostapd_setup_interface_complete(str
+@@ -1176,7 +1171,7 @@ int hostapd_setup_interface_complete(str
  		if (j)
  			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
  		if (hostapd_setup_bss(hapd, j == 0))
@@ -60,7 +60,7 @@
  		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
  			prev_addr = hapd->own_addr;
  	}
-@@ -1188,7 +1183,7 @@ int hostapd_setup_interface_complete(str
+@@ -1191,7 +1186,7 @@ int hostapd_setup_interface_complete(str
  	if (hostapd_driver_commit(hapd) < 0) {
  		wpa_printf(MSG_ERROR, "%s: Failed to commit driver "
  			   "configuration", __func__);
@@ -69,7 +69,7 @@
  	}
  
  	/*
-@@ -1213,6 +1208,13 @@ int hostapd_setup_interface_complete(str
+@@ -1216,6 +1211,13 @@ int hostapd_setup_interface_complete(str
  		iface->interfaces->terminate_on_error--;
  
  	return 0;
