@@ -279,6 +279,9 @@ ar71xx_board_detect() {
 	*"DIR-835 rev. A1")
 		name="dir-835-a1"
 		;;
+	*"Dragino v2")
+		name="dragino2"
+		;;
 	*EAP7660D)
 		name="eap7660d"
 		;;
