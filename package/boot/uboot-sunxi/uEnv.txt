@@ -1,0 +1,5 @@
+fdt_high=ffffffff
+loadkernel=fatload mmc 0 0x46000000 uImage
+loaddtb=fatload mmc 0 0x49000000 dtb
+bootargs=console=ttyS0,115200 earlyprintk root=/dev/mmcblk0p2 rootwait
+uenvcmd=run loadkernel && run loaddtb && bootm 0x46000000 - 0x49000000
