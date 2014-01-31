@@ -1,0 +1,232 @@
+# DO NOT EDIT. This file is generated from Config.src
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+menu "Busybox Library Tuning"
+
+config BUSYBOX_CONFIG_FEATURE_SYSTEMD
+	bool "Enable systemd support"
+	default BUSYBOX_DEFAULT_FEATURE_SYSTEMD
+	help
+	  If you plan to use busybox daemons on a system where daemons
+	  are controlled by systemd, enable this option.
+	  If you don't use systemd, it is still safe to enable it,
+	  but the downside is increased code size.
+config BUSYBOX_CONFIG_FEATURE_RTMINMAX
+	bool "Support RTMIN[+n] and RTMAX[-n] signal names"
+	default BUSYBOX_DEFAULT_FEATURE_RTMINMAX
+	help
+	  Support RTMIN[+n] and RTMAX[-n] signal names
+	  in kill, killall etc. This costs ~250 bytes.
+
+config BUSYBOX_CONFIG_PASSWORD_MINLEN
+	int "Minimum password length"
+	default BUSYBOX_DEFAULT_PASSWORD_MINLEN
+	range 5 32
+	help
+	  Minimum allowable password length.
+
+config BUSYBOX_CONFIG_MD5_SIZE_VS_SPEED
+	int "MD5: Trade bytes for speed (0:fast, 3:slow)"
+	default BUSYBOX_DEFAULT_MD5_SIZE_VS_SPEED
+	range 0 3
+	help
+	  Trade binary size versus speed for the md5sum algorithm.
+	  Approximate values running uClibc and hashing
+	  linux-2.4.4.tar.bz2 were:
+	                    user times (sec)  text size (386)
+	  0 (fastest)         1.1                6144
+	  1                   1.4                5392
+	  2                   3.0                5088
+	  3 (smallest)        5.1                4912
+
+config BUSYBOX_CONFIG_FEATURE_FAST_TOP
+	bool "Faster /proc scanning code (+100 bytes)"
+	default BUSYBOX_DEFAULT_FEATURE_FAST_TOP
+	help
+	  This option makes top (and ps) ~20% faster (or 20% less CPU hungry),
+	  but code size is slightly bigger.
+
+config BUSYBOX_CONFIG_FEATURE_ETC_NETWORKS
+	bool "Support for /etc/networks"
+	default BUSYBOX_DEFAULT_FEATURE_ETC_NETWORKS
+	help
+	  Enable support for network names in /etc/networks. This is
+	  a rarely used feature which allows you to use names
+	  instead of IP/mask pairs in route command.
+
+config BUSYBOX_CONFIG_FEATURE_USE_TERMIOS
+	bool "Use termios to manipulate the screen"
+	default BUSYBOX_DEFAULT_FEATURE_USE_TERMIOS
+	depends on BUSYBOX_CONFIG_MORE || BUSYBOX_CONFIG_TOP || BUSYBOX_CONFIG_POWERTOP
+	help
+	  This option allows utilities such as 'more' and 'top' to determine
+	  the size of the screen. If you leave this disabled, your utilities
+	  that display things on the screen will be especially primitive and
+	  will be unable to determine the current screen size, and will be
+	  unable to move the cursor.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING
+	bool "Command line editing"
+	default BUSYBOX_DEFAULT_FEATURE_EDITING
+	help
+	  Enable line editing (mainly for shell command line).
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_MAX_LEN
+	int "Maximum length of input"
+	range 128 8192
+	default BUSYBOX_DEFAULT_FEATURE_EDITING_MAX_LEN
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Line editing code uses on-stack buffers for storage.
+	  You may want to decrease this parameter if your target machine
+	  benefits from smaller stack usage.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_VI
+	bool "vi-style line editing commands"
+	default BUSYBOX_DEFAULT_FEATURE_EDITING_VI
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Enable vi-style line editing. In shells, this mode can be
+	  turned on and off with "set -o vi" and "set +o vi".
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_HISTORY
+	int "History size"
+	# Don't allow way too big values here, code uses fixed "char *history[N]" struct member
+	range 0 9999
+	default BUSYBOX_DEFAULT_FEATURE_EDITING_HISTORY
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Specify command history size (0 - disable).
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
+	bool "History saving"
+	default BUSYBOX_DEFAULT_FEATURE_EDITING_SAVEHISTORY
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Enable history saving in shells.
+
+config BUSYBOX_CONFIG_FEATURE_REVERSE_SEARCH
+	bool "Reverse history search"
+	default BUSYBOX_DEFAULT_FEATURE_REVERSE_SEARCH
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
+	help
+	  Enable readline-like Ctrl-R combination for reverse history search.
+	  Increases code by about 0.5k.
+
+config BUSYBOX_CONFIG_FEATURE_TAB_COMPLETION
+	bool "Tab completion"
+	default BUSYBOX_DEFAULT_FEATURE_TAB_COMPLETION
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Enable tab completion.
+
+config BUSYBOX_CONFIG_FEATURE_USERNAME_COMPLETION
+	bool "Username completion"
+	default BUSYBOX_DEFAULT_FEATURE_USERNAME_COMPLETION
+	depends on BUSYBOX_CONFIG_FEATURE_TAB_COMPLETION
+	help
+	  Enable username completion.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_FANCY_PROMPT
+	bool "Fancy shell prompts"
+	default BUSYBOX_DEFAULT_FEATURE_EDITING_FANCY_PROMPT
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Setting this option allows for prompts to use things like \w and
+	  \$ and escape codes.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_ASK_TERMINAL
+	bool "Query cursor position from terminal"
+	default BUSYBOX_DEFAULT_FEATURE_EDITING_ASK_TERMINAL
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Allow usage of "ESC [ 6 n" sequence. Terminal answers back with
+	  current cursor position. This information is used to make line
+	  editing more robust in some cases.
+	  If you are not sure whether your terminals respond to this code
+	  correctly, or want to save on code size (about 400 bytes),
+	  then do not turn this option on.
+
+config BUSYBOX_CONFIG_FEATURE_NON_POSIX_CP
+	bool "Non-POSIX, but safer, copying to special nodes"
+	default BUSYBOX_DEFAULT_FEATURE_NON_POSIX_CP
+	help
+	  With this option, "cp file symlink" will delete symlink
+	  and create a regular file. This does not conform to POSIX,
+	  but prevents a symlink attack.
+	  Similarly, "cp file device" will not send file's data
+	  to the device. (To do that, use "cat file >device")
+
+config BUSYBOX_CONFIG_FEATURE_VERBOSE_CP_MESSAGE
+	bool "Give more precise messages when copy fails (cp, mv etc)"
+	default BUSYBOX_DEFAULT_FEATURE_VERBOSE_CP_MESSAGE
+	help
+	  Error messages with this feature enabled:
+	    $ cp file /does_not_exist/file
+	    cp: cannot create '/does_not_exist/file': Path does not exist
+	    $ cp file /vmlinuz/file
+	    cp: cannot stat '/vmlinuz/file': Path has non-directory component
+	  If this feature is not enabled, they will be, respectively:
+	    cp: cannot create '/does_not_exist/file': No such file or directory
+	    cp: cannot stat '/vmlinuz/file': Not a directory
+	  This will cost you ~60 bytes.
+
+config BUSYBOX_CONFIG_FEATURE_COPYBUF_KB
+	int "Copy buffer size, in kilobytes"
+	range 1 1024
+	default BUSYBOX_DEFAULT_FEATURE_COPYBUF_KB
+	help
+	  Size of buffer used by cp, mv, install, wget etc.
+	  Buffers which are 4 kb or less will be allocated on stack.
+	  Bigger buffers will be allocated with mmap, with fallback to 4 kb
+	  stack buffer if mmap fails.
+
+config BUSYBOX_CONFIG_FEATURE_SKIP_ROOTFS
+	bool "Skip rootfs in mount table"
+	default BUSYBOX_DEFAULT_FEATURE_SKIP_ROOTFS
+	help
+	  Ignore rootfs entry in mount table.
+
+	  In Linux, kernel has a special filesystem, rootfs, which is initially
+	  mounted on /. It contains initramfs data, if kernel is configured
+	  to have one. Usually, another file system is mounted over / early
+	  in boot process, and therefore most tools which manipulate
+	  mount table, such as df, will skip rootfs entry.
+
+	  However, some systems do not mount anything on /.
+	  If you need to configure busybox for one of these systems,
+	  you may find useful to turn this option off to make df show
+	  initramfs statistic.
+
+	  Otherwise, choose Y.
+
+config BUSYBOX_CONFIG_MONOTONIC_SYSCALL
+	bool "Use clock_gettime(CLOCK_MONOTONIC) syscall"
+	default BUSYBOX_DEFAULT_MONOTONIC_SYSCALL
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  Use clock_gettime(CLOCK_MONOTONIC) syscall for measuring
+	  time intervals (time, ping, traceroute etc need this).
+	  Probably requires Linux 2.6+. If not selected, gettimeofday
+	  will be used instead (which gives wrong results if date/time
+	  is reset).
+
+config BUSYBOX_CONFIG_IOCTL_HEX2STR_ERROR
+	bool "Use ioctl names rather than hex values in error messages"
+	default BUSYBOX_DEFAULT_IOCTL_HEX2STR_ERROR
+	help
+	  Use ioctl names rather than hex values in error messages
+	  (e.g. VT_DISALLOCATE rather than 0x5608). If disabled this
+	  saves about 1400 bytes.
+
+config BUSYBOX_CONFIG_FEATURE_HWIB
+	bool "Support infiniband HW"
+	default BUSYBOX_DEFAULT_FEATURE_HWIB
+	help
+	  Support for printing infiniband addresses in
+	  network applets.
+
+endmenu

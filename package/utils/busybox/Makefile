@@ -17,13 +17,17 @@ PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
 PKG_MD5SUM:=9c0cae5a0379228e7b55e5b29528df8e
 
-PKG_CONFIG_DEPENDS:=CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
+PKG_BUILD_DEPENDS:=BUSYBOX_USE_LIBRPC:librpc
 PKG_BUILD_PARALLEL:=1
 
 PKG_LICENSE:=GPLv2 BSD-4c
 PKG_LICENSE_FILES:=LICENSE archival/libarchive/bz/LICENSE
 
 include $(INCLUDE_DIR)/package.mk
+
+ifeq ($(DUMP),)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell $(SH_FUNC) grep '^CONFIG_BUSYBOX_' $(TOPDIR)/.config | md5s)
+endif
 
 ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
   BB_MAKE_VERBOSE := V=1
@@ -34,10 +38,10 @@ endif
 define Package/busybox
   SECTION:=base
   CATEGORY:=Base system
-  MAINTAINER:=Nicolas Thill <nico@openwrt.org>
+  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
-  DEPENDS:=+BUSYBOX_CONFIG_FEATURE_MOUNT_NFS:librpc
+  DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc
   MENU:=1
 endef
 
@@ -50,27 +54,11 @@ define Package/busybox/config
 	source "$(SOURCE)/Config.in"
 endef
 
-CONFIG_TEMPLATE:=./config/default
-
-LDLIBS:=m crypt
-ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
-  TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
-  export LDFLAGS=$(TARGET_LDFLAGS)
-  LDLIBS += rpc
-endif
-
-CONFIG_TEMPLATE:=+ $(CONFIG_TEMPLATE) $(PKG_BUILD_DIR)/.config.build
-
-ENV_CONFIG:=$(wildcard $(TOPDIR)/env/busybox-config)
-ifneq ($(ENV_CONFIG),)
-  CONFIG_TEMPLATE:=+ $(CONFIG_TEMPLATE) $(ENV_CONFIG)
-  STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(shell $(SH_FUNC) md5s < $(ENV_CONFIG))
-endif
+BUSYBOX_SYM=$(if $(CONFIG_BUSYBOX_CUSTOM),CONFIG,DEFAULT)
 
 define Build/Configure
-	grep -E '^(# )?CONFIG_BUSYBOX_CONFIG_' $(TOPDIR)/.config | \
-		sed -e 's,CONFIG_BUSYBOX_CONFIG_,CONFIG_,' > $(PKG_BUILD_DIR)/.config.build
-	$(SCRIPT_DIR)/kconfig.pl $(CONFIG_TEMPLATE) > $(PKG_BUILD_DIR)/.config
+	rm -f $(PKG_BUILD_DIR)/.configured*
+	grep 'CONFIG_BUSYBOX_$(BUSYBOX_SYM)' $(TOPDIR)/.config | sed -e "s,\\(# \)\\?CONFIG_BUSYBOX_$(BUSYBOX_SYM)_\\(.*\\),\\1CONFIG_\\2,g" > $(PKG_BUILD_DIR)/.config
 	yes 'n' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -82,6 +70,13 @@ endef
 
 ifdef CONFIG_GCC_VERSION_LLVM
   TARGET_CFLAGS += -fnested-functions
+endif
+
+LDLIBS:=m crypt
+ifdef CONFIG_BUSYBOX_USE_LIBRPC
+  TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
+  export LDFLAGS=$(TARGET_LDFLAGS)
+  LDLIBS += rpc
 endif
 
 define Build/Compile

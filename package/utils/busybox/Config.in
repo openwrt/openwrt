@@ -1,6 +1,18 @@
 if PACKAGE_busybox
 
-config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
-	bool "Enable NFS mount support"
+config BUSYBOX_CUSTOM
+	bool "Customize busybox options"
+	default n
+
+	source "package/utils/busybox/Config-defaults.in"
+
+	if BUSYBOX_CUSTOM
+	source "package/utils/busybox/config/Config.in"
+	endif
+
+config BUSYBOX_USE_LIBRPC
+	bool
+	default y if BUSYBOX_CUSTOM && BUSYBOX_CONFIG_FEATURE_HAVE_RPC
+	default y if !BUSYBOX_CUSTOM && BUSYBOX_DEFAULT_FEATURE_HAVE_RPC
 
 endif

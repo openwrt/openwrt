@@ -10,12 +10,13 @@
  IF_LOGIN(APPLET(login, BB_DIR_BIN, BB_SUID_REQUIRE))
 --- a/miscutils/Config.src
 +++ b/miscutils/Config.src
-@@ -419,6 +419,11 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
+@@ -419,6 +419,12 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
  	help
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
  
 +config LOCK
 +	bool "lock"
++	default n
 +	help
 +	  Small utility for using locks in scripts
 +
