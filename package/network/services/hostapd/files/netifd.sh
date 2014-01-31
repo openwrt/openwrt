@@ -6,6 +6,12 @@ hostapd_add_rate() {
 	[ $sub -gt 0 ] && append $var "."
 }
 
+hostapd_add_basic_rate() {
+	local var="$1"
+	local val="$(($2 / 100))"
+	append $var "$val" " "
+}
+
 hostapd_append_wep_key() {
 	local var="$1"
 
@@ -71,7 +77,7 @@ hostapd_prepare_device_config() {
 	local brlist= br
 	json_get_values basic_rate_list basic_rate
 	for br in $basic_rate_list; do
-		hostapd_add_rate brlist "$br"
+		hostapd_add_basic_rate brlist "$br"
 	done
 	[ -n "$brlist" ] && append base_cfg "basic_rates=$brlist" "$N"
 	[ -n "$beacon_int" ] && append base_cfg "beacon_int=$beacon_int" "$N"
