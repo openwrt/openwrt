@@ -29,6 +29,30 @@ VERSION_REPO:=$(if $(VERSION_REPO),$(VERSION_REPO),http://downloads.openwrt.org/
 VERSION_DIST:=$(call qstrip,$(CONFIG_VERSION_DIST))
 VERSION_DIST:=$(if $(VERSION_DIST),$(VERSION_DIST),OpenWrt)
 
+
+define taint2sym
+$(CONFIG_$(firstword $(subst :, ,$(subst +,,$(subst -,,$(1))))))
+endef
+
+define taint2name
+$(lastword $(subst :, ,$(1)))
+endef
+
+VERSION_TAINT_SPECS := \
+	-ALL:no-all \
+	-IPV6:no-ipv6 \
+	+USE_EGLIBC:eglibc \
+	+USE_MKLIBS:mklibs \
+	+BUSYBOX_CUSTOM:busybox \
+
+VERSION_TAINTS := $(strip $(foreach taint,$(VERSION_TAINT_SPECS), \
+	$(if $(findstring +,$(taint)), \
+		$(if $(call taint2sym,$(taint)),$(call taint2name,$(taint))), \
+		$(if $(call taint2sym,$(taint)),,$(call taint2name,$(taint))) \
+	)))
+
+PKG_CONFIG_DEPENDS += $(foreach taint,$(VERSION_TAINT_SPECS),$(call taint2sym,$(taint)))
+
 VERSION_SED:=$(SED) 's,%U,$(VERSION_REPO),g' \
 	-e 's,%V,$(VERSION_NUMBER),g' \
 	-e 's,%v,\L$(subst $(space),_,$(VERSION_NUMBER)),g' \
@@ -41,3 +65,4 @@ VERSION_SED:=$(SED) 's,%U,$(VERSION_REPO),g' \
 	-e 's,%R,$(REVISION),g' \
 	-e 's,%T,$(BOARD),g' \
 	-e 's,%S,$(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic),g' \
+	-e 's,%t,$(VERSION_TAINTS),g' \
