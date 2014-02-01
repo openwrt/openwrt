@@ -1,3 +1,219 @@
+commit b9f268b5b01331c3c82179abca551429450e9417
+Author: Michal Kazior <michal.kazior@tieto.com>
+Date:   Wed Jan 29 14:22:27 2014 +0100
+
+    cfg80211: consider existing DFS interfaces
+    
+    It was possible to break interface combinations in
+    the following way:
+    
+     combo 1: iftype = AP, num_ifaces = 2, num_chans = 2,
+     combo 2: iftype = AP, num_ifaces = 1, num_chans = 1, radar = HT20
+    
+    With the above interface combinations it was
+    possible to:
+    
+     step 1. start AP on DFS channel by matching combo 2
+     step 2. start AP on non-DFS channel by matching combo 1
+    
+    This was possible beacuse (step 2) did not consider
+    if other interfaces require radar detection.
+    
+    The patch changes how cfg80211 tracks channels -
+    instead of channel itself now a complete chandef
+    is stored.
+    
+    Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit bc9c62f5f511cc395c62dbf4cdd437f23db53b28
+Author: Antonio Quartulli <antonio@open-mesh.com>
+Date:   Wed Jan 29 17:53:43 2014 +0100
+
+    cfg80211: fix channel configuration in IBSS join
+    
+    When receiving an IBSS_JOINED event select the BSS object
+    based on the {bssid, channel} couple rather than the bssid
+    only.
+    With the current approach if another cell having the same
+    BSSID (but using a different channel) exists then cfg80211
+    picks up the wrong BSS object.
+    The result is a mismatching channel configuration between
+    cfg80211 and the driver, that can lead to any sort of
+    problem.
+    
+    The issue can be triggered by having an IBSS sitting on
+    given channel and then asking the driver to create a new
+    cell using the same BSSID but with a different frequency.
+    By passing the channel to cfg80211_get_bss() we can solve
+    this ambiguity and retrieve/create the correct BSS object.
+    All the users of cfg80211_ibss_joined() have been changed
+    accordingly.
+    
+    Moreover WARN when cfg80211_ibss_joined() gets a NULL
+    channel as argument and remove a bogus call of the same
+    function in ath6kl (it does not make sense to call
+    cfg80211_ibss_joined() with a zero BSSID on ibss-leave).
+    
+    Cc: Kalle Valo <kvalo@qca.qualcomm.com>
+    Cc: Arend van Spriel <arend@broadcom.com>
+    Cc: Bing Zhao <bzhao@marvell.com>
+    Cc: Jussi Kivilinna <jussi.kivilinna@iki.fi>
+    Cc: libertas-dev@lists.infradead.org
+    Acked-by: Kalle Valo <kvalo@qca.qualcomm.com>
+    Signed-off-by: Antonio Quartulli <antonio@open-mesh.com>
+    [minor code cleanup in ath6kl]
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit 7e0c41cb41f215aba2c39b1c237bb4d42ec49a85
+Author: Johannes Berg <johannes.berg@intel.com>
+Date:   Fri Jan 24 14:41:44 2014 +0100
+
+    mac80211: fix bufferable MMPDU RX handling
+    
+    Action, disassoc and deauth frames are bufferable, and as such don't
+    have the PM bit in the frame control field reserved which means we
+    need to react to the bit when receiving in such a frame.
+    
+    Fix this by introducing a new helper ieee80211_is_bufferable_mmpdu()
+    and using it for the RX path that currently ignores the PM bit in
+    any non-data frames for doze->wake transitions, but listens to it in
+    all frames for wake->doze transitions, both of which are wrong.
+    
+    Also use the new helper in the TX path to clean up the code.
+    
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit fc0df6d2343636e3f48a069330d5b972e3d8659d
+Author: Janusz Dziedzic <janusz.dziedzic@tieto.com>
+Date:   Fri Jan 24 14:29:21 2014 +0100
+
+    cfg80211: set preset_chandef after channel switch
+    
+    Set preset_chandef in channel switch notification.
+    In other case we will have old preset_chandef.
+    
+    Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit cdec895e2344987ff171cece96e25d7407a3ebf6
+Author: Simon Wunderlich <simon@open-mesh.com>
+Date:   Fri Jan 24 23:48:29 2014 +0100
+
+    mac80211: send ibss probe responses with noack flag
+    
+    Responding to probe requests for scanning clients will often create
+    excessive retries, as it happens quite often that the scanning client
+    already left the channel. Therefore do it like hostapd and send probe
+    responses for wildcard SSID only once by using the noack flag.
+    
+    Signed-off-by: Simon Wunderlich <simon@open-mesh.com>
+    [fix typo & 'wildcard SSID' in commit log]
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit 0b865d1e6b9c05052adae9315df7cb195dc60c3b
+Author: Luciano Coelho <luciano.coelho@intel.com>
+Date:   Tue Jan 28 17:09:08 2014 +0200
+
+    mac80211: ibss: remove unnecessary call to release channel
+    
+    The ieee80211_vif_use_channel() function calls
+    ieee80211_vif_release_channel(), so there's no need to call it
+    explicitly in __ieee80211_sta_join_ibss().
+    
+    Signed-off-by: Luciano Coelho <luciano.coelho@intel.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit e1b6c17e971f0a51ff86c2dac2584c63cd999cd7
+Author: Michal Kazior <michal.kazior@tieto.com>
+Date:   Wed Jan 29 07:56:21 2014 +0100
+
+    mac80211: add missing CSA locking
+    
+    The patch adds a missing sdata lock and adds a few
+    lockdeps for easier maintenance.
+    
+    Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit ad17ba7d14d225b109b73c177cd446afb8050598
+Author: Michal Kazior <michal.kazior@tieto.com>
+Date:   Wed Jan 29 07:56:20 2014 +0100
+
+    mac80211: fix sdata->radar_required locking
+    
+    radar_required setting wasn't protected by
+    local->mtx in some places. This should prevent
+    from scanning/radar detection/roc colliding.
+    
+    Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit 5fcd5f1808813a3d9e502fd756e01bee8a79c85d
+Author: Michal Kazior <michal.kazior@tieto.com>
+Date:   Wed Jan 29 07:56:19 2014 +0100
+
+    mac80211: move csa_active setting in STA CSA
+    
+    The sdata->vif.csa_active could be left set after,
+    e.g. channel context constraints check fail in STA
+    mode leaving the interface in a strange state for
+    a brief period of time until it is disconnected.
+    This was harmless but ugly.
+    
+    Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
+    Reviewed-by: Luciano Coelho <luciano.coelho@intel.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit e486da4b7eed71821c6b4c1bb9ac62ffd3ab13e9
+Author: Michal Kazior <michal.kazior@tieto.com>
+Date:   Wed Jan 29 07:56:18 2014 +0100
+
+    mac80211: fix possible memory leak on AP CSA failure
+    
+    If CSA for AP interface failed and the interface
+    was not stopped afterwards another CSA request
+    would leak sdata->u.ap.next_beacon.
+    
+    Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
+    Reviewed-by: Luciano Coelho <luciano.coelho@intel.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit 3a77ba08940682bf3d52cf14f980337324af9d4a
+Author: Johannes Berg <johannes.berg@intel.com>
+Date:   Sat Feb 1 00:33:29 2014 +0100
+
+    mac80211: fix fragmentation code, particularly for encryption
+    
+    The "new" fragmentation code (since my rewrite almost 5 years ago)
+    erroneously sets skb->len rather than using skb_trim() to adjust
+    the length of the first fragment after copying out all the others.
+    This leaves the skb tail pointer pointing to after where the data
+    originally ended, and thus causes the encryption MIC to be written
+    at that point, rather than where it belongs: immediately after the
+    data.
+    
+    The impact of this is that if software encryption is done, then
+     a) encryption doesn't work for the first fragment, the connection
+        becomes unusable as the first fragment will never be properly
+        verified at the receiver, the MIC is practically guaranteed to
+        be wrong
+     b) we leak up to 8 bytes of plaintext (!) of the packet out into
+        the air
+    
+    This is only mitigated by the fact that many devices are capable
+    of doing encryption in hardware, in which case this can't happen
+    as the tail pointer is irrelevant in that case. Additionally,
+    fragmentation is not used very frequently and would normally have
+    to be configured manually.
+    
+    Fix this by using skb_trim() properly.
+    
+    Cc: stable@vger.kernel.org
+    Fixes: 2de8e0d999b8 ("mac80211: rewrite fragmentation")
+    Reported-by: Jouni Malinen <j@w1.fi>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
 commit de5f242e0c10e841017e37eb8c38974a642dbca8
 Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
 Date:   Tue Jan 28 06:21:59 2014 +0530
@@ -333,7 +549,31 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
     Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 --- a/drivers/net/wireless/ath/ath6kl/cfg80211.c
 +++ b/drivers/net/wireless/ath/ath6kl/cfg80211.c
-@@ -3256,6 +3256,15 @@ static int ath6kl_cfg80211_sscan_start(s
+@@ -790,7 +790,7 @@ void ath6kl_cfg80211_connect_event(struc
+ 	if (nw_type & ADHOC_NETWORK) {
+ 		ath6kl_dbg(ATH6KL_DBG_WLAN_CFG, "ad-hoc %s selected\n",
+ 			   nw_type & ADHOC_CREATOR ? "creator" : "joiner");
+-		cfg80211_ibss_joined(vif->ndev, bssid, GFP_KERNEL);
++		cfg80211_ibss_joined(vif->ndev, bssid, chan, GFP_KERNEL);
+ 		cfg80211_put_bss(ar->wiphy, bss);
+ 		return;
+ 	}
+@@ -861,13 +861,9 @@ void ath6kl_cfg80211_disconnect_event(st
+ 	}
+ 
+ 	if (vif->nw_type & ADHOC_NETWORK) {
+-		if (vif->wdev.iftype != NL80211_IFTYPE_ADHOC) {
++		if (vif->wdev.iftype != NL80211_IFTYPE_ADHOC)
+ 			ath6kl_dbg(ATH6KL_DBG_WLAN_CFG,
+ 				   "%s: ath6k not in ibss mode\n", __func__);
+-			return;
+-		}
+-		memset(bssid, 0, ETH_ALEN);
+-		cfg80211_ibss_joined(vif->ndev, bssid, GFP_KERNEL);
+ 		return;
+ 	}
+ 
+@@ -3256,6 +3252,15 @@ static int ath6kl_cfg80211_sscan_start(s
  	struct ath6kl_vif *vif = netdev_priv(dev);
  	u16 interval;
  	int ret, rssi_thold;
@@ -349,7 +589,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	if (ar->state != ATH6KL_STATE_ON)
  		return -EIO;
-@@ -3268,11 +3277,11 @@ static int ath6kl_cfg80211_sscan_start(s
+@@ -3268,11 +3273,11 @@ static int ath6kl_cfg80211_sscan_start(s
  	ret = ath6kl_set_probed_ssids(ar, vif, request->ssids,
  				      request->n_ssids,
  				      request->match_sets,
@@ -363,7 +603,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		ret = ath6kl_wmi_bssfilter_cmd(ar->wmi, vif->fw_vif_idx,
  					       ALL_BSS_FILTER, 0);
  		if (ret < 0)
-@@ -3286,12 +3295,12 @@ static int ath6kl_cfg80211_sscan_start(s
+@@ -3286,12 +3291,12 @@ static int ath6kl_cfg80211_sscan_start(s
  
  	if (test_bit(ATH6KL_FW_CAPABILITY_RSSI_SCAN_THOLD,
  		     ar->fw_capabilities)) {
@@ -470,7 +710,28 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		else
 --- a/include/linux/ieee80211.h
 +++ b/include/linux/ieee80211.h
-@@ -2192,10 +2192,10 @@ static inline u8 *ieee80211_get_DA(struc
+@@ -597,6 +597,20 @@ static inline int ieee80211_is_qos_nullf
+ }
+ 
+ /**
++ * ieee80211_is_bufferable_mmpdu - check if frame is bufferable MMPDU
++ * @fc: frame control field in little-endian byteorder
++ */
++static inline bool ieee80211_is_bufferable_mmpdu(__le16 fc)
++{
++	/* IEEE 802.11-2012, definition of "bufferable management frame";
++	 * note that this ignores the IBSS special case. */
++	return ieee80211_is_mgmt(fc) &&
++	       (ieee80211_is_action(fc) ||
++		ieee80211_is_disassoc(fc) ||
++		ieee80211_is_deauth(fc));
++}
++
++/**
+  * ieee80211_is_first_frag - check if IEEE80211_SCTL_FRAG is not set
+  * @seq_ctrl: frame sequence control bytes in little-endian byteorder
+  */
+@@ -2192,10 +2206,10 @@ static inline u8 *ieee80211_get_DA(struc
  }
  
  /**
@@ -483,7 +744,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  {
  	if (ieee80211_is_disassoc(hdr->frame_control) ||
  	    ieee80211_is_deauth(hdr->frame_control))
-@@ -2224,6 +2224,17 @@ static inline bool ieee80211_is_robust_m
+@@ -2224,6 +2238,17 @@ static inline bool ieee80211_is_robust_m
  }
  
  /**
@@ -534,6 +795,46 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	/* internal */
  	struct wiphy *wiphy;
+@@ -3130,8 +3133,8 @@ struct cfg80211_cached_keys;
+  * @identifier: (private) Identifier used in nl80211 to identify this
+  *	wireless device if it has no netdev
+  * @current_bss: (private) Used by the internal configuration code
+- * @channel: (private) Used by the internal configuration code to track
+- *	the user-set AP, monitor and WDS channel
++ * @chandef: (private) Used by the internal configuration code to track
++ *	the user-set channel definition.
+  * @preset_chandef: (private) Used by the internal configuration code to
+  *	track the channel to be used for AP later
+  * @bssid: (private) Used by the internal configuration code
+@@ -3195,9 +3198,7 @@ struct wireless_dev {
+ 
+ 	struct cfg80211_internal_bss *current_bss; /* associated / joined */
+ 	struct cfg80211_chan_def preset_chandef;
+-
+-	/* for AP and mesh channel tracking */
+-	struct ieee80211_channel *channel;
++	struct cfg80211_chan_def chandef;
+ 
+ 	bool ibss_fixed;
+ 	bool ibss_dfs_possible;
+@@ -3879,6 +3880,7 @@ void cfg80211_michael_mic_failure(struct
+  *
+  * @dev: network device
+  * @bssid: the BSSID of the IBSS joined
++ * @channel: the channel of the IBSS joined
+  * @gfp: allocation flags
+  *
+  * This function notifies cfg80211 that the device joined an IBSS or
+@@ -3888,7 +3890,8 @@ void cfg80211_michael_mic_failure(struct
+  * with the locally generated beacon -- this guarantees that there is
+  * always a scan result for this IBSS. cfg80211 will handle the rest.
+  */
+-void cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid, gfp_t gfp);
++void cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid,
++			  struct ieee80211_channel *channel, gfp_t gfp);
+ 
+ /**
+  * cfg80211_notify_new_candidate - notify cfg80211 of a new mesh peer candidate
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
 @@ -2442,9 +2442,15 @@ enum nl80211_reg_rule_attr {
@@ -567,6 +868,17 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  void ieee80211_send_bar(struct ieee80211_vif *vif, u8 *ra, u16 tid, u16 ssn)
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
+@@ -970,9 +970,9 @@ static int ieee80211_start_ap(struct wip
+ 	/* TODO: make hostapd tell us what it wants */
+ 	sdata->smps_mode = IEEE80211_SMPS_OFF;
+ 	sdata->needed_rx_chains = sdata->local->rx_chains;
+-	sdata->radar_required = params->radar_required;
+ 
+ 	mutex_lock(&local->mtx);
++	sdata->radar_required = params->radar_required;
+ 	err = ieee80211_vif_use_channel(sdata, &params->chandef,
+ 					IEEE80211_CHANCTX_SHARED);
+ 	mutex_unlock(&local->mtx);
 @@ -1021,8 +1021,10 @@ static int ieee80211_start_ap(struct wip
  					IEEE80211_P2P_OPPPS_ENABLE_BIT;
  
@@ -587,7 +899,24 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		return err;
  	}
  
-@@ -1090,8 +1093,6 @@ static int ieee80211_stop_ap(struct wiph
+@@ -1053,6 +1056,7 @@ static int ieee80211_change_beacon(struc
+ 	int err;
+ 
+ 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++	sdata_assert_lock(sdata);
+ 
+ 	/* don't allow changing the beacon while CSA is in place - offset
+ 	 * of channel switch counter may change
+@@ -1080,6 +1084,8 @@ static int ieee80211_stop_ap(struct wiph
+ 	struct probe_resp *old_probe_resp;
+ 	struct cfg80211_chan_def chandef;
+ 
++	sdata_assert_lock(sdata);
++
+ 	old_beacon = sdata_dereference(sdata->u.ap.beacon, sdata);
+ 	if (!old_beacon)
+ 		return -ENOENT;
+@@ -1090,8 +1096,6 @@ static int ieee80211_stop_ap(struct wiph
  	kfree(sdata->u.ap.next_beacon);
  	sdata->u.ap.next_beacon = NULL;
  
@@ -596,7 +925,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	/* turn off carrier for this interface and dependent VLANs */
  	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list)
  		netif_carrier_off(vlan->dev);
-@@ -1103,6 +1104,7 @@ static int ieee80211_stop_ap(struct wiph
+@@ -1103,6 +1107,7 @@ static int ieee80211_stop_ap(struct wiph
  	kfree_rcu(old_beacon, rcu_head);
  	if (old_probe_resp)
  		kfree_rcu(old_probe_resp, rcu_head);
@@ -604,7 +933,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	__sta_info_flush(sdata, true);
  	ieee80211_free_keys(sdata, true);
-@@ -2638,6 +2640,24 @@ static int ieee80211_start_roc_work(stru
+@@ -2638,6 +2643,24 @@ static int ieee80211_start_roc_work(stru
  	INIT_DELAYED_WORK(&roc->work, ieee80211_sw_roc_work);
  	INIT_LIST_HEAD(&roc->dependents);
  
@@ -629,7 +958,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	/* if there's one pending or we're scanning, queue this one */
  	if (!list_empty(&local->roc_list) ||
  	    local->scanning || local->radar_detect_enabled)
-@@ -2772,24 +2792,6 @@ static int ieee80211_start_roc_work(stru
+@@ -2772,24 +2795,6 @@ static int ieee80211_start_roc_work(stru
  	if (!queued)
  		list_add_tail(&roc->list, &local->roc_list);
  
@@ -654,6 +983,44 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	return 0;
  }
  
+@@ -3004,8 +3009,10 @@ void ieee80211_csa_finalize_work(struct 
+ 	if (!ieee80211_sdata_running(sdata))
+ 		goto unlock;
+ 
+-	sdata->radar_required = sdata->csa_radar_required;
++	sdata_assert_lock(sdata);
++
+ 	mutex_lock(&local->mtx);
++	sdata->radar_required = sdata->csa_radar_required;
+ 	err = ieee80211_vif_change_channel(sdata, &changed);
+ 	mutex_unlock(&local->mtx);
+ 	if (WARN_ON(err < 0))
+@@ -3022,13 +3029,13 @@ void ieee80211_csa_finalize_work(struct 
+ 	switch (sdata->vif.type) {
+ 	case NL80211_IFTYPE_AP:
+ 		err = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon);
++		kfree(sdata->u.ap.next_beacon);
++		sdata->u.ap.next_beacon = NULL;
++
+ 		if (err < 0)
+ 			goto unlock;
+ 
+ 		changed |= err;
+-		kfree(sdata->u.ap.next_beacon);
+-		sdata->u.ap.next_beacon = NULL;
+-
+ 		ieee80211_bss_info_change_notify(sdata, err);
+ 		break;
+ 	case NL80211_IFTYPE_ADHOC:
+@@ -3066,7 +3073,7 @@ int ieee80211_channel_switch(struct wiph
+ 	struct ieee80211_if_mesh __maybe_unused *ifmsh;
+ 	int err, num_chanctx;
+ 
+-	lockdep_assert_held(&sdata->wdev.mtx);
++	sdata_assert_lock(sdata);
+ 
+ 	if (!list_empty(&local->roc_list) || local->scanning)
+ 		return -EBUSY;
 --- a/net/mac80211/ht.c
 +++ b/net/mac80211/ht.c
 @@ -375,7 +375,7 @@ void ieee80211_send_delba(struct ieee802
@@ -702,6 +1069,16 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	/*
  	 * Remove all stations associated with this interface.
+@@ -827,7 +834,9 @@ static void ieee80211_do_stop(struct iee
+ 	cancel_work_sync(&local->dynamic_ps_enable_work);
+ 
+ 	cancel_work_sync(&sdata->recalc_smps);
++	sdata_lock(sdata);
+ 	sdata->vif.csa_active = false;
++	sdata_unlock(sdata);
+ 	cancel_work_sync(&sdata->csa_finalize_work);
+ 
+ 	cancel_delayed_work_sync(&sdata->dfs_cac_timer_work);
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
 @@ -599,10 +599,10 @@ static int ieee80211_is_unicast_robust_m
@@ -739,7 +1116,34 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		return -1; /* not a robust management frame */
  
  	mmie = (struct ieee80211_mmie *)
-@@ -1845,8 +1845,7 @@ static int ieee80211_drop_unencrypted_mg
+@@ -1311,18 +1311,15 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 	    !ieee80211_has_morefrags(hdr->frame_control) &&
+ 	    !(status->rx_flags & IEEE80211_RX_DEFERRED_RELEASE) &&
+ 	    (rx->sdata->vif.type == NL80211_IFTYPE_AP ||
+-	     rx->sdata->vif.type == NL80211_IFTYPE_AP_VLAN)) {
++	     rx->sdata->vif.type == NL80211_IFTYPE_AP_VLAN) &&
++	    /* PM bit is only checked in frames where it isn't reserved,
++	     * in AP mode it's reserved in non-bufferable management frames
++	     * (cf. IEEE 802.11-2012 8.2.4.1.7 Power Management field)
++	     */
++	    (!ieee80211_is_mgmt(hdr->frame_control) ||
++	     ieee80211_is_bufferable_mmpdu(hdr->frame_control))) {
+ 		if (test_sta_flag(sta, WLAN_STA_PS_STA)) {
+-			/*
+-			 * Ignore doze->wake transitions that are
+-			 * indicated by non-data frames, the standard
+-			 * is unclear here, but for example going to
+-			 * PS mode and then scanning would cause a
+-			 * doze->wake transition for the probe request,
+-			 * and that is clearly undesirable.
+-			 */
+-			if (ieee80211_is_data(hdr->frame_control) &&
+-			    !ieee80211_has_pm(hdr->frame_control))
++			if (!ieee80211_has_pm(hdr->frame_control))
+ 				sta_ps_end(sta);
+ 		} else {
+ 			if (ieee80211_has_pm(hdr->frame_control))
+@@ -1845,8 +1842,7 @@ static int ieee80211_drop_unencrypted_mg
  		 * having configured keys.
  		 */
  		if (unlikely(ieee80211_is_action(fc) && !rx->key &&
@@ -761,7 +1165,18 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		return 0;
  
  	return 1;
-@@ -567,7 +566,7 @@ ieee80211_tx_h_select_key(struct ieee802
+@@ -525,9 +524,7 @@ ieee80211_tx_h_ps_buf(struct ieee80211_t
+ 
+ 	/* only deauth, disassoc and action are bufferable MMPDUs */
+ 	if (ieee80211_is_mgmt(hdr->frame_control) &&
+-	    !ieee80211_is_deauth(hdr->frame_control) &&
+-	    !ieee80211_is_disassoc(hdr->frame_control) &&
+-	    !ieee80211_is_action(hdr->frame_control)) {
++	    !ieee80211_is_bufferable_mmpdu(hdr->frame_control)) {
+ 		if (tx->flags & IEEE80211_TX_UNICAST)
+ 			info->flags |= IEEE80211_TX_CTL_NO_PS_BUFFER;
+ 		return TX_CONTINUE;
+@@ -567,7 +564,7 @@ ieee80211_tx_h_select_key(struct ieee802
  		tx->key = key;
  	else if (ieee80211_is_mgmt(hdr->frame_control) &&
  		 is_multicast_ether_addr(hdr->addr1) &&
@@ -770,7 +1185,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		 (key = rcu_dereference(tx->sdata->default_mgmt_key)))
  		tx->key = key;
  	else if (is_multicast_ether_addr(hdr->addr1) &&
-@@ -582,12 +581,12 @@ ieee80211_tx_h_select_key(struct ieee802
+@@ -582,12 +579,12 @@ ieee80211_tx_h_select_key(struct ieee802
  		tx->key = NULL;
  	else if (tx->skb->protocol == tx->sdata->control_port_protocol)
  		tx->key = NULL;
@@ -785,6 +1200,15 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		tx->key = NULL;
  	else {
  		I802_DEBUG_INC(tx->local->tx_handlers_drop_unencrypted);
+@@ -878,7 +875,7 @@ static int ieee80211_fragment(struct iee
+ 	}
+ 
+ 	/* adjust first fragment's length */
+-	skb->len = hdrlen + per_fragm;
++	skb_trim(skb, hdrlen + per_fragm);
+ 	return 0;
+ }
+ 
 --- a/net/mac80211/wpa.c
 +++ b/net/mac80211/wpa.c
 @@ -499,7 +499,7 @@ ieee80211_crypto_ccmp_decrypt(struct iee
@@ -798,8 +1222,12 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	data_len = skb->len - hdrlen - IEEE80211_CCMP_HDR_LEN -
 --- a/net/wireless/ap.c
 +++ b/net/wireless/ap.c
-@@ -30,6 +30,7 @@ static int __cfg80211_stop_ap(struct cfg
- 		wdev->channel = NULL;
+@@ -27,9 +27,10 @@ static int __cfg80211_stop_ap(struct cfg
+ 	err = rdev_stop_ap(rdev, dev);
+ 	if (!err) {
+ 		wdev->beacon_interval = 0;
+-		wdev->channel = NULL;
++		memset(&wdev->chandef, 0, sizeof(wdev->chandef));
  		wdev->ssid_len = 0;
  		rdev_set_qos_map(rdev, dev, NULL);
 +		nl80211_send_ap_stopped(wdev);
@@ -856,7 +1284,25 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	struct cfg80211_sched_scan_request *sched_scan_req;
  	unsigned long suspend_at;
  	struct work_struct scan_done_wk;
-@@ -361,7 +362,8 @@ int cfg80211_validate_key_settings(struc
+@@ -210,6 +211,7 @@ struct cfg80211_event {
+ 		} dc;
+ 		struct {
+ 			u8 bssid[ETH_ALEN];
++			struct ieee80211_channel *channel;
+ 		} ij;
+ 	};
+ };
+@@ -257,7 +259,8 @@ int __cfg80211_leave_ibss(struct cfg8021
+ 			  struct net_device *dev, bool nowext);
+ int cfg80211_leave_ibss(struct cfg80211_registered_device *rdev,
+ 			struct net_device *dev, bool nowext);
+-void __cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid);
++void __cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid,
++			    struct ieee80211_channel *channel);
+ int cfg80211_ibss_wext_join(struct cfg80211_registered_device *rdev,
+ 			    struct wireless_dev *wdev);
+ 
+@@ -361,7 +364,8 @@ int cfg80211_validate_key_settings(struc
  				   struct key_params *params, int key_idx,
  				   bool pairwise, const u8 *mac_addr);
  void __cfg80211_scan_done(struct work_struct *wk);
@@ -866,6 +1312,16 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  void __cfg80211_sched_scan_results(struct work_struct *wk);
  int __cfg80211_stop_sched_scan(struct cfg80211_registered_device *rdev,
  			       bool driver_initiated);
+@@ -441,7 +445,8 @@ static inline unsigned int elapsed_jiffi
+ void
+ cfg80211_get_chan_state(struct wireless_dev *wdev,
+ 		        struct ieee80211_channel **chan,
+-		        enum cfg80211_chan_mode *chanmode);
++		        enum cfg80211_chan_mode *chanmode,
++		        u8 *radar_detect);
+ 
+ int cfg80211_set_monitor_channel(struct cfg80211_registered_device *rdev,
+ 				 struct cfg80211_chan_def *chandef);
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
 @@ -1723,9 +1723,10 @@ static int nl80211_dump_wiphy(struct sk_
@@ -897,6 +1353,15 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  			result = parse_txq_params(tb, &txq_params);
  			if (result)
  				goto bad_res;
+@@ -3289,7 +3292,7 @@ static int nl80211_start_ap(struct sk_bu
+ 	if (!err) {
+ 		wdev->preset_chandef = params.chandef;
+ 		wdev->beacon_interval = params.beacon_interval;
+-		wdev->channel = params.chandef.chan;
++		wdev->chandef = params.chandef;
+ 		wdev->ssid_len = params.ssid_len;
+ 		memcpy(wdev->ssid, params.ssid, wdev->ssid_len);
+ 	}
 @@ -5210,9 +5213,11 @@ static int nl80211_set_reg(struct sk_buf
  
  	nla_for_each_nested(nl_reg_rule, info->attrs[NL80211_ATTR_REG_RULES],
@@ -1034,6 +1499,15 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	}
  
  	if (info->attrs[NL80211_ATTR_IE]) {
+@@ -5751,7 +5810,7 @@ static int nl80211_start_radar_detection
+ 
+ 	err = rdev->ops->start_radar_detection(&rdev->wiphy, dev, &chandef);
+ 	if (!err) {
+-		wdev->channel = chandef.chan;
++		wdev->chandef = chandef;
+ 		wdev->cac_started = true;
+ 		wdev->cac_start_time = jiffies;
+ 	}
 @@ -7502,16 +7561,19 @@ static int nl80211_set_tx_bitrate_mask(s
  	 * directly to the enum ieee80211_band values used in cfg80211.
  	 */
@@ -1108,7 +1582,17 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	genlmsg_multicast_netns(&nl80211_fam, wiphy_net(&rdev->wiphy), msg, 0,
  				NL80211_MCGRP_SCAN, GFP_KERNEL);
  }
-@@ -11673,6 +11726,35 @@ void cfg80211_crit_proto_stopped(struct 
+@@ -11158,7 +11211,8 @@ void cfg80211_ch_switch_notify(struct ne
+ 		    wdev->iftype != NL80211_IFTYPE_MESH_POINT))
+ 		return;
+ 
+-	wdev->channel = chandef->chan;
++	wdev->chandef = *chandef;
++	wdev->preset_chandef = *chandef;
+ 	nl80211_ch_switch_notify(rdev, dev, chandef, GFP_KERNEL);
+ }
+ EXPORT_SYMBOL(cfg80211_ch_switch_notify);
+@@ -11673,6 +11727,35 @@ void cfg80211_crit_proto_stopped(struct 
  }
  EXPORT_SYMBOL(cfg80211_crit_proto_stopped);
  
@@ -1277,3 +1761,380 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		return -EBUSY;
  
  	if (wdev->conn->params.channel)
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1001,7 +1001,6 @@ ieee80211_sta_process_chanswitch(struct 
+ 	}
+ 
+ 	ifmgd->flags |= IEEE80211_STA_CSA_RECEIVED;
+-	sdata->vif.csa_active = true;
+ 
+ 	mutex_lock(&local->chanctx_mtx);
+ 	if (local->use_chanctx) {
+@@ -1039,6 +1038,7 @@ ieee80211_sta_process_chanswitch(struct 
+ 	mutex_unlock(&local->chanctx_mtx);
+ 
+ 	sdata->csa_chandef = csa_ie.chandef;
++	sdata->vif.csa_active = true;
+ 
+ 	if (csa_ie.mode)
+ 		ieee80211_stop_queues_by_reason(&local->hw,
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -196,6 +196,8 @@ static bool ieee80211_is_radar_required(
+ {
+ 	struct ieee80211_sub_if_data *sdata;
+ 
++	lockdep_assert_held(&local->mtx);
++
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(sdata, &local->interfaces, list) {
+ 		if (sdata->radar_required) {
+--- a/net/mac80211/ibss.c
++++ b/net/mac80211/ibss.c
+@@ -294,7 +294,6 @@ static void __ieee80211_sta_join_ibss(st
+ 	}
+ 
+ 	mutex_lock(&local->mtx);
+-	ieee80211_vif_release_channel(sdata);
+ 	if (ieee80211_vif_use_channel(sdata, &chandef,
+ 				      ifibss->fixed_channel ?
+ 					IEEE80211_CHANCTX_SHARED :
+@@ -303,6 +302,7 @@ static void __ieee80211_sta_join_ibss(st
+ 		mutex_unlock(&local->mtx);
+ 		return;
+ 	}
++	sdata->radar_required = radar_required;
+ 	mutex_unlock(&local->mtx);
+ 
+ 	memcpy(ifibss->bssid, bssid, ETH_ALEN);
+@@ -318,7 +318,6 @@ static void __ieee80211_sta_join_ibss(st
+ 	rcu_assign_pointer(ifibss->presp, presp);
+ 	mgmt = (void *)presp->head;
+ 
+-	sdata->radar_required = radar_required;
+ 	sdata->vif.bss_conf.enable_beacon = true;
+ 	sdata->vif.bss_conf.beacon_int = beacon_int;
+ 	sdata->vif.bss_conf.basic_rates = basic_rates;
+@@ -386,7 +385,7 @@ static void __ieee80211_sta_join_ibss(st
+ 					      presp->head_len, 0, GFP_KERNEL);
+ 	cfg80211_put_bss(local->hw.wiphy, bss);
+ 	netif_carrier_on(sdata->dev);
+-	cfg80211_ibss_joined(sdata->dev, ifibss->bssid, GFP_KERNEL);
++	cfg80211_ibss_joined(sdata->dev, ifibss->bssid, chan, GFP_KERNEL);
+ }
+ 
+ static void ieee80211_sta_join_ibss(struct ieee80211_sub_if_data *sdata,
+@@ -802,6 +801,8 @@ ieee80211_ibss_process_chanswitch(struct
+ 	int err;
+ 	u32 sta_flags;
+ 
++	sdata_assert_lock(sdata);
++
+ 	sta_flags = IEEE80211_STA_DISABLE_VHT;
+ 	switch (ifibss->chandef.width) {
+ 	case NL80211_CHAN_WIDTH_5:
+@@ -1471,6 +1472,11 @@ static void ieee80211_rx_mgmt_probe_req(
+ 	memcpy(((struct ieee80211_mgmt *) skb->data)->da, mgmt->sa, ETH_ALEN);
+ 	ibss_dbg(sdata, "Sending ProbeResp to %pM\n", mgmt->sa);
+ 	IEEE80211_SKB_CB(skb)->flags |= IEEE80211_TX_INTFL_DONT_ENCRYPT;
++
++	/* avoid excessive retries for probe request to wildcard SSIDs */
++	if (pos[1] == 0)
++		IEEE80211_SKB_CB(skb)->flags |= IEEE80211_TX_CTL_NO_ACK;
++
+ 	ieee80211_tx_skb(sdata, skb);
+ }
+ 
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -872,6 +872,8 @@ ieee80211_mesh_process_chnswitch(struct 
+ 	if (!ifmsh->mesh_id)
+ 		return false;
+ 
++	sdata_assert_lock(sdata);
++
+ 	sta_flags = IEEE80211_STA_DISABLE_VHT;
+ 	switch (sdata->vif.bss_conf.chandef.width) {
+ 	case NL80211_CHAN_WIDTH_20_NOHT:
+--- a/drivers/net/wireless/brcm80211/brcmfmac/wl_cfg80211.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/wl_cfg80211.c
+@@ -4658,6 +4658,7 @@ brcmf_notify_connect_status(struct brcmf
+ 	struct brcmf_cfg80211_info *cfg = ifp->drvr->config;
+ 	struct net_device *ndev = ifp->ndev;
+ 	struct brcmf_cfg80211_profile *profile = &ifp->vif->profile;
++	struct ieee80211_channel *chan;
+ 	s32 err = 0;
+ 
+ 	if (ifp->vif->mode == WL_MODE_AP) {
+@@ -4665,9 +4666,10 @@ brcmf_notify_connect_status(struct brcmf
+ 	} else if (brcmf_is_linkup(e)) {
+ 		brcmf_dbg(CONN, "Linkup\n");
+ 		if (brcmf_is_ibssmode(ifp->vif)) {
++			chan = ieee80211_get_channel(cfg->wiphy, cfg->channel);
+ 			memcpy(profile->bssid, e->addr, ETH_ALEN);
+ 			wl_inform_ibss(cfg, ndev, e->addr);
+-			cfg80211_ibss_joined(ndev, e->addr, GFP_KERNEL);
++			cfg80211_ibss_joined(ndev, e->addr, chan, GFP_KERNEL);
+ 			clear_bit(BRCMF_VIF_STATUS_CONNECTING,
+ 				  &ifp->vif->sme_state);
+ 			set_bit(BRCMF_VIF_STATUS_CONNECTED,
+--- a/drivers/net/wireless/libertas/cfg.c
++++ b/drivers/net/wireless/libertas/cfg.c
+@@ -1766,7 +1766,8 @@ static void lbs_join_post(struct lbs_pri
+ 	memcpy(priv->wdev->ssid, params->ssid, params->ssid_len);
+ 	priv->wdev->ssid_len = params->ssid_len;
+ 
+-	cfg80211_ibss_joined(priv->dev, bssid, GFP_KERNEL);
++	cfg80211_ibss_joined(priv->dev, bssid, params->chandef.chan,
++			     GFP_KERNEL);
+ 
+ 	/* TODO: consider doing this at MACREG_INT_CODE_LINK_SENSED time */
+ 	priv->connect_status = LBS_CONNECTED;
+--- a/drivers/net/wireless/mwifiex/cfg80211.c
++++ b/drivers/net/wireless/mwifiex/cfg80211.c
+@@ -1881,7 +1881,8 @@ mwifiex_cfg80211_join_ibss(struct wiphy 
+ 				     params->privacy);
+ done:
+ 	if (!ret) {
+-		cfg80211_ibss_joined(priv->netdev, priv->cfg_bssid, GFP_KERNEL);
++		cfg80211_ibss_joined(priv->netdev, priv->cfg_bssid,
++				     params->chandef.chan, GFP_KERNEL);
+ 		dev_dbg(priv->adapter->dev,
+ 			"info: joined/created adhoc network with bssid"
+ 			" %pM successfully\n", priv->cfg_bssid);
+--- a/drivers/net/wireless/rndis_wlan.c
++++ b/drivers/net/wireless/rndis_wlan.c
+@@ -2835,7 +2835,9 @@ static void rndis_wlan_do_link_up_work(s
+ 					bssid, req_ie, req_ie_len,
+ 					resp_ie, resp_ie_len, GFP_KERNEL);
+ 	} else if (priv->infra_mode == NDIS_80211_INFRA_ADHOC)
+-		cfg80211_ibss_joined(usbdev->net, bssid, GFP_KERNEL);
++		cfg80211_ibss_joined(usbdev->net, bssid,
++				     get_current_channel(usbdev, NULL),
++				     GFP_KERNEL);
+ 
+ 	kfree(info);
+ 
+--- a/net/wireless/ibss.c
++++ b/net/wireless/ibss.c
+@@ -14,7 +14,8 @@
+ #include "rdev-ops.h"
+ 
+ 
+-void __cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid)
++void __cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid,
++			    struct ieee80211_channel *channel)
+ {
+ 	struct wireless_dev *wdev = dev->ieee80211_ptr;
+ 	struct cfg80211_bss *bss;
+@@ -28,8 +29,7 @@ void __cfg80211_ibss_joined(struct net_d
+ 	if (!wdev->ssid_len)
+ 		return;
+ 
+-	bss = cfg80211_get_bss(wdev->wiphy, NULL, bssid,
+-			       wdev->ssid, wdev->ssid_len,
++	bss = cfg80211_get_bss(wdev->wiphy, channel, bssid, NULL, 0,
+ 			       WLAN_CAPABILITY_IBSS, WLAN_CAPABILITY_IBSS);
+ 
+ 	if (WARN_ON(!bss))
+@@ -54,21 +54,26 @@ void __cfg80211_ibss_joined(struct net_d
+ #endif
+ }
+ 
+-void cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid, gfp_t gfp)
++void cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid,
++			  struct ieee80211_channel *channel, gfp_t gfp)
+ {
+ 	struct wireless_dev *wdev = dev->ieee80211_ptr;
+ 	struct cfg80211_registered_device *rdev = wiphy_to_dev(wdev->wiphy);
+ 	struct cfg80211_event *ev;
+ 	unsigned long flags;
+ 
+-	trace_cfg80211_ibss_joined(dev, bssid);
++	trace_cfg80211_ibss_joined(dev, bssid, channel);
++
++	if (WARN_ON(!channel))
++		return;
+ 
+ 	ev = kzalloc(sizeof(*ev), gfp);
+ 	if (!ev)
+ 		return;
+ 
+ 	ev->type = EVENT_IBSS_JOINED;
+-	memcpy(ev->cr.bssid, bssid, ETH_ALEN);
++	memcpy(ev->ij.bssid, bssid, ETH_ALEN);
++	ev->ij.channel = channel;
+ 
+ 	spin_lock_irqsave(&wdev->event_lock, flags);
+ 	list_add_tail(&ev->list, &wdev->event_list);
+@@ -117,6 +122,7 @@ int __cfg80211_join_ibss(struct cfg80211
+ 
+ 	wdev->ibss_fixed = params->channel_fixed;
+ 	wdev->ibss_dfs_possible = params->userspace_handles_dfs;
++	wdev->chandef = params->chandef;
+ #ifdef CPTCFG_CFG80211_WEXT
+ 	wdev->wext.ibss.chandef = params->chandef;
+ #endif
+@@ -200,6 +206,7 @@ static void __cfg80211_clear_ibss(struct
+ 
+ 	wdev->current_bss = NULL;
+ 	wdev->ssid_len = 0;
++	memset(&wdev->chandef, 0, sizeof(wdev->chandef));
+ #ifdef CPTCFG_CFG80211_WEXT
+ 	if (!nowext)
+ 		wdev->wext.ibss.ssid_len = 0;
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -2278,11 +2278,6 @@ DECLARE_EVENT_CLASS(cfg80211_rx_evt,
+ 	TP_printk(NETDEV_PR_FMT ", " MAC_PR_FMT, NETDEV_PR_ARG, MAC_PR_ARG(addr))
+ );
+ 
+-DEFINE_EVENT(cfg80211_rx_evt, cfg80211_ibss_joined,
+-	TP_PROTO(struct net_device *netdev, const u8 *addr),
+-	TP_ARGS(netdev, addr)
+-);
+-
+ DEFINE_EVENT(cfg80211_rx_evt, cfg80211_rx_spurious_frame,
+ 	TP_PROTO(struct net_device *netdev, const u8 *addr),
+ 	TP_ARGS(netdev, addr)
+@@ -2293,6 +2288,24 @@ DEFINE_EVENT(cfg80211_rx_evt, cfg80211_r
+ 	TP_ARGS(netdev, addr)
+ );
+ 
++TRACE_EVENT(cfg80211_ibss_joined,
++	TP_PROTO(struct net_device *netdev, const u8 *bssid,
++		 struct ieee80211_channel *channel),
++	TP_ARGS(netdev, bssid, channel),
++	TP_STRUCT__entry(
++		NETDEV_ENTRY
++		MAC_ENTRY(bssid)
++		CHAN_ENTRY
++	),
++	TP_fast_assign(
++		NETDEV_ASSIGN;
++		MAC_ASSIGN(bssid, bssid);
++		CHAN_ASSIGN(channel);
++	),
++	TP_printk(NETDEV_PR_FMT ", bssid: " MAC_PR_FMT ", " CHAN_PR_FMT,
++		  NETDEV_PR_ARG, MAC_PR_ARG(bssid), CHAN_PR_ARG)
++);
++
+ TRACE_EVENT(cfg80211_probe_status,
+ 	TP_PROTO(struct net_device *netdev, const u8 *addr, u64 cookie,
+ 		 bool acked),
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -820,7 +820,8 @@ void cfg80211_process_wdev_events(struct
+ 						ev->dc.reason, true);
+ 			break;
+ 		case EVENT_IBSS_JOINED:
+-			__cfg80211_ibss_joined(wdev->netdev, ev->ij.bssid);
++			__cfg80211_ibss_joined(wdev->netdev, ev->ij.bssid,
++					       ev->ij.channel);
+ 			break;
+ 		}
+ 		wdev_unlock(wdev);
+@@ -1356,7 +1357,7 @@ int cfg80211_can_use_iftype_chan(struct 
+ 		 */
+ 		mutex_lock_nested(&wdev_iter->mtx, 1);
+ 		__acquire(wdev_iter->mtx);
+-		cfg80211_get_chan_state(wdev_iter, &ch, &chmode);
++		cfg80211_get_chan_state(wdev_iter, &ch, &chmode, &radar_detect);
+ 		wdev_unlock(wdev_iter);
+ 
+ 		switch (chmode) {
+--- a/net/wireless/chan.c
++++ b/net/wireless/chan.c
+@@ -642,7 +642,8 @@ int cfg80211_set_monitor_channel(struct 
+ void
+ cfg80211_get_chan_state(struct wireless_dev *wdev,
+ 		        struct ieee80211_channel **chan,
+-		        enum cfg80211_chan_mode *chanmode)
++		        enum cfg80211_chan_mode *chanmode,
++		        u8 *radar_detect)
+ {
+ 	*chan = NULL;
+ 	*chanmode = CHAN_MODE_UNDEFINED;
+@@ -660,6 +661,11 @@ cfg80211_get_chan_state(struct wireless_
+ 				     !wdev->ibss_dfs_possible)
+ 				  ? CHAN_MODE_SHARED
+ 				  : CHAN_MODE_EXCLUSIVE;
++
++			/* consider worst-case - IBSS can try to return to the
++			 * original user-specified channel as creator */
++			if (wdev->ibss_dfs_possible)
++				*radar_detect |= BIT(wdev->chandef.width);
+ 			return;
+ 		}
+ 		break;
+@@ -674,17 +680,26 @@ cfg80211_get_chan_state(struct wireless_
+ 	case NL80211_IFTYPE_AP:
+ 	case NL80211_IFTYPE_P2P_GO:
+ 		if (wdev->cac_started) {
+-			*chan = wdev->channel;
++			*chan = wdev->chandef.chan;
+ 			*chanmode = CHAN_MODE_SHARED;
++			*radar_detect |= BIT(wdev->chandef.width);
+ 		} else if (wdev->beacon_interval) {
+-			*chan = wdev->channel;
++			*chan = wdev->chandef.chan;
+ 			*chanmode = CHAN_MODE_SHARED;
++
++			if (cfg80211_chandef_dfs_required(wdev->wiphy,
++							  &wdev->chandef))
++				*radar_detect |= BIT(wdev->chandef.width);
+ 		}
+ 		return;
+ 	case NL80211_IFTYPE_MESH_POINT:
+ 		if (wdev->mesh_id_len) {
+-			*chan = wdev->channel;
++			*chan = wdev->chandef.chan;
+ 			*chanmode = CHAN_MODE_SHARED;
++
++			if (cfg80211_chandef_dfs_required(wdev->wiphy,
++							  &wdev->chandef))
++				*radar_detect |= BIT(wdev->chandef.width);
+ 		}
+ 		return;
+ 	case NL80211_IFTYPE_MONITOR:
+--- a/net/wireless/mesh.c
++++ b/net/wireless/mesh.c
+@@ -195,7 +195,7 @@ int __cfg80211_join_mesh(struct cfg80211
+ 	if (!err) {
+ 		memcpy(wdev->ssid, setup->mesh_id, setup->mesh_id_len);
+ 		wdev->mesh_id_len = setup->mesh_id_len;
+-		wdev->channel = setup->chandef.chan;
++		wdev->chandef = setup->chandef;
+ 	}
+ 
+ 	return err;
+@@ -244,7 +244,7 @@ int cfg80211_set_mesh_channel(struct cfg
+ 		err = rdev_libertas_set_mesh_channel(rdev, wdev->netdev,
+ 						     chandef->chan);
+ 		if (!err)
+-			wdev->channel = chandef->chan;
++			wdev->chandef = *chandef;
+ 
+ 		return err;
+ 	}
+@@ -276,7 +276,7 @@ static int __cfg80211_leave_mesh(struct 
+ 	err = rdev_leave_mesh(rdev, dev);
+ 	if (!err) {
+ 		wdev->mesh_id_len = 0;
+-		wdev->channel = NULL;
++		memset(&wdev->chandef, 0, sizeof(wdev->chandef));
+ 		rdev_set_qos_map(rdev, dev, NULL);
+ 	}
+ 
+--- a/net/wireless/mlme.c
++++ b/net/wireless/mlme.c
+@@ -772,7 +772,7 @@ void cfg80211_cac_event(struct net_devic
+ 	if (WARN_ON(!wdev->cac_started))
+ 		return;
+ 
+-	if (WARN_ON(!wdev->channel))
++	if (WARN_ON(!wdev->chandef.chan))
+ 		return;
+ 
+ 	switch (event) {
