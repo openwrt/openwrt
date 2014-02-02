@@ -63,7 +63,7 @@ hostapd_prepare_device_config() {
 	local base="${config%%.conf}"
 	local base_cfg=
 
-	json_get_vars country country_ie beacon_int basic_rate
+	json_get_vars country country_ie beacon_int
 
 	hostapd_set_log_options base_cfg
 
