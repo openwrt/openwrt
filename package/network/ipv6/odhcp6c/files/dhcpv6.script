@@ -50,7 +50,7 @@ setup_interface () {
 		entry="${entry#*,}"
 		local valid="${entry%%,*}"
 
-		proto_add_ipv6_address "$addr" "$mask" "$preferred" "$valid" 1
+		proto_add_ipv6_address "$addr" "$mask" "$preferred" "$valid"
 	done
 
 	for entry in $RA_ROUTES; do
