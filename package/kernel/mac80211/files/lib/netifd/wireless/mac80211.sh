@@ -20,7 +20,7 @@ drv_mac80211_init_device_config() {
 	config_add_string path phy macaddr
 	config_add_string hwmode
 	config_add_int beacon_int chanbw frag rts
-	config_add_int rxantenna txantenna antenna_gain txpower
+	config_add_int rxantenna txantenna antenna_gain txpower distance
 	config_add_boolean noscan
 	config_add_array ht_capab
 }
