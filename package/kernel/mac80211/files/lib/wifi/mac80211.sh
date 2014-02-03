@@ -69,6 +69,8 @@ detect_mac80211() {
 		mode_11n=""
 		mode_band="g"
 		channel="11"
+		htmode=""
+
 		ht_cap=0
 		for cap in $(iw phy "$dev" info | grep 'Capabilities:' | cut -d: -f2); do
 			ht_cap="$(($ht_cap | $cap))"
@@ -76,7 +78,7 @@ detect_mac80211() {
 		ht_capab="";
 		[ "$ht_cap" -gt 0 ] && {
 			mode_11n="n"
-			append ht_capab "	option htmode	HT20" "$N"
+			htmode="HT20"
 
 			list="	list ht_capab"
 			[ "$(($ht_cap & 1))" -eq 1 ] && append ht_capab "$list	LDPC" "$N"
@@ -90,6 +92,15 @@ detect_mac80211() {
 			[ "$(($ht_cap & 4096))" -eq 4096 ] && append ht_capab "$list	DSSS_CCK-40" "$N"
 		}
 		iw phy "$dev" info | grep -q '2412 MHz' || { mode_band="a"; channel="36"; }
+
+		vht_cap=$(iw phy "$dev" info | grep -c 'VHT Capabilities')
+		[ "$vht_cap" -gt 0 ] && {
+			mode_band="a";
+			channel="36"
+			htmode="VHT80"
+		}
+
+		[ -n $htmode ] && append ht_capab "	option htmode	$htmode" "$N"
 
 		if [ -x /usr/bin/readlink ]; then
 			path="$(readlink -f /sys/class/ieee80211/${dev}/device)"
