@@ -1,3 +1,18 @@
+commit e138e0ef9560c46ce93dbb22a728a57888e94d1c
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Mon Feb 3 13:31:37 2014 +0530
+
+    ath9k: Fix TX power calculation
+    
+    The commit, "ath9k_hw: Fix incorrect Tx control power in AR9003 template"
+    fixed the incorrect values in the eeprom templates, but if
+    boards have already been calibrated with incorrect values,
+    they would still be using the wrong TX power. Fix this by assigning
+    a default value in such cases.
+    
+    Cc: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+
 commit b9f268b5b01331c3c82179abca551429450e9417
 Author: Michal Kazior <michal.kazior@tieto.com>
 Date:   Wed Jan 29 14:22:27 2014 +0100
@@ -2138,3 +2153,16 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		return;
  
  	switch (event) {
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -5065,6 +5065,10 @@ static u16 ar9003_hw_get_max_edge_power(
+ 			break;
+ 		}
+ 	}
++
++	if (is2GHz && !twiceMaxEdgePower)
++		twiceMaxEdgePower = 60;
++
+ 	return twiceMaxEdgePower;
+ }
+ 
