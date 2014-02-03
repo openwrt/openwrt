@@ -50,7 +50,7 @@ setup_interface () {
 		entry="${entry#*,}"
 		local valid="${entry%%,*}"
 
-		proto_add_ipv6_address "$addr" "$mask" "$preferred" "$valid"
+		proto_add_ipv6_address "$addr" "$mask" "$preferred" "$valid" 1
 	done
 
 	for entry in $RA_ROUTES; do
@@ -65,7 +65,8 @@ setup_interface () {
 		local metric="${entry%%,*}"
 
 		if [ -z "$SOURCE_ROUTING" -o -z "$gw" ]; then
-			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid"
+			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid" "::/128"
+			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid" "$addr/$mask"
 		else
 			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid" "::/128"
 			for prefix in $PREFIXES $ADDRESSES; do
