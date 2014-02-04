@@ -1,21 +1,5 @@
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
-@@ -138,13 +138,13 @@ config SSB_DRIVER_MIPS
- 
- config SSB_SFLASH
- 	bool "SSB serial flash support"
--	depends on SSB_DRIVER_MIPS && BROKEN
-+	depends on SSB_DRIVER_MIPS
- 	default y
- 
- # Assumption: We are on embedded, if we compile the MIPS core.
- config SSB_EMBEDDED
- 	bool
--	depends on SSB_DRIVER_MIPS
-+	depends on SSB_DRIVER_MIPS && SSB_PCICORE_HOSTMODE
- 	default y
- 
- config SSB_DRIVER_EXTIF
 @@ -168,6 +168,7 @@ config SSB_DRIVER_GIGE
  config SSB_DRIVER_GPIO
  	bool "SSB GPIO driver"
@@ -26,36 +10,7 @@
  
 --- a/drivers/ssb/driver_chipcommon_sflash.c
 +++ b/drivers/ssb/driver_chipcommon_sflash.c
-@@ -9,6 +9,19 @@
- 
- #include "ssb_private.h"
- 
-+static struct resource ssb_sflash_resource = {
-+	.name	= "ssb_sflash",
-+	.start	= SSB_FLASH2,
-+	.end	= 0,
-+	.flags  = IORESOURCE_MEM | IORESOURCE_READONLY,
-+};
-+
-+struct platform_device ssb_sflash_dev = {
-+	.name		= "ssb_sflash",
-+	.resource	= &ssb_sflash_resource,
-+	.num_resources	= 1,
-+};
-+
- struct ssb_sflash_tbl_e {
- 	char *name;
- 	u32 id;
-@@ -16,7 +29,7 @@ struct ssb_sflash_tbl_e {
- 	u16 numblocks;
- };
- 
--static struct ssb_sflash_tbl_e ssb_sflash_st_tbl[] = {
-+static const struct ssb_sflash_tbl_e ssb_sflash_st_tbl[] = {
- 	{ "M25P20", 0x11, 0x10000, 4, },
- 	{ "M25P40", 0x12, 0x10000, 8, },
- 
-@@ -24,10 +37,10 @@ static struct ssb_sflash_tbl_e ssb_sflas
+@@ -37,7 +37,7 @@ static const struct ssb_sflash_tbl_e ssb
  	{ "M25P32", 0x15, 0x10000, 64, },
  	{ "M25P64", 0x16, 0x10000, 128, },
  	{ "M25FL128", 0x17, 0x10000, 256, },
@@ -63,12 +18,8 @@
 +	{ NULL },
  };
  
--static struct ssb_sflash_tbl_e ssb_sflash_sst_tbl[] = {
-+static const struct ssb_sflash_tbl_e ssb_sflash_sst_tbl[] = {
- 	{ "SST25WF512", 1, 0x1000, 16, },
- 	{ "SST25VF512", 0x48, 0x1000, 16, },
- 	{ "SST25WF010", 2, 0x1000, 32, },
-@@ -42,10 +55,10 @@ static struct ssb_sflash_tbl_e ssb_sflas
+ static const struct ssb_sflash_tbl_e ssb_sflash_sst_tbl[] = {
+@@ -55,7 +55,7 @@ static const struct ssb_sflash_tbl_e ssb
  	{ "SST25VF016", 0x41, 0x1000, 512, },
  	{ "SST25VF032", 0x4a, 0x1000, 1024, },
  	{ "SST25VF064", 0x4b, 0x1000, 2048, },
@@ -76,12 +27,8 @@
 +	{ NULL },
  };
  
--static struct ssb_sflash_tbl_e ssb_sflash_at_tbl[] = {
-+static const struct ssb_sflash_tbl_e ssb_sflash_at_tbl[] = {
- 	{ "AT45DB011", 0xc, 256, 512, },
- 	{ "AT45DB021", 0x14, 256, 1024, },
- 	{ "AT45DB041", 0x1c, 256, 2048, },
-@@ -53,7 +66,7 @@ static struct ssb_sflash_tbl_e ssb_sflas
+ static const struct ssb_sflash_tbl_e ssb_sflash_at_tbl[] = {
+@@ -66,7 +66,7 @@ static const struct ssb_sflash_tbl_e ssb
  	{ "AT45DB161", 0x2c, 512, 4096, },
  	{ "AT45DB321", 0x34, 512, 8192, },
  	{ "AT45DB642", 0x3c, 1024, 8192, },
@@ -90,42 +37,6 @@
  };
  
  static void ssb_sflash_cmd(struct ssb_chipcommon *cc, u32 opcode)
-@@ -73,7 +86,8 @@ static void ssb_sflash_cmd(struct ssb_ch
- /* Initialize serial flash access */
- int ssb_sflash_init(struct ssb_chipcommon *cc)
- {
--	struct ssb_sflash_tbl_e *e;
-+	struct ssb_sflash *sflash = &cc->dev->bus->mipscore.sflash;
-+	const struct ssb_sflash_tbl_e *e;
- 	u32 id, id2;
- 
- 	switch (cc->capabilities & SSB_CHIPCO_CAP_FLASHT) {
-@@ -131,10 +145,20 @@ int ssb_sflash_init(struct ssb_chipcommo
- 		return -ENOTSUPP;
- 	}
- 
--	pr_info("Found %s serial flash (blocksize: 0x%X, blocks: %d)\n",
--		e->name, e->blocksize, e->numblocks);
--
--	pr_err("Serial flash support is not implemented yet!\n");
-+	sflash->window = SSB_FLASH2;
-+	sflash->blocksize = e->blocksize;
-+	sflash->numblocks = e->numblocks;
-+	sflash->size = sflash->blocksize * sflash->numblocks;
-+	sflash->present = true;
-+
-+	pr_info("Found %s serial flash (size: %dKiB, blocksize: 0x%X, blocks: %d)\n",
-+		e->name, sflash->size / 1024, e->blocksize, e->numblocks);
-+
-+	/* Prepare platform device, but don't register it yet. It's too early,
-+	 * malloc (required by device_private_init) is not available yet. */
-+	ssb_sflash_dev.resource[0].end = ssb_sflash_dev.resource[0].start +
-+					 sflash->size;
-+	ssb_sflash_dev.dev.platform_data = sflash;
- 
--	return -ENOTSUPP;
-+	return 0;
- }
 --- a/drivers/ssb/driver_gpio.c
 +++ b/drivers/ssb/driver_gpio.c
 @@ -9,16 +9,40 @@
@@ -518,22 +429,53 @@
  	if (ssb_chipco_available(&bus->chipco))
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -553,6 +553,14 @@ static int ssb_devices_register(struct s
- 	}
- #endif
+@@ -374,7 +374,8 @@ static ssize_t \
+ attrib##_show(struct device *dev, struct device_attribute *attr, char *buf) \
+ { \
+ 	return sprintf(buf, format_string, dev_to_ssb_dev(dev)->field); \
+-}
++} \
++static DEVICE_ATTR_RO(attrib);
  
-+#ifdef CONFIG_SSB_SFLASH
-+	if (bus->mipscore.sflash.present) {
-+		err = platform_device_register(&ssb_sflash_dev);
-+		if (err)
-+			pr_err("Error registering serial flash\n");
-+	}
-+#endif
-+
- 	return 0;
- error:
- 	/* Unwind the already registered devices. */
-@@ -582,6 +590,13 @@ static int ssb_attach_queued_buses(void)
+ ssb_config_attr(core_num, core_index, "%u\n")
+ ssb_config_attr(coreid, id.coreid, "0x%04x\n")
+@@ -387,16 +388,18 @@ name_show(struct device *dev, struct dev
+ 	return sprintf(buf, "%s\n",
+ 		       ssb_core_name(dev_to_ssb_dev(dev)->id.coreid));
+ }
++static DEVICE_ATTR_RO(name);
+ 
+-static struct device_attribute ssb_device_attrs[] = {
+-	__ATTR_RO(name),
+-	__ATTR_RO(core_num),
+-	__ATTR_RO(coreid),
+-	__ATTR_RO(vendor),
+-	__ATTR_RO(revision),
+-	__ATTR_RO(irq),
+-	__ATTR_NULL,
++static struct attribute *ssb_device_attrs[] = {
++	&dev_attr_name.attr,
++	&dev_attr_core_num.attr,
++	&dev_attr_coreid.attr,
++	&dev_attr_vendor.attr,
++	&dev_attr_revision.attr,
++	&dev_attr_irq.attr,
++	NULL,
+ };
++ATTRIBUTE_GROUPS(ssb_device);
+ 
+ static struct bus_type ssb_bustype = {
+ 	.name		= "ssb",
+@@ -407,7 +410,7 @@ static struct bus_type ssb_bustype = {
+ 	.suspend	= ssb_device_suspend,
+ 	.resume		= ssb_device_resume,
+ 	.uevent		= ssb_device_uevent,
+-	.dev_attrs	= ssb_device_attrs,
++	.dev_groups	= ssb_device_groups,
+ };
+ 
+ static void ssb_buses_lock(void)
+@@ -590,6 +593,13 @@ static int ssb_attach_queued_buses(void)
  		ssb_pcicore_init(&bus->pcicore);
  		if (bus->bustype == SSB_BUSTYPE_SSB)
  			ssb_watchdog_register(bus);
@@ -547,7 +489,7 @@
  		ssb_bus_may_powerdown(bus);
  
  		err = ssb_devices_register(bus);
-@@ -819,11 +834,6 @@ static int ssb_bus_register(struct ssb_b
+@@ -827,11 +837,6 @@ static int ssb_bus_register(struct ssb_b
  	ssb_chipcommon_init(&bus->chipco);
  	ssb_extif_init(&bus->extif);
  	ssb_mipscore_init(&bus->mipscore);
@@ -559,41 +501,6 @@
  	err = ssb_fetch_invariants(bus, get_invariants);
  	if (err) {
  		ssb_bus_may_powerdown(bus);
---- a/drivers/ssb/pcihost_wrapper.c
-+++ b/drivers/ssb/pcihost_wrapper.c
-@@ -38,7 +38,7 @@ static int ssb_pcihost_resume(struct pci
- 	struct ssb_bus *ssb = pci_get_drvdata(dev);
- 	int err;
- 
--	pci_set_power_state(dev, 0);
-+	pci_set_power_state(dev, PCI_D0);
- 	err = pci_enable_device(dev);
- 	if (err)
- 		return err;
---- a/drivers/ssb/sprom.c
-+++ b/drivers/ssb/sprom.c
-@@ -54,7 +54,7 @@ static int hex2sprom(u16 *sprom, const c
- 	while (cnt < sprom_size_words) {
- 		memcpy(tmp, dump, 4);
- 		dump += 4;
--		err = strict_strtoul(tmp, 16, &parsed);
-+		err = kstrtoul(tmp, 16, &parsed);
- 		if (err)
- 			return err;
- 		sprom[cnt++] = swab16((u16)parsed);
---- a/drivers/ssb/ssb_private.h
-+++ b/drivers/ssb/ssb_private.h
-@@ -243,6 +243,10 @@ static inline int ssb_sflash_init(struct
- extern struct platform_device ssb_pflash_dev;
- #endif
- 
-+#ifdef CONFIG_SSB_SFLASH
-+extern struct platform_device ssb_sflash_dev;
-+#endif
-+
- #ifdef CONFIG_SSB_DRIVER_EXTIF
- extern u32 ssb_extif_watchdog_timer_set_wdt(struct bcm47xx_wdt *wdt, u32 ticks);
- extern u32 ssb_extif_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms);
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
 @@ -486,6 +486,7 @@ struct ssb_bus {
@@ -634,44 +541,3 @@
  
  #endif /* CONFIG_SSB_DRIVER_GIGE */
  #endif /* LINUX_SSB_DRIVER_GIGE_H_ */
---- a/include/linux/ssb/ssb_driver_mips.h
-+++ b/include/linux/ssb/ssb_driver_mips.h
-@@ -20,6 +20,18 @@ struct ssb_pflash {
- 	u32 window_size;
- };
- 
-+#ifdef CONFIG_SSB_SFLASH
-+struct ssb_sflash {
-+	bool present;
-+	u32 window;
-+	u32 blocksize;
-+	u16 numblocks;
-+	u32 size;
-+
-+	void *priv;
-+};
-+#endif
-+
- struct ssb_mipscore {
- 	struct ssb_device *dev;
- 
-@@ -27,6 +39,9 @@ struct ssb_mipscore {
- 	struct ssb_serial_port serial_ports[4];
- 
- 	struct ssb_pflash pflash;
-+#ifdef CONFIG_SSB_SFLASH
-+	struct ssb_sflash sflash;
-+#endif
- };
- 
- extern void ssb_mipscore_init(struct ssb_mipscore *mcore);
---- a/include/linux/ssb/ssb_regs.h
-+++ b/include/linux/ssb/ssb_regs.h
-@@ -172,6 +172,7 @@
- #define SSB_SPROMSIZE_WORDS_R4		220
- #define SSB_SPROMSIZE_BYTES_R123	(SSB_SPROMSIZE_WORDS_R123 * sizeof(u16))
- #define SSB_SPROMSIZE_BYTES_R4		(SSB_SPROMSIZE_WORDS_R4 * sizeof(u16))
-+#define SSB_SPROMSIZE_WORDS_R10		230
- #define SSB_SPROM_BASE1			0x1000
- #define SSB_SPROM_BASE31		0x0800
- #define SSB_SPROM_REVISION		0x007E

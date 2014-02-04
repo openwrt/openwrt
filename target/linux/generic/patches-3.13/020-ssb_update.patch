@@ -1,20 +1,6 @@
-From 5668cb19fea423cb6681f1efa8b130a26be2562e Mon Sep 17 00:00:00 2001
-From: Rafa? Mi?ecki <zajec5@gmail.com>
-Date: Fri, 3 Jan 2014 09:55:29 +0100
-Subject: [PATCH] ssb: gpio: add own IRQ domain
-
-Signed-off-by: Rafa? Mi?ecki <zajec5@gmail.com>
-Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/ssb/Kconfig       |    1 +
- drivers/ssb/driver_gpio.c |  304 ++++++++++++++++++++++++++++++++++++++++++---
- drivers/ssb/main.c        |   12 +-
- include/linux/ssb/ssb.h   |    1 +
- 4 files changed, 297 insertions(+), 21 deletions(-)
-
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
-@@ -169,6 +169,7 @@ config SSB_DRIVER_GIGE
+@@ -168,6 +168,7 @@ config SSB_DRIVER_GIGE
  config SSB_DRIVER_GPIO
  	bool "SSB GPIO driver"
  	depends on SSB && GPIOLIB
@@ -22,6 +8,35 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
  	help
  	  Driver to provide access to the GPIO pins on the bus.
  
+--- a/drivers/ssb/driver_chipcommon_sflash.c
++++ b/drivers/ssb/driver_chipcommon_sflash.c
+@@ -37,7 +37,7 @@ static const struct ssb_sflash_tbl_e ssb
+ 	{ "M25P32", 0x15, 0x10000, 64, },
+ 	{ "M25P64", 0x16, 0x10000, 128, },
+ 	{ "M25FL128", 0x17, 0x10000, 256, },
+-	{ 0 },
++	{ NULL },
+ };
+ 
+ static const struct ssb_sflash_tbl_e ssb_sflash_sst_tbl[] = {
+@@ -55,7 +55,7 @@ static const struct ssb_sflash_tbl_e ssb
+ 	{ "SST25VF016", 0x41, 0x1000, 512, },
+ 	{ "SST25VF032", 0x4a, 0x1000, 1024, },
+ 	{ "SST25VF064", 0x4b, 0x1000, 2048, },
+-	{ 0 },
++	{ NULL },
+ };
+ 
+ static const struct ssb_sflash_tbl_e ssb_sflash_at_tbl[] = {
+@@ -66,7 +66,7 @@ static const struct ssb_sflash_tbl_e ssb
+ 	{ "AT45DB161", 0x2c, 512, 4096, },
+ 	{ "AT45DB321", 0x34, 512, 8192, },
+ 	{ "AT45DB642", 0x3c, 1024, 8192, },
+-	{ 0 },
++	{ NULL },
+ };
+ 
+ static void ssb_sflash_cmd(struct ssb_chipcommon *cc, u32 opcode)
 --- a/drivers/ssb/driver_gpio.c
 +++ b/drivers/ssb/driver_gpio.c
 @@ -9,16 +9,40 @@
@@ -46,7 +61,7 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
  	return container_of(chip, struct ssb_bus, gpio);
  }
  
-+#if IS_BUILTIN(CONFIG_SSB_EMBEDDED)
++#if IS_ENABLED(CONFIG_SSB_EMBEDDED)
 +static int ssb_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
 +{
 +	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
@@ -70,7 +85,7 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
  }
  
 -static int ssb_gpio_chipco_to_irq(struct gpio_chip *chip, unsigned gpio)
-+#if IS_BUILTIN(CONFIG_SSB_EMBEDDED)
++#if IS_ENABLED(CONFIG_SSB_EMBEDDED)
 +static void ssb_gpio_irq_chipco_mask(struct irq_data *d)
  {
 -	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
@@ -107,13 +122,13 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	u32 val = chipco_read32(chipco, SSB_CHIPCO_GPIOIN);
 +	u32 mask = chipco_read32(chipco, SSB_CHIPCO_GPIOIRQ);
 +	u32 pol = chipco_read32(chipco, SSB_CHIPCO_GPIOPOL);
-+	u32 irqs = (val ^ pol) & mask;
++	unsigned long irqs = (val ^ pol) & mask;
 +	int gpio;
 +
 +	if (!irqs)
 +		return IRQ_NONE;
 +
-+	for_each_set_bit(gpio, (unsigned long *)&irqs, bus->gpio.ngpio)
++	for_each_set_bit(gpio, &irqs, bus->gpio.ngpio)
 +		generic_handle_irq(ssb_gpio_to_irq(&bus->gpio, gpio));
 +	ssb_chipco_gpio_polarity(chipco, irqs, val & irqs);
 +
@@ -201,17 +216,18 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	chip->label		= "ssb_chipco_gpio";
  	chip->owner		= THIS_MODULE;
-@@ -96,7 +230,8 @@ static int ssb_gpio_chipco_init(struct s
+@@ -96,7 +230,9 @@ static int ssb_gpio_chipco_init(struct s
  	chip->set		= ssb_gpio_chipco_set_value;
  	chip->direction_input	= ssb_gpio_chipco_direction_input;
  	chip->direction_output	= ssb_gpio_chipco_direction_output;
 -	chip->to_irq		= ssb_gpio_chipco_to_irq;
-+	if (IS_BUILTIN(CONFIG_SSB_EMBEDDED))
-+		chip->to_irq	= ssb_gpio_to_irq;
++#if IS_ENABLED(CONFIG_SSB_EMBEDDED)
++	chip->to_irq		= ssb_gpio_to_irq;
++#endif
  	chip->ngpio		= 16;
  	/* There is just one SoC in one device and its GPIO addresses should be
  	 * deterministic to address them more easily. The other buses could get
-@@ -106,9 +241,23 @@ static int ssb_gpio_chipco_init(struct s
+@@ -106,9 +242,23 @@ static int ssb_gpio_chipco_init(struct s
  	else
  		chip->base		= -1;
  
@@ -236,12 +252,12 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
  #ifdef CONFIG_SSB_DRIVER_EXTIF
  
  static int ssb_gpio_extif_get_value(struct gpio_chip *chip, unsigned gpio)
-@@ -145,19 +294,127 @@ static int ssb_gpio_extif_direction_outp
+@@ -145,19 +295,127 @@ static int ssb_gpio_extif_direction_outp
  	return 0;
  }
  
 -static int ssb_gpio_extif_to_irq(struct gpio_chip *chip, unsigned gpio)
-+#if IS_BUILTIN(CONFIG_SSB_EMBEDDED)
++#if IS_ENABLED(CONFIG_SSB_EMBEDDED)
 +static void ssb_gpio_irq_extif_mask(struct irq_data *d)
  {
 -	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
@@ -253,8 +269,8 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
 -	else
 -		return -EINVAL;
 +	ssb_extif_gpio_intmask(&bus->extif, BIT(gpio), 0);
- }
- 
++}
++
 +static void ssb_gpio_irq_extif_unmask(struct irq_data *d)
 +{
 +	struct ssb_bus *bus = irq_data_get_irq_chip_data(d);
@@ -278,13 +294,13 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	u32 val = ssb_read32(extif->dev, SSB_EXTIF_GPIO_IN);
 +	u32 mask = ssb_read32(extif->dev, SSB_EXTIF_GPIO_INTMASK);
 +	u32 pol = ssb_read32(extif->dev, SSB_EXTIF_GPIO_INTPOL);
-+	u32 irqs = (val ^ pol) & mask;
++	unsigned long irqs = (val ^ pol) & mask;
 +	int gpio;
 +
 +	if (!irqs)
 +		return IRQ_NONE;
 +
-+	for_each_set_bit(gpio, (unsigned long *)&irqs, bus->gpio.ngpio)
++	for_each_set_bit(gpio, &irqs, bus->gpio.ngpio)
 +		generic_handle_irq(ssb_gpio_to_irq(&bus->gpio, gpio));
 +	ssb_extif_gpio_polarity(extif, irqs, val & irqs);
 +
@@ -333,8 +349,8 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	irq_domain_remove(bus->irq_domain);
 +err_irq_domain:
 +	return err;
-+}
-+
+ }
+ 
 +static void ssb_gpio_irq_extif_domain_exit(struct ssb_bus *bus)
 +{
 +	struct ssb_extif *extif = &bus->extif;
@@ -370,17 +386,18 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	chip->label		= "ssb_extif_gpio";
  	chip->owner		= THIS_MODULE;
-@@ -165,7 +422,8 @@ static int ssb_gpio_extif_init(struct ss
+@@ -165,7 +423,9 @@ static int ssb_gpio_extif_init(struct ss
  	chip->set		= ssb_gpio_extif_set_value;
  	chip->direction_input	= ssb_gpio_extif_direction_input;
  	chip->direction_output	= ssb_gpio_extif_direction_output;
 -	chip->to_irq		= ssb_gpio_extif_to_irq;
-+	if (IS_BUILTIN(CONFIG_SSB_EMBEDDED))
-+		chip->to_irq	= ssb_gpio_to_irq;
++#if IS_ENABLED(CONFIG_SSB_EMBEDDED)
++	chip->to_irq		= ssb_gpio_to_irq;
++#endif
  	chip->ngpio		= 5;
  	/* There is just one SoC in one device and its GPIO addresses should be
  	 * deterministic to address them more easily. The other buses could get
-@@ -175,7 +433,17 @@ static int ssb_gpio_extif_init(struct ss
+@@ -175,7 +435,17 @@ static int ssb_gpio_extif_init(struct ss
  	else
  		chip->base		= -1;
  
@@ -399,7 +416,7 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
  }
  
  #else
-@@ -185,6 +453,10 @@ static int ssb_gpio_extif_init(struct ss
+@@ -185,6 +455,10 @@ static int ssb_gpio_extif_init(struct ss
  }
  #endif
  
@@ -412,7 +429,7 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
  	if (ssb_chipco_available(&bus->chipco))
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -590,6 +590,13 @@ static int ssb_attach_queued_buses(void)
+@@ -593,6 +593,13 @@ static int ssb_attach_queued_buses(void)
  		ssb_pcicore_init(&bus->pcicore);
  		if (bus->bustype == SSB_BUSTYPE_SSB)
  			ssb_watchdog_register(bus);
@@ -426,7 +443,7 @@ Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
  		ssb_bus_may_powerdown(bus);
  
  		err = ssb_devices_register(bus);
-@@ -827,11 +834,6 @@ static int ssb_bus_register(struct ssb_b
+@@ -830,11 +837,6 @@ static int ssb_bus_register(struct ssb_b
  	ssb_chipcommon_init(&bus->chipco);
  	ssb_extif_init(&bus->extif);
  	ssb_mipscore_init(&bus->mipscore);

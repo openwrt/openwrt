@@ -195,33 +195,3 @@
  		netdev_info(dev,
  			    "attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
  			    phydev->drv->name, dev_name(&phydev->dev));
---- a/include/linux/ssb/ssb_driver_gige.h
-+++ b/include/linux/ssb/ssb_driver_gige.h
-@@ -108,6 +108,16 @@ static inline int ssb_gige_get_macaddr(s
- 	return 0;
- }
- 
-+/* Get the device phy address */
-+static inline int ssb_gige_get_phyaddr(struct pci_dev *pdev)
-+{
-+	struct ssb_gige *dev = pdev_to_ssb_gige(pdev);
-+	if (!dev)
-+		return -ENODEV;
-+
-+	return dev->dev->bus->sprom.et0phyaddr;
-+}
-+
- extern int ssb_gige_pcibios_plat_dev_init(struct ssb_device *sdev,
- 					  struct pci_dev *pdev);
- extern int ssb_gige_map_irq(struct ssb_device *sdev,
-@@ -174,6 +184,10 @@ static inline int ssb_gige_get_macaddr(s
- {
- 	return -ENODEV;
- }
-+static inline int ssb_gige_get_phyaddr(struct pci_dev *pdev)
-+{
-+	return -ENODEV;
-+}
- 
- #endif /* CONFIG_SSB_DRIVER_GIGE */
- #endif /* LINUX_SSB_DRIVER_GIGE_H_ */
