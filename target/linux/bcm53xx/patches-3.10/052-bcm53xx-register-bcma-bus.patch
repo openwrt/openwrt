@@ -1,21 +1,59 @@
-bcm53xx: register bcma bus
+From 22b90bcf616578abe09845c72317ce53312f7faf Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 25 Jan 2014 17:03:07 +0100
+Subject: [PATCH 8/8] ARM: BCM5301X: register bcma bus
 
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- arch/arm/boot/dts/bcm4708.dtsi |    5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/boot/dts/bcm4708.dtsi |   43 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
 
 --- a/arch/arm/boot/dts/bcm4708.dtsi
 +++ b/arch/arm/boot/dts/bcm4708.dtsi
-@@ -72,6 +72,11 @@
- 		      <0x19020100 0x100>;
+@@ -31,4 +31,47 @@
+ 		};
  	};
  
-+	bus@18000000 {
++	aix@18000000 {
 +		compatible = "brcm,bus-aix";
 +		reg = <0x18000000 0x1000>;
-+	};
++		ranges = <0x00000000 0x18000000 0x00100000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
 +
- 	timer@19020200 {
- 		compatible = "arm,cortex-a9-global-timer";
- 		reg = <0x19020200 0x100>;
++		usb2@0 {
++			compatible = "brcm,northstar-usb2";
++			reg = <0x18021000 0x1000>;
++			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		usb3@0 {
++			compatible = "brcm,northstar-usb3";
++			reg = <0x18023000 0x1000>;
++			interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		gmac@0 {
++			compatible = "brcm,northstar-gmac";
++			reg = <0x18024000 0x1000>;
++			interrupts = <GIC_SPI 147 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		gmac@1 {
++			compatible = "brcm,northstar-gmac";
++			reg = <0x18025000 0x1000>;
++			interrupts = <GIC_SPI 148 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		gmac@2 {
++			compatible = "brcm,northstar-gmac";
++			reg = <0x18026000 0x1000>;
++			interrupts = <GIC_SPI 149 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		gmac@3 {
++			compatible = "brcm,northstar-gmac";
++			reg = <0x18027000 0x1000>;
++			interrupts = <GIC_SPI 150 IRQ_TYPE_LEVEL_HIGH>;
++		};
++	};
+ };
