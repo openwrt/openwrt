@@ -1,0 +1,74 @@
+From 06a21484198df9a4d34fe5062878d3bf4fc14340 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 9 Jan 2014 19:40:14 +0100
+Subject: [PATCH 7/8] bcma: get irqs from dt
+
+---
+ drivers/bcma/main.c |   42 +++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 41 insertions(+), 1 deletion(-)
+
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -10,6 +10,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/bcma/bcma.h>
+ #include <linux/slab.h>
++#include <linux/of_irq.h>
++#include <linux/of_address.h>
+ 
+ MODULE_DESCRIPTION("Broadcom's specific AMBA driver");
+ MODULE_LICENSE("GPL");
+@@ -111,6 +113,38 @@ static void bcma_release_core_dev(struct
+ 	kfree(core);
+ }
+ 
++static struct device_node *bcma_of_find_child_device(struct platform_device *parent,
++						     struct bcma_device *core)
++{
++	struct device_node *node;
++	u64 size;
++	const __be32 *reg;
++
++	if (!parent || !parent->dev.of_node)
++		return NULL;
++
++	for_each_child_of_node(parent->dev.of_node, node) {
++		reg = of_get_address(node, 0, &size, 0);
++		if (!reg)
++			continue;
++		if (be32_to_cpup(reg) == core->addr)
++			return node;
++	}
++	return NULL;
++}
++
++static void bcma_of_fill_device(struct platform_device *parent,
++				struct bcma_device *core)
++{
++	struct device_node *node;
++
++	node = bcma_of_find_child_device(parent, core);
++	if (!node)
++		return;
++	core->dev.of_node = node;
++	core->irq = irq_of_parse_and_map(node, 0);
++}
++
+ static int bcma_register_cores(struct bcma_bus *bus)
+ {
+ 	struct bcma_device *core;
+@@ -145,7 +179,13 @@ static int bcma_register_cores(struct bc
+ 			break;
+ 		case BCMA_HOSTTYPE_SOC:
+ 			core->dev.dma_mask = &core->dev.coherent_dma_mask;
+-			core->dma_dev = &core->dev;
++			if (bus->host_pdev) {
++				core->dma_dev = &bus->host_pdev->dev;
++				core->dev.parent = &bus->host_pdev->dev;
++				bcma_of_fill_device(bus->host_pdev, core);
++			} else {
++				core->dma_dev = &core->dev;
++			}
+ 			break;
+ 		case BCMA_HOSTTYPE_SDIO:
+ 			break;
