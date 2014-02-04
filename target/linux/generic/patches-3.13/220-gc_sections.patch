@@ -328,6 +328,81 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			VMLINUX_SYMBOL(__ctors_end) = .;
  #else
  #define KERNEL_CTORS()
+@@ -517,7 +518,7 @@
+ #define SBSS(sbss_align)						\
+ 	. = ALIGN(sbss_align);						\
+ 	.sbss : AT(ADDR(.sbss) - LOAD_OFFSET) {				\
+-		*(.sbss)						\
++		*(.sbss .sbss.*)					\
+ 		*(.scommon)						\
+ 	}
+ 
+@@ -535,7 +536,7 @@
+ 		BSS_FIRST_SECTIONS					\
+ 		*(.bss..page_aligned)					\
+ 		*(.dynbss)						\
+-		*(.bss)							\
++		*(.bss .bss.*)						\
+ 		*(COMMON)						\
+ 	}
+ 
+@@ -596,7 +597,7 @@
+ 	. = ALIGN(4);							\
+ 	.tracedata : AT(ADDR(.tracedata) - LOAD_OFFSET) {		\
+ 		VMLINUX_SYMBOL(__tracedata_start) = .;			\
+-		*(.tracedata)						\
++		KEEP(*(.tracedata))					\
+ 		VMLINUX_SYMBOL(__tracedata_end) = .;			\
+ 	}
+ #else
+@@ -613,17 +614,17 @@
+ #define INIT_SETUP(initsetup_align)					\
+ 		. = ALIGN(initsetup_align);				\
+ 		VMLINUX_SYMBOL(__setup_start) = .;			\
+-		*(.init.setup)						\
++		KEEP(*(.init.setup))					\
+ 		VMLINUX_SYMBOL(__setup_end) = .;
+ 
+ #define INIT_CALLS_LEVEL(level)						\
+ 		VMLINUX_SYMBOL(__initcall##level##_start) = .;		\
+-		*(.initcall##level##.init)				\
+-		*(.initcall##level##s.init)				\
++		KEEP(*(.initcall##level##.init))			\
++		KEEP(*(.initcall##level##s.init))			\
+ 
+ #define INIT_CALLS							\
+ 		VMLINUX_SYMBOL(__initcall_start) = .;			\
+-		*(.initcallearly.init)					\
++		KEEP(*(.initcallearly.init))				\
+ 		INIT_CALLS_LEVEL(0)					\
+ 		INIT_CALLS_LEVEL(1)					\
+ 		INIT_CALLS_LEVEL(2)					\
+@@ -637,21 +638,21 @@
+ 
+ #define CON_INITCALL							\
+ 		VMLINUX_SYMBOL(__con_initcall_start) = .;		\
+-		*(.con_initcall.init)					\
++		KEEP(*(.con_initcall.init))				\
+ 		VMLINUX_SYMBOL(__con_initcall_end) = .;
+ 
+ #define SECURITY_INITCALL						\
+ 		VMLINUX_SYMBOL(__security_initcall_start) = .;		\
+-		*(.security_initcall.init)				\
++		KEEP(*(.security_initcall.init))			\
+ 		VMLINUX_SYMBOL(__security_initcall_end) = .;
+ 
+ #ifdef CONFIG_BLK_DEV_INITRD
+ #define INIT_RAM_FS							\
+ 	. = ALIGN(4);							\
+ 	VMLINUX_SYMBOL(__initramfs_start) = .;				\
+-	*(.init.ramfs)							\
++	KEEP(*(.init.ramfs))						\
+ 	. = ALIGN(8);							\
+-	*(.init.ramfs.info)
++	KEEP(*(.init.ramfs.info))
+ #else
+ #define INIT_RAM_FS
+ #endif
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
 @@ -18,11 +18,16 @@ ifeq ($(CONFIG_CPU_ENDIAN_BE8),y)
