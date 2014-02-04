@@ -1,8 +1,36 @@
-patches for bgmac backported from net-next/master
-
+--- a/drivers/net/ethernet/broadcom/Kconfig
++++ b/drivers/net/ethernet/broadcom/Kconfig
+@@ -23,6 +23,7 @@ config B44
+ 	depends on SSB_POSSIBLE && HAS_DMA
+ 	select SSB
+ 	select MII
++	select PHYLIB
+ 	---help---
+ 	  If you have a network (Ethernet) controller of this type, say Y
+ 	  or M and read the Ethernet-HOWTO, available from
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -149,6 +149,8 @@ static netdev_tx_t bgmac_dma_tx_add(stru
+@@ -96,6 +96,19 @@ static void bgmac_dma_tx_enable(struct b
+ 	u32 ctl;
+ 
+ 	ctl = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_TX_CTL);
++	if (bgmac->core->id.rev >= 4) {
++		ctl &= ~BGMAC_DMA_TX_BL_MASK;
++		ctl |= BGMAC_DMA_TX_BL_128 << BGMAC_DMA_TX_BL_SHIFT;
++
++		ctl &= ~BGMAC_DMA_TX_MR_MASK;
++		ctl |= BGMAC_DMA_TX_MR_2 << BGMAC_DMA_TX_MR_SHIFT;
++
++		ctl &= ~BGMAC_DMA_TX_PC_MASK;
++		ctl |= BGMAC_DMA_TX_PC_16 << BGMAC_DMA_TX_PC_SHIFT;
++
++		ctl &= ~BGMAC_DMA_TX_PT_MASK;
++		ctl |= BGMAC_DMA_TX_PT_8 << BGMAC_DMA_TX_PT_SHIFT;
++	}
+ 	ctl |= BGMAC_DMA_TX_ENABLE;
+ 	ctl |= BGMAC_DMA_TX_PARITY_DISABLE;
+ 	bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_TX_CTL, ctl);
+@@ -149,6 +162,8 @@ static netdev_tx_t bgmac_dma_tx_add(stru
  	dma_desc->ctl0 = cpu_to_le32(ctl0);
  	dma_desc->ctl1 = cpu_to_le32(ctl1);
  
@@ -11,7 +39,7 @@ patches for bgmac backported from net-next/master
  	wmb();
  
  	/* Increase ring->end to point empty slot. We tell hardware the first
-@@ -178,6 +180,7 @@ static void bgmac_dma_tx_free(struct bgm
+@@ -178,6 +193,7 @@ static void bgmac_dma_tx_free(struct bgm
  	struct device *dma_dev = bgmac->core->dma_dev;
  	int empty_slot;
  	bool freed = false;
@@ -19,7 +47,7 @@ patches for bgmac backported from net-next/master
  
  	/* The last slot that hardware didn't consume yet */
  	empty_slot = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_TX_STATUS);
-@@ -195,6 +198,9 @@ static void bgmac_dma_tx_free(struct bgm
+@@ -195,6 +211,9 @@ static void bgmac_dma_tx_free(struct bgm
  					 slot->skb->len, DMA_TO_DEVICE);
  			slot->dma_addr = 0;
  
@@ -29,7 +57,7 @@ patches for bgmac backported from net-next/master
  			/* Free memory! :) */
  			dev_kfree_skb(slot->skb);
  			slot->skb = NULL;
-@@ -208,6 +214,8 @@ static void bgmac_dma_tx_free(struct bgm
+@@ -208,6 +227,8 @@ static void bgmac_dma_tx_free(struct bgm
  		freed = true;
  	}
  
@@ -38,7 +66,24 @@ patches for bgmac backported from net-next/master
  	if (freed && netif_queue_stopped(bgmac->net_dev))
  		netif_wake_queue(bgmac->net_dev);
  }
-@@ -244,31 +252,59 @@ static int bgmac_dma_rx_skb_for_slot(str
+@@ -232,6 +253,16 @@ static void bgmac_dma_rx_enable(struct b
+ 	u32 ctl;
+ 
+ 	ctl = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_RX_CTL);
++	if (bgmac->core->id.rev >= 4) {
++		ctl &= ~BGMAC_DMA_RX_BL_MASK;
++		ctl |= BGMAC_DMA_RX_BL_128 << BGMAC_DMA_RX_BL_SHIFT;
++
++		ctl &= ~BGMAC_DMA_RX_PC_MASK;
++		ctl |= BGMAC_DMA_RX_PC_8 << BGMAC_DMA_RX_PC_SHIFT;
++
++		ctl &= ~BGMAC_DMA_RX_PT_MASK;
++		ctl |= BGMAC_DMA_RX_PT_1 << BGMAC_DMA_RX_PT_SHIFT;
++	}
+ 	ctl &= BGMAC_DMA_RX_ADDREXT_MASK;
+ 	ctl |= BGMAC_DMA_RX_ENABLE;
+ 	ctl |= BGMAC_DMA_RX_PARITY_DISABLE;
+@@ -244,31 +275,59 @@ static int bgmac_dma_rx_skb_for_slot(str
  				     struct bgmac_slot_info *slot)
  {
  	struct device *dma_dev = bgmac->core->dma_dev;
@@ -104,7 +149,7 @@ patches for bgmac backported from net-next/master
  static int bgmac_dma_rx_read(struct bgmac *bgmac, struct bgmac_dma_ring *ring,
  			     int weight)
  {
-@@ -287,7 +323,6 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -287,7 +346,6 @@ static int bgmac_dma_rx_read(struct bgma
  		struct device *dma_dev = bgmac->core->dma_dev;
  		struct bgmac_slot_info *slot = &ring->slots[ring->start];
  		struct sk_buff *skb = slot->skb;
@@ -112,7 +157,7 @@ patches for bgmac backported from net-next/master
  		struct bgmac_rx_header *rx;
  		u16 len, flags;
  
-@@ -300,38 +335,51 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -300,38 +358,51 @@ static int bgmac_dma_rx_read(struct bgma
  		len = le16_to_cpu(rx->len);
  		flags = le16_to_cpu(rx->flags);
  
@@ -191,7 +236,7 @@ patches for bgmac backported from net-next/master
  
  		if (++ring->start >= BGMAC_RX_RING_SLOTS)
  			ring->start = 0;
-@@ -495,8 +543,6 @@ err_dma_free:
+@@ -495,8 +566,6 @@ err_dma_free:
  static void bgmac_dma_init(struct bgmac *bgmac)
  {
  	struct bgmac_dma_ring *ring;
@@ -200,7 +245,7 @@ patches for bgmac backported from net-next/master
  	int i;
  
  	for (i = 0; i < BGMAC_MAX_TX_RINGS; i++) {
-@@ -529,23 +575,8 @@ static void bgmac_dma_init(struct bgmac
+@@ -529,23 +598,8 @@ static void bgmac_dma_init(struct bgmac
  		if (ring->unaligned)
  			bgmac_dma_rx_enable(bgmac, ring);
  
@@ -226,7 +271,262 @@ patches for bgmac backported from net-next/master
  
  		bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_INDEX,
  			    ring->index_base +
-@@ -988,6 +1019,8 @@ static void bgmac_chip_reset(struct bgma
+@@ -651,70 +705,6 @@ static int bgmac_phy_write(struct bgmac
+ 	return 0;
+ }
+ 
+-/* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipphyforce */
+-static void bgmac_phy_force(struct bgmac *bgmac)
+-{
+-	u16 ctl;
+-	u16 mask = ~(BGMAC_PHY_CTL_SPEED | BGMAC_PHY_CTL_SPEED_MSB |
+-		     BGMAC_PHY_CTL_ANENAB | BGMAC_PHY_CTL_DUPLEX);
+-
+-	if (bgmac->phyaddr == BGMAC_PHY_NOREGS)
+-		return;
+-
+-	if (bgmac->autoneg)
+-		return;
+-
+-	ctl = bgmac_phy_read(bgmac, bgmac->phyaddr, BGMAC_PHY_CTL);
+-	ctl &= mask;
+-	if (bgmac->full_duplex)
+-		ctl |= BGMAC_PHY_CTL_DUPLEX;
+-	if (bgmac->speed == BGMAC_SPEED_100)
+-		ctl |= BGMAC_PHY_CTL_SPEED_100;
+-	else if (bgmac->speed == BGMAC_SPEED_1000)
+-		ctl |= BGMAC_PHY_CTL_SPEED_1000;
+-	bgmac_phy_write(bgmac, bgmac->phyaddr, BGMAC_PHY_CTL, ctl);
+-}
+-
+-/* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipphyadvertise */
+-static void bgmac_phy_advertise(struct bgmac *bgmac)
+-{
+-	u16 adv;
+-
+-	if (bgmac->phyaddr == BGMAC_PHY_NOREGS)
+-		return;
+-
+-	if (!bgmac->autoneg)
+-		return;
+-
+-	/* Adv selected 10/100 speeds */
+-	adv = bgmac_phy_read(bgmac, bgmac->phyaddr, BGMAC_PHY_ADV);
+-	adv &= ~(BGMAC_PHY_ADV_10HALF | BGMAC_PHY_ADV_10FULL |
+-		 BGMAC_PHY_ADV_100HALF | BGMAC_PHY_ADV_100FULL);
+-	if (!bgmac->full_duplex && bgmac->speed & BGMAC_SPEED_10)
+-		adv |= BGMAC_PHY_ADV_10HALF;
+-	if (!bgmac->full_duplex && bgmac->speed & BGMAC_SPEED_100)
+-		adv |= BGMAC_PHY_ADV_100HALF;
+-	if (bgmac->full_duplex && bgmac->speed & BGMAC_SPEED_10)
+-		adv |= BGMAC_PHY_ADV_10FULL;
+-	if (bgmac->full_duplex && bgmac->speed & BGMAC_SPEED_100)
+-		adv |= BGMAC_PHY_ADV_100FULL;
+-	bgmac_phy_write(bgmac, bgmac->phyaddr, BGMAC_PHY_ADV, adv);
+-
+-	/* Adv selected 1000 speeds */
+-	adv = bgmac_phy_read(bgmac, bgmac->phyaddr, BGMAC_PHY_ADV2);
+-	adv &= ~(BGMAC_PHY_ADV2_1000HALF | BGMAC_PHY_ADV2_1000FULL);
+-	if (!bgmac->full_duplex && bgmac->speed & BGMAC_SPEED_1000)
+-		adv |= BGMAC_PHY_ADV2_1000HALF;
+-	if (bgmac->full_duplex && bgmac->speed & BGMAC_SPEED_1000)
+-		adv |= BGMAC_PHY_ADV2_1000FULL;
+-	bgmac_phy_write(bgmac, bgmac->phyaddr, BGMAC_PHY_ADV2, adv);
+-
+-	/* Restart */
+-	bgmac_phy_write(bgmac, bgmac->phyaddr, BGMAC_PHY_CTL,
+-			bgmac_phy_read(bgmac, bgmac->phyaddr, BGMAC_PHY_CTL) |
+-			BGMAC_PHY_CTL_RESTART);
+-}
+-
+ /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipphyinit */
+ static void bgmac_phy_init(struct bgmac *bgmac)
+ {
+@@ -758,11 +748,9 @@ static void bgmac_phy_reset(struct bgmac
+ 	if (bgmac->phyaddr == BGMAC_PHY_NOREGS)
+ 		return;
+ 
+-	bgmac_phy_write(bgmac, bgmac->phyaddr, BGMAC_PHY_CTL,
+-			BGMAC_PHY_CTL_RESET);
++	bgmac_phy_write(bgmac, bgmac->phyaddr, MII_BMCR, BMCR_RESET);
+ 	udelay(100);
+-	if (bgmac_phy_read(bgmac, bgmac->phyaddr, BGMAC_PHY_CTL) &
+-	    BGMAC_PHY_CTL_RESET)
++	if (bgmac_phy_read(bgmac, bgmac->phyaddr, MII_BMCR) & BMCR_RESET)
+ 		bgmac_err(bgmac, "PHY reset failed\n");
+ 	bgmac_phy_init(bgmac);
+ }
+@@ -780,13 +768,13 @@ static void bgmac_cmdcfg_maskset(struct
+ 	u32 cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
+ 	u32 new_val = (cmdcfg & mask) | set;
+ 
+-	bgmac_set(bgmac, BGMAC_CMDCFG, BGMAC_CMDCFG_SR);
++	bgmac_set(bgmac, BGMAC_CMDCFG, BGMAC_CMDCFG_SR(bgmac->core->id.rev));
+ 	udelay(2);
+ 
+ 	if (new_val != cmdcfg || force)
+ 		bgmac_write(bgmac, BGMAC_CMDCFG, new_val);
+ 
+-	bgmac_mask(bgmac, BGMAC_CMDCFG, ~BGMAC_CMDCFG_SR);
++	bgmac_mask(bgmac, BGMAC_CMDCFG, ~BGMAC_CMDCFG_SR(bgmac->core->id.rev));
+ 	udelay(2);
+ }
+ 
+@@ -845,31 +833,56 @@ static void bgmac_clear_mib(struct bgmac
+ }
+ 
+ /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/gmac_speed */
+-static void bgmac_speed(struct bgmac *bgmac, int speed)
++static void bgmac_mac_speed(struct bgmac *bgmac)
+ {
+ 	u32 mask = ~(BGMAC_CMDCFG_ES_MASK | BGMAC_CMDCFG_HD);
+ 	u32 set = 0;
+ 
+-	if (speed & BGMAC_SPEED_10)
++	switch (bgmac->mac_speed) {
++	case SPEED_10:
+ 		set |= BGMAC_CMDCFG_ES_10;
+-	if (speed & BGMAC_SPEED_100)
++		break;
++	case SPEED_100:
+ 		set |= BGMAC_CMDCFG_ES_100;
+-	if (speed & BGMAC_SPEED_1000)
++		break;
++	case SPEED_1000:
+ 		set |= BGMAC_CMDCFG_ES_1000;
+-	if (!bgmac->full_duplex)
++		break;
++	case SPEED_2500:
++		set |= BGMAC_CMDCFG_ES_2500;
++		break;
++	default:
++		bgmac_err(bgmac, "Unsupported speed: %d\n", bgmac->mac_speed);
++	}
++
++	if (bgmac->mac_duplex == DUPLEX_HALF)
+ 		set |= BGMAC_CMDCFG_HD;
++
+ 	bgmac_cmdcfg_maskset(bgmac, mask, set, true);
+ }
+ 
+ static void bgmac_miiconfig(struct bgmac *bgmac)
+ {
+-	u8 imode = (bgmac_read(bgmac, BGMAC_DEV_STATUS) & BGMAC_DS_MM_MASK) >>
+-			BGMAC_DS_MM_SHIFT;
+-	if (imode == 0 || imode == 1) {
+-		if (bgmac->autoneg)
+-			bgmac_speed(bgmac, BGMAC_SPEED_100);
+-		else
+-			bgmac_speed(bgmac, bgmac->speed);
++	struct bcma_device *core = bgmac->core;
++	struct bcma_chipinfo *ci = &core->bus->chipinfo;
++	u8 imode;
++
++	if (ci->id == BCMA_CHIP_ID_BCM4707 ||
++	    ci->id == BCMA_CHIP_ID_BCM53018) {
++		bcma_awrite32(core, BCMA_IOCTL,
++			      bcma_aread32(core, BCMA_IOCTL) | 0x40 |
++			      BGMAC_BCMA_IOCTL_SW_CLKEN);
++		bgmac->mac_speed = SPEED_2500;
++		bgmac->mac_duplex = DUPLEX_FULL;
++		bgmac_mac_speed(bgmac);
++	} else {
++		imode = (bgmac_read(bgmac, BGMAC_DEV_STATUS) &
++			BGMAC_DS_MM_MASK) >> BGMAC_DS_MM_SHIFT;
++		if (imode == 0 || imode == 1) {
++			bgmac->mac_speed = SPEED_100;
++			bgmac->mac_duplex = DUPLEX_FULL;
++			bgmac_mac_speed(bgmac);
++		}
+ 	}
+ }
+ 
+@@ -879,7 +892,7 @@ static void bgmac_chip_reset(struct bgma
+ 	struct bcma_device *core = bgmac->core;
+ 	struct bcma_bus *bus = core->bus;
+ 	struct bcma_chipinfo *ci = &bus->chipinfo;
+-	u32 flags = 0;
++	u32 flags;
+ 	u32 iost;
+ 	int i;
+ 
+@@ -902,26 +915,36 @@ static void bgmac_chip_reset(struct bgma
+ 	}
+ 
+ 	iost = bcma_aread32(core, BCMA_IOST);
+-	if ((ci->id == BCMA_CHIP_ID_BCM5357 && ci->pkg == 10) ||
++	if ((ci->id == BCMA_CHIP_ID_BCM5357 && ci->pkg == BCMA_PKG_ID_BCM47186) ||
+ 	    (ci->id == BCMA_CHIP_ID_BCM4749 && ci->pkg == 10) ||
+-	    (ci->id == BCMA_CHIP_ID_BCM53572 && ci->pkg == 9))
++	    (ci->id == BCMA_CHIP_ID_BCM53572 && ci->pkg == BCMA_PKG_ID_BCM47188))
+ 		iost &= ~BGMAC_BCMA_IOST_ATTACHED;
+ 
+-	if (iost & BGMAC_BCMA_IOST_ATTACHED) {
+-		flags = BGMAC_BCMA_IOCTL_SW_CLKEN;
+-		if (!bgmac->has_robosw)
+-			flags |= BGMAC_BCMA_IOCTL_SW_RESET;
++	/* 3GMAC: for BCM4707, only do core reset at bgmac_probe() */
++	if (ci->id != BCMA_CHIP_ID_BCM4707) {
++		flags = 0;
++		if (iost & BGMAC_BCMA_IOST_ATTACHED) {
++			flags = BGMAC_BCMA_IOCTL_SW_CLKEN;
++			if (!bgmac->has_robosw)
++				flags |= BGMAC_BCMA_IOCTL_SW_RESET;
++		}
++		bcma_core_enable(core, flags);
+ 	}
+ 
+-	bcma_core_enable(core, flags);
+-
+-	if (core->id.rev > 2) {
+-		bgmac_set(bgmac, BCMA_CLKCTLST, 1 << 8);
+-		bgmac_wait_value(bgmac->core, BCMA_CLKCTLST, 1 << 24, 1 << 24,
++	/* Request Misc PLL for corerev > 2 */
++	if (core->id.rev > 2 &&
++	    ci->id != BCMA_CHIP_ID_BCM4707 &&
++	    ci->id != BCMA_CHIP_ID_BCM53018) {
++		bgmac_set(bgmac, BCMA_CLKCTLST,
++			  BGMAC_BCMA_CLKCTLST_MISC_PLL_REQ);
++		bgmac_wait_value(bgmac->core, BCMA_CLKCTLST,
++				 BGMAC_BCMA_CLKCTLST_MISC_PLL_ST,
++				 BGMAC_BCMA_CLKCTLST_MISC_PLL_ST,
+ 				 1000);
+ 	}
+ 
+-	if (ci->id == BCMA_CHIP_ID_BCM5357 || ci->id == BCMA_CHIP_ID_BCM4749 ||
++	if (ci->id == BCMA_CHIP_ID_BCM5357 ||
++	    ci->id == BCMA_CHIP_ID_BCM4749 ||
+ 	    ci->id == BCMA_CHIP_ID_BCM53572) {
+ 		struct bcma_drv_cc *cc = &bgmac->core->bus->drv_cc;
+ 		u8 et_swtype = 0;
+@@ -936,10 +959,11 @@ static void bgmac_chip_reset(struct bgma
+ 			et_swtype &= 0x0f;
+ 			et_swtype <<= 4;
+ 			sw_type = et_swtype;
+-		} else if (ci->id == BCMA_CHIP_ID_BCM5357 && ci->pkg == 9) {
++		} else if (ci->id == BCMA_CHIP_ID_BCM5357 && ci->pkg == BCMA_PKG_ID_BCM5358) {
+ 			sw_type = BGMAC_CHIPCTL_1_SW_TYPE_EPHYRMII;
+-		} else if ((ci->id != BCMA_CHIP_ID_BCM53572 && ci->pkg == 10) ||
+-			   (ci->id == BCMA_CHIP_ID_BCM53572 && ci->pkg == 9)) {
++		} else if ((ci->id == BCMA_CHIP_ID_BCM5357 && ci->pkg == BCMA_PKG_ID_BCM47186) ||
++			   (ci->id == BCMA_CHIP_ID_BCM4749 && ci->pkg == 10) ||
++			   (ci->id == BCMA_CHIP_ID_BCM53572 && ci->pkg == BCMA_PKG_ID_BCM47188)) {
+ 			sw_type = BGMAC_CHIPCTL_1_IF_TYPE_RGMII |
+ 				  BGMAC_CHIPCTL_1_SW_TYPE_RGMII;
+ 		}
+@@ -976,8 +1000,10 @@ static void bgmac_chip_reset(struct bgma
+ 			     BGMAC_CMDCFG_PROM |
+ 			     BGMAC_CMDCFG_NLC |
+ 			     BGMAC_CMDCFG_CFE |
+-			     BGMAC_CMDCFG_SR,
++			     BGMAC_CMDCFG_SR(core->id.rev),
+ 			     false);
++	bgmac->mac_speed = SPEED_UNKNOWN;
++	bgmac->mac_duplex = DUPLEX_UNKNOWN;
+ 
+ 	bgmac_clear_mib(bgmac);
+ 	if (core->id.id == BCMA_CORE_4706_MAC_GBIT)
+@@ -988,6 +1014,8 @@ static void bgmac_chip_reset(struct bgma
  	bgmac_miiconfig(bgmac);
  	bgmac_phy_init(bgmac);
  
@@ -235,3 +535,447 @@ patches for bgmac backported from net-next/master
  	bgmac->int_status = 0;
  }
  
+@@ -1015,7 +1043,7 @@ static void bgmac_enable(struct bgmac *b
+ 
+ 	cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
+ 	bgmac_cmdcfg_maskset(bgmac, ~(BGMAC_CMDCFG_TE | BGMAC_CMDCFG_RE),
+-			     BGMAC_CMDCFG_SR, true);
++			     BGMAC_CMDCFG_SR(bgmac->core->id.rev), true);
+ 	udelay(2);
+ 	cmdcfg |= BGMAC_CMDCFG_TE | BGMAC_CMDCFG_RE;
+ 	bgmac_write(bgmac, BGMAC_CMDCFG, cmdcfg);
+@@ -1044,12 +1072,16 @@ static void bgmac_enable(struct bgmac *b
+ 		break;
+ 	}
+ 
+-	rxq_ctl = bgmac_read(bgmac, BGMAC_RXQ_CTL);
+-	rxq_ctl &= ~BGMAC_RXQ_CTL_MDP_MASK;
+-	bp_clk = bcma_pmu_get_bus_clock(&bgmac->core->bus->drv_cc) / 1000000;
+-	mdp = (bp_clk * 128 / 1000) - 3;
+-	rxq_ctl |= (mdp << BGMAC_RXQ_CTL_MDP_SHIFT);
+-	bgmac_write(bgmac, BGMAC_RXQ_CTL, rxq_ctl);
++	if (ci->id != BCMA_CHIP_ID_BCM4707 &&
++	    ci->id != BCMA_CHIP_ID_BCM53018) {
++		rxq_ctl = bgmac_read(bgmac, BGMAC_RXQ_CTL);
++		rxq_ctl &= ~BGMAC_RXQ_CTL_MDP_MASK;
++		bp_clk = bcma_pmu_get_bus_clock(&bgmac->core->bus->drv_cc) /
++				1000000;
++		mdp = (bp_clk * 128 / 1000) - 3;
++		rxq_ctl |= (mdp << BGMAC_RXQ_CTL_MDP_SHIFT);
++		bgmac_write(bgmac, BGMAC_RXQ_CTL, rxq_ctl);
++	}
+ }
+ 
+ /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipinit */
+@@ -1075,13 +1107,6 @@ static void bgmac_chip_init(struct bgmac
+ 
+ 	bgmac_write(bgmac, BGMAC_RXMAX_LENGTH, 32 + ETHER_MAX_LEN);
+ 
+-	if (!bgmac->autoneg) {
+-		bgmac_speed(bgmac, bgmac->speed);
+-		bgmac_phy_force(bgmac);
+-	} else if (bgmac->speed) { /* if there is anything to adv */
+-		bgmac_phy_advertise(bgmac);
+-	}
+-
+ 	if (full_init) {
+ 		bgmac_dma_init(bgmac);
+ 		if (1) /* FIXME: is there any case we don't want IRQs? */
+@@ -1171,6 +1196,8 @@ static int bgmac_open(struct net_device
+ 	}
+ 	napi_enable(&bgmac->napi);
+ 
++	phy_start(bgmac->phy_dev);
++
+ 	netif_carrier_on(net_dev);
+ 
+ err_out:
+@@ -1183,6 +1210,8 @@ static int bgmac_stop(struct net_device
+ 
+ 	netif_carrier_off(net_dev);
+ 
++	phy_stop(bgmac->phy_dev);
++
+ 	napi_disable(&bgmac->napi);
+ 	bgmac_chip_intrs_off(bgmac);
+ 	free_irq(bgmac->core->irq, net_dev);
+@@ -1219,27 +1248,11 @@ static int bgmac_set_mac_address(struct
+ static int bgmac_ioctl(struct net_device *net_dev, struct ifreq *ifr, int cmd)
+ {
+ 	struct bgmac *bgmac = netdev_priv(net_dev);
+-	struct mii_ioctl_data *data = if_mii(ifr);
+ 
+-	switch (cmd) {
+-	case SIOCGMIIPHY:
+-		data->phy_id = bgmac->phyaddr;
+-		/* fallthru */
+-	case SIOCGMIIREG:
+-		if (!netif_running(net_dev))
+-			return -EAGAIN;
+-		data->val_out = bgmac_phy_read(bgmac, data->phy_id,
+-					       data->reg_num & 0x1f);
+-		return 0;
+-	case SIOCSMIIREG:
+-		if (!netif_running(net_dev))
+-			return -EAGAIN;
+-		bgmac_phy_write(bgmac, data->phy_id, data->reg_num & 0x1f,
+-				data->val_in);
+-		return 0;
+-	default:
+-		return -EOPNOTSUPP;
+-	}
++	if (!netif_running(net_dev))
++		return -EINVAL;
++
++	return phy_mii_ioctl(bgmac->phy_dev, ifr, cmd);
+ }
+ 
+ static const struct net_device_ops bgmac_netdev_ops = {
+@@ -1261,61 +1274,16 @@ static int bgmac_get_settings(struct net
+ {
+ 	struct bgmac *bgmac = netdev_priv(net_dev);
+ 
+-	cmd->supported = SUPPORTED_10baseT_Half |
+-			 SUPPORTED_10baseT_Full |
+-			 SUPPORTED_100baseT_Half |
+-			 SUPPORTED_100baseT_Full |
+-			 SUPPORTED_1000baseT_Half |
+-			 SUPPORTED_1000baseT_Full |
+-			 SUPPORTED_Autoneg;
+-
+-	if (bgmac->autoneg) {
+-		WARN_ON(cmd->advertising);
+-		if (bgmac->full_duplex) {
+-			if (bgmac->speed & BGMAC_SPEED_10)
+-				cmd->advertising |= ADVERTISED_10baseT_Full;
+-			if (bgmac->speed & BGMAC_SPEED_100)
+-				cmd->advertising |= ADVERTISED_100baseT_Full;
+-			if (bgmac->speed & BGMAC_SPEED_1000)
+-				cmd->advertising |= ADVERTISED_1000baseT_Full;
+-		} else {
+-			if (bgmac->speed & BGMAC_SPEED_10)
+-				cmd->advertising |= ADVERTISED_10baseT_Half;
+-			if (bgmac->speed & BGMAC_SPEED_100)
+-				cmd->advertising |= ADVERTISED_100baseT_Half;
+-			if (bgmac->speed & BGMAC_SPEED_1000)
+-				cmd->advertising |= ADVERTISED_1000baseT_Half;
+-		}
+-	} else {
+-		switch (bgmac->speed) {
+-		case BGMAC_SPEED_10:
+-			ethtool_cmd_speed_set(cmd, SPEED_10);
+-			break;
+-		case BGMAC_SPEED_100:
+-			ethtool_cmd_speed_set(cmd, SPEED_100);
+-			break;
+-		case BGMAC_SPEED_1000:
+-			ethtool_cmd_speed_set(cmd, SPEED_1000);
+-			break;
+-		}
+-	}
+-
+-	cmd->duplex = bgmac->full_duplex ? DUPLEX_FULL : DUPLEX_HALF;
+-
+-	cmd->autoneg = bgmac->autoneg;
+-
+-	return 0;
++	return phy_ethtool_gset(bgmac->phy_dev, cmd);
+ }
+ 
+-#if 0
+ static int bgmac_set_settings(struct net_device *net_dev,
+ 			      struct ethtool_cmd *cmd)
+ {
+ 	struct bgmac *bgmac = netdev_priv(net_dev);
+ 
+-	return -1;
++	return phy_ethtool_sset(bgmac->phy_dev, cmd);
+ }
+-#endif
+ 
+ static void bgmac_get_drvinfo(struct net_device *net_dev,
+ 			      struct ethtool_drvinfo *info)
+@@ -1326,6 +1294,7 @@ static void bgmac_get_drvinfo(struct net
+ 
+ static const struct ethtool_ops bgmac_ethtool_ops = {
+ 	.get_settings		= bgmac_get_settings,
++	.set_settings		= bgmac_set_settings,
+ 	.get_drvinfo		= bgmac_get_drvinfo,
+ };
+ 
+@@ -1344,9 +1313,35 @@ static int bgmac_mii_write(struct mii_bu
+ 	return bgmac_phy_write(bus->priv, mii_id, regnum, value);
+ }
+ 
++static void bgmac_adjust_link(struct net_device *net_dev)
++{
++	struct bgmac *bgmac = netdev_priv(net_dev);
++	struct phy_device *phy_dev = bgmac->phy_dev;
++	bool update = false;
++
++	if (phy_dev->link) {
++		if (phy_dev->speed != bgmac->mac_speed) {
++			bgmac->mac_speed = phy_dev->speed;
++			update = true;
++		}
++
++		if (phy_dev->duplex != bgmac->mac_duplex) {
++			bgmac->mac_duplex = phy_dev->duplex;
++			update = true;
++		}
++	}
++
++	if (update) {
++		bgmac_mac_speed(bgmac);
++		phy_print_status(phy_dev);
++	}
++}
++
+ static int bgmac_mii_register(struct bgmac *bgmac)
+ {
+ 	struct mii_bus *mii_bus;
++	struct phy_device *phy_dev;
++	char bus_id[MII_BUS_ID_SIZE + 3];
+ 	int i, err = 0;
+ 
+ 	mii_bus = mdiobus_alloc();
+@@ -1378,8 +1373,22 @@ static int bgmac_mii_register(struct bgm
+ 
+ 	bgmac->mii_bus = mii_bus;
+ 
++	/* Connect to the PHY */
++	snprintf(bus_id, sizeof(bus_id), PHY_ID_FMT, mii_bus->id,
++		 bgmac->phyaddr);
++	phy_dev = phy_connect(bgmac->net_dev, bus_id, &bgmac_adjust_link,
++			      PHY_INTERFACE_MODE_MII);
++	if (IS_ERR(phy_dev)) {
++		bgmac_err(bgmac, "PHY connecton failed\n");
++		err = PTR_ERR(phy_dev);
++		goto err_unregister_bus;
++	}
++	bgmac->phy_dev = phy_dev;
++
+ 	return err;
+ 
++err_unregister_bus:
++	mdiobus_unregister(mii_bus);
+ err_free_irq:
+ 	kfree(mii_bus->irq);
+ err_free_bus:
+@@ -1434,9 +1443,6 @@ static int bgmac_probe(struct bcma_devic
+ 	bcma_set_drvdata(core, bgmac);
+ 
+ 	/* Defaults */
+-	bgmac->autoneg = true;
+-	bgmac->full_duplex = true;
+-	bgmac->speed = BGMAC_SPEED_10 | BGMAC_SPEED_100 | BGMAC_SPEED_1000;
+ 	memcpy(bgmac->net_dev->dev_addr, mac, ETH_ALEN);
+ 
+ 	/* On BCM4706 we need common core to access PHY */
+@@ -1467,6 +1473,27 @@ static int bgmac_probe(struct bcma_devic
+ 
+ 	bgmac_chip_reset(bgmac);
+ 
++	/* For Northstar, we have to take all GMAC core out of reset */
++	if (core->id.id == BCMA_CHIP_ID_BCM4707 ||
++	    core->id.id == BCMA_CHIP_ID_BCM53018) {
++		struct bcma_device *ns_core;
++		int ns_gmac;
++
++		/* Northstar has 4 GMAC cores */
++		for (ns_gmac = 0; ns_gmac < 4; ns_gmac++) {
++			/* As Northstar requirement, we have to reset all GMACs
++			 * before accessing one. bgmac_chip_reset() call
++			 * bcma_core_enable() for this core. Then the other
++			 * three GMACs didn't reset.  We do it here.
++			 */
++			ns_core = bcma_find_core_unit(core->bus,
++						      BCMA_CORE_MAC_GBIT,
++						      ns_gmac);
++			if (ns_core && !bcma_core_is_enabled(ns_core))
++				bcma_core_enable(ns_core, 0);
++		}
++	}
++
+ 	err = bgmac_dma_alloc(bgmac);
+ 	if (err) {
+ 		bgmac_err(bgmac, "Unable to alloc memory for DMA\n");
+@@ -1491,14 +1518,12 @@ static int bgmac_probe(struct bcma_devic
+ 	err = bgmac_mii_register(bgmac);
+ 	if (err) {
+ 		bgmac_err(bgmac, "Cannot register MDIO\n");
+-		err = -ENOTSUPP;
+ 		goto err_dma_free;
+ 	}
+ 
+ 	err = register_netdev(bgmac->net_dev);
+ 	if (err) {
+ 		bgmac_err(bgmac, "Cannot register net device\n");
+-		err = -ENOTSUPP;
+ 		goto err_mii_unregister;
+ 	}
+ 
+--- a/drivers/net/ethernet/broadcom/bgmac.h
++++ b/drivers/net/ethernet/broadcom/bgmac.h
+@@ -95,7 +95,11 @@
+ #define  BGMAC_RXQ_CTL_MDP_SHIFT		24
+ #define BGMAC_GPIO_SELECT			0x194
+ #define BGMAC_GPIO_OUTPUT_EN			0x198
+-/* For 0x1e0 see BCMA_CLKCTLST */
++
++/* For 0x1e0 see BCMA_CLKCTLST. Below are BGMAC specific bits */
++#define  BGMAC_BCMA_CLKCTLST_MISC_PLL_REQ	0x00000100
++#define  BGMAC_BCMA_CLKCTLST_MISC_PLL_ST	0x01000000
++
+ #define BGMAC_HW_WAR				0x1e4
+ #define BGMAC_PWR_CTL				0x1e8
+ #define BGMAC_DMA_BASE0				0x200		/* Tx and Rx controller */
+@@ -185,6 +189,7 @@
+ #define   BGMAC_CMDCFG_ES_10			0x00000000
+ #define   BGMAC_CMDCFG_ES_100			0x00000004
+ #define   BGMAC_CMDCFG_ES_1000			0x00000008
++#define   BGMAC_CMDCFG_ES_2500			0x0000000C
+ #define  BGMAC_CMDCFG_PROM			0x00000010	/* Set to activate promiscuous mode */
+ #define  BGMAC_CMDCFG_PAD_EN			0x00000020
+ #define  BGMAC_CMDCFG_CF			0x00000040
+@@ -193,7 +198,9 @@
+ #define  BGMAC_CMDCFG_TAI			0x00000200
+ #define  BGMAC_CMDCFG_HD			0x00000400	/* Set if in half duplex mode */
+ #define  BGMAC_CMDCFG_HD_SHIFT			10
+-#define  BGMAC_CMDCFG_SR			0x00000800	/* Set to reset mode */
++#define  BGMAC_CMDCFG_SR_REV0			0x00000800	/* Set to reset mode, for other revs */
++#define  BGMAC_CMDCFG_SR_REV4			0x00002000	/* Set to reset mode, only for core rev 4 */
++#define  BGMAC_CMDCFG_SR(rev)  ((rev == 4) ? BGMAC_CMDCFG_SR_REV4 : BGMAC_CMDCFG_SR_REV0)
+ #define  BGMAC_CMDCFG_ML			0x00008000	/* Set to activate mac loopback mode */
+ #define  BGMAC_CMDCFG_AE			0x00400000
+ #define  BGMAC_CMDCFG_CFE			0x00800000
+@@ -216,27 +223,6 @@
+ #define BGMAC_RX_STATUS				0xb38
+ #define BGMAC_TX_STATUS				0xb3c
+ 
+-#define BGMAC_PHY_CTL				0x00
+-#define  BGMAC_PHY_CTL_SPEED_MSB		0x0040
+-#define  BGMAC_PHY_CTL_DUPLEX			0x0100		/* duplex mode */
+-#define  BGMAC_PHY_CTL_RESTART			0x0200		/* restart autonegotiation */
+-#define  BGMAC_PHY_CTL_ANENAB			0x1000		/* enable autonegotiation */
+-#define  BGMAC_PHY_CTL_SPEED			0x2000
+-#define  BGMAC_PHY_CTL_LOOP			0x4000		/* loopback */
+-#define  BGMAC_PHY_CTL_RESET			0x8000		/* reset */
+-/* Helpers */
+-#define  BGMAC_PHY_CTL_SPEED_10			0
+-#define  BGMAC_PHY_CTL_SPEED_100		BGMAC_PHY_CTL_SPEED
+-#define  BGMAC_PHY_CTL_SPEED_1000		BGMAC_PHY_CTL_SPEED_MSB
+-#define BGMAC_PHY_ADV				0x04
+-#define  BGMAC_PHY_ADV_10HALF			0x0020		/* advertise 10MBits/s half duplex */
+-#define  BGMAC_PHY_ADV_10FULL			0x0040		/* advertise 10MBits/s full duplex */
+-#define  BGMAC_PHY_ADV_100HALF			0x0080		/* advertise 100MBits/s half duplex */
+-#define  BGMAC_PHY_ADV_100FULL			0x0100		/* advertise 100MBits/s full duplex */
+-#define BGMAC_PHY_ADV2				0x09
+-#define  BGMAC_PHY_ADV2_1000HALF		0x0100		/* advertise 1000MBits/s half duplex */
+-#define  BGMAC_PHY_ADV2_1000FULL		0x0200		/* advertise 1000MBits/s full duplex */
+-
+ /* BCMA GMAC core specific IO Control (BCMA_IOCTL) flags */
+ #define BGMAC_BCMA_IOCTL_SW_CLKEN		0x00000004	/* PHY Clock Enable */
+ #define BGMAC_BCMA_IOCTL_SW_RESET		0x00000008	/* PHY Reset */
+@@ -254,9 +240,34 @@
+ #define  BGMAC_DMA_TX_SUSPEND			0x00000002
+ #define  BGMAC_DMA_TX_LOOPBACK			0x00000004
+ #define  BGMAC_DMA_TX_FLUSH			0x00000010
++#define  BGMAC_DMA_TX_MR_MASK			0x000000C0	/* Multiple outstanding reads */
++#define  BGMAC_DMA_TX_MR_SHIFT			6
++#define   BGMAC_DMA_TX_MR_1			0
++#define   BGMAC_DMA_TX_MR_2			1
+ #define  BGMAC_DMA_TX_PARITY_DISABLE		0x00000800
+ #define  BGMAC_DMA_TX_ADDREXT_MASK		0x00030000
+ #define  BGMAC_DMA_TX_ADDREXT_SHIFT		16
++#define  BGMAC_DMA_TX_BL_MASK			0x001C0000	/* BurstLen bits */
++#define  BGMAC_DMA_TX_BL_SHIFT			18
++#define   BGMAC_DMA_TX_BL_16			0
++#define   BGMAC_DMA_TX_BL_32			1
++#define   BGMAC_DMA_TX_BL_64			2
++#define   BGMAC_DMA_TX_BL_128			3
++#define   BGMAC_DMA_TX_BL_256			4
++#define   BGMAC_DMA_TX_BL_512			5
++#define   BGMAC_DMA_TX_BL_1024			6
++#define  BGMAC_DMA_TX_PC_MASK			0x00E00000	/* Prefetch control */
++#define  BGMAC_DMA_TX_PC_SHIFT			21
++#define   BGMAC_DMA_TX_PC_0			0
++#define   BGMAC_DMA_TX_PC_4			1
++#define   BGMAC_DMA_TX_PC_8			2
++#define   BGMAC_DMA_TX_PC_16			3
++#define  BGMAC_DMA_TX_PT_MASK			0x03000000	/* Prefetch threshold */
++#define  BGMAC_DMA_TX_PT_SHIFT			24
++#define   BGMAC_DMA_TX_PT_1			0
++#define   BGMAC_DMA_TX_PT_2			1
++#define   BGMAC_DMA_TX_PT_4			2
++#define   BGMAC_DMA_TX_PT_8			3
+ #define BGMAC_DMA_TX_INDEX			0x04
+ #define BGMAC_DMA_TX_RINGLO			0x08
+ #define BGMAC_DMA_TX_RINGHI			0x0C
+@@ -284,8 +295,33 @@
+ #define  BGMAC_DMA_RX_DIRECT_FIFO		0x00000100
+ #define  BGMAC_DMA_RX_OVERFLOW_CONT		0x00000400
+ #define  BGMAC_DMA_RX_PARITY_DISABLE		0x00000800
++#define  BGMAC_DMA_RX_MR_MASK			0x000000C0	/* Multiple outstanding reads */
++#define  BGMAC_DMA_RX_MR_SHIFT			6
++#define   BGMAC_DMA_TX_MR_1			0
++#define   BGMAC_DMA_TX_MR_2			1
+ #define  BGMAC_DMA_RX_ADDREXT_MASK		0x00030000
+ #define  BGMAC_DMA_RX_ADDREXT_SHIFT		16
++#define  BGMAC_DMA_RX_BL_MASK			0x001C0000	/* BurstLen bits */
++#define  BGMAC_DMA_RX_BL_SHIFT			18
++#define   BGMAC_DMA_RX_BL_16			0
++#define   BGMAC_DMA_RX_BL_32			1
++#define   BGMAC_DMA_RX_BL_64			2
++#define   BGMAC_DMA_RX_BL_128			3
++#define   BGMAC_DMA_RX_BL_256			4
++#define   BGMAC_DMA_RX_BL_512			5
++#define   BGMAC_DMA_RX_BL_1024			6
++#define  BGMAC_DMA_RX_PC_MASK			0x00E00000	/* Prefetch control */
++#define  BGMAC_DMA_RX_PC_SHIFT			21
++#define   BGMAC_DMA_RX_PC_0			0
++#define   BGMAC_DMA_RX_PC_4			1
++#define   BGMAC_DMA_RX_PC_8			2
++#define   BGMAC_DMA_RX_PC_16			3
++#define  BGMAC_DMA_RX_PT_MASK			0x03000000	/* Prefetch threshold */
++#define  BGMAC_DMA_RX_PT_SHIFT			24
++#define   BGMAC_DMA_RX_PT_1			0
++#define   BGMAC_DMA_RX_PT_2			1
++#define   BGMAC_DMA_RX_PT_4			2
++#define   BGMAC_DMA_RX_PT_8			3
+ #define BGMAC_DMA_RX_INDEX			0x24
+ #define BGMAC_DMA_RX_RINGLO			0x28
+ #define BGMAC_DMA_RX_RINGHI			0x2C
+@@ -342,10 +378,6 @@
+ #define BGMAC_CHIPCTL_1_SW_TYPE_RGMII		0x000000C0
+ #define BGMAC_CHIPCTL_1_RXC_DLL_BYPASS		0x00010000
+ 
+-#define BGMAC_SPEED_10				0x0001
+-#define BGMAC_SPEED_100				0x0002
+-#define BGMAC_SPEED_1000			0x0004
+-
+ #define BGMAC_WEIGHT	64
+ 
+ #define ETHER_MAX_LEN   1518
+@@ -402,6 +434,7 @@ struct bgmac {
+ 	struct net_device *net_dev;
+ 	struct napi_struct napi;
+ 	struct mii_bus *mii_bus;
++	struct phy_device *phy_dev;
+ 
+ 	/* DMA */
+ 	struct bgmac_dma_ring tx_ring[BGMAC_MAX_TX_RINGS];
+@@ -416,10 +449,9 @@ struct bgmac {
+ 	u32 int_mask;
+ 	u32 int_status;
+ 
+-	/* Speed-related */
+-	int speed;
+-	bool autoneg;
+-	bool full_duplex;
++	/* Current MAC state */
++	int mac_speed;
++	int mac_duplex;
+ 
+ 	u8 phyaddr;
+ 	bool has_robosw;

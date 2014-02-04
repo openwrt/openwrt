@@ -12,7 +12,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <bcm47xx_nvram.h>
  
  static const struct bcma_device_id bgmac_bcma_tbl[] = {
-@@ -1381,6 +1382,17 @@ static void bgmac_mii_unregister(struct
+@@ -1405,6 +1406,17 @@ static void bgmac_mii_unregister(struct
  	mdiobus_free(mii_bus);
  }
  
@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * BCMA bus ops
   **************************************************/
-@@ -1507,6 +1519,16 @@ static int bgmac_probe(struct bcma_devic
+@@ -1521,6 +1533,16 @@ static int bgmac_probe(struct bcma_devic
  		goto err_dma_free;
  	}
  
@@ -47,7 +47,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		bgmac_err(bgmac, "Cannot register net device\n");
-@@ -1536,6 +1558,10 @@ static void bgmac_remove(struct bcma_dev
+@@ -1549,6 +1571,10 @@ static void bgmac_remove(struct bcma_dev
  {
  	struct bgmac *bgmac = bcma_get_drvdata(core);
  
@@ -60,7 +60,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	bgmac_mii_unregister(bgmac);
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
-@@ -405,6 +405,9 @@ struct bgmac {
+@@ -457,6 +457,9 @@ struct bgmac {
  	bool has_robosw;
  
  	bool loopback;
