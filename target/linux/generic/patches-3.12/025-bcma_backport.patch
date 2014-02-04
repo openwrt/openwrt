@@ -1,3 +1,236 @@
+--- a/drivers/bcma/Kconfig
++++ b/drivers/bcma/Kconfig
+@@ -75,6 +75,7 @@ config BCMA_DRIVER_GMAC_CMN
+ config BCMA_DRIVER_GPIO
+ 	bool "BCMA GPIO driver"
+ 	depends on BCMA && GPIOLIB
++	select IRQ_DOMAIN if BCMA_HOST_SOC
+ 	help
+ 	  Driver to provide access to the GPIO pins of the bcma bus.
+ 
+--- a/drivers/bcma/bcma_private.h
++++ b/drivers/bcma/bcma_private.h
+@@ -33,8 +33,6 @@ int __init bcma_bus_early_register(struc
+ int bcma_bus_suspend(struct bcma_bus *bus);
+ int bcma_bus_resume(struct bcma_bus *bus);
+ #endif
+-struct bcma_device *bcma_find_core_unit(struct bcma_bus *bus, u16 coreid,
+-					u8 unit);
+ 
+ /* scan.c */
+ int bcma_bus_scan(struct bcma_bus *bus);
+--- a/drivers/bcma/driver_chipcommon_sflash.c
++++ b/drivers/bcma/driver_chipcommon_sflash.c
+@@ -38,7 +38,7 @@ static const struct bcma_sflash_tbl_e bc
+ 	{ "M25P32", 0x15, 0x10000, 64, },
+ 	{ "M25P64", 0x16, 0x10000, 128, },
+ 	{ "M25FL128", 0x17, 0x10000, 256, },
+-	{ 0 },
++	{ NULL },
+ };
+ 
+ static const struct bcma_sflash_tbl_e bcma_sflash_sst_tbl[] = {
+@@ -56,7 +56,7 @@ static const struct bcma_sflash_tbl_e bc
+ 	{ "SST25VF016", 0x41, 0x1000, 512, },
+ 	{ "SST25VF032", 0x4a, 0x1000, 1024, },
+ 	{ "SST25VF064", 0x4b, 0x1000, 2048, },
+-	{ 0 },
++	{ NULL },
+ };
+ 
+ static const struct bcma_sflash_tbl_e bcma_sflash_at_tbl[] = {
+@@ -67,7 +67,7 @@ static const struct bcma_sflash_tbl_e bc
+ 	{ "AT45DB161", 0x2c, 512, 4096, },
+ 	{ "AT45DB321", 0x34, 512, 8192, },
+ 	{ "AT45DB642", 0x3c, 1024, 8192, },
+-	{ 0 },
++	{ NULL },
+ };
+ 
+ static void bcma_sflash_cmd(struct bcma_drv_cc *cc, u32 opcode)
+--- a/drivers/bcma/driver_gpio.c
++++ b/drivers/bcma/driver_gpio.c
+@@ -9,6 +9,9 @@
+  */
+ 
+ #include <linux/gpio.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/irqdomain.h>
+ #include <linux/export.h>
+ #include <linux/bcma/bcma.h>
+ 
+@@ -73,19 +76,136 @@ static void bcma_gpio_free(struct gpio_c
+ 	bcma_chipco_gpio_pullup(cc, 1 << gpio, 0);
+ }
+ 
++#if IS_BUILTIN(CONFIG_BCMA_HOST_SOC)
+ static int bcma_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
+ {
+ 	struct bcma_drv_cc *cc = bcma_gpio_get_cc(chip);
+ 
+ 	if (cc->core->bus->hosttype == BCMA_HOSTTYPE_SOC)
+-		return bcma_core_irq(cc->core);
++		return irq_find_mapping(cc->irq_domain, gpio);
+ 	else
+ 		return -EINVAL;
+ }
+ 
++static void bcma_gpio_irq_unmask(struct irq_data *d)
++{
++	struct bcma_drv_cc *cc = irq_data_get_irq_chip_data(d);
++	int gpio = irqd_to_hwirq(d);
++	u32 val = bcma_chipco_gpio_in(cc, BIT(gpio));
++
++	bcma_chipco_gpio_polarity(cc, BIT(gpio), val);
++	bcma_chipco_gpio_intmask(cc, BIT(gpio), BIT(gpio));
++}
++
++static void bcma_gpio_irq_mask(struct irq_data *d)
++{
++	struct bcma_drv_cc *cc = irq_data_get_irq_chip_data(d);
++	int gpio = irqd_to_hwirq(d);
++
++	bcma_chipco_gpio_intmask(cc, BIT(gpio), 0);
++}
++
++static struct irq_chip bcma_gpio_irq_chip = {
++	.name		= "BCMA-GPIO",
++	.irq_mask	= bcma_gpio_irq_mask,
++	.irq_unmask	= bcma_gpio_irq_unmask,
++};
++
++static irqreturn_t bcma_gpio_irq_handler(int irq, void *dev_id)
++{
++	struct bcma_drv_cc *cc = dev_id;
++	u32 val = bcma_cc_read32(cc, BCMA_CC_GPIOIN);
++	u32 mask = bcma_cc_read32(cc, BCMA_CC_GPIOIRQ);
++	u32 pol = bcma_cc_read32(cc, BCMA_CC_GPIOPOL);
++	unsigned long irqs = (val ^ pol) & mask;
++	int gpio;
++
++	if (!irqs)
++		return IRQ_NONE;
++
++	for_each_set_bit(gpio, &irqs, cc->gpio.ngpio)
++		generic_handle_irq(bcma_gpio_to_irq(&cc->gpio, gpio));
++	bcma_chipco_gpio_polarity(cc, irqs, val & irqs);
++
++	return IRQ_HANDLED;
++}
++
++static int bcma_gpio_irq_domain_init(struct bcma_drv_cc *cc)
++{
++	struct gpio_chip *chip = &cc->gpio;
++	int gpio, hwirq, err;
++
++	if (cc->core->bus->hosttype != BCMA_HOSTTYPE_SOC)
++		return 0;
++
++	cc->irq_domain = irq_domain_add_linear(NULL, chip->ngpio,
++					       &irq_domain_simple_ops, cc);
++	if (!cc->irq_domain) {
++		err = -ENODEV;
++		goto err_irq_domain;
++	}
++	for (gpio = 0; gpio < chip->ngpio; gpio++) {
++		int irq = irq_create_mapping(cc->irq_domain, gpio);
++
++		irq_set_chip_data(irq, cc);
++		irq_set_chip_and_handler(irq, &bcma_gpio_irq_chip,
++					 handle_simple_irq);
++	}
++
++	hwirq = bcma_core_irq(cc->core);
++	err = request_irq(hwirq, bcma_gpio_irq_handler, IRQF_SHARED, "gpio",
++			  cc);
++	if (err)
++		goto err_req_irq;
++
++	bcma_chipco_gpio_intmask(cc, ~0, 0);
++	bcma_cc_set32(cc, BCMA_CC_IRQMASK, BCMA_CC_IRQ_GPIO);
++
++	return 0;
++
++err_req_irq:
++	for (gpio = 0; gpio < chip->ngpio; gpio++) {
++		int irq = irq_find_mapping(cc->irq_domain, gpio);
++
++		irq_dispose_mapping(irq);
++	}
++	irq_domain_remove(cc->irq_domain);
++err_irq_domain:
++	return err;
++}
++
++static void bcma_gpio_irq_domain_exit(struct bcma_drv_cc *cc)
++{
++	struct gpio_chip *chip = &cc->gpio;
++	int gpio;
++
++	if (cc->core->bus->hosttype != BCMA_HOSTTYPE_SOC)
++		return;
++
++	bcma_cc_mask32(cc, BCMA_CC_IRQMASK, ~BCMA_CC_IRQ_GPIO);
++	free_irq(bcma_core_irq(cc->core), cc);
++	for (gpio = 0; gpio < chip->ngpio; gpio++) {
++		int irq = irq_find_mapping(cc->irq_domain, gpio);
++
++		irq_dispose_mapping(irq);
++	}
++	irq_domain_remove(cc->irq_domain);
++}
++#else
++static int bcma_gpio_irq_domain_init(struct bcma_drv_cc *cc)
++{
++	return 0;
++}
++
++static void bcma_gpio_irq_domain_exit(struct bcma_drv_cc *cc)
++{
++}
++#endif
++
+ int bcma_gpio_init(struct bcma_drv_cc *cc)
+ {
+ 	struct gpio_chip *chip = &cc->gpio;
++	int err;
+ 
+ 	chip->label		= "bcma_gpio";
+ 	chip->owner		= THIS_MODULE;
+@@ -95,7 +215,9 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+ 	chip->set		= bcma_gpio_set_value;
+ 	chip->direction_input	= bcma_gpio_direction_input;
+ 	chip->direction_output	= bcma_gpio_direction_output;
++#if IS_BUILTIN(CONFIG_BCMA_HOST_SOC)
+ 	chip->to_irq		= bcma_gpio_to_irq;
++#endif
+ 	chip->ngpio		= 16;
+ 	/* There is just one SoC in one device and its GPIO addresses should be
+ 	 * deterministic to address them more easily. The other buses could get
+@@ -105,10 +227,21 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+ 	else
+ 		chip->base		= -1;
+ 
+-	return gpiochip_add(chip);
++	err = bcma_gpio_irq_domain_init(cc);
++	if (err)
++		return err;
++
++	err = gpiochip_add(chip);
++	if (err) {
++		bcma_gpio_irq_domain_exit(cc);
++		return err;
++	}
++
++	return 0;
+ }
+ 
+ int bcma_gpio_unregister(struct bcma_drv_cc *cc)
+ {
++	bcma_gpio_irq_domain_exit(cc);
+ 	return gpiochip_remove(&cc->gpio);
+ }
 --- a/drivers/bcma/host_pci.c
 +++ b/drivers/bcma/host_pci.c
 @@ -188,8 +188,11 @@ static int bcma_host_pci_probe(struct pc
@@ -14,11 +247,140 @@
  
  	/* Map MMIO */
  	err = -ENOMEM;
-@@ -269,6 +272,7 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
+@@ -235,7 +238,6 @@ static void bcma_host_pci_remove(struct
+ 	pci_release_regions(dev);
+ 	pci_disable_device(dev);
+ 	kfree(bus);
+-	pci_set_drvdata(dev, NULL);
+ }
  
- static DEFINE_PCI_DEVICE_TABLE(bcma_pci_bridge_tbl) = {
+ #ifdef CONFIG_PM_SLEEP
+@@ -267,8 +269,9 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
+ 
+ #endif /* CONFIG_PM_SLEEP */
+ 
+-static DEFINE_PCI_DEVICE_TABLE(bcma_pci_bridge_tbl) = {
++static const struct pci_device_id bcma_pci_bridge_tbl[] = {
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x0576) },
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4313) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43224) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4331) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4353) },
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -30,28 +30,37 @@ static ssize_t manuf_show(struct device
+ 	struct bcma_device *core = container_of(dev, struct bcma_device, dev);
+ 	return sprintf(buf, "0x%03X\n", core->id.manuf);
+ }
++static DEVICE_ATTR_RO(manuf);
++
+ static ssize_t id_show(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	struct bcma_device *core = container_of(dev, struct bcma_device, dev);
+ 	return sprintf(buf, "0x%03X\n", core->id.id);
+ }
++static DEVICE_ATTR_RO(id);
++
+ static ssize_t rev_show(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	struct bcma_device *core = container_of(dev, struct bcma_device, dev);
+ 	return sprintf(buf, "0x%02X\n", core->id.rev);
+ }
++static DEVICE_ATTR_RO(rev);
++
+ static ssize_t class_show(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	struct bcma_device *core = container_of(dev, struct bcma_device, dev);
+ 	return sprintf(buf, "0x%X\n", core->id.class);
+ }
+-static struct device_attribute bcma_device_attrs[] = {
+-	__ATTR_RO(manuf),
+-	__ATTR_RO(id),
+-	__ATTR_RO(rev),
+-	__ATTR_RO(class),
+-	__ATTR_NULL,
++static DEVICE_ATTR_RO(class);
++
++static struct attribute *bcma_device_attrs[] = {
++	&dev_attr_manuf.attr,
++	&dev_attr_id.attr,
++	&dev_attr_rev.attr,
++	&dev_attr_class.attr,
++	NULL,
+ };
++ATTRIBUTE_GROUPS(bcma_device);
+ 
+ static struct bus_type bcma_bus_type = {
+ 	.name		= "bcma",
+@@ -59,7 +68,7 @@ static struct bus_type bcma_bus_type = {
+ 	.probe		= bcma_device_probe,
+ 	.remove		= bcma_device_remove,
+ 	.uevent		= bcma_device_uevent,
+-	.dev_attrs	= bcma_device_attrs,
++	.dev_groups	= bcma_device_groups,
+ };
+ 
+ static u16 bcma_cc_core_id(struct bcma_bus *bus)
+@@ -69,18 +78,6 @@ static u16 bcma_cc_core_id(struct bcma_b
+ 	return BCMA_CORE_CHIPCOMMON;
+ }
+ 
+-struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid)
+-{
+-	struct bcma_device *core;
+-
+-	list_for_each_entry(core, &bus->cores, list) {
+-		if (core->id.id == coreid)
+-			return core;
+-	}
+-	return NULL;
+-}
+-EXPORT_SYMBOL_GPL(bcma_find_core);
+-
+ struct bcma_device *bcma_find_core_unit(struct bcma_bus *bus, u16 coreid,
+ 					u8 unit)
+ {
+@@ -92,6 +89,7 @@ struct bcma_device *bcma_find_core_unit(
+ 	}
+ 	return NULL;
+ }
++EXPORT_SYMBOL_GPL(bcma_find_core_unit);
+ 
+ bool bcma_wait_value(struct bcma_device *core, u16 reg, u32 mask, u32 value,
+ 		     int timeout)
+@@ -167,6 +165,7 @@ static int bcma_register_cores(struct bc
+ 			bcma_err(bus,
+ 				 "Could not register dev for core 0x%03X\n",
+ 				 core->id.id);
++			put_device(&core->dev);
+ 			continue;
+ 		}
+ 		core->dev_registered = true;
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -418,7 +418,14 @@ static inline void bcma_maskset16(struct
+ 	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
+ }
+ 
+-extern struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid);
++extern struct bcma_device *bcma_find_core_unit(struct bcma_bus *bus, u16 coreid,
++					       u8 unit);
++static inline struct bcma_device *bcma_find_core(struct bcma_bus *bus,
++						 u16 coreid)
++{
++	return bcma_find_core_unit(bus, coreid, 0);
++}
++
+ extern bool bcma_core_is_enabled(struct bcma_device *core);
+ extern void bcma_core_disable(struct bcma_device *core, u32 flags);
+ extern int bcma_core_enable(struct bcma_device *core, u32 flags);
+--- a/include/linux/bcma/bcma_driver_chipcommon.h
++++ b/include/linux/bcma/bcma_driver_chipcommon.h
+@@ -640,6 +640,7 @@ struct bcma_drv_cc {
+ 	spinlock_t gpio_lock;
+ #ifdef CONFIG_BCMA_DRIVER_GPIO
+ 	struct gpio_chip gpio;
++	struct irq_domain *irq_domain;
+ #endif
+ };
+ 
