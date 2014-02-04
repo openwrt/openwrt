@@ -1,9 +1,32 @@
+From 68e30f30875d4e4608cebec27ca8bd07be0d0f64 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Thu, 2 Jan 2014 13:53:15 +0100
+Subject: [PATCH] MIPS: BCM47XX: Drop WGT634U hacks
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This old wgt634u.c was trying to implement a bit ugly support for
+Netgear WGT634U. It provided info about LED, flash mapping & layout and
+was trying to handle reset button.
+
+This is not needed anymore as we have replacement for all this stuff.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/6302/
+---
+ arch/mips/bcm47xx/Makefile  |   1 -
+ arch/mips/bcm47xx/wgt634u.c | 174 --------------------------------------------
+ 2 files changed, 175 deletions(-)
+ delete mode 100644 arch/mips/bcm47xx/wgt634u.c
+
 --- a/arch/mips/bcm47xx/Makefile
 +++ b/arch/mips/bcm47xx/Makefile
-@@ -6,4 +6,3 @@
+@@ -5,4 +5,3 @@
+ 
  obj-y				+= irq.o nvram.o prom.o serial.o setup.o time.o sprom.o
  obj-y				+= board.o buttons.o leds.o
- obj-y				+= gpio.o
 -obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- a/arch/mips/bcm47xx/wgt634u.c
 +++ /dev/null
