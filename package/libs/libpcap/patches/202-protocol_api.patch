@@ -1,16 +1,6 @@
---- a/pcap-int.h
-+++ b/pcap-int.h
-@@ -209,6 +209,7 @@ struct pcap_opt {
- 	char	*source;
- 	int	promisc;
- 	int	rfmon;
-+	int 	proto;      /* protocol for packet socket (linux) */
- 	int	tstamp_type;
- };
- 
 --- a/pcap-linux.c
 +++ b/pcap-linux.c
-@@ -363,7 +363,7 @@ static int	iface_get_id(int fd, const ch
+@@ -380,7 +380,7 @@ static int	iface_get_id(int fd, const ch
  static int	iface_get_mtu(int fd, const char *device, char *ebuf);
  static int 	iface_get_arptype(int fd, const char *device, char *ebuf);
  #ifdef HAVE_PF_PACKET_SOCKETS
@@ -19,7 +9,7 @@
  #ifdef IW_MODE_MONITOR
  static int	has_wext(int sock_fd, const char *device, char *ebuf);
  #endif /* IW_MODE_MONITOR */
-@@ -980,7 +980,7 @@ pcap_can_set_rfmon_linux(pcap_t *handle)
+@@ -963,7 +963,7 @@ pcap_can_set_rfmon_linux(pcap_t *handle)
  	 * (We assume that if we have Wireless Extensions support
  	 * we also have PF_PACKET support.)
  	 */
@@ -28,7 +18,7 @@
  	if (sock_fd == -1) {
  		(void)snprintf(handle->errbuf, PCAP_ERRBUF_SIZE,
  		    "socket: %s", pcap_strerror(errno));
-@@ -1266,6 +1266,9 @@ pcap_activate_linux(pcap_t *handle)
+@@ -1251,6 +1251,9 @@ pcap_activate_linux(pcap_t *handle)
  	handle->read_op = pcap_read_linux;
  	handle->stats_op = pcap_stats_linux;
  
@@ -38,7 +28,7 @@
  	/*
  	 * The "any" device is a special device which causes us not
  	 * to bind to a particular device and thus to look at all
-@@ -2897,8 +2900,8 @@ activate_new(pcap_t *handle)
+@@ -3012,8 +3015,8 @@ activate_new(pcap_t *handle)
  	 * try a SOCK_RAW socket for the raw interface.
  	 */
  	sock_fd = is_any_device ?
@@ -49,7 +39,7 @@
  
  	if (sock_fd == -1) {
  		if (errno == EINVAL || errno == EAFNOSUPPORT) {
-@@ -3015,7 +3018,7 @@ activate_new(pcap_t *handle)
+@@ -3130,7 +3133,7 @@ activate_new(pcap_t *handle)
  				return PCAP_ERROR;
  			}
  			sock_fd = socket(PF_PACKET, SOCK_DGRAM,
@@ -58,16 +48,16 @@
  			if (sock_fd == -1) {
  				snprintf(handle->errbuf, PCAP_ERRBUF_SIZE,
  				    "socket: %s", pcap_strerror(errno));
-@@ -3078,7 +3081,7 @@ activate_new(pcap_t *handle)
+@@ -3193,7 +3196,7 @@ activate_new(pcap_t *handle)
  		}
  
- 		if ((err = iface_bind(sock_fd, handle->md.ifindex,
+ 		if ((err = iface_bind(sock_fd, handlep->ifindex,
 -		    handle->errbuf)) != 1) {
 +		    handle->errbuf, handle->opt.proto)) != 1) {
  		    	close(sock_fd);
  			if (err < 0)
  				return err;
-@@ -4149,7 +4152,7 @@ iface_get_id(int fd, const char *device,
+@@ -4667,7 +4670,7 @@ iface_get_id(int fd, const char *device,
   *  or a PCAP_ERROR_ value on a hard error.
   */
  static int
@@ -76,7 +66,7 @@
  {
  	struct sockaddr_ll	sll;
  	int			err;
-@@ -4158,7 +4161,7 @@ iface_bind(int fd, int ifindex, char *eb
+@@ -4676,7 +4679,7 @@ iface_bind(int fd, int ifindex, char *eb
  	memset(&sll, 0, sizeof(sll));
  	sll.sll_family		= AF_PACKET;
  	sll.sll_ifindex		= ifindex;
@@ -85,7 +75,7 @@
  
  	if (bind(fd, (struct sockaddr *) &sll, sizeof(sll)) == -1) {
  		if (errno == ENETDOWN) {
-@@ -5040,7 +5043,7 @@ activate_old(pcap_t *handle)
+@@ -5561,7 +5564,7 @@ activate_old(pcap_t *handle)
  
  	/* Open the socket */
  
@@ -96,15 +86,15 @@
  			 "socket: %s", pcap_strerror(errno));
 --- a/pcap.c
 +++ b/pcap.c
-@@ -309,6 +309,7 @@ pcap_create_common(const char *source, c
- 	pcap_set_snaplen(p, 65535);	/* max packet size */
+@@ -556,6 +556,7 @@ pcap_create_common(const char *source, c
  	p->opt.promisc = 0;
- 	p->opt.buffer_size = 0;
+ 	p->opt.rfmon = 0;
+ 	p->opt.immediate = 0;
 +	p->opt.proto = -1;
  	p->opt.tstamp_type = -1;	/* default to not setting time stamp type */
+ 	p->opt.tstamp_precision = PCAP_TSTAMP_PRECISION_MICRO;
  	return (p);
- }
-@@ -405,6 +406,15 @@ pcap_set_buffer_size(pcap_t *p, int buff
+@@ -713,6 +714,15 @@ pcap_get_tstamp_precision(pcap_t *p)
  }
  
  int
@@ -130,11 +120,21 @@
  
  /*
   * Compatibility for systems that have a bpf.h that
-@@ -280,6 +281,7 @@ int	pcap_set_rfmon(pcap_t *, int);
- int	pcap_set_timeout(pcap_t *, int);
+@@ -283,6 +284,7 @@ int	pcap_set_timeout(pcap_t *, int);
  int	pcap_set_tstamp_type(pcap_t *, int);
+ int	pcap_set_immediate_mode(pcap_t *, int);
  int	pcap_set_buffer_size(pcap_t *, int);
 +int	pcap_set_protocol(pcap_t *, unsigned short);
+ int	pcap_set_tstamp_precision(pcap_t *, int);
+ int	pcap_get_tstamp_precision(pcap_t *);
  int	pcap_activate(pcap_t *);
- 
- int	pcap_list_tstamp_types(pcap_t *, int **);
+--- a/pcap-int.h
++++ b/pcap-int.h
+@@ -88,6 +88,7 @@ struct pcap_opt {
+ 	char	*source;
+ 	int	timeout;	/* timeout for buffering */
+ 	int	buffer_size;
++	int	proto;      /* protocol for packet socket (linux) */
+ 	int	promisc;
+ 	int	rfmon;		/* monitor mode */
+ 	int	immediate;	/* immediate mode - deliver packets as soon as they arrive */
