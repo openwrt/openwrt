@@ -1,0 +1,94 @@
+From eccc92de2d133957fe2c126f18a5a5faef0bb93b Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Thu, 9 Jan 2014 23:26:05 +0100
+Subject: [PATCH] sunxi: A10-OLinuXino-Lime support fixup
+
+Fix:
+-code indentation
+-dram timings, the used cas and tpr0 - tpr2 were typical sun5i / sun7i
+ settings, while they should be sun4i settings
+-Properly sort boards.cfg entry
+-Add status led support
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ board/sunxi/dram_a10_olinuxino_l.c | 40 +++++++++++++++++++-------------------
+ boards.cfg                         |  2 +-
+ 2 files changed, 21 insertions(+), 21 deletions(-)
+
+diff --git a/board/sunxi/dram_a10_olinuxino_l.c b/board/sunxi/dram_a10_olinuxino_l.c
+index 31b6542..24a1bd9 100644
+--- a/board/sunxi/dram_a10_olinuxino_l.c
++++ b/board/sunxi/dram_a10_olinuxino_l.c
+@@ -4,28 +4,28 @@
+ #include <asm/arch/dram.h>
+ 
+ static struct dram_para dram_para = {
+-       .clock = 480,
+-       .type = 3,
+-       .rank_num = 1,
+-       .density = 4096,
+-       .io_width = 16,
+-       .bus_width = 16,
+-       .cas = 9,
+-       .zq = 123,
+-       .odt_en = 0,
+-       .size = 512,
+-       .tpr0 = 0x42d899b7,
+-       .tpr1 = 0xa090,
+-       .tpr2 = 0x22a00,
+-       .tpr3 = 0,
+-       .tpr4 = 0,
+-       .tpr5 = 0,
+-       .emr1 = 0x4,
+-       .emr2 = 0x10,
+-       .emr3 = 0,
++	.clock = 480,
++	.type = 3,
++	.rank_num = 1,
++	.density = 4096,
++	.io_width = 16,
++	.bus_width = 16,
++	.cas = 6,
++	.zq = 123,
++	.odt_en = 0,
++	.size = 512,
++	.tpr0 = 0x30926692,
++	.tpr1 = 0x1090,
++	.tpr2 = 0x1a0c8,
++	.tpr3 = 0,
++	.tpr4 = 0,
++	.tpr5 = 0,
++	.emr1 = 0x4,
++	.emr2 = 0,
++	.emr3 = 0,
+ };
+ 
+ unsigned long sunxi_dram_init(void)
+ {
+-       return dramc_init(&dram_para);
++	return dramc_init(&dram_para);
+ }
+diff --git a/boards.cfg b/boards.cfg
+index eda05de..dfeb07a 100644
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -345,6 +345,7 @@ Active  arm         armv7          s5pc1xx     samsung         goni
+ Active  arm         armv7          s5pc1xx     samsung         smdkc100            smdkc100                             -                                                                                                                                 Minkyu Kang <mk7.kang@samsung.com>
+ Active  arm         armv7          socfpga     altera          socfpga             socfpga_cyclone5                     -                                                                                                                                 -
+ Active  arm         armv7          sunxi       -               sunxi               A10_MID_1GB                          sun4i:A10_MID_1GB,SPL                                                                                                             -
++Active  arm         armv7          sunxi       -               sunxi               A10-OLinuXino-Lime                   sun4i:A10_OLINUXINO_L,STATUSLED=226,SPL,SUNXI_EMAC                                                                                -
+ Active  arm         armv7          sunxi       -               sunxi               A10s-OLinuXino-M                     sun5i:A10S_OLINUXINO_M,STATUSLED=131,AXP152_POWER,CONS_INDEX=1,SPL,SUNXI_EMAC                                                     -
+ Active  arm         armv7          sunxi       -               sunxi               A10s-OLinuXino-M_FEL                 sun5i:A10S_OLINUXINO_M,STATUSLED=131,AXP152_POWER,CONS_INDEX=1,SPL_FEL,SUNXI_EMAC                                                 -
+ Active  arm         armv7          sunxi       -               sunxi               A13-OLinuXino                        sun5i:A13_OLINUXINO,SPL,STATUSLED=201,CONS_INDEX=2                                                                                -
+@@ -415,7 +416,6 @@ Active  arm         armv7          sunxi       -               sunxi
+ Active  arm         armv7          sunxi       -               sunxi               uhost_u1a                            sun4i:UHOST_U1A,SPL,STATUSLED=34                                                                                                  -
+ Active  arm         armv7          sunxi       -               sunxi               wobo-i5                              sun5i:WOBO_I5,SPL,STATUSLED=34                                                                                                    -
+ Active  arm         armv7          sunxi       -               sunxi               xzpad700                             sun5i:XZPAD700,SPL                                                                                                                -
+-Active  arm         armv7          sunxi       -               sunxi               A10-OLinuXino-Lime			 sun4i:A10_OLINUXINO_L,SPL,SUNXI_EMAC                                                                                             -
+ Active  arm         armv7          u8500       st-ericsson     snowball            snowball                             -                                                                                                                                 Mathieu Poirier <mathieu.poirier@linaro.org>
+ Active  arm         armv7          u8500       st-ericsson     u8500               u8500_href                           -                                                                                                                                 -
+ Active  arm         armv7          vf610       freescale       vf610twr            vf610twr                             vf610twr:IMX_CONFIG=board/freescale/vf610twr/imximage.cfg                                                                         Alison Wang <b18965@freescale.com>
+-- 
+1.8.5.1
+
