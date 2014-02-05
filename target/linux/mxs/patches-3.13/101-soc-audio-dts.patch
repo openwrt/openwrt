@@ -1,0 +1,39 @@
+--- a/arch/arm/boot/dts/imx23-olinuxino.dts
++++ b/arch/arm/boot/dts/imx23-olinuxino.dts
+@@ -84,6 +84,25 @@
+ 			usbphy0: usbphy@8007c000 {
+ 				status = "okay";
+ 			};
++			
++			codec: mxs-builtin-codec {
++				compatible = "fsl,mxs-builtin-codec";
++				reg = <0x80048000 0x2000>, <0x8004c000 0x2000>,
++				  <0x8005c000 0x2000>;
++				reg-names = "audioout", "audioin", "rtc";
++				clocks = <&clks 31>;
++				clock-names = "filt";
++			};
++			
++			platform_dai: mxs-builtin-cpu-dai {
++				compatible = "fsl,mxs-builtin-cpu-dai";
++				reg = <0x80048000 0x2000>, <0x8004c000 0x2000>,
++				  <0x8005c000 0x2000>;
++				reg-names = "audioout", "audioin", "rtc";
++				interrupts = <8 6 4>;
++				dmas = <&dma_apbx 0>, <&dma_apbx 1>;
++				dma-names = "rx", "tx";
++			};
+ 		};
+ 	};
+ 
+@@ -118,4 +137,10 @@
+ 			gpios = <&gpio2 1 1>;
+ 		};
+ 	};
++	
++	mxs-builtin-audio {
++		compatible = "fsl,mxs-builtin-audio";
++		audio-codec = <&codec>;
++		cpu-dai = <&platform_dai>;
++	};
+ };
