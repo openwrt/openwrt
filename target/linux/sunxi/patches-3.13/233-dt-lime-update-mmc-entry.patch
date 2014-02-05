@@ -1,0 +1,15 @@
+diff -ruN old/arch/arm/boot/dts/sun4i-a10-olinuxino-lime.dts new/arch/arm/boot/dts/sun4i-a10-olinuxino-lime.dts
+--- old/arch/arm/boot/dts/sun4i-a10-olinuxino-lime.dts	2014-01-22 23:41:25.000000000 +0100
++++ new/arch/arm/boot/dts/sun4i-a10-olinuxino-lime.dts	2014-01-28 01:23:50.083617987 +0100
+@@ -33,9 +33,9 @@
+ 			};
+ 		};
+ 
+-		sdc0: sdc@01c0f000 {
++		mmc0: mmc@01c0f000 {
+ 			pinctrl-names = "default";
+-			pinctrl-0 = <&sdc0_pins_a>;
++			pinctrl-0 = <&mmc0_pins_a>;
+ 			pinctrl-1 = <&mmc0_cd_pin_olinuxino>;
+ 			cd-gpios = <&pio 7 1 0>; /* PH1 */
+ 			cd-mode = <1>;

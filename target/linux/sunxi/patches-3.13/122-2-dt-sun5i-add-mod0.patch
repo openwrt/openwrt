@@ -1,0 +1,220 @@
+From 9a8d3f21c94099a2bcd79ac1684cc8020fd98df2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Mon, 23 Dec 2013 00:32:42 -0300
+Subject: [PATCH] ARM: sun5i: dt: mod0 clocks
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This commit adds all the mod0 clocks available on A10 and A13. The list
+has been constructed by looking at the Allwinner code release for A10S
+and A13.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun5i-a10s.dtsi | 88 +++++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/sun5i-a13.dtsi  | 88 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 176 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
+index ca19362..96c7185 100644
+--- a/arch/arm/boot/dts/sun5i-a10s.dtsi
++++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
+@@ -173,6 +173,94 @@
+ 				"apb1_i2c2", "apb1_uart0", "apb1_uart1",
+ 				"apb1_uart2", "apb1_uart3";
+ 		};
++
++		nand_clk: clk@01c20080 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20080 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "nand";
++		};
++
++		ms_clk: clk@01c20084 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20084 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "ms";
++		};
++
++		mmc0_clk: clk@01c20088 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20088 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "mmc0";
++		};
++
++		mmc1_clk: clk@01c2008c {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c2008c 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "mmc1";
++		};
++
++		mmc2_clk: clk@01c20090 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20090 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "mmc2";
++		};
++
++		ts_clk: clk@01c20098 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20098 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "ts";
++		};
++
++		ss_clk: clk@01c2009c {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c2009c 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "ss";
++		};
++
++		spi0_clk: clk@01c200a0 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c200a0 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "spi0";
++		};
++
++		spi1_clk: clk@01c200a4 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c200a4 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "spi1";
++		};
++
++		spi2_clk: clk@01c200a8 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c200a8 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "spi2";
++		};
++
++		ir0_clk: clk@01c200b0 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c200b0 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "ir0";
++		};
+ 	};
+ 
+ 	soc@01c00000 {
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index 9ac706a..e2505d6 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -170,6 +170,94 @@
+ 			clock-output-names = "apb1_i2c0", "apb1_i2c1",
+ 				"apb1_i2c2", "apb1_uart1", "apb1_uart3";
+ 		};
++
++		nand_clk: clk@01c20080 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20080 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "nand";
++		};
++
++		ms_clk: clk@01c20084 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20084 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "ms";
++		};
++
++		mmc0_clk: clk@01c20088 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20088 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "mmc0";
++		};
++
++		mmc1_clk: clk@01c2008c {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c2008c 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "mmc1";
++		};
++
++		mmc2_clk: clk@01c20090 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20090 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "mmc2";
++		};
++
++		ts_clk: clk@01c20098 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c20098 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "ts";
++		};
++
++		ss_clk: clk@01c2009c {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c2009c 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "ss";
++		};
++
++		spi0_clk: clk@01c200a0 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c200a0 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "spi0";
++		};
++
++		spi1_clk: clk@01c200a4 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c200a4 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "spi1";
++		};
++
++		spi2_clk: clk@01c200a8 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c200a8 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "spi2";
++		};
++
++		ir0_clk: clk@01c200b0 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c200b0 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "ir0";
++		};
+ 	};
+ 
+ 	soc@01c00000 {
+-- 
+1.8.5.1
+

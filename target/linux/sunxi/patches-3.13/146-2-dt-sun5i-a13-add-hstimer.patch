@@ -1,0 +1,38 @@
+From 22a3eff19679e0e592e061201690670a2f5fdba7 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Thu, 7 Nov 2013 12:01:48 +0100
+Subject: [PATCH] ARM: sun5i: a13: Add support for the High Speed Timers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The Allwinner A13 has support for two high speed timers. Now that we
+have a driver to support it, we can enable them in the device tree.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Tested-by: Emilio López <emilio@elopez.com.ar>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ arch/arm/boot/dts/sun5i-a13.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index ce8ef2a..1ccd75d 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -273,5 +273,12 @@
+ 			clock-frequency = <100000>;
+ 			status = "disabled";
+ 		};
++
++		timer@01c60000 {
++			compatible = "allwinner,sun5i-a13-hstimer";
++			reg = <0x01c60000 0x1000>;
++			interrupts = <82>, <83>;
++			clocks = <&ahb_gates 28>;
++		};
+ 	};
+ };
+-- 
+1.8.5.1
+

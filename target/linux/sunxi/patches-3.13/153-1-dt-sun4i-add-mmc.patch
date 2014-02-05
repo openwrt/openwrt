@@ -1,0 +1,106 @@
+From 677631fa522e4ac24f636535e3abb5cd1a5ef40e Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sat, 14 Dec 2013 22:58:12 +0100
+Subject: [PATCH] ARM: dts: sun4i: Add support for mmc
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10-a1000.dts      | 16 ++++++++++++++++
+ arch/arm/boot/dts/sun4i-a10-cubieboard.dts | 16 ++++++++++++++++
+ arch/arm/boot/dts/sun4i-a10.dtsi           | 17 +++++++++++++++++
+ 3 files changed, 49 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-a1000.dts b/arch/arm/boot/dts/sun4i-a10-a1000.dts
+index eb4d73b..aef8207 100644
+--- a/arch/arm/boot/dts/sun4i-a10-a1000.dts
++++ b/arch/arm/boot/dts/sun4i-a10-a1000.dts
+@@ -39,7 +39,23 @@
+ 			};
+ 		};
+ 
++		mmc0: mmc@01c0f000 {
++			pinctrl-names = "default";
++			pinctrl-0 = <&mmc0_pins_a>;
++			pinctrl-1 = <&mmc0_cd_pin_a1000>;
++			cd-gpios = <&pio 7 1 0>; /* PH1 */
++			cd-mode = <1>;
++			status = "okay";
++		};
++
+ 		pinctrl@01c20800 {
++			mmc0_cd_pin_a1000: mmc0_cd_pin@0 {
++				allwinner,pins = "PH1";
++				allwinner,function = "gpio_in";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
+ 			emac_power_pin_a1000: emac_power_pin@0 {
+ 				allwinner,pins = "PH15";
+ 				allwinner,function = "gpio_out";
+diff --git a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
+index 425a7db..f50fb2b 100644
+--- a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
++++ b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
+@@ -42,7 +42,23 @@
+ 			};
+ 		};
+ 
++		mmc0: mmc@01c0f000 {
++			pinctrl-names = "default";
++			pinctrl-0 = <&mmc0_pins_a>;
++			pinctrl-1 = <&mmc0_cd_pin_cubieboard>;
++			cd-gpios = <&pio 7 1 0>; /* PH1 */
++			cd-mode = <1>;
++			status = "okay";
++		};
++
+ 		pinctrl@01c20800 {
++			mmc0_cd_pin_cubieboard: mmc0_cd_pin@0 {
++				allwinner,pins = "PH1";
++				allwinner,function = "gpio_in";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
+ 			led_pins_cubieboard: led_pins@0 {
+ 				allwinner,pins = "PH20", "PH21";
+ 				allwinner,function = "gpio_out";
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index 9779c6b..4736dd2 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -321,6 +321,16 @@
+ 			#size-cells = <0>;
+ 		};
+ 
++		mmc0: mmc@01c0f000 {
++			compatible = "allwinner,sun4i-a10-mmc";
++			reg = <0x01c0f000 0x1000>;
++			clocks = <&ahb_gates 8>, <&mmc0_clk>;
++			clock-names = "ahb", "mod";
++			interrupts = <32>;
++			bus-width = <4>;
++			status = "disabled";
++		};
++
+ 		intc: interrupt-controller@01c20400 {
+ 			compatible = "allwinner,sun4i-ic";
+ 			reg = <0x01c20400 0x400>;
+@@ -391,6 +401,13 @@
+ 				allwinner,drive = <0>;
+ 				allwinner,pull = <0>;
+ 			};
++
++			mmc0_pins_a: mmc0@0 {
++				allwinner,pins = "PF0","PF1","PF2","PF3","PF4","PF5";
++				allwinner,function = "mmc0";
++				allwinner,drive = <3>;
++				allwinner,pull = <0>;
++			};
+ 		};
+ 
+ 		timer@01c20c00 {
+-- 
+1.8.5.1
+

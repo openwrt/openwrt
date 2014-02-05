@@ -1,0 +1,27 @@
+From e772c9c2f552740ae735328cbd06b1d7f8e9d885 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Tue, 17 Dec 2013 23:27:03 +0100
+Subject: [PATCH] ARM: sunxi-ehci: Fix resource check
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/usb/host/ehci-sunxi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/host/ehci-sunxi.c b/drivers/usb/host/ehci-sunxi.c
+index e7e15cc..e050d78 100644
+--- a/drivers/usb/host/ehci-sunxi.c
++++ b/drivers/usb/host/ehci-sunxi.c
+@@ -332,7 +332,8 @@ static int sunxi_ehci_probe(struct platform_device *pdev)
+ 	if (pdev->resource[0].flags != IORESOURCE_MEM
+ 			|| pdev->resource[1].flags != IORESOURCE_MEM
+ 			|| pdev->resource[2].flags != IORESOURCE_MEM
+-			|| pdev->resource[3].flags != IORESOURCE_IRQ) {
++			|| (pdev->resource[3].flags & IORESOURCE_TYPE_BITS)
++				!= IORESOURCE_IRQ) {
+ 		dev_err(&pdev->dev, "invalid resource type\n");
+ 		return -ENODEV;
+ 	}
+-- 
+1.8.5.1
+

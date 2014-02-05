@@ -1,0 +1,79 @@
+From 538d4a6ca5f41039d906f28be82e0f4d26ec8ac9 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Mon, 23 Dec 2013 00:32:44 -0300
+Subject: [PATCH] ARM: sunxi: dt: add nodes for the mbus clock
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+mbus is the memory bus clock, and it is present on both sun5i and sun7i
+machines. Its register layout is compatible with the mod0 one.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun5i-a10s.dtsi | 8 ++++++++
+ arch/arm/boot/dts/sun5i-a13.dtsi  | 8 ++++++++
+ arch/arm/boot/dts/sun7i-a20.dtsi  | 8 ++++++++
+ 3 files changed, 24 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
+index 96c7185..78360b3 100644
+--- a/arch/arm/boot/dts/sun5i-a10s.dtsi
++++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
+@@ -261,6 +261,14 @@
+ 			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
+ 			clock-output-names = "ir0";
+ 		};
++
++		mbus_clk: clk@01c2015c {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c2015c 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "mbus";
++		};
+ 	};
+ 
+ 	soc@01c00000 {
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index e2505d6..2f37ca5 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -258,6 +258,14 @@
+ 			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
+ 			clock-output-names = "ir0";
+ 		};
++
++		mbus_clk: clk@01c2015c {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c2015c 0x4>;
++			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
++			clock-output-names = "mbus";
++		};
+ 	};
+ 
+ 	soc@01c00000 {
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index f6ee631..4c25f81 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -294,6 +294,14 @@
+ 			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
+ 			clock-output-names = "spi3";
+ 		};
++
++		mbus_clk: clk@01c2015c {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-mod0-clk";
++			reg = <0x01c2015c 0x4>;
++			clocks = <&osc24M>, <&pll6 2>, <&pll5 1>;
++			clock-output-names = "mbus";
++		};
+ 	};
+ 
+ 	soc@01c00000 {
+-- 
+1.8.5.1
+

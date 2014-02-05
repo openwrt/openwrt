@@ -1,0 +1,503 @@
+From 825ce97e1faa39bfd30c3dca95fba5eb021cb534 Mon Sep 17 00:00:00 2001
+From: arokux <arokux@gmail.com>
+Date: Wed, 18 Sep 2013 21:45:03 +0200
+Subject: [PATCH] ARM: sunxi: usb: Add Allwinner sunXi EHCI driver
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+
+Conflicts:
+	drivers/usb/host/Makefile
+---
+ drivers/usb/host/Kconfig      |   9 +
+ drivers/usb/host/Makefile     |   1 +
+ drivers/usb/host/ehci-sunxi.c | 446 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 456 insertions(+)
+ create mode 100644 drivers/usb/host/ehci-sunxi.c
+
+diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
+index a9707da..db94dba 100644
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -273,6 +273,15 @@ config USB_OCTEON_EHCI
+ 	  USB 2.0 device support.  All CN6XXX based chips with USB are
+ 	  supported.
+ 
++config USB_SUNXI_EHCI
++	tristate "Allwinner sunXi EHCI support"
++	depends on ARCH_SUNXI
++	default n
++	help
++	  Enable support for the Allwinner sunXi on-chip EHCI
++	  controller. It is needed for high-speed (480Mbit/sec)
++	  USB 2.0 device support.
++
+ endif # USB_EHCI_HCD
+ 
+ config USB_OXU210HP_HCD
+diff --git a/drivers/usb/host/Makefile b/drivers/usb/host/Makefile
+index 01e879e..d96053d 100644
+--- a/drivers/usb/host/Makefile
++++ b/drivers/usb/host/Makefile
+@@ -39,6 +39,7 @@ obj-$(CONFIG_USB_EHCI_HCD_AT91) += ehci-atmel.o
+ obj-$(CONFIG_USB_EHCI_MSM)	+= ehci-msm.o
+ obj-$(CONFIG_USB_EHCI_TEGRA)	+= ehci-tegra.o
+ obj-$(CONFIG_USB_W90X900_EHCI)	+= ehci-w90x900.o
++obj-$(CONFIG_USB_SUNXI_EHCI)	+= ehci-sunxi.o
+ 
+ obj-$(CONFIG_USB_OXU210HP_HCD)	+= oxu210hp-hcd.o
+ obj-$(CONFIG_USB_ISP116X_HCD)	+= isp116x-hcd.o
+diff --git a/drivers/usb/host/ehci-sunxi.c b/drivers/usb/host/ehci-sunxi.c
+new file mode 100644
+index 0000000..e7e15cc
+--- /dev/null
++++ b/drivers/usb/host/ehci-sunxi.c
+@@ -0,0 +1,446 @@
++/*
++ * Copyright (C) 2013 Roman Byshko
++ *
++ * Roman Byshko <rbyshko@gmail.com>
++ *
++ * Based on code from
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This file is licensed under the terms of the GNU General Public
++ * License version 2.  This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++#include <linux/bitops.h>
++#include <linux/clk.h>
++#include <linux/dma-mapping.h>
++#include <linux/io.h>
++#include <linux/irq.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/regulator/consumer.h>
++#include <linux/reset.h>
++#include <linux/usb.h>
++#include <linux/usb/hcd.h>
++
++#include "ehci.h"
++
++#define DRV_DESC	"Allwinner sunXi EHCI driver"
++#define DRV_NAME	"sunxi-ehci"
++
++#define SUNXI_USB_PASSBY_EN	1
++
++#define SUNXI_EHCI_AHB_ICHR8_EN		BIT(10)
++#define SUNXI_EHCI_AHB_INCR4_BURST_EN	BIT(9)
++#define SUNXI_EHCI_AHB_INCRX_ALIGN_EN	BIT(8)
++#define SUNXI_EHCI_ULPI_BYPASS_EN	BIT(0)
++
++struct sunxi_ehci_hcd {
++	struct clk *phy_clk;
++	struct clk *ahb_ehci_clk;
++	struct reset_control *reset;
++	struct regulator *vbus_reg;
++	void __iomem *csr;
++	void __iomem *pmuirq;
++	int irq;
++	int id;
++};
++
++
++static void usb_phy_write(struct sunxi_ehci_hcd *sunxi_ehci,u32 addr, u32 data, u32 len)
++{
++	u32 j = 0;
++	u32 temp = 0;
++	u32 usbc_bit = 0;
++	void __iomem *dest = sunxi_ehci->csr;
++
++	usbc_bit = BIT(sunxi_ehci->id << 1);
++
++	for (j = 0; j < len; j++) {
++		temp = readl(dest);
++
++		/* clear the address portion */
++		temp &= ~(0xff << 8);
++
++		/* set the address */
++		temp |= ((addr + j) << 8);
++		writel(temp, dest);
++
++		/* set the data bit and clear usbc bit*/
++		temp = readb(dest);
++		if (data & 0x1)
++			temp |= BIT(7);
++		else
++			temp &= ~BIT(7);
++		temp &= ~usbc_bit;
++		writeb(temp, dest);
++
++		/* flip usbc_bit */
++		__set_bit(usbc_bit, dest);
++		__clear_bit(usbc_bit, dest);
++
++		data >>= 1;
++	}
++}
++
++/* FIXME: should this function be protected by a lock?
++ * ehci1 and ehci0 could call it concurrently with same csr.
++ */
++static void sunxi_usb_phy_init(struct sunxi_ehci_hcd *sunxi_ehci)
++{
++	/* The following comments are machine
++	 * translated from Chinese, you have been warned!
++	 */
++
++	/* adjust PHY's magnitude and rate */
++	usb_phy_write(sunxi_ehci, 0x20, 0x14, 5);
++
++	/* threshold adjustment disconnect */
++	usb_phy_write(sunxi_ehci, 0x2a, 3, 2);
++
++	return;
++}
++
++static void sunxi_usb_passby(struct sunxi_ehci_hcd *sunxi_ehci, int enable)
++{
++	unsigned long reg_value = 0;
++	unsigned long bits = 0;
++	static DEFINE_SPINLOCK(lock);
++	unsigned long flags = 0;
++	void __iomem *addr = sunxi_ehci->pmuirq;
++
++	bits = SUNXI_EHCI_AHB_ICHR8_EN |
++		SUNXI_EHCI_AHB_INCR4_BURST_EN |
++		SUNXI_EHCI_AHB_INCRX_ALIGN_EN |
++		SUNXI_EHCI_ULPI_BYPASS_EN;
++
++	spin_lock_irqsave(&lock, flags);
++
++	reg_value = readl(addr);
++
++	if (enable)
++		reg_value |= bits;
++	else
++		reg_value &= ~bits;
++
++	writel(reg_value, addr);
++
++	spin_unlock_irqrestore(&lock, flags);
++
++	return;
++}
++
++static void sunxi_ehci_disable(struct sunxi_ehci_hcd *sunxi_ehci)
++{
++	regulator_disable(sunxi_ehci->vbus_reg);
++
++	sunxi_usb_passby(sunxi_ehci, !SUNXI_USB_PASSBY_EN);
++
++	clk_disable_unprepare(sunxi_ehci->ahb_ehci_clk);
++	clk_disable_unprepare(sunxi_ehci->phy_clk);
++
++	reset_control_assert(sunxi_ehci->reset);
++}
++
++static int sunxi_ehci_enable(struct sunxi_ehci_hcd *sunxi_ehci)
++{
++	int ret;
++
++	ret = clk_prepare_enable(sunxi_ehci->phy_clk);
++	if (ret)
++		return ret;
++
++	ret = reset_control_deassert(sunxi_ehci->reset);
++	if (ret)
++		goto fail1;
++
++	ret = clk_prepare_enable(sunxi_ehci->ahb_ehci_clk);
++	if (ret)
++		goto fail2;
++
++	sunxi_usb_phy_init(sunxi_ehci);
++
++	sunxi_usb_passby(sunxi_ehci, SUNXI_USB_PASSBY_EN);
++
++	ret = regulator_enable(sunxi_ehci->vbus_reg);
++	if (ret)
++		goto fail3;
++
++	return 0;
++
++fail3:
++	clk_disable_unprepare(sunxi_ehci->ahb_ehci_clk);
++fail2:
++	reset_control_assert(sunxi_ehci->reset);
++fail1:
++	clk_disable_unprepare(sunxi_ehci->phy_clk);
++
++	return ret;
++}
++
++#ifdef CONFIG_PM
++static int sunxi_ehci_suspend(struct device *dev)
++{
++	struct sunxi_ehci_hcd *sunxi_ehci = NULL;
++	struct usb_hcd *hcd = dev_get_drvdata(dev);
++	int ret;
++
++	bool do_wakeup = device_may_wakeup(dev);
++
++	ret = ehci_suspend(hcd, do_wakeup);
++
++	sunxi_ehci = (struct sunxi_ehci_hcd *)hcd_to_ehci(hcd)->priv;
++
++	sunxi_ehci_disable(sunxi_ehci);
++
++	return ret;
++}
++
++static int sunxi_ehci_resume(struct device *dev)
++{
++	struct sunxi_ehci_hcd *sunxi_ehci = NULL;
++	struct usb_hcd *hcd = dev_get_drvdata(dev);
++	int ret;
++
++	sunxi_ehci = (struct sunxi_ehci_hcd *)hcd_to_ehci(hcd)->priv;
++
++	ret = sunxi_ehci_enable(sunxi_ehci);
++	if (ret)
++		return ret;
++
++	return ehci_resume(hcd, false);
++}
++
++
++static const struct dev_pm_ops sunxi_ehci_pmops = {
++	.suspend	= sunxi_ehci_suspend,
++	.resume		= sunxi_ehci_resume,
++};
++
++#define SUNXI_EHCI_PMOPS (&sunxi_ehci_pmops)
++#else /* !CONFIG_PM */
++#define SUNXI_EHCI_PMOPS NULL
++#endif /* CONFIG_PM */
++
++static const struct ehci_driver_overrides sunxi_overrides __initconst = {
++	.reset =	NULL,
++	.extra_priv_size	= sizeof(struct sunxi_ehci_hcd),
++};
++
++/* FIXME: Should there be two instances of hc_driver,
++ * or one is enough to handle two EHCI controllers? */
++static struct hc_driver __read_mostly sunxi_ehci_hc_driver;
++
++static int sunxi_ehci_init(struct platform_device *pdev, struct usb_hcd *hcd,
++			   struct sunxi_ehci_hcd *sunxi_ehci)
++{
++	void __iomem *ehci_regs = NULL;
++	struct resource *res = NULL;
++
++	sunxi_ehci->vbus_reg = devm_regulator_get(&pdev->dev, "vbus");
++	if (IS_ERR(sunxi_ehci->vbus_reg)) {
++		if (PTR_ERR(sunxi_ehci->vbus_reg) == -EPROBE_DEFER)
++			return -EPROBE_DEFER;
++
++		dev_info(&pdev->dev, "no USB VBUS power supply found\n");
++	}
++
++	sunxi_ehci->id = of_alias_get_id(pdev->dev.of_node, "ehci");
++	if (sunxi_ehci->id < 0)
++		return sunxi_ehci->id;
++
++	/* FIXME: should res be freed on some failure? */
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "failed to get I/O memory\n");
++		return -ENXIO;
++	}
++	ehci_regs = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(ehci_regs))
++		return PTR_ERR(ehci_regs);
++
++	hcd->rsrc_start = res->start;
++	hcd->rsrc_len = resource_size(res);
++	hcd->regs = ehci_regs;
++	hcd_to_ehci(hcd)->caps = ehci_regs;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (!res) {
++		dev_err(&pdev->dev, "failed to get I/O memory\n");
++		return -ENXIO;
++	}
++	sunxi_ehci->pmuirq = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(sunxi_ehci->pmuirq))
++		return PTR_ERR(sunxi_ehci->pmuirq);
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 2);
++	if (!res) {
++		dev_err(&pdev->dev, "failed to get I/O memory\n");
++		return -ENXIO;
++	}
++
++	/* FIXME: this one byte needs to be shared between both EHCIs,
++	 * that is why ioremap instead of devm_ioremap_resource,
++	 * memory is not unmaped back for now.
++	 */
++	sunxi_ehci->csr = ioremap(res->start, resource_size(res));
++	if (IS_ERR(sunxi_ehci->csr)) {
++		dev_err(&pdev->dev, "failed to remap memory\n");
++		return PTR_ERR(sunxi_ehci->csr);
++	}
++
++	sunxi_ehci->irq = platform_get_irq(pdev, 0);
++	if (!sunxi_ehci->irq) {
++		dev_err(&pdev->dev, "failed to get IRQ\n");
++		return -ENODEV;
++	}
++
++	sunxi_ehci->phy_clk = devm_clk_get(&pdev->dev, "usb_phy");
++	if (IS_ERR(sunxi_ehci->phy_clk)) {
++		dev_err(&pdev->dev, "failed to get usb_phy clock\n");
++		return PTR_ERR(sunxi_ehci->phy_clk);
++	}
++	sunxi_ehci->ahb_ehci_clk = devm_clk_get(&pdev->dev, "ahb_ehci");
++	if (IS_ERR(sunxi_ehci->ahb_ehci_clk)) {
++		dev_err(&pdev->dev, "failed to get ahb_ehci clock\n");
++		return PTR_ERR(sunxi_ehci->ahb_ehci_clk);
++	}
++
++	sunxi_ehci->reset = reset_control_get(&pdev->dev, "ehci_reset");
++	if (IS_ERR(sunxi_ehci->reset))
++	{
++		dev_err(&pdev->dev, "failed to get ehci_reset reset line\n");
++		return PTR_ERR(sunxi_ehci->reset);
++	}
++
++	return 0;
++}
++
++static int sunxi_ehci_probe(struct platform_device *pdev)
++{
++	struct sunxi_ehci_hcd *sunxi_ehci = NULL;
++	struct usb_hcd *hcd = NULL;
++	int ret;
++
++	if (pdev->num_resources != 4) {
++		dev_err(&pdev->dev, "invalid number of resources: %i\n",
++		       pdev->num_resources);
++		return -ENODEV;
++	}
++
++	if (pdev->resource[0].flags != IORESOURCE_MEM
++			|| pdev->resource[1].flags != IORESOURCE_MEM
++			|| pdev->resource[2].flags != IORESOURCE_MEM
++			|| pdev->resource[3].flags != IORESOURCE_IRQ) {
++		dev_err(&pdev->dev, "invalid resource type\n");
++		return -ENODEV;
++	}
++
++	if (!pdev->dev.dma_mask)
++		pdev->dev.dma_mask = &pdev->dev.coherent_dma_mask;
++	if (!pdev->dev.coherent_dma_mask)
++		pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
++
++	hcd = usb_create_hcd(&sunxi_ehci_hc_driver, &pdev->dev,
++			     dev_name(&pdev->dev));
++	if (!hcd) {
++		dev_err(&pdev->dev, "unable to create HCD\n");
++		return -ENOMEM;
++	}
++
++	platform_set_drvdata(pdev, hcd);
++
++	sunxi_ehci = (struct sunxi_ehci_hcd *)hcd_to_ehci(hcd)->priv;
++	ret = sunxi_ehci_init(pdev, hcd, sunxi_ehci);
++	if (ret)
++		goto fail1;
++
++	ret = sunxi_ehci_enable(sunxi_ehci);
++	if (ret)
++		goto fail1;
++
++	ret = usb_add_hcd(hcd, sunxi_ehci->irq, IRQF_SHARED | IRQF_DISABLED);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to add USB HCD\n");
++		goto fail2;
++	}
++
++	return 0;
++
++fail2:
++	sunxi_ehci_disable(sunxi_ehci);
++
++fail1:
++	usb_put_hcd(hcd);
++	return ret;
++}
++
++static int sunxi_ehci_remove(struct platform_device *pdev)
++{
++	struct usb_hcd *hcd = platform_get_drvdata(pdev);
++	struct sunxi_ehci_hcd *sunxi_ehci = NULL;
++
++	sunxi_ehci = (struct sunxi_ehci_hcd *)hcd_to_ehci(hcd)->priv;
++
++	usb_remove_hcd(hcd);
++
++	sunxi_ehci_disable(sunxi_ehci);
++
++	usb_put_hcd(hcd);
++
++	return 0;
++}
++
++static void sunxi_ehci_shutdown(struct platform_device *pdev)
++{
++	struct usb_hcd *hcd = platform_get_drvdata(pdev);
++	struct sunxi_ehci_hcd *sunxi_ehci = NULL;
++
++	sunxi_ehci = (struct sunxi_ehci_hcd *)hcd_to_ehci(hcd)->priv;
++
++	usb_hcd_platform_shutdown(pdev);
++
++	sunxi_ehci_disable(sunxi_ehci);
++}
++
++static const struct of_device_id ehci_of_match[] = {
++	{.compatible = "allwinner,sunxi-ehci"},
++	{},
++};
++
++static struct platform_driver ehci_sunxi_driver = {
++	.driver = {
++		.of_match_table = ehci_of_match,
++		.name = DRV_NAME,
++		.pm = SUNXI_EHCI_PMOPS,
++	},
++	.probe = sunxi_ehci_probe,
++	.remove = sunxi_ehci_remove,
++	.shutdown = sunxi_ehci_shutdown,
++};
++
++static int __init sunxi_ehci_init_module(void)
++{
++	if (usb_disabled())
++		return -ENODEV;
++
++	pr_info(DRV_NAME ": " DRV_DESC "\n");
++
++	ehci_init_driver(&sunxi_ehci_hc_driver, &sunxi_overrides);
++
++	return platform_driver_register(&ehci_sunxi_driver);
++}
++module_init(sunxi_ehci_init_module);
++
++static void __exit sunxi_ehci_exit_module(void)
++{
++	platform_driver_unregister(&ehci_sunxi_driver);
++}
++module_exit(sunxi_ehci_exit_module);
++
++MODULE_DESCRIPTION(DRIVER_DESC);
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:" DRV_NAME);
++MODULE_DEVICE_TABLE(of, ehci_of_match);
++MODULE_AUTHOR("Roman Byshko <rbyshko@gmail.com>");
+-- 
+1.8.5.1
+

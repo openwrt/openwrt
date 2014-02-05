@@ -1,0 +1,68 @@
+From 9dc8189536f4c59bb7ad8c736021cefc1488bf74 Mon Sep 17 00:00:00 2001
+From: "Victor N. Ramos Mello" <victornrm@gmail.com>
+Date: Fri, 18 Oct 2013 20:27:51 -0300
+Subject: [PATCH] drivers: clk: sunxi: Fix memory leakage in clk-sunxi.c
+
+Fix a possible memory leak in sun4i_osc_clk_setup().
+Moved clock-frequency check to save superfluous allocation.
+
+Signed-off-by: Victor N. Ramos Mello <victornrm@gmail.com>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ drivers/clk/sunxi/clk-sunxi.c | 28 +++++++++++++++++-----------
+ 1 file changed, 17 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
+index 8fc1375..492ef0e 100644
+--- a/drivers/clk/sunxi/clk-sunxi.c
++++ b/drivers/clk/sunxi/clk-sunxi.c
+@@ -37,18 +37,16 @@ static void __init sun4i_osc_clk_setup(struct device_node *node)
+ 	const char *clk_name = node->name;
+ 	u32 rate;
+ 
++	if (of_property_read_u32(node, "clock-frequency", &rate))
++		return;
++
+ 	/* allocate fixed-rate and gate clock structs */
+ 	fixed = kzalloc(sizeof(struct clk_fixed_rate), GFP_KERNEL);
+ 	if (!fixed)
+ 		return;
+ 	gate = kzalloc(sizeof(struct clk_gate), GFP_KERNEL);
+-	if (!gate) {
+-		kfree(fixed);
+-		return;
+-	}
+-
+-	if (of_property_read_u32(node, "clock-frequency", &rate))
+-		return;
++	if (!gate)
++		goto err_free_fixed;
+ 
+ 	/* set up gate and fixed rate properties */
+ 	gate->reg = of_iomap(node, 0);
+@@ -63,10 +61,18 @@ static void __init sun4i_osc_clk_setup(struct device_node *node)
+ 			&gate->hw, &clk_gate_ops,
+ 			CLK_IS_ROOT);
+ 
+-	if (!IS_ERR(clk)) {
+-		of_clk_add_provider(node, of_clk_src_simple_get, clk);
+-		clk_register_clkdev(clk, clk_name, NULL);
+-	}
++	if (IS_ERR(clk))
++		goto err_free_gate;
++
++	of_clk_add_provider(node, of_clk_src_simple_get, clk);
++	clk_register_clkdev(clk, clk_name, NULL);
++
++	return;
++
++err_free_gate:
++	kfree(gate);
++err_free_fixed:
++	kfree(fixed);
+ }
+ CLK_OF_DECLARE(sun4i_osc, "allwinner,sun4i-osc-clk", sun4i_osc_clk_setup);
+ 
+-- 
+1.8.5.1
+
