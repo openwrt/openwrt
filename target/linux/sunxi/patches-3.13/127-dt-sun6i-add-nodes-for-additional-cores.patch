@@ -1,0 +1,36 @@
+From d3861805e84e1b54073e20dc499b9380b38bb7ab Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Sun, 3 Nov 2013 10:30:12 +0100
+Subject: [PATCH] ARM: sun6i: dt: Add IP needed to bring up the additional
+ cores
+
+Add the PRCM and CPU configuration units needed for SMP in the A31 DTSI.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun6i-a31.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun6i-a31.dtsi b/arch/arm/boot/dts/sun6i-a31.dtsi
+index 97966b0..5256ad9 100644
+--- a/arch/arm/boot/dts/sun6i-a31.dtsi
++++ b/arch/arm/boot/dts/sun6i-a31.dtsi
+@@ -322,5 +322,15 @@
+ 			#interrupt-cells = <3>;
+ 			interrupts = <1 9 0xf04>;
+ 		};
++
++		cpucfg@01f01c00 {
++			compatible = "allwinner,sun6i-a31-cpuconfig";
++			reg = <0x01f01c00 0x300>;
++		};
++
++		prcm@01f01c00 {
++			compatible = "allwinner,sun6i-a31-prcm";
++			reg = <0x01f01400 0x200>;
++		};
+ 	};
+ };
+-- 
+1.8.5.1
+
