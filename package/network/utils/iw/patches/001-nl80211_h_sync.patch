@@ -1,239 +1,39 @@
 --- a/nl80211.h
 +++ b/nl80211.h
-@@ -27,6 +27,8 @@
- 
- #include <linux/types.h>
- 
-+#define NL80211_GENL_NAME "nl80211"
-+
- /**
-  * DOC: Station handling
+@@ -1555,6 +1555,9 @@ enum nl80211_commands {
+  *	data is in the format defined for the payload of the QoS Map Set element
+  *	in IEEE Std 802.11-2012, 8.4.2.97.
   *
-@@ -1429,6 +1431,11 @@ enum nl80211_commands {
-  * @NL80211_ATTR_MAX_CRIT_PROT_DURATION: duration in milliseconds in which
-  *      the connection should have increased reliability (u16).
-  *
-+ * @NL80211_ATTR_PEER_AID: Association ID for the peer TDLS station (u16).
-+ *	This is similar to @NL80211_ATTR_STA_AID but with a difference of being
-+ *	allowed to be used with the first @NL80211_CMD_SET_STATION command to
-+ *	update a TDLS peer STA entry.
++ * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
++ *	transmit power to stay within regulatory limits. u32, dBi.
 + *
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
   */
-@@ -1727,6 +1734,10 @@ enum nl80211_attrs {
- 	NL80211_ATTR_CRIT_PROT_ID,
- 	NL80211_ATTR_MAX_CRIT_PROT_DURATION,
+@@ -1883,6 +1886,8 @@ enum nl80211_attrs {
  
-+	NL80211_ATTR_PEER_AID,
-+
+ 	NL80211_ATTR_QOS_MAP,
+ 
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
 +
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -1991,6 +2002,10 @@ enum nl80211_sta_bss_param {
-  * @NL80211_STA_INFO_PEER_PM: peer mesh STA link-specific power mode
-  * @NL80211_STA_INFO_NONPEER_PM: neighbor mesh STA power save mode towards
-  *	non-peer STA
-+ * @NL80211_STA_INFO_CHAIN_SIGNAL: per-chain signal strength of last PPDU
-+ *	Contains a nested array of signal strength attributes (u8, dBm)
-+ * @NL80211_STA_INFO_CHAIN_SIGNAL_AVG: per-chain signal strength average
-+ *	Same format as NL80211_STA_INFO_CHAIN_SIGNAL.
-  * @__NL80211_STA_INFO_AFTER_LAST: internal
-  * @NL80211_STA_INFO_MAX: highest possible station info attribute
-  */
-@@ -2020,6 +2035,8 @@ enum nl80211_sta_info {
- 	NL80211_STA_INFO_NONPEER_PM,
- 	NL80211_STA_INFO_RX_BYTES64,
- 	NL80211_STA_INFO_TX_BYTES64,
-+	NL80211_STA_INFO_CHAIN_SIGNAL,
-+	NL80211_STA_INFO_CHAIN_SIGNAL_AVG,
- 
- 	/* keep last */
- 	__NL80211_STA_INFO_AFTER_LAST,
-@@ -2413,6 +2430,8 @@ enum nl80211_survey_info {
-  * @NL80211_MNTR_FLAG_OTHER_BSS: disable BSSID filtering
-  * @NL80211_MNTR_FLAG_COOK_FRAMES: report frames after processing.
-  *	overrides all other flags.
-+ * @NL80211_MNTR_FLAG_ACTIVE: use the configured MAC address
-+ *	and ACK incoming unicast packets.
-  *
-  * @__NL80211_MNTR_FLAG_AFTER_LAST: internal use
-  * @NL80211_MNTR_FLAG_MAX: highest possible monitor flag
-@@ -2424,6 +2443,7 @@ enum nl80211_mntr_flags {
- 	NL80211_MNTR_FLAG_CONTROL,
- 	NL80211_MNTR_FLAG_OTHER_BSS,
- 	NL80211_MNTR_FLAG_COOK_FRAMES,
-+	NL80211_MNTR_FLAG_ACTIVE,
- 
- 	/* keep last */
- 	__NL80211_MNTR_FLAG_AFTER_LAST,
-@@ -2559,6 +2579,10 @@ enum nl80211_mesh_power_mode {
-  *
-  * @NL80211_MESHCONF_AWAKE_WINDOW: awake window duration (in TUs)
-  *
-+ * @NL80211_MESHCONF_PLINK_TIMEOUT: If no tx activity is seen from a STA we've
-+ *	established peering with for longer than this time (in seconds), then
-+ *	remove it from the STA's list of peers.  Default is 30 minutes.
-+ *
-  * @__NL80211_MESHCONF_ATTR_AFTER_LAST: internal use
-  */
- enum nl80211_meshconf_params {
-@@ -2590,6 +2614,7 @@ enum nl80211_meshconf_params {
- 	NL80211_MESHCONF_HWMP_CONFIRMATION_INTERVAL,
- 	NL80211_MESHCONF_POWER_MODE,
- 	NL80211_MESHCONF_AWAKE_WINDOW,
-+	NL80211_MESHCONF_PLINK_TIMEOUT,
- 
- 	/* keep last */
- 	__NL80211_MESHCONF_ATTR_AFTER_LAST,
-@@ -2637,6 +2662,10 @@ enum nl80211_meshconf_params {
-  * @NL80211_MESH_SETUP_USERSPACE_MPM: Enable this option if userspace will
-  *	implement an MPM which handles peer allocation and state.
-  *
-+ * @NL80211_MESH_SETUP_AUTH_PROTOCOL: Inform the kernel of the authentication
-+ *	method (u8, as defined in IEEE 8.4.2.100.6, e.g. 0x1 for SAE).
-+ *	Default is no authentication method required.
-+ *
-  * @NL80211_MESH_SETUP_ATTR_MAX: highest possible mesh setup attribute number
-  *
-  * @__NL80211_MESH_SETUP_ATTR_AFTER_LAST: Internal use
-@@ -2650,6 +2679,7 @@ enum nl80211_mesh_setup_params {
- 	NL80211_MESH_SETUP_USERSPACE_AMPE,
- 	NL80211_MESH_SETUP_ENABLE_VENDOR_SYNC,
- 	NL80211_MESH_SETUP_USERSPACE_MPM,
-+	NL80211_MESH_SETUP_AUTH_PROTOCOL,
- 
- 	/* keep last */
- 	__NL80211_MESH_SETUP_ATTR_AFTER_LAST,
-@@ -2730,6 +2760,8 @@ enum nl80211_channel_type {
-  *	and %NL80211_ATTR_CENTER_FREQ2 attributes must be provided as well
-  * @NL80211_CHAN_WIDTH_160: 160 MHz channel, the %NL80211_ATTR_CENTER_FREQ1
-  *	attribute must be provided as well
-+ * @NL80211_CHAN_WIDTH_5: 5 MHz OFDM channel
-+ * @NL80211_CHAN_WIDTH_10: 10 MHz OFDM channel
-  */
- enum nl80211_chan_width {
- 	NL80211_CHAN_WIDTH_20_NOHT,
-@@ -2738,6 +2770,8 @@ enum nl80211_chan_width {
- 	NL80211_CHAN_WIDTH_80,
- 	NL80211_CHAN_WIDTH_80P80,
- 	NL80211_CHAN_WIDTH_160,
-+	NL80211_CHAN_WIDTH_5,
-+	NL80211_CHAN_WIDTH_10,
- };
- 
- /**
-@@ -3028,11 +3062,11 @@ enum nl80211_tx_power_setting {
- };
- 
- /**
-- * enum nl80211_wowlan_packet_pattern_attr - WoWLAN packet pattern attribute
-- * @__NL80211_WOWLAN_PKTPAT_INVALID: invalid number for nested attribute
-- * @NL80211_WOWLAN_PKTPAT_PATTERN: the pattern, values where the mask has
-+ * enum nl80211_packet_pattern_attr - packet pattern attribute
-+ * @__NL80211_PKTPAT_INVALID: invalid number for nested attribute
-+ * @NL80211_PKTPAT_PATTERN: the pattern, values where the mask has
-  *	a zero bit are ignored
-- * @NL80211_WOWLAN_PKTPAT_MASK: pattern mask, must be long enough to have
-+ * @NL80211_PKTPAT_MASK: pattern mask, must be long enough to have
-  *	a bit for each byte in the pattern. The lowest-order bit corresponds
-  *	to the first byte of the pattern, but the bytes of the pattern are
-  *	in a little-endian-like format, i.e. the 9th byte of the pattern
-@@ -3043,23 +3077,23 @@ enum nl80211_tx_power_setting {
-  *	Note that the pattern matching is done as though frames were not
-  *	802.11 frames but 802.3 frames, i.e. the frame is fully unpacked
-  *	first (including SNAP header unpacking) and then matched.
-- * @NL80211_WOWLAN_PKTPAT_OFFSET: packet offset, pattern is matched after
-+ * @NL80211_PKTPAT_OFFSET: packet offset, pattern is matched after
-  *	these fixed number of bytes of received packet
-- * @NUM_NL80211_WOWLAN_PKTPAT: number of attributes
-- * @MAX_NL80211_WOWLAN_PKTPAT: max attribute number
-+ * @NUM_NL80211_PKTPAT: number of attributes
-+ * @MAX_NL80211_PKTPAT: max attribute number
-  */
--enum nl80211_wowlan_packet_pattern_attr {
--	__NL80211_WOWLAN_PKTPAT_INVALID,
--	NL80211_WOWLAN_PKTPAT_MASK,
--	NL80211_WOWLAN_PKTPAT_PATTERN,
--	NL80211_WOWLAN_PKTPAT_OFFSET,
-+enum nl80211_packet_pattern_attr {
-+	__NL80211_PKTPAT_INVALID,
-+	NL80211_PKTPAT_MASK,
-+	NL80211_PKTPAT_PATTERN,
-+	NL80211_PKTPAT_OFFSET,
- 
--	NUM_NL80211_WOWLAN_PKTPAT,
--	MAX_NL80211_WOWLAN_PKTPAT = NUM_NL80211_WOWLAN_PKTPAT - 1,
-+	NUM_NL80211_PKTPAT,
-+	MAX_NL80211_PKTPAT = NUM_NL80211_PKTPAT - 1,
- };
- 
- /**
-- * struct nl80211_wowlan_pattern_support - pattern support information
-+ * struct nl80211_pattern_support - packet pattern support information
-  * @max_patterns: maximum number of patterns supported
-  * @min_pattern_len: minimum length of each pattern
-  * @max_pattern_len: maximum length of each pattern
-@@ -3069,13 +3103,22 @@ enum nl80211_wowlan_packet_pattern_attr 
-  * that is part of %NL80211_ATTR_WOWLAN_TRIGGERS_SUPPORTED in the
-  * capability information given by the kernel to userspace.
-  */
--struct nl80211_wowlan_pattern_support {
-+struct nl80211_pattern_support {
- 	__u32 max_patterns;
- 	__u32 min_pattern_len;
- 	__u32 max_pattern_len;
- 	__u32 max_pkt_offset;
- } __attribute__((packed));
- 
-+/* only for backward compatibility */
-+#define __NL80211_WOWLAN_PKTPAT_INVALID __NL80211_PKTPAT_INVALID
-+#define NL80211_WOWLAN_PKTPAT_MASK NL80211_PKTPAT_MASK
-+#define NL80211_WOWLAN_PKTPAT_PATTERN NL80211_PKTPAT_PATTERN
-+#define NL80211_WOWLAN_PKTPAT_OFFSET NL80211_PKTPAT_OFFSET
-+#define NUM_NL80211_WOWLAN_PKTPAT NUM_NL80211_PKTPAT
-+#define MAX_NL80211_WOWLAN_PKTPAT MAX_NL80211_PKTPAT
-+#define nl80211_wowlan_pattern_support nl80211_pattern_support
-+
- /**
-  * enum nl80211_wowlan_triggers - WoWLAN trigger definitions
-  * @__NL80211_WOWLAN_TRIG_INVALID: invalid number for nested attributes
-@@ -3095,7 +3138,7 @@ struct nl80211_wowlan_pattern_support {
-  *	pattern matching is done after the packet is converted to the MSDU.
-  *
-  *	In %NL80211_ATTR_WOWLAN_TRIGGERS_SUPPORTED, it is a binary attribute
-- *	carrying a &struct nl80211_wowlan_pattern_support.
-+ *	carrying a &struct nl80211_pattern_support.
-  *
-  *	When reporting wakeup. it is a u32 attribute containing the 0-based
-  *	index of the pattern that caused the wakeup, in the patterns passed
-@@ -3252,7 +3295,7 @@ struct nl80211_wowlan_tcp_data_token_fea
-  * @NL80211_WOWLAN_TCP_WAKE_PAYLOAD: wake packet payload, for advertising a
-  *	u32 attribute holding the maximum length
-  * @NL80211_WOWLAN_TCP_WAKE_MASK: Wake packet payload mask, not used for
-- *	feature advertising. The mask works like @NL80211_WOWLAN_PKTPAT_MASK
-+ *	feature advertising. The mask works like @NL80211_PKTPAT_MASK
-  *	but on the TCP payload only.
-  * @NUM_NL80211_WOWLAN_TCP: number of TCP attributes
-  * @MAX_NL80211_WOWLAN_TCP: highest attribute number
-@@ -3556,6 +3599,10 @@ enum nl80211_ap_sme_features {
-  *	Peering Management entity which may be implemented by registering for
-  *	beacons or NL80211_CMD_NEW_PEER_CANDIDATE events. The mesh beacon is
-  *	still generated by the driver.
-+ * @NL80211_FEATURE_ACTIVE_MONITOR: This driver supports an active monitor
-+ *	interface. An active monitor interface behaves like a normal monitor
-+ *	interface, but gets added to the driver. It ensures that incoming
-+ *	unicast packets directed at the configured interface address get ACKed.
-  */
- enum nl80211_feature_flags {
- 	NL80211_FEATURE_SK_TX_STATUS			= 1 << 0,
-@@ -3575,6 +3622,7 @@ enum nl80211_feature_flags {
- 	NL80211_FEATURE_ADVERTISE_CHAN_LIMITS		= 1 << 14,
- 	NL80211_FEATURE_FULL_AP_CLIENT_STATE		= 1 << 15,
- 	NL80211_FEATURE_USERSPACE_MPM			= 1 << 16,
-+	NL80211_FEATURE_ACTIVE_MONITOR			= 1 << 17,
- };
- 
- /**
+@@ -2442,9 +2447,15 @@ enum nl80211_reg_rule_attr {
+  * enum nl80211_sched_scan_match_attr - scheduled scan match attributes
+  * @__NL80211_SCHED_SCAN_MATCH_ATTR_INVALID: attribute number 0 is reserved
+  * @NL80211_SCHED_SCAN_MATCH_ATTR_SSID: SSID to be used for matching,
+- * only report BSS with matching SSID.
++ *	only report BSS with matching SSID.
+  * @NL80211_SCHED_SCAN_MATCH_ATTR_RSSI: RSSI threshold (in dBm) for reporting a
+- *	BSS in scan results. Filtering is turned off if not specified.
++ *	BSS in scan results. Filtering is turned off if not specified. Note that
++ *	if this attribute is in a match set of its own, then it is treated as
++ *	the default value for all matchsets with an SSID, rather than being a
++ *	matchset of its own without an RSSI filter. This is due to problems with
++ *	how this API was implemented in the past. Also, due to the same problem,
++ *	the only way to create a matchset with only an RSSI filter (with this
++ *	attribute) is if there's only a single matchset with the RSSI attribute.
+  * @NL80211_SCHED_SCAN_MATCH_ATTR_MAX: highest scheduled scan filter
+  *	attribute number currently defined
+  * @__NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST: internal use

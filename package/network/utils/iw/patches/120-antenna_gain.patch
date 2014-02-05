@@ -1,6 +1,6 @@
 --- a/phy.c
 +++ b/phy.c
-@@ -421,3 +421,31 @@ COMMAND(set, antenna, "<bitmap> | all | 
+@@ -424,3 +424,31 @@ COMMAND(set, antenna, "<bitmap> | all |
  	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_antenna,
  	"Set a bitmap of allowed antennas to use for TX and RX.\n"
  	"The driver may reject antenna configurations it cannot support.");

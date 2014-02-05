@@ -5,7 +5,7 @@
  	interface.o ibss.o station.o survey.o util.o \
  	mesh.o mpath.o scan.o reg.o version.o \
 -	reason.o status.o connect.o link.o offch.o ps.o cqm.o \
--	bitrate.o wowlan.o roc.o p2p.o
+-	bitrate.o wowlan.o coalesce.o roc.o p2p.o
 +	reason.o status.o connect.o link.o ps.o \
 +	bitrate.o
  OBJS += sections.o
@@ -13,7 +13,7 @@
  OBJS-$(HWSIM) += hwsim.o
 --- a/info.c
 +++ b/info.c
-@@ -198,6 +198,7 @@ next:
+@@ -204,6 +204,7 @@ next:
  				}
  			}
  
@@ -21,7 +21,7 @@
  			if (tb_band[NL80211_BAND_ATTR_RATES]) {
  			printf("\t\tBitrates (non-HT):\n");
  			nla_for_each_nested(nl_rate, tb_band[NL80211_BAND_ATTR_RATES], rem_rate) {
-@@ -214,6 +215,7 @@ next:
+@@ -220,6 +221,7 @@ next:
  				printf("\n");
  			}
  			}
@@ -29,7 +29,7 @@
  		}
  	}
  
-@@ -248,6 +250,7 @@ next:
+@@ -254,6 +256,7 @@ next:
  		printf("\tCoverage class: %d (up to %dm)\n", coverage, 450 * coverage);
  	}
  
@@ -37,7 +37,7 @@
  	if (tb_msg[NL80211_ATTR_CIPHER_SUITES]) {
  		int num = nla_len(tb_msg[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
  		int i;
-@@ -259,6 +262,7 @@ next:
+@@ -265,6 +268,7 @@ next:
  					cipher_name(ciphers[i]));
  		}
  	}
@@ -45,7 +45,7 @@
  
  	if (tb_msg[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX] &&
  	    tb_msg[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX])
-@@ -278,11 +282,13 @@ next:
+@@ -284,11 +288,13 @@ next:
  			printf("\t\t * %s\n", iftype_name(nla_type(nl_mode)));
  	}
  
@@ -59,7 +59,7 @@
  
  	if (tb_msg[NL80211_ATTR_INTERFACE_COMBINATIONS]) {
  		struct nlattr *nl_combi;
-@@ -379,6 +385,7 @@ broken_combination:
+@@ -385,6 +391,7 @@ broken_combination:
  			printf("\tinterface combinations are not supported\n");
  	}
  
@@ -67,7 +67,7 @@
  	if (tb_msg[NL80211_ATTR_SUPPORTED_COMMANDS]) {
  		printf("\tSupported commands:\n");
  		nla_for_each_nested(nl_cmd, tb_msg[NL80211_ATTR_SUPPORTED_COMMANDS], rem_cmd)
-@@ -471,6 +478,7 @@ broken_combination:
+@@ -477,6 +484,7 @@ broken_combination:
  				printf("\t\t * wake up on TCP connection\n");
  		}
  	}
@@ -75,7 +75,7 @@
  
  	if (tb_msg[NL80211_ATTR_ROAM_SUPPORT])
  		printf("\tDevice supports roaming.\n");
-@@ -507,6 +515,7 @@ broken_combination:
+@@ -513,6 +521,7 @@ broken_combination:
  		}
  	}
  
@@ -83,15 +83,15 @@
  	if (tb_msg[NL80211_ATTR_FEATURE_FLAGS]) {
  		unsigned int features = nla_get_u32(tb_msg[NL80211_ATTR_FEATURE_FLAGS]);
  
-@@ -527,6 +536,7 @@ broken_combination:
+@@ -533,6 +542,7 @@ broken_combination:
  		if (features & NL80211_FEATURE_AP_SCAN)
  			printf("\tDevice supports AP scan.\n");
  	}
 +#endif
  
- 	return NL_SKIP;
- }
-@@ -558,6 +568,7 @@ TOPLEVEL(list, NULL, NL80211_CMD_GET_WIP
+ 	if (tb_msg[NL80211_ATTR_TDLS_SUPPORT])
+ 		printf("\tDevice supports T-DLS.\n");
+@@ -582,6 +592,7 @@ TOPLEVEL(list, NULL, NL80211_CMD_GET_WIP
  	 "List all wireless devices and their capabilities.");
  TOPLEVEL(phy, NULL, NL80211_CMD_GET_WIPHY, NLM_F_DUMP, CIB_NONE, handle_info, NULL);
  
@@ -99,7 +99,7 @@
  static int handle_commands(struct nl80211_state *state,
  			   struct nl_cb *cb, struct nl_msg *msg,
  			   int argc, char **argv, enum id_input id)
-@@ -570,6 +581,7 @@ static int handle_commands(struct nl8021
+@@ -594,6 +605,7 @@ static int handle_commands(struct nl8021
  }
  TOPLEVEL(commands, NULL, NL80211_CMD_GET_WIPHY, 0, CIB_NONE, handle_commands,
  	 "list all known commands and their decimal & hex value");
