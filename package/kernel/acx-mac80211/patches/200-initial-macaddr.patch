@@ -1,7 +1,7 @@
 --- a/cardsetting.c
 +++ b/cardsetting.c
-@@ -710,10 +710,25 @@ static int acx1xx_get_station_id(acx_dev
- 	u8 *stationID = adev->ie_cmd_buf;;
+@@ -715,10 +715,25 @@ int acx1xx_get_station_id(acx_device_t *
+ 	u8 *stationID = adev->ie_cmd_buf;
  	const u8 *paddr;
  	int i, res;
 +	const char *prom_addr;

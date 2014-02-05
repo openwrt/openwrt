@@ -9,11 +9,9 @@ Signed-off-by: Oliver Winker <oliver@oli1170.net>
  main.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/main.c b/main.c
-index 3af6cd0..841592f 100644
 --- a/main.c
 +++ b/main.c
-@@ -682,10 +682,17 @@ int acx_op_config(struct ieee80211_hw *hw, u32 changed)
+@@ -682,10 +682,17 @@ int acx_op_config(struct ieee80211_hw *h
  
  	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
  		logf1(L_DEBUG, "IEEE80211_CONF_CHANGE_CHANNEL,"
@@ -31,6 +29,3 @@ index 3af6cd0..841592f 100644
  
  		changed_not_done &= ~IEEE80211_CONF_CHANGE_CHANNEL;
  	}
--- 
-1.8.4.rc1
-
