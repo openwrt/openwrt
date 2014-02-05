@@ -1,6 +1,6 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -571,71 +571,12 @@ install: install-shared install-archive
+@@ -585,68 +585,12 @@ install: install-shared install-archive
  	    (mkdir -p $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir))
  	[ -d $(DESTDIR)$(includedir)/pcap ] || \
  	    (mkdir -p $(DESTDIR)$(includedir)/pcap; chmod 755 $(DESTDIR)$(includedir)/pcap)
@@ -27,42 +27,39 @@
 -	for i in $(MAN3PCAP_EXPAND:.in=); do \
 -		$(INSTALL_DATA) $$i \
 -		    $(DESTDIR)$(mandir)/man3/$$i; done
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_datalink_val_to_description.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_datalink_val_to_name.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_datalink_val_to_description.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_dump_fopen.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_dump_open.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_dump_fopen.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_freealldevs.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_findalldevs.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_freealldevs.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_perror.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_geterr.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_perror.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_sendpacket.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_inject.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_sendpacket.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_free_datalinks.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_list_datalinks.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_free_datalinks.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_free_tstamp_types.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_list_tstamp_types.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_free_tstamp_types.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_dispatch.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_loop.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_dispatch.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_minor_version.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_major_version.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_minor_version.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_next.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_next_ex.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_next.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_fopen_offline.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_open_offline.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_fopen_offline.3pcap
--	rm -f $(DESTDIR)$(mandir)/man3/pcap_getnonblock.3pcap
--	ln $(DESTDIR)$(mandir)/man3/pcap_setnonblock.3pcap \
--		 $(DESTDIR)$(mandir)/man3/pcap_getnonblock.3pcap
+-	(cd $(DESTDIR)$(mandir)/man3 && \
+-	rm -f pcap_datalink_val_to_description.3pcap && \
+-	$(LN_S) pcap_datalink_val_to_name.3pcap \
+-		 pcap_datalink_val_to_description.3pcap && \
+-	rm -f pcap_dump_fopen.3pcap && \
+-	$(LN_S) pcap_dump_open.3pcap pcap_dump_fopen.3pcap && \
+-	rm -f pcap_freealldevs.3pcap && \
+-	$(LN_S) pcap_findalldevs.3pcap pcap_freealldevs.3pcap && \
+-	rm -f pcap_perror.3pcap && \
+-	$(LN_S) pcap_geterr.3pcap pcap_perror.3pcap && \
+-	rm -f pcap_sendpacket.3pcap && \
+-	$(LN_S) pcap_inject.3pcap pcap_sendpacket.3pcap && \
+-	rm -f pcap_free_datalinks.3pcap && \
+-	$(LN_S) pcap_list_datalinks.3pcap pcap_free_datalinks.3pcap && \
+-	rm -f pcap_free_tstamp_types.3pcap && \
+-	$(LN_S) pcap_list_tstamp_types.3pcap pcap_free_tstamp_types.3pcap && \
+-	rm -f pcap_dispatch.3pcap && \
+-	$(LN_S) pcap_loop.3pcap pcap_dispatch.3pcap && \
+-	rm -f pcap_minor_version.3pcap && \
+-	$(LN_S) pcap_major_version.3pcap pcap_minor_version.3pcap && \
+-	rm -f pcap_next.3pcap && \
+-	$(LN_S) pcap_next_ex.3pcap pcap_next.3pcap && \
+-	rm -f pcap_open_dead_with_tstamp_precision.3pcap && \
+-	$(LN_S) pcap_open_dead.3pcap \
+-		 pcap_open_dead_with_tstamp_precision.3pcap && \
+-	rm -f pcap_open_offline_with_tstamp_precision.3pcap && \
+-	$(LN_S) pcap_open_offline.3pcap pcap_open_offline_with_tstamp_precision.3pcap && \
+-	rm -f pcap_fopen_offline.3pcap && \
+-	$(LN_S) pcap_open_offline.3pcap pcap_fopen_offline.3pcap && \
+-	rm -f pcap_fopen_offline_with_tstamp_precision.3pcap && \
+-	$(LN_S) pcap_open_offline.3pcap pcap_fopen_offline_with_tstamp_precision.3pcap && \
+-	rm -f pcap_getnonblock.3pcap && \
+-	$(LN_S) pcap_setnonblock.3pcap pcap_getnonblock.3pcap)
 -	for i in $(MANFILE); do \
 -		$(INSTALL_DATA) `echo $$i | sed 's/.manfile.in/.manfile/'` \
 -		    $(DESTDIR)$(mandir)/man@MAN_FILE_FORMATS@/`echo $$i | sed 's/.manfile.in/.@MAN_FILE_FORMATS@/'`; done
