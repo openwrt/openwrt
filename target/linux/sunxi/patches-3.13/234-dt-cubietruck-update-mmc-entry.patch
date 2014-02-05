@@ -1,0 +1,15 @@
+diff -ruN old/arch/arm/boot/dts/sun7i-a20-cubietruck.dts new/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
+--- old/arch/arm/boot/dts/sun7i-a20-cubietruck.dts	2014-01-31 18:02:42.000000000 +0100
++++ new/arch/arm/boot/dts/sun7i-a20-cubietruck.dts	2014-01-31 18:07:13.719332547 +0100
+@@ -19,9 +19,9 @@
+ 	compatible = "cubietech,cubietruck", "allwinner,sun7i-a20";
+ 
+ 	soc@01c00000 {
+-		sdc0: sdc@01c0f000 {
++		mmc0: mmc@01c0f000 {
+ 			pinctrl-names = "default";
+-			pinctrl-0 = <&sdc0_pins_a>;
++			pinctrl-0 = <&mmc0_pins_a>;
+ 			pinctrl-1 = <&mmc0_cd_pin_cubietruck>;
+ 			cd-gpios = <&pio 7 1 0>; /* PH1 */
+ 			cd-mode = <1>;

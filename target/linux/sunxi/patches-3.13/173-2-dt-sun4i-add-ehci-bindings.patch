@@ -1,0 +1,63 @@
+From ec53e86224acaa3891148fa298bb1504f3579d6b Mon Sep 17 00:00:00 2001
+From: arokux <arokux@gmail.com>
+Date: Wed, 18 Sep 2013 00:30:04 +0200
+Subject: [PATCH] ARM: sun4i: dt: Add USB EHCI bindings
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+
+Conflicts:
+	arch/arm/boot/dts/sun4i-a10.dtsi
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index c9913c0..64eda82 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -17,6 +17,8 @@
+ 
+ 	aliases {
+ 		ethernet0 = &emac;
++		ehci1 = &ehci0;
++		ehci2 = &ehci1;
+ 	};
+ 
+ 	cpus {
+@@ -556,5 +558,33 @@
+ 			clock-frequency = <100000>;
+ 			status = "disabled";
+ 		};
++
++		usb_rst: reset@0x01c200cc {
++		        #reset-cells = <1>;
++		        compatible = "allwinner,sun4i-clock-reset";
++		        reg = <0x01c200cc 0x4>;
++		};
++
++		ehci0: ehci0@0x01c14000 {
++			compatible = "allwinner,sunxi-ehci";
++			reg = <0x01c14000 0x400 0x01c14800 0x4 0x01c13404 0x4>;
++			interrupts = <39>;
++			resets = <&usb_rst 1>;
++			reset-names = "ehci_reset";
++			clocks = <&usb 8>, <&ahb_gates 1>;
++			clock-names = "usb_phy", "ahb_ehci";
++			status = "disabled";
++		};
++
++		ehci1: ehci1@0x01c1c000 {
++			compatible = "allwinner,sunxi-ehci";
++			reg = <0x01c1c000 0x400 0x01c1c800 0x4 0x01c13404 0x4>;
++			interrupts = <40>;
++			resets = <&usb_rst 2>;
++			reset-names = "ehci_reset";
++			clocks = <&usb 8>, <&ahb_gates 3>;
++			clock-names = "usb_phy", "ahb_ehci";
++			status = "disabled";
++		};
+ 	};
+ };
+-- 
+1.8.5.1
+

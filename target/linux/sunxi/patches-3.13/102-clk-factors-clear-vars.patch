@@ -1,0 +1,32 @@
+From 789bea92aba0256a7f5309992327df8729333750 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Fri, 20 Sep 2013 22:03:11 -0300
+Subject: [PATCH] clk: sunxi: factors: clear variables before using them
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Random bits may get into our factors if we don't clear n, k, m and p.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ drivers/clk/sunxi/clk-factors.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clk/sunxi/clk-factors.c b/drivers/clk/sunxi/clk-factors.c
+index 5687ac9..f05207a 100644
+--- a/drivers/clk/sunxi/clk-factors.c
++++ b/drivers/clk/sunxi/clk-factors.c
+@@ -88,7 +88,7 @@ static long clk_factors_round_rate(struct clk_hw *hw, unsigned long rate,
+ static int clk_factors_set_rate(struct clk_hw *hw, unsigned long rate,
+ 				unsigned long parent_rate)
+ {
+-	u8 n, k, m, p;
++	u8 n = 0, k = 0, m = 0, p = 0;
+ 	u32 reg;
+ 	struct clk_factors *factors = to_clk_factors(hw);
+ 	struct clk_factors_config *config = factors->config;
+-- 
+1.8.5.1
+
