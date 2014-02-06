@@ -1,0 +1,47 @@
+From a1c859ab115c043662c2779d2e965bb09a90b8cb Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Tue, 17 Dec 2013 23:57:24 +0100
+Subject: [PATCH] ARM: sunxi-clock-reset: rename compat property
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun6i-a31.dtsi | 4 ++--
+ drivers/reset/reset-sunxi.c      | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sun6i-a31.dtsi b/arch/arm/boot/dts/sun6i-a31.dtsi
+index 5256ad9..ab6ea43 100644
+--- a/arch/arm/boot/dts/sun6i-a31.dtsi
++++ b/arch/arm/boot/dts/sun6i-a31.dtsi
+@@ -220,13 +220,13 @@
+ 
+ 		apb1_rst: reset@01c202d0 {
+ 			#reset-cells = <1>;
+-			compatible = "allwinner,sun6i-a31-clock-reset";
++			compatible = "allwinner,sun4i-clock-reset";
+ 			reg = <0x01c202d0 0x4>;
+ 		};
+ 
+ 		apb2_rst: reset@01c202d8 {
+ 			#reset-cells = <1>;
+-			compatible = "allwinner,sun6i-a31-clock-reset";
++			compatible = "allwinner,sun4i-clock-reset";
+ 			reg = <0x01c202d8 0x4>;
+ 		};
+ 
+diff --git a/drivers/reset/reset-sunxi.c b/drivers/reset/reset-sunxi.c
+index 695bd34..3db179c 100644
+--- a/drivers/reset/reset-sunxi.c
++++ b/drivers/reset/reset-sunxi.c
+@@ -138,7 +138,7 @@ void __init sun6i_reset_init(void)
+  * device model.
+  */
+ static const struct of_device_id sunxi_reset_dt_ids[] = {
+-	 { .compatible = "allwinner,sun6i-a31-clock-reset", },
++	 { .compatible = "allwinner,sun4i-clock-reset", },
+ 	 { /* sentinel */ },
+ };
+ MODULE_DEVICE_TABLE(of, sunxi_reset_dt_ids);
+-- 
+1.8.5.1
+
