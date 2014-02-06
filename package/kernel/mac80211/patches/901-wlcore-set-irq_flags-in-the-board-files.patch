@@ -91,7 +91,7 @@ Acked-by: Sekhar Nori <nsekhar@ti.com>
  #else
  	ret = request_threaded_irq(wl->irq, hardirq_fn, wlcore_irq,
 -				   irqflags, pdev->name, wl);
-+				   wl->irqflags, pdev->name, wl);
++				   wl->irq_flags, pdev->name, wl);
  #endif
  	if (ret < 0) {
  		wl1271_error("request_irq() failed: %d", ret);
