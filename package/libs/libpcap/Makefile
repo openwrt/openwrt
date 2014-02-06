@@ -59,7 +59,11 @@ CONFIGURE_ARGS += \
 	--without-septel \
 	--without-dag \
 	--without-libnl \
-	--disable-can
+	--without-snf \
+	--disable-can \
+	--disable-canusb \
+	--disable-dbus \
+	--disable-bluetooth
 
 ifeq ($(CONFIG_IPV6),y)
 CONFIGURE_ARGS += \
