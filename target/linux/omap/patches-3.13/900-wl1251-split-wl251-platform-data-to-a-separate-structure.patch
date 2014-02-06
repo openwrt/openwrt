@@ -1,0 +1,198 @@
+Move the wl1251 part of the wl12xx platform data structure into a new
+structure specifically for wl1251.  Change the platform data built-in
+block and board files accordingly.
+
+Cc: Tony Lindgren <tony@atomide.com>
+Signed-off-by: Luciano Coelho <coelho@ti.com>
+Acked-by: Tony Lindgren <tony@atomide.com>
+Reviewed-by: Felipe Balbi <balbi@ti.com>
+
+---
+ arch/arm/mach-omap2/board-omap3pandora.c       |  4 +--
+ arch/arm/mach-omap2/board-rx51-peripherals.c   |  2 +-
+ drivers/net/wireless/ti/wilink_platform_data.c | 37 +++++++++++++++++++++-----
+ drivers/net/wireless/ti/wl1251/sdio.c          | 12 ++++-----
+ drivers/net/wireless/ti/wl1251/spi.c           |  2 +-
+ include/linux/wl12xx.h                         | 22 ++++++++++++++-
+ 6 files changed, 62 insertions(+), 17 deletions(-)
+
+--- a/arch/arm/mach-omap2/board-omap3pandora.c
++++ b/arch/arm/mach-omap2/board-omap3pandora.c
+@@ -536,7 +536,7 @@ static struct spi_board_info omap3pandor
+ 
+ static void __init pandora_wl1251_init(void)
+ {
+-	struct wl12xx_platform_data pandora_wl1251_pdata;
++	struct wl1251_platform_data pandora_wl1251_pdata;
+ 	int ret;
+ 
+ 	memset(&pandora_wl1251_pdata, 0, sizeof(pandora_wl1251_pdata));
+@@ -550,7 +550,7 @@ static void __init pandora_wl1251_init(v
+ 		goto fail_irq;
+ 
+ 	pandora_wl1251_pdata.use_eeprom = true;
+-	ret = wl12xx_set_platform_data(&pandora_wl1251_pdata);
++	ret = wl1251_set_platform_data(&pandora_wl1251_pdata);
+ 	if (ret < 0)
+ 		goto fail_irq;
+ 
+--- a/arch/arm/mach-omap2/board-rx51-peripherals.c
++++ b/arch/arm/mach-omap2/board-rx51-peripherals.c
+@@ -84,7 +84,7 @@ enum {
+ 	RX51_SPI_MIPID,		/* LCD panel */
+ };
+ 
+-static struct wl12xx_platform_data wl1251_pdata;
++static struct wl1251_platform_data wl1251_pdata;
+ static struct tsc2005_platform_data tsc2005_pdata;
+ 
+ #if defined(CONFIG_SENSORS_LIS3_I2C) || defined(CONFIG_SENSORS_LIS3_I2C_MODULE)
+--- a/drivers/net/wireless/ti/wilink_platform_data.c
++++ b/drivers/net/wireless/ti/wilink_platform_data.c
+@@ -23,17 +23,17 @@
+ #include <linux/err.h>
+ #include <linux/wl12xx.h>
+ 
+-static struct wl12xx_platform_data *platform_data;
++static struct wl12xx_platform_data *wl12xx_platform_data;
+ 
+ int __init wl12xx_set_platform_data(const struct wl12xx_platform_data *data)
+ {
+-	if (platform_data)
++	if (wl12xx_platform_data)
+ 		return -EBUSY;
+ 	if (!data)
+ 		return -EINVAL;
+ 
+-	platform_data = kmemdup(data, sizeof(*data), GFP_KERNEL);
+-	if (!platform_data)
++	wl12xx_platform_data = kmemdup(data, sizeof(*data), GFP_KERNEL);
++	if (!wl12xx_platform_data)
+ 		return -ENOMEM;
+ 
+ 	return 0;
+@@ -41,9 +41,34 @@ int __init wl12xx_set_platform_data(cons
+ 
+ struct wl12xx_platform_data *wl12xx_get_platform_data(void)
+ {
+-	if (!platform_data)
++	if (!wl12xx_platform_data)
+ 		return ERR_PTR(-ENODEV);
+ 
+-	return platform_data;
++	return wl12xx_platform_data;
+ }
+ EXPORT_SYMBOL(wl12xx_get_platform_data);
++
++static struct wl1251_platform_data *wl1251_platform_data;
++
++int __init wl1251_set_platform_data(const struct wl1251_platform_data *data)
++{
++	if (wl1251_platform_data)
++		return -EBUSY;
++	if (!data)
++		return -EINVAL;
++
++	wl1251_platform_data = kmemdup(data, sizeof(*data), GFP_KERNEL);
++	if (!wl1251_platform_data)
++		return -ENOMEM;
++
++	return 0;
++}
++
++struct wl1251_platform_data *wl1251_get_platform_data(void)
++{
++	if (!wl1251_platform_data)
++		return ERR_PTR(-ENODEV);
++
++	return wl1251_platform_data;
++}
++EXPORT_SYMBOL(wl1251_get_platform_data);
+--- a/drivers/net/wireless/ti/wl1251/sdio.c
++++ b/drivers/net/wireless/ti/wl1251/sdio.c
+@@ -227,7 +227,7 @@ static int wl1251_sdio_probe(struct sdio
+ 	struct wl1251 *wl;
+ 	struct ieee80211_hw *hw;
+ 	struct wl1251_sdio *wl_sdio;
+-	const struct wl12xx_platform_data *wl12xx_board_data;
++	const struct wl1251_platform_data *wl1251_board_data;
+ 
+ 	hw = wl1251_alloc_hw();
+ 	if (IS_ERR(hw))
+@@ -254,11 +254,11 @@ static int wl1251_sdio_probe(struct sdio
+ 	wl->if_priv = wl_sdio;
+ 	wl->if_ops = &wl1251_sdio_ops;
+ 
+-	wl12xx_board_data = wl12xx_get_platform_data();
+-	if (!IS_ERR(wl12xx_board_data)) {
+-		wl->set_power = wl12xx_board_data->set_power;
+-		wl->irq = wl12xx_board_data->irq;
+-		wl->use_eeprom = wl12xx_board_data->use_eeprom;
++	wl1251_board_data = wl1251_get_platform_data();
++	if (!IS_ERR(wl1251_board_data)) {
++		wl->set_power = wl1251_board_data->set_power;
++		wl->irq = wl1251_board_data->irq;
++		wl->use_eeprom = wl1251_board_data->use_eeprom;
+ 	}
+ 
+ 	if (wl->irq) {
+--- a/drivers/net/wireless/ti/wl1251/spi.c
++++ b/drivers/net/wireless/ti/wl1251/spi.c
+@@ -238,7 +238,7 @@ static const struct wl1251_if_operations
+ 
+ static int wl1251_spi_probe(struct spi_device *spi)
+ {
+-	struct wl12xx_platform_data *pdata;
++	struct wl1251_platform_data *pdata;
+ 	struct ieee80211_hw *hw;
+ 	struct wl1251 *wl;
+ 	int ret;
+--- a/include/linux/wl12xx.h
++++ b/include/linux/wl12xx.h
+@@ -48,11 +48,15 @@ enum {
+ 	WL12XX_TCXOCLOCK_33_6	= 7, /* 33.6 MHz */
+ };
+ 
+-struct wl12xx_platform_data {
++struct wl1251_platform_data {
+ 	void (*set_power)(bool enable);
+ 	/* SDIO only: IRQ number if WLAN_IRQ line is used, 0 for SDIO IRQs */
+ 	int irq;
+ 	bool use_eeprom;
++};
++
++struct wl12xx_platform_data {
++	int irq;
+ 	int board_ref_clock;
+ 	int board_tcxo_clock;
+ 	unsigned long platform_quirks;
+@@ -68,6 +72,10 @@ int wl12xx_set_platform_data(const struc
+ 
+ struct wl12xx_platform_data *wl12xx_get_platform_data(void);
+ 
++int wl1251_set_platform_data(const struct wl1251_platform_data *data);
++
++struct wl1251_platform_data *wl1251_get_platform_data(void);
++
+ #else
+ 
+ static inline
+@@ -81,6 +89,18 @@ struct wl12xx_platform_data *wl12xx_get_
+ {
+ 	return ERR_PTR(-ENODATA);
+ }
++
++static inline
++int wl1251_set_platform_data(const struct wl1251_platform_data *data)
++{
++	return -ENOSYS;
++}
++
++static inline
++struct wl1251_platform_data *wl1251_get_platform_data(void)
++{
++	return ERR_PTR(-ENODATA);
++}
+ 
+ #endif
+ 
