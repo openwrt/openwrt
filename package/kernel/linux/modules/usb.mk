@@ -205,7 +205,7 @@ $(eval $(call KernelPackage,usb2-pci))
 
 define KernelPackage/usb-dwc2
   TITLE:=DWC2 USB controller driver
-  DEPENDS:=@LINUX_3_10
+  DEPENDS:=@(!LINUX_3_3&&!LINUX_3_6&&!LINUX_3_8&&!LINUX_3_9)
   KCONFIG:= \
 	CONFIG_USB_DWC2 \
 	CONFIG_USB_DWC2_DEBUG=n \
