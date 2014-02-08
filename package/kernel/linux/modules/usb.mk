@@ -969,6 +969,21 @@ endef
 $(eval $(call KernelPackage,usb-net-ipheth))
 
 
+define KernelPackage/usb-net-kalmia
+  TITLE:=Samsung Kalmia based LTE USB modem
+  KCONFIG:=CONFIG_USB_NET_KALMIA
+  FILES:=$(LINUX_DIR)/drivers/net/usb/kalmia.ko
+  AUTOLOAD:=$(call AutoProbe,kalmia)
+  $(call AddDepends/usb-net)
+endef
+
+define KernelPackage/usb-net-kalmia/description
+ Kernel support for Samsung Kalmia based LTE USB modem
+endef
+
+$(eval $(call KernelPackage,usb-net-kalmia))
+
+
 define KernelPackage/usb-hid
   TITLE:=Support for USB Human Input Devices
   KCONFIG:=CONFIG_HID_SUPPORT=y CONFIG_USB_HID CONFIG_USB_HIDDEV=y
