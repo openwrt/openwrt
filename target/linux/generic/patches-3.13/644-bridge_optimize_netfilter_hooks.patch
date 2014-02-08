@@ -100,7 +100,7 @@
  
  /* br_netfilter.c */
  #ifdef CONFIG_BRIDGE_NETFILTER
-+int brnf_call_ebtables;
++extern int brnf_call_ebtables;
  int br_netfilter_init(void);
  void br_netfilter_fini(void);
  void br_netfilter_rtable_init(struct net_bridge *);
