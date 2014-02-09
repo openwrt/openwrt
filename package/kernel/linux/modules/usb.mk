@@ -43,7 +43,7 @@ define KernelPackage/musb-hdrc
 	CONFIG_MUSB_PIO_ONLY=n \
 	CONFIG_USB_MUSB_DUAL_ROLE=y \
 	CONFIG_USB_MUSB_DEBUG=y
-  DEPENDS:=@TARGET_omap24xx
+  DEPENDS:=@(TARGET_omap||TARGET_omap24xx)
   FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
   AUTOLOAD:=$(call AutoLoad,46,musb_hdrc)
   $(call AddDepends/usb)
@@ -61,7 +61,7 @@ define KernelPackage/nop-usb-xceiv
   TITLE:=Support for USB OTG NOP transceiver
   KCONFIG:= \
 	CONFIG_NOP_USB_XCEIV
-  DEPENDS:=@TARGET_omap24xx
+  DEPENDS:=+kmod-musb-hdrc
   FILES:=$(LINUX_DIR)/drivers/usb/otg/nop-usb-xceiv.ko
   AUTOLOAD:=$(call AutoLoad,45,nop-usb-xceiv)
   $(call AddDepends/usb)
