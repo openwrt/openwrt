@@ -41,7 +41,7 @@ define KernelPackage/musb-hdrc
   KCONFIG:= \
 	CONFIG_USB_MUSB_HDRC \
 	CONFIG_MUSB_PIO_ONLY=n \
-	CONFIG_USB_MUSB_OTG=y \
+	CONFIG_USB_MUSB_DUAL_ROLE=y \
 	CONFIG_USB_MUSB_DEBUG=y
   DEPENDS:=@TARGET_omap24xx
   FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
