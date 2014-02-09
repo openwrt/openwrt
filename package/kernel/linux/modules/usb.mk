@@ -36,6 +36,44 @@ define AddDepends/usb
 endef
 
 
+define KernelPackage/musb-hdrc
+  TITLE:=Support for Mentor Graphics silicon dual role USB
+  KCONFIG:= \
+	CONFIG_USB_MUSB_HDRC \
+	CONFIG_MUSB_PIO_ONLY=n \
+	CONFIG_USB_MUSB_OTG=y \
+	CONFIG_USB_MUSB_DEBUG=y
+  DEPENDS:=@TARGET_omap24xx
+  FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
+  AUTOLOAD:=$(call AutoLoad,46,musb_hdrc)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/musb-hdrc/description
+  Kernel support for Mentor Graphics silicon dual role USB device.
+endef
+
+$(eval $(call KernelPackage,musb-hdrc))
+
+
+
+define KernelPackage/nop-usb-xceiv
+  TITLE:=Support for USB OTG NOP transceiver
+  KCONFIG:= \
+	CONFIG_NOP_USB_XCEIV
+  DEPENDS:=@TARGET_omap24xx
+  FILES:=$(LINUX_DIR)/drivers/usb/otg/nop-usb-xceiv.ko
+  AUTOLOAD:=$(call AutoLoad,45,nop-usb-xceiv)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/nop-usb-xceiv/description
+  Support for USB OTG NOP transceiver
+endef
+
+$(eval $(call KernelPackage,nop-usb-xceiv))
+
+
 define KernelPackage/usb-gadget
   TITLE:=USB Gadget support
   KCONFIG:=CONFIG_USB_GADGET
