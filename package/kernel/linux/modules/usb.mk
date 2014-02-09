@@ -47,7 +47,7 @@ define KernelPackage/musb-hdrc
 	CONFIG_USB_MUSB_GADGET=n \
 	CONFIG_USB_MUSB_HOST=n \
 	CONFIG_USB_MUSB_DEBUG=y
-  DEPENDS:=@(TARGET_omap||TARGET_omap24xx)
+  DEPENDS:=@(TARGET_omap||TARGET_omap24xx) +kmod-usb-gadget
   FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
   AUTOLOAD:=$(call AutoLoad,46,musb_hdrc)
   $(call AddDepends/usb)
