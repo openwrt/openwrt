@@ -40,7 +40,9 @@ define KernelPackage/musb-hdrc
   TITLE:=Support for Mentor Graphics silicon dual role USB
   KCONFIG:= \
 	CONFIG_USB_MUSB_HDRC \
-	CONFIG_MUSB_PIO_ONLY=n \
+	CONFIG_USB_INVENTRA_DMA=n \
+	CONFIG_USB_TI_CPPI41_DMA=n \
+	CONFIG_MUSB_PIO_ONLY=y \
 	CONFIG_USB_MUSB_DUAL_ROLE=y \
 	CONFIG_USB_MUSB_GADGET=n \
 	CONFIG_USB_MUSB_HOST=n \
