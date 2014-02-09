@@ -36,7 +36,7 @@ define AddDepends/usb
 endef
 
 
-define KernelPackage/musb-hdrc
+define KernelPackage/usb-musb-hdrc
   TITLE:=Support for Mentor Graphics silicon dual role USB
   KCONFIG:= \
 	CONFIG_USB_MUSB_HDRC \
@@ -47,21 +47,57 @@ define KernelPackage/musb-hdrc
 	CONFIG_USB_MUSB_GADGET=n \
 	CONFIG_USB_MUSB_HOST=n \
 	CONFIG_USB_MUSB_DEBUG=y
-  DEPENDS:=@(TARGET_omap||TARGET_omap24xx) +kmod-usb-gadget
+  DEPENDS:= \
+	@(TARGET_omap||TARGET_omap24xx) +kmod-usb-gadget \
+	+TARGET_omap24xx:kmod-usb-musb-tusb6010 \
+	+TARGET_omap:kmod-usb-musb-platformglue
   FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
   AUTOLOAD:=$(call AutoLoad,46,musb_hdrc)
   $(call AddDepends/usb)
 endef
 
-define KernelPackage/musb-hdrc/description
+define KernelPackage/usb-musb-hdrc/description
   Kernel support for Mentor Graphics silicon dual role USB device.
 endef
 
-$(eval $(call KernelPackage,musb-hdrc))
+$(eval $(call KernelPackage,usb-musb-hdrc))
 
 
+define KernelPackage/usb-musb-platformglue
+  TITLE:=MUSB platform glue layer
+  KCONFIG:= \
+	CONFIG_USB_MUSB_TUSB6010=n \
+	USB_MUSB_OMAP2PLUS \
+	USB_MUSB_AM35X \
+	USB_MUSB_DSPS=n\
+	USB_MUSB_UX500=n
+#  DEPENDS:=+kmod-usb-musb-hdrc
+  $(call AddDepends/usb)
+endef
 
-define KernelPackage/nop-usb-xceiv
+define KernelPackage/usb-musb-platformglue/description
+  MUSB platform glue modules
+endef
+
+$(eval $(call KernelPackage,usb-musb-platformglue))
+
+
+define KernelPackage/usb-musb-tusb6010
+  TITLE:=Support for TUSB 6010
+  KCONFIG:= \
+	CONFIG_USB_MUSB_TUSB6010
+#  DEPENDS:=+kmod-usb-musb-hdrc +kmod-usb-nop-usb-xceiv
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-musb-tusb6010/description
+  TUSB6010 support
+endef
+
+$(eval $(call KernelPackage,usb-musb-tusb6010))
+
+
+define KernelPackage/usb-nop-usb-xceiv
   TITLE:=Support for USB OTG NOP transceiver
   KCONFIG:= \
 	CONFIG_NOP_USB_XCEIV
@@ -71,11 +107,11 @@ define KernelPackage/nop-usb-xceiv
   $(call AddDepends/usb)
 endef
 
-define KernelPackage/nop-usb-xceiv/description
+define KernelPackage/usb-nop-usb-xceiv/description
   Support for USB OTG NOP transceiver
 endef
 
-$(eval $(call KernelPackage,nop-usb-xceiv))
+$(eval $(call KernelPackage,usb-nop-usb-xceiv))
 
 
 define KernelPackage/usb-gadget
