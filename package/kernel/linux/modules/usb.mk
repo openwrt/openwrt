@@ -67,11 +67,11 @@ define KernelPackage/usb-musb-platformglue
   TITLE:=MUSB platform glue layer
   KCONFIG:= \
 	CONFIG_USB_MUSB_TUSB6010=n \
-	USB_MUSB_OMAP2PLUS \
-	USB_MUSB_AM35X \
-	USB_MUSB_DSPS=n\
-	USB_MUSB_UX500=n
-#  DEPENDS:=+kmod-usb-musb-hdrc
+	CONFIG_USB_MUSB_OMAP2PLUS \
+	CONFIG_USB_MUSB_AM35X \
+	CONFIG_USB_MUSB_DSPS=n\
+	CONFIG_USB_MUSB_UX500=n
+  DEPENDS:=@TARGET_omap
   $(call AddDepends/usb)
 endef
 
@@ -84,9 +84,8 @@ $(eval $(call KernelPackage,usb-musb-platformglue))
 
 define KernelPackage/usb-musb-tusb6010
   TITLE:=Support for TUSB 6010
-  KCONFIG:= \
-	CONFIG_USB_MUSB_TUSB6010
-#  DEPENDS:=+kmod-usb-musb-hdrc +kmod-usb-nop-usb-xceiv
+  KCONFIG:=CONFIG_USB_MUSB_TUSB6010
+  DEPENDS:=@TARGET_omap24xx
   $(call AddDepends/usb)
 endef
 
@@ -97,21 +96,83 @@ endef
 $(eval $(call KernelPackage,usb-musb-tusb6010))
 
 
-define KernelPackage/usb-nop-usb-xceiv
-  TITLE:=Support for USB OTG NOP transceiver
-  KCONFIG:= \
-	CONFIG_NOP_USB_XCEIV
-  DEPENDS:=+kmod-musb-hdrc
-  FILES:=$(LINUX_DIR)/drivers/usb/otg/nop-usb-xceiv.ko
-  AUTOLOAD:=$(call AutoLoad,45,nop-usb-xceiv)
+define KernelPackage/usb-phy-nop
+  TITLE:=Support for USB NOP transceiver
+  KCONFIG:=CONFIG_NOP_USB_XCEIV
+  FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-generic.ko
+  AUTOLOAD:=$(call AutoLoad,45,phy-generic)
   $(call AddDepends/usb)
 endef
 
-define KernelPackage/usb-nop-usb-xceiv/description
-  Support for USB OTG NOP transceiver
+define KernelPackage/usb-phy-nop/description
+  Support for USB NOP transceiver
 endef
 
-$(eval $(call KernelPackage,usb-nop-usb-xceiv))
+$(eval $(call KernelPackage,usb-phy-nop))
+
+
+define KernelPackage/usb-phy-am335x
+  TITLE:=Support for AM335x USB PHY
+  KCONFIG:=CONFIG_AM335X_PHY_USB
+  DEPENDS:=@TARGET_omap +kmod-usb-phy-nop
+  FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-am335x.ko
+  AUTOLOAD:=$(call AutoLoad,45,phy-am335x)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-phy-am335x/description
+  Support for AM335x USB PHY
+endef
+
+$(eval $(call KernelPackage,usb-phy-am335x))
+
+
+define KernelPackage/usb-phy-omap-usb3
+  TITLE:=Support for OMAP USB3 PHY
+  KCONFIG:=CONFIG_OMAP_USB3
+  DEPENDS:=@TARGET_omap
+  FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-omap-usb3.ko
+  AUTOLOAD:=$(call AutoLoad,45,phy-omap-usb3)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-phy-omap-usb3/description
+  Support for OMAP USB3 PHY
+endef
+
+$(eval $(call KernelPackage,usb-phy-omap-usb3))
+
+
+define KernelPackage/usb-phy-twl4030
+  TITLE:=Support for TWL6030 OTG PHY
+  KCONFIG:=CONFIG_TWL4030_USB
+  DEPENDS:=@TARGET_omap
+  FILES:=$(LINUX_DIR)/drivers/phy/phy-twl4030-usb.ko
+  AUTOLOAD:=$(call AutoLoad,45,phy-twl4030-usb)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-phy-twl4030/description
+  Support for TWL4030/TWL5030/TPS659x0 OTG PHY
+endef
+
+$(eval $(call KernelPackage,usb-phy-twl4030))
+
+
+define KernelPackage/usb-phy-twl6030
+  TITLE:=Support for TWL6030 OTG PHY
+  KCONFIG:=CONFIG_TWL6030_USB
+  DEPENDS:=@TARGET_omap
+  FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-twl6030-usb.ko
+  AUTOLOAD:=$(call AutoLoad,45,phy-twl6030-usb)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-phy-twl6030/description
+  Support for TWL6030 OTG PHY
+endef
+
+$(eval $(call KernelPackage,usb-phy-twl6030))
 
 
 define KernelPackage/usb-gadget
@@ -232,11 +293,32 @@ endef
 $(eval $(call KernelPackage,usb2-fsl))
 
 
+define KernelPackage/usb2-omap
+  TITLE:=Support for USB2 for OMAP
+  DEPENDS:=@TARGET_omap +kmod-usb-phy-nop +kmod-usb-phy-am335x
+  KCONFIG:=\
+	CONFIG_USB_EHCI_HCD_OMAP \
+	CONFIG_OMAP_USB2
+  FILES:= \
+	$(LINUX_DIR)/drivers/phy/phy-omap2-usb.ko \
+	$(LINUX_DIR)/drivers/usb/host/ehci-omap.ko
+  AUTOLOAD:=$(call AutoLoad,39,phy-omap2-usb ehci-omap)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb2-omap/description
+ Kernel support for OMAP USB2 (EHCI) controllers
+endef
+
+$(eval $(call KernelPackage,usb2-omap))
+
+
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   DEPENDS:=\
 	+TARGET_brcm47xx:kmod-usb-brcm47xx \
-	+TARGET_mpc85xx:kmod-usb2-fsl
+	+TARGET_mpc85xx:kmod-usb2-fsl \
+	+TARGET_omap:kmod-usb2-omap
   KCONFIG:=\
 	CONFIG_USB_EHCI_HCD \
 	CONFIG_USB_EHCI_ATH79=y \
@@ -1229,6 +1311,7 @@ $(eval $(call KernelPackage,usbmon))
 
 define KernelPackage/usb3
   TITLE:=Support for USB3 controllers
+  DEPENDS:=+TARGET_omap:kmod-usb-phy-omap-usb3
   KCONFIG:= \
 	CONFIG_USB_XHCI_HCD \
 	CONFIG_USB_XHCI_HCD_DEBUGGING=n
