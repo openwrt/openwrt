@@ -102,8 +102,18 @@ $(eval $(call KernelPackage,usb-musb-tusb6010))
 define KernelPackage/usb-phy-nop
   TITLE:=Support for USB NOP transceiver
   KCONFIG:=CONFIG_NOP_USB_XCEIV
+ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/phy/phy-generic.ko),)
   FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-generic.ko
   AUTOLOAD:=$(call AutoLoad,43,phy-generic)
+else
+ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/phy/phy-nop.ko),)
+  FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-nop.ko
+  AUTOLOAD:=$(call AutoLoad,43,phy-nop)
+else
+  FILES:=$(LINUX_DIR)/drivers/usb/otg/nop-usb-xceiv.ko
+  AUTOLOAD:=$(call AutoLoad,43,nop-usb-xceiv)
+endif
+endif
   $(call AddDepends/usb)
 endef
 
