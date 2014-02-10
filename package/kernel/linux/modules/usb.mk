@@ -72,7 +72,6 @@ define KernelPackage/usb-musb-platformglue
 	CONFIG_USB_MUSB_UX500=n
   DEPENDS:=@TARGET_omap +kmod-usb-phy-nop +kmod-usb-musb-hdrc +kmod-usb-phy-am335x
   FILES:= \
-	$(LINUX_DIR)/drivers/usb/phy/phy-omap-control.ko \
 	$(LINUX_DIR)/drivers/usb/musb/musb_dsps.ko \
 	$(LINUX_DIR)/drivers/usb/musb/musb_am335x.ko
   AUTOLOAD:=$(call AutoLoad,45,phy-omap-control musb_dsps musb_am335x)
