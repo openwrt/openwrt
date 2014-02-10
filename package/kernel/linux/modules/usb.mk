@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -49,8 +49,7 @@ define KernelPackage/usb-musb-hdrc
 	CONFIG_USB_MUSB_DEBUG=y
   DEPENDS:= \
 	@(TARGET_omap||TARGET_omap24xx) +kmod-usb-gadget \
-	+TARGET_omap24xx:kmod-usb-musb-tusb6010 \
-	+TARGET_omap:kmod-usb-musb-platformglue
+	+TARGET_omap24xx:kmod-usb-musb-tusb6010
   FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
   AUTOLOAD:=$(call AutoLoad,46,musb_hdrc)
   $(call AddDepends/usb)
@@ -67,11 +66,16 @@ define KernelPackage/usb-musb-platformglue
   TITLE:=MUSB platform glue layer
   KCONFIG:= \
 	CONFIG_USB_MUSB_TUSB6010=n \
-	CONFIG_USB_MUSB_OMAP2PLUS \
-	CONFIG_USB_MUSB_AM35X \
-	CONFIG_USB_MUSB_DSPS=n\
+	CONFIG_USB_MUSB_OMAP2PLUS=n \
+	CONFIG_USB_MUSB_AM35X=n \
+	CONFIG_USB_MUSB_DSPS \
 	CONFIG_USB_MUSB_UX500=n
-  DEPENDS:=@TARGET_omap
+  DEPENDS:=@TARGET_omap +kmod-usb-phy-nop +kmod-usb-musb-hdrc +kmod-usb-phy-am335x
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/phy/phy-omap-control.ko \
+	$(LINUX_DIR)/drivers/usb/musb/musb_dsps.ko \
+	$(LINUX_DIR)/drivers/usb/musb/musb_am335x.ko
+  AUTOLOAD:=$(call AutoLoad,45,phy-omap-control musb_dsps musb_am335x)
   $(call AddDepends/usb)
 endef
 
@@ -100,7 +104,7 @@ define KernelPackage/usb-phy-nop
   TITLE:=Support for USB NOP transceiver
   KCONFIG:=CONFIG_NOP_USB_XCEIV
   FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-generic.ko
-  AUTOLOAD:=$(call AutoLoad,45,phy-generic)
+  AUTOLOAD:=$(call AutoLoad,43,phy-generic)
   $(call AddDepends/usb)
 endef
 
@@ -113,10 +117,14 @@ $(eval $(call KernelPackage,usb-phy-nop))
 
 define KernelPackage/usb-phy-am335x
   TITLE:=Support for AM335x USB PHY
-  KCONFIG:=CONFIG_AM335X_PHY_USB
+  KCONFIG:= \
+	CONFIG_AM335X_PHY_USB \
+	CONFIG_AM335X_CONTROL_USB
   DEPENDS:=@TARGET_omap +kmod-usb-phy-nop
-  FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-am335x.ko
-  AUTOLOAD:=$(call AutoLoad,45,phy-am335x)
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/phy/phy-am335x.ko \
+	$(LINUX_DIR)/drivers/usb/phy/phy-am335x-control.ko
+  AUTOLOAD:=$(call AutoLoad,44,phy-am335x)
   $(call AddDepends/usb)
 endef
 
@@ -125,6 +133,26 @@ define KernelPackage/usb-phy-am335x/description
 endef
 
 $(eval $(call KernelPackage,usb-phy-am335x))
+
+
+define KernelPackage/usb-phy-omap-usb2
+  TITLE:=Support for OMAP2 USB PHY
+  KCONFIG:= \
+	CONFIG_OMAP_USB2 \
+	CONFIG_OMAP_CONTROL_USB
+  DEPENDS:=@TARGET_omap
+  FILES:= \
+	$(LINUX_DIR)/drivers/phy/phy-omap-usb2.ko \
+	$(LINUX_DIR)/drivers/usb/phy/phy-omap-control.ko
+  AUTOLOAD:=$(call AutoLoad,45,phy-omap-control phy-omap-usb2)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-phy-omap-usb2/description
+  Support for AM335x USB PHY
+endef
+
+$(eval $(call KernelPackage,usb-phy-omap-usb2))
 
 
 define KernelPackage/usb-phy-omap-usb3
@@ -144,9 +172,9 @@ $(eval $(call KernelPackage,usb-phy-omap-usb3))
 
 
 define KernelPackage/usb-phy-twl4030
-  TITLE:=Support for TWL6030 OTG PHY
+  TITLE:=Support for TWL4030 OTG PHY
   KCONFIG:=CONFIG_TWL4030_USB
-  DEPENDS:=@TARGET_omap
+  DEPENDS:=@TARGET_omap +kmod-usb-phy-omap-usb2 +kmod-usb-musb-hdrc
   FILES:=$(LINUX_DIR)/drivers/phy/phy-twl4030-usb.ko
   AUTOLOAD:=$(call AutoLoad,45,phy-twl4030-usb)
   $(call AddDepends/usb)
@@ -162,7 +190,7 @@ $(eval $(call KernelPackage,usb-phy-twl4030))
 define KernelPackage/usb-phy-twl6030
   TITLE:=Support for TWL6030 OTG PHY
   KCONFIG:=CONFIG_TWL6030_USB
-  DEPENDS:=@TARGET_omap
+  DEPENDS:=@TARGET_omap +kmod-usb-phy-omap-usb2 +kmod-usb-musb-hdrc
   FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-twl6030-usb.ko
   AUTOLOAD:=$(call AutoLoad,45,phy-twl6030-usb)
   $(call AddDepends/usb)
@@ -297,13 +325,9 @@ $(eval $(call KernelPackage,usb2-fsl))
 define KernelPackage/usb2-omap
   TITLE:=Support for USB2 for OMAP
   DEPENDS:=@TARGET_omap +kmod-usb-phy-nop +kmod-usb-phy-am335x
-  KCONFIG:=\
-	CONFIG_USB_EHCI_HCD_OMAP \
-	CONFIG_OMAP_USB2
-  FILES:= \
-	$(LINUX_DIR)/drivers/phy/phy-omap2-usb.ko \
-	$(LINUX_DIR)/drivers/usb/host/ehci-omap.ko
-  AUTOLOAD:=$(call AutoLoad,39,phy-omap2-usb ehci-omap)
+  KCONFIG:=CONFIG_USB_EHCI_HCD_OMAP
+  FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-omap.ko
+  AUTOLOAD:=$(call AutoLoad,39,ehci-omap)
   $(call AddDepends/usb)
 endef
 
