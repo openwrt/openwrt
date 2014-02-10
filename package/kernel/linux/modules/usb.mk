@@ -211,16 +211,17 @@ define KernelPackage/usb-eth-gadget
   KCONFIG:= \
 	CONFIG_USB_ETH \
 	CONFIG_USB_ETH_RNDIS=y \
-	CONFIG_USB_ETH_EEM=y
+	CONFIG_USB_ETH_EEM=n
   DEPENDS:=+kmod-usb-gadget +(!LINUX_3_3&&!LINUX_3_6):kmod-usb-lib-composite
 ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/gadget/u_ether.ko),)
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/u_ether.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/u_rndis.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/usb_f_ecm.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/usb_f_ecm_subset.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/usb_f_rndis.ko \
-	$(LINUX_DIR)/drivers/usb/gadget/usb_f_eem.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/g_ether.ko
-  AUTOLOAD:=$(call AutoLoad,52,g_ether)
+  AUTOLOAD:=$(call AutoLoad,52,usb_f_ecm g_ether)
 else
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/g_ether.ko
   AUTOLOAD:=$(call AutoLoad,52,g_ether)
