@@ -1,0 +1,35 @@
+From 348fc73a301b88ec3f2da8c1f02858c75e79455e Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Tue, 21 May 2013 19:53:09 +0200
+Subject: [PATCH 014/203] arm: mvebu: enable two USB interfaces on the Armada
+ XP GP board
+
+The Armada XP GP board has two USB slots: one on the front side and
+one on the back side. This commit enables the two USB host controllers
+that correspond to those wo USB slots.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/armada-xp-gp.dts | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/arch/arm/boot/dts/armada-xp-gp.dts
++++ b/arch/arm/boot/dts/armada-xp-gp.dts
+@@ -105,6 +105,16 @@
+ 				phy-mode = "rgmii-id";
+ 			};
+ 
++			/* Front-side USB slot */
++			usb@50000 {
++				status = "okay";
++			};
++
++			/* Back-side USB slot */
++			usb@51000 {
++				status = "okay";
++			};
++
+ 			spi0: spi@10600 {
+ 				status = "okay";
+ 

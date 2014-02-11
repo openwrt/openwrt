@@ -1,0 +1,54 @@
+From c7c7e6309ae12f2cb0d9053875876b57bb7587e4 Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Wed, 5 Jun 2013 09:04:56 +0200
+Subject: [PATCH 026/203] arm: mvebu: move cache and mvebu-mbus initialization
+ later
+
+Current, the L2 cache and the mvebu-mbus drivers are initialized at
+->init_early() time. However, at ->init_early() time, ioremap() only
+works if a static I/O mapping has already been put in place. If it's
+not the case, it tries to do a memory allocation with kmalloc() which
+is not possible so early at this stage of the initialization.
+
+Since we want to get rid of the static I/O mapping, we cannot
+initialize the L2 cache driver and the mvebu-mbus driver so early. So,
+we move their initialization to the ->init_time() level, which is
+slightly later (so ioremap() works properly), but sufficiently early
+to be before the call of the ->smp_prepare_cpus() hook, which creates
+an address decoding window for the BootROM, which requires the
+mvebu-mbus driver to be properly initialized.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/mach-mvebu/armada-370-xp.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+--- a/arch/arm/mach-mvebu/armada-370-xp.c
++++ b/arch/arm/mach-mvebu/armada-370-xp.c
+@@ -45,14 +45,11 @@ static void __init armada_370_xp_map_io(
+ 
+ static void __init armada_370_xp_timer_and_clk_init(void)
+ {
++	char *mbus_soc_name;
++
+ 	mvebu_clocks_init();
+ 	armada_370_xp_timer_init();
+ 	coherency_init();
+-}
+-
+-static void __init armada_370_xp_init_early(void)
+-{
+-	char *mbus_soc_name;
+ 
+ 	/*
+ 	 * This initialization will be replaced by a DT-based
+@@ -88,7 +85,6 @@ DT_MACHINE_START(ARMADA_XP_DT, "Marvell
+ 	.smp		= smp_ops(armada_xp_smp_ops),
+ 	.init_machine	= armada_370_xp_dt_init,
+ 	.map_io		= armada_370_xp_map_io,
+-	.init_early	= armada_370_xp_init_early,
+ 	.init_irq	= irqchip_init,
+ 	.init_time	= armada_370_xp_timer_and_clk_init,
+ 	.restart	= mvebu_restart,

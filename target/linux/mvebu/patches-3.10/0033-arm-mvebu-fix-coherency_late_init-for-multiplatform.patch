@@ -1,0 +1,41 @@
+From 3891658a01af7e875d4c176ebb5d713d74a6e998 Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Thu, 20 Jun 2013 09:45:26 +0200
+Subject: [PATCH 033/203] arm: mvebu: fix coherency_late_init() for
+ multiplatform
+
+As noticed by Arnaud Patard (Rtp) <arnaud.patard@rtp-net.org>, commit
+865e0527d2d7 ('arm: mvebu: avoid hardcoded virtual address in
+coherency code') added a postcore_initcall() to register the bus
+notifier that the mvebu code needs to apply correct DMA operations on
+its platform devices breaks the multiplatform boot on other platforms,
+because the bus notifier registration is unconditional.
+
+This commit fixes that by registering the bus notifier only if we have
+the mvebu coherency unit described in the Device Tree. The conditional
+used is exactly the same in which the bus_register_notifier() call was
+originally enclosed before 865e0527d2d7 ('arm: mvebu: avoid hardcoded
+virtual address in coherency code').
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Reported-by: Arnaud Patard (Rtp) <arnaud.patard@rtp-net.org>
+Acked-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/mach-mvebu/coherency.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/mach-mvebu/coherency.c
++++ b/arch/arm/mach-mvebu/coherency.c
+@@ -147,8 +147,9 @@ int __init coherency_init(void)
+ 
+ static int __init coherency_late_init(void)
+ {
+-	bus_register_notifier(&platform_bus_type,
+-			      &mvebu_hwcc_platform_nb);
++	if (of_find_matching_node(NULL, of_coherency_table))
++		bus_register_notifier(&platform_bus_type,
++				      &mvebu_hwcc_platform_nb);
+ 	return 0;
+ }
+ 
