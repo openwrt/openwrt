@@ -1,0 +1,52 @@
+From 5a1bd82f089e19ba049a871a0d5538ed9eb5e5cd Mon Sep 17 00:00:00 2001
+From: Grant Likely <grant.likely@linaro.org>
+Date: Thu, 19 Dec 2013 09:31:02 -0300
+Subject: [PATCH 191/203] of/irq: Fix potential buffer overflow
+
+Commit 2361613206e6, "of/irq: Refactor interrupt-map parsing" introduced
+a potential buffer overflow bug because it doesn't do sufficient range
+checking on the input data. This patch adds the appropriate checking and
+buffer size adjustments. If the bounds are out of range then warn
+loudly. MAX_PHANDLE_ARGS should be sufficient. If it is not then the
+value can be increased.
+
+Signed-off-by: Grant Likely <grant.likely@linaro.org>
+Cc: Rob Herring <rob.herring@calxeda.com>
+---
+ drivers/of/irq.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/drivers/of/irq.c
++++ b/drivers/of/irq.c
+@@ -95,9 +95,9 @@ struct device_node *of_irq_find_parent(s
+ int of_irq_parse_raw(const __be32 *addr, struct of_phandle_args *out_irq)
+ {
+ 	struct device_node *ipar, *tnode, *old = NULL, *newpar = NULL;
+-	__be32 initial_match_array[8];
++	__be32 initial_match_array[MAX_PHANDLE_ARGS];
+ 	const __be32 *match_array = initial_match_array;
+-	const __be32 *tmp, *imap, *imask, dummy_imask[] = { ~0, ~0, ~0, ~0, ~0 };
++	const __be32 *tmp, *imap, *imask, dummy_imask[] = { [0 ... MAX_PHANDLE_ARGS] = ~0 };
+ 	u32 intsize = 1, addrsize, newintsize = 0, newaddrsize = 0;
+ 	int imaplen, match, i;
+ 
+@@ -147,6 +147,10 @@ int of_irq_parse_raw(const __be32 *addr,
+ 
+ 	pr_debug(" -> addrsize=%d\n", addrsize);
+ 
++	/* Range check so that the temporary buffer doesn't overflow */
++	if (WARN_ON(addrsize + intsize > MAX_PHANDLE_ARGS))
++		goto fail;
++
+ 	/* Precalculate the match array - this simplifies match loop */
+ 	for (i = 0; i < addrsize; i++)
+ 		initial_match_array[i] = addr ? addr[i] : 0;
+@@ -229,6 +233,8 @@ int of_irq_parse_raw(const __be32 *addr,
+ 			    newintsize, newaddrsize);
+ 
+ 			/* Check for malformed properties */
++			if (WARN_ON(newaddrsize + newintsize > MAX_PHANDLE_ARGS))
++				goto fail;
+ 			if (imaplen < (newaddrsize + newintsize))
+ 				goto fail;
+ 

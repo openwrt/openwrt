@@ -1,0 +1,30 @@
+From 8bce53e42f78e009fbfbd4a98ea98f66e6cd5b4c Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Thu, 7 Nov 2013 12:17:18 -0300
+Subject: [PATCH 139/203] mtd: nand: pxa3xx: Add a nice comment to
+ pxa3xx_set_datasize()
+
+Add a comment clarifying the use of pxa3xx_set_datasize() which is only
+applicable on data read/write commands (i.e. commands with a data cycle,
+such as READID, READ0, STATUS, etc.)
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -304,6 +304,11 @@ static void pxa3xx_nand_set_timing(struc
+ 	nand_writel(info, NDTR1CS0, ndtr1);
+ }
+ 
++/*
++ * Set the data and OOB size, depending on the selected
++ * spare and ECC configuration.
++ * Only applicable to READ0, READOOB and PAGEPROG commands.
++ */
+ static void pxa3xx_set_datasize(struct pxa3xx_nand_info *info)
+ {
+ 	int oob_enable = info->reg_ndcr & NDCR_SPARE_EN;

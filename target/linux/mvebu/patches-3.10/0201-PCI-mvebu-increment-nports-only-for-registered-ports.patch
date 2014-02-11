@@ -1,0 +1,47 @@
+From e619fe9eb65d8064739f16eca2015145ac920f13 Mon Sep 17 00:00:00 2001
+From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Date: Tue, 13 Aug 2013 14:25:21 +0200
+Subject: [PATCH 201/203] PCI: mvebu: increment nports only for registered
+ ports
+
+The number of ports is probed by counting the number of available child nodes.
+Later on, the registration of a port can fail and cause a mismatch between
+the ->nports counter and registered ports. This patch modifies the counting
+strategy, to make ->nports represent the number of registered ports instead
+of the number of available childs.
+
+Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ drivers/pci/host/pci-mvebu.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/pci/host/pci-mvebu.c
++++ b/drivers/pci/host/pci-mvebu.c
+@@ -841,13 +841,14 @@ static int __init mvebu_pcie_probe(struc
+ 		return ret;
+ 	}
+ 
++	i = 0;
+ 	for_each_child_of_node(pdev->dev.of_node, child) {
+ 		if (!of_device_is_available(child))
+ 			continue;
+-		pcie->nports++;
++		i++;
+ 	}
+ 
+-	pcie->ports = devm_kzalloc(&pdev->dev, pcie->nports *
++	pcie->ports = devm_kzalloc(&pdev->dev, i *
+ 				   sizeof(struct mvebu_pcie_port),
+ 				   GFP_KERNEL);
+ 	if (!pcie->ports)
+@@ -934,8 +935,8 @@ static int __init mvebu_pcie_probe(struc
+ 		i++;
+ 	}
+ 
++	pcie->nports = i;
+ 	mvebu_pcie_msi_enable(pcie);
+-
+ 	mvebu_pcie_enable(pcie);
+ 
+ 	return 0;

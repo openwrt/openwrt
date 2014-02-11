@@ -1,0 +1,27 @@
+From 15a2884ede54118137708ccc72f246fe986f8a57 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 19 Dec 2013 09:30:50 -0300
+Subject: [PATCH 179/203] of/irq: init struct resource to 0 in
+ of_irq_to_resource()
+
+It almost does not matter because most users use only the ->start member
+of the struct. However if this struct is passed to a platform device
+which is then added via platform_device_add() then the ->parent member is
+also used.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Grant Likely <grant.likely@linaro.org>
+---
+ drivers/of/irq.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/of/irq.c
++++ b/drivers/of/irq.c
+@@ -351,6 +351,7 @@ int of_irq_to_resource(struct device_nod
+ 	if (r && irq) {
+ 		const char *name = NULL;
+ 
++		memset(r, 0, sizeof(*r));
+ 		/*
+ 		 * Get optional "interrupts-names" property to add a name
+ 		 * to the resource.

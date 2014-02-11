@@ -1,0 +1,44 @@
+From 508e3a33ebe14ae4444a45b3f65dff5d5e6a4c73 Mon Sep 17 00:00:00 2001
+From: Tushar Behera <tushar.behera@linaro.org>
+Date: Mon, 17 Jun 2013 14:46:13 +0530
+Subject: [PATCH 199/203] PCI: mvebu: Convert to use devm_ioremap_resource
+
+Commit 75096579c3ac ("lib: devres: Introduce devm_ioremap_resource()")
+introduced devm_ioremap_resource() and deprecated the use of
+devm_request_and_ioremap().
+
+While at it, modify mvebu_pcie_map_registers() to propagate error code.
+
+Signed-off-by: Tushar Behera <tushar.behera@linaro.org>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Acked-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+---
+ drivers/pci/host/pci-mvebu.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/pci/host/pci-mvebu.c
++++ b/drivers/pci/host/pci-mvebu.c
+@@ -736,9 +736,9 @@ mvebu_pcie_map_registers(struct platform
+ 
+ 	ret = of_address_to_resource(np, 0, &regs);
+ 	if (ret)
+-		return NULL;
++		return ERR_PTR(ret);
+ 
+-	return devm_request_and_ioremap(&pdev->dev, &regs);
++	return devm_ioremap_resource(&pdev->dev, &regs);
+ }
+ 
+ static void __init mvebu_pcie_msi_enable(struct mvebu_pcie *pcie)
+@@ -897,9 +897,10 @@ static int __init mvebu_pcie_probe(struc
+ 		}
+ 
+ 		port->base = mvebu_pcie_map_registers(pdev, child, port);
+-		if (!port->base) {
++		if (IS_ERR(port->base)) {
+ 			dev_err(&pdev->dev, "PCIe%d.%d: cannot map registers\n",
+ 				port->port, port->lane);
++			port->base = NULL;
+ 			continue;
+ 		}
+ 

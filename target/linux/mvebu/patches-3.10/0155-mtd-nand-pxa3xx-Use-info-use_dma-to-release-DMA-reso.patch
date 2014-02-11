@@ -1,0 +1,29 @@
+From 4c6bade4cf80d77decc5ea89fbaadff8b008f5e9 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 25 Nov 2013 12:35:28 -0300
+Subject: [PATCH 155/203] mtd: nand: pxa3xx: Use info->use_dma to release DMA
+ resources
+
+After the driver allocates all DMA resources, it sets "info->use_dma".
+Therefore, we need to check that variable to decide which resources
+needs to be freed, instead of the global use_dma variable.
+
+Without this change, when the device probe fails, the driver will try
+to release unallocated DMA resources, with nasty results.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -1288,7 +1288,7 @@ static int pxa3xx_nand_init_buff(struct
+ static void pxa3xx_nand_free_buff(struct pxa3xx_nand_info *info)
+ {
+ 	struct platform_device *pdev = info->pdev;
+-	if (use_dma) {
++	if (info->use_dma) {
+ 		pxa_free_dma(info->data_dma_ch);
+ 		dma_free_coherent(&pdev->dev, info->buf_size,
+ 				  info->data_buff, info->data_buff_phys);

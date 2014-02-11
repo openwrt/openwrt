@@ -1,0 +1,65 @@
+From c524c5790d413b37702013e7e83a845fd3f007ac Mon Sep 17 00:00:00 2001
+From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Date: Tue, 13 Aug 2013 14:25:20 +0200
+Subject: [PATCH 200/203] PCI: mvebu: move clock enable before register access
+
+The clock passed to PCI controller found on MVEBU SoCs may come from a
+clock gate. This requires the clock to be enabled before any registers
+are accessed. Therefore, move the clock enable before register iomap to
+ensure it is enabled.
+
+Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ drivers/pci/host/pci-mvebu.c | 25 ++++++++++++-------------
+ 1 file changed, 12 insertions(+), 13 deletions(-)
+
+--- a/drivers/pci/host/pci-mvebu.c
++++ b/drivers/pci/host/pci-mvebu.c
+@@ -896,11 +896,23 @@ static int __init mvebu_pcie_probe(struc
+ 			continue;
+ 		}
+ 
++		port->clk = of_clk_get_by_name(child, NULL);
++		if (IS_ERR(port->clk)) {
++			dev_err(&pdev->dev, "PCIe%d.%d: cannot get clock\n",
++			       port->port, port->lane);
++			continue;
++		}
++
++		ret = clk_prepare_enable(port->clk);
++		if (ret)
++			continue;
++
+ 		port->base = mvebu_pcie_map_registers(pdev, child, port);
+ 		if (IS_ERR(port->base)) {
+ 			dev_err(&pdev->dev, "PCIe%d.%d: cannot map registers\n",
+ 				port->port, port->lane);
+ 			port->base = NULL;
++			clk_disable_unprepare(port->clk);
+ 			continue;
+ 		}
+ 
+@@ -916,22 +928,9 @@ static int __init mvebu_pcie_probe(struc
+ 				 port->port, port->lane);
+ 		}
+ 
+-		port->clk = of_clk_get_by_name(child, NULL);
+-		if (!port->clk) {
+-			dev_err(&pdev->dev, "PCIe%d.%d: cannot get clock\n",
+-			       port->port, port->lane);
+-			iounmap(port->base);
+-			port->haslink = 0;
+-			continue;
+-		}
+-
+ 		port->dn = child;
+-
+-		clk_prepare_enable(port->clk);
+ 		spin_lock_init(&port->conf_lock);
+-
+ 		mvebu_sw_pci_bridge_init(port);
+-
+ 		i++;
+ 	}
+ 

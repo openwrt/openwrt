@@ -1,0 +1,29 @@
+From bcaac3d9265d751f7d20df6ed0ac24241308dff7 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Tue, 20 Aug 2013 12:45:52 -0300
+Subject: [PATCH 169/203] clocksource: armada-370-xp: Replace WARN_ON with
+ BUG_ON
+
+If the clock fails to be obtained and the timer fails to be properly
+registered, the kernel will freeze real soon. Instead, let's BUG()
+where the actual problem is located.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Acked-by: Jason Cooper <jason@lakedaemon.net>
+Acked-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
+---
+ drivers/clocksource/time-armada-370-xp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clocksource/time-armada-370-xp.c
++++ b/drivers/clocksource/time-armada-370-xp.c
+@@ -306,7 +306,7 @@ static void __init armada_370_timer_init
+ {
+ 	struct clk *clk = of_clk_get(np, 0);
+ 
+-	WARN_ON(IS_ERR(clk));
++	BUG_ON(IS_ERR(clk));
+ 	timer_clk = clk_get_rate(clk) / TIMER_DIVIDER;
+ 	timer25Mhz = false;
+ 

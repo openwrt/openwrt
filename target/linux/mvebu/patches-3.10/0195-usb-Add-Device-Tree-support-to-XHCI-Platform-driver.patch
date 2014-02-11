@@ -1,0 +1,68 @@
+From 956b857c1fc80164859adbe1147704b1f352e153 Mon Sep 17 00:00:00 2001
+From: Al Cooper <alcooperx@gmail.com>
+Date: Fri, 6 Dec 2013 00:18:25 +0100
+Subject: [PATCH 195/203] usb: Add Device Tree support to XHCI Platform driver
+
+Add Device Tree match table to xhci-plat.c. Add DT bindings document.
+
+Signed-off-by: Al Cooper <alcooperx@gmail.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Felipe Balbi <balbi@ti.com>
+Signed-off-by: Sarah Sharp <sarah.a.sharp@linux.intel.com>
+
+Conflicts:
+	drivers/usb/host/xhci-plat.c
+---
+ Documentation/devicetree/bindings/usb/usb-xhci.txt | 14 ++++++++++++++
+ drivers/usb/host/xhci-plat.c                       | 10 ++++++++++
+ 2 files changed, 24 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/usb/usb-xhci.txt
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+@@ -0,0 +1,14 @@
++USB xHCI controllers
++
++Required properties:
++  - compatible: should be "xhci-platform".
++  - reg: should contain address and length of the standard XHCI
++    register set for the device.
++  - interrupts: one XHCI interrupt should be described here.
++
++Example:
++	usb@f0931000 {
++		compatible = "xhci-platform";
++		reg = <0xf0931000 0x8c8>;
++		interrupts = <0x0 0x4e 0x0>;
++	};
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -14,6 +14,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
++#include <linux/of.h>
+ 
+ #include "xhci.h"
+ 
+@@ -186,11 +187,20 @@ static int xhci_plat_remove(struct platf
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_OF
++static const struct of_device_id usb_xhci_of_match[] = {
++	{ .compatible = "xhci-platform" },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
++#endif
++
+ static struct platform_driver usb_xhci_driver = {
+ 	.probe	= xhci_plat_probe,
+ 	.remove	= xhci_plat_remove,
+ 	.driver	= {
+ 		.name = "xhci-hcd",
++		.of_match_table = of_match_ptr(usb_xhci_of_match),
+ 	},
+ };
+ MODULE_ALIAS("platform:xhci-hcd");

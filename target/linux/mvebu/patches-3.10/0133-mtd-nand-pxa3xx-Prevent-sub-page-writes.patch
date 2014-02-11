@@ -1,0 +1,25 @@
+From ec1977c2873dc7f0e6cec3edb8c30d92882f65d1 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Thu, 7 Nov 2013 12:17:12 -0300
+Subject: [PATCH 133/203] mtd: nand: pxa3xx: Prevent sub-page writes
+
+The current driver doesn't support sub-page writing, so report
+that to the NAND core.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Daniel Mack <zonque@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -1145,6 +1145,7 @@ static int alloc_nand_resource(struct pl
+ 		chip->read_byte		= pxa3xx_nand_read_byte;
+ 		chip->read_buf		= pxa3xx_nand_read_buf;
+ 		chip->write_buf		= pxa3xx_nand_write_buf;
++		chip->options		|= NAND_NO_SUBPAGE_WRITE;
+ 	}
+ 
+ 	spin_lock_init(&chip->controller->lock);

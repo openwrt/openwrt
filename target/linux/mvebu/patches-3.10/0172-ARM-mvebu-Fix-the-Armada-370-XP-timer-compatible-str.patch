@@ -1,0 +1,62 @@
+From e33103d8d4cfc513467eb30bc4faee5c91c8e6c2 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Tue, 13 Aug 2013 11:43:15 -0300
+Subject: [PATCH 172/203] ARM: mvebu: Fix the Armada 370/XP timer compatible
+ strings
+
+The "marvell,armada-370-xp-timer" compatible string, together with
+the "marvell,timer-25Mhz" property are deprecated and should be
+removed from current DT.
+
+Instead, the timer DT nodes are now required to have an appropriate
+compatible string, which should be either "marvell,armada-370-timer"
+or "marvell,armada-xp-timer", depending on SoC.
+
+The clock property is now required only for Armada 370 so move it accordingly.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/armada-370-xp.dtsi | 2 --
+ arch/arm/boot/dts/armada-370.dtsi    | 5 +++++
+ arch/arm/boot/dts/armada-xp.dtsi     | 2 +-
+ 3 files changed, 6 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/armada-370-xp.dtsi
++++ b/arch/arm/boot/dts/armada-370-xp.dtsi
+@@ -143,10 +143,8 @@
+ 			};
+ 
+ 			timer@20300 {
+-				compatible = "marvell,armada-370-xp-timer";
+ 				reg = <0x20300 0x30>, <0x21040 0x30>;
+ 				interrupts = <37>, <38>, <39>, <40>, <5>, <6>;
+-				clocks = <&coreclk 2>;
+ 			};
+ 
+ 			sata@a0000 {
+--- a/arch/arm/boot/dts/armada-370.dtsi
++++ b/arch/arm/boot/dts/armada-370.dtsi
+@@ -163,6 +163,11 @@
+ 				interrupts = <91>;
+ 			};
+ 
++			timer@20300 {
++				compatible = "marvell,armada-370-timer";
++				clocks = <&coreclk 2>;
++			};
++
+ 			coreclk: mvebu-sar@18230 {
+ 				compatible = "marvell,armada-370-core-clock";
+ 				reg = <0x18230 0x08>;
+--- a/arch/arm/boot/dts/armada-xp.dtsi
++++ b/arch/arm/boot/dts/armada-xp.dtsi
+@@ -69,7 +69,7 @@
+ 			};
+ 
+ 			timer@20300 {
+-				marvell,timer-25Mhz;
++				compatible = "marvell,armada-xp-timer";
+ 			};
+ 
+ 			coreclk: mvebu-sar@18230 {

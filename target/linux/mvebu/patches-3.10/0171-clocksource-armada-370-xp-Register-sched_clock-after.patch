@@ -1,0 +1,65 @@
+From 3d7976bb4a0f34203456cc0e9054b4a6401c9fdb Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Tue, 26 Nov 2013 18:20:14 -0300
+Subject: [PATCH 171/203] clocksource: armada-370-xp: Register sched_clock
+ after the counter reset
+
+This commit registers the sched_clock _after_ the counter reset
+(instead of before). This removes the timestamp 'jump' in kernel
+log messages.
+
+Before this change:
+
+[    0.000000] sched_clock: 32 bits at 25MHz, resolution 40ns, wraps every 171798691800ns
+[    0.000000] Initializing Coherency fabric
+[    0.000000] Aurora cache controller enabled
+[    0.000000] l2x0: 16 ways, CACHE_ID 0x00000100, AUX_CTRL 0x1a696b12, Cache size: 1024 kB
+[  163.507447] Calibrating delay loop... 1325.05 BogoMIPS (lpj=662528)
+[  163.521419] pid_max: default: 32768 minimum: 301
+[  163.526185] Mount-cache hash table entries: 512
+[  163.531095] CPU: Testing write buffer coherency: ok
+
+After this change:
+
+[    0.000000] sched_clock: 32 bits at 25MHz, resolution 40ns, wraps every 171798691800ns
+[    0.000000] Initializing Coherency fabric
+[    0.000000] Aurora cache controller enabled
+[    0.000000] l2x0: 16 ways, CACHE_ID 0x00000100, AUX_CTRL 0x1a696b12, Cache size: 1024 kB
+[    0.016849] Calibrating delay loop... 1325.05 BogoMIPS (lpj=662528)
+[    0.030820] pid_max: default: 32768 minimum: 301
+[    0.035588] Mount-cache hash table entries: 512
+[    0.040500] CPU: Testing write buffer coherency: ok
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Acked-by: Jason Cooper <jason@lakedaemon.net>
+---
+ drivers/clocksource/time-armada-370-xp.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/clocksource/time-armada-370-xp.c
++++ b/drivers/clocksource/time-armada-370-xp.c
+@@ -250,11 +250,6 @@ static void __init armada_370_xp_timer_c
+ 	ticks_per_jiffy = (timer_clk + HZ / 2) / HZ;
+ 
+ 	/*
+-	 * Set scale and timer for sched_clock.
+-	 */
+-	setup_sched_clock(armada_370_xp_read_sched_clock, 32, timer_clk);
+-
+-	/*
+ 	 * Setup free-running clocksource timer (interrupts
+ 	 * disabled).
+ 	 */
+@@ -264,6 +259,11 @@ static void __init armada_370_xp_timer_c
+ 	timer_ctrl_clrset(0, TIMER0_EN | TIMER0_RELOAD_EN |
+ 			     TIMER0_DIV(TIMER_DIVIDER_SHIFT));
+ 
++	/*
++	 * Set scale and timer for sched_clock.
++	 */
++	setup_sched_clock(armada_370_xp_read_sched_clock, 32, timer_clk);
++
+ 	clocksource_mmio_init(timer_base + TIMER0_VAL_OFF,
+ 			      "armada_370_xp_clocksource",
+ 			      timer_clk, 300, 32, clocksource_mmio_readl_down);
