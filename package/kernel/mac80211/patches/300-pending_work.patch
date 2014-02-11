@@ -1,3 +1,16 @@
+commit 82ed9e3ccc02797df2ffe4b78127c4cd5f799a41
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Tue Feb 11 15:54:13 2014 +0100
+
+    mac80211: send control port protocol frames to the VO queue
+    
+    Improves reliability of wifi connections with WPA, since authentication
+    frames are prioritized over normal traffic and also typically exempt
+    from aggregation.
+    
+    Cc: stable@vger.kernel.org
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit d4426800f71e972feaa33e04c5801fc730627bdd
 Author: Stanislaw Gruszka <stf_xl@wp.pl>
 Date:   Mon Feb 10 22:38:28 2014 +0100
@@ -2705,3 +2718,17 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	bool rfkill_off;
  	u16 seqno;
  };
+--- a/net/mac80211/wme.c
++++ b/net/mac80211/wme.c
+@@ -154,6 +154,11 @@ u16 ieee80211_select_queue(struct ieee80
+ 		return IEEE80211_AC_BE;
+ 	}
+ 
++	if (skb->protocol == sdata->control_port_protocol) {
++		skb->priority = 7;
++		return ieee80211_downgrade_queue(sdata, skb);
++	}
++
+ 	/* use the data classifier to determine what 802.1d tag the
+ 	 * data frame has */
+ 	rcu_read_lock();
