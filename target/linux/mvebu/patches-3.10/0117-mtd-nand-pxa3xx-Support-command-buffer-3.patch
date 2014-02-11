@@ -1,0 +1,59 @@
+From 6bbda039fe5e9d1b3c04f4f0dd8479a2c102d28e Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 12 Aug 2013 14:14:50 -0300
+Subject: [PATCH 117/203] mtd: nand: pxa3xx: Support command buffer #3
+
+Some newer controllers support a fourth command buffer. This additional
+command buffer allows to set an arbitrary length count, using the
+NDCB3.NDLENCNT field, to perform non-standard length operations
+such as the ONFI parameter page read.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Daniel Mack <zonque@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -197,6 +197,7 @@ struct pxa3xx_nand_info {
+ 	uint32_t		ndcb0;
+ 	uint32_t		ndcb1;
+ 	uint32_t		ndcb2;
++	uint32_t		ndcb3;
+ };
+ 
+ static bool use_dma = 1;
+@@ -493,9 +494,22 @@ static irqreturn_t pxa3xx_nand_irq(int i
+ 		nand_writel(info, NDSR, NDSR_WRCMDREQ);
+ 		status &= ~NDSR_WRCMDREQ;
+ 		info->state = STATE_CMD_HANDLE;
++
++		/*
++		 * Command buffer registers NDCB{0-2} (and optionally NDCB3)
++		 * must be loaded by writing directly either 12 or 16
++		 * bytes directly to NDCB0, four bytes at a time.
++		 *
++		 * Direct write access to NDCB1, NDCB2 and NDCB3 is ignored
++		 * but each NDCBx register can be read.
++		 */
+ 		nand_writel(info, NDCB0, info->ndcb0);
+ 		nand_writel(info, NDCB0, info->ndcb1);
+ 		nand_writel(info, NDCB0, info->ndcb2);
++
++		/* NDCB3 register is available in NFCv2 (Armada 370/XP SoC) */
++		if (info->variant == PXA3XX_NAND_VARIANT_ARMADA370)
++			nand_writel(info, NDCB0, info->ndcb3);
+ 	}
+ 
+ 	/* clear NDSR to let the controller exit the IRQ */
+@@ -554,6 +568,7 @@ static int prepare_command_pool(struct p
+ 	default:
+ 		info->ndcb1 = 0;
+ 		info->ndcb2 = 0;
++		info->ndcb3 = 0;
+ 		break;
+ 	}
+ 

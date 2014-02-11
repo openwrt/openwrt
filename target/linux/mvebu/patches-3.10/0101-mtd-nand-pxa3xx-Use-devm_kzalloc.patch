@@ -1,0 +1,60 @@
+From 271ef48cf11b86ab666582051fed3bdb13681e64 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Wed, 17 Apr 2013 13:38:09 -0300
+Subject: [PATCH 101/203] mtd: nand: pxa3xx: Use devm_kzalloc
+
+Replace regular kzalloc with managed devm_kzalloc
+which simplifies the error path.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -1035,12 +1035,10 @@ static int alloc_nand_resource(struct pl
+ 	int ret, irq, cs;
+ 
+ 	pdata = pdev->dev.platform_data;
+-	info = kzalloc(sizeof(*info) + (sizeof(*mtd) +
+-		       sizeof(*host)) * pdata->num_cs, GFP_KERNEL);
+-	if (!info) {
+-		dev_err(&pdev->dev, "failed to allocate memory\n");
++	info = devm_kzalloc(&pdev->dev, sizeof(*info) + (sizeof(*mtd) +
++			    sizeof(*host)) * pdata->num_cs, GFP_KERNEL);
++	if (!info)
+ 		return -ENOMEM;
+-	}
+ 
+ 	info->pdev = pdev;
+ 	for (cs = 0; cs < pdata->num_cs; cs++) {
+@@ -1072,8 +1070,7 @@ static int alloc_nand_resource(struct pl
+ 	info->clk = clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(info->clk)) {
+ 		dev_err(&pdev->dev, "failed to get nand clock\n");
+-		ret = PTR_ERR(info->clk);
+-		goto fail_free_mtd;
++		return PTR_ERR(info->clk);
+ 	}
+ 	clk_enable(info->clk);
+ 
+@@ -1165,8 +1162,6 @@ fail_free_res:
+ fail_put_clk:
+ 	clk_disable(info->clk);
+ 	clk_put(info->clk);
+-fail_free_mtd:
+-	kfree(info);
+ 	return ret;
+ }
+ 
+@@ -1202,7 +1197,6 @@ static int pxa3xx_nand_remove(struct pla
+ 
+ 	for (cs = 0; cs < pdata->num_cs; cs++)
+ 		nand_release(info->host[cs]->mtd);
+-	kfree(info);
+ 	return 0;
+ }
+ 

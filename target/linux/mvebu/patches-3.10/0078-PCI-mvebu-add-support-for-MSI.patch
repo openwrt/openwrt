@@ -1,0 +1,109 @@
+From be448338edda73460dc3e8c005b17edddf1c1b4f Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Thu, 6 Jun 2013 18:27:16 +0200
+Subject: [PATCH 078/203] PCI: mvebu: add support for MSI
+
+This commit adds support for Message Signaled Interrupts in the
+Marvell PCIe host controller. The work is very simple: it simply gets
+a reference to the msi_chip associated to the PCIe controller thanks
+to the msi-parent DT property, and stores this reference in the
+pci_bus structure. This is enough to let the Linux PCI core use the
+functions of msi_chip to setup and teardown MSIs.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Reviewed-by: Thierry Reding <thierry.reding@gmail.com>
+Acked-by: Bjorn Helgaas <bhelgaas@google.com>
+---
+ .../devicetree/bindings/pci/mvebu-pci.txt          |  3 +++
+ drivers/pci/host/pci-mvebu.c                       | 26 ++++++++++++++++++++++
+ 2 files changed, 29 insertions(+)
+
+--- a/Documentation/devicetree/bindings/pci/mvebu-pci.txt
++++ b/Documentation/devicetree/bindings/pci/mvebu-pci.txt
+@@ -14,6 +14,8 @@ Mandatory properties:
+   interfaces, and ranges describing the MBus windows needed to access
+   the memory and I/O regions of each PCIe interface.
+ 
++- msi-parent: Link to the hardware entity that serves as the Message
++  Signaled Interrupt controller for this PCI controller.
+ The ranges describing the MMIO registers have the following layout:
+ 
+     0x82000000 0 r MBUS_ID(0xf0, 0x01) r 0 s
+@@ -85,6 +87,7 @@ pcie-controller {
+ 	#size-cells = <2>;
+ 
+ 	bus-range = <0x00 0xff>;
++	msi-parent = <&mpic>;
+ 
+ 	ranges =
+ 	       <0x82000000 0 0x40000 MBUS_ID(0xf0, 0x01) 0x40000 0 0x00002000	/* Port 0.0 registers */
+--- a/drivers/pci/host/pci-mvebu.c
++++ b/drivers/pci/host/pci-mvebu.c
+@@ -11,6 +11,7 @@
+ #include <linux/clk.h>
+ #include <linux/module.h>
+ #include <linux/mbus.h>
++#include <linux/msi.h>
+ #include <linux/slab.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_address.h>
+@@ -103,6 +104,7 @@ struct mvebu_pcie_port;
+ struct mvebu_pcie {
+ 	struct platform_device *pdev;
+ 	struct mvebu_pcie_port *ports;
++	struct msi_chip *msi;
+ 	struct resource io;
+ 	struct resource realio;
+ 	struct resource mem;
+@@ -673,6 +675,12 @@ static struct pci_bus *mvebu_pcie_scan_b
+ 	return bus;
+ }
+ 
++void mvebu_pcie_add_bus(struct pci_bus *bus)
++{
++	struct mvebu_pcie *pcie = sys_to_pcie(bus->sysdata);
++	bus->msi = pcie->msi;
++}
++
+ resource_size_t mvebu_pcie_align_resource(struct pci_dev *dev,
+ 					  const struct resource *res,
+ 					  resource_size_t start,
+@@ -709,6 +717,7 @@ static void __init mvebu_pcie_enable(str
+ 	hw.map_irq        = mvebu_pcie_map_irq;
+ 	hw.ops            = &mvebu_pcie_ops;
+ 	hw.align_resource = mvebu_pcie_align_resource;
++	hw.add_bus        = mvebu_pcie_add_bus;
+ 
+ 	pci_common_init(&hw);
+ }
+@@ -733,6 +742,21 @@ mvebu_pcie_map_registers(struct platform
+ 	return devm_request_and_ioremap(&pdev->dev, &regs);
+ }
+ 
++static void __init mvebu_pcie_msi_enable(struct mvebu_pcie *pcie)
++{
++	struct device_node *msi_node;
++
++	msi_node = of_parse_phandle(pcie->pdev->dev.of_node,
++				    "msi-parent", 0);
++	if (!msi_node)
++		return;
++
++	pcie->msi = of_pci_find_msi_chip_by_node(msi_node);
++
++	if (pcie->msi)
++		pcie->msi->dev = &pcie->pdev->dev;
++}
++
+ #define DT_FLAGS_TO_TYPE(flags)       (((flags) >> 24) & 0x03)
+ #define    DT_TYPE_IO                 0x1
+ #define    DT_TYPE_MEM32              0x2
+@@ -911,6 +935,8 @@ static int __init mvebu_pcie_probe(struc
+ 		i++;
+ 	}
+ 
++	mvebu_pcie_msi_enable(pcie);
++
+ 	mvebu_pcie_enable(pcie);
+ 
+ 	return 0;

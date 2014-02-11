@@ -1,0 +1,78 @@
+From c26369f5b9929e1187ccf716d6d1678196ec0b4f Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 12 Aug 2013 14:14:58 -0300
+Subject: [PATCH 125/203] mtd: nand: pxa3xx: Allow devices with no dma
+ resources
+
+When use_dma=0 there's no point in requesting resources for dma,
+since they won't be used anyway. Therefore we remove that requirement,
+therefore allowing devices without dma to pass the driver probe.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Daniel Mack <zonque@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 51 +++++++++++++++++++++++-------------------
+ 1 file changed, 28 insertions(+), 23 deletions(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -1141,30 +1141,35 @@ static int alloc_nand_resource(struct pl
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	/*
+-	 * This is a dirty hack to make this driver work from devicetree
+-	 * bindings. It can be removed once we have a prober DMA controller
+-	 * framework for DT.
+-	 */
+-	if (pdev->dev.of_node && of_machine_is_compatible("marvell,pxa3xx")) {
+-		info->drcmr_dat = 97;
+-		info->drcmr_cmd = 99;
+-	} else {
+-		r = platform_get_resource(pdev, IORESOURCE_DMA, 0);
+-		if (r == NULL) {
+-			dev_err(&pdev->dev, "no resource defined for data DMA\n");
+-			ret = -ENXIO;
+-			goto fail_disable_clk;
+-		}
+-		info->drcmr_dat = r->start;
++	if (use_dma) {
++		/*
++		 * This is a dirty hack to make this driver work from
++		 * devicetree bindings. It can be removed once we have
++		 * a prober DMA controller framework for DT.
++		 */
++		if (pdev->dev.of_node &&
++		    of_machine_is_compatible("marvell,pxa3xx")) {
++			info->drcmr_dat = 97;
++			info->drcmr_cmd = 99;
++		} else {
++			r = platform_get_resource(pdev, IORESOURCE_DMA, 0);
++			if (r == NULL) {
++				dev_err(&pdev->dev,
++					"no resource defined for data DMA\n");
++				ret = -ENXIO;
++				goto fail_disable_clk;
++			}
++			info->drcmr_dat = r->start;
+ 
+-		r = platform_get_resource(pdev, IORESOURCE_DMA, 1);
+-		if (r == NULL) {
+-			dev_err(&pdev->dev, "no resource defined for command DMA\n");
+-			ret = -ENXIO;
+-			goto fail_disable_clk;
++			r = platform_get_resource(pdev, IORESOURCE_DMA, 1);
++			if (r == NULL) {
++				dev_err(&pdev->dev,
++					"no resource defined for cmd DMA\n");
++				ret = -ENXIO;
++				goto fail_disable_clk;
++			}
++			info->drcmr_cmd = r->start;
+ 		}
+-		info->drcmr_cmd = r->start;
+ 	}
+ 
+ 	irq = platform_get_irq(pdev, 0);

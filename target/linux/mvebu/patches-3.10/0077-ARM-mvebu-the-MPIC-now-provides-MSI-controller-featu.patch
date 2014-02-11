@@ -1,0 +1,28 @@
+From 2ae5acab1c267ef1c5e61e5086b93fba8eb9752e Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Thu, 6 Jun 2013 18:26:29 +0200
+Subject: [PATCH 077/203] ARM: mvebu: the MPIC now provides MSI controller
+ features
+
+Adds the 'msi-controller' property to the main interrupt controller
+Device Tree node, to indicate that it can now behave as a MSI
+controller.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Reviewed-by: Thierry Reding <thierry.reding@gmail.com>
+Tested-by: Daniel Price <daniel.price@gmail.com>
+Acked-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
+---
+ arch/arm/boot/dts/armada-370-xp.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/armada-370-xp.dtsi
++++ b/arch/arm/boot/dts/armada-370-xp.dtsi
+@@ -109,6 +109,7 @@
+ 				#interrupt-cells = <1>;
+ 				#size-cells = <1>;
+ 				interrupt-controller;
++				msi-controller;
+ 			};
+ 
+ 			coherency-fabric@20200 {

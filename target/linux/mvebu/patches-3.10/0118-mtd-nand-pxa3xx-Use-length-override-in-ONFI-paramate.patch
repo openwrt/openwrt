@@ -1,0 +1,52 @@
+From adbba4cf6ea15c2acb53e3fd9fc03c6b37f1f1fc Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 12 Aug 2013 14:14:51 -0300
+Subject: [PATCH 118/203] mtd: nand: pxa3xx: Use 'length override' in ONFI
+ paramater page read
+
+The ONFI command 'parameter page read' needs a non-standard length.
+Therefore, we enable the 'length override' field in NDCB0 and set
+a non-zero 'length count' in NDCB3.
+
+Additionally, the 'spare enable' bit must be disabled for any command
+that sets a non-zero 'length count' in NDCB3.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Daniel Mack <zonque@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -80,6 +80,7 @@
+ #define NDSR_RDDREQ		(0x1 << 1)
+ #define NDSR_WRCMDREQ		(0x1)
+ 
++#define NDCB0_LEN_OVRD		(0x1 << 28)
+ #define NDCB0_ST_ROW_EN         (0x1 << 26)
+ #define NDCB0_AUTO_RS		(0x1 << 25)
+ #define NDCB0_CSEL		(0x1 << 24)
+@@ -562,6 +563,9 @@ static int prepare_command_pool(struct p
+ 	case NAND_CMD_READOOB:
+ 		pxa3xx_set_datasize(info);
+ 		break;
++	case NAND_CMD_PARAM:
++		info->use_spare = 0;
++		break;
+ 	case NAND_CMD_SEQIN:
+ 		exec_cmd = 0;
+ 		break;
+@@ -637,8 +641,10 @@ static int prepare_command_pool(struct p
+ 		info->buf_count = 256;
+ 		info->ndcb0 |= NDCB0_CMD_TYPE(0)
+ 				| NDCB0_ADDR_CYC(1)
++				| NDCB0_LEN_OVRD
+ 				| cmd;
+ 		info->ndcb1 = (column & 0xFF);
++		info->ndcb3 = 256;
+ 		info->data_size = 256;
+ 		break;
+ 

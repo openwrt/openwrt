@@ -1,0 +1,60 @@
+From 98e6b600e81f71f8621e316f5d46cf261a9f1da4 Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Mon, 25 Nov 2013 17:26:47 +0100
+Subject: [PATCH 088/203] ARM: mvebu: re-enable PCIe on Armada 370 DB
+
+Commit 14fd8ed0a7fd19913 ("ARM: mvebu: Relocate Armada 370/XP PCIe
+device tree nodes") relocated the PCIe controller DT nodes one level
+up in the Device Tree, to reflect a more correct representation of the
+hardware introduced by the mvebu-mbus Device Tree binding.
+
+However, while most of the boards were properly adjusted accordingly,
+the Armada 370 DB board was left unchanged, and therefore, PCIe is
+seen as not enabled on this board. This patch fixes that by moving the
+PCIe controller node one level-up in armada-370-db.dts.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Cc: stable@vger.kernel.org
+---
+ arch/arm/boot/dts/armada-370-db.dts | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
+
+--- a/arch/arm/boot/dts/armada-370-db.dts
++++ b/arch/arm/boot/dts/armada-370-db.dts
+@@ -99,22 +99,22 @@
+ 					spi-max-frequency = <50000000>;
+ 				};
+ 			};
++		};
+ 
+-			pcie-controller {
++		pcie-controller {
++			status = "okay";
++			/*
++			 * The two PCIe units are accessible through
++			 * both standard PCIe slots and mini-PCIe
++			 * slots on the board.
++			 */
++			pcie@1,0 {
++				/* Port 0, Lane 0 */
++				status = "okay";
++			};
++			pcie@2,0 {
++				/* Port 1, Lane 0 */
+ 				status = "okay";
+-				/*
+-				 * The two PCIe units are accessible through
+-				 * both standard PCIe slots and mini-PCIe
+-				 * slots on the board.
+-				 */
+-				pcie@1,0 {
+-					/* Port 0, Lane 0 */
+-					status = "okay";
+-				};
+-				pcie@2,0 {
+-					/* Port 1, Lane 0 */
+-					status = "okay";
+-				};
+ 			};
+ 		};
+ 	};

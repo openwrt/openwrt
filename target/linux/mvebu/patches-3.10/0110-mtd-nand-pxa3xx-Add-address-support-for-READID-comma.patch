@@ -1,0 +1,31 @@
+From 82dad325809637899313315c3103985df94c90a5 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Tue, 14 May 2013 08:15:24 -0300
+Subject: [PATCH 110/203] mtd: nand: pxa3xx: Add address support for READID
+ command
+
+This allows to support READID ONFI command which sends 0x20
+as address together with the 0x90 READID command.
+
+This is required to detect ONFI compliant devices.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Nikita Kiryanov <nikita@compulab.co.il>
+Acked-by: Igor Grinberg <grinberg@compulab.co.il>
+Reviewed-by: Haojian Zhuang <haojian.zhuang@gmail.com>
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -596,6 +596,7 @@ static int prepare_command_pool(struct p
+ 		info->ndcb0 |= NDCB0_CMD_TYPE(3)
+ 				| NDCB0_ADDR_CYC(1)
+ 				| cmd;
++		info->ndcb1 = (column & 0xFF);
+ 
+ 		info->data_size = 8;
+ 		break;

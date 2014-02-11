@@ -1,0 +1,33 @@
+From d6d4e28e52f3cd70f60d03405181994a2763532b Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 12 Aug 2013 14:14:57 -0300
+Subject: [PATCH 124/203] mtd: nand: pxa3xx: Add __maybe_unused keyword to
+ enable_int()
+
+Now that we have added ARCH_HAS_DMA conditional the function
+enable_int() may be unused. Declare it as __maybe_unused,
+in order to remove the following warning, when the function is not used:
+
+drivers/mtd/nand//pxa3xx_nand.c:343:24: warning: 'enable_int' defined
+but not used [-Wunused-function]
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Daniel Mack <zonque@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -348,7 +348,8 @@ static void pxa3xx_nand_stop(struct pxa3
+ 	nand_writel(info, NDSR, NDSR_MASK);
+ }
+ 
+-static void enable_int(struct pxa3xx_nand_info *info, uint32_t int_mask)
++static void __maybe_unused
++enable_int(struct pxa3xx_nand_info *info, uint32_t int_mask)
+ {
+ 	uint32_t ndcr;
+ 

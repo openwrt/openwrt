@@ -1,0 +1,485 @@
+From 67bbed6edc12a5f239435c182d9c56ce2c930d87 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Tue, 23 Jul 2013 07:45:49 -0300
+Subject: [PATCH 061/203] ARM: kirkwood: Use the preprocessor on device tree
+ files
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Andrew Lunn <andrew@lunn.ch>
+Tested-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+---
+ arch/arm/boot/dts/kirkwood-cloudbox.dts            |  4 +--
+ arch/arm/boot/dts/kirkwood-dns320.dts              |  2 +-
+ arch/arm/boot/dts/kirkwood-dns325.dts              |  2 +-
+ arch/arm/boot/dts/kirkwood-dnskw.dtsi              |  4 +--
+ arch/arm/boot/dts/kirkwood-dockstar.dts            |  4 +--
+ arch/arm/boot/dts/kirkwood-dreamplug.dts           |  4 +--
+ arch/arm/boot/dts/kirkwood-goflexnet.dts           |  4 +--
+ .../arm/boot/dts/kirkwood-guruplug-server-plus.dts |  4 +--
+ arch/arm/boot/dts/kirkwood-ib62x0.dts              |  4 +--
+ arch/arm/boot/dts/kirkwood-iconnect.dts            |  4 +--
+ arch/arm/boot/dts/kirkwood-iomega_ix2_200.dts      |  4 +--
+ arch/arm/boot/dts/kirkwood-is2.dts                 |  2 +-
+ arch/arm/boot/dts/kirkwood-km_kirkwood.dts         |  4 +--
+ arch/arm/boot/dts/kirkwood-lschlv2.dts             |  2 +-
+ arch/arm/boot/dts/kirkwood-lsxhl.dts               |  2 +-
+ arch/arm/boot/dts/kirkwood-lsxl.dtsi               |  4 +--
+ arch/arm/boot/dts/kirkwood-mplcec4.dts             |  4 +--
+ .../boot/dts/kirkwood-netgear_readynas_duo_v2.dts  |  4 +--
+ arch/arm/boot/dts/kirkwood-ns2-common.dtsi         |  4 +--
+ arch/arm/boot/dts/kirkwood-ns2.dts                 |  2 +-
+ arch/arm/boot/dts/kirkwood-ns2lite.dts             |  2 +-
+ arch/arm/boot/dts/kirkwood-ns2max.dts              |  2 +-
+ arch/arm/boot/dts/kirkwood-ns2mini.dts             |  2 +-
+ arch/arm/boot/dts/kirkwood-nsa310.dts              | 40 +++++++++++++---------
+ arch/arm/boot/dts/kirkwood-openblocks_a6.dts       |  4 +--
+ arch/arm/boot/dts/kirkwood-topkick.dts             |  4 +--
+ arch/arm/boot/dts/kirkwood-ts219-6281.dts          | 13 +++----
+ arch/arm/boot/dts/kirkwood-ts219-6282.dts          | 21 ++++++++----
+ 28 files changed, 86 insertions(+), 70 deletions(-)
+
+--- a/arch/arm/boot/dts/kirkwood-cloudbox.dts
++++ b/arch/arm/boot/dts/kirkwood-cloudbox.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "LaCie CloudBox";
+--- a/arch/arm/boot/dts/kirkwood-dns320.dts
++++ b/arch/arm/boot/dts/kirkwood-dns320.dts
+@@ -1,6 +1,6 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-dnskw.dtsi"
++#include "kirkwood-dnskw.dtsi"
+ 
+ / {
+ 	model = "D-Link DNS-320 NAS (Rev A1)";
+--- a/arch/arm/boot/dts/kirkwood-dns325.dts
++++ b/arch/arm/boot/dts/kirkwood-dns325.dts
+@@ -1,6 +1,6 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-dnskw.dtsi"
++#include "kirkwood-dnskw.dtsi"
+ 
+ / {
+ 	model = "D-Link DNS-325 NAS (Rev A1)";
+--- a/arch/arm/boot/dts/kirkwood-dnskw.dtsi
++++ b/arch/arm/boot/dts/kirkwood-dnskw.dtsi
+@@ -1,5 +1,5 @@
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "D-Link DNS NASes (kirkwood-based)";
+--- a/arch/arm/boot/dts/kirkwood-dockstar.dts
++++ b/arch/arm/boot/dts/kirkwood-dockstar.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "Seagate FreeAgent Dockstar";
+--- a/arch/arm/boot/dts/kirkwood-dreamplug.dts
++++ b/arch/arm/boot/dts/kirkwood-dreamplug.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "Globalscale Technologies Dreamplug";
+--- a/arch/arm/boot/dts/kirkwood-goflexnet.dts
++++ b/arch/arm/boot/dts/kirkwood-goflexnet.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "Seagate GoFlex Net";
+--- a/arch/arm/boot/dts/kirkwood-guruplug-server-plus.dts
++++ b/arch/arm/boot/dts/kirkwood-guruplug-server-plus.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "Globalscale Technologies Guruplug Server Plus";
+--- a/arch/arm/boot/dts/kirkwood-ib62x0.dts
++++ b/arch/arm/boot/dts/kirkwood-ib62x0.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "RaidSonic ICY BOX IB-NAS62x0 (Rev B)";
+--- a/arch/arm/boot/dts/kirkwood-iconnect.dts
++++ b/arch/arm/boot/dts/kirkwood-iconnect.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "Iomega Iconnect";
+--- a/arch/arm/boot/dts/kirkwood-iomega_ix2_200.dts
++++ b/arch/arm/boot/dts/kirkwood-iomega_ix2_200.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "Iomega StorCenter ix2-200";
+--- a/arch/arm/boot/dts/kirkwood-is2.dts
++++ b/arch/arm/boot/dts/kirkwood-is2.dts
+@@ -1,6 +1,6 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-ns2-common.dtsi"
++#include "kirkwood-ns2-common.dtsi"
+ 
+ / {
+ 	model = "LaCie Internet Space v2";
+--- a/arch/arm/boot/dts/kirkwood-km_kirkwood.dts
++++ b/arch/arm/boot/dts/kirkwood-km_kirkwood.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-98dx4122.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-98dx4122.dtsi"
+ 
+ / {
+ 	model = "Keymile Kirkwood Reference Design";
+--- a/arch/arm/boot/dts/kirkwood-lschlv2.dts
++++ b/arch/arm/boot/dts/kirkwood-lschlv2.dts
+@@ -1,6 +1,6 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-lsxl.dtsi"
++#include "kirkwood-lsxl.dtsi"
+ 
+ / {
+ 	model = "Buffalo Linkstation LS-CHLv2";
+--- a/arch/arm/boot/dts/kirkwood-lsxhl.dts
++++ b/arch/arm/boot/dts/kirkwood-lsxhl.dts
+@@ -1,6 +1,6 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-lsxl.dtsi"
++#include "kirkwood-lsxl.dtsi"
+ 
+ / {
+ 	model = "Buffalo Linkstation LS-XHL";
+--- a/arch/arm/boot/dts/kirkwood-lsxl.dtsi
++++ b/arch/arm/boot/dts/kirkwood-lsxl.dtsi
+@@ -1,5 +1,5 @@
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	chosen {
+--- a/arch/arm/boot/dts/kirkwood-mplcec4.dts
++++ b/arch/arm/boot/dts/kirkwood-mplcec4.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "MPL CEC4";
+--- a/arch/arm/boot/dts/kirkwood-netgear_readynas_duo_v2.dts
++++ b/arch/arm/boot/dts/kirkwood-netgear_readynas_duo_v2.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6282.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6282.dtsi"
+ 
+ / {
+ 	model = "NETGEAR ReadyNAS Duo v2";
+--- a/arch/arm/boot/dts/kirkwood-ns2-common.dtsi
++++ b/arch/arm/boot/dts/kirkwood-ns2-common.dtsi
+@@ -1,5 +1,5 @@
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	chosen {
+--- a/arch/arm/boot/dts/kirkwood-ns2.dts
++++ b/arch/arm/boot/dts/kirkwood-ns2.dts
+@@ -1,6 +1,6 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-ns2-common.dtsi"
++#include "kirkwood-ns2-common.dtsi"
+ 
+ / {
+ 	model = "LaCie Network Space v2";
+--- a/arch/arm/boot/dts/kirkwood-ns2lite.dts
++++ b/arch/arm/boot/dts/kirkwood-ns2lite.dts
+@@ -1,6 +1,6 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-ns2-common.dtsi"
++#include "kirkwood-ns2-common.dtsi"
+ 
+ / {
+ 	model = "LaCie Network Space Lite v2";
+--- a/arch/arm/boot/dts/kirkwood-ns2max.dts
++++ b/arch/arm/boot/dts/kirkwood-ns2max.dts
+@@ -1,6 +1,6 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-ns2-common.dtsi"
++#include "kirkwood-ns2-common.dtsi"
+ 
+ / {
+ 	model = "LaCie Network Space Max v2";
+--- a/arch/arm/boot/dts/kirkwood-ns2mini.dts
++++ b/arch/arm/boot/dts/kirkwood-ns2mini.dts
+@@ -1,6 +1,6 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-ns2-common.dtsi"
++#include "kirkwood-ns2-common.dtsi"
+ 
+ / {
+ 	/* This machine is embedded in the first LaCie CloudBox product. */
+--- a/arch/arm/boot/dts/kirkwood-nsa310.dts
++++ b/arch/arm/boot/dts/kirkwood-nsa310.dts
+@@ -1,6 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "ZyXEL NSA310";
+@@ -17,22 +18,7 @@
+ 
+ 	ocp@f1000000 {
+ 		pinctrl: pinctrl@10000 {
+-			pinctrl-0 = < &pmx_led_esata_green
+-				      &pmx_led_esata_red
+-				      &pmx_led_usb_green
+-				      &pmx_led_usb_red
+-				      &pmx_usb_power_off
+-				      &pmx_led_sys_green
+-				      &pmx_led_sys_red
+-				      &pmx_btn_reset
+-				      &pmx_btn_copy
+-				      &pmx_led_copy_green
+-				      &pmx_led_copy_red
+-				      &pmx_led_hdd_green
+-				      &pmx_led_hdd_red
+-				      &pmx_unknown
+-				      &pmx_btn_power
+-				      &pmx_pwr_off >;
++			pinctrl-0 = <&pmx_unknown>;
+ 			pinctrl-names = "default";
+ 
+ 			pmx_led_esata_green: pmx-led-esata-green {
+@@ -176,12 +162,22 @@
+ 				reg = <0x5040000 0x2fc0000>;
+ 			};
+ 		};
++
++		pcie-controller {
++			status = "okay";
++
++			pcie@1,0 {
++				status = "okay";
++			};
++		};
+ 	};
+ 
+ 	gpio_keys {
+ 		compatible = "gpio-keys";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		pinctrl-0 = <&pmx_btn_reset &pmx_btn_copy &pmx_btn_power>;
++		pinctrl-names = "default";
+ 
+ 		button@1 {
+ 			label = "Power Button";
+@@ -202,6 +198,12 @@
+ 
+ 	gpio-leds {
+ 		compatible = "gpio-leds";
++		pinctrl-0 = <&pmx_led_esata_green &pmx_led_esata_red
++			     &pmx_led_usb_green &pmx_led_usb_red
++			     &pmx_led_sys_green &pmx_led_sys_red
++			     &pmx_led_copy_green &pmx_led_copy_red
++			     &pmx_led_hdd_green &pmx_led_hdd_red>;
++		pinctrl-names = "default";
+ 
+ 		green-sys {
+ 			label = "nsa310:green:sys";
+@@ -247,6 +249,8 @@
+ 
+ 	gpio_poweroff {
+ 		compatible = "gpio-poweroff";
++		pinctrl-0 = <&pmx_pwr_off>;
++		pinctrl-names = "default";
+ 		gpios = <&gpio1 16 0>;
+ 	};
+ 
+@@ -254,6 +258,8 @@
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		pinctrl-0 = <&pmx_usb_power_off>;
++		pinctrl-names = "default";
+ 
+ 		usb0_power_off: regulator@1 {
+ 			compatible = "regulator-fixed";
+--- a/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
++++ b/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6282.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6282.dtsi"
+ 
+ / {
+ 	model = "Plat'Home OpenBlocksA6";
+--- a/arch/arm/boot/dts/kirkwood-topkick.dts
++++ b/arch/arm/boot/dts/kirkwood-topkick.dts
+@@ -1,7 +1,7 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood.dtsi"
+-/include/ "kirkwood-6282.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6282.dtsi"
+ 
+ / {
+ 	model = "Univeral Scientific Industrial Co. Topkick-1281P2";
+--- a/arch/arm/boot/dts/kirkwood-ts219-6281.dts
++++ b/arch/arm/boot/dts/kirkwood-ts219-6281.dts
+@@ -1,16 +1,14 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-ts219.dtsi"
+-/include/ "kirkwood-6281.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
++#include "kirkwood-ts219.dtsi"
+ 
+ / {
+ 	ocp@f1000000 {
+ 		pinctrl: pinctrl@10000 {
+ 
+-			pinctrl-0 = < &pmx_uart0 &pmx_uart1 &pmx_spi
+-				      &pmx_twsi0 &pmx_sata0 &pmx_sata1
+-				      &pmx_ram_size &pmx_reset_button
+-				      &pmx_USB_copy_button &pmx_board_id>;
++			pinctrl-0 = <&pmx_ram_size &pmx_board_id>;
+ 			pinctrl-names = "default";
+ 
+ 			pmx_ram_size: pmx-ram-size {
+@@ -38,6 +36,9 @@
+ 		compatible = "gpio-keys";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		pinctrl-0 = <&pmx_reset_button &pmx_USB_copy_button>;
++		pinctrl-names = "default";
++
+ 		button@1 {
+ 			label = "USB Copy";
+ 			linux,code = <133>;
+--- a/arch/arm/boot/dts/kirkwood-ts219-6282.dts
++++ b/arch/arm/boot/dts/kirkwood-ts219-6282.dts
+@@ -1,16 +1,14 @@
+ /dts-v1/;
+ 
+-/include/ "kirkwood-ts219.dtsi"
+-/include/ "kirkwood-6282.dtsi"
++#include "kirkwood.dtsi"
++#include "kirkwood-6282.dtsi"
++#include "kirkwood-ts219.dtsi"
+ 
+ / {
+ 	ocp@f1000000 {
+ 		pinctrl: pinctrl@10000 {
+ 
+-			pinctrl-0 = < &pmx_uart0 &pmx_uart1 &pmx_spi
+-				      &pmx_twsi0 &pmx_sata0 &pmx_sata1
+-				      &pmx_ram_size &pmx_reset_button
+-				      &pmx_USB_copy_button &pmx_board_id>;
++			pinctrl-0 = <&pmx_ram_size &pmx_board_id>;
+ 			pinctrl-names = "default";
+ 
+ 			pmx_ram_size: pmx-ram-size {
+@@ -32,12 +30,23 @@
+ 				marvell,function = "gpio";
+ 			};
+ 		};
++		pcie-controller {
++			status = "okay";
++
++			pcie@2,0 {
++				status = "okay";
++			};
++		};
++
+ 	};
+ 
+ 	gpio_keys {
+ 		compatible = "gpio-keys";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		pinctrl-0 = <&pmx_reset_button &pmx_USB_copy_button>;
++		pinctrl-names = "default";
++
+ 		button@1 {
+ 			label = "USB Copy";
+ 			linux,code = <133>;

@@ -1,0 +1,80 @@
+From f37031e030eb05ba579c82b9e0424d2608c1ad67 Mon Sep 17 00:00:00 2001
+From: Jingoo Han <jg1.han@samsung.com>
+Date: Tue, 30 Jul 2013 17:18:33 +0900
+Subject: [PATCH 113/203] mtd: nand: use dev_get_platdata()
+
+Use the wrapper function for retrieving the platform data instead of
+accessing dev->platform_data directly.
+
+Signed-off-by: Jingoo Han <jg1.han@samsung.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -815,7 +815,7 @@ static int pxa3xx_nand_config_flash(stru
+ 				    const struct pxa3xx_nand_flash *f)
+ {
+ 	struct platform_device *pdev = info->pdev;
+-	struct pxa3xx_nand_platform_data *pdata = pdev->dev.platform_data;
++	struct pxa3xx_nand_platform_data *pdata = dev_get_platdata(&pdev->dev);
+ 	struct pxa3xx_nand_host *host = info->host[info->cs];
+ 	uint32_t ndcr = 0x0; /* enable all interrupts */
+ 
+@@ -958,7 +958,7 @@ static int pxa3xx_nand_scan(struct mtd_i
+ 	struct pxa3xx_nand_host *host = mtd->priv;
+ 	struct pxa3xx_nand_info *info = host->info_data;
+ 	struct platform_device *pdev = info->pdev;
+-	struct pxa3xx_nand_platform_data *pdata = pdev->dev.platform_data;
++	struct pxa3xx_nand_platform_data *pdata = dev_get_platdata(&pdev->dev);
+ 	struct nand_flash_dev pxa3xx_flash_ids[2], *def = NULL;
+ 	const struct pxa3xx_nand_flash *f = NULL;
+ 	struct nand_chip *chip = mtd->priv;
+@@ -1058,7 +1058,7 @@ static int alloc_nand_resource(struct pl
+ 	struct resource *r;
+ 	int ret, irq, cs;
+ 
+-	pdata = pdev->dev.platform_data;
++	pdata = dev_get_platdata(&pdev->dev);
+ 	info = devm_kzalloc(&pdev->dev, sizeof(*info) + (sizeof(*mtd) +
+ 			    sizeof(*host)) * pdata->num_cs, GFP_KERNEL);
+ 	if (!info)
+@@ -1176,7 +1176,7 @@ static int pxa3xx_nand_remove(struct pla
+ 	if (!info)
+ 		return 0;
+ 
+-	pdata = pdev->dev.platform_data;
++	pdata = dev_get_platdata(&pdev->dev);
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq >= 0)
+@@ -1239,7 +1239,7 @@ static int pxa3xx_nand_probe(struct plat
+ 	if (ret)
+ 		return ret;
+ 
+-	pdata = pdev->dev.platform_data;
++	pdata = dev_get_platdata(&pdev->dev);
+ 	if (!pdata) {
+ 		dev_err(&pdev->dev, "no platform data defined\n");
+ 		return -ENODEV;
+@@ -1286,7 +1286,7 @@ static int pxa3xx_nand_suspend(struct pl
+ 	struct mtd_info *mtd;
+ 	int cs;
+ 
+-	pdata = pdev->dev.platform_data;
++	pdata = dev_get_platdata(&pdev->dev);
+ 	if (info->state) {
+ 		dev_err(&pdev->dev, "driver busy, state = %d\n", info->state);
+ 		return -EAGAIN;
+@@ -1307,7 +1307,7 @@ static int pxa3xx_nand_resume(struct pla
+ 	struct mtd_info *mtd;
+ 	int cs;
+ 
+-	pdata = pdev->dev.platform_data;
++	pdata = dev_get_platdata(&pdev->dev);
+ 	/* We don't want to handle interrupt without calling mtd routine */
+ 	disable_int(info, NDCR_INT_MASK);
+ 
