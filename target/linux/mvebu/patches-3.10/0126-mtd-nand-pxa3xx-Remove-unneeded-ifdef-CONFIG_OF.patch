@@ -1,0 +1,39 @@
+From 1fea4cca22fcb1045a0c1ad42df793e3ea29b5bf Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 12 Aug 2013 14:14:46 -0300
+Subject: [PATCH 126/203] mtd: nand: pxa3xx: Remove unneeded ifdef CONFIG_OF
+
+There's no need to enclose this code within idef CONFIG_OF,
+because the OF framework provides no-op stubs if CONFIG_OF=n.
+
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -1236,7 +1236,6 @@ static int pxa3xx_nand_remove(struct pla
+ 	return 0;
+ }
+ 
+-#ifdef CONFIG_OF
+ static struct of_device_id pxa3xx_nand_dt_ids[] = {
+ 	{
+ 		.compatible = "marvell,pxa3xx-nand",
+@@ -1284,12 +1283,6 @@ static int pxa3xx_nand_probe_dt(struct p
+ 
+ 	return 0;
+ }
+-#else
+-static inline int pxa3xx_nand_probe_dt(struct platform_device *pdev)
+-{
+-	return 0;
+-}
+-#endif
+ 
+ static int pxa3xx_nand_probe(struct platform_device *pdev)
+ {

@@ -1,0 +1,32 @@
+From 455ad812cb2ec97339f780e2a79169620f1e7485 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Fri, 18 Oct 2013 20:02:30 -0300
+Subject: [PATCH 097/203] ARM: mvebu: Add a 2 GHz fixed-clock Armada 370/XP
+
+Armada 370/XP SoCs have a 2 GHz fixed PLL that is used to feed
+other clocks. This commit adds a DT representation of this clock
+through a fixed-clock compatible node.
+
+Reviewed-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/armada-370-xp.dtsi | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/arch/arm/boot/dts/armada-370-xp.dtsi
++++ b/arch/arm/boot/dts/armada-370-xp.dtsi
+@@ -251,4 +251,13 @@
+ 
+ 		};
+ 	};
++
++	clocks {
++		/* 2 GHz fixed main PLL */
++		mainpll: mainpll {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <2000000000>;
++		};
++	};
+  };

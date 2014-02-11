@@ -1,0 +1,29 @@
+From baef6bdc8a3e9cb30ab254fd23eb655d592a19df Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Tue, 14 May 2013 08:15:22 -0300
+Subject: [PATCH 108/203] mtd: nand: pxa3xx: Use of_machine_is_compatible()
+
+This patch replaces cpu_is_pxa3xx() with of_machine_is_compatible()
+which allows to build this driver for other platforms than ARCH_PXA.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Nikita Kiryanov <nikita@compulab.co.il>
+Acked-by: Igor Grinberg <grinberg@compulab.co.il>
+Reviewed-by: Haojian Zhuang <haojian.zhuang@gmail.com>
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -1094,7 +1094,7 @@ static int alloc_nand_resource(struct pl
+ 	 * bindings. It can be removed once we have a prober DMA controller
+ 	 * framework for DT.
+ 	 */
+-	if (pdev->dev.of_node && cpu_is_pxa3xx()) {
++	if (pdev->dev.of_node && of_machine_is_compatible("marvell,pxa3xx")) {
+ 		info->drcmr_dat = 97;
+ 		info->drcmr_cmd = 99;
+ 	} else {

@@ -1,0 +1,60 @@
+From 7171305e9caebac8cd12ef5a5ef3823f0fbe4a1c Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Thu, 6 Jun 2013 18:30:19 +0200
+Subject: [PATCH 079/203] ARM: mvebu: link PCIe controllers to the MSI
+ controller
+
+This commit adjusts the Armada 370 and Armada XP PCIe controllers
+Device Tree informations to reference their MSI controller. In the
+case of this platform, the MSI controller is implemented by the MPIC.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Tested-by: Daniel Price <daniel.price@gmail.com>
+Acked-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
+---
+ arch/arm/boot/dts/armada-370.dtsi        | 1 +
+ arch/arm/boot/dts/armada-xp-mv78230.dtsi | 1 +
+ arch/arm/boot/dts/armada-xp-mv78260.dtsi | 1 +
+ arch/arm/boot/dts/armada-xp-mv78460.dtsi | 1 +
+ 4 files changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/armada-370.dtsi
++++ b/arch/arm/boot/dts/armada-370.dtsi
+@@ -44,6 +44,7 @@
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+ 
++			msi-parent = <&mpic>;
+ 			bus-range = <0x00 0xff>;
+ 
+ 			ranges =
+--- a/arch/arm/boot/dts/armada-xp-mv78230.dtsi
++++ b/arch/arm/boot/dts/armada-xp-mv78230.dtsi
+@@ -57,6 +57,7 @@
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+ 
++				msi-parent = <&mpic>;
+ 			bus-range = <0x00 0xff>;
+ 
+ 			ranges =
+--- a/arch/arm/boot/dts/armada-xp-mv78260.dtsi
++++ b/arch/arm/boot/dts/armada-xp-mv78260.dtsi
+@@ -58,6 +58,7 @@
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+ 
++				msi-parent = <&mpic>;
+ 			bus-range = <0x00 0xff>;
+ 
+ 			ranges =
+--- a/arch/arm/boot/dts/armada-xp-mv78460.dtsi
++++ b/arch/arm/boot/dts/armada-xp-mv78460.dtsi
+@@ -74,6 +74,7 @@
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+ 
++				msi-parent = <&mpic>;
+ 			bus-range = <0x00 0xff>;
+ 
+ 			ranges =

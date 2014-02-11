@@ -1,0 +1,41 @@
+From 9d4a304873c9f6a8bbf78cba329985768a1c6c93 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Tue, 23 Jul 2013 07:48:04 -0300
+Subject: [PATCH 062/203] ARM: kirkwood: Introduce MBus DT node
+
+Add a minimal MBus node, just to allow the MBus driver to probe.
+Follow-up patches will migrate the rest of the nodes appropriately.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Andrew Lunn <andrew@lunn.ch>
+Tested-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+---
+ arch/arm/boot/dts/kirkwood.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/arch/arm/boot/dts/kirkwood.dtsi
++++ b/arch/arm/boot/dts/kirkwood.dtsi
+@@ -16,6 +16,11 @@
+ 		      <0xf1020214 0x04>;
+ 	};
+ 
++	mbus {
++		compatible = "marvell,kirkwood-mbus", "simple-bus";
++		controller = <&mbusc>;
++	};
++
+ 	ocp@f1000000 {
+ 		compatible = "simple-bus";
+ 		ranges = <0x00000000 0xf1000000 0x4000000
+@@ -23,6 +28,11 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 
++		mbusc: mbus-controller@20000 {
++			compatible = "marvell,mbus-controller";
++			reg = <0x20000 0x80>, <0x1500 0x20>;
++		};
++
+ 		core_clk: core-clocks@10030 {
+ 			compatible = "marvell,kirkwood-core-clock";
+ 			reg = <0x10030 0x4>;

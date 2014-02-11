@@ -1,0 +1,46 @@
+From c16f0b44984bc623621d26df22823b50f13f65d8 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Tue, 14 May 2013 08:15:21 -0300
+Subject: [PATCH 107/203] mtd: nand: pxa3xx: Set info->use_dma properly
+
+Currently, the variable info->use_dma is never set and always
+zero-valued which means the driver never does DMA transfers.
+We fix this by simply setting info->use_dma to the module parameter,
+also named 'use_dma'. Note that the module parameter has the same name,
+but different semantics.
+
+This fixes a regression introduced by the below commit
+which removed the info->use_dma variable set.
+
+  commit 4eb2da8994042d68e84e31138788429a102da2ea
+  Author: Lei Wen <leiwen@marvell.com>
+  Date:   Mon Feb 28 10:32:13 2011 +0800
+
+      mtd: pxa3xx_nand: unify prepare command
+
+Before the above commit, the driver had use_dma=1 on all NAND commands
+except on CMD_STATUS. This behavior is long lost and we are not
+recovering in this patch, either.
+
+This was spotted and verified by human inspection.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Nikita Kiryanov <nikita@compulab.co.il>
+Acked-by: Igor Grinberg <grinberg@compulab.co.il>
+Reviewed-by: Haojian Zhuang <haojian.zhuang@gmail.com>
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -506,6 +506,7 @@ static int prepare_command_pool(struct p
+ 	info->buf_count		= 0;
+ 	info->oob_size		= 0;
+ 	info->use_ecc		= 0;
++	info->use_dma		= (use_dma) ? 1 : 0;
+ 	info->is_ready		= 0;
+ 	info->retcode		= ERR_NONE;
+ 	if (info->cs != 0)

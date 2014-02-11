@@ -1,0 +1,45 @@
+From 96d8ffc47c7ee9689b8b48ac9588e0b00fa9bd44 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 12 Aug 2013 14:14:53 -0300
+Subject: [PATCH 120/203] mtd: nand: pxa3xx: Remove hardcoded mtd name
+
+There's no advantage in using a hardcoded name for the mtd device.
+Instead use the provided by the platform_device.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Daniel Mack <zonque@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -244,8 +244,6 @@ static struct pxa3xx_nand_flash builtin_
+ /* Define a default flash type setting serve as flash detecting only */
+ #define DEFAULT_FLASH_TYPE (&builtin_flash_types[0])
+ 
+-const char *mtd_names[] = {"pxa3xx_nand-0", "pxa3xx_nand-1", NULL};
+-
+ #define NDTR0_tCH(c)	(min((c), 7) << 19)
+ #define NDTR0_tCS(c)	(min((c), 7) << 16)
+ #define NDTR0_tWH(c)	(min((c), 7) << 11)
+@@ -1091,8 +1089,6 @@ KEEP_CONFIG:
+ 		host->row_addr_cycles = 3;
+ 	else
+ 		host->row_addr_cycles = 2;
+-
+-	mtd->name = mtd_names[0];
+ 	return nand_scan_tail(mtd);
+ }
+ 
+@@ -1321,6 +1317,8 @@ static int pxa3xx_nand_probe(struct plat
+ 	probe_success = 0;
+ 	for (cs = 0; cs < pdata->num_cs; cs++) {
+ 		struct mtd_info *mtd = info->host[cs]->mtd;
++
++		mtd->name = pdev->name;
+ 		info->cs = cs;
+ 		ret = pxa3xx_nand_scan(mtd);
+ 		if (ret) {
