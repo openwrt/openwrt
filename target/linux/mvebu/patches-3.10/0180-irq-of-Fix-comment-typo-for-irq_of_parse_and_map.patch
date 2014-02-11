@@ -1,0 +1,24 @@
+From 3d73f7a8db8a7506630174d0e8609138d97c8326 Mon Sep 17 00:00:00 2001
+From: Yijing Wang <wangyijing@huawei.com>
+Date: Thu, 19 Dec 2013 09:30:51 -0300
+Subject: [PATCH 180/203] irq/of: Fix comment typo for irq_of_parse_and_map
+
+Fix trivial comment typo for irq_of_parse_and_map().
+
+Signed-off-by: Yijing Wang <wangyijing@huawei.com>
+Signed-off-by: Grant Likely <grant.likely@linaro.org>
+---
+ drivers/of/irq.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/of/irq.c
++++ b/drivers/of/irq.c
+@@ -28,7 +28,7 @@
+ 
+ /**
+  * irq_of_parse_and_map - Parse and map an interrupt into linux virq space
+- * @device: Device node of the device whose interrupt is to be mapped
++ * @dev: Device node of the device whose interrupt is to be mapped
+  * @index: Index of the interrupt to map
+  *
+  * This function is a wrapper that chains of_irq_map_one() and

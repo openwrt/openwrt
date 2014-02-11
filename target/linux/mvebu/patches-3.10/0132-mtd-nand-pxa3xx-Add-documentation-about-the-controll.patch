@@ -1,0 +1,28 @@
+From 54c1163b143e4ed911b8dddc0829c87f93b3debd Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Thu, 7 Nov 2013 12:17:10 -0300
+Subject: [PATCH 132/203] mtd: nand: pxa3xx: Add documentation about the
+ controller
+
+Given there's no public specification to this date, and in order
+to capture some important details and singularities about the
+controller let's document them once and for good.
+
+Cc: linux-doc@vger.kernel.org
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -7,6 +7,8 @@
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
++ *
++ * See Documentation/mtd/nand/pxa3xx-nand.txt for more details.
+  */
+ 
+ #include <linux/kernel.h>

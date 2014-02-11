@@ -1,0 +1,24 @@
+From a18945a7fd26b83c765b60bcffe306421f7efe80 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 2 Dec 2013 18:44:40 -0300
+Subject: [PATCH 160/203] ARM: mvebu: config: Add NAND support
+
+Enable the pxa3xx-nand driver, which now supports the NAND controller
+in Armada 370/XP SoC.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+---
+ arch/arm/configs/mvebu_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm/configs/mvebu_defconfig
++++ b/arch/arm/configs/mvebu_defconfig
+@@ -53,6 +53,8 @@ CONFIG_MTD_CFI_INTELEXT=y
+ CONFIG_MTD_CFI_AMDSTD=y
+ CONFIG_MTD_CFI_STAA=y
+ CONFIG_MTD_PHYSMAP_OF=y
++CONFIG_MTD_NAND=y
++CONFIG_MTD_NAND_PXA3xx=y
+ CONFIG_SERIAL_8250_DW=y
+ CONFIG_GPIOLIB=y
+ CONFIG_GPIO_SYSFS=y

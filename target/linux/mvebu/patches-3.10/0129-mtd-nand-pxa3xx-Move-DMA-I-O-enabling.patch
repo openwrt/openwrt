@@ -1,0 +1,40 @@
+From 18166290599760e8ff1b6c0389834beafd09a517 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Fri, 4 Oct 2013 15:30:37 -0300
+Subject: [PATCH 129/203] mtd: nand: pxa3xx: Move DMA I/O enabling
+
+Instead of setting info->dma each time a command is prepared,
+we can move it after the DMA buffers are allocated.
+
+This is more clear and it's the proper place to enable this, given
+DMA cannot be turned on and off during runtime.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Daniel Mack <zonque@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -540,7 +540,6 @@ static int prepare_command_pool(struct p
+ 	info->oob_size		= 0;
+ 	info->use_ecc		= 0;
+ 	info->use_spare		= 1;
+-	info->use_dma		= (use_dma) ? 1 : 0;
+ 	info->is_ready		= 0;
+ 	info->retcode		= ERR_NONE;
+ 	if (info->cs != 0)
+@@ -950,6 +949,11 @@ static int pxa3xx_nand_init_buff(struct
+ 		return info->data_dma_ch;
+ 	}
+ 
++	/*
++	 * Now that DMA buffers are allocated we turn on
++	 * DMA proper for I/O operations.
++	 */
++	info->use_dma = 1;
+ 	return 0;
+ }
+ 

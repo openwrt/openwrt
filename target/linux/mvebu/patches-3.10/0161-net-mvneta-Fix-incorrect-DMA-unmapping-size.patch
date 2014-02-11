@@ -1,0 +1,69 @@
+From f834da3962eaee5d72f152e9a066c06ec0d9c2c4 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Thu, 5 Dec 2013 13:35:37 -0300
+Subject: [PATCH 161/203] net: mvneta: Fix incorrect DMA unmapping size
+
+The current code unmaps the DMA mapping created for rx skb_buff's by
+using the data_size as the the mapping size. This is wrong since the
+correct size to specify should match the size used to create the mapping.
+
+This commit removes the following DMA_API_DEBUG warning:
+
+------------[ cut here ]------------
+WARNING: at lib/dma-debug.c:887 check_unmap+0x3a8/0x860()
+mvneta d0070000.ethernet: DMA-API: device driver frees DMA memory with different size [device address=0x000000002eb80000] [map size=1600 bytes] [unmap size=66 bytes]
+CPU: 0 PID: 0 Comm: swapper/0 Not tainted 3.10.21-01444-ga88ae13-dirty #92
+[<c0013600>] (unwind_backtrace+0x0/0xf8) from [<c0010fb8>] (show_stack+0x10/0x14)
+[<c0010fb8>] (show_stack+0x10/0x14) from [<c001afa0>] (warn_slowpath_common+0x48/0x68)
+[<c001afa0>] (warn_slowpath_common+0x48/0x68) from [<c001b01c>] (warn_slowpath_fmt+0x30/0x40)
+[<c001b01c>] (warn_slowpath_fmt+0x30/0x40) from [<c018d0fc>] (check_unmap+0x3a8/0x860)
+[<c018d0fc>] (check_unmap+0x3a8/0x860) from [<c018d734>] (debug_dma_unmap_page+0x64/0x70)
+[<c018d734>] (debug_dma_unmap_page+0x64/0x70) from [<c0233f78>] (mvneta_rx+0xec/0x468)
+[<c0233f78>] (mvneta_rx+0xec/0x468) from [<c023436c>] (mvneta_poll+0x78/0x16c)
+[<c023436c>] (mvneta_poll+0x78/0x16c) from [<c02db468>] (net_rx_action+0x94/0x160)
+[<c02db468>] (net_rx_action+0x94/0x160) from [<c0021e68>] (__do_softirq+0xe8/0x1d0)
+[<c0021e68>] (__do_softirq+0xe8/0x1d0) from [<c0021ff8>] (do_softirq+0x4c/0x58)
+[<c0021ff8>] (do_softirq+0x4c/0x58) from [<c0022228>] (irq_exit+0x58/0x90)
+[<c0022228>] (irq_exit+0x58/0x90) from [<c000e7c8>] (handle_IRQ+0x3c/0x94)
+[<c000e7c8>] (handle_IRQ+0x3c/0x94) from [<c0008548>] (armada_370_xp_handle_irq+0x4c/0xb4)
+[<c0008548>] (armada_370_xp_handle_irq+0x4c/0xb4) from [<c000dc20>] (__irq_svc+0x40/0x50)
+Exception stack(0xc04f1f70 to 0xc04f1fb8)
+1f60:                                     c1fe46f8 00000000 00001d92 00001d92
+1f80: c04f0000 c04f0000 c04f84a4 c03e081c c05220e7 00000001 c05220e7 c04f0000
+1fa0: 00000000 c04f1fb8 c000eaf8 c004c048 60000113 ffffffff
+[<c000dc20>] (__irq_svc+0x40/0x50) from [<c004c048>] (cpu_startup_entry+0x54/0x128)
+[<c004c048>] (cpu_startup_entry+0x54/0x128) from [<c04c1a14>] (start_kernel+0x29c/0x2f0)
+[<c04c1a14>] (start_kernel+0x29c/0x2f0) from [<00008074>] (0x8074)
+---[ end trace d4955f6acd178110 ]---
+Mapped at:
+ [<c018d600>] debug_dma_map_page+0x4c/0x11c
+ [<c0235d6c>] mvneta_setup_rxqs+0x398/0x598
+ [<c0236084>] mvneta_open+0x40/0x17c
+ [<c02dbbd4>] __dev_open+0x9c/0x100
+ [<c02dbe58>] __dev_change_flags+0x7c/0x134
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -1341,7 +1341,7 @@ static void mvneta_rxq_drop_pkts(struct
+ 
+ 		dev_kfree_skb_any(skb);
+ 		dma_unmap_single(pp->dev->dev.parent, rx_desc->buf_phys_addr,
+-				 rx_desc->data_size, DMA_FROM_DEVICE);
++				 MVNETA_RX_BUF_SIZE(pp->pkt_size), DMA_FROM_DEVICE);
+ 	}
+ 
+ 	if (rx_done)
+@@ -1387,7 +1387,7 @@ static int mvneta_rx(struct mvneta_port
+ 		}
+ 
+ 		dma_unmap_single(pp->dev->dev.parent, rx_desc->buf_phys_addr,
+-				 rx_desc->data_size, DMA_FROM_DEVICE);
++				 MVNETA_RX_BUF_SIZE(pp->pkt_size), DMA_FROM_DEVICE);
+ 
+ 		rx_bytes = rx_desc->data_size -
+ 			(ETH_FCS_LEN + MVNETA_MH_SIZE);

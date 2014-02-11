@@ -1,0 +1,62 @@
+From 061855025b6842debdf6ea2e8bfd86f50700e263 Mon Sep 17 00:00:00 2001
+From: Grant Likely <grant.likely@linaro.org>
+Date: Thu, 19 Dec 2013 09:30:58 -0300
+Subject: [PATCH 187/203] of: Add helper for printing an of_phandle_args
+ structure
+
+It is sometimes useful for debug to get the contents of an
+of_phandle_args structure out into the kernel log.
+
+Signed-off-by: Grant Likely <grant.likely@linaro.org>
+
+Conflicts:
+	drivers/of/base.c
+---
+ drivers/of/base.c  | 9 +++++++++
+ drivers/of/irq.c   | 6 +++---
+ include/linux/of.h | 1 +
+ 3 files changed, 13 insertions(+), 3 deletions(-)
+
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -1136,6 +1136,15 @@ EXPORT_SYMBOL(of_parse_phandle);
+  * To get a device_node of the `node2' node you may call this:
+  * of_parse_phandle_with_args(node3, "list", "#list-cells", 1, &args);
+  */
++void of_print_phandle_args(const char *msg, const struct of_phandle_args *args)
++{
++	int i;
++	printk("%s %s", msg, of_node_full_name(args->np));
++	for (i = 0; i < args->args_count; i++)
++		printk(i ? ",%08x" : ":%08x", args->args[i]);
++	printk("\n");
++}
++
+ static int __of_parse_phandle_with_args(const struct device_node *np,
+ 					const char *list_name,
+ 					const char *cells_name, int index,
+--- a/drivers/of/irq.c
++++ b/drivers/of/irq.c
+@@ -101,9 +101,9 @@ int of_irq_parse_raw(const __be32 *addr,
+ 	u32 intsize = 1, addrsize, newintsize = 0, newaddrsize = 0;
+ 	int imaplen, match, i;
+ 
+-	pr_debug("of_irq_parse_raw: par=%s,intspec=[0x%08x 0x%08x...],ointsize=%d\n",
+-		 of_node_full_name(out_irq->np), out_irq->args[0], out_irq->args[1],
+-		 out_irq->args_count);
++#ifdef DEBUG
++	of_print_phandle_args("of_irq_parse_raw: ", out_irq);
++#endif
+ 
+ 	ipar = of_node_get(out_irq->np);
+ 
+--- a/include/linux/of.h
++++ b/include/linux/of.h
+@@ -274,6 +274,7 @@ extern int of_n_size_cells(struct device
+ extern const struct of_device_id *of_match_node(
+ 	const struct of_device_id *matches, const struct device_node *node);
+ extern int of_modalias_node(struct device_node *node, char *modalias, int len);
++extern void of_print_phandle_args(const char *msg, const struct of_phandle_args *args);
+ extern struct device_node *of_parse_phandle(const struct device_node *np,
+ 					    const char *phandle_name,
+ 					    int index);

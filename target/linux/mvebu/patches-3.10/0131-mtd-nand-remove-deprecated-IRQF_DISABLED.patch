@@ -1,0 +1,27 @@
+From e3779fc4a84e1c51c061e3e13b1abf1c9a56a2cd Mon Sep 17 00:00:00 2001
+From: Michael Opdenacker <michael.opdenacker@free-electrons.com>
+Date: Sun, 13 Oct 2013 08:21:32 +0200
+Subject: [PATCH 131/203] mtd: nand: remove deprecated IRQF_DISABLED
+
+This patch proposes to remove the use of the IRQF_DISABLED flag
+
+It's a NOOP since 2.6.35 and it will be removed one day.
+
+Signed-off-by: Michael Opdenacker <michael.opdenacker@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -1213,8 +1213,7 @@ static int alloc_nand_resource(struct pl
+ 	/* initialize all interrupts to be disabled */
+ 	disable_int(info, NDSR_MASK);
+ 
+-	ret = request_irq(irq, pxa3xx_nand_irq, IRQF_DISABLED,
+-			  pdev->name, info);
++	ret = request_irq(irq, pxa3xx_nand_irq, 0, pdev->name, info);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "failed to request IRQ\n");
+ 		goto fail_free_buf;

@@ -1,0 +1,42 @@
+From 97598678602aaea473303523ce37a45d258206ca Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Thu, 7 Nov 2013 12:17:13 -0300
+Subject: [PATCH 134/203] mtd: nand: pxa3xx: read_page() returns max_bitflips
+
+As per the ecc.read_page() prototype, we must return the maximum number
+of bitflips that were corrected on any one region covering an ecc step.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Tested-by: Daniel Mack <zonque@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/nand/pxa3xx_nand.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -751,6 +751,7 @@ static int pxa3xx_nand_read_page_hwecc(s
+ {
+ 	struct pxa3xx_nand_host *host = mtd->priv;
+ 	struct pxa3xx_nand_info *info = host->info_data;
++	int max_bitflips = 0;
+ 
+ 	chip->read_buf(mtd, buf, mtd->writesize);
+ 	chip->read_buf(mtd, chip->oob_poi, mtd->oobsize);
+@@ -758,6 +759,7 @@ static int pxa3xx_nand_read_page_hwecc(s
+ 	if (info->retcode == ERR_SBERR) {
+ 		switch (info->use_ecc) {
+ 		case 1:
++			max_bitflips = 1;
+ 			mtd->ecc_stats.corrected++;
+ 			break;
+ 		case 0:
+@@ -776,7 +778,7 @@ static int pxa3xx_nand_read_page_hwecc(s
+ 			mtd->ecc_stats.failed++;
+ 	}
+ 
+-	return 0;
++	return max_bitflips;
+ }
+ 
+ static uint8_t pxa3xx_nand_read_byte(struct mtd_info *mtd)
