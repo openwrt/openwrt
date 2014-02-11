@@ -28,6 +28,9 @@ mvebu_board_detect() {
 	*"PlatHome OpenBlocks AX3-4 board")
 		name="openblocks-ax3-4"
 		;;
+	*"Marvell Armada XP GP Board")
+		name="armada-xp-gp"
+		;;
 	esac
 
 	[ -z "$name" ] && name="unknown"
