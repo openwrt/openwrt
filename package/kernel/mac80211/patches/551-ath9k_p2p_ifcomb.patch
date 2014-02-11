@@ -1,0 +1,33 @@
+From c997a1da25fe7c717ed099888b8eb35d4e139e70 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sun, 8 Dec 2013 08:52:52 +0100
+Subject: [PATCH] ath9k: support only one P2P interface
+
+Preparation for adding P2P powersave and multi-channel support.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+ drivers/net/wireless/ath/ath9k/init.c | 4 ++--
+  1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -863,15 +863,15 @@ void ath9k_reload_chainmask_settings(str
+ 
+ static const struct ieee80211_iface_limit if_limits[] = {
+ 	{ .max = 2048,	.types = BIT(NL80211_IFTYPE_STATION) |
+-				 BIT(NL80211_IFTYPE_P2P_CLIENT) |
+ 				 BIT(NL80211_IFTYPE_WDS) },
+ 	{ .max = 8,	.types =
+ #ifdef CPTCFG_MAC80211_MESH
+ 				 BIT(NL80211_IFTYPE_MESH_POINT) |
+ #endif
+-				 BIT(NL80211_IFTYPE_AP) |
+-				 BIT(NL80211_IFTYPE_P2P_GO) },
++				 BIT(NL80211_IFTYPE_AP) },
+ 	{ .max = 1,	.types = BIT(NL80211_IFTYPE_ADHOC) },
++	{ .max = 1,	.types = BIT(NL80211_IFTYPE_P2P_CLIENT) |
++				 BIT(NL80211_IFTYPE_P2P_GO) },
+ };
+ 
+ static const struct ieee80211_iface_limit if_dfs_limits[] = {
