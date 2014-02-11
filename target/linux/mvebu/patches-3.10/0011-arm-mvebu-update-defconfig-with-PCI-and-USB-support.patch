@@ -1,0 +1,36 @@
+From c3da1bb20af37c09a07756d54420470788f131c7 Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Fri, 7 Dec 2012 22:49:57 +0100
+Subject: [PATCH 011/203] arm: mvebu: update defconfig with PCI and USB support
+
+Now that we have the necessary drivers and Device Tree informations to
+support PCIe on Armada 370 and Armada XP, enable the CONFIG_PCI
+option.
+
+Also, since the Armada 370 Mirabox has a built-in USB XHCI controller
+connected on the PCIe bus, enable the corresponding options as well.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+---
+ arch/arm/configs/mvebu_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/arch/arm/configs/mvebu_defconfig
++++ b/arch/arm/configs/mvebu_defconfig
+@@ -13,6 +13,8 @@ CONFIG_MACH_ARMADA_370=y
+ CONFIG_MACH_ARMADA_XP=y
+ # CONFIG_CACHE_L2X0 is not set
+ # CONFIG_SWP_EMULATE is not set
++CONFIG_PCI=y
++CONFIG_PCI_MVEBU=y
+ CONFIG_SMP=y
+ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+@@ -61,6 +63,7 @@ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_EHCI_ROOT_HUB_TT=y
+ CONFIG_USB_STORAGE=y
++CONFIG_USB_XHCI_HCD=y
+ CONFIG_MMC=y
+ CONFIG_MMC_MVSDIO=y
+ CONFIG_NEW_LEDS=y

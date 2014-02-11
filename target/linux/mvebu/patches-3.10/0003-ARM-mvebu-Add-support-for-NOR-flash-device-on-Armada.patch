@@ -1,0 +1,71 @@
+From 74cd8c09ae416261d7595021fc8062836dc750a2 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Fri, 17 May 2013 08:09:58 -0300
+Subject: [PATCH 003/203] ARM: mvebu: Add support for NOR flash device on
+ Armada XP-DB board
+
+The Armada XP Development Board (DB-78460-BP) has a NOR flash device
+connected to the Device Bus. This commit adds the device tree node
+to support this device.
+
+This SoC supports a flexible and dynamic decoding window allocation
+scheme; but since this feature is still not implemented we need
+to specify the window base address in the device tree node itself.
+
+This base address has been selected in a completely arbitrary fashion.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/armada-xp-db.dts | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+--- a/arch/arm/boot/dts/armada-xp-db.dts
++++ b/arch/arm/boot/dts/armada-xp-db.dts
+@@ -30,6 +30,9 @@
+ 	};
+ 
+ 	soc {
++		ranges = <0          0 0xd0000000 0x100000	/* Internal registers 1MiB */
++			  0xf0000000 0 0xf0000000 0x1000000>;	/* Device Bus, NOR 16MiB   */
++
+ 		internal-regs {
+ 			serial@12000 {
+ 				clock-frequency = <250000000>;
+@@ -156,6 +159,35 @@
+ 					status = "okay";
+ 				};
+ 			};
++
++			devbus-bootcs@10400 {
++				status = "okay";
++				ranges = <0 0xf0000000 0x1000000>;
++
++				/* Device Bus parameters are required */
++
++				/* Read parameters */
++				devbus,bus-width    = <8>;
++				devbus,turn-off-ps  = <60000>;
++				devbus,badr-skew-ps = <0>;
++				devbus,acc-first-ps = <124000>;
++				devbus,acc-next-ps  = <248000>;
++				devbus,rd-setup-ps  = <0>;
++				devbus,rd-hold-ps   = <0>;
++
++				/* Write parameters */
++				devbus,sync-enable = <0>;
++				devbus,wr-high-ps  = <60000>;
++				devbus,wr-low-ps   = <60000>;
++				devbus,ale-wr-ps   = <60000>;
++
++				/* NOR 16 MiB */
++				nor@0 {
++					compatible = "cfi-flash";
++					reg = <0 0x1000000>;
++					bank-width = <2>;
++				};
++			};
+ 		};
+ 	};
+ };

@@ -1,0 +1,28 @@
+From df8ceea297967c3452a514bbde715acebf3bda29 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Fri, 7 Jun 2013 13:47:49 -0300
+Subject: [PATCH 023/203] ARM: mvebu: Remove device tree unused properties on
+ A370
+
+These properties are not needed so it's safe to remove them.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Acked-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/armada-370.dtsi | 4 ----
+ 1 file changed, 4 deletions(-)
+
+--- a/arch/arm/boot/dts/armada-370.dtsi
++++ b/arch/arm/boot/dts/armada-370.dtsi
+@@ -180,10 +180,6 @@
+ 
+ 				bus-range = <0x00 0xff>;
+ 
+-				reg = <0x40000 0x2000>, <0x80000 0x2000>;
+-
+-				reg-names = "pcie0.0", "pcie1.0";
+-
+ 				ranges = <0x82000000 0 0x40000 0x40000 0 0x00002000   /* Port 0.0 registers */
+ 					0x82000000 0 0x80000 0x80000 0 0x00002000   /* Port 1.0 registers */
+ 					0x82000000 0 0xe0000000 0xe0000000 0 0x08000000   /* non-prefetchable memory */

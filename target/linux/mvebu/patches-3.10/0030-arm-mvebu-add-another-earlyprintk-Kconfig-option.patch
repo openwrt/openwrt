@@ -1,0 +1,85 @@
+From 70c30ca997919a4b8c9051a3903f30c79c735f12 Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Wed, 5 Jun 2013 09:05:00 +0200
+Subject: [PATCH 030/203] arm: mvebu: add another earlyprintk Kconfig option
+
+In order to support both old and new bootloaders, we add a new Kconfig
+option for the earlyprintk UART selection. The existing option allows
+to work with old bootloaders (that keep the internal registers mapped
+at 0xd0000000), while the newly introduced option allows to work with
+new bootloaders (that remap the internal registers at 0xf1000000).
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/Kconfig.debug         | 30 ++++++++++++++++++++++++++++--
+ arch/arm/include/debug/mvebu.S |  5 +++++
+ 2 files changed, 33 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -303,12 +303,37 @@ choice
+ 		  their output to the serial port on MSM 8960 devices.
+ 
+ 	config DEBUG_MVEBU_UART
+-		bool "Kernel low-level debugging messages via MVEBU UART"
++		bool "Kernel low-level debugging messages via MVEBU UART (old bootloaders)"
+ 		depends on ARCH_MVEBU
+ 		help
+ 		  Say Y here if you want kernel low-level debugging support
+ 		  on MVEBU based platforms.
+ 
++		  This option should be used with the old bootloaders
++		  that left the internal registers mapped at
++		  0xd0000000. As of today, this is the case on
++		  platforms such as the Globalscale Mirabox or the
++		  Plathome OpenBlocks AX3, when using the original
++		  bootloader.
++
++		  If the wrong DEBUG_MVEBU_UART* option is selected,
++		  when u-boot hands over to the kernel, the system
++		  silently crashes, with no serial output at all.
++
++	config DEBUG_MVEBU_UART_ALTERNATE
++		bool "Kernel low-level debugging messages via MVEBU UART (new bootloaders)"
++		depends on ARCH_MVEBU
++		help
++		  Say Y here if you want kernel low-level debugging support
++		  on MVEBU based platforms.
++
++		  This option should be used with the new bootloaders
++		  that remap the internal registers at 0xf1000000.
++
++		  If the wrong DEBUG_MVEBU_UART* option is selected,
++		  when u-boot hands over to the kernel, the system
++		  silently crashes, with no serial output at all.
++
+ 	config DEBUG_NOMADIK_UART
+ 		bool "Kernel low-level debugging messages via NOMADIK UART"
+ 		depends on ARCH_NOMADIK
+@@ -632,7 +657,8 @@ config DEBUG_LL_INCLUDE
+ 				 DEBUG_IMX51_UART || \
+ 				 DEBUG_IMX53_UART ||\
+ 				 DEBUG_IMX6Q_UART
+-	default "debug/mvebu.S" if DEBUG_MVEBU_UART
++	default "debug/mvebu.S" if DEBUG_MVEBU_UART || \
++				   DEBUG_MVEBU_UART_ALTERNATE
+ 	default "debug/mxs.S" if DEBUG_IMX23_UART || DEBUG_IMX28_UART
+ 	default "debug/nomadik.S" if DEBUG_NOMADIK_UART
+ 	default "debug/omap2plus.S" if DEBUG_OMAP2PLUS_UART
+--- a/arch/arm/include/debug/mvebu.S
++++ b/arch/arm/include/debug/mvebu.S
+@@ -11,7 +11,12 @@
+  * published by the Free Software Foundation.
+ */
+ 
++#ifdef CONFIG_DEBUG_MVEBU_UART_ALTERNATE
++#define ARMADA_370_XP_REGS_PHYS_BASE	0xf1000000
++#else
+ #define ARMADA_370_XP_REGS_PHYS_BASE	0xd0000000
++#endif
++
+ #define ARMADA_370_XP_REGS_VIRT_BASE	0xfec00000
+ 
+ 	.macro	addruart, rp, rv, tmp
