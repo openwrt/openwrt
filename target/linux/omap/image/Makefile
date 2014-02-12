@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012-2013 OpenWrt.org
+# Copyright (C) 2012-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -22,6 +22,17 @@ define Image/BuildKernel
 endef
 
 define Image/Build
+
+ ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+	$(CP) $(KDIR)/zImage $(TARGET_DIR)/boot/
+ endif
+ ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/am335x*.dtb $(TARGET_DIR)/boot/
+	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap3*.dtb $(TARGET_DIR)/boot/
+	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap4*.dtb $(TARGET_DIR)/boot/
+ endif
 	$(call Image/Build/$(1),$(1))
 endef
 
