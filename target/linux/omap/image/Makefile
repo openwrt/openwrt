@@ -7,6 +7,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+UBIFS_OPTS = -F -m 2048 -e 124KiB -c 4096 -U
+UBI_OPTS = -m 2048 -p 128KiB -s 512 -O 2048
+
 define Image/BuildKernel
 	cp $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
 	-mkdir $(BIN_DIR)/dtbs
