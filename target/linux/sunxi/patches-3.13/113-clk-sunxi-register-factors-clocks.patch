@@ -18,8 +18,6 @@ Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clk/sunxi/clk-sunxi.c   | 70 ++++++++++++++++++++++++++++++++++++++---
  3 files changed, 76 insertions(+), 73 deletions(-)
 
-diff --git a/drivers/clk/sunxi/clk-factors.c b/drivers/clk/sunxi/clk-factors.c
-index f05207a..9e23264 100644
 --- a/drivers/clk/sunxi/clk-factors.c
 +++ b/drivers/clk/sunxi/clk-factors.c
 @@ -30,14 +30,6 @@
@@ -37,7 +35,7 @@ index f05207a..9e23264 100644
  #define to_clk_factors(_hw) container_of(_hw, struct clk_factors, hw)
  
  #define SETMASK(len, pos)		(((1U << (len)) - 1) << (pos))
-@@ -120,61 +112,8 @@ static int clk_factors_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -120,61 +112,8 @@ static int clk_factors_set_rate(struct c
  	return 0;
  }
  
@@ -100,8 +98,6 @@ index f05207a..9e23264 100644
 -
 -	return clk;
 -}
-diff --git a/drivers/clk/sunxi/clk-factors.h b/drivers/clk/sunxi/clk-factors.h
-index f49851c..02e1a43 100644
 --- a/drivers/clk/sunxi/clk-factors.h
 +++ b/drivers/clk/sunxi/clk-factors.h
 @@ -17,11 +17,13 @@ struct clk_factors_config {
@@ -125,8 +121,6 @@ index f49851c..02e1a43 100644
 +
 +extern const struct clk_ops clk_factors_ops;
  #endif
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 492ef0e..7dc39a6 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
 @@ -23,6 +23,9 @@
@@ -139,7 +133,7 @@ index 492ef0e..7dc39a6 100644
  /**
   * sun4i_osc_clk_setup() - Setup function for gatable oscillator
   */
-@@ -261,7 +264,11 @@ static void sun4i_get_apb1_factors(u32 *freq, u32 parent_rate,
+@@ -261,7 +264,11 @@ static void sun4i_get_apb1_factors(u32 *
   * sunxi_factors_clk_setup() - Setup function for factor clocks
   */
  
@@ -151,7 +145,7 @@ index 492ef0e..7dc39a6 100644
  	struct clk_factors_config *table;
  	void (*getter) (u32 *rate, u32 parent_rate, u8 *n, u8 *k, u8 *m, u8 *p);
  };
-@@ -312,16 +319,71 @@ static void __init sunxi_factors_clk_setup(struct device_node *node,
+@@ -312,16 +319,71 @@ static void __init sunxi_factors_clk_set
  					   struct factors_data *data)
  {
  	struct clk *clk;
@@ -209,15 +203,15 @@ index 492ef0e..7dc39a6 100644
 +		mux->lock = &clk_lock;
 +		mux_hw = &mux->hw;
 +	}
-+
+ 
+-	clk = clk_register_factors(NULL, clk_name, parent, 0, reg,
+-				   data->table, data->getter, &clk_lock);
 +	/* set up factors properties */
 +	factors->reg = reg;
 +	factors->config = data->table;
 +	factors->get_factors = data->getter;
 +	factors->lock = &clk_lock;
- 
--	clk = clk_register_factors(NULL, clk_name, parent, 0, reg,
--				   data->table, data->getter, &clk_lock);
++
 +	clk = clk_register_composite(NULL, clk_name,
 +			parents, i,
 +			mux_hw, &clk_mux_ops,
@@ -227,6 +221,3 @@ index 492ef0e..7dc39a6 100644
  
  	if (!IS_ERR(clk)) {
  		of_clk_add_provider(node, of_clk_src_simple_get, clk);
--- 
-1.8.5.1
-

@@ -12,11 +12,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/boot/dts/sun7i-a20.dtsi | 6 ++++++
  2 files changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
-index 319cc6b..f11f292 100644
 --- a/arch/arm/boot/dts/sun4i-a10.dtsi
 +++ b/arch/arm/boot/dts/sun4i-a10.dtsi
-@@ -266,6 +266,12 @@
+@@ -412,6 +412,12 @@
  			reg = <0x01c20c90 0x10>;
  		};
  
@@ -29,11 +27,9 @@ index 319cc6b..f11f292 100644
  		sid: eeprom@01c23800 {
  			compatible = "allwinner,sun4i-sid";
  			reg = <0x01c23800 0x10>;
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 367611a..cc3683c 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -265,6 +265,12 @@
+@@ -416,6 +416,12 @@
  			reg = <0x01c20c90 0x10>;
  		};
  
@@ -46,6 +42,3 @@ index 367611a..cc3683c 100644
  		sid: eeprom@01c23800 {
  			compatible = "allwinner,sun7i-a20-sid";
  			reg = <0x01c23800 0x200>;
--- 
-1.8.5.1
-

@@ -21,16 +21,11 @@ Acked-by: Philipp Zabel <p.zabel@pengutronix.de>
  2 files changed, 176 insertions(+)
  create mode 100644 drivers/reset/reset-sunxi.c
 
-diff --git a/drivers/reset/Makefile b/drivers/reset/Makefile
-index 1e2d83f..cc29832 100644
 --- a/drivers/reset/Makefile
 +++ b/drivers/reset/Makefile
 @@ -1 +1,2 @@
  obj-$(CONFIG_RESET_CONTROLLER) += core.o
 +obj-$(CONFIG_ARCH_SUNXI) += reset-sunxi.o
-diff --git a/drivers/reset/reset-sunxi.c b/drivers/reset/reset-sunxi.c
-new file mode 100644
-index 0000000..695bd34
 --- /dev/null
 +++ b/drivers/reset/reset-sunxi.c
 @@ -0,0 +1,175 @@
@@ -209,6 +204,3 @@ index 0000000..695bd34
 +MODULE_AUTHOR("Maxime Ripard <maxime.ripard@free-electrons.com");
 +MODULE_DESCRIPTION("Allwinner SoCs Reset Controller Driver");
 +MODULE_LICENSE("GPL");
--- 
-1.8.5.1
-

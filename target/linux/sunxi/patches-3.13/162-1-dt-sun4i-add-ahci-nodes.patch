@@ -15,8 +15,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun4i-a10.dtsi           |  9 +++++++++
  3 files changed, 40 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10-a1000.dts b/arch/arm/boot/dts/sun4i-a10-a1000.dts
-index aef8207..fd6d512 100644
 --- a/arch/arm/boot/dts/sun4i-a10-a1000.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-a1000.dts
 @@ -48,6 +48,10 @@
@@ -30,8 +28,6 @@ index aef8207..fd6d512 100644
  		pinctrl@01c20800 {
  			mmc0_cd_pin_a1000: mmc0_cd_pin@0 {
  				allwinner,pins = "PH1";
-diff --git a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
-index f50fb2b..53ac453 100644
 --- a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
 @@ -51,7 +51,19 @@
@@ -74,11 +70,9 @@ index f50fb2b..53ac453 100644
 +		};
 +	};
  };
-diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
-index 4736dd2..731b491 100644
 --- a/arch/arm/boot/dts/sun4i-a10.dtsi
 +++ b/arch/arm/boot/dts/sun4i-a10.dtsi
-@@ -331,6 +331,15 @@
+@@ -338,6 +338,15 @@
  			status = "disabled";
  		};
  
@@ -94,6 +88,3 @@ index 4736dd2..731b491 100644
  		intc: interrupt-controller@01c20400 {
  			compatible = "allwinner,sun4i-ic";
  			reg = <0x01c20400 0x400>;
--- 
-1.8.5.1
-

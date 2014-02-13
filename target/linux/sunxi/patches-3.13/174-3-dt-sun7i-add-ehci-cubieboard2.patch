@@ -11,11 +11,9 @@ Conflicts:
  arch/arm/boot/dts/sun7i-a20-cubieboard2.dts | 45 +++++++++++++++++++++++++++++
  1 file changed, 45 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-index a26711c..10ea99d 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-@@ -54,6 +54,20 @@
+@@ -69,6 +69,20 @@
  				allwinner,drive = <0>;
  				allwinner,pull = <0>;
  			};
@@ -36,7 +34,7 @@ index a26711c..10ea99d 100644
  		};
  
  		uart0: serial@01c28000 {
-@@ -71,6 +85,15 @@
+@@ -86,6 +100,15 @@
  		i2c1: i2c@01c2b000 {
  			pinctrl-names = "default";
  			pinctrl-0 = <&i2c1_pins_a>;
@@ -51,8 +49,8 @@ index a26711c..10ea99d 100644
 +			vbus-supply = <&reg_usb2_vbus>;
  			status = "okay";
  		};
- 
-@@ -112,5 +135,27 @@
+ 	};
+@@ -119,5 +142,27 @@
  			gpio = <&pio 1 8 0>;
  			enable-active-high;
  		};
@@ -80,6 +78,3 @@ index a26711c..10ea99d 100644
 +		};
  	};
  };
--- 
-1.8.5.1
-

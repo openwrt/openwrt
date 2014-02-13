@@ -16,11 +16,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  3 files changed, 531 insertions(+)
  create mode 100644 drivers/rtc/rtc-sunxi.c
 
-diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
-index 0077302..c2fa86c 100644
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
-@@ -1104,6 +1104,13 @@ config RTC_DRV_SUN4V
+@@ -1122,6 +1122,13 @@ config RTC_DRV_SUN4V
  	  If you say Y here you will get support for the Hypervisor
  	  based RTC on SUN4V systems.
  
@@ -34,11 +32,9 @@ index 0077302..c2fa86c 100644
  config RTC_DRV_STARFIRE
  	bool "Starfire RTC"
  	depends on SPARC64
-diff --git a/drivers/rtc/Makefile b/drivers/rtc/Makefile
-index 27b4bd8..63f3e99 100644
 --- a/drivers/rtc/Makefile
 +++ b/drivers/rtc/Makefile
-@@ -117,6 +117,7 @@ obj-$(CONFIG_RTC_DRV_STARFIRE)	+= rtc-starfire.o
+@@ -119,6 +119,7 @@ obj-$(CONFIG_RTC_DRV_STARFIRE)	+= rtc-st
  obj-$(CONFIG_RTC_DRV_STK17TA8)	+= rtc-stk17ta8.o
  obj-$(CONFIG_RTC_DRV_STMP)	+= rtc-stmp3xxx.o
  obj-$(CONFIG_RTC_DRV_SUN4V)	+= rtc-sun4v.o
@@ -46,9 +42,6 @@ index 27b4bd8..63f3e99 100644
  obj-$(CONFIG_RTC_DRV_TEGRA)	+= rtc-tegra.o
  obj-$(CONFIG_RTC_DRV_TEST)	+= rtc-test.o
  obj-$(CONFIG_RTC_DRV_TILE)	+= rtc-tile.o
-diff --git a/drivers/rtc/rtc-sunxi.c b/drivers/rtc/rtc-sunxi.c
-new file mode 100644
-index 0000000..68a3528
 --- /dev/null
 +++ b/drivers/rtc/rtc-sunxi.c
 @@ -0,0 +1,523 @@
@@ -575,6 +568,3 @@ index 0000000..68a3528
 +MODULE_DESCRIPTION("sunxi RTC driver");
 +MODULE_AUTHOR("Carlo Caione <carlo.caione@gmail.com>");
 +MODULE_LICENSE("GPL");
--- 
-1.8.5.1
-

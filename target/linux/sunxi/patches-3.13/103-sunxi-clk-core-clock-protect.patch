@@ -20,11 +20,9 @@ Conflicts:
  drivers/clk/sunxi/clk-sunxi.c | 28 ++++++++++++++++++++++++++++
  1 file changed, 28 insertions(+)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 9bbd035..8fc1375 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -616,6 +616,31 @@ static void __init of_sunxi_table_clock_setup(const struct of_device_id *clk_mat
+@@ -616,6 +616,31 @@ static void __init of_sunxi_table_clock_
  	}
  }
  
@@ -56,7 +54,7 @@ index 9bbd035..8fc1375 100644
  static void __init sunxi_init_clocks(struct device_node *np)
  {
  	/* Register factor clocks */
-@@ -629,6 +654,9 @@ static void __init sunxi_init_clocks(struct device_node *np)
+@@ -629,6 +654,9 @@ static void __init sunxi_init_clocks(str
  
  	/* Register gate clocks */
  	of_sunxi_table_clock_setup(clk_gates_match, sunxi_gates_clk_setup);
@@ -66,6 +64,3 @@ index 9bbd035..8fc1375 100644
  }
  CLK_OF_DECLARE(sun4i_a10_clk_init, "allwinner,sun4i-a10", sunxi_init_clocks);
  CLK_OF_DECLARE(sun5i_a10s_clk_init, "allwinner,sun5i-a10s", sunxi_init_clocks);
--- 
-1.8.5.1
-

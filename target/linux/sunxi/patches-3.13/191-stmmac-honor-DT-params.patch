@@ -12,11 +12,9 @@ Signed-off-by: Chen-Yu Tsai <wens@csie.org>
  drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-index 51c9069..74c7aef 100644
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -47,6 +47,7 @@ static int stmmac_probe_config_dt(struct platform_device *pdev,
+@@ -47,6 +47,7 @@ static int stmmac_probe_config_dt(struct
  		plat->bus_id = 0;
  
  	of_property_read_u32(np, "snps,phy-addr", &plat->phy_addr);
@@ -24,6 +22,3 @@ index 51c9069..74c7aef 100644
  
  	plat->mdio_bus_data = devm_kzalloc(&pdev->dev,
  					   sizeof(struct stmmac_mdio_bus_data),
--- 
-1.8.5.1
-

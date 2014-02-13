@@ -8,8 +8,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun5i-a13.dtsi | 21 +++++++++++++++++++++
  1 file changed, 21 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index 1a416d0..5bf7e9a 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
 @@ -16,6 +16,10 @@
@@ -23,7 +21,7 @@ index 1a416d0..5bf7e9a 100644
  	cpus {
  		#address-cells = <1>;
  		#size-cells = <0>;
-@@ -416,5 +420,22 @@
+@@ -423,5 +427,22 @@
  			interrupts = <82>, <83>;
  			clocks = <&ahb_gates 28>;
  		};
@@ -46,6 +44,3 @@ index 1a416d0..5bf7e9a 100644
 +		};
  	};
  };
--- 
-1.8.5.1
-

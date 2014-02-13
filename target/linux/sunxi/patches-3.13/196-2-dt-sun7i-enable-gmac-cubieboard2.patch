@@ -11,8 +11,6 @@ Signed-off-by: Chen-Yu Tsai <wens@csie.org>
  arch/arm/boot/dts/sun7i-a20-cubieboard2.dts | 23 ++++++++---------------
  1 file changed, 8 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-index d28e600..48777cd 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 @@ -19,21 +19,6 @@
@@ -37,8 +35,8 @@ index d28e600..48777cd 100644
  		mmc0: mmc@01c0f000 {
  			pinctrl-names = "default";
  			pinctrl-0 = <&mmc0_pins_a>;
-@@ -76,6 +61,14 @@
- 			pinctrl-0 = <&i2c1_pins_a>;
+@@ -111,6 +96,14 @@
+ 			vbus-supply = <&reg_usb2_vbus>;
  			status = "okay";
  		};
 +
@@ -52,6 +50,3 @@ index d28e600..48777cd 100644
  	};
  
  	leds {
--- 
-1.8.5.1
-

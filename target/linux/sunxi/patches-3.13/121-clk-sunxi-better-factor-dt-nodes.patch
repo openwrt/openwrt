@@ -27,11 +27,9 @@ Signed-off-by: Emilio López <emilio@elopez.com.ar>
  drivers/clk/sunxi/clk-sunxi.c | 9 +++++++++
  1 file changed, 9 insertions(+)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index af99b57..81d4c72 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -441,6 +441,15 @@ static struct clk * __init sunxi_factors_clk_setup(struct device_node *node,
+@@ -441,6 +441,15 @@ static struct clk * __init sunxi_factors
  	       (parents[i] = of_clk_get_parent_name(node, i)) != NULL)
  		i++;
  
@@ -47,6 +45,3 @@ index af99b57..81d4c72 100644
  	factors = kzalloc(sizeof(struct clk_factors), GFP_KERNEL);
  	if (!factors)
  		return NULL;
--- 
-1.8.5.1
-

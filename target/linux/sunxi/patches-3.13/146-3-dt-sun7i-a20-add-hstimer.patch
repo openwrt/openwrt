@@ -22,11 +22,9 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
  arch/arm/boot/dts/sun7i-a20.dtsi | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 93f7f96..c74147a 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -405,6 +405,16 @@
+@@ -552,6 +552,16 @@
  			status = "disabled";
  		};
  
@@ -43,6 +41,3 @@ index 93f7f96..c74147a 100644
  		gic: interrupt-controller@01c81000 {
  			compatible = "arm,cortex-a7-gic", "arm,cortex-a15-gic";
  			reg = <0x01c81000 0x1000>,
--- 
-1.8.5.1
-

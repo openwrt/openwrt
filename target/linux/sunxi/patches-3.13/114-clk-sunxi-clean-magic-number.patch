@@ -14,11 +14,9 @@ Signed-off-by: Emilio López <emilio@elopez.com.ar>
  drivers/clk/sunxi/clk-sunxi.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 7dc39a6..25ebba8 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -420,13 +420,14 @@ static void __init sunxi_mux_clk_setup(struct device_node *node,
+@@ -420,13 +420,14 @@ static void __init sunxi_mux_clk_setup(s
  {
  	struct clk *clk;
  	const char *clk_name = node->name;
@@ -35,6 +33,3 @@ index 7dc39a6..25ebba8 100644
  		i++;
  
  	clk = clk_register_mux(NULL, clk_name, parents, i,
--- 
-1.8.5.1
-

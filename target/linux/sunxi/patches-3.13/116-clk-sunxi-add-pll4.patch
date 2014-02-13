@@ -18,11 +18,9 @@ Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/boot/dts/sun7i-a20.dtsi  | 7 +++++++
  4 files changed, 28 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
-index 0bf70ee..1d6346c 100644
 --- a/arch/arm/boot/dts/sun4i-a10.dtsi
 +++ b/arch/arm/boot/dts/sun4i-a10.dtsi
-@@ -70,6 +70,13 @@
+@@ -66,6 +66,13 @@
  			clocks = <&osc24M>;
  		};
  
@@ -36,11 +34,9 @@ index 0bf70ee..1d6346c 100644
  		/* dummy is 200M */
  		cpu: cpu@01c20054 {
  			#clock-cells = <0>;
-diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
-index 924a2c1..64d6d75 100644
 --- a/arch/arm/boot/dts/sun5i-a10s.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
-@@ -67,6 +67,13 @@
+@@ -63,6 +63,13 @@
  			clocks = <&osc24M>;
  		};
  
@@ -54,8 +50,6 @@ index 924a2c1..64d6d75 100644
  		/* dummy is 200M */
  		cpu: cpu@01c20054 {
  			#clock-cells = <0>;
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index 1ccd75d..2c355c8 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
 @@ -67,6 +67,13 @@
@@ -72,11 +66,9 @@ index 1ccd75d..2c355c8 100644
  		/* dummy is 200M */
  		cpu: cpu@01c20054 {
  			#clock-cells = <0>;
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index c74147a..18144f0 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -66,6 +66,13 @@
+@@ -62,6 +62,13 @@
  			clocks = <&osc24M>;
  		};
  
@@ -90,6 +82,3 @@ index c74147a..18144f0 100644
  		/*
  		 * This is a dummy clock, to be used as placeholder on
  		 * other mux clocks when a specific parent clock is not
--- 
-1.8.5.1
-

@@ -17,11 +17,9 @@ Acked-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/sunxi/clk-sunxi.c                     | 2 ++
  2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
-index 91a748f..b8c6cc4 100644
 --- a/Documentation/devicetree/bindings/clock/sunxi.txt
 +++ b/Documentation/devicetree/bindings/clock/sunxi.txt
-@@ -7,7 +7,7 @@ This binding uses the common clock binding[1].
+@@ -7,7 +7,7 @@ This binding uses the common clock bindi
  Required properties:
  - compatible : shall be one of the following:
  	"allwinner,sun4i-osc-clk" - for a gatable oscillator
@@ -30,11 +28,9 @@ index 91a748f..b8c6cc4 100644
  	"allwinner,sun6i-a31-pll1-clk" - for the main PLL clock on A31
  	"allwinner,sun4i-cpu-clk" - for the CPU multiplexer clock
  	"allwinner,sun4i-axi-clk" - for the AXI clock
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 25ebba8..52f34ec 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -301,11 +301,13 @@ struct factors_data {
+@@ -301,11 +301,13 @@ static struct clk_factors_config sun4i_a
  };
  
  static const struct factors_data sun4i_pll1_data __initconst = {
@@ -48,6 +44,3 @@ index 25ebba8..52f34ec 100644
  	.table = &sun6i_a31_pll1_config,
  	.getter = sun6i_a31_get_pll1_factors,
  };
--- 
-1.8.5.1
-

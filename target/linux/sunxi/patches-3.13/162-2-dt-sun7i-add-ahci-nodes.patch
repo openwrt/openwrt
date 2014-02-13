@@ -16,11 +16,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20.dtsi                |  9 +++++++++
  4 files changed, 89 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-index 48777cd..a26711c 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-@@ -28,7 +28,19 @@
+@@ -43,7 +43,19 @@
  			status = "okay";
  		};
  
@@ -40,7 +38,7 @@ index 48777cd..a26711c 100644
  			mmc0_cd_pin_cubieboard2: mmc0_cd_pin@0 {
  				allwinner,pins = "PH1";
  				allwinner,function = "gpio_in";
-@@ -86,4 +98,19 @@
+@@ -93,4 +105,19 @@
  			gpios = <&pio 7 20 0>;
  		};
  	};
@@ -60,11 +58,9 @@ index 48777cd..a26711c 100644
 +		};
 +	};
  };
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index 2684f27..a5f3418 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-@@ -28,6 +28,11 @@
+@@ -43,6 +43,11 @@
  			status = "okay";
  		};
  
@@ -76,7 +72,7 @@ index 2684f27..a5f3418 100644
  		pinctrl@01c20800 {
  			mmc0_cd_pin_cubietruck: mmc0_cd_pin@0 {
  				allwinner,pins = "PH1";
-@@ -36,6 +41,13 @@
+@@ -58,6 +63,13 @@
  				allwinner,pull = <0>;
  			};
  
@@ -90,8 +86,8 @@ index 2684f27..a5f3418 100644
  			led_pins_cubietruck: led_pins@0 {
  				allwinner,pins = "PH7", "PH11", "PH20", "PH21";
  				allwinner,function = "gpio_out";
-@@ -84,4 +96,19 @@
- 			gpios = <&pio 7 7 0>;
+@@ -149,4 +161,19 @@
+ 			gpio = <&pio 7 3 0>;
  		};
  	};
 +
@@ -110,11 +106,9 @@ index 2684f27..a5f3418 100644
 +		};
 +	};
  };
-diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-index bf6f6c8..20b1000 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-@@ -37,7 +37,19 @@
+@@ -52,7 +52,19 @@
  			status = "okay";
  		};
  
@@ -134,7 +128,7 @@ index bf6f6c8..20b1000 100644
  			mmc0_cd_pin_olinuxinom: mmc0_cd_pin@0 {
  				allwinner,pins = "PH1";
  				allwinner,function = "gpio_in";
-@@ -116,4 +128,18 @@
+@@ -123,4 +135,18 @@
  			default-state = "on";
  		};
  	};
@@ -153,11 +147,9 @@ index bf6f6c8..20b1000 100644
 +		};
 +	};
  };
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index c9c123a..3242a29 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -448,6 +448,15 @@
+@@ -433,6 +433,15 @@
  			};
  		};
  
@@ -173,6 +165,3 @@ index c9c123a..3242a29 100644
  		timer@01c20c00 {
  			compatible = "allwinner,sun4i-timer";
  			reg = <0x01c20c00 0x90>;
--- 
-1.8.5.1
-

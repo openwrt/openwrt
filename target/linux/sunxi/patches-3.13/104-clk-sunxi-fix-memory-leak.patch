@@ -12,11 +12,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clk/sunxi/clk-sunxi.c | 28 +++++++++++++++++-----------
  1 file changed, 17 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 8fc1375..492ef0e 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -37,18 +37,16 @@ static void __init sun4i_osc_clk_setup(struct device_node *node)
+@@ -37,18 +37,16 @@ static void __init sun4i_osc_clk_setup(s
  	const char *clk_name = node->name;
  	u32 rate;
  
@@ -40,7 +38,7 @@ index 8fc1375..492ef0e 100644
  
  	/* set up gate and fixed rate properties */
  	gate->reg = of_iomap(node, 0);
-@@ -63,10 +61,18 @@ static void __init sun4i_osc_clk_setup(struct device_node *node)
+@@ -63,10 +61,18 @@ static void __init sun4i_osc_clk_setup(s
  			&gate->hw, &clk_gate_ops,
  			CLK_IS_ROOT);
  
@@ -63,6 +61,3 @@ index 8fc1375..492ef0e 100644
  }
  CLK_OF_DECLARE(sun4i_osc, "allwinner,sun4i-osc-clk", sun4i_osc_clk_setup);
  
--- 
-1.8.5.1
-

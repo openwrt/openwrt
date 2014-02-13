@@ -12,8 +12,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun5i-a13.dtsi                 | 17 ++++++++++++
  5 files changed, 115 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts b/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
-index 3c9f8b3..e47a731 100644
 --- a/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
 @@ -34,7 +34,39 @@
@@ -56,11 +54,9 @@ index 3c9f8b3..e47a731 100644
  			led_pins_olinuxino: led_pins@0 {
  				allwinner,pins = "PE3";
  				allwinner,function = "gpio_out";
-diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
-index c42ed2a..c3bb9bd 100644
 --- a/arch/arm/boot/dts/sun5i-a10s.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
-@@ -286,6 +286,26 @@
+@@ -293,6 +293,26 @@
  			#size-cells = <0>;
  		};
  
@@ -87,7 +83,7 @@ index c42ed2a..c3bb9bd 100644
  		intc: interrupt-controller@01c20400 {
  			compatible = "allwinner,sun4i-ic";
  			reg = <0x01c20400 0x400>;
-@@ -356,6 +376,20 @@
+@@ -363,6 +383,20 @@
  				allwinner,drive = <0>;
  				allwinner,pull = <0>;
  			};
@@ -108,8 +104,6 @@ index c42ed2a..c3bb9bd 100644
  		};
  
  		timer@01c20c00 {
-diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts
-index fe2ce0a..37ec3d9 100644
 --- a/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts
 @@ -20,7 +20,23 @@
@@ -136,8 +130,6 @@ index fe2ce0a..37ec3d9 100644
  			led_pins_olinuxinom: led_pins@0 {
  				allwinner,pins = "PG9";
  				allwinner,function = "gpio_out";
-diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
-index 9e508dc..cf77d9a 100644
 --- a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
 +++ b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
 @@ -23,7 +23,23 @@
@@ -164,11 +156,9 @@ index 9e508dc..cf77d9a 100644
  			led_pins_olinuxino: led_pins@0 {
  				allwinner,pins = "PG9";
  				allwinner,function = "gpio_out";
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index 8274a41..2dde48a 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
-@@ -267,6 +267,16 @@
+@@ -274,6 +274,16 @@
  		#size-cells = <1>;
  		ranges;
  
@@ -185,7 +175,7 @@ index 8274a41..2dde48a 100644
  		intc: interrupt-controller@01c20400 {
  			compatible = "allwinner,sun4i-ic";
  			reg = <0x01c20400 0x400>;
-@@ -319,6 +329,13 @@
+@@ -326,6 +336,13 @@
  				allwinner,drive = <0>;
  				allwinner,pull = <0>;
  			};
@@ -199,6 +189,3 @@ index 8274a41..2dde48a 100644
  		};
  
  		timer@01c20c00 {
--- 
-1.8.5.1
-

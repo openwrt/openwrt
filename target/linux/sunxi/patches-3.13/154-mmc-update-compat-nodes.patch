@@ -1,7 +1,6 @@
-diff -ruN old/drivers/mmc/host/sunxi-mci.c new/drivers/mmc/host/sunxi-mci.c
---- old/drivers/mmc/host/sunxi-mci.c	2014-01-22 23:41:25.000000000 +0100
-+++ new/drivers/mmc/host/sunxi-mci.c	2014-01-28 16:55:24.000000000 +0100
-@@ -715,8 +715,8 @@
+--- a/drivers/mmc/host/sunxi-mci.c
++++ b/drivers/mmc/host/sunxi-mci.c
+@@ -715,8 +715,8 @@ static void sunxi_mmc_request(struct mmc
  }
  
  static const struct of_device_id sunxi_mmc_of_match[] = {
@@ -12,7 +11,7 @@ diff -ruN old/drivers/mmc/host/sunxi-mci.c new/drivers/mmc/host/sunxi-mci.c
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, sunxi_mmc_of_match);
-@@ -736,7 +736,7 @@
+@@ -736,7 +736,7 @@ static int sunxi_mmc_resource_request(st
  	struct device_node *np = pdev->dev.of_node;
  	int ret;
  

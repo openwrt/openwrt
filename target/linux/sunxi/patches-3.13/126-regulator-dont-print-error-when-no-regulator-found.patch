@@ -15,11 +15,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/regulator/core.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
-index d85f313..9888f26 100644
 --- a/drivers/regulator/core.c
 +++ b/drivers/regulator/core.c
-@@ -1351,7 +1351,8 @@ static struct regulator *_regulator_get(struct device *dev, const char *id,
+@@ -1351,7 +1351,8 @@ static struct regulator *_regulator_get(
  
  		rdev = dummy_regulator_rdev;
  		goto found;
@@ -29,6 +27,3 @@ index d85f313..9888f26 100644
  		dev_err(dev, "dummy supplies not allowed\n");
  	}
  
--- 
-1.8.5.1
-

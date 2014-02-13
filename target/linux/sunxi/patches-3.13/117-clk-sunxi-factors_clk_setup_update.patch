@@ -16,11 +16,9 @@ Acked-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/sunxi/clk-sunxi.c | 15 ++++++++-------
  1 file changed, 8 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 52f34ec..96ccb3c 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -317,8 +317,8 @@ struct factors_data {
+@@ -317,8 +317,8 @@ static const struct factors_data sun4i_a
  	.getter = sun4i_get_apb1_factors,
  };
  
@@ -31,7 +29,7 @@ index 52f34ec..96ccb3c 100644
  {
  	struct clk *clk;
  	struct clk_factors *factors;
-@@ -340,14 +340,14 @@ static void __init sunxi_factors_clk_setup(struct device_node *node,
+@@ -340,14 +340,14 @@ static void __init sunxi_factors_clk_set
  
  	factors = kzalloc(sizeof(struct clk_factors), GFP_KERNEL);
  	if (!factors)
@@ -48,7 +46,7 @@ index 52f34ec..96ccb3c 100644
  		}
  
  		/* set up gate properties */
-@@ -363,7 +363,7 @@ static void __init sunxi_factors_clk_setup(struct device_node *node,
+@@ -363,7 +363,7 @@ static void __init sunxi_factors_clk_set
  		if (!mux) {
  			kfree(factors);
  			kfree(gate);
@@ -57,7 +55,7 @@ index 52f34ec..96ccb3c 100644
  		}
  
  		/* set up gate properties */
-@@ -384,13 +384,14 @@ static void __init sunxi_factors_clk_setup(struct device_node *node,
+@@ -384,13 +384,14 @@ static void __init sunxi_factors_clk_set
  			parents, i,
  			mux_hw, &clk_mux_ops,
  			&factors->hw, &clk_factors_ops,
@@ -74,6 +72,3 @@ index 52f34ec..96ccb3c 100644
  }
  
  
--- 
-1.8.5.1
-

@@ -1,6 +1,6 @@
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
-@@ -125,6 +125,7 @@ config SND_SOC_ALL_CODECS
+@@ -132,6 +132,7 @@ config SND_SOC_ALL_CODECS
  	select SND_SOC_WM9705 if SND_SOC_AC97_BUS
  	select SND_SOC_WM9712 if SND_SOC_AC97_BUS
  	select SND_SOC_WM9713 if SND_SOC_AC97_BUS
@@ -8,7 +8,7 @@
          help
            Normally ASoC codec drivers are only built if a machine driver which
            uses them is also built since they are only usable with a machine
-@@ -507,6 +508,9 @@ config SND_SOC_WM9712
+@@ -534,6 +535,9 @@ config SND_SOC_WM9712
  config SND_SOC_WM9713
  	tristate
  
@@ -20,7 +20,7 @@
  	tristate
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
-@@ -118,6 +118,7 @@ snd-soc-wm9705-objs := wm9705.o
+@@ -124,6 +124,7 @@ snd-soc-wm9705-objs := wm9705.o
  snd-soc-wm9712-objs := wm9712.o
  snd-soc-wm9713-objs := wm9713.o
  snd-soc-wm-hubs-objs := wm_hubs.o
@@ -28,7 +28,7 @@
  
  # Amp
  snd-soc-max9877-objs := max9877.o
-@@ -242,6 +243,7 @@ obj-$(CONFIG_SND_SOC_WM9712)	+= snd-soc-
+@@ -254,6 +255,7 @@ obj-$(CONFIG_SND_SOC_WM9712)	+= snd-soc-
  obj-$(CONFIG_SND_SOC_WM9713)	+= snd-soc-wm9713.o
  obj-$(CONFIG_SND_SOC_WM_ADSP)	+= snd-soc-wm-adsp.o
  obj-$(CONFIG_SND_SOC_WM_HUBS)	+= snd-soc-wm-hubs.o
@@ -1997,7 +1997,7 @@
 +#endif /* __MXS_ADC_CODEC_H */
 --- a/sound/soc/mxs/Kconfig
 +++ b/sound/soc/mxs/Kconfig
-@@ -18,3 +18,13 @@ config SND_SOC_MXS_SGTL5000
+@@ -19,3 +19,13 @@ config SND_SOC_MXS_SGTL5000
  	  a sgtl5000 codec.
  
  endif	# SND_MXS_SOC

@@ -9,8 +9,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/reset/reset-sunxi.c      | 2 +-
  2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sun6i-a31.dtsi b/arch/arm/boot/dts/sun6i-a31.dtsi
-index 5256ad9..ab6ea43 100644
 --- a/arch/arm/boot/dts/sun6i-a31.dtsi
 +++ b/arch/arm/boot/dts/sun6i-a31.dtsi
 @@ -220,13 +220,13 @@
@@ -29,8 +27,6 @@ index 5256ad9..ab6ea43 100644
  			reg = <0x01c202d8 0x4>;
  		};
  
-diff --git a/drivers/reset/reset-sunxi.c b/drivers/reset/reset-sunxi.c
-index 695bd34..3db179c 100644
 --- a/drivers/reset/reset-sunxi.c
 +++ b/drivers/reset/reset-sunxi.c
 @@ -138,7 +138,7 @@ void __init sun6i_reset_init(void)
@@ -42,6 +38,3 @@ index 695bd34..3db179c 100644
  	 { /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(of, sunxi_reset_dt_ids);
--- 
-1.8.5.1
-

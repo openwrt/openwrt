@@ -16,8 +16,6 @@ Acked-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/sunxi/clk-sunxi.c                     | 57 +++++++++++++++++++++++
  2 files changed, 61 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
-index 80b2a39..46d8433 100644
 --- a/Documentation/devicetree/bindings/clock/sunxi.txt
 +++ b/Documentation/devicetree/bindings/clock/sunxi.txt
 @@ -35,10 +35,13 @@ Required properties:
@@ -35,11 +33,9 @@ index 80b2a39..46d8433 100644
  - #clock-cells : from common clock binding; shall be set to 0 except for
  	"allwinner,*-gates-clk" where it shall be set to 1
  
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 649d7c3..af99b57 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -295,6 +295,47 @@ static void sun4i_get_apb1_factors(u32 *freq, u32 parent_rate,
+@@ -295,6 +295,47 @@ static void sun4i_get_apb1_factors(u32 *
  
  
  /**
@@ -87,7 +83,7 @@ index 649d7c3..af99b57 100644
   * sunxi_factors_clk_setup() - Setup function for factor clocks
   */
  
-@@ -341,6 +382,14 @@ struct factors_data {
+@@ -341,6 +382,14 @@ static struct clk_factors_config sun4i_a
  	.pwidth = 2,
  };
  
@@ -102,7 +98,7 @@ index 649d7c3..af99b57 100644
  static const struct factors_data sun4i_pll1_data __initconst = {
  	.enable = 31,
  	.table = &sun4i_pll1_config,
-@@ -364,6 +413,13 @@ struct factors_data {
+@@ -364,6 +413,13 @@ static const struct factors_data sun4i_a
  	.getter = sun4i_get_apb1_factors,
  };
  
@@ -116,7 +112,7 @@ index 649d7c3..af99b57 100644
  static struct clk * __init sunxi_factors_clk_setup(struct device_node *node,
  						const struct factors_data *data)
  {
-@@ -852,6 +908,7 @@ static void __init sunxi_divs_clk_setup(struct device_node *node,
+@@ -852,6 +908,7 @@ static const struct of_device_id clk_fac
  	{.compatible = "allwinner,sun4i-pll1-clk", .data = &sun4i_pll1_data,},
  	{.compatible = "allwinner,sun6i-a31-pll1-clk", .data = &sun6i_a31_pll1_data,},
  	{.compatible = "allwinner,sun4i-apb1-clk", .data = &sun4i_apb1_data,},
@@ -124,6 +120,3 @@ index 649d7c3..af99b57 100644
  	{}
  };
  
--- 
-1.8.5.1
-

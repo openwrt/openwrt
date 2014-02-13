@@ -9,9 +9,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  1 file changed, 22 insertions(+)
  create mode 100644 include/linux/clk/sunxi.h
 
-diff --git a/include/linux/clk/sunxi.h b/include/linux/clk/sunxi.h
-new file mode 100644
-index 0000000..1ef5c89
 --- /dev/null
 +++ b/include/linux/clk/sunxi.h
 @@ -0,0 +1,22 @@
@@ -37,6 +34,3 @@ index 0000000..1ef5c89
 +void clk_sunxi_mmc_phase_control(struct clk_hw *hw, u8 sample, u8 output);
 +
 +#endif
--- 
-1.8.5.1
-

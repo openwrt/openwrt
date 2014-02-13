@@ -8,11 +8,9 @@ Signed-off-by: Chen-Yu Tsai <wens@csie.org>
  drivers/net/ethernet/stmicro/stmmac/stmmac_main.c | 24 +++++++++++++----------
  1 file changed, 14 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-index 8a7a23a..4d75cba 100644
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -2682,10 +2682,17 @@ struct stmmac_priv *stmmac_dvr_probe(struct device *device,
+@@ -2680,10 +2680,17 @@ struct stmmac_priv *stmmac_dvr_probe(str
  	if ((phyaddr >= 0) && (phyaddr <= 31))
  		priv->plat->phy_addr = phyaddr;
  
@@ -31,7 +29,7 @@ index 8a7a23a..4d75cba 100644
  
  	ndev->netdev_ops = &stmmac_netdev_ops;
  
-@@ -2723,12 +2730,6 @@ struct stmmac_priv *stmmac_dvr_probe(struct device *device,
+@@ -2721,12 +2728,6 @@ struct stmmac_priv *stmmac_dvr_probe(str
  		goto error_netdev_register;
  	}
  
@@ -44,7 +42,7 @@ index 8a7a23a..4d75cba 100644
  	/* If a specific clk_csr value is passed from the platform
  	 * this means that the CSR Clock Range selection cannot be
  	 * changed at run-time and it is fixed. Viceversa the driver'll try to
-@@ -2753,15 +2754,18 @@ struct stmmac_priv *stmmac_dvr_probe(struct device *device,
+@@ -2751,15 +2752,18 @@ struct stmmac_priv *stmmac_dvr_probe(str
  		}
  	}
  
@@ -66,6 +64,3 @@ index 8a7a23a..4d75cba 100644
  	free_netdev(ndev);
  
  	return NULL;
--- 
-1.8.5.1
-

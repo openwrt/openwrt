@@ -8,11 +8,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/clk/sunxi/clk-sunxi.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 6d3286a..573ef28 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -702,6 +702,10 @@ struct gates_data {
+@@ -705,6 +705,10 @@ static const struct gates_data sun4i_ahb
  	.mask = {0x7F77FFF, 0x14FB3F},
  };
  
@@ -23,7 +21,7 @@ index 6d3286a..573ef28 100644
  static const struct gates_data sun5i_a10s_ahb_gates_data __initconst = {
  	.mask = {0x147667e7, 0x185915},
  };
-@@ -1017,6 +1021,7 @@ static void __init sunxi_divs_clk_setup(struct device_node *node,
+@@ -1021,6 +1025,7 @@ static const struct of_device_id clk_mux
  static const struct of_device_id clk_gates_match[] __initconst = {
  	{.compatible = "allwinner,sun4i-axi-gates-clk", .data = &sun4i_axi_gates_data,},
  	{.compatible = "allwinner,sun4i-ahb-gates-clk", .data = &sun4i_ahb_gates_data,},
@@ -31,6 +29,3 @@ index 6d3286a..573ef28 100644
  	{.compatible = "allwinner,sun5i-a10s-ahb-gates-clk", .data = &sun5i_a10s_ahb_gates_data,},
  	{.compatible = "allwinner,sun5i-a13-ahb-gates-clk", .data = &sun5i_a13_ahb_gates_data,},
  	{.compatible = "allwinner,sun6i-a31-ahb1-gates-clk", .data = &sun6i_a31_ahb1_gates_data,},
--- 
-1.8.5.1
-

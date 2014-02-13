@@ -14,11 +14,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clk/sunxi/clk-factors.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clk/sunxi/clk-factors.c b/drivers/clk/sunxi/clk-factors.c
-index 5687ac9..f05207a 100644
 --- a/drivers/clk/sunxi/clk-factors.c
 +++ b/drivers/clk/sunxi/clk-factors.c
-@@ -88,7 +88,7 @@ static long clk_factors_round_rate(struct clk_hw *hw, unsigned long rate,
+@@ -88,7 +88,7 @@ static long clk_factors_round_rate(struc
  static int clk_factors_set_rate(struct clk_hw *hw, unsigned long rate,
  				unsigned long parent_rate)
  {
@@ -27,6 +25,3 @@ index 5687ac9..f05207a 100644
  	u32 reg;
  	struct clk_factors *factors = to_clk_factors(hw);
  	struct clk_factors_config *config = factors->config;
--- 
-1.8.5.1
-

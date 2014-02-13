@@ -11,8 +11,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20.dtsi                | 34 +++++++++++++++++++++++++
  4 files changed, 98 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-index 5c51cb8..d28e600 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 @@ -34,7 +34,23 @@
@@ -39,10 +37,6 @@ index 5c51cb8..d28e600 100644
  			led_pins_cubieboard2: led_pins@0 {
  				allwinner,pins = "PH20", "PH21";
  				allwinner,function = "gpio_out";
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index 8a1009d..7ee628a 100644
-diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-index ead3013..d377696 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 @@ -34,7 +34,39 @@
@@ -85,11 +79,9 @@ index ead3013..d377696 100644
  			led_pins_olinuxino: led_pins@0 {
  				allwinner,pins = "PH2";
  				allwinner,function = "gpio_out";
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 8819c68..0c1d363 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -319,6 +319,26 @@
+@@ -334,6 +334,26 @@
  			#size-cells = <0>;
  		};
  
@@ -116,7 +108,7 @@ index 8819c68..0c1d363 100644
  		pio: pinctrl@01c20800 {
  			compatible = "allwinner,sun7i-a20-pinctrl";
  			reg = <0x01c20800 0x400>;
-@@ -382,6 +402,20 @@
+@@ -397,6 +417,20 @@
  				allwinner,drive = <0>;
  				allwinner,pull = <0>;
  			};
@@ -137,6 +129,3 @@ index 8819c68..0c1d363 100644
  		};
  
  		timer@01c20c00 {
--- 
-1.8.5.1
-
