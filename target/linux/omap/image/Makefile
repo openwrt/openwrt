@@ -15,17 +15,10 @@ define Image/BuildKernel
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(CP) $(KDIR)/zImage-initramfs $(BIN_DIR)/openwrt-$(BOARD)-zImage-initramfs
  endif
-	-mkdir $(BIN_DIR)/dtbs
-	-$(CP) $(LINUX_DIR)/arch/arm/boot/dts/am335x*.dtb $(BIN_DIR)/dtbs/
-	-$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap3*.dtb $(BIN_DIR)/dtbs/
-	-$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap4*.dtb $(BIN_DIR)/dtbs/
-endef
-
-define Image/Build
 
  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
-	$(CP) $(KDIR)/zImage $(TARGET_DIR)/boot/
+	$(CP) $(BIN_DIR)/openwrt-$(BOARD)-zImage $(TARGET_DIR)/boot/zImage
  endif
  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
@@ -33,6 +26,13 @@ define Image/Build
 	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap3*.dtb $(TARGET_DIR)/boot/
 	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap4*.dtb $(TARGET_DIR)/boot/
  endif
+	-mkdir $(BIN_DIR)/dtbs
+	-$(CP) $(LINUX_DIR)/arch/arm/boot/dts/am335x*.dtb $(BIN_DIR)/dtbs/
+	-$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap3*.dtb $(BIN_DIR)/dtbs/
+	-$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap4*.dtb $(BIN_DIR)/dtbs/
+endef
+
+define Image/Build
 	$(call Image/Build/$(1),$(1))
 endef
 
