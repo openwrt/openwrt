@@ -36,7 +36,7 @@ $(if $(1),board=$(1) )$(if $(2),console=$(2)$(COMMA)$(3))
 endef
 
 define mtdpartsize
-$(shell echo $$((`echo '$(2)' | sed -e 's/.*[:$(COMMA)]\([0-9]*\)k[@]*[0-9a-zx]*($(1)).*/\1/'` * 1024)))
+$(shell sz=`echo '$(2)' | sed -ne 's/.*[:$(COMMA)]\([0-9]*\)k[@]*[0-9a-zx]*($(1)).*/\1/p'`; [ -n "$$sz" ] && echo $$(($$sz * 1024)))
 endef
 
 SINGLE_PROFILES:=
