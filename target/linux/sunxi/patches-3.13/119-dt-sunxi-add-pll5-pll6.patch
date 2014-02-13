@@ -18,11 +18,9 @@ Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/boot/dts/sun7i-a20.dtsi  | 28 ++++++++++++++++------------
  4 files changed, 67 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
-index 1d6346c..07564e9e 100644
 --- a/arch/arm/boot/dts/sun4i-a10.dtsi
 +++ b/arch/arm/boot/dts/sun4i-a10.dtsi
-@@ -77,6 +77,22 @@
+@@ -73,6 +73,22 @@
  			clocks = <&osc24M>;
  		};
  
@@ -45,7 +43,7 @@ index 1d6346c..07564e9e 100644
  		/* dummy is 200M */
  		cpu: cpu@01c20054 {
  			#clock-cells = <0>;
-@@ -142,12 +158,11 @@
+@@ -138,12 +154,11 @@
  				"apb0_ir1", "apb0_keypad";
  		};
  
@@ -59,11 +57,9 @@ index 1d6346c..07564e9e 100644
  		};
  
  		apb1: apb1@01c20058 {
-diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
-index 64d6d75..ca19362 100644
 --- a/arch/arm/boot/dts/sun5i-a10s.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
-@@ -74,6 +74,22 @@
+@@ -70,6 +70,22 @@
  			clocks = <&osc24M>;
  		};
  
@@ -86,7 +82,7 @@ index 64d6d75..ca19362 100644
  		/* dummy is 200M */
  		cpu: cpu@01c20054 {
  			#clock-cells = <0>;
-@@ -134,12 +150,11 @@
+@@ -130,12 +146,11 @@
  				"apb0_ir", "apb0_keypad";
  		};
  
@@ -100,8 +96,6 @@ index 64d6d75..ca19362 100644
  		};
  
  		apb1: apb1@01c20058 {
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index 2c355c8..9ac706a 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
 @@ -74,6 +74,22 @@
@@ -141,11 +135,9 @@ index 2c355c8..9ac706a 100644
  		};
  
  		apb1: apb1@01c20058 {
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 18144f0..9176ed0 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -73,23 +73,27 @@
+@@ -69,23 +69,27 @@
  			clocks = <&osc24M>;
  		};
  
@@ -184,7 +176,7 @@ index 18144f0..9176ed0 100644
  		};
  
  		axi: axi@01c20054 {
-@@ -148,7 +152,7 @@
+@@ -144,7 +148,7 @@
  			#clock-cells = <0>;
  			compatible = "allwinner,sun4i-apb1-mux-clk";
  			reg = <0x01c20058 0x4>;
@@ -193,6 +185,3 @@ index 18144f0..9176ed0 100644
  		};
  
  		apb1: apb1@01c20058 {
--- 
-1.8.5.1
-

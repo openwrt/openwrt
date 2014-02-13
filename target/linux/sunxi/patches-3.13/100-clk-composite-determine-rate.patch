@@ -17,11 +17,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clk/clk-composite.c | 28 ++++++++++++++++++++++++++++
  1 file changed, 28 insertions(+)
 
-diff --git a/drivers/clk/clk-composite.c b/drivers/clk/clk-composite.c
-index a33f46f..753d0b7 100644
 --- a/drivers/clk/clk-composite.c
 +++ b/drivers/clk/clk-composite.c
-@@ -55,6 +55,30 @@ static unsigned long clk_composite_recalc_rate(struct clk_hw *hw,
+@@ -55,6 +55,30 @@ static unsigned long clk_composite_recal
  	return rate_ops->recalc_rate(rate_hw, parent_rate);
  }
  
@@ -52,7 +50,7 @@ index a33f46f..753d0b7 100644
  static long clk_composite_round_rate(struct clk_hw *hw, unsigned long rate,
  				  unsigned long *prate)
  {
-@@ -147,6 +171,8 @@ struct clk *clk_register_composite(struct device *dev, const char *name,
+@@ -147,6 +171,8 @@ struct clk *clk_register_composite(struc
  		composite->mux_ops = mux_ops;
  		clk_composite_ops->get_parent = clk_composite_get_parent;
  		clk_composite_ops->set_parent = clk_composite_set_parent;
@@ -61,7 +59,7 @@ index a33f46f..753d0b7 100644
  	}
  
  	if (rate_hw && rate_ops) {
-@@ -170,6 +196,8 @@ struct clk *clk_register_composite(struct device *dev, const char *name,
+@@ -170,6 +196,8 @@ struct clk *clk_register_composite(struc
  		composite->rate_hw = rate_hw;
  		composite->rate_ops = rate_ops;
  		clk_composite_ops->recalc_rate = clk_composite_recalc_rate;
@@ -70,6 +68,3 @@ index a33f46f..753d0b7 100644
  	}
  
  	if (gate_hw && gate_ops) {
--- 
-1.8.5.1
-

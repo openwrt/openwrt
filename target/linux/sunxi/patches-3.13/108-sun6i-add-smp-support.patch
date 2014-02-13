@@ -19,16 +19,11 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  create mode 100644 arch/arm/mach-sunxi/headsmp.S
  create mode 100644 arch/arm/mach-sunxi/platsmp.c
 
-diff --git a/arch/arm/mach-sunxi/Makefile b/arch/arm/mach-sunxi/Makefile
-index 93bebfc..d939720 100644
 --- a/arch/arm/mach-sunxi/Makefile
 +++ b/arch/arm/mach-sunxi/Makefile
 @@ -1 +1,2 @@
  obj-$(CONFIG_ARCH_SUNXI) += sunxi.o
 +obj-$(CONFIG_SMP) += platsmp.o headsmp.o
-diff --git a/arch/arm/mach-sunxi/common.h b/arch/arm/mach-sunxi/common.h
-new file mode 100644
-index 0000000..9e5ac47
 --- /dev/null
 +++ b/arch/arm/mach-sunxi/common.h
 @@ -0,0 +1,19 @@
@@ -51,9 +46,6 @@ index 0000000..9e5ac47
 +extern struct smp_operations sun6i_smp_ops;
 +
 +#endif /* __ARCH_SUNXI_COMMON_H_ */
-diff --git a/arch/arm/mach-sunxi/headsmp.S b/arch/arm/mach-sunxi/headsmp.S
-new file mode 100644
-index 0000000..a10d494
 --- /dev/null
 +++ b/arch/arm/mach-sunxi/headsmp.S
 @@ -0,0 +1,9 @@
@@ -66,9 +58,6 @@ index 0000000..a10d494
 +	msr	cpsr_fsxc, #0xd3
 +	b	secondary_startup
 +ENDPROC(sun6i_secondary_startup)
-diff --git a/arch/arm/mach-sunxi/platsmp.c b/arch/arm/mach-sunxi/platsmp.c
-new file mode 100644
-index 0000000..7b141d8
 --- /dev/null
 +++ b/arch/arm/mach-sunxi/platsmp.c
 @@ -0,0 +1,124 @@
@@ -196,8 +185,6 @@ index 0000000..7b141d8
 +	.smp_prepare_cpus	= sun6i_smp_prepare_cpus,
 +	.smp_boot_secondary	= sun6i_smp_boot_secondary,
 +};
-diff --git a/arch/arm/mach-sunxi/sunxi.c b/arch/arm/mach-sunxi/sunxi.c
-index 594ac48..aeea6ce 100644
 --- a/arch/arm/mach-sunxi/sunxi.c
 +++ b/arch/arm/mach-sunxi/sunxi.c
 @@ -25,6 +25,8 @@
@@ -209,7 +196,7 @@ index 594ac48..aeea6ce 100644
  #define SUN4I_WATCHDOG_CTRL_REG		0x00
  #define SUN4I_WATCHDOG_CTRL_RESTART		BIT(0)
  #define SUN4I_WATCHDOG_MODE_REG		0x04
-@@ -147,6 +149,7 @@ static void __init sun6i_timer_init(void)
+@@ -147,6 +149,7 @@ DT_MACHINE_START(SUN6I_DT, "Allwinner su
  	.init_time	= sun6i_timer_init,
  	.dt_compat	= sun6i_board_dt_compat,
  	.restart	= sun6i_restart,
@@ -217,6 +204,3 @@ index 594ac48..aeea6ce 100644
  MACHINE_END
  
  static const char * const sun7i_board_dt_compat[] = {
--- 
-1.8.5.1
-

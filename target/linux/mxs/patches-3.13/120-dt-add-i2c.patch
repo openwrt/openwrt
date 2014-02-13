@@ -1,8 +1,7 @@
-diff -ruN old/arch/arm/boot/dts/imx23.dtsi new/arch/arm/boot/dts/imx23.dtsi
---- old/arch/arm/boot/dts/imx23.dtsi	2013-11-19 11:52:31.000000000 +0100
-+++ new/arch/arm/boot/dts/imx23.dtsi	2013-11-19 13:08:47.787452900 +0100
-@@ -145,6 +145,39 @@
- 					fsl,pull-up = <0>;
+--- a/arch/arm/boot/dts/imx23.dtsi
++++ b/arch/arm/boot/dts/imx23.dtsi
+@@ -146,6 +146,39 @@
+ 					fsl,pull-up = <MXS_PULL_DISABLE>;
  				};
  
 +				i2c0_pins_a: i2c0@0 {
@@ -41,7 +40,7 @@ diff -ruN old/arch/arm/boot/dts/imx23.dtsi new/arch/arm/boot/dts/imx23.dtsi
  				auart0_pins_a: auart0@0 {
  					reg = <0>;
  					fsl,pinmux-ids = <
-@@ -441,7 +474,12 @@
+@@ -443,7 +476,12 @@
  			};
  
  			i2c@80058000 {
@@ -54,9 +53,8 @@ diff -ruN old/arch/arm/boot/dts/imx23.dtsi new/arch/arm/boot/dts/imx23.dtsi
  				dmas = <&dma_apbx 3>;
  				dma-names = "rx-tx";
  				status = "disabled";
-diff -ruN old/arch/arm/boot/dts/imx23-olinuxino.dts new/arch/arm/boot/dts/imx23-olinuxino.dts
---- old/arch/arm/boot/dts/imx23-olinuxino.dts	2013-11-19 11:52:31.000000000 +0100
-+++ new/arch/arm/boot/dts/imx23-olinuxino.dts	2013-11-19 12:18:53.000000000 +0100
+--- a/arch/arm/boot/dts/imx23-olinuxino.dts
++++ b/arch/arm/boot/dts/imx23-olinuxino.dts
 @@ -79,6 +79,12 @@
  				status = "okay";
  			};

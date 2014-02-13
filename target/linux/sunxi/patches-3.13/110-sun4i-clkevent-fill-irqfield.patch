@@ -16,11 +16,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clocksource/sun4i_timer.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/clocksource/sun4i_timer.c b/drivers/clocksource/sun4i_timer.c
-index a4f6119..db937e9 100644
 --- a/drivers/clocksource/sun4i_timer.c
 +++ b/drivers/clocksource/sun4i_timer.c
-@@ -191,6 +191,7 @@ static void __init sun4i_timer_init(struct device_node *node)
+@@ -191,6 +191,7 @@ static void __init sun4i_timer_init(stru
  	writel(val | TIMER_IRQ_EN(0), timer_base + TIMER_IRQ_EN_REG);
  
  	sun4i_clockevent.cpumask = cpumask_of(0);
@@ -28,6 +26,3 @@ index a4f6119..db937e9 100644
  
  	clockevents_config_and_register(&sun4i_clockevent, rate,
  					TIMER_SYNC_TICKS, 0xffffffff);
--- 
-1.8.5.1
-

@@ -61,10 +61,10 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  		retval = pdata->pre_setup(hcd);
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -225,6 +225,7 @@ struct ehci_hcd {			/* one per controlle
- 	unsigned		has_synopsys_hc_bug:1; /* Synopsys HC */
+@@ -226,6 +226,7 @@ struct ehci_hcd {			/* one per controlle
  	unsigned		frame_index_bug:1; /* MosChip (AKA NetMos) */
  	unsigned		need_oc_pp_cycle:1; /* MPC834X port power */
+ 	unsigned		imx28_write_fix:1; /* For Freescale i.MX28 */
 +	unsigned		ignore_oc:1;
  
  	/* required for usb32 quirk */

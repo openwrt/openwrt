@@ -14,8 +14,6 @@ Conflicts:
  3 files changed, 456 insertions(+)
  create mode 100644 drivers/usb/host/ehci-sunxi.c
 
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index a9707da..db94dba 100644
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -273,6 +273,15 @@ config USB_OCTEON_EHCI
@@ -34,11 +32,9 @@ index a9707da..db94dba 100644
  endif # USB_EHCI_HCD
  
  config USB_OXU210HP_HCD
-diff --git a/drivers/usb/host/Makefile b/drivers/usb/host/Makefile
-index 01e879e..d96053d 100644
 --- a/drivers/usb/host/Makefile
 +++ b/drivers/usb/host/Makefile
-@@ -39,6 +39,7 @@ obj-$(CONFIG_USB_EHCI_HCD_AT91) += ehci-atmel.o
+@@ -39,6 +39,7 @@ obj-$(CONFIG_USB_EHCI_HCD_AT91) += ehci-
  obj-$(CONFIG_USB_EHCI_MSM)	+= ehci-msm.o
  obj-$(CONFIG_USB_EHCI_TEGRA)	+= ehci-tegra.o
  obj-$(CONFIG_USB_W90X900_EHCI)	+= ehci-w90x900.o
@@ -46,9 +42,6 @@ index 01e879e..d96053d 100644
  
  obj-$(CONFIG_USB_OXU210HP_HCD)	+= oxu210hp-hcd.o
  obj-$(CONFIG_USB_ISP116X_HCD)	+= isp116x-hcd.o
-diff --git a/drivers/usb/host/ehci-sunxi.c b/drivers/usb/host/ehci-sunxi.c
-new file mode 100644
-index 0000000..e7e15cc
 --- /dev/null
 +++ b/drivers/usb/host/ehci-sunxi.c
 @@ -0,0 +1,446 @@
@@ -498,6 +491,3 @@ index 0000000..e7e15cc
 +MODULE_ALIAS("platform:" DRV_NAME);
 +MODULE_DEVICE_TABLE(of, ehci_of_match);
 +MODULE_AUTHOR("Roman Byshko <rbyshko@gmail.com>");
--- 
-1.8.5.1
-

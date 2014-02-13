@@ -14,8 +14,6 @@ Acked-by: Philipp Zabel <p.zabel@pengutronix.de>
  arch/arm/mach-sunxi/sunxi.c | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/mach-sunxi/sunxi.c b/arch/arm/mach-sunxi/sunxi.c
-index 61d3a38..594ac48 100644
 --- a/arch/arm/mach-sunxi/sunxi.c
 +++ b/arch/arm/mach-sunxi/sunxi.c
 @@ -10,6 +10,8 @@
@@ -27,7 +25,7 @@ index 61d3a38..594ac48 100644
  #include <linux/delay.h>
  #include <linux/kernel.h>
  #include <linux/init.h>
-@@ -132,8 +134,17 @@ static void __init sunxi_dt_init(void)
+@@ -132,8 +134,17 @@ static const char * const sun6i_board_dt
  	NULL,
  };
  
@@ -45,6 +43,3 @@ index 61d3a38..594ac48 100644
  	.dt_compat	= sun6i_board_dt_compat,
  	.restart	= sun6i_restart,
  MACHINE_END
--- 
-1.8.5.1
-

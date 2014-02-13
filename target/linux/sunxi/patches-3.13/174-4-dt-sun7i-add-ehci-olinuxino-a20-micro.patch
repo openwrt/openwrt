@@ -8,11 +8,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts | 47 +++++++++++++++++++++++++
  1 file changed, 47 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-index 20b1000..5f13ed64 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-@@ -70,6 +70,20 @@
+@@ -85,6 +85,20 @@
  				allwinner,drive = <1>;
  				allwinner,pull = <0>;
  			};
@@ -33,8 +31,8 @@ index 20b1000..5f13ed64 100644
  		};
  
  		uart0: serial@01c28000 {
-@@ -115,6 +129,16 @@
- 			phy-mode = "mii";
+@@ -122,6 +136,16 @@
+ 			pinctrl-0 = <&i2c2_pins_a>;
  			status = "okay";
  		};
 +
@@ -50,7 +48,7 @@ index 20b1000..5f13ed64 100644
  	};
  
  	leds {
-@@ -131,6 +155,7 @@
+@@ -138,6 +162,7 @@
  
  	regulators {
  		compatible = "simple-bus";
@@ -58,7 +56,7 @@ index 20b1000..5f13ed64 100644
  
  		reg_ahci_5v: ahci-5v {
  			compatible = "regulator-fixed";
-@@ -141,5 +166,27 @@
+@@ -148,5 +173,27 @@
  			gpio = <&pio 1 8 0>;
  			enable-active-high;
  		};
@@ -86,6 +84,3 @@ index 20b1000..5f13ed64 100644
 +		};
  	};
  };
--- 
-1.8.5.1
-

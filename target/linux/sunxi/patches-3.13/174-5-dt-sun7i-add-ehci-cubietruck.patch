@@ -8,11 +8,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20-cubietruck.dts | 46 ++++++++++++++++++++++++++++++
  1 file changed, 46 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index a5f3418..c8b3ea9 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-@@ -28,11 +28,21 @@
+@@ -43,11 +43,21 @@
  			status = "okay";
  		};
  
@@ -34,9 +32,9 @@ index a5f3418..c8b3ea9 100644
  		pinctrl@01c20800 {
  			mmc0_cd_pin_cubietruck: mmc0_cd_pin@0 {
  				allwinner,pins = "PH1";
-@@ -54,6 +64,20 @@
- 				allwinner,drive = <0>;
- 				allwinner,pull = <0>;
+@@ -90,6 +100,20 @@
+ 					allwinner,drive = <0>;
+ 					allwinner,pull = <2>;
  			};
 +
 +			usb1_vbus_pin: usb1_vbus_pin@0 {
@@ -55,7 +53,7 @@ index a5f3418..c8b3ea9 100644
  		};
  
  		uart0: serial@01c28000 {
-@@ -110,5 +134,27 @@
+@@ -175,5 +199,27 @@
  			gpio = <&pio 7 12 0>;
  			enable-active-high;
  		};
@@ -83,6 +81,3 @@ index a5f3418..c8b3ea9 100644
 +		};
  	};
  };
--- 
-1.8.5.1
-

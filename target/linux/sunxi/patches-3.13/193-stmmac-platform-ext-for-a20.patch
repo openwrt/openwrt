@@ -26,9 +26,6 @@ Signed-off-by: Chen-Yu Tsai <wens@csie.org>
  create mode 100644 Documentation/devicetree/bindings/net/allwinner,sun7i-gmac.txt
  create mode 100644 drivers/net/ethernet/stmicro/stmmac/dwmac-sunxi.c
 
-diff --git a/Documentation/devicetree/bindings/net/allwinner,sun7i-gmac.txt b/Documentation/devicetree/bindings/net/allwinner,sun7i-gmac.txt
-new file mode 100644
-index 0000000..271554a
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/net/allwinner,sun7i-gmac.txt
 @@ -0,0 +1,22 @@
@@ -54,8 +51,6 @@ index 0000000..271554a
 +		clock-names = "stmmaceth";
 +		phy-mode = "mii";
 +	};
-diff --git a/drivers/net/ethernet/stmicro/stmmac/Kconfig b/drivers/net/ethernet/stmicro/stmmac/Kconfig
-index 6e52c0f..6d71210 100644
 --- a/drivers/net/ethernet/stmicro/stmmac/Kconfig
 +++ b/drivers/net/ethernet/stmicro/stmmac/Kconfig
 @@ -25,6 +25,18 @@ config STMMAC_PLATFORM
@@ -77,8 +72,6 @@ index 6e52c0f..6d71210 100644
  config STMMAC_PCI
  	bool "STMMAC PCI bus support"
  	depends on STMMAC_ETH && PCI
-diff --git a/drivers/net/ethernet/stmicro/stmmac/Makefile b/drivers/net/ethernet/stmicro/stmmac/Makefile
-index 356a9dd..ecadece 100644
 --- a/drivers/net/ethernet/stmicro/stmmac/Makefile
 +++ b/drivers/net/ethernet/stmicro/stmmac/Makefile
 @@ -1,6 +1,7 @@
@@ -89,9 +82,6 @@ index 356a9dd..ecadece 100644
  stmmac-objs:= stmmac_main.o stmmac_ethtool.o stmmac_mdio.o ring_mode.o	\
  	      chain_mode.o dwmac_lib.o dwmac1000_core.o  dwmac1000_dma.o \
  	      dwmac100_core.o dwmac100_dma.o enh_desc.o  norm_desc.o \
-diff --git a/drivers/net/ethernet/stmicro/stmmac/dwmac-sunxi.c b/drivers/net/ethernet/stmicro/stmmac/dwmac-sunxi.c
-new file mode 100644
-index 0000000..6c9fdb0
 --- /dev/null
 +++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-sunxi.c
 @@ -0,0 +1,76 @@
@@ -171,11 +161,9 @@ index 0000000..6c9fdb0
 +	.init = sun7i_gmac_init,
 +};
 +
-diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac.h b/drivers/net/ethernet/stmicro/stmmac/stmmac.h
-index 22f89ff..c8f659a 100644
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac.h
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac.h
-@@ -130,6 +130,9 @@ struct stmmac_priv *stmmac_dvr_probe(struct device *device,
+@@ -130,6 +130,9 @@ void stmmac_disable_eee_mode(struct stmm
  bool stmmac_eee_init(struct stmmac_priv *priv);
  
  #ifdef CONFIG_STMMAC_PLATFORM
@@ -185,11 +173,9 @@ index 22f89ff..c8f659a 100644
  extern struct platform_driver stmmac_pltfr_driver;
  static inline int stmmac_register_platform(void)
  {
-diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-index df3fd1c..6cf8292 100644
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -35,6 +35,9 @@
+@@ -35,6 +35,9 @@ static const struct of_device_id stmmac_
  	{ .compatible = "snps,dwmac-3.70a"},
  	{ .compatible = "snps,dwmac-3.710"},
  	{ .compatible = "snps,dwmac"},
@@ -199,6 +185,3 @@ index df3fd1c..6cf8292 100644
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, stmmac_dt_ids);
--- 
-1.8.5.1
-

@@ -16,8 +16,6 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clk/sunxi/clk-factors.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clk/sunxi/clk-factors.c b/drivers/clk/sunxi/clk-factors.c
-index 88523f9..5687ac9 100644
 --- a/drivers/clk/sunxi/clk-factors.c
 +++ b/drivers/clk/sunxi/clk-factors.c
 @@ -40,7 +40,7 @@ struct clk_factors {
@@ -29,6 +27,3 @@ index 88523f9..5687ac9 100644
  #define CLRMASK(len, pos)		(~(SETMASK(len, pos)))
  #define FACTOR_GET(bit, len, reg)	(((reg) & SETMASK(len, bit)) >> (bit))
  
--- 
-1.8.5.1
-

@@ -13,7 +13,7 @@ FEATURES:=usb usbgadget ext4 targz fpu audio display ubifs
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=vfpv3
 
-LINUX_VERSION:=3.13.1
+LINUX_VERSION:=3.13.2
 
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
