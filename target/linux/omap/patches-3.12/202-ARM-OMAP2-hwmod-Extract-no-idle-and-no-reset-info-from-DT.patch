@@ -14,7 +14,7 @@ Signed-off-by: Paul Walmsley <paul@pwsan.com>
 ---
 --- a/arch/arm/mach-omap2/omap_hwmod.c
 +++ b/arch/arm/mach-omap2/omap_hwmod.c
-@@ -2357,6 +2357,8 @@ static struct device_node *of_dev_hwmod_
+@@ -2393,6 +2393,8 @@ static struct device_node *of_dev_hwmod_
  /**
   * _init_mpu_rt_base - populate the virtual address for a hwmod
   * @oh: struct omap_hwmod * to locate the virtual address
@@ -23,7 +23,7 @@ Signed-off-by: Paul Walmsley <paul@pwsan.com>
   *
   * Cache the virtual address used by the MPU to access this IP block's
   * registers.  This address is needed early so the OCP registers that
-@@ -2365,11 +2367,11 @@ static struct device_node *of_dev_hwmod_
+@@ -2401,11 +2403,11 @@ static struct device_node *of_dev_hwmod_
   * Returns 0 on success, -EINVAL if an invalid hwmod is passed, and
   * -ENXIO on absent or invalid register target address space.
   */
@@ -37,7 +37,7 @@ Signed-off-by: Paul Walmsley <paul@pwsan.com>
  
  	if (!oh)
  		return -EINVAL;
-@@ -2385,12 +2387,10 @@ static int __init _init_mpu_rt_base(stru
+@@ -2421,12 +2423,10 @@ static int __init _init_mpu_rt_base(stru
  			 oh->name);
  
  		/* Extract the IO space from device tree blob */
@@ -52,7 +52,7 @@ Signed-off-by: Paul Walmsley <paul@pwsan.com>
  	} else {
  		va_start = ioremap(mem->pa_start, mem->pa_end - mem->pa_start);
  	}
-@@ -2423,12 +2423,16 @@ static int __init _init_mpu_rt_base(stru
+@@ -2459,12 +2459,16 @@ static int __init _init_mpu_rt_base(stru
  static int __init _init(struct omap_hwmod *oh, void *data)
  {
  	int r;
@@ -70,7 +70,7 @@ Signed-off-by: Paul Walmsley <paul@pwsan.com>
  		if (r < 0) {
  			WARN(1, "omap_hwmod: %s: doesn't have mpu register target base\n",
  			     oh->name);
-@@ -2442,6 +2446,12 @@ static int __init _init(struct omap_hwmo
+@@ -2478,6 +2482,12 @@ static int __init _init(struct omap_hwmo
  		return -EINVAL;
  	}
  

@@ -71,9 +71,9 @@
  
 --- a/scripts/link-vmlinux.sh
 +++ b/scripts/link-vmlinux.sh
-@@ -84,6 +84,10 @@ kallsyms()
- 
- 	kallsymopt="${kallsymopt} --page-offset=$CONFIG_PAGE_OFFSET"
+@@ -86,6 +86,10 @@ kallsyms()
+ 		kallsymopt="${kallsymopt} --page-offset=$CONFIG_PAGE_OFFSET"
+ 	fi
  
 +	if [ -n "${CONFIG_KALLSYMS_UNCOMPRESSED}" ]; then
 +		kallsymopt="${kallsymopt} --uncompressed"
