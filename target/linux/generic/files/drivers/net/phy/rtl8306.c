@@ -519,7 +519,7 @@ rtl_get_cpuport(struct switch_dev *dev, const struct switch_attr *attr, struct s
 #endif
 
 static int
-rtl_reset(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+rtl_reset(struct switch_dev *dev)
 {
 	rtl_hw_init(dev);
 	return 0;
@@ -708,12 +708,6 @@ rtl_set_ports(struct switch_dev *dev, struct switch_val *val)
 static struct switch_attr rtl_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
-		.name = "reset",
-		.description = "Reset the switch",
-		.set = rtl_reset,
-	},
-	{
-		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
 		.description = "Enable VLAN mode",
 		.max = 1,
@@ -855,6 +849,7 @@ static const struct switch_dev_ops rtl8306_ops = {
 	.get_vlan_ports = rtl_get_ports,
 	.set_vlan_ports = rtl_set_ports,
 	.apply_config = rtl_hw_apply,
+	.reset_switch = rtl_reset,
 };
 
 static int
