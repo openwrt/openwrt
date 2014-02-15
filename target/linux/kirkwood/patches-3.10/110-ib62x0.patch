@@ -17,33 +17,37 @@
  		serial@12000 {
  			status = "okay";
  		};
-@@ -64,19 +65,18 @@
+@@ -64,19 +65,23 @@
  
  			partition@0 {
  				label = "u-boot";
 -				reg = <0x0000000 0x100000>;
 +				reg = <0x0000000 0xe0000>;
- 			};
- 
--			partition@100000 {
--				label = "uImage";
--				reg = <0x0100000 0x600000>;
++			};
++
 +			partition@e0000 {
 +				label = "u-boot environment";
 +				reg = <0xe0000 0x100000>;
  			};
  
+ 			partition@100000 {
+-				label = "uImage";
+-				reg = <0x0100000 0x600000>;
++				label = "second stage u-boot";
++				reg = <0x100000 0x200000>;
+ 			};
+ 
 -			partition@700000 {
-+			partition@100000 {
++			partition@200000 {
  				label = "root";
 -				reg = <0x0700000 0xf900000>;
-+				reg = <0x100000 0xff00000>;
++				reg = <0x200000 0xfe00000>;
  			};
 -
  		};
  	};
  
-@@ -84,6 +84,7 @@
+@@ -84,6 +89,7 @@
  		compatible = "gpio-keys";
  		#address-cells = <1>;
  		#size-cells = <0>;
@@ -51,7 +55,7 @@
  		button@1 {
  			label = "USB Copy";
  			linux,code = <133>;
-@@ -95,6 +96,7 @@
+@@ -95,6 +101,7 @@
  			gpios = <&gpio0 28 1>;
  		};
  	};
@@ -59,7 +63,7 @@
  	gpio-leds {
  		compatible = "gpio-leds";
  
-@@ -112,12 +114,11 @@
+@@ -112,12 +119,11 @@
  			gpios = <&gpio0 27 0>;
  		};
  	};
@@ -73,7 +77,7 @@
  };
  
  &mdio {
-@@ -131,6 +132,7 @@
+@@ -131,6 +137,7 @@
  
  &eth0 {
  	status = "okay";
