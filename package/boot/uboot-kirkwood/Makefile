@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2012 OpenWrt.org
+# Copyright (C) 2010-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2012.10
+PKG_VERSION:=2013.10
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
@@ -16,8 +16,10 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=8655f63b1e5c4647295ac9ce44660be3
+PKG_MD5SUM:=a076a044b64371edc52f7e562b13f6b2
 PKG_TARGETS:=bin
+
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -27,23 +29,44 @@ define uboot/Default
   IMAGE:=
 endef
 
-define uboot/sheevaplug
-  TITLE:=U-Boot for the SheevaPlug
-endef
-
 define uboot/dockstar
-  TITLE:=U-Boot for the Seagate DockStar
+  TITLE:=U-Boot for Seagate DockStar
 endef
 
-define uboot/iconnect
-  TITLE:=U-Boot for the Iomega iConnect Wireless
+define uboot/dockstar_second_stage
+  TITLE:=second stage U-Boot for Seagate DockStar
 endef
 
 define uboot/ib62x0
-  TITLE:=U-Boot for the RaidSonic ICY BOX NAS6210 and NAS6220
+  TITLE:=U-Boot for RaidSonic ICY BOX NAS6210 and NAS6220
 endef
 
-UBOOTS:=sheevaplug dockstar iconnect ib62x0
+define uboot/ib62x0_second_stage
+  TITLE:=second stage U-Boot for RaidSonic ICY BOX NAS6210 and NAS6220
+endef
+
+define uboot/iconnect
+  TITLE:=U-Boot for Iomega iConnect Wireless
+endef
+
+define uboot/iconnect_second_stage
+  TITLE:=second stage U-Boot for Iomega iConnect Wireless
+endef
+
+define uboot/pogo_e02
+  TITLE:=U-Boot for Cloud Engines Pogoplug E02
+endef
+
+define uboot/sheevaplug
+  TITLE:=U-Boot for SheevaPlug
+endef
+
+UBOOTS:= \
+	dockstar dockstar_second_stage \
+	ib62x0 ib62x0_second_stage \
+	iconnect iconnect_second_stage \
+	pogo_e02 \
+	sheevaplug
 
 define Package/uboot/template
 define Package/uboot-kirkwood-$(1)
@@ -69,14 +92,18 @@ UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin
 endif
 
 define Build/Configure
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(UBOOT_CONFIG)_config
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		u-boot.kwb \
 		CROSS_COMPILE=$(TARGET_CROSS)
+	mkimage -A $(ARCH) -O linux -T kernel -C none \
+		-a 0x600000 -e 0x600000 \
+		-n 'OpenWrt Das U-Boot uImage' \
+		-d $(PKG_BUILD_DIR)/u-boot.bin $(PKG_BUILD_DIR)/u-boot.img
 endef
 
 define Package/uboot/install/default
@@ -85,6 +112,8 @@ define Package/uboot/install/default
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.bin
 	$(CP) $(PKG_BUILD_DIR)/u-boot.kwb \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.kwb
+	$(CP) $(PKG_BUILD_DIR)/u-boot.img \
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.img
 	$(INSTALL_DIR) $(BIN_DIR)/u-boot-kwboot/
 	$(CP) $(PKG_BUILD_DIR)/tools/kwboot \
 		$(BIN_DIR)/u-boot-kwboot/
