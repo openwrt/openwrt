@@ -56,11 +56,13 @@
 				ebu {
 					lantiq,groups = "ebu a23";
 					lantiq,function = "ebu";
+					lantiq,open-drain = <0>;
 					lantiq,output = <1>;
 				};
 				stp {
 					lantiq,groups = "stp";
 					lantiq,function = "stp";
+					lantiq,open-drain = <0>;
 					lantiq,output = <1>;
 				};
 				exin {
@@ -76,11 +78,13 @@
 				pci_out {
 					lantiq,groups = "gnt1", "gnt2";
 					lantiq,function = "pci";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
 					lantiq,output = <1>;
 				};
 				pci_rst {
 					lantiq,pins = "io21";
-					lantiq,open-drain;
+					lantiq,open-drain = <0>;
 					lantiq,output = <1>;
 				};
 				buttons {
