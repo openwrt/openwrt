@@ -22,21 +22,6 @@ DOCKSTAR_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,DOCKSTAR))
 
-define Profile/ICONNECT
-  NAME:=Iomega Iconnect
-  PACKAGES:= \
-	kmod-usb2 kmod-usb-storage
-endef
-
-define Profile/ICONNECT/Description
- Package set compatible with Iomega Iconnect board.
-endef
-
-ICONNECT_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-ICONNECT_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
-$(eval $(call Profile,ICONNECT))
-
 define Profile/IB62X0
   NAME:=RaidSonic ICY BOX IB-NAS62x0
   PACKAGES:= \
@@ -53,3 +38,18 @@ IB62X0_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
 IB62X0_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,IB62X0))
+
+define Profile/ICONNECT
+  NAME:=Iomega Iconnect
+  PACKAGES:= \
+	kmod-usb2 kmod-usb-storage
+endef
+
+define Profile/ICONNECT/Description
+ Package set compatible with Iomega Iconnect board.
+endef
+
+ICONNECT_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+ICONNECT_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+
+$(eval $(call Profile,ICONNECT))

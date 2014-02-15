@@ -117,11 +117,11 @@ Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
 Image/BuildKernel/Template/DOCKSTAR=$(call Image/BuildKernel/Template,dockstar)
 Image/InstallKernel/Template/DOCKSTAR=$(call Image/InstallKernel/Template,dockstar)
 
-Image/BuildKernel/Template/ICONNECT=$(call Image/BuildKernel/Template,iconnect)
-Image/InstallKernel/Template/ICONNECT=$(call Image/InstallKernel/Template,iconnect)
-
 Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
 Image/InstallKernel/Template/IB62X0=$(call Image/InstallKernel/Template,ib62x0)
+
+Image/BuildKernel/Template/ICONNECT=$(call Image/BuildKernel/Template,iconnect)
+Image/InstallKernel/Template/ICONNECT=$(call Image/InstallKernel/Template,iconnect)
 
 Image/BuildKernel/Template/POGOE02=$(call Image/BuildKernel/Template,pogo_e02)
 Image/InstallKernel/Template/POGOE02=$(call Image/InstallKernel/Template,pogo_e02)
