@@ -8,7 +8,6 @@
 define Profile/DOCKSTAR
   NAME:=Seagate FreeAgent Dockstar
   PACKAGES:= \
-	kmod-ata-core kmod-ata-marvell-sata \
 	kmod-rtc-marvell kmod-usb2 kmod-usb-storage \
 	uboot-envtools
 endef
