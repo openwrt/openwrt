@@ -22,6 +22,23 @@ DOCKSTAR_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,DOCKSTAR))
 
+define Profile/GOFLEXNET
+  NAME:=Seagate GoFlexNet
+  PACKAGES:= \
+	kmod-ata-core kmod-ata-marvell-sata \
+	kmod-rtc-marvell kmod-usb2 kmod-usb-storage \
+	uboot-envtools
+endef
+
+define Profile/GOFLEXNET/Description
+ Package set compatible with Seagate GoFlexNet
+endef
+
+GOFLEXNET_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+GOFLEXNET_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+
+$(eval $(call Profile,GOFLEXNET))
+
 define Profile/IB62X0
   NAME:=RaidSonic ICY BOX IB-NAS62x0
   PACKAGES:= \
