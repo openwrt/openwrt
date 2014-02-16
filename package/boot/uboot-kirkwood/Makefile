@@ -37,6 +37,10 @@ define uboot/dockstar_second_stage
   TITLE:=second stage U-Boot for Seagate DockStar
 endef
 
+define uboot/goflexhome
+  TITLE:=U-Boot for the Seagate GoFlexHome/GoFlexNet
+endef
+
 define uboot/ib62x0
   TITLE:=U-Boot for RaidSonic ICY BOX NAS6210 and NAS6220
 endef
@@ -63,6 +67,7 @@ endef
 
 UBOOTS:= \
 	dockstar dockstar_second_stage \
+	goflexhome \
 	ib62x0 ib62x0_second_stage \
 	iconnect iconnect_second_stage \
 	pogo_e02 \
