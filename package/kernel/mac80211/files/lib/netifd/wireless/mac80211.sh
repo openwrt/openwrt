@@ -17,7 +17,7 @@ MP_CONFIG_STRING="mesh_power_mode"
 drv_mac80211_init_device_config() {
 	hostapd_common_add_device_config
 
-	config_add_string path phy macaddr
+	config_add_string path phy 'macaddr:macaddr'
 	config_add_string hwmode
 	config_add_int beacon_int chanbw frag rts
 	config_add_int rxantenna txantenna antenna_gain txpower distance
@@ -42,7 +42,7 @@ drv_mac80211_init_device_config() {
 drv_mac80211_init_iface_config() {
 	hostapd_common_add_bss_config
 
-	config_add_string macaddr ifname
+	config_add_string 'macaddr:macaddr' ifname
 
 	config_add_boolean wds powersave
 	config_add_int maxassoc
