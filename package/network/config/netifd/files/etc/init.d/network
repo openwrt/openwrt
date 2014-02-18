@@ -40,12 +40,117 @@ service_running() {
 	/sbin/wifi reload_legacy
 }
 
+validate_atm_bridge_section()
+{
+	uci_validate_section network "atm-bridge" "${1}" \
+		'unit:uinteger:0' \
+		'vci:range(32, 65535):35' \
+		'vpi:range(0, 255):8' \
+		'atmdev:uinteger:0' \
+		'encaps:or("llc", "vc"):llc' \
+		'payload:or("bridged", "routed"):bridged'
+
+	return $?
+}
+
+validate_route_section()
+{
+	uci_validate_section network route "${1}" \
+		'interface:string' \
+		'target:ip4addr' \
+		'netmask:ip4prefix' \
+		'gateway:ip4addr' \
+		'metric:uinteger' \
+		'mtu:uinteger' \
+		'table:range(0,65535)'
+
+	return $?
+}
+
+validate_route6_section()
+{
+	uci_validate_section network route6 "${1}" \
+		'interface:string' \
+		'target:ip6addr' \
+		'gateway:ip6addr' \
+		'metric:uinteger' \
+		'mtu:uinteger' \
+		'table:range(0,65535)'
+
+	return $?
+}
+
+validate_rule_section()
+{
+	uci_validate_section network rule "${1}" \
+		'in:string' \
+		'out:string' \
+		'src:ip4prefix' \
+		'dest:ip4prefix' \
+		'tos:rage(0.31)' \
+		'string:mark' \
+		'invert:bool' \
+		'lookup:range(0,65535)' \
+		'goto:range(0,65535)' \
+		'action:or("prohibit", "unreachable", "blackhole", "throw")'
+
+	return $?
+}
+
+validate_rule6_section()
+{
+	uci_validate_section network rule6 "${1}" \
+		'in:string' \
+		'out:string' \
+		'src:ip4prefix' \
+		'dest:ip4prefix' \
+		'tos:rage(0.31)' \
+		'string:mark' \
+		'invert:bool' \
+		'lookup:range(0,65535)' \ 
+		'goto:range(0,65535)' \
+		'action:or("prohibit", "unreachable", "blackhole", "throw")'
+
+	return $?
+}
+
+validate_switch_section()
+{
+	uci_validate_section network switch "${1}" \
+		'name:string' \
+		'enable:bool' \
+		'enable_vlan:bool' \
+		'reset:bool'
+
+	return $?
+}
+
+validate_switch_vlan()
+{
+	uci_validate_section network switch_vlan "${1}" \
+		'device:string' \
+		'vlan:uinteger' \
+		'ports:list(ports)'
+
+	return $?
+}
+
 service_triggers()
 {
 	procd_open_trigger
 	procd_add_config_trigger "config.change" "network" /etc/init.d/network reload
 	procd_add_config_trigger "config.change" "wireless" /etc/init.d/network reload
 	procd_close_trigger
+
+	procd_open_validate
+	validate_atm_bridge_section
+	validate_route_section
+	validate_route6_section
+	validate_rule_section
+	validate_rule6_section
+	validate_switch_section
+	validate_switch_vlan
+	procd_close_validate
 }
 
 restart() {
