@@ -89,7 +89,7 @@ EOF
 }
 
 hostapd_common_add_bss_config() {
-	config_add_string bssid ssid
+	config_add_string 'bssid:macaddr' 'ssid:string'
 	config_add_boolean wds wmm hidden
 
 	config_add_int maxassoc max_inactivity
@@ -102,9 +102,9 @@ hostapd_common_add_bss_config() {
 	config_add_boolean rsn_preauth auth_cache
 	config_add_int ieee80211w
 
-	config_add_string auth_server server
+	config_add_string 'auth_server:host' 'server:host'
 	config_add_string auth_secret
-	config_add_int auth_port port
+	config_add_int 'auth_port:port' 'port:port'
 
 	config_add_string acct_server
 	config_add_string acct_secret
@@ -118,15 +118,15 @@ hostapd_common_add_bss_config() {
 	config_add_string iapp_interface
 	config_add_string eap_type ca_cert client_cert identity auth priv_key priv_key_pwd
 
-	config_add_string key1 key2 key3 key4 password
+	config_add_string 'key1:wepkey' 'key2:wepkey' 'key3:wepkey' 'key4:wepkey' 'password:wpakey'
 
 	config_add_boolean wps_pushbutton wps_label ext_registrar
 	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
 
 	config_add_int ieee80211w_max_timeout ieee80211w_retry_timeout
 
-	config_add_string macfilter macfile
-	config_add_array maclist
+	config_add_string macfilter 'macfile:file'
+	config_add_array 'maclist:list(macaddr)'
 
 	config_add_int mcast_rate
 	config_add_array basic_rate
