@@ -641,7 +641,7 @@ endef
 
 define KernelPackage/libertas-sd
   $(call KernelPackage/mac80211/Default)
-  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +kmod-mmc +@DRIVER_WEXT_SUPPORT
+  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +kmod-mmc +@DRIVER_WEXT_SUPPORT @!TARGET_uml
   TITLE:=Marvell 88W8686 Wireless Driver
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.ko \
