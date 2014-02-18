@@ -16,6 +16,8 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string iface_dslite
 	proto_config_add_string 'ifaceid:ip6addr'
 	proto_config_add_string 'sourcerouting:bool'
+	proto_config_add_string "userclass"
+	proto_config_add_string "vendorclass"
 }
 
 proto_dhcpv6_setup() {
