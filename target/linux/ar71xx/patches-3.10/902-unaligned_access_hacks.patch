@@ -900,8 +900,9 @@
 -		tp->rx_opt.rcv_tsval = ntohl(*ptr);
 +		tp->rx_opt.rcv_tsval = get_unaligned_be32(ptr);
  		++ptr;
- 		if (*ptr)
+-		if (*ptr)
 -			tp->rx_opt.rcv_tsecr = ntohl(*ptr) - tp->tsoffset;
++		if (net_hdr_word(ptr))
 +			tp->rx_opt.rcv_tsecr = get_unaligned_be32(ptr) -
 +					       tp->tsoffset;
  		else
