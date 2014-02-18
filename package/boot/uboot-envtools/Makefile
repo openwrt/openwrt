@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
 PKG_VERSION:=2013.10
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -41,6 +41,7 @@ define Build/Compile
 	touch $(PKG_BUILD_DIR)/include/config.h
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		HOSTCC="$(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)gcc" \
+		HOSTOPTFLAGS="$(TARGET_CFLAGS)" \
 		HOSTSTRIP="$(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)strip" \
 		env
 endef
