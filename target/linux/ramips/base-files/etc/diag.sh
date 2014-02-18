@@ -160,7 +160,10 @@ get_status_led() {
 		;;
 	f7c027)
 		status_led="belkin:orange:status"
-        ;;
+		;;
+	na930)
+		status_led="na930:blue:power"
+		;;
 	esac
 }
 
