@@ -4,37 +4,6 @@
 START=10
 STOP=98
 
-system_config() {
-	local cfg="$1"
-
-	local hostname conloglevel buffersize timezone zonename
-
-	config_get hostname "$cfg" hostname 'OpenWrt'
-	echo "$hostname" > /proc/sys/kernel/hostname
-
-	config_get conloglevel "$cfg" conloglevel
-	config_get buffersize "$cfg" buffersize
-	[ -z "$conloglevel" -a -z "$buffersize" ] || dmesg ${conloglevel:+-n $conloglevel} ${buffersize:+-s $buffersize}
-
-	config_get timezone "$cfg" timezone 'UTC'
-	echo "$timezone" > /tmp/TZ
-
-	config_get zonename "$cfg" zonename
-	[ -n "$zonename" ] && [ -f "/usr/share/zoneinfo/$zonename" ] && ln -s "/usr/share/zoneinfo/$zonename" /tmp/localtime
-
-	# apply timezone to kernel
-	date -k
-}
-
-apply_uci_config() {
-	sh -c '. /lib/functions.sh; include /lib/config; uci_apply_defaults'
-}
-
-start() {
-	config_load system
-	config_foreach system_config system
-}
-
 boot() {
 	[ -f /proc/mounts ] || /sbin/mount_root
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
@@ -64,7 +33,7 @@ boot() {
 	}
 	rm -f /tmp/wireless.tmp
 
-	apply_uci_config
+	sh -c '. /lib/functions.sh; include /lib/config; uci_apply_defaults'
 	
 	# temporary hack until configd exists
 	/sbin/reload_config
