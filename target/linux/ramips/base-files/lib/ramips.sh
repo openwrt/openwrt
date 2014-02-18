@@ -280,6 +280,9 @@ ramips_board_detect() {
 	*"V22SG")
 		name="v22sg"
 		;;
+	*"Sercomm NA930")
+		name="na930"
+		;;
 	*)
 		name="generic"
 		;;
