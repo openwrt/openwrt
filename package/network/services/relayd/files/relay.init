@@ -6,6 +6,19 @@ START=80
 USE_PROCD=1
 PROG=/usr/sbin/relayd
 
+validate_proto_relayd()
+{
+	uci_validate_section network "interface" "${1}" \
+		'network:list(string)' \
+		'expiry:uinteger:30' \
+		'retry:uinteger:5' \
+		'table:range(0, 65535):16800' \
+		'forward_bcast:bool:1' \
+		'forward_dhcp:bool:1'
+
+	return $?
+}
+
 resolve_ifname() {
 	grep -qs "^ *$1:" /proc/net/dev && {
 		procd_append_param command -I "$1"
