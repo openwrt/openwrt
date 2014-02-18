@@ -60,7 +60,7 @@ start_service_remote()
 
 service_triggers()
 {
-	procd_add_config_trigger "system" "/etc/init.d/log" "start"
+	procd_add_reload_trigger "system"
 	procd_add_validation validate_log_section
 }
 
