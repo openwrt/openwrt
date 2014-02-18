@@ -9,19 +9,19 @@
 # Steps:
 # 1) toolchain/binutils/install
 #    build & install binutils
-# 2) toolchain/gcc/prepare
+# 2) toolchain/gcc/minimal/install
 #    build & install a minimal gcc, needed for steps 3 & 4
 # 3) toolchain/kernel-headers/install
 #    install kernel headers, needed for step 4
-# 4) toolchain/libc/prepare
+# 4) toolchain/libc/headers/install
 #    build & install libc headers & support files, needed for step 5
-# 5) toolchain/gcc/compile
+# 5) toolchain/gcc/initial/install
 #    build & install an initial gcc, needed for step 6
-# 6) toolchain/libc/compile
+# 6) toolchain/libc/install
 #    build & install the final libc
-# 7) toolchain/gcc/install
+# 7) toolchain/gcc/final/install
 #    build & install the final gcc
-# 8) toolchain/libc/install
+# 8) toolchain/libc/utils/install
 #    build & install libc utilities
 #
 
