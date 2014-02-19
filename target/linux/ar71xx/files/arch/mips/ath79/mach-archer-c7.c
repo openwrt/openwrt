@@ -1,7 +1,8 @@
 /*
- * TP-LINK Archer C7 board support
+ * TP-LINK Archer C7/TL-WDR4900 v2 board support
  *
  * Copyright (c) 2013 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (c) 2014 施康成 <tenninjas@tenninjas.ca>
  *
  * Based on the Qualcomm Atheros AP135/AP136 reference board support code
  *   Copyright (c) 2012 Qualcomm Atheros
@@ -24,12 +25,13 @@
 #include <linux/phy.h>
 #include <linux/gpio.h>
 #include <linux/platform_device.h>
-//#include <linux/ath9k_platform.h>
+#include <linux/ath9k_platform.h>
 #include <linux/ar8216_platform.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 
 #include "common.h"
+#include "dev-ap9x-pci.h"
 #include "dev-eth.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
@@ -57,6 +59,7 @@
 #define ARCHER_C7_KEYS_DEBOUNCE_INTERVAL (3 * ARCHER_C7_KEYS_POLL_INTERVAL)
 
 #define ARCHER_C7_WMAC_CALDATA_OFFSET	0x1000
+#define ARCHER_C7_PCIE_CALDATA_OFFSET	0x5000
 
 static const char *archer_c7_part_probes[] = {
 	"tp-link",
@@ -196,7 +199,7 @@ static void __init archer_c7_gmac_setup(void)
 	iounmap(base);
 }
 
-static void __init archer_c7_setup(void)
+static void __init common_setup(bool pcie_slot)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
@@ -212,7 +215,13 @@ static void __init archer_c7_setup(void)
 	ath79_init_mac(tmpmac, mac, -1);
 	ath79_register_wmac(art + ARCHER_C7_WMAC_CALDATA_OFFSET, tmpmac);
 
-	ath79_register_pci();
+	if (pcie_slot) {
+		ath79_register_pci();
+	} else {
+		ath79_init_mac(tmpmac, mac, -1);
+		ap9x_pci_setup_wmac_led_pin(0, 0);
+		ap91_pci_init(art + ARCHER_C7_PCIE_CALDATA_OFFSET, tmpmac);
+	}
 
 	mdiobus_register_board_info(archer_c7_mdio0_info,
 				    ARRAY_SIZE(archer_c7_mdio0_info));
@@ -247,5 +256,19 @@ static void __init archer_c7_setup(void)
 	ath79_register_usb();
 }
 
+static void __init archer_c7_setup(void)
+{
+	common_setup(true);
+}
+
 MIPS_MACHINE(ATH79_MACH_ARCHER_C7, "ARCHER-C7", "TP-LINK Archer C7",
 	     archer_c7_setup);
+
+static void __init tl_wdr4900_v2_setup(void)
+{
+	common_setup(false);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WDR4900_V2, "TL-WDR4900-v2", "TP-LINK TL-WDR4900 v2",
+	     tl_wdr4900_v2_setup)
+
