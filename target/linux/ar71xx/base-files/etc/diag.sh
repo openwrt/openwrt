@@ -160,6 +160,7 @@ get_status_led() {
 		status_led="tp-link:green:system"
 		;;
 	archer-c7 | \
+	tl-wdr4900-v2 | \
 	tl-mr10u | \
 	tl-mr13u | \
 	tl-wdr4300 | \
