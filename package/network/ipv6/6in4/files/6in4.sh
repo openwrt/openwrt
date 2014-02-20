@@ -14,8 +14,8 @@ proto_6in4_setup() {
 	local iface="$2"
 	local link="6in4-$cfg"
 
-	local mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password sourcerouting
-	json_get_vars mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password sourcerouting
+	local mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password updatekey sourcerouting
+	json_get_vars mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password updatekey sourcerouting
 
 	[ -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -62,10 +62,12 @@ proto_6in4_setup() {
 
 	proto_send_update "$cfg"
 
-	[ -n "$tunnelid" -a -n "$username" -a -n "$password" ] && {
+	[ -n "$tunnelid" -a -n "$username" -a \( -n "$password" -o -n "$updatekey" \) ] && {
 		[ "${#password}" == 32 -a -z "${password//[a-fA-F0-9]/}" ] || {
 			password="$(echo -n "$password" | md5sum)"; password="${password%% *}"
 		}
+
+		[ -n "$updatekey" ] && password="$updatekey"
 
 		local url="http://ipv4.tunnelbroker.net/ipv4_end.php?ip=AUTO&apikey=$username&pass=$password&tid=$tunnelid"
 		local try=0
@@ -95,6 +97,7 @@ proto_6in4_init_config() {
 	proto_config_add_string "tunnelid"
 	proto_config_add_string "username"
 	proto_config_add_string "password"
+	proto_config_add_string "updatekey"
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
 	proto_config_add_boolean "sourcerouting"
