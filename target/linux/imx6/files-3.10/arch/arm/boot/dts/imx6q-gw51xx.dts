@@ -1,0 +1,38 @@
+/*
+ * Copyright 2013 Gateworks Corporation
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+/dts-v1/;
+#include "imx6q.dtsi"
+#include "imx6qdl-gw51xx.dtsi"
+
+/ {
+	model = "Gateworks Ventana i.MX6 Quad GW51XX";
+	compatible = "gw,imx6q-gw51xx", "gw,ventana", "fsl,imx6q";
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog>;
+
+	hog {
+		pinctrl_hog: hoggrp {
+			fsl,pins = <
+				MX6Q_PAD_EIM_A19__GPIO2_IO19   0x80000000 /* MEZZ_DIO0 */
+				MX6Q_PAD_EIM_A20__GPIO2_IO18   0x80000000 /* MEZZ_DIO1 */
+				MX6Q_PAD_EIM_D22__GPIO3_IO22   0x80000000 /* OTG_PWR_EN */
+				MX6Q_PAD_ENET_TXD0__GPIO1_IO30 0x80000000 /* PHY Reset */
+				MX6Q_PAD_GPIO_0__GPIO1_IO00    0x80000000 /* PCIE_RST# */
+				MX6Q_PAD_KEY_COL0__GPIO4_IO06  0x80000000 /* user1 led */
+				MX6Q_PAD_KEY_ROW0__GPIO4_IO07  0x80000000 /* user2 led */
+			 >;
+		};
+	};
+};
