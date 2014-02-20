@@ -36,6 +36,7 @@
 #include "dev-wmac.h"
 #include "machtypes.h"
 #include "routerboot.h"
+#include "dev-leds-gpio.h"
 
 #define RB95X_GPIO_NAND_NCE	14
 
@@ -56,6 +57,38 @@ static struct mtd_partition rb95x_nand_partitions[] = {
 		.offset	= MTDPART_OFS_NXTBLK,
 		.size	= MTDPART_SIZ_FULL,
 	},
+};
+
+static struct gpio_led rb951ui_leds_gpio[] __initdata = {
+	{
+		.name		= "rb:green:wlan",
+		.gpio		= 11,
+		.active_low	= 1,
+	}, {
+		.name		= "rb:green:act",
+		.gpio		= 3,
+		.active_low	= 1,
+	}, {
+		.name		= "rb:green:port1",
+		.gpio		= 13,
+		.active_low	= 1,
+	}, {
+		.name		= "rb:green:port2",
+		.gpio		= 12,
+		.active_low	= 1,
+	}, {
+		.name		= "rb:green:port3",
+		.gpio		= 4,
+		.active_low	= 1,
+	}, {
+		.name		= "rb:green:port4",
+		.gpio		= 21,
+		.active_low	= 1,
+	}, {
+		.name		= "rb:green:port5",
+		.gpio		= 16,
+		.active_low	= 1,
+	}
 };
 
 static struct ar8327_pad_cfg rb95x_ar8327_pad0_cfg = {
@@ -157,6 +190,14 @@ static int __init rb95x_setup(void)
 
 	rb95x_nand_init();
 
+	return 0;
+}
+
+static void __init rb951g_setup(void)
+{
+	if (rb95x_setup())
+		return;
+
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
 				   AR934X_ETH_CFG_SW_ONLY_MODE);
 
@@ -171,17 +212,47 @@ static int __init rb95x_setup(void)
 
 	ath79_register_eth(0);
 
-	return 0;
-}
-
-static void __init rb951g_setup(void)
-{
-	if (rb95x_setup())
-		return;
-
 	rb95x_wlan_init();
 	ath79_register_usb();
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_951G, "951G", "MikroTik RouterBOARD 951G-2HnD",
 	     rb951g_setup);
+
+static void __init rb951ui_setup(void)
+{
+	if (rb95x_setup())
+		return;
+
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_SW_ONLY_MODE);
+
+	ath79_register_mdio(1, 0x0);
+
+	ath79_init_mac(ath79_eth0_data.mac_addr, ath79_mac_base, 0);
+	ath79_init_mac(ath79_eth1_data.mac_addr, ath79_mac_base, 1);
+
+	ath79_switch_data.phy4_mii_en = 1;
+	ath79_switch_data.phy_poll_mask = BIT(4);
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ath79_eth0_data.phy_mask = BIT(4);
+	ath79_eth0_data.mii_bus_dev = &ath79_mdio1_device.dev;
+	ath79_register_eth(0);
+
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ath79_register_eth(1);
+
+	gpio_request_one(20, GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
+
+	gpio_request_one(2, GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "POE power");
+
+	rb95x_wlan_init();
+	ath79_register_usb();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb951ui_leds_gpio),
+				 rb951ui_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_RB_951U, "951HnD", "MikroTik RouterBOARD 951Ui-2HnD",
+	     rb951ui_setup);
