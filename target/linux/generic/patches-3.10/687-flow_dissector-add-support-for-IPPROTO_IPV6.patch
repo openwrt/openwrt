@@ -1,0 +1,25 @@
+From 9c60237cd842c337539b1d72582b8cc410aeb3a6 Mon Sep 17 00:00:00 2001
+From: Tom Herbert <therbert@google.com>
+Date: Mon, 29 Jul 2013 11:07:42 -0700
+Subject: [PATCH 4/5] flow_dissector: add support for IPPROTO_IPV6
+
+Support IPPROTO_IPV6 similar to IPPROTO_IPIP
+
+Signed-off-by: Tom Herbert <therbert@google.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ net/core/flow_dissector.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/net/core/flow_dissector.c
++++ b/net/core/flow_dissector.c
+@@ -141,6 +141,9 @@ ipv6:
+ 	case IPPROTO_IPIP:
+ 		proto = htons(ETH_P_IP);
+ 		goto ip;
++	case IPPROTO_IPV6:
++		proto = htons(ETH_P_IPV6);
++		goto ipv6;
+ 	default:
+ 		break;
+ 	}
