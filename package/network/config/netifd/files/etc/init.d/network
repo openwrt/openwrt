@@ -57,12 +57,12 @@ validate_route_section()
 {
 	uci_validate_section network route "${1}" \
 		'interface:string' \
-		'target:ip4addr' \
-		'netmask:ip4prefix' \
+		'target:cidr4' \
+		'netmask:netmask4' \
 		'gateway:ip4addr' \
 		'metric:uinteger' \
 		'mtu:uinteger' \
-		'table:range(0,65535)'
+		'table:or(range(0,65535),string)'
 
 	return $?
 }
@@ -71,11 +71,11 @@ validate_route6_section()
 {
 	uci_validate_section network route6 "${1}" \
 		'interface:string' \
-		'target:ip6addr' \
+		'target:cidr6' \
 		'gateway:ip6addr' \
 		'metric:uinteger' \
 		'mtu:uinteger' \
-		'table:range(0,65535)'
+		'table:or(range(0,65535),string)'
 
 	return $?
 }
@@ -85,12 +85,12 @@ validate_rule_section()
 	uci_validate_section network rule "${1}" \
 		'in:string' \
 		'out:string' \
-		'src:ip4prefix' \
-		'dest:ip4prefix' \
-		'tos:rage(0.31)' \
-		'string:mark' \
+		'src:cidr4' \
+		'dest:cidr4' \
+		'tos:range(0,31)' \
+		'mark:string' \
 		'invert:bool' \
-		'lookup:range(0,65535)' \
+		'lookup:or(range(0,65535),string)' \
 		'goto:range(0,65535)' \
 		'action:or("prohibit", "unreachable", "blackhole", "throw")'
 
@@ -102,12 +102,12 @@ validate_rule6_section()
 	uci_validate_section network rule6 "${1}" \
 		'in:string' \
 		'out:string' \
-		'src:ip4prefix' \
-		'dest:ip4prefix' \
-		'tos:rage(0.31)' \
-		'string:mark' \
+		'src:cidr6' \
+		'dest:cidr6' \
+		'tos:range(0,31)' \
+		'mark:string' \
 		'invert:bool' \
-		'lookup:range(0,65535)' \ 
+		'lookup:or(range(0,65535),string)' \
 		'goto:range(0,65535)' \
 		'action:or("prohibit", "unreachable", "blackhole", "throw")'
 
