@@ -7,13 +7,13 @@ QUIET=""
 validate_firewall_redirect()
 {
 	uci_validate_section firewall redirect "${1}" \
-		'proto:or("tcp", "udp", "tcpudp")' \
+		'proto:or(uinteger, string)' \
 		'src:string' \
-		'src_ip:ipaddr' \
-		'src_dport:string' \
+		'src_ip:cidr' \
+		'src_dport:or(port, portrange)' \
 		'dest:string' \
-		'dest_ip:ipaddr' \
-		'dest_port:string' \
+		'dest_ip:cidr' \
+		'dest_port:or(port, portrange)' \
 		'target:or("SNAT", "DNAT")'
 	
 	return $?
@@ -22,11 +22,11 @@ validate_firewall_redirect()
 validate_firewall_rule()
 {
 	uci_validate_section firewall rule "${1}" \
-		'proto:string' \
+		'proto:or(uinteger, string)' \
 		'src:string' \
 		'dest:string' \
-		'src_port:string' \
-		'dest_port:string' \
+		'src_port:or(port, portrange)' \
+		'dest_port:or(port, portrange)' \
 		'target:string'
 	
 	return $?
