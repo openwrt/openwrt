@@ -54,7 +54,8 @@ CONFIGURE_ARGS = \
 		--sbindir=/usr/sbin \
 		--libexecdir=/usr/lib \
 		--sysconfdir=/etc \
-		$(if $(CONFIG_KEXEC_ZLIB),--with,--without)-zlib
+		$(if $(CONFIG_KEXEC_ZLIB),--with,--without)-zlib \
+		--without-lzma
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
