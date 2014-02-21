@@ -10,7 +10,7 @@ NETWORK_DEVICES_MENU:=Network Devices
 define KernelPackage/sis190
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SiS 190 Fast/Gigabit Ethernet support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_SIS190
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/sis/sis190.ko
   AUTOLOAD:=$(call AutoProbe,sis190)
@@ -48,7 +48,7 @@ $(eval $(call KernelPackage,atl2))
 define KernelPackage/atl1
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros L1 Gigabit Ethernet support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_ATL1
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/atlx/atl1.ko
   AUTOLOAD:=$(call AutoProbe,atl1)
@@ -246,7 +246,7 @@ $(eval $(call KernelPackage,r6040))
 define KernelPackage/sis900
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SiS 900 Ethernet support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_SIS900
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/sis/sis900.ko
   AUTOLOAD:=$(call AutoProbe,sis900)
@@ -284,7 +284,7 @@ $(eval $(call KernelPackage,sky2))
 define KernelPackage/via-rhine
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Via Rhine ethernet support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_VIA_RHINE \
     CONFIG_VIA_RHINE_MMIO=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/via/via-rhine.ko
@@ -317,7 +317,7 @@ $(eval $(call KernelPackage,via-velocity))
 define KernelPackage/8139too
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_8139TOO \
     CONFIG_8139TOO_PIO=y \
     CONFIG_8139TOO_TUNE_TWISTER=n \
@@ -337,7 +337,7 @@ $(eval $(call KernelPackage,8139too))
 define KernelPackage/8139cp
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8139C+ PCI Fast Ethernet Adapter kernel support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_8139CP
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/8139cp.ko
   AUTOLOAD:=$(call AutoProbe,8139cp)
@@ -353,7 +353,7 @@ $(eval $(call KernelPackage,8139cp))
 define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
     CONFIG_R8169_VLAN=n
@@ -389,7 +389,7 @@ $(eval $(call KernelPackage,ne2k-pci))
 define KernelPackage/e100
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) PRO/100+ cards kernel support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_E100
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e100.ko
   AUTOLOAD:=$(call AutoProbe,e100)
@@ -446,7 +446,7 @@ $(eval $(call KernelPackage,e1000e))
 define KernelPackage/b44
   TITLE:=Broadcom 44xx driver
   KCONFIG:=CONFIG_B44
-  DEPENDS:=@PCI_SUPPORT +!TARGET_brcm47xx:kmod-ssb
+  DEPENDS:=@PCI_SUPPORT +!TARGET_brcm47xx:kmod-ssb +kmod-mii
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/b44.ko
   AUTOLOAD:=$(call AutoLoad,19,b44,1)
@@ -462,7 +462,7 @@ $(eval $(call KernelPackage,b44))
 define KernelPackage/3c59x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=3Com 3c590/3c900 series (592/595/597) Vortex/Boomerang
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_VORTEX
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/3com/3c59x.ko
   AUTOLOAD:=$(call AutoProbe,3c59x)
@@ -595,7 +595,7 @@ $(eval $(call KernelPackage,macvlan))
 
 define KernelPackage/tulip
   TITLE:=Tulip family network device support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   KCONFIG:= \
     CONFIG_NET_TULIP=y \
@@ -680,7 +680,7 @@ $(eval $(call KernelPackage,ifb))
 define KernelPackage/dm9000
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Davicom 9000 Ethernet support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-mii
   KCONFIG:=CONFIG_DM9000 \
     CONFIG_DM9000_DEBUGLEVEL=4 \
     CONFIG_DM9000_FORCE_SIMPLE_PHY_POLL=y
