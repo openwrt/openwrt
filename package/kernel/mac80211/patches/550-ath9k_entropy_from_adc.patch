@@ -18,7 +18,7 @@
  	void (*spectral_scan_trigger)(struct ath_hw *ah);
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -1768,6 +1768,26 @@ static void ar9003_hw_tx99_set_txpower(s
+@@ -1764,6 +1764,26 @@ static void ar9003_hw_tx99_set_txpower(s
  		  ATH9K_POW_SM(p_pwr_array[ALL_TARGET_HT40_14],  0));
  }
  
@@ -45,7 +45,7 @@
  void ar9003_hw_attach_phy_ops(struct ath_hw *ah)
  {
  	struct ath_hw_private_ops *priv_ops = ath9k_hw_private_ops(ah);
-@@ -1798,6 +1818,7 @@ void ar9003_hw_attach_phy_ops(struct ath
+@@ -1794,6 +1814,7 @@ void ar9003_hw_attach_phy_ops(struct ath
  	priv_ops->set_radar_params = ar9003_hw_set_radar_params;
  	priv_ops->fast_chan_change = ar9003_hw_fast_chan_change;
  

@@ -1,3 +1,21 @@
+commit b14fbb554fc65a2e0b5c41a319269b0350f187e7
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sat Feb 22 14:35:25 2014 +0100
+
+    ath9k: do not set half/quarter channel flags in AR_PHY_MODE
+    
+    5/10 MHz channel bandwidth is configured via the PLL clock, instead of
+    the AR_PHY_MODE register. Using that register is AR93xx specific, and
+    makes the mode incompatible with earlier chipsets.
+    
+    In some early versions, these flags were apparently applied at the wrong
+    point in time and thus did not cause connectivity issues, however now
+    they are causing problems, as pointed out in this OpenWrt ticket:
+    
+    https://dev.openwrt.org/ticket/14916
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 0f1cb7be2551b30b02cd54c897e0e29e483cfda5
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Sat Feb 22 13:43:29 2014 +0100
@@ -3296,3 +3314,16 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  			 "%17s: %2d\n", "MCI Reset",
  			 sc->debug.stats.reset[RESET_TYPE_MCI]);
  
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -868,10 +868,6 @@ static void ar9003_hw_set_rfmode(struct 
+ 
+ 	if (IS_CHAN_A_FAST_CLOCK(ah, chan))
+ 		rfMode |= (AR_PHY_MODE_DYNAMIC | AR_PHY_MODE_DYN_CCK_DISABLE);
+-	if (IS_CHAN_QUARTER_RATE(chan))
+-		rfMode |= AR_PHY_MODE_QUARTER;
+-	if (IS_CHAN_HALF_RATE(chan))
+-		rfMode |= AR_PHY_MODE_HALF;
+ 
+ 	if (rfMode & (AR_PHY_MODE_QUARTER | AR_PHY_MODE_HALF))
+ 		REG_RMW_FIELD(ah, AR_PHY_FRAME_CTL,
