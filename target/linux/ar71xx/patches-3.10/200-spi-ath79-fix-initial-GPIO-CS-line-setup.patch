@@ -1,0 +1,37 @@
+From 3a7853f0dd24e81dc920c98a5c7e8cfdde81bb45 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Thu, 16 Jan 2014 16:58:58 +0100
+Subject: [PATCH] spi-ath79: fix initial GPIO CS line setup
+
+The 'ath79_spi_setup_cs' function initializes the chip
+select line of a given SPI device in order to make sure
+that the device is inactive.
+
+If the SPI_CS_HIGH bit is set for a given device, it
+means that the CS line of that device is active HIGH
+so it must be set to LOW initially. In case of GPIO
+CS lines, the 'ath79_spi_setup_cs' function does the
+opposite of that due to the wrong GPIO flags.
+
+Fix the code to use the correct GPIO flags.
+
+Reported-by: Ronald Wahl <ronald.wahl@raritan.com>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/spi/spi-ath79.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -132,9 +132,9 @@ static int ath79_spi_setup_cs(struct spi
+ 
+ 		flags = GPIOF_DIR_OUT;
+ 		if (spi->mode & SPI_CS_HIGH)
+-			flags |= GPIOF_INIT_HIGH;
+-		else
+ 			flags |= GPIOF_INIT_LOW;
++		else
++			flags |= GPIOF_INIT_HIGH;
+ 
+ 		status = gpio_request_one(cdata->gpio, flags,
+ 					  dev_name(&spi->dev));
