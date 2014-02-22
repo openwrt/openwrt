@@ -1130,6 +1130,19 @@ static const struct b53_chip_data b53_switch_chips[] = {
 		.sw_ops = &b53_switch_ops,
 	},
 	{
+		.chip_id = BCM53128_DEVICE_ID,
+		.dev_name = "BCM53128",
+		.alias = "bcm53128",
+		.vlans = 4096,
+		.enabled_ports = 0x1ff,
+		.cpu_port = B53_CPU_PORT,
+		.vta_regs = B53_VTA_REGS,
+		.duplex_reg = B53_DUPLEX_STAT_GE,
+		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
+		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
+		.sw_ops = &b53_switch_ops,
+	},
+	{
 		.chip_id = BCM63XX_DEVICE_ID,
 		.dev_name = "BCM63xx",
 		.alias = "bcm63xx",
@@ -1363,6 +1376,7 @@ int b53_switch_detect(struct b53_device *dev)
 		switch (id32) {
 		case BCM53115_DEVICE_ID:
 		case BCM53125_DEVICE_ID:
+		case BCM53128_DEVICE_ID:
 		case BCM53010_DEVICE_ID:
 		case BCM53011_DEVICE_ID:
 		case BCM53012_DEVICE_ID:
