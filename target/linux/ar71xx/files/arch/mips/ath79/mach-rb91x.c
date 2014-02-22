@@ -22,6 +22,7 @@
 #include <linux/spi/flash.h>
 #include <linux/routerboot.h>
 #include <linux/gpio.h>
+#include <linux/platform_data/gpio-latch.h>
 
 #include <asm/prom.h>
 #include <asm/mach-ath79/ath79.h>
@@ -49,6 +50,9 @@
 
 #define RB91X_FLAG_USB		BIT(0)
 #define RB91X_FLAG_PCIE		BIT(1)
+
+#define RB91X_LATCH_GPIO_BASE	AR934X_GPIO_COUNT
+#define RB91X_LATCH_GPIO(_x)	(RB91X_LATCH_GPIO_BASE + (_x))
 
 struct rb_board_info {
 	const char *name;
@@ -78,6 +82,19 @@ static struct mtd_partition rb711gr100_spi_partitions[] = {
 static struct flash_platform_data rb711gr100_spi_flash_data = {
 	.parts		= rb711gr100_spi_partitions,
 	.nr_parts	= ARRAY_SIZE(rb711gr100_spi_partitions),
+};
+
+static int rb711gr100_gpio_latch_gpios[AR934X_GPIO_COUNT] __initdata = {
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+	12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
+};
+
+static struct gpio_latch_platform_data rb711gr100_gpio_latch_data __initdata = {
+	.base = RB91X_LATCH_GPIO_BASE,
+	.num_gpios = ARRAY_SIZE(rb711gr100_gpio_latch_gpios),
+	.gpios = rb711gr100_gpio_latch_gpios,
+	.le_gpio_index = 11,
+	.le_active_low = true,
 };
 
 static void __init rb711gr100_init_partitions(const struct rb_info *info)
@@ -163,6 +180,10 @@ static void __init rb711gr100_setup(void)
 	rb711gr100_wlan_init();
 
 	platform_device_register_simple("rb91x-nand", -1, NULL, 0);
+
+	platform_device_register_data(NULL, "gpio-latch", -1,
+				      &rb711gr100_gpio_latch_data,
+				      sizeof(rb711gr100_gpio_latch_data));
 
 	flags = rb711gr100_get_flags(info);
 
