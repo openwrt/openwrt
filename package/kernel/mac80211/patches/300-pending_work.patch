@@ -1,3 +1,16 @@
+commit ee41f72476e1ea44283dfe1cbf75b9543a1e15c8
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sat Feb 22 14:44:52 2014 +0100
+
+    ath9k: make some hardware reset log messages debug-only
+    
+    On some chips, baseband watchdog hangs are more common than others, and
+    the driver has support for handling them.
+    Interrupts even after a watchdog hang are also quite common, so there's
+    not much point in spamming the user's logfiles.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit b14fbb554fc65a2e0b5c41a319269b0350f187e7
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Sat Feb 22 14:35:25 2014 +0100
@@ -1043,6 +1056,33 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -451,7 +451,7 @@ void ath9k_tasklet(unsigned long data)
+ 		 * interrupts are enabled in the reset routine.
+ 		 */
+ 		atomic_inc(&ah->intr_ref_cnt);
+-		ath_dbg(common, ANY, "FATAL: Skipping interrupts\n");
++		ath_dbg(common, RESET, "FATAL: Skipping interrupts\n");
+ 		goto out;
+ 	}
+ 
+@@ -471,7 +471,7 @@ void ath9k_tasklet(unsigned long data)
+ 			 * interrupts are enabled in the reset routine.
+ 			 */
+ 			atomic_inc(&ah->intr_ref_cnt);
+-			ath_dbg(common, ANY,
++			ath_dbg(common, RESET,
+ 				"BB_WATCHDOG: Skipping interrupts\n");
+ 			goto out;
+ 		}
+@@ -484,7 +484,7 @@ void ath9k_tasklet(unsigned long data)
+ 			type = RESET_TYPE_TX_GTT;
+ 			ath9k_queue_reset(sc, type);
+ 			atomic_inc(&ah->intr_ref_cnt);
+-			ath_dbg(common, ANY,
++			ath_dbg(common, RESET,
+ 				"GTT: Skipping interrupts\n");
+ 			goto out;
+ 		}
 @@ -1866,7 +1866,7 @@ static void ath9k_set_coverage_class(str
  
  static bool ath9k_has_tx_pending(struct ath_softc *sc)
