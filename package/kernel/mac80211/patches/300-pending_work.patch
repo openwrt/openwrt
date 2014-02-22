@@ -1,3 +1,145 @@
+commit d84856012e0f10fe598a5ad3b7b869397a089e07
+Author: Johannes Berg <johannes.berg@intel.com>
+Date:   Thu Feb 20 11:19:58 2014 +0100
+
+    mac80211: fix station wakeup powersave race
+    
+    Consider the following (relatively unlikely) scenario:
+     1) station goes to sleep while frames are buffered in driver
+     2) driver blocks wakeup (until no more frames are buffered)
+     3) station wakes up again
+     4) driver unblocks wakeup
+    
+    In this case, the current mac80211 code will do the following:
+     1) WLAN_STA_PS_STA set
+     2) WLAN_STA_PS_DRIVER set
+     3) - nothing -
+     4) WLAN_STA_PS_DRIVER cleared
+    
+    As a result, no frames will be delivered to the client, even
+    though it is awake, until it sends another frame to us that
+    triggers ieee80211_sta_ps_deliver_wakeup() in sta_ps_end().
+    
+    Since we now take the PS spinlock, we can fix this while at
+    the same time removing the complexity with the pending skb
+    queue function. This was broken since my commit 50a9432daeec
+    ("mac80211: fix powersaving clients races") due to removing
+    the clearing of WLAN_STA_PS_STA in the RX path.
+    
+    While at it, fix a cleanup path issue when a station is
+    removed while the driver is still blocking its wakeup.
+    
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit 798f2786602cbe93e6b928299614aa36ebf50692
+Author: Johannes Berg <johannes.berg@intel.com>
+Date:   Mon Feb 17 20:49:03 2014 +0100
+
+    mac80211: insert stations before adding to driver
+    
+    There's a race condition in mac80211 because we add stations
+    to the internal lists after adding them to the driver, which
+    means that (for example) the following can happen:
+     1. a station connects and is added
+     2. first, it is added to the driver
+     3. then, it is added to the mac80211 lists
+    
+    If the station goes to sleep between steps 2 and 3, and the
+    firmware/hardware records it as being asleep, mac80211 will
+    never instruct the driver to wake it up again as it never
+    realized it went to sleep since the RX path discarded the
+    frame as a "spurious class 3 frame", no station entry was
+    present yet.
+    
+    Fix this by adding the station in software first, and only
+    then adding it to the driver. That way, any state that the
+    driver changes will be reflected properly in mac80211's
+    station state. The problematic part is the roll-back if the
+    driver fails to add the station, in that case a bit more is
+    needed. To not make that overly complex prevent starting BA
+    sessions in the meantime.
+    
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit b9ba6a520cb07ab3aa7aaaf9ce4a0bc7a6bc06fe
+Author: Emmanuel Grumbach <emmanuel.grumbach@intel.com>
+Date:   Thu Feb 20 09:22:11 2014 +0200
+
+    mac80211: fix AP powersave TX vs. wakeup race
+    
+    There is a race between the TX path and the STA wakeup: while
+    a station is sleeping, mac80211 buffers frames until it wakes
+    up, then the frames are transmitted. However, the RX and TX
+    path are concurrent, so the packet indicating wakeup can be
+    processed while a packet is being transmitted.
+    
+    This can lead to a situation where the buffered frames list
+    is emptied on the one side, while a frame is being added on
+    the other side, as the station is still seen as sleeping in
+    the TX path.
+    
+    As a result, the newly added frame will not be send anytime
+    soon. It might be sent much later (and out of order) when the
+    station goes to sleep and wakes up the next time.
+    
+    Additionally, it can lead to the crash below.
+    
+    Fix all this by synchronising both paths with a new lock.
+    Both path are not fastpath since they handle PS situations.
+    
+    In a later patch we'll remove the extra skb queue locks to
+    reduce locking overhead.
+    
+    BUG: unable to handle kernel
+    NULL pointer dereference at 000000b0
+    IP: [<ff6f1791>] ieee80211_report_used_skb+0x11/0x3e0 [mac80211]
+    *pde = 00000000
+    Oops: 0000 [#1] SMP DEBUG_PAGEALLOC
+    EIP: 0060:[<ff6f1791>] EFLAGS: 00210282 CPU: 1
+    EIP is at ieee80211_report_used_skb+0x11/0x3e0 [mac80211]
+    EAX: e5900da0 EBX: 00000000 ECX: 00000001 EDX: 00000000
+    ESI: e41d00c0 EDI: e5900da0 EBP: ebe458e4 ESP: ebe458b0
+     DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+    CR0: 8005003b CR2: 000000b0 CR3: 25a78000 CR4: 000407d0
+    DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+    DR6: ffff0ff0 DR7: 00000400
+    Process iperf (pid: 3934, ti=ebe44000 task=e757c0b0 task.ti=ebe44000)
+    iwlwifi 0000:02:00.0: I iwl_pcie_enqueue_hcmd Sending command LQ_CMD (#4e), seq: 0x0903, 92 bytes at 3[3]:9
+    Stack:
+     e403b32c ebe458c4 00200002 00200286 e403b338 ebe458cc c10960bb e5900da0
+     ff76a6ec ebe458d8 00000000 e41d00c0 e5900da0 ebe458f0 ff6f1b75 e403b210
+     ebe4598c ff723dc1 00000000 ff76a6ec e597c978 e403b758 00000002 00000002
+    Call Trace:
+     [<ff6f1b75>] ieee80211_free_txskb+0x15/0x20 [mac80211]
+     [<ff723dc1>] invoke_tx_handlers+0x1661/0x1780 [mac80211]
+     [<ff7248a5>] ieee80211_tx+0x75/0x100 [mac80211]
+     [<ff7249bf>] ieee80211_xmit+0x8f/0xc0 [mac80211]
+     [<ff72550e>] ieee80211_subif_start_xmit+0x4fe/0xe20 [mac80211]
+     [<c149ef70>] dev_hard_start_xmit+0x450/0x950
+     [<c14b9aa9>] sch_direct_xmit+0xa9/0x250
+     [<c14b9c9b>] __qdisc_run+0x4b/0x150
+     [<c149f732>] dev_queue_xmit+0x2c2/0xca0
+    
+    Cc: stable@vger.kernel.org
+    Reported-by: Yaara Rozenblum <yaara.rozenblum@intel.com>
+    Signed-off-by: Emmanuel Grumbach <emmanuel.grumbach@intel.com>
+    Reviewed-by: Stanislaw Gruszka <sgruszka@redhat.com>
+    [reword commit log, use a separate lock]
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit 80e419de0dff38436b30d363311c625766193f86
+Author: Inbal Hacohen <Inbal.Hacohen@intel.com>
+Date:   Wed Feb 12 09:32:27 2014 +0200
+
+    cfg80211: bugfix in regulatory user hint process
+    
+    After processing hint_user, we would want to schedule the
+    timeout work only if we are actually waiting to CRDA. This happens
+    when the status is not "IGNORE" nor "ALREADY_SET".
+    
+    Signed-off-by: Inbal Hacohen <Inbal.Hacohen@intel.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
 commit 6514c93afede55284e2cb63359aadedb85884c80
 Author: Jouni Malinen <jouni@qca.qualcomm.com>
 Date:   Tue Feb 18 20:41:08 2014 +0200
@@ -1329,7 +1471,21 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		return -1; /* not a robust management frame */
  
  	mmie = (struct ieee80211_mmie *)
-@@ -1311,18 +1311,15 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1128,6 +1128,13 @@ static void sta_ps_end(struct sta_info *
+ 	       sta->sta.addr, sta->sta.aid);
+ 
+ 	if (test_sta_flag(sta, WLAN_STA_PS_DRIVER)) {
++		/*
++		 * Clear the flag only if the other one is still set
++		 * so that the TX path won't start TX'ing new frames
++		 * directly ... In the case that the driver flag isn't
++		 * set ieee80211_sta_ps_deliver_wakeup() will clear it.
++		 */
++		clear_sta_flag(sta, WLAN_STA_PS_STA);
+ 		ps_dbg(sta->sdata, "STA %pM aid %d driver-ps-blocked\n",
+ 		       sta->sta.addr, sta->sta.aid);
+ 		return;
+@@ -1311,18 +1318,15 @@ ieee80211_rx_h_sta_process(struct ieee80
  	    !ieee80211_has_morefrags(hdr->frame_control) &&
  	    !(status->rx_flags & IEEE80211_RX_DEFERRED_RELEASE) &&
  	    (rx->sdata->vif.type == NL80211_IFTYPE_AP ||
@@ -1356,7 +1512,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  				sta_ps_end(sta);
  		} else {
  			if (ieee80211_has_pm(hdr->frame_control))
-@@ -1845,8 +1842,7 @@ static int ieee80211_drop_unencrypted_mg
+@@ -1845,8 +1849,7 @@ static int ieee80211_drop_unencrypted_mg
  		 * having configured keys.
  		 */
  		if (unlikely(ieee80211_is_action(fc) && !rx->key &&
@@ -1378,7 +1534,36 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		return 0;
  
  	return 1;
-@@ -525,9 +524,7 @@ ieee80211_tx_h_ps_buf(struct ieee80211_t
+@@ -478,6 +477,20 @@ ieee80211_tx_h_unicast_ps_buf(struct iee
+ 		       sta->sta.addr, sta->sta.aid, ac);
+ 		if (tx->local->total_ps_buffered >= TOTAL_MAX_TX_BUFFER)
+ 			purge_old_ps_buffers(tx->local);
++
++		/* sync with ieee80211_sta_ps_deliver_wakeup */
++		spin_lock(&sta->ps_lock);
++		/*
++		 * STA woke up the meantime and all the frames on ps_tx_buf have
++		 * been queued to pending queue. No reordering can happen, go
++		 * ahead and Tx the packet.
++		 */
++		if (!test_sta_flag(sta, WLAN_STA_PS_STA) &&
++		    !test_sta_flag(sta, WLAN_STA_PS_DRIVER)) {
++			spin_unlock(&sta->ps_lock);
++			return TX_CONTINUE;
++		}
++
+ 		if (skb_queue_len(&sta->ps_tx_buf[ac]) >= STA_MAX_TX_BUFFER) {
+ 			struct sk_buff *old = skb_dequeue(&sta->ps_tx_buf[ac]);
+ 			ps_dbg(tx->sdata,
+@@ -492,6 +505,7 @@ ieee80211_tx_h_unicast_ps_buf(struct iee
+ 		info->flags |= IEEE80211_TX_INTFL_NEED_TXPROCESSING;
+ 		info->flags &= ~IEEE80211_TX_TEMPORARY_FLAGS;
+ 		skb_queue_tail(&sta->ps_tx_buf[ac], tx->skb);
++		spin_unlock(&sta->ps_lock);
+ 
+ 		if (!timer_pending(&local->sta_cleanup))
+ 			mod_timer(&local->sta_cleanup,
+@@ -525,9 +539,7 @@ ieee80211_tx_h_ps_buf(struct ieee80211_t
  
  	/* only deauth, disassoc and action are bufferable MMPDUs */
  	if (ieee80211_is_mgmt(hdr->frame_control) &&
@@ -1389,7 +1574,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		if (tx->flags & IEEE80211_TX_UNICAST)
  			info->flags |= IEEE80211_TX_CTL_NO_PS_BUFFER;
  		return TX_CONTINUE;
-@@ -567,7 +564,7 @@ ieee80211_tx_h_select_key(struct ieee802
+@@ -567,7 +579,7 @@ ieee80211_tx_h_select_key(struct ieee802
  		tx->key = key;
  	else if (ieee80211_is_mgmt(hdr->frame_control) &&
  		 is_multicast_ether_addr(hdr->addr1) &&
@@ -1398,7 +1583,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		 (key = rcu_dereference(tx->sdata->default_mgmt_key)))
  		tx->key = key;
  	else if (is_multicast_ether_addr(hdr->addr1) &&
-@@ -582,12 +579,12 @@ ieee80211_tx_h_select_key(struct ieee802
+@@ -582,12 +594,12 @@ ieee80211_tx_h_select_key(struct ieee802
  		tx->key = NULL;
  	else if (tx->skb->protocol == tx->sdata->control_port_protocol)
  		tx->key = NULL;
@@ -1413,7 +1598,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		tx->key = NULL;
  	else {
  		I802_DEBUG_INC(tx->local->tx_handlers_drop_unencrypted);
-@@ -878,7 +875,7 @@ static int ieee80211_fragment(struct iee
+@@ -878,7 +890,7 @@ static int ieee80211_fragment(struct iee
  	}
  
  	/* adjust first fragment's length */
@@ -2816,3 +3001,238 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	hw->queues = 4;
  	hw->max_rates = 4;
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1700,14 +1700,8 @@ void ieee80211_stop_queue_by_reason(stru
+ void ieee80211_propagate_queue_wake(struct ieee80211_local *local, int queue);
+ void ieee80211_add_pending_skb(struct ieee80211_local *local,
+ 			       struct sk_buff *skb);
+-void ieee80211_add_pending_skbs_fn(struct ieee80211_local *local,
+-				   struct sk_buff_head *skbs,
+-				   void (*fn)(void *data), void *data);
+-static inline void ieee80211_add_pending_skbs(struct ieee80211_local *local,
+-					      struct sk_buff_head *skbs)
+-{
+-	ieee80211_add_pending_skbs_fn(local, skbs, NULL, NULL);
+-}
++void ieee80211_add_pending_skbs(struct ieee80211_local *local,
++				struct sk_buff_head *skbs);
+ void ieee80211_flush_queues(struct ieee80211_local *local,
+ 			    struct ieee80211_sub_if_data *sdata);
+ 
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -91,7 +91,7 @@ static int sta_info_hash_del(struct ieee
+ 	return -ENOENT;
+ }
+ 
+-static void cleanup_single_sta(struct sta_info *sta)
++static void __cleanup_single_sta(struct sta_info *sta)
+ {
+ 	int ac, i;
+ 	struct tid_ampdu_tx *tid_tx;
+@@ -99,7 +99,8 @@ static void cleanup_single_sta(struct st
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct ps_data *ps;
+ 
+-	if (test_sta_flag(sta, WLAN_STA_PS_STA)) {
++	if (test_sta_flag(sta, WLAN_STA_PS_STA) ||
++	    test_sta_flag(sta, WLAN_STA_PS_DRIVER)) {
+ 		if (sta->sdata->vif.type == NL80211_IFTYPE_AP ||
+ 		    sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
+ 			ps = &sdata->bss->ps;
+@@ -109,6 +110,7 @@ static void cleanup_single_sta(struct st
+ 			return;
+ 
+ 		clear_sta_flag(sta, WLAN_STA_PS_STA);
++		clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
+ 
+ 		atomic_dec(&ps->num_sta_ps);
+ 		sta_info_recalc_tim(sta);
+@@ -139,7 +141,14 @@ static void cleanup_single_sta(struct st
+ 		ieee80211_purge_tx_queue(&local->hw, &tid_tx->pending);
+ 		kfree(tid_tx);
+ 	}
++}
+ 
++static void cleanup_single_sta(struct sta_info *sta)
++{
++	struct ieee80211_sub_if_data *sdata = sta->sdata;
++	struct ieee80211_local *local = sdata->local;
++
++	__cleanup_single_sta(sta);
+ 	sta_info_free(local, sta);
+ }
+ 
+@@ -330,6 +339,7 @@ struct sta_info *sta_info_alloc(struct i
+ 	rcu_read_unlock();
+ 
+ 	spin_lock_init(&sta->lock);
++	spin_lock_init(&sta->ps_lock);
+ 	INIT_WORK(&sta->drv_unblock_wk, sta_unblock);
+ 	INIT_WORK(&sta->ampdu_mlme.work, ieee80211_ba_session_work);
+ 	mutex_init(&sta->ampdu_mlme.mtx);
+@@ -487,21 +497,26 @@ static int sta_info_insert_finish(struct
+ 		goto out_err;
+ 	}
+ 
+-	/* notify driver */
+-	err = sta_info_insert_drv_state(local, sdata, sta);
+-	if (err)
+-		goto out_err;
+-
+ 	local->num_sta++;
+ 	local->sta_generation++;
+ 	smp_mb();
+ 
++	/* simplify things and don't accept BA sessions yet */
++	set_sta_flag(sta, WLAN_STA_BLOCK_BA);
++
+ 	/* make the station visible */
+ 	sta_info_hash_add(local, sta);
+ 
+ 	list_add_rcu(&sta->list, &local->sta_list);
+ 
++	/* notify driver */
++	err = sta_info_insert_drv_state(local, sdata, sta);
++	if (err)
++		goto out_remove;
++
+ 	set_sta_flag(sta, WLAN_STA_INSERTED);
++	/* accept BA sessions now */
++	clear_sta_flag(sta, WLAN_STA_BLOCK_BA);
+ 
+ 	ieee80211_recalc_min_chandef(sdata);
+ 	ieee80211_sta_debugfs_add(sta);
+@@ -522,6 +537,12 @@ static int sta_info_insert_finish(struct
+ 		mesh_accept_plinks_update(sdata);
+ 
+ 	return 0;
++ out_remove:
++	sta_info_hash_del(local, sta);
++	list_del_rcu(&sta->list);
++	local->num_sta--;
++	synchronize_net();
++	__cleanup_single_sta(sta);
+  out_err:
+ 	mutex_unlock(&local->sta_mtx);
+ 	rcu_read_lock();
+@@ -1071,10 +1092,14 @@ struct ieee80211_sta *ieee80211_find_sta
+ }
+ EXPORT_SYMBOL(ieee80211_find_sta);
+ 
+-static void clear_sta_ps_flags(void *_sta)
++/* powersave support code */
++void ieee80211_sta_ps_deliver_wakeup(struct sta_info *sta)
+ {
+-	struct sta_info *sta = _sta;
+ 	struct ieee80211_sub_if_data *sdata = sta->sdata;
++	struct ieee80211_local *local = sdata->local;
++	struct sk_buff_head pending;
++	int filtered = 0, buffered = 0, ac;
++	unsigned long flags;
+ 	struct ps_data *ps;
+ 
+ 	if (sdata->vif.type == NL80211_IFTYPE_AP ||
+@@ -1085,20 +1110,6 @@ static void clear_sta_ps_flags(void *_st
+ 	else
+ 		return;
+ 
+-	clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
+-	if (test_and_clear_sta_flag(sta, WLAN_STA_PS_STA))
+-		atomic_dec(&ps->num_sta_ps);
+-}
+-
+-/* powersave support code */
+-void ieee80211_sta_ps_deliver_wakeup(struct sta_info *sta)
+-{
+-	struct ieee80211_sub_if_data *sdata = sta->sdata;
+-	struct ieee80211_local *local = sdata->local;
+-	struct sk_buff_head pending;
+-	int filtered = 0, buffered = 0, ac;
+-	unsigned long flags;
+-
+ 	clear_sta_flag(sta, WLAN_STA_SP);
+ 
+ 	BUILD_BUG_ON(BITS_TO_LONGS(IEEE80211_NUM_TIDS) > 1);
+@@ -1109,6 +1120,8 @@ void ieee80211_sta_ps_deliver_wakeup(str
+ 
+ 	skb_queue_head_init(&pending);
+ 
++	/* sync with ieee80211_tx_h_unicast_ps_buf */
++	spin_lock(&sta->ps_lock);
+ 	/* Send all buffered frames to the station */
+ 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
+ 		int count = skb_queue_len(&pending), tmp;
+@@ -1127,7 +1140,12 @@ void ieee80211_sta_ps_deliver_wakeup(str
+ 		buffered += tmp - count;
+ 	}
+ 
+-	ieee80211_add_pending_skbs_fn(local, &pending, clear_sta_ps_flags, sta);
++	ieee80211_add_pending_skbs(local, &pending);
++	clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
++	clear_sta_flag(sta, WLAN_STA_PS_STA);
++	spin_unlock(&sta->ps_lock);
++
++	atomic_dec(&ps->num_sta_ps);
+ 
+ 	/* This station just woke up and isn't aware of our SMPS state */
+ 	if (!ieee80211_smps_is_restrictive(sta->known_smps_mode,
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -267,6 +267,7 @@ struct ieee80211_tx_latency_stat {
+  * @drv_unblock_wk: used for driver PS unblocking
+  * @listen_interval: listen interval of this station, when we're acting as AP
+  * @_flags: STA flags, see &enum ieee80211_sta_info_flags, do not use directly
++ * @ps_lock: used for powersave (when mac80211 is the AP) related locking
+  * @ps_tx_buf: buffers (per AC) of frames to transmit to this station
+  *	when it leaves power saving state or polls
+  * @tx_filtered: buffers (per AC) of frames we already tried to
+@@ -356,10 +357,8 @@ struct sta_info {
+ 	/* use the accessors defined below */
+ 	unsigned long _flags;
+ 
+-	/*
+-	 * STA powersave frame queues, no more than the internal
+-	 * locking required.
+-	 */
++	/* STA powersave lock and frame queues */
++	spinlock_t ps_lock;
+ 	struct sk_buff_head ps_tx_buf[IEEE80211_NUM_ACS];
+ 	struct sk_buff_head tx_filtered[IEEE80211_NUM_ACS];
+ 	unsigned long driver_buffered_tids;
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -435,9 +435,8 @@ void ieee80211_add_pending_skb(struct ie
+ 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+ }
+ 
+-void ieee80211_add_pending_skbs_fn(struct ieee80211_local *local,
+-				   struct sk_buff_head *skbs,
+-				   void (*fn)(void *data), void *data)
++void ieee80211_add_pending_skbs(struct ieee80211_local *local,
++				struct sk_buff_head *skbs)
+ {
+ 	struct ieee80211_hw *hw = &local->hw;
+ 	struct sk_buff *skb;
+@@ -461,9 +460,6 @@ void ieee80211_add_pending_skbs_fn(struc
+ 		__skb_queue_tail(&local->pending[queue], skb);
+ 	}
+ 
+-	if (fn)
+-		fn(data);
+-
+ 	for (i = 0; i < hw->queues; i++)
+ 		__ieee80211_wake_queue(hw, i,
+ 			IEEE80211_QUEUE_STOP_REASON_SKB_ADD);
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -1700,7 +1700,7 @@ static void reg_process_hint(struct regu
+ 		return;
+ 	case NL80211_REGDOM_SET_BY_USER:
+ 		treatment = reg_process_hint_user(reg_request);
+-		if (treatment == REG_REQ_OK ||
++		if (treatment == REG_REQ_IGNORE ||
+ 		    treatment == REG_REQ_ALREADY_SET)
+ 			return;
+ 		schedule_delayed_work(&reg_timeout, msecs_to_jiffies(3142));
