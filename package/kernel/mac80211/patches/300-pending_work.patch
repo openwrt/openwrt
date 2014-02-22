@@ -1,3 +1,15 @@
+commit 6514c93afede55284e2cb63359aadedb85884c80
+Author: Jouni Malinen <jouni@qca.qualcomm.com>
+Date:   Tue Feb 18 20:41:08 2014 +0200
+
+    ath9k: Enable U-APSD AP mode support
+    
+    mac80211 handles the actual operations, so ath9k can just indicate
+    support for this. Based on initial tests, this combination seems to
+    work fine.
+    
+    Signed-off-by: Jouni Malinen <jouni@qca.qualcomm.com>
+
 commit a63caf0a357ad5c1f08d6b7827dc76c451445017
 Author: Stanislaw Gruszka <sgruszka@redhat.com>
 Date:   Wed Feb 19 13:15:17 2014 +0100
@@ -2794,3 +2806,13 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		buffered = ath_tid_has_buffered(tid);
  
  		tid->sched = false;
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -943,6 +943,7 @@ static void ath9k_set_hw_capab(struct at
+ 	hw->wiphy->flags |= WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
+ 	hw->wiphy->flags |= WIPHY_FLAG_SUPPORTS_5_10_MHZ;
+ 	hw->wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
++	hw->wiphy->flags |= WIPHY_FLAG_AP_UAPSD;
+ 
+ 	hw->queues = 4;
+ 	hw->max_rates = 4;
