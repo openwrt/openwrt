@@ -121,6 +121,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
+	'F@ST2704V2')
+		status_led="F@ST2704V2:green:power"
+		brcm63xx_has_reset_button="true"
+		ifname=eth0
+		;;
 	*)
 		;;
 	esac

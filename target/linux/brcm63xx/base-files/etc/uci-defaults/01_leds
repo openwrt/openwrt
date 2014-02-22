@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Copyright (C) 2013 OpenWrt.org
+#
+
+                                                                                                                                                                             
+. /lib/functions/uci-defaults.sh
+. /lib/brcm63xx.sh
+
+
+case "$board_name" in
+'F@ST2704V2')
+	ucidef_set_led_usbdev "usb" "USB" "F@ST2704V2:green:usb" "1-1"
+	;;
+esac
+
+ucidef_commit_leds
+
+exit 0
