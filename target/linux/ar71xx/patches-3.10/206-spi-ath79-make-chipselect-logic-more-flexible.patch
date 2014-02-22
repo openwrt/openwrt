@@ -236,9 +236,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +	case ATH79_SPI_CS_TYPE_GPIO:
  		flags = GPIOF_DIR_OUT;
  		if (spi->mode & SPI_CS_HIGH)
- 			flags |= GPIOF_INIT_HIGH;
- 		else
  			flags |= GPIOF_INIT_LOW;
+ 		else
+ 			flags |= GPIOF_INIT_HIGH;
  
 -		status = gpio_request_one(cdata->gpio, flags,
 +		status = gpio_request_one(cdata->cs_line, flags,
