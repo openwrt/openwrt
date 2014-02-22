@@ -557,7 +557,7 @@
  #define IGMP_HOST_MEMBERSHIP_REPORT	0x12	/* Ditto */
 --- a/net/core/flow_dissector.c
 +++ b/net/core/flow_dissector.c
-@@ -152,7 +152,7 @@ ipv6:
+@@ -157,7 +157,7 @@ ipv6:
  		ports = skb_header_pointer(skb, nhoff + poff,
  					   sizeof(_ports), &_ports);
  		if (ports)
