@@ -190,6 +190,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96368MVNgr,6368,96368MVNgr-generic)
 	$(call Image/Build/CFE,$(1),96368MVWG,6368,96368MVWG-generic)
 
+	# Asmax AR 1004g
+	$(call Image/Build/CFEFIXUP,$(1),96348GW-10,AR1004G,6348,AR1004G)
 	# BT Voyager V210_BTR
 	$(call Image/Build/CFE,$(1),V210_BB,6348,BTV210_BTR,,--layoutver 5)
 	# BT Voyager V210_ROI, V210_WB
