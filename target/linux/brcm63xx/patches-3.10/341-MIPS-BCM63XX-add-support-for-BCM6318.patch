@@ -644,8 +644,8 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
 -	if (BCMCPU_IS_6328())
 +	if (BCMCPU_IS_6318() || BCMCPU_IS_6328())
  		enetsw_pd.num_ports = ENETSW_PORTS_6328;
- 	else if (BCMCPU_IS_6362() || BCMCPU_IS_6368())
- 		enetsw_pd.num_ports = ENETSW_PORTS_6368;
+ 	else if (BCMCPU_IS_6362() || BCMCPU_IS_6368() ||
+ 		 BCMCPU_VARIANT_IS_63168() || BCMCPU_VARIANT_IS_63169())
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h
 @@ -9,6 +9,8 @@ int __init bcm63xx_gpio_init(void);
