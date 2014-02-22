@@ -1,3 +1,13 @@
+commit 118945bb12082e9d4edddc868d88143164e0f440
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sat Feb 22 14:55:23 2014 +0100
+
+    ath5k: set SURVEY_INFO_IN_USE on get_survey
+    
+    Only one channel is returned - the one currently being used.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit ee41f72476e1ea44283dfe1cbf75b9543a1e15c8
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Sat Feb 22 14:44:52 2014 +0100
@@ -3367,3 +3377,13 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	if (rfMode & (AR_PHY_MODE_QUARTER | AR_PHY_MODE_HALF))
  		REG_RMW_FIELD(ah, AR_PHY_FRAME_CTL,
+--- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
++++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
+@@ -706,6 +706,7 @@ ath5k_get_survey(struct ieee80211_hw *hw
+ 	survey->channel = conf->chandef.chan;
+ 	survey->noise = ah->ah_noise_floor;
+ 	survey->filled = SURVEY_INFO_NOISE_DBM |
++			SURVEY_INFO_IN_USE |
+ 			SURVEY_INFO_CHANNEL_TIME |
+ 			SURVEY_INFO_CHANNEL_TIME_BUSY |
+ 			SURVEY_INFO_CHANNEL_TIME_RX |
