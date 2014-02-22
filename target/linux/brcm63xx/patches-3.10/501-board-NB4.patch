@@ -22,7 +22,7 @@
  static struct board_info board;
  
  /*
-@@ -754,6 +762,601 @@ static struct board_info __initdata boar
+@@ -755,6 +763,601 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -624,7 +624,7 @@
  #endif
  
  /*
-@@ -790,6 +1393,11 @@ static const struct board_info __initcon
+@@ -791,6 +1394,11 @@ static const struct board_info __initcon
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -636,7 +636,7 @@
  #endif
  };
  
-@@ -844,6 +1452,16 @@ static void __init boardid_fixup(u8 *boo
+@@ -845,6 +1453,16 @@ static void __init boardid_fixup(u8 *boo
  	struct bcm_tag *tag = (struct bcm_tag *)(boot_addr + CFE_OFFSET_64K);
  	char *board_name = (char *)bcm63xx_nvram_get_name();
  
