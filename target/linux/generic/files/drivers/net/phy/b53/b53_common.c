@@ -1222,7 +1222,7 @@ static const struct b53_chip_data b53_switch_chips[] = {
 	},
 };
 
-int b53_switch_init(struct b53_device *dev)
+static int b53_switch_init(struct b53_device *dev)
 {
 	struct switch_dev *sw_dev = &dev->sw_dev;
 	unsigned i;
