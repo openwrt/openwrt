@@ -1,3 +1,13 @@
+commit d5d87a37bbd6066b2c3c5d0bd0fe2a6e2ea45cc5
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Fri Feb 21 11:39:59 2014 +0100
+
+    ath9k: list more reset causes in debugfs
+    
+    Number of MAC hangs and stuck beacons were missing
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit d84856012e0f10fe598a5ad3b7b869397a089e07
 Author: Johannes Berg <johannes.berg@intel.com>
 Date:   Thu Feb 20 11:19:58 2014 +0100
@@ -3236,3 +3246,18 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		    treatment == REG_REQ_ALREADY_SET)
  			return;
  		schedule_delayed_work(&reg_timeout, msecs_to_jiffies(3142));
+--- a/drivers/net/wireless/ath/ath9k/debug.c
++++ b/drivers/net/wireless/ath/ath9k/debug.c
+@@ -866,6 +866,12 @@ static ssize_t read_file_reset(struct fi
+ 			 "%17s: %2d\n", "PLL RX Hang",
+ 			 sc->debug.stats.reset[RESET_TYPE_PLL_HANG]);
+ 	len += scnprintf(buf + len, sizeof(buf) - len,
++			 "%17s: %2d\n", "MAC Hang",
++			 sc->debug.stats.reset[RESET_TYPE_MAC_HANG]);
++	len += scnprintf(buf + len, sizeof(buf) - len,
++			 "%17s: %2d\n", "Stuck Beacon",
++			 sc->debug.stats.reset[RESET_TYPE_BEACON_STUCK]);
++	len += scnprintf(buf + len, sizeof(buf) - len,
+ 			 "%17s: %2d\n", "MCI Reset",
+ 			 sc->debug.stats.reset[RESET_TYPE_MCI]);
+ 
