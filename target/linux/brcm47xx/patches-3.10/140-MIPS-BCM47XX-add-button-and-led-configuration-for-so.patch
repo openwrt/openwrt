@@ -1,7 +1,7 @@
-From 9894af92816e729162812f2554c9d97578138834 Mon Sep 17 00:00:00 2001
+From e3d15471f1be2bd2fd4db82907ad4b2d74ec2636 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Fri, 10 Jan 2014 23:55:28 +0100
-Subject: [PATCH 1/2] MIPS: BCM47XX: add button and led configuration for some
+Subject: [PATCH 4/6] MIPS: BCM47XX: add button and led configuration for some
  Linksys devices
 
 This adds led and button GPIO configuration for Linksys wrt54g3gv2,
@@ -51,7 +51,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt310nv1);
  		break;
-+	case BCM47XX_BOARD_LINKSYS_WRT54GSV1:
++	case BCM47XX_BOARD_LINKSYS_WRT54G:
 +		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt54gsv1);
 +		break;
 +	case BCM47XX_BOARD_LINKSYS_WRT54G3GV2:
@@ -113,7 +113,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt310nv1);
  		break;
-+	case BCM47XX_BOARD_LINKSYS_WRT54GSV1:
++	case BCM47XX_BOARD_LINKSYS_WRT54G:
 +		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt54gsv1);
 +		break;
 +	case BCM47XX_BOARD_LINKSYS_WRT54G3GV2:
