@@ -1,6 +1,14 @@
 --- a/drivers/net/ethernet/broadcom/b44.c
 +++ b/drivers/net/ethernet/broadcom/b44.c
-@@ -1511,6 +1511,10 @@ static int b44_open(struct net_device *d
+@@ -576,7 +576,6 @@ static void b44_check_phy(struct b44 *bp
+ 			else
+ 				val &= ~TX_CTRL_DUPLEX;
+ 			bw32(bp, B44_TX_CTRL, val);
+-			netif_carrier_on(bp->dev);
+ 			b44_link_report(bp);
+ 		}
+ 		return;
+@@ -1511,6 +1510,10 @@ static int b44_open(struct net_device *d
  	add_timer(&bp->timer);
  
  	b44_enable_ints(bp);
@@ -11,7 +19,7 @@
  	netif_start_queue(dev);
  out:
  	return err;
-@@ -1673,6 +1677,9 @@ static int b44_close(struct net_device *
+@@ -1673,6 +1676,9 @@ static int b44_close(struct net_device *
  
  	netif_stop_queue(dev);
  
@@ -21,3 +29,19 @@
  	napi_disable(&bp->napi);
  
  	del_timer_sync(&bp->timer);
+@@ -2251,8 +2257,13 @@ static void b44_adjust_link(struct net_d
+ 	}
+ 
+ 	if (status_changed) {
+-		b44_check_phy(bp);
+-		phy_print_status(phydev);
++		u32 val = br32(bp, B44_TX_CTRL);
++		if (bp->flags & B44_FLAG_FULL_DUPLEX)
++			val |= TX_CTRL_DUPLEX;
++		else
++			val &= ~TX_CTRL_DUPLEX;
++		bw32(bp, B44_TX_CTRL, val);
++		b44_link_report(bp);
+ 	}
+ }
+ 
