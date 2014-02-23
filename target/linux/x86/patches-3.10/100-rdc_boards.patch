@@ -138,7 +138,7 @@
 +late_initcall(rdc_board_setup);
 --- /dev/null
 +++ b/arch/x86/mach-rdc321x/boards/ar525w.c
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,251 @@
 +/*
 + * ar525w RDC321x platform devices
 + *
@@ -294,7 +294,7 @@
 +		return -ENOMEM;
 +	}
 +
-+	res =  master->read(master, 0x0, bufferlength, &len, buffer);
++	res =  mtd_read(master, 0x0, bufferlength, &len, buffer);
 +	if (res || len != bufferlength)
 +		goto out;
 +
@@ -310,8 +310,12 @@
 +	header->fastcksum = crc32(crcbuf, sizeof(crcbuf));
 +	header->checksum = crc32(buffer, bufferlength);
 +
-+	if (master->unlock)
-+		master->unlock(master, 0, master->erasesize);
++	res = mtd_unlock(master, 0, master->erasesize);
++	if (res != 0 && res != -EOPNOTSUPP) {
++		printk(KERN_ERR "Can't unlock image header\n");
++		goto out;
++	}
++
 +	res = erase_write (master, 0, master->erasesize, buffer);
 +	if (res)
 +		printk(KERN_ERR "Can't rewrite image header\n");
@@ -334,7 +338,7 @@
 +	if (master->size != 0x400000) //4MB
 +		return -ENOSYS;
 +
-+	res =  master->read(master, 0x0, sizeof(header), &len, (char *)&header);
++	res =  mtd_read(master, 0x0, sizeof(header), &len, (char *)&header);
 +	if (res)
 +		return res;
 +
@@ -430,7 +434,7 @@
 +	u32 kernel_len;
 +	u16 tmp;
 +
-+	res =  master->read(master, 0x4000 + 1036, 2, &len, (char *) &tmp);
++	res =  mtd_read(master, 0x4000 + 1036, 2, &len, (char *) &tmp);
 +	if (res)
 +		return res;
 +	kernel_len = tmp * master->erasesize;
@@ -606,7 +610,7 @@
 +	if (master->size != 0x400000) /* 4MB */
 +		return -ENOSYS;
 +
-+	res =  master->read(master, 0x8000, sizeof(header), &len, (char *)&header);
++	res =  mtd_read(master, 0x8000, sizeof(header), &len, (char *)&header);
 +	if (res)
 +		return res;
 +
