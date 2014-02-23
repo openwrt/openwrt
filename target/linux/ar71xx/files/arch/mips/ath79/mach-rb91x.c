@@ -68,6 +68,8 @@
 #define RB91X_SSR_BIT_PCIE_POWER	7
 
 #define RB91X_GPIO_SSR_STROBE	RB91X_LATCH_GPIO(0)
+#define RB91X_GPIO_LED_POWER	RB91X_LATCH_GPIO(1)
+#define RB91X_GPIO_LED_USER	RB91X_LATCH_GPIO(2)
 #define RB91X_GPIO_NAND_READ	RB91X_LATCH_GPIO(3)
 #define RB91X_GPIO_NAND_RDY	RB91X_LATCH_GPIO(4)
 #define RB91X_GPIO_NLE		RB91X_LATCH_GPIO(11)
@@ -75,6 +77,14 @@
 #define RB91X_GPIO_NAND_NCE	RB91X_LATCH_GPIO(13)
 #define RB91X_GPIO_NAND_CLE	RB91X_LATCH_GPIO(14)
 #define RB91X_GPIO_NAND_ALE	RB91X_LATCH_GPIO(15)
+
+#define RB91X_GPIO_LED_1	RB91X_SSR_GPIO(RB91X_SSR_BIT_LED1)
+#define RB91X_GPIO_LED_2	RB91X_SSR_GPIO(RB91X_SSR_BIT_LED2)
+#define RB91X_GPIO_LED_3	RB91X_SSR_GPIO(RB91X_SSR_BIT_LED3)
+#define RB91X_GPIO_LED_4	RB91X_SSR_GPIO(RB91X_SSR_BIT_LED4)
+#define RB91X_GPIO_LED_5	RB91X_SSR_GPIO(RB91X_SSR_BIT_LED5)
+#define RB91X_GPIO_USB_POWER	RB91X_SSR_GPIO(RB91X_SSR_BIT_USB_POWER)
+#define RB91X_GPIO_PCIE_POWER	RB91X_SSR_GPIO(RB91X_SSR_BIT_PCIE_POWER)
 
 struct rb_board_info {
 	const char *name;
@@ -175,6 +185,44 @@ static struct ath79_spi_platform_data rb711gr100_spi_data __initdata = {
 	.num_chipselect = 2,
 };
 
+static struct gpio_led rb711gr100_leds[] __initdata = {
+	{
+		.name		= "rb:green:led1",
+		.gpio		= RB91X_GPIO_LED_1,
+		.active_low	= 0,
+	},
+	{
+		.name		= "rb:green:led2",
+		.gpio		= RB91X_GPIO_LED_2,
+		.active_low	= 0,
+	},
+	{
+		.name		= "rb:green:led3",
+		.gpio		= RB91X_GPIO_LED_3,
+		.active_low	= 0,
+	},
+	{
+		.name		= "rb:green:led4",
+		.gpio		= RB91X_GPIO_LED_4,
+		.active_low	= 0,
+	},
+	{
+		.name		= "rb:green:led5",
+		.gpio		= RB91X_GPIO_LED_5,
+		.active_low	= 0,
+	},
+	{
+		.name		= "rb:green:user",
+		.gpio		= RB91X_GPIO_LED_USER,
+		.active_low	= 0,
+	},
+	{
+		.name		= "rb:green:power",
+		.gpio		= RB91X_GPIO_LED_POWER,
+		.active_low	= 0,
+	},
+};
+
 static void __init rb711gr100_init_partitions(const struct rb_info *info)
 {
 	rb711gr100_spi_partitions[0].size = info->hard_cfg_offs;
@@ -265,6 +313,9 @@ static void __init rb711gr100_setup(void)
 	platform_device_register_data(NULL, "gpio-latch", -1,
 				      &rb711gr100_gpio_latch_data,
 				      sizeof(rb711gr100_gpio_latch_data));
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb711gr100_leds),
+				 rb711gr100_leds);
 
 	flags = rb711gr100_get_flags(info);
 
