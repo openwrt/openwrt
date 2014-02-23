@@ -1,7 +1,8 @@
 DEVICE_TYPE:=terminal
 BOARDNAME:=Artec ThinCan
-
+LINUX_VERSION:=3.10.32
 CPU_TYPE := geode
+FEATURES += broken
 
 DEFAULT_PACKAGES:=\
 	base-files \
