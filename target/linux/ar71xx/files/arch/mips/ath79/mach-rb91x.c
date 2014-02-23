@@ -23,6 +23,7 @@
 #include <linux/routerboot.h>
 #include <linux/gpio.h>
 #include <linux/platform_data/gpio-latch.h>
+#include <linux/platform_data/rb91x_nand.h>
 
 #include <asm/prom.h>
 #include <asm/mach-ath79/ath79.h>
@@ -53,6 +54,14 @@
 
 #define RB91X_LATCH_GPIO_BASE	AR934X_GPIO_COUNT
 #define RB91X_LATCH_GPIO(_x)	(RB91X_LATCH_GPIO_BASE + (_x))
+
+#define RB91X_GPIO_NAND_READ	RB91X_LATCH_GPIO(3)
+#define RB91X_GPIO_NAND_RDY	RB91X_LATCH_GPIO(4)
+#define RB91X_GPIO_NLE		RB91X_LATCH_GPIO(11)
+#define RB91X_GPIO_NAND_NRW	RB91X_LATCH_GPIO(12)
+#define RB91X_GPIO_NAND_NCE	RB91X_LATCH_GPIO(13)
+#define RB91X_GPIO_NAND_CLE	RB91X_LATCH_GPIO(14)
+#define RB91X_GPIO_NAND_ALE	RB91X_LATCH_GPIO(15)
 
 struct rb_board_info {
 	const char *name;
@@ -95,6 +104,16 @@ static struct gpio_latch_platform_data rb711gr100_gpio_latch_data __initdata = {
 	.gpios = rb711gr100_gpio_latch_gpios,
 	.le_gpio_index = 11,
 	.le_active_low = true,
+};
+
+static struct rb91x_nand_platform_data rb711gr100_nand_data __initdata = {
+	.gpio_nce = RB91X_GPIO_NAND_NCE,
+	.gpio_ale = RB91X_GPIO_NAND_ALE,
+	.gpio_cle = RB91X_GPIO_NAND_CLE,
+	.gpio_rdy = RB91X_GPIO_NAND_RDY,
+	.gpio_read = RB91X_GPIO_NAND_READ,
+	.gpio_nrw = RB91X_GPIO_NAND_NRW,
+	.gpio_nle = RB91X_GPIO_NLE,
 };
 
 static void __init rb711gr100_init_partitions(const struct rb_info *info)
@@ -179,7 +198,9 @@ static void __init rb711gr100_setup(void)
 
 	rb711gr100_wlan_init();
 
-	platform_device_register_simple("rb91x-nand", -1, NULL, 0);
+	platform_device_register_data(NULL, "rb91x-nand", -1,
+				      &rb711gr100_nand_data,
+				      sizeof(rb711gr100_nand_data));
 
 	platform_device_register_data(NULL, "gpio-latch", -1,
 				      &rb711gr100_gpio_latch_data,
