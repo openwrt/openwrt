@@ -17,7 +17,7 @@ Signed-off-by: Grant Likely <grant.likely@linaro.org>
 
 --- a/drivers/of/address.c
 +++ b/drivers/of/address.c
-@@ -481,7 +481,7 @@ static u64 __of_translate_address(struct
+@@ -482,7 +482,7 @@ static u64 __of_translate_address(struct
  	int na, ns, pna, pns;
  	u64 result = OF_BAD_ADDR;
  
@@ -26,7 +26,7 @@ Signed-off-by: Grant Likely <grant.likely@linaro.org>
  
  	/* Increase refcount at current level */
  	of_node_get(dev);
-@@ -496,13 +496,13 @@ static u64 __of_translate_address(struct
+@@ -497,13 +497,13 @@ static u64 __of_translate_address(struct
  	bus->count_cells(dev, &na, &ns);
  	if (!OF_CHECK_COUNTS(na, ns)) {
  		printk(KERN_ERR "prom_parse: Bad cell count for %s\n",

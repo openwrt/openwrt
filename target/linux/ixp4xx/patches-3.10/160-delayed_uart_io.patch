@@ -57,7 +57,7 @@
  		if (!port->mapbase)
  			break;
  
-@@ -3091,6 +3113,7 @@ static int serial8250_probe(struct platf
+@@ -3095,6 +3117,7 @@ static int serial8250_probe(struct platf
  		uart.port.set_termios	= p->set_termios;
  		uart.port.pm		= p->pm;
  		uart.port.dev		= &dev->dev;
@@ -65,7 +65,7 @@
  		uart.port.irqflags	|= irqflag;
  		ret = serial8250_register_8250_port(&uart);
  		if (ret < 0) {
-@@ -3242,6 +3265,7 @@ int serial8250_register_8250_port(struct
+@@ -3246,6 +3269,7 @@ int serial8250_register_8250_port(struct
  		uart->port.flags        = up->port.flags | UPF_BOOT_AUTOCONF;
  		uart->bugs		= up->bugs;
  		uart->port.mapbase      = up->port.mapbase;

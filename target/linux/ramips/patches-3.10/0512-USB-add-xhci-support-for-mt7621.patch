@@ -1,6 +1,6 @@
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -1259,7 +1259,7 @@ static void hub_quiesce(struct usb_hub *
+@@ -1254,7 +1254,7 @@ static void hub_quiesce(struct usb_hub *
  	if (type != HUB_SUSPEND) {
  		/* Disconnect all the children */
  		for (i = 0; i < hdev->maxchild; ++i) {
@@ -120,7 +120,7 @@
  static int xhci_free_msi(struct xhci_hcd *xhci)
  {
  	int i;
-@@ -386,6 +408,7 @@ static int xhci_try_enable_msi(struct us
+@@ -389,6 +411,7 @@ static int xhci_try_enable_msi(struct us
  		return ret;
  	}
  	hcd->irq = pdev->irq;
@@ -128,7 +128,7 @@
  	return 0;
  }
  
-@@ -427,6 +450,11 @@ static void compliance_mode_recovery(uns
+@@ -430,6 +453,11 @@ static void compliance_mode_recovery(uns
  			xhci_dbg(xhci, "Attempting compliance mode recovery\n");
  			hcd = xhci->shared_hcd;
  
@@ -140,7 +140,7 @@
  			if (hcd->state == HC_STATE_SUSPENDED)
  				usb_hcd_resume_root_hub(hcd);
  
-@@ -475,6 +503,9 @@ bool xhci_compliance_mode_recovery_timer
+@@ -478,6 +506,9 @@ bool xhci_compliance_mode_recovery_timer
  {
  	const char *dmi_product_name, *dmi_sys_vendor;
  
@@ -150,7 +150,7 @@
  	dmi_product_name = dmi_get_system_info(DMI_PRODUCT_NAME);
  	dmi_sys_vendor = dmi_get_system_info(DMI_SYS_VENDOR);
  	if (!dmi_product_name || !dmi_sys_vendor)
-@@ -518,6 +549,10 @@ int xhci_init(struct usb_hcd *hcd)
+@@ -521,6 +552,10 @@ int xhci_init(struct usb_hcd *hcd)
  	} else {
  		xhci_dbg(xhci, "xHCI doesn't need link TRB QUIRK\n");
  	}
@@ -161,7 +161,7 @@
  	retval = xhci_mem_init(xhci, GFP_KERNEL);
  	xhci_dbg(xhci, "Finished xhci_init\n");
  
-@@ -661,7 +696,11 @@ int xhci_run(struct usb_hcd *hcd)
+@@ -664,7 +699,11 @@ int xhci_run(struct usb_hcd *hcd)
  	xhci_dbg(xhci, "// Set the interrupt modulation register\n");
  	temp = xhci_readl(xhci, &xhci->ir_set->irq_control);
  	temp &= ~ER_IRQ_INTERVAL_MASK;
@@ -173,7 +173,7 @@
  	xhci_writel(xhci, temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -682,6 +721,9 @@ int xhci_run(struct usb_hcd *hcd)
+@@ -685,6 +724,9 @@ int xhci_run(struct usb_hcd *hcd)
  		xhci_queue_vendor_command(xhci, 0, 0, 0,
  				TRB_TYPE(TRB_NEC_GET_FW));
  
@@ -183,7 +183,7 @@
  	xhci_dbg(xhci, "Finished xhci_run for USB2 roothub\n");
  	return 0;
  }
-@@ -999,7 +1041,6 @@ int xhci_resume(struct xhci_hcd *xhci, b
+@@ -1002,7 +1044,6 @@ int xhci_resume(struct xhci_hcd *xhci, b
  
  	/* If restore operation fails, re-initialize the HC during resume */
  	if ((temp & STS_SRE) || hibernated) {
@@ -191,7 +191,7 @@
  		if ((xhci->quirks & XHCI_COMP_MODE_QUIRK) &&
  				!(xhci_all_ports_seen_u0(xhci))) {
  			del_timer_sync(&xhci->comp_mode_recovery_timer);
-@@ -1583,6 +1624,13 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1586,6 +1627,13 @@ int xhci_drop_endpoint(struct usb_hcd *h
  	u32 drop_flag;
  	u32 new_add_flags, new_drop_flags, new_slot_info;
  	int ret;
@@ -205,7 +205,7 @@
  
  	ret = xhci_check_args(hcd, udev, ep, 1, true, __func__);
  	if (ret <= 0)
-@@ -1634,6 +1682,40 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1637,6 +1685,40 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -246,7 +246,7 @@
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x, new slot info = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1669,6 +1751,18 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1672,6 +1754,18 @@ int xhci_add_endpoint(struct usb_hcd *hc
  	u32 new_add_flags, new_drop_flags, new_slot_info;
  	struct xhci_virt_device *virt_dev;
  	int ret = 0;
@@ -265,7 +265,7 @@
  
  	ret = xhci_check_args(hcd, udev, ep, 1, true, __func__);
  	if (ret <= 0) {
-@@ -1731,6 +1825,56 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1734,6 +1828,56 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  
@@ -322,7 +322,7 @@
  	ctrl_ctx->add_flags |= cpu_to_le32(added_ctxs);
  	new_add_flags = le32_to_cpu(ctrl_ctx->add_flags);
  
-@@ -2694,7 +2838,7 @@ int xhci_check_bandwidth(struct usb_hcd
+@@ -2697,7 +2841,7 @@ int xhci_check_bandwidth(struct usb_hcd
  	if (ctrl_ctx->add_flags == cpu_to_le32(SLOT_FLAG) &&
  			ctrl_ctx->drop_flags == 0)
  		return 0;
@@ -331,7 +331,7 @@
  	xhci_dbg(xhci, "New Input Control Context:\n");
  	slot_ctx = xhci_get_slot_ctx(xhci, virt_dev->in_ctx);
  	xhci_dbg_ctx(xhci, virt_dev->in_ctx,
-@@ -4230,10 +4374,14 @@ static u16 xhci_call_host_update_timeout
+@@ -4233,10 +4377,14 @@ static u16 xhci_call_host_update_timeout
  		u16 *timeout)
  {
  	if (state == USB3_LPM_U1) {
@@ -346,7 +346,7 @@
  			return xhci_calculate_intel_u2_timeout(udev, desc);
  	}
  
-@@ -4659,7 +4807,9 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4662,7 +4810,9 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  	/* Accept arbitrarily long scatter-gather lists */
  	hcd->self.sg_tablesize = ~0;
  	/* XHCI controllers don't stop the ep queue on short packets :| */
@@ -356,7 +356,7 @@
  
  	if (usb_hcd_is_primary_hcd(hcd)) {
  		xhci = kzalloc(sizeof(struct xhci_hcd), GFP_KERNEL);
-@@ -4728,6 +4878,10 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4731,6 +4881,10 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  		goto error;
  	xhci_dbg(xhci, "Reset complete\n");
  
@@ -367,7 +367,7 @@
  	temp = xhci_readl(xhci, &xhci->cap_regs->hcc_params);
  	if (HCC_64BIT_ADDR(temp)) {
  		xhci_dbg(xhci, "Enabling 64-bit DMA addresses.\n");
-@@ -4752,8 +4906,21 @@ MODULE_DESCRIPTION(DRIVER_DESC);
+@@ -4755,8 +4909,21 @@ MODULE_DESCRIPTION(DRIVER_DESC);
  MODULE_AUTHOR(DRIVER_AUTHOR);
  MODULE_LICENSE("GPL");
  
@@ -389,7 +389,7 @@
  	int retval;
  
  	retval = xhci_register_pci();
-@@ -4766,6 +4933,33 @@ static int __init xhci_hcd_init(void)
+@@ -4769,6 +4936,33 @@ static int __init xhci_hcd_init(void)
  		printk(KERN_DEBUG "Problem registering platform driver.");
  		goto unreg_pci;
  	}
@@ -423,7 +423,7 @@
  	/*
  	 * Check the compiler generated sizes of structures that must be laid
  	 * out in specific ways for hardware access.
-@@ -4783,6 +4977,7 @@ static int __init xhci_hcd_init(void)
+@@ -4786,6 +4980,7 @@ static int __init xhci_hcd_init(void)
  	BUILD_BUG_ON(sizeof(struct xhci_intr_reg) != 8*32/8);
  	/* xhci_run_regs has eight fields and embeds 128 xhci_intr_regs */
  	BUILD_BUG_ON(sizeof(struct xhci_run_regs) != (8+8*128)*32/8);

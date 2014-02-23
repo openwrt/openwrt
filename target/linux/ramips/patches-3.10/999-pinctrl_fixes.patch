@@ -1,8 +1,6 @@
-Index: linux-3.10.28/drivers/pinctrl/pinctrl-rt2880.c
-===================================================================
---- linux-3.10.28.orig/drivers/pinctrl/pinctrl-rt2880.c	2014-02-14 10:46:06.216549358 +0000
-+++ linux-3.10.28/drivers/pinctrl/pinctrl-rt2880.c	2014-02-14 14:58:18.580040433 +0000
-@@ -204,6 +204,7 @@
+--- a/drivers/pinctrl/pinctrl-rt2880.c
++++ b/drivers/pinctrl/pinctrl-rt2880.c
+@@ -204,6 +204,7 @@ static int rt2880_pmx_group_enable(struc
  {
  	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
          u32 mode = 0;
@@ -10,7 +8,7 @@ Index: linux-3.10.28/drivers/pinctrl/pinctrl-rt2880.c
  
  	/* dont allow double use */
  	if (p->groups[group].enabled) {
-@@ -217,16 +218,16 @@
+@@ -217,16 +218,16 @@ static int rt2880_pmx_group_enable(struc
  	mode = rt_sysc_r32(SYSC_REG_GPIO_MODE);
  	mode &= ~(p->groups[group].mask << p->groups[group].shift);
  
