@@ -81,7 +81,7 @@ Conflicts:
  		return -ENOMEM;
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -4654,7 +4654,6 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4657,7 +4657,6 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  	struct xhci_hcd		*xhci;
  	struct device		*dev = hcd->self.controller;
  	int			retval;
@@ -89,7 +89,7 @@ Conflicts:
  
  	/* Accept arbitrarily long scatter-gather lists */
  	hcd->self.sg_tablesize = ~0;
-@@ -4682,14 +4681,6 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4685,14 +4684,6 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  		/* xHCI private pointer was set in xhci_pci_probe for the second
  		 * registered roothub.
  		 */
@@ -104,7 +104,7 @@ Conflicts:
  		return 0;
  	}
  
-@@ -4728,12 +4719,12 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4731,12 +4722,12 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  		goto error;
  	xhci_dbg(xhci, "Reset complete\n");
  
