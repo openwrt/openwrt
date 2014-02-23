@@ -65,7 +65,7 @@ struct usbentry {
 
 static char *sysfs_attr(const char *dev, const char *attr)
 {
-	int fd, len;
+	int fd, len = 0;
 	char path[PATH_MAX];
 	static char buf[129];
 
