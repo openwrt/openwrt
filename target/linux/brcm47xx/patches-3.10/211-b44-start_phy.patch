@@ -1,0 +1,23 @@
+--- a/drivers/net/ethernet/broadcom/b44.c
++++ b/drivers/net/ethernet/broadcom/b44.c
+@@ -1511,6 +1511,10 @@ static int b44_open(struct net_device *d
+ 	add_timer(&bp->timer);
+ 
+ 	b44_enable_ints(bp);
++
++	if (bp->flags & B44_FLAG_EXTERNAL_PHY)
++		phy_start(bp->phydev);
++
+ 	netif_start_queue(dev);
+ out:
+ 	return err;
+@@ -1673,6 +1677,9 @@ static int b44_close(struct net_device *
+ 
+ 	netif_stop_queue(dev);
+ 
++	if (bp->flags & B44_FLAG_EXTERNAL_PHY)
++		phy_stop(bp->phydev);
++
+ 	napi_disable(&bp->napi);
+ 
+ 	del_timer_sync(&bp->timer);
