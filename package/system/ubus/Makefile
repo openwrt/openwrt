@@ -38,6 +38,7 @@ define Package/libubus
   SECTION:=libs
   CATEGORY:=Libraries
   DEPENDS:=+libubox
+  ABI_VERSION:=$(PKG_VERSION)
   TITLE:=OpenWrt RPC client library
 endef
 
@@ -73,8 +74,7 @@ define Package/libubus-lua/install
 	$(CP) $(PKG_BUILD_DIR)/lua/ubus.so $(1)/usr/lib/lua/
 endef
 
-$(eval $(call BuildPackage,ubus))
-$(eval $(call BuildPackage,ubusd))
 $(eval $(call BuildPackage,libubus))
 $(eval $(call BuildPackage,libubus-lua))
-
+$(eval $(call BuildPackage,ubus))
+$(eval $(call BuildPackage,ubusd))
