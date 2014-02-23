@@ -33,9 +33,9 @@
 #include "common.h"
 #include "dev-eth.h"
 #include "dev-leds-gpio.h"
-#include "dev-m25p80.h"
 #include "dev-nfc.h"
 #include "dev-usb.h"
+#include "dev-spi.h"
 #include "dev-wmac.h"
 #include "machtypes.h"
 #include "pci.h"
@@ -55,6 +55,19 @@
 #define RB91X_LATCH_GPIO_BASE	AR934X_GPIO_COUNT
 #define RB91X_LATCH_GPIO(_x)	(RB91X_LATCH_GPIO_BASE + (_x))
 
+#define RB91X_SSR_GPIO_BASE	(RB91X_LATCH_GPIO_BASE + AR934X_GPIO_COUNT)
+#define RB91X_SSR_GPIO(_x)	(RB91X_SSR_GPIO_BASE + (_x))
+
+#define RB91X_SSR_BIT_LED1		0
+#define RB91X_SSR_BIT_LED2		1
+#define RB91X_SSR_BIT_LED3		2
+#define RB91X_SSR_BIT_LED4		3
+#define RB91X_SSR_BIT_LED5		4
+#define RB91X_SSR_BIT_5			5
+#define RB91X_SSR_BIT_USB_POWER		6
+#define RB91X_SSR_BIT_PCIE_POWER	7
+
+#define RB91X_GPIO_SSR_STROBE	RB91X_LATCH_GPIO(0)
 #define RB91X_GPIO_NAND_READ	RB91X_LATCH_GPIO(3)
 #define RB91X_GPIO_NAND_RDY	RB91X_LATCH_GPIO(4)
 #define RB91X_GPIO_NLE		RB91X_LATCH_GPIO(11)
@@ -114,6 +127,52 @@ static struct rb91x_nand_platform_data rb711gr100_nand_data __initdata = {
 	.gpio_read = RB91X_GPIO_NAND_READ,
 	.gpio_nrw = RB91X_GPIO_NAND_NRW,
 	.gpio_nle = RB91X_GPIO_NLE,
+};
+
+static u8 rb711gr100_ssr_initdata[] __initdata = {
+	BIT(RB91X_SSR_BIT_PCIE_POWER) |
+	BIT(RB91X_SSR_BIT_USB_POWER) |
+	BIT(RB91X_SSR_BIT_5)
+};
+
+static struct gen_74x164_chip_platform_data rb711gr100_ssr_data = {
+	.base = RB91X_SSR_GPIO_BASE,
+	.num_registers = ARRAY_SIZE(rb711gr100_ssr_initdata),
+	.init_data = rb711gr100_ssr_initdata,
+};
+
+static struct ath79_spi_controller_data rb711gr100_spi0_cdata = {
+	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
+	.cs_line = 0,
+	.is_flash = true,
+};
+
+static struct ath79_spi_controller_data rb711gr100_spi1_cdata = {
+	.cs_type = ATH79_SPI_CS_TYPE_GPIO,
+	.cs_line = RB91X_GPIO_SSR_STROBE,
+};
+
+static struct spi_board_info rb711gr100_spi_info[] = {
+	{
+		.bus_num	= 0,
+		.chip_select	= 0,
+		.max_speed_hz	= 25000000,
+		.modalias	= "m25p80",
+		.platform_data  = &rb711gr100_spi_flash_data,
+		.controller_data = &rb711gr100_spi0_cdata
+	}, {
+		.bus_num	= 0,
+		.chip_select	= 1,
+		.max_speed_hz	= 10000000,
+		.modalias	= "74x164",
+		.platform_data	= &rb711gr100_ssr_data,
+		.controller_data = &rb711gr100_spi1_cdata
+	}
+};
+
+static struct ath79_spi_platform_data rb711gr100_spi_data __initdata = {
+	.bus_num = 0,
+	.num_chipselect = 2,
 };
 
 static void __init rb711gr100_init_partitions(const struct rb_info *info)
@@ -182,7 +241,8 @@ static void __init rb711gr100_setup(void)
 	mips_set_machine_name(buf);
 
 	rb711gr100_init_partitions(info);
-	ath79_register_m25p80(&rb711gr100_spi_flash_data);
+	ath79_register_spi(&rb711gr100_spi_data, rb711gr100_spi_info,
+			   ARRAY_SIZE(rb711gr100_spi_info));
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
 				   AR934X_ETH_CFG_SW_ONLY_MODE);
