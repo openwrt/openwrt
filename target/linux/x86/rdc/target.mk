@@ -1,6 +1,8 @@
 BOARDNAME:=RDC R-321x
 FEATURES:=squashfs pci usb gpio pcmcia
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
+LINUX_VERSION:=3.10.32
+FEATURES += broken
 
 DEFAULT_PACKAGES += kmod-llc kmod-stp kmod-bridge kmod-8021q \
 		    wpad-mini kmod-libphy kmod-r6040 kmod-input-core \
