@@ -32,6 +32,7 @@ define Package/Default
   else
     VERSION:=$(PKG_RELEASE)
   endif
+  ABI_VERSION:=
   ifneq ($(PKG_FLAGS),)
     PKGFLAGS:=$(PKG_FLAGS)
   else
