@@ -18,12 +18,6 @@ PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.bz2
 ifneq ($(CONFIG_EGLIBC_VERSION_2_15),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_15
 endif
-ifneq ($(CONFIG_EGLIBC_VERSION_2_16),)
-  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_16
-endif
-ifneq ($(CONFIG_EGLIBC_VERSION_2_17),)
-  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_17
-endif
 ifneq ($(CONFIG_EGLIBC_VERSION_2_19),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_19
 endif
@@ -86,7 +80,7 @@ define Host/Prepare
 	$(call Host/Prepare/Default)
 	ln -snf $(PKG_SOURCE_SUBDIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(SED) 's,y,n,' $(HOST_BUILD_DIR)/libc/option-groups.defaults
-ifneq ($(CONFIG_EGLIBC_VERSION_2_15)$(CONFIG_EGLIBC_VERSION_2_16),)
+ifneq ($(CONFIG_EGLIBC_VERSION_2_15),)
 	ln -sf ../ports $(HOST_BUILD_DIR)/libc/
 endif
 endef

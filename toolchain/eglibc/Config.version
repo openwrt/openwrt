@@ -3,18 +3,10 @@ if USE_EGLIBC
 config EGLIBC_VERSION
 	string
 	default "2.15" if EGLIBC_VERSION_2_15
-	default "2.16" if EGLIBC_VERSION_2_16
-	default "2.17" if EGLIBC_VERSION_2_17
 	default "2.19" if EGLIBC_VERSION_2_19
 
 config EGLIBC_VERSION_2_15
 	default y if !TOOLCHAINOPTS
-	bool
-
-config EGLIBC_VERSION_2_16
-	bool
-
-config EGLIBC_VERSION_2_17
 	bool
 
 config EGLIBC_VERSION_2_19
