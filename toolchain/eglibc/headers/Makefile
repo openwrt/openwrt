@@ -11,6 +11,7 @@ define Host/Install
 	$(call Host/SetToolchainInfo)
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/{include,lib}
 	$(MAKE) -C $(CUR_BUILD_DIR) \
+		BUILD_CFLAGS="$(HOST_CFLAGS)" \
 		install_root="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev" \
 		install-bootstrap-headers=yes \
 		install-headers

@@ -17,6 +17,10 @@ choice
 		bool "eglibc 2.17"
 		select EGLIBC_VERSION_2_17
 
+	config EGLIBC_USE_VERSION_2_19
+		bool "eglibc 2.19"
+		select EGLIBC_VERSION_2_19
+
 endchoice
 
 config EGLIBC_REVISION
@@ -25,6 +29,7 @@ config EGLIBC_REVISION
 	default "18909" if EGLIBC_VERSION_2_15
 	default "21110" if EGLIBC_VERSION_2_16
 	default "22243" if EGLIBC_VERSION_2_17
+	default "25243" if EGLIBC_VERSION_2_19
 	default ""
 
 menu "eglibc configuration"
