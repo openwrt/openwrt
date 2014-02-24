@@ -1,0 +1,92 @@
+From 5fb4e8d7287ac8fcb33aae8b1e9e22c5a3c392bd Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Thu, 10 Nov 2011 17:33:40 +0100
+Subject: [PATCH 51/79] MTD: DEVICES: m25p80: add support for limiting reads
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ drivers/mtd/devices/m25p80.c |   29 +++++++++++++++++++++++++++--
+ include/linux/spi/flash.h    |    4 ++++
+ 2 files changed, 31 insertions(+), 2 deletions(-)
+
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -101,6 +101,7 @@ struct m25p {
+ 	u8			program_opcode;
+ 	u8			*command;
+ 	bool			fast_read;
++	int			max_transfer_len;
+ };
+ 
+ static inline struct m25p *mtd_to_m25p(struct mtd_info *mtd)
+@@ -359,10 +360,9 @@ static int m25p80_erase(struct mtd_info
+  * Read an address range from the flash chip.  The address range
+  * may be any size provided it is within the physical boundaries.
+  */
+-static int m25p80_read(struct mtd_info *mtd, loff_t from, size_t len,
++static int __m25p80_read(struct m25p *flash, loff_t from, size_t len,
+ 	size_t *retlen, u_char *buf)
+ {
+-	struct m25p *flash = mtd_to_m25p(mtd);
+ 	struct spi_transfer t[2];
+ 	struct spi_message m;
+ 	uint8_t opcode;
+@@ -405,6 +405,28 @@ static int m25p80_read(struct mtd_info *
+ 	return 0;
+ }
+ 
++static int m25p80_read(struct mtd_info *mtd, loff_t from, size_t len,
++	size_t *retlen, u_char *buf)
++{
++	struct m25p *flash = mtd_to_m25p(mtd);
++	size_t off;
++	size_t read_len = flash->max_transfer_len;
++	size_t part_len;
++	int ret = 0;
++
++	if (!read_len)
++		return __m25p80_read(flash, from, len, retlen, buf);
++
++	*retlen = 0;
++
++	for (off = 0; off < len && !ret; off += read_len) {
++		ret = __m25p80_read(flash, from + off, min(len - off, read_len),
++				    &part_len, buf + off);
++			*retlen += part_len;
++	}
++
++	return ret;
++}
+ /*
+  * Write an address range to the flash chip.  Data must be written in
+  * FLASH_PAGESIZE chunks.  The address range may be any size provided
+@@ -1001,6 +1023,9 @@ static int m25p_probe(struct spi_device
+ 	if (!flash->command)
+ 		return -ENOMEM;
+ 
++	if (data)
++		flash->max_transfer_len = data->max_transfer_len;
++
+ 	flash->spi = spi;
+ 	mutex_init(&flash->lock);
+ 	spi_set_drvdata(spi, flash);
+--- a/include/linux/spi/flash.h
++++ b/include/linux/spi/flash.h
+@@ -13,6 +13,8 @@ struct mtd_part_parser_data;
+  * @part_probe_types: optional list of MTD parser names to use for
+  *	partitioning
+  *
++ * @max_transfer_len: option maximum read/write length limitation for
++ *	SPI controllers not able to transfer any length commands.
+  * Board init code (in arch/.../mach-xxx/board-yyy.c files) can
+  * provide information about SPI flash parts (such as DataFlash) to
+  * help set up the device and its appropriate default partitioning.
+@@ -28,6 +30,8 @@ struct flash_platform_data {
+ 	char		*type;
+ 
+ 	const char	**part_probe_types;
++
++	unsigned int	max_transfer_len;
+ 	/* we'll likely add more ... use JEDEC IDs, etc */
+ };
+ 

@@ -1,0 +1,36 @@
+From 8bd8f46cbc709974b26396aa440133db4484015e Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Fri, 28 Jun 2013 00:25:13 +0200
+Subject: [PATCH V2 01/13] MIPS: BCM63XX: disable SMP also on BCM3368
+
+BCM3368 has the same shared TLB as BCM6358.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/bcm63xx/prom.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/bcm63xx/prom.c
++++ b/arch/mips/bcm63xx/prom.c
+@@ -64,9 +64,9 @@ void __init prom_init(void)
+ 		register_smp_ops(&bmips_smp_ops);
+ 
+ 		/*
+-		 * BCM6328 might not have its second CPU enabled, while BCM6358
+-		 * needs special handling for its shared TLB, so disable SMP
+-		 * for now.
++		 * BCM6328 might not have its second CPU enabled, while BCM3368
++		 * and BCM6358 need special handling for their shared TLB, so
++		 * disable SMP for now.
+ 		 */
+ 		if (BCMCPU_IS_6328()) {
+ 			reg = bcm_readl(BCM_6328_OTP_BASE +
+@@ -74,7 +74,7 @@ void __init prom_init(void)
+ 
+ 			if (reg & OTP_6328_REG3_TP1_DISABLED)
+ 				bmips_smp_enabled = 0;
+-		} else if (BCMCPU_IS_6358()) {
++		} else if (BCMCPU_IS_3368() || BCMCPU_IS_6358()) {
+ 			bmips_smp_enabled = 0;
+ 		}
+ 

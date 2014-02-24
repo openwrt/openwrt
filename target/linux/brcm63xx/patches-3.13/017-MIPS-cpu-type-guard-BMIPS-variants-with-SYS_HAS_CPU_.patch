@@ -1,0 +1,44 @@
+From c515f21d7680015bc94e0c081b73aba5a3d74680 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Thu, 17 Oct 2013 13:14:48 +0200
+Subject: [PATCH V2 12/13] MIPS: cpu-type: guard BMIPS variants with
+ SYS_HAS_CPU_BMIPS*
+
+BMIPS32 and  BMIPS3300 also need to be available for MIPS32R1, as
+bcm47xx might not select BMIPS.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/include/asm/cpu-type.h | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+--- a/arch/mips/include/asm/cpu-type.h
++++ b/arch/mips/include/asm/cpu-type.h
+@@ -27,10 +27,7 @@ static inline int __pure __get_cpu_type(
+ #ifdef CONFIG_SYS_HAS_CPU_MIPS32_R1
+ 	case CPU_4KC:
+ 	case CPU_ALCHEMY:
+-	case CPU_BMIPS3300:
+-	case CPU_BMIPS4350:
+ 	case CPU_PR4450:
+-	case CPU_BMIPS32:
+ 	case CPU_JZRISC:
+ #endif
+ 
+@@ -163,6 +160,16 @@ static inline int __pure __get_cpu_type(
+ 	case CPU_CAVIUM_OCTEON2:
+ #endif
+ 
++#if defined(CONFIG_SYS_HAS_CPU_BMIPS32_3300) || \
++	defined (CONFIG_SYS_HAS_CPU_MIPS32_R1)
++	case CPU_BMIPS32:
++	case CPU_BMIPS3300:
++#endif
++
++#ifdef CONFIG_SYS_HAS_CPU_BMIPS4350
++	case CPU_BMIPS4350:
++#endif
++
+ #ifdef CONFIG_SYS_HAS_CPU_BMIPS4380
+ 	case CPU_BMIPS4380:
+ #endif

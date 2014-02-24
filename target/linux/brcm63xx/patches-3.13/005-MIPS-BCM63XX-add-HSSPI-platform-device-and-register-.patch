@@ -1,0 +1,107 @@
+From ad04c99347cf9e583457f7258e97f0be22fad2ec Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sat, 12 Nov 2011 12:18:26 +0100
+Subject: [PATCH 4/5] MIPS: BCM63XX: add HSSPI platform device and register it
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/bcm63xx/Makefile                         |  4 +-
+ arch/mips/bcm63xx/boards/board_bcm963xx.c          |  3 ++
+ arch/mips/bcm63xx/dev-hsspi.c                      | 47 ++++++++++++++++++++++
+ .../include/asm/mach-bcm63xx/bcm63xx_dev_hsspi.h   |  8 ++++
+ 4 files changed, 60 insertions(+), 2 deletions(-)
+ create mode 100644 arch/mips/bcm63xx/dev-hsspi.c
+ create mode 100644 arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_hsspi.h
+
+--- a/arch/mips/bcm63xx/Makefile
++++ b/arch/mips/bcm63xx/Makefile
+@@ -1,7 +1,7 @@
+ obj-y		+= clk.o cpu.o cs.o gpio.o irq.o nvram.o prom.o reset.o \
+ 		   setup.o timer.o dev-dsp.o dev-enet.o dev-flash.o \
+-		   dev-pcmcia.o dev-rng.o dev-spi.o dev-uart.o dev-wdt.o \
+-		   dev-usb-usbd.o
++		   dev-pcmcia.o dev-rng.o dev-spi.o dev-hsspi.o dev-uart.o \
++		   dev-wdt.o dev-usb-usbd.o
+ obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
+ 
+ obj-y		+= boards/
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -23,6 +23,7 @@
+ #include <bcm63xx_dev_enet.h>
+ #include <bcm63xx_dev_dsp.h>
+ #include <bcm63xx_dev_flash.h>
++#include <bcm63xx_dev_hsspi.h>
+ #include <bcm63xx_dev_pcmcia.h>
+ #include <bcm63xx_dev_spi.h>
+ #include <bcm63xx_dev_usb_usbd.h>
+@@ -915,6 +916,8 @@ int __init board_register_devices(void)
+ 
+ 	bcm63xx_spi_register();
+ 
++	bcm63xx_hsspi_register();
++
+ 	bcm63xx_flash_register();
+ 
+ 	bcm63xx_led_data.num_leds = ARRAY_SIZE(board.leds);
+--- /dev/null
++++ b/arch/mips/bcm63xx/dev-hsspi.c
+@@ -0,0 +1,47 @@
++/*
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ *
++ * Copyright (C) 2012 Jonas Gorski <jonas.gorski@gmail.com>
++ */
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++
++#include <bcm63xx_cpu.h>
++#include <bcm63xx_dev_hsspi.h>
++#include <bcm63xx_regs.h>
++
++static struct resource spi_resources[] = {
++	{
++		.start		= -1, /* filled at runtime */
++		.end		= -1, /* filled at runtime */
++		.flags		= IORESOURCE_MEM,
++	},
++	{
++		.start		= -1, /* filled at runtime */
++		.flags		= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device bcm63xx_hsspi_device = {
++	.name		= "bcm63xx-hsspi",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(spi_resources),
++	.resource	= spi_resources,
++};
++
++int __init bcm63xx_hsspi_register(void)
++{
++	if (!BCMCPU_IS_6328() && !BCMCPU_IS_6362())
++		return -ENODEV;
++
++	spi_resources[0].start = bcm63xx_regset_address(RSET_HSSPI);
++	spi_resources[0].end = spi_resources[0].start;
++	spi_resources[0].end += RSET_HSSPI_SIZE - 1;
++	spi_resources[1].start = bcm63xx_get_irq_number(IRQ_HSSPI);
++
++	return platform_device_register(&bcm63xx_hsspi_device);
++}
+--- /dev/null
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_hsspi.h
+@@ -0,0 +1,8 @@
++#ifndef BCM63XX_DEV_HSSPI_H
++#define BCM63XX_DEV_HSSPI_H
++
++#include <linux/types.h>
++
++int bcm63xx_hsspi_register(void);
++
++#endif /* BCM63XX_DEV_HSSPI_H */

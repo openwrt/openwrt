@@ -1,0 +1,24 @@
+From c6c4897703d825c9efea6d9a708aaa080c8c3177 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Thu, 17 Oct 2013 13:16:08 +0200
+Subject: [PATCH V2 13/13] MIPS: BCM63XX: drop SYS_HAS_CPU_MIPS32R1
+
+All MIPS cores on BCM63XX identify as Broadcom, not MIPS, so no need
+to support non-broadcom MIPS CPUs. This also ensures that CPU_BMIPS
+is always selected.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -132,7 +132,6 @@ config BCM63XX
+ 	select CSRC_R4K
+ 	select DMA_NONCOHERENT
+ 	select IRQ_CPU
+-	select SYS_HAS_CPU_MIPS32_R1
+ 	select SYS_SUPPORTS_32BIT_KERNEL
+ 	select SYS_SUPPORTS_BIG_ENDIAN
+ 	select SYS_HAS_EARLY_PRINTK
