@@ -5,12 +5,16 @@ HOST_BUILD_PARALLEL:=1
 include ./common.mk
 
 define Host/Compile
-	$(MAKE) -C $(CUR_BUILD_DIR) all PARALLELMFLAGS="$(HOST_JOBS)"
+	$(MAKE) -C $(CUR_BUILD_DIR) \
+		PARALLELMFLAGS="$(HOST_JOBS)" \
+		BUILD_CFLAGS="$(HOST_CFLAGS)" \
+		all
 endef
 
 define Host/Install
 	$(call Host/SetToolchainInfo)
 	$(MAKE) -C $(CUR_BUILD_DIR) \
+		BUILD_CFLAGS="$(HOST_CFLAGS)" \
 		install_root="$(TOOLCHAIN_DIR)" \
 		install
 	( cd $(TOOLCHAIN_DIR) ; \
