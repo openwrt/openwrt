@@ -6,10 +6,10 @@ config EGLIBC_VERSION
 	default "2.19" if EGLIBC_VERSION_2_19
 
 config EGLIBC_VERSION_2_15
-	default y if !TOOLCHAINOPTS
 	bool
 
 config EGLIBC_VERSION_2_19
+	default y if !TOOLCHAINOPTS
 	bool
 
 endif
