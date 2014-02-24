@@ -57,12 +57,30 @@
  }
 --- a/libgcc/Makefile.in
 +++ b/libgcc/Makefile.in
-@@ -272,7 +272,7 @@ ifeq ($(enable_shared),yes)
+@@ -269,6 +269,12 @@ ifeq ($(enable_shared),yes)
+     install-libunwind = install-libunwind
+   endif
+ 
++else
++# Not enable_shared.
++iterator = $(srcdir)/empty.mk $(patsubst %,$(srcdir)/static-object.mk,$(iter-items))
++endif
++
++
  # For -fvisibility=hidden.  We need both a -fvisibility=hidden on
  # the command line, and a #define to prevent libgcc2.h etc from
  # overriding that with #pragmas.
--vis_hide = @vis_hide@
-+vis_hide =
+@@ -291,13 +297,6 @@ else
+ gen-hide-list = echo > $@
+ endif
  
- ifneq (,$(vis_hide))
- 
+-else
+-# Not enable_shared.
+-iterator = $(srcdir)/empty.mk $(patsubst %,$(srcdir)/static-object.mk,$(iter-items))
+-vis_hide =
+-gen-hide-list = echo > \$@
+-endif
+-
+ ifneq ($(EXTRA_PARTS),)
+   extra-parts = libgcc-extra-parts
+   INSTALL_PARTS = $(EXTRA_PARTS)
