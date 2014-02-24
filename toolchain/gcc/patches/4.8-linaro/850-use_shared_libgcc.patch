@@ -33,17 +33,6 @@
 -    printf ("\n  local:\n\t*;\n};\n");
 +    printf ("\n\t*;\n};\n");
  }
---- a/libgcc/Makefile.in
-+++ b/libgcc/Makefile.in
-@@ -368,7 +368,7 @@ endif
- # For -fvisibility=hidden.  We need both a -fvisibility=hidden on
- # the command line, and a #define to prevent libgcc2.h etc from
- # overriding that with #pragmas.
--vis_hide = @vis_hide@
-+vis_hide =
- 
- ifneq (,$(vis_hide))
- 
 --- a/gcc/config/rs6000/linux.h
 +++ b/gcc/config/rs6000/linux.h
 @@ -61,6 +61,9 @@
