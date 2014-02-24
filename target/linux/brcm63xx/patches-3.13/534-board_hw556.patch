@@ -1,0 +1,565 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -2901,6 +2901,492 @@ static struct board_info __initdata boar
+ 	},
+ };
+ 
++static struct board_info __initdata board_HW556 = {
++	.name					= "HW556",
++	.expected_cpu_id			= 0x6358,
++
++	.has_uart0				= 1,
++	.has_pci				= 1,
++	.has_ohci0				= 1,
++	.has_ehci0				= 1,
++	.num_usbh_ports				= 2,
++
++	.has_caldata				= 1,
++	.caldata = {
++		{
++			.caldata_offset		= 0xe00000,
++		},
++	},
++
++	.has_enet1				= 1,
++	.enet1 = {
++		.has_phy			= 1,
++		.phy_id				= 0,
++		.force_speed_100		= 1,
++		.force_duplex_full		= 1,
++	},
++
++	.leds = {
++		{
++			.name			= "HW556:red:message",
++			.gpio			= 0,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:hspa",
++			.gpio			= 1,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:dsl",
++			.gpio			= 2,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:power",
++			.gpio			= 3,
++			.active_low		= 1,
++			.default_trigger	= "default-on",
++		},
++		{
++			.name			= "HW556:red:all",
++			.gpio			= 6,
++			.active_low		= 1,
++			.default_trigger	= "default-on",
++		},
++	},
++
++	.buttons = {
++		{
++			.desc			= "help",
++			.gpio			= 8,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_HELP,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "wlan",
++			.gpio			= 9,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_WLAN,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "restart",
++			.gpio			= 10,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_RESTART,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "reset",
++			.gpio			= 11,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_CONFIG,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
++static struct board_info __initdata board_HW556_A = {
++	.name					= "HW556_A",
++	.expected_cpu_id			= 0x6358,
++
++	.has_uart0				= 1,
++	.has_pci				= 1,
++	.has_ohci0				= 1,
++	.has_ehci0				= 1,
++	.num_usbh_ports				= 2,
++
++	.has_caldata				= 1,
++	.caldata = {
++		{
++			.vendor			= PCI_VENDOR_ID_RALINK,
++			.caldata_offset		= 0xeffe00,
++			.slot			= 1,
++			.eeprom			= "rt2x00.eeprom",
++		},
++	},
++
++	.has_enet1				= 1,
++	.enet1 = {
++		.has_phy			= 1,
++		.phy_id				= 0,
++		.force_speed_100		= 1,
++		.force_duplex_full		= 1,
++	},
++
++	.leds = {
++		{
++			.name			= "HW556:green:lan1",
++			.gpio			= 0,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan2",
++			.gpio			= 1,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:dsl",
++			.gpio			= 2,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:power",
++			.gpio			= 3,
++			.active_low		= 1,
++			.default_trigger	= "default-on",
++		},
++		{
++			.name			= "HW556:red:message",
++			.gpio			= 12,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan1",
++			.gpio			= 13,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:hspa",
++			.gpio			= 15,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan2",
++			.gpio			= 22,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan3",
++			.gpio			= 23,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan3",
++			.gpio			= 26,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan4",
++			.gpio			= 27,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan4",
++			.gpio			= 28,
++			.active_low		= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc			= "help",
++			.gpio			= 8,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_HELP,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "wlan",
++			.gpio			= 9,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_WLAN,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "restart",
++			.gpio			= 10,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_RESTART,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "reset",
++			.gpio			= 11,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_CONFIG,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
++static struct board_info __initdata board_HW556_B = {
++	.name					= "HW556_B",
++	.expected_cpu_id			= 0x6358,
++
++	.has_uart0				= 1,
++	.has_pci				= 1,
++	.has_ohci0				= 1,
++	.has_ehci0				= 1,
++	.num_usbh_ports				= 2,
++
++	.has_caldata				= 1,
++	.caldata = {
++		{
++			.vendor			= PCI_VENDOR_ID_ATHEROS,
++			.caldata_offset		= 0xf7e000,
++			.slot			= 1,
++			.endian_check		= 1,
++			.led_pin		= 2,
++		},
++	},
++
++	.has_enet1				= 1,
++	.enet1 = {
++		.has_phy			= 1,
++		.phy_id				= 0,
++		.force_speed_100		= 1,
++		.force_duplex_full		= 1,
++	},
++
++	.leds = {
++		{
++			.name			= "HW556:red:message",
++			.gpio			= 0,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:hspa",
++			.gpio			= 1,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:dsl",
++			.gpio			= 2,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:power",
++			.gpio			= 3,
++			.active_low		= 1,
++			.default_trigger	= "default-on",
++		},
++		{
++			.name			= "HW556:red:all",
++			.gpio			= 6,
++			.active_low		= 1,
++			.default_trigger	= "default-on",
++		},
++		{
++			.name			= "HW556:green:lan1",
++			.gpio			= 12,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan1",
++			.gpio			= 13,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan2",
++			.gpio			= 15,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan2",
++			.gpio			= 22,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan3",
++			.gpio			= 23,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan3",
++			.gpio			= 26,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan4",
++			.gpio			= 27,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan4",
++			.gpio			= 28,
++			.active_low		= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc			= "help",
++			.gpio			= 8,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_HELP,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "wlan",
++			.gpio			= 9,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_WLAN,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "restart",
++			.gpio			= 10,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_RESTART,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "reset",
++			.gpio			= 11,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_CONFIG,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
++static struct board_info __initdata board_HW556_C = {
++	.name					= "HW556_C",
++	.expected_cpu_id			= 0x6358,
++
++	.has_uart0				= 1,
++	.has_pci				= 1,
++	.has_ohci0				= 1,
++	.has_ehci0				= 1,
++	.num_usbh_ports				= 2,
++
++	.has_caldata				= 1,
++	.caldata = {
++		{
++			.vendor			= PCI_VENDOR_ID_ATHEROS,
++			.caldata_offset		= 0xefe000,
++			.slot			= 1,
++			.endian_check		= 1,
++			.led_pin		= 2,
++		},
++	},
++
++	.has_enet1				= 1,
++	.enet1 = {
++		.has_phy			= 1,
++		.phy_id				= 0,
++		.force_speed_100		= 1,
++		.force_duplex_full		= 1,
++	},
++
++	.leds = {
++		{
++			.name			= "HW556:red:message",
++			.gpio			= 0,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:hspa",
++			.gpio			= 1,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:dsl",
++			.gpio			= 2,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:power",
++			.gpio			= 3,
++			.active_low		= 1,
++			.default_trigger	= "default-on",
++		},
++		{
++			.name			= "HW556:red:all",
++			.gpio			= 6,
++			.active_low		= 1,
++			.default_trigger	= "default-on",
++		},
++		{
++			.name			= "HW556:green:lan1",
++			.gpio			= 12,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan1",
++			.gpio			= 13,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan2",
++			.gpio			= 15,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan2",
++			.gpio			= 22,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan3",
++			.gpio			= 23,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan3",
++			.gpio			= 26,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:green:lan4",
++			.gpio			= 27,
++			.active_low		= 1,
++		},
++		{
++			.name			= "HW556:red:lan4",
++			.gpio			= 28,
++			.active_low		= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc			= "help",
++			.gpio			= 8,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_HELP,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "wlan",
++			.gpio			= 9,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_WLAN,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "restart",
++			.gpio			= 10,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_RESTART,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "reset",
++			.gpio			= 11,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_CONFIG,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
++
+  /* T-Home Speedport W 303V Typ B */
+ static struct board_info __initdata board_spw303v = {
+ 	.name			= "96358-502V",
+@@ -3340,6 +3826,10 @@ static const struct board_info __initcon
+ 	&board_nb4_fxc_r2,
+ 	&board_ct6373_1,
+ 	&board_HW553,
++	&board_HW556,
++	&board_HW556_A,
++	&board_HW556_B,
++	&board_HW556_C,
+ 	&board_spw303v,
+ 	&board_DVAG3810BN,
+ #endif
+@@ -3405,13 +3895,37 @@ static void __init boardid_fixup(u8 *boo
+ 	struct bcm_tag *tag = (struct bcm_tag *)(boot_addr + CFE_OFFSET_64K);
+ 	char *board_name = (char *)bcm63xx_nvram_get_name();
+ 
+-	if (BCMCPU_IS_6358() && (!strcmp(board_name, "96358VW"))) {
+-		u8 *p = boot_addr + NB4_PID_OFFSET;
+-
+-		/* Extract nb4 PID */
+-		if (!memcmp(p, "NB4-", 4)) {
+-			memcpy(board_name, p, sizeof("NB4-XXX-rX"));
+-			return;
++	if (BCMCPU_IS_6358()) {
++		if (!strcmp(board_name, "96358VW")) {
++			u8 *p = boot_addr + NB4_PID_OFFSET;
++
++			/* Extract nb4 PID */
++			if (!memcmp(p, "NB4-", 4)) {
++				memcpy(board_name, p, sizeof("NB4-XXX-rX"));
++				return;
++			}
++		} else if (!strcmp(board_name, "HW556")) {
++			/*
++			 * HW556 has different wlan caldatas depending on
++			 * hardware version.
++			 * Detect hardware version and change board id
++			 */
++			u8 cal_data_ath9k[4] = { 0xa5, 0x5a, 0, 0 };
++			u8 cal_data_rt3062[4] = { 0x62, 0x30, 1, 0 };
++
++			if (!memcmp(boot_addr + 0xeffe00,
++				    &cal_data_rt3062, 4)) {
++				/* Ralink 0xeffe00 */
++				memcpy(board_name, "HW556_A", 7);
++			} else if (!memcmp(boot_addr + 0xf7e000,
++					   &cal_data_ath9k, 4)) {
++				/* Atheros 0xf7e000 */
++				memcpy(board_name, "HW556_B", 7);
++			} else if (!memcmp(boot_addr + 0xefe000,
++					   &cal_data_ath9k, 4)) {
++				/* Atheros 0xefe000 */
++				memcpy(board_name, "HW556_C", 7);
++			}
+ 		}
+ 	}
+ 
+--- a/drivers/mtd/bcm63xxpart.c
++++ b/drivers/mtd/bcm63xxpart.c
+@@ -70,6 +70,11 @@ static int bcm63xx_parse_cfe_partitions(
+ 			      BCM63XX_CFE_BLOCK_SIZE);
+ 
+ 	cfelen = cfe_erasesize;
++
++	/* Fix HW556 MX29LV128DB */
++	if (!strncmp(bcm63xx_nvram_get_name(), "HW556", 5))
++		cfelen = 0x20000;
++
+ 	nvramlen = bcm63xx_nvram_get_psi_size() * SZ_1K;
+ 	nvramlen = roundup(nvramlen, cfe_erasesize);
+ 	nvramaddr = master->size - nvramlen;

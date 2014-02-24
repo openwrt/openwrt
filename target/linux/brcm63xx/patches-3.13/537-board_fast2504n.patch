@@ -1,0 +1,113 @@
+From: Max Staudt <openwrt.max@enpas.org>
+Date: Wed, 15 Jan 2014 18:51:13 +0000
+Subject: [PATCH] brcm63xx: F@ST2504n board support (Linux-3.10.26)
+
+Signed-off-by: Max Staudt <openwrt.max@enpas.org>
+---
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -3787,6 +3787,96 @@ static struct board_info __initdata boar
+ 	.devs = nb6_devices,
+ 	.num_devs = ARRAY_SIZE(nb6_devices),
+ };
++
++static struct board_info __initdata board_fast2504n = {
++	.name				= "F@ST2504n",
++	.expected_cpu_id		= 0x6362,
++
++	.has_uart0			= 1,
++
++	.has_enetsw			= 1,
++
++	.enetsw = {
++		.used_ports = {
++			[0] = {
++				.used	= 1,
++				.phy_id	= 1,
++				.name	= "Port 1",
++			},
++
++			[1] = {
++				.used	= 1,
++				.phy_id	= 2,
++				.name	= "Port 2",
++			},
++
++			[2] = {
++				.used	= 1,
++				.phy_id	= 3,
++				.name	= "Port 3",
++			},
++
++			[3] = {
++				.used	= 1,
++				.phy_id	= 4,
++				.name	= "Port 4",
++			},
++		},
++	},
++
++	.leds = {
++		{
++			.name		= "fast2504n:orange:power",
++			.gpio		= 2,
++			.active_low	= 1,
++		},
++		{
++			.name		= "fast2504n:green:power",
++			.gpio		= 10,
++			.active_low	= 1,
++			.default_trigger = "default-on",
++		},
++		{
++			.name		= "fast2504n:red:internet",
++			.gpio		= 26,
++			.active_low	= 1,
++		},
++		{
++			.name		= "fast2504n:green:ok",
++			.gpio		= 28,
++			.active_low	= 1,
++		},
++		{
++			.name		= "fast2504n:orange:ok",
++			.gpio		= 29,
++			.active_low	= 1,
++		},
++		{
++			.name		= "fast2504n:orange:wlan",
++			.gpio		= 30,
++			.active_low	= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 24,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 25,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++	},
++};
+ #endif
+ 
+ /*
+@@ -4008,6 +4098,7 @@ static const struct board_info __initcon
+ 
+ #ifdef CONFIG_BCM63XX_CPU_6362
+ 	&board_nb6,
++	&board_fast2504n,
+ #endif
+ 
+ #ifdef CONFIG_BCM63XX_CPU_6368

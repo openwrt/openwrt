@@ -1,0 +1,267 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -148,28 +148,28 @@ static struct board_info __initdata boar
+ 
+ 	.leds = {
+ 		{
+-			.name		= "adsl",
++			.name		= "96338GW:green:adsl",
+ 			.gpio		= 3,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ses",
++			.name		= "96338GW:green:ses",
+ 			.gpio		= 5,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp-fail",
++			.name		= "96338GW:green:ppp-fail",
+ 			.gpio		= 4,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "power",
++			.name		= "96338GW:green:power",
+ 			.gpio		= 0,
+ 			.active_low	= 1,
+ 			.default_trigger = "default-on",
+ 		},
+ 		{
+-			.name		= "stop",
++			.name		= "96338GW:green:stop",
+ 			.gpio		= 1,
+ 			.active_low	= 1,
+ 		}
+@@ -189,28 +189,28 @@ static struct board_info __initdata boar
+ 
+ 	.leds = {
+ 		{
+-			.name		= "adsl",
++			.name		= "96338W:green:adsl",
+ 			.gpio		= 3,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ses",
++			.name		= "96338W:green:ses",
+ 			.gpio		= 5,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp-fail",
++			.name		= "96338W:green:ppp-fail",
+ 			.gpio		= 4,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "power",
++			.name		= "96338W:green:power",
+ 			.gpio		= 0,
+ 			.active_low	= 1,
+ 			.default_trigger = "default-on",
+ 		},
+ 		{
+-			.name		= "stop",
++			.name		= "96338W:green:stop",
+ 			.gpio		= 1,
+ 			.active_low	= 1,
+ 		},
+@@ -249,29 +249,29 @@ static struct board_info __initdata boar
+ 
+ 	.leds = {
+ 		{
+-			.name		= "adsl-fail",
++			.name		= "96348R:green:adsl-fail",
+ 			.gpio		= 2,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp",
++			.name		= "96348R:green:ppp",
+ 			.gpio		= 3,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp-fail",
++			.name		= "96348R:green:ppp-fail",
+ 			.gpio		= 4,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "power",
++			.name		= "96348R:green:power",
+ 			.gpio		= 0,
+ 			.active_low	= 1,
+ 			.default_trigger = "default-on",
+ 
+ 		},
+ 		{
+-			.name		= "stop",
++			.name		= "96348R:green:stop",
+ 			.gpio		= 1,
+ 			.active_low	= 1,
+ 		},
+@@ -310,28 +310,28 @@ static struct board_info __initdata boar
+ 
+ 	.leds = {
+ 		{
+-			.name		= "adsl-fail",
++			.name		= "96348GW-10:green:adsl-fail",
+ 			.gpio		= 2,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp",
++			.name		= "96348GW-10:green:ppp",
+ 			.gpio		= 3,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp-fail",
++			.name		= "96348GW-10:green:ppp-fail",
+ 			.gpio		= 4,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "power",
++			.name		= "96348GW-10:green:power",
+ 			.gpio		= 0,
+ 			.active_low	= 1,
+ 			.default_trigger = "default-on",
+ 		},
+ 		{
+-			.name		= "stop",
++			.name		= "96348GW-10:green:stop",
+ 			.gpio		= 1,
+ 			.active_low	= 1,
+ 		},
+@@ -364,28 +364,28 @@ static struct board_info __initdata boar
+ 
+ 	.leds = {
+ 		{
+-			.name		= "adsl-fail",
++			.name		= "96348GW-11:green:adsl-fail",
+ 			.gpio		= 2,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp",
++			.name		= "96348GW-11:green:ppp",
+ 			.gpio		= 3,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp-fail",
++			.name		= "96348GW-11:green:ppp-fail",
+ 			.gpio		= 4,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "power",
++			.name		= "96348GW-11:green:power",
+ 			.gpio		= 0,
+ 			.active_low	= 1,
+ 			.default_trigger = "default-on",
+ 		},
+ 		{
+-			.name		= "stop",
++			.name		= "96348GW-11:green:stop",
+ 			.gpio		= 1,
+ 			.active_low	= 1,
+ 		},
+@@ -432,28 +432,28 @@ static struct board_info __initdata boar
+ 
+ 	.leds = {
+ 		{
+-			.name		= "adsl-fail",
++			.name		= "96348GW:green:adsl-fail",
+ 			.gpio		= 2,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp",
++			.name		= "96348GW:green:ppp",
+ 			.gpio		= 3,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp-fail",
++			.name		= "96348GW:green:ppp-fail",
+ 			.gpio		= 4,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "power",
++			.name		= "96348GW:green:power",
+ 			.gpio		= 0,
+ 			.active_low	= 1,
+ 			.default_trigger = "default-on",
+ 		},
+ 		{
+-			.name		= "stop",
++			.name		= "96348GW:green:stop",
+ 			.gpio		= 1,
+ 			.active_low	= 1,
+ 		},
+@@ -585,27 +585,27 @@ static struct board_info __initdata boar
+ 
+ 	.leds = {
+ 		{
+-			.name		= "adsl-fail",
++			.name		= "96358VW:green:adsl-fail",
+ 			.gpio		= 15,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp",
++			.name		= "96358VW:green:ppp",
+ 			.gpio		= 22,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp-fail",
++			.name		= "96358VW:green:ppp-fail",
+ 			.gpio		= 23,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "power",
++			.name		= "96358VW:green:power",
+ 			.gpio		= 4,
+ 			.default_trigger = "default-on",
+ 		},
+ 		{
+-			.name		= "stop",
++			.name		= "96358VW:green:stop",
+ 			.gpio		= 5,
+ 		},
+ 	},
+@@ -637,22 +637,22 @@ static struct board_info __initdata boar
+ 
+ 	.leds = {
+ 		{
+-			.name		= "adsl",
++			.name		= "96358VW2:green:adsl",
+ 			.gpio		= 22,
+ 			.active_low	= 1,
+ 		},
+ 		{
+-			.name		= "ppp-fail",
++			.name		= "96358VW2:green:ppp-fail",
+ 			.gpio		= 23,
+ 		},
+ 		{
+-			.name		= "power",
++			.name		= "96358VW2:green:power",
+ 			.gpio		= 5,
+ 			.active_low	= 1,
+ 			.default_trigger = "default-on",
+ 		},
+ 		{
+-			.name		= "stop",
++			.name		= "96358VW2:green:stop",
+ 			.gpio		= 4,
+ 			.active_low	= 1,
+ 		},

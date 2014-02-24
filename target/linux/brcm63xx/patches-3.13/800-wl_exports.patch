@@ -1,0 +1,34 @@
+--- a/arch/mips/bcm63xx/nvram.c
++++ b/arch/mips/bcm63xx/nvram.c
+@@ -40,6 +40,13 @@ struct bcm963xx_nvram {
+ static struct bcm963xx_nvram nvram;
+ static int mac_addr_used;
+ 
++/*
++ * Required export for WL
++ */
++#define NVRAM_SPACE 0x8000
++char nvram_buf[NVRAM_SPACE];
++EXPORT_SYMBOL(nvram_buf);
++
+ void __init bcm63xx_nvram_init(void *addr)
+ {
+ 	unsigned int check_len;
+@@ -48,6 +55,7 @@ void __init bcm63xx_nvram_init(void *add
+ 
+ 	/* extract nvram data */
+ 	memcpy(&nvram, addr, sizeof(nvram));
++	memcpy(&nvram_buf, addr, NVRAM_SPACE);
+ 
+ 	/* check checksum before using data */
+ 	if (nvram.version <= 4) {
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -59,6 +59,7 @@ void (*_dma_cache_wback)(unsigned long s
+ void (*_dma_cache_inv)(unsigned long start, unsigned long size);
+ 
+ EXPORT_SYMBOL(_dma_cache_wback_inv);
++EXPORT_SYMBOL(_dma_cache_inv);
+ 
+ #endif /* CONFIG_DMA_NONCOHERENT */
+ 

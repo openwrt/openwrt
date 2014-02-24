@@ -1,0 +1,61 @@
+From 082a49f0490008b999db80e3ccf1521c7dd21cec Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Mon, 2 Dec 2013 12:32:44 +0100
+Subject: [PATCH 1/8] MIPS: BCM63XX: remove !RUNTIME_DETECT code from register
+ sets
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h | 33 ------------------------
+ 1 file changed, 33 deletions(-)
+
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
+@@ -598,10 +598,6 @@ enum bcm63xx_regs_set {
+ 
+ extern const unsigned long *bcm63xx_regs_base;
+ 
+-#define __GEN_RSET_BASE(__cpu, __rset)					\
+-	case RSET_## __rset :						\
+-		return BCM_## __cpu ##_## __rset ##_BASE;
+-
+ #define __GEN_RSET(__cpu)						\
+ 	switch (set) {							\
+ 	__GEN_RSET_BASE(__cpu, DSL_LMEM)				\
+@@ -693,36 +689,7 @@ extern const unsigned long *bcm63xx_regs
+ 
+ static inline unsigned long bcm63xx_regset_address(enum bcm63xx_regs_set set)
+ {
+-#ifdef BCMCPU_RUNTIME_DETECT
+ 	return bcm63xx_regs_base[set];
+-#else
+-#ifdef CONFIG_BCM63XX_CPU_3368
+-	__GEN_RSET(3368)
+-#endif
+-#ifdef CONFIG_BCM63XX_CPU_6328
+-	__GEN_RSET(6328)
+-#endif
+-#ifdef CONFIG_BCM63XX_CPU_6338
+-	__GEN_RSET(6338)
+-#endif
+-#ifdef CONFIG_BCM63XX_CPU_6345
+-	__GEN_RSET(6345)
+-#endif
+-#ifdef CONFIG_BCM63XX_CPU_6348
+-	__GEN_RSET(6348)
+-#endif
+-#ifdef CONFIG_BCM63XX_CPU_6358
+-	__GEN_RSET(6358)
+-#endif
+-#ifdef CONFIG_BCM63XX_CPU_6362
+-	__GEN_RSET(6362)
+-#endif
+-#ifdef CONFIG_BCM63XX_CPU_6368
+-	__GEN_RSET(6368)
+-#endif
+-#endif
+-	/* unreached */
+-	return 0;
+ }
+ 
+ /*

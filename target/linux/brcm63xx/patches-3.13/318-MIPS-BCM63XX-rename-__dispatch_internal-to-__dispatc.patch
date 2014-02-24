@@ -1,0 +1,42 @@
+From 653dcc09407a695efb203337c6f72515d4c4ee43 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Thu, 21 Mar 2013 17:05:15 +0100
+Subject: [PATCH 29/53] MIPS: BCM63XX: rename __dispatch_internal to
+ __dispatch_internal_32
+
+Make it follow the same naming convention as the other functions.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/bcm63xx/irq.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/mips/bcm63xx/irq.c
++++ b/arch/mips/bcm63xx/irq.c
+@@ -19,7 +19,7 @@
+ #include <bcm63xx_io.h>
+ #include <bcm63xx_irq.h>
+ 
+-static void __dispatch_internal(void) __maybe_unused;
++static void __dispatch_internal_32(void) __maybe_unused;
+ static void __dispatch_internal_64(void) __maybe_unused;
+ static void __internal_irq_mask_32(unsigned int irq) __maybe_unused;
+ static void __internal_irq_mask_64(unsigned int irq) __maybe_unused;
+@@ -117,7 +117,7 @@ static void bcm63xx_init_irq(void)
+ 	}
+ 
+ 	if (irq_bits == 32) {
+-		dispatch_internal = __dispatch_internal;
++		dispatch_internal = __dispatch_internal_32;
+ 		internal_irq_mask = __internal_irq_mask_32;
+ 		internal_irq_unmask = __internal_irq_unmask_32;
+ 	} else {
+@@ -149,7 +149,7 @@ static inline void handle_internal(int i
+  * will resume the loop where it ended the last time we left this
+  * function.
+  */
+-static void __dispatch_internal(void)
++static void __dispatch_internal_32(void)
+ {
+ 	u32 pending;
+ 	static int i;

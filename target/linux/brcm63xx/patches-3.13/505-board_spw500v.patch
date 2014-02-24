@@ -1,0 +1,78 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -647,6 +647,67 @@ static struct board_info __initdata boar
+ 		},
+ 	},
+ };
++
++static struct board_info __initdata board_spw500v = {
++	.name				= "SPW500V",
++	.expected_cpu_id		= 0x6348,
++
++	.has_uart0			= 1,
++	.has_enet0			= 1,
++	.has_pci			= 1,
++
++	.enet0 = {
++		.has_phy		= 1,
++		.use_internal_phy	= 1,
++	},
++
++	.has_dsp			= 1,
++	.dsp = {
++		.gpio_rst		= 6,
++		.gpio_int		= 34,
++		.ext_irq		= 2,
++		.cs			= 2,
++	},
++
++	.leds = {
++		{
++			.name		= "SPW500V:red:power",
++			.gpio		= 1,
++			.active_low	= 1,
++		},
++		{
++			.name		= "SPW500V:green:power",
++			.gpio		= 0,
++			.active_low	= 1,
++			.default_trigger = "default-on",
++		},
++		{
++			.name		= "SPW500V:green:ppp",
++			.gpio		= 3,
++			.active_low	= 1,
++		},
++		{	.name		= "SPW500V:green:pstn",
++			.gpio		= 28,
++			.active_low	= 1,
++		},
++		{
++			.name		= "SPW500V:green:voip",
++			.gpio		= 32,
++			.active_low	= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 33,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
+ #endif
+ 
+ /*
+@@ -1569,6 +1630,7 @@ static const struct board_info __initcon
+ 	&board_96348gw_a,
+ 	&board_rta1025w_16,
+ 	&board_96348_D4PW,
++	&board_spw500v,
+ #endif
+ 
+ #ifdef CONFIG_BCM63XX_CPU_6358
