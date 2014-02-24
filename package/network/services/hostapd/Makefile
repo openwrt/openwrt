@@ -86,6 +86,10 @@ ifneq ($(LOCAL_TYPE),hostapd)
 	CONFIG_DRIVER_ROBOSWITCH=$(CONFIG_PACKAGE_kmod-switch)
 endif
 
+ifdef CONFIG_USE_EGLIBC
+  TARGET_LDFLAGS += -lrt
+endif
+
 DRV_DEPENDS:=+PACKAGE_kmod-mac80211:libnl-tiny @(!TARGET_avr32||BROKEN)
 
 define Package/hostapd/Default
