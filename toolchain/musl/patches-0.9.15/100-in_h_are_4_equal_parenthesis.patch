@@ -1,7 +1,6 @@
-diff -urN musl-0.9.8/include/netinet/in.h musl-0.9.8.new/include/netinet/in.h
---- musl-0.9.8/include/netinet/in.h	2013-01-25 14:14:07.000000000 +0100
-+++ musl-0.9.8.new/include/netinet/in.h	2013-01-29 21:43:46.843051396 +0100
-@@ -141,7 +141,7 @@
+--- a/include/netinet/in.h
++++ b/include/netinet/in.h
+@@ -149,7 +149,7 @@ uint16_t ntohs(uint16_t);
          (IN6_IS_ADDR_MULTICAST(a) && ((((uint8_t *) (a))[1] & 0xf) == 0xe))
  
  #define __ARE_4_EQUAL(a,b) \
