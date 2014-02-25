@@ -7,7 +7,41 @@
 . /lib/ar71xx.sh
 
 set_preinit_iface() {
-	ifname=eth0
+	case $(ar71xx_board_name) in
+	alfa-ap96 |\
+	alfa-nx |\
+	ap135-020 |\
+	ap136-020 |\
+	ap83 |\
+	archer-c7 |\
+	dir-505-a1 |\
+	jwap003 |\
+	pb42 |\
+	pb44 |\
+	rb-433 |\
+	rb-433u |\
+	rb-435g |\
+	rb-450 |\
+	rb-450g |\
+	routerstation |\
+	routerstation-pro |\
+	tl-mr3420-v2 |\
+	tl-wdr4900-v2 |\
+	tl-wr1043nd-v2 |\
+	tl-wr710n |\
+	tl-wr720n-v3 |\
+	tl-wr841n-v8 |\
+	tl-wr842n-v2 |\
+	wnr2000-v3 |\
+	wnr2200 |\
+	wnr612-v2 |\
+	wpe72)
+		ifname=eth1
+		;;
+	*)
+		ifname=eth0
+		;;
+	esac
 }
 
 boot_hook_add preinit_main set_preinit_iface
