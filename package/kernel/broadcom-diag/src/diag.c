@@ -695,7 +695,7 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[WBR2_G54];
 	case BCM47XX_BOARD_BUFFALO_WLA2_G54L:
 		return &platforms[WLA2_G54L];
-	case BCM47XX_BOARD_LINKSYS_WRT54GSV1:
+	case BCM47XX_BOARD_LINKSYS_WRT54G:
 		return &platforms[WRT54G];
 	case BCM47XX_BOARD_NETGEAR_WNDR3700V3:
 		return &platforms[WNDR3700V3];
