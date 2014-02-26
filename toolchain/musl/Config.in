@@ -3,7 +3,6 @@
 choice
 	prompt "musl Version"
 	depends on TOOLCHAINOPTS && USE_MUSL
-	depends on BROKEN
 	default MUSL_USE_VERSION_0_9_15
 	help
 	  Select the version of musl you wish to use.
