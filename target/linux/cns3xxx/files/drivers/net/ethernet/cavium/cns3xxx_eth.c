@@ -713,9 +713,14 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		}
 	}
 
+	rx_ring->cur_index = i;
 	if (!received) {
 		napi_complete(napi);
 		enable_irq(IRQ_CNS3XXX_SW_R0RXC);
+
+		/* if rx descriptors are full schedule another poll */
+		if (rx_ring->desc[(i-1) & (RX_DESCS-1)].cown)
+			eth_schedule_poll(sw);
 	}
 
 	spin_lock_bh(&tx_lock);
@@ -723,8 +728,6 @@ static int eth_poll(struct napi_struct *napi, int budget)
 	spin_unlock_bh(&tx_lock);
 
 	cns3xxx_alloc_rx_buf(sw, received);
-
-	rx_ring->cur_index = i;
 
 	wmb();
 	enable_rx_dma(sw);
