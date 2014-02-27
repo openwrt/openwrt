@@ -8,7 +8,11 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/BuildKernel
-	cp $(LINUX_DIR)/arch/$(ARCH)/boot/$(subst ",,$(KERNELNAME)) $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf
+	cp $(KDIR)/$(subst ",,$(KERNELNAME)) $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf
+endef
+
+define Image/BuildKernel/Initramfs
+	cp $(KDIR)/$(subst ",,$(KERNELNAME))-initramfs $(BIN_DIR)/openwrt-$(BOARD)-vmlinux-initramfs.elf
 endef
 
 define Image/Build/squashfs
