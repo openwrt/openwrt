@@ -583,7 +583,7 @@ static void eth_check_num_used(struct _tx_ring *tx_ring)
 	}
 }
 
-static void eth_complete_tx(struct sw *sw)
+static int eth_complete_tx(struct sw *sw)
 {
 	struct _tx_ring *tx_ring = &sw->tx_ring;
 	struct tx_desc *desc;
@@ -615,6 +615,8 @@ static void eth_complete_tx(struct sw *sw)
 	tx_ring->free_index = index;
 	tx_ring->num_used -= i;
 	eth_check_num_used(tx_ring);
+
+	return TX_DESCS - tx_ring->num_used;
 }
 
 static int eth_poll(struct napi_struct *napi, int budget)
@@ -776,11 +778,13 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 	skb_walk_frags(skb, skb1)
 		nr_desc++;
 
-	eth_schedule_poll(sw);
 	spin_lock_bh(&tx_lock);
 	if ((tx_ring->num_used + nr_desc + 1) >= TX_DESCS) {
-		spin_unlock_bh(&tx_lock);
-		return NETDEV_TX_BUSY;
+		/* clean up tx descriptors when needed */
+		if (eth_complete_tx(sw) < nr_desc) {
+			spin_unlock_bh(&tx_lock);
+			return NETDEV_TX_BUSY;
+		}
 	}
 
 	index = index0 = tx_ring->cur_index;
