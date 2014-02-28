@@ -8,10 +8,6 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 include $(INCLUDE_DIR)/host.mk
 
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/arm/boot/Image $(KDIR)/Image
-endef
-
 FAT32_BLOCK_SIZE=1024
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_BRCM2708_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
