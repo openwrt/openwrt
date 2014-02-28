@@ -1,0 +1,66 @@
+From bd9a95701602937c6e402a4fc6786d1675431117 Mon Sep 17 00:00:00 2001
+From: ddv2005 <ddv@abinet.com>
+Date: Sun, 5 Aug 2012 10:42:12 -0400
+Subject: [PATCH 024/174] Fix spinlock recursion in sdhci-bcm2708.c
+
+---
+ drivers/mmc/host/sdhci-bcm2708.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+--- a/drivers/mmc/host/sdhci-bcm2708.c
++++ b/drivers/mmc/host/sdhci-bcm2708.c
+@@ -643,11 +643,11 @@ void
+ sdhci_bcm2708_platdma_reset(struct sdhci_host *host, struct mmc_data *data)
+ {
+ 	struct sdhci_bcm2708_priv *host_priv = SDHCI_HOST_PRIV(host);
+-	unsigned long flags;
++//	unsigned long flags;
+ 
+ 	BUG_ON(NULL == host);
+ 
+-	spin_lock_irqsave(&host->lock, flags);
++//	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	if (host_priv->dma_wanted) {
+ 		if (NULL == data) {
+@@ -727,7 +727,7 @@ sdhci_bcm2708_platdma_reset(struct sdhci
+ #endif
+ 	}
+ 
+-	spin_unlock_irqrestore(&host->lock, flags);
++//	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ 
+@@ -740,11 +740,11 @@ static void sdhci_bcm2708_dma_complete_i
+ 	int sg_len;
+ 	int sg_ix;
+ 	int sg_todo;
+-	unsigned long flags;
++//	unsigned long flags;
+ 
+ 	BUG_ON(NULL == host);
+ 
+-	spin_lock_irqsave(&host->lock, flags);
++//	spin_lock_irqsave(&host->lock, flags);
+ 	data = host->data;
+ 
+ #ifdef CHECK_DMA_USE
+@@ -769,7 +769,7 @@ static void sdhci_bcm2708_dma_complete_i
+ 
+ 	if (NULL == data) {
+ 		DBG("PDMA unused completion - status 0x%X\n", dma_cs);
+-		spin_unlock_irqrestore(&host->lock, flags);
++//		spin_unlock_irqrestore(&host->lock, flags);
+ 		return;
+ 	}
+ 	sg = data->sg;
+@@ -862,7 +862,7 @@ static void sdhci_bcm2708_dma_complete_i
+ 						SDHCI_INT_SPACE_AVAIL);
+ 		}
+ 	}
+-	spin_unlock_irqrestore(&host->lock, flags);
++//	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ static irqreturn_t sdhci_bcm2708_dma_irq(int irq, void *dev_id)

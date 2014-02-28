@@ -1,0 +1,134 @@
+From dc570a70493daf0ec548ff57f1a1a9fb31caccb7 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Thu, 18 Jul 2013 17:07:26 +0100
+Subject: [PATCH 082/174] dwc_otg: prevent OOPSes during device disconnects
+
+The dwc_otg_urb_enqueue function is thread-unsafe. In particular the
+access of urb->hcpriv, usb_hcd_link_urb_to_ep, dwc_otg_urb->qtd and
+friends does not occur within a critical section and so if a device
+was unplugged during activity there was a high chance that the
+usbcore hub_thread would try to disable the endpoint with partially-
+formed entries in the URB queue. This would result in BUG() or null
+pointer dereferences.
+
+Fix so that access of urb->hcpriv, enqueuing to the hardware and
+adding to usbcore endpoint URB lists is contained within a single
+critical section.
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.c       |  3 ---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c | 14 +++++---------
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c |  6 +-----
+ 3 files changed, 6 insertions(+), 17 deletions(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+@@ -464,7 +464,6 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_
+ 			    dwc_otg_hcd_urb_t * dwc_otg_urb, void **ep_handle,
+ 			    int atomic_alloc)
+ {
+-	dwc_irqflags_t flags;
+ 	int retval = 0;
+ 	uint8_t needs_scheduling = 0;
+ 	dwc_otg_transaction_type_e tr_type;
+@@ -515,12 +514,10 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_
+ 	}
+ 
+ 	if(needs_scheduling) {
+-		DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
+ 		tr_type = dwc_otg_hcd_select_transactions(hcd);
+ 		if (tr_type != DWC_OTG_TRANSACTION_NONE) {
+ 			dwc_otg_hcd_queue_transactions(hcd, tr_type);
+ 		}
+-		DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
+ 	}
+ 	return retval;
+ }
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+@@ -679,9 +679,7 @@ static int dwc_otg_urb_enqueue(struct us
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+ 	struct usb_host_endpoint *ep = urb->ep;
+ #endif
+-#if USB_URB_EP_LINKING
+       	dwc_irqflags_t irqflags;
+-#endif
+         void **ref_ep_hcpriv = &ep->hcpriv;
+ 	dwc_otg_hcd_t *dwc_otg_hcd = hcd_to_dwc_otg_hcd(hcd);
+ 	dwc_otg_hcd_urb_t *dwc_otg_urb;
+@@ -733,7 +731,6 @@ static int dwc_otg_urb_enqueue(struct us
+ 	if(dwc_otg_urb == NULL)
+ 		return -ENOMEM;
+ 
+-	urb->hcpriv = dwc_otg_urb;
+ 	if (!dwc_otg_urb && urb->number_of_packets)
+ 		return -ENOMEM;
+ 
+@@ -775,10 +772,10 @@ static int dwc_otg_urb_enqueue(struct us
+ 						    iso_frame_desc[i].length);
+ 	}
+ 
+-#if USB_URB_EP_LINKING
+ 	DWC_SPINLOCK_IRQSAVE(dwc_otg_hcd->lock, &irqflags);
++	urb->hcpriv = dwc_otg_urb;
++#if USB_URB_EP_LINKING
+ 	retval = usb_hcd_link_urb_to_ep(hcd, urb);
+-	DWC_SPINUNLOCK_IRQRESTORE(dwc_otg_hcd->lock, irqflags);
+ 	if (0 == retval)
+ #endif
+ 	{
+@@ -794,17 +791,16 @@ static int dwc_otg_urb_enqueue(struct us
+ 						urb);
+ 			}
+ 		} else {
+-#if USB_URB_EP_LINKING
+-			dwc_irqflags_t irqflags;
+ 			DWC_DEBUGPL(DBG_HCD, "DWC OTG dwc_otg_hcd_urb_enqueue failed rc %d\n", retval);
+-			DWC_SPINLOCK_IRQSAVE(dwc_otg_hcd->lock, &irqflags);
++#if USB_URB_EP_LINKING
+ 			usb_hcd_unlink_urb_from_ep(hcd, urb);
+-			DWC_SPINUNLOCK_IRQRESTORE(dwc_otg_hcd->lock, irqflags);
+ #endif
++			urb->hcpriv = NULL;
+ 			if (retval == -DWC_E_NO_DEVICE)
+ 				retval = -ENODEV;
+ 		}
+ 	}
++	DWC_SPINUNLOCK_IRQRESTORE(dwc_otg_hcd->lock, irqflags);
+ 	return retval;
+ }
+ 
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+@@ -919,6 +919,7 @@ void dwc_otg_hcd_qtd_init(dwc_otg_qtd_t
+  * QH to place the QTD into.  If it does not find a QH, then it will create a
+  * new QH. If the QH to which the QTD is added is not currently scheduled, it
+  * is placed into the proper schedule based on its EP type.
++ * HCD lock must be held and interrupts must be disabled on entry
+  *
+  * @param[in] qtd The QTD to add
+  * @param[in] hcd The DWC HCD structure
+@@ -931,8 +932,6 @@ int dwc_otg_hcd_qtd_add(dwc_otg_qtd_t *
+ 			dwc_otg_hcd_t * hcd, dwc_otg_qh_t ** qh, int atomic_alloc)
+ {
+ 	int retval = 0;
+-	dwc_irqflags_t flags;
+-
+ 	dwc_otg_hcd_urb_t *urb = qtd->urb;
+ 
+ 	/*
+@@ -946,15 +945,12 @@ int dwc_otg_hcd_qtd_add(dwc_otg_qtd_t *
+ 			goto done;
+ 		}
+ 	}
+-	DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
+ 	retval = dwc_otg_hcd_qh_add(hcd, *qh);
+ 	if (retval == 0) {
+ 		DWC_CIRCLEQ_INSERT_TAIL(&((*qh)->qtd_list), qtd,
+ 					qtd_list_entry);
+ 		qtd->qh = *qh;
+ 	}
+-	DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
+-
+ done:
+ 
+ 	return retval;

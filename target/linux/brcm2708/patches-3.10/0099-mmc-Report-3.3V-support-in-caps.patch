@@ -1,0 +1,316 @@
+From c24b41600f008f5662a467de17644d26a0c269fd Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Sat, 9 Nov 2013 17:42:58 +0000
+Subject: [PATCH 099/174] mmc: Report 3.3V support in caps
+
+sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstream code
+---
+ drivers/mmc/host/sdhci-bcm2708.c |  2 +
+ drivers/mmc/host/sdhci.c         | 82 ++++++++++++++++++++++------------------
+ 2 files changed, 47 insertions(+), 37 deletions(-)
+
+--- a/drivers/mmc/host/sdhci-bcm2708.c
++++ b/drivers/mmc/host/sdhci-bcm2708.c
+@@ -1282,6 +1282,8 @@ static int sdhci_bcm2708_probe(struct pl
+ 	    host_priv->dma_chan, host_priv->dma_chan_base,
+ 	    host_priv->dma_irq);
+ 
++    // we support 3.3V
++    host->caps |= SDHCI_CAN_VDD_330;
+     if (allow_highspeed)
+         host->mmc->caps |= MMC_CAP_SD_HIGHSPEED | MMC_CAP_MMC_HIGHSPEED;
+ 
+--- a/drivers/mmc/host/sdhci.c
++++ b/drivers/mmc/host/sdhci.c
+@@ -210,6 +210,14 @@ static void sdhci_spin_disable_schedule(
+ #endif
+ }
+ 
++
++#undef spin_lock_irqsave
++#define spin_lock_irqsave(host_lock, flags)      sdhci_spin_lock_irqsave(container_of(host_lock, struct sdhci_host, lock), &flags)
++#define spin_unlock_irqrestore(host_lock, flags) sdhci_spin_unlock_irqrestore(container_of(host_lock, struct sdhci_host, lock), flags)
++
++#define spin_lock(host_lock)   sdhci_spin_lock(container_of(host_lock, struct sdhci_host, lock))
++#define spin_unlock(host_lock) sdhci_spin_unlock(container_of(host_lock, struct sdhci_host, lock))
++
+ static void sdhci_clear_set_irqs(struct sdhci_host *host, u32 clear, u32 set)
+ {
+ 	u32 ier;
+@@ -374,7 +382,7 @@ static void sdhci_led_control(struct led
+ 	struct sdhci_host *host = container_of(led, struct sdhci_host, led);
+ 	unsigned long flags;
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	if (host->runtime_suspended)
+ 		goto out;
+@@ -384,7 +392,7 @@ static void sdhci_led_control(struct led
+ 	else
+ 		sdhci_activate_led(host);
+ out:
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ #endif
+ 
+@@ -1419,7 +1427,7 @@ static void sdhci_request(struct mmc_hos
+ 
+ 	sdhci_runtime_pm_get(host);
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	WARN_ON(host->mrq != NULL);
+ 
+@@ -1477,9 +1485,9 @@ static void sdhci_request(struct mmc_hos
+ 					mmc->card->type == MMC_TYPE_MMC ?
+ 					MMC_SEND_TUNING_BLOCK_HS200 :
+ 					MMC_SEND_TUNING_BLOCK;
+-				sdhci_spin_unlock_irqrestore(host, flags);
++				spin_unlock_irqrestore(&host->lock, flags);
+ 				sdhci_execute_tuning(mmc, tuning_opcode);
+-				sdhci_spin_lock_irqsave(host, &flags);
++				spin_lock_irqsave(&host->lock, flags);
+ 
+ 				/* Restore original mmc_request structure */
+ 				host->mrq = mrq;
+@@ -1493,7 +1501,7 @@ static void sdhci_request(struct mmc_hos
+ 	}
+ 
+ 	mmiowb();
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
+@@ -1502,10 +1510,10 @@ static void sdhci_do_set_ios(struct sdhc
+ 	int vdd_bit = -1;
+ 	u8 ctrl;
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	if (host->flags & SDHCI_DEVICE_DEAD) {
+-		sdhci_spin_unlock_irqrestore(host, flags);
++		spin_unlock_irqrestore(&host->lock, flags);
+ 		if (host->vmmc && ios->power_mode == MMC_POWER_OFF)
+ 			mmc_regulator_set_ocr(host->mmc, host->vmmc, 0);
+ 		return;
+@@ -1532,9 +1540,9 @@ static void sdhci_do_set_ios(struct sdhc
+ 		vdd_bit = sdhci_set_power(host, ios->vdd);
+ 
+ 	if (host->vmmc && vdd_bit != -1) {
+-		sdhci_spin_unlock_irqrestore(host, flags);
++		spin_unlock_irqrestore(&host->lock, flags);
+ 		mmc_regulator_set_ocr(host->mmc, host->vmmc, vdd_bit);
+-		sdhci_spin_lock_irqsave(host, &flags);
++		spin_lock_irqsave(&host->lock, flags);
+ 	}
+ 
+ 	if (host->ops->platform_send_init_74_clocks)
+@@ -1672,7 +1680,7 @@ static void sdhci_do_set_ios(struct sdhc
+ 		sdhci_reset(host, SDHCI_RESET_CMD | SDHCI_RESET_DATA);
+ 
+ 	mmiowb();
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ static void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -1720,7 +1728,7 @@ static int sdhci_check_ro(struct sdhci_h
+ 	unsigned long flags;
+ 	int is_readonly;
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	if (host->flags & SDHCI_DEVICE_DEAD)
+ 		is_readonly = 0;
+@@ -1730,7 +1738,7 @@ static int sdhci_check_ro(struct sdhci_h
+ 		is_readonly = !(sdhci_readl(host, SDHCI_PRESENT_STATE)
+ 				& SDHCI_WRITE_PROTECT);
+ 
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ 
+ 	/* This quirk needs to be replaced by a callback-function later */
+ 	return host->quirks & SDHCI_QUIRK_INVERTED_WRITE_PROTECT ?
+@@ -1803,9 +1811,9 @@ static void sdhci_enable_sdio_irq(struct
+ 	struct sdhci_host *host = mmc_priv(mmc);
+ 	unsigned long flags;
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 	sdhci_enable_sdio_irq_nolock(host, enable);
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ static int sdhci_do_start_signal_voltage_switch(struct sdhci_host *host,
+@@ -2149,7 +2157,7 @@ static void sdhci_card_event(struct mmc_
+ 	struct sdhci_host *host = mmc_priv(mmc);
+ 	unsigned long flags;
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	/* Check host->mrq first in case we are runtime suspended */
+ 	if (host->mrq &&
+@@ -2166,7 +2174,7 @@ static void sdhci_card_event(struct mmc_
+ 		tasklet_schedule(&host->finish_tasklet);
+ 	}
+ 
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ static const struct mmc_host_ops sdhci_ops = {
+@@ -2205,14 +2213,14 @@ static void sdhci_tasklet_finish(unsigne
+ 
+ 	host = (struct sdhci_host*)param;
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 
+         /*
+          * If this tasklet gets rescheduled while running, it will
+          * be run again afterwards but without any active request.
+          */
+ 	if (!host->mrq) {
+-		sdhci_spin_unlock_irqrestore(host, flags);
++		spin_unlock_irqrestore(&host->lock, flags);
+ 		return;
+ 	}
+ 
+@@ -2250,7 +2258,7 @@ static void sdhci_tasklet_finish(unsigne
+ #endif
+ 
+ 	mmiowb();
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ 
+ 	mmc_request_done(host->mmc, mrq);
+ 	sdhci_runtime_pm_put(host);
+@@ -2263,7 +2271,7 @@ static void sdhci_timeout_timer(unsigned
+ 
+ 	host = (struct sdhci_host*)data;
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	if (host->mrq) {
+ 		pr_err("%s: Timeout waiting for hardware "
+@@ -2284,7 +2292,7 @@ static void sdhci_timeout_timer(unsigned
+ 	}
+ 
+ 	mmiowb();
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ static void sdhci_tuning_timer(unsigned long data)
+@@ -2294,11 +2302,11 @@ static void sdhci_tuning_timer(unsigned
+ 
+ 	host = (struct sdhci_host *)data;
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	host->flags |= SDHCI_NEEDS_RETUNING;
+ 
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ /*****************************************************************************\
+@@ -2522,10 +2530,10 @@ static irqreturn_t sdhci_irq(int irq, vo
+ 	u32 intmask, unexpected = 0;
+ 	int cardint = 0, max_loops = 16;
+ 
+-	sdhci_spin_lock(host);
++	spin_lock(&host->lock);
+ 
+ 	if (host->runtime_suspended) {
+-		sdhci_spin_unlock(host);
++		spin_unlock(&host->lock);
+ 		pr_warning("%s: got irq while runtime suspended\n",
+ 		       mmc_hostname(host->mmc));
+ 		return IRQ_HANDLED;
+@@ -2629,7 +2637,7 @@ again:
+ 	if (intmask && --max_loops)
+ 		goto again;
+ out:
+-	sdhci_spin_unlock(host);
++	spin_unlock(&host->lock);
+ 
+ 	if (unexpected) {
+ 		pr_err("%s: Unexpected interrupt 0x%08x.\n",
+@@ -2791,15 +2799,15 @@ int sdhci_runtime_suspend_host(struct sd
+ 		host->flags &= ~SDHCI_NEEDS_RETUNING;
+ 	}
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 	sdhci_mask_irqs(host, SDHCI_INT_ALL_MASK);
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ 
+ 	synchronize_irq(host->irq);
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 	host->runtime_suspended = true;
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ 
+ 	return ret;
+ }
+@@ -2825,16 +2833,16 @@ int sdhci_runtime_resume_host(struct sdh
+ 	sdhci_do_start_signal_voltage_switch(host, &host->mmc->ios);
+ 	if ((host_flags & SDHCI_PV_ENABLED) &&
+ 		!(host->quirks2 & SDHCI_QUIRK2_PRESET_VALUE_BROKEN)) {
+-		sdhci_spin_lock_irqsave(host, &flags);
++		spin_lock_irqsave(&host->lock, flags);
+ 		sdhci_enable_preset_value(host, true);
+-		sdhci_spin_unlock_irqrestore(host, flags);
++		spin_unlock_irqrestore(&host->lock, flags);
+ 	}
+ 
+ 	/* Set the re-tuning expiration flag */
+ 	if (host->flags & SDHCI_USING_RETUNING_TIMER)
+ 		host->flags |= SDHCI_NEEDS_RETUNING;
+ 
+-	sdhci_spin_lock_irqsave(host, &flags);
++	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	host->runtime_suspended = false;
+ 
+@@ -2845,7 +2853,7 @@ int sdhci_runtime_resume_host(struct sdh
+ 	/* Enable Card Detection */
+ 	sdhci_enable_card_detection(host);
+ 
+-	sdhci_spin_unlock_irqrestore(host, flags);
++	spin_unlock_irqrestore(&host->lock, flags);
+ 
+ 	return ret;
+ }
+@@ -3401,7 +3409,7 @@ void sdhci_remove_host(struct sdhci_host
+ 	unsigned long flags;
+ 
+ 	if (dead) {
+-		sdhci_spin_lock_irqsave(host, &flags);
++		spin_lock_irqsave(&host->lock, flags);
+ 
+ 		host->flags |= SDHCI_DEVICE_DEAD;
+ 
+@@ -3413,7 +3421,7 @@ void sdhci_remove_host(struct sdhci_host
+ 			tasklet_schedule(&host->finish_tasklet);
+ 		}
+ 
+-		sdhci_spin_unlock_irqrestore(host, flags);
++		spin_unlock_irqrestore(&host->lock, flags);
+ 	}
+ 
+ 	sdhci_disable_card_detection(host);

@@ -1,0 +1,37 @@
+From afd8800a96b940049ac37fb90cc24deeeea5c57e Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dsteve@broadcom.com>
+Date: Mon, 9 Dec 2013 17:29:39 +0000
+Subject: [PATCH 138/174] V4L2: Fix information advertised through g_vidfmt
+
+Width and height were being stored based on incorrect
+values.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -1028,13 +1028,19 @@ static int mmal_setup_components(struct
+ 		if (!ret) {
+ 			dev->capture.fmt = mfmt;
+ 			dev->capture.stride = f->fmt.pix.bytesperline;
+-			dev->capture.width = port->es.video.crop.width;
+-			dev->capture.height = port->es.video.crop.height;
++			dev->capture.width = camera_port->es.video.crop.width;
++			dev->capture.height = camera_port->es.video.crop.height;
+ 
+ 			/* select port for capture */
+ 			dev->capture.port = port;
+ 			dev->capture.camera_port = camera_port;
+ 			dev->capture.encode_component = encode_component;
++			v4l2_dbg(1, bcm2835_v4l2_debug,
++				 &dev->v4l2_dev,
++				"Set dev->capture.fmt %08X, %dx%d, stride %d",
++				port->format.encoding,
++				dev->capture.width, dev->capture.height,
++				dev->capture.stride);
+ 		}
+ 	}
+ 

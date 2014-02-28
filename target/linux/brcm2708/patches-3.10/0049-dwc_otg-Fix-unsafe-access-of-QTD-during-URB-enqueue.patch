@@ -1,0 +1,82 @@
+From 08e3e98d28e32852e43bf25fb3e64bb3f5e6af4d Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Fri, 15 Feb 2013 22:36:47 +0000
+Subject: [PATCH 049/174] dwc_otg: Fix unsafe access of QTD during URB enqueue
+
+In dwc_otg_hcd_urb_enqueue during qtd creation, it was possible that the
+transaction could complete almost immediately after the qtd was assigned
+to a host channel during URB enqueue, which meant the qtd pointer was no
+longer valid having been completed and removed. Usually, this resulted in
+an OOPS during URB submission. By predetermining whether transactions
+need to be queued or not, this unsafe pointer access is avoided.
+
+This bug was only evident on the Pi model A where a device was attached
+that had no periodic endpoints (e.g. USB pendrive or some wlan devices).
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.c       | 23 ++++++++++++-----------
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c |  2 +-
+ 2 files changed, 13 insertions(+), 12 deletions(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+@@ -462,6 +462,8 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_
+ {
+ 	dwc_irqflags_t flags;
+ 	int retval = 0;
++	uint8_t needs_scheduling = 0;
++	dwc_otg_transaction_type_e tr_type;
+ 	dwc_otg_qtd_t *qtd;
+ 	gintmsk_data_t intr_mask = {.d32 = 0 };
+ 
+@@ -493,22 +495,22 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_
+ 		return -DWC_E_NO_MEMORY;
+ 	}
+ #endif
+-	retval =
+-	    dwc_otg_hcd_qtd_add(qtd, hcd, (dwc_otg_qh_t **) ep_handle, atomic_alloc);
++	intr_mask.d32 = DWC_READ_REG32(&hcd->core_if->core_global_regs->gintmsk);
++	if(!intr_mask.b.sofintr) needs_scheduling = 1;
++	if((((dwc_otg_qh_t *)ep_handle)->ep_type == UE_BULK) && !(qtd->urb->flags & URB_GIVEBACK_ASAP))
++		/* Do not schedule SG transactions until qtd has URB_GIVEBACK_ASAP set */
++		needs_scheduling = 0;
++
++	retval = dwc_otg_hcd_qtd_add(qtd, hcd, (dwc_otg_qh_t **) ep_handle, atomic_alloc);
+             // creates a new queue in ep_handle if it doesn't exist already
+ 	if (retval < 0) {
+ 		DWC_ERROR("DWC OTG HCD URB Enqueue failed adding QTD. "
+ 			  "Error status %d\n", retval);
+ 		dwc_otg_hcd_qtd_free(qtd);
++		return retval;
+ 	}
+-	intr_mask.d32 = DWC_READ_REG32(&hcd->core_if->core_global_regs->gintmsk);
+-	if (!intr_mask.b.sofintr && retval == 0) {
+-		dwc_otg_transaction_type_e tr_type;
+-		if ((qtd->qh->ep_type == UE_BULK)
+-		    && !(qtd->urb->flags & URB_GIVEBACK_ASAP)) {
+-			/* Do not schedule SG transactions until qtd has URB_GIVEBACK_ASAP set */
+-			return 0;
+-		}
++
++	if(needs_scheduling) {
+ 		DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
+ 		tr_type = dwc_otg_hcd_select_transactions(hcd);
+ 		if (tr_type != DWC_OTG_TRANSACTION_NONE) {
+@@ -516,7 +518,6 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_
+ 		}
+ 		DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
+ 	}
+-
+ 	return retval;
+ }
+ 
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+@@ -937,7 +937,7 @@ int dwc_otg_hcd_qtd_add(dwc_otg_qtd_t *
+ 	if (*qh == NULL) {
+ 		*qh = dwc_otg_hcd_qh_create(hcd, urb, atomic_alloc);
+ 		if (*qh == NULL) {
+-			retval = -1;
++			retval = -DWC_E_NO_MEMORY;
+ 			goto done;
+ 		}
+ 	}

@@ -1,0 +1,26 @@
+From 445255441aa03cca3d1318d1e7ff58872c91c645 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Fri, 2 Aug 2013 10:04:18 +0100
+Subject: [PATCH 086/174] dwc_otg: fix potential sleep while atomic during urb
+ enqueue
+
+Fixes a regression introduced with eb1b482a. Kmalloc called from
+dwc_otg_hcd_qtd_add / dwc_otg_hcd_qtd_create did not always have
+the GPF_ATOMIC flag set. Force this flag when inside the larger
+critical section.
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+@@ -781,8 +781,7 @@ static int dwc_otg_urb_enqueue(struct us
+ 	{
+ 		retval = dwc_otg_hcd_urb_enqueue(dwc_otg_hcd, dwc_otg_urb,
+ 						/*(dwc_otg_qh_t **)*/
+-						ref_ep_hcpriv,
+-						mem_flags == GFP_ATOMIC ? 1 : 0);
++						ref_ep_hcpriv, 1);
+ 		if (0 == retval) {
+ 			if (alloc_bandwidth) {
+ 				allocate_bus_bandwidth(hcd,

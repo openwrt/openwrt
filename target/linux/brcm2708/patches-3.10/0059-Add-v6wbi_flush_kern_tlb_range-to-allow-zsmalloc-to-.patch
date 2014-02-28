@@ -1,0 +1,20 @@
+From f7d501dfb97c2af4dd1f60f85e94bf110f69834c Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 16 Apr 2013 15:36:01 +0100
+Subject: [PATCH 059/174] Add v6wbi_flush_kern_tlb_range to allow zsmalloc to
+ be built as a module
+
+---
+ arch/arm/kernel/armksyms.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/kernel/armksyms.c
++++ b/arch/arm/kernel/armksyms.c
+@@ -156,3 +156,7 @@ EXPORT_SYMBOL(__gnu_mcount_nc);
+ #ifdef CONFIG_ARM_PATCH_PHYS_VIRT
+ EXPORT_SYMBOL(__pv_phys_offset);
+ #endif
++
++extern void v6wbi_flush_kern_tlb_range(void);
++EXPORT_SYMBOL(v6wbi_flush_kern_tlb_range);
++

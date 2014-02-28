@@ -1,0 +1,189 @@
+From 75f2608b89d80e627d50aca40f2124253a8275b0 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dsteve@broadcom.com>
+Date: Mon, 9 Dec 2013 10:58:01 +0000
+Subject: [PATCH 131/174] V4L2: Fix EV values. Add manual shutter speed control
+
+V4L2 EV values should be in units of 1/1000. Corrected.
+Add support for V4L2_CID_EXPOSURE_ABSOLUTE which should
+give manual shutter control. Requires manual exposure mode
+to be selected first.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.h  |  4 +-
+ drivers/media/platform/bcm2835/controls.c        | 94 ++++++++++++++++++------
+ drivers/media/platform/bcm2835/mmal-parameters.h |  1 +
+ 3 files changed, 76 insertions(+), 23 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.h
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.h
+@@ -15,7 +15,7 @@
+  * core driver device
+  */
+ 
+-#define V4L2_CTRL_COUNT 18 /* number of v4l controls */
++#define V4L2_CTRL_COUNT 19 /* number of v4l controls */
+ 
+ enum {
+ 	MMAL_COMPONENT_CAMERA = 0,
+@@ -51,6 +51,8 @@ struct bm2835_mmal_dev {
+ 	struct mmal_colourfx      colourfx;
+ 	int                       hflip;
+ 	int                       vflip;
++	enum mmal_parameter_exposuremode exposure_mode;
++	unsigned int		  manual_shutter_speed;
+ 
+ 	/* allocated mmal instance and components */
+ 	struct vchiq_mmal_instance   *instance;
+--- a/drivers/media/platform/bcm2835/controls.c
++++ b/drivers/media/platform/bcm2835/controls.c
+@@ -30,11 +30,23 @@
+ #include "mmal-parameters.h"
+ #include "bcm2835-camera.h"
+ 
+-/* The supported V4L2_CID_AUTO_EXPOSURE_BIAS values are from -24 to +24.
+- * These are in 1/6th increments so the effective range is -4.0EV to +4.0EV.
++/* The supported V4L2_CID_AUTO_EXPOSURE_BIAS values are from -4.0 to +4.0.
++ * MMAL values are in 1/6th increments so the MMAL range is -24 to +24.
++ * V4L2 docs say value "is expressed in terms of EV, drivers should interpret
++ * the values as 0.001 EV units, where the value 1000 stands for +1 EV."
++ * V4L2 is limited to a max of 32 values in a menu, so count in 1/3rds from
++ * -4 to +4
+  */
+ static const s64 ev_bias_qmenu[] = {
+-	-24, -21, -18, -15, -12, -9, -6, -3, 0, 3, 6, 9, 12, 15, 18, 21, 24
++	-4000, -3667, -3333,
++	-3000, -2667, -2333,
++	-2000, -1667, -1333,
++	-1000,  -667,  -333,
++	    0,   333,   667,
++	 1000,  1333,  1667,
++	 2000,  2333,  2667,
++	 3000,  3333,  3667,
++	 4000
+ };
+ 
+ /* Supported ISO values
+@@ -166,6 +178,22 @@ static int ctrl_set_value(struct bm2835_
+ 					     &u32_value, sizeof(u32_value));
+ }
+ 
++static int ctrl_set_value_ev(struct bm2835_mmal_dev *dev,
++		      struct v4l2_ctrl *ctrl,
++		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
++{
++	s32 s32_value;
++	struct vchiq_mmal_port *control;
++
++	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
++
++	s32_value = (ctrl->val-12)*2;	/* Convert from index to 1/6ths */
++
++	return vchiq_mmal_port_parameter_set(dev->instance, control,
++					     mmal_ctrl->mmal_id,
++					     &s32_value, sizeof(s32_value));
++}
++
+ static int ctrl_set_rotate(struct bm2835_mmal_dev *dev,
+ 		      struct v4l2_ctrl *ctrl,
+ 		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+@@ -245,34 +273,50 @@ static int ctrl_set_exposure(struct bm28
+ 		      struct v4l2_ctrl *ctrl,
+ 		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+ {
+-	u32 u32_value;
++	enum mmal_parameter_exposuremode exp_mode = dev->exposure_mode;
++	u32 shutter_speed = 0;
+ 	struct vchiq_mmal_port *control;
++	int ret = 0;
+ 
+ 	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
+ 
+-	switch (ctrl->val) {
+-	case V4L2_EXPOSURE_AUTO:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_AUTO;
+-		break;
+-
+-	case V4L2_EXPOSURE_MANUAL:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_OFF;
+-		break;
+-
+-	case V4L2_EXPOSURE_SHUTTER_PRIORITY:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_SPORTS;
+-		break;
+-
+-	case V4L2_EXPOSURE_APERTURE_PRIORITY:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_NIGHT;
+-		break;
++	if (mmal_ctrl->mmal_id == MMAL_PARAMETER_SHUTTER_SPEED)	{
++		/* V4L2 is in 100usec increments.
++		 * MMAL is 1usec.
++		 */
++		dev->manual_shutter_speed = ctrl->val * 100;
++	} else if (mmal_ctrl->mmal_id == MMAL_PARAMETER_EXPOSURE_MODE) {
++		switch (ctrl->val) {
++		case V4L2_EXPOSURE_AUTO:
++			exp_mode = MMAL_PARAM_EXPOSUREMODE_AUTO;
++			break;
++
++		case V4L2_EXPOSURE_MANUAL:
++			exp_mode = MMAL_PARAM_EXPOSUREMODE_OFF;
++			break;
++
++		case V4L2_EXPOSURE_SHUTTER_PRIORITY:
++			exp_mode = MMAL_PARAM_EXPOSUREMODE_SPORTS;
++			break;
++
++		case V4L2_EXPOSURE_APERTURE_PRIORITY:
++			exp_mode = MMAL_PARAM_EXPOSUREMODE_NIGHT;
++			break;
+ 
++		}
++		dev->exposure_mode = exp_mode;
+ 	}
+ 
+-	/* todo: what about the other ten modes there are MMAL parameters for */
+-	return vchiq_mmal_port_parameter_set(dev->instance, control,
+-					     mmal_ctrl->mmal_id,
+-					     &u32_value, sizeof(u32_value));
++	if (dev->exposure_mode == MMAL_PARAM_EXPOSUREMODE_OFF)
++		shutter_speed = dev->manual_shutter_speed;
++
++	ret = vchiq_mmal_port_parameter_set(dev->instance, control,
++				     MMAL_PARAMETER_SHUTTER_SPEED,
++				     &shutter_speed, sizeof(shutter_speed));
++	ret += vchiq_mmal_port_parameter_set(dev->instance, control,
++					     MMAL_PARAMETER_EXPOSURE_MODE,
++					     &exp_mode, sizeof(u32));
++	return ret;
+ }
+ 
+ static int ctrl_set_metering_mode(struct bm2835_mmal_dev *dev,
+@@ -578,10 +622,16 @@ static const struct bm2835_mmal_v4l2_ctr
+ 	},
+  */
+ 	{
++		V4L2_CID_EXPOSURE_ABSOLUTE, MMAL_CONTROL_TYPE_STD,
++		/* Units of 100usecs */
++		1, 1*1000*10, 100*10, 1, NULL,
++		MMAL_PARAMETER_SHUTTER_SPEED, &ctrl_set_exposure
++	},
++	{
+ 		V4L2_CID_AUTO_EXPOSURE_BIAS, MMAL_CONTROL_TYPE_INT_MENU,
+ 		0, ARRAY_SIZE(ev_bias_qmenu) - 1,
+ 		(ARRAY_SIZE(ev_bias_qmenu)+1)/2 - 1, 0, ev_bias_qmenu,
+-		MMAL_PARAMETER_EXPOSURE_COMP, &ctrl_set_value
++		MMAL_PARAMETER_EXPOSURE_COMP, &ctrl_set_value_ev
+ 	},
+ 	{
+ 		V4L2_CID_EXPOSURE_METERING,
+--- a/drivers/media/platform/bcm2835/mmal-parameters.h
++++ b/drivers/media/platform/bcm2835/mmal-parameters.h
+@@ -161,6 +161,7 @@ enum mmal_parameter_camera_type {
+ 	MMAL_PARAMETER_SW_SHARPEN_DISABLE, /**< @ref MMAL_PARAMETER_BOOLEAN_T */
+ 	MMAL_PARAMETER_FLASH_REQUIRED, /**< @ref MMAL_PARAMETER_BOOLEAN_T */
+ 	MMAL_PARAMETER_SW_SATURATION_DISABLE, /**< @ref MMAL_PARAMETER_BOOLEAN_T */
++	MMAL_PARAMETER_SHUTTER_SPEED              /**< Takes a @ref MMAL_PARAMETER_UINT32_T */
+ };
+ 
+ enum mmal_parameter_camera_config_timestamp_mode {

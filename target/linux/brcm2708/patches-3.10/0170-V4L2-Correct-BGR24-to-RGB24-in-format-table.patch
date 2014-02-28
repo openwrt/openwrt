@@ -1,0 +1,23 @@
+From c07faead7a537b84fda682c8f62eea977814af31 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dsteve@broadcom.com>
+Date: Wed, 12 Feb 2014 11:39:20 +0000
+Subject: [PATCH 170/174] V4L2: Correct BGR24 to RGB24 in format table
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -84,8 +84,8 @@ static struct mmal_fmt formats[] = {
+ 	 .mmal_component = MMAL_COMPONENT_CAMERA,
+ 	 },
+ 	{
+-	 .name = "RGB24 (BE)",
+-	 .fourcc = V4L2_PIX_FMT_BGR24,
++	 .name = "RGB24 (LE)",
++	 .fourcc = V4L2_PIX_FMT_RGB24,
+ 	 .flags = 0,
+ 	 .mmal = MMAL_ENCODING_BGR24,
+ 	 .depth = 24,

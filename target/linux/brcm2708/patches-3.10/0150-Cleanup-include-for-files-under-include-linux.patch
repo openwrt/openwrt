@@ -1,0 +1,32 @@
+From d8088f3740de018fd6ae975f290db057194fe243 Mon Sep 17 00:00:00 2001
+From: Daniel Santos <daniel.santos@pobox.com>
+Date: Fri, 3 Jan 2014 17:24:46 -0600
+Subject: [PATCH 150/174] Cleanup include for files under include/linux
+
+Adding include/linux/anything is bad form. This fixes this prior to
+other changes that touches this Makefile.
+---
+ drivers/char/broadcom/vc_cma/Makefile | 1 -
+ drivers/char/broadcom/vc_cma/vc_cma.c | 2 +-
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/char/broadcom/vc_cma/Makefile
++++ b/drivers/char/broadcom/vc_cma/Makefile
+@@ -1,6 +1,5 @@
+ EXTRA_CFLAGS  += -Wall -Wstrict-prototypes -Wno-trigraphs
+ EXTRA_CFLAGS  += -Werror
+-EXTRA_CFLAGS  += -I"include/linux/broadcom"
+ EXTRA_CFLAGS  += -I"drivers/misc/vc04_services"
+ EXTRA_CFLAGS  += -I"drivers/misc/vc04_services/interface/vchi"
+ EXTRA_CFLAGS  += -I"drivers/misc/vc04_services/interface/vchiq_arm"
+--- a/drivers/char/broadcom/vc_cma/vc_cma.c
++++ b/drivers/char/broadcom/vc_cma/vc_cma.c
+@@ -46,7 +46,7 @@
+ #include <linux/uaccess.h>
+ #include <asm/cacheflush.h>
+ 
+-#include "vc_cma.h"
++#include <linux/broadcom/vc_cma.h>
+ 
+ #include "vchiq_util.h"
+ #include "vchiq_connected.h"

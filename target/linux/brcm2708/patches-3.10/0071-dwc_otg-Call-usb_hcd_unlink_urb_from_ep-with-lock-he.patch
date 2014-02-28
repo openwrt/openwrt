@@ -1,0 +1,82 @@
+From 9b8c30f46a381533c92a6424ff25f9014d8802b0 Mon Sep 17 00:00:00 2001
+From: Mike Bradley <mike.bradley@incanetworks.com>
+Date: Mon, 17 Jun 2013 11:31:42 -0700
+Subject: [PATCH 071/174] dwc_otg: Call usb_hcd_unlink_urb_from_ep with lock
+ held in completion handler
+
+usb_hcd_unlink_urb_from_ep must be called with the HCD lock held.  Calling it
+asynchronously in the tasklet was not safe (regression in
+c4564d4a1a0a9b10d4419e48239f5d99e88d2667).
+
+This change unlinks it from the endpoint prior to queueing it for handling in
+the tasklet, and also adds a check to ensure the urb is OK to be unlinked
+before doing so.
+
+NULL pointer dereference kernel oopses had been observed in usb_hcd_giveback_urb
+when a USB device was unplugged/replugged during data transfer.  This effect
+was reproduced using automated USB port power control, hundreds of replug
+events were performed during active transfers to confirm that the problem was
+eliminated.
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.c       |  2 +-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c | 18 ++++++++++++++----
+ 2 files changed, 15 insertions(+), 5 deletions(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+@@ -704,6 +704,7 @@ static void completion_tasklet_func(void
+ 	urb_tq_entry_t *item;
+ 	dwc_irqflags_t flags;
+ 
++	/* This could just be spin_lock_irq */
+ 	DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
+ 	while (!DWC_TAILQ_EMPTY(&hcd->completed_urb_list)) {
+ 		item = DWC_TAILQ_FIRST(&hcd->completed_urb_list);
+@@ -713,7 +714,6 @@ static void completion_tasklet_func(void
+ 		DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
+ 		DWC_FREE(item);
+ 
+-		usb_hcd_unlink_urb_from_ep(hcd->priv, urb);
+ 		usb_hcd_giveback_urb(hcd->priv, urb, urb->status);
+ 
+ 		DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+@@ -265,13 +265,15 @@ static void free_bus_bandwidth(struct us
+ 
+ /**
+  * Sets the final status of an URB and returns it to the device driver. Any
+- * required cleanup of the URB is performed.
++ * required cleanup of the URB is performed.  The HCD lock should be held on
++ * entry.
+  */
+ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
+ 		     dwc_otg_hcd_urb_t * dwc_otg_urb, int32_t status)
+ {
+ 	struct urb *urb = (struct urb *)urb_handle;
+ 	urb_tq_entry_t *new_entry;
++	int rc = 0;
+ 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
+ 		DWC_PRINTF("%s: urb %p, device %d, ep %d %s, status=%d\n",
+ 			   __func__, urb, usb_pipedevice(urb->pipe),
+@@ -363,9 +365,17 @@ static int _complete(dwc_otg_hcd_t * hcd
+ #endif
+ 	} else {
+ 		new_entry->urb = urb;
+-		DWC_TAILQ_INSERT_TAIL(&hcd->completed_urb_list, new_entry,
+-					urb_tq_entries);
+-		DWC_TASK_HI_SCHEDULE(hcd->completion_tasklet);
++#if USB_URB_EP_LINKING
++		rc = usb_hcd_check_unlink_urb(dwc_otg_hcd_to_hcd(hcd), urb, urb->status);
++		if(0 == rc) {
++			usb_hcd_unlink_urb_from_ep(dwc_otg_hcd_to_hcd(hcd), urb);
++		}
++#endif
++		if(0 == rc) {
++			DWC_TAILQ_INSERT_TAIL(&hcd->completed_urb_list, new_entry,
++						urb_tq_entries);
++			DWC_TASK_HI_SCHEDULE(hcd->completion_tasklet);
++		}
+ 	}
+ 	return 0;
+ }

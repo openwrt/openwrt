@@ -1,0 +1,138 @@
+From 974102eef65cd2576157b089db47386c5b29dee6 Mon Sep 17 00:00:00 2001
+From: Vincent Sanders <vincent.sanders@collabora.co.uk>
+Date: Mon, 2 Sep 2013 16:44:57 +0100
+Subject: [PATCH 108/174] vchiq: create_pagelist copes with vmalloc memory
+
+Signed-off-by: Daniel Stone <daniels@collabora.com>
+---
+ .../interface/vchiq_arm/vchiq_2835_arm.c           | 83 ++++++++++++++--------
+ 1 file changed, 53 insertions(+), 30 deletions(-)
+
+--- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
+@@ -374,6 +374,7 @@ create_pagelist(char __user *buf, size_t
+ 	unsigned int num_pages, offset, i;
+ 	char *addr, *base_addr, *next_addr;
+ 	int run, addridx, actual_pages;
++        unsigned long *need_release;
+ 
+ 	offset = (unsigned int)buf & (PAGE_SIZE - 1);
+ 	num_pages = (count + offset + PAGE_SIZE - 1) / PAGE_SIZE;
+@@ -384,9 +385,10 @@ create_pagelist(char __user *buf, size_t
+ 	** list
+ 	*/
+ 	pagelist = kmalloc(sizeof(PAGELIST_T) +
+-		(num_pages * sizeof(unsigned long)) +
+-		(num_pages * sizeof(pages[0])),
+-		GFP_KERNEL);
++                           (num_pages * sizeof(unsigned long)) +
++                           sizeof(unsigned long) +
++                           (num_pages * sizeof(pages[0])),
++                           GFP_KERNEL);
+ 
+ 	vchiq_log_trace(vchiq_arm_log_level,
+ 		"create_pagelist - %x", (unsigned int)pagelist);
+@@ -394,28 +396,44 @@ create_pagelist(char __user *buf, size_t
+ 		return -ENOMEM;
+ 
+ 	addrs = pagelist->addrs;
+-	pages = (struct page **)(addrs + num_pages);
++        need_release = (unsigned long *)(addrs + num_pages);
++	pages = (struct page **)(addrs + num_pages + 1);
+ 
+-	down_read(&task->mm->mmap_sem);
+-	actual_pages = get_user_pages(task, task->mm,
+-		(unsigned long)buf & ~(PAGE_SIZE - 1), num_pages,
+-		(type == PAGELIST_READ) /*Write */ , 0 /*Force */ ,
+-		pages, NULL /*vmas */);
+-	up_read(&task->mm->mmap_sem);
+-
+-   if (actual_pages != num_pages)
+-   {
+-      /* This is probably due to the process being killed */
+-      while (actual_pages > 0)
+-      {
+-         actual_pages--;
+-         page_cache_release(pages[actual_pages]);
+-      }
+-      kfree(pagelist);
+-      if (actual_pages == 0)
+-         actual_pages = -ENOMEM;
+-      return actual_pages;
+-   }
++	if (is_vmalloc_addr(buf)) {
++		for (actual_pages = 0; actual_pages < num_pages; actual_pages++) {
++			pages[actual_pages] = vmalloc_to_page(buf + (actual_pages * PAGE_SIZE));
++		}
++                *need_release = 0; /* do not try and release vmalloc pages */
++	} else {
++		down_read(&task->mm->mmap_sem);
++		actual_pages = get_user_pages(task, task->mm,
++				          (unsigned long)buf & ~(PAGE_SIZE - 1),
++					  num_pages,
++					  (type == PAGELIST_READ) /*Write */ ,
++					  0 /*Force */ ,
++					  pages,
++					  NULL /*vmas */);
++		up_read(&task->mm->mmap_sem);
++
++		if (actual_pages != num_pages) {
++			vchiq_log_info(vchiq_arm_log_level,
++				       "create_pagelist - only %d/%d pages locked",
++				       actual_pages,
++				       num_pages);
++
++			/* This is probably due to the process being killed */
++			while (actual_pages > 0)
++			{
++				actual_pages--;
++				page_cache_release(pages[actual_pages]);
++			}
++			kfree(pagelist);
++			if (actual_pages == 0)
++				actual_pages = -ENOMEM;
++			return actual_pages;
++		}
++                *need_release = 1; /* release user pages */
++	}
+ 
+ 	pagelist->length = count;
+ 	pagelist->type = type;
+@@ -482,6 +500,7 @@ create_pagelist(char __user *buf, size_t
+ static void
+ free_pagelist(PAGELIST_T *pagelist, int actual)
+ {
++        unsigned long *need_release;
+ 	struct page **pages;
+ 	unsigned int num_pages, i;
+ 
+@@ -492,7 +511,8 @@ free_pagelist(PAGELIST_T *pagelist, int
+ 		(pagelist->length + pagelist->offset + PAGE_SIZE - 1) /
+ 		PAGE_SIZE;
+ 
+-	pages = (struct page **)(pagelist->addrs + num_pages);
++        need_release = (unsigned long *)(pagelist->addrs + num_pages);
++	pages = (struct page **)(pagelist->addrs + num_pages + 1);
+ 
+ 	/* Deal with any partial cache lines (fragments) */
+ 	if (pagelist->type >= PAGELIST_READ_WITH_FRAGMENTS) {
+@@ -528,11 +548,14 @@ free_pagelist(PAGELIST_T *pagelist, int
+ 		up(&g_free_fragments_sema);
+ 	}
+ 
+-	for (i = 0; i < num_pages; i++) {
+-		if (pagelist->type != PAGELIST_WRITE)
+-			set_page_dirty(pages[i]);
+-		page_cache_release(pages[i]);
+-	}
++        if (*need_release) {
++		for (i = 0; i < num_pages; i++) {
++			if (pagelist->type != PAGELIST_WRITE)
++				set_page_dirty(pages[i]);
++
++			page_cache_release(pages[i]);
++		}
++        }
+ 
+ 	kfree(pagelist);
+ }

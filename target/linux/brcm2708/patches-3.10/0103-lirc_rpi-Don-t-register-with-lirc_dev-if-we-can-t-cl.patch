@@ -1,0 +1,58 @@
+From 72ce4c24efeac1b3260b3b10ec7cbc2701dcef5a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Du=C5=A1an=20Dragi=C4=87?= <dragic.dusan@gmail.com>
+Date: Wed, 25 Sep 2013 18:44:05 +0200
+Subject: [PATCH 103/174] lirc_rpi: Don't register with lirc_dev if we can't
+ claim gpio pins
+
+Currently the lirc_rpi module always registers a new lirc device.
+In case the gpio pins can't be claimed it exits without unregistering.
+
+Skip registering with lirc_dev if pins can't be claimed.
+Also, don't free gpio pins that we haven't claimed.
+---
+ drivers/staging/media/lirc/lirc_rpi.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+--- a/drivers/staging/media/lirc/lirc_rpi.c
++++ b/drivers/staging/media/lirc/lirc_rpi.c
+@@ -590,8 +590,6 @@ static int __init lirc_rpi_init(void)
+ 
+ static void lirc_rpi_exit(void)
+ {
+-	gpio_free(gpio_out_pin);
+-	gpio_free(gpio_in_pin);
+ 	platform_device_unregister(lirc_rpi_dev);
+ 	platform_driver_unregister(&lirc_rpi_driver);
+ 	lirc_buffer_free(&rbuf);
+@@ -623,6 +621,10 @@ static int __init lirc_rpi_init_module(v
+ 		goto exit_rpi;
+ 	}
+ 
++	result = init_port();
++	if (result < 0)
++		goto exit_rpi;
++
+ 	driver.features = LIRC_CAN_SET_SEND_DUTY_CYCLE |
+ 			  LIRC_CAN_SET_SEND_CARRIER |
+ 			  LIRC_CAN_SEND_PULSE |
+@@ -640,10 +642,6 @@ static int __init lirc_rpi_init_module(v
+ 
+ 	printk(KERN_INFO LIRC_DRIVER_NAME ": driver registered!\n");
+ 
+-	result = init_port();
+-	if (result < 0)
+-		goto exit_rpi;
+-
+ 	return 0;
+ 
+ 	exit_rpi:
+@@ -654,6 +652,9 @@ static int __init lirc_rpi_init_module(v
+ 
+ static void __exit lirc_rpi_exit_module(void)
+ {
++	gpio_free(gpio_out_pin);
++	gpio_free(gpio_in_pin);
++
+ 	lirc_rpi_exit();
+ 
+ 	lirc_unregister_driver(driver.minor);

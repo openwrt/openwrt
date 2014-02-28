@@ -1,0 +1,83 @@
+From 3c3c5a15a17649092ecf4c128478b267676c3353 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Mon, 22 Jul 2013 14:08:26 +0100
+Subject: [PATCH 083/174] dwc_otg: prevent BUG() in TT allocation if hub
+ address is > 16
+
+A fixed-size array is used to track TT allocation. This was
+previously set to 16 which caused a crash because
+dwc_otg_hcd_allocate_port would read past the end of the array.
+
+This was hit if a hub was plugged in which enumerated as addr > 16,
+due to previous device resets or unplugs.
+
+Also add #ifdef FIQ_DEBUG around hcd->hub_port_alloc[], which grows
+to a large size if 128 hub addresses are supported. This field is
+for debug only for tracking which frame an allocate happened in.
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.c      | 7 ++++++-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.h      | 6 ++++--
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 3 ++-
+ 3 files changed, 12 insertions(+), 4 deletions(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+@@ -983,7 +983,9 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd
+ 	hcd->periodic_qh_count = 0;
+ 
+ 	DWC_MEMSET(hcd->hub_port, 0, sizeof(hcd->hub_port));
++#ifdef FIQ_DEBUG
+ 	DWC_MEMSET(hcd->hub_port_alloc, -1, sizeof(hcd->hub_port_alloc));
++#endif
+ 
+ out:
+ 	return retval;
+@@ -1317,7 +1319,9 @@ int dwc_otg_hcd_allocate_port(dwc_otg_hc
+ 		qh->skip_count = 0;
+ 		hcd->hub_port[hub_addr] |= 1 << port_addr;
+ 		fiq_print(FIQDBG_PORTHUB, "H%dP%d:A %d", hub_addr, port_addr, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->pipe_info.ep_num);
++#ifdef FIQ_DEBUG
+ 		hcd->hub_port_alloc[hub_addr * 16 + port_addr] = dwc_otg_hcd_get_frame_number(hcd);
++#endif
+ 		return 0;
+ 	}
+ }
+@@ -1331,8 +1335,9 @@ void dwc_otg_hcd_release_port(dwc_otg_hc
+ 	hcd->fops->hub_info(hcd, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->priv, &hub_addr, &port_addr);
+ 
+ 	hcd->hub_port[hub_addr] &= ~(1 << port_addr);
++#ifdef FIQ_DEBUG
+ 	hcd->hub_port_alloc[hub_addr * 16 + port_addr] = -1;
+-
++#endif
+ 	fiq_print(FIQDBG_PORTHUB, "H%dP%d:RO%d", hub_addr, port_addr, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->pipe_info.ep_num);
+ 
+ }
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+@@ -577,8 +577,10 @@ struct dwc_otg_hcd {
+ 	uint32_t *frame_list;
+ 
+ 	/** Hub - Port assignment */
+-	int hub_port[16];
+-	int hub_port_alloc[256];
++	int hub_port[128];
++#ifdef FIQ_DEBUG
++	int hub_port_alloc[2048];
++#endif
+ 
+ 	/** Frame List DMA address */
+ 	dma_addr_t frame_list_dma;
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -1419,8 +1419,9 @@ cleanup:
+ 		}
+ 
+ 		hcd->hub_port[hc->hub_addr] &= ~(1 << hc->port_addr);
++#ifdef FIQ_DEBUG
+ 		hcd->hub_port_alloc[hc->hub_addr * 16 + hc->port_addr] = -1;
+-
++#endif
+ 		fiq_print(FIQDBG_PORTHUB, "H%dP%d:RR%d", hc->hub_addr, hc->port_addr, endp);
+ 	}
+ 

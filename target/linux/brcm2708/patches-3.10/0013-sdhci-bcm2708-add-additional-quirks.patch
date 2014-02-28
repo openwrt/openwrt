@@ -1,0 +1,27 @@
+From b567bbb9b16e9c860c8d7a4f2c6cf44c66533dfa Mon Sep 17 00:00:00 2001
+From: Grigori Goronzy <greg@blackbox>
+Date: Mon, 11 Jun 2012 18:53:59 +0200
+Subject: [PATCH 013/174] sdhci-bcm2708: add additional quirks
+
+Some additional quirks are needed for correct operation.
+There's no SDHCI capabilities register documented, and it always reads
+zero, so add SDHCI_QUIRK_MISSING_CAPS. Apparently
+SDHCI_QUIRK_NO_HISPD_BIT is needed for many cards to work correctly in
+high-speed mode, so add it as well.
+---
+ drivers/mmc/host/sdhci-bcm2708.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/mmc/host/sdhci-bcm2708.c
++++ b/drivers/mmc/host/sdhci-bcm2708.c
+@@ -1189,7 +1189,9 @@ static int sdhci_bcm2708_probe(struct pl
+ 	host->quirks = SDHCI_QUIRK_BROKEN_CARD_DETECTION |
+ 		       SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK |
+ 		       SDHCI_QUIRK_BROKEN_TIMEOUT_VAL |
+-		       SDHCI_QUIRK_NONSTANDARD_CLOCK;
++               SDHCI_QUIRK_MISSING_CAPS |
++               SDHCI_QUIRK_NO_HISPD_BIT;
++
+ #ifdef CONFIG_MMC_SDHCI_BCM2708_DMA
+ 	host->flags = SDHCI_USE_PLATDMA;
+ #endif

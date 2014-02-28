@@ -1,0 +1,64 @@
+From cb902630ae7ef709c8f40ca3f506cf5052077701 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Sat, 13 Jul 2013 20:41:26 +0100
+Subject: [PATCH 078/174] dwc_otg: mask correct interrupts after transaction
+ error recovery
+
+The dwc_otg driver will unmask certain interrupts on a transaction
+that previously halted in the error state in order to reset the
+QTD error count. The various fine-grained interrupt handlers do not
+consider that other interrupts besides themselves were unmasked.
+
+By disabling the two other interrupts only ever enabled in DMA mode
+for this purpose, we can avoid unnecessary function calls in the
+IRQ handler. This will also prevent an unneccesary FIQ interrupt
+from being generated if the FIQ is enabled.
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -1851,7 +1851,11 @@ static int32_t handle_hc_nak_intr(dwc_ot
+ 			 * transfers in DMA mode for the sole purpose of
+ 			 * resetting the error count after a transaction error
+ 			 * occurs. The core will continue transferring data.
++			 * Disable other interrupts unmasked for the same
++			 * reason.
+ 			 */
++			disable_hc_int(hc_regs, datatglerr);
++			disable_hc_int(hc_regs, ack);
+ 			qtd->error_count = 0;
+ 			goto handle_nak_done;
+ 		}
+@@ -1963,6 +1967,15 @@ static int32_t handle_hc_ack_intr(dwc_ot
+ 			halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_ACK);
+ 		}
+ 	} else {
++		/*
++		 * An unmasked ACK on a non-split DMA transaction is
++		 * for the sole purpose of resetting error counts. Disable other
++		 * interrupts unmasked for the same reason.
++		 */
++		if(hcd->core_if->dma_enable) {
++			disable_hc_int(hc_regs, datatglerr);
++			disable_hc_int(hc_regs, nak);
++		}
+ 		qtd->error_count = 0;
+ 
+ 		if (hc->qh->ping_state) {
+@@ -2328,6 +2341,14 @@ static int32_t handle_hc_datatglerr_intr
+ 			qtd->urb, qtd, DWC_OTG_HC_XFER_XACT_ERR);
+ 		halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_XACT_ERR);
+ 	} else if (hc->ep_is_in) {
++		/* An unmasked data toggle error on a non-split DMA transaction is
++		 * for the sole purpose of resetting error counts. Disable other
++		 * interrupts unmasked for the same reason.
++		 */
++		if(hcd->core_if->dma_enable) {
++			disable_hc_int(hc_regs, ack);
++			disable_hc_int(hc_regs, nak);
++		}
+ 		qtd->error_count = 0;
+ 	}
+ 

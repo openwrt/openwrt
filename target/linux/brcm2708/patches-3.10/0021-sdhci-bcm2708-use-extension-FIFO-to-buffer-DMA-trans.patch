@@ -1,0 +1,49 @@
+From 3e9891e91d7dda096ab1cc2518830938ad69880d Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Sun, 12 May 2013 12:25:52 +0100
+Subject: [PATCH 021/174] sdhci-bcm2708: use extension FIFO to buffer DMA
+ transfers
+
+The additional FIFO might speed up transfers in some cases.
+---
+ drivers/mmc/host/sdhci-bcm2708.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-bcm2708.c
++++ b/drivers/mmc/host/sdhci-bcm2708.c
+@@ -74,6 +74,9 @@
+ /* Mhz clock that the EMMC core is running at. Should match the platform clockman settings */
+ #define BCM2708_EMMC_CLOCK_FREQ 50000000
+ 
++#define REG_EXRDFIFO_EN     0x80
++#define REG_EXRDFIFO_CFG    0x84
++
+ /*****************************************************************************\
+  *									     *
+  * Debug								     *
+@@ -957,10 +960,12 @@ static ssize_t attr_dma_store(struct dev
+ 		int on = simple_strtol(buf, NULL, 0);
+ 		if (on) {
+ 			host->flags |= SDHCI_USE_PLATDMA;
++			sdhci_bcm2708_writel(host, 1, REG_EXRDFIFO_EN);
+ 			printk(KERN_INFO "%s: DMA enabled\n",
+ 			       mmc_hostname(host->mmc));
+ 		} else {
+ 			host->flags &= ~(SDHCI_USE_PLATDMA | SDHCI_REQ_USE_DMA);
++			sdhci_bcm2708_writel(host, 0, REG_EXRDFIFO_EN);
+ 			printk(KERN_INFO "%s: DMA disabled\n",
+ 			       mmc_hostname(host->mmc));
+ 		}
+@@ -1272,6 +1277,12 @@ static int sdhci_bcm2708_probe(struct pl
+ 	ret = device_create_file(&pdev->dev, &dev_attr_dma_wait);
+ 	ret = device_create_file(&pdev->dev, &dev_attr_status);
+ 
++#ifdef CONFIG_MMC_SDHCI_BCM2708_DMA
++	/* enable extension fifo for paced DMA transfers */
++	sdhci_bcm2708_writel(host, 1, REG_EXRDFIFO_EN);
++	sdhci_bcm2708_writel(host, 4, REG_EXRDFIFO_CFG);
++#endif
++
+ 	printk(KERN_INFO "%s: BCM2708 SDHC host at 0x%08llx DMA %d IRQ %d\n",
+ 	       mmc_hostname(host->mmc), (unsigned long long)iomem->start,
+ 	       host_priv->dma_chan, host_priv->dma_irq);

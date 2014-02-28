@@ -1,0 +1,199 @@
+From 99e6d36a5f752bb0237a61143bea29c93e6da22c Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Mon, 8 Apr 2013 21:12:48 +0100
+Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
+ with dwc_otg.nak_holdoff_enable=0. Thanks gsh
+
+---
+ drivers/usb/host/dwc_otg/dwc_otg_driver.c    |  7 ++++++-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.c       | 22 +++++++++++++++++++++-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.h       |  5 +++++
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c  | 21 +++++++++++++++++++--
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c | 19 +++++++++++++++++++
+ 5 files changed, 70 insertions(+), 4 deletions(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_driver.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+@@ -243,6 +243,9 @@ static struct dwc_otg_driver_module_para
+ //Global variable to switch the fiq fix on or off (declared in bcm2708.c)
+ extern bool fiq_fix_enable;
+ 
++//Global variable to switch the nak holdoff on or off
++bool nak_holdoff_enable = true;
++
+ 
+ /**
+  * This function shows the Driver Version.
+@@ -1086,6 +1089,7 @@ static int __init dwc_otg_driver_init(vo
+ 		return retval;
+ 	}
+ 	printk(KERN_DEBUG "dwc_otg: FIQ %s\n", fiq_fix_enable ? "enabled":"disabled");
++	printk(KERN_DEBUG "dwc_otg: NAK holdoff %s\n", nak_holdoff_enable ? "enabled":"disabled");
+ 
+ 	error = driver_create_file(drv, &driver_attr_version);
+ #ifdef DEBUG
+@@ -1366,9 +1370,10 @@ MODULE_PARM_DESC(otg_ver, "OTG revision
+ module_param(microframe_schedule, bool, 0444);
+ MODULE_PARM_DESC(microframe_schedule, "Enable the microframe scheduler");
+ 
+-
+ module_param(fiq_fix_enable, bool, 0444);
+ MODULE_PARM_DESC(fiq_fix_enable, "Enable the fiq fix");
++module_param(nak_holdoff_enable, bool, 0444);
++MODULE_PARM_DESC(nak_holdoff_enable, "Enable the NAK holdoff");
+ 
+ /** @page "Module Parameters"
+  *
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+@@ -527,6 +527,8 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_
+ {
+ 	dwc_otg_qh_t *qh;
+ 	dwc_otg_qtd_t *urb_qtd;
++	BUG_ON(!hcd);
++	BUG_ON(!dwc_otg_urb);
+ 
+ #ifdef DEBUG /* integrity checks (Broadcom) */
+ 
+@@ -543,14 +545,17 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_
+ 		return -DWC_E_INVALID;
+ 	}
+ 	urb_qtd = dwc_otg_urb->qtd;
++	BUG_ON(!urb_qtd);
+ 	if (urb_qtd->qh == NULL) { 
+ 		DWC_ERROR("**** DWC OTG HCD URB Dequeue with QTD with NULL Q handler\n");
+ 		return -DWC_E_INVALID;
+ 	}
+ #else
+ 	urb_qtd = dwc_otg_urb->qtd;
++	BUG_ON(!urb_qtd);
+ #endif
+ 	qh = urb_qtd->qh;
++	BUG_ON(!qh);
+ 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
+ 		if (urb_qtd->in_process) {
+ 			dump_channel_info(hcd, qh);
+@@ -1309,6 +1314,22 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+ 		num_channels - hcd->periodic_channels) &&
+ 	       !DWC_CIRCLEQ_EMPTY(&hcd->free_hc_list)) {
+ 
++		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
++
++		/*
++		 * Check to see if this is a NAK'd retransmit, in which case ignore for retransmission
++		 * we hold off on bulk retransmissions to reduce NAK interrupt overhead for
++		 * cheeky devices that just hold off using NAKs
++		 */
++		if (dwc_full_frame_num(qh->nak_frame) == dwc_full_frame_num(dwc_otg_hcd_get_frame_number(hcd))) {
++			// Make fiq interrupt run on next frame (i.e. 8 uframes)
++			g_next_sched_frame = ((qh->nak_frame + 8) & ~7) & DWC_HFNUM_MAX_FRNUM;
++			qh_ptr = DWC_LIST_NEXT(qh_ptr);
++			continue;
++		}
++		else
++			qh->nak_frame = 0xffff;
++
+ 		if (microframe_schedule) {
+ 				DWC_SPINLOCK_IRQSAVE(channel_lock, &flags);
+ 				if (hcd->available_host_channels < 1) {
+@@ -1321,7 +1342,6 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+ 				last_sel_trans_num_nonper_scheduled++;
+ #endif /* DEBUG_HOST_CHANNELS */
+ 		}
+-		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
+ 
+ 		assign_and_init_hc(hcd, qh);
+ 
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+@@ -321,6 +321,11 @@ typedef struct dwc_otg_qh {
+ 	 */
+ 	uint16_t sched_frame;
+ 
++	/*
++	** Frame a NAK was received on this queue head, used to minimise NAK retransmission
++	*/
++	uint16_t nak_frame;
++
+ 	/** (micro)frame at which last start split was initialized. */
+ 	uint16_t start_split_frame;
+ 
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -56,7 +56,12 @@ int fiq_done, int_done;
+ int g_next_sched_frame, g_np_count, g_np_sent, g_work_expected;
+ static int mphi_int_count = 0 ;
+ 
+-extern bool fiq_fix_enable;
++extern bool fiq_fix_enable, nak_holdoff_enable;
++
++hcchar_data_t nak_hcchar;
++hctsiz_data_t nak_hctsiz;
++hcsplt_data_t nak_hcsplt;
++int nak_count;
+ 
+ void __attribute__ ((naked)) dwc_otg_hcd_handle_fiq(void)
+ {
+@@ -230,7 +235,7 @@ exit_handler_routine:
+ 			DWC_WRITE_REG32(c_mphi_regs.ctrl, (1<<31));
+ 			mphi_int_count = 0;
+ 		}
+-			int_done++;
++		int_done++;
+ 		if((jiffies / HZ) > last_time)
+ 		{
+ 			/* Once a second output the fiq and irq numbers, useful for debug */
+@@ -1419,6 +1424,18 @@ static int32_t handle_hc_nak_intr(dwc_ot
+ 		    "NAK Received--\n", hc->hc_num);
+ 
+ 	/*
++	 * When we get bulk NAKs then remember this so we holdoff on this qh until
++	 * the beginning of the next frame
++	 */
++	switch(dwc_otg_hcd_get_pipe_type(&qtd->urb->pipe_info)) {
++		case UE_BULK:
++		//case UE_INTERRUPT:
++		//case UE_CONTROL:
++		if (nak_holdoff_enable)
++			hc->qh->nak_frame = dwc_otg_hcd_get_frame_number(hcd);
++	}
++
++	/*
+ 	 * Handle NAK for IN/OUT SSPLIT/CSPLIT transfers, bulk, control, and
+ 	 * interrupt.  Re-start the SSPLIT transfer.
+ 	 */
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+@@ -181,6 +181,7 @@ void qh_init(dwc_otg_hcd_t * hcd, dwc_ot
+ 	if (microframe_schedule)
+ 		qh->speed = dev_speed;
+ 
++	qh->nak_frame = 0xffff;
+ 
+ 	if (((dev_speed == USB_SPEED_LOW) ||
+ 	     (dev_speed == USB_SPEED_FULL)) &&
+@@ -764,6 +765,24 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_h
+ 			       int sched_next_periodic_split)
+ {	
+ 	if (dwc_qh_is_non_per(qh)) {
++
++	dwc_otg_qh_t *qh_tmp;
++	dwc_list_link_t *qh_list;
++	DWC_LIST_FOREACH(qh_list, &hcd->non_periodic_sched_inactive)
++	{
++		qh_tmp = DWC_LIST_ENTRY(qh_list, struct dwc_otg_qh, qh_list_entry);
++		if(qh_tmp == qh)
++		{
++			/*
++			 *  FIQ is being disabled because this one nevers gets a np_count increment
++			 *  This is still not absolutely correct, but it should fix itself with
++			 *  just an unnecessary extra interrupt
++			 */
++			g_np_sent = g_np_count;
++		}
++	}
++
++
+ 		dwc_otg_hcd_qh_remove(hcd, qh);
+ 		if (!DWC_CIRCLEQ_EMPTY(&qh->qtd_list)) {
+ 			/* Add back to inactive non-periodic schedule. */

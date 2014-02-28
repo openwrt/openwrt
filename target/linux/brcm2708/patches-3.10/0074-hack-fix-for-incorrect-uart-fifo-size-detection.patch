@@ -1,0 +1,20 @@
+From a720faa00a378b304c7a24cbbde6d9bc98fb5c70 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 3 Jul 2013 13:55:00 +0100
+Subject: [PATCH 074/174] hack: fix for incorrect uart fifo size detection
+
+---
+ drivers/tty/serial/amba-pl011.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/tty/serial/amba-pl011.c
++++ b/drivers/tty/serial/amba-pl011.c
+@@ -84,7 +84,7 @@ struct vendor_data {
+ 
+ static unsigned int get_fifosize_arm(unsigned int periphid)
+ {
+-	unsigned int rev = (periphid >> 20) & 0xf;
++	unsigned int rev = 0; //(periphid >> 20) & 0xf;
+ 	return rev < 3 ? 16 : 32;
+ }
+ 

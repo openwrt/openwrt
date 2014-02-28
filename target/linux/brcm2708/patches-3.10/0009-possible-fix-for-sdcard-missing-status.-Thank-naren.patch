@@ -1,0 +1,34 @@
+From f7ea3b11c29f79b86cbb2e25fa4cd1598a4350e3 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 8 May 2012 23:12:13 +0100
+Subject: [PATCH 009/174] possible fix for sdcard missing status. Thank naren
+
+---
+ drivers/mmc/host/sdhci-bcm2708.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-bcm2708.c
++++ b/drivers/mmc/host/sdhci-bcm2708.c
+@@ -1173,6 +1173,14 @@ static unsigned int sdhci_bcm2708_uhs_br
+         return 1;
+ }
+ 
++static unsigned int sdhci_bcm2708_missing_status(struct sdhci_host *host)
++{
++	if(host->last_cmdop == MMC_SEND_STATUS)
++		return 1;
++	else
++		return 0;
++}
++
+ /***************************************************************************** \
+  *									     *
+  * Device ops								     *
+@@ -1206,6 +1214,7 @@ static struct sdhci_ops sdhci_bcm2708_op
+ 	.spurious_crc_acmd51 = sdhci_bcm2708_quirk_spurious_crc,
+ 	.voltage_broken = sdhci_bcm2708_quirk_voltage_broken,
+ 	.uhs_broken = sdhci_bcm2708_uhs_broken,
++	.missing_status = sdhci_bcm2708_missing_status,
+ };
+ 
+ /*****************************************************************************\
