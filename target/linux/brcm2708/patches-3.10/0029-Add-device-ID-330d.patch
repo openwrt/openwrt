@@ -1,0 +1,31 @@
+From dae7c3832370e9a807907128ce37070f40fbb882 Mon Sep 17 00:00:00 2001
+From: Jo Are By <grimjoey@gmail.com>
+Date: Sun, 17 Mar 2013 17:45:41 +0100
+Subject: [PATCH 029/174] Add device ID (330d)
+
+---
+ drivers/net/wireless/rtl8192cu/hal/rtl8192c/usb/usb_halinit.c | 2 ++
+ drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c        | 1 +
+ 2 files changed, 3 insertions(+)
+
+--- a/drivers/net/wireless/rtl8192cu/hal/rtl8192c/usb/usb_halinit.c
++++ b/drivers/net/wireless/rtl8192cu/hal/rtl8192c/usb/usb_halinit.c
+@@ -3786,6 +3786,8 @@ _ReadIDs(
+ 				pHalData->CustomerID = RT_CID_DLINK;
+ 			else if((pHalData->EEPROMVID == 0x2001) && (pHalData->EEPROMPID == 0x330a))
+ 				pHalData->CustomerID = RT_CID_DLINK;
++			else if((pHalData->EEPROMVID == 0x2001) && (pHalData->EEPROMPID == 0x330d))
++				pHalData->CustomerID = RT_CID_DLINK;
+ 			break;
+ 		case EEPROM_CID_WHQL:
+ /*			
+--- a/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c
++++ b/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c
+@@ -137,6 +137,7 @@ static struct usb_device_id rtw_usb_id_t
+ 	{USB_DEVICE(0x2001, 0x3307)},//D-Link - Cameo
+ 	{USB_DEVICE(0x2001, 0x330A)},//D-Link - Alpha
+ 	{USB_DEVICE(0x2001, 0x3309)},//D-Link - Alpha
++	{USB_DEVICE(0x2001, 0x330D)},//D-Link - Alpha(?)
+ 	{USB_DEVICE(0x0586, 0x341F)},//Zyxel - Abocom
+ 	{USB_DEVICE(0x7392, 0x7822)},//Edimax - Edimax
+ 	{USB_DEVICE(0x2019, 0xAB2B)},//Planex - Abocom

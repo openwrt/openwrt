@@ -1,0 +1,49 @@
+From 9f5c2a77277b99949398e97cc753074d1b8e9521 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 3 Jul 2013 00:42:49 +0100
+Subject: [PATCH 022/174] sdhci-bcm2708: use multiblock-type transfers for
+ single blocks
+
+There are issues with both single block reads (missed completion)
+and writes (data loss in some cases!). Just don't do single block
+transfers anymore, and treat them like multiblock transfers. This
+adds a quirk for this and uses it.
+---
+ drivers/mmc/card/block.c         | 2 +-
+ drivers/mmc/host/sdhci-bcm2708.c | 3 +++
+ include/linux/mmc/host.h         | 1 +
+ 3 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -1333,7 +1333,7 @@ static void mmc_blk_rw_rq_prep(struct mm
+ 			brq->data.blocks = 1;
+ 	}
+ 
+-	if (brq->data.blocks > 1 || do_rel_wr) {
++	if (brq->data.blocks > 1 || do_rel_wr || card->host->caps2 & MMC_CAP2_FORCE_MULTIBLOCK) {
+ 		/* SPI multiblock writes terminate using a special
+ 		 * token, not a STOP_TRANSMISSION request.
+ 		 */
+--- a/drivers/mmc/host/sdhci-bcm2708.c
++++ b/drivers/mmc/host/sdhci-bcm2708.c
+@@ -1266,6 +1266,9 @@ static int sdhci_bcm2708_probe(struct pl
+ 
+     if (allow_highspeed)
+         host->mmc->caps |= MMC_CAP_SD_HIGHSPEED | MMC_CAP_MMC_HIGHSPEED;
++
++    /* single block writes cause data loss with some SD cards! */
++    host->mmc->caps2 |= MMC_CAP2_FORCE_MULTIBLOCK;
+ #endif
+ 
+ 	ret = sdhci_add_host(host);
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -281,6 +281,7 @@ struct mmc_host {
+ #define MMC_CAP2_PACKED_CMD	(MMC_CAP2_PACKED_RD | \
+ 				 MMC_CAP2_PACKED_WR)
+ #define MMC_CAP2_NO_PRESCAN_POWERUP (1 << 14)	/* Don't power up before scan */
++#define MMC_CAP2_FORCE_MULTIBLOCK (1 << 31)	/* Always use multiblock transfers */
+ 
+ 	mmc_pm_flag_t		pm_caps;	/* supported pm features */
+ 

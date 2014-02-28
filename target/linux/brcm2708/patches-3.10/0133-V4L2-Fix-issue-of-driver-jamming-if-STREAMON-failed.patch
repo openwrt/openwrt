@@ -1,0 +1,33 @@
+From a29f4da13057535935fb2b390b01b46b4a4d133b Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dsteve@broadcom.com>
+Date: Mon, 9 Dec 2013 11:05:24 +0000
+Subject: [PATCH 133/174] V4L2: Fix issue of driver jamming if STREAMON failed.
+
+Fix issue where the driver was left in a partially enabled
+state if STREAMON failed, and would then reject many IOCTLs
+as it thought it was streaming.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -425,7 +425,15 @@ static int start_streaming(struct vb2_qu
+ 	    vchiq_mmal_port_enable(dev->instance, dev->capture.port, buffer_cb);
+ 	if (ret) {
+ 		v4l2_err(&dev->v4l2_dev,
+-			 "Failed to enable capture port - error %d\n", ret);
++			"Failed to enable capture port - error %d. "
++			"Disabling camera port again\n", ret);
++
++		vchiq_mmal_port_disable(dev->instance,
++					dev->capture.camera_port);
++		if (disable_camera(dev) < 0) {
++			v4l2_err(&dev->v4l2_dev, "Failed to disable camera");
++			return -EINVAL;
++		}
+ 		return -1;
+ 	}
+ 

@@ -1,0 +1,55 @@
+From bf571a571b090c16cd49458126e996243d8a2626 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Thu, 28 Mar 2013 00:10:32 +0000
+Subject: [PATCH 039/174] bcm2708: Add vc_cma driver to enable use of CMA
+
+---
+ arch/arm/mach-bcm2708/bcm2708.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -60,6 +60,11 @@
+ #include "armctrl.h"
+ #include "clock.h"
+ 
++#ifdef CONFIG_BCM_VC_CMA
++#include <linux/broadcom/vc_cma.h>
++#endif
++
++
+ /* Effectively we have an IOMMU (ARM<->VideoCore map) that is set up to
+  * give us IO access only to 64Mbytes of physical memory (26 bits).  We could
+  * represent this window by setting our dmamasks to 26 bits but, in fact
+@@ -693,6 +698,9 @@ void __init bcm2708_init(void)
+ {
+ 	int i;
+ 
++#if defined(CONFIG_BCM_VC_CMA)
++	vc_cma_early_init();
++#endif
+ 	printk("bcm2708.uart_clock = %d\n", uart_clock);
+ 	pm_power_off = bcm2708_power_off;
+ 
+@@ -889,6 +897,13 @@ void __init bcm2708_init_early(void)
+ 	init_dma_coherent_pool_size(SZ_4M);
+ }
+ 
++static void __init board_reserve(void)
++{
++#if defined(CONFIG_BCM_VC_CMA)
++	vc_cma_reserve();
++#endif
++}
++
+ MACHINE_START(BCM2708, "BCM2708")
+     /* Maintainer: Broadcom Europe Ltd. */
+ 	.map_io = bcm2708_map_io,
+@@ -897,6 +912,7 @@ MACHINE_START(BCM2708, "BCM2708")
+ 	.init_machine = bcm2708_init,
+ 	.init_early = bcm2708_init_early,
+ 	.restart = bcm2708_restart,
++	.reserve = board_reserve,
+ MACHINE_END
+ 
+ module_param(boardrev, uint, 0644);

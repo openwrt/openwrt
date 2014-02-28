@@ -1,0 +1,230 @@
+From 980348ac7301c266ddbed9256ad9835cbda6e719 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dsteve@broadcom.com>
+Date: Fri, 13 Dec 2013 15:54:13 +0000
+Subject: [PATCH 136/174] V4L2: Add support for frame rate control.
+
+Add support for frame rate (or time per frame as V4L2
+inverts it) control via s_parm.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c  | 115 +++++++++++++++++++++--
+ drivers/media/platform/bcm2835/bcm2835-camera.h  |   4 +-
+ drivers/media/platform/bcm2835/controls.c        |   5 +-
+ drivers/media/platform/bcm2835/mmal-parameters.h |   5 +
+ 4 files changed, 116 insertions(+), 13 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -55,6 +55,15 @@ MODULE_PARM_DESC(bcm2835_v4l2_debug, "De
+ 
+ static struct bm2835_mmal_dev *gdev;	/* global device data */
+ 
++#define FPS_MIN 1
++#define FPS_MAX 30
++
++/* timeperframe: min/max and default */
++static const struct v4l2_fract
++	tpf_min     = {.numerator = 1,		.denominator = FPS_MAX},
++	tpf_max     = {.numerator = 1,	        .denominator = FPS_MIN},
++	tpf_default = {.numerator = 1000,	.denominator = 30000};
++
+ /* video formats */
+ static struct mmal_fmt formats[] = {
+ 	{
+@@ -869,8 +878,10 @@ static int mmal_setup_components(struct
+ 	camera_port->es.video.crop.y = 0;
+ 	camera_port->es.video.crop.width = f->fmt.pix.width;
+ 	camera_port->es.video.crop.height = f->fmt.pix.height;
+-	camera_port->es.video.frame_rate.num = 30;
+-	camera_port->es.video.frame_rate.den = 1;
++	camera_port->es.video.frame_rate.num =
++			dev->capture.timeperframe.denominator;
++	camera_port->es.video.frame_rate.den =
++			dev->capture.timeperframe.numerator;
+ 
+ 	ret = vchiq_mmal_port_set_format(dev->instance, camera_port);
+ 
+@@ -1064,6 +1075,90 @@ static int vidioc_s_fmt_vid_cap(struct f
+ 	return ret;
+ }
+ 
++/* timeperframe is arbitrary and continous */
++static int vidioc_enum_frameintervals(struct file *file, void *priv,
++					     struct v4l2_frmivalenum *fival)
++{
++	if (fival->index)
++		return -EINVAL;
++
++	/* regarding width & height - we support any */
++
++	fival->type = V4L2_FRMIVAL_TYPE_CONTINUOUS;
++
++	/* fill in stepwise (step=1.0 is requred by V4L2 spec) */
++	fival->stepwise.min  = tpf_min;
++	fival->stepwise.max  = tpf_max;
++	fival->stepwise.step = (struct v4l2_fract) {1, 1};
++
++	return 0;
++}
++
++static int vidioc_g_parm(struct file *file, void *priv,
++			  struct v4l2_streamparm *parm)
++{
++	struct bm2835_mmal_dev *dev = video_drvdata(file);
++
++	if (parm->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
++		return -EINVAL;
++
++	parm->parm.capture.capability   = V4L2_CAP_TIMEPERFRAME;
++	parm->parm.capture.timeperframe = dev->capture.timeperframe;
++	parm->parm.capture.readbuffers  = 1;
++	return 0;
++}
++
++#define FRACT_CMP(a, OP, b)	\
++	((u64)(a).numerator * (b).denominator  OP  \
++	 (u64)(b).numerator * (a).denominator)
++
++static int vidioc_s_parm(struct file *file, void *priv,
++			  struct v4l2_streamparm *parm)
++{
++	struct bm2835_mmal_dev *dev = video_drvdata(file);
++	struct v4l2_fract tpf;
++	struct mmal_parameter_rational fps_param;
++	int ret;
++
++	if (parm->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
++		return -EINVAL;
++
++	tpf = parm->parm.capture.timeperframe;
++
++	/* tpf: {*, 0} resets timing; clip to [min, max]*/
++	tpf = tpf.denominator ? tpf : tpf_default;
++	tpf = FRACT_CMP(tpf, <, tpf_min) ? tpf_min : tpf;
++	tpf = FRACT_CMP(tpf, >, tpf_max) ? tpf_max : tpf;
++
++	dev->capture.timeperframe = tpf;
++	parm->parm.capture.timeperframe = tpf;
++	parm->parm.capture.readbuffers  = 1;
++
++	fps_param.num = dev->capture.timeperframe.denominator;
++	fps_param.den = dev->capture.timeperframe.numerator;
++	ret = vchiq_mmal_port_parameter_set(dev->instance,
++				      &dev->component[MMAL_COMPONENT_CAMERA]->
++					output[MMAL_CAMERA_PORT_PREVIEW],
++				      MMAL_PARAMETER_VIDEO_FRAME_RATE,
++				      &fps_param, sizeof(fps_param));
++	ret += vchiq_mmal_port_parameter_set(dev->instance,
++				      &dev->component[MMAL_COMPONENT_CAMERA]->
++					output[MMAL_CAMERA_PORT_VIDEO],
++				      MMAL_PARAMETER_VIDEO_FRAME_RATE,
++				      &fps_param, sizeof(fps_param));
++	ret += vchiq_mmal_port_parameter_set(dev->instance,
++				      &dev->component[MMAL_COMPONENT_CAMERA]->
++					output[MMAL_CAMERA_PORT_CAPTURE],
++				      MMAL_PARAMETER_VIDEO_FRAME_RATE,
++				      &fps_param, sizeof(fps_param));
++	if (ret)
++		v4l2_dbg(0, bcm2835_v4l2_debug, &dev->v4l2_dev,
++		 "Failed to set fps ret %d\n",
++		 ret);
++
++	return 0;
++}
++
+ static const struct v4l2_ioctl_ops camera0_ioctl_ops = {
+ 	/* overlay */
+ 	.vidioc_enum_fmt_vid_overlay = vidioc_enum_fmt_vid_overlay,
+@@ -1092,6 +1187,9 @@ static const struct v4l2_ioctl_ops camer
+ 	.vidioc_querybuf = vb2_ioctl_querybuf,
+ 	.vidioc_qbuf = vb2_ioctl_qbuf,
+ 	.vidioc_dqbuf = vb2_ioctl_dqbuf,
++	.vidioc_enum_frameintervals = vidioc_enum_frameintervals,
++	.vidioc_g_parm        = vidioc_g_parm,
++	.vidioc_s_parm        = vidioc_s_parm,
+ 	.vidioc_streamon = vb2_ioctl_streamon,
+ 	.vidioc_streamoff = vb2_ioctl_streamoff,
+ 
+@@ -1184,8 +1282,10 @@ static int __init mmal_init(struct bm283
+ 	format->es->video.crop.y = 0;
+ 	format->es->video.crop.width = 1024;
+ 	format->es->video.crop.height = 768;
+-	format->es->video.frame_rate.num = PREVIEW_FRAME_RATE_NUM;
+-	format->es->video.frame_rate.den = PREVIEW_FRAME_RATE_DEN;
++	format->es->video.frame_rate.num =
++			dev->capture.timeperframe.denominator;
++	format->es->video.frame_rate.den =
++			dev->capture.timeperframe.numerator;
+ 
+ 	format =
+ 	    &dev->component[MMAL_COMPONENT_CAMERA]->
+@@ -1200,8 +1300,10 @@ static int __init mmal_init(struct bm283
+ 	format->es->video.crop.y = 0;
+ 	format->es->video.crop.width = 1024;
+ 	format->es->video.crop.height = 768;
+-	format->es->video.frame_rate.num = PREVIEW_FRAME_RATE_NUM;
+-	format->es->video.frame_rate.den = PREVIEW_FRAME_RATE_DEN;
++	format->es->video.frame_rate.num =
++			dev->capture.timeperframe.denominator;
++	format->es->video.frame_rate.den =
++			dev->capture.timeperframe.numerator;
+ 
+ 	format =
+ 	    &dev->component[MMAL_COMPONENT_CAMERA]->
+@@ -1222,6 +1324,7 @@ static int __init mmal_init(struct bm283
+ 	dev->capture.height = format->es->video.height;
+ 	dev->capture.fmt = &formats[0];
+ 	dev->capture.encode_component = NULL;
++	dev->capture.timeperframe = tpf_default;
+ 
+ 	/* get the preview component ready */
+ 	ret = vchiq_mmal_component_init(
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.h
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.h
+@@ -32,9 +32,6 @@ enum {
+ 	MMAL_CAMERA_PORT_COUNT
+ };
+ 
+-#define PREVIEW_FRAME_RATE_NUM 30
+-#define PREVIEW_FRAME_RATE_DEN 1
+-
+ #define PREVIEW_LAYER      2
+ 
+ extern int bcm2835_v4l2_debug;
+@@ -66,6 +63,7 @@ struct bm2835_mmal_dev {
+ 		unsigned int     height;  /* height */
+ 		unsigned int     stride;  /* stride */
+ 		struct mmal_fmt  *fmt;
++		struct v4l2_fract          timeperframe;
+ 
+ 		/* H264 encode bitrate */
+ 		int         encode_bitrate;
+--- a/drivers/media/platform/bcm2835/controls.c
++++ b/drivers/media/platform/bcm2835/controls.c
+@@ -152,10 +152,7 @@ static int ctrl_set_rational(struct bm28
+ 		      struct v4l2_ctrl *ctrl,
+ 		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+ {
+-	struct  {
+-		s32 num;    /**< Numerator */
+-		s32 den;    /**< Denominator */
+-	} rational_value;
++	struct mmal_parameter_rational rational_value;
+ 	struct vchiq_mmal_port *control;
+ 
+ 	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
+--- a/drivers/media/platform/bcm2835/mmal-parameters.h
++++ b/drivers/media/platform/bcm2835/mmal-parameters.h
+@@ -164,6 +164,11 @@ enum mmal_parameter_camera_type {
+ 	MMAL_PARAMETER_SHUTTER_SPEED              /**< Takes a @ref MMAL_PARAMETER_UINT32_T */
+ };
+ 
++struct mmal_parameter_rational {
++	s32 num;    /**< Numerator */
++	s32 den;    /**< Denominator */
++};
++
+ enum mmal_parameter_camera_config_timestamp_mode {
+ 	MMAL_PARAM_TIMESTAMP_MODE_ZERO = 0, /* Always timestamp frames as 0 */
+ 	MMAL_PARAM_TIMESTAMP_MODE_RAW_STC,  /* Use the raw STC value

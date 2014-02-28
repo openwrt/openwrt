@@ -1,0 +1,57 @@
+From 4e0660161587681630da35f525cacf17bed58795 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 12 Feb 2014 12:01:56 +0000
+Subject: [PATCH 167/174] bcm2708fb: Allow swapping of red/blue in 24/32 modes
+
+---
+ drivers/video/bcm2708_fb.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+--- a/drivers/video/bcm2708_fb.c
++++ b/drivers/video/bcm2708_fb.c
+@@ -53,6 +53,7 @@ static u32 dma_busy_wait_threshold = 1<<
+ module_param(dma_busy_wait_threshold, int, 0644);
+ MODULE_PARM_DESC(dma_busy_wait_threshold, "Busy-wait for DMA completion below this area");
+ 
++static int fbswap = 0;     /* module parameter */
+ 
+ /* this data structure describes each frame buffer device we find */
+ 
+@@ -185,7 +186,12 @@ static int bcm2708_fb_set_bitfields(stru
+ 	 * encoded in the pixel data.  Calculate their position from
+ 	 * the bitfield length defined above.
+ 	 */
+-	if (ret == 0 && var->bits_per_pixel >= 24) {
++	if (ret == 0 && var->bits_per_pixel >= 24 && fbswap) {
++		var->blue.offset = 0;
++		var->green.offset = var->blue.offset + var->blue.length;
++		var->red.offset = var->green.offset + var->green.length;
++		var->transp.offset = var->red.offset + var->red.length;
++	} else if (ret == 0 && var->bits_per_pixel >= 24) {
+ 		var->red.offset = 0;
+ 		var->green.offset = var->red.offset + var->red.length;
+ 		var->blue.offset = var->green.offset + var->green.length;
+@@ -618,8 +624,8 @@ static int bcm2708_fb_register(struct bc
+ 
+ 	fb_set_var(&fb->fb, &fb->fb.var);
+ 
+-	print_debug("BCM2708FB: registering framebuffer (%dx%d@%d)\n", fbwidth,
+-		fbheight, fbdepth);
++	print_debug("BCM2708FB: registering framebuffer (%dx%d@%d) (%d)\n", fbwidth
++		fbheight, fbdepth, fbswap);
+ 
+ 	ret = register_framebuffer(&fb->fb);
+ 	print_debug("BCM2708FB: register framebuffer (%d)\n", ret);
+@@ -746,6 +752,7 @@ module_exit(bcm2708_fb_exit);
+ module_param(fbwidth, int, 0644);
+ module_param(fbheight, int, 0644);
+ module_param(fbdepth, int, 0644);
++module_param(fbswap, int, 0644);
+ 
+ MODULE_DESCRIPTION("BCM2708 framebuffer driver");
+ MODULE_LICENSE("GPL");
+@@ -753,3 +760,4 @@ MODULE_LICENSE("GPL");
+ MODULE_PARM_DESC(fbwidth, "Width of ARM Framebuffer");
+ MODULE_PARM_DESC(fbheight, "Height of ARM Framebuffer");
+ MODULE_PARM_DESC(fbdepth, "Bit depth of ARM Framebuffer");
++MODULE_PARM_DESC(fbswap, "Swap order of red and blue in 24 and 32 bit modes");

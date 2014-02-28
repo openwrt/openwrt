@@ -1,0 +1,78 @@
+From f1f13a6b3798161ccc3852320bd2184b85c9209b Mon Sep 17 00:00:00 2001
+From: pjennings <pjennings-git@pjennings.net>
+Date: Wed, 20 Feb 2013 17:51:43 -0600
+Subject: [PATCH 051/174] Added inverted transmitter support
+
+---
+ drivers/staging/media/lirc/lirc_rpi.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
+
+--- a/drivers/staging/media/lirc/lirc_rpi.c
++++ b/drivers/staging/media/lirc/lirc_rpi.c
+@@ -68,6 +68,8 @@ static int debug;
+ static int sense = -1;
+ /* use softcarrier by default */
+ static int softcarrier = 1;
++/* 0 = do not invert output, 1 = invert output */
++static int invert = 0;
+ 
+ struct gpio_chip *gpiochip;
+ struct irq_chip *irqchip;
+@@ -135,10 +137,10 @@ static long send_pulse_softcarrier(unsig
+ 	actual = 0; target = 0; flag = 0;
+ 	while (actual < length) {
+ 		if (flag) {
+-			gpiochip->set(gpiochip, gpio_out_pin, 0);
++			gpiochip->set(gpiochip, gpio_out_pin, invert);
+ 			target += space_width;
+ 		} else {
+-			gpiochip->set(gpiochip, gpio_out_pin, 1);
++			gpiochip->set(gpiochip, gpio_out_pin, !invert);
+ 			target += pulse_width;
+ 		}
+ 		d = (target - actual -
+@@ -162,7 +164,7 @@ static long send_pulse(unsigned long len
+ 	if (softcarrier) {
+ 		return send_pulse_softcarrier(length);
+ 	} else {
+-		gpiochip->set(gpiochip, gpio_out_pin, 1);
++		gpiochip->set(gpiochip, gpio_out_pin, !invert);
+ 		safe_udelay(length);
+ 		return 0;
+ 	}
+@@ -170,7 +172,7 @@ static long send_pulse(unsigned long len
+ 
+ static void send_space(long length)
+ {
+-	gpiochip->set(gpiochip, gpio_out_pin, 0);
++	gpiochip->set(gpiochip, gpio_out_pin, invert);
+ 	if (length <= 0)
+ 		return;
+ 	safe_udelay(length);
+@@ -318,7 +320,7 @@ static int init_port(void)
+ 
+ 	gpiochip->direction_input(gpiochip, gpio_in_pin);
+ 	gpiochip->direction_output(gpiochip, gpio_out_pin, 1);
+-	gpiochip->set(gpiochip, gpio_out_pin, 0);
++	gpiochip->set(gpiochip, gpio_out_pin, invert);
+ 
+ 	irq = gpiochip->to_irq(gpiochip, gpio_in_pin);
+ 	dprintk("to_irq %d\n", irq);
+@@ -457,7 +459,7 @@ static ssize_t lirc_write(struct file *f
+ 		else
+ 			delta = send_pulse(wbuf[i]);
+ 	}
+-	gpiochip->set(gpiochip, gpio_out_pin, 0);
++	gpiochip->set(gpiochip, gpio_out_pin, invert);
+ 
+ 	spin_unlock_irqrestore(&lock, flags);
+ 	kfree(wbuf);
+@@ -683,5 +685,8 @@ MODULE_PARM_DESC(sense, "Override autode
+ module_param(softcarrier, bool, S_IRUGO);
+ MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on, default on)");
+ 
++module_param(invert, bool, S_IRUGO);
++MODULE_PARM_DESC(invert, "Invert output (0 = off, 1 = on, default off");
++
+ module_param(debug, bool, S_IRUGO | S_IWUSR);
+ MODULE_PARM_DESC(debug, "Enable debugging messages");

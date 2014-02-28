@@ -1,0 +1,26 @@
+From 5ea012c31815b53d6f49ce0679750108657b8a63 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dsteve@broadcom.com>
+Date: Tue, 7 Jan 2014 12:36:07 +0000
+Subject: [PATCH 152/174] V4L2: Increase the MMAL timeout to 3sec
+
+MJPEG codec flush is now taking longer and results
+in a kernel panic if the driver has stopped waiting for
+the result when it finally completes.
+Increase the timeout value from 1 to 3secs.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+---
+ drivers/media/platform/bcm2835/mmal-vchiq.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/platform/bcm2835/mmal-vchiq.c
++++ b/drivers/media/platform/bcm2835/mmal-vchiq.c
+@@ -742,7 +742,7 @@ static int send_synchronous_mmal_msg(str
+ 		return ret;
+ 	}
+ 
+-	ret = wait_for_completion_timeout(&msg_context.u.sync.cmplt, HZ);
++	ret = wait_for_completion_timeout(&msg_context.u.sync.cmplt, 3*HZ);
+ 	if (ret <= 0) {
+ 		pr_err("error %d waiting for sync completion\n", ret);
+ 		if (ret == 0)

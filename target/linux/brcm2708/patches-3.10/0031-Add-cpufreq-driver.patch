@@ -1,0 +1,289 @@
+From d19db6057337b577baab7766718781d55c402fbb Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Sat, 2 Nov 2013 22:44:41 +0000
+Subject: [PATCH 031/174] Add cpufreq driver
+
+---
+ arch/arm/Kconfig                  |   1 +
+ drivers/cpufreq/Kconfig.arm       |   8 ++
+ drivers/cpufreq/Makefile          |   1 +
+ drivers/cpufreq/bcm2835-cpufreq.c | 239 ++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 249 insertions(+)
+ create mode 100755 drivers/cpufreq/bcm2835-cpufreq.c
+
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -369,6 +369,7 @@ config ARCH_BCM2708
+ 	select HAVE_SCHED_CLOCK
+ 	select NEED_MACH_MEMORY_H
+ 	select CLKDEV_LOOKUP
++	select ARCH_HAS_CPUFREQ
+ 	select GENERIC_CLOCKEVENTS
+ 	select ARM_ERRATA_411920
+ 	select MACH_BCM2708
+--- a/drivers/cpufreq/Kconfig.arm
++++ b/drivers/cpufreq/Kconfig.arm
+@@ -150,3 +150,11 @@ config ARM_SPEAR_CPUFREQ
+ 	default y
+ 	help
+ 	  This adds the CPUFreq driver support for SPEAr SOCs.
++
++config ARM_BCM2835_CPUFREQ
++	bool "BCM2835 Driver"
++	default y
++	help
++	  This adds the CPUFreq driver for BCM2835
++
++	  If in doubt, say N.
+--- a/drivers/cpufreq/Makefile
++++ b/drivers/cpufreq/Makefile
+@@ -72,6 +72,7 @@ obj-$(CONFIG_ARM_SA1100_CPUFREQ)	+= sa11
+ obj-$(CONFIG_ARM_SA1110_CPUFREQ)	+= sa1110-cpufreq.o
+ obj-$(CONFIG_ARM_SPEAR_CPUFREQ)		+= spear-cpufreq.o
+ obj-$(CONFIG_ARCH_TEGRA)		+= tegra-cpufreq.o
++obj-$(CONFIG_ARM_BCM2835_CPUFREQ)	+= bcm2835-cpufreq.o
+ 
+ ##################################################################################
+ # PowerPC platform drivers
+--- /dev/null
++++ b/drivers/cpufreq/bcm2835-cpufreq.c
+@@ -0,0 +1,239 @@
++/*****************************************************************************
++* Copyright 2011 Broadcom Corporation.  All rights reserved.
++*
++* Unless you and Broadcom execute a separate written software license
++* agreement governing use of this software, this software is licensed to you
++* under the terms of the GNU General Public License version 2, available at
++* http://www.broadcom.com/licenses/GPLv2.php (the "GPL").
++*	
++* Notwithstanding the above, under no circumstances may you combine this
++* software in any way with any other Broadcom software provided under a
++* license other than the GPL, without Broadcom's express prior written
++* consent.
++*****************************************************************************/
++
++/*****************************************************************************
++* FILENAME: bcm2835-cpufreq.h
++* DESCRIPTION: This driver dynamically manages the CPU Frequency of the ARM
++* processor. Messages are sent to Videocore either setting or requesting the
++* frequency of the ARM in order to match an appropiate frequency to the current
++* usage of the processor. The policy which selects the frequency to use is
++* defined in the kernel .config file, but can be changed during runtime.
++*****************************************************************************/
++
++/* ---------- INCLUDES ---------- */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/cpufreq.h>
++#include <mach/vcio.h>
++
++/* ---------- DEFINES ---------- */
++/*#define CPUFREQ_DEBUG_ENABLE*/		/* enable debugging */
++#define MODULE_NAME "bcm2835-cpufreq"
++
++#define VCMSG_ID_ARM_CLOCK 0x000000003		/* Clock/Voltage ID's */
++
++/* debug printk macros */
++#ifdef CPUFREQ_DEBUG_ENABLE
++#define print_debug(fmt,...) pr_debug("%s:%s:%d: "fmt, MODULE_NAME, __func__, __LINE__, ##__VA_ARGS__)
++#else
++#define print_debug(fmt,...)
++#endif
++#define print_err(fmt,...) pr_err("%s:%s:%d: "fmt, MODULE_NAME, __func__,__LINE__, ##__VA_ARGS__)
++#define print_info(fmt,...) pr_info("%s: "fmt, MODULE_NAME, ##__VA_ARGS__)
++
++/* tag part of the message */
++struct vc_msg_tag {
++	uint32_t tag_id;		/* the message id */
++	uint32_t buffer_size;		/* size of the buffer (which in this case is always 8 bytes) */
++	uint32_t data_size;		/* amount of data being sent or received */
++	uint32_t dev_id;		/* the ID of the clock/voltage to get or set */
++	uint32_t val;			/* the value (e.g. rate (in Hz)) to set */
++};
++
++/* message structure to be sent to videocore */
++struct vc_msg {
++	uint32_t msg_size;		/* simply, sizeof(struct vc_msg) */
++	uint32_t request_code;		/* holds various information like the success and number of bytes returned (refer to mailboxes wiki) */
++	struct vc_msg_tag tag;		/* the tag structure above to make */
++	uint32_t end_tag;		/* an end identifier, should be set to NULL */
++};
++
++/* ---------- GLOBALS ---------- */
++static struct cpufreq_driver bcm2835_cpufreq_driver;	/* the cpufreq driver global */
++
++/*
++ ===============================================
++  clk_rate either gets or sets the clock rates.
++ ===============================================
++*/
++static uint32_t bcm2835_cpufreq_set_clock(int cur_rate, int arm_rate)
++{
++	int s, actual_rate=0;
++	struct vc_msg msg;
++	
++	/* wipe all previous message data */
++	memset(&msg, 0, sizeof msg);
++	
++	msg.msg_size = sizeof msg;
++			
++	msg.tag.tag_id = VCMSG_SET_CLOCK_RATE;
++	msg.tag.buffer_size = 8;
++	msg.tag.data_size = 8;   /* we're sending the clock ID and the new rates which is a total of 2 words */
++	msg.tag.dev_id = VCMSG_ID_ARM_CLOCK;
++	msg.tag.val = arm_rate * 1000;
++			
++	/* send the message */
++	s = bcm_mailbox_property(&msg, sizeof msg);
++	
++	/* check if it was all ok and return the rate in KHz */
++	if (s == 0 && (msg.request_code & 0x80000000))
++		actual_rate = msg.tag.val/1000;
++
++	print_debug("Setting new frequency = %d -> %d (actual %d)\n", cur_rate, arm_rate, actual_rate);	
++	return actual_rate;
++}
++
++static uint32_t bcm2835_cpufreq_get_clock(int tag)
++{
++	int s;
++	int arm_rate = 0;
++	struct vc_msg msg;
++	
++	/* wipe all previous message data */
++	memset(&msg, 0, sizeof msg);
++	
++	msg.msg_size = sizeof msg;
++	msg.tag.tag_id = tag;
++	msg.tag.buffer_size = 8;
++	msg.tag.data_size = 4; /* we're just sending the clock ID which is one word long */
++	msg.tag.dev_id = VCMSG_ID_ARM_CLOCK;
++	
++	/* send the message */
++	s = bcm_mailbox_property(&msg, sizeof msg);
++
++	/* check if it was all ok and return the rate in KHz */
++	if (s == 0 && (msg.request_code & 0x80000000))
++		arm_rate = msg.tag.val/1000;
++
++	print_debug("%s frequency = %d\n",
++		tag == VCMSG_GET_CLOCK_RATE ? "Current":
++		tag == VCMSG_GET_MIN_CLOCK ? "Min":
++		tag == VCMSG_GET_MAX_CLOCK ? "Max":
++		"Unexpected", arm_rate);
++	
++	return arm_rate;
++}
++
++/*
++ ====================================================
++  Module Initialisation registers the cpufreq driver
++ ====================================================
++*/
++static int __init bcm2835_cpufreq_module_init(void)
++{	
++	print_debug("IN\n");
++	return cpufreq_register_driver(&bcm2835_cpufreq_driver);
++}
++
++/*
++ =============
++  Module exit
++ =============
++*/
++static void __exit bcm2835_cpufreq_module_exit(void)
++{
++	print_debug("IN\n");
++	cpufreq_unregister_driver(&bcm2835_cpufreq_driver);
++	return;
++}
++
++/*
++ ==============================================================
++  Initialisation function sets up the CPU policy for first use
++ ==============================================================
++*/
++static int bcm2835_cpufreq_driver_init(struct cpufreq_policy *policy)
++{
++	/* measured value of how long it takes to change frequency */	
++	policy->cpuinfo.transition_latency = 355000; /* ns */
++
++	/* now find out what the maximum and minimum frequencies are */
++	policy->min = policy->cpuinfo.min_freq = bcm2835_cpufreq_get_clock(VCMSG_GET_MIN_CLOCK);
++	policy->max = policy->cpuinfo.max_freq = bcm2835_cpufreq_get_clock(VCMSG_GET_MAX_CLOCK);
++	policy->cur = bcm2835_cpufreq_get_clock(VCMSG_GET_CLOCK_RATE);
++	
++	print_info("min=%d max=%d cur=%d\n", policy->min, policy->max, policy->cur);
++	return 0;
++}
++
++/*
++ =================================================================================
++  Target function chooses the most appropriate frequency from the table to enable
++ =================================================================================
++*/
++
++static int bcm2835_cpufreq_driver_target(struct cpufreq_policy *policy, unsigned int target_freq, unsigned int relation)
++{
++	unsigned int target = target_freq;
++	unsigned int cur = policy->cur;
++	print_debug("%s: min=%d max=%d cur=%d target=%d\n",policy->governor->name,policy->min,policy->max,policy->cur,target_freq);
++	
++	/* if we are above min and using ondemand, then just use max */
++	if (strcmp("ondemand", policy->governor->name)==0 && target > policy->min)
++		target = policy->max;
++	/* if the frequency is the same, just quit */
++	if (target == policy->cur)
++		return 0;
++
++	/* otherwise were good to set the clock frequency */
++	policy->cur = bcm2835_cpufreq_set_clock(policy->cur, target);
++	
++	if (!policy->cur)
++	{
++		print_err("Error occurred setting a new frequency (%d)!\n", target);
++		policy->cur = bcm2835_cpufreq_get_clock(VCMSG_GET_CLOCK_RATE);
++		return -EINVAL;
++	}
++	print_debug("Freq %d->%d (min=%d max=%d target=%d request=%d)\n", cur, policy->cur, policy->min, policy->max, target_freq, target);
++	return 0;
++}
++
++static unsigned int bcm2835_cpufreq_driver_get(unsigned int cpu)
++{
++	unsigned int actual_rate = bcm2835_cpufreq_get_clock(VCMSG_GET_CLOCK_RATE);
++	print_debug("cpu=%d\n", actual_rate);
++	return actual_rate;
++}
++
++/*
++ =================================================================================
++  Verify ensures that when a policy is changed, it is suitable for the CPU to use
++ =================================================================================
++*/
++
++static int bcm2835_cpufreq_driver_verify(struct cpufreq_policy *policy)
++{
++	print_info("switching to governor %s\n", policy->governor->name);
++	return 0;
++}
++
++
++/* the CPUFreq driver */
++static struct cpufreq_driver bcm2835_cpufreq_driver = {
++		.name   = "BCM2835 CPUFreq",
++		.owner  = THIS_MODULE,
++		.init   = bcm2835_cpufreq_driver_init,
++		.verify = bcm2835_cpufreq_driver_verify,
++		.target = bcm2835_cpufreq_driver_target,
++		.get    = bcm2835_cpufreq_driver_get
++};
++
++MODULE_AUTHOR("Dorian Peake and Dom Cobley");
++MODULE_DESCRIPTION("CPU frequency driver for BCM2835 chip");
++MODULE_LICENSE("GPL");
++
++module_init(bcm2835_cpufreq_module_init);
++module_exit(bcm2835_cpufreq_module_exit);
++

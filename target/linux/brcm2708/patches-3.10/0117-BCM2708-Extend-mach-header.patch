@@ -1,0 +1,40 @@
+From a35663826cfd0dea9a44d7b7a506ce9db9c703e3 Mon Sep 17 00:00:00 2001
+From: Florian Meier <florian.meier@koalo.de>
+Date: Fri, 22 Nov 2013 14:37:51 +0100
+Subject: [PATCH 117/174] BCM2708: Extend mach header
+
+Extend the headers of the mach-bcm2708
+in order to support I2S and DMA engine.
+
+Signed-off-by: Florian Meier <florian.meier@koalo.de>
+---
+ arch/arm/mach-bcm2708/include/mach/dma.h      | 2 ++
+ arch/arm/mach-bcm2708/include/mach/platform.h | 2 ++
+ 2 files changed, 4 insertions(+)
+
+--- a/arch/arm/mach-bcm2708/include/mach/dma.h
++++ b/arch/arm/mach-bcm2708/include/mach/dma.h
+@@ -45,6 +45,8 @@
+ #define BCM2708_DMA_ADDR	0x04
+ /* the current control block appears in the following registers - read only */
+ #define BCM2708_DMA_INFO	0x08
++#define BCM2708_DMA_SOURCE_AD	0x0c
++#define BCM2708_DMA_DEST_AD	0x10
+ #define BCM2708_DMA_NEXTCB	0x1C
+ #define BCM2708_DMA_DEBUG	0x20
+ 
+--- a/arch/arm/mach-bcm2708/include/mach/platform.h
++++ b/arch/arm/mach-bcm2708/include/mach/platform.h
+@@ -62,10 +62,12 @@
+ #define DMA_BASE		 (BCM2708_PERI_BASE + 0x7000)	/* DMA controller */
+ #define ARM_BASE                 (BCM2708_PERI_BASE + 0xB000)	 /* BCM2708 ARM control block */
+ #define PM_BASE			 (BCM2708_PERI_BASE + 0x100000) /* Power Management, Reset controller and Watchdog registers */
++#define PCM_CLOCK_BASE           (BCM2708_PERI_BASE + 0x101098) /* PCM Clock */
+ #define RNG_BASE                 (BCM2708_PERI_BASE + 0x104000) /* Hardware RNG */
+ #define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) /* GPIO */
+ #define UART0_BASE               (BCM2708_PERI_BASE + 0x201000)	/* Uart 0 */
+ #define MMCI0_BASE               (BCM2708_PERI_BASE + 0x202000) /* MMC interface */
++#define I2S_BASE                 (BCM2708_PERI_BASE + 0x203000) /* I2S */
+ #define SPI0_BASE		 (BCM2708_PERI_BASE + 0x204000) /* SPI0 */
+ #define BSC0_BASE		 (BCM2708_PERI_BASE + 0x205000) /* BSC0 I2C/TWI */
+ #define UART1_BASE               (BCM2708_PERI_BASE + 0x215000) /* Uart 1 */

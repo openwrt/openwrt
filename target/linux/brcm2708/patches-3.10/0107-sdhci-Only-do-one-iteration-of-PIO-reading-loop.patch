@@ -1,0 +1,19 @@
+From e397b0cf1aee50664b423f716d6843b2a2010093 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 20 Nov 2013 11:22:05 +0000
+Subject: [PATCH 107/174] sdhci: Only do one iteration of PIO reading loop
+
+---
+ drivers/mmc/host/sdhci.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mmc/host/sdhci.c
++++ b/drivers/mmc/host/sdhci.c
+@@ -539,6 +539,7 @@ static void sdhci_transfer_pio(struct sd
+ 			break;
+ 		state = sdhci_readl(host, SDHCI_PRESENT_STATE);
+ 		available = state & mask;
++		break;
+ 	}
+ 
+ 	DBG("PIO transfer complete - %d blocks left.\n", host->blocks);

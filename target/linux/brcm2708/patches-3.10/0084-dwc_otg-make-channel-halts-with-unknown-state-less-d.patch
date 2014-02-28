@@ -1,0 +1,42 @@
+From e2c9f557c5bff8c839704d0627d5dd108a0e14f2 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Tue, 23 Jul 2013 14:15:32 +0100
+Subject: [PATCH 084/174] dwc_otg: make channel halts with unknown state less
+ damaging
+
+If the IRQ received a channel halt interrupt through the FIQ
+with no other bits set, the IRQ would not release the host
+channel and never complete the URB.
+
+Add catchall handling to treat as a transaction error and retry.
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -2578,12 +2578,24 @@ static void handle_hc_chhltd_intr_dma(dw
+ 				     DWC_READ_REG32(&hcd->
+ 						    core_if->core_global_regs->
+ 						    gintsts));
++				/* Failthrough: use 3-strikes rule */
++				qtd->error_count++;
++				dwc_otg_hcd_save_data_toggle(hc, hc_regs, qtd);
++				update_urb_state_xfer_intr(hc, hc_regs,
++					   qtd->urb, qtd, DWC_OTG_HC_XFER_XACT_ERR);
++				halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_XACT_ERR);
+ 			}
+ 
+ 		}
+ 	} else {
+ 		DWC_PRINTF("NYET/NAK/ACK/other in non-error case, 0x%08x\n",
+ 			   hcint.d32);
++		/* Failthrough: use 3-strikes rule */
++		qtd->error_count++;
++		dwc_otg_hcd_save_data_toggle(hc, hc_regs, qtd);
++		update_urb_state_xfer_intr(hc, hc_regs,
++			   qtd->urb, qtd, DWC_OTG_HC_XFER_XACT_ERR);
++		halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_XACT_ERR);
+ 	}
+ }
+ 

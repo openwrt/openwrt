@@ -1,0 +1,21 @@
+From b4ac9f9ce1c102b2550608161f466b06af1ebf00 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 21 Feb 2014 17:15:59 +0000
+Subject: [PATCH 174/174] alsa: Make alsa work queue high priority. Fixes
+ underrun issues when using negitive nice priority
+
+---
+ sound/arm/bcm2835-vchiq.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sound/arm/bcm2835-vchiq.c
++++ b/sound/arm/bcm2835-vchiq.c
+@@ -178,7 +178,7 @@ int bcm2835_audio_write(bcm2835_alsa_str
+ 
+ void my_workqueue_init(bcm2835_alsa_stream_t * alsa_stream)
+ {
+-	alsa_stream->my_wq = create_workqueue("my_queue");
++	alsa_stream->my_wq = alloc_workqueue("my_queue", WQ_HIGHPRI, 1);
+ 	return;
+ }
+ 

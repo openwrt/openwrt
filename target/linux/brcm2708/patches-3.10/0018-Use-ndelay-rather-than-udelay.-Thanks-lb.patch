@@ -1,0 +1,44 @@
+From a56370b5a103f3949c5ed2997a971e1949a15132 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 22 Jun 2012 12:57:42 +0100
+Subject: [PATCH 018/174] Use ndelay rather than udelay. Thanks lb
+
+---
+ drivers/mmc/host/sdhci-bcm2708.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/mmc/host/sdhci-bcm2708.c
++++ b/drivers/mmc/host/sdhci-bcm2708.c
+@@ -249,14 +249,14 @@ static void sdhci_bcm2708_raw_writel(str
+ 		if (now == last_write_hpt || now == last_write_hpt+1) {
+ 			 /* we can't guarantee any significant time has
+ 			  * passed - we'll have to wait anyway ! */
+-			udelay((ns_2clk+1000-1)/1000);
++			ndelay(ns_2clk);
+ 		} else
+ 		{
+ 			/* we must have waited at least this many ns: */
+ 			unsigned int ns_wait = HPTIME_CLK_NS *
+ 					       (last_write_hpt - now - 1);
+ 			if (ns_wait < ns_2clk)
+-				udelay((ns_2clk-ns_wait+500)/1000);
++				ndelay(ns_2clk - ns_wait);
+ 		}
+ 		last_write_hpt = now;
+ 	}
+@@ -272,13 +272,13 @@ static void sdhci_bcm2708_raw_writel(str
+ 		ier &= ~SDHCI_INT_DATA_TIMEOUT;
+ 		writel(ier, host->ioaddr + SDHCI_SIGNAL_ENABLE);
+ 		timeout_disabled = true;
+-		udelay((ns_2clk+1000-1)/1000);
++		ndelay(ns_2clk);
+ 	} else if (timeout_disabled) {
+ 		ier = readl(host->ioaddr + SDHCI_SIGNAL_ENABLE);
+ 		ier |= SDHCI_INT_DATA_TIMEOUT;
+ 		writel(ier, host->ioaddr + SDHCI_SIGNAL_ENABLE);
+ 		timeout_disabled = false;
+-		udelay((ns_2clk+1000-1)/1000);
++		ndelay(ns_2clk);
+ 	}
+ #endif
+ 	writel(val, host->ioaddr + reg);

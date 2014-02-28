@@ -1,0 +1,72 @@
+From 7793e8e7ab80fb41381652e46dbfe29dae3d7eea Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 18 Dec 2013 22:16:19 +0000
+Subject: [PATCH 128/174] config: Enable CONFIG_MEMCG, but leave it disabled
+ (due to memory cost). Enable with cgroup_enable=memory.
+
+---
+ arch/arm/configs/bcmrpi_defconfig |  1 +
+ kernel/cgroup.c                   | 31 +++++++++++++++++++++++++++++++
+ mm/memcontrol.c                   |  1 +
+ 3 files changed, 33 insertions(+)
+
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -18,6 +18,7 @@ CONFIG_CGROUP_FREEZER=y
+ CONFIG_CGROUP_DEVICE=y
+ CONFIG_CGROUP_CPUACCT=y
+ CONFIG_RESOURCE_COUNTERS=y
++CONFIG_MEMCG=y
+ CONFIG_BLK_CGROUP=y
+ CONFIG_NAMESPACES=y
+ CONFIG_SCHED_AUTOGROUP=y
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -5127,6 +5127,37 @@ static int __init cgroup_disable(char *s
+ }
+ __setup("cgroup_disable=", cgroup_disable);
+ 
++static int __init cgroup_enable(char *str)
++{
++	int i;
++	char *token;
++
++	while ((token = strsep(&str, ",")) != NULL) {
++		if (!*token)
++			continue;
++		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++			struct cgroup_subsys *ss = subsys[i];
++
++			/*
++			 * cgroup_enable, being at boot time, can't
++			 * know about module subsystems, so we don't
++			 * worry about them.
++			 */
++			if (!ss || ss->module)
++				continue;
++
++			if (!strcmp(token, ss->name)) {
++				ss->disabled = 0;
++				printk(KERN_INFO "Enabling %s control group"
++					" subsystem\n", ss->name);
++				break;
++			}
++		}
++	}
++	return 1;
++}
++__setup("cgroup_enable=", cgroup_enable);
++
+ /*
+  * Functons for CSS ID.
+  */
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -6956,6 +6956,7 @@ struct cgroup_subsys mem_cgroup_subsys =
+ 	.base_cftypes = mem_cgroup_files,
+ 	.early_init = 0,
+ 	.use_id = 1,
++	.disabled = 1,
+ };
+ 
+ #ifdef CONFIG_MEMCG_SWAP

@@ -1,0 +1,182 @@
+From 3d55e3e65ac2277c2b9a1803c39847fc6b9a0a5d Mon Sep 17 00:00:00 2001
+From: Luke Diamand <luked@broadcom.com>
+Date: Sat, 28 Dec 2013 07:39:51 +0000
+Subject: [PATCH 145/174] vc_mem: tidy up debug printing
+
+Replace explicit use of printk() with pr_XXX() calls to
+better conform to kernel coding style.
+
+Signed-off-by: Luke Diamand <luked@broadcom.com>
+---
+ arch/arm/mach-bcm2708/vc_mem.c | 47 +++++++++++++++++-------------------------
+ 1 file changed, 19 insertions(+), 28 deletions(-)
+
+--- a/arch/arm/mach-bcm2708/vc_mem.c
++++ b/arch/arm/mach-bcm2708/vc_mem.c
+@@ -35,16 +35,6 @@
+ 
+ #define DRIVER_NAME  "vc-mem"
+ 
+-// Uncomment to enable debug logging
+-// #define ENABLE_DBG
+-
+-#if defined(ENABLE_DBG)
+-#define LOG_DBG( fmt, ... )  printk( KERN_INFO fmt "\n", ##__VA_ARGS__ )
+-#else
+-#define LOG_DBG( fmt, ... )
+-#endif
+-#define LOG_ERR( fmt, ... )  printk( KERN_ERR fmt "\n", ##__VA_ARGS__ )
+-
+ // Device (/dev) related variables
+ static dev_t vc_mem_devnum = 0;
+ static struct class *vc_mem_class = NULL;
+@@ -95,7 +85,7 @@ vc_mem_open(struct inode *inode, struct
+ 	(void) inode;
+ 	(void) file;
+ 
+-	LOG_DBG("%s: called file = 0x%p", __func__, file);
++	pr_debug("%s: called file = 0x%p\n", __func__, file);
+ 
+ 	return 0;
+ }
+@@ -112,7 +102,7 @@ vc_mem_release(struct inode *inode, stru
+ 	(void) inode;
+ 	(void) file;
+ 
+-	LOG_DBG("%s: called file = 0x%p", __func__, file);
++	pr_debug("%s: called file = 0x%p\n", __func__, file);
+ 
+ 	return 0;
+ }
+@@ -167,12 +157,12 @@ vc_mem_ioctl(struct file *file, unsigned
+ 	(void) cmd;
+ 	(void) arg;
+ 
+-	LOG_DBG("%s: called file = 0x%p", __func__, file);
++	pr_debug("%s: called file = 0x%p\n", __func__, file);
+ 
+ 	switch (cmd) {
+ 	case VC_MEM_IOC_MEM_PHYS_ADDR:
+ 		{
+-			LOG_DBG("%s: VC_MEM_IOC_MEM_PHYS_ADDR=0x%p",
++			pr_debug("%s: VC_MEM_IOC_MEM_PHYS_ADDR=0x%p\n",
+ 				__func__, (void *) mm_vc_mem_phys_addr);
+ 
+ 			if (copy_to_user((void *) arg, &mm_vc_mem_phys_addr,
+@@ -186,7 +176,7 @@ vc_mem_ioctl(struct file *file, unsigned
+ 			// Get the videocore memory size first
+ 			vc_mem_get_size();
+ 
+-			LOG_DBG("%s: VC_MEM_IOC_MEM_SIZE=%u", __func__,
++			pr_debug("%s: VC_MEM_IOC_MEM_SIZE=%u\n", __func__,
+ 				mm_vc_mem_size);
+ 
+ 			if (copy_to_user((void *) arg, &mm_vc_mem_size,
+@@ -200,7 +190,7 @@ vc_mem_ioctl(struct file *file, unsigned
+ 			// Get the videocore memory base
+ 			vc_mem_get_base();
+ 
+-			LOG_DBG("%s: VC_MEM_IOC_MEM_BASE=%u", __func__,
++			pr_debug("%s: VC_MEM_IOC_MEM_BASE=%u\n", __func__,
+ 				mm_vc_mem_base);
+ 
+ 			if (copy_to_user((void *) arg, &mm_vc_mem_base,
+@@ -214,7 +204,7 @@ vc_mem_ioctl(struct file *file, unsigned
+ 			// Get the videocore memory base
+ 			vc_mem_get_base();
+ 
+-			LOG_DBG("%s: VC_MEM_IOC_MEM_LOAD=%u", __func__,
++			pr_debug("%s: VC_MEM_IOC_MEM_LOAD=%u\n", __func__,
+ 				mm_vc_mem_base);
+ 
+ 			if (copy_to_user((void *) arg, &mm_vc_mem_base,
+@@ -228,7 +218,7 @@ vc_mem_ioctl(struct file *file, unsigned
+ 			return -ENOTTY;
+ 		}
+ 	}
+-	LOG_DBG("%s: file = 0x%p returning %d", __func__, file, rc);
++	pr_debug("%s: file = 0x%p returning %d\n", __func__, file, rc);
+ 
+ 	return rc;
+ }
+@@ -246,12 +236,12 @@ vc_mem_mmap(struct file *filp, struct vm
+ 	unsigned long length = vma->vm_end - vma->vm_start;
+ 	unsigned long offset = vma->vm_pgoff << PAGE_SHIFT;
+ 
+-	LOG_DBG("%s: vm_start = 0x%08lx vm_end = 0x%08lx vm_pgoff = 0x%08lx",
++	pr_debug("%s: vm_start = 0x%08lx vm_end = 0x%08lx vm_pgoff = 0x%08lx\n",
+ 		__func__, (long) vma->vm_start, (long) vma->vm_end,
+ 		(long) vma->vm_pgoff);
+ 
+ 	if (offset + length > mm_vc_mem_size) {
+-		LOG_ERR("%s: length %ld is too big", __func__, length);
++		pr_err("%s: length %ld is too big\n", __func__, length);
+ 		return -EINVAL;
+ 	}
+ 	// Do not cache the memory map
+@@ -261,7 +251,7 @@ vc_mem_mmap(struct file *filp, struct vm
+ 			     (mm_vc_mem_phys_addr >> PAGE_SHIFT) +
+ 			     vma->vm_pgoff, length, vma->vm_page_prot);
+ 	if (rc != 0) {
+-		LOG_ERR("%s: remap_pfn_range failed (rc=%d)", __func__, rc);
++		pr_err("%s: remap_pfn_range failed (rc=%d)\n", __func__, rc);
+ 	}
+ 
+ 	return rc;
+@@ -347,7 +337,7 @@ vc_mem_init(void)
+ 	int rc = -EFAULT;
+ 	struct device *dev;
+ 
+-	LOG_DBG("%s: called", __func__);
++	pr_debug("%s: called\n", __func__);
+ 
+ 	mm_vc_mem_phys_addr = phys_addr;
+ 	mm_vc_mem_size = mem_size;
+@@ -355,24 +345,25 @@ vc_mem_init(void)
+ 
+ 	vc_mem_get_size();
+ 
+-	printk("vc-mem: phys_addr:0x%08lx mem_base=0x%08x mem_size:0x%08x(%u MiB)\n",
++	pr_info("vc-mem: phys_addr:0x%08lx mem_base=0x%08x mem_size:0x%08x(%u MiB)\n",
+ 		mm_vc_mem_phys_addr, mm_vc_mem_base, mm_vc_mem_size, mm_vc_mem_size / (1024 * 1024));
+ 
+ 	if ((rc = alloc_chrdev_region(&vc_mem_devnum, 0, 1, DRIVER_NAME)) < 0) {
+-		LOG_ERR("%s: alloc_chrdev_region failed (rc=%d)", __func__, rc);
++		pr_err("%s: alloc_chrdev_region failed (rc=%d)\n",
++		       __func__, rc);
+ 		goto out_err;
+ 	}
+ 
+ 	cdev_init(&vc_mem_cdev, &vc_mem_fops);
+ 	if ((rc = cdev_add(&vc_mem_cdev, vc_mem_devnum, 1)) != 0) {
+-		LOG_ERR("%s: cdev_add failed (rc=%d)", __func__, rc);
++		pr_err("%s: cdev_add failed (rc=%d)\n", __func__, rc);
+ 		goto out_unregister;
+ 	}
+ 
+ 	vc_mem_class = class_create(THIS_MODULE, DRIVER_NAME);
+ 	if (IS_ERR(vc_mem_class)) {
+ 		rc = PTR_ERR(vc_mem_class);
+-		LOG_ERR("%s: class_create failed (rc=%d)", __func__, rc);
++		pr_err("%s: class_create failed (rc=%d)\n", __func__, rc);
+ 		goto out_cdev_del;
+ 	}
+ 
+@@ -380,7 +371,7 @@ vc_mem_init(void)
+ 			    DRIVER_NAME);
+ 	if (IS_ERR(dev)) {
+ 		rc = PTR_ERR(dev);
+-		LOG_ERR("%s: device_create failed (rc=%d)", __func__, rc);
++		pr_err("%s: device_create failed (rc=%d)\n", __func__, rc);
+ 		goto out_class_destroy;
+ 	}
+ 
+@@ -417,7 +408,7 @@ vc_mem_init(void)
+ static void __exit
+ vc_mem_exit(void)
+ {
+-	LOG_DBG("%s: called", __func__);
++	pr_debug("%s: called\n", __func__);
+ 
+ 	if (vc_mem_inited) {
+ #if CONFIG_DEBUG_FS

@@ -1,0 +1,19 @@
+From bc4acbad80239f770ca05312d94e15285ede65f7 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Sat, 23 Nov 2013 11:47:00 +0000
+Subject: [PATCH 105/174] config: Add CONFIG_IFB
+
+---
+ arch/arm/configs/bcmrpi_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -408,6 +408,7 @@ CONFIG_DM_DELAY=m
+ CONFIG_NETDEVICES=y
+ CONFIG_BONDING=m
+ CONFIG_DUMMY=m
++CONFIG_IFB=m
+ CONFIG_MACVLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m

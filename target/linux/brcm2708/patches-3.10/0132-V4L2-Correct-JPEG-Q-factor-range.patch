@@ -1,0 +1,35 @@
+From c76bf0b3b33a00eb7a8bd274a84d3b0cae93a5b9 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dsteve@broadcom.com>
+Date: Mon, 9 Dec 2013 11:01:53 +0000
+Subject: [PATCH 132/174] V4L2: Correct JPEG Q-factor range
+
+Should be 1-100, not 0-100
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+---
+ drivers/media/platform/bcm2835/controls.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/controls.c
++++ b/drivers/media/platform/bcm2835/controls.c
+@@ -538,7 +538,7 @@ static int ctrl_set_bitrate_mode(struct
+ 	return 0;
+ }
+ 
+-static int ctrl_set_q_factor(struct bm2835_mmal_dev *dev,
++static int ctrl_set_image_encode_output(struct bm2835_mmal_dev *dev,
+ 		      struct v4l2_ctrl *ctrl,
+ 		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+ {
+@@ -683,9 +683,9 @@ static const struct bm2835_mmal_v4l2_ctr
+ 	},
+ 	{
+ 		V4L2_CID_JPEG_COMPRESSION_QUALITY, MMAL_CONTROL_TYPE_STD,
+-		0, 100,
++		1, 100,
+ 		30, 1, NULL,
+-		MMAL_PARAMETER_JPEG_Q_FACTOR, &ctrl_set_q_factor
++		MMAL_PARAMETER_JPEG_Q_FACTOR, &ctrl_set_image_encode_output
+ 	},
+ };
+ 

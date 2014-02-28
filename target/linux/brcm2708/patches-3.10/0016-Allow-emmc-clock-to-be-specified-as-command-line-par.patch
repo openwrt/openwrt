@@ -1,0 +1,44 @@
+From 9227615100c139c48fbbf39312b38c4430eac00d Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Sat, 16 Jun 2012 22:31:55 +0100
+Subject: [PATCH 016/174] Allow emmc clock to be specified as command line
+ parameter
+
+---
+ drivers/mmc/host/sdhci-bcm2708.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/mmc/host/sdhci-bcm2708.c
++++ b/drivers/mmc/host/sdhci-bcm2708.c
+@@ -130,6 +130,7 @@ static inline unsigned long int since_ns
+ }
+ 
+ static bool allow_highspeed = 1;
++static int emmc_clock_freq = BCM2708_EMMC_CLOCK_FREQ;
+ 
+ #if 0
+ static void hptime_test(void)
+@@ -355,7 +356,7 @@ void sdhci_bcm2708_writeb(struct sdhci_h
+ 
+ static unsigned int sdhci_bcm2708_get_max_clock(struct sdhci_host *host)
+ {
+-	return BCM2708_EMMC_CLOCK_FREQ;
++	return emmc_clock_freq;
+ }
+ 
+ /*****************************************************************************\
+@@ -1361,6 +1362,7 @@ module_init(sdhci_drv_init);
+ module_exit(sdhci_drv_exit);
+ 
+ module_param(allow_highspeed, bool, 0444);
++module_param(emmc_clock_freq, int, 0444);
+ 
+ MODULE_DESCRIPTION("Secure Digital Host Controller Interface platform driver");
+ MODULE_AUTHOR("Broadcom <info@broadcom.com>");
+@@ -1368,4 +1370,6 @@ MODULE_LICENSE("GPL v2");
+ MODULE_ALIAS("platform:"DRIVER_NAME);
+ 
+ MODULE_PARM_DESC(allow_highspeed, "Allow high speed transfers modes");
++MODULE_PARM_DESC(emmc_clock_freq, "Specify the speed of emmc clock");
++
+ 

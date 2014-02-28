@@ -1,0 +1,229 @@
+From 71109f7d314b6205259d5cecf8314708f84fb9e6 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Thu, 21 Mar 2013 19:36:17 +0000
+Subject: [PATCH 057/174] dwc_otg: implement tasklet for returning URBs to
+ usbcore hcd layer
+
+The dwc_otg driver interrupt handler for transfer completion will spend
+a very long time with interrupts disabled when a URB is completed -
+this is because usb_hcd_giveback_urb is called from within the handler
+which for a USB device driver with complicated processing (e.g. webcam)
+will take an exorbitant amount of time to complete. This results in
+missed completion interrupts for other USB packets which lead to them
+being dropped due to microframe overruns.
+
+This patch splits returning the URB to the usb hcd layer into a
+high-priority tasklet. This will have most benefit for isochronous IN
+transfers but will also have incidental benefit where multiple periodic
+devices are active at once.
+---
+ .../usb/host/dwc_common_port/dwc_common_linux.c    |  5 ++++
+ drivers/usb/host/dwc_common_port/dwc_list.h        | 14 ++++-----
+ drivers/usb/host/dwc_common_port/dwc_os.h          |  2 ++
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.c             | 34 +++++++++++++++++++++-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.h             | 10 +++++++
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c       | 25 ++++++++++------
+ 6 files changed, 73 insertions(+), 17 deletions(-)
+
+--- a/drivers/usb/host/dwc_common_port/dwc_common_linux.c
++++ b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
+@@ -991,6 +991,11 @@ void DWC_TASK_SCHEDULE(dwc_tasklet_t *ta
+ 	tasklet_schedule(&task->t);
+ }
+ 
++void DWC_TASK_HI_SCHEDULE(dwc_tasklet_t *task)
++{
++	tasklet_hi_schedule(&task->t);
++}
++
+ 
+ /* workqueues
+  - run in process context (can sleep)
+--- a/drivers/usb/host/dwc_common_port/dwc_list.h
++++ b/drivers/usb/host/dwc_common_port/dwc_list.h
+@@ -384,17 +384,17 @@ struct {								\
+ #define DWC_TAILQ_PREV(elm, headname, field)				\
+ 	(*(((struct headname *)((elm)->field.tqe_prev))->tqh_last))
+ #define DWC_TAILQ_EMPTY(head)						\
+-	(TAILQ_FIRST(head) == TAILQ_END(head))
++	(DWC_TAILQ_FIRST(head) == DWC_TAILQ_END(head))
+ 
+ #define DWC_TAILQ_FOREACH(var, head, field)				\
+-	for((var) = TAILQ_FIRST(head);					\
+-	    (var) != TAILQ_END(head);					\
+-	    (var) = TAILQ_NEXT(var, field))
++	for ((var) = DWC_TAILQ_FIRST(head);				\
++	    (var) != DWC_TAILQ_END(head);				\
++	    (var) = DWC_TAILQ_NEXT(var, field))
+ 
+ #define DWC_TAILQ_FOREACH_REVERSE(var, head, headname, field)		\
+-	for((var) = TAILQ_LAST(head, headname);				\
+-	    (var) != TAILQ_END(head);					\
+-	    (var) = TAILQ_PREV(var, headname, field))
++	for ((var) = DWC_TAILQ_LAST(head, headname);			\
++	    (var) != DWC_TAILQ_END(head);				\
++	    (var) = DWC_TAILQ_PREV(var, headname, field))
+ 
+ /*
+  * Tail queue functions.
+--- a/drivers/usb/host/dwc_common_port/dwc_os.h
++++ b/drivers/usb/host/dwc_common_port/dwc_os.h
+@@ -981,6 +981,8 @@ extern void DWC_TASK_FREE(dwc_tasklet_t
+ extern void DWC_TASK_SCHEDULE(dwc_tasklet_t *task);
+ #define dwc_task_schedule DWC_TASK_SCHEDULE
+ 
++extern void DWC_TASK_HI_SCHEDULE(dwc_tasklet_t *task);
++#define dwc_task_hi_schedule DWC_TASK_HI_SCHEDULE
+ 
+ /** @name Timer
+  *
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+@@ -40,6 +40,9 @@
+  * header file.
+  */
+ 
++#include <linux/usb.h>
++#include <linux/usb/hcd.h>
++
+ #include "dwc_otg_hcd.h"
+ #include "dwc_otg_regs.h"
+ 
+@@ -694,6 +697,31 @@ static void reset_tasklet_func(void *dat
+ 	dwc_otg_hcd->flags.b.port_reset_change = 1;
+ }
+ 
++static void completion_tasklet_func(void *ptr)
++{
++	dwc_otg_hcd_t *hcd = (dwc_otg_hcd_t *) ptr;
++	struct urb *urb;
++	urb_tq_entry_t *item;
++	dwc_irqflags_t flags;
++
++	DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
++	while (!DWC_TAILQ_EMPTY(&hcd->completed_urb_list)) {
++		item = DWC_TAILQ_FIRST(&hcd->completed_urb_list);
++		urb = item->urb;
++		DWC_TAILQ_REMOVE(&hcd->completed_urb_list, item,
++				urb_tq_entries);
++		DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
++		DWC_FREE(item);
++
++		usb_hcd_unlink_urb_from_ep(hcd->priv, urb);
++		usb_hcd_giveback_urb(hcd->priv, urb, urb->status);
++
++		DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
++	}
++	DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
++	return;
++}
++
+ static void qh_list_free(dwc_otg_hcd_t * hcd, dwc_list_link_t * qh_list)
+ {
+ 	dwc_list_link_t *item;
+@@ -833,6 +861,7 @@ static void dwc_otg_hcd_free(dwc_otg_hcd
+ 
+ 	DWC_TIMER_FREE(dwc_otg_hcd->conn_timer);
+ 	DWC_TASK_FREE(dwc_otg_hcd->reset_tasklet);
++	DWC_TASK_FREE(dwc_otg_hcd->completion_tasklet);
+ 
+ #ifdef DWC_DEV_SRPCAP
+ 	if (dwc_otg_hcd->core_if->power_down == 2 &&
+@@ -877,7 +906,7 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd
+ 	DWC_LIST_INIT(&hcd->periodic_sched_ready);
+ 	DWC_LIST_INIT(&hcd->periodic_sched_assigned);
+ 	DWC_LIST_INIT(&hcd->periodic_sched_queued);
+-
++	DWC_TAILQ_INIT(&hcd->completed_urb_list);
+ 	/*
+ 	 * Create a host channel descriptor for each host channel implemented
+ 	 * in the controller. Initialize the channel descriptor array.
+@@ -915,6 +944,9 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd
+ 
+ 	/* Initialize reset tasklet. */
+ 	hcd->reset_tasklet = DWC_TASK_ALLOC("reset_tasklet", reset_tasklet_func, hcd);
++
++	hcd->completion_tasklet = DWC_TASK_ALLOC("completion_tasklet",
++						completion_tasklet_func, hcd);
+ #ifdef DWC_DEV_SRPCAP
+ 	if (hcd->core_if->power_down == 2) {
+ 		/* Initialize Power on timer for Host power up in case hibernation */
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+@@ -374,6 +374,13 @@ typedef struct dwc_otg_qh {
+ 
+ DWC_CIRCLEQ_HEAD(hc_list, dwc_hc);
+ 
++typedef struct urb_tq_entry {
++	struct urb *urb;
++	DWC_TAILQ_ENTRY(urb_tq_entry) urb_tq_entries;
++} urb_tq_entry_t;
++
++DWC_TAILQ_HEAD(urb_list, urb_tq_entry);
++
+ /**
+  * This structure holds the state of the HCD, including the non-periodic and
+  * periodic schedules.
+@@ -551,6 +558,9 @@ struct dwc_otg_hcd {
+ 	/* Tasket to do a reset */
+ 	dwc_tasklet_t *reset_tasklet;
+ 
++	dwc_tasklet_t *completion_tasklet;
++	struct urb_list completed_urb_list;
++
+ 	/*  */
+ 	dwc_spinlock_t *lock;
+ 	dwc_spinlock_t *channel_lock;
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+@@ -271,7 +271,7 @@ static int _complete(dwc_otg_hcd_t * hcd
+ 		     dwc_otg_hcd_urb_t * dwc_otg_urb, int32_t status)
+ {
+ 	struct urb *urb = (struct urb *)urb_handle;
+-
++	urb_tq_entry_t *new_entry;
+ 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
+ 		DWC_PRINTF("%s: urb %p, device %d, ep %d %s, status=%d\n",
+ 			   __func__, urb, usb_pipedevice(urb->pipe),
+@@ -285,7 +285,7 @@ static int _complete(dwc_otg_hcd_t * hcd
+ 			}
+ 		}
+ 	}
+-
++	new_entry = DWC_ALLOC_ATOMIC(sizeof(urb_tq_entry_t));
+ 	urb->actual_length = dwc_otg_hcd_urb_get_actual_length(dwc_otg_urb);
+ 	/* Convert status value. */
+ 	switch (status) {
+@@ -348,18 +348,25 @@ static int _complete(dwc_otg_hcd_t * hcd
+ 	}
+ 
+ 	DWC_FREE(dwc_otg_urb);
+-
++	if (!new_entry) {
++		DWC_ERROR("dwc_otg_hcd: complete: cannot allocate URB TQ entry\n");
++		urb->status = -EPROTO;
++		/* don't schedule the tasklet -
++		 * directly return the packet here with error. */
+ #if USB_URB_EP_LINKING
+-        usb_hcd_unlink_urb_from_ep(dwc_otg_hcd_to_hcd(hcd), urb);
++		usb_hcd_unlink_urb_from_ep(dwc_otg_hcd_to_hcd(hcd), urb);
+ #endif
+-	DWC_SPINUNLOCK(hcd->lock);
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
+-	usb_hcd_giveback_urb(dwc_otg_hcd_to_hcd(hcd), urb);
++		usb_hcd_giveback_urb(dwc_otg_hcd_to_hcd(hcd), urb);
+ #else
+-	usb_hcd_giveback_urb(dwc_otg_hcd_to_hcd(hcd), urb, status);
++		usb_hcd_giveback_urb(dwc_otg_hcd_to_hcd(hcd), urb, urb->status);
+ #endif
+-	DWC_SPINLOCK(hcd->lock);
+-
++	} else {
++		new_entry->urb = urb;
++		DWC_TAILQ_INSERT_TAIL(&hcd->completed_urb_list, new_entry,
++					urb_tq_entries);
++		DWC_TASK_HI_SCHEDULE(hcd->completion_tasklet);
++	}
+ 	return 0;
+ }
+ 

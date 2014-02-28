@@ -1,0 +1,55 @@
+From 68f187f8fa966229b9820edec5dda455bdff52ea Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 13 Nov 2013 11:40:56 +0000
+Subject: [PATCH 101/174] sdhci: sdhci_bcm2708_uhs_broken should be handled
+ through caps reported
+
+---
+ drivers/mmc/host/sdhci-bcm2708.c | 6 ------
+ drivers/mmc/host/sdhci.c         | 2 +-
+ drivers/mmc/host/sdhci.h         | 1 -
+ 3 files changed, 1 insertion(+), 8 deletions(-)
+
+--- a/drivers/mmc/host/sdhci-bcm2708.c
++++ b/drivers/mmc/host/sdhci-bcm2708.c
+@@ -1114,11 +1114,6 @@ static unsigned int sdhci_bcm2708_quirk_
+         return 1;
+ }
+ 
+-static unsigned int sdhci_bcm2708_uhs_broken(struct sdhci_host *host)
+-{
+-        return 1;
+-}
+-
+ static unsigned int sdhci_bcm2708_missing_status(struct sdhci_host *host)
+ {
+ 	return 1;
+@@ -1150,7 +1145,6 @@ static struct sdhci_ops sdhci_bcm2708_op
+ 	.pdma_reset = sdhci_bcm2708_platdma_reset,
+ #endif
+ 	.extra_ints = sdhci_bcm2708_quirk_extra_ints,
+-	.uhs_broken = sdhci_bcm2708_uhs_broken,
+ };
+ 
+ /*****************************************************************************\
+--- a/drivers/mmc/host/sdhci.c
++++ b/drivers/mmc/host/sdhci.c
+@@ -1581,7 +1581,7 @@ static void sdhci_do_set_ios(struct sdhc
+ 	else
+ 		ctrl &= ~SDHCI_CTRL_HISPD;
+ 
+-	if (host->version >= SDHCI_SPEC_300 && !(host->ops->uhs_broken)) {
++	if (host->version >= SDHCI_SPEC_300) {
+ 		u16 clk, ctrl_2;
+ 
+ 		/* In case of UHS-I modes, set High Speed Enable */
+--- a/drivers/mmc/host/sdhci.h
++++ b/drivers/mmc/host/sdhci.h
+@@ -299,7 +299,6 @@ struct sdhci_ops {
+ 				      struct mmc_data *data);
+ 	unsigned int 	(*extra_ints)(struct sdhci_host *host);
+ 	unsigned int	(*spurious_crc_acmd51)(struct sdhci_host *host);
+-	unsigned int	(*uhs_broken)(struct sdhci_host *host);
+ 	unsigned int	(*missing_status)(struct sdhci_host *host);
+ 
+ 	void	(*hw_reset)(struct sdhci_host *host);

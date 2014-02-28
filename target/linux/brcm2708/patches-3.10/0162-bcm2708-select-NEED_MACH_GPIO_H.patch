@@ -1,0 +1,30 @@
+From d1df97f2d10654ace3d14a77a2de866ce4cd8d4b Mon Sep 17 00:00:00 2001
+From: Joerg Faschingbauer <jf@faschingbauer.co.at>
+Date: Sat, 18 Jan 2014 23:15:07 +0100
+Subject: [PATCH 162/174] bcm2708: select NEED_MACH_GPIO_H
+
+makers out there use to use gpio_to_irq() in board setup code. it is
+necessary that gpio_to_irq() be defined as a macro for this to work.
+
+https://github.com/raspberrypi/linux/commit/01464226ac6089bd6a33f9899cc792c2355ebf39,
+on its way towards devicetree, introduces a switch NEED_MACH_GPIO_H
+that platforms have to set to get the macro definition of
+gpio_to_irq() - otherwise, the gpiolib incarnation of gpio_to_irq() is
+found instead which does not work from board code.
+
+define NEED_MACH_GPIO_H to make things work again without any pain for
+makers (though this clearly is in the way of devicetree).
+---
+ arch/arm/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -367,6 +367,7 @@ config ARCH_BCM2708
+ 	select ARM_AMBA
+ 	select HAVE_CLK
+ 	select HAVE_SCHED_CLOCK
++	select NEED_MACH_GPIO_H
+ 	select NEED_MACH_MEMORY_H
+ 	select CLKDEV_LOOKUP
+ 	select ARCH_HAS_CPUFREQ

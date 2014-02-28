@@ -1,0 +1,28 @@
+From f5a30bc0daed31795078a29b13f85c48613ccd65 Mon Sep 17 00:00:00 2001
+From: Vincent Sanders <vincent.sanders@collabora.co.uk>
+Date: Sat, 9 Nov 2013 22:37:21 +0000
+Subject: [PATCH 110/174] vchiq: export additional symbols
+
+Signed-off-by: Daniel Stone <daniels@collabora.com>
+---
+ drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
+@@ -405,6 +405,7 @@ int32_t vchi_held_msg_release(VCHI_HELD_
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(vchi_held_msg_release);
+ 
+ /***********************************************************
+  * Name: vchi_msg_hold
+@@ -450,6 +451,7 @@ int32_t vchi_msg_hold(VCHI_SERVICE_HANDL
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(vchi_msg_hold);
+ 
+ /***********************************************************
+  * Name: vchi_initialise

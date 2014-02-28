@@ -1,0 +1,19 @@
+From 7720663aca3ed9b1ecb3a9db8f463b285ed42ba8 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Thu, 5 Dec 2013 16:42:37 +0000
+Subject: [PATCH 113/174] config: Add BCACHE
+
+---
+ arch/arm/configs/bcmrpi_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -397,6 +397,7 @@ CONFIG_ISCSI_BOOT_SYSFS=m
+ CONFIG_MD=y
+ CONFIG_MD_LINEAR=m
+ CONFIG_MD_RAID0=m
++CONFIG_BCACHE=m
+ CONFIG_BLK_DEV_DM=m
+ CONFIG_DM_CRYPT=m
+ CONFIG_DM_SNAPSHOT=m
