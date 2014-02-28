@@ -1,3 +1,41 @@
+commit 1abdeca3c6fb9cf1f84f85e78ed8d1c33bd69db0
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Fri Feb 28 18:52:56 2014 +0100
+
+    ath9k_hw: tweak noise immunity thresholds for older chipsets
+    
+    Older chipsets are more sensitive to high PHY error counts, and the
+    current noise immunity thresholds were based on tests run at QCA with
+    newer chipsets.
+    
+    This patch brings back the values from the old ANI implementation for
+    old chipsets, and it also disables weak signal detection on an earlier
+    noise immunity level, to improve overall radio stability on affected
+    devices.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+commit 431e506da5953adc3b65af25f4b90873d528c115
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Fri Feb 28 18:44:13 2014 +0100
+
+    ath9k_hw: toggle weak signal detection in AP mode on older chipsets
+    
+    The commit 80b4205b "ath9k: Fix OFDM weak signal detection for AP mode"
+    prevented weak signal detection changes from taking effect in AP mode on
+    all chipsets, claiming it is "not allowed".
+    
+    The main reason for not disabling weak signal detection in AP mode is
+    that typically beacon RSSI is used to track whether it is needed to
+    boost range, and this is unavailable in AP mode for obvious reasons.
+    
+    The problem with not disabling weak signal detection is that older
+    chipsets are very sensitive to high PHY error counts. When faced with
+    heavy noise, this can lead to an excessive amount of "Failed to stop
+    TX DMA" errors in the field.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 98d1a6c5b14688ed030e81b889f607be308e0df9
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Mon Feb 24 22:20:32 2014 +0100
@@ -3591,3 +3629,81 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  }
  
  static void ath9k_rx_skb_postprocess(struct ath_common *common,
+--- a/drivers/net/wireless/ath/ath9k/ani.c
++++ b/drivers/net/wireless/ath/ath9k/ani.c
+@@ -176,16 +176,26 @@ static void ath9k_hw_set_ofdm_nil(struct
+ 	if (ah->opmode == NL80211_IFTYPE_STATION &&
+ 	    BEACON_RSSI(ah) <= ATH9K_ANI_RSSI_THR_HIGH)
+ 		weak_sig = true;
+-
+ 	/*
+-	 * OFDM Weak signal detection is always enabled for AP mode.
++	 * Newer chipsets are better at dealing with high PHY error counts -
++	 * keep weak signal detection enabled when no RSSI threshold is
++	 * available to determine if it is needed (mode != STA)
+ 	 */
+-	if (ah->opmode != NL80211_IFTYPE_AP &&
+-	    aniState->ofdmWeakSigDetect != weak_sig) {
+-		ath9k_hw_ani_control(ah,
+-				     ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
+-				     entry_ofdm->ofdm_weak_signal_on);
+-	}
++	else if (AR_SREV_9300_20_OR_LATER(ah) &&
++		 ah->opmode != NL80211_IFTYPE_STATION)
++		weak_sig = true;
++
++	/* Older chipsets are more sensitive to high PHY error counts */
++	else if (!AR_SREV_9300_20_OR_LATER(ah) &&
++		 aniState->ofdmNoiseImmunityLevel >= 8)
++		weak_sig = false;
++
++	if (aniState->ofdmWeakSigDetect != weak_sig)
++		ath9k_hw_ani_control(ah, ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
++				     weak_sig);
++
++	if (!AR_SREV_9300_20_OR_LATER(ah))
++		return;
+ 
+ 	if (aniState->ofdmNoiseImmunityLevel >= ATH9K_ANI_OFDM_DEF_LEVEL) {
+ 		ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH;
+@@ -483,10 +493,17 @@ void ath9k_hw_ani_init(struct ath_hw *ah
+ 
+ 	ath_dbg(common, ANI, "Initialize ANI\n");
+ 
+-	ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH;
+-	ah->config.ofdm_trig_low = ATH9K_ANI_OFDM_TRIG_LOW;
+-	ah->config.cck_trig_high = ATH9K_ANI_CCK_TRIG_HIGH;
+-	ah->config.cck_trig_low = ATH9K_ANI_CCK_TRIG_LOW;
++	if (AR_SREV_9300_20_OR_LATER(ah)) {
++		ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH;
++		ah->config.ofdm_trig_low = ATH9K_ANI_OFDM_TRIG_LOW;
++		ah->config.cck_trig_high = ATH9K_ANI_CCK_TRIG_HIGH;
++		ah->config.cck_trig_low = ATH9K_ANI_CCK_TRIG_LOW;
++	} else {
++		ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH_OLD;
++		ah->config.ofdm_trig_low = ATH9K_ANI_OFDM_TRIG_LOW_OLD;
++		ah->config.cck_trig_high = ATH9K_ANI_CCK_TRIG_HIGH_OLD;
++		ah->config.cck_trig_low = ATH9K_ANI_CCK_TRIG_LOW_OLD;
++	}
+ 
+ 	ani->spurImmunityLevel = ATH9K_ANI_SPUR_IMMUNE_LVL;
+ 	ani->firstepLevel = ATH9K_ANI_FIRSTEP_LVL;
+--- a/drivers/net/wireless/ath/ath9k/ani.h
++++ b/drivers/net/wireless/ath/ath9k/ani.h
+@@ -22,12 +22,16 @@
+ /* units are errors per second */
+ #define ATH9K_ANI_OFDM_TRIG_HIGH           3500
+ #define ATH9K_ANI_OFDM_TRIG_HIGH_BELOW_INI 1000
++#define ATH9K_ANI_OFDM_TRIG_HIGH_OLD       500
+ 
+ #define ATH9K_ANI_OFDM_TRIG_LOW           400
+ #define ATH9K_ANI_OFDM_TRIG_LOW_ABOVE_INI 900
++#define ATH9K_ANI_OFDM_TRIG_LOW_OLD       200
+ 
+ #define ATH9K_ANI_CCK_TRIG_HIGH           600
++#define ATH9K_ANI_CCK_TRIG_HIGH_OLD       200
+ #define ATH9K_ANI_CCK_TRIG_LOW            300
++#define ATH9K_ANI_CCK_TRIG_LOW_OLD        100
+ 
+ #define ATH9K_ANI_SPUR_IMMUNE_LVL         3
+ #define ATH9K_ANI_FIRSTEP_LVL             2
