@@ -50,6 +50,7 @@ drv_mac80211_init_iface_config() {
 	config_add_int dtim_interval
 
 	# mesh
+	config_add_string mesh_id
 	config_add_int $MP_CONFIG_INT
 	config_add_boolean $MP_CONFIG_BOOL
 	config_add_string $MP_CONFIG_STRING
