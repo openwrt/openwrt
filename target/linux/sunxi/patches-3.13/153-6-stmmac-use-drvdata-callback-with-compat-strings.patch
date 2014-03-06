@@ -1,0 +1,123 @@
+From 022066f50f53000679d31eb407693085f37b3f14 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@csie.org>
+Date: Fri, 17 Jan 2014 21:24:46 +0800
+Subject: [PATCH] net: stmmac: Use driver data and callbacks tied with
+ compatible strings
+
+The stmmac driver core allows passing feature flags and callbacks via
+platform data. Add a similar stmmac_of_data to pass flags and callbacks
+tied to compatible strings. This allows us to extend stmmac with glue
+layers for different SoCs.
+
+Signed-off-by: Chen-Yu Tsai <wens@csie.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ .../net/ethernet/stmicro/stmmac/stmmac_platform.c  | 44 +++++++++++++++++-----
+ include/linux/stmmac.h                             | 18 +++++++++
+ 2 files changed, 52 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+index 82110f1..bf119db 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+@@ -26,8 +26,20 @@
+ #include <linux/io.h>
+ #include <linux/of.h>
+ #include <linux/of_net.h>
++#include <linux/of_device.h>
+ #include "stmmac.h"
+ 
++static const struct of_device_id stmmac_dt_ids[] = {
++	/* SoC specific glue layers should come before generic bindings */
++	{ .compatible = "st,spear600-gmac"},
++	{ .compatible = "snps,dwmac-3.610"},
++	{ .compatible = "snps,dwmac-3.70a"},
++	{ .compatible = "snps,dwmac-3.710"},
++	{ .compatible = "snps,dwmac"},
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, stmmac_dt_ids);
++
+ #ifdef CONFIG_OF
+ static int stmmac_probe_config_dt(struct platform_device *pdev,
+ 				  struct plat_stmmacenet_data *plat,
+@@ -35,10 +47,32 @@ static int stmmac_probe_config_dt(struct platform_device *pdev,
+ {
+ 	struct device_node *np = pdev->dev.of_node;
+ 	struct stmmac_dma_cfg *dma_cfg;
++	const struct of_device_id *device;
+ 
+ 	if (!np)
+ 		return -ENODEV;
+ 
++	device = of_match_device(stmmac_dt_ids, &pdev->dev);
++	if (!device)
++		return -ENODEV;
++
++	if (device->data) {
++		const struct stmmac_of_data *data = device->data;
++		plat->has_gmac = data->has_gmac;
++		plat->enh_desc = data->enh_desc;
++		plat->tx_coe = data->tx_coe;
++		plat->rx_coe = data->rx_coe;
++		plat->bugged_jumbo = data->bugged_jumbo;
++		plat->pmt = data->pmt;
++		plat->riwt_off = data->riwt_off;
++		plat->fix_mac_speed = data->fix_mac_speed;
++		plat->bus_setup = data->bus_setup;
++		plat->setup = data->setup;
++		plat->free = data->free;
++		plat->init = data->init;
++		plat->exit = data->exit;
++	}
++
+ 	*mac = of_get_mac_address(np);
+ 	plat->interface = of_get_phy_mode(np);
+ 
+@@ -259,16 +293,6 @@ static int stmmac_pltfr_resume(struct device *dev)
+ static SIMPLE_DEV_PM_OPS(stmmac_pltfr_pm_ops,
+ 			stmmac_pltfr_suspend, stmmac_pltfr_resume);
+ 
+-static const struct of_device_id stmmac_dt_ids[] = {
+-	{ .compatible = "st,spear600-gmac"},
+-	{ .compatible = "snps,dwmac-3.610"},
+-	{ .compatible = "snps,dwmac-3.70a"},
+-	{ .compatible = "snps,dwmac-3.710"},
+-	{ .compatible = "snps,dwmac"},
+-	{ /* sentinel */ }
+-};
+-MODULE_DEVICE_TABLE(of, stmmac_dt_ids);
+-
+ struct platform_driver stmmac_pltfr_driver = {
+ 	.probe = stmmac_pltfr_probe,
+ 	.remove = stmmac_pltfr_remove,
+diff --git a/include/linux/stmmac.h b/include/linux/stmmac.h
+index 0a5a7ac..1367974 100644
+--- a/include/linux/stmmac.h
++++ b/include/linux/stmmac.h
+@@ -121,4 +121,22 @@ struct plat_stmmacenet_data {
+ 	void *custom_data;
+ 	void *bsp_priv;
+ };
++
++/* of_data for SoC glue layer device tree bindings */
++
++struct stmmac_of_data {
++	int has_gmac;
++	int enh_desc;
++	int tx_coe;
++	int rx_coe;
++	int bugged_jumbo;
++	int pmt;
++	int riwt_off;
++	void (*fix_mac_speed)(void *priv, unsigned int speed);
++	void (*bus_setup)(void __iomem *ioaddr);
++	void *(*setup)(struct platform_device *pdev);
++	void (*free)(struct platform_device *pdev, void *priv);
++	int (*init)(struct platform_device *pdev, void *priv);
++	void (*exit)(struct platform_device *pdev, void *priv);
++};
+ #endif
+-- 
+1.8.5.5
+

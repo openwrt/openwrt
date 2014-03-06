@@ -1,0 +1,40 @@
+From 37e3cce7288f7d5c34ae630f16faf48bd3d01c18 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sun, 5 Jan 2014 22:40:39 +0100
+Subject: [PATCH] phy-core: Don't propagate -ENOSUPP from
+ phy_pm_runtime_get_sync to caller
+
+The phy-core allows phy_init and phy_power_on to be called multiple times,
+but before this patch -ENOSUPP from phy_pm_runtime_get_sync would be
+propagated to the caller for the 2nd and later calls.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/phy/phy-core.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/phy/phy-core.c b/drivers/phy/phy-core.c
+index b355553..6c73837 100644
+--- a/drivers/phy/phy-core.c
++++ b/drivers/phy/phy-core.c
+@@ -176,6 +176,8 @@ int phy_init(struct phy *phy)
+ 			dev_err(&phy->dev, "phy init failed --> %d\n", ret);
+ 			goto out;
+ 		}
++	} else {
++		ret = 0; /* Override possible ret == -ENOTSUPP */
+ 	}
+ 	++phy->init_count;
+ 
+@@ -232,6 +234,8 @@ int phy_power_on(struct phy *phy)
+ 			dev_err(&phy->dev, "phy poweron failed --> %d\n", ret);
+ 			goto out;
+ 		}
++	} else {
++		ret = 0; /* Override possible ret == -ENOTSUPP */
+ 	}
+ 	++phy->power_count;
+ 	mutex_unlock(&phy->mutex);
+-- 
+1.8.5.5
+

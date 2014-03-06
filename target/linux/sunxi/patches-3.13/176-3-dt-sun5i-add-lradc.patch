@@ -1,0 +1,104 @@
+From 23f834fe6efd9f97e9b336cc53d902e6a0158cc5 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Wed, 1 Jan 2014 19:50:33 +0100
+Subject: [PATCH] ARM: dts: sun5i: Add lradc node
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts | 8 ++++++++
+ arch/arm/boot/dts/sun5i-a10s.dtsi                | 7 +++++++
+ arch/arm/boot/dts/sun5i-a13-olinuxino.dts        | 8 ++++++++
+ arch/arm/boot/dts/sun5i-a13.dtsi                 | 7 +++++++
+ 4 files changed, 30 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts b/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
+index 5c7b454..2cbca7b 100644
+--- a/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
++++ b/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
+@@ -13,6 +13,7 @@
+ 
+ /dts-v1/;
+ /include/ "sun5i-a10s.dtsi"
++#include <dt-bindings/input/input.h>
+ 
+ / {
+ 	model = "Olimex A10s-Olinuxino Micro";
+@@ -73,6 +74,13 @@
+ 			};
+ 		};
+ 
++		lradc: lradc@01c22800 {
++			allwinner,chan0-step = <200>;
++			linux,chan0-keycodes = <KEY_VOLUMEUP KEY_VOLUMEDOWN
++						KEY_MENU KEY_ENTER KEY_HOME>;
++			status = "okay";
++		};
++
+ 		uart0: serial@01c28000 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&uart0_pins_a>;
+diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
+index 15dfa9a..95cb245 100644
+--- a/arch/arm/boot/dts/sun5i-a10s.dtsi
++++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
+@@ -430,6 +430,13 @@
+ 			reg = <0x01c20c90 0x10>;
+ 		};
+ 
++		lradc: lradc@01c22800 {
++			compatible = "allwinner,sun4i-lradc-keys";
++			reg = <0x01c22800 0x100>;
++			interrupts = <31>;
++			status = "disabled";
++		};
++
+ 		sid: eeprom@01c23800 {
+ 			compatible = "allwinner,sun4i-sid";
+ 			reg = <0x01c23800 0x10>;
+diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
+index a7280f5..ba32a41 100644
+--- a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
++++ b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
+@@ -13,6 +13,7 @@
+ 
+ /dts-v1/;
+ /include/ "sun5i-a13.dtsi"
++#include <dt-bindings/input/input.h>
+ 
+ / {
+ 	model = "Olimex A13-Olinuxino";
+@@ -43,6 +44,13 @@
+ 			};
+ 		};
+ 
++		lradc: lradc@01c22800 {
++			allwinner,chan0-step = <200>;
++			linux,chan0-keycodes = <KEY_VOLUMEUP KEY_VOLUMEDOWN
++						KEY_MENU KEY_ENTER KEY_HOME>;
++			status = "okay";
++		};
++
+ 		uart1: serial@01c28400 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&uart1_pins_b>;
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index 14a99d0..bae0f5f 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -376,6 +376,13 @@
+ 			reg = <0x01c20c90 0x10>;
+ 		};
+ 
++		lradc: lradc@01c22800 {
++			compatible = "allwinner,sun4i-lradc-keys";
++			reg = <0x01c22800 0x100>;
++			interrupts = <31>;
++			status = "disabled";
++		};
++
+ 		sid: eeprom@01c23800 {
+ 			compatible = "allwinner,sun4i-sid";
+ 			reg = <0x01c23800 0x10>;
+-- 
+1.8.5.5
+

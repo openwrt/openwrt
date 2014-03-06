@@ -1,0 +1,111 @@
+From 92ef67c53ad92487c3c8de75e7940384c2edd793 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Wed, 5 Feb 2014 14:05:03 +0100
+Subject: [PATCH] clk: sunxi: Add support for PLL6 on the A31
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The A31 has a slightly different PLL6 clock. Add support for this new clock in
+our driver.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+---
+ Documentation/devicetree/bindings/clock/sunxi.txt |  1 +
+ drivers/clk/sunxi/clk-sunxi.c                     | 45 +++++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
+index ca2b692..c37c764 100644
+--- a/Documentation/devicetree/bindings/clock/sunxi.txt
++++ b/Documentation/devicetree/bindings/clock/sunxi.txt
+@@ -11,6 +11,7 @@ Required properties:
+ 	"allwinner,sun6i-a31-pll1-clk" - for the main PLL clock on A31
+ 	"allwinner,sun4i-pll5-clk" - for the PLL5 clock
+ 	"allwinner,sun4i-pll6-clk" - for the PLL6 clock
++	"allwinner,sun6i-a31-pll6-clk" - for the PLL6 clock on A31
+ 	"allwinner,sun4i-cpu-clk" - for the CPU multiplexer clock
+ 	"allwinner,sun4i-axi-clk" - for the AXI clock
+ 	"allwinner,sun4i-axi-gates-clk" - for the AXI gates
+diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
+index a779c31..d4cf297 100644
+--- a/drivers/clk/sunxi/clk-sunxi.c
++++ b/drivers/clk/sunxi/clk-sunxi.c
+@@ -252,7 +252,38 @@ static void sun4i_get_pll5_factors(u32 *freq, u32 parent_rate,
+ 	*n = DIV_ROUND_UP(div, (*k+1));
+ }
+ 
++/**
++ * sun6i_a31_get_pll6_factors() - calculates n, k factors for A31 PLL6
++ * PLL6 rate is calculated as follows
++ * rate = parent_rate * n * (k + 1) / 2
++ * parent_rate is always 24Mhz
++ */
++
++static void sun6i_a31_get_pll6_factors(u32 *freq, u32 parent_rate,
++				       u8 *n, u8 *k, u8 *m, u8 *p)
++{
++	u8 div;
++
++	/*
++	 * We always have 24MHz / 2, so we can just say that our
++	 * parent clock is 12MHz.
++	 */
++	parent_rate = parent_rate / 2;
++
++	/* Normalize value to a parent_rate multiple (24M / 2) */
++	div = *freq / parent_rate;
++	*freq = parent_rate * div;
++
++	/* we were called to round the frequency, we can now return */
++	if (n == NULL)
++		return;
++
++	*k = div / 32;
++	if (*k > 3)
++		*k = 3;
+ 
++	*n = DIV_ROUND_UP(div, (*k+1));
++}
+ 
+ /**
+  * sun4i_get_apb1_factors() - calculates m, p factors for APB1
+@@ -420,6 +451,13 @@ struct factors_data {
+ 	.kwidth = 2,
+ };
+ 
++static struct clk_factors_config sun6i_a31_pll6_config = {
++	.nshift	= 8,
++	.nwidth = 5,
++	.kshift = 4,
++	.kwidth = 2,
++};
++
+ static struct clk_factors_config sun4i_apb1_config = {
+ 	.mshift = 0,
+ 	.mwidth = 5,
+@@ -469,6 +507,12 @@ struct factors_data {
+ 	.name = "pll6",
+ };
+ 
++static const struct factors_data sun6i_a31_pll6_data __initconst = {
++	.enable = 31,
++	.table = &sun6i_a31_pll6_config,
++	.getter = sun6i_a31_get_pll6_factors,
++};
++
+ static const struct factors_data sun4i_apb1_data __initconst = {
+ 	.table = &sun4i_apb1_config,
+ 	.getter = sun4i_get_apb1_factors,
+@@ -1069,6 +1113,7 @@ static void __init sunxi_divs_clk_setup(struct device_node *node,
+ static const struct of_device_id clk_factors_match[] __initconst = {
+ 	{.compatible = "allwinner,sun4i-pll1-clk", .data = &sun4i_pll1_data,},
+ 	{.compatible = "allwinner,sun6i-a31-pll1-clk", .data = &sun6i_a31_pll1_data,},
++	{.compatible = "allwinner,sun6i-a31-pll6-clk", .data = &sun6i_a31_pll6_data,},
+ 	{.compatible = "allwinner,sun4i-apb1-clk", .data = &sun4i_apb1_data,},
+ 	{.compatible = "allwinner,sun4i-mod0-clk", .data = &sun4i_mod0_data,},
+ 	{.compatible = "allwinner,sun7i-a20-out-clk", .data = &sun7i_a20_out_data,},
+-- 
+1.8.5.5
+

@@ -1,0 +1,95 @@
+From d11b47592e6af40fff595900c2af30774ee0b88e Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sun, 9 Feb 2014 14:17:28 +0100
+Subject: [PATCH] ARM: sun5i: dt: Add sun5i-a1*-usb-vbus-reg dts include files
+
+Almost all sun5i-a10s boards have a gpio controlled vbus for usb1 using gpio
+pin PB10 as in the reference design. This commit adds an include file for this,
+avoiding the need to copy and paste the dts code.
+
+For sun5i-a13 based board the reference design uses a gpio on the pmic, which
+we don't support yet. Still for consistency with all the other dts files also
+add a sun5i-a13-usb-vbus-reg.dtsi files, without a gpio reference for now.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun5i-a10s-usb-vbus-reg.dtsi | 36 ++++++++++++++++++++++++++
+ arch/arm/boot/dts/sun5i-a13-usb-vbus-reg.dtsi  | 23 ++++++++++++++++
+ 2 files changed, 59 insertions(+)
+ create mode 100644 arch/arm/boot/dts/sun5i-a10s-usb-vbus-reg.dtsi
+ create mode 100644 arch/arm/boot/dts/sun5i-a13-usb-vbus-reg.dtsi
+
+diff --git a/arch/arm/boot/dts/sun5i-a10s-usb-vbus-reg.dtsi b/arch/arm/boot/dts/sun5i-a10s-usb-vbus-reg.dtsi
+new file mode 100644
+index 0000000..bb1a693
+--- /dev/null
++++ b/arch/arm/boot/dts/sun5i-a10s-usb-vbus-reg.dtsi
+@@ -0,0 +1,36 @@
++/*
++ * sun5i a10s boards usb vbus supply common code
++ *
++ * Copyright 2014 - Hans de Goede <hdegoede@redhat.com>
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++/ {
++	soc@01c00000 {
++		pio: pinctrl@01c20800 {
++			usb1_vbus_pin_a: usb1_vbus_pin@0 {
++				allwinner,pins = "PB10";
++				allwinner,function = "gpio_out";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++		};
++	};
++
++	reg_usb1_vbus: usb1-vbus {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&usb1_vbus_pin_a>;
++		regulator-name = "usb1-vbus";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++		gpio = <&pio 1 10 0>;
++	};
++};
+diff --git a/arch/arm/boot/dts/sun5i-a13-usb-vbus-reg.dtsi b/arch/arm/boot/dts/sun5i-a13-usb-vbus-reg.dtsi
+new file mode 100644
+index 0000000..4d70b9a
+--- /dev/null
++++ b/arch/arm/boot/dts/sun5i-a13-usb-vbus-reg.dtsi
+@@ -0,0 +1,23 @@
++/*
++ * sun5i a13 boards usb vbus supply common code
++ *
++ * Copyright 2014 - Hans de Goede <hdegoede@redhat.com>
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++/ {
++	reg_usb1_vbus: usb1-vbus {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		regulator-name = "usb1-vbus";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++	};
++};
+-- 
+1.8.5.5
+

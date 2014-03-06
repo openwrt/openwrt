@@ -1,0 +1,79 @@
+From c3593cc95c240663bd9c191c1029237e467575af Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Fri, 7 Feb 2014 18:08:03 +0100
+Subject: [PATCH] ARM: sun4i: dt: Add sun4i-a10-usb-vbus-reg dts include file
+
+Almost all sun4i and sun7i boards have a gpio controlled vbus for usb1 and
+usb2, using gpio pin PH6 and PH3 as in the reference design. This commit adds
+an include file for this, avoiding the need to copy and paste the exact same
+dts code to almost all sun4i and sun7i dts files.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10-usb-vbus-reg.dtsi | 54 +++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+ create mode 100644 arch/arm/boot/dts/sun4i-a10-usb-vbus-reg.dtsi
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-usb-vbus-reg.dtsi b/arch/arm/boot/dts/sun4i-a10-usb-vbus-reg.dtsi
+new file mode 100644
+index 0000000..803be0c
+--- /dev/null
++++ b/arch/arm/boot/dts/sun4i-a10-usb-vbus-reg.dtsi
+@@ -0,0 +1,54 @@
++/*
++ * sun4i boards usb vbus supply common code
++ *
++ * Copyright 2014 - Hans de Goede <hdegoede@redhat.com>
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++/ {
++	soc@01c00000 {
++		pio: pinctrl@01c20800 {
++			usb1_vbus_pin_a: usb1_vbus_pin@0 {
++				allwinner,pins = "PH6";
++				allwinner,function = "gpio_out";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			usb2_vbus_pin_a: usb2_vbus_pin@0 {
++				allwinner,pins = "PH3";
++				allwinner,function = "gpio_out";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++		};
++	};
++
++	reg_usb1_vbus: usb1-vbus {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&usb1_vbus_pin_a>;
++		regulator-name = "usb1-vbus";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++		gpio = <&pio 7 6 0>;
++	};
++
++	reg_usb2_vbus: usb2-vbus {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&usb2_vbus_pin_a>;
++		regulator-name = "usb2-vbus";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++		gpio = <&pio 7 3 0>;
++	};
++};
+-- 
+1.8.5.5
+

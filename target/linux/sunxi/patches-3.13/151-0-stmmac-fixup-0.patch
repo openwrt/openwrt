@@ -1,0 +1,50 @@
+From 33ba4079ea8c611c1aeca34f2d6d53a8214c14c5 Mon Sep 17 00:00:00 2001
+From: Rashika Kheria <rashika.kheria@gmail.com>
+Date: Thu, 19 Dec 2013 14:19:44 +0530
+Subject: [PATCH] drivers: net: Mark functions as static in stmmac_platform.c
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch marks the function stmmac_pltfr_freeze() and
+stmmac_pltfr_restore() in stmmac_platform.c as static because they are
+not used outside this file.
+
+Thus, it also removes the following warnings in
+ethernet/stmicro/stmmac/stmmac_platform.c:
+
+drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c:222:5: warning: no previous prototype for ‘stmmac_pltfr_freeze’ [-Wmissing-prototypes]
+drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c:236:5: warning: no previous prototype for ‘stmmac_pltfr_restore’ [-Wmissing-prototypes]
+
+Signed-off-by: Rashika Kheria <rashika.kheria@gmail.com>
+Reviewed-by: Josh Triplett <josh@joshtriplett.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+index 51c9069..38bd1f4 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+@@ -219,7 +219,7 @@ static int stmmac_pltfr_resume(struct device *dev)
+ 	return stmmac_resume(ndev);
+ }
+ 
+-int stmmac_pltfr_freeze(struct device *dev)
++static int stmmac_pltfr_freeze(struct device *dev)
+ {
+ 	int ret;
+ 	struct plat_stmmacenet_data *plat_dat = dev_get_platdata(dev);
+@@ -233,7 +233,7 @@ int stmmac_pltfr_freeze(struct device *dev)
+ 	return ret;
+ }
+ 
+-int stmmac_pltfr_restore(struct device *dev)
++static int stmmac_pltfr_restore(struct device *dev)
+ {
+ 	struct plat_stmmacenet_data *plat_dat = dev_get_platdata(dev);
+ 	struct net_device *ndev = dev_get_drvdata(dev);
+-- 
+1.8.5.5
+

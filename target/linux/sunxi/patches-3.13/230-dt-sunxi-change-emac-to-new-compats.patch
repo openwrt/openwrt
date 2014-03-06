@@ -1,0 +1,57 @@
+From 4dae1686782d52084893421b89ff1aa61e223aaf Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Sun, 2 Feb 2014 14:49:11 +0100
+Subject: [PATCH] net: ethernet: sunxi: Add new compatibles
+
+The Allwinner A10 compatibles were following a slightly different compatible
+patterns than the rest of the SoCs for historical reasons. Add compatibles
+matching the other pattern to the ethernet driver for consistency, and keep the
+older one for backward compatibility.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ Documentation/devicetree/bindings/net/allwinner,sun4i-emac.txt | 5 +++--
+ drivers/net/ethernet/allwinner/sun4i-emac.c                    | 3 +++
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/allwinner,sun4i-emac.txt b/Documentation/devicetree/bindings/net/allwinner,sun4i-emac.txt
+index b90bfcd..863d5b81 100644
+--- a/Documentation/devicetree/bindings/net/allwinner,sun4i-emac.txt
++++ b/Documentation/devicetree/bindings/net/allwinner,sun4i-emac.txt
+@@ -1,7 +1,8 @@
+ * Allwinner EMAC ethernet controller
+ 
+ Required properties:
+-- compatible: should be "allwinner,sun4i-emac".
++- compatible: should be "allwinner,sun4i-a10-emac" (Deprecated:
++              "allwinner,sun4i-emac")
+ - reg: address and length of the register set for the device.
+ - interrupts: interrupt for the device
+ - phy: A phandle to a phy node defining the PHY address (as the reg
+@@ -14,7 +15,7 @@ Optional properties:
+ Example:
+ 
+ emac: ethernet@01c0b000 {
+-       compatible = "allwinner,sun4i-emac";
++       compatible = "allwinner,sun4i-a10-emac";
+        reg = <0x01c0b000 0x1000>;
+        interrupts = <55>;
+        clocks = <&ahb_gates 17>;
+diff --git a/drivers/net/ethernet/allwinner/sun4i-emac.c b/drivers/net/ethernet/allwinner/sun4i-emac.c
+index 0cc2143..511f6ee 100644
+--- a/drivers/net/ethernet/allwinner/sun4i-emac.c
++++ b/drivers/net/ethernet/allwinner/sun4i-emac.c
+@@ -929,6 +929,9 @@ static int emac_resume(struct platform_device *dev)
+ }
+ 
+ static const struct of_device_id emac_of_match[] = {
++	{.compatible = "allwinner,sun4i-a10-emac",},
++
++	/* Deprecated */
+ 	{.compatible = "allwinner,sun4i-emac",},
+ 	{},
+ };
+-- 
+1.8.5.5
+
