@@ -1,0 +1,35 @@
+From 4261ec43b199a214f6b0ae5fefefff2e524f8977 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@csie.org>
+Date: Tue, 14 Jan 2014 22:49:50 +0800
+Subject: [PATCH] ARM: dts: sun7i: add pin muxing options for UART2
+
+UART2 is used on CubieTruck to connect to the Bluetooth module.
+Add the pin set used in this case.
+
+Signed-off-by: Chen-Yu Tsai <wens@csie.org>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun7i-a20.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index b476855..bfb2cf2 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -381,6 +381,13 @@
+ 				allwinner,pull = <0>;
+ 			};
+ 
++			uart2_pins_a: uart2@0 {
++				allwinner,pins = "PI16", "PI17", "PI18", "PI19";
++				allwinner,function = "uart2";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
+ 			uart6_pins_a: uart6@0 {
+ 				allwinner,pins = "PI12", "PI13";
+ 				allwinner,function = "uart6";
+-- 
+1.8.5.5
+

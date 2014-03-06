@@ -1,0 +1,83 @@
+From 3aa1e8b65b7db768fade643e26f8995860596795 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Tue, 11 Feb 2014 17:41:48 +0100
+Subject: [PATCH] uhci-platform: Change compatible string from platform-uhci to
+ generic-uhci
+
+This brings the uhci-platform bindings in sync with what we've done for
+the ohci- and ehci-platform drivers. As discussed there using platform as a
+prefix is a bit weird as the platform bus is a Linux specific thing and
+the bindings are supposed to be OS agnostic.
+
+Note that the old platform-uhci compatible string is kept around for, well,
+compatibility reasons.
+
+While at it rename the bindings txt file to match the name of all the
+other ?hci-platform bindings docs.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ Documentation/devicetree/bindings/usb/platform-uhci.txt | 15 ---------------
+ Documentation/devicetree/bindings/usb/usb-uhci.txt      | 15 +++++++++++++++
+ drivers/usb/host/uhci-platform.c                        |  1 +
+ 3 files changed, 16 insertions(+), 15 deletions(-)
+ delete mode 100644 Documentation/devicetree/bindings/usb/platform-uhci.txt
+ create mode 100644 Documentation/devicetree/bindings/usb/usb-uhci.txt
+
+diff --git a/Documentation/devicetree/bindings/usb/platform-uhci.txt b/Documentation/devicetree/bindings/usb/platform-uhci.txt
+deleted file mode 100644
+index a4fb071..0000000
+--- a/Documentation/devicetree/bindings/usb/platform-uhci.txt
++++ /dev/null
+@@ -1,15 +0,0 @@
+-Generic Platform UHCI Controller
+------------------------------------------------------
+-
+-Required properties:
+-- compatible : "platform-uhci"
+-- reg : Should contain 1 register ranges(address and length)
+-- interrupts : UHCI controller interrupt
+-
+-Example:
+-
+-	uhci@d8007b00 {
+-		compatible = "platform-uhci";
+-		reg = <0xd8007b00 0x200>;
+-		interrupts = <43>;
+-	};
+diff --git a/Documentation/devicetree/bindings/usb/usb-uhci.txt b/Documentation/devicetree/bindings/usb/usb-uhci.txt
+new file mode 100644
+index 0000000..2981334
+--- /dev/null
++++ b/Documentation/devicetree/bindings/usb/usb-uhci.txt
+@@ -0,0 +1,15 @@
++Generic Platform UHCI Controller
++-----------------------------------------------------
++
++Required properties:
++- compatible : "generic-uhci" (deprecated: "platform-uhci")
++- reg : Should contain 1 register ranges(address and length)
++- interrupts : UHCI controller interrupt
++
++Example:
++
++	uhci@d8007b00 {
++		compatible = "generic-uhci";
++		reg = <0xd8007b00 0x200>;
++		interrupts = <43>;
++	};
+diff --git a/drivers/usb/host/uhci-platform.c b/drivers/usb/host/uhci-platform.c
+index 44e6c9d..01833ab 100644
+--- a/drivers/usb/host/uhci-platform.c
++++ b/drivers/usb/host/uhci-platform.c
+@@ -148,6 +148,7 @@ static void uhci_hcd_platform_shutdown(struct platform_device *op)
+ }
+ 
+ static const struct of_device_id platform_uhci_ids[] = {
++	{ .compatible = "generic-uhci", },
+ 	{ .compatible = "platform-uhci", },
+ 	{}
+ };
+-- 
+1.8.5.5
+

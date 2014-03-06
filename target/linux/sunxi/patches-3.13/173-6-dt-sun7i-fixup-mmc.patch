@@ -1,0 +1,73 @@
+From e48e7ba7f97e883a24036df04cb474cf7cd22574 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Mon, 17 Feb 2014 17:16:08 +0100
+Subject: [PATCH] ARM: sun7i: dt: Fixup mmc bindings
+
+1) Now that we're no longer overriding the caps set by mmc_of_parse we need
+to set cd-inverted for our card detection to work.
+
+2) Now that we no longer claim UHS modes support we will never use any DDR
+modes, so drive-strength 2 is enough for the mmc data pins.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun7i-a20.dtsi | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 3bc6ac5..f4ecd79 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -399,6 +399,7 @@
+ 			clock-names = "ahb", "mod";
+ 			interrupts = <0 32 4>;
+ 			bus-width = <4>;
++			cd-inverted;
+ 			status = "disabled";
+ 		};
+ 
+@@ -409,6 +410,7 @@
+ 			clock-names = "ahb", "mod";
+ 			interrupts = <0 33 4>;
+ 			bus-width = <4>;
++			cd-inverted;
+ 			status = "disabled";
+ 		};
+ 
+@@ -419,6 +421,7 @@
+ 			clock-names = "ahb", "mod";
+ 			interrupts = <0 34 4>;
+ 			bus-width = <4>;
++			cd-inverted;
+ 			status = "disabled";
+ 		};
+ 
+@@ -429,6 +432,7 @@
+ 			clock-names = "ahb", "mod";
+ 			interrupts = <0 35 4>;
+ 			bus-width = <4>;
++			cd-inverted;
+ 			status = "disabled";
+ 		};
+ 
+@@ -554,7 +558,7 @@
+ 			mmc0_pins_a: mmc0@0 {
+ 				allwinner,pins = "PF0","PF1","PF2","PF3","PF4","PF5";
+ 				allwinner,function = "mmc0";
+-				allwinner,drive = <3>;
++				allwinner,drive = <2>;
+ 				allwinner,pull = <0>;
+ 			};
+ 
+@@ -568,7 +572,7 @@
+ 			mmc3_pins_a: mmc3@0 {
+ 				allwinner,pins = "PI4","PI5","PI6","PI7","PI8","PI9";
+ 				allwinner,function = "mmc3";
+-				allwinner,drive = <3>;
++				allwinner,drive = <2>;
+ 				allwinner,pull = <0>;
+ 			};
+ 		};
+-- 
+1.8.5.5
+

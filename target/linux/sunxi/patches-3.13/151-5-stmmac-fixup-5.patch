@@ -1,0 +1,45 @@
+From 073752aa59b3db120b2508d5bdd0598ada25fd25 Mon Sep 17 00:00:00 2001
+From: Srinivas Kandagatla <srinivas.kandagatla@st.com>
+Date: Thu, 16 Jan 2014 10:52:27 +0000
+Subject: [PATCH] net: stmmac: make stmmac_mdio_reset non-static
+
+This patch promotes stmmac_mdio_reset function from static to
+non-static, so that power management functions can decide to reset if
+the IP comes out from lowe power state specially hibernation cases.
+
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@st.com>
+Acked-by: Giuseppe Cavallaro <peppe.cavallaro@st.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac.h      | 1 +
+ drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac.h b/drivers/net/ethernet/stmicro/stmmac/stmmac.h
+index 92be6b3..5a568015 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac.h
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac.h
+@@ -110,6 +110,7 @@ struct stmmac_priv {
+ 
+ int stmmac_mdio_unregister(struct net_device *ndev);
+ int stmmac_mdio_register(struct net_device *ndev);
++int stmmac_mdio_reset(struct mii_bus *mii);
+ void stmmac_set_ethtool_ops(struct net_device *netdev);
+ extern const struct stmmac_desc_ops enh_desc_ops;
+ extern const struct stmmac_desc_ops ndesc_ops;
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c
+index aab12d2..a468eb1 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c
+@@ -128,7 +128,7 @@ static int stmmac_mdio_write(struct mii_bus *bus, int phyaddr, int phyreg,
+  * @bus: points to the mii_bus structure
+  * Description: reset the MII bus
+  */
+-static int stmmac_mdio_reset(struct mii_bus *bus)
++int stmmac_mdio_reset(struct mii_bus *bus)
+ {
+ #if defined(CONFIG_STMMAC_PLATFORM)
+ 	struct net_device *ndev = bus->priv;
+-- 
+1.8.5.5
+

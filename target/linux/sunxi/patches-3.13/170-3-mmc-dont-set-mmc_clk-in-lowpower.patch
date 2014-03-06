@@ -1,0 +1,49 @@
+From 0a6ec6db90c73b037428bf3a94a6281754007c25 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Mon, 17 Feb 2014 16:55:54 +0100
+Subject: [PATCH] sunxi-mmc: Don't set mmc clk in low power mode
+
+The android driver uses an io-flag to descern whether a controller is
+hooked up to a sdcard slot, or to an onboard sdio dev. And for sdcard slots
+it sets the clock in a low-power mode.
+
+This is causing transmission errors when talking to the sdio-wifi on the
+cubietruck, and this may be the cause of problems with some type sdcards
+too. This patch fixes things by simply never setting the clk in low power
+mode.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/mmc/host/sunxi-mmc.c | 3 ---
+ drivers/mmc/host/sunxi-mmc.h | 1 -
+ 2 files changed, 4 deletions(-)
+
+diff --git a/drivers/mmc/host/sunxi-mmc.c b/drivers/mmc/host/sunxi-mmc.c
+index f4bfaf0..c1a9d8a 100644
+--- a/drivers/mmc/host/sunxi-mmc.c
++++ b/drivers/mmc/host/sunxi-mmc.c
+@@ -400,9 +400,6 @@ static void sunxi_mmc_oclk_onoff(struct sunxi_mmc_host *host, u32 oclk_en)
+ 	if (oclk_en)
+ 		rval |= SDXC_CARD_CLOCK_ON;
+ 
+-	if (!host->io_flag)
+-		rval |= SDXC_LOW_POWER_ON;
+-
+ 	mci_writel(host, REG_CLKCR, rval);
+ 
+ 	rval = SDXC_START | SDXC_UPCLK_ONLY | SDXC_WAIT_PRE_OVER;
+diff --git a/drivers/mmc/host/sunxi-mmc.h b/drivers/mmc/host/sunxi-mmc.h
+index cbd6d49..a738850 100644
+--- a/drivers/mmc/host/sunxi-mmc.h
++++ b/drivers/mmc/host/sunxi-mmc.h
+@@ -211,7 +211,6 @@ struct sunxi_mmc_host {
+ 
+ 	/* flags */
+ 	u32		power_on:1;
+-	u32		io_flag:1;
+ 	u32		wait_dma:1;
+ 
+ 	dma_addr_t	sg_dma;
+-- 
+1.8.5.5
+

@@ -1,0 +1,61 @@
+From 2f2ffd5ea0174434c8214722127e5e977dcecf32 Mon Sep 17 00:00:00 2001
+From: Zalan Blenessy <zalan.blenessy@gmail.com>
+Date: Sun, 22 Dec 2013 17:08:10 +0100
+Subject: [PATCH] ARM: sun7i: dt: Add USB host nodes to a20-olinuxino-micro dts
+
+Add nodes for the usb-phy and ehci- and ohci-usb-host controllers.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
+index aef289f..824ce0a 100644
+--- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
++++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
+@@ -14,6 +14,7 @@
+ /dts-v1/;
+ /include/ "sun7i-a20.dtsi"
+ /include/ "sunxi-ahci-reg.dtsi"
++/include/ "sun4i-a10-usb-vbus-reg.dtsi"
+ #include <dt-bindings/input/input.h>
+ 
+ / {
+@@ -37,11 +38,33 @@
+ 			status = "okay";
+ 		};
+ 
++		usbphy: phy@01c13400 {
++			usb1_vbus-supply = <&reg_usb1_vbus>;
++			usb2_vbus-supply = <&reg_usb2_vbus>;
++			status = "okay";
++		};
++
++		ehci0: usb@01c14000 {
++			status = "okay";
++		};
++
++		ohci0: usb@01c14400 {
++			status = "okay";
++		};
++
+ 		ahci: sata@01c18000 {
+ 			target-supply = <&reg_ahci_5v>;
+ 			status = "okay";
+ 		};
+ 
++		ehci1: usb@01c1c000 {
++			status = "okay";
++		};
++
++		ohci1: usb@01c1c400 {
++			status = "okay";
++		};
++
+ 		pinctrl@01c20800 {
+ 			mmc3_cd_pin_olinuxinom: mmc3_cd_pin@0 {
+ 				allwinner,pins = "PH11";
+-- 
+1.8.5.5
+

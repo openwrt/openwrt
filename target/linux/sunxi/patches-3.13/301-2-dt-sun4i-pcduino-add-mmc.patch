@@ -1,0 +1,73 @@
+From 54b9b9ab635ed8e643784402096524768f490f5d Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sat, 11 Jan 2014 04:33:23 +0100
+Subject: [PATCH] ARM: sun4i: dt: Add mmc node to a few more boards
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10-hackberry.dts  | 9 +++++++++
+ arch/arm/boot/dts/sun4i-a10-mini-xplus.dts | 8 ++++++++
+ arch/arm/boot/dts/sun4i-a10-pcduino.dts    | 8 ++++++++
+ 3 files changed, 25 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-hackberry.dts b/arch/arm/boot/dts/sun4i-a10-hackberry.dts
+index 6692d336..2eb30d0 100644
+--- a/arch/arm/boot/dts/sun4i-a10-hackberry.dts
++++ b/arch/arm/boot/dts/sun4i-a10-hackberry.dts
+@@ -35,6 +35,15 @@
+ 			};
+ 		};
+ 
++		mmc0: mmc@01c0f000 {
++			pinctrl-names = "default", "default";
++			pinctrl-0 = <&mmc0_pins_a>;
++			pinctrl-1 = <&mmc0_cd_pin_reference_design>;
++			cd-gpios = <&pio 7 1 0>; /* PH1 */
++			cd-mode = <1>;
++			status = "okay";
++		};
++
+ 		pio: pinctrl@01c20800 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&hackberry_hogs>;
+diff --git a/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts b/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
+index 70b3323..6dbe53c 100644
+--- a/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
++++ b/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
+@@ -19,6 +19,14 @@
+ 	compatible = "pineriver,mini-xplus", "allwinner,sun4i-a10";
+ 
+ 	soc@01c00000 {
++		mmc0: mmc@01c0f000 {
++			pinctrl-names = "default", "default";
++			pinctrl-0 = <&mmc0_pins_a>;
++			pinctrl-1 = <&mmc0_cd_pin_reference_design>;
++			cd-gpios = <&pio 7 1 0>; /* PH1 */
++			status = "okay";
++		};
++
+ 		uart0: serial@01c28000 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&uart0_pins_a>;
+diff --git a/arch/arm/boot/dts/sun4i-a10-pcduino.dts b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
+index f5692a3..87f7742 100644
+--- a/arch/arm/boot/dts/sun4i-a10-pcduino.dts
++++ b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
+@@ -33,6 +33,14 @@
+ 			};
+ 		};
+ 
++		mmc0: mmc@01c0f000 {
++			pinctrl-names = "default", "default";
++			pinctrl-0 = <&mmc0_pins_a>;
++			pinctrl-1 = <&mmc0_cd_pin_reference_design>;
++			cd-gpios = <&pio 7 1 0>; /* PH1 */
++			status = "okay";
++		};
++
+ 		uart0: serial@01c28000 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&uart0_pins_a>;
+-- 
+1.8.5.5
+

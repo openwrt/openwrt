@@ -1,0 +1,32 @@
+From 0cc774ef2524ec54e9d2db8771ba3739cb8ebc99 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 13 Jan 2014 11:08:47 +0100
+Subject: [PATCH] ARM: sun5i: a13: Add missing serial aliases
+
+Some UART aliases have been defined, but not all of them. Add the remaining
+ones to be consistent and to ease the parsing of the DT by the bootloaders.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun5i-a13.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index 320335a..6de40b6 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -16,6 +16,11 @@
+ / {
+ 	interrupt-parent = <&intc>;
+ 
++	aliases {
++		serial0 = &uart1;
++		serial1 = &uart3;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-- 
+1.8.5.5
+

@@ -1,0 +1,31 @@
+From 90189e2c18e983da0ce22e44cd610f9ce2db69b1 Mon Sep 17 00:00:00 2001
+From: Roger Quadros <rogerq@ti.com>
+Date: Mon, 20 Jan 2014 16:32:33 +0200
+Subject: [PATCH] ata: ahci_platform: Add DT compatible for Synopsis DWC AHCI
+ controller
+
+Add compatible string "snps,dwc-ahci", which should be used
+for Synopsis Designware SATA cores. e.g. on TI OMAP5 and DRA7 platforms.
+
+Signed-off-by: Roger Quadros <rogerq@ti.com>
+Reviewed-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/ata/ahci_platform.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
+index bdadec1..d7e55ba 100644
+--- a/drivers/ata/ahci_platform.c
++++ b/drivers/ata/ahci_platform.c
+@@ -609,6 +609,7 @@ static SIMPLE_DEV_PM_OPS(ahci_pm_ops, ahci_platform_suspend,
+ 	{ .compatible = "snps,spear-ahci", },
+ 	{ .compatible = "snps,exynos5440-ahci", },
+ 	{ .compatible = "ibm,476gtr-ahci", },
++	{ .compatible = "snps,dwc-ahci", },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, ahci_of_match);
+-- 
+1.8.5.5
+

@@ -1,0 +1,45 @@
+From cc8e5932c671ba2d3ce511a15c19c47b015bc4ab Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sun, 5 Jan 2014 00:00:30 +0100
+Subject: [PATCH] phy-core: phy_get: Leave error logging to the caller
+
+In various cases errors may be expected, ie probe-deferral or a call to
+phy_get from a driver where the use of a phy is optional.
+
+Rather then adding all sort of complicated checks for this, and/or adding
+special functions like devm_phy_get_optional, simply don't log an error,
+and let deciding if get_phy returning an error really should result in a
+dev_err up to the caller.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/phy/phy-core.c | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/phy/phy-core.c b/drivers/phy/phy-core.c
+index 5f5b0f4..b355553 100644
+--- a/drivers/phy/phy-core.c
++++ b/drivers/phy/phy-core.c
+@@ -404,17 +404,11 @@ struct phy *phy_get(struct device *dev, const char *string)
+ 		index = of_property_match_string(dev->of_node, "phy-names",
+ 			string);
+ 		phy = of_phy_get(dev, index);
+-		if (IS_ERR(phy)) {
+-			dev_err(dev, "unable to find phy\n");
+-			return phy;
+-		}
+ 	} else {
+ 		phy = phy_lookup(dev, string);
+-		if (IS_ERR(phy)) {
+-			dev_err(dev, "unable to find phy\n");
+-			return phy;
+-		}
+ 	}
++	if (IS_ERR(phy))
++		return phy;
+ 
+ 	if (!try_module_get(phy->ops->owner))
+ 		return ERR_PTR(-EPROBE_DEFER);
+-- 
+1.8.5.5
+
