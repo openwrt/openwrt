@@ -690,11 +690,13 @@ endif
 
 Image/Build/Profile/WMR300=$(call BuildFirmware/Default8M/$(1),$(1),wmr-300,WMR300)
 Image/Build/Profile/RT-N14U=$(call BuildFirmware/Default8M/$(1),$(1),rt-n14u,RT-N14U)
+Image/Build/Profile/WRTNODE=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode,WRTNODE)
 
 ifeq ($(SUBTARGET),mt7620n)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WMR300,$(1))
 	$(call Image/Build/Profile/RT-N14U,$(1))
+	$(call Image/Build/Profile/WRTNODE,$(1))
 endef
 endif
 

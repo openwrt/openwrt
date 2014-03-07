@@ -84,6 +84,8 @@ platform_check_image() {
 	ur-326n4g |\
 	ur-336un |\
 	wr512-3gn |\
+	wmr300 |\
+	wrtnode |\
 	x5 |\
 	x8)
 		[ "$magic" != "27051956" ] && {
