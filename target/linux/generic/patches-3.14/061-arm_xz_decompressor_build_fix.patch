@@ -1,0 +1,10 @@
+--- a/arch/arm/boot/compressed/decompress.c
++++ b/arch/arm/boot/compressed/decompress.c
+@@ -48,6 +48,7 @@ extern char * strstr(const char * s1, co
+ #ifdef CONFIG_KERNEL_XZ
+ #define memmove memmove
+ #define memcpy memcpy
++extern char * strstr(const char *, const char *);
+ #include "../../../../lib/decompress_unxz.c"
+ #endif
+ 
