@@ -10,9 +10,20 @@ curdir:=tools
 
 # subdirectories to descend into
 tools-y :=
+
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN)$(CONFIG_GCC_LLVM),)
-tools-y += gmp mpfr mpc libelf
+  BUILD_TOOLCHAIN := y
 endif
+ifdef CONFIG_GCC_USE_GRAPHITE
+  ifeq ($(CONFIG_GCC_USE_SYSTEM_PPL_CLOOG),)
+    BUILD_PPL_CLOOG = y
+  endif
+endif
+ifneq ($(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_kmod-b43legacy)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
+  BUILD_B43_TOOLS = y
+endif
+
+tools-$(BUILD_TOOLCHAIN) += gmp mpfr mpc libelf
 tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-image patch quilt yaffs2 flock padjffs2
@@ -23,20 +34,10 @@ tools-$(CONFIG_powerpc) += upx
 tools-$(CONFIG_TARGET_x86) += qemu
 tools-$(CONFIG_TARGET_mxs) += elftosb
 tools-$(CONFIG_TARGET_brcm2708) += mtools dosfstools
-ifneq ($(CONFIG_TARGET_ar71xx),)
-tools-y += lzma-old squashfs
-endif
+tools-$(CONFIG_TARGET_ar71xx) += lzma-old squashfs
 tools-y += lzma squashfs4
-ifneq ($(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_kmod-b43legacy)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
-tools-y += b43-tools
-endif
-
-ifdef CONFIG_GCC_USE_GRAPHITE
-  ifeq ($(CONFIG_GCC_USE_SYSTEM_PPL_CLOOG),)
-	tools-y += ppl cloog
-	$(curdir)/cloog/compile := $(curdir)/ppl/install
-  endif
-endif
+tools-$(BUILD_B43_TOOLS) += b43-tools
+tools-$(BUILD_PPL_CLOOG) += ppl cloog
 
 # builddir dependencies
 $(curdir)/bison/compile := $(curdir)/flex/install
@@ -68,6 +69,7 @@ $(curdir)/libelf/compile := $(curdir)/automake/install
 $(curdir)/sdcc/compile := $(curdir)/bison/install
 $(curdir)/b43-tools/compile := $(curdir)/bison/install
 $(curdir)/padjffs2/compile := $(curdir)/findutils/install
+$(curdir)/cloog/compile := $(curdir)/ppl/install
 
 ifneq ($(CONFIG_CCACHE),)
 $(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/install))
@@ -147,5 +149,6 @@ $(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(
 $(curdir)/ := .config prereq
 $(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_5 CONFIG_GCC_USE_GRAPHITE CONFIG_TARGET_orion_generic))
+tools_enabled = $(foreach tool,$(sort $(tools-y) $(tools-)),$(if $(filter $(tool),$(tools-y)),y,n))
+$(eval $(call stampfile,$(curdir),tools,install,,_$(subst $(space),,$(tools_enabled))))
 $(eval $(call subdir,$(curdir)))
