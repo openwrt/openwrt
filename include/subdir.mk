@@ -57,7 +57,7 @@ endef
 ifndef DUMP_TARGET_DB
 # Parameters: <subdir> <name> <target> <depends> <config options> <stampfile location>
 define stampfile
-  $(1)/stamp-$(3):=$(if $(6),$(6),$(STAGING_DIR))/stamp/.$(2)_$(3)$(if $(5),_$(call confvar,$(5)))
+  $(1)/stamp-$(3):=$(if $(6),$(6),$(STAGING_DIR))/stamp/.$(2)_$(3)$(5)
   $$($(1)/stamp-$(3)): $(TMP_DIR)/.build $(4)
 	@+$(SCRIPT_DIR)/timestamp.pl -n $$($(1)/stamp-$(3)) $(1) $(4) || \
 		$(MAKE) $(if $(QUIET),--no-print-directory) $$($(1)/flags-$(3)) $(1)/$(3)
