@@ -1,3 +1,16 @@
+commit fcb064fdd5a27bec8d24099bc0172468f34c97cb
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sun Mar 9 09:43:09 2014 +0100
+
+    ath9k_hw: fix unreachable code in baseband hang detection code
+    
+    The commit "ath9k: reduce baseband hang detection false positive rate"
+    added a delay in the loop checking the baseband state, however it was
+    unreachable due to previous 'continue' statements.
+    
+    Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 31959d8df39319e32c6d5ba9c135727be90cfad7
 Author: Michal Kazior <michal.kazior@tieto.com>
 Date:   Fri Mar 7 08:09:38 2014 +0100
@@ -1197,7 +1210,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	if (AR_SREV_9300(ah))
  		return !ath9k_hw_detect_mac_hang(ah);
-@@ -1542,9 +1542,13 @@ bool ath9k_hw_check_alive(struct ath_hw 
+@@ -1542,9 +1542,14 @@ bool ath9k_hw_check_alive(struct ath_hw 
  	if (AR_SREV_9285_12_OR_LATER(ah))
  		return true;
  
@@ -1207,20 +1220,12 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
 +		if (reg != last_val)
 +			return true;
  
++		udelay(1);
 +		last_val = reg;
  		if ((reg & 0x7E7FFFEF) == 0x00702400)
  			continue;
  
-@@ -1556,6 +1560,8 @@ bool ath9k_hw_check_alive(struct ath_hw 
- 		default:
- 			return true;
- 		}
-+
-+		udelay(1);
- 	} while (count-- > 0);
- 
- 	return false;
-@@ -2051,9 +2057,8 @@ static bool ath9k_hw_set_power_awake(str
+@@ -2051,9 +2056,8 @@ static bool ath9k_hw_set_power_awake(str
  
  	REG_SET_BIT(ah, AR_RTC_FORCE_WAKE,
  		    AR_RTC_FORCE_WAKE_EN);
