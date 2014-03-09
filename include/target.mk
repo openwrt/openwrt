@@ -51,6 +51,9 @@ endif
 # Add device specific packages (here below to allow device type set from subtarget)
 DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
 
+filter_packages = $(filter-out -% $(patsubst -%,%,$(filter -%,$(1))),$(1))
+extra_packages = $(if $(filter wpad-mini wpad nas,$(1)),iwinfo)
+
 define Profile/Default
   NAME:=
   PACKAGES:=
@@ -65,7 +68,7 @@ define Profile
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
 	echo "Target-Profile-Name: $(NAME)"; \
-	echo "Target-Profile-Packages: $(PACKAGES)"; \
+	echo "Target-Profile-Packages: $(PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES) $(PACKAGES))"; \
 	if [ -f ./config/profile-$(1) ]; then \
 		echo "Target-Profile-Kconfig: yes"; \
 	fi; \
@@ -270,7 +273,7 @@ define BuildTargets/DumpCurrent
 	 echo 'Target-Description:'; \
 	 $(SH_FUNC) getvar $(call shvar,Target/Description); \
 	 echo '@@'; \
-	 echo 'Default-Packages: $(DEFAULT_PACKAGES)'; \
+	 echo 'Default-Packages: $(DEFAULT_PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES))'; \
 	 $(DUMPINFO)
 	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) -s DUMP=1 SUBTARGET=$(SUBTARGET); ))
 endef
