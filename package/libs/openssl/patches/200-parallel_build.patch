@@ -29,7 +29,7 @@
  
  all_testapps: build_libs build_testapps
  build_testapps:
-@@ -454,7 +454,7 @@ report:
+@@ -455,7 +455,7 @@ report:
  	@$(PERL) util/selftest.pl
  
  depend:
@@ -38,7 +38,7 @@
  
  lint:
  	@set -e; target=lint; $(RECURSIVE_BUILD_CMD)
-@@ -532,9 +532,9 @@ dist:   
+@@ -533,9 +533,9 @@ dist:
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -50,7 +50,7 @@
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
  		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR) \
  		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/engines \
-@@ -543,12 +543,19 @@ install_sw:
+@@ -544,12 +544,19 @@ install_sw:
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/misc \
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/certs \
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/private
@@ -71,7 +71,7 @@
  	@set -e; liblist="$(LIBS)"; for i in $$liblist ;\
  	do \
  		if [ -f "$$i" ]; then \
-@@ -628,12 +635,7 @@ install_html_docs:
+@@ -629,12 +636,7 @@ install_html_docs:
  		done; \
  	done
  
@@ -97,7 +97,7 @@
  		fi; \
 --- a/crypto/Makefile
 +++ b/crypto/Makefile
-@@ -86,11 +86,11 @@ testapps:
+@@ -88,11 +88,11 @@ testapps:
  	@if [ -z "$(THIS)" ]; then $(MAKE) -f $(TOP)/Makefile reflect THIS=$@; fi
  
  subdirs:
@@ -111,7 +111,7 @@
  
  links:
  	@$(PERL) $(TOP)/util/mklink.pl ../include/openssl $(EXHEADER)
-@@ -101,7 +101,7 @@ links:
+@@ -103,7 +103,7 @@ links:
  # lib: $(LIB): are splitted to avoid end-less loop
  lib:	$(LIB)
  	@touch lib
@@ -120,7 +120,7 @@
  	$(AR) $(LIB) $(LIBOBJ)
  	[ -z "$(FIPSLIBDIR)" ] || $(AR) $(LIB) $(FIPSLIBDIR)fipscanister.o
  	$(RANLIB) $(LIB) || echo Never mind.
-@@ -112,7 +112,7 @@ shared: buildinf.h lib subdirs
+@@ -114,7 +114,7 @@ shared: buildinf.h lib subdirs
  	fi
  
  libs:
@@ -129,7 +129,7 @@
  
  install:
  	@[ -n "$(INSTALLTOP)" ] # should be set by top Makefile...
-@@ -121,7 +121,7 @@ install:
+@@ -123,7 +123,7 @@ install:
  	(cp $$i $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i; \
  	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i ); \
  	done;
