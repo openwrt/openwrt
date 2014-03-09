@@ -121,11 +121,6 @@ define Build/Configure
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS) \
 	)
-endef
-
-TARGET_CFLAGS += $(FPIC)
-
-define Build/Compile
 	# XXX: OpenSSL "make depend" will look for installed headers before its own,
 	# so remove installed stuff first
 	-$(SUBMAKE) -j1 clean-staging
@@ -134,6 +129,11 @@ define Build/Compile
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
 		$(OPENSSL_MAKEFLAGS) \
 		depend
+endef
+
+TARGET_CFLAGS += $(FPIC)
+
+define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		ASFLAGS="$(TARGET_ASFLAGS) -c" \
