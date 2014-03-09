@@ -110,7 +110,13 @@ else
   endif
 endif
 
+STAMP_CONFIGURED := $(STAMP_CONFIGURED)_$(subst $(space),_,$(OPENSSL_OPTIONS))
+
 define Build/Configure
+	[ -f $(STAMP_CONFIGURED) ] || { \
+		rm -f $(PKG_BUILD_DIR)/*.so.* $(PKG_BUILD_DIR)/*.a; \
+		find $(PKG_BUILD_DIR) -name \*.o | xargs rm -f; \
+	}
 	(cd $(PKG_BUILD_DIR); \
 		./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
