@@ -1,3 +1,66 @@
+commit 31959d8df39319e32c6d5ba9c135727be90cfad7
+Author: Michal Kazior <michal.kazior@tieto.com>
+Date:   Fri Mar 7 08:09:38 2014 +0100
+
+    mac80211: fix possible NULL dereference
+    
+    If chanctx is missing on a given vif then the band
+    is assumed to be 2GHz. However if hw doesn't
+    support 2GHz band then mac80211 ended up with a
+    NULL dereference.
+    
+    This fixes a splat:
+    
+    [ 4605.207223] BUG: unable to handle kernel NULL pointer dereference at 0000000000000018
+    [ 4605.210789] IP: [<ffffffffa07b5635>] ieee80211_parse_bitrates+0x65/0x110 [mac80211]
+    
+    The splat was preceeded by WARN_ON(!chanctx_conf)
+    in ieee80211_get_sdata_band().
+    
+    Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
+
+commit 6c5a3ffa0a2d22c091a2717f427259bacf77ac5e
+Author: Michael Braun <michael-dev@fami-braun.de>
+Date:   Thu Mar 6 15:08:43 2014 +0100
+
+    mac80211: fix WPA with VLAN on AP side with ps-sta again
+    
+    commit de74a1d9032f4d37ea453ad2a647e1aff4cd2591
+      "mac80211: fix WPA with VLAN on AP side with ps-sta"
+    fixed an issue where queued multicast packets would
+    be sent out encrypted with the key of an other bss.
+    
+    commit "7cbf9d017dbb5e3276de7d527925d42d4c11e732"
+      "mac80211: fix oops on mesh PS broadcast forwarding"
+    essentially reverted it, because vif.type cannot be AP_VLAN
+    due to the check to vif.type in ieee80211_get_buffered_bc before.
+    
+    As the later commit intended to fix the MESH case, fix it
+    by checking for IFTYPE_AP instead of IFTYPE_AP_VLAN.
+    
+    Fixes: 7cbf9d017dbb
+    Cc: <stable@vger.kernel.org> # 3.10.x
+    Cc: <stable@vger.kernel.org> # 3.11.x
+    Cc: <stable@vger.kernel.org> # 3.12.x
+    Cc: <stable@vger.kernel.org> # 3.13.x
+    Cc: <linux-wireless@vger.kernel.org>
+    Cc: <projekt-wlan@fem.tu-ilmenau.de>
+    Signed-off-by: Michael Braun <michael-dev@fami-braun.de>
+
+commit 9d6ab9bdb9b368a6cf9519f0f92509b5b2c297ec
+Author: Johannes Berg <johannes.berg@intel.com>
+Date:   Mon Mar 3 14:19:08 2014 +0100
+
+    cfg80211: remove racy beacon_interval assignment
+    
+    In case of AP mode, the beacon interval is already reset to
+    zero inside cfg80211_stop_ap(), and in the other modes it
+    isn't relevant. Remove the assignment to remove a potential
+    race since the assignment isn't properly locked.
+    
+    Reported-by: Michal Kazior <michal.kazior@tieto.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
 commit 1abdeca3c6fb9cf1f84f85e78ed8d1c33bd69db0
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Fri Feb 28 18:52:56 2014 +0100
@@ -1487,7 +1550,17 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	__sta_info_flush(sdata, true);
  	ieee80211_free_keys(sdata, true);
-@@ -2638,6 +2643,24 @@ static int ieee80211_start_roc_work(stru
+@@ -1988,6 +1993,9 @@ static int ieee80211_change_bss(struct w
+ 
+ 	band = ieee80211_get_sdata_band(sdata);
+ 
++	if (WARN_ON(!wiphy->bands[band]))
++		return -EINVAL;
++
+ 	if (params->use_cts_prot >= 0) {
+ 		sdata->vif.bss_conf.use_cts_prot = params->use_cts_prot;
+ 		changed |= BSS_CHANGED_ERP_CTS_PROT;
+@@ -2638,6 +2646,24 @@ static int ieee80211_start_roc_work(stru
  	INIT_DELAYED_WORK(&roc->work, ieee80211_sw_roc_work);
  	INIT_LIST_HEAD(&roc->dependents);
  
@@ -1512,7 +1585,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	/* if there's one pending or we're scanning, queue this one */
  	if (!list_empty(&local->roc_list) ||
  	    local->scanning || local->radar_detect_enabled)
-@@ -2772,24 +2795,6 @@ static int ieee80211_start_roc_work(stru
+@@ -2772,24 +2798,6 @@ static int ieee80211_start_roc_work(stru
  	if (!queued)
  		list_add_tail(&roc->list, &local->roc_list);
  
@@ -1537,7 +1610,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	return 0;
  }
  
-@@ -3004,8 +3009,10 @@ void ieee80211_csa_finalize_work(struct 
+@@ -3004,8 +3012,10 @@ void ieee80211_csa_finalize_work(struct 
  	if (!ieee80211_sdata_running(sdata))
  		goto unlock;
  
@@ -1549,7 +1622,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	err = ieee80211_vif_change_channel(sdata, &changed);
  	mutex_unlock(&local->mtx);
  	if (WARN_ON(err < 0))
-@@ -3022,13 +3029,13 @@ void ieee80211_csa_finalize_work(struct 
+@@ -3022,13 +3032,13 @@ void ieee80211_csa_finalize_work(struct 
  	switch (sdata->vif.type) {
  	case NL80211_IFTYPE_AP:
  		err = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon);
@@ -1566,7 +1639,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		ieee80211_bss_info_change_notify(sdata, err);
  		break;
  	case NL80211_IFTYPE_ADHOC:
-@@ -3066,7 +3073,7 @@ int ieee80211_channel_switch(struct wiph
+@@ -3066,7 +3076,7 @@ int ieee80211_channel_switch(struct wiph
  	struct ieee80211_if_mesh __maybe_unused *ifmsh;
  	int err, num_chanctx;
  
@@ -1806,6 +1879,15 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	return 0;
  }
  
+@@ -2900,7 +2912,7 @@ ieee80211_get_buffered_bc(struct ieee802
+ 				cpu_to_le16(IEEE80211_FCTL_MOREDATA);
+ 		}
+ 
+-		if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++		if (sdata->vif.type == NL80211_IFTYPE_AP)
+ 			sdata = IEEE80211_DEV_TO_SUB_IF(skb->dev);
+ 		if (!ieee80211_tx_prepare(sdata, &tx, skb))
+ 			break;
 --- a/net/mac80211/wpa.c
 +++ b/net/mac80211/wpa.c
 @@ -499,7 +499,7 @@ ieee80211_crypto_ccmp_decrypt(struct iee
@@ -1857,7 +1939,16 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	/*
  	 * There are major locking problems in nl80211/mac80211 for CSA,
  	 * disable for all drivers until this has been reworked.
-@@ -875,8 +875,11 @@ static int cfg80211_netdev_notifier_call
+@@ -795,8 +795,6 @@ void cfg80211_leave(struct cfg80211_regi
+ 	default:
+ 		break;
+ 	}
+-
+-	wdev->beacon_interval = 0;
+ }
+ 
+ static int cfg80211_netdev_notifier_call(struct notifier_block *nb,
+@@ -875,8 +873,11 @@ static int cfg80211_netdev_notifier_call
  		break;
  	case NETDEV_DOWN:
  		cfg80211_update_iface_num(rdev, wdev->iftype, -1);
