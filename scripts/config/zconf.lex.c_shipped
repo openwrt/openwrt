@@ -2401,6 +2401,13 @@ void zconf_nextfile(const char *name)
 	int i;
 
 	err = glob(name, GLOB_ERR | GLOB_MARK, NULL, &gl);
+
+	/* ignore wildcard patterns that return no result */
+	if (err == GLOB_NOMATCH && strchr(name, '*')) {
+		err = 0;
+		gl.gl_pathc = 0;
+	}
+
 	if (err) {
 		const char *reason = "unknown error";
 
