@@ -64,6 +64,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	rm -rf \
 		$(SDK_BUILD_DIR)/target/linux/*/files* \
 		$(SDK_BUILD_DIR)/target/linux/*/patches*
+	./convert-config.pl $(TOPDIR)/.config > $(SDK_BUILD_DIR)/Config-build.in
 	$(CP) -L \
 		$(TOPDIR)/LICENSE \
 		$(TOPDIR)/rules.mk \
