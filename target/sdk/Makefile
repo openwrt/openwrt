@@ -73,7 +73,6 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		./files/README.SDK \
 		$(SDK_BUILD_DIR)/
 	$(CP) \
-		./files/package/rules.mk \
 		$(TOPDIR)/package/Makefile \
 		$(SDK_BUILD_DIR)/package/
 	$(if $(SVN_PACKAGE_URL),echo "src-svn trunk $(SVN_PACKAGE_URL)" \
