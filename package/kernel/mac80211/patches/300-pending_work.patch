@@ -1,3 +1,16 @@
+commit c977493766310a825f406836636ffd66e1447783
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Mon Mar 10 19:52:56 2014 +0100
+
+    ath9k_hw: remove ANI function restrictions for AP mode
+    
+    The primary purpose of this piece of code was to selectively disable
+    OFDM weak signal detection. The checks for this are elsewhere, and an
+    earlier commit relaxed the restrictions for older chips, which are more
+    sensitive to interference.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 8d804f1af11e4e058b1e8453327777d73a585cb8
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Sun Mar 9 11:25:43 2014 +0100
@@ -3870,7 +3883,25 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	if (aniState->ofdmNoiseImmunityLevel >= ATH9K_ANI_OFDM_DEF_LEVEL) {
  		ah->config.ofdm_trig_high = ATH9K_ANI_OFDM_TRIG_HIGH;
-@@ -483,10 +493,17 @@ void ath9k_hw_ani_init(struct ath_hw *ah
+@@ -308,17 +318,6 @@ void ath9k_ani_reset(struct ath_hw *ah, 
+ 	BUG_ON(aniState == NULL);
+ 	ah->stats.ast_ani_reset++;
+ 
+-	/* only allow a subset of functions in AP mode */
+-	if (ah->opmode == NL80211_IFTYPE_AP) {
+-		if (IS_CHAN_2GHZ(chan)) {
+-			ah->ani_function = (ATH9K_ANI_SPUR_IMMUNITY_LEVEL |
+-					    ATH9K_ANI_FIRSTEP_LEVEL);
+-			if (AR_SREV_9300_20_OR_LATER(ah))
+-				ah->ani_function |= ATH9K_ANI_MRC_CCK;
+-		} else
+-			ah->ani_function = 0;
+-	}
+-
+ 	ofdm_nil = max_t(int, ATH9K_ANI_OFDM_DEF_LEVEL,
+ 			 aniState->ofdmNoiseImmunityLevel);
+ 	cck_nil = max_t(int, ATH9K_ANI_CCK_DEF_LEVEL,
+@@ -483,10 +482,17 @@ void ath9k_hw_ani_init(struct ath_hw *ah
  
  	ath_dbg(common, ANI, "Initialize ANI\n");
  
