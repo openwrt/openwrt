@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2008-2013 OpenWrt.org
+# Copyright (C) 2008-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=flex
-PKG_VERSION:=2.5.37
+PKG_VERSION:=2.5.38
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=c75940e1fc25108f2a7b3ef42abdae06
+PKG_MD5SUM:=b230c88e65996ff74994d08a2a2e0f27
 PKG_CAT:=bzcat
 
 HOST_BUILD_PARALLEL:=1
