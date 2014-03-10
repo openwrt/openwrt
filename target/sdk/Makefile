@@ -57,7 +57,6 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) \
 		$(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
-		--exclude="staging_dir/$(ARCH)" \
 		$(SDK_DIRS) $(KERNEL_FILES) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 	mkdir -p $(SDK_BUILD_DIR)/target/linux
