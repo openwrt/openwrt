@@ -1,3 +1,38 @@
+commit 3a0f984b1cdcd6a9f8c441635ef3b05d58547f4e
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Tue Mar 11 14:03:32 2014 +0100
+
+    ath9k_hw: set ANI firstep as absolute values instead of relative
+    
+    On older chips, the INI value differ in similar ways as cycpwr_thr1, so
+    convert it to absolute values as well.
+    
+    Since the ANI algorithm is different here compared to the old
+    implementation (fewer steps, controlled at a different point in time),
+    it makes sense to use values similar to what would be applied for newer
+    chips, just without relying on INI defaults.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+commit 91d70d40400c569b49605b78fd7c43e9405694f4
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Tue Mar 11 14:00:37 2014 +0100
+
+    ath9k_hw: set ANI cycpwr_thr1 as absolute values instead of relative
+    
+    The table was copied from the ANI implementation of AR9300. It assumes
+    that the INI values contain a baseline value that is usable as reference
+    from which to increase/decrease based on the noise immunity value.
+    
+    On older chips, the differences are bigger and especially AR5008/AR9001
+    are configured to much more sensitive values than what is useful.
+    
+    Improve ANI behavior by reverting to the absolute values used in the
+    previous implementation (expressed as a simple formula instead of the
+    old table).
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit c977493766310a825f406836636ffd66e1447783
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Mon Mar 10 19:52:56 2014 +0100
@@ -3942,3 +3977,136 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  #define ATH9K_ANI_SPUR_IMMUNE_LVL         3
  #define ATH9K_ANI_FIRSTEP_LVL             2
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -26,10 +26,6 @@ static const int firstep_table[] =
+ /* level:  0   1   2   3   4   5   6   7   8  */
+ 	{ -4, -2,  0,  2,  4,  6,  8, 10, 12 }; /* lvl 0-8, default 2 */
+ 
+-static const int cycpwrThr1_table[] =
+-/* level:  0   1   2   3   4   5   6   7   8  */
+-	{ -6, -4, -2,  0,  2,  4,  6,  8 };     /* lvl 0-7, default 3 */
+-
+ /*
+  * register values to turn OFDM weak signal detection OFF
+  */
+@@ -921,7 +917,7 @@ static bool ar5008_hw_ani_control_new(st
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ath9k_channel *chan = ah->curchan;
+ 	struct ar5416AniState *aniState = &ah->ani;
+-	s32 value, value2;
++	s32 value;
+ 
+ 	switch (cmd & ah->ani_function) {
+ 	case ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION:{
+@@ -1008,42 +1004,11 @@ static bool ar5008_hw_ani_control_new(st
+ 	case ATH9K_ANI_FIRSTEP_LEVEL:{
+ 		u32 level = param;
+ 
+-		if (level >= ARRAY_SIZE(firstep_table)) {
+-			ath_dbg(common, ANI,
+-				"ATH9K_ANI_FIRSTEP_LEVEL: level out of range (%u > %zu)\n",
+-				level, ARRAY_SIZE(firstep_table));
+-			return false;
+-		}
+-
+-		/*
+-		 * make register setting relative to default
+-		 * from INI file & cap value
+-		 */
+-		value = firstep_table[level] -
+-			firstep_table[ATH9K_ANI_FIRSTEP_LVL] +
+-			aniState->iniDef.firstep;
+-		if (value < ATH9K_SIG_FIRSTEP_SETTING_MIN)
+-			value = ATH9K_SIG_FIRSTEP_SETTING_MIN;
+-		if (value > ATH9K_SIG_FIRSTEP_SETTING_MAX)
+-			value = ATH9K_SIG_FIRSTEP_SETTING_MAX;
++		value = level * 2;
+ 		REG_RMW_FIELD(ah, AR_PHY_FIND_SIG,
+-			      AR_PHY_FIND_SIG_FIRSTEP,
+-			      value);
+-		/*
+-		 * we need to set first step low register too
+-		 * make register setting relative to default
+-		 * from INI file & cap value
+-		 */
+-		value2 = firstep_table[level] -
+-			 firstep_table[ATH9K_ANI_FIRSTEP_LVL] +
+-			 aniState->iniDef.firstepLow;
+-		if (value2 < ATH9K_SIG_FIRSTEP_SETTING_MIN)
+-			value2 = ATH9K_SIG_FIRSTEP_SETTING_MIN;
+-		if (value2 > ATH9K_SIG_FIRSTEP_SETTING_MAX)
+-			value2 = ATH9K_SIG_FIRSTEP_SETTING_MAX;
+-
++			      AR_PHY_FIND_SIG_FIRSTEP, value);
+ 		REG_RMW_FIELD(ah, AR_PHY_FIND_SIG_LOW,
+-			      AR_PHY_FIND_SIG_FIRSTEP_LOW, value2);
++			      AR_PHY_FIND_SIG_FIRSTEP_LOW, value);
+ 
+ 		if (level != aniState->firstepLevel) {
+ 			ath_dbg(common, ANI,
+@@ -1060,7 +1025,7 @@ static bool ar5008_hw_ani_control_new(st
+ 				aniState->firstepLevel,
+ 				level,
+ 				ATH9K_ANI_FIRSTEP_LVL,
+-				value2,
++				value,
+ 				aniState->iniDef.firstepLow);
+ 			if (level > aniState->firstepLevel)
+ 				ah->stats.ast_ani_stepup++;
+@@ -1073,41 +1038,13 @@ static bool ar5008_hw_ani_control_new(st
+ 	case ATH9K_ANI_SPUR_IMMUNITY_LEVEL:{
+ 		u32 level = param;
+ 
+-		if (level >= ARRAY_SIZE(cycpwrThr1_table)) {
+-			ath_dbg(common, ANI,
+-				"ATH9K_ANI_SPUR_IMMUNITY_LEVEL: level out of range (%u > %zu)\n",
+-				level, ARRAY_SIZE(cycpwrThr1_table));
+-			return false;
+-		}
+-		/*
+-		 * make register setting relative to default
+-		 * from INI file & cap value
+-		 */
+-		value = cycpwrThr1_table[level] -
+-			cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL] +
+-			aniState->iniDef.cycpwrThr1;
+-		if (value < ATH9K_SIG_SPUR_IMM_SETTING_MIN)
+-			value = ATH9K_SIG_SPUR_IMM_SETTING_MIN;
+-		if (value > ATH9K_SIG_SPUR_IMM_SETTING_MAX)
+-			value = ATH9K_SIG_SPUR_IMM_SETTING_MAX;
++		value = (level + 1) * 2;
+ 		REG_RMW_FIELD(ah, AR_PHY_TIMING5,
+-			      AR_PHY_TIMING5_CYCPWR_THR1,
+-			      value);
++			      AR_PHY_TIMING5_CYCPWR_THR1, value);
+ 
+-		/*
+-		 * set AR_PHY_EXT_CCA for extension channel
+-		 * make register setting relative to default
+-		 * from INI file & cap value
+-		 */
+-		value2 = cycpwrThr1_table[level] -
+-			 cycpwrThr1_table[ATH9K_ANI_SPUR_IMMUNE_LVL] +
+-			 aniState->iniDef.cycpwrThr1Ext;
+-		if (value2 < ATH9K_SIG_SPUR_IMM_SETTING_MIN)
+-			value2 = ATH9K_SIG_SPUR_IMM_SETTING_MIN;
+-		if (value2 > ATH9K_SIG_SPUR_IMM_SETTING_MAX)
+-			value2 = ATH9K_SIG_SPUR_IMM_SETTING_MAX;
+-		REG_RMW_FIELD(ah, AR_PHY_EXT_CCA,
+-			      AR_PHY_EXT_TIMING5_CYCPWR_THR1, value2);
++		if (IS_CHAN_HT40(ah->curchan))
++			REG_RMW_FIELD(ah, AR_PHY_EXT_CCA,
++				      AR_PHY_EXT_TIMING5_CYCPWR_THR1, value);
+ 
+ 		if (level != aniState->spurImmunityLevel) {
+ 			ath_dbg(common, ANI,
+@@ -1124,7 +1061,7 @@ static bool ar5008_hw_ani_control_new(st
+ 				aniState->spurImmunityLevel,
+ 				level,
+ 				ATH9K_ANI_SPUR_IMMUNE_LVL,
+-				value2,
++				value,
+ 				aniState->iniDef.cycpwrThr1Ext);
+ 			if (level > aniState->spurImmunityLevel)
+ 				ah->stats.ast_ani_spurup++;
