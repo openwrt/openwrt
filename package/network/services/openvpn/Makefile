@@ -66,7 +66,7 @@ CONFIGURE_VARS += \
 
 define Build/Configure
 	$(call Build/Configure/Default, \
-		--enable-small \
+		$(if $(CONFIG_OPENVPN_$(BUILD_VARIANT)_ENABLE_SMALL),--enable-small) \
 		--disable-selinux \
 		--disable-systemd \
 		--disable-plugins \

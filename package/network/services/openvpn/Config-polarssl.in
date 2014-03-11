@@ -56,4 +56,11 @@ config OPENVPN_polarssl_ENABLE_IPROUTE2
 	bool "Enable support for iproute2"
 	default n
 
+config OPENVPN_polarssl_ENABLE_SMALL
+	bool "Enable size optimization"
+	default y
+	help
+	  enable smaller executable size (disable OCC, usage
+	  message, and verb 4 parm list)
+
 endif
