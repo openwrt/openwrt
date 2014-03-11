@@ -17,6 +17,8 @@ PKG_MD5SUM:=d8eee8cba0edb28974cc1f8532e3bd18
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
+PKG_USE_MIPS16:=0
+
 include $(INCLUDE_DIR)/ltqtapi.mk
 include $(INCLUDE_DIR)/package.mk
 
