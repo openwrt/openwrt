@@ -103,6 +103,7 @@ Extra iptables extensions for connection tracking.
 
  Matches:
   - connbytes
+  - connlimit
   - connmark
   - recent
   - helper
