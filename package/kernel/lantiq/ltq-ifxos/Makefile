@@ -14,6 +14,8 @@ PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=bc107f9d8ff6bed4c2760a2817bbb029
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
+PKG_USE_MIPS16:=0
+
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ltq-ifxos
