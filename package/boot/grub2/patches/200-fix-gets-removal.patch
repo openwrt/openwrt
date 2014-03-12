@@ -1,15 +1,16 @@
 --- a/grub-core/gnulib/stdio.in.h
 +++ b/grub-core/gnulib/stdio.in.h
-@@ -137,12 +137,6 @@
-                  "use gnulib module fflush for portable POSIX compliance");
+@@ -695,13 +695,6 @@ _GL_WARN_ON_USE (getline, "getline is un
+ # endif
  #endif
  
 -/* It is very rare that the developer ever has full control of stdin,
--   so any use of gets warrants an unconditional warning.  Assume it is
--   always declared, since it is required by C89.  */
+-   so any use of gets warrants an unconditional warning; besides, C11
+-   removed it.  */
 -#undef gets
--_GL_WARN_ON_USE (gets, "gets is a security hole - use fgets instead");
+-#if HAVE_RAW_DECL_GETS
+-#endif
 -
- #if @GNULIB_FOPEN@
- # if @REPLACE_FOPEN@
- #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+ 
+ #if @GNULIB_OBSTACK_PRINTF@ || @GNULIB_OBSTACK_PRINTF_POSIX@
+ struct obstack;

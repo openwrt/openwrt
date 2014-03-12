@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=grub
-PKG_VERSION:=2.00
+PKG_VERSION:=2.02~beta2
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@GNU/grub
-PKG_MD5SUM:=e927540b6eda8b024fb0391eeaa4091c
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE_URL:=http://alpha.gnu.org/gnu/grub
+PKG_MD5SUM:=be62932eade308a364ea4bbc91295930
 
 HOST_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=grub2/host
