@@ -21,6 +21,24 @@ validate_log_section()
 	return $?
 }
 
+validate_log_daemon()
+{
+	uci_validate_section system system "${1}" \
+		'log_buffer_size:uinteger:16'
+	return $?
+}
+
+start_service_daemon()
+{
+	local log_buffer_size
+	validate_log_daemon "${1}"
+	procd_open_instance
+	procd_set_param command "/sbin/logd"
+	procd_append_param command -S "${log_buffer_size}"
+	procd_set_param respawn
+	procd_close_instance
+}
+
 start_service_file()
 {
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
@@ -54,7 +72,7 @@ start_service_remote()
 	procd_open_instance
 	procd_set_param command "$PROG" -f -r "$log_ip" "${log_port}" -p "$pid_file"
 	[ "${log_proto}" != "udp" ] || procd_append_param command -u
-	[ -z "${log_prefix}" ] || procd_append_param command -P ${log_prefix}
+	[ -z "${log_prefix}" ] || procd_append_param command -P "${log_prefix}"
 	procd_close_instance
 }
 
@@ -66,12 +84,8 @@ service_triggers()
 
 start_service()
 {
-	procd_open_instance
-	procd_set_param command "/sbin/logd"
-	procd_set_param respawn
-	procd_close_instance
-
 	config_load system
+	config_foreach start_service_daemon system
 	config_foreach start_service_file system
 	config_foreach start_service_remote system
 }
