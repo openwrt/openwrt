@@ -721,9 +721,10 @@ static ssize_t hcddump_show( struct device *_dev,
 			     char *buf)
 {
 #ifndef DWC_DEVICE_ONLY
-	struct platform_device *pdev = container_of(_dev, struct platform_device, dev); \
-	dwc_otg_device_t *otg_dev = platform_get_drvdata(pdev);		\
-	dwc_otg_hcd_dump_state(otg_dev->hcd);
+	struct platform_device *pdev = container_of(_dev, struct platform_device, dev);
+	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+	dwc_otg_hcd_t *otg_dev = hcd_to_dwc_otg_hcd(hcd);
+	dwc_otg_hcd_dump_state(otg_dev);
 #endif
    	return sprintf( buf, "HCD Dump\n" );
 }

@@ -176,8 +176,10 @@ static void kill_urbs_in_qh_list(dwc_otg_hcd_t *hcd, struct list_head *qh_list)
 		     qtd_item = qh->qtd_list.next) {
 			qtd = list_entry(qtd_item, dwc_otg_qtd_t, qtd_list_entry);
 			if (qtd->urb != NULL) {
+				SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
 				dwc_otg_hcd_complete_urb(hcd, qtd->urb,
 							 -ETIMEDOUT);
+				SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
 			}
 			dwc_otg_hcd_qtd_remove_and_free(hcd, qtd);
 		}
@@ -589,6 +591,7 @@ static void hcd_reinit(dwc_otg_hcd_t *hcd)
 	hcd->non_periodic_qh_ptr = &hcd->non_periodic_sched_active;
 	hcd->non_periodic_channels = 0;
 	hcd->periodic_channels = 0;
+	hcd->nakking_channels = 0;
 
 	/*
 	 * Put all channels in the free channel list and clean up channel
@@ -853,10 +856,10 @@ static void dump_channel_info(dwc_otg_hcd_t *hcd,
 //OTG host require the DMA addr is DWORD-aligned,
 //patch it if the buffer is not DWORD-aligned
 inline
-void hcd_check_and_patch_dma_addr(struct urb *urb){
+int hcd_check_and_patch_dma_addr(struct urb *urb){
 
 	if((!urb->transfer_buffer)||!urb->transfer_dma||urb->transfer_dma==0xffffffff)
-		return;
+		return 0;
 
 	if(((u32)urb->transfer_buffer)& 0x3){
 		/*
@@ -881,11 +884,12 @@ void hcd_check_and_patch_dma_addr(struct urb *urb){
 				kfree(urb->aligned_transfer_buffer);
 			}
 			urb->aligned_transfer_buffer=kmalloc(urb->aligned_transfer_buffer_length,GFP_KERNEL|GFP_DMA|GFP_ATOMIC);
-			urb->aligned_transfer_dma=dma_map_single(NULL,(void *)(urb->aligned_transfer_buffer),(urb->aligned_transfer_buffer_length),DMA_FROM_DEVICE);
 			if(!urb->aligned_transfer_buffer){
 				DWC_ERROR("Cannot alloc required buffer!!\n");
-				BUG();
+				//BUG();
+				return -1;
 			}
+			urb->aligned_transfer_dma=dma_map_single(NULL,(void *)(urb->aligned_transfer_buffer),(urb->aligned_transfer_buffer_length),DMA_FROM_DEVICE);
 			//printk(" new allocated aligned_buf=%.8x aligned_buf_len=%d\n", (u32)urb->aligned_transfer_buffer, urb->aligned_transfer_buffer_length);
 		}
 		urb->transfer_dma=urb->aligned_transfer_dma;
@@ -894,6 +898,7 @@ void hcd_check_and_patch_dma_addr(struct urb *urb){
 			dma_sync_single_for_device(NULL,urb->transfer_dma,urb->transfer_buffer_length,DMA_TO_DEVICE);
 		}
 	}
+	return 0;
 }
 
 
@@ -910,7 +915,15 @@ int dwc_otg_hcd_urb_enqueue(struct usb_hcd *hcd,
 	int retval = 0;
 	dwc_otg_hcd_t *dwc_otg_hcd = hcd_to_dwc_otg_hcd(hcd);
 	dwc_otg_qtd_t *qtd;
+	unsigned long flags;
 
+	SPIN_LOCK_IRQSAVE(&dwc_otg_hcd->lock, flags);
+
+	if (urb->hcpriv != NULL) {
+		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
+		return -ENOMEM;
+
+	}
 #ifdef DEBUG
 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
 		dump_urb_info(urb, "dwc_otg_hcd_urb_enqueue");
@@ -918,13 +931,19 @@ int dwc_otg_hcd_urb_enqueue(struct usb_hcd *hcd,
 #endif
 	if (!dwc_otg_hcd->flags.b.port_connect_status) {
 		/* No longer connected. */
+		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 		return -ENODEV;
 	}
 
-	hcd_check_and_patch_dma_addr(urb);
+	if (hcd_check_and_patch_dma_addr(urb)) {
+		DWC_ERROR("Unable to check and patch dma addr\n");
+		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
+		return -ENOMEM;
+	}
 	qtd = dwc_otg_hcd_qtd_create(urb);
 	if (qtd == NULL) {
 		DWC_ERROR("DWC OTG HCD URB Enqueue failed creating QTD\n");
+		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 		return -ENOMEM;
 	}
 
@@ -934,7 +953,7 @@ int dwc_otg_hcd_urb_enqueue(struct usb_hcd *hcd,
 			  "Error status %d\n", retval);
 		dwc_otg_hcd_qtd_free(qtd);
 	}
-
+	SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 	return retval;
 }
 
@@ -948,6 +967,7 @@ int dwc_otg_hcd_urb_dequeue(struct usb_hcd *hcd,
 	dwc_otg_qtd_t *urb_qtd;
 	dwc_otg_qh_t *qh;
 	struct usb_host_endpoint *ep = dwc_urb_to_endpoint(urb);
+	int rc;
 
 	DWC_DEBUGPL(DBG_HCD, "DWC OTG HCD URB Dequeue\n");
 
@@ -958,10 +978,6 @@ int dwc_otg_hcd_urb_dequeue(struct usb_hcd *hcd,
 	urb_qtd = (dwc_otg_qtd_t *)urb->hcpriv;
 	qh = (dwc_otg_qh_t *)ep->hcpriv;
 
-	if (urb_qtd == NULL) {
-		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
-		return 0;
-	}
 #ifdef DEBUG
 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
 		dump_urb_info(urb, "dwc_otg_hcd_urb_dequeue");
@@ -971,7 +987,7 @@ int dwc_otg_hcd_urb_dequeue(struct usb_hcd *hcd,
 	}
 #endif
 
-	if (urb_qtd == qh->qtd_in_process) {
+	if (qh && urb_qtd == qh->qtd_in_process) {
 		/* The QTD is in process (it has been assigned to a channel). */
 
 		if (dwc_otg_hcd->flags.b.port_connect_status) {
@@ -982,7 +998,7 @@ int dwc_otg_hcd_urb_dequeue(struct usb_hcd *hcd,
 			 * written to halt the channel since the core is in
 			 * device mode.
 			 */
-			dwc_otg_hc_halt(dwc_otg_hcd->core_if, qh->channel,
+			dwc_otg_hc_halt(dwc_otg_hcd, qh->channel,
 					DWC_OTG_HC_XFER_URB_DEQUEUE);
 		}
 	}
@@ -992,22 +1008,28 @@ int dwc_otg_hcd_urb_dequeue(struct usb_hcd *hcd,
 	 * schedule if it has any remaining QTDs.
 	 */
 	dwc_otg_hcd_qtd_remove_and_free(dwc_otg_hcd, urb_qtd);
-	if (urb_qtd == qh->qtd_in_process) {
-		/* Note that dwc_otg_hcd_qh_deactivate() locks the spin_lock again */
-		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
+	if (qh && urb_qtd == qh->qtd_in_process) {
 		dwc_otg_hcd_qh_deactivate(dwc_otg_hcd, qh, 0);
 		qh->channel = NULL;
 		qh->qtd_in_process = NULL;
 	} else {
-		if (list_empty(&qh->qtd_list))
+		if (qh && list_empty(&qh->qtd_list)) {
 			dwc_otg_hcd_qh_remove(dwc_otg_hcd, qh);
-		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
+		}
 	}
 
-	urb->hcpriv = NULL;
 
-	/* Higher layer software sets URB status. */
-	usb_hcd_giveback_urb(hcd, urb, status);
+	rc = usb_hcd_check_unlink_urb(hcd, urb, status);
+
+	if (!rc) {
+		usb_hcd_unlink_urb_from_ep(hcd, urb);
+	}
+	urb->hcpriv = NULL;
+	SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
+
+	if (!rc) {
+		usb_hcd_giveback_urb(hcd, urb, status);
+	}
 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
 		DWC_PRINT("Called usb_hcd_giveback_urb()\n");
 		DWC_PRINT("  urb->status = %d\n", urb->status);
@@ -2035,15 +2057,19 @@ static void assign_and_init_hc(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 	dwc_otg_qtd_t	*qtd;
 	struct urb	*urb;
 
-	DWC_DEBUGPL(DBG_HCDV, "%s(%p,%p)\n", __func__, hcd, qh);
-
+	DWC_DEBUGPL(DBG_HCD_FLOOD, "%s(%p,%p)\n", __func__, hcd, qh);
 	hc = list_entry(hcd->free_hc_list.next, dwc_hc_t, hc_list_entry);
+
+	qtd = list_entry(qh->qtd_list.next, dwc_otg_qtd_t, qtd_list_entry);
+	urb = qtd->urb;
+
+	if (!urb){
+		return;
+	}
 
 	/* Remove the host channel from the free list. */
 	list_del_init(&hc->hc_list_entry);
 
-	qtd = list_entry(qh->qtd_list.next, dwc_otg_qtd_t, qtd_list_entry);
-	urb = qtd->urb;
 	qh->channel = hc;
 	qh->qtd_in_process = qtd;
 
@@ -2202,16 +2228,24 @@ static void assign_and_init_hc(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t *hcd)
 {
 	struct list_head 		*qh_ptr;
-	dwc_otg_qh_t 			*qh;
+	dwc_otg_qh_t 			*qh = NULL;
 	int				num_channels;
 	dwc_otg_transaction_type_e	ret_val = DWC_OTG_TRANSACTION_NONE;
+	uint16_t      cur_frame = dwc_otg_hcd_get_frame_number(dwc_otg_hcd_to_hcd(hcd));
+	unsigned long flags;
+	int include_nakd, channels_full;
+	/* This condition has once been observed, but the cause was
+	 * never determined. Check for it here, to collect debug data if
+	 * it occurs again. */
+	WARN_ON_ONCE(hcd->non_periodic_channels < 0);
+	check_nakking(hcd, __FUNCTION__,  "start");
 
 #ifdef DEBUG_SOF
 	DWC_DEBUGPL(DBG_HCD, "  Select Transactions\n");
 #endif
 
-	spin_lock(&hcd->lock);
-	/* Process entries in the periodic ready list. */
+	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
+		/* Process entries in the periodic ready list. */
 	qh_ptr = hcd->periodic_sched_ready.next;
 	while (qh_ptr != &hcd->periodic_sched_ready &&
 	       !list_empty(&hcd->free_hc_list)) {
@@ -2234,34 +2268,137 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t *hcd)
 	 * schedule. Some free host channels may not be used if they are
 	 * reserved for periodic transfers.
 	 */
-	qh_ptr = hcd->non_periodic_sched_inactive.next;
 	num_channels = hcd->core_if->core_params->host_channels;
-	while (qh_ptr != &hcd->non_periodic_sched_inactive &&
-	       (hcd->non_periodic_channels <
-		num_channels - hcd->periodic_channels) &&
-	       !list_empty(&hcd->free_hc_list)) {
 
-		qh = list_entry(qh_ptr, dwc_otg_qh_t, qh_list_entry);
-		assign_and_init_hc(hcd, qh);
+	/* Go over the queue twice: Once while not including nak'd
+	 * entries, one while including them. This is so a retransmit of
+	 * an entry that has received a nak is scheduled only after all
+	 * new entries.
+	 */
+	channels_full = 0;
+	for (include_nakd = 0; include_nakd < 2 && !channels_full; ++include_nakd) {
+	    qh_ptr = hcd->non_periodic_sched_inactive.next;
+	  while (qh_ptr != &hcd->non_periodic_sched_inactive) {
+			qh = list_entry(qh_ptr, dwc_otg_qh_t, qh_list_entry);
+			qh_ptr = qh_ptr->next;
 
-		/*
-		 * Move the QH from the non-periodic inactive schedule to the
-		 * non-periodic active schedule.
-		 */
-		qh_ptr = qh_ptr->next;
-		list_move(&qh->qh_list_entry, &hcd->non_periodic_sched_active);
+			/* If a nak'd frame is in the queue for 100ms, forget
+		 	* about its nak status, to prevent the situation where
+		 	* a nak'd frame never gets resubmitted because there
+		 	* are continously non-nakking tranfsfers available.
+		 	*/
+			if (qh->nak_frame != 0xffff &&
+		    	dwc_frame_num_gt(cur_frame, qh->nak_frame + 800))
+				qh->nak_frame = 0xffff;
 
-		if (ret_val == DWC_OTG_TRANSACTION_NONE) {
-			ret_val = DWC_OTG_TRANSACTION_NON_PERIODIC;
-		} else {
-			ret_val = DWC_OTG_TRANSACTION_ALL;
+			/* In the first pass, ignore NAK'd retransmit
+		 	* alltogether, to give them lower priority. */
+			if (!include_nakd && qh->nak_frame != 0xffff)
+				continue;
+
+			/*
+			* Check to see if this is a NAK'd retransmit, in which case ignore for retransmission
+			* we hold off on bulk retransmissions to reduce NAK interrupt overhead for
+			* cheeky devices that just hold off using NAKs
+			*/
+			if (dwc_full_frame_num(qh->nak_frame) == dwc_full_frame_num(dwc_otg_hcd_get_frame_number(dwc_otg_hcd_to_hcd(hcd))))
+				continue;
+
+			/* Ok, we found a candidate for scheduling. Is there a
+		 	* free channel? */
+			if (hcd->non_periodic_channels >=
+		    	num_channels - hcd->periodic_channels ||
+	            	list_empty(&hcd->free_hc_list)) {
+				channels_full = 1;
+				break;
+			}
+
+			/* When retrying a NAK'd transfer, we give it a fair
+		 	* chance of completing again. */
+			qh->nak_frame = 0xffff;
+			assign_and_init_hc(hcd, qh);
+
+			/*
+		 	* Move the QH from the non-periodic inactive schedule to the
+		 	* non-periodic active schedule.
+		 	*/
+			list_move(&qh->qh_list_entry, &hcd->non_periodic_sched_active);
+
+			if (ret_val == DWC_OTG_TRANSACTION_NONE) {
+				ret_val = DWC_OTG_TRANSACTION_NON_PERIODIC;
+			} else {
+				ret_val = DWC_OTG_TRANSACTION_ALL;
+			}
+
+			hcd->non_periodic_channels++;
 		}
+		if (hcd->core_if->dma_enable && channels_full &&
+			  hcd->periodic_channels + hcd->nakking_channels >= num_channels) {
+			/* There are items queued, but all channels are either
+			 * reserved for periodic or have received NAKs. This
+			 * means that it could take an indefinite amount of time
+			 * before a channel is actually freed (since in DMA
+			 * mode, the hardware takes care of retries), so we take
+			 * action here by forcing a nakking channel to halt to
+			 * give other transfers a chance to run. */
+			dwc_otg_qtd_t *qtd = list_entry(qh->qtd_list.next, dwc_otg_qtd_t, qtd_list_entry);
+			struct urb *urb = qtd->urb;
+			dwc_hc_t *hc = dwc_otg_halt_nakking_channel(hcd);
 
-		hcd->non_periodic_channels++;
+			if (hc)
+			  DWC_DEBUGPL(DBG_HCD "Out of Host Channels for non-periodic transfer - Halting channel %d (dev %d ep%d%s) to service qh %p (dev %d ep%d%s)\n", hc->hc_num, hc->dev_addr, hc->ep_num, (hc->ep_is_in ? "in" : "out"), qh, usb_pipedevice(urb->pipe), usb_pipeendpoint(urb->pipe), (usb_pipein(urb->pipe) != 0) ? "in" : "out");
+
+		}
 	}
-	spin_unlock(&hcd->lock);
+
+	SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
 
 	return ret_val;
+}
+
+/**
+ * Halt a bulk channel that is blocking on NAKs to free up space.
+ *
+ * This will decrement hcd->nakking_channels immediately, but
+ * hcd->non_periodic_channels is not decremented until the channel is
+ * actually halted.
+ *
+ * Returns the halted channel.
+ */
+dwc_hc_t *dwc_otg_halt_nakking_channel(dwc_otg_hcd_t *hcd) {
+ int num_channels, i;
+ uint16_t cur_frame;
+
+ cur_frame = dwc_otg_hcd_get_frame_number(dwc_otg_hcd_to_hcd(hcd));
+ num_channels = hcd->core_if->core_params->host_channels;
+
+ for (i = 0; i < num_channels; i++) {
+   int channel = (hcd->last_channel_halted + 1 + i) % num_channels;
+   dwc_hc_t *hc = hcd->hc_ptr_array[channel];
+   if (hc->xfer_started
+       && !hc->halt_on_queue
+       && !hc->halt_pending
+       && hc->qh->nak_frame != 0xffff) {
+     dwc_otg_hc_halt(hcd, hc, DWC_OTG_HC_XFER_NAK);
+     /* Store the last channel halted to
+      * fairly rotate the channel to halt.
+      * This prevent the scenario where there
+      * are three blocking endpoints and only
+      * two free host channels, where the
+      * blocking endpoint that gets hc 3 will
+      * never be halted, while the other two
+      * endpoints will be fighting over the
+      * other host channel. */
+     hcd->last_channel_halted = channel;
+     /* Update nak_frame, so this frame is
+      * kept at low priority for a period of
+      * time starting now. */
+     hc->qh->nak_frame = cur_frame;
+     return hc;
+   }
+ }
+ dwc_otg_hcd_dump_state(hcd);
+ return NULL;
 }
 
 /**
@@ -2298,7 +2435,7 @@ static int queue_transaction(dwc_otg_hcd_t *hcd,
 		/* Don't queue a request if the channel has been halted. */
 		retval = 0;
 	} else if (hc->halt_on_queue) {
-		dwc_otg_hc_halt(hcd->core_if, hc, hc->halt_status);
+		dwc_otg_hc_halt(hcd, hc, hc->halt_status);
 		retval = 0;
 	} else if (hc->do_ping) {
 		if (!hc->xfer_started) {
@@ -2446,12 +2583,12 @@ static void process_periodic_channels(dwc_otg_hcd_t *hcd)
 	dwc_otg_host_global_regs_t *host_regs;
 	host_regs = hcd->core_if->host_if->host_global_regs;
 
-	DWC_DEBUGPL(DBG_HCDV, "Queue periodic transactions\n");
+	DWC_DEBUGPL(DBG_HCD_FLOOD, "Queue periodic transactions\n");
 #ifdef DEBUG
 	tx_status.d32 = dwc_read_reg32(&host_regs->hptxsts);
-	DWC_DEBUGPL(DBG_HCDV, "  P Tx Req Queue Space Avail (before queue): %d\n",
+	DWC_DEBUGPL(DBG_HCD_FLOOD, "  P Tx Req Queue Space Avail (before queue): %d\n",
 		    tx_status.b.ptxqspcavail);
-	DWC_DEBUGPL(DBG_HCDV, "  P Tx FIFO Space Avail (before queue): %d\n",
+	DWC_DEBUGPL(DBG_HCD_FLOOD, "  P Tx FIFO Space Avail (before queue): %d\n",
 		    tx_status.b.ptxfspcavail);
 #endif
 
@@ -2586,7 +2723,12 @@ void dwc_otg_hcd_queue_transactions(dwc_otg_hcd_t *hcd,
  */
 void dwc_otg_hcd_complete_urb(dwc_otg_hcd_t *hcd, struct urb *urb, int status)
 {
+	unsigned long		flags;
+
+	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
+
 #ifdef DEBUG
+
 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
 		DWC_PRINT("%s: urb %p, device %d, ep %d %s, status=%d\n",
 			  __func__, urb, usb_pipedevice(urb->pipe),
@@ -2609,10 +2751,12 @@ void dwc_otg_hcd_complete_urb(dwc_otg_hcd_t *hcd, struct urb *urb, int status)
 		memcpy(urb->transfer_buffer,urb->aligned_transfer_buffer,urb->actual_length);
 	}
 
-
+	usb_hcd_unlink_urb_from_ep(dwc_otg_hcd_to_hcd(hcd), urb);
 	urb->status = status;
 	urb->hcpriv = NULL;
+	SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
 	usb_hcd_giveback_urb(dwc_otg_hcd_to_hcd(hcd), urb, status);
+
 }
 
 /*
@@ -2674,7 +2818,7 @@ void dwc_otg_hcd_dump_state(dwc_otg_hcd_t *hcd)
 	DWC_PRINT("  Num channels: %d\n", num_channels);
 	for (i = 0; i < num_channels; i++) {
 		dwc_hc_t *hc = hcd->hc_ptr_array[i];
-		DWC_PRINT("  Channel %d:\n", i);
+		DWC_PRINT("  Channel %d: %p\n", i, hc);
 		DWC_PRINT("    dev_addr: %d, ep_num: %d, ep_is_in: %d\n",
 			  hc->dev_addr, hc->ep_num, hc->ep_is_in);
 		DWC_PRINT("    speed: %d\n", hc->speed);
@@ -2696,6 +2840,8 @@ void dwc_otg_hcd_dump_state(dwc_otg_hcd_t *hcd)
 		DWC_PRINT("    xact_pos: %d\n", hc->xact_pos);
 		DWC_PRINT("    requests: %d\n", hc->requests);
 		DWC_PRINT("    qh: %p\n", hc->qh);
+		if (hc->qh)
+			DWC_PRINT("    nak_frame: %x\n", hc->qh->nak_frame);
 		if (hc->xfer_started) {
 			hfnum_data_t hfnum;
 			hcchar_data_t hcchar;
@@ -2735,6 +2881,8 @@ void dwc_otg_hcd_dump_state(dwc_otg_hcd_t *hcd)
 	}
 	DWC_PRINT("  non_periodic_channels: %d\n", hcd->non_periodic_channels);
 	DWC_PRINT("  periodic_channels: %d\n", hcd->periodic_channels);
+	DWC_PRINT("  nakking_channels: %d\n", hcd->nakking_channels);
+	DWC_PRINT("  last_channel_halted: %d\n", hcd->last_channel_halted);
 	DWC_PRINT("  periodic_usecs: %d\n", hcd->periodic_usecs);
 	np_tx_status.d32 = dwc_read_reg32(&hcd->core_if->core_global_regs->gnptxsts);
 	DWC_PRINT("  NP Tx Req Queue Space Avail: %d\n", np_tx_status.b.nptxqspcavail);
