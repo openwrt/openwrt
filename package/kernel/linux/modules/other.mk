@@ -705,7 +705,8 @@ define KernelPackage/zram
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
-	CONFIG_ZRAM_DEBUG=n
+	CONFIG_ZRAM_DEBUG=n \
+	CONFIG_PGTABLE_MAPPING=n
   FILES:= \
 	$(LINUX_DIR)/drivers/staging/zsmalloc/zsmalloc.ko \
 	$(LINUX_DIR)/drivers/staging/zram/zram.ko
