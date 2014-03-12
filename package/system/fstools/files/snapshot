@@ -1,0 +1,111 @@
+#!/bin/sh
+# Copyright (C) 2014 OpenWrt.org
+
+
+do_snapshot_unpack() {
+	echo "- snapshot -"
+	mkdir /tmp/snapshot
+	cd /tmp/snapshot
+	fs-state snapshot read
+	block=`ls block*.tar.gz 2> /dev/null`
+	[ -z "$block" ] || for a in $block; do
+		tar xzf $a -C /
+		rm -f $a
+	done
+}
+
+do_config_unpack() {
+	echo "- config -"
+	fs-state snapshot config_read
+	[ -f /tmp/config.tar.gz ] && {
+		tar xzf /tmp/config.tar.gz -C /
+		rm -f /tmp/config.tar.gz
+	}
+}
+
+do_snapshot_push() {
+	cd /volatile
+	tar czf /tmp/snapshot.tar.gz *
+	fs-state snapshot write
+	reboot
+}
+
+do_config_push() {
+	cd /volatile
+	tar czf /tmp/config.tar.gz *
+	fs-state snapshot config_write
+}
+
+do_snapshot_upgrade() {
+	opkg update
+	[ $? == 0 ] || exit 1
+
+	opkg list-upgradable
+	[ $? == 0 ] || exit 2
+	
+	UPDATES=`opkg list-upgradable | cut -d" " -f1`
+	[ -z "${UPDATES}" ] && exit 0
+
+	opkg upgrade ${UPDATES}
+	[ $? == 0 ] || exit 3
+
+	do_snapshot_push
+	sleep 5
+	reboot
+	sleep 10
+}
+
+do_convert_jffs2() {
+	fs-state snapshot write
+	sleep 2
+	reboot -f
+}
+
+do_convert() {
+	. /lib/functions.sh
+	. /lib/upgrade/common.sh
+	ubus call system upgrade
+	touch /tmp/sysupgrade
+	cd /overlay
+	tar czf /tmp/snapshot.tar.gz *
+	kill_remaining TERM
+	sleep 3
+	kill_remaining KILL
+	run_ramfs '. /sbin/snapshot; do_convert_jffs2'
+}
+
+[ -n "$(cat /proc/mounts|grep /overlay|grep jffs2)" ] && {
+case $1 in
+convert)
+	do_convert
+	;;
+esac
+}
+
+[ -d /volatile ] && {
+case $1 in
+push)
+	do_snapshot_push
+	;;
+config)
+	do_config_push
+	;;
+upgrade)
+	do_snapshot_upgrade
+	;;
+info)
+	fs-state info
+	;;
+esac
+}
+
+[ "$SNAPSHOT" = "magic" ] && {
+case $1 in
+unpack)
+	do_snapshot_unpack
+	;;
+config_unpack)
+	do_config_unpack
+	;;
+esac
+}

@@ -3,7 +3,7 @@
 # Copyright (C) 2010 Vertical Communications
 
 do_mount_root() {
-	mount_root
+	fs-state start
 	boot_run_hook preinit_mount_root
 	[ -f /sysupgrade.tgz ] && {
 		echo "- config restore -"
