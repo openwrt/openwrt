@@ -76,7 +76,7 @@ OPKG:= \
 PACKAGE_INSTALL_FILES:= \
 	$(foreach pkg,$(sort $(package-y)), \
 		$(foreach variant, \
-			$(if $(package/$(pkg)/variants), \
+			$(if $(strip $(package/$(pkg)/variants)), \
 				$(package/$(pkg)/variants), \
 				$(if $(package/$(pkg)/default-variant), \
 					$(package/$(pkg)/default-variant), \
