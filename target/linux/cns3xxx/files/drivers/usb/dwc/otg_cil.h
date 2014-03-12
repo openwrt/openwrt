@@ -45,6 +45,8 @@
 #include "linux/timer.h"
 #endif
 
+struct dwc_otg_hcd;
+
 /**
  * @file
  * This file contains the interface to the Core Interface Layer.
@@ -402,7 +404,7 @@ typedef struct dwc_otg_core_params
 	 */
 	int32_t dma_burst_size;	 /* Translate this to GAHBCFG values */
 //#define dwc_param_dma_burst_size_default 32
-#define dwc_param_dma_burst_size_default 1
+#define dwc_param_dma_burst_size_default 32
 
 	/**
 	 * Specifies the maximum speed of operation in host and device mode.
@@ -876,7 +878,7 @@ extern void dwc_otg_iso_ep_start_buf_transfer(dwc_otg_core_if_t *core_if, dwc_ep
  */
 /**@{*/
 extern void dwc_otg_hc_init(dwc_otg_core_if_t *_core_if, dwc_hc_t *_hc);
-extern void dwc_otg_hc_halt(dwc_otg_core_if_t *_core_if,
+extern void dwc_otg_hc_halt(struct dwc_otg_hcd *_hcd,
 				dwc_hc_t *_hc,
 				dwc_otg_halt_status_e _halt_status);
 extern void dwc_otg_hc_cleanup(dwc_otg_core_if_t *_core_if, dwc_hc_t *_hc);

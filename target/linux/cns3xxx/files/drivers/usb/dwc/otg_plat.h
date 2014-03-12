@@ -202,6 +202,7 @@ static inline uint32_t SET_DEBUG_LEVEL( const uint32_t new )
 /** When debug level has the DBG_HCD_URB bit set, display enqueued URBs in host
  *  mode. */
 #define DBG_HCD_URB	(0x800)
+#define DBG_HCD_FLOOD (0x1)
 
 /** When debug level has any bit set, display debug messages */
 #define DBG_ANY		(0xFF)

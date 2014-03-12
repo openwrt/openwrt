@@ -211,6 +211,8 @@ void dwc_otg_hcd_qh_init(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh, struct urb *urb)
 		    usb_pipeendpoint(urb->pipe),
 		    usb_pipein(urb->pipe) == USB_DIR_IN ? "IN" : "OUT");
 
+	qh->nak_frame = 0xffff;
+
 	switch(urb->dev->speed) {
 	case USB_SPEED_LOW:
 		speed = "low";
@@ -453,7 +455,26 @@ static int schedule_periodic(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 	int status;
 	struct usb_bus *bus = hcd_to_bus(dwc_otg_hcd_to_hcd(hcd));
 	int frame;
+	int num_channels;
 
+	num_channels = hcd->core_if->core_params->host_channels;
+
+	if ((hcd->periodic_channels < num_channels - 1)) {
+	  if (hcd->periodic_channels + hcd->nakking_channels >= num_channels) {
+	    /* All non-periodic channels are nakking? Halt
+	     * one to make room (as long as there is at
+	     * least one channel for non-periodic transfers,
+	     * all the blocking non-periodics can time-share
+	     * that one channel. */
+	    dwc_hc_t *hc = dwc_otg_halt_nakking_channel(hcd);
+	    if (hc)
+	      DWC_DEBUGPL(DBG_HCD, "Out of Host Channels for periodic transfer - Halting channel %d (dev %d ep%d%s)\n", hc->hc_num, hc->dev_addr, hc->ep_num, (hc->ep_is_in ? "in" : "out"));
+	  }
+	  /* It could be that all channels are currently occupied,
+	   * but in that case one will be freed up soon (either
+	   * because it completed or because it was forced to halt
+	   * above). */
+	}
 	status = find_uframe(hcd, qh);
 	frame = -1;
 	if (status == 0) {
@@ -482,6 +503,8 @@ static int schedule_periodic(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 	}
 	/* Always start in the inactive schedule. */
 	list_add_tail(&qh->qh_list_entry, &hcd->periodic_sched_inactive);
+
+	hcd->periodic_channels++;
 
 	/* Update claimed usecs per (micro)frame. */
 	hcd->periodic_usecs += qh->usecs;
@@ -553,6 +576,9 @@ static void deschedule_periodic(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 	int i;
 
 	list_del_init(&qh->qh_list_entry);
+
+	hcd->periodic_channels--;
+
 	/* Update claimed usecs per (micro)frame. */
 	hcd->periodic_usecs -= qh->usecs;
 	for (i = 0; i < 8; i++) {
@@ -628,9 +654,6 @@ void dwc_otg_hcd_qh_remove (dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
  */
 void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh, int sched_next_periodic_split)
 {
-	unsigned long flags;
-	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
-
 	if (dwc_qh_is_non_per(qh)) {
 		dwc_otg_hcd_qh_remove(hcd, qh);
 		if (!list_empty(&qh->qtd_list)) {
@@ -690,8 +713,6 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh, int sched_n
 			}
 		}
 	}
-
-	SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
 }
 
 /**
@@ -759,22 +780,22 @@ int dwc_otg_hcd_qtd_add (dwc_otg_qtd_t *qtd,
 {
 	struct usb_host_endpoint *ep;
 	dwc_otg_qh_t *qh;
-	unsigned long flags;
 	int retval = 0;
 
 	struct urb *urb = qtd->urb;
-
-	SPIN_LOCK_IRQSAVE(&dwc_otg_hcd->lock, flags);
 
 	/*
 	 * Get the QH which holds the QTD-list to insert to. Create QH if it
 	 * doesn't exist.
 	 */
+	usb_hcd_link_urb_to_ep(dwc_otg_hcd_to_hcd(dwc_otg_hcd), urb);
 	ep = dwc_urb_to_endpoint(urb);
 	qh = (dwc_otg_qh_t *)ep->hcpriv;
 	if (qh == NULL) {
 		qh = dwc_otg_hcd_qh_create (dwc_otg_hcd, urb);
 		if (qh == NULL) {
+			usb_hcd_unlink_urb_from_ep(dwc_otg_hcd_to_hcd(dwc_otg_hcd), urb);
+			retval = -ENOMEM;
 			goto done;
 		}
 		ep->hcpriv = qh;
@@ -783,11 +804,11 @@ int dwc_otg_hcd_qtd_add (dwc_otg_qtd_t *qtd,
 	retval = dwc_otg_hcd_qh_add(dwc_otg_hcd, qh);
 	if (retval == 0) {
 		list_add_tail(&qtd->qtd_list_entry, &qh->qtd_list);
+	} else {
+		usb_hcd_unlink_urb_from_ep(dwc_otg_hcd_to_hcd(dwc_otg_hcd), urb);
 	}
 
  done:
-	SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
-
 	return retval;
 }
 

@@ -66,7 +66,7 @@
 #include "otg_regs.h"
 #include "otg_cil.h"
 #include "otg_pcd.h"
-
+#include "otg_hcd.h"
 
 /**
  * This function is called to initialize the DWC_otg CSR data
@@ -1156,12 +1156,13 @@ void dwc_otg_core_host_init(dwc_otg_core_if_t *core_if)
 		DWC_DEBUGPL(DBG_HCDV, "%s: Halt channel %d\n", __func__, i);
 		do {
 			hcchar.d32 = dwc_read_reg32(&hc_regs->hcchar);
-			if (++count > 1000)
+			if (++count > 200)
 			{
 				DWC_ERROR("%s: Unable to clear halt on channel %d\n",
 					  __func__, i);
 				break;
 			}
+			udelay(100);
 		}
 		while (hcchar.b.chen);
 	}
@@ -1211,6 +1212,8 @@ void dwc_otg_hc_init(dwc_otg_core_if_t *core_if, dwc_hc_t *hc)
 	hc_intr_mask.b.chhltd = 1;
 	if (core_if->dma_enable) {
 		hc_intr_mask.b.ahberr = 1;
+		/* Always record the first nak interrupt for bulk
+		 * packets. */
 		if (hc->error_state && !hc->do_split &&
 			hc->ep_type != DWC_OTG_EP_TYPE_ISOC) {
 			hc_intr_mask.b.ack = 1;
@@ -1375,7 +1378,7 @@ void dwc_otg_hc_init(dwc_otg_core_if_t *core_if, dwc_hc_t *hc)
  * @param hc Host channel to halt.
  * @param halt_status Reason for halting the channel.
  */
-void dwc_otg_hc_halt(dwc_otg_core_if_t *core_if,
+void dwc_otg_hc_halt(dwc_otg_hcd_t *hcd,
 			 dwc_hc_t *hc,
 			 dwc_otg_halt_status_e halt_status)
 {
@@ -1385,6 +1388,7 @@ void dwc_otg_hc_halt(dwc_otg_core_if_t *core_if,
 	dwc_otg_hc_regs_t		*hc_regs;
 	dwc_otg_core_global_regs_t	*global_regs;
 	dwc_otg_host_global_regs_t	*host_global_regs;
+	dwc_otg_core_if_t *core_if = hcd->core_if;
 
 	hc_regs = core_if->host_if->hc_regs[hc->hc_num];
 	global_regs = core_if->core_global_regs;
@@ -1476,6 +1480,9 @@ void dwc_otg_hc_halt(dwc_otg_core_if_t *core_if,
 	dwc_write_reg32(&hc_regs->hcchar, hcchar.d32);
 
 	hc->halt_status = halt_status;
+
+	if (!hc->halt_on_queue && !hc->halt_pending && hc->qh->nak_frame != 0xffff)
+		hcd->nakking_channels--;
 
 	if (hcchar.b.chen) {
 		hc->halt_pending = 1;
@@ -1744,9 +1751,9 @@ void dwc_otg_hc_start_transfer(dwc_otg_core_if_t *core_if, dwc_hc_t *hc)
 	dwc_write_reg32(&hc_regs->hctsiz, hctsiz.d32);
 
 	DWC_DEBUGPL(DBG_HCDV, "%s: Channel %d\n", __func__, hc->hc_num);
-	DWC_DEBUGPL(DBG_HCDV, "	 Xfer Size: %d\n", hctsiz.b.xfersize);
-	DWC_DEBUGPL(DBG_HCDV, "	 Num Pkts: %d\n", hctsiz.b.pktcnt);
-	DWC_DEBUGPL(DBG_HCDV, "	 Start PID: %d\n", hctsiz.b.pid);
+	DWC_DEBUGPL(DBG_HCDV, "  Xfer Size: %d\n", hctsiz.b.xfersize);
+	DWC_DEBUGPL(DBG_HCDV, "  Num Pkts: %d\n", hctsiz.b.pktcnt);
+	DWC_DEBUGPL(DBG_HCDV, "  Start PID: %d\n", hctsiz.b.pid);
 
 	if (core_if->dma_enable) {
 		dwc_write_reg32(&hc_regs->hcdma, (uint32_t)hc->xfer_buff);
@@ -1774,6 +1781,10 @@ void dwc_otg_hc_start_transfer(dwc_otg_core_if_t *core_if, dwc_hc_t *hc)
 	/* Set host channel enable after all other setup is complete. */
 	hcchar.b.chen = 1;
 	hcchar.b.chdis = 0;
+
+	/* Memory Barrier before enabling channel ensure the channel is setup correct */
+	mb();
+
 	dwc_write_reg32(&hc_regs->hcchar, hcchar.d32);
 
 	hc->xfer_started = 1;
@@ -1786,7 +1797,7 @@ void dwc_otg_hc_start_transfer(dwc_otg_core_if_t *core_if, dwc_hc_t *hc)
 	}
 
 #ifdef DEBUG
-	/* Start a timer for this transfer. */
+	/* Start a timer for this transfer */
 	core_if->hc_xfer_timer[hc->hc_num].function = hc_xfer_timeout;
 	core_if->hc_xfer_info[hc->hc_num].core_if = core_if;
 	core_if->hc_xfer_info[hc->hc_num].hc = hc;
@@ -1844,6 +1855,10 @@ int dwc_otg_hc_continue_transfer(dwc_otg_core_if_t *core_if, dwc_hc_t *hc)
 		hcchar.b.chen = 1;
 		hcchar.b.chdis = 0;
 		DWC_DEBUGPL(DBG_HCDV, "	 IN xfer: hcchar = 0x%08x\n", hcchar.d32);
+
+		/* Memory Barrier before enabling channel ensure the channel is setup correct */
+		mb();
+
 		dwc_write_reg32(&hc_regs->hcchar, hcchar.d32);
 		hc->requests++;
 		return 1;
@@ -1891,6 +1906,10 @@ void dwc_otg_hc_do_ping(dwc_otg_core_if_t *core_if, dwc_hc_t *hc)
 	hcchar.d32 = dwc_read_reg32(&hc_regs->hcchar);
 	hcchar.b.chen = 1;
 	hcchar.b.chdis = 0;
+
+	/* Memory Barrier before enabling channel ensure the channel is setup correct */
+	mb();
+
 	dwc_write_reg32(&hc_regs->hcchar, hcchar.d32);
 }
 
@@ -2089,9 +2108,10 @@ void dwc_otg_ep_activate(dwc_otg_core_if_t *core_if, dwc_ep_t *ep)
 			if(core_if->dma_desc_enable) {
 				diepmsk.b.bna = 1;
 			}
+
 /*
 			if(core_if->dma_enable) {
-				doepmsk.b.nak = 1;
+				diepmsk.b.nak = 1;
 			}
 */
 			dwc_write_reg32(&dev_if->dev_global_regs->diepeachintmsk[ep->num], diepmsk.d32);
@@ -3567,6 +3587,7 @@ void dwc_otg_flush_tx_fifo(dwc_otg_core_if_t *core_if,
 			dwc_read_reg32(&global_regs->gnptxsts));
 			break;
 		}
+		udelay(1);
 	}
 	while (greset.b.txfflsh == 1);
 
@@ -3599,6 +3620,7 @@ void dwc_otg_flush_rx_fifo(dwc_otg_core_if_t *core_if)
 				greset.d32);
 			break;
 		}
+		udelay(1);
 	}
 	while (greset.b.rxfflsh == 1);
 
@@ -3640,6 +3662,7 @@ void dwc_otg_core_reset(dwc_otg_core_if_t *core_if)
 				greset.d32);
 			break;
 		}
+		udelay(1);
 	}
 	while (greset.b.csftrst == 1);
 

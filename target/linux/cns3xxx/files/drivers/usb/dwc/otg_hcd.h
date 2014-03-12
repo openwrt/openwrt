@@ -194,6 +194,11 @@ typedef struct dwc_otg_qh {
 	 */
 	uint16_t		sched_frame;
 
+	/*
+	 * Frame a NAK was received on this queue head, used to minimise NAK retransmission
+	 */
+	uint16_t nak_frame;
+
 	/** (micro)frame at which last start split was initialized. */
 	uint16_t		start_split_frame;
 
@@ -328,6 +333,21 @@ typedef struct dwc_otg_hcd {
 	struct list_head	free_hc_list;
 
 	/**
+	 * The number of bulk channels in the active schedule that do
+	 * not have a halt pending or queued but received at least one
+	 * nak and thus are probably blocking a host channel.
+	 *
+	 * This number is included in non_perodic_channels as well.
+	 */
+	int nakking_channels;
+
+	/**
+	 * The number of the last host channel that was halted to free
+	 * up a host channel.
+	 */
+	int last_channel_halted;
+
+	/**
 	 * Number of host channels assigned to periodic transfers. Currently
 	 * assuming that there is a dedicated host channel for each periodic
 	 * transaction and at least one host channel available for
@@ -452,6 +472,8 @@ extern void dwc_otg_hcd_queue_transactions(dwc_otg_hcd_t *hcd,
 					   dwc_otg_transaction_type_e tr_type);
 extern void dwc_otg_hcd_complete_urb(dwc_otg_hcd_t *_hcd, struct urb *urb,
 				     int status);
+extern dwc_hc_t *dwc_otg_halt_nakking_channel(dwc_otg_hcd_t *hcd);
+
 /** @} */
 
 /** @name Interrupt Handler Functions */
@@ -611,6 +633,40 @@ static inline uint16_t dwc_micro_frame_num(uint16_t frame)
 {
 	return frame & 0x7;
 }
+
+/* Perform some sanity checks on nakking / non_perodic channel states. */
+static inline int check_nakking(struct dwc_otg_hcd *hcd, const char *func, const char* context) {
+#ifdef DEBUG
+	int nakking = 0, non_periodic = 0, i;
+	int num_channels = hcd->core_if->core_params->host_channels;
+	for (i = 0; i < num_channels; i++) {
+		dwc_hc_t *hc = hcd->hc_ptr_array[i];
+		if (hc->xfer_started
+		    && (hc->ep_type == DWC_OTG_EP_TYPE_BULK
+			|| hc->ep_type == DWC_OTG_EP_TYPE_CONTROL)) {
+				non_periodic++;
+		}
+		if (hc->xfer_started
+		    && !hc->halt_on_queue
+		    && !hc->halt_pending
+		    && hc->qh->nak_frame != 0xffff) {
+			nakking++;
+		}
+	}
+
+	if (nakking != hcd->nakking_channels
+	    || nakking > hcd->non_periodic_channels
+	    || non_periodic != hcd->non_periodic_channels) {
+		printk("%s/%s: Inconsistent nakking state\n", func, context);
+		printk("non_periodic: %d, real %d, nakking: %d, real %d\n", hcd->non_periodic_channels, non_periodic, hcd->nakking_channels, nakking);
+		dwc_otg_hcd_dump_state(hcd);
+		WARN_ON(1);
+		return 1;
+	}
+#endif
+	return 0;
+}
+
 
 #ifdef DEBUG
 /**
