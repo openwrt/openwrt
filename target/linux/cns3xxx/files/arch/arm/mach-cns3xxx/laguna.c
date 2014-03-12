@@ -697,6 +697,21 @@ static struct gpio laguna_gpio_gw2387[] = {
 	{ 113, GPIOF_IN           , "DIO5" },
 };
 
+static struct gpio laguna_gpio_gw2385[] = {
+	{   0, GPIOF_IN           , "*GSC_IRQ#" },
+	{   1, GPIOF_OUT_INIT_HIGH, "*USB_HST_VBUS_EN" },
+	{   2, GPIOF_IN           , "*USB_HST_FAULT#" },
+	{   5, GPIOF_IN           , "*USB_OTG_FAULT#" },
+	{   6, GPIOF_OUT_INIT_LOW , "*USB_HST_PCI_SEL" },
+	{   7, GPIOF_OUT_INIT_LOW , "*GSM_SEL0" },
+	{   8, GPIOF_OUT_INIT_LOW , "*GSM_SEL1" },
+	{   9, GPIOF_OUT_INIT_LOW , "*SER_EN" },
+	{  10, GPIOF_IN,            "*USER_PB#" },
+	{  11, GPIOF_OUT_INIT_HIGH, "*PERST#" },
+	{ 100, GPIOF_IN           , "*USER_PB#" },
+	{ 103, GPIOF_OUT_INIT_HIGH, "V5_EN" },
+};
+
 static struct gpio laguna_gpio_gw2384[] = {
 	{   0, GPIOF_IN           , "*GSC_IRQ#" },
 	{   1, GPIOF_OUT_INIT_HIGH, "*USB_HST_VBUS_EN" },
@@ -953,6 +968,21 @@ static int __init laguna_model_setup(void)
 			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2387));
 			// configure LED's
 			laguna_gpio_leds_data.num_leds = 2;
+		} else if (strncmp(laguna_info.model, "GW2385", 6) == 0) {
+			// configure GPIO's
+			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2385));
+			// configure LED's
+			laguna_gpio_leds[0].gpio = 115;
+			laguna_gpio_leds[1].gpio = 12;
+			laguna_gpio_leds[1].name = "red";
+			laguna_gpio_leds[1].active_low = 0,
+			laguna_gpio_leds[2].gpio = 14;
+			laguna_gpio_leds[2].name = "green";
+			laguna_gpio_leds[2].active_low = 0,
+			laguna_gpio_leds[3].gpio = 15;
+			laguna_gpio_leds[3].name = "blue";
+			laguna_gpio_leds[3].active_low = 0,
+			laguna_gpio_leds_data.num_leds = 4;
 		} else if (strncmp(laguna_info.model, "GW2384", 6) == 0) {
 			// configure GPIO's
 			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2384));
