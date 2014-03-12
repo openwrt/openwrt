@@ -1,0 +1,89 @@
+From c546fa49901252cbc1e4046d7188858b2f9e130f Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 10 Jan 2014 23:55:43 +0100
+Subject: [PATCH 2/2] MIPS: BCM47XX: add detection and GPIO config for Siemens
+ SE505v2
+
+This adds board detection for the Siemens SE505v2 and the led gpio
+configuration. This board does not have any buttons.
+This is based on OpenWrt broadcom-diag and Manuel Munz's nvram dump.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/bcm47xx/board.c                          |   17 +++++++++++++++++
+ arch/mips/bcm47xx/leds.c                           |   12 ++++++++++++
+ arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h |    2 ++
+ 3 files changed, 31 insertions(+)
+
+--- a/arch/mips/bcm47xx/board.c
++++ b/arch/mips/bcm47xx/board.c
+@@ -181,6 +181,13 @@ struct bcm47xx_board_type_list3 bcm47xx_
+ 	{ {0}, NULL},
+ };
+ 
++/* boardtype, boardrev */
++static const
++struct bcm47xx_board_type_list2 bcm47xx_board_list_board_type_rev[] __initconst = {
++	{{BCM47XX_BOARD_SIEMENS_SE505V2, "Siemens SE505 V2"}, "0x0101", "0x10"},
++	{ {0}, NULL},
++};
++
+ static const
+ struct bcm47xx_board_type bcm47xx_board_unknown[] __initconst = {
+ 	{BCM47XX_BOARD_UNKNOWN, "Unknown Board"},
+@@ -274,6 +281,16 @@ static __init const struct bcm47xx_board
+ 				return &e3->board;
+ 		}
+ 	}
++
++	if (bcm47xx_nvram_getenv("boardtype", buf1, sizeof(buf1)) >= 0 &&
++	    bcm47xx_nvram_getenv("boardrev", buf2, sizeof(buf2)) >= 0 &&
++    	    bcm47xx_nvram_getenv("boardnum", buf3, sizeof(buf3)) ==  -ENOENT) {
++		for (e2 = bcm47xx_board_list_board_type_rev; e2->value1; e2++) {
++			if (!strcmp(buf1, e2->value1) &&
++			    !strcmp(buf2, e2->value2))
++				return &e2->board;
++		}
++	}
+ 	return bcm47xx_board_unknown;
+ }
+ 
+--- a/arch/mips/bcm47xx/leds.c
++++ b/arch/mips/bcm47xx/leds.c
+@@ -383,6 +383,14 @@ bcm47xx_leds_netgear_wnr834bv2[] __initc
+ 	BCM47XX_GPIO_LED(7, "unk", "connected", 0, LEDS_GPIO_DEFSTATE_OFF),
+ };
+ 
++/* Siemens */
++static const struct gpio_led
++bcm47xx_leds_siemens_se505v2[] __initconst = {
++	BCM47XX_GPIO_LED(0, "unk", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(3, "unk", "wlan", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(5, "unk", "power", 1, LEDS_GPIO_DEFSTATE_ON),
++};
++
+ /* SimpleTech */
+ 
+ static const struct gpio_led
+@@ -562,6 +570,10 @@ void __init bcm47xx_leds_register(void)
+ 		bcm47xx_set_pdata(bcm47xx_leds_netgear_wnr834bv2);
+ 		break;
+ 
++	case BCM47XX_BOARD_SIEMENS_SE505V2:
++		bcm47xx_set_pdata(bcm47xx_leds_siemens_se505v2);
++		break;
++
+ 	case BCM47XX_BOARD_SIMPLETECH_SIMPLESHARE:
+ 		bcm47xx_set_pdata(bcm47xx_leds_simpletech_simpleshare);
+ 		break;
+--- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
++++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
+@@ -94,6 +94,8 @@ enum bcm47xx_board {
+ 
+ 	BCM47XX_BOARD_PHICOMM_M1,
+ 
++	BCM47XX_BOARD_SIEMENS_SE505V2,
++
+ 	BCM47XX_BOARD_SIMPLETECH_SIMPLESHARE,
+ 
+ 	BCM47XX_BOARD_ZTE_H218N,

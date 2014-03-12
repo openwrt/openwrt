@@ -15,7 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/diag
   SUBMENU:=Other modules
-  DEPENDS:=@TARGET_brcm47xx
+  DEPENDS:=@TARGET_brcm47xx @!LINUX_3_14
   TITLE:=Driver for router LEDs and Buttons
   FILES:=$(PKG_BUILD_DIR)/diag.ko
   AUTOLOAD:=$(call AutoLoad,05,diag,1)

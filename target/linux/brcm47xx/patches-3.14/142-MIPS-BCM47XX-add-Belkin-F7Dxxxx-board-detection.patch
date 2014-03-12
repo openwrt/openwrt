@@ -1,0 +1,77 @@
+From 44927df87162ae9beb6e7b934b0e75818b88e350 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 2 Jan 2014 19:10:05 +0100
+Subject: [PATCH] MIPS: BCM47XX: add Belkin F7Dxxxx board detection
+
+From: Cody P Schafer <devel@codyps.com>
+
+Add a few Belkin F7Dxxxx entries, with F7D4401 sourced from online
+documentation and the "F7D7302" being observed. F7D3301, F7D3302, and
+F7D4302 are reasonable guesses which are unlikely to cause
+mis-detection.
+
+Signed-off-by: Cody P Schafer <devel@codyps.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/bcm47xx/board.c                          |    4 ++++
+ arch/mips/bcm47xx/buttons.c                        |    4 ++++
+ arch/mips/bcm47xx/leds.c                           |    4 ++++
+ arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h |    4 ++++
+ 4 files changed, 16 insertions(+)
+
+--- a/arch/mips/bcm47xx/board.c
++++ b/arch/mips/bcm47xx/board.c
+@@ -71,7 +71,11 @@ struct bcm47xx_board_type_list1 bcm47xx_
+ 	{{BCM47XX_BOARD_ASUS_WL500W, "Asus WL500W"}, "WL500gW-"},
+ 	{{BCM47XX_BOARD_ASUS_WL520GC, "Asus WL520GC"}, "WL520GC-"},
+ 	{{BCM47XX_BOARD_ASUS_WL520GU, "Asus WL520GU"}, "WL520GU-"},
++	{{BCM47XX_BOARD_BELKIN_F7D3301, "Belkin F7D3301"}, "F7D3301"},
++	{{BCM47XX_BOARD_BELKIN_F7D3302, "Belkin F7D3302"}, "F7D3302"},
+ 	{{BCM47XX_BOARD_BELKIN_F7D4301, "Belkin F7D4301"}, "F7D4301"},
++	{{BCM47XX_BOARD_BELKIN_F7D4302, "Belkin F7D4302"}, "F7D4302"},
++	{{BCM47XX_BOARD_BELKIN_F7D4401, "Belkin F7D4401"}, "F7D4401"},
+ 	{ {0}, NULL},
+ };
+ 
+--- a/arch/mips/bcm47xx/buttons.c
++++ b/arch/mips/bcm47xx/buttons.c
+@@ -420,7 +420,11 @@ int __init bcm47xx_buttons_register(void
+ 		err = bcm47xx_copy_bdata(bcm47xx_buttons_asus_wlhdd);
+ 		break;
+ 
++	case BCM47XX_BOARD_BELKIN_F7D3301:
++	case BCM47XX_BOARD_BELKIN_F7D3302:
+ 	case BCM47XX_BOARD_BELKIN_F7D4301:
++	case BCM47XX_BOARD_BELKIN_F7D4302:
++	case BCM47XX_BOARD_BELKIN_F7D4401:
+ 		err = bcm47xx_copy_bdata(bcm47xx_buttons_belkin_f7d4301);
+ 		break;
+ 
+--- a/arch/mips/bcm47xx/leds.c
++++ b/arch/mips/bcm47xx/leds.c
+@@ -457,7 +457,11 @@ void __init bcm47xx_leds_register(void)
+ 		bcm47xx_set_pdata(bcm47xx_leds_asus_wlhdd);
+ 		break;
+ 
++	case BCM47XX_BOARD_BELKIN_F7D3301:
++	case BCM47XX_BOARD_BELKIN_F7D3302:
+ 	case BCM47XX_BOARD_BELKIN_F7D4301:
++	case BCM47XX_BOARD_BELKIN_F7D4302:
++	case BCM47XX_BOARD_BELKIN_F7D4401:
+ 		bcm47xx_set_pdata(bcm47xx_leds_belkin_f7d4301);
+ 		break;
+ 
+--- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
++++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
+@@ -27,7 +27,11 @@ enum bcm47xx_board {
+ 	BCM47XX_BOARD_ASUS_WL700GE,
+ 	BCM47XX_BOARD_ASUS_WLHDD,
+ 
++	BCM47XX_BOARD_BELKIN_F7D3301,
++	BCM47XX_BOARD_BELKIN_F7D3302,
+ 	BCM47XX_BOARD_BELKIN_F7D4301,
++	BCM47XX_BOARD_BELKIN_F7D4302,
++	BCM47XX_BOARD_BELKIN_F7D4401,
+ 
+ 	BCM47XX_BOARD_BUFFALO_WBR2_G54,
+ 	BCM47XX_BOARD_BUFFALO_WHR2_A54G54,
