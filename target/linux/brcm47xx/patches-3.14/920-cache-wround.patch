@@ -1,0 +1,138 @@
+--- a/arch/mips/include/asm/r4kcache.h
++++ b/arch/mips/include/asm/r4kcache.h
+@@ -21,10 +21,28 @@
+ #ifdef CONFIG_BCM47XX
+ #include <asm/paccess.h>
+ #include <linux/ssb/ssb.h>
+-#define BCM4710_DUMMY_RREG() ((void) *((u8 *) KSEG1ADDR(SSB_ENUM_BASE)))
++#define BCM4710_DUMMY_RREG() bcm4710_dummy_rreg()
++
++static inline unsigned long bcm4710_dummy_rreg(void)
++{
++      return *(volatile unsigned long *)(KSEG1ADDR(SSB_ENUM_BASE));
++}
++
++#define BCM4710_FILL_TLB(addr) bcm4710_fill_tlb((void *)(addr))
++
++static inline unsigned long bcm4710_fill_tlb(void *addr)
++{
++      return *(unsigned long *)addr;
++}
++
++#define BCM4710_PROTECTED_FILL_TLB(addr) bcm4710_protected_fill_tlb((void *)(addr))
++
++static inline void bcm4710_protected_fill_tlb(void *addr)
++{
++      unsigned long x;
++      get_dbe(x, (unsigned long *)addr);;
++}
+ 
+-#define BCM4710_FILL_TLB(addr) (*(volatile unsigned long *)(addr))
+-#define BCM4710_PROTECTED_FILL_TLB(addr) ({ unsigned long x; get_dbe(x, (volatile unsigned long *)(addr)); })
+ #else
+ #define BCM4710_DUMMY_RREG()
+ 
+--- a/arch/mips/mm/tlbex.c
++++ b/arch/mips/mm/tlbex.c
+@@ -935,6 +935,9 @@ build_get_pgde32(u32 **p, unsigned int t
+ 		uasm_i_srl(p, ptr, ptr, SMP_CPUID_PTRSHIFT);
+ 		uasm_i_addu(p, ptr, tmp, ptr);
+ #else
++#ifdef CONFIG_BCM47XX
++		uasm_i_nop(p);
++#endif
+ 		UASM_i_LA_mostly(p, ptr, pgdc);
+ #endif
+ 		uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
+@@ -1277,12 +1280,12 @@ static void build_r4000_tlb_refill_handl
+ 			/* No need for uasm_i_nop */
+ 		}
+ 
+-#ifdef CONFIG_BCM47XX
+-		uasm_i_nop(&p);
+-#endif
+ #ifdef CONFIG_64BIT
+ 		build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
+ #else
++# ifdef CONFIG_BCM47XX
++		uasm_i_nop(&p);
++# endif
+ 		build_get_pgde32(&p, K0, K1); /* get pgd in K1 */
+ #endif
+ 
+@@ -1294,6 +1297,9 @@ static void build_r4000_tlb_refill_handl
+ 		build_update_entries(&p, K0, K1);
+ 		build_tlb_write_entry(&p, &l, &r, tlb_random);
+ 		uasm_l_leave(&l, p);
++#ifdef CONFIG_BCM47XX
++		uasm_i_nop(&p);
++#endif
+ 		uasm_i_eret(&p); /* return from trap */
+ 	}
+ #ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
+@@ -1838,12 +1844,12 @@ build_r4000_tlbchange_handler_head(u32 *
+ {
+ 	struct work_registers wr = build_get_work_registers(p);
+ 
+-#ifdef CONFIG_BCM47XX
+-	uasm_i_nop(p);
+-#endif
+ #ifdef CONFIG_64BIT
+ 	build_get_pmde64(p, l, r, wr.r1, wr.r2); /* get pmd in ptr */
+ #else
++# ifdef CONFIG_BCM47XX
++	uasm_i_nop(p);
++# endif
+ 	build_get_pgde32(p, wr.r1, wr.r2); /* get pgd in ptr */
+ #endif
+ 
+@@ -1882,6 +1888,9 @@ build_r4000_tlbchange_handler_tail(u32 *
+ 	build_tlb_write_entry(p, l, r, tlb_indexed);
+ 	uasm_l_leave(l, *p);
+ 	build_restore_work_registers(p);
++#ifdef CONFIG_BCM47XX
++	uasm_i_nop(p);
++#endif
+ 	uasm_i_eret(p); /* return from trap */
+ 
+ #ifdef CONFIG_64BIT
+--- a/arch/mips/kernel/genex.S
++++ b/arch/mips/kernel/genex.S
+@@ -21,6 +21,19 @@
+ #include <asm/war.h>
+ #include <asm/thread_info.h>
+ 
++#ifdef CONFIG_BCM47XX
++# ifdef eret
++#  undef eret
++# endif
++# define eret 					\
++	.set push;				\
++	.set noreorder;				\
++	 nop; 					\
++	 nop;					\
++	 eret;					\
++	.set pop;
++#endif
++
+ #ifdef CONFIG_MIPS_MT_SMTC
+ #define PANIC_PIC(msg)					\
+ 		.set	push;				\
+@@ -48,7 +61,6 @@ NESTED(except_vec3_generic, 0, sp)
+ 	.set	noat
+ #ifdef CONFIG_BCM47XX
+ 	nop
+-	nop
+ #endif
+ #if R5432_CP0_INTERRUPT_WAR
+ 	mfc0	k0, CP0_INDEX
+@@ -73,6 +85,9 @@ NESTED(except_vec3_r4000, 0, sp)
+ 	.set	push
+ 	.set	mips3
+ 	.set	noat
++#ifdef CONFIG_BCM47XX
++	nop
++#endif
+ 	mfc0	k1, CP0_CAUSE
+ 	li	k0, 31<<2
+ 	andi	k1, k1, 0x7c

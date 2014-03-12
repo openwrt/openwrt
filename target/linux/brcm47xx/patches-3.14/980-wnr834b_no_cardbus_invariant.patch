@@ -1,0 +1,13 @@
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -127,6 +127,10 @@ static int bcm47xx_get_invariants(struct
+ 	if (bcm47xx_nvram_getenv("cardbus", buf, sizeof(buf)) >= 0)
+ 		iv->has_cardbus_slot = !!simple_strtoul(buf, NULL, 10);
+ 
++	/* Do not indicate cardbus for Netgear WNR834B V1 and V2 */
++	if (iv->boardinfo.type == 0x0472 && iv->has_cardbus_slot)
++		iv->has_cardbus_slot = 0;
++
+ 	return 0;
+ }
+ 
