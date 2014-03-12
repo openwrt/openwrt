@@ -41,7 +41,7 @@ tools-$(BUILD_PPL_CLOOG) += ppl cloog
 
 # builddir dependencies
 $(curdir)/bison/compile := $(curdir)/flex/install
-$(curdir)/flex/compile := $(curdir)/m4/install
+$(curdir)/flex/compile := $(curdir)/automake/install
 $(curdir)/pkg-config/compile := $(curdir)/sed/install
 $(curdir)/libtool/compile := $(curdir)/sed/install
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
