@@ -184,7 +184,7 @@ static int __init rb95x_setup(void)
 {
 	const struct rb_info *info;
 
-	info = rb_init_info((void *)(KSEG1ADDR(0x1f00000)), 0x10000);
+	info = rb_init_info((void *)(KSEG1ADDR(AR71XX_SPI_BASE)), 0x10000);
 	if (!info)
 		return -EINVAL;
 
