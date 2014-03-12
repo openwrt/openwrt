@@ -43,7 +43,7 @@ static void __init ath79_nfc_init_resource(struct resource res[2],
 					   unsigned long size,
 					   int irq)
 {
-	memset(res, 0, sizeof(res));
+	memset(res, 0, sizeof(struct resource) * 2);
 
 	res[0].flags = IORESOURCE_MEM;
 	res[0].start = base;
