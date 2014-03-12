@@ -3,11 +3,7 @@
 
 START=95
 boot() {
-	[ -d /tmp/root ] && {
-		lock /tmp/.switch2jffs
-		switch2jffs
-		lock -u /tmp/.switch2jffs
-	}
+	[ -d /tmp/root ] && fs-state done
 
 	# process user commands
 	[ -f /etc/rc.local ] && {

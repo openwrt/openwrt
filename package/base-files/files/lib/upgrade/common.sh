@@ -57,6 +57,8 @@ run_ramfs() { # <command> [...]
 		/bin/sleep /bin/zcat /usr/bin/bzcat /usr/bin/printf /usr/bin/wc
 
 	install_bin /sbin/mtd
+	install_bin /sbin/fs-state
+	install_bin /sbin/snapshot
 	for file in $RAMFS_COPY_BIN; do
 		install_bin $file
 	done
