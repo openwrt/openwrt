@@ -100,6 +100,7 @@ endif
 
 ifeq ($(CONFIG_x86_64),y)
   OPENSSL_TARGET:=linux-x86_64
+  OPENSSL_MAKEFLAGS += LIBDIR=lib
 else
   OPENSSL_OPTIONS+=no-sse2
   ifeq ($(CONFIG_mips)$(CONFIG_mipsel),y)
