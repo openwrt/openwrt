@@ -143,7 +143,7 @@
  		.name	= "intrq",
  		.start	= IRQ_IXP4XX_GPIO12,
  		.end	= IRQ_IXP4XX_GPIO12,
-@@ -133,21 +210,210 @@ static struct platform_device avila_pata
+@@ -133,21 +210,237 @@ static struct platform_device avila_pata
  	.resource		= avila_pata_resources,
  };
  
@@ -358,13 +358,17 @@
 +	platform_device_register(&avila_npec_device);
 +
 +	platform_device_register(&avila_gpio_leds_device);
- 
- 	avila_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
- 	avila_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
-@@ -159,8 +425,339 @@ static void __init avila_init(void)
- 	avila_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
- 
- 	platform_device_register(&avila_pata);
++
++	avila_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
++	avila_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
++
++	avila_pata_resources[1].start = IXP4XX_EXP_BUS_BASE(2);
++	avila_pata_resources[1].end = IXP4XX_EXP_BUS_END(2);
++
++	avila_pata_data.cs0_cfg = IXP4XX_EXP_CS1;
++	avila_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
++
++	platform_device_register(&avila_pata);
 +}
 +
 +static void __init avila_gw2347_setup(void)
@@ -381,17 +385,13 @@
 +	platform_device_register(&avila_npec_device);
 +
 +	platform_device_register(&avila_gpio_leds_device);
-+
-+	avila_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
-+	avila_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
-+
-+	avila_pata_resources[1].start = IXP4XX_EXP_BUS_BASE(2);
-+	avila_pata_resources[1].end = IXP4XX_EXP_BUS_END(2);
-+
-+	avila_pata_data.cs0_cfg = IXP4XX_EXP_CS1;
-+	avila_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
-+
-+	platform_device_register(&avila_pata);
+ 
+ 	avila_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
+ 	avila_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
+@@ -159,8 +452,335 @@ static void __init avila_init(void)
+ 	avila_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
+ 
+ 	platform_device_register(&avila_pata);
 +}
 +
 +static void __init avila_gw2353_setup(void)
@@ -545,6 +545,26 @@
 +	setup_audio_devices();
 +}
 +
++static void __init avila_gw2375_setup(void)
++{
++	avila_npeb_data.phy = 1;
++	platform_device_register(&avila_npeb_device);
++
++	avila_npec_data.phy = 2;
++	platform_device_register(&avila_npec_device);
++
++	*IXP4XX_EXP_CS2 = 0xBFFF3C43;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO10, IRQ_TYPE_EDGE_RISING);
++	avila_optional_uart_data[0].mapbase = 0x52000000;
++	avila_optional_uart_data[0].membase = (void __iomem *)ioremap(0x52000000, 0x0fff);
++	avila_optional_uart_data[0].irq   = IRQ_IXP4XX_GPIO10;
++
++	avila_optional_uart.num_resources = 1;
++
++	platform_device_register(&avila_optional_uart);
++
++	setup_audio_devices();
++}
 +
 +
 +static struct avila_board_info avila_boards[] __initdata = {
@@ -581,6 +601,9 @@
 +	}, {
 +		.model		= "GW2373",
 +		.setup		= avila_gw2369_setup,
++	}, {
++		.model		= "GW2375",
++		.setup		= avila_gw2375_setup,
 +	}
 +};
 +
