@@ -1,3 +1,24 @@
+commit 584d297fd29fb39c76af25ae74ff9d5fe74c8a14
+Author: Helmut Schaa <helmut.schaa@googlemail.com>
+Date:   Wed Mar 12 10:37:55 2014 +0100
+
+    ath9k: Fix sequence number assignment for non-data frames
+    
+    Since commit 558ff225de80ac95b132d3a115ddadcd64498b4f (ath9k: fix
+    ps-poll responses under a-mpdu sessions) non-data frames would have
+    gotten a sequence number from a TIDs sequence counter instead of
+    using the global sequence counter.
+    
+    This can lead to instable connections.
+    
+    To fix this only select the correct TID if we are processing a
+    data frame. Furthermore, prevent non-data frames to get a sequence
+    number from a TID sequence counter by adding a check to
+    ath_tx_setup_buffer.
+    
+    Cc: Felix Fietkau <nbd@openwrt.org>
+    Signed-off-by: Helmut Schaa <helmut.schaa@googlemail.com>
+
 commit 3a0f984b1cdcd6a9f8c441635ef3b05d58547f4e
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Tue Mar 11 14:03:32 2014 +0100
@@ -3370,11 +3391,20 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  			    ATH_CABQ_READY_TIME) / 100;
  	ath_txq_update(sc, qnum, &qi);
  
+@@ -2061,7 +2063,7 @@ static struct ath_buf *ath_tx_setup_buff
+ 
+ 	ATH_TXBUF_RESET(bf);
+ 
+-	if (tid) {
++	if (tid && ieee80211_is_data_present(hdr->frame_control)) {
+ 		fragno = le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_FRAG;
+ 		seqno = tid->seq_next;
+ 		hdr->seq_ctrl = cpu_to_le16(tid->seq_next << IEEE80211_SEQ_SEQ_SHIFT);
 @@ -2184,14 +2186,15 @@ int ath_tx_start(struct ieee80211_hw *hw
  		txq->stopped = true;
  	}
  
-+	if (txctl->an)
++	if (txctl->an && ieee80211_is_data_present(hdr->frame_control))
 +		tid = ath_get_skb_tid(sc, txctl->an, skb);
 +
  	if (info->flags & IEEE80211_TX_CTL_PS_RESPONSE) {
