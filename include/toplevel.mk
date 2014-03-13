@@ -156,6 +156,15 @@ prereq:: prepare-tmpinfo .config
 	@+$(MAKE) -r -s tmp/.prereq-build $(PREP_MK)
 	@+$(NO_TRACE_MAKE) -r -s $@
 
+ifeq ($(SDK),1)
+
+%::
+	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
+	@./scripts/config/conf --defconfig=.config Config.in
+	@+$(ULIMIT_FIX) $(SUBMAKE) -r $@
+
+else
+
 %::
 	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
 	@( \
@@ -166,6 +175,8 @@ prereq:: prepare-tmpinfo .config
 		fi \
 	)
 	@+$(ULIMIT_FIX) $(SUBMAKE) -r $@
+
+endif
 
 help:
 	cat README

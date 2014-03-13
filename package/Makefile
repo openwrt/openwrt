@@ -10,11 +10,8 @@ curdir:=package
 -include $(TMP_DIR)/.packagedeps
 $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
 $(curdir)/builddirs-install:=.
-ifeq ($(SDK),1)
-else
-  $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
-  $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
-endif
+$(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
+$(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
 ifneq ($(IGNORE_ERRORS),)
   package-y-filter := $(package-y)
   package-m-filter := $(filter-out $(package-y),$(package-m))

@@ -1,6 +1,13 @@
 #!/usr/bin/env perl
 use strict;
 
+print <<EOF;
+config ALL
+	bool
+	default y
+
+EOF
+
 while (<>) {
 	chomp;
 	next unless /^CONFIG_([^=]+)=(.*)$/;
@@ -8,6 +15,8 @@ while (<>) {
 	my $var = $1;
 	my $val = $2;
 	my $type;
+
+	next if $var eq 'ALL';
 
 	if ($val eq 'y') {
 		$type = "bool";
