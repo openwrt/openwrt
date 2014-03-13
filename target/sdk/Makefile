@@ -17,7 +17,9 @@ PKG_CPU:=$(word 1,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
 SDK_NAME:=OpenWrt-SDK-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)-gcc-$(GCCV)_$(LIBC)-$(LIBCV)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 
+STAGING_SUBDIR_HOST := staging_dir/host
 STAGING_SUBDIR_TARGET := staging_dir/target-$(ARCH)$(ARCH_SUFFIX)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi)
+STAGING_SUBDIR_TOOLCHAIN := staging_dir/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi)
 
 EXCLUDE_DIRS:=*/ccache \
 	*/stamp \
@@ -33,9 +35,9 @@ EXCLUDE_DIRS:=*/ccache \
 	$(STAGING_SUBDIR_TARGET)/usr/bin
 
 SDK_DIRS = \
-		staging_dir/host \
+		$(STAGING_SUBDIR_HOST) \
 		$(STAGING_SUBDIR_TARGET) \
-		staging_dir/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi) \
+		$(STAGING_SUBDIR_TOOLCHAIN)
 
 SVN_PACKAGE_URL=$(shell svn info ../../package | awk '/^URL:/ { print $$2; }')
 
@@ -69,6 +71,21 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		$(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
 		$(SDK_DIRS) $(KERNEL_FILES) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
+
+	@-( \
+		find \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/bin \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/usr/bin \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/bin \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/*/bin \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/libexec \
+			-type f; \
+		find \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/lib \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/usr/lib \
+			-type f -name \*.so\* -or -name \*.a; \
+	) | xargs strip 2>/dev/null >/dev/null
+
 	mkdir -p $(SDK_BUILD_DIR)/target/linux
 	$(CP) $(GENERIC_PLATFORM_DIR) $(PLATFORM_DIR) $(SDK_BUILD_DIR)/target/linux/
 	rm -rf \
