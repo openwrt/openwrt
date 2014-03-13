@@ -774,9 +774,10 @@ sub gen_package_mk() {
 				} elsif (defined($srcpackage{$dep})) {
 					$idx = $subdir{$dep}.$dep;
 				}
-				$idx .= $suffix;
 				undef $idx if $idx eq 'base-files';
 				if ($idx) {
+					$idx .= $suffix;
+
 					my $depline;
 					next if $pkg->{src} eq $pkg_dep->{src}.$suffix;
 					next if $dep{$condition.":".$pkg->{src}."->".$idx};
