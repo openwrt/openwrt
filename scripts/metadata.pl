@@ -674,14 +674,7 @@ sub gen_package_mk() {
 
 		next if defined $pkg->{vdepends};
 
-		if ($ENV{SDK}) {
-			$conf{$pkg->{src}} or do {
-				$config = 'm';
-				$conf{$pkg->{src}} = 1;
-			};
-		} else {
-			$config = "\$(CONFIG_PACKAGE_$name)"
-		}
+		$config = "\$(CONFIG_PACKAGE_$name)";
 		if ($config) {
 			$pkg->{buildonly} and $config = "";
 			print "package-$config += $pkg->{subdir}$pkg->{src}\n";
