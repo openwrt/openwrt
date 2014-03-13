@@ -16,15 +16,25 @@ PKG_CPU:=$(word 1,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
 
 SDK_NAME:=OpenWrt-SDK-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)-gcc-$(GCCV)_$(LIBC)-$(LIBCV)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
+
+STAGING_SUBDIR_TARGET := staging_dir/target-$(ARCH)$(ARCH_SUFFIX)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi)
+
 EXCLUDE_DIRS:=*/ccache \
 	*/stamp \
 	*/stampfiles \
 	*/man \
 	*/info \
+	*/root-* \
+	initial \
+	*.install.clean \
+	*.install.flags \
+	*.install \
+	*/doc \
+	$(STAGING_SUBDIR_TARGET)/usr/bin
 
 SDK_DIRS = \
 		staging_dir/host \
-		staging_dir/target-$(ARCH)$(ARCH_SUFFIX)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi) \
+		$(STAGING_SUBDIR_TARGET) \
 		staging_dir/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi) \
 
 SVN_PACKAGE_URL=$(shell svn info ../../package | awk '/^URL:/ { print $$2; }')
