@@ -44,9 +44,6 @@ dirclean: clean
 prereq: $(package/stamp-prereq) ;
 
 world: prepare $(package/stamp-compile) FORCE
-	@for configfile in `find package -maxdepth 2 -name Config.in` ; do \
-		$(MAKE) compile -C `dirname $$configfile`; \
-	done
 	@$(MAKE) package/index
 
 .PHONY: clean dirclean prereq prepare world
