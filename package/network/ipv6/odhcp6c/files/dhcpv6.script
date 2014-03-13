@@ -84,6 +84,7 @@ setup_interface () {
 		json_add_string proto "dslite"
 		json_add_string peeraddr "$AFTR_IP"
 		json_add_string tunlink "$INTERFACE"
+		[ -n "$IFACE_DSLITE_DELEGATE" ] && json_add_boolean delegate "$IFACE_DSLITE_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	fi
