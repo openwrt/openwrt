@@ -53,6 +53,7 @@ setup_interface () {
 		json_add_string ip6prefix "$ip6rdprefix"
 		json_add_int ip6prefixlen "$ip6rdprefixlen"
 		json_add_string tunlink "$INTERFACE"
+		[ -n "$IFACE6RD_DELEGATE" ] && json_add_boolean delegate "$IFACE6RD_DELEGATE"
 		json_close_object
 
 		ubus call network add_dynamic "$(json_dump)"
