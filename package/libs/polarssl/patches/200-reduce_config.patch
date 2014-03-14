@@ -1,16 +1,96 @@
 --- a/include/polarssl/config.h
 +++ b/include/polarssl/config.h
-@@ -206,8 +206,8 @@
-  * Requires: POLARSSL_BIGNUM_C, POLARSSL_RSA_C
+@@ -315,8 +315,8 @@
+  *      TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
+  *      TLS_PSK_WITH_3DES_EDE_CBC_SHA
+  *      TLS_PSK_WITH_RC4_128_SHA
+- */
+ #define POLARSSL_KEY_EXCHANGE_PSK_ENABLED
++ */
+ 
+ /**
+  * \def POLARSSL_KEY_EXCHANGE_DHE_PSK_ENABLED
+@@ -339,8 +339,8 @@
+  *      TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256
+  *      TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA
+  *      TLS_DHE_PSK_WITH_RC4_128_SHA
+- */
+ #define POLARSSL_KEY_EXCHANGE_DHE_PSK_ENABLED
++ */
+ 
+ /**
+  * \def POLARSSL_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+@@ -359,8 +359,8 @@
+  *      TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256
+  *      TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA
+  *      TLS_ECDHE_PSK_WITH_RC4_128_SHA
+- */
+ #define POLARSSL_KEY_EXCHANGE_ECDHE_PSK_ENABLED
++ */
+ 
+ /**
+  * \def POLARSSL_KEY_EXCHANGE_RSA_PSK_ENABLED
+@@ -384,8 +384,8 @@
+  *      TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256
+  *      TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA
+  *      TLS_RSA_PSK_WITH_RC4_128_SHA
+- */
+ #define POLARSSL_KEY_EXCHANGE_RSA_PSK_ENABLED
++ */
+ 
+ /**
+  * \def POLARSSL_KEY_EXCHANGE_RSA_ENABLED
+@@ -463,8 +463,8 @@
+  *      TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256
+  *      TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
+  *      TLS_ECDHE_RSA_WITH_RC4_128_SHA
+- */
+ #define POLARSSL_KEY_EXCHANGE_ECDHE_RSA_ENABLED
++ */
+ 
+ /**
+  * \def POLARSSL_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+@@ -487,8 +487,8 @@
+  *      TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256
+  *      TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA
+  *      TLS_ECDHE_ECDSA_WITH_RC4_128_SHA
+- */
+ #define POLARSSL_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
++ */
+ 
+ /**
+  * \def POLARSSL_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+@@ -511,8 +511,8 @@
+  *      TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384
+  *      TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256
+  *      TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384
+- */
+ #define POLARSSL_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
++ */
+ 
+ /**
+  * \def POLARSSL_KEY_EXCHANGE_ECDH_RSA_ENABLED
+@@ -535,8 +535,8 @@
+  *      TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384
+  *      TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256
+  *      TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384
+- */
+ #define POLARSSL_KEY_EXCHANGE_ECDH_RSA_ENABLED
++ */
+ 
+ /**
+  * \def POLARSSL_ERROR_STRERROR_BC
+@@ -566,8 +566,8 @@
+  * Enable the prime-number generation code.
   *
-  * Enable the RSA prime-number generation code.
+  * Requires: POLARSSL_BIGNUM_C
 - */
  #define POLARSSL_GENPRIME
 + */
  
  /**
   * \def POLARSSL_FS_IO
-@@ -264,8 +264,8 @@
+@@ -662,8 +662,8 @@
   * \def POLARSSL_SELF_TEST
   *
   * Enable the checkup functions (*_self_test).
@@ -20,18 +100,18 @@
  
  /**
   * \def POLARSSL_SSL_ALL_ALERT_MESSAGES
-@@ -466,8 +466,8 @@
-  *      TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256
-  *      TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256
-  *      TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256
+@@ -1107,8 +1107,8 @@
+  *      TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384
+  *      TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
+  *      TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
 - */
  #define POLARSSL_CAMELLIA_C
 + */
  
  /**
   * \def POLARSSL_CERTS_C
-@@ -478,8 +478,8 @@
-  * Caller:
+@@ -1121,8 +1121,8 @@
+  * Requires: POLARSSL_PEM_PARSE_C
   *
   * This module is used for testing (ssl_client/server).
 - */
@@ -40,7 +120,7 @@
  
  /**
   * \def POLARSSL_CIPHER_C
-@@ -518,8 +518,8 @@
+@@ -1161,8 +1161,8 @@
   *          library/ssl_tls.c
   *
   * This module provides debugging functions.
@@ -50,18 +130,48 @@
  
  /**
   * \def POLARSSL_DES_C
-@@ -604,8 +604,8 @@
-  * enabled as well):
-  *      TLS_RSA_WITH_AES_128_GCM_SHA256
-  *      TLS_RSA_WITH_AES_256_GCM_SHA384
+@@ -1217,8 +1217,8 @@
+  *      ECDHE-ECDSA, ECDHE-RSA, DHE-PSK
+  *
+  * Requires: POLARSSL_ECP_C
+- */
+ #define POLARSSL_ECDH_C
++ */
+ 
+ /**
+  * \def POLARSSL_ECDSA_C
+@@ -1232,8 +1232,8 @@
+  *      ECDHE-ECDSA
+  *
+  * Requires: POLARSSL_ECP_C, POLARSSL_ASN1_WRITE_C, POLARSSL_ASN1_PARSE_C
+- */
+ #define POLARSSL_ECDSA_C
++ */
+ 
+ /**
+  * \def POLARSSL_ECP_C
+@@ -1245,8 +1245,8 @@
+  *          library/ecdsa.c
+  *
+  * Requires: POLARSSL_BIGNUM_C and at least one POLARSSL_ECP_DP_XXX_ENABLED
+- */
+ #define POLARSSL_ECP_C
++ */
+ 
+ /**
+  * \def POLARSSL_ENTROPY_C
+@@ -1285,8 +1285,8 @@
+  *
+  * This module enables the AES-GCM and CAMELLIA-GCM ciphersuites, if other
+  * requisites are enabled as well.
 - */
  #define POLARSSL_GCM_C
 + */
  
  /**
   * \def POLARSSL_HAVEGE_C
-@@ -704,8 +704,8 @@
-  * Caller:  library/aes.c
+@@ -1436,8 +1436,8 @@
+  * Requires: POLARSSL_HAVE_ASM
   *
   * This modules adds support for the VIA PadLock on x86.
 - */
@@ -70,7 +180,17 @@
  
  /**
   * \def POLARSSL_PBKDF2_C
-@@ -848,8 +848,8 @@
+@@ -1584,8 +1584,8 @@
+  * Module:  library/ripemd160.c
+  * Caller:  library/md.c
+  *
+- */
+ #define POLARSSL_RIPEMD160_C
++ */
+ 
+ /**
+  * \def POLARSSL_RSA_C
+@@ -1664,8 +1664,8 @@
   * Caller:
   *
   * Requires: POLARSSL_SSL_CACHE_C
@@ -80,7 +200,7 @@
  
  /**
   * \def POLARSSL_SSL_CLI_C
-@@ -903,8 +903,8 @@
+@@ -1741,8 +1741,8 @@
   * Caller:  library/havege.c
   *
   * This module is used by the HAVEGE random number generator.
@@ -90,13 +210,13 @@
  
  /**
   * \def POLARSSL_VERSION_C
-@@ -953,8 +953,8 @@
+@@ -1862,8 +1862,8 @@
   *
   * Module:  library/xtea.c
   * Caller:
 - */
  #define POLARSSL_XTEA_C
 + */
- /* \} name */
  
- /**
+ /* \} name SECTION: PolarSSL modules */
+ 
