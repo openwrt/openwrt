@@ -1,0 +1,38 @@
+--- a/programs/pkey/gen_key.c
++++ b/programs/pkey/gen_key.c
+@@ -155,7 +155,9 @@ int main( int argc, char *argv[] )
+ 
+     opt.type                = DFL_TYPE;
+     opt.rsa_keysize         = DFL_RSA_KEYSIZE;
++#if defined(POLARSSL_ECP_C)
+     opt.ec_curve            = DFL_EC_CURVE;
++#endif
+     opt.filename            = DFL_FILENAME;
+     opt.format              = DFL_FORMAT;
+ 
+@@ -170,8 +172,10 @@ int main( int argc, char *argv[] )
+         {
+             if( strcmp( q, "rsa" ) == 0 )
+                 opt.type = POLARSSL_PK_RSA;
++#if defined(POLARSSL_ECP_C)
+             if( strcmp( q, "ec" ) == 0 )
+                 opt.type = POLARSSL_PK_ECKEY;
++#endif
+             else
+                 goto usage;
+         }
+@@ -190,12 +194,14 @@ int main( int argc, char *argv[] )
+             if( opt.rsa_keysize < 1024 || opt.rsa_keysize > 8192 )
+                 goto usage;
+         }
++#if defined(POLARSSL_ECP_C)
+         else if( strcmp( p, "ec_curve" ) == 0 )
+         {
+             if( ( curve_info = ecp_curve_info_from_name( q ) ) == NULL )
+                 goto usage;
+             opt.ec_curve = curve_info->grp_id;
+         }
++#endif
+         else if( strcmp( p, "filename" ) == 0 )
+             opt.filename = q;
+         else

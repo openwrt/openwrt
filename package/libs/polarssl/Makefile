@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=polarssl
-PKG_VERSION:=1.2.9
+PKG_VERSION:=1.3.4
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
 PKG_SOURCE_URL:=https://polarssl.org/code/releases
-PKG_MD5SUM:=3d8e01537e747d7997993c70f2e108db
+PKG_MD5SUM:=30a75c5f171be49f805f3bf64a0af054
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -35,6 +35,7 @@ $(call Package/polarssl/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= (library)
+  ABI_VERSION:=$(PKG_VERSION)
 endef
 
 define Package/libpolarssl/description
