@@ -56,48 +56,52 @@ diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
 index 454077a..a8e0df3 100644
 --- a/arch/arm/boot/dts/sun4i-a10.dtsi
 +++ b/arch/arm/boot/dts/sun4i-a10.dtsi
-@@ -338,6 +338,46 @@
+@@ -338,6 +338,50 @@
  			#size-cells = <0>;
  		};
  
 +		mmc0: mmc@01c0f000 {
-+			compatible = "allwinner,sun5i-a13-mmc";
++			compatible = "allwinner,sun4i-a10-mmc";
 +			reg = <0x01c0f000 0x1000>;
 +			clocks = <&ahb_gates 8>, <&mmc0_clk>;
 +			clock-names = "ahb", "mod";
 +			interrupts = <32>;
 +			bus-width = <4>;
 +			status = "disabled";
++			cd-inverted;
 +		};
 +
 +		mmc1: mmc@01c10000 {
-+			compatible = "allwinner,sun5i-a13-mmc";
++			compatible = "allwinner,sun4i-a10-mmc";
 +			reg = <0x01c10000 0x1000>;
 +			clocks = <&ahb_gates 9>, <&mmc1_clk>;
 +			clock-names = "ahb", "mod";
 +			interrupts = <33>;
 +			bus-width = <4>;
 +			status = "disabled";
++			cd-inverted;
 +		};
 +
 +		mmc2: mmc@01c11000 {
-+			compatible = "allwinner,sun5i-a13-mmc";
++			compatible = "allwinner,sun4i-a10-mmc";
 +			reg = <0x01c11000 0x1000>;
 +			clocks = <&ahb_gates 10>, <&mmc2_clk>;
 +			clock-names = "ahb", "mod";
 +			interrupts = <34>;
 +			bus-width = <4>;
 +			status = "disabled";
++			cd-inverted;
 +		};
 +
 +		mmc3: mmc@01c12000 {
-+			compatible = "allwinner,sun5i-a13-mmc";
++			compatible = "allwinner,sun4i-a10-mmc";
 +			reg = <0x01c12000 0x1000>;
 +			clocks = <&ahb_gates 11>, <&mmc3_clk>;
 +			clock-names = "ahb", "mod";
 +			interrupts = <35>;
 +			bus-width = <4>;
 +			status = "disabled";
++			cd-inverted;
 +		};
 +
  		ahci: sata@01c18000 {
@@ -111,7 +115,7 @@ index 454077a..a8e0df3 100644
 +			mmc0_pins_a: mmc0@0 {
 +				allwinner,pins = "PF0","PF1","PF2","PF3","PF4","PF5";
 +				allwinner,function = "mmc0";
-+				allwinner,drive = <3>;
++				allwinner,drive = <2>;
 +				allwinner,pull = <0>;
 +			};
 +
