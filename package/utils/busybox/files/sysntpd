@@ -24,7 +24,7 @@ start_service() {
 	procd_open_instance
 	procd_set_param command "$PROG" -n
 	[ "$enable_server" = "1" ] && procd_append_param command -l
-	for peer in "$server"; do
+	for peer in $server; do
 		procd_append_param command -p $peer
 	done
 	procd_set_param respawn
