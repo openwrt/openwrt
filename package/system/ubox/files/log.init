@@ -24,14 +24,17 @@ validate_log_section()
 validate_log_daemon()
 {
 	uci_validate_section system system "${1}" \
-		'log_buffer_size:uinteger:16'
+		'log_size:uinteger:0' \
+		'log_buffer_size:uinteger:0'
 	return $?
 }
 
 start_service_daemon()
 {
-	local log_buffer_size
+	local log_buffer_size log_size
 	validate_log_daemon "${1}"
+	[ $log_buffer_size -eq 0 -a $log_size -gt 0 ] && log_buffer_size=$log_size
+	[ $log_buffer_size -eq 0 ] && log_buffer_size=16
 	procd_open_instance
 	procd_set_param command "/sbin/logd"
 	procd_append_param command -S "${log_buffer_size}"
