@@ -8,7 +8,7 @@
  #include <dt-bindings/pwm/pwm.h>
  
  / {
-@@ -200,6 +201,33 @@
+@@ -200,6 +201,26 @@
  				0x144 (PIN_INPUT_PULLDOWN | MUX_MODE4) /* rmii1_ref_clk.mcasp1_axr3 */
  			>;
  		};
@@ -28,21 +28,14 @@
 +	};
 +	
 +	wlan {
-+		compatible = "ti,wilink6";
-+		interrupt-parent = <&gpio0>;
-+		interrupts = <31 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&refclock>;
-+		clock-names = "refclock";
++		compatible = "wlcore";
++		gpio = <31>;
 +
-+		refclock: refclock {
-+			compatible = "ti,wilink-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <38400000>;
-+		};
++		board-ref-clock = <4>;
  	};
  
  	ocp {
-@@ -335,6 +363,16 @@
+@@ -335,6 +356,16 @@
  		regulator-boot-on;
  	};
  
@@ -59,7 +52,7 @@
  	leds {
  		pinctrl-names = "default";
  		pinctrl-0 = <&user_leds_s0>;
-@@ -535,6 +573,16 @@
+@@ -535,6 +566,16 @@
  	status = "okay";
  };
  

@@ -8,28 +8,21 @@
  #include <dt-bindings/pwm/pwm.h>
  
  / {
-@@ -26,6 +27,20 @@
+@@ -26,6 +27,13 @@
  		};
  	};
  
 +	wlan {
-+		compatible = "ti,wilink6";
-+		interrupt-parent = <&gpio0>;
-+		interrupts = <31 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&refclock>;
-+		clock-names = "refclock";
++		compatible = "wlcore";
 +
-+		refclock: refclock {
-+			compatible = "ti,wilink-clock";
-+			#clock-cells = <0>;
-+			clock-frequency = <38400000>;
-+		};
++		gpio = <31>;
++		board-ref-clock = <4>;
 +	};
 +
  	memory {
  		device_type = "memory";
  		reg = <0x80000000 0x10000000>; /* 256 MB */
-@@ -45,6 +60,16 @@
+@@ -45,6 +53,16 @@
  		regulator-boot-on;
  	};
  
@@ -46,7 +39,7 @@
  	leds {
  		pinctrl-names = "default";
  		pinctrl-0 = <&user_leds_s0>;
-@@ -297,6 +322,20 @@
+@@ -297,6 +315,20 @@
  			0x144 (PIN_INPUT_PULLDOWN | MUX_MODE4) /* rmii1_ref_clk.mcasp1_axr3 */
  		>;
  	};
@@ -67,7 +60,7 @@
  };
  
  &uart0 {
-@@ -503,6 +542,16 @@
+@@ -503,6 +535,16 @@
  	ti,no-reset-on-init;
  };
  
