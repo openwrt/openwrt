@@ -1,0 +1,176 @@
+Each hw supports a different iface combinations.
+Define the supported combinations in each driver,
+and save it in wl->iface_combinations.
+
+Since each driver defines its own combinations now,
+it can also define its max supported channels, so
+we no longer need to save and set it explicitly
+in wlcore.
+
+Update wl18xx interface combinations to allow
+multiple APs.
+
+Signed-off-by: Eliad Peller <eliad@wizery.com>
+
+---
+drivers/net/wireless/ti/wl12xx/main.c   | 26 +++++++++++++++++++++-
+ drivers/net/wireless/ti/wl18xx/main.c   | 39 ++++++++++++++++++++++++++++++++-
+ drivers/net/wireless/ti/wlcore/main.c   | 28 ++---------------------
+ drivers/net/wireless/ti/wlcore/wlcore.h |  5 +++--
+ 4 files changed, 68 insertions(+), 30 deletions(-)
+
+--- a/drivers/net/wireless/ti/wl12xx/main.c
++++ b/drivers/net/wireless/ti/wl12xx/main.c
+@@ -1743,6 +1743,29 @@ static struct ieee80211_sta_ht_cap wl12x
+ 		},
+ };
+ 
++static const struct ieee80211_iface_limit wl12xx_iface_limits[] = {
++	{
++		.max = 3,
++		.types = BIT(NL80211_IFTYPE_STATION),
++	},
++	{
++		.max = 1,
++		.types = BIT(NL80211_IFTYPE_AP) |
++			 BIT(NL80211_IFTYPE_P2P_GO) |
++			 BIT(NL80211_IFTYPE_P2P_CLIENT),
++	},
++};
++
++static const struct ieee80211_iface_combination
++wl12xx_iface_combinations[] = {
++	{
++		.max_interfaces = 3,
++		.limits = wl12xx_iface_limits,
++		.n_limits = ARRAY_SIZE(wl12xx_iface_limits),
++		.num_different_channels = 1,
++	},
++};
++
+ static int wl12xx_setup(struct wl1271 *wl)
+ {
+ 	struct wl12xx_priv *priv = wl->priv;
+@@ -1757,7 +1780,8 @@ static int wl12xx_setup(struct wl1271 *w
+ 	wl->num_rx_desc = WL12XX_NUM_RX_DESCRIPTORS;
+ 	wl->num_links = WL12XX_MAX_LINKS;
+ 	wl->max_ap_stations = WL12XX_MAX_AP_STATIONS;
+-	wl->num_channels = 1;
++	wl->iface_combinations = wl12xx_iface_combinations;
++	wl->n_iface_combinations = ARRAY_SIZE(wl12xx_iface_combinations);
+ 	wl->num_mac_addr = WL12XX_NUM_MAC_ADDRESSES;
+ 	wl->band_rate_to_idx = wl12xx_band_rate_to_idx;
+ 	wl->hw_tx_rate_tbl_size = WL12XX_CONF_HW_RXTX_RATE_MAX;
+--- a/drivers/net/wireless/ti/wl18xx/main.c
++++ b/drivers/net/wireless/ti/wl18xx/main.c
+@@ -1747,6 +1747,42 @@ static struct ieee80211_sta_ht_cap wl18x
+ 		},
+ };
+ 
++static const struct ieee80211_iface_limit wl18xx_iface_limits[] = {
++	{
++		.max = 3,
++		.types = BIT(NL80211_IFTYPE_STATION),
++	},
++	{
++		.max = 1,
++		.types = BIT(NL80211_IFTYPE_AP) |
++			 BIT(NL80211_IFTYPE_P2P_GO) |
++			 BIT(NL80211_IFTYPE_P2P_CLIENT),
++	},
++};
++
++static const struct ieee80211_iface_limit wl18xx_iface_ap_limits[] = {
++	{
++		.max = 2,
++		.types = BIT(NL80211_IFTYPE_AP),
++	},
++};
++
++static const struct ieee80211_iface_combination
++wl18xx_iface_combinations[] = {
++	{
++		.max_interfaces = 3,
++		.limits = wl18xx_iface_limits,
++		.n_limits = ARRAY_SIZE(wl18xx_iface_limits),
++		.num_different_channels = 2,
++	},
++	{
++		.max_interfaces = 2,
++		.limits = wl18xx_iface_ap_limits,
++		.n_limits = ARRAY_SIZE(wl18xx_iface_ap_limits),
++		.num_different_channels = 1,
++	}
++};
++
+ static int wl18xx_setup(struct wl1271 *wl)
+ {
+ 	struct wl18xx_priv *priv = wl->priv;
+@@ -1760,7 +1796,8 @@ static int wl18xx_setup(struct wl1271 *w
+ 	wl->num_rx_desc = WL18XX_NUM_RX_DESCRIPTORS;
+ 	wl->num_links = WL18XX_MAX_LINKS;
+ 	wl->max_ap_stations = WL18XX_MAX_AP_STATIONS;
+-	wl->num_channels = 2;
++	wl->iface_combinations = wl18xx_iface_combinations;
++	wl->n_iface_combinations = ARRAY_SIZE(wl18xx_iface_combinations);
+ 	wl->num_mac_addr = WL18XX_NUM_MAC_ADDRESSES;
+ 	wl->band_rate_to_idx = wl18xx_band_rate_to_idx;
+ 	wl->hw_tx_rate_tbl_size = WL18XX_CONF_HW_RXTX_RATE_MAX;
+--- a/drivers/net/wireless/ti/wlcore/main.c
++++ b/drivers/net/wireless/ti/wlcore/main.c
+@@ -5723,28 +5723,6 @@ static void wl1271_unregister_hw(struct
+ 
+ }
+ 
+-static const struct ieee80211_iface_limit wlcore_iface_limits[] = {
+-	{
+-		.max = 3,
+-		.types = BIT(NL80211_IFTYPE_STATION),
+-	},
+-	{
+-		.max = 1,
+-		.types = BIT(NL80211_IFTYPE_AP) |
+-			 BIT(NL80211_IFTYPE_P2P_GO) |
+-			 BIT(NL80211_IFTYPE_P2P_CLIENT),
+-	},
+-};
+-
+-static struct ieee80211_iface_combination
+-wlcore_iface_combinations[] = {
+-	{
+-	  .max_interfaces = 3,
+-	  .limits = wlcore_iface_limits,
+-	  .n_limits = ARRAY_SIZE(wlcore_iface_limits),
+-	},
+-};
+-
+ static int wl1271_init_ieee80211(struct wl1271 *wl)
+ {
+ 	int i;
+@@ -5865,10 +5843,8 @@ static int wl1271_init_ieee80211(struct
+ 		NL80211_PROBE_RESP_OFFLOAD_SUPPORT_P2P;
+ 
+ 	/* allowed interface combinations */
+-	wlcore_iface_combinations[0].num_different_channels = wl->num_channels;
+-	wl->hw->wiphy->iface_combinations = wlcore_iface_combinations;
+-	wl->hw->wiphy->n_iface_combinations =
+-		ARRAY_SIZE(wlcore_iface_combinations);
++	wl->hw->wiphy->iface_combinations = wl->iface_combinations;
++	wl->hw->wiphy->n_iface_combinations = wl->n_iface_combinations;
+ 
+ 	SET_IEEE80211_DEV(wl->hw, wl->dev);
+ 
+--- a/drivers/net/wireless/ti/wlcore/wlcore.h
++++ b/drivers/net/wireless/ti/wlcore/wlcore.h
+@@ -485,8 +485,9 @@ struct wl1271 {
+ 
+ 	struct completion nvs_loading_complete;
+ 
+-	/* number of concurrent channels the HW supports */
+-	u32 num_channels;
++	/* interface combinations supported by the hw */
++	const struct ieee80211_iface_combination *iface_combinations;
++	u8 n_iface_combinations;
+ };
+ 
+ int wlcore_probe(struct wl1271 *wl, struct platform_device *pdev);

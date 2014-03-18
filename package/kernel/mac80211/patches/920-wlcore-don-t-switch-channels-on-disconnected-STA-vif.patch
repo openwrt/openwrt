@@ -1,0 +1,41 @@
+From 4101e8dc540d19f1f6c24930629149191786e4cd Mon Sep 17 00:00:00 2001
+From: Arik Nemtsov <arik@wizery.com>
+Date: Mon, 9 Sep 2013 16:48:59 +0300
+Subject: [PATCH 27/75] wlcore: don't switch channels on disconnected STA vifs
+
+Sending the FW a channel switch command on a disconnected vif may result
+in a beacon loss event. Avoid this edge case.
+
+Signed-off-by: Arik Nemtsov <arik@wizery.com>
+---
+ drivers/net/wireless/ti/wlcore/main.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/net/wireless/ti/wlcore/main.c b/drivers/net/wireless/ti/wlcore/main.c
+index 117e01e..a0c5a1e 100644
+--- a/drivers/net/wireless/ti/wlcore/main.c
++++ b/drivers/net/wireless/ti/wlcore/main.c
+@@ -5224,6 +5224,10 @@ static void wl12xx_op_channel_switch(struct ieee80211_hw *hw,
+ 	if (unlikely(wl->state == WLCORE_STATE_OFF)) {
+ 		wl12xx_for_each_wlvif_sta(wl, wlvif) {
+ 			struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
++
++			if (!test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags))
++				continue;
++
+ 			ieee80211_chswitch_done(vif, false);
+ 		}
+ 		goto out;
+@@ -5239,6 +5243,9 @@ static void wl12xx_op_channel_switch(struct ieee80211_hw *hw,
+ 	wl12xx_for_each_wlvif_sta(wl, wlvif) {
+ 		unsigned long delay_usec;
+ 
++		if (!test_bit(WLVIF_FLAG_STA_ASSOCIATED, &wlvif->flags))
++			continue;
++
+ 		ret = wl->ops->channel_switch(wl, wlvif, ch_switch);
+ 		if (ret)
+ 			goto out_sleep;
+-- 
+1.8.3.2
+

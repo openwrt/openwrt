@@ -1,0 +1,21 @@
+dfs configuration command might take longer than
+the current timeout. increase it to 5 seconds.
+
+Signed-off-by: Yaniv Machani <yanivma@ti.com>
+Signed-off-by: Eliad Peller <eliad@wizery.com>
+
+---
+drivers/net/wireless/ti/wlcore/cmd.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ti/wlcore/cmd.h
++++ b/drivers/net/wireless/ti/wlcore/cmd.h
+@@ -207,7 +207,7 @@ enum cmd_templ {
+ #define WL1271_COMMAND_TIMEOUT     2000
+ #define WL1271_CMD_TEMPL_DFLT_SIZE 252
+ #define WL1271_CMD_TEMPL_MAX_SIZE  512
+-#define WL1271_EVENT_TIMEOUT       1500
++#define WL1271_EVENT_TIMEOUT       5000
+ 
+ struct wl1271_cmd_header {
+ 	__le16 id;
