@@ -1,0 +1,60 @@
+From 3da3528448850ccde412d52fb939575641ada80d Mon Sep 17 00:00:00 2001
+From: "Maciej W. Rozycki" <macro@linux-mips.org>
+Date: Wed, 18 Sep 2013 19:08:15 +0100
+Subject: [PATCH 204/215] MIPS: 74K/1074K: Correct erratum workaround.
+
+Make sure 74K revision numbers are not applied to the 1074K.  Also catch
+invalid usage.
+
+Signed-off-by: Maciej W. Rozycki <macro@linux-mips.org>
+Cc: Steven J. Hill <Steven.Hill@imgtec.com>
+Cc: Leonid Yegoshin <Leonid.Yegoshin@imgtec.com>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/5857/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+(cherry picked from commit 9213ad77070ea75fc3a5e43e3d9e9c4146e4930a)
+---
+ arch/mips/mm/c-r4k.c |   26 ++++++++++++++++++--------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
+
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
+@@ -785,20 +785,30 @@ static inline void rm7k_erratum31(void)
+ 
+ static inline void alias_74k_erratum(struct cpuinfo_mips *c)
+ {
++	unsigned int imp = c->processor_id & 0xff00;
++	unsigned int rev = c->processor_id & PRID_REV_MASK;
++
+ 	/*
+ 	 * Early versions of the 74K do not update the cache tags on a
+ 	 * vtag miss/ptag hit which can occur in the case of KSEG0/KUSEG
+ 	 * aliases. In this case it is better to treat the cache as always
+ 	 * having aliases.
+ 	 */
+-	if ((c->processor_id & 0xff) <= PRID_REV_ENCODE_332(2, 4, 0))
+-		c->dcache.flags |= MIPS_CACHE_VTAG;
+-	if ((c->processor_id & 0xff) == PRID_REV_ENCODE_332(2, 4, 0))
+-		write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
+-	if (((c->processor_id & 0xff00) == PRID_IMP_1074K) &&
+-	    ((c->processor_id & 0xff) <= PRID_REV_ENCODE_332(1, 1, 0))) {
+-		c->dcache.flags |= MIPS_CACHE_VTAG;
+-		write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
++	switch (imp) {
++	case PRID_IMP_74K:
++		if (rev <= PRID_REV_ENCODE_332(2, 4, 0))
++			c->dcache.flags |= MIPS_CACHE_VTAG;
++		if (rev == PRID_REV_ENCODE_332(2, 4, 0))
++			write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
++		break;
++	case PRID_IMP_1074K:
++		if (rev <= PRID_REV_ENCODE_332(1, 1, 0)) {
++			c->dcache.flags |= MIPS_CACHE_VTAG;
++			write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
++		}
++		break;
++	default:
++		BUG();
+ 	}
+ }
+ 

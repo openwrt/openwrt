@@ -1,0 +1,24 @@
+From b83808826ac7a5c727f5314b5a3bf07fcd6ec929 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 23 May 2013 18:50:56 +0200
+Subject: [PATCH 104/133] MIPS: ralink: workaround DTB memory issue
+
+If the DTB is too big a bug happens on boot when init ram is freed.
+This is a temporary fix until the real cause is found.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/of.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -74,7 +74,7 @@ void __init device_tree_init(void)
+ 	unflatten_device_tree();
+ 
+ 	/* free the space reserved for the dt blob */
+-	free_bootmem(base, size);
++	//free_bootmem(base, size);
+ }
+ 
+ void __init plat_mem_setup(void)

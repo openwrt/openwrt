@@ -1,0 +1,37 @@
+From a9d4390c6d27e737887388ccbb48f3767f9f89ef Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 24 Jan 2014 17:01:17 +0100
+Subject: [PATCH 209/215] MIPS: ralink: add MT7621 early_printk support
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/early_printk.c |   10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+--- a/arch/mips/ralink/early_printk.c
++++ b/arch/mips/ralink/early_printk.c
+@@ -13,6 +13,8 @@
+ 
+ #ifdef CONFIG_SOC_RT288X
+ #define EARLY_UART_BASE         0x300c00
++#elif defined(CONFIG_SOC_MT7621)
++#define EARLY_UART_BASE         0x1E000c00
+ #else
+ #define EARLY_UART_BASE         0x10000c00
+ #endif
+@@ -40,9 +42,15 @@ static inline u32 uart_r32(unsigned reg)
+ 
+ void prom_putchar(unsigned char ch)
+ {
++#ifdef CONFIG_SOC_MT7621
++	uart_w32(ch, UART_TX);
++	while ((uart_r32(0x14) & UART_LSR_THRE) == 0)
++		;
++#else
+ 	while ((uart_r32(UART_REG_LSR) & UART_LSR_THRE) == 0)
+ 		;
+ 	uart_w32(ch, UART_REG_TX);
+ 	while ((uart_r32(UART_REG_LSR) & UART_LSR_THRE) == 0)
+ 		;
++#endif
+ }
