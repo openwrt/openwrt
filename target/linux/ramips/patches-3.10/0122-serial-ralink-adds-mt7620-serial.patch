@@ -1,0 +1,23 @@
+From 16f476a7528eefade4bd4ebee12d5aa2052bba8c Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 15 Mar 2013 18:16:01 +0100
+Subject: [PATCH 122/133] serial: ralink: adds mt7620 serial
+
+Add the config symbol for Mediatek7620 SoC to SERIAL_8250_RT288X
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/tty/serial/8250/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/tty/serial/8250/Kconfig
++++ b/drivers/tty/serial/8250/Kconfig
+@@ -300,7 +300,7 @@ config SERIAL_8250_EM
+ 
+ config SERIAL_8250_RT288X
+ 	bool "Ralink RT288x/RT305x/RT3662/RT3883 serial port support"
+-	depends on SERIAL_8250 && (SOC_RT288X || SOC_RT305X || SOC_RT3883)
++	depends on SERIAL_8250 && (SOC_RT288X || SOC_RT305X || SOC_RT3883 || SOC_MT7620)
+ 	help
+ 	  If you have a Ralink RT288x/RT305x SoC based board and want to use the
+ 	  serial port, say Y to this option. The driver can handle up to 2 serial

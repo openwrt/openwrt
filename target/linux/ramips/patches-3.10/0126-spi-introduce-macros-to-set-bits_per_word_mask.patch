@@ -1,0 +1,29 @@
+From b07600f50efe84d7e3b431e6d10fe774bb00d573 Mon Sep 17 00:00:00 2001
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Tue, 21 May 2013 20:36:34 -0600
+Subject: [PATCH 126/133] spi: introduce macros to set bits_per_word_mask
+
+Introduce two macros to make setting up spi_master.bits_per_word_mask
+easier, and avoid mistakes like writing BIT(n) instead of BIT(n - 1).
+
+SPI_BPW_MASK is for a single supported value of bits_per_word_mask.
+
+SPI_BPW_RANGE_MASK represents a contiguous set of bit lengths.
+
+Signed-off-by: Stephen Warren <swarren@wwwdotorg.org>
+Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+---
+ include/linux/spi/spi.h |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -308,6 +308,8 @@ struct spi_master {
+ 
+ 	/* bitmask of supported bits_per_word for transfers */
+ 	u32			bits_per_word_mask;
++#define SPI_BPW_MASK(bits) BIT((bits) - 1)
++#define SPI_BPW_RANGE_MASK(min, max) ((BIT(max) - 1) - (BIT(min) - 1))
+ 
+ 	/* other constraints relevant to this driver */
+ 	u16			flags;

@@ -1,7 +1,7 @@
-From cdc1b12b3debaf5b3894fd146e73221a8acd0152 Mon Sep 17 00:00:00 2001
+From 1be15a87eea5f26fb24b6aac332530cd3e2d984e Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 14 Jul 2013 23:08:11 +0200
-Subject: [PATCH 20/25] MIPS: use set_mode() to enable/disable the cevt-r4k
+Subject: [PATCH 100/133] MIPS: use set_mode() to enable/disable the cevt-r4k
  irq
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
@@ -24,13 +24,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  DEFINE_PER_CPU(struct clock_event_device, mips_clockevent_device);
  int cp0_timer_irq_installed;
  
-@@ -90,6 +84,32 @@ struct irqaction c0_compare_irqaction =
+@@ -90,9 +84,38 @@ struct irqaction c0_compare_irqaction =
  	.name = "timer",
  };
  
 +void mips_set_clock_mode(enum clock_event_mode mode,
 +				struct clock_event_device *evt)
 +{
++#ifdef CONFIG_CEVT_SYSTICK_QUIRK
 +	switch (mode) {
 +	case CLOCK_EVT_MODE_ONESHOT:
 +		if (cp0_timer_irq_installed)
@@ -53,21 +54,27 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		pr_err("Unhandeled mips clock_mode\n");
 +		break;
 +	}
++#endif
 +}
  
  void mips_event_handler(struct clock_event_device *dev)
  {
-@@ -215,13 +235,6 @@ int __cpuinit r4k_clockevent_init(void)
++
+ }
+ 
+ /*
+@@ -215,12 +238,14 @@ int __cpuinit r4k_clockevent_init(void)
  #endif
  	clockevents_register_device(cd);
  
--	if (cp0_timer_irq_installed)
--		return 0;
--
--	cp0_timer_irq_installed = 1;
--
--	setup_irq(irq, &c0_compare_irqaction);
--
++#ifndef CONFIG_CEVT_SYSTICK_QUIRK
+ 	if (cp0_timer_irq_installed)
+ 		return 0;
+ 
+ 	cp0_timer_irq_installed = 1;
+ 
+ 	setup_irq(irq, &c0_compare_irqaction);
++#endif
+ 
  	return 0;
  }
- 
