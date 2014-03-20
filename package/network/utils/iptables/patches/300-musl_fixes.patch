@@ -1,6 +1,6 @@
 --- a/extensions/libip6t_ipv6header.c
 +++ b/extensions/libip6t_ipv6header.c
-@@ -10,6 +10,9 @@ on whether they contain certain headers
+@@ -10,6 +10,9 @@ on whether they contain certain headers 
  #include <netdb.h>
  #include <xtables.h>
  #include <linux/netfilter_ipv6/ip6t_ipv6header.h>
@@ -60,18 +60,6 @@
 -#include <linux/in6.h>
 -#endif
  #endif
---- a/include/linux/netfilter/xt_osf.h
-+++ b/include/linux/netfilter/xt_osf.h
-@@ -21,6 +21,9 @@
- #define _XT_OSF_H
- 
- #include <linux/types.h>
-+#if !defined(__UCLIBC__) && !defined(__GLIBC__)
-+#include <linux/tcp.h>
-+#endif
- 
- #define MAXGENRELEN		32
- 
 --- a/include/linux/netfilter_ipv4/ip_tables.h
 +++ b/include/linux/netfilter_ipv4/ip_tables.h
 @@ -16,6 +16,7 @@
