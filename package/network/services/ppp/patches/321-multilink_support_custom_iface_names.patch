@@ -118,7 +118,7 @@ Signed-off-by: George Kashperko <george@znau.edu.ua>
  			&& memcmp(vd.dptr, key.dptr, vd.dsize) == 0;
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -700,6 +700,16 @@ void cfg_bundle(int mrru, int mtru, int 
+@@ -693,6 +693,16 @@ void cfg_bundle(int mrru, int mtru, int 
  	add_fd(ppp_dev_fd);
  }
  
@@ -135,7 +135,7 @@ Signed-off-by: George Kashperko <george@znau.edu.ua>
  /*
   * make_new_bundle - create a new PPP unit (i.e. a bundle)
   * and connect our channel to it.  This should only get called
-@@ -718,6 +728,8 @@ void make_new_bundle(int mrru, int mtru,
+@@ -711,6 +721,8 @@ void make_new_bundle(int mrru, int mtru,
  
  	/* set the mrru and flags */
  	cfg_bundle(mrru, mtru, rssn, tssn);

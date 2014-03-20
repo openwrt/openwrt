@@ -1,0 +1,100 @@
+--- a/pppd/plugins/rp-pppoe/plugin.c
++++ b/pppd/plugins/rp-pppoe/plugin.c
+@@ -46,9 +46,9 @@ static char const RCSID[] =
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <signal.h>
+-#include <net/ethernet.h>
+ #include <net/if_arp.h>
+ #include <linux/ppp_defs.h>
++#include <linux/if_ether.h>
+ #include <linux/if_ppp.h>
+ #include <linux/if_pppox.h>
+ 
+--- a/pppd/plugins/rp-pppoe/pppoe.h
++++ b/pppd/plugins/rp-pppoe/pppoe.h
+@@ -86,17 +86,6 @@ typedef unsigned long UINT32_t;
+ 
+ #include <netinet/in.h>
+ 
+-#ifdef HAVE_NETINET_IF_ETHER_H
+-#include <sys/types.h>
+-
+-#ifdef HAVE_SYS_SOCKET_H
+-#include <sys/socket.h>
+-#endif
+-#ifndef HAVE_SYS_DLPI_H
+-#include <netinet/if_ether.h>
+-#endif
+-#endif
+-
+ 
+ 
+ /* Ethernet frame types according to RFC 2516 */
+--- a/pppd/plugins/rp-pppoe/if.c
++++ b/pppd/plugins/rp-pppoe/if.c
+@@ -31,7 +31,7 @@ static char const RCSID[] =
+ #endif
+ 
+ #ifdef HAVE_NET_ETHERNET_H
+-#include <net/ethernet.h>
++#include <linux/if_ether.h>
+ #endif
+ 
+ #ifdef HAVE_ASM_TYPES_H
+--- a/pppd/plugins/rp-pppoe/pppoe-discovery.c
++++ b/pppd/plugins/rp-pppoe/pppoe-discovery.c
+@@ -16,6 +16,7 @@
+ #include <string.h>
+ 
+ #include "pppoe.h"
++#include "pppd/pppd.h"
+ 
+ #ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+@@ -27,10 +28,6 @@
+ #include <linux/if_packet.h>
+ #endif
+ 
+-#ifdef HAVE_NET_ETHERNET_H
+-#include <net/ethernet.h>
+-#endif
+-
+ #ifdef HAVE_ASM_TYPES_H
+ #include <asm/types.h>
+ #endif
+@@ -717,6 +714,23 @@ char *xstrdup(const char *s)
+     return ret;
+ }
+ 
++void
++error(char *fmt, ...)
++{
++    va_list pvar;
++
++#if defined(__STDC__)
++    va_start(pvar, fmt);
++#else
++    char *fmt;
++    va_start(pvar);
++    fmt = va_arg(pvar, char *);
++#endif
++
++    fprintf(stderr, fmt, pvar);
++    va_end(pvar);
++}
++
+ void usage(void)
+ {
+     fprintf(stderr, "Usage: pppoe-discovery [options]\n");
+--- a/pppd/plugins/rp-pppoe/Makefile.linux
++++ b/pppd/plugins/rp-pppoe/Makefile.linux
+@@ -33,7 +33,7 @@ pppoe-discovery: pppoe-discovery.o debug
+ 	$(CC) -o pppoe-discovery pppoe-discovery.o debug.o
+ 
+ pppoe-discovery.o: pppoe-discovery.c
+-	$(CC) $(CFLAGS) -c -o pppoe-discovery.o pppoe-discovery.c
++	$(CC) $(CFLAGS) -I../../.. -c -o pppoe-discovery.o pppoe-discovery.c
+ 
+ debug.o: debug.c
+ 	$(CC) $(CFLAGS) -c -o debug.o debug.c
