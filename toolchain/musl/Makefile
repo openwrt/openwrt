@@ -19,7 +19,7 @@ define Host/SetToolchainInfo
 endef
 
 define Host/Compile
-	$(MAKE) $(HOST_JOBS) $(MUSL_MAKEOPTS) all
+	+$(MAKE) $(HOST_JOBS) $(MUSL_MAKEOPTS) all
 endef
 
 define Host/Install
