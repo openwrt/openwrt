@@ -31,10 +31,10 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
 +		hstimer@01c60000 {
 +			compatible = "allwinner,sun7i-a20-hstimer";
 +			reg = <0x01c60000 0x1000>;
-+			interrupts = <0 81 1>,
-+				     <0 82 1>,
-+				     <0 83 1>,
-+				     <0 84 1>;
++			interrupts = <0 81 4>,
++				     <0 82 4>,
++				     <0 83 4>,
++				     <0 84 4>;
 +			clocks = <&ahb_gates 28>;
 +		};
 +
