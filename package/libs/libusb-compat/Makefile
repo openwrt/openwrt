@@ -39,6 +39,7 @@ TARGET_CFLAGS += $(FPIC)
 
 define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/libusb-config $(STAGING_DIR)/host/bin
 endef
 
 define Package/libusb-compat/install
