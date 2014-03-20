@@ -429,7 +429,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endef
 
   LD_MUSL_NAME = $(notdir $(firstword $(wildcard $(TOOLCHAIN_DIR)/lib/ld-musl-*.so*)))
-  $(warning LD_MUSL_NAME='$(LD_MUSL_NAME)')
 
   define Package/musl/install
 	$(INSTALL_DIR) $(1)/lib
