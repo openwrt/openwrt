@@ -70,7 +70,7 @@ index 025ce52..403bd2e 100644
  			led_pins_cubietruck: led_pins@0 {
  				allwinner,pins = "PH7", "PH11", "PH20", "PH21";
  				allwinner,function = "gpio_out";
-@@ -90,4 +103,9 @@
+@@ -90,4 +103,10 @@
  			gpios = <&pio 7 7 0>;
  		};
  	};
@@ -78,6 +78,7 @@ index 025ce52..403bd2e 100644
 +	reg_ahci_5v: ahci-5v {
 +		pinctrl-0 = <&ahci_pwr_pin_cubietruck>;
 +		gpio = <&pio 7 12 0>;
++		status = "okay";
 +	};
  };
 diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
