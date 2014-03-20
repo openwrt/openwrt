@@ -45,7 +45,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
        "Maximum number of unsuccessful connection attempts to allow",
 --- a/pppd/pppd.h
 +++ b/pppd/pppd.h
-@@ -71,6 +71,10 @@
+@@ -74,6 +74,10 @@
  #include "eui64.h"
  #endif
  
@@ -56,7 +56,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  /*
   * Limits.
   */
-@@ -309,6 +313,7 @@ extern char	*record_file;	/* File to rec
+@@ -312,6 +316,7 @@ extern char	*record_file;	/* File to rec
  extern bool	sync_serial;	/* Device is synchronous serial device */
  extern int	maxfail;	/* Max # of unsuccessful connection attempts */
  extern char	linkname[MAXPATHLEN]; /* logical name for link */
@@ -66,7 +66,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  extern int	max_data_rate;	/* max bytes/sec through charshunt */
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -168,6 +168,10 @@ struct in6_ifreq {
+@@ -161,6 +161,10 @@ struct in6_ifreq {
  /* We can get an EIO error on an ioctl if the modem has hung up */
  #define ok_error(num) ((num)==EIO)
  
@@ -77,7 +77,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  static int tty_disc = N_TTY;	/* The TTY discipline */
  static int ppp_disc = N_PPP;	/* The PPP discpline */
  static int initfdflags = -1;	/* Initial file descriptor flags for fd */
-@@ -622,7 +626,8 @@ void generic_disestablish_ppp(int dev_fd
+@@ -615,7 +619,8 @@ void generic_disestablish_ppp(int dev_fd
   */
  static int make_ppp_unit()
  {
@@ -87,7 +87,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  	if (ppp_dev_fd >= 0) {
  		dbglog("in make_ppp_unit, already had /dev/ppp open?");
-@@ -645,6 +650,30 @@ static int make_ppp_unit()
+@@ -638,6 +643,30 @@ static int make_ppp_unit()
  	}
  	if (x < 0)
  		error("Couldn't create new ppp unit: %m");
