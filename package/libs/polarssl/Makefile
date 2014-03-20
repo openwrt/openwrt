@@ -47,7 +47,7 @@ define Package/polarssl-progs
 $(call Package/polarssl/Default)
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+libpolarssl
+  DEPENDS:=+libpolarssl +libpthread
   TITLE+= (programs)
 endef
 
