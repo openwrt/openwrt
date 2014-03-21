@@ -62,7 +62,6 @@ void doit(char *name)
 {
 	char passphrase[128], passphrase1[128];
 	FILE *f;
-	struct t_conf *tc;
 	struct t_confent *tcent;
 	struct t_pw eps_passwd;
 
@@ -152,7 +151,8 @@ t_changepw(pwname, diff)
   if((bakfp = fopen(bakfile2, "wb")) == NULL &&
      (unlink(bakfile2) < 0 || (bakfp = fopen(bakfile2, "wb")) == NULL)) {
     fclose(passfp);
-    fclose(bakfp);
+    free(bakfile);
+    free(bakfile2);
     return -1;
   }
 
@@ -169,10 +169,16 @@ t_changepw(pwname, diff)
 
 #ifdef USE_RENAME
   unlink(bakfile);
-  if(rename(pwname, bakfile) < 0)
+  if(rename(pwname, bakfile) < 0) {
+    free(bakfile);
+    free(bakfile2);
     return -1;
-  if(rename(bakfile2, pwname) < 0)
+  }
+  if(rename(bakfile2, pwname) < 0) {
+    free(bakfile);
+    free(bakfile2);
     return -1;
+  }
 #else
   unlink(bakfile);
   link(pwname, bakfile);

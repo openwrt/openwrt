@@ -50,8 +50,6 @@ main()
   int index;
   struct t_client * tc;
   struct t_preconf *tcp;
-  struct t_num n;
-  struct t_num g;
   struct t_num s;
   struct t_num B;
   char username[MAXUSERLEN];

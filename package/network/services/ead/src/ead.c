@@ -120,8 +120,8 @@ set_recv_type(pcap_t *p, bool rx)
 #ifdef PACKET_RECV_TYPE
 	struct sockaddr_ll sll;
 	struct ifreq ifr;
-	int ifindex, mask;
-	int fd, ret;
+	int mask;
+	int fd;
 
 	fd = pcap_get_selectable_fd(p);
 	if (fd < 0)
@@ -132,7 +132,7 @@ set_recv_type(pcap_t *p, bool rx)
 	else
 		mask = 0;
 
-	ret = setsockopt(fd, SOL_PACKET, PACKET_RECV_TYPE, &mask, sizeof(mask));
+	setsockopt(fd, SOL_PACKET, PACKET_RECV_TYPE, &mask, sizeof(mask));
 #endif
 }
 
@@ -841,7 +841,7 @@ static int
 check_bridge_port(const char *br, const char *port, void *arg)
 {
 	struct ead_instance *in;
-	struct list_head *p, *tmp;
+	struct list_head *p;
 
 	list_for_each(p, &instances) {
 		in = list_entry(p, struct ead_instance, list);
@@ -873,7 +873,7 @@ check_all_interfaces(void)
 {
 #ifdef linux
 	struct ead_instance *in;
-	struct list_head *p, *tmp;
+	struct list_head *p;
 
 	br_foreach_bridge(check_bridge, NULL);
 

@@ -161,7 +161,7 @@ t_fromb64(dst, src)
       break;
   }
 
-  while(a[j] == 0 && j <= size)
+  while(j <= size && a[j] == 0)
     ++j;
 
   memcpy(dst, a + j, size - j + 1);
