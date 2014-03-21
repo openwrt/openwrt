@@ -16,9 +16,6 @@ include $(TOPDIR)/include/verbose.mk
 
 export TMP_DIR:=$(TOPDIR)/tmp
 
-GREP_OPTIONS=
-export GREP_OPTIONS
-
 qstrip=$(strip $(subst ",,$(1)))
 #"))
 
