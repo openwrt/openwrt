@@ -28,7 +28,6 @@ define Host/Configure
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
-		$(DISABLE_NLS) \
 		--enable-threads \
 		--enable-werror=no \
 	);
