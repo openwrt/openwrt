@@ -23,7 +23,6 @@ define KernelPackage/can
 	CONFIG_PCH_CAN=n \
 	CONFIG_CAN_GRCAN=n \
 	CONFIG_CAN_CC770=n \
-	CONFIG_CAN_C_CAN=n \
 	CONFIG_CAN_MSCAN=n \
 	CONFIG_CAN_SJA1000=n \
 	CONFIG_CAN_SOFTING=n \
@@ -221,3 +220,57 @@ define KernelPackage/can-usb-8dev/description
 endef
 
 $(eval $(call KernelPackage,can-usb-8dev))
+
+
+define KernelPackage/can-c-can
+  TITLE:=BOSCH C_CAN/D_CAN drivers
+  KCONFIG:=CONFIG_CAN_C_CAN
+  FILES:=$(LINUX_DIR)/drivers/net/can/c_can/c_can.ko
+  AUTOLOAD:=$(call AutoProbe,c_can)
+  $(call AddDepends/can)
+endef
+
+define KernelPackage/can-c-can/description
+ This driver adds generic support for the C_CAN/D_CAN chips.
+endef
+
+$(eval $(call KernelPackage,can-c-can))
+
+
+define KernelPackage/can-c-can-platform
+  TITLE:=Platform Bus based BOSCH C_CAN/D_CAN driver
+  KCONFIG:=CONFIG_CAN_C_CAN_PLATFORM
+  DEPENDS:=kmod-can-c-can
+  FILES:=$(LINUX_DIR)/drivers/net/can/c_can/c_can_platform.ko
+  AUTOLOAD:=$(call AutoProbe,c_can_platform)
+  $(call AddDepends/can)
+endef
+
+define KernelPackage/can-c-can-platform/description
+ This driver adds support for the C_CAN/D_CAN chips connected
+ to the "platform bus" (Linux abstraction for directly to the
+ processor attached devices) which can be found on various
+ boards from ST Microelectronics (http://www.st.com) like the
+ SPEAr1310 and SPEAr320 evaluation boards & TI (www.ti.com)
+ boards like am335x, dm814x, dm813x and dm811x.
+endef
+
+$(eval $(call KernelPackage,can-c-can-platform))
+
+
+define KernelPackage/can-c-can-pci
+  TITLE:=PCI Bus based BOSCH C_CAN/D_CAN driver
+  KCONFIG:=CONFIG_CAN_C_CAN_PCI
+  DEPENDS:=kmod-can-c-can @PCI_SUPPORT
+  FILES:=$(LINUX_DIR)/drivers/net/can/c_can/c_can_pci.ko
+  AUTOLOAD:=$(call AutoProbe,c_can_pci)
+  $(call AddDepends/can)
+endef
+
+define KernelPackage/can-c-can-pci/description
+ This driver adds support for the C_CAN/D_CAN chips connected
+ to the PCI bus.
+endef
+
+$(eval $(call KernelPackage,can-c-can-pci))
+
