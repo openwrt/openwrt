@@ -68,10 +68,6 @@ int BN_mul(BIGNUM *r, BIGNUM *a, BIGNUM *b, BN_CTX *ctx)
 #if defined(BN_MUL_COMBA) || defined(BN_RECURSION)
 	int i;
 #endif
-#ifdef BN_RECURSION
-	BIGNUM *t;
-	int j,k;
-#endif
 
 #ifdef BN_COUNT
 	printf("BN_mul %d * %d\n",a->top,b->top);

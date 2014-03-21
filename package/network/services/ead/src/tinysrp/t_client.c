@@ -58,8 +58,6 @@ t_clientopen(u, n, g, s)
   int i, validated;
   struct t_preconf * tpc;
 
-  BigInteger nn, gg, n12, r;
-
   validated = 0;
   if(n->len < MIN_MOD_BYTES)
     return 0;
