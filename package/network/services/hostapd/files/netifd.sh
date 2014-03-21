@@ -120,7 +120,7 @@ hostapd_common_add_bss_config() {
 
 	config_add_string 'key1:wepkey' 'key2:wepkey' 'key3:wepkey' 'key4:wepkey' 'password:wpakey'
 
-	config_add_boolean wps_pushbutton wps_label ext_registrar
+	config_add_boolean wps_pushbutton wps_label ext_registrar wps_pbc_in_m1
 	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
 
 	config_add_int ieee80211w_max_timeout ieee80211w_retry_timeout
@@ -145,7 +145,7 @@ hostapd_set_bss_options() {
 	json_get_vars \
 		wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey \
 		maxassoc max_inactivity disassoc_low_ack isolate auth_cache \
-		wps_pushbutton wps_label ext_registrar \
+		wps_pushbutton wps_label ext_registrar wps_pbc_in_m1 \
 		wps_device_type wps_device_name wps_manufacturer wps_pin \
 		macfilter ssid wmm hidden short_preamble
 
@@ -279,6 +279,7 @@ hostapd_set_bss_options() {
 		append bss_conf "device_name=$wps_device_name" "$N"
 		append bss_conf "manufacturer=$wps_manufacturer" "$N"
 		append bss_conf "config_methods=$config_methods" "$N"
+		[ "$wps_pbc_in_m1" -gt 0 ] && append bss_conf "pbc_in_m1=$wps_pbc_in_m1" "$N"
 	}
 
 	append bss_conf "ssid=$ssid" "$N"
