@@ -20,10 +20,6 @@ world:
 include $(TOPDIR)/include/host.mk
 
 ifneq ($(OPENWRT_BUILD),1)
-  # XXX: these three lines are normally defined by rules.mk
-  # but we can't include that file in this context
-  empty:=
-  space:= $(empty) $(empty)
   _SINGLE=export MAKEFLAGS=$(space);
 
   override OPENWRT_BUILD=1
