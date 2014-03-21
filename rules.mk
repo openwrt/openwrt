@@ -272,12 +272,6 @@ else
   DISABLE_IPV6:=--disable-ipv6
 endif
 
-ifeq ($(CONFIG_TAR_VERBOSITY),y)
-  TAR_OPTIONS:=-xvf -
-else
-  TAR_OPTIONS:=-xf -
-endif
-
 ifeq ($(CONFIG_BUILD_LOG),y)
   BUILD_LOG:=1
 endif
