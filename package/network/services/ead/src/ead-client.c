@@ -67,7 +67,7 @@ static uint16_t sid = 0;
 static void
 set_nonblock(int enable)
 {
-	if (enable == !!(sockflags & O_NONBLOCK));
+	if (enable == !!(sockflags & O_NONBLOCK))
 		return;
 
 	sockflags ^= O_NONBLOCK;
