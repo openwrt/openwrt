@@ -119,7 +119,6 @@ endef
 
 define Package/chat
 $(call Package/ppp/Default)
-  DEPENDS:=@(PACKAGE_ppp||PACKAGE_ppp-multilink)
   TITLE:=Establish conversation with a modem
 endef
 
