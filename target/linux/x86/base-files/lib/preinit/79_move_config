@@ -18,5 +18,5 @@ move_config() {
 	umount /mnt
 }
 
-boot_hook_add preinit_main move_config
+boot_hook_add preinit_mount_root move_config
 
