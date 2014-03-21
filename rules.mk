@@ -260,12 +260,6 @@ else
     $(SCRIPT_DIR)/rstrip.sh
 endif
 
-ifeq ($(CONFIG_ENABLE_LOCALE),true)
-  DISABLE_NLS:=--enable-nls
-else
-  DISABLE_NLS:=--disable-nls
-endif
-
 ifeq ($(CONFIG_IPV6),y)
   DISABLE_IPV6:=
 else

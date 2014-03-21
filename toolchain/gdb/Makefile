@@ -29,7 +29,6 @@ define Host/Configure
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
 		--disable-werror \
-		$(DISABLE_NLS) \
 		--without-uiout \
 		--disable-tui --disable-gdbtk --without-x \
 		--without-included-gettext \
