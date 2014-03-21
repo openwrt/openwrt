@@ -11,7 +11,7 @@ define KernelPackage/can
   SUBMENU:=$(CAN_MENU)
   TITLE:=CAN bus support
   KCONFIG:=\
-	CONFIG_CAN=y \
+	CONFIG_CAN=m \
 	CONFIG_CAN_DEV \
 	CONFIG_CAN_CALC_BITTIMING=y \
 	CONFIG_CAN_LEDS=y \
@@ -29,8 +29,9 @@ define KernelPackage/can
 	CONFIG_CAN_SOFTING=n \
 	CONFIG_NET_EMATCH_CANID=n \
 	CONFIG_CAN_DEBUG_DEVICES=n
-  FILES:=$(LINUX_DIR)/drivers/net/can/can-dev.ko
-  AUTOLOAD:=$(call AutoProbe,can-dev)
+  FILES:=$(LINUX_DIR)/drivers/net/can/can-dev.ko \
+	 $(LINUX_DIR)/net/can/can.ko
+  AUTOLOAD:=$(call AutoProbe,can can-dev)
 endef
 
 define KernelPackage/can/description
