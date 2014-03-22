@@ -11,8 +11,6 @@ ifneq ($(HOST_OS),Linux)
 else
   HOST_TAR:=$(TAR)
 endif
-
-TAR_OPTIONS:=-xf -
 TAR_CMD=$(HOST_TAR) -C $(1)/.. $(TAR_OPTIONS)
 UNZIP_CMD=unzip -d $(1)/.. $(DL_DIR)/$(PKG_SOURCE)
 
