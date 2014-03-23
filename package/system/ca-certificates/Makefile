@@ -32,10 +32,8 @@ define Build/Install
 endef
 
 define Package/ca-certificates/install
-	$(INSTALL_DIR) $(1)/etc/ssl
-	ln -s ../../usr/share/ca-certificates $(1)/etc/ssl/certs
-	$(INSTALL_DIR) $(1)/usr/share/ca-certificates
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/ca-certificates/*/*.crt $(1)/usr/share/ca-certificates/
+	$(INSTALL_DIR) $(1)/etc/ssl/certs
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/ca-certificates/*/*.crt $(1)/etc/ssl/certs/
 endef
 
 $(eval $(call BuildPackage,ca-certificates))
