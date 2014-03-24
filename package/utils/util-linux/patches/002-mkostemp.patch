@@ -1,0 +1,65 @@
+Support older hosts with latest util-linux-native
+
+mkostemp is not defined on older machines.  So we detect this and
+provide a define that uses mkstemp instead.
+
+O_CLOEXEC is not defined on older machines.  It is however defined
+in the 'c.h' header.  Fix up the users to include 'c.h'.
+
+fdisks/fdisksunlabel.c was modified to use qsort_r, however
+this is not defined on older hosts.  Revert:
+  commit c69bbca9c1f6645097bd20fe3a21f5a99a2a0698
+  fdisk: (sun): use ask API, remove global variable
+
+Upstream-Status: Inappropriate [other]
+Patches revert upstream changes in order to support older
+machines.
+
+Signed-off-by: Mark Hatle <mark.hatle@windriver.com>
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -299,6 +299,7 @@ AC_CHECK_FUNCS([ \
+ 	llseek \
+ 	lseek64 \
+ 	mempcpy \
++	mkostemp \
+ 	nanosleep \
+ 	personality \
+ 	posix_fadvise \
+--- a/include/c.h
++++ b/include/c.h
+@@ -236,6 +236,13 @@ static inline int dirfd(DIR *d)
+ #endif
+ 
+ /*
++ * mkostemp replacement
++ */
++#ifndef HAVE_MKOSTEMP
++#define mkostemp(template, flags) mkstemp(template)
++#endif
++
++/*
+  * MAXHOSTNAMELEN replacement
+  */
+ static inline size_t get_hostname_max(void)
+--- a/lib/randutils.c
++++ b/lib/randutils.c
+@@ -16,6 +16,7 @@
+ #include <sys/syscall.h>
+ 
+ #include "randutils.h"
++#include "c.h"
+ 
+ #ifdef HAVE_TLS
+ #define THREAD_LOCAL static __thread
+--- a/lib/wholedisk.c
++++ b/lib/wholedisk.c
+@@ -10,6 +10,7 @@
+ 
+ #include "blkdev.h"
+ #include "wholedisk.h"
++#include "c.h"
+ 
+ int is_whole_disk_fd(int fd, const char *name)
+ {

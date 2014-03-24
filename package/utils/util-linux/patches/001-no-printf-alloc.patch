@@ -1,17 +1,13 @@
-for systems that don't support latest POSIX standard: %as
-
-https://bugs.gentoo.org/406303
-
 --- a/configure.ac
 +++ b/configure.ac
-@@ -688,7 +688,6 @@ AC_ARG_ENABLE([libmount],
+@@ -769,7 +769,6 @@ AC_ARG_ENABLE([libmount],
  UL_BUILD_INIT([libmount])
  UL_REQUIRES_LINUX([libmount])
  UL_REQUIRES_BUILD([libmount], [libblkid])
 -UL_REQUIRES_HAVE([libmount], [scanf_alloc_modifier], [scanf string alloc modifier])
- AM_CONDITIONAL(BUILD_LIBMOUNT, test "x$build_libmount" = xyes)
+ AM_CONDITIONAL([BUILD_LIBMOUNT], [test "x$build_libmount" = xyes])
+ AM_CONDITIONAL([BUILD_LIBMOUNT_TESTS], [test "x$build_libmount" = xyes -a "x$enable_static" = xyes])
  
- AC_SUBST([LIBMOUNT_VERSION])
 --- a/libmount/src/tab_parse.c
 +++ b/libmount/src/tab_parse.c
 @@ -22,6 +22,10 @@
@@ -90,7 +86,7 @@ https://bugs.gentoo.org/406303
  			&end);
  
  	if (rc >= 7 && end > 0)
-@@ -167,9 +202,15 @@ static int mnt_parse_mountinfo_line(stru
+@@ -169,9 +204,15 @@ static int mnt_parse_mountinfo_line(stru
  			UL_SCNsA" "	/* (9) source */
  			UL_SCNsA,	/* (10) fs options (fs specific) */
  
