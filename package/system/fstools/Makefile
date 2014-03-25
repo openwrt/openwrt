@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fstools
-PKG_VERSION:=2014-02-27
+PKG_VERSION:=2014-03-25
 
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
@@ -39,6 +39,7 @@ endef
 define Package/fstools/install
 	$(INSTALL_DIR) $(1)/sbin
 
+	$(INSTALL_BIN) ./files/{jffs2reset,jffs2mark,mount_root} $(1)/sbin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/fs-state $(1)/sbin/
 	$(INSTALL_BIN) ./files/snapshot $(1)/sbin/
 endef
