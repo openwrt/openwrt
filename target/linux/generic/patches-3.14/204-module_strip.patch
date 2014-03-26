@@ -133,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	set_license(mod, get_modinfo(info, "license"));
 --- a/scripts/mod/modpost.c
 +++ b/scripts/mod/modpost.c
-@@ -1721,7 +1721,9 @@ static void read_symbols(char *modname)
+@@ -1734,7 +1734,9 @@ static void read_symbols(char *modname)
  		symname = info.strtab + sym->st_name;
  
  		handle_modversions(mod, &info, sym, symname);
@@ -143,7 +143,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	}
  	if (!is_vmlinux(modname) ||
  	     (is_vmlinux(modname) && vmlinux_section_warnings))
-@@ -1865,7 +1867,9 @@ static void add_header(struct buffer *b,
+@@ -1878,7 +1880,9 @@ static void add_header(struct buffer *b,
  	buf_printf(b, "#include <linux/vermagic.h>\n");
  	buf_printf(b, "#include <linux/compiler.h>\n");
  	buf_printf(b, "\n");
@@ -153,7 +153,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	buf_printf(b, "\n");
  	buf_printf(b, "__visible struct module __this_module\n");
  	buf_printf(b, "__attribute__((section(\".gnu.linkonce.this_module\"))) = {\n");
-@@ -1882,16 +1886,20 @@ static void add_header(struct buffer *b,
+@@ -1895,16 +1899,20 @@ static void add_header(struct buffer *b,
  
  static void add_intree_flag(struct buffer *b, int is_intree)
  {
@@ -174,7 +174,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  /**
-@@ -1984,11 +1992,13 @@ static void add_depends(struct buffer *b
+@@ -1997,11 +2005,13 @@ static void add_depends(struct buffer *b
  
  static void add_srcversion(struct buffer *b, struct module *mod)
  {
@@ -188,7 +188,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static void write_if_changed(struct buffer *b, const char *fname)
-@@ -2217,7 +2227,9 @@ int main(int argc, char **argv)
+@@ -2230,7 +2240,9 @@ int main(int argc, char **argv)
  		add_staging_flag(&buf, mod->name);
  		err |= add_versions(&buf, mod);
  		add_depends(&buf, mod, modules);
