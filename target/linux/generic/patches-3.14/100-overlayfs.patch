@@ -243,7 +243,7 @@
          will be called when part or all of the page is to be removed
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -6437,6 +6437,13 @@ F:	drivers/scsi/osd/
+@@ -6451,6 +6451,13 @@ F:	drivers/scsi/osd/
  F:	include/scsi/osd_*
  F:	fs/exofs/
  
@@ -380,7 +380,7 @@
  {
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -830,8 +830,7 @@ struct file *dentry_open(const struct pa
+@@ -834,8 +834,7 @@ struct file *dentry_open(const struct pa
  	f = get_empty_filp();
  	if (!IS_ERR(f)) {
  		f->f_flags = flags;
@@ -390,7 +390,7 @@
  		if (!error) {
  			/* from now on we need fput() to dispose of f */
  			error = open_check_o_direct(f);
-@@ -848,6 +847,26 @@ struct file *dentry_open(const struct pa
+@@ -852,6 +851,26 @@ struct file *dentry_open(const struct pa
  }
  EXPORT_SYMBOL(dentry_open);
  
@@ -3158,7 +3158,7 @@
  			       struct pipe_inode_info *opipe,
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -246,6 +246,12 @@ struct iattr {
+@@ -249,6 +249,12 @@ struct iattr {
   */
  #include <linux/quota.h>
  
@@ -3171,7 +3171,7 @@
  /** 
   * enum positive_aop_returns - aop return codes with specific semantics
   *
-@@ -1325,6 +1331,11 @@ struct super_block {
+@@ -1329,6 +1335,11 @@ struct super_block {
  	struct list_lru		s_dentry_lru ____cacheline_aligned_in_smp;
  	struct list_lru		s_inode_lru ____cacheline_aligned_in_smp;
  	struct rcu_head		rcu;
@@ -3183,7 +3183,7 @@
  };
  
  extern struct timespec current_fs_time(struct super_block *sb);
-@@ -1581,6 +1592,7 @@ struct inode_operations {
+@@ -1585,6 +1596,7 @@ struct inode_operations {
  			   umode_t create_mode, int *opened);
  	int (*tmpfile) (struct inode *, struct dentry *, umode_t);
  	int (*set_acl)(struct inode *, struct posix_acl *, int);
@@ -3191,7 +3191,7 @@
  } ____cacheline_aligned;
  
  ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
-@@ -2075,6 +2087,7 @@ extern struct file *file_open_name(struc
+@@ -2079,6 +2091,7 @@ extern struct file *file_open_name(struc
  extern struct file *filp_open(const char *, int, umode_t);
  extern struct file *file_open_root(struct dentry *, struct vfsmount *,
  				   const char *, int);
@@ -3199,7 +3199,7 @@
  extern struct file * dentry_open(const struct path *, int, const struct cred *);
  extern int filp_close(struct file *, fl_owner_t id);
  
-@@ -2288,6 +2301,7 @@ extern sector_t bmap(struct inode *, sec
+@@ -2292,6 +2305,7 @@ extern sector_t bmap(struct inode *, sec
  #endif
  extern int notify_change(struct dentry *, struct iattr *, struct inode **);
  extern int inode_permission(struct inode *, int);
@@ -3207,7 +3207,7 @@
  extern int generic_permission(struct inode *, int);
  
  static inline bool execute_ok(struct inode *inode)
-@@ -2496,6 +2510,9 @@ extern ssize_t generic_file_splice_write
+@@ -2500,6 +2514,9 @@ extern ssize_t generic_file_splice_write
  		struct file *, loff_t *, size_t, unsigned int);
  extern ssize_t generic_splice_sendpage(struct pipe_inode_info *pipe,
  		struct file *out, loff_t *, size_t len, unsigned int flags);
