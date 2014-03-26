@@ -59,6 +59,15 @@ static void pad(int size)
 	}
 	ofs = ofs % erasesize;
 	if (ofs == 0) {
+		while (mtd_block_is_bad(outfd, mtdofs) && (mtdofs < mtdsize)) {
+			if (!quiet)
+				fprintf(stderr, "\nSkipping bad block at 0x%08x   ", mtdofs);
+
+			mtdofs += erasesize;
+
+			/* Move the file pointer along over the bad block. */
+			lseek(outfd, erasesize, SEEK_CUR);
+		}
 		mtd_erase_block(outfd, mtdofs);
 		write(outfd, buf, erasesize);
 		mtdofs += erasesize;
