@@ -14,8 +14,8 @@ proto_dslite_setup() {
 	local iface="$2"
 	local link="dslite-$cfg"
 
-	local mtu ttl peeraddr ip6addr tunlink
-	json_get_vars mtu ttl peeraddr ip6addr tunlink
+	local mtu ttl peeraddr ip6addr tunlink zone
+	json_get_vars mtu ttl peeraddr ip6addr tunlink zone
 
 	[ -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -51,6 +51,10 @@ proto_dslite_setup() {
 	[ -n "$tunlink" ] && json_add_string link "$tunlink"
 	proto_close_tunnel
 
+	proto_add_data
+	[ -n "$zone" ] && json_add_string zone "$zone"
+	proto_close_data
+
 	proto_send_update "$cfg"
 }
 
@@ -67,6 +71,7 @@ proto_dslite_init_config() {
 	proto_config_add_string "tunlink"
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
+	proto_config_add_string "zone"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
