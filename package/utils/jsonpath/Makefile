@@ -5,7 +5,7 @@ PKG_VERSION:=2014-01-08
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://git.openwrt.org/project/jsonpath.git
+PKG_SOURCE_URL:=http://git.openwrt.org/project/jsonpath.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=f1e3aeb2526ea28db34c7bc714277c1dff26e5fc
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
