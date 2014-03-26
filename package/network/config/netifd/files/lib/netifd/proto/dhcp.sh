@@ -36,6 +36,7 @@ proto_dhcp_setup() {
 	[ "$broadcast" = 1 ] && broadcast="-B" || broadcast=
 	[ -n "$clientid" ] && clientid="-x 0x3d:${clientid//:/}" || clientid="-C"
 	[ -n "$iface6rd" ] && proto_export "IFACE6RD=$iface6rd"
+	[ -n "$iface6rd" ] && append dhcpopts "-O 212"
 	[ "$delegate" = "0" ] && proto_export "IFACE6RD_DELEGATE=0"
 
 	proto_export "INTERFACE=$config"
