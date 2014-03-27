@@ -183,6 +183,10 @@ tplink_board_detect() {
 	"430000"*)
 		model="TP-Link TL-WDR4300"
 		;;
+	"430080"*)
+		iw reg set IL
+		model="TP-Link TL-WDR4300 (IL)"
+		;;
 	"431000"*)
 		model="TP-Link TL-WDR4310"
 		;;
