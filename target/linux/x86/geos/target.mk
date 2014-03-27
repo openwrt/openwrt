@@ -21,7 +21,7 @@ DEFAULT_PACKAGES += \
             kmod-cpu-msr \
             soloscli linux-atm br2684ctl ppp-mod-pppoa pppdump pppstats \
             hwclock wpad flashrom tc
-LINUX_VERSION:=3.10.32
+LINUX_VERSION:=3.10.34
 CS5535_MASK:=0x0E000048
 
 CPU_TYPE := geode

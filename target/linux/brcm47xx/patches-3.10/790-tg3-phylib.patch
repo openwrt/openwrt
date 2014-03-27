@@ -129,7 +129,7 @@
  
  			tp->phy_flags |= TG3_PHYFLG_IS_LOW_POWER;
  
-@@ -11783,7 +11790,7 @@ static int tg3_get_settings(struct net_d
+@@ -11782,7 +11789,7 @@ static int tg3_get_settings(struct net_d
  		struct phy_device *phydev;
  		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
  			return -EAGAIN;
@@ -138,7 +138,7 @@
  		return phy_ethtool_gset(phydev, cmd);
  	}
  
-@@ -11850,7 +11857,7 @@ static int tg3_set_settings(struct net_d
+@@ -11849,7 +11856,7 @@ static int tg3_set_settings(struct net_d
  		struct phy_device *phydev;
  		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
  			return -EAGAIN;
@@ -147,7 +147,7 @@
  		return phy_ethtool_sset(phydev, cmd);
  	}
  
-@@ -12007,7 +12014,7 @@ static int tg3_nway_reset(struct net_dev
+@@ -12006,7 +12013,7 @@ static int tg3_nway_reset(struct net_dev
  	if (tg3_flag(tp, USE_PHYLIB)) {
  		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
  			return -EAGAIN;
@@ -156,7 +156,7 @@
  	} else {
  		u32 bmcr;
  
-@@ -12123,7 +12130,7 @@ static int tg3_set_pauseparam(struct net
+@@ -12122,7 +12129,7 @@ static int tg3_set_pauseparam(struct net
  		u32 newadv;
  		struct phy_device *phydev;
  
@@ -165,7 +165,7 @@
  
  		if (!(phydev->supported & SUPPORTED_Pause) ||
  		    (!(phydev->supported & SUPPORTED_Asym_Pause) &&
-@@ -13557,7 +13564,7 @@ static int tg3_ioctl(struct net_device *
+@@ -13556,7 +13563,7 @@ static int tg3_ioctl(struct net_device *
  		struct phy_device *phydev;
  		if (!(tp->phy_flags & TG3_PHYFLG_IS_CONNECTED))
  			return -EAGAIN;
@@ -174,7 +174,7 @@
  		return phy_mii_ioctl(phydev, ifr, cmd);
  	}
  
-@@ -17193,8 +17200,10 @@ static int tg3_init_one(struct pci_dev *
+@@ -17192,8 +17199,10 @@ static int tg3_init_one(struct pci_dev *
  			tg3_flag_set(tp, FLUSH_POSTED_WRITES);
  		if (ssb_gige_one_dma_at_once(pdev))
  			tg3_flag_set(tp, ONE_DMA_AT_ONCE);
@@ -186,7 +186,7 @@
  		if (ssb_gige_is_rgmii(pdev))
  			tg3_flag_set(tp, RGMII_MODE);
  	}
-@@ -17464,7 +17473,7 @@ static int tg3_init_one(struct pci_dev *
+@@ -17463,7 +17472,7 @@ static int tg3_init_one(struct pci_dev *
  
  	if (tp->phy_flags & TG3_PHYFLG_IS_CONNECTED) {
  		struct phy_device *phydev;

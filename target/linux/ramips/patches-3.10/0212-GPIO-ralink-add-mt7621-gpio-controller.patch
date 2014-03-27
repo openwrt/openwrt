@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 194 insertions(+), 1 deletion(-)
  create mode 100644 drivers/gpio/gpio-mt7621.c
 
-Index: linux-3.10.32/arch/mips/Kconfig
-===================================================================
---- linux-3.10.32.orig/arch/mips/Kconfig	2014-03-18 11:00:30.945639822 +0000
-+++ linux-3.10.32/arch/mips/Kconfig	2014-03-18 11:00:31.325639806 +0000
-@@ -448,7 +448,10 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -448,7 +448,10 @@ config RALINK
  	select ARCH_REQUIRE_GPIOLIB
  	select PINCTRL
  	select PINCTRL_RT2880
@@ -28,11 +26,9 @@ Index: linux-3.10.32/arch/mips/Kconfig
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
  	select FW_ARC
-Index: linux-3.10.32/drivers/gpio/Kconfig
-===================================================================
---- linux-3.10.32.orig/drivers/gpio/Kconfig	2014-03-18 11:00:30.653639834 +0000
-+++ linux-3.10.32/drivers/gpio/Kconfig	2014-03-18 11:02:01.901636126 +0000
-@@ -710,6 +710,12 @@
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -710,6 +710,12 @@ config GPIO_MSIC
  	  Enable support for GPIO on intel MSIC controllers found in
  	  intel MID devices
  
@@ -45,19 +41,15 @@ Index: linux-3.10.32/drivers/gpio/Kconfig
  comment "USB GPIO expanders:"
  
  config GPIO_VIPERBOARD
-Index: linux-3.10.32/drivers/gpio/Makefile
-===================================================================
---- linux-3.10.32.orig/drivers/gpio/Makefile	2014-03-18 11:00:30.653639834 +0000
-+++ linux-3.10.32/drivers/gpio/Makefile	2014-03-18 11:00:31.325639806 +0000
-@@ -88,3 +88,4 @@
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -88,3 +88,4 @@ obj-$(CONFIG_GPIO_WM831X)	+= gpio-wm831x
  obj-$(CONFIG_GPIO_WM8350)	+= gpio-wm8350.o
  obj-$(CONFIG_GPIO_WM8994)	+= gpio-wm8994.o
  obj-$(CONFIG_GPIO_XILINX)	+= gpio-xilinx.o
 +obj-$(CONFIG_GPIO_MT7621)	+= gpio-mt7621.o
-Index: linux-3.10.32/drivers/gpio/gpio-mt7621.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.32/drivers/gpio/gpio-mt7621.c	2014-03-18 11:00:31.325639806 +0000
+--- /dev/null
++++ b/drivers/gpio/gpio-mt7621.c
 @@ -0,0 +1,183 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it

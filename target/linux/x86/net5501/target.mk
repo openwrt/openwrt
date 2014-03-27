@@ -23,7 +23,7 @@ DEFAULT_PACKAGES += kmod-crypto-hw-geode kmod-crypto-ocf \
 CS5535_MASK:=0x01000040
 
 CPU_TYPE := geode
-LINUX_VERSION:=3.10.32
+LINUX_VERSION:=3.10.34
 FEATURES += broken
 
 define Target/Description

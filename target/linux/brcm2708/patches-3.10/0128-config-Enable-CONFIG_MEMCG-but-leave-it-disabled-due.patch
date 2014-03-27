@@ -62,7 +62,7 @@ Subject: [PATCH 128/174] config: Enable CONFIG_MEMCG, but leave it disabled
   */
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -6956,6 +6956,7 @@ struct cgroup_subsys mem_cgroup_subsys =
+@@ -6970,6 +6970,7 @@ struct cgroup_subsys mem_cgroup_subsys =
  	.base_cftypes = mem_cgroup_files,
  	.early_init = 0,
  	.use_id = 1,
