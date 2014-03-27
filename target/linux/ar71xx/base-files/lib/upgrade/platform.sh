@@ -220,6 +220,7 @@ platform_check_image() {
 		;;
 
 	archer-c7 | \
+	oolite | \
 	tl-mr10u | \
 	tl-mr11u | \
 	tl-mr13u | \

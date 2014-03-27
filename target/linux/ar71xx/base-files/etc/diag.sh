@@ -125,6 +125,9 @@ get_status_led() {
 	rw2458n)
 		status_led="rw2458n:green:d3"
 		;;
+	oolite)
+		status_led="oolite:red:system"
+		;;
 	tew-632brp)
 		status_led="tew-632brp:green:status"
 		;;
