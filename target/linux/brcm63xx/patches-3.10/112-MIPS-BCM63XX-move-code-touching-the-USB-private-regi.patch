@@ -108,7 +108,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  
  #define DRV_MODULE_NAME		"bcm63xx_udc"
  
-@@ -863,22 +864,7 @@ static void bcm63xx_select_phy_mode(stru
+@@ -869,22 +870,7 @@ static void bcm63xx_select_phy_mode(stru
  		bcm_gpio_writel(val, GPIO_PINMUX_OTHR_REG);
  	}
  
@@ -132,7 +132,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  }
  
  /**
-@@ -892,14 +878,9 @@ static void bcm63xx_select_phy_mode(stru
+@@ -898,14 +884,9 @@ static void bcm63xx_select_phy_mode(stru
   */
  static void bcm63xx_select_pullup(struct bcm63xx_udc *udc, bool is_on)
  {

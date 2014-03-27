@@ -11,7 +11,7 @@ BOARD:=brcm63xx
 BOARDNAME:=Broadcom BCM63xx
 SUBTARGETS:=generic smp
 FEATURES:=squashfs usb atm pci pcmcia usbgadget
-LINUX_VERSION:=3.10.32
+LINUX_VERSION:=3.10.34
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 include $(INCLUDE_DIR)/target.mk

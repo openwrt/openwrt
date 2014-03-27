@@ -31,7 +31,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  static struct clk clk_usbd = {
 --- a/drivers/usb/gadget/bcm63xx_udc.c
 +++ b/drivers/usb/gadget/bcm63xx_udc.c
-@@ -386,7 +386,6 @@ static inline void set_clocks(struct bcm
+@@ -392,7 +392,6 @@ static inline void set_clocks(struct bcm
  	if (is_enabled) {
  		clk_enable(udc->usbh_clk);
  		clk_enable(udc->usbd_clk);

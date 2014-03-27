@@ -12,7 +12,7 @@ BOARDNAME:=Broadcom BCM47xx/53xx (MIPS)
 FEATURES:=squashfs usb pcmcia
 MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 
-LINUX_VERSION:=3.10.32
+LINUX_VERSION:=3.10.34
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += swconfig wpad-mini nvram \
