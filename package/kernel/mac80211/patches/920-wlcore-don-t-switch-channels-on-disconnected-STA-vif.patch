@@ -11,11 +11,9 @@ Signed-off-by: Arik Nemtsov <arik@wizery.com>
  drivers/net/wireless/ti/wlcore/main.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/net/wireless/ti/wlcore/main.c b/drivers/net/wireless/ti/wlcore/main.c
-index 117e01e..a0c5a1e 100644
 --- a/drivers/net/wireless/ti/wlcore/main.c
 +++ b/drivers/net/wireless/ti/wlcore/main.c
-@@ -5224,6 +5224,10 @@ static void wl12xx_op_channel_switch(struct ieee80211_hw *hw,
+@@ -5179,6 +5179,10 @@ static void wl12xx_op_channel_switch(str
  	if (unlikely(wl->state == WLCORE_STATE_OFF)) {
  		wl12xx_for_each_wlvif_sta(wl, wlvif) {
  			struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
@@ -26,7 +24,7 @@ index 117e01e..a0c5a1e 100644
  			ieee80211_chswitch_done(vif, false);
  		}
  		goto out;
-@@ -5239,6 +5243,9 @@ static void wl12xx_op_channel_switch(struct ieee80211_hw *hw,
+@@ -5194,6 +5198,9 @@ static void wl12xx_op_channel_switch(str
  	wl12xx_for_each_wlvif_sta(wl, wlvif) {
  		unsigned long delay_usec;
  
@@ -36,6 +34,3 @@ index 117e01e..a0c5a1e 100644
  		ret = wl->ops->channel_switch(wl, wlvif, ch_switch);
  		if (ret)
  			goto out_sleep;
--- 
-1.8.3.2
-
