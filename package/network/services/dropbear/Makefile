@@ -59,7 +59,6 @@ define Package/dropbearconvert
 endef
 
 CONFIGURE_ARGS += \
-	--with-shared \
 	--disable-pam \
 	--enable-openpty \
 	--enable-syslog \
@@ -78,8 +77,9 @@ CONFIGURE_ARGS += \
 TARGET_CFLAGS += -DARGTYPE=3 -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 
-define Build/Prepare
-	$(call Build/Prepare/Default)
+define Build/Configure
+	$(Build/Configure/Default)
+
 	# Enforce that all replacements are made, otherwise options.h has changed
 	# format and this logic is broken.
 	for OPTION in DROPBEAR_ECDSA DROPBEAR_ECDH DROPBEAR_CURVE25519; do \
