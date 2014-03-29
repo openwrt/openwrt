@@ -44,7 +44,9 @@ validate_section_dropbear()
 		'rsakeyfile:file' \
 		'dsskeyfile:file' \
 		'BannerFile:file' \
-		'Port:list(port):22'
+		'Port:list(port):22' \
+		'SSHKeepAlive:uinteger:300' \
+		'IdleTimeout:uinteger:0'
 	return $?
 }
 
@@ -74,6 +76,8 @@ dropbear_instance()
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
 	[ -n "${Interface}" ] && network_get_device Interface "${Interface}"
 	append_ports "${Interface}" "${Port}"
+	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
+	[ "${SSHKeepAlive}" -ne 0 ] && procd_append_param command -K "${SSHKeepAlive}"
 	procd_close_instance
 }
 
