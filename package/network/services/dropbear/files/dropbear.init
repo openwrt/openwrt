@@ -72,8 +72,8 @@ dropbear_instance()
 	[ -n "${rsakeyfile}" ] && procd_append_param command -r "${rsakeyfile}"
 	[ -n "${dsskeyfile}" ] && procd_append_param command -d "${dsskeyfile}"
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
-	[ -n "${interface}" ] && network_get_device interface "${interface}"
-	append_ports "${interface}" "${Port}"
+	[ -n "${Interface}" ] && network_get_device Interface "${Interface}"
+	append_ports "${Interface}" "${Port}"
 	procd_close_instance
 }
 
