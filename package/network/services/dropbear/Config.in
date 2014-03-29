@@ -1,0 +1,27 @@
+menu "Configuration"
+	depends on PACKAGE_dropbear
+
+config DROPBEAR_ECC
+	bool "Elliptic curve cryptography (ECC)"
+	default n
+	help
+		Enables elliptic curve cryptography (ECC) support in key exchange and public key
+		authentication.
+
+		Key exchange algorithms:
+		  ecdh-sha2-nistp256
+		  ecdh-sha2-nistp384
+		  ecdh-sha2-nistp521
+		  curve25519-sha256@libssh.org
+
+		Public key algorithms:
+		  ecdsa-sha2-nistp256
+		  ecdsa-sha2-nistp384
+		  ecdsa-sha2-nistp521
+
+		Does not generate ECC host keys by default (ECC key exchange will not be used,
+		only ECC public key auth).
+
+		Increases binary size by about 36 kB (MIPS).
+
+endmenu
