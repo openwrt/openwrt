@@ -8,24 +8,30 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=2013.59
+PKG_VERSION:=2014.63
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://matt.ucc.asn.au/dropbear/releases/ \
 	https://dropbear.nl/mirror/releases/
-PKG_MD5SUM:=6c1e6c2c297f4034488ffc95e8b7e6e9
+PKG_MD5SUM:=7066bb9a2da708f3ed06314fdc9c47fd
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
 
 PKG_BUILD_PARALLEL:=1
 
+PKG_CONFIG_DEPENDS:=CONFIG_DROPBEAR_ECC
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/dropbear/Default
   URL:=http://matt.ucc.asn.au/dropbear/
+endef
+
+define Package/dropbear/config
+	source "$(SOURCE)/Config.in"
 endef
 
 define Package/dropbear
@@ -71,6 +77,20 @@ CONFIGURE_ARGS += \
 
 TARGET_CFLAGS += -DARGTYPE=3 -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	# Enforce that all replacements are made, otherwise options.h has changed
+	# format and this logic is broken.
+	for OPTION in DROPBEAR_ECDSA DROPBEAR_ECDH DROPBEAR_CURVE25519; do \
+	  awk 'BEGIN { rc = 1 } \
+	       /'$$$$OPTION'/ { $$$$0 = "$(if $(CONFIG_DROPBEAR_ECC),,// )#define '$$$$OPTION'"; rc = 0 } \
+	       { print } \
+	       END { exit(rc) }' $(PKG_BUILD_DIR)/options.h \
+	       >$(PKG_BUILD_DIR)/options.h.new && \
+	  mv $(PKG_BUILD_DIR)/options.h.new $(PKG_BUILD_DIR)/options.h || exit 1; \
+	done
+endef
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
