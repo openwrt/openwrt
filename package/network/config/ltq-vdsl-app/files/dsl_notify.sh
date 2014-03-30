@@ -9,36 +9,55 @@
 
 [ "$DSL_NOTIFICATION_TYPE" = "DSL_INTERFACE_STATUS" ] || exit 0
 
+. /usr/share/libubox/jshn.sh
 . /lib/functions.sh
+. /lib/functions/leds.sh
 
 include /lib/network
 scan_interfaces
 
-local found=0
+logger "Found no matching interface for DSL notification ($DSL_INTERFACE_STATUS)"
+
+local default
+config_load system
+config_get default led_adsl default
+if [ "$default" != 1 ]; then
+	case "$DSL_INTERFACE_STATUS" in
+	  "HANDSHAKE")  led_timer adsl 500 500;;
+	  "TRAINING")   led_timer adsl 200 200;;
+	  "UP")		led_on adsl;;
+	  *)		led_off adsl
+	esac
+fi
+
+local interfaces=`ubus list network.interface.\* | cut -d"." -f3`
 local ifc
 for ifc in $interfaces; do
+
 	local up
-	config_get_bool up "$ifc" up 0
+	json_load "$(ifstatus $ifc)"
+	json_get_var up up
 
 	local auto
 	config_get_bool auto "$ifc" auto 1
 
 	local proto
-	config_get proto "$ifc" proto
+	json_get_var proto proto
 
 	if [ "$DSL_INTERFACE_STATUS" = "UP" ]; then
 		if [ "$proto" = "pppoa" ] && [ "$up" != 1 ] && [ "$auto" = 1 ]; then
-			found=1
 			( sleep 1; ifup "$ifc" ) &
 		fi
 	else
 		if [ "$proto" = "pppoa" ] && [ "$up" = 1 ] && [ "$auto" = 1 ]; then
-			found=1
 			( sleep 1; ifdown "$ifc" ) &
+		else
+			json_get_var autostart autostart
+			if [ "$proto" = "pppoa" ] && [ "$up" != 1 ] && [ "$autostart" = 1 ]; then
+				( sleep 1; ifdown "$ifc" ) &
+			fi
 		fi
 	fi
 done
 
-if [ "$found" != 1 ]; then
-	logger "Found no matching interface for DSL notification ($DSL_INTERFACE_STATUS)"
-fi
+
