@@ -256,8 +256,8 @@ static int ptm_napi_poll(struct napi_struct *napi, int budget)
     //  clear interrupt
     IFX_REG_W32_MASK(0, 1, MBOX_IGU1_ISRC);
     //  no more traffic
-    if ( WAN_RX_DESC_BASE[g_ptm_priv_data.itf[0].rx_desc_pos].own ) {   //  if PP32 hold descriptor
-        napi_complete(napi);
+    if (work_done < budget) {
+	napi_complete(napi);
         IFX_REG_W32_MASK(0, 1, MBOX_IGU1_IER);
         return work_done;
     }
