@@ -6,7 +6,7 @@
 	model = "FRITZ3370 - Fritz!Box WLAN 3370";
 
 	chosen {
-		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit rootfstype=jffs2";
+		bootargs = "console=ttyLTQ0,115200";
 	};
 
 	memory@0 {
@@ -205,7 +205,7 @@
 	};
 
 	ath9k_eep {
-		compatible = "ath9k,eeprom-mtd";
+		compatible = "ath9k,eeprom";
 		ath,eep-flash = <&ath9k_cal 0x985>;
 		ath,eep-endian;
 		ath,eep-swap;
