@@ -1,0 +1,44 @@
+From d754315c54af9cb8222e0a04ed5b2b4b927ed176 Mon Sep 17 00:00:00 2001
+From: Ruediger Meier <ruediger.meier@ga-group.nl>
+Date: Mon, 17 Mar 2014 11:48:47 +0100
+Subject: [PATCH 262/288] unshare: include libmount.h to provide missing MS_*
+ defines
+
+Since 6728ca10 we are using MS_PRIVATE and MS_REC which are not defined
+in some systems's sys/mount.h.
+
+Signed-off-by: Ruediger Meier <ruediger.meier@ga-group.nl>
+---
+ sys-utils/Makemodule.am |    1 +
+ sys-utils/unshare.c     |    3 +++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/sys-utils/Makemodule.am b/sys-utils/Makemodule.am
+index 30b5d3e..93a2c8d 100644
+--- a/sys-utils/Makemodule.am
++++ b/sys-utils/Makemodule.am
+@@ -296,6 +296,7 @@ usrbin_exec_PROGRAMS += unshare
+ dist_man_MANS += sys-utils/unshare.1
+ unshare_SOURCES = sys-utils/unshare.c
+ unshare_LDADD = $(LDADD) libcommon.la
++unshare_CFLAGS = $(AM_CFLAGS) -I$(ul_libmount_incdir)
+ endif
+ 
+ if BUILD_NSENTER
+diff --git a/sys-utils/unshare.c b/sys-utils/unshare.c
+index 91e0ec7..1240293 100644
+--- a/sys-utils/unshare.c
++++ b/sys-utils/unshare.c
+@@ -27,6 +27,9 @@
+ #include <sys/wait.h>
+ #include <sys/mount.h>
+ 
++/* we only need some defines missing in sys/mount.h, no libmount linkage */
++#include <libmount.h>
++
+ #include "nls.h"
+ #include "c.h"
+ #include "closestream.h"
+-- 
+1.7.9.5
+
