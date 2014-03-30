@@ -74,6 +74,15 @@ ARV4519PW|ARV7510PW22|ARV7518PW|ARV752DPW22)
 	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
 	;;
 
+# rtl8306g
+ARV7519PW)
+	lan_mac=$(mtd_get_mac_binary board_config 22)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4t"
+	;;
+
 WBMR)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "switch0" "1" "1"
