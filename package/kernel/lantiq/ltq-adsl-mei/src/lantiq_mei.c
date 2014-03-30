@@ -1513,13 +1513,31 @@ IFX_MEI_DFEMemoryAlloc (DSL_DEV_Device_t * pDev, long size)
                         allocate_size = size;
                 else
                         allocate_size = SDRAM_SEGMENT_SIZE;
-		org_mem_ptr = kmalloc (allocate_size + 1024, GFP_KERNEL);
+        
+		org_mem_ptr = kmalloc (allocate_size, GFP_KERNEL);
 		if (org_mem_ptr == NULL) {
                         IFX_MEI_EMSG ("%d: kmalloc %d bytes memory fail!\n", idx, allocate_size);
 			err = -ENOMEM;
 			goto allocate_error;
 		}
-                mem_ptr = (unsigned long) (org_mem_ptr + 1023) & ~(1024 -1);
+		
+		if (((unsigned long)org_mem_ptr) & (1023)) {
+			/* Pointer not 1k aligned, so free it and allocate a larger chunk
+			 * for further alignment.
+			 */
+			kfree(org_mem_ptr);
+			org_mem_ptr = kmalloc (allocate_size + 1024, GFP_KERNEL);
+			if (org_mem_ptr == NULL) {
+				IFX_MEI_EMSG ("%d: kmalloc %d bytes memory fail!\n",
+				              idx, allocate_size + 1024);
+				err = -ENOMEM;
+				goto allocate_error;
+			}
+			mem_ptr = (unsigned long) (org_mem_ptr + 1023) & ~(1024 -1);
+		} else {
+			mem_ptr = (unsigned long) org_mem_ptr;
+		}
+
                 adsl_mem_info[idx].address = (char *) mem_ptr;
                 adsl_mem_info[idx].org_address = org_mem_ptr;
                 adsl_mem_info[idx].size = allocate_size;
@@ -1591,6 +1609,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 
 	size_t nRead = 0, nCopy = 0;
 	char *mem_ptr;
+	char *org_mem_ptr = NULL;
 	ssize_t retval = -ENOMEM;
 	int idx = 0;
 
@@ -1634,17 +1653,33 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 		DSL_DEV_PRIVATE(pDev)->img_hdr =
 			(ARC_IMG_HDR *) adsl_mem_info[0].address;
 
-		adsl_mem_info[XDATA_REGISTER].org_address = kmalloc (SDRAM_SEGMENT_SIZE + 1024, GFP_KERNEL);
-		adsl_mem_info[XDATA_REGISTER].address =
-			(char *) ((unsigned long) (adsl_mem_info[XDATA_REGISTER].org_address + 1023) & 0xFFFFFC00);
-
-		adsl_mem_info[XDATA_REGISTER].size = SDRAM_SEGMENT_SIZE;
-
-		if (adsl_mem_info[XDATA_REGISTER].address == NULL) {
+		org_mem_ptr = kmalloc (SDRAM_SEGMENT_SIZE, GFP_KERNEL);
+		if (org_mem_ptr == NULL) {
 			IFX_MEI_EMSG ("kmalloc memory fail!\n");
 			retval = -ENOMEM;
 			goto error;
 		}
+		
+		if (((unsigned long)org_mem_ptr) & (1023)) {
+			/* Pointer not 1k aligned, so free it and allocate a larger chunk
+			 * for further alignment.
+			 */
+			kfree(org_mem_ptr);
+			org_mem_ptr = kmalloc (SDRAM_SEGMENT_SIZE + 1024, GFP_KERNEL);
+			if (org_mem_ptr == NULL) {
+				IFX_MEI_EMSG ("kmalloc memory fail!\n");
+				retval = -ENOMEM;
+				goto error;
+			}
+			adsl_mem_info[XDATA_REGISTER].address =
+				(char *) ((unsigned long) (org_mem_ptr + 1023) & ~(1024 -1));
+		} else {
+			adsl_mem_info[XDATA_REGISTER].address = org_mem_ptr;
+		}
+		
+		adsl_mem_info[XDATA_REGISTER].org_address = org_mem_ptr;
+		adsl_mem_info[XDATA_REGISTER].size = SDRAM_SEGMENT_SIZE;
+
 		adsl_mem_info[XDATA_REGISTER].type = FREE_RELOAD;
 		IFX_MEI_DMSG("-> IFX_MEI_BarUpdate()\n");
 		IFX_MEI_BarUpdate (pDev, (DSL_DEV_PRIVATE(pDev)->nBar));
