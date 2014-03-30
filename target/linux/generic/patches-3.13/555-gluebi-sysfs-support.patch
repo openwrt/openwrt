@@ -1,0 +1,88 @@
+Index: linux-3.13.2/drivers/mtd/ubi/gluebi.c
+===================================================================
+--- linux-3.13.2.orig/drivers/mtd/ubi/gluebi.c
++++ linux-3.13.2/drivers/mtd/ubi/gluebi.c
+@@ -38,6 +38,7 @@
+ #include <linux/mutex.h>
+ #include <linux/mtd/ubi.h>
+ #include <linux/mtd/mtd.h>
++#include <linux/export.h>
+ #include "ubi-media.h"
+ 
+ #define err_msg(fmt, ...)                                   \
+@@ -66,6 +67,16 @@ struct gluebi_device {
+ static LIST_HEAD(gluebi_devices);
+ static DEFINE_MUTEX(devices_mutex);
+ 
++/* Device attribute handler for gluebi files in '/<sysfs>/class/mtd/mtdX' */
++static ssize_t gluebi_attribute_show(struct device *dev,
++	struct device_attribute *attr, char *buf);
++
++/* Device attributes corresponding to files in '/<sysfs>/class/mtd/mtdX' */
++static struct device_attribute attr_vol_gluebi_ubi_num =
++__ATTR(gluebi_ubi_num, S_IRUGO, gluebi_attribute_show, NULL);
++static struct device_attribute attr_vol_gluebi_vol_id =
++__ATTR(gluebi_vol_id, S_IRUGO, gluebi_attribute_show, NULL);
++
+ /**
+  * find_gluebi_nolock - find a gluebi device.
+  * @ubi_num: UBI device number
+@@ -288,6 +299,36 @@ out_err:
+ }
+ 
+ /**
++ * gluebi_attribute_show - "Show" method for gluebi files in sysfs.
++ */
++static ssize_t gluebi_attribute_show(struct device *dev,
++				  struct device_attribute *attr, char *buf)
++{
++	int ret;
++	struct mtd_info *mtd = container_of(dev, struct mtd_info, dev);
++	struct gluebi_device *gluebi;
++
++	gluebi_get_device(mtd);
++	gluebi = container_of(mtd, struct gluebi_device, mtd);
++
++	/* This really shouldn't happen */
++	if (!gluebi)
++		return -ENODEV;
++
++	if (attr == &attr_vol_gluebi_ubi_num) {
++		ret = sprintf(buf, "%u\n", gluebi->ubi_num);
++	} else if (attr == &attr_vol_gluebi_vol_id) {
++		ret = sprintf(buf, "%u\n", gluebi->vol_id);
++	} else {
++		/* This must be a bug */
++		ret = -EINVAL;
++	}
++
++	gluebi_put_device(mtd);
++	return ret;
++}
++
++/**
+  * gluebi_create - create a gluebi device for an UBI volume.
+  * @di: UBI device description object
+  * @vi: UBI volume description object
+@@ -355,6 +396,8 @@ static int gluebi_create(struct ubi_devi
+ 	mutex_lock(&devices_mutex);
+ 	list_add_tail(&gluebi->list, &gluebi_devices);
+ 	mutex_unlock(&devices_mutex);
++	device_create_file(&mtd->dev, &attr_vol_gluebi_ubi_num);
++	device_create_file(&mtd->dev, &attr_vol_gluebi_vol_id);
+ 	return 0;
+ }
+ 
+@@ -380,8 +423,11 @@ static int gluebi_remove(struct ubi_volu
+ 		err = -ENOENT;
+ 	} else if (gluebi->refcnt)
+ 		err = -EBUSY;
+-	else
++	else {
++		device_remove_file(&gluebi->mtd.dev, &attr_vol_gluebi_ubi_num);
++		device_remove_file(&gluebi->mtd.dev, &attr_vol_gluebi_vol_id);
+ 		list_del(&gluebi->list);
++	}
+ 	mutex_unlock(&devices_mutex);
+ 	if (err)
+ 		return err;
