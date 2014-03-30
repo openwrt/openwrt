@@ -118,6 +118,45 @@ define Image/Build/jffs2-256k
 	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 endef
 
+define Image/Build/ubifs
+
+ifneq ($($(PROFILE)_UBIFS_OPTS),)
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubifs
+endif
+endef
+
+define Image/Build/ubi
+
+ifneq ($($(PROFILE)_UBI_OPTS),)
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubi
+endif
+endef
+
+define Image/InstallKernel/Template
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage $(TARGET_DIR)/boot/
+	ln -sf $(IMG_PREFIX)-$(1)-uImage $(TARGET_DIR)/boot/uImage
+endif
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE),)
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-zImage $(TARGET_DIR)/boot/
+	ln -sf $(IMG_PREFIX)-$(1)-zImage $(TARGET_DIR)/boot/zImage
+endif
+endif
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+
+ifneq ($(1),)
+	$(CP) $(KDIR)/$(1).dtb $(TARGET_DIR)/boot/
+endif
+endif
+endef
+
 define Image/BuildKernel/Template
 	$(call PatchKernelLzma,$(1))
 	$(call MkImageLzma,$(1))
@@ -305,6 +344,10 @@ endif
 
 define Image/BuildKernel
 	$(call Image/BuildKernel/Profile/$(PROFILE))
+endef
+
+define Image/InstallKernel
+	$(call Image/InstallKernel/Template/$(PROFILE))
 endef
 
 define Image/Build
