@@ -307,6 +307,12 @@ Image/Build/Profile/H201L=$(call Image/Build/$(1),$(1),H201L)
 Image/BuildKernel/Profile/P2601HNFX=$(call Image/BuildKernel/Template,P2601HNFX)
 Image/Build/Profile/P2601HNFX=$(call Image/Build/$(1),$(1),P2601HNFX)
 
+Image/BuildKernel/Profile/ARV7519RWV11=$(call Image/BuildKernel/Template,ARV7519RWV11,$(1))
+Image/Build/Profile/ARV7519RWV11=$(call Image/Build/$(1), $(1),ARV7519RWV11)
+
+Image/BuildKernel/Profile/ARV7519RWV12=$(call Image/BuildKernel/Template,ARV7519RWV12,$(1))
+Image/Build/Profile/ARV7519RWV12=$(call Image/Build/$(1), $(1),ARV7519RWV12)
+
 endif
 
 
