@@ -113,12 +113,13 @@ H201L)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4t"
 	;;
 
+#rtl8306g
 P2601HNFX)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "switch0" "1" "1"
-	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 	;;
-	
+
 P2812HNUFX)
 	ucidef_set_interface_lan 'eth0.1'
 	ucidef_add_switch "switch0" "1" "1"
