@@ -67,10 +67,12 @@ int mtd_open(const char *mtd, bool block)
 	int i;
 	int ret;
 	int flags = O_RDWR | O_SYNC;
+	char name[PATH_MAX];
 
+	snprintf(name, sizeof(name), "\"%s\"", mtd);
 	if ((fp = fopen("/proc/mtd", "r"))) {
 		while (fgets(dev, sizeof(dev), fp)) {
-			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
+			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, name)) {
 				snprintf(dev, sizeof(dev), "/dev/mtd%s/%d", (block ? "block" : ""), i);
 				if ((ret=open(dev, flags))<0) {
 					snprintf(dev, sizeof(dev), "/dev/mtd%s%d", (block ? "block" : ""), i);
