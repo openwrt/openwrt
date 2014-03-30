@@ -240,7 +240,7 @@ endef
 define Package/lsblk
 $(call Package/util-linux/Default)
   TITLE:=list block devices
-  DEPENDS:= +libblkid
+  DEPENDS:= +libblkid +libmount
   SUBMENU=disc
 endef
 
