@@ -126,6 +126,7 @@ enum rtl_regidx {
 	RTL_REG_EN_TAG_CLR,
 	RTL_REG_EN_TAG_IN,
 	RTL_REG_TRAP_CPU,
+	RTL_REG_CPU_LINKUP,
 	RTL_REG_TRUNK_PORTSEL,
 	RTL_REG_EN_TRUNK,
 	RTL_REG_RESET,
@@ -194,6 +195,7 @@ static const struct rtl_reg rtl_regs[] = {
 	[RTL_REG_RESET]          = { 0, 0, 16,  1, 12, 0 },
 
 	[RTL_REG_TRAP_CPU]       = { 3, 2, 22,  1,  6, 0 },
+	[RTL_REG_CPU_LINKUP]     = { 0, 6, 22,  1, 15, 0 },
 
 	[RTL_REG_VLAN_TAG_ONLY]  = { 0, 0, 16,  1,  8, 1 },
 	[RTL_REG_VLAN_FILTER]    = { 0, 0, 16,  1,  9, 1 },
@@ -457,6 +459,8 @@ rtl_hw_apply(struct switch_dev *dev)
 	rtl_set(dev, RTL_REG_EN_TRUNK, trunk_en);
 	rtl_set(dev, RTL_REG_TRUNK_PORTSEL, trunk_psel);
 	rtl_phy_restore(dev, 5, &port5);
+
+	rtl_set(dev, RTL_REG_CPU_LINKUP, 1);
 
 	return 0;
 }
