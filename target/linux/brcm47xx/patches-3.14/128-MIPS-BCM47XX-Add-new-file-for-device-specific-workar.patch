@@ -44,7 +44,7 @@ V2: Drop pr_debug for devices we don't need workarounds for. It was too
  	return 0;
 --- /dev/null
 +++ b/arch/mips/bcm47xx/workarounds.c
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,31 @@
 +#include "bcm47xx_private.h"
 +
 +#include <linux/gpio.h>
@@ -53,8 +53,14 @@ V2: Drop pr_debug for devices we don't need workarounds for. It was too
 +
 +static void __init bcm47xx_workarounds_netgear_wnr3500l(void)
 +{
-+	/* Set GPIO 12 to 1 to pass power to the USB port */
-+	gpio_set_value(12, 1);
++	const int usb_power = 12;
++	int err;
++
++	err = gpio_request_one(usb_power, GPIOF_OUT_INIT_HIGH, "usb_power");
++	if (err)
++		pr_err("Failed to request USB power gpio: %d\n", err);
++	else
++		gpio_free(usb_power);
 +}
 +
 +void __init bcm47xx_workarounds(void)
