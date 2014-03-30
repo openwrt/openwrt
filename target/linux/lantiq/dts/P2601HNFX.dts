@@ -62,6 +62,9 @@
 				stp {
 					lantiq,groups = "stp";
 					lantiq,function = "stp";
+					lantiq,pull = <2>;
+					lantiq,open-drain = <0>;
+					lantiq,output = <1>;
 				};
 				exin {
 					lantiq,groups = "exin1";
@@ -122,10 +125,10 @@
 			gpios = <&gpio 53 1>;
 			linux,code = <0x198>;
 		};
-		wps {
-			label = "wps";
+		rfkill {
+			label = "rfkill";
 			gpios = <&gpio 54 1>;
-			linux,code = <0x211>;
+			linux,code = <0xf7>;
 		};
 	};
 
