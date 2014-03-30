@@ -25,7 +25,7 @@
  	dfs_commands,
 --- a/source3/printing/spoolssd.c
 +++ b/source3/printing/spoolssd.c
-@@ -153,6 +153,10 @@ void start_spoolssd(struct tevent_contex
+@@ -165,6 +165,10 @@ void start_spoolssd(struct tevent_contex
  	NTSTATUS status;
  	int ret;
  
@@ -51,7 +51,7 @@
  			d_printf(_("Usage:\n"));
 --- a/source3/smbd/reply.c
 +++ b/source3/smbd/reply.c
-@@ -5196,7 +5196,11 @@ void reply_printopen(struct smb_request 
+@@ -5206,7 +5206,11 @@ void reply_printopen(struct smb_request
  		return;
  	}
  
@@ -64,7 +64,7 @@
  		reply_nterror(req, NT_STATUS_ACCESS_DENIED);
  		END_PROFILE(SMBsplopen);
  		return;
-@@ -5302,7 +5306,10 @@ void reply_printqueue(struct smb_request
+@@ -5312,7 +5316,10 @@ void reply_printqueue(struct smb_request
  	   is really quite gross and only worked when there was only
  	   one printer - I think we should now only accept it if they
  	   get it right (tridge) */
@@ -78,7 +78,7 @@
  		return;
 --- a/source3/smbd/lanman.c
 +++ b/source3/smbd/lanman.c
-@@ -784,6 +784,10 @@ static bool api_DosPrintQGetInfo(struct 
+@@ -784,6 +784,10 @@ static bool api_DosPrintQGetInfo(struct
  	union spoolss_JobInfo *job_info = NULL;
  	union spoolss_PrinterInfo printer_info;
  
@@ -133,7 +133,7 @@
  	if (!str1 || !str2 || !p) {
  		return False;
  	}
-@@ -4792,6 +4812,10 @@ static bool api_WPrintJobGetInfo(struct 
+@@ -4792,6 +4812,10 @@ static bool api_WPrintJobGetInfo(struct
  	struct spoolss_DevmodeContainer devmode_ctr;
  	union spoolss_JobInfo info;
  
@@ -177,7 +177,7 @@
  	if (!str1 || !str2 || !p) {
  		return False;
  	}
-@@ -5374,6 +5410,10 @@ static bool api_WPrintDriverEnum(struct 
+@@ -5374,6 +5410,10 @@ static bool api_WPrintDriverEnum(struct
  	int succnt;
  	struct pack_desc desc;
  
@@ -303,7 +303,7 @@
  	}
 --- a/source3/smbd/process.c
 +++ b/source3/smbd/process.c
-@@ -2476,8 +2476,10 @@ static bool housekeeping_fn(const struct
+@@ -2423,8 +2423,10 @@ static bool housekeeping_fn(const struct
  
  	change_to_root_user();
  
@@ -316,7 +316,7 @@
  	check_reload(sconn, time_mono(NULL));
 --- a/source3/smbd/server.c
 +++ b/source3/smbd/server.c
-@@ -126,7 +126,9 @@ static void smb_pcap_updated(struct mess
+@@ -123,7 +123,9 @@ static void smb_pcap_updated(struct mess
  {
  	struct tevent_context *ev_ctx =
  		talloc_get_type_abort(private_data, struct tevent_context);
@@ -327,7 +327,7 @@
  	DEBUG(10,("Got message saying pcap was updated. Reloading.\n"));
  	change_to_root_user();
  	reload_printers(ev_ctx, msg);
-@@ -1231,6 +1233,7 @@ extern void build_options(bool screen);
+@@ -1277,6 +1279,7 @@ extern void build_options(bool screen);
  	 * The print backend init also migrates the printing tdb's,
  	 * this requires a winreg pipe.
  	 */
@@ -335,7 +335,7 @@
  	if (!print_backend_init(smbd_messaging_context()))
  		exit(1);
  
-@@ -1262,7 +1265,7 @@ extern void build_options(bool screen);
+@@ -1315,7 +1318,7 @@ extern void build_options(bool screen);
  				       smbd_messaging_context());
  		}
  	}
