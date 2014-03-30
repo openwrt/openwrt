@@ -10,6 +10,7 @@ rt2x00_eeprom_extract() {
 	local part=$1
 	local offset=$2
 	local count=$3
+	local swab=$4
 	local mtd
 
 	. /lib/functions.sh
@@ -18,8 +19,13 @@ rt2x00_eeprom_extract() {
 	[ -n "$mtd" ] || \
 		rt2x00_eeprom_die "no mtd device found for partition $part"
 
-	dd if=$mtd of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$count || \
-		rt2x00_eeprom_die "failed to extract from $mtd"
+	if [ $swab -gt 0 ]; then
+		dd if=$mtd of=/lib/firmware/$FIRMWARE bs=2 skip=$offset count=$count conv=swab || \
+			rt2x00_eeprom_die "failed to extract from $mtd"
+	else
+		dd if=$mtd of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$count || \
+			rt2x00_eeprom_die "failed to extract from $mtd"
+	fi
 }
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
@@ -29,8 +35,11 @@ case "$FIRMWARE" in
 "RT2860.eeprom" )
 	local board=$(lantiq_board_id)
 	case $board in
-	ARV7510PW22|ARV7519PW|ARV7525PW|ARV752DPW|ARV752DPW22)
-		rt2x00_eeprom_extract "board_config" 1040 512
+	ARV7510PW22|ARV7519PW|ARV752DPW|ARV752DPW22)
+		rt2x00_eeprom_extract "board_config" 520 256 1
+		;;
+	ARV7525PW)
+		rt2x00_eeprom_extract "board_config" 1040 512 0
 		;;
 	*)
 		rt2x00_eeprom_die "board $board is not supported yet"
