@@ -16,6 +16,8 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/drv_dsl_cpe_api-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=b6d9c1e3c5db1bfcd6e81bb2f582cadb
 
+PKG_USE_MIPS16:=0
+
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
