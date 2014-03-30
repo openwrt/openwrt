@@ -4007,7 +4007,7 @@
  	},
 --- a/source3/librpc/gen_ndr/ndr_ntprinting.c
 +++ b/source3/librpc/gen_ndr/ndr_ntprinting.c
-@@ -914,7 +914,7 @@ static const struct ndr_interface_call n
+@@ -902,7 +902,7 @@ static const struct ndr_interface_call n
  		sizeof(struct decode_ntprinting_form),
  		(ndr_push_flags_fn_t) ndr_push_decode_ntprinting_form,
  		(ndr_pull_flags_fn_t) ndr_pull_decode_ntprinting_form,
@@ -4016,7 +4016,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -923,7 +923,7 @@ static const struct ndr_interface_call n
+@@ -911,7 +911,7 @@ static const struct ndr_interface_call n
  		sizeof(struct decode_ntprinting_driver),
  		(ndr_push_flags_fn_t) ndr_push_decode_ntprinting_driver,
  		(ndr_pull_flags_fn_t) ndr_pull_decode_ntprinting_driver,
@@ -4025,7 +4025,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -932,7 +932,7 @@ static const struct ndr_interface_call n
+@@ -920,7 +920,7 @@ static const struct ndr_interface_call n
  		sizeof(struct decode_ntprinting_printer),
  		(ndr_push_flags_fn_t) ndr_push_decode_ntprinting_printer,
  		(ndr_pull_flags_fn_t) ndr_pull_decode_ntprinting_printer,
@@ -5402,7 +5402,7 @@
  	},
 --- a/source3/librpc/gen_ndr/ndr_spoolss.c
 +++ b/source3/librpc/gen_ndr/ndr_spoolss.c
-@@ -32661,7 +32661,7 @@ static const struct ndr_interface_call s
+@@ -32660,7 +32660,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumPrinters),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumPrinters,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumPrinters,
@@ -5411,7 +5411,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32670,7 +32670,7 @@ static const struct ndr_interface_call s
+@@ -32669,7 +32669,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_OpenPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_OpenPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_OpenPrinter,
@@ -5420,7 +5420,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32679,7 +32679,7 @@ static const struct ndr_interface_call s
+@@ -32678,7 +32678,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_SetJob),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_SetJob,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_SetJob,
@@ -5429,7 +5429,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32688,7 +32688,7 @@ static const struct ndr_interface_call s
+@@ -32687,7 +32687,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetJob),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetJob,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetJob,
@@ -5438,7 +5438,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32697,7 +32697,7 @@ static const struct ndr_interface_call s
+@@ -32696,7 +32696,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumJobs),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumJobs,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumJobs,
@@ -5447,7 +5447,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32706,7 +32706,7 @@ static const struct ndr_interface_call s
+@@ -32705,7 +32705,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPrinter,
@@ -5456,7 +5456,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32715,7 +32715,7 @@ static const struct ndr_interface_call s
+@@ -32714,7 +32714,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrinter,
@@ -5465,7 +5465,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32724,7 +32724,7 @@ static const struct ndr_interface_call s
+@@ -32723,7 +32723,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_SetPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_SetPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_SetPrinter,
@@ -5474,7 +5474,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32733,7 +32733,7 @@ static const struct ndr_interface_call s
+@@ -32732,7 +32732,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetPrinter,
@@ -5483,7 +5483,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32742,7 +32742,7 @@ static const struct ndr_interface_call s
+@@ -32741,7 +32741,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPrinterDriver),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPrinterDriver,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPrinterDriver,
@@ -5492,7 +5492,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32751,7 +32751,7 @@ static const struct ndr_interface_call s
+@@ -32750,7 +32750,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumPrinterDrivers),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumPrinterDrivers,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumPrinterDrivers,
@@ -5501,7 +5501,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32760,7 +32760,7 @@ static const struct ndr_interface_call s
+@@ -32759,7 +32759,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetPrinterDriver),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetPrinterDriver,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetPrinterDriver,
@@ -5510,7 +5510,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32769,7 +32769,7 @@ static const struct ndr_interface_call s
+@@ -32768,7 +32768,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetPrinterDriverDirectory),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetPrinterDriverDirectory,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetPrinterDriverDirectory,
@@ -5519,7 +5519,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32778,7 +32778,7 @@ static const struct ndr_interface_call s
+@@ -32777,7 +32777,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrinterDriver),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrinterDriver,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrinterDriver,
@@ -5528,7 +5528,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32787,7 +32787,7 @@ static const struct ndr_interface_call s
+@@ -32786,7 +32786,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPrintProcessor),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPrintProcessor,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPrintProcessor,
@@ -5537,7 +5537,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32796,7 +32796,7 @@ static const struct ndr_interface_call s
+@@ -32795,7 +32795,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumPrintProcessors),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumPrintProcessors,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumPrintProcessors,
@@ -5546,7 +5546,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32805,7 +32805,7 @@ static const struct ndr_interface_call s
+@@ -32804,7 +32804,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetPrintProcessorDirectory),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetPrintProcessorDirectory,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetPrintProcessorDirectory,
@@ -5555,7 +5555,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32814,7 +32814,7 @@ static const struct ndr_interface_call s
+@@ -32813,7 +32813,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_StartDocPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_StartDocPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_StartDocPrinter,
@@ -5564,7 +5564,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32823,7 +32823,7 @@ static const struct ndr_interface_call s
+@@ -32822,7 +32822,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_StartPagePrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_StartPagePrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_StartPagePrinter,
@@ -5573,7 +5573,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32832,7 +32832,7 @@ static const struct ndr_interface_call s
+@@ -32831,7 +32831,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_WritePrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_WritePrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_WritePrinter,
@@ -5582,7 +5582,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32841,7 +32841,7 @@ static const struct ndr_interface_call s
+@@ -32840,7 +32840,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EndPagePrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EndPagePrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EndPagePrinter,
@@ -5591,7 +5591,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32850,7 +32850,7 @@ static const struct ndr_interface_call s
+@@ -32849,7 +32849,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AbortPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AbortPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AbortPrinter,
@@ -5600,7 +5600,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32859,7 +32859,7 @@ static const struct ndr_interface_call s
+@@ -32858,7 +32858,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_ReadPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_ReadPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_ReadPrinter,
@@ -5609,7 +5609,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32868,7 +32868,7 @@ static const struct ndr_interface_call s
+@@ -32867,7 +32867,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EndDocPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EndDocPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EndDocPrinter,
@@ -5618,7 +5618,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32877,7 +32877,7 @@ static const struct ndr_interface_call s
+@@ -32876,7 +32876,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddJob),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddJob,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddJob,
@@ -5627,7 +5627,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32886,7 +32886,7 @@ static const struct ndr_interface_call s
+@@ -32885,7 +32885,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_ScheduleJob),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_ScheduleJob,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_ScheduleJob,
@@ -5636,7 +5636,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32895,7 +32895,7 @@ static const struct ndr_interface_call s
+@@ -32894,7 +32894,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetPrinterData),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetPrinterData,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetPrinterData,
@@ -5645,7 +5645,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32904,7 +32904,7 @@ static const struct ndr_interface_call s
+@@ -32903,7 +32903,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_SetPrinterData),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_SetPrinterData,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_SetPrinterData,
@@ -5654,7 +5654,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32913,7 +32913,7 @@ static const struct ndr_interface_call s
+@@ -32912,7 +32912,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_WaitForPrinterChange),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_WaitForPrinterChange,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_WaitForPrinterChange,
@@ -5663,7 +5663,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32922,7 +32922,7 @@ static const struct ndr_interface_call s
+@@ -32921,7 +32921,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_ClosePrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_ClosePrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_ClosePrinter,
@@ -5672,7 +5672,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32931,7 +32931,7 @@ static const struct ndr_interface_call s
+@@ -32930,7 +32930,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddForm),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddForm,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddForm,
@@ -5681,7 +5681,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32940,7 +32940,7 @@ static const struct ndr_interface_call s
+@@ -32939,7 +32939,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeleteForm),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeleteForm,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeleteForm,
@@ -5690,7 +5690,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32949,7 +32949,7 @@ static const struct ndr_interface_call s
+@@ -32948,7 +32948,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetForm),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetForm,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetForm,
@@ -5699,7 +5699,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32958,7 +32958,7 @@ static const struct ndr_interface_call s
+@@ -32957,7 +32957,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_SetForm),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_SetForm,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_SetForm,
@@ -5708,7 +5708,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32967,7 +32967,7 @@ static const struct ndr_interface_call s
+@@ -32966,7 +32966,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumForms),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumForms,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumForms,
@@ -5717,7 +5717,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32976,7 +32976,7 @@ static const struct ndr_interface_call s
+@@ -32975,7 +32975,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumPorts),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumPorts,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumPorts,
@@ -5726,7 +5726,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32985,7 +32985,7 @@ static const struct ndr_interface_call s
+@@ -32984,7 +32984,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumMonitors),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumMonitors,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumMonitors,
@@ -5735,7 +5735,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -32994,7 +32994,7 @@ static const struct ndr_interface_call s
+@@ -32993,7 +32993,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPort),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPort,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPort,
@@ -5744,7 +5744,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33003,7 +33003,7 @@ static const struct ndr_interface_call s
+@@ -33002,7 +33002,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_ConfigurePort),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_ConfigurePort,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_ConfigurePort,
@@ -5753,7 +5753,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33012,7 +33012,7 @@ static const struct ndr_interface_call s
+@@ -33011,7 +33011,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePort),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePort,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePort,
@@ -5762,7 +5762,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33021,7 +33021,7 @@ static const struct ndr_interface_call s
+@@ -33020,7 +33020,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_CreatePrinterIC),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_CreatePrinterIC,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_CreatePrinterIC,
@@ -5771,7 +5771,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33030,7 +33030,7 @@ static const struct ndr_interface_call s
+@@ -33029,7 +33029,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_PlayGDIScriptOnPrinterIC),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_PlayGDIScriptOnPrinterIC,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_PlayGDIScriptOnPrinterIC,
@@ -5780,7 +5780,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33039,7 +33039,7 @@ static const struct ndr_interface_call s
+@@ -33038,7 +33038,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrinterIC),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrinterIC,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrinterIC,
@@ -5789,7 +5789,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33048,7 +33048,7 @@ static const struct ndr_interface_call s
+@@ -33047,7 +33047,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPrinterConnection),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPrinterConnection,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPrinterConnection,
@@ -5798,7 +5798,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33057,7 +33057,7 @@ static const struct ndr_interface_call s
+@@ -33056,7 +33056,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrinterConnection),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrinterConnection,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrinterConnection,
@@ -5807,7 +5807,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33066,7 +33066,7 @@ static const struct ndr_interface_call s
+@@ -33065,7 +33065,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_PrinterMessageBox),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_PrinterMessageBox,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_PrinterMessageBox,
@@ -5816,7 +5816,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33075,7 +33075,7 @@ static const struct ndr_interface_call s
+@@ -33074,7 +33074,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddMonitor),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddMonitor,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddMonitor,
@@ -5825,7 +5825,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33084,7 +33084,7 @@ static const struct ndr_interface_call s
+@@ -33083,7 +33083,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeleteMonitor),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeleteMonitor,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeleteMonitor,
@@ -5834,7 +5834,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33093,7 +33093,7 @@ static const struct ndr_interface_call s
+@@ -33092,7 +33092,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrintProcessor),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrintProcessor,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrintProcessor,
@@ -5843,7 +5843,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33102,7 +33102,7 @@ static const struct ndr_interface_call s
+@@ -33101,7 +33101,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPrintProvidor),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPrintProvidor,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPrintProvidor,
@@ -5852,7 +5852,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33111,7 +33111,7 @@ static const struct ndr_interface_call s
+@@ -33110,7 +33110,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrintProvidor),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrintProvidor,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrintProvidor,
@@ -5861,7 +5861,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33120,7 +33120,7 @@ static const struct ndr_interface_call s
+@@ -33119,7 +33119,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumPrintProcDataTypes),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumPrintProcDataTypes,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumPrintProcDataTypes,
@@ -5870,7 +5870,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33129,7 +33129,7 @@ static const struct ndr_interface_call s
+@@ -33128,7 +33128,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_ResetPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_ResetPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_ResetPrinter,
@@ -5879,7 +5879,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33138,7 +33138,7 @@ static const struct ndr_interface_call s
+@@ -33137,7 +33137,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetPrinterDriver2),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetPrinterDriver2,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetPrinterDriver2,
@@ -5888,7 +5888,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33147,7 +33147,7 @@ static const struct ndr_interface_call s
+@@ -33146,7 +33146,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_FindFirstPrinterChangeNotification),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_FindFirstPrinterChangeNotification,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_FindFirstPrinterChangeNotification,
@@ -5897,7 +5897,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33156,7 +33156,7 @@ static const struct ndr_interface_call s
+@@ -33155,7 +33155,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_FindNextPrinterChangeNotification),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_FindNextPrinterChangeNotification,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_FindNextPrinterChangeNotification,
@@ -5906,7 +5906,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33165,7 +33165,7 @@ static const struct ndr_interface_call s
+@@ -33164,7 +33164,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_FindClosePrinterNotify),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_FindClosePrinterNotify,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_FindClosePrinterNotify,
@@ -5915,7 +5915,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33174,7 +33174,7 @@ static const struct ndr_interface_call s
+@@ -33173,7 +33173,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_RouterFindFirstPrinterChangeNotificationOld),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_RouterFindFirstPrinterChangeNotificationOld,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_RouterFindFirstPrinterChangeNotificationOld,
@@ -5924,7 +5924,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33183,7 +33183,7 @@ static const struct ndr_interface_call s
+@@ -33182,7 +33182,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_ReplyOpenPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_ReplyOpenPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_ReplyOpenPrinter,
@@ -5933,7 +5933,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33192,7 +33192,7 @@ static const struct ndr_interface_call s
+@@ -33191,7 +33191,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_RouterReplyPrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_RouterReplyPrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_RouterReplyPrinter,
@@ -5942,7 +5942,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33201,7 +33201,7 @@ static const struct ndr_interface_call s
+@@ -33200,7 +33200,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_ReplyClosePrinter),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_ReplyClosePrinter,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_ReplyClosePrinter,
@@ -5951,7 +5951,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33210,7 +33210,7 @@ static const struct ndr_interface_call s
+@@ -33209,7 +33209,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPortEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPortEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPortEx,
@@ -5960,7 +5960,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33219,7 +33219,7 @@ static const struct ndr_interface_call s
+@@ -33218,7 +33218,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_RouterFindFirstPrinterChangeNotification),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_RouterFindFirstPrinterChangeNotification,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_RouterFindFirstPrinterChangeNotification,
@@ -5969,7 +5969,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33228,7 +33228,7 @@ static const struct ndr_interface_call s
+@@ -33227,7 +33227,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_SpoolerInit),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_SpoolerInit,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_SpoolerInit,
@@ -5978,7 +5978,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33237,7 +33237,7 @@ static const struct ndr_interface_call s
+@@ -33236,7 +33236,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_ResetPrinterEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_ResetPrinterEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_ResetPrinterEx,
@@ -5987,7 +5987,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33246,7 +33246,7 @@ static const struct ndr_interface_call s
+@@ -33245,7 +33245,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_RemoteFindFirstPrinterChangeNotifyEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_RemoteFindFirstPrinterChangeNotifyEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_RemoteFindFirstPrinterChangeNotifyEx,
@@ -5996,7 +5996,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33255,7 +33255,7 @@ static const struct ndr_interface_call s
+@@ -33254,7 +33254,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_RouterReplyPrinterEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_RouterReplyPrinterEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_RouterReplyPrinterEx,
@@ -6005,7 +6005,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33264,7 +33264,7 @@ static const struct ndr_interface_call s
+@@ -33263,7 +33263,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_RouterRefreshPrinterChangeNotify),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_RouterRefreshPrinterChangeNotify,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_RouterRefreshPrinterChangeNotify,
@@ -6014,7 +6014,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33273,7 +33273,7 @@ static const struct ndr_interface_call s
+@@ -33272,7 +33272,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_44),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_44,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_44,
@@ -6023,7 +6023,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33282,7 +33282,7 @@ static const struct ndr_interface_call s
+@@ -33281,7 +33281,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_OpenPrinterEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_OpenPrinterEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_OpenPrinterEx,
@@ -6032,7 +6032,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33291,7 +33291,7 @@ static const struct ndr_interface_call s
+@@ -33290,7 +33290,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPrinterEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPrinterEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPrinterEx,
@@ -6041,7 +6041,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33300,7 +33300,7 @@ static const struct ndr_interface_call s
+@@ -33299,7 +33299,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_SetPort),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_SetPort,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_SetPort,
@@ -6050,7 +6050,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33309,7 +33309,7 @@ static const struct ndr_interface_call s
+@@ -33308,7 +33308,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumPrinterData),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumPrinterData,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumPrinterData,
@@ -6059,7 +6059,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33318,7 +33318,7 @@ static const struct ndr_interface_call s
+@@ -33317,7 +33317,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrinterData),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrinterData,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrinterData,
@@ -6068,7 +6068,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33327,7 +33327,7 @@ static const struct ndr_interface_call s
+@@ -33326,7 +33326,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_4a),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_4a,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_4a,
@@ -6077,7 +6077,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33336,7 +33336,7 @@ static const struct ndr_interface_call s
+@@ -33335,7 +33335,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_4b),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_4b,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_4b,
@@ -6086,7 +6086,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33345,7 +33345,7 @@ static const struct ndr_interface_call s
+@@ -33344,7 +33344,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_4c),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_4c,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_4c,
@@ -6095,7 +6095,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33354,7 +33354,7 @@ static const struct ndr_interface_call s
+@@ -33353,7 +33353,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_SetPrinterDataEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_SetPrinterDataEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_SetPrinterDataEx,
@@ -6104,7 +6104,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33363,7 +33363,7 @@ static const struct ndr_interface_call s
+@@ -33362,7 +33362,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetPrinterDataEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetPrinterDataEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetPrinterDataEx,
@@ -6113,7 +6113,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33372,7 +33372,7 @@ static const struct ndr_interface_call s
+@@ -33371,7 +33371,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumPrinterDataEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumPrinterDataEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumPrinterDataEx,
@@ -6122,7 +6122,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33381,7 +33381,7 @@ static const struct ndr_interface_call s
+@@ -33380,7 +33380,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumPrinterKey),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumPrinterKey,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumPrinterKey,
@@ -6131,7 +6131,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33390,7 +33390,7 @@ static const struct ndr_interface_call s
+@@ -33389,7 +33389,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrinterDataEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrinterDataEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrinterDataEx,
@@ -6140,7 +6140,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33399,7 +33399,7 @@ static const struct ndr_interface_call s
+@@ -33398,7 +33398,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrinterKey),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrinterKey,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrinterKey,
@@ -6149,7 +6149,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33408,7 +33408,7 @@ static const struct ndr_interface_call s
+@@ -33407,7 +33407,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_53),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_53,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_53,
@@ -6158,7 +6158,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33417,7 +33417,7 @@ static const struct ndr_interface_call s
+@@ -33416,7 +33416,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePrinterDriverEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePrinterDriverEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePrinterDriverEx,
@@ -6167,7 +6167,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33426,7 +33426,7 @@ static const struct ndr_interface_call s
+@@ -33425,7 +33425,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPerMachineConnection),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPerMachineConnection,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPerMachineConnection,
@@ -6176,7 +6176,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33435,7 +33435,7 @@ static const struct ndr_interface_call s
+@@ -33434,7 +33434,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_DeletePerMachineConnection),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_DeletePerMachineConnection,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_DeletePerMachineConnection,
@@ -6185,7 +6185,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33444,7 +33444,7 @@ static const struct ndr_interface_call s
+@@ -33443,7 +33443,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_EnumPerMachineConnections),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_EnumPerMachineConnections,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_EnumPerMachineConnections,
@@ -6194,7 +6194,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33453,7 +33453,7 @@ static const struct ndr_interface_call s
+@@ -33452,7 +33452,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_XcvData),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_XcvData,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_XcvData,
@@ -6203,7 +6203,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33462,7 +33462,7 @@ static const struct ndr_interface_call s
+@@ -33461,7 +33461,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_AddPrinterDriverEx),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_AddPrinterDriverEx,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_AddPrinterDriverEx,
@@ -6212,7 +6212,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33471,7 +33471,7 @@ static const struct ndr_interface_call s
+@@ -33470,7 +33470,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_5a),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_5a,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_5a,
@@ -6221,7 +6221,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33480,7 +33480,7 @@ static const struct ndr_interface_call s
+@@ -33479,7 +33479,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_5b),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_5b,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_5b,
@@ -6230,7 +6230,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33489,7 +33489,7 @@ static const struct ndr_interface_call s
+@@ -33488,7 +33488,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_5c),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_5c,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_5c,
@@ -6239,7 +6239,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33498,7 +33498,7 @@ static const struct ndr_interface_call s
+@@ -33497,7 +33497,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_5d),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_5d,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_5d,
@@ -6248,7 +6248,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33507,7 +33507,7 @@ static const struct ndr_interface_call s
+@@ -33506,7 +33506,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_5e),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_5e,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_5e,
@@ -6257,7 +6257,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33516,7 +33516,7 @@ static const struct ndr_interface_call s
+@@ -33515,7 +33515,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_5f),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_5f,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_5f,
@@ -6266,7 +6266,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33525,7 +33525,7 @@ static const struct ndr_interface_call s
+@@ -33524,7 +33524,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_60),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_60,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_60,
@@ -6275,7 +6275,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33534,7 +33534,7 @@ static const struct ndr_interface_call s
+@@ -33533,7 +33533,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_61),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_61,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_61,
@@ -6284,7 +6284,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33543,7 +33543,7 @@ static const struct ndr_interface_call s
+@@ -33542,7 +33542,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_62),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_62,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_62,
@@ -6293,7 +6293,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33552,7 +33552,7 @@ static const struct ndr_interface_call s
+@@ -33551,7 +33551,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_63),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_63,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_63,
@@ -6302,7 +6302,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33561,7 +33561,7 @@ static const struct ndr_interface_call s
+@@ -33560,7 +33560,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_64),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_64,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_64,
@@ -6311,7 +6311,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33570,7 +33570,7 @@ static const struct ndr_interface_call s
+@@ -33569,7 +33569,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_65),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_65,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_65,
@@ -6320,7 +6320,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33579,7 +33579,7 @@ static const struct ndr_interface_call s
+@@ -33578,7 +33578,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetCorePrinterDrivers),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetCorePrinterDrivers,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetCorePrinterDrivers,
@@ -6329,7 +6329,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33588,7 +33588,7 @@ static const struct ndr_interface_call s
+@@ -33587,7 +33587,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_67),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_67,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_67,
@@ -6338,7 +6338,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33597,7 +33597,7 @@ static const struct ndr_interface_call s
+@@ -33596,7 +33596,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_GetPrinterDriverPackagePath),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_GetPrinterDriverPackagePath,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_GetPrinterDriverPackagePath,
@@ -6347,7 +6347,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33606,7 +33606,7 @@ static const struct ndr_interface_call s
+@@ -33605,7 +33605,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_69),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_69,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_69,
@@ -6356,7 +6356,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33615,7 +33615,7 @@ static const struct ndr_interface_call s
+@@ -33614,7 +33614,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_6a),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_6a,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_6a,
@@ -6365,7 +6365,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33624,7 +33624,7 @@ static const struct ndr_interface_call s
+@@ -33623,7 +33623,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_6b),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_6b,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_6b,
@@ -6374,7 +6374,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33633,7 +33633,7 @@ static const struct ndr_interface_call s
+@@ -33632,7 +33632,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_6c),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_6c,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_6c,
@@ -6383,7 +6383,7 @@
  		{ 0, NULL },
  		{ 0, NULL },
  	},
-@@ -33642,7 +33642,7 @@ static const struct ndr_interface_call s
+@@ -33641,7 +33641,7 @@ static const struct ndr_interface_call s
  		sizeof(struct spoolss_6d),
  		(ndr_push_flags_fn_t) ndr_push_spoolss_6d,
  		(ndr_pull_flags_fn_t) ndr_pull_spoolss_6d,

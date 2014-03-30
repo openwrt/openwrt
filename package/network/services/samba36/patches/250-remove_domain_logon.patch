@@ -99,7 +99,7 @@
  	dfs_commands,
 --- a/source3/rpc_server/wkssvc/srv_wkssvc_nt.c
 +++ b/source3/rpc_server/wkssvc/srv_wkssvc_nt.c
-@@ -824,6 +824,10 @@ WERROR _wkssvc_NetrJoinDomain2(struct pi
+@@ -820,6 +820,10 @@ WERROR _wkssvc_NetrJoinDomain2(struct pi
  	WERROR werr;
  	struct security_token *token = p->session_info->security_token;
  
@@ -110,7 +110,7 @@
  	if (!r->in.domain_name) {
  		return WERR_INVALID_PARAM;
  	}
-@@ -901,6 +905,10 @@ WERROR _wkssvc_NetrUnjoinDomain2(struct
+@@ -897,6 +901,10 @@ WERROR _wkssvc_NetrUnjoinDomain2(struct 
  	WERROR werr;
  	struct security_token *token = p->session_info->security_token;
  
@@ -147,7 +147,7 @@
  	/* lookup a DC first */
  
  	if ( !get_dc_name(domain, NULL, dc_name, &dc_ss) ) {
-@@ -243,6 +250,10 @@ NTSTATUS change_trust_account_password(
+@@ -243,6 +250,10 @@ NTSTATUS change_trust_account_password( 
  	struct cli_state *cli = NULL;
  	struct rpc_pipe_client *netlogon_pipe = NULL;
  
@@ -172,7 +172,7 @@
  }
 --- a/source3/smbd/process.c
 +++ b/source3/smbd/process.c
-@@ -2431,8 +2431,10 @@ static bool housekeeping_fn(const struct
+@@ -2484,8 +2484,10 @@ static bool housekeeping_fn(const struct
  	/* check if we need to reload services */
  	check_reload(sconn, time_mono(NULL));
  
