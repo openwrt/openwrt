@@ -83,6 +83,22 @@ endef
 $(eval $(call KernelPackage,nls-cp852))
 
 
+define KernelPackage/nls-cp862
+  SUBMENU:=Native Language Support
+  TITLE:=Codepage 862 (Hebrew)
+  KCONFIG:=CONFIG_NLS_CODEPAGE_862
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp862.ko
+  AUTOLOAD:=$(call AutoLoad,25,nls_cp862)
+  $(call AddDepends/nls)
+endef
+
+define KernelPackage/nls-cp862/description
+  Kernel module for NLS Codepage 862 (Hebrew)
+endef
+
+$(eval $(call KernelPackage,nls-cp862))
+
+
 define KernelPackage/nls-cp866
   SUBMENU:=Native Language Support
   TITLE:=Codepage 866 (Cyrillic)
@@ -161,6 +177,22 @@ define KernelPackage/nls-iso8859-2/description
 endef
 
 $(eval $(call KernelPackage,nls-iso8859-2))
+
+
+define KernelPackage/nls-iso8859-8
+  SUBMENU:=Native Language Support
+  TITLE:=ISO 8859-8, CP1255 (Hebrew)
+  KCONFIG:=CONFIG_NLS_ISO8859_8
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp1255.ko
+  AUTOLOAD:=$(call AutoLoad,25,nls_cp1255)
+  $(call AddDepends/nls)
+endef
+
+define KernelPackage/nls-iso8859-8/description
+ Kernel module for Hebrew charsets (ISO-8859-8, CP1255)
+endef
+
+$(eval $(call KernelPackage,nls-iso8859-8))
 
 
 define KernelPackage/nls-iso8859-13
