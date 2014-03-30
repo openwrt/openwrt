@@ -34,7 +34,7 @@
 +	size_t len;
 +	int ret;
 +
-+	if (strcmp(name, "rootfs") != 0)
++	if (strcmp(name, "firmware") != 0)
 +		return;
 +	while (part_size < end) {
 +		long size_min = part_size - 0x400 - 12 - offset;
