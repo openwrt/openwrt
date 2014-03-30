@@ -360,6 +360,31 @@ rtl_set(struct switch_dev *dev, enum rtl_regidx s, unsigned int val)
 }
 
 static void
+rtl_fix_pvids(struct switch_dev *dev)
+{
+	unsigned int port, vlan, mask;
+	
+	for (port = 0; port < RTL8306_NUM_PORTS; port++)
+	{
+		/* skip tagged ports */
+		if (rtl_get(dev, RTL_PORT_REG(port, TAG_INSERT)) != 1)
+			continue;
+		
+		for (vlan = 0; vlan < RTL8306_NUM_VLANS; vlan++)
+		{
+			mask = rtl_get(dev, RTL_VLAN_REG(vlan, PORTMASK));
+			/* skip non-members */
+			if (!(mask & (1 << port)))
+				continue;
+			
+			rtl_set(dev, RTL_PORT_REG(port, PVID), vlan);
+			/* next port */
+			break;
+		}
+	}
+}
+
+static void
 rtl_phy_save(struct switch_dev *dev, int port, struct rtl_phyregs *regs)
 {
 	regs->nway = rtl_get(dev, RTL_PORT_REG(port, NWAY));
@@ -440,7 +465,6 @@ static void
 rtl_hw_init(struct switch_dev *dev)
 {
 	struct rtl_priv *priv = to_rtl(dev);
-	int cpu_mask = 1 << dev->cpu_port;
 	int i;
 
 	rtl_set(dev, RTL_REG_VLAN_ENABLE, 0);
@@ -466,21 +490,19 @@ rtl_hw_init(struct switch_dev *dev)
 		rtl_set(dev, RTL_VLAN_REG(i, PORTMASK), 0);
 	}
 
+#ifdef DEBUG
 	/* default to port isolation */
 	for (i = 0; i < RTL8306_NUM_PORTS; i++) {
-		unsigned long mask;
-
-		if ((1 << i) == cpu_mask)
-			mask = ((1 << RTL8306_NUM_PORTS) - 1) & ~cpu_mask; /* all bits set */
-		else
-			mask = cpu_mask | (1 << i);
-
-		rtl_set(dev, RTL_VLAN_REG(i, PORTMASK), mask);
+		if (i != dev->cpu_port)
+			rtl_set(dev, RTL_VLAN_REG(i, PORTMASK), (1 << dev->cpu_port) | (1 << i));
 		rtl_set(dev, RTL_PORT_REG(i, PVID), i);
 		rtl_set(dev, RTL_PORT_REG(i, NULL_VID_REPLACE), 1);
 		rtl_set(dev, RTL_PORT_REG(i, VID_INSERT), 1);
 		rtl_set(dev, RTL_PORT_REG(i, TAG_INSERT), 3);
 	}
+#endif
+	rtl_fix_pvids(dev);
+
 	rtl_hw_apply(dev);
 }
 
@@ -565,6 +587,7 @@ rtl_attr_get_int(struct switch_dev *dev, const struct switch_attr *attr, struct 
 	return 0;
 }
 
+#ifdef DEBUG
 static int
 rtl_attr_set_port_int(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
@@ -580,6 +603,39 @@ rtl_attr_get_port_int(struct switch_dev *dev, const struct switch_attr *attr, st
 	if (val->port_vlan >= RTL8306_NUM_PORTS)
 		return -EINVAL;
 	return rtl_attr_get_int(dev, attr, val);
+}
+#endif
+
+static int
+rtl_attr_set_port_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	unsigned int vlan;
+
+	if (val->port_vlan >= RTL8306_NUM_PORTS)
+		return -EINVAL;
+
+	for (vlan = 0; vlan < RTL8306_NUM_VLANS; vlan++) {
+		if (rtl_get(dev, RTL_VLAN_REG(vlan, VID)) == val->value.i) {
+			rtl_set(dev, RTL_PORT_REG(val->port_vlan, PVID), vlan);
+			break;
+		}
+	}
+
+	return 0;
+}
+
+static int
+rtl_attr_get_port_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	unsigned int vlan;
+
+	if (val->port_vlan >= RTL8306_NUM_PORTS)
+		return -EINVAL;
+
+	vlan = rtl_get(dev, RTL_PORT_REG(val->port_vlan, PVID));
+	val->value.i = rtl_get(dev, RTL_VLAN_REG(vlan, VID));
+
+	return 0;
 }
 
 static int 
@@ -635,7 +691,7 @@ rtl_get_ports(struct switch_dev *dev, struct switch_val *val)
 
 		port = &val->value.ports[val->len];
 		port->id = i;
-		if (rtl_get(dev, RTL_PORT_REG(i, TAG_INSERT)) == 2 || i == dev->cpu_port)
+		if (rtl_get(dev, RTL_PORT_REG(i, TAG_INSERT)) == 2)
 			port->flags = (1 << SWITCH_PORT_FLAG_TAGGED);
 		val->len++;
 	}
@@ -662,12 +718,14 @@ rtl_set_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct swit
 		if (i > 3)
 			rtl_phy_save(dev, val->port_vlan, &port);
 		rtl_set(dev, RTL_PORT_REG(i, NULL_VID_REPLACE), 1);
-		rtl_set(dev, RTL_PORT_REG(i, VID_INSERT), (en ? (i == dev->cpu_port ? 0 : 1) : 1));
-		rtl_set(dev, RTL_PORT_REG(i, TAG_INSERT), (en ? (i == dev->cpu_port ? 2 : 1) : 3));
+		rtl_set(dev, RTL_PORT_REG(i, VID_INSERT), 1);
+		rtl_set(dev, RTL_PORT_REG(i, TAG_INSERT), (en ? 1 : 3));
 		if (i > 3)
 			rtl_phy_restore(dev, val->port_vlan, &port);
 	}
 	rtl_set(dev, RTL_REG_VLAN_ENABLE, en);
+
+	rtl_fix_pvids(dev);
 
 	return 0;
 }
@@ -683,7 +741,6 @@ static int
 rtl_set_ports(struct switch_dev *dev, struct switch_val *val)
 {
 	unsigned int mask = 0;
-	unsigned int oldmask;
 	int i;
 
 	for(i = 0; i < val->len; i++)
@@ -693,37 +750,17 @@ rtl_set_ports(struct switch_dev *dev, struct switch_val *val)
 
 		mask |= (1 << port->id);
 
-		if (port->id == dev->cpu_port)
-			continue;
-
-		if ((i == dev->cpu_port) ||
-			(port->flags & (1 << SWITCH_PORT_FLAG_TAGGED)))
+		if (port->flags & (1 << SWITCH_PORT_FLAG_TAGGED))
 			tagged = true;
-
-		/* fix up PVIDs for added ports */
-		if (!tagged)
-			rtl_set(dev, RTL_PORT_REG(port->id, PVID), val->port_vlan);
 
 		rtl_set(dev, RTL_PORT_REG(port->id, NON_PVID_DISCARD), (tagged ? 0 : 1));
 		rtl_set(dev, RTL_PORT_REG(port->id, VID_INSERT), (tagged ? 0 : 1));
 		rtl_set(dev, RTL_PORT_REG(port->id, TAG_INSERT), (tagged ? 2 : 1));
 	}
 
-	oldmask = rtl_get(dev, RTL_VLAN_REG(val->port_vlan, PORTMASK));
 	rtl_set(dev, RTL_VLAN_REG(val->port_vlan, PORTMASK), mask);
 
-	/* fix up PVIDs for removed ports, default to last vlan */
-	oldmask &= ~mask;
-	for (i = 0; i < RTL8306_NUM_PORTS; i++) {
-		if (!(oldmask & (1 << i)))
-			continue;
-
-		if (i == dev->cpu_port)
-			continue;
-
-		if (rtl_get(dev, RTL_PORT_REG(i, PVID)) == val->port_vlan)
-			rtl_set(dev, RTL_PORT_REG(i, PVID), dev->vlans - 1);
-	}
+	rtl_fix_pvids(dev);
 
 	return 0;
 }
@@ -794,10 +831,12 @@ static struct switch_attr rtl_globals[] = {
 };
 static struct switch_attr rtl_port[] = {
 	{
-		RTL_PORT_REGATTR(PVID),
+		.type = SWITCH_TYPE_INT,
+		.set = rtl_attr_set_port_pvid,
+		.get = rtl_attr_get_port_pvid,
 		.name = "pvid",
 		.description = "Port VLAN ID",
-		.max = RTL8306_NUM_VLANS - 1,
+		.max = 4095,
 	},
 #ifdef DEBUG
 	{
