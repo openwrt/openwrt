@@ -1,0 +1,13 @@
+--- a/arch/mips/bcm47xx/leds.c
++++ b/arch/mips/bcm47xx/leds.c
+@@ -216,8 +216,8 @@ bcm47xx_leds_linksys_e1000v1[] __initcon
+ 
+ static const struct gpio_led
+ bcm47xx_leds_linksys_e1000v21[] __initconst = {
+-	BCM47XX_GPIO_LED(5, "unk", "wlan", 0, LEDS_GPIO_DEFSTATE_OFF),
+-	BCM47XX_GPIO_LED(6, "unk", "power", 1, LEDS_GPIO_DEFSTATE_ON),
++	BCM47XX_GPIO_LED(5, "blue", "wlan", 0, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(6, "blue", "power", 1, LEDS_GPIO_DEFSTATE_ON),
+ 	BCM47XX_GPIO_LED(7, "amber", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
+ 	BCM47XX_GPIO_LED(8, "blue", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
+ };
