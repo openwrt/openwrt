@@ -109,6 +109,12 @@ P2601HNFX)
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
 	;;
+	
+P2812HNUFX)
+	ucidef_set_interface_lan 'eth0.1'
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 4 5 6t"
+	;;
 
 TDW8970)
 	lan_mac=$(mtd_get_mac_binary boardconfig 61696)
