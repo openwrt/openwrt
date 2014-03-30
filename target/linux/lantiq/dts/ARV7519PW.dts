@@ -1,0 +1,213 @@
+/dts-v1/;
+
+/include/ "danube.dtsi"
+
+/ {
+	model = "ARV7519PW - Astoria Networks";
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
+
+	memory@0 {
+		reg = <0x0 0x4000000>;
+	};
+
+	sram@1F000000 {
+		vmmc@107000 {
+			status = "okay";
+		};
+	};
+
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x2000000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x00000 0x40000>;
+					read-only;
+				};
+
+				partition@40000 {
+					label = "uboot_env";
+					reg = <0x40000 0x20000>;
+				};
+
+				partition@60000 {
+					label = "firmware";
+					reg = <0x60000 0xf80000>;
+				};
+
+				partition@fe0000 {
+					label = "board_config";
+					reg = <0xfe0000 0x20000>;
+					read-only;
+				};
+			};
+
+			mac_addr {
+				compatible = "lantiq,eth-mac";
+				reg = <0 0xfe0016 0x6>;
+				mac-increment = <2>;
+			};
+		};
+
+		gpio: pinmux@E100B10 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			state_default: pinmux {
+				ebu {
+					lantiq,groups = "ebu cs1";
+					lantiq,function = "ebu";
+				};
+				pci_in {
+					lantiq,groups = "req1";
+					lantiq,function = "pci";
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+					lantiq,output = <0>;
+				};
+				pci_out {
+					lantiq,groups = "gnt1";
+					lantiq,function = "pci";
+					lantiq,pull = <0>;
+					lantiq,output = <1>;
+				};
+				pci_rst {
+					lantiq,pins = "io21";
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
+				switch_rst {
+					lantiq,pins = "io19";
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
+			};
+		};
+
+		etop@E180000 {
+			phy-mode = "mii";
+		};
+
+		/* warning: passive port
+		only works with active devices */
+		ifxhcd@E101000 {
+			status = "okay";
+		};
+
+		pci@E105400 {
+			status = "okay";
+			lantiq,external-clock;
+			gpio-reset = <&gpio 21 0>;
+			req-mask = <0xf>;
+		};    
+	};
+
+	ralink_eep {
+		compatible = "ralink,eeprom";
+		ralink,eeprom = "RT2860.eeprom";
+        };
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 11 1>;
+			linux,code = <0xf7>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio 28 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		power {
+			label = "power";
+			gpios = <&gpio 2 1>;
+			default-state = "off";
+		};
+		power2 {
+			label = "power2";
+			gpios = <&gpio 14 1>;
+		};
+		online {
+			label = "online";
+			gpios = <&gpio 3 1>;
+		};
+		online2 {
+			label = "online2";
+			gpios = <&gpio 30 1>;
+		};
+		wifi {
+			label = "wifi";
+			gpios = <&gpio 12 1>;
+		};
+		wifi2 {
+			label = "wifi2";
+			gpios = <&gpio 10 1>;
+		};
+		wifi3 {
+			label = "wifi3";
+			gpios = <&gpio 6 1>;
+		};
+		voice {
+			label = "voice";
+			gpios = <&gpio 31 1>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio 15 1>;
+		};
+		wps2 {
+			label = "wps2";
+			gpios = <&gpio 7 1>;
+		};
+		wps3 {
+			label = "wps3";
+			gpios = <&gpio 23 1>;
+		};
+		dsl {
+			label = "dsl";
+			gpios = <&gpio 4 1>;
+		};
+		lan {
+			label = "lan";
+			gpios = <&gpio 1 1>;
+		};
+		tv {
+			label = "tv";
+			gpios = <&gpio 20 1>;
+		};
+		upgrade {
+			label = "upgrade";
+			gpios = <&gpio 29 1>;
+		};
+	};
+
+	/* is there another way to "reserve" the GPIO? */
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		switch {
+			gpio-export,name = "switch";
+			gpio-export,output = <1>;
+			gpios = <&gpio 19 0>;
+		};
+	};
+};
