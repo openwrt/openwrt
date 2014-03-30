@@ -310,6 +310,10 @@ endif
 ifeq ($(CONFIG_TARGET_lantiq_xrx200),y)
 
 # VR9
+Image/BuildKernel/Profile/P2812HNUFX=$(call Image/BuildKernel/Template,P2812HNUFX)
+Image/InstallKernel/Template/P2812HNUFX=$(call Image/InstallKernel/Template,P2812HNUFX)
+Image/Build/Profile/P2812HNUFX=$(call Image/Build/$(1),$(1),P2812HNUFX)
+
 Image/BuildKernel/Profile/EASY80920NAND=$(call Image/BuildKernel/Template,EASY80920NAND)
 Image/Build/Profile/EASY80920NAND=$(call Image/Build/$(1),$(1),EASY80920NAND)
 
