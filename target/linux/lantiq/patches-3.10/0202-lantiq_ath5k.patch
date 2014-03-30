@@ -1,0 +1,55 @@
+Index: linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c
+===================================================================
+--- linux-3.10.34.orig/arch/mips/lantiq/xway/ath_eep.c	2014-03-29 20:17:33.826386600 +0000
++++ linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c	2014-03-29 20:18:19.610387315 +0000
+@@ -36,6 +36,7 @@
+ 	return 0;
+ }
+ 
++static int ath9k_eep_load;
+ int __init of_ath9k_eeprom_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node, *mtd_np;
+@@ -112,6 +113,12 @@
+ 	if (!of_property_read_u32(np, "ath,pci-slot", &pci_slot)) {
+ 		ltq_pci_ath_fixup(pci_slot, ath9k_pdata.eeprom_data);
+ 		dev_info(&pdev->dev, "pci slot: %u\n", pci_slot);
++		if (ath9k_eep_load) {
++			struct pci_dev *d = NULL;
++			while ((d = pci_get_device(PCI_VENDOR_ID_ATHEROS,
++					PCI_ANY_ID, d)) != NULL)
++				pci_fixup_device(pci_fixup_early, d);
++		}
+ 	}
+ 
+ 	dev_info(&pdev->dev, "loaded ath9k eeprom\n");
+@@ -132,20 +139,19 @@
+ 	},
+ };
+ 
+-static int ath9k_eep_loaded;
+ static int __init of_ath9k_eeprom_init(void)
+ {
+ 	int ret = platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
+ 
+-	if (!ret)
+-		ath9k_eep_loaded = 1;
++	if (ret)
++		ath9k_eep_load = 1;
+ 
+ 	return ret;
+ }
+ 
+ static int __init of_ath9k_eeprom_init_late(void)
+ {
+-	if (ath9k_eep_loaded)
++	if (!ath9k_eep_load)
+ 		return 0;
+ 	return platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
+ }
+@@ -247,4 +253,4 @@
+ {
+ 	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
+ }
+-device_initcall(of_ath5k_eeprom_init);
++subsys_initcall(of_ath5k_eeprom_init);
