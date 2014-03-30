@@ -1,0 +1,50 @@
+/dts-v1/;
+
+
+/include/ "ARV7519RW.dtsi"
+
+/ {
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x2000000>, <1 0x2000000 0x2000000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x000000000000 0x00060000>;
+					read-only;
+				};
+
+				partition@60000 {
+					label = "uboot_cfg";
+					reg = <0x000000060000 0x00020000>;
+					read-only;
+				};
+				
+				partition@80000 {
+					label = "firmware";
+					reg = <0x000000080000 0x01f00000>;
+				};
+				
+				partition@1f80000 {
+					label = "boardconfig";
+					reg = <0x000001f80000 0x00080000>;
+					read-only;
+
+				};	
+							
+
+				
+			};
+		};
+	};
+	gphy-xrx200 {
+		compatible = "lantiq,phy-xrx200";
+		firmware = "lantiq/vr9_phy11g_a1x.bin";  /*VR9 1.1*/
+		phys = [ 00 01 ];
+	};
+};
