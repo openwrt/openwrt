@@ -23,6 +23,13 @@ case "$board" in
 VG3503J)
 	ucidef_set_led_netdev "vdsl" "vdsl" "bt:green:dsl" "ptm0"
 	;;
+BTHOMEHUBV2B)
+	ucidef_set_led_default "power" "power" "soc:blue:power" "1"
+#	ucidef_set_led_wlan "wifi" "wifi" "soc:blue:wireless" "phy0radio"
+	ucidef_set_led_wlan "wifi" "wifi" "soc:blue:wireless" "phy0tpt"
+	ucidef_set_led_netdev "internet" "internet" "soc:blue:broadband" "nas0"
+	ucidef_set_led_usbdev "usb" "usb" "soc:blue:phone" "1-1"
+	;;
 *)
 	;;
 esac
