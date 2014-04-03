@@ -54,10 +54,10 @@ define TPLinkImageLzma
 endef
 
 define MkImageEVA
-	lzma2eva 0x80002000 0x80002000 $(KDIR)/vmlinux-$(1).lzma $(KDIR)/$(1).eva.prealign
-	dd if=$(KDIR)/$(1).eva.prealign of=$(KDIR)/$(1).eva.align.64k bs=64k conv=sync
-	dd if=$(KDIR)/$(1).eva.prealign of=$(KDIR)/$(1).eva.align.128k bs=128k conv=sync
-	cat ./eva.dummy.squashfs >> $(KDIR)/$(1).eva.align.64k
+	lzma2eva 0x80002000 0x80002000 $(KDIR)/vmlinux$(2)-$(1).lzma $(KDIR)/$(1)$(2).eva.prealign
+	dd if=$(KDIR)/$(1)$(2).eva.prealign of=$(KDIR)/$(1)$(2).eva.align.64k bs=64k conv=sync
+	dd if=$(KDIR)/$(1)$(2).eva.prealign of=$(KDIR)/$(1)$(2).eva.align.128k bs=128k conv=sync
+	cat ./eva.dummy.squashfs >> $(KDIR)/$(1)$(2).eva.align.64k
 endef
 
 define CompressGzip
@@ -91,6 +91,21 @@ endef
 define Image/BuildEVA/squashfs
 	cat $(KDIR)/$(2).eva.align.64k $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva)
+endef
+
+define Image/BuildEVA/ubifs
+
+ifneq ($($(PROFILE)_UBIFS_OPTS),)
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubifs
+endif
+endef
+
+define Image/BuildEVA/ubi
+
+ifneq ($($(PROFILE)_UBI_OPTS),)
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubi
+	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs-overlay.ubi
+endif
 endef
 
 define Image/BuildLoader/squashfs
@@ -197,6 +212,12 @@ define Image/BuildKernelEVA/Template
 	$(call MkImageEVA,$(1))
 	$(CP) $(KDIR)/$(1).eva.align.64k $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva.align.64k
 	$(CP) $(KDIR)/$(1).eva.align.128k $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva.align.128k
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call PatchKernelLzma,$(1),-initramfs)
+	$(call MkImageEVA,$(1),-initramfs)
+	$(CP) $(KDIR)/$(1)-initramfs.eva.align.64k $(BIN_DIR)/$(IMG_PREFIX)-$(1)-initramfs.eva.align.64k
+	$(CP) $(KDIR)/$(1)-initramfs.eva.align.128k $(BIN_DIR)/$(IMG_PREFIX)-$(1)-initramfs.eva.align.128k
+endif
 endef
 
 define Image/BuildKernelGzip/Template

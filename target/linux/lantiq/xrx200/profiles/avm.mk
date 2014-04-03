@@ -7,4 +7,7 @@ define Profile/FRITZ3370
 	ltq-vdsl-app ppp-mod-pppoa
 endef
 
+FRITZ3370_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+FRITZ3370_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+
 $(eval $(call Profile,FRITZ3370))
