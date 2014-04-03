@@ -1,0 +1,275 @@
+/dts-v1/;
+
+/include/ "danube.dtsi"
+
+/ {
+	model = "BTHOMEHUBV2B - BT Home Hub 2B";  /* SoC: Lantiq Danube-S PSB 50712 @ 333MHz V1.3/1.5 */
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit rootfstype=squashfs,jffs2";
+	};
+
+	memory@0 {				  /* RAM: Samsung K4H511638F-LC 64MB */
+		reg = <0x0 0x4000000>;
+	};
+
+	sram@1F000000 {
+		vmmc@107000 {
+			status = "okay";
+			gpios = <&gpio 31 0>;
+		};
+	};
+
+	fpi@10000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		localbus@0 {
+			#address-cells = <2>;
+			#size-cells = <1>;
+			ranges = <0 0 0x0 0x3ffffff /* addrsel0 */
+				1 0 0x4000000 0x4000010>; /* addsel1 */
+			compatible = "lantiq,localbus", "simple-bus";
+
+			nor-boot@0 {				/* NOR Flash: Spansion S29AL004D 512KB */
+				compatible = "lantiq,nor";	/* "AMD AM29LV400BB" compatible on 3.3.8 */
+				lantiq,cs = <0>;
+				bank-width = <2>;
+				reg = <0 0x0 0x80000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x00000 0x40000>; /* 256KB */
+				};
+
+				partition@40000 {
+					label = "uboot_env";
+					reg = <0x40000 0x10000>; /* 64KB */
+				};
+
+				partition@50000 {
+					label = "rg_conf_1";
+					reg = <0x50000 0x10000>;
+				};
+
+				partition@60000 {
+					label = "rg_conf_2";
+					reg = <0x60000 0x10000>;
+				};
+
+				partition@70000 {
+					label = "rg_conf_factory";
+					reg = <0x70000 0x10000>;
+				};
+			};
+
+			nand-parts@0 {		  /* NAND Flash: Samsung K9F5608U0D-JIB0 32MB */
+				compatible = "gen_nand", "lantiq,nand-xway";
+				lantiq,cs = <1>;
+				bank-width = <2>;
+				reg = <1 0x0 0x2000000 >;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				req-mask = <0x1>;  /* PCI request lines to mask during NAND access */
+
+				ath9k_cal: partition@0 {
+					label = "art";	   /* Atheros 9160 wifi b/g/n radio EEPROM */
+					reg = <0x00000 0x4000>;
+					read-only;
+				};
+
+				partition@4000 {
+					label = "firmware";
+					reg = <0x4000 0x1FFC000>;
+				};
+
+			};
+
+
+			ath9k_eep {
+				compatible = "ath9k,eeprom";
+				ath,eep-flash = <&ath9k_cal 0x0000>;
+				ath,mac-increment = <1>;
+				ath,pci-slot = <14>;
+				ath,eep-endian;
+			};
+		};
+
+		gpio: pinmux@E100B10 {
+			compatible = "lantiq,pinctrl-xway";
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			#gpio-cells = <2>;
+			gpio-controller;
+			reg = <0xE100B10 0xA0>;
+
+			state_default: pinmux {
+				stp {
+					lantiq,groups = "stp";
+					lantiq,function = "stp";
+					lantiq,output = <1>;
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+				};
+				nand_out {
+					lantiq,groups = "nand cle", "nand ale";
+					lantiq,function = "ebu";
+					lantiq,output = <1>;
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+				};
+				nand_cs1 {
+					lantiq,groups = "nand cs1";
+					lantiq,function = "ebu";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+				};
+				exin {
+					lantiq,groups = "exin1";
+					lantiq,function = "exin";
+				};
+				pci_in {
+					lantiq,groups = "req1";
+					lantiq,function = "pci";
+					lantiq,output = <0>;
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+				};
+				pci_out {
+					lantiq,groups = "gnt1";
+					lantiq,function = "pci";
+					lantiq,output = <1>;
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+				};
+
+				pci_rst {
+					lantiq,pins = "io21";
+					lantiq,output = <1>;
+					lantiq,open-drain = <0>;
+				};
+
+				btn_in {
+					lantiq,pins = "io2", "io15", "io22";
+					lantiq,output = <0>;
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+				};
+			};
+		};
+
+		etop@E180000 {
+			compatible = "lantiq,etop-xway";
+			reg = <0xE180000 0x40000>;
+			interrupt-parent = <&icu0>;
+			interrupts = <73 78>;
+			phy-mode = "rmii";
+			mac-address = [ 00 11 22 33 44 55 ];
+		};
+
+		ifxhcd@E101000 {
+			status = "okay";
+		};
+
+		stp0: stp@E100BB0 {
+			status = "okay";
+			#gpio-cells = <2>;
+			compatible = "lantiq,gpio-stp-xway";
+			gpio-controller;
+			reg = <0xE100BB0 0x40>;
+
+			lantiq,shadow = <0xfff>;
+			lantiq,groups = <0x3>;
+		};
+
+		pci@E105400 {
+			status = "okay";
+			lantiq,bus-clock = <33333333>;
+			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
+			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
+			gpio-reset = <&gpio 21 0>;
+			req-mask = <0x1>;		 /* GNT1 */
+		};
+
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 2 1>;
+			linux,code = <0x198>;
+		};
+		findhandset {
+			label = "findhandset";
+			gpios = <&gpio 15 1>;
+			linux,code = <0x101>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio 22 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		upgrading-orange {
+			label = "soc:orange:upgrading";
+			gpios = <&stp0 5 0>;
+		};
+
+		phone-orange {
+			label = "soc:orange:phone";
+			gpios = <&stp0 6 0>;
+		};
+		phone-blue {
+			label = "soc:blue:phone";
+			gpios = <&stp0 7 0>;
+		};
+
+		wireless-orange {
+			label = "soc:orange:wireless";
+			gpios = <&stp0 8 0>;
+		};
+		wireless-blue {
+			label = "soc:blue:wireless";
+			gpios = <&stp0 9 0>;
+		};
+
+		broadband-red {
+			label = "soc:red:broadband";
+			gpios = <&stp0 10 0>;
+		};
+		broadband-orange {
+			label = "soc:orange:broadband";
+			gpios = <&stp0 11 0>;
+		};
+		broadband-blue {
+			label = "soc:blue:broadband";
+			gpios = <&stp0 12 0>;
+		};
+
+		power-red {
+			label = "soc:red:power";
+			gpios = <&stp0 13 0>;
+		};
+		power-orange {
+			label = "soc:orange:power";
+			gpios = <&stp0 14 0>;
+		};
+		power-blue {
+			label = "soc:blue:power";
+			gpios = <&stp0 15 0>;
+		};
+	};
+
+};
+

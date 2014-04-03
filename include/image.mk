@@ -71,9 +71,9 @@ define toupper
 $(shell echo $(1) | tr '[:lower:]' '[:upper:]')
 endef
 
-# pad to 4k, 8k, 64k, 128k 256k and add jffs2 end-of-filesystem mark
+# pad to 4k, 8k, 16k, 64k, 128k, 256k and add jffs2 end-of-filesystem mark
 define prepare_generic_squashfs
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(1) 4 8 64 128 256
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(1) 4 8 16 64 128 256
 endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)

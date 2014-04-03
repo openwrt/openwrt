@@ -6,12 +6,13 @@
 #
 
 # boards missing since devicetree update
-#EASY50712 ARV3527P BTHOMEHUBV2B BTHOMEHUBV2BOPENRG
+#EASY50712 ARV3527P
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 JFFS2_BLOCKSIZE = 64k 128k 256k
+NAND_BLOCKSIZE = 512:16k
 
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 
@@ -130,6 +131,13 @@ endef
 
 define Image/Build/jffs2-256k
 	dd if=$(KDIR)/uImage-$(2) of=$(KDIR)/uImage-$(2)-$(1) bs=256k conv=sync
+	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
+endef
+
+define Image/Build/jffs2-nand-512-16k
+	dd if=$(KDIR)/uImage-$(2) of=$(KDIR)/uImage-$(2)-$(1) bs=16k conv=sync
+	$(CP) $(KDIR)/uImage-$(2)-$(1) $(BIN_DIR)/uImage-$(2)-$(1)
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/root-$(2)-$(1)
 	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 endef
 
@@ -254,6 +262,9 @@ endif
 ifeq ($(CONFIG_TARGET_lantiq_xway),y)
 
 # Danube
+Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
+Image/Build/Profile/BTHOMEHUBV2B=$(call Image/Build/$(1),$(1),BTHOMEHUBV2B)
+
 Image/BuildKernel/Profile/EASY50712=$(call Image/BuildKernel/Template,EASY50712)
 Image/Build/Profile/EASY50712=$(call Image/Build/$(1),$(1),EASY50712)
 
