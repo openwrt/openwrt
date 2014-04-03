@@ -1,8 +1,8 @@
 Index: linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c
 ===================================================================
---- linux-3.10.34.orig/arch/mips/lantiq/xway/ath_eep.c	2014-03-29 20:17:33.826386600 +0000
-+++ linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c	2014-03-29 20:18:19.610387315 +0000
-@@ -36,6 +36,7 @@
+--- linux-3.10.34.orig/arch/mips/lantiq/xway/ath_eep.c	2014-04-03 13:25:03.128464891 +0100
++++ linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c	2014-04-03 13:35:30.432482868 +0100
+@@ -36,10 +36,11 @@
  	return 0;
  }
  
@@ -10,7 +10,12 @@ Index: linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c
  int __init of_ath9k_eeprom_probe(struct platform_device *pdev)
  {
  	struct device_node *np = pdev->dev.of_node, *mtd_np;
-@@ -112,6 +113,12 @@
+-	int mac_offset;
++	int mac_offset, led_pin;
+ 	u32 mac_inc = 0, pci_slot = 0;
+ 	int i;
+ 	struct mtd_info *the_mtd;
+@@ -112,6 +113,18 @@
  	if (!of_property_read_u32(np, "ath,pci-slot", &pci_slot)) {
  		ltq_pci_ath_fixup(pci_slot, ath9k_pdata.eeprom_data);
  		dev_info(&pdev->dev, "pci slot: %u\n", pci_slot);
@@ -20,10 +25,16 @@ Index: linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c
 +					PCI_ANY_ID, d)) != NULL)
 +				pci_fixup_device(pci_fixup_early, d);
 +		}
++	}
++
++	if (!of_property_read_u32(np, "ath,led-pin", &led_pin)) {
++		ath9k_pdata.led_pin = led_pin;
++
++		dev_info(&pdev->dev, "using led pin %d.\n", led_pin);
  	}
  
  	dev_info(&pdev->dev, "loaded ath9k eeprom\n");
-@@ -132,20 +139,19 @@
+@@ -132,20 +145,19 @@
  	},
  };
  
@@ -47,7 +58,7 @@ Index: linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c
  		return 0;
  	return platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
  }
-@@ -247,4 +253,4 @@
+@@ -247,4 +259,4 @@
  {
  	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
  }
