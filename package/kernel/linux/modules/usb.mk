@@ -253,11 +253,13 @@ define KernelPackage/usb-eth-gadget
 ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/gadget/u_ether.ko),)
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/u_ether.ko \
-	$(LINUX_DIR)/drivers/usb/gadget/u_rndis.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/usb_f_ecm.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/usb_f_ecm_subset.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/usb_f_rndis.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/g_ether.ko
+  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/gadget/u_rndis.ko),)
+    FILES+=$(LINUX_DIR)/drivers/usb/gadget/u_rndis.ko
+  endif
   AUTOLOAD:=$(call AutoLoad,52,usb_f_ecm g_ether)
 else
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/g_ether.ko
@@ -405,9 +407,15 @@ define KernelPackage/usb-dwc2
 	CONFIG_USB_DWC2_DEBUG=n \
 	CONFIG_USB_DWC2_VERBOSE=n \
 	CONFIG_USB_DWC2_TRACK_MISSED_SOFS=n
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.14.0)),1)
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/dwc2/dwc2.ko \
+	$(LINUX_DIR)/drivers/usb/dwc2/dwc2_platform.ko
+else
   FILES:= \
 	$(LINUX_DIR)/drivers/staging/dwc2/dwc2.ko \
 	$(LINUX_DIR)/drivers/staging/dwc2/dwc2_platform.ko
+endif
   AUTOLOAD:=$(call AutoLoad,54,dwc2 dwc2_platform,1)
   $(call AddDepends/usb)
 endef
