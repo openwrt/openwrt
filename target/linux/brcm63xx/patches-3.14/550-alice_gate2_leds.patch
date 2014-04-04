@@ -1,0 +1,102 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -2213,6 +2213,99 @@ static struct board_info __initdata boar
+ 
+ 	.has_ohci0 = 1,
+ 	.has_ehci0 = 1,
++
++	.leds = {
++		{
++			.name		= "AGPF-S0:red:power",
++			.gpio		= 5,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:green:power",
++			.gpio		= 4,
++			.active_low	= 1,
++			.default_trigger = "default-on",
++		},
++		{
++			.name		= "AGPF-S0:red:service",
++			.gpio		= 7,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:green:service",
++			.gpio		= 6,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:green:adsl",
++			.gpio		= 9,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:red:adsl",
++			.gpio		= 10,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:red:wifi",
++			.gpio		= 23,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:green:wifi",
++			.gpio		= 22,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:green:internet",
++			.gpio		= 25,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:red:internet",
++			.gpio		= 24,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:red:usr1",
++			.gpio		= 27,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:green:usr1",
++			.gpio		= 26,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:red:usr2",
++			.gpio		= 30,
++			.active_low	= 1,
++		},
++		{
++			.name		= "AGPF-S0:green:usr2",
++			.gpio		= 29,
++			.active_low	= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc           = "reset",
++			.gpio           = 37,
++			.active_low     = 1,
++			.type           = EV_KEY,
++			.code           = KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 34,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
+ };
+ 
+ static struct board_info __initdata board_DWVS0 = {

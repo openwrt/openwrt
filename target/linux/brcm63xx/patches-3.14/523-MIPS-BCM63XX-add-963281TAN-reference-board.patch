@@ -1,0 +1,96 @@
+From f0649f7b7c672cf452a1796a1422bf615e1973f8 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 29 May 2012 11:01:12 +0200
+Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
+
+---
+ arch/mips/bcm63xx/boards/board_bcm963xx.c |   71 +++++++++++++++++++++++++++++
+ 1 files changed, 71 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -171,6 +171,76 @@ static struct board_info __initdata boar
+ 		},
+ 	},
+ };
++
++static struct board_info __initdata board_963281TAN = {
++	.name				= "963281TAN",
++	.expected_cpu_id		= 0x6328,
++
++	.has_uart0			= 1,
++	.has_pci			= 1,
++
++	.has_enetsw			= 1,
++
++	.enetsw = {
++		.used_ports = {
++			[0] = {
++				.used	= 1,
++				.phy_id = 1,
++				.name	= "Port 1",
++			},
++			[1] = {
++				.used	= 1,
++				.phy_id	= 2,
++				.name	= "Port 2",
++			},
++			[2] = {
++				.used	= 1,
++				.phy_id	= 3,
++				.name	= "Port 3",
++			},
++			[3] = {
++				.used	= 1,
++				.phy_id	= 4,
++				.name	= "Port 4",
++			},
++		},
++	},
++
++	.leds = {
++		{
++			.name		= "963281TAN::internet",
++			.gpio		= 1,
++			.active_low	= 1,
++		},
++		{
++			.name		= "963281TAN::power",
++			.gpio		= 4,
++			.active_low	= 1,
++			.default_trigger = "default-on",
++		},
++		{
++			.name		= "963281TAN::internet-fail",
++			.gpio		= 7,
++			.active_low	= 1,
++		},
++		{
++			.name		= "963281TAN::power-fail",
++			.gpio		= 8,
++			.active_low	= 1,
++		},
++		{
++			.name		= "963281TAN::wps",
++			.gpio		= 9,
++			.active_low	= 1,
++		},
++		{
++			.name		= "963281TAN::dsl",
++			.gpio		= 11,
++			.active_low	= 1,
++		},
++
++	},
++};
+ #endif
+ 
+ /*
+@@ -2423,6 +2493,7 @@ static const struct board_info __initcon
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6328
+ 	&board_96328avng,
++	&board_963281TAN,
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6338
+ 	&board_96338gw,

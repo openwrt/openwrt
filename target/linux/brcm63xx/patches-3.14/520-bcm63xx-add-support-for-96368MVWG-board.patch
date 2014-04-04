@@ -1,0 +1,135 @@
+From eeacc2529942051504bc957726aa178671344421 Mon Sep 17 00:00:00 2001
+From: Maxime Bizon <mbizon@freebox.fr>
+Date: Wed, 20 Jan 2010 16:21:30 +0100
+Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
+
+---
+ arch/mips/bcm63xx/boards/board_bcm963xx.c          |   95 ++++++++++++++++++++
+ .../mips/include/asm/mach-bcm63xx/board_bcm963xx.h |    2 +
+ 2 files changed, 97 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -2238,6 +2238,85 @@ static struct board_info __initdata boar
+ #endif
+ 
+ /*
++ * known 6368 boards
++ */
++#ifdef CONFIG_BCM63XX_CPU_6368
++static struct board_info __initdata board_96368mvwg = {
++	.name				= "96368MVWG",
++	.expected_cpu_id		= 0x6368,
++
++	.has_uart0			= 1,
++	.has_pci			= 1,
++
++	.has_usbd			= 1,
++
++	.usbd = {
++		.use_fullspeed		= 0,
++		.port_no		= 0,
++	},
++
++	.has_enetsw			= 1,
++
++	.enetsw = {
++		.used_ports = {
++			[1] = {
++				.used	= 1,
++				.phy_id	= 2,
++				.name	= "port1",
++			},
++
++			[2] = {
++				.used	= 1,
++				.phy_id	= 3,
++				.name	= "port2",
++			},
++
++			[4] = {
++				.used	= 1,
++				.phy_id	= 0x12,
++				.name	= "port0",
++			},
++
++			[5] = {
++				.used	= 1,
++				.phy_id	= 0x11,
++				.name	= "port3",
++			},
++		},
++	},
++
++	.leds = {
++		{
++			.name		= "96368MVWG:green:adsl",
++			.gpio		= 2,
++			.active_low	= 1,
++		},
++		{
++			.name		= "96368MVWG:green:ppp",
++			.gpio		= 5,
++		},
++		{
++			.name		= "96368MVWG:green:power",
++			.gpio		= 22,
++			.default_trigger = "default-on",
++		},
++		{
++			.name		= "96368MVWG:green:wps",
++			.gpio		= 23,
++			.active_low	= 1,
++		},
++		{
++			.name		= "96368MVWG:red:ppp-fail",
++			.gpio		= 31,
++		},
++	},
++
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
++};
++#endif
++
++/*
+  * all boards
+  */
+ static const struct board_info __initconst *bcm963xx_boards[] = {
+@@ -2292,6 +2371,10 @@ static const struct board_info __initcon
+ 	&board_HW553,
+ 	&board_spw303v,
+ #endif
++
++#ifdef CONFIG_BCM63XX_CPU_6368
++	&board_96368mvwg,
++#endif
+ };
+ 
+ /*
+@@ -2473,12 +2556,25 @@ void __init board_prom_init(void)
+ 		bcm63xx_pci_enabled = 1;
+ 		if (BCMCPU_IS_6348())
+ 			val |= GPIO_MODE_6348_G2_PCI;
++
++		if (BCMCPU_IS_6368())
++			val |= GPIO_MODE_6368_PCI_REQ1 |
++				GPIO_MODE_6368_PCI_GNT1 |
++				GPIO_MODE_6368_PCI_INTB |
++				GPIO_MODE_6368_PCI_REQ0 |
++				GPIO_MODE_6368_PCI_GNT0;
+ 	}
+ #endif
+ 
+ 	if (board.has_pccard) {
+ 		if (BCMCPU_IS_6348())
+ 			val |= GPIO_MODE_6348_G1_MII_PCCARD;
++
++		if (BCMCPU_IS_6368())
++			val |= GPIO_MODE_6368_PCMCIA_CD1 |
++				GPIO_MODE_6368_PCMCIA_CD2 |
++				GPIO_MODE_6368_PCMCIA_VS1 |
++				GPIO_MODE_6368_PCMCIA_VS2;
+ 	}
+ 
+ 	if (board.has_enet0 && !board.enet0.use_internal_phy) {

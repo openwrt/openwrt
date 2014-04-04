@@ -1,0 +1,68 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -1068,6 +1068,57 @@ static struct board_info __initdata boar
+ 	.has_ehci0			= 1,
+ };
+ 
++static struct board_info __initdata board_FAST2604 = {
++	.name						= "F@ST2604",
++	.expected_cpu_id			= 0x6348,
++
++	.has_uart0					= 1,
++	.has_pci					= 1,
++	.has_ohci0					= 1,
++
++	.has_enet1					= 1,
++	.enet1 = {
++		.has_phy			= 1,
++		.phy_id				= 0,
++		.force_speed_100		= 1,
++		.force_duplex_full		= 1,
++	},
++
++	.leds = {
++		{
++			.name				= "F@ST2604:green:power",
++			.gpio				= 0,
++			.active_low			= 1,
++			.default_trigger	= "default-on",
++		},
++		{
++			.name				= "F@ST2604:red:power",
++			.gpio				= 1,
++			.active_low			= 1,
++		},
++		{
++			.name				= "F@ST2604:red:inet",
++			.gpio				= 4,
++			.active_low			= 1,
++		},
++		{
++			.name				= "F@ST2604:green:wps",
++			.gpio				= 5,
++			.active_low			= 1,
++		},
++	},
++	.buttons = {
++		{
++			.desc				= "reset",
++			.gpio				= 33,
++			.active_low			= 1,
++			.type				= EV_KEY,
++			.code				= KEY_RESTART,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
++
+ static struct board_info __initdata board_rta1025w_16 = {
+ 	.name				= "RTA1025W_16",
+ 	.expected_cpu_id		= 0x6348,
+@@ -2957,6 +3008,7 @@ static const struct board_info __initcon
+ 	&board_96348gw_10,
+ 	&board_96348gw_11,
+ 	&board_FAST2404,
++	&board_FAST2604,
+ 	&board_DV201AMR,
+ 	&board_96348gw_a,
+ 	&board_rta1025w_16,

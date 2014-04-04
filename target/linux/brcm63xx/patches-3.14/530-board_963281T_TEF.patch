@@ -1,0 +1,137 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -252,6 +252,126 @@ static struct board_info __initdata boar
+ 	},
+ };
+ 
++static struct board_info __initdata board_963281T_TEF = {
++	.name					= "963281T_TEF",
++	.expected_cpu_id			= 0x6328,
++
++	.has_uart0				= 1,
++	.has_pci				= 1,
++	.has_ohci0				= 1,
++	.has_ehci0				= 1,
++	.num_usbh_ports				= 1,
++	.has_enetsw				= 1,
++
++	.enetsw = {
++		.used_ports = {
++			[0] = {
++				.used		= 1,
++				.phy_id		= 1,
++				.name		= "Port 1",
++			},
++			[1] = {
++				.used		= 1,
++				.phy_id		= 2,
++				.name		= "Port 2",
++			},
++			[2] = {
++				.used		= 1,
++				.phy_id		= 3,
++				.name		= "Port 3",
++			},
++			[3] = {
++				.used		= 1,
++				.phy_id		= 4,
++				.name		= "Port 4",
++			},
++		},
++	},
++
++	.leds = {
++		{
++			.name			= "963281T_TEF:green:power",
++			.gpio			= 4,
++			.active_low		= 1,
++			.default_trigger	= "default-on",
++		},
++		{
++			.name			= "963281T_TEF:red:power",
++			.gpio			= 8,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:green:inet",
++			.gpio			= 11,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:red:inet",
++			.gpio			= 2,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:green:ppp",
++			.gpio			= 3,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:red:ppp",
++			.gpio			= 5,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:green:3g",
++			.gpio			= 6,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:red:3g",
++			.gpio			= 7,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:green:wlan",
++			.gpio			= 9,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:red:wlan",
++			.gpio			= 10,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:green:eth",
++			.gpio			= 31,
++			.active_low		= 1,
++		},
++		{
++			.name			= "963281T_TEF:red:eth",
++			.gpio			= 20,
++			.active_low		= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc			= "reset",
++			.gpio			= 23,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_RESTART,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc			= "wlan",
++			.gpio			= 24,
++			.active_low		= 1,
++			.type			= EV_KEY,
++			.code			= KEY_WLAN,
++			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
++
+ static struct board_info __initdata board_dsl_274xb_f1 = {
+ 	.name				= "AW4339U",
+ 	.expected_cpu_id		= 0x6328,
+@@ -2989,6 +3109,7 @@ static const struct board_info __initcon
+ #ifdef CONFIG_BCM63XX_CPU_6328
+ 	&board_96328avng,
+ 	&board_963281TAN,
++	&board_963281T_TEF,
+ 	&board_dsl_274xb_f1,
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6338
