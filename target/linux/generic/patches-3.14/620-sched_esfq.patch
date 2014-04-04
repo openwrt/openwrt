@@ -560,7 +560,7 @@
 +	struct Qdisc *sch = (struct Qdisc*)arg;
 +	struct esfq_sched_data *q = qdisc_priv(sch);
 +
-+	q->perturbation = net_random()&0x1F;
++	q->perturbation = prandom_u32()&0x1F;
 +
 +	if (q->perturb_period) {
 +		q->perturb_timer.expires = jiffies + q->perturb_period;
