@@ -11,7 +11,6 @@ SOUND_MENU:=Sound Support
 SOUNDCORE_LOAD ?= \
 	soundcore \
 	snd \
-	snd-page-alloc \
 	snd-hwdep \
 	snd-seq-device \
 	snd-rawmidi \
@@ -23,7 +22,6 @@ SOUNDCORE_LOAD ?= \
 SOUNDCORE_FILES ?= \
 	$(LINUX_DIR)/sound/soundcore.ko \
 	$(LINUX_DIR)/sound/core/snd.ko \
-	$(LINUX_DIR)/sound/core/snd-page-alloc.ko \
 	$(LINUX_DIR)/sound/core/snd-hwdep.ko \
 	$(LINUX_DIR)/sound/core/seq/snd-seq-device.ko \
 	$(LINUX_DIR)/sound/core/snd-rawmidi.ko \
@@ -46,6 +44,14 @@ SOUNDCORE_LOAD += \
 
 SOUNDCORE_FILES += \
 	$(if $(CONFIG_SND_DMAENGINE_PCM),$(LINUX_DIR)/sound/core/snd-pcm-dmaengine.ko)
+endif
+
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,3.14.0)),1)
+SOUNDCORE_LOAD += \
+	snd-page-alloc
+
+SOUNDCORE_FILES += \
+	$(LINUX_DIR)/sound/core/snd-page-alloc.ko
 endif
 
 define KernelPackage/sound-core
