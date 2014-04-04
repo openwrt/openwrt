@@ -1,0 +1,119 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -4552,6 +4552,108 @@ static struct board_info __initdata boar
+ 		},
+ 	},
+ };
++
++static struct board_info __initdata board_vw6339gu = {
++	.name				= "VW6339GU",
++	.expected_cpu_id		= 0x63268,
++
++	.has_uart0			= 1,
++
++	.has_ehci0			= 1,
++	.has_ohci0			= 1,
++	.num_usbh_ports			= 1,
++
++	.has_enetsw			= 1,
++
++	.enetsw = {
++		.used_ports = {
++			[0] = {
++				.used	= 1,
++				.phy_id	= 1,
++				.name	= "LAN2",
++			},
++
++			[1] = {
++				.used	= 1,
++				.phy_id	= 2,
++				.name	= "LAN3",
++			},
++
++			[2] = {
++				.used	= 1,
++				.phy_id	= 3,
++				.name	= "LAN4",
++			},
++
++			[3] = {
++				.used	= 1,
++				.phy_id	= 4,
++				.name	= "LAN1",
++			},
++
++			[4] = {
++				.used	= 1,
++				.phy_id	= 7,
++				.name	= "WAN",
++			},
++		},
++	},
++
++	.leds = {
++		{
++			.name		= "VW6339GU:green:power",
++			.gpio		= 1,
++			.active_low	= 1,
++		},
++		{
++			.name		= "VW6339GU:red:power",
++			.gpio		= 0,
++			.active_low	= 1,
++		},
++		{
++			.name		= "VW6339GU:green:internet",
++			.gpio		= 8,
++			.active_low	= 1,
++		},
++		{
++			.name		= "VW6339GU:red:internet",
++			.gpio		= 2,
++			.active_low	= 1,
++		},
++		{
++			.name		= "VW6339GU:green:dsl",
++			.gpio		= 3,
++			.active_low	= 1,
++		},
++		{
++			.name		= "VW6339GU:green:wps",
++			.gpio		= 7,
++			.active_low	= 1,
++		},
++		{
++			.name		= "VW6339GU:green:usb",
++			.gpio		= 15,
++			.active_low	= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 32,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 34,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
+ #endif
+ 
+ /*
+@@ -4642,6 +4744,7 @@ static const struct board_info __initcon
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_63268
+ 	&board_963269bhr,
++	&board_vw6339gu,
+ #endif
+ };
+ 
