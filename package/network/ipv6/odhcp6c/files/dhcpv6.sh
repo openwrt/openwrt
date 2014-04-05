@@ -5,6 +5,8 @@
 init_proto "$@"
 
 proto_dhcpv6_init_config() {
+	renew_handler=1
+
 	proto_config_add_string 'reqaddress:or("try","force","none")'
 	proto_config_add_string 'reqprefix:or("auto","no",range(0, 64))'
 	proto_config_add_string clientid
@@ -65,6 +67,13 @@ proto_dhcpv6_setup() {
 	proto_run_command "$config" odhcp6c \
 		-s /lib/netifd/dhcpv6.script \
 		$opts $iface
+}
+
+proto_dhcpv6_renew() {
+	local interface="$1"
+	# SIGUSR1 forces odhcp6c to renew its lease
+	local sigusr1="$(kill -l SIGUSR1)"
+	[ -n "$sigusr1" ] && proto_kill_command "$interface" $sigusr1
 }
 
 proto_dhcpv6_teardown() {
