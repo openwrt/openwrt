@@ -5,6 +5,8 @@
 init_proto "$@"
 
 proto_dhcp_init_config() {
+	renew_handler=1
+
 	proto_config_add_string 'ipaddr:ipaddr'
 	proto_config_add_string 'hostname:hostname'
 	proto_config_add_string clientid
@@ -49,6 +51,13 @@ proto_dhcp_setup() {
 		${hostname:+-H $hostname} \
 		${vendorid:+-V $vendorid} \
 		$clientid $broadcast $dhcpopts
+}
+
+proto_dhcp_renew() {
+	local interface="$1"
+	# SIGUSR1 forces udhcpc to renew its lease
+	local sigusr1="$(kill -l SIGUSR1)"
+	[ -n "$sigusr1" ] && proto_kill_command "$interface" $sigusr1
 }
 
 proto_dhcp_teardown() {
