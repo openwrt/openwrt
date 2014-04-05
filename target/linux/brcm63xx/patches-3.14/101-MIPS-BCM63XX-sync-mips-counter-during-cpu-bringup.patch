@@ -1,0 +1,27 @@
+From 23c21090f49a64b532755542a71e9aa3e4fc84d9 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sat, 5 Apr 2014 20:07:25 +0200
+Subject: [PATCH] MIPS: BCM63XX: sync mips counter during cpu bringup
+
+We are using the mips counters as the clock source, so we need to ensure
+they are synced, else e.g. gettimeofday will return different values
+depending on which core it was run.
+
+Observed difference was about 8 seconds, causing ~8 seconds ping or time
+running backwards for some programs.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -132,6 +132,7 @@ config BCM63XX
+ 	select BOOT_RAW
+ 	select CEVT_R4K
+ 	select CSRC_R4K
++	select SYNC_R4K
+ 	select DMA_NONCOHERENT
+ 	select IRQ_CPU
+ 	select SYS_SUPPORTS_32BIT_KERNEL
