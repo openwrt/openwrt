@@ -13,7 +13,7 @@ PKG_VERSION:=1.5.0
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=git://git.infradead.org/ubi-utils.git
+PKG_SOURCE_URL:=git://git.infradead.org/mtd-utils.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
