@@ -71,7 +71,6 @@ define Package/ltq-vdsl-app/install
 
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dsl_cpe_control $(1)/sbin/vdsl_cpe_control
-	$(INSTALL_BIN) ./files/dsl_notify.sh $(1)/sbin
 endef
 
 $(eval $(call BuildPackage,ltq-vdsl-app))

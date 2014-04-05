@@ -16,8 +16,6 @@
 include /lib/network
 scan_interfaces
 
-logger "Found no matching interface for DSL notification ($DSL_INTERFACE_STATUS)"
-
 local default
 config_load system
 config_get default led_adsl default
