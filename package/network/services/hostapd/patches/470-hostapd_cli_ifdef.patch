@@ -16,7 +16,7 @@
  "   get_config           show current configuration\n"
  "   help                 show this usage help\n"
  "   interface [ifname]   show interfaces/select interface\n"
-@@ -352,7 +350,6 @@ static int hostapd_cli_cmd_sa_query(stru
+@@ -362,7 +360,6 @@ static int hostapd_cli_cmd_sa_query(stru
  #endif /* CONFIG_IEEE80211W */
  
  
@@ -24,7 +24,7 @@
  static int hostapd_cli_cmd_wps_pin(struct wpa_ctrl *ctrl, int argc,
  				   char *argv[])
  {
-@@ -578,7 +575,6 @@ static int hostapd_cli_cmd_wps_config(st
+@@ -588,7 +585,6 @@ static int hostapd_cli_cmd_wps_config(st
  			 ssid_hex, argv[1]);
  	return wpa_ctrl_command(ctrl, buf);
  }
@@ -32,7 +32,7 @@
  
  
  static int hostapd_cli_cmd_disassoc_imminent(struct wpa_ctrl *ctrl, int argc,
-@@ -903,7 +899,6 @@ static struct hostapd_cli_cmd hostapd_cl
+@@ -979,7 +975,6 @@ static struct hostapd_cli_cmd hostapd_cl
  #ifdef CONFIG_IEEE80211W
  	{ "sa_query", hostapd_cli_cmd_sa_query },
  #endif /* CONFIG_IEEE80211W */
@@ -40,7 +40,7 @@
  	{ "wps_pin", hostapd_cli_cmd_wps_pin },
  	{ "wps_check_pin", hostapd_cli_cmd_wps_check_pin },
  	{ "wps_pbc", hostapd_cli_cmd_wps_pbc },
-@@ -917,7 +912,6 @@ static struct hostapd_cli_cmd hostapd_cl
+@@ -993,7 +988,6 @@ static struct hostapd_cli_cmd hostapd_cl
  	{ "wps_ap_pin", hostapd_cli_cmd_wps_ap_pin },
  	{ "wps_config", hostapd_cli_cmd_wps_config },
  	{ "wps_get_status", hostapd_cli_cmd_wps_get_status },

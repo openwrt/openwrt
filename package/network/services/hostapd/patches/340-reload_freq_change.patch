@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -72,6 +72,16 @@ static void hostapd_reload_bss(struct ho
+@@ -68,6 +68,16 @@ static void hostapd_reload_bss(struct ho
  #endif /* CONFIG_NO_RADIUS */
  
  	ssid = &hapd->conf->ssid;
@@ -17,7 +17,7 @@
  	if (!ssid->wpa_psk_set && ssid->wpa_psk && !ssid->wpa_psk->next &&
  	    ssid->wpa_passphrase_set && ssid->wpa_passphrase) {
  		/*
-@@ -172,6 +182,9 @@ int hostapd_reload_config(struct hostapd
+@@ -168,20 +178,12 @@ int hostapd_reload_config(struct hostapd
  	oldconf = hapd->iconf;
  	iface->conf = newconf;
  
@@ -27,3 +27,17 @@
  	for (j = 0; j < iface->num_bss; j++) {
  		hapd = iface->bss[j];
  		hapd->iconf = newconf;
+-		hapd->iconf->channel = oldconf->channel;
+-		hapd->iconf->secondary_channel = oldconf->secondary_channel;
+-		hapd->iconf->ieee80211n = oldconf->ieee80211n;
+-		hapd->iconf->ieee80211ac = oldconf->ieee80211ac;
+-		hapd->iconf->ht_capab = oldconf->ht_capab;
+-		hapd->iconf->vht_capab = oldconf->vht_capab;
+-		hapd->iconf->vht_oper_chwidth = oldconf->vht_oper_chwidth;
+-		hapd->iconf->vht_oper_centr_freq_seg0_idx =
+-			oldconf->vht_oper_centr_freq_seg0_idx;
+-		hapd->iconf->vht_oper_centr_freq_seg1_idx =
+-			oldconf->vht_oper_centr_freq_seg1_idx;
+ 		hapd->conf = newconf->bss[j];
+ 		hostapd_reload_bss(hapd);
+ 	}

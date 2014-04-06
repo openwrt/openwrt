@@ -1,15 +1,15 @@
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -33,6 +33,8 @@
- extern int wpa_debug_level;
- extern int wpa_debug_show_keys;
- extern int wpa_debug_timestamp;
+@@ -36,6 +36,8 @@ struct hapd_global {
+ };
+ 
+ static struct hapd_global global;
 +static int daemonize = 0;
 +static char *pid_file = NULL;
  
- extern struct wpa_driver_ops *wpa_drivers[];
  
-@@ -147,6 +149,14 @@ static void hostapd_logger_cb(void *ctx,
+ #ifndef CONFIG_NO_HOSTAPD_LOGGER
+@@ -141,6 +143,14 @@ static void hostapd_logger_cb(void *ctx,
  }
  #endif /* CONFIG_NO_HOSTAPD_LOGGER */
  
@@ -24,7 +24,7 @@
  
  /**
   * hostapd_driver_init - Preparate driver interface
-@@ -165,6 +175,8 @@ static int hostapd_driver_init(struct ho
+@@ -159,6 +169,8 @@ static int hostapd_driver_init(struct ho
  		return -1;
  	}
  
@@ -33,7 +33,7 @@
  	/* Initialize the driver interface */
  	if (!(b[0] | b[1] | b[2] | b[3] | b[4] | b[5]))
  		b = NULL;
-@@ -381,8 +393,6 @@ static void hostapd_global_deinit(const 
+@@ -372,8 +384,6 @@ static void hostapd_global_deinit(const 
  #endif /* CONFIG_NATIVE_WINDOWS */
  
  	eap_server_unregister_methods();
@@ -42,7 +42,7 @@
  }
  
  
-@@ -408,11 +418,6 @@ static int hostapd_global_run(struct hap
+@@ -399,11 +409,6 @@ static int hostapd_global_run(struct hap
  	}
  #endif /* EAP_SERVER_TNC */
  
@@ -54,7 +54,7 @@
  	eloop_run();
  
  	return 0;
-@@ -521,8 +526,7 @@ int main(int argc, char *argv[])
+@@ -533,8 +538,7 @@ int main(int argc, char *argv[])
  	struct hapd_interfaces interfaces;
  	int ret = 1;
  	size_t i, j;
