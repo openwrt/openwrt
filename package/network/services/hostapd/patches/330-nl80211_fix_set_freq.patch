@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -6860,7 +6860,7 @@ static int wpa_driver_nl80211_set_freq(s
+@@ -7323,7 +7323,7 @@ static int wpa_driver_nl80211_set_freq(s
  
  	nl80211_cmd(drv, msg, 0, NL80211_CMD_SET_WIPHY);
  
@@ -9,7 +9,7 @@
  	if (nl80211_put_freq_params(msg, freq) < 0)
  		goto nla_put_failure;
  
-@@ -11322,7 +11322,7 @@ static int nl80211_switch_channel(void *
+@@ -11840,7 +11840,7 @@ static int nl80211_switch_channel(void *
  		return -ENOMEM;
  
  	nl80211_cmd(drv, msg, 0, NL80211_CMD_CHANNEL_SWITCH);

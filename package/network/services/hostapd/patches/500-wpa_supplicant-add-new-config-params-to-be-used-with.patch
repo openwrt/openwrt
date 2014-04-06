@@ -22,9 +22,9 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "common/defs.h"
  #include "utils/list.h"
  
-@@ -404,6 +405,11 @@ struct wpa_driver_associate_params {
- 	 */
- 	int freq;
+@@ -406,6 +407,11 @@ struct wpa_driver_associate_params {
+ 	 * responsible for selecting with which BSS to associate. */
+ 	const u8 *bssid;
  
 +	int beacon_interval;
 +	int fixed_freq;
@@ -32,11 +32,11 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
 +	int mcast_rate;
 +
  	/**
- 	 * bg_scan_period - Background scan period in seconds, 0 to disable
- 	 * background scan, or -1 to indicate no change to default driver
+ 	 * bssid_hint - BSSID of a proposed AP
+ 	 *
 --- a/wpa_supplicant/config.c
 +++ b/wpa_supplicant/config.c
-@@ -14,6 +14,7 @@
+@@ -15,6 +15,7 @@
  #include "rsn_supp/wpa.h"
  #include "eap_peer/eap.h"
  #include "p2p/p2p.h"
@@ -44,7 +44,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "config.h"
  
  
-@@ -1512,6 +1513,97 @@ static char * wpa_config_write_psk_list(
+@@ -1527,6 +1528,97 @@ static char * wpa_config_write_psk_list(
  
  #endif /* CONFIG_P2P */
  
@@ -142,7 +142,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  /* Helper macros for network block parser */
  
  #ifdef OFFSET
-@@ -1715,6 +1807,9 @@ static const struct parse_data ssid_fiel
+@@ -1731,6 +1823,9 @@ static const struct parse_data ssid_fiel
  	{ INT(ap_max_inactivity) },
  	{ INT(dtim_period) },
  	{ INT(beacon_int) },
@@ -162,7 +162,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  
  #define MAX_SSID_LEN 32
  
-@@ -620,6 +621,10 @@ struct wpa_ssid {
+@@ -630,6 +631,10 @@ struct wpa_ssid {
  	 * dereferences since it may not be updated in all cases.
  	 */
  	void *parent_cred;
@@ -175,24 +175,11 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #endif /* CONFIG_SSID_H */
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1623,15 +1623,24 @@ void wpa_supplicant_associate(struct wpa
- 		params.ssid_len = ssid->ssid_len;
- 	}
- 
--	if (ssid->mode == WPAS_MODE_IBSS && ssid->bssid_set &&
--	    wpa_s->conf->ap_scan == 2) {
--		params.bssid = ssid->bssid;
--		params.fixed_bssid = 1;
-+	if (ssid->mode == WPAS_MODE_IBSS) {
-+		if (ssid->bssid_set && wpa_s->conf->ap_scan == 2) {
-+			params.bssid = ssid->bssid;
-+			params.fixed_bssid = 1;
-+		}
-+		if (ssid->frequency > 0 && params.freq == 0)
-+			/* Initial channel for IBSS */
-+			params.freq = ssid->frequency;
+@@ -1788,6 +1788,13 @@ static void wpas_start_assoc_cb(struct w
+ 			params.beacon_int = ssid->beacon_int;
+ 		else
+ 			params.beacon_int = wpa_s->conf->beacon_int;
 +		params.fixed_freq = ssid->fixed_freq;
-+		params.beacon_interval = ssid->beacon_int;
 +		i = 0;
 +		while (i < NL80211_MAX_SUPP_RATES) {
 +			params.rates[i] = ssid->rates[i];
@@ -201,9 +188,4 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
 +		params.mcast_rate = ssid->mcast_rate;
  	}
  
--	if (ssid->mode == WPAS_MODE_IBSS && ssid->frequency > 0 &&
--	    params.freq == 0)
--		params.freq = ssid->frequency; /* Initial channel for IBSS */
  	params.wpa_ie = wpa_ie;
- 	params.wpa_ie_len = wpa_ie_len;
- 	params.pairwise_suite = cipher_pairwise;

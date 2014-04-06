@@ -1,6 +1,6 @@
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -34,6 +34,7 @@
+@@ -37,6 +37,7 @@
  #include "wps/wps.h"
  #include "config_file.h"
  #include "ctrl_iface.h"
@@ -8,7 +8,7 @@
  
  
  struct wpa_ctrl_dst {
-@@ -44,6 +45,7 @@ struct wpa_ctrl_dst {
+@@ -47,6 +48,7 @@ struct wpa_ctrl_dst {
  	int errors;
  };
  
@@ -16,7 +16,7 @@
  
  static void hostapd_ctrl_iface_send(struct hostapd_data *hapd, int level,
  				    const char *buf, size_t len);
-@@ -153,6 +155,68 @@ static int hostapd_ctrl_iface_new_sta(st
+@@ -156,6 +158,68 @@ static int hostapd_ctrl_iface_new_sta(st
  	return 0;
  }
  
@@ -85,14 +85,14 @@
  
  #ifdef CONFIG_IEEE80211W
  #ifdef NEED_AP_MLME
-@@ -1199,6 +1263,10 @@ static void hostapd_ctrl_iface_receive(i
- 				reply_len += res;
- 		}
- #endif /* CONFIG_NO_RADIUS */
+@@ -1546,6 +1610,10 @@ static void hostapd_ctrl_iface_receive(i
+ 	} else if (os_strncmp(buf, "VENDOR ", 7) == 0) {
+ 		reply_len = hostapd_ctrl_iface_vendor(hapd, buf + 7, reply,
+ 						      reply_size);
 +	} else if (os_strcmp(buf, "DOWN") == 0) {
 +		hostapd_ctrl_iface_set_down(hapd);
 +	} else if (os_strncmp(buf, "UPDATE ", 7) == 0) {
 +		hostapd_ctrl_iface_update(hapd, buf + 7);
- 	} else if (os_strcmp(buf, "STA-FIRST") == 0) {
- 		reply_len = hostapd_ctrl_iface_sta_first(hapd, reply,
- 							 reply_size);
+ 
+ 	} else {
+ 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);

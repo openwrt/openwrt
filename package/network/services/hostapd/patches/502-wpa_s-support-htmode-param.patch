@@ -16,7 +16,7 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
 
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -409,6 +409,8 @@ struct wpa_driver_associate_params {
+@@ -411,6 +411,8 @@ struct wpa_driver_associate_params {
  	int fixed_freq;
  	unsigned char rates[NL80211_MAX_SUPP_RATES];
  	int mcast_rate;
@@ -24,10 +24,10 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
 +	unsigned int htmode;
  
  	/**
- 	 * bg_scan_period - Background scan period in seconds, 0 to disable
+ 	 * bssid_hint - BSSID of a proposed AP
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -7967,6 +7967,22 @@ retry:
+@@ -8468,6 +8468,22 @@ retry:
  		NLA_PUT_U32(msg, NL80211_ATTR_MCAST_RATE, params->mcast_rate);
  	}
  
@@ -52,7 +52,7 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
  		goto nla_put_failure;
 --- a/wpa_supplicant/config.c
 +++ b/wpa_supplicant/config.c
-@@ -1544,6 +1544,71 @@ static char * wpa_config_write_mcast_rat
+@@ -1559,6 +1559,71 @@ static char * wpa_config_write_mcast_rat
  }
  #endif /* NO_CONFIG_WRITE */
  
@@ -124,7 +124,7 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
  static int wpa_config_parse_rates(const struct parse_data *data,
  				  struct wpa_ssid *ssid, int line,
  				  const char *value)
-@@ -1810,6 +1875,7 @@ static const struct parse_data ssid_fiel
+@@ -1826,6 +1891,7 @@ static const struct parse_data ssid_fiel
  	{ INT_RANGE(fixed_freq, 0, 1) },
  	{ FUNC(rates) },
  	{ FUNC(mcast_rate) },
@@ -134,7 +134,7 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
  #undef OFFSET
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
-@@ -625,6 +625,8 @@ struct wpa_ssid {
+@@ -635,6 +635,8 @@ struct wpa_ssid {
  	int fixed_freq;
  	unsigned char rates[NL80211_MAX_SUPP_RATES];
  	double mcast_rate;
@@ -145,7 +145,7 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
  #endif /* CONFIG_SSID_H */
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1639,6 +1639,8 @@ void wpa_supplicant_associate(struct wpa
+@@ -1795,6 +1795,8 @@ static void wpas_start_assoc_cb(struct w
  			i++;
  		}
  		params.mcast_rate = ssid->mcast_rate;

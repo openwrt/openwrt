@@ -1,23 +1,23 @@
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -14,6 +14,7 @@
- 
+@@ -15,6 +15,7 @@
  #include "utils/common.h"
  #include "utils/eloop.h"
+ #include "utils/uuid.h"
 +#include "utils/build_features.h"
  #include "crypto/random.h"
  #include "crypto/tls.h"
  #include "common/version.h"
-@@ -546,7 +547,7 @@ int main(int argc, char *argv[])
+@@ -558,7 +559,7 @@ int main(int argc, char *argv[])
  
  	wpa_supplicant_event = hostapd_wpa_event;
  	for (;;) {
--		c = getopt(argc, argv, "b:Bde:f:hKP:Ttvg:G:");
-+		c = getopt(argc, argv, "b:Bde:f:hKP:Ttg:G:v::");
+-		c = getopt(argc, argv, "b:Bde:f:hKP:Ttu:vg:G:");
++		c = getopt(argc, argv, "b:Bde:f:hKP:Ttu:g:G:v::");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -583,6 +584,8 @@ int main(int argc, char *argv[])
+@@ -595,6 +596,8 @@ int main(int argc, char *argv[])
  			break;
  #endif /* CONFIG_DEBUG_LINUX_TRACING */
  		case 'v':
@@ -36,16 +36,16 @@
  #include "wpa_supplicant_i.h"
  #include "driver_i.h"
  #include "p2p_supplicant.h"
-@@ -161,7 +162,7 @@ int main(int argc, char *argv[])
+@@ -176,7 +177,7 @@ int main(int argc, char *argv[])
  
  	for (;;) {
  		c = getopt(argc, argv,
--			   "b:Bc:C:D:de:f:g:G:hH:i:I:KLNo:O:p:P:qsTtuvW");
-+			   "b:Bc:C:D:de:f:g:G:hH:i:I:KLNo:O:p:P:qsTtuv::W");
+-			   "b:Bc:C:D:de:f:g:G:hH:i:I:KLm:No:O:p:P:qsTtuvW");
++			   "b:Bc:C:D:de:f:g:G:hH:i:I:KLm:No:O:p:P:qsTtuv::W");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -259,8 +260,12 @@ int main(int argc, char *argv[])
+@@ -279,8 +280,12 @@ int main(int argc, char *argv[])
  			break;
  #endif /* CONFIG_DBUS */
  		case 'v':

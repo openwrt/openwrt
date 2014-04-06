@@ -20,40 +20,41 @@
  {
  	size_t i;
  
-@@ -375,20 +375,9 @@ static void _wpa_hexdump(int level, cons
+@@ -375,20 +375,8 @@ static void _wpa_hexdump(int level, cons
  #endif /* CONFIG_ANDROID_LOG */
  }
  
--void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len)
+-void wpa_hexdump(int level, const char *title, const void *buf, size_t len)
 -{
 -	_wpa_hexdump(level, title, buf, len, 1);
 -}
 -
 -
--void wpa_hexdump_key(int level, const char *title, const u8 *buf, size_t len)
+-void wpa_hexdump_key(int level, const char *title, const void *buf, size_t len)
 -{
 -	_wpa_hexdump(level, title, buf, len, wpa_debug_show_keys);
 -}
- 
 -
--static void _wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
+-
+-static void _wpa_hexdump_ascii(int level, const char *title, const void *buf,
 -			       size_t len, int show)
-+void _wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
++void _wpa_hexdump_ascii(int level, const char *title, const void *buf,
 +			size_t len, int show)
  {
  	size_t i, llen;
  	const u8 *pos = buf;
-@@ -495,19 +484,6 @@ static void _wpa_hexdump_ascii(int level
+@@ -495,20 +483,6 @@ static void _wpa_hexdump_ascii(int level
  }
  
  
--void wpa_hexdump_ascii(int level, const char *title, const u8 *buf, size_t len)
+-void wpa_hexdump_ascii(int level, const char *title, const void *buf,
+-		       size_t len)
 -{
 -	_wpa_hexdump_ascii(level, title, buf, len, 1);
 -}
 -
 -
--void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
+-void wpa_hexdump_ascii_key(int level, const char *title, const void *buf,
 -			   size_t len)
 -{
 -	_wpa_hexdump_ascii(level, title, buf, len, wpa_debug_show_keys);
@@ -63,7 +64,7 @@
  #ifdef CONFIG_DEBUG_FILE
  static char *last_path = NULL;
  #endif /* CONFIG_DEBUG_FILE */
-@@ -591,7 +567,7 @@ void wpa_msg_register_ifname_cb(wpa_msg_
+@@ -592,7 +566,7 @@ void wpa_msg_register_ifname_cb(wpa_msg_
  }
  
  
@@ -72,7 +73,7 @@
  {
  	va_list ap;
  	char *buf;
-@@ -625,7 +601,7 @@ void wpa_msg(void *ctx, int level, const
+@@ -630,7 +604,7 @@ void wpa_msg(void *ctx, int level, const
  }
  
  
@@ -83,14 +84,14 @@
  	char *buf;
 --- a/src/utils/wpa_debug.h
 +++ b/src/utils/wpa_debug.h
-@@ -43,6 +43,17 @@ int wpa_debug_open_file(const char *path
+@@ -47,6 +47,17 @@ int wpa_debug_open_file(const char *path
  int wpa_debug_reopen_file(void);
  void wpa_debug_close_file(void);
  
 +/* internal */
 +void _wpa_hexdump(int level, const char *title, const u8 *buf,
 +		  size_t len, int show);
-+void _wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
++void _wpa_hexdump_ascii(int level, const char *title, const void *buf,
 +			size_t len, int show);
 +extern int wpa_debug_show_keys;
 +
@@ -101,7 +102,7 @@
  /**
   * wpa_debug_printf_timestamp - Print timestamp for debug output
   *
-@@ -63,9 +74,15 @@ void wpa_debug_print_timestamp(void);
+@@ -67,9 +78,15 @@ void wpa_debug_print_timestamp(void);
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -118,11 +119,11 @@
  /**
   * wpa_hexdump - conditional hex dump
   * @level: priority level (MSG_*) of the message
-@@ -77,7 +94,13 @@ PRINTF_FORMAT(2, 3);
+@@ -81,7 +98,13 @@ PRINTF_FORMAT(2, 3);
   * output may be directed to stdout, stderr, and/or syslog based on
   * configuration. The contents of buf is printed out has hex dump.
   */
--void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len);
+-void wpa_hexdump(int level, const char *title, const void *buf, size_t len);
 +static inline void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len)
 +{
 +	if (level < CONFIG_MSG_MIN_PRIORITY)
@@ -133,11 +134,11 @@
  
  static inline void wpa_hexdump_buf(int level, const char *title,
  				   const struct wpabuf *buf)
-@@ -99,7 +122,13 @@ static inline void wpa_hexdump_buf(int l
+@@ -103,7 +126,13 @@ static inline void wpa_hexdump_buf(int l
   * like wpa_hexdump(), but by default, does not include secret keys (passwords,
   * etc.) in debug output.
   */
--void wpa_hexdump_key(int level, const char *title, const u8 *buf, size_t len);
+-void wpa_hexdump_key(int level, const char *title, const void *buf, size_t len);
 +static inline void wpa_hexdump_key(int level, const char *title, const u8 *buf, size_t len)
 +{
 +	if (level < CONFIG_MSG_MIN_PRIORITY)
@@ -148,11 +149,11 @@
  
  static inline void wpa_hexdump_buf_key(int level, const char *title,
  				       const struct wpabuf *buf)
-@@ -121,8 +150,14 @@ static inline void wpa_hexdump_buf_key(i
+@@ -125,8 +154,14 @@ static inline void wpa_hexdump_buf_key(i
   * the hex numbers and ASCII characters (for printable range) are shown. 16
   * bytes per line will be shown.
   */
--void wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
+-void wpa_hexdump_ascii(int level, const char *title, const void *buf,
 -		       size_t len);
 +static inline void wpa_hexdump_ascii(int level, const char *title,
 +				     const u8 *buf, size_t len)
@@ -165,11 +166,11 @@
  
  /**
   * wpa_hexdump_ascii_key - conditional hex dump, hide keys
-@@ -138,8 +173,14 @@ void wpa_hexdump_ascii(int level, const 
+@@ -142,8 +177,14 @@ void wpa_hexdump_ascii(int level, const 
   * bytes per line will be shown. This works like wpa_hexdump_ascii(), but by
   * default, does not include secret keys (passwords, etc.) in debug output.
   */
--void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
+-void wpa_hexdump_ascii_key(int level, const char *title, const void *buf,
 -			   size_t len);
 +static inline void wpa_hexdump_ascii_key(int level, const char *title,
 +					 const u8 *buf, size_t len)
@@ -182,7 +183,7 @@
  
  /*
   * wpa_dbg() behaves like wpa_msg(), but it can be removed from build to reduce
-@@ -174,7 +215,12 @@ void wpa_hexdump_ascii_key(int level, co
+@@ -178,7 +219,12 @@ void wpa_hexdump_ascii_key(int level, co
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -196,7 +197,7 @@
  
  /**
   * wpa_msg_ctrl - Conditional printf for ctrl_iface monitors
-@@ -188,8 +234,13 @@ void wpa_msg(void *ctx, int level, const
+@@ -192,8 +238,13 @@ void wpa_msg(void *ctx, int level, const
   * attached ctrl_iface monitors. In other words, it can be used for frequent
   * events that do not need to be sent to syslog.
   */

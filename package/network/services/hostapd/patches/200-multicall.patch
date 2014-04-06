@@ -1,14 +1,14 @@
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -14,6 +14,7 @@ CFLAGS += -I../src/utils
+@@ -14,6 +14,7 @@ CFLAGS += -I$(abspath ../src/utils)
  # CFLAGS += -DUSE_KERNEL_HEADERS -I/usr/src/linux/include
  
  -include .config
 +-include $(if $(MULTICALL), ../wpa_supplicant/.config)
  
- ifndef CONFIG_OS
- ifdef CONFIG_NATIVE_WINDOWS
-@@ -200,10 +201,14 @@ ifdef CONFIG_IEEE80211AC
+ ifdef CONFIG_TESTING_OPTIONS
+ CFLAGS += -DCONFIG_TESTING_OPTIONS
+@@ -223,10 +224,14 @@ ifdef CONFIG_IEEE80211AC
  CFLAGS += -DCONFIG_IEEE80211AC
  endif
  
@@ -26,7 +26,7 @@
  LIBS += $(DRV_AP_LIBS)
  
  ifdef CONFIG_L2_PACKET
-@@ -890,6 +895,12 @@ install: all
+@@ -913,6 +918,12 @@ install: all
  
  BCHECK=../src/drivers/build.hostapd
  
@@ -39,7 +39,7 @@
  hostapd: $(BCHECK) $(OBJS)
  	$(Q)$(CC) $(LDFLAGS) -o hostapd $(OBJS) $(LIBS)
  	@$(E) "  LD " $@
-@@ -928,6 +939,12 @@ HOBJS += ../src/crypto/aes-internal.o
+@@ -951,6 +962,12 @@ HOBJS += ../src/crypto/aes-internal.o
  HOBJS += ../src/crypto/aes-internal-enc.o
  endif
  
@@ -54,15 +54,15 @@
  	@$(E) "  LD " $@
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -14,6 +14,7 @@ CFLAGS += -I../src
- CFLAGS += -I../src/utils
+@@ -14,6 +14,7 @@ CFLAGS += -I$(abspath ../src)
+ CFLAGS += -I$(abspath ../src/utils)
  
  -include .config
 +-include $(if $(MULTICALL),../hostapd/.config)
  
- BINALL=wpa_supplicant wpa_cli
- 
-@@ -727,6 +728,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
+ ifdef CONFIG_TESTING_OPTIONS
+ CFLAGS += -DCONFIG_TESTING_OPTIONS
+@@ -746,6 +747,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
  CFLAGS += -DCONFIG_DYNAMIC_EAP_METHODS
  LIBS += -ldl -rdynamic
  endif
@@ -73,7 +73,7 @@
  endif
  
  ifdef CONFIG_AP
-@@ -735,9 +740,11 @@ NEED_EAP_COMMON=y
+@@ -754,9 +759,11 @@ NEED_EAP_COMMON=y
  NEED_RSN_AUTHENTICATOR=y
  CFLAGS += -DCONFIG_AP
  OBJS += ap.o
@@ -85,7 +85,7 @@
  OBJS += ../src/ap/hostapd.o
  OBJS += ../src/ap/wpa_auth_glue.o
  OBJS += ../src/ap/utils.o
-@@ -799,10 +806,18 @@ endif
+@@ -818,10 +825,18 @@ endif
  ifdef CONFIG_HS20
  OBJS += ../src/ap/hs20.o
  endif
@@ -104,7 +104,7 @@
  NEED_AES_WRAP=y
  OBJS += ../src/ap/wpa_auth.o
  OBJS += ../src/ap/wpa_auth_ie.o
-@@ -1551,6 +1566,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
+@@ -1584,6 +1599,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
  
  $(OBJS_c) $(OBJS_t) $(OBJS_t2) $(OBJS) $(BCHECK) $(EXTRA_progs): .config
  
@@ -117,7 +117,7 @@
  wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)
  	$(Q)$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
  	@$(E) "  LD " $@
-@@ -1625,6 +1646,12 @@ eap_eke.so: ../src/eap_peer/eap_eke.c ..
+@@ -1664,6 +1685,12 @@ endif
  %@.service: %.service.arg.in
  	sed -e 's|\@BINDIR\@|$(BINDIR)|g' $< >$@
  
@@ -132,7 +132,7 @@
  wpa_cli.exe: wpa_cli
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4079,8 +4079,8 @@ union wpa_event_data {
+@@ -3874,8 +3874,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -145,7 +145,7 @@
  /*
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -844,8 +844,8 @@ static void hostapd_event_dfs_nop_finish
+@@ -906,8 +906,8 @@ static void hostapd_event_dfs_nop_finish
  #endif /* NEED_AP_MLME */
  
  
@@ -158,7 +158,7 @@
  #ifndef CONFIG_NO_STDOUT_DEBUG
 --- a/wpa_supplicant/wpa_priv.c
 +++ b/wpa_supplicant/wpa_priv.c
-@@ -817,8 +817,8 @@ static void wpa_priv_send_ft_response(st
+@@ -815,8 +815,8 @@ static void wpa_priv_send_ft_response(st
  }
  
  
@@ -169,7 +169,7 @@
  {
  	struct wpa_priv_interface *iface = ctx;
  
-@@ -960,6 +960,7 @@ int main(int argc, char *argv[])
+@@ -956,6 +956,7 @@ int main(int argc, char *argv[])
  	if (os_program_init())
  		return -1;
  
@@ -179,7 +179,7 @@
  	for (;;) {
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -2710,8 +2710,8 @@ static void wpa_supplicant_update_channe
+@@ -2887,8 +2887,8 @@ static void wpa_supplicant_notify_avoid_
  }
  
  
@@ -192,7 +192,7 @@
  
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -3138,6 +3138,9 @@ static void wpa_supplicant_deinit_iface(
+@@ -3711,6 +3711,9 @@ static void wpa_supplicant_deinit_iface(
  	os_free(wpa_s);
  }
  
@@ -202,7 +202,7 @@
  
  /**
   * wpa_supplicant_add_iface - Add a new network interface
-@@ -3329,6 +3332,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -3902,6 +3905,7 @@ struct wpa_global * wpa_supplicant_init(
  	wpa_msg_register_ifname_cb(wpa_supplicant_msg_ifname_cb);
  #endif /* CONFIG_NO_WPA_MSG */
  
@@ -212,7 +212,7 @@
  		wpa_debug_open_syslog();
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -511,6 +511,9 @@ static int hostapd_get_ctrl_iface_group(
+@@ -502,6 +502,9 @@ static int hostapd_get_ctrl_iface_group(
  	return 0;
  }
  
@@ -220,27 +220,25 @@
 +                       union wpa_event_data *data);
 +
  
- int main(int argc, char *argv[])
- {
-@@ -541,6 +544,7 @@ int main(int argc, char *argv[])
+ #ifdef CONFIG_WPS
+ static int gen_uuid(const char *txt_addr)
+@@ -553,6 +556,7 @@ int main(int argc, char *argv[])
  	interfaces.global_iface_name = NULL;
  	interfaces.global_ctrl_sock = -1;
  
 +	wpa_supplicant_event = hostapd_wpa_event;
  	for (;;) {
- 		c = getopt(argc, argv, "b:Bde:f:hKP:Ttvg:G:");
+ 		c = getopt(argc, argv, "b:Bde:f:hKP:Ttu:vg:G:");
  		if (c < 0)
 --- a/src/drivers/drivers.c
 +++ b/src/drivers/drivers.c
-@@ -7,7 +7,11 @@
-  */
- 
- #include "includes.h"
-+#include "common.h"
-+#include "driver.h"
+@@ -10,6 +10,9 @@
+ #include "utils/common.h"
+ #include "driver.h"
  
 +void (*wpa_supplicant_event)(void *ctx, enum wpa_event_type event,
 +			     union wpa_event_data *data);
- 
++
  #ifdef CONFIG_DRIVER_WEXT
  extern struct wpa_driver_ops wpa_driver_wext_ops; /* driver_wext.c */
+ #endif /* CONFIG_DRIVER_WEXT */
