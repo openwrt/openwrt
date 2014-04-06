@@ -32,10 +32,10 @@ Signed-off-by: Luis R. Rodriguez <mcgrof@do-not-panic.com>
 +	units = $7
  	sub(/\)/, "", units)
  	sub(/,/, "", units)
- 	if (units == "mW") {
-@@ -80,7 +77,7 @@ function parse_reg_rule()
- 		}
- 	}
+ 	dfs_cac = $9
+@@ -86,7 +83,7 @@ function parse_reg_rule()
+ 	sub(/\(/, "", dfs_cac)
+ 	sub(/\)/, "", dfs_cac)
  	flagstr = ""
 -	for (i=8; i<=NF; i++)
 +	for (i=7; i<=NF; i++)

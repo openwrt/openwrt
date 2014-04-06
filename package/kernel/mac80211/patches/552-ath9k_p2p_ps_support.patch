@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return true;
  }
  
-@@ -1126,6 +1128,8 @@ static int ath9k_add_interface(struct ie
+@@ -1128,6 +1130,8 @@ static int ath9k_add_interface(struct ie
  	if (ath9k_uses_beacons(vif->type))
  		ath9k_beacon_assign_slot(sc, vif);
  
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	an->sc = sc;
  	an->sta = NULL;
  	an->vif = vif;
-@@ -1170,6 +1174,29 @@ static int ath9k_change_interface(struct
+@@ -1172,6 +1176,29 @@ static int ath9k_change_interface(struct
  	return 0;
  }
  
@@ -66,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static void ath9k_remove_interface(struct ieee80211_hw *hw,
  				   struct ieee80211_vif *vif)
  {
-@@ -1181,6 +1208,13 @@ static void ath9k_remove_interface(struc
+@@ -1183,6 +1210,13 @@ static void ath9k_remove_interface(struc
  
  	mutex_lock(&sc->mutex);
  
@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	sc->nvifs--;
  	sc->tx99_vif = NULL;
  
-@@ -1649,6 +1683,70 @@ static void ath9k_bss_assoc_iter(void *d
+@@ -1649,6 +1683,72 @@ static void ath9k_bss_assoc_iter(void *d
  		ath9k_set_assoc_state(sc, vif);
  }
  
@@ -130,6 +130,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +void ath9k_update_p2p_ps(struct ath_softc *sc, struct ieee80211_vif *vif)
 +{
 +	struct ath_vif *avp = (void *)vif->drv_priv;
++	unsigned long flags;
 +	u32 tsf;
 +
 +	if (!sc->p2p_ps_timer)
@@ -140,18 +141,19 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +
 +	sc->p2p_ps_vif = avp;
 +
-+	if (sc->ps_flags & PS_BEACON_SYNC)
-+		return;
-+
-+	tsf = ath9k_hw_gettsf32(sc->sc_ah);
-+	ieee80211_parse_p2p_noa(&vif->bss_conf.p2p_noa_attr, &avp->noa, tsf);
-+	ath9k_update_p2p_ps_timer(sc, avp);
++	spin_lock_irqsave(&sc->sc_pm_lock, flags);
++	if (!(sc->ps_flags & PS_BEACON_SYNC)) {
++		tsf = ath9k_hw_gettsf32(sc->sc_ah);
++		ieee80211_parse_p2p_noa(&vif->bss_conf.p2p_noa_attr, &avp->noa, tsf);
++		ath9k_update_p2p_ps_timer(sc, avp);
++	}
++	spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
 +}
 +
  static void ath9k_bss_info_changed(struct ieee80211_hw *hw,
  				   struct ieee80211_vif *vif,
  				   struct ieee80211_bss_conf *bss_conf,
-@@ -1723,6 +1821,12 @@ static void ath9k_bss_info_changed(struc
+@@ -1723,6 +1823,12 @@ static void ath9k_bss_info_changed(struc
  		}
  	}
  
@@ -166,7 +168,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -115,6 +115,9 @@ int ath_descdma_setup(struct ath_softc *
+@@ -114,6 +114,9 @@ int ath_descdma_setup(struct ath_softc *
  #define ATH_TXFIFO_DEPTH           8
  #define ATH_TX_ERROR               0x01
  
@@ -176,7 +178,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define IEEE80211_SEQ_SEQ_SHIFT    4
  #define IEEE80211_SEQ_MAX          4096
  #define IEEE80211_WEP_IVLEN        3
-@@ -363,11 +366,15 @@ void ath9k_release_buffered_frames(struc
+@@ -367,11 +370,15 @@ void ath9k_release_buffered_frames(struc
  /********/
  
  struct ath_vif {
@@ -192,7 +194,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  };
  
  struct ath9k_vif_iter_data {
-@@ -472,6 +479,8 @@ int ath_update_survey_stats(struct ath_s
+@@ -464,6 +471,8 @@ int ath_update_survey_stats(struct ath_s
  void ath_update_survey_nf(struct ath_softc *sc, int channel);
  void ath9k_queue_reset(struct ath_softc *sc, enum ath_reset_type type);
  void ath_ps_full_sleep(unsigned long data);
@@ -201,19 +203,19 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  /**********/
  /* BTCOEX */
-@@ -741,6 +750,9 @@ struct ath_softc {
+@@ -724,6 +733,9 @@ struct ath_softc {
  	struct completion paprd_complete;
  	wait_queue_head_t tx_wait;
  
 +	struct ath_gen_timer *p2p_ps_timer;
 +	struct ath_vif *p2p_ps_vif;
 +
- 	unsigned long sc_flags;
  	unsigned long driver_data;
  
+ 	u8 gtt_cnt;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -797,6 +797,9 @@ static int ath9k_init_softc(u16 devid, s
+@@ -593,6 +593,9 @@ static int ath9k_init_softc(u16 devid, s
  	if (ret)
  		goto err_btcoex;
  
@@ -223,7 +225,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	ath9k_cmn_init_crypto(sc->sc_ah);
  	ath9k_init_misc(sc);
  	ath_fill_led_pin(sc);
-@@ -1082,6 +1085,9 @@ static void ath9k_deinit_softc(struct at
+@@ -870,6 +873,9 @@ static void ath9k_deinit_softc(struct at
  {
  	int i = 0;
  

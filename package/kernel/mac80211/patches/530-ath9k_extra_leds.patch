@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -563,6 +563,9 @@ static inline int ath9k_dump_btcoex(stru
+@@ -555,6 +555,9 @@ static inline int ath9k_dump_btcoex(stru
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
  void ath_fill_led_pin(struct ath_softc *sc);
@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -710,6 +713,13 @@ enum sc_op_flags {
+@@ -693,6 +696,13 @@ void ath_ant_comb_scan(struct ath_softc 
  #define PS_BEACON_SYNC            BIT(4)
  #define PS_WAIT_FOR_ANI           BIT(5)
  
@@ -24,8 +24,8 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -751,9 +761,8 @@ struct ath_softc {
- 	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
+@@ -732,9 +742,8 @@ struct ath_softc {
+ 	struct ath_beacon beacon;
  
  #ifdef CPTCFG_MAC80211_LEDS
 -	bool led_registered;
@@ -162,7 +162,7 @@
  void ath_fill_led_pin(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -1018,7 +1018,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -806,7 +806,7 @@ int ath9k_init_device(u16 devid, struct 
  
  #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -173,7 +173,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1573,6 +1573,61 @@ static const struct file_operations fops
+@@ -1577,6 +1577,61 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -235,7 +235,7 @@
  
  int ath9k_init_debug(struct ath_hw *ah)
  {
-@@ -1597,6 +1652,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1601,6 +1656,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_eeprom);
  	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
  			    sc, &fops_chanbw);

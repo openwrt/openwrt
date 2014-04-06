@@ -16,8 +16,6 @@ Signed-off-by: Eliad Peller <eliad@wizery.com>
  drivers/net/wireless/ti/wl18xx/event.h | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)
 
-diff --git a/drivers/net/wireless/ti/wl18xx/event.h b/drivers/net/wireless/ti/wl18xx/event.h
-index 398f3d2..a76e98e 100644
 --- a/drivers/net/wireless/ti/wl18xx/event.h
 +++ b/drivers/net/wireless/ti/wl18xx/event.h
 @@ -68,6 +68,26 @@ struct wl18xx_event_mailbox {
@@ -47,6 +45,3 @@ index 398f3d2..a76e98e 100644
  } __packed;
  
  int wl18xx_wait_for_event(struct wl1271 *wl, enum wlcore_wait_event event,
--- 
-1.8.5.2.229.g4448466.dirty
-

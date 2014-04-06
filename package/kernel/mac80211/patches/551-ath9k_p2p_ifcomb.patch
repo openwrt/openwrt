@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -863,15 +863,15 @@ void ath9k_reload_chainmask_settings(str
+@@ -649,15 +649,15 @@ static void ath9k_init_txpower_limits(st
  
  static const struct ieee80211_iface_limit if_limits[] = {
  	{ .max = 2048,	.types = BIT(NL80211_IFTYPE_STATION) |
