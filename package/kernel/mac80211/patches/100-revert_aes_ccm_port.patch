@@ -1,3 +1,104 @@
+--- a/net/mac80211/wpa.c
++++ b/net/mac80211/wpa.c
+@@ -301,15 +301,22 @@ ieee80211_crypto_tkip_decrypt(struct iee
+ }
+ 
+ 
+-static void ccmp_special_blocks(struct sk_buff *skb, u8 *pn, u8 *b_0, u8 *aad)
++static void ccmp_special_blocks(struct sk_buff *skb, u8 *pn, u8 *scratch,
++				int encrypted)
+ {
+ 	__le16 mask_fc;
+ 	int a4_included, mgmt;
+ 	u8 qos_tid;
+-	u16 len_a;
++	u8 *b_0, *aad;
++	u16 data_len, len_a;
+ 	unsigned int hdrlen;
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 
++	memset(scratch, 0, 6 * AES_BLOCK_SIZE);
++
++	b_0 = scratch + 3 * AES_BLOCK_SIZE;
++	aad = scratch + 4 * AES_BLOCK_SIZE;
++
+ 	/*
+ 	 * Mask FC: zero subtype b4 b5 b6 (if not mgmt)
+ 	 * Retry, PwrMgt, MoreData; set Protected
+@@ -331,21 +338,20 @@ static void ccmp_special_blocks(struct s
+ 	else
+ 		qos_tid = 0;
+ 
+-	/* In CCM, the initial vectors (IV) used for CTR mode encryption and CBC
+-	 * mode authentication are not allowed to collide, yet both are derived
+-	 * from this vector b_0. We only set L := 1 here to indicate that the
+-	 * data size can be represented in (L+1) bytes. The CCM layer will take
+-	 * care of storing the data length in the top (L+1) bytes and setting
+-	 * and clearing the other bits as is required to derive the two IVs.
+-	 */
+-	b_0[0] = 0x1;
++	data_len = skb->len - hdrlen - IEEE80211_CCMP_HDR_LEN;
++	if (encrypted)
++		data_len -= IEEE80211_CCMP_MIC_LEN;
+ 
++	/* First block, b_0 */
++	b_0[0] = 0x59; /* flags: Adata: 1, M: 011, L: 001 */
+ 	/* Nonce: Nonce Flags | A2 | PN
+ 	 * Nonce Flags: Priority (b0..b3) | Management (b4) | Reserved (b5..b7)
+ 	 */
+ 	b_0[1] = qos_tid | (mgmt << 4);
+ 	memcpy(&b_0[2], hdr->addr2, ETH_ALEN);
+ 	memcpy(&b_0[8], pn, IEEE80211_CCMP_PN_LEN);
++	/* l(m) */
++	put_unaligned_be16(data_len, &b_0[14]);
+ 
+ 	/* AAD (extra authenticate-only data) / masked 802.11 header
+ 	 * FC | A1 | A2 | A3 | SC | [A4] | [QC] */
+@@ -401,8 +407,7 @@ static int ccmp_encrypt_skb(struct ieee8
+ 	u8 *pos;
+ 	u8 pn[6];
+ 	u64 pn64;
+-	u8 aad[2 * AES_BLOCK_SIZE];
+-	u8 b_0[AES_BLOCK_SIZE];
++	u8 scratch[6 * AES_BLOCK_SIZE];
+ 
+ 	if (info->control.hw_key &&
+ 	    !(info->control.hw_key->flags & IEEE80211_KEY_FLAG_GENERATE_IV) &&
+@@ -455,9 +460,9 @@ static int ccmp_encrypt_skb(struct ieee8
+ 		return 0;
+ 
+ 	pos += IEEE80211_CCMP_HDR_LEN;
+-	ccmp_special_blocks(skb, pn, b_0, aad);
+-	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, b_0, aad, pos, len,
+-				  skb_put(skb, IEEE80211_CCMP_MIC_LEN));
++	ccmp_special_blocks(skb, pn, scratch, 0);
++	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, scratch, pos, len,
++				  pos, skb_put(skb, IEEE80211_CCMP_MIC_LEN));
+ 
+ 	return 0;
+ }
+@@ -520,16 +525,16 @@ ieee80211_crypto_ccmp_decrypt(struct iee
+ 	}
+ 
+ 	if (!(status->flag & RX_FLAG_DECRYPTED)) {
+-		u8 aad[2 * AES_BLOCK_SIZE];
+-		u8 b_0[AES_BLOCK_SIZE];
++		u8 scratch[6 * AES_BLOCK_SIZE];
+ 		/* hardware didn't decrypt/verify MIC */
+-		ccmp_special_blocks(skb, pn, b_0, aad);
++		ccmp_special_blocks(skb, pn, scratch, 1);
+ 
+ 		if (ieee80211_aes_ccm_decrypt(
+-			    key->u.ccmp.tfm, b_0, aad,
++			    key->u.ccmp.tfm, scratch,
+ 			    skb->data + hdrlen + IEEE80211_CCMP_HDR_LEN,
+ 			    data_len,
+-			    skb->data + skb->len - IEEE80211_CCMP_MIC_LEN))
++			    skb->data + skb->len - IEEE80211_CCMP_MIC_LEN,
++			    skb->data + hdrlen + IEEE80211_CCMP_HDR_LEN))
+ 			return RX_DROP_UNUSABLE;
+ 	}
+ 
 --- a/net/mac80211/Kconfig
 +++ b/net/mac80211/Kconfig
 @@ -5,7 +5,6 @@ config MAC80211
@@ -244,104 +345,3 @@
  			u32 replays; /* dot11RSNAStatsCCMPReplays */
  		} ccmp;
  		struct {
---- a/net/mac80211/wpa.c
-+++ b/net/mac80211/wpa.c
-@@ -301,16 +301,22 @@ ieee80211_crypto_tkip_decrypt(struct iee
- }
- 
- 
--static void ccmp_special_blocks(struct sk_buff *skb, u8 *pn, u8 *b_0, u8 *aad,
-+static void ccmp_special_blocks(struct sk_buff *skb, u8 *pn, u8 *scratch,
- 				int encrypted)
- {
- 	__le16 mask_fc;
- 	int a4_included, mgmt;
- 	u8 qos_tid;
--	u16 len_a;
-+	u8 *b_0, *aad;
-+	u16 data_len, len_a;
- 	unsigned int hdrlen;
- 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
- 
-+	memset(scratch, 0, 6 * AES_BLOCK_SIZE);
-+
-+	b_0 = scratch + 3 * AES_BLOCK_SIZE;
-+	aad = scratch + 4 * AES_BLOCK_SIZE;
-+
- 	/*
- 	 * Mask FC: zero subtype b4 b5 b6 (if not mgmt)
- 	 * Retry, PwrMgt, MoreData; set Protected
-@@ -332,21 +338,20 @@ static void ccmp_special_blocks(struct s
- 	else
- 		qos_tid = 0;
- 
--	/* In CCM, the initial vectors (IV) used for CTR mode encryption and CBC
--	 * mode authentication are not allowed to collide, yet both are derived
--	 * from this vector b_0. We only set L := 1 here to indicate that the
--	 * data size can be represented in (L+1) bytes. The CCM layer will take
--	 * care of storing the data length in the top (L+1) bytes and setting
--	 * and clearing the other bits as is required to derive the two IVs.
--	 */
--	b_0[0] = 0x1;
-+	data_len = skb->len - hdrlen - IEEE80211_CCMP_HDR_LEN;
-+	if (encrypted)
-+		data_len -= IEEE80211_CCMP_MIC_LEN;
- 
-+	/* First block, b_0 */
-+	b_0[0] = 0x59; /* flags: Adata: 1, M: 011, L: 001 */
- 	/* Nonce: Nonce Flags | A2 | PN
- 	 * Nonce Flags: Priority (b0..b3) | Management (b4) | Reserved (b5..b7)
- 	 */
- 	b_0[1] = qos_tid | (mgmt << 4);
- 	memcpy(&b_0[2], hdr->addr2, ETH_ALEN);
- 	memcpy(&b_0[8], pn, IEEE80211_CCMP_PN_LEN);
-+	/* l(m) */
-+	put_unaligned_be16(data_len, &b_0[14]);
- 
- 	/* AAD (extra authenticate-only data) / masked 802.11 header
- 	 * FC | A1 | A2 | A3 | SC | [A4] | [QC] */
-@@ -402,8 +407,7 @@ static int ccmp_encrypt_skb(struct ieee8
- 	u8 *pos;
- 	u8 pn[6];
- 	u64 pn64;
--	u8 aad[2 * AES_BLOCK_SIZE];
--	u8 b_0[AES_BLOCK_SIZE];
-+	u8 scratch[6 * AES_BLOCK_SIZE];
- 
- 	if (info->control.hw_key &&
- 	    !(info->control.hw_key->flags & IEEE80211_KEY_FLAG_GENERATE_IV) &&
-@@ -456,9 +460,9 @@ static int ccmp_encrypt_skb(struct ieee8
- 		return 0;
- 
- 	pos += IEEE80211_CCMP_HDR_LEN;
--	ccmp_special_blocks(skb, pn, b_0, aad, 0);
--	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, b_0, aad, pos, len,
--				  skb_put(skb, IEEE80211_CCMP_MIC_LEN));
-+	ccmp_special_blocks(skb, pn, scratch, 0);
-+	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, scratch, pos, len,
-+				  pos, skb_put(skb, IEEE80211_CCMP_MIC_LEN));
- 
- 	return 0;
- }
-@@ -521,16 +525,16 @@ ieee80211_crypto_ccmp_decrypt(struct iee
- 	}
- 
- 	if (!(status->flag & RX_FLAG_DECRYPTED)) {
--		u8 aad[2 * AES_BLOCK_SIZE];
--		u8 b_0[AES_BLOCK_SIZE];
-+		u8 scratch[6 * AES_BLOCK_SIZE];
- 		/* hardware didn't decrypt/verify MIC */
--		ccmp_special_blocks(skb, pn, b_0, aad, 1);
-+		ccmp_special_blocks(skb, pn, scratch, 1);
- 
- 		if (ieee80211_aes_ccm_decrypt(
--			    key->u.ccmp.tfm, b_0, aad,
-+			    key->u.ccmp.tfm, scratch,
- 			    skb->data + hdrlen + IEEE80211_CCMP_HDR_LEN,
- 			    data_len,
--			    skb->data + skb->len - IEEE80211_CCMP_MIC_LEN))
-+			    skb->data + skb->len - IEEE80211_CCMP_MIC_LEN,
-+			    skb->data + hdrlen + IEEE80211_CCMP_HDR_LEN))
- 			return RX_DROP_UNUSABLE;
- 	}
- 

@@ -1,6 +1,6 @@
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -2156,6 +2156,7 @@ struct cfg80211_qos_map {
+@@ -2167,6 +2167,7 @@ struct cfg80211_qos_map {
   *	(as advertised by the nl80211 feature flag.)
   * @get_tx_power: store the current TX power into the dbm variable;
   *	return 0 if successful
@@ -8,7 +8,7 @@
   *
   * @set_wds_peer: set the WDS peer for a WDS interface
   *
-@@ -2380,6 +2381,7 @@ struct cfg80211_ops {
+@@ -2396,6 +2397,7 @@ struct cfg80211_ops {
  				enum nl80211_tx_power_setting type, int mbm);
  	int	(*get_tx_power)(struct wiphy *wiphy, struct wireless_dev *wdev,
  				int *dbm);
@@ -18,7 +18,7 @@
  				const u8 *addr);
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1033,6 +1033,7 @@ enum ieee80211_smps_mode {
+@@ -1032,6 +1032,7 @@ enum ieee80211_smps_mode {
   *
   * @power_level: requested transmit power (in dBm), backward compatibility
   *	value only that is set to the minimum of all interfaces
@@ -26,7 +26,7 @@
   *
   * @chandef: the channel definition to tune to
   * @radar_enabled: whether radar detection is enabled
-@@ -1054,6 +1055,7 @@ struct ieee80211_conf {
+@@ -1053,6 +1054,7 @@ struct ieee80211_conf {
  	u32 flags;
  	int power_level, dynamic_ps_timeout;
  	int max_sleep_period;
@@ -36,9 +36,9 @@
  	u8 ps_dtim_period;
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -1555,6 +1555,9 @@ enum nl80211_commands {
-  *	data is in the format defined for the payload of the QoS Map Set element
-  *	in IEEE Std 802.11-2012, 8.4.2.97.
+@@ -1579,6 +1579,9 @@ enum nl80211_commands {
+  * @NL80211_ATTR_TDLS_PEER_CAPABILITY: flags for TDLS peer capabilities, u32.
+  *	As specified in the &enum nl80211_tdls_peer_capability.
   *
 + * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
 + *	transmit power to stay within regulatory limits. u32, dBi.
@@ -46,9 +46,9 @@
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
   */
-@@ -1883,6 +1886,8 @@ enum nl80211_attrs {
+@@ -1914,6 +1917,8 @@ enum nl80211_attrs {
  
- 	NL80211_ATTR_QOS_MAP,
+ 	NL80211_ATTR_TDLS_PEER_CAPABILITY,
  
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
 +
@@ -57,7 +57,7 @@
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2339,6 +2339,19 @@ static int ieee80211_get_tx_power(struct
+@@ -2345,6 +2345,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -77,7 +77,7 @@
  static int ieee80211_set_wds_peer(struct wiphy *wiphy, struct net_device *dev,
  				  const u8 *addr)
  {
-@@ -3924,6 +3937,7 @@ struct cfg80211_ops mac80211_config_ops
+@@ -4000,6 +4013,7 @@ const struct cfg80211_ops mac80211_confi
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
@@ -87,7 +87,7 @@
  	CFG80211_TESTMODE_CMD(ieee80211_testmode_cmd)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1221,6 +1221,7 @@ struct ieee80211_local {
+@@ -1225,6 +1225,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */
@@ -139,34 +139,32 @@
  	local->user_power_level = IEEE80211_UNSET_POWER_LEVEL;
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -384,6 +384,7 @@ static const struct nla_policy nl80211_p
- 	[NL80211_ATTR_VENDOR_DATA] = { .type = NLA_BINARY },
- 	[NL80211_ATTR_QOS_MAP] = { .type = NLA_BINARY,
- 				   .len = IEEE80211_QOS_MAP_LEN_MAX },
+@@ -385,6 +385,7 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_MAC_HINT] = { .len = ETH_ALEN },
+ 	[NL80211_ATTR_WIPHY_FREQ_HINT] = { .type = NLA_U32 },
+ 	[NL80211_ATTR_TDLS_PEER_CAPABILITY] = { .type = NLA_U32 },
 +	[NL80211_ATTR_WIPHY_ANTENNA_GAIN] = { .type = NLA_U32 },
  };
  
  /* policy for the key attributes */
-@@ -2104,6 +2105,22 @@ static int nl80211_set_wiphy(struct sk_b
- 		if (result)
- 			goto bad_res;
+@@ -2116,6 +2117,20 @@ static int nl80211_set_wiphy(struct sk_b
+ 			return result;
  	}
-+
+ 
 +	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_GAIN]) {
 +		int idx, dbi = 0;
 +
-+		if (!rdev->ops->set_antenna_gain) {
-+			result = -EOPNOTSUPP;
-+			goto bad_res;
-+		}
++		if (!rdev->ops->set_antenna_gain)
++			return -EOPNOTSUPP;
 +
 +		idx = NL80211_ATTR_WIPHY_ANTENNA_GAIN;
 +		dbi = nla_get_u32(info->attrs[idx]);
 +
 +		result = rdev->ops->set_antenna_gain(&rdev->wiphy, dbi);
 +		if (result)
-+			goto bad_res;
++			return result;
 +	}
- 
++
  	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_TX] &&
  	    info->attrs[NL80211_ATTR_WIPHY_ANTENNA_RX]) {
+ 		u32 tx_ant, rx_ant;

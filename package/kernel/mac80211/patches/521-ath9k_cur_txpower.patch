@@ -14,7 +14,7 @@
  
  out:
  	spin_unlock_bh(&sc->sc_pcu_lock);
-@@ -1371,6 +1375,7 @@ static int ath9k_config(struct ieee80211
+@@ -1370,6 +1374,7 @@ static int ath9k_config(struct ieee80211
  		sc->config.txpowlimit = 2 * conf->power_level;
  		ath9k_cmn_update_txpow(ah, sc->curtxpow,
  				       sc->config.txpowlimit, &sc->curtxpow);
