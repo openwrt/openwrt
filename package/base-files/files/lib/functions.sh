@@ -331,15 +331,6 @@ macaddr_canonicalize()
 	printf "%02x:%02x:%02x:%02x:%02x:%02x" 0x${canon// / 0x} 2>/dev/null
 }
 
-jffs2_mark_erase() {
-	local part="$(find_mtd_part "$1")"
-	[ -z "$part" ] && {
-		echo Partition not found.
-		return 1
-	}
-	echo -e "\xde\xad\xc0\xde" | mtd -qq write - "$1"
-}
-
 group_add() {
 	local name="$1"
 	local gid="$2"
