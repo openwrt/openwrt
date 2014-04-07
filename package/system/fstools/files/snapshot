@@ -6,7 +6,7 @@ do_snapshot_unpack() {
 	echo "- snapshot -"
 	mkdir /tmp/snapshot
 	cd /tmp/snapshot
-	fs-state snapshot read
+	snapshot_tool read
 	block=`ls block*.tar.gz 2> /dev/null`
 	[ -z "$block" ] || for a in $block; do
 		tar xzf $a -C /
@@ -16,7 +16,7 @@ do_snapshot_unpack() {
 
 do_config_unpack() {
 	echo "- config -"
-	fs-state snapshot config_read
+	snapshot_tool config_read
 	[ -f /tmp/config.tar.gz ] && {
 		tar xzf /tmp/config.tar.gz -C /
 		rm -f /tmp/config.tar.gz
@@ -26,14 +26,14 @@ do_config_unpack() {
 do_snapshot_push() {
 	cd /volatile
 	tar czf /tmp/snapshot.tar.gz *
-	fs-state snapshot write
+	snapshot_tool write
 	reboot
 }
 
 do_config_push() {
 	cd /volatile
 	tar czf /tmp/config.tar.gz *
-	fs-state snapshot config_write
+	snapshot_tool config_write
 }
 
 do_snapshot_upgrade() {
@@ -56,7 +56,7 @@ do_snapshot_upgrade() {
 }
 
 do_convert_jffs2() {
-	fs-state snapshot write
+	snapshot_tool write
 	sleep 2
 	reboot -f
 }
@@ -94,7 +94,7 @@ upgrade)
 	do_snapshot_upgrade
 	;;
 info)
-	fs-state info
+	snapshot_tool info
 	;;
 esac
 }
