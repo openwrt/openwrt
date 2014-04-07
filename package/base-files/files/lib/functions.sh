@@ -84,24 +84,6 @@ list() {
 	list_cb "$varname" "$*"
 }
 
-config_rename() {
-	local OLD="$1"
-	local NEW="$2"
-	local oldvar
-	local newvar
-
-	[ -n "$OLD" -a -n "$NEW" ] || return
-	for oldvar in `set | grep ^CONFIG_${OLD}_ | \
-		sed -e 's/\(.*\)=.*$/\1/'` ; do
-		newvar="CONFIG_${NEW}_${oldvar##CONFIG_${OLD}_}"
-		eval "export ${NO_EXPORT:+-n} \"$newvar=\${$oldvar}\""
-		unset "$oldvar"
-	done
-	export ${NO_EXPORT:+-n} CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , $NEW ,")"
-
-	[ "$CONFIG_SECTION" = "$OLD" ] && export ${NO_EXPORT:+-n} CONFIG_SECTION="$NEW"
-}
-
 config_unset() {
 	config_set "$1" "$2" ""
 }
