@@ -24,6 +24,7 @@ pi_init_path="/bin:/sbin:/usr/bin:/usr/sbin"
 pi_init_cmd="/sbin/init"
 
 . /lib/functions.sh
+. /lib/functions/preinit.sh
 
 boot_hook_init preinit_essential
 boot_hook_init preinit_main
