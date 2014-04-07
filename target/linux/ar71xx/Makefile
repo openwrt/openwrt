@@ -18,8 +18,7 @@ LINUX_VERSION:=3.10.34
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
-	kmod-leds-gpio kmod-gpio-button-hotplug swconfig \
-	kmod-ledtrig-default-on kmod-ledtrig-timer kmod-ledtrig-netdev \
+	kmod-gpio-button-hotplug swconfig \
 	kmod-ath9k wpad-mini uboot-envtools
 
 $(eval $(call BuildTarget))
