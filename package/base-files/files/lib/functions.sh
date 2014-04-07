@@ -17,10 +17,6 @@ NO_EXPORT=1
 LOAD_STATE=1
 LIST_SEP=" "
 
-hotplug_dev() {
-	env -i ACTION=$1 INTERFACE=$2 /sbin/hotplug-call net
-}
-
 append() {
 	local var="$1"
 	local value="$2"
