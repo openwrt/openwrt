@@ -533,13 +533,6 @@ boot_run_hook() {
 	done
 }
 
-jffs2_ready() {
-	mtdpart="$(find_mtd_part rootfs_data)"
-	[ -z "$mtdpart" ] && return 1
-	magic=$(hexdump $mtdpart -n 4 -e '4/1 "%02x"')
-	[ "$magic" != "deadc0de" ]
-}
-
 pivot() { # <new_root> <old_root>
 	/bin/mount -o noatime,move /proc $1/proc && \
 	pivot_root $1 $1$2 && {
