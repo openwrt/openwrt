@@ -178,6 +178,9 @@ get_status_led() {
 	tl-wr720n-v3)
 		status_led="tp-link:blue:system"
 		;;
+	tl-wr841n-v9)
+		status_led="tp-link:green:qss"
+		;;
 	tl-wr2543n)
 		status_led="tp-link:green:wps"
 		;;
