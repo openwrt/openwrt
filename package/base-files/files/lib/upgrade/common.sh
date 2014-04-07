@@ -58,6 +58,7 @@ run_ramfs() { # <command> [...]
 		/bin/cut /usr/bin/printf /bin/sync
 
 	install_bin /sbin/mtd
+	install_bin /sbin/ubi
 	install_bin /sbin/mount_root
 	install_bin /sbin/snapshot
 	install_bin /sbin/snapshot_tool
