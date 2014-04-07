@@ -6,6 +6,14 @@ endef
 
 $(eval $(call Profile,VG3503J))
 
+define Profile/VG3503J_V2
+  NAME:=BT Openreach - ECI VDSL Modem v2
+  PACKAGES:=kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
+       kmod-ltq-ptm-vr9 ltq-vdsl-app
+endef
+
+$(eval $(call Profile,VG3503J_V2))
+
 define Profile/VGV7519NOR
   NAME:=Experiabox 8 VGV7519
   PACKAGES:=kmod-ath9k wpad-mini \
