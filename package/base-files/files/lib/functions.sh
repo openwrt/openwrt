@@ -447,30 +447,6 @@ user_exists() {
 }
 
 
-pi_include() {
-	if [ -f "/tmp/overlay/$1" ]; then
-		. "/tmp/overlay/$1"
-	elif [ -f "$1" ]; then
-		. "$1"
-	elif [ -d "/tmp/overlay/$1" ]; then
-		if [ -n "$(ls /tmp/overlay/$1/*.sh 2>/dev/null)" ]; then
-			for src_script in /tmp/overlay/$1/*.sh; do
-				. "$src_script"
-			done
-		fi
-	elif [ -d "$1" ]; then
-		if [ -n "$(ls $1/*.sh 2>/dev/null)" ]; then
-			for src_script in $1/*.sh; do
-				. "$src_script"
-			done
-		fi
-	else
-		echo "WARNING: $1 not found"
-		return 1
-	fi
-	return 0
-}
-
 boot_hook_splice_start() {
 	export -n PI_HOOK_SPLICE=1
 }
