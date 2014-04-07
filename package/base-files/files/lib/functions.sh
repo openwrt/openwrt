@@ -368,17 +368,6 @@ jffs2_mark_erase() {
 	echo -e "\xde\xad\xc0\xde" | mtd -qq write - "$1"
 }
 
-uci_apply_defaults() {
-	cd /etc/uci-defaults || return 0
-	files="$(ls)"
-	[ -z "$files" ] && return 0
-	mkdir -p /tmp/.uci
-	for file in $files; do
-		( . "./$(basename $file)" ) && rm -f "$file"
-	done
-	uci commit
-}
-
 group_add() {
 	local name="$1"
 	local gid="$2"
