@@ -34,21 +34,6 @@ list_contains() {
 	[ "${val%% $str *}" != "$val" ]
 }
 
-list_remove() {
-	local var="$1"
-	local remove="$2"
-	local val
-
-	eval "val=\" \${$var} \""
-	val1="${val%% $remove *}"
-	[ "$val1" = "$val" ] && return
-	val2="${val##* $remove }"
-	[ "$val2" = "$val" ] && return
-	val="${val1## } ${val2%% }"
-	val="${val%% }"
-	eval "export ${NO_EXPORT:+-n} -- \"$var=\$val\""
-}
-
 config_load() {
 	[ -n "$IPKG_INSTROOT" ] && return 0
 	uci_load "$@"
@@ -119,19 +104,6 @@ config_rename() {
 
 config_unset() {
 	config_set "$1" "$2" ""
-}
-
-config_clear() {
-	local SECTION="$1"
-	local oldvar
-
-	list_remove CONFIG_SECTIONS "$SECTION"
-	export ${NO_EXPORT:+-n} CONFIG_SECTIONS="${SECTION:+$CONFIG_SECTIONS}"
-
-	for oldvar in `set | grep ^CONFIG_${SECTION:+${SECTION}_} | \
-		sed -e 's/\(.*\)=.*$/\1/'` ; do
-		unset $oldvar
-	done
 }
 
 # config_get <variable> <section> <option> [<default>]
