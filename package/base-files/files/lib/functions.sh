@@ -363,32 +363,6 @@ macaddr_canonicalize()
 	printf "%02x:%02x:%02x:%02x:%02x:%02x" 0x${canon// / 0x} 2>/dev/null
 }
 
-strtok() { # <string> { <variable> [<separator>] ... }
-	local tmp
-	local val="$1"
-	local count=0
-
-	shift
-
-	while [ $# -gt 1 ]; do
-		tmp="${val%%$2*}"
-
-		[ "$tmp" = "$val" ] && break
-
-		val="${val#$tmp$2}"
-
-		export ${NO_EXPORT:+-n} "$1=$tmp"; count=$((count+1))
-		shift 2
-	done
-
-	if [ $# -gt 0 -a -n "$val" ]; then
-		export ${NO_EXPORT:+-n} "$1=$val"; count=$((count+1))
-	fi
-
-	return $count
-}
-
-
 jffs2_mark_erase() {
 	local part="$(find_mtd_part "$1")"
 	[ -z "$part" ] && {
