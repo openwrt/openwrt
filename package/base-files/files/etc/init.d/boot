@@ -5,6 +5,8 @@ START=10
 STOP=98
 
 uci_apply_defaults() {
+	. /lib/functions/system.sh
+
 	cd /etc/uci-defaults || return 0
 	files="$(ls)"
 	[ -z "$files" ] && return 0

@@ -14,6 +14,7 @@ ath9k_eeprom_extract() {
 	local mtd
 
 	. /lib/functions.sh
+	. /lib/functions/system.sh
 
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || \
@@ -29,6 +30,7 @@ tpl_set_wireless_mac()
 	local mac
 
 	. /lib/functions.sh
+	. /lib/functions/system.sh
 
 	mac=$(mtd_get_mac_binary u-boot 326656)
 	mac=$(macaddr_add $mac $offset)
