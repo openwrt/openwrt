@@ -4,6 +4,17 @@
 START=10
 STOP=98
 
+uci_apply_defaults() {
+	cd /etc/uci-defaults || return 0
+	files="$(ls)"
+	[ -z "$files" ] && return 0
+	mkdir -p /tmp/.uci
+	for file in $files; do
+		( . "./$(basename $file)" ) && rm -f "$file"
+	done
+	uci commit
+}
+
 boot() {
 	[ -f /proc/mounts ] || /sbin/mount_root
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
@@ -33,7 +44,7 @@ boot() {
 	}
 	rm -f /tmp/wireless.tmp
 
-	sh -c '. /lib/functions.sh; include /lib/config; uci_apply_defaults'
+	uci_apply_defaults
 	
 	# temporary hack until configd exists
 	/sbin/reload_config
