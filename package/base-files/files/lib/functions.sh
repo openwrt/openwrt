@@ -540,33 +540,6 @@ jffs2_ready() {
 	[ "$magic" != "deadc0de" ]
 }
 
-dupe() { # <new_root> <old_root>
-	cd $1
-	echo -n "creating directories... "
-	{
-		cd $2
-		find . -xdev -type d
-		echo "./dev ./overlay ./mnt ./proc ./tmp"
-		# xdev skips mounted directories
-		cd $1
-	} | xargs mkdir -p
-	echo "done"
-
-	echo -n "setting up symlinks... "
-	for file in $(cd $2; find . -xdev -type f;); do
-		case "$file" in
-		./rom/note) ;; #nothing
-		./etc/config*|\
-		./usr/lib/opkg/info/*) cp -af $2/$file $file;;
-		*) ln -sf /rom/${file#./*} $file;;
-		esac
-	done
-	for file in $(cd $2; find . -xdev -type l;); do
-		cp -af $2/${file#./*} $file
-	done
-	echo "done"
-}
-
 pivot() { # <new_root> <old_root>
 	/bin/mount -o noatime,move /proc $1/proc && \
 	pivot_root $1 $1$2 && {
@@ -579,23 +552,8 @@ pivot() { # <new_root> <old_root>
 }
 
 fopivot() { # <rw_root> <ro_root> <dupe?>
-	root=$1
-	{
-		if grep -q overlay /proc/filesystems; then
-			/bin/mount -o noatime,lowerdir=/,upperdir=$1 -t overlayfs "overlayfs:$1" /mnt && root=/mnt
-		elif grep -q mini_fo /proc/filesystems; then
-			/bin/mount -t mini_fo -o noatime,base=/,sto=$1 "mini_fo:$1" /mnt 2>&- && root=/mnt
-		else
-			/bin/mount --bind -o noatime / /mnt
-			/bin/mount --bind -o noatime,union "$1" /mnt && root=/mnt
-		fi
-	} || {
-		[ "$3" = "1" ] && {
-		/bin/mount | grep "on $1 type" 2>&- 1>&- || /bin/mount -o noatime,bind $1 $1
-		dupe $1 $rom
-		}
-	}
-	pivot $root $2
+	/bin/mount -o noatime,lowerdir=/,upperdir=$1 -t overlayfs "overlayfs:$1" /mnt
+	pivot /mnt $2
 }
 
 ramoverlay() {
