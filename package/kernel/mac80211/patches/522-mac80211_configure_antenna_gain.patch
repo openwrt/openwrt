@@ -102,34 +102,24 @@
  	struct cfg80211_chan_def chandef = {};
  	u32 changed = 0;
 -	int power;
-+	int power, ant_gain, max_power;
++	int power, max_power;
  	u32 offchannel_flag;
  
  	offchannel_flag = local->hw.conf.flags & IEEE80211_CONF_OFFCHANNEL;
-@@ -156,8 +156,21 @@ static u32 ieee80211_hw_conf_chan(struct
+@@ -156,6 +156,12 @@ static u32 ieee80211_hw_conf_chan(struct
  	}
  	rcu_read_unlock();
  
--	if (local->hw.conf.power_level != power) {
 +	max_power = chandef.chan->max_reg_power;
-+	ant_gain = chandef.chan->max_antenna_gain;
 +	if (local->user_antenna_gain > 0) {
-+		if (local->user_antenna_gain > ant_gain) {
-+			max_power -= local->user_antenna_gain - ant_gain;
-+			ant_gain = 0;
-+		} else
-+			ant_gain -= local->user_antenna_gain;
++		max_power -= local->user_antenna_gain;
 +		power = min(power, max_power);
 +	}
 +
-+	if (local->hw.conf.power_level != power ||
-+	    local->hw.conf.max_antenna_gain != ant_gain) {
+ 	if (local->hw.conf.power_level != power) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;
-+		local->hw.conf.max_antenna_gain = ant_gain;
  		local->hw.cur_power_level = power;
- 		local->hw.conf.power_level = power;
- 	}
-@@ -584,6 +597,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+@@ -584,6 +590,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(
  					 IEEE80211_RADIOTAP_MCS_HAVE_BW;
  	local->hw.radiotap_vht_details = IEEE80211_RADIOTAP_VHT_KNOWN_GI |
  					 IEEE80211_RADIOTAP_VHT_KNOWN_BANDWIDTH;
