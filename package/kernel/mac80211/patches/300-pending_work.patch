@@ -1,3 +1,13 @@
+commit 0ca13e26341733bf9577287fb04a3bef0d2f5cc9
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Wed Apr 9 00:07:01 2014 +0200
+
+    mac80211: suppress BSS info change notifications for AP_VLAN
+    
+    Fixes warnings on tx power changes
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit ec998e5991781ecdaad0911dc64f1c8d3749c308
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Tue Apr 8 23:42:17 2014 +0200
@@ -55,3 +65,14 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  }
  
  void ath9k_beacon_tasklet(unsigned long data)
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -203,7 +203,7 @@ void ieee80211_bss_info_change_notify(st
+ {
+ 	struct ieee80211_local *local = sdata->local;
+ 
+-	if (!changed)
++	if (!changed || sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
+ 		return;
+ 
+ 	drv_bss_info_changed(local, sdata, &sdata->vif.bss_conf, changed);
