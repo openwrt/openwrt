@@ -17,7 +17,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/arch/mips/bcm47xx/board.c
 +++ b/arch/mips/bcm47xx/board.c
-@@ -181,6 +181,13 @@ struct bcm47xx_board_type_list3 bcm47xx_
+@@ -182,6 +182,13 @@ struct bcm47xx_board_type_list3 bcm47xx_
  	{ {0}, NULL},
  };
  
@@ -31,7 +31,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static const
  struct bcm47xx_board_type bcm47xx_board_unknown[] __initconst = {
  	{BCM47XX_BOARD_UNKNOWN, "Unknown Board"},
-@@ -274,6 +281,16 @@ static __init const struct bcm47xx_board
+@@ -275,6 +282,16 @@ static __init const struct bcm47xx_board
  				return &e3->board;
  		}
  	}
