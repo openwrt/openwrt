@@ -168,6 +168,13 @@ include() {
 	done
 }
 
+find_mtd_index() {
+	local PART="$(grep "\"$1\"" /proc/mtd | awk -F: '{print $1}')"
+	local INDEX="${PART##mtd}"
+
+	echo ${INDEX}
+}
+
 find_mtd_part() {
 	local INDEX=$(find_mtd_index "$1")
 	local PREFIX=/dev/mtdblock
