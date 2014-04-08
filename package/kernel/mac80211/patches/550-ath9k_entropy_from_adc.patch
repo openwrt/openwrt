@@ -124,7 +124,7 @@
  		long_cal_interval = ATH_LONG_CALINTERVAL_INT;
 --- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-@@ -1233,9 +1233,30 @@ static void ar5008_hw_set_radar_conf(str
+@@ -1231,9 +1231,30 @@ static void ar5008_hw_set_radar_conf(str
  	conf->radar_inband = 8;
  }
  
@@ -155,7 +155,7 @@
  	static const u32 ar5416_cca_regs[6] = {
  		AR_PHY_CCA,
  		AR_PHY_CH1_CCA,
-@@ -1250,6 +1271,8 @@ int ar5008_hw_attach_phy_ops(struct ath_
+@@ -1248,6 +1269,8 @@ int ar5008_hw_attach_phy_ops(struct ath_
  	if (ret)
  	    return ret;
  

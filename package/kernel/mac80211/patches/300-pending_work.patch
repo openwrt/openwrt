@@ -1,0 +1,28 @@
+commit 93f310a38a1d81a4bc8fcd9bf29628bd721cf2ef
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sun Apr 6 23:35:28 2014 +0200
+
+    ath9k_hw: reduce ANI firstep range for older chips
+    
+    Use 0-8 instead of 0-16, which is closer to the old implementation.
+    Also drop the overwrite of the firstep_low parameter to improve
+    stability.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -1004,11 +1004,9 @@ static bool ar5008_hw_ani_control_new(st
+ 	case ATH9K_ANI_FIRSTEP_LEVEL:{
+ 		u32 level = param;
+ 
+-		value = level * 2;
++		value = level;
+ 		REG_RMW_FIELD(ah, AR_PHY_FIND_SIG,
+ 			      AR_PHY_FIND_SIG_FIRSTEP, value);
+-		REG_RMW_FIELD(ah, AR_PHY_FIND_SIG_LOW,
+-			      AR_PHY_FIND_SIG_FIRSTEP_LOW, value);
+ 
+ 		if (level != aniState->firstepLevel) {
+ 			ath_dbg(common, ANI,
