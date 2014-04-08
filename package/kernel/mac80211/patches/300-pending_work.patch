@@ -1,3 +1,16 @@
+commit ec998e5991781ecdaad0911dc64f1c8d3749c308
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Tue Apr 8 23:42:17 2014 +0200
+
+    ath9k: fix a scheduling while atomic bug in CSA handling
+    
+    Commit "ath9k: prepare for multi-interface CSA support" added a call to
+    ieee80211_iterate_active_interfaces in atomic context (beacon tasklet),
+    which is crashing.
+    Use ieee80211_iterate_active_interfaces_atomic instead.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 93f310a38a1d81a4bc8fcd9bf29628bd721cf2ef
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Sun Apr 6 23:35:28 2014 +0200
@@ -26,3 +39,19 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  
  		if (level != aniState->firstepLevel) {
  			ath_dbg(common, ANI,
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -312,10 +312,9 @@ static void ath9k_csa_update_vif(void *d
+ 
+ void ath9k_csa_update(struct ath_softc *sc)
+ {
+-	ieee80211_iterate_active_interfaces(sc->hw,
+-					    IEEE80211_IFACE_ITER_NORMAL,
+-					    ath9k_csa_update_vif,
+-					    sc);
++	ieee80211_iterate_active_interfaces_atomic(sc->hw,
++						   IEEE80211_IFACE_ITER_NORMAL,
++						   ath9k_csa_update_vif, sc);
+ }
+ 
+ void ath9k_beacon_tasklet(unsigned long data)
