@@ -12,7 +12,7 @@ BOARDNAME:=x86_64
 FEATURES:=ext4 vdi vmdk targz
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.13.7
+LINUX_VERSION:=3.14
 
 KERNELNAME:=bzImage
 
