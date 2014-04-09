@@ -24,7 +24,6 @@ define KernelPackage/ltq-ptm-template
   VARIANT:=$(1)
   DEPENDS:=@TARGET_lantiq_$(2)
   FILES:=$(PKG_BUILD_DIR)/ltq_ptm_$(1).ko 
-  AUTOLOAD:=$(call AutoProbe,ltq_ptm_$(1))
 endef
 
 KernelPackage/ltq-ptm-danube=$(call KernelPackage/ltq-ptm-template,danube,xway)
