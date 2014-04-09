@@ -1,7 +1,7 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2012 OpenWrt.org
 
-START=99
+#START=99
 
 EXTRA_COMMANDS="status lucistat"
 EXTRA_HELP="	status  Get DSL status information
@@ -13,24 +13,168 @@ SERVICE_WRITE_PID=1
 . /lib/functions/lantiq_dsl.sh
 XDSL_CTRL=vdsl_cpe_control
 
-start() {
-	local firmware xtu
-	
-	config_load network
-	
-	config_get firmware wan firmware
-	[ -z "${firmware}" ] &&
-		firmware=vdsl.bin
+# G.992.1 Annex A
+# G.992.2 Annex A
+# G.992.3 Annex A
+# G.992.4 Annex A
+# G.992.5 Annex A
+# G.993.2 Annex A/B/C
+xtse_adsl_a="04 01 04 01 00 01 00 00"
 
-	config_get xtu wan xtu
-	[ -z "${xtu}" ] &&
-		xtu=10_00_10_00_00_04_01_07
+# G.992.1 Annex B
+# G.992.3 Annex B
+# G.992.5 Annex B
+# G.993.2 Annex A/B/C
+xtse_adsl_b="10 00 10 00 00 04 00 00"
+
+# G.992.1 Annex B
+# G.992.3 Annex B
+# G.992.3 Annex J
+# G.992.5 Annex B
+# G.992.5 Annex J
+# G.993.2 Annex A/B/C
+xtse_adsl_j="10 00 10 40 00 04 01 00"
+
+xtse_vdsl="00 00 00 00 00 00 00 07"
+
+xdsl_scr() {
+	val=`echo $2 | sed "s/ / 0x/g"`
+	echo "[WaitForConfiguration]={
+#G997XTUSEC_g997xtusecs 0x$val
+}
+
+[WaitForLinkActivate]={
+}
+
+[WaitForRestart]={
+}
+
+[Common]={
+}" > /tmp/$1.scr
+}
+
+# A43
+tone_adsl_a="0x142"
+tone_vdsl_a="0x142"
+
+# A43 + V43
+tone_adsl_av="0x142"
+tone_vdsl_av="0x146"
+
+# B43
+tone_adsl_b="0x1"
+tone_vdsl_b="0x1"
+
+# B43 + V43
+tone_adsl_bv="0x1"
+tone_vdsl_bv="0x5"
+
+lowlevel_cfg() {
+	echo "# VRX Low Level Configuration File
+#
+# Parameters must be separated by tabs or spaces.
+# Empty lines and comments will be ignored.
+#
+
+# nFilter
+#
+# NA     = -1
+# OFF    = 0
+# ISDN   = 1
+# POTS   = 2
+# POTS_2 = 3
+# POTS_3 = 4
+#
+#  (dec)
+    -1
+
+# nHsToneGroupMode nHsToneGroup_A       nHsToneGroup_V    nHsToneGroup_AV
+#
+# NA     = -1      NA         = -1      see               see
+# AUTO   = 0       VDSL2_B43  = 0x0001  nHsToneGroup_A    nHsToneGroup_A
+# MANUAL = 1       VDSL2_A43  = 0x0002
+#                  VDSL2_V43  = 0x0004
+#                  VDSL1_V43P = 0x0008
+#                  VDSL1_V43I = 0x0010
+#                  ADSL1_C43  = 0x0020
+#                  ADSL2_J43  = 0x0040
+#                  ADSL2_B43C = 0x0080
+#                  ADSL2_A43C = 0x0100
+#
+#  (dec)           (hex)                (hex)             (hex)
+     1             $1			$2		 0x0
+
+#   nBaseAddr     nIrqNum
+#
+#     (hex)        (dec)
+    0x1e116000      63
+
+# nUtopiaPhyAdr   nUtopiaBusWidth      nPosPhyParity
+#                 default(16b) = 0     NA   = -1
+#                 8-bit        = 1     ODD  = 0
+#                 16-bit       = 2
+#
+#
+#    (hex)            (dec)                (dec)
+      0xFF              0                    0
+
+# bNtrEnable
+#
+#  (dec)
+    0" > /tmp/lowlevel.cfg
+}
+
+start() {
+	local annex
+	local firmware
+	local tone
+	local tone_adsl
+	local tone_vdsl
+	local xtse_adsl
+	local mode
+
+	config_load network
+	config_get tone wan tone
+	config_get annex wan annex
+	config_get firmware wan firmware
+	config_get xfer_mode wan xfer_mode
+
+	[ -z "${xfer_mode}" ] && xfer_mode=ptm
+
+	case "${xfer_mode}" in
+	atm)
+		insmod ltq_atm_vr9
+		mode=1
+		;;
+	*)
+		insmod ltq_ptm_vr9
+		mode=2
+		;;
+	esac
+
+	eval "xtse_adsl=\"\${xtse_adsl_$annex}\""
+	[ -z "${xtse_adsl}" ] && xtse_adsl=$xtse_adsl_b
+
+	eval "tone_adsl=\"\${tone_adsl_$tone}\""
+	[ -z "${tone_adsl}" ] && tone_adsl=$tone_adsl_av
+
+	eval "tone_vdsl=\"\${tone_vdsl_$tone}\""
+	[ -z "${tone_vdsl}" ] && tone_vdsl=$tone_vdsl_av
+		
+	[ -z "${firmware}" ] && firmware=vdsl.bin
+
+	xdsl_scr adsl "${xtse_adsl}"
+	xdsl_scr vdsl "${xtse_vdsl}"
+	lowlevel_cfg "${tone_adsl}" "${tone_vdsl}"
 
 	service_start /sbin/vdsl_cpe_control \
-		-i${xtu} \
-		-T4_0_1
-		-n /sbin/dsl_notify.sh \
-		-f /lib/firmware/${firmware}
+			-i `echo $xtse_adsl | sed "s/ /_/g"` \
+			-n /sbin/dsl_notify.sh \
+			-f /lib/firmware/${firmware} \
+			-a /tmp/adsl.scr \
+			-A /tmp/vdsl.scr \
+			-l /tmp/lowlevel.cfg \
+			-M ${mode}
 }
 
 stop() {
