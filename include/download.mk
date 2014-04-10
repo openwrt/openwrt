@@ -31,6 +31,7 @@ endef
 # code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
 dl_pack/bz2=$(TAR) cjf $(1) $(2)
 dl_pack/gz=$(TAR) czf $(1) $(2)
+dl_pack/xz=$(TAR) c $(2) | xz -zc > $(1)
 dl_pack/unknown=echo "ERROR: Unknown pack format for file $(1)"; false
 define dl_pack
 	$(if $(dl_pack/$(call ext,$(1))),$(dl_pack/$(call ext,$(1))),$(dl_pack/unknown))
