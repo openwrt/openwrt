@@ -1,3 +1,16 @@
+commit 7cbb4c021bfd1e656f5b9953a947ab3c64e4e3b0
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Thu Apr 10 10:49:01 2014 +0200
+
+    mac80211: exclude AP_VLAN interfaces from tx power calculation
+    
+    Their power value is initialized to zero. This patch fixes an issue
+    where the configured power drops to the minimum value when AP_VLAN
+    interfaces are created/removed.
+    
+    Cc: stable@vger.kernel.org
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 0ca13e26341733bf9577287fb04a3bef0d2f5cc9
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Wed Apr 9 00:07:01 2014 +0200
@@ -67,7 +80,16 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  void ath9k_beacon_tasklet(unsigned long data)
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -203,7 +203,7 @@ void ieee80211_bss_info_change_notify(st
+@@ -152,6 +152,8 @@ static u32 ieee80211_hw_conf_chan(struct
+ 	list_for_each_entry_rcu(sdata, &local->interfaces, list) {
+ 		if (!rcu_access_pointer(sdata->vif.chanctx_conf))
+ 			continue;
++		if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++			continue;
+ 		power = min(power, sdata->vif.bss_conf.txpower);
+ 	}
+ 	rcu_read_unlock();
+@@ -203,7 +205,7 @@ void ieee80211_bss_info_change_notify(st
  {
  	struct ieee80211_local *local = sdata->local;
  
