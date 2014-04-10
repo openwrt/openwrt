@@ -53,15 +53,15 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
   endef
 
   define Image/cmdline/jffs2-64k
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 rootwait
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs,5 root=/dev/mtdblock0 rootfstype=jffs2 rootwait
   endef
 
   define Image/cmdline/jffs2-128k
-    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2 rootwait
+    block2mtd.block2mtd=$(ROOTPART),131072,rootfs,5 root=/dev/mtdblock0 rootfstype=jffs2 rootwait
   endef
 
   define Image/cmdline/squashfs
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs rootwait
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs,5 root=/dev/mtdblock0 rootfstype=squashfs rootwait
   endef
 
   define Image/Build/grub2
