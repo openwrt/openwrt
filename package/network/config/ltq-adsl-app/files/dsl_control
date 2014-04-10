@@ -32,8 +32,8 @@ start() {
 	local firmware
 	local xtu
 	config_load network
-	config_get annex wan annex
-	config_get firmware wan firmware
+	config_get annex dsl annex
+	config_get firmware dsl firmware
 
 	eval "xtu=\"\${annex_$annex}\""
 

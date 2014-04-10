@@ -28,6 +28,30 @@ set network.wan6.proto='dhcpv6'
 EOF
 }
 
+set_adsl_modem() {
+	local annex=$1
+	local firmware=$2
+	uci batch <<EOF
+set network.adsl='dsl-modem'
+set network.adsl.annex='$annex'
+set network.adsl.firmware='$firmware'
+EOF
+}
+
+set_vdsl_modem() {
+	local annex=$1
+	local firmware=$2
+	local tone=$3
+	local xfer_mode=$4
+	uci batch <<EOF
+set network.vdsl='dsl-modem'
+set network.vdsl.annex='$annex'
+set network.vdsl.firmware='$firmware'
+set network.vdsl.tone='$tone'
+set network.vdsl.xfer_mode='$xfer_mode'
+EOF
+}
+
 . /lib/functions/uci-defaults.sh
 . /lib/functions/lantiq.sh
 
@@ -38,6 +62,7 @@ ucidef_set_interface_lan 'eth0'
 
 vpi=1
 vci=32
+annex="a"
 encaps="llc"
 payload="bridged"
 lan_mac=""
@@ -143,6 +168,13 @@ BTHOMEHUBV2B)
 esac
 
 [ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ] || set_atm_wan "$vpi" "$vci" "$encaps" "$payload"
+
+if [ -n "$(grep "system type.*: VR9" /proc/cpuinfo)" ]; then
+	set_vdsl_modem "$annex" "vdsl.bin" "bv" "ptm"
+else
+	set_adsl_modem "$annex" "adsl.bin"
+fi
+
 [ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan $lan_mac
 [ -n "$wan_mac" ] && ucidef_set_interface_macaddr wan $wan_mac
 

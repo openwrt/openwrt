@@ -134,10 +134,10 @@ start() {
 	local mode
 
 	config_load network
-	config_get tone wan tone
-	config_get annex wan annex
-	config_get firmware wan firmware
-	config_get xfer_mode wan xfer_mode
+	config_get tone dsl tone
+	config_get annex dsl annex
+	config_get firmware dsl firmware
+	config_get xfer_mode dsl xfer_mode
 
 	[ -z "${xfer_mode}" ] && xfer_mode=ptm
 
