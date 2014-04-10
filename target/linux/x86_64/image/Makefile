@@ -145,7 +145,7 @@ ifneq ($(CONFIG_VMDK_IMAGES),)
     # left here because the image builder doesnt need these
     ifeq ($(1),ext4)
 		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk || true
-		qemu-img convert -f raw -O vmdk \
+		qemu-img convert -f raw -O vmdk -o adapter_type=lsilogic \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
     endif
