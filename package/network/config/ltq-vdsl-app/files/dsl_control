@@ -1,7 +1,8 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2012 OpenWrt.org
 
-START=99
+# needs to start before the atm layer which starts at 50
+START=48
 
 EXTRA_COMMANDS="status lucistat"
 EXTRA_HELP="	status  Get DSL status information
@@ -153,7 +154,7 @@ start() {
 	esac
 
 	eval "xtse_adsl=\"\${xtse_adsl_$annex}\""
-	[ -z "${xtse_adsl}" ] && xtse_adsl=$xtse_adsl_b
+	[ -z "${xtse_adsl}" ] && xtse_adsl=$xtse_adsl_a
 
 	eval "tone_adsl=\"\${tone_adsl_$tone}\""
 	[ -z "${tone_adsl}" ] && tone_adsl=$tone_adsl_av
@@ -161,7 +162,11 @@ start() {
 	eval "tone_vdsl=\"\${tone_vdsl_$tone}\""
 	[ -z "${tone_vdsl}" ] && tone_vdsl=$tone_vdsl_av
 		
-	[ -z "${firmware}" ] && firmware=vdsl.bin
+	[ -z "${firmware}" ] && firmware=/lib/firmware/vdsl.bin
+	[ -f "${firmware}" ] || {
+		echo failed to find $firmware
+		return 1
+	}
 
 	xdsl_scr adsl "${xtse_adsl}"
 	xdsl_scr vdsl "${xtse_vdsl}"
@@ -170,7 +175,7 @@ start() {
 	service_start /sbin/vdsl_cpe_control \
 			-i `echo $xtse_adsl | sed "s/ /_/g"` \
 			-n /sbin/dsl_notify.sh \
-			-f /lib/firmware/${firmware} \
+			-f ${firmware} \
 			-a /tmp/adsl.scr \
 			-A /tmp/vdsl.scr \
 			-l /tmp/lowlevel.cfg \
