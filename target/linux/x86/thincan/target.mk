@@ -1,6 +1,5 @@
 DEVICE_TYPE:=terminal
 BOARDNAME:=Artec ThinCan
-LINUX_VERSION:=3.10.34
 CPU_TYPE := geode
 FEATURES += broken
 
