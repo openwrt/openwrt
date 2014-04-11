@@ -38,11 +38,15 @@ start() {
 	eval "xtu=\"\${annex_$annex}\""
 
 	[ -z "${firmware}" ] &&
-		firmware=adsl.bin
+		firmware=/lib/firmware/adsl.bin
+	[ -f "${firmware}" ] || {
+		echo failed to find $firmware
+		return 1
+	}
 
 	service_start /sbin/dsl_cpe_control -i${xtu} \
 			-n /sbin/dsl_notify.sh \
-			-f /lib/firmware/${firmware}
+			-f ${firmware}
 }
 
 stop() {

@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2014 OpenWrt.org
+
+. /lib/functions.sh
+
+START=30
+start() {
+	MTD=$(find_mtd_index dsl_fw)
+	[ "$MTD" -gt 0 ] && {
+		mkdir -p /lib/firmware/dsl/
+		mount -t jffs2 /dev/mtdblock$MTD /lib/firmware/dsl/
+	}
+}
