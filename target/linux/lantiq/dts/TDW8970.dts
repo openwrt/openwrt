@@ -167,8 +167,13 @@
 			};
 
 			partition@20000 {
-				reg = <0x20000 0x7a0000>;
+				reg = <0x20000 0x6a0000>;
 				label = "firmware";
+			};
+
+			partition@6c0000 {
+				reg = <0x6c0000 0x100000>;
+				label = "dsl_fw";
 			};
 
 			partition@7c0000 {
