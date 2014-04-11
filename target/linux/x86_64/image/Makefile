@@ -148,6 +148,10 @@ ifneq ($(CONFIG_VMDK_IMAGES),)
 		qemu-img convert -f raw -O vmdk -o adapter_type=lsilogic \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
+		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1)-esxi.vmdk || true
+		qemu-img convert -f raw -O vmdk -o adapter_type=lsilogic,subformat=monolithicFlat \
+			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1)-esxi.vmdk
     endif
   endef
 endif
