@@ -57,7 +57,7 @@ start_instance()
 
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
-	local listen http https interpreter indexes path
+	local listen http https interpreter indexes path handler
 
 	procd_open_instance
 	procd_set_param respawn
@@ -68,8 +68,10 @@ start_instance()
 	append_arg "$cfg" config "-c"
 	append_arg "$cfg" cgi_prefix "-x"
 	[ -f /usr/lib/uhttpd_lua.so ] && {
-		append_arg "$cfg" lua_prefix "-l"
-		append_arg "$cfg" lua_handler "-L"
+		config_get handler "$cfg" lua_handler
+		[ -f "$handler" ] && append_arg "$cfg" lua_prefix "-l" && {
+			procd_append_param command "-L" "$handler"
+		}
 	}
 	[ -f /usr/lib/uhttpd_ubus.so ] && {
 		append_arg "$cfg" ubus_prefix "-u"
