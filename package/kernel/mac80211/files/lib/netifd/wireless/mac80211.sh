@@ -449,6 +449,7 @@ mac80211_setup_adhoc() {
 
 mac80211_setup_vif() {
 	local name="$1"
+	local failed
 
 	json_select data
 	json_get_vars ifname
@@ -473,7 +474,19 @@ mac80211_setup_vif() {
 				json_get_var mp_val "$var"
 				[ -n "$mp_val" ] && iw dev "$ifname" set mesh_param "$var" "$mp_val"
 			done
-			# todo: authsae
+
+			# authsae
+			json_get_vars key
+			if [ -n "$key" ]; then
+				if [ -e "/lib/wifi/authsae.sh" ]; then
+					. /lib/wifi/authsae.sh
+					authsae_start_interface || failed=1
+				else
+					wireless_setup_vif_failed AUTHSAE_NOT_INSTALLED
+					json_select ..
+					return
+				fi
+			fi
 		;;
 		adhoc)
 			wireless_vif_parse_encryption
