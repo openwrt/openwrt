@@ -32,6 +32,15 @@ ap113)
 	ucidef_set_led_usbdev "usb" "USB" "ap113:green:usb" "1-1"
 	;;
 
+bullet-m | \
+nanostation-m | \
+rocket-m)
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "ubnt:red:link1" "wlan0" "1" "100" "0" "13"
+	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "ubnt:orange:link2" "wlan0" "26" "100" "-25" "13"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "ubnt:green:link3" "wlan0" "51" "100" "-50" "13"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "ubnt:green:link4" "wlan0" "76" "100" "-75" "13"
+	;;
+
 bxu2000n-2-a1)
 	ucidef_set_led_wlan "wlan" "WLAN" "bhu:green:wlan" "phy0tpt"
 	;;
