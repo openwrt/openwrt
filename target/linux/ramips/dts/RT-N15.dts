@@ -9,15 +9,17 @@
 	model = "Asus RT-N15";
 
 	palmbus@300000 {
-		sysc@0 {
-			ralink,pinmux = "uartlite";
-			ralink,gpiomux = "i2c";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
 		gpio0: gpio@600 {
 			status = "okay";
+		};
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "uartlite", "mdio";
+				ralink,function = "gpio";
+			};
 		};
 	};
 
@@ -46,7 +48,7 @@
 			read-only;
 		};
 		partition@50000 {
-			label = "linux";
+			label = "firmware";
 			reg = <0x50000 0x3b0000>;
 		};
 	};
@@ -57,6 +59,14 @@
 
                 port@0 {
 			ralink,fixed-link = <1000 1 1 1>;
+		};
+
+		mdio-bus {
+			status = "okay";
+			phy0: ethernet-phy@0 {
+				phy-mode = "mii";
+				reg = <0>;
+			};
 		};
 	};
 
