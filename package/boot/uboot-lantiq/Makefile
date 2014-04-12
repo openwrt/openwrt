@@ -121,6 +121,17 @@ define uboot/gigasx76x_nor
   SOC:=danube
 endef
 
+define uboot/acmp252_ram
+  TITLE:=U-Boot for AudioCodes MP-252 (RAM)
+  SOC:=danube
+  DDR_SETTINGS:=board/audiocodes/acmp252/ddr_settings.h
+endef
+
+define uboot/acmp252_nor
+  TITLE:=U-Boot for AudioCodes MP-252 (NOR)
+  SOC:=danube
+endef
+
 define uboot/easy50712_ram
   TITLE:=U-Boot for Lantiq EASY50712 (RAM)
   SOC:=danube
@@ -169,6 +180,7 @@ UBOOTS:= \
 	arv752dpw_ram arv752dpw_nor arv752dpw_brn \
 	arv752dpw22_ram arv752dpw22_nor arv752dpw22_brn \
 	gigasx76x_ram gigasx76x_nor \
+	acmp252_ram acmp252_nor \
 	easy50712_ram easy50712_nor easy50712_norspl \
 	easy80920_ram easy80920_nor easy80920_norspl easy80920_sfspl
 
