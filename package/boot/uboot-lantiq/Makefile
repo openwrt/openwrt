@@ -80,11 +80,36 @@ define uboot/easy50712_norspl
   IMAGE:=u-boot.ltq.lzo.norspl
 endef
 
+define uboot/easy80920_ram
+  TITLE:=U-Boot for Lantiq EASY80920 (RAM)
+  SOC:=vr9
+  DDR_SETTINGS:=board/lantiq/easy80920/ddr_settings.h
+endef
+
+define uboot/easy80920_nor
+  TITLE:=U-Boot for Lantiq EASY80920 (NOR)
+  SOC:=vr9
+endef
+
+define uboot/easy80920_norspl
+  TITLE:=U-Boot for Lantiq EASY80920 (NOR SPL)
+  SOC:=vr9
+  IMAGE:=u-boot.ltq.lzo.norspl
+endef
+
+define uboot/easy80920_sfspl
+  TITLE:=U-Boot for Lantiq EASY80920 (SPI SPL)
+  SOC:=vr9
+  IMAGE:=u-boot.ltq.lzo.sfspl
+endef
+
+
 UBOOTS:= \
 	arv4519pw_ram arv4519pw_nor \
 	arv7518pw_ram arv7518pw_nor \
 	gigasx76x_ram gigasx76x_nor \
-	easy50712_ram easy50712_nor easy50712_norspl
+	easy50712_ram easy50712_nor easy50712_norspl \
+	easy80920_ram easy80920_nor easy80920_norspl easy80920_sfspl
 
 define Package/uboot/template
 define Package/uboot-lantiq-$(1)
