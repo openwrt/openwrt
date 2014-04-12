@@ -7,7 +7,7 @@
 
 define Profile/ARCHERC7
 	NAME:=TP-LINK Archer C7
-	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
 endef
 
 define Profile/ARCHERC7/Description
