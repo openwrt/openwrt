@@ -1,8 +1,6 @@
-Index: linux-3.10.34/drivers/mtd/nand/xway_nand.c
-===================================================================
---- linux-3.10.34.orig/drivers/mtd/nand/xway_nand.c	2014-03-28 11:51:49.790953906 +0000
-+++ linux-3.10.34/drivers/mtd/nand/xway_nand.c	2014-03-28 15:45:08.196369790 +0000
-@@ -80,13 +80,16 @@
+--- a/drivers/mtd/nand/xway_nand.c
++++ b/drivers/mtd/nand/xway_nand.c
+@@ -80,13 +80,16 @@ static void xway_reset_chip(struct nand_
  
  static void xway_select_chip(struct mtd_info *mtd, int chip)
  {
