@@ -31,6 +31,7 @@
 #include "dev-wmac.h"
 #include "machtypes.h"
 
+/* AR9344 GPIOs */
 #define WNDR4300_GPIO_LED_POWER_GREEN	0
 #define WNDR4300_GPIO_LED_POWER_AMBER	2
 #define WNDR4300_GPIO_LED_USB		13
@@ -44,6 +45,9 @@
 #define WNDR4300_GPIO_BTN_RESET		21
 #define WNDR4300_GPIO_BTN_WIRELESS	15
 #define WNDR4300_GPIO_BTN_WPS		12
+
+/* AR9580 GPIOs */
+#define WNDR4300_GPIO_USB_5V		0
 
 #define WNDR4300_KEYS_POLL_INTERVAL	20	/* msecs */
 #define WNDR4300_KEYS_DEBOUNCE_INTERVAL	(3 * WNDR4300_KEYS_POLL_INTERVAL)
@@ -192,6 +196,11 @@ static void __init wndr4300_setup(void)
 	ath79_register_usb();
 
 	ath79_register_wmac_simple();
+
+	/* enable power for the USB port */
+	ap9x_pci_setup_wmac_gpio(0, BIT(WNDR4300_GPIO_USB_5V),
+				 BIT(WNDR4300_GPIO_USB_5V));
+
 	ap91_pci_init_simple();
 }
 
