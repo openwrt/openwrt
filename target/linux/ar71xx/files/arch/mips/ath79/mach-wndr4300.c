@@ -2,6 +2,7 @@
  *  NETGEAR WNDR4300 board support
  *
  *  Copyright (C) 2012 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2014 Ralph Perlich <rpsoft@arcor.de>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -31,13 +32,13 @@
 #include "machtypes.h"
 
 #define WNDR4300_GPIO_LED_POWER_GREEN	0
-#define WNDR4300_GPIO_LED_POWER_ORANGE	2
+#define WNDR4300_GPIO_LED_POWER_AMBER	2
 #define WNDR4300_GPIO_LED_USB		13
 #define WNDR4300_GPIO_LED_WAN_GREEN	1
-#define WNDR4300_GPIO_LED_WAN_ORANGE	3
+#define WNDR4300_GPIO_LED_WAN_AMBER	3
 #define WNDR4300_GPIO_LED_WLAN5G	14
 #define WNDR4300_GPIO_LED_WPS_GREEN	16
-#define WNDR4300_GPIO_LED_WPS_ORANGE	17
+#define WNDR4300_GPIO_LED_WPS_AMBER	17
 
 #define WNDR4300_GPIO_BTN_RESET		21
 #define WNDR4300_GPIO_BTN_WIRELESS	15
@@ -53,8 +54,8 @@ static struct gpio_led wndr4300_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "netgear:orange:power",
-		.gpio		= WNDR4300_GPIO_LED_POWER_ORANGE,
+		.name		= "netgear:amber:power",
+		.gpio		= WNDR4300_GPIO_LED_POWER_AMBER,
 		.active_low	= 1,
 	},
 	{
@@ -63,8 +64,8 @@ static struct gpio_led wndr4300_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "netgear:orange:wan",
-		.gpio		= WNDR4300_GPIO_LED_WAN_ORANGE,
+		.name		= "netgear:amber:wan",
+		.gpio		= WNDR4300_GPIO_LED_WAN_AMBER,
 		.active_low	= 1,
 	},
 	{
@@ -78,8 +79,8 @@ static struct gpio_led wndr4300_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "netgear:orange:wps",
-		.gpio		= WNDR4300_GPIO_LED_WPS_ORANGE,
+		.name		= "netgear:amber:wps",
+		.gpio		= WNDR4300_GPIO_LED_WPS_AMBER,
 		.active_low	= 1,
 	},
 	{
