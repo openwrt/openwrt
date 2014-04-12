@@ -1,0 +1,262 @@
+From 4bfa74583bc938d2da41f255f22baa1845332893 Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Tue, 12 Mar 2013 01:42:46 +0100
+Subject: MIPS: add board support for ZyXEL P-2601HN-Fx
+
+Signed-off-by: Luka Perkov <luka@openwrt.org>
+
+diff --git a/board/zyxel/p2601hnfx/Makefile b/board/zyxel/p2601hnfx/Makefile
+new file mode 100644
+index 0000000..3a547c2
+--- /dev/null
++++ b/board/zyxel/p2601hnfx/Makefile
+@@ -0,0 +1,27 @@
++#
++# Copyright (C) 2000-2011 Wolfgang Denk, DENX Software Engineering, wd@denx.de
++#
++# SPDX-License-Identifier:	GPL-2.0+
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(BOARD).o
++
++COBJS	= $(BOARD).o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
++OBJS	:= $(addprefix $(obj),$(COBJS))
++SOBJS	:= $(addprefix $(obj),$(SOBJS))
++
++$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
++	$(call cmd_link_o_target, $(OBJS) $(SOBJS))
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+diff --git a/board/zyxel/p2601hnfx/config.mk b/board/zyxel/p2601hnfx/config.mk
+new file mode 100644
+index 0000000..9d33739
+--- /dev/null
++++ b/board/zyxel/p2601hnfx/config.mk
+@@ -0,0 +1,7 @@
++#
++# Copyright (C) 2012-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++#
++# SPDX-License-Identifier:	GPL-2.0+
++#
++
++PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
+diff --git a/board/zyxel/p2601hnfx/ddr_settings.h b/board/zyxel/p2601hnfx/ddr_settings.h
+new file mode 100644
+index 0000000..92af4fa
+--- /dev/null
++++ b/board/zyxel/p2601hnfx/ddr_settings.h
+@@ -0,0 +1,55 @@
++/*
++ * Copyright (C) 2013 Luka Perkov <luka@openwrt.org>
++ *
++ * The values have been extracted from original ZyXEL U-Boot.
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#define MC_DC00_VALUE	0x1B1B
++#define MC_DC01_VALUE	0x0
++#define MC_DC02_VALUE	0x0
++#define MC_DC03_VALUE	0x0
++#define MC_DC04_VALUE	0x0
++#define MC_DC05_VALUE	0x200
++#define MC_DC06_VALUE	0x306
++#define MC_DC07_VALUE	0x303
++#define MC_DC08_VALUE	0x102
++#define MC_DC09_VALUE	0x70A
++#define MC_DC10_VALUE	0x203
++#define MC_DC11_VALUE	0xC02
++#define MC_DC12_VALUE	0x1C8
++#define MC_DC13_VALUE	0x1
++#define MC_DC14_VALUE	0x0
++#define MC_DC15_VALUE	0x144
++#define MC_DC16_VALUE	0xC800
++#define MC_DC17_VALUE	0xD
++#define MC_DC18_VALUE	0x301
++#define MC_DC19_VALUE	0x200
++#define MC_DC20_VALUE	0xA03
++#define MC_DC21_VALUE	0x1900
++#define MC_DC22_VALUE	0x1919
++#define MC_DC23_VALUE	0x0
++#define MC_DC24_VALUE	0x66
++#define MC_DC25_VALUE	0x0
++#define MC_DC26_VALUE	0x0
++#define MC_DC27_VALUE	0x0
++#define MC_DC28_VALUE	0x50A
++#define MC_DC29_VALUE	0x2D65
++#define MC_DC30_VALUE	0x81B1
++#define MC_DC31_VALUE	0x0
++#define MC_DC32_VALUE	0x0
++#define MC_DC33_VALUE	0x0
++#define MC_DC34_VALUE	0x0
++#define MC_DC35_VALUE	0x0
++#define MC_DC36_VALUE	0x0
++#define MC_DC37_VALUE	0x0
++#define MC_DC38_VALUE	0x0
++#define MC_DC39_VALUE	0x0
++#define MC_DC40_VALUE	0x0
++#define MC_DC41_VALUE	0x0
++#define MC_DC42_VALUE	0x0
++#define MC_DC43_VALUE	0x0
++#define MC_DC44_VALUE	0x0
++#define MC_DC45_VALUE	0x600
++#define MC_DC46_VALUE	0x0
+diff --git a/board/zyxel/p2601hnfx/p2601hnfx.c b/board/zyxel/p2601hnfx/p2601hnfx.c
+new file mode 100644
+index 0000000..6a69af9
+--- /dev/null
++++ b/board/zyxel/p2601hnfx/p2601hnfx.c
+@@ -0,0 +1,51 @@
++/*
++ * Copyright (C) 2013 Luka Perkov <luka@openwrt.org>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++#include <switch.h>
++#include <asm/gpio.h>
++#include <asm/lantiq/eth.h>
++#include <asm/lantiq/reset.h>
++#include <asm/lantiq/chipid.h>
++
++int board_early_init_f(void)
++{
++	return 0;
++}
++
++int checkboard(void)
++{
++	puts("Board: " CONFIG_BOARD_NAME "\n");
++	ltq_chip_print_info();
++
++	return 0;
++}
++
++static const struct ltq_eth_port_config eth_port_config[] = {
++	/* MAC0: REALTEK RTL8306 switch */
++	{ 0, 0x0, LTQ_ETH_PORT_SWITCH, PHY_INTERFACE_MODE_RMII },
++};
++
++static const struct ltq_eth_board_config eth_board_config = {
++	.ports = eth_port_config,
++	.num_ports = ARRAY_SIZE(eth_port_config),
++};
++
++int board_eth_init(bd_t *bis)
++{
++	return ltq_eth_initialize(&eth_board_config);
++}
++
++static struct switch_device rtl8306_dev = {
++	.name = "rtl8306",
++	.cpu_port = 5,
++	.port_mask = 0xF,
++};
++
++int board_switch_init(void)
++{
++	return switch_device_register(&rtl8306_dev);
++}
+diff --git a/boards.cfg b/boards.cfg
+index e505203..45c2aa0 100644
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -499,6 +499,10 @@ Active  mips        mips32         -           micronas        vct
+ Active  mips        mips32         arx100      zte             zxv10h201l          zxv10h201l_nor                       zxv10h201l:SYS_BOOT_NOR                                                                                                           Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         arx100      zte             zxv10h201l          zxv10h201l_ram                       zxv10h201l:SYS_BOOT_RAM                                                                                                           Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         arx100      zte             zxv10h201l          zxv10h201l_zte                       zxv10h201l:SYS_BOOT_ZTE                                                                                                           Luka Perkov <luka@openwrt.org>
++Active  mips        mips32         arx100      zyxel           p2601hnfx           p2601hnfx_nor                        p2601hnfx:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
++Active  mips        mips32         arx100      zyxel           p2601hnfx           p2601hnfx_norspl                     p2601hnfx:SYS_BOOT_NORSPL                                                                                                         Luka Perkov <luka@openwrt.org>
++Active  mips        mips32         arx100      zyxel           p2601hnfx           p2601hnfx_ram                        p2601hnfx:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
++Active  mips        mips32         arx100      zyxel           p2601hnfx           p2601hnfx_zyxel                      p2601hnfx:SYS_BOOT_ZYXEL                                                                                                          Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         arx100      zyxel           p661hnufx           p661hnufx_ram                        p661hnufx:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         arx100      zyxel           p661hnufx           p661hnufx_sfspl                      p661hnufx:SYS_BOOT_SFSPL                                                                                                          Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         arx100      zyxel           p661hnufx           p661hnufx_zyxel                      p661hnufx:SYS_BOOT_ZYXEL                                                                                                          Luka Perkov <luka@openwrt.org>
+diff --git a/include/configs/p2601hnfx.h b/include/configs/p2601hnfx.h
+new file mode 100644
+index 0000000..5cba30f
+--- /dev/null
++++ b/include/configs/p2601hnfx.h
+@@ -0,0 +1,67 @@
++/*
++ * Copyright (C) 2013 Luka Perkov <luka@openwrt.org>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef __CONFIG_H
++#define __CONFIG_H
++
++#define CONFIG_MACH_TYPE	"P-2601HN-Fx"
++#define CONFIG_IDENT_STRING	" "CONFIG_MACH_TYPE
++#define CONFIG_BOARD_NAME	"ZyXEL P-2601HN-Fx"
++
++/* Configure SoC */
++#define CONFIG_LTQ_SUPPORT_UART			/* Enable ASC and UART */
++
++#define CONFIG_LTQ_SUPPORT_NOR_FLASH		/* Have a parallel NOR flash */
++
++#define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NOR flash SPL */
++#define CONFIG_LTQ_SPL_COMP_LZO			/* Compress SPL with LZO */
++#define CONFIG_LTQ_SPL_CONSOLE			/* Enable SPL console */
++
++/* Environment */
++#if defined(CONFIG_SYS_BOOT_NOR)
++#define CONFIG_ENV_IS_IN_FLASH
++#define CONFIG_ENV_OVERWRITE
++#define CONFIG_ENV_OFFSET		(256 * 1024)
++#define CONFIG_ENV_SECT_SIZE		(128 * 1024)
++#elif defined(CONFIG_SYS_BOOT_NORSPL)
++#define CONFIG_ENV_IS_IN_FLASH
++#define CONFIG_ENV_OVERWRITE
++#define CONFIG_ENV_OFFSET		(128 * 1024)
++#define CONFIG_ENV_SECT_SIZE		(128 * 1024)
++#else
++#define CONFIG_ENV_IS_NOWHERE
++#endif
++
++#define CONFIG_ENV_SIZE			(8 * 1024)
++#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
++
++#if defined(CONFIG_SYS_BOOT_ZYXEL)
++#define CONFIG_SYS_TEXT_BASE		0x80800000
++#define CONFIG_SKIP_LOWLEVEL_INIT
++#endif
++
++/* Console */
++#define CONFIG_LTQ_ADVANCED_CONSOLE
++#define CONFIG_BAUDRATE			115200
++#define CONFIG_CONSOLE_ASC		1
++#define CONFIG_CONSOLE_DEV		"ttyLTQ1"
++
++/* Pull in default board configs for Lantiq XWAY Danube */
++#include <asm/lantiq/config.h>
++#include <asm/arch/config.h>
++
++/* Pull in default OpenWrt configs for Lantiq SoC */
++#include "openwrt-lantiq-common.h"
++
++#define CONFIG_ENV_UPDATE_UBOOT_NOR \
++	"update-uboot-nor=run load-uboot-norspl-lzo write-uboot-nor\0"
++
++#define CONFIG_EXTRA_ENV_SETTINGS	\
++	CONFIG_ENV_LANTIQ_DEFAULTS	\
++	CONFIG_ENV_UPDATE_UBOOT_NOR	\
++	"kernel_addr=0xB0040000\0"
++
++#endif /* __CONFIG_H */
+-- 
+1.8.3.2
+

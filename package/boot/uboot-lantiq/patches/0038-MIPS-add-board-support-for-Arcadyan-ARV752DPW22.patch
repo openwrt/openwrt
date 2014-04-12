@@ -1,16 +1,16 @@
-From 54a31b334162e8dc2ea891057ddeab42978db8b3 Mon Sep 17 00:00:00 2001
-From: Luka Perkov <luka@openwrt.org>
-Date: Sat, 2 Mar 2013 23:34:00 +0100
-Subject: MIPS: add board support for Arcadyan ARV7518
+From 09f411b4d10f10a62f147264121bb853b4649c3e Mon Sep 17 00:00:00 2001
+From: Oliver Muth <dr.o.muth@gmx.de>
+Date: Sat, 12 Oct 2013 16:49:53 +0200
+Subject: MIPS: add board support for Arcadyan ARV752DPW22
 
-Signed-off-by: Luka Perkov <luka@openwrt.org>
+Signed-off-by: Oliver Muth <dr.o.muth@gmx.de>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/board/arcadyan/arv7518pw/Makefile b/board/arcadyan/arv7518pw/Makefile
+diff --git a/board/arcadyan/arv752dpw22/Makefile b/board/arcadyan/arv752dpw22/Makefile
 new file mode 100644
 index 0000000..3a547c2
 --- /dev/null
-+++ b/board/arcadyan/arv7518pw/Makefile
++++ b/board/arcadyan/arv752dpw22/Makefile
 @@ -0,0 +1,27 @@
 +#
 +# Copyright (C) 2000-2011 Wolfgang Denk, DENX Software Engineering, wd@denx.de
@@ -39,14 +39,15 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/arcadyan/arv7518pw/arv7518pw.c b/board/arcadyan/arv7518pw/arv7518pw.c
+diff --git a/board/arcadyan/arv752dpw22/arv752dpw22.c b/board/arcadyan/arv752dpw22/arv752dpw22.c
 new file mode 100644
-index 0000000..a9dfd03
+index 0000000..9b2d89f
 --- /dev/null
-+++ b/board/arcadyan/arv7518pw/arv7518pw.c
-@@ -0,0 +1,51 @@
++++ b/board/arcadyan/arv752dpw22/arv752dpw22.c
+@@ -0,0 +1,52 @@
 +/*
 + * Copyright (C) 2012 Luka Perkov <luka@openwrt.org>
++ * Copyright (C) 2013 Oliver Muth <dr.o.muth@gmx.de>
 + *
 + * SPDX-License-Identifier:	GPL-2.0+
 + */
@@ -73,7 +74,7 @@ index 0000000..a9dfd03
 +
 +static const struct ltq_eth_port_config eth_port_config[] = {
 +	/* MAC0: Atheros ar8216 switch */
-+	{ 0, 0x0, LTQ_ETH_PORT_SWITCH, PHY_INTERFACE_MODE_NONE },
++	{ 0, 0x0, LTQ_ETH_PORT_SWITCH, PHY_INTERFACE_MODE_MII },
 +};
 +
 +static const struct ltq_eth_board_config eth_board_config = {
@@ -96,11 +97,11 @@ index 0000000..a9dfd03
 +{
 +	return switch_device_register(&ar8216_dev);
 +}
-diff --git a/board/arcadyan/arv7518pw/config.mk b/board/arcadyan/arv7518pw/config.mk
+diff --git a/board/arcadyan/arv752dpw22/config.mk b/board/arcadyan/arv752dpw22/config.mk
 new file mode 100644
 index 0000000..9d8953b
 --- /dev/null
-+++ b/board/arcadyan/arv7518pw/config.mk
++++ b/board/arcadyan/arv752dpw22/config.mk
 @@ -0,0 +1,7 @@
 +#
 +# Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
@@ -109,16 +110,16 @@ index 0000000..9d8953b
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/arcadyan/arv7518pw/ddr_settings.h b/board/arcadyan/arv7518pw/ddr_settings.h
+diff --git a/board/arcadyan/arv752dpw22/ddr_settings.h b/board/arcadyan/arv752dpw22/ddr_settings.h
 new file mode 100644
-index 0000000..8b5e9c5
+index 0000000..a226322
 --- /dev/null
-+++ b/board/arcadyan/arv7518pw/ddr_settings.h
++++ b/board/arcadyan/arv752dpw22/ddr_settings.h
 @@ -0,0 +1,55 @@
 +/*
-+ * Copyright (C) 2012-2013 Luka Perkov <luka@openwrt.org>
++ * Copyright (C) 2011-2013 Luka Perkov <luka@openwrt.org>
 + *
-+ * This file has been generated with lantiq_ram_extract_magic.awk script.
++ * This file has been generated with lantiq_ram_extract_magic.awk script.     
 + *
 + * SPDX-License-Identifier:	GPL-2.0+
 + */
@@ -171,25 +172,25 @@ index 0000000..8b5e9c5
 +#define MC_DC45_VALUE	0x500
 +#define MC_DC46_VALUE	0x0
 diff --git a/boards.cfg b/boards.cfg
-index f300d5a..e832423 100644
+index 79cba2d..287f974 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -505,6 +505,9 @@ Active  mips        mips32         au1x00      -               pb1x00
- Active  mips        mips32         danube      arcadyan        arv4519pw           arv4519pw_brn                        arv4519pw:SYS_BOOT_BRN                                                                                                            Luka Perkov <luka@openwrt.org>
- Active  mips        mips32         danube      arcadyan        arv4519pw           arv4519pw_nor                        arv4519pw:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
- Active  mips        mips32         danube      arcadyan        arv4519pw           arv4519pw_ram                        arv4519pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
-+Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_brn                        arv7518pw:SYS_BOOT_BRN                                                                                                            Luka Perkov <luka@openwrt.org>
-+Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_nor                        arv7518pw:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
-+Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_ram                        arv7518pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
- Active  mips        mips32         danube      lantiq          easy50712           easy50712_nor                        easy50712:SYS_BOOT_NOR                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
- Active  mips        mips32         danube      lantiq          easy50712           easy50712_norspl                     easy50712:SYS_BOOT_NORSPL                                                                                                         Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
- Active  mips        mips32         danube      lantiq          easy50712           easy50712_ram                        easy50712:SYS_BOOT_RAM                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
-diff --git a/include/configs/arv7518pw.h b/include/configs/arv7518pw.h
+@@ -521,6 +521,9 @@ Active  mips        mips32         danube      arcadyan        arv7518pw
+ Active  mips        mips32         danube      arcadyan        arv752dpw           arv752dpw_brn                        arv752dpw:SYS_BOOT_BRN                                                                                                            -
+ Active  mips        mips32         danube      arcadyan        arv752dpw           arv752dpw_nor                        arv752dpw:SYS_BOOT_NOR                                                                                                            -
+ Active  mips        mips32         danube      arcadyan        arv752dpw           arv752dpw_ram                        arv752dpw:SYS_BOOT_RAM                                                                                                            -
++Active  mips        mips32         danube      arcadyan        arv752dpw22         arv752dpw22_brn                      arv752dpw22:SYS_BOOT_BRN                                                                                                          -
++Active  mips        mips32         danube      arcadyan        arv752dpw22         arv752dpw22_nor                      arv752dpw22:SYS_BOOT_NOR                                                                                                          -
++Active  mips        mips32         danube      arcadyan        arv752dpw22         arv752dpw22_ram                      arv752dpw22:SYS_BOOT_RAM                                                                                                          -
+ Active  mips        mips32         danube      audiocodes      acmp252             acmp252_nor                          acmp252:SYS_BOOT_NOR                                                                                                              Daniel Golle <daniel.golle@gmail.com>
+ Active  mips        mips32         danube      audiocodes      acmp252             acmp252_ram                          acmp252:SYS_BOOT_RAM                                                                                                              Daniel Golle <daniel.golle@gmail.com>
+ Active  mips        mips32         danube      gigaset         sx76x               gigasx76x_nor                        sx76x:SYS_BOOT_NOR                                                                                                                Luka Perkov <luka@openwrt.org>
+diff --git a/include/configs/arv752dpw22.h b/include/configs/arv752dpw22.h
 new file mode 100644
-index 0000000..8cf1708
+index 0000000..f17aa70
 --- /dev/null
-+++ b/include/configs/arv7518pw.h
-@@ -0,0 +1,67 @@
++++ b/include/configs/arv752dpw22.h
+@@ -0,0 +1,68 @@
 +/*
 + * Copyright (C) 2012-2013 Luka Perkov <luka@openwrt.org>
 + *
@@ -199,9 +200,9 @@ index 0000000..8cf1708
 +#ifndef __CONFIG_H
 +#define __CONFIG_H
 +
-+#define CONFIG_MACH_TYPE	"ARV7518PW"
++#define CONFIG_MACH_TYPE	"ARV752DPW22"
 +#define CONFIG_IDENT_STRING	" "CONFIG_MACH_TYPE
-+#define CONFIG_BOARD_NAME	"Arcadyan ARV7518PW"
++#define CONFIG_BOARD_NAME	"Arcadyan ARV752DPW22"
 +
 +/* Configure SoC */
 +#define CONFIG_LTQ_SUPPORT_UART		/* Enable ASC and UART */
@@ -227,13 +228,14 @@ index 0000000..8cf1708
 +#define CONFIG_ENV_SIZE			(8 * 1024)
 +#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
 +
-+/* Brnboot loadable image */
++/* Burnboot loadable image */
 +#if defined(CONFIG_SYS_BOOT_BRN)
 +#define CONFIG_SYS_TEXT_BASE		0x80002000
 +#define CONFIG_SKIP_LOWLEVEL_INIT
 +#define CONFIG_SYS_DISABLE_CACHE
 +#define CONFIG_ENV_OVERWRITE 1
 +#endif
++
 +
 +/* Console */
 +#define CONFIG_LTQ_ADVANCED_CONSOLE
