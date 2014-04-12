@@ -21,6 +21,8 @@ PKG_TARGETS:=bin
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
+FIRMWARE_LANTIQ_SOURCE:=$(TOPDIR)/target/linux/lantiq/files/firmware/lantiq
+
 include $(INCLUDE_DIR)/package.mk
 
 define uboot/Default
@@ -200,6 +202,19 @@ define BuildUBootPackage
 	$(eval $(uboot/Default))
 	$(eval $(uboot/$(1)))
 	$(call Package/uboot/template,$(1),$(TITLE))
+endef
+
+define CopyVR9Firmware
+	$(CP) $(FIRMWARE_LANTIQ_SOURCE)/vr9_phy$(1)_a$(2)x.bin \
+		$(PKG_BUILD_DIR)/arch/mips/cpu/mips32/vrx200/fw_phy$(1)_a$(2)x.blob
+endef
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(call CopyVR9Firmware,11g,1)
+	$(call CopyVR9Firmware,11g,2)
+	$(call CopyVR9Firmware,22f,1)
+	$(call CopyVR9Firmware,22f,2)
 endef
 
 define Build/Configure
