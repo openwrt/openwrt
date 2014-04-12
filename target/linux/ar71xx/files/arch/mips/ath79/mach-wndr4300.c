@@ -116,7 +116,7 @@ static struct gpio_keys_button wndr4300_gpio_keys[] __initdata = {
 	{
 		.desc		= "Wireless button",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RFKILL,
 		.debounce_interval = WNDR4300_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNDR4300_GPIO_BTN_WIRELESS,
 		.active_low	= 1,
