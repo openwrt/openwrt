@@ -21,6 +21,8 @@ PKG_TARGETS:=bin
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
+PKG_BUILD_PARALLEL:=1
+
 FIRMWARE_LANTIQ_SOURCE:=$(TOPDIR)/target/linux/lantiq/files/firmware/lantiq
 
 include $(INCLUDE_DIR)/package.mk
