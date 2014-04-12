@@ -49,11 +49,11 @@ SINGLE_PROFILES:=
 # $(4)      : board name.
 # $(5)~$(7) : arguments for $(mkcmdline)
 #		board=$(1) console=$(2),$(3)
-# $(8)~$(12): extra arguments.
+# $(8)~$(14): extra arguments.
 define SingleProfile
   # $(1): action name, e.g. loader, buildkernel, squashfs, etc.
   define Image/Build/Profile/$(3)
-	$$(call Image/Build/Template/$(2)/$$(1),$(1),$(4),$$(call mkcmdline,$(5),$(6),$(7)),$(8),$(9),$(10),$(11),$(12))
+	$$(call Image/Build/Template/$(2)/$$(1),$(1),$(4),$$(call mkcmdline,$(5),$(6),$(7)),$(8),$(9),$(10),$(11),$(12),$(13),$(14))
   endef
   SINGLE_PROFILES += $(3)
 endef
@@ -913,7 +913,7 @@ endef
 
 define Jffs2Template
   define Image/Build/Template/$(1)/jffs2-$(2)
-    $$(call Image/Build/$$(1),jffs2-$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+    $$(call Image/Build/$$(1),jffs2-$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8),$$(9),$$(10))
   endef
 endef
 
@@ -926,16 +926,16 @@ define BuildTemplate
   # $(3)     : kernel command line.
   # $(4)~$(8): extra arguments.
   define Image/Build/Template/$(1)/initramfs
-    $$(call Image/Build/$$(1)/initramfs,initramfs,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+    $$(call Image/Build/$$(1)/initramfs,initramfs,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8),$$(9),$$(10))
   endef
   define Image/Build/Template/$(1)/loader
-    $$(call Image/Build/$$(1)/loader,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+    $$(call Image/Build/$$(1)/loader,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8),$$(9),$$(10))
   endef
   define Image/Build/Template/$(1)/buildkernel
-    $$(call Image/Build/$$(1)/buildkernel,,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+    $$(call Image/Build/$$(1)/buildkernel,,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8),$$(9),$$(10))
   endef
   define Image/Build/Template/$(1)/squashfs
-    $$(call Image/Build/$$(1),squashfs$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
+    $$(call Image/Build/$$(1),squashfs$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8),$$(9),$$(10))
   endef
   $(if $(3),$(foreach bs,$(3),$(eval $(call Jffs2Template,$(1),$(bs)))))
 endef
