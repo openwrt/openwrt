@@ -149,11 +149,15 @@ endef
 endif
 
 # $(1): name of the 1st file.
+# $(2): size limit of the 1st file if it is greater than 262144, or
+#       the erase size of the flash if it is greater than zero and less
+#       than 262144
 # $(3): name of the 2nd file.
+# $(4): size limit of the 2nd file if $(2) is greater than 262144, otherwise
+#       it is the size limit of the output file
 # $(5): name of the output file.
 # $(6): padding size.
 define CatFiles
-	# $(4): size limit of the output file.
 	if [ $(2) -eq 0 ]; then \
 		filename="$(3)"; fstype=$$$${filename##*\.}; \
 		case "$$$${fstype}" in \
@@ -174,8 +178,6 @@ define CatFiles
 			echo "Warning: $(5) is too big (> $(4) bytes)" >&2; \
 			rm -f $(5); \
 		fi; \
-	# $(2): size limit of the 1st file.
-	# $(4): size limit of the 2nd file.
 	else if [ $(2) -gt 262144 ]; then \
 		if [ `stat -c%s "$(1)"` -gt $(2) ]; then \
 			echo "Warning: $(1) is too big (> $(2) bytes)" >&2; \
@@ -184,8 +186,6 @@ define CatFiles
 		else \
 			( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
 		fi; fi; \
-	# $(2): padding size for the 2nd file.
-	# $(4): size limit of the output file.
 	else \
 		( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
 		if [ `stat -c%s $(5)` -gt $(4) ]; then \
