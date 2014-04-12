@@ -254,6 +254,7 @@ hostapd_set_bss_options() {
 
 	set_default wps_pushbutton 0
 	set_default wps_label 0
+	set_default wps_pbc_in_m1 0
 
 	config_methods=
 	[ "$wps_pushbutton" -gt 0 ] && append config_methods push_button
