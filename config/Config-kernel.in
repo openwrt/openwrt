@@ -144,6 +144,10 @@ config USE_RFKILL
 	bool "Enable rfkill support"
 	default RFKILL_SUPPORT
 
+config USE_SPARSE
+	bool "Enable sparse check during kernel build"
+	default n
+
 #
 # CGROUP support symbols
 #
