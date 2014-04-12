@@ -13,6 +13,8 @@ JFFS2_BLOCKSIZE = 64k 128k 256k
 
 rootfs_type=$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 
+# $(1): rootfs type.
+# $(2): board name.
 define imgname
 $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(call rootfs_type,$(1))
 endef
@@ -41,13 +43,23 @@ endef
 
 SINGLE_PROFILES:=
 
+# $(1)      : name of image build method to be used, e.g., TPLINK-LZMA, AthLzma.
+# $(2)      : name of the build template to be used, e.g. 64k, 64kraw, 128k, etc.
+# $(3)      : name of the profile to be defined.
+# $(4)      : board name.
+# $(5)~$(7) : arguments for $(mkcmdline)
+#		board=$(1) console=$(2),$(3)
+# $(8)~$(12): extra arguments.
 define SingleProfile
+  # $(1): action name, e.g. loader, buildkernel, squashfs, etc.
   define Image/Build/Profile/$(3)
 	$$(call Image/Build/Template/$(2)/$$(1),$(1),$(4),$$(call mkcmdline,$(5),$(6),$(7)),$(8),$(9),$(10),$(11),$(12))
   endef
   SINGLE_PROFILES += $(3)
 endef
 
+# $(1), name of the MultiProfile to be added.
+# $(2), name of Profiles to be included in the MultiProfile.
 define MultiProfile
   define Image/Build/Profile/$(1)
 	$(foreach p,$(2),
@@ -62,6 +74,9 @@ KDIR_TMP:=$(KDIR)/tmp
 VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 
+# $(1): input file.
+# $(2): output file.
+# $(3): extra arguments for lzma.
 define CompressLzma
   $(STAGING_DIR_HOST)/bin/lzma e $(1) -lc1 -lp2 -pb2 $(3) $(2)
 endef
@@ -76,6 +91,10 @@ define PatchKernel/initramfs
 	cp $(KDIR_TMP)/vmlinux-initramfs-$(1) $(call imgname,initramfs,$(1)).bin
 endef
 
+# $(1): board name.
+# $(2): kernel command line.
+# $(3): extra argumetns for lzma.
+# $(4): name suffix, e.g. "-initramfs".
 define PatchKernelLzma
 	cp $(KDIR)/vmlinux$(4) $(KDIR_TMP)/vmlinux$(4)-$(1)
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR_TMP)/vmlinux$(4)-$(1) "$(strip $(2))"
@@ -89,12 +108,21 @@ define PatchKernelGzip
 endef
 
 ifneq ($(SUBTARGET),mikrotik)
+# $(1): compression method of the data.
+# $(2): extra arguments.
+# $(3): input data file.
+# $(4): output file.
 define MkuImage
 	mkimage -A mips -O linux -T kernel -a 0x80060000 -C $(1) $(2) \
 		-e 0x80060000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
 		-d $(3) $(4)
 endef
 
+# $(1): board name.
+# $(2): kernel command line.
+# $(3): extra arguments for lzma.
+# $(4): name suffix, e.g. "-initramfs".
+# $(5): extra arguments for mkimage.
 define MkuImageLzma
 	$(call PatchKernelLzma,$(1),$(2),$(3),$(4))
 	$(call MkuImage,lzma,$(5),$(KDIR_TMP)/vmlinux$(4)-$(1).bin.lzma,$(KDIR_TMP)/vmlinux$(4)-$(1).uImage)
@@ -120,7 +148,12 @@ define MkuImageOKLI
 endef
 endif
 
+# $(1): name of the 1st file.
+# $(3): name of the 2nd file.
+# $(5): name of the output file.
+# $(6): padding size.
 define CatFiles
+	# $(4): size limit of the output file.
 	if [ $(2) -eq 0 ]; then \
 		filename="$(3)"; fstype=$$$${filename##*\.}; \
 		case "$$$${fstype}" in \
@@ -141,6 +174,8 @@ define CatFiles
 			echo "Warning: $(5) is too big (> $(4) bytes)" >&2; \
 			rm -f $(5); \
 		fi; \
+	# $(2): size limit of the 1st file.
+	# $(4): size limit of the 2nd file.
 	else if [ $(2) -gt 262144 ]; then \
 		if [ `stat -c%s "$(1)"` -gt $(2) ]; then \
 			echo "Warning: $(1) is too big (> $(2) bytes)" >&2; \
@@ -149,6 +184,8 @@ define CatFiles
 		else \
 			( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
 		fi; fi; \
+	# $(2): padding size for the 2nd file.
+	# $(4): size limit of the output file.
 	else \
 		( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
 		if [ `stat -c%s $(5)` -gt $(4) ]; then \
@@ -158,6 +195,11 @@ define CatFiles
 	fi; fi
 endef
 
+# $(1): rootfs type.
+# $(2): board name.
+# $(3): kernel image size limit.
+# $(4): rootfs image size limit.
+# $(5): padding argument for padjffs2.
 Sysupgrade/KR=$(call CatFiles,$(2),$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(5)))
 Sysupgrade/KRuImage=$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)),$(5))
 Sysupgrade/RKuImage=$(call CatFiles,$(KDIR)/root.$(1),$(4),$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(call sysupname,$(1),$(2)))
@@ -875,7 +917,14 @@ define Jffs2Template
   endef
 endef
 
+# $(1): template name to be defined.
+# $(2): squashfs suffix to be used.
+# $(3): jffs2 suffix to be used.
 define BuildTemplate
+  # $(1)     : name of build method.
+  # $(2)     : board name.
+  # $(3)     : kernel command line.
+  # $(4)~$(8): extra arguments.
   define Image/Build/Template/$(1)/initramfs
     $$(call Image/Build/$$(1)/initramfs,initramfs,$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8))
   endef
@@ -1162,6 +1211,7 @@ endif
 	$(call Image/Build/Profile/$(if $(CONFIG_IB),Default,$(IMAGE_PROFILE)),loader)
 endef
 
+# $(1): filesystem type.
 define Image/Build
 	$(call Image/Build/$(call rootfs_type,$(1)),$(1))
 	$(call Image/Build/Profile/$(IMAGE_PROFILE),$(1))
