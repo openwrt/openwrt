@@ -36,6 +36,7 @@
 #define WNDR4300_GPIO_LED_USB		13
 #define WNDR4300_GPIO_LED_WAN_GREEN	1
 #define WNDR4300_GPIO_LED_WAN_AMBER	3
+#define WNDR4300_GPIO_LED_WLAN2G	11
 #define WNDR4300_GPIO_LED_WLAN5G	14
 #define WNDR4300_GPIO_LED_WPS_GREEN	16
 #define WNDR4300_GPIO_LED_WPS_AMBER	17
@@ -81,6 +82,11 @@ static struct gpio_led wndr4300_leds_gpio[] __initdata = {
 	{
 		.name		= "netgear:amber:wps",
 		.gpio		= WNDR4300_GPIO_LED_WPS_AMBER,
+		.active_low	= 1,
+	},
+	{
+		.name		= "netgear:green:wlan2g",
+		.gpio		= WNDR4300_GPIO_LED_WLAN2G,
 		.active_low	= 1,
 	},
 	{
