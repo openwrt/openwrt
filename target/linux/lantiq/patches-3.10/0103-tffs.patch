@@ -4,10 +4,8 @@ Date: Sun, 14 Jul 2013 22:26:43 +0200
 Subject: add basic tffs driver
 
 ---
-Index: linux-3.10.13/arch/mips/lantiq/xway/Makefile
-===================================================================
---- linux-3.10.13.orig/arch/mips/lantiq/xway/Makefile	2013-09-29 00:18:30.164765435 +0200
-+++ linux-3.10.13/arch/mips/lantiq/xway/Makefile	2013-09-29 00:18:30.216765439 +0200
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,6 +1,6 @@
  obj-y := prom.o sysctrl.o clk.o reset.o dma.o timer.o dcdc.o
  
@@ -16,10 +14,8 @@ Index: linux-3.10.13/arch/mips/lantiq/xway/Makefile
  
  obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
  
-Index: linux-3.10.13/arch/mips/lantiq/xway/tffs.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.13/arch/mips/lantiq/xway/tffs.c	2013-09-29 00:37:17.712792305 +0200
+--- /dev/null
++++ b/arch/mips/lantiq/xway/tffs.c
 @@ -0,0 +1,87 @@
 +#include <linux/module.h>
 +#include <linux/mtd/mtd.h>

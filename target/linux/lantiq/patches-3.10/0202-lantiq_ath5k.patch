@@ -1,8 +1,6 @@
-Index: linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c
-===================================================================
---- linux-3.10.34.orig/arch/mips/lantiq/xway/ath_eep.c	2014-04-03 13:25:03.128464891 +0100
-+++ linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c	2014-04-03 13:35:30.432482868 +0100
-@@ -36,10 +36,11 @@
+--- a/arch/mips/lantiq/xway/ath_eep.c
++++ b/arch/mips/lantiq/xway/ath_eep.c
+@@ -36,10 +36,11 @@ static int ath9k_pci_plat_dev_init(struc
  	return 0;
  }
  
@@ -15,7 +13,7 @@ Index: linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c
  	u32 mac_inc = 0, pci_slot = 0;
  	int i;
  	struct mtd_info *the_mtd;
-@@ -112,6 +113,18 @@
+@@ -112,6 +113,18 @@ int __init of_ath9k_eeprom_probe(struct
  	if (!of_property_read_u32(np, "ath,pci-slot", &pci_slot)) {
  		ltq_pci_ath_fixup(pci_slot, ath9k_pdata.eeprom_data);
  		dev_info(&pdev->dev, "pci slot: %u\n", pci_slot);
@@ -34,7 +32,7 @@ Index: linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c
  	}
  
  	dev_info(&pdev->dev, "loaded ath9k eeprom\n");
-@@ -132,20 +145,19 @@
+@@ -132,20 +145,19 @@ static struct platform_driver ath9k_eepr
  	},
  };
  
@@ -58,7 +56,7 @@ Index: linux-3.10.34/arch/mips/lantiq/xway/ath_eep.c
  		return 0;
  	return platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
  }
-@@ -247,4 +259,4 @@
+@@ -247,4 +259,4 @@ static int __init of_ath5k_eeprom_init(v
  {
  	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
  }

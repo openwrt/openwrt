@@ -13,7 +13,7 @@ FEATURES:=targz usb jffs2_nand ubifs
 CPU_TYPE:=xscale
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.10.34
+LINUX_VERSION:=3.10.36
 
 include $(INCLUDE_DIR)/target.mk
 
