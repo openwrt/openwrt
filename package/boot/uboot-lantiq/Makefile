@@ -41,6 +41,27 @@ define uboot/arv4519pw_nor
   SOC:=danube
 endef
 
+define uboot/arv4519pw_brn
+  TITLE:=U-Boot for Arcadyan arv4519pw (BRN)
+  SOC:=danube
+endef
+
+define uboot/arv7510pw_ram
+  TITLE:=U-Boot for Arcadyan arv7510pw (RAM)
+  SOC:=danube
+  DDR_SETTINGS:=board/arcadyan/arv7510pw/ddr_settings.h
+endef
+
+define uboot/arv7510pw_nor
+  TITLE:=U-Boot for Arcadyan arv7510pw (NOR)
+  SOC:=danube
+endef
+
+define uboot/arv7510pw_brn
+  TITLE:=U-Boot for Arcadyan arv7510pw (BRN)
+  SOC:=danube
+endef
+
 define uboot/arv7518pw_ram
   TITLE:=U-Boot for Arcadyan arv7518pw (RAM)
   SOC:=danube
@@ -49,6 +70,43 @@ endef
 
 define uboot/arv7518pw_nor
   TITLE:=U-Boot for Arcadyan arv7518pw (NOR)
+  SOC:=danube
+endef
+
+define uboot/arv7518pw_brn
+  TITLE:=U-Boot for Arcadyan arv7518pw (BRN)
+  SOC:=danube
+endef
+
+define uboot/arv752dpw_ram
+  TITLE:=U-Boot for Arcadyan arv752dpw (RAM)
+  SOC:=danube
+  DDR_SETTINGS:=board/arcadyan/arv752dpw/ddr_settings.h
+endef
+
+define uboot/arv752dpw_nor
+  TITLE:=U-Boot for Arcadyan arv752dpw (NOR)
+  SOC:=danube
+endef
+
+define uboot/arv752dpw_brn
+  TITLE:=U-Boot for Arcadyan arv752dpw (BRN)
+  SOC:=danube
+endef
+
+define uboot/arv752dpw22_ram
+  TITLE:=U-Boot for Arcadyan arv752dpw22 (RAM)
+  SOC:=danube
+  DDR_SETTINGS:=board/arcadyan/arv752dpw22/ddr_settings.h
+endef
+
+define uboot/arv752dpw22_nor
+  TITLE:=U-Boot for Arcadyan arv752dpw22 (NOR)
+  SOC:=danube
+endef
+
+define uboot/arv752dpw22_brn
+  TITLE:=U-Boot for Arcadyan arv752dpw22 (BRN)
   SOC:=danube
 endef
 
@@ -105,8 +163,11 @@ endef
 
 
 UBOOTS:= \
-	arv4519pw_ram arv4519pw_nor \
-	arv7518pw_ram arv7518pw_nor \
+	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
+	arv7510pw_ram arv7510pw_nor arv7510pw_brn \
+	arv7518pw_ram arv7518pw_nor arv7518pw_brn \
+	arv752dpw_ram arv752dpw_nor arv752dpw_brn \
+	arv752dpw22_ram arv752dpw22_nor arv752dpw22_brn \
 	gigasx76x_ram gigasx76x_nor \
 	easy50712_ram easy50712_nor easy50712_norspl \
 	easy80920_ram easy80920_nor easy80920_norspl easy80920_sfspl
