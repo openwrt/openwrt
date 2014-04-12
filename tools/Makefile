@@ -38,6 +38,7 @@ tools-$(CONFIG_TARGET_ar71xx) += lzma-old squashfs
 tools-y += lzma squashfs4
 tools-$(BUILD_B43_TOOLS) += b43-tools
 tools-$(BUILD_PPL_CLOOG) += ppl cloog
+tools-$(CONFIG_USE_SPARSE) += sparse
 
 # builddir dependencies
 $(curdir)/bison/compile := $(curdir)/flex/install
