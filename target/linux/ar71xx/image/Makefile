@@ -843,13 +843,14 @@ endef
 # $(6): Board name (upper caps)
 # $(7): firmware region code (not used yet)
 # $(8): DNI Hardware version
+# $(9): suffix of the configuration file for ubinize
 define Image/Build/NetgearNAND
 	$(eval firmwaresize=$(call mtdpartsize,firmware,$(4)))
 	$(eval kernelsize=$(call mtdpartsize,kernel,$(4)))
 	$(eval imageraw=$(KDIR_TMP)/$(2)-raw.img)
 	$(CP) $(KDIR)/root.squashfs-raw $(KDIR_TMP)/root.squashfs
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR_TMP)/jffs2.eof
-	$(call ubinize,ubinize-$(2).ini,$(KDIR_TMP),$(KDIR_TMP)/$(2)-root.ubi,128KiB,2048,-E 5)
+	$(call ubinize,ubinize-$(9).ini,$(KDIR_TMP),$(KDIR_TMP)/$(2)-root.ubi,128KiB,2048,-E 5)
 	( \
 		dd if=$(KDIR_TMP)/vmlinux-$(2).uImage; \
 		dd if=$(KDIR_TMP)/$(2)-root.ubi \
@@ -1176,7 +1177,10 @@ $(eval $(call MultiProfile,Madwifi,EAP7660D UBNTRS UBNTRSPRO UBNTLSSR71 WP543))
 endif # ifeq ($(SUBTARGET),generic)
 
 ifeq ($(SUBTARGET),nand)
-$(eval $(call SingleProfile,NetgearNAND,64k,WNDR4300,wndr4300,WNDR4300,ttyS0,115200,$$(wndr4300_mtdlayout),0x33373033,WNDR4300,"",-H 29763948+0+128+128+2x2+3x3))
+$(eval $(call SingleProfile,NetgearNAND,64k,WNDR3700V4,wndr3700v4,WNDR4300,ttyS0,115200,$$(wndr4300_mtdlayout),0x33373033,WNDR3700V4,"",-H 29763948+128+128,wndr4300))
+$(eval $(call SingleProfile,NetgearNAND,64k,WNDR4300V1,wndr4300,WNDR4300,ttyS0,115200,$$(wndr4300_mtdlayout),0x33373033,WNDR4300,"",-H 29763948+0+128+128+2x2+3x3,wndr4300))
+
+$(eval $(call MultiProfile,WNDR4300,WNDR3700V4 WNDR4300V1))
 endif # ifeq ($(SUBTARGET),nand)
 
 
