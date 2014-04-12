@@ -155,6 +155,12 @@ static struct mdio_board_info wndr4300_mdio0_info[] = {
 
 static void __init wndr4300_setup(void)
 {
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(wndr4300_leds_gpio); i++)
+		ath79_gpio_output_select(wndr4300_leds_gpio[i].gpio,
+					 AR934X_GPIO_OUT_GPIO);
+
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wndr4300_leds_gpio),
 				 wndr4300_leds_gpio);
 	ath79_register_gpio_keys_polled(-1, WNDR4300_KEYS_POLL_INTERVAL,
