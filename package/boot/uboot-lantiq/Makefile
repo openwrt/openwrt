@@ -63,10 +63,28 @@ define uboot/gigasx76x_nor
   SOC:=danube
 endef
 
+define uboot/easy50712_ram
+  TITLE:=U-Boot for Lantiq EASY50712 (RAM)
+  SOC:=danube
+  DDR_SETTINGS:=board/lantiq/easy50712/ddr_settings.h
+endef
+
+define uboot/easy50712_nor
+  TITLE:=U-Boot for Lantiq EASY50712 (NOR)
+  SOC:=danube
+endef
+
+define uboot/easy50712_norspl
+  TITLE:=U-Boot for Lantiq EASY50712 (NOR SPL)
+  SOC:=danube
+  IMAGE:=u-boot.ltq.lzo.norspl
+endef
+
 UBOOTS:= \
 	arv4519pw_ram arv4519pw_nor \
 	arv7518pw_ram arv7518pw_nor \
-	gigasx76x_ram gigasx76x_nor
+	gigasx76x_ram gigasx76x_nor \
+	easy50712_ram easy50712_nor easy50712_norspl
 
 define Package/uboot/template
 define Package/uboot-lantiq-$(1)
