@@ -456,13 +456,15 @@ define BuildFirmware/WHRG300N/squashfs
 	$(call BuildFirmware/Default4M/$(1),$(1),whr-g300n,WHR-G300N)
 	# the following line has a bad argument 3 ... the old Makefile was already broken	
 	$(call BuildFirmware/Buffalo,$(1),whr-g300n,whr-g300n)
-	( \
-		echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
-			dd bs=512 count=1 conv=sync; \
-		dd if=$(call sysupname,$(1),whr-g300n); \
-	) > $(KDIR)/whr-g300n-tftp.tmp
-	buffalo-tftp -i $(KDIR)/whr-g300n-tftp.tmp \
-		-o $(call imgname,$(1),whr-g300n)-tftp.bin
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		( \
+			echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
+				dd bs=512 count=1 conv=sync; \
+			dd if=$(call sysupname,$(1),whr-g300n); \
+		) > $(KDIR)/whr-g300n-tftp.tmp && \
+		buffalo-tftp -i $(KDIR)/whr-g300n-tftp.tmp \
+			-o $(call imgname,$(1),whr-g300n)-tftp.bin; \
+	fi
 endef
 BuildFirmware/WHRG300N/initramfs=$(call BuildFirmware/OF/initramfs,$(1),whr-g300n,WHR-G300N)
 Image/Build/Profile/WHRG300N=$(call BuildFirmware/WHRG300N/$(1),$(1))
