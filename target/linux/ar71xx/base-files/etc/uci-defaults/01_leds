@@ -326,6 +326,8 @@ wndr3700)
 wndr4300)
 	ucidef_set_led_netdev "wan" "WAN (green)" "netgear:green:wan" "eth0.2"
 	ucidef_set_led_usbdev "usb" "USB" "netgear:green:usb" "1-1"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "netgear:green:wlan2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "netgear:blue:wlan5g" "phy1tpt"
 	;;
 
 whr-g301n |\
