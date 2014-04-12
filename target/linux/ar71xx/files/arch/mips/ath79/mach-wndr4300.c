@@ -1,5 +1,5 @@
 /*
- *  NETGEAR WNDR4300 board support
+ *  NETGEAR WNDR3700v4/WNDR4300 board support
  *
  *  Copyright (C) 2012 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2014 Ralph Perlich <rpsoft@arcor.de>
@@ -204,5 +204,5 @@ static void __init wndr4300_setup(void)
 	ap91_pci_init_simple();
 }
 
-MIPS_MACHINE(ATH79_MACH_WNDR4300, "WNDR4300", "NETGEAR WNDR4300",
+MIPS_MACHINE(ATH79_MACH_WNDR4300, "WNDR4300", "NETGEAR WNDR3700v4/WNDR4300",
 	     wndr4300_setup);
