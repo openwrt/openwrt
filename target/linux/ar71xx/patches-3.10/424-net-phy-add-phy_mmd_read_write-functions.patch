@@ -1,0 +1,40 @@
+--- a/drivers/net/phy/phy.c
++++ b/drivers/net/phy/phy.c
+@@ -1009,6 +1009,12 @@ static int phy_read_mmd_indirect(struct
+ 	return ret;
+ }
+ 
++int phy_read_mmd(struct phy_device *phydev, int prtad, int devad, int addr)
++{
++	return phy_read_mmd_indirect(phydev->bus, prtad, devad, phydev->addr);
++}
++EXPORT_SYMBOL(phy_read_mmd);
++
+ /**
+  * phy_write_mmd_indirect - writes data to the MMD registers
+  * @bus: the target MII bus
+@@ -1034,6 +1040,12 @@ static void phy_write_mmd_indirect(struc
+ 	bus->write(bus, addr, MII_MMD_DATA, data);
+ }
+ 
++void phy_write_mmd(struct phy_device *phydev, int prtad, int devad, u16 data)
++{
++	phy_write_mmd_indirect(phydev->bus, prtad, devad, phydev->addr, data);
++}
++EXPORT_SYMBOL(phy_write_mmd);
++
+ /**
+  * phy_init_eee - init and check the EEE feature
+  * @phydev: target phy_device struct
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -580,6 +580,9 @@ int phy_register_fixup_for_uid(u32 phy_u
+ 		int (*run)(struct phy_device *));
+ int phy_scan_fixups(struct phy_device *phydev);
+ 
++int phy_read_mmd(struct phy_device *phydev, int prtad, int devad, int addr);
++void phy_write_mmd(struct phy_device *phydev, int prtad, int devad, u16 data);
++
+ int phy_init_eee(struct phy_device *phydev, bool clk_stop_enable);
+ int phy_get_eee_err(struct phy_device *phydev);
+ int phy_ethtool_set_eee(struct phy_device *phydev, struct ethtool_eee *data);
