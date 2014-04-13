@@ -352,6 +352,9 @@ ar71xx_board_detect() {
 	*"NBG460N/550N/550NH")
 		name="nbg460n_550n_550nh"
 		;;
+	*"Zyxel NBG6716")
+		name="nbg6716"
+		;;
 	*OM2P)
 		name="om2p"
 		;;
