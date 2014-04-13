@@ -94,6 +94,9 @@ get_status_led() {
 	nbg460n_550n_550nh)
 		status_led="nbg460n:green:power"
 		;;
+	nbg6716)
+		status_led="nbg6716:white:power"
+		;;
 	om2p | \
 	om2p-hs | \
 	om2p-lc)
