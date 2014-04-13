@@ -4717,7 +4717,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +MODULE_DEVICE_TABLE(of, of_fe_match);
 --- /dev/null
 +++ b/drivers/net/ethernet/ralink/soc_rt2880.c
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,52 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -4761,6 +4761,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.mdio_read = rt2880_mdio_read,
 +	.mdio_write = rt2880_mdio_write,
 +	.mdio_adjust_link = rt2880_mdio_link_adjust,
++	.port_init = rt2880_port_init,
 +};
 +
 +const struct of_device_id of_fe_match[] = {
