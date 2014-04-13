@@ -24,6 +24,7 @@
 #include <linux/gpio.h>
 #include <linux/platform_data/gpio-latch.h>
 #include <linux/platform_data/rb91x_nand.h>
+#include <linux/platform_data/phy-at803x.h>
 
 #include <asm/prom.h>
 #include <asm/mach-ath79/ath79.h>
@@ -223,6 +224,20 @@ static struct gpio_led rb711gr100_leds[] __initdata = {
 	},
 };
 
+static struct at803x_platform_data rb91x_at803x_data = {
+	.disable_smarteee = 1,
+	.enable_rgmii_rx_delay = 1,
+	.enable_rgmii_tx_delay = 1,
+};
+
+static struct mdio_board_info rb91x_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &rb91x_at803x_data,
+	},
+};
+
 static void __init rb711gr100_init_partitions(const struct rb_info *info)
 {
 	rb711gr100_spi_partitions[0].size = info->hard_cfg_offs;
@@ -293,9 +308,13 @@ static void __init rb711gr100_setup(void)
 			   ARRAY_SIZE(rb711gr100_spi_info));
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
+				   AR934X_ETH_CFG_RXD_DELAY |
 				   AR934X_ETH_CFG_SW_ONLY_MODE);
 
 	ath79_register_mdio(0, 0x0);
+
+	mdiobus_register_board_info(rb91x_mdio0_info,
+				    ARRAY_SIZE(rb91x_mdio0_info));
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, ath79_mac_base, 0);
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
