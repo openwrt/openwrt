@@ -56,6 +56,13 @@ proto_dslite_setup() {
 
 	proto_add_data
 	[ -n "$zone" ] && json_add_string zone "$zone"
+
+	json_add_array firewall
+	  json_add_object ""
+	    json_add_string type nat
+	    json_add_string target ACCEPT
+	  json_close_object
+	json_close_array
 	proto_close_data
 
 	proto_send_update "$cfg"
