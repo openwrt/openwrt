@@ -37,9 +37,8 @@ endef
 $(eval $(call Profile,VGV7519BRN))
 
 define Profile/ARV7519RWV11
-  NAME:=Livebox Astoria V1
-  PACKAGES:=kmod-ath9k wpad-mini \
-	kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
+  NAME:=Livebox Astoria ARV7519 v1.1
+  PACKAGES:=kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
 	kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
 	kmod-ltq-atm-vr9 ltq-vdsl-vr9-fw-installer \
 	ltq-vdsl-app ppp-mod-pppoa
@@ -48,9 +47,8 @@ endef
 $(eval $(call Profile,ARV7519RWV11))
 
 define Profile/ARV7519RWV12
-  NAME:=Livebox Astoria V2
-  PACKAGES:=kmod-ath9k wpad-mini \
-	kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
+  NAME:=Livebox Astoria ARV7519 v1.2
+  PACKAGES:=kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
 	kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
 	kmod-ltq-atm-vr9 ltq-vdsl-vr9-fw-installer \
 	ltq-vdsl-app ppp-mod-pppoa
