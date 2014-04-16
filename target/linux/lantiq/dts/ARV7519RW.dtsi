@@ -1,23 +1,54 @@
 /include/ "vr9.dtsi"
 
 / {
-
 	model = "ARV7519 - Astoria Networks ARV7519RW22-A-LT";
-	
+
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 	};
-	
+
 	memory@0 {
 		reg = <0x0 0x8000000>;
 	};
-	
+
 	fpi@10000000 {
-		
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x2000000>, <1 0x2000000 0x2000000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x0 0x60000>;
+					read-only;
+				};
+
+				partition@60000 {
+					label = "uboot_cfg";
+					reg = <0x60000 0x20000>;
+					read-only;
+				};
+
+				partition@80000 {
+					label = "firmware";
+					reg = <0x80000 0x1f00000>;
+				};
+
+				partition@1f80000 {
+					label = "boardconfig";
+					reg = <0x1f80000 0x80000>;
+					read-only;
+				};
+			};
+		};
+
 		gpio: pinmux@E100B10 {
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
-			
+
 			state_default: pinmux {
 				mdio {
 					lantiq,groups = "mdio";
@@ -63,20 +94,32 @@
 				reg = <0>;
 				mac-address = [ 00 11 22 33 44 55 ];
 
+				ethernet@1 {
+					compatible = "lantiq,xrx200-pdi-port";
+					reg = <4>;
+					phy-mode = "mii";
+					phy-handle = <&phy13>;
+				};
 				ethernet@2 {
 					compatible = "lantiq,xrx200-pdi-port";
-					reg = <2>;
-					phy-mode = "gmii";
-					phy-handle = <&phy11>;
+					reg = <5>;
+					phy-mode = "mii";
+					phy-handle = <&phy14>;
 				};
 				ethernet@3 {
 					compatible = "lantiq,xrx200-pdi-port";
-					reg = <4>;
-					phy-mode = "gmii";
-					phy-handle = <&phy13>;
+					reg = <2>;
+					phy-mode = "mii";
+					phy-handle = <&phy11>;
+				};
+				ethernet@4 {
+					compatible = "lantiq,xrx200-pdi-port";
+					reg = <3>;
+					phy-mode = "mii";
+					phy-handle = <&phy12>;
 				};
 			};
-			
+
 			wan: interface@1 {
 				compatible = "lantiq,xrx200-pdi";
 				#address-cells = <1>;
@@ -84,7 +127,7 @@
 				reg = <1>;
 				mac-address = [ 00 11 22 33 44 56 ];
 				lantiq,wan;
-				ethernet@4 {
+				ethernet@0 {
 					compatible = "lantiq,xrx200-pdi-port";
 					reg = <0>;
 					phy-mode = "rgmii";
@@ -102,11 +145,19 @@
 				};
 				phy11: ethernet-phy@11 {
 					reg = <0x11>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+				};
+				phy12: ethernet-phy@12 {
+					reg = <0x12>;
+					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
 				};
 				phy13: ethernet-phy@13 {
 					reg = <0x13>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+				};
+				phy14: ethernet-phy@14 {
+					reg = <0x14>;
+					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
 				};
 			};
 		};
@@ -116,7 +167,7 @@
 			gpios = <&gpio 32 0>;
 			lantiq,portmask = <0x3>;
 		};
-	
+
 		pcie@d900000 {
 			status = "disabled";
 			compatible = "lantiq,pcie-xway";
@@ -133,54 +184,55 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 20 1>;
+			linux,code = <0x211>;
+		};
 		reset {
 			label = "reset";
 			gpios = <&gpio 22 1>;
 			linux,code = <0x198>;
 		};
-
 		rfkill {
 			label = "rfkill";
 			gpios = <&gpio 45 1>;
 			linux,code = <0xf7>;
-		};
-		wps {
-			gpios = <&gpio 20 1>;
-			linux,code = <0x211>;
 		};
 	};
 
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		lan{						/* green */
+		lan_green {
 			label = "lan";
-			gpios = <&gpio 02 1>;
+			gpios = <&gpio 2 1>;
 		};
-		voice {						/* green */
-			label = "voice";
-			gpios = <&gpio 29 1>;
-		};
-		message1 {					/* red */
-			label = "message1";
+		message_red {
+			label = "message_red";
 			gpios = <&gpio 10 1>;
 		};
-		message2 {					/* green */
-			label = "message2";
-			gpios = <&gpio 19 1>;
-		};
-		message3 {					/* orange */
-			label = "message3";
-			gpios = <&gpio 28 1>;
-		};		
-		alarm {						/* blue */
-			label = "alarm";
-			gpios = <&gpio 15 1>;
-		};
-		power {						/* red */
+		power_red {
 			label = "power";
 			gpios = <&gpio 14 1>;
 			default-state = "on";
+		};
+		alarm_blue {
+			label = "alarm";
+			gpios = <&gpio 15 1>;
+		};
+		message_orange {
+			label = "message_orange";
+			gpios = <&gpio 19 1>;
+		};
+		message_green {
+			label = "message_green";
+			gpios = <&gpio 28 1>;
+		};
+		voice_green {
+			label = "voice";
+			gpios = <&gpio 29 1>;
 		};
 	};
 };
