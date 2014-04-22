@@ -62,6 +62,7 @@ platform_check_image() {
 	omni-emb | \
 	omni-emb-hpm | \
 	psr-680w | \
+	px4885 | \
 	rp-n53 | \
 	rt-g32-b1 | \
 	rt-n10-plus | \

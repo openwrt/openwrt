@@ -129,6 +129,10 @@ case $board in
 		ucidef_set_led_netdev "eth" "ETH" "emb:green:eth" "eth0"
 		set_wifi_led "emb:green:wifi"
 		;;
+	px4885)
+		set_wifi_led "7links:orange:wifi"
+		set_usb_led "7links:blue:storage"
+		;;
 	sl-r7205)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;

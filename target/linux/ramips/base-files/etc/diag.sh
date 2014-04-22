@@ -92,6 +92,9 @@ get_status_led() {
 	pwh2004)
 		status_led="pwh2004:green:power"
 		;;
+	px4885)
+		status_led="7links:orange:wifi"
+		;;
 	rt-n15)
 		status_led="rt-n15:blue:power"
 		;;
