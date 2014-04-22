@@ -203,6 +203,26 @@ define uboot/easy80920_sfspl
   DEPS:=@(TARGET_lantiq_xrx200_EASY80920NOR||TARGET_lantiq_xrx200_EASY80920NAND)
 endef
 
+define uboot/fb3370_eva
+  TITLE:=U-Boot for AVM FRITZ3370 (EVA)
+  SOC:=vr9
+  DEPS:=@TARGET_lantiq_xrx200_FRITZ3370
+endef
+
+define uboot/fb3370_ram
+  TITLE:=U-Boot for AVM FRITZ3370 (RAM)
+  SOC:=vr9
+  DDR_SETTINGS:=board/avm/fb3370/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xrx200_FRITZ3370
+endef
+
+define uboot/fb3370_sfspl
+  TITLE:=U-Boot for AVM FRITZ3370 (SPI SPL)
+  SOC:=vr9
+  IMAGE:=u-boot.ltq.lzo.sfspl
+  DEPS:=@TARGET_lantiq_xrx200_FRITZ3370
+endef
+
 
 UBOOTS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
@@ -213,7 +233,8 @@ UBOOTS:= \
 	gigasx76x_ram gigasx76x_nor \
 	acmp252_ram acmp252_nor \
 	easy50712_ram easy50712_nor easy50712_norspl \
-	easy80920_ram easy80920_nor easy80920_norspl easy80920_sfspl
+	easy80920_ram easy80920_nor easy80920_norspl easy80920_sfspl \
+	fb3370_eva fb3370_ram fb3370_sfspl
 
 define Package/uboot/template
 define Package/uboot-lantiq-$(1)
