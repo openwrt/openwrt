@@ -9,4 +9,8 @@ define Profile/BTHOMEHUBV2B
 	swconfig
 endef
 
+BTHOMEHUBV2B_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
+BTHOMEHUBV2B_UBI_OPTS:="-m 512 -p 16KiB -s 256"
+
+
 $(eval $(call Profile,BTHOMEHUBV2B))
