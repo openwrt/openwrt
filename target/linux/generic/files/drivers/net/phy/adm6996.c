@@ -6,6 +6,7 @@
  * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
  * VLAN support Copyright (c) 2010, 2011 Peter Lebbing <peter@digitalbrains.com>
  * Copyright (c) 2013 Hauke Mehrtens <hauke@hauke-m.de>
+ * Copyright (c) 2014 Matti Laakso <malaakso@elisanet.fi>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of the GNU General Public License v2 as published by the
@@ -54,6 +55,11 @@ static const char * const adm6996_model_name[] =
 	"ADM6996L"
 };
 
+struct adm6996_mib_desc {
+	unsigned int offset;
+	const char *name;
+};
+
 struct adm6996_priv {
 	struct switch_dev dev;
 	void *priv;
@@ -78,6 +84,9 @@ struct adm6996_priv {
 	u16 vlan_id[ADM_NUM_VLANS];
 	u8 vlan_table[ADM_NUM_VLANS];	/* bitmap, 1 = port is member */
 	u8 vlan_tagged[ADM_NUM_VLANS];	/* bitmap, 1 = tagged member */
+	
+	struct mutex mib_lock;
+	char buf[2048];
 
 	struct mutex reg_mutex;
 
@@ -88,6 +97,21 @@ struct adm6996_priv {
 
 #define to_adm(_dev) container_of(_dev, struct adm6996_priv, dev)
 #define phy_to_adm(_phy) ((struct adm6996_priv *) (_phy)->priv)
+
+#define MIB_DESC(_o, _n)	\
+	{			\
+		.offset = (_o),	\
+		.name = (_n),	\
+	}
+
+static const struct adm6996_mib_desc adm6996_mibs[] = {
+	MIB_DESC(ADM_CL0, "RxPacket"),
+	MIB_DESC(ADM_CL6, "RxByte"),
+	MIB_DESC(ADM_CL12, "TxPacket"),
+	MIB_DESC(ADM_CL18, "TxByte"),
+	MIB_DESC(ADM_CL24, "Collision"),
+	MIB_DESC(ADM_CL30, "Error"),
+};
 
 static inline u16
 r16(struct adm6996_priv *priv, enum admreg reg)
@@ -773,6 +797,99 @@ adm6996_reset_switch(struct switch_dev *dev)
 	return 0;
 }
 
+static int
+adm6996_get_port_link(struct switch_dev *dev, int port,
+		struct switch_port_link *link)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+	
+	u16 reg = 0;
+	u32 speed;
+	
+	if (port >= ADM_NUM_PORTS)
+		return -EINVAL;
+	
+	switch (port) {
+	case 0:
+		reg = r16(priv, ADM_PS0);
+		break;
+	case 1:
+		reg = r16(priv, ADM_PS0);
+		reg = reg >> 8;
+		break;
+	case 2:
+		reg = r16(priv, ADM_PS1);
+		break;
+	case 3:
+		reg = r16(priv, ADM_PS1);
+		reg = reg >> 8;
+		break;
+	case 4:
+		reg = r16(priv, ADM_PS1);
+		reg = reg >> 12;
+		break;
+	case 5:
+		reg = r16(priv, ADM_PS2);
+		/* Bits 0, 1, 3 and 4. */
+		reg = (reg & 3) | ((reg & 24) >> 1);
+		break;
+	default:
+		return -EINVAL;
+	}
+	
+	link->link = reg & ADM_PS_LS;
+	if (!link->link)
+		return 0;
+	link->aneg = true;
+	link->duplex = reg & ADM_PS_DS;
+	link->tx_flow = reg & ADM_PS_FCS;
+	link->rx_flow = reg & ADM_PS_FCS;
+	if (reg & ADM_PS_SS)
+		link->speed = SWITCH_PORT_SPEED_100;
+	else
+		link->speed = SWITCH_PORT_SPEED_10;
+
+	return 0;
+}
+
+static int
+adm6996_sw_get_port_mib(struct switch_dev *dev,
+		       const struct switch_attr *attr,
+		       struct switch_val *val)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+	int port;
+	char *buf = priv->buf;
+	int i, len = 0;
+	u32 reg = 0;
+
+	port = val->port_vlan;
+	if (port >= ADM_NUM_PORTS)
+		return -EINVAL;
+
+	mutex_lock(&priv->mib_lock);
+
+	len += snprintf(buf + len, sizeof(priv->buf) - len,
+			"Port %d MIB counters\n",
+			port);
+
+	for (i = 0; i < ARRAY_SIZE(adm6996_mibs); i++) {
+		reg = r16(priv, adm6996_mibs[i].offset + ADM_OFFSET_PORT(port));
+		reg += r16(priv, adm6996_mibs[i].offset + ADM_OFFSET_PORT(port) + 1) << 16;
+		len += snprintf(buf + len, sizeof(priv->buf) - len,
+				"%-12s: %lu\n",
+				adm6996_mibs[i].name,
+				reg);
+	}
+
+	mutex_unlock(&priv->mib_lock);
+
+	val->value.s = buf;
+	val->len = len;
+
+	return 0;
+}
+
 static struct switch_attr adm6996_globals[] = {
 	{
 	 .type = SWITCH_TYPE_INT,
@@ -802,6 +919,13 @@ static struct switch_attr adm6996_globals[] = {
 };
 
 static struct switch_attr adm6996_port[] = {
+	{
+	 .type = SWITCH_TYPE_STRING,
+	 .name = "mib",
+	 .description = "Get port's MIB counters",
+	 .set = NULL,
+	 .get = adm6996_sw_get_port_mib,
+	},
 };
 
 static struct switch_attr adm6996_vlan[] = {
@@ -833,6 +957,7 @@ static const struct switch_dev_ops adm6996_ops = {
 	.set_vlan_ports = adm6996_set_ports,
 	.apply_config = adm6996_hw_apply,
 	.reset_switch = adm6996_reset_switch,
+	.get_port_link = adm6996_get_port_link,
 };
 
 static int adm6996_switch_init(struct adm6996_priv *priv, const char *alias, struct net_device *netdev)
@@ -899,6 +1024,7 @@ static int adm6996_config_init(struct phy_device *pdev)
 		return -ENOMEM;
 
 	mutex_init(&priv->reg_mutex);
+	mutex_init(&priv->mib_lock);
 	priv->priv = pdev;
 	priv->read = adm6996_read_mii_reg;
 	priv->write = adm6996_write_mii_reg;
