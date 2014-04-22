@@ -14,13 +14,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/firmware/Makefile
 +++ b/firmware/Makefile
-@@ -134,6 +134,9 @@ fw-shipped-$(CONFIG_USB_SERIAL_KEYSPAN_P
+@@ -134,6 +134,10 @@ fw-shipped-$(CONFIG_USB_SERIAL_KEYSPAN_P
  fw-shipped-$(CONFIG_USB_SERIAL_XIRCOM) += keyspan_pda/xircom_pgs.fw
  fw-shipped-$(CONFIG_USB_VICAM) += vicam/firmware.fw
  fw-shipped-$(CONFIG_VIDEO_CPIA2) += cpia2/stv0672_vp4.bin
 +fw-shipped-$(CONFIG_LANTIQ_XRX200) += lantiq/vr9_phy11g_a1x.bin
 +fw-shipped-$(CONFIG_LANTIQ_XRX200) += lantiq/vr9_phy11g_a2x.bin
 +fw-shipped-$(CONFIG_LANTIQ_XRX200) += lantiq/vr9_phy22f_a1x.bin
++fw-shipped-$(CONFIG_LANTIQ_XRX200) += lantiq/vr9_phy22f_a2x.bin
  fw-shipped-$(CONFIG_YAM) += yam/1200.bin yam/9600.bin
  
  fw-shipped-all := $(fw-shipped-y) $(fw-shipped-m) $(fw-shipped-)
@@ -358,6 +359,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +lantiq/vr9_phy11g_a1x.bin
 +lantiq/vr9_phy22f_a1x.bin
 +
-+# GPHY core on Lantiq XWAY VR9 v1.1
++# GPHY core on Lantiq XWAY VR9 v1.2
 +lantiq/vr9_phy11g_a2x.bin
 +lantiq/vr9_phy22f_a2x.bin
