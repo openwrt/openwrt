@@ -5,11 +5,9 @@ Subject: MIPS: lantiq: easy80920: add support for NAND SPL
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/boards.cfg b/boards.cfg
-index f090726..394ede7 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -509,6 +509,7 @@ Active  mips        mips32         incaip      -               incaip
+@@ -509,6 +509,7 @@ Active  mips        mips32         incai
  Active  mips        mips32         incaip      -               incaip              incaip_100MHz                        incaip:CPU_CLOCK_RATE=100000000                                                                                                   Wolfgang Denk <wd@denx.de>
  Active  mips        mips32         incaip      -               incaip              incaip_133MHz                        incaip:CPU_CLOCK_RATE=133000000                                                                                                   Wolfgang Denk <wd@denx.de>
  Active  mips        mips32         incaip      -               incaip              incaip_150MHz                        incaip:CPU_CLOCK_RATE=150000000                                                                                                   Wolfgang Denk <wd@denx.de>
@@ -17,8 +15,6 @@ index f090726..394ede7 100644
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_nor                        easy80920:SYS_BOOT_NOR                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_norspl                     easy80920:SYS_BOOT_NORSPL                                                                                                         Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_ram                        easy80920:SYS_BOOT_RAM                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
-diff --git a/include/configs/easy80920.h b/include/configs/easy80920.h
-index ad69bc2..56ceedb 100644
 --- a/include/configs/easy80920.h
 +++ b/include/configs/easy80920.h
 @@ -31,6 +31,14 @@
@@ -63,6 +59,3 @@ index ad69bc2..56ceedb 100644
 +	CONFIG_ENV_UPDATE_UBOOT_NAND
  
  #endif /* __CONFIG_H */
--- 
-1.8.3.2
-

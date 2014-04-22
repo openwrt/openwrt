@@ -6,8 +6,6 @@ Subject: net: switchlib: add driver for REALTEK RTL8306
 Signed-off-by: Oliver Muth <dr.o.muth@gmx.de>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/drivers/net/switch/Makefile b/drivers/net/switch/Makefile
-index 7400897..08c6972 100644
 --- a/drivers/net/switch/Makefile
 +++ b/drivers/net/switch/Makefile
 @@ -13,6 +13,7 @@ COBJS-$(CONFIG_SWITCH_MULTI) += switch.o
@@ -18,9 +16,6 @@ index 7400897..08c6972 100644
  
  COBJS	:= $(COBJS-y)
  SRCS	:= $(COBJS:.o=.c)
-diff --git a/drivers/net/switch/rtl8306.c b/drivers/net/switch/rtl8306.c
-new file mode 100644
-index 0000000..7a6a917
 --- /dev/null
 +++ b/drivers/net/switch/rtl8306.c
 @@ -0,0 +1,332 @@
@@ -356,8 +351,6 @@ index 0000000..7a6a917
 +
 +	switch_driver_register(&rtl8306_drv);
 +}
-diff --git a/drivers/net/switch/switch.c b/drivers/net/switch/switch.c
-index 3e34a7f..2e1c668 100644
 --- a/drivers/net/switch/switch.c
 +++ b/drivers/net/switch/switch.c
 @@ -26,6 +26,9 @@ void switch_init(void)
@@ -370,11 +363,9 @@ index 3e34a7f..2e1c668 100644
  
  	board_switch_init();
  }
-diff --git a/include/switch.h b/include/switch.h
-index ae7b123..927b1d2 100644
 --- a/include/switch.h
 +++ b/include/switch.h
-@@ -100,6 +100,7 @@ static inline void switch_setup(struct switch_device *dev)
+@@ -100,6 +100,7 @@ static inline void switch_setup(struct s
  extern void switch_psb697x_init(void);
  extern void switch_adm6996i_init(void);
  extern void switch_ar8216_init(void);
@@ -382,6 +373,3 @@ index ae7b123..927b1d2 100644
  
  #endif /* __SWITCH_H */
  
--- 
-1.8.3.2
-

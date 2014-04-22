@@ -5,9 +5,6 @@ Subject: MIPS: add board support for AVM FritzBox 3370
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/board/avm/fb3370/Makefile b/board/avm/fb3370/Makefile
-new file mode 100644
-index 0000000..e3d621e
 --- /dev/null
 +++ b/board/avm/fb3370/Makefile
 @@ -0,0 +1,28 @@
@@ -39,9 +36,6 @@ index 0000000..e3d621e
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/avm/fb3370/config.mk b/board/avm/fb3370/config.mk
-new file mode 100644
-index 0000000..4dcfd05
 --- /dev/null
 +++ b/board/avm/fb3370/config.mk
 @@ -0,0 +1,7 @@
@@ -52,9 +46,6 @@ index 0000000..4dcfd05
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/avm/fb3370/ddr_settings.h b/board/avm/fb3370/ddr_settings.h
-new file mode 100644
-index 0000000..307c084
 --- /dev/null
 +++ b/board/avm/fb3370/ddr_settings.h
 @@ -0,0 +1,69 @@
@@ -127,9 +118,6 @@ index 0000000..307c084
 +#define	MC_CCR59_VALUE	0x7800301
 +#define	MC_CCR60_VALUE	0x7800301
 +#define	MC_CCR61_VALUE	0x4
-diff --git a/board/avm/fb3370/fb3370.c b/board/avm/fb3370/fb3370.c
-new file mode 100644
-index 0000000..ff44c68
 --- /dev/null
 +++ b/board/avm/fb3370/fb3370.c
 @@ -0,0 +1,138 @@
@@ -271,11 +259,9 @@ index 0000000..ff44c68
 +		break;
 +	}
 +}
-diff --git a/boards.cfg b/boards.cfg
-index 9f407b8..ea5c4f9 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -517,6 +517,9 @@ Active  mips        mips32         incaip      -               incaip
+@@ -517,6 +517,9 @@ Active  mips        mips32         incai
  Active  mips        mips32         incaip      -               incaip              incaip_100MHz                        incaip:CPU_CLOCK_RATE=100000000                                                                                                   Wolfgang Denk <wd@denx.de>
  Active  mips        mips32         incaip      -               incaip              incaip_133MHz                        incaip:CPU_CLOCK_RATE=133000000                                                                                                   Wolfgang Denk <wd@denx.de>
  Active  mips        mips32         incaip      -               incaip              incaip_150MHz                        incaip:CPU_CLOCK_RATE=150000000                                                                                                   Wolfgang Denk <wd@denx.de>
@@ -285,9 +271,6 @@ index 9f407b8..ea5c4f9 100644
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_nandspl                    easy80920:SYS_BOOT_NANDSPL                                                                                                        Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_nor                        easy80920:SYS_BOOT_NOR                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_norspl                     easy80920:SYS_BOOT_NORSPL                                                                                                         Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
-diff --git a/include/configs/fb3370.h b/include/configs/fb3370.h
-new file mode 100644
-index 0000000..8ae1373
 --- /dev/null
 +++ b/include/configs/fb3370.h
 @@ -0,0 +1,78 @@
@@ -369,6 +352,3 @@ index 0000000..8ae1373
 +	CONFIG_ENV_UPDATE_UBOOT_SF
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-

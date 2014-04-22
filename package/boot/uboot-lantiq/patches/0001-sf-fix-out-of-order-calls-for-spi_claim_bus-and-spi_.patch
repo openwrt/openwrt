@@ -5,11 +5,9 @@ Subject: sf: fix out-of-order calls for spi_claim_bus and spi_release_bus
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/drivers/mtd/spi/sf_ops.c b/drivers/mtd/spi/sf_ops.c
-index 108665f..d34747b 100644
 --- a/drivers/mtd/spi/sf_ops.c
 +++ b/drivers/mtd/spi/sf_ops.c
-@@ -132,12 +132,6 @@ int spi_flash_write_common(struct spi_flash *flash, const u8 *cmd,
+@@ -132,12 +132,6 @@ int spi_flash_write_common(struct spi_fl
  	if (buf == NULL)
  		timeout = SPI_FLASH_PAGE_ERASE_TIMEOUT;
  
@@ -22,7 +20,7 @@ index 108665f..d34747b 100644
  	ret = spi_flash_cmd_write_enable(flash);
  	if (ret < 0) {
  		debug("SF: enabling write failed\n");
-@@ -158,8 +152,6 @@ int spi_flash_write_common(struct spi_flash *flash, const u8 *cmd,
+@@ -158,8 +152,6 @@ int spi_flash_write_common(struct spi_fl
  		return ret;
  	}
  
@@ -31,7 +29,7 @@ index 108665f..d34747b 100644
  	return ret;
  }
  
-@@ -175,12 +167,18 @@ int spi_flash_cmd_erase_ops(struct spi_flash *flash, u32 offset, size_t len)
+@@ -175,12 +167,18 @@ int spi_flash_cmd_erase_ops(struct spi_f
  		return -1;
  	}
  
@@ -51,7 +49,7 @@ index 108665f..d34747b 100644
  #endif
  		spi_flash_addr(offset, cmd);
  
-@@ -190,13 +188,16 @@ int spi_flash_cmd_erase_ops(struct spi_flash *flash, u32 offset, size_t len)
+@@ -190,13 +188,16 @@ int spi_flash_cmd_erase_ops(struct spi_f
  		ret = spi_flash_write_common(flash, cmd, sizeof(cmd), NULL, 0);
  		if (ret < 0) {
  			debug("SF: erase failed\n");
@@ -69,7 +67,7 @@ index 108665f..d34747b 100644
  	return ret;
  }
  
-@@ -208,6 +209,12 @@ int spi_flash_cmd_write_ops(struct spi_flash *flash, u32 offset,
+@@ -208,6 +209,12 @@ int spi_flash_cmd_write_ops(struct spi_f
  	u8 cmd[4];
  	int ret = -1;
  
@@ -82,7 +80,7 @@ index 108665f..d34747b 100644
  	page_size = flash->page_size;
  
  	cmd[0] = CMD_PAGE_PROGRAM;
-@@ -215,7 +222,7 @@ int spi_flash_cmd_write_ops(struct spi_flash *flash, u32 offset,
+@@ -215,7 +222,7 @@ int spi_flash_cmd_write_ops(struct spi_f
  #ifdef CONFIG_SPI_FLASH_BAR
  		ret = spi_flash_bank(flash, offset);
  		if (ret < 0)
@@ -91,7 +89,7 @@ index 108665f..d34747b 100644
  #endif
  		byte_addr = offset % page_size;
  		chunk_len = min(len - actual, page_size - byte_addr);
-@@ -232,12 +239,15 @@ int spi_flash_cmd_write_ops(struct spi_flash *flash, u32 offset,
+@@ -232,12 +239,15 @@ int spi_flash_cmd_write_ops(struct spi_f
  					buf + actual, chunk_len);
  		if (ret < 0) {
  			debug("SF: write failed\n");
@@ -108,7 +106,7 @@ index 108665f..d34747b 100644
  	return ret;
  }
  
-@@ -247,20 +257,12 @@ int spi_flash_read_common(struct spi_flash *flash, const u8 *cmd,
+@@ -247,20 +257,12 @@ int spi_flash_read_common(struct spi_fla
  	struct spi_slave *spi = flash->spi;
  	int ret;
  
@@ -129,7 +127,7 @@ index 108665f..d34747b 100644
  	return ret;
  }
  
-@@ -271,6 +273,12 @@ int spi_flash_cmd_read_ops(struct spi_flash *flash, u32 offset,
+@@ -271,6 +273,12 @@ int spi_flash_cmd_read_ops(struct spi_fl
  	u32 remain_len, read_len;
  	int ret = -1;
  
@@ -142,7 +140,7 @@ index 108665f..d34747b 100644
  	/* Handle memory-mapped SPI */
  	if (flash->memory_map) {
  		spi_xfer(flash->spi, 0, NULL, NULL, SPI_XFER_MMAP);
-@@ -289,7 +297,7 @@ int spi_flash_cmd_read_ops(struct spi_flash *flash, u32 offset,
+@@ -289,7 +297,7 @@ int spi_flash_cmd_read_ops(struct spi_fl
  		ret = spi_flash_cmd_bankaddr_write(flash, bank_sel);
  		if (ret) {
  			debug("SF: fail to set bank%d\n", bank_sel);
@@ -151,7 +149,7 @@ index 108665f..d34747b 100644
  		}
  #endif
  		remain_len = (SPI_FLASH_16MB_BOUN * (bank_sel + 1)) - offset;
-@@ -304,7 +312,7 @@ int spi_flash_cmd_read_ops(struct spi_flash *flash, u32 offset,
+@@ -304,7 +312,7 @@ int spi_flash_cmd_read_ops(struct spi_fl
  							data, read_len);
  		if (ret < 0) {
  			debug("SF: read failed\n");
@@ -160,7 +158,7 @@ index 108665f..d34747b 100644
  		}
  
  		offset += read_len;
-@@ -312,6 +320,9 @@ int spi_flash_cmd_read_ops(struct spi_flash *flash, u32 offset,
+@@ -312,6 +320,9 @@ int spi_flash_cmd_read_ops(struct spi_fl
  		data += read_len;
  	}
  
@@ -170,6 +168,3 @@ index 108665f..d34747b 100644
  	return ret;
  }
  
--- 
-1.8.3.2
-

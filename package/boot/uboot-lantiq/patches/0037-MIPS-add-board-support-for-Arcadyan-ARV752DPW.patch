@@ -6,9 +6,6 @@ Subject: MIPS: add board support for Arcadyan ARV752DPW
 Signed-off-by: Oliver Muth <dr.o.muth@gmx.de>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/board/arcadyan/arv752dpw/Makefile b/board/arcadyan/arv752dpw/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/arcadyan/arv752dpw/Makefile
 @@ -0,0 +1,27 @@
@@ -39,9 +36,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/arcadyan/arv752dpw/arv752dpw.c b/board/arcadyan/arv752dpw/arv752dpw.c
-new file mode 100644
-index 0000000..d555904
 --- /dev/null
 +++ b/board/arcadyan/arv752dpw/arv752dpw.c
 @@ -0,0 +1,51 @@
@@ -96,9 +90,6 @@ index 0000000..d555904
 +{
 +	return switch_device_register(&rtl8306_dev);
 +}
-diff --git a/board/arcadyan/arv752dpw/config.mk b/board/arcadyan/arv752dpw/config.mk
-new file mode 100644
-index 0000000..9d8953b
 --- /dev/null
 +++ b/board/arcadyan/arv752dpw/config.mk
 @@ -0,0 +1,7 @@
@@ -109,9 +100,6 @@ index 0000000..9d8953b
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/arcadyan/arv752dpw/ddr_settings.h b/board/arcadyan/arv752dpw/ddr_settings.h
-new file mode 100644
-index 0000000..a226322
 --- /dev/null
 +++ b/board/arcadyan/arv752dpw/ddr_settings.h
 @@ -0,0 +1,55 @@
@@ -170,11 +158,9 @@ index 0000000..a226322
 +#define MC_DC44_VALUE	0x0
 +#define MC_DC45_VALUE	0x500
 +#define MC_DC46_VALUE	0x0
-diff --git a/boards.cfg b/boards.cfg
-index f10be39..79cba2d 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -518,6 +518,9 @@ Active  mips        mips32         danube      arcadyan        arv4519pw
+@@ -518,6 +518,9 @@ Active  mips        mips32         danub
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_brn                        arv7518pw:SYS_BOOT_BRN                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_nor                        arv7518pw:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_ram                        arv7518pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
@@ -184,9 +170,6 @@ index f10be39..79cba2d 100644
  Active  mips        mips32         danube      audiocodes      acmp252             acmp252_nor                          acmp252:SYS_BOOT_NOR                                                                                                              Daniel Golle <daniel.golle@gmail.com>
  Active  mips        mips32         danube      audiocodes      acmp252             acmp252_ram                          acmp252:SYS_BOOT_RAM                                                                                                              Daniel Golle <daniel.golle@gmail.com>
  Active  mips        mips32         danube      gigaset         sx76x               gigasx76x_nor                        sx76x:SYS_BOOT_NOR                                                                                                                Luka Perkov <luka@openwrt.org>
-diff --git a/include/configs/arv752dpw.h b/include/configs/arv752dpw.h
-new file mode 100644
-index 0000000..f6d6092
 --- /dev/null
 +++ b/include/configs/arv752dpw.h
 @@ -0,0 +1,67 @@
@@ -257,6 +240,3 @@ index 0000000..f6d6092
 +	"kernel_addr=0xB0040000\0"
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-

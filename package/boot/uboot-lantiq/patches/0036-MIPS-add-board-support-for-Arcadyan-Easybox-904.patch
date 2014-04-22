@@ -5,9 +5,6 @@ Subject: MIPS: add board support for Arcadyan Easybox 904
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/board/arcadyan/easybox904/Makefile b/board/arcadyan/easybox904/Makefile
-new file mode 100644
-index 0000000..0380dea
 --- /dev/null
 +++ b/board/arcadyan/easybox904/Makefile
 @@ -0,0 +1,27 @@
@@ -38,9 +35,6 @@ index 0000000..0380dea
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/arcadyan/easybox904/config.mk b/board/arcadyan/easybox904/config.mk
-new file mode 100644
-index 0000000..9d8953b
 --- /dev/null
 +++ b/board/arcadyan/easybox904/config.mk
 @@ -0,0 +1,7 @@
@@ -51,9 +45,6 @@ index 0000000..9d8953b
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/arcadyan/easybox904/ddr_settings.h b/board/arcadyan/easybox904/ddr_settings.h
-new file mode 100644
-index 0000000..24541bc
 --- /dev/null
 +++ b/board/arcadyan/easybox904/ddr_settings.h
 @@ -0,0 +1,68 @@
@@ -125,9 +116,6 @@ index 0000000..24541bc
 +#define	MC_CCR59_VALUE	0x7C00301
 +#define	MC_CCR60_VALUE	0x7C00301
 +#define	MC_CCR61_VALUE	0x4
-diff --git a/board/arcadyan/easybox904/easybox904.c b/board/arcadyan/easybox904/easybox904.c
-new file mode 100644
-index 0000000..4dbe044
 --- /dev/null
 +++ b/board/arcadyan/easybox904/easybox904.c
 @@ -0,0 +1,98 @@
@@ -229,11 +217,9 @@ index 0000000..4dbe044
 +
 +	return ltq_eth_initialize(&eth_board_config);
 +}
-diff --git a/boards.cfg b/boards.cfg
-index 0cbf756..f10be39 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -529,6 +529,7 @@ Active  mips        mips32         incaip      -               incaip
+@@ -529,6 +529,7 @@ Active  mips        mips32         incai
  Active  mips        mips32         incaip      -               incaip              incaip_100MHz                        incaip:CPU_CLOCK_RATE=100000000                                                                                                   Wolfgang Denk <wd@denx.de>
  Active  mips        mips32         incaip      -               incaip              incaip_133MHz                        incaip:CPU_CLOCK_RATE=133000000                                                                                                   Wolfgang Denk <wd@denx.de>
  Active  mips        mips32         incaip      -               incaip              incaip_150MHz                        incaip:CPU_CLOCK_RATE=150000000                                                                                                   Wolfgang Denk <wd@denx.de>
@@ -241,9 +227,6 @@ index 0cbf756..f10be39 100644
  Active  mips        mips32         vrx200      avm             fb3370              fb3370_eva                           fb3370:SYS_BOOT_EVA                                                                                                               Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         vrx200      avm             fb3370              fb3370_ram                           fb3370:SYS_BOOT_RAM                                                                                                               Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         vrx200      avm             fb3370              fb3370_sfspl                         fb3370:SYS_BOOT_SFSPL                                                                                                             Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
-diff --git a/include/configs/easybox904.h b/include/configs/easybox904.h
-new file mode 100644
-index 0000000..c892d77
 --- /dev/null
 +++ b/include/configs/easybox904.h
 @@ -0,0 +1,45 @@
@@ -292,6 +275,3 @@ index 0000000..c892d77
 +	CONFIG_ENV_LANTIQ_DEFAULTS
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-

@@ -5,9 +5,6 @@ Subject: MIPS: add board support for AudioCodes MP-252
 
 Signed-off-by: Daniel Golle <dgolle@allnet.de>
 
-diff --git a/board/audiocodes/acmp252/Makefile b/board/audiocodes/acmp252/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/audiocodes/acmp252/Makefile
 @@ -0,0 +1,27 @@
@@ -38,9 +35,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/audiocodes/acmp252/acmp252.c b/board/audiocodes/acmp252/acmp252.c
-new file mode 100644
-index 0000000..3368506
 --- /dev/null
 +++ b/board/audiocodes/acmp252/acmp252.c
 @@ -0,0 +1,66 @@
@@ -110,9 +104,6 @@ index 0000000..3368506
 +
 +	return switch_device_register(&adm6996i_dev);
 +}
-diff --git a/board/audiocodes/acmp252/config.mk b/board/audiocodes/acmp252/config.mk
-new file mode 100644
-index 0000000..9d8953b
 --- /dev/null
 +++ b/board/audiocodes/acmp252/config.mk
 @@ -0,0 +1,7 @@
@@ -123,9 +114,6 @@ index 0000000..9d8953b
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/audiocodes/acmp252/ddr_settings.h b/board/audiocodes/acmp252/ddr_settings.h
-new file mode 100644
-index 0000000..d0b4f20
 --- /dev/null
 +++ b/board/audiocodes/acmp252/ddr_settings.h
 @@ -0,0 +1,55 @@
@@ -184,11 +172,9 @@ index 0000000..d0b4f20
 +#define MC_DC44_VALUE	0x0
 +#define MC_DC45_VALUE	0x500
 +#define MC_DC46_VALUE	0x0
-diff --git a/boards.cfg b/boards.cfg
-index e832423..9f407b8 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -508,6 +508,8 @@ Active  mips        mips32         danube      arcadyan        arv4519pw
+@@ -508,6 +508,8 @@ Active  mips        mips32         danub
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_brn                        arv7518pw:SYS_BOOT_BRN                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_nor                        arv7518pw:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_ram                        arv7518pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
@@ -197,9 +183,6 @@ index e832423..9f407b8 100644
  Active  mips        mips32         danube      lantiq          easy50712           easy50712_nor                        easy50712:SYS_BOOT_NOR                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         danube      lantiq          easy50712           easy50712_norspl                     easy50712:SYS_BOOT_NORSPL                                                                                                         Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         danube      lantiq          easy50712           easy50712_ram                        easy50712:SYS_BOOT_RAM                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
-diff --git a/include/configs/acmp252.h b/include/configs/acmp252.h
-new file mode 100644
-index 0000000..2c9ab19
 --- /dev/null
 +++ b/include/configs/acmp252.h
 @@ -0,0 +1,60 @@
@@ -263,6 +246,3 @@ index 0000000..2c9ab19
 +	"kernel_addr=0xB0040000\0"
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-

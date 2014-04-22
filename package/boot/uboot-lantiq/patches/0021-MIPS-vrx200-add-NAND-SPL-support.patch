@@ -5,8 +5,6 @@ Subject: MIPS: vrx200: add NAND SPL support
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/arch/mips/cpu/mips32/vrx200/config.mk b/arch/mips/cpu/mips32/vrx200/config.mk
-index 442156a..b0fc882 100644
 --- a/arch/mips/cpu/mips32/vrx200/config.mk
 +++ b/arch/mips/cpu/mips32/vrx200/config.mk
 @@ -27,4 +27,9 @@ ALL-y += $(obj)u-boot.ltq.norspl
@@ -19,8 +17,6 @@ index 442156a..b0fc882 100644
 +ALL-$(CONFIG_SPL_LZMA_SUPPORT) += $(obj)u-boot.ltq.lzma.nandspl
 +endif
  endif
-diff --git a/arch/mips/include/asm/arch-vrx200/config.h b/arch/mips/include/asm/arch-vrx200/config.h
-index 88ef256..4ec6092 100644
 --- a/arch/mips/include/asm/arch-vrx200/config.h
 +++ b/arch/mips/include/asm/arch-vrx200/config.h
 @@ -164,7 +164,7 @@
@@ -32,6 +28,3 @@ index 88ef256..4ec6092 100644
  #define CONFIG_SYS_TEXT_BASE		0x80100000
  #define CONFIG_SPL_TEXT_BASE		0xBE220000
  #endif
--- 
-1.8.3.2
-

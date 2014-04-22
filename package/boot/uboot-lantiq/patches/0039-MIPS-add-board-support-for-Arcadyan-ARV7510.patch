@@ -6,9 +6,6 @@ Subject: MIPS: add board support for Arcadyan ARV7510
 Signed-off-by: Matti Laakso <malaakso@elisanet.fi>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/board/arcadyan/arv7510pw/Makefile b/board/arcadyan/arv7510pw/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/arcadyan/arv7510pw/Makefile
 @@ -0,0 +1,27 @@
@@ -39,9 +36,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/arcadyan/arv7510pw/arv7510pw.c b/board/arcadyan/arv7510pw/arv7510pw.c
-new file mode 100644
-index 0000000..6880b4c
 --- /dev/null
 +++ b/board/arcadyan/arv7510pw/arv7510pw.c
 @@ -0,0 +1,72 @@
@@ -117,9 +111,6 @@ index 0000000..6880b4c
 +
 +	return switch_device_register(&adm6996i_dev);
 +}
-diff --git a/board/arcadyan/arv7510pw/config.mk b/board/arcadyan/arv7510pw/config.mk
-new file mode 100644
-index 0000000..9d8953b
 --- /dev/null
 +++ b/board/arcadyan/arv7510pw/config.mk
 @@ -0,0 +1,7 @@
@@ -130,9 +121,6 @@ index 0000000..9d8953b
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/arcadyan/arv7510pw/ddr_settings.h b/board/arcadyan/arv7510pw/ddr_settings.h
-new file mode 100644
-index 0000000..e63f591
 --- /dev/null
 +++ b/board/arcadyan/arv7510pw/ddr_settings.h
 @@ -0,0 +1,53 @@
@@ -189,11 +177,9 @@ index 0000000..e63f591
 +#define MC_DC44_VALUE	0x0
 +#define MC_DC45_VALUE	0x500
 +#define MC_DC46_VALUE	0x0
-diff --git a/boards.cfg b/boards.cfg
-index 287f974..29156d4 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -515,6 +515,9 @@ Active  mips        mips32         au1x00      -               pb1x00
+@@ -515,6 +515,9 @@ Active  mips        mips32         au1x0
  Active  mips        mips32         danube      arcadyan        arv4519pw           arv4519pw_brn                        arv4519pw:SYS_BOOT_BRN                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         danube      arcadyan        arv4519pw           arv4519pw_nor                        arv4519pw:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         danube      arcadyan        arv4519pw           arv4519pw_ram                        arv4519pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
@@ -203,9 +189,6 @@ index 287f974..29156d4 100644
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_brn                        arv7518pw:SYS_BOOT_BRN                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_nor                        arv7518pw:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_ram                        arv7518pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
-diff --git a/include/configs/arv7510pw.h b/include/configs/arv7510pw.h
-new file mode 100644
-index 0000000..9eacfa1
 --- /dev/null
 +++ b/include/configs/arv7510pw.h
 @@ -0,0 +1,75 @@
@@ -284,6 +267,3 @@ index 0000000..9eacfa1
 +	"kernel_addr=0xB0060000\0"
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-
