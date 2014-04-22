@@ -241,6 +241,7 @@ endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
+	mkdir -p $(PKG_BUILD_DIR)/arch/mips/cpu/mips32/vrx200/
 	$(call CopyVR9Firmware,11g,1)
 	$(call CopyVR9Firmware,11g,2)
 	$(call CopyVR9Firmware,22f,1)
