@@ -223,6 +223,20 @@ define uboot/fb3370_sfspl
   DEPS:=@TARGET_lantiq_xrx200_FRITZ3370
 endef
 
+define uboot/p2812hnufx_ram
+  TITLE:=U-Boot for ZyXEL P-2812HNU-Fx (RAM)
+  SOC:=vr9
+  DDR_SETTINGS:=board/zyxel/p2812hnufx/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xrx200_P2812HNUFX
+endef
+
+define uboot/p2812hnufx_nandspl
+  TITLE:=U-Boot for ZyXEL P-2812HNU-Fx (NAND SPL)
+  SOC:=vr9
+  IMAGE:=u-boot.ltq.lzo.nandspl
+  DEPS:=@TARGET_lantiq_xrx200_P2812HNUFX
+endef
+
 
 UBOOTS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
@@ -234,7 +248,8 @@ UBOOTS:= \
 	acmp252_ram acmp252_nor \
 	easy50712_ram easy50712_nor easy50712_norspl \
 	easy80920_ram easy80920_nor easy80920_norspl easy80920_sfspl \
-	fb3370_eva fb3370_ram fb3370_sfspl
+	fb3370_eva fb3370_ram fb3370_sfspl \
+	p2812hnufx_ram p2812hnufx_nandspl
 
 define Package/uboot/template
 define Package/uboot-lantiq-$(1)
