@@ -257,11 +257,21 @@ define BuildFirmware/PorayDualSize/squashfs
 endef
 BuildFirmware/PorayDualSize/initramfs=$(call BuildFirmware/DefaultDualSize/initramfs,$(1),$(2),$(3))
 
+define BuildFirmware/Gemtek/squashfs
+	$(call BuildFirmware/Default4M/$(1),$(1),$(2),$(3))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		mkheader_gemtek "$(call sysupname,$(1),$(2))" \
+			"$(call imgname,$(1),$(2))-factory.bin" $(2) || \
+		rm -f "$(call imgname,$(1),$(2))-factory.bin"; \
+	fi
+endef
+BuildFirmware/Gemtek/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
+
 #
 # RT288X Profiles
 #
 
-Image/Build/Profile/AR725W=$(call BuildFirmware/Default4M/$(1),$(1),ar725w,AR725W)
+Image/Build/Profile/AR725W=$(call BuildFirmware/Gemtek/$(1),$(1),ar725w,AR725W)
 
 # 0x790000
 belkin_f5d8235v1_mtd_size=7929856
