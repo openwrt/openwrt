@@ -261,6 +261,8 @@ BuildFirmware/PorayDualSize/initramfs=$(call BuildFirmware/DefaultDualSize/initr
 # RT288X Profiles
 #
 
+Image/Build/Profile/AR725W=$(call BuildFirmware/Default4M/$(1),$(1),ar725w,AR725W)
+
 # 0x790000
 belkin_f5d8235v1_mtd_size=7929856
 Image/Build/Profile/F5D8235V1=$(call BuildFirmware/CustomFlash/$(1),$(1),f5d8235v1,F5D8235_V1,$(belkin_f5d8235v1_mtd_size))
@@ -273,6 +275,7 @@ Image/Build/Profile/WLITX4AG300N=$(call BuildFirmware/Default4M/$(1),$(1),wli-tx
 
 ifeq ($(SUBTARGET),rt288x)
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/AR725W,$(1))
 	$(call Image/Build/Profile/F5D8235V1,$(1))
 	$(call Image/Build/Profile/RTN15,$(1))
 	$(call Image/Build/Profile/V11STFE,$(1))
