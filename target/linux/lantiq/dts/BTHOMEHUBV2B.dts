@@ -6,7 +6,10 @@
 	model = "BTHOMEHUBV2B - BT Home Hub 2B";  /* SoC: Lantiq Danube-S PSB 50712 @ 333MHz V1.3/1.5 */
 
 	chosen {
-		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit rootfstype=squashfs,jffs2";
+		// uncomment for overlayfs on top of ubi
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit ubi.mtd=rootfs_ubi,256 root=/dev/mtdblock8";
+		// uncomment for ubifs
+//		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit ubi.mtd=rootfs_ubi,256 root=ubi0:rootfs rootfstype=ubifs";
 	};
 
 	memory@0 {				  /* RAM: Samsung K4H511638F-LC 64MB */
@@ -80,8 +83,13 @@
 				};
 
 				partition@4000 {
-					label = "firmware";
-					reg = <0x4000 0x1FFC000>;
+					label = "kernel";
+					reg = <0x4000 0x160000>;
+				};
+
+				partition@164000 {
+					label = "rootfs_ubi";
+					reg = <0x164000 0x1E9C000>;
 				};
 
 			};
