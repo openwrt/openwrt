@@ -5,8 +5,6 @@ Subject: Makefile: add Lantiq NAND SPL images
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/.gitignore b/.gitignore
-index 7abdc37..869b1b8 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -54,6 +54,9 @@
@@ -19,11 +17,9 @@ index 7abdc37..869b1b8 100644
  /u-boot.lzma.img
  /u-boot.lzo.img
  
-diff --git a/Makefile b/Makefile
-index 73ec67d..0445035 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -599,6 +599,24 @@ $(obj)u-boot.ltq.lzma.sfspl: $(obj)u-boot.lzma.img $(obj)spl/u-boot-spl.bin
+@@ -599,6 +599,24 @@ $(obj)u-boot.ltq.lzma.sfspl: $(obj)u-boo
  		$(obj)tools/ltq-boot-image -t sfspl -e $(CONFIG_SPL_TEXT_BASE) \
  			-s $(obj)spl/u-boot-spl.bin -u $< -o $@
  
@@ -48,6 +44,3 @@ index 73ec67d..0445035 100644
  $(obj)u-boot.ltq.norspl: $(obj)u-boot.img $(obj)spl/u-boot-spl.bin
  	cat $(obj)spl/u-boot-spl.bin $< > $@
  
--- 
-1.8.3.2
-

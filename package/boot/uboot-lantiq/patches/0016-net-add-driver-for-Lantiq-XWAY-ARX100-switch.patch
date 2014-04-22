@@ -5,8 +5,6 @@ Subject: net: add driver for Lantiq XWAY ARX100 switch
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/arch/mips/include/asm/arch-arx100/config.h b/arch/mips/include/asm/arch-arx100/config.h
-index 1a6c9bc..8f955e8 100644
 --- a/arch/mips/include/asm/arch-arx100/config.h
 +++ b/arch/mips/include/asm/arch-arx100/config.h
 @@ -10,17 +10,21 @@
@@ -34,9 +32,6 @@ index 1a6c9bc..8f955e8 100644
   */
  
  #ifndef __ARX100_CONFIG_H__
-diff --git a/arch/mips/include/asm/arch-arx100/switch.h b/arch/mips/include/asm/arch-arx100/switch.h
-new file mode 100644
-index 0000000..301056c
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-arx100/switch.h
 @@ -0,0 +1,86 @@
@@ -126,11 +121,9 @@ index 0000000..301056c
 +#define MDIO_CTRL_REGAD_MASK	0x1f
 +
 +#endif /* __ARX100_SWITCH_H__ */
-diff --git a/drivers/net/Makefile b/drivers/net/Makefile
-index bbc2c92..926b8c2 100644
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -38,6 +38,7 @@ COBJS-$(CONFIG_DRIVER_KS8695ETH) += ks8695eth.o
+@@ -38,6 +38,7 @@ COBJS-$(CONFIG_DRIVER_KS8695ETH) += ks86
  COBJS-$(CONFIG_KS8851_MLL) += ks8851_mll.o
  COBJS-$(CONFIG_LAN91C96) += lan91c96.o
  COBJS-$(CONFIG_LANTIQ_DANUBE_ETOP) += lantiq_danube_etop.o
@@ -138,9 +131,6 @@ index bbc2c92..926b8c2 100644
  COBJS-$(CONFIG_LANTIQ_VRX200_SWITCH) += lantiq_vrx200_switch.o
  COBJS-$(CONFIG_MACB) += macb.o
  COBJS-$(CONFIG_MCFFEC) += mcffec.o mcfmii.o
-diff --git a/drivers/net/lantiq_arx100_switch.c b/drivers/net/lantiq_arx100_switch.c
-new file mode 100644
-index 0000000..cc65249
 --- /dev/null
 +++ b/drivers/net/lantiq_arx100_switch.c
 @@ -0,0 +1,410 @@
@@ -554,6 +544,3 @@ index 0000000..cc65249
 +
 +	return 0;
 +}
--- 
-1.8.3.2
-

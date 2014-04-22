@@ -10,8 +10,6 @@ setup code for switch devices across different boards.
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 Cc: Joe Hershberger <joe.hershberger@gmail.com>
 
-diff --git a/Makefile b/Makefile
-index dc04179..6ee9a3c 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -280,6 +280,7 @@ LIBS-y += drivers/mtd/ubi/libubi.o
@@ -22,9 +20,6 @@ index dc04179..6ee9a3c 100644
  LIBS-y += drivers/pci/libpci.o
  LIBS-y += drivers/pcmcia/libpcmcia.o
  LIBS-y += drivers/power/libpower.o \
-diff --git a/drivers/net/switch/Makefile b/drivers/net/switch/Makefile
-new file mode 100644
-index 0000000..31719d8
 --- /dev/null
 +++ b/drivers/net/switch/Makefile
 @@ -0,0 +1,30 @@
@@ -58,9 +53,6 @@ index 0000000..31719d8
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/drivers/net/switch/switch.c b/drivers/net/switch/switch.c
-new file mode 100644
-index 0000000..0e1d6b7
 --- /dev/null
 +++ b/drivers/net/switch/switch.c
 @@ -0,0 +1,62 @@
@@ -126,9 +118,6 @@ index 0000000..0e1d6b7
 +
 +	return NULL;
 +}
-diff --git a/include/switch.h b/include/switch.h
-new file mode 100644
-index 0000000..4a7ae63
 --- /dev/null
 +++ b/include/switch.h
 @@ -0,0 +1,102 @@
@@ -234,8 +223,6 @@ index 0000000..4a7ae63
 +
 +#endif /* __SWITCH_H */
 +
-diff --git a/net/eth.c b/net/eth.c
-index c96e767..03ecc1c 100644
 --- a/net/eth.c
 +++ b/net/eth.c
 @@ -10,6 +10,7 @@
@@ -255,6 +242,3 @@ index c96e767..03ecc1c 100644
  	eth_env_init(bis);
  
  	/*
--- 
-1.8.3.2
-

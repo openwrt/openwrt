@@ -5,8 +5,6 @@ Subject: net: switchlib: add driver for Lantiq PSB697X switch family
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/drivers/net/switch/Makefile b/drivers/net/switch/Makefile
-index 31719d8..a426774 100644
 --- a/drivers/net/switch/Makefile
 +++ b/drivers/net/switch/Makefile
 @@ -10,6 +10,7 @@ include $(TOPDIR)/config.mk
@@ -17,9 +15,6 @@ index 31719d8..a426774 100644
  
  COBJS	:= $(COBJS-y)
  SRCS	:= $(COBJS:.o=.c)
-diff --git a/drivers/net/switch/psb697x.c b/drivers/net/switch/psb697x.c
-new file mode 100644
-index 0000000..cb6c391
 --- /dev/null
 +++ b/drivers/net/switch/psb697x.c
 @@ -0,0 +1,118 @@
@@ -141,8 +136,6 @@ index 0000000..cb6c391
 +
 +	switch_driver_register(&psb697x_drv);
 +}
-diff --git a/drivers/net/switch/switch.c b/drivers/net/switch/switch.c
-index 0e1d6b7..3d02610 100644
 --- a/drivers/net/switch/switch.c
 +++ b/drivers/net/switch/switch.c
 @@ -17,6 +17,10 @@ void switch_init(void)
@@ -156,11 +149,9 @@ index 0e1d6b7..3d02610 100644
  	board_switch_init();
  }
  
-diff --git a/include/switch.h b/include/switch.h
-index 4a7ae63..fd3cdbd 100644
 --- a/include/switch.h
 +++ b/include/switch.h
-@@ -97,6 +97,7 @@ static inline void switch_setup(struct switch_device *dev)
+@@ -97,6 +97,7 @@ static inline void switch_setup(struct s
  }
  
  /* Init functions for supported Switch drivers */
@@ -168,6 +159,3 @@ index 4a7ae63..fd3cdbd 100644
  
  #endif /* __SWITCH_H */
  
--- 
-1.8.3.2
-

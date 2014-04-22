@@ -5,9 +5,6 @@ Subject: MIPS: add board support for ZyXEL P-2812HNU-Fx
 
 Signed-off-by: Luka Perkov <luka@openwrt.org>
 
-diff --git a/board/zyxel/p2812hnufx/Makefile b/board/zyxel/p2812hnufx/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/zyxel/p2812hnufx/Makefile
 @@ -0,0 +1,27 @@
@@ -38,9 +35,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/zyxel/p2812hnufx/config.mk b/board/zyxel/p2812hnufx/config.mk
-new file mode 100644
-index 0000000..9d33739
 --- /dev/null
 +++ b/board/zyxel/p2812hnufx/config.mk
 @@ -0,0 +1,7 @@
@@ -51,9 +45,6 @@ index 0000000..9d33739
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/zyxel/p2812hnufx/ddr_settings.h b/board/zyxel/p2812hnufx/ddr_settings.h
-new file mode 100644
-index 0000000..128c42e
 --- /dev/null
 +++ b/board/zyxel/p2812hnufx/ddr_settings.h
 @@ -0,0 +1,70 @@
@@ -127,9 +118,6 @@ index 0000000..128c42e
 +#define	MC_CCR59_VALUE	0x7800301
 +#define	MC_CCR60_VALUE	0x7800301
 +#define	MC_CCR61_VALUE	0x4
-diff --git a/board/zyxel/p2812hnufx/p2812hnufx.c b/board/zyxel/p2812hnufx/p2812hnufx.c
-new file mode 100644
-index 0000000..cd2f819
 --- /dev/null
 +++ b/board/zyxel/p2812hnufx/p2812hnufx.c
 @@ -0,0 +1,97 @@
@@ -230,11 +218,9 @@ index 0000000..cd2f819
 +
 +	return ltq_eth_initialize(&eth_board_config);
 +}
-diff --git a/boards.cfg b/boards.cfg
-index 45c2aa0..0cbf756 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -540,6 +540,8 @@ Active  mips        mips32         vrx200      lantiq          easy80920
+@@ -540,6 +540,8 @@ Active  mips        mips32         vrx20
  Active  mips        mips32         vrx200      zte             zxhnh367n           zxhnh367n_nandspl                    zxhnh367n:SYS_BOOT_NANDSPL                                                                                                        Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         vrx200      zte             zxhnh367n           zxhnh367n_ram                        zxhnh367n:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         vrx200      zte             zxhnh367n           zxhnh367n_zte                        zxhnh367n:SYS_BOOT_ZTE                                                                                                            Luka Perkov <luka@openwrt.org>
@@ -243,9 +229,6 @@ index 45c2aa0..0cbf756 100644
  Active  mips        mips64         -           -               qemu-mips           qemu_mips64                          qemu-mips64:SYS_BIG_ENDIAN                                                                                                        -
  Active  mips        mips64         -           -               qemu-mips           qemu_mips64el                        qemu-mips64:SYS_LITTLE_ENDIAN                                                                                                     -
  Active  nds32       n1213          ag101       AndesTech       adp-ag101           adp-ag101                            -                                                                                                                                 Andes <uboot@andestech.com>
-diff --git a/include/configs/p2812hnufx.h b/include/configs/p2812hnufx.h
-new file mode 100644
-index 0000000..6806eb1
 --- /dev/null
 +++ b/include/configs/p2812hnufx.h
 @@ -0,0 +1,67 @@
@@ -316,6 +299,3 @@ index 0000000..6806eb1
 +	CONFIG_ENV_UPDATE_UBOOT_NAND
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-

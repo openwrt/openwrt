@@ -5,9 +5,6 @@ Subject: MIPS: add board support for ZyXEL P-2601HN-Fx
 
 Signed-off-by: Luka Perkov <luka@openwrt.org>
 
-diff --git a/board/zyxel/p2601hnfx/Makefile b/board/zyxel/p2601hnfx/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/zyxel/p2601hnfx/Makefile
 @@ -0,0 +1,27 @@
@@ -38,9 +35,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/zyxel/p2601hnfx/config.mk b/board/zyxel/p2601hnfx/config.mk
-new file mode 100644
-index 0000000..9d33739
 --- /dev/null
 +++ b/board/zyxel/p2601hnfx/config.mk
 @@ -0,0 +1,7 @@
@@ -51,9 +45,6 @@ index 0000000..9d33739
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/zyxel/p2601hnfx/ddr_settings.h b/board/zyxel/p2601hnfx/ddr_settings.h
-new file mode 100644
-index 0000000..92af4fa
 --- /dev/null
 +++ b/board/zyxel/p2601hnfx/ddr_settings.h
 @@ -0,0 +1,55 @@
@@ -112,9 +103,6 @@ index 0000000..92af4fa
 +#define MC_DC44_VALUE	0x0
 +#define MC_DC45_VALUE	0x600
 +#define MC_DC46_VALUE	0x0
-diff --git a/board/zyxel/p2601hnfx/p2601hnfx.c b/board/zyxel/p2601hnfx/p2601hnfx.c
-new file mode 100644
-index 0000000..6a69af9
 --- /dev/null
 +++ b/board/zyxel/p2601hnfx/p2601hnfx.c
 @@ -0,0 +1,51 @@
@@ -169,11 +157,9 @@ index 0000000..6a69af9
 +{
 +	return switch_device_register(&rtl8306_dev);
 +}
-diff --git a/boards.cfg b/boards.cfg
-index e505203..45c2aa0 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -499,6 +499,10 @@ Active  mips        mips32         -           micronas        vct
+@@ -499,6 +499,10 @@ Active  mips        mips32         -
  Active  mips        mips32         arx100      zte             zxv10h201l          zxv10h201l_nor                       zxv10h201l:SYS_BOOT_NOR                                                                                                           Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         arx100      zte             zxv10h201l          zxv10h201l_ram                       zxv10h201l:SYS_BOOT_RAM                                                                                                           Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         arx100      zte             zxv10h201l          zxv10h201l_zte                       zxv10h201l:SYS_BOOT_ZTE                                                                                                           Luka Perkov <luka@openwrt.org>
@@ -184,9 +170,6 @@ index e505203..45c2aa0 100644
  Active  mips        mips32         arx100      zyxel           p661hnufx           p661hnufx_ram                        p661hnufx:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         arx100      zyxel           p661hnufx           p661hnufx_sfspl                      p661hnufx:SYS_BOOT_SFSPL                                                                                                          Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         arx100      zyxel           p661hnufx           p661hnufx_zyxel                      p661hnufx:SYS_BOOT_ZYXEL                                                                                                          Luka Perkov <luka@openwrt.org>
-diff --git a/include/configs/p2601hnfx.h b/include/configs/p2601hnfx.h
-new file mode 100644
-index 0000000..5cba30f
 --- /dev/null
 +++ b/include/configs/p2601hnfx.h
 @@ -0,0 +1,67 @@
@@ -257,6 +240,3 @@ index 0000000..5cba30f
 +	"kernel_addr=0xB0040000\0"
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-

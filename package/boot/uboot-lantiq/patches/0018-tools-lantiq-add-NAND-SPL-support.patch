@@ -5,8 +5,6 @@ Subject: tools: lantiq: add NAND SPL support
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/tools/ltq-boot-image.c b/tools/ltq-boot-image.c
-index 75a188c..743fc6f 100644
 --- a/tools/ltq-boot-image.c
 +++ b/tools/ltq-boot-image.c
 @@ -14,7 +14,8 @@
@@ -42,7 +40,7 @@ index 75a188c..743fc6f 100644
  }
  
  static enum image_types parse_image_type(const char *type)
-@@ -64,6 +68,9 @@ static enum image_types parse_image_type(const char *type)
+@@ -64,6 +68,9 @@ static enum image_types parse_image_type
  	if (!strncmp(type, "sfspl", 6))
  		return IMAGE_SFSPL;
  
@@ -52,7 +50,7 @@ index 75a188c..743fc6f 100644
  	return IMAGE_NONE;
  }
  
-@@ -73,7 +80,7 @@ static int parse_args(int argc, char *argv[], struct args *arg)
+@@ -73,7 +80,7 @@ static int parse_args(int argc, char *ar
  
  	memset(arg, 0, sizeof(*arg));
  
@@ -61,7 +59,7 @@ index 75a188c..743fc6f 100644
  		switch (opt) {
  		case 'h':
  			usage_msg(argv[0]);
-@@ -84,6 +91,12 @@ static int parse_args(int argc, char *argv[], struct args *arg)
+@@ -84,6 +91,12 @@ static int parse_args(int argc, char *ar
  		case 'e':
  			arg->entry_addr = strtoul(optarg, NULL, 16);
  			break;
@@ -74,7 +72,7 @@ index 75a188c..743fc6f 100644
  		case 'u':
  			arg->uboot_bin = optarg;
  			break;
-@@ -114,11 +127,22 @@ static int parse_args(int argc, char *argv[], struct args *arg)
+@@ -114,11 +127,22 @@ static int parse_args(int argc, char *ar
  		goto parse_error;
  	}
  
@@ -98,7 +96,7 @@ index 75a188c..743fc6f 100644
  	return 0;
  
  parse_error:
-@@ -174,6 +198,19 @@ static int write_nvb_start_header(int fd, __u32 addr)
+@@ -174,6 +198,19 @@ static int write_nvb_start_header(int fd
  	return write_header(fd, hdr, sizeof(hdr));
  }
  
@@ -118,7 +116,7 @@ index 75a188c..743fc6f 100644
  static int open_input_bin(const char *name, void **ptr, size_t *size)
  {
  	struct stat sbuf;
-@@ -238,9 +275,37 @@ static int open_output_bin(const char *name)
+@@ -238,9 +275,37 @@ static int open_output_bin(const char *n
  	return fd;
  }
  
@@ -158,7 +156,7 @@ index 75a188c..743fc6f 100644
  	void *uboot_ptr, *spl_ptr;
  	size_t uboot_size, spl_size;
  
-@@ -256,9 +321,22 @@ static int create_sfspl(const struct args *arg)
+@@ -256,9 +321,22 @@ static int create_sfspl(const struct arg
  	if (0 > uboot_fd)
  		goto err_uboot;
  
@@ -181,7 +179,7 @@ index 75a188c..743fc6f 100644
  
  	ret = copy_bin(out_fd, spl_ptr, spl_size);
  	if (ret)
-@@ -268,16 +346,16 @@ static int create_sfspl(const struct args *arg)
+@@ -268,16 +346,16 @@ static int create_sfspl(const struct arg
  	if (ret)
  		goto err_write;
  
@@ -223,6 +221,3 @@ index 75a188c..743fc6f 100644
  		break;
  	default:
  		fprintf(stderr, "Image type not implemented\n");
--- 
-1.8.3.2
-

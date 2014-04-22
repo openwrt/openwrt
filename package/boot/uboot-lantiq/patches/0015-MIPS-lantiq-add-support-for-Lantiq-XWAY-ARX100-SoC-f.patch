@@ -7,9 +7,6 @@ Signed-off-by: Luka Perkov <luka@openwrt.org>
 Signed-off-by: John Crispin <blogic@openwrt.org>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/arch/mips/cpu/mips32/arx100/Makefile b/arch/mips/cpu/mips32/arx100/Makefile
-new file mode 100644
-index 0000000..98f5f73
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/Makefile
 @@ -0,0 +1,31 @@
@@ -44,9 +41,6 @@ index 0000000..98f5f73
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/arch/mips/cpu/mips32/arx100/cgu.c b/arch/mips/cpu/mips32/arx100/cgu.c
-new file mode 100644
-index 0000000..6e71ee7
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/cgu.c
 @@ -0,0 +1,109 @@
@@ -159,9 +153,6 @@ index 0000000..6e71ee7
 +
 +	return clk;
 +}
-diff --git a/arch/mips/cpu/mips32/arx100/cgu_init.S b/arch/mips/cpu/mips32/arx100/cgu_init.S
-new file mode 100644
-index 0000000..ed70cb2
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/cgu_init.S
 @@ -0,0 +1,105 @@
@@ -270,9 +261,6 @@ index 0000000..ed70cb2
 +	 nop
 +
 +	END(ltq_cgu_init)
-diff --git a/arch/mips/cpu/mips32/arx100/chipid.c b/arch/mips/cpu/mips32/arx100/chipid.c
-new file mode 100644
-index 0000000..e97d7ef
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/chipid.c
 @@ -0,0 +1,60 @@
@@ -336,9 +324,6 @@ index 0000000..e97d7ef
 +
 +	return "";
 +}
-diff --git a/arch/mips/cpu/mips32/arx100/config.mk b/arch/mips/cpu/mips32/arx100/config.mk
-new file mode 100644
-index 0000000..442156a
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/config.mk
 @@ -0,0 +1,30 @@
@@ -372,9 +357,6 @@ index 0000000..442156a
 +ALL-$(CONFIG_SPL_LZMA_SUPPORT) += $(obj)u-boot.ltq.lzma.norspl
 +endif
 +endif
-diff --git a/arch/mips/cpu/mips32/arx100/ebu.c b/arch/mips/cpu/mips32/arx100/ebu.c
-new file mode 100644
-index 0000000..4ab3cf1
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/ebu.c
 @@ -0,0 +1,111 @@
@@ -489,9 +471,6 @@ index 0000000..4ab3cf1
 +{
 +	return (void *)(addr ^ 2);
 +}
-diff --git a/arch/mips/cpu/mips32/arx100/mem.c b/arch/mips/cpu/mips32/arx100/mem.c
-new file mode 100644
-index 0000000..1fba7cd
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/mem.c
 @@ -0,0 +1,30 @@
@@ -525,9 +504,6 @@ index 0000000..1fba7cd
 +
 +	return (1 << (row + col)) * 4 * 2;
 +}
-diff --git a/arch/mips/cpu/mips32/arx100/mem_init.S b/arch/mips/cpu/mips32/arx100/mem_init.S
-new file mode 100644
-index 0000000..5d70842
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/mem_init.S
 @@ -0,0 +1,114 @@
@@ -645,9 +621,6 @@ index 0000000..5d70842
 +	jr	ra
 +
 +	END(ltq_mem_init)
-diff --git a/arch/mips/cpu/mips32/arx100/pmu.c b/arch/mips/cpu/mips32/arx100/pmu.c
-new file mode 100644
-index 0000000..d2afe96
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/pmu.c
 @@ -0,0 +1,120 @@
@@ -771,9 +744,6 @@ index 0000000..d2afe96
 +
 +	ltq_clrsetbits(&ltq_pmu_regs->pwdcr, clr, set);
 +}
-diff --git a/arch/mips/cpu/mips32/arx100/rcu.c b/arch/mips/cpu/mips32/arx100/rcu.c
-new file mode 100644
-index 0000000..4ff6935
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/arx100/rcu.c
 @@ -0,0 +1,130 @@
@@ -907,11 +877,9 @@ index 0000000..4ff6935
 +		return BOOT_UNKNOWN;
 +	}
 +}
-diff --git a/arch/mips/cpu/mips32/lantiq-common/cpu.c b/arch/mips/cpu/mips32/lantiq-common/cpu.c
-index 4a7acdf..aa37b35 100644
 --- a/arch/mips/cpu/mips32/lantiq-common/cpu.c
 +++ b/arch/mips/cpu/mips32/lantiq-common/cpu.c
-@@ -20,6 +20,7 @@ static const char ltq_bootsel_strings[][16] = {
+@@ -20,6 +20,7 @@ static const char ltq_bootsel_strings[][
  	"PCI",
  	"MII0",
  	"RMII0",
@@ -919,8 +887,6 @@ index 4a7acdf..aa37b35 100644
  	"RGMII1",
  	"unknown",
  };
-diff --git a/arch/mips/cpu/mips32/lantiq-common/start.S b/arch/mips/cpu/mips32/lantiq-common/start.S
-index 481d739..fc8276e 100644
 --- a/arch/mips/cpu/mips32/lantiq-common/start.S
 +++ b/arch/mips/cpu/mips32/lantiq-common/start.S
 @@ -64,6 +64,11 @@
@@ -935,9 +901,6 @@ index 481d739..fc8276e 100644
  #ifdef CONFIG_SOC_XWAY_VRX200
  #define CONFIG0_LANTIQ		(CONFIG0_MIPS34K | CONFIG0_MIPS32_64)
  #define STATUS_LANTIQ		(STATUS_MIPS34K | STATUS_MIPS32_64)
-diff --git a/arch/mips/include/asm/arch-arx100/config.h b/arch/mips/include/asm/arch-arx100/config.h
-new file mode 100644
-index 0000000..1a6c9bc
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-arx100/config.h
 @@ -0,0 +1,175 @@
@@ -1116,9 +1079,6 @@ index 0000000..1a6c9bc
 +#define	CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_TEXT_BASE
 +
 +#endif /* __ARX100_CONFIG_H__ */
-diff --git a/arch/mips/include/asm/arch-arx100/gpio.h b/arch/mips/include/asm/arch-arx100/gpio.h
-new file mode 100644
-index 0000000..f6b6409
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-arx100/gpio.h
 @@ -0,0 +1,12 @@
@@ -1134,9 +1094,6 @@ index 0000000..f6b6409
 +#include <asm/lantiq/gpio.h>
 +
 +#endif /* __ARX100_GPIO_H__ */
-diff --git a/arch/mips/include/asm/arch-arx100/nand.h b/arch/mips/include/asm/arch-arx100/nand.h
-new file mode 100644
-index 0000000..231b68f
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-arx100/nand.h
 @@ -0,0 +1,13 @@
@@ -1153,9 +1110,6 @@ index 0000000..231b68f
 +int ltq_nand_init(struct nand_chip *nand);
 +
 +#endif /* __VRX200_NAND_H__ */
-diff --git a/arch/mips/include/asm/arch-arx100/soc.h b/arch/mips/include/asm/arch-arx100/soc.h
-new file mode 100644
-index 0000000..3ccaf3f
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-arx100/soc.h
 @@ -0,0 +1,37 @@
@@ -1196,8 +1150,6 @@ index 0000000..3ccaf3f
 +#define LTQ_MC_DDR_DC_OFFSET(x)		(x * 0x10)
 +
 +#endif /* __ARX100_SOC_H__ */
-diff --git a/arch/mips/include/asm/lantiq/chipid.h b/arch/mips/include/asm/lantiq/chipid.h
-index c9921b0..19adf97 100644
 --- a/arch/mips/include/asm/lantiq/chipid.h
 +++ b/arch/mips/include/asm/lantiq/chipid.h
 @@ -15,6 +15,10 @@ enum ltq_chip_partnum {
@@ -1211,10 +1163,12 @@ index c9921b0..19adf97 100644
  	LTQ_SOC_VRX288 = 0x01C0,	/* VRX288 v1.1 */
  	LTQ_SOC_VRX268 = 0x01C2,	/* VRX268 v1.1 */
  	LTQ_SOC_GRX288 = 0x01C9,	/* GRX288 v1.1 */
-@@ -38,6 +42,38 @@ static inline int ltq_soc_is_danube(void)
+@@ -36,6 +40,38 @@ static inline int ltq_soc_is_danube(void
+ {
+ 	return 0;
  }
- #endif
- 
++#endif
++
 +#ifdef CONFIG_SOC_XWAY_ARX100
 +static inline int ltq_soc_is_arx100(void)
 +{
@@ -1245,13 +1199,9 @@ index c9921b0..19adf97 100644
 +{
 +	return 0;
 +}
-+#endif
-+
+ #endif
+ 
  #ifdef CONFIG_SOC_XWAY_VRX200
- static inline int ltq_soc_is_vrx200(void)
- {
-diff --git a/arch/mips/include/asm/lantiq/clk.h b/arch/mips/include/asm/lantiq/clk.h
-index e13f000..5aea603 100644
 --- a/arch/mips/include/asm/lantiq/clk.h
 +++ b/arch/mips/include/asm/lantiq/clk.h
 @@ -13,9 +13,10 @@ enum ltq_clk {
@@ -1266,8 +1216,6 @@ index e13f000..5aea603 100644
  	CLOCK_333_MHZ = 333333333,
  	CLOCK_393_MHZ = 393219000,
  	CLOCK_500_MHZ = 500000000,
-diff --git a/arch/mips/include/asm/lantiq/cpu.h b/arch/mips/include/asm/lantiq/cpu.h
-index b3a504e..e3b0312 100644
 --- a/arch/mips/include/asm/lantiq/cpu.h
 +++ b/arch/mips/include/asm/lantiq/cpu.h
 @@ -17,6 +17,7 @@ enum ltq_boot_select {
@@ -1278,6 +1226,3 @@ index b3a504e..e3b0312 100644
  	BOOT_RGMII1,
  	BOOT_UNKNOWN,
  };
--- 
-1.8.3.2
-

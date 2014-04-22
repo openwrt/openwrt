@@ -6,9 +6,6 @@ Subject: MIPS: add board support for Arcadyan ARV4519
 Signed-off-by: Luka Perkov <luka@openwrt.org>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/board/arcadyan/arv4519pw/Makefile b/board/arcadyan/arv4519pw/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/arcadyan/arv4519pw/Makefile
 @@ -0,0 +1,27 @@
@@ -39,9 +36,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/arcadyan/arv4519pw/arv4519pw.c b/board/arcadyan/arv4519pw/arv4519pw.c
-new file mode 100644
-index 0000000..a9dfd03
 --- /dev/null
 +++ b/board/arcadyan/arv4519pw/arv4519pw.c
 @@ -0,0 +1,51 @@
@@ -96,9 +90,6 @@ index 0000000..a9dfd03
 +{
 +	return switch_device_register(&ar8216_dev);
 +}
-diff --git a/board/arcadyan/arv4519pw/config.mk b/board/arcadyan/arv4519pw/config.mk
-new file mode 100644
-index 0000000..9d8953b
 --- /dev/null
 +++ b/board/arcadyan/arv4519pw/config.mk
 @@ -0,0 +1,7 @@
@@ -109,9 +100,6 @@ index 0000000..9d8953b
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/arcadyan/arv4519pw/ddr_settings.h b/board/arcadyan/arv4519pw/ddr_settings.h
-new file mode 100644
-index 0000000..c5e88b3
 --- /dev/null
 +++ b/board/arcadyan/arv4519pw/ddr_settings.h
 @@ -0,0 +1,55 @@
@@ -170,11 +158,9 @@ index 0000000..c5e88b3
 +#define MC_DC44_VALUE	0x0
 +#define MC_DC45_VALUE	0x500
 +#define MC_DC46_VALUE	0x0
-diff --git a/boards.cfg b/boards.cfg
-index 394ede7..f300d5a 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -502,6 +502,9 @@ Active  mips        mips32         au1x00      -               dbau1x00
+@@ -502,6 +502,9 @@ Active  mips        mips32         au1x0
  Active  mips        mips32         au1x00      -               dbau1x00            dbau1550                             dbau1x00:DBAU1550                                                                                                                 Thomas Lange <thomas@corelatus.se>
  Active  mips        mips32         au1x00      -               dbau1x00            dbau1550_el                          dbau1x00:DBAU1550,SYS_LITTLE_ENDIAN                                                                                               Thomas Lange <thomas@corelatus.se>
  Active  mips        mips32         au1x00      -               pb1x00              pb1000                               pb1x00:PB1000                                                                                                                     -
@@ -184,9 +170,6 @@ index 394ede7..f300d5a 100644
  Active  mips        mips32         danube      lantiq          easy50712           easy50712_nor                        easy50712:SYS_BOOT_NOR                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         danube      lantiq          easy50712           easy50712_norspl                     easy50712:SYS_BOOT_NORSPL                                                                                                         Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         danube      lantiq          easy50712           easy50712_ram                        easy50712:SYS_BOOT_RAM                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
-diff --git a/include/configs/arv4519pw.h b/include/configs/arv4519pw.h
-new file mode 100644
-index 0000000..6907108
 --- /dev/null
 +++ b/include/configs/arv4519pw.h
 @@ -0,0 +1,67 @@
@@ -257,6 +240,3 @@ index 0000000..6907108
 +	"kernel_addr=0xB0040000\0"
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-

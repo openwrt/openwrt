@@ -6,8 +6,6 @@ Subject: MIPS: add support for Lantiq XWAY SoCs
 Signed-off-by: Luka Perkov <luka@openwrt.org>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/.gitignore b/.gitignore
-index a39bd54..7abdc37 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -49,6 +49,13 @@
@@ -24,8 +22,6 @@ index a39bd54..7abdc37 100644
  
  #
  # Generated files
-diff --git a/Makefile b/Makefile
-index 6ee9a3c..73ec67d 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -435,6 +435,12 @@ $(obj)u-boot.bin:	$(obj)u-boot
@@ -67,7 +63,7 @@ index 6ee9a3c..73ec67d 100644
  
  $(obj)u-boot.imx: $(obj)u-boot.bin depend
  		$(MAKE) -C $(SRCTREE)/arch/arm/imx-common $(OBJTREE)/u-boot.imx
-@@ -571,6 +587,27 @@ $(obj)u-boot-img-spl-at-end.bin: $(obj)spl/u-boot-spl.bin $(obj)u-boot.img
+@@ -571,6 +587,27 @@ $(obj)u-boot-img-spl-at-end.bin: $(obj)s
  			conv=notrunc 2>/dev/null
  		cat $(obj)u-boot-pad.img $(obj)spl/u-boot-spl.bin > $@
  
@@ -95,11 +91,9 @@ index 6ee9a3c..73ec67d 100644
  ifeq ($(CONFIG_SANDBOX),y)
  GEN_UBOOT = \
  		cd $(LNDIR) && $(CC) $(SYMS) -T $(obj)u-boot.lds \
-diff --git a/README b/README
-index 09662a4..1acceff 100644
 --- a/README
 +++ b/README
-@@ -468,6 +468,11 @@ The following options need to be configured:
+@@ -468,6 +468,11 @@ The following options need to be configu
  			CONF_CM_CACHABLE_CUW
  			CONF_CM_CACHABLE_ACCELERATED
  
@@ -111,11 +105,9 @@ index 09662a4..1acceff 100644
  		CONFIG_SYS_XWAY_EBU_BOOTCFG
  
  		Special option for Lantiq XWAY SoCs for booting from NOR flash.
-diff --git a/arch/mips/config.mk b/arch/mips/config.mk
-index c3f81b5..84b6e59 100644
 --- a/arch/mips/config.mk
 +++ b/arch/mips/config.mk
-@@ -45,9 +45,13 @@ PLATFORM_CPPFLAGS += -DCONFIG_MIPS -D__MIPS__
+@@ -45,9 +45,13 @@ PLATFORM_CPPFLAGS += -DCONFIG_MIPS -D__M
  # On the other hand, we want PIC in the U-Boot code to relocate it from ROM
  # to RAM. $28 is always used as gp.
  #
@@ -131,8 +123,6 @@ index c3f81b5..84b6e59 100644
 -LDFLAGS_FINAL			+= --gc-sections -pie
 +LDFLAGS_FINAL			+= --gc-sections $(PF_PIE)
  OBJCFLAGS			+= --remove-section=.dynsym
-diff --git a/arch/mips/cpu/mips32/cache.S b/arch/mips/cpu/mips32/cache.S
-index 12f656c..8620a9d 100644
 --- a/arch/mips/cpu/mips32/cache.S
 +++ b/arch/mips/cpu/mips32/cache.S
 @@ -29,7 +29,11 @@
@@ -171,9 +161,6 @@ index 12f656c..8620a9d 100644
  	/* clear all tags */
  	PTR_LI		t0, INDEX_BASE
  	PTR_ADDU	t1, t0, a1
-diff --git a/arch/mips/cpu/mips32/danube/Makefile b/arch/mips/cpu/mips32/danube/Makefile
-new file mode 100644
-index 0000000..98f5f73
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/Makefile
 @@ -0,0 +1,31 @@
@@ -208,9 +195,6 @@ index 0000000..98f5f73
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/arch/mips/cpu/mips32/danube/cgu.c b/arch/mips/cpu/mips32/danube/cgu.c
-new file mode 100644
-index 0000000..4fd110a
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/cgu.c
 @@ -0,0 +1,117 @@
@@ -331,9 +315,6 @@ index 0000000..4fd110a
 +
 +	return clk;
 +}
-diff --git a/arch/mips/cpu/mips32/danube/cgu_init.S b/arch/mips/cpu/mips32/danube/cgu_init.S
-new file mode 100644
-index 0000000..e0922f1
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/cgu_init.S
 @@ -0,0 +1,142 @@
@@ -479,9 +460,6 @@ index 0000000..e0922f1
 +	jr	ra
 +
 +	END(ltq_cgu_init)
-diff --git a/arch/mips/cpu/mips32/danube/chipid.c b/arch/mips/cpu/mips32/danube/chipid.c
-new file mode 100644
-index 0000000..02d9554
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/chipid.c
 @@ -0,0 +1,59 @@
@@ -544,9 +522,6 @@ index 0000000..02d9554
 +
 +	return "";
 +}
-diff --git a/arch/mips/cpu/mips32/danube/config.mk b/arch/mips/cpu/mips32/danube/config.mk
-new file mode 100644
-index 0000000..cee376f
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/config.mk
 @@ -0,0 +1,25 @@
@@ -575,9 +550,6 @@ index 0000000..cee376f
 +ALL-$(CONFIG_SPL_LZMA_SUPPORT) += $(obj)u-boot.ltq.lzma.norspl
 +endif
 +endif
-diff --git a/arch/mips/cpu/mips32/danube/ebu.c b/arch/mips/cpu/mips32/danube/ebu.c
-new file mode 100644
-index 0000000..902f6a7
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/ebu.c
 @@ -0,0 +1,105 @@
@@ -686,9 +658,6 @@ index 0000000..902f6a7
 +{
 +	return (void *)(addr ^ 2);
 +}
-diff --git a/arch/mips/cpu/mips32/danube/mem.c b/arch/mips/cpu/mips32/danube/mem.c
-new file mode 100644
-index 0000000..be1922c
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/mem.c
 @@ -0,0 +1,30 @@
@@ -722,9 +691,6 @@ index 0000000..be1922c
 +
 +	return (1 << (row + col)) * 4 * 2;
 +}
-diff --git a/arch/mips/cpu/mips32/danube/mem_init.S b/arch/mips/cpu/mips32/danube/mem_init.S
-new file mode 100644
-index 0000000..47a35e1
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/mem_init.S
 @@ -0,0 +1,114 @@
@@ -842,9 +808,6 @@ index 0000000..47a35e1
 +	jr	ra
 +
 +	END(ltq_mem_init)
-diff --git a/arch/mips/cpu/mips32/danube/pmu.c b/arch/mips/cpu/mips32/danube/pmu.c
-new file mode 100644
-index 0000000..7dd8aea
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/pmu.c
 @@ -0,0 +1,117 @@
@@ -965,9 +928,6 @@ index 0000000..7dd8aea
 +
 +	ltq_clrsetbits(&ltq_pmu_regs->pwdcr, clr, set);
 +}
-diff --git a/arch/mips/cpu/mips32/danube/rcu.c b/arch/mips/cpu/mips32/danube/rcu.c
-new file mode 100644
-index 0000000..906491a
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/danube/rcu.c
 @@ -0,0 +1,125 @@
@@ -1096,9 +1056,6 @@ index 0000000..906491a
 +		return BOOT_UNKNOWN;
 +	}
 +}
-diff --git a/arch/mips/cpu/mips32/lantiq-common/Makefile b/arch/mips/cpu/mips32/lantiq-common/Makefile
-new file mode 100644
-index 0000000..260d67c
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/lantiq-common/Makefile
 @@ -0,0 +1,34 @@
@@ -1136,9 +1093,6 @@ index 0000000..260d67c
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/arch/mips/cpu/mips32/lantiq-common/cpu.c b/arch/mips/cpu/mips32/lantiq-common/cpu.c
-new file mode 100644
-index 0000000..4a7acdf
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/lantiq-common/cpu.c
 @@ -0,0 +1,59 @@
@@ -1201,9 +1155,6 @@ index 0000000..4a7acdf
 +{
 +	ltq_reset_activate(LTQ_RESET_CORE);
 +}
-diff --git a/arch/mips/cpu/mips32/lantiq-common/lowlevel_init.S b/arch/mips/cpu/mips32/lantiq-common/lowlevel_init.S
-new file mode 100644
-index 0000000..ad03b04
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/lantiq-common/lowlevel_init.S
 @@ -0,0 +1,20 @@
@@ -1227,9 +1178,6 @@ index 0000000..ad03b04
 +
 +	jr	t8
 +	END(lowlevel_init)
-diff --git a/arch/mips/cpu/mips32/lantiq-common/pmu.c b/arch/mips/cpu/mips32/lantiq-common/pmu.c
-new file mode 100644
-index 0000000..8f0dac1
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/lantiq-common/pmu.c
 @@ -0,0 +1,9 @@
@@ -1242,9 +1190,6 @@ index 0000000..8f0dac1
 +#include <common.h>
 +#include <asm/lantiq/pm.h>
 +
-diff --git a/arch/mips/cpu/mips32/lantiq-common/spl.c b/arch/mips/cpu/mips32/lantiq-common/spl.c
-new file mode 100644
-index 0000000..489a82b
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/lantiq-common/spl.c
 @@ -0,0 +1,403 @@
@@ -1651,9 +1596,6 @@ index 0000000..489a82b
 +	for (;;)
 +		;
 +}
-diff --git a/arch/mips/cpu/mips32/lantiq-common/start.S b/arch/mips/cpu/mips32/lantiq-common/start.S
-new file mode 100644
-index 0000000..481d739
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/lantiq-common/start.S
 @@ -0,0 +1,143 @@
@@ -1800,9 +1742,6 @@ index 0000000..481d739
 +	la	t9, spl_lantiq_init
 +	jr	t9
 +	 nop
-diff --git a/arch/mips/cpu/mips32/lantiq-common/u-boot-spl.lds b/arch/mips/cpu/mips32/lantiq-common/u-boot-spl.lds
-new file mode 100644
-index 0000000..97c8fa8
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/lantiq-common/u-boot-spl.lds
 @@ -0,0 +1,48 @@
@@ -1854,8 +1793,6 @@ index 0000000..97c8fa8
 +	__end = .;
 +	uboot_end = .;
 +}
-diff --git a/arch/mips/cpu/mips32/start.S b/arch/mips/cpu/mips32/start.S
-index 70ad198..091a4e2 100644
 --- a/arch/mips/cpu/mips32/start.S
 +++ b/arch/mips/cpu/mips32/start.S
 @@ -105,7 +105,7 @@ reset:
@@ -1867,9 +1804,6 @@ index 70ad198..091a4e2 100644
  	/* CONFIG0 register */
  	li	t0, CONF_CM_UNCACHED
  	mtc0	t0, CP0_CONFIG
-diff --git a/arch/mips/cpu/mips32/vrx200/Makefile b/arch/mips/cpu/mips32/vrx200/Makefile
-new file mode 100644
-index 0000000..714dc69
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/Makefile
 @@ -0,0 +1,32 @@
@@ -1905,9 +1839,6 @@ index 0000000..714dc69
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/arch/mips/cpu/mips32/vrx200/cgu.c b/arch/mips/cpu/mips32/vrx200/cgu.c
-new file mode 100644
-index 0000000..799c902
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/cgu.c
 @@ -0,0 +1,208 @@
@@ -2119,9 +2050,6 @@ index 0000000..799c902
 +{
 +	ltq_cgu_pll1_init();
 +}
-diff --git a/arch/mips/cpu/mips32/vrx200/cgu_init.S b/arch/mips/cpu/mips32/vrx200/cgu_init.S
-new file mode 100644
-index 0000000..190ef89
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/cgu_init.S
 @@ -0,0 +1,119 @@
@@ -2244,9 +2172,6 @@ index 0000000..190ef89
 +	 nop
 +
 +	END(ltq_cgu_init)
-diff --git a/arch/mips/cpu/mips32/vrx200/chipid.c b/arch/mips/cpu/mips32/vrx200/chipid.c
-new file mode 100644
-index 0000000..f916e87
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/chipid.c
 @@ -0,0 +1,62 @@
@@ -2312,9 +2237,6 @@ index 0000000..f916e87
 +
 +	return "";
 +}
-diff --git a/arch/mips/cpu/mips32/vrx200/config.mk b/arch/mips/cpu/mips32/vrx200/config.mk
-new file mode 100644
-index 0000000..442156a
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/config.mk
 @@ -0,0 +1,30 @@
@@ -2348,9 +2270,6 @@ index 0000000..442156a
 +ALL-$(CONFIG_SPL_LZMA_SUPPORT) += $(obj)u-boot.ltq.lzma.norspl
 +endif
 +endif
-diff --git a/arch/mips/cpu/mips32/vrx200/dcdc.c b/arch/mips/cpu/mips32/vrx200/dcdc.c
-new file mode 100644
-index 0000000..11ca0d7
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/dcdc.c
 @@ -0,0 +1,106 @@
@@ -2460,9 +2379,6 @@ index 0000000..11ca0d7
 +		__udelay(1000);
 +	}
 +}
-diff --git a/arch/mips/cpu/mips32/vrx200/ebu.c b/arch/mips/cpu/mips32/vrx200/ebu.c
-new file mode 100644
-index 0000000..4ab3cf1
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/ebu.c
 @@ -0,0 +1,111 @@
@@ -2577,25 +2493,6 @@ index 0000000..4ab3cf1
 +{
 +	return (void *)(addr ^ 2);
 +}
-diff --git a/arch/mips/cpu/mips32/vrx200/fw_phy11g_a1x.blob b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a1x.blob
-new file mode 100644
-index 0000000..cdf3d30
-Binary files /dev/null and b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a1x.blob differ
-diff --git a/arch/mips/cpu/mips32/vrx200/fw_phy11g_a2x.blob b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a2x.blob
-new file mode 100644
-index 0000000..1559081
-Binary files /dev/null and b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a2x.blob differ
-diff --git a/arch/mips/cpu/mips32/vrx200/fw_phy22f_a1x.blob b/arch/mips/cpu/mips32/vrx200/fw_phy22f_a1x.blob
-new file mode 100644
-index 0000000..02b88a0
-Binary files /dev/null and b/arch/mips/cpu/mips32/vrx200/fw_phy22f_a1x.blob differ
-diff --git a/arch/mips/cpu/mips32/vrx200/fw_phy22f_a2x.blob b/arch/mips/cpu/mips32/vrx200/fw_phy22f_a2x.blob
-new file mode 100644
-index 0000000..eeab2ab
-Binary files /dev/null and b/arch/mips/cpu/mips32/vrx200/fw_phy22f_a2x.blob differ
-diff --git a/arch/mips/cpu/mips32/vrx200/gphy.c b/arch/mips/cpu/mips32/vrx200/gphy.c
-new file mode 100644
-index 0000000..269ca5d
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/gphy.c
 @@ -0,0 +1,58 @@
@@ -2657,9 +2554,6 @@ index 0000000..269ca5d
 +	ltq_gphy_copy(&__ltq_fw_phy22f_a2x_start, &__ltq_fw_phy22f_a2x_end,
 +			addr);
 +}
-diff --git a/arch/mips/cpu/mips32/vrx200/gphy_fw.S b/arch/mips/cpu/mips32/vrx200/gphy_fw.S
-new file mode 100644
-index 0000000..3a0417a
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/gphy_fw.S
 @@ -0,0 +1,27 @@
@@ -2690,9 +2584,6 @@ index 0000000..3a0417a
 +EXPORT(__ltq_fw_phy22f_a2x_start)
 +	.incbin "fw_phy22f_a2x.blob"
 +EXPORT(__ltq_fw_phy22f_a2x_end)
-diff --git a/arch/mips/cpu/mips32/vrx200/mem.c b/arch/mips/cpu/mips32/vrx200/mem.c
-new file mode 100644
-index 0000000..c3e14ab
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/mem.c
 @@ -0,0 +1,57 @@
@@ -2753,9 +2644,6 @@ index 0000000..c3e14ab
 +
 +	return size;
 +}
-diff --git a/arch/mips/cpu/mips32/vrx200/mem_init.S b/arch/mips/cpu/mips32/vrx200/mem_init.S
-new file mode 100644
-index 0000000..a296845
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/mem_init.S
 @@ -0,0 +1,233 @@
@@ -2992,9 +2880,6 @@ index 0000000..a296845
 +	jr	ra
 +
 +	END(ltq_mem_init)
-diff --git a/arch/mips/cpu/mips32/vrx200/pmu.c b/arch/mips/cpu/mips32/vrx200/pmu.c
-new file mode 100644
-index 0000000..a144473
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/pmu.c
 @@ -0,0 +1,130 @@
@@ -3128,9 +3013,6 @@ index 0000000..a144473
 +
 +	ltq_clrsetbits(&ltq_pmu_regs->pwdcr, clr, set);
 +}
-diff --git a/arch/mips/cpu/mips32/vrx200/rcu.c b/arch/mips/cpu/mips32/vrx200/rcu.c
-new file mode 100644
-index 0000000..763f287
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/rcu.c
 @@ -0,0 +1,194 @@
@@ -3328,9 +3210,6 @@ index 0000000..763f287
 +	/* Start GPHY by releasing reset */
 +	ltq_clrbits(&ltq_rcu_regs->req, module);
 +}
-diff --git a/arch/mips/include/asm/arch-danube/config.h b/arch/mips/include/asm/arch-danube/config.h
-new file mode 100644
-index 0000000..d84f66f
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-danube/config.h
 @@ -0,0 +1,163 @@
@@ -3497,9 +3376,6 @@ index 0000000..d84f66f
 +#define	CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_TEXT_BASE
 +
 +#endif /* __DANUBE_CONFIG_H__ */
-diff --git a/arch/mips/include/asm/arch-danube/gpio.h b/arch/mips/include/asm/arch-danube/gpio.h
-new file mode 100644
-index 0000000..70eb086
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-danube/gpio.h
 @@ -0,0 +1,12 @@
@@ -3515,9 +3391,6 @@ index 0000000..70eb086
 +#include <asm/lantiq/gpio.h>
 +
 +#endif /* __DANUBE_GPIO_H__ */
-diff --git a/arch/mips/include/asm/arch-danube/nand.h b/arch/mips/include/asm/arch-danube/nand.h
-new file mode 100644
-index 0000000..c7a573a
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-danube/nand.h
 @@ -0,0 +1,13 @@
@@ -3534,9 +3407,6 @@ index 0000000..c7a573a
 +int ltq_nand_init(struct nand_chip *nand);
 +
 +#endif /* __DANUBE_NAND_H__ */
-diff --git a/arch/mips/include/asm/arch-danube/soc.h b/arch/mips/include/asm/arch-danube/soc.h
-new file mode 100644
-index 0000000..47ef62a
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-danube/soc.h
 @@ -0,0 +1,38 @@
@@ -3578,9 +3448,6 @@ index 0000000..47ef62a
 +#define LTQ_MC_DDR_DC_OFFSET(x)		(x * 0x10)
 +
 +#endif /* __DANUBE_SOC_H__ */
-diff --git a/arch/mips/include/asm/arch-vrx200/config.h b/arch/mips/include/asm/arch-vrx200/config.h
-new file mode 100644
-index 0000000..88ef256
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-vrx200/config.h
 @@ -0,0 +1,184 @@
@@ -3768,9 +3635,6 @@ index 0000000..88ef256
 +#define	CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_TEXT_BASE
 +
 +#endif /* __VRX200_CONFIG_H__ */
-diff --git a/arch/mips/include/asm/arch-vrx200/gphy.h b/arch/mips/include/asm/arch-vrx200/gphy.h
-new file mode 100644
-index 0000000..6cdb268
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-vrx200/gphy.h
 @@ -0,0 +1,65 @@
@@ -3839,9 +3703,6 @@ index 0000000..6cdb268
 +extern void ltq_rcu_gphy_boot(unsigned int id, ulong addr);
 +
 +#endif /* __VRX200_GPHY_H__ */
-diff --git a/arch/mips/include/asm/arch-vrx200/gpio.h b/arch/mips/include/asm/arch-vrx200/gpio.h
-new file mode 100644
-index 0000000..b8d7676
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-vrx200/gpio.h
 @@ -0,0 +1,12 @@
@@ -3857,9 +3718,6 @@ index 0000000..b8d7676
 +#include <asm/lantiq/gpio.h>
 +
 +#endif /* __VRX200_GPIO_H__ */
-diff --git a/arch/mips/include/asm/arch-vrx200/nand.h b/arch/mips/include/asm/arch-vrx200/nand.h
-new file mode 100644
-index 0000000..231b68f
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-vrx200/nand.h
 @@ -0,0 +1,13 @@
@@ -3876,9 +3734,6 @@ index 0000000..231b68f
 +int ltq_nand_init(struct nand_chip *nand);
 +
 +#endif /* __VRX200_NAND_H__ */
-diff --git a/arch/mips/include/asm/arch-vrx200/soc.h b/arch/mips/include/asm/arch-vrx200/soc.h
-new file mode 100644
-index 0000000..fae5906
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-vrx200/soc.h
 @@ -0,0 +1,45 @@
@@ -3927,9 +3782,6 @@ index 0000000..fae5906
 +#define LTQ_MC_DDR_CCR_OFFSET(x)	(x * 0x10)
 +
 +#endif /* __VRX200_SOC_H__ */
-diff --git a/arch/mips/include/asm/arch-vrx200/switch.h b/arch/mips/include/asm/arch-vrx200/switch.h
-new file mode 100644
-index 0000000..e505099
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-vrx200/switch.h
 @@ -0,0 +1,502 @@
@@ -4435,8 +4287,6 @@ index 0000000..e505099
 +#define MDIO_CTRL_REGAD_MASK	0x1f
 +
 +#endif /* __VRX200_SWITCH_H__ */
-diff --git a/arch/mips/include/asm/asm.h b/arch/mips/include/asm/asm.h
-index 933ccb1..dd0ffb6 100644
 --- a/arch/mips/include/asm/asm.h
 +++ b/arch/mips/include/asm/asm.h
 @@ -53,6 +53,7 @@
@@ -4457,9 +4307,6 @@ index 933ccb1..dd0ffb6 100644
  symbol:		.frame	sp, framesize, rpc
  
  /*
-diff --git a/arch/mips/include/asm/gpio.h b/arch/mips/include/asm/gpio.h
-new file mode 100644
-index 0000000..9be58b8
 --- /dev/null
 +++ b/arch/mips/include/asm/gpio.h
 @@ -0,0 +1,6 @@
@@ -4469,9 +4316,6 @@ index 0000000..9be58b8
 +
 +#include <asm/arch/gpio.h>
 +#include <asm-generic/gpio.h>
-diff --git a/arch/mips/include/asm/lantiq/chipid.h b/arch/mips/include/asm/lantiq/chipid.h
-new file mode 100644
-index 0000000..c9921b0
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/chipid.h
 @@ -0,0 +1,73 @@
@@ -4548,9 +4392,6 @@ index 0000000..c9921b0
 +#endif
 +
 +#endif /* __LANTIQ_CHIPID_H__ */
-diff --git a/arch/mips/include/asm/lantiq/clk.h b/arch/mips/include/asm/lantiq/clk.h
-new file mode 100644
-index 0000000..e13f000
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/clk.h
 @@ -0,0 +1,30 @@
@@ -4584,9 +4425,6 @@ index 0000000..e13f000
 +extern unsigned long ltq_get_io_region_clock(void);
 +
 +#endif /* __LANTIQ_CLK_H__ */
-diff --git a/arch/mips/include/asm/lantiq/config.h b/arch/mips/include/asm/lantiq/config.h
-new file mode 100644
-index 0000000..feac30d
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/config.h
 @@ -0,0 +1,164 @@
@@ -4754,9 +4592,6 @@ index 0000000..feac30d
 +	CONFIG_ENV_LOAD_UBOOT_SF
 +
 +#endif /* __LANTIQ_CONFIG_H__ */
-diff --git a/arch/mips/include/asm/lantiq/cpu.h b/arch/mips/include/asm/lantiq/cpu.h
-new file mode 100644
-index 0000000..b3a504e
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/cpu.h
 @@ -0,0 +1,34 @@
@@ -4794,9 +4629,6 @@ index 0000000..b3a504e
 +void ltq_dcdc_init(unsigned int dig_ref);
 +
 +#endif /* __LANTIQ_CPU_H__ */
-diff --git a/arch/mips/include/asm/lantiq/dma.h b/arch/mips/include/asm/lantiq/dma.h
-new file mode 100644
-index 0000000..15a29c9
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/dma.h
 @@ -0,0 +1,94 @@
@@ -4894,9 +4726,6 @@ index 0000000..15a29c9
 +			unsigned long timeout);
 +
 +#endif /* __LANTIQ_DMA_H__ */
-diff --git a/arch/mips/include/asm/lantiq/eth.h b/arch/mips/include/asm/lantiq/eth.h
-new file mode 100644
-index 0000000..d09e9cf
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/eth.h
 @@ -0,0 +1,35 @@
@@ -4935,9 +4764,6 @@ index 0000000..d09e9cf
 +extern int ltq_eth_initialize(const struct ltq_eth_board_config *board_config);
 +
 +#endif /* __LANTIQ_ETH_H__ */
-diff --git a/arch/mips/include/asm/lantiq/gpio.h b/arch/mips/include/asm/lantiq/gpio.h
-new file mode 100644
-index 0000000..66e227f
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/gpio.h
 @@ -0,0 +1,50 @@
@@ -4991,9 +4817,6 @@ index 0000000..66e227f
 +#include <asm-generic/gpio.h>
 +
 +#endif /* __LANTIQ_GPIO_H__ */
-diff --git a/arch/mips/include/asm/lantiq/io.h b/arch/mips/include/asm/lantiq/io.h
-new file mode 100644
-index 0000000..5ac7696
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/io.h
 @@ -0,0 +1,37 @@
@@ -5034,9 +4857,6 @@ index 0000000..5ac7696
 +}
 +
 +#endif /* __LANTIQ_IO_H__ */
-diff --git a/arch/mips/include/asm/lantiq/pm.h b/arch/mips/include/asm/lantiq/pm.h
-new file mode 100644
-index 0000000..9db7117
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/pm.h
 @@ -0,0 +1,21 @@
@@ -5061,9 +4881,6 @@ index 0000000..9db7117
 +int ltq_pm_disable(enum ltq_pm_modules module);
 +
 +#endif /* __LANTIQ_PM_H__ */
-diff --git a/arch/mips/include/asm/lantiq/reset.h b/arch/mips/include/asm/lantiq/reset.h
-new file mode 100644
-index 0000000..0dbc994
 --- /dev/null
 +++ b/arch/mips/include/asm/lantiq/reset.h
 @@ -0,0 +1,37 @@
@@ -5104,8 +4921,6 @@ index 0000000..0dbc994
 +}
 +
 +#endif /* __LANTIQ_RESET_H__ */
-diff --git a/arch/mips/include/asm/mipsregs.h b/arch/mips/include/asm/mipsregs.h
-index be7e5c6..b3bc255 100644
 --- a/arch/mips/include/asm/mipsregs.h
 +++ b/arch/mips/include/asm/mipsregs.h
 @@ -46,7 +46,10 @@
@@ -5170,20 +4985,16 @@ index be7e5c6..b3bc255 100644
   * Bits in the coprocessor 0 config register.
   */
  /* Generic bits.  */
-diff --git a/arch/mips/include/asm/u-boot-mips.h b/arch/mips/include/asm/u-boot-mips.h
-index 9f3cce9..30fb469 100644
 --- a/arch/mips/include/asm/u-boot-mips.h
 +++ b/arch/mips/include/asm/u-boot-mips.h
-@@ -23,3 +23,4 @@ static inline unsigned long image_copy_end(void)
+@@ -23,3 +23,4 @@ static inline unsigned long image_copy_e
  }
  
  extern int incaip_set_cpuclk(void);
 +extern int arch_cpu_init(void);
-diff --git a/arch/mips/lib/board.c b/arch/mips/lib/board.c
-index 9e6ba15..daa0182 100644
 --- a/arch/mips/lib/board.c
 +++ b/arch/mips/lib/board.c
-@@ -33,6 +33,16 @@ static char *failed = "*** failed ***\n";
+@@ -33,6 +33,16 @@ static char *failed = "*** failed ***\n"
   */
  const unsigned long mips_io_port_base = -1;
  
@@ -5208,9 +5019,6 @@ index 9e6ba15..daa0182 100644
  	board_early_init_f,
  	timer_init,
  	env_init,		/* initialize environment */
-diff --git a/board/lantiq/easy50712/Makefile b/board/lantiq/easy50712/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/lantiq/easy50712/Makefile
 @@ -0,0 +1,27 @@
@@ -5241,9 +5049,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/lantiq/easy50712/config.mk b/board/lantiq/easy50712/config.mk
-new file mode 100644
-index 0000000..9d8953b
 --- /dev/null
 +++ b/board/lantiq/easy50712/config.mk
 @@ -0,0 +1,7 @@
@@ -5254,9 +5059,6 @@ index 0000000..9d8953b
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/lantiq/easy50712/ddr_settings.h b/board/lantiq/easy50712/ddr_settings.h
-new file mode 100644
-index 0000000..36a4118
 --- /dev/null
 +++ b/board/lantiq/easy50712/ddr_settings.h
 @@ -0,0 +1,54 @@
@@ -5314,9 +5116,6 @@ index 0000000..36a4118
 +#define MC_DC44_VALUE	0x0
 +#define MC_DC45_VALUE	0x500
 +#define MC_DC46_VALUE	0x0
-diff --git a/board/lantiq/easy50712/easy50712.c b/board/lantiq/easy50712/easy50712.c
-new file mode 100644
-index 0000000..4f6a237
 --- /dev/null
 +++ b/board/lantiq/easy50712/easy50712.c
 @@ -0,0 +1,112 @@
@@ -5432,9 +5231,6 @@ index 0000000..4f6a237
 +		break;
 +	}
 +}
-diff --git a/board/lantiq/easy80920/Makefile b/board/lantiq/easy80920/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/lantiq/easy80920/Makefile
 @@ -0,0 +1,27 @@
@@ -5465,9 +5261,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/lantiq/easy80920/config.mk b/board/lantiq/easy80920/config.mk
-new file mode 100644
-index 0000000..9d8953b
 --- /dev/null
 +++ b/board/lantiq/easy80920/config.mk
 @@ -0,0 +1,7 @@
@@ -5478,9 +5271,6 @@ index 0000000..9d8953b
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/lantiq/easy80920/ddr_settings.h b/board/lantiq/easy80920/ddr_settings.h
-new file mode 100644
-index 0000000..671d1c1
 --- /dev/null
 +++ b/board/lantiq/easy80920/ddr_settings.h
 @@ -0,0 +1,69 @@
@@ -5553,9 +5343,6 @@ index 0000000..671d1c1
 +#define	MC_CCR59_VALUE	0x7800301
 +#define	MC_CCR60_VALUE	0x7800301
 +#define	MC_CCR61_VALUE	0x4
-diff --git a/board/lantiq/easy80920/easy80920.c b/board/lantiq/easy80920/easy80920.c
-new file mode 100644
-index 0000000..d9a4f81
 --- /dev/null
 +++ b/board/lantiq/easy80920/easy80920.c
 @@ -0,0 +1,138 @@
@@ -5697,11 +5484,9 @@ index 0000000..d9a4f81
 +		break;
 +	}
 +}
-diff --git a/boards.cfg b/boards.cfg
-index aa2ee64..f090726 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -502,10 +502,17 @@ Active  mips        mips32         au1x00      -               dbau1x00
+@@ -502,10 +502,17 @@ Active  mips        mips32         au1x0
  Active  mips        mips32         au1x00      -               dbau1x00            dbau1550                             dbau1x00:DBAU1550                                                                                                                 Thomas Lange <thomas@corelatus.se>
  Active  mips        mips32         au1x00      -               dbau1x00            dbau1550_el                          dbau1x00:DBAU1550,SYS_LITTLE_ENDIAN                                                                                               Thomas Lange <thomas@corelatus.se>
  Active  mips        mips32         au1x00      -               pb1x00              pb1000                               pb1x00:PB1000                                                                                                                     -
@@ -5719,8 +5504,6 @@ index aa2ee64..f090726 100644
  Active  mips        mips64         -           -               qemu-mips           qemu_mips64                          qemu-mips64:SYS_BIG_ENDIAN                                                                                                        -
  Active  mips        mips64         -           -               qemu-mips           qemu_mips64el                        qemu-mips64:SYS_LITTLE_ENDIAN                                                                                                     -
  Active  nds32       n1213          ag101       AndesTech       adp-ag101           adp-ag101                            -                                                                                                                                 Andes <uboot@andestech.com>
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index a6132e2..5a4bcef 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -12,6 +12,7 @@ LIB	:= $(obj)libdma.o
@@ -5731,9 +5514,6 @@ index a6132e2..5a4bcef 100644
  COBJS-$(CONFIG_OMAP3_DMA) += omap3_dma.o
  
  COBJS	:= $(COBJS-y)
-diff --git a/drivers/dma/lantiq_dma.c b/drivers/dma/lantiq_dma.c
-new file mode 100644
-index 0000000..a78212a
 --- /dev/null
 +++ b/drivers/dma/lantiq_dma.c
 @@ -0,0 +1,387 @@
@@ -6124,8 +5904,6 @@ index 0000000..a78212a
 +
 +	return 0;
 +}
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index 71ddb00..5fb505b 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
 @@ -12,6 +12,7 @@ LIB 	:= $(obj)libgpio.o
@@ -6136,9 +5914,6 @@ index 71ddb00..5fb505b 100644
  COBJS-$(CONFIG_MARVELL_GPIO)	+= mvgpio.o
  COBJS-$(CONFIG_MARVELL_MFP)	+= mvmfp.o
  COBJS-$(CONFIG_MXC_GPIO)	+= mxc_gpio.o
-diff --git a/drivers/gpio/lantiq_gpio.c b/drivers/gpio/lantiq_gpio.c
-new file mode 100644
-index 0000000..374a668
 --- /dev/null
 +++ b/drivers/gpio/lantiq_gpio.c
 @@ -0,0 +1,329 @@
@@ -6471,11 +6246,9 @@ index 0000000..374a668
 +
 +	return 0;
 +}
-diff --git a/drivers/mtd/cfi_flash.c b/drivers/mtd/cfi_flash.c
-index a389cd1..fa4fae7 100644
 --- a/drivers/mtd/cfi_flash.c
 +++ b/drivers/mtd/cfi_flash.c
-@@ -161,6 +161,18 @@ u64 flash_read64(void *addr)__attribute__((weak, alias("__flash_read64")));
+@@ -161,6 +161,18 @@ u64 flash_read64(void *addr)__attribute_
  #define flash_read64	__flash_read64
  #endif
  
@@ -6494,7 +6267,7 @@ index a389cd1..fa4fae7 100644
  /*-----------------------------------------------------------------------
   */
  #if defined(CONFIG_ENV_IS_IN_FLASH) || defined(CONFIG_ENV_ADDR_REDUND) || (CONFIG_SYS_MONITOR_BASE >= CONFIG_SYS_FLASH_BASE)
-@@ -196,7 +208,7 @@ flash_map (flash_info_t * info, flash_sect_t sect, uint offset)
+@@ -196,7 +208,7 @@ flash_map (flash_info_t * info, flash_se
  {
  	unsigned int byte_offset = offset * info->portwidth;
  
@@ -6503,11 +6276,9 @@ index a389cd1..fa4fae7 100644
  }
  
  static inline void flash_unmap(flash_info_t *info, flash_sect_t sect,
-diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
-index 366dee6..e9adaaa 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -53,6 +53,7 @@ COBJS-$(CONFIG_NAND_JZ4740) += jz4740_nand.o
+@@ -53,6 +53,7 @@ COBJS-$(CONFIG_NAND_JZ4740) += jz4740_na
  COBJS-$(CONFIG_NAND_KB9202) += kb9202_nand.o
  COBJS-$(CONFIG_NAND_KIRKWOOD) += kirkwood_nand.o
  COBJS-$(CONFIG_NAND_KMETER1) += kmeter1_nand.o
@@ -6515,9 +6286,6 @@ index 366dee6..e9adaaa 100644
  COBJS-$(CONFIG_NAND_MPC5121_NFC) += mpc5121_nfc.o
  COBJS-$(CONFIG_NAND_MXC) += mxc_nand.o
  COBJS-$(CONFIG_NAND_MXS) += mxs_nand.o
-diff --git a/drivers/mtd/nand/lantiq_nand.c b/drivers/mtd/nand/lantiq_nand.c
-new file mode 100644
-index 0000000..85f8f68
 --- /dev/null
 +++ b/drivers/mtd/nand/lantiq_nand.c
 @@ -0,0 +1,126 @@
@@ -6647,11 +6415,9 @@ index 0000000..85f8f68
 +{
 +	return ltq_nand_init(chip);
 +}
-diff --git a/drivers/net/Makefile b/drivers/net/Makefile
-index 18fd54f..bbc2c92 100644
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -37,6 +37,8 @@ COBJS-$(CONFIG_INCA_IP_SWITCH) += inca-ip_sw.o
+@@ -37,6 +37,8 @@ COBJS-$(CONFIG_INCA_IP_SWITCH) += inca-i
  COBJS-$(CONFIG_DRIVER_KS8695ETH) += ks8695eth.o
  COBJS-$(CONFIG_KS8851_MLL) += ks8851_mll.o
  COBJS-$(CONFIG_LAN91C96) += lan91c96.o
@@ -6660,9 +6426,6 @@ index 18fd54f..bbc2c92 100644
  COBJS-$(CONFIG_MACB) += macb.o
  COBJS-$(CONFIG_MCFFEC) += mcffec.o mcfmii.o
  COBJS-$(CONFIG_MPC5xxx_FEC) += mpc5xxx_fec.o
-diff --git a/drivers/net/lantiq_danube_etop.c b/drivers/net/lantiq_danube_etop.c
-new file mode 100644
-index 0000000..7453882
 --- /dev/null
 +++ b/drivers/net/lantiq_danube_etop.c
 @@ -0,0 +1,410 @@
@@ -7076,9 +6839,6 @@ index 0000000..7453882
 +
 +	return 0;
 +}
-diff --git a/drivers/net/lantiq_vrx200_switch.c b/drivers/net/lantiq_vrx200_switch.c
-new file mode 100644
-index 0000000..174427d
 --- /dev/null
 +++ b/drivers/net/lantiq_vrx200_switch.c
 @@ -0,0 +1,675 @@
@@ -7757,11 +7517,9 @@ index 0000000..174427d
 +
 +	return 0;
 +}
-diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
-index fe762e9..9eb08b8 100644
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -20,6 +20,7 @@ COBJS-$(CONFIG_PHY_BROADCOM) += broadcom.o
+@@ -20,6 +20,7 @@ COBJS-$(CONFIG_PHY_BROADCOM) += broadcom
  COBJS-$(CONFIG_PHY_DAVICOM) += davicom.o
  COBJS-$(CONFIG_PHY_ET1011C) += et1011c.o
  COBJS-$(CONFIG_PHY_ICPLUS) += icplus.o
@@ -7769,9 +7527,6 @@ index fe762e9..9eb08b8 100644
  COBJS-$(CONFIG_PHY_LXT) += lxt.o
  COBJS-$(CONFIG_PHY_MARVELL) += marvell.o
  COBJS-$(CONFIG_PHY_MICREL) += micrel.o
-diff --git a/drivers/net/phy/lantiq.c b/drivers/net/phy/lantiq.c
-new file mode 100644
-index 0000000..572c8c3
 --- /dev/null
 +++ b/drivers/net/phy/lantiq.c
 @@ -0,0 +1,238 @@
@@ -8013,8 +7768,6 @@ index 0000000..572c8c3
 +
 +	return 0;
 +}
-diff --git a/drivers/net/phy/phy.c b/drivers/net/phy/phy.c
-index 62925bb..dfbe108 100644
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
 @@ -16,9 +16,10 @@
@@ -8056,11 +7809,9 @@ index 62925bb..dfbe108 100644
  #ifdef CONFIG_PHY_LXT
  	phy_lxt_init();
  #endif
-diff --git a/drivers/serial/Makefile b/drivers/serial/Makefile
-index e1fd7a5..3247b82 100644
 --- a/drivers/serial/Makefile
 +++ b/drivers/serial/Makefile
-@@ -24,6 +24,7 @@ COBJS-$(CONFIG_SYS_NS16550_SERIAL) += serial_ns16550.o
+@@ -24,6 +24,7 @@ COBJS-$(CONFIG_SYS_NS16550_SERIAL) += se
  COBJS-$(CONFIG_IMX_SERIAL) += serial_imx.o
  COBJS-$(CONFIG_IXP_SERIAL) += serial_ixp.o
  COBJS-$(CONFIG_KS8695_SERIAL) += serial_ks8695.o
@@ -8068,11 +7819,9 @@ index e1fd7a5..3247b82 100644
  COBJS-$(CONFIG_MAX3100_SERIAL) += serial_max3100.o
  COBJS-$(CONFIG_MXC_UART) += serial_mxc.o
  COBJS-$(CONFIG_PL010_SERIAL) += serial_pl01x.o
-diff --git a/drivers/serial/serial.c b/drivers/serial/serial.c
-index df2b84a..b955f30 100644
 --- a/drivers/serial/serial.c
 +++ b/drivers/serial/serial.c
-@@ -160,6 +160,7 @@ serial_initfunc(sa1100_serial_initialize);
+@@ -160,6 +160,7 @@ serial_initfunc(sa1100_serial_initialize
  serial_initfunc(sh_serial_initialize);
  serial_initfunc(arm_dcc_initialize);
  serial_initfunc(mxs_auart_initialize);
@@ -8088,9 +7837,6 @@ index df2b84a..b955f30 100644
  
  	serial_assign(default_serial_console()->name);
  }
-diff --git a/drivers/serial/serial_lantiq.c b/drivers/serial/serial_lantiq.c
-new file mode 100644
-index 0000000..07b2f9d
 --- /dev/null
 +++ b/drivers/serial/serial_lantiq.c
 @@ -0,0 +1,263 @@
@@ -8357,11 +8103,9 @@ index 0000000..07b2f9d
 +{
 +	return &ltq_serial_drv;
 +}
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index e5941b0..f831ea1 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -25,6 +25,7 @@ COBJS-$(CONFIG_DAVINCI_SPI) += davinci_spi.o
+@@ -25,6 +25,7 @@ COBJS-$(CONFIG_DAVINCI_SPI) += davinci_s
  COBJS-$(CONFIG_EXYNOS_SPI) += exynos_spi.o
  COBJS-$(CONFIG_ICH_SPI) +=  ich.o
  COBJS-$(CONFIG_KIRKWOOD_SPI) += kirkwood_spi.o
@@ -8369,9 +8113,6 @@ index e5941b0..f831ea1 100644
  COBJS-$(CONFIG_MPC52XX_SPI) += mpc52xx_spi.o
  COBJS-$(CONFIG_MPC8XXX_SPI) += mpc8xxx_spi.o
  COBJS-$(CONFIG_MXC_SPI) += mxc_spi.o
-diff --git a/drivers/spi/lantiq_spi.c b/drivers/spi/lantiq_spi.c
-new file mode 100644
-index 0000000..b327878
 --- /dev/null
 +++ b/drivers/spi/lantiq_spi.c
 @@ -0,0 +1,666 @@
@@ -9041,9 +8782,6 @@ index 0000000..b327878
 +
 +	return ret;
 +}
-diff --git a/include/configs/easy50712.h b/include/configs/easy50712.h
-new file mode 100644
-index 0000000..6d7988c
 --- /dev/null
 +++ b/include/configs/easy50712.h
 @@ -0,0 +1,79 @@
@@ -9126,9 +8864,6 @@ index 0000000..6d7988c
 +	CONFIG_ENV_UPDATE_UBOOT_NOR
 +
 +#endif /* __CONFIG_H */
-diff --git a/include/configs/easy80920.h b/include/configs/easy80920.h
-new file mode 100644
-index 0000000..ad69bc2
 --- /dev/null
 +++ b/include/configs/easy80920.h
 @@ -0,0 +1,92 @@
@@ -9224,8 +8959,6 @@ index 0000000..ad69bc2
 +	CONFIG_ENV_UPDATE_UBOOT_SF
 +
 +#endif /* __CONFIG_H */
-diff --git a/include/phy.h b/include/phy.h
-index f0f522a..818bd7f 100644
 --- a/include/phy.h
 +++ b/include/phy.h
 @@ -214,6 +214,7 @@ int phy_atheros_init(void);
@@ -9236,11 +8969,9 @@ index f0f522a..818bd7f 100644
  int phy_lxt_init(void);
  int phy_marvell_init(void);
  int phy_micrel_init(void);
-diff --git a/spl/Makefile b/spl/Makefile
-index b366ac2..46eb851 100644
 --- a/spl/Makefile
 +++ b/spl/Makefile
-@@ -100,6 +100,8 @@ LIBS-$(CONFIG_SPL_USBETH_SUPPORT) += drivers/net/phy/libphy.o
+@@ -100,6 +100,8 @@ LIBS-$(CONFIG_SPL_USBETH_SUPPORT) += dri
  LIBS-$(CONFIG_SPL_MUSB_NEW_SUPPORT) += drivers/usb/musb-new/libusb_musb-new.o
  LIBS-$(CONFIG_SPL_USBETH_SUPPORT) += drivers/usb/gadget/libusb_gadget.o
  LIBS-$(CONFIG_SPL_WATCHDOG_SUPPORT) += drivers/watchdog/libwatchdog.o
@@ -9249,8 +8980,6 @@ index b366ac2..46eb851 100644
  
  ifneq ($(CONFIG_OMAP_COMMON),)
  LIBS-y += $(CPUDIR)/omap-common/libomap-common.o
-diff --git a/tools/.gitignore b/tools/.gitignore
-index a7fee26..4d56882 100644
 --- a/tools/.gitignore
 +++ b/tools/.gitignore
 @@ -2,6 +2,7 @@
@@ -9261,11 +8990,9 @@ index a7fee26..4d56882 100644
  /kwboot
  /mkenvimage
  /mkimage
-diff --git a/tools/Makefile b/tools/Makefile
-index ca76f94..ae1714b 100644
 --- a/tools/Makefile
 +++ b/tools/Makefile
-@@ -49,6 +49,7 @@ BIN_FILES-$(CONFIG_VIDEO_LOGO) += bmp_logo$(SFX)
+@@ -49,6 +49,7 @@ BIN_FILES-$(CONFIG_VIDEO_LOGO) += bmp_lo
  BIN_FILES-$(CONFIG_BUILD_ENVCRC) += envcrc$(SFX)
  BIN_FILES-$(CONFIG_CMD_NET) += gen_eth_addr$(SFX)
  BIN_FILES-$(CONFIG_CMD_LOADS) += img2srec$(SFX)
@@ -9292,9 +9019,6 @@ index ca76f94..ae1714b 100644
  $(obj)xway-swap-bytes$(SFX):	$(obj)xway-swap-bytes.o
  	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
  	$(HOSTSTRIP) $@
-diff --git a/tools/ltq-boot-image.c b/tools/ltq-boot-image.c
-new file mode 100644
-index 0000000..75a188c
 --- /dev/null
 +++ b/tools/ltq-boot-image.c
 @@ -0,0 +1,315 @@
@@ -9613,6 +9337,3 @@ index 0000000..75a188c
 +
 +	return EXIT_FAILURE;
 +}
--- 
-1.8.3.2
-

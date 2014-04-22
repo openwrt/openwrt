@@ -5,9 +5,6 @@ Subject: MIPS: add board support for ZyXEL P-661HNU-Fx
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/board/zyxel/p661hnufx/Makefile b/board/zyxel/p661hnufx/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/zyxel/p661hnufx/Makefile
 @@ -0,0 +1,27 @@
@@ -38,9 +35,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/zyxel/p661hnufx/config.mk b/board/zyxel/p661hnufx/config.mk
-new file mode 100644
-index 0000000..9d33739
 --- /dev/null
 +++ b/board/zyxel/p661hnufx/config.mk
 @@ -0,0 +1,7 @@
@@ -51,9 +45,6 @@ index 0000000..9d33739
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/zyxel/p661hnufx/ddr_settings.h b/board/zyxel/p661hnufx/ddr_settings.h
-new file mode 100644
-index 0000000..83693b8
 --- /dev/null
 +++ b/board/zyxel/p661hnufx/ddr_settings.h
 @@ -0,0 +1,55 @@
@@ -112,9 +103,6 @@ index 0000000..83693b8
 +#define MC_DC44_VALUE	0x0
 +#define MC_DC45_VALUE	0x600
 +#define MC_DC46_VALUE	0x0
-diff --git a/board/zyxel/p661hnufx/p661hnufx.c b/board/zyxel/p661hnufx/p661hnufx.c
-new file mode 100644
-index 0000000..dfaca51
 --- /dev/null
 +++ b/board/zyxel/p661hnufx/p661hnufx.c
 @@ -0,0 +1,102 @@
@@ -220,11 +208,9 @@ index 0000000..dfaca51
 +		break;
 +	}
 +}
-diff --git a/boards.cfg b/boards.cfg
-index 4362856..e505203 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -499,6 +499,9 @@ Active  mips        mips32         -           micronas        vct
+@@ -499,6 +499,9 @@ Active  mips        mips32         -
  Active  mips        mips32         arx100      zte             zxv10h201l          zxv10h201l_nor                       zxv10h201l:SYS_BOOT_NOR                                                                                                           Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         arx100      zte             zxv10h201l          zxv10h201l_ram                       zxv10h201l:SYS_BOOT_RAM                                                                                                           Luka Perkov <luka@openwrt.org>
  Active  mips        mips32         arx100      zte             zxv10h201l          zxv10h201l_zte                       zxv10h201l:SYS_BOOT_ZTE                                                                                                           Luka Perkov <luka@openwrt.org>
@@ -234,9 +220,6 @@ index 4362856..e505203 100644
  Active  mips        mips32         au1x00      -               dbau1x00            dbau1000                             dbau1x00:DBAU1000                                                                                                                 Thomas Lange <thomas@corelatus.se>
  Active  mips        mips32         au1x00      -               dbau1x00            dbau1100                             dbau1x00:DBAU1100                                                                                                                 Thomas Lange <thomas@corelatus.se>
  Active  mips        mips32         au1x00      -               dbau1x00            dbau1500                             dbau1x00:DBAU1500                                                                                                                 Thomas Lange <thomas@corelatus.se>
-diff --git a/include/configs/p661hnufx.h b/include/configs/p661hnufx.h
-new file mode 100644
-index 0000000..85e3e1e
 --- /dev/null
 +++ b/include/configs/p661hnufx.h
 @@ -0,0 +1,79 @@
@@ -319,6 +302,3 @@ index 0000000..85e3e1e
 +	CONFIG_ENV_UPDATE_UBOOT_SF
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-

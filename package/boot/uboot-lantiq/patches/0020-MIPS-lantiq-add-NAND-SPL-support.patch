@@ -5,8 +5,6 @@ Subject: MIPS: lantiq: add NAND SPL support
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/arch/mips/cpu/mips32/lantiq-common/spl.c b/arch/mips/cpu/mips32/lantiq-common/spl.c
-index 489a82b..3d9d4d4 100644
 --- a/arch/mips/cpu/mips32/lantiq-common/spl.c
 +++ b/arch/mips/cpu/mips32/lantiq-common/spl.c
 @@ -8,6 +8,7 @@
@@ -36,7 +34,7 @@ index 489a82b..3d9d4d4 100644
  #define spl_sync()	__asm__ __volatile__("sync");
  
  struct spl_image {
-@@ -337,6 +350,58 @@ static int spl_load_nor_flash(struct spl_image *spl)
+@@ -337,6 +350,58 @@ static int spl_load_nor_flash(struct spl
  	return ret;
  }
  
@@ -95,7 +93,7 @@ index 489a82b..3d9d4d4 100644
  static int spl_load(struct spl_image *spl)
  {
  	int ret;
-@@ -345,6 +410,8 @@ static int spl_load(struct spl_image *spl)
+@@ -345,6 +410,8 @@ static int spl_load(struct spl_image *sp
  		ret = spl_load_spi_flash(spl);
  	else if (spl_boot_nor_flash)
  		ret = spl_load_nor_flash(spl);
@@ -104,8 +102,6 @@ index 489a82b..3d9d4d4 100644
  	else
  		ret = 1;
  
-diff --git a/arch/mips/include/asm/lantiq/config.h b/arch/mips/include/asm/lantiq/config.h
-index feac30d..483cc94 100644
 --- a/arch/mips/include/asm/lantiq/config.h
 +++ b/arch/mips/include/asm/lantiq/config.h
 @@ -40,6 +40,26 @@
@@ -167,6 +163,3 @@ index feac30d..483cc94 100644
 +	CONFIG_ENV_LOAD_UBOOT_NAND
  
  #endif /* __LANTIQ_CONFIG_H__ */
--- 
-1.8.3.2
-

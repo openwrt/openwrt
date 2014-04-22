@@ -5,8 +5,6 @@ Subject: net: switchlib: add driver for Lantiq ADM6996I switch family
 
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/drivers/net/switch/Makefile b/drivers/net/switch/Makefile
-index a426774..6b7eeb9 100644
 --- a/drivers/net/switch/Makefile
 +++ b/drivers/net/switch/Makefile
 @@ -11,6 +11,7 @@ LIB	:= $(obj)libswitch.o
@@ -17,9 +15,6 @@ index a426774..6b7eeb9 100644
  
  COBJS	:= $(COBJS-y)
  SRCS	:= $(COBJS:.o=.c)
-diff --git a/drivers/net/switch/adm6996i.c b/drivers/net/switch/adm6996i.c
-new file mode 100644
-index 0000000..46fcdc9
 --- /dev/null
 +++ b/drivers/net/switch/adm6996i.c
 @@ -0,0 +1,115 @@
@@ -138,8 +133,6 @@ index 0000000..46fcdc9
 +
 +	switch_driver_register(&adm6996i_drv);
 +}
-diff --git a/drivers/net/switch/switch.c b/drivers/net/switch/switch.c
-index 3d02610..ea3fe9c 100644
 --- a/drivers/net/switch/switch.c
 +++ b/drivers/net/switch/switch.c
 @@ -20,6 +20,9 @@ void switch_init(void)
@@ -152,11 +145,9 @@ index 3d02610..ea3fe9c 100644
  
  	board_switch_init();
  }
-diff --git a/include/switch.h b/include/switch.h
-index fd3cdbd..4b46df0 100644
 --- a/include/switch.h
 +++ b/include/switch.h
-@@ -98,6 +98,7 @@ static inline void switch_setup(struct switch_device *dev)
+@@ -98,6 +98,7 @@ static inline void switch_setup(struct s
  
  /* Init functions for supported Switch drivers */
  extern void switch_psb697x_init(void);
@@ -164,6 +155,3 @@ index fd3cdbd..4b46df0 100644
  
  #endif /* __SWITCH_H */
  
--- 
-1.8.3.2
-

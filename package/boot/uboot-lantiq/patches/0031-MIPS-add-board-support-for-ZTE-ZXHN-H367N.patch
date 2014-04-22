@@ -5,9 +5,6 @@ Subject: MIPS: add board support for ZTE ZXHN H367N
 
 Signed-off-by: Luka Perkov <luka@openwrt.org>
 
-diff --git a/board/zte/zxhnh367n/Makefile b/board/zte/zxhnh367n/Makefile
-new file mode 100644
-index 0000000..3a547c2
 --- /dev/null
 +++ b/board/zte/zxhnh367n/Makefile
 @@ -0,0 +1,27 @@
@@ -38,9 +35,6 @@ index 0000000..3a547c2
 +sinclude $(obj).depend
 +
 +#########################################################################
-diff --git a/board/zte/zxhnh367n/config.mk b/board/zte/zxhnh367n/config.mk
-new file mode 100644
-index 0000000..9d33739
 --- /dev/null
 +++ b/board/zte/zxhnh367n/config.mk
 @@ -0,0 +1,7 @@
@@ -51,9 +45,6 @@ index 0000000..9d33739
 +#
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
-diff --git a/board/zte/zxhnh367n/ddr_settings.h b/board/zte/zxhnh367n/ddr_settings.h
-new file mode 100644
-index 0000000..b3f81de
 --- /dev/null
 +++ b/board/zte/zxhnh367n/ddr_settings.h
 @@ -0,0 +1,70 @@
@@ -127,9 +118,6 @@ index 0000000..b3f81de
 +#define	MC_CCR59_VALUE	0x7800301
 +#define	MC_CCR60_VALUE	0x7800301
 +#define	MC_CCR61_VALUE	0x4
-diff --git a/board/zte/zxhnh367n/zxhnh367n.c b/board/zte/zxhnh367n/zxhnh367n.c
-new file mode 100644
-index 0000000..f64f105
 --- /dev/null
 +++ b/board/zte/zxhnh367n/zxhnh367n.c
 @@ -0,0 +1,97 @@
@@ -230,11 +218,9 @@ index 0000000..f64f105
 +
 +	return ltq_eth_initialize(&eth_board_config);
 +}
-diff --git a/boards.cfg b/boards.cfg
-index 2163cdb..4b18a26 100644
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -527,6 +527,9 @@ Active  mips        mips32         vrx200      lantiq          easy80920
+@@ -527,6 +527,9 @@ Active  mips        mips32         vrx20
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_norspl                     easy80920:SYS_BOOT_NORSPL                                                                                                         Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_ram                        easy80920:SYS_BOOT_RAM                                                                                                            Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_sfspl                      easy80920:SYS_BOOT_SFSPL                                                                                                          Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
@@ -244,9 +230,6 @@ index 2163cdb..4b18a26 100644
  Active  mips        mips64         -           -               qemu-mips           qemu_mips64                          qemu-mips64:SYS_BIG_ENDIAN                                                                                                        -
  Active  mips        mips64         -           -               qemu-mips           qemu_mips64el                        qemu-mips64:SYS_LITTLE_ENDIAN                                                                                                     -
  Active  nds32       n1213          ag101       AndesTech       adp-ag101           adp-ag101                            -                                                                                                                                 Andes <uboot@andestech.com>
-diff --git a/include/configs/zxhnh367n.h b/include/configs/zxhnh367n.h
-new file mode 100644
-index 0000000..55d2e2a
 --- /dev/null
 +++ b/include/configs/zxhnh367n.h
 @@ -0,0 +1,72 @@
@@ -322,6 +305,3 @@ index 0000000..55d2e2a
 +	CONFIG_ENV_UPDATE_UBOOT_NAND
 +
 +#endif /* __CONFIG_H */
--- 
-1.8.3.2
-

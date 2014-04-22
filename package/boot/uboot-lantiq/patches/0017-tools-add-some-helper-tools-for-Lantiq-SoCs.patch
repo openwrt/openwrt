@@ -6,9 +6,6 @@ Subject: tools: add some helper tools for Lantiq SoCs
 Signed-off-by: Luka Perkov Luka Perkov <luka@openwrt.org>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/tools/gct.pl b/tools/gct.pl
-new file mode 100755
-index 0000000..33fa6f7
 --- /dev/null
 +++ b/tools/gct.pl
 @@ -0,0 +1,155 @@
@@ -167,9 +164,6 @@ index 0000000..33fa6f7
 +		$holder="";
 +	}
 +}
-diff --git a/tools/lantiq_bdi_conf.awk b/tools/lantiq_bdi_conf.awk
-new file mode 100755
-index 0000000..c732289
 --- /dev/null
 +++ b/tools/lantiq_bdi_conf.awk
 @@ -0,0 +1,116 @@
@@ -289,9 +283,6 @@ index 0000000..c732289
 +	default:
 +	}
 +}
-diff --git a/tools/lantiq_ram_extract_magic.awk b/tools/lantiq_ram_extract_magic.awk
-new file mode 100755
-index 0000000..64f1cbc
 --- /dev/null
 +++ b/tools/lantiq_ram_extract_magic.awk
 @@ -0,0 +1,69 @@
@@ -364,9 +355,6 @@ index 0000000..64f1cbc
 +	if ($4 == "t2,736(t1)")
 +		right_section=0
 +}
-diff --git a/tools/lantiq_ram_init_uart.awk b/tools/lantiq_ram_init_uart.awk
-new file mode 100755
-index 0000000..dc82645
 --- /dev/null
 +++ b/tools/lantiq_ram_init_uart.awk
 @@ -0,0 +1,117 @@
@@ -487,6 +475,3 @@ index 0000000..dc82645
 +	default:
 +	}
 +}
--- 
-1.8.3.2
-

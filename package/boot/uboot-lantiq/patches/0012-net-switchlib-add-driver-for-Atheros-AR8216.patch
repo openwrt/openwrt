@@ -6,8 +6,6 @@ Subject: net: switchlib: add driver for Atheros AR8216
 Signed-off-by: Luka Perkov <openwrt@lukaperkov.net>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
-diff --git a/drivers/net/switch/Makefile b/drivers/net/switch/Makefile
-index 6b7eeb9..7400897 100644
 --- a/drivers/net/switch/Makefile
 +++ b/drivers/net/switch/Makefile
 @@ -12,6 +12,7 @@ LIB	:= $(obj)libswitch.o
@@ -18,9 +16,6 @@ index 6b7eeb9..7400897 100644
  
  COBJS	:= $(COBJS-y)
  SRCS	:= $(COBJS:.o=.c)
-diff --git a/drivers/net/switch/ar8216.c b/drivers/net/switch/ar8216.c
-new file mode 100644
-index 0000000..f1348f0
 --- /dev/null
 +++ b/drivers/net/switch/ar8216.c
 @@ -0,0 +1,114 @@
@@ -138,8 +133,6 @@ index 0000000..f1348f0
 +
 +	switch_driver_register(&ar8216_drv);
 +}
-diff --git a/drivers/net/switch/switch.c b/drivers/net/switch/switch.c
-index ea3fe9c..3e34a7f 100644
 --- a/drivers/net/switch/switch.c
 +++ b/drivers/net/switch/switch.c
 @@ -23,6 +23,9 @@ void switch_init(void)
@@ -152,11 +145,9 @@ index ea3fe9c..3e34a7f 100644
  
  	board_switch_init();
  }
-diff --git a/include/switch.h b/include/switch.h
-index 4b46df0..ae7b123 100644
 --- a/include/switch.h
 +++ b/include/switch.h
-@@ -99,6 +99,7 @@ static inline void switch_setup(struct switch_device *dev)
+@@ -99,6 +99,7 @@ static inline void switch_setup(struct s
  /* Init functions for supported Switch drivers */
  extern void switch_psb697x_init(void);
  extern void switch_adm6996i_init(void);
@@ -164,6 +155,3 @@ index 4b46df0..ae7b123 100644
  
  #endif /* __SWITCH_H */
  
--- 
-1.8.3.2
-
