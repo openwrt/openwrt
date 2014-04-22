@@ -116,6 +116,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "2" "0 5t"
 		;;
 
+	ar725w | \
 	rt-n15 | \
 	wl-351)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
