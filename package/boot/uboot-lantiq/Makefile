@@ -32,148 +32,175 @@ define uboot/Default
   SOC:=
   DDR_SETTINGS:=
   IMAGE:=
+  DEPS:=
 endef
 
 define uboot/arv4519pw_ram
   TITLE:=U-Boot for Arcadyan arv4519pw (RAM)
   SOC:=danube
   DDR_SETTINGS:=board/arcadyan/arv4519pw/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway_ARV4519PW
 endef
 
 define uboot/arv4519pw_nor
   TITLE:=U-Boot for Arcadyan arv4519pw (NOR)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV4519PW
 endef
 
 define uboot/arv4519pw_brn
   TITLE:=U-Boot for Arcadyan arv4519pw (BRN)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV4519PW
 endef
 
 define uboot/arv7510pw_ram
   TITLE:=U-Boot for Arcadyan arv7510pw (RAM)
   SOC:=danube
   DDR_SETTINGS:=board/arcadyan/arv7510pw/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway_ARV4510PW
 endef
 
 define uboot/arv7510pw_nor
   TITLE:=U-Boot for Arcadyan arv7510pw (NOR)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV4510PW
 endef
 
 define uboot/arv7510pw_brn
   TITLE:=U-Boot for Arcadyan arv7510pw (BRN)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV4510PW
 endef
 
 define uboot/arv7518pw_ram
   TITLE:=U-Boot for Arcadyan arv7518pw (RAM)
   SOC:=danube
   DDR_SETTINGS:=board/arcadyan/arv7518pw/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway_ARV7518PW
 endef
 
 define uboot/arv7518pw_nor
   TITLE:=U-Boot for Arcadyan arv7518pw (NOR)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV7518PW
 endef
 
 define uboot/arv7518pw_brn
   TITLE:=U-Boot for Arcadyan arv7518pw (BRN)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV7518PW
 endef
 
 define uboot/arv752dpw_ram
   TITLE:=U-Boot for Arcadyan arv752dpw (RAM)
   SOC:=danube
   DDR_SETTINGS:=board/arcadyan/arv752dpw/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway_ARV752DPW
 endef
 
 define uboot/arv752dpw_nor
   TITLE:=U-Boot for Arcadyan arv752dpw (NOR)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV752DPW
 endef
 
 define uboot/arv752dpw_brn
   TITLE:=U-Boot for Arcadyan arv752dpw (BRN)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV752DPW
 endef
 
 define uboot/arv752dpw22_ram
   TITLE:=U-Boot for Arcadyan arv752dpw22 (RAM)
   SOC:=danube
   DDR_SETTINGS:=board/arcadyan/arv752dpw22/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway_ARV752DPW22
 endef
 
 define uboot/arv752dpw22_nor
   TITLE:=U-Boot for Arcadyan arv752dpw22 (NOR)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV752DPW22
 endef
 
 define uboot/arv752dpw22_brn
   TITLE:=U-Boot for Arcadyan arv752dpw22 (BRN)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV752DPW22
 endef
 
 define uboot/gigasx76x_ram
   TITLE:=U-Boot for Siemens Gigaset sx76x (RAM)
   SOC:=danube
   DDR_SETTINGS:=board/gigaset/sx76x/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway_GIGASX76X
 endef
 
 define uboot/gigasx76x_nor
   TITLE:=U-Boot for Siemens Gigaset sx76x (NOR)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_GIGASX76X
 endef
 
 define uboot/acmp252_ram
   TITLE:=U-Boot for AudioCodes MP-252 (RAM)
   SOC:=danube
   DDR_SETTINGS:=board/audiocodes/acmp252/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway_ACMP252
 endef
 
 define uboot/acmp252_nor
   TITLE:=U-Boot for AudioCodes MP-252 (NOR)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ACMP252
 endef
 
 define uboot/easy50712_ram
   TITLE:=U-Boot for Lantiq EASY50712 (RAM)
   SOC:=danube
   DDR_SETTINGS:=board/lantiq/easy50712/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway_EASY50712
 endef
 
 define uboot/easy50712_nor
   TITLE:=U-Boot for Lantiq EASY50712 (NOR)
   SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_EASY50712
 endef
 
 define uboot/easy50712_norspl
   TITLE:=U-Boot for Lantiq EASY50712 (NOR SPL)
   SOC:=danube
   IMAGE:=u-boot.ltq.lzo.norspl
+  DEPS:=@TARGET_lantiq_xway_EASY50712
 endef
 
 define uboot/easy80920_ram
   TITLE:=U-Boot for Lantiq EASY80920 (RAM)
   SOC:=vr9
   DDR_SETTINGS:=board/lantiq/easy80920/ddr_settings.h
+  DEPS:=@(TARGET_lantiq_xrx200_EASY80920NOR||TARGET_lantiq_xrx200_EASY80920NAND)
 endef
 
 define uboot/easy80920_nor
   TITLE:=U-Boot for Lantiq EASY80920 (NOR)
   SOC:=vr9
+  DEPS:=@(TARGET_lantiq_xrx200_EASY80920NOR||TARGET_lantiq_xrx200_EASY80920NAND)
 endef
 
 define uboot/easy80920_norspl
   TITLE:=U-Boot for Lantiq EASY80920 (NOR SPL)
   SOC:=vr9
   IMAGE:=u-boot.ltq.lzo.norspl
+  DEPS:=@(TARGET_lantiq_xrx200_EASY80920NOR||TARGET_lantiq_xrx200_EASY80920NAND)
 endef
 
 define uboot/easy80920_sfspl
   TITLE:=U-Boot for Lantiq EASY80920 (SPI SPL)
   SOC:=vr9
   IMAGE:=u-boot.ltq.lzo.sfspl
+  DEPS:=@(TARGET_lantiq_xrx200_EASY80920NOR||TARGET_lantiq_xrx200_EASY80920NAND)
 endef
 
 
@@ -192,7 +219,7 @@ define Package/uboot/template
 define Package/uboot-lantiq-$(1)
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_lantiq_xway
+  DEPENDS:=$(3)
   TITLE:=$(2)
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)
@@ -203,7 +230,8 @@ endef
 define BuildUBootPackage
 	$(eval $(uboot/Default))
 	$(eval $(uboot/$(1)))
-	$(call Package/uboot/template,$(1),$(TITLE))
+	DEPS:=$(uboot/$(1)/DEPS)
+	$(call Package/uboot/template,$(1),$(TITLE),$(DEPS))
 endef
 
 define CopyVR9Firmware
