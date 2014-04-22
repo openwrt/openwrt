@@ -23,6 +23,7 @@ platform_check_image() {
 	all0256n | \
 	all5002 | \
 	all5003 | \
+	ar725w | \
 	asl26555 | \
 	awm002-evb | \
 	bc2 | \
