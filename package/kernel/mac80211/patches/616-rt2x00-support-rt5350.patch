@@ -1,16 +1,16 @@
 --- a/drivers/net/wireless/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/rt2x00/rt2800.h
-@@ -71,6 +71,7 @@
- #define RF5592				0x000f
+@@ -73,6 +73,7 @@
  #define RF3070				0x3070
  #define RF3290				0x3290
+ #define RF3853				0x3853
 +#define RF5350				0x5350
  #define RF5360				0x5360
  #define RF5370				0x5370
  #define RF5372				0x5372
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -2705,6 +2705,13 @@ static void rt2800_config_channel_rf53xx
+@@ -2994,6 +2994,13 @@ static void rt2800_config_channel_rf53xx
  
  				rt2800_rfcsr_write(rt2x00dev, 59,
  						   r59_non_bt[idx]);
@@ -24,15 +24,15 @@
  			}
  		}
  	}
-@@ -3142,6 +3149,7 @@ static void rt2800_config_channel(struct
- 		rt2800_config_channel_rf3322(rt2x00dev, conf, rf, info);
+@@ -3472,6 +3479,7 @@ static void rt2800_config_channel(struct
+ 		rt2800_config_channel_rf3853(rt2x00dev, conf, rf, info);
  		break;
  	case RF3070:
 +	case RF5350:
  	case RF5360:
  	case RF5370:
  	case RF5372:
-@@ -3159,6 +3167,7 @@ static void rt2800_config_channel(struct
+@@ -3489,6 +3497,7 @@ static void rt2800_config_channel(struct
  	if (rt2x00_rf(rt2x00dev, RF3070) ||
  	    rt2x00_rf(rt2x00dev, RF3290) ||
  	    rt2x00_rf(rt2x00dev, RF3322) ||
@@ -40,7 +40,7 @@
  	    rt2x00_rf(rt2x00dev, RF5360) ||
  	    rt2x00_rf(rt2x00dev, RF5370) ||
  	    rt2x00_rf(rt2x00dev, RF5372) ||
-@@ -3399,7 +3408,8 @@ static void rt2800_config_channel(struct
+@@ -3766,7 +3775,8 @@ static void rt2800_config_channel(struct
  	/*
  	 * Clear update flag
  	 */
@@ -50,15 +50,15 @@
  		rt2800_bbp_read(rt2x00dev, 49, &bbp);
  		rt2x00_set_field8(&bbp, BBP49_UPDATE_FLAG, 0);
  		rt2800_bbp_write(rt2x00dev, 49, bbp);
-@@ -4273,6 +4283,7 @@ void rt2800_vco_calibration(struct rt2x0
- 	case RF3053:
+@@ -4645,6 +4655,7 @@ void rt2800_vco_calibration(struct rt2x0
  	case RF3070:
  	case RF3290:
+ 	case RF3853:
 +	case RF5350:
  	case RF5360:
  	case RF5370:
  	case RF5372:
-@@ -4669,6 +4680,8 @@ static int rt2800_init_registers(struct 
+@@ -5079,6 +5090,8 @@ static int rt2800_init_registers(struct
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
@@ -67,7 +67,7 @@
  	} else {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000000);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
-@@ -5310,9 +5323,13 @@ static void rt2800_init_bbp_3352(struct 
+@@ -5734,9 +5747,13 @@ static void rt2800_init_bbp_3352(struct
  
  	rt2800_bbp_write(rt2x00dev, 82, 0x62);
  
@@ -84,7 +84,7 @@
  
  	rt2800_bbp_write(rt2x00dev, 86, 0x38);
  
-@@ -5326,9 +5343,13 @@ static void rt2800_init_bbp_3352(struct 
+@@ -5750,9 +5767,13 @@ static void rt2800_init_bbp_3352(struct
  
  	rt2800_bbp_write(rt2x00dev, 104, 0x92);
  
@@ -101,7 +101,7 @@
  
  	rt2800_bbp_write(rt2x00dev, 120, 0x50);
  
-@@ -5353,6 +5374,13 @@ static void rt2800_init_bbp_3352(struct 
+@@ -5777,6 +5798,13 @@ static void rt2800_init_bbp_3352(struct
  	rt2800_bbp_write(rt2x00dev, 143, 0xa2);
  
  	rt2800_bbp_write(rt2x00dev, 148, 0xc8);
@@ -115,7 +115,7 @@
  }
  
  static void rt2800_init_bbp_3390(struct rt2x00_dev *rt2x00dev)
-@@ -5653,6 +5681,7 @@ static void rt2800_init_bbp(struct rt2x0
+@@ -6118,6 +6146,7 @@ static void rt2800_init_bbp(struct rt2x0
  		rt2800_init_bbp_3290(rt2x00dev);
  		break;
  	case RT3352:
@@ -123,8 +123,8 @@
  		rt2800_init_bbp_3352(rt2x00dev);
  		break;
  	case RT3390:
-@@ -6463,6 +6492,76 @@ static void rt2800_init_rfcsr_3593(struc
- 	/* TODO: enable stream mode support */
+@@ -7069,6 +7098,76 @@ static void rt2800_init_rfcsr_3883(struc
+ 	rt2800_rfcsr_write(rt2x00dev, 20, rfcsr);
  }
  
 +static void rt2800_init_rfcsr_5350(struct rt2x00_dev *rt2x00dev)
@@ -200,7 +200,7 @@
  static void rt2800_init_rfcsr_5390(struct rt2x00_dev *rt2x00dev)
  {
  	rt2800_rf_init_calibration(rt2x00dev, 2);
-@@ -6700,6 +6799,9 @@ static void rt2800_init_rfcsr(struct rt2
+@@ -7309,6 +7408,9 @@ static void rt2800_init_rfcsr(struct rt2
  	case RT3593:
  		rt2800_init_rfcsr_3593(rt2x00dev);
  		break;
@@ -210,7 +210,7 @@
  	case RT5390:
  		rt2800_init_rfcsr_5390(rt2x00dev);
  		break;
-@@ -6949,6 +7051,12 @@ static int rt2800_validate_eeprom(struct
+@@ -7568,6 +7670,12 @@ static int rt2800_validate_eeprom(struct
  		rt2x00_set_field16(&word, EEPROM_NIC_CONF0_RF_TYPE, RF2820);
  		rt2800_eeprom_write(rt2x00dev, EEPROM_NIC_CONF0, word);
  		rt2x00_eeprom_dbg(rt2x00dev, "Antenna: 0x%04x\n", word);
@@ -223,16 +223,24 @@
  	} else if (rt2x00_rt(rt2x00dev, RT2860) ||
  		   rt2x00_rt(rt2x00dev, RT2872)) {
  		/*
-@@ -7082,6 +7190,8 @@ static int rt2800_init_eeprom(struct rt2
- 	    rt2x00_rt(rt2x00dev, RT5390) ||
- 	    rt2x00_rt(rt2x00dev, RT5392))
+@@ -7706,6 +7814,8 @@ static int rt2800_init_eeprom(struct rt2
  		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
+ 	else if (rt2x00_rt(rt2x00dev, RT3883))
+ 		rf = RF3853;
 +	else if (rt2x00_rt(rt2x00dev, RT5350))
 +		rf = RF5350;
  	else
  		rf = rt2x00_get_field16(eeprom, EEPROM_NIC_CONF0_RF_TYPE);
  
-@@ -7100,6 +7210,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7725,6 +7835,7 @@ static int rt2800_init_eeprom(struct rt2
+ 	case RF3320:
+ 	case RF3322:
+ 	case RF3853:
++	case RF5350:
+ 	case RF5360:
+ 	case RF5370:
+ 	case RF5372:
+@@ -8279,6 +8390,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3290:
  	case RF3320:
  	case RF3322:
@@ -240,26 +248,18 @@
  	case RF5360:
  	case RF5370:
  	case RF5372:
-@@ -7594,6 +7705,7 @@ static int rt2800_probe_hw_mode(struct r
- 	case RF3290:
- 	case RF3320:
- 	case RF3322:
-+	case RF5350:
- 	case RF5360:
- 	case RF5370:
- 	case RF5372:
-@@ -7726,6 +7838,7 @@ static int rt2800_probe_hw_mode(struct r
- 	case RF3053:
+@@ -8417,6 +8529,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3070:
  	case RF3290:
+ 	case RF3853:
 +	case RF5350:
  	case RF5360:
  	case RF5370:
  	case RF5372:
-@@ -7764,6 +7877,7 @@ static int rt2800_probe_rt(struct rt2x00
- 	case RT3390:
+@@ -8456,6 +8569,7 @@ static int rt2800_probe_rt(struct rt2x00
  	case RT3572:
  	case RT3593:
+ 	case RT3883:
 +	case RT5350:
  	case RT5390:
  	case RT5392:
