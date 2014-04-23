@@ -1,0 +1,62 @@
+From a058825fa7b53fab3b003d8928b60e5b686b3421 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 4 Aug 2013 14:36:11 +0200
+Subject: [PATCH] rt2x00: rt2800lib: add hw_beacon_count field to struct
+ rt2800_drv_data
+
+Some chipsets can handle more than 8 beacons at once.
+Add a new field to the rt2800_drv_data structure which
+will hold the number of supported beacons of the given
+chipset.
+
+Update the rt2x00_init_registers function to get the
+beacon count from the new field instead of using a
+hardcoded value.
+
+In order to keep the current behaviour, initialize the
+new field with the actually used value.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/net/wireless/rt2x00/rt2800lib.c |    5 ++++-
+ drivers/net/wireless/rt2x00/rt2800lib.h |    1 +
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -4584,6 +4584,7 @@ EXPORT_SYMBOL_GPL(rt2800_link_tuner);
+  */
+ static int rt2800_init_registers(struct rt2x00_dev *rt2x00dev)
+ {
++	struct rt2800_drv_data *drv_data = rt2x00dev->drv_data;
+ 	u32 reg;
+ 	u16 eeprom;
+ 	unsigned int i;
+@@ -4971,7 +4972,7 @@ static int rt2800_init_registers(struct
+ 	/*
+ 	 * Clear all beacons
+ 	 */
+-	for (i = 0; i < 8; i++)
++	for (i = 0; i < drv_data->hw_beacon_count; i++)
+ 		rt2800_clear_beacon_register(rt2x00dev, i);
+ 
+ 	if (rt2x00_is_usb(rt2x00dev)) {
+@@ -7817,6 +7818,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+ 	if (rt2x00_rt(rt2x00dev, RT3593))
+ 		__set_bit(RT2800_HAS_HIGH_SHARED_MEM, &drv_data->rt2800_flags);
+ 
++	drv_data->hw_beacon_count = 8;
++
+ 	/*
+ 	 * Allocate eeprom data.
+ 	 */
+--- a/drivers/net/wireless/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/rt2x00/rt2800lib.h
+@@ -33,6 +33,7 @@ struct rt2800_drv_data {
+ 	u8 txmixer_gain_24g;
+ 	u8 txmixer_gain_5g;
+ 	unsigned int tbtt_tick;
++	unsigned int hw_beacon_count;
+ 
+ 	unsigned long rt2800_flags;
+ 
