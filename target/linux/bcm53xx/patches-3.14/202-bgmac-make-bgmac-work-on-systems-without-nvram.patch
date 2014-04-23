@@ -1,0 +1,73 @@
+These are some hackish patches to make the Ethernet driver work somehow
+on this arm core.
+The flash driver is not working, so we removed the nvram reading, this 
+should be changed after we have a flash driver.
+The mdelay(1) is a ugly workaround for this arm chip, this seams to be a dma problem.
+
+The PHY says it is not connected by default, just ignore it.
+
+--- a/drivers/net/ethernet/broadcom/Kconfig
++++ b/drivers/net/ethernet/broadcom/Kconfig
+@@ -131,7 +131,7 @@ config BNX2X_SRIOV
+ 
+ config BGMAC
+ 	tristate "BCMA bus GBit core support"
+-	depends on BCMA_HOST_SOC && HAS_DMA && BCM47XX
++	depends on BCMA_HOST_SOC && HAS_DMA
+ 	select PHYLIB
+ 	---help---
+ 	  This driver supports GBit MAC and BCM4706 GBit MAC cores on BCMA bus.
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -17,7 +17,11 @@
+ #include <linux/interrupt.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_data/b53.h>
++#ifdef CONFIG_BCM47XX
+ #include <bcm47xx_nvram.h>
++#else
++#define bcm47xx_nvram_getenv(a, b, c) -1
++#endif
+ 
+ static const struct bcma_device_id bgmac_bcma_tbl[] = {
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_4706_MAC_GBIT, BCMA_ANY_REV, BCMA_ANY_CLASS),
+@@ -1452,7 +1456,7 @@ static int bgmac_probe(struct bcma_devic
+ 	int err;
+ 
+ 	/* We don't support 2nd, 3rd, ... units, SPROM has to be adjusted */
+-	if (core->core_unit > 1) {
++	if (core->core_unit > 0) {
+ 		pr_err("Unsupported core_unit %d\n", core->core_unit);
+ 		return -ENOTSUPP;
+ 	}
+@@ -1487,8 +1491,7 @@ static int bgmac_probe(struct bcma_devic
+ 	}
+ 	bgmac->cmn = core->bus->drv_gmac_cmn.core;
+ 
+-	bgmac->phyaddr = core->core_unit ? sprom->et1phyaddr :
+-			 sprom->et0phyaddr;
++	bgmac->phyaddr = BGMAC_PHY_NOREGS; // core->core_unit ? sprom->et1phyaddr : sprom->et0phyaddr;
+ 	bgmac->phyaddr &= BGMAC_PHY_MASK;
+ 	if (bgmac->phyaddr == BGMAC_PHY_MASK) {
+ 		bgmac_err(bgmac, "No PHY found\n");
+@@ -1540,8 +1543,7 @@ static int bgmac_probe(struct bcma_devic
+ 	/* TODO: reset the external phy. Specs are needed */
+ 	bgmac_phy_reset(bgmac);
+ 
+-	bgmac->has_robosw = !!(core->bus->sprom.boardflags_lo &
+-			       BGMAC_BFL_ENETROBO);
++	bgmac->has_robosw = 1;
+ 	if (bgmac->has_robosw)
+ 		bgmac_warn(bgmac, "Support for Roboswitch not implemented\n");
+ 
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -898,7 +898,7 @@ int genphy_update_link(struct phy_device
+ 		return status;
+ 
+ 	if ((status & BMSR_LSTATUS) == 0)
+-		phydev->link = 0;
++		phydev->link = 1;
+ 	else
+ 		phydev->link = 1;
+ 
