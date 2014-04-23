@@ -1,0 +1,204 @@
+From d27509f19b5f93ea3425cfef782bb3c6541cd44d Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Tue, 4 Feb 2014 00:01:45 +0100
+Subject: [PATCH] ARM: BCM5301X: add dts files for BCM4708 SoC
+
+This uses the newly added BCM5301X SoC code.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Christian Daudt <bcm@fixthebug.org>
+Signed-off-by: Matt Porter <mporter@linaro.org>
+---
+ arch/arm/boot/dts/Makefile                  |    1 +
+ arch/arm/boot/dts/bcm4708-netgear-r6250.dts |   35 ++++++++++
+ arch/arm/boot/dts/bcm4708.dtsi              |   34 ++++++++++
+ arch/arm/boot/dts/bcm5301x.dtsi             |   95 +++++++++++++++++++++++++++
+ 4 files changed, 165 insertions(+)
+ create mode 100644 arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+ create mode 100644 arch/arm/boot/dts/bcm4708.dtsi
+ create mode 100644 arch/arm/boot/dts/bcm5301x.dtsi
+
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -50,6 +50,7 @@ dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rp
+ dtb-$(CONFIG_ARCH_BCM_MOBILE) += bcm11351-brt.dtb \
+ 	bcm28155-ap.dtb
+ dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
++dtb-$(CONFIG_ARCH_BCM_5301X) += bcm4708-netgear-r6250.dtb
+ dtb-$(CONFIG_ARCH_BERLIN) += \
+ 	berlin2-sony-nsz-gs7.dtb	\
+ 	berlin2cd-google-chromecast.dtb
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -0,0 +1,35 @@
++/*
++ * Broadcom BCM470X / BCM5301X arm platform code.
++ * DTS for Netgear R6250 V1
++ *
++ * Copyright 2013 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++/dts-v1/;
++
++#include "bcm4708.dtsi"
++
++/ {
++	compatible = "netgear,r6250v1", "brcm,bcm4708";
++	model = "Netgear R6250 V1 (BCM4708)";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++	};
++
++	memory {
++		reg = <0x00000000 0x08000000>;
++	};
++
++	chipcommonA {
++		uart0: serial@0300 {
++			status = "okay";
++		};
++
++		uart1: serial@0400 {
++			status = "okay";
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm4708.dtsi
+@@ -0,0 +1,34 @@
++/*
++ * Broadcom BCM470X / BCM5301X ARM platform code.
++ * DTS for BCM4708 SoC.
++ *
++ * Copyright 2013-2014 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include "bcm5301x.dtsi"
++
++/ {
++	compatible = "brcm,bcm4708";
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a9";
++			next-level-cache = <&L2>;
++			reg = <0x0>;
++		};
++
++		cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a9";
++			next-level-cache = <&L2>;
++			reg = <0x1>;
++		};
++	};
++
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm5301x.dtsi
+@@ -0,0 +1,95 @@
++/*
++ * Broadcom BCM470X / BCM5301X ARM platform code.
++ * Generic DTS part for all BCM53010, BCM53011, BCM53012, BCM53014, BCM53015,
++ * BCM53016, BCM53017, BCM53018, BCM4707, BCM4708 and BCM4709 SoCs
++ *
++ * Copyright 2013-2014 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include "skeleton.dtsi"
++
++/ {
++	interrupt-parent = <&gic>;
++
++	chipcommonA {
++		compatible = "simple-bus";
++		ranges = <0x00000000 0x18000000 0x00001000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		uart0: serial@0300 {
++			compatible = "ns16550";
++			reg = <0x0300 0x100>;
++			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
++			clock-frequency = <100000000>;
++			status = "disabled";
++		};
++
++		uart1: serial@0400 {
++			compatible = "ns16550";
++			reg = <0x0400 0x100>;
++			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
++			clock-frequency = <100000000>;
++			status = "disabled";
++		};
++	};
++
++	mpcore {
++		compatible = "simple-bus";
++		ranges = <0x00000000 0x19020000 0x00003000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		scu@0000 {
++			compatible = "arm,cortex-a9-scu";
++			reg = <0x0000 0x100>;
++		};
++
++		timer@0200 {
++			compatible = "arm,cortex-a9-global-timer";
++			reg = <0x0200 0x100>;
++			interrupts = <GIC_PPI 11 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&clk_periph>;
++		};
++
++		local-timer@0600 {
++			compatible = "arm,cortex-a9-twd-timer";
++			reg = <0x0600 0x100>;
++			interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&clk_periph>;
++		};
++
++		gic: interrupt-controller@1000 {
++			compatible = "arm,cortex-a9-gic";
++			#interrupt-cells = <3>;
++			#address-cells = <0>;
++			interrupt-controller;
++			reg = <0x1000 0x1000>,
++			      <0x0100 0x100>;
++		};
++
++		L2: cache-controller@2000 {
++			compatible = "arm,pl310-cache";
++			reg = <0x2000 0x1000>;
++			cache-unified;
++			cache-level = <2>;
++		};
++	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		/* As long as we do not have a real clock driver us this
++		 * fixed clock */
++		clk_periph: periph {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <400000000>;
++		};
++	};
++};
