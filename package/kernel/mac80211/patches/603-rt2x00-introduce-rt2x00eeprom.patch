@@ -48,16 +48,16 @@
  obj-$(CPTCFG_RT2X00_LIB_MMIO)		+= rt2x00mmio.o
 --- a/drivers/net/wireless/rt2x00/rt2800lib.h
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.h
-@@ -20,6 +20,8 @@
- #ifndef RT2800LIB_H
- #define RT2800LIB_H
+@@ -43,6 +43,8 @@ struct rt2800_drv_data {
+ 	} shmem_lock;
+ };
  
 +#include "rt2800.h"
 +
  struct rt2800_ops {
  	void (*register_read)(struct rt2x00_dev *rt2x00dev,
  			      const unsigned int offset, u32 *value);
-@@ -119,6 +121,15 @@ static inline int rt2800_read_eeprom(str
+@@ -176,6 +178,15 @@ static inline int rt2800_read_eeprom(str
  {
  	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
  
@@ -75,7 +75,7 @@
  
 --- a/drivers/net/wireless/rt2x00/rt2800soc.c
 +++ b/drivers/net/wireless/rt2x00/rt2800soc.c
-@@ -95,19 +95,6 @@ static int rt2800soc_set_device_state(st
+@@ -102,19 +102,6 @@ static int rt2800soc_set_device_state(st
  	return retval;
  }
  
@@ -95,7 +95,7 @@
  /* Firmware functions */
  static char *rt2800soc_get_firmware_name(struct rt2x00_dev *rt2x00dev)
  {
-@@ -171,7 +158,6 @@ static const struct rt2800_ops rt2800soc
+@@ -178,7 +165,6 @@ static const struct rt2800_ops rt2800soc
  	.register_multiread	= rt2x00mmio_register_multiread,
  	.register_multiwrite	= rt2x00mmio_register_multiwrite,
  	.regbusy_read		= rt2x00mmio_regbusy_read,
