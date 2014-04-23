@@ -1,0 +1,23 @@
+From f6734ec72da936989a8ce4186b3ede28fbc47836 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 18 Aug 2013 21:57:34 +0200
+Subject: [PATCH] rt2x00: rt2800lib: enable RT2800_HAS_HIGH_SHARED_MEM for
+ RT3883
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/net/wireless/rt2x00/rt2800lib.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -8406,7 +8406,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+ 	if (retval)
+ 		return retval;
+ 
+-	if (rt2x00_rt(rt2x00dev, RT3593))
++	if (rt2x00_rt(rt2x00dev, RT3593) ||
++	    rt2x00_rt(rt2x00dev, RT3883))
+ 		__set_bit(RT2800_HAS_HIGH_SHARED_MEM, &drv_data->rt2800_flags);
+ 
+ 	if (rt2x00_rt(rt2x00dev, RT3593) ||

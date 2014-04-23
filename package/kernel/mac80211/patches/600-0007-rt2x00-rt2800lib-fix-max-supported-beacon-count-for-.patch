@@ -1,0 +1,24 @@
+From 9bea8b61f6025cd633bd5ac71be258620b49bcb3 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 2 Sep 2013 11:00:06 +0200
+Subject: [PATCH] rt2x00: rt2800lib: fix max supported beacon count for RT3593
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/net/wireless/rt2x00/rt2800lib.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -7842,7 +7842,10 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+ 	if (rt2x00_rt(rt2x00dev, RT3593))
+ 		__set_bit(RT2800_HAS_HIGH_SHARED_MEM, &drv_data->rt2800_flags);
+ 
+-	drv_data->hw_beacon_count = 8;
++	if (rt2x00_rt(rt2x00dev, RT3593))
++		drv_data->hw_beacon_count = 16;
++	else
++		drv_data->hw_beacon_count = 8;
+ 
+ 	/*
+ 	 * Allocate eeprom data.

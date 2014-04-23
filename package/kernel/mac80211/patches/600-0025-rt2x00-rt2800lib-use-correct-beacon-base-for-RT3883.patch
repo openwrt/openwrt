@@ -1,0 +1,22 @@
+From b403bdfa00665ce6b53583bdb837ffad0b91c09f Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 24 Mar 2013 19:26:29 +0100
+Subject: [PATCH] rt2x00: rt2800lib: use correct beacon base for RT3883
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/net/wireless/rt2x00/rt2800lib.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -983,7 +983,8 @@ EXPORT_SYMBOL_GPL(rt2800_txdone_entry);
+ static unsigned int rt2800_hw_beacon_base(struct rt2x00_dev *rt2x00dev,
+ 					  unsigned int index)
+ {
+-	if (rt2x00_rt(rt2x00dev, RT3593))
++	if (rt2x00_rt(rt2x00dev, RT3593) ||
++	    rt2x00_rt(rt2x00dev, RT3883))
+ 		return HW_BEACON_BASE_HIGH(index);
+ 
+ 	return HW_BEACON_BASE(index);
