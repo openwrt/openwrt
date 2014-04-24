@@ -26,8 +26,13 @@ proto_6rd_setup() {
 	( proto_add_host_dependency "$cfg" 0.0.0.0 )
 
 	[ -z "$ipaddr" ] && {
-		local wanif
-		if ! network_find_wan wanif || ! network_get_ipaddr ipaddr "$wanif"; then
+		local wanif="$tunlink"
+		if [ -z $wanif ] && ! network_find_wan wanif; then
+			proto_notify_error "$cfg" "NO_WAN_LINK"
+			return
+		fi
+
+		if ! network_get_ipaddr ipaddr "$wanif"; then
 			proto_notify_error "$cfg" "NO_WAN_LINK"
 			return
 		fi
