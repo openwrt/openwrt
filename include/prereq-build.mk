@@ -189,5 +189,5 @@ $(eval $(call Require,getopt-extended, \
 ))
 
 $(eval $(call RequireCommand,file, \
-	Please install file. \
+	Please install the 'file' package. \
 ))
