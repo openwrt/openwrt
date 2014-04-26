@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -8873,12 +8873,7 @@ static int wpa_driver_nl80211_set_mode(s
+@@ -8936,12 +8936,7 @@ static int wpa_driver_nl80211_set_mode(s
  			/* Try to set the mode again while the interface is
  			 * down */
  			ret = nl80211_set_mode(drv, drv->ifindex, nlmode);
@@ -14,7 +14,7 @@
  				break;
  		} else
  			wpa_printf(MSG_DEBUG, "nl80211: Failed to set "
-@@ -8891,6 +8886,8 @@ static int wpa_driver_nl80211_set_mode(s
+@@ -8954,6 +8949,8 @@ static int wpa_driver_nl80211_set_mode(s
  			   "interface is down");
  		drv->nlmode = nlmode;
  		drv->ignore_if_down_event = 1;
