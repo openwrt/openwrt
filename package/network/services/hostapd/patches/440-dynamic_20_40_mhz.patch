@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2644,6 +2644,10 @@ static int hostapd_config_fill(struct ho
+@@ -2648,6 +2648,10 @@ static int hostapd_config_fill(struct ho
  				   line);
  			return 1;
  		}
@@ -97,29 +97,25 @@
  
  
  u8 * hostapd_eid_ht_capabilities(struct hostapd_data *hapd, u8 *eid)
-@@ -92,12 +94,15 @@ u8 * hostapd_eid_ht_operation(struct hos
+@@ -92,6 +94,9 @@ u8 * hostapd_eid_ht_operation(struct hos
  
- 	oper->control_chan = hapd->iconf->channel;
+ 	oper->primary_chan = hapd->iconf->channel;
  	oper->operation_mode = host_to_le16(hapd->iface->ht_op_mode);
--	if (hapd->iconf->secondary_channel == 1)
--		oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE |
--			HT_INFO_HT_PARAM_REC_TRANS_CHNL_WIDTH;
--	if (hapd->iconf->secondary_channel == -1)
--		oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW |
--			HT_INFO_HT_PARAM_REC_TRANS_CHNL_WIDTH;
++	if (hapd->iface->force_20mhz)
++		goto skip;
 +
-+	if (!hapd->iface->force_20mhz) {
-+		if (hapd->iconf->secondary_channel == 1)
-+			oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE |
-+				HT_INFO_HT_PARAM_REC_TRANS_CHNL_WIDTH;
-+		if (hapd->iconf->secondary_channel == -1)
-+			oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW |
-+				HT_INFO_HT_PARAM_REC_TRANS_CHNL_WIDTH;
-+	}
+ 	if (hapd->iconf->secondary_channel == 1)
+ 		oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE |
+ 			HT_INFO_HT_PARAM_STA_CHNL_WIDTH;
+@@ -99,6 +104,7 @@ u8 * hostapd_eid_ht_operation(struct hos
+ 		oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW |
+ 			HT_INFO_HT_PARAM_STA_CHNL_WIDTH;
  
++skip:
  	pos += sizeof(*oper);
  
-@@ -291,3 +296,84 @@ void hostapd_get_ht_capab(struct hostapd
+ 	return pos;
+@@ -288,3 +294,84 @@ void hostapd_get_ht_capab(struct hostapd
  
  	neg_ht_cap->ht_capabilities_info = host_to_le16(cap);
  }

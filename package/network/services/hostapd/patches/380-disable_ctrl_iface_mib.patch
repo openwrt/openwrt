@@ -42,7 +42,7 @@
  
 --- a/wpa_supplicant/ctrl_iface.c
 +++ b/wpa_supplicant/ctrl_iface.c
-@@ -6100,6 +6100,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -6075,6 +6075,7 @@ char * wpa_supplicant_ctrl_iface_process
  			reply_len = -1;
  	} else if (os_strncmp(buf, "NOTE ", 5) == 0) {
  		wpa_printf(MSG_INFO, "NOTE: %s", buf + 5);
@@ -50,7 +50,7 @@
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = wpa_sm_get_mib(wpa_s->wpa, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -6111,6 +6112,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -6086,6 +6087,7 @@ char * wpa_supplicant_ctrl_iface_process
  			else
  				reply_len += res;
  		}
@@ -58,7 +58,7 @@
  	} else if (os_strncmp(buf, "STATUS", 6) == 0) {
  		reply_len = wpa_supplicant_ctrl_iface_status(
  			wpa_s, buf + 6, reply, reply_size);
-@@ -6518,6 +6520,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -6490,6 +6492,7 @@ char * wpa_supplicant_ctrl_iface_process
  		reply_len = wpa_supplicant_ctrl_iface_bss(
  			wpa_s, buf + 4, reply, reply_size);
  #ifdef CONFIG_AP
@@ -66,7 +66,7 @@
  	} else if (os_strcmp(buf, "STA-FIRST") == 0) {
  		reply_len = ap_ctrl_iface_sta_first(wpa_s, reply, reply_size);
  	} else if (os_strncmp(buf, "STA ", 4) == 0) {
-@@ -6526,6 +6529,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -6498,6 +6501,7 @@ char * wpa_supplicant_ctrl_iface_process
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = ap_ctrl_iface_sta_next(wpa_s, buf + 9, reply,
  						   reply_size);
@@ -136,7 +136,7 @@
  {
 --- a/src/rsn_supp/wpa.c
 +++ b/src/rsn_supp/wpa.c
-@@ -1910,6 +1910,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
+@@ -1912,6 +1912,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
  }
  
  
@@ -145,7 +145,7 @@
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
  ((s) >> 24) & 0xff, ((s) >> 16) & 0xff, ((s) >> 8) & 0xff, (s) & 0xff
-@@ -1993,6 +1995,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
+@@ -1995,6 +1997,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
  
  	return (int) len;
  }

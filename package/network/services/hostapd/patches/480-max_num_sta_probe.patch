@@ -9,5 +9,5 @@
 +			   " too many connected stations.", MAC2STR(mgmt->sa));
 +
  #ifdef CONFIG_INTERWORKING
- 	if (elems.interworking && elems.interworking_len >= 1) {
- 		u8 ant = elems.interworking[0] & 0x0f;
+ 	if (hapd->conf->interworking &&
+ 	    elems.interworking && elems.interworking_len >= 1) {
