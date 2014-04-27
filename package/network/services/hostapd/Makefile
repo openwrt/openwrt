@@ -88,6 +88,7 @@ endif
 
 ifdef CONFIG_USE_EGLIBC
   TARGET_LDFLAGS += -lrt
+  TARGET_LDFLAGS_C += -lrt
 endif
 
 DRV_DEPENDS:=+PACKAGE_kmod-mac80211:libnl-tiny @(!TARGET_avr32||BROKEN)
@@ -267,7 +268,7 @@ define Build/RunMake
 		$(TARGET_CONFIGURE_OPTS) \
 		$(DRIVER_MAKEOPTS) \
 		LIBS="$(TARGET_LDFLAGS)" \
-		LIBS_c="" \
+		LIBS_c="$(TARGET_LDFLAGS_C)" \
 		BCHECK= \
 		$(2)
 endef
