@@ -1,0 +1,10 @@
+--- a/compat/backport-3.15.c
++++ b/compat/backport-3.15.c
+@@ -11,6 +11,7 @@
+ #include <linux/kernel.h>
+ #include <linux/device.h>
+ #include <linux/of.h>
++#include <linux/string.h>
+ 
+ /**
+  * devm_kstrdup - Allocate resource managed space and
