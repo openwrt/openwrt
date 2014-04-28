@@ -178,7 +178,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define IEEE80211_SEQ_SEQ_SHIFT    4
  #define IEEE80211_SEQ_MAX          4096
  #define IEEE80211_WEP_IVLEN        3
-@@ -367,11 +370,15 @@ void ath9k_release_buffered_frames(struc
+@@ -366,11 +369,15 @@ void ath9k_release_buffered_frames(struc
  /********/
  
  struct ath_vif {
@@ -194,7 +194,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  };
  
  struct ath9k_vif_iter_data {
-@@ -464,6 +471,8 @@ int ath_update_survey_stats(struct ath_s
+@@ -463,6 +470,8 @@ int ath_update_survey_stats(struct ath_s
  void ath_update_survey_nf(struct ath_softc *sc, int channel);
  void ath9k_queue_reset(struct ath_softc *sc, enum ath_reset_type type);
  void ath_ps_full_sleep(unsigned long data);
@@ -203,7 +203,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  /**********/
  /* BTCOEX */
-@@ -724,6 +733,9 @@ struct ath_softc {
+@@ -723,6 +732,9 @@ struct ath_softc {
  	struct completion paprd_complete;
  	wait_queue_head_t tx_wait;
  
