@@ -277,6 +277,17 @@ endef
 
 $(eval $(call KernelPackage,crypto-cbc))
 
+define KernelPackage/crypto-pcbc
+  TITLE:=Propagating Cipher Block Chaining CryptoAPI module
+  DEPENDS:=+kmod-crypto-manager
+  KCONFIG:=CONFIG_CRYPTO_PCBC
+  FILES:=$(LINUX_DIR)/crypto/pcbc.ko
+  AUTOLOAD:=$(call AutoLoad,09,pcbc)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-pcbc))
+
 define KernelPackage/crypto-crc32c
   TITLE:=CRC32c CRC module
   DEPENDS:=+kmod-crypto-hash
@@ -311,6 +322,16 @@ endef
 
 $(eval $(call KernelPackage,crypto-deflate))
 
+
+define KernelPackage/crypto-fcrypt
+  TITLE:=FCRYPT cipher CryptoAPI module
+  KCONFIG:=CONFIG_CRYPTO_FCRYPT
+  FILES:=$(LINUX_DIR)/crypto/fcrypt.ko
+  AUTOLOAD:=$(call AutoLoad,09,fcrypt)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-fcrypt))
 
 define KernelPackage/crypto-ecb
   TITLE:=Electronic CodeBook CryptoAPI module
@@ -429,7 +450,6 @@ define KernelPackage/crypto-misc
 	$(if $(call kernel_patchver_ge,3.7),$(LINUX_DIR)/crypto/cast_common.ko) \
 	$(LINUX_DIR)/crypto/cast5$(cast56_mod_suffix).ko \
 	$(LINUX_DIR)/crypto/cast6$(cast56_mod_suffix).ko \
-	$(LINUX_DIR)/crypto/fcrypt.ko \
 	$(LINUX_DIR)/crypto/khazad.ko \
 	$(LINUX_DIR)/crypto/sha512_generic.ko \
 	$(LINUX_DIR)/crypto/tea.ko \

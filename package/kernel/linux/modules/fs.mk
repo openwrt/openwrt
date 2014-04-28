@@ -7,6 +7,43 @@
 
 FS_MENU:=Filesystems
 
+define KernelPackage/fs-fscache
+  SUBMENU:=$(FS_MENU)
+  TITLE:=General filesystem local cache manager
+  DEPENDS:=
+  KCONFIG:=\
+	CONFIG_FSCACHE=m \
+	CONFIG_FSCACHE_STATS=y \
+	CONFIG_FSCACHE_HISTOGRAM=n \
+	CONFIG_FSCACHE_DEBUG=n \
+	CONFIG_FSCACHE_OBJECT_LIST=n \
+	CONFIG_CACHEFILES=y \
+	CONFIG_CACHEFILES_DEBUG=n \
+	CONFIG_CACHEFILES_HISTOGRAM=n
+  FILES:=$(LINUX_DIR)/fs/fscache/fscache.ko
+  AUTOLOAD:=$(call AutoLoad,29,fscache)
+endef
+
+$(eval $(call KernelPackage,fs-fscache))
+
+define KernelPackage/fs-afs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Andrew FileSystem client
+  DEPENDS:=+kmod-rxrpc +kmod-dnsresolver +kmod-fs-fscache
+  KCONFIG:=\
+	CONFIG_AFS_FS=m \
+	CONFIG_AFS_DEBUG=n \
+	CONFIG_AFS_FSCACHE=y
+  FILES:=$(LINUX_DIR)/fs/afs/kafs.ko
+  AUTOLOAD:=$(call AutoLoad,30,kafs)
+endef
+
+define KernelPackage/fs-afs/description
+  Kernel module for Andrew FileSystem client support
+endef
+
+$(eval $(call KernelPackage,fs-afs))
+
 define KernelPackage/fs-autofs4
   SUBMENU:=$(FS_MENU)
   TITLE:=AUTOFS4 filesystem support

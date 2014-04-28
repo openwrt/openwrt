@@ -938,3 +938,32 @@ endef
 
 $(eval $(call KernelPackage,slip))
 
+define KernelPackage/dnsresolver
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=In-kernel DNS Resolver
+  KCONFIG:= CONFIG_DNS_RESOLVER
+  FILES:=$(LINUX_DIR)/net/dns_resolver/dns_resolver.ko
+  AUTOLOAD:=$(call AutoLoad,30,dns_resolver)
+endef
+
+$(eval $(call KernelPackage,dnsresolver))
+
+define KernelPackage/rxrpc
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=AF_RXRPC support
+  KCONFIG:= \
+	CONFIG_AF_RXRPC \
+	CONFIG_RXKAD=m \
+	CONFIG_AF_RXRPC_DEBUG=n
+  FILES:= \
+	$(LINUX_DIR)/net/rxrpc/af-rxrpc.ko \
+	$(LINUX_DIR)/net/rxrpc/rxkad.ko
+  AUTOLOAD:=$(call AutoLoad,30,rxkad af-rxrpc)
+  DEPENDS:=+kmod-crypto-core +kmod-crypto-manager +kmod-crypto-pcbc +kmod-crypto-fcrypt
+endef
+
+define KernelPackage/rxrpc/description
+  Kernel support for AF_RXRPC; required for AFS client
+endef
+
+$(eval $(call KernelPackage,rxrpc))
