@@ -1,3 +1,43 @@
+commit c82552c5b0cb1735dbcbad78b1ffc6d3c212dc56
+Author: Tim Harvey <tharvey@gateworks.com>
+Date:   Mon Apr 21 16:14:57 2014 -0700
+
+    ath9k: add a recv budget
+    
+    Implement a recv budget so that in cases of high traffic we still allow other
+    taskets to get processed.
+    
+    Without this, we can encounter a host of issues during high wireless traffic
+    reception depending on system load including rcu stall's detected (ARM),
+    soft lockups, failure to service critical tasks such as watchdog resets,
+    and triggering of the tx stuck tasklet.
+    
+    The same thing was proposed previously by Ben:
+     http://www.spinics.net/lists/linux-wireless/msg112891.html
+    
+    The only difference here is that I make sure only processed packets are counted
+    in the budget by checking at the end of the rx loop.
+    
+    Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+    Acked-by: Felix Fietkau <nbd@openwrt.org>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit 3a758134e66ca74a9df792616b5288b2fa2cfd7f
+Author: Tim Harvey <tharvey@gateworks.com>
+Date:   Mon Apr 21 16:14:56 2014 -0700
+
+    ath9k: fix possible hang on flush
+    
+    If a flush is requested, make sure to clear the descriptor once we've
+    processed it.
+    
+    This resolves a hang that will occur if all RX descriptors are full when a
+    flush is requested.
+    
+    Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+    Acked-by: Felix Fietkau <nbd@openwrt.org>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
 commit eefb1d6adc4c60d219182b8917e4567484ce07fc
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Mon Apr 28 18:27:41 2014 +0200
@@ -237,3 +277,34 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  		tid->active	   = false;
  		__skb_queue_head_init(&tid->buf_q);
  		__skb_queue_head_init(&tid->retry_q);
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -975,6 +975,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 	u64 tsf = 0;
+ 	unsigned long flags;
+ 	dma_addr_t new_buf_addr;
++	unsigned int budget = 512;
+ 
+ 	if (edma)
+ 		dma_type = DMA_BIDIRECTIONAL;
+@@ -1113,15 +1114,17 @@ requeue_drop_frag:
+ 		}
+ requeue:
+ 		list_add_tail(&bf->list, &sc->rx.rxbuf);
+-		if (flush)
+-			continue;
+ 
+ 		if (edma) {
+ 			ath_rx_edma_buf_link(sc, qtype);
+ 		} else {
+ 			ath_rx_buf_relink(sc, bf);
+-			ath9k_hw_rxena(ah);
++			if (!flush)
++				ath9k_hw_rxena(ah);
+ 		}
++
++		if (!budget--)
++			break;
+ 	} while (1);
+ 
+ 	if (!(ah->imask & ATH9K_INT_RXEOL)) {
