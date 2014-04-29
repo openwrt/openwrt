@@ -7,6 +7,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+UBIFS_OPTS = -F -m 2048 -e 126KiB -c 2048 -U
+UBI_OPTS = -m 2048 -p 128KiB -s 512
+
 define Build/Clean
 	$(MAKE) -C u-boot clean
 endef
@@ -28,11 +31,16 @@ define MkuImageDtb
 		-d $(KDIR)/zImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
 endef
 
+define MkOftree
+	cp -u $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
+	cp $(LINUX_DIR)/arch/arm/boot/dts/$(2).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-oftree.dtb
+endef
+
 # Atmel
 Image/Build/Kernel/AT91SAM9263EK=$(call MkuImageDtb,9263ek,at91sam9263ek)
 Image/Build/Kernel/AT91SAM9G15EK=$(call MkuImageDtb,9g15ek,at91sam9g15ek)
-Image/Build/Kernel/AT91SAM9G20EK=$(call MkuImageDtb,9g20ek,at91sam9g20ek)
-Image/Build/Kernel/AT91SAM9G20EK-2MMC=$(call MkuImageDtb,9g20ek_2mmc,at91sam9g20ek_2mmc)
+Image/Build/Kernel/AT91SAM9G20EK=$(call MkOftree,9g20ek,at91sam9g20ek)
+Image/Build/Kernel/AT91SAM9G20EK-2MMC=$(call MkOftree,9g20ek_2mmc,at91sam9g20ek_2mmc)
 Image/Build/Kernel/AT91SAM9G25EK=$(call MkuImageDtb,9g25ek,at91sam9g25ek)
 Image/Build/Kernel/AT91SAM9G35EK=$(call MkuImageDtb,9g35ek,at91sam9g35ek)
 Image/Build/Kernel/AT91SAM9M10G45EK=$(call MkuImageDtb,9m10g45ek,at91sam9m10g45ek)
