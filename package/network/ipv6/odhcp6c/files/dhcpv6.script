@@ -94,6 +94,33 @@ setup_interface () {
 		ubus call network add_dynamic "$(json_dump)"
 	fi
 
+	MAPTYPE=""
+	MAPRULE=""
+
+	if [ -n "$MAPE" ]; then
+		MAPTYPE="map-e"
+		MAPRULE="$MAPE"
+	elif [ -n "$MAPT" ]; then
+		MAPTYPE="map-t"
+		MAPRULE="$MAPT"
+	elif [ -n "$LW4O6" ]; then
+		MAPTYPE="lw4o6"
+		MAPRULE="$LW4O6"
+	fi
+
+	if [ -n "$IFACE_MAP" -a -n "$MAPTYPE" -a -n "$MAPRULE" ]; then
+		json_init
+		json_add_string name "$IFACE_MAP"
+		json_add_string ifname "@$INTERFACE"
+		json_add_string proto map
+		json_add_string type "$MAPTYPE"
+		json_add_string rule "$MAPRULE"
+		[ -n "$ZONE_MAP" ] && json_add_string zone "$ZONE_MAP"
+		[ -n "$IFACE_MAP_DELEGATE" ] && json_add_boolean delegate "$IFACE_MAP_DELEGATE"
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
+	fi
+
 	# TODO: $SNTP_IP $SIP_IP $SNTP_FQDN $SIP_DOMAIN
 }
 
