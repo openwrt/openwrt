@@ -15,7 +15,8 @@ BOARDS:= \
 	sun6i-a31-colombus \
 	sun7i-a20-cubieboard2 \
 	sun7i-a20-cubietruck \
-	sun7i-a20-olinuxino-micro
+	sun7i-a20-olinuxino-micro \
+	sun7i-a20-pcduino3
 
 define Image/BuildKernel
 	mkimage -A arm -O linux -T kernel -C none \
