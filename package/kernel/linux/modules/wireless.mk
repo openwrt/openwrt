@@ -106,3 +106,23 @@ endef
 
 $(eval $(call Download,net-prism54))
 $(eval $(call KernelPackage,net-prism54))
+
+define KernelPackage/net-rtl8188eu
+  SUBMENU:=$(WIRELESS_MENU)
+  TITLE:=RTL8188EU support (staging)
+  DEPENDS:=@LINUX_3_13 @USB_SUPPORT +@DRIVER_WEXT_SUPPORT +r8188eu-firmware
+  KCONFIG:=\
+	CONFIG_STAGING=y \
+	CONFIG_R8188EU \
+	CONFIG_88EU_AP_MODE=n \
+	CONFIG_88EU_P2P=n
+  FILES:=$(LINUX_DIR)/drivers/staging/rtl8188eu/r8188eu.ko
+  AUTOLOAD:=$(call AutoProbe,r8188eu)
+endef
+
+define KernelPackage/net-rtl8188eu/description
+ Kernel modules for RealTek RTL8188EU support
+endef
+
+$(eval $(call KernelPackage,net-rtl8188eu))
+
