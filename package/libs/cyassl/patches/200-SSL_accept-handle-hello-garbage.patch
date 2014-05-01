@@ -1,9 +1,9 @@
 --- a/src/internal.c
 +++ b/src/internal.c
-@@ -4622,6 +4622,10 @@ int ProcessReply(CYASSL* ssl)
+@@ -5063,6 +5063,10 @@ int ProcessReply(CYASSL* ssl)
                  b1 =
                  ssl->buffers.inputBuffer.buffer[ssl->buffers.inputBuffer.idx++];
-                 ssl->curSize = ((b0 & 0x7f) << 8) | b1;
+                 ssl->curSize = (word16)(((b0 & 0x7f) << 8) | b1);
 +
 +                /* does not appear to a be a SSLv2 client hello */
 +                if ( ssl->buffers.inputBuffer.buffer[ssl->buffers.inputBuffer.idx] != 1 )
