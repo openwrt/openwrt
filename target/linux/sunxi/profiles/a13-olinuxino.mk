@@ -8,7 +8,7 @@
 define Profile/A13_OLinuXino
 	NAME:=A13 OLinuXino
 	PACKAGES:=\
-		uboot-sunxi-A13-OLinuXino
+		uboot-sunxi-A13-OLinuXino kmod-rtl8192cu
 endef
 
 define Profile/A13_OLinuXino/Description

@@ -20,6 +20,9 @@ case "`cat /proc/device-tree/model`" in
 "Olimex A20-Olinuxino Micro")
 	ucidef_set_interface_lan 'eth0'
 	;;
+"Olimex A13-Olinuxino" |\
+	ucidef_set_interface_lan 'wlan0'
+	;;
 esac
 
 uci commit network
