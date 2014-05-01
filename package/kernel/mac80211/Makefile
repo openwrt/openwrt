@@ -464,6 +464,7 @@ endef
 define KernelPackage/rtl8192cu/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw.bin $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_TMSC.bin $(1)/lib/firmware/rtlwifi
 endef
 
 ZD1211FW_NAME:=zd1211-firmware
