@@ -114,6 +114,7 @@ CONFIGURE_ARGS += \
 	--without-libnetapi \
 	--without-libsmbclient \
 	--without-libsmbsharemodes \
+	--without-libtevent \
 	--without-libaddns \
 	--with-shared-modules=pdb_tdbsam,pdb_wbc_sam,idmap_nss,nss_info_template,auth_winbind,auth_wbc,auth_domain
 
