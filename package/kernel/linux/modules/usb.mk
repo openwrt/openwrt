@@ -1090,6 +1090,38 @@ endef
 $(eval $(call KernelPackage,usb-net-cdc-ether))
 
 
+define KernelPackage/usb-net-cdc-eem
+  TITLE:=Support for CDC EEM connections
+  KCONFIG:=CONFIG_USB_NET_CDC_EEM
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_eem.ko
+  AUTOLOAD:=$(call AutoProbe,cdc_eem)
+  $(call AddDepends/usb-net)
+endef
+
+define KernelPackage/usb-net-cdc-eem/description
+ Kernel support for USB CDC EEM
+endef
+
+$(eval $(call KernelPackage,usb-net-cdc-eem))
+
+
+define KernelPackage/usb-net-cdc-subset
+  TITLE:=Support for CDC Ethernet subset connections
+  KCONFIG:= \
+	CONFIG_USB_NET_CDC_SUBSET \
+	CONFIG_USB_ARMLINUX
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_subset.ko
+  AUTOLOAD:=$(call AutoProbe,cdc_subset)
+  $(call AddDepends/usb-net)
+endef
+
+define KernelPackage/usb-net-cdc-subset/description
+ Kernel support for Simple USB Network Links (CDC Ethernet subset)
+endef
+
+$(eval $(call KernelPackage,usb-net-cdc-subset))
+
+
 define KernelPackage/usb-net-qmi-wwan
   TITLE:=QMI WWAN driver
   KCONFIG:=CONFIG_USB_NET_QMI_WWAN
