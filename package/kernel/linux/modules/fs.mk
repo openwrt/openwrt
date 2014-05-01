@@ -121,6 +121,21 @@ endef
 
 $(eval $(call KernelPackage,fs-configfs))
 
+define KernelPackage/fs-cramfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Compressed RAM/ROM filesystem support
+  DEPENDS:=+kmod-lib-zlib
+  KCONFIG:= \
+	CONFIG_CRAMFS
+  FILES:=$(LINUX_DIR)/fs/cramfs/cramfs.ko
+  AUTOLOAD:=$(call AutoLoad,30,cramfs)
+endef
+
+define KernelPackage/fs-cramfs/description
+ Kernel module for cramfs support
+endef
+
+$(eval $(call KernelPackage,fs-cramfs))
 
 define KernelPackage/fs-exportfs
   SUBMENU:=$(FS_MENU)
