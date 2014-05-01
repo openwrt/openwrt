@@ -98,7 +98,7 @@
  	if (!str1 || !str2 || !p) {
  		return False;
  	}
-@@ -2541,6 +2545,10 @@ static bool api_NetUserGetGroups(struct 
+@@ -2541,6 +2545,10 @@ static bool api_NetUserGetGroups(struct
  	NTSTATUS status, result;
  	struct dcerpc_binding_handle *b;
  
@@ -109,7 +109,7 @@
  	if (!str1 || !str2 || !UserName || !p) {
  		return False;
  	}
-@@ -2733,6 +2741,10 @@ static bool api_RNetUserEnum(struct smbd
+@@ -2741,6 +2749,10 @@ static bool api_RNetUserEnum(struct smbd
  
  	struct dcerpc_binding_handle *b;
  
@@ -120,18 +120,7 @@
  	if (!str1 || !str2 || !p) {
  		return False;
  	}
-@@ -2979,6 +2991,10 @@ static bool api_SetUserPassword(struct s
- 	int min_pwd_length;
- 	struct dcerpc_binding_handle *b = NULL;
- 
-+#ifndef SAMR_SUPPORT
-+	return False;
-+#endif
-+
- 	/* Skip 2 strings. */
- 	p = skip_string(param,tpscnt,np);
- 	p = skip_string(param,tpscnt,p);
-@@ -3224,6 +3240,10 @@ static bool api_SamOEMChangePassword(str
+@@ -2979,6 +2991,10 @@ static bool api_SamOEMChangePassword(str
  	int bufsize;
  	struct dcerpc_binding_handle *b;
  
@@ -142,7 +131,7 @@
  	*rparam_len = 4;
  	*rparam = smb_realloc_limit(*rparam,*rparam_len);
  	if (!*rparam) {
-@@ -4265,6 +4285,10 @@ static bool api_RNetUserGetInfo(struct s
+@@ -4020,6 +4036,10 @@ static bool api_RNetUserGetInfo(struct s
  	union samr_UserInfo *info;
  	struct dcerpc_binding_handle *b = NULL;
  
