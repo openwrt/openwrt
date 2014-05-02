@@ -168,7 +168,7 @@ $(eval $(call KernelPackage,usb-phy-omap-usb2))
 define KernelPackage/usb-phy-omap-usb3
   TITLE:=Support for OMAP USB3 PHY
   KCONFIG:=CONFIG_OMAP_USB3
-  DEPENDS:=@TARGET_omap
+  DEPENDS:=@TARGET_omap +kmod-usb-phy-omap-usb2
   FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-omap-usb3.ko
   AUTOLOAD:=$(call AutoLoad,45,phy-omap-usb3)
   $(call AddDepends/usb)
@@ -336,7 +336,7 @@ $(eval $(call KernelPackage,usb2-fsl))
 
 define KernelPackage/usb2-omap
   TITLE:=Support for USB2 for OMAP
-  DEPENDS:=@TARGET_omap +kmod-usb-phy-nop +kmod-usb-phy-am335x
+  DEPENDS:=@TARGET_omap +kmod-usb-phy-nop +kmod-usb-phy-am335x +kmod-usb2
   KCONFIG:=CONFIG_USB_EHCI_HCD_OMAP
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-omap.ko
   AUTOLOAD:=$(call AutoLoad,39,ehci-omap)
@@ -354,8 +354,7 @@ define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   DEPENDS:=\
 	+TARGET_brcm47xx:kmod-usb-brcm47xx \
-	+TARGET_mpc85xx:kmod-usb2-fsl \
-	+TARGET_omap:kmod-usb2-omap
+	+TARGET_mpc85xx:kmod-usb2-fsl
   KCONFIG:=\
 	CONFIG_USB_EHCI_HCD \
 	CONFIG_USB_EHCI_ATH79=y \
