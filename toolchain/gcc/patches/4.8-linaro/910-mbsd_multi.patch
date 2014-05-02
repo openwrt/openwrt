@@ -157,7 +157,7 @@
      { OPT_LEVELS_2_PLUS, OPT_freorder_blocks, NULL, 1 },
      { OPT_LEVELS_2_PLUS, OPT_freorder_functions, NULL, 1 },
      { OPT_LEVELS_2_PLUS, OPT_ftree_vrp, NULL, 1 },
-@@ -488,6 +486,8 @@ static const struct default_options defa
+@@ -489,6 +487,8 @@ static const struct default_options defa
      { OPT_LEVELS_2_PLUS, OPT_fhoist_adjacent_loads, NULL, 1 },
  
      /* -O3 optimizations.  */
@@ -166,7 +166,7 @@
      { OPT_LEVELS_3_PLUS, OPT_ftree_loop_distribute_patterns, NULL, 1 },
      { OPT_LEVELS_3_PLUS, OPT_fpredictive_commoning, NULL, 1 },
      /* Inlining of functions reducing size is a good idea with -Os
-@@ -1423,6 +1423,17 @@ common_handle_option (struct gcc_options
+@@ -1435,6 +1435,17 @@ common_handle_option (struct gcc_options
  			       opts, opts_set, loc, dc);
        break;
  
@@ -209,7 +209,7 @@
  -Wfatal-errors  -Wfloat-equal  -Wformat  -Wformat=2 @gol
  -Wno-format-contains-nul -Wno-format-extra-args -Wformat-nonliteral @gol
  -Wformat-security  -Wformat-y2k @gol
-@@ -4817,6 +4817,22 @@ This option is only supported for C and
+@@ -4817,6 +4817,22 @@ This option is only supported for C and 
  @option{-Wall} and by @option{-Wpedantic}, which can be disabled with
  @option{-Wno-pointer-sign}.
  

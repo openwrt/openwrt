@@ -1,6 +1,6 @@
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -551,7 +551,7 @@ case ${target} in
+@@ -559,7 +559,7 @@ case ${target} in
  esac
  
  # Common C libraries.
@@ -9,7 +9,7 @@
  
  # Common parts for widely ported systems.
  case ${target} in
-@@ -654,6 +654,9 @@ case ${target} in
+@@ -662,6 +662,9 @@ case ${target} in
      *-*-*uclibc*)
        tm_defines="$tm_defines DEFAULT_LIBC=LIBC_UCLIBC"
        ;;
@@ -34,7 +34,7 @@
  #undef  LINK_SPEC
 --- a/gcc/config/i386/linux.h
 +++ b/gcc/config/i386/linux.h
-@@ -21,3 +21,4 @@ along with GCC; see the file COPYING3.
+@@ -21,3 +21,4 @@ along with GCC; see the file COPYING3.  
  
  #define GNU_USER_LINK_EMULATION "elf_i386"
  #define GLIBC_DYNAMIC_LINKER "/lib/ld-linux.so.2"
@@ -127,7 +127,7 @@
 +Use musl C library
 --- a/gcc/config/mips/linux.h
 +++ b/gcc/config/mips/linux.h
-@@ -18,3 +18,5 @@ along with GCC; see the file COPYING3.
+@@ -18,3 +18,5 @@ along with GCC; see the file COPYING3.  
  <http://www.gnu.org/licenses/>.  */
  
  #define GLIBC_DYNAMIC_LINKER "/lib/ld.so.1"
@@ -295,7 +295,7 @@
      ;;
 --- a/gcc/config/mips/linux64.h
 +++ b/gcc/config/mips/linux64.h
-@@ -27,6 +27,9 @@ along with GCC; see the file COPYING3.
+@@ -27,6 +27,9 @@ along with GCC; see the file COPYING3.  
  #define GLIBC_DYNAMIC_LINKERN32 "/lib32/ld.so.1"
  #define UCLIBC_DYNAMIC_LINKERN32 "/lib32/ld-uClibc.so.0"
  #define BIONIC_DYNAMIC_LINKERN32 "/system/bin/linker32"
@@ -308,7 +308,7 @@
 +			 BIONIC_DYNAMIC_LINKERN32, MUSL_DYNAMIC_LINKERN32)
 --- a/gcc/config/sparc/linux64.h
 +++ b/gcc/config/sparc/linux64.h
-@@ -95,6 +95,9 @@ along with GCC; see the file COPYING3.
+@@ -95,6 +95,9 @@ along with GCC; see the file COPYING3.  
  #define GLIBC_DYNAMIC_LINKER32 "/lib/ld-linux.so.2"
  #define GLIBC_DYNAMIC_LINKER64 "/lib64/ld-linux.so.2"
  
