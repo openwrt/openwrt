@@ -1,6 +1,6 @@
 --- a/gcc/config/arm/arm.h
 +++ b/gcc/config/arm/arm.h
-@@ -271,7 +271,7 @@ extern void (*arm_lang_output_object_att
+@@ -277,7 +277,7 @@ extern void (*arm_lang_output_object_att
  /* Thumb-1 only.  */
  #define TARGET_THUMB1_ONLY		(TARGET_THUMB1 && !arm_arch_notm)
  
@@ -8,4 +8,4 @@
 +#define TARGET_LDRD			(arm_arch6 && ARM_DOUBLEWORD_ALIGN \
                                           && !TARGET_THUMB1)
  
- /* The following two macros concern the ability to execute coprocessor
+ #define TARGET_CRC32			(arm_arch_crc)
