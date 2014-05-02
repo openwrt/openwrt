@@ -138,8 +138,15 @@ define KernelPackage/lib-xor
   TITLE:=XOR blocks algorithm support
   HIDDEN:=1
   KCONFIG:=CONFIG_XOR_BLOCKS
+ifneq ($(wildcard $(LINUX_DIR)/arch/arm/lib/xor-neon.ko),)
+  FILES:= \
+    $(LINUX_DIR)/crypto/xor.ko \
+    $(LINUX_DIR)/arch/arm/lib/xor-neon.ko
+  AUTOLOAD:=$(call AutoProbe,xor-neon xor)
+else
   FILES:=$(LINUX_DIR)/crypto/xor.ko
   AUTOLOAD:=$(call AutoProbe,xor)
+endif
 endef
 
 define KernelPackage/lib-xor/description
