@@ -110,7 +110,7 @@ $(eval $(call KernelPackage,net-prism54))
 define KernelPackage/net-rtl8188eu
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=RTL8188EU support (staging)
-  DEPENDS:=@LINUX_3_13 @USB_SUPPORT +@DRIVER_WEXT_SUPPORT +r8188eu-firmware
+  DEPENDS:=@LINUX_3_13 @USB_SUPPORT +@DRIVER_WEXT_SUPPORT +r8188eu-firmware +kmod-usb-core
   KCONFIG:=\
 	CONFIG_STAGING=y \
 	CONFIG_R8188EU \
