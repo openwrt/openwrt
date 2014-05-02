@@ -1364,7 +1364,7 @@ $(eval $(call KernelPackage,usb-chipidea,1))
 
 define KernelPackage/usb-mxs-phy
   TITLE:=Support for Freescale MXS USB PHY
-  DEPENDS:=@TARGET_imx6
+  DEPENDS:=@TARGET_imx6||TARGET_mxs +TARGET_mxs:kmod-usb-chipidea-imx
   KCONFIG:=CONFIG_USB_MXS_PHY
   FILES:=\
 	$(LINUX_DIR)/drivers/usb/phy/phy-mxs-usb.ko
