@@ -71,11 +71,10 @@ mac80211_hostapd_setup_base() {
 
 		ht_capab=
 		case "$htmode" in
-			HT20|HT40-|HT40+) ht_capab="[$htmode]";;
-			VHT40|VHT80|VHT160)
-				case "$channel" in
-					36|44|52|60|100|108|116|124|132|140|149|157) ht_capab="[HT40+]";;
-					40|48|56|64|104|112|120|128|136|144|153|161) ht_capab="[HT40-]";;
+			HT40*|VHT40|VHT80|VHT160)
+				case "$(( ($channel / 4) % 2 ))" in
+					1) ht_capab="[HT40+]";;
+					0) ht_capab="[HT40-]";;
 				esac
 				;;
 		esac
@@ -90,32 +89,20 @@ mac80211_hostapd_setup_base() {
 		idx="$channel"
 		case "$htmode" in
 			VHT40)
-				case "$channel" in
-					36|40) idx=38;;
-					44|48) idx=42;;
-					52|56) idx=54;;
-					60|64) idx=58;;
-					100|104) idx=102;;
-					108|112) idx=110;;
-					116|120) idx=118;;
-					124|128) idx=126;;
-					132|136) idx=134;;
-					140|144) idx=142;;
-					149|153) idx=151;;
-					157|161) idx=159;;
+				case "$(( ($channel / 4) % 2 ))" in
+					1) idx=$(($channel + 2));;
+					0) idx=$(($channel - 2));;
 				esac
 				enable_ac=1
 				append base_cfg "vht_oper_chwidth=0" "$N"
 				append base_cfg "vht_oper_centr_freq_seg0_idx=$idx" "$N"
 			;;
 			VHT80)
-				case "$channel" in
-					36|40|44|48) idx=42;;
-					52|56|60|64) idx=58;;
-					100|104|108|112) idx=106;;
-					116|120|124|128) idx=122;;
-					132|136|140|144) idx=138;;
-					149|153|157|161) idx=155;;
+				case "$(( ($channel / 4) % 2 ))" in
+					1) idx=$(($channel + 6));;
+					2) idx=$(($channel + 2));;
+					3) idx=$(($channel - 2));;
+					0) idx=$(($channel - 6));;
 				esac
 				enable_ac=1
 				append base_cfg "vht_oper_chwidth=1" "$N"
