@@ -91,9 +91,26 @@ mac80211_hostapd_setup_base() {
 		case "$htmode" in
 			HT20) ;;
 			HT40*|VHT40|VHT80|VHT160)
-				case "$(( ($channel / 4) % 2 ))" in
-					1) ht_capab="[HT40+]";;
-					0) ht_capab="[HT40-]";;
+				case "$hwmode" in
+					a)
+						case "$(( ($channel / 4) % 2 ))" in
+							1) ht_capab="[HT40+]";;
+							0) ht_capab="[HT40-]";;
+						esac
+					;;
+					*)
+						case "$htmode" in
+							HT40+) ht_capab="[HT40+]";;
+							HT40-) ht_capab="[HT40-]";;
+							*)
+								if [ "$channel" -lt 7 ]; then
+									ht_capab="[HT40+]"
+								else
+									ht_capab="[HT40-]"
+								fi
+							;;
+						esac
+					;;
 				esac
 			;;
 			*) ieee80211n= ;;
