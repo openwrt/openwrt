@@ -56,6 +56,25 @@ drv_mac80211_init_iface_config() {
 	config_add_string $MP_CONFIG_STRING
 }
 
+mac80211_add_capabilities() {
+	local __var="$1"; shift
+	local __mask="$1"; shift
+	local __out= oifs
+
+	oifs="$IFS"
+	IFS=:
+	for capab in "$@"; do
+		set -- $capab
+
+		[ "$(($4))" -gt 0 ] || continue
+		[ "$(($__mask & $2))" -eq "$((${3:-$2}))" ] || continue
+		__out="$__out[$1]"
+	done
+	IFS="$oifs"
+
+	export -n -- "$__var=$__out"
+}
+
 mac80211_hostapd_setup_base() {
 	local phy="$1"
 
@@ -80,13 +99,40 @@ mac80211_hostapd_setup_base() {
 			*) ieee80211n= ;;
 		esac
 
-		[ -n "$ieee80211n" ] && append base_cfg "ieee80211n=1" "$N"
+		[ -n "$ieee80211n" ] && {
+			append base_cfg "ieee80211n=1" "$N"
 
-		for cap in $ht_capab_list; do
-			ht_capab="$ht_capab[$cap]"
-		done
+			json_get_vars \
+				ldpc:1 \
+				greenfield:1 \
+				short_gi_20:1 \
+				short_gi_40:1 \
+				tx_stbc:1 \
+				rx_stbc:3 \
+				dsss_cck_40:1
 
-		[ -n "$ht_capab" ] && append base_cfg "ht_capab=$ht_capab" "$N"
+			ht_cap_mask=0
+			for cap in $(iw phy "$phy" info | grep 'Capabilities:' | cut -d: -f2); do
+				ht_cap_mask="$(($ht_cap_mask | $cap))"
+			done
+
+			cap_rx_stbc=$((($ht_cap_mask >> 8) & 3))
+			[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
+			ht_cap_mask="$(( ($ht_cap_mask & ~(0x300)) | ($cap_rx_stbc << 8) ))"
+
+			mac80211_add_capabilities ht_capab_flags $ht_cap_mask \
+				LDPC:0x1::$ldpc \
+				GF:0x10::$greenfield \
+				SHORT-GI-20:0x20::$short_gi_20 \
+				SHORT-GI-40:0x40::$short_gi_40 \
+				TX-STBC:0x80::$max_tx_stbc \
+				RX-STBC1:0x300:0x100:1 \
+				RX-STBC12:0x300:0x200:1 \
+				RX-STBC123:0x300:0x300:1 \
+				DSSS_CCK-40:0x1000::$dsss_cck_40
+
+			[ -n "$ht_capab" ] && append base_cfg "ht_capab=$ht_capab$ht_capab_flags" "$N"
+		}
 
 		# 802.11ac
 		enable_ac=0
