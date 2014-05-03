@@ -89,7 +89,7 @@ mac80211_hostapd_setup_base() {
 		ieee80211n=1
 		ht_capab=
 		case "$htmode" in
-			HT20) ;;
+			VHT20|HT20) ;;
 			HT40*|VHT40|VHT80|VHT160)
 				case "$hwmode" in
 					a)
@@ -156,6 +156,7 @@ mac80211_hostapd_setup_base() {
 		enable_ac=0
 		idx="$channel"
 		case "$htmode" in
+			VHT20) enable_ac=1;;
 			VHT40)
 				case "$(( ($channel / 4) % 2 ))" in
 					1) idx=$(($channel + 2));;
