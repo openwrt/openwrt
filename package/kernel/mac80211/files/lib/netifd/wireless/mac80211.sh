@@ -184,42 +184,37 @@ mac80211_hostapd_setup_base() {
 				rx_antenna_pattern:1 \
 				tx_antenna_pattern:1 \
 				vht_max_mpdu:11454 \
-				vht_max_rx_stbc:4 \
+				rx_stbc:4 \
 				vht_link_adapt:3 \
 				vht160:2
 
 			append base_cfg "ieee80211ac=1" "$N"
-			vht_capab=""
 			vht_cap=0
 			for cap in $(iw phy "$phy" info | awk -F "[()]" '/VHT Capabilities/ { print $2 }'); do
 				vht_cap="$(($vht_cap | $cap))"
 			done
 
-			# boolean
-			[ "$((($vht_cap & 16) * $rxldpc))" -eq 16 ] && \
-				vht_capab="$vht_capab[RXLDPC]"
-			[ "$((($vht_cap & 32) * $short_gi_80))" -eq 32 ] && \
-				vht_capab="$vht_capab[SHORT-GI-80]"
-			[ "$((($vht_cap & 64) * $short_gi_160))" -eq 64 ] && \
-				vht_capab="$vht_capab[SHORT-GI-160]"
-			[ "$((($vht_cap & 128) * $tx_stbc_2by1))" -eq 128 ] && \
-				vht_capab="$vht_capab[TX-STBC-2BY1]"
-			[ "$((($vht_cap & 2048) * $su_beamformer))" -eq 2048 ] && \
-				vht_capab="$vht_capab[SU-BEAMFORMER]"
-			[ "$((($vht_cap & 4096) * $su_beamformee))" -eq 4096 ] && \
-				vht_capab="$vht_capab[SU-BEAMFORMEE]"
-			[ "$((($vht_cap & 524288) * $mu_beamformer))" -eq 524288 ] && \
-				vht_capab="$vht_capab[MU-BEAMFORMER]"
-			[ "$((($vht_cap & 1048576) * $mu_beamformee))" -eq 1048576 ] && \
-				vht_capab="$vht_capab[MU-BEAMFORMEE]"
-			[ "$((($vht_cap & 2097152) * $vht_txop_ps))" -eq 2097152 ] && \
-				vht_capab="$vht_capab[VHT-TXOP-PS]"
-			[ "$((($vht_cap & 4194304) * $htc_vht))" -eq 4194304 ] && \
-				vht_capab="$vht_capab[HTC-VHT]"
-			[ "$((($vht_cap & 268435456) * $rx_antenna_pattern))" -eq 268435456 ] && \
-				vht_capab="$vht_capab[RX-ANTENNA-PATTERN]"
-			[ "$((($vht_cap & 536870912) * $tx_antenna_pattern))" -eq 536870912 ] && \
-				vht_capab="$vht_capab[TX-ANTENNA-PATTERN]"
+			cap_rx_stbc=$((($vht_cap >> 8) & 7))
+			[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
+			ht_cap_mask="$(( ($vht_cap & ~(0x700)) | ($cap_rx_stbc << 8) ))"
+
+			mac80211_add_capabilities vht_capab $vht_cap \
+				RXLDPC:0x10::$rxldpc \
+				SHORT-GI-80:0x20::$short_gi_80 \
+				SHORT-GI-160:0x40::$short_gi_160 \
+				TX-STBC-2BY1:0x80::$tx_stbc \
+				SU-BEAMFORMER:0x800::$su_beamformer \
+				SU-BEAMFORMEE:0x1000::$su_beamformee \
+				MU-BEAMFORMER:0x80000::$mu_beamformer \
+				MU-BEAMFORMEE:0x100000::$mu_beamformee \
+				VHT-TXOP-PS:0x200000::$vht_txop_ps \
+				HTC-VHT:0x400000::$htc_vht \
+				RX-ANTENNA-PATTERN:0x10000000::$rx_antenna_pattern \
+				TX-ANTENNA-PATTERN:0x20000000::$tx_antenna_pattern \
+				RX-STBC1:0x700:0x100:1 \
+				RX-STBC12:0x700:0x200:1 \
+				RX-STBC123:0x700:0x300:1 \
+				RX-STBC1234:0x700:0x400:1 \
 
 			# supported Channel widths
 			vht160_hw=0
@@ -238,21 +233,6 @@ mac80211_hostapd_setup_base() {
 				vht_max_mpdu_hw=11454
 			[ "$vht_max_mpdu_hw" != 3895 ] && \
 				vht_capab="$vht_capab[MAX-MPDU-$vht_max_mpdu_hw]"
-
-			# support for the reception of PPDUs using STBC
-			vht_max_rx_stbc_hw=0
-			[ "$(($vht_cap & 1792))" -ge 256 -a 1 -le "$vht_max_rx_stbc" ] && \
-				vht_max_rx_stbc_hw=1
-			[ "$(($vht_cap & 1792))" -ge 512 -a 2 -le "$vht_max_rx_stbc" ] && \
-				vht_max_rx_stbc_hw=2
-			[ "$(($vht_cap & 1792))" -ge 768 -a 3 -le "$vht_max_rx_stbc" ] && \
-				vht_max_rx_stbc_hw=3
-			[ "$(($vht_cap & 1792))" -ge 1024 -a 4 -le "$vht_max_rx_stbc" ] && \
-				vht_max_rx_stbc_hw=4
-			[ "$vht_max_rx_stbc_hw" = 1 ] && vht_capab="$vht_capab[RX-STBC-1]"
-			[ "$vht_max_rx_stbc_hw" = 2 ] && vht_capab="$vht_capab[RX-STBC-12]"
-			[ "$vht_max_rx_stbc_hw" = 3 ] && vht_capab="$vht_capab[RX-STBC-123]"
-			[ "$vht_max_rx_stbc_hw" = 4 ] && vht_capab="$vht_capab[RX-STBC-1234]"
 
 			# whether or not the STA supports link adaptation using VHT variant
 			vht_link_adapt_hw=0
