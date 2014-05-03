@@ -1,3 +1,41 @@
+commit 4d76248013dbb1948429555208900a585b0f351d
+Author: Janusz Dziedzic <janusz.dziedzic@tieto.com>
+Date:   Tue Apr 8 13:38:43 2014 +0200
+
+    ath9k: Enable DFS only when ATH9K_DFS_CERTIFIED
+    
+    Add DFS interface combination only when
+    CONFIG_ATH9K_DFS_CERTIFIED is set. In other case
+    user can run CAC/beaconing without proper handling
+    of pulse events (without radar detection activated).
+    
+    Reported-by: Cedric Voncken <cedric.voncken@acksys.fr>
+    Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit c83a4e5156a4b4dd22137d33a5625440982d6d37
+Author: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+Date:   Mon Apr 28 21:17:08 2014 +0530
+
+    ath9k_hw: fix worse EVM for 11b rates
+    
+    Adjust FIR filter co-efficients to improve EVM for 11b rates.
+    
+    Signed-off-by: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit 8aab2c7a2f4a957e344db429dfb1190ae59ce8b5
+Author: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+Date:   Mon Apr 28 21:17:07 2014 +0530
+
+    ath9k_hw: update ar9300 initvals
+    
+     * rfsat gainchange hysteresis of rf_gain stuck with large
+       interference present.
+    
+    Signed-off-by: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
 commit 8c7ae357cc5b6bd037ad2d666e9f3789cf882925
 Author: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
 Date:   Wed Apr 23 15:07:57 2014 +0530
@@ -345,7 +383,23 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
   err_irq:
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -781,6 +781,9 @@ int ath9k_init_device(u16 devid, struct 
+@@ -670,6 +670,7 @@ static const struct ieee80211_iface_comb
+ 		.num_different_channels = 1,
+ 		.beacon_int_infra_match = true,
+ 	},
++#ifdef CONFIG_ATH9K_DFS_CERTIFIED
+ 	{
+ 		.limits = if_dfs_limits,
+ 		.n_limits = ARRAY_SIZE(if_dfs_limits),
+@@ -679,6 +680,7 @@ static const struct ieee80211_iface_comb
+ 		.radar_detect_widths =	BIT(NL80211_CHAN_WIDTH_20_NOHT) |
+ 					BIT(NL80211_CHAN_WIDTH_20),
+ 	}
++#endif
+ };
+ 
+ static void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
+@@ -781,6 +783,9 @@ int ath9k_init_device(u16 devid, struct 
  	common = ath9k_hw_common(ah);
  	ath9k_set_hw_capab(sc, hw);
  
@@ -376,3 +430,86 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  	return 0;
  
  err_init:
+--- a/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h
+@@ -410,7 +410,7 @@ static const u32 ar9300_2p2_baseband_cor
+ 	{0x00009e30, 0x06336f77},
+ 	{0x00009e34, 0x6af6532f},
+ 	{0x00009e38, 0x0cc80c00},
+-	{0x00009e40, 0x0d261820},
++	{0x00009e40, 0x0d261800},
+ 	{0x00009e4c, 0x00001004},
+ 	{0x00009e50, 0x00ff03f1},
+ 	{0x00009e54, 0x00000000},
+--- a/drivers/net/wireless/ath/ath9k/ar9330_1p1_initvals.h
++++ b/drivers/net/wireless/ath/ath9k/ar9330_1p1_initvals.h
+@@ -592,7 +592,7 @@ static const u32 ar9331_1p1_baseband_cor
+ 	{0x00009e30, 0x06336f77},
+ 	{0x00009e34, 0x6af6532f},
+ 	{0x00009e38, 0x0cc80c00},
+-	{0x00009e40, 0x0d261820},
++	{0x00009e40, 0x0d261800},
+ 	{0x00009e4c, 0x00001004},
+ 	{0x00009e50, 0x00ff03f1},
+ 	{0x00009fc0, 0x803e4788},
+--- a/drivers/net/wireless/ath/ath9k/ar9330_1p2_initvals.h
++++ b/drivers/net/wireless/ath/ath9k/ar9330_1p2_initvals.h
+@@ -231,7 +231,7 @@ static const u32 ar9331_1p2_baseband_cor
+ 	{0x00009e30, 0x06336f77},
+ 	{0x00009e34, 0x6af6532f},
+ 	{0x00009e38, 0x0cc80c00},
+-	{0x00009e40, 0x0d261820},
++	{0x00009e40, 0x0d261800},
+ 	{0x00009e4c, 0x00001004},
+ 	{0x00009e50, 0x00ff03f1},
+ 	{0x00009fc0, 0x803e4788},
+--- a/drivers/net/wireless/ath/ath9k/ar9340_initvals.h
++++ b/drivers/net/wireless/ath/ath9k/ar9340_initvals.h
+@@ -318,7 +318,7 @@ static const u32 ar9340_1p0_baseband_cor
+ 	{0x00009e30, 0x06336f77},
+ 	{0x00009e34, 0x6af6532f},
+ 	{0x00009e38, 0x0cc80c00},
+-	{0x00009e40, 0x0d261820},
++	{0x00009e40, 0x0d261800},
+ 	{0x00009e4c, 0x00001004},
+ 	{0x00009e50, 0x00ff03f1},
+ 	{0x00009e54, 0x00000000},
+@@ -348,9 +348,9 @@ static const u32 ar9340_1p0_baseband_cor
+ 	{0x0000a370, 0x00000000},
+ 	{0x0000a390, 0x00000001},
+ 	{0x0000a394, 0x00000444},
+-	{0x0000a398, 0x00000000},
+-	{0x0000a39c, 0x210d0401},
+-	{0x0000a3a0, 0xab9a7144},
++	{0x0000a398, 0x001f0e0f},
++	{0x0000a39c, 0x0075393f},
++	{0x0000a3a0, 0xb79f6427},
+ 	{0x0000a3a4, 0x00000000},
+ 	{0x0000a3a8, 0xaaaaaaaa},
+ 	{0x0000a3ac, 0x3c466478},
+--- a/drivers/net/wireless/ath/ath9k/ar9580_1p0_initvals.h
++++ b/drivers/net/wireless/ath/ath9k/ar9580_1p0_initvals.h
+@@ -90,7 +90,7 @@ static const u32 ar9580_1p0_baseband_cor
+ 	{0x00009e30, 0x06336f77},
+ 	{0x00009e34, 0x6af6532f},
+ 	{0x00009e38, 0x0cc80c00},
+-	{0x00009e40, 0x0d261820},
++	{0x00009e40, 0x0d261800},
+ 	{0x00009e4c, 0x00001004},
+ 	{0x00009e50, 0x00ff03f1},
+ 	{0x00009e54, 0x00000000},
+--- a/drivers/net/wireless/ath/ath9k/ar953x_initvals.h
++++ b/drivers/net/wireless/ath/ath9k/ar953x_initvals.h
+@@ -257,9 +257,9 @@ static const u32 qca953x_1p0_baseband_co
+ 	{0x0000a370, 0x00000000},
+ 	{0x0000a390, 0x00000001},
+ 	{0x0000a394, 0x00000444},
+-	{0x0000a398, 0x1f020503},
+-	{0x0000a39c, 0x29180c03},
+-	{0x0000a3a0, 0x9a8b6844},
++	{0x0000a398, 0x001f0e0f},
++	{0x0000a39c, 0x0075393f},
++	{0x0000a3a0, 0xb79f6427},
+ 	{0x0000a3a4, 0x000000ff},
+ 	{0x0000a3a8, 0x6a6a6a6a},
+ 	{0x0000a3ac, 0x6a6a6a6a},
