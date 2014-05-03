@@ -51,7 +51,7 @@ hostapd_common_add_device_config() {
 	config_add_array basic_rate
 
 	config_add_string country
-	config_add_boolean country_ie
+	config_add_boolean country_ie doth
 
 	hostapd_add_log_config
 }
@@ -63,14 +63,18 @@ hostapd_prepare_device_config() {
 	local base="${config%%.conf}"
 	local base_cfg=
 
-	json_get_vars country country_ie beacon_int
+	json_get_vars country country_ie beacon_int doth
 
 	hostapd_set_log_options base_cfg
 
 	set_default country_ie 1
+	set_default doth 1
+
 	[ -n "$country" ] && {
 		append base_cfg "country_code=$country" "$N"
+
 		[ "$country_ie" -gt 0 ] && append base_cfg "ieee80211d=1" "$N"
+		[ "$hwmode" = "a" -a "$doth" -gt 0 ] && append base_cfg "ieee80211h=1" "$N"
 	}
 	[ -n "$hwmode" ] && append base_cfg "hw_mode=$hwmode" "$N"
 
