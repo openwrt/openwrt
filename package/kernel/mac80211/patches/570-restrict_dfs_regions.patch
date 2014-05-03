@@ -1,0 +1,82 @@
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -4321,6 +4321,7 @@ static const struct ieee80211_iface_comb
+ 					BIT(NL80211_CHAN_WIDTH_20) |
+ 					BIT(NL80211_CHAN_WIDTH_40) |
+ 					BIT(NL80211_CHAN_WIDTH_80),
++		.radar_detect_regions = BIT(NL80211_DFS_ETSI),
+ #endif
+ 	},
+ };
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -688,6 +688,7 @@ static const struct ieee80211_iface_comb
+ 		.beacon_int_infra_match = true,
+ 		.radar_detect_widths =	BIT(NL80211_CHAN_WIDTH_20_NOHT) |
+ 					BIT(NL80211_CHAN_WIDTH_20),
++		.radar_detect_regions = BIT(NL80211_DFS_ETSI),
+ 	}
+ #endif
+ };
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -2620,6 +2620,7 @@ struct ieee80211_iface_limit {
+  *	between infrastructure and AP types must match. This is required
+  *	only in special cases.
+  * @radar_detect_widths: bitmap of channel widths supported for radar detection
++ * @radar_detect_regions: bitmap of regions supported for radar detection
+  *
+  * With this structure the driver can describe which interface
+  * combinations it supports concurrently.
+@@ -2677,6 +2678,7 @@ struct ieee80211_iface_combination {
+ 	u8 n_limits;
+ 	bool beacon_int_infra_match;
+ 	u8 radar_detect_widths;
++	u8 radar_detect_regions;
+ };
+ 
+ struct ieee80211_txrx_stypes {
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -1259,6 +1259,7 @@ int cfg80211_can_use_iftype_chan(struct 
+ 				 enum cfg80211_chan_mode chanmode,
+ 				 u8 radar_detect)
+ {
++	const struct ieee80211_regdomain *regdom;
+ 	struct wireless_dev *wdev_iter;
+ 	u32 used_iftypes = BIT(iftype);
+ 	int num[NUM_NL80211_IFTYPES];
+@@ -1267,6 +1268,7 @@ int cfg80211_can_use_iftype_chan(struct 
+ 	struct ieee80211_channel *ch;
+ 	enum cfg80211_chan_mode chmode;
+ 	int num_different_channels = 0;
++	enum nl80211_dfs_regions region = 0;
+ 	int total = 1;
+ 	int i, j;
+ 
+@@ -1285,6 +1287,14 @@ int cfg80211_can_use_iftype_chan(struct 
+ 		return 0;
+ 	}
+ 
++	if (radar_detect) {
++		rcu_read_lock();
++		regdom = rcu_dereference(cfg80211_regdomain);
++		if (regdom)
++			region = regdom->dfs_region;
++		rcu_read_unlock();
++	}
++
+ 	memset(num, 0, sizeof(num));
+ 	memset(used_channels, 0, sizeof(used_channels));
+ 
+@@ -1392,6 +1402,10 @@ int cfg80211_can_use_iftype_chan(struct 
+ 		if (radar_detect && !(c->radar_detect_widths & radar_detect))
+ 			goto cont;
+ 
++		if (radar_detect && c->radar_detect_regions &&
++		    !(c->radar_detect_regions & BIT(region)))
++			goto cont;
++
+ 		/*
+ 		 * Finally check that all iftypes that we're currently
+ 		 * using are actually part of this combination. If they
