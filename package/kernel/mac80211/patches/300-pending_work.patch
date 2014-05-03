@@ -1,3 +1,18 @@
+commit 4c8a3486cb577d40c1ef75f0a8dc9a04773eef83
+Author: Nickolay Ledovskikh <nledovskikh@gmail.com>
+Date:   Fri Apr 25 22:53:34 2014 +0400
+
+    ath5k: Fix AR5K_PHY_TXPOWER_RATE_MAX register value setting.
+    
+    I was reading ath5k power setting code and
+    noticed typing error in ath5k_hw_txpower function.
+    Invalid value was written to AR5K_PHY_TXPOWER_RATE_MAX
+    register.
+    
+    Signed-off-by: Nikolay Ledovskikh <nledovskikh@gmail.com>
+    Acked-by: Nick Kossifidis <mickflemm@gmail.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
 commit 4d76248013dbb1948429555208900a585b0f351d
 Author: Janusz Dziedzic <janusz.dziedzic@tieto.com>
 Date:   Tue Apr 8 13:38:43 2014 +0200
@@ -513,3 +528,16 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  	{0x0000a3a4, 0x000000ff},
  	{0x0000a3a8, 0x6a6a6a6a},
  	{0x0000a3ac, 0x6a6a6a6a},
+--- a/drivers/net/wireless/ath/ath5k/phy.c
++++ b/drivers/net/wireless/ath/ath5k/phy.c
+@@ -3709,8 +3709,8 @@ ath5k_hw_txpower(struct ath5k_hw *ah, st
+ 			AR5K_REG_MS(AR5K_TUNE_MAX_TXPOWER, AR5K_TPC_CHIRP),
+ 			AR5K_TPC);
+ 	} else {
+-		ath5k_hw_reg_write(ah, AR5K_PHY_TXPOWER_RATE_MAX |
+-			AR5K_TUNE_MAX_TXPOWER, AR5K_PHY_TXPOWER_RATE_MAX);
++		ath5k_hw_reg_write(ah, AR5K_TUNE_MAX_TXPOWER,
++			AR5K_PHY_TXPOWER_RATE_MAX);
+ 	}
+ 
+ 	return 0;
