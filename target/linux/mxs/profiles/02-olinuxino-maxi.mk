@@ -6,7 +6,7 @@
 #
 
 define Profile/olinuxino-maxi
-  NAME:=Olimex OLinuXino MAXI/MINI boards
+  NAME:=Olimex OLinuXino Maxi/Mini boards
   PACKAGES += imx-bootlets uboot-mxs-mx23_olinuxino \
 	  kmod-usb-mxs-phy kmod-usb-net kmod-usb-net-smsc95xx \
 	  kmod-gpio-mcp23s08 kmod-leds-gpio kmod-ledtrig-heartbeat kmod-rtc-stmp3xxx \
@@ -14,7 +14,7 @@ define Profile/olinuxino-maxi
 endef
 
 define Profile/olinuxino-maxi/Description
-	Olimex OLinuXino MAXI/MINI boards
+	Olimex OLinuXino Maxi/Mini boards
 endef
-$(eval $(call Profile,olinuxino-maxi))
 
+$(eval $(call Profile,olinuxino-maxi))
