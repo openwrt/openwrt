@@ -67,17 +67,21 @@ mac80211_hostapd_setup_base() {
 		json_get_vars noscan htmode
 		json_get_values ht_capab_list ht_capab
 
-		append base_cfg "ieee80211n=1" "$N"
-
+		ieee80211n=1
 		ht_capab=
 		case "$htmode" in
+			HT20) ;;
 			HT40*|VHT40|VHT80|VHT160)
 				case "$(( ($channel / 4) % 2 ))" in
 					1) ht_capab="[HT40+]";;
 					0) ht_capab="[HT40-]";;
 				esac
-				;;
+			;;
+			*) ieee80211n= ;;
 		esac
+
+		[ -n "$ieee80211n" ] && append base_cfg "ieee80211n=1" "$N"
+
 		for cap in $ht_capab_list; do
 			ht_capab="$ht_capab[$cap]"
 		done
