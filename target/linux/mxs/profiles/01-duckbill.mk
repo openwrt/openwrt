@@ -6,7 +6,7 @@
 #
 
 define Profile/duckbill
-  NAME:=I2SE Duckbill series
+  NAME:=I2SE Duckbill boards
   DEPENDS:=+@TARGET_ROOTFS_INCLUDE_KERNEL +@TARGET_ROOTFS_INCLUDE_DTB
   FEATURES+=usbgadget
   PACKAGES+= \

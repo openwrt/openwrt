@@ -18,4 +18,3 @@ define Profile/olinuxino-micro/Description
 endef
 
 $(eval $(call Profile,olinuxino-micro))
-
