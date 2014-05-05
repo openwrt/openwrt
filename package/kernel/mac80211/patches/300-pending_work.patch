@@ -1,3 +1,15 @@
+commit 92e9dd662542683856e62a5e7e43fcf5b9da5c4a
+Author: Henning Rogge <hrogge@gmail.com>
+Date:   Thu May 1 10:03:46 2014 +0200
+
+    mac80211: Fix mac80211 station info rx bitrate for IBSS mode
+    
+    Filter out incoming multicast packages before applying their bitrate
+    to the rx bitrate station info field to prevent them from setting the
+    rx bitrate to the basic multicast rate.
+    
+    Signed-off-by: Henning Rogge <hrogge@gmail.com>
+
 commit 4c8a3486cb577d40c1ef75f0a8dc9a04773eef83
 Author: Nickolay Ledovskikh <nledovskikh@gmail.com>
 Date:   Fri Apr 25 22:53:34 2014 +0400
@@ -541,3 +553,15 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  	}
  
  	return 0;
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1231,7 +1231,8 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 		if (ether_addr_equal(bssid, rx->sdata->u.ibss.bssid) &&
+ 		    test_sta_flag(sta, WLAN_STA_AUTHORIZED)) {
+ 			sta->last_rx = jiffies;
+-			if (ieee80211_is_data(hdr->frame_control)) {
++			if (ieee80211_is_data(hdr->frame_control) &&
++			    !is_multicast_ether_addr(hdr->addr1)) {
+ 				sta->last_rx_rate_idx = status->rate_idx;
+ 				sta->last_rx_rate_flag = status->flag;
+ 				sta->last_rx_rate_vht_flag = status->vht_flag;
