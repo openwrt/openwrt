@@ -8,7 +8,7 @@ diff -ruN u-boot-2014.01-rc1.old/board/sunxi/dram_pcduino3.c u-boot-2014.01-rc1/
 +#include <asm/arch/dram.h>
 +
 +static struct dram_para dram_para = {
-+	.clock = 408,
++	.clock = 480,
 +	.type = 3,
 +	.rank_num = 1,
 +	.density = 4096,
@@ -22,7 +22,7 @@ diff -ruN u-boot-2014.01-rc1.old/board/sunxi/dram_pcduino3.c u-boot-2014.01-rc1/
 +	.tpr1 = 0xa090,
 +	.tpr2 = 0x22a00,
 +	.tpr3 = 0,
-+	.tpr4 = 0x1,
++	.tpr4 = 0,
 +	.tpr5 = 0,
 +	.emr1 = 0x4,
 +	.emr2 = 0x10,
@@ -51,7 +51,7 @@ diff -ruN u-boot-2014.01-rc1.old/boards.cfg u-boot-2014.01-rc1/boards.cfg
  Active  arm         armv7          sunxi       -               sunxi               mk802ii_A20                              sun7i:MK802II_A20,SPL                                                                                                                 -
  Active  arm         armv7          sunxi       -               sunxi               mk802ii                              sun4i:MK802II,SPL                                                                                                                 -
  Active  arm         armv7          sunxi       -               sunxi               pcDuino                              sun4i:PCDUINO,SPL,SUNXI_EMAC                                                                                                      -
-+Active  arm         armv7          sunxi       -               sunxi               pcDuino3                             sun7i:PCDUINO3,SPL,SUNXI_GMAC,FAST_MBUS                                                                                           -
++Active  arm         armv7          sunxi       -               sunxi               pcDuino3                             sun7i:PCDUINO3,SPL,SUNXI_EMAC,FAST_MBUS                                                                                           -
  Active  arm         armv7          sunxi       -               sunxi               pengpod1000                          sun4i:PENGPOD1000,SPL                                                                                                             -
  Active  arm         armv7          sunxi       -               sunxi               pengpod700                           sun4i:PENGPOD700,SPL                                                                                                              -
  Active  arm         armv7          sunxi       -               sunxi               PoV_ProTab2_IPS9                     sun4i:POV_PROTAB2,SPL                                                                                                             -
