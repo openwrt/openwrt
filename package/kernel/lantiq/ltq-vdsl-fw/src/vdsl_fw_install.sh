@@ -1,10 +1,10 @@
 #!/bin/sh
+. /lib/functions.sh
 
 FW="/tmp/Firmware_Speedport_W921V_1.20.000.bin"
 URL="http://hilfe.telekom.de/dlp/eki/downloads/Speedport/Speedport%20W%20921V/Firmware_Speedport_W921V_1.20.000.bin"
-FW_TAPI="/tmp/vr9_tapi_fw.bin"
-FW_DSL="/tmp/vr9_dsl_fw_annex_b.bin"
-FW_TGZ="/tmp/vr9_fw.tgz"
+FW_TAPI="vr9_tapi_fw.bin"
+FW_DSL="vr9_dsl_fw_annex_b.bin"
 MD5_FW="4d812f2c3476dadd738b022c4767c491"
 MD5_TAPI="06b6ab3481b8d3eb7e8bf6131f7f6b7f"
 MD5_DSL="59dd9dc81195c6854433c691b163f757"
@@ -32,7 +32,9 @@ F=`md5sum -b ${FW} | cut -d" " -f1`
 	exit 1
 }
 
+cd /tmp
 echo "Unpack and decompress w921v Firmware"
+
 w921v_fw_cutter
 [ $? -eq 0 ] || exit 1
 
@@ -44,5 +46,12 @@ D=`md5sum -b ${FW_DSL} | cut -d" " -f1`
 	exit 1
 }
 
-cp ${FW_TAPI} ${FW_DSL} /lib/firmware/
-ln -s /lib/firmware/vr9_dsl_fw_annex_b.bin /lib/firmware/vdsl.bin
+MTD=$(find_mtd_index dsl_fw)
+if [ "$MTD" -gt 0 -a -e "/dev/mtd$MTD" ]; then
+	echo "Storing firmware in flash"
+	tar cvz ${FW_TAPI} ${FW_DSL} > "/dev/mtd$MTD"
+	/etc/init.d/dsl_fs boot
+else
+	cp ${FW_TAPI} ${FW_DSL} /lib/firmware/
+	ln -s /lib/firmware/vr9_dsl_fw_annex_b.bin /lib/firmware/vdsl.bin
+fi
