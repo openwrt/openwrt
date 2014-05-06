@@ -69,6 +69,7 @@ detect_mac80211() {
 		mode_band="g"
 		channel="11"
 		htmode=""
+		ht_capab=""
 
 		iw phy "$dev" info | grep -q 'Capabilities:' && htmode=HT20
 		iw phy "$dev" info | grep -q '2412 MHz' || { mode_band="a"; channel="36"; }
