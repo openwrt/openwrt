@@ -40,6 +40,9 @@ endef
 
 EXTRA_CFLAGS = -fno-pic -mno-abicalls -mlong-calls -G 0
 
+MAKE_FLAGS += \
+	SHELL="$(BASH)"
+
 CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
 	--with-max-device="1" \
 	--with-lines-per-device="1" \
