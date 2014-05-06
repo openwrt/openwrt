@@ -36,6 +36,9 @@ endef
 
 #DEBUG=-DDEBUG_PRINT=1
 
+MAKE_FLAGS += \
+	SHELL="$(BASH)"
+
 CONFIGURE_ARGS += \
 	--enable-kernelincl="$(LINUX_DIR)/include" \
 	--enable-device=vr9 \
