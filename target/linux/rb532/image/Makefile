@@ -51,12 +51,12 @@ define Image/cmdline/jffs2-128k
 block2mtd.block2mtd=/dev/sda2,131072 root=/dev/mtdblock0 rootfstype=jffs2
 endef
 
-define Image/cmdline/ext2
-root=/dev/sda2 rootfstype=ext2
+define Image/cmdline/ext4
+root=/dev/sda2 rootfstype=ext4
 endef
 
 define Image/cmdline/squashfs
-block2mtd.block2mtd=/dev/sda2,65536 root=/dev/mtdblock0 rootfstype=squashfs
+root=/dev/sda2 rootfstype=squashfs
 endef
 
 define Image/cmdline/yaffs2
