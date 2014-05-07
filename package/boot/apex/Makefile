@@ -12,8 +12,7 @@ PKG_VERSION:=1.6.9
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=ftp://ftp.buici.com/pub/apex/ \
-	ftp://metalab.unc.edu/pub/Linux/system/boot/apex/
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=9606cf2e3fd2c9a86fe0b61388509a30
 PKG_TARGETS:=bin
 
