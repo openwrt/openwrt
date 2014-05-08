@@ -196,7 +196,9 @@ static struct mtd_part_parser wrt160nl_parser = {
 
 static int __init wrt160nl_parser_init(void)
 {
-	return register_mtd_parser(&wrt160nl_parser);
+	register_mtd_parser(&wrt160nl_parser);
+
+	return 0;
 }
 
 module_init(wrt160nl_parser_init);
