@@ -33,13 +33,17 @@
  	if (status < 0)
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -99,6 +99,9 @@ static int phy_config_interrupt(struct p
+@@ -99,7 +99,12 @@ static int phy_config_interrupt(struct p
   */
  static inline int phy_aneg_done(struct phy_device *phydev)
  {
+-	int retval = phy_read(phydev, MII_BMSR);
++	int retval;
++
 +	if (phydev->drv->aneg_done)
 +		return phydev->drv->aneg_done(phydev);
 +
- 	int retval = phy_read(phydev, MII_BMSR);
++	retval = phy_read(phydev, MII_BMSR);
  
  	return (retval < 0) ? retval : (retval & BMSR_ANEGCOMPLETE);
+ }
