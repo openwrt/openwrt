@@ -246,7 +246,9 @@ static struct mtd_part_parser adm8668_parser = {
 
 static int __init adm8668_parser_init(void)
 {
-	return register_mtd_parser(&adm8668_parser);
+	register_mtd_parser(&adm8668_parser);
+
+	return 0;
 }
 
 static void __exit adm8668_parser_exit(void)
