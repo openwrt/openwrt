@@ -115,6 +115,7 @@ setup_interface () {
 		json_add_string proto map
 		json_add_string type "$MAPTYPE"
 		json_add_string rule "$MAPRULE"
+		json_add_string tunlink "$INTERFACE"
 		[ -n "$ZONE_MAP" ] && json_add_string zone "$ZONE_MAP"
 		[ -n "$IFACE_MAP_DELEGATE" ] && json_add_boolean delegate "$IFACE_MAP_DELEGATE"
 		json_close_object
