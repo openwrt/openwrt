@@ -1,0 +1,63 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2010-2012 OpenWrt.org
+
+START=99
+STOP=10
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
+# igmpproxy supports both a debug mode and verbosity, which are very useful
+# when something isn't working.
+#
+# Debug mode will print everything to stdout instead of syslog. Generally
+# verbosity should NOT be set as it will quickly fill your syslog.
+#
+# Put any debug or verbosity options into IGMP_OPTS
+#
+# Examples:
+# OPTIONS="-d -v -v" - debug mode and very verbose, this will land in
+#                        stdout and not in syslog
+# OPTIONS="-v" - be verbose, this will write aditional information to syslog
+
+OPTIONS=""
+
+igmp_header() {
+	local quickleave
+	config_get_bool quickleave "$1" quickleave 0
+
+	mkdir -p /var/etc
+	rm -f /var/etc/igmpproxy.conf
+	[ $quickleave -gt 0 ] && echo "quickleave" >> /var/etc/igmpproxy.conf
+
+	[ -L /etc/igmpproxy.conf ] || ln -nsf /var/etc/igmpproxy.conf /etc/igmpproxy.conf
+}
+
+igmp_add_phyint() {
+        local network direction altnets
+
+        config_get network $1 network
+        config_get direction $1 direction
+        config_get altnets $1 altnet
+
+        device=$(uci_get_state network "$network" ifname "$network")
+        echo -e "\nphyint $device $direction ratelimit 0 threshold 1" >> /var/etc/igmpproxy.conf
+
+        if [ -n "$altnets" ]; then
+                local altnet
+                for altnet in $altnets; do
+                        echo -e "\taltnet $altnet" >> /var/etc/igmpproxy.conf
+                done
+        fi
+}
+
+start() {
+	config_load igmpproxy
+	config_foreach igmp_header igmpproxy
+	config_foreach igmp_add_phyint phyint
+	service_start /usr/sbin/igmpproxy $OPTIONS /etc/igmpproxy.conf
+}
+
+stop() {
+	service_stop /usr/sbin/igmpproxy
+}
