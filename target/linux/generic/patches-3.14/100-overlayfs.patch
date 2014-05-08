@@ -3219,7 +3219,7 @@
  file_ra_state_init(struct file_ra_state *ra, struct address_space *mapping);
 --- a/include/linux/mount.h
 +++ b/include/linux/mount.h
-@@ -71,6 +71,9 @@ extern void mnt_pin(struct vfsmount *mnt
+@@ -74,6 +74,9 @@ extern void mnt_pin(struct vfsmount *mnt
  extern void mnt_unpin(struct vfsmount *mnt);
  extern int __mnt_is_readonly(struct vfsmount *mnt);
  
