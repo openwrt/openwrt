@@ -164,7 +164,9 @@ static struct mtd_part_parser myloader_mtd_parser = {
 
 static int __init myloader_mtd_parser_init(void)
 {
-	return register_mtd_parser(&myloader_mtd_parser);
+	register_mtd_parser(&myloader_mtd_parser);
+
+	return 0;
 }
 
 static void __exit myloader_mtd_parser_exit(void)

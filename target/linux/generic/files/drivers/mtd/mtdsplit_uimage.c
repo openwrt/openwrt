@@ -271,23 +271,12 @@ static struct mtd_part_parser uimage_netgear_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-static int mtdsplit_uimage_init(void)
+static int __init mtdsplit_uimage_init(void)
 {
-	int ret;
-
-	ret = register_mtd_parser(&uimage_generic_parser);
-	if (ret)
-		return ret;
-
-	ret = register_mtd_parser(&uimage_netgear_parser);
-	if (ret)
-		goto err_unregister_generic;
+	register_mtd_parser(&uimage_generic_parser);
+	register_mtd_parser(&uimage_netgear_parser);
 
 	return 0;
-
-err_unregister_generic:
-	deregister_mtd_parser(&uimage_generic_parser);
-	return ret;
 }
 
 module_init(mtdsplit_uimage_init);

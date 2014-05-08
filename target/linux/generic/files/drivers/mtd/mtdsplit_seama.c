@@ -93,10 +93,11 @@ static struct mtd_part_parser mtdsplit_seama_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-static int
-mtdsplit_seama_init(void)
+static int __init mtdsplit_seama_init(void)
 {
-	return register_mtd_parser(&mtdsplit_seama_parser);
+	register_mtd_parser(&mtdsplit_seama_parser);
+
+	return 0;
 }
 
 subsys_initcall(mtdsplit_seama_init);
