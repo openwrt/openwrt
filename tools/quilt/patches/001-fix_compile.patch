@@ -1,6 +1,6 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -266,13 +266,10 @@ $(patsubst %.in,%,$(wildcard bin/*.in qu
+@@ -272,13 +272,10 @@ $(patsubst %.in,%,$(wildcard bin/*.in qu
  	@$(if $(filter $@,$(NON_EXEC_IN)),,chmod +x $@)
  
  configure : configure.ac aclocal.m4
@@ -14,5 +14,5 @@
 -	@false
 +	@touch $@
  
- compat_leftover := $(filter-out $(COMPAT),$(shell $(FIND) compat -maxdepth 1 -type f -perm +111))
+ compat_leftover := $(filter-out $(COMPAT),$(shell $(FIND) compat -type f -perm -0100))
  
