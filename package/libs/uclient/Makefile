@@ -44,7 +44,7 @@ endef
 
 define Package/uclient-fetch/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/bin/uclient-fetch $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/uclient-fetch $(1)/usr/bin/
 endef
 
 $(eval $(call BuildPackage,libuclient))
