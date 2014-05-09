@@ -92,7 +92,6 @@ setup_interface () {
 		[ -n "$IFACE_DSLITE_DELEGATE" ] && json_add_boolean delegate "$IFACE_DSLITE_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
-		ifup "$IFACE_DSLITE"
 	fi
 
 	MAPTYPE=""
@@ -121,7 +120,6 @@ setup_interface () {
 		[ -n "$IFACE_MAP_DELEGATE" ] && json_add_boolean delegate "$IFACE_MAP_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
-		ifup "$IFACE_MAP"
 	fi
 
 	# TODO: $SNTP_IP $SIP_IP $SNTP_FQDN $SIP_DOMAIN
