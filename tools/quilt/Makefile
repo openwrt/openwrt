@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=quilt
-PKG_VERSION:=0.61
+PKG_VERSION:=0.63
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://download.savannah.gnu.org/releases/$(PKG_NAME)
-PKG_MD5SUM:=24417eba5961592b64103bdda001ebf4
+PKG_MD5SUM:=c0ef4beb58a6fa72563b955e70624b6e
 
 include $(INCLUDE_DIR)/host-build.mk
 
