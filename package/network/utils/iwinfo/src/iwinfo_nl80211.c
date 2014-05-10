@@ -526,7 +526,13 @@ static char * nl80211_wpactl_info(const char *ifname, const char *cmd,
 		goto out;
 
 	if (connect(sock, (struct sockaddr *) &remote, remote_length))
-		goto out;
+	{
+		remote_length = sizeof(remote.sun_family) + sprintf(remote.sun_path,
+			"/var/run/wpa_supplicant/%s", ifname);
+
+		if (connect(sock, (struct sockaddr *) &remote, remote_length))
+			goto out;
+	}
 
 	local.sun_family = AF_UNIX;
 	local_length = sizeof(local.sun_family) +
