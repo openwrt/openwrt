@@ -358,6 +358,7 @@ enable_broadcom() {
 		[ "$ifname" != "${ifname##${device}-}" ] && if_cmd="if_up"
 		append $if_cmd "macaddr=\$(wlc ifname '$ifname' cur_etheraddr)" ";$N"
 		append $if_cmd "ifconfig '$ifname' \${macaddr:+hw ether \$macaddr}" ";$N"
+		append if_up "ifconfig '$ifname' up" ";$N"
 
 		local net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
