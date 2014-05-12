@@ -1,0 +1,43 @@
+From: Tim Harvey <tharvey@gateworks.com>
+Subject: [PATCH] PCI: imx6: add support for legacy irqs
+
+The i.MX6 supports legacy IRQ's via 155,154,153,152.  When devices
+are behind a PCIe-to-PCIe switch (at least for the TI XIO2001) the 
+mapping is reversed from when they are behind a PCIe switch.
+
+This patch still needs some review and clarification before going
+upstream.
+---
+ drivers/pci/host/pcie-designware.c | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+--- a/drivers/pci/host/pcie-designware.c
++++ b/drivers/pci/host/pcie-designware.c
+@@ -739,7 +739,26 @@ static int dw_pcie_map_irq(const struct
+ {
+ 	struct pcie_port *pp = sys_to_pcie(dev->bus->sysdata);
+ 
+-	return pp->irq;
++	/* TI XIO2001 PCIe-to-PCI bridge IRQs are flipped it seems */
++	if ( dev->bus && dev->bus->self
++	 && (dev->bus->self->vendor == 0x104c)
++	 && (dev->bus->self->device == 0x8240)) {
++		switch (pin) {
++		case 1: return pp->irq - 3;
++		case 2: return pp->irq - 2;
++		case 3: return pp->irq - 1;
++		case 4: return pp->irq;
++		default: return -1;
++		}
++	} else {
++		switch (pin) {
++		case 1: return pp->irq;
++		case 2: return pp->irq - 1;
++		case 3: return pp->irq - 2;
++		case 4: return pp->irq - 3;
++		default: return -1;
++		}
++	}
+ }
+ 
+ static void dw_pcie_add_bus(struct pci_bus *bus)
