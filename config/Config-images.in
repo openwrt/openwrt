@@ -216,9 +216,8 @@ menu "Target Images"
 	config TARGET_ROOTFS_PARTNAME
 		string "Root partition on target device"
 		depends on OLPC_BOOTSCRIPT_IMAGES || GRUB_IMAGES
-		default "/dev/vda2" if TARGET_x86_kvm_guest
 		default "/dev/xvda2" if TARGET_x86_xen_domu
-		default "/dev/sda2" if ! (TARGET_x86_kvm_guest || TARGET_x86_xen_domu)
+		default "/dev/sda2" if ! TARGET_x86_xen_domu
 		help
 		  The root partition on the final device.  If you don't know,
 		  you probably want the default (/dev/sda2).
