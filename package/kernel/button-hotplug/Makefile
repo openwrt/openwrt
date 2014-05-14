@@ -23,7 +23,8 @@ define KernelPackage/button-hotplug
 endef
 
 define KernelPackage/button-hotplug/description
-  Kernel module to generate button hotplug events
+  Kernel module to generate button uevent-s from input subsystem events.
+  If your device uses GPIO buttons, see gpio-button-hotplug.
 endef
 
 EXTRA_KCONFIG:= \
