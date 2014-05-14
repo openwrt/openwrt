@@ -22,8 +22,14 @@ define KernelPackage/gpio-button-hotplug
   KCONFIG:=
 endef
 
-define KernelPackage/button-hotplug/description
-  Kernel module to generate GPIO button hotplug events
+define KernelPackage/gpio-button-hotplug/description
+ This is a replacement for the following in-kernel drivers:
+ 1) gpio_keys (KEYBOARD_GPIO)
+ 2) gpio_keys_polled (KEYBOARD_GPIO_POLLED)
+
+ Instead of generating input events (like in-kernel drivers do) it generates
+ uevent-s and broadcasts them. This allows disabling input subsystem which is
+ an overkill for OpenWrt simple needs.
 endef
 
 MAKE_OPTS:= \
