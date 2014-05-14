@@ -18,6 +18,7 @@ ifneq ($(IGNORE_ERRORS),)
   package-n-filter := $(filter-out $(package-y) $(package-m),$(package-))
   package-ignore-errors := $(filter n m y,$(IGNORE_ERRORS))
   package-ignore-errors := $(if $(package-ignore-errors),$(package-ignore-errors),n m)
+  $(curdir)/builddirs-ignore-download := $(foreach m,$(package-ignore-errors),$(package-$(m)-filter))
   $(curdir)/builddirs-ignore-compile := $(foreach m,$(package-ignore-errors),$(package-$(m)-filter))
 endif
 
