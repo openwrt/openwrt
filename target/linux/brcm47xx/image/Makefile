@@ -71,6 +71,15 @@ define Image/Build/Huawei
 	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx >> $(BIN_DIR)/openwrt-$(2)-$(3)-gz.bin
 endef
 
+# $(1): filesystem type.
+# $(2): device model (used for output file).
+# $(3): board_id (device specific magic).
+# $(4): region.
+# $(5): simplified filesystem type (without block size).
+define Image/Build/Chk
+	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/openwrt-$(2)-$(5).chk -k $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -b $(3) -r $(4)
+endef
+
 define trxalign/jffs2-128k
 -a 0x20000 -f $(KDIR)/root.$(1)
 endef
@@ -99,6 +108,16 @@ endef
 
 # $(1): filesystem type.
 define Image/Build/jffs2-64k
+	$(call Image/Build/Chk,$(1),wgr614_v8,U12H072T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr3300_v1,U12H093T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr3400_v2,U12H187T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr3700_v3,U12H194T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr4000,U12H181T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr834b_v2,U12H081T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr2000v2,U12H114T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr3500L,U12H136T99_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr3500v2,U12H127T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g-em,W3GN,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g,W54G,4.71.1,$(patsubst jffs2-%,jffs2,$(1)))
@@ -125,8 +144,11 @@ define Image/Build/jffs2-64k
 	$(call Image/Build/CyberTAN,$(1),e3000_v1,61XN,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),e3200_v1,3200,1.0.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),e4200_v1,4200,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Huawei,$(1),e970,$(1))
 	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),we800g,3,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
+	$(call Image/Build/USR,$(1),usr5461,$(1))
 	$(call Image/Build/Edi,$(1),ps1208mfg,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/dwl3150,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 endef
@@ -142,15 +164,6 @@ define Image/Build/Initramfs
 endef
 
 # $(1): filesystem type.
-# $(2): device model (used for output file).
-# $(3): board_id (device specific magic).
-# $(4): region.
-# $(5): simplified filesystem type (without block size).
-define Image/Build/Chk
-	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/openwrt-$(2)-$(5).chk -k $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -b $(3) -r $(4)
-endef
-
-# $(1): filesystem type.
 define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx \
 		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
@@ -159,22 +172,9 @@ define Image/Build
 		-f $(KDIR)/vmlinux.gz \
 		$(call trxalign/$(1),$(1))
 	$(call Image/Build/$(1),$(1))
-	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
-	$(call Image/Build/USR,$(1),usr5461,$(1))
-	$(call Image/Build/Huawei,$(1),e970,$(1))
-	$(call Image/Build/Chk,$(1),wgr614_v8,U12H072T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wgr614_v9,U12H094T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3300_v1,U12H093T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3400_v2,U12H187T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wndr3400_vcna,U12H155T01_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3700_v3,U12H194T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr4000,U12H181T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr834b_v2,U12H081T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr2000v2,U12H114T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500L,U12H136T99_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wnr3500U,U12H136T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500v2,U12H127T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wnr3500v2_VC,U12H127T70_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/Build/Initramfs)
