@@ -38,6 +38,11 @@ define Image/Build/dwl3150
 	echo "BCM-5352-2050-0000000-01" >> $(BIN_DIR)/openwrt-dwl3150-$(2).bin
 endef
 
+# $(1): filesystem type.
+# $(2): device model (used for output file).
+# $(3): pattern (device specific magic).
+# $(4): version.
+# $(5): simplified filesystem type (without block size).
 define Image/Build/CyberTAN
 	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
 endef
@@ -84,6 +89,7 @@ define Image/Build/trxV2
 	$(call Image/Build/CyberTAN2,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
 endef
 
+# $(1): filesystem type.
 define Image/Build/jffs2-128k
 	$(call Image/Build/CyberTAN,$(1),wrt54gs,W54S,4.80.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrtsl54gs,W54U,2.08.1,$(patsubst jffs2-%,jffs2,$(1)))
@@ -91,6 +97,7 @@ define Image/Build/jffs2-128k
 	$(call Image/Build/wgt634u,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 endef
 
+# $(1): filesystem type.
 define Image/Build/jffs2-64k
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g-em,W3GN,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
@@ -124,6 +131,7 @@ define Image/Build/jffs2-64k
 	$(call Image/Build/dwl3150,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 endef
 
+# $(1): filesystem type.
 define Image/Build/squashfs
 	$(call Image/Build/jffs2-64k,$(1))
 	$(call Image/Build/jffs2-128k,$(1))
@@ -133,10 +141,16 @@ define Image/Build/Initramfs
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-initramfs.trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux-initramfs.lzma
 endef
 
+# $(1): filesystem type.
+# $(2): device model (used for output file).
+# $(3): board_id (device specific magic).
+# $(4): region.
+# $(5): simplified filesystem type (without block size).
 define Image/Build/Chk
 	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/openwrt-$(2)-$(5).chk -k $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -b $(3) -r $(4)
 endef
 
+# $(1): filesystem type.
 define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx \
 		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
