@@ -11,7 +11,7 @@ define Profile/Broadcom-b44-none
 endef
 
 define Profile/Broadcom-b44-none/Description
-	Package set compatible with hardware older Broadcom BCM47xx or BCM535x 
+	Package set compatible with hardware older Broadcom BCM47xx or BCM535x
 	SoC without any Wifi cards and b44 Ethernet driver.
 endef
 $(eval $(call Profile,Broadcom-b44-none))

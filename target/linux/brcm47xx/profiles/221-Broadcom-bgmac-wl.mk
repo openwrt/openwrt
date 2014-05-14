@@ -11,8 +11,8 @@ define Profile/Broadcom-bgmac-wl
 endef
 
 define Profile/Broadcom-bgmac-wl/Description
-	Package set compatible with hardware newer Broadcom BCM47xx or BCM535x 
-	SoC with Broadcom BCM43xx Wifi cards using the proprietary Broadcom 
+	Package set compatible with hardware newer Broadcom BCM47xx or BCM535x
+	SoC with Broadcom BCM43xx Wifi cards using the proprietary Broadcom
 	wireless "wl" driver and bgmac Ethernet driver.
 endef
 

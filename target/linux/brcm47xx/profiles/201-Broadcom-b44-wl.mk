@@ -11,8 +11,8 @@ define Profile/Broadcom-b44-wl
 endef
 
 define Profile/Broadcom-b44-wl/Description
-	Package set compatible with hardware older Broadcom BCM47xx or BCM535x 
-	SoC with Broadcom BCM43xx Wifi cards using the proprietary Broadcom 
+	Package set compatible with hardware older Broadcom BCM47xx or BCM535x
+	SoC with Broadcom BCM43xx Wifi cards using the proprietary Broadcom
 	wireless "wl" driver and b44 Ethernet driver.
 endef
 

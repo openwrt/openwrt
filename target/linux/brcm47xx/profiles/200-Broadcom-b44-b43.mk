@@ -11,8 +11,8 @@ define Profile/Broadcom-b44-b43
 endef
 
 define Profile/Broadcom-b44-b43/Description
-	Package set compatible with hardware older Broadcom BCM47xx or BCM535x 
-	SoC with Broadcom BCM43xx Wifi cards using the mac80211, b43 and 
+	Package set compatible with hardware older Broadcom BCM47xx or BCM535x
+	SoC with Broadcom BCM43xx Wifi cards using the mac80211, b43 and
 	b43legacy drivers and b44 Ethernet driver.
 endef
 
