@@ -11,7 +11,7 @@ define Profile/Broadcom-none
 endef
 
 define Profile/Broadcom-none/Description
-	Package set compatible with hardware any Broadcom BCM47xx or BCM535x 
+	Package set compatible with hardware any Broadcom BCM47xx or BCM535x
 	SoC without any Wifi cards and b44, tg3 or bgmac Ethernet driver.
 endef
 $(eval $(call Profile,Broadcom-none))

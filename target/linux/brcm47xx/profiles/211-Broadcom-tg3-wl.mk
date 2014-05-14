@@ -12,7 +12,7 @@ endef
 
 define Profile/Broadcom-tg3-wl/Description
 	Package set compatible with hardware Broadcom BCM4705/BCM4785
-	SoC with Broadcom BCM43xx Wifi cards using the proprietary Broadcom 
+	SoC with Broadcom BCM43xx Wifi cards using the proprietary Broadcom
 	wireless "wl" driver and tg3 Ethernet driver.
 endef
 
