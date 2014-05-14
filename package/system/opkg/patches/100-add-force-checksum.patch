@@ -1,0 +1,85 @@
+--- a/libopkg/opkg_conf.c
++++ b/libopkg/opkg_conf.c
+@@ -54,6 +54,7 @@ opkg_option_t options[] = {
+ 	  { "force_reinstall", OPKG_OPT_TYPE_BOOL, &_conf.force_reinstall },
+ 	  { "force_space", OPKG_OPT_TYPE_BOOL, &_conf.force_space },
+ 	  { "force_postinstall", OPKG_OPT_TYPE_BOOL, &_conf.force_postinstall },
++	  { "force_checksum", OPKG_OPT_TYPE_BOOL, &_conf.force_checksum },
+           { "check_signature", OPKG_OPT_TYPE_BOOL, &_conf.check_signature },
+ 	  { "ftp_proxy", OPKG_OPT_TYPE_STRING, &_conf.ftp_proxy },
+ 	  { "http_proxy", OPKG_OPT_TYPE_STRING, &_conf.http_proxy },
+--- a/libopkg/opkg_conf.h
++++ b/libopkg/opkg_conf.h
+@@ -78,6 +78,7 @@ struct opkg_conf
+      int force_removal_of_essential_packages;
+      int force_postinstall;
+      int force_remove;
++     int force_checksum;
+      int check_signature;
+      int nodeps; /* do not follow dependencies */
+      int nocase; /* perform case insensitive matching */
+--- a/libopkg/opkg_install.c
++++ b/libopkg/opkg_install.c
+@@ -1327,12 +1327,19 @@ opkg_install_pkg(pkg_t *pkg, int from_up
+          file_md5 = file_md5sum_alloc(pkg->local_filename);
+          if (file_md5 && strcmp(file_md5, pkg->md5sum))
+          {
+-              opkg_msg(ERROR, "Package %s md5sum mismatch. "
+-			"Either the opkg or the package index are corrupt. "
+-			"Try 'opkg update'.\n",
+-			pkg->name);
+-              free(file_md5);
+-              return -1;
++              if (!conf->force_checksum)
++              {
++                  opkg_msg(ERROR, "Package %s md5sum mismatch. "
++			    "Either the opkg or the package index are corrupt. "
++			    "Try 'opkg update'.\n",
++			    pkg->name);
++                  free(file_md5);
++                  return -1;
++              }
++              else
++              {
++                  opkg_msg(NOTICE, "Ignored %s md5sum mismatch.\n", pkg->name);
++              }
+          }
+ 	 if (file_md5)
+               free(file_md5);
+--- a/src/opkg-cl.c
++++ b/src/opkg-cl.c
+@@ -42,6 +42,7 @@ enum {
+ 	ARGS_OPT_FORCE_SPACE,
+ 	ARGS_OPT_FORCE_POSTINSTALL,
+ 	ARGS_OPT_FORCE_REMOVE,
++	ARGS_OPT_FORCE_CHECKSUM,
+ 	ARGS_OPT_ADD_ARCH,
+ 	ARGS_OPT_ADD_DEST,
+ 	ARGS_OPT_NOACTION,
+@@ -84,6 +85,8 @@ static struct option long_options[] = {
+ 	{"force_postinstall", 0, 0, ARGS_OPT_FORCE_POSTINSTALL},
+ 	{"force-remove", 0, 0, ARGS_OPT_FORCE_REMOVE},
+ 	{"force_remove", 0, 0, ARGS_OPT_FORCE_REMOVE},
++	{"force-checksum", 0, 0, ARGS_OPT_FORCE_CHECKSUM},
++	{"force_checksum", 0, 0, ARGS_OPT_FORCE_CHECKSUM},
+ 	{"noaction", 0, 0, ARGS_OPT_NOACTION},
+ 	{"download-only", 0, 0, ARGS_OPT_DOWNLOAD_ONLY},
+ 	{"nodeps", 0, 0, ARGS_OPT_NODEPS},
+@@ -178,6 +181,9 @@ args_parse(int argc, char *argv[])
+ 		case ARGS_OPT_FORCE_REMOVE:
+ 			conf->force_remove = 1;
+ 			break;
++		case ARGS_OPT_FORCE_CHECKSUM:
++			conf->force_checksum = 1;
++			break;
+ 		case ARGS_OPT_NODEPS:
+ 			conf->nodeps = 1;
+ 			break;
+@@ -293,6 +299,7 @@ usage()
+ 	printf("\t--force-space		Disable free space checks\n");
+ 	printf("\t--force-postinstall	Run postinstall scripts even in offline mode\n");
+ 	printf("\t--force-remove	Remove package even if prerm script fails\n");
++	printf("\t--force-checksum	Don't fail on checksum mismatches\n");
+ 	printf("\t--noaction		No action -- test only\n");
+ 	printf("\t--download-only	No action -- download only\n");
+ 	printf("\t--nodeps		Do not follow dependencies\n");
