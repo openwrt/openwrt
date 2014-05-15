@@ -166,7 +166,7 @@ mac80211_hostapd_setup_base() {
 			append base_cfg "vht_oper_centr_freq_seg0_idx=$idx" "$N"
 		;;
 		VHT80)
-			case "$(( ($channel / 4) % 2 ))" in
+			case "$(( ($channel / 4) % 4 ))" in
 				1) idx=$(($channel + 6));;
 				2) idx=$(($channel + 2));;
 				3) idx=$(($channel - 2));;
