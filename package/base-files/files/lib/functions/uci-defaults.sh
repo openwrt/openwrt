@@ -172,6 +172,7 @@ ucidef_set_interface_lan() {
 	uci batch <<EOF
 set network.lan='interface'
 set network.lan.ifname='$ifname'
+set network.lan.force_link=1
 set network.lan.type='bridge'
 set network.lan.proto='static'
 set network.lan.ipaddr='192.168.1.1'
