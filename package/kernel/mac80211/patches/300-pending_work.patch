@@ -1,3 +1,26 @@
+commit 230ab8c1880266c9cfceac962e2d48309dea79a7
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Mon May 19 21:48:56 2014 +0200
+
+    ath9k: re-schedule rx processing after budget exceeded
+    
+    Should improve rx stability under load
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+commit 27647baeaee1b12bc3c57ccf1c7eba53bcd7fe53
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Mon May 19 21:20:49 2014 +0200
+
+    ath9k: avoid passing buffers to the hardware during flush
+    
+    The commit "ath9k: fix possible hang on flush" changed the receive code
+    to always link rx descriptors of processed frames, even when flushing.
+    In some cases, this leads to flushed rx buffers being passed to the
+    hardware while rx is already stopped.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 92e9dd662542683856e62a5e7e43fcf5b9da5c4a
 Author: Henning Rogge <hrogge@gmail.com>
 Date:   Thu May 1 10:03:46 2014 +0200
@@ -359,7 +382,97 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  		__skb_queue_head_init(&tid->retry_q);
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -975,6 +975,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+@@ -34,7 +34,8 @@ static inline bool ath9k_check_auto_slee
+  * buffer (or rx fifo). This can incorrectly acknowledge packets
+  * to a sender if last desc is self-linked.
+  */
+-static void ath_rx_buf_link(struct ath_softc *sc, struct ath_rxbuf *bf)
++static void ath_rx_buf_link(struct ath_softc *sc, struct ath_rxbuf *bf,
++			    bool flush)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+@@ -59,18 +60,19 @@ static void ath_rx_buf_link(struct ath_s
+ 			     common->rx_bufsize,
+ 			     0);
+ 
+-	if (sc->rx.rxlink == NULL)
+-		ath9k_hw_putrxbuf(ah, bf->bf_daddr);
+-	else
++	if (sc->rx.rxlink)
+ 		*sc->rx.rxlink = bf->bf_daddr;
++	else if (!flush)
++		ath9k_hw_putrxbuf(ah, bf->bf_daddr);
+ 
+ 	sc->rx.rxlink = &ds->ds_link;
+ }
+ 
+-static void ath_rx_buf_relink(struct ath_softc *sc, struct ath_rxbuf *bf)
++static void ath_rx_buf_relink(struct ath_softc *sc, struct ath_rxbuf *bf,
++			      bool flush)
+ {
+ 	if (sc->rx.buf_hold)
+-		ath_rx_buf_link(sc, sc->rx.buf_hold);
++		ath_rx_buf_link(sc, sc->rx.buf_hold, flush);
+ 
+ 	sc->rx.buf_hold = bf;
+ }
+@@ -106,7 +108,7 @@ static void ath_opmode_init(struct ath_s
+ }
+ 
+ static bool ath_rx_edma_buf_link(struct ath_softc *sc,
+-				 enum ath9k_rx_qtype qtype)
++				 enum ath9k_rx_qtype qtype, bool flush)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_rx_edma *rx_edma;
+@@ -127,7 +129,8 @@ static bool ath_rx_edma_buf_link(struct 
+ 				ah->caps.rx_status_len, DMA_TO_DEVICE);
+ 
+ 	SKB_CB_ATHBUF(skb) = bf;
+-	ath9k_hw_addrxbuf_edma(ah, bf->bf_buf_addr, qtype);
++	if (!flush)
++		ath9k_hw_addrxbuf_edma(ah, bf->bf_buf_addr, qtype);
+ 	__skb_queue_tail(&rx_edma->rx_fifo, skb);
+ 
+ 	return true;
+@@ -145,7 +148,7 @@ static void ath_rx_addbuffer_edma(struct
+ 	}
+ 
+ 	list_for_each_entry_safe(bf, tbf, &sc->rx.rxbuf, list)
+-		if (!ath_rx_edma_buf_link(sc, qtype))
++		if (!ath_rx_edma_buf_link(sc, qtype, false))
+ 			break;
+ 
+ }
+@@ -442,7 +445,7 @@ int ath_startrecv(struct ath_softc *sc)
+ 	sc->rx.buf_hold = NULL;
+ 	sc->rx.rxlink = NULL;
+ 	list_for_each_entry_safe(bf, tbf, &sc->rx.rxbuf, list) {
+-		ath_rx_buf_link(sc, bf);
++		ath_rx_buf_link(sc, bf, false);
+ 	}
+ 
+ 	/* We could have deleted elements so the list may be empty now */
+@@ -636,7 +639,7 @@ static bool ath_edma_get_buffers(struct 
+ 	if (ret == -EINVAL) {
+ 		/* corrupt descriptor, skip this one and the following one */
+ 		list_add_tail(&bf->list, &sc->rx.rxbuf);
+-		ath_rx_edma_buf_link(sc, qtype);
++		ath_rx_edma_buf_link(sc, qtype, false);
+ 
+ 		skb = skb_peek(&rx_edma->rx_fifo);
+ 		if (skb) {
+@@ -645,7 +648,7 @@ static bool ath_edma_get_buffers(struct 
+ 
+ 			__skb_unlink(skb, &rx_edma->rx_fifo);
+ 			list_add_tail(&bf->list, &sc->rx.rxbuf);
+-			ath_rx_edma_buf_link(sc, qtype);
++			ath_rx_edma_buf_link(sc, qtype, false);
+ 		}
+ 
+ 		bf = NULL;
+@@ -975,6 +978,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
  	u64 tsf = 0;
  	unsigned long flags;
  	dma_addr_t new_buf_addr;
@@ -367,7 +480,7 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  
  	if (edma)
  		dma_type = DMA_BIDIRECTIONAL;
-@@ -1113,15 +1114,17 @@ requeue_drop_frag:
+@@ -1113,15 +1117,17 @@ requeue_drop_frag:
  		}
  requeue:
  		list_add_tail(&bf->list, &sc->rx.rxbuf);
@@ -375,10 +488,12 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
 -			continue;
  
  		if (edma) {
- 			ath_rx_edma_buf_link(sc, qtype);
+-			ath_rx_edma_buf_link(sc, qtype);
++			ath_rx_edma_buf_link(sc, qtype, flush);
  		} else {
- 			ath_rx_buf_relink(sc, bf);
+-			ath_rx_buf_relink(sc, bf);
 -			ath9k_hw_rxena(ah);
++			ath_rx_buf_relink(sc, bf, flush);
 +			if (!flush)
 +				ath9k_hw_rxena(ah);
  		}
@@ -388,6 +503,13 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  	} while (1);
  
  	if (!(ah->imask & ATH9K_INT_RXEOL)) {
+@@ -1129,5 +1135,5 @@ requeue:
+ 		ath9k_hw_set_interrupts(ah);
+ 	}
+ 
+-	return 0;
++	return !budget;
+ }
 --- a/drivers/net/wireless/ath/ath9k/ahb.c
 +++ b/drivers/net/wireless/ath/ath9k/ahb.c
 @@ -86,7 +86,6 @@ static int ath_ahb_probe(struct platform
@@ -565,3 +687,49 @@ Date:   Sun Apr 6 23:35:28 2014 +0200
  				sta->last_rx_rate_idx = status->rate_idx;
  				sta->last_rx_rate_flag = status->flag;
  				sta->last_rx_rate_vht_flag = status->vht_flag;
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -442,6 +442,8 @@ void ath9k_tasklet(unsigned long data)
+ 	ath9k_ps_wakeup(sc);
+ 	spin_lock(&sc->sc_pcu_lock);
+ 
++	sc->intrstatus = 0;
++
+ 	if (status & ATH9K_INT_FATAL) {
+ 		type = RESET_TYPE_FATAL_INT;
+ 		ath9k_queue_reset(sc, type);
+@@ -510,10 +512,12 @@ void ath9k_tasklet(unsigned long data)
+ 	if (status & rxmask) {
+ 		/* Check for high priority Rx first */
+ 		if ((ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) &&
+-		    (status & ATH9K_INT_RXHP))
+-			ath_rx_tasklet(sc, 0, true);
++		    (status & ATH9K_INT_RXHP) &&
++		    ath_rx_tasklet(sc, 0, true))
++			sc->intrstatus |= ATH9K_INT_RXHP;
+ 
+-		ath_rx_tasklet(sc, 0, false);
++		if (ath_rx_tasklet(sc, 0, false))
++			sc->intrstatus |= ATH9K_INT_RXLP;
+ 	}
+ 
+ 	if (status & ATH9K_INT_TX) {
+@@ -541,6 +545,9 @@ void ath9k_tasklet(unsigned long data)
+ 
+ 	/* re-enable hardware interrupt */
+ 	ath9k_hw_enable_interrupts(ah);
++	if (sc->intrstatus)
++		tasklet_schedule(&sc->intr_tq);
++
+ out:
+ 	spin_unlock(&sc->sc_pcu_lock);
+ 	ath9k_ps_restore(sc);
+@@ -607,7 +614,7 @@ irqreturn_t ath_isr(int irq, void *dev)
+ 		return IRQ_NONE;
+ 
+ 	/* Cache the status */
+-	sc->intrstatus = status;
++	sc->intrstatus |= status;
+ 
+ 	if (status & SCHED_INTR)
+ 		sched = true;
