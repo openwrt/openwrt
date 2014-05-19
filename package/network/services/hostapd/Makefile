@@ -225,6 +225,15 @@ define Package/hostapd-common-old
   CATEGORY:=Network
 endef
 
+define Package/eapol-test
+  TITLE:=802.1x authentication test utility
+  SECTION:=net
+  CATEGORY:=Network
+  VARIANT:=supplicant-full
+  DEPENDS:=$(DRV_DEPENDS)
+endef
+
+
 ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   define Build/Configure/rebuild
 	$(FIND) $(PKG_BUILD_DIR) -name \*.o -or -name \*.a | $(XARGS) rm -f
@@ -309,8 +318,15 @@ define Build/Compile/supplicant
 	)
 endef
 
+define Build/Compile/supplicant-full
+	$(call Build/RunMake,wpa_supplicant, \
+		eapol_test \
+	)
+endef
+
 define Build/Compile
 	$(Build/Compile/$(LOCAL_TYPE))
+	$(Build/Compile/$(BUILD_VARIANT))
 endef
 
 define Install/hostapd
@@ -369,6 +385,13 @@ ifneq ($(LOCAL_TYPE),hostapd)
   endef
 endif
 
+ifeq ($(BUILD_VARIANT),supplicant-full)
+  define Package/eapol-test/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/eapol_test $(1)/usr/sbin/
+  endef
+endif
+
 $(eval $(call BuildPackage,hostapd))
 $(eval $(call BuildPackage,hostapd-mini))
 $(eval $(call BuildPackage,wpad))
@@ -380,3 +403,4 @@ $(eval $(call BuildPackage,wpa-cli))
 $(eval $(call BuildPackage,hostapd-utils))
 $(eval $(call BuildPackage,hostapd-common))
 $(eval $(call BuildPackage,hostapd-common-old))
+$(eval $(call BuildPackage,eapol-test))

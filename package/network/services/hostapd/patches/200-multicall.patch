@@ -242,3 +242,35 @@
  #ifdef CONFIG_DRIVER_WEXT
  extern struct wpa_driver_ops wpa_driver_wext_ops; /* driver_wext.c */
  #endif /* CONFIG_DRIVER_WEXT */
+--- a/wpa_supplicant/eapol_test.c
++++ b/wpa_supplicant/eapol_test.c
+@@ -28,8 +28,12 @@
+ #include "ctrl_iface.h"
+ #include "pcsc_funcs.h"
+ #include "wpas_glue.h"
++#include "drivers/driver.h"
+ 
+ 
++void (*wpa_supplicant_event)(void *ctx, enum wpa_event_type event,
++			     union wpa_event_data *data);
++
+ struct wpa_driver_ops *wpa_drivers[] = { NULL };
+ 
+ 
+@@ -1140,6 +1144,8 @@ static void usage(void)
+ 	       "option several times.\n");
+ }
+ 
++extern void supplicant_event(void *ctx, enum wpa_event_type event,
++			     union wpa_event_data *data);
+ 
+ int main(int argc, char *argv[])
+ {
+@@ -1158,6 +1164,7 @@ int main(int argc, char *argv[])
+ 	if (os_program_init())
+ 		return -1;
+ 
++	wpa_supplicant_event = supplicant_event;
+ 	hostapd_logger_register_cb(hostapd_logger_cb);
+ 
+ 	os_memset(&eapol_test, 0, sizeof(eapol_test));
