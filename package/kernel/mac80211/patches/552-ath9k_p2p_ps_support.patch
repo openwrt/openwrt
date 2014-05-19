@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return true;
  }
  
-@@ -1128,6 +1130,8 @@ static int ath9k_add_interface(struct ie
+@@ -1135,6 +1137,8 @@ static int ath9k_add_interface(struct ie
  	if (ath9k_uses_beacons(vif->type))
  		ath9k_beacon_assign_slot(sc, vif);
  
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	an->sc = sc;
  	an->sta = NULL;
  	an->vif = vif;
-@@ -1172,6 +1176,29 @@ static int ath9k_change_interface(struct
+@@ -1179,6 +1183,29 @@ static int ath9k_change_interface(struct
  	return 0;
  }
  
@@ -66,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static void ath9k_remove_interface(struct ieee80211_hw *hw,
  				   struct ieee80211_vif *vif)
  {
-@@ -1183,6 +1210,13 @@ static void ath9k_remove_interface(struc
+@@ -1190,6 +1217,13 @@ static void ath9k_remove_interface(struc
  
  	mutex_lock(&sc->mutex);
  
@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	sc->nvifs--;
  	sc->tx99_vif = NULL;
  
-@@ -1649,6 +1683,72 @@ static void ath9k_bss_assoc_iter(void *d
+@@ -1656,6 +1690,72 @@ static void ath9k_bss_assoc_iter(void *d
  		ath9k_set_assoc_state(sc, vif);
  }
  
@@ -153,7 +153,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static void ath9k_bss_info_changed(struct ieee80211_hw *hw,
  				   struct ieee80211_vif *vif,
  				   struct ieee80211_bss_conf *bss_conf,
-@@ -1723,6 +1823,12 @@ static void ath9k_bss_info_changed(struc
+@@ -1730,6 +1830,12 @@ static void ath9k_bss_info_changed(struc
  		}
  	}
  
@@ -237,7 +237,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++)
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -539,6 +539,9 @@ static void ath_rx_ps_beacon(struct ath_
+@@ -542,6 +542,9 @@ static void ath_rx_ps_beacon(struct ath_
  		ath_dbg(common, PS,
  			"Reconfigure beacon timers based on synchronized timestamp\n");
  		ath9k_set_beacon(sc);
