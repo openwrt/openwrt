@@ -36,7 +36,7 @@ drv_mac80211_init_device_config() {
 		htc_vht \
 		rx_antenna_pattern \
 		tx_antenna_pattern
-	config_add_int vht_max_mpdu vht_max_rx_stbc vht_link_adapt vht160
+	config_add_int vht_max_mpdu vht_link_adapt vht160 rx_stbc tx_stbc
 }
 
 drv_mac80211_init_iface_config() {
@@ -142,7 +142,7 @@ mac80211_hostapd_setup_base() {
 			GF:0x10::$greenfield \
 			SHORT-GI-20:0x20::$short_gi_20 \
 			SHORT-GI-40:0x40::$short_gi_40 \
-			TX-STBC:0x80::$max_tx_stbc \
+			TX-STBC:0x80::$tx_stbc \
 			RX-STBC1:0x300:0x100:1 \
 			RX-STBC12:0x300:0x200:1 \
 			RX-STBC123:0x300:0x300:1 \
@@ -204,6 +204,7 @@ mac80211_hostapd_setup_base() {
 			tx_antenna_pattern:1 \
 			vht_max_mpdu:11454 \
 			rx_stbc:4 \
+			tx_stbc:4 \
 			vht_link_adapt:3 \
 			vht160:2
 
