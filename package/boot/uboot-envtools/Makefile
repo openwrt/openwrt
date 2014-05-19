@@ -9,15 +9,15 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
-PKG_VERSION:=2013.10
-PKG_RELEASE:=3
+PKG_VERSION:=2014.04
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
 
-PKG_MD5SUM:=a076a044b64371edc52f7e562b13f6b2
+PKG_MD5SUM:=6d2116d1385a66e9a59742caa9d62a54
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/u-boot-$(PKG_VERSION)
 
@@ -35,14 +35,14 @@ define Package/uboot-envtools/description
 endef
 
 define Build/Configure
+	touch $(PKG_BUILD_DIR)/include/config.mk
+	touch $(PKG_BUILD_DIR)/include/config.h
 endef
 
 define Build/Compile
-	touch $(PKG_BUILD_DIR)/include/config.h
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		HOSTCC="$(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)gcc" \
-		HOSTOPTFLAGS="$(TARGET_CFLAGS)" \
-		HOSTSTRIP="$(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)strip" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		TARGET_CFLAGS="$(TARGET_CFLAGS)" \
 		env
 endef
 
