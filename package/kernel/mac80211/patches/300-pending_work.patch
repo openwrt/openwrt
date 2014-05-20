@@ -1,13 +1,3 @@
-commit 230ab8c1880266c9cfceac962e2d48309dea79a7
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Mon May 19 21:48:56 2014 +0200
-
-    ath9k: re-schedule rx processing after budget exceeded
-    
-    Should improve rx stability under load
-    
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
-
 commit ff9655bebd25d35ab13c2515a029723b69949720
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Mon May 19 21:20:49 2014 +0200
@@ -4328,52 +4318,6 @@ Date:   Tue Apr 29 17:52:36 2014 +0200
  		/* Finally check that all iftypes that we're currently
  		 * using are actually part of this combination. If they
  		 * aren't then we can't use this combination and have
---- a/drivers/net/wireless/ath/ath9k/main.c
-+++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -444,6 +444,8 @@ void ath9k_tasklet(unsigned long data)
- 	ath9k_ps_wakeup(sc);
- 	spin_lock(&sc->sc_pcu_lock);
- 
-+	sc->intrstatus = 0;
-+
- 	if (status & ATH9K_INT_FATAL) {
- 		type = RESET_TYPE_FATAL_INT;
- 		ath9k_queue_reset(sc, type);
-@@ -512,10 +514,12 @@ void ath9k_tasklet(unsigned long data)
- 	if (status & rxmask) {
- 		/* Check for high priority Rx first */
- 		if ((ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) &&
--		    (status & ATH9K_INT_RXHP))
--			ath_rx_tasklet(sc, 0, true);
-+		    (status & ATH9K_INT_RXHP) &&
-+		    ath_rx_tasklet(sc, 0, true))
-+			sc->intrstatus |= ATH9K_INT_RXHP;
- 
--		ath_rx_tasklet(sc, 0, false);
-+		if (ath_rx_tasklet(sc, 0, false))
-+			sc->intrstatus |= ATH9K_INT_RXLP;
- 	}
- 
- 	if (status & ATH9K_INT_TX) {
-@@ -543,6 +547,9 @@ void ath9k_tasklet(unsigned long data)
- 
- 	/* re-enable hardware interrupt */
- 	ath9k_hw_enable_interrupts(ah);
-+	if (sc->intrstatus)
-+		tasklet_schedule(&sc->intr_tq);
-+
- out:
- 	spin_unlock(&sc->sc_pcu_lock);
- 	ath9k_ps_restore(sc);
-@@ -609,7 +616,7 @@ irqreturn_t ath_isr(int irq, void *dev)
- 		return IRQ_NONE;
- 
- 	/* Cache the status */
--	sc->intrstatus = status;
-+	sc->intrstatus |= status;
- 
- 	if (status & SCHED_INTR)
- 		sched = true;
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
 @@ -34,7 +34,8 @@ static inline bool ath9k_check_auto_slee
@@ -4437,10 +4381,3 @@ Date:   Tue Apr 29 17:52:36 2014 +0200
  		}
  
  		if (!budget--)
-@@ -1135,5 +1137,5 @@ requeue:
- 		ath9k_hw_set_interrupts(ah);
- 	}
- 
--	return 0;
-+	return !budget;
- }
