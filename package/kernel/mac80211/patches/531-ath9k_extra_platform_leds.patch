@@ -1,9 +1,9 @@
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
-@@ -37,6 +37,9 @@ struct ath9k_platform_data {
- 
- 	int (*get_mac_revision)(void);
+@@ -39,6 +39,9 @@ struct ath9k_platform_data {
  	int (*external_reset)(void);
+ 
+ 	bool use_eeprom;
 +
 +	int num_leds;
 +	const struct gpio_led *leds;

@@ -10,11 +10,11 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2014-03-31
+PKG_VERSION:=2014-05-19
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_BACKPORT_VERSION:=
-PKG_MD5SUM:=8b5cf82d6defc5867511014af4afc0b6
+PKG_MD5SUM:=ff5426bf85668c3c36c7f602adeb1e5b
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION)$(PKG_BACKPORT_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -357,7 +357,7 @@ define KernelPackage/rtl8180
   $(call KernelPackage/rtl818x/Default)
   DEPENDS+= @PCI_SUPPORT
   TITLE+= (RTL8180 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180/rtl8180.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180/rtl818x_pci.ko
   AUTOLOAD:=$(call AutoProbe,rtl8180)
 endef
 

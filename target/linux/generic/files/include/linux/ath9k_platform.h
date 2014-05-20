@@ -40,6 +40,8 @@ struct ath9k_platform_data {
 	int (*get_mac_revision)(void);
 	int (*external_reset)(void);
 
+	bool use_eeprom;
+
 	int num_leds;
 	const struct gpio_led *leds;
 };

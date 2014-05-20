@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -216,6 +216,19 @@ void ath9k_hw_get_channel_centers(struct
+@@ -215,6 +215,19 @@ void ath9k_hw_get_channel_centers(struct
  		centers->synth_center + (extoff * HT40_CHANNEL_CENTER_SHIFT);
  }
  
@@ -20,7 +20,7 @@
  /******************/
  /* Chip Revisions */
  /******************/
-@@ -1336,6 +1349,9 @@ static bool ath9k_hw_set_reset(struct at
+@@ -1337,6 +1350,9 @@ static bool ath9k_hw_set_reset(struct at
  	if (AR_SREV_9100(ah))
  		udelay(50);
  
@@ -30,7 +30,7 @@
  	return true;
  }
  
-@@ -1435,6 +1451,9 @@ static bool ath9k_hw_chip_reset(struct a
+@@ -1436,6 +1452,9 @@ static bool ath9k_hw_chip_reset(struct a
  		ar9003_hw_internal_regulator_apply(ah);
  	ath9k_hw_init_pll(ah, chan);
  
@@ -40,7 +40,7 @@
  	return true;
  }
  
-@@ -1729,8 +1748,14 @@ static int ath9k_hw_do_fastcc(struct ath
+@@ -1730,8 +1749,14 @@ static int ath9k_hw_do_fastcc(struct ath
  	if (AR_SREV_9271(ah))
  		ar9002_hw_load_ani_reg(ah, chan);
  
@@ -55,7 +55,7 @@
  	return -EINVAL;
  }
  
-@@ -1958,6 +1983,9 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -1959,6 +1984,9 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  	if (AR_SREV_9565(ah) && common->bt_ant_diversity)
  		REG_SET_BIT(ah, AR_BTCOEX_WL_LNADIV, AR_BTCOEX_WL_LNADIV_FORCE_ON);
  
