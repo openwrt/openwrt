@@ -88,22 +88,22 @@ Signed-off-by: Arik Nemtsov <arik@wizery.com>
  static int wl1271_probe(struct sdio_func *func,
  				  const struct sdio_device_id *id)
  {
-@@ -248,12 +304,9 @@ static int wl1271_probe(struct sdio_func
+@@ -245,10 +301,10 @@ static int wl1271_probe(struct sdio_func
  	/* Use block mode for transferring over one block size of data */
  	func->card->quirks |= MMC_QUIRK_BLKSZ_FOR_BYTE_MODE;
  
--	pdev_data->pdata = wl12xx_get_platform_data();
--	if (IS_ERR(pdev_data->pdata)) {
--		ret = PTR_ERR(pdev_data->pdata);
+-	pdev_data.pdata = wl12xx_get_platform_data();
+-	if (IS_ERR(pdev_data.pdata)) {
+-		ret = PTR_ERR(pdev_data.pdata);
 -		dev_err(glue->dev, "missing wlan platform data: %d\n", ret);
-+	pdev_data->pdata = get_platform_data(&func->dev);
-+	if (!(pdev_data->pdata))
++	pdev_data.pdata = get_platform_data(&func->dev);
++	if (!pdev_data.pdata) {
++		ret = -EINVAL;
++		dev_err(glue->dev, "missing wlan platform data\n");
  		goto out_free_glue;
--	}
+ 	}
  
- 	/* if sdio can keep power while host is suspended, enable wow */
- 	mmcflags = sdio_get_host_pm_caps(func);
-@@ -282,7 +335,7 @@ static int wl1271_probe(struct sdio_func
+@@ -279,7 +335,7 @@ static int wl1271_probe(struct sdio_func
  	if (!glue->core) {
  		dev_err(glue->dev, "can't allocate platform_device");
  		ret = -ENOMEM;
@@ -112,7 +112,7 @@ Signed-off-by: Arik Nemtsov <arik@wizery.com>
  	}
  
  	glue->core->dev.parent = &func->dev;
-@@ -316,6 +369,9 @@ static int wl1271_probe(struct sdio_func
+@@ -313,6 +369,9 @@ static int wl1271_probe(struct sdio_func
  out_dev_put:
  	platform_device_put(glue->core);
  
@@ -122,7 +122,7 @@ Signed-off-by: Arik Nemtsov <arik@wizery.com>
  out_free_glue:
  	kfree(glue);
  
-@@ -329,11 +385,14 @@ out:
+@@ -323,11 +382,14 @@ out:
  static void wl1271_remove(struct sdio_func *func)
  {
  	struct wl12xx_sdio_glue *glue = sdio_get_drvdata(func);

@@ -19,7 +19,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/net/wireless/b43/b43.h
 +++ b/drivers/net/wireless/b43/b43.h
-@@ -1061,6 +1061,31 @@ static inline bool b43_using_pio_transfe
+@@ -1054,6 +1054,31 @@ static inline bool b43_using_pio_transfe
  	return dev->__using_pio_transfers;
  }
  
@@ -53,9 +53,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  __printf(2, 3) void b43err(struct b43_wl *wl, const char *fmt, ...);
 --- a/drivers/net/wireless/b43/bus.h
 +++ b/drivers/net/wireless/b43/bus.h
-@@ -60,6 +60,16 @@ static inline bool b43_bus_host_is_sdio(
- 	return (dev->bus_type == B43_BUS_SSB &&
- 		dev->sdev->bus->bustype == SSB_BUSTYPE_SDIO);
+@@ -70,6 +70,16 @@ static inline bool b43_bus_host_is_sdio(
+ 	return false;
+ #endif
  }
 +static inline bool b43_bus_host_is_pci(struct b43_bus_dev *dev)
 +{
@@ -72,7 +72,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  struct b43_bus_dev *b43_bus_dev_ssb_init(struct ssb_device *sdev);
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -4437,7 +4437,7 @@ static int b43_phy_versioning(struct b43
+@@ -4370,7 +4370,7 @@ static int b43_phy_versioning(struct b43
  		u16 radio24[3];
  
  		for (tmp = 0; tmp < 3; tmp++) {
@@ -81,7 +81,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  			radio24[tmp] = b43_read16(dev, B43_MMIO_RADIO24_DATA);
  		}
  
-@@ -4456,10 +4456,10 @@ static int b43_phy_versioning(struct b43
+@@ -4389,10 +4389,10 @@ static int b43_phy_versioning(struct b43
  			else
  				tmp = 0x5205017F;
  		} else {
@@ -96,7 +96,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  				<< 16;
 --- a/drivers/net/wireless/b43/phy_common.c
 +++ b/drivers/net/wireless/b43/phy_common.c
-@@ -266,6 +266,12 @@ void b43_phy_write(struct b43_wldev *dev
+@@ -267,6 +267,12 @@ void b43_phy_write(struct b43_wldev *dev
  {
  	assert_mac_suspended(dev);
  	dev->phy.ops->phy_write(dev, reg, value);
@@ -197,7 +197,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 --- a/drivers/net/wireless/b43/phy_n.c
 +++ b/drivers/net/wireless/b43/phy_n.c
-@@ -5418,14 +5418,14 @@ static inline void check_phyreg(struct b
+@@ -5641,14 +5641,14 @@ static inline void check_phyreg(struct b
  static u16 b43_nphy_op_read(struct b43_wldev *dev, u16 reg)
  {
  	check_phyreg(dev, reg);
@@ -214,7 +214,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_write16(dev, B43_MMIO_PHY_DATA, value);
  }
  
-@@ -5433,7 +5433,7 @@ static void b43_nphy_op_maskset(struct b
+@@ -5656,7 +5656,7 @@ static void b43_nphy_op_maskset(struct b
  				 u16 set)
  {
  	check_phyreg(dev, reg);
@@ -223,16 +223,16 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_maskset16(dev, B43_MMIO_PHY_DATA, mask, set);
  }
  
-@@ -5444,7 +5444,7 @@ static u16 b43_nphy_op_radio_read(struct
- 	/* N-PHY needs 0x100 for read access */
- 	reg |= 0x100;
+@@ -5670,7 +5670,7 @@ static u16 b43_nphy_op_radio_read(struct
+ 	else
+ 		reg |= 0x100;
  
 -	b43_write16(dev, B43_MMIO_RADIO_CONTROL, reg);
 +	b43_wflush16(dev, B43_MMIO_RADIO_CONTROL, reg);
  	return b43_read16(dev, B43_MMIO_RADIO_DATA_LOW);
  }
  
-@@ -5453,7 +5453,7 @@ static void b43_nphy_op_radio_write(stru
+@@ -5679,7 +5679,7 @@ static void b43_nphy_op_radio_write(stru
  	/* Register 1 is a 32-bit register. */
  	B43_WARN_ON(reg == 1);
  

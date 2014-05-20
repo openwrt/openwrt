@@ -10,7 +10,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -3959,6 +3959,9 @@ static u8 rt2800_compensate_txpower(stru
+@@ -3958,6 +3958,9 @@ static u8 rt2800_compensate_txpower(stru
  	if (rt2x00_rt(rt2x00dev, RT3593))
  		return min_t(u8, txpower, 0xc);
  

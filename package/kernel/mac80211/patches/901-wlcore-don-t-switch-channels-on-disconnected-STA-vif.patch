@@ -13,7 +13,7 @@ Signed-off-by: Arik Nemtsov <arik@wizery.com>
 
 --- a/drivers/net/wireless/ti/wlcore/main.c
 +++ b/drivers/net/wireless/ti/wlcore/main.c
-@@ -5181,6 +5181,10 @@ static void wl12xx_op_channel_switch(str
+@@ -5148,6 +5148,10 @@ static void wl12xx_op_channel_switch(str
  	if (unlikely(wl->state == WLCORE_STATE_OFF)) {
  		wl12xx_for_each_wlvif_sta(wl, wlvif) {
  			struct ieee80211_vif *vif = wl12xx_wlvif_to_vif(wlvif);
@@ -24,7 +24,7 @@ Signed-off-by: Arik Nemtsov <arik@wizery.com>
  			ieee80211_chswitch_done(vif, false);
  		}
  		goto out;
-@@ -5196,6 +5200,9 @@ static void wl12xx_op_channel_switch(str
+@@ -5163,6 +5167,9 @@ static void wl12xx_op_channel_switch(str
  	wl12xx_for_each_wlvif_sta(wl, wlvif) {
  		unsigned long delay_usec;
  

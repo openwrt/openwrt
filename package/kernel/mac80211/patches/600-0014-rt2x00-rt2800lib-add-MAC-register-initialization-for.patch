@@ -35,7 +35,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  #define RX_FILTER_CFG			0x1400
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -4973,6 +4973,12 @@ static int rt2800_init_registers(struct
+@@ -4972,6 +4972,12 @@ static int rt2800_init_registers(struct 
  			rt2800_register_write(rt2x00dev, TX_SW_CFG2,
  					      0x00000000);
  		}
@@ -48,7 +48,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	} else if (rt2x00_rt(rt2x00dev, RT5390) ||
  		   rt2x00_rt(rt2x00dev, RT5392) ||
  		   rt2x00_rt(rt2x00dev, RT5592)) {
-@@ -5003,9 +5009,11 @@ static int rt2800_init_registers(struct
+@@ -5002,9 +5008,11 @@ static int rt2800_init_registers(struct 
  
  	rt2800_register_read(rt2x00dev, MAX_LEN_CFG, &reg);
  	rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_MPDU, AGGREGATION_SIZE);
@@ -63,7 +63,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 2);
  	else
  		rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 1);
-@@ -5158,6 +5166,11 @@ static int rt2800_init_registers(struct
+@@ -5157,6 +5165,11 @@ static int rt2800_init_registers(struct 
  	reg = rt2x00_rt(rt2x00dev, RT5592) ? 0x00000082 : 0x00000002;
  	rt2800_register_write(rt2x00dev, TXOP_HLDR_ET, reg);
  

@@ -79,8 +79,8 @@ Changes since v1: ---
 +	rt2800_shared_mem_unlock(rt2x00dev);
  
  	/*
- 	 * Enable beaconing again.
-@@ -1027,6 +1039,8 @@ static inline void rt2800_clear_beacon_r
+ 	 * Restore beaconing state.
+@@ -1026,6 +1038,8 @@ static inline void rt2800_clear_beacon_r
  
  	beacon_base = rt2800_hw_beacon_base(rt2x00dev, index);
  
@@ -89,7 +89,7 @@ Changes since v1: ---
  	/*
  	 * For the Beacon base registers we only need to clear
  	 * the whole TXWI which (when set to 0) will invalidate
-@@ -1034,6 +1048,8 @@ static inline void rt2800_clear_beacon_r
+@@ -1033,6 +1047,8 @@ static inline void rt2800_clear_beacon_r
  	 */
  	for (i = 0; i < txwi_desc_size; i += sizeof(__le32))
  		rt2800_register_write(rt2x00dev, beacon_base + i, 0);
@@ -98,7 +98,7 @@ Changes since v1: ---
  }
  
  void rt2800_clear_beacon(struct queue_entry *entry)
-@@ -1217,7 +1233,9 @@ static void rt2800_delete_wcid_attr(stru
+@@ -1216,7 +1232,9 @@ static void rt2800_delete_wcid_attr(stru
  {
  	u32 offset;
  	offset = MAC_WCID_ATTR_ENTRY(wcid);
@@ -108,7 +108,7 @@ Changes since v1: ---
  }
  
  static void rt2800_config_wcid_attr_bssidx(struct rt2x00_dev *rt2x00dev,
-@@ -1230,11 +1248,13 @@ static void rt2800_config_wcid_attr_bssi
+@@ -1229,11 +1247,13 @@ static void rt2800_config_wcid_attr_bssi
  	 * The BSS Idx numbers is split in a main value of 3 bits,
  	 * and a extended field for adding one additional bit to the value.
  	 */
@@ -122,7 +122,7 @@ Changes since v1: ---
  }
  
  static void rt2800_config_wcid_attr_cipher(struct rt2x00_dev *rt2x00dev,
-@@ -1247,6 +1267,7 @@ static void rt2800_config_wcid_attr_ciph
+@@ -1246,6 +1266,7 @@ static void rt2800_config_wcid_attr_ciph
  
  	offset = MAC_WCID_ATTR_ENTRY(key->hw_key_idx);
  
@@ -130,7 +130,7 @@ Changes since v1: ---
  	if (crypto->cmd == SET_KEY) {
  		rt2800_register_read(rt2x00dev, offset, &reg);
  		rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_KEYTAB,
-@@ -1271,6 +1292,7 @@ static void rt2800_config_wcid_attr_ciph
+@@ -1270,6 +1291,7 @@ static void rt2800_config_wcid_attr_ciph
  		rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_RX_WIUDF, 0);
  		rt2800_register_write(rt2x00dev, offset, reg);
  	}
@@ -138,7 +138,7 @@ Changes since v1: ---
  
  	offset = MAC_IVEIV_ENTRY(key->hw_key_idx);
  
-@@ -1280,8 +1302,11 @@ static void rt2800_config_wcid_attr_ciph
+@@ -1279,8 +1301,11 @@ static void rt2800_config_wcid_attr_ciph
  	    (crypto->cipher == CIPHER_AES))
  		iveiv_entry.iv[3] |= 0x20;
  	iveiv_entry.iv[3] |= key->keyidx << 6;
@@ -150,7 +150,7 @@ Changes since v1: ---
  }
  
  int rt2800_config_shared_key(struct rt2x00_dev *rt2x00dev,
-@@ -1304,8 +1329,11 @@ int rt2800_config_shared_key(struct rt2x
+@@ -1303,8 +1328,11 @@ int rt2800_config_shared_key(struct rt2x
  		       sizeof(key_entry.rx_mic));
  
  		offset = SHARED_KEY_ENTRY(key->hw_key_idx);
@@ -162,7 +162,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -1320,10 +1348,12 @@ int rt2800_config_shared_key(struct rt2x
+@@ -1319,10 +1347,12 @@ int rt2800_config_shared_key(struct rt2x
  
  	offset = SHARED_KEY_MODE_ENTRY(key->hw_key_idx / 8);
  
@@ -175,7 +175,7 @@ Changes since v1: ---
  
  	/*
  	 * Update WCID information
-@@ -1393,8 +1423,11 @@ int rt2800_config_pairwise_key(struct rt
+@@ -1392,8 +1422,11 @@ int rt2800_config_pairwise_key(struct rt
  		       sizeof(key_entry.rx_mic));
  
  		offset = PAIRWISE_KEY_ENTRY(key->hw_key_idx);
@@ -187,7 +187,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -4876,14 +4909,19 @@ static int rt2800_init_registers(struct
+@@ -4875,14 +4908,19 @@ static int rt2800_init_registers(struct 
  	/*
  	 * ASIC will keep garbage value after boot, clear encryption keys.
  	 */
@@ -207,7 +207,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -5009,8 +5047,10 @@ static int rt2800_wait_bbp_ready(struct
+@@ -5008,8 +5046,10 @@ static int rt2800_wait_bbp_ready(struct 
  	 * BBP was enabled after firmware was loaded,
  	 * but we need to reactivate it now.
  	 */
@@ -218,7 +218,7 @@ Changes since v1: ---
  	msleep(1);
  
  	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-@@ -6706,11 +6746,19 @@ int rt2800_enable_radio(struct rt2x00_de
+@@ -6705,11 +6745,19 @@ int rt2800_enable_radio(struct rt2x00_de
  	/*
  	 * Send signal during boot time to initialize firmware.
  	 */
@@ -239,7 +239,7 @@ Changes since v1: ---
  	msleep(1);
  
  	/*
-@@ -7716,6 +7764,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -7715,6 +7763,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	int retval;
  	u32 reg;
  
@@ -248,7 +248,7 @@ Changes since v1: ---
  	retval = rt2800_probe_rt(rt2x00dev);
  	if (retval)
  		return retval;
-@@ -7795,8 +7845,11 @@ void rt2800_get_tkip_seq(struct ieee8021
+@@ -7794,8 +7844,11 @@ void rt2800_get_tkip_seq(struct ieee8021
  	u32 offset;
  
  	offset = MAC_IVEIV_ENTRY(hw_key_idx);
@@ -372,7 +372,7 @@ Changes since v1: ---
  #endif /* RT2800MMIO_H */
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -69,7 +69,9 @@ static void rt2800pci_mcu_status(struct
+@@ -69,7 +69,9 @@ static void rt2800pci_mcu_status(struct 
  		return;
  
  	for (i = 0; i < 200; i++) {
@@ -382,7 +382,7 @@ Changes since v1: ---
  
  		if ((rt2x00_get_field32(reg, H2M_MAILBOX_CID_CMD0) == token) ||
  		    (rt2x00_get_field32(reg, H2M_MAILBOX_CID_CMD1) == token) ||
-@@ -83,8 +85,10 @@ static void rt2800pci_mcu_status(struct
+@@ -83,8 +85,10 @@ static void rt2800pci_mcu_status(struct 
  	if (i == 200)
  		rt2x00_err(rt2x00dev, "MCU request failed, no response from hardware\n");
  

@@ -11,7 +11,7 @@
  b43-$(CPTCFG_B43_PCMCIA)	+= pcmcia.o
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -1915,10 +1915,12 @@ static void b43_do_interrupt_thread(stru
+@@ -1899,10 +1899,12 @@ static void b43_do_interrupt_thread(stru
  			dma_reason[0], dma_reason[1],
  			dma_reason[2], dma_reason[3],
  			dma_reason[4], dma_reason[5]);
@@ -75,12 +75,12 @@
  #endif /* B43_PIO_H_ */
 --- a/drivers/net/wireless/b43/Kconfig
 +++ b/drivers/net/wireless/b43/Kconfig
-@@ -98,7 +98,7 @@ config B43_BCMA_PIO
+@@ -118,7 +118,7 @@ config B43_BCMA_PIO
  	default y
  
  config B43_PIO
 -	bool
 +	bool "Broadcom 43xx PIO support"
- 	depends on B43
+ 	depends on B43 && B43_SSB
  	select SSB_BLOCKIO
  	default y

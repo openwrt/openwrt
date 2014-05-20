@@ -131,7 +131,7 @@
  .PHONY: defconfig-help
 --- a/Makefile.real
 +++ b/Makefile.real
-@@ -54,7 +54,7 @@ defconfig-%::
+@@ -59,7 +59,7 @@ defconfig-%::
  
  backport-include/backport/autoconf.h: .config Kconfig.versions Kconfig.kernel
  	@$(MAKE) oldconfig
@@ -140,7 +140,7 @@
  	@grep -f .local-symbols .config | (				\
  		echo "#ifndef COMPAT_AUTOCONF_INCLUDED"			;\
  		echo "#define COMPAT_AUTOCONF_INCLUDED"			;\
-@@ -75,7 +75,12 @@ backport-include/backport/autoconf.h: .c
+@@ -80,7 +80,12 @@ backport-include/backport/autoconf.h: .c
  			esac						;\
  		done							;\
  		echo "#endif /* COMPAT_AUTOCONF_INCLUDED */"		;\
