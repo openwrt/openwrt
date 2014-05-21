@@ -45,18 +45,6 @@
 #define LUA_REG(type,op) \
 	{ #op, iwinfo_L_##type##_##op }
 
-#define LUA_WRAP_INT(type,op) 							\
-	static int iwinfo_L_##type##_##op(lua_State *L)		\
-	{													\
-		const char *ifname = luaL_checkstring(L, 1);	\
-		int rv;											\
-		if( !type##_get_##op(ifname, &rv) )				\
-			lua_pushnumber(L, rv);						\
-		else											\
-			lua_pushnil(L);								\
-		return 1;										\
-	}
-
 #define LUA_WRAP_INT_OP(type,op)						\
 	static int iwinfo_L_##type##_##op(lua_State *L)		\
 	{													\
@@ -64,19 +52,6 @@
 		int rv;											\
 		if( !type##_ops.op(ifname, &rv) )				\
 			lua_pushnumber(L, rv);						\
-		else											\
-			lua_pushnil(L);								\
-		return 1;										\
-	}
-
-#define LUA_WRAP_STRING(type,op) 						\
-	static int iwinfo_L_##type##_##op(lua_State *L)		\
-	{													\
-		const char *ifname = luaL_checkstring(L, 1);	\
-		char rv[IWINFO_BUFSIZE];						\
-		memset(rv, 0, IWINFO_BUFSIZE);					\
-		if( !type##_get_##op(ifname, rv) )				\
-			lua_pushstring(L, rv);						\
 		else											\
 			lua_pushnil(L);								\
 		return 1;										\
@@ -93,12 +68,6 @@
 		else											\
 			lua_pushnil(L);								\
 		return 1;										\
-	}
-
-#define LUA_WRAP_STRUCT(type,op)						\
-	static int iwinfo_L_##type##_##op(lua_State *L)		\
-	{													\
-		return iwinfo_L_##op(L, type##_get_##op);		\
 	}
 
 #define LUA_WRAP_STRUCT_OP(type,op)						\
