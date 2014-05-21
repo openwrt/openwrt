@@ -20,8 +20,8 @@
  * inspired by the hostapd madwifi driver.
  */
 
-#include "iwinfo/madwifi.h"
 #include "iwinfo_wext.h"
+#include "iwinfo/api/madwifi.h"
 
 
 /*
@@ -337,32 +337,32 @@ static void madwifi_ifdel(const char *ifname)
 }
 
 
-int madwifi_probe(const char *ifname)
+static int madwifi_probe(const char *ifname)
 {
 	return ( !!madwifi_isvap(ifname, NULL) || madwifi_iswifi(ifname) );
 }
 
-void madwifi_close(void)
+static void madwifi_close(void)
 {
 	/* Nop */
 }
 
-int madwifi_get_mode(const char *ifname, int *buf)
+static int madwifi_get_mode(const char *ifname, int *buf)
 {
 	return wext_ops.mode(ifname, buf);
 }
 
-int madwifi_get_ssid(const char *ifname, char *buf)
+static int madwifi_get_ssid(const char *ifname, char *buf)
 {
 	return wext_ops.ssid(ifname, buf);
 }
 
-int madwifi_get_bssid(const char *ifname, char *buf)
+static int madwifi_get_bssid(const char *ifname, char *buf)
 {
 	return wext_ops.bssid(ifname, buf);
 }
 
-int madwifi_get_channel(const char *ifname, int *buf)
+static int madwifi_get_channel(const char *ifname, int *buf)
 {
 	int i;
 	uint16_t freq;
@@ -394,7 +394,7 @@ int madwifi_get_channel(const char *ifname, int *buf)
 	return -1;
 }
 
-int madwifi_get_frequency(const char *ifname, int *buf)
+static int madwifi_get_frequency(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 
@@ -407,12 +407,12 @@ int madwifi_get_frequency(const char *ifname, int *buf)
 	return -1;
 }
 
-int madwifi_get_txpower(const char *ifname, int *buf)
+static int madwifi_get_txpower(const char *ifname, int *buf)
 {
 	return wext_ops.txpower(ifname, buf);
 }
 
-int madwifi_get_bitrate(const char *ifname, int *buf)
+static int madwifi_get_bitrate(const char *ifname, int *buf)
 {
 	unsigned int mode, len, rate, rate_count;
 	uint8_t tmp[24*1024];
@@ -458,7 +458,7 @@ int madwifi_get_bitrate(const char *ifname, int *buf)
 	return -1;
 }
 
-int madwifi_get_signal(const char *ifname, int *buf)
+static int madwifi_get_signal(const char *ifname, int *buf)
 {
 	unsigned int mode, len, rssi, rssi_count;
 	uint8_t tmp[24*1024];
@@ -504,12 +504,12 @@ int madwifi_get_signal(const char *ifname, int *buf)
 	return -1;
 }
 
-int madwifi_get_noise(const char *ifname, int *buf)
+static int madwifi_get_noise(const char *ifname, int *buf)
 {
 	return wext_ops.noise(ifname, buf);
 }
 
-int madwifi_get_quality(const char *ifname, int *buf)
+static int madwifi_get_quality(const char *ifname, int *buf)
 {
 	unsigned int mode, len, quality, quality_count;
 	uint8_t tmp[24*1024];
@@ -555,12 +555,12 @@ int madwifi_get_quality(const char *ifname, int *buf)
 	return -1;
 }
 
-int madwifi_get_quality_max(const char *ifname, int *buf)
+static int madwifi_get_quality_max(const char *ifname, int *buf)
 {
 	return wext_ops.quality_max(ifname, buf);
 }
 
-int madwifi_get_encryption(const char *ifname, char *buf)
+static int madwifi_get_encryption(const char *ifname, char *buf)
 {
 	int ciphers = 0, key_len = 0;
 	char keybuf[IW_ENCODING_TOKEN_MAX];
@@ -721,7 +721,7 @@ int madwifi_get_encryption(const char *ifname, char *buf)
 	return 0;
 }
 
-int madwifi_get_phyname(const char *ifname, char *buf)
+static int madwifi_get_phyname(const char *ifname, char *buf)
 {
 	const char *wifidev;
 
@@ -741,7 +741,7 @@ int madwifi_get_phyname(const char *ifname, char *buf)
 	return -1;
 }
 
-int madwifi_get_assoclist(const char *ifname, char *buf, int *len)
+static int madwifi_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	int bl, tl, noise;
 	uint8_t *cp;
@@ -797,7 +797,7 @@ int madwifi_get_assoclist(const char *ifname, char *buf, int *len)
 	return -1;
 }
 
-int madwifi_get_txpwrlist(const char *ifname, char *buf, int *len)
+static int madwifi_get_txpwrlist(const char *ifname, char *buf, int *len)
 {
 	int rc = -1;
 	char *res;
@@ -821,7 +821,7 @@ int madwifi_get_txpwrlist(const char *ifname, char *buf, int *len)
 	return rc;
 }
 
-int madwifi_get_scanlist(const char *ifname, char *buf, int *len)
+static int madwifi_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	int ret;
 	char *res;
@@ -881,7 +881,7 @@ int madwifi_get_scanlist(const char *ifname, char *buf, int *len)
 	return ret;
 }
 
-int madwifi_get_freqlist(const char *ifname, char *buf, int *len)
+static int madwifi_get_freqlist(const char *ifname, char *buf, int *len)
 {
 	int i, bl;
 	int rc = -1;
@@ -931,7 +931,7 @@ int madwifi_get_freqlist(const char *ifname, char *buf, int *len)
 	return -1;
 }
 
-int madwifi_get_country(const char *ifname, char *buf)
+static int madwifi_get_country(const char *ifname, char *buf)
 {
 	int i, fd, ccode = -1;
 	char buffer[34];
@@ -969,7 +969,7 @@ int madwifi_get_country(const char *ifname, char *buf)
 	return -1;
 }
 
-int madwifi_get_countrylist(const char *ifname, char *buf, int *len)
+static int madwifi_get_countrylist(const char *ifname, char *buf, int *len)
 {
 	int i, count;
 	struct ISO3166_to_CCode *e, *p = NULL;
@@ -997,7 +997,7 @@ int madwifi_get_countrylist(const char *ifname, char *buf, int *len)
 	return 0;
 }
 
-int madwifi_get_hwmodelist(const char *ifname, int *buf)
+static int madwifi_get_hwmodelist(const char *ifname, int *buf)
 {
 	char chans[IWINFO_BUFSIZE] = { 0 };
 	struct iwinfo_freqlist_entry *e = NULL;
@@ -1024,7 +1024,7 @@ int madwifi_get_hwmodelist(const char *ifname, int *buf)
 	return -1;
 }
 
-int madwifi_get_mbssid_support(const char *ifname, int *buf)
+static int madwifi_get_mbssid_support(const char *ifname, int *buf)
 {
 	/* Test whether we can create another interface */
 	char *nif = madwifi_ifadd(ifname);
@@ -1042,7 +1042,7 @@ int madwifi_get_mbssid_support(const char *ifname, int *buf)
 	return -1;
 }
 
-int madwifi_get_hardware_id(const char *ifname, char *buf)
+static int madwifi_get_hardware_id(const char *ifname, char *buf)
 {
 	char vendor[64];
 	char device[64];
@@ -1067,7 +1067,7 @@ madwifi_get_hardware_entry(const char *ifname)
 	return iwinfo_hardware(&id);
 }
 
-int madwifi_get_hardware_name(const char *ifname, char *buf)
+static int madwifi_get_hardware_name(const char *ifname, char *buf)
 {
 	const struct iwinfo_hardware_entry *hw;
 
@@ -1079,7 +1079,7 @@ int madwifi_get_hardware_name(const char *ifname, char *buf)
 	return 0;
 }
 
-int madwifi_get_txpower_offset(const char *ifname, int *buf)
+static int madwifi_get_txpower_offset(const char *ifname, int *buf)
 {
 	const struct iwinfo_hardware_entry *hw;
 
@@ -1090,7 +1090,7 @@ int madwifi_get_txpower_offset(const char *ifname, int *buf)
 	return 0;
 }
 
-int madwifi_get_frequency_offset(const char *ifname, int *buf)
+static int madwifi_get_frequency_offset(const char *ifname, int *buf)
 {
 	const struct iwinfo_hardware_entry *hw;
 
@@ -1100,3 +1100,34 @@ int madwifi_get_frequency_offset(const char *ifname, int *buf)
 	*buf = hw->frequency_offset;
 	return 0;
 }
+
+const struct iwinfo_ops madwifi_ops = {
+	.name             = "madwifi",
+	.probe            = madwifi_probe,
+	.channel          = madwifi_get_channel,
+	.frequency        = madwifi_get_frequency,
+	.frequency_offset = madwifi_get_frequency_offset,
+	.txpower          = madwifi_get_txpower,
+	.txpower_offset   = madwifi_get_txpower_offset,
+	.bitrate          = madwifi_get_bitrate,
+	.signal           = madwifi_get_signal,
+	.noise            = madwifi_get_noise,
+	.quality          = madwifi_get_quality,
+	.quality_max      = madwifi_get_quality_max,
+	.mbssid_support   = madwifi_get_mbssid_support,
+	.hwmodelist       = madwifi_get_hwmodelist,
+	.mode             = madwifi_get_mode,
+	.ssid             = madwifi_get_ssid,
+	.bssid            = madwifi_get_bssid,
+	.country          = madwifi_get_country,
+	.hardware_id      = madwifi_get_hardware_id,
+	.hardware_name    = madwifi_get_hardware_name,
+	.encryption       = madwifi_get_encryption,
+	.phyname          = madwifi_get_phyname,
+	.assoclist        = madwifi_get_assoclist,
+	.txpwrlist        = madwifi_get_txpwrlist,
+	.scanlist         = madwifi_get_scanlist,
+	.freqlist         = madwifi_get_freqlist,
+	.countrylist      = madwifi_get_countrylist,
+	.close            = madwifi_close
+};
