@@ -55,6 +55,8 @@ int wext_get_hardware_name(const char *ifname, char *buf);
 void wext_close(void);
 
 static const struct iwinfo_ops wext_ops = {
+	.name             = "wext",
+	.probe            = wext_probe,
 	.channel          = wext_get_channel,
 	.frequency        = wext_get_frequency,
 	.frequency_offset = wext_get_frequency_offset,

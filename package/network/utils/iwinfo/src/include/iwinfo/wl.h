@@ -55,6 +55,8 @@ int wl_get_hardware_name(const char *ifname, char *buf);
 void wl_close(void);
 
 static const struct iwinfo_ops wl_ops = {
+	.name             = "wl",
+	.probe            = wl_probe,
 	.channel          = wl_get_channel,
 	.frequency        = wl_get_frequency,
 	.frequency_offset = wl_get_frequency_offset,

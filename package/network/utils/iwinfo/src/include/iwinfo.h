@@ -148,6 +148,9 @@ extern const struct iwinfo_iso3166_label IWINFO_ISO3166_NAMES[];
 
 
 struct iwinfo_ops {
+	const char *name;
+
+	int (*probe)(const char *ifname);
 	int (*mode)(const char *, int *);
 	int (*channel)(const char *, int *);
 	int (*frequency)(const char *, int *);
