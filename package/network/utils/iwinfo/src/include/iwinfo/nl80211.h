@@ -96,6 +96,8 @@ int nl80211_get_hardware_name(const char *ifname, char *buf);
 void nl80211_close(void);
 
 static const struct iwinfo_ops nl80211_ops = {
+	.name             = "nl80211",
+	.probe            = nl80211_probe,
 	.channel          = nl80211_get_channel,
 	.frequency        = nl80211_get_frequency,
 	.frequency_offset = nl80211_get_frequency_offset,

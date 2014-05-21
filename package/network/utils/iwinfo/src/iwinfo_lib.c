@@ -313,77 +313,49 @@ const struct iwinfo_iso3166_label IWINFO_ISO3166_NAMES[] = {
 	{ 0,               "" }
 };
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#endif
+
+static const struct iwinfo_ops *backends[] = {
+#ifdef USE_NL80211
+	&nl80211_ops,
+#endif
+#ifdef USE_MADWIFI
+	&madwifi_ops,
+#endif
+#ifdef USE_WL
+	&wl_ops,
+#endif
+	&wext_ops,
+};
 
 const char * iwinfo_type(const char *ifname)
 {
-#ifdef USE_NL80211
-	if (nl80211_probe(ifname))
-		return "nl80211";
-	else
-#endif
+	const struct iwinfo_ops *ops = iwinfo_backend(ifname);
+	if (!ops)
+		return NULL;
 
-#ifdef USE_MADWIFI
-	if (madwifi_probe(ifname))
-		return "madwifi";
-	else
-#endif
-
-#ifdef USE_WL
-	if (wl_probe(ifname))
-		return "wl";
-	else
-#endif
-
-	if (wext_probe(ifname))
-		return "wext";
-
-	return NULL;
+	return ops->name;
 }
 
 const struct iwinfo_ops * iwinfo_backend(const char *ifname)
 {
-	const char *type;
-	struct iwinfo_ops *ops;
+	int i;
 
-	type = iwinfo_type(ifname);
-	if (!type)
-		return NULL;
-
-#ifdef USE_NL80211
-	if (!strcmp(type, "nl80211"))
-		return &nl80211_ops;
-	else
-#endif
-
-#ifdef USE_MADWIFI
-	if (!strcmp(type, "madwifi"))
-		return &madwifi_ops;
-	else
-#endif
-
-#ifdef USE_WL
-	if (!strcmp(type, "wl"))
-		return &wl_ops;
-	else
-#endif
-
-	if (!strcmp(type, "wext"))
-		return &wext_ops;
+	for (i = 0; i < ARRAY_SIZE(backends); i++)
+		if (backends[i]->probe(ifname))
+			return backends[i];
 
 	return NULL;
 }
 
 void iwinfo_finish(void)
 {
-#ifdef USE_WL
-	wl_close();
-#endif
-#ifdef USE_MADWIFI
-	madwifi_close();
-#endif
-#ifdef USE_NL80211
-	nl80211_close();
-#endif
-	wext_close();
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(backends); i++)
+		backends[i]->close();
+
 	iwinfo_close();
 }

@@ -54,6 +54,8 @@ int madwifi_get_hardware_name(const char *ifname, char *buf);
 void madwifi_close(void);
 
 static const struct iwinfo_ops madwifi_ops = {
+	.name             = "madwifi",
+	.probe            = madwifi_probe,
 	.channel          = madwifi_get_channel,
 	.frequency        = madwifi_get_frequency,
 	.frequency_offset = madwifi_get_frequency_offset,
