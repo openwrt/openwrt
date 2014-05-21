@@ -23,7 +23,7 @@
 
 #include "iwinfo.h"
 #include "iwinfo/utils.h"
-#include "iwinfo/api/wext.h"
+#include "api/wext.h"
 
 
 typedef struct stream_descr

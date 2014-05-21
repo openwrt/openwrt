@@ -33,7 +33,7 @@
 
 #include "iwinfo.h"
 #include "iwinfo/utils.h"
-#include "iwinfo/api/nl80211.h"
+#include "api/nl80211.h"
 
 struct nl80211_state {
 	struct nl_sock *nl_sock;
