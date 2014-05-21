@@ -1,14 +1,11 @@
 --- a/tools/Makefile
 +++ b/tools/Makefile
-@@ -160,9 +160,9 @@
- # Define __KERNEL_STRICT_NAMES to prevent typedef overlaps
+@@ -173,7 +173,7 @@
+ # Define _GNU_SOURCE to obtain the getline prototype from stdio.h
  #
- HOSTCPPFLAGS =	-include $(SRCTREE)/include/libfdt_env.h \
--		-idirafter $(SRCTREE)/include \
-+		-I $(SRCTREE)/include \
- 		-idirafter $(OBJTREE)/include2 \
--		-idirafter $(OBJTREE)/include \
-+		-I $(OBJTREE)/include \
- 	        -I $(SRCTREE)/lib/libfdt \
- 		-I $(SRCTREE)/tools \
+ HOST_EXTRACFLAGS += -include $(srctree)/include/libfdt_env.h \
+-		$(patsubst -I%,-idirafter%, $(UBOOTINCLUDE)) \
++		-I$(srctree)/include \
+ 		-I$(srctree)/lib/libfdt \
+ 		-I$(srctree)/tools \
  		-DCONFIG_SYS_TEXT_BASE=$(CONFIG_SYS_TEXT_BASE) \
