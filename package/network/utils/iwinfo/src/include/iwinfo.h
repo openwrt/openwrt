@@ -183,7 +183,7 @@ const char * iwinfo_type(const char *ifname);
 const struct iwinfo_ops * iwinfo_backend(const char *ifname);
 void iwinfo_finish(void);
 
-#include "iwinfo/wext.h"
+extern const struct iwinfo_ops wext_ops;
 
 #ifdef USE_WL
 #include "iwinfo/wl.h"

@@ -23,7 +23,6 @@
  */
 
 #include "iwinfo/nl80211.h"
-#include "iwinfo/wext.h"
 
 #define min(x, y) ((x) < (y)) ? (x) : (y)
 
@@ -1032,7 +1031,7 @@ int nl80211_get_txpower(const char *ifname, int *buf)
 		return 0;
 #endif
 
-	return wext_get_txpower(ifname, buf);
+	return wext_ops.txpower(ifname, buf);
 }
 
 
@@ -2295,19 +2294,19 @@ int nl80211_get_hardware_id(const char *ifname, char *buf)
 		/* Reuse existing interface */
 		if ((res = nl80211_phy2ifname(ifname)) != NULL)
 		{
-			rv = wext_get_hardware_id(res, buf);
+			rv = wext_ops.hardware_id(res, buf);
 		}
 
 		/* Need to spawn a temporary iface for finding IDs */
 		else if ((res = nl80211_ifadd(ifname)) != NULL)
 		{
-			rv = wext_get_hardware_id(res, buf);
+			rv = wext_ops.hardware_id(res, buf);
 			nl80211_ifdel(res);
 		}
 	}
 	else
 	{
-		rv = wext_get_hardware_id(ifname, buf);
+		rv = wext_ops.hardware_id(ifname, buf);
 	}
 
 	/* Failed to obtain hardware IDs, search board config */

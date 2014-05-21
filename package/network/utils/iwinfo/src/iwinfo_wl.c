@@ -19,7 +19,6 @@
  */
 
 #include "iwinfo/wl.h"
-#include "iwinfo/wext.h"
 
 static int wl_ioctl(const char *name, int cmd, void *buf, int len)
 {
@@ -143,13 +142,13 @@ int wl_get_channel(const char *ifname, int *buf)
 
 int wl_get_frequency(const char *ifname, int *buf)
 {
-	return wext_get_frequency(ifname, buf);
+	return wext_ops.frequency(ifname, buf);
 }
 
 int wl_get_txpower(const char *ifname, int *buf)
 {
 	/* WLC_GET_VAR "qtxpower" */
-	return wext_get_txpower(ifname, buf);
+	return wext_ops.txpower(ifname, buf);
 }
 
 int wl_get_bitrate(const char *ifname, int *buf)
@@ -235,12 +234,12 @@ int wl_get_noise(const char *ifname, int *buf)
 
 int wl_get_quality(const char *ifname, int *buf)
 {
-	return wext_get_quality(ifname, buf);
+	return wext_ops.quality(ifname, buf);
 }
 
 int wl_get_quality_max(const char *ifname, int *buf)
 {
-	return wext_get_quality_max(ifname, buf);
+	return wext_ops.quality_max(ifname, buf);
 }
 
 int wl_get_encryption(const char *ifname, char *buf)
@@ -521,12 +520,12 @@ int wl_get_txpwrlist(const char *ifname, char *buf, int *len)
 
 int wl_get_scanlist(const char *ifname, char *buf, int *len)
 {
-	return wext_get_scanlist(ifname, buf, len);
+	return wext_ops.scanlist(ifname, buf, len);
 }
 
 int wl_get_freqlist(const char *ifname, char *buf, int *len)
 {
-	return wext_get_freqlist(ifname, buf, len);
+	return wext_ops.freqlist(ifname, buf, len);
 }
 
 int wl_get_country(const char *ifname, char *buf)

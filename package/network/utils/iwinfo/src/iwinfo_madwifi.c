@@ -21,7 +21,7 @@
  */
 
 #include "iwinfo/madwifi.h"
-#include "iwinfo/wext.h"
+#include "iwinfo_wext.h"
 
 
 /*
@@ -349,17 +349,17 @@ void madwifi_close(void)
 
 int madwifi_get_mode(const char *ifname, int *buf)
 {
-	return wext_get_mode(ifname, buf);
+	return wext_ops.mode(ifname, buf);
 }
 
 int madwifi_get_ssid(const char *ifname, char *buf)
 {
-	return wext_get_ssid(ifname, buf);
+	return wext_ops.ssid(ifname, buf);
 }
 
 int madwifi_get_bssid(const char *ifname, char *buf)
 {
-	return wext_get_bssid(ifname, buf);
+	return wext_ops.bssid(ifname, buf);
 }
 
 int madwifi_get_channel(const char *ifname, int *buf)
@@ -409,7 +409,7 @@ int madwifi_get_frequency(const char *ifname, int *buf)
 
 int madwifi_get_txpower(const char *ifname, int *buf)
 {
-	return wext_get_txpower(ifname, buf);
+	return wext_ops.txpower(ifname, buf);
 }
 
 int madwifi_get_bitrate(const char *ifname, int *buf)
@@ -452,7 +452,7 @@ int madwifi_get_bitrate(const char *ifname, int *buf)
 		}
 
 		/* Return whatever wext tells us ... */
-		return wext_get_bitrate(ifname, buf);
+		return wext_ops.bitrate(ifname, buf);
 	}
 
 	return -1;
@@ -498,7 +498,7 @@ int madwifi_get_signal(const char *ifname, int *buf)
 		}
 
 		/* Return whatever wext tells us ... */
-		return wext_get_signal(ifname, buf);
+		return wext_ops.signal(ifname, buf);
 	}
 
 	return -1;
@@ -506,7 +506,7 @@ int madwifi_get_signal(const char *ifname, int *buf)
 
 int madwifi_get_noise(const char *ifname, int *buf)
 {
-	return wext_get_noise(ifname, buf);
+	return wext_ops.noise(ifname, buf);
 }
 
 int madwifi_get_quality(const char *ifname, int *buf)
@@ -549,7 +549,7 @@ int madwifi_get_quality(const char *ifname, int *buf)
 		}
 
 		/* Return whatever wext tells us ... */
-		return wext_get_quality(ifname, buf);
+		return wext_ops.quality(ifname, buf);
 	}
 
 	return -1;
@@ -557,7 +557,7 @@ int madwifi_get_quality(const char *ifname, int *buf)
 
 int madwifi_get_quality_max(const char *ifname, int *buf)
 {
-	return wext_get_quality_max(ifname, buf);
+	return wext_ops.quality_max(ifname, buf);
 }
 
 int madwifi_get_encryption(const char *ifname, char *buf)
@@ -807,7 +807,7 @@ int madwifi_get_txpwrlist(const char *ifname, char *buf, int *len)
 	{
 		if( (res = madwifi_ifadd(ifname)) != NULL )
 		{
-			rc = wext_get_txpwrlist(res, buf, len);
+			rc = wext_ops.txpwrlist(res, buf, len);
 			madwifi_ifdel(res);
 		}
 	}
@@ -815,7 +815,7 @@ int madwifi_get_txpwrlist(const char *ifname, char *buf, int *len)
 	/* Its an athX ... */
 	else if( !!madwifi_isvap(ifname, NULL) )
 	{
-		rc = wext_get_txpwrlist(ifname, buf, len);
+		rc = wext_ops.txpwrlist(ifname, buf, len);
 	}
 
 	return rc;
@@ -841,7 +841,7 @@ int madwifi_get_scanlist(const char *ifname, char *buf, int *len)
 				{
 					if( iwinfo_ifup(e->d_name) )
 					{
-						ret = wext_get_scanlist(e->d_name, buf, len);
+						ret = wext_ops.scanlist(e->d_name, buf, len);
 						break;
 					}
 				}
@@ -857,13 +857,13 @@ int madwifi_get_scanlist(const char *ifname, char *buf, int *len)
 			{
 				if( iwinfo_ifup(res) )
 				{
-					wext_get_scanlist(res, buf, len);
+					wext_ops.scanlist(res, buf, len);
 					sleep(1);
 
-					wext_get_scanlist(res, buf, len);
+					wext_ops.scanlist(res, buf, len);
 					sleep(1);
 
-					ret = wext_get_scanlist(res, buf, len);
+					ret = wext_ops.scanlist(res, buf, len);
 				}
 
 				iwinfo_ifdown(res);
@@ -875,7 +875,7 @@ int madwifi_get_scanlist(const char *ifname, char *buf, int *len)
 	/* Got athX device? */
 	else if( !!madwifi_isvap(ifname, NULL) )
 	{
-		ret = wext_get_scanlist(ifname, buf, len);
+		ret = wext_ops.scanlist(ifname, buf, len);
 	}
 
 	return ret;
@@ -1050,7 +1050,7 @@ int madwifi_get_hardware_id(const char *ifname, char *buf)
 	struct iwinfo_hardware_entry *e;
 	const char *phy = madwifi_phyname(ifname);
 
-	if (wext_get_hardware_id(phy, buf))
+	if (wext_ops.hardware_id(phy, buf))
 		return iwinfo_hardware_id_from_mtd((struct iwinfo_hardware_id *)buf);
 
 	return 0;

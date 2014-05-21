@@ -20,7 +20,7 @@
  */
 
 #include "iwinfo.h"
-#include "iwinfo/wext.h"
+#include "iwinfo_wext.h"
 
 static double wext_freq2float(const struct iw_freq *in)
 {
@@ -55,7 +55,7 @@ static inline int wext_ioctl(const char *ifname, int cmd, struct iwreq *wrq)
 }
 
 
-int wext_probe(const char *ifname)
+static int wext_probe(const char *ifname)
 {
 	struct iwreq wrq;
 
@@ -65,12 +65,12 @@ int wext_probe(const char *ifname)
 	return 0;
 }
 
-void wext_close(void)
+static void wext_close(void)
 {
 	/* Nop */
 }
 
-int wext_get_mode(const char *ifname, int *buf)
+static int wext_get_mode(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 
@@ -105,7 +105,7 @@ int wext_get_mode(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_ssid(const char *ifname, char *buf)
+static int wext_get_ssid(const char *ifname, char *buf)
 {
 	struct iwreq wrq;
 
@@ -119,7 +119,7 @@ int wext_get_ssid(const char *ifname, char *buf)
 	return -1;
 }
 
-int wext_get_bssid(const char *ifname, char *buf)
+static int wext_get_bssid(const char *ifname, char *buf)
 {
 	struct iwreq wrq;
 
@@ -136,7 +136,7 @@ int wext_get_bssid(const char *ifname, char *buf)
 	return -1;
 }
 
-int wext_get_bitrate(const char *ifname, int *buf)
+static int wext_get_bitrate(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 
@@ -149,7 +149,7 @@ int wext_get_bitrate(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_channel(const char *ifname, int *buf)
+static int wext_get_channel(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 	struct iw_range range;
@@ -187,7 +187,7 @@ int wext_get_channel(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_frequency(const char *ifname, int *buf)
+static int wext_get_frequency(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 	struct iw_range range;
@@ -225,7 +225,7 @@ int wext_get_frequency(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_txpower(const char *ifname, int *buf)
+static int wext_get_txpower(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 
@@ -244,7 +244,7 @@ int wext_get_txpower(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_signal(const char *ifname, int *buf)
+static int wext_get_signal(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 	struct iw_statistics stats;
@@ -264,7 +264,7 @@ int wext_get_signal(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_noise(const char *ifname, int *buf)
+static int wext_get_noise(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 	struct iw_statistics stats;
@@ -284,7 +284,7 @@ int wext_get_noise(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_quality(const char *ifname, int *buf)
+static int wext_get_quality(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 	struct iw_statistics stats;
@@ -302,7 +302,7 @@ int wext_get_quality(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_quality_max(const char *ifname, int *buf)
+static int wext_get_quality_max(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 	struct iw_range range;
@@ -320,13 +320,13 @@ int wext_get_quality_max(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_assoclist(const char *ifname, char *buf, int *len)
+static int wext_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	/* Stub */
 	return -1;
 }
 
-int wext_get_txpwrlist(const char *ifname, char *buf, int *len)
+static int wext_get_txpwrlist(const char *ifname, char *buf, int *len)
 {
 	struct iwreq wrq;
 	struct iw_range range;
@@ -367,7 +367,7 @@ int wext_get_txpwrlist(const char *ifname, char *buf, int *len)
 	return -1;
 }
 
-int wext_get_freqlist(const char *ifname, char *buf, int *len)
+static int wext_get_freqlist(const char *ifname, char *buf, int *len)
 {
 	struct iwreq wrq;
 	struct iw_range range;
@@ -399,19 +399,19 @@ int wext_get_freqlist(const char *ifname, char *buf, int *len)
 	return -1;
 }
 
-int wext_get_country(const char *ifname, char *buf)
+static int wext_get_country(const char *ifname, char *buf)
 {
 	sprintf(buf, "00");
 	return 0;
 }
 
-int wext_get_countrylist(const char *ifname, char *buf, int *len)
+static int wext_get_countrylist(const char *ifname, char *buf, int *len)
 {
 	/* Stub */
 	return -1;
 }
 
-int wext_get_hwmodelist(const char *ifname, int *buf)
+static int wext_get_hwmodelist(const char *ifname, int *buf)
 {
 	char chans[IWINFO_BUFSIZE] = { 0 };
 	struct iwinfo_freqlist_entry *e = NULL;
@@ -440,20 +440,20 @@ int wext_get_hwmodelist(const char *ifname, int *buf)
 	return -1;
 }
 
-int wext_get_encryption(const char *ifname, char *buf)
+static int wext_get_encryption(const char *ifname, char *buf)
 {
 	/* No reliable crypto info in wext */
 	return -1;
 }
 
-int wext_get_phyname(const char *ifname, char *buf)
+static int wext_get_phyname(const char *ifname, char *buf)
 {
 	/* No suitable api in wext */
 	strcpy(buf, ifname);
 	return 0;
 }
 
-int wext_get_mbssid_support(const char *ifname, int *buf)
+static int wext_get_mbssid_support(const char *ifname, int *buf)
 {
 	/* No multi bssid support atm */
 	return -1;
@@ -480,7 +480,7 @@ static char * wext_sysfs_ifname_file(const char *ifname, const char *path)
 	return rv;
 }
 
-int wext_get_hardware_id(const char *ifname, char *buf)
+static int wext_get_hardware_id(const char *ifname, char *buf)
 {
 	char *data;
 	struct iwinfo_hardware_id *id = (struct iwinfo_hardware_id *)buf;
@@ -506,22 +506,53 @@ int wext_get_hardware_id(const char *ifname, char *buf)
 	return (id->vendor_id > 0 && id->device_id > 0) ? 0 : -1;
 }
 
-int wext_get_hardware_name(const char *ifname, char *buf)
+static int wext_get_hardware_name(const char *ifname, char *buf)
 {
 	sprintf(buf, "Generic WEXT");
 	return 0;
 }
 
-int wext_get_txpower_offset(const char *ifname, int *buf)
+static int wext_get_txpower_offset(const char *ifname, int *buf)
 {
 	/* Stub */
 	*buf = 0;
 	return -1;
 }
 
-int wext_get_frequency_offset(const char *ifname, int *buf)
+static int wext_get_frequency_offset(const char *ifname, int *buf)
 {
 	/* Stub */
 	*buf = 0;
 	return -1;
 }
+
+const struct iwinfo_ops wext_ops = {
+	.name             = "wext",
+	.probe            = wext_probe,
+	.channel          = wext_get_channel,
+	.frequency        = wext_get_frequency,
+	.frequency_offset = wext_get_frequency_offset,
+	.txpower          = wext_get_txpower,
+	.txpower_offset   = wext_get_txpower_offset,
+	.bitrate          = wext_get_bitrate,
+	.signal           = wext_get_signal,
+	.noise            = wext_get_noise,
+	.quality          = wext_get_quality,
+	.quality_max      = wext_get_quality_max,
+	.mbssid_support   = wext_get_mbssid_support,
+	.hwmodelist       = wext_get_hwmodelist,
+	.mode             = wext_get_mode,
+	.ssid             = wext_get_ssid,
+	.bssid            = wext_get_bssid,
+	.country          = wext_get_country,
+	.hardware_id      = wext_get_hardware_id,
+	.hardware_name    = wext_get_hardware_name,
+	.encryption       = wext_get_encryption,
+	.phyname          = wext_get_phyname,
+	.assoclist        = wext_get_assoclist,
+	.txpwrlist        = wext_get_txpwrlist,
+	.scanlist         = wext_get_scanlist,
+	.freqlist         = wext_get_freqlist,
+	.countrylist      = wext_get_countrylist,
+	.close            = wext_close
+};
