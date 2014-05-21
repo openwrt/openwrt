@@ -19,7 +19,7 @@
  */
 
 #include "iwinfo.h"
-#include "iwinfo/api/broadcom.h"
+#include "api/broadcom.h"
 
 static int wl_ioctl(const char *name, int cmd, void *buf, int len)
 {

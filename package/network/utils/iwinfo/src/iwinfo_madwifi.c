@@ -21,7 +21,7 @@
  */
 
 #include "iwinfo_wext.h"
-#include "iwinfo/api/madwifi.h"
+#include "api/madwifi.h"
 
 
 /*
