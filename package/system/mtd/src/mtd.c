@@ -21,6 +21,7 @@
  * The code is based on the linux-mtd examples.
  */
 
+#define _GNU_SOURCE
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
