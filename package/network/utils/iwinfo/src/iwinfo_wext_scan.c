@@ -20,7 +20,7 @@
  */
 
 #include "iwinfo.h"
-#include "iwinfo/wext_scan.h"
+#include "iwinfo_wext.h"
 
 
 static int wext_ioctl(const char *ifname, int cmd, struct iwreq *wrq)

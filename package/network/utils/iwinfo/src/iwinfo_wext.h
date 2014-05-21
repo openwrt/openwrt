@@ -377,4 +377,6 @@ static const unsigned int standard_event_num =
 #define	IW_IE_CYPHER_NUM	8
 #define	IW_IE_KEY_MGMT_NUM	3
 
+int wext_get_scanlist(const char *ifname, char *buf, int *len);
+
 #endif
