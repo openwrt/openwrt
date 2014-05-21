@@ -22,11 +22,32 @@
  * Parts of this code are derived from the Linux iw utility.
  */
 
-#include "iwinfo/nl80211.h"
+#include "iwinfo_nl80211.h"
 
 #define min(x, y) ((x) < (y)) ? (x) : (y)
 
 static struct nl80211_state *nls = NULL;
+
+static void nl80211_close(void)
+{
+	if (nls)
+	{
+		if (nls->nlctrl)
+			genl_family_put(nls->nlctrl);
+
+		if (nls->nl80211)
+			genl_family_put(nls->nl80211);
+
+		if (nls->nl_sock)
+			nl_socket_free(nls->nl_sock);
+
+		if (nls->nl_cache)
+			nl_cache_free(nls->nl_cache);
+
+		free(nls);
+		nls = NULL;
+	}
+}
 
 static int nl80211_init(void)
 {
@@ -83,6 +104,23 @@ static int nl80211_init(void)
 err:
 	nl80211_close();
 	return err;
+}
+
+static int nl80211_readint(const char *path)
+{
+	int fd;
+	int rv = -1;
+	char buffer[16];
+
+	if ((fd = open(path, O_RDONLY)) > -1)
+	{
+		if (read(fd, buffer, sizeof(buffer)) > 0)
+			rv = atoi(buffer);
+
+		close(fd);
+	}
+
+	return rv;
 }
 
 
@@ -452,6 +490,96 @@ static char * nl80211_ifname2phy(const char *ifname)
 	return phy[0] ? phy : NULL;
 }
 
+static char * nl80211_phy2ifname(const char *ifname)
+{
+	int fd, ifidx = -1, cifidx = -1, phyidx = -1;
+	char buffer[64];
+	static char nif[IFNAMSIZ] = { 0 };
+
+	DIR *d;
+	struct dirent *e;
+
+	if (!ifname)
+		return NULL;
+	else if (!strncmp(ifname, "phy", 3))
+		phyidx = atoi(&ifname[3]);
+	else if (!strncmp(ifname, "radio", 5))
+		phyidx = atoi(&ifname[5]);
+
+	memset(nif, 0, sizeof(nif));
+
+	if (phyidx > -1)
+	{
+		if ((d = opendir("/sys/class/net")) != NULL)
+		{
+			while ((e = readdir(d)) != NULL)
+			{
+				snprintf(buffer, sizeof(buffer),
+				         "/sys/class/net/%s/phy80211/index", e->d_name);
+
+				if (nl80211_readint(buffer) == phyidx)
+				{
+					snprintf(buffer, sizeof(buffer),
+					         "/sys/class/net/%s/ifindex", e->d_name);
+
+					if ((cifidx = nl80211_readint(buffer)) >= 0 &&
+					    ((ifidx < 0) || (cifidx < ifidx)))
+					{
+						ifidx = cifidx;
+						strncpy(nif, e->d_name, sizeof(nif));
+					}
+				}
+			}
+
+			closedir(d);
+		}
+	}
+
+	return nif[0] ? nif : NULL;
+}
+
+static int nl80211_get_mode_cb(struct nl_msg *msg, void *arg)
+{
+	int *mode = arg;
+	struct nlattr **tb = nl80211_parse(msg);
+	const int ifmodes[NL80211_IFTYPE_MAX + 1] = {
+		IWINFO_OPMODE_UNKNOWN,		/* unspecified */
+		IWINFO_OPMODE_ADHOC,		/* IBSS */
+		IWINFO_OPMODE_CLIENT,		/* managed */
+		IWINFO_OPMODE_MASTER,		/* AP */
+		IWINFO_OPMODE_AP_VLAN,		/* AP/VLAN */
+		IWINFO_OPMODE_WDS,			/* WDS */
+		IWINFO_OPMODE_MONITOR,		/* monitor */
+		IWINFO_OPMODE_MESHPOINT,	/* mesh point */
+		IWINFO_OPMODE_P2P_CLIENT,	/* P2P-client */
+		IWINFO_OPMODE_P2P_GO,		/* P2P-GO */
+	};
+
+	if (tb[NL80211_ATTR_IFTYPE])
+		*mode = ifmodes[nla_get_u32(tb[NL80211_ATTR_IFTYPE])];
+
+	return NL_SKIP;
+}
+
+
+static int nl80211_get_mode(const char *ifname, int *buf)
+{
+	char *res;
+	struct nl80211_msg_conveyor *req;
+
+	res = nl80211_phy2ifname(ifname);
+	req = nl80211_msg(res ? res : ifname, NL80211_CMD_GET_INTERFACE, 0);
+	*buf = IWINFO_OPMODE_UNKNOWN;
+
+	if (req)
+	{
+		nl80211_send(req, nl80211_get_mode_cb, buf);
+		nl80211_free(req);
+	}
+
+	return (*buf == IWINFO_OPMODE_UNKNOWN) ? -1 : 0;
+}
+
 static char * nl80211_hostapd_info(const char *ifname)
 {
 	int mode;
@@ -589,71 +717,6 @@ out:
 	return rv;
 }
 
-static inline int nl80211_readint(const char *path)
-{
-	int fd;
-	int rv = -1;
-	char buffer[16];
-
-	if ((fd = open(path, O_RDONLY)) > -1)
-	{
-		if (read(fd, buffer, sizeof(buffer)) > 0)
-			rv = atoi(buffer);
-
-		close(fd);
-	}
-
-	return rv;
-}
-
-static char * nl80211_phy2ifname(const char *ifname)
-{
-	int fd, ifidx = -1, cifidx = -1, phyidx = -1;
-	char buffer[64];
-	static char nif[IFNAMSIZ] = { 0 };
-
-	DIR *d;
-	struct dirent *e;
-
-	if (!ifname)
-		return NULL;
-	else if (!strncmp(ifname, "phy", 3))
-		phyidx = atoi(&ifname[3]);
-	else if (!strncmp(ifname, "radio", 5))
-		phyidx = atoi(&ifname[5]);
-
-	memset(nif, 0, sizeof(nif));
-
-	if (phyidx > -1)
-	{
-		if ((d = opendir("/sys/class/net")) != NULL)
-		{
-			while ((e = readdir(d)) != NULL)
-			{
-				snprintf(buffer, sizeof(buffer),
-				         "/sys/class/net/%s/phy80211/index", e->d_name);
-
-				if (nl80211_readint(buffer) == phyidx)
-				{
-					snprintf(buffer, sizeof(buffer),
-					         "/sys/class/net/%s/ifindex", e->d_name);
-
-					if ((cifidx = nl80211_readint(buffer)) >= 0 &&
-					    ((ifidx < 0) || (cifidx < ifidx)))
-					{
-						ifidx = cifidx;
-						strncpy(nif, e->d_name, sizeof(nif));
-					}
-				}
-			}
-
-			closedir(d);
-		}
-	}
-
-	return nif[0] ? nif : NULL;
-}
-
 static char * nl80211_ifadd(const char *ifname)
 {
 	int phyidx;
@@ -719,74 +782,10 @@ static void nl80211_hostapd_hup(const char *ifname)
 }
 
 
-int nl80211_probe(const char *ifname)
+static int nl80211_probe(const char *ifname)
 {
 	return !!nl80211_ifname2phy(ifname);
 }
-
-void nl80211_close(void)
-{
-	if (nls)
-	{
-		if (nls->nlctrl)
-			genl_family_put(nls->nlctrl);
-
-		if (nls->nl80211)
-			genl_family_put(nls->nl80211);
-
-		if (nls->nl_sock)
-			nl_socket_free(nls->nl_sock);
-
-		if (nls->nl_cache)
-			nl_cache_free(nls->nl_cache);
-
-		free(nls);
-		nls = NULL;
-	}
-}
-
-
-static int nl80211_get_mode_cb(struct nl_msg *msg, void *arg)
-{
-	int *mode = arg;
-	struct nlattr **tb = nl80211_parse(msg);
-	const int ifmodes[NL80211_IFTYPE_MAX + 1] = {
-		IWINFO_OPMODE_UNKNOWN,		/* unspecified */
-		IWINFO_OPMODE_ADHOC,		/* IBSS */
-		IWINFO_OPMODE_CLIENT,		/* managed */
-		IWINFO_OPMODE_MASTER,		/* AP */
-		IWINFO_OPMODE_AP_VLAN,		/* AP/VLAN */
-		IWINFO_OPMODE_WDS,			/* WDS */
-		IWINFO_OPMODE_MONITOR,		/* monitor */
-		IWINFO_OPMODE_MESHPOINT,	/* mesh point */
-		IWINFO_OPMODE_P2P_CLIENT,	/* P2P-client */
-		IWINFO_OPMODE_P2P_GO,		/* P2P-GO */
-	};
-
-	if (tb[NL80211_ATTR_IFTYPE])
-		*mode = ifmodes[nla_get_u32(tb[NL80211_ATTR_IFTYPE])];
-
-	return NL_SKIP;
-}
-
-int nl80211_get_mode(const char *ifname, int *buf)
-{
-	char *res;
-	struct nl80211_msg_conveyor *req;
-
-	res = nl80211_phy2ifname(ifname);
-	req = nl80211_msg(res ? res : ifname, NL80211_CMD_GET_INTERFACE, 0);
-	*buf = IWINFO_OPMODE_UNKNOWN;
-
-	if (req)
-	{
-		nl80211_send(req, nl80211_get_mode_cb, buf);
-		nl80211_free(req);
-	}
-
-	return (*buf == IWINFO_OPMODE_UNKNOWN) ? -1 : 0;
-}
-
 
 struct nl80211_ssid_bssid {
 	unsigned char *ssid;
@@ -851,7 +850,7 @@ static int nl80211_get_ssid_bssid_cb(struct nl_msg *msg, void *arg)
 	}
 }
 
-int nl80211_get_ssid(const char *ifname, char *buf)
+static int nl80211_get_ssid(const char *ifname, char *buf)
 {
 	char *res;
 	struct nl80211_msg_conveyor *req;
@@ -881,7 +880,7 @@ int nl80211_get_ssid(const char *ifname, char *buf)
 	return (*buf == 0) ? -1 : 0;
 }
 
-int nl80211_get_bssid(const char *ifname, char *buf)
+static int nl80211_get_bssid(const char *ifname, char *buf)
 {
 	char *res;
 	struct nl80211_msg_conveyor *req;
@@ -960,7 +959,7 @@ static int nl80211_get_frequency_info_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-int nl80211_get_frequency(const char *ifname, int *buf)
+static int nl80211_get_frequency(const char *ifname, int *buf)
 {
 	int chn;
 	char *res, *channel;
@@ -1005,7 +1004,7 @@ int nl80211_get_frequency(const char *ifname, int *buf)
 	return (*buf == 0) ? -1 : 0;
 }
 
-int nl80211_get_channel(const char *ifname, int *buf)
+static int nl80211_get_channel(const char *ifname, int *buf)
 {
 	if (!nl80211_get_frequency(ifname, buf))
 	{
@@ -1017,7 +1016,7 @@ int nl80211_get_channel(const char *ifname, int *buf)
 }
 
 
-int nl80211_get_txpower(const char *ifname, int *buf)
+static int nl80211_get_txpower(const char *ifname, int *buf)
 {
 #if 0
 	char *res;
@@ -1127,7 +1126,7 @@ static void nl80211_fill_signal(const char *ifname, struct nl80211_rssi_rate *r)
 	}
 }
 
-int nl80211_get_bitrate(const char *ifname, int *buf)
+static int nl80211_get_bitrate(const char *ifname, int *buf)
 {
 	struct nl80211_rssi_rate rr;
 
@@ -1142,7 +1141,7 @@ int nl80211_get_bitrate(const char *ifname, int *buf)
 	return -1;
 }
 
-int nl80211_get_signal(const char *ifname, int *buf)
+static int nl80211_get_signal(const char *ifname, int *buf)
 {
 	struct nl80211_rssi_rate rr;
 
@@ -1185,7 +1184,7 @@ static int nl80211_get_noise_cb(struct nl_msg *msg, void *arg)
 }
 
 
-int nl80211_get_noise(const char *ifname, int *buf)
+static int nl80211_get_noise(const char *ifname, int *buf)
 {
 	int8_t noise;
 	struct nl80211_msg_conveyor *req;
@@ -1208,7 +1207,7 @@ int nl80211_get_noise(const char *ifname, int *buf)
 	return -1;
 }
 
-int nl80211_get_quality(const char *ifname, int *buf)
+static int nl80211_get_quality(const char *ifname, int *buf)
 {
 	int signal;
 
@@ -1240,7 +1239,7 @@ int nl80211_get_quality(const char *ifname, int *buf)
 	return -1;
 }
 
-int nl80211_get_quality_max(const char *ifname, int *buf)
+static int nl80211_get_quality_max(const char *ifname, int *buf)
 {
 	/* The cfg80211 wext compat layer assumes a maximum
 	 * quality of 70 */
@@ -1249,7 +1248,7 @@ int nl80211_get_quality_max(const char *ifname, int *buf)
 	return 0;
 }
 
-int nl80211_get_encryption(const char *ifname, char *buf)
+static int nl80211_get_encryption(const char *ifname, char *buf)
 {
 	int i;
 	char k[9];
@@ -1412,7 +1411,7 @@ int nl80211_get_encryption(const char *ifname, char *buf)
 	return -1;
 }
 
-int nl80211_get_phyname(const char *ifname, char *buf)
+static int nl80211_get_phyname(const char *ifname, char *buf)
 {
 	const char *name;
 
@@ -1528,7 +1527,7 @@ static int nl80211_get_assoclist_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-int nl80211_get_assoclist(const char *ifname, char *buf, int *len)
+static int nl80211_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	DIR *d;
 	int i, noise = 0;
@@ -1618,7 +1617,7 @@ static int nl80211_get_txpwrlist_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-int nl80211_get_txpwrlist(const char *ifname, char *buf, int *len)
+static int nl80211_get_txpwrlist(const char *ifname, char *buf, int *len)
 {
 	int ch_cur;
 	int dbm_max = -1, dbm_cur, dbm_cnt;
@@ -1861,7 +1860,7 @@ static int nl80211_get_scanlist_nl(const char *ifname, char *buf, int *len)
 	return *len ? 0 : -1;
 }
 
-int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
+static int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	int freq, rssi, qmax, count;
 	char *res;
@@ -2083,7 +2082,7 @@ static int nl80211_get_freqlist_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-int nl80211_get_freqlist(const char *ifname, char *buf, int *len)
+static int nl80211_get_freqlist(const char *ifname, char *buf, int *len)
 {
 	struct nl80211_msg_conveyor *req;
 	struct nl80211_array_buf arr = { .buf = buf, .count = 0 };
@@ -2117,7 +2116,7 @@ static int nl80211_get_country_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-int nl80211_get_country(const char *ifname, char *buf)
+static int nl80211_get_country(const char *ifname, char *buf)
 {
 	int rv = -1;
 	struct nl80211_msg_conveyor *req;
@@ -2135,7 +2134,7 @@ int nl80211_get_country(const char *ifname, char *buf)
 	return rv;
 }
 
-int nl80211_get_countrylist(const char *ifname, char *buf, int *len)
+static int nl80211_get_countrylist(const char *ifname, char *buf, int *len)
 {
 	int i, count;
 	struct iwinfo_country_entry *e = (struct iwinfo_country_entry *)buf;
@@ -2203,7 +2202,7 @@ static int nl80211_get_hwmodelist_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-int nl80211_get_hwmodelist(const char *ifname, int *buf)
+static int nl80211_get_hwmodelist(const char *ifname, int *buf)
 {
 	struct nl80211_msg_conveyor *req;
 
@@ -2270,7 +2269,7 @@ static int nl80211_get_ifcomb_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-int nl80211_get_mbssid_support(const char *ifname, int *buf)
+static int nl80211_get_mbssid_support(const char *ifname, int *buf)
 {
 	struct nl80211_msg_conveyor *req;
 
@@ -2283,7 +2282,7 @@ int nl80211_get_mbssid_support(const char *ifname, int *buf)
 	return 0;
 }
 
-int nl80211_get_hardware_id(const char *ifname, char *buf)
+static int nl80211_get_hardware_id(const char *ifname, char *buf)
 {
 	int rv;
 	char *res;
@@ -2329,7 +2328,7 @@ nl80211_get_hardware_entry(const char *ifname)
 	return iwinfo_hardware(&id);
 }
 
-int nl80211_get_hardware_name(const char *ifname, char *buf)
+static int nl80211_get_hardware_name(const char *ifname, char *buf)
 {
 	const struct iwinfo_hardware_entry *hw;
 
@@ -2341,7 +2340,7 @@ int nl80211_get_hardware_name(const char *ifname, char *buf)
 	return 0;
 }
 
-int nl80211_get_txpower_offset(const char *ifname, int *buf)
+static int nl80211_get_txpower_offset(const char *ifname, int *buf)
 {
 	const struct iwinfo_hardware_entry *hw;
 
@@ -2352,7 +2351,7 @@ int nl80211_get_txpower_offset(const char *ifname, int *buf)
 	return 0;
 }
 
-int nl80211_get_frequency_offset(const char *ifname, int *buf)
+static int nl80211_get_frequency_offset(const char *ifname, int *buf)
 {
 	const struct iwinfo_hardware_entry *hw;
 
@@ -2362,3 +2361,34 @@ int nl80211_get_frequency_offset(const char *ifname, int *buf)
 	*buf = hw->frequency_offset;
 	return 0;
 }
+
+const struct iwinfo_ops nl80211_ops = {
+	.name             = "nl80211",
+	.probe            = nl80211_probe,
+	.channel          = nl80211_get_channel,
+	.frequency        = nl80211_get_frequency,
+	.frequency_offset = nl80211_get_frequency_offset,
+	.txpower          = nl80211_get_txpower,
+	.txpower_offset   = nl80211_get_txpower_offset,
+	.bitrate          = nl80211_get_bitrate,
+	.signal           = nl80211_get_signal,
+	.noise            = nl80211_get_noise,
+	.quality          = nl80211_get_quality,
+	.quality_max      = nl80211_get_quality_max,
+	.mbssid_support   = nl80211_get_mbssid_support,
+	.hwmodelist       = nl80211_get_hwmodelist,
+	.mode             = nl80211_get_mode,
+	.ssid             = nl80211_get_ssid,
+	.bssid            = nl80211_get_bssid,
+	.country          = nl80211_get_country,
+	.hardware_id      = nl80211_get_hardware_id,
+	.hardware_name    = nl80211_get_hardware_name,
+	.encryption       = nl80211_get_encryption,
+	.phyname          = nl80211_get_phyname,
+	.assoclist        = nl80211_get_assoclist,
+	.txpwrlist        = nl80211_get_txpwrlist,
+	.scanlist         = nl80211_get_scanlist,
+	.freqlist         = nl80211_get_freqlist,
+	.countrylist      = nl80211_get_countrylist,
+	.close            = nl80211_close
+};
