@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libiwinfo
-PKG_RELEASE:=48
+PKG_RELEASE:=49
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 PKG_CONFIG_DEPENDS := \
@@ -25,6 +25,7 @@ define Package/libiwinfo
   CATEGORY:=Libraries
   TITLE:=Generalized Wireless Information Library (iwinfo)
   DEPENDS:=+PACKAGE_kmod-mac80211:libnl-tiny
+  ABI_VERSION:=$(PKG_RELEASE)
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
 
