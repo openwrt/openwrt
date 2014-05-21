@@ -186,9 +186,8 @@ void iwinfo_finish(void);
 extern const struct iwinfo_ops wext_ops;
 extern const struct iwinfo_ops madwifi_ops;
 extern const struct iwinfo_ops nl80211_ops;
+extern const struct iwinfo_ops wl_ops;
 
-#ifdef USE_WL
-#include "iwinfo/wl.h"
-#endif
+#include "iwinfo/utils.h"
 
 #endif

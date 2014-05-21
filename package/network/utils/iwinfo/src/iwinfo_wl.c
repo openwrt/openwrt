@@ -18,7 +18,8 @@
  * This code is based on the wlc.c utility published by OpenWrt.org .
  */
 
-#include "iwinfo/wl.h"
+#include "iwinfo.h"
+#include "iwinfo/api/broadcom.h"
 
 static int wl_ioctl(const char *name, int cmd, void *buf, int len)
 {
@@ -72,19 +73,19 @@ static struct wl_maclist * wl_read_assoclist(const char *ifname)
 }
 
 
-int wl_probe(const char *ifname)
+static int wl_probe(const char *ifname)
 {
 	int magic;
 	return (!wl_ioctl(ifname, WLC_GET_MAGIC, &magic, sizeof(magic)) &&
 			(magic == WLC_IOCTL_MAGIC));
 }
 
-void wl_close(void)
+static void wl_close(void)
 {
 	/* Nop */
 }
 
-int wl_get_mode(const char *ifname, int *buf)
+static int wl_get_mode(const char *ifname, int *buf)
 {
 	int ret = -1;
 	int ap, infra, passive;
@@ -110,7 +111,7 @@ int wl_get_mode(const char *ifname, int *buf)
 	return 0;
 }
 
-int wl_get_ssid(const char *ifname, char *buf)
+static int wl_get_ssid(const char *ifname, char *buf)
 {
 	int ret = -1;
 	wlc_ssid_t ssid;
@@ -121,7 +122,7 @@ int wl_get_ssid(const char *ifname, char *buf)
 	return ret;
 }
 
-int wl_get_bssid(const char *ifname, char *buf)
+static int wl_get_bssid(const char *ifname, char *buf)
 {
 	int ret = -1;
 	char bssid[6];
@@ -135,23 +136,23 @@ int wl_get_bssid(const char *ifname, char *buf)
 	return ret;
 }
 
-int wl_get_channel(const char *ifname, int *buf)
+static int wl_get_channel(const char *ifname, int *buf)
 {
 	return wl_ioctl(ifname, WLC_GET_CHANNEL, buf, sizeof(buf));
 }
 
-int wl_get_frequency(const char *ifname, int *buf)
+static int wl_get_frequency(const char *ifname, int *buf)
 {
 	return wext_ops.frequency(ifname, buf);
 }
 
-int wl_get_txpower(const char *ifname, int *buf)
+static int wl_get_txpower(const char *ifname, int *buf)
 {
 	/* WLC_GET_VAR "qtxpower" */
 	return wext_ops.txpower(ifname, buf);
 }
 
-int wl_get_bitrate(const char *ifname, int *buf)
+static int wl_get_bitrate(const char *ifname, int *buf)
 {
 	int ret = -1;
 	int rate = 0;
@@ -162,7 +163,7 @@ int wl_get_bitrate(const char *ifname, int *buf)
 	return ret;
 }
 
-int wl_get_signal(const char *ifname, int *buf)
+static int wl_get_signal(const char *ifname, int *buf)
 {
 	unsigned int ap, rssi, i, rssi_count;
 	int ioctl_req_version = 0x2000;
@@ -206,7 +207,7 @@ int wl_get_signal(const char *ifname, int *buf)
 	return 0;
 }
 
-int wl_get_noise(const char *ifname, int *buf)
+static int wl_get_noise(const char *ifname, int *buf)
 {
 	unsigned int ap, noise;
 	int ioctl_req_version = 0x2000;
@@ -232,17 +233,17 @@ int wl_get_noise(const char *ifname, int *buf)
 	return 0;
 }
 
-int wl_get_quality(const char *ifname, int *buf)
+static int wl_get_quality(const char *ifname, int *buf)
 {
 	return wext_ops.quality(ifname, buf);
 }
 
-int wl_get_quality_max(const char *ifname, int *buf)
+static int wl_get_quality_max(const char *ifname, int *buf)
 {
 	return wext_ops.quality_max(ifname, buf);
 }
 
-int wl_get_encryption(const char *ifname, char *buf)
+static int wl_get_encryption(const char *ifname, char *buf)
 {
 	uint32_t wsec, wauth, wpa;
 	struct iwinfo_crypto_entry *c = (struct iwinfo_crypto_entry *)buf;
@@ -323,7 +324,7 @@ int wl_get_encryption(const char *ifname, char *buf)
 	return 0;
 }
 
-int wl_get_phyname(const char *ifname, char *buf)
+static int wl_get_phyname(const char *ifname, char *buf)
 {
 	char *p;
 
@@ -335,7 +336,7 @@ int wl_get_phyname(const char *ifname, char *buf)
 	return 0;
 }
 
-int wl_get_enctype(const char *ifname, char *buf)
+static int wl_get_enctype(const char *ifname, char *buf)
 {
 	uint32_t wsec, wpa;
 	char algo[11];
@@ -420,7 +421,7 @@ static void wl_get_assoclist_cb(const char *ifname,
 	}
 }
 
-int wl_get_assoclist(const char *ifname, char *buf, int *len)
+static int wl_get_assoclist(const char *ifname, char *buf, int *len)
 {
 	int i, j, noise;
 	int ap, infra, passive;
@@ -500,7 +501,7 @@ int wl_get_assoclist(const char *ifname, char *buf, int *len)
 	return -1;
 }
 
-int wl_get_txpwrlist(const char *ifname, char *buf, int *len)
+static int wl_get_txpwrlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_txpwrlist_entry entry;
 	uint8_t dbm[11] = { 0, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 };
@@ -518,17 +519,17 @@ int wl_get_txpwrlist(const char *ifname, char *buf, int *len)
 	return 0;
 }
 
-int wl_get_scanlist(const char *ifname, char *buf, int *len)
+static int wl_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	return wext_ops.scanlist(ifname, buf, len);
 }
 
-int wl_get_freqlist(const char *ifname, char *buf, int *len)
+static int wl_get_freqlist(const char *ifname, char *buf, int *len)
 {
 	return wext_ops.freqlist(ifname, buf, len);
 }
 
-int wl_get_country(const char *ifname, char *buf)
+static int wl_get_country(const char *ifname, char *buf)
 {
 	char ccode[WLC_CNTRY_BUF_SZ];
 
@@ -551,7 +552,7 @@ int wl_get_country(const char *ifname, char *buf)
 	return -1;
 }
 
-int wl_get_countrylist(const char *ifname, char *buf, int *len)
+static int wl_get_countrylist(const char *ifname, char *buf, int *len)
 {
 	int i, count;
 	char cdata[WLC_IOCTL_MAXLEN];
@@ -583,7 +584,7 @@ int wl_get_countrylist(const char *ifname, char *buf, int *len)
 	return -1;
 }
 
-int wl_get_hwmodelist(const char *ifname, int *buf)
+static int wl_get_hwmodelist(const char *ifname, int *buf)
 {
 	int phytype;
 	uint i, band[WLC_BAND_ALL], bands;
@@ -627,7 +628,7 @@ int wl_get_hwmodelist(const char *ifname, int *buf)
 	return -1;
 }
 
-int wl_get_mbssid_support(const char *ifname, int *buf)
+static int wl_get_mbssid_support(const char *ifname, int *buf)
 {
 	wlc_rev_info_t revinfo;
 
@@ -644,7 +645,7 @@ int wl_get_mbssid_support(const char *ifname, int *buf)
 	return -1;
 }
 
-int wl_get_hardware_id(const char *ifname, char *buf)
+static int wl_get_hardware_id(const char *ifname, char *buf)
 {
 	wlc_rev_info_t revinfo;
 	struct iwinfo_hardware_id *ids = (struct iwinfo_hardware_id *)buf;
@@ -660,7 +661,7 @@ int wl_get_hardware_id(const char *ifname, char *buf)
 	return 0;
 }
 
-int wl_get_hardware_name(const char *ifname, char *buf)
+static int wl_get_hardware_name(const char *ifname, char *buf)
 {
 	struct iwinfo_hardware_id ids;
 
@@ -672,7 +673,7 @@ int wl_get_hardware_name(const char *ifname, char *buf)
 	return 0;
 }
 
-int wl_get_txpower_offset(const char *ifname, int *buf)
+static int wl_get_txpower_offset(const char *ifname, int *buf)
 {
 	FILE *p;
 	char off[8];
@@ -690,9 +691,40 @@ int wl_get_txpower_offset(const char *ifname, int *buf)
 	return 0;
 }
 
-int wl_get_frequency_offset(const char *ifname, int *buf)
+static int wl_get_frequency_offset(const char *ifname, int *buf)
 {
 	/* Stub */
 	*buf = 0;
 	return -1;
 }
+
+const struct iwinfo_ops wl_ops = {
+	.name             = "wl",
+	.probe            = wl_probe,
+	.channel          = wl_get_channel,
+	.frequency        = wl_get_frequency,
+	.frequency_offset = wl_get_frequency_offset,
+	.txpower          = wl_get_txpower,
+	.txpower_offset   = wl_get_txpower_offset,
+	.bitrate          = wl_get_bitrate,
+	.signal           = wl_get_signal,
+	.noise            = wl_get_noise,
+	.quality          = wl_get_quality,
+	.quality_max      = wl_get_quality_max,
+	.mbssid_support   = wl_get_mbssid_support,
+	.hwmodelist       = wl_get_hwmodelist,
+	.mode             = wl_get_mode,
+	.ssid             = wl_get_ssid,
+	.bssid            = wl_get_bssid,
+	.country          = wl_get_country,
+	.hardware_id      = wl_get_hardware_id,
+	.hardware_name    = wl_get_hardware_name,
+	.encryption       = wl_get_encryption,
+	.phyname          = wl_get_phyname,
+	.assoclist        = wl_get_assoclist,
+	.txpwrlist        = wl_get_txpwrlist,
+	.scanlist         = wl_get_scanlist,
+	.freqlist         = wl_get_freqlist,
+	.countrylist      = wl_get_countrylist,
+	.close            = wl_close
+};
