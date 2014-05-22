@@ -1,0 +1,160 @@
+#!/bin/sh
+# map.sh - IPv4-in-IPv6 tunnel backend
+#
+# Author: Steven Barth <cyrus@openwrt.org>
+# Copyright (c) 2014 cisco Systems, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2
+# as published by the Free Software Foundation
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+[ -n "$INCLUDE_ONLY" ] || {
+	. /lib/functions.sh
+	. /lib/functions/network.sh
+	. ../netifd-proto.sh
+	init_proto "$@"
+}
+
+proto_map_setup() {
+	local cfg="$1"
+	local iface="$2"
+	local link="map-$cfg"
+
+	# uncomment for legacy MAP0 mode
+	#export LEGACY=1
+
+	local type mtu ttl tunlink zone
+	local rule ipaddr ip4prefixlen ip6prefix ip6prefixlen peeraddr ealen psidlen psid offset
+	json_get_vars type mtu ttl tunlink zone
+	json_get_vars rule ipaddr ip4prefixlen ip6prefix ip6prefixlen peeraddr ealen psidlen psid offset
+
+	[ -z "$zone" ] && zone="wan"
+	[ -z "$type" ] && type="map-e"
+	[ -z "$ip4prefixlen" ] && ip4prefixlen=32
+
+	( proto_add_host_dependency "$cfg" "::" "$tunlink" )
+
+	if [ -z "$rule" ]; then
+		rule="type=$type,ipv6prefix=$ip6prefix,prefix6len=$ip6prefixlen,ipv4prefix=$ipaddr,prefix4len=$ip4prefixlen"
+		[ -n "$psid" ] && rule="$rule,psid=$psid"
+		[ -n "$psidlen" ] && rule="$rule,psidlen=$psidlen"
+		[ -n "$offset" ] && rule="$rule,offset=$offset"
+		[ -n "$ealen" ] && rule="$rule,ealen=$ealen"
+		rule="$rule,br=$peeraddr"
+	fi
+
+	RULE_DATA=$(mapcalc ${tunlink:-\*} $rule)
+	if [ "$?" != 0 ]; then
+		proto_notify_error "$cfg" "INVALID_MAP_RULE"
+		proto_block_restart "$cfg"
+		return
+	fi
+
+	eval $RULE_DATA
+	
+	if [ -z "$RULE_BMR" ]; then
+		proto_notify_error "$cfg" "NO_MATCHING_PD"
+		proto_block_restart "$cfg"
+		return
+	fi
+
+	k=$RULE_BMR
+	if [ "$type" = "lw4o6" -o "$type" = "map-e" ]; then
+		proto_init_update "$link" 1
+		proto_add_ipv4_address $(eval "echo \$RULE_${k}_IPV4ADDR") "" "" ""
+	
+		proto_add_tunnel
+		json_add_string mode ipip6
+		json_add_int mtu "${mtu:-1280}"
+		json_add_int ttl "${ttl:-64}"
+		json_add_string local $(eval "echo \$RULE_${k}_IPV6ADDR")
+		json_add_string remote $(eval "echo \$RULE_${k}_BR")
+		json_add_string link $(eval "echo \$RULE_${k}_PD6IFACE")
+
+		if [ "$type" = "map-e" ]; then
+			json_add_array "fmrs"
+				for i in $(seq $RULE_COUNT); do
+					[ "$(eval "echo \$RULE_${i}_FMR")" != 1 ] && continue
+					fmr="$(eval "echo \$RULE_${i}_IPV6PREFIX")/$(eval "echo \$RULE_${i}_PREFIX6LEN")"
+					fmr="$fmr,$(eval "echo \$RULE_${i}_IPV4PREFIX")/$(eval "echo \$RULE_${i}_PREFIX4LEN")"
+					fmr="$fmr,$(eval "echo \$RULE_${i}_EALEN"),$(eval "echo \$RULE_${i}_OFFSET")"
+					json_add_string "" "$fmr"
+				done
+			json_close_array
+		fi
+
+		proto_close_tunnel
+	else
+		proto_notify_error "$cfg" "UNSUPPORTED_TYPE"
+		proto_block_restart "$cfg"
+	fi
+
+	proto_add_ipv4_route "0.0.0.0" 0
+	proto_add_data
+	[ "$zone" != "-" ] && json_add_string zone "$zone"
+
+	json_add_array firewall
+	  for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
+            for proto in icmp tcp udp; do
+	      json_add_object ""
+	        json_add_string type nat
+	        json_add_string target SNAT
+	        json_add_string family inet
+	        json_add_string proto "$proto"
+                json_add_boolean connlimit_ports 1
+                json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
+                json_add_string snat_port "$portset"
+	      json_close_object
+            done
+	  done
+	json_close_array
+	proto_close_data
+
+	proto_send_update "$cfg"
+
+	if [ "$type" = "lw4o6" -o "$type" = "map-e" ]; then
+		json_init
+		json_add_string name "${cfg}_local"
+		json_add_string ifname "@$(eval "echo \$RULE_${k}_PD6IFACE")"
+		json_add_string proto "static"
+		json_add_array ip6addr
+		json_add_string "" "$(eval "echo \$RULE_${k}_IPV6ADDR")"
+		json_close_array
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
+	fi
+}
+
+proto_map_teardown() {
+	local cfg="$1"
+	ifdown "${cfg}_local"
+}
+
+proto_map_init_config() {
+	no_device=1             
+	available=1
+
+	proto_config_add_string "rule"
+	proto_config_add_string "ipaddr"
+	proto_config_add_int "ip4prefixlen"
+	proto_config_add_string "ip6prefix"
+	proto_config_add_int "ip6prefixlen"
+	proto_config_add_string "peeraddr"
+	proto_config_add_int "psidlen"
+	proto_config_add_int "psid"
+	proto_config_add_int "offset"
+
+	proto_config_add_string "tunlink"
+	proto_config_add_int "mtu"
+	proto_config_add_int "ttl"
+	proto_config_add_string "zone"
+}
+
+[ -n "$INCLUDE_ONLY" ] || {
+        add_protocol map
+}
