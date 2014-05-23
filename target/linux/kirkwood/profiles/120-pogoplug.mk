@@ -15,7 +15,7 @@ define Profile/POGOE02/Description
  Package set compatible with Cloud Engines Pogoplug E02 board.
 endef
 
-POGOE02_UBIFS_OPTS:="-m 2048 -e 128KiB -c 4096"
+POGOE02_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
 POGOE02_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,POGOE02))
