@@ -80,7 +80,7 @@
  static int ssb_gpio_chipco_get_value(struct gpio_chip *chip, unsigned gpio)
  {
  	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
-@@ -74,19 +98,129 @@ static void ssb_gpio_chipco_free(struct
+@@ -74,19 +98,129 @@ static void ssb_gpio_chipco_free(struct 
  	ssb_chipco_gpio_pullup(&bus->chipco, 1 << gpio, 0);
  }
  
@@ -503,7 +503,15 @@
  		ssb_bus_may_powerdown(bus);
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -486,6 +486,7 @@ struct ssb_bus {
+@@ -33,6 +33,7 @@ struct ssb_sprom {
+ 	u8 et1phyaddr;		/* MII address for enet1 */
+ 	u8 et0mdcport;		/* MDIO for enet0 */
+ 	u8 et1mdcport;		/* MDIO for enet1 */
++	u16 dev_id;		/* Device ID overriding e.g. PCI ID */
+ 	u16 board_rev;		/* Board revision number from SPROM. */
+ 	u16 board_num;		/* Board number from SPROM. */
+ 	u16 board_type;		/* Board type from SPROM. */
+@@ -486,6 +487,7 @@ struct ssb_bus {
  #endif /* EMBEDDED */
  #ifdef CONFIG_SSB_DRIVER_GPIO
  	struct gpio_chip gpio;
@@ -541,3 +549,13 @@
  
  #endif /* CONFIG_SSB_DRIVER_GIGE */
  #endif /* LINUX_SSB_DRIVER_GIGE_H_ */
+--- a/arch/mips/bcm47xx/sprom.c
++++ b/arch/mips/bcm47xx/sprom.c
+@@ -168,6 +168,7 @@ static void nvram_read_alpha2(const char
+ static void bcm47xx_fill_sprom_r1234589(struct ssb_sprom *sprom,
+ 					const char *prefix, bool fallback)
+ {
++	nvram_read_u16(prefix, NULL, "devid", &sprom->dev_id, 0, fallback);
+ 	nvram_read_u8(prefix, NULL, "ledbh0", &sprom->gpio0, 0xff, fallback);
+ 	nvram_read_u8(prefix, NULL, "ledbh1", &sprom->gpio1, 0xff, fallback);
+ 	nvram_read_u8(prefix, NULL, "ledbh2", &sprom->gpio2, 0xff, fallback);

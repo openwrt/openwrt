@@ -18,7 +18,7 @@ Patchwork: http://patchwork.linux-mips.org/patch/6211/
 
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -135,7 +135,7 @@ static void nvram_read_leddc(const char
+@@ -135,7 +135,7 @@ static void nvram_read_leddc(const char 
  }
  
  static void nvram_read_macaddr(const char *prefix, const char *name,
@@ -50,7 +50,7 @@ Patchwork: http://patchwork.linux-mips.org/patch/6211/
  }
  
  static void bcm47xx_fill_sprom_r1234589(struct ssb_sprom *sprom,
-@@ -180,7 +180,7 @@ static void bcm47xx_fill_sprom_r1234589(
+@@ -181,7 +181,7 @@ static void bcm47xx_fill_sprom_r1234589(
  		      fallback);
  	nvram_read_s8(prefix, NULL, "ag1", &sprom->antenna_gain.a1, 0,
  		      fallback);
@@ -59,7 +59,7 @@ Patchwork: http://patchwork.linux-mips.org/patch/6211/
  }
  
  static void bcm47xx_fill_sprom_r12389(struct ssb_sprom *sprom,
-@@ -633,20 +633,20 @@ static void bcm47xx_fill_sprom_path_r45(
+@@ -634,20 +634,20 @@ static void bcm47xx_fill_sprom_path_r45(
  static void bcm47xx_fill_sprom_ethernet(struct ssb_sprom *sprom,
  					const char *prefix, bool fallback)
  {

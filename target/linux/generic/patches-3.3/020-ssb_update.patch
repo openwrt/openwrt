@@ -471,7 +471,7 @@
  	}
  
  	if (updown_tab) {
-@@ -516,8 +524,8 @@ void ssb_pmu_init(struct ssb_chipcommon
+@@ -516,8 +524,8 @@ void ssb_pmu_init(struct ssb_chipcommon 
  	pmucap = chipco_read32(cc, SSB_CHIPCO_PMU_CAP);
  	cc->pmu.rev = (pmucap & SSB_CHIPCO_PMU_CAP_REVISION);
  
@@ -1131,7 +1131,7 @@
  }
  
  static void dump_irq(struct ssb_bus *bus)
-@@ -178,9 +199,9 @@ static void ssb_mips_serial_init(struct
+@@ -178,9 +199,9 @@ static void ssb_mips_serial_init(struct 
  {
  	struct ssb_bus *bus = mcore->dev->bus;
  
@@ -1143,7 +1143,7 @@
  		mcore->nr_serial_ports = ssb_chipco_serial_init(&bus->chipco, mcore->serial_ports);
  	else
  		mcore->nr_serial_ports = 0;
-@@ -189,17 +210,42 @@ static void ssb_mips_serial_init(struct
+@@ -189,17 +210,42 @@ static void ssb_mips_serial_init(struct 
  static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
  {
  	struct ssb_bus *bus = mcore->dev->bus;
@@ -1980,7 +1980,7 @@
  	sprom_extract_r458(out, in);
  
  	/* TODO - get remaining rev 8 stuff needed */
-@@ -641,7 +753,7 @@ static int sprom_extract(struct ssb_bus
+@@ -641,7 +753,7 @@ static int sprom_extract(struct ssb_bus 
  	memset(out, 0, sizeof(*out));
  
  	out->revision = in[size - 1] & 0x00FF;
@@ -1989,7 +1989,7 @@
  	memset(out->et0mac, 0xFF, 6);		/* preset et0 and et1 mac */
  	memset(out->et1mac, 0xFF, 6);
  
-@@ -650,7 +762,7 @@ static int sprom_extract(struct ssb_bus
+@@ -650,7 +762,7 @@ static int sprom_extract(struct ssb_bus 
  		 * number stored in the SPROM.
  		 * Always extract r1. */
  		out->revision = 1;
@@ -1998,7 +1998,7 @@
  	}
  
  	switch (out->revision) {
-@@ -667,9 +779,8 @@ static int sprom_extract(struct ssb_bus
+@@ -667,9 +779,8 @@ static int sprom_extract(struct ssb_bus 
  		sprom_extract_r8(out, in);
  		break;
  	default:
@@ -2494,7 +2494,7 @@
  
  #include <linux/ssb/ssb_regs.h>
  
-@@ -16,19 +18,28 @@ struct pcmcia_device;
+@@ -16,19 +18,29 @@ struct pcmcia_device;
  struct ssb_bus;
  struct ssb_driver;
  
@@ -2516,6 +2516,7 @@
  	u8 et1phyaddr;		/* MII address for enet1 */
  	u8 et0mdcport;		/* MDIO for enet0 */
  	u8 et1mdcport;		/* MDIO for enet1 */
++	u16 dev_id;		/* Device ID overriding e.g. PCI ID */
  	u16 board_rev;		/* Board revision number from SPROM. */
 +	u16 board_num;		/* Board number from SPROM. */
 +	u16 board_type;		/* Board type from SPROM. */
@@ -2528,7 +2529,7 @@
  	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
  	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
  	u16 pa0b0;
-@@ -47,10 +58,10 @@ struct ssb_sprom {
+@@ -47,10 +59,10 @@ struct ssb_sprom {
  	u8 gpio1;		/* GPIO pin 1 */
  	u8 gpio2;		/* GPIO pin 2 */
  	u8 gpio3;		/* GPIO pin 3 */
@@ -2543,7 +2544,7 @@
  	u8 itssi_a;		/* Idle TSSI Target for A-PHY */
  	u8 itssi_bg;		/* Idle TSSI Target for B/G-PHY */
  	u8 tri2g;		/* 2.4GHz TX isolation */
-@@ -61,8 +72,8 @@ struct ssb_sprom {
+@@ -61,8 +73,8 @@ struct ssb_sprom {
  	u8 txpid5gl[4];		/* 4.9 - 5.1GHz TX power index */
  	u8 txpid5g[4];		/* 5.1 - 5.5GHz TX power index */
  	u8 txpid5gh[4];		/* 5.5 - ...GHz TX power index */
@@ -2554,7 +2555,7 @@
  	u8 rssisav2g;		/* 2GHz RSSI params */
  	u8 rssismc2g;
  	u8 rssismf2g;
-@@ -82,16 +93,13 @@ struct ssb_sprom {
+@@ -82,16 +94,13 @@ struct ssb_sprom {
  	u16 boardflags2_hi;	/* Board flags (bits 48-63) */
  	/* TODO store board flags in a single u64 */
  
@@ -2574,7 +2575,7 @@
  	} antenna_gain;
  
  	struct {
-@@ -103,14 +111,85 @@ struct ssb_sprom {
+@@ -103,14 +112,85 @@ struct ssb_sprom {
  		} ghz5;
  	} fem;
  
@@ -2662,7 +2663,7 @@
  };
  
  
-@@ -166,6 +245,7 @@ struct ssb_bus_ops {
+@@ -166,6 +246,7 @@ struct ssb_bus_ops {
  #define SSB_DEV_MINI_MACPHY	0x823
  #define SSB_DEV_ARM_1176	0x824
  #define SSB_DEV_ARM_7TDMI	0x825
@@ -2670,7 +2671,7 @@
  
  /* Vendor-ID values */
  #define SSB_VENDOR_BROADCOM	0x4243
-@@ -260,13 +340,61 @@ enum ssb_bustype {
+@@ -260,13 +341,61 @@ enum ssb_bustype {
  #define SSB_BOARDVENDOR_DELL	0x1028	/* Dell */
  #define SSB_BOARDVENDOR_HP	0x0E11	/* HP */
  /* board_type */
@@ -2735,7 +2736,7 @@
  /* chip_package */
  #define SSB_CHIPPACK_BCM4712S	1	/* Small 200pin 4712 */
  #define SSB_CHIPPACK_BCM4712M	2	/* Medium 225pin 4712 */
-@@ -354,7 +482,11 @@ struct ssb_bus {
+@@ -354,7 +483,11 @@ struct ssb_bus {
  #ifdef CONFIG_SSB_EMBEDDED
  	/* Lock for GPIO register access. */
  	spinlock_t gpio_lock;
