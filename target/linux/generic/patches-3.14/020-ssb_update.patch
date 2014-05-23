@@ -1,0 +1,36 @@
+commit 4f4aa2ec24dc45881849833a439558d3a378028c
+Author: Rafał Miłecki <zajec5@gmail.com>
+Date:   Sun May 18 00:22:38 2014 +0200
+
+    ssb: sprom: add dev_id field for value overriding standard ID
+    
+    Some devices may have different features despite sharing the same ID
+    (e.g. PCI ID). For example 14e4:4331 is usually a dual band, but this
+    can be "limited". Device with "pci/x/y/devid=0x4332" supports 2.4 GHz
+    only. Similarly 0x4333 will mean support for 5 GHz only.
+    Add entry in SPROM so info described above can be extracted and stored.
+    
+    Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+    Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+--- a/arch/mips/bcm47xx/sprom.c
++++ b/arch/mips/bcm47xx/sprom.c
+@@ -168,6 +168,7 @@ static void nvram_read_alpha2(const char
+ static void bcm47xx_fill_sprom_r1234589(struct ssb_sprom *sprom,
+ 					const char *prefix, bool fallback)
+ {
++	nvram_read_u16(prefix, NULL, "devid", &sprom->dev_id, 0, fallback);
+ 	nvram_read_u8(prefix, NULL, "ledbh0", &sprom->gpio0, 0xff, fallback);
+ 	nvram_read_u8(prefix, NULL, "ledbh1", &sprom->gpio1, 0xff, fallback);
+ 	nvram_read_u8(prefix, NULL, "ledbh2", &sprom->gpio2, 0xff, fallback);
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -33,6 +33,7 @@ struct ssb_sprom {
+ 	u8 et1phyaddr;		/* MII address for enet1 */
+ 	u8 et0mdcport;		/* MDIO for enet0 */
+ 	u8 et1mdcport;		/* MDIO for enet1 */
++	u16 dev_id;		/* Device ID overriding e.g. PCI ID */
+ 	u16 board_rev;		/* Board revision number from SPROM. */
+ 	u16 board_num;		/* Board number from SPROM. */
+ 	u16 board_type;		/* Board type from SPROM. */

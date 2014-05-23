@@ -417,7 +417,7 @@
  	}
  
  	if (updown_tab) {
-@@ -523,8 +524,8 @@ void ssb_pmu_init(struct ssb_chipcommon
+@@ -523,8 +524,8 @@ void ssb_pmu_init(struct ssb_chipcommon 
  	pmucap = chipco_read32(cc, SSB_CHIPCO_PMU_CAP);
  	cc->pmu.rev = (pmucap & SSB_CHIPCO_PMU_CAP_REVISION);
  
@@ -1075,7 +1075,7 @@
  }
  
  static void dump_irq(struct ssb_bus *bus)
-@@ -178,9 +199,9 @@ static void ssb_mips_serial_init(struct
+@@ -178,9 +199,9 @@ static void ssb_mips_serial_init(struct 
  {
  	struct ssb_bus *bus = mcore->dev->bus;
  
@@ -1087,7 +1087,7 @@
  		mcore->nr_serial_ports = ssb_chipco_serial_init(&bus->chipco, mcore->serial_ports);
  	else
  		mcore->nr_serial_ports = 0;
-@@ -189,17 +210,42 @@ static void ssb_mips_serial_init(struct
+@@ -189,17 +210,42 @@ static void ssb_mips_serial_init(struct 
  static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
  {
  	struct ssb_bus *bus = mcore->dev->bus;
@@ -1715,7 +1715,7 @@
  	SPEX(alpha2[0], SSB_SPROM8_CCODE, 0xff00, 8);
  	SPEX(alpha2[1], SSB_SPROM8_CCODE, 0x00ff, 0);
  	SPEX(boardflags_lo, SSB_SPROM8_BFLLO, 0xFFFF, 0);
-@@ -743,7 +753,7 @@ static int sprom_extract(struct ssb_bus
+@@ -743,7 +753,7 @@ static int sprom_extract(struct ssb_bus 
  	memset(out, 0, sizeof(*out));
  
  	out->revision = in[size - 1] & 0x00FF;
@@ -1724,7 +1724,7 @@
  	memset(out->et0mac, 0xFF, 6);		/* preset et0 and et1 mac */
  	memset(out->et1mac, 0xFF, 6);
  
-@@ -752,7 +762,7 @@ static int sprom_extract(struct ssb_bus
+@@ -752,7 +762,7 @@ static int sprom_extract(struct ssb_bus 
  		 * number stored in the SPROM.
  		 * Always extract r1. */
  		out->revision = 1;
@@ -1733,7 +1733,7 @@
  	}
  
  	switch (out->revision) {
-@@ -769,9 +779,8 @@ static int sprom_extract(struct ssb_bus
+@@ -769,9 +779,8 @@ static int sprom_extract(struct ssb_bus 
  		sprom_extract_r8(out, in);
  		break;
  	default:
@@ -2172,7 +2172,7 @@
  
  #include <linux/ssb/ssb_regs.h>
  
-@@ -24,9 +26,9 @@ struct ssb_sprom_core_pwr_info {
+@@ -24,13 +26,14 @@ struct ssb_sprom_core_pwr_info {
  
  struct ssb_sprom {
  	u8 revision;
@@ -2185,7 +2185,12 @@
  	u8 et0phyaddr;		/* MII address for enet0 */
  	u8 et1phyaddr;		/* MII address for enet1 */
  	u8 et0mdcport;		/* MDIO for enet0 */
-@@ -338,13 +340,61 @@ enum ssb_bustype {
+ 	u8 et1mdcport;		/* MDIO for enet1 */
++	u16 dev_id;		/* Device ID overriding e.g. PCI ID */
+ 	u16 board_rev;		/* Board revision number from SPROM. */
+ 	u16 board_num;		/* Board number from SPROM. */
+ 	u16 board_type;		/* Board type from SPROM. */
+@@ -338,13 +341,61 @@ enum ssb_bustype {
  #define SSB_BOARDVENDOR_DELL	0x1028	/* Dell */
  #define SSB_BOARDVENDOR_HP	0x0E11	/* HP */
  /* board_type */
@@ -2250,7 +2255,7 @@
  /* chip_package */
  #define SSB_CHIPPACK_BCM4712S	1	/* Small 200pin 4712 */
  #define SSB_CHIPPACK_BCM4712M	2	/* Medium 225pin 4712 */
-@@ -432,7 +482,11 @@ struct ssb_bus {
+@@ -432,7 +483,11 @@ struct ssb_bus {
  #ifdef CONFIG_SSB_EMBEDDED
  	/* Lock for GPIO register access. */
  	spinlock_t gpio_lock;

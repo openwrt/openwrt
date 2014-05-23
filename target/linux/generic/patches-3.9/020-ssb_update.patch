@@ -93,7 +93,7 @@
  	}
  
  	if (updown_tab) {
-@@ -526,8 +524,8 @@ void ssb_pmu_init(struct ssb_chipcommon
+@@ -526,8 +524,8 @@ void ssb_pmu_init(struct ssb_chipcommon 
  	pmucap = chipco_read32(cc, SSB_CHIPCO_PMU_CAP);
  	cc->pmu.rev = (pmucap & SSB_CHIPCO_PMU_CAP_REVISION);
  
@@ -140,7 +140,7 @@
  		return 0;
  	}
  }
-@@ -692,8 +687,23 @@ void ssb_pmu_spuravoid_pllupdate(struct
+@@ -692,8 +687,23 @@ void ssb_pmu_spuravoid_pllupdate(struct 
  		pmu_ctl = SSB_CHIPCO_PMU_CTL_PLL_UPD;
  		break;
  	case 43222:
@@ -751,7 +751,7 @@
  	SPEX(alpha2[0], SSB_SPROM8_CCODE, 0xff00, 8);
  	SPEX(alpha2[1], SSB_SPROM8_CCODE, 0x00ff, 0);
  	SPEX(boardflags_lo, SSB_SPROM8_BFLLO, 0xFFFF, 0);
-@@ -743,7 +753,7 @@ static int sprom_extract(struct ssb_bus
+@@ -743,7 +753,7 @@ static int sprom_extract(struct ssb_bus 
  	memset(out, 0, sizeof(*out));
  
  	out->revision = in[size - 1] & 0x00FF;
@@ -760,7 +760,7 @@
  	memset(out->et0mac, 0xFF, 6);		/* preset et0 and et1 mac */
  	memset(out->et1mac, 0xFF, 6);
  
-@@ -752,7 +762,7 @@ static int sprom_extract(struct ssb_bus
+@@ -752,7 +762,7 @@ static int sprom_extract(struct ssb_bus 
  		 * number stored in the SPROM.
  		 * Always extract r1. */
  		out->revision = 1;
@@ -769,7 +769,7 @@
  	}
  
  	switch (out->revision) {
-@@ -769,9 +779,8 @@ static int sprom_extract(struct ssb_bus
+@@ -769,9 +779,8 @@ static int sprom_extract(struct ssb_bus 
  		sprom_extract_r8(out, in);
  		break;
  	default:
@@ -1125,7 +1125,7 @@
  extern u32 ssb_extif_watchdog_timer_set_ms(struct bcm47xx_wdt *wdt, u32 ms);
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -26,9 +26,9 @@ struct ssb_sprom_core_pwr_info {
+@@ -26,13 +26,14 @@ struct ssb_sprom_core_pwr_info {
  
  struct ssb_sprom {
  	u8 revision;
@@ -1138,7 +1138,12 @@
  	u8 et0phyaddr;		/* MII address for enet0 */
  	u8 et1phyaddr;		/* MII address for enet1 */
  	u8 et0mdcport;		/* MDIO for enet0 */
-@@ -340,13 +340,61 @@ enum ssb_bustype {
+ 	u8 et1mdcport;		/* MDIO for enet1 */
++	u16 dev_id;		/* Device ID overriding e.g. PCI ID */
+ 	u16 board_rev;		/* Board revision number from SPROM. */
+ 	u16 board_num;		/* Board number from SPROM. */
+ 	u16 board_type;		/* Board type from SPROM. */
+@@ -340,13 +341,61 @@ enum ssb_bustype {
  #define SSB_BOARDVENDOR_DELL	0x1028	/* Dell */
  #define SSB_BOARDVENDOR_HP	0x0E11	/* HP */
  /* board_type */
@@ -1261,3 +1266,13 @@
  #define SSB_SPROM4_AGAIN01		0x005E	/* Antenna Gain (in dBm Q5.2) */
  #define  SSB_SPROM4_AGAIN0		0x00FF	/* Antenna 0 */
  #define  SSB_SPROM4_AGAIN0_SHIFT	0
+--- a/arch/mips/bcm47xx/sprom.c
++++ b/arch/mips/bcm47xx/sprom.c
+@@ -168,6 +168,7 @@ static void nvram_read_alpha2(const char
+ static void bcm47xx_fill_sprom_r1234589(struct ssb_sprom *sprom,
+ 					const char *prefix, bool fallback)
+ {
++	nvram_read_u16(prefix, NULL, "devid", &sprom->dev_id, 0, fallback);
+ 	nvram_read_u8(prefix, NULL, "ledbh0", &sprom->gpio0, 0xff, fallback);
+ 	nvram_read_u8(prefix, NULL, "ledbh1", &sprom->gpio1, 0xff, fallback);
+ 	nvram_read_u8(prefix, NULL, "ledbh2", &sprom->gpio2, 0xff, fallback);
