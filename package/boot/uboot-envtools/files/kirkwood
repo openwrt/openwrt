@@ -11,6 +11,7 @@ touch /etc/config/ubootenv
 . /lib/functions.sh
 
 case "`cat /proc/device-tree/model`" in
+"Cloud Engines Pogoplug E02" | \
 "RaidSonic ICY BOX IB-NAS62x0 (Rev B)")
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
