@@ -72,7 +72,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  struct b43_bus_dev *b43_bus_dev_ssb_init(struct ssb_device *sdev);
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -4370,7 +4370,7 @@ static int b43_phy_versioning(struct b43
+@@ -4380,7 +4380,7 @@ static int b43_phy_versioning(struct b43
  		u16 radio24[3];
  
  		for (tmp = 0; tmp < 3; tmp++) {
@@ -81,7 +81,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  			radio24[tmp] = b43_read16(dev, B43_MMIO_RADIO24_DATA);
  		}
  
-@@ -4389,10 +4389,10 @@ static int b43_phy_versioning(struct b43
+@@ -4399,10 +4399,10 @@ static int b43_phy_versioning(struct b43
  			else
  				tmp = 0x5205017F;
  		} else {

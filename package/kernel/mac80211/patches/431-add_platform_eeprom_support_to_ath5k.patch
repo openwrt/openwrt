@@ -22,14 +22,14 @@
  	u32 status, timeout;
  
 +	struct ath5k_platform_data *pdata = NULL;
-+	
++
 +	if (ah->pdev)
 +		pdata = ah->pdev->dev.platform_data;
 +
 +	if (pdata && pdata->eeprom_data && pdata->eeprom_data[61] == AR5K_EEPROM_MAGIC_VALUE) {
-+		if (offset >= ATH5K_PLAT_EEP_MAX_WORDS) 
++		if (offset >= ATH5K_PLAT_EEP_MAX_WORDS)
 +			return false;
-+		
++
 +		*data = pdata->eeprom_data[offset];
 +		return true;
 +	}

@@ -68,7 +68,7 @@
  obj-$(CPTCFG_NFC) += net/nfc/
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -2723,7 +2723,7 @@ static struct ssb_device *b43_ssb_gpio_d
+@@ -2733,7 +2733,7 @@ static struct ssb_device *b43_ssb_gpio_d
  {
  	struct ssb_bus *bus = dev->dev->sdev->bus;
  
@@ -77,7 +77,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4688,7 +4688,7 @@ static int b43_wireless_core_init(struct
+@@ -4698,7 +4698,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */
