@@ -224,7 +224,6 @@ static int button_hotplug_create_event(const char *name, unsigned int type,
 
 /* -------------------------------------------------------------------------*/
 
-#ifdef	CONFIG_HOTPLUG
 static int button_get_index(unsigned int code)
 {
 	int i;
@@ -256,12 +255,6 @@ static void button_hotplug_event(struct gpio_keys_button_data *data,
 			(seen - priv->seen) / HZ, value);
 	priv->seen = seen;
 }
-#else
-static void button_hotplug_event(struct gpio_keys_button_data *data,
-			   unsigned int type, int value)
-{
-}
-#endif	/* CONFIG_HOTPLUG */
 
 struct gpio_keys_button_dev {
 	int polled;
