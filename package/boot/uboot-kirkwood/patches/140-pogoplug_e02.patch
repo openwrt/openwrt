@@ -1,0 +1,58 @@
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -168,6 +168,7 @@ Active  arm         arm926ejs      davin
+ Active  arm         arm926ejs      kirkwood    buffalo         lsxl                lschlv2                              lsxl:LSCHLV2                                                                                                                      Michael Walle <michael@walle.cc>
+ Active  arm         arm926ejs      kirkwood    buffalo         lsxl                lsxhl                                lsxl:LSXHL                                                                                                                        Michael Walle <michael@walle.cc>
+ Active  arm         arm926ejs      kirkwood    cloudengines    -                   pogo_e02                             -                                                                                                                                 Dave Purdy <david.c.purdy@gmail.com>
++Active  arm         arm926ejs      kirkwood    cloudengines    pogo_e02            pogo_e02_second_stage                pogo_e02:SECOND_STAGE                                                                                                             Felix Kaechele <felix@fetzig.org>
+ Active  arm         arm926ejs      kirkwood    d-link          -                   dns325                               -                                                                                                                                 Stefan Herbrechtsmeier <stefan@code.herbrechtsmeier.net>
+ Active  arm         arm926ejs      kirkwood    iomega          -                   iconnect                             -                                                                                                                                 Luka Perkov <luka@openwrt.org>
+ Active  arm         arm926ejs      kirkwood    iomega          iconnect            iconnect_second_stage                iconnect:SECOND_STAGE                                                                                                             Luka Perkov <luka@openwrt.org>
+--- a/include/configs/pogo_e02.h
++++ b/include/configs/pogo_e02.h
+@@ -62,23 +62,35 @@
+ #endif
+ 
+ #define CONFIG_ENV_SIZE			0x20000	/* 128k */
+-#define CONFIG_ENV_OFFSET		0x60000	/* env starts here */
++#define CONFIG_ENV_OFFSET		0xe0000	/* env starts here */
+ 
+ /*
+  * Default environment variables
+  */
+ #define CONFIG_BOOTCOMMAND \
+-	"setenv bootargs $(bootargs_console); " \
+-	"run bootcmd_usb; " \
+-	"bootm 0x00800000 0x01100000"
++	"setenv bootargs ${console} ${mtdparts} ${bootargs_root}; " \
++	"ubi part root; " \
++	"ubifsmount ubi:rootfs; " \
++	"ubifsload 0x800000 ${kernel}; " \
++	"ubifsload 0x700000 ${fdt}; " \
++	"ubifsumount; " \
++	"fdt addr 0x700000; fdt resize; fdt chosen; " \
++	"bootz 0x800000 - 0x700000"
++
++#define CONFIG_MTDPARTS \
++	"mtdparts=orion_nand:" \
++	"0xe0000@0x0(uboot)," \
++	"0x20000@0xe0000(uboot_env)," \
++	"0x100000@0x100000(second_stage_uboot)," \
++	"-@0x200000(root)\0"
+ 
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+-	"mtdparts=mtdparts=orion_nand:1M(u-boot),4M(uImage)," \
+-	"32M(rootfs),-(data)\0"\
+-	"mtdids=nand0=orion_nand\0"\
+-	"bootargs_console=console=ttyS0,115200\0" \
+-	"bootcmd_usb=usb start; ext2load usb 0:1 0x00800000 /uImage; " \
+-	"ext2load usb 0:1 0x01100000 /uInitrd\0"
++	"console=console=ttyS0,115200\0"	\
++	"mtdids=nand0=orion_nand\0"		\
++	"mtdparts="CONFIG_MTDPARTS		\
++	"kernel=/boot/zImage\0"			\
++	"fdt=/boot/pogo_e02.dtb\0"		\
++	"bootargs_root=ubi.mtd=3 root=ubi0:rootfs rootfstype=ubifs rw\0"
+ 
+ /*
+  * Ethernet Driver configuration
