@@ -77,6 +77,7 @@ setup_interface () {
 
 	proto_add_data
 	[ -n "$CER" ] && json_add_string cer "$CER"
+	[ -n "$PASSTHRU" ] && json_add_string passthru "$PASSTHRU"
 	proto_close_data
 
 	proto_send_update "$INTERFACE"
