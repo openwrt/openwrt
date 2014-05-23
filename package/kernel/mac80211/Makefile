@@ -358,7 +358,7 @@ define KernelPackage/rtl8180
   DEPENDS+= @PCI_SUPPORT
   TITLE+= (RTL8180 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180/rtl818x_pci.ko
-  AUTOLOAD:=$(call AutoProbe,rtl8180)
+  AUTOLOAD:=$(call AutoProbe,rtl818x_pci)
 endef
 
 define KernelPackage/rtl8187
