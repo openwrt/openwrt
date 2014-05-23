@@ -208,7 +208,6 @@ static int button_hotplug_create_event(const char *name, unsigned long seen,
 
 /* -------------------------------------------------------------------------*/
 
-#ifdef	CONFIG_HOTPLUG
 static int button_get_index(unsigned int code)
 {
 	int i;
@@ -239,12 +238,6 @@ static void button_hotplug_event(struct input_handle *handle,
 			(seen - priv->seen[btn]) / HZ, value);
 	priv->seen[btn] = seen;
 }
-#else
-static void button_hotplug_event(struct input_handle *handle,
-			   unsigned int type, unsigned int code, int value)
-{
-}
-#endif	/* CONFIG_HOTPLUG */
 
 static int button_hotplug_connect(struct input_handler *handler,
 		struct input_dev *dev, const struct input_device_id *id)
