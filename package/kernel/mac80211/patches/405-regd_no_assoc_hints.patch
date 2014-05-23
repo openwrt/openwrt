@@ -1,6 +1,6 @@
 --- a/net/wireless/reg.c
 +++ b/net/wireless/reg.c
-@@ -2079,6 +2079,8 @@ void regulatory_hint_country_ie(struct w
+@@ -2080,6 +2080,8 @@ void regulatory_hint_country_ie(struct w
  	enum environment_cap env = ENVIRON_ANY;
  	struct regulatory_request *request = NULL, *lr;
  
@@ -9,7 +9,7 @@
  	/* IE len must be evenly divisible by 2 */
  	if (country_ie_len & 0x01)
  		return;
-@@ -2275,6 +2277,7 @@ static void restore_regulatory_settings(
+@@ -2276,6 +2278,7 @@ static void restore_regulatory_settings(
  
  void regulatory_hint_disconnect(void)
  {
