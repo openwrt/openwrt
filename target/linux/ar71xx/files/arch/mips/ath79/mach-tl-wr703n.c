@@ -86,7 +86,7 @@ static void __init common_setup(unsigned usb_power_gpio, bool sec_ethernet)
 
 	if (sec_ethernet)
 	{
-		ath79_init_mac(ath79_eth0_data.mac_addr, mac, -1);
+		ath79_init_mac(ath79_eth1_data.mac_addr, mac, -1);
 		ath79_register_eth(1);
 	}
 
