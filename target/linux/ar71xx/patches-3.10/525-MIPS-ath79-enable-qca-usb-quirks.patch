@@ -1,6 +1,15 @@
 --- a/arch/mips/ath79/dev-usb.c
 +++ b/arch/mips/ath79/dev-usb.c
-@@ -182,14 +182,34 @@ static void __init ar933x_usb_setup(void
+@@ -37,6 +37,8 @@ static struct usb_ehci_pdata ath79_ehci_
+ static struct usb_ehci_pdata ath79_ehci_pdata_v2 = {
+ 	.caps_offset		= 0x100,
+ 	.has_tt			= 1,
++	.qca_force_host_mode	= 1,
++	.qca_force_16bit_ptw	= 1,
+ };
+ 
+ static void __init ath79_usb_register(const char *name, int id,
+@@ -182,14 +184,34 @@ static void __init ar933x_usb_setup(void
  			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
  }
  
@@ -10,11 +19,13 @@
 -	u32 bootstrap;
 +	void __iomem *phy_reg;
 +	u32 t;
-+
+ 
+-	bootstrap = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
+-	if (bootstrap & AR934X_BOOTSTRAP_USB_MODE_DEVICE)
 +	phy_reg = ioremap(base, 4);
 +	if (!phy_reg)
-+		return;
-+
+ 		return;
+ 
 +	t = ioread32(phy_reg);
 +	t &= ~0xff;
 +	t |= 0x58;
@@ -22,14 +33,12 @@
 +
 +	iounmap(phy_reg);
 +}
- 
--	bootstrap = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
--	if (bootstrap & AR934X_BOOTSTRAP_USB_MODE_DEVICE)
++
 +static void ar934x_usb_reset_notifier(struct platform_device *pdev)
 +{
 +	if (pdev->id != -1)
- 		return;
- 
++		return;
++
 +	enable_tx_tx_idp_violation_fix(0x18116c94);
 +	dev_info(&pdev->dev, "TX-TX IDP fix enabled\n");
 +}
@@ -39,12 +48,10 @@
  	ath79_device_reset_set(AR934X_RESET_USBSUS_OVERRIDE);
  	udelay(1000);
  
-@@ -202,14 +222,44 @@ static void __init ar934x_usb_setup(void
+@@ -202,14 +224,40 @@ static void __init ar934x_usb_setup(void
  	ath79_device_reset_clear(AR934X_RESET_USB_HOST);
  	udelay(1000);
  
-+	ath79_ehci_pdata_v2.qca_force_host_mode = 1;
-+	ath79_ehci_pdata_v2.qca_force_16bit_ptw = 1;
 +	if (ath79_soc_rev >= 3)
 +		ath79_ehci_pdata_v2.reset_notifier = ar934x_usb_reset_notifier;
 +
@@ -77,8 +84,6 @@
 +
  static void __init qca955x_usb_setup(void)
  {
-+	ath79_ehci_pdata_v2.qca_force_host_mode = 1;
-+	ath79_ehci_pdata_v2.qca_force_16bit_ptw = 1;
 +	ath79_ehci_pdata_v2.reset_notifier = qca955x_usb_reset_notifier;
 +
  	ath79_usb_register("ehci-platform", 0,
