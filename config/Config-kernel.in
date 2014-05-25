@@ -134,6 +134,17 @@ config KERNEL_PRINTK_TIME
 	bool "Enable printk timestamps"
 	default y
 
+config KERNEL_SLUB_DEBUG
+	bool
+
+config KERNEL_SLUB_DEBUG_ON
+	bool
+
+config KERNEL_SLABINFO
+	select KERNEL_SLUB_DEBUG
+	select KERNEL_SLUB_DEBUG_ON
+	bool "Enable /proc slab debug info"
+
 config KERNEL_PROC_PAGE_MONITOR
 	bool "Enable /proc page monitoring"
 
