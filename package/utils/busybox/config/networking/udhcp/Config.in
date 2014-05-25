@@ -4,7 +4,12 @@
 # see scripts/kbuild/config-language.txt.
 #
 
-
+config BUSYBOX_CONFIG_UDHCPC6
+	bool "udhcp client for DHCPv6 (udhcpc6)"
+	default BUSYBOX_DEFAULT_UDHCPC6  # not yet ready
+	depends on BUSYBOX_CONFIG_FEATURE_IPV6
+	help
+	  udhcpc6 is a DHCPv6 client
 
 config BUSYBOX_CONFIG_UDHCPD
 	bool "udhcp server (udhcpd)"

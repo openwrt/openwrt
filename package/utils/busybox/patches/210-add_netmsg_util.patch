@@ -1,6 +1,6 @@
 --- a/include/applets.src.h
 +++ b/include/applets.src.h
-@@ -266,6 +266,7 @@ IF_MT(APPLET(mt, BB_DIR_BIN, BB_SUID_DRO
+@@ -255,6 +255,7 @@ IF_MT(APPLET(mt, BB_DIR_BIN, BB_SUID_DRO
  IF_MV(APPLET(mv, BB_DIR_BIN, BB_SUID_DROP))
  IF_NAMEIF(APPLET(nameif, BB_DIR_SBIN, BB_SUID_DROP))
  IF_NC(APPLET(nc, BB_DIR_USR_BIN, BB_SUID_DROP))
@@ -10,7 +10,7 @@
  IF_NOHUP(APPLET(nohup, BB_DIR_USR_BIN, BB_SUID_DROP))
 --- a/networking/Config.src
 +++ b/networking/Config.src
-@@ -612,6 +612,12 @@ config FEATURE_IPCALC_LONG_OPTIONS
+@@ -620,6 +620,12 @@ config FEATURE_IPCALC_LONG_OPTIONS
  	help
  	  Support long options for the ipcalc applet.
  
@@ -96,7 +96,7 @@
 +	}
 +
 +	return 0;
-+	
++
 +fail:
 +	close(s);
 +	exit(1);

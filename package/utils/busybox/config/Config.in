@@ -82,20 +82,21 @@ config BUSYBOX_CONFIG_FEATURE_BUFFERS_GO_IN_BSS
 endchoice
 
 config BUSYBOX_CONFIG_SHOW_USAGE
-	bool "Show terse applet usage messages"
+	bool "Show applet usage messages"
 	default BUSYBOX_DEFAULT_SHOW_USAGE
 	help
-	  All BusyBox applets will show help messages when invoked with
-	  wrong arguments. You can turn off printing these terse usage
-	  messages if you say no here.
-	  This will save you up to 7k.
+	  Enabling this option, BusyBox applets will show terse help messages
+	  when invoked with wrong arguments.
+	  If you do not want to show any (helpful) usage message when
+	  issuing wrong command syntax, you can say 'N' here,
+	  saving approximately 7k.
 
 config BUSYBOX_CONFIG_FEATURE_VERBOSE_USAGE
 	bool "Show verbose applet usage messages"
 	default BUSYBOX_DEFAULT_FEATURE_VERBOSE_USAGE
 	depends on BUSYBOX_CONFIG_SHOW_USAGE
 	help
-	  All BusyBox applets will show more verbose help messages when
+	  All BusyBox applets will show verbose help messages when
 	  busybox is invoked with --help. This will add a lot of text to the
 	  busybox binary. In the default configuration, this will add about
 	  13k, but it can add much more depending on your configuration.
@@ -105,8 +106,8 @@ config BUSYBOX_CONFIG_FEATURE_COMPRESS_USAGE
 	default BUSYBOX_DEFAULT_FEATURE_COMPRESS_USAGE
 	depends on BUSYBOX_CONFIG_SHOW_USAGE
 	help
-	  Store usage messages in compressed form, uncompress them on-the-fly
-	  when <applet> --help is called.
+	  Store usage messages in .bz compressed form, uncompress them
+	  on-the-fly when <applet> --help is called.
 
 	  If you have a really tiny busybox with few applets enabled (and
 	  bunzip2 isn't one of them), the overhead of the decompressor might
@@ -159,12 +160,13 @@ config BUSYBOX_CONFIG_UNICODE_USING_LOCALE
 	  Internal implementation is smaller.
 
 config BUSYBOX_CONFIG_FEATURE_CHECK_UNICODE_IN_ENV
-	bool "Check $LANG environment variable"
+	bool "Check $LC_ALL, $LC_CTYPE and $LANG environment variables"
 	default BUSYBOX_DEFAULT_FEATURE_CHECK_UNICODE_IN_ENV
 	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT && !BUSYBOX_CONFIG_UNICODE_USING_LOCALE
 	help
 	  With this option on, Unicode support is activated
-	  only if LANG variable has the value of the form "xxxx.utf8"
+	  only if locale-related variables have the value of the form
+	  "xxxx.utf8"
 
 	  Otherwise, Unicode support will be always enabled and active.
 
@@ -308,7 +310,18 @@ config BUSYBOX_CONFIG_FEATURE_PIDFILE
 	default BUSYBOX_DEFAULT_FEATURE_PIDFILE
 	help
 	  This option makes some applets (e.g. crond, syslogd, inetd) write
-	  a pidfile in /var/run. Some applications rely on them.
+	  a pidfile at the configured PID_FILE_PATH.  It has no effect
+	  on applets which require pidfiles to run.
+
+config BUSYBOX_CONFIG_PID_FILE_PATH
+	string "Path to directory for pidfile"
+	default BUSYBOX_DEFAULT_PID_FILE_PATH
+	depends on BUSYBOX_CONFIG_FEATURE_PIDFILE
+	help
+	  This is the default path where pidfiles are created.  Applets which
+	  allow you to set the pidfile path on the command line will override
+	  this value.  The option has no effect on applets that require you to
+	  specify a pidfile path.
 
 config BUSYBOX_CONFIG_FEATURE_SUID
 	bool "Support for SUID/SGID handling"
@@ -319,7 +332,7 @@ config BUSYBOX_CONFIG_FEATURE_SUID
 	  root-level operations even when run by ordinary users
 	  (for example, mounting of user mounts in fstab needs this).
 
-	  Busybox will automatically drop priviledges for applets
+	  Busybox will automatically drop privileges for applets
 	  that don't need root access.
 
 	  If you are really paranoid and don't want to do this, build two
@@ -598,11 +611,38 @@ config BUSYBOX_CONFIG_CROSS_COMPILER_PREFIX
 
 	  Native builds leave this empty.
 
+config BUSYBOX_CONFIG_SYSROOT
+	string "Path to sysroot"
+	default BUSYBOX_DEFAULT_SYSROOT
+	help
+	  If you want to build BusyBox with a cross compiler, then you
+	  might also need to specify where /usr/include and /usr/lib
+	  will be found.
+
+	  For example, BusyBox can be built against an installed
+	  Android NDK, platform version 9, for ARM ABI with
+
+	  CONFIG_SYSROOT=/opt/android-ndk/platforms/android-9/arch-arm
+
+	  Native builds leave this empty.
+
 config BUSYBOX_CONFIG_EXTRA_CFLAGS
 	string "Additional CFLAGS"
 	default BUSYBOX_DEFAULT_EXTRA_CFLAGS
 	help
 	  Additional CFLAGS to pass to the compiler verbatim.
+
+config BUSYBOX_CONFIG_EXTRA_LDFLAGS
+	string "Additional LDFLAGS"
+	default BUSYBOX_DEFAULT_EXTRA_LDFLAGS
+	help
+	  Additional LDFLAGS to pass to the linker verbatim.
+
+config BUSYBOX_CONFIG_EXTRA_LDLIBS
+	string "Additional LDLIBS"
+	default BUSYBOX_DEFAULT_EXTRA_LDLIBS
+	help
+	  Additional LDLIBS to pass to the linker with -l.
 
 endmenu
 

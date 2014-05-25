@@ -1,6 +1,6 @@
 --- a/networking/telnetd.c
 +++ b/networking/telnetd.c
-@@ -330,6 +330,7 @@ make_new_session(
+@@ -331,6 +331,7 @@ make_new_session(
  
  	/* Restore default signal handling ASAP */
  	bb_signals((1 << SIGCHLD) + (1 << SIGPIPE), SIG_DFL);

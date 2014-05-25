@@ -58,6 +58,12 @@ config BUSYBOX_CONFIG_FEATURE_DATE_COMPAT
 	  With this option off, 'date DATE' is 'date -s DATE' support
 	  the same format. With it on, 'date DATE' additionally supports
 	  MMDDhhmm[[YY]YY][.ss] format.
+config BUSYBOX_CONFIG_HOSTID
+	bool "hostid"
+	default BUSYBOX_DEFAULT_HOSTID
+	help
+	  hostid prints the numeric identifier (in hexadecimal) for
+	  the current host.
 config BUSYBOX_CONFIG_ID
 	bool "id"
 	default BUSYBOX_DEFAULT_ID
@@ -88,6 +94,21 @@ config BUSYBOX_CONFIG_TOUCH
 	help
 	  touch is used to create or change the access and/or
 	  modification timestamp of specified files.
+
+config BUSYBOX_CONFIG_FEATURE_TOUCH_NODEREF
+	bool "Add support for -h"
+	default BUSYBOX_DEFAULT_FEATURE_TOUCH_NODEREF
+	depends on BUSYBOX_CONFIG_TOUCH
+	help
+	  Enable touch to have the -h option.
+	  This requires libc support for lutimes() function.
+
+config BUSYBOX_CONFIG_FEATURE_TOUCH_SUSV3
+	bool "Add support for SUSV3 features (-d -t -r)"
+	default BUSYBOX_DEFAULT_FEATURE_TOUCH_SUSV3
+	depends on BUSYBOX_CONFIG_TOUCH
+	help
+	  Enable touch to use a reference file or a given date/time argument.
 config BUSYBOX_CONFIG_TR
 	bool "tr"
 	default BUSYBOX_DEFAULT_TR
@@ -393,13 +414,6 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_HEAD
 	help
 	  This enables the head options (-c, -q, and -v).
 
-config BUSYBOX_CONFIG_HOSTID
-	bool "hostid"
-	default BUSYBOX_DEFAULT_HOSTID
-	help
-	  hostid prints the numeric identifier (in hexadecimal) for
-	  the current host.
-
 config BUSYBOX_CONFIG_INSTALL
 	bool "install"
 	default BUSYBOX_DEFAULT_INSTALL
@@ -644,6 +658,12 @@ config BUSYBOX_CONFIG_SHA512SUM
 	default BUSYBOX_DEFAULT_SHA512SUM
 	help
 	  Compute and check SHA512 message digest
+
+config BUSYBOX_CONFIG_SHA3SUM
+	bool "sha3sum"
+	default BUSYBOX_DEFAULT_SHA3SUM
+	help
+	  Compute and check SHA3 (512-bit) message digest
 
 config BUSYBOX_CONFIG_SLEEP
 	bool "sleep"
@@ -897,13 +917,13 @@ config BUSYBOX_CONFIG_FEATURE_HUMAN_READABLE
 	help
 	  Allow df, du, and ls to have human readable output.
 
-comment "Common options for md5sum, sha1sum, sha256sum, sha512sum"
-	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA512SUM
+comment "Common options for md5sum, sha1sum, sha256sum, sha512sum, sha3sum"
+	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA512SUM || BUSYBOX_CONFIG_SHA3SUM
 
 config BUSYBOX_CONFIG_FEATURE_MD5_SHA1_SUM_CHECK
 	bool "Enable -c, -s and -w options"
 	default BUSYBOX_DEFAULT_FEATURE_MD5_SHA1_SUM_CHECK
-	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA512SUM
+	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA512SUM || BUSYBOX_CONFIG_SHA3SUM
 	help
 	  Enabling the -c options allows files to be checked
 	  against pre-calculated hash values.

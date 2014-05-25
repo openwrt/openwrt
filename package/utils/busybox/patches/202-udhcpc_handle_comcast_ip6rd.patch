@@ -1,0 +1,18 @@
+--- a/networking/udhcp/common.c
++++ b/networking/udhcp/common.c
+@@ -64,6 +64,7 @@ const struct dhcp_optflag dhcp_optflags[
+ #endif
+ 	{ OPTION_STRING                           , 0xd1 }, /* DHCP_PXE_CONF_FILE */
+ 	{ OPTION_6RD                              , 0xd4 }, /* DHCP_6RD           */
++	{ OPTION_6RD                              , 0x96 }, /* DHCP_6RD (Comcast) */
+ 	{ OPTION_STATIC_ROUTES | OPTION_LIST      , 0xf9 }, /* DHCP_MS_STATIC_ROUTES */
+ 	{ OPTION_STRING                           , 0xfc }, /* DHCP_WPAD          */
+ 
+@@ -131,6 +132,7 @@ const char dhcp_option_strings[] ALIGN1 
+ #endif
+ 	"pxeconffile" "\0" /* DHCP_PXE_CONF_FILE  */
+ 	"ip6rd" "\0"       /* DHCP_6RD            */
++	"ip6rd" "\0"       /* DHCP_6RD (Comcast)  */
+ 	"msstaticroutes""\0"/* DHCP_MS_STATIC_ROUTES */
+ 	"wpad" "\0"        /* DHCP_WPAD           */
+ 	;

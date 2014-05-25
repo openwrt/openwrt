@@ -28,9 +28,9 @@ config BUSYBOX_CONFIG_PASSWORD_MINLEN
 	help
 	  Minimum allowable password length.
 
-config BUSYBOX_CONFIG_MD5_SIZE_VS_SPEED
+config BUSYBOX_CONFIG_MD5_SMALL
 	int "MD5: Trade bytes for speed (0:fast, 3:slow)"
-	default BUSYBOX_DEFAULT_MD5_SIZE_VS_SPEED
+	default BUSYBOX_DEFAULT_MD5_SMALL
 	range 0 3
 	help
 	  Trade binary size versus speed for the md5sum algorithm.
@@ -41,6 +41,16 @@ config BUSYBOX_CONFIG_MD5_SIZE_VS_SPEED
 	  1                   1.4                5392
 	  2                   3.0                5088
 	  3 (smallest)        5.1                4912
+
+config BUSYBOX_CONFIG_SHA3_SMALL
+	int "SHA3: Trade bytes for speed (0:fast, 1:slow)"
+	default BUSYBOX_DEFAULT_SHA3_SMALL
+	range 0 1
+	help
+	  Trade binary size versus speed for the sha3sum algorithm.
+	  SHA3_SMALL=0 compared to SHA3_SMALL=1 (approximate):
+	  64-bit x86: +270 bytes of code, 45% faster
+	  32-bit x86: +450 bytes of code, 75% faster
 
 config BUSYBOX_CONFIG_FEATURE_FAST_TOP
 	bool "Faster /proc scanning code (+100 bytes)"
@@ -107,6 +117,13 @@ config BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
 	depends on BUSYBOX_CONFIG_FEATURE_EDITING
 	help
 	  Enable history saving in shells.
+
+config BUSYBOX_CONFIG_FEATURE_EDITING_SAVE_ON_EXIT
+	bool "Save history on shell exit, not after every command"
+	default BUSYBOX_DEFAULT_FEATURE_EDITING_SAVE_ON_EXIT
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
+	help
+	  Save history on shell exit, not after every command.
 
 config BUSYBOX_CONFIG_FEATURE_REVERSE_SEARCH
 	bool "Reverse history search"
@@ -198,8 +215,8 @@ config BUSYBOX_CONFIG_FEATURE_SKIP_ROOTFS
 
 	  However, some systems do not mount anything on /.
 	  If you need to configure busybox for one of these systems,
-	  you may find useful to turn this option off to make df show
-	  initramfs statistic.
+	  you may find it useful to turn this option off to make df show
+	  initramfs statistics.
 
 	  Otherwise, choose Y.
 
