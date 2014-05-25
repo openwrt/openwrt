@@ -572,6 +572,14 @@ This module adds support for wireless adapters based on
 Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
 endef
 
+define KernelPackage/ath9k/config
+
+	config ATH9K_SUPPORT_PCOEM
+		bool "Support chips used in PC OEM cards"
+		depends PACKAGE_kmod-ath9k
+	
+endef
+
 define KernelPackage/ath9k-htc
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n USB device support
@@ -1395,6 +1403,7 @@ config-$(call config_package,ath9k-common) += ATH9K_COMMON
 config-$(CONFIG_TARGET_ar71xx) += ATH9K_AHB
 config-$(CONFIG_PCI) += ATH9K_PCI
 config-$(CONFIG_ATH_USER_REGD) += ATH_USER_REGD
+config-$(CONFIG_ATH9K_SUPPORT_PCOEM) += ATH9K_PCOEM
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k) += ATH10K ATH10K_PCI
