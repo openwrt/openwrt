@@ -6,11 +6,77 @@
 
 menu "Editors"
 
+config BUSYBOX_CONFIG_AWK
+	bool "awk"
+	default BUSYBOX_DEFAULT_AWK
+	help
+	  Awk is used as a pattern scanning and processing language. This is
+	  the BusyBox implementation of that programming language.
+
+config BUSYBOX_CONFIG_FEATURE_AWK_LIBM
+	bool "Enable math functions (requires libm)"
+	default BUSYBOX_DEFAULT_FEATURE_AWK_LIBM
+	depends on BUSYBOX_CONFIG_AWK
+	help
+	  Enable math functions of the Awk programming language.
+	  NOTE: This will require libm to be present for linking.
+
+config BUSYBOX_CONFIG_FEATURE_AWK_GNU_EXTENSIONS
+	bool "Enable a few GNU extensions"
+	default BUSYBOX_DEFAULT_FEATURE_AWK_GNU_EXTENSIONS
+	depends on BUSYBOX_CONFIG_AWK
+	help
+	  Enable a few features from gawk:
+	  * command line option -e AWK_PROGRAM
+	  * simultaneous use of -f and -e on the command line.
+	    This enables the use of awk library files.
+	    Ex: awk -f mylib.awk -e '{print myfunction($1);}' ...
+config BUSYBOX_CONFIG_CMP
+	bool "cmp"
+	default BUSYBOX_DEFAULT_CMP
+	help
+	  cmp is used to compare two files and returns the result
+	  to standard output.
+config BUSYBOX_CONFIG_DIFF
+	bool "diff"
+	default BUSYBOX_DEFAULT_DIFF
+	help
+	  diff compares two files or directories and outputs the
+	  differences between them in a form that can be given to
+	  the patch command.
+
+config BUSYBOX_CONFIG_FEATURE_DIFF_LONG_OPTIONS
+	bool "Enable long options"
+	default BUSYBOX_DEFAULT_FEATURE_DIFF_LONG_OPTIONS
+	depends on BUSYBOX_CONFIG_DIFF && BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Enable use of long options.
+
+config BUSYBOX_CONFIG_FEATURE_DIFF_DIR
+	bool "Enable directory support"
+	default BUSYBOX_DEFAULT_FEATURE_DIFF_DIR
+	depends on BUSYBOX_CONFIG_DIFF
+	help
+	  This option enables support for directory and subdirectory
+	  comparison.
+config BUSYBOX_CONFIG_ED
+	bool "ed"
+	default BUSYBOX_DEFAULT_ED
+	help
+	  The original 1970's Unix text editor, from the days of teletypes.
+	  Small, simple, evil. Part of SUSv3. If you're not already using
+	  this, you don't need it.
 config BUSYBOX_CONFIG_PATCH
 	bool "patch"
 	default BUSYBOX_DEFAULT_PATCH
 	help
 	  Apply a unified diff formatted patch.
+config BUSYBOX_CONFIG_SED
+	bool "sed"
+	default BUSYBOX_DEFAULT_SED
+	help
+	  sed is used to perform text transformations on a file
+	  or input from a pipeline.
 config BUSYBOX_CONFIG_VI
 	bool "vi"
 	default BUSYBOX_DEFAULT_VI
@@ -126,74 +192,6 @@ config BUSYBOX_CONFIG_FEATURE_VI_ASK_TERMINAL
 	  cursor position using "ESC [ 6 n" escape sequence, then read stdin.
 
 	  This is not clean but helps a lot on serial lines and such.
-
-config BUSYBOX_CONFIG_FEATURE_VI_OPTIMIZE_CURSOR
-	bool "Optimize cursor movement"
-	default BUSYBOX_DEFAULT_FEATURE_VI_OPTIMIZE_CURSOR
-	depends on BUSYBOX_CONFIG_VI
-	help
-	  This will make the cursor movement faster, but requires more memory
-	  and it makes the applet a tiny bit larger.
-
-config BUSYBOX_CONFIG_AWK
-	bool "awk"
-	default BUSYBOX_DEFAULT_AWK
-	help
-	  Awk is used as a pattern scanning and processing language. This is
-	  the BusyBox implementation of that programming language.
-
-config BUSYBOX_CONFIG_FEATURE_AWK_LIBM
-	bool "Enable math functions (requires libm)"
-	default BUSYBOX_DEFAULT_FEATURE_AWK_LIBM
-	depends on BUSYBOX_CONFIG_AWK
-	help
-	  Enable math functions of the Awk programming language.
-	  NOTE: This will require libm to be present for linking.
-
-config BUSYBOX_CONFIG_CMP
-	bool "cmp"
-	default BUSYBOX_DEFAULT_CMP
-	help
-	  cmp is used to compare two files and returns the result
-	  to standard output.
-
-config BUSYBOX_CONFIG_DIFF
-	bool "diff"
-	default BUSYBOX_DEFAULT_DIFF
-	help
-	  diff compares two files or directories and outputs the
-	  differences between them in a form that can be given to
-	  the patch command.
-
-config BUSYBOX_CONFIG_FEATURE_DIFF_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_DIFF_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_DIFF && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	  Enable use of long options.
-
-config BUSYBOX_CONFIG_FEATURE_DIFF_DIR
-	bool "Enable directory support"
-	default BUSYBOX_DEFAULT_FEATURE_DIFF_DIR
-	depends on BUSYBOX_CONFIG_DIFF
-	help
-	  This option enables support for directory and subdirectory
-	  comparison.
-
-config BUSYBOX_CONFIG_ED
-	bool "ed"
-	default BUSYBOX_DEFAULT_ED
-	help
-	  The original 1970's Unix text editor, from the days of teletypes.
-	  Small, simple, evil. Part of SUSv3. If you're not already using
-	  this, you don't need it.
-
-config BUSYBOX_CONFIG_SED
-	bool "sed"
-	default BUSYBOX_DEFAULT_SED
-	help
-	  sed is used to perform text transformations on a file
-	  or input from a pipeline.
 
 config BUSYBOX_CONFIG_FEATURE_ALLOW_EXEC
 	bool "Allow vi and awk to execute shell commands"

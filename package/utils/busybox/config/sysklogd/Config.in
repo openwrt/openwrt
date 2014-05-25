@@ -7,7 +7,6 @@
 menu "System Logging Utilities"
 
 
-
 config BUSYBOX_CONFIG_SYSLOGD
 	bool "syslogd"
 	default BUSYBOX_DEFAULT_SYSLOGD
@@ -114,6 +113,19 @@ config BUSYBOX_CONFIG_FEATURE_LOGREAD_REDUCED_LOCKING
 	  from circular buffer, minimizing semaphore
 	  contention at some minor memory expense.
 
+config BUSYBOX_CONFIG_FEATURE_KMSG_SYSLOG
+	bool "Linux kernel printk buffer support"
+	default BUSYBOX_DEFAULT_FEATURE_KMSG_SYSLOG
+	depends on BUSYBOX_CONFIG_SYSLOGD
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  When you enable this feature, the syslogd utility will
+	  write system log message to the Linux kernel's printk buffer.
+	  This can be used as a smaller alternative to the syslogd IPC
+	  support, as klogd and logread aren't needed.
+
+	  NOTICE: Syslog facilities in log entries needs kernel 3.5+.
+
 config BUSYBOX_CONFIG_KLOGD
 	bool "klogd"
 	default BUSYBOX_DEFAULT_KLOGD
@@ -123,6 +135,9 @@ config BUSYBOX_CONFIG_KLOGD
 	  out to the 'syslogd' utility so they can be logged. If
 	  you wish to record the messages produced by the kernel,
 	  you should enable this option.
+
+comment "klogd should not be used together with syslog to kernel printk buffer"
+	depends on BUSYBOX_CONFIG_KLOGD && BUSYBOX_CONFIG_FEATURE_KMSG_SYSLOG
 
 config BUSYBOX_CONFIG_FEATURE_KLOGD_KLOGCTL
 	bool "Use the klogctl() interface"

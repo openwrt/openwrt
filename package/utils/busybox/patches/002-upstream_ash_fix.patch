@@ -1,0 +1,11 @@
+--- a/shell/ash.c
++++ b/shell/ash.c
+@@ -13014,7 +13014,7 @@ init(void)
+ 		setvar2("PPID", utoa(getppid()));
+ #if ENABLE_ASH_BASH_COMPAT
+ 		p = lookupvar("SHLVL");
+-		setvar2("SHLVL", utoa(p ? atoi(p) + 1 : 1));
++		setvar("SHLVL", utoa((p ? atoi(p) : 0) + 1), VEXPORT);
+ #endif
+ 		p = lookupvar("PWD");
+ 		if (p) {

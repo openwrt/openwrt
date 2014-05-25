@@ -36,14 +36,11 @@ config BUSYBOX_CONFIG_FEATURE_LESS_BRACKETS
 	  brackets, facilitating programming.
 
 config BUSYBOX_CONFIG_FEATURE_LESS_FLAGS
-	bool "Enable extra flags"
+	bool "Enable -m/-M"
 	default BUSYBOX_DEFAULT_FEATURE_LESS_FLAGS
 	depends on BUSYBOX_CONFIG_LESS
 	help
-	  The extra flags provided do the following:
-
-	  The -M flag enables a more sophisticated status line.
-	  The -m flag enables a simpler status line with a percentage.
+	  The -M/-m flag enables a more sophisticated status line.
 
 config BUSYBOX_CONFIG_FEATURE_LESS_MARKS
 	bool "Enable marks"
@@ -106,6 +103,18 @@ config BUSYBOX_CONFIG_NANDDUMP
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Dump the content of raw NAND chip
+config BUSYBOX_CONFIG_RFKILL
+	bool "rfkill"
+	default BUSYBOX_DEFAULT_RFKILL # doesn't build on Ubuntu 9.04
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  Enable/disable wireless devices.
+
+	  rfkill list : list all wireless devices
+	  rfkill list bluetooth : list all bluetooth devices
+	  rfkill list 1 : list device corresponding to the given index
+	  rfkill block|unblock wlan : block/unblock all wlan(wifi) devices
+
 config BUSYBOX_CONFIG_SETSERIAL
 	bool "setserial"
 	default BUSYBOX_DEFAULT_SETSERIAL
@@ -153,6 +162,12 @@ config BUSYBOX_CONFIG_UBIUPDATEVOL
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Update a UBI volume.
+config BUSYBOX_CONFIG_WALL
+	bool "wall"
+	default BUSYBOX_DEFAULT_WALL
+	depends on BUSYBOX_CONFIG_FEATURE_UTMP
+	help
+	  Write a message to all users that are logged in.
 
 config BUSYBOX_CONFIG_ADJTIMEX
 	bool "adjtimex"
@@ -656,18 +671,6 @@ config BUSYBOX_CONFIG_READAHEAD
 	  As readahead(2) blocks until each file has been read, it is best to
 	  run this applet as a background job.
 
-config BUSYBOX_CONFIG_RFKILL
-	bool "rfkill"
-	default BUSYBOX_DEFAULT_RFKILL  # doesn't build on Ubuntu 9.04
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  Enable/disable wireless devices.
-
-	  rfkill list : list all wireless devices
-	  rfkill list bluetooth : list all bluetooth devices
-	  rfkill list 1 : list device corresponding to the given index
-	  rfkill block|unblock wlan : block/unblock all wlan(wifi) devices
-
 config BUSYBOX_CONFIG_RUNLEVEL
 	bool "runlevel"
 	default BUSYBOX_DEFAULT_RUNLEVEL
@@ -743,13 +746,6 @@ config BUSYBOX_CONFIG_VOLNAME
 	default BUSYBOX_DEFAULT_VOLNAME
 	help
 	  Prints a CD-ROM volume name.
-
-config BUSYBOX_CONFIG_WALL
-	bool "wall"
-	default BUSYBOX_DEFAULT_WALL
-	depends on BUSYBOX_CONFIG_FEATURE_UTMP
-	help
-	  Write a message to all users that are logged in.
 
 config BUSYBOX_CONFIG_WATCHDOG
 	bool "watchdog"

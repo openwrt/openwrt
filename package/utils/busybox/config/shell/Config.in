@@ -156,6 +156,9 @@ config BUSYBOX_CONFIG_CTTYHACK
 
 	  # exec setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
 
+	  Starting getty on a controlling tty from a shell script:
+
+	  # getty 115200 $(cttyhack)
 config BUSYBOX_CONFIG_HUSH
 	bool "hush"
 	default BUSYBOX_DEFAULT_HUSH
@@ -290,6 +293,7 @@ config BUSYBOX_CONFIG_MSH
 	select BUSYBOX_CONFIG_HUSH
 	help
 	  msh is deprecated and will be removed, please migrate to hush.
+
 
 
 choice

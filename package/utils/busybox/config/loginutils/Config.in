@@ -216,6 +216,17 @@ config BUSYBOX_CONFIG_LOGIN
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
 
+config BUSYBOX_CONFIG_LOGIN_SESSION_AS_CHILD
+	bool "Run logged in session in a child process"
+	default BUSYBOX_DEFAULT_LOGIN_SESSION_AS_CHILD if BUSYBOX_CONFIG_PAM
+	depends on BUSYBOX_CONFIG_LOGIN
+	help
+	  Run the logged in session in a child process.  This allows
+	  login to clean up things such as utmp entries or PAM sessions
+	  when the login session is complete.  If you use PAM, you
+	  almost always would want this to be set to Y, else PAM session
+	  will not be cleaned up.
+
 config BUSYBOX_CONFIG_PAM
 	bool "Support for PAM (Pluggable Authentication Modules)"
 	default BUSYBOX_DEFAULT_PAM
@@ -282,6 +293,13 @@ config BUSYBOX_CONFIG_CHPASSWD
 	help
 	  Reads a file of user name and password pairs from standard input
 	  and uses this information to update a group of existing users.
+
+config BUSYBOX_CONFIG_FEATURE_DEFAULT_PASSWD_ALGO
+	string "Default password encryption method (passwd -a, cryptpw -m parameter)"
+	default BUSYBOX_DEFAULT_FEATURE_DEFAULT_PASSWD_ALGO
+	depends on BUSYBOX_CONFIG_PASSWD || BUSYBOX_CONFIG_CRYPTPW
+	help
+	  Possible choices are "d[es]", "m[d5]", "s[ha256]" or "sha512".
 
 config BUSYBOX_CONFIG_SU
 	bool "su"

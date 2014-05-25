@@ -11,6 +11,69 @@ config BUSYBOX_CONFIG_BLOCKDEV
 	default BUSYBOX_DEFAULT_BLOCKDEV
 	help
 	  Performs some ioctls with block devices.
+config BUSYBOX_CONFIG_FSTRIM
+	bool "fstrim"
+	default BUSYBOX_DEFAULT_FSTRIM
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  Discard unused blocks on a mounted filesystem.
+config BUSYBOX_CONFIG_MDEV
+	bool "mdev"
+	default BUSYBOX_DEFAULT_MDEV
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  mdev is a mini-udev implementation for dynamically creating device
+	  nodes in the /dev directory.
+
+	  For more information, please see docs/mdev.txt
+
+config BUSYBOX_CONFIG_FEATURE_MDEV_CONF
+	bool "Support /etc/mdev.conf"
+	default BUSYBOX_DEFAULT_FEATURE_MDEV_CONF
+	depends on BUSYBOX_CONFIG_MDEV
+	help
+	  Add support for the mdev config file to control ownership and
+	  permissions of the device nodes.
+
+	  For more information, please see docs/mdev.txt
+
+config BUSYBOX_CONFIG_FEATURE_MDEV_RENAME
+	bool "Support subdirs/symlinks"
+	default BUSYBOX_DEFAULT_FEATURE_MDEV_RENAME
+	depends on BUSYBOX_CONFIG_FEATURE_MDEV_CONF
+	help
+	  Add support for renaming devices and creating symlinks.
+
+	  For more information, please see docs/mdev.txt
+
+config BUSYBOX_CONFIG_FEATURE_MDEV_RENAME_REGEXP
+	bool "Support regular expressions substitutions when renaming device"
+	default BUSYBOX_DEFAULT_FEATURE_MDEV_RENAME_REGEXP
+	depends on BUSYBOX_CONFIG_FEATURE_MDEV_RENAME
+	help
+	  Add support for regular expressions substitutions when renaming
+	  device.
+
+config BUSYBOX_CONFIG_FEATURE_MDEV_EXEC
+	bool "Support command execution at device addition/removal"
+	default BUSYBOX_DEFAULT_FEATURE_MDEV_EXEC
+	depends on BUSYBOX_CONFIG_FEATURE_MDEV_CONF
+	help
+	  This adds support for an optional field to /etc/mdev.conf for
+	  executing commands when devices are created/removed.
+
+	  For more information, please see docs/mdev.txt
+
+config BUSYBOX_CONFIG_FEATURE_MDEV_LOAD_FIRMWARE
+	bool "Support loading of firmwares"
+	default BUSYBOX_DEFAULT_FEATURE_MDEV_LOAD_FIRMWARE
+	depends on BUSYBOX_CONFIG_MDEV
+	help
+	  Some devices need to load firmware before they can be usable.
+
+	  These devices will request userspace look up the files in
+	  /lib/firmware/ and if it exists, send it to the kernel for
+	  loading into the hardware.
 config BUSYBOX_CONFIG_REV
 	bool "rev"
 	default BUSYBOX_DEFAULT_REV
@@ -414,64 +477,6 @@ config BUSYBOX_CONFIG_LSUSB
 
 	  This version uses sysfs (/sys/bus/usb/devices) only.
 
-config BUSYBOX_CONFIG_MDEV
-	bool "mdev"
-	default BUSYBOX_DEFAULT_MDEV
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  mdev is a mini-udev implementation for dynamically creating device
-	  nodes in the /dev directory.
-
-	  For more information, please see docs/mdev.txt
-
-config BUSYBOX_CONFIG_FEATURE_MDEV_CONF
-	bool "Support /etc/mdev.conf"
-	default BUSYBOX_DEFAULT_FEATURE_MDEV_CONF
-	depends on BUSYBOX_CONFIG_MDEV
-	help
-	  Add support for the mdev config file to control ownership and
-	  permissions of the device nodes.
-
-	  For more information, please see docs/mdev.txt
-
-config BUSYBOX_CONFIG_FEATURE_MDEV_RENAME
-	bool "Support subdirs/symlinks"
-	default BUSYBOX_DEFAULT_FEATURE_MDEV_RENAME
-	depends on BUSYBOX_CONFIG_FEATURE_MDEV_CONF
-	help
-	  Add support for renaming devices and creating symlinks.
-
-	  For more information, please see docs/mdev.txt
-
-config BUSYBOX_CONFIG_FEATURE_MDEV_RENAME_REGEXP
-	bool "Support regular expressions substitutions when renaming device"
-	default BUSYBOX_DEFAULT_FEATURE_MDEV_RENAME_REGEXP
-	depends on BUSYBOX_CONFIG_FEATURE_MDEV_RENAME
-	help
-	  Add support for regular expressions substitutions when renaming
-	  device.
-
-config BUSYBOX_CONFIG_FEATURE_MDEV_EXEC
-	bool "Support command execution at device addition/removal"
-	default BUSYBOX_DEFAULT_FEATURE_MDEV_EXEC
-	depends on BUSYBOX_CONFIG_FEATURE_MDEV_CONF
-	help
-	  This adds support for an optional field to /etc/mdev.conf for
-	  executing commands when devices are created/removed.
-
-	  For more information, please see docs/mdev.txt
-
-config BUSYBOX_CONFIG_FEATURE_MDEV_LOAD_FIRMWARE
-	bool "Support loading of firmwares"
-	default BUSYBOX_DEFAULT_FEATURE_MDEV_LOAD_FIRMWARE
-	depends on BUSYBOX_CONFIG_MDEV
-	help
-	  Some devices need to load firmware before they can be usable.
-
-	  These devices will request userspace look up the files in
-	  /lib/firmware/ and if it exists, send it to the kernel for
-	  loading into the hardware.
-
 config BUSYBOX_CONFIG_MKSWAP
 	bool "mkswap"
 	default BUSYBOX_DEFAULT_MKSWAP
@@ -553,13 +558,18 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_LABEL
 	  This also enables label or uuid support for swapon.
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
-	bool "Support mounting NFS file systems"
+	bool "Support mounting NFS file systems on Linux < 2.6.23"
 	default BUSYBOX_DEFAULT_FEATURE_MOUNT_NFS
 	depends on BUSYBOX_CONFIG_MOUNT
 	select BUSYBOX_CONFIG_FEATURE_HAVE_RPC
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
-	  Enable mounting of NFS file systems.
+	  Enable mounting of NFS file systems on Linux kernels prior
+	  to version 2.6.23. Note that in this case mounting of NFS
+	  over IPv6 will not be possible.
+
+	  Note that this option links in RPC support from libc,
+	  which is rather large (~10 kbytes on uclibc).
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_CIFS
 	bool "Support mounting CIFS/SMB file systems"
@@ -762,224 +772,6 @@ config BUSYBOX_CONFIG_FEATURE_MTAB_SUPPORT
 	  About the only reason to use this is if you've removed /proc from
 	  your kernel.
 
-config BUSYBOX_CONFIG_VOLUMEID
-	bool #No description makes it a hidden option
-	default BUSYBOX_DEFAULT_VOLUMEID
-
-menu "Filesystem/Volume identification"
-	depends on BUSYBOX_CONFIG_VOLUMEID
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_EXT
-	bool "Ext filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_EXT
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_BTRFS
-	bool "btrfs filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_BTRFS
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_REISERFS
-	bool "Reiser filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_REISERFS
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_FAT
-	bool "fat filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_FAT
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_HFS
-	bool "hfs filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_HFS
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_JFS
-	bool "jfs filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_JFS
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_UFS
-###	bool "ufs filesystem"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_XFS
-	bool "xfs filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_XFS
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_NTFS
-	bool "ntfs filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_NTFS
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_ISO9660
-	bool "iso9660 filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_ISO9660
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_UDF
-	bool "udf filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_UDF
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LUKS
-	bool "luks filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_LUKS
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXSWAP
-	bool "linux swap filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_LINUXSWAP
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_LVM
-###	bool "lvm"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_CRAMFS
-	bool "cramfs filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_CRAMFS
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_HPFS
-###	bool "hpfs filesystem"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_ROMFS
-	bool "romfs filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_ROMFS
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_SYSV
-	bool "sysv filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_SYSV
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_MINIX
-###	bool "minix filesystem"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### These only detect partition tables - not used (yet?)
-### config FEATURE_VOLUMEID_MAC
-###	bool "mac filesystem"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-###
-### config FEATURE_VOLUMEID_MSDOS
-###	bool "msdos filesystem"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_OCFS2
-	bool "ocfs2 filesystem"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_OCFS2
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_HIGHPOINTRAID
-###	bool "highpoint raid"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_ISWRAID
-###	bool "intel raid"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_LSIRAID
-###	bool "lsi raid"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_VIARAID
-###	bool "via raid"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_SILICONRAID
-###	bool "silicon raid"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_NVIDIARAID
-###	bool "nvidia raid"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_PROMISERAID
-###	bool "promise raid"
-###	default y
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXRAID
-	bool "linuxraid"
-	default BUSYBOX_DEFAULT_FEATURE_VOLUMEID_LINUXRAID
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-endmenu
+source package/utils/busybox/config/util-linux/volume_id/Config.in
 
 endmenu

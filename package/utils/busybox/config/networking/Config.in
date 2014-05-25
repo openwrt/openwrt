@@ -55,7 +55,7 @@ config BUSYBOX_CONFIG_NC_SERVER
 	  Allow netcat to act as a server.
 
 config BUSYBOX_CONFIG_NC_EXTRA
-	bool "Netcat extensions (-eiw and filename)"
+	bool "Netcat extensions (-eiw and -f FILE)"
 	default BUSYBOX_DEFAULT_NC_EXTRA
 	depends on BUSYBOX_CONFIG_NC
 	help
@@ -71,7 +71,7 @@ config BUSYBOX_CONFIG_NC_110_COMPAT
 	  This option makes nc closely follow original nc-1.10.
 	  The code is about 2.5k bigger. It enables
 	  -s ADDR, -n, -u, -v, -o FILE, -z options, but loses
-	  busybox-specific extensions: -f FILE and -ll.
+	  busybox-specific extensions: -f FILE.
 config BUSYBOX_CONFIG_PING
 	bool "ping"
 	default BUSYBOX_DEFAULT_PING
@@ -292,14 +292,22 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_BASIC_AUTH
 	help
 	  Utilizes password settings from /etc/httpd.conf for basic
 	  authentication on a per url basis.
+	  Example for httpd.conf file:
+	  /adm:toor:PaSsWd
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_AUTH_MD5
 	bool "Support MD5 crypted passwords for http Authentication"
 	default BUSYBOX_DEFAULT_FEATURE_HTTPD_AUTH_MD5
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_BASIC_AUTH
 	help
-	  Enables basic per URL authentication from /etc/httpd.conf
-	  using md5 passwords.
+	  Enables encrypted passwords, and wildcard user/passwords
+	  in httpd.conf file.
+	  User '*' means 'any system user name is ok',
+	  password of '*' means 'use system password for this user'
+	  Examples:
+	  /adm:toor:$1$P/eKnWXS$aI1aPGxT.dJD5SzqAKWrF0
+	  /adm:root:*
+	  /wiki:*:*
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	bool "Support Common Gateway Interface (CGI)"
@@ -316,8 +324,8 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
 	help
 	  This option enables support for running scripts through an
 	  interpreter. Turn this on if you want PHP scripts to work
-	  properly. You need to supply an additional line in your httpd
-	  config file:
+	  properly. You need to supply an additional line in your
+	  httpd.conf file:
 	  *.php:/path/to/your/php
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
@@ -1036,8 +1044,8 @@ config BUSYBOX_CONFIG_WGET
 	bool "wget"
 	default BUSYBOX_DEFAULT_WGET
 	help
-	  wget is a utility for non-interactive download of files from HTTP,
-	  HTTPS, and FTP servers.
+	  wget is a utility for non-interactive download of files from HTTP
+	  and FTP servers.
 
 config BUSYBOX_CONFIG_FEATURE_WGET_STATUSBAR
 	bool "Enable a nifty process meter (+2k)"
@@ -1061,16 +1069,18 @@ config BUSYBOX_CONFIG_FEATURE_WGET_LONG_OPTIONS
 	  Support long options for the wget applet.
 
 config BUSYBOX_CONFIG_FEATURE_WGET_TIMEOUT
-	bool "Enable read timeout option -T SEC"
+	bool "Enable timeout option -T SEC"
 	default BUSYBOX_DEFAULT_FEATURE_WGET_TIMEOUT
 	depends on BUSYBOX_CONFIG_WGET
 	help
-	  Supports network read timeout for wget, so that wget will give
-	  up and timeout when reading network data, through the -T command
-	  line option.  Currently only network data read timeout is
-	  supported (i.e., timeout is not applied to the DNS nor TCP
-	  connection initialization).  When FEATURE_WGET_LONG_OPTIONS is
-	  also enabled, the --timeout option will work in addition to -T.
+	  Supports network read and connect timeouts for wget,
+	  so that wget will give up and timeout, through the -T
+	  command line option.
+
+	  Currently only connect and network data read timeout are
+	  supported (i.e., timeout is not applied to the DNS query). When
+	  FEATURE_WGET_LONG_OPTIONS is also enabled, the --timeout option
+	  will work in addition to -T.
 
 config BUSYBOX_CONFIG_ZCIP
 	bool "zcip"
