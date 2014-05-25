@@ -9,7 +9,17 @@
  };
  
  static void __init ath79_usb_register(const char *name, int id,
-@@ -182,14 +184,34 @@ static void __init ar933x_usb_setup(void
+@@ -159,6 +161,9 @@ static void __init ar913x_usb_setup(void
+ 	ath79_device_reset_clear(AR913X_RESET_USB_PHY);
+ 	mdelay(10);
+ 
++	ath79_ehci_pdata_v2.qca_force_host_mode	= 0;
++	ath79_ehci_pdata_v2.qca_force_16bit_ptw	= 0;
++
+ 	ath79_usb_register("ehci-platform", -1,
+ 			   AR913X_EHCI_BASE, AR913X_EHCI_SIZE,
+ 			   ATH79_CPU_IRQ(3),
+@@ -182,14 +187,34 @@ static void __init ar933x_usb_setup(void
  			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
  }
  
@@ -48,7 +58,7 @@
  	ath79_device_reset_set(AR934X_RESET_USBSUS_OVERRIDE);
  	udelay(1000);
  
-@@ -202,14 +224,40 @@ static void __init ar934x_usb_setup(void
+@@ -202,14 +227,40 @@ static void __init ar934x_usb_setup(void
  	ath79_device_reset_clear(AR934X_RESET_USB_HOST);
  	udelay(1000);
  
