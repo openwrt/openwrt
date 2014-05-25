@@ -370,15 +370,12 @@ $(call KernelPackage/rtl818x/Default)
 endef
 
 define KernelPackage/rtlwifi/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-rtlwifi
-
 	config PACKAGE_RTLWIFI_DEBUG
 		bool "Realtek wireless debugging"
+		depends on PACKAGE_kmod-rtlwifi
 		help
 		  Say Y, if you want to debug realtek wireless drivers.
 
-	endmenu
 endef
 
 define KernelPackage/rtlwifi
@@ -386,7 +383,7 @@ define KernelPackage/rtlwifi
   TITLE:=Realtek common driver part
   DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +@DRIVER_11N_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtlwifi.ko
-  MENU:=1
+  HIDDEN:=1
 endef
 
 define KernelPackage/rtlwifi-pci
