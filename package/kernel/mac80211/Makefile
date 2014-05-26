@@ -576,7 +576,7 @@ define KernelPackage/ath9k/config
 
 	config ATH9K_SUPPORT_PCOEM
 		bool "Support chips used in PC OEM cards"
-		depends PACKAGE_kmod-ath9k
+		depends on PACKAGE_kmod-ath9k
 	
 endef
 
