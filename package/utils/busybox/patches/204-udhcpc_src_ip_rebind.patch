@@ -1,0 +1,53 @@
+Index: busybox-1.22.1/networking/udhcp/dhcpc.c
+===================================================================
+--- busybox-1.22.1.orig/networking/udhcp/dhcpc.c
++++ busybox-1.22.1/networking/udhcp/dhcpc.c
+@@ -659,10 +659,10 @@ static void add_client_options(struct dh
+  * client reverts to using the IP broadcast address.
+  */
+ 
+-static int raw_bcast_from_client_config_ifindex(struct dhcp_packet *packet)
++static int raw_bcast_from_client_config_ifindex(struct dhcp_packet *packet, uint32_t src_nip)
+ {
+ 	return udhcp_send_raw_packet(packet,
+-		/*src*/ INADDR_ANY, CLIENT_PORT,
++		/*src*/ src_nip, CLIENT_PORT,
+ 		/*dst*/ INADDR_BROADCAST, SERVER_PORT, MAC_BCAST_ADDR,
+ 		client_config.ifindex);
+ }
+@@ -673,7 +673,7 @@ static int bcast_or_ucast(struct dhcp_pa
+ 		return udhcp_send_kernel_packet(packet,
+ 			ciaddr, CLIENT_PORT,
+ 			server, SERVER_PORT);
+-	return raw_bcast_from_client_config_ifindex(packet);
++	return raw_bcast_from_client_config_ifindex(packet, ciaddr);
+ }
+ 
+ /* Broadcast a DHCP discover packet to the network, with an optionally requested IP */
+@@ -701,7 +701,7 @@ static NOINLINE int send_discover(uint32
+ 
+ 	if (msgs++ < 3)
+ 	bb_info_msg("Sending discover...");
+-	return raw_bcast_from_client_config_ifindex(&packet);
++	return raw_bcast_from_client_config_ifindex(&packet, INADDR_ANY);
+ }
+ 
+ /* Broadcast a DHCP request message */
+@@ -745,7 +745,7 @@ static NOINLINE int send_select(uint32_t
+ 
+ 	addr.s_addr = requested;
+ 	bb_info_msg("Sending select for %s...", inet_ntoa(addr));
+-	return raw_bcast_from_client_config_ifindex(&packet);
++	return raw_bcast_from_client_config_ifindex(&packet, INADDR_ANY);
+ }
+ 
+ /* Unicast or broadcast a DHCP renew message */
+@@ -813,7 +813,7 @@ static NOINLINE int send_decline(/*uint3
+ 	udhcp_add_simple_option(&packet, DHCP_SERVER_ID, server);
+ 
+ 	bb_info_msg("Sending decline...");
+-	return raw_bcast_from_client_config_ifindex(&packet);
++	return raw_bcast_from_client_config_ifindex(&packet, INADDR_ANY);
+ }
+ #endif
+ 
