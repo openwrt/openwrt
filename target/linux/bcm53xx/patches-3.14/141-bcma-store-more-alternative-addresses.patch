@@ -1,0 +1,71 @@
+From 9317024aa1d8df94d3b021bc23b57f02a435e96c Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Mon, 12 May 2014 21:57:53 +0200
+Subject: [PATCH 10/15] bcma: store more alternative addresses
+
+Each core could have more than one alternative address. There are cores
+with 8 alternative addresses for different functions. The PHY control
+in the Chip common B core is done through the 2. alternative address
+and not the first one.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/scan.c         | 9 +++++----
+ drivers/usb/host/bcma-hcd.c | 2 +-
+ include/linux/bcma/bcma.h   | 2 +-
+ 3 files changed, 7 insertions(+), 6 deletions(-)
+
+--- a/drivers/bcma/scan.c
++++ b/drivers/bcma/scan.c
+@@ -276,7 +276,7 @@ static int bcma_get_next_core(struct bcm
+ 			      struct bcma_device *core)
+ {
+ 	u32 tmp;
+-	u8 i, j;
++	u8 i, j, k;
+ 	s32 cia, cib;
+ 	u8 ports[2], wrappers[2];
+ 
+@@ -367,6 +367,7 @@ static int bcma_get_next_core(struct bcm
+ 	core->addr = tmp;
+ 
+ 	/* get & parse slave ports */
++	k = 0;
+ 	for (i = 0; i < ports[1]; i++) {
+ 		for (j = 0; ; j++) {
+ 			tmp = bcma_erom_get_addr_desc(bus, eromptr,
+@@ -376,9 +377,9 @@ static int bcma_get_next_core(struct bcm
+ 				/* pr_debug("erom: slave port %d "
+ 				 * "has %d descriptors\n", i, j); */
+ 				break;
+-			} else {
+-				if (i == 0 && j == 0)
+-					core->addr1 = tmp;
++			} else if (k < 8) {
++				core->addr_s[k] = tmp;
++				k++;
+ 			}
+ 		}
+ 	}
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -237,7 +237,7 @@ static int bcma_hcd_probe(struct bcma_de
+ 	bcma_hcd_init_chip(dev);
+ 
+ 	/* In AI chips EHCI is addrspace 0, OHCI is 1 */
+-	ohci_addr = dev->addr1;
++	ohci_addr = dev->addr_s[0];
+ 	if ((chipinfo->id == 0x5357 || chipinfo->id == 0x4749)
+ 	    && chipinfo->rev == 0)
+ 		ohci_addr = 0x18009000;
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -263,7 +263,7 @@ struct bcma_device {
+ 	u8 core_unit;
+ 
+ 	u32 addr;
+-	u32 addr1;
++	u32 addr_s[8];
+ 	u32 wrap;
+ 
+ 	void __iomem *io_addr;

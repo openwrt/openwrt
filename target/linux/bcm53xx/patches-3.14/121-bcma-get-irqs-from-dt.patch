@@ -1,10 +1,12 @@
-From 06a21484198df9a4d34fe5062878d3bf4fc14340 Mon Sep 17 00:00:00 2001
+From 3e59da41882a408064cd23f4c9124a7938bdb91f Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Thu, 9 Jan 2014 19:40:14 +0100
-Subject: [PATCH 7/8] bcma: get irqs from dt
+Subject: [PATCH 06/15] bcma: get irqs from dt
 
+If bcma was registered with device tree it will search for some nodes
+with the irq number and add it to the core configuration.
 ---
- drivers/bcma/main.c |   42 +++++++++++++++++++++++++++++++++++++++++-
+ drivers/bcma/main.c | 42 +++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 41 insertions(+), 1 deletion(-)
 
 --- a/drivers/bcma/main.c

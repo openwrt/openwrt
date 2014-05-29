@@ -1,15 +1,15 @@
-From c046c19fc8f1af7cf253fea5b0253143c159948a Mon Sep 17 00:00:00 2001
+From bb5d497aeceb8d9f36a1d990538389b54748dfcd Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 6 Jan 2014 23:29:15 +0100
-Subject: [PATCH 6/8] bcma: register bcma as device tree driver
+Subject: [PATCH 05/15] bcma: register bcma as device tree driver
 
 This driver is used by the bcm53xx ARM SoC code.Now it is possible to
 give the address of the chipcommon core in device tree.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- drivers/bcma/host_soc.c   |   70 +++++++++++++++++++++++++++++++++++++++++++++
- include/linux/bcma/bcma.h |    2 ++
+ drivers/bcma/host_soc.c   | 70 +++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/bcma/bcma.h |  2 ++
  2 files changed, 72 insertions(+)
 
 --- a/drivers/bcma/host_soc.c

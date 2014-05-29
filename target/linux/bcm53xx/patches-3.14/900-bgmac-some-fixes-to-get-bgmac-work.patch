@@ -1,0 +1,33 @@
+From 0bd576e93a188fd3aab769b622fb3d35fa9bc7a7 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 3 May 2014 19:55:38 +0200
+Subject: [PATCH 15/15] bgmac: some fixes to get bgmac work
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/net/ethernet/broadcom/Kconfig | 2 +-
+ drivers/net/phy/phy_device.c          | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/Kconfig
++++ b/drivers/net/ethernet/broadcom/Kconfig
+@@ -131,7 +131,7 @@ config BNX2X_SRIOV
+ 
+ config BGMAC
+ 	tristate "BCMA bus GBit core support"
+-	depends on BCMA_HOST_SOC && HAS_DMA && BCM47XX
++	depends on BCMA_HOST_SOC && HAS_DMA
+ 	select PHYLIB
+ 	---help---
+ 	  This driver supports GBit MAC and BCM4706 GBit MAC cores on BCMA bus.
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -898,7 +898,7 @@ int genphy_update_link(struct phy_device
+ 		return status;
+ 
+ 	if ((status & BMSR_LSTATUS) == 0)
+-		phydev->link = 0;
++		phydev->link = 1;
+ 	else
+ 		phydev->link = 1;
+ 
