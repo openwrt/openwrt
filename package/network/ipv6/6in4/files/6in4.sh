@@ -69,7 +69,7 @@ proto_6in4_setup() {
 
 		[ -n "$updatekey" ] && password="$updatekey"
 
-		local url="http://ipv4.tunnelbroker.net/ipv4_end.php?ip=AUTO&apikey=$username&pass=$password&tid=$tunnelid"
+		local url="http://ipv4.tunnelbroker.net/nic/update?username=$username&password=$password&hostname=$tunnelid"
 		local try=0
 		local max=3
 
