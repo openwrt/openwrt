@@ -1725,13 +1725,16 @@ static void nl80211_get_scanlist_ie(struct nlattr **bss,
 	int ielen = nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]);
 	unsigned char *ie = nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]);
 	static unsigned char ms_oui[3] = { 0x00, 0x50, 0xf2 };
+	int len;
 
 	while (ielen >= 2 && ielen >= ie[1])
 	{
 		switch (ie[0])
 		{
 		case 0: /* SSID */
-			memcpy(e->ssid, ie + 2, min(ie[1], IWINFO_ESSID_MAX_SIZE));
+			len = min(ie[1], IWINFO_ESSID_MAX_SIZE);
+			memcpy(e->ssid, ie + 2, len);
+			e->ssid[len] = 0;
 			break;
 
 		case 48: /* RSN */
