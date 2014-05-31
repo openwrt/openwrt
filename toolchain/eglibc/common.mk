@@ -34,6 +34,9 @@ HOST_STAMP_CONFIGURED:=$(CUR_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(CUR_BUILD_DIR)/.built
 HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.eglibc_$(VARIANT)_installed
 
+ifeq ($(ARCH),mips64)
+  TARGET_CFLAGS += -mabi=64
+endif
 
 EGLIBC_CONFIGURE:= \
 	BUILD_CC="$(HOSTCC)" \
