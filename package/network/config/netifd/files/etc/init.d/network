@@ -36,7 +36,7 @@ stop_service() {
 }
 
 service_running() {
-	sleep 5
+	ubus -t 30 wait_for network.interface
 	/sbin/wifi reload_legacy
 }
 
