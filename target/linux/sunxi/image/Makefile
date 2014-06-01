@@ -13,6 +13,7 @@ BOARDS:= \
 	sun4i-a10-pcduino \
 	sun5i-a13-olinuxino \
 	sun6i-a31-colombus \
+	sun7i-a20-bananapi \
 	sun7i-a20-cubieboard2 \
 	sun7i-a20-cubietruck \
 	sun7i-a20-olinuxino-micro \
