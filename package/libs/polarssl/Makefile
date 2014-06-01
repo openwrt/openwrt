@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=polarssl
-PKG_VERSION:=1.3.4
+PKG_VERSION:=1.3.7
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
 PKG_SOURCE_URL:=https://polarssl.org/code/releases
-PKG_MD5SUM:=30a75c5f171be49f805f3bf64a0af054
+PKG_MD5SUM:=b656e4c83ee94f93d19eb0832fd7f976
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -61,6 +61,7 @@ PKG_INSTALL:=1
 CMAKE_OPTIONS += \
 	-DCMAKE_BUILD_TYPE:String="Release" \
 	-DUSE_SHARED_POLARSSL_LIBRARY:Bool=ON \
+	-DENABLE_TESTING:Bool=OFF \
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
