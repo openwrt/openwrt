@@ -11,7 +11,6 @@ define Profile/VENTANA
 	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea kmod-usb-mxs-phy \
 	kmod-sound-core kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
 	kmod-can kmod-can-flexcan kmod-can-raw \
-	canutils-cansend canutils-candump canutils-cangen \
 	kmod-rtc-ds1672 kmod-gpio-pca953x kmod-hwmon-gsc kmod-eeprom-at24 \
 	kmod-leds-gpio kmod-pps-gpio \
 	kobs-ng
