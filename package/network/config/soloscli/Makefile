@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,16 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=soloscli
-PKG_VERSION:=0.11
-PKG_RELEASE:=3
+PKG_VERSION:=1.04
+PKG_RELEASE:=1
 
 PKG_SOURCE:=solos-pci-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/openadsl
-PKG_MD5SUM:=ab3f3fa654ef7c3a402980eca094e690
-
-PKG_INSTALL:=1
+PKG_MD5SUM:=c398866de3c059b14eb953c89d698124
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/solos-pci-$(PKG_VERSION)
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
