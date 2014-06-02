@@ -46,10 +46,7 @@ for LDD in ${PATH//://ldd }/ldd; do
 	LDD=""
 done
 
-[ -n "$LDD" -a -x "$LDD" ] || {
-	echo "Unable to find working ldd" >&2
-	exit 4
-}
+[ -n "$LDD" -a -x "$LDD" ] || LDD=
 
 for BIN in "$@"; do
 	[ -n "$BIN" -a -x "$BIN" -a -n "$DIR" ] || {
@@ -66,22 +63,24 @@ for BIN in "$@"; do
 	LDSO=""
 
 	echo "Bundling ${BIN##*/}"
-	for token in $("$LDD" "$BIN" 2>/dev/null); do
-		case "$token" in */*.so*)
-			case "$token" in
-				*ld-*.so*) LDSO="${token##*/}" ;;
-				*) echo " * lib: ${token##*/}" ;;
-			esac
+	[ -n "$LDD" ] && {
+		for token in $("$LDD" "$BIN" 2>/dev/null); do
+			case "$token" in */*.so*)
+				case "$token" in
+					*ld-*.so*) LDSO="${token##*/}" ;;
+					*) echo " * lib: ${token##*/}" ;;
+				esac
 
-			dest="$DIR/bundled/lib/${token##*/}"
-			ddir="${dest%/*}"
+				dest="$DIR/bundled/lib/${token##*/}"
+				ddir="${dest%/*}"
 
-			[ -f "$token" -a ! -f "$dest" ] && {
-				_md "$ddir"
-				_cp "$token" "$dest"
-			}
-		;; esac
-	done
+				[ -f "$token" -a ! -f "$dest" ] && {
+					_md "$ddir"
+					_cp "$token" "$dest"
+				}
+			;; esac
+		done
+	}
 
 	_md "$DIR"
 
@@ -105,7 +104,7 @@ for BIN in "$@"; do
 
 	# is a static executable or non-elf binary
 	else
-		echo " * not dynamically linked"
+		[ -n "$LDD" ] && echo " * not dynamically linked"
 		_cp "$BIN" "$DIR/${BIN##*/}"
 	fi
 done
