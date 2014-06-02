@@ -112,8 +112,8 @@ ${INIT_TRACE:+set -x}
 	}
 
 	stop() {
-		procd_kill "$(basename ${basescript:-$initscript})" "$1"
 		stop_service "$@"
+		procd_kill "$(basename ${basescript:-$initscript})" "$1"
 	}
 
 	reload() {
