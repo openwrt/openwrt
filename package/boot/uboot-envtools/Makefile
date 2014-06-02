@@ -21,6 +21,8 @@ PKG_MD5SUM:=6d2116d1385a66e9a59742caa9d62a54
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/u-boot-$(PKG_VERSION)
 
+PKG_BUILD_DEPENDS:=+fstools
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/uboot-envtools
@@ -34,15 +36,22 @@ define Package/uboot-envtools/description
  This package includes tools to read and modify U-Boot bootloader environment.
 endef
 
+define Package/uboot-envtools/config
+	source "$(SOURCE)/Config.in"
+endef
+
 define Build/Configure
 	touch $(PKG_BUILD_DIR)/include/config.mk
 	touch $(PKG_BUILD_DIR)/include/config.h
 endef
 
+TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		TARGET_CFLAGS="$(TARGET_CFLAGS)" \
+		UBI="$(CONFIG_UBOOT_ENVTOOLS_UBI)" \
 		env
 endef
 
