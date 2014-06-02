@@ -70,6 +70,9 @@ ramips_board_detect() {
 	*"Aztech HW550-3G")
 		name="hw550-3g"
 		;;
+	*"CY-SWR1100")
+		name="cy-swr1100"
+		;;
 	*"DCS-930")
 		name="dcs-930"
 		;;

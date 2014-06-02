@@ -51,6 +51,7 @@ preinit_set_mac_address() {
                 mac=$(mtd_get_mac_binary devdata 16388)
                 ifconfig eth0 hw ether $mac 2>/dev/null
                 ;;
+	cy-swr1100 |\
 	dir-645)
 		mac=$(mtd_get_mac_ascii nvram lanmac)
 		mac=$(macaddr_setbit_la "$mac")

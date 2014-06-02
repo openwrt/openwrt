@@ -78,6 +78,13 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 6t"
 		;;
 
+	cy-swr1100)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 9t"
+		ucidef_add_switch_vlan "switch0" "2" "4 9t"
+		;;
+
 	dir-610-a1 | \
 	dir-300-b7 | \
 	dir-320-b1 | \
@@ -205,6 +212,7 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
+	cy-swr1100 | \
 	dir-645)
 		lan_mac=$(mtd_get_mac_ascii nvram lanmac)
 		wan_mac=$(mtd_get_mac_ascii nvram wanmac)

@@ -70,6 +70,7 @@ case "$FIRMWARE" in
 	broadway | \
 	br6524n | \
 	carambola | \
+	cy-swr1100 | \
 	d105 | \
 	dcs-930 | \
 	dir-300-b7 | \
@@ -136,6 +137,9 @@ case "$FIRMWARE" in
 
 "rt2x00pci_1_0.eeprom")
 	case $board in
+	cy-swr1100)
+		rt2x00_eeprom_extract "factory" 8192 512
+		;;
 	rt-n56u | whr-600d)
 		rt2x00_eeprom_extract "factory" 32768 512
 		;;

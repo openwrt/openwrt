@@ -14,6 +14,7 @@ fix_seama_header() {
 board=$(ramips_board_name)
 
 case "$board" in
+cy-swr1100 | \
 dir-645)
 	fix_seama_header kernel
 	;;
