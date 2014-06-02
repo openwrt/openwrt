@@ -229,7 +229,7 @@
  #include <asm/uaccess.h>
  
  #include <linux/proc_fs.h>
-@@ -763,10 +764,10 @@ static void tcp_v6_send_response(struct
+@@ -763,10 +764,10 @@ static void tcp_v6_send_response(struct 
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -328,7 +328,7 @@
  
 --- a/net/ipv6/ip6_tunnel.c
 +++ b/net/ipv6/ip6_tunnel.c
-@@ -1122,9 +1122,9 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1272,9 +1272,9 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
@@ -662,7 +662,7 @@
  #include <linux/netdevice.h>
 --- a/include/net/inet_ecn.h
 +++ b/include/net/inet_ecn.h
-@@ -115,13 +115,13 @@ static inline int IP6_ECN_set_ce(struct
+@@ -115,13 +115,13 @@ static inline int IP6_ECN_set_ce(struct 
  {
  	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
  		return 0;
@@ -855,7 +855,7 @@
  	ptr = ip6hoff + sizeof(struct ipv6hdr);
 --- a/net/xfrm/xfrm_input.c
 +++ b/net/xfrm/xfrm_input.c
-@@ -77,8 +77,8 @@ int xfrm_parse_spi(struct sk_buff *skb,
+@@ -77,8 +77,8 @@ int xfrm_parse_spi(struct sk_buff *skb, 
  	if (!pskb_may_pull(skb, hlen))
  		return -EINVAL;
  
