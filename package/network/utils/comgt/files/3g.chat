@@ -8,5 +8,5 @@ OK      "ATE1"
 OK      'AT+CGDCONT=1,"IP","$USE_APN"'
 SAY     "Calling UMTS/GPRS"
 TIMEOUT 30
-OK      "ATD*99***1#"
+OK      "ATD$DIALNUMBER"
 CONNECT ' '
