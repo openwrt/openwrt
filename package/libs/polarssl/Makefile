@@ -43,19 +43,6 @@ $(call Package/polarssl/Default/description)
 This package contains the PolarSSL library.
 endef
 
-define Package/polarssl-progs
-$(call Package/polarssl/Default)
-  SECTION:=utils
-  CATEGORY:=Utilities
-  DEPENDS:=+libpolarssl +libpthread
-  TITLE+= (programs)
-endef
-
-define Package/polarssl-progs/description
-$(call Package/polarssl/Default/description)
-This package contains the PolarSSL programs.
-endef
-
 PKG_INSTALL:=1
 
 CMAKE_OPTIONS += \
@@ -75,10 +62,4 @@ define Package/libpolarssl/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpolarssl.so* $(1)/usr/lib/
 endef
 
-define Package/polarssl-progs/install
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/* $(1)/usr/bin/
-endef
-
 $(eval $(call BuildPackage,libpolarssl))
-$(eval $(call BuildPackage,polarssl-progs))
