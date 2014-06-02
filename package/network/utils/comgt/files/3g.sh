@@ -13,6 +13,7 @@ proto_3g_init_config() {
 	proto_config_add_string "apn"
 	proto_config_add_string "service"
 	proto_config_add_string "pincode"
+	proto_config_add_string "dialnumber"
 }
 
 proto_3g_setup() {
@@ -23,6 +24,7 @@ proto_3g_setup() {
 	json_get_var apn apn
 	json_get_var service service
 	json_get_var pincode pincode
+	json_get_var dialnumber dialnumber
 
 	[ -e "$device" ] || {
 		proto_set_available "$interface" 0
@@ -74,10 +76,15 @@ proto_3g_setup() {
 			[ -n "$SIERRA" ] && {
 				gcom -d "$device" -s /etc/gcom/getcarrier.gcom || return 1
 			}
+
+			if [ -z "$dialnumber" ]; then
+				dialnumber="*99***1#"
+			fi
+
 		;;
 	esac
 
-	connect="${apn:+USE_APN=$apn }/usr/sbin/chat -t5 -v -E -f $chat"
+	connect="${apn:+USE_APN=$apn }DIALNUMBER=$dialnumber /usr/sbin/chat -t5 -v -E -f $chat"
 	ppp_generic_setup "$interface" \
 		noaccomp \
 		nopcomp \
