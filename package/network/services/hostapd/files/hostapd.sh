@@ -130,7 +130,9 @@ hostapd_set_bss_options() {
 				append "$var" "radius_das_client=$dae_client $dae_secret" "$N"
 			}
 			config_get nasid "$vif" nasid
+			config_get ownip "$vif" ownip
 			append "$var" "nas_identifier=$nasid" "$N"
+			append "$var" "own_ip_addr=$ownip" "$N"
 			append "$var" "eapol_key_index_workaround=1" "$N"
 			append "$var" "ieee8021x=1" "$N"
 			append "$var" "wpa_key_mgmt=WPA-EAP" "$N"
