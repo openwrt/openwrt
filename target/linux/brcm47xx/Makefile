@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=brcm47xx
 BOARDNAME:=Broadcom BCM47xx/53xx (MIPS)
-FEATURES:=squashfs usb pcmcia
+FEATURES:=squashfs usb pcmcia low_mem
 MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 
 LINUX_VERSION:=3.10.36
