@@ -82,7 +82,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +#include "imx6qdl-gw51xx.dtsi"
 +
 +/ {
-+	model = "Gateworks Ventana i.MX6 DualLite GW51XX";
++	model = "Gateworks Ventana i.MX6 DualLite/Solo GW51XX";
 +	compatible = "gw,imx6dl-gw51xx", "gw,ventana", "fsl,imx6dl";
 +};
 --- /dev/null
@@ -104,7 +104,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +#include "imx6qdl-gw52xx.dtsi"
 +
 +/ {
-+	model = "Gateworks Ventana i.MX6 DualLite GW52XX";
++	model = "Gateworks Ventana i.MX6 DualLite/Solo GW52XX";
 +	compatible = "gw,imx6dl-gw52xx", "gw,ventana", "fsl,imx6dl";
 +};
 --- /dev/null
@@ -126,7 +126,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +#include "imx6qdl-gw53xx.dtsi"
 +
 +/ {
-+	model = "Gateworks Ventana i.MX6 DualLite GW53XX";
++	model = "Gateworks Ventana i.MX6 DualLite/Solo GW53XX";
 +	compatible = "gw,imx6dl-gw53xx", "gw,ventana", "fsl,imx6dl";
 +};
 --- /dev/null
@@ -148,7 +148,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +#include "imx6qdl-gw54xx.dtsi"
 +
 +/ {
-+	model = "Gateworks Ventana i.MX6 DualLite GW54XX";
++	model = "Gateworks Ventana i.MX6 DualLite/Solo GW54XX";
 +	compatible = "gw,imx6dl-gw54xx", "gw,ventana", "fsl,imx6dl";
 +};
 --- /dev/null
@@ -167,10 +167,10 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +
 +/dts-v1/;
 +#include "imx6q.dtsi"
-+#include "imx6qdl-gw54xx.dtsi"
++#include "imx6qdl-gw51xx.dtsi"
 +
 +/ {
-+	model = "Gateworks Ventana i.MX6 Quad GW51XX";
++	model = "Gateworks Ventana i.MX6 Dual/Quad GW51XX";
 +	compatible = "gw,imx6q-gw51xx", "gw,ventana", "fsl,imx6q";
 +};
 --- /dev/null
@@ -192,7 +192,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +#include "imx6qdl-gw52xx.dtsi"
 +
 +/ {
-+	model = "Gateworks Ventana i.MX6 Quad GW52XX";
++	model = "Gateworks Ventana i.MX6 Dual/Quad GW52XX";
 +	compatible = "gw,imx6q-gw52xx", "gw,ventana", "fsl,imx6q";
 +};
 +
@@ -218,7 +218,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +#include "imx6qdl-gw53xx.dtsi"
 +
 +/ {
-+	model = "Gateworks Ventana i.MX6 Quad GW53XX";
++	model = "Gateworks Ventana i.MX6 Dual/Quad GW53XX";
 +	compatible = "gw,imx6q-gw53xx", "gw,ventana", "fsl,imx6q";
 +};
 +
@@ -227,7 +227,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +};
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6q-gw5400-a.dts
-@@ -0,0 +1,546 @@
+@@ -0,0 +1,543 @@
 +/*
 + * Copyright 2013 Gateworks Corporation
 + *
@@ -345,9 +345,9 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +	};
 +
 +	sound {
-+		compatible = "fsl,imx6q-sabrelite-sgtl5000",
++		compatible = "fsl,imx6q-ventana-sgtl5000",
 +			     "fsl,imx-audio-sgtl5000";
-+		model = "imx6q-sabrelite-sgtl5000";
++		model = "sgtl5000-audio";
 +		ssi-controller = <&ssi1>;
 +		audio-codec = <&codec>;
 +		audio-routing =
@@ -717,9 +717,6 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +
 +&ldb {
 +	status = "okay";
-+	lvds-channel@0 {
-+		crtcs = <&ipu1 0>, <&ipu1 1>, <&ipu2 0>, <&ipu2 1>;
-+	};
 +};
 +
 +&pcie {
@@ -793,7 +790,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +#include "imx6qdl-gw54xx.dtsi"
 +
 +/ {
-+	model = "Gateworks Ventana i.MX6 Quad GW54XX";
++	model = "Gateworks Ventana i.MX6 Dual/Quad GW54XX";
 +	compatible = "gw,imx6q-gw54xx", "gw,ventana", "fsl,imx6q";
 +};
 +
@@ -1179,7 +1176,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +};
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6qdl-gw52xx.dtsi
-@@ -0,0 +1,490 @@
+@@ -0,0 +1,528 @@
 +/*
 + * Copyright 2013 Gateworks Corporation
 + *
@@ -1207,6 +1204,14 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +
 +	chosen {
 +		bootargs = "console=ttymxc1,115200";
++	};
++
++	backlight {
++		compatible = "pwm-backlight";
++		pwms = <&pwm4 0 5000000>;
++		brightness-levels = <0 4 8 16 32 64 128 255>;
++		default-brightness-level = <7>;
++		status = "okay";
 +	};
 +
 +	leds {
@@ -1296,9 +1301,9 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +	};
 +
 +	sound {
-+		compatible = "fsl,imx6q-sabrelite-sgtl5000",
++		compatible = "fsl,imx6q-ventana-sgtl5000",
 +			     "fsl,imx-audio-sgtl5000";
-+		model = "imx6q-sabrelite-sgtl5000";
++		model = "sgtl5000-audio";
 +		ssi-controller = <&ssi1>;
 +		audio-codec = <&codec>;
 +		audio-routing =
@@ -1458,7 +1463,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +	codec: sgtl5000@0a {
 +		compatible = "fsl,sgtl5000";
 +		reg = <0x0a>;
-+		clocks = <&clks 169>;
++		clocks = <&clks 201>;
 +		VDDA-supply = <&reg_1p8v>;
 +		VDDIO-supply = <&reg_3p3v>;
 +	};
@@ -1576,6 +1581,12 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +			>;
 +		};
 +
++		pinctrl_pwm4: pwm4grp {
++			fsl,pins = <
++				MX6QDL_PAD_SD1_CMD__PWM4_OUT		0x1b0b1
++			>;
++		};
++
 +		pinctrl_uart1: uart1grp {
 +			fsl,pins = <
 +				MX6QDL_PAD_SD3_DAT7__UART1_TX_DATA	0x1b0b1
@@ -1618,13 +1629,37 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +
 +&ldb {
 +	status = "okay";
++
 +	lvds-channel@0 {
-+		crtcs = <&ipu1 0>, <&ipu1 1>;
++		fsl,data-mapping = "spwg";
++		fsl,data-width = <18>;
++		status = "okay";
++
++		display-timings {
++			native-mode = <&timing0>;
++			timing0: hsd100pxn1 {
++				clock-frequency = <65000000>;
++				hactive = <1024>;
++				vactive = <768>;
++				hback-porch = <220>;
++				hfront-porch = <40>;
++				vback-porch = <21>;
++				vfront-porch = <7>;
++				hsync-len = <60>;
++				vsync-len = <10>;
++			};
++		};
 +	};
 +};
 +
 +&pcie {
 +	reset-gpio = <&gpio1 29 0>;
++	status = "okay";
++};
++
++&pwm4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm4>;
 +	status = "okay";
 +};
 +
@@ -1672,7 +1707,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +};
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6qdl-gw53xx.dtsi
-@@ -0,0 +1,553 @@
+@@ -0,0 +1,573 @@
 +/*
 + * Copyright 2013 Gateworks Corporation
 + *
@@ -1703,6 +1738,14 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +
 +	chosen {
 +		bootargs = "console=ttymxc1,115200";
++	};
++
++	backlight {
++		compatible = "pwm-backlight";
++		pwms = <&pwm4 0 5000000>;
++		brightness-levels = <0 4 8 16 32 64 128 255>;
++		default-brightness-level = <7>;
++		status = "okay";
 +	};
 +
 +	leds {
@@ -1792,9 +1835,9 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +	};
 +
 +	sound {
-+		compatible = "fsl,imx6q-sabrelite-sgtl5000",
++		compatible = "fsl,imx6q-ventana-sgtl5000",
 +			     "fsl,imx-audio-sgtl5000";
-+		model = "imx6q-sabrelite-sgtl5000";
++		model = "sgtl5000-audio";
 +		ssi-controller = <&ssi1>;
 +		audio-codec = <&codec>;
 +		audio-routing =
@@ -2109,6 +2152,12 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +			>;
 +		};
 +
++		pinctrl_pwm4: pwm4grp {
++			fsl,pins = <
++				MX6QDL_PAD_SD1_CMD__PWM4_OUT		0x1b0b1
++			>;
++		};
++
 +		pinctrl_uart1: uart1grp {
 +			fsl,pins = <
 +				MX6QDL_PAD_SD3_DAT7__UART1_TX_DATA	0x1b0b1
@@ -2152,7 +2201,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +&ldb {
 +	status = "okay";
 +
-+	lvds-channel@1 {
++	lvds-channel@0 {
 +		fsl,data-mapping = "spwg";
 +		fsl,data-width = <18>;
 +		status = "okay";
@@ -2181,6 +2230,12 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +	eth1: sky2@8 { /* MAC/PHY on bus 8 */
 +		compatible = "marvell,sky2";
 +	};
++};
++
++&pwm4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm4>;
++	status = "okay";
 +};
 +
 +&ssi1 {
@@ -2228,7 +2283,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +};
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6qdl-gw54xx.dtsi
-@@ -0,0 +1,580 @@
+@@ -0,0 +1,600 @@
 +/*
 + * Copyright 2013 Gateworks Corporation
 + *
@@ -2259,6 +2314,14 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +
 +	chosen {
 +		bootargs = "console=ttymxc1,115200";
++	};
++
++	backlight {
++		compatible = "pwm-backlight";
++		pwms = <&pwm4 0 5000000>;
++		brightness-levels = <0 4 8 16 32 64 128 255>;
++		default-brightness-level = <7>;
++		status = "okay";
 +	};
 +
 +	leds {
@@ -2338,9 +2401,9 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +	};
 +
 +	sound {
-+		compatible = "fsl,imx6q-sabrelite-sgtl5000",
++		compatible = "fsl,imx6q-ventana-sgtl5000",
 +			     "fsl,imx-audio-sgtl5000";
-+		model = "imx6q-sabrelite-sgtl5000";
++		model = "sgtl5000-audio";
 +		ssi-controller = <&ssi1>;
 +		audio-codec = <&codec>;
 +		audio-routing =
@@ -2687,6 +2750,12 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +			>;
 +		};
 +
++		pinctrl_pwm4: pwm4grp {
++			fsl,pins = <
++				MX6QDL_PAD_SD1_CMD__PWM4_OUT		0x1b0b1
++			>;
++		};
++
 +		pinctrl_uart1: uart1grp {
 +			fsl,pins = <
 +				MX6QDL_PAD_SD3_DAT7__UART1_TX_DATA	0x1b0b1
@@ -2730,7 +2799,7 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +&ldb {
 +	status = "okay";
 +
-+	lvds-channel@1 {
++	lvds-channel@0 {
 +		fsl,data-mapping = "spwg";
 +		fsl,data-width = <18>;
 +		status = "okay";
@@ -2759,6 +2828,12 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
 +	eth1: sky2@8 { /* MAC/PHY on bus 8 */
 +		compatible = "marvell,sky2";
 +	};
++};
++
++&pwm4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm4>;
++	status = "okay";
 +};
 +
 +&ssi1 {
