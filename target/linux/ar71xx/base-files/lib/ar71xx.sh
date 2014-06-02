@@ -280,6 +280,9 @@ ar71xx_board_detect() {
 	*"DIR-600 rev. A1")
 		name="dir-600-a1"
 		;;
+	*"DIR-615 rev. E1")
+		name="dir-615-e1"
+		;;
 	*"DIR-615 rev. E4")
 		name="dir-615-e4"
 		;;

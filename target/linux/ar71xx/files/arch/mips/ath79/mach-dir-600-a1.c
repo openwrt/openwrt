@@ -141,6 +141,14 @@ static void __init dir_600_a1_setup(void)
 MIPS_MACHINE(ATH79_MACH_DIR_600_A1, "DIR-600-A1", "D-Link DIR-600 rev. A1",
 	     dir_600_a1_setup);
 
+static void __init dir_615_e1_setup(void)
+{
+	dir_600_a1_setup();
+}
+
+MIPS_MACHINE(ATH79_MACH_DIR_615_E1, "DIR-615-E1", "D-Link DIR-615 rev. E1",
+	     dir_615_e1_setup);
+
 static void __init dir_615_e4_setup(void)
 {
 	dir_600_a1_setup();
