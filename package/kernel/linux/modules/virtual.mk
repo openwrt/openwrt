@@ -142,8 +142,9 @@ $(eval $(call KernelPackage,xen-fbdev))
 define KernelPackage/xen-kbddev
   SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen virtual keyboard and mouse
-  DEPENDS:=@TARGET_x86_xen_domu
-  KCONFIG:=CONFIG_XEN_KBDDEV_FRONTEND
+  DEPENDS:=@TARGET_x86_xen_domu +kmod-input-core
+  KCONFIG:=CONFIG_INPUT_MISC=y \
+	CONFIG_INPUT_XEN_KBDDEV_FRONTEND
   FILES:=$(LINUX_DIR)/drivers/input/xen-kbdfront.ko
   AUTOLOAD:=$(call AutoLoad,08,xen-kbdfront)
 endef
