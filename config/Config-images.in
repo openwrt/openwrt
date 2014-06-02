@@ -72,14 +72,14 @@ menu "Target Images"
 		help
 		  Build a ext4 root filesystem
 
-		config TARGET_ROOTFS_MAXINODE
+		config TARGET_EXT4_MAXINODE
 			int "Maximum number of inodes in root filesystem"
 			depends on TARGET_ROOTFS_EXT4FS
 			default 6000
 			help
 			  Allows you to change the maximum number of inodes in the root filesystem
 
-		config TARGET_ROOTFS_RESERVED_PCT
+		config TARGET_EXT4_RESERVED_PCT
 			int "Percentage of reserved blocks in root filesystem"
 			depends on TARGET_ROOTFS_EXT4FS
 			default 0
