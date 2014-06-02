@@ -146,6 +146,7 @@ menu "Target Images"
 		config TARGET_SQUASHFS_BLOCK_SIZE
 			int "Block size (in KiB)"
 			depends on TARGET_ROOTFS_SQUASHFS
+			default 64 if LOW_MEMORY_FOOTPRINT
 			default 256
 
 	menuconfig TARGET_ROOTFS_UBIFS
