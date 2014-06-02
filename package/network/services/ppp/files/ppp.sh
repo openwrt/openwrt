@@ -19,12 +19,13 @@ ppp_generic_init_config() {
 	proto_config_add_boolean ipv6
 	proto_config_add_boolean authfail
 	proto_config_add_int mtu
+	proto_config_add_string pppname
 }
 
 ppp_generic_setup() {
 	local config="$1"; shift
 
-	json_get_vars ipv6 demand keepalive username password pppd_options
+	json_get_vars ipv6 demand keepalive username password pppd_options pppname
 	[ "$ipv6" = 1 ] || ipv6=""
 	if [ "${demand:-0}" -gt 0 ]; then
 		demand="precompiled-active-filter /etc/ppp/filter demand idle $demand"
@@ -33,6 +34,7 @@ ppp_generic_setup() {
 	fi
 
 	[ -n "$mtu" ] || json_get_var mtu mtu
+	[ -n "$pppname" ] || pppname="${proto:-ppp}-$config"
 
 	local interval="${keepalive##*[, ]}"
 	[ "$interval" != "$keepalive" ] || interval=5
@@ -41,7 +43,7 @@ ppp_generic_setup() {
 
 	proto_run_command "$config" /usr/sbin/pppd \
 		nodetach ipparam "$config" \
-		ifname "${proto:-ppp}-$config" \
+		ifname "$pppname" \
 		${keepalive:+lcp-echo-interval $interval lcp-echo-failure ${keepalive%%[, ]*}} \
 		${ipv6:++ipv6} \
 		nodefaultroute \
