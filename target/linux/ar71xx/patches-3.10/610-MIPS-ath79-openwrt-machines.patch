@@ -29,6 +29,7 @@
 +	ATH79_MACH_DIR_505_A1,		/* D-Link DIR-505 rev. A1 */
 +	ATH79_MACH_DIR_600_A1,		/* D-Link DIR-600 rev. A1 */
 +	ATH79_MACH_DIR_615_C1,		/* D-Link DIR-615 rev. C1 */
++	ATH79_MACH_DIR_615_E1,		/* D-Link DIR-615 rev. E1 */
 +	ATH79_MACH_DIR_615_E4,		/* D-Link DIR-615 rev. E4 */
 +	ATH79_MACH_DIR_825_B1,		/* D-Link DIR-825 rev. B1 */
 +	ATH79_MACH_DIR_825_C1,		/* D-Link DIR-825 rev. C1 */
@@ -423,7 +424,7 @@
 +	select ATH79_NVRAM
 +
 +config ATH79_MACH_DIR_600_A1
-+	bool "D-Link DIR-600 A1/DIR-615 E4 support"
++	bool "D-Link DIR-600 A1/DIR-615 E1/DIR-615 E4 support"
 +	select SOC_AR724X
 +	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_ETH

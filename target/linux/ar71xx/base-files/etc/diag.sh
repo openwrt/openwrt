@@ -48,6 +48,7 @@ get_status_led() {
 		;;
 	dir-505-a1 |\
 	dir-600-a1 |\
+	dir-615-e1 |\
 	dir-615-e4)
 		status_led="d-link:green:power"
 		;;

@@ -146,6 +146,7 @@ platform_check_image() {
 	dir-505-a1 | \
 	dir-600-a1 | \
 	dir-615-c1 | \
+	dir-615-e1 | \
 	dir-615-e4 | \
 	dir-825-c1 | \
 	dir-835-a1 | \
