@@ -98,6 +98,7 @@ get_status_led() {
 		status_led="nbg6716:white:power"
 		;;
 	om2p | \
+	om2pv2 | \
 	om2p-hs | \
 	om2p-lc)
 		status_led="om2p:blue:power"

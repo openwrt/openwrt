@@ -358,6 +358,9 @@ ar71xx_board_detect() {
 	*OM2P)
 		name="om2p"
 		;;
+	*OM2Pv2)
+		name="om2pv2"
+		;;
 	*"OM2P HS")
 		name="om2p-hs"
 		;;
