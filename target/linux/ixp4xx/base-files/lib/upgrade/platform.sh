@@ -93,7 +93,7 @@ platform_check_image() {
 	local kern_part_size=0x$(platform_find_part_size "$kernelpart")
 	local kern_length=0x$(dd if="$1" bs=2 skip=1 count=4 2>/dev/null)
 
-	[ "$ARGC" -gt 1 ] && return 1
+	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
 	avila | cambria )

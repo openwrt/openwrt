@@ -1,6 +1,6 @@
 PART_NAME=linux
 platform_check_image() {
-	[ "$ARGC" -gt 1 ] && return 1
+	[ "$#" -gt 1 ] && return 1
 	case "$(get_magic_word "$1")" in
 		3600|3700|3800)
 			# 6348GW-11 boards use openwrt-96348GW-11-squashfs-cfe.bin files

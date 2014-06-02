@@ -10,7 +10,7 @@ RAMFS_COPY_DATA=/lib/adm5120.sh
 platform_check_image() {
 	local magic="$(get_magic_word "$1")"
 
-	[ "$ARGC" -gt 1 ] && return 1
+	[ "$#" -gt 1 ] && return 1
 
 	case "$board_name" in
 	"ZyXEL"*|"Compex WP54 family")

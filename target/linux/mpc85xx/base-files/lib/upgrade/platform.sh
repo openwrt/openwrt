@@ -28,7 +28,7 @@ platform_check_image() {
 	local board=$(mpc85xx_board_name)
 	local magic="$(get_magic_long "$1")"
 
-	[ "$ARGC" -gt 1 ] && return 1
+	[ "$#" -gt 1 ] && return 1
 
 	case $board in
 	tl-wdr4900-v1)
