@@ -222,3 +222,4 @@ static void __init om2p_hs_setup(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_OM2P_HS, "OM2P-HS", "OpenMesh OM2P HS", om2p_hs_setup);
+MIPS_MACHINE(ATH79_MACH_OM2P_HSv2, "OM2P-HSv2", "OpenMesh OM2P HSv2", om2p_hs_setup);
