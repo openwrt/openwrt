@@ -28,9 +28,7 @@
 #define WNDAP360_GPIO_LED_POWER_GREEN		2
 
 /* Reset button - next to the power connector */
-#define WNDAP360_GPIO_BTN_RESET		3
-/* WPS button - next to a led on right */
-#define WNDAP360_GPIO_BTN_WPS		8
+#define WNDAP360_GPIO_BTN_RESET			8
 
 #define WNDAP360_KEYS_POLL_INTERVAL		20	/* msecs */
 #define WNDAP360_KEYS_DEBOUNCE_INTERVAL	(3 * WNDAP360_KEYS_POLL_INTERVAL)
@@ -94,6 +92,9 @@ static void __init wndap360_setup(void)
 	ath79_register_gpio_keys_polled(-1, WNDAP360_KEYS_POLL_INTERVAL,
 					 ARRAY_SIZE(wndap360_gpio_keys),
 					 wndap360_gpio_keys);
+
+	ap9x_pci_setup_wmac_led_pin(0, 5);
+	ap9x_pci_setup_wmac_led_pin(1, 5);
 
 	ap94_pci_init(art + WNDAP360_CALDATA0_OFFSET,
 		      art + WNDAP360_WMAC0_MAC_OFFSET,
