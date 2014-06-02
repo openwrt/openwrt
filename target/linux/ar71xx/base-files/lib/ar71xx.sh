@@ -106,6 +106,9 @@ tplink_board_detect() {
 	"070100"*)
 		model="TP-Link TL-WA701N/ND"
 		;;
+	"073000"*)
+		model="TP-Link TL-WA730RE"
+		;;
 	"074000"*)
 		model="TP-Link TL-WR740N/ND"
 		;;
