@@ -62,6 +62,24 @@ menuconfig DEVEL
 		  This will create a git clone of the kernel in your build
 		  directory.
 
+	config KERNEL_GIT_LOCAL_REPOSITORY
+		string "Enter path to local reference repository" if DEVEL
+		depends on (KERNEL_GIT_CLONE_URI != "")
+		default ""
+		help
+		  Enter a full pathname to a local reference git repository.
+		  In this instance, the --refererence option of git clone will
+		  be used thus creating a quick local clone of your repo.
+
+	config KERNEL_GIT_BRANCH
+		string "Enter git branch to clone" if DEVEL
+		depends on (KERNEL_GIT_CLONE_URI != "")
+		default ""
+		help
+		  Enter the branch name to checkout after cloning the git repository.
+		  In this instance, the --branch option of git clone will be used.
+		  If unused, the clone's repository HEAD will be checked-out.
+
 	config BUILD_LOG
 		bool "Enable log files during build process" if DEVEL
 		help
