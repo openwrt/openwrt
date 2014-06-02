@@ -162,7 +162,8 @@ BuildFirmware/Edimax/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
 
 # build Seama header images
 define BuildFirmware/Seama/squashfs
-	$(call BuildFirmware/OF,$(1),$(2),$(3),$(5))
+	$(call MkImageLzmaDtb,$(2),$(3),$(5))
+	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1)-sysupgrade.bin)
 	cat $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/root.$(1) > $(KDIR)/img_$(2).$(1).tmp
 	if [ `stat -c%s "$(KDIR)/img_$(2).$(1).tmp"` -gt $$$$(($(5) - 64)) ]; then \
 		echo "Warning: $(KDIR)/img_$(2).$(1).tmp is too big" >&2; \
@@ -179,6 +180,14 @@ define BuildFirmware/Seama/squashfs
 			-s $(call imgname,$(1),$(2))-factory.bin \
 			-m "signature=$(4)" \
 			-i $(KDIR)/vmlinux-$(2).tmp.seama; \
+		dd if=$(KDIR)/vmlinux-$(2).bin.lzma.padded bs=1 count=`expr \`stat -c%s $(KDIR)/vmlinux-$(2).bin.lzma.padded\` - 64` of=$(KDIR)/vmlinux-$(2)-sysupgrade.tmp; \
+		$(STAGING_DIR_HOST)/bin/seama \
+			-i $(KDIR)/vmlinux-$(2)-sysupgrade.tmp \
+			-m "dev=/dev/mtdblock/2" -m "type=firmware"; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2)-sysupgrade.tmp.seama; \
+			dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+		) > $(BIN_DIR)/$(output_name); \
 	fi
 endef
 BuildFirmware/Seama/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
