@@ -54,7 +54,7 @@ dropbear_instance()
 {
 	local PasswordAuth enable Interface GatewayPorts \
 		RootPasswordAuth RootLogin rsakeyfile \
-		dsskeyfile BannerFile Port
+		dsskeyfile BannerFile Port SSHKeepAlive IdleTimeout
 
 	validate_section_dropbear "${1}" || {
 		echo "validation failed"
