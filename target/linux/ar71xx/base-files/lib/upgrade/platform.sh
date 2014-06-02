@@ -293,6 +293,7 @@ platform_check_image() {
 		return 0
 		;;
 	wndr3700 | \
+	wnr2000-v3 | \
 	wnr612-v2)
 		local hw_magic
 
