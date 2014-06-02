@@ -118,6 +118,9 @@ tplink_board_detect() {
 	"075000"*)
 		model="TP-Link TL-WA750RE"
 		;;
+	"751000"*)
+		model="TP-Link TL-WA7510N"
+		;;
 	"080100"*)
 		model="TP-Link TL-WA801N/ND"
 		;;
@@ -508,7 +511,7 @@ ar71xx_board_detect() {
 	*TL-WA750RE)
 		name="tl-wa750re"
 		;;
-	*TL-WA7510N)
+	*"TL-WA7510N v1")
 		name="tl-wa7510n"
 		;;
 	*TL-WA850RE)
