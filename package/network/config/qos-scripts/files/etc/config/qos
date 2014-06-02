@@ -11,13 +11,16 @@ config interface wan
 config classify
 	option target       "Priority"
 	option ports        "22,53"
+	option comment      "ssh, dns"
 config classify
 	option target       "Normal"
 	option proto        "tcp"
 	option ports        "20,21,25,80,110,443,993,995"
+	option comment      "ftp, smtp, http(s), imap"
 config classify
 	option target       "Express"
 	option ports        "5190"
+	option comment      "AOL, iChat, ICQ"
 config default
 	option target       "Express"
 	option proto        "udp"
