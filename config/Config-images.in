@@ -110,6 +110,13 @@ menu "Target Images"
 			default 1024 if TARGET_EXT4_BLOCKSIZE_1K
 			depends TARGET_ROOTFS_EXT4FS
 
+		config TARGET_EXT4_JOURNAL
+			bool "Create a journaling filesystem"
+			depends on TARGET_ROOTFS_EXT4FS
+			default n
+			help
+			  Create an ext4 filesystem with a journal
+
 	config TARGET_ROOTFS_ISO
 		bool "iso"
 		default n
