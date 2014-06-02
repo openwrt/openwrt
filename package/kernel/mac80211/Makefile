@@ -1208,6 +1208,16 @@ define KernelPackage/b43/config
 
 		  If unsure, say Y.
 
+	config PACKAGE_B43_PHY_LP
+		bool "Enable support for LP-PHYs"
+		default y
+		help
+		  Enable support for LP-PHY. This includes support for the following devices:
+		  PCI: BCM4312
+		  SoC: BCM5354
+
+		  If unsure, say Y.
+
 	config PACKAGE_B43_PHY_HT
 		bool "Enable support for HT-PHYs"
 		default y
@@ -1418,8 +1428,9 @@ endif
 config-$(call config_package,carl9170) += CARL9170
 
 config-$(call config_package,b43) += B43
-config-y += B43_SSB B43_BCMA B43_PHY_LP
+config-y += B43_SSB B43_BCMA
 config-$(CONFIG_PACKAGE_B43_PHY_N) += B43_PHY_N
+config-$(CONFIG_PACKAGE_B43_PHY_LP) += B43_PHY_LP
 config-$(CONFIG_PACKAGE_B43_PHY_HT) += B43_PHY_HT
 config-$(CONFIG_PACKAGE_B43_PIO) += B43_PIO
 config-$(CONFIG_PACKAGE_B43_DEBUG) += B43_DEBUG
