@@ -60,6 +60,10 @@ case $board in
 	br6524n)
 		set_wifi_led "edimax:blue:wlan"
 		;;
+	cy-swr1100)
+		ucidef_set_led_default "wps" "WPS" "samsung:blue:wps" "0"
+		set_usb_led "samsung:blue:usb"
+		;;
 	d105)
 		ucidef_set_led_default "power" "POWER" "d105:red:power" "1"
 		set_usb_led "d105:green:usb"
