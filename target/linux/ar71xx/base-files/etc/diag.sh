@@ -65,6 +65,9 @@ get_status_led() {
 	eap7660d)
 		status_led="eap7660d:green:ds4"
 		;;
+	hiwifi-hc6361)
+		status_led="hiwifi:blue:system"
+		;;
 	hornet-ub)
 		status_led="alfa:blue:wps"
 		;;
