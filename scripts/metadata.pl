@@ -183,6 +183,7 @@ sub target_config_features(@) {
 		/nommu/ and $ret .= "\tselect NOMMU\n";
 		/mips16/ and $ret .= "\tselect HAS_MIPS16\n";
 		/rfkill/ and $ret .= "\tselect RFKILL_SUPPORT\n";
+		/low_mem/ and $ret .= "\tselect LOW_MEMORY_FOOTPRINT\n";
 	}
 	return $ret;
 }
