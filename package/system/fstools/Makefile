@@ -78,6 +78,13 @@ define Package/block-mount/install
 
 endef
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/*.h $(1)/usr/include/
+	$(INSTALL_DIR) $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libubi-utils.a $(1)/usr/lib/
+endef
+
 $(eval $(call BuildPackage,fstools))
 $(eval $(call BuildPackage,ubi-flash))
 $(eval $(call BuildPackage,block-mount))
