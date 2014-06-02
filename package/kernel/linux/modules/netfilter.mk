@@ -420,6 +420,21 @@ endef
 
 $(eval $(call KernelPackage,ip6tables))
 
+define KernelPackage/ip6tables-extra
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Extra IPv6 modules
+  DEPENDS:=+kmod-ip6tables
+  KCONFIG:=$(KCONFIG_IPT_IPV6_EXTRA)
+  FILES:=$(foreach mod,$(IPT_IPV6_EXTRA-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoLoad,43,$(notdir $(IPT_IPV6_EXTRA-m)))
+endef
+
+define KernelPackage/ip6tables-extra/description
+ Netfilter IPv6 extra header matching modules
+endef
+
+$(eval $(call KernelPackage,ip6tables-extra))
+
 ARP_MODULES = arp_tables arpt_mangle arptable_filter
 define KernelPackage/arptables
   SUBMENU:=$(NF_MENU)
