@@ -137,11 +137,16 @@ menu "Target Images"
 		help
 		  Build a jffs2 root filesystem for NAND flash
 
-	config TARGET_ROOTFS_SQUASHFS
+	menuconfig TARGET_ROOTFS_SQUASHFS
 		bool "squashfs"
 		default y if USES_SQUASHFS
 		help
 		  Build a squashfs-lzma root filesystem
+
+		config TARGET_SQUASHFS_BLOCK_SIZE
+			int "Block size (in KiB)"
+			depends on TARGET_ROOTFS_SQUASHFS
+			default 256
 
 	menuconfig TARGET_ROOTFS_UBIFS
 		bool "ubifs"
