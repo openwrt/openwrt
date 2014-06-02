@@ -119,6 +119,7 @@ hostapd_common_add_bss_config() {
 	config_add_int dae_port
 
 	config_add_string nasid
+	config_add_string ownip
 	config_add_string iapp_interface
 	config_add_string eap_type ca_cert client_cert identity auth priv_key priv_key_pwd
 
@@ -208,7 +209,7 @@ hostapd_set_bss_options() {
 				acct_server acct_secret acct_port \
 				dae_client dae_secret dae_port \
 				nasid rsn_preauth iapp_interface \
-				eap_reauth_period
+				ownip eap_reauth_period
 
 			# legacy compatibility
 			[ -n "$auth_server" ] || json_get_var auth_server server
@@ -238,6 +239,7 @@ hostapd_set_bss_options() {
 			}
 
 			append bss_conf "nas_identifier=$nasid" "$N"
+                        [ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
 			append bss_conf "eapol_key_index_workaround=1" "$N"
 			append bss_conf "ieee8021x=1" "$N"
 			append bss_conf "wpa_key_mgmt=WPA-EAP" "$N"
