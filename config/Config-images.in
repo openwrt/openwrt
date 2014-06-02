@@ -66,11 +66,25 @@ menu "Target Images"
 
 	comment "Root filesystem images"
 
-	config TARGET_ROOTFS_EXT4FS
+	menuconfig TARGET_ROOTFS_EXT4FS
 		bool "ext4"
 		default y if USES_EXT4
 		help
-		  Ext4 file system with some free space for uml images
+		  Build a ext4 root filesystem
+
+		config TARGET_ROOTFS_MAXINODE
+			int "Maximum number of inodes in root filesystem"
+			depends on TARGET_ROOTFS_EXT4FS
+			default 6000
+			help
+			  Allows you to change the maximum number of inodes in the root filesystem
+
+		config TARGET_ROOTFS_RESERVED_PCT
+			int "Percentage of reserved blocks in root filesystem"
+			depends on TARGET_ROOTFS_EXT4FS
+			default 0
+			help
+			  Allows you to change the percentage of reserved blocks in the root filesystem
 
 	config TARGET_ROOTFS_ISO
 		bool "iso"
@@ -222,19 +236,6 @@ menu "Target Images"
 		  The root partition on the final device.  If you don't know,
 		  you probably want the default (/dev/sda2).
 
-	config TARGET_ROOTFS_MAXINODE
-		int "Maximum number of inodes in root filesystem"
-		depends on TARGET_ROOTFS_EXT4FS
-		default 6000
-		help
-		  Allows you to change the maximum number of inodes in the root filesystem
-
-	config TARGET_ROOTFS_RESERVED_PCT
-		int "Percentage of reserved blocks in root filesystem"
-		depends on TARGET_ROOTFS_EXT4FS
-		default 0
-		help
-		  Allows you to change the percentage of reserved blocks in the root filesystem
 
 	menuconfig TARGET_ROOTFS_INCLUDE_KERNEL
 		bool "Include kernel in root filesystem"
