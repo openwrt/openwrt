@@ -276,6 +276,32 @@ endef
 $(eval $(call KernelPackage,usb-eth-gadget))
 
 
+define KernelPackage/usb-serial-gadget
+  TITLE:=USB Serial Gadget support
+  KCONFIG:=CONFIG_USB_G_SERIAL
+  DEPENDS:=+kmod-usb-gadget +(!LINUX_3_3&&!LINUX_3_6):kmod-usb-lib-composite
+ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/gadget/u_serial.ko),)
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/gadget/u_serial.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/usb_f_acm.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/usb_f_obex.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/usb_f_serial.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/g_serial.ko
+  AUTOLOAD:=$(call AutoLoad,52,usb_f_acm g_serial)
+else
+  FILES:=$(LINUX_DIR)/drivers/usb/gadget/g_serial.ko
+  AUTOLOAD:=$(call AutoLoad,52,g_serial)
+endif
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-serial-gadget/description
+  Kernel support for USB Serial Gadget.
+endef
+
+$(eval $(call KernelPackage,usb-serial-gadget))
+
+
 define KernelPackage/usb-uhci
   TITLE:=Support for UHCI controllers
   KCONFIG:= \
