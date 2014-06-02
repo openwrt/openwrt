@@ -153,6 +153,7 @@ platform_check_image() {
 	dragino2 | \
 	ew-dorin | \
 	ew-dorin-router | \
+	hiwifi-hc6361 | \
 	hornet-ub-x2 | \
 	mzk-w04nu | \
 	mzk-w300nh | \

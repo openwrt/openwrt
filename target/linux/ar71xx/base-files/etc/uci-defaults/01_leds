@@ -103,6 +103,11 @@ dir-825-c1)
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "d-link:blue:wlan2g" "phy0tpt"
 	;;
 
+hiwifi-hc6361)
+	ucidef_set_led_default "inet" "INET" "hiwifi:blue:internet" "0"
+	ucidef_set_led_wlan "wlan" "WLAN" "hiwifi:blue:wlan-2p4" "phy0tpt"
+	;;
+
 hornet-ub)
 	ucidef_set_led_netdev "lan" "LAN" "alfa:blue:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "alfa:blue:wan" "eth1"
