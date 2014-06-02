@@ -69,7 +69,7 @@ run_ramfs() { # <command> [...]
 	install_bin /usr/sbin/ubirmvol
 	install_bin /usr/sbin/ubimkvol
 	for file in $RAMFS_COPY_BIN; do
-		install_bin $file
+		install_bin ${file//:/ }
 	done
 	install_file /etc/resolv.conf /lib/functions.sh /lib/functions/*.sh /lib/upgrade/*.sh $RAMFS_COPY_DATA
 
