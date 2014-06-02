@@ -7,7 +7,7 @@ PART_NAME=firmware
 platform_check_image() {
 	local magic="$(get_magic_long "$1")"
 
-	[ "$ARGC" -gt 1 ] && return 1
+	[ "$#" -gt 1 ] && return 1
 
 	[ "$magic" != "27051956" ] && {
 		echo "Invalid image type."

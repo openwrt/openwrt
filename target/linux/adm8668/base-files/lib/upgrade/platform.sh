@@ -1,6 +1,6 @@
 PART_NAME=linux
 platform_check_image() {
-	[ "$ARGC" -gt 1 ] && return 1
+	[ "$#" -gt 1 ] && return 1
 
 	case "$(get_magic_word "$1")" in
 		# u-boot

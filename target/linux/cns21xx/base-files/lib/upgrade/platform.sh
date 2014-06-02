@@ -11,7 +11,7 @@ platform_check_image() {
 	local board=$(get_board_name)
 	local magic="$(get_magic_word "$1")"
 
-	[ "$ARGC" -gt 1 ] && return 1
+	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
 	nsb3ast)

@@ -2,7 +2,7 @@ KERNEL_IMG="openwrt-au1000-au1500-vmlinux.bin"
 ROOTFS_IMG="openwrt-au1000-au1500-root.fs"
 
 platform_check_image() {
-	[ "$ARGC" -gt 1 ] && return 1
+	[ "$#" -gt 1 ] && return 1
 	case "$(get_magic_word "$1")" in
 		6f70)
 			( get_image "$1" | tar -tf - $KERNEL_IMG >/dev/null && \
