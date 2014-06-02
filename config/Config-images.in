@@ -87,9 +87,9 @@ menu "Target Images"
 			  Allows you to change the percentage of reserved blocks in the root filesystem
 
 		choice
-			prompt "Root filesystem block size""
+			prompt "Root filesystem block size"
 			default TARGET_EXT4_BLOCKSIZE_4K
-			depends TARGET_ROOTFS_EXT4FS
+			depends on TARGET_ROOTFS_EXT4FS
 			help
 			  Allows you to change the block size of the root filesystem
 
@@ -108,7 +108,7 @@ menu "Target Images"
 			default 4096 if TARGET_EXT4_BLOCKSIZE_4K
 			default 2048 if TARGET_EXT4_BLOCKSIZE_2K
 			default 1024 if TARGET_EXT4_BLOCKSIZE_1K
-			depends TARGET_ROOTFS_EXT4FS
+			depends on TARGET_ROOTFS_EXT4FS
 
 		config TARGET_EXT4_JOURNAL
 			bool "Create a journaling filesystem"
