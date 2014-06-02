@@ -86,6 +86,30 @@ menu "Target Images"
 			help
 			  Allows you to change the percentage of reserved blocks in the root filesystem
 
+		choice
+			prompt "Root filesystem block size""
+			default TARGET_EXT4_BLOCKSIZE_4K
+			depends TARGET_ROOTFS_EXT4FS
+			help
+			  Allows you to change the block size of the root filesystem
+
+			config TARGET_EXT4_BLOCKSIZE_4K
+				bool "4k"
+
+			config TARGET_EXT4_BLOCKSIZE_2K
+				bool "2k"
+
+			config TARGET_EXT4_BLOCKSIZE_1K
+				bool "1k"
+		endchoice
+
+		config TARGET_EXT4_BLOCKSIZE
+			int
+			default 4096 if TARGET_EXT4_BLOCKSIZE_4K
+			default 2048 if TARGET_EXT4_BLOCKSIZE_2K
+			default 1024 if TARGET_EXT4_BLOCKSIZE_1K
+			depends TARGET_ROOTFS_EXT4FS
+
 	config TARGET_ROOTFS_ISO
 		bool "iso"
 		default n
