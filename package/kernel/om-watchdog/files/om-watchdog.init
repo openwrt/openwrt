@@ -13,7 +13,7 @@ boot() {
 		local board=$(ar71xx_board_name)
 
 		case "$board" in
-			"om2p"|"om2p-hs")
+			"om2p"|"om2p-hs"|"om2p-hsv2")
 				service_start /sbin/om-watchdog 12
 				;;
 			"om2pv2"|"om2p-lc")
