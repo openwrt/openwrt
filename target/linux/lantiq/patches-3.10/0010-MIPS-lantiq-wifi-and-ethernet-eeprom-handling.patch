@@ -1,19 +1,21 @@
-From 8c19ced548538d964dcfb83bdf9ea9e8fbb7bdb1 Mon Sep 17 00:00:00 2001
+From 591a9bdde1fa9aa6f1c6132ea04771bb1dcd6180 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 13 Mar 2013 10:02:58 +0100
-Subject: [PATCH 10/34] MIPS: lantiq: wifi and ethernet eeprom handling
+Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 
-Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h  |    6 +
  .../mips/include/asm/mach-lantiq/xway/lantiq_soc.h |    3 +
- arch/mips/lantiq/xway/Makefile                     |    2 +
- arch/mips/lantiq/xway/ath_eep.c                    |  237 ++++++++++++++++++++
+ arch/mips/lantiq/xway/Makefile                     |    3 +
+ arch/mips/lantiq/xway/ath_eep.c                    |  248 ++++++++++++++++++++
+ arch/mips/lantiq/xway/eth_mac.c                    |   76 ++++++
  arch/mips/lantiq/xway/pci-ath-fixup.c              |  109 +++++++++
  arch/mips/lantiq/xway/rt_eep.c                     |   60 +++++
- 6 files changed, 417 insertions(+)
+ arch/mips/pci/pci-lantiq.c                         |    2 +-
+ 8 files changed, 506 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
  create mode 100644 arch/mips/lantiq/xway/ath_eep.c
+ create mode 100644 arch/mips/lantiq/xway/eth_mac.c
  create mode 100644 arch/mips/lantiq/xway/pci-ath-fixup.c
  create mode 100644 arch/mips/lantiq/xway/rt_eep.c
 
@@ -39,16 +41,16 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #endif /* _LTQ_XWAY_H__ */
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -2,4 +2,6 @@ obj-y := prom.o sysctrl.o clk.o reset.o
+@@ -1,3 +1,6 @@
+ obj-y := prom.o sysctrl.o clk.o reset.o dma.o gptu.o dcdc.o
  
- obj-y += vmmc.o
- 
++obj-y += eth_mac.o
 +obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
 +
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,250 @@
+@@ -0,0 +1,248 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -72,7 +74,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/mtd/mtd.h>
 +#include <pci-ath-fixup.h>
 +#include <lantiq_soc.h>
-+#include <linux/of_net.h>
 +
 +extern int (*ltq_pci_plat_dev_init)(struct pci_dev *dev);
 +struct ath5k_platform_data ath5k_pdata;
@@ -90,6 +91,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +int __init of_ath9k_eeprom_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node, *mtd_np;
++	struct resource *eep_res, *mac_res = NULL;
++	void __iomem *eep, *mac;
 +	int mac_offset;
 +	u32 mac_inc = 0, pci_slot = 0;
 +	int i;
@@ -99,41 +102,36 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	const char *part;
 +	phandle phandle;
 +
-+	list = of_get_property(np, "ath,eep-flash", &i);
-+	if (!list || (i !=  (2 * sizeof(*list)))) {
-+		dev_err(&pdev->dev, "failed to find ath,eep-flash\n");
-+		return -ENODEV;
-+	}
++	if ((list = of_get_property(np, "ath,eep-flash", &i)) && i == 2 *
++			sizeof(*list) && (phandle = be32_to_cpup(list++)) &&
++			(mtd_np = of_find_node_by_phandle(phandle)) && ((part =
++			of_get_property(mtd_np, "label", NULL)) || (part =
++			mtd_np->name)) && (the_mtd = get_mtd_device_nm(part))
++			!= ERR_PTR(-ENODEV)) {
++		i = mtd_read(the_mtd, be32_to_cpup(list),
++				ATH9K_PLAT_EEP_MAX_WORDS << 1, &flash_readlen,
++				(void *) ath9k_pdata.eeprom_data);
++		put_mtd_device(the_mtd);
++		if ((sizeof(ath9k_pdata.eeprom_data) != flash_readlen) || i) {
++			dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
++			return -ENODEV;
++		}
++	} else {
++		eep_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++		mac_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 +
-+	phandle = be32_to_cpup(list++);
-+	if (!phandle) {
-+		dev_err(&pdev->dev, "failed to find phandle\n");
-+		return -ENODEV;
-+	}
++		if (!eep_res) {
++			dev_err(&pdev->dev, "failed to load eeprom address\n");
++			return -ENODEV;
++		}
++		if (resource_size(eep_res) != ATH9K_PLAT_EEP_MAX_WORDS << 1) {
++			dev_err(&pdev->dev, "eeprom has an invalid size\n");
++			return -EINVAL;
++		}
 +
-+	mtd_np = of_find_node_by_phandle(phandle);
-+	if (!mtd_np) {
-+		dev_err(&pdev->dev, "failed to find mtd node\n");
-+		return -ENODEV;
-+	}
-+
-+	part = of_get_property(mtd_np, "label", NULL);
-+	if (!part)
-+		part = mtd_np->name;
-+
-+	the_mtd = get_mtd_device_nm(part);
-+	if (the_mtd == ERR_PTR(-ENODEV)) {
-+		dev_err(&pdev->dev, "failed to find mtd device\n");
-+		return -ENODEV;
-+	}
-+
-+	i = mtd_read(the_mtd, be32_to_cpup(list),
-+			ATH9K_PLAT_EEP_MAX_WORDS << 1, &flash_readlen,
-+			(void *) ath9k_pdata.eeprom_data);
-+	put_mtd_device(the_mtd);
-+	if ((sizeof(ath9k_pdata.eeprom_data) != flash_readlen) || i) {
-+		dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
-+		return -ENODEV;
++		eep = ioremap(eep_res->start, resource_size(eep_res));
++		memcpy_fromio(ath9k_pdata.eeprom_data, eep,
++				ATH9K_PLAT_EEP_MAX_WORDS << 1);
 +	}
 +
 +	if (of_find_property(np, "ath,eep-swap", NULL))
@@ -148,10 +146,18 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
 +		memcpy_fromio(athxk_eeprom_mac, (void*) ath9k_pdata.eeprom_data + mac_offset, 6);
-+	} else {
++	} else if (mac_res) {
++		if (resource_size(mac_res) != 6) {
++			dev_err(&pdev->dev, "mac has an invalid size\n");
++			return -EINVAL;
++		}
++		mac = ioremap(mac_res->start, resource_size(mac_res));
++		memcpy_fromio(athxk_eeprom_mac, mac, 6);
++	} else if (ltq_get_eth_mac())
++		memcpy(athxk_eeprom_mac, ltq_get_eth_mac(), 6);
++	else {
++		dev_warn(&pdev->dev, "using random mac\n");
 +		random_ether_addr(athxk_eeprom_mac);
-+		if (of_get_mac_address_mtd(np, athxk_eeprom_mac))
-+			dev_warn(&pdev->dev, "using random mac\n");
 +	}
 +
 +	if (!of_property_read_u32(np, "ath,mac-increment", &mac_inc))
@@ -162,6 +168,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	if (!of_property_read_u32(np, "ath,pci-slot", &pci_slot)) {
 +		ltq_pci_ath_fixup(pci_slot, ath9k_pdata.eeprom_data);
++
 +		dev_info(&pdev->dev, "pci slot: %u\n", pci_slot);
 +	}
 +
@@ -183,25 +190,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	},
 +};
 +
-+static int ath9k_eep_loaded;
 +static int __init of_ath9k_eeprom_init(void)
 +{
-+	int ret = platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
-+
-+	if (!ret)
-+		ath9k_eep_loaded = 1;
-+
-+	return ret;
-+}
-+
-+static int __init of_ath9k_eeprom_init_late(void)
-+{
-+	if (ath9k_eep_loaded)
-+		return 0;
 +	return platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
 +}
-+late_initcall(of_ath9k_eeprom_init_late);
-+subsys_initcall(of_ath9k_eeprom_init);
++arch_initcall(of_ath9k_eeprom_init);
++
 +
 +static int ath5k_pci_plat_dev_init(struct pci_dev *dev)
 +{
@@ -212,6 +206,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +int __init of_ath5k_eeprom_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node, *mtd_np;
++	struct resource *eep_res, *mac_res = NULL;
++	void __iomem *eep, *mac;
 +	int mac_offset;
 +	u32 mac_inc = 0;
 +	int i;
@@ -221,53 +217,57 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	const char *part;
 +	phandle phandle;
 +
-+	list = of_get_property(np, "ath,eep-flash", &i);
-+	if (!list || (i !=  (2 * sizeof(*list)))) {
-+		dev_err(&pdev->dev, "failed to find ath,eep-flash\n");
-+		return -ENODEV;
-+	}
++	if ((list = of_get_property(np, "ath,eep-flash", &i)) && i == 2 *
++			sizeof(*list) && (phandle = be32_to_cpup(list++)) &&
++			(mtd_np = of_find_node_by_phandle(phandle)) && ((part =
++			of_get_property(mtd_np, "label", NULL)) || (part =
++			mtd_np->name)) && (the_mtd = get_mtd_device_nm(part))
++			!= ERR_PTR(-ENODEV)) {
++		i = mtd_read(the_mtd, be32_to_cpup(list),
++				ATH5K_PLAT_EEP_MAX_WORDS << 1, &flash_readlen,
++				(void *) ath5k_pdata.eeprom_data);
++		put_mtd_device(the_mtd);
++		if ((sizeof(ATH5K_PLAT_EEP_MAX_WORDS << 1) != flash_readlen)
++				|| i) {
++			dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
++			return -ENODEV;
++		}
++	} else {
++		eep_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++		mac_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 +
-+	phandle = be32_to_cpup(list++);
-+	if (!phandle) {
-+		dev_err(&pdev->dev, "failed to find phandle\n");
-+		return -ENODEV;
-+	}
++		if (!eep_res) {
++			dev_err(&pdev->dev, "failed to load eeprom address\n");
++			return -ENODEV;
++		}
++		if (resource_size(eep_res) != ATH5K_PLAT_EEP_MAX_WORDS << 1) {
++			dev_err(&pdev->dev, "eeprom has an invalid size\n");
++			return -EINVAL;
++		}
 +
-+	mtd_np = of_find_node_by_phandle(phandle);
-+	if (!mtd_np) {
-+		dev_err(&pdev->dev, "failed to find mtd node\n");
-+		return -ENODEV;
-+	}
-+
-+	part = of_get_property(mtd_np, "label", NULL);
-+	if (!part)
-+		part = mtd_np->name;
-+
-+	the_mtd = get_mtd_device_nm(part);
-+	if (the_mtd == ERR_PTR(-ENODEV)) {
-+		dev_err(&pdev->dev, "failed to find mtd device\n");
-+		return -ENODEV;
-+	}
-+
-+	i = mtd_read(the_mtd, be32_to_cpup(list),
-+			ATH5K_PLAT_EEP_MAX_WORDS << 1, &flash_readlen,
-+			(void *) ath5k_pdata.eeprom_data);
-+	put_mtd_device(the_mtd);
-+	if ((sizeof(ath5k_pdata.eeprom_data) != flash_readlen) || i) {
-+		dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
-+		return -ENODEV;
++		eep = ioremap(eep_res->start, resource_size(eep_res));
++		memcpy_fromio(ath5k_pdata.eeprom_data, eep,
++				ATH5K_PLAT_EEP_MAX_WORDS << 1);
 +	}
 +
 +	if (of_find_property(np, "ath,eep-swap", NULL))
 +		for (i = 0; i < ATH5K_PLAT_EEP_MAX_WORDS; i++)
-+			ath5k_pdata.eeprom_data[i] = swab16(ath9k_pdata.eeprom_data[i]);
++			ath5k_pdata.eeprom_data[i] = swab16(ath5k_pdata.eeprom_data[i]);
 +
 +	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
 +		memcpy_fromio(athxk_eeprom_mac, (void*) ath5k_pdata.eeprom_data + mac_offset, 6);
-+	} else {
++	} else if (mac_res) {
++		if (resource_size(mac_res) != 6) {
++			dev_err(&pdev->dev, "mac has an invalid size\n");
++			return -EINVAL;
++		}
++		mac = ioremap(mac_res->start, resource_size(mac_res));
++		memcpy_fromio(athxk_eeprom_mac, mac, 6);
++	} else if (ltq_get_eth_mac())
++		memcpy(athxk_eeprom_mac, ltq_get_eth_mac(), 6);
++	else {
++		dev_warn(&pdev->dev, "using random mac\n");
 +		random_ether_addr(athxk_eeprom_mac);
-+		if (of_get_mac_address_mtd(np, athxk_eeprom_mac))
-+			dev_warn(&pdev->dev, "using random mac\n");
 +	}
 +
 +	if (!of_property_read_u32(np, "ath,mac-increment", &mac_inc))
@@ -299,6 +299,85 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
 +}
 +device_initcall(of_ath5k_eeprom_init);
+--- /dev/null
++++ b/arch/mips/lantiq/xway/eth_mac.c
+@@ -0,0 +1,76 @@
++/*
++ *  Copyright (C) 2012 John Crispin <blogic@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/of_platform.h>
++#include <linux/if_ether.h>
++
++static u8 eth_mac[6];
++static int eth_mac_set;
++
++const u8* ltq_get_eth_mac(void)
++{
++	return eth_mac;
++}
++
++static int __init setup_ethaddr(char *str)
++{
++	eth_mac_set = mac_pton(str, eth_mac);
++	return !eth_mac_set;
++}
++__setup("ethaddr=", setup_ethaddr);
++
++int __init of_eth_mac_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	struct resource *mac_res;
++	void __iomem *mac;
++	u32 mac_inc = 0;
++
++	if (eth_mac_set) {
++		dev_err(&pdev->dev, "mac was already set by bootloader\n");
++		return -EINVAL;
++	}
++	mac_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++
++	if (!mac_res) {
++		dev_err(&pdev->dev, "failed to load mac\n");
++		return -EINVAL;
++	}
++	if (resource_size(mac_res) != 6) {
++		dev_err(&pdev->dev, "mac has an invalid size\n");
++		return -EINVAL;
++	}
++	mac = ioremap(mac_res->start, resource_size(mac_res));
++	memcpy_fromio(eth_mac, mac, 6);
++
++	if (!of_property_read_u32(np, "mac-increment", &mac_inc))
++		eth_mac[5] += mac_inc;
++
++	return 0;
++}
++
++static struct of_device_id eth_mac_ids[] = {
++	{ .compatible = "lantiq,eth-mac" },
++	{ /* sentinel */ }
++};
++
++static struct platform_driver eth_mac_driver = {
++	.driver		= {
++		.name		= "lantiq,eth-mac",
++		.owner	= THIS_MODULE,
++		.of_match_table	= of_match_ptr(eth_mac_ids),
++	},
++};
++
++static int __init of_eth_mac_init(void)
++{
++	return platform_driver_probe(&eth_mac_driver, of_eth_mac_probe);
++}
++device_initcall(of_eth_mac_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/pci-ath-fixup.c
 @@ -0,0 +1,109 @@
