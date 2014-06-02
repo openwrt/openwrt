@@ -113,7 +113,8 @@ start_instance() {
 		route_metric route_up rport script_security secret server server_bridge setenv shaper sndbuf \
 		socks_proxy status status_version syslog tcp_queue_limit tls_auth \
 		tls_cipher tls_remote tls_timeout tls_verify tmp_dir topology tran_window \
-		tun_mtu tun_mtu_extra txqueuelen user verb down push up
+		tun_mtu tun_mtu_extra txqueuelen user verb down push up \
+		ifconfig_ipv6 route_ipv6 server_ipv6 ifconfig_ipv6_pool ifconfig_ipv6_push iroute_ipv6
 
 	openvpn_add_instance "$s" "/var/etc" "openvpn-$s.conf"
 }
