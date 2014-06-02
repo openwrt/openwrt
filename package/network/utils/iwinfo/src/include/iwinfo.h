@@ -27,6 +27,7 @@
 #define IWINFO_80211_B       (1 << 1)
 #define IWINFO_80211_G       (1 << 2)
 #define IWINFO_80211_N       (1 << 3)
+#define IWINFO_80211_AC      (1 << 4)
 
 #define IWINFO_CIPHER_NONE   (1 << 0)
 #define IWINFO_CIPHER_WEP40  (1 << 1)
