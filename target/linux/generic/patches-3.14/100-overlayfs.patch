@@ -380,7 +380,7 @@
  {
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -834,8 +834,7 @@ struct file *dentry_open(const struct pa
+@@ -822,8 +822,7 @@ struct file *dentry_open(const struct pa
  	f = get_empty_filp();
  	if (!IS_ERR(f)) {
  		f->f_flags = flags;
@@ -390,7 +390,7 @@
  		if (!error) {
  			/* from now on we need fput() to dispose of f */
  			error = open_check_o_direct(f);
-@@ -852,6 +851,26 @@ struct file *dentry_open(const struct pa
+@@ -840,6 +839,26 @@ struct file *dentry_open(const struct pa
  }
  EXPORT_SYMBOL(dentry_open);
  

@@ -68,7 +68,7 @@
  
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -665,9 +665,12 @@ int open_check_o_direct(struct file *f)
+@@ -654,9 +654,12 @@ int open_check_o_direct(struct file *f)
  {
  	/* NB: we're sure to have correct a_ops only after f_op->open */
  	if (f->f_flags & O_DIRECT) {

@@ -1,6 +1,6 @@
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1244,6 +1244,11 @@ struct net_device {
+@@ -1245,6 +1245,11 @@ struct net_device {
  	const struct ethtool_ops *ethtool_ops;
  	const struct forwarding_accel_ops *fwd_ops;
  
@@ -12,7 +12,7 @@
  	/* Hardware header description */
  	const struct header_ops *header_ops;
  
-@@ -1312,6 +1317,9 @@ struct net_device {
+@@ -1313,6 +1318,9 @@ struct net_device {
  	void			*ax25_ptr;	/* AX.25 specific data */
  	struct wireless_dev	*ieee80211_ptr;	/* IEEE 802.11 specific data,
  						   assign before registering */
