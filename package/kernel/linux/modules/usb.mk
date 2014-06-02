@@ -1260,7 +1260,7 @@ define KernelPackage/usb-hid
   FILES:=$(LINUX_DIR)/drivers/$(USBHID_DIR)/usbhid.ko
   AUTOLOAD:=$(call AutoProbe,usbhid)
   $(call AddDepends/usb)
-  $(call AddDepends/hid)
+  $(call AddDepends/hid,+kmod-hid-generic)
   $(call AddDepends/input,+kmod-input-evdev)
 endef
 
