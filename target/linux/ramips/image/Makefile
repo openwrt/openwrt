@@ -454,6 +454,8 @@ Image/Build/Profile/RTG32B1=$(call BuildFirmware/Default4M/$(1),$(1),rt-g32-b1,R
 
 Image/Build/Profile/RTN10PLUS=$(call BuildFirmware/Default4M/$(1),$(1),rt-n10-plus,RT-N10-PLUS)
 
+Image/Build/Profile/RUT5XX=$(call BuildFirmware/Default8M/$(1),$(1),rut5xx,RUT5XX)
+
 Image/Build/Profile/SL-R7205=$(call BuildFirmware/Default4M/$(1),$(1),sl-r7205,SL-R7205)
 
 Image/Build/Profile/V22RW-2X2=$(call BuildFirmware/Default4M/$(1),$(1),v22rw-2x2,V22RW-2X2)
@@ -591,6 +593,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/RTG32B1,$(1))
 	$(call Image/Build/Profile/RTN10PLUS,$(1))
 	$(call Image/Build/Profile/RT-N13U,$(1))
+	$(call Image/Build/Profile/RUT5XX,$(1))
 	$(call Image/Build/Profile/SL-R7205,$(1))
 	$(call Image/Build/Profile/UR-326N4G,$(1))
 	$(call Image/Build/Profile/V22RW-2X2,$(1))

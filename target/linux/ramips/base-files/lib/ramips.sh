@@ -211,6 +211,9 @@ ramips_board_detect() {
 	*"RT-N56U")
 		name="rt-n56u"
 		;;
+	*"RUT5XX")
+		name="rut5xx"
+		;;
 	*"Skyline SL-R7205"*)
 		name="sl-r7205"
 		;;
