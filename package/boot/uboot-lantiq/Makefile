@@ -71,6 +71,25 @@ define uboot/arv7510pw_brn
   DEPS:=@TARGET_lantiq_xway_ARV4510PW
 endef
 
+define uboot/arv7510pw22_ram
+  TITLE:=U-Boot for Arcadyan arv7510pw22 (RAM)
+  SOC:=danube
+  DDR_SETTINGS:=board/arcadyan/arv7510pw22/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway_ARV7510PW22
+endef
+
+define uboot/arv7510pw22_nor
+  TITLE:=U-Boot for Arcadyan arv7510pw22 (NOR)
+  SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV7510PW22
+endef
+
+define uboot/arv7510pw22_brn
+  TITLE:=U-Boot for Arcadyan arv7510pw22 (BRN)
+  SOC:=danube
+  DEPS:=@TARGET_lantiq_xway_ARV7510PW22
+endef
+
 define uboot/arv7518pw_ram
   TITLE:=U-Boot for Arcadyan arv7518pw (RAM)
   SOC:=danube
@@ -239,6 +258,7 @@ endef
 UBOOTS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
 	arv7510pw_ram arv7510pw_nor arv7510pw_brn \
+	arv7510pw22_ram arv7510pw22_nor arv7510pw22_brn \
 	arv7518pw_ram arv7518pw_nor arv7518pw_brn \
 	arv752dpw_ram arv752dpw_nor arv752dpw_brn \
 	arv752dpw22_ram arv752dpw22_nor arv752dpw22_brn \
