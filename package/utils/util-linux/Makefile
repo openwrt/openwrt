@@ -34,6 +34,7 @@ CONFIGURE_ARGS += \
 	--enable-new-mount	\
 	--with-ncurses		\
 	--disable-tls		\
+	--disable-sulogin	\
 	--without-udev
 
 TARGET_CFLAGS += $(FPIC)
