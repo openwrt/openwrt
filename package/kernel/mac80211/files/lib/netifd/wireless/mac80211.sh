@@ -36,7 +36,7 @@ drv_mac80211_init_device_config() {
 		htc_vht \
 		rx_antenna_pattern \
 		tx_antenna_pattern
-	config_add_int vht_max_mpdu vht_link_adapt vht160 rx_stbc tx_stbc
+	config_add_int vht_max_a_mpdu_len_exp vht_max_mpdu vht_link_adapt vht160 rx_stbc tx_stbc
 }
 
 drv_mac80211_init_iface_config() {
@@ -202,6 +202,7 @@ mac80211_hostapd_setup_base() {
 			htc_vht:1 \
 			rx_antenna_pattern:1 \
 			tx_antenna_pattern:1 \
+			vht_max_a_mpdu_len_exp:7 \
 			vht_max_mpdu:11454 \
 			rx_stbc:4 \
 			tx_stbc:4 \
@@ -253,6 +254,24 @@ mac80211_hostapd_setup_base() {
 			vht_max_mpdu_hw=11454
 		[ "$vht_max_mpdu_hw" != 3895 ] && \
 			vht_capab="$vht_capab[MAX-MPDU-$vht_max_mpdu_hw]"
+			
+		# maximum A-MPDU length exponent
+		vht_max_a_mpdu_len_exp_hw=0
+		[ "$(($vht_cap & 58720256))" -ge 8388608 -a 1 -le "$vht_max_a_mpdu_len_exp" ] && \
+			vht_max_a_mpdu_len_exp_hw=1
+		[ "$(($vht_cap & 58720256))" -ge 16777216 -a 2 -le "$vht_max_a_mpdu_len_exp" ] && \
+			vht_max_a_mpdu_len_exp_hw=2
+		[ "$(($vht_cap & 58720256))" -ge 25165824 -a 3 -le "$vht_max_a_mpdu_len_exp" ] && \
+			vht_max_a_mpdu_len_exp_hw=3
+		[ "$(($vht_cap & 58720256))" -ge 33554432 -a 4 -le "$vht_max_a_mpdu_len_exp" ] && \
+			vht_max_a_mpdu_len_exp_hw=4
+		[ "$(($vht_cap & 58720256))" -ge 41943040 -a 5 -le "$vht_max_a_mpdu_len_exp" ] && \
+			vht_max_a_mpdu_len_exp_hw=5
+		[ "$(($vht_cap & 58720256))" -ge 50331648 -a 6 -le "$vht_max_a_mpdu_len_exp" ] && \
+			vht_max_a_mpdu_len_exp_hw=6
+		[ "$(($vht_cap & 58720256))" -ge 58720256 -a 7 -le "$vht_max_a_mpdu_len_exp" ] && \
+			vht_max_a_mpdu_len_exp_hw=7
+		vht_capab="$vht_capab[MAX-A-MPDU-LEN-EXP$vht_max_a_mpdu_len_exp_hw]"
 
 		# whether or not the STA supports link adaptation using VHT variant
 		vht_link_adapt_hw=0
