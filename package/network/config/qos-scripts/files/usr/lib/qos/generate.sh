@@ -118,6 +118,10 @@ parse_matching_rule() {
 				add_insmod ipt_connbytes
 				append "$var" "-m connbytes --connbytes $value --connbytes-dir both --connbytes-mode bytes"
 			;;
+			*:comment)
+				add_insmod xt_comment
+				append "$var" "-m comment --comment '$value'"
+			;;
 			*:tos)
                                 add_insmod ipt_tos
                                 case "$value" in
