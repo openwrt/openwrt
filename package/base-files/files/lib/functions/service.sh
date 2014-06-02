@@ -101,26 +101,3 @@ service_stop() {
 service_reload() {
 	SERVICE_SIG="${SERVICE_SIG:-$SERVICE_SIG_RELOAD}" service -K "$@"
 }
-
-service_kill() {
-	cat 1>&2 << __END_OF_WARNING__
-#
-# WARNING: the 'service_kill' function is now deprecated and might be
-# removed soon. Consider using the other new service_* wrappers instead.
-#
-__END_OF_WARNING__
-	local name="${1}"
-	local pid="${2:-$(pidof "$name")}"
-	local grace="${3:-5}"
-
-	[ -f "$pid" ] && pid="$(head -n1 "$pid" 2>/dev/null)"
-
-	for pid in $pid; do
-		[ -d "/proc/$pid" ] || continue
-		local try=0
-		kill -TERM $pid 2>/dev/null && \
-			while grep -qs "$name" "/proc/$pid/cmdline" && [ $((try++)) -lt $grace ]; do sleep 1; done
-		kill -KILL $pid 2>/dev/null && \
-			while grep -qs "$name" "/proc/$pid/cmdline"; do sleep 1; done
-	done
-}
