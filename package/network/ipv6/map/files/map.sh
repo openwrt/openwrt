@@ -45,7 +45,11 @@ proto_map_setup() {
 		[ -n "$psidlen" ] && rule="$rule,psidlen=$psidlen"
 		[ -n "$offset" ] && rule="$rule,offset=$offset"
 		[ -n "$ealen" ] && rule="$rule,ealen=$ealen"
-		rule="$rule,br=$peeraddr"
+		if [ "$type" = "map-t" ]; then
+			rule="$rule,dmr=$peeraddr"
+		else
+			rule="$rule,br=$peeraddr"
+		fi
 	fi
 
 	RULE_DATA=$(mapcalc ${tunlink:-\*} $rule)
@@ -89,6 +93,25 @@ proto_map_setup() {
 		fi
 
 		proto_close_tunnel
+	elif [ "$type" = "map-t" -a -f "/proc/net/nat46/control" ]; then
+		proto_init_update "$link" 1
+		local style="MAP"
+		[ "$LEGACY" = 1 ] && style="MAP0"
+
+		echo add $link > /proc/net/nat46/control
+		local cfgstr="local.style $style local.v4 $(eval "echo \$RULE_${k}_IPV4PREFIX")/$(eval "echo \$RULE_${k}_PREFIX4LEN")"
+		cfgstr="$cfgstr local.v6 $(eval "echo \$RULE_${k}_IPV6PREFIX")/$(eval "echo \$RULE_${k}_PREFIX6LEN")"
+		cfgstr="$cfgstr local.ea-len $(eval "echo \$RULE_${k}_EALEN") local.psid-offset $(eval "echo \$RULE_${k}_OFFSET")"
+		cfgstr="$cfgstr remote.v4 0.0.0.0/0 remote.v6 $(eval "echo \$RULE_${k}_DMR") remote.style RFC6052 remote.ea-len 0 remote.psid-offset 0"
+		echo config $link $cfgstr > /proc/net/nat46/control
+
+		for i in $(seq $RULE_COUNT); do
+			[ "$(eval "echo \$RULE_${i}_FMR")" != 1 ] && continue
+			local cfgstr="remote.style $style remote.v4 $(eval "echo \$RULE_${i}_IPV4PREFIX")/$(eval "echo \$RULE_${i}_PREFIX4LEN")"
+			cfgstr="$cfgstr remote.v6 $(eval "echo \$RULE_${i}_IPV6PREFIX")/$(eval "echo \$RULE_${i}_PREFIX6LEN")"
+			cfgstr="$cfgstr remote.ea-len $(eval "echo \$RULE_${i}_EALEN") remote.psid-offset $(eval "echo \$RULE_${i}_OFFSET")"
+			echo insert $link $cfgstr > /proc/net/nat46/control
+		done
 	else
 		proto_notify_error "$cfg" "UNSUPPORTED_TYPE"
 		proto_block_restart "$cfg"
@@ -112,6 +135,29 @@ proto_map_setup() {
 	      json_close_object
             done
 	  done
+	  if [ "$type" = "map-t" ]; then
+	  	json_add_object ""
+	  		json_add_string type rule
+	  		json_add_string family inet6
+	  		json_add_string proto all
+	  		json_add_string direction in
+			json_add_string dest "$zone"
+			json_add_string src "$zone"
+	  		json_add_string src_ip $(eval "echo \$RULE_${k}_IPV6ADDR")
+	  		json_add_string target ACCEPT
+	  	json_close_object
+	  	json_add_object ""
+	  		json_add_string type rule
+	  		json_add_string family inet6
+	  		json_add_string proto all
+	  		json_add_string direction out
+			json_add_string dest "$zone"
+			json_add_string src "$zone"
+	  		json_add_string dest_ip $(eval "echo \$RULE_${k}_IPV6ADDR")
+	  		json_add_string target ACCEPT
+	  	json_close_object
+		proto_add_ipv6_route $(eval "echo \$RULE_${k}_IPV6ADDR") 128
+	  fi
 	json_close_array
 	proto_close_data
 
