@@ -1,11 +1,10 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2010-2012 OpenWrt.org
+# Copyright (C) 2010-2014 OpenWrt.org
 
 START=99
-STOP=10
-
-SERVICE_DAEMONIZE=1
-SERVICE_WRITE_PID=1
+USE_PROCD=1
+PROG=/usr/sbin/igmpproxy
+CONFIGFILE=/var/etc/igmpproxy.conf
 
 # igmpproxy supports both a debug mode and verbosity, which are very useful
 # when something isn't working.
@@ -21,6 +20,7 @@ SERVICE_WRITE_PID=1
 # OPTIONS="-v" - be verbose, this will write aditional information to syslog
 
 OPTIONS=""
+UPSTREAM=0
 
 igmp_header() {
 	local quickleave
@@ -34,30 +34,46 @@ igmp_header() {
 }
 
 igmp_add_phyint() {
-        local network direction altnets
+        local network direction altnets device up
 
         config_get network $1 network
         config_get direction $1 direction
         config_get altnets $1 altnet
 
-        device=$(uci_get_state network "$network" ifname "$network")
-        echo -e "\nphyint $device $direction ratelimit 0 threshold 1" >> /var/etc/igmpproxy.conf
+	json_load "$(ifstatus $network)"
+	json_get_var device l3_device
+	json_get_var up up
+	[ -n "$device" -a "$up" = "1" ] || return;
 
-        if [ -n "$altnets" ]; then
-                local altnet
-                for altnet in $altnets; do
-                        echo -e "\taltnet $altnet" >> /var/etc/igmpproxy.conf
-                done
-        fi
+	UPSTREAM=1
+
+	echo -e "\nphyint $device $direction ratelimit 0 threshold 1" >> /var/etc/igmpproxy.conf
+
+	if [ -n "$altnets" ]; then
+		local altnet
+		for altnet in $altnets; do
+			echo -e "\taltnet $altnet" >> /var/etc/igmpproxy.conf
+		done
+	fi
 }
 
-start() {
+service_triggers() {
+	procd_add_reload_trigger "igmpproxy"
+}
+
+start_service() {
 	config_load igmpproxy
+
 	config_foreach igmp_header igmpproxy
 	config_foreach igmp_add_phyint phyint
-	service_start /usr/sbin/igmpproxy $OPTIONS /etc/igmpproxy.conf
-}
 
-stop() {
-	service_stop /usr/sbin/igmpproxy
+	[ $UPSTREAM = 1 ] || return
+
+	procd_open_instance
+	procd_set_param command $PROG
+	[ -n "$OPTIONS" ] && procd_append_param $OPTIONS
+	procd_append_param command $CONFIGFILE
+	procd_set_param file $CONFIGFILE
+	procd_set_param respawn
+	procd_close_instance
 }
