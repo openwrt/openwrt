@@ -24,14 +24,15 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string "userclass"
 	proto_config_add_string "vendorclass"
 	proto_config_add_boolean delegate
+	proto_config_add_int "soltimeout"
 }
 
 proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map ifaceid sourcerouting userclass vendorclass delegate zone_dslite zone_map
-	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map ifaceid sourcerouting userclass vendorclass delegate zone_dslite zone_map
+	local reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map ifaceid sourcerouting userclass vendorclass delegate zone_dslite zone_map soltimeout
+	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map ifaceid sourcerouting userclass vendorclass delegate zone_dslite zone_map soltimeout
 
 
 	# Configure
@@ -58,6 +59,8 @@ proto_dhcpv6_setup() {
 	for opt in $reqopts; do
 		append opts "-r$opt"
 	done
+
+	append opts "-t${soltimeout:-120}"
 
 	[ -n "$ip6prefix" ] && proto_export "USERPREFIX=$ip6prefix"
 	[ -n "$iface_dslite" ] && proto_export "IFACE_DSLITE=$iface_dslite"
