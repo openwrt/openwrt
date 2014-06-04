@@ -276,7 +276,7 @@ hostapd_set_bss_options() {
 		wps_state=2
 		[ -n "$wps_configured" ] && wps_state=1
 
-		[ "$ext_registrar" -gt 0 -a -n "$bridge" ] && append bss_conf "upnp_iface=$bridge" "$N"
+		[ "$ext_registrar" -gt 0 -a -n "$network_bridge" ] && append bss_conf "upnp_iface=$network_bridge" "$N"
 
 		append bss_conf "eap_server=1" "$N"
 		append bss_conf "ap_pin=$wps_pin" "$N"
@@ -297,10 +297,10 @@ hostapd_set_bss_options() {
 	}
 
 	if [ "$wpa" -ge "2" ]; then
-		if [ -n "$bridge" -a "$rsn_preauth" = 1 ]; then
+		if [ -n "$network_bridge" -a "$rsn_preauth" = 1 ]; then
 			set_default auth_cache 1
 			append bss_conf "rsn_preauth=1" "$N"
-			append bss_conf "rsn_preauth_interfaces=$bridge" "$N"
+			append bss_conf "rsn_preauth_interfaces=$network_bridge" "$N"
 		else
 			set_default auth_cache 0
 		fi
