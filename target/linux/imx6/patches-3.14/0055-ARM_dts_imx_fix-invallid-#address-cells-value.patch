@@ -1,0 +1,55 @@
+commit d644122d8420c425fdf5c74e50d440d5f146bc0c
+Author: Tim Harvey <tharvey@gateworks.com>
+Date:   Thu Mar 13 09:37:51 2014 -0700
+
+    ARM: dts: imx: fix invalid #address-cells value
+    
+    The invalid value of #address-cells in the imx6 pcie host controller node
+    causes of_irq_parse_raw() to incorrectly advance through an interrupt-map
+    table of more than one interrupt. We also take the opportunity to drop the
+    unused #size-cells here.
+    
+    This patch resolves this issue and allows proper interrupt mapping for an
+    imx6 pcie host connected to a P2P bridge when using legacy interrupts.
+    
+    Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+    Cc: Jason Gunthorpe <jgunthorpe@obsidianresearch.com>
+    Cc: Jingoo Han <jg1.han@samsung.com>
+    Cc: Lucas Stach <l.stach@pengutronix.de>
+    Cc: Mark Rutland <mark.rutland@arm.com>
+    Cc: linux-samsung-soc <linux-samsung-soc@vger.kernel.org>
+    Cc: Richard Zhu <r65037@freescale.com>
+    Cc: Sascha Hauer <kernel@pengutronix.de>
+    Cc: Arnd Bergmann <arnd@arndb.de>
+    Cc: Stephen Warren <swarren@wwwdotorg.org>
+    Cc: Bjorn Helgaas <bhelgaas@google.com>
+    Cc: Simon Horman <horms@verge.net.au>
+    Cc: Thierry Reding <thierry.reding@gmail.com>
+    Cc: Ben Dooks <ben-linux@fluff.org>
+    Cc: linux-tegra <linux-tegra@vger.kernel.org>
+    Cc: Kukjin Kim <kgene.kim@samsung.com>
+    Cc: Shawn Guo <shawn.guo@linaro.org>
+    Cc: Grant Likely <grant.likely@linaro.org>
+
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
+@@ -38,8 +38,6 @@
+ 	intc: interrupt-controller@00a01000 {
+ 		compatible = "arm,cortex-a9-gic";
+ 		#interrupt-cells = <3>;
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+ 		interrupt-controller;
+ 		reg = <0x00a01000 0x1000>,
+ 		      <0x00a00100 0x100>;
+--- a/arch/arm/boot/dts/imx6sl.dtsi
++++ b/arch/arm/boot/dts/imx6sl.dtsi
+@@ -44,8 +44,6 @@
+ 	intc: interrupt-controller@00a01000 {
+ 		compatible = "arm,cortex-a9-gic";
+ 		#interrupt-cells = <3>;
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+ 		interrupt-controller;
+ 		reg = <0x00a01000 0x1000>,
+ 		      <0x00a00100 0x100>;
