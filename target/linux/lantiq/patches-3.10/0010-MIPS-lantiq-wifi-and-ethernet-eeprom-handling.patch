@@ -246,6 +246,8 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +		}
 +
 +		eep = ioremap(eep_res->start, resource_size(eep_res));
++		ath5k_pdata.eeprom_data = kmalloc(ATH5K_PLAT_EEP_MAX_WORDS<<1,
++				GFP_KERNEL);
 +		memcpy_fromio(ath5k_pdata.eeprom_data, eep,
 +				ATH5K_PLAT_EEP_MAX_WORDS << 1);
 +	}
