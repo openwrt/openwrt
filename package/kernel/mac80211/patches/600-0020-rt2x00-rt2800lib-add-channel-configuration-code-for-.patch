@@ -10,7 +10,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -3384,6 +3384,36 @@ static char rt2800_txpower_to_dev(struct
+@@ -3429,6 +3429,36 @@ static char rt2800_txpower_to_dev(struct
  		return clamp_t(char, txpower, MIN_A_TXPOWER, MAX_A_TXPOWER);
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
  				  struct ieee80211_conf *conf,
  				  struct rf_channel *rf,
-@@ -3402,6 +3432,12 @@ static void rt2800_config_channel(struct
+@@ -3447,6 +3477,12 @@ static void rt2800_config_channel(struct
  			rt2800_txpower_to_dev(rt2x00dev, rf->channel,
  					      info->default_power3);
  
@@ -60,7 +60,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	switch (rt2x00dev->chip.rf) {
  	case RF2020:
  	case RF3020:
-@@ -3483,6 +3519,15 @@ static void rt2800_config_channel(struct
+@@ -3528,6 +3564,15 @@ static void rt2800_config_channel(struct
  		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
  		rt2800_bbp_write(rt2x00dev, 64, 0x37 - rt2x00dev->lna_gain);
  		rt2800_bbp_write(rt2x00dev, 77, 0x98);
@@ -76,7 +76,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	} else {
  		rt2800_bbp_write(rt2x00dev, 62, 0x37 - rt2x00dev->lna_gain);
  		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
-@@ -3495,6 +3540,7 @@ static void rt2800_config_channel(struct
+@@ -3540,6 +3585,7 @@ static void rt2800_config_channel(struct
  		    !rt2x00_rt(rt2x00dev, RT5392)) {
  			if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {
  				rt2800_bbp_write(rt2x00dev, 82, 0x62);
@@ -84,7 +84,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  				rt2800_bbp_write(rt2x00dev, 75, 0x46);
  			} else {
  				if (rt2x00_rt(rt2x00dev, RT3593))
-@@ -3503,19 +3549,22 @@ static void rt2800_config_channel(struct
+@@ -3548,19 +3594,22 @@ static void rt2800_config_channel(struct
  					rt2800_bbp_write(rt2x00dev, 82, 0x84);
  				rt2800_bbp_write(rt2x00dev, 75, 0x50);
  			}
@@ -110,7 +110,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			rt2800_bbp_write(rt2x00dev, 83, 0x9a);
  
  		if (rt2x00_has_cap_external_lna_a(rt2x00dev))
-@@ -3640,6 +3689,23 @@ static void rt2800_config_channel(struct
+@@ -3685,6 +3734,23 @@ static void rt2800_config_channel(struct
  		usleep_range(1000, 1500);
  	}
  

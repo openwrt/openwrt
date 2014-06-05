@@ -1,3 +1,66 @@
+commit f3831a4e3903dbc1a57d5df56deb6a143fd001bc
+Author: Stanislaw Gruszka <sgruszka@redhat.com>
+Date:   Thu Jun 5 13:52:27 2014 +0200
+
+    rt2x00: do not initialize BCN_OFFSET registers
+    
+    We setup BCN_OFFSET{0,1} registers dynamically, don't have to
+    initialize them.
+    
+    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
+
+commit e5c58ca7a48d4c82f282749a978052c47fd95998
+Author: Stanislaw Gruszka <sgruszka@redhat.com>
+Date:   Thu Jun 5 13:52:26 2014 +0200
+
+    rt2x00: change order when stop beaconing
+    
+    When no beaconing is needed, first stop beacon queue (disable beaconing
+    globally) to avoid possible sending of not prepared beacon on short
+    period after clearing beacon and before stop of BCN queue.
+    
+    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
+
+commit 382c1b9e03f52d0cd741ef1d942cad0f649f0744
+Author: Stanislaw Gruszka <sgruszka@redhat.com>
+Date:   Thu Jun 5 13:52:25 2014 +0200
+
+    rt2x00: change default MAC_BSSID_DW1_BSS_BCN_NUM
+    
+    We setup MAC_BSSID_DW1_BSS_BCN_NUM dynamically when numbers of active
+    beacons increase. Change default to 0 to tell hardware that we want to
+    send only one beacon as default.
+    
+    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
+
+commit 3b400571dd033e46fa7e76c5bb92a3ce8198afa9
+Author: Stanislaw Gruszka <sgruszka@redhat.com>
+Date:   Thu Jun 5 13:52:24 2014 +0200
+
+    rt2x00: change beaconing setup on RT2800
+    
+    As reported by Matthias, on 5572 chip, even if we clear up TXWI
+    of corresponding beacon, hardware still try to send it or do other
+    action that increase power consumption peak up to 1A.
+    
+    To avoid the issue, setup beaconing dynamically by configuring offsets
+    of currently active beacons and MAC_BSSID_DW1_BSS_BCN_NUM variable,
+    which limit number of beacons that hardware will try to send.
+    
+    Reported-by: Matthias Fend <Matthias.Fend@wolfvision.net>
+    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
+
+commit 916e591b2cc41f7e572992175ca56d866d7bc958
+Author: Stanislaw Gruszka <sgruszka@redhat.com>
+Date:   Thu Jun 5 13:52:23 2014 +0200
+
+    rt2x00: change beaconing locking
+    
+    This patch is needed for further changes to keep global variables
+    consistent when changing beaconing on diffrent vif's.
+    
+    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
+
 commit 930b0dffd1731f3f418f9132faea720a23b7af61
 Author: Johannes Berg <johannes.berg@intel.com>
 Date:   Tue Jun 3 11:18:47 2014 +0200
@@ -384,3 +447,240 @@ Date:   Mon May 19 21:20:49 2014 +0200
  			spin_unlock(&sta->ps_lock);
  			return TX_CONTINUE;
  		}
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -947,6 +947,40 @@ static inline u8 rt2800_get_beacon_offse
+ 	return BEACON_BASE_TO_OFFSET(rt2800_hw_beacon_base(rt2x00dev, index));
+ }
+ 
++static void rt2800_update_beacons_setup(struct rt2x00_dev *rt2x00dev)
++{
++	struct data_queue *queue = rt2x00dev->bcn;
++	struct queue_entry *entry;
++	int i, bcn_num = 0;
++	u64 off, reg = 0;
++	u32 bssid_dw1;
++
++	/*
++	 * Setup offsets of all active beacons in BCN_OFFSET{0,1} registers.
++	 */
++	for (i = 0; i < queue->limit; i++) {
++		entry = &queue->entries[i];
++		if (!test_bit(ENTRY_BCN_ENABLED, &entry->flags))
++			continue;
++		off = rt2800_get_beacon_offset(rt2x00dev, entry->entry_idx);
++		reg |= off << (8 * bcn_num);
++		bcn_num++;
++	}
++
++	WARN_ON_ONCE(bcn_num != rt2x00dev->intf_beaconing);
++
++	rt2800_register_write(rt2x00dev, BCN_OFFSET0, (u32) reg);
++	rt2800_register_write(rt2x00dev, BCN_OFFSET1, (u32) (reg >> 32));
++
++	/*
++	 * H/W sends up to MAC_BSSID_DW1_BSS_BCN_NUM + 1 consecutive beacons.
++	 */
++	rt2800_register_read(rt2x00dev, MAC_BSSID_DW1, &bssid_dw1);
++	rt2x00_set_field32(&bssid_dw1, MAC_BSSID_DW1_BSS_BCN_NUM,
++			   bcn_num > 0 ? bcn_num - 1 : 0);
++	rt2800_register_write(rt2x00dev, MAC_BSSID_DW1, bssid_dw1);
++}
++
+ void rt2800_write_beacon(struct queue_entry *entry, struct txentry_desc *txdesc)
+ {
+ 	struct rt2x00_dev *rt2x00dev = entry->queue->rt2x00dev;
+@@ -1003,6 +1037,12 @@ void rt2800_write_beacon(struct queue_en
+ 
+ 	rt2800_register_multiwrite(rt2x00dev, beacon_base, entry->skb->data,
+ 				   entry->skb->len + padding_len);
++	__set_bit(ENTRY_BCN_ENABLED, &entry->flags);
++
++	/*
++	 * Change global beacons settings.
++	 */
++	rt2800_update_beacons_setup(rt2x00dev);
+ 
+ 	/*
+ 	 * Restore beaconing state.
+@@ -1053,8 +1093,13 @@ void rt2800_clear_beacon(struct queue_en
+ 	 * Clear beacon.
+ 	 */
+ 	rt2800_clear_beacon_register(rt2x00dev, entry->entry_idx);
++	__clear_bit(ENTRY_BCN_ENABLED, &entry->flags);
+ 
+ 	/*
++	 * Change global beacons settings.
++	 */
++	rt2800_update_beacons_setup(rt2x00dev);
++	/*
+ 	 * Restore beaconing state.
+ 	 */
+ 	rt2800_register_write(rt2x00dev, BCN_TIME_CFG, orig_reg);
+@@ -1556,7 +1601,7 @@ void rt2800_config_intf(struct rt2x00_de
+ 		if (!is_zero_ether_addr((const u8 *)conf->bssid)) {
+ 			reg = le32_to_cpu(conf->bssid[1]);
+ 			rt2x00_set_field32(&reg, MAC_BSSID_DW1_BSS_ID_MASK, 3);
+-			rt2x00_set_field32(&reg, MAC_BSSID_DW1_BSS_BCN_NUM, 7);
++			rt2x00_set_field32(&reg, MAC_BSSID_DW1_BSS_BCN_NUM, 0);
+ 			conf->bssid[1] = cpu_to_le32(reg);
+ 		}
+ 
+@@ -4517,28 +4562,6 @@ static int rt2800_init_registers(struct 
+ 	if (ret)
+ 		return ret;
+ 
+-	rt2800_register_read(rt2x00dev, BCN_OFFSET0, &reg);
+-	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN0,
+-			   rt2800_get_beacon_offset(rt2x00dev, 0));
+-	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN1,
+-			   rt2800_get_beacon_offset(rt2x00dev, 1));
+-	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN2,
+-			   rt2800_get_beacon_offset(rt2x00dev, 2));
+-	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN3,
+-			   rt2800_get_beacon_offset(rt2x00dev, 3));
+-	rt2800_register_write(rt2x00dev, BCN_OFFSET0, reg);
+-
+-	rt2800_register_read(rt2x00dev, BCN_OFFSET1, &reg);
+-	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN4,
+-			   rt2800_get_beacon_offset(rt2x00dev, 4));
+-	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN5,
+-			   rt2800_get_beacon_offset(rt2x00dev, 5));
+-	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN6,
+-			   rt2800_get_beacon_offset(rt2x00dev, 6));
+-	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN7,
+-			   rt2800_get_beacon_offset(rt2x00dev, 7));
+-	rt2800_register_write(rt2x00dev, BCN_OFFSET1, reg);
+-
+ 	rt2800_register_write(rt2x00dev, LEGACY_BASIC_RATE, 0x0000013f);
+ 	rt2800_register_write(rt2x00dev, HT_BASIC_RATE, 0x00008003);
+ 
+--- a/drivers/net/wireless/rt2x00/rt2x00dev.c
++++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
+@@ -141,8 +141,11 @@ static void rt2x00lib_intf_scheduled_ite
+ 	if (!test_bit(DEVICE_STATE_ENABLED_RADIO, &rt2x00dev->flags))
+ 		return;
+ 
+-	if (test_and_clear_bit(DELAYED_UPDATE_BEACON, &intf->delayed_flags))
++	if (test_and_clear_bit(DELAYED_UPDATE_BEACON, &intf->delayed_flags)) {
++		mutex_lock(&intf->beacon_skb_mutex);
+ 		rt2x00queue_update_beacon(rt2x00dev, vif);
++		mutex_unlock(&intf->beacon_skb_mutex);
++	}
+ }
+ 
+ static void rt2x00lib_intf_scheduled(struct work_struct *work)
+@@ -216,7 +219,7 @@ static void rt2x00lib_beaconupdate_iter(
+ 	 * never be called for USB devices.
+ 	 */
+ 	WARN_ON(rt2x00_is_usb(rt2x00dev));
+-	rt2x00queue_update_beacon_locked(rt2x00dev, vif);
++	rt2x00queue_update_beacon(rt2x00dev, vif);
+ }
+ 
+ void rt2x00lib_beacondone(struct rt2x00_dev *rt2x00dev)
+--- a/drivers/net/wireless/rt2x00/rt2x00mac.c
++++ b/drivers/net/wireless/rt2x00/rt2x00mac.c
+@@ -624,25 +624,24 @@ void rt2x00mac_bss_info_changed(struct i
+ 	 * Start/stop beaconing.
+ 	 */
+ 	if (changes & BSS_CHANGED_BEACON_ENABLED) {
++		mutex_lock(&intf->beacon_skb_mutex);
+ 		if (!bss_conf->enable_beacon && intf->enable_beacon) {
+ 			rt2x00dev->intf_beaconing--;
+ 			intf->enable_beacon = false;
+-			/*
+-			 * Clear beacon in the H/W for this vif. This is needed
+-			 * to disable beaconing on this particular interface
+-			 * and keep it running on other interfaces.
+-			 */
+-			rt2x00queue_clear_beacon(rt2x00dev, vif);
+ 
+ 			if (rt2x00dev->intf_beaconing == 0) {
+ 				/*
+ 				 * Last beaconing interface disabled
+ 				 * -> stop beacon queue.
+ 				 */
+-				mutex_lock(&intf->beacon_skb_mutex);
+ 				rt2x00queue_stop_queue(rt2x00dev->bcn);
+-				mutex_unlock(&intf->beacon_skb_mutex);
+ 			}
++			/*
++			 * Clear beacon in the H/W for this vif. This is needed
++			 * to disable beaconing on this particular interface
++			 * and keep it running on other interfaces.
++			 */
++			rt2x00queue_clear_beacon(rt2x00dev, vif);
+ 		} else if (bss_conf->enable_beacon && !intf->enable_beacon) {
+ 			rt2x00dev->intf_beaconing++;
+ 			intf->enable_beacon = true;
+@@ -658,11 +657,10 @@ void rt2x00mac_bss_info_changed(struct i
+ 				 * First beaconing interface enabled
+ 				 * -> start beacon queue.
+ 				 */
+-				mutex_lock(&intf->beacon_skb_mutex);
+ 				rt2x00queue_start_queue(rt2x00dev->bcn);
+-				mutex_unlock(&intf->beacon_skb_mutex);
+ 			}
+ 		}
++		mutex_unlock(&intf->beacon_skb_mutex);
+ 	}
+ 
+ 	/*
+--- a/drivers/net/wireless/rt2x00/rt2x00queue.c
++++ b/drivers/net/wireless/rt2x00/rt2x00queue.c
+@@ -754,8 +754,6 @@ int rt2x00queue_clear_beacon(struct rt2x
+ 	if (unlikely(!intf->beacon))
+ 		return -ENOBUFS;
+ 
+-	mutex_lock(&intf->beacon_skb_mutex);
+-
+ 	/*
+ 	 * Clean up the beacon skb.
+ 	 */
+@@ -768,13 +766,11 @@ int rt2x00queue_clear_beacon(struct rt2x
+ 	if (rt2x00dev->ops->lib->clear_beacon)
+ 		rt2x00dev->ops->lib->clear_beacon(intf->beacon);
+ 
+-	mutex_unlock(&intf->beacon_skb_mutex);
+-
+ 	return 0;
+ }
+ 
+-int rt2x00queue_update_beacon_locked(struct rt2x00_dev *rt2x00dev,
+-				     struct ieee80211_vif *vif)
++int rt2x00queue_update_beacon(struct rt2x00_dev *rt2x00dev,
++			      struct ieee80211_vif *vif)
+ {
+ 	struct rt2x00_intf *intf = vif_to_intf(vif);
+ 	struct skb_frame_desc *skbdesc;
+@@ -815,19 +811,6 @@ int rt2x00queue_update_beacon_locked(str
+ 
+ }
+ 
+-int rt2x00queue_update_beacon(struct rt2x00_dev *rt2x00dev,
+-			      struct ieee80211_vif *vif)
+-{
+-	struct rt2x00_intf *intf = vif_to_intf(vif);
+-	int ret;
+-
+-	mutex_lock(&intf->beacon_skb_mutex);
+-	ret = rt2x00queue_update_beacon_locked(rt2x00dev, vif);
+-	mutex_unlock(&intf->beacon_skb_mutex);
+-
+-	return ret;
+-}
+-
+ bool rt2x00queue_for_each_entry(struct data_queue *queue,
+ 				enum queue_index start,
+ 				enum queue_index end,
+--- a/drivers/net/wireless/rt2x00/rt2x00queue.h
++++ b/drivers/net/wireless/rt2x00/rt2x00queue.h
+@@ -353,6 +353,7 @@ struct txentry_desc {
+  */
+ enum queue_entry_flags {
+ 	ENTRY_BCN_ASSIGNED,
++	ENTRY_BCN_ENABLED,
+ 	ENTRY_OWNER_DEVICE_DATA,
+ 	ENTRY_DATA_PENDING,
+ 	ENTRY_DATA_IO_FAILED,

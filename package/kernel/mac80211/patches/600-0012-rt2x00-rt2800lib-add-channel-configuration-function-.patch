@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -2604,6 +2604,211 @@ static void rt2800_config_channel_rf3053
+@@ -2649,6 +2649,211 @@ static void rt2800_config_channel_rf3053
  	}
  }
  
@@ -223,7 +223,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  #define POWER_BOUND		0x27
  #define POWER_BOUND_5G		0x2b
  
-@@ -3216,6 +3421,9 @@ static void rt2800_config_channel(struct
+@@ -3261,6 +3466,9 @@ static void rt2800_config_channel(struct
  	case RF3322:
  		rt2800_config_channel_rf3322(rt2x00dev, conf, rf, info);
  		break;

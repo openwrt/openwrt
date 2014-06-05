@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -3505,11 +3505,18 @@ static void rt2800_config_channel(struct
+@@ -3550,11 +3550,18 @@ static void rt2800_config_channel(struct
  	/*
  	 * Change BBP settings
  	 */
@@ -19,7 +19,7 @@
  	} else if (rt2x00_rt(rt2x00dev, RT3593)) {
  		if (rf->channel > 14) {
  			/* Disable CCK Packet detection on 5GHz */
-@@ -6585,6 +6592,12 @@ static void rt2800_init_rfcsr_3290(struc
+@@ -6608,6 +6615,12 @@ static void rt2800_init_rfcsr_3290(struc
  
  static void rt2800_init_rfcsr_3352(struct rt2x00_dev *rt2x00dev)
  {
@@ -32,7 +32,7 @@
  	rt2800_rf_init_calibration(rt2x00dev, 30);
  
  	rt2800_rfcsr_write(rt2x00dev, 0, 0xf0);
-@@ -6620,15 +6633,30 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -6643,15 +6656,30 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 31, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 32, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 33, 0x00);
@@ -66,7 +66,7 @@
  	rt2800_rfcsr_write(rt2x00dev, 43, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 44, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 45, 0xdb);
-@@ -6636,15 +6664,20 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -6659,15 +6687,20 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 47, 0x0d);
  	rt2800_rfcsr_write(rt2x00dev, 48, 0x14);
  	rt2800_rfcsr_write(rt2x00dev, 49, 0x00);
@@ -96,7 +96,7 @@
  	rt2800_rfcsr_write(rt2x00dev, 59, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 60, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 61, 0x00);
-@@ -7665,6 +7698,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7688,6 +7721,7 @@ static int rt2800_init_eeprom(struct rt2
  	 * RT53xx: defined in "EEPROM_CHIP_ID" field
  	 */
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
@@ -104,7 +104,7 @@
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
-@@ -7759,7 +7793,8 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7782,7 +7816,8 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Detect if this device has Bluetooth co-existence.
  	 */
@@ -114,7 +114,7 @@
  		__set_bit(CAPABILITY_BT_COEXIST, &rt2x00dev->cap_flags);
  
  	/*
-@@ -7788,6 +7823,22 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7811,6 +7846,22 @@ static int rt2800_init_eeprom(struct rt2
  					EIRP_MAX_TX_POWER_LIMIT)
  		__set_bit(CAPABILITY_POWER_LIMIT, &rt2x00dev->cap_flags);
  
