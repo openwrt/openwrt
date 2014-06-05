@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4748,18 +4748,20 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -4817,18 +4817,20 @@ wpa_driver_nl80211_finish_drv_init(struc
  }
  
  
@@ -24,7 +24,7 @@
  
  	return send_and_recv_msgs(drv, msg, NULL, NULL);
   nla_put_failure:
-@@ -4767,6 +4769,15 @@ static int wpa_driver_nl80211_del_beacon
+@@ -4836,6 +4838,15 @@ static int wpa_driver_nl80211_del_beacon
  	return -ENOBUFS;
  }
  
@@ -40,7 +40,7 @@
  
  /**
   * wpa_driver_nl80211_deinit - Deinitialize nl80211 driver interface
-@@ -10475,7 +10486,6 @@ static int wpa_driver_nl80211_stop_ap(vo
+@@ -10617,7 +10628,6 @@ static int wpa_driver_nl80211_stop_ap(vo
  	if (!is_ap_interface(drv->nlmode))
  		return -1;
  	wpa_driver_nl80211_del_beacon(drv);

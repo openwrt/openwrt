@@ -27,7 +27,7 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
  	 * bssid_hint - BSSID of a proposed AP
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -8525,6 +8525,22 @@ retry:
+@@ -8651,6 +8651,22 @@ retry:
  		NLA_PUT_U32(msg, NL80211_ATTR_MCAST_RATE, params->mcast_rate);
  	}
  
@@ -129,9 +129,9 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
  	{ FUNC(rates) },
  	{ FUNC(mcast_rate) },
 +	{ FUNC(htmode) },
- };
- 
- #undef OFFSET
+ #ifdef CONFIG_MACSEC
+ 	{ INT_RANGE(macsec_policy, 0, 1) },
+ #endif /* CONFIG_MACSEC */
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
 @@ -641,6 +641,8 @@ struct wpa_ssid {
@@ -140,12 +140,12 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
  	double mcast_rate;
 +	int ht_set;
 +	unsigned int htmode;
- };
  
- #endif /* CONFIG_SSID_H */
+ #ifdef CONFIG_MACSEC
+ 	/**
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1798,6 +1798,8 @@ static void wpas_start_assoc_cb(struct w
+@@ -1812,6 +1812,8 @@ static void wpas_start_assoc_cb(struct w
  			i++;
  		}
  		params.mcast_rate = ssid->mcast_rate;
