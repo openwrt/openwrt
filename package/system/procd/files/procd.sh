@@ -128,13 +128,44 @@ _procd_set_param() {
 		env|data|limits)
 			_procd_add_table "$type" "$@"
 		;;
-		command|netdev|file|respawn)
+		command|netdev|file|respawn|watch)
 			_procd_add_array "$type" "$@"
 		;;
 		nice)
 			json_add_int "$type" "$1"
 		;;
 	esac
+}
+
+_procd_add_interface_trigger() {
+	json_add_array
+	_procd_add_array_data "$1"
+	shift
+
+	json_add_array
+	_procd_add_array_data "if"
+
+	json_add_array
+	_procd_add_array_data "eq" "interface" "$1"
+	shift
+	json_close_array
+
+	json_add_array
+	_procd_add_array_data "run_script" "$@"
+	json_close_array
+
+	json_close_array
+
+	json_close_array
+}
+
+_procd_add_network_trigger() {
+	local script=$(readlink "$initscript")
+	local name=$(basename ${script:-$initscript})
+
+	_procd_open_trigger
+	_procd_add_interface_trigger "interface.*" $1 /etc/init.d/$name reload
+	_procd_close_trigger
 }
 
 _procd_add_config_trigger() {
@@ -182,7 +213,7 @@ _procd_append_param() {
 		env|data|limits)
 			_procd_add_table_data "$@"
 		;;
-		command|netdev|file|respawn)
+		command|netdev|file|respawn|watch)
 			_procd_add_array_data "$@"
 		;;
 	esac
@@ -237,6 +268,8 @@ _procd_wrapper \
 	procd_add_instance \
 	procd_add_config_trigger \
 	procd_add_reload_trigger \
+	procd_add_interface_trigger \
+	procd_add_network_trigger \
 	procd_open_trigger \
 	procd_close_trigger \
 	procd_open_instance \
