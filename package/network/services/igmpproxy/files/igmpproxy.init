@@ -20,7 +20,6 @@ CONFIGFILE=/var/etc/igmpproxy.conf
 # OPTIONS="-v" - be verbose, this will write aditional information to syslog
 
 OPTIONS=""
-UPSTREAM=0
 
 igmp_header() {
 	local quickleave
@@ -45,8 +44,6 @@ igmp_add_phyint() {
 	json_get_var up up
 	[ -n "$device" -a "$up" = "1" ] || return;
 
-	UPSTREAM=1
-
 	echo -e "\nphyint $device $direction ratelimit 0 threshold 1" >> /var/etc/igmpproxy.conf
 
 	if [ -n "$altnets" ]; then
@@ -55,6 +52,13 @@ igmp_add_phyint() {
 			echo -e "\taltnet $altnet" >> /var/etc/igmpproxy.conf
 		done
 	fi
+}
+
+igmp_add_network() {
+	local network
+
+	config_get network $1 network
+	procd_add_interface_trigger "interface.*" $network /etc/init.d/igmpproxy restart
 }
 
 service_triggers() {
@@ -67,13 +71,14 @@ start_service() {
 	config_foreach igmp_header igmpproxy
 	config_foreach igmp_add_phyint phyint
 
-	[ $UPSTREAM = 1 ] || return
-
 	procd_open_instance
 	procd_set_param command $PROG
 	[ -n "$OPTIONS" ] && procd_append_param $OPTIONS
 	procd_append_param command $CONFIGFILE
 	procd_set_param file $CONFIGFILE
 	procd_set_param respawn
+	procd_open_trigger
+	config_foreach igmp_add_network phyint
+	procd_close_trigger
 	procd_close_instance
 }
