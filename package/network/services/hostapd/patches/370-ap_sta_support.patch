@@ -45,7 +45,7 @@
  CONFIG_OS=win32
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -104,6 +104,46 @@ const char *wpa_supplicant_full_license5
+@@ -104,6 +104,55 @@ const char *wpa_supplicant_full_license5
  "\n";
  #endif /* CONFIG_NO_STDOUT_DEBUG */
  
@@ -69,14 +69,23 @@
 +	int len = sizeof(buf);
 +	enum hostapd_hw_mode hw_mode;
 +	u8 channel;
++	int sec_chan = 0;
 +	int ret;
 +
 +	if (!bss)
 +		return;
 +
++	if (bss->ht_param & HT_INFO_HT_PARAM_STA_CHNL_WIDTH) {
++		int sec = bss->ht_param & HT_INFO_HT_PARAM_SECONDARY_CHNL_OFF_MASK;
++		if (sec == HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE)
++			sec_chan = 1;
++		else if (sec ==  HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW)
++			sec_chan = -1;
++	}
++
 +	hw_mode = ieee80211_freq_to_chan(bss->freq, &channel);
-+	if (asprintf(&cmd, "UPDATE channel=%d sec_chan=0 hw_mode=%d ieee80211n=%d",
-+		     channel, hw_mode, !!bss->ht_capab) < 0)
++	if (asprintf(&cmd, "UPDATE channel=%d sec_chan=%d hw_mode=%d ieee80211n=%d",
++		     channel, sec_chan, hw_mode, !!bss->ht_capab) < 0)
 +		return -1;
 +
 +	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
@@ -92,7 +101,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -705,8 +745,12 @@ void wpa_supplicant_set_state(struct wpa
+@@ -705,8 +754,12 @@ void wpa_supplicant_set_state(struct wpa
  #endif /* CONFIG_P2P */
  
  		sme_sched_obss_scan(wpa_s, 1);
@@ -105,7 +114,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -3516,6 +3560,20 @@ static int wpa_supplicant_init_iface(str
+@@ -3516,6 +3569,20 @@ static int wpa_supplicant_init_iface(str
  			   sizeof(wpa_s->bridge_ifname));
  	}
  
@@ -126,7 +135,7 @@
  	/* RSNA Supplicant Key Management - INITIALIZE */
  	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
  	eapol_sm_notify_portValid(wpa_s->eapol, FALSE);
-@@ -3711,6 +3769,11 @@ static void wpa_supplicant_deinit_iface(
+@@ -3711,6 +3778,11 @@ static void wpa_supplicant_deinit_iface(
  	if (terminate)
  		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_TERMINATING);
  
@@ -148,25 +157,29 @@
  #include "drivers/driver.h"
  #include "wpa_supplicant_i.h"
  #include "config.h"
-@@ -247,6 +248,9 @@ static void calculate_update_time(const 
+@@ -247,6 +248,10 @@ static void calculate_update_time(const
  static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
  			     struct os_reltime *fetch_time)
  {
 +	struct ieee80211_ht_capabilities *capab;
++	struct ieee80211_ht_operation *oper;
 +	struct ieee802_11_elems elems;
 +
  	dst->flags = src->flags;
  	os_memcpy(dst->bssid, src->bssid, ETH_ALEN);
  	dst->freq = src->freq;
-@@ -257,6 +261,12 @@ static void wpa_bss_copy_res(struct wpa_
+@@ -257,6 +262,15 @@ static void wpa_bss_copy_res(struct wpa_
  	dst->level = src->level;
  	dst->tsf = src->tsf;
  
 +	memset(&elems, 0, sizeof(elems));
 +	ieee802_11_parse_elems((u8 *) (src + 1), src->ie_len, &elems, 0);
 +	capab = (struct ieee80211_ht_capabilities *) elems.ht_capabilities;
++	oper = (struct ieee80211_ht_operation *) elems.ht_operation;
 +	if (capab)
 +		dst->ht_capab = le_to_host16(capab->ht_capabilities_info);
++	if (oper)
++		dst->ht_param = oper->ht_param;
 +
  	calculate_update_time(fetch_time, src->age, &dst->last_update);
  }
@@ -211,12 +224,14 @@
  			break;
 --- a/wpa_supplicant/bss.h
 +++ b/wpa_supplicant/bss.h
-@@ -70,6 +70,8 @@ struct wpa_bss {
+@@ -70,6 +70,10 @@ struct wpa_bss {
  	u8 ssid[32];
  	/** Length of SSID */
  	size_t ssid_len;
 +	/** HT caapbilities */
 +	u16 ht_capab;
++	/* Five octets of HT Operation Information */
++	u8 ht_param;
  	/** Frequency of the channel in MHz (e.g., 2412 = channel 1) */
  	int freq;
  	/** Beacon interval in TUs (host byte order) */
