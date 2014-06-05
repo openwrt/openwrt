@@ -219,16 +219,16 @@ _procd_kill() {
 
 uci_validate_section()
 {
-	local package="$1"
-	local type="$2"
-	local name="$3"
-	local error
+	local _package="$1"
+	local _type="$2"
+	local _name="$3"
+	local _error
 	shift; shift; shift
-	local result=`/sbin/validate_data "$package" "$type" "$name" "$@" 2> /dev/null`
-	error=$?
-	eval "$result"
-	[ "$error" = "0" ] || `/sbin/validate_data "$package" "$type" "$name" "$@" 1> /dev/null`
-	return $error
+	local _result=`/sbin/validate_data "$_package" "$_type" "$_name" "$@" 2> /dev/null`
+	_error=$?
+	eval "$_result"
+	[ "$_error" = "0" ] || `/sbin/validate_data "$_package" "$_type" "$_name" "$@" 1> /dev/null`
+	return $_error
 }
 
 _procd_wrapper \
