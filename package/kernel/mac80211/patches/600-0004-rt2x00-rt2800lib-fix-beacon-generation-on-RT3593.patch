@@ -98,7 +98,7 @@ Changes since v1: ---
  	return HW_BEACON_BASE(index);
  }
  
-@@ -1012,8 +1048,12 @@ void rt2800_write_beacon(struct queue_en
+@@ -1046,8 +1082,12 @@ void rt2800_write_beacon(struct queue_en
  	beacon_base = rt2800_hw_beacon_base(rt2x00dev, entry->entry_idx);
  
  	rt2800_shared_mem_lock(rt2x00dev);
@@ -109,9 +109,9 @@ Changes since v1: ---
 +	rt2800_deselect_beacon_mem(rt2x00dev);
 +
  	rt2800_shared_mem_unlock(rt2x00dev);
+ 	__set_bit(ENTRY_BCN_ENABLED, &entry->flags);
  
- 	/*
-@@ -1040,6 +1080,8 @@ static inline void rt2800_clear_beacon_r
+@@ -1080,6 +1120,8 @@ static inline void rt2800_clear_beacon_r
  
  	rt2800_shared_mem_lock(rt2x00dev);
  
@@ -120,7 +120,7 @@ Changes since v1: ---
  	/*
  	 * For the Beacon base registers we only need to clear
  	 * the whole TXWI which (when set to 0) will invalidate
-@@ -1048,6 +1090,8 @@ static inline void rt2800_clear_beacon_r
+@@ -1088,6 +1130,8 @@ static inline void rt2800_clear_beacon_r
  	for (i = 0; i < txwi_desc_size; i += sizeof(__le32))
  		rt2800_register_write(rt2x00dev, beacon_base + i, 0);
  

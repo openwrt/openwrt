@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -7460,7 +7460,8 @@ static u8 rt2800_get_txmixer_gain_24g(st
+@@ -7483,7 +7483,8 @@ static u8 rt2800_get_txmixer_gain_24g(st
  {
  	u16 word;
  
@@ -21,7 +21,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		return 0;
  
  	rt2800_eeprom_read(rt2x00dev, EEPROM_TXMIXER_GAIN_BG, &word);
-@@ -7474,7 +7475,8 @@ static u8 rt2800_get_txmixer_gain_5g(str
+@@ -7497,7 +7498,8 @@ static u8 rt2800_get_txmixer_gain_5g(str
  {
  	u16 word;
  

@@ -24,7 +24,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -4583,6 +4583,7 @@ EXPORT_SYMBOL_GPL(rt2800_link_tuner);
+@@ -4628,6 +4628,7 @@ EXPORT_SYMBOL_GPL(rt2800_link_tuner);
   */
  static int rt2800_init_registers(struct rt2x00_dev *rt2x00dev)
  {
@@ -32,7 +32,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	u32 reg;
  	u16 eeprom;
  	unsigned int i;
-@@ -4970,7 +4971,7 @@ static int rt2800_init_registers(struct 
+@@ -4993,7 +4994,7 @@ static int rt2800_init_registers(struct 
  	/*
  	 * Clear all beacons
  	 */
@@ -41,7 +41,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		rt2800_clear_beacon_register(rt2x00dev, i);
  
  	if (rt2x00_is_usb(rt2x00dev)) {
-@@ -7816,6 +7817,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -7839,6 +7840,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	if (rt2x00_rt(rt2x00dev, RT3593))
  		__set_bit(RT2800_HAS_HIGH_SHARED_MEM, &drv_data->rt2800_flags);
  
