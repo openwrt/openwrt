@@ -101,7 +101,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -710,8 +759,12 @@ void wpa_supplicant_set_state(struct wpa
+@@ -711,8 +760,12 @@ void wpa_supplicant_set_state(struct wpa
  #endif /* CONFIG_P2P */
  
  		sme_sched_obss_scan(wpa_s, 1);
@@ -114,7 +114,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -3594,6 +3647,20 @@ static int wpa_supplicant_init_iface(str
+@@ -3595,6 +3648,20 @@ static int wpa_supplicant_init_iface(str
  			   sizeof(wpa_s->bridge_ifname));
  	}
  
@@ -135,7 +135,7 @@
  	/* RSNA Supplicant Key Management - INITIALIZE */
  	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
  	eapol_sm_notify_portValid(wpa_s->eapol, FALSE);
-@@ -3797,6 +3864,11 @@ static void wpa_supplicant_deinit_iface(
+@@ -3798,6 +3865,11 @@ static void wpa_supplicant_deinit_iface(
  	if (terminate)
  		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_TERMINATING);
  

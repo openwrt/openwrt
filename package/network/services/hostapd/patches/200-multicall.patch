@@ -192,7 +192,7 @@
  
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -3810,6 +3810,9 @@ static void wpa_supplicant_deinit_iface(
+@@ -3811,6 +3811,9 @@ static void wpa_supplicant_deinit_iface(
  	os_free(wpa_s);
  }
  
@@ -202,7 +202,7 @@
  
  /**
   * wpa_supplicant_add_iface - Add a new network interface
-@@ -4001,6 +4004,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -4002,6 +4005,7 @@ struct wpa_global * wpa_supplicant_init(
  	wpa_msg_register_ifname_cb(wpa_supplicant_msg_ifname_cb);
  #endif /* CONFIG_NO_WPA_MSG */
  
