@@ -53,17 +53,19 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  __printf(2, 3) void b43err(struct b43_wl *wl, const char *fmt, ...);
 --- a/drivers/net/wireless/b43/bus.h
 +++ b/drivers/net/wireless/b43/bus.h
-@@ -70,6 +70,16 @@ static inline bool b43_bus_host_is_sdio(
+@@ -70,6 +70,18 @@ static inline bool b43_bus_host_is_sdio(
  	return false;
  #endif
  }
 +static inline bool b43_bus_host_is_pci(struct b43_bus_dev *dev)
 +{
-+	if (dev->bus_type == B43_BUS_SSB)
-+		return (dev->sdev->bus->bustype == SSB_BUSTYPE_PCI);
 +#ifdef CPTCFG_B43_BCMA
 +	if (dev->bus_type == B43_BUS_BCMA)
 +		return (dev->bdev->bus->hosttype == BCMA_HOSTTYPE_PCI);
++#endif
++#ifdef CPTCFG_B43_SSB
++	if (dev->bus_type == B43_BUS_SSB)
++		return (dev->sdev->bus->bustype == SSB_BUSTYPE_PCI);
 +#endif
 +	return false;
 +}
