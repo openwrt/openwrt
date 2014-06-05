@@ -1070,7 +1070,8 @@ define KernelPackage/b43
   URL:=http://linuxwireless.org/en/users/Drivers/b43
   KCONFIG:= \
   	CONFIG_HW_RANDOM=y
-  DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):kmod-ssb
+  # Depend on PCI_SUPPORT to make sure we can select kmod-bcma or kmod-ssb
+  DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):PCI_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/b43/b43.ko
   AUTOLOAD:=$(call AutoProbe,b43)
   MENU:=1
@@ -1178,10 +1179,26 @@ define KernelPackage/b43/config
 		  Example (keep files for G-PHY and N-PHY):
 		    G,N
 
-	config PACKAGE_B43_BUSES_BCMA
-		bool "Support for BCMA bus"
+	choice
+		prompt "Supported buses"
+		default PACKAGE_B43_BUSES_BCMA_AND_SSB
+		help
+		  This allows choosing buses that b43 should support.
+
+	config PACKAGE_B43_BUSES_BCMA_AND_SSB
+		bool "BCMA and SSB"
 		select PACKAGE_kmod-bcma if !TARGET_brcm47xx
-		default y
+		select PACKAGE_kmod-ssb if !(TARGET_brcm47xx || TARGET_brcm63xx)
+
+	config PACKAGE_B43_BUSES_BCMA
+		bool "BCMA only"
+		select PACKAGE_kmod-bcma if !TARGET_brcm47xx
+
+	config PACKAGE_B43_BUSES_SSB
+		bool "SSB only"
+		select PACKAGE_kmod-ssb if !(TARGET_brcm47xx || TARGET_brcm63xx)
+
+	endchoice
 
 	config PACKAGE_B43_DEBUG
 		bool "Enable debug output and debugfs for b43"
@@ -1433,11 +1450,9 @@ endif
 config-$(call config_package,carl9170) += CARL9170
 
 config-$(call config_package,b43) += B43
-ifeq ($(CONFIG_PACKAGE_B43_BUSES_BCMA),y)
-config-y += B43_BUSES_BCMA_AND_SSB
-else
-config-y += B43_BUSES_SSB
-endif
+config-$(CONFIG_PACKAGE_B43_BUSES_BCMA_AND_SSB) += B43_BUSES_BCMA_AND_SSB
+config-$(CONFIG_PACKAGE_B43_BUSES_BCMA) += B43_BUSES_BCMA
+config-$(CONFIG_PACKAGE_B43_BUSES_SSB) += B43_BUSES_SSB
 config-$(CONFIG_PACKAGE_B43_PHY_N) += B43_PHY_N
 config-$(CONFIG_PACKAGE_B43_PHY_LP) += B43_PHY_LP
 config-$(CONFIG_PACKAGE_B43_PHY_HT) += B43_PHY_HT
