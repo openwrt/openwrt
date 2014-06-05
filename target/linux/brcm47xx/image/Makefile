@@ -98,8 +98,12 @@ define Image/Build/trxV2
 	$(call Image/Build/CyberTAN2,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
 endef
 
+#################################################
+# Subtarget generic
+#################################################
+
 # $(1): filesystem type.
-define Image/Build/jffs2-128k
+define Image/Build/generic/jffs2-128k
 	$(call Image/Build/CyberTAN,$(1),wrt54gs,W54S,4.80.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrtsl54gs,W54U,2.08.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/trxV2,$(1),wrt54g3gv2-vf,3G2V,3.00.24,$(patsubst jffs2-%,jffs2,$(1)),6)
@@ -107,7 +111,7 @@ define Image/Build/jffs2-128k
 endef
 
 # $(1): filesystem type.
-define Image/Build/jffs2-64k
+define Image/Build/generic/jffs2-64k
 	$(call Image/Build/Chk,$(1),wgr614_v8,U12H072T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wndr3300_v1,U12H093T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
@@ -154,10 +158,14 @@ define Image/Build/jffs2-64k
 endef
 
 # $(1): filesystem type.
-define Image/Build/squashfs
-	$(call Image/Build/jffs2-64k,$(1))
-	$(call Image/Build/jffs2-128k,$(1))
+define Image/Build/generic/squashfs
+	$(call Image/Build/generic/jffs2-64k,$(1))
+	$(call Image/Build/generic/jffs2-128k,$(1))
 endef
+
+#################################################
+# Shared BuildImage defines
+#################################################
 
 define Image/Build/Initramfs
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-initramfs.trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux-initramfs.lzma
@@ -171,7 +179,7 @@ define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx \
 		-f $(KDIR)/vmlinux.gz \
 		$(call trxalign/$(1),$(1))
-	$(call Image/Build/$(1),$(1))
+	$(call Image/Build/$(SUBTARGET)/$(1),$(1))
 #	$(call Image/Build/Chk,$(1),wgr614_v9,U12H094T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wndr3400_vcna,U12H155T01_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wnr3500U,U12H136T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
