@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -68,6 +68,16 @@ static void hostapd_reload_bss(struct ho
+@@ -70,6 +70,16 @@ static void hostapd_reload_bss(struct ho
  #endif /* CONFIG_NO_RADIUS */
  
  	ssid = &hapd->conf->ssid;
@@ -17,7 +17,7 @@
  	if (!ssid->wpa_psk_set && ssid->wpa_psk && !ssid->wpa_psk->next &&
  	    ssid->wpa_passphrase_set && ssid->wpa_passphrase) {
  		/*
-@@ -168,20 +178,12 @@ int hostapd_reload_config(struct hostapd
+@@ -170,20 +180,12 @@ int hostapd_reload_config(struct hostapd
  	oldconf = hapd->iconf;
  	iface->conf = newconf;
  

@@ -1,6 +1,6 @@
 --- a/src/drivers/drivers.mak
 +++ b/src/drivers/drivers.mak
-@@ -25,7 +25,6 @@ NEED_SME=y
+@@ -30,7 +30,6 @@ NEED_SME=y
  NEED_AP_MLME=y
  NEED_NETLINK=y
  NEED_LINUX_IOCTL=y
@@ -8,7 +8,7 @@
  
  ifdef CONFIG_LIBNL32
    DRV_LIBS += -lnl-3
-@@ -109,7 +108,6 @@ DRV_WPA_CFLAGS += -DCONFIG_DRIVER_WEXT
+@@ -114,7 +113,6 @@ DRV_WPA_CFLAGS += -DCONFIG_DRIVER_WEXT
  CONFIG_WIRELESS_EXTENSION=y
  NEED_NETLINK=y
  NEED_LINUX_IOCTL=y
@@ -16,7 +16,7 @@
  endif
  
  ifdef CONFIG_DRIVER_NDIS
-@@ -135,7 +133,6 @@ endif
+@@ -140,7 +138,6 @@ endif
  ifdef CONFIG_WIRELESS_EXTENSION
  DRV_WPA_CFLAGS += -DCONFIG_WIRELESS_EXTENSION
  DRV_WPA_OBJS += ../src/drivers/driver_wext.o
@@ -24,7 +24,7 @@
  endif
  
  ifdef NEED_NETLINK
-@@ -148,6 +145,7 @@ endif
+@@ -153,6 +150,7 @@ endif
  
  ifdef NEED_RFKILL
  DRV_OBJS += ../src/drivers/rfkill.o

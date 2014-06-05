@@ -45,7 +45,7 @@
  CONFIG_OS=win32
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -104,6 +104,55 @@ const char *wpa_supplicant_full_license5
+@@ -105,6 +105,55 @@ const char *wpa_supplicant_full_license5
  "\n";
  #endif /* CONFIG_NO_STDOUT_DEBUG */
  
@@ -101,7 +101,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -705,8 +754,12 @@ void wpa_supplicant_set_state(struct wpa
+@@ -710,8 +759,12 @@ void wpa_supplicant_set_state(struct wpa
  #endif /* CONFIG_P2P */
  
  		sme_sched_obss_scan(wpa_s, 1);
@@ -114,7 +114,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -3516,6 +3569,20 @@ static int wpa_supplicant_init_iface(str
+@@ -3594,6 +3647,20 @@ static int wpa_supplicant_init_iface(str
  			   sizeof(wpa_s->bridge_ifname));
  	}
  
@@ -135,7 +135,7 @@
  	/* RSNA Supplicant Key Management - INITIALIZE */
  	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
  	eapol_sm_notify_portValid(wpa_s->eapol, FALSE);
-@@ -3711,6 +3778,11 @@ static void wpa_supplicant_deinit_iface(
+@@ -3797,6 +3864,11 @@ static void wpa_supplicant_deinit_iface(
  	if (terminate)
  		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_TERMINATING);
  
@@ -157,7 +157,7 @@
  #include "drivers/driver.h"
  #include "wpa_supplicant_i.h"
  #include "config.h"
-@@ -247,6 +248,10 @@ static void calculate_update_time(const
+@@ -247,6 +248,10 @@ static void calculate_update_time(const 
  static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
  			     struct os_reltime *fetch_time)
  {

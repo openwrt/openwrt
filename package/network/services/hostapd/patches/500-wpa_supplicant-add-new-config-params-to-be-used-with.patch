@@ -149,9 +149,9 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
 +	{ INT_RANGE(fixed_freq, 0, 1) },
 +	{ FUNC(rates) },
 +	{ FUNC(mcast_rate) },
- };
- 
- #undef OFFSET
+ #ifdef CONFIG_MACSEC
+ 	{ INT_RANGE(macsec_policy, 0, 1) },
+ #endif /* CONFIG_MACSEC */
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
 @@ -12,6 +12,7 @@
@@ -162,20 +162,20 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  
  #define MAX_SSID_LEN 32
  
-@@ -636,6 +637,10 @@ struct wpa_ssid {
- 	 * dereferences since it may not be updated in all cases.
+@@ -637,6 +638,10 @@ struct wpa_ssid {
  	 */
  	void *parent_cred;
-+
+ 
 +	int fixed_freq;
 +	unsigned char rates[NL80211_MAX_SUPP_RATES];
 +	double mcast_rate;
- };
- 
- #endif /* CONFIG_SSID_H */
++
+ #ifdef CONFIG_MACSEC
+ 	/**
+ 	 * macsec_policy - Determines the policy for MACsec secure session
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1791,6 +1791,13 @@ static void wpas_start_assoc_cb(struct w
+@@ -1805,6 +1805,13 @@ static void wpas_start_assoc_cb(struct w
  			params.beacon_int = ssid->beacon_int;
  		else
  			params.beacon_int = wpa_s->conf->beacon_int;

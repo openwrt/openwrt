@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2638,6 +2638,8 @@ static int hostapd_config_fill(struct ho
+@@ -2639,6 +2639,8 @@ static int hostapd_config_fill(struct ho
  		}
  #endif /* CONFIG_IEEE80211W */
  #ifdef CONFIG_IEEE80211N
@@ -21,9 +21,9 @@
  	int require_ht;
 --- a/src/ap/hw_features.c
 +++ b/src/ap/hw_features.c
-@@ -574,7 +574,7 @@ static int ieee80211n_check_40mhz(struct
- {
+@@ -690,7 +690,7 @@ static int ieee80211n_check_40mhz(struct
  	struct wpa_driver_scan_params params;
+ 	int ret;
  
 -	if (!iface->conf->secondary_channel)
 +	if (!iface->conf->secondary_channel || iface->conf->noscan)
