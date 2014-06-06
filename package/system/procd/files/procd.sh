@@ -131,6 +131,11 @@ _procd_set_param() {
 		command|netdev|file|respawn|watch)
 			_procd_add_array "$type" "$@"
 		;;
+		error)
+			json_add_array "$type"
+			json_add_string "" "$@"
+			json_close_array
+		;;
 		nice)
 			json_add_int "$type" "$1"
 		;;
@@ -207,14 +212,22 @@ _procd_add_validation() {
 
 _procd_append_param() {
 	local type="$1"; shift
+	local _json_no_warning=1
 
 	json_select "$type"
+	[ $? = 0 ] || {
+		_procd_set_param "$type" "$@"
+		return
+	}
 	case "$type" in
 		env|data|limits)
 			_procd_add_table_data "$@"
 		;;
 		command|netdev|file|respawn|watch)
 			_procd_add_array_data "$@"
+		;;
+		error)
+			json_add_string "" "$@"
 		;;
 	esac
 	json_select ..
