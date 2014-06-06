@@ -8,9 +8,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mtd-utils
-PKG_REV:=ab8c6fb93ce9db0f09401c4b819b0b277dc00340
-PKG_VERSION:=1.5.0
-PKG_RELEASE:=2
+PKG_REV:=7d2839b8dede3ae368780364b4a07473d2303219
+PKG_VERSION:=1.5.1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=git://git.infradead.org/mtd-utils.git
@@ -33,6 +33,7 @@ include $(INCLUDE_DIR)/package.mk
 FILES:= \
 	ubiattach \
 	ubicrc32 \
+	ubiblock \
 	ubidetach \
 	ubiformat \
 	ubimkvol \

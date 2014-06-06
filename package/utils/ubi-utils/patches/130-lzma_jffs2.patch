@@ -2,10 +2,10 @@
 +++ b/Makefile
 @@ -3,7 +3,7 @@
  
- VERSION = 1.5.0
+ VERSION = 1.5.1
  
--CPPFLAGS += -D_GNU_SOURCE -I./include -I$(BUILDDIR)/include -I./ubi-utils/include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS)
-+CPPFLAGS += -D_GNU_SOURCE -I./include -I$(BUILDDIR)/include -I./ubi-utils/include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) -I./include/linux/lzma
+-CPPFLAGS += -D_GNU_SOURCE -I./include -I$(BUILDDIR)/include -I./ubi-utils/include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) $(UUIDCPPFLAGS)
++CPPFLAGS += -D_GNU_SOURCE -I./include -I$(BUILDDIR)/include -I./ubi-utils/include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) $(UUIDCPPFLAGS) -I./include/linux/lzma
  
  ifeq ($(WITHOUT_XATTR), 1)
    CPPFLAGS += -DWITHOUT_XATTR
@@ -5011,7 +5011,7 @@
 +}
 --- a/mkfs.jffs2.c
 +++ b/mkfs.jffs2.c
-@@ -1658,11 +1658,11 @@ int main(int argc, char **argv)
+@@ -1659,11 +1659,11 @@ int main(int argc, char **argv)
  						  }
  						  erase_block_size *= units;
  
