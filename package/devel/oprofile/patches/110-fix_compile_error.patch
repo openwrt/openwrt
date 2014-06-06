@@ -1,0 +1,30 @@
+--- a/libop/op_cpu_type.c
++++ b/libop/op_cpu_type.c
+@@ -250,6 +250,7 @@ static void release_at_hw_platform(void)
+ 	}
+ }
+ 
++#ifdef PPC64
+ static op_cpu _try_ppc64_arch_generic_cpu(void)
+ {
+ 	const char * platform, * base_platform;
+@@ -312,6 +313,7 @@ static op_cpu _get_ppc64_cpu_type(void)
+ 	cpu_type = op_get_cpu_number(cpu_type_str);
+ 	return cpu_type;
+ }
++#endif
+ 
+ static op_cpu _get_arm_cpu_type(void)
+ {
+@@ -592,9 +594,11 @@ static op_cpu __get_cpu_type_alt_method(
+ 	    fnmatch("i?86", uname_info.machine, 0) == 0) {
+ 		return _get_x86_64_cpu_type();
+ 	}
++#ifdef PPC64
+ 	if (strncmp(uname_info.machine, "ppc64", 5) == 0) {
+ 		return _get_ppc64_cpu_type();
+ 	}
++#endif
+ 	if (strncmp(uname_info.machine, "arm", 3) == 0) {
+ 		return _get_arm_cpu_type();
+ 	}
