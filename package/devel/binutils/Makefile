@@ -8,24 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
-PKG_VERSION:=$(strip $(subst ",, $(CONFIG_BINUTILS_VERSION)))
-#"))
-PKG_RELEASE:=6
+PKG_VERSION:=2.24
+PKG_RELEASE:=1
 
-ifeq ($(findstring linaro, $(CONFIG_BINUTILS_VERSION)),linaro)
-  PKG_SOURCE_URL:=https://releases.linaro.org/13.12/components/toolchain/binutils-linaro/
-  PKG_REV:=2.24-2013.12
-  PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.xz
-  BINUTILS_DIR:=$(PKG_NAME)-linaro-$(PKG_REV)
-  PKG_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
-  PKG_VERSION:=$(PKG_REV)
-else
-  PKG_SOURCE_URL:=@GNU/binutils
-  PKG_SOURCE:=binutils-$(PKG_VERSION).tar.bz2
-endif
-PKG_MD5SUM:=
-
-PATCH_DIR:=$(TOPDIR)/toolchain/binutils/patches/$(PKG_VERSION)
+PKG_SOURCE_URL:=@GNU/binutils
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_VERSION:=$(PKG_VERSION)
+PKG_MD5SUM:=e0f71a7b2ddab0f8612336ac81d9636b
 
 PKG_FIXUP:=autoreconf
 PKG_LIBTOOL_PATHS:=. gas bfd opcodes gprof binutils ld libiberty gold intl
@@ -56,61 +45,28 @@ define Package/binutils/description
   The Binutils package contains a linker, an assembler, and other tools for handling object files
 endef
 
-CONFIGURE_ARGS = \
-		--target=$(REAL_GNU_TARGET_NAME) \
-		--host=$(REAL_GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=/usr \
-		--disable-multilib \
-		--disable-werror \
-		--disable-nls \
-		--enable-shared \
-		$(SOFT_FLOAT_CONFIG_OPTION) \
-		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS))
-
 TARGET_CFLAGS += $(FPIC)
-TARGET_LDFLAGS := -L$(PKG_BUILD_DIR)/libiberty $(TARGET_LDFLAGS)
 
-define Build/Configure
-	$(call Build/Configure/Default)
-	$(call Build/Compile/Default, \
-		configure-bfd \
-		configure-binutils \
-		configure-etc \
-		configure-gas \
-		configure-gprof \
-		configure-intl \
-		configure-ld \
-		configure-libiberty \
-		configure-opcodes \
-	)
-	$(MAKE) CFLAGS="$(TARGET_CFLAGS)" -C $(PKG_BUILD_DIR)/bfd/po Makefile
+CONFIGURE_ARGS += \
+	--enable-install-libiberty \
+	--enable-install-libbfd
+
+define Build/Install
+	$(call Build/Install/Default)
+	$(MAKE) -C $(PKG_BUILD_DIR)/libiberty \
+		target_header_dir=libiberty \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		MULTIOSDIR="" \
+		install
 endef
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/{lib,include}
-	$(CP) \
-		$(PKG_INSTALL_DIR)/usr/lib/* \
-		$(1)/usr/lib/
-	$(CP) \
-		$(PKG_BUILD_DIR)/include/*.h \
-		$(1)/usr/include/
-	$(CP) \
-		$(PKG_INSTALL_DIR)/usr/include/* \
-		$(1)/usr/include/
-	rm -f $(1)/usr/include/gdbm.h
-endef
-
-define Build/Compile
-	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/bfd/doc/ CFLAGS="-I$(PKG_BUILD_DIR)/include" chew
-	$(call Build/Compile/Default)
+	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 endef
 
 define Package/objdump/install
 	$(INSTALL_DIR) $(1)/usr/bin $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/objdump $(1)/usr/bin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libopcodes*.so $(1)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbfd*.so $(1)/usr/lib/
 endef
 
 define Package/binutils/install
