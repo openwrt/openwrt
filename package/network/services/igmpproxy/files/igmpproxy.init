@@ -42,7 +42,11 @@ igmp_add_phyint() {
 	json_load "$(ifstatus $network)"
 	json_get_var device l3_device
 	json_get_var up up
-	[ -n "$device" -a "$up" = "1" ] || return;
+
+	[ -n "$device" -a "$up" = "1" ] || {
+		procd_append_param error "$network is not up"
+		return;
+	}
 
 	echo -e "\nphyint $device $direction ratelimit 0 threshold 1" >> /var/etc/igmpproxy.conf
 
@@ -68,10 +72,9 @@ service_triggers() {
 start_service() {
 	config_load igmpproxy
 
+	procd_open_instance
 	config_foreach igmp_header igmpproxy
 	config_foreach igmp_add_phyint phyint
-
-	procd_open_instance
 	procd_set_param command $PROG
 	[ -n "$OPTIONS" ] && procd_append_param $OPTIONS
 	procd_append_param command $CONFIGFILE
