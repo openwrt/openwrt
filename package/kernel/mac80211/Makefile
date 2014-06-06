@@ -1071,13 +1071,31 @@ define KernelPackage/b43
   KCONFIG:= \
   	CONFIG_HW_RANDOM=y
   # Depend on PCI_SUPPORT to make sure we can select kmod-bcma or kmod-ssb
-  DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):PCI_SUPPORT
+  DEPENDS += \
+	@PCI_SUPPORT +kmod-mac80211 \
+	$(if $(CONFIG_PACKAGE_B43_USE_SSB),+kmod-ssb) \
+	$(if $(CONFIG_PACKAGE_B43_USE_BCMA),+kmod-bcma)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/b43/b43.ko
   AUTOLOAD:=$(call AutoProbe,b43)
   MENU:=1
 endef
 
 define KernelPackage/b43/config
+
+config PACKAGE_B43_USE_SSB
+	select PACKAGE_kmod-ssb
+	tristate
+	depends on !TARGET_brcm47xx
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_SSB
+
+config PACKAGE_B43_USE_BCMA
+	select PACKAGE_kmod-bcma
+	tristate
+	depends on !TARGET_brcm47xx
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
+	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA
+
   if PACKAGE_kmod-b43
 
 	choice
@@ -1187,16 +1205,12 @@ define KernelPackage/b43/config
 
 	config PACKAGE_B43_BUSES_BCMA_AND_SSB
 		bool "BCMA and SSB"
-		select PACKAGE_kmod-bcma if !TARGET_brcm47xx
-		select PACKAGE_kmod-ssb if !(TARGET_brcm47xx || TARGET_brcm63xx)
 
 	config PACKAGE_B43_BUSES_BCMA
 		bool "BCMA only"
-		select PACKAGE_kmod-bcma if !TARGET_brcm47xx
 
 	config PACKAGE_B43_BUSES_SSB
 		bool "SSB only"
-		select PACKAGE_kmod-ssb if !(TARGET_brcm47xx || TARGET_brcm63xx)
 
 	endchoice
 
