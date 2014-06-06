@@ -299,12 +299,9 @@ if KERNEL_CGROUPS
 		  the kmem extension can use it to guarantee that no group of processes
 		  will ever exhaust kernel resources alone.
 
-	config KERNEL_PERF_EVENTS
-		bool
-		default y if KERNEL_CGROUP_PERF
-
 	config KERNEL_CGROUP_PERF
 		bool "Enable perf_event per-cpu per-container group (cgroup) monitoring"
+		select KERNEL_PERF_EVENTS
 		default n
 		help
 		  This option extends the per-cpu mode to restrict monitoring to
