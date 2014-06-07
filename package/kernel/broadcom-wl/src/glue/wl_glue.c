@@ -268,17 +268,17 @@ static int __init wl_glue_init(void)
 	 */
 	switch (bcm47xx_bus_type)
 	{
-#ifdef CONFIG_SSB
+#ifdef CONFIG_BCM47XX_SSB
 	case BCM47XX_BUS_TYPE_SSB:
 		active_bus_type = WL_GLUE_BUS_TYPE_SSB;
 		break;
-#endif /* CONFIG_SSB */
+#endif /* CONFIG_BCM47XX_SSB */
 
-#ifdef CONFIG_BCMA
+#ifdef CONFIG_BCM47XX_BCMA
 	case BCM47XX_BUS_TYPE_BCMA:
 		active_bus_type = WL_GLUE_BUS_TYPE_BCMA;
 		break;
-#endif /* CONFIG_BCMA */
+#endif /* CONFIG_BCM47XX_BCMA */
 	}
 #endif /* CONFIG_BCM47XX */
 
