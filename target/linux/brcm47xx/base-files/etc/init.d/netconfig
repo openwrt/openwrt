@@ -224,14 +224,14 @@ start() {
 	eval "$network_defs"
 
 	[ -n "$vlan1ports" -o -n "$vlan2ports" ] && {
-		local cfg=`ucidef_add_switch "switch0" 1 1`
+		local cfg=`ucidef_add_switch "eth0" 1 1`
 		[ -n "$cfg" ] && uci rename network.$cfg=eth0
 		[ -n "$vlan1ports" ] && {
-			cfg=`ucidef_add_switch_vlan "switch0" 1 "$vlan1ports"`
+			cfg=`ucidef_add_switch_vlan "eth0" 1 "$vlan1ports"`
 			[ -n "$cfg" ] && uci rename network.$cfg=eth0_1
 		}
 		[ -n "$vlan2ports" ] && {
-			cfg=`ucidef_add_switch_vlan "switch0" 2 "$vlan2ports"`
+			cfg=`ucidef_add_switch_vlan "eth0" 2 "$vlan2ports"`
 			[ -n "$cfg" ] && uci rename network.$cfg=eth0_2
 		}
 	}
