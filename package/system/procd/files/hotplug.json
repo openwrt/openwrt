@@ -13,7 +13,7 @@
 								[ "null", "full", "ptmx", "zero" ],
 							],
 							[ "regex", "DEVNAME",
-								[ "^gpio", "^hvc", "^tty" ],
+								[ "^gpio", "^hvc" ],
 							],
 						],
 						[
@@ -76,10 +76,10 @@
 	],
 	[ "if",
 		[ "and",
-			[ "eq", "SUBSYSTEM",
-				[ "tty", "usb-serial" ]
+			[ "eq", "SUBSYSTEM", "usb-serial" ],
+			[ "regex", "DEVNAME",
+				[ "^ttyUSB", "^ttyACM" ]
 			],
-			[ "regex", "DEVNAME", "^ttyUSB" ],
 		],
 		[ "exec", "/sbin/hotplug-call", "tty" ]
 	],
