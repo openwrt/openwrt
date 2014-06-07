@@ -34,7 +34,9 @@ define Package/uqmi/description
 endef
 
 TARGET_CFLAGS += \
-	-I$(STAGING_DIR)/usr/include
+	-I$(STAGING_DIR)/usr/include -ffunction-sections -fdata-sections
+
+TARGET_LDFLAGS += -Wl,--gc-sections
 
 CMAKE_OPTIONS += \
 	-DDEBUG=1
