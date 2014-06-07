@@ -5,7 +5,7 @@ START=00
 
 boot() {
 	local curtime="$(date +%s)"
-	local maxtime="$(find /etc -type f -exec date +%s -r {} \; | sort -nr | head -n1)"
+	local maxtime="$(find /etc -type f -exec date -r {} +%s \; | sort -nr | head -n1)"
 	[ $curtime -lt $maxtime ] && date -s @$maxtime
 }
 
