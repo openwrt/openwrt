@@ -1,3 +1,4 @@
+FEATURES += low_mem
 BOARDNAME:=Legacy (802.11g)
 
 define Target/Description
