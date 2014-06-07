@@ -1167,6 +1167,7 @@ config PACKAGE_B43_USE_BCMA
 	config B43_FW_SQUASH_COREREVS
 		string "Core revisions to include"
 		depends on B43_FW_SQUASH
+		default "5,6,7,8,9,10,11,13,15" if TARGET_brcm47xx_legacy
 		default "5,6,7,8,9,10,11,13,15,16,29"
 		help
 		  This is a comma seperated list of core revision numbers.
@@ -1180,6 +1181,7 @@ config PACKAGE_B43_USE_BCMA
 	config B43_FW_SQUASH_PHYTYPES
 		string "PHY types to include"
 		depends on B43_FW_SQUASH
+		default "G,LP" if TARGET_brcm47xx_legacy
 		default "G,LP,N,HT"
 		help
 		  This is a comma seperated list of PHY types:
@@ -1204,9 +1206,11 @@ config PACKAGE_B43_USE_BCMA
 		  This allows choosing buses that b43 should support.
 
 	config PACKAGE_B43_BUSES_BCMA_AND_SSB
+		depends on !TARGET_brcm47xx_legacy
 		bool "BCMA and SSB"
 
 	config PACKAGE_B43_BUSES_BCMA
+		depends on !TARGET_brcm47xx_legacy
 		bool "BCMA only"
 
 	config PACKAGE_B43_BUSES_SSB
@@ -1234,6 +1238,7 @@ config PACKAGE_B43_USE_BCMA
 
 	config PACKAGE_B43_PHY_N
 		bool "Enable support for N-PHYs"
+		default n if TARGET_brcm47xx_legacy
 		default y
 		help
 		  Enable support for N-PHY. This includes support for the following devices:
@@ -1256,6 +1261,7 @@ config PACKAGE_B43_USE_BCMA
 
 	config PACKAGE_B43_PHY_HT
 		bool "Enable support for HT-PHYs"
+		default n if TARGET_brcm47xx_legacy
 		default y
 		help
 		  Enable support for HT-PHY. This includes support for the following devices:
