@@ -5,10 +5,10 @@ out the configuration than the in kernel cfe config reader.
 
 --- a/arch/mips/bcm47xx/Makefile
 +++ b/arch/mips/bcm47xx/Makefile
-@@ -6,3 +6,4 @@
+@@ -5,3 +5,4 @@
+ 
  obj-y				+= irq.o nvram.o prom.o serial.o setup.o time.o sprom.o
  obj-y				+= board.o buttons.o leds.o workarounds.o
- obj-y				+= gpio.o
 +obj-y				+= cfe_env.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/cfe_env.c
@@ -290,16 +290,6 @@ out the configuration than the in kernel cfe config reader.
 +			return -ENOENT;
 +		return snprintf(val, val_len, "%s", value);
 +	}
-+
- 	/* Look for name=value and return value */
- 	var = &nvram_buf[sizeof(struct nvram_header)];
- 	end = nvram_buf + sizeof(nvram_buf) - 2;
-@@ -221,6 +250,9 @@ char *nvram_get(const char *name)
- 	if (!nvram_buf[0])
- 		nvram_init();
- 
-+	if (cfe_env)
-+		return cfe_env_get(nvram_buf, name);
 +
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
