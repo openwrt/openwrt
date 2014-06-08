@@ -13,9 +13,11 @@ define KernelPackage/usb-brcm47xx
   	CONFIG_USB_HCD_BCMA \
   	CONFIG_USB_HCD_SSB
   FILES:= \
-  	$(LINUX_DIR)/drivers/usb/host/bcma-hcd.ko \
-  	$(LINUX_DIR)/drivers/usb/host/ssb-hcd.ko
-  AUTOLOAD:=$(call AutoLoad,19,bcma-hcd ssb-hcd,1)
+	$(if $(CONFIG_USB_HCD_BCMA),$(LINUX_DIR)/drivers/usb/host/bcma-hcd.ko) \
+	$(if $(CONFIG_USB_HCD_SSB),$(LINUX_DIR)/drivers/usb/host/ssb-hcd.ko)
+  AUTOLOAD:=$(call AutoLoad,19, \
+	$(if $(CONFIG_USB_HCD_BCMA),bcma-hcd) \
+	$(if $(CONFIG_USB_HCD_SSB),ssb-hcd),1)
   $(call AddDepends/usb)
 endef
 
