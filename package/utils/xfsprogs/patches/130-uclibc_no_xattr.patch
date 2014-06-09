@@ -8,13 +8,11 @@ diff --git a/fsr/xfs_fsr.c b/fsr/xfs_fsr.c
 index 40c2e6f..4f54059 100644
 --- a/fsr/xfs_fsr.c
 +++ b/fsr/xfs_fsr.c
-@@ -35,7 +35,9 @@
+@@ -35,7 +35,6 @@
  #include <sys/wait.h>
  #include <sys/vfs.h>
  #include <sys/statvfs.h>
-+#ifndef __UCLIBC__
- #include <sys/xattr.h>
-+#endif
+-#include <sys/xattr.h>
  
  
  #ifndef XFS_XFLAG_NODEFRAG
@@ -22,7 +20,7 @@ index 40c2e6f..4f54059 100644
  	int		tfd,
  	xfs_bstat_t	*bstatp)
  {
-+#ifndef __UCLIBC__
++#if 0
  	struct stat64	tstatbuf;
  	int		i;
  	int		last_forkoff = 0;

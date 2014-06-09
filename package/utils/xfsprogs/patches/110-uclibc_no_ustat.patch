@@ -8,13 +8,11 @@ diff --git a/libxfs/linux.c b/libxfs/linux.c
 index 2e07d54..6a6c905 100644
 --- a/libxfs/linux.c
 +++ b/libxfs/linux.c
-@@ -21,7 +21,9 @@
+@@ -21,7 +21,6 @@
  #include <mntent.h>
  #include <sys/stat.h>
  #undef ustat
-+#ifndef __UCLIBC__
- #include <sys/ustat.h>
-+#endif
+-#include <sys/ustat.h>
  #include <sys/mount.h>
  #include <sys/ioctl.h>
  #include <sys/sysinfo.h>
@@ -22,7 +20,7 @@ index 2e07d54..6a6c905 100644
  int
  platform_check_ismounted(char *name, char *block, struct stat64 *s, int verbose)
  {
-+#ifndef __UCLIBC__
++#if 0
  	/* Pad ust; pre-2.6.28 linux copies out too much in 32bit compat mode */
  	struct ustat	ust[2];
  	struct stat64	st;
