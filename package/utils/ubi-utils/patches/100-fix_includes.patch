@@ -1,0 +1,30 @@
+--- a/lib/libfec.c
++++ b/lib/libfec.c
+@@ -45,6 +45,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <sys/types.h>
+ 
+ /*
+  * stuff used for testing purposes only
+--- a/serve_image.c
++++ b/serve_image.c
+@@ -3,7 +3,6 @@
+ 
+ #include <time.h>
+ #include <errno.h>
+-#include <error.h>
+ #include <netdb.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+--- a/recv_image.c
++++ b/recv_image.c
+@@ -4,7 +4,6 @@
+ #define _BSD_SOURCE	/* struct ip_mreq */
+ 
+ #include <errno.h>
+-#include <error.h>
+ #include <stdio.h>
+ #include <netdb.h>
+ #include <stdlib.h>
