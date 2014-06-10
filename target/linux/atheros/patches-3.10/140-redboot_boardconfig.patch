@@ -43,12 +43,11 @@
  		parts[i].size = fl->img->size;
  		parts[i].offset = fl->img->flash_base;
  		parts[i].name = names;
-@@ -284,6 +289,14 @@ static int parse_redboot_partitions(stru
+@@ -284,6 +289,13 @@ static int parse_redboot_partitions(stru
  		fl = fl->next;
  		kfree(tmp_fl);
  	}
-+	if(master->size - max_offset >= master->erasesize)
-+	{
++	if (master->size - max_offset >= master->erasesize) {
 +		parts[nrparts].size = master->size - max_offset;
 +		parts[nrparts].offset = max_offset;
 +		parts[nrparts].name = names;

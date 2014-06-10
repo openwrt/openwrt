@@ -63,10 +63,10 @@
  		fl = fl->next;
  		kfree(tmp_fl);
  	}
--	if(master->size - max_offset >= master->erasesize)
+-	if (master->size - max_offset >= master->erasesize) {
 +
 +	if (master->size - max_offset >=
-+	    mtd_get_offset_erasesize(master, max_offset))
- 	{
++	    mtd_get_offset_erasesize(master, max_offset)) {
  		parts[nrparts].size = master->size - max_offset;
  		parts[nrparts].offset = max_offset;
+ 		parts[nrparts].name = names;
