@@ -84,7 +84,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
 --- /dev/null
 +++ b/arch/mips/ar231x/board.c
-@@ -0,0 +1,259 @@
+@@ -0,0 +1,260 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -209,7 +209,7 @@
 +	}
 +
 +	if (!found) {
-+		printk("Could not find Radio Configuration data\n");
++		pr_warn("WARNING: Could not find Radio Configuration data\n");
 +		radio_config = 0;
 +	}
 +
@@ -243,7 +243,7 @@
 +	}
 +
 +	if (!bcfg) {
-+		printk(KERN_WARNING "WARNING: No board configuration data found!\n");
++		pr_warn("WARNING: No board configuration data found!\n");
 +		return -ENODEV;
 +	}
 +
@@ -251,10 +251,10 @@
 +	ar231x_board.config = (struct ar231x_boarddata *) board_data;
 +	memcpy(board_data, bcfg, 0x100);
 +	if (broken_boarddata) {
-+		printk(KERN_WARNING "WARNING: broken board data detected\n");
++		pr_warn("WARNING: broken board data detected\n");
 +		config = ar231x_board.config;
 +		if (!memcmp(config->enet0_mac, "\x00\x00\x00\x00\x00\x00", 6)) {
-+			printk(KERN_INFO "Fixing up empty mac addresses\n");
++			pr_info("Fixing up empty mac addresses\n");
 +			config->reset_config_gpio = 0xffff;
 +			config->sys_led_gpio = 0xffff;
 +			random_ether_addr(config->wlan0_mac);
@@ -279,13 +279,14 @@
 +	radio_data = board_data + 0x100 + ((rcfg - bcfg) & 0xfff);
 +	ar231x_board.radio = radio_data;
 +	offset = radio_data - board_data;
-+	printk(KERN_INFO "Radio config found at offset 0x%x(0x%x)\n", rcfg - bcfg, offset);
++	pr_info("Radio config found at offset 0x%x (0x%x)\n", rcfg - bcfg,
++		offset);
 +	rcfg_size = BOARD_CONFIG_BUFSZ - offset;
 +	memcpy(radio_data, rcfg, rcfg_size);
 +
 +	mac_addr = &radio_data[0x1d * 2];
 +	if (is_broadcast_ether_addr(mac_addr)) {
-+		printk(KERN_INFO "Radio MAC is blank; using board-data\n");
++		pr_info("Radio MAC is blank; using board-data\n");
 +		memcpy(mac_addr, ar231x_board.config->wlan0_mac, ETH_ALEN);
 +	}
 +
@@ -1640,8 +1641,9 @@
 +	u32 dma1 = ar231x_read_reg(AR531X_DMA1);
 +	u32 dma_addr = ar231x_read_reg(AR531X_DMAADDR);   /* clears error */
 +
-+	printk("AHB interrupt: PROCADDR=0x%8.8x  PROC1=0x%8.8x  DMAADDR=0x%8.8x  DMA1=0x%8.8x\n",
-+	       proc_addr, proc1, dma_addr, dma1);
++	pr_emerg("AHB interrupt: PROCADDR=0x%8.8x  PROC1=0x%8.8x  "
++		 "DMAADDR=0x%8.8x  DMA1=0x%8.8x\n", proc_addr, proc1, dma_addr,
++		 dma1);
 +
 +	machine_restart("AHB error"); /* Catastrophic failure */
 +	return IRQ_HANDLED;
@@ -2057,12 +2059,11 @@
 +	gpch = &ar5312_gpio_chip;
 +	ret = gpiochip_add(&gpch->chip);
 +	if (ret) {
-+		printk(KERN_ERR "%s: failed to add gpiochip\n",
-+			gpch->chip.label);
++		pr_err("%s: failed to add gpiochip\n", gpch->chip.label);
 +		return ret;
 +	}
-+	printk(KERN_INFO "%s: registered %d GPIOs\n",
-+		gpch->chip.label, gpch->chip.ngpio);
++	pr_info("%s: registered %d GPIOs\n", gpch->chip.label,
++		gpch->chip.ngpio);
 +	return ret;
 +}
 +
@@ -2108,7 +2109,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,692 @@
+@@ -0,0 +1,691 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2322,7 +2323,7 @@
 +    ar231x_write_reg(AR2315_AHB_ERR0, AHB_ERROR_DET);
 +    ar231x_read_reg(AR2315_AHB_ERR1);
 +
-+    printk(KERN_ERR "AHB fatal error\n");
++    pr_emerg("AHB fatal error\n");
 +    machine_restart("AHB error"); /* Catastrophic failure */
 +
 +    return IRQ_HANDLED;
@@ -2742,12 +2743,11 @@
 +	gpch = &ar2315_gpio_chip;
 +	ret = gpiochip_add(&gpch->chip);
 +	if (ret) {
-+		printk(KERN_ERR "%s: failed to add gpiochip\n",
-+			gpch->chip.label);
++		pr_err("%s: failed to add gpiochip\n", gpch->chip.label);
 +		return ret;
 +	}
-+	printk(KERN_INFO "%s: registered %d GPIOs\n",
-+		gpch->chip.label, gpch->chip.ngpio);
++	pr_info("%s: registered %d GPIOs\n", gpch->chip.label,
++		gpch->chip.ngpio);
 +	return ret;
 +}
 +
