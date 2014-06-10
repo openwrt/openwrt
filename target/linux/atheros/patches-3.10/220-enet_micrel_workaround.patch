@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/ar231x/ar231x.c
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -150,6 +150,7 @@ static int ar231x_mdiobus_write(struct m
+@@ -146,6 +146,7 @@ static int ar231x_mdiobus_write(struct m
  static int ar231x_mdiobus_reset(struct mii_bus *bus);
  static int ar231x_mdiobus_probe (struct net_device *dev);
  static void ar231x_adjust_link(struct net_device *dev);
@@ -8,7 +8,7 @@
  
  #ifndef ERR
  #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
-@@ -182,6 +183,32 @@ static const struct net_device_ops ar231
+@@ -178,6 +179,32 @@ static const struct net_device_ops ar231
  #endif
  };
  
@@ -41,7 +41,7 @@
  int ar231x_probe(struct platform_device *pdev)
  {
  	struct net_device *dev;
-@@ -297,6 +324,23 @@ int ar231x_probe(struct platform_device
+@@ -293,6 +320,23 @@ int ar231x_probe(struct platform_device
  
  	mdiobus_register(sp->mii_bus);
  
@@ -65,7 +65,7 @@
  	if (ar231x_mdiobus_probe(dev) != 0) {
  		printk(KERN_ERR "%s: mdiobus_probe failed\n", dev->name);
  		rx_tasklet_cleanup(dev);
-@@ -353,8 +397,10 @@ static int ar231x_remove(struct platform
+@@ -349,8 +393,10 @@ static int ar231x_remove(struct platform
  	rx_tasklet_cleanup(dev);
  	ar231x_init_cleanup(dev);
  	unregister_netdev(dev);
@@ -78,7 +78,7 @@
  	kfree(dev);
  	return 0;
  }
-@@ -1115,6 +1161,9 @@ static int ar231x_ioctl(struct net_devic
+@@ -1111,6 +1157,9 @@ static int ar231x_ioctl(struct net_devic
  	struct ar231x_private *sp = netdev_priv(dev);
  	int ret;
  
