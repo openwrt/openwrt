@@ -84,7 +84,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
 --- /dev/null
 +++ b/arch/mips/ar231x/board.c
-@@ -0,0 +1,260 @@
+@@ -0,0 +1,261 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -297,7 +297,8 @@
 +ar231x_halt(void)
 +{
 +	local_irq_disable();
-+	while (1);
++	while (1)
++		;
 +}
 +
 +void __init

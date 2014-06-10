@@ -32,7 +32,7 @@
 +obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1255 @@
+@@ -0,0 +1,1257 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -1208,7 +1208,8 @@
 +	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 +
 +	ethernet->mii_addr = MII_ADDR(phy_addr, regnum);
-+	while (ethernet->mii_addr & MII_ADDR_BUSY);
++	while (ethernet->mii_addr & MII_ADDR_BUSY)
++		;
 +	return ethernet->mii_data >> MII_DATA_SHIFT;
 +}
 +
@@ -1219,7 +1220,8 @@
 +	struct ar231x_private *sp = netdev_priv(dev);
 +	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 +
-+	while (ethernet->mii_addr & MII_ADDR_BUSY);
++	while (ethernet->mii_addr & MII_ADDR_BUSY)
++		;
 +	ethernet->mii_data = value << MII_DATA_SHIFT;
 +	ethernet->mii_addr = MII_ADDR(phy_addr, regnum) | MII_ADDR_WRITE;
 +
