@@ -95,7 +95,7 @@
 +	ar231x_mask_reg(AR2315_PCI_MISC_CONFIG, AR2315_PCIMISC_CFG_SEL, 0);
 +	local_irq_restore(flags);
 +
-+	return (err ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL);
++	return err ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL;
 +}
 +
 +static int ar231x_pci_read(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 * value)
