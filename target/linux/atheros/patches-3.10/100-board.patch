@@ -1524,7 +1524,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,579 @@
+@@ -0,0 +1,580 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1975,7 +1975,7 @@
 +static int __init
 +ar5312_cpu_frequency(void)
 +{
-+	unsigned int result;
++	unsigned int scratch;
 +	unsigned int predivide_mask, predivide_shift;
 +	unsigned int multiplier_mask, multiplier_shift;
 +	unsigned int clock_ctl1, predivide_select, predivisor, multiplier;
@@ -1983,8 +1983,9 @@
 +	u16 devid;
 +
 +	/* Trust the bootrom's idea of cpu frequency. */
-+	if ((result = ar231x_read_reg(AR5312_SCRATCH)))
-+		return result;
++	scratch = ar231x_read_reg(AR5312_SCRATCH);
++	if (scratch)
++		return scratch;
 +
 +	devid = ar231x_read_reg(AR531X_REV);
 +	devid &= AR531X_REV_MAJ;
