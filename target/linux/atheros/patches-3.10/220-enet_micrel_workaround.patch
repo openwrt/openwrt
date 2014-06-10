@@ -4,7 +4,7 @@
  static int ar231x_mdiobus_reset(struct mii_bus *bus);
  static int ar231x_mdiobus_probe (struct net_device *dev);
  static void ar231x_adjust_link(struct net_device *dev);
-+static bool no_phy = false;
++static bool no_phy;
  
  #ifndef ERR
  #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)

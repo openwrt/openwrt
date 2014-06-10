@@ -2147,7 +2147,7 @@
 +#include "devices.h"
 +#include "ar2315.h"
 +
-+static u32 gpiointmask = 0, gpiointval = 0;
++static u32 gpiointmask, gpiointval;
 +
 +static inline void ar2315_gpio_irq(void)
 +{
