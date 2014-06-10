@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/watchdog/ar2315-wtd.c
-@@ -0,0 +1,199 @@
+@@ -0,0 +1,197 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -106,26 +106,24 @@
 +	int ret = -ENOIOCTLCMD;
 +
 +	switch (cmd) {
-+		case WDIOC_GETSUPPORT:
-+			ret = copy_to_user((struct watchdog_info __user *)arg, &ident, sizeof(ident)) ? -EFAULT : 0;
++	case WDIOC_GETSUPPORT:
++		ret = copy_to_user((void __user *)arg, &ident, sizeof(ident)) ?
++		      -EFAULT : 0;
++		break;
++	case WDIOC_KEEPALIVE:
++		ar2315_wdt_enable();
++		ret = 0;
++		break;
++	case WDIOC_SETTIMEOUT:
++		ret = get_user(new_wdt_timeout, (int __user *)arg);
++		if (ret)
 +			break;
-+
-+		case WDIOC_KEEPALIVE:
-+			ar2315_wdt_enable();
-+			ret = 0;
-+			break;
-+
-+		case WDIOC_SETTIMEOUT:
-+			ret = get_user(new_wdt_timeout, (int __user *)arg);
-+			if (ret)
-+				break;
-+			wdt_timeout = HEARTBEAT(new_wdt_timeout);
-+			ar2315_wdt_enable();
-+			break;
-+
-+		case WDIOC_GETTIMEOUT:
-+			ret = put_user(wdt_timeout, (int __user *)arg);
-+			break;
++		wdt_timeout = HEARTBEAT(new_wdt_timeout);
++		ar2315_wdt_enable();
++		break;
++	case WDIOC_GETTIMEOUT:
++		ret = put_user(wdt_timeout, (int __user *)arg);
++		break;
 +	}
 +	return ret;
 +}

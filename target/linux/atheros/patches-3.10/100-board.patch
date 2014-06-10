@@ -197,15 +197,15 @@
 +
 +	/* AR2316 relocates radio config to new location */
 +	if (!found) {
-+	    for (radio_config = board_config + 0xf8;
-+			(radio_config < flash_limit - 0x1000 + 0xf8);
-+			 radio_config += 0x1000) {
++		for (radio_config = board_config + 0xf8;
++		     (radio_config < flash_limit - 0x1000 + 0xf8);
++		     radio_config += 0x1000) {
 +			if ((*(u32 *)radio_config != 0xffffffff) &&
-+				check_radio_magic(radio_config)) {
++			    check_radio_magic(radio_config)) {
 +				found = 1;
 +				break;
 +			}
-+	    }
++		}
 +	}
 +
 +	if (!found) {
@@ -398,15 +398,15 @@
 + * address(es).
 + */
 +struct ar231x_boarddata {
-+    u32 magic;                       /* board data is valid */
++	u32 magic;                   /* board data is valid */
 +#define AR531X_BD_MAGIC 0x35333131   /* "5311", for all 531x platforms */
-+    u16 cksum;                       /* checksum (starting with BD_REV 2) */
-+    u16 rev;                         /* revision of this struct */
-+#define BD_REV  4
-+    char board_name[64];             /* Name of board */
-+    u16 major;                       /* Board major number */
-+    u16 minor;                       /* Board minor number */
-+    u32 flags;                      /* Board configuration */
++	u16 cksum;                   /* checksum (starting with BD_REV 2) */
++	u16 rev;                     /* revision of this struct */
++#define BD_REV 4
++	char board_name[64];         /* Name of board */
++	u16 major;                   /* Board major number */
++	u16 minor;                   /* Board minor number */
++	u32 flags;                   /* Board configuration */
 +#define BD_ENET0        0x00000001   /* ENET0 is stuffed */
 +#define BD_ENET1        0x00000002   /* ENET1 is stuffed */
 +#define BD_UART1        0x00000004   /* UART1 is stuffed */
@@ -425,22 +425,22 @@
 +#define BD_WLAN0_5G_EN  0x00008000   /* FLAG for radio0_2G */
 +#define BD_WLAN1_2G_EN  0x00020000   /* FLAG for radio0_2G */
 +#define BD_WLAN1_5G_EN  0x00040000   /* FLAG for radio0_2G */
-+    u16 reset_config_gpio;           /* Reset factory GPIO pin */
-+    u16 sys_led_gpio;                /* System LED GPIO pin */
++	u16 reset_config_gpio;       /* Reset factory GPIO pin */
++	u16 sys_led_gpio;            /* System LED GPIO pin */
 +
-+    u32 cpu_freq;                    /* CPU core frequency in Hz */
-+    u32 sys_freq;                    /* System frequency in Hz */
-+    u32 cnt_freq;                    /* Calculated C0_COUNT frequency */
++	u32 cpu_freq;                /* CPU core frequency in Hz */
++	u32 sys_freq;                /* System frequency in Hz */
++	u32 cnt_freq;                /* Calculated C0_COUNT frequency */
 +
-+    u8  wlan0_mac[6];
-+    u8  enet0_mac[6];
-+    u8  enet1_mac[6];
++	u8  wlan0_mac[6];
++	u8  enet0_mac[6];
++	u8  enet1_mac[6];
 +
-+    u16 pci_id;                      /* Pseudo PCIID for common code */
-+    u16 mem_cap;                     /* cap bank1 in MB */
++	u16 pci_id;                  /* Pseudo PCIID for common code */
++	u16 mem_cap;                 /* cap bank1 in MB */
 +
-+    /* version 3 */
-+    u8  wlan1_mac[6];                 /* (ar5212) */
++	/* version 3 */
++	u8  wlan1_mac[6];            /* (ar5212) */
 +};
 +
 +#define BOARD_CONFIG_BUFSZ		0x1000
@@ -932,10 +932,10 @@
 +#define AR2315_AHB_ERR3         (AR2315_DSLBASE + 0x005c)  /* hrdata */
 +#define AR2315_AHB_ERR4         (AR2315_DSLBASE + 0x0060)  /* status */
 +
-+#define AHB_ERROR_DET               1   /* AHB Error has been detected,          */
-+                                        /* write 1 to clear all bits in ERR0     */
-+#define AHB_ERROR_OVR               2   /* AHB Error overflow has been detected  */
-+#define AHB_ERROR_WDT               4   /* AHB Error due to wdt instead of hresp */
++#define AHB_ERROR_DET	1 /* AHB Error has been detected,          */
++			  /* write 1 to clear all bits in ERR0     */
++#define AHB_ERROR_OVR	2 /* AHB Error overflow has been detected  */
++#define AHB_ERROR_WDT	4 /* AHB Error due to wdt instead of hresp */
 +
 +#define AR2315_PROCERR_HMAST               0x0000000f
 +#define AR2315_PROCERR_HMAST_DFLT          0
@@ -1292,7 +1292,7 @@
 +#endif /* __AR2315_REG_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
-@@ -0,0 +1,232 @@
+@@ -0,0 +1,233 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1355,18 +1355,18 @@
 +/* Reset/Timer Block Address Map */
 +#define AR531X_RESETTMR		(AR531X_APBBASE  + 0x3000)
 +#define AR531X_TIMER		(AR531X_RESETTMR + 0x0000) /* countdown timer */
-+#define AR531X_WD_CTRL          (AR531X_RESETTMR + 0x0008) /* watchdog cntrl */
-+#define AR531X_WD_TIMER         (AR531X_RESETTMR + 0x000c) /* watchdog timer */
++#define AR531X_WD_CTRL		(AR531X_RESETTMR + 0x0008) /* watchdog cntrl */
++#define AR531X_WD_TIMER		(AR531X_RESETTMR + 0x000c) /* watchdog timer */
 +#define AR531X_ISR		(AR531X_RESETTMR + 0x0010) /* Intr Status Reg */
 +#define AR531X_IMR		(AR531X_RESETTMR + 0x0014) /* Intr Mask Reg */
 +#define AR531X_RESET		(AR531X_RESETTMR + 0x0020)
 +#define AR5312_CLOCKCTL1	(AR531X_RESETTMR + 0x0064)
-+#define AR5312_SCRATCH   	(AR531X_RESETTMR + 0x006c)
++#define AR5312_SCRATCH		(AR531X_RESETTMR + 0x006c)
 +#define AR531X_PROCADDR		(AR531X_RESETTMR + 0x0070)
 +#define AR531X_PROC1		(AR531X_RESETTMR + 0x0074)
 +#define AR531X_DMAADDR		(AR531X_RESETTMR + 0x0078)
 +#define AR531X_DMA1		(AR531X_RESETTMR + 0x007c)
-+#define AR531X_ENABLE           (AR531X_RESETTMR + 0x0080) /* interface enb */
++#define AR531X_ENABLE		(AR531X_RESETTMR + 0x0080) /* interface enb */
 +#define AR531X_REV		(AR531X_RESETTMR + 0x0090) /* revision */
 +
 +/* AR531X_WD_CTRL register bit field definitions */
@@ -1444,7 +1444,8 @@
 +#define AR531X_ENABLE_UART_AND_WLAN1_PIO 0x0008   /* UART, and WLAN1 PIOs */
 +#define AR531X_ENABLE_WLAN1_DMA          0x0010   /* WLAN1 DMAs */
 +#define AR531X_ENABLE_WLAN1 \
-+            (AR531X_ENABLE_UART_AND_WLAN1_PIO | AR531X_ENABLE_WLAN1_DMA)
++	(AR531X_ENABLE_UART_AND_WLAN1_PIO |\
++	 AR531X_ENABLE_WLAN1_DMA)
 +
 +/* AR531X_REV register bit field definitions */
 +#define AR531X_REV_WMAC_MAJ    0xf000
@@ -2080,8 +2081,8 @@
 +	memcfg = ar231x_read_reg(AR531X_MEM_CFG1);
 +	bank0AC = (memcfg & MEM_CFG1_AC0) >> MEM_CFG1_AC0_S;
 +	bank1AC = (memcfg & MEM_CFG1_AC1) >> MEM_CFG1_AC1_S;
-+	memsize = (bank0AC ? (1 << (bank0AC+1)) : 0)
-+	        + (bank1AC ? (1 << (bank1AC+1)) : 0);
++	memsize = (bank0AC ? (1 << (bank0AC+1)) : 0) +
++		  (bank1AC ? (1 << (bank1AC+1)) : 0);
 +	memsize <<= 20;
 +	add_memory_region(0, memsize, BOOT_MEM_RAM);
 +
@@ -2109,7 +2110,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,691 @@
+@@ -0,0 +1,693 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2259,23 +2260,23 @@
 +	imr = ar231x_read_reg(AR2315_IMR);
 +	switch(d->irq) {
 +	case AR531X_MISC_IRQ_SPI:
-+		 imr |= AR2315_ISR_SPI;
-+		 break;
++		imr |= AR2315_ISR_SPI;
++		break;
 +	case AR531X_MISC_IRQ_TIMER:
-+	     imr |= AR2315_ISR_TIMER;
-+	     break;
++		imr |= AR2315_ISR_TIMER;
++		break;
 +	case AR531X_MISC_IRQ_AHB_PROC:
-+	     imr |= AR2315_ISR_AHB;
-+	     break;
++		imr |= AR2315_ISR_AHB;
++		break;
 +	case AR531X_MISC_IRQ_GPIO:
-+	     imr |= AR2315_ISR_GPIO;
-+	     break;
++		imr |= AR2315_ISR_GPIO;
++		break;
 +	case AR531X_MISC_IRQ_UART0:
-+	     imr |= AR2315_ISR_UART0;
-+	     break;
++		imr |= AR2315_ISR_UART0;
++		break;
 +	case AR531X_MISC_IRQ_WATCHDOG:
-+	     imr |= AR2315_ISR_WD;
-+	     break;
++		imr |= AR2315_ISR_WD;
++		break;
 +	default:
 +		break;
 +	}
@@ -2290,23 +2291,23 @@
 +	imr = ar231x_read_reg(AR2315_IMR);
 +	switch(d->irq) {
 +	case AR531X_MISC_IRQ_SPI:
-+		 imr &= ~AR2315_ISR_SPI;
-+		 break;
++		imr &= ~AR2315_ISR_SPI;
++		break;
 +	case AR531X_MISC_IRQ_TIMER:
-+	     imr &= ~AR2315_ISR_TIMER;
-+	     break;
++		imr &= ~AR2315_ISR_TIMER;
++		break;
 +	case AR531X_MISC_IRQ_AHB_PROC:
-+	     imr &= ~AR2315_ISR_AHB;
-+	     break;
++		imr &= ~AR2315_ISR_AHB;
++		break;
 +	case AR531X_MISC_IRQ_GPIO:
-+	     imr &= ~AR2315_ISR_GPIO;
-+	     break;
++		imr &= ~AR2315_ISR_GPIO;
++		break;
 +	case AR531X_MISC_IRQ_UART0:
-+	     imr &= ~AR2315_ISR_UART0;
-+	     break;
++		imr &= ~AR2315_ISR_UART0;
++		break;
 +	case AR531X_MISC_IRQ_WATCHDOG:
-+	     imr &= ~AR2315_ISR_WD;
-+	     break;
++		imr &= ~AR2315_ISR_WD;
++		break;
 +	default:
 +		break;
 +	}
@@ -2320,13 +2321,13 @@
 +
 +static irqreturn_t ar2315_ahb_proc_handler(int cpl, void *dev_id)
 +{
-+    ar231x_write_reg(AR2315_AHB_ERR0, AHB_ERROR_DET);
-+    ar231x_read_reg(AR2315_AHB_ERR1);
++	ar231x_write_reg(AR2315_AHB_ERR0, AHB_ERROR_DET);
++	ar231x_read_reg(AR2315_AHB_ERR1);
 +
-+    pr_emerg("AHB fatal error\n");
-+    machine_restart("AHB error"); /* Catastrophic failure */
++	pr_emerg("AHB fatal error\n");
++	machine_restart("AHB error"); /* Catastrophic failure */
 +
-+    return IRQ_HANDLED;
++	return IRQ_HANDLED;
 +}
 +
 +static struct irqaction ar2315_ahb_proc_interrupt  = {
@@ -2560,22 +2561,22 @@
 +	u32 flash_size = 0;
 +
 +	/* probe the flash chip size */
-+	switch(spiflash_probe()) {
-+		case STM_8MBIT_SIGNATURE:
-+			flash_size = 0x00100000;
-+			break;
-+		case STM_16MBIT_SIGNATURE:
-+			flash_size = 0x00200000;
-+			break;
-+		case STM_32MBIT_SIGNATURE:
-+			flash_size = 0x00400000;
-+			break;
-+		case STM_64MBIT_SIGNATURE:
-+			flash_size = 0x00800000;
-+			break;
-+		case STM_128MBIT_SIGNATURE:
-+			flash_size = 0x01000000;
-+			break;
++	switch (spiflash_probe()) {
++	case STM_8MBIT_SIGNATURE:
++		flash_size = 0x00100000;
++		break;
++	case STM_16MBIT_SIGNATURE:
++		flash_size = 0x00200000;
++		break;
++	case STM_32MBIT_SIGNATURE:
++		flash_size = 0x00400000;
++		break;
++	case STM_64MBIT_SIGNATURE:
++		flash_size = 0x00800000;
++		break;
++	case STM_128MBIT_SIGNATURE:
++		flash_size = 0x01000000;
++		break;
 +	}
 +
 +	ar2315_spiflash_res[0].end = ar2315_spiflash_res[0].start +
@@ -2693,19 +2694,21 @@
 +	divby2 += 1;
 +	pllc_out = (40000000/refdiv)*(2*divby2)*fdiv;
 +
-+    /* clkm input selected */
++	/* clkm input selected */
 +	switch (clock_ctl & CPUCLK_CLK_SEL_M) {
-+		case 0:
-+		case 1:
-+			clk_div = pllc_divide_table[(pllc_ctrl & PLLC_CLKM_DIV_M) >> PLLC_CLKM_DIV_S];
-+			break;
-+		case 2:
-+			clk_div = pllc_divide_table[(pllc_ctrl & PLLC_CLKC_DIV_M) >> PLLC_CLKC_DIV_S];
-+			break;
-+		default:
-+			pllc_out = 40000000;
-+			clk_div = 1;
-+			break;
++	case 0:
++	case 1:
++		clk_div = pllc_divide_table[(pllc_ctrl & PLLC_CLKM_DIV_M) >>
++			  PLLC_CLKM_DIV_S];
++		break;
++	case 2:
++		clk_div = pllc_divide_table[(pllc_ctrl & PLLC_CLKC_DIV_M) >>
++			  PLLC_CLKC_DIV_S];
++		break;
++	default:
++		pllc_out = 40000000;
++		clk_div = 1;
++		break;
 +	}
 +
 +	cpu_div = (clock_ctl & CPUCLK_CLK_DIV_M) >> CPUCLK_CLK_DIV_S;
@@ -2717,13 +2720,13 @@
 +static inline unsigned int
 +ar2315_cpu_frequency(void)
 +{
-+    return ar2315_sys_clk(ar231x_read_reg(AR2315_CPUCLK));
++	return ar2315_sys_clk(ar231x_read_reg(AR2315_CPUCLK));
 +}
 +
 +static inline unsigned int
 +ar2315_apb_frequency(void)
 +{
-+    return ar2315_sys_clk(ar231x_read_reg(AR2315_AMBACLK));
++	return ar2315_sys_clk(ar231x_read_reg(AR2315_AMBACLK));
 +}
 +
 +void __init
@@ -2770,14 +2773,14 @@
 +
 +	/* Detect the hardware based on the device ID */
 +	devid = ar231x_read_reg(AR2315_SREV) & AR2315_REV_CHIP;
-+	switch(devid) {
-+		case 0x90:
-+		case 0x91:
-+			ar231x_devtype = DEV_TYPE_AR2317;
-+			break;
-+		default:
-+			ar231x_devtype = DEV_TYPE_AR2315;
-+			break;
++	switch (devid) {
++	case 0x90:
++	case 0x91:
++		ar231x_devtype = DEV_TYPE_AR2317;
++		break;
++	default:
++		ar231x_devtype = DEV_TYPE_AR2315;
++		break;
 +	}
 +	ar2315_gpio_init();
 +	ar231x_board.devid = devid;
