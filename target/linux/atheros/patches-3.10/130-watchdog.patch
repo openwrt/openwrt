@@ -44,8 +44,8 @@
 +#define HEARTBEAT(x) (x < 1 || x > 90 ? 20 : x)
 +
 +static int wdt_timeout = 20;
-+static int started = 0;
-+static int in_use = 0;
++static int started;
++static int in_use;
 +
 +static void
 +ar2315_wdt_enable(void)
