@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,515 @@
+@@ -0,0 +1,517 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -177,7 +177,7 @@
 +}
 +
 +static u32
-+spiflash_sendcmd (struct spiflash_priv *priv, int opcode, u32 addr)
++spiflash_sendcmd(struct spiflash_priv *priv, int opcode, u32 addr)
 +{
 +	const struct opcodes *op;
 +	u32 reg, mask;
@@ -224,7 +224,7 @@
 + * and flashconfig_tbl array index for success.
 + */
 +static int
-+spiflash_probe_chip (struct spiflash_priv *priv)
++spiflash_probe_chip(struct spiflash_priv *priv)
 +{
 +	u32 sig;
 +	int flash_size;
@@ -273,7 +273,7 @@
 +		schedule();
 +		remove_wait_queue(&priv->wq, &wait);
 +
-+		if(signal_pending(current))
++		if (signal_pending(current))
 +			return 0;
 +
 +		goto retry;
@@ -301,7 +301,7 @@
 +
 +
 +static int
-+spiflash_erase (struct mtd_info *mtd, struct erase_info *instr)
++spiflash_erase(struct mtd_info *mtd, struct erase_info *instr)
 +{
 +	struct spiflash_priv *priv = to_spiflash(mtd);
 +	const struct opcodes *op;
@@ -333,7 +333,8 @@
 +}
 +
 +static int
-+spiflash_read (struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
++spiflash_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
++	      u_char *buf)
 +{
 +	struct spiflash_priv *priv = to_spiflash(mtd);
 +	u8 *read_addr;
@@ -357,7 +358,8 @@
 +}
 +
 +static int
-+spiflash_write (struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u8 *buf)
++spiflash_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
++	       const u8 *buf)
 +{
 +	struct spiflash_priv *priv = to_spiflash(mtd);
 +	u32 opcode, bytes_left;
@@ -501,7 +503,7 @@
 +}
 +
 +static int
-+spiflash_remove (struct platform_device *pdev)
++spiflash_remove(struct platform_device *pdev)
 +{
 +	struct spiflash_priv *priv = platform_get_drvdata(pdev);
 +	struct mtd_info *mtd = &priv->mtd;
@@ -521,19 +523,19 @@
 +};
 +
 +int __init
-+spiflash_init (void)
++spiflash_init(void)
 +{
 +	return platform_driver_register(&spiflash_driver);
 +}
 +
 +void __exit
-+spiflash_exit (void)
++spiflash_exit(void)
 +{
 +	return platform_driver_unregister(&spiflash_driver);
 +}
 +
-+module_init (spiflash_init);
-+module_exit (spiflash_exit);
++module_init(spiflash_init);
++module_exit(spiflash_exit);
 +
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("OpenWrt.org, Atheros Communications Inc");

@@ -47,7 +47,7 @@
  	}
  #endif
  	for ( ; i<nrparts; i++) {
--		if(max_offset < buf[i].flash_base + buf[i].size)
+-		if (max_offset < buf[i].flash_base + buf[i].size)
 -			max_offset = buf[i].flash_base + buf[i].size;
  		parts[i].size = fl->img->size;
  		parts[i].offset = fl->img->flash_base;

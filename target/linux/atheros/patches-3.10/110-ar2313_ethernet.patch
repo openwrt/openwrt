@@ -49,8 +49,8 @@
 + * (at your option) any later version.
 + *
 + * Additional credits:
-+ * 	This code is taken from John Taylor's Sibyte driver and then
-+ * 	modified for the AR2313.
++ * This code is taken from John Taylor's Sibyte driver and then
++ * modified for the AR2313.
 + */
 +
 +#include <linux/module.h>
@@ -88,7 +88,7 @@
 +
 +
 +#ifndef min
-+#define min(a,b)	(((a)<(b))?(a):(b))
++#define min(a, b)	(((a) < (b)) ? (a) : (b))
 +#endif
 +
 +#ifndef SMP_CACHE_BYTES
@@ -179,7 +179,7 @@
 +static int ar231x_mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum);
 +static int ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value);
 +static int ar231x_mdiobus_reset(struct mii_bus *bus);
-+static int ar231x_mdiobus_probe (struct net_device *dev);
++static int ar231x_mdiobus_probe(struct net_device *dev);
 +static void ar231x_adjust_link(struct net_device *dev);
 +
 +#ifndef ERR
@@ -423,7 +423,7 @@
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
 +	if (sp->rx_ring != NULL) {
-+		kfree((void *) KSEG0ADDR(sp->rx_ring));
++		kfree((void *)KSEG0ADDR(sp->rx_ring));
 +		sp->rx_ring = NULL;
 +		sp->tx_ring = NULL;
 +	}
@@ -452,9 +452,9 @@
 +	dma_cache_inv((unsigned int) space, size);
 +
 +	/* now convert pointer to KSEG1 */
-+	space = (ar231x_descr_t *) KSEG1ADDR(space);
++	space = (ar231x_descr_t *)KSEG1ADDR(space);
 +
-+	memset((void *) space, 0, size);
++	memset((void *)space, 0, size);
 +
 +	sp->rx_ring = space;
 +	space += AR2313_DESCR_ENTRIES;
@@ -490,9 +490,9 @@
 +	ar231x_free_descriptors(dev);
 +
 +	if (sp->eth_regs)
-+		iounmap((void *) sp->eth_regs);
++		iounmap((void *)sp->eth_regs);
 +	if (sp->dma_regs)
-+		iounmap((void *) sp->dma_regs);
++		iounmap((void *)sp->dma_regs);
 +
 +	if (sp->rx_skb) {
 +		for (j = 0; j < AR2313_DESCR_ENTRIES; j++) {
@@ -535,7 +535,7 @@
 +
 +static void ar231x_link_timer_fn(unsigned long data)
 +{
-+	struct net_device *dev = (struct net_device *) data;
++	struct net_device *dev = (struct net_device *)data;
 +	struct ar231x_private *sp = netdev_priv(dev);
 +
 +	/**
@@ -781,7 +781,7 @@
 +		skb->dev = dev;
 +		sp->rx_skb[idx] = skb;
 +
-+		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
++		rd = (ar231x_descr_t *)&sp->rx_ring[idx];
 +
 +		/* initialize dma descriptor */
 +		rd->devcs = ((AR2313_BUFSIZE << DMA_RX1_BSIZE_SHIFT) |
@@ -942,7 +942,7 @@
 +
 +static void rx_tasklet_func(unsigned long data)
 +{
-+	struct net_device *dev = (struct net_device *) data;
++	struct net_device *dev = (struct net_device *)data;
 +	struct ar231x_private *sp = netdev_priv(dev);
 +
 +	if (sp->unloading)
@@ -969,7 +969,7 @@
 +
 +static irqreturn_t ar231x_interrupt(int irq, void *dev_id)
 +{
-+	struct net_device *dev = (struct net_device *) dev_id;
++	struct net_device *dev = (struct net_device *)dev_id;
 +	struct ar231x_private *sp = netdev_priv(dev);
 +	unsigned int status, enabled;
 +
@@ -1149,7 +1149,7 @@
 +	switch (cmd) {
 +	case SIOCETHTOOL:
 +		spin_lock_irq(&sp->lock);
-+		ret = phy_ethtool_ioctl(sp->phy_dev, (void *) ifr->ifr_data);
++		ret = phy_ethtool_ioctl(sp->phy_dev, (void *)ifr->ifr_data);
 +		spin_unlock_irq(&sp->lock);
 +		return ret;
 +
@@ -1235,7 +1235,7 @@
 +	return 0;
 +}
 +
-+static int ar231x_mdiobus_probe (struct net_device *dev)
++static int ar231x_mdiobus_probe(struct net_device *dev)
 +{
 +	struct ar231x_private *const sp = netdev_priv(dev);
 +	struct phy_device *phydev = NULL;
@@ -1250,7 +1250,7 @@
 +		}
 +
 +	if (!phydev) {
-+		printk (KERN_ERR "ar231x: %s: no PHY found\n", dev->name);
++		printk(KERN_ERR "ar231x: %s: no PHY found\n", dev->name);
 +		return -1;
 +	}
 +
