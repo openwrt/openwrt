@@ -32,7 +32,7 @@
 +obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1265 @@
+@@ -0,0 +1,1266 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -905,8 +905,9 @@
 +
 +	while (idx != sp->tx_prd) {
 +		txdesc = &sp->tx_ring[idx];
++		status = txdesc->status;
 +
-+		if ((status = txdesc->status) & DMA_TX_OWN) {
++		if (status & DMA_TX_OWN) {
 +			/* ar231x dma still owns descr */
 +			break;
 +		}

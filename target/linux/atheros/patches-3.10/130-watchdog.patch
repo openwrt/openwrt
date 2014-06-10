@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/watchdog/ar2315-wtd.c
-@@ -0,0 +1,199 @@
+@@ -0,0 +1,200 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -117,7 +117,8 @@
 +			break;
 +
 +		case WDIOC_SETTIMEOUT:
-+			if((ret = get_user(new_wdt_timeout, (int __user *)arg)))
++			ret = get_user(new_wdt_timeout, (int __user *)arg);
++			if (ret)
 +				break;
 +			wdt_timeout = HEARTBEAT(new_wdt_timeout);
 +			ar2315_wdt_enable();
