@@ -7,7 +7,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
 --- /dev/null
 +++ b/arch/mips/ar231x/pci.c
-@@ -0,0 +1,228 @@
+@@ -0,0 +1,229 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -71,18 +71,18 @@
 +	if (write) {
 +		value = *ptr;
 +		if (size == 1)
-+			err = put_dbe(value, (u8 *) addr);
++			err = put_dbe(value, (u8 *)addr);
 +		else if (size == 2)
-+			err = put_dbe(value, (u16 *) addr);
++			err = put_dbe(value, (u16 *)addr);
 +		else if (size == 4)
-+			err = put_dbe(value, (u32 *) addr);
++			err = put_dbe(value, (u32 *)addr);
 +	} else {
 +		if (size == 1)
-+			err = get_dbe(value, (u8 *) addr);
++			err = get_dbe(value, (u8 *)addr);
 +		else if (size == 2)
-+			err = get_dbe(value, (u16 *) addr);
++			err = get_dbe(value, (u16 *)addr);
 +		else if (size == 4)
-+			err = get_dbe(value, (u32 *) addr);
++			err = get_dbe(value, (u32 *)addr);
 +		if (err)
 +			*ptr = 0xffffffff;
 +		else
@@ -96,7 +96,8 @@
 +	return err ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL;
 +}
 +
-+static int ar231x_pci_read(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 * value)
++static int ar231x_pci_read(struct pci_bus *bus, unsigned int devfn, int where,
++			   int size, u32 *value)
 +{
 +	return config_access(devfn, where, size, value, 0);
 +}

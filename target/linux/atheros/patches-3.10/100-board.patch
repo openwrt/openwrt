@@ -213,7 +213,7 @@
 +		radio_config = 0;
 +	}
 +
-+	return (u8 *) radio_config;
++	return radio_config;
 +}
 +
 +int __init
@@ -248,7 +248,7 @@
 +	}
 +
 +	board_data = kzalloc(BOARD_CONFIG_BUFSZ, GFP_KERNEL);
-+	ar231x_board.config = (struct ar231x_boarddata *) board_data;
++	ar231x_board.config = (struct ar231x_boarddata *)board_data;
 +	memcpy(board_data, bcfg, 0x100);
 +	if (broken_boarddata) {
 +		pr_warn("WARNING: broken board data detected\n");
@@ -269,7 +269,7 @@
 +	 * of what the physical layout on the flash chip looks like */
 +
 +	if (ar231x_board.radio)
-+		rcfg = (u8 *) ar231x_board.radio;
++		rcfg = (u8 *)ar231x_board.radio;
 +	else
 +		rcfg = find_radio_config(flash_limit, bcfg);
 +
@@ -1818,13 +1818,13 @@
 +
 +static const struct gpio_led_platform_data ar5312_led_data = {
 +	.num_leds = ARRAY_SIZE(ar5312_leds),
-+	.leds = (void *) ar5312_leds,
++	.leds = (void *)ar5312_leds,
 +};
 +
 +static struct platform_device ar5312_gpio_leds = {
 +	.name = "leds-gpio",
 +	.id = -1,
-+	.dev.platform_data = (void *) &ar5312_led_data,
++	.dev.platform_data = (void *)&ar5312_led_data,
 +};
 +#endif
 +
@@ -1857,7 +1857,7 @@
 +	ar231x_write_reg(AR531X_FLASHCTL2,
 +		ar231x_read_reg(AR531X_FLASHCTL2) & ~(FLASHCTL_E | FLASHCTL_AC));
 +
-+	return (char *) KSEG1ADDR(AR531X_FLASH + 0x800000);
++	return (char *)KSEG1ADDR(AR531X_FLASH + 0x800000);
 +}
 +
 +int __init ar5312_init_devices(void)
@@ -1916,7 +1916,7 @@
 +			c--;
 +	}
 +
-+	switch(ar231x_devtype) {
++	switch (ar231x_devtype) {
 +	case DEV_TYPE_AR5312:
 +		ar5312_eth0_data.macaddr = config->enet0_mac;
 +		ar231x_add_ethernet(0, KSEG1ADDR(AR531X_ENET0),
@@ -2258,7 +2258,7 @@
 +	unsigned int imr;
 +
 +	imr = ar231x_read_reg(AR2315_IMR);
-+	switch(d->irq) {
++	switch (d->irq) {
 +	case AR531X_MISC_IRQ_SPI:
 +		imr |= AR2315_ISR_SPI;
 +		break;
@@ -2289,7 +2289,7 @@
 +	unsigned int imr;
 +
 +	imr = ar231x_read_reg(AR2315_IMR);
-+	switch(d->irq) {
++	switch (d->irq) {
 +	case AR531X_MISC_IRQ_SPI:
 +		imr &= ~AR2315_ISR_SPI;
 +		break;
@@ -2581,20 +2581,20 @@
 +
 +	ar2315_spiflash_res[0].end = ar2315_spiflash_res[0].start +
 +		flash_size - 1;
-+	return (u8 *) ar2315_spiflash_res[0].end + 1;
++	return (u8 *)ar2315_spiflash_res[0].end + 1;
 +}
 +
 +#ifdef CONFIG_LEDS_GPIO
 +static struct gpio_led ar2315_leds[6];
 +static struct gpio_led_platform_data ar2315_led_data = {
-+	.leds = (void *) ar2315_leds,
++	.leds = (void *)ar2315_leds,
 +};
 +
 +static struct platform_device ar2315_gpio_leds = {
 +	.name = "leds-gpio",
 +	.id = -1,
 +	.dev = {
-+		.platform_data = (void *) &ar2315_led_data,
++		.platform_data = (void *)&ar2315_led_data,
 +	}
 +};
 +
@@ -2606,8 +2606,8 @@
 +
 +	ar2315_led_data.num_leds = 0;
 +	for (i = 1; i < 8; i++) {
-+		if((i == AR2315_RESET_GPIO) ||
-+		   (i == ar231x_board.config->reset_config_gpio))
++		if ((i == AR2315_RESET_GPIO) ||
++		    (i == ar231x_board.config->reset_config_gpio))
 +			continue;
 +
 +		if (i == ar231x_board.config->sys_led_gpio)
@@ -2652,12 +2652,12 @@
 +static void
 +ar2315_restart(char *command)
 +{
-+	void (*mips_reset_vec)(void) = (void *) 0xbfc00000;
++	void (*mips_reset_vec)(void) = (void *)0xbfc00000;
 +
 +	local_irq_disable();
 +
 +	/* try reset the system via reset control */
-+	ar231x_write_reg(AR2315_COLD_RESET,AR2317_RESET_SYSTEM);
++	ar231x_write_reg(AR2315_COLD_RESET, AR2317_RESET_SYSTEM);
 +
 +	/* Cold reset does not work on the AR2315/6, use the GPIO reset bits a workaround.
 +	 * give it some time to attempt a gpio based hardware reset
@@ -2797,7 +2797,7 @@
 +	/* Clear any lingering AHB errors */
 +	config = read_c0_config();
 +	write_c0_config(config & ~0x3);
-+	ar231x_write_reg(AR2315_AHB_ERR0,AHB_ERROR_DET);
++	ar231x_write_reg(AR2315_AHB_ERR0, AHB_ERROR_DET);
 +	ar231x_read_reg(AR2315_AHB_ERR1);
 +	ar231x_write_reg(AR2315_WDC, AR2315_WDC_IGNORE_EXPIRATION);
 +
@@ -2922,13 +2922,13 @@
 +static inline u32
 +ar231x_read_reg(u32 reg)
 +{
-+	return __raw_readl((u32 *) KSEG1ADDR(reg));
++	return __raw_readl((u32 *)KSEG1ADDR(reg));
 +}
 +
 +static inline void
 +ar231x_write_reg(u32 reg, u32 val)
 +{
-+	__raw_writel(val, (u32 *) KSEG1ADDR(reg));
++	__raw_writel(val, (u32 *)KSEG1ADDR(reg));
 +}
 +
 +static inline u32

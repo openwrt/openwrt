@@ -56,7 +56,7 @@
 +static ssize_t
 +ar2315_wdt_write(struct file *file, const char __user *data, size_t len, loff_t *ppos)
 +{
-+	if(len)
++	if (len)
 +		ar2315_wdt_enable();
 +	return len;
 +}
@@ -64,7 +64,7 @@
 +static int
 +ar2315_wdt_open(struct inode *inode, struct file *file)
 +{
-+	if(in_use)
++	if (in_use)
 +		return -EBUSY;
 +	ar2315_wdt_enable();
 +	in_use = started = 1;
@@ -157,7 +157,7 @@
 +	}
 +
 +	ret = misc_register(&ar2315_wdt_miscdev);
-+	if(ret)
++	if (ret)
 +		dev_err(&dev->dev, "failed to register miscdev\n");
 +
 +out:
@@ -185,7 +185,7 @@
 +init_ar2315_wdt(void)
 +{
 +	int ret = platform_driver_register(&ar2315_wdt_driver);
-+	if(ret)
++	if (ret)
 +		pr_err("ar2315_wdt: error registering platfom driver!\n");
 +	return ret;
 +}
