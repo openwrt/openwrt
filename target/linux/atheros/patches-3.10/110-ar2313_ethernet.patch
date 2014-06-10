@@ -32,7 +32,7 @@
 +obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1257 @@
+@@ -0,0 +1,1254 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -159,7 +159,8 @@
 +#define VLAN_HDR                0
 +#endif
 +
-+#define AR2313_BUFSIZE		(AR2313_MTU + VLAN_HDR + ETH_HLEN + CRC_LEN + RX_OFFSET)
++#define AR2313_BUFSIZE		(AR2313_MTU + VLAN_HDR + ETH_HLEN + CRC_LEN + \
++				 RX_OFFSET)
 +
 +#ifdef MODULE
 +MODULE_LICENSE("GPL");
@@ -177,7 +178,8 @@
 +static void ar231x_tx_timeout(struct net_device *dev);
 +
 +static int ar231x_mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum);
-+static int ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value);
++static int ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum,
++				u16 value);
 +static int ar231x_mdiobus_reset(struct mii_bus *bus);
 +static int ar231x_mdiobus_probe(struct net_device *dev);
 +static void ar231x_adjust_link(struct net_device *dev);
@@ -254,8 +256,8 @@
 +	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long) dev);
 +	tasklet_disable(&sp->rx_tasklet);
 +
-+	sp->eth_regs =
-+		ioremap_nocache(virt_to_phys(ar_eth_base), sizeof(*sp->eth_regs));
++	sp->eth_regs = ioremap_nocache(virt_to_phys(ar_eth_base),
++				       sizeof(*sp->eth_regs));
 +	if (!sp->eth_regs) {
 +		printk("Can't remap eth registers\n");
 +		return -ENXIO;
@@ -308,10 +310,8 @@
 +		return -1;
 +	}
 +
-+	printk("%s: %s: %02x:%02x:%02x:%02x:%02x:%02x, irq %d\n",
-+		   dev->name, sp->name,
-+		   dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
-+		   dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5], dev->irq);
++	printk("%s: %s: %pM, irq %d\n", dev->name, sp->name, dev->dev_addr,
++	       dev->irq);
 +
 +	sp->mii_bus = mdiobus_alloc();
 +	if (sp->mii_bus == NULL)
@@ -442,8 +442,7 @@
 +		return 0;
 +	}
 +
-+	size =
-+		(sizeof(ar231x_descr_t) * (AR2313_DESCR_ENTRIES * AR2313_QUEUES));
++	size = sizeof(ar231x_descr_t) * (AR2313_DESCR_ENTRIES * AR2313_QUEUES);
 +	space = kmalloc(size, GFP_KERNEL);
 +	if (space == NULL)
 +		return 1;
@@ -468,9 +467,7 @@
 +		td->status = 0;
 +		td->devcs = DMA_TX1_CHAINED;
 +		td->addr = 0;
-+		td->descr =
-+			virt_to_phys(&sp->
-+						 tx_ring[(j + 1) & (AR2313_DESCR_ENTRIES - 1)]);
++		td->descr = virt_to_phys(&sp->tx_ring[DSC_NEXT(j)]);
 +	}
 +
 +	return 0;
@@ -571,11 +568,14 @@
 +			u16 reg;
 +
 +			sp->link = 1;
-+			reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_BMCR);
++			reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy,
++						  MII_BMCR);
 +			if (reg & BMCR_ANENABLE) {
 +				/* auto neg enabled */
-+				reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_LPA);
-+				duplex = (reg & (LPA_100FULL | LPA_10FULL)) ? 1 : 0;
++				reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy,
++							  MII_LPA);
++				duplex = reg & (LPA_100FULL | LPA_10FULL) ?
++					 1 : 0;
 +			} else {
 +				/* no auto neg, just read duplex config */
 +				duplex = (reg & BMCR_FULLDPLX) ? 1 : 0;
@@ -587,13 +587,13 @@
 +			if (duplex) {
 +				/* full duplex */
 +				sp->eth_regs->mac_control =
-+					((sp->eth_regs->
-+					  mac_control | MAC_CONTROL_F) & ~MAC_CONTROL_DRO);
++					(sp->eth_regs->mac_control |
++					 MAC_CONTROL_F) & ~MAC_CONTROL_DRO;
 +			} else {
 +				/* half duplex */
 +				sp->eth_regs->mac_control =
-+					((sp->eth_regs->
-+					  mac_control | MAC_CONTROL_DRO) & ~MAC_CONTROL_F);
++					(sp->eth_regs->mac_control |
++					 MAC_CONTROL_DRO) & ~MAC_CONTROL_F;
 +			}
 +		} else {
 +			/* no link */
@@ -624,10 +624,9 @@
 +		((32 << DMA_BUS_MODE_PBL_SHIFT) | DMA_BUS_MODE_BLE);
 +
 +	/* enable interrupts */
-+	sp->dma_regs->intr_ena = (DMA_STATUS_AIS |
-+							  DMA_STATUS_NIS |
-+							  DMA_STATUS_RI |
-+							  DMA_STATUS_TI | DMA_STATUS_FBE);
++	sp->dma_regs->intr_ena = DMA_STATUS_AIS | DMA_STATUS_NIS |
++				 DMA_STATUS_RI | DMA_STATUS_TI |
++				 DMA_STATUS_FBE;
 +	sp->dma_regs->xmt_base = virt_to_phys(sp->tx_ring);
 +	sp->dma_regs->rcv_base = virt_to_phys(sp->rx_ring);
 +	sp->dma_regs->control =
@@ -648,13 +647,13 @@
 +	sp->eth_regs->mac_control = flags;
 +
 +	/* Set all Ethernet station address registers to their initial values */
-+	ethsah = ((((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
-+			  (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF));
++	ethsah = (((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
++		 (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF);
 +
-+	ethsal = ((((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
-+			  (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
-+			  (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
-+			  (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF));
++	ethsal = (((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
++		 (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
++		 (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
++		 (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF);
 +
 +	sp->eth_regs->mac_addr[0] = ethsah;
 +	sp->eth_regs->mac_addr[1] = ethsal;
@@ -787,9 +786,7 @@
 +		rd->devcs = ((AR2313_BUFSIZE << DMA_RX1_BSIZE_SHIFT) |
 +					 DMA_RX1_CHAINED);
 +		rd->addr = virt_to_phys(skb->data);
-+		rd->descr =
-+			virt_to_phys(&sp->
-+						 rx_ring[(idx + 1) & (AR2313_DESCR_ENTRIES - 1)]);
++		rd->descr = virt_to_phys(&sp->rx_ring[DSC_NEXT(idx)]);
 +		rd->status = DMA_RX_OWN;
 +
 +		idx = DSC_NEXT(idx);
@@ -849,12 +846,13 @@
 +
 +		} else {
 +			/* alloc new buffer. */
-+			skb_new = netdev_alloc_skb_ip_align(dev, AR2313_BUFSIZE);
++			skb_new = netdev_alloc_skb_ip_align(dev,
++							    AR2313_BUFSIZE);
 +			if (skb_new != NULL) {
 +				skb = sp->rx_skb[idx];
 +				/* set skb */
-+				skb_put(skb,
-+						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
++				skb_put(skb, ((status >> DMA_RX_LEN_SHIFT) &
++					0x3fff) - CRC_LEN);
 +
 +				dev->stats.rx_bytes += skb->len;
 +				skb->protocol = eth_type_trans(skb, dev);
@@ -905,8 +903,8 @@
 +		}
 +		/* done with this descriptor */
 +		dma_unmap_single(NULL, txdesc->addr,
-+						 txdesc->devcs & DMA_TX1_BSIZE_MASK,
-+						 DMA_TO_DEVICE);
++				 txdesc->devcs & DMA_TX1_BSIZE_MASK,
++				 DMA_TO_DEVICE);
 +		txdesc->status = 0;
 +
 +		if (status & DMA_TX_ERROR) {
@@ -918,9 +916,8 @@
 +				dev->stats.tx_heartbeat_errors++;
 +			if (status & (DMA_TX_ERR_LOSS | DMA_TX_ERR_LINK))
 +				dev->stats.tx_carrier_errors++;
-+			if (status & (DMA_TX_ERR_LATE |
-+						  DMA_TX_ERR_COL |
-+						  DMA_TX_ERR_JABBER | DMA_TX_ERR_DEFER))
++			if (status & (DMA_TX_ERR_LATE | DMA_TX_ERR_COL |
++			    DMA_TX_ERR_JABBER | DMA_TX_ERR_DEFER))
 +				dev->stats.tx_aborted_errors++;
 +		} else {
 +			/* transmit OK */
@@ -1009,13 +1006,13 @@
 +	unsigned int ethsal, ethsah;
 +
 +	/* reset the hardware, in case the MAC address changed */
-+	ethsah = ((((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
-+			  (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF));
++	ethsah = (((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
++		 (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF);
 +
-+	ethsal = ((((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
-+			  (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
-+			  (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
-+			  (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF));
++	ethsal = (((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
++		 (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
++		 (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
++		 (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF);
 +
 +	sp->eth_regs->mac_addr[0] = ethsah;
 +	sp->eth_regs->mac_addr[1] = ethsal;
@@ -1049,7 +1046,7 @@
 +
 +	/* kill the MAC */
 +	sp->eth_regs->mac_control &= ~(MAC_CONTROL_RE |	/* disable Receives */
-+								   MAC_CONTROL_TE);	/* disable Transmits */
++				       MAC_CONTROL_TE);	/* disable Transmits */
 +	/* stop dma */
 +	sp->dma_regs->control = 0;
 +	sp->dma_regs->bus_mode = DMA_BUS_MODE_SWR;
@@ -1260,8 +1257,8 @@
 +	BUG_ON(!phydev);
 +	BUG_ON(phydev->attached_dev);
 +
-+	phydev = phy_connect(dev, dev_name(&phydev->dev), &ar231x_adjust_link, 0,
-+		PHY_INTERFACE_MODE_MII);
++	phydev = phy_connect(dev, dev_name(&phydev->dev), &ar231x_adjust_link,
++			     0, PHY_INTERFACE_MODE_MII);
 +
 +	if (IS_ERR(phydev)) {
 +		printk(KERN_ERR "%s: Could not attach to PHY\n", dev->name);
@@ -1400,13 +1397,13 @@
 +#define MAC_CONTROL_HO		BIT(15)	/* Hash only filtering */
 +#define MAC_CONTROL_PB		BIT(16)	/* Pass Bad frames */
 +#define MAC_CONTROL_IF		BIT(17)	/* Inverse filtering */
-+#define MAC_CONTROL_PR		BIT(18)	/* promiscuous mode (valid frames only) */
++#define MAC_CONTROL_PR		BIT(18)	/* promis mode (valid frames only) */
 +#define MAC_CONTROL_PM		BIT(19)	/* pass multicast */
 +#define MAC_CONTROL_F		BIT(20)	/* full-duplex */
 +#define MAC_CONTROL_DRO		BIT(23)	/* Disable Receive Own */
 +#define MAC_CONTROL_HBD		BIT(28)	/* heart-beat disabled (MUST BE SET) */
 +#define MAC_CONTROL_BLE		BIT(30)	/* big endian mode */
-+#define MAC_CONTROL_RA		BIT(31)	/* receive all (valid and invalid frames) */
++#define MAC_CONTROL_RA		BIT(31)	/* rcv all (valid and invalid frames) */
 +
 +#define MII_ADDR_BUSY		BIT(0)
 +#define MII_ADDR_WRITE		BIT(1)
@@ -1549,7 +1546,7 @@
 +
 +
 +	struct timer_list link_timer;
-+	unsigned short phy;			/* merlot phy = 1, samsung phy = 0x1f */
++	unsigned short phy;		/* merlot phy = 1, samsung phy = 0x1f */
 +	unsigned short mac;
 +	unsigned short link;		/* 0 - link down, 1 - link up */
 +	u16 phy_data;

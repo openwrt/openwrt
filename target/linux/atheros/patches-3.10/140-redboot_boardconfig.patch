@@ -17,12 +17,13 @@
  	int nrparts = 0;
  	struct fis_image_desc *buf;
  	struct mtd_partition *parts;
-@@ -225,14 +228,14 @@ static int parse_redboot_partitions(stru
+@@ -225,14 +228,15 @@ static int parse_redboot_partitions(stru
  		}
  	}
  #endif
 -	parts = kzalloc(sizeof(*parts)*nrparts + nulllen + namelen, GFP_KERNEL);
-+	parts = kzalloc(sizeof(*parts) * (nrparts + 1) + nulllen + namelen + sizeof(BOARD_CONFIG_PART), GFP_KERNEL);
++	parts = kzalloc(sizeof(*parts) * (nrparts + 1) + nulllen + namelen +
++			sizeof(BOARD_CONFIG_PART), GFP_KERNEL);
  
  	if (!parts) {
  		ret = -ENOMEM;
@@ -34,7 +35,7 @@
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	if (nulllen > 0) {
  		strcpy(nullname, nullstring);
-@@ -251,6 +254,8 @@ static int parse_redboot_partitions(stru
+@@ -251,6 +255,8 @@ static int parse_redboot_partitions(stru
  	}
  #endif
  	for ( ; i<nrparts; i++) {
@@ -43,7 +44,7 @@
  		parts[i].size = fl->img->size;
  		parts[i].offset = fl->img->flash_base;
  		parts[i].name = names;
-@@ -284,6 +289,13 @@ static int parse_redboot_partitions(stru
+@@ -284,6 +290,13 @@ static int parse_redboot_partitions(stru
  		fl = fl->next;
  		kfree(tmp_fl);
  	}

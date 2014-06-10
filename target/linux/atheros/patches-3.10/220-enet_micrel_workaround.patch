@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/ar231x/ar231x.c
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -146,6 +146,7 @@ static int ar231x_mdiobus_write(struct m
+@@ -148,6 +148,7 @@ static int ar231x_mdiobus_write(struct m
  static int ar231x_mdiobus_reset(struct mii_bus *bus);
  static int ar231x_mdiobus_probe(struct net_device *dev);
  static void ar231x_adjust_link(struct net_device *dev);
@@ -8,7 +8,7 @@
  
  #ifndef ERR
  #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
-@@ -178,6 +179,32 @@ static const struct net_device_ops ar231
+@@ -180,6 +181,32 @@ static const struct net_device_ops ar231
  #endif
  };
  
@@ -78,7 +78,7 @@
  	kfree(dev);
  	return 0;
  }
-@@ -1111,6 +1157,9 @@ static int ar231x_ioctl(struct net_devic
+@@ -1108,6 +1154,9 @@ static int ar231x_ioctl(struct net_devic
  	struct ar231x_private *sp = netdev_priv(dev);
  	int ret;
  

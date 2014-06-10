@@ -35,7 +35,7 @@
  	if (i == numslots) {
  		/* Didn't find it */
 +		if (offset + master->erasesize < master->size) {
-+			/* not at the end of the flash yet, maybe next block :) */
++			/* not at the end of the flash yet, maybe next block */
 +			directory++;
 +			goto restart;
 +		}
