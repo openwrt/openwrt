@@ -32,7 +32,7 @@
 +obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1256 @@
+@@ -0,0 +1,1255 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -190,23 +190,23 @@
 +static void
 +ar231x_netpoll(struct net_device *dev)
 +{
-+      unsigned long flags;
++	unsigned long flags;
 +
-+      local_irq_save(flags);
-+      ar231x_interrupt(dev->irq, dev);
-+      local_irq_restore(flags);
++	local_irq_save(flags);
++	ar231x_interrupt(dev->irq, dev);
++	local_irq_restore(flags);
 +}
 +#endif
 +
 +static const struct net_device_ops ar231x_ops = {
-+	.ndo_open 		= ar231x_open,
-+	.ndo_stop 		= ar231x_close,
-+	.ndo_start_xmit 	= ar231x_start_xmit,
-+	.ndo_set_rx_mode	 = ar231x_multicast_list,
-+	.ndo_do_ioctl 		= ar231x_ioctl,
-+	.ndo_change_mtu 	= eth_change_mtu,
++	.ndo_open		= ar231x_open,
++	.ndo_stop		= ar231x_close,
++	.ndo_start_xmit		= ar231x_start_xmit,
++	.ndo_set_rx_mode	= ar231x_multicast_list,
++	.ndo_do_ioctl		= ar231x_ioctl,
++	.ndo_change_mtu		= eth_change_mtu,
 +	.ndo_validate_addr	= eth_validate_addr,
-+	.ndo_set_mac_address 	= eth_mac_addr,
++	.ndo_set_mac_address	= eth_mac_addr,
 +	.ndo_tx_timeout		= ar231x_tx_timeout,
 +#ifdef CONFIG_NET_POLL_CONTROLLER
 +	.ndo_poll_controller	= ar231x_netpoll,
@@ -744,7 +744,7 @@
 +
 +	return 0;
 +
-+  init_error:
++init_error:
 +	ar231x_init_cleanup(dev);
 +	return ecode;
 +}
@@ -1213,8 +1213,7 @@
 +}
 +
 +static int
-+ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum,
-+             u16 value)
++ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value)
 +{
 +	struct net_device *const dev = bus->priv;
 +	struct ar231x_private *sp = netdev_priv(dev);

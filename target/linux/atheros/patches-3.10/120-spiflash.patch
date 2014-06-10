@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,514 @@
+@@ -0,0 +1,515 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -114,10 +114,11 @@
 +};
 +
 +struct opcodes {
-+    __u16 code;
-+    __s8 tx_cnt;
-+    __s8 rx_cnt;
++	__u16 code;
++	__s8 tx_cnt;
++	__s8 rx_cnt;
 +};
++
 +const struct opcodes stm_opcodes[] = {
 +	[SPI_WRITE_ENABLE] = {STM_OP_WR_ENABLE, 1, 0},
 +	[SPI_WRITE_DISABLE] = {STM_OP_WR_DISABLE, 1, 0},
