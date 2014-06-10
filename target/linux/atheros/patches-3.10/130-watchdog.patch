@@ -41,7 +41,7 @@
 +#include <ar231x.h>
 +
 +#define CLOCK_RATE 40000000
-+#define HEARTBEAT(x) (x < 1 || x > 90)?(20):(x)
++#define HEARTBEAT(x) (x < 1 || x > 90 ? 20 : x)
 +
 +static int wdt_timeout = 20;
 +static int started = 0;
