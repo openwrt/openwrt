@@ -661,7 +661,7 @@
 +
 +/* Returns gpio for IRQ attached.  Unchecked function */
 +static inline int irq_to_gpio(unsigned irq) {
-+	return (irq - (AR531X_GPIO_IRQ(0)));
++	return irq - AR531X_GPIO_IRQ(0);
 +}
 +
 +#include <asm-generic/gpio.h> /* cansleep wrappers */

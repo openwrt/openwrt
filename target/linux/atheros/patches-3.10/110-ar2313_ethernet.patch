@@ -262,7 +262,7 @@
 +		ioremap_nocache(virt_to_phys(ar_eth_base), sizeof(*sp->eth_regs));
 +	if (!sp->eth_regs) {
 +		printk("Can't remap eth registers\n");
-+		return (-ENXIO);
++		return -ENXIO;
 +	}
 +
 +	/**
@@ -278,7 +278,7 @@
 +							sizeof(*sp->phy_regs));
 +		if (!sp->phy_regs) {
 +			printk("Can't remap phy registers\n");
-+			return (-ENXIO);
++			return -ENXIO;
 +		}
 +	}
 +
@@ -288,13 +288,13 @@
 +	dev->base_addr = (unsigned int) sp->dma_regs;
 +	if (!sp->dma_regs) {
 +		printk("Can't remap DMA registers\n");
-+		return (-ENXIO);
++		return -ENXIO;
 +	}
 +
 +	sp->int_regs = ioremap_nocache(virt_to_phys(sp->cfg->reset_base), 4);
 +	if (!sp->int_regs) {
 +		printk("Can't remap INTERRUPT registers\n");
-+		return (-ENXIO);
++		return -ENXIO;
 +	}
 +
 +	strncpy(sp->name, "Atheros AR231x", sizeof(sp->name) - 1);
@@ -667,7 +667,7 @@
 +
 +	mdelay(10);
 +
-+	return (0);
++	return 0;
 +}
 +
 +
@@ -1218,7 +1218,7 @@
 +
 +	ethernet->mii_addr = MII_ADDR(phy_addr, regnum);
 +	while (ethernet->mii_addr & MII_ADDR_BUSY);
-+	return (ethernet->mii_data >> MII_DATA_SHIFT);
++	return ethernet->mii_data >> MII_DATA_SHIFT;
 +}
 +
 +static int
