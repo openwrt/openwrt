@@ -198,11 +198,11 @@
 +	set_io_port_base(ar231x_pci_controller.io_map_base); /* PCI I/O space*/
 +
 +	reg = ar231x_mask_reg(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
-+	msleep(10);
++	msleep(20);
 +
 +	reg &= ~AR2315_RESET_PCIDMA;
 +	ar231x_write_reg(AR2315_RESET, reg);
-+	msleep(10);
++	msleep(20);
 +
 +	ar231x_mask_reg(AR2315_ENDIAN_CTL, 0,
 +		AR2315_CONFIG_PCIAHB | AR2315_CONFIG_PCIAHB_BRIDGE);
