@@ -128,7 +128,7 @@
 +	return ret;
 +}
 +
-+static struct file_operations ar2315_wdt_fops = {
++static const struct file_operations ar2315_wdt_fops = {
 +	.owner		= THIS_MODULE,
 +	.llseek		= no_llseek,
 +	.write		= ar2315_wdt_write,
