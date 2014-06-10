@@ -438,7 +438,7 @@
 +	ar231x_descr_t *space;
 +
 +	if (sp->rx_ring != NULL) {
-+		printk("%s: already done.\n", __FUNCTION__);
++		printk("%s: already done.\n", __func__);
 +		return 0;
 +	}
 +
@@ -673,7 +673,7 @@
 +	/* Allocate descriptors */
 +	if (ar231x_allocate_descriptors(dev)) {
 +		printk("%s: %s: ar231x_allocate_descriptors failed\n",
-+			   dev->name, __FUNCTION__);
++		       dev->name, __func__);
 +		ecode = -EAGAIN;
 +		goto init_error;
 +	}
@@ -685,7 +685,7 @@
 +					GFP_KERNEL);
 +		if (!(sp->rx_skb)) {
 +			printk("%s: %s: rx_skb kmalloc failed\n",
-+				   dev->name, __FUNCTION__);
++			       dev->name, __func__);
 +			ecode = -EAGAIN;
 +			goto init_error;
 +		}
@@ -698,7 +698,7 @@
 +					GFP_KERNEL);
 +		if (!(sp->tx_skb)) {
 +			printk("%s: %s: tx_skb kmalloc failed\n",
-+				   dev->name, __FUNCTION__);
++			       dev->name, __func__);
 +			ecode = -EAGAIN;
 +			goto init_error;
 +		}
@@ -735,7 +735,7 @@
 +					dev->name, dev);
 +	if (ecode) {
 +		printk(KERN_WARNING "%s: %s: Requested IRQ %d is busy\n",
-+			   dev->name, __FUNCTION__, dev->irq);
++		       dev->name, __func__, dev->irq);
 +		goto init_error;
 +	}
 +
@@ -773,7 +773,7 @@
 +		skb = netdev_alloc_skb_ip_align(dev, AR2313_BUFSIZE);
 +		if (!skb) {
 +			printk("\n\n\n\n %s: No memory in system\n\n\n\n",
-+				   __FUNCTION__);
++			       __func__);
 +			break;
 +		}
 +
