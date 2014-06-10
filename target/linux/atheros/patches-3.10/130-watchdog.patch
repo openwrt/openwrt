@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/watchdog/ar2315-wtd.c
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,199 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -32,10 +32,9 @@
 +#include <linux/reboot.h>
 +#include <linux/init.h>
 +#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/uaccess.h>
 +
-+#include <asm/io.h>
-+#include <asm/uaccess.h>
-+#include <asm/addrspace.h>
 +#include <ar231x_platform.h>
 +#include <ar2315_regs.h>
 +#include <ar231x.h>

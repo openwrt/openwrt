@@ -32,7 +32,7 @@
 +obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1260 @@
+@@ -0,0 +1,1256 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -75,15 +75,11 @@
 +#include <linux/ethtool.h>
 +#include <linux/ctype.h>
 +#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/uaccess.h>
 +
 +#include <net/sock.h>
 +#include <net/ip.h>
-+
-+#include <asm/io.h>
-+#include <asm/irq.h>
-+#include <asm/byteorder.h>
-+#include <asm/uaccess.h>
-+#include <asm/bootinfo.h>
 +
 +#define AR2313_MTU                     1692
 +#define AR2313_PRIOS                   1
@@ -1295,7 +1291,7 @@
 +
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.h
-@@ -0,0 +1,289 @@
+@@ -0,0 +1,288 @@
 +/*
 + * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -1318,7 +1314,6 @@
 +#include <linux/interrupt.h>
 +#include <generated/autoconf.h>
 +#include <linux/bitops.h>
-+#include <asm/bootinfo.h>
 +#include <ar231x_platform.h>
 +
 +/* probe link timer - 5 secs */
