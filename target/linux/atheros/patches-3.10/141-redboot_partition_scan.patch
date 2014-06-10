@@ -7,7 +7,7 @@
 +	buf = vmalloc(master->erasesize);
 +	if (!buf)
 +		return -ENOMEM;
-+		
++
 + restart:
  	if ( directory < 0 ) {
  		offset = master->size + directory * master->erasesize;
